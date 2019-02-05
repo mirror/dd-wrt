@@ -64,7 +64,7 @@ class WpaSupplicant:
                                     stdout=subprocess.PIPE, shell=shell)
             out = proc.communicate()[0]
             ret = proc.returncode
-            return ret, out
+            return ret, out.decode()
         else:
             return self.host.execute(cmd_array)
 
@@ -240,7 +240,7 @@ class WpaSupplicant:
             iter = iter + 1
         if iter == 60:
             logger.error(self.ifname + ": Driver scan state did not clear")
-            print "Trying to clear cfg80211/mac80211 scan state"
+            print("Trying to clear cfg80211/mac80211 scan state")
             status, buf = self.host.execute(["ifconfig", self.ifname, "down"])
             if status != 0:
                 logger.info("ifconfig failed: " + buf)
@@ -438,7 +438,7 @@ class WpaSupplicant:
             try:
                 [name,value] = l.split('=', 1)
                 vals[name] = value
-            except ValueError, e:
+            except ValueError as e:
                 logger.info(self.ifname + ": Ignore unexpected STATUS line: " + l)
         return vals
 
@@ -507,7 +507,7 @@ class WpaSupplicant:
             try:
                 [name,value] = l.split('=', 1)
                 vals[name] = value
-            except ValueError, e:
+            except ValueError as e:
                 logger.info(self.ifname + ": Ignore unexpected MIB line: " + l)
         return vals
 
@@ -764,12 +764,12 @@ class WpaSupplicant:
             return self.group_form_result(ev, expect_failure, go_neg_res)
         raise Exception("P2P_CONNECT failed")
 
-    def wait_event(self, events, timeout=10):
+    def _wait_event(self, mon, pfx, events, timeout):
         start = os.times()[4]
         while True:
-            while self.mon.pending():
-                ev = self.mon.recv()
-                logger.debug(self.dbg + ": " + ev)
+            while mon.pending():
+                ev = mon.recv()
+                logger.debug(self.dbg + pfx + ev)
                 for event in events:
                     if event in ev:
                         return ev
@@ -777,29 +777,18 @@ class WpaSupplicant:
             remaining = start + timeout - now
             if remaining <= 0:
                 break
-            if not self.mon.pending(timeout=remaining):
+            if not mon.pending(timeout=remaining):
                 break
         return None
 
+    def wait_event(self, events, timeout=10):
+        return self._wait_event(self.mon, ": ", events, timeout)
+
     def wait_global_event(self, events, timeout):
         if self.global_iface is None:
-            self.wait_event(events, timeout)
-        else:
-            start = os.times()[4]
-            while True:
-                while self.global_mon.pending():
-                    ev = self.global_mon.recv()
-                    logger.debug(self.global_dbg + self.ifname + "(global): " + ev)
-                    for event in events:
-                        if event in ev:
-                            return ev
-                now = os.times()[4]
-                remaining = start + timeout - now
-                if remaining <= 0:
-                    break
-                if not self.global_mon.pending(timeout=remaining):
-                    break
-        return None
+            return self.wait_event(events, timeout)
+        return self._wait_event(self.global_mon, "(global): ",
+                                events, timeout)
 
     def wait_group_event(self, events, timeout=10):
         if self.group_ifname and self.group_ifname != self.ifname:
@@ -958,7 +947,7 @@ class WpaSupplicant:
             "mean_data_rate": 1500,
         }
         cmd = "WMM_AC_ADDTS %s tsid=%d up=%d" % (direction, tsid, up)
-        for (key, value) in params.iteritems():
+        for (key, value) in params.items():
             cmd += " %s=%d" % (key, value)
         if extra:
             cmd += " " + extra
@@ -1151,8 +1140,9 @@ class WpaSupplicant:
         self.dump_monitor()
         if new_ssid:
             self.request("WPS_REG " + bssid + " " + pin + " " +
-                         new_ssid.encode("hex") + " " + key_mgmt + " " +
-                         cipher + " " + new_passphrase.encode("hex"))
+                         binascii.hexlify(new_ssid.encode()).decode() + " " +
+                         key_mgmt + " " + cipher + " " +
+                         binascii.hexlify(new_passphrase.encode()).decode())
             if no_wait:
                 return
             ev = self.wait_event(["WPS-SUCCESS"], timeout=15)

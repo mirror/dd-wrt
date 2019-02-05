@@ -135,6 +135,7 @@ struct hostapd_vlan {
 };
 
 #define PMK_LEN 32
+#define KEYID_LEN 32
 #define MIN_PASSPHRASE_LEN 8
 #define MAX_PASSPHRASE_LEN 63
 struct hostapd_sta_wpa_psk_short {
@@ -148,6 +149,7 @@ struct hostapd_sta_wpa_psk_short {
 struct hostapd_wpa_psk {
 	struct hostapd_wpa_psk *next;
 	int group;
+	char keyid[KEYID_LEN];
 	u8 psk[PMK_LEN];
 	u8 addr[ETH_ALEN];
 	u8 p2p_dev_addr[ETH_ALEN];
@@ -397,6 +399,7 @@ struct hostapd_bss_config {
 	char *private_key_passwd;
 	int check_crl;
 	int check_crl_strict;
+	unsigned int crl_reload_interval;
 	unsigned int tls_session_lifetime;
 	unsigned int tls_flags;
 	char *ocsp_stapling_response;
@@ -892,5 +895,6 @@ hostapd_config_get_radius_attr(struct hostapd_radius_attr *attr, u8 type);
 int hostapd_config_check(struct hostapd_config *conf, int full_config);
 void hostapd_set_security_params(struct hostapd_bss_config *bss,
 				 int full_config);
+int hostapd_sae_pw_id_in_use(struct hostapd_bss_config *conf);
 
 #endif /* HOSTAPD_CONFIG_H */

@@ -11,6 +11,7 @@ import os
 import socket
 import subprocess
 import time
+import binascii
 
 import hostapd
 import hwsim_utils
@@ -94,7 +95,7 @@ def test_wpas_ctrl_network(dev):
         res = dev[0].get_network(id, "key_mgmt")
         if res != value:
             raise Exception("Unexpected response for key_mgmt")
-    except Exception, e:
+    except Exception as e:
         if str(e).startswith("Unexpected"):
             raise
         else:
@@ -872,7 +873,7 @@ def test_wpas_ctrl_disallow_aps(dev, apdev):
         raise Exception("Unexpected BSSID")
 
     dev[0].dump_monitor()
-    if "OK" not in dev[0].request("SET disallow_aps ssid " + "test".encode("hex")):
+    if "OK" not in dev[0].request("SET disallow_aps ssid " + binascii.hexlify(b"test").decode()):
         raise Exception("Failed to set disallow_aps")
     dev[0].wait_disconnected(timeout=5, error="Disconnection not seen")
     ev = dev[0].wait_event(["CTRL-EVENT-CONNECTED"], timeout=1)
@@ -1485,7 +1486,7 @@ def test_wpas_ctrl_dump(dev, apdev):
         if res == 'FAIL\n':
             res = "null"
         if res != vals[field]:
-            print "'{}' != '{}'".format(res, vals[field])
+            print("'{}' != '{}'".format(res, vals[field]))
             raise Exception("Mismatch in config field " + field)
     if "beacon_int" not in vals:
         raise Exception("Missing config field")
@@ -1617,7 +1618,7 @@ def test_wpas_ctrl_wait(dev, apdev, test_params):
         prg = '../../wpa_supplicant/wpa_supplicant'
     arg = [ prg ]
     cmd = subprocess.Popen(arg, stdout=subprocess.PIPE)
-    out = cmd.communicate()[0]
+    out = cmd.communicate()[0].decode()
     cmd.wait()
     tracing = "Linux tracing" in out
 
@@ -1826,8 +1827,8 @@ def test_wpas_ctrl_socket_full(dev, apdev, test_params):
     for i in range(20):
         logger.debug("Command %d" % i)
         try:
-            s.send("MIB")
-        except Exception, e:
+            s.send(b"MIB")
+        except Exception as e:
             logger.info("Could not send command %d: %s" % (i, str(e)))
             break
         # Close without receiving response
@@ -1845,8 +1846,8 @@ def test_wpas_ctrl_socket_full(dev, apdev, test_params):
     for i in range(10):
         logger.debug("Command %d [2]" % i)
         try:
-            s2.send("MIB")
-        except Exception, e:
+            s2.send(b"MIB")
+        except Exception as e:
             logger.info("Could not send command %d [2]: %s" % (i, str(e)))
             break
         # Close without receiving response
@@ -1858,8 +1859,8 @@ def test_wpas_ctrl_socket_full(dev, apdev, test_params):
     for i in range(10):
         logger.debug("Command %d [3]" % i)
         try:
-            s2.send("MIB")
-        except Exception, e:
+            s2.send(b"MIB")
+        except Exception as e:
             logger.info("Could not send command %d [3]: %s" % (i, str(e)))
             break
         # Close without receiving response
@@ -1877,8 +1878,8 @@ def test_wpas_ctrl_socket_full(dev, apdev, test_params):
     counter += 1
     s.bind(local)
     s.connect("/var/run/wpa_supplicant/wlan0")
-    s.send("ATTACH")
-    res = s.recv(100)
+    s.send(b"ATTACH")
+    res = s.recv(100).decode()
     if "OK" not in res:
         raise Exception("Could not attach a test socket")
 

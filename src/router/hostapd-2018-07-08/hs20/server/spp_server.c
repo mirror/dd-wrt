@@ -790,6 +790,45 @@ static int add_update_node(struct hs20_svc *ctx, xml_node_t *spp_node,
 }
 
 
+static xml_node_t * read_subrem_file(struct hs20_svc *ctx,
+				     const char *subrem_id,
+				     char *uri, size_t uri_size)
+{
+	char fname[200];
+	char *buf, *buf2, *pos;
+	size_t len;
+	xml_node_t *node;
+
+	os_snprintf(fname, sizeof(fname), "%s/spp/subrem/%s",
+		    ctx->root_dir, subrem_id);
+	debug_print(ctx, 1, "Use subrem file %s", fname);
+
+	buf = os_readfile(fname, &len);
+	if (!buf)
+		return NULL;
+	buf2 = os_realloc(buf, len + 1);
+	if (!buf2) {
+		os_free(buf);
+		return NULL;
+	}
+	buf = buf2;
+	buf[len] = '\0';
+
+	pos = os_strchr(buf, '\n');
+	if (!pos) {
+		os_free(buf);
+		return NULL;
+	}
+	*pos++ = '\0';
+	os_strlcpy(uri, buf, uri_size);
+
+	node = xml_node_from_buf(ctx->xml, pos);
+	os_free(buf);
+
+	return node;
+}
+
+
 static xml_node_t * build_sub_rem_resp(struct hs20_svc *ctx,
 				       const char *user, const char *realm,
 				       const char *session_id,
@@ -799,18 +838,8 @@ static xml_node_t * build_sub_rem_resp(struct hs20_svc *ctx,
 	xml_node_t *spp_node, *cred;
 	char buf[400];
 	char new_pw[33];
-	char *real_user = NULL;
 	char *status;
 	char *cert;
-
-	if (dmacc) {
-		real_user = db_get_val(ctx, user, realm, "identity", dmacc);
-		if (real_user == NULL) {
-			debug_print(ctx, 1, "Could not find user identity for "
-				    "dmacc user '%s'", user);
-			return NULL;
-		}
-	}
 
 	cert = db_get_val(ctx, user, realm, "cert", dmacc);
 	if (cert && cert[0] == '\0') {
@@ -818,10 +847,38 @@ static xml_node_t * build_sub_rem_resp(struct hs20_svc *ctx,
 		cert = NULL;
 	}
 	if (cert) {
-		cred = build_credential_cert(ctx, real_user ? real_user : user,
-					     realm, cert);
+		char *subrem;
+
+		/* No change needed in PPS MO unless specifically asked to */
+		cred = NULL;
+		buf[0] = '\0';
+
+		subrem = db_get_val(ctx, user, realm, "subrem", dmacc);
+		if (subrem && subrem[0]) {
+			cred = read_subrem_file(ctx, subrem, buf, sizeof(buf));
+			if (!cred) {
+				debug_print(ctx, 1,
+					    "Could not create updateNode from subrem file");
+				os_free(subrem);
+				os_free(cert);
+				return NULL;
+			}
+		}
+		os_free(subrem);
 	} else {
+		char *real_user = NULL;
 		char *pw;
+
+		if (dmacc) {
+			real_user = db_get_val(ctx, user, realm, "identity",
+					       dmacc);
+			if (!real_user) {
+				debug_print(ctx, 1,
+					    "Could not find user identity for dmacc user '%s'",
+					    user);
+				return NULL;
+			}
+		}
 
 		pw = db_get_session_val(ctx, user, realm, session_id,
 					"password");
@@ -838,12 +895,17 @@ static xml_node_t * build_sub_rem_resp(struct hs20_svc *ctx,
 						real_user ? real_user : user,
 						realm, new_pw, sizeof(new_pw));
 		}
-	}
-	free(real_user);
-	if (!cred) {
-		debug_print(ctx, 1, "Could not build credential");
-		os_free(cert);
-		return NULL;
+
+		free(real_user);
+		if (!cred) {
+			debug_print(ctx, 1, "Could not build credential");
+			os_free(cert);
+			return NULL;
+		}
+
+		snprintf(buf, sizeof(buf),
+			 "./Wi-Fi/%s/PerProviderSubscription/Cred01/Credential",
+			 realm);
 	}
 
 	status = "Remediation complete, request sppUpdateResponse";
@@ -855,11 +917,8 @@ static xml_node_t * build_sub_rem_resp(struct hs20_svc *ctx,
 		return NULL;
 	}
 
-	snprintf(buf, sizeof(buf),
-		 "./Wi-Fi/%s/PerProviderSubscription/Cred01/Credential",
-		 realm);
-
-	if (add_update_node(ctx, spp_node, ns, buf, cred) < 0) {
+	if ((cred && add_update_node(ctx, spp_node, ns, buf, cred) < 0) ||
+	    (!cred && !xml_node_create(ctx->xml, spp_node, ns, "noMOUpdate"))) {
 		debug_print(ctx, 1, "Could not add update node");
 		xml_node_free(ctx->xml, spp_node);
 		os_free(cert);

@@ -30,10 +30,10 @@ from utils import HwsimSkip
 from hwsim_wrapper import run_hwsim_test
 
 def usage():
-    print "USAGE: " + sys.argv[0] + " -t devices"
-    print "USAGE: " + sys.argv[0] + " -t check_devices"
-    print "USAGE: " + sys.argv[0] + " -d <dut_name> -t <all|sanity|tests_to_run> [-r <ref_name>] [-c <cfg_file.py>] [-m <all|monitor_name>] [-h hwsim_tests][-R][-T][-P][-v]"
-    print "USAGE: " + sys.argv[0]
+    print("USAGE: " + sys.argv[0] + " -t devices")
+    print("USAGE: " + sys.argv[0] + " -t check_devices")
+    print("USAGE: " + sys.argv[0] + " -d <dut_name> -t <all|sanity|tests_to_run> [-r <ref_name>] [-c <cfg_file.py>] [-m <all|monitor_name>] [-h hwsim_tests][-R][-T][-P][-v]")
+    print("USAGE: " + sys.argv[0])
 
 def get_devices(devices, duts, refs, monitors):
     for dut in duts:
@@ -161,7 +161,7 @@ def main():
         if m:
             mod = __import__(m.group(1))
             test_modules.append(mod.__name__.replace('test_', '', 1))
-            for key,val in mod.__dict__.iteritems():
+            for key,val in mod.__dict__.items():
                 if key.startswith("test_"):
                     tests.append(val)
     test_names = list(set([t.__name__.replace('test_', '', 1) for t in tests]))
@@ -173,7 +173,7 @@ def main():
         if m:
             mod = __import__(m.group(1))
             test_modules.append(mod.__name__.replace('test_', '', 1))
-            for key,val in mod.__dict__.iteritems():
+            for key,val in mod.__dict__.items():
                 if key.startswith("test_"):
                     hwsim_tests.append(val)
 
@@ -200,7 +200,7 @@ def main():
                 t = None
                 for tt in hwsim_tests:
                     name = tt.__name__.replace('test_', '', 1)
-                    if name == test and tt.func_code.co_argcount <= 2:
+                    if name == test and tt.__code__.co_argcount <= 2:
                         t = tt
                         break
                 if not t:
@@ -215,15 +215,15 @@ def main():
     # print help
     if requested_tests[0] == "help" and len(requested_hwsim_tests) == 0:
         usage()
-        print "\nAvailable Devices:"
+        print("\nAvailable Devices:")
         for device in devices:
-            print "\t", device['name']
-        print "\nAvailable tests:"
+            print("\t", device['name'])
+        print("\nAvailable tests:")
         for test in test_names:
-            print "\t", test
-        print "\nAvailable hwsim tests:"
+            print("\t", test)
+        print("\nAvailable hwsim tests:")
         for hwsim_test in hwsim_tests:
-            print "\t", hwsim_test.__name__.replace('test_', '', 1)
+            print("\t", hwsim_test.__name__.replace('test_', '', 1))
         return
 
     # show/check devices
@@ -265,7 +265,7 @@ def main():
     # lock devices
     try:
         get_devices(devices, duts, refs, monitors)
-    except Exception, e:
+    except Exception as e:
         logger.warning("get devices failed: " + str(e))
         logger.info(traceback.format_exc())
         put_devices(devices, duts, refs, monitors)
@@ -288,7 +288,7 @@ def main():
     logger.warning("RUN check_devices")
     try:
         check_devices(devices, setup_params, refs, duts, monitors)
-    except Exception, e:
+    except Exception as e:
         logger.warning("FAILED: " + str(e))
         logger.info(traceback.format_exc())
         put_devices(devices, duts, refs, monitors)
@@ -317,10 +317,10 @@ def main():
         except KeyboardInterrupt:
             put_devices(devices, duts, refs, monitors)
             raise
-        except TestSkip, e:
+        except TestSkip as e:
             end = datetime.now()
             logger.warning("SKIP (" + str(e) + ") - " + str((end - start).total_seconds()) + "s")
-        except Exception, e:
+        except Exception as e:
             end = datetime.now()
             logger.warning("FAILED (" + str(e) + ") - " + str((end - start).total_seconds()) + "s")
             logger.info(traceback.format_exc())
@@ -344,11 +344,11 @@ def main():
         except KeyboardInterrupt:
             put_devices(devices, duts, refs, monitors)
             raise
-        except HwsimSkip,e:
+        except HwsimSkip as e:
             end = datetime.now()
             logger.warning("SKIP (" + str(e) + ") - " + str((end - start).total_seconds()) + "s")
             failed.append(hwsim_test.__name__.replace('test_', '', 1))
-        except Exception, e:
+        except Exception as e:
             end = datetime.now()
             logger.warning("FAILED (" + str(e) + ") - " + str((end - start).total_seconds()) + "s")
             logger.info(traceback.format_exc())

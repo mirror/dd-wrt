@@ -57,7 +57,7 @@ def test_dpp_qr_code_parsing(dev, apdev):
               "DPP:;;",
               "DPP:C:1/2;M:;K;;",
               "DPP:I:;M:01020304050;K:MDkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDIgADURzxmttZoIRIPWGoQMV00XHWCAQIhXruVWOz0NjlkIA=;;",
-              "DPP:K:" + base64.b64encode("hello") + ";;",
+              "DPP:K:" + base64.b64encode(b"hello").decode() + ";;",
               "DPP:K:MEkwEwYHKoZIzj0CAQYIKoZIzj0DAQEDMgAEXiJuIWt1Q/CPCkuULechh37UsXPmbUANOeN5U9sOQROE4o/NEFeFEejROHYwwehF;;",
               "DPP:K:MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBANNZaZA4T/kRDjnmpI1ACOJhAuTIIEk2KFOpS6XPpGF+EVr/ao3XemkE0/nzXmGaLzLqTUCJknSdxTnVPeWfCVsCAwEAAQ==;;",
               "DPP:K:MIIBCjCB0wYHKoZIzj0CATCBxwIBATAkBgcqhkjOPQEBAhkA/////////////////////v//////////MEsEGP////////////////////7//////////AQYZCEFGeWcgOcPp+mrciQwSf643uzBRrmxAxUAMEWub8hCL2TtV5Uo04Eg6uEhltUEMQQYjagOsDCQ9ny/IOtDoYgA9P8K/YL/EBIHGSuV/8jaeGMQEe1rJM3Vc/l3oR55SBECGQD///////////////+Z3vg2FGvJsbTSKDECAQEDMgAEXiJuIWt1Q/CPCkuULechh37UsXPmbUANOeN5U9sOQROE4o/NEFeFEejROHYwwehF;;",
@@ -313,7 +313,7 @@ def run_dpp_qr_code_auth_unicast(dev, apdev, curve, netrole=None, key=None,
         cmd = "DPP_CONFIGURATOR_ADD"
         if conf_curve:
             cmd += " curve=" + conf_curve
-        res = dev[1].request(cmd);
+        res = dev[1].request(cmd)
         if "FAIL" in res:
             raise Exception("Failed to add configurator")
         conf_id = int(res)
@@ -988,7 +988,7 @@ def test_dpp_qr_code_auth_neg_chan(dev, apdev):
 
     logger.info("Create configurator on dev1")
     cmd = "DPP_CONFIGURATOR_ADD"
-    res = dev[1].request(cmd);
+    res = dev[1].request(cmd)
     if "FAIL" in res:
         raise Exception("Failed to add configurator")
     conf_id = int(res)
@@ -1115,7 +1115,7 @@ def test_dpp_config_fragmentation(dev, apdev):
 def test_dpp_config_legacy_gen(dev, apdev):
     """Generate DPP Config Object for legacy network"""
     run_dpp_qr_code_auth_unicast(dev, apdev, "prime256v1",
-                                 init_extra="conf=sta-psk pass=%s" % "passphrase".encode("hex"),
+                                 init_extra="conf=sta-psk pass=%s" % binascii.hexlify(b"passphrase").decode(),
                                  require_conf_success=True)
 
 def test_dpp_config_legacy_gen_psk(dev, apdev):
@@ -1290,8 +1290,8 @@ def build_conf_obj(kty="EC", crv="P-256",
     elif not no_signed_connector:
         payload = '{"groups":[{"groupId":"*","netRole":"sta"}],"netAccessKey":{"kty":"EC","crv":"P-256","x":"aTF4JEGIPKSZ0Xv9zdCMjm-tn5XpMsYIVZ9wySAz1gI","y":"QGcHWA_6rbU9XDXAztoX-M5Q3suTnMaqEhULtn7SSXw"}}'
         sign = "_sm6YswxMf6hJLVTyYoU1uYUeY2VVkUNjrzjSiEhY42StD_RWowStEE-9CRsdCvLmsTptZ72_g40vTFwdId20A"
-        conn = base64.urlsafe_b64encode(prot_hdr).rstrip('=') + '.'
-        conn += base64.urlsafe_b64encode(payload).rstrip('=') + '.'
+        conn = base64.urlsafe_b64encode(prot_hdr.encode()).decode().rstrip('=') + '.'
+        conn += base64.urlsafe_b64encode(payload.encode()).decode().rstrip('=') + '.'
         conn += sign
         conf += '"signedConnector":"%s",' % conn
 
@@ -1556,7 +1556,7 @@ def ecdsa_sign(pkey, message, alg="sha256"):
         raise Exception("Extra data at the end of ECDSA signature")
 
     raw_sign = r + s
-    return base64.urlsafe_b64encode(raw_sign).rstrip('=')
+    return base64.urlsafe_b64encode(raw_sign).decode().rstrip('=')
 
 p256_priv_key = """-----BEGIN EC PRIVATE KEY-----
 MHcCAQEEIBVQij9ah629f1pu3tarDQGQvrzHgAkgYd1jHGiLxNajoAoGCCqGSM49
@@ -1572,11 +1572,11 @@ def run_dpp_config_connector(dev, apdev, expiry=None, payload=None,
         raise HwsimSkip("OpenSSL python method not available")
     pkey = OpenSSL.crypto.load_privatekey(OpenSSL.crypto.FILETYPE_PEM,
                                           p256_priv_key)
-    x = base64.urlsafe_b64encode(p256_pub_key_x).rstrip('=')
-    y = base64.urlsafe_b64encode(p256_pub_key_y).rstrip('=')
+    x = base64.urlsafe_b64encode(p256_pub_key_x).decode().rstrip('=')
+    y = base64.urlsafe_b64encode(p256_pub_key_y).decode().rstrip('=')
 
-    pubkey = '\04' + p256_pub_key_x + p256_pub_key_y
-    kid = base64.urlsafe_b64encode(hashlib.sha256(pubkey).digest()).rstrip('=')
+    pubkey = b'\x04' + p256_pub_key_x + p256_pub_key_y
+    kid = base64.urlsafe_b64encode(hashlib.sha256(pubkey).digest()).decode().rstrip('=')
 
     prot_hdr = '{"typ":"dppCon","kid":"%s","alg":"ES256"}' % kid
 
@@ -1585,8 +1585,8 @@ def run_dpp_config_connector(dev, apdev, expiry=None, payload=None,
         if expiry:
             payload += ',"expiry":"%s"' % expiry
         payload += '}'
-    conn = base64.urlsafe_b64encode(prot_hdr).rstrip('=') + '.'
-    conn += base64.urlsafe_b64encode(payload).rstrip('=')
+    conn = base64.urlsafe_b64encode(prot_hdr.encode()).decode().rstrip('=') + '.'
+    conn += base64.urlsafe_b64encode(payload.encode()).decode().rstrip('=')
     sign = ecdsa_sign(pkey, conn)
     conn += '.' + sign
     run_dpp_config_error(dev, apdev,
@@ -1707,12 +1707,14 @@ def test_dpp_gas_timeout(dev, apdev):
 
     # DPP Authentication Request
     msg = dev[0].mgmt_rx()
-    if "OK" not in dev[0].request("MGMT_RX_PROCESS freq={} datarate={} ssi_signal={} frame={}".format(msg['freq'], msg['datarate'], msg['ssi_signal'], msg['frame'].encode('hex'))):
+    if "OK" not in dev[0].request("MGMT_RX_PROCESS freq={} datarate={} ssi_signal={} frame={}".format(
+        msg['freq'], msg['datarate'], msg['ssi_signal'], binascii.hexlify(msg['frame']).decode())):
         raise Exception("MGMT_RX_PROCESS failed")
 
     # DPP Authentication Confirmation
     msg = dev[0].mgmt_rx()
-    if "OK" not in dev[0].request("MGMT_RX_PROCESS freq={} datarate={} ssi_signal={} frame={}".format(msg['freq'], msg['datarate'], msg['ssi_signal'], msg['frame'].encode('hex'))):
+    if "OK" not in dev[0].request("MGMT_RX_PROCESS freq={} datarate={} ssi_signal={} frame={}".format(
+        msg['freq'], msg['datarate'], msg['ssi_signal'], binascii.hexlify(msg['frame']).decode())):
         raise Exception("MGMT_RX_PROCESS failed")
 
     ev = dev[0].wait_event(["DPP-AUTH-SUCCESS"], timeout=5)
@@ -1724,7 +1726,8 @@ def test_dpp_gas_timeout(dev, apdev):
 
     # DPP Configuration Response (GAS Initial Response frame)
     msg = dev[0].mgmt_rx()
-    if "OK" not in dev[0].request("MGMT_RX_PROCESS freq={} datarate={} ssi_signal={} frame={}".format(msg['freq'], msg['datarate'], msg['ssi_signal'], msg['frame'].encode('hex'))):
+    if "OK" not in dev[0].request("MGMT_RX_PROCESS freq={} datarate={} ssi_signal={} frame={}".format(
+        msg['freq'], msg['datarate'], msg['ssi_signal'], binascii.hexlify(msg['frame']).decode())):
         raise Exception("MGMT_RX_PROCESS failed")
 
     # GAS Comeback Response frame
@@ -1977,7 +1980,7 @@ def run_dpp_ap_config(dev, apdev, curve=None, conf_curve=None,
     cmd = "DPP_CONFIGURATOR_ADD"
     if conf_curve:
         cmd += " curve=" + conf_curve
-    res = dev[0].request(cmd);
+    res = dev[0].request(cmd)
     if "FAIL" in res:
         raise Exception("Failed to add configurator")
     conf_id = int(res)
@@ -2035,7 +2038,7 @@ def run_dpp_ap_config(dev, apdev, curve=None, conf_curve=None,
         if conf_curve:
             cmd += " curve=" + conf_curve
         cmd += " key=" + csign
-        res = dev[0].request(cmd);
+        res = dev[0].request(cmd)
         if "FAIL" in res:
             raise Exception("Failed to add configurator (reconf)")
         conf_id = int(res)
@@ -2266,7 +2269,9 @@ def run_dpp_auto_connect_legacy(dev, apdev, conf='sta-psk',
     if "OK" not in dev[0].request(cmd):
         raise Exception("Failed to start listen operation")
 
-    cmd = "DPP_AUTH_INIT peer=%d conf=%s ssid=%s pass=%s" % (id1, conf, "dpp-legacy".encode("hex"), "secret passphrase".encode("hex"))
+    cmd = "DPP_AUTH_INIT peer=%d conf=%s ssid=%s pass=%s" % (id1, conf,
+        binascii.hexlify(b"dpp-legacy").decode(),
+        binascii.hexlify(b"secret passphrase").decode())
     if "OK" not in dev[1].request(cmd):
         raise Exception("Failed to initiate DPP Authentication")
     ev = dev[1].wait_event(["DPP-CONF-SENT"], timeout=10)
@@ -2317,7 +2322,9 @@ def run_dpp_auto_connect_legacy_pmf_required(dev, apdev):
     if "OK" not in dev[0].request(cmd):
         raise Exception("Failed to start listen operation")
 
-    cmd = "DPP_AUTH_INIT peer=%d conf=sta-psk ssid=%s pass=%s" % (id1, "dpp-legacy".encode("hex"), "secret passphrase".encode("hex"))
+    cmd = "DPP_AUTH_INIT peer=%d conf=sta-psk ssid=%s pass=%s" % (id1,
+        binascii.hexlify(b"dpp-legacy").decode(),
+        binascii.hexlify(b"secret passphrase").decode())
     if "OK" not in dev[1].request(cmd):
         raise Exception("Failed to initiate DPP Authentication")
     ev = dev[1].wait_event(["DPP-CONF-SENT"], timeout=10)
@@ -2346,7 +2353,7 @@ def run_dpp_qr_code_auth_responder_configurator(dev, apdev, extra):
     check_dpp_capab(dev[0])
     check_dpp_capab(dev[1])
     cmd = "DPP_CONFIGURATOR_ADD"
-    res = dev[0].request(cmd);
+    res = dev[0].request(cmd)
     if "FAIL" in res:
         raise Exception("Failed to add configurator")
     conf_id = int(res)
@@ -2365,7 +2372,7 @@ def run_dpp_qr_code_auth_responder_configurator(dev, apdev, extra):
     id1 = int(res)
 
     dev[0].set("dpp_configurator_params",
-               " conf=sta-dpp configurator=%d%s" % (conf_id, extra));
+               " conf=sta-dpp configurator=%d%s" % (conf_id, extra))
     cmd = "DPP_LISTEN 2412 role=configurator"
     if "OK" not in dev[0].request(cmd):
         raise Exception("Failed to start listen operation")
@@ -2396,7 +2403,7 @@ def test_dpp_qr_code_hostapd_init(dev, apdev):
     check_dpp_capab(hapd)
 
     cmd = "DPP_CONFIGURATOR_ADD"
-    res = dev[0].request(cmd);
+    res = dev[0].request(cmd)
     if "FAIL" in res:
         raise Exception("Failed to add configurator")
     conf_id = int(res)
@@ -2410,7 +2417,7 @@ def test_dpp_qr_code_hostapd_init(dev, apdev):
     uri0 = dev[0].request("DPP_BOOTSTRAP_GET_URI %d" % id0)
 
     dev[0].set("dpp_configurator_params",
-               " conf=ap-dpp configurator=%d" % conf_id);
+               " conf=ap-dpp configurator=%d" % conf_id)
     cmd = "DPP_LISTEN 2437 role=configurator"
     if "OK" not in dev[0].request(cmd):
         raise Exception("Failed to start listen operation")
@@ -2453,7 +2460,7 @@ def run_dpp_qr_code_hostapd_init_offchannel(dev, apdev, extra):
     check_dpp_capab(hapd)
 
     cmd = "DPP_CONFIGURATOR_ADD"
-    res = dev[0].request(cmd);
+    res = dev[0].request(cmd)
     if "FAIL" in res:
         raise Exception("Failed to add configurator")
     conf_id = int(res)
@@ -2467,7 +2474,7 @@ def run_dpp_qr_code_hostapd_init_offchannel(dev, apdev, extra):
     uri0 = dev[0].request("DPP_BOOTSTRAP_GET_URI %d" % id0)
 
     dev[0].set("dpp_configurator_params",
-               " conf=ap-dpp configurator=%d" % conf_id);
+               " conf=ap-dpp configurator=%d" % conf_id)
     cmd = "DPP_LISTEN 2462 role=configurator"
     if "OK" not in dev[0].request(cmd):
         raise Exception("Failed to start listen operation")
@@ -2722,7 +2729,7 @@ def test_dpp_pkex_config(dev, apdev):
     check_dpp_capab(dev[1])
 
     cmd = "DPP_CONFIGURATOR_ADD"
-    res = dev[1].request(cmd);
+    res = dev[1].request(cmd)
     if "FAIL" in res:
         raise Exception("Failed to add configurator")
     conf_id = int(res)
@@ -3191,13 +3198,13 @@ def test_dpp_pkex_config2(dev, apdev):
     check_dpp_capab(dev[0])
 
     cmd = "DPP_CONFIGURATOR_ADD"
-    res = dev[0].request(cmd);
+    res = dev[0].request(cmd)
     if "FAIL" in res:
         raise Exception("Failed to add configurator")
     conf_id = int(res)
 
     dev[0].set("dpp_configurator_params",
-               " conf=sta-dpp configurator=%d" % conf_id);
+               " conf=sta-dpp configurator=%d" % conf_id)
     run_dpp_pkex2(dev, apdev)
 
 def run_dpp_pkex2(dev, apdev, curve=None, init_extra=""):
@@ -3332,7 +3339,7 @@ def test_dpp_pkex_hostapd_responder(dev, apdev):
         raise Exception("Failed to set PKEX data (responder/hostapd)")
 
     cmd = "DPP_CONFIGURATOR_ADD"
-    res = dev[0].request(cmd);
+    res = dev[0].request(cmd)
     if "FAIL" in res:
         raise Exception("Failed to add configurator")
     conf_id = int(res)
@@ -3371,7 +3378,7 @@ def test_dpp_pkex_hostapd_initiator(dev, apdev):
     check_dpp_capab(hapd)
 
     cmd = "DPP_CONFIGURATOR_ADD"
-    res = dev[0].request(cmd);
+    res = dev[0].request(cmd)
     if "FAIL" in res:
         raise Exception("Failed to add configurator")
     conf_id = int(res)
@@ -3383,7 +3390,7 @@ def test_dpp_pkex_hostapd_initiator(dev, apdev):
     id0 = int(res)
 
     dev[0].set("dpp_configurator_params",
-               " conf=ap-dpp configurator=%d" % conf_id);
+               " conf=ap-dpp configurator=%d" % conf_id)
 
     cmd = "DPP_PKEX_ADD own=%d identifier=test code=secret" % (id0)
     res = dev[0].request(cmd)
@@ -3428,7 +3435,7 @@ def test_dpp_hostapd_configurator(dev, apdev):
     check_dpp_capab(hapd)
 
     cmd = "DPP_CONFIGURATOR_ADD"
-    res = hapd.request(cmd);
+    res = hapd.request(cmd)
     if "FAIL" in res:
         raise Exception("Failed to add configurator")
     conf_id = int(res)
@@ -3484,13 +3491,13 @@ def test_dpp_hostapd_configurator_responder(dev, apdev):
     check_dpp_capab(hapd)
 
     cmd = "DPP_CONFIGURATOR_ADD"
-    res = hapd.request(cmd);
+    res = hapd.request(cmd)
     if "FAIL" in res:
         raise Exception("Failed to add configurator")
     conf_id = int(res)
 
     hapd.set("dpp_configurator_params",
-             " conf=sta-dpp configurator=%d" % conf_id);
+             " conf=sta-dpp configurator=%d" % conf_id)
 
     addr = hapd.own_addr().replace(':', '')
     cmd = "DPP_BOOTSTRAP_GEN type=qrcode chan=81/1 mac=" + addr
@@ -3560,7 +3567,7 @@ def run_dpp_own_config(dev, apdev, own_curve=None, expect_failure=False,
     uri = hapd.request("DPP_BOOTSTRAP_GET_URI %d" % id_h)
 
     cmd = "DPP_CONFIGURATOR_ADD"
-    res = dev[0].request(cmd);
+    res = dev[0].request(cmd)
     if "FAIL" in res:
         raise Exception("Failed to add configurator")
     conf_id = int(res)
@@ -3604,7 +3611,7 @@ def run_dpp_own_config(dev, apdev, own_curve=None, expect_failure=False,
     if expect_failure:
         ev = dev[0].wait_event(["CTRL-EVENT-CONNECTED"], timeout=1)
         if ev is not None:
-            raise Exception("Unexpected connection");
+            raise Exception("Unexpected connection")
         dev[0].request("DISCONNECT")
     else:
         dev[0].wait_connected()
@@ -3636,7 +3643,7 @@ def run_dpp_own_config_ap(dev, apdev, reconf_configurator=False, extra=""):
     check_dpp_capab(hapd)
 
     cmd = "DPP_CONFIGURATOR_ADD"
-    res = hapd.request(cmd);
+    res = hapd.request(cmd)
     if "FAIL" in res:
         raise Exception("Failed to add configurator")
     conf_id = int(res)
@@ -3657,7 +3664,7 @@ def run_dpp_own_config_ap(dev, apdev, reconf_configurator=False, extra=""):
         if "OK" not in res:
             raise Exception("DPP_CONFIGURATOR_REMOVE failed")
         cmd = "DPP_CONFIGURATOR_ADD key=" + csign
-        res = hapd.request(cmd);
+        res = hapd.request(cmd)
         if "FAIL" in res:
             raise Exception("Failed to add configurator (reconf)")
         conf_id = int(res)
@@ -3727,7 +3734,7 @@ def run_dpp_intro_mismatch(dev, apdev, wpas):
     uri = hapd.request("DPP_BOOTSTRAP_GET_URI %d" % id_h)
 
     logger.info("Provision AP with DPP configuration")
-    res = dev[1].request("DPP_CONFIGURATOR_ADD");
+    res = dev[1].request("DPP_CONFIGURATOR_ADD")
     if "FAIL" in res:
         raise Exception("Failed to add configurator")
     conf_id = int(res)
@@ -3792,7 +3799,7 @@ def run_dpp_intro_mismatch(dev, apdev, wpas):
     if "OK" not in dev[2].request(cmd):
         raise Exception("Failed to start listen operation")
 
-    res = dev[1].request("DPP_CONFIGURATOR_ADD");
+    res = dev[1].request("DPP_CONFIGURATOR_ADD")
     if "FAIL" in res:
         raise Exception("Failed to add configurator")
     conf_id_2 = int(res)
@@ -3913,7 +3920,7 @@ def run_dpp_proto_init(dev, test_dev, test, mutual=False, unicast=True,
         else:
             cmd += " role=configurator"
         dev[0].set("dpp_configurator_params",
-                   " conf=sta-dpp configurator=%d" % conf_id);
+                   " conf=sta-dpp configurator=%d" % conf_id)
     elif incompatible_roles:
         cmd += " role=enrollee"
 
@@ -4881,12 +4888,12 @@ def test_dpp_pkex_alloc_fail(dev, apdev):
     for count, func in tests:
         with alloc_fail(dev[1], count, func):
             cmd = "DPP_CONFIGURATOR_ADD"
-            res = dev[1].request(cmd);
+            res = dev[1].request(cmd)
             if "FAIL" not in res:
                 raise Exception("Unexpected DPP_CONFIGURATOR_ADD success")
 
     cmd = "DPP_CONFIGURATOR_ADD"
-    res = dev[1].request(cmd);
+    res = dev[1].request(cmd)
     if "FAIL" in res:
         raise Exception("Failed to add configurator")
     conf_id = int(res)
@@ -5023,7 +5030,7 @@ def test_dpp_pkex_test_fail(dev, apdev):
     for count, func in tests:
         with fail_test(dev[1], count, func):
             cmd = "DPP_CONFIGURATOR_ADD"
-            res = dev[1].request(cmd);
+            res = dev[1].request(cmd)
             if "FAIL" not in res:
                 raise Exception("Unexpected DPP_CONFIGURATOR_ADD success")
 
@@ -5031,12 +5038,12 @@ def test_dpp_pkex_test_fail(dev, apdev):
     for count, func in tests:
         with fail_test(dev[1], count, func):
             cmd = "DPP_BOOTSTRAP_GEN type=pkex"
-            res = dev[1].request(cmd);
+            res = dev[1].request(cmd)
             if "FAIL" not in res:
                 raise Exception("Unexpected DPP_BOOTSTRAP_GEN success")
 
     cmd = "DPP_CONFIGURATOR_ADD"
-    res = dev[1].request(cmd);
+    res = dev[1].request(cmd)
     if "FAIL" in res:
         raise Exception("Failed to add configurator")
     conf_id = int(res)
@@ -5149,7 +5156,8 @@ def test_dpp_keygen_configurator_error(dev, apdev):
 
 def rx_process_frame(dev):
     msg = dev.mgmt_rx()
-    if "OK" not in dev.request("MGMT_RX_PROCESS freq={} datarate={} ssi_signal={} frame={}".format(msg['freq'], msg['datarate'], msg['ssi_signal'], msg['frame'].encode('hex'))):
+    if "OK" not in dev.request("MGMT_RX_PROCESS freq={} datarate={} ssi_signal={} frame={}".format(
+        msg['freq'], msg['datarate'], msg['ssi_signal'], binascii.hexlify(msg['frame']).decode())):
         raise Exception("MGMT_RX_PROCESS failed")
 
 def wait_auth_success(responder, initiator):
@@ -5238,7 +5246,7 @@ def test_dpp_gas_comeback_after_failure(dev, apdev):
 
     # DPP Configuration Request (GAS Comeback Request frame)
     msg = dev[0].mgmt_rx()
-    frame = msg['frame'].encode('hex')
+    frame = binascii.hexlify(msg['frame']).decode()
     with alloc_fail(dev[0], 1, "gas_build_comeback_resp;gas_server_handle_rx_comeback_req"):
         if "OK" not in dev[0].request("MGMT_RX_PROCESS freq={} datarate={} ssi_signal={} frame={}".format(msg['freq'], msg['datarate'], msg['ssi_signal'], frame)):
             raise Exception("MGMT_RX_PROCESS failed")
@@ -5269,26 +5277,29 @@ def test_dpp_gas(dev, apdev):
     msg = dev[0].mgmt_rx()
 
     # Protected Dual of GAS Initial Request frame (dropped by GAS server)
-    frame = msg['frame'].encode('hex')
-    frame = frame[0:48] + "09" + frame[50:]
+    if msg == None:
+        raise Exception("MGMT_RX_PROCESS failed. <Please retry>")
+    frame = binascii.hexlify(msg['frame'])
+    frame = frame[0:48] + b"09" + frame[50:]
+    frame = frame.decode()
     if "OK" not in dev[0].request("MGMT_RX_PROCESS freq={} datarate={} ssi_signal={} frame={}".format(msg['freq'], msg['datarate'], msg['ssi_signal'], frame)):
         raise Exception("MGMT_RX_PROCESS failed")
 
     with alloc_fail(dev[0], 1, "gas_server_send_resp"):
-        frame = msg['frame'].encode('hex')
+        frame = binascii.hexlify(msg['frame']).decode()
         if "OK" not in dev[0].request("MGMT_RX_PROCESS freq={} datarate={} ssi_signal={} frame={}".format(msg['freq'], msg['datarate'], msg['ssi_signal'], frame)):
             raise Exception("MGMT_RX_PROCESS failed")
         wait_fail_trigger(dev[0], "GET_ALLOC_FAIL")
 
     with alloc_fail(dev[0], 1, "gas_build_initial_resp;gas_server_send_resp"):
-        frame = msg['frame'].encode('hex')
+        frame = binascii.hexlify(msg['frame']).decode()
         if "OK" not in dev[0].request("MGMT_RX_PROCESS freq={} datarate={} ssi_signal={} frame={}".format(msg['freq'], msg['datarate'], msg['ssi_signal'], frame)):
             raise Exception("MGMT_RX_PROCESS failed")
         wait_fail_trigger(dev[0], "GET_ALLOC_FAIL")
 
     # Add extra data after Query Request field to trigger
     # "GAS: Ignored extra data after Query Request field"
-    frame = msg['frame'].encode('hex') + "00"
+    frame = binascii.hexlify(msg['frame']).decode() + "00"
     if "OK" not in dev[0].request("MGMT_RX_PROCESS freq={} datarate={} ssi_signal={} frame={}".format(msg['freq'], msg['datarate'], msg['ssi_signal'], frame)):
         raise Exception("MGMT_RX_PROCESS failed")
 
@@ -5314,7 +5325,7 @@ def test_dpp_truncated_attr(dev, apdev):
     frame = msg['frame']
 
     # DPP: Truncated message - not enough room for the attribute - dropped
-    frame1 = frame[0:36].encode('hex')
+    frame1 = binascii.hexlify(frame[0:36]).decode()
     if "OK" not in dev[0].request("MGMT_RX_PROCESS freq={} datarate={} ssi_signal={} frame={}".format(msg['freq'], msg['datarate'], msg['ssi_signal'], frame1)):
         raise Exception("MGMT_RX_PROCESS failed")
     ev = dev[0].wait_event(["DPP-RX"], timeout=5)
@@ -5322,7 +5333,7 @@ def test_dpp_truncated_attr(dev, apdev):
         raise Exception("Invalid attribute error not reported")
 
     # DPP: Unexpected octets (3) after the last attribute
-    frame2 = frame.encode('hex') + "000000"
+    frame2 = binascii.hexlify(frame).decode() + "000000"
     if "OK" not in dev[0].request("MGMT_RX_PROCESS freq={} datarate={} ssi_signal={} frame={}".format(msg['freq'], msg['datarate'], msg['ssi_signal'], frame2)):
         raise Exception("MGMT_RX_PROCESS failed")
     ev = dev[0].wait_event(["DPP-RX"], timeout=5)
@@ -5425,7 +5436,7 @@ def test_dpp_invalid_legacy_params(dev, apdev):
     id1 = int(res)
 
     # No pass/psk
-    cmd = "DPP_AUTH_INIT peer=%d conf=sta-psk ssid=%s" % (id1, "dpp-legacy".encode("hex"))
+    cmd = "DPP_AUTH_INIT peer=%d conf=sta-psk ssid=%s" % (id1, binascii.hexlify(b"dpp-legacy").decode())
     if "FAIL" not in dev[1].request(cmd):
         raise Exception("Invalid command not rejected")
 
@@ -5448,7 +5459,7 @@ def test_dpp_invalid_legacy_params2(dev, apdev):
     id1 = int(res)
 
     dev[0].set("dpp_configurator_params",
-               " conf=sta-psk ssid=%s" % ("dpp-legacy".encode("hex")))
+               " conf=sta-psk ssid=%s" % (binascii.hexlify(b"dpp-legacy").decode()))
     cmd = "DPP_LISTEN 2412 role=configurator"
     if "OK" not in dev[0].request(cmd):
         raise Exception("Failed to start listen operation")
@@ -5483,7 +5494,9 @@ def test_dpp_legacy_params_failure(dev, apdev):
     if "OK" not in dev[0].request("DPP_LISTEN 2412"):
         raise Exception("Failed to start listen operation")
 
-    cmd = "DPP_AUTH_INIT peer=%d conf=sta-psk pass=%s ssid=%s" % (id1, "passphrase".encode("hex"), "dpp-legacy".encode("hex"))
+    cmd = "DPP_AUTH_INIT peer=%d conf=sta-psk pass=%s ssid=%s" % (id1,
+        binascii.hexlify(b"passphrase").decode(),
+        binascii.hexlify(b"dpp-legacy").decode())
     with alloc_fail(dev[1], 1, "dpp_build_conf_obj_legacy"):
         if "OK" not in dev[1].request(cmd):
             raise Exception("Failed to initiate DPP")
@@ -5517,7 +5530,7 @@ def test_dpp_invalid_configurator_key(dev, apdev):
 def test_dpp_own_config_sign_fail(dev, apdev):
     """DPP own config signing failure"""
     check_dpp_capab(dev[0])
-    res = dev[0].request("DPP_CONFIGURATOR_ADD");
+    res = dev[0].request("DPP_CONFIGURATOR_ADD")
     if "FAIL" in res:
         raise Exception("Failed to add configurator")
     conf_id = int(res)
@@ -5542,7 +5555,7 @@ def run_dpp_peer_intro_failures(dev, apdev):
     hapd = hostapd.add_ap(apdev[0], { "ssid": "unconfigured" })
     check_dpp_capab(hapd)
 
-    res = hapd.request("DPP_CONFIGURATOR_ADD key=" + dpp_key_p256);
+    res = hapd.request("DPP_CONFIGURATOR_ADD key=" + dpp_key_p256)
     if "FAIL" in res:
         raise Exception("Failed to add configurator")
     conf_id = int(res)
@@ -5550,7 +5563,7 @@ def run_dpp_peer_intro_failures(dev, apdev):
     if "FAIL" in csign or len(csign) == 0:
         raise Exception("DPP_CONFIGURATOR_GET_KEY failed")
 
-    res = dev[0].request("DPP_CONFIGURATOR_ADD key=" + csign);
+    res = dev[0].request("DPP_CONFIGURATOR_ADD key=" + csign)
     if "FAIL" in res:
         raise Exception("Failed to add configurator")
     conf_id2 = int(res)
@@ -5796,7 +5809,7 @@ def test_dpp_network_addition_failure(dev, apdev):
 def run_dpp_network_addition_failure(dev, apdev):
     check_dpp_capab(dev[0])
 
-    res = dev[0].request("DPP_CONFIGURATOR_ADD");
+    res = dev[0].request("DPP_CONFIGURATOR_ADD")
     if "FAIL" in res:
         raise Exception("Failed to add configurator")
     conf_id = int(res)
@@ -5819,7 +5832,7 @@ def run_dpp_network_addition_failure(dev, apdev):
             wait_fail_trigger(dev[0], "GET_ALLOC_FAIL")
         dev[0].dump_monitor()
 
-    cmd = "DPP_CONFIGURATOR_SIGN  conf=sta-psk pass=%s configurator=%d" % ("passphrase".encode("hex"), conf_id)
+    cmd = "DPP_CONFIGURATOR_SIGN  conf=sta-psk pass=%s configurator=%d" % (binascii.hexlify(b"passphrase").decode(), conf_id)
     tests = [ (1, "wpa_config_set_quoted;wpas_dpp_add_network") ]
     for count,func in tests:
         with alloc_fail(dev[0], count, func):

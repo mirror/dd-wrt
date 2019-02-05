@@ -12,6 +12,7 @@ import hashlib
 import hmac
 import os
 import time
+import sys
 import stat
 import subprocess
 import logging
@@ -19,12 +20,22 @@ logger = logging.getLogger()
 import re
 import socket
 import struct
-import httplib
-import urlparse
+try:
+    from http.client import HTTPConnection
+    from urllib.request import urlopen
+    from urllib.parse import urlparse, urljoin
+    from urllib.error import HTTPError
+    from io import StringIO
+    from socketserver import StreamRequestHandler, TCPServer
+except ImportError:
+    from httplib import HTTPConnection
+    from urllib import urlopen
+    from urlparse import urlparse, urljoin
+    from urllib2 import build_opener, ProxyHandler, HTTPError
+    from StringIO import StringIO
+    from SocketServer import StreamRequestHandler, TCPServer
 import urllib
 import xml.etree.ElementTree as ET
-import StringIO
-import SocketServer
 
 import hwsim_utils
 import hostapd
@@ -167,7 +178,7 @@ def test_ap_wps_init_through_wps_config(dev, apdev):
     ssid = "test-wps-init-config"
     hapd = hostapd.add_ap(apdev[0],
                           { "ssid": ssid, "eap_server": "1", "wps_state": "1" })
-    if "FAIL" in hapd.request("WPS_CONFIG " + ssid.encode("hex") + " WPA2PSK CCMP " + "12345678".encode("hex")):
+    if "FAIL" in hapd.request("WPS_CONFIG " + binascii.hexlify(ssid.encode()).decode() + " WPA2PSK CCMP " + binascii.hexlify(b"12345678").decode()):
         raise Exception("WPS_CONFIG command failed")
     ev = hapd.wait_event(["WPS-NEW-AP-SETTINGS"], timeout=5)
     if ev is None:
@@ -190,7 +201,7 @@ def test_ap_wps_init_through_wps_config_2(dev, apdev):
     hapd = hostapd.add_ap(apdev[0],
                           { "ssid": ssid, "eap_server": "1", "wps_state": "1",
                           "wps_cred_processing": "2" })
-    if "FAIL" in hapd.request("WPS_CONFIG " + ssid.encode("hex") + " WPA2PSK CCMP " + "12345678".encode("hex")):
+    if "FAIL" in hapd.request("WPS_CONFIG " + binascii.hexlify(ssid.encode()).decode() + " WPA2PSK CCMP " + binascii.hexlify(b"12345678").decode()):
         raise Exception("WPS_CONFIG command failed")
     ev = hapd.wait_event(["WPS-NEW-AP-SETTINGS"], timeout=5)
     if ev is None:
@@ -204,7 +215,7 @@ def test_ap_wps_invalid_wps_config_passphrase(dev, apdev):
     ssid = "test-wps-init-config"
     hapd = hostapd.add_ap(apdev[0],
                           { "ssid": ssid, "eap_server": "1", "wps_state": "1" })
-    if "FAIL" not in hapd.request("WPS_CONFIG " + ssid.encode("hex") + " WPA2PSK CCMP " + "1234567".encode("hex")):
+    if "FAIL" not in hapd.request("WPS_CONFIG " + binascii.hexlify(ssid.encode()).decode() + " WPA2PSK CCMP " + binascii.hexlify(b"1234567").decode()):
         raise Exception("Invalid WPS_CONFIG command accepted")
 
 def test_ap_wps_conf(dev, apdev):
@@ -602,13 +613,13 @@ def test_ap_wps_reg_override_ap_settings(dev, apdev):
     except:
         pass
     # Override AP Settings with values that point to another AP
-    data = build_wsc_attr(ATTR_NETWORK_INDEX, '\x01')
-    data += build_wsc_attr(ATTR_SSID, "test")
-    data += build_wsc_attr(ATTR_AUTH_TYPE, '\x00\x01')
-    data += build_wsc_attr(ATTR_ENCR_TYPE, '\x00\x01')
-    data += build_wsc_attr(ATTR_NETWORK_KEY, '')
+    data = build_wsc_attr(ATTR_NETWORK_INDEX, b'\x01')
+    data += build_wsc_attr(ATTR_SSID, b"test")
+    data += build_wsc_attr(ATTR_AUTH_TYPE, b'\x00\x01')
+    data += build_wsc_attr(ATTR_ENCR_TYPE, b'\x00\x01')
+    data += build_wsc_attr(ATTR_NETWORK_KEY, b'')
     data += build_wsc_attr(ATTR_MAC_ADDR, binascii.unhexlify(apdev[1]['bssid'].replace(':', '')))
-    with open(ap_settings, "w") as f:
+    with open(ap_settings, "wb") as f:
         f.write(data)
     ssid = "test-wps-reg-ap-pin"
     appin = "12345670"
@@ -761,7 +772,7 @@ def test_ap_wps_reg_config_ext_processing(dev, apdev):
     if "1026" not in ev:
         raise Exception("AP Settings missing from event")
     hapd.request("SET wps_cred_processing 0")
-    if "FAIL" in hapd.request("WPS_CONFIG " + new_ssid.encode("hex") + " WPA2PSK CCMP " + new_passphrase.encode("hex")):
+    if "FAIL" in hapd.request("WPS_CONFIG " + binascii.hexlify(new_ssid.encode()).decode() + " WPA2PSK CCMP " + binascii.hexlify(new_passphrase.encode()).decode()):
         raise Exception("WPS_CONFIG command failed")
     dev[0].wait_connected(timeout=15)
 
@@ -1562,8 +1573,8 @@ def _test_ap_wps_er_config_ap(dev, apdev):
         raise Exception("Expected AP UUID not found")
     new_passphrase = "1234567890"
     dev[0].request("WPS_ER_CONFIG " + apdev[0]['bssid'] + " " + ap_pin + " " +
-                   ssid.encode("hex") + " WPA2PSK CCMP " +
-                   new_passphrase.encode("hex"))
+                   binascii.hexlify(ssid.encode()).decode() + " WPA2PSK CCMP " +
+                   binascii.hexlify(new_passphrase.encode()).decode())
     ev = dev[0].wait_event(["WPS-SUCCESS"])
     if ev is None:
         raise Exception("WPS ER configuration operation timed out")
@@ -2329,7 +2340,7 @@ def test_ap_wps_auto_setup_with_config_file(dev, apdev):
                 try:
                     [name,value] = l.split('=', 1)
                     vals[name] = value
-                except ValueError, e:
+                except ValueError as e:
                     if "# WPS configuration" in l:
                         pass
                     else:
@@ -2351,13 +2362,13 @@ def test_ap_wps_pbc_timeout(dev, apdev, params):
 
     location = ssdp_get_location(ap_uuid)
     urls = upnp_get_urls(location)
-    eventurl = urlparse.urlparse(urls['event_sub_url'])
-    ctrlurl = urlparse.urlparse(urls['control_url'])
+    eventurl = urlparse(urls['event_sub_url'])
+    ctrlurl = urlparse(urls['control_url'])
 
-    url = urlparse.urlparse(location)
-    conn = httplib.HTTPConnection(url.netloc)
+    url = urlparse(location)
+    conn = HTTPConnection(url.netloc)
 
-    class WPSERHTTPServer(SocketServer.StreamRequestHandler):
+    class WPSERHTTPServer(StreamRequestHandler):
         def handle(self):
             data = self.rfile.readline().strip()
             logger.debug(data)
@@ -2476,10 +2487,10 @@ def ssdp_send(msg, no_recv=False):
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
     sock.bind(("127.0.0.1", 0))
-    sock.sendto(msg, ("239.255.255.250", 1900))
+    sock.sendto(msg.encode(), ("239.255.255.250", 1900))
     if no_recv:
         return None
-    return sock.recv(1000)
+    return sock.recv(1000).decode()
 
 def ssdp_send_msearch(st, no_recv=False):
     msg = '\r\n'.join([
@@ -2547,7 +2558,7 @@ def test_ap_wps_ssdp_invalid_msearch(dev, apdev):
             'MAN: "ssdp:discover"',
             'ST: urn:schemas-wifialliance-org:device:WFADevice:1',
             '', ''])
-    sock.sendto(msg, ("239.255.255.250", 1900))
+    sock.sendto(msg.encode(), ("239.255.255.250", 1900))
 
     logger.debug("Negative MX")
     msg = '\r\n'.join([
@@ -2557,7 +2568,7 @@ def test_ap_wps_ssdp_invalid_msearch(dev, apdev):
             'MAN: "ssdp:discover"',
             'ST: urn:schemas-wifialliance-org:device:WFADevice:1',
             '', ''])
-    sock.sendto(msg, ("239.255.255.250", 1900))
+    sock.sendto(msg.encode(), ("239.255.255.250", 1900))
 
     logger.debug("Invalid MX")
     msg = '\r\n'.join([
@@ -2567,7 +2578,7 @@ def test_ap_wps_ssdp_invalid_msearch(dev, apdev):
             'MAN: "ssdp:discover"',
             'ST: urn:schemas-wifialliance-org:device:WFADevice:1',
             '', ''])
-    sock.sendto(msg, ("239.255.255.250", 1900))
+    sock.sendto(msg.encode(), ("239.255.255.250", 1900))
 
     logger.debug("Missing MAN")
     msg = '\r\n'.join([
@@ -2576,7 +2587,7 @@ def test_ap_wps_ssdp_invalid_msearch(dev, apdev):
             'MX: 1',
             'ST: urn:schemas-wifialliance-org:device:WFADevice:1',
             '', ''])
-    sock.sendto(msg, ("239.255.255.250", 1900))
+    sock.sendto(msg.encode(), ("239.255.255.250", 1900))
 
     logger.debug("Invalid MAN")
     msg = '\r\n'.join([
@@ -2586,7 +2597,7 @@ def test_ap_wps_ssdp_invalid_msearch(dev, apdev):
             'MAN: foo',
             'ST: urn:schemas-wifialliance-org:device:WFADevice:1',
             '', ''])
-    sock.sendto(msg, ("239.255.255.250", 1900))
+    sock.sendto(msg.encode(), ("239.255.255.250", 1900))
     msg = '\r\n'.join([
             'M-SEARCH * HTTP/1.1',
             'HOST: 239.255.255.250:1900',
@@ -2594,7 +2605,7 @@ def test_ap_wps_ssdp_invalid_msearch(dev, apdev):
             'MAN; "ssdp:discover"',
             'ST: urn:schemas-wifialliance-org:device:WFADevice:1',
             '', ''])
-    sock.sendto(msg, ("239.255.255.250", 1900))
+    sock.sendto(msg.encode(), ("239.255.255.250", 1900))
 
     logger.debug("Missing HOST")
     msg = '\r\n'.join([
@@ -2603,7 +2614,7 @@ def test_ap_wps_ssdp_invalid_msearch(dev, apdev):
             'MX: 1',
             'ST: urn:schemas-wifialliance-org:device:WFADevice:1',
             '', ''])
-    sock.sendto(msg, ("239.255.255.250", 1900))
+    sock.sendto(msg.encode(), ("239.255.255.250", 1900))
 
     logger.debug("Missing ST")
     msg = '\r\n'.join([
@@ -2612,7 +2623,7 @@ def test_ap_wps_ssdp_invalid_msearch(dev, apdev):
             'MAN: "ssdp:discover"',
             'MX: 1',
             '', ''])
-    sock.sendto(msg, ("239.255.255.250", 1900))
+    sock.sendto(msg.encode(), ("239.255.255.250", 1900))
 
     logger.debug("Mismatching ST")
     msg = '\r\n'.join([
@@ -2622,7 +2633,7 @@ def test_ap_wps_ssdp_invalid_msearch(dev, apdev):
             'MX: 1',
             'ST: uuid:16d5f8a9-4ee4-4f5e-81f9-cc6e2f47f42d',
             '', ''])
-    sock.sendto(msg, ("239.255.255.250", 1900))
+    sock.sendto(msg.encode(), ("239.255.255.250", 1900))
     msg = '\r\n'.join([
             'M-SEARCH * HTTP/1.1',
             'HOST: 239.255.255.250:1900',
@@ -2630,7 +2641,7 @@ def test_ap_wps_ssdp_invalid_msearch(dev, apdev):
             'MX: 1',
             'ST: foo:bar',
             '', ''])
-    sock.sendto(msg, ("239.255.255.250", 1900))
+    sock.sendto(msg.encode(), ("239.255.255.250", 1900))
     msg = '\r\n'.join([
             'M-SEARCH * HTTP/1.1',
             'HOST: 239.255.255.250:1900',
@@ -2638,7 +2649,7 @@ def test_ap_wps_ssdp_invalid_msearch(dev, apdev):
             'MX: 1',
             'ST: foobar',
             '', ''])
-    sock.sendto(msg, ("239.255.255.250", 1900))
+    sock.sendto(msg.encode(), ("239.255.255.250", 1900))
 
     logger.debug("Invalid ST")
     msg = '\r\n'.join([
@@ -2648,7 +2659,7 @@ def test_ap_wps_ssdp_invalid_msearch(dev, apdev):
             'MX: 1',
             'ST; urn:schemas-wifialliance-org:device:WFADevice:1',
             '', ''])
-    sock.sendto(msg, ("239.255.255.250", 1900))
+    sock.sendto(msg.encode(), ("239.255.255.250", 1900))
 
     logger.debug("Invalid M-SEARCH")
     msg = '\r\n'.join([
@@ -2658,7 +2669,7 @@ def test_ap_wps_ssdp_invalid_msearch(dev, apdev):
             'MX: 1',
             'ST: urn:schemas-wifialliance-org:device:WFADevice:1',
             '', ''])
-    sock.sendto(msg, ("239.255.255.250", 1900))
+    sock.sendto(msg.encode(), ("239.255.255.250", 1900))
     msg = '\r\n'.join([
             'M-SEARCH-* HTTP/1.1',
             'HOST: 239.255.255.250:1900',
@@ -2666,10 +2677,10 @@ def test_ap_wps_ssdp_invalid_msearch(dev, apdev):
             'MX: 1',
             'ST: urn:schemas-wifialliance-org:device:WFADevice:1',
             '', ''])
-    sock.sendto(msg, ("239.255.255.250", 1900))
+    sock.sendto(msg.encode(), ("239.255.255.250", 1900))
 
     logger.debug("Invalid message format")
-    sock.sendto("NOTIFY * HTTP/1.1", ("239.255.255.250", 1900))
+    sock.sendto(b"NOTIFY * HTTP/1.1", ("239.255.255.250", 1900))
     msg = '\r'.join([
             'M-SEARCH * HTTP/1.1',
             'HOST: 239.255.255.250:1900',
@@ -2677,7 +2688,7 @@ def test_ap_wps_ssdp_invalid_msearch(dev, apdev):
             'MX: 1',
             'ST: urn:schemas-wifialliance-org:device:WFADevice:1',
             '', ''])
-    sock.sendto(msg, ("239.255.255.250", 1900))
+    sock.sendto(msg.encode(), ("239.255.255.250", 1900))
 
     try:
         r = sock.recv(1000)
@@ -2693,7 +2704,7 @@ def test_ap_wps_ssdp_invalid_msearch(dev, apdev):
             'MX: 1',
             'ST: urn:schemas-wifialliance-org:device:WFADevice:1',
             '', ''])
-    sock.sendto(msg, ("239.255.255.250", 1900))
+    sock.sendto(msg.encode(), ("239.255.255.250", 1900))
 
     try:
         r = sock.recv(1000)
@@ -2719,11 +2730,11 @@ def test_ap_wps_ssdp_burst(dev, apdev):
     sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
     sock.bind(("127.0.0.1", 0))
     for i in range(0, 25):
-        sock.sendto(msg, ("239.255.255.250", 1900))
+        sock.sendto(msg.encode(), ("239.255.255.250", 1900))
     resp = 0
     while True:
         try:
-            r = sock.recv(1000)
+            r = sock.recv(1000).decode()
             if not r.startswith("HTTP/1.1 200 OK\r\n"):
                 raise Exception("Unexpected message: " + r)
             resp += 1
@@ -2737,10 +2748,10 @@ def test_ap_wps_ssdp_burst(dev, apdev):
     sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
     sock.bind(("127.0.0.1", 0))
     for i in range(0, 25):
-        sock.sendto(msg, ("239.255.255.250", 1900))
+        sock.sendto(msg.encode(), ("239.255.255.250", 1900))
     while True:
         try:
-            r = sock.recv(1000)
+            r = sock.recv(1000).decode()
             if ap_uuid in r:
                 break
         except socket.timeout:
@@ -2758,15 +2769,20 @@ def ssdp_get_location(uuid):
     return location
 
 def upnp_get_urls(location):
-    conn = urllib.urlopen(location, proxies={})
+    if sys.version_info[0] > 2:
+        conn = urlopen(location)
+    else:
+        conn = urlopen(location, proxies={})
     tree = ET.parse(conn)
     root = tree.getroot()
     urn = '{urn:schemas-upnp-org:device-1-0}'
     service = root.find("./" + urn + "device/" + urn + "serviceList/" + urn + "service")
     res = {}
-    res['scpd_url'] = urlparse.urljoin(location, service.find(urn + 'SCPDURL').text)
-    res['control_url'] = urlparse.urljoin(location, service.find(urn + 'controlURL').text)
-    res['event_sub_url'] = urlparse.urljoin(location, service.find(urn + 'eventSubURL').text)
+    res['scpd_url'] = urljoin(location, service.find(urn + 'SCPDURL').text)
+    res['control_url'] = urljoin(location,
+                                 service.find(urn + 'controlURL').text)
+    res['event_sub_url'] = urljoin(location,
+                                   service.find(urn + 'eventSubURL').text)
     return res
 
 def upnp_soap_action(conn, path, action, include_soap_action=True,
@@ -2783,23 +2799,21 @@ def upnp_soap_action(conn, path, action, include_soap_action=True,
     act = ET.SubElement(body, "{%s}%s" % (wpsns, action))
     if newmsg:
         msg = ET.SubElement(act, "NewMessage")
-        msg.text = base64.b64encode(newmsg)
+        msg.text = base64.b64encode(newmsg.encode()).decode()
     if neweventtype:
         msg = ET.SubElement(act, "NewWLANEventType")
         msg.text = neweventtype
     if neweventmac:
         msg = ET.SubElement(act, "NewWLANEventMAC")
         msg.text = neweventmac
-    tree = ET.ElementTree(root)
-    soap = StringIO.StringIO()
-    tree.write(soap, xml_declaration=True, encoding='utf-8')
 
     headers = { "Content-type": 'text/xml; charset="utf-8"' }
     if include_soap_action:
         headers["SOAPAction"] = '"urn:schemas-wifialliance-org:service:WFAWLANConfig:1#%s"' % action
     elif soap_action_override:
         headers["SOAPAction"] = soap_action_override
-    conn.request("POST", path, soap.getvalue(), headers)
+    decl = b'<?xml version=\'1.0\' encoding=\'utf8\'?>\n'
+    conn.request("POST", path, decl + ET.tostring(root), headers)
     return conn.getresponse()
 
 def test_ap_wps_upnp(dev, apdev):
@@ -2810,16 +2824,26 @@ def test_ap_wps_upnp(dev, apdev):
     location = ssdp_get_location(ap_uuid)
     urls = upnp_get_urls(location)
 
-    conn = urllib.urlopen(urls['scpd_url'], proxies={})
+    if sys.version_info[0] > 2:
+        conn = urlopen(urls['scpd_url'])
+    else:
+        conn = urlopen(urls['scpd_url'], proxies={})
     scpd = conn.read()
 
-    conn = urllib.urlopen(urlparse.urljoin(location, "unknown.html"),
-                          proxies={})
-    if conn.getcode() != 404:
-        raise Exception("Unexpected HTTP response to GET unknown URL")
+    if sys.version_info[0] > 2:
+        try:
+            conn = urlopen(urljoin(location, "unknown.html"))
+            raise Exception("Unexpected HTTP response to GET unknown URL")
+        except HTTPError as e:
+            if e.code != 404:
+                raise Exception("Unexpected HTTP response to GET unknown URL")
+    else:
+        conn = urlopen(urljoin(location, "unknown.html"), proxies={})
+        if conn.getcode() != 404:
+            raise Exception("Unexpected HTTP response to GET unknown URL")
 
-    url = urlparse.urlparse(location)
-    conn = httplib.HTTPConnection(url.netloc)
+    url = urlparse(location)
+    conn = HTTPConnection(url.netloc)
     #conn.set_debuglevel(1)
     headers = { "Content-type": 'text/xml; charset="utf-8"',
                 "SOAPAction": '"urn:schemas-wifialliance-org:service:WFAWLANConfig:1#GetDeviceInfo"' }
@@ -2835,7 +2859,7 @@ def test_ap_wps_upnp(dev, apdev):
 
     headers = { "Content-type": 'text/xml; charset="utf-8"',
                 "SOAPAction": '"urn:some-unknown-action#GetDeviceInfo"' }
-    ctrlurl = urlparse.urlparse(urls['control_url'])
+    ctrlurl = urlparse(urls['control_url'])
     conn.request("POST", ctrlurl.path, "\r\n\r\n", headers)
     resp = conn.getresponse()
     if resp.status != 401:
@@ -2861,7 +2885,7 @@ def test_ap_wps_upnp(dev, apdev):
     resp = upnp_soap_action(conn, ctrlurl.path, "GetDeviceInfo")
     if resp.status != 200:
         raise Exception("Unexpected HTTP response: %d" % resp.status)
-    dev = resp.read()
+    dev = resp.read().decode()
     if "NewDeviceInfo" not in dev:
         raise Exception("Unexpected GetDeviceInfo response")
 
@@ -2892,10 +2916,10 @@ def test_ap_wps_upnp_subscribe(dev, apdev):
 
     location = ssdp_get_location(ap_uuid)
     urls = upnp_get_urls(location)
-    eventurl = urlparse.urlparse(urls['event_sub_url'])
+    eventurl = urlparse(urls['event_sub_url'])
 
-    url = urlparse.urlparse(location)
-    conn = httplib.HTTPConnection(url.netloc)
+    url = urlparse(location)
+    conn = HTTPConnection(url.netloc)
     #conn.set_debuglevel(1)
     headers = { "callback": '<http://127.0.0.1:12345/event>',
                 "timeout": "Second-1234" }
@@ -3241,9 +3265,9 @@ def test_ap_wps_upnp_subscribe_events(dev, apdev):
 
     location = ssdp_get_location(ap_uuid)
     urls = upnp_get_urls(location)
-    eventurl = urlparse.urlparse(urls['event_sub_url'])
+    eventurl = urlparse(urls['event_sub_url'])
 
-    class WPSERHTTPServer(SocketServer.StreamRequestHandler):
+    class WPSERHTTPServer(StreamRequestHandler):
         def handle(self):
             data = self.rfile.readline().strip()
             logger.debug(data)
@@ -3252,8 +3276,8 @@ def test_ap_wps_upnp_subscribe_events(dev, apdev):
     server = MyTCPServer(("127.0.0.1", 12345), WPSERHTTPServer)
     server.timeout = 1
 
-    url = urlparse.urlparse(location)
-    conn = httplib.HTTPConnection(url.netloc)
+    url = urlparse(location)
+    conn = HTTPConnection(url.netloc)
 
     headers = { "callback": '<http://127.0.0.1:12345/event>',
                 "NT": "upnp:event",
@@ -3308,8 +3332,8 @@ def test_ap_wps_upnp_http_proto(dev, apdev):
 
     location = ssdp_get_location(ap_uuid)
 
-    url = urlparse.urlparse(location)
-    conn = httplib.HTTPConnection(url.netloc, timeout=0.2)
+    url = urlparse(location)
+    conn = HTTPConnection(url.netloc, timeout=0.2)
     #conn.set_debuglevel(1)
 
     conn.request("HEAD", "hello")
@@ -3322,7 +3346,7 @@ def test_ap_wps_upnp_http_proto(dev, apdev):
         try:
             conn.request(cmd, "hello")
             resp = conn.getresponse()
-        except Exception, e:
+        except Exception as e:
             pass
         conn.close()
 
@@ -3330,7 +3354,7 @@ def test_ap_wps_upnp_http_proto(dev, apdev):
     conn.request("HEAD", "hello", "\r\n\r\n", headers)
     try:
         resp = conn.getresponse()
-    except Exception, e:
+    except Exception as e:
         pass
     conn.close()
 
@@ -3338,7 +3362,7 @@ def test_ap_wps_upnp_http_proto(dev, apdev):
     conn.request("HEAD", "hello", "\r\n\r\n", headers)
     try:
         resp = conn.getresponse()
-    except Exception, e:
+    except Exception as e:
         pass
     conn.close()
 
@@ -3346,7 +3370,7 @@ def test_ap_wps_upnp_http_proto(dev, apdev):
     conn.request("HEAD", "hello", "\r\n\r\nhello", headers)
     try:
         resp = conn.getresponse()
-    except Exception, e:
+    except Exception as e:
         pass
     conn.close()
 
@@ -3368,7 +3392,7 @@ def test_ap_wps_upnp_http_proto(dev, apdev):
     conn.request("HEAD", 5000 * 'A')
     try:
         resp = conn.getresponse()
-    except Exception, e:
+    except Exception as e:
         pass
     conn.close()
 
@@ -3383,7 +3407,7 @@ def test_ap_wps_upnp_http_proto(dev, apdev):
     conn.request("POST", "hello", 10 * 'A' + "\r\n\r\n", headers)
     try:
         resp = conn.getresponse()
-    except Exception, e:
+    except Exception as e:
         pass
     conn.close()
 
@@ -3396,7 +3420,7 @@ def test_ap_wps_upnp_http_proto(dev, apdev):
     conn.request("POST", "hello", 60000 * 'A' + "\r\n\r\n")
     try:
         resp = conn.getresponse()
-    except Exception, e:
+    except Exception as e:
         pass
     conn.close()
 
@@ -3407,8 +3431,8 @@ def test_ap_wps_upnp_http_proto_chunked(dev, apdev):
 
     location = ssdp_get_location(ap_uuid)
 
-    url = urlparse.urlparse(location)
-    conn = httplib.HTTPConnection(url.netloc)
+    url = urlparse(location)
+    conn = HTTPConnection(url.netloc)
     #conn.set_debuglevel(1)
 
     headers = { "Transfer-Encoding": 'chunked' }
@@ -3423,10 +3447,10 @@ def test_ap_wps_upnp_http_proto_chunked(dev, apdev):
     conn.putrequest("POST", "hello")
     conn.putheader('Transfer-Encoding', 'chunked')
     conn.endheaders()
-    conn.send("a\r\nabcdefghij\r\n")
+    conn.send(b"a\r\nabcdefghij\r\n")
     time.sleep(0.1)
-    conn.send("2\r\nkl\r\n")
-    conn.send("0\r\n\r\n")
+    conn.send(b"2\r\nkl\r\n")
+    conn.send(b"0\r\n\r\n")
     resp = conn.getresponse()
     if resp.status != 404:
         raise Exception("Unexpected HTTP response: %d" % resp.status)
@@ -3438,11 +3462,11 @@ def test_ap_wps_upnp_http_proto_chunked(dev, apdev):
     completed = False
     try:
         for i in range(20000):
-            conn.send("1\r\nZ\r\n")
-        conn.send("0\r\n\r\n")
+            conn.send(b"1\r\nZ\r\n")
+        conn.send(b"0\r\n\r\n")
         resp = conn.getresponse()
         completed = True
-    except Exception, e:
+    except Exception as e:
         pass
     conn.close()
     if completed:
@@ -3452,14 +3476,14 @@ def test_ap_wps_upnp_http_proto_chunked(dev, apdev):
     conn.request("POST", "hello", "80000000\r\na", headers)
     try:
         resp = conn.getresponse()
-    except Exception, e:
+    except Exception as e:
         pass
     conn.close()
 
     conn.request("POST", "hello", "10000000\r\na", headers)
     try:
         resp = conn.getresponse()
-    except Exception, e:
+    except Exception as e:
         pass
     conn.close()
 
@@ -3894,7 +3918,7 @@ def test_ap_wps_wpa_cli_action(dev, apdev, test_params):
 
     arg = [ 'ps', 'ax' ]
     cmd = subprocess.Popen(arg, stdout=subprocess.PIPE)
-    out = cmd.communicate()[0]
+    out = cmd.communicate()[0].decode()
     cmd.wait()
     logger.debug("Processes:\n" + out)
     if "wpa_cli -P %s -B -i %s" % (pidfile, dev[0].ifname) not in out:
@@ -3920,7 +3944,7 @@ def test_ap_wps_wpa_cli_action(dev, apdev, test_params):
 
     arg = [ 'ps', 'ax' ]
     cmd = subprocess.Popen(arg, stdout=subprocess.PIPE)
-    out = cmd.communicate()[0]
+    out = cmd.communicate()[0].decode()
     cmd.wait()
     logger.debug("Remaining processes:\n" + out)
     if "wpa_cli -P %s -B -i %s" % (pidfile, dev[0].ifname) in out:
@@ -3946,49 +3970,51 @@ def _test_ap_wps_er_ssdp_proto(dev, apdev):
     if "OK" not in dev[0].request("WPS_ER_START ifname=lo 1.2.3.4"):
         raise Exception("WPS_ER_START with filter failed")
     (msg,addr) = sock.recvfrom(1000)
+    msg = msg.decode()
     logger.debug("Received SSDP message from %s: %s" % (str(addr), msg))
     if "M-SEARCH" not in msg:
         raise Exception("Not an M-SEARCH")
-    sock.sendto("FOO", addr)
+    sock.sendto(b"FOO", addr)
     time.sleep(0.1)
     dev[0].request("WPS_ER_STOP")
 
     dev[0].request("WPS_ER_START ifname=lo")
     (msg,addr) = sock.recvfrom(1000)
+    msg = msg.decode()
     logger.debug("Received SSDP message from %s: %s" % (str(addr), msg))
     if "M-SEARCH" not in msg:
         raise Exception("Not an M-SEARCH")
-    sock.sendto("FOO", addr)
-    sock.sendto("HTTP/1.1 200 OK\r\nFOO\r\n\r\n", addr)
-    sock.sendto("HTTP/1.1 200 OK\r\nNTS:foo\r\n\r\n", addr)
-    sock.sendto("HTTP/1.1 200 OK\r\nNTS:ssdp:byebye\r\n\r\n", addr)
-    sock.sendto("HTTP/1.1 200 OK\r\ncache-control:   foo=1\r\n\r\n", addr)
-    sock.sendto("HTTP/1.1 200 OK\r\ncache-control:   max-age=1\r\n\r\n", addr)
-    sock.sendto("HTTP/1.1 200 OK\r\nusn:\r\n\r\n", addr)
-    sock.sendto("HTTP/1.1 200 OK\r\nusn:foo\r\n\r\n", addr)
-    sock.sendto("HTTP/1.1 200 OK\r\nusn:   uuid:\r\n\r\n", addr)
-    sock.sendto("HTTP/1.1 200 OK\r\nusn:   uuid:     \r\n\r\n", addr)
-    sock.sendto("HTTP/1.1 200 OK\r\nusn:   uuid:     foo\r\n\r\n", addr)
-    sock.sendto("HTTP/1.1 200 OK\r\nST: urn:schemas-wifialliance-org:device:WFADevice:1\r\n\r\n", addr)
-    sock.sendto("HTTP/1.1 200 OK\r\nST: urn:schemas-wifialliance-org:device:WFADevice:1\r\nNTS:ssdp:byebye\r\n\r\n", addr)
-    sock.sendto("HTTP/1.1 200 OK\r\nST: urn:schemas-wifialliance-org:device:WFADevice:1\r\nlocation:foo\r\n\r\n", addr)
+    sock.sendto(b"FOO", addr)
+    sock.sendto(b"HTTP/1.1 200 OK\r\nFOO\r\n\r\n", addr)
+    sock.sendto(b"HTTP/1.1 200 OK\r\nNTS:foo\r\n\r\n", addr)
+    sock.sendto(b"HTTP/1.1 200 OK\r\nNTS:ssdp:byebye\r\n\r\n", addr)
+    sock.sendto(b"HTTP/1.1 200 OK\r\ncache-control:   foo=1\r\n\r\n", addr)
+    sock.sendto(b"HTTP/1.1 200 OK\r\ncache-control:   max-age=1\r\n\r\n", addr)
+    sock.sendto(b"HTTP/1.1 200 OK\r\nusn:\r\n\r\n", addr)
+    sock.sendto(b"HTTP/1.1 200 OK\r\nusn:foo\r\n\r\n", addr)
+    sock.sendto(b"HTTP/1.1 200 OK\r\nusn:   uuid:\r\n\r\n", addr)
+    sock.sendto(b"HTTP/1.1 200 OK\r\nusn:   uuid:     \r\n\r\n", addr)
+    sock.sendto(b"HTTP/1.1 200 OK\r\nusn:   uuid:     foo\r\n\r\n", addr)
+    sock.sendto(b"HTTP/1.1 200 OK\r\nST: urn:schemas-wifialliance-org:device:WFADevice:1\r\n\r\n", addr)
+    sock.sendto(b"HTTP/1.1 200 OK\r\nST: urn:schemas-wifialliance-org:device:WFADevice:1\r\nNTS:ssdp:byebye\r\n\r\n", addr)
+    sock.sendto(b"HTTP/1.1 200 OK\r\nST: urn:schemas-wifialliance-org:device:WFADevice:1\r\nlocation:foo\r\n\r\n", addr)
     with alloc_fail(dev[0], 1, "wps_er_ap_add"):
-        sock.sendto("HTTP/1.1 200 OK\r\nST: urn:schemas-wifialliance-org:device:WFADevice:1\r\nlocation:foo\r\ncache-control:max-age=1\r\n\r\n", addr)
+        sock.sendto(b"HTTP/1.1 200 OK\r\nST: urn:schemas-wifialliance-org:device:WFADevice:1\r\nlocation:foo\r\ncache-control:max-age=1\r\n\r\n", addr)
         time.sleep(0.1)
     with alloc_fail(dev[0], 2, "wps_er_ap_add"):
-        sock.sendto("HTTP/1.1 200 OK\r\nST: urn:schemas-wifialliance-org:device:WFADevice:1\r\nlocation:foo\r\ncache-control:max-age=1\r\n\r\n", addr)
+        sock.sendto(b"HTTP/1.1 200 OK\r\nST: urn:schemas-wifialliance-org:device:WFADevice:1\r\nlocation:foo\r\ncache-control:max-age=1\r\n\r\n", addr)
         time.sleep(0.1)
 
     # Add an AP with bogus URL
-    sock.sendto("HTTP/1.1 200 OK\r\nST: urn:schemas-wifialliance-org:device:WFADevice:1\r\nlocation:foo\r\ncache-control:max-age=1\r\n\r\n", addr)
+    sock.sendto(b"HTTP/1.1 200 OK\r\nST: urn:schemas-wifialliance-org:device:WFADevice:1\r\nlocation:foo\r\ncache-control:max-age=1\r\n\r\n", addr)
     # Update timeout on AP without updating URL
-    sock.sendto("HTTP/1.1 200 OK\r\nST: urn:schemas-wifialliance-org:device:WFADevice:1\r\nlocation:http://127.0.0.1:12345/foo.xml\r\ncache-control:max-age=1\r\n\r\n", addr)
+    sock.sendto(b"HTTP/1.1 200 OK\r\nST: urn:schemas-wifialliance-org:device:WFADevice:1\r\nlocation:http://127.0.0.1:12345/foo.xml\r\ncache-control:max-age=1\r\n\r\n", addr)
     ev = dev[0].wait_event(["WPS-ER-AP-REMOVE"], timeout=5)
     if ev is None:
         raise Exception("No WPS-ER-AP-REMOVE event on max-age timeout")
 
     # Add an AP with a valid URL (but no server listing to it)
-    sock.sendto("HTTP/1.1 200 OK\r\nST: urn:schemas-wifialliance-org:device:WFADevice:1\r\nlocation:http://127.0.0.1:12345/foo.xml\r\ncache-control:max-age=1\r\n\r\n", addr)
+    sock.sendto(b"HTTP/1.1 200 OK\r\nST: urn:schemas-wifialliance-org:device:WFADevice:1\r\nlocation:http://127.0.0.1:12345/foo.xml\r\ncache-control:max-age=1\r\n\r\n", addr)
     ev = dev[0].wait_event(["WPS-ER-AP-REMOVE"], timeout=5)
     if ev is None:
         raise Exception("No WPS-ER-AP-REMOVE event on max-age timeout")
@@ -4036,7 +4062,7 @@ def gen_upnp_info(eventSubURL='wps_event', controlURL='wps_control',
           'Connection: close\r\n' + \
           'Content-Length: ' + str(len(payload)) + '\r\n' + \
           'Date: Sat, 15 Aug 2015 18:55:08 GMT\r\n\r\n'
-    return hdr + payload
+    return (hdr + payload).encode()
 
 def gen_wps_control(payload_override=None):
     payload = '''<?xml version="1.0"?>
@@ -4064,7 +4090,7 @@ AAYANyoAASA=
           'Connection: close\r\n' + \
           'Content-Length: ' + str(len(payload)) + '\r\n' + \
           'Date: Sat, 15 Aug 2015 18:55:08 GMT\r\n\r\n'
-    return hdr + payload
+    return (hdr + payload).encode()
 
 def gen_wps_event(sid='uuid:7eb3342a-8a5f-47fe-a585-0785bfec6d8a'):
     payload = ""
@@ -4077,14 +4103,14 @@ def gen_wps_event(sid='uuid:7eb3342a-8a5f-47fe-a585-0785bfec6d8a'):
         hdr += 'SID: ' + sid + '\r\n'
     hdr += 'Timeout: Second-1801\r\n' + \
           'Date: Sat, 15 Aug 2015 18:55:08 GMT\r\n\r\n'
-    return hdr + payload
+    return (hdr + payload).encode()
 
-class WPSAPHTTPServer(SocketServer.StreamRequestHandler):
+class WPSAPHTTPServer(StreamRequestHandler):
     def handle(self):
-        data = self.rfile.readline().strip()
+        data = self.rfile.readline().decode().strip()
         logger.info("HTTP server received: " + data)
         while True:
-            hdr = self.rfile.readline().strip()
+            hdr = self.rfile.readline().decode().strip()
             if len(hdr) == 0:
                 break
             logger.info("HTTP header: " + hdr)
@@ -4113,10 +4139,10 @@ class WPSAPHTTPServer(SocketServer.StreamRequestHandler):
     def handle_others(self, data):
         logger.info("Ignore HTTP request: " + data)
 
-class MyTCPServer(SocketServer.TCPServer):
+class MyTCPServer(TCPServer):
     def __init__(self, addr, handler):
         self.allow_reuse_address = True
-        SocketServer.TCPServer.__init__(self, addr, handler)
+        TCPServer.__init__(self, addr, handler)
 
 def wps_er_start(dev, http_server, max_age=1, wait_m_search=False,
                  location_url=None):
@@ -4127,6 +4153,7 @@ def wps_er_start(dev, http_server, max_age=1, wait_m_search=False,
     dev.request("WPS_ER_START ifname=lo")
     for i in range(100):
         (msg,addr) = sock.recvfrom(1000)
+        msg = msg.decode()
         logger.debug("Received SSDP message from %s: %s" % (str(addr), msg))
         if "M-SEARCH" in msg:
             break
@@ -4139,7 +4166,7 @@ def wps_er_start(dev, http_server, max_age=1, wait_m_search=False,
     server = MyTCPServer(("127.0.0.1", 12345), http_server)
     if not location_url:
         location_url = 'http://127.0.0.1:12345/foo.xml'
-    sock.sendto("HTTP/1.1 200 OK\r\nST: urn:schemas-wifialliance-org:device:WFADevice:1\r\nlocation:%s\r\ncache-control:max-age=%d\r\n\r\n" % (location_url, max_age), addr)
+    sock.sendto(("HTTP/1.1 200 OK\r\nST: urn:schemas-wifialliance-org:device:WFADevice:1\r\nlocation:%s\r\ncache-control:max-age=%d\r\n\r\n" % (location_url, max_age)).encode(), addr)
     server.timeout = 1
     return server,sock
 
@@ -4184,13 +4211,13 @@ def run_wps_er_proto_test(dev, handler, no_event_url=False, location_url=None):
             dev.request("WPS_ER_STOP")
 
 def send_wlanevent(url, uuid, data, no_response=False):
-    conn = httplib.HTTPConnection(url.netloc)
+    conn = HTTPConnection(url.netloc)
     payload = '''<?xml version="1.0" encoding="utf-8"?>
 <e:propertyset xmlns:e="urn:schemas-upnp-org:event-1-0">
 <e:property><STAStatus>1</STAStatus></e:property>
 <e:property><APStatus>1</APStatus></e:property>
 <e:property><WLANEvent>'''
-    payload += base64.b64encode(data)
+    payload += base64.b64encode(data).decode()
     payload += '</WLANEvent></e:property></e:propertyset>'
     headers = { "Content-type": 'text/xml; charset="utf-8"',
                 "Server": "Unspecified, UPnP/1.0, Unspecified",
@@ -4203,7 +4230,7 @@ def send_wlanevent(url, uuid, data, no_response=False):
     if no_response:
         try:
             conn.getresponse()
-        except Exception, e:
+        except Exception as e:
             pass
         return
     resp = conn.getresponse()
@@ -4239,8 +4266,8 @@ def _test_ap_wps_er_http_proto(dev, apdev):
     sock.close()
 
     logger.info("Valid Probe Request notification")
-    url = urlparse.urlparse(wps_event_url)
-    conn = httplib.HTTPConnection(url.netloc)
+    url = urlparse(wps_event_url)
+    conn = HTTPConnection(url.netloc)
     payload = '''<?xml version="1.0" encoding="utf-8"?>
 <e:propertyset xmlns:e="urn:schemas-upnp-org:event-1-0">
 <e:property><STAStatus>1</STAStatus></e:property>
@@ -4270,32 +4297,32 @@ RGV2aWNlIEEQSQAGADcqAAEg
         raise Exception("No Enrollee UUID match")
 
     logger.info("Incorrect event URL AP id")
-    conn = httplib.HTTPConnection(url.netloc)
+    conn = HTTPConnection(url.netloc)
     conn.request("NOTIFY", url.path + '123', payload, headers)
     resp = conn.getresponse()
     if resp.status != 404:
         raise Exception("Unexpected HTTP response: %d" % resp.status)
 
     logger.info("Missing AP id")
-    conn = httplib.HTTPConnection(url.netloc)
+    conn = HTTPConnection(url.netloc)
     conn.request("NOTIFY", '/event/' + url.path.split('/')[2],
                  payload, headers)
     time.sleep(0.1)
 
     logger.info("Incorrect event URL event id")
-    conn = httplib.HTTPConnection(url.netloc)
+    conn = HTTPConnection(url.netloc)
     conn.request("NOTIFY", '/event/123456789/123', payload, headers)
     time.sleep(0.1)
 
     logger.info("Incorrect event URL prefix")
-    conn = httplib.HTTPConnection(url.netloc)
+    conn = HTTPConnection(url.netloc)
     conn.request("NOTIFY", '/foobar/123456789/123', payload, headers)
     resp = conn.getresponse()
     if resp.status != 404:
         raise Exception("Unexpected HTTP response: %d" % resp.status)
 
     logger.info("Unsupported request")
-    conn = httplib.HTTPConnection(url.netloc)
+    conn = HTTPConnection(url.netloc)
     conn.request("FOOBAR", '/foobar/123456789/123', payload, headers)
     resp = conn.getresponse()
     if resp.status != 501:
@@ -4303,169 +4330,169 @@ RGV2aWNlIEEQSQAGADcqAAEg
 
     logger.info("Unsupported request and OOM")
     with alloc_fail(dev[0], 1, "wps_er_http_req"):
-        conn = httplib.HTTPConnection(url.netloc)
+        conn = HTTPConnection(url.netloc)
         conn.request("FOOBAR", '/foobar/123456789/123', payload, headers)
         time.sleep(0.5)
 
     logger.info("Too short WLANEvent")
-    data = '\x00'
+    data = b'\x00'
     send_wlanevent(url, uuid, data)
 
     logger.info("Invalid WLANEventMAC")
-    data = '\x00qwertyuiopasdfghjklzxcvbnm'
+    data = b'\x00qwertyuiopasdfghjklzxcvbnm'
     send_wlanevent(url, uuid, data)
 
     logger.info("Unknown WLANEventType")
-    data = '\xff02:00:00:00:00:00'
+    data = b'\xff02:00:00:00:00:00'
     send_wlanevent(url, uuid, data)
 
     logger.info("Probe Request notification without any attributes")
-    data = '\x0102:00:00:00:00:00'
+    data = b'\x0102:00:00:00:00:00'
     send_wlanevent(url, uuid, data)
 
     logger.info("Probe Request notification with invalid attribute")
-    data = '\x0102:00:00:00:00:00\xff'
+    data = b'\x0102:00:00:00:00:00\xff'
     send_wlanevent(url, uuid, data)
 
     logger.info("EAP message without any attributes")
-    data = '\x0202:00:00:00:00:00'
+    data = b'\x0202:00:00:00:00:00'
     send_wlanevent(url, uuid, data)
 
     logger.info("EAP message with invalid attribute")
-    data = '\x0202:00:00:00:00:00\xff'
+    data = b'\x0202:00:00:00:00:00\xff'
     send_wlanevent(url, uuid, data)
 
     logger.info("EAP message from new STA and not M1")
-    data = '\x0202:ff:ff:ff:ff:ff' + '\x10\x22\x00\x01\x05'
+    data = b'\x0202:ff:ff:ff:ff:ff' + b'\x10\x22\x00\x01\x05'
     send_wlanevent(url, uuid, data)
 
     logger.info("EAP message: M1")
-    data = '\x0202:00:00:00:00:00'
-    data += '\x10\x22\x00\x01\x04'
-    data += '\x10\x47\x00\x10' + 16*'\x00'
-    data += '\x10\x20\x00\x06\x02\x00\x00\x00\x00\x00'
-    data += '\x10\x1a\x00\x10' + 16*'\x00'
-    data += '\x10\x32\x00\xc0' + 192*'\x00'
-    data += '\x10\x04\x00\x02\x00\x00'
-    data += '\x10\x10\x00\x02\x00\x00'
-    data += '\x10\x0d\x00\x01\x00'
-    data += '\x10\x08\x00\x02\x00\x00'
-    data += '\x10\x44\x00\x01\x00'
-    data += '\x10\x21\x00\x00'
-    data += '\x10\x23\x00\x00'
-    data += '\x10\x24\x00\x00'
-    data += '\x10\x42\x00\x00'
-    data += '\x10\x54\x00\x08' + 8*'\x00'
-    data += '\x10\x11\x00\x00'
-    data += '\x10\x3c\x00\x01\x00'
-    data += '\x10\x02\x00\x02\x00\x00'
-    data += '\x10\x12\x00\x02\x00\x00'
-    data += '\x10\x09\x00\x02\x00\x00'
-    data += '\x10\x2d\x00\x04\x00\x00\x00\x00'
+    data = b'\x0202:00:00:00:00:00'
+    data += b'\x10\x22\x00\x01\x04'
+    data += b'\x10\x47\x00\x10' + 16 * b'\x00'
+    data += b'\x10\x20\x00\x06\x02\x00\x00\x00\x00\x00'
+    data += b'\x10\x1a\x00\x10' + 16 * b'\x00'
+    data += b'\x10\x32\x00\xc0' + 192 * b'\x00'
+    data += b'\x10\x04\x00\x02\x00\x00'
+    data += b'\x10\x10\x00\x02\x00\x00'
+    data += b'\x10\x0d\x00\x01\x00'
+    data += b'\x10\x08\x00\x02\x00\x00'
+    data += b'\x10\x44\x00\x01\x00'
+    data += b'\x10\x21\x00\x00'
+    data += b'\x10\x23\x00\x00'
+    data += b'\x10\x24\x00\x00'
+    data += b'\x10\x42\x00\x00'
+    data += b'\x10\x54\x00\x08' + 8 * b'\x00'
+    data += b'\x10\x11\x00\x00'
+    data += b'\x10\x3c\x00\x01\x00'
+    data += b'\x10\x02\x00\x02\x00\x00'
+    data += b'\x10\x12\x00\x02\x00\x00'
+    data += b'\x10\x09\x00\x02\x00\x00'
+    data += b'\x10\x2d\x00\x04\x00\x00\x00\x00'
     m1 = data
     send_wlanevent(url, uuid, data)
 
     logger.info("EAP message: WSC_ACK")
-    data = '\x0202:00:00:00:00:00' + '\x10\x22\x00\x01\x0d'
+    data = b'\x0202:00:00:00:00:00' + b'\x10\x22\x00\x01\x0d'
     send_wlanevent(url, uuid, data)
 
     logger.info("EAP message: M1")
     send_wlanevent(url, uuid, m1)
 
     logger.info("EAP message: WSC_NACK")
-    data = '\x0202:00:00:00:00:00' + '\x10\x22\x00\x01\x0e'
+    data = b'\x0202:00:00:00:00:00' + b'\x10\x22\x00\x01\x0e'
     send_wlanevent(url, uuid, data)
 
     logger.info("EAP message: M1 - Too long attribute values")
-    data = '\x0202:00:00:00:00:00'
-    data += '\x10\x11\x00\x21' + 33*'\x00'
-    data += '\x10\x45\x00\x21' + 33*'\x00'
-    data += '\x10\x42\x00\x21' + 33*'\x00'
-    data += '\x10\x24\x00\x21' + 33*'\x00'
-    data += '\x10\x23\x00\x21' + 33*'\x00'
-    data += '\x10\x21\x00\x41' + 65*'\x00'
-    data += '\x10\x49\x00\x09\x00\x37\x2a\x05\x02\x00\x00\x05\x00'
+    data = b'\x0202:00:00:00:00:00'
+    data += b'\x10\x11\x00\x21' + 33 * b'\x00'
+    data += b'\x10\x45\x00\x21' + 33 * b'\x00'
+    data += b'\x10\x42\x00\x21' + 33 * b'\x00'
+    data += b'\x10\x24\x00\x21' + 33 * b'\x00'
+    data += b'\x10\x23\x00\x21' + 33 * b'\x00'
+    data += b'\x10\x21\x00\x41' + 65 * b'\x00'
+    data += b'\x10\x49\x00\x09\x00\x37\x2a\x05\x02\x00\x00\x05\x00'
     send_wlanevent(url, uuid, data)
 
     logger.info("EAP message: M1 missing UUID-E")
-    data = '\x0202:00:00:00:00:00'
-    data += '\x10\x22\x00\x01\x04'
+    data = b'\x0202:00:00:00:00:00'
+    data += b'\x10\x22\x00\x01\x04'
     send_wlanevent(url, uuid, data)
 
     logger.info("EAP message: M1 missing MAC Address")
-    data += '\x10\x47\x00\x10' + 16*'\x00'
+    data += b'\x10\x47\x00\x10' + 16 * b'\x00'
     send_wlanevent(url, uuid, data)
 
     logger.info("EAP message: M1 missing Enrollee Nonce")
-    data += '\x10\x20\x00\x06\x02\x00\x00\x00\x00\x00'
+    data += b'\x10\x20\x00\x06\x02\x00\x00\x00\x00\x00'
     send_wlanevent(url, uuid, data)
 
     logger.info("EAP message: M1 missing Public Key")
-    data += '\x10\x1a\x00\x10' + 16*'\x00'
+    data += b'\x10\x1a\x00\x10' + 16 * b'\x00'
     send_wlanevent(url, uuid, data)
 
     logger.info("EAP message: M1 missing Authentication Type flags")
-    data += '\x10\x32\x00\xc0' + 192*'\x00'
+    data += b'\x10\x32\x00\xc0' + 192 * b'\x00'
     send_wlanevent(url, uuid, data)
 
     logger.info("EAP message: M1 missing Encryption Type Flags")
-    data += '\x10\x04\x00\x02\x00\x00'
+    data += b'\x10\x04\x00\x02\x00\x00'
     send_wlanevent(url, uuid, data)
 
     logger.info("EAP message: M1 missing Connection Type flags")
-    data += '\x10\x10\x00\x02\x00\x00'
+    data += b'\x10\x10\x00\x02\x00\x00'
     send_wlanevent(url, uuid, data)
 
     logger.info("EAP message: M1 missing Config Methods")
-    data += '\x10\x0d\x00\x01\x00'
+    data += b'\x10\x0d\x00\x01\x00'
     send_wlanevent(url, uuid, data)
 
     logger.info("EAP message: M1 missing Wi-Fi Protected Setup State")
-    data += '\x10\x08\x00\x02\x00\x00'
+    data += b'\x10\x08\x00\x02\x00\x00'
     send_wlanevent(url, uuid, data)
 
     logger.info("EAP message: M1 missing Manufacturer")
-    data += '\x10\x44\x00\x01\x00'
+    data += b'\x10\x44\x00\x01\x00'
     send_wlanevent(url, uuid, data)
 
     logger.info("EAP message: M1 missing Model Name")
-    data += '\x10\x21\x00\x00'
+    data += b'\x10\x21\x00\x00'
     send_wlanevent(url, uuid, data)
 
     logger.info("EAP message: M1 missing Model Number")
-    data += '\x10\x23\x00\x00'
+    data += b'\x10\x23\x00\x00'
     send_wlanevent(url, uuid, data)
 
     logger.info("EAP message: M1 missing Serial Number")
-    data += '\x10\x24\x00\x00'
+    data += b'\x10\x24\x00\x00'
     send_wlanevent(url, uuid, data)
 
     logger.info("EAP message: M1 missing Primary Device Type")
-    data += '\x10\x42\x00\x00'
+    data += b'\x10\x42\x00\x00'
     send_wlanevent(url, uuid, data)
 
     logger.info("EAP message: M1 missing Device Name")
-    data += '\x10\x54\x00\x08' + 8*'\x00'
+    data += b'\x10\x54\x00\x08' + 8 * b'\x00'
     send_wlanevent(url, uuid, data)
 
     logger.info("EAP message: M1 missing RF Bands")
-    data += '\x10\x11\x00\x00'
+    data += b'\x10\x11\x00\x00'
     send_wlanevent(url, uuid, data)
 
     logger.info("EAP message: M1 missing Association State")
-    data += '\x10\x3c\x00\x01\x00'
+    data += b'\x10\x3c\x00\x01\x00'
     send_wlanevent(url, uuid, data)
 
     logger.info("EAP message: M1 missing Device Password ID")
-    data += '\x10\x02\x00\x02\x00\x00'
+    data += b'\x10\x02\x00\x02\x00\x00'
     send_wlanevent(url, uuid, data)
 
     logger.info("EAP message: M1 missing Configuration Error")
-    data += '\x10\x12\x00\x02\x00\x00'
+    data += b'\x10\x12\x00\x02\x00\x00'
     send_wlanevent(url, uuid, data)
 
     logger.info("EAP message: M1 missing OS Version")
-    data += '\x10\x09\x00\x02\x00\x00'
+    data += b'\x10\x09\x00\x02\x00\x00'
     send_wlanevent(url, uuid, data)
 
     logger.info("Check max concurrent requests")
@@ -4477,11 +4504,11 @@ RGV2aWNlIEEQSQAGADcqAAEg
         socks[i].settimeout(10)
         socks[i].connect(addr)
     for i in range(20):
-        socks[i].send("GET / HTTP/1.1\r\n\r\n")
+        socks[i].send(b"GET / HTTP/1.1\r\n\r\n")
     count = 0
     for i in range(20):
         try:
-            res = socks[i].recv(100)
+            res = socks[i].recv(100).decode()
             if "HTTP/1" in res:
                 count += 1
             else:
@@ -4502,7 +4529,7 @@ RGV2aWNlIEEQSQAGADcqAAEg
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM,
                                  socket.IPPROTO_TCP)
             sock.connect(addr)
-            sock.send("GET / HTTP/1.1\r\n\r\n")
+            sock.send(b"GET / HTTP/1.1\r\n\r\n")
             try:
                 sock.recv(100)
             except:
@@ -4525,7 +4552,7 @@ RGV2aWNlIEEQSQAGADcqAAEg
                              socket.IPPROTO_TCP)
         sock.settimeout(0.1)
         sock.connect(addr)
-        sock.send(req)
+        sock.send(req.encode())
         try:
             sock.recv(100)
         except:
@@ -4536,14 +4563,14 @@ RGV2aWNlIEEQSQAGADcqAAEg
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM,
                              socket.IPPROTO_TCP)
         sock.connect(addr)
-        sock.send("NOTIFY / HTTP/1.1\r\n\r\n" + 4500*'a')
+        sock.send(b"NOTIFY / HTTP/1.1\r\n\r\n" + 4500 * b'a')
         try:
             sock.recv(100)
         except:
             pass
         sock.close()
 
-    conn = httplib.HTTPConnection(url.netloc)
+    conn = HTTPConnection(url.netloc)
     payload = '<foo'
     headers = { "Content-type": 'text/xml; charset="utf-8"',
                 "Server": "Unspecified, UPnP/1.0, Unspecified",
@@ -4557,7 +4584,7 @@ RGV2aWNlIEEQSQAGADcqAAEg
     if resp.status != 200:
         raise Exception("Unexpected HTTP response: %d" % resp.status)
 
-    conn = httplib.HTTPConnection(url.netloc)
+    conn = HTTPConnection(url.netloc)
     payload = '<WLANEvent foo></WLANEvent>'
     headers = { "Content-type": 'text/xml; charset="utf-8"',
                 "Server": "Unspecified, UPnP/1.0, Unspecified",
@@ -4572,10 +4599,10 @@ RGV2aWNlIEEQSQAGADcqAAEg
         raise Exception("Unexpected HTTP response: %d" % resp.status)
 
     with alloc_fail(dev[0], 1, "xml_get_first_item"):
-        send_wlanevent(url, uuid, '')
+        send_wlanevent(url, uuid, b'')
 
     with alloc_fail(dev[0], 1, "wpabuf_alloc_ext_data;xml_get_base64_item"):
-        send_wlanevent(url, uuid, 'foo')
+        send_wlanevent(url, uuid, b'foo')
 
     for func in [ "wps_init",
                   "wps_process_manufacturer",
@@ -4590,32 +4617,32 @@ RGV2aWNlIEEQSQAGADcqAAEg
         send_wlanevent(url, uuid, m1, no_response=True)
 
     with alloc_fail(dev[0], 1, "wps_er_http_resp_not_found"):
-        url2 = urlparse.urlparse(wps_event_url.replace('/event/', '/notfound/'))
+        url2 = urlparse(wps_event_url.replace('/event/', '/notfound/'))
         send_wlanevent(url2, uuid, m1, no_response=True)
 
     logger.info("EAP message: M1")
-    data = '\x0202:11:22:00:00:00'
-    data += '\x10\x22\x00\x01\x04'
-    data += '\x10\x47\x00\x10' + 16*'\x00'
-    data += '\x10\x20\x00\x06\x02\x00\x00\x00\x00\x00'
-    data += '\x10\x1a\x00\x10' + 16*'\x00'
-    data += '\x10\x32\x00\xc0' + 192*'\x00'
-    data += '\x10\x04\x00\x02\x00\x00'
-    data += '\x10\x10\x00\x02\x00\x00'
-    data += '\x10\x0d\x00\x01\x00'
-    data += '\x10\x08\x00\x02\x00\x00'
-    data += '\x10\x44\x00\x01\x00'
-    data += '\x10\x21\x00\x00'
-    data += '\x10\x23\x00\x00'
-    data += '\x10\x24\x00\x00'
-    data += '\x10\x42\x00\x00'
-    data += '\x10\x54\x00\x08' + 8*'\x00'
-    data += '\x10\x11\x00\x00'
-    data += '\x10\x3c\x00\x01\x00'
-    data += '\x10\x02\x00\x02\x00\x00'
-    data += '\x10\x12\x00\x02\x00\x00'
-    data += '\x10\x09\x00\x02\x00\x00'
-    data += '\x10\x2d\x00\x04\x00\x00\x00\x00'
+    data = b'\x0202:11:22:00:00:00'
+    data += b'\x10\x22\x00\x01\x04'
+    data += b'\x10\x47\x00\x10' + 16 * b'\x00'
+    data += b'\x10\x20\x00\x06\x02\x00\x00\x00\x00\x00'
+    data += b'\x10\x1a\x00\x10' + 16 * b'\x00'
+    data += b'\x10\x32\x00\xc0' + 192 * b'\x00'
+    data += b'\x10\x04\x00\x02\x00\x00'
+    data += b'\x10\x10\x00\x02\x00\x00'
+    data += b'\x10\x0d\x00\x01\x00'
+    data += b'\x10\x08\x00\x02\x00\x00'
+    data += b'\x10\x44\x00\x01\x00'
+    data += b'\x10\x21\x00\x00'
+    data += b'\x10\x23\x00\x00'
+    data += b'\x10\x24\x00\x00'
+    data += b'\x10\x42\x00\x00'
+    data += b'\x10\x54\x00\x08' + 8 * b'\x00'
+    data += b'\x10\x11\x00\x00'
+    data += b'\x10\x3c\x00\x01\x00'
+    data += b'\x10\x02\x00\x02\x00\x00'
+    data += b'\x10\x12\x00\x02\x00\x00'
+    data += b'\x10\x09\x00\x02\x00\x00'
+    data += b'\x10\x2d\x00\x04\x00\x00\x00\x00'
     dev[0].dump_monitor()
     with alloc_fail(dev[0], 1, "wps_er_add_sta_data"):
         send_wlanevent(url, uuid, data)
@@ -4709,7 +4736,7 @@ def test_ap_wps_er_http_proto_subscribe_failing(dev, apdev):
                   'Content-Length: ' + str(len(payload)) + '\r\n' + \
                   'Timeout: Second-1801\r\n' + \
                   'Date: Sat, 15 Aug 2015 18:55:08 GMT\r\n\r\n'
-            self.wfile.write(hdr + payload)
+            self.wfile.write((hdr + payload).encode())
     run_wps_er_proto_test(dev[0], WPSAPHTTPServer_fail_subscribe)
 
 def test_ap_wps_er_http_proto_subscribe_invalid_response(dev, apdev):
@@ -4724,7 +4751,7 @@ def test_ap_wps_er_http_proto_subscribe_invalid_response(dev, apdev):
                   'Content-Length: ' + str(len(payload)) + '\r\n' + \
                   'Timeout: Second-1801\r\n' + \
                   'Date: Sat, 15 Aug 2015 18:55:08 GMT\r\n\r\n'
-            self.wfile.write(hdr + payload)
+            self.wfile.write((hdr + payload).encode())
     run_wps_er_proto_test(dev[0], WPSAPHTTPServer_subscribe_invalid_response)
 
 def test_ap_wps_er_http_proto_subscribe_invalid_response(dev, apdev):
@@ -4761,7 +4788,7 @@ def test_ap_wps_er_http_proto_upnp_info_no_device(dev, apdev):
                   'Connection: close\r\n' + \
                   'Content-Length: ' + str(len(payload)) + '\r\n' + \
                   'Date: Sat, 15 Aug 2015 18:55:08 GMT\r\n\r\n'
-            self.wfile.write(hdr + payload)
+            self.wfile.write((hdr + payload).encode())
     run_wps_er_proto_test(dev[0], WPSAPHTTPServer_no_device, no_event_url=True)
 
 def test_ap_wps_er_http_proto_upnp_info_no_device_type(dev, apdev):
@@ -4784,7 +4811,7 @@ def test_ap_wps_er_http_proto_upnp_info_no_device_type(dev, apdev):
                   'Connection: close\r\n' + \
                   'Content-Length: ' + str(len(payload)) + '\r\n' + \
                   'Date: Sat, 15 Aug 2015 18:55:08 GMT\r\n\r\n'
-            self.wfile.write(hdr + payload)
+            self.wfile.write((hdr + payload).encode())
     run_wps_er_proto_test(dev[0], WPSAPHTTPServer_no_device, no_event_url=True)
 
 def test_ap_wps_er_http_proto_upnp_info_invalid_udn_uuid(dev, apdev):
@@ -4822,15 +4849,15 @@ def _test_ap_wps_http_timeout(dev, apdev):
     add_ssdp_ap(apdev[0], ap_uuid)
 
     location = ssdp_get_location(ap_uuid)
-    url = urlparse.urlparse(location)
+    url = urlparse(location)
     addr = (url.hostname, url.port)
     logger.debug("Open HTTP connection to hostapd, but do not complete request")
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM,
                          socket.IPPROTO_TCP)
     sock.connect(addr)
-    sock.send("G")
+    sock.send(b"G")
 
-    class DummyServer(SocketServer.StreamRequestHandler):
+    class DummyServer(StreamRequestHandler):
         def handle(self):
             logger.debug("DummyServer - start 31 sec wait")
             time.sleep(31)
@@ -4866,14 +4893,15 @@ def _test_ap_wps_er_url_parse(dev, apdev):
     sock.bind(("239.255.255.250", 1900))
     dev[0].request("WPS_ER_START ifname=lo")
     (msg,addr) = sock.recvfrom(1000)
+    msg = msg.decode()
     logger.debug("Received SSDP message from %s: %s" % (str(addr), msg))
     if "M-SEARCH" not in msg:
         raise Exception("Not an M-SEARCH")
-    sock.sendto("HTTP/1.1 200 OK\r\nST: urn:schemas-wifialliance-org:device:WFADevice:1\r\nlocation:http://127.0.0.1\r\ncache-control:max-age=1\r\n\r\n", addr)
+    sock.sendto(b"HTTP/1.1 200 OK\r\nST: urn:schemas-wifialliance-org:device:WFADevice:1\r\nlocation:http://127.0.0.1\r\ncache-control:max-age=1\r\n\r\n", addr)
     ev = dev[0].wait_event(["WPS-ER-AP-REMOVE"], timeout=2)
-    sock.sendto("HTTP/1.1 200 OK\r\nST: urn:schemas-wifialliance-org:device:WFADevice:1\r\nlocation:http://127.0.0.1/:foo\r\ncache-control:max-age=1\r\n\r\n", addr)
+    sock.sendto(b"HTTP/1.1 200 OK\r\nST: urn:schemas-wifialliance-org:device:WFADevice:1\r\nlocation:http://127.0.0.1/:foo\r\ncache-control:max-age=1\r\n\r\n", addr)
     ev = dev[0].wait_event(["WPS-ER-AP-REMOVE"], timeout=2)
-    sock.sendto("HTTP/1.1 200 OK\r\nST: urn:schemas-wifialliance-org:device:WFADevice:1\r\nlocation:http://255.255.255.255:0/foo.xml\r\ncache-control:max-age=1\r\n\r\n", addr)
+    sock.sendto(b"HTTP/1.1 200 OK\r\nST: urn:schemas-wifialliance-org:device:WFADevice:1\r\nlocation:http://255.255.255.255:0/foo.xml\r\ncache-control:max-age=1\r\n\r\n", addr)
     ev = dev[0].wait_event(["WPS-ER-AP-REMOVE"], timeout=2)
 
     sock.close()
@@ -4905,7 +4933,7 @@ def test_ap_wps_er_http_client(dev, apdev):
 
     class WPSAPHTTPServer_req_as_resp(WPSAPHTTPServer):
         def handle_upnp_info(self):
-            self.wfile.write("GET / HTTP/1.1\r\n\r\n")
+            self.wfile.write(b"GET / HTTP/1.1\r\n\r\n")
     run_wps_er_proto_test(dev[0], WPSAPHTTPServer_req_as_resp,
                           no_event_url=True)
 
@@ -5127,7 +5155,7 @@ def wps_run_pbc_fail_ap(apdev, dev, hapd):
         try:
             dev.flush_scan_cache()
             break
-        except Exception, e:
+        except Exception as e:
             if str(e).startswith("Failed to trigger scan"):
                 # Try again
                 time.sleep(1)
@@ -5927,12 +5955,12 @@ def test_ap_wps_set_selected_registrar_proto(dev, apdev):
 
     location = ssdp_get_location(ap_uuid)
     urls = upnp_get_urls(location)
-    eventurl = urlparse.urlparse(urls['event_sub_url'])
-    ctrlurl = urlparse.urlparse(urls['control_url'])
-    url = urlparse.urlparse(location)
-    conn = httplib.HTTPConnection(url.netloc)
+    eventurl = urlparse(urls['event_sub_url'])
+    ctrlurl = urlparse(urls['control_url'])
+    url = urlparse(location)
+    conn = HTTPConnection(url.netloc)
 
-    class WPSERHTTPServer(SocketServer.StreamRequestHandler):
+    class WPSERHTTPServer(StreamRequestHandler):
         def handle(self):
             data = self.rfile.readline().strip()
             logger.debug(data)
@@ -5963,7 +5991,7 @@ def test_ap_wps_set_selected_registrar_proto(dev, apdev):
               (200, "104a000110") ]
     for status,test in tests:
         tlvs = binascii.unhexlify(test)
-        newmsg = base64.b64encode(tlvs)
+        newmsg = base64.b64encode(tlvs).decode()
         msg = '<?xml version="1.0"?>\n'
         msg += '<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">'
         msg += '<s:Body>'
@@ -6164,13 +6192,13 @@ def get_wsc_msg(dev):
     # Parse EAP expanded header
     if len(data) < 1:
         raise Exception("No EAP type included")
-    msg['eap_type'], = struct.unpack('B', data[0])
+    msg['eap_type'], = struct.unpack('B', data[0:1])
     data = data[1:]
 
     if msg['eap_type'] == 254:
         if len(data) < 3 + 4:
             raise Exception("Truncated EAP expanded header")
-        msg['eap_vendor_id'], msg['eap_vendor_type'] = struct.unpack('>LL', '\0' + data[0:7])
+        msg['eap_vendor_id'], msg['eap_vendor_type'] = struct.unpack('>LL', b'\x00' + data[0:7])
         data = data[7:]
     else:
         raise Exception("Unexpected EAP type")
@@ -6212,7 +6240,8 @@ def recv_wsc_msg(dev, opcode, msg_type):
     return msg, msg['wsc_attrs'], msg['raw_attrs']
 
 def build_wsc_attr(attr, payload):
-    return struct.pack('>HH', attr, len(payload)) + payload
+    _payload = payload if type(payload) == bytes else payload.encode()
+    return struct.pack('>HH', attr, len(_payload)) + _payload
 
 def build_attr_msg_type(msg_type):
     return build_wsc_attr(ATTR_MSG_TYPE, struct.pack('B', msg_type))
@@ -6250,7 +6279,7 @@ def build_eap_failure(eap_id):
     return msg
 
 def send_wsc_msg(dev, src, msg):
-    res = dev.request("EAPOL_RX " + src + " " + binascii.hexlify(msg))
+    res = dev.request("EAPOL_RX " + src + " " + binascii.hexlify(msg).decode())
     if "OK" not in res:
         raise Exception("EAPOL_RX failed")
 
@@ -6258,14 +6287,14 @@ group_5_prime = 0xFFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC
 group_5_generator = 2
 
 def wsc_kdf(key, label, bits):
-    result = ''
+    result = b''
     i = 1
     while len(result) * 8 < bits:
-        data = struct.pack('>L', i) + label + struct.pack('>L', bits)
+        data = struct.pack('>L', i) + label.encode() + struct.pack('>L', bits)
         m = hmac.new(key, data, hashlib.sha256)
         result += m.digest()
         i += 1
-    return result[0:bits / 8]
+    return result[0:bits // 8]
 
 def wsc_keys(kdk):
     keys = wsc_kdf(kdk, "Wi-Fi Easy and Secure Key Derivation", 640)
@@ -6275,12 +6304,12 @@ def wsc_keys(kdk):
     return authkey,keywrapkey,emsk
 
 def wsc_dev_pw_half_psk(authkey, dev_pw):
-    m = hmac.new(authkey, dev_pw, hashlib.sha256)
+    m = hmac.new(authkey, dev_pw.encode(), hashlib.sha256)
     return m.digest()[0:16]
 
 def wsc_dev_pw_psk(authkey, dev_pw):
-    dev_pw_1 = dev_pw[0:len(dev_pw) / 2]
-    dev_pw_2 = dev_pw[len(dev_pw) / 2:]
+    dev_pw_1 = dev_pw[0:len(dev_pw) // 2]
+    dev_pw_2 = dev_pw[len(dev_pw) // 2:]
     psk1 = wsc_dev_pw_half_psk(authkey, dev_pw_1)
     psk2 = wsc_dev_pw_half_psk(authkey, dev_pw_2)
     return psk1,psk2
@@ -6294,7 +6323,7 @@ def build_attr_encr_settings(authkey, keywrapkey, data):
     m = hmac.new(authkey, data, hashlib.sha256)
     kwa = m.digest()[0:8]
     data += build_wsc_attr(ATTR_KEY_WRAP_AUTH, kwa)
-    iv = 16*'\x99'
+    iv = 16*b'\x99'
     aes = AES.new(keywrapkey, AES.MODE_CBC, iv)
     pad_len = 16 - len(data) % 16
     ps = pad_len * struct.pack('B', pad_len)
@@ -6309,7 +6338,7 @@ def decrypt_attr_encr_settings(authkey, keywrapkey, data):
     encr = data[16:]
     aes = AES.new(keywrapkey, AES.MODE_CBC, iv)
     decrypted = aes.decrypt(encr)
-    pad_len, = struct.unpack('B', decrypted[-1])
+    pad_len, = struct.unpack('B', decrypted[-1:])
     if pad_len > len(decrypted):
         raise Exception("Invalid padding in Encrypted Settings")
     for i in range(-pad_len, -1):
@@ -6347,10 +6376,10 @@ def wsc_dh_init():
     return own_private, pk
 
 def wsc_dh_kdf(peer_pk, own_private, mac_addr, e_nonce, r_nonce):
-    peer_public = long(binascii.hexlify(peer_pk), 16)
+    peer_public = int(binascii.hexlify(peer_pk), 16)
     if peer_public < 2 or peer_public >= group_5_prime:
         raise Exception("Invalid peer public key")
-    if pow(peer_public, (group_5_prime - 1) / 2, group_5_prime) != 1:
+    if pow(peer_public, (group_5_prime - 1) // 2, group_5_prime) != 1:
         raise Exception("Unexpected Legendre symbol for peer public key")
 
     shared_secret = pow(peer_public, own_private, group_5_prime)
@@ -6358,33 +6387,33 @@ def wsc_dh_kdf(peer_pk, own_private, mac_addr, e_nonce, r_nonce):
     logger.debug("DH shared secret: " + ss)
 
     dhkey = hashlib.sha256(binascii.unhexlify(ss)).digest()
-    logger.debug("DHKey: " + binascii.hexlify(dhkey))
+    logger.debug("DHKey: " + binascii.hexlify(dhkey).decode())
 
     m = hmac.new(dhkey, e_nonce + mac_addr + r_nonce, hashlib.sha256)
     kdk = m.digest()
-    logger.debug("KDK: " + binascii.hexlify(kdk))
+    logger.debug("KDK: " + binascii.hexlify(kdk).decode())
     authkey,keywrapkey,emsk = wsc_keys(kdk)
-    logger.debug("AuthKey: " + binascii.hexlify(authkey))
-    logger.debug("KeyWrapKey: " + binascii.hexlify(keywrapkey))
-    logger.debug("EMSK: " + binascii.hexlify(emsk))
+    logger.debug("AuthKey: " + binascii.hexlify(authkey).decode())
+    logger.debug("KeyWrapKey: " + binascii.hexlify(keywrapkey).decode())
+    logger.debug("EMSK: " + binascii.hexlify(emsk).decode())
     return authkey,keywrapkey
 
 def wsc_dev_pw_hash(authkey, dev_pw, e_pk, r_pk):
     psk1,psk2 = wsc_dev_pw_psk(authkey, dev_pw)
-    logger.debug("PSK1: " + binascii.hexlify(psk1))
-    logger.debug("PSK2: " + binascii.hexlify(psk2))
+    logger.debug("PSK1: " + binascii.hexlify(psk1).decode())
+    logger.debug("PSK2: " + binascii.hexlify(psk2).decode())
 
     # Note: Secret values are supposed to be random, but hardcoded values are
     # fine for testing.
-    s1 = 16*'\x77'
+    s1 = 16*b'\x77'
     m = hmac.new(authkey, s1 + psk1 + e_pk + r_pk, hashlib.sha256)
     hash1 = m.digest()
-    logger.debug("Hash1: " + binascii.hexlify(hash1))
+    logger.debug("Hash1: " + binascii.hexlify(hash1).decode())
 
-    s2 = 16*'\x88'
+    s2 = 16*b'\x88'
     m = hmac.new(authkey, s2 + psk2 + e_pk + r_pk, hashlib.sha256)
     hash2 = m.digest()
-    logger.debug("Hash2: " + binascii.hexlify(hash2))
+    logger.debug("Hash2: " + binascii.hexlify(hash2).decode())
     return s1,s2,hash1,hash2
 
 def build_m1(eap_id, uuid_e, mac_addr, e_nonce, e_pk,
@@ -6508,8 +6537,8 @@ def test_wps_ext(dev, apdev):
     wsc_start_id = msg['eap_identifier']
 
     mac_addr = binascii.unhexlify(dev[0].own_addr().replace(':', ''))
-    uuid_e = 16*'\x11'
-    e_nonce = 16*'\x22'
+    uuid_e = 16*b'\x11'
+    e_nonce = 16*b'\x22'
     own_private, e_pk = wsc_dh_init()
 
     logger.debug("Send M1 to AP")
@@ -6572,7 +6601,7 @@ def test_wps_ext(dev, apdev):
     msg, m8_attrs, raw_m8_attrs = recv_wsc_msg(hapd, WSC_MSG, WPS_M8)
     m8_cred = decrypt_attr_encr_settings(authkey, keywrapkey,
                                          m8_attrs[ATTR_ENCR_SETTINGS])
-    logger.debug("M8 Credential: " + binascii.hexlify(m8_cred))
+    logger.debug("M8 Credential: " + binascii.hexlify(m8_cred).decode())
 
     logger.debug("Prepare WSC_Done")
     attrs = build_wsc_attr(ATTR_VERSION, '\x10')
@@ -6584,12 +6613,12 @@ def test_wps_ext(dev, apdev):
     # Do not send WSC_Done yet to allow exchangw with STA complete before the
     # AP disconnects.
 
-    uuid_r = 16*'\x33'
-    r_nonce = 16*'\x44'
+    uuid_r = 16*b'\x33'
+    r_nonce = 16*b'\x44'
 
     eap_id = wsc_start_id
     logger.debug("Send WSC/Start to STA")
-    wsc_start = build_eap_wsc(1, eap_id, "", opcode=WSC_Start)
+    wsc_start = build_eap_wsc(1, eap_id, b'', opcode=WSC_Start)
     send_wsc_msg(dev[0], bssid, wsc_start)
     eap_id = (eap_id + 1) % 256
 
@@ -6685,8 +6714,8 @@ def wps_start_kwa(dev, apdev):
     wps_ext_eap_wsc(dev[0], hapd, bssid, "EAP-WSC/Start")
 
     mac_addr = binascii.unhexlify(dev[0].own_addr().replace(':', ''))
-    uuid_r = 16*'\x33'
-    r_nonce = 16*'\x44'
+    uuid_r = 16*b'\x33'
+    r_nonce = 16*b'\x44'
     own_private, e_pk = wsc_dh_init()
 
     logger.debug("Receive M1 from STA")
@@ -6738,7 +6767,7 @@ def test_wps_ext_kwa_proto_no_kwa(dev, apdev):
     r_s1,keywrapkey,authkey,raw_m3_attrs,eap_id,bssid,attrs = wps_start_kwa(dev, apdev)
     data = build_wsc_attr(ATTR_R_SNONCE1, r_s1)
     # Encrypted Settings without KWA
-    iv = 16*'\x99'
+    iv = 16*b'\x99'
     aes = AES.new(keywrapkey, AES.MODE_CBC, iv)
     pad_len = 16 - len(data) % 16
     ps = pad_len * struct.pack('B', pad_len)
@@ -6756,7 +6785,7 @@ def test_wps_ext_kwa_proto_data_after_kwa(dev, apdev):
     kwa = m.digest()[0:8]
     data += build_wsc_attr(ATTR_KEY_WRAP_AUTH, kwa)
     data += build_wsc_attr(ATTR_VENDOR_EXT, "1234567890")
-    iv = 16*'\x99'
+    iv = 16*b'\x99'
     aes = AES.new(keywrapkey, AES.MODE_CBC, iv)
     pad_len = 16 - len(data) % 16
     ps = pad_len * struct.pack('B', pad_len)
@@ -6771,7 +6800,7 @@ def test_wps_ext_kwa_proto_kwa_mismatch(dev, apdev):
     data = build_wsc_attr(ATTR_R_SNONCE1, r_s1)
     # Encrypted Settings and KWA with incorrect value
     data += build_wsc_attr(ATTR_KEY_WRAP_AUTH, 8*'\x00')
-    iv = 16*'\x99'
+    iv = 16*b'\x99'
     aes = AES.new(keywrapkey, AES.MODE_CBC, iv)
     pad_len = 16 - len(data) % 16
     ps = pad_len * struct.pack('B', pad_len)
@@ -6788,8 +6817,8 @@ def wps_run_cred_proto(dev, apdev, m8_cred, connect=False, no_connect=False):
     wps_ext_eap_wsc(dev[0], hapd, bssid, "EAP-WSC/Start")
 
     mac_addr = binascii.unhexlify(dev[0].own_addr().replace(':', ''))
-    uuid_r = 16*'\x33'
-    r_nonce = 16*'\x44'
+    uuid_r = 16*b'\x33'
+    r_nonce = 16*b'\x44'
     own_private, e_pk = wsc_dh_init()
 
     logger.debug("Receive M1 from STA")
@@ -6894,7 +6923,7 @@ def wps_run_cred_proto(dev, apdev, m8_cred, connect=False, no_connect=False):
 def build_cred(nw_idx='\x01', ssid='test-wps-conf', auth_type='\x00\x20',
                encr_type='\x00\x08', nw_key="12345678",
                mac_addr='\x00\x00\x00\x00\x00\x00'):
-    attrs = ''
+    attrs = b''
     if nw_idx is not None:
         attrs += build_wsc_attr(ATTR_NETWORK_INDEX, nw_idx)
     if ssid is not None:
@@ -6978,7 +7007,7 @@ def test_wps_ext_cred_proto_invalid_encr_type(dev, apdev):
 def test_wps_ext_cred_proto_missing_cred(dev, apdev):
     """WPS and Credential: Missing Credential"""
     mac_addr = binascii.unhexlify(dev[0].own_addr().replace(':', ''))
-    m8_cred = ''
+    m8_cred = b''
     wps_run_cred_proto(dev, apdev, m8_cred)
 
 def test_wps_ext_proto_m2_no_public_key(dev, apdev):
@@ -6990,8 +7019,8 @@ def test_wps_ext_proto_m2_no_public_key(dev, apdev):
     wps_ext_eap_wsc(dev[0], hapd, bssid, "EAP-WSC/Start")
 
     mac_addr = binascii.unhexlify(dev[0].own_addr().replace(':', ''))
-    uuid_r = 16*'\x33'
-    r_nonce = 16*'\x44'
+    uuid_r = 16*b'\x33'
+    r_nonce = 16*b'\x44'
     own_private, e_pk = wsc_dh_init()
 
     logger.debug("Receive M1 from STA")
@@ -7028,8 +7057,8 @@ def test_wps_ext_proto_m2_invalid_public_key(dev, apdev):
     wps_ext_eap_wsc(dev[0], hapd, bssid, "EAP-WSC/Start")
 
     mac_addr = binascii.unhexlify(dev[0].own_addr().replace(':', ''))
-    uuid_r = 16*'\x33'
-    r_nonce = 16*'\x44'
+    uuid_r = 16*b'\x33'
+    r_nonce = 16*b'\x44'
     own_private, e_pk = wsc_dh_init()
 
     logger.debug("Receive M1 from STA")
@@ -7045,7 +7074,7 @@ def test_wps_ext_proto_m2_invalid_public_key(dev, apdev):
     logger.debug("Send M2 to STA")
     m2, raw_m2_attrs = build_m2(authkey, raw_m1_attrs, eap_id,
                                 m1_attrs[ATTR_ENROLLEE_NONCE],
-                                r_nonce, uuid_r, 192*'\xff')
+                                r_nonce, uuid_r, 192*b'\xff')
     send_wsc_msg(dev[0], bssid, m2)
     eap_id = (eap_id + 1) % 256
 
@@ -7066,8 +7095,8 @@ def test_wps_ext_proto_m2_public_key_oom(dev, apdev):
     wps_ext_eap_wsc(dev[0], hapd, bssid, "EAP-WSC/Start")
 
     mac_addr = binascii.unhexlify(dev[0].own_addr().replace(':', ''))
-    uuid_r = 16*'\x33'
-    r_nonce = 16*'\x44'
+    uuid_r = 16*b'\x33'
+    r_nonce = 16*b'\x44'
     own_private, e_pk = wsc_dh_init()
 
     logger.debug("Receive M1 from STA")
@@ -7105,8 +7134,8 @@ def test_wps_ext_proto_nack_m3(dev, apdev):
     wps_ext_eap_wsc(dev[0], hapd, bssid, "EAP-WSC/Start")
 
     mac_addr = binascii.unhexlify(dev[0].own_addr().replace(':', ''))
-    uuid_r = 16*'\x33'
-    r_nonce = 16*'\x44'
+    uuid_r = 16*b'\x33'
+    r_nonce = 16*b'\x44'
     own_private, e_pk = wsc_dh_init()
 
     logger.debug("Receive M1 from STA")
@@ -7148,8 +7177,8 @@ def test_wps_ext_proto_nack_m5(dev, apdev):
     wps_ext_eap_wsc(dev[0], hapd, bssid, "EAP-WSC/Start")
 
     mac_addr = binascii.unhexlify(dev[0].own_addr().replace(':', ''))
-    uuid_r = 16*'\x33'
-    r_nonce = 16*'\x44'
+    uuid_r = 16*b'\x33'
+    r_nonce = 16*b'\x44'
     own_private, e_pk = wsc_dh_init()
 
     logger.debug("Receive M1 from STA")
@@ -7207,8 +7236,8 @@ def wps_nack_m3(dev, apdev):
     wps_ext_eap_wsc(dev[0], hapd, bssid, "EAP-WSC/Start")
 
     mac_addr = binascii.unhexlify(dev[0].own_addr().replace(':', ''))
-    uuid_r = 16*'\x33'
-    r_nonce = 16*'\x44'
+    uuid_r = 16*b'\x33'
+    r_nonce = 16*b'\x44'
     own_private, e_pk = wsc_dh_init()
 
     logger.debug("Receive M1 from STA")
@@ -7306,7 +7335,7 @@ def test_wps_ext_proto_nack_m3_invalid_attr(dev, apdev):
     """WPS and NACK M3 invalid attribute"""
     eap_id, e_nonce, r_nonce, bssid = wps_nack_m3(dev, apdev)
     logger.debug("Send NACK to STA")
-    attrs = '\x10\x10\x00'
+    attrs = b'\x10\x10\x00'
     msg = build_eap_wsc(1, eap_id, attrs, opcode=WSC_NACK)
     send_wsc_msg(dev[0], bssid, msg)
     dev[0].request("WPS_CANCEL")
@@ -7377,7 +7406,7 @@ def test_wps_ext_proto_ack_m3_invalid_attr(dev, apdev):
     """WPS and ACK M3 invalid attribute"""
     eap_id, e_nonce, r_nonce, bssid = wps_nack_m3(dev, apdev)
     logger.debug("Send ACK to STA")
-    attrs = '\x10\x10\x00'
+    attrs = b'\x10\x10\x00'
     msg = build_eap_wsc(1, eap_id, attrs, opcode=WSC_ACK)
     send_wsc_msg(dev[0], bssid, msg)
     dev[0].request("WPS_CANCEL")
@@ -7402,8 +7431,8 @@ def wps_to_m3_helper(dev, apdev):
     wps_ext_eap_wsc(dev[0], hapd, bssid, "EAP-WSC/Start")
 
     mac_addr = binascii.unhexlify(dev[0].own_addr().replace(':', ''))
-    uuid_r = 16*'\x33'
-    r_nonce = 16*'\x44'
+    uuid_r = 16*b'\x33'
+    r_nonce = 16*b'\x44'
     own_private, e_pk = wsc_dh_init()
 
     logger.debug("Receive M1 from STA")
@@ -7516,7 +7545,7 @@ def test_wps_ext_proto_m4_missing_r_snonce1(dev, apdev):
     attrs += build_wsc_attr(ATTR_R_HASH1, r_hash1)
     attrs += build_wsc_attr(ATTR_R_HASH2, r_hash2)
     #data = build_wsc_attr(ATTR_R_SNONCE1, r_s1)
-    data = ''
+    data = b''
     attrs += build_attr_encr_settings(authkey, keywrapkey, data)
     attrs += build_attr_authenticator(authkey, m3, attrs)
     m4 = build_eap_wsc(1, eap_id, attrs)
@@ -7547,7 +7576,7 @@ def test_wps_ext_proto_m4_invalid_pad_string(dev, apdev):
     m = hmac.new(authkey, data, hashlib.sha256)
     kwa = m.digest()[0:8]
     data += build_wsc_attr(ATTR_KEY_WRAP_AUTH, kwa)
-    iv = 16*'\x99'
+    iv = 16*b'\x99'
     aes = AES.new(keywrapkey, AES.MODE_CBC, iv)
     pad_len = 16 - len(data) % 16
     ps = (pad_len - 1) * struct.pack('B', pad_len) + struct.pack('B', pad_len - 1)
@@ -7584,7 +7613,7 @@ def test_wps_ext_proto_m4_invalid_pad_value(dev, apdev):
     m = hmac.new(authkey, data, hashlib.sha256)
     kwa = m.digest()[0:8]
     data += build_wsc_attr(ATTR_KEY_WRAP_AUTH, kwa)
-    iv = 16*'\x99'
+    iv = 16*b'\x99'
     aes = AES.new(keywrapkey, AES.MODE_CBC, iv)
     pad_len = 16 - len(data) % 16
     ps = (pad_len - 1) * struct.pack('B', pad_len) + struct.pack('B', 255)
@@ -7639,7 +7668,7 @@ def test_wps_ext_proto_m6_missing_r_snonce2(dev, apdev):
     attrs += build_attr_msg_type(WPS_M6)
     attrs += build_wsc_attr(ATTR_ENROLLEE_NONCE, e_nonce)
     #data = build_wsc_attr(ATTR_R_SNONCE2, r_s2)
-    data = ''
+    data = b''
     attrs += build_attr_encr_settings(authkey, keywrapkey, data)
     attrs += build_attr_authenticator(authkey, m5, attrs)
     m6 = build_eap_wsc(1, eap_id, attrs)
@@ -7748,8 +7777,8 @@ def wps_run_ap_settings_proto(dev, apdev, ap_settings, success):
     e_pk = m1_attrs[ATTR_PUBLIC_KEY]
 
     appin = '12345670'
-    uuid_r = 16*'\x33'
-    r_nonce = 16*'\x44'
+    uuid_r = 16*b'\x33'
+    r_nonce = 16*b'\x44'
     own_private, r_pk = wsc_dh_init()
     authkey,keywrapkey = wsc_dh_kdf(e_pk, own_private, mac_addr, e_nonce,
                                     r_nonce)
@@ -7932,8 +7961,8 @@ def test_wps_ext_m3_missing_e_hash1(dev, apdev):
         raise Exception("Unexpected Op-Code for WSC/Start")
 
     mac_addr = binascii.unhexlify(dev[0].own_addr().replace(':', ''))
-    uuid_e = 16*'\x11'
-    e_nonce = 16*'\x22'
+    uuid_e = 16*b'\x11'
+    e_nonce = 16*b'\x22'
     own_private, e_pk = wsc_dh_init()
 
     logger.debug("Send M1 to AP")
@@ -7977,8 +8006,8 @@ def test_wps_ext_m3_missing_e_hash2(dev, apdev):
         raise Exception("Unexpected Op-Code for WSC/Start")
 
     mac_addr = binascii.unhexlify(dev[0].own_addr().replace(':', ''))
-    uuid_e = 16*'\x11'
-    e_nonce = 16*'\x22'
+    uuid_e = 16*b'\x11'
+    e_nonce = 16*b'\x22'
     own_private, e_pk = wsc_dh_init()
 
     logger.debug("Send M1 to AP")
@@ -8022,8 +8051,8 @@ def test_wps_ext_m5_missing_e_snonce1(dev, apdev):
         raise Exception("Unexpected Op-Code for WSC/Start")
 
     mac_addr = binascii.unhexlify(dev[0].own_addr().replace(':', ''))
-    uuid_e = 16*'\x11'
-    e_nonce = 16*'\x22'
+    uuid_e = 16*b'\x11'
+    e_nonce = 16*b'\x22'
     own_private, e_pk = wsc_dh_init()
 
     logger.debug("Send M1 to AP")
@@ -8059,7 +8088,7 @@ def test_wps_ext_m5_missing_e_snonce1(dev, apdev):
     attrs += build_attr_msg_type(WPS_M5)
     attrs += build_wsc_attr(ATTR_REGISTRAR_NONCE, r_nonce)
     #data = build_wsc_attr(ATTR_E_SNONCE1, e_s1)
-    data = ''
+    data = b''
     attrs += build_attr_encr_settings(authkey, keywrapkey, data)
     attrs += build_attr_authenticator(authkey, raw_m4_attrs, attrs)
     raw_m5_attrs = attrs
@@ -8082,8 +8111,8 @@ def test_wps_ext_m5_e_snonce1_mismatch(dev, apdev):
         raise Exception("Unexpected Op-Code for WSC/Start")
 
     mac_addr = binascii.unhexlify(dev[0].own_addr().replace(':', ''))
-    uuid_e = 16*'\x11'
-    e_nonce = 16*'\x22'
+    uuid_e = 16*b'\x11'
+    e_nonce = 16*b'\x22'
     own_private, e_pk = wsc_dh_init()
 
     logger.debug("Send M1 to AP")
@@ -8140,8 +8169,8 @@ def test_wps_ext_m7_missing_e_snonce2(dev, apdev):
         raise Exception("Unexpected Op-Code for WSC/Start")
 
     mac_addr = binascii.unhexlify(dev[0].own_addr().replace(':', ''))
-    uuid_e = 16*'\x11'
-    e_nonce = 16*'\x22'
+    uuid_e = 16*b'\x11'
+    e_nonce = 16*b'\x22'
     own_private, e_pk = wsc_dh_init()
 
     logger.debug("Send M1 to AP")
@@ -8191,7 +8220,7 @@ def test_wps_ext_m7_missing_e_snonce2(dev, apdev):
     attrs += build_attr_msg_type(WPS_M7)
     attrs += build_wsc_attr(ATTR_REGISTRAR_NONCE, r_nonce)
     #data = build_wsc_attr(ATTR_E_SNONCE2, e_s2)
-    data = ''
+    data = b''
     attrs += build_attr_encr_settings(authkey, keywrapkey, data)
     attrs += build_attr_authenticator(authkey, raw_m6_attrs, attrs)
     m7 = build_eap_wsc(2, msg['eap_identifier'], attrs)
@@ -8214,8 +8243,8 @@ def test_wps_ext_m7_e_snonce2_mismatch(dev, apdev):
         raise Exception("Unexpected Op-Code for WSC/Start")
 
     mac_addr = binascii.unhexlify(dev[0].own_addr().replace(':', ''))
-    uuid_e = 16*'\x11'
-    e_nonce = 16*'\x22'
+    uuid_e = 16*b'\x11'
+    e_nonce = 16*b'\x22'
     own_private, e_pk = wsc_dh_init()
 
     logger.debug("Send M1 to AP")
@@ -8318,8 +8347,8 @@ def test_wps_ext_m3_m1(dev, apdev):
         raise Exception("Unexpected Op-Code for WSC/Start")
 
     mac_addr = binascii.unhexlify(dev[0].own_addr().replace(':', ''))
-    uuid_e = 16*'\x11'
-    e_nonce = 16*'\x22'
+    uuid_e = 16*b'\x11'
+    e_nonce = 16*b'\x22'
     own_private, e_pk = wsc_dh_init()
 
     logger.debug("Send M1 to AP")
@@ -8363,8 +8392,8 @@ def test_wps_ext_m5_m3(dev, apdev):
         raise Exception("Unexpected Op-Code for WSC/Start")
 
     mac_addr = binascii.unhexlify(dev[0].own_addr().replace(':', ''))
-    uuid_e = 16*'\x11'
-    e_nonce = 16*'\x22'
+    uuid_e = 16*b'\x11'
+    e_nonce = 16*b'\x22'
     own_private, e_pk = wsc_dh_init()
 
     logger.debug("Send M1 to AP")
@@ -8422,8 +8451,8 @@ def test_wps_ext_m3_m2(dev, apdev):
         raise Exception("Unexpected Op-Code for WSC/Start")
 
     mac_addr = binascii.unhexlify(dev[0].own_addr().replace(':', ''))
-    uuid_e = 16*'\x11'
-    e_nonce = 16*'\x22'
+    uuid_e = 16*b'\x11'
+    e_nonce = 16*b'\x22'
     own_private, e_pk = wsc_dh_init()
 
     logger.debug("Send M1 to AP")
@@ -8465,8 +8494,8 @@ def test_wps_ext_m3_m5(dev, apdev):
         raise Exception("Unexpected Op-Code for WSC/Start")
 
     mac_addr = binascii.unhexlify(dev[0].own_addr().replace(':', ''))
-    uuid_e = 16*'\x11'
-    e_nonce = 16*'\x22'
+    uuid_e = 16*b'\x11'
+    e_nonce = 16*b'\x22'
     own_private, e_pk = wsc_dh_init()
 
     logger.debug("Send M1 to AP")
@@ -8510,8 +8539,8 @@ def test_wps_ext_m3_m7(dev, apdev):
         raise Exception("Unexpected Op-Code for WSC/Start")
 
     mac_addr = binascii.unhexlify(dev[0].own_addr().replace(':', ''))
-    uuid_e = 16*'\x11'
-    e_nonce = 16*'\x22'
+    uuid_e = 16*b'\x11'
+    e_nonce = 16*b'\x22'
     own_private, e_pk = wsc_dh_init()
 
     logger.debug("Send M1 to AP")
@@ -8555,8 +8584,8 @@ def test_wps_ext_m3_done(dev, apdev):
         raise Exception("Unexpected Op-Code for WSC/Start")
 
     mac_addr = binascii.unhexlify(dev[0].own_addr().replace(':', ''))
-    uuid_e = 16*'\x11'
-    e_nonce = 16*'\x22'
+    uuid_e = 16*b'\x11'
+    e_nonce = 16*b'\x22'
     own_private, e_pk = wsc_dh_init()
 
     logger.debug("Send M1 to AP")
@@ -8597,8 +8626,8 @@ def test_wps_ext_m2_nack_invalid(dev, apdev):
         raise Exception("Unexpected Op-Code for WSC/Start")
 
     mac_addr = binascii.unhexlify(dev[0].own_addr().replace(':', ''))
-    uuid_e = 16*'\x11'
-    e_nonce = 16*'\x22'
+    uuid_e = 16*b'\x11'
+    e_nonce = 16*b'\x22'
     own_private, e_pk = wsc_dh_init()
 
     logger.debug("Send M1 to AP")
@@ -8616,7 +8645,7 @@ def test_wps_ext_m2_nack_invalid(dev, apdev):
     e_s1,e_s2,e_hash1,e_hash2 = wsc_dev_pw_hash(authkey, pin, e_pk, r_pk)
 
     logger.debug("Send WSC_NACK to AP")
-    attrs = '\x10\x00\x00'
+    attrs = b'\x10\x00\x00'
     nack = build_eap_wsc(2, msg['eap_identifier'], attrs, opcode=WSC_NACK)
     send_wsc_msg(hapd, addr, nack)
 
@@ -8636,8 +8665,8 @@ def test_wps_ext_m2_nack_no_msg_type(dev, apdev):
         raise Exception("Unexpected Op-Code for WSC/Start")
 
     mac_addr = binascii.unhexlify(dev[0].own_addr().replace(':', ''))
-    uuid_e = 16*'\x11'
-    e_nonce = 16*'\x22'
+    uuid_e = 16*b'\x11'
+    e_nonce = 16*b'\x22'
     own_private, e_pk = wsc_dh_init()
 
     logger.debug("Send M1 to AP")
@@ -8675,8 +8704,8 @@ def test_wps_ext_m2_nack_invalid_msg_type(dev, apdev):
         raise Exception("Unexpected Op-Code for WSC/Start")
 
     mac_addr = binascii.unhexlify(dev[0].own_addr().replace(':', ''))
-    uuid_e = 16*'\x11'
-    e_nonce = 16*'\x22'
+    uuid_e = 16*b'\x11'
+    e_nonce = 16*b'\x22'
     own_private, e_pk = wsc_dh_init()
 
     logger.debug("Send M1 to AP")
@@ -8714,8 +8743,8 @@ def test_wps_ext_m2_nack_e_nonce_mismatch(dev, apdev):
         raise Exception("Unexpected Op-Code for WSC/Start")
 
     mac_addr = binascii.unhexlify(dev[0].own_addr().replace(':', ''))
-    uuid_e = 16*'\x11'
-    e_nonce = 16*'\x22'
+    uuid_e = 16*b'\x11'
+    e_nonce = 16*b'\x22'
     own_private, e_pk = wsc_dh_init()
 
     logger.debug("Send M1 to AP")
@@ -8733,7 +8762,7 @@ def test_wps_ext_m2_nack_e_nonce_mismatch(dev, apdev):
     e_s1,e_s2,e_hash1,e_hash2 = wsc_dev_pw_hash(authkey, pin, e_pk, r_pk)
 
     logger.debug("Send WSC_NACK to AP")
-    nack,attrs = build_nack(msg['eap_identifier'], 16*'\x00', r_nonce,
+    nack,attrs = build_nack(msg['eap_identifier'], 16*b'\x00', r_nonce,
                             eap_code=2)
     send_wsc_msg(hapd, addr, nack)
 
@@ -8753,8 +8782,8 @@ def test_wps_ext_m2_nack_no_config_error(dev, apdev):
         raise Exception("Unexpected Op-Code for WSC/Start")
 
     mac_addr = binascii.unhexlify(dev[0].own_addr().replace(':', ''))
-    uuid_e = 16*'\x11'
-    e_nonce = 16*'\x22'
+    uuid_e = 16*b'\x11'
+    e_nonce = 16*b'\x22'
     own_private, e_pk = wsc_dh_init()
 
     logger.debug("Send M1 to AP")
@@ -8792,8 +8821,8 @@ def test_wps_ext_m2_ack_invalid(dev, apdev):
         raise Exception("Unexpected Op-Code for WSC/Start")
 
     mac_addr = binascii.unhexlify(dev[0].own_addr().replace(':', ''))
-    uuid_e = 16*'\x11'
-    e_nonce = 16*'\x22'
+    uuid_e = 16*b'\x11'
+    e_nonce = 16*b'\x22'
     own_private, e_pk = wsc_dh_init()
 
     logger.debug("Send M1 to AP")
@@ -8811,7 +8840,7 @@ def test_wps_ext_m2_ack_invalid(dev, apdev):
     e_s1,e_s2,e_hash1,e_hash2 = wsc_dev_pw_hash(authkey, pin, e_pk, r_pk)
 
     logger.debug("Send WSC_ACK to AP")
-    attrs = '\x10\x00\x00'
+    attrs = b'\x10\x00\x00'
     ack = build_eap_wsc(2, msg['eap_identifier'], attrs, opcode=WSC_ACK)
     send_wsc_msg(hapd, addr, ack)
 
@@ -8831,8 +8860,8 @@ def test_wps_ext_m2_ack(dev, apdev):
         raise Exception("Unexpected Op-Code for WSC/Start")
 
     mac_addr = binascii.unhexlify(dev[0].own_addr().replace(':', ''))
-    uuid_e = 16*'\x11'
-    e_nonce = 16*'\x22'
+    uuid_e = 16*b'\x11'
+    e_nonce = 16*b'\x22'
     own_private, e_pk = wsc_dh_init()
 
     logger.debug("Send M1 to AP")
@@ -8869,8 +8898,8 @@ def test_wps_ext_m2_ack_no_msg_type(dev, apdev):
         raise Exception("Unexpected Op-Code for WSC/Start")
 
     mac_addr = binascii.unhexlify(dev[0].own_addr().replace(':', ''))
-    uuid_e = 16*'\x11'
-    e_nonce = 16*'\x22'
+    uuid_e = 16*b'\x11'
+    e_nonce = 16*b'\x22'
     own_private, e_pk = wsc_dh_init()
 
     logger.debug("Send M1 to AP")
@@ -8908,8 +8937,8 @@ def test_wps_ext_m2_ack_invalid_msg_type(dev, apdev):
         raise Exception("Unexpected Op-Code for WSC/Start")
 
     mac_addr = binascii.unhexlify(dev[0].own_addr().replace(':', ''))
-    uuid_e = 16*'\x11'
-    e_nonce = 16*'\x22'
+    uuid_e = 16*b'\x11'
+    e_nonce = 16*b'\x22'
     own_private, e_pk = wsc_dh_init()
 
     logger.debug("Send M1 to AP")
@@ -8947,8 +8976,8 @@ def test_wps_ext_m2_ack_e_nonce_mismatch(dev, apdev):
         raise Exception("Unexpected Op-Code for WSC/Start")
 
     mac_addr = binascii.unhexlify(dev[0].own_addr().replace(':', ''))
-    uuid_e = 16*'\x11'
-    e_nonce = 16*'\x22'
+    uuid_e = 16*b'\x11'
+    e_nonce = 16*b'\x22'
     own_private, e_pk = wsc_dh_init()
 
     logger.debug("Send M1 to AP")
@@ -8966,7 +8995,7 @@ def test_wps_ext_m2_ack_e_nonce_mismatch(dev, apdev):
     e_s1,e_s2,e_hash1,e_hash2 = wsc_dev_pw_hash(authkey, pin, e_pk, r_pk)
 
     logger.debug("Send WSC_ACK to AP")
-    ack,attrs = build_ack(msg['eap_identifier'], 16*'\x00', r_nonce,
+    ack,attrs = build_ack(msg['eap_identifier'], 16*b'\x00', r_nonce,
                           eap_code=2)
     send_wsc_msg(hapd, addr, ack)
 
@@ -8986,7 +9015,7 @@ def test_wps_ext_m1_invalid(dev, apdev):
         raise Exception("Unexpected Op-Code for WSC/Start")
 
     logger.debug("Send M1 to AP")
-    attrs = '\x10\x00\x00'
+    attrs = b'\x10\x00\x00'
     m1 = build_eap_wsc(2, msg['eap_identifier'], attrs)
     send_wsc_msg(hapd, addr, m1)
 
@@ -9009,7 +9038,7 @@ def test_wps_ext_m1_missing_msg_type(dev, apdev):
     m1 = build_eap_wsc(2, msg['eap_identifier'], attrs)
     send_wsc_msg(hapd, addr, m1)
 
-    wps_wait_ap_nack(hapd, dev[0], 16*'\x00', 16*'\x00')
+    wps_wait_ap_nack(hapd, dev[0], 16*b'\x00', 16*b'\x00')
 
 def wps_ext_wsc_done(dev, apdev):
     pin = "12345670"
@@ -9023,8 +9052,8 @@ def wps_ext_wsc_done(dev, apdev):
         raise Exception("Unexpected Op-Code for WSC/Start")
 
     mac_addr = binascii.unhexlify(dev[0].own_addr().replace(':', ''))
-    uuid_e = 16*'\x11'
-    e_nonce = 16*'\x22'
+    uuid_e = 16*b'\x11'
+    e_nonce = 16*b'\x22'
     own_private, e_pk = wsc_dh_init()
 
     logger.debug("Send M1 to AP")
@@ -9090,7 +9119,7 @@ def test_wps_ext_wsc_done_invalid(dev, apdev):
     hapd, msg, e_nonce, r_nonce = wps_ext_wsc_done(dev, apdev)
 
     logger.debug("Send WSC_Done to AP")
-    attrs = '\x10\x00\x00'
+    attrs = b'\x10\x00\x00'
     wsc_done = build_eap_wsc(2, msg['eap_identifier'], attrs, opcode=WSC_Done)
     send_wsc_msg(hapd, dev[0].own_addr(), wsc_done)
 
@@ -9169,8 +9198,8 @@ def test_wps_ext_m7_no_encr_settings(dev, apdev):
         raise Exception("Unexpected Op-Code for WSC/Start")
 
     mac_addr = binascii.unhexlify(dev[0].own_addr().replace(':', ''))
-    uuid_e = 16*'\x11'
-    e_nonce = 16*'\x22'
+    uuid_e = 16*b'\x11'
+    e_nonce = 16*b'\x22'
     own_private, e_pk = wsc_dh_init()
 
     logger.debug("Send M1 to AP")
@@ -9242,14 +9271,14 @@ def test_wps_ext_m1_workaround(dev, apdev):
         raise Exception("Unexpected Op-Code for WSC/Start")
 
     mac_addr = binascii.unhexlify(dev[0].own_addr().replace(':', ''))
-    uuid_e = 16*'\x11'
-    e_nonce = 16*'\x22'
+    uuid_e = 16*b'\x11'
+    e_nonce = 16*b'\x22'
     own_private, e_pk = wsc_dh_init()
 
     logger.debug("Send M1 to AP")
     m1, raw_m1_attrs = build_m1(msg['eap_identifier'], uuid_e, mac_addr,
                                 e_nonce, e_pk, manufacturer='Apple TEST',
-                                model_name='AirPort', config_methods='\xff\xff')
+                                model_name='AirPort', config_methods=b'\xff\xff')
     send_wsc_msg(hapd, addr, m1)
 
     logger.debug("Receive M2 from AP")
@@ -9269,12 +9298,12 @@ def test_ap_wps_upnp_web_oom(dev, apdev, params):
     hapd = add_ssdp_ap(apdev[0], ap_uuid)
 
     location = ssdp_get_location(ap_uuid)
-    url = urlparse.urlparse(location)
+    url = urlparse(location)
     urls = upnp_get_urls(location)
-    eventurl = urlparse.urlparse(urls['event_sub_url'])
-    ctrlurl = urlparse.urlparse(urls['control_url'])
+    eventurl = urlparse(urls['event_sub_url'])
+    ctrlurl = urlparse(urls['control_url'])
 
-    conn = httplib.HTTPConnection(url.netloc)
+    conn = HTTPConnection(url.netloc)
     with alloc_fail(hapd, 1, "web_connection_parse_get"):
         conn.request("GET", "/wps_device.xml")
         try:
@@ -9282,7 +9311,7 @@ def test_ap_wps_upnp_web_oom(dev, apdev, params):
         except:
             pass
 
-    conn = httplib.HTTPConnection(url.netloc)
+    conn = HTTPConnection(url.netloc)
     conn.request("GET", "/unknown")
     resp = conn.getresponse()
     if resp.status != 404:
@@ -9292,60 +9321,60 @@ def test_ap_wps_upnp_web_oom(dev, apdev, params):
         conn.request("GET", "/unknown")
         try:
             resp = conn.getresponse()
-            print resp.status
+            print(resp.status)
         except:
             pass
 
-    conn = httplib.HTTPConnection(url.netloc)
+    conn = HTTPConnection(url.netloc)
     conn.request("GET", "/wps_device.xml")
     resp = conn.getresponse()
     if resp.status != 200:
         raise Exception("GET /wps_device.xml failed")
 
-    conn = httplib.HTTPConnection(url.netloc)
+    conn = HTTPConnection(url.netloc)
     resp = upnp_soap_action(conn, ctrlurl.path, "GetDeviceInfo")
     if resp.status != 200:
         raise Exception("GetDeviceInfo failed")
 
     with alloc_fail(hapd, 1, "web_process_get_device_info"):
-        conn = httplib.HTTPConnection(url.netloc)
+        conn = HTTPConnection(url.netloc)
         resp = upnp_soap_action(conn, ctrlurl.path, "GetDeviceInfo")
         if resp.status != 500:
             raise Exception("Internal error not reported from GetDeviceInfo OOM")
 
     with alloc_fail(hapd, 1, "wps_build_m1;web_process_get_device_info"):
-        conn = httplib.HTTPConnection(url.netloc)
+        conn = HTTPConnection(url.netloc)
         resp = upnp_soap_action(conn, ctrlurl.path, "GetDeviceInfo")
         if resp.status != 500:
             raise Exception("Internal error not reported from GetDeviceInfo OOM")
 
     with alloc_fail(hapd, 1, "wpabuf_alloc;web_connection_send_reply"):
-        conn = httplib.HTTPConnection(url.netloc)
+        conn = HTTPConnection(url.netloc)
         try:
             resp = upnp_soap_action(conn, ctrlurl.path, "GetDeviceInfo")
         except:
             pass
 
-    conn = httplib.HTTPConnection(url.netloc)
+    conn = HTTPConnection(url.netloc)
     resp = upnp_soap_action(conn, ctrlurl.path, "GetDeviceInfo")
     if resp.status != 200:
         raise Exception("GetDeviceInfo failed")
 
     # No NewWLANEventType in PutWLANResponse NewMessage
-    conn = httplib.HTTPConnection(url.netloc)
+    conn = HTTPConnection(url.netloc)
     resp = upnp_soap_action(conn, ctrlurl.path, "PutWLANResponse", newmsg="foo")
     if resp.status != 600:
         raise Exception("Unexpected HTTP response: %d" % resp.status)
 
     # No NewWLANEventMAC in PutWLANResponse NewMessage
-    conn = httplib.HTTPConnection(url.netloc)
+    conn = HTTPConnection(url.netloc)
     resp = upnp_soap_action(conn, ctrlurl.path, "PutWLANResponse",
                             newmsg="foo", neweventtype="1")
     if resp.status != 600:
         raise Exception("Unexpected HTTP response: %d" % resp.status)
 
     # Invalid NewWLANEventMAC in PutWLANResponse NewMessage
-    conn = httplib.HTTPConnection(url.netloc)
+    conn = HTTPConnection(url.netloc)
     resp = upnp_soap_action(conn, ctrlurl.path, "PutWLANResponse",
                             newmsg="foo", neweventtype="1",
                             neweventmac="foo")
@@ -9354,7 +9383,7 @@ def test_ap_wps_upnp_web_oom(dev, apdev, params):
 
     # Workaround for NewWLANEventMAC in PutWLANResponse NewMessage
     # Ignored unexpected PutWLANResponse WLANEventType 1
-    conn = httplib.HTTPConnection(url.netloc)
+    conn = HTTPConnection(url.netloc)
     resp = upnp_soap_action(conn, ctrlurl.path, "PutWLANResponse",
                             newmsg="foo", neweventtype="1",
                             neweventmac="00.11.22.33.44.55")
@@ -9362,7 +9391,7 @@ def test_ap_wps_upnp_web_oom(dev, apdev, params):
         raise Exception("Unexpected HTTP response: %d" % resp.status)
 
     # PutWLANResponse NewMessage with invalid EAP message
-    conn = httplib.HTTPConnection(url.netloc)
+    conn = HTTPConnection(url.netloc)
     resp = upnp_soap_action(conn, ctrlurl.path, "PutWLANResponse",
                             newmsg="foo", neweventtype="2",
                             neweventmac="00:11:22:33:44:55")
@@ -9370,7 +9399,7 @@ def test_ap_wps_upnp_web_oom(dev, apdev, params):
         raise Exception("Unexpected HTTP response: %d" % resp.status)
 
     with alloc_fail(hapd, 1, "web_connection_parse_subscribe"):
-        conn = httplib.HTTPConnection(url.netloc)
+        conn = HTTPConnection(url.netloc)
         headers = { "callback": '<http://127.0.0.1:12345/event>',
                     "NT": "upnp:event",
                     "timeout": "Second-1234" }
@@ -9381,7 +9410,7 @@ def test_ap_wps_upnp_web_oom(dev, apdev, params):
             pass
 
     with alloc_fail(hapd, 1, "dup_binstr;web_connection_parse_subscribe"):
-        conn = httplib.HTTPConnection(url.netloc)
+        conn = HTTPConnection(url.netloc)
         headers = { "callback": '<http://127.0.0.1:12345/event>',
                     "NT": "upnp:event",
                     "timeout": "Second-1234" }
@@ -9391,7 +9420,7 @@ def test_ap_wps_upnp_web_oom(dev, apdev, params):
             raise Exception("Unexpected HTTP response: %d" % resp.status)
 
     with alloc_fail(hapd, 1, "wpabuf_alloc;web_connection_parse_unsubscribe"):
-        conn = httplib.HTTPConnection(url.netloc)
+        conn = HTTPConnection(url.netloc)
         headers = { "callback": '<http://127.0.0.1:12345/event>',
                     "NT": "upnp:event",
                     "timeout": "Second-1234" }
@@ -9402,7 +9431,7 @@ def test_ap_wps_upnp_web_oom(dev, apdev, params):
             pass
 
     with alloc_fail(hapd, 1, "web_connection_unimplemented"):
-        conn = httplib.HTTPConnection(url.netloc)
+        conn = HTTPConnection(url.netloc)
         conn.request("HEAD", "/wps_device.xml")
         try:
             resp = conn.getresponse()

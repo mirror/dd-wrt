@@ -6,6 +6,7 @@
 
 import logging
 logger = logging.getLogger()
+import binascii
 import os
 import signal
 import subprocess
@@ -139,14 +140,14 @@ def log_ip_macsec():
     cmd = subprocess.Popen([ "ip", "macsec", "show" ],
                            stdout=subprocess.PIPE,
                            stderr=open('/dev/null', 'w'))
-    res = cmd.stdout.read()
+    res = cmd.stdout.read().decode()
     cmd.stdout.close()
     logger.info("ip macsec:\n" + res)
 
 def log_ip_link():
     cmd = subprocess.Popen([ "ip", "link", "show" ],
                            stdout=subprocess.PIPE)
-    res = cmd.stdout.read()
+    res = cmd.stdout.read().decode()
     cmd.stdout.close()
     logger.info("ip link:\n" + res)
 
@@ -164,7 +165,7 @@ def add_wpas_interfaces(count=2):
             wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
             wpas.interface_add("veth%d" % i, driver="macsec_linux")
             wpa.append(wpas)
-    except Exception, e:
+    except Exception as e:
         if "Failed to add a dynamic wpa_supplicant interface" in str(e):
             raise HwsimSkip("macsec supported (wpa_supplicant CONFIG_MACSEC, CONFIG_MACSEC_LINUX; kernel CONFIG_MACSEC)")
         raise
@@ -175,9 +176,9 @@ def lower_addr(addr1, addr2):
     a1 = addr1.split(':')
     a2 = addr2.split(':')
     for i in range(6):
-        if a1[i].decode("hex") < a2[i].decode("hex"):
+        if binascii.unhexlify(a1[i]) < binascii.unhexlify(a2[i]):
             return True
-        if a1[i].decode("hex") > a2[i].decode("hex"):
+        if binascii.unhexlify(a1[i]) > binascii.unhexlify(a2[i]):
             return False
     return False
 
@@ -459,7 +460,7 @@ def log_ip_macsec_ns():
     cmd = subprocess.Popen([ "ip", "macsec", "show" ],
                            stdout=subprocess.PIPE,
                            stderr=open('/dev/null', 'w'))
-    res = cmd.stdout.read()
+    res = cmd.stdout.read().decode()
     cmd.stdout.close()
     logger.info("ip macsec show:\n" + res)
 
@@ -467,7 +468,7 @@ def log_ip_macsec_ns():
                              "ip", "macsec", "show" ],
                            stdout=subprocess.PIPE,
                            stderr=open('/dev/null', 'w'))
-    res = cmd.stdout.read()
+    res = cmd.stdout.read().decode()
     cmd.stdout.close()
     logger.info("ip macsec show (ns0):\n" + res)
 
@@ -475,14 +476,14 @@ def log_ip_macsec_ns():
                              "ip", "macsec", "show" ],
                            stdout=subprocess.PIPE,
                            stderr=open('/dev/null', 'w'))
-    res = cmd.stdout.read()
+    res = cmd.stdout.read().decode()
     cmd.stdout.close()
     logger.info("ip macsec show (ns1):\n" + res)
 
 def log_ip_link_ns():
     cmd = subprocess.Popen([ "ip", "link", "show" ],
                            stdout=subprocess.PIPE)
-    res = cmd.stdout.read()
+    res = cmd.stdout.read().decode()
     cmd.stdout.close()
     logger.info("ip link:\n" + res)
 
@@ -490,7 +491,7 @@ def log_ip_link_ns():
                              "ip", "link", "show" ],
                            stdout=subprocess.PIPE,
                            stderr=open('/dev/null', 'w'))
-    res = cmd.stdout.read()
+    res = cmd.stdout.read().decode()
     cmd.stdout.close()
     logger.info("ip link show (ns0):\n" + res)
 
@@ -498,7 +499,7 @@ def log_ip_link_ns():
                              "ip", "link", "show" ],
                            stdout=subprocess.PIPE,
                            stderr=open('/dev/null', 'w'))
-    res = cmd.stdout.read()
+    res = cmd.stdout.read().decode()
     cmd.stdout.close()
     logger.info("ip link show (ns1):\n" + res)
 
@@ -509,13 +510,13 @@ def write_conf(conffile, mka_priority=None):
         f.write("ap_scan=0\n")
         f.write("fast_reauth=1\n")
         f.write("network={\n")
-	f.write("   key_mgmt=NONE\n")
-	f.write("   mka_cak=000102030405060708090a0b0c0d0e0f\n")
-	f.write("   mka_ckn=000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f\n")
+        f.write("   key_mgmt=NONE\n")
+        f.write("   mka_cak=000102030405060708090a0b0c0d0e0f\n")
+        f.write("   mka_ckn=000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f\n")
         if mka_priority is not None:
             f.write("   mka_priority=%d\n" % mka_priority)
-	f.write("   eapol_flags=0\n")
-	f.write("   macsec_policy=1\n")
+        f.write("   eapol_flags=0\n")
+        f.write("   macsec_policy=1\n")
         f.write("}\n")
 
 def run_macsec_psk_ns(dev, apdev, params):
@@ -639,7 +640,7 @@ def run_macsec_psk_ns(dev, apdev, params):
     c = subprocess.Popen(['ip', 'netns', 'exec', 'ns0',
                           'ping', '-c', '2', '192.168.248.18'],
                          stdout=subprocess.PIPE)
-    res = c.stdout.read()
+    res = c.stdout.read().decode()
     c.stdout.close()
     logger.info("ping:\n" + res)
     if "2 packets transmitted, 2 received" not in res:

@@ -32,7 +32,7 @@ class IPAssign(object):
         if self._ipv6:
             # wait for DAD to finish
             while True:
-                o = subprocess.check_output(self._cmd + ['show', 'tentative', 'dev', self._iface])
+                o = subprocess.check_output(self._cmd + ['show', 'tentative', 'dev', self._iface]).decode()
                 if not self._addr in o:
                     break
                 time.sleep(0.1)
@@ -162,12 +162,12 @@ def test_ip4_drop_gratuitous_arp(devs, apdevs, params):
             ap_addr = hapd.own_addr()
             cl_addr = dev.own_addr()
             pkt = build_arp(cl_addr, ap_addr, 2, ap_addr, '10.0.0.1', ap_addr, '10.0.0.1')
-            pkt = binascii.hexlify(pkt)
+            pkt = binascii.hexlify(pkt).decode()
 
             if "OK" not in hapd.request('DATA_TEST_FRAME ' + pkt):
                 raise Exception("DATA_TEST_FRAME failed")
 
-            if hapd.own_addr() in subprocess.check_output(['ip', 'neigh', 'show']):
+            if hapd.own_addr() in subprocess.check_output(['ip', 'neigh', 'show']).decode():
                 raise Exception("gratuitous ARP frame updated erroneously")
         finally:
             subprocess.call(['ip', 'neigh', 'del', '10.0.0.1', 'dev', dev.ifname])
@@ -188,12 +188,12 @@ def test_ip6_drop_unsolicited_na(devs, apdevs, params):
             cl_addr = dev.own_addr()
             pkt = build_na(ap_addr, 'fdaa::2', 'ff02::1', 'fdaa::2', flags=0x20,
                            opt=binascii.unhexlify('0201' + ap_addr.replace(':', '')))
-            pkt = binascii.hexlify(pkt)
+            pkt = binascii.hexlify(pkt).decode()
 
             if "OK" not in hapd.request('DATA_TEST_FRAME ' + pkt):
                 raise Exception("DATA_TEST_FRAME failed")
 
-            if hapd.own_addr() in subprocess.check_output(['ip', 'neigh', 'show']):
+            if hapd.own_addr() in subprocess.check_output(['ip', 'neigh', 'show']).decode():
                 raise Exception("unsolicited NA frame updated erroneously")
         finally:
             subprocess.call(['ip', '-6', 'neigh', 'del', 'fdaa::2', 'dev', dev.ifname])

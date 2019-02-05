@@ -55,7 +55,7 @@ class HostapdGlobal:
                                     stdout=subprocess.PIPE, shell=shell)
             out = proc.communicate()[0]
             ret = proc.returncode
-            return ret, out
+            return ret, out.decode()
         else:
             return self.host.execute(cmd_array)
 
@@ -162,7 +162,7 @@ class Hostapd:
                                     stdout=subprocess.PIPE, shell=shell)
             out = proc.communicate()[0]
             ret = proc.returncode
-            return ret, out
+            return ret, out.decode()
         else:
             return self.host.execute(cmd_array)
 
@@ -329,7 +329,8 @@ class Hostapd:
     def mgmt_tx(self, msg):
         t = (msg['fc'], 0) + mac2tuple(msg['da']) + mac2tuple(msg['sa']) + mac2tuple(msg['bssid']) + (0,)
         hdr = struct.pack('<HH6B6B6BH', *t)
-        if "OK" not in self.request("MGMT_TX " + binascii.hexlify(hdr + msg['payload'])):
+        res = self.request("MGMT_TX " + binascii.hexlify(hdr + msg['payload']).decode())
+        if "OK" not in res:
             raise Exception("MGMT_TX command to hostapd failed")
 
     def get_sta(self, addr, info=None, next=False):
@@ -413,7 +414,7 @@ def add_ap(apdev, params, wait_enabled=True, no_enable=False, timeout=30,
         for field in fields:
             if field in params:
                 hapd.set(field, params[field])
-        for f,v in params.items():
+        for f,v in list(params.items()):
             if f in fields:
                 continue
             if isinstance(v, list):
