@@ -54,7 +54,7 @@ echo "[Peer]" >> /tmp/wireguard/oet$1_peer$2_conf
 echo "PublicKey = $($nv get oet$1_public)" >> /tmp/wireguard/oet$1_peer$2_conf
 echo "Endpoint = $EP:$($nv get oet$1_port)" >> /tmp/wireguard/oet$1_peer$2_conf
 #echo "AllowedIPs = $EP" >> /tmp/wireguard/oet$1_peer$2_conf
-echo "AllowedIPs = $($nv get oet$1_aip$2)" >> /tmp/wireguard/oet$1_peer$2_conf
+echo "AllowedIPs = 0.0.0.0/0" >> /tmp/wireguard/oet$1_peer$2_conf
 if [ $($nv get oet$1_usepsk$2) = "1" ]
 then
 echo "PresharedKey = $($nv get oet$1_psk$2)" >> /tmp/wireguard/oet$1_peer$2_conf
