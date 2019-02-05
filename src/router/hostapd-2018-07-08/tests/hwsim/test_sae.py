@@ -362,6 +362,7 @@ def test_sae_key_lifetime_in_memory(dev, apdev, params):
     # eloop before reading process memory.
     time.sleep(1)
     dev[0].ping()
+    password = password.encode()
     buf = read_process_memory(pid, password)
 
     dev[0].request("DISCONNECT")
@@ -726,7 +727,7 @@ def test_sae_proto_confirm_replay(dev, apdev):
     hdr = "b0003a01" + bssid + addr + bssid + "1000"
 
     hapd.dump_monitor()
-    hapd.request("MGMT_RX_PROCESS freq=2412 datarate=0 ssi_signal=-30 frame=" + req['frame'].encode('hex'))
+    hapd.request("MGMT_RX_PROCESS freq=2412 datarate=0 ssi_signal=-30 frame=" + binascii.hexlify(req['frame']).decode())
 
     logger.info("Confirm")
     for i in range(0, 10):
@@ -740,10 +741,10 @@ def test_sae_proto_confirm_replay(dev, apdev):
         raise Exception("Authentication frame (confirm) not received")
 
     hapd.dump_monitor()
-    hapd.request("MGMT_RX_PROCESS freq=2412 datarate=0 ssi_signal=-30 frame=" + req['frame'].encode('hex'))
+    hapd.request("MGMT_RX_PROCESS freq=2412 datarate=0 ssi_signal=-30 frame=" + binascii.hexlify(req['frame']).decode())
 
     logger.info("Replay Confirm")
-    hapd.request("MGMT_RX_PROCESS freq=2412 datarate=0 ssi_signal=-30 frame=" + req['frame'].encode('hex'))
+    hapd.request("MGMT_RX_PROCESS freq=2412 datarate=0 ssi_signal=-30 frame=" + binascii.hexlify(req['frame']).decode())
 
     logger.info("Association Request")
     for i in range(0, 10):
@@ -757,7 +758,7 @@ def test_sae_proto_confirm_replay(dev, apdev):
         raise Exception("Association Request frame not received")
 
     hapd.dump_monitor()
-    hapd.request("MGMT_RX_PROCESS freq=2412 datarate=0 ssi_signal=-30 frame=" + req['frame'].encode('hex'))
+    hapd.request("MGMT_RX_PROCESS freq=2412 datarate=0 ssi_signal=-30 frame=" + binascii.hexlify(req['frame']).decode())
     ev = hapd.wait_event(["MGMT-TX-STATUS"], timeout=5)
     if ev is None:
         raise Exception("Management frame TX status not reported (1)")
@@ -1321,6 +1322,19 @@ def test_sae_password_id_ecc(dev, apdev):
 def test_sae_password_id_ffc(dev, apdev):
     """SAE and password identifier (FFC)"""
     run_sae_password_id(dev, apdev, "22")
+
+def test_sae_password_id_only(dev, apdev):
+    """SAE and password identifier (exclusively)"""
+    if "SAE" not in dev[0].get_capability("auth_alg"):
+        raise HwsimSkip("SAE not supported")
+    params = hostapd.wpa2_params(ssid="test-sae")
+    params['wpa_key_mgmt'] = 'SAE'
+    params['sae_password'] = 'secret|id=pw id'
+    hapd = hostapd.add_ap(apdev[0], params)
+
+    dev[0].request("SET sae_groups ")
+    dev[0].connect("test-sae", sae_password="secret", sae_password_id="pw id",
+                   key_mgmt="SAE", scan_freq="2412")
 
 def test_sae_forced_anti_clogging_pw_id(dev, apdev):
     """SAE anti clogging (forced and Password Identifier)"""

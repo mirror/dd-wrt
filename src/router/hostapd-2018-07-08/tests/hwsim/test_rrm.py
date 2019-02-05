@@ -721,19 +721,19 @@ class BeaconReport:
                 # 2 = all fixed fields and all elements
                 # Fixed fields: Timestamp[8] BeaconInt[2] CapabInfo[2]
                 self.frame_body = report[0:elen]
-	    if eid == 2:
-	        self.frame_body_fragment_id = report[0:elen]
+            if eid == 2:
+                self.frame_body_fragment_id = report[0:elen]
             if eid == 164:
                 self.last_indication = report[0:elen]
             report = report[elen:]
     def __str__(self):
         txt = "opclass={} channel={} start={} duration={} frame_info={} rcpi={} rsni={} bssid={} antenna_id={} parent_tsf={}".format(self.opclass, self.channel, self.start, self.duration, self.frame_info, self.rcpi, self.rsni, self.bssid_str, self.antenna_id, self.parent_tsf)
         if self.frame_body:
-            txt += " frame_body=" + binascii.hexlify(self.frame_body)
+            txt += " frame_body=" + binascii.hexlify(self.frame_body).decode()
         if self.frame_body_fragment_id:
-            txt += " fragment_id=" + binascii.hexlify(self.frame_body_fragment_id)
+            txt += " fragment_id=" + binascii.hexlify(self.frame_body_fragment_id).decode()
         if self.last_indication:
-            txt += " last_indication=" + binascii.hexlify(self.last_indication)
+            txt += " last_indication=" + binascii.hexlify(self.last_indication).decode()
 
         return txt
 
@@ -874,7 +874,7 @@ def test_rrm_beacon_req_last_frame_indication(dev, apdev):
         if not report.last_indication:
             raise Exception("Last Beacon Report Indication subelement missing")
 
-        last = binascii.hexlify(report.last_indication)
+        last = binascii.hexlify(report.last_indication).decode()
         if last != '01':
             raise Exception("last beacon report indication is not set on last frame")
 
@@ -1083,7 +1083,7 @@ def test_rrm_beacon_req_table_ssid(dev, apdev):
     addr = dev[0].own_addr()
 
     bssid2 = hapd2.own_addr()
-    token = run_req_beacon(hapd, addr, "51000000000002ffffffffffff" + "0007" + "another".encode('hex'))
+    token = run_req_beacon(hapd, addr, "51000000000002ffffffffffff" + "0007" + binascii.hexlify(b"another").decode())
     ev = hapd.wait_event(["BEACON-RESP-RX"], timeout=10)
     if ev is None:
         raise Exception("Beacon report response not received")
@@ -1247,7 +1247,7 @@ def test_rrm_beacon_req_table_vht(dev, apdev):
             elif report.bssid_str == apdev[1]['bssid']:
                 if report.opclass != 117 or report.channel != 48:
                     raise Exception("Incorrect opclass/channel for AP1")
-    except Exception, e:
+    except Exception as e:
         if isinstance(e, Exception) and str(e) == "AP startup failed":
             if not vht_supported():
                 raise HwsimSkip("80 MHz channel not supported in regulatory information")
@@ -1662,7 +1662,7 @@ def test_rrm_beacon_req_passive_scan_vht(dev, apdev):
         logger.info("Received beacon report: " + str(report))
         if report.opclass != 128 or report.channel != 36:
             raise Exception("Incorrect opclass/channel for AP")
-    except Exception, e:
+    except Exception as e:
         if isinstance(e, Exception) and str(e) == "AP startup failed":
             if not vht_supported():
                 raise HwsimSkip("80 MHz channel not supported in regulatory information")
@@ -1712,7 +1712,7 @@ def test_rrm_beacon_req_passive_scan_vht160(dev, apdev):
         logger.info("Received beacon report: " + str(report))
         if report.opclass != 129 or report.channel != 104:
             raise Exception("Incorrect opclass/channel for AP")
-    except Exception, e:
+    except Exception as e:
         if isinstance(e, Exception) and str(e) == "AP startup failed":
             raise HwsimSkip("ZA regulatory rule likely did not have DFS requirement removed")
         raise

@@ -8,7 +8,10 @@ import logging
 logger = logging.getLogger()
 import threading
 import time
-import Queue
+try:
+    from Queue import Queue
+except ImportError:
+    from queue import Queue
 
 import hwsim_utils
 
@@ -227,7 +230,7 @@ def go_neg_init(i_dev, r_dev, pin, i_method, i_intent, res):
     try:
         i_res = i_dev.p2p_go_neg_init(r_dev.p2p_dev_addr(), pin, i_method, timeout=20, go_intent=i_intent)
         logger.debug("i_res: " + str(i_res))
-    except Exception, e:
+    except Exception as e:
         i_res = None
         logger.info("go_neg_init thread caught an exception from p2p_go_neg_init: " + str(e))
     res.put(i_res)
@@ -238,7 +241,7 @@ def go_neg_pin(i_dev, r_dev, i_intent=None, r_intent=None, i_method='enter', r_m
     pin = r_dev.wps_read_pin()
     logger.info("Start GO negotiation " + i_dev.ifname + " -> " + r_dev.ifname)
     r_dev.dump_monitor()
-    res = Queue.Queue()
+    res = Queue()
     t = threading.Thread(target=go_neg_init, args=(i_dev, r_dev, pin, i_method, i_intent, res))
     t.start()
     logger.debug("Wait for GO Negotiation Request on r_dev")
@@ -305,7 +308,7 @@ def go_neg_init_pbc(i_dev, r_dev, i_intent, res, freq, provdisc):
                                       timeout=20, go_intent=i_intent, freq=freq,
                                       provdisc=provdisc)
         logger.debug("i_res: " + str(i_res))
-    except Exception, e:
+    except Exception as e:
         i_res = None
         logger.info("go_neg_init_pbc thread caught an exception from p2p_go_neg_init: " + str(e))
     res.put(i_res)
@@ -318,7 +321,7 @@ def go_neg_pbc(i_dev, r_dev, i_intent=None, r_intent=None, i_freq=None, r_freq=N
     i_dev.p2p_find(social=True)
     logger.info("Start GO negotiation " + i_dev.ifname + " -> " + r_dev.ifname)
     r_dev.dump_monitor()
-    res = Queue.Queue()
+    res = Queue()
     t = threading.Thread(target=go_neg_init_pbc, args=(i_dev, r_dev, i_intent, res, i_freq, provdisc))
     t.start()
     logger.debug("Wait for GO Negotiation Request on r_dev")

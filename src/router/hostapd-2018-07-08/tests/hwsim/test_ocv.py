@@ -22,7 +22,7 @@ from test_ap_psk import parse_eapol, build_eapol, pmk_to_ptk, eapol_key_mic, rec
 
 def make_ocikde(op_class, channel, seg1_idx):
     WLAN_EID_VENDOR_SPECIFIC = 221
-    RSN_KEY_DATA_OCI = "\x00\x0f\xac\x0d"
+    RSN_KEY_DATA_OCI = b"\x00\x0f\xac\x0d"
 
     data = RSN_KEY_DATA_OCI + struct.pack("<BBB", op_class, channel, seg1_idx)
     ocikde = struct.pack("<BB", WLAN_EID_VENDOR_SPECIFIC, len(data)) + data
@@ -35,7 +35,7 @@ def ocv_setup_ap(apdev, params):
     params.update(hostapd.wpa2_params(ssid=ssid, passphrase=passphrase))
     try:
         hapd = hostapd.add_ap(apdev, params)
-    except Exception, e:
+    except Exception as e:
         if "Failed to set hostapd parameter ocv" in str(e):
             raise HwsimSkip("OCV not supported")
         raise
@@ -371,7 +371,7 @@ class APConnection:
         params["ocv"] = ap_ocv
         try:
             self.hapd = hostapd.add_ap(apdev, params)
-        except Exception, e:
+        except Exception as e:
             if "Failed to set hostapd parameter ocv" in str(e):
                 raise HwsimSkip("OCV not supported")
             raise
@@ -403,7 +403,7 @@ class APConnection:
     def test_bad_oci(self, logmsg, op_class, channel, seg1_idx):
         logger.debug("Bad OCI element: " + logmsg)
         if op_class is None:
-            ocikde = ""
+            ocikde = b''
         else:
             ocikde = make_ocikde(op_class, channel, seg1_idx)
 
@@ -598,7 +598,7 @@ def test_wpa2_ocv_ap_retransmit_msg3(dev, apdev):
     params['wpa_disable_eapol_key_retries'] = "1"
     try:
         hapd = hostapd.add_ap(apdev[0], params)
-    except Exception, e:
+    except Exception as e:
         if "Failed to set hostapd parameter ocv" in str(e):
             raise HwsimSkip("OCV not supported")
         raise
@@ -731,7 +731,7 @@ class STAConnection:
 
         try:
             self.hapd = hostapd.add_ap(apdev, params)
-        except Exception, e:
+        except Exception as e:
             if "Failed to set hostapd parameter ocv" in str(e):
                 raise HwsimSkip("OCV not supported")
             raise
@@ -768,7 +768,7 @@ class STAConnection:
     def test_bad_oci(self, logmsg, op_class, channel, seg1_idx, errmsg):
         logger.info("Bad OCI element: " + logmsg)
         if op_class is None:
-            ocikde = ""
+            ocikde = b''
         else:
             ocikde = make_ocikde(op_class, channel, seg1_idx)
 

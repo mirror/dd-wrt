@@ -22,7 +22,7 @@ HWSIM_ATTR_USE_CHANCTX		= 15
 class HWSimController(object):
     def __init__(self):
         self._conn = netlink.Connection(netlink.NETLINK_GENERIC)
-        self._fid = netlink.genl_controller.get_family_id('MAC80211_HWSIM')
+        self._fid = netlink.genl_controller.get_family_id(b'MAC80211_HWSIM')
 
     def create_radio(self, n_channels=None, use_chanctx=False,
                      use_p2p_device=False):
@@ -65,7 +65,7 @@ class HWSimRadio(object):
             raise Exception("Failed to create radio (err:%d)" % self._radio_id)
         try:
             iface = os.listdir('/sys/class/mac80211_hwsim/hwsim%d/net/' % self._radio_id)[0]
-        except Exception,e:
+        except Exception as e:
             self._controller.destroy_radio(self._radio_id)
             raise e
         return self._radio_id, iface
@@ -75,11 +75,11 @@ class HWSimRadio(object):
 
 
 def create(args):
-    print 'Created radio %d' % c.create_radio(n_channels=args.channels,
-                                              use_chanctx=args.chanctx)
+    print('Created radio %d' % c.create_radio(n_channels=args.channels,
+                                              use_chanctx=args.chanctx))
 
 def destroy(args):
-    print c.destroy_radio(args.radio)
+    print(c.destroy_radio(args.radio))
 
 if __name__ == '__main__':
     import argparse

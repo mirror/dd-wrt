@@ -1,5 +1,5 @@
 # EAP Re-authentication Protocol (ERP) tests
-# Copyright (c) 2014-2015, Jouni Malinen <j@w1.fi>
+# Copyright (c) 2014-2019, Jouni Malinen <j@w1.fi>
 #
 # This software may be distributed under the terms of the BSD license.
 # See README for more details.
@@ -211,11 +211,10 @@ def test_erp_radius_eap_methods(dev, apdev):
              password="password")
     erp_test(dev[0], hapd, eap="PAX", identity="erp-pax@example.com",
              password_hex="0123456789abcdef0123456789abcdef")
-    # TODO: PEAP (EMSK)
-    #if "MSCHAPV2" in eap_methods:
-    #    erp_test(dev[0], hapd, eap="PEAP", identity="erp-peap@example.com",
-    #             password="password", ca_cert="auth_serv/ca.pem",
-    #             phase2="auth=MSCHAPV2")
+    if "MSCHAPV2" in eap_methods:
+        erp_test(dev[0], hapd, eap="PEAP", identity="erp-peap@example.com",
+                 password="password", ca_cert="auth_serv/ca.pem",
+                 phase2="auth=MSCHAPV2")
     erp_test(dev[0], hapd, eap="PSK", identity="erp-psk@example.com",
              password_hex="0123456789abcdef0123456789abcdef")
     if "PWD" in eap_methods:
@@ -276,6 +275,7 @@ def test_erp_key_lifetime_in_memory(dev, apdev, params):
     # eloop before reading process memory.
     time.sleep(1)
     dev[0].ping()
+    password = password.encode()
     buf = read_process_memory(pid, password)
 
     dev[0].request("DISCONNECT")
@@ -515,7 +515,7 @@ def test_erp_home_realm_oom(dev, apdev):
                        ca_cert="auth_serv/ca.pem", phase2="auth=PAP",
                        erp="1", scan_freq="2412", wait_connect=False)
         dev[0].wait_connected(timeout=10)
-        if range > 1:
+        if count > 1:
             continue
         with alloc_fail(dev[0], count, "eap_get_realm"):
             dev[0].request("DISCONNECT")

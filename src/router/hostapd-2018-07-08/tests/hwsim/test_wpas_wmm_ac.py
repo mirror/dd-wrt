@@ -8,6 +8,7 @@ from remotehost import remote_compatible
 import logging
 logger = logging.getLogger()
 import struct
+import sys
 
 import hwsim_utils
 import hostapd
@@ -60,7 +61,7 @@ def test_tspec(dev, apdev):
     try:
         dev[0].add_ts(tsid, 3)
         raise Exception("ADDTS succeeded although it should have failed")
-    except Exception, e:
+    except Exception as e:
         if not str(e).startswith("ADDTS failed"):
             raise
     status = dev[0].request("WMM_AC_STATUS")
@@ -77,7 +78,7 @@ def test_tspec(dev, apdev):
     try:
         dev[0].add_ts(tsid, 5)
         raise Exception("ADDTS succeeded although it should have failed")
-    except Exception, e:
+    except Exception as e:
         if not str(e).startswith("ADDTS failed"):
             raise
 
@@ -93,13 +94,13 @@ def test_tspec(dev, apdev):
     try:
         dev[0].add_ts(tsid, 7, direction="uplink")
         raise Exception("ADDTS succeeded although it should have failed")
-    except Exception, e:
+    except Exception as e:
         if not str(e).startswith("ADDTS failed"):
             raise
     try:
         dev[0].add_ts(tsid, 7, direction="bidi")
         raise Exception("ADDTS succeeded although it should have failed")
-    except Exception, e:
+    except Exception as e:
         if not str(e).startswith("ADDTS failed"):
             raise
 
@@ -107,7 +108,7 @@ def test_tspec(dev, apdev):
     try:
         dev[0].del_ts(tsid)
         raise Exception("DELTS succeeded although it should have failed")
-    except Exception, e:
+    except Exception as e:
         if not str(e).startswith("DELTS failed"):
             raise
 
@@ -171,7 +172,7 @@ def test_tspec_protocol(dev, apdev):
     hapd.mgmt_tx(msg)
 
     # too short WMM element
-    msg['payload'] = struct.pack('BBBB', 17, 1, dialog, 0) + payload[4:] + '\xdd\x06\x00\x50\xf2\x02\x02\x01'
+    msg['payload'] = struct.pack('BBBB', 17, 1, dialog, 0) + payload[4:] + b'\xdd\x06\x00\x50\xf2\x02\x02\x01'
     hapd.mgmt_tx(msg)
 
     # DELTS
@@ -201,7 +202,8 @@ def test_tspec_protocol(dev, apdev):
     msg['sa'] = apdev[0]['bssid']
 
     # modified parameters
-    msg['payload'] = struct.pack('BBBB', 17, 1, dialog, 1) + payload[4:12] + struct.pack('B', ord(payload[12]) & ~0x60) + payload[13:]
+    p12int = payload[12] if sys.version_info[0] > 2 else ord(payload[12])
+    msg['payload'] = struct.pack('BBBB', 17, 1, dialog, 1) + payload[4:12] + struct.pack('B', p12int & ~0x60) + payload[13:]
     hapd.mgmt_tx(msg)
 
     # reject request
@@ -231,7 +233,7 @@ def test_tspec_not_enabled(dev, apdev):
     try:
         dev[0].add_ts(5, 6)
         raise Exception("ADDTS succeeded although it should have failed")
-    except Exception, e:
+    except Exception as e:
         if not str(e).startswith("ADDTS failed"):
             raise
 
@@ -239,7 +241,7 @@ def test_tspec_not_enabled(dev, apdev):
     try:
         dev[0].del_ts(5)
         raise Exception("DELTS succeeded although it should have failed")
-    except Exception, e:
+    except Exception as e:
         if not str(e).startswith("DELTS failed"):
             raise
 
