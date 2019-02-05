@@ -23,6 +23,8 @@ CONFIGURE_ARGS+= \
         --with-zlib
 
 lighttpd-configure: pcre-configure pcre openssl
+	cd lighttpd && autoreconf -fiv || exit 1
+	cd lighttpd && rm -Rf autom4te.cache
 	cd lighttpd && ./configure --host=$(ARCH)-linux $(CONFIGURE_ARGS) CFLAGS="-fPIC -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) -I$(TOP)/pcre -I$(TOP)/zlib" CPPFLAGS="$(COPTS) $(MIPS16_OPT)" LDFLAGS="-L$(TOP)/pcre/.libs -lpthread -lpcre -L$(TOP)/zlib $(LDFLAGS) -lz" PCRE_LIB="-lpcre" PCRECONFIG="true"
 
 lighttpd: openssl
