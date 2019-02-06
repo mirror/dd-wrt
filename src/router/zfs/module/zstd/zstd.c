@@ -464,8 +464,9 @@ zstd_alloc(void *opaque __unused, size_t size)
 		 */
 #ifdef _KERNEL
 		z = kvmem_zalloc(nbytes, KM_SLEEP);
-#endif
+#else
 		z = kmem_zalloc(nbytes, KM_SLEEP);
+#endif
 		if (z)
 			newtype = ZSTD_KMEM_UNKNOWN;
 #ifdef _KERNEL
