@@ -142,7 +142,7 @@ spl_kvmalloc(size_t size, gfp_t flags)
 	gfp_t kmalloc_flags = flags;
 	void *ret;
 #ifdef HAVE_KVMALLOC
-	if (flags & GFP_KERNEL) {
+	if ((flags & GFP_KERNEL) == GFP_KERNEL) {
 		return (kvmalloc(size, flags));
 	}
 #endif
