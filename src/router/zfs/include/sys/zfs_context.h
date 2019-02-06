@@ -400,6 +400,9 @@ void procfs_list_add(procfs_list_t *procfs_list, void *p);
 #define	vmem_alloc(_s, _f)	kmem_alloc(_s, _f)
 #define	vmem_zalloc(_s, _f)	kmem_zalloc(_s, _f)
 #define	vmem_free(_b, _s)	kmem_free(_b, _s)
+#define	kvmem_alloc(_s, _f)	kmem_alloc(_s, _f)
+#define	kvmem_zalloc(_s, _f)	kmem_zalloc(_s, _f)
+#define	kvmem_free(_b, _s)	kmem_free(_b, _s)
 #define	kmem_cache_create(_a, _b, _c, _d, _e, _f, _g, _h, _i) \
 	umem_cache_create(_a, _b, _c, _d, _e, _f, _g, _h, _i)
 #define	kmem_cache_destroy(_c)	umem_cache_destroy(_c)
