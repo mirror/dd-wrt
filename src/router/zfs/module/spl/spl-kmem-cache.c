@@ -203,11 +203,7 @@ kv_alloc(spl_kmem_cache_t *skc, int size, int flags)
 		ASSERT(ISP2(size));
 		ptr = (void *)__get_free_pages(lflags, get_order(size));
 	} else if (skc->skc_flags & KMC_KVMEM) {
-		    printk(KERN_INFO "kvmalloc try %d\n",size);
 		ptr = kvmalloc(size, lflags);
-		if (!ptr) {
-		    printk(KERN_INFO "kvmalloc fail\n");
-		}
 	} else {
 		ptr = __vmalloc(size, lflags | __GFP_HIGHMEM, PAGE_KERNEL);
 	}
