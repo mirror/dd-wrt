@@ -133,9 +133,11 @@ strfree(char *str)
 }
 EXPORT_SYMBOL(strfree);
 
-#if !defined(HAVE_KVMALLOC)
+#ifndef __GFP_REPEAT
+#define		__GFP_REPEAT __GFP_RETRY_MAYFAIL
+#endif
 void *
-kvmalloc(size_t size, gfp_t flags)
+spl_kvmalloc(size_t size, gfp_t flags)
 {
 	gfp_t kmalloc_flags = flags;
 	void *ret;
@@ -150,9 +152,9 @@ kvmalloc(size_t size, gfp_t flags)
 		return (ret);
 	return (__vmalloc(size, flags | __GFP_HIGHMEM, PAGE_KERNEL));
 }
-
-void 
-kvfree(const void *addr)
+#undef __GFP_REPEAT
+void
+spl_kvfree(const void *addr)
 {
 	if (is_vmalloc_addr(addr))
 		vfree(addr);
@@ -160,7 +162,6 @@ kvfree(const void *addr)
 		kfree(addr);
 }
 
-#endif
 /*
  * General purpose unified implementation of kmem_alloc(). It is an
  * amalgamation of Linux and Illumos allocator design. It should never be
@@ -190,7 +191,7 @@ spl_kmem_alloc_impl(size_t size, int flags, int node)
 	}
 
 	if (flags & KM_KVMEM) {
-		return (kvmalloc(size, lflags));
+		return (spl_kvmalloc(size, lflags));
 	}
 	/*
 	 * Use a loop because kmalloc_node() can fail when GFP_KERNEL is used

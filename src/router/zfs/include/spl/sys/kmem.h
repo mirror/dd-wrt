@@ -29,12 +29,10 @@
 #include <linux/slab.h>
 #include <linux/sched.h>
 #include <linux/mm.h>
-#if !defined(HAVE_KVMALLOC)
 #include <linux/vmalloc.h>
 #include <linux/slab.h>
-void *kvmalloc(size_t size, gfp_t flags);
-void kvfree(const void *addr);
-#endif
+void *spl_kvmalloc(size_t size, gfp_t flags);
+void spl_kvfree(const void *addr);
 
 
 extern int kmem_debugging(void);
