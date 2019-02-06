@@ -497,7 +497,7 @@ void start_sysinit(void)
 	setWirelessLed(0, 11);
 	setWirelessLed(1, 14);
 #elif HAVE_CPE880
-	setWirelessLed(1, 12);
+	setWirelessLed(0, 12);
 	setSwitchLED(19, "0x01");
 
 	if (!nvram_exists("wlanled") || !nvram_matchi("wlanled", 0))
