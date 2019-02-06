@@ -133,6 +133,24 @@ strfree(char *str)
 }
 EXPORT_SYMBOL(strfree);
 
+#if !defined(HAVE_KVMALLOC)
+void *
+kvmalloc(size_t size, gfp_t flags)
+{
+	gfp_t kmalloc_flags = flags;
+	void *ret;
+	if (size > PAGE_SIZE) {
+		kmalloc_flags |= __GFP_NOWARN;
+		if (!(kmalloc_flags & __GFP_REPEAT) ||
+		    (size <= PAGE_SIZE << PAGE_ALLOC_COSTLY_ORDER))
+			kmalloc_flags |= __GFP_NORETRY;
+	}
+	ret = kmalloc(size, kmalloc_flags);
+	if (ret || size <= PAGE_SIZE)
+		return (ret);
+	return (__vmalloc(size, flags, PAGE_KERNEL));
+}
+#endif
 /*
  * General purpose unified implementation of kmem_alloc(). It is an
  * amalgamation of Linux and Illumos allocator design. It should never be
@@ -152,8 +170,8 @@ spl_kmem_alloc_impl(size_t size, int flags, int node)
 	 * Allocations larger than spl_kmem_alloc_warn should be performed
 	 * through the vmem_alloc()/vmem_zalloc() interfaces.
 	 */
-	if ((spl_kmem_alloc_warn > 0) && (size > spl_kmem_alloc_warn) && 
-	    !(flags & KM_VMEM)) {
+	if ((spl_kmem_alloc_warn > 0) && (size > spl_kmem_alloc_warn) &&
+	    !(flags & KM_VMEM) && !(flags & KM_KVMEM)) {
 		printk(KERN_WARNING
 		    "Large kmem_alloc(%lu, 0x%x), please file an issue at:\n"
 		    "https://github.com/zfsonlinux/zfs/issues/new\n",
@@ -161,6 +179,9 @@ spl_kmem_alloc_impl(size_t size, int flags, int node)
 		dump_stack();
 	}
 
+	if (flags & KM_KVMEM) {
+		return (kvmalloc(size, lflags));
+	}
 	/*
 	 * Use a loop because kmalloc_node() can fail when GFP_KERNEL is used
 	 * unlike kmem_alloc() with KM_SLEEP on Illumos.
@@ -180,7 +201,8 @@ spl_kmem_alloc_impl(size_t size, int flags, int node)
 		 */
 		if ((size > spl_kmem_alloc_max) || use_vmem) {
 			if (flags & KM_VMEM) {
-				ptr = __vmalloc(size, lflags | __GFP_HIGHMEM, PAGE_KERNEL);
+				ptr = __vmalloc(size, lflags | __GFP_HIGHMEM,
+				    PAGE_KERNEL);
 			} else {
 				return (NULL);
 			}
