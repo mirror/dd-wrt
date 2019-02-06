@@ -33,6 +33,7 @@
 #include <linux/vmalloc.h>
 #include <linux/slab.h>
 void *kvmalloc(size_t size, gfp_t flags);
+void kvfree(const void *addr);
 #endif
 
 
