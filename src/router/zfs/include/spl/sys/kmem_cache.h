@@ -52,7 +52,7 @@ enum {
 	KMC_BIT_DESTROY		= 17,	/* Destroy in progress */
 	KMC_BIT_TOTAL		= 18,	/* Proc handler helper bit */
 	KMC_BIT_ALLOC		= 19,	/* Proc handler helper bit */
-	KMC_BIT_KVMEM		= 21,	/* Use kvmalloc linux allocator  */
+	KMC_BIT_KVMEM		= 20,	/* Use kvmalloc linux allocator  */
 	KMC_BIT_MAX		= 21,	/* Proc handler helper bit */
 };
 

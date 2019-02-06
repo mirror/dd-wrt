@@ -150,6 +150,16 @@ kvmalloc(size_t size, gfp_t flags)
 		return (ret);
 	return (__vmalloc(size, flags, PAGE_KERNEL));
 }
+
+void 
+kvfree(const void *addr)
+{
+	if (is_vmalloc_addr(addr))
+		vfree(addr);
+	else
+		kfree(addr);
+}
+
 #endif
 /*
  * General purpose unified implementation of kmem_alloc(). It is an
