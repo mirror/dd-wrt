@@ -19,4 +19,10 @@ static void curve25519_generate_secret(u8 secret[CURVE25519_KEY_SIZE]);
 static bool __must_check curve25519_generate_public(
 	u8 pub[CURVE25519_KEY_SIZE], const u8 secret[CURVE25519_KEY_SIZE]);
 
+static inline void curve25519_clamp_secret(u8 secret[CURVE25519_KEY_SIZE])
+{
+	secret[0] &= 248;
+	secret[31] = (secret[31] & 127) | 64;
+}
+
 #endif /* _ZINC_CURVE25519_H */

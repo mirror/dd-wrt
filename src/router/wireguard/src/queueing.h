@@ -23,7 +23,7 @@ static int wg_packet_queue_init(struct crypt_queue *queue, work_func_t function,
 			 bool multicore, unsigned int len);
 static void wg_packet_queue_free(struct crypt_queue *queue, bool multicore);
 static struct multicore_worker __percpu *
-wg_packet_alloc_percpu_multicore_worker(work_func_t function, void *ptr);
+wg_packet_percpu_multicore_worker_alloc(work_func_t function, void *ptr);
 
 /* receive.c APIs: */
 static void wg_packet_receive(struct wg_device *wg, struct sk_buff *skb);
