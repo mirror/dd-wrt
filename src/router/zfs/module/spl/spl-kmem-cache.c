@@ -205,7 +205,19 @@ kv_alloc(spl_kmem_cache_t *skc, int size, int flags)
 	} else if (skc->skc_flags & KMC_KVMEM) {
 		ptr = spl_kvmalloc(size, lflags);
 	} else {
-		ptr = __vmalloc(size, lflags | __GFP_HIGHMEM, PAGE_KERNEL);
+	/*
+	 * GFP_KERNEL allocations can safe use kvmalloc allocator which
+	 * may increase performance since vmalloc overhead might not
+	 * be applicated since enough contiguous memory was available
+	 * at allocation time. unfortunatly the slab statistic will
+	 * show allocations as VMEM without any care if kmalloc was
+	 * used in reality. but this is just cosmetic
+	 */
+		if (lflags == GFP_KERNEL)
+			ptr = spl_kvmalloc(size, lflags);
+		else
+			ptr = __vmalloc(size, lflags | __GFP_HIGHMEM,
+			    PAGE_KERNEL);
 	}
 
 	/* Resulting allocated memory will be page aligned */
@@ -232,10 +244,8 @@ kv_free(spl_kmem_cache_t *skc, void *ptr, int size)
 	if (skc->skc_flags & KMC_KMEM) {
 		ASSERT(ISP2(size));
 		free_pages((unsigned long)ptr, get_order(size));
-	} else if (skc->skc_flags & KMC_KVMEM) {
-		spl_kvfree(ptr);
 	} else {
-		vfree(ptr);
+		spl_kvfree(ptr);
 	}
 }
 
@@ -973,7 +983,7 @@ spl_kmem_cache_create(char *name, size_t size, size_t align,
 
 		/*
 		 * All other objects are considered large and are placed
-		 * on vmem backed slabs.
+		 * on vmem or kvmem backed slabs
 		 */
 		else
 			skc->skc_flags |= KMC_VMEM;
