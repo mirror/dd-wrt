@@ -223,7 +223,11 @@ spl_kmem_alloc_impl(size_t size, int flags, int node)
 				return (NULL);
 			}
 		} else {
-			ptr = kmalloc_node(size, lflags, node);
+			if (flags & KM_VMEM)
+				ptr = kmalloc_node(size,
+				    lflags | __GFP_NORETRY, node);
+			else
+				ptr = kmalloc_node(size, lflags, node);
 		}
 
 		if (likely(ptr) || (flags & KM_NOSLEEP))
