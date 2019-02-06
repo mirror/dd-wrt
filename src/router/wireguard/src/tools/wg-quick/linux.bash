@@ -14,6 +14,7 @@ export PATH="${SELF%/*}:$PATH"
 WG_CONFIG=""
 INTERFACE=""
 ADDRESSES=( )
+
 MTU=""
 DNS=( )
 TABLE=""
