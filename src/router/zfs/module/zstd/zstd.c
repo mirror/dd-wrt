@@ -451,7 +451,6 @@ zstd_alloc(void *opaque __unused, size_t size)
 					memset(z, 0, nbytes);
 					z->isvm = B_FALSE;
 				}
-				
 			}
 			break;
 		}
@@ -464,15 +463,15 @@ zstd_alloc(void *opaque __unused, size_t size)
 		 * so we need to use standard vmem allocator
 		 */
 #ifdef _KERNEL
-		if (nbytes > spl_kmem_alloc_max || \
-		    nbytes > spl_kmem_alloc_warn) {
-			z = vmem_zalloc(nbytes, KM_SLEEP);
-		}
-		else
+		z = kvmem_zalloc(nbytes, KM_SLEEP);
 #endif
-			z = kmem_zalloc(nbytes, KM_SLEEP);
+		z = kmem_zalloc(nbytes, KM_SLEEP);
 		if (z)
 			newtype = ZSTD_KMEM_UNKNOWN;
+#ifdef _KERNEL
+		else
+			printk(KERN_INFO "allocation of %ld failed, disable compression\n", size);
+#endif
 	}
 	/* fallback if everything fails */
 	if (!z && zstd_vmem_cache[type].vm && type == ZSTD_KMEM_DCTX) {
@@ -484,6 +483,9 @@ zstd_alloc(void *opaque __unused, size_t size)
 		zstd_vmem_cache[type].inuse = B_TRUE;
 		z = zstd_vmem_cache[type].vm;
 		if (z) {
+#ifdef _KERNEL
+			printk(KERN_INFO "use fallback for decompression\n");
+#endif
 			memset(z, 0, nbytes);
 			z->isvm = B_TRUE;
 		}
@@ -558,7 +560,7 @@ static int zstd_meminit(void)
 	    + sizeof (struct zstd_kmem), PAGESIZE);
 	zstd_kmem_cache[1] = kmem_cache_create(
 	    zstd_cache_config[1].cache_name, zstd_cache_size[1].kmem_size,
-	    0, NULL, NULL, NULL, NULL, NULL, 0);
+	    0, NULL, NULL, NULL, NULL, NULL, KMC_KVMEM);
 	zstd_cache_size[1].kmem_flags = zstd_cache_config[1].flags;
 	/*
 	 * Estimate the size of the ZSTD CCtx workspace required for each record
@@ -577,7 +579,7 @@ static int zstd_meminit(void)
 		zstd_kmem_cache[i] = kmem_cache_create(
 		    zstd_cache_config[i].cache_name,
 		    zstd_cache_size[i].kmem_size,
-		    0, NULL, NULL, NULL, NULL, NULL, 0);
+		    0, NULL, NULL, NULL, NULL, NULL, KMC_KVMEM);
 	}
 
 	/* Estimate the size of the decompression context */
@@ -586,7 +588,8 @@ static int zstd_meminit(void)
 	zstd_cache_size[i].kmem_size = P2ROUNDUP(ZSTD_estimateDCtxSize() +
 	    sizeof (struct zstd_kmem), PAGESIZE);
 	zstd_kmem_cache[i] = kmem_cache_create(zstd_cache_config[i].cache_name,
-	    zstd_cache_size[i].kmem_size, 0, NULL, NULL, NULL, NULL, NULL, 0);
+	    zstd_cache_size[i].kmem_size, 0, NULL, NULL, NULL, NULL, NULL, 
+	    KMC_KVMEM);
 	zstd_cache_size[i].kmem_flags = zstd_cache_config[i].flags;
 
 	create_vmem_cache(&zstd_vmem_cache[i], \
