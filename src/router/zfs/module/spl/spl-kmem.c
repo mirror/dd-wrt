@@ -152,7 +152,7 @@ spl_kvmalloc(size_t size, gfp_t flags)
 		    (size <= PAGE_SIZE << PAGE_ALLOC_COSTLY_ORDER))
 			kmalloc_flags |= __GFP_NORETRY;
 	}
-	ret = kmalloc(size, kmalloc_flags);
+	ret = kmalloc_node(size, kmalloc_flags, NUMA_NO_NODE);
 	if (ret || size <= PAGE_SIZE)
 		return (ret);
 	return (__vmalloc(size, flags | __GFP_HIGHMEM, PAGE_KERNEL));
@@ -178,7 +178,6 @@ inline void *
 spl_kmem_alloc_impl(size_t size, int flags, int node)
 {
 	gfp_t lflags = kmem_flags_convert(flags);
-	int use_vmem = 0;
 	void *ptr;
 
 	/*
@@ -215,7 +214,7 @@ spl_kmem_alloc_impl(size_t size, int flags, int node)
 		 * impact performance so frequently manipulating the virtual
 		 * address space is strongly discouraged.
 		 */
-		if ((size > spl_kmem_alloc_max) || use_vmem) {
+		if ((size > spl_kmem_alloc_max)) {
 			if (flags & KM_VMEM) {
 				ptr = __vmalloc(size, lflags | __GFP_HIGHMEM,
 				    PAGE_KERNEL);
@@ -224,23 +223,13 @@ spl_kmem_alloc_impl(size_t size, int flags, int node)
 			}
 		} else {
 			if (flags & KM_VMEM)
-				ptr = kmalloc_node(size,
-				    lflags | __GFP_NORETRY, node);
+				ptr = spl_kvmalloc(size, lflags);
 			else
 				ptr = kmalloc_node(size, lflags, node);
 		}
 
-		if (likely(ptr) || (flags & KM_NOSLEEP))
+		if (likely(ptr) || (flags & KM_NOSLEEP) || (flags & KM_ONCE))
 			return (ptr);
-
-		/*
-		 * For vmem_alloc() and vmem_zalloc() callers retry immediately
-		 * using __vmalloc() which is unlikely to fail.
-		 */
-		if ((flags & KM_VMEM) && (use_vmem == 0))  {
-			use_vmem = 1;
-			continue;
-		}
 
 		/*
 		 * Use cond_resched() instead of congestion_wait() to avoid

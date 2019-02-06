@@ -582,7 +582,7 @@ static int zstd_meminit(void)
 	zstd_cache_size[i].kmem_size = P2ROUNDUP(ZSTD_estimateDCtxSize() +
 	    sizeof (struct zstd_kmem), PAGESIZE);
 	zstd_kmem_cache[i] = kmem_cache_create(zstd_cache_config[i].cache_name,
-	    zstd_cache_size[i].kmem_size, 0, NULL, NULL, NULL, NULL, NULL, 
+	    zstd_cache_size[i].kmem_size, 0, NULL, NULL, NULL, NULL, NULL,
 	    KMC_KVMEM);
 	zstd_cache_size[i].kmem_flags = zstd_cache_config[i].flags;
 
