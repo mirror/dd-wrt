@@ -203,7 +203,11 @@ kv_alloc(spl_kmem_cache_t *skc, int size, int flags)
 		ASSERT(ISP2(size));
 		ptr = (void *)__get_free_pages(lflags, get_order(size));
 	} else if (skc->skc_flags & KMC_KVMEM) {
+		    printk(KERN_INFO "kvmalloc try %d\n",size);
 		ptr = kvmalloc(size, lflags);
+		if (!ptr) {
+		    printk(KERN_INFO "kvmalloc fail\n");
+		}
 	} else {
 		ptr = __vmalloc(size, lflags | __GFP_HIGHMEM, PAGE_KERNEL);
 	}
@@ -232,6 +236,8 @@ kv_free(spl_kmem_cache_t *skc, void *ptr, int size)
 	if (skc->skc_flags & KMC_KMEM) {
 		ASSERT(ISP2(size));
 		free_pages((unsigned long)ptr, get_order(size));
+	} else if (skc->skc_flags & KMC_KVMEM) {
+		kvfree(ptr);	
 	} else {
 		vfree(ptr);
 	}
@@ -1246,7 +1252,7 @@ spl_cache_grow(spl_kmem_cache_t *skc, int flags, void **obj)
 	 * However, this can't be applied to KVM_VMEM due to a bug that
 	 * __vmalloc() doesn't honor gfp flags in page table allocation.
 	 */
-	if (!(skc->skc_flags & KMC_VMEM)) {
+	if (!(skc->skc_flags & KMC_VMEM) && !(skc->skc_flags & KMC_KVMEM)) {
 		rc = __spl_cache_grow(skc, flags | KM_NOSLEEP);
 		if (rc == 0)
 			return (0);
