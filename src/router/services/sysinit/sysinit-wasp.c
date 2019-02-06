@@ -497,11 +497,11 @@ void start_sysinit(void)
 	setWirelessLed(0, 11);
 	setWirelessLed(1, 14);
 #elif HAVE_CPE880
-	setWirelessLed(0, 12);
+	setWirelessLed(1, 12);
 	setSwitchLED(19, "0x01");
 
 	if (!nvram_matchi("wlanled", 0))
-		eval("/sbin/wlanled", "-l", "generic_17:-94", "-l", "generic_20:-80", "-l", "generic_21:-73", "-l", "generic_22:-65");
+		eval("/sbin/wlanled", "-L", "generic_17:-94", "-L", "generic_20:-80", "-L", "generic_21:-73", "-L", "generic_22:-65");
 #elif HAVE_CPE890
 	writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
 	if (!nvram_matchi("wlanled", 0))
