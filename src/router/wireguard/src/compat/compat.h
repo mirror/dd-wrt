@@ -475,7 +475,7 @@ static inline void *kvmalloc_ours(size_t size, gfp_t flags)
 	ret = kmalloc(size, kmalloc_flags);
 	if (ret || size <= PAGE_SIZE)
 		return ret;
-	return __vmalloc(size, flags, PAGE_KERNEL);
+	return __vmalloc(size, flags | __GFP_HIGHMEM, PAGE_KERNEL);
 }
 static inline void *kvzalloc_ours(size_t size, gfp_t flags)
 {
