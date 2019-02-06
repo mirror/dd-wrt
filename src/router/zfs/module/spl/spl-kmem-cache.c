@@ -203,7 +203,7 @@ kv_alloc(spl_kmem_cache_t *skc, int size, int flags)
 		ASSERT(ISP2(size));
 		ptr = (void *)__get_free_pages(lflags, get_order(size));
 	} else if (skc->skc_flags & KMC_KVMEM) {
-		ptr = kvmalloc(size, lflags);
+		ptr = spl_kvmalloc(size, lflags);
 	} else {
 		ptr = __vmalloc(size, lflags | __GFP_HIGHMEM, PAGE_KERNEL);
 	}
@@ -233,7 +233,7 @@ kv_free(spl_kmem_cache_t *skc, void *ptr, int size)
 		ASSERT(ISP2(size));
 		free_pages((unsigned long)ptr, get_order(size));
 	} else if (skc->skc_flags & KMC_KVMEM) {
-		kvfree(ptr);	
+		spl_kvfree(ptr);
 	} else {
 		vfree(ptr);
 	}
