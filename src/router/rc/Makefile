@@ -561,7 +561,7 @@ ifeq ($(CONFIG_CPE890),y)
 CFLAGS += -DHAVE_CPE890 -DHAVE_WLANLED -D_GNU_SOURCE  -I$(TOP)/libubox  -I$(TOP)/libnl-tiny/include
 endif
 ifeq ($(CONFIG_CPE880),y)
-CFLAGS += -DHAVE_CPE880
+CFLAGS += -DHAVE_CPE880 -DHAVE_WLANLED -D_GNU_SOURCE  -I$(TOP)/libubox  -I$(TOP)/libnl-tiny/include
 endif
 
 
