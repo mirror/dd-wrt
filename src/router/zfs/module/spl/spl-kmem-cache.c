@@ -203,7 +203,7 @@ kv_alloc(spl_kmem_cache_t *skc, int size, int flags)
 		ASSERT(ISP2(size));
 		ptr = (void *)__get_free_pages(lflags, get_order(size));
 	} else if (skc->skc_flags & KMC_KVMEM) {
-		ptr = kvmalloc(size, lflags | __GFP_HIGHMEM);
+		ptr = kvmalloc(size, lflags);
 	} else {
 		ptr = __vmalloc(size, lflags | __GFP_HIGHMEM, PAGE_KERNEL);
 	}
