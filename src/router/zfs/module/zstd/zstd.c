@@ -463,7 +463,7 @@ zstd_alloc(void *opaque __unused, size_t size)
 		 * so we need to use standard vmem allocator
 		 */
 #ifdef _KERNEL
-		z = kvmem_zalloc(nbytes, KM_SLEEP);
+		z = vmem_zalloc(nbytes, KM_SLEEP);
 #else
 		z = kmem_zalloc(nbytes, KM_SLEEP);
 #endif
