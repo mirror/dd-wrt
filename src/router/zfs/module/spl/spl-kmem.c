@@ -139,6 +139,11 @@ EXPORT_SYMBOL(strfree);
 void *
 spl_kvmalloc(size_t size, gfp_t flags)
 {
+#ifdef HAVE_KVMALLOC
+	if (flags & GFP_KERNEL) {
+		return (kvmalloc(size, flags));
+	}
+#endif
 	gfp_t kmalloc_flags = flags;
 	void *ret;
 	if (size > PAGE_SIZE) {
@@ -152,7 +157,7 @@ spl_kvmalloc(size_t size, gfp_t flags)
 		return (ret);
 	return (__vmalloc(size, flags | __GFP_HIGHMEM, PAGE_KERNEL));
 }
-#undef __GFP_REPEAT
+
 void
 spl_kvfree(const void *addr)
 {
