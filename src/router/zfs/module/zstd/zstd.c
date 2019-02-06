@@ -469,10 +469,6 @@ zstd_alloc(void *opaque __unused, size_t size)
 #endif
 		if (z)
 			newtype = ZSTD_KMEM_UNKNOWN;
-#ifdef _KERNEL
-		else
-			printk(KERN_INFO "allocation of %ld failed, disable compression\n", size);
-#endif
 	}
 	/* fallback if everything fails */
 	if (!z && zstd_vmem_cache[type].vm && type == ZSTD_KMEM_DCTX) {
@@ -484,9 +480,6 @@ zstd_alloc(void *opaque __unused, size_t size)
 		zstd_vmem_cache[type].inuse = B_TRUE;
 		z = zstd_vmem_cache[type].vm;
 		if (z) {
-#ifdef _KERNEL
-			printk(KERN_INFO "use fallback for decompression\n");
-#endif
 			memset(z, 0, nbytes);
 			z->isvm = B_TRUE;
 		}

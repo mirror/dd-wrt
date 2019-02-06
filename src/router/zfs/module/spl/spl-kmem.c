@@ -139,13 +139,13 @@ EXPORT_SYMBOL(strfree);
 void *
 spl_kvmalloc(size_t size, gfp_t flags)
 {
+	gfp_t kmalloc_flags = flags;
+	void *ret;
 #ifdef HAVE_KVMALLOC
 	if (flags & GFP_KERNEL) {
 		return (kvmalloc(size, flags));
 	}
 #endif
-	gfp_t kmalloc_flags = flags;
-	void *ret;
 	if (size > PAGE_SIZE) {
 		kmalloc_flags |= __GFP_NOWARN;
 		if (!(kmalloc_flags & __GFP_REPEAT) ||
