@@ -644,7 +644,8 @@ backup_do_embed(dmu_sendarg_t *dsp, const blkptr_t *bp)
 	 * Compression function must be legacy, or explicitly enabled.
 	 */
 	if ((BP_GET_COMPRESS(bp) >= ZIO_COMPRESS_LEGACY_FUNCTIONS &&
-	    !(dsp->dsa_featureflags & DMU_BACKUP_FEATURE_LZ4)))
+	    !(dsp->dsa_featureflags & DMU_BACKUP_FEATURE_LZ4) &&
+	    !(dsp->dsa_featureflags & DMU_BACKUP_FEATURE_ZSTD)))
 		return (B_FALSE);
 
 	/*
