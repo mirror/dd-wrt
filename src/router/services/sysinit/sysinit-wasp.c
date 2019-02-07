@@ -499,6 +499,10 @@ void start_sysinit(void)
 #elif HAVE_CPE880
 	setWirelessLed(0, 12);
 	setSwitchLED(19, "0x01");
+	writestr("/sys/devices/platform/leds-gpio/leds/generic_17/brightness", "255");
+	writestr("/sys/devices/platform/leds-gpio/leds/generic_20/brightness", "255");
+	writestr("/sys/devices/platform/leds-gpio/leds/generic_21/brightness", "255");
+	writestr("/sys/devices/platform/leds-gpio/leds/generic_22/brightness", "255");
 
 	if (!nvram_exists("wlanled") || !nvram_matchi("wlanled", 0))
 		eval("/sbin/wlanled", "-L", "generic_17:-94", "-L", "generic_20:-80", "-L", "generic_21:-73", "-L", "generic_22:-65");
