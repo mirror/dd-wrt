@@ -1195,6 +1195,7 @@ static void resetbtn_period_check(int sig)
 #elif defined(HAVE_WDR4300)
 //      sesgpio = 0x110;
 //      val |= get_gpio(16) << 16;      //aoss pushbutton
+#elif defined(HAVE_CPE880)
 #elif defined(HAVE_WNDR3700V4)
 	wifi24gpio = 0x10f;
 	sesgpio = 0x10c;
