@@ -559,7 +559,7 @@ struct sk_buff {
 				struct skb_mstamp skb_mstamp;
 			};
 		};
-		struct rb_node	rbnode; /* used in netem, ip4 defrag, and tcp stack */
+		struct rb_node	rbnode; /* used in netem & tcp stack */
 	};
 	struct sock		*sk;
 	struct net_device	*dev;
@@ -2293,7 +2293,7 @@ static inline void __skb_queue_purge(struct sk_buff_head *list)
 		kfree_skb(skb);
 }
 
-unsigned int skb_rbtree_purge(struct rb_root *root);
+void skb_rbtree_purge(struct rb_root *root);
 
 void *netdev_alloc_frag(unsigned int fragsz);
 
