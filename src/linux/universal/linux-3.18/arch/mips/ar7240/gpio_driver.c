@@ -472,7 +472,7 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 #elif defined(CONFIG_XD3200)
 	 .active_low = 1,
 #elif defined(CONFIG_CPE880)
-	 .active_low = 1,
+	 .active_low = 0,
 #else
 	 .active_low = 0,
 #endif
