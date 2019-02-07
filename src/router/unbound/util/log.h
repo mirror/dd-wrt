@@ -207,6 +207,8 @@ void log_vmsg(int pri, const char* type, const char* format, va_list args);
 #define log_err(format, ...) do { } while(0)
 #define log_warn(format, ...)  do { } while(0)
 #define log_hex(msg, data, length) do { } while(0)
+#define log_query(format, ...) do { } while(0)
+#define log_reply(format, ...) do { } while(0)
 #define log_buf(level, msg, buf) do { } while(0)
 #define fatal_exit(format, ...) exit(-1)
 #define log_vmsg(pri, type,format, args) do { } while(0)
