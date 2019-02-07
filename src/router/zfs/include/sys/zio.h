@@ -131,7 +131,7 @@ enum zio_encrypt {
  * The number of "legacy" compression functions which can be set on individual
  * objects.
  */
-#define	ZIO_COMPRESS_LEGACY_FUNCTIONS ZIO_COMPRESS_ZSTD
+#define	ZIO_COMPRESS_LEGACY_FUNCTIONS ZIO_COMPRESS_LZ4
 
 /*
  * The meaning of "compress = on" selected by the compression features enabled
@@ -139,6 +139,7 @@ enum zio_encrypt {
  */
 #define	ZIO_COMPRESS_LEGACY_ON_VALUE	ZIO_COMPRESS_LZJB
 #define	ZIO_COMPRESS_LZ4_ON_VALUE	ZIO_COMPRESS_LZ4
+#define	ZIO_COMPRESS_ZSTD_ON_VALUE	ZIO_COMPRESS_ZSTD
 
 #define	ZIO_COMPRESS_DEFAULT		ZIO_COMPRESS_OFF
 
