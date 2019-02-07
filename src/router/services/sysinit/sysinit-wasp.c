@@ -498,7 +498,7 @@ void start_sysinit(void)
 	setWirelessLed(1, 14);
 #elif HAVE_CPE880
 	setWirelessLed(0, 12);
-	setSwitchLED(19, "0x01");
+	setSwitchLED(19, 0x01);
 	writestr("/sys/devices/platform/leds-gpio/leds/generic_17/brightness", "255");
 	writestr("/sys/devices/platform/leds-gpio/leds/generic_20/brightness", "255");
 	writestr("/sys/devices/platform/leds-gpio/leds/generic_21/brightness", "255");
