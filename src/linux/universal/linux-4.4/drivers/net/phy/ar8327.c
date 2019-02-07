@@ -684,6 +684,7 @@ ar8327_init_globals(struct ar8xxx_priv *priv)
 
 	/* enable CPU port and disable mirror port */
 	t = AR8327_FWD_CTRL0_CPU_PORT_EN |
+            AR8327_FWD_CTRL0_IGMP_COPY_EN |
 	    AR8327_FWD_CTRL0_MIRROR_PORT;
 	ar8xxx_write(priv, AR8327_REG_FWD_CTRL0, t);
 
