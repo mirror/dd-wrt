@@ -504,7 +504,7 @@ void start_sysinit(void)
 	writestr("/sys/devices/platform/leds-gpio/leds/generic_21/brightness", "255");
 	writestr("/sys/devices/platform/leds-gpio/leds/generic_22/brightness", "255");
 
-	if (!nvram_exists("wlanled") || !nvram_matchi("wlanled", 0))
+	if (nvram_invmatch("wlanled", "0"))
 		eval("/sbin/wlanled", "-L", "generic_17:-94", "-L", "generic_20:-80", "-L", "generic_21:-73", "-L", "generic_22:-65");
 #elif HAVE_CPE890
 	writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
