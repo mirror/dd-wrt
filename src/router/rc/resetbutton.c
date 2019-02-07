@@ -945,6 +945,7 @@ static void handle_ses(void)
 {
 
 	runStartup("/etc/config", ".sesbutton");
+	runStartup("/usr/local/config", ".sesbutton");
 	runStartup("/jffs/etc/config", ".sesbutton");	// if available
 	runStartup("/mmc/etc/config", ".sesbutton");	// if available
 	runStartup("/tmp/etc/config", ".sesbutton");	// if available

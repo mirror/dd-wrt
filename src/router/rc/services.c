@@ -1381,9 +1381,7 @@ static void handle_usbdrivers(void)
 #ifdef HAVE_EOP_TUNNEL
 static void handle_eop(void)
 {
-	FORK(eval("/etc/config/eop-tunnel.startup"));
-	FORK(eval("/etc/config/eop-tunnel.firewall"));
-
+	restart_f("firewall");
 }
 #endif
 static struct SERVICES services_def[] = {
