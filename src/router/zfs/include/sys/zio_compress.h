@@ -57,7 +57,7 @@ enum zio_compress {
 
 #define	ZIO_ZSTD_LEVEL_MIN	1
 #define	ZIO_ZSTD_LEVEL_DEFAULT	3
-#define	ZIO_ZSTD_LEVEL_MAX	22
+#define	ZIO_ZSTD_LEVEL_MAX	19
 
 enum zio_zstd_levels {
 	ZIO_ZSTDLVL_INHERIT = 0,
@@ -80,10 +80,7 @@ enum zio_zstd_levels {
 	ZIO_ZSTDLVL_17,
 	ZIO_ZSTDLVL_18,
 	ZIO_ZSTDLVL_19,
-	ZIO_ZSTDLVL_20,
-	ZIO_ZSTDLVL_21,
-	ZIO_ZSTDLVL_22,
-#define	ZIO_ZSTDLVL_MAX ZIO_ZSTDLVL_22
+#define	ZIO_ZSTDLVL_MAX ZIO_ZSTDLVL_19
 	ZIO_ZSTDLVL_RESERVE = 31, /* Leave room for new positive levels */
 	ZIO_ZSTDLVL_FAST, /* Fast levels are negative */
 	ZIO_ZSTDLVL_FAST_1,
@@ -187,7 +184,7 @@ extern int zstd_getlevel(void *src, size_t s_len);
  * Compress and decompress data if necessary.
  */
 extern size_t zio_compress_data(enum zio_compress c, abd_t *src, void *dst,
-    size_t s_len, struct zio_prop *zp);
+    size_t s_len, enum zio_zstd_levels zstd_level);
 extern int zio_decompress_data(enum zio_compress c, abd_t *src, void *dst,
     size_t s_len, size_t d_len);
 extern int zio_decompress_data_buf(enum zio_compress c, void *src, void *dst,
