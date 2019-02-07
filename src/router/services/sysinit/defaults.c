@@ -3586,6 +3586,11 @@ struct nvram_param srouter_defaults[] = {
 	{"shownf", "1"},
 	{"speedchecker_enable", "0"},
 #endif
+#if defined(HAVE_ONNET) || defined(HAVE_ONNET_BLANK)
+#ifdef HAVE_CPE880
+	{"wlanled", "0"},
+#endif
+#endif
 	{0, 0}
 };
 #else
