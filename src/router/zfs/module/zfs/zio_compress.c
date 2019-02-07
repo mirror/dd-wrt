@@ -100,6 +100,8 @@ zio_compress_select(spa_t *spa, enum zio_compress child,
 	if (result == ZIO_COMPRESS_ON) {
 		if (spa_feature_is_active(spa, SPA_FEATURE_LZ4_COMPRESS))
 			result = ZIO_COMPRESS_LZ4_ON_VALUE;
+		else if (spa_feature_is_active(spa, SPA_FEATURE_ZSTD_COMPRESS))
+			result = ZIO_COMPRESS_ZSTD_ON_VALUE;
 		else
 			result = ZIO_COMPRESS_LEGACY_ON_VALUE;
 	}
@@ -121,7 +123,7 @@ zio_compress_zeroed_cb(void *data, size_t len, void *private)
 
 size_t
 zio_compress_data(enum zio_compress c, abd_t *src, void *dst, size_t s_len,
-    zio_prop_t *zp)
+    enum zio_zstd_levels zstd_level)
 {
 	size_t c_len, d_len;
 	int level;
@@ -146,11 +148,10 @@ zio_compress_data(enum zio_compress c, abd_t *src, void *dst, size_t s_len,
 	level = ci->ci_level;
 
 	if (c == ZIO_COMPRESS_ZSTD) {
-		ASSERT(zp != NULL);
-		if (zp->zp_zstd_level == ZIO_ZSTDLVL_DEFAULT)
+		if (zstd_level == ZIO_ZSTDLVL_DEFAULT)
 			level = ZIO_ZSTD_LEVEL_DEFAULT;
 		else
-			level = zp->zp_zstd_level;
+			level = zstd_level;
 	}
 
 	/* No compression algorithms can read from ABDs directly */

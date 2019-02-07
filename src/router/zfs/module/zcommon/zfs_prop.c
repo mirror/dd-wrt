@@ -165,12 +165,6 @@ zfs_prop_init(void)
 		    (ZIO_ZSTDLVL_18 << SPA_COMPRESSBITS) },
 		{ "zstd-19",	ZIO_COMPRESS_ZSTD |
 		    (ZIO_ZSTDLVL_19 << SPA_COMPRESSBITS) },
-		{ "zstd-20",	ZIO_COMPRESS_ZSTD |
-		    (ZIO_ZSTDLVL_20 << SPA_COMPRESSBITS) },
-		{ "zstd-21",	ZIO_COMPRESS_ZSTD |
-		    (ZIO_ZSTDLVL_21 << SPA_COMPRESSBITS) },
-		{ "zstd-22",	ZIO_COMPRESS_ZSTD |
-		    (ZIO_ZSTDLVL_22 << SPA_COMPRESSBITS) },
 		/*
 		 * The ZSTD-Fast levels are also synthetic.
 		 */
