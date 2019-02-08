@@ -391,13 +391,19 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int le
 	dhcp_argv[i++] = "vendorspecific";
 #endif
 #endif
-	if (nvram_matchi("orange_voodoo", 1)) {
+	if (nvram_match("wan_proto", "dhcp_auth")) {
 		dhcp_argv[i++] = "-x"; // user class
-		dhcp_argv[i++] = "0x4d:2b46535644534c5f6c697665626f782e496e7465726e65742e736f66746174686f6d652e4c697665626f7833";
+		char userclass[128];
+		snprintf(userclass, sizeof(userclass),"0x4d:%s", nvram_safe_get("dhcp_userclass");
+		dhcp_argv[i++] = userclass;
 		dhcp_argv[i++] = "-x"; // authentication
-		dhcp_argv[i++] = "0x5a:00000000000000000000006674692fxxxxxxxxxxxxxx";
+		char auth[128];
+		snprintf(auth, sizeof(auth),"0x5a:%s", nvram_safe_get("dhcp_authentication");
+		dhcp_argv[i++] = auth;
 		dhcp_argv[i++] = "-x"; // class id 
-		dhcp_argv[i++] = "0x3c:736167656d";
+		char classid[128];
+		snprintf(classid, sizeof(classid),"0x3c:%s", nvram_safe_get("dhcp_classid");
+		dhcp_argv[i++] = classid;
 	}
 	if (flags)
 		dhcp_argv[i++] = flags;
@@ -4170,7 +4176,7 @@ void start_wan(int status)
 		}
 	} else
 #endif
-	if (strcmp(wan_proto, "dhcp") == 0) {
+	if (strcmp(wan_proto, "dhcp") == 0 || strcmp(wan_proto, "dhcp_auth") == 0) {
 		start_dhcpc(wan_ifname, NULL, NULL, 1, 0, 0);
 	}
 #ifdef HAVE_IPETH

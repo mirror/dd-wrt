@@ -993,6 +993,8 @@ struct mtu_lists mtu_list[] = {
 	{
 	 "dhcp", "576", "10000"},
 	{
+	 "dhcp_auth", "576", "10000"},
+	{
 	 "iphone", "576", "1500"},
 	{
 	 "static", "576", "10000"},

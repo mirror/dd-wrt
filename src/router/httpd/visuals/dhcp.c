@@ -306,7 +306,7 @@ void ej_dhcp_remaining_time(webs_t wp, int argc, char_t ** argv)
 {
 	// tofu12
 
-	if (nvram_invmatch("wan_proto", "dhcp"))
+	if (nvram_invmatch("wan_proto", "dhcp") && nvram_invmatch("wan_proto", "dhcp_auth"))
 		return;
 
 	long exp;
