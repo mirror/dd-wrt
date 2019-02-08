@@ -1172,7 +1172,14 @@ static const struct switch_attr ar8327_sw_attr_globals[] = {
 		.set = ar8xxx_sw_set_mirror_source_port,
 		.get = ar8xxx_sw_get_mirror_source_port,
 		.max = AR8327_NUM_PORTS - 1
- 	},
+	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "disable_all_leds",
+		.description = "Disable all switch LEDs",
+		.set = ar8xxx_sw_set_disable_all_leds,
+		.max = 1
+	},
 	{
 		.type = SWITCH_TYPE_STRING,
 		.name = "arl_table",
