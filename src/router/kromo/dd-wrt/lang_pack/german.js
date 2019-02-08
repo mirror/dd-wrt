@@ -1009,6 +1009,7 @@ idx.legend3="Uhrzeit-Einstellungen";
 idx.timeset="Zeitzone";
 idx.static_ip="Statische IP";
 idx.dhcp="Automatische Konfiguration - DHCP";
+idx.dhcp_auth="DHCP mit Authentifizierung";
 idx.dhcp_legend="Einstellungen Netzwerk-Adress-Server (DHCP)";
 idx.dhcp_type="DHCP-Typ";
 idx.dhcp_srv="DHCP-Server";

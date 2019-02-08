@@ -165,6 +165,8 @@ void ej_show_miscinfo(webs_t wp, int argc, char_t ** argv)
 
 	if (nvram_match("wan_proto", "dhcp"))
 		websWrite(wp, "SWWanStatus = 0\n");
+	if (nvram_match("wan_proto", "dhcp_auth"))
+		websWrite(wp, "SWWanStatus = 0\n");
 	if (nvram_match("wan_proto", "static"))
 		websWrite(wp, "SWWanStatus = 1\n");
 	if (nvram_match("wan_proto", "pppoe"))

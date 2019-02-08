@@ -84,7 +84,7 @@ void start_dhcpfwd(void)
 #endif
 		else if (getWET()) {
 			// nothing
-		} else if (strcmp(wan_proto, "dhcp") == 0 || strcmp(wan_proto, "static") == 0) {
+		} else if (strcmp(wan_proto, "dhcp") == 0 || strcmp(wan_proto, "static") == 0 || strcmp(wan_proto, "dhcp_auth") == 0) {
 			fprintf(fp, "if	%s	false	true	true\n", wan_ifname);
 		}
 #ifdef HAVE_3G

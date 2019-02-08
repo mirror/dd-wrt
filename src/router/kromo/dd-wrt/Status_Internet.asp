@@ -66,16 +66,16 @@ addEvent(window, "load", function() {
 	setElementVisible("wan_showtraff", "<% nvg("ttraff_enable"); %>" == "1" && ("<% getWET(); %>" == "0" && "<% nvram_get("wan_proto"); %>" != "disabled" || "<% nvram_get("ttraff_iface"); %>" != "") );
 	setElementVisible("wan_showdisabled", "<% getWET(); %>" == "1");
 	setElementVisible("wan_info", "<% nvg("wan_proto"); %>" != "disabled");
-	setElementVisible("wan_dhcp", "<% nvg("wan_proto"); %>" == "dhcp");
-	setElementVisible("wan_connection", "<% nvg("wan_proto"); %>" != "dhcp" && "<% nvg("wan_proto"); %>" != "static");
+	setElementVisible("wan_dhcp", "<% nvg("wan_proto"); %>" == "dhcp" || "<% nvg("wan_proto"); %>" == "dhcp_auth");
+	setElementVisible("wan_connection", "<% nvg("wan_proto"); %>" != "dhcp" && "<% nvg("wan_proto"); %>" != "dhcp_auth" && "<% nvg("wan_proto"); %>" != "static");
 	setElementVisible("wan_signal", "<% nvg("wan_proto"); %>" == "3g");
 	setElementVisible("wan_acname", "<% nvg("wan_proto"); %>" == "pppoe");
 
 	update = new StatusUpdate("Status_Internet.live.asp", <% nvg("refresh_time"); %>);
 	update.onUpdate("wan_shortproto", function(u) {
 		setElementVisible("wan_info", u.wan_shortproto != "disabled");
-		setElementVisible("wan_dhcp", u.wan_shortproto == "dhcp");
-		setElementVisible("wan_connection", u.wan_shortproto != "dhcp" && u.wan_shortproto != "static");
+		setElementVisible("wan_dhcp", u.wan_shortproto == "dhcp" || u.wan_shortproto == "dhcp_auth");
+		setElementVisible("wan_connection", u.wan_shortproto != "dhcp" && u.wan_shortproto != "dhcp_auth" && u.wan_shortproto != "static");
 	});
 
 	update.start();
@@ -117,6 +117,7 @@ addEvent(window, "unload", function() {
 									<div class="setting">
 										<div class="label"><% tran("idx.conn_type"); %></div>
 										<% nvm("wan_proto", "dhcp", "<script type="text/javascript">Capture(idx.dhcp)</script>"); %>
+										<% nvm("wan_proto", "dhcp_auth", "<script type="text/javascript">Capture(idx.dhcp_auth)</script>"); %>
 										<% nvm("wan_proto", "static", "<script type="text/javascript">Capture(share.sttic)</script>"); %>
 										<% nvm("wan_proto", "pppoe", "PPPoE"); %>
 										<% nvm("wan_proto", "pptp", "PPTP"); %>
