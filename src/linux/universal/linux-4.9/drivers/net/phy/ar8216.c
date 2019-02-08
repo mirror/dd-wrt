@@ -1590,6 +1590,56 @@ ar8xxx_sw_set_flush_port_arl_table(struct switch_dev *dev,
 	return ret;
 }
 
+int
+ar8xxx_sw_set_disable_all_leds(struct switch_dev *dev,
+			       const struct switch_attr *attr,
+			       struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	u32 mask;
+
+	if(val->value.i){
+		/* Set PATTERN_EN = 00 (LED always off) for
+		 * both LED_CTRL_RULE in single 32-bit register */
+		u32 mask = ~(BIT(31) | BIT(30) | BIT(14) | BIT(15));
+
+		ar8xxx_write(priv, AR8327_REG_LED_CTRL0,
+					priv->read(priv, AR8327_REG_LED_CTRL0) & mask);
+
+		ar8xxx_write(priv, AR8327_REG_LED_CTRL1,
+					priv->read(priv, AR8327_REG_LED_CTRL1) & mask);
+
+		ar8xxx_write(priv, AR8327_REG_LED_CTRL2,
+					priv->read(priv, AR8327_REG_LED_CTRL2) & mask);
+
+		/* Set LED_PATTERN_EN_XY = 00 (pattern enable for portX LEDY) for
+		 * all ports (1~3) */
+		mask = ~(BITS(8, 25));
+		ar8xxx_write(priv, AR8327_REG_LED_CTRL3,
+					priv->read(priv, AR8327_REG_LED_CTRL3) & mask);
+	} else {
+		/* Set PATTERN_EN = 11 (LED controlled by LED_RULE registers) */
+		u32 mask = BIT(31) | BIT(30) | BIT(14) | BIT(15);
+
+		ar8xxx_write(priv, AR8327_REG_LED_CTRL0,
+					priv->read(priv, AR8327_REG_LED_CTRL0) | mask);
+
+		ar8xxx_write(priv, AR8327_REG_LED_CTRL1,
+					priv->read(priv, AR8327_REG_LED_CTRL1) | mask);
+
+		ar8xxx_write(priv, AR8327_REG_LED_CTRL2,
+					priv->read(priv, AR8327_REG_LED_CTRL2) | mask);
+
+		/* Set LED_PATTERN_EN_XY = 11 */
+		mask = BITS(8, 25);
+
+		ar8xxx_write(priv, AR8327_REG_LED_CTRL3,
+				priv->read(priv, AR8327_REG_LED_CTRL3) | mask);
+	}
+
+	return 0;
+}
+
 static const struct switch_attr ar8xxx_sw_attr_globals[] = {
 	{
 		.type = SWITCH_TYPE_INT,
@@ -1636,6 +1686,13 @@ static const struct switch_attr ar8xxx_sw_attr_globals[] = {
 		.set = ar8xxx_sw_set_mirror_source_port,
 		.get = ar8xxx_sw_get_mirror_source_port,
 		.max = AR8216_NUM_PORTS - 1
+ 	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "disable_all_leds",
+		.description = "Disable all switch LEDs",
+		.set = ar8xxx_sw_set_disable_all_leds,
+		.max = 1
  	},
 	{
 		.type = SWITCH_TYPE_STRING,
