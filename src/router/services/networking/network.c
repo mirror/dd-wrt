@@ -375,6 +375,7 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int le
 		NULL, NULL,
 		NULL, NULL,
 		NULL, NULL,
+		NULL, NULL,
 	};
 
 	int i = 7;
@@ -404,6 +405,10 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int le
 		char classid[128];
 		snprintf(classid, sizeof(classid),"0x3c:%s", nvram_safe_get("dhcp_classid");
 		dhcp_argv[i++] = classid;
+		dhcp_argv[i++] = "-x"; // client id 
+		char clientid[128];
+		snprintf(clientid, sizeof(clientid),"0x3d:%s", nvram_safe_get("dhcp_clientid");
+		dhcp_argv[i++] = clientid;
 	}
 	if (flags)
 		dhcp_argv[i++] = flags;
