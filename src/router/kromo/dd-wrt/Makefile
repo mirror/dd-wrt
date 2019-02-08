@@ -964,7 +964,6 @@ ifneq ($(CONFIG_DANUBE),y)
 	rm -f $(INSTALLDIR)/www/index_pppoe_atm.asp
 	rm -f $(INSTALLDIR)/www/index_bridge.asp
 	rm -f $(INSTALLDIR)/www/index_dhcp.asp
-	rm -f $(INSTALLDIR)/www/index_dhcp_auth.asp
 endif
 ifneq ($(CONFIG_AOSS),y)
 ifneq ($(CONFIG_WPS),y)
