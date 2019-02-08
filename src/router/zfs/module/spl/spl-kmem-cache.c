@@ -213,7 +213,7 @@ kv_alloc(spl_kmem_cache_t *skc, int size, int flags)
 	 * show allocations as VMEM without any care if kmalloc was
 	 * used in reality. but this is just cosmetic
 	 */
-		if (lflags == GFP_KERNEL)
+		if ((lflags & GFP_KERNEL) == GFP_KERNEL)
 			ptr = spl_kvmalloc(size, lflags);
 		else
 			ptr = __vmalloc(size, lflags | __GFP_HIGHMEM,
