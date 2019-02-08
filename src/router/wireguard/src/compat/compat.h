@@ -617,6 +617,10 @@ static inline int cpu_has_xfeatures(u64 xfeatures_needed, const char **feature_n
 #endif
 #endif
 
+#ifndef ALIGN_DOWN
+#define ALIGN_DOWN(x, a)	__ALIGN_KERNEL((x) - ((a) - 1), (a))
+#endif
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 6, 0) && defined(CONFIG_X86_64)
 /* This is incredibly dumb and reckless, but as it turns out, there's
  * not really hardware Linux runs properly on that supports F but not BW
