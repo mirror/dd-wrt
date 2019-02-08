@@ -4,7 +4,10 @@
  "wan_hostname" "WAN Host Name"  "NAME"  "255"  "TRUE" "3"   
  "wan_domain"  "WAN Domain Name"  "NAME"  "255"  "TRUE" "3"   
  "wan_ipaddr"  "WAN IP Address"  "WANIPADDR"  "FALSE" "3"   
- "wan_proto"  "WAN Protocol"  "CHOICE" "7" "disabled"  "dhcp"  "static"  "pppoe"  "pptp"  "l2tp"  "heartbeat"  "FALSE" "3"   
+ "wan_proto"  "WAN Protocol"  "CHOICE" "8" "disabled"  "dhcp" "dhcp_auth" "static"  "pppoe"  "pptp"  "l2tp"  "heartbeat"  "FALSE" "3"   
+ "dhcp_userclass" "DHCP userclass"  "NAME"  "127"  "TRUE" "3"
+ "dhcp_classid" "DHCP classid"  "NAME"  "127"  "TRUE" "3"
+ "dhcp_authentication" "DHCP authentication"  "NAME"  "127"  "TRUE" "3"
  "wan_dualaccess"  "dual-access mode" "CHOICE" "2" "1" "0" "FALSE" "0"
  "ntp_server"  "NTP Server" "NULL" "TRUE" "0"    // not use 
  "ntp_mode"  "NTP Mode"  "CHOICE"  "2" "manual" "auto"  "TRUE" "0"  
