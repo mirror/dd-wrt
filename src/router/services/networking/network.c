@@ -404,17 +404,17 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int le
 		}
 		if (nvram_invmatch("dhcp_authentication", "")) {
 			dhcp_argv[i++] = "-x";	// authentication
-			vasprintf(&auth, sizeof(auth), "0x5a:%s", nvram_safe_get("dhcp_authentication"));
+			vasprintf(&auth, "0x5a:%s", nvram_safe_get("dhcp_authentication"));
 			dhcp_argv[i++] = auth;
 		}
 		if (nvram_invmatch("dhcp_classid", "")) {
 			dhcp_argv[i++] = "-x";	// class id 
-			vasprintf(&classid, sizeof(classid), "0x3c:%s", nvram_safe_get("dhcp_classid"));
+			vasprintf(&classid, "0x3c:%s", nvram_safe_get("dhcp_classid"));
 			dhcp_argv[i++] = classid;
 		}
 		if (nvram_invmatch("dhcp_clientid", "")) {
 			dhcp_argv[i++] = "-x";	// client id 
-			vasprintf(&clientid, sizeof(clientid), "0x3d:%s", nvram_safe_get("dhcp_clientid"));
+			vasprintf(&clientid, "0x3d:%s", nvram_safe_get("dhcp_clientid"));
 			dhcp_argv[i++] = clientid;
 		}
 	}
