@@ -392,29 +392,29 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int le
 	dhcp_argv[i++] = "vendorspecific";
 #endif
 #endif
+	char *userclass = NULL;
+	char *auth = NULL;
+	char *classid = NULL;
+	char *clientid = NULL;
 	if (nvram_match("wan_proto", "dhcp_auth")) {
 		if (nvram_invmatch("dhcp_userclass", "")) {
 			dhcp_argv[i++] = "-x";	// user class
-			char userclass[128];
-			snprintf(userclass, sizeof(userclass), "0x4d:%s", nvram_safe_get("dhcp_userclass"));
+			vasprintf(&userclass, "0x4d:%s", nvram_safe_get("dhcp_userclass"));
 			dhcp_argv[i++] = userclass;
 		}
 		if (nvram_invmatch("dhcp_authentication", "")) {
 			dhcp_argv[i++] = "-x";	// authentication
-			char auth[128];
-			snprintf(auth, sizeof(auth), "0x5a:%s", nvram_safe_get("dhcp_authentication"));
+			vasprintf(&auth, sizeof(auth), "0x5a:%s", nvram_safe_get("dhcp_authentication"));
 			dhcp_argv[i++] = auth;
 		}
 		if (nvram_invmatch("dhcp_classid", "")) {
 			dhcp_argv[i++] = "-x";	// class id 
-			char classid[128];
-			snprintf(classid, sizeof(classid), "0x3c:%s", nvram_safe_get("dhcp_classid"));
+			vasprintf(&classid, sizeof(classid), "0x3c:%s", nvram_safe_get("dhcp_classid"));
 			dhcp_argv[i++] = classid;
 		}
 		if (nvram_invmatch("dhcp_clientid", "")) {
 			dhcp_argv[i++] = "-x";	// client id 
-			char clientid[128];
-			snprintf(clientid, sizeof(clientid), "0x3d:%s", nvram_safe_get("dhcp_clientid"));
+			vasprintf(&clientid, sizeof(clientid), "0x3d:%s", nvram_safe_get("dhcp_clientid"));
 			dhcp_argv[i++] = clientid;
 		}
 	}
@@ -448,6 +448,14 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int le
 
 	_evalpid(dhcp_argv, NULL, 0, &pid);
 
+	if (userclass)
+		free(userclass);
+	if (auth)
+		free(auth);
+	if (classid)
+		free(classid);
+	if (clientid)
+		free(clientid);
 }
 
 /*
