@@ -300,6 +300,7 @@ void ej_show_connectiontype(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "document.write(\"<option value=\\\"disabled\\\" %s >\" + share.disabled + \"</option>\");\n", nvram_selmatch(wp, "wan_proto", "disabled") ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp, "document.write(\"<option value=\\\"static\\\" %s >\" + idx.static_ip + \"</option>\");\n", nvram_selmatch(wp, "wan_proto", "static") ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp, "document.write(\"<option value=\\\"dhcp\\\" %s >\" + idx.dhcp + \"</option>\");\n", nvram_selmatch(wp, "wan_proto", "dhcp") ? "selected=\\\"selected\\\"" : "");
+	websWrite(wp, "document.write(\"<option value=\\\"dhcp_auth\\\" %s >\" + idx.dhcp_auth + \"</option>\");\n", nvram_selmatch(wp, "wan_proto", "dhcp_auth") ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp, "\n//]]>\n</script>\n");
 
 #ifdef HAVE_MODEMBRIDGE

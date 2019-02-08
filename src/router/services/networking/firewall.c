@@ -1924,7 +1924,7 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 		}
 	}
 #endif
-	if (nvram_match("wan_proto", "dhcp"))
+	if (nvram_match("wan_proto", "dhcp") || nvram_match("wan_proto", "dhcp_auth"))
 		save2file_A_input("-i %s -p udp --sport 67 --dport 68 -j %s", wanface, log_accept);
 	if (nvram_matchi("pptpd_enable", 1)
 	    || nvram_matchi("pptpd_client_enable", 1)
