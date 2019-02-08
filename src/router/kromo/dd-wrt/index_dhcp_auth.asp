@@ -1,4 +1,3 @@
-<% atmsettings("pppoe"); %>
 <div class="setting">
 	<div class="label"><% tran("idx.dhcp_userclass"); %></div>
 	<input name="dhcp_userclass" size="127" maxlength="127" value="<% nvg("dhcp_userclass"); %>" />
