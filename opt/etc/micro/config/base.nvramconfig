@@ -5,6 +5,7 @@
  "wan_domain"  "WAN Domain Name"  "NAME"  "255"  "TRUE" "3"   
  "wan_ipaddr"  "WAN IP Address"  "WANIPADDR"  "FALSE" "3"   
  "wan_proto"  "WAN Protocol"  "CHOICE" "8" "disabled"  "dhcp" "dhcp_auth" "static"  "pppoe"  "pptp"  "l2tp"  "heartbeat"  "FALSE" "3"   
+ "dhcp_clientid" "DHCP clientid"  "NAME"  "127"  "TRUE" "3"
  "dhcp_userclass" "DHCP userclass"  "NAME"  "127"  "TRUE" "3"
  "dhcp_classid" "DHCP classid"  "NAME"  "127"  "TRUE" "3"
  "dhcp_authentication" "DHCP authentication"  "NAME"  "127"  "TRUE" "3"
