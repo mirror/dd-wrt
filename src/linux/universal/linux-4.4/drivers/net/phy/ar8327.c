@@ -1387,6 +1387,13 @@ static const struct switch_attr ar8327_sw_attr_globals[] = {
 	},
 	{
 		.type = SWITCH_TYPE_INT,
+		.name = "disable_all_leds",
+		.description = "Disable all switch LEDs",
+		.set = ar8xxx_sw_set_disable_all_leds,
+		.max = 1
+ 	},
+	{
+		.type = SWITCH_TYPE_INT,
 		.name = "arl_age_time",
 		.description = "ARL age time (secs)",
 		.set = ar8xxx_sw_set_arl_age_time,
