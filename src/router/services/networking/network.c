@@ -392,11 +392,11 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int le
 #endif
 #endif
 	if (nvram_matchi("orange_voodoo", 1)) {
-		dhcp_argv[i++] = "-x";
+		dhcp_argv[i++] = "-x"; // user class
 		dhcp_argv[i++] = "0x4d:2b46535644534c5f6c697665626f782e496e7465726e65742e736f66746174686f6d652e4c697665626f7833";
-		dhcp_argv[i++] = "-x";
+		dhcp_argv[i++] = "-x"; // authentication
 		dhcp_argv[i++] = "0x5a:00000000000000000000006674692fxxxxxxxxxxxxxx";
-		dhcp_argv[i++] = "-x";
+		dhcp_argv[i++] = "-x"; // class id 
 		dhcp_argv[i++] = "0x3c:736167656d";
 	}
 	if (flags)
