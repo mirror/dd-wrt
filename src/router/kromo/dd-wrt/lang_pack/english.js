@@ -1155,6 +1155,7 @@ idx.dhcp_auth="DHCP Authenticated";
 idx.dhcp_userclass="Userclass";
 idx.dhcp_authentication="Authentication";
 idx.dhcp_classid="Class ID";
+idx.dhcp_clientid="Client ID";
 idx.dhcp_legend="Network Address Server Settings (DHCP)";
 idx.dhcp_type="DHCP Type";
 idx.dhcp_srv="DHCP Server";
