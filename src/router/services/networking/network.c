@@ -335,6 +335,9 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int le
 #else
 	char *vendorclass = nvram_safe_get("dhcpc_vendorclass");
 #endif
+	char *userclass = nvram_safe_get("dhcp_userclass");
+	char *auth = nvram_safe_get("dhcp_authentication");
+	char *clientid = nvram_safe_get("dhcp_clientid");
 	char *requestip = nvram_safe_get("dhcpc_requestip");
 	int use_extra = 0;
 
@@ -392,30 +395,26 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int le
 	dhcp_argv[i++] = "vendorspecific";
 #endif
 #endif
-	char *userclass = NULL;
-	char *auth = NULL;
-	char *classid = NULL;
-	char *clientid = NULL;
+	char *s_auth = NULL;
+	char *s_clientid = NULL;
 	if (nvram_match("wan_proto", "dhcp_auth")) {
-		if (nvram_invmatch("dhcp_userclass", "")) {
-			dhcp_argv[i++] = "-x";	// user class
-			asprintf(&userclass, "0x4d:%s", nvram_safe_get("dhcp_userclass"));
-			dhcp_argv[i++] = userclass;
-		}
-		if (nvram_invmatch("dhcp_authentication", "")) {
+		if (*auth) {
 			dhcp_argv[i++] = "-x";	// authentication
-			asprintf(&auth, "0x5a:%s", nvram_safe_get("dhcp_authentication"));
-			dhcp_argv[i++] = auth;
+			asprintf(&s_auth, "0x5a:%s", auth);
+			dhcp_argv[i++] = s_auth;
 		}
-		if (nvram_invmatch("dhcp_classid", "")) {
-			dhcp_argv[i++] = "-x";	// class id 
-			asprintf(&classid, "0x3c:%s", nvram_safe_get("dhcp_classid"));
-			dhcp_argv[i++] = classid;
-		}
-		if (nvram_invmatch("dhcp_clientid", "")) {
+		if (*clientid) {
 			dhcp_argv[i++] = "-x";	// client id 
-			asprintf(&clientid, "0x3d:%s", nvram_safe_get("dhcp_clientid"));
-			dhcp_argv[i++] = clientid;
+			asprintf(&s_clientid, "0x3d:%s", clientid);
+			dhcp_argv[i++] = s_clientid;
+		}
+		if (*vendorclass) {
+			dhcp_argv[i++] = "-V";	// vendor class 
+			dhcp_argv[i++] = vendorclass;
+		}
+		if (*userclass) {
+			dhcp_argv[i++] = "-u";	// user class
+			dhcp_argv[i++] = userclass;
 		}
 	}
 	if (flags)
@@ -430,9 +429,11 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int le
 		dhcp_argv[i++] = "-T";
 
 	if (use_extra) {
-		if (*vendorclass) {
-			dhcp_argv[i++] = "-V";
-			dhcp_argv[i++] = vendorclass;
+		if (!nvram_match("wan_proto", "dhcp_auth")) {
+			if (*vendorclass) {
+				dhcp_argv[i++] = "-V";
+				dhcp_argv[i++] = vendorclass;
+			}
 		}
 
 		if (*requestip) {
@@ -448,14 +449,10 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int le
 
 	_evalpid(dhcp_argv, NULL, 0, &pid);
 
-	if (userclass)
-		free(userclass);
-	if (auth)
-		free(auth);
-	if (classid)
-		free(classid);
-	if (clientid)
-		free(clientid);
+	if (s_auth)
+		free(s_auth);
+	if (s_clientid)
+		free(s_clientid);
 }
 
 /*
