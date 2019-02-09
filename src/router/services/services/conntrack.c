@@ -37,6 +37,7 @@ void start_conntrack(void)
 	writeprocsysnet("ipv4/ip_conntrack_max", CONNTRACK_MAX);
 	writeprocsysnet("ipv4/netfilter/ip_conntrack_max", CONNTRACK_MAX);
 	writeprocsysnet("nf_conntrack_max", CONNTRACK_MAX);
+	writeprocsysnet("netfilter/nf_conntrack_max", CONNTRACK_MAX);
 
 	writeprocsysnet("ipv4/netfilter/ip_conntrack_tcp_timeout_established", CONNTRACK_TCP_TIMEOUTS);
 	writeprocsysnet("netfilter/nf_conntrack_tcp_timeout_established", CONNTRACK_TCP_TIMEOUTS);
