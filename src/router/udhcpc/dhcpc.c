@@ -67,6 +67,7 @@ struct client_config_t client_config = {
 	.script = DEFAULT_SCRIPT,
 	.clientid = NULL,
 	.vendorclass = NULL,
+	.userclass = NULL,
 	.hostname = NULL,
 	.fqdn = NULL,
 	.ifindex = 0,
@@ -201,6 +202,7 @@ int main(int argc, char *argv[])
 	static const struct option arg_options[] = {
 		{"clientid",	required_argument,	0, 'c'},
 		{"clientid-none", no_argument,		0, 'C'},
+		{"userclass",	required_argument,	0, 'u'},
 		{"vendorclass",	required_argument,	0, 'V'},
 		{"foreground",	no_argument,		0, 'f'},
 		{"background",	no_argument,		0, 'b'},
@@ -245,6 +247,14 @@ int main(int argc, char *argv[])
 			client_config.vendorclass[OPT_CODE] = DHCP_VENDOR;
 			client_config.vendorclass[OPT_LEN] = len;
 			strncpy(client_config.vendorclass + OPT_DATA, optarg, len);
+			break;
+		case 'u':
+			len = strlen(optarg) > 255 ? 255 : strlen(optarg);
+			if (client_config.userclass) free(client_config.userclass);
+			client_config.userclass = xmalloc(len + 2);
+			client_config.userclass[OPT_CODE] = DHCP_USERCLASS;
+			client_config.userclass[OPT_LEN] = len;
+			strncpy(client_config.userclass + OPT_DATA, optarg, len);
 			break;
 		case 'f':
 			client_config.foreground = 1;
