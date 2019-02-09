@@ -106,9 +106,9 @@ void start_tor(void)
 	fprintf(fp, "TransPort %s:9040\n", nvram_safe_get("lan_ipaddr"));
 	fprintf(fp, "DNSPort %s:5353\n", nvram_safe_get("lan_ipaddr"));
 	if (nvram_matchi("tor_transparent", 1)) {
-		sysprintf("iptables -t nat -A PREROUTING -i br0 -p udp --dport 53 -j REDIRECT --to-ports 5353");
-		sysprintf("iptables -t nat -A PREROUTING -i br0 -p udp --dport 5353 -j REDIRECT --to-ports 5353");
-		sysprintf("iptables -t nat -A PREROUTING -i br0 -p tcp --syn -j REDIRECT --to-ports 9040");
+		sysprintf("iptables -t nat -A PREROUTING -i br0 -p udp --dport 53 -j DNAT --to %s:5353", nvram_safe_get("lan_ipaddr"));
+		sysprintf("iptables -t nat -A PREROUTING -i br0 -p udp --dport 5353 -j DNAT --to %s:5353", nvram_safe_get("lan_ipaddr"));
+		sysprintf("iptables -t nat -A PREROUTING -i br0 -p tcp --syn -j DNAT --to %s:9040", nvram_safe_get("lan_ipaddr"));
 	}
 #ifdef HAVE_X86
 	eval("mkdir", "-p", "/tmp/tor");

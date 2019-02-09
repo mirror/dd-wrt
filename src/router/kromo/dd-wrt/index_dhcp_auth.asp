@@ -3,12 +3,12 @@
 	<input name="dhcp_userclass" size="63" maxlength="1023" value="<% nvg("dhcp_userclass"); %>" />
 </div>
 <div class="setting">
-	<div class="label"><% tran("idx.dhcp_clientid"); %></div>
-	<input name="dhcp_clientid" size="63" maxlength="1023" value="<% nvg("dhcp_clientid"); %>" />
+	<div class="label"><% tran("service.dhcp_vendor"); %></div>
+	<input maxlength="79" size="63" name="dhcpc_vendorclass" value="<% nvg("dhcpc_vendorclass"); %>" />
 </div>
 <div class="setting">
-	<div class="label"><% tran("idx.dhcp_classid"); %></div>
-	<input name="dhcp_classid" size="63" maxlength="1023" value="<% nvg("dhcp_classid"); %>" />
+	<div class="label"><% tran("idx.dhcp_clientid"); %></div>
+	<input name="dhcp_clientid" size="63" maxlength="1023" value="<% nvg("dhcp_clientid"); %>" />
 </div>
 <div class="setting">
 	<div class="label"><% tran("idx.dhcp_authentication"); %></div>
