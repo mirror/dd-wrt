@@ -499,13 +499,13 @@ void start_sysinit(void)
 #elif HAVE_CPE880
 	setWirelessLed(0, 12);
 	setSwitchLED(19, 0x01);
-	writestr("/sys/devices/platform/leds-gpio/leds/generic_17/brightness", "255");
-	writestr("/sys/devices/platform/leds-gpio/leds/generic_20/brightness", "255");
-	writestr("/sys/devices/platform/leds-gpio/leds/generic_21/brightness", "255");
-	writestr("/sys/devices/platform/leds-gpio/leds/generic_22/brightness", "255");
+	writestr("/sys/devices/platform/leds-gpio/leds/generic_17/brightness", "0");
+	writestr("/sys/devices/platform/leds-gpio/leds/generic_20/brightness", "0");
+	writestr("/sys/devices/platform/leds-gpio/leds/generic_21/brightness", "0");
+	writestr("/sys/devices/platform/leds-gpio/leds/generic_22/brightness", "0");
 
 	if (nvram_invmatch("wlanled", "0"))
-		eval("/sbin/wlanled", "-L", "generic_17:-94", "-L", "generic_20:-80", "-L", "generic_21:-73", "-L", "generic_22:-65");
+		eval("/sbin/wlanled", "-l", "generic_17:-94", "-l", "generic_20:-80", "-l", "generic_21:-73", "-l", "generic_22:-65");
 #elif HAVE_CPE890
 	writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
 	if (!nvram_matchi("wlanled", 0))
