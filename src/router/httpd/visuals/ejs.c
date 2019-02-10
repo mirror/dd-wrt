@@ -1321,7 +1321,6 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 	char eths[256];
 	char eths2[256];
 	char bword[256];
-	char bufferif[512];
 	glob_t globbuf;
 	char *globstring;
 	int globresult;
@@ -1339,17 +1338,7 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 	getIfList(eths2, "tun");
 	strcat(eths, " ");
 	strcat(eths, eths2);
-	bzero(bufferif, 256);
-	getIfListB(bufferif, NULL, 1, 1);
 
-#ifndef HAVE_MADWIFI
-	int cnt = get_wl_instances();
-	int c;
-	for (c = 0; c < cnt; c++) {
-		strcat(bufferif, " ");
-		strcat(bufferif, get_wl_instance_name(c));
-	}
-#endif
 	foreach(var, eths, next) {
 		if (!strcmp(get_wan_face(), var))
 			continue;
@@ -1361,15 +1350,19 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 			continue;
 		if (!strcmp(nvram_safe_get("lan_ifname"), var))
 			continue;
-		foreach(bword, bufferif, bnext) {
-			if (!strcmp(bword, var)) {
-				snprintf(name, sizeof(name), "BRIDGE (%s)", getNetworkLabel(wp, var));
+#ifndef HAVE_MADWIFI
+		for (c = 0; c < cnt; c++) {
+			if (!strcmp(get_wl_instance_name(c), var))
 				goto skip;
-			}
 		}
-		snprintf(name, sizeof(name), "LAN (%s)", getNetworkLabel(wp, var));
-	      skip:;
+#endif
+		if (isbridge(var)) {
+			snprintf(name, sizeof(name), "BRIDGE (%s)", getNetworkLabel(wp, var));
+		} else
+			snprintf(name, sizeof(name), "LAN (%s)", getNetworkLabel(wp, var));
+
 		show_bwif(wp, var, name);
+	      skip:;
 	}
 	char buf[128];
 	if (!nvram_match("wan_proto", "disabled")) {
