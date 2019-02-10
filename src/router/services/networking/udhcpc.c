@@ -85,7 +85,7 @@ static int deconfig(void)
 	unlink("/tmp/get_lease_time");
 	unlink("/tmp/lease_time");
 
-	if (nvram_match("wan_priotity")) {
+	if (nvram_match("wan_priority"), "1") {
 		eval("vconfig", wan_ifname, "set_egress_map", "0", "6");
 	}
 
@@ -191,7 +191,7 @@ static int bound(void)
 	char temp_wan_ipaddr[16], temp_wan_netmask[16], temp_wan_gateway[16];
 	int changed = 0;
 	char *cidr;
-	if (nvram_match("wan_priotity")) {
+	if (nvram_match("wan_priority"), "1") {
 		eval("vconfig", wan_ifname, "set_egress_map", "0", "0");
 	}
 	if (nvram_match("wan_proto", "iphone"))
