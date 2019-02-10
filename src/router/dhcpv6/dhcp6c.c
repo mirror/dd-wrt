@@ -68,6 +68,7 @@
 #include <string.h>
 #include <err.h>
 #include <ifaddrs.h>
+#include <fcntl.h>
 
 #include <dhcp6.h>
 #include <config.h>
@@ -285,7 +286,7 @@ client6_init()
 {
 	struct addrinfo hints, *res;
 	static struct sockaddr_in6 sa6_allagent_storage;
-	int error, on = 1;
+	int error, on = 0;
 
 	/* get our DUID */
 	if (get_duid(DUID_FILE, &client_duid)) {
@@ -317,6 +318,20 @@ client6_init()
 		dprintf(LOG_ERR, FNAME, "socket");
 		exit(1);
 	}
+
+	if ((on = fcntl(sock, F_GETFL, 0)) == -1) {
+		dprintf(LOG_ERR, FNAME, "fctnl getflags");
+		exit(1);
+	}
+
+	on |= FD_CLOEXEC;
+
+	if ((on = fcntl(sock, F_SETFL, on)) == -1) {
+		dprintf(LOG_ERR, FNAME, "fctnl setflags");
+		exit(1);
+	}
+
+	on = 1;
 	if (setsockopt(sock, SOL_SOCKET, SO_REUSEPORT,
 		       &on, sizeof(on)) < 0) {
 		dprintf(LOG_ERR, FNAME,
@@ -366,13 +381,6 @@ client6_init()
 		exit(1);
 	}
 	freeaddrinfo(res);
-
-	/* open a routing socket to watch the routing table */
-	if ((rtsock = socket(PF_ROUTE, SOCK_RAW, 0)) < 0) {
-		dprintf(LOG_ERR, FNAME, "open a routing socket: %s",
-		    strerror(errno));
-		exit(1);
-	}
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = PF_INET6;
@@ -632,7 +640,7 @@ get_ifname(bpp, lenp, ifbuf, ifbuflen)
 	if (*lenp < ifnamelen || ifnamelen > ifbuflen)
 		return (-1);
 
-	memset(ifbuf, 0, sizeof(ifbuf));
+	memset(ifbuf, 0, ifbuflen);
 	memcpy(ifbuf, *bpp, ifnamelen);
 	if (ifbuf[ifbuflen - 1] != '\0')
 		return (-1);	/* not null terminated */
@@ -976,7 +984,7 @@ construct_confdata(ifp, ev)
 			    "failed to create a new event data");
 			goto fail;
 		}
-		memset(evd, 0, sizeof(evd));
+		memset(evd, 0, sizeof(*evd));
 
 		memset(&iaparam, 0, sizeof(iaparam));
 		iaparam.iaid = iac->iaid;
