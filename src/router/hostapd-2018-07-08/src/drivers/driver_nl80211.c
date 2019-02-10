@@ -40,6 +40,9 @@
 #include "driver_nl80211.h"
 
 
+#ifndef NETLINK_CAP_ACK
+#define NETLINK_CAP_ACK 10
+#endif /* NETLINK_CAP_ACK */
 /* support for extack if compilation headers are too old */
 #ifndef NETLINK_EXT_ACK
 #define NETLINK_EXT_ACK 11
@@ -405,6 +408,11 @@ static int send_and_recv(struct nl80211_global *global,
 	opt = 1;
 	setsockopt(nl_socket_get_fd(nl_handle), SOL_NETLINK,
 		   NETLINK_EXT_ACK, &opt, sizeof(opt));
+
+	/* try to set NETLINK_CAP_ACK to 1, ignoring errors */
+	opt = 1;
+	setsockopt(nl_socket_get_fd(nl_handle), SOL_NETLINK,
+		   NETLINK_CAP_ACK, &opt, sizeof(opt));
 
 	err = nl_send_auto_complete(nl_handle, msg);
 	if (err < 0)
@@ -5760,9 +5768,10 @@ skip_auth_type:
 		goto fail;
 
 	if (nl_connect)
-		ret = send_and_recv(drv->global, nl_connect, msg, NULL, NULL);
+		ret = send_and_recv(drv->global, nl_connect, msg,
+				    NULL, (void *) -1);
 	else
-		ret = send_and_recv_msgs(drv, msg, NULL, NULL);
+		ret = send_and_recv_msgs(drv, msg, NULL, (void *) -1);
 
 	msg = NULL;
 	if (ret) {
@@ -5774,6 +5783,7 @@ skip_auth_type:
 	}
 
 fail:
+	nl80211_nlmsg_clear(msg);
 	nlmsg_free(msg);
 	return ret;
 
@@ -7967,11 +7977,12 @@ static int nl80211_pmkid(struct i802_bss *bss, int cmd,
 		     params->fils_cache_id)) ||
 	    (params->pmk_len && params->pmk_len <= PMK_MAX_LEN &&
 	     nla_put(msg, NL80211_ATTR_PMK, params->pmk_len, params->pmk))) {
+		nl80211_nlmsg_clear(msg);
 		nlmsg_free(msg);
 		return -ENOBUFS;
 	}
 
-	return send_and_recv_msgs(bss->drv, msg, NULL, NULL);
+	return send_and_recv_msgs(bss->drv, msg, NULL, (void *) -1);
 }
 
 
