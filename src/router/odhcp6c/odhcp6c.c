@@ -439,7 +439,6 @@ int main(_unused int argc, char* const argv[])
 		}
 	}
 
-	script_call("started", 0, false);
 
 	while (!signal_term) { // Main logic
 		odhcp6c_clear_state(STATE_SERVER_ID);
@@ -456,6 +455,7 @@ int main(_unused int argc, char* const argv[])
 		syslog(LOG_NOTICE, "(re)starting transaction on %s", ifname);
 
 		signal_usr1 = signal_usr2 = false;
+		script_call("started", 0, false);
 		int mode = dhcpv6_set_ia_mode(ia_na_mode, ia_pd_mode);
 		if (mode != DHCPV6_STATELESS)
 			mode = dhcpv6_request(DHCPV6_MSG_SOLICIT);
