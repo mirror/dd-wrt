@@ -1166,6 +1166,7 @@ idx.dhcp_maxusers="Maximum DHCP Users";
 idx.dhcp_lease="Client Lease Time";
 idx.dhcp_dnsmasq="Use DNSMasq for DHCP";
 idx.dns_dnsmasq="Use DNSMasq for DNS";
+idx.wan_priority="Use VLAN Priority";
 idx.auth_dnsmasq="DHCP-Authoritative";
 idx.force_dnsmasq="Forced DNS Redirection";
 idx.recursive_dns="Recursive DNS Resolving (Unbound)";
