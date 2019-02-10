@@ -249,11 +249,12 @@ function submitcheck(F) {
 		if(F._dhcp_dnsmasq) {
 			F.dhcp_dnsmasq.value = F._dhcp_dnsmasq.checked ? 1 : 0;
 		}
-
 		if(F._dns_dnsmasq) {
 			F.dns_dnsmasq.value = F._dns_dnsmasq.checked ? 1 : 0;
 		}
-
+		if(F._wan_priority) {
+			F.wan_priority.value = F._wan_priority.checked ? 1 : 0;
+		}
 		if(F._auth_dnsmasq) {
 			F.auth_dnsmasq.value = F._auth_dnsmasq.checked ? 1 : 0;
 		}
@@ -360,6 +361,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="now_proto" value="<% nvram_gozila_get("wan_proto"); %>" />
 							<input type="hidden" name="dhcp_dnsmasq" value="0" />
 							<input type="hidden" name="dns_dnsmasq" value="0" />
+							<input type="hidden" name="wan_priority" value="0" />
 							<input type="hidden" name="auth_dnsmasq" value="0" />
 							<input type="hidden" name="dns_redirect" value="0" />
 							<input type="hidden" name="recursive_dns" value="0" />
