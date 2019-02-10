@@ -1361,16 +1361,15 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 			continue;
 		if (!strcmp(nvram_safe_get("lan_ifname"), var))
 			continue;
-		if (strchr(var, '.') == NULL) {
-			foreach(bword, bufferif, bnext) {
-				if (!strcmp(bword, var)) {
-					goto skip;
-				}
+		foreach(bword, bufferif, bnext) {
+			if (!strcmp(bword, var)) {
+				snprintf(name, sizeof(name), "BRIDGE (%s)", getNetworkLabel(wp, var));
+				goto skip;
 			}
-			snprintf(name, sizeof(name), "LAN (%s)", getNetworkLabel(wp, var));
-			show_bwif(wp, var, name);
 		}
+		snprintf(name, sizeof(name), "LAN (%s)", getNetworkLabel(wp, var));
 	      skip:;
+		show_bwif(wp, var, name);
 	}
 	char buf[128];
 	if (!nvram_match("wan_proto", "disabled")) {
