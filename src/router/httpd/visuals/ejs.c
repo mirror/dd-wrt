@@ -623,6 +623,12 @@ void ej_ifdef(webs_t wp, int argc, char_t ** argv)
 		return;
 	}
 
+	if (!strcmp(name, "WANVLAN")) {
+		if (isvlan(get_wan_face()))
+			websWrite(wp, output);
+		return;
+	}
+
 	return;
 }
 
@@ -683,6 +689,11 @@ void ej_ifndef(webs_t wp, int argc, char_t ** argv)
 	}
 	if (!strcmp(name, "STA")) {
 		if (getSTA())
+			return;
+	}
+
+	if (!strcmp(name, "WANVLAN")) {
+		if (isvlan(get_wan_face()))
 			return;
 	}
 
