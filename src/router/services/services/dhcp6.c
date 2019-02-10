@@ -75,6 +75,7 @@ void start_dhcp6c(void)
 	nvram_unset("ipv6_prefix");
 	nvram_unset("ipv6_rtr_addr");
 	nvram_unset("ipv6_get_dns");
+#if 0
 	char mac[18];
 	getLANMac(mac);
 	if (!*mac)
@@ -118,8 +119,60 @@ void start_dhcp6c(void)
 			fclose(fpc);
 		}
 	}
+#else
+		prefix_len = 64 - (atoi(nvram_safe_get("ipv6_pf_len")) ? : 64);
+		if (prefix_len < 0)
+			prefix_len = 0;
+#endif
+	char plen[16];
+	sprintf(plen, "%d", prefix_len);
+	int i=5;
+	char *dhcp_argv[] = { "odhcpc6c",
+		"-i", get_wan_face(),
+		"-P", plen,
+		NULL, NULL,
+		NULL, NULL,
+		NULL, NULL,
+		NULL, NULL,
+		NULL, NULL,
+		NULL, NULL,
+		NULL, NULL,
+		NULL, NULL,
+		NULL, NULL,
+		NULL, NULL,
+		NULL, NULL,
+		NULL, NULL,
+		NULL, NULL,
+		NULL, NULL,
+		NULL, NULL,
+		NULL, NULL,
+	};
 
-	eval("dhcp6c", "-c", "/tmp/dhcp6c.conf", "-T", "LL", get_wan_face());
+	if (nvram_match("wan_proto", "dhcp_auth")) {
+		if (*auth) {
+			dhcp_argv[i++] = "-x";	// authentication
+			asprintf(&s_auth, "0x11:%s", auth);
+			dhcp_argv[i++] = s_auth;
+		}
+		if (*clientid) {
+			dhcp_argv[i++] = "-x";	// client id 
+			asprintf(&s_clientid, "0x01:%s", clientid);
+			dhcp_argv[i++] = s_clientid;
+		}
+		if (*vendorclass) {
+			dhcp_argv[i++] = "-V";	// vendor class 
+			dhcp_argv[i++] = vendorclass;
+		}
+		if (*userclass) {
+			dhcp_argv[i++] = "-u";	// user class
+			dhcp_argv[i++] = userclass;
+		}
+	}
+
+
+	pid_t pid;
+	_evalpid(dhcp_argv, NULL, 0, &pid);
+//	eval("dhcp6c", "-c", "/tmp/dhcp6c.conf", "-T", "LL", get_wan_face());
 }
 
 void stop_dhcp6c(void)
