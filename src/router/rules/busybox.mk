@@ -322,11 +322,11 @@ ifeq ($(CONFIG_IPV6),y)
 	echo "CONFIG_FEATURE_PREFER_IPV4_ADDRESS=y" >> busybox/.config
 	sed -i 's/\# CONFIG_FEATURE_NETSTAT_PRG is not set/CONFIG_FEATURE_NETSTAT_PRG=y/g' busybox/.config
 	sed -i 's/\# CONFIG_FEATURE_NETSTAT_WIDE is not set/CONFIG_FEATURE_NETSTAT_WIDE=y/g' busybox/.config
-	sed -i 's/\# CONFIG_UDHCPC6 is not set/CONFIG_UDHCPC6=y/g' busybox/.config
-	echo "CONFIG_FEATURE_UDHCPC6_RFC3646=y" >> busybox/.config
-	echo "CONFIG_FEATURE_UDHCPC6_RFC4704=y" >> busybox/.config
-	echo "CONFIG_FEATURE_UDHCPC6_RFC4833=y" >> busybox/.config
-	echo "# CONFIG_FEATURE_UDHCPC6_RFC5970 is not set" >> busybox/.config
+#	sed -i 's/\# CONFIG_UDHCPC6 is not set/CONFIG_UDHCPC6=y/g' busybox/.config
+##	echo "CONFIG_FEATURE_UDHCPC6_RFC3646=y" >> busybox/.config
+#	echo "CONFIG_FEATURE_UDHCPC6_RFC4704=y" >> busybox/.config
+#	echo "CONFIG_FEATURE_UDHCPC6_RFC4833=y" >> busybox/.config
+#	echo "# CONFIG_FEATURE_UDHCPC6_RFC5970 is not set" >> busybox/.config
 else
 	echo "# CONFIG_TRACEROUTE6 is not set" >> busybox/.config
 	echo "# CONFIG_PING6 is not set" >> busybox/.config
