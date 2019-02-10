@@ -22,3 +22,4 @@ clean:
 	
 install:
 	install -D $(TARGET) $(INSTALLDIR)/usr/sbin/$(TARGET)
+	install -D odhcp6c-example-script.sh $(INSTALLDIR)/usr/sbin/odhcp6c-update
