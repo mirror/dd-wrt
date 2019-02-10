@@ -1,3 +1,4 @@
+
 /*
  * network.c
  *
@@ -446,7 +447,6 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int le
 			dhcp_argv[i++] = wan_hostname;
 		}
 	}
-
 	_evalpid(dhcp_argv, NULL, 0, &pid);
 
 	if (s_auth)
