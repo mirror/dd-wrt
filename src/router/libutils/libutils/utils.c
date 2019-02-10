@@ -52,6 +52,7 @@
 #include <code_pattern.h>
 #include <bcmdevs.h>
 #include <net/route.h>
+#include <linux/if_vlan.h>
 #include <cy_conf.h>
 #include <bcmdevs.h>
 #include <linux/if_ether.h>
@@ -1655,6 +1656,21 @@ void getSystemMac(char *newmac)
 
 }
 
+int isvlan(char *name)
+{
+	int socket_fd;
+	struct vlan_ioctl_args ifr;
+
+	if ((socket_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+		return 0;
+	strcpy(ifr.device1, name);
+	ifr.cmd = GET_VLAN_VID_CMD;
+	int err = ioctl(socket_fd, SIOCSIFVLAN, &ifr);
+	close(socket_fd);
+	return err ? 0 : 1;
+
+}
+
 #define MAX_BRIDGES	1024
 
 #include <linux/if_bridge.h>
@@ -2024,7 +2040,7 @@ static char *s_getDrives(int type)
 			}
 #ifdef HAVE_ZFS
 			if (type) {
-				char *d = &file->d_name;
+				char *d = &file->d_name[0];
 				char stats[512];
 				char cmp[32];
 				if (d && *d) {
