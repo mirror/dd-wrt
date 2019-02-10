@@ -126,8 +126,8 @@ void start_dhcp6c(void)
 #endif
 	char plen[16];
 	sprintf(plen, "%d", prefix_len);
-	int i=5;
-	char *dhcp_argv[] = { "odhcpc6c",
+	int i=6;
+	char *dhcp_argv[] = { "odhcpc6c", "-d",
 		"-i", get_wan_face(),
 		"-P", plen,
 		NULL, NULL,
@@ -147,6 +147,17 @@ void start_dhcp6c(void)
 		NULL, NULL,
 		NULL, NULL,
 	};
+
+#ifdef HAVE_FREECWMP
+	char *vendorclass = "dslforum.org";
+#else
+	char *vendorclass = nvram_safe_get("dhcpc_vendorclass");
+#endif
+	char *userclass = nvram_safe_get("dhcp_userclass");
+	char *auth = nvram_safe_get("dhcp_authentication");
+	char *clientid = nvram_safe_get("dhcp_clientid");
+	char *s_auth = NULL;
+	char *s_clientid = NULL;
 
 	if (nvram_match("wan_proto", "dhcp_auth")) {
 		if (*auth) {
@@ -172,6 +183,11 @@ void start_dhcp6c(void)
 
 	pid_t pid;
 	_evalpid(dhcp_argv, NULL, 0, &pid);
+
+	if (s_auth)
+		free(s_auth);
+	if (s_clientid)
+		free(s_clientid);
 //	eval("dhcp6c", "-c", "/tmp/dhcp6c.conf", "-T", "LL", get_wan_face());
 }
 
