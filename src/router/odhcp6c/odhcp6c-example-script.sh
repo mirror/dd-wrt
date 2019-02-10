@@ -19,6 +19,10 @@ update_resolv() {
 
 setup_interface () {
 	local device="$1"
+	if [ "$($nv get wan_priority)" = "1" ]
+	then
+		vconfig "$device" set_egress_map 0 0
+	fi
 
 	# Merge RA-DNS
 	for radns in $RA_DNS; do
@@ -130,6 +134,10 @@ teardown_interface() {
 	ip -6 route flush dev "$device"
 	ip -6 address flush dev "$device" scope global
 	update_resolv "$device" ""
+	if [ "$($nv get wan_priority)" = "1" ]
+	then
+		vconfig "$device" set_egress_map 0 6
+	fi
 }
 
 (
