@@ -106,7 +106,7 @@ client6_script(scriptpath, state, optinfo)
 	nispnamelen = 0;
 	bcmcsservers = 0;
 	bcmcsnamelen = 0;
-	envc = 2;     /* we at least include the reason and the terminator */
+	envc = 3;     /* we at least include the reason and the terminator */
 
 	/* count the number of variables */
 	for (v = TAILQ_FIRST(&optinfo->dns_list); v; v = TAILQ_NEXT(v, link))
@@ -169,6 +169,16 @@ client6_script(scriptpath, state, optinfo)
 	 */
 	i = 0;
 	/* reason */
+	char s_state[64];
+	sprintf(s_state, "%d", state);
+	
+	if ((envp[i++] = strdup(s_state)) == NULL) {
+		dprintf(LOG_NOTICE, FNAME,
+		    "failed to allocate state strings");
+		ret = -1;
+		goto clean;
+	}
+	
 	if ((envp[i++] = strdup(reason)) == NULL) {
 		dprintf(LOG_NOTICE, FNAME,
 		    "failed to allocate reason strings");
