@@ -151,6 +151,9 @@ static void uart_start(struct tty_struct *tty)
 	struct uart_port *port;
 	unsigned long flags;
 
+	if (!state)
+		return;
+
 	port = uart_port_lock(state, flags);
 	__uart_start(tty);
 	uart_port_unlock(port, flags);
@@ -748,6 +751,9 @@ static void uart_throttle(struct tty_struct *tty)
 	struct uart_state *state = tty->driver_data;
 	struct uart_port *port;
 	upstat_t mask = 0;
+
+	if (!state)
+		return;
 
 	port = uart_port_ref(state);
 	if (!port)
