@@ -170,9 +170,10 @@ void start_dhcp6c(void)
 				}
 			}
 
-			fprintf(fpc, "};\n" "id-assoc pd 0 {\n" " prefix-interface %s {\n"	//
+			fprintf(fpc, "};\n" "id-assoc pd 0 {\n" //
+				" prefix-interface %s {\n" //
 				"  sla-id 0;\n"	//
-				"  sla-len %d;\n"	//
+				"  sla-len %d;\n" //
 				" };\n"	//
 				"};\n"	//
 				"id-assoc na 0 { };\n", nvram_safe_get("lan_ifname"), prefix_len);
