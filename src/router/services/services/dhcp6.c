@@ -109,7 +109,7 @@ void start_dhcp6c(void)
 			prefix_len = 0;
 
 		if ((fpc = fopen("/etc/dhcp6c.conf", "w"))) {
-			fprintf(fpc, "interface %s {\n" //
+			fprintf(fpc, "interface %s {\n"	//
 				" send ia-pd 0;\n"	//
 				" send rapid-commit;\n"	//
 				" request domain-name-servers;\n"	//
@@ -132,7 +132,7 @@ void start_dhcp6c(void)
 			char *requestip = nvram_safe_get("dhcpc_requestip");
 
 			if (nvram_match("wan_proto", "dhcp_auth")) {
-				fprintf(fpc,"raw-option 6 00:0b:00:11:00:17:00:18\n");
+				fprintf(fpc, "raw-option 6 00:0b:00:11:00:17:00:18\n");
 				if (*auth) {
 					fprintf(fpc, "raw-option 11 %s\n", auth);
 					int i;
@@ -170,10 +170,10 @@ void start_dhcp6c(void)
 				}
 			}
 
-			fprintf(fpc, "};\n" "id-assoc pd 0 {\n" //
-				" prefix-interface %s {\n" //
+			fprintf(fpc, "};\n" "id-assoc pd 0 {\n"	//
+				" prefix-interface %s {\n"	//
 				"  sla-id 0;\n"	//
-				"  sla-len %d;\n" //
+				"  sla-len %d;\n"	//
 				" };\n"	//
 				"};\n"	//
 				"id-assoc na 0 { };\n", nvram_safe_get("lan_ifname"), prefix_len);
@@ -308,6 +308,7 @@ int dhcp6c_state_main(int argc, char **argv)
 	c |= nvram_change("ipv6_get_sip_servers", getenv("new_sip_servers"));
 
 	if (c) {
+
 		dns_to_resolv();
 #ifdef HAVE_RADVD
 		stop_radvd();
@@ -315,6 +316,10 @@ int dhcp6c_state_main(int argc, char **argv)
 #endif
 		stop_dhcp6s();
 		start_dhcp6s();
+	}
+
+	if (nvram_match("wan_priority", "1")) {
+		eval("vconfig", get_wan_face(), "set_egress_map", "0", "0");
 	}
 	return 0;
 }
