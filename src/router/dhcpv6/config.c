@@ -221,14 +221,14 @@ configure_interface(iflist)
 			case DECL_DUID:
 				if ((configure_duid((char *)cfl->ptr,
 						    &ifc->duid)) != 0) {
-					d_printf(LOG_ERR, FNAME, "%s:%d "
+					dprintf(LOG_ERR, FNAME, "%s:%d "
 					    "failed to configure "
 					    "DUID for %s",
 					    configfilename, cfl->line,
 					    ifc->ifname);
 					goto bad;
 				}
-				d_printf(LOG_DEBUG, FNAME,
+				dprintf(LOG_DEBUG, FNAME,
 				    "configure DUID for %s: %s",
 				    ifc->ifname, duidstr(&ifc->duid));
 				break;
