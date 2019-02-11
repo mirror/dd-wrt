@@ -75,7 +75,7 @@ void start_dhcp6c(void)
 	nvram_unset("ipv6_prefix");
 	nvram_unset("ipv6_rtr_addr");
 	nvram_unset("ipv6_get_dns");
-#if 0
+
 	char mac[18];
 	getLANMac(mac);
 	if (!*mac)
@@ -109,86 +109,77 @@ void start_dhcp6c(void)
 			prefix_len = 0;
 
 		if ((fpc = fopen("/etc/dhcp6c.conf", "w"))) {
-			fprintf(fpc,
-				"interface %s {\n"
-				" send ia-pd 0;\n"
-				" send rapid-commit;\n"
-				" request domain-name-servers;\n"
-				" script \"/sbin/dhcp6c-state\";\n"
-				"};\n" "id-assoc pd 0 {\n" " prefix-interface %s {\n" "  sla-id 0;\n" "  sla-len %d;\n" " };\n" "};\n" "id-assoc na 0 { };\n", get_wan_face(), nvram_safe_get("lan_ifname"), prefix_len);
+			fprintf(fpc, "interface %s {\n" " send ia-pd 0;\n"	//
+				" send rapid-commit;\n"	//
+				" request domain-name-servers;\n"	//
+				" script \"/sbin/dhcp6c-state\";\n", get_wan_face());
+
+/*#define DH6OPT_USER_CLASS 15
+#define DH6OPT_VENDOR_CLASS 16
+#define DH6OPT_CLIENTID	1
+#define DH6OPT_ORO 6
+#define DH6OPT_AUTH 11
+*/
+#ifdef HAVE_FREECWMP
+			char *vendorclass = "dslforum.org";
+#else
+			char *vendorclass = nvram_safe_get("dhcpc_vendorclass");
+#endif
+			char *userclass = nvram_safe_get("dhcp_userclass");
+			char *auth = nvram_safe_get("dhcp_authentication");
+			char *clientid = nvram_safe_get("dhcp_clientid");
+			char *requestip = nvram_safe_get("dhcpc_requestip");
+
+			if (nvram_match("wan_proto", "dhcp_auth")) {
+				fprintf(fpc,"raw-option 6 00:0b:00:11:00:17:00:18\n");
+				if (*auth) {
+					fprintf(fpc, "raw-option 11 %s\n", auth);
+					int i;
+					for (i = 0; i < strlen(auth); i += 2) {
+						if (i)
+							fprintf(fpc, ":");
+						fprintf(fpc, "%c%c", auth[i], auth[i + 1]);
+					}
+					fprintf(fpc, "\n");
+				}
+
+				if (*clientid) {
+					fprintf(fpc, "raw-option 1 %s\n", clientid);
+					int i;
+					for (i = 0; i < strlen(clientid); i += 2) {
+						if (i)
+							fprintf(fpc, ":");
+						fprintf(fpc, "%c%c", clientid[i], clientid[i + 1]);
+					}
+					fprintf(fpc, "\n");
+				}
+				if (*vendorclass) {
+					fprintf(fpc, "raw-option 16 00:00:04:0e:%02X:%02X", strlen(vendorclass) >> 8, strlen(vendorclass) & 0xff);	// 00:00:04:0e enterprise id for sagecom
+					int i;
+					for (i = 0; i < strlen(vendorclass); i++)
+						fprintf(fpc, ":%02X", vendorclass[i]);
+					fprintf(fpc, "\n");
+				}
+				if (*userclass) {
+					fprintf(fpc, "raw-option 15 %02X:%02X", strlen(userclass) >> 8, strlen(userclass) & 0xff);	// must convert to hex
+					int i;
+					for (i = 0; i < strlen(userclass); i++)
+						fprintf(fpc, ":%02X", userclass[i]);
+					fprintf(fpc, "\n");
+				}
+			}
+
+			fprintf(fpc, "};\n" "id-assoc pd 0 {\n" " prefix-interface %s {\n"	//
+				"  sla-id 0;\n"	//
+				"  sla-len %d;\n"	//
+				" };\n"	//
+				"};\n"	//
+				"id-assoc na 0 { };\n", nvram_safe_get("lan_ifname"), prefix_len);
 			fclose(fpc);
 		}
 	}
-#else
-		prefix_len = 64 - (atoi(nvram_safe_get("ipv6_pf_len")) ? : 64);
-		if (prefix_len < 0)
-			prefix_len = 0;
-#endif
-	char plen[16];
-	sprintf(plen, "%d", prefix_len);
-	int i=6;
-	char *dhcp_argv[] = { "odhcpc6c", "-d",
-		"-i", get_wan_face(),
-		"-P", plen,
-		NULL, NULL,
-		NULL, NULL,
-		NULL, NULL,
-		NULL, NULL,
-		NULL, NULL,
-		NULL, NULL,
-		NULL, NULL,
-		NULL, NULL,
-		NULL, NULL,
-		NULL, NULL,
-		NULL, NULL,
-		NULL, NULL,
-		NULL, NULL,
-		NULL, NULL,
-		NULL, NULL,
-		NULL, NULL,
-	};
 
-#ifdef HAVE_FREECWMP
-	char *vendorclass = "dslforum.org";
-#else
-	char *vendorclass = nvram_safe_get("dhcpc_vendorclass");
-#endif
-	char *userclass = nvram_safe_get("dhcp_userclass");
-	char *auth = nvram_safe_get("dhcp_authentication");
-	char *clientid = nvram_safe_get("dhcp_clientid");
-	char *s_auth = NULL;
-	char *s_clientid = NULL;
-
-	if (nvram_match("wan_proto", "dhcp_auth")) {
-		if (*auth) {
-			dhcp_argv[i++] = "-x";	// authentication
-			asprintf(&s_auth, "0x11:%s", auth);
-			dhcp_argv[i++] = s_auth;
-		}
-		if (*clientid) {
-			dhcp_argv[i++] = "-x";	// client id 
-			asprintf(&s_clientid, "0x01:%s", clientid);
-			dhcp_argv[i++] = s_clientid;
-		}
-		if (*vendorclass) {
-			dhcp_argv[i++] = "-V";	// vendor class 
-			dhcp_argv[i++] = vendorclass;
-		}
-		if (*userclass) {
-			dhcp_argv[i++] = "-u";	// user class
-			dhcp_argv[i++] = userclass;
-		}
-	}
-
-
-	pid_t pid;
-	_evalpid(dhcp_argv, NULL, 0, &pid);
-
-	if (s_auth)
-		free(s_auth);
-	if (s_clientid)
-		free(s_clientid);
-//	eval("dhcp6c", "-c", "/tmp/dhcp6c.conf", "-T", "LL", get_wan_face());
+	eval("dhcp6c", "-c", "/tmp/dhcp6c.conf", "-T", "LL", get_wan_face());
 }
 
 void stop_dhcp6c(void)
