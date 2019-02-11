@@ -855,6 +855,8 @@ client6_expire_refreshtime(arg)
 
 	return (NULL);
 }
+extern int nvram_match(const char *name, const char *match);
+extern char *get_wan_face(void);
 
 struct dhcp6_timer *
 client6_timo(arg)
@@ -898,7 +900,12 @@ client6_timo(arg)
 		/* fall through */
 	case DHCP6S_REQUEST:
 	case DHCP6S_RELEASE:
-	case DHCP6S_INFOREQ:
+    	case DHCP6S_INFOREQ:
+		if (nvram_match("wan_priority", "1")) {
+		char call[128];
+		sprintf(call, "vconfig %s set_egress_map 0 6",get_wan_face());		
+		system(call);
+		}	
 		client6_send(ev);
 		break;
 	case DHCP6S_RENEW:
