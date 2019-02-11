@@ -388,7 +388,7 @@ client6_script(scriptpath, state, optinfo)
 		elen = sizeof(raw_dhcp_option_str) + 1 /* underscore */ + 1 /* equals sign */ + 5;
 		elen += rawop->datalen * 2;
 		if ((s = envp[i++] = malloc(elen)) == NULL) {
-			d_printf(LOG_NOTICE, FNAME,
+			dprintf(LOG_NOTICE, FNAME,
 			    "failed to allocate string for DHCPv6 option %d",
 			    rawop->opnum);
 			ret = -1;
