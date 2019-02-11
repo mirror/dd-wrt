@@ -1335,7 +1335,7 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 	glob_t globbuf;
 	char *globstring;
 	int globresult;
-
+	int c;
 	show_bwif(wp, nvram_safe_get("lan_ifname"), "LAN");
 	bzero(eths, sizeof(eths));
 	getIfLists(eths, sizeof(eths));
@@ -1393,7 +1393,7 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 
 	}
 #ifdef HAVE_MADWIFI
-	int c = getdevicecount();
+	c = getdevicecount();
 	int i;
 
 	for (i = 0; i < c; i++) {
