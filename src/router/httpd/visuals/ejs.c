@@ -1349,7 +1349,9 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 	getIfList(eths2, "tun");
 	strcat(eths, " ");
 	strcat(eths, eths2);
-
+#ifndef HAVE_MADWIFI
+	int cnt = get_wl_instances();
+#endif
 	foreach(var, eths, next) {
 		if (!strcmp(get_wan_face(), var))
 			continue;
