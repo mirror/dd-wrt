@@ -109,7 +109,8 @@ void start_dhcp6c(void)
 			prefix_len = 0;
 
 		if ((fpc = fopen("/etc/dhcp6c.conf", "w"))) {
-			fprintf(fpc, "interface %s {\n" " send ia-pd 0;\n"	//
+			fprintf(fpc, "interface %s {\n" //
+				" send ia-pd 0;\n"	//
 				" send rapid-commit;\n"	//
 				" request domain-name-servers;\n"	//
 				" script \"/sbin/dhcp6c-state\";\n", get_wan_face());
