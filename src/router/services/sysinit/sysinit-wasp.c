@@ -191,7 +191,7 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 	if (nvram_match("wan_proto", "disabled")
-	    && nvram_seti("fullswitch", 1)) {
+	    && nvram_matchi("fullswitch", 1)) {
 		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 4 5");
 	} else {
 		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 5");
