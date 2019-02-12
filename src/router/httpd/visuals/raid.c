@@ -53,6 +53,10 @@
 /* simply check for availability of the required filesystem tools */
 static int checkfs(char *type)
 {
+#ifdef HAVE_ZFS
+	if (!strcmp(type, "zfs"))
+		return 1;
+#endif
 	char fscheck[32];
 	sprintf(fscheck, "/sbin/mkfs.%s", type);
 	char fscheck2[32];
@@ -267,6 +271,7 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 	int exfat = checkfs("exfat");
 	int ntfs = checkfs("ntfs");
 	int fat32 = checkfs("fat");
+	int zfs = checkfs("zfs");
 	char *drives = getAllDrives();
 	char drive[128];
 	char *dnext;
@@ -347,6 +352,8 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, "document.write(\"<option value=\\\"btrfs\\\" %s >BTRFS</option>\");\n", !strcmp(raidfs, "btrfs") ? "selected=\\\"selected\\\"" : "");
 			if (ntfs)
 				websWrite(wp, "document.write(\"<option value=\\\"ntfs\\\" %s >NTFS</option>\");\n", !strcmp(raidfs, "ntfs") ? "selected=\\\"selected\\\"" : "");
+			if (zfs)
+				websWrite(wp, "document.write(\"<option value=\\\"zfs\\\" %s >ZFS</option>\");\n", !strcmp(raidfs, "zfs") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "//]]>\n</script></select>\n");
 			websWrite(wp, "</td>\n");
 		}
@@ -520,6 +527,8 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 			else if (!strcmp(fs, "NTFS") && ntfs)
 				dis = 0;
 			else if (!strcmp(fs, "FAT32") && fat32)
+				dis = 0;
+			else if (!strcmp(fs, "ZFS") && zfs)
 				dis = 0;
 			websWrite(wp,
 				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" id=\\\"drive_format%d\\\" name=\\\"reboot_button\\\" type=\\\"button\\\" value=\\\"\" + nas.format + \"\\\" onclick=drive_format_submit(this.form,%d,\\\"%s\\\") %s />\");\n//]]>\n</script>\n",
