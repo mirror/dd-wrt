@@ -2426,6 +2426,13 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 static void mangle_table(char *wanface, char *wanaddr, char *vifs)
 {
 	save2file("*mangle\n:PREROUTING ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]");
+
+	if (nvram_match("wan_priority", "1") && isvlan(wanface)) {
+		eval("vconfig", "set_egress_map", wanface, "0", "6");
+		eval("vconfig", "set_egress_map", wanface, "1", "0");
+		save2file_A_postrouting("-j CLASSIFY --set-class 0:1");
+		save2file_A_postrouting("-o %s -p udp --dport 67 -j CLASSIFY --set-class 0:0", wanface);
+	}
 	if (strcmp(get_wan_face(), "wwan0")) {
 
 		if (wanactive(wanaddr) && (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off"))) {
