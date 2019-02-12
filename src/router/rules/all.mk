@@ -315,6 +315,7 @@ include rules/dosfstools.mk
 include rules/zfs.mk
 include rules/libzip.mk
 include rules/qrencode.mk
+include rules/iozone.mk
 
 #
 # Generic rules
