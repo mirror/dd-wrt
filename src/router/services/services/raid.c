@@ -228,6 +228,9 @@ void start_raid(void)
 				if (nvram_nmatch("ntfs", "raidfs%d", i)) {
 					sysprintf("mkfs.ntfs -Q -F -L \"%s\" /dev/md%d", poolname, i);
 				}
+				if (nvram_nmatch("zfs", "raidfs%d", i)) {
+					sysprintf("zpool create -f -m \"/tmp/mnt/%s\" \"%s\" /dev/md%d", poolname, poolname, i);
+				}
 			}
 			if (!strcmp(type, "btrfs")) {
 				if (!strcmp(level, "0"))
@@ -316,6 +319,10 @@ void start_raid(void)
 			}
 			if (nvram_nmatch("ntfs", "raidfs%d", i)) {
 				sysprintf("ntfs-3g -o compression,direct_io,big_writes /dev/md%d \"/tmp/mnt/%s\"", i, poolname);
+			}
+			if (nvram_nmatch("zfs", "raidfs%d", i)) {
+				sysprintf("zpool import -a -d /dev");
+				sysprintf("zfs mount %s", poolname);
 			}
 		}
 		if (!strcmp(type, "btrfs")) {
