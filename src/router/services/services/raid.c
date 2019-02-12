@@ -66,6 +66,8 @@ void start_raid(void)
 				xfs = 1;
 			if (!strcmp(fs, "ntfs"))
 				ntfs = 1;
+			if (!strcmp(fs, "zfs"))
+				zfs = 1;
 			if (!strcmp(fs, "ext2"))
 				ext2 = 1;
 			else if (!strncmp(fs, "ext", 3))
