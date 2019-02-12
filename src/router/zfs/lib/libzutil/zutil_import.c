@@ -412,13 +412,13 @@ udev_device_is_ready(struct udev_device *dev)
 int
 zpool_label_disk_wait(const char *path, int timeout_ms)
 {
-#ifdef HAVE_LIBUDEV
+#if 0 //def HAVE_LIBUDEV
 	struct udev *udev;
 	struct udev_device *dev = NULL;
 	char nodepath[MAXPATHLEN];
 	char *sysname = NULL;
 	int ret = ENODEV;
-	int settle_ms = 50;
+	int settle_ms = 500;
 	long sleep_ms = 10;
 	hrtime_t start, settle;
 
@@ -480,7 +480,7 @@ zpool_label_disk_wait(const char *path, int timeout_ms)
 
 	return (ret);
 #else
-	int settle_ms = 50;
+	int settle_ms = 500;
 	long sleep_ms = 10;
 	hrtime_t start, settle;
 	struct stat64 statbuf;
