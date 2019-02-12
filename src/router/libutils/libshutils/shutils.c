@@ -1080,7 +1080,7 @@ char *getdisc(void)		// works only for squashfs
 	int i, a;
 	char ret[8];
 	char *cache = nvram_safe_get("root_disc");
-	if (cache[0]) {
+	if (!cache[0]) {
 		if (rootdetect(cache) > 0)
 			return cache;
 	}
