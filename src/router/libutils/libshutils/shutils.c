@@ -1080,9 +1080,11 @@ char *getdisc(void)		// works only for squashfs
 	int i, a;
 	int nocache = 0;
 	static char ret[8];
+#ifndef HAVE_EROUTER
 	FILE *in = fopen("/usr/local/nvram/nvram.bin", "rb");
 	if (in) {
 		fclose(in);
+#endif
 		char *cache = nvram_safe_get("root_disc");
 		if (cache[0]) {
 			char tmp[32];
@@ -1091,8 +1093,10 @@ char *getdisc(void)		// works only for squashfs
 				return cache;
 			}
 		}
+#ifndef HAVE_EROUTER
 	} else
 		nocache = 1;
+#endif
 	for (i = 'a'; i <= 'z'; i++) {
 		char dev[64];
 		sprintf(dev, "/dev/sd%c2", i);
