@@ -901,11 +901,6 @@ client6_timo(arg)
 	case DHCP6S_REQUEST:
 	case DHCP6S_RELEASE:
     	case DHCP6S_INFOREQ:
-		if (nvram_match("wan_priority", "1")) {
-		char call[128];
-		sprintf(call, "vconfig %s set_egress_map 0 6",get_wan_face());		
-		system(call);
-		}	
 		client6_send(ev);
 		break;
 	case DHCP6S_RENEW:
