@@ -419,6 +419,7 @@ struct nvram_param srouter_defaults[] = {
 	{"wan_proto", "dhcp"},	/* [static|dhcp|pppoe|disabled] */
 #elif HAVE_WHRHPGN
 #ifdef HAVE_ONNET
+	{"fullswitch", "1"},
 	{"wan_proto", "disabled"},	/* [static|dhcp|pppoe|disabled] */
 #else
 	{"wan_proto", "dhcp"},	/* [static|dhcp|pppoe|disabled] */
