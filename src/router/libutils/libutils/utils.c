@@ -2022,8 +2022,10 @@ static char *s_getDrives(int type)
 	if (type)
 		mounts = getMountedDrives();
 	DIR *dir;
-	char *drives = NULL;
+	char **drives = NULL;
+	int alloc = 0;
 	struct dirent *file;
+	int count = 0;
 	if (!(dir = opendir("/dev")))
 		return NULL;
 	while (dir && (file = readdir(dir))) {
@@ -2069,19 +2071,28 @@ static char *s_getDrives(int type)
 			int c = 0;
 			if (drives)
 				c = 1;
-			drives = realloc(drives, drives ? strlen(drv) + 2 + strlen(drives) : strlen(drv) + 1);
-			if (c)
-				strcat(drives, " ");
-			else
-				drives[0] = 0;
-			strcat(drives, drv);
+			drives = realloc(drives, sizeof(char **) * (count + 1));
+			drives[count++] = strdup(drv);
+			alloc += strlen(drv) + 1;
 		}
 	      next:;
 	}
 	closedir(dir);
 	if (mounts)
 		free(mounts);
-	return drives;
+
+	qsort(drives, count, sizeof(char *), ifcompare);
+	char *result = malloc(alloc + 1);
+	int i;
+	for (i = 0; i < count; i++) {
+		if (i) {
+			strcat(result, " ");
+		}
+		strcat(result, drives[i]);
+		free(drives[i]);
+	}
+	free(drives);
+	return result;
 }
 
 char *getUnmountedDrives(void)
