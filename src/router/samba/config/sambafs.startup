@@ -21,7 +21,7 @@ if [ "$(nvram get samba_mount)" = "1" ]; then
     insmod des_generic
     insmod hmac
     insmod sha256_generic
-    mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",sec=ntlm
+    mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",sec=ntlm,vers=3.0
     stopservice dlna
     startservice dlna
     stopservice ftpsrv
