@@ -474,13 +474,13 @@ retry:
 		goto retry;
 	}
 
+#ifndef CONFIG_X86
 	printk("List of all partitions:\n");
 	printk_all_partitions();
 	printk("No filesystem could mount root, tried: ");
 	for (p = fs_names; *p; p += strlen(p)+1)
 		printk(" %s", p);
 	printk("\n");
-#ifndef CONFIG_X86
 #ifdef CONFIG_BLOCK
 	__bdevname(ROOT_DEV, b);
 #endif
