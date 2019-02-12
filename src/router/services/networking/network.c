@@ -1174,6 +1174,18 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("vlan2");
 	}
+	eval("swconfig", "dev", "eth0", "set", "reset", "1");
+	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
+	if (nvram_match("wan_proto", "disabled") 
+	    && nvram_matchi("fullswitch", 1)) {
+		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 4 5");
+	} else {
+		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 5");
+		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 4");
+	}
+	eval("swconfig", "dev", "eth0", "set", "apply");
+
+
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth1", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
