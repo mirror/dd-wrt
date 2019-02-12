@@ -147,7 +147,7 @@ enum {
 #define DHCP_CLIENT_ID          0x3d /* 61: by default client's MAC addr, but may be arbitrarily long */
 //#define DHCP_TFTP_SERVER_NAME 0x42 /* 66: same as 'sname' field */
 //#define DHCP_BOOT_FILE        0x43 /* 67: same as 'file' field */
-#define DHCP_USER_CLASS       0x4d /* 77: RFC 3004. set of LASCII strings. "I am a printer" etc */
+//#define DHCP_USER_CLASS       0x4d /* 77: RFC 3004. set of LASCII strings. "I am a printer" etc */
 #define DHCP_FQDN               0x51 /* 81: client asks to update DNS to map its FQDN to its new IP */
 //#define DHCP_DOMAIN_SEARCH    0x77 /* 119: RFC 3397. set of ASCIZ string, DNS-style compressed */
 //#define DHCP_SIP_SERVERS      0x78 /* 120: RFC 3361. flag byte, then: 0: domain names, 1: IP addrs */

@@ -19,7 +19,6 @@ struct client_config_t {
 	struct option_set *options;     /* list of DHCP options to send to server */
 	uint8_t *clientid;              /* Optional client id to use */
 	uint8_t *vendorclass;           /* Optional vendor class-id to use */
-	uint8_t *userclass;           /* Optional user class-id to use */
 	uint8_t *hostname;              /* Optional hostname to use */
 	uint8_t *fqdn;                  /* Optional fully qualified domain name to use */
 
