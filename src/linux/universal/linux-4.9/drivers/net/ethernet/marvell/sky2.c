@@ -2632,9 +2632,9 @@ resubmit:
 error:
 	++dev->stats.rx_errors;
 
-	if (net_ratelimit())
-		netif_info(sky2, rx_err, dev,
-			   "rx error, status 0x%x length %d\n", status, length);
+//	if (net_ratelimit())
+//		netif_info(sky2, rx_err, dev,
+//			   "rx error, status 0x%x length %d\n", status, length);
 
 	goto resubmit;
 }
@@ -3019,8 +3019,8 @@ static void sky2_watchdog(unsigned long arg)
 /* Hardware/software error handling */
 static void sky2_err_intr(struct sky2_hw *hw, u32 status)
 {
-	if (net_ratelimit())
-		dev_warn(&hw->pdev->dev, "error interrupt status=%#x\n", status);
+//	if (net_ratelimit())
+//		dev_warn(&hw->pdev->dev, "error interrupt status=%#x\n", status);
 
 	if (status & Y2_IS_HW_ERR)
 		sky2_hw_intr(hw);
