@@ -205,7 +205,7 @@ void start_raid(void)
 			sysprintf("zpool destroy %s", poolname);
 			if (!strcmp(type, "md")) {
 				dd_loginfo("raid", "creating MD Raid /dev/md%d", i);
-				sysprintf("mdadm --create /dev/md%d --level=%s --raid-devices=%d --run %s", i, level, drives, raid);
+				sysprintf("mdadm --create --assume-clean /dev/md%d --level=%s --raid-devices=%d --run %s", i, level, drives, raid);
 				if (nvram_nmatch("ext4", "raidfs%d", i)) {
 					sysprintf("mkfs.ext4 -F -E lazy_itable_init=1 -L \"%s\" /dev/md%d", poolname, i);
 				}
