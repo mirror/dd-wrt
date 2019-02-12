@@ -136,6 +136,8 @@ void start_transmission(void)
 	}
 	if (fp)
 		fclose(fp);
+	sysprintf("echo 16777216 > /proc/sys/net/core/rmem_max");
+	sysprintf("echo 4194304 > /proc/sys/net/core/wmem_max");
 	eval("transmissiond", "--config-dir", nvram_safe_get("transmission_dir"));
 	dd_loginfo("transmission", "daemon successfully started\n");
 	return;
