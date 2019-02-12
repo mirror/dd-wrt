@@ -67,7 +67,6 @@ struct tpacket_auxdata {
 static const char udhcpc_longopts[] ALIGN1 =
 	"clientid-none\0"  No_argument       "C"
 	"vendorclass\0"    Required_argument "V"
-	"userclass\0"      Required_argument "u"
 	"hostname\0"       Required_argument "H"
 	"fqdn\0"           Required_argument "F"
 	"interface\0"      Required_argument "i"
@@ -96,28 +95,27 @@ static const char udhcpc_longopts[] ALIGN1 =
 enum {
 	OPT_C = 1 << 0,
 	OPT_V = 1 << 1,
-	OPT_u = 1 << 2,
-	OPT_H = 1 << 3,
-	OPT_h = 1 << 4,
-	OPT_F = 1 << 5,
-	OPT_i = 1 << 6,
-	OPT_n = 1 << 7,
-	OPT_p = 1 << 8,
-	OPT_q = 1 << 9,
-	OPT_R = 1 << 10,
-	OPT_r = 1 << 11,
-	OPT_s = 1 << 12,
-	OPT_T = 1 << 13,
-	OPT_t = 1 << 14,
-	OPT_S = 1 << 15,
-	OPT_A = 1 << 16,
-	OPT_O = 1 << 17,
-	OPT_o = 1 << 18,
-	OPT_x = 1 << 19,
-	OPT_f = 1 << 20,
-	OPT_B = 1 << 21,
+	OPT_H = 1 << 2,
+	OPT_h = 1 << 3,
+	OPT_F = 1 << 4,
+	OPT_i = 1 << 5,
+	OPT_n = 1 << 6,
+	OPT_p = 1 << 7,
+	OPT_q = 1 << 8,
+	OPT_R = 1 << 9,
+	OPT_r = 1 << 10,
+	OPT_s = 1 << 11,
+	OPT_T = 1 << 12,
+	OPT_t = 1 << 13,
+	OPT_S = 1 << 14,
+	OPT_A = 1 << 15,
+	OPT_O = 1 << 16,
+	OPT_o = 1 << 17,
+	OPT_x = 1 << 18,
+	OPT_f = 1 << 19,
+	OPT_B = 1 << 20,
 /* The rest has variable bit positions, need to be clever */
-	OPTBIT_B = 21,
+	OPTBIT_B = 20,
 	USE_FOR_MMU(             OPTBIT_b,)
 	IF_FEATURE_UDHCPC_ARPING(OPTBIT_a,)
 	IF_FEATURE_UDHCP_PORT(   OPTBIT_P,)
@@ -657,8 +655,6 @@ static void add_client_options(struct dhcp_packet *packet)
 
 	if (client_config.vendorclass)
 		udhcp_add_binary_option(packet, client_config.vendorclass);
-	if (client_config.userclass)
-		udhcp_add_binary_option(packet, client_config.userclass);
 	if (client_config.hostname)
 		udhcp_add_binary_option(packet, client_config.hostname);
 	if (client_config.fqdn)
@@ -1247,7 +1243,6 @@ static void client_background(void)
 //usage:     "\n			-x 14:'\"dumpfile\"' - option 14 (shell-quoted)"
 //usage:     "\n	-F NAME		Ask server to update DNS mapping for NAME"
 //usage:     "\n	-V VENDOR	Vendor identifier (default 'udhcp VERSION')"
-//usage:     "\n	-u USER Class	User identifier"
 //usage:     "\n	-C		Don't send MAC as client identifier"
 //usage:	IF_UDHCP_VERBOSE(
 //usage:     "\n	-v		Verbose"
@@ -1261,7 +1256,7 @@ int udhcpc_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 {
 	uint8_t *message;
-	const char *str_V, *str_u, *str_h, *str_F, *str_r;
+	const char *str_V, *str_h, *str_F, *str_r;
 	IF_FEATURE_UDHCPC_ARPING(const char *str_a = "2000";)
 	IF_FEATURE_UDHCP_PORT(char *str_P;)
 	void *clientid_mac_ptr;
@@ -1292,14 +1287,14 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 	/* Parse command line */
 	opt = getopt32long(argv, "^"
 		/* O,x: list; -T,-t,-A take numeric param */
-		"CV:u:H:h:F:i:np:qRr:s:T:+t:+SA:+O:*ox:*fB"
+		"CV:H:h:F:i:np:qRr:s:T:+t:+SA:+O:*ox:*fB"
 		USE_FOR_MMU("b")
 		IF_FEATURE_UDHCPC_ARPING("a::")
 		IF_FEATURE_UDHCP_PORT("P:")
 		"v"
 		"\0" IF_UDHCP_VERBOSE("vv") /* -v is a counter */
 		, udhcpc_longopts
-		, &str_V ,&str_u, &str_h, &str_h, &str_F
+		, &str_V, &str_h, &str_h, &str_F
 		, &client_config.interface, &client_config.pidfile /* i,p */
 		, &str_r /* r */
 		, &client_config.script /* s */
@@ -1389,9 +1384,6 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 		// ...so the question is, should we?
 		//bb_error_msg("option -V VENDOR is deprecated, use -x vendor:VENDOR");
 		client_config.vendorclass = alloc_dhcp_option(DHCP_VENDOR, str_V, 0);
-	}
-	if (str_u[0] != '\0') {
-		client_config.userclass = alloc_dhcp_option(DHCP_USER_CLASS, str_u, 0);
 	}
 
 #if !BB_MMU
