@@ -1084,9 +1084,20 @@ char *getdisc(void)		// works only for squashfs
 		sprintf(dev, "/dev/sd%c2", i);
 		int detect = rootdetect(dev);
 		if (detect < 0)
-			break;
+			continue;
 		if (detect) {
 			sprintf(ret, "sd%c", i);
+			return ret;
+		}
+	}
+	for (i = 'a'; i <= 'z'; i++) {
+		char dev[64];
+		sprintf(dev, "/dev/hd%c2", i);
+		int detect = rootdetect(dev);
+		if (detect < 0)
+			continue;
+		if (detect) {
+			sprintf(ret, "hd%c", i);
 			return ret;
 		}
 	}
@@ -1096,7 +1107,7 @@ char *getdisc(void)		// works only for squashfs
 			sprintf(dev, "/dev/mmcblk%cp%c", i, a);
 			int detect = rootdetect(dev);
 			if (detect < 0)
-				break;
+				continue;
 			if (detect) {
 				sprintf(ret, "mmcblk%c", i);
 				return ret;
