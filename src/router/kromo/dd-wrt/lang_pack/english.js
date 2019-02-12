@@ -1975,7 +1975,8 @@ service.zabbix_usrpara="User Parameters";
 //TRansmission
 service.transmission_legend="BitTorrent";
 service.transmission_srv="Transmission Daemon";
-service.transmission_dir="Transmission Directory";
+service.transmission_dir="Transmission Config Directory";
+service.transmission_download="Transmission Download Directory";
 
 // ** eop-tunnel.asp **//
 var eoip=new Object();
