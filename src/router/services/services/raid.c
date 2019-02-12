@@ -184,6 +184,12 @@ void start_raid(void)
 	}
 
 	i = 0;
+	char *raid = nvram_nget("raid%d", i);
+	char *next;
+	char drive[64];
+	foreach(drive, raid, next) {
+		sysprintf("hdparm -S 120 %s", drive);
+	}
 	while (1) {
 		char *raid = nvram_nget("raid%d", i);
 		if (!*raid)
@@ -193,8 +199,6 @@ void start_raid(void)
 		char *type = nvram_nget("raidtype%d", i);
 		char *poolname = nvram_nget("raidname%d", i);
 		if (strcmp(done, "1")) {
-			char *next;
-			char drive[64];
 			int drives = 0;
 			foreach(drive, raid, next) {
 				drives++;
