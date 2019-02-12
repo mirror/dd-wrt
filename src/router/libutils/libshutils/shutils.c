@@ -1078,7 +1078,12 @@ static int rootdetect(char *fname)
 char *getdisc(void)		// works only for squashfs 
 {
 	int i, a;
-	static char ret[8];
+	char ret[8];
+	char *cache = nvram_safe_get("root_disc");
+	if (cache[0]) {
+		if (rootdetect(cache) > 0)
+			return cache;
+	}
 	for (i = 'a'; i <= 'z'; i++) {
 		char dev[64];
 		sprintf(dev, "/dev/sd%c2", i);
@@ -1087,7 +1092,9 @@ char *getdisc(void)		// works only for squashfs
 			continue;
 		if (detect) {
 			sprintf(ret, "sd%c", i);
-			return ret;
+			nvram_set("root_disc", ret);
+			nvram_commit();
+			return nvram_safe_get("root_disc");
 		}
 	}
 	for (i = 'a'; i <= 'z'; i++) {
@@ -1098,7 +1105,9 @@ char *getdisc(void)		// works only for squashfs
 			continue;
 		if (detect) {
 			sprintf(ret, "hd%c", i);
-			return ret;
+			nvram_set("root_disc", ret);
+			nvram_commit();
+			return nvram_safe_get("root_disc");
 		}
 	}
 	for (a = '1'; a <= '2'; a++) {
@@ -1110,7 +1119,9 @@ char *getdisc(void)		// works only for squashfs
 				continue;
 			if (detect) {
 				sprintf(ret, "mmcblk%c", i);
-				return ret;
+				nvram_set("root_disc", ret);
+				nvram_commit();
+				return nvram_safe_get("root_disc");
 			}
 		}
 	}
