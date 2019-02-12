@@ -107,7 +107,7 @@ static char *getfsname(char *drive)
 
 	if (strlen(root) == 7) { // mmcblkX
 		char tmp[64];
-		sprintf(tmp, "/dev/%s", root);0
+		sprintf(tmp, "/dev/%s", root);
 		if (!strncmp(drive, tmp, 12))
 		    return NULL;
 	}
