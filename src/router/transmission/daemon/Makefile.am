@@ -19,7 +19,7 @@ bin_PROGRAMS = \
     transmission-remote
 
 LDADD = \
-    $(top_builddir)/libtransmission/libtransmission.a \
+    $(top_builddir)/libtransmission/libtransmission.la \
     @LIBUPNP_LIBS@ \
     @LIBNATPMP_LIBS@ \
     @DHT_LIBS@ \
