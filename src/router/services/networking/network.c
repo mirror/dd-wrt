@@ -1168,7 +1168,7 @@ void start_lan(void)
 		nvram_set("et0macaddr", get_hwaddr("eth1", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_CPE880
-	nvram_setz(lan_ifnames, "vlan1 ath0");
+	nvram_setz(lan_ifnames, "vlan1 vlan2 ath0");
 	if (getSTA() || getWET() || CANBRIDGE()) {
 		PORTSETUPWAN("");
 	} else {
