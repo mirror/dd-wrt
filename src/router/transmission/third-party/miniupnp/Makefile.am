@@ -1,8 +1,8 @@
-noinst_LIBRARIES = libminiupnp.a
+lib_LTLIBRARIES = libminiupnp.la
 
 AM_CFLAGS = @PTHREAD_CFLAGS@ -DNDEBUG -D_GNU_SOURCE
 
-libminiupnp_a_SOURCES = \
+libminiupnp_la_SOURCES = \
     connecthostport.c \
     igd_desc_parse.c \
     minisoap.c \
