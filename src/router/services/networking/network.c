@@ -398,6 +398,8 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int le
 #endif
 	char *s_auth = NULL;
 	char *s_clientid = NULL;
+	char s_userclass[128]={0};
+	
 	if (nvram_match("wan_proto", "dhcp_auth")) {
 		if (*auth) {
 			dhcp_argv[i++] = "-x";	// authentication
@@ -414,8 +416,12 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int le
 			dhcp_argv[i++] = vendorclass;
 		}
 		if (*userclass) {
-			dhcp_argv[i++] = "-u";	// user class
-			dhcp_argv[i++] = userclass;
+			dhcp_argv[i++] = "-x";	// user class
+			sprintf(s_userclass,"0x4d:");
+			int i;
+			for (i = 0; i < strlen(userclass); i++)
+				sprintf(s_userclass, "%s:%02X", s_userclass, userclass[i]);
+			dhcp_argv[i++] = s_userclass;
 		}
 	}
 	if (flags)
