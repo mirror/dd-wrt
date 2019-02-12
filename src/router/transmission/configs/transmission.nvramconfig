@@ -1,2 +1,3 @@
  "transmission_enable"  "Transmission Daemon"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
  "transmission_dir"  "Transmission Dir"  "NULL"  "FALSE" "0"
+ "transmission_download"  "Transmission Download Dir"  "NULL"  "FALSE" "0"

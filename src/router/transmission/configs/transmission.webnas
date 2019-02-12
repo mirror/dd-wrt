@@ -11,4 +11,8 @@
 		<div class="label"><% tran("service.transmission_dir"); %></div>
 		<input size="25" maxlength="40" class="text" name="transmission_dir" value="<% nvram_get("transmission_dir"); %>" />
 	</div>
+	<div class="setting">
+		<div class="label"><% tran("service.transmission_download"); %></div>
+		<input size="25" maxlength="40" class="text" name="transmission_download" value="<% nvram_get("transmission_download"); %>" />
+	</div>
 </fieldset><br/>
