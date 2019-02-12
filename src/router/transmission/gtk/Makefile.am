@@ -78,7 +78,7 @@ transmission_gtk_SOURCES = \
 dist_man_MANS = transmission-gtk.1
 
 transmission_gtk_LDADD = \
-    $(top_builddir)/libtransmission/libtransmission.a \
+    $(top_builddir)/libtransmission/libtransmission.la \
     @LIBUPNP_LIBS@ \
     @LIBNATPMP_LIBS@ \
     @DHT_LIBS@ \
