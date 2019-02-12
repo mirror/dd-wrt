@@ -2083,6 +2083,7 @@ static char *s_getDrives(int type)
 
 	qsort(drives, count, sizeof(char *), ifcompare);
 	char *result = malloc(alloc + 1);
+	memset(result, 0, alloc + 1);
 	int i;
 	for (i = 0; i < count; i++) {
 		if (i) {
