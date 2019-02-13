@@ -87,15 +87,7 @@ void start_raid(void)
 	if (i == 0)
 		return;
 
-#ifdef HAVE_80211AC
-	writeprocsys("vm/min_free_kbytes", "20480");
-#elif HAVE_MVEBU
 	writeprocsys("vm/min_free_kbytes", "65536");
-#elif HAVE_IPQ806X
-	writeprocsys("vm/min_free_kbytes", "65536");
-#else
-	writeprocsys("vm/min_free_kbytes", "4096");
-#endif
 	writeprocsys("vm/vfs_cache_pressure", "10000");
 	writeprocsys("vm/dirty_expire_centisecs", "100");
 	writeprocsys("vm/dirty_writeback_centisecs", "100");
