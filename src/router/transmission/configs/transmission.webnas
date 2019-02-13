@@ -15,4 +15,11 @@
 		<div class="label"><% tran("service.transmission_download"); %></div>
 		<input size="25" maxlength="40" class="text" name="transmission_download" value="<% nvram_get("transmission_download"); %>" />
 	</div>
+	<div class="setting">
+		<div class="label"><% tran("service.transmission_style"); %></div>
+		<select name="transmisson_style">
+			<option value="default" <% nvram_selected("transmission_style","default"); %>>Default</option>
+			<option value="combustion" <% nvram_selected("transmission_style","combustion"); %>>Combustion</option>
+		</select>
+	</div>
 </fieldset><br/>
