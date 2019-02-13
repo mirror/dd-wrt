@@ -310,7 +310,7 @@ void start_raid(void)
 				sysprintf("mount -t btrfs /dev/md%d \"/tmp/mnt/%s\"", i, poolname);
 			}
 			if (nvram_nmatch("exfat", "raidfs%d", i)) {
-				sysprintf("mount -t exfat /dev/md%d \"/tmp/mnt/%s\"", i, poolname);
+				sysprintf("mount -t exfat -o iocharset=utf8 /dev/md%d \"/tmp/mnt/%s\"", i, poolname);
 			}
 			if (nvram_nmatch("fat32", "raidfs%d", i)) {
 				sysprintf("mount -t vfat -o iocharset=utf8 /dev/md%d \"/tmp/mnt/%s\"", i, poolname);
