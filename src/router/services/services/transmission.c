@@ -157,6 +157,8 @@ void start_transmission(void)
 					fprintf(fp, "\t\"%s\": \"%s/incomplete\",\n", name, nvram_safe_get("transmission_download"));
 				else if (!strcmp(name, "rpc-whiteliste"))
 					fprintf(fp, "\t\"%s\": \"127.0.0.1, %s\",\n", name, allowed);
+				else if (!strcmp(name, "rpc-port"))
+					fprintf(fp, "\t\"%s\": %s,\n", name, nvram_safe_get("transmission_rpc"));
 				else if (!strcmp(config[i].val, "false"))
 					fprintf(fp, "\t\"%s\": false,\n", name);
 				else if (!strcmp(config[i].val, "true"))
