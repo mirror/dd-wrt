@@ -20,6 +20,7 @@ typedef enum {
 	attr_delayed_allocation_blocks,
 	attr_session_write_kbytes,
 	attr_lifetime_write_kbytes,
+	attr_lazyinit_stats,
 	attr_reserved_clusters,
 	attr_inode_readahead,
 	attr_trigger_test_error,
@@ -70,6 +71,21 @@ static ssize_t lifetime_write_kbytes_show(struct ext4_attr *a,
 			(unsigned long long)(sbi->s_kbytes_written +
 			((part_stat_read(sb->s_bdev->bd_part, sectors[1]) -
 			  EXT4_SB(sb)->s_sectors_written_start) >> 1)));
+}
+
+static ssize_t lazyinit_stats_show(struct ext4_attr *a,
+				   struct ext4_sb_info *sbi, char *buf)
+{
+	int len = 0;
+	unsigned long total = sbi->lazyinit_total_cnt;
+	unsigned long finish = sbi->lazyinit_finished_cnt;
+
+	len += snprintf(buf + len, PAGE_SIZE,
+			"groups_finished: %lu\n", finish);
+	len += snprintf(buf + len, PAGE_SIZE,
+			"groups_total: %lu\n", total);
+
+	return len;
 }
 
 static ssize_t inode_readahead_blks_store(struct ext4_attr *a,
@@ -165,6 +181,7 @@ static struct ext4_attr ext4_attr_##_name = {			\
 EXT4_ATTR_FUNC(delayed_allocation_blocks, 0444);
 EXT4_ATTR_FUNC(session_write_kbytes, 0444);
 EXT4_ATTR_FUNC(lifetime_write_kbytes, 0444);
+EXT4_ATTR_FUNC(lazyinit_stats, 0444);
 EXT4_ATTR_FUNC(reserved_clusters, 0644);
 
 EXT4_ATTR_OFFSET(inode_readahead_blks, 0644, inode_readahead,
@@ -195,6 +212,7 @@ static struct attribute *ext4_attrs[] = {
 	ATTR_LIST(delayed_allocation_blocks),
 	ATTR_LIST(session_write_kbytes),
 	ATTR_LIST(lifetime_write_kbytes),
+	ATTR_LIST(lazyinit_stats),
 	ATTR_LIST(reserved_clusters),
 	ATTR_LIST(inode_readahead_blks),
 	ATTR_LIST(inode_goal),
@@ -269,6 +287,8 @@ static ssize_t ext4_attr_show(struct kobject *kobj,
 		return session_write_kbytes_show(a, sbi, buf);
 	case attr_lifetime_write_kbytes:
 		return lifetime_write_kbytes_show(a, sbi, buf);
+	case attr_lazyinit_stats:
+		return lazyinit_stats_show(a, sbi, buf);
 	case attr_reserved_clusters:
 		return snprintf(buf, PAGE_SIZE, "%llu\n",
 				(unsigned long long)
