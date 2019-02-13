@@ -14,6 +14,7 @@ if [ "$(nvram get samba_mount)" = "1" ]; then
     mkdir /mnt/smbshare
     chmod 777 /mnt/smbshare
     insmod nls_base
+    insmod nls_cp850
     insmod fscache
     insmod cifs
     insmod md4
@@ -22,7 +23,7 @@ if [ "$(nvram get samba_mount)" = "1" ]; then
     insmod hmac
     insmod sha256_generic
     insmod cmac
-    mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",sec=ntlm,vers=3.0
+    mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",sec=ntlm,vers=3.0,iocharset=utf8
     stopservice dlna
     startservice dlna
     stopservice ftpsrv
