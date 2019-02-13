@@ -1977,6 +1977,7 @@ service.transmission_legend="BitTorrent";
 service.transmission_srv="Transmission Daemon";
 service.transmission_dir="Transmission Config Directory";
 service.transmission_download="Transmission Download Directory";
+service.transmission_style="Web UI Style";
 
 // ** eop-tunnel.asp **//
 var eoip=new Object();
