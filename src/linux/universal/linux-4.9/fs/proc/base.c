@@ -2337,13 +2337,10 @@ static ssize_t timerslack_ns_write(struct file *file, const char __user *buf,
 		return -ESRCH;
 
 	if (p != current) {
-		rcu_read_lock();
-		if (!ns_capable(__task_cred(p)->user_ns, CAP_SYS_NICE)) {
-			rcu_read_unlock();
+		if (!capable(CAP_SYS_NICE)) {
 			count = -EPERM;
 			goto out;
 		}
-		rcu_read_unlock();
 
 		err = security_task_setscheduler(p);
 		if (err) {
@@ -2376,14 +2373,11 @@ static int timerslack_ns_show(struct seq_file *m, void *v)
 		return -ESRCH;
 
 	if (p != current) {
-		rcu_read_lock();
-		if (!ns_capable(__task_cred(p)->user_ns, CAP_SYS_NICE)) {
-			rcu_read_unlock();
+
+		if (!capable(CAP_SYS_NICE)) {
 			err = -EPERM;
 			goto out;
 		}
-		rcu_read_unlock();
-
 		err = security_task_getscheduler(p);
 		if (err)
 			goto out;
