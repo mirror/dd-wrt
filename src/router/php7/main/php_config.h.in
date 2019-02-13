@@ -681,6 +681,9 @@
 /* Define to 1 if you have the `flock' function. */
 #undef HAVE_FLOCK
 
+/* Struct flock is 64-bit AIX-type */
+#undef HAVE_FLOCK_AIX64
+
 /* Struct flock is BSD-type */
 #undef HAVE_FLOCK_BSD
 
@@ -1560,7 +1563,7 @@
 /* */
 #undef HAVE_RL_CALLBACK_READ_CHAR
 
-/* Define to 1 if you have the `rl_completion_matches' function. */
+/* */
 #undef HAVE_RL_COMPLETION_MATCHES
 
 /* */

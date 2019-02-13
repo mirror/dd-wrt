@@ -21,7 +21,7 @@
 #ifndef MYSQLND_H
 #define MYSQLND_H
 
-#define PHP_MYSQLND_VERSION "mysqlnd 5.0.12-dev - 20150407 - $Id: 401a40ebd5e281cf22215acdc170723a1519aaa9 $"
+#define PHP_MYSQLND_VERSION "mysqlnd 5.0.12-dev - 20150407 - $Id: 7cc7cc96e675f6d72e5cf0f267f48e167c2abb23 $"
 #define MYSQLND_VERSION_ID 50012
 
 #define MYSQLND_PLUGIN_API_VERSION 2
@@ -188,7 +188,7 @@ PHPAPI void mysqlnd_free_result_bind_dtor(MYSQLND_RESULT_BIND * result_bind);
 PHPAPI const char * mysqlnd_field_type_name(const enum mysqlnd_field_types field_type);
 
 /* LOAD DATA LOCAL */
-void mysqlnd_local_infile_default(MYSQLND_CONN_DATA * conn);
+PHPAPI void mysqlnd_local_infile_default(MYSQLND_CONN_DATA * conn);
 
 /* Simple commands */
 #define mysqlnd_autocommit(conn, mode)		((conn)->data)->m->set_autocommit((conn)->data, (mode))

@@ -1102,6 +1102,10 @@ static void sccp_visit_instr(scdf_ctx *scdf, zend_op *opline, zend_ssa_op *ssa_o
 					SET_RESULT(result, data);
 					SET_RESULT(op1, &zv);
 				} else if (ct_eval_assign_dim(&zv, data, op2) == SUCCESS) {
+					/* Mark array containing partial array as partial */
+					if (IS_PARTIAL_ARRAY(data)) {
+						MAKE_PARTIAL_ARRAY(&zv);
+					}
 					SET_RESULT(result, data);
 					SET_RESULT(op1, &zv);
 				} else {
@@ -1401,19 +1405,24 @@ static void sccp_visit_instr(scdf_ctx *scdf, zend_op *opline, zend_ssa_op *ssa_o
 						if (IS_BOT(data)) {
 							dup_partial_array(&zv, op1);
 							ct_eval_del_array_elem(&zv, op2);
-						} else {
-							if (zend_optimizer_eval_binary_op(&tmp, zend_compound_assign_to_binary_op(opline->opcode), &tmp, data) != SUCCESS) {
-								SET_RESULT_BOT(result);
-								SET_RESULT_BOT(op1);
-								zval_ptr_dtor_nogc(&tmp);
-								break;
-							}
+							SET_RESULT_BOT(result);
+							SET_RESULT(op1, &zv);
+							zval_ptr_dtor_nogc(&tmp);
+							zval_ptr_dtor_nogc(&zv);
+							break;
+						}
 
-							if (IS_PARTIAL_ARRAY(op1)) {
-								dup_partial_array(&zv, op1);
-							} else {
-								ZVAL_COPY(&zv, op1);
-							}
+						if (zend_optimizer_eval_binary_op(&tmp, zend_compound_assign_to_binary_op(opline->opcode), &tmp, data) != SUCCESS) {
+							SET_RESULT_BOT(result);
+							SET_RESULT_BOT(op1);
+							zval_ptr_dtor_nogc(&tmp);
+							break;
+						}
+
+						if (IS_PARTIAL_ARRAY(op1)) {
+							dup_partial_array(&zv, op1);
+						} else {
+							ZVAL_COPY(&zv, op1);
 						}
 
 						if (ct_eval_assign_dim(&zv, &tmp, op2) == SUCCESS) {
@@ -1423,6 +1432,7 @@ static void sccp_visit_instr(scdf_ctx *scdf, zend_op *opline, zend_ssa_op *ssa_o
 							zval_ptr_dtor_nogc(&zv);
 							break;
 						}
+
 						zval_ptr_dtor_nogc(&tmp);
 						zval_ptr_dtor_nogc(&zv);
 					}
@@ -1440,16 +1450,21 @@ static void sccp_visit_instr(scdf_ctx *scdf, zend_op *opline, zend_ssa_op *ssa_o
 						if (IS_BOT(data)) {
 							dup_partial_object(&zv, op1);
 							ct_eval_del_obj_prop(&zv, op2);
-						} else {
-							if (zend_optimizer_eval_binary_op(&tmp, zend_compound_assign_to_binary_op(opline->opcode), &tmp, data) != SUCCESS) {
-								SET_RESULT_BOT(result);
-								SET_RESULT_BOT(op1);
-								zval_ptr_dtor_nogc(&tmp);
-								break;
-							}
-
-							dup_partial_object(&zv, op1);
+							SET_RESULT_BOT(result);
+							SET_RESULT(op1, &zv);
+							zval_ptr_dtor_nogc(&tmp);
+							zval_ptr_dtor_nogc(&zv);
+							break;
 						}
+
+						if (zend_optimizer_eval_binary_op(&tmp, zend_compound_assign_to_binary_op(opline->opcode), &tmp, data) != SUCCESS) {
+							SET_RESULT_BOT(result);
+							SET_RESULT_BOT(op1);
+							zval_ptr_dtor_nogc(&tmp);
+							break;
+						}
+
+						dup_partial_object(&zv, op1);
 
 						if (ct_eval_assign_obj(&zv, &tmp, op2) == SUCCESS) {
 							SET_RESULT(result, &tmp);
@@ -1458,6 +1473,7 @@ static void sccp_visit_instr(scdf_ctx *scdf, zend_op *opline, zend_ssa_op *ssa_o
 							zval_ptr_dtor_nogc(&zv);
 							break;
 						}
+
 						zval_ptr_dtor_nogc(&tmp);
 						zval_ptr_dtor_nogc(&zv);
 					}
@@ -2356,8 +2372,8 @@ int sccp_optimize_op_array(zend_optimizer_ctx *ctx, zend_op_array *op_array, zen
 			}
 			fprintf(stderr, "    #%d.", i);
 			zend_dump_var(op_array, IS_CV, ssa->vars[i].var);
-			if (IS_PARTIAL_ARRAY(zv)) {
-				fprintf(stderr, " = [");
+			if (Z_TYPE_P(zv) == IS_ARRAY || IS_PARTIAL_ARRAY(zv)) {
+				fprintf(stderr, " = %s[", IS_PARTIAL_ARRAY(zv) ? "partial " : "");
 				zend_dump_ht(Z_ARRVAL_P(zv));
 				fprintf(stderr, "]");
 			} else if (IS_PARTIAL_OBJECT(zv)) {
