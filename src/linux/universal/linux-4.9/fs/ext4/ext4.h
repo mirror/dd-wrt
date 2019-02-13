@@ -1522,6 +1522,10 @@ struct ext4_sb_info {
 	u8 key_prefix[EXT4_KEY_DESC_PREFIX_SIZE];
 	u8 key_prefix_size;
 #endif
+
+	/* for lazyinit stats */
+	unsigned long lazyinit_finished_cnt;
+	unsigned long lazyinit_total_cnt;
 };
 
 static inline struct ext4_sb_info *EXT4_SB(struct super_block *sb)

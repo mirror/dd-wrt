@@ -1026,6 +1026,10 @@ struct ext4_inode_info {
 	/* Encryption params */
 	struct ext4_crypt_info *i_crypt_info;
 #endif
+
+	/* for lazyinit stats */
+	unsigned long lazyinit_finished_cnt;
+	unsigned long lazyinit_total_cnt;
 };
 
 /*
