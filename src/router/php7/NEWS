@@ -1,5 +1,97 @@
 PHP                                                                        NEWS
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+07 Feb 2019, PHP 7.3.2
+
+- Core:
+  . Fixed bug #77369 (memcpy with negative length via crafted DNS response). (Stas)
+  . Fixed bug #77387 (Recursion detection broken when printing GLOBALS).
+    (Laruence)
+  . Fixed bug #77376 ("undefined function" message no longer includes
+    namespace). (Laruence)
+  . Fixed bug #77357 (base64_encode / base64_decode doest not work on nested
+    VM). (Nikita)
+  . Fixed bug #77339 (__callStatic may get incorrect arguments). (Dmitry)
+  . Fixed bug #77317 (__DIR__, __FILE__, realpath() reveal physical path for
+    subst virtual drive). (Anatol)
+  . Fixed bug #77263 (Segfault when using 2 RecursiveFilterIterator). (Dmitry)
+  . Fixed bug #77447 (PHP 7.3 built with ASAN crashes in
+    zend_cpu_supports_avx2). (Nikita)
+  . Fixed bug #77484 (Zend engine crashes when calling realpath in invalid
+    working dir). (Anatol)
+
+- Curl:
+  . Fixed bug #76675 (Segfault with H2 server push). (Pedro Magalhães)
+
+- Fileinfo:
+  . Fixed bug #77346 (webm files incorrectly detected as
+    application/octet-stream). (Anatol)
+
+- FPM:
+  . Fixed bug #77430 (php-fpm crashes with Main process exited, code=dumped,
+    status=11/SEGV). (Jakub Zelenka)
+
+- GD:
+  . Fixed bug #73281 (imagescale(…, IMG_BILINEAR_FIXED) can cause black border).
+    (cmb)
+  . Fixed bug #73614 (gdImageFilledArc() doesn't properly draw pies). (cmb)
+  . Fixed bug #77272 (imagescale() may return image resource on failure). (cmb)
+  . Fixed bug #77391 (1bpp BMPs may fail to be loaded). (Romain Déoux, cmb)
+  . Fixed bug #77479 (imagewbmp() segfaults with very large images). (cmb)
+
+- ldap:
+  . Fixed bug #77440 (ldap_bind using ldaps or ldap_start_tls()=exception in
+    libcrypto-1_1-x64.dll). (Anatol)
+
+- Mbstring:
+  . Fixed bug #77428 (mb_ereg_replace() doesn't replace a substitution
+    variable). (Nikita)
+  . Fixed bug #77454 (mb_scrub() silently truncates after a null byte).
+    (64796c6e69 at gmail dot com)
+
+- MySQLnd:
+  . Fixed bug #77308 (Unbuffered queries memory leak). (Dmitry)
+  . Fixed bug #75684 (In mysqlnd_ext_plugin.h the plugin methods family has
+      no external visibility). (Anatol)
+
+- Opcache:
+  . Fixed bug #77266 (Assertion failed in dce_live_ranges). (Laruence)
+  . Fixed bug #77257 (value of variable assigned in a switch() construct gets
+    lost). (Nikita)
+  . Fixed bug #77434 (php-fpm workers are segfaulting in zend_gc_addre).
+    (Nikita)
+  . Fixed bug #77361 (configure fails on 64-bit AIX when opcache enabled).
+    (Kevin Adler)
+  . Fixed bug #77287 (Opcache literal compaction is incompatible with EXT
+    opcodes). (Nikita)
+
+- PCRE:
+  . Fixed bug #77338 (get_browser with empty string). (Nikita)
+
+- PDO:
+  . Fixed bug #77273 (array_walk_recursive corrupts value types leading to PDO
+    failure). (Nikita)
+
+- PDO MySQL:
+  . Fixed bug #77289 (PDO MySQL segfaults with persistent connection).
+    (Lauri Kenttä)
+
+- SOAP:
+  . Fixed bug #77410 (Segmentation Fault when executing method with an empty
+    parameter). (Nikita)
+
+- Sockets:
+  . Fixed bug #76839 (socket_recvfrom may return an invalid 'from' address
+    on MacOS). (Michael Meyer)
+
+- SPL:
+  . Fixed bug #77298 (segfault occurs when add property to unserialized empty
+    ArrayObject). (jhdxr)
+
+- Standard:
+  . Fixed bug #77395 (segfault about array_multisort). (Laruence)
+  . Fixed bug #77439 (parse_str segfaults when inserting item into existing
+    array). (Nikita)
+
 10 Jan 2019, PHP 7.3.1
 
 - Core:
@@ -27,7 +119,7 @@ PHP                                                                        NEWS
   . Fixed bug #77198 (auto cropping has insufficient precision). (cmb)
   . Fixed bug #77200 (imagecropauto(…, GD_CROP_SIDES) crops left but not right).
     (cmb)
-  . Fixed bug #77269 (efree() on uninitialized Heap data in imagescale leads to 
+  . Fixed bug #77269 (efree() on uninitialized Heap data in imagescale leads to
     use-after-free). (cmb)
   . Fixed bug #77270 (imagecolormatch Out Of Bounds Write on Heap). (cmb)
 
@@ -35,8 +127,8 @@ PHP                                                                        NEWS
   . Fixed bug #77367 (Negative size parameter in mb_split). (Stas)
   . Fixed bug #77370 (Buffer overflow on mb regex functions - fetch_token).
     (Stas)
-  . Fixed bug #77371 (heap buffer overflow in mb regex functions -
-    compile_string_node). (Stas)
+  . Fixed bug #77371 (heap buffer overflow in mb regex functions
+    - compile_string_node). (Stas)
   . Fixed bug #77381 (heap buffer overflow in multibyte match_at). (Stas)
   . Fixed bug #77382 (heap buffer overflow due to incorrect length in
     expand_case_fold_string). (Stas)
@@ -64,8 +156,7 @@ PHP                                                                        NEWS
     Morozov)
 
 - Phar:
-  . Fixed bug #77247 (heap buffer overflow in phar_detect_phar_fname_ext).
-    (Stas)
+  . Fixed bug #77247 (heap buffer overflow in phar_detect_phar_fname_ext). (Stas)
 
 - Soap:
   . Fixed bug #77088 (Segfault when using SoapClient with null options).
@@ -244,9 +335,9 @@ PHP                                                                        NEWS
     (cmb)
 
 - IMAP:
+  . Fixed bug #77020 (null pointer dereference in imap_mail). (cmb)
   . Fixed bug #77153 (imap_open allows to run arbitrary shell commands via
     mailbox parameter). (Stas)
-  . Fixed bug #77020 (null pointer dereference in imap_mail). (cmb)
 
 - Interbase:
   . Fixed bug #75453 (Incorrect reflection for ibase_[p]connect). (villfa)

@@ -3099,6 +3099,10 @@ ZEND_VM_HOT_OBJ_HANDLER(112, ZEND_INIT_METHOD_CALL, CONST|TMPVAR|UNUSED|THIS|CV,
 		    EXPECTED(obj == orig_obj)) {
 			CACHE_POLYMORPHIC_PTR(opline->result.num, called_scope, fbc);
 		}
+		if ((OP1_TYPE & (IS_VAR|IS_TMP_VAR)) && UNEXPECTED(obj != orig_obj)) {
+			/* Reset "object" to trigger reference counting */
+			object = NULL;
+		}
 		if (EXPECTED(fbc->type == ZEND_USER_FUNCTION) && UNEXPECTED(!fbc->op_array.run_time_cache)) {
 			init_func_run_time_cache(&fbc->op_array);
 		}
@@ -3443,11 +3447,10 @@ ZEND_VM_HOT_HANDLER(69, ZEND_INIT_NS_FCALL_BY_NAME, ANY, CONST, NUM|CACHE_SLOT)
 
 	fbc = CACHED_PTR(opline->result.num);
 	if (UNEXPECTED(fbc == NULL)) {
-		func_name = RT_CONSTANT(opline, opline->op2) + 1;
-		func = zend_hash_find_ex(EG(function_table), Z_STR_P(func_name), 1);
+		func_name = (zval *)RT_CONSTANT(opline, opline->op2);
+		func = zend_hash_find_ex(EG(function_table), Z_STR_P(func_name + 1), 1);
 		if (func == NULL) {
-			func_name++;
-			func = zend_hash_find_ex(EG(function_table), Z_STR_P(func_name), 1);
+			func = zend_hash_find_ex(EG(function_table), Z_STR_P(func_name + 2), 1);
 			if (UNEXPECTED(func == NULL)) {
 				ZEND_VM_DISPATCH_TO_HELPER(zend_undefined_function_helper, function_name, func_name);
 			}

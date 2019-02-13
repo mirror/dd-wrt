@@ -1499,7 +1499,7 @@ static zend_bool zend_try_compile_const_expr_resolve_class_name(zval *zv, zend_a
 
 	switch (fetch_type) {
 		case ZEND_FETCH_CLASS_SELF:
-			if (constant || (CG(active_class_entry) && zend_is_scope_known())) {
+			if (CG(active_class_entry) && zend_is_scope_known()) {
 				ZVAL_STR_COPY(zv, CG(active_class_entry)->name);
 			} else {
 				ZVAL_NULL(zv);
@@ -4153,6 +4153,14 @@ void zend_compile_static_call(znode *result, zend_ast *ast, uint32_t type) /* {{
 		if (ce) {
 			zend_string *lcname = Z_STR_P(CT_CONSTANT(opline->op2) + 1);
 			fbc = zend_hash_find_ptr(&ce->function_table, lcname);
+			if (fbc && !(fbc->common.fn_flags & ZEND_ACC_PUBLIC)) {
+				if (ce != CG(active_class_entry)
+				 &&((fbc->common.fn_flags & ZEND_ACC_PRIVATE)
+				  || !zend_check_protected(zend_get_function_root_class(fbc), CG(active_class_entry)))) {
+					/* incompatibe function */
+					fbc = NULL;
+				}
+			}
 		}
 	}
 
@@ -6987,6 +6995,7 @@ static inline void zend_ct_eval_greater(zval *result, zend_ast_kind kind, zval *
 static zend_bool zend_try_ct_eval_array(zval *result, zend_ast *ast) /* {{{ */
 {
 	zend_ast_list *list = zend_ast_get_list(ast);
+	zend_ast *last_elem_ast = NULL;
 	uint32_t i;
 	zend_bool is_constant = 1;
 
@@ -6999,6 +7008,10 @@ static zend_bool zend_try_ct_eval_array(zval *result, zend_ast *ast) /* {{{ */
 		zend_ast *elem_ast = list->child[i];
 
 		if (elem_ast == NULL) {
+			/* Report error at line of last non-empty element */
+			if (last_elem_ast) {
+				CG(zend_lineno) = zend_ast_get_lineno(last_elem_ast);
+			}
 			zend_error(E_COMPILE_ERROR, "Cannot use empty array elements in arrays");
 		}
 
@@ -7010,6 +7023,8 @@ static zend_bool zend_try_ct_eval_array(zval *result, zend_ast *ast) /* {{{ */
 		) {
 			is_constant = 0;
 		}
+
+		last_elem_ast = elem_ast;
 	}
 
 	if (!is_constant) {
@@ -8071,9 +8086,7 @@ void zend_compile_const_expr_magic_const(zend_ast **ast_ptr) /* {{{ */
 	zend_ast *ast = *ast_ptr;
 
 	/* Other cases already resolved by constant folding */
-	ZEND_ASSERT(ast->attr == T_CLASS_C &&
-	            CG(active_class_entry) &&
-	            (CG(active_class_entry)->ce_flags & ZEND_ACC_TRAIT) != 0);
+	ZEND_ASSERT(ast->attr == T_CLASS_C);
 
 	zend_ast_destroy(ast);
 	*ast_ptr = zend_ast_create(ZEND_AST_CONSTANT_CLASS);
