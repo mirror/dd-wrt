@@ -2083,6 +2083,10 @@ struct ext4_filename {
 #ifdef CONFIG_EXT4_FS_ENCRYPTION
 	struct fscrypt_str crypto_buf;
 #endif
+
+	/* for lazyinit stats */
+	unsigned long lazyinit_finished_cnt;
+	unsigned long lazyinit_total_cnt;
 };
 
 #define fname_name(p) ((p)->disk_name.name)

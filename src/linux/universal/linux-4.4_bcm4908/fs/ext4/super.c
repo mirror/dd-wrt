@@ -2709,6 +2709,7 @@ static int ext4_run_li_request(struct ext4_li_request *elr)
 		}
 		elr->lr_next_sched = jiffies + elr->lr_timeout;
 		elr->lr_next_group = group + 1;
+		EXT4_SB(sb)->lazyinit_finished_cnt++;
 	}
 	sb_end_write(sb);
 
@@ -2916,10 +2917,12 @@ static struct ext4_li_request *ext4_li_request_new(struct super_block *sb,
 {
 	struct ext4_sb_info *sbi = EXT4_SB(sb);
 	struct ext4_li_request *elr;
+	ext4_group_t group, ngroups;
+	struct ext4_group_desc *gdp = NULL;
 
 	elr = kzalloc(sizeof(*elr), GFP_KERNEL);
 	if (!elr)
-		return NULL;
+		return ERR_PTR(-ENOMEM);
 
 	elr->lr_super = sb;
 	elr->lr_sbi = sbi;
@@ -2932,6 +2935,16 @@ static struct ext4_li_request *ext4_li_request_new(struct super_block *sb,
 	 */
 	elr->lr_next_sched = jiffies + (prandom_u32() %
 				(EXT4_DEF_LI_MAX_START_DELAY * HZ));
+	ngroups = EXT4_SB(sb)->s_groups_count;
+	 for (group = elr->lr_next_group; group < ngroups; group++) {
+		gdp = ext4_get_group_desc(sb, group, NULL);
+		if (!gdp) {
+			elr = ERR_PTR(-EIO);
+			break;
+		}
+		if (!(gdp->bg_flags & cpu_to_le16(EXT4_BG_INODE_ZEROED)))
+			sbi->lazyinit_total_cnt++;
+	}
 	return elr;
 }
 
@@ -2959,8 +2972,8 @@ int ext4_register_li_request(struct super_block *sb,
 		goto out;
 
 	elr = ext4_li_request_new(sb, first_not_zeroed);
-	if (!elr) {
-		ret = -ENOMEM;
+	if (IS_ERR(elr)) {
+		ret = PTR_ERR(elr);
 		goto out;
 	}
 
