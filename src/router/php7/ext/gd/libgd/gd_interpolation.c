@@ -662,43 +662,7 @@ static inline int getPixelOverflowTC(gdImagePtr im, const int x, const int y, co
 		}
 		return c;
 	} else {
-		register int border = 0;
-
-		if (y < im->cy1) {
-			border = im->tpixels[0][im->cx1];
-			goto processborder;
-		}
-
-		if (y < im->cy1) {
-			border = im->tpixels[0][im->cx1];
-			goto processborder;
-		}
-
-		if (y > im->cy2) {
-			if (x >= im->cx1 && x <= im->cx1) {
-				border = im->tpixels[im->cy2][x];
-				goto processborder;
-			} else {
-				return gdTrueColorAlpha(0, 0, 0, 127);
-			}
-		}
-
-		/* y is bound safe at this point */
-		if (x < im->cx1) {
-			border = im->tpixels[y][im->cx1];
-			goto processborder;
-		}
-
-		if (x > im->cx2) {
-			border = im->tpixels[y][im->cx2];
-		}
-
-processborder:
-		if (border == im->transparent) {
-			return gdTrueColorAlpha(0, 0, 0, 127);
-		} else{
-			return gdTrueColorAlpha(gdTrueColorGetRed(border), gdTrueColorGetGreen(border), gdTrueColorGetBlue(border), 127);
-		}
+		return bgColor;
 	}
 }
 
@@ -713,42 +677,7 @@ static inline int getPixelOverflowPalette(gdImagePtr im, const int x, const int 
 		}
 		return colorIndex2RGBA(c);
 	} else {
-		register int border = 0;
-		if (y < im->cy1) {
-			border = gdImageGetPixel(im, im->cx1, 0);
-			goto processborder;
-		}
-
-		if (y < im->cy1) {
-			border = gdImageGetPixel(im, im->cx1, 0);
-			goto processborder;
-		}
-
-		if (y > im->cy2) {
-			if (x >= im->cx1 && x <= im->cx1) {
-				border = gdImageGetPixel(im, x,  im->cy2);
-				goto processborder;
-			} else {
-				return gdTrueColorAlpha(0, 0, 0, 127);
-			}
-		}
-
-		/* y is bound safe at this point */
-		if (x < im->cx1) {
-			border = gdImageGetPixel(im, im->cx1, y);
-			goto processborder;
-		}
-
-		if (x > im->cx2) {
-			border = gdImageGetPixel(im, im->cx2, y);
-		}
-
-processborder:
-		if (border == im->transparent) {
-			return gdTrueColorAlpha(0, 0, 0, 127);
-		} else{
-			return colorIndex2RGBcustomA(border, 127);
-		}
+		return bgColor;
 	}
 }
 
@@ -1020,7 +949,7 @@ static inline void _gdScaleRow(gdImagePtr pSrc,  unsigned int src_width, gdImage
     }
 }
 
-static inline void _gdScaleHoriz(gdImagePtr pSrc, unsigned int src_width, unsigned int src_height, gdImagePtr pDst,  unsigned int dst_width, unsigned int dst_height)
+static inline int _gdScaleHoriz(gdImagePtr pSrc, unsigned int src_width, unsigned int src_height, gdImagePtr pDst,  unsigned int dst_width, unsigned int dst_height)
 {
 	unsigned int u;
 	LineContribType * contrib;
@@ -1035,13 +964,14 @@ static inline void _gdScaleHoriz(gdImagePtr pSrc, unsigned int src_width, unsign
 
 	contrib = _gdContributionsCalc(dst_width, src_width, (double)dst_width / (double)src_width, pSrc->interpolation);
 	if (contrib == NULL) {
-		return;
+		return 0;
 	}
 	/* Scale each row */
 	for (u = 0; u < dst_height - 1; u++) {
 		_gdScaleRow(pSrc, src_width, pDst, dst_width, u, contrib);
 	}
 	_gdContributionsFree (contrib);
+	return 1;
 }
 
 static inline void _gdScaleCol (gdImagePtr pSrc,  unsigned int src_width, gdImagePtr pRes, unsigned int dst_width, unsigned int dst_height, unsigned int uCol, LineContribType *contrib)
@@ -1066,7 +996,7 @@ static inline void _gdScaleCol (gdImagePtr pSrc,  unsigned int src_width, gdImag
 	}
 }
 
-static inline void _gdScaleVert (const gdImagePtr pSrc, const unsigned int src_width, const unsigned int src_height, const gdImagePtr pDst, const unsigned int dst_width, const unsigned int dst_height)
+static inline int _gdScaleVert (const gdImagePtr pSrc, const unsigned int src_width, const unsigned int src_height, const gdImagePtr pDst, const unsigned int dst_width, const unsigned int dst_height)
 {
 	unsigned int u;
 	LineContribType * contrib;
@@ -1081,19 +1011,21 @@ static inline void _gdScaleVert (const gdImagePtr pSrc, const unsigned int src_w
 
 	contrib = _gdContributionsCalc(dst_height, src_height, (double)(dst_height) / (double)(src_height), pSrc->interpolation);
 	if (contrib == NULL) {
-		return;
+		return 0;
 	}
 	/* scale each column */
 	for (u = 0; u < dst_width - 1; u++) {
 		_gdScaleCol(pSrc, src_width, pDst, dst_width, dst_height, u, contrib);
 	}
 	_gdContributionsFree(contrib);
+	return 1;
 }
 
 gdImagePtr gdImageScaleTwoPass(const gdImagePtr src, const unsigned int src_width, const unsigned int src_height, const unsigned int new_width, const unsigned int new_height)
 {
 	gdImagePtr tmp_im;
 	gdImagePtr dst;
+	int scale_pass_res;
 
 	if (new_width == 0 || new_height == 0) {
 		return NULL;
@@ -1109,7 +1041,11 @@ gdImagePtr gdImageScaleTwoPass(const gdImagePtr src, const unsigned int src_widt
 		return NULL;
 	}
 	gdImageSetInterpolationMethod(tmp_im, src->interpolation_id);
-	_gdScaleHoriz(src, src_width, src_height, tmp_im, new_width, src_height);
+	scale_pass_res = _gdScaleHoriz(src, src_width, src_height, tmp_im, new_width, src_height);
+	if (scale_pass_res != 1) {
+		gdImageDestroy(tmp_im);
+		return NULL;
+	}
 
 	dst = gdImageCreateTrueColor(new_width, new_height);
 	if (dst == NULL) {
@@ -1117,30 +1053,14 @@ gdImagePtr gdImageScaleTwoPass(const gdImagePtr src, const unsigned int src_widt
 		return NULL;
 	}
 	gdImageSetInterpolationMethod(dst, src->interpolation_id);
-	_gdScaleVert(tmp_im, new_width, src_height, dst, new_width, new_height);
-	gdImageDestroy(tmp_im);
-
-	return dst;
-}
-
-gdImagePtr Scale(const gdImagePtr src, const unsigned int src_width, const unsigned int src_height, const gdImagePtr dst, const unsigned int new_width, const unsigned int new_height)
-{
-	gdImagePtr tmp_im;
-
-	if (new_width == 0 || new_height == 0) {
+	scale_pass_res = _gdScaleVert(tmp_im, new_width, src_height, dst, new_width, new_height);
+	if (scale_pass_res != 1) {
+		gdImageDestroy(dst);
+		gdImageDestroy(tmp_im);
 		return NULL;
 	}
-
-	tmp_im = gdImageCreateTrueColor(new_width, src_height);
-	if (tmp_im == NULL) {
-		return NULL;
-	}
-	gdImageSetInterpolationMethod(tmp_im, src->interpolation_id);
-
-	_gdScaleHoriz(src, src_width, src_height, tmp_im, new_width, src_height);
-	_gdScaleVert(tmp_im, new_width, src_height, dst, new_width, new_height);
-
 	gdImageDestroy(tmp_im);
+
 	return dst;
 }
 
@@ -1315,11 +1235,11 @@ static gdImagePtr gdImageScaleBilinearPalette(gdImagePtr im, const unsigned int 
 					f_b1, f_b2, f_b3, f_b4,
 					f_a1, f_a2, f_a3, f_a4;
 
-			/* zero for the background color, nothig gets outside anyway */
+			/* 0 for bgColor; (n,m) is supposed to be valid anyway */
 			pixel1 = getPixelOverflowPalette(im, n, m, 0);
-			pixel2 = getPixelOverflowPalette(im, n + 1, m, 0);
-			pixel3 = getPixelOverflowPalette(im, n, m + 1, 0);
-			pixel4 = getPixelOverflowPalette(im, n + 1, m + 1, 0);
+			pixel2 = getPixelOverflowPalette(im, n + 1, m, pixel1);
+			pixel3 = getPixelOverflowPalette(im, n, m + 1, pixel1);
+			pixel4 = getPixelOverflowPalette(im, n + 1, m + 1, pixel1);
 
 			f_r1 = gd_itofx(gdTrueColorGetRed(pixel1));
 			f_r2 = gd_itofx(gdTrueColorGetRed(pixel2));
@@ -1407,11 +1327,11 @@ static gdImagePtr gdImageScaleBilinearTC(gdImagePtr im, const unsigned int new_w
 					f_b1, f_b2, f_b3, f_b4,
 					f_a1, f_a2, f_a3, f_a4;
 			dwSrcTotalOffset = m + n;
-			/* 0 for bgColor, nothing gets outside anyway */
+			/* 0 for bgColor; (n,m) is supposed to be valid anyway */
 			pixel1 = getPixelOverflowTC(im, n, m, 0);
-			pixel2 = getPixelOverflowTC(im, n + 1, m, 0);
-			pixel3 = getPixelOverflowTC(im, n, m + 1, 0);
-			pixel4 = getPixelOverflowTC(im, n + 1, m + 1, 0);
+			pixel2 = getPixelOverflowTC(im, n + 1, m, pixel1);
+			pixel3 = getPixelOverflowTC(im, n, m + 1, pixel1);
+			pixel4 = getPixelOverflowTC(im, n + 1, m + 1, pixel1);
 
 			f_r1 = gd_itofx(gdTrueColorGetRed(pixel1));
 			f_r2 = gd_itofx(gdTrueColorGetRed(pixel2));
