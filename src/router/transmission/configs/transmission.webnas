@@ -1,5 +1,3 @@
- 
-
 <fieldset>
 	<legend><% tran("service.transmission_legend"); %></legend>
 	<div class="setting">
@@ -21,7 +19,7 @@
 	</div>
 	<div class="setting">
 		<div class="label"><% tran("service.transmission_style"); %></div>
-		<select name="transmisson_style">
+		<select name="transmission_style">
 			<option value="default" <% nvram_selected("transmission_style","default"); %>>Default</option>
 			<option value="combustion" <% nvram_selected("transmission_style","combustion"); %>>Combustion</option>
 			<option value="transmission-web-control" <% nvram_selected("transmission_style","transmission-web-control"); %>>Transmission Web Control</option>
