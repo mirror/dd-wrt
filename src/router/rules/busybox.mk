@@ -490,7 +490,6 @@ endif
 	echo "# CONFIG_TEST2 is not set" >> busybox/.config
 	echo "# CONFIG_EGREP is not set" >> busybox/.config
 	echo "# CONFIG_FGREP is not set" >> busybox/.config
-	echo "# CONFIG_POWEROFF is not set" >> busybox/.config
 	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
 	echo "# CONFIG_MKDOSFS is not set" >> busybox/.config
 	echo "# CONFIG_LINUX32 is not set" >> busybox/.config
@@ -505,6 +504,8 @@ endif
 	echo "CONFIG_REBOOT=y" >> busybox/.config
 ifeq ($(CONFIG_X86),y)
 	echo "CONFIG_POWEROFF=y" >> busybox/.config
+else
+	echo "# CONFIG_POWEROFF is not set" >> busybox/.config
 endif
 	echo "CONFIG_SH_IS_ASH=y" >> busybox/.config
 	echo "# CONFIG_SH_IS_HUSH is not set" >> busybox/.config
