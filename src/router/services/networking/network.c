@@ -78,6 +78,8 @@
 #include <bcmparams.h>
 #include <services.h>
 
+#include "../sysinit/devices/ethtools.c"
+
 extern int br_add_bridge(const char *brname);
 extern int br_del_bridge(const char *brname);
 extern int br_add_interface(const char *br, const char *dev);
@@ -1176,12 +1178,13 @@ void start_lan(void)
 	}
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
-	if (nvram_match("wan_proto", "disabled") 
-	    && nvram_matchi("fullswitch", 1)) {
+	if (nvram_match("wan_proto", "disabled")) { 
 		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 4 5");
+		setSwitchLED(19, 0x01);
 	} else {
 		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 5");
 		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 4");
+		setSwitchLED(19, 0x10);
 	}
 	eval("swconfig", "dev", "eth0", "set", "apply");
 
