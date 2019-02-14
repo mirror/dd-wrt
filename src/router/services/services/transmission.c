@@ -176,7 +176,7 @@ void start_transmission(void)
 					fprintf(fp, "\t\"%s\": false,\n", name);
 				else if (!strcmp(config[i].val, "true"))
 					fprintf(fp, "\t\"%s\": true,\n", name);
-				else if (!isnum(config[i].val))
+				else if (isnum(config[i].val))
 					fprintf(fp, "\t\"%s\": %s,\n", name, config[i].val);
 				else
 					fprintf(fp, "\t\"%s\": \"%s\",\n", name, config[i].val);
