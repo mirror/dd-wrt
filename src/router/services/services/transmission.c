@@ -165,7 +165,7 @@ void start_transmission(void)
 			snprintf(inc, sizeof(inc), "%s/incomplete", nvram_safe_get("transmission_download"));
 			set_config("incomplete-dir", inc);
 			char allow[512];
-			snprintf(allow, "127.0.0.1, %s", allowed);
+			snprintf(allow, sizeof(allow), "127.0.0.1, %s", allowed);
 			set_config("rpc-whitelist", allow);
 			set_config("rpc-port", nvram_safe_get("transmission_rpc"));
 
@@ -173,15 +173,19 @@ void start_transmission(void)
 			for (i = 0; i < count; i++) {
 				char *name = config[i].name;
 				if (!config[i].val[0])
-					fprintf(fp, "\t\"%s\": "",\n", name);
+					fprintf(fp, "\t\"%s\": \"\"", name);
 				else if (!strcmp(config[i].val, "false"))
-					fprintf(fp, "\t\"%s\": false,\n", name);
+					fprintf(fp, "\t\"%s\": false", name);
 				else if (!strcmp(config[i].val, "true"))
-					fprintf(fp, "\t\"%s\": true,\n", name);
+					fprintf(fp, "\t\"%s\": true", name);
 				else if (isnum(config[i].val))
-					fprintf(fp, "\t\"%s\": %s,\n", name, config[i].val);
+					fprintf(fp, "\t\"%s\": %s", name, config[i].val);
 				else
-					fprintf(fp, "\t\"%s\": \"%s\",\n", name, config[i].val);
+					fprintf(fp, "\t\"%s\": \"%s\"", name, config[i].val);
+				if (i == count - 1)
+					fprintf(fp, "\n");
+				else
+					fprintf(fp, ",\n");
 			}
 			fprintf(fp, "}\n");
 
@@ -200,5 +204,13 @@ void start_transmission(void)
 void stop_transmission(void)
 {
 	stop_process("transmissiond", "daemon");
+}
+
+#endif
+
+#ifdef TEST
+int main(int argc, char *argv[])
+{
+	start_transmission();
 }
 #endif
