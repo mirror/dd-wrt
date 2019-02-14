@@ -172,7 +172,9 @@ void start_transmission(void)
 			fprintf(fp, "{\n");
 			for (i = 0; i < count; i++) {
 				char *name = config[i].name;
-				if (!strcmp(config[i].val, "false"))
+				if (!config[i].val[0])
+					fprintf(fp, "\t\"%s\": "",\n", name);
+				else if (!strcmp(config[i].val, "false"))
 					fprintf(fp, "\t\"%s\": false,\n", name);
 				else if (!strcmp(config[i].val, "true"))
 					fprintf(fp, "\t\"%s\": true,\n", name);
