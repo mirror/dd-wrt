@@ -126,6 +126,18 @@ static int isnum(char *str)
 	return 1;
 }
 
+static void set_config(char *name, char *val)
+{
+	int count = sizeof(config) / sizeof(struct config_val);
+	int i;
+	for (i = 0; i < count; i++) {
+		if (!strcmp(name, config[i].name)) {
+			config[i].val = val;
+		}
+	}
+
+}
+
 void start_transmission(void)
 {
 	if (!nvram_matchi("transmission_enable", 1))
@@ -148,18 +160,19 @@ void start_transmission(void)
 		if (fp) {
 			int count = sizeof(config) / sizeof(struct config_val);
 			int i;
+			set_config("download-dir", nvram_safe_get("transmission_download"));
+			char inc[512];
+			snprintf(inc, sizeof(inc), "%s/incomplete", nvram_safe_get("transmission_download"));
+			set_config("incomplete-dir", inc);
+			char allow[512];
+			snprintf(allow, "127.0.0.1, %s", allowed);
+			set_config("rpc-whitelist", allow);
+			set_config("rpc-port", nvram_safe_get("transmission_rpc"));
+
 			fprintf(fp, "{\n");
 			for (i = 0; i < count; i++) {
 				char *name = config[i].name;
-				if (!strcmp(name, "download-dir"))
-					fprintf(fp, "\t\"%s\": \"%s\",\n", name, nvram_safe_get("transmission_download"));
-				else if (!strcmp(name, "incomplete-dir"))
-					fprintf(fp, "\t\"%s\": \"%s/incomplete\",\n", name, nvram_safe_get("transmission_download"));
-				else if (!strcmp(name, "rpc-whiteliste"))
-					fprintf(fp, "\t\"%s\": \"127.0.0.1, %s\",\n", name, allowed);
-				else if (!strcmp(name, "rpc-port"))
-					fprintf(fp, "\t\"%s\": %s,\n", name, nvram_safe_get("transmission_rpc"));
-				else if (!strcmp(config[i].val, "false"))
+				if (!strcmp(config[i].val, "false"))
 					fprintf(fp, "\t\"%s\": false,\n", name);
 				else if (!strcmp(config[i].val, "true"))
 					fprintf(fp, "\t\"%s\": true,\n", name);
