@@ -184,6 +184,6 @@ void start_transmission(void)
 
 void stop_transmission(void)
 {
-	stop_process("transmission", "daemon");
+	stop_process("transmissiond", "daemon");
 }
 #endif
