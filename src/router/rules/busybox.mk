@@ -503,6 +503,9 @@ endif
 	echo "# CONFIG_NETMSG is not set" >> busybox/.config
 	echo "# CONFIG_SVC is not set" >> busybox/.config
 	echo "CONFIG_REBOOT=y" >> busybox/.config
+ifeq ($(CONFIG_X86),y)
+	echo "CONFIG_POWEROFF=y" >> busybox/.config
+endif
 	echo "CONFIG_SH_IS_ASH=y" >> busybox/.config
 	echo "# CONFIG_SH_IS_HUSH is not set" >> busybox/.config
 	echo "# CONFIG_SH_IS_NONE is not set" >> busybox/.config
