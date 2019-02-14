@@ -310,9 +310,9 @@ static void do_mount(char *fs, char *path, char *mount_point, char *dev)
 #endif
 	if (!strcmp(fs, "vfat") || !strcmp(fs, "exfat")) {
 		ret = eval("/bin/mount", "-t", fs, "-o", "iocharset=utf8", path, mount_point);
-	else if (!strcmp(fs, "ext4")) {
+	} else if (!strcmp(fs, "ext4")) {
 		ret = eval("/bin/mount", "-t", fs, "-o", "init_itable=0,nobarrier,noatime,nobh,nodiratime,barrier=0", path, mount_point);
-	else if (!strcmp(fs, "ext2") || !strcmp(fs, "ext3")) {
+	} else if (!strcmp(fs, "ext2") || !strcmp(fs, "ext3")) {
 		ret = eval("/bin/mount", "-t", fs, "-o", "nobarrier,noatime,nobh,nodiratime,barrier=0", path, mount_point);
 	} else {
 		ret = eval("/bin/mount", "-t", fs, path, mount_point);
