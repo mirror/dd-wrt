@@ -497,6 +497,8 @@ static int usb_process_path(char *path, int host, char *part, char *devpath)
 	writeprocsys("vm/min_free_kbytes", "65536");
 #elif HAVE_IPQ806X
 	writeprocsys("vm/min_free_kbytes", "65536");
+#elif HAVE_X86
+	writeprocsys("vm/min_free_kbytes", "65536");
 #else
 	writeprocsys("vm/min_free_kbytes", "4096");
 #endif
