@@ -167,8 +167,8 @@ void start_transmission(void)
 					fprintf(fp, "\t\"%s\": %s,\n", name, config[i].val);
 				else
 					fprintf(fp, "\t\"%s\": \"%s\",\n", name, config[i].val);
-				fprintf(fp, "}\n");
 			}
+			fprintf(fp, "}\n");
 
 		}
 	}
