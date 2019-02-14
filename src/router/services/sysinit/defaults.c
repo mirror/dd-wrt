@@ -3569,7 +3569,7 @@ struct nvram_param srouter_defaults[] = {
 	{"transmission_dir", "/mnt/sda/transmission_config"},
 	{"transmission_download", "/mnt/sda"},
 	{"transmission_rpc", "9091"},
-	{"transmission_style", "combustion"},
+	{"transmission_style", "transmission-web-control"},
 #endif
 #ifdef HAVE_MACTELNET
 	{"mactelnetd_enable", "0"},
