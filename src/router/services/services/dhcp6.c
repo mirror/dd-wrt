@@ -145,7 +145,7 @@ void start_dhcp6c(void)
 				}
 
 				if (*clientid) {
-					fprintf(fpc, "raw-option 1 %s\n", clientid);
+					fprintf(fpc, "raw-option 1 ");
 					int i;
 					for (i = 0; i < strlen(clientid); i += 2) {
 						if (i)
