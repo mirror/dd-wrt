@@ -3220,8 +3220,6 @@ void radio_off(int idx)
 	if (idx != -1) {
 		fprintf(stderr, "radio_off(%d) interface: %s\n", idx, get_wl_instance_name(idx));
 		eval("wl", "-i", get_wl_instance_name(idx), "radio", "off");
-		wlconf_down(get_wl_instance_name(idx));
-		wlconf_up(get_wl_instance_name(idx));
 		if (idx == 0)
 			led_control(LED_WLAN0, LED_OFF);
 		if (idx == 1)
@@ -3236,8 +3234,6 @@ void radio_off(int idx)
 
 		for (ii = 0; ii < cc; ii++) {
 			eval("wl", "-i", get_wl_instance_name(ii), "radio", "off");
-			wlconf_down(get_wl_instance_name(ii));
-			wlconf_up(get_wl_instance_name(ii));
 		}
 		led_control(LED_WLAN0, LED_OFF);
 		led_control(LED_WLAN1, LED_OFF);
