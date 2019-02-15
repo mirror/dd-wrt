@@ -39,80 +39,81 @@
 struct config_val {
 	char *name;
 	char *val;
+	int alloc;
 };
 
 static struct config_val config[] = {
-	{"alt-speed-down", "50"},
-	{"alt-speed-enabled", "true"},
-	{"alt-speed-time-begin", "540"},
-	{"alt-speed-time-day", "127"},
-	{"alt-speed-time-enabled", "false"},
-	{"alt-speed-time-end", "1020"},
-	{"alt-speed-up", "50"},
-	{"bind-address-ipv4", "0.0.0.0"},
-	{"bind-address-ipv6", "::"},
-	{"blocklist-enabled", "false"},
-	{"blocklist-url", "http://www.example.com/blocklist"},
-	{"cache-size-mb", "4"},
-	{"dht-enabled", "true"},
-	{"download-dir", ""},
-	{"download-limit", "100"},
-	{"download-limit-enabled", "0"},
-	{"download-queue-enabled", "true"},
-	{"download-queue-size", "5"},
-	{"encryption", "0"},
-	{"idle-seeding-limit", "30"},
-	{"idle-seeding-limit-enabled", "false"},
-	{"incomplete-dir", ""},
-	{"incomplete-dir-enabled", "false"},
-	{"lpd-enabled", "true"},
-	{"max-peers-global", "200"},
-	{"message-level", "2"},
-	{"peer-congestion-algorithm", ""},
-	{"peer-id-ttl-hours", "6"},
-	{"peer-limit-global", "200"},
-	{"peer-limit-per-torrent", "50"},
-	{"peer-port", "62708"},
-	{"peer-port-random-high", "65535"},
-	{"peer-port-random-low", "49152"},
-	{"peer-port-random-on-start", "true"},
-	{"peer-socket-tos", "default"},
-	{"pex-enabled", "true"},
-	{"port-forwarding-enabled", "true"},
-	{"preallocation", "1"},
-	{"prefetch-enabled", "true"},
-	{"queue-stalled-enabled", "true"},
-	{"queue-stalled-minutes", "30"},
-	{"ratio-limit", "2"},
-	{"ratio-limit-enabled", "false"},
-	{"rename-partial-files", "true"},
-	{"rpc-authentication-required", "true"},
-	{"rpc-bind-address", "0.0.0.0"},
-	{"rpc-enabled", "true"},
-	{"rpc-host-whitelist", ""},
-	{"rpc-host-whitelist-enabled", "true"},
-	{"rpc-password", "{572778e48a0d0f5104d970ed9fc69f6f98f03fd6ozr1fmao"},
-	{"rpc-port", "9091"},
-	{"rpc-url", "/transmission/"},
-	{"rpc-username", "transmission"},
-	{"rpc-whitelist", "127.0.0.1"},
-	{"rpc-whitelist-enabled", "true"},
-	{"scrape-paused-torrents-enabled", "true"},
-	{"script-torrent-done-enabled", "false"},
-	{"script-torrent-done-filename", ""},
-	{"seed-queue-enabled", "false"},
-	{"seed-queue-size", "10"},
-	{"speed-limit-down", "100"},
-	{"speed-limit-down-enabled", "false"},
-	{"speed-limit-up", "100"},
-	{"speed-limit-up-enabled", "false"},
-	{"start-added-torrents", "true"},
-	{"trash-original-torrent-files", "false"},
-	{"umask", "18"},
-	{"upload-limit", "100"},
-	{"upload-limit-enabled", "0"},
-	{"upload-slots-per-torrent", "14"},
-	{"utp-enabled", "true"}
+	{"alt-speed-down", "50", 0},
+	{"alt-speed-enabled", "true", 0},
+	{"alt-speed-time-begin", "540", 0},
+	{"alt-speed-time-day", "127", 0},
+	{"alt-speed-time-enabled", "false", 0},
+	{"alt-speed-time-end", "1020", 0},
+	{"alt-speed-up", "50", 0},
+	{"bind-address-ipv4", "0.0.0.0", 0},
+	{"bind-address-ipv6", "::", 0},
+	{"blocklist-enabled", "false", 0},
+	{"blocklist-url", "http://www.example.com/blocklist", 0},
+	{"cache-size-mb", "4", 0},
+	{"dht-enabled", "true", 0},
+	{"download-dir", "", 0},
+	{"download-limit", "100", 0},
+	{"download-limit-enabled", "0", 0},
+	{"download-queue-enabled", "true", 0},
+	{"download-queue-size", "5", 0},
+	{"encryption", "0", 0},
+	{"idle-seeding-limit", "30", 0},
+	{"idle-seeding-limit-enabled", "false", 0},
+	{"incomplete-dir", "", 0},
+	{"incomplete-dir-enabled", "false", 0},
+	{"lpd-enabled", "true", 0},
+	{"max-peers-global", "200", 0},
+	{"message-level", "2", 0},
+	{"peer-congestion-algorithm", "", 0},
+	{"peer-id-ttl-hours", "6", 0},
+	{"peer-limit-global", "200", 0},
+	{"peer-limit-per-torrent", "50", 0},
+	{"peer-port", "62708", 0},
+	{"peer-port-random-high", "65535", 0},
+	{"peer-port-random-low", "49152", 0},
+	{"peer-port-random-on-start", "true", 0},
+	{"peer-socket-tos", "default", 0},
+	{"pex-enabled", "true", 0},
+	{"port-forwarding-enabled", "true", 0},
+	{"preallocation", "1", 0},
+	{"prefetch-enabled", "true", 0},
+	{"queue-stalled-enabled", "true", 0},
+	{"queue-stalled-minutes", "30", 0},
+	{"ratio-limit", "2", 0},
+	{"ratio-limit-enabled", "false", 0},
+	{"rename-partial-files", "true", 0},
+	{"rpc-authentication-required", "true", 0},
+	{"rpc-bind-address", "0.0.0.0", 0},
+	{"rpc-enabled", "true", 0},
+	{"rpc-host-whitelist", "", 0},
+	{"rpc-host-whitelist-enabled", "true", 0},
+	{"rpc-password", "{572778e48a0d0f5104d970ed9fc69f6f98f03fd6ozr1fmao", 0},
+	{"rpc-port", "9091", 0},
+	{"rpc-url", "/transmission/", 0},
+	{"rpc-username", "transmission", 0},
+	{"rpc-whitelist", "127.0.0.1", 0},
+	{"rpc-whitelist-enabled", "true", 0},
+	{"scrape-paused-torrents-enabled", "true", 0},
+	{"script-torrent-done-enabled", "false", 0},
+	{"script-torrent-done-filename", "", 0},
+	{"seed-queue-enabled", "false", 0},
+	{"seed-queue-size", "10", 0},
+	{"speed-limit-down", "100", 0},
+	{"speed-limit-down-enabled", "false", 0},
+	{"speed-limit-up", "100", 0},
+	{"speed-limit-up-enabled", "false", 0},
+	{"start-added-torrents", "true", 0},
+	{"trash-original-torrent-files", "false", 0},
+	{"umask", "18", 0},
+	{"upload-limit", "100", 0},
+	{"upload-limit-enabled", "0", 0},
+	{"upload-slots-per-torrent", "14", 0},
+	{"utp-enabled", "true", 0}
 };
 
 static int isnum(char *str)
@@ -126,36 +127,70 @@ static int isnum(char *str)
 	return 1;
 }
 
-static void set_config(char *name, char *val)
+static void set_config_alloc(char *name, char *val, int alloc)
 {
 	int count = sizeof(config) / sizeof(struct config_val);
 	int i;
 	for (i = 0; i < count; i++) {
 		if (!strcmp(name, config[i].name)) {
 			config[i].val = val;
+			config[i].alloc = alloc;
 		}
 	}
 
 }
 
-static void parse(void)
+static void set_config(char *name, char *val)
+{
+	set_config_alloc(name, val, 0);
+}
+
+static void parse_config(void)
 {
 	char path[256];
 	snprintf(path, sizeof(path), "%s/settings.json", nvram_safe_get("transmission_dir"));
 	FILE *fp = fopen(path, "rb");
-	while (!feof(fp)) {
-		char name[128] = { 0 };
-		char val[128] = { 0 };
-		fscanf(fp, "\"%s\": %s\n", &name[0], &val[0]);
-		fprintf(stderr, "scan: %s %s\n", name, val);
+	if (fp) {
+		while (!feof(fp)) {
+			char str[512] = { 0 };
+			fgets(str, sizeof(str), fp);
+			char *name = strchr(str, '"');
+			if (!name)
+				continue;
+			name++;
+			char *val = strchr(name, '"');
+			if (!val)
+				continue;
+			val[0] = 0;
+			val += 3;
+			if (strchr(val, '"'))
+				val++;
+			char *end = strchr(val, '"');
+			if (end)
+				end[0] = 0;
+			else {
+				end = strchr(val, ',');
+				if (end)
+					end[0] = 0;
+				else
+					end = strchr(val, '\n');
+				if (end)
+					end[0] = 0;
+
+			}
+			set_config_alloc(name, strdup(val), 1);
+		}
+		fclose(fp);
 	}
-	fclose(fp);
 }
+void stop_transmission(void);
 
 void start_transmission(void)
 {
 	if (!nvram_matchi("transmission_enable", 1))
 		return;
+	stop_transmission();	// write config if present
+	parse_config();		// read it back and parse it
 
 	eval("mkdir", "-p", nvram_safe_get("transmission_dir"));
 
@@ -166,47 +201,48 @@ void start_transmission(void)
 		p[1] = '*';
 		p[2] = 0;
 	}
+	int count = sizeof(config) / sizeof(struct config_val);
+	int i;
 	char path[256];
 	snprintf(path, sizeof(path), "%s/settings.json", nvram_safe_get("transmission_dir"));
-	FILE *fp = fopen(path, "rb");
-	if (!fp) {
-		fp = fopen(path, "wb");
-		if (fp) {
-			int count = sizeof(config) / sizeof(struct config_val);
-			int i;
-			set_config("download-dir", nvram_safe_get("transmission_download"));
-			char inc[512];
-			snprintf(inc, sizeof(inc), "%s/incomplete", nvram_safe_get("transmission_download"));
-			set_config("incomplete-dir", inc);
-			char allow[512];
-			snprintf(allow, sizeof(allow), "127.0.0.1, %s", allowed);
-			set_config("rpc-whitelist", allow);
-			set_config("rpc-port", nvram_safe_get("transmission_rpc"));
+	FILE *fp = fopen(path, "wb");
+	if (fp) {
+		set_config("download-dir", nvram_safe_get("transmission_download"));
+		char inc[512];
+		snprintf(inc, sizeof(inc), "%s/incomplete", nvram_safe_get("transmission_download"));
+		set_config("incomplete-dir", inc);
+		char allow[512];
+		snprintf(allow, sizeof(allow), "127.0.0.1, %s", allowed);
+		set_config("rpc-whitelist", allow);
+		set_config("rpc-port", nvram_safe_get("transmission_rpc"));
 
-			fprintf(fp, "{\n");
-			for (i = 0; i < count; i++) {
-				char *name = config[i].name;
-				if (!config[i].val[0])
-					fprintf(fp, "\t\"%s\": \"\"", name);
-				else if (!strcmp(config[i].val, "false"))
-					fprintf(fp, "\t\"%s\": false", name);
-				else if (!strcmp(config[i].val, "true"))
-					fprintf(fp, "\t\"%s\": true", name);
-				else if (isnum(config[i].val))
-					fprintf(fp, "\t\"%s\": %s", name, config[i].val);
-				else
-					fprintf(fp, "\t\"%s\": \"%s\"", name, config[i].val);
-				if (i == count - 1)
-					fprintf(fp, "\n");
-				else
-					fprintf(fp, ",\n");
-			}
-			fprintf(fp, "}\n");
-
+		fprintf(fp, "{\n");
+		for (i = 0; i < count; i++) {
+			char *name = config[i].name;
+			if (!config[i].val[0])
+				fprintf(fp, "\t\"%s\": \"\"", name);
+			else if (!strcmp(config[i].val, "false"))
+				fprintf(fp, "\t\"%s\": false", name);
+			else if (!strcmp(config[i].val, "true"))
+				fprintf(fp, "\t\"%s\": true", name);
+			else if (isnum(config[i].val))
+				fprintf(fp, "\t\"%s\": %s", name, config[i].val);
+			else
+				fprintf(fp, "\t\"%s\": \"%s\"", name, config[i].val);
+			if (i == count - 1)
+				fprintf(fp, "\n");
+			else
+				fprintf(fp, ",\n");
 		}
+		fprintf(fp, "}\n");
+
 	}
 	if (fp)
 		fclose(fp);
+	for (i = 0; i < count; i++) {
+		if (config[i].alloc)
+			free(config[i].val);
+	}
 	sysprintf("echo 16777216 > /proc/sys/net/core/rmem_max");
 	sysprintf("echo 4194304 > /proc/sys/net/core/wmem_max");
 	char *web = nvram_default_get("transmission_style", "default");
@@ -225,6 +261,6 @@ void stop_transmission(void)
 #ifdef TEST
 int main(int argc, char *argv[])
 {
-	parse();
+	parse_config();
 }
 #endif
