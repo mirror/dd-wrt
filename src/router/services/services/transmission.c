@@ -138,6 +138,20 @@ static void set_config(char *name, char *val)
 
 }
 
+static void parse(void)
+{
+	char path[256];
+	snprintf(path, sizeof(path), "%s/settings.json", nvram_safe_get("transmission_dir"));
+	FILE *fp = fopen(path, "rb");
+	while (!feof(fp)) {
+		char name[128] = { 0 };
+		char val[128] = { 0 };
+		fscanf(fp, "\"%s\": %s\n", &name[0], &val[0]);
+		fprintf(stderr, "scan: %s %s\n", name, val);
+	}
+	fclose(fp);
+}
+
 void start_transmission(void)
 {
 	if (!nvram_matchi("transmission_enable", 1))
@@ -211,6 +225,6 @@ void stop_transmission(void)
 #ifdef TEST
 int main(int argc, char *argv[])
 {
-	start_transmission();
+	parse();
 }
 #endif
