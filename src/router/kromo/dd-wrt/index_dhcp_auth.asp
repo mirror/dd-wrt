@@ -1,4 +1,4 @@
-<% ifdef("WANVLAN", "<!--"); %>
+<% ifndef("WANVLAN", "<!--"); %>
 <div class="setting">
 <div class="label">
 <script type="text/javascript">Capture(idx.wan_priority)</script></div>
