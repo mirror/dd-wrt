@@ -132,16 +132,16 @@ void start_dhcp6c(void)
 			char *requestip = nvram_safe_get("dhcpc_requestip");
 
 			if (nvram_match("wan_proto", "dhcp_auth")) {
-				fprintf(fpc, "raw-option 6 00:0b:00:11:00:17:00:18\n");
+				fprintf(fpc, "send raw-option 6 00:0b:00:11:00:17:00:18;\n");
 				if (*auth) {
-					fprintf(fpc, "raw-option 11 %s\n", auth);
+					fprintf(fpc, "send raw-option 11 %s\n", auth);
 					int i;
 					for (i = 0; i < strlen(auth); i += 2) {
 						if (i)
 							fprintf(fpc, ":");
 						fprintf(fpc, "%c%c", auth[i], auth[i + 1]);
 					}
-					fprintf(fpc, "\n");
+					fprintf(fpc, ";\n");
 				}
 
 				if (*clientid) {
