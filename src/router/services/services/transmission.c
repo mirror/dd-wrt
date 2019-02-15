@@ -215,6 +215,8 @@ void start_transmission(void)
 		snprintf(allow, sizeof(allow), "127.0.0.1, %s", allowed);
 		set_config("rpc-whitelist", allow);
 		set_config("rpc-port", nvram_safe_get("transmission_rpc"));
+		set_config("rpc-username", nvram_safe_get("transmission_username"));
+		set_config("rpc-password", nvram_safe_get("transmission_password"));
 
 		fprintf(fp, "{\n");
 		for (i = 0; i < count; i++) {
