@@ -180,7 +180,7 @@ void start_raid(void)
 	char *next;
 	char drive[64];
 	foreach(drive, raid, next) {
-		sysprintf("hdparm -S 120 %s", drive);
+		sysprintf("hdparm -S 242 %s", drive);
 	}
 	while (1) {
 		char *raid = nvram_nget("raid%d", i);
