@@ -25,4 +25,12 @@
 			<option value="transmission-web-control" <% nvram_selected("transmission_style","transmission-web-control"); %>>Transmission Web Control</option>
 		</select>
 	</div>
+	<div class="setting">
+		<div class="label"><% tran("share.usrname"); %></div>
+		<input size="20" maxlength="63" class="text" name="transmission_username" value="<% nvram_get("transmission_username"); %>" />
+	</div>
+	<div class="setting">
+		<div class="label"><% tran("share.passwd"); %></div>
+		<input type="password" maxlength="63" size="20" value="d6nw5v1x2pc7st9m" autocomplete="off" name="transmission_password" />
+	</div>
 </fieldset><br/>
