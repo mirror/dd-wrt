@@ -400,8 +400,8 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int le
 #endif
 	char *s_auth = NULL;
 	char *s_clientid = NULL;
-	char s_userclass[128]={0};
-	
+	char *s_userclass = NULL;
+
 	if (nvram_match("wan_proto", "dhcp_auth")) {
 		if (*auth) {
 			dhcp_argv[i++] = "-x";	// authentication
@@ -419,10 +419,7 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int le
 		}
 		if (*userclass) {
 			dhcp_argv[i++] = "-x";	// user class
-			sprintf(s_userclass,"0x4d:");
-			int i;
-			for (i = 0; i < strlen(userclass); i++)
-				sprintf(s_userclass, "%s:%02X", s_userclass, userclass[i]);
+			asprintf(&s_userclass, "0x4d:%s", userclass);
 			dhcp_argv[i++] = s_userclass;
 		}
 	}
@@ -467,6 +464,8 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int le
 		free(s_auth);
 	if (s_clientid)
 		free(s_clientid);
+	if (s_userclass)
+		free(s_userclass);
 }
 
 /*
@@ -1178,7 +1177,7 @@ void start_lan(void)
 	}
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
-	if (nvram_match("wan_proto", "disabled")) { 
+	if (nvram_match("wan_proto", "disabled")) {
 		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 4 5");
 	} else {
 		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 5");
