@@ -3997,6 +3997,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	ifname = getRADev(prefix);
 #endif
 	copytonv(wp, "%s_multicast", ifname);
+	copytonv(wp, "%s_multicast_to_unicast", ifname);
 	copytonv(wp, "%s_bridged", ifname);
 	copytonv(wp, "%s_nat", ifname);
 	copytonv(wp, "%s_isolation", ifname);
@@ -4012,6 +4013,7 @@ static void save_prefix(webs_t wp, char *prefix)
 #else
 
 	copytonv(wp, "%s_multicast", prefix);
+	copytonv(wp, "%s_multicast_to_unicast", prefix);
 	copytonv(wp, "%s_bridged", prefix);
 	copytonv(wp, "%s_nat", prefix);
 	copytonv(wp, "%s_isolation", prefix);
