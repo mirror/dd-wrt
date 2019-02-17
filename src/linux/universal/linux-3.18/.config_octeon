@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.18.108 Kernel Configuration
+# Linux/mips 3.18.134 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -301,7 +301,6 @@ CONFIG_SLAB=y
 # CONFIG_SLOB is not set
 # CONFIG_SYSTEM_TRUSTED_KEYRING is not set
 # CONFIG_PROFILING is not set
-# CONFIG_OPROFILE is not set
 CONFIG_HAVE_OPROFILE=y
 # CONFIG_KPROBES is not set
 CONFIG_JUMP_LABEL=y
@@ -1155,7 +1154,6 @@ CONFIG_MII=y
 # CONFIG_IFB is not set
 # CONFIG_NET_TEAM is not set
 # CONFIG_MACVLAN is not set
-# CONFIG_MACVTAP is not set
 # CONFIG_VXLAN is not set
 # CONFIG_NETCONSOLE is not set
 # CONFIG_NETPOLL is not set
@@ -2264,4 +2262,3 @@ CONFIG_AVERAGE=y
 CONFIG_LIBFDT=y
 # CONFIG_ARCH_HAS_SG_CHAIN is not set
 # CONFIG_VIRTUALIZATION is not set
-# CONFIG_CRYPTO_DRBG_CTR is not set
