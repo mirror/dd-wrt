@@ -157,7 +157,7 @@ extern char *addr2str __P((struct sockaddr *));
 extern char *in6addr2str __P((struct in6_addr *, int));
 extern int in6_addrscopebyif __P((struct in6_addr *, char *));
 extern int in6_scope __P((struct in6_addr *));
-#if 0 //def NEED_PRINTF
+#ifdef NEED_DEBUG
 extern void setloglevel __P((int));
 #else
 #define setloglevel(level) do {} while(0)

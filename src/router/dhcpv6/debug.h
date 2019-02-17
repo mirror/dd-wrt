@@ -9,7 +9,7 @@
  * We do not want that. We redefine dprintf to our local implementation. */
 #include <stdio.h>
 
-#if 0 //def NEED_PRINTF
+#ifdef NEED_DEBUG
 
 #define dprintf(level, args...) \
 	( { if ((level) <= MAX_DEBUG_LEVEL) my_dprintf((level), args); } )
