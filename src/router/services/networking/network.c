@@ -423,7 +423,7 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int le
 			int c;
 			sprintf(s_userclass, "0x4d:");
 			for (c = 0; c < strlen(userclass); c++) {
-				sprintf(s_userclass, "%s%02X", s_userclass, userclass[i]);
+				sprintf(s_userclass, "%s%02X", s_userclass, userclass[c]);
 			}
 			dhcp_argv[i++] = s_userclass;
 		}
