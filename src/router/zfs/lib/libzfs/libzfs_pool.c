@@ -4559,6 +4559,8 @@ zpool_label_disk(libzfs_handle_t *hdl, zpool_handle_t *zhp, char *name)
 		 */
 		zfs_error_aux(hdl, dgettext(TEXT_DOMAIN, "cannot "
 		    "label '%s': unable to open device: %d"), path, errno);
+	(void) snprintf(errbuf, sizeof (errbuf),
+	    dgettext(TEXT_DOMAIN, "cannot label '%s' (open failed)"), name);
 		return (zfs_error(hdl, EZFS_OPENFAILED, errbuf));
 	}
 
@@ -4571,6 +4573,8 @@ zpool_label_disk(libzfs_handle_t *hdl, zpool_handle_t *zhp, char *name)
 			(void) no_memory(hdl);
 
 		(void) close(fd);
+	(void) snprintf(errbuf, sizeof (errbuf),
+	    dgettext(TEXT_DOMAIN, "cannot label '%s' (unable to read disk capacity)"), name);
 		zfs_error_aux(hdl, dgettext(TEXT_DOMAIN, "cannot "
 		    "label '%s': unable to read disk capacity"), path);
 
@@ -4622,6 +4626,8 @@ zpool_label_disk(libzfs_handle_t *hdl, zpool_handle_t *zhp, char *name)
 
 		zfs_error_aux(hdl, dgettext(TEXT_DOMAIN, "try using "
 		    "parted(8) and then provide a specific slice: %d"), rval);
+	(void) snprintf(errbuf, sizeof (errbuf),
+	    dgettext(TEXT_DOMAIN, "cannot label '%s' (try using parted(8) and then provide a specific slice)"), name);
 		return (zfs_error(hdl, EZFS_LABELFAILED, errbuf));
 	}
 
@@ -4636,6 +4642,8 @@ zpool_label_disk(libzfs_handle_t *hdl, zpool_handle_t *zhp, char *name)
 	if (rval) {
 		zfs_error_aux(hdl, dgettext(TEXT_DOMAIN, "failed to "
 		    "detect device partitions on '%s': %d"), path, rval);
+	(void) snprintf(errbuf, sizeof (errbuf),
+	    dgettext(TEXT_DOMAIN, "cannot label '%s' (failed to detect device partitions)"), name);
 		return (zfs_error(hdl, EZFS_LABELFAILED, errbuf));
 	}
 
@@ -4647,6 +4655,8 @@ zpool_label_disk(libzfs_handle_t *hdl, zpool_handle_t *zhp, char *name)
 		    "EFI label on '%s' is damaged.  Ensure\nthis device "
 		    "is not in in use, and is functioning properly: %d"),
 		    path, rval);
+	(void) snprintf(errbuf, sizeof (errbuf),
+	    dgettext(TEXT_DOMAIN, "cannot label '%s' (efi damages)"), name);
 		return (zfs_error(hdl, EZFS_LABELFAILED, errbuf));
 	}
 
