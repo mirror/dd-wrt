@@ -128,6 +128,13 @@ extern char *device;
 #define MATCHLIST_PREFIXLEN 0x1
 
 /* common.c */
+int
+rawop_count_list(struct rawop_list *head);
+void
+rawop_clear_list(struct rawop_list *head);
+int
+rawop_copy_list(struct rawop_list *dst,struct rawop_list *src);
+
 typedef enum { IFADDRCONF_ADD, IFADDRCONF_REMOVE } ifaddrconf_cmd_t;
 extern int dhcp6_copy_list __P((struct dhcp6_list *, struct dhcp6_list *));
 extern void dhcp6_move_list __P((struct dhcp6_list *, struct dhcp6_list *));

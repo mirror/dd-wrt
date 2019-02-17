@@ -719,7 +719,7 @@ dhcpoption:
 			//free(datastr);
 			//free(opstr);
 
-//			fprintf(stderr, "Raw option %d length %d stored at %p with data at %p",
+//			fprintf(stderr, "Raw option %d length %d stored at %p with data at %p\n",
 //				rawop->opnum, rawop->datalen, (void*)rawop, (void*)rawop->data);
 
 			MAKE_CFLIST(l, DHCPOPT_RAW, NULL, NULL);
