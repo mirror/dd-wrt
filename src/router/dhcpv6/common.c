@@ -133,68 +133,44 @@ rawop_count_list(head)
 }
 
 void
+rawop_clear_listval(lv)
+	struct rawoption *iv;
+{
+	free(lv->data);
+	free(lv);
+}
+
+
+void
 rawop_clear_list(head)
 	struct rawop_list *head;
 {
-	struct rawoption *op;
+	struct rawoption *v;
 
-	//dprintf(LOG_INFO, FNAME, "clearing %d rawops at %p", rawop_count_list(head), (void*)head);
-
-	while ((op = TAILQ_FIRST(head)) != NULL) {
-
-		//dprintf(LOG_INFO, FNAME, "  current op: %p link: %p", (void*)op, op->link);
-		TAILQ_REMOVE(head, op, link);
-
-		if (op->data != NULL) {
-			dprintf(LOG_INFO, FNAME, "    freeing op data at %p", (void*)op->data);
-			free(op->data);
-		}
-		//free(op);	// Needed?
+	while ((v = TAILQ_FIRST(head)) != NULL) {
+		TAILQ_REMOVE(head, v, link);
+		rawop_clear_listval(v);
 	}
+
 	return;
 }
+
 
 int
 rawop_copy_list(dst, src)
 	struct rawop_list *dst, *src;
 {
-	struct rawoption *op, *newop;
+	struct rawoption *ent, *newop;
 
-	/*
-	dprintf(LOG_INFO, FNAME,
-		"  copying rawop list %p to %p (%d ops)",
-		(void*)src, (void*)dst, rawop_count_list(src));
-	*/
-
-	for (op = TAILQ_FIRST(src); op; op = TAILQ_NEXT(op, link)) {
-		newop = NULL;
-		if ((newop = malloc(sizeof(*newop))) == NULL) {
-			dprintf(LOG_ERR, FNAME,
-				"failed to allocate memory for a new raw option");
-			goto fail;
-		}
-		memset(newop, 0, sizeof(*newop));
-
-		newop->opnum = op->opnum;
-		newop->datalen = op->datalen;
-		newop->data = NULL;
-
-		/* copy data */
-		if ((newop->data = malloc(newop->datalen)) == NULL) {
-			dprintf(LOG_ERR, FNAME,
-				"failed to allocate memory for new raw option data");
-			goto fail;
-		}
-		memcpy(newop->data, op->data, newop->datalen);
-		//dprintf(LOG_INFO, FNAME, "    copied %d bytes of data at %p", newop->datalen, (void*)newop->data);
-
+	for (ent = TAILQ_FIRST(src); ent; ent = TAILQ_NEXT(ent, link)) {
+		newop->opnum = ent->opnum;
+		newop->datalen = ent->datalen;
+		newop->data = malloc(newop->datalen);
+		memcpy(newop->data, ent->data, newop->datalen);
 		TAILQ_INSERT_TAIL(dst, newop, link);
 	}
-	return (0);
 
-  fail:
-	rawop_clear_list(dst);
-	return (-1);
+	return (0);
 }
 
 void
