@@ -146,7 +146,7 @@ rawop_clear_list(head)
 		TAILQ_REMOVE(head, op, link);
 
 		if (op->data != NULL) {
-			dprintf(LOG_INFO, FNAME, "    freeing op data at %p", (void*)op->data);
+			d_printf(LOG_INFO, FNAME, "    freeing op data at %p", (void*)op->data);
 			free(op->data);
 		}
 		free(op);	// Needed?
@@ -161,7 +161,7 @@ rawop_copy_list(dst, src)
 	struct rawoption *op, *newop;
 
 	/*
-	dprintf(LOG_INFO, FNAME,
+	d_printf(LOG_INFO, FNAME,
 		"  copying rawop list %p to %p (%d ops)",
 		(void*)src, (void*)dst, rawop_count_list(src));
 	*/
@@ -169,7 +169,7 @@ rawop_copy_list(dst, src)
 	for (op = TAILQ_FIRST(src); op; op = TAILQ_NEXT(op, link)) {
 		newop = NULL;
 		if ((newop = malloc(sizeof(*newop))) == NULL) {
-			dprintf(LOG_ERR, FNAME,
+			d_printf(LOG_ERR, FNAME,
 				"failed to allocate memory for a new raw option");
 			goto fail;
 		}
@@ -181,7 +181,7 @@ rawop_copy_list(dst, src)
 
 		/* copy data */
 		if ((newop->data = malloc(newop->datalen)) == NULL) {
-			dprintf(LOG_ERR, FNAME,
+			d_printf(LOG_ERR, FNAME,
 				"failed to allocate memory for new raw option data");
 			goto fail;
 		}
@@ -203,7 +203,7 @@ rawop_move_list(dst, src)
 {
 	struct rawoption *op;
 	/*
-	dprintf(LOG_INFO, FNAME,
+	d_printf(LOG_INFO, FNAME,
 		"  moving rawop list of %d from %p to %p",
 		rawop_count_list(src), (void*)src, (void*)dst);
 	*/
@@ -1827,7 +1827,7 @@ dhcp6_get_options(p, ep, optinfo)
 			/* XXX */
 			case 0:
 				// Discard auth
-				dprintf(LOG_DEBUG, FNAME, "  Discarding null authentication");
+				d_printf(LOG_DEBUG, FNAME, "  Discarding null authentication");
 				optinfo->authproto = DHCP6_AUTHPROTO_UNDEF;
 				optinfo->authalgorithm = DHCP6_AUTHALG_UNDEF;
 				optinfo->authrdm = DHCP6_AUTHRDM_UNDEF;
@@ -2012,7 +2012,7 @@ dhcp6_get_options(p, ep, optinfo)
 		/* XXX */
 		case DHCPOPT_RAW:
 			rawop = (struct rawoption *) cp;
-			dprintf(LOG_DEBUG, FNAME,
+			d_printf(LOG_DEBUG, FNAME,
 				"raw option: %d",
 				rawop->opnum);
 			TAILQ_INSERT_TAIL(&optinfo->rawops, rawop, link);
@@ -2623,7 +2623,7 @@ dhcp6_set_options(type, optbp, optep, optinfo)
 	for (rawop = TAILQ_FIRST(&optinfo->rawops); rawop;
 	    rawop = TAILQ_NEXT(rawop, link)) {
 
-		dprintf(LOG_DEBUG, FNAME,
+		d_printf(LOG_DEBUG, FNAME,
 			"  raw option %d length %d at %p",
 			rawop->opnum, rawop->datalen, (void*)rawop);
 
