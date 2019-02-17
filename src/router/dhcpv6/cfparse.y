@@ -715,7 +715,9 @@ dhcpoption:
 				p1 = (int)(strchr(xlate, *h) - xlate);
 				p2 = (int)(strchr(xlate, *(h+1)) - xlate);
 				*b = (char)((p1 * 16) + p2);
+				i++;
 			}
+//			fprintf(stderr, "parsed %d bytes, alloc %d\n",i, len +1);
 			//free(datastr);
 			//free(opstr);
 
