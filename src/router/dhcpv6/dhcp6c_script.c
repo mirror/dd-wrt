@@ -397,7 +397,8 @@ client6_script(scriptpath, state, optinfo)
 		snprintf(s, elen, "%s_%d=", raw_dhcp_option_str, rawop->opnum);
 		const char * hex = "0123456789abcdef";
 		char * val = (char*)malloc(3);
-		for (int o = 0; o < rawop->datalen; o++) {
+		int o;
+		for (o = 0; o < rawop->datalen; o++) {
 			val[0] = hex[(rawop->data[o]>>4) & 0x0F];
 			val[1] = hex[(rawop->data[o]   ) & 0x0F];
 			val[2] = 0x00;

@@ -122,7 +122,6 @@ rawop_count_list(head)
 {
 	struct rawoption *op;
 	int i;
-
 	//dprintf(LOG_INFO, FNAME, "counting list at %p", (void*)head);
 
 	for (i = 0, op = TAILQ_FIRST(head); op; op = TAILQ_NEXT(op, link)) {
@@ -134,7 +133,7 @@ rawop_count_list(head)
 
 void
 rawop_clear_listval(lv)
-	struct rawoption *iv;
+	struct rawoption *lv;
 {
 	free(lv->data);
 	free(lv);
@@ -161,11 +160,11 @@ rawop_copy_list(dst, src)
 	struct rawop_list *dst, *src;
 {
 	struct rawoption *ent, *newop;
-
 	for (ent = TAILQ_FIRST(src); ent; ent = TAILQ_NEXT(ent, link)) {
+		newop = malloc(sizeof(*newop));
 		newop->opnum = ent->opnum;
 		newop->datalen = ent->datalen;
-		newop->data = malloc(newop->datalen);
+		newop->data = malloc(newop->datalen + 1);
 		memcpy(newop->data, ent->data, newop->datalen);
 		TAILQ_INSERT_TAIL(dst, newop, link);
 	}
@@ -3359,7 +3358,6 @@ my_dprintf(int level, const char *fname, const char *fmt, ...)
 
 	if (*fname == '\0')
 		printfname = 0;
-
 	if (foreground && debug_thresh >= level) {
 		time_t now;
 		struct tm *tm_now;
