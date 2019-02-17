@@ -175,7 +175,6 @@ interface_statement:
 		struct cf_namelist *ifl;
 
 		MAKE_NAMELIST(ifl, $2, $4);
-
 		if (add_namelist(ifl, &iflist_head))
 			return (-1);
 	}
@@ -696,11 +695,10 @@ dhcpoption:
 
 			/* allocate buffer */
 			int len = strlen(datastr);
-			len -= len / 3; /* remove ':' from length */
+			len -= (len - 2) / 3; /* remove ':' from length */
 			len = len / 2; /* byte length */
 			rawop->datalen = len;
-
-			if ((rawop->data = malloc(len)) == NULL) {
+			if ((rawop->data = malloc(len + 1)) == NULL) {
 				yywarn("can't allocate memory");
 				free(datastr);
 				free(opstr);
@@ -721,8 +719,8 @@ dhcpoption:
 			//free(datastr);
 			//free(opstr);
 
-			yywarn("Raw option %d length %d stored at %p with data at %p",
-				rawop->opnum, rawop->datalen, (void*)rawop, (void*)rawop->data);
+//			fprintf(stderr, "Raw option %d length %d stored at %p with data at %p",
+//				rawop->opnum, rawop->datalen, (void*)rawop, (void*)rawop->data);
 
 			MAKE_CFLIST(l, DHCPOPT_RAW, NULL, NULL);
 			l->ptr = rawop;
@@ -1286,41 +1284,59 @@ add_namelist(new, headp)
 static void
 cleanup()
 {
-	cleanup_namelist(iflist_head);
+	//fprintf(stderr, "%s:%d\n",__func__,__LINE__);
+//	cleanup_namelist(iflist_head);
 	iflist_head = NULL;
+	//fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 	cleanup_namelist(hostlist_head);
 	hostlist_head = NULL;
+	//fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 	cleanup_namelist(iapdlist_head);
 	iapdlist_head = NULL;
+	//fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 	cleanup_namelist(ianalist_head);
 	ianalist_head = NULL;
+	//fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 	cleanup_namelist(authinfolist_head);
 	authinfolist_head = NULL;
+	//fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 	cleanup_namelist(keylist_head);
 	keylist_head = NULL;
+	//fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 	cleanup_namelist(addrpoollist_head);
 	addrpoollist_head = NULL;
 
+	//fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 	cleanup_cflist(cf_sip_list);
 	cf_sip_list = NULL;
+	//fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 	cleanup_cflist(cf_sip_name_list);
 	cf_sip_name_list = NULL;
+	//fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 	cleanup_cflist(cf_dns_list);
 	cf_dns_list = NULL;
+	//fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 	cleanup_cflist(cf_dns_name_list);
 	cf_dns_name_list = NULL;
+	//fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 	cleanup_cflist(cf_ntp_list);
 	cf_ntp_list = NULL;
+	//fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 	cleanup_cflist(cf_nis_list);
 	cf_nis_list = NULL;
+	//fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 	cleanup_cflist(cf_nis_name_list);
 	cf_nis_name_list = NULL;
+	//fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 	cleanup_cflist(cf_nisp_list);
 	cf_nisp_list = NULL;
+	//fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 	cleanup_cflist(cf_nisp_name_list);
 	cf_nisp_name_list = NULL;
+	//fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 	cleanup_cflist(cf_bcmcs_list);
 	cf_bcmcs_list = NULL;
+	//fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 	cleanup_cflist(cf_bcmcs_name_list);
 	cf_bcmcs_name_list = NULL;
 }
@@ -1392,7 +1408,9 @@ cf_post_config()
 		config_fail();
 
 	configure_commit();
+	//fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 	cleanup();
+	//fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 	return (0);
 }
 #undef config_fail
