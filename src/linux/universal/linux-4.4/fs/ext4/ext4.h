@@ -1026,10 +1026,6 @@ struct ext4_inode_info {
 	/* Encryption params */
 	struct ext4_crypt_info *i_crypt_info;
 #endif
-
-	/* for lazyinit stats */
-	unsigned long lazyinit_finished_cnt;
-	unsigned long lazyinit_total_cnt;
 };
 
 /*
@@ -1452,6 +1448,10 @@ struct ext4_sb_info {
 	struct ratelimit_state s_err_ratelimit_state;
 	struct ratelimit_state s_warning_ratelimit_state;
 	struct ratelimit_state s_msg_ratelimit_state;
+	/* for lazyinit stats */
+	unsigned long lazyinit_finished_cnt;
+	unsigned long lazyinit_total_cnt;
+
 };
 
 static inline struct ext4_sb_info *EXT4_SB(struct super_block *sb)
