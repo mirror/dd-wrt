@@ -58,6 +58,68 @@ void spl_dumpstack(void);
 #define	PANIC(fmt, a...)						\
 	spl_panic(__FILE__, __FUNCTION__, __LINE__, fmt, ## a)
 
+
+#define	CTASSERT_GLOBAL(x)		_CTASSERT(x, __LINE__)
+#define	CTASSERT(x)			{ _CTASSERT(x, __LINE__); }
+#define	_CTASSERT(x, y)			__CTASSERT(x, y)
+#define	__CTASSERT(x, y)						\
+	typedef char __attribute__ ((unused))				\
+	__compile_time_assertion__ ## y[(x) ? 1 : -1]
+
+/*
+ * Debugging disabled (--disable-debug)
+ */
+#ifdef NDEBUG
+
+#define	VERIFY(cond)	do {						\
+	if ((cond))  {} 						\
+	} while (0)
+
+#define	VERIFY3B(LEFT, OP, RIGHT)	do {				\
+		boolean_t _verify3_left = (boolean_t)(LEFT);		\
+		boolean_t _verify3_right = (boolean_t)(RIGHT);		\
+		if (!(_verify3_left OP _verify3_right)){}		\
+	} while (0)
+
+#define	VERIFY3S(LEFT, OP, RIGHT)	do {				\
+		int64_t _verify3_left = (int64_t)(LEFT);		\
+		int64_t _verify3_right = (int64_t)(RIGHT);		\
+		if (!(_verify3_left OP _verify3_right)) {}			\
+	} while (0)
+
+#define	VERIFY3U(LEFT, OP, RIGHT)	do {				\
+		uint64_t _verify3_left = (uint64_t)(LEFT);		\
+		uint64_t _verify3_right = (uint64_t)(RIGHT);		\
+		if (!(_verify3_left OP _verify3_right)) {}			\
+	} while (0)
+
+#define	VERIFY3P(LEFT, OP, RIGHT)	do {				\
+		uintptr_t _verify3_left = (uintptr_t)(LEFT);		\
+		uintptr_t _verify3_right = (uintptr_t)(RIGHT);		\
+		if (!(_verify3_left OP _verify3_right)) {}			\
+	} while (0)
+
+#define	VERIFY0(RIGHT)	do {				\
+		int64_t _verify3_left = (int64_t)(0);		\
+		int64_t _verify3_right = (int64_t)(RIGHT);		\
+		if (!(_verify3_left == _verify3_right)) {}			\
+	} while (0)
+
+#define	ASSERT(x)		((void)0)
+#define	ASSERTV(x)
+#define	ASSERT3B(x,y,z)		((void)0)
+#define	ASSERT3S(x,y,z)		((void)0)
+#define	ASSERT3U(x,y,z)		((void)0)
+#define	ASSERT3P(x,y,z)		((void)0)
+#define	ASSERT0(x)		((void)0)
+#define	IMPLY(A, B)		((void)0)
+#define	EQUIV(A, B)		((void)0)
+
+/*
+ * Debugging enabled (--enable-debug)
+ */
+#else
+
 #define	VERIFY(cond)							\
 	(void) (unlikely(!(cond)) &&					\
 	    spl_panic(__FILE__, __FUNCTION__, __LINE__,			\
@@ -117,32 +179,6 @@ void spl_dumpstack(void);
 		    (long long) (_verify3_right));			\
 	} while (0)
 
-#define	CTASSERT_GLOBAL(x)		_CTASSERT(x, __LINE__)
-#define	CTASSERT(x)			{ _CTASSERT(x, __LINE__); }
-#define	_CTASSERT(x, y)			__CTASSERT(x, y)
-#define	__CTASSERT(x, y)						\
-	typedef char __attribute__ ((unused))				\
-	__compile_time_assertion__ ## y[(x) ? 1 : -1]
-
-/*
- * Debugging disabled (--disable-debug)
- */
-#ifdef NDEBUG
-
-#define	ASSERT(x)		((void)0)
-#define	ASSERTV(x)
-#define	ASSERT3B(x,y,z)		((void)0)
-#define	ASSERT3S(x,y,z)		((void)0)
-#define	ASSERT3U(x,y,z)		((void)0)
-#define	ASSERT3P(x,y,z)		((void)0)
-#define	ASSERT0(x)		((void)0)
-#define	IMPLY(A, B)		((void)0)
-#define	EQUIV(A, B)		((void)0)
-
-/*
- * Debugging enabled (--enable-debug)
- */
-#else
 
 #define	ASSERT3B	VERIFY3B
 #define	ASSERT3S	VERIFY3S

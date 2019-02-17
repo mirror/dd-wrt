@@ -584,7 +584,7 @@ efi_ioctl(int fd, int cmd, dk_efi_t *dk_ioc)
 int
 efi_rescan(int fd)
 {
-	int retry = 10;
+	int retry = 20;
 	int error;
 
 	/* Notify the kernel a devices partition table has been updated */
