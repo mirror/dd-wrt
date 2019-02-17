@@ -768,6 +768,7 @@ void validate_portsetup(webs_t wp, char *value, struct variable *v)
 		copytonv(wp, "%s_hwaddr", var);
 		char *bridged = copytonv(wp, "%s_bridged", var);
 		copytonv(wp, "%s_multicast", var);
+		copytonv(wp, "%s_multicast_to_unicast", var);
 		copytonv(wp, "%s_nat", var);
 		copytonv(wp, "%s_isolation", var);
 #ifdef HAVE_TOR
