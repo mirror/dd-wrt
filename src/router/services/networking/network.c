@@ -400,7 +400,7 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int le
 #endif
 	char *s_auth = NULL;
 	char *s_clientid = NULL;
-	char s_userclass[512] = { 0 };
+	char *s_userclass = NULL;
 
 	if (nvram_match("wan_proto", "dhcp_auth")) {
 		if (*auth) {
@@ -421,6 +421,7 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int le
 			dhcp_argv[i++] = "-x";	// user class
 
 			int c;
+			s_userclass = malloc(6 + (strlen(userclass) * 2));	// 5 bytes trailer, 2*string lenght for hex values + 1 zero termination
 			sprintf(s_userclass, "0x4d:");
 			for (c = 0; c < strlen(userclass); c++) {
 				sprintf(s_userclass, "%s%02X", s_userclass, userclass[c]);
@@ -469,6 +470,8 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int le
 		free(s_auth);
 	if (s_clientid)
 		free(s_clientid);
+	if (s_userclass)
+		free(s_userclass);
 }
 
 /*
