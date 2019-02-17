@@ -198,9 +198,6 @@ extern size_t strlcat __P((char *, const char *, size_t));
 #ifndef HAVE_STRLCPY
 extern size_t strlcpy __P((char *, const char *, size_t));
 #endif
-void rawop_clear_list(struct rawop_list *head);
-int rawop_copy_list(struct rawop_list *dst,struct rawop_list  *src);
-
 
 /*
  * compat hacks in case libc and kernel get out of sync:
