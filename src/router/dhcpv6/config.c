@@ -1344,8 +1344,6 @@ configure_commit()
 		if (init) {
 			TAILQ_INIT(&ifp->rawops);
 			init = 0;
-		} else {
-			rawop_clear_list(&ifp->rawops);
 		}
 
 		ifp->server_pref = DH6OPT_PREF_UNDEF;
