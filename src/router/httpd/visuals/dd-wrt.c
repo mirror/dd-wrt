@@ -2121,10 +2121,12 @@ static void showbridgesettings(webs_t wp, char *var, int mcast, int dual)
 		nvram_default_get(mcastvar, "0");
 		showRadio(wp, "wl_basic.multicast", mcastvar);
 
-		char unicast[32];
-		sprintf(unicast, "%s_multicast_to_unicast", var);
-		nvram_default_get(unicast, "0");
-		showRadio(wp, "networking.unicast", unicast);
+		if (has_multicast_to_unicast(var)) {
+			char unicast[32];
+			sprintf(unicast, "%s_multicast_to_unicast", var);
+			nvram_default_get(unicast, "0");
+			showRadio(wp, "networking.unicast", unicast);
+		}
 	}
 	if (has_gateway()) {
 		char natvar[32];

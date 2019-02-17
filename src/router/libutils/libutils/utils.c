@@ -1705,6 +1705,18 @@ int isbridge(char *name)
 
 }
 
+int has_multicast_to_unicast(char *name)
+{
+	char fname[64];
+	snprintf(fname, sizeof(fname), "/sys/class/net/%s/brport/multicast_to_unicast");
+	FILE *fp = fopen(fname, "rb");
+	if (fp) {
+		fclose(fp);
+		return 1;
+	}
+	return 0;
+}
+
 int writeint(char *path, int a)
 {
 	int fd = open(path, O_WRONLY);
