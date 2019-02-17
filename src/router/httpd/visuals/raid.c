@@ -102,18 +102,18 @@ static char *getfsname(char *drive)
 	char *fs;
 #if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) || defined(HAVE_EROUTER) && !defined(HAVE_WDR4900)
 	char *root = getdisc();
-	if (strlen(root) == 3) { // sdX
+	if (strlen(root) == 3) {	// sdX
 		char tmp[64];
 		sprintf(tmp, "/dev/%s", root);
 		if (!strncmp(drive, tmp, 8))
-		    return NULL;
+			return NULL;
 	}
 
-	if (strlen(root) == 7) { // mmcblkX
+	if (strlen(root) == 7) {	// mmcblkX
 		char tmp[64];
 		sprintf(tmp, "/dev/%s", root);
 		if (!strncmp(drive, tmp, 12))
-		    return NULL;
+			return NULL;
 	}
 #endif
 	if (stat(drive, &sb) < 0) {
