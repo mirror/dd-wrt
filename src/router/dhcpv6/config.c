@@ -109,6 +109,10 @@ struct dhcp6_ifconf {
 
 	char *scriptpath;	/* path to config script (client only) */
 
+	/* XXX */
+	struct duid duid;
+	struct rawop_list rawops;
+
 	struct dhcp6_list reqopt_list;
 	struct ia_conflist iaconf_list;
 
@@ -183,6 +187,10 @@ configure_interface(iflist)
 		TAILQ_INIT(&ifc->reqopt_list);
 		TAILQ_INIT(&ifc->iaconf_list);
 
+		/* XXX */
+		fprintf(stderr, "init rawops %s\n", ifp->name);
+		TAILQ_INIT(&ifc->rawops);
+
 		for (cfl = ifp->params; cfl; cfl = cfl->next) {
 			switch(cfl->type) {
 			case DECL_REQUEST:
@@ -210,6 +218,22 @@ configure_interface(iflist)
 					goto bad;
 				}
 				break;
+			/* XXX */
+			case DECL_DUID:
+				if ((configure_duid((char *)cfl->ptr,
+						    &ifc->duid)) != 0) {
+					dprintf(LOG_ERR, FNAME, "%s:%d "
+					    "failed to configure "
+					    "DUID for %s",
+					    configfilename, cfl->line,
+					    ifc->ifname);
+					goto bad;
+				}
+				dprintf(LOG_DEBUG, FNAME,
+				    "configure DUID for %s: %s",
+				    ifc->ifname, duidstr(&ifc->duid));
+				break;
+
 			case DECL_INFO_ONLY:
 				if (dhcp6_mode != DHCP6_MODE_CLIENT) {
 					dprintf(LOG_INFO, FNAME, "%s:%d "
@@ -310,7 +334,7 @@ configure_interface(iflist)
 			}
 		}
 	}
-	
+
 	return (0);
 
   bad:
@@ -813,7 +837,7 @@ configure_keys(keylist)
 				}
 				lt = localtime(&now);
 				lt->tm_sec = 0;
-				
+
 				if (strptime(expire, "%Y-%m-%d %H:%M", lt)
 				    == NULL &&
 				    strptime(expire, "%m-%d %H:%M", lt)
@@ -1301,13 +1325,24 @@ configure_cleanup()
 	clear_poolconf(pool_conflist0);
 }
 
+int
+rawop_count_list(struct rawop_list *head);
+void
+rawop_clear_list(struct rawop_list *head);
+int
+rawop_copy_list(struct rawop_list *dst,struct rawop_list *src);
+
 void
 configure_commit()
 {
 	struct dhcp6_ifconf *ifc;
 	struct dhcp6_if *ifp;
 	struct ia_conf *iac;
+	/* XXX */
+	struct rawoption *rawop;
 
+	static int init = 1;
+	fprintf(stderr, "configure commit\n");
 	/* commit interface configuration */
 	for (ifp = dhcp6_if; ifp; ifp = ifp->next) {
 		/* re-initialization */
@@ -1315,6 +1350,13 @@ configure_commit()
 		ifp->allow_flags = 0;
 		dhcp6_clear_list(&ifp->reqopt_list);
 		clear_iaconf(&ifp->iaconf_list);
+
+		/* XXX */
+		if (init) {
+			TAILQ_INIT(&ifp->rawops);
+			init = 0;
+		}
+
 		ifp->server_pref = DH6OPT_PREF_UNDEF;
 		if (ifp->scriptpath != NULL)
 			free(ifp->scriptpath);
@@ -1350,7 +1392,25 @@ configure_commit()
 		}
 		ifp->pool = ifc->pool;
 		ifc->pool.name = NULL;
+
+		/* XXX */
+		if (ifc->duid.duid_id != NULL) {
+			dprintf(LOG_INFO, FNAME, "copying duid");
+			duidcpy(&ifp->duid, &ifc->duid);
+		}
+
+		fprintf(stderr, "conf_commit: copying %d rawops from %p (ifc) to %p (ifp)\n",
+			rawop_count_list(&ifc->rawops), &ifc->rawops, &ifp->rawops);
+		fprintf(stderr, "clear list\n");
+		rawop_clear_list(&ifp->rawops);
+		fprintf(stderr, "copy list\n");
+		rawop_copy_list(&ifp->rawops, &ifc->rawops); // XXX: breaks if move instead of copy
 	}
+
+	/* XXX*/
+	fprintf(stderr, "clear list\n");
+	rawop_clear_list(&ifc->rawops);
+	duidfree(&ifc->duid);
 
 	clear_ifconf(dhcp6_ifconflist);
 	dhcp6_ifconflist = NULL;
@@ -1550,6 +1610,9 @@ add_options(opcode, ifc, cfl0)
 	int opttype;
 	struct authinfo *ainfo;
 	struct ia_conf *iac;
+	/* XXX */
+	char *cp;
+	struct rawoption *rawopc;
 
 	for (cfl = cfl0; cfl; cfl = cfl->next) {
 		switch(cfl->type) {
@@ -1643,6 +1706,18 @@ add_options(opcode, ifc, cfl0)
 				break;
 			}
 			break;
+
+		/* XXX */
+
+		case DHCPOPT_RAW:
+			opttype = DHCPOPT_RAW;
+			rawopc = (struct rawoption *) cfl->ptr;
+			fprintf(stderr,
+				"add raw option: %d length: %d\n",
+				rawopc->opnum, rawopc->datalen);
+			TAILQ_INSERT_TAIL(&ifc->rawops, rawopc, link);
+			break;
+
 		case DHCPOPT_SIP:
 		case DHCPOPT_SIPNAME:
 		case DHCPOPT_DNS:

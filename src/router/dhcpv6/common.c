@@ -149,7 +149,7 @@ rawop_clear_list(head)
 			dprintf(LOG_INFO, FNAME, "    freeing op data at %p", (void*)op->data);
 			free(op->data);
 		}
-		free(op);	// Needed?
+		//free(op);	// Needed?
 	}
 	return;
 }
