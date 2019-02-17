@@ -291,6 +291,7 @@ int br_add_interface(const char *br, const char *dev)
 	char ipaddr[32];
 	char hwaddr[32];
 	char netmask[32];
+	char unicast[32];
 
 	sprintf(ipaddr, "%s_ipaddr", dev);
 	sprintf(netmask, "%s_netmask", dev);
@@ -318,6 +319,7 @@ int br_add_interface(const char *br, const char *dev)
 		set_hwaddr(br, eabuf);
 	}
 
+	sysprintf("echo %d > /sys/class/net/%s/brport/multicast_to_unicast", nvram_ngeti("%s_multicast_to_unicast", dev), dev);
 	return ret;
 }
 
