@@ -1323,13 +1323,6 @@ configure_cleanup()
 	clear_poolconf(pool_conflist0);
 }
 
-int
-rawop_count_list(struct rawop_list *head);
-void
-rawop_clear_list(struct rawop_list *head);
-int
-rawop_copy_list(struct rawop_list *dst,struct rawop_list *src);
-
 void
 configure_commit()
 {
