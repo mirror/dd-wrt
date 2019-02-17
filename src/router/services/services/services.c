@@ -231,12 +231,12 @@ void start_check_mbim(void)
 
 void start_pppmodules(void)
 {
-	insmod("zlib_inflate zlib_deflate slhc ppp_generic bsd_comp ppp_deflate ppp_async ppp_synctty ppp_mppe pppox pppoe");
+	insmod("zlib_inflate zlib_deflate slhc crc-ccitt ppp_generic bsd_comp ppp_deflate ppp_async ppp_synctty ppp_mppe pppox pppoe");
 }
 
 void stop_pppmodules(void)
 {
-	rmmod("pppoe pppox ppp_mppe ppp_synctty ppp_async ppp_deflate bsd_comp ppp_generic slhc");
+	rmmod("pppoe pppox ppp_mppe ppp_synctty ppp_async ppp_deflate bsd_comp ppp_generic slhc crc-ccitt");
 }
 
 void stop_dhcpc(void)
