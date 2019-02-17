@@ -119,10 +119,14 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "</div>\n");
 
 		char mcast[32];
-
 		sprintf(mcast, "%s_multicast", var);
 		nvram_default_get(mcast, "0");
 		showRadio(wp, "wl_basic.multicast", mcast);
+
+		char unicast[32];
+		sprintf(unicast, "%s_multicast_to_unicast", var);
+		nvram_default_get(unicast, "0");
+		showRadio(wp, "networking.unicast", unicast);
 
 		if (has_gateway()) {
 			sprintf(mcast, "%s_nat", var);

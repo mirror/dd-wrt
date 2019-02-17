@@ -1422,6 +1422,7 @@ networking.pathcost="Path Cost";
 networking.hairpin="Hairpin Mode";
 networking.bridge="Bridge";
 networking.snooping="IGMP Snooping";
+networking.unicast="Multicast To Unicast";
 networking.assign="Assignment";
 networking.bridgeassign="Bridge Assignment";
 networking.bonding="Bonding";
