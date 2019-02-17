@@ -134,7 +134,7 @@ void start_dhcp6c(void)
 			if (nvram_match("wan_proto", "dhcp_auth")) {
 				fprintf(fpc, "send raw-option 6 00:0b:00:11:00:17:00:18;\n");
 				if (*auth) {
-					fprintf(fpc, "send raw-option 11 %s\n", auth);
+					fprintf(fpc, "send raw-option 11 ");
 					int i;
 					for (i = 0; i < strlen(auth); i += 2) {
 						if (i)
