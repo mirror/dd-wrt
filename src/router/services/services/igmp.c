@@ -41,29 +41,22 @@ void start_igmprt(void)
 		return;
 
 	FILE *fp = fopen("/tmp/igmpproxy.conf", "wb");
-
-	if (nvram_matchi("dtag_bng", 1) && nvram_matchi("wan_vdsl", 1)) {
-		fprintf(fp, "quickleave\nphyint %s upstream  ratelimit 0  threshold 1\n", get_wan_face());
-	} else if (nvram_matchi("dtag_vlan8", 1) && nvram_matchi("wan_vdsl", 1)) {
-		fprintf(fp, "quickleave\nphyint %s upstream  ratelimit 0  threshold 1\n", nvram_safe_get("tvnicfrom"));
-		fprintf(fp, "phyint %s disabled\n", get_wan_face());
+	int fromvlan = 0;
+	fromvlan |= (nvram_matchi("dtag_vlan8", 1) && nvram_matchi("wan_vdsl", 1));
 #ifdef HAVE_PPTP
-	} else if (nvram_match("wan_proto", "pptp") && nvram_exists("tvnicfrom")) {
-		fprintf(fp, "quickleave\nphyint %s upstream  ratelimit 0  threshold 1\n", nvram_safe_get("tvnicfrom"));
-		fprintf(fp, "phyint %s disabled\n", get_wan_face());
+	fromvlan |= (nvram_match("wan_proto", "pptp") && nvram_exists("tvnicfrom"));
 #endif
 #ifdef HAVE_L2TP
-	} else if (nvram_match("wan_proto", "l2tp") && nvram_exists("tvnicfrom")) {
-		fprintf(fp, "quickleave\nphyint %s upstream  ratelimit 0  threshold 1\n", nvram_safe_get("tvnicfrom"));
-		fprintf(fp, "phyint %s disabled\n", get_wan_face());
+	fromvlan |= (nvram_match("wan_proto", "l2tp") && nvram_exists("tvnicfrom"));
 #endif
 #ifdef HAVE_PPPOEDUAL
-	} else if (nvram_match("wan_proto", "pppoe_dual") && nvram_exists("tvnicfrom")) {
+	fromvlan |= (nvram_match("wan_proto", "pppoe_dual") && nvram_exists("tvnicfrom"));
+#endif
+	if (nvram_matchi("dtag_bng", 1) && nvram_matchi("wan_vdsl", 1) || !fromvlan) {
+		fprintf(fp, "quickleave\nphyint %s upstream  ratelimit 0  threshold 1\n", get_wan_face());
+	} else {
 		fprintf(fp, "quickleave\nphyint %s upstream  ratelimit 0  threshold 1\n", nvram_safe_get("tvnicfrom"));
 		fprintf(fp, "phyint %s disabled\n", get_wan_face());
-#endif
-	} else {
-		fprintf(fp, "quickleave\nphyint %s upstream  ratelimit 0  threshold 1\n", get_wan_face());
 	}
 	if (nvram_matchi("block_multicast", 0)) {
 		fprintf(fp, "phyint %s downstream  ratelimit 0  threshold 1\n", nvram_safe_get("lan_ifname"));
