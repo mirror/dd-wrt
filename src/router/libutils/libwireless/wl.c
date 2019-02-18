@@ -2663,7 +2663,7 @@ static int devicecountbydriver(const char *prefix, char *drivername)
 int is_ath5k(const char *prefix)
 {
 	INITVALUECACHE();
-	ret = devicecountbydriver(prefix, "ath5k");
+	RETURNVALUE(devicecountbydriver(prefix, "ath5k"));
 	EXITVALUECACHE();
 	return ret;
 }
@@ -2672,7 +2672,7 @@ int is_ath5k(const char *prefix)
 int is_ath9k(const char *prefix)
 {
 	INITVALUECACHE();
-	ret = devicecountbydriver(prefix, "ath9k");
+	RETURNVALUE(devicecountbydriver(prefix, "ath9k"));
 	EXITVALUECACHE();
 	return ret;
 }
@@ -2681,7 +2681,7 @@ int is_ath9k(const char *prefix)
 int is_mvebu(const char *prefix)
 {
 	INITVALUECACHE();
-	ret = devicecountbydriver(prefix, "mwlwifi");
+	RETURNVALUE(devicecountbydriver(prefix, "mwlwifi"));
 	EXITVALUECACHE();
 	return ret;
 }
@@ -2690,7 +2690,7 @@ int is_mvebu(const char *prefix)
 int is_ath10k(const char *prefix)
 {
 	INITVALUECACHE();
-	ret = devicecountbydriver(prefix, "ath10k_pci");
+	RETURNVALUE(devicecountbydriver(prefix, "ath10k_pci"));
 	EXITVALUECACHE();
 	return ret;
 }
@@ -2700,7 +2700,7 @@ int is_ath10k(const char *prefix)
 int is_brcmfmac(const char *prefix)
 {
 	INITVALUECACHE();
-	ret = devicecountbydriver(prefix, "brcmfmac");
+	RETURNVALUE(devicecountbydriver(prefix, "brcmfmac"));
 	EXITVALUECACHE();
 	return ret;
 }
