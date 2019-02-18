@@ -44,7 +44,7 @@ struct cpufreq_governor *cpufreq_default_governor(void)
 	return &cpufreq_gov_performance;
 }
 #endif
-#ifndef CONFIG_CPU_FREQ_GOV_PERFORMANCE_MODULE
+#if 0 // ndef CONFIG_CPU_FREQ_GOV_PERFORMANCE_MODULE
 struct cpufreq_governor *cpufreq_fallback_governor(void)
 {
 	return &cpufreq_gov_performance;
