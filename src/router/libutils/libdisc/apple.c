@@ -108,7 +108,7 @@ int detect_apple_volume(SECTION * section, int level)
 {
 	char s[256], t[1026];
 	unsigned char *buf;
-	u2 magic, version, volnamelen;
+	u2 magic, volnamelen;
 	u4 blocksize, blockstart;
 	u8 blockcount, offset;
 	u8 catalogstart, cataloglength;
@@ -118,7 +118,7 @@ int detect_apple_volume(SECTION * section, int level)
 		return 0;
 
 	magic = get_be_short(buf);
-	version = get_be_short(buf + 2);
+	//version = get_be_short(buf + 2);
 
 	if (magic == 0xD2D7) {
 		print_line(level, "MFS file system");
