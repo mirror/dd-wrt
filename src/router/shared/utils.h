@@ -777,6 +777,8 @@
 
 #define ROUTER_UBNT_UAPACPRO 0x107102
 
+#define ROUTER_BOARD_UNIFI_V2 0x10810c
+
 #define NVROUTER "DD_BOARD"
 #define NVROUTER_ALT "alternate_name"
 

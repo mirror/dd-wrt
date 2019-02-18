@@ -217,6 +217,8 @@ void start_sysinit(void)
 	if (brand == ROUTER_UBNT_UAPAC || brand == ROUTER_UBNT_UAPACPRO) {
 		setWirelessLed(0, 7);
 		setWirelessLed(1, 8);
+	} else if (brand == ROUTER_BOARD_UNIFI_V2) {
+		setWirelessLed(0, 14);
 	} else {
 		writeprocsys("dev/wifi0/softled", "0");
 		if (!nvram_matchi("wlanled", 0))
