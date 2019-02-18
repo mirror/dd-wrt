@@ -562,6 +562,12 @@ struct cpufreq_governor *cpufreq_default_governor(void)
 	return &schedutil_gov;
 }
 #endif
+#ifndef CONFIG_CPU_FREQ_GOV_SCHEDUTIL_MODULE
+struct cpufreq_governor *cpufreq_fallback_governor(void)
+{
+	return &schedutil_gov;
+}
+#endif
 
 static int __init sugov_register(void)
 {
