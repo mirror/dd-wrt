@@ -3204,6 +3204,7 @@ int wlconf_up(char *name)
 		}
 	}
 	eval("ifconfig", name, "up");
+	eval("startservice", "emf", "-f");
 	return ret;
 }
 
@@ -3281,6 +3282,7 @@ void radio_on(int idx)
 	}
 	eval("startservice", "nas", "-f");
 	eval("startservice", "guest_nas", "-f");
+	eval("startservice", "emf", "-f");
 }
 
 /*
