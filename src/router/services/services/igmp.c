@@ -52,7 +52,7 @@ void start_igmprt(void)
 #ifdef HAVE_PPPOEDUAL
 	fromvlan |= (nvram_match("wan_proto", "pppoe_dual") && nvram_exists("tvnicfrom"));
 #endif
-	if (nvram_matchi("dtag_bng", 1) && nvram_matchi("wan_vdsl", 1) || !fromvlan) {
+	if ((nvram_matchi("dtag_bng", 1) && nvram_matchi("wan_vdsl", 1) && nvram_match("wan_proto", "pppoe")) || !fromvlan) {
 		fprintf(fp, "quickleave\nphyint %s upstream  ratelimit 0  threshold 1\n", get_wan_face());
 	} else {
 		fprintf(fp, "quickleave\nphyint %s upstream  ratelimit 0  threshold 1\n", nvram_safe_get("tvnicfrom"));
