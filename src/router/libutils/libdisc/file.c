@@ -57,9 +57,12 @@ typedef struct file_source {
  * helper functions
  */
 
+void analyze_fd(int fd, int filekind, const char *filename);
 static void determine_file_size(FILE_SOURCE * fs, int filekind);
+int analyze_stat(struct stat *sb, const char *filename);
 
 static int analyse_file(SOURCE * s, int level);
+void analyze_stdin(void);
 static u8 read_file(SOURCE * s, u8 pos, u8 len, void *buf);
 static void close_file(SOURCE * s);
 
