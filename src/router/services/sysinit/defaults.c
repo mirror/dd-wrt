@@ -1287,8 +1287,12 @@ struct nvram_param srouter_defaults[] = {
 #ifdef HAVE_CARLSONWIRELESS
 	{"ath0_channelbw", "40"},	/* ath0 channel bandwidth */
 #elif defined(HAVE_ONNET)
+#ifdef HAVE_CPE880
+	{"ath0_channelbw", "40"},
+#else
 	{"ath0_channelbw", "2040"},
 	{"ath1_channelbw", "2040"},
+#endif
 #elif defined(HAVE_AXTEL)
 	{"ath0_channelbw", "2040"},
 #else
@@ -1403,6 +1407,8 @@ struct nvram_param srouter_defaults[] = {
 	{"ath0_channel", "2412"},
 	{"ath1_channel", "2437"},
 	{"ath2_channel", "2462"},
+#elif HAVE_ONNET
+	{"ath0_channel", "5300"},
 #else
 	{"ath0_channel", "0"},	/* Channel number */
 	{"ath1_channel", "0"},	/* Channel number */
@@ -1463,6 +1469,12 @@ struct nvram_param srouter_defaults[] = {
 #endif
 #elif HAVE_CARLSONWIRELESS
 	{"ath0_net_mode", "n5-only"},	/* ath0 wireless mode */
+#elif HAVE_ONNET
+#ifdef HAVE_CPE880
+	{"ath0_net_mode", "n5-only"},	/* ath0 wireless mode */
+#else
+	{"ath0_net_mode", "mixed"},	/* ath0 wireless mode */
+#endif
 #else
 	{"wl_net_mode", "mixed"},	/* Wireless mode
 					 * (mixed|g-only|b-only|disable) */
