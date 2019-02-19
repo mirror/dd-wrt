@@ -302,7 +302,20 @@ void igmpProxyRun(void)
 		FD_SET(MRouterFD, &ReadFDS);
 
 		// wait for input
+#ifdef __UCLIBC__
+#ifndef TIMESPEC_TO_TIMEVAL
+#define TIMESPEC_TO_TIMEVAL(tv, ts) {                                   \
+        (tv)->tv_sec = (ts)->tv_sec;                                    \
+        (tv)->tv_usec = (ts)->tv_nsec / 1000;                           \
+}
+#endif
+		struct timeval compat_timeout;
+		TIMESPEC_TO_TIMEVAL(&compat_timeout, timeout);
+		Rt = select(MaxFD + 1, &ReadFDS, NULL, NULL, &compat_timeout);
+#else
+
 		Rt = pselect(MaxFD + 1, &ReadFDS, NULL, NULL, timeout, NULL);
+#endif
 
 		// log and ignore failures
 		if (Rt < 0) {
@@ -361,7 +374,7 @@ void igmpProxyRun(void)
  * Signal handler.  Take note of the fact that the signal arrived
  * so that the main loop can take care of it.
  */
-static void signalHandler(int sig)
+void signalHandler(int sig)
 {
 	switch (sig) {
 	case SIGINT:
