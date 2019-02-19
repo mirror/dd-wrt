@@ -5,6 +5,7 @@ igmpproxy_SOURCES = \
 	confread.c \
 	ifvc.c \
 	igmp.c \
+	igmpv3.h \
 	igmpproxy.c \
 	igmpproxy.h \
 	kern.c \
@@ -16,6 +17,7 @@ igmpproxy_SOURCES = \
 	os-linux.h \
 	os-netbsd.h \
 	os-openbsd.h \
+	os-qnxnto.h \
 	request.c \
 	rttable.c \
 	syslog.c \
