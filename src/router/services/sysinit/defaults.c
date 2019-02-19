@@ -277,6 +277,13 @@ struct nvram_param srouter_defaults[] = {
 	{"ath0_regdomain", "MEXICO"},	/* LAN IP address */
 #elif HAVE_RAYTRONIK
 	{"lan_ipaddr", "10.0.0.1"},	/* LAN IP address */
+#elif HAVE_ONNET
+#ifdef HAVE_ONNET_STATION
+	{"lan_ipaddr", "192.168.1.2"},
+#else
+	{"lan_ipaddr", "192.168.1.1"},
+#endif
+	{"lan_proto", "static"},
 #else
 	{"lan_ipaddr", "192.168.1.1"},	/* LAN IP address */
 #endif
@@ -1324,7 +1331,11 @@ struct nvram_param srouter_defaults[] = {
 	{"ath0_mode", "wdsap"},	/* AP mode (wdsap) */
 	{"ath0_channelbw", "2040"},	/* LAN IP address */
 #elif HAVE_ONNET
+#ifdef HAVE_ONNET_STATION
+	{"ath0_mode", "wdssta"},
+#else
 	{"ath0_mode", "wdsap"},
+#endif
 #else
 	{"ath0_mode", "ap"},	/* AP mode (ap|sta|wds) */
 	{"ath1_mode", "ap"},	/* AP mode (ap|sta|wds) */

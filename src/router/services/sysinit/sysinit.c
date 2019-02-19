@@ -2440,6 +2440,15 @@ void start_restore_defaults(void)
 		nvram_set("lan_ipaddr", "192.168.11.1");
 #elif HAVE_RAYTRONIK
 		nvram_set("lan_ipaddr", "10.0.0.1");
+#elif HAVE_ONNET
+#ifdef HAVE_ONNET_STATION
+		nvram_set("lan_ipaddr", "192.168.1.2");
+		nvram_set("ath0_mode", "wdssta");
+#else
+		nvram_set("lan_ipaddr", "192.168.1.1");
+		nvram_set("ath0_mode", "wdsap");
+#endif
+		nvram_set("lan_proto", "static");
 #else
 		nvram_set("lan_ipaddr", "192.168.1.1");
 #endif
