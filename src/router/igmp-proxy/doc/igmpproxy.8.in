@@ -8,7 +8,7 @@
 igmpproxy \- Multicast router utilizing IGMP forwarding
 
 .SH SYNOPSIS
-.B igmpproxy [-h] [-d] [-v [-v]]
+.B igmpproxy [-h] [-n] [-d] [-v [-v]]
 .I config-file
 
 
@@ -42,9 +42,12 @@ Display help.
 Verbose logging. Set logging level to INFO instead of WARNING used by default. 
 .IP -vv
 More verbose logging. Set logging level to DEBUG.
+.IP -n
+Do not run as a daemon.
 .IP -d
 Output log messages to STDERR instead of to
 .BR syslog (3).
+Implies \fB\-n\fP.
 
 
 .SH LIMITS
