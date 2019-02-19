@@ -100,6 +100,10 @@ void initRouteTable() {
             
             //k_join(allrouters_group, Dp->InAdr.s_addr);
             joinMcGroup( getMcGroupSock(), Dp, allrouters_group );
+
+            my_log(LOG_DEBUG, 0, "Joining all igmpv3 multicast routers group %s on vif %s",
+                         inetFmt(alligmp3_group,s1),inetFmt(Dp->InAdr.s_addr,s2));
+            joinMcGroup( getMcGroupSock(), Dp, alligmp3_group );
         }
     }
 }
