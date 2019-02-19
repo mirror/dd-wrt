@@ -13,10 +13,10 @@
 
 static inline unsigned short ip_data_len(const struct ip *ip)
 {
-    return ip->ip_len;
+	return ip->ip_len;
 }
 
 static inline void ip_set_len(struct ip *ip, unsigned short len)
 {
-    ip->ip_len = len;
+	ip->ip_len = len;
 }
