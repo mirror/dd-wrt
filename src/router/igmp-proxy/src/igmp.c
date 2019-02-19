@@ -36,10 +36,12 @@
 */
 
 #include "igmpproxy.h"
+#include "igmpv3.h"
  
 // Globals                  
 uint32_t     allhosts_group;          /* All hosts addr in net order */
 uint32_t     allrouters_group;          /* All hosts addr in net order */
+uint32_t     alligmp3_group;          /* IGMPv3 addr in net order */
               
 extern int MRouterFD;
 
@@ -74,6 +76,7 @@ void initIgmp() {
 
     allhosts_group   = htonl(INADDR_ALLHOSTS_GROUP);
     allrouters_group = htonl(INADDR_ALLRTRS_GROUP);
+    alligmp3_group   = htonl(INADDR_ALLIGMPV3_GROUP);
 }
 
 /**
@@ -86,6 +89,7 @@ char *igmpPacketKind(u_int type, u_int code) {
     case IGMP_MEMBERSHIP_QUERY:     return  "Membership query  ";
     case IGMP_V1_MEMBERSHIP_REPORT:  return "V1 member report  ";
     case IGMP_V2_MEMBERSHIP_REPORT:  return "V2 member report  ";
+    case IGMP_V3_MEMBERSHIP_REPORT:  return "V3 member report  ";
     case IGMP_V2_LEAVE_GROUP:        return "Leave message     ";
     
     default:
@@ -103,7 +107,9 @@ void acceptIgmp(int recvlen) {
     register uint32_t src, dst, group;
     struct ip *ip;
     struct igmp *igmp;
-    int ipdatalen, iphdrlen, igmpdatalen;
+    struct internal_igmpv3_report *igmpv3;
+    struct internal_igmpv3_grec *grec;
+    int ipdatalen, iphdrlen, ngrec, nsrcs, i;
 
     if (recvlen < sizeof(struct ip)) {
         my_log(LOG_WARNING, 0,
@@ -164,10 +170,9 @@ void acceptIgmp(int recvlen) {
         return;
     }
 
-    igmp        = (struct igmp *)(recv_buf + iphdrlen);
-    group       = igmp->igmp_group.s_addr;
-    igmpdatalen = ipdatalen - IGMP_MINLEN;
-    if (igmpdatalen < 0) {
+    igmp = (struct igmp *)(recv_buf + iphdrlen);
+    if ((ipdatalen < IGMP_MINLEN) ||
+        (igmp->igmp_type == IGMP_V3_MEMBERSHIP_REPORT && ipdatalen <= IGMPV3_MINLEN)) {
         my_log(LOG_WARNING, 0,
             "received IP data field too short (%u bytes) for IGMP, from %s",
             ipdatalen, inetFmt(src, s1));
@@ -181,10 +186,47 @@ void acceptIgmp(int recvlen) {
     switch (igmp->igmp_type) {
     case IGMP_V1_MEMBERSHIP_REPORT:
     case IGMP_V2_MEMBERSHIP_REPORT:
+        group = igmp->igmp_group.s_addr;
         acceptGroupReport(src, group, igmp->igmp_type);
         return;
+    case IGMP_V3_MEMBERSHIP_REPORT:
+        igmpv3 = (struct internal_igmpv3_report *)(recv_buf + iphdrlen);
+        grec = &igmpv3->igmp_grec[0];
+        ngrec = ntohs(igmpv3->igmp_ngrec);
+        while (ngrec--) {
+            if ((uint8_t *)igmpv3 + ipdatalen < (uint8_t *)grec + sizeof(*grec))
+                break;
+            group = grec->grec_mca.s_addr;
+            nsrcs = ntohs(grec->grec_nsrcs);
+            switch (grec->grec_type) {
+            case IGMPV3_MODE_IS_INCLUDE:
+            case IGMPV3_CHANGE_TO_INCLUDE:
+                if (nsrcs == 0) {
+                    acceptLeaveMessage(src, group);
+                    break;
+                } /* else fall through */
+            case IGMPV3_MODE_IS_EXCLUDE:
+            case IGMPV3_CHANGE_TO_EXCLUDE:
+            case IGMPV3_ALLOW_NEW_SOURCES:
+                acceptGroupReport(src, group, igmp->igmp_type);
+                break;
+            case IGMPV3_BLOCK_OLD_SOURCES:
+                break;
+            default:
+                my_log(LOG_INFO, 0,
+                    "ignoring unknown IGMPv3 group record type %x from %s to %s for %s",
+                    grec->grec_type, inetFmt(src, s1), inetFmt(dst, s2),
+                    inetFmt(group, s3));
+                break;
+            }
+            grec = (struct internal_igmpv3_grec *)
+                (&grec->grec_src[nsrcs] + grec->grec_auxwords * 4);
+    }
+        return;
+    
     
     case IGMP_V2_LEAVE_GROUP:
+        group = igmp->igmp_group.s_addr;
         acceptLeaveMessage(src, group);
         return;
     
