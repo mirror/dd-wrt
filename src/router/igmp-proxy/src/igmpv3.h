@@ -37,7 +37,7 @@ struct internal_igmpv3_report {
 	u_int16_t igmp_cksum;
 	u_int16_t igmp_resv2;
 	u_int16_t igmp_ngrec;
-	struct igmpv3_grec igmp_grec[0];
+	struct internal_igmpv3_grec igmp_grec[0];
 };
 
 #define IGMPV3_MODE_IS_INCLUDE   1
