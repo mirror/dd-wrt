@@ -32,83 +32,77 @@
 **
 */
 
-
 #include "igmpproxy.h"
 
 int curttl = 0;
 
-void k_set_rcvbuf(int bufsize, int minsize) {
-    int delta = bufsize / 2;
-    int iter = 0;
+void k_set_rcvbuf(int bufsize, int minsize)
+{
+	int delta = bufsize / 2;
+	int iter = 0;
 
-    /*
-     * Set the socket buffer.  If we can't set it as large as we
-     * want, search around to try to find the highest acceptable
-     * value.  The highest acceptable value being smaller than
-     * minsize is a fatal error.
-     */
-    if (setsockopt(MRouterFD, SOL_SOCKET, SO_RCVBUF,
-                   (char *)&bufsize, sizeof(bufsize)) < 0) {
-        bufsize -= delta;
-        while (1) {
-            iter++;
-            if (delta > 1)
-                delta /= 2;
+	/*
+	 * Set the socket buffer.  If we can't set it as large as we
+	 * want, search around to try to find the highest acceptable
+	 * value.  The highest acceptable value being smaller than
+	 * minsize is a fatal error.
+	 */
+	if (setsockopt(MRouterFD, SOL_SOCKET, SO_RCVBUF, (char *)&bufsize, sizeof(bufsize)) < 0) {
+		bufsize -= delta;
+		while (1) {
+			iter++;
+			if (delta > 1)
+				delta /= 2;
 
-            if (setsockopt(MRouterFD, SOL_SOCKET, SO_RCVBUF,
-                           (char *)&bufsize, sizeof(bufsize)) < 0) {
-                bufsize -= delta;
-            } else {
-                if (delta < 1024)
-                    break;
-                bufsize += delta;
-            }
-        }
-        if (bufsize < minsize) {
-            my_log(LOG_ERR, 0, "OS-allowed buffer size %u < app min %u",
-                bufsize, minsize);
-            /*NOTREACHED*/
-        }
-    }
-    my_log(LOG_DEBUG, 0, "Got %d byte buffer size in %d iterations", bufsize, iter);
+			if (setsockopt(MRouterFD, SOL_SOCKET, SO_RCVBUF, (char *)&bufsize, sizeof(bufsize)) < 0) {
+				bufsize -= delta;
+			} else {
+				if (delta < 1024)
+					break;
+				bufsize += delta;
+			}
+		}
+		if (bufsize < minsize) {
+			my_log(LOG_ERR, 0, "OS-allowed buffer size %u < app min %u", bufsize, minsize);
+		 /*NOTREACHED*/}
+	}
+	my_log(LOG_DEBUG, 0, "Got %d byte buffer size in %d iterations", bufsize, iter);
 }
 
-void k_hdr_include(int hdrincl) {
-    if (setsockopt(MRouterFD, IPPROTO_IP, IP_HDRINCL,
-                   (char *)&hdrincl, sizeof(hdrincl)) < 0)
-        my_log(LOG_WARNING, errno, "setsockopt IP_HDRINCL %u", hdrincl);
+void k_hdr_include(int hdrincl)
+{
+	if (setsockopt(MRouterFD, IPPROTO_IP, IP_HDRINCL, (char *)&hdrincl, sizeof(hdrincl)) < 0)
+		my_log(LOG_WARNING, errno, "setsockopt IP_HDRINCL %u", hdrincl);
 }
 
-
-void k_set_ttl(int t) {
+void k_set_ttl(int t)
+{
 #ifndef RAW_OUTPUT_IS_RAW
-    unsigned char ttl;
+	unsigned char ttl;
 
-    ttl = t;
-    if (setsockopt(MRouterFD, IPPROTO_IP, IP_MULTICAST_TTL,
-                   (char *)&ttl, sizeof(ttl)) < 0)
-        my_log(LOG_WARNING, errno, "setsockopt IP_MULTICAST_TTL %u", ttl);
+	ttl = t;
+	if (setsockopt(MRouterFD, IPPROTO_IP, IP_MULTICAST_TTL, (char *)&ttl, sizeof(ttl)) < 0)
+		my_log(LOG_WARNING, errno, "setsockopt IP_MULTICAST_TTL %u", ttl);
 #endif
-    curttl = t;
+	curttl = t;
 }
 
-void k_set_loop(int l) {
-    unsigned char loop;
+void k_set_loop(int l)
+{
+	unsigned char loop;
 
-    loop = l;
-    if (setsockopt(MRouterFD, IPPROTO_IP, IP_MULTICAST_LOOP,
-                   (char *)&loop, sizeof(loop)) < 0)
-        my_log(LOG_WARNING, errno, "setsockopt IP_MULTICAST_LOOP %u", loop);
+	loop = l;
+	if (setsockopt(MRouterFD, IPPROTO_IP, IP_MULTICAST_LOOP, (char *)&loop, sizeof(loop)) < 0)
+		my_log(LOG_WARNING, errno, "setsockopt IP_MULTICAST_LOOP %u", loop);
 }
 
-void k_set_if(uint32_t ifa) {
-    struct in_addr adr;
+void k_set_if(uint32_t ifa)
+{
+	struct in_addr adr;
 
-    adr.s_addr = ifa;
-    if (setsockopt(MRouterFD, IPPROTO_IP, IP_MULTICAST_IF,
-                   (char *)&adr, sizeof(adr)) < 0)
-        my_log(LOG_WARNING, errno, "setsockopt IP_MULTICAST_IF %s",
-            inetFmt(ifa, s1));
+	adr.s_addr = ifa;
+	if (setsockopt(MRouterFD, IPPROTO_IP, IP_MULTICAST_IF, (char *)&adr, sizeof(adr)) < 0)
+		my_log(LOG_WARNING, errno, "setsockopt IP_MULTICAST_IF %s", inetFmt(ifa, s1));
 }
 
 /*
@@ -123,7 +117,6 @@ void k_join(uint32_t grp, uint32_t ifa) {
         my_log(LOG_WARNING, errno, "can't join group %s on interface %s",
             inetFmt(grp, s1), inetFmt(ifa, s2));
 }
-
 
 void k_leave(uint32_t grp, uint32_t ifa) {
     struct ip_mreq mreq;

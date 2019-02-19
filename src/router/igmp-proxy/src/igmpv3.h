@@ -22,20 +22,20 @@
 */
 
 struct igmpv3_grec {
-    u_int8_t grec_type;
-    u_int8_t grec_auxwords;
-    u_int16_t grec_nsrcs;
-    struct in_addr grec_mca;
-    struct in_addr grec_src[0];
+	u_int8_t grec_type;
+	u_int8_t grec_auxwords;
+	u_int16_t grec_nsrcs;
+	struct in_addr grec_mca;
+	struct in_addr grec_src[0];
 };
 
 struct igmpv3_report {
-    u_int8_t igmp_type;
-    u_int8_t igmp_resv1;
-    u_int16_t igmp_cksum;
-    u_int16_t igmp_resv2;
-    u_int16_t igmp_ngrec;
-    struct igmpv3_grec igmp_grec[0];
+	u_int8_t igmp_type;
+	u_int8_t igmp_resv1;
+	u_int16_t igmp_cksum;
+	u_int16_t igmp_resv2;
+	u_int16_t igmp_ngrec;
+	struct igmpv3_grec igmp_grec[0];
 };
 
 #define IGMPV3_MODE_IS_INCLUDE   1
