@@ -20,8 +20,10 @@
 /**
 *   igmpv3.h - Header file for common IGMPv3 includes.
 */
+#ifndef IGMPV3_H
+#define IGMPV3_H
 
-struct igmpv3_grec {
+struct internal_igmpv3_grec {
 	u_int8_t grec_type;
 	u_int8_t grec_auxwords;
 	u_int16_t grec_nsrcs;
@@ -29,7 +31,7 @@ struct igmpv3_grec {
 	struct in_addr grec_src[0];
 };
 
-struct igmpv3_report {
+struct internal_igmpv3_report {
 	u_int8_t igmp_type;
 	u_int8_t igmp_resv1;
 	u_int16_t igmp_cksum;
@@ -46,3 +48,4 @@ struct igmpv3_report {
 #define IGMPV3_BLOCK_OLD_SOURCES 6
 
 #define IGMPV3_MINLEN 12
+#endif
