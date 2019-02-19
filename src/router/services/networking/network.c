@@ -5206,8 +5206,11 @@ void start_hotplug_net(void)
 	if (!strcmp(action, "add")) {
 		set_frame_compression(ifname, interface);
 		eval("ifconfig", interface, "up");
-		if (nvram_matchi(bridged, 1))
+		if (nvram_matchi(bridged, 1)) {
 			br_add_interface(getBridge(ifname, tmp), interface);
+			apply_bridgeif(ifname, interface);
+		}
+
 	}
 	if (!strcmp(action, "remove")) {
 		eval("ifconfig", interface, "down");
