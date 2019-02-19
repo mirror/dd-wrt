@@ -1,5 +1,5 @@
 /*
-**  igmpproxy - IGMP proxy based multicast router
+**  igmpproxy - IGMP proxy based multicast router 
 **  Copyright (C) 2005 Johnny Egeland <johnny@rlo.org>
 **
 **  This program is free software; you can redistribute it and/or modify
@@ -23,20 +23,16 @@
 **  of igmpproxy.
 **
 **  smcroute 0.92 - Copyright (C) 2001 Carsten Schill <carsten@cschill.de>
-**  - Licensed under the GNU General Public License, either version 2 or
-**    any later version.
-**
-**  mrouted 3.9-beta3 - Copyright (C) 2002 by The Board of Trustees of
+**  - Licensed under the GNU General Public License, version 2
+**  
+**  mrouted 3.9-beta3 - COPYRIGHT 1989 by The Board of Trustees of 
 **  Leland Stanford Junior University.
-**  - Licensed under the 3-clause BSD license, see Stanford.txt file.
+**  - Original license can be found in the Stanford.txt file.
 **
 */
 /**
 *   igmpproxy.h - Header file for common includes.
 */
-
-#include "config.h"
-#include "os.h"
 
 #include <errno.h>
 #include <stdarg.h>
@@ -55,13 +51,15 @@
 #ifdef __UCLIBC__
 #include <sys/ioctl.h>
 #endif
-#include <sys/ioctl.h>
 #include <sys/param.h>
 #include <sys/select.h>
 
 #include <net/if.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+
+#include "os.h"
+#include "config.h"
 
 /*
  * Limit on length of route data
@@ -71,10 +69,9 @@
 #define MAX_IP_HEADER_LEN	60
 #define IP_HEADER_RAOPT_LEN	24
 
-#define MAX_MC_VIFS    32	// !!! check this const in the specific includes
-#define MAX_UPS_VIFS    8
+#define MAX_MC_VIFS    32     // !!! check this const in the specific includes
 
-// Useful macros..
+// Useful macros..          
 #define VCMC( Vc )  (sizeof( Vc ) / sizeof( (Vc)[ 0 ] ))
 #define VCEP( Vc )  (&(Vc)[ VCMC( Vc ) ])
 
@@ -84,6 +81,7 @@
 #define BIT_CLR(X,n)     ((X) &= ~(1 << (n)))
 #define BIT_TST(X,n)     ((X) & 1 << (n))
 
+
 //#################################################################################
 //  Globals
 //#################################################################################
@@ -92,13 +90,15 @@
  * External declarations for global variables and functions.
  */
 #define RECV_BUF_SIZE 8192
-extern char *recv_buf;
-extern char *send_buf;
+extern char     *recv_buf;
+extern char     *send_buf;
 
-extern char s1[];
-extern char s2[];
-extern char s3[];
-extern char s4[];
+extern char     s1[];
+extern char     s2[];
+extern char		s3[];
+extern char		s4[];
+
+
 
 //#################################################################################
 //  Lib function prototypes.
@@ -106,21 +106,19 @@ extern char s4[];
 
 /* syslog.c
  */
-extern bool Log2Stderr;		// Log to stderr instead of to syslog
-extern int LogLevel;		// Log threshold, LOG_WARNING .... LOG_DEBUG
+extern bool Log2Stderr;           // Log to stderr instead of to syslog
+extern int  LogLevel;             // Log threshold, LOG_WARNING .... LOG_DEBUG 
 
-void my_log(int Serverity, int Errno, const char *FmtSt, ...);
+void my_log( int Serverity, int Errno, const char *FmtSt, ... );
 
 /* ifvc.c
  */
-#define MAX_IF         40	// max. number of interfaces recognized
+#define MAX_IF         40     // max. number of interfaces recognized 
 
 // Interface states
-#define IF_STATE_DISABLED      0	// Interface should be ignored.
-#define IF_STATE_UPSTREAM      1	// Interface is the upstream interface
-#define IF_STATE_DOWNSTREAM    2	// Interface is a downstream interface
-#define IF_STATE_LOST          3	// aimwang: Temp from downstream to hidden
-#define IF_STATE_HIDDEN        4	// aimwang: Interface is hidden
+#define IF_STATE_DISABLED      0   // Interface should be ignored.
+#define IF_STATE_UPSTREAM      1   // Interface is the upstream interface
+#define IF_STATE_DOWNSTREAM    2   // Interface is a downstream interface
 
 // Multicast default values...
 #define DEFAULT_ROBUSTNESS     2
@@ -132,105 +130,97 @@ void my_log(int Serverity, int Errno, const char *FmtSt, ...);
 #define INTERVAL_QUERY_RESPONSE  10
 //#define INTERVAL_QUERY_RESPONSE  10
 
-#define ROUTESTATE_NOTJOINED            0	// The group corresponding to route is not joined
-#define ROUTESTATE_JOINED               1	// The group corresponding to route is joined
-#define ROUTESTATE_CHECK_LAST_MEMBER    2	// The router is checking for hosts
+#define ROUTESTATE_NOTJOINED            0   // The group corresponding to route is not joined
+#define ROUTESTATE_JOINED               1   // The group corresponding to route is joined
+#define ROUTESTATE_CHECK_LAST_MEMBER    2   // The router is checking for hosts
 
-// Linked list of networks...
+
+
+// Linked list of networks... 
 struct SubnetList {
-	uint32_t subnet_addr;
-	uint32_t subnet_mask;
-	struct SubnetList *next;
+    uint32_t              subnet_addr;
+    uint32_t              subnet_mask;
+    struct SubnetList*  next;
 };
 
 struct IfDesc {
-	char Name[IF_NAMESIZE];
-	struct in_addr InAdr;	/* == 0 for non IP interfaces */
-	short Flags;
-	short state;
-	struct SubnetList *allowednets;
-	struct SubnetList *allowedgroups;
-	unsigned int robustness;
-	unsigned char threshold;	/* ttl limit */
-	unsigned int ratelimit;
-	unsigned int index;
+    char                Name[IF_NAMESIZE];
+    int               	Flags;
+    int               	state;
+    unsigned int        robustness;
+    unsigned int       threshold;   /* ttl limit */
+    unsigned int        ratelimit; 
+    unsigned int        index;
+    struct SubnetList*  allowednets;
+    struct SubnetList*  allowedgroups;
+    struct in_addr      InAdr;          /* == 0 for non IP interfaces */            
 };
 
-// Keeps common configuration settings
+// Keeps common configuration settings 
 struct Config {
-	unsigned int robustnessValue;
-	unsigned int queryInterval;
-	unsigned int queryResponseInterval;
-	// Used on startup..
-	unsigned int startupQueryInterval;
-	unsigned int startupQueryCount;
-	// Last member probe...
-	unsigned int lastMemberQueryInterval;
-	unsigned int lastMemberQueryCount;
-	// Set if upstream leave messages should be sent instantly..
-	unsigned short fastUpstreamLeave;
-	//~ aimwang added
-	// Set if nneed to detect new interface.
-	unsigned short rescanVif;
-	// Set if not detect new interface for down stream.
-	unsigned short defaultInterfaceState;	// 0: disable, 2: downstream
-	//~ aimwang added done
+    unsigned int        robustnessValue;
+    unsigned int        queryInterval;
+    unsigned int        queryResponseInterval;
+    // Used on startup..
+    unsigned int        startupQueryInterval;
+    unsigned int        startupQueryCount;
+    // Last member probe...
+    unsigned int        lastMemberQueryInterval;
+    unsigned int        lastMemberQueryCount;
+    // Set if upstream leave messages should be sent instantly..
+    unsigned int      fastUpstreamLeave;
 };
 
-// Holds the indeces of the upstream IF...
-extern int upStreamIfIdx[MAX_UPS_VIFS];
+// Defines the Index of the upstream VIF...
+extern int upStreamVif;
 
 /* ifvc.c
  */
-void rebuildIfVc(void);
-void buildIfVc(void);
-struct IfDesc *getIfByName(const char *IfName);
-struct IfDesc *getIfByIx(unsigned Ix);
-struct IfDesc *getIfByAddress(uint32_t Ix);
-struct IfDesc *getIfByVifIndex(unsigned vifindex);
-int isAdressValidForIf(struct IfDesc *intrface, uint32_t ipaddr);
+void buildIfVc( void );
+struct IfDesc *getIfByName( const char *IfName );
+struct IfDesc *getIfByIx( unsigned Ix );
+struct IfDesc *getIfByAddress( uint32_t Ix );
+int isAdressValidForIf(struct IfDesc* intrface, uint32_t ipaddr);
 
 /* mroute-api.c
  */
 struct MRouteDesc {
-	struct in_addr OriginAdr, McAdr;
-	short InVif;
-	uint8_t TtlVc[MAX_MC_VIFS];
+    int           InVif;
+    uint8_t           TtlVc[ MAX_MC_VIFS ];
+    struct in_addr  OriginAdr, McAdr;
 };
 
 // IGMP socket as interface for the mrouted API
 // - receives the IGMP messages
 extern int MRouterFD;
 
-int enableMRouter(void);
-void disableMRouter(void);
-void addVIF(struct IfDesc *Dp);
-void delVIF(struct IfDesc *Dp);
-int addMRoute(struct MRouteDesc *Dp);
-int delMRoute(struct MRouteDesc *Dp);
-int getVifIx(struct IfDesc *IfDp);
+int enableMRouter( void );
+void disableMRouter( void );
+void addVIF( struct IfDesc *Dp );
+int addMRoute( struct MRouteDesc * Dp );
+int delMRoute( struct MRouteDesc * Dp );
+int getVifIx( struct IfDesc *IfDp );
 
 /* config.c
  */
 int loadConfig(char *configFile);
-void configureVifs(void);
-struct Config *getCommonConfig(void);
+void configureVifs();
+struct Config *getCommonConfig();
 
 /* igmp.c
 */
 extern uint32_t allhosts_group;
 extern uint32_t allrouters_group;
-extern uint32_t alligmp3_group;
 void initIgmp(void);
 void acceptIgmp(int);
-void sendIgmp(uint32_t, uint32_t, int, int, uint32_t, int);
+void sendIgmp (uint32_t, uint32_t, int, int, uint32_t,int);
 
 /* lib.c
  */
-char *fmtInAdr(char *St, struct in_addr InAdr);
-char *inetFmt(uint32_t addr, char *s);
-char *inetFmts(uint32_t addr, uint32_t mask, char *s);
-uint16_t inetChksum(uint16_t * addr, int len);
+char   *fmtInAdr( char *St, struct in_addr InAdr );
+char   *inetFmt(uint32_t addr, char *s);
+char   *inetFmts(uint32_t addr, uint32_t mask, char *s);
+uint16_t inetChksum(uint16_t *addr, int len);
 
 /* kern.c
  */
@@ -246,39 +236,38 @@ void k_leave(uint32_t grp, uint32_t ifa);
 
 /* udpsock.c
  */
-int openUdpSocket(uint32_t PeerInAdr, uint16_t PeerPort);
+int openUdpSocket( uint32_t PeerInAdr, uint16_t PeerPort );
 
 /* mcgroup.c
  */
-int joinMcGroup(int UdpSock, struct IfDesc *IfDp, uint32_t mcastaddr);
-int leaveMcGroup(int UdpSock, struct IfDesc *IfDp, uint32_t mcastaddr);
+int joinMcGroup( int UdpSock, struct IfDesc *IfDp, uint32_t mcastaddr );
+int leaveMcGroup( int UdpSock, struct IfDesc *IfDp, uint32_t mcastaddr );
+
 
 /* rttable.c
  */
-void initRouteTable(void);
-void clearAllRoutes(void);
+void initRouteTable();
+void clearAllRoutes();
 int insertRoute(uint32_t group, int ifx);
-int activateRoute(uint32_t group, uint32_t originAddr, int upstrVif);
-void ageActiveRoutes(void);
+int activateRoute(uint32_t group, uint32_t originAddr);
+void ageActiveRoutes();
 void setRouteLastMemberMode(uint32_t group);
 int lastMemberGroupAge(uint32_t group);
-int interfaceInRoute(int32_t group, int Ix);
-int getMcGroupSock(void);
 
 /* request.c
  */
-void acceptGroupReport(uint32_t src, uint32_t group);
+void acceptGroupReport(uint32_t src, uint32_t group, uint8_t type);
 void acceptLeaveMessage(uint32_t src, uint32_t group);
-void sendGeneralMembershipQuery(void);
+void sendGeneralMembershipQuery();
 
 /* callout.c 
 */
-typedef void (*timer_f) (void *);
+typedef void (*timer_f)(void *);
 
-void callout_init(void);
-void free_all_callouts(void);
+void callout_init();
+void free_all_callouts();
 void age_callout_queue(int);
-int timer_nextTimer(void);
+int timer_nextTimer();
 int timer_setTimer(int, timer_f, void *);
 int timer_clearTimer(int);
 int timer_leftTimer(int);
@@ -288,6 +277,8 @@ int timer_leftTimer(int);
 #define MAX_TOKEN_LENGTH    30
 
 int openConfigFile(char *filename);
-void closeConfigFile(void);
-char *nextConfigToken(void);
-char *getCurrentConfigToken(void);
+void closeConfigFile();
+char* nextConfigToken();
+char* getCurrentConfigToken();
+
+
