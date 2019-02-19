@@ -115,8 +115,8 @@ void acceptIgmp(int recvlen)
 	register uint32_t src, dst, group;
 	struct ip *ip;
 	struct igmp *igmp;
-	struct igmpv3_report *igmpv3;
-	struct igmpv3_grec *grec;
+	struct internal_igmpv3_report *igmpv3;
+	struct internal_igmpv3_grec *grec;
 	int ipdatalen, iphdrlen, ngrec, nsrcs, i;
 
 	if (recvlen < (int)sizeof(struct ip)) {
@@ -201,7 +201,7 @@ void acceptIgmp(int recvlen)
 		return;
 
 	case IGMP_V3_MEMBERSHIP_REPORT:
-		igmpv3 = (struct igmpv3_report *)(recv_buf + iphdrlen);
+		igmpv3 = (struct internal_igmpv3_report *)(recv_buf + iphdrlen);
 		grec = &igmpv3->igmp_grec[0];
 		ngrec = ntohs(igmpv3->igmp_ngrec);
 		while (ngrec--) {
@@ -227,7 +227,7 @@ void acceptIgmp(int recvlen)
 				my_log(LOG_INFO, 0, "ignoring unknown IGMPv3 group record type %x from %s to %s for %s", grec->grec_type, inetFmt(src, s1), inetFmt(dst, s2), inetFmt(group, s3));
 				break;
 			}
-			grec = (struct igmpv3_grec *)
+			grec = (struct internal_igmpv3_grec *)
 			    (&grec->grec_src[nsrcs] + grec->grec_auxwords * 4);
 		}
 		return;
