@@ -1323,6 +1323,8 @@ struct nvram_param srouter_defaults[] = {
 #elif HAVE_RAYTRONIK
 	{"ath0_mode", "wdsap"},	/* AP mode (wdsap) */
 	{"ath0_channelbw", "2040"},	/* LAN IP address */
+#elif HAVE_ONNET
+	{"ath0_mode", "wdsap"},
 #else
 	{"ath0_mode", "ap"},	/* AP mode (ap|sta|wds) */
 	{"ath1_mode", "ap"},	/* AP mode (ap|sta|wds) */
