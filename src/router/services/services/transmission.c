@@ -189,6 +189,34 @@ static void parse_config(void)
 	}
 }
 
+static void writeconfig(FILE * fp)
+{
+	int i;
+	int count = sizeof(config) / sizeof(struct config_val);
+	fprintf(fp, "{\n");
+	for (i = 0; i < count; i++) {
+		char *name = config[i].name;
+		if (!config[i].val[0])
+			fprintf(fp, "\t\"%s\": \"\"", name);
+		else if (config[i].type)
+			fprintf(fp, "\t\"%s\": \"%s\"", name, config[i].val);
+		else if (!strcmp(config[i].val, "false"))
+			fprintf(fp, "\t\"%s\": false", name);
+		else if (!strcmp(config[i].val, "true"))
+			fprintf(fp, "\t\"%s\": true", name);
+		else if (isnum(config[i].val))
+			fprintf(fp, "\t\"%s\": %s", name, config[i].val);
+		else
+			fprintf(fp, "\t\"%s\": \"%s\"", name, config[i].val);
+		if (i == count - 1)
+			fprintf(fp, "\n");
+		else
+			fprintf(fp, ",\n");
+	}
+	fprintf(fp, "}\n");
+
+}
+
 void stop_transmission(void);
 
 void start_transmission(void)
@@ -216,35 +244,16 @@ void start_transmission(void)
 		set_config("download-dir", nvram_safe_get("transmission_download"), 1);
 		char inc[512];
 		snprintf(inc, sizeof(inc), "%s/incomplete", nvram_safe_get("transmission_download"));
-		set_config("incomplete-dir", inc, 1);
+		set_config("incomplete-dir", strdup(inc), 1);
 		char allow[512];
-		snprintf(allow, sizeof(allow), "127.0.0.1, %s", allowed, 1);
-		set_config("rpc-whitelist", allow, 1);
-		set_config("rpc-port", nvram_safe_get("transmission_rpc"), 0);
-		set_config("rpc-username", nvram_safe_get("transmission_username"), 1);
-		set_config("rpc-password", nvram_safe_get("transmission_password"), 1);
+		snprintf(allow, sizeof(allow), "127.0.0.1,%s", allowed);
+		set_config("rpc-whitelist", strdup(allow), 1);
+		set_config("rpc-whitelist-enabled", "true", 0);
+		set_config("rpc-port", strdup(nvram_safe_get("transmission_rpc")), 1);
+		set_config("rpc-username", strdup(nvram_safe_get("transmission_username")), 1);
+		set_config("rpc-password", strdup(nvram_safe_get("transmission_password")), 1);
 		set_config("rpc-authentication-required", "true", 0);
-		fprintf(fp, "{\n");
-		for (i = 0; i < count; i++) {
-			char *name = config[i].name;
-			if (!config[i].val[0])
-				fprintf(fp, "\t\"%s\": \"\"", name);
-			else if (config[i].type)
-				fprintf(fp, "\t\"%s\": \"%s\"", name, config[i].val);
-			else if (!strcmp(config[i].val, "false"))
-				fprintf(fp, "\t\"%s\": false", name);
-			else if (!strcmp(config[i].val, "true"))
-				fprintf(fp, "\t\"%s\": true", name);
-			else if (isnum(config[i].val))
-				fprintf(fp, "\t\"%s\": %s", name, config[i].val);
-			else
-				fprintf(fp, "\t\"%s\": \"%s\"", name, config[i].val);
-			if (i == count - 1)
-				fprintf(fp, "\n");
-			else
-				fprintf(fp, ",\n");
-		}
-		fprintf(fp, "}\n");
+		writeconfig(fp);
 
 	}
 	if (fp)
