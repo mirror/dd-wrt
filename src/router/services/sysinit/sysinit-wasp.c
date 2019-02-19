@@ -197,16 +197,6 @@ void start_sysinit(void)
 		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 4");
 	}
 	eval("swconfig", "dev", "eth0", "set", "apply");
-
-	insmod("ledtrig-netdev");
-	setEthLED(19, "vlan2");
-	setWirelessLed(0, 12);
-	writestr("/sys/devices/platform/leds-gpio/leds/generic_17/brightness", "0");
-	writestr("/sys/devices/platform/leds-gpio/leds/generic_20/brightness", "0");
-	writestr("/sys/devices/platform/leds-gpio/leds/generic_21/brightness", "0");
-	writestr("/sys/devices/platform/leds-gpio/leds/generic_22/brightness", "0");
-	if (nvram_invmatch("wlanled", "0"))
-		eval("/sbin/wlanled", "-l", "generic_17:-94", "-l", "generic_20:-80", "-l", "generic_21:-73", "-l", "generic_22:-65");
 #elif defined (HAVE_MMS344)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
@@ -511,6 +501,17 @@ void start_sysinit(void)
 #ifdef HAVE_WNDR3700V4
 	setWirelessLed(0, 11);
 	setWirelessLed(1, 14);
+#elif HAVE_CPE880
+	insmod("ledtrig-netdev");
+	setEthLED(19, "vlan2");
+	setWirelessLed(0, 12);
+	writestr("/sys/devices/platform/leds-gpio/leds/generic_17/brightness", "0");
+	writestr("/sys/devices/platform/leds-gpio/leds/generic_20/brightness", "0");
+	writestr("/sys/devices/platform/leds-gpio/leds/generic_21/brightness", "0");
+	writestr("/sys/devices/platform/leds-gpio/leds/generic_22/brightness", "0");
+
+	if (!nvram_matchi("wlanled", 0))
+		eval("/sbin/wlanled", "-l", "generic_17:-94", "-l", "generic_20:-80", "-l", "generic_21:-73", "-l", "generic_22:-65");
 #elif HAVE_CPE890
 	writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
 	if (!nvram_matchi("wlanled", 0))
