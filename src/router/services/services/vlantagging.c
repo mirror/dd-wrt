@@ -137,6 +137,38 @@ static void set_stp_state(char *bridge, char *stp)
 #endif
 
 }
+void apply_bridgeif(char *match, char *ifname) 
+{
+	char stp[256];
+	set_stp_state("br0", getBridgeSTPType("br0", stp));
+	char word[256];
+	char *next, *wordlist;
+
+	wordlist = nvram_safe_get("bridgesif");
+	foreach(word, wordlist, next) {
+		GETENTRYBYIDX(tag, word, 0);
+		GETENTRYBYIDX(port, word, 1);
+		GETENTRYBYIDX(prio, word, 2);
+		GETENTRYBYIDX(hairpin, word, 3);
+		GETENTRYBYIDX(stp, word, 4);
+		GETENTRYBYIDX(pathcost, word, 5);
+
+		if (strncmp(tag, "EOP", 3) && !strcmp(match, tag)) {
+			br_add_interface(ifname, port);
+			if (prio)
+				br_set_port_prio(ifname, port, atoi(prio));
+			if (hairpin)
+				br_set_port_hairpin(ifname, port, atoi(hairpin));
+			if (stp)
+				br_set_port_stp(ifname, port, atoi(stp));
+			if (pathcost)
+				br_set_path_cost(ifname, port, atoi(pathcost));
+		}
+	}
+
+}
+
+
 
 void start_bridgesif(void)
 {
