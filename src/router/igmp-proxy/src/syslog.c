@@ -1,5 +1,5 @@
 /*
-**  igmpproxy - IGMP proxy based multicast router
+**  igmpproxy - IGMP proxy based multicast router 
 **  Copyright (C) 2005 Johnny Egeland <johnny@rlo.org>
 **
 **  This program is free software; you can redistribute it and/or modify
@@ -23,12 +23,11 @@
 **  of igmpproxy.
 **
 **  smcroute 0.92 - Copyright (C) 2001 Carsten Schill <carsten@cschill.de>
-**  - Licensed under the GNU General Public License, either version 2 or
-**    any later version.
-**
-**  mrouted 3.9-beta3 - Copyright (C) 2002 by The Board of Trustees of
+**  - Licensed under the GNU General Public License, version 2
+**  
+**  mrouted 3.9-beta3 - COPYRIGHT 1989 by The Board of Trustees of 
 **  Leland Stanford Junior University.
-**  - Licensed under the 3-clause BSD license, see Stanford.txt file.
+**  - Original license can be found in the Stanford.txt file.
 **
 */
 
@@ -37,26 +36,27 @@
 int LogLevel = LOG_WARNING;
 bool Log2Stderr = false;
 
-void my_log(int Severity, int Errno, const char *FmtSt, ...)
+void my_log( int Severity, int Errno, const char *FmtSt, ... )
 {
-	char LogMsg[128];
+    char LogMsg[ 128 ];
 
-	va_list ArgPt;
-	unsigned Ln;
-	va_start(ArgPt, FmtSt);
-	Ln = vsnprintf(LogMsg, sizeof(LogMsg), FmtSt, ArgPt);
-	if (Errno > 0)
-		snprintf(LogMsg + Ln, sizeof(LogMsg) - Ln, "; Errno(%d): %s", Errno, strerror(Errno));
-	va_end(ArgPt);
+    va_list ArgPt;
+    unsigned Ln;
+    va_start( ArgPt, FmtSt );
+    Ln = vsnprintf( LogMsg, sizeof( LogMsg ), FmtSt, ArgPt );
+    if( Errno > 0 )
+        snprintf( LogMsg + Ln, sizeof( LogMsg ) - Ln,
+                "; Errno(%d): %s", Errno, strerror(Errno) );
+    va_end( ArgPt );
 
-	if (Severity <= LogLevel) {
-		if (Log2Stderr)
-			fprintf(stderr, "%s\n", LogMsg);
-		else {
-			syslog(Severity, "%s", LogMsg);
-		}
+    if (Severity <= LogLevel) {
+        if (Log2Stderr)
+            fprintf(stderr, "%s\n", LogMsg);
+        else {
+            syslog(Severity, "%s", LogMsg);
 	}
+    }
 
-	if (Severity <= LOG_ERR)
-		exit(-1);
+    if( Severity <= LOG_ERR )
+        exit( -1 );
 }
