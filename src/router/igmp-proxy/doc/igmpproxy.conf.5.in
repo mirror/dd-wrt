@@ -25,7 +25,7 @@ or
 The
 .B upstream
 network interface is the outgoing interface which is responsible for communicating
-to availible multicast data sources. There can only be one upstream interface.
+to available multicast data sources. There can only be one upstream interface.
 
 .B Downstream
 network interfaces are the distribution interfaces to the destination networks, 
@@ -46,9 +46,9 @@ The configuration file has two main keywords:
 .B quickleave
 .RS 
 Enables quickleave mode. In this mode the daemon will send a Leave IGMP message
-upstream as soon as it recieves a Leave message for any downstream interface.
+upstream as soon as it receives a Leave message for any downstream interface.
 The daemon will then ask for Membership reports on the downstream interfaces, 
-and if a report is recieved the group is joined again upstream. Normally this
+and if a report is received the group is joined again upstream. Normally this
 is not noticed at all by clients on the downstream networks. If it's vital
 that the daemon should act exactly as a real multicast client on the upstream
 interface, this function should not be used. Disabling this function increases
@@ -86,7 +86,7 @@ The role of the interface. This should be either
 .B downstream
 (one or more interfaces) or
 .B disabled
-. This option is required.
+\&. This option is required.
 .RE
 
 .B ratelimit
@@ -105,7 +105,7 @@ threshols value will be ignored. This setting is optional, and by default the th
 
 .B altnet
 .I networkaddr
-...
+\&...
 .RS
 Defines alternate sources for multicasting and IGMP data. The network address must be on the 
 following format 'a.b.c.d/n'. By default the router will accept data from sources on the same
@@ -136,7 +136,7 @@ response times. Often used or large groups should be defined first, as parsing e
 a group matches an entry.
 
 You may also specify whitelist entries for the upstream interface. Only igmp membership reports
-for explicitely whitelisted multicast groups will be sent out on the upstream interface. This
+for explicitly whitelisted multicast groups will be sent out on the upstream interface. This
 is useful if you want to use multicast groups only between your downstream interfaces, like SSDP
 from a UPnP server.
 .RE
@@ -162,25 +162,6 @@ phyint eth1 downstream ratelimit 0 threshold 1
 .br
 phyint eth2 downstream
 
-.B whitelist
-.I networkaddr
-.RS
-Defines a whitelist for multicast groups. The network address must be in the following
-format 'a.b.c.d/n'. If you want to allow one single group use a network mask of /32,
-i.e. 'a.b.c.d/32'. 
-
-By default all multicast groups are allowed on any downstream interface. If at least one
-whitelist entry is defined, all igmp membership reports for not explicitly whitelisted
-multicast groups will be ignored and therefore not be served by igmpproxy. This is especially
-useful, if your provider does only allow a predefined set of multicast groups. These whitelists
-are only obeyed by igmpproxy itself, they won't prevent any other igmp client running on the
-same machine as igmpproxy from requesting 'unallowed' multicast groups.
-
-You may specify as many whitelist entries as needed. Although you should keep it as simple as
-possible, as this list is parsed for every membership report and therefore this increases igmp
-response times. Often used or large groups should be defined first, as parsing ends as soon as
-a group matches an entry.
-.RE
 
 .SH SEE ALSO
 .BR igmpproxy (8)
