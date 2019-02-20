@@ -1,0 +1,7 @@
+dm_bounds_check_wrapper
+dm_dump_memory_wrapper
+dm_free_wrapper
+dm_malloc_wrapper
+dm_realloc_wrapper
+dm_strdup_wrapper
+dm_zalloc_wrapper

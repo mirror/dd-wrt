@@ -1,0 +1,212 @@
+.TH DMFILEMAPD 8 "Dec 17 2016" "Linux" "MAINTENANCE COMMANDS"
+
+.de OPT_FD
+.  RB [ file_descriptor ]
+..
+.
+.de OPT_GROUP
+.  RB [ group_id ]
+..
+.de OPT_PATH
+.  RB [ abs_path ]
+..
+.
+.de OPT_MODE
+.  RB [ mode ]
+..
+.
+.de OPT_DEBUG
+.  RB [ foreground [ verbose ] ]
+..
+.
+.SH NAME
+.
+dmfilemapd \(em device-mapper filemap monitoring daemon
+.
+.SH SYNOPSIS
+.
+.de CMD_DMFILEMAPD
+.  ad l
+.  IR dmfilemapd
+.  OPT_FD
+.  OPT_GROUP
+.  OPT_PATH
+.  OPT_MODE
+.  OPT_DEBUG
+.  ad b
+..
+.CMD_DMFILEMAPD
+.
+.PD
+.ad b
+.
+.SH DESCRIPTION
+.
+The dmfilemapd daemon monitors groups of \fIdmstats\fP regions that
+correspond to the extents of a file, adding and removing regions to
+reflect the changing state of the file on-disk.
+
+The daemon is normally launched automatically by the \fPdmstats
+create\fP command, but can be run manually, either to create a new
+daemon where one did not previously exist, or to change the options
+previously used, by killing the existing daemon and starting a new
+one.
+.
+.SH OPTIONS
+.
+.HP
+.BR file_descriptor
+.br
+Specify the file descriptor number for the file to be monitored.
+The file descriptor must reference a regular file, open for reading,
+in a local file system that supports the FIEMAP ioctl, and that
+returns data describing the physical location of extents.
+
+The process that executes \fBdmfilemapd\fP is responsible for
+opening the file descriptor that is handed to the daemon.
+.
+.HP
+.BR group_id
+.br
+The \fBdmstats\fP group identifier of the group that \fBdmfilemapd\fP
+should update. The group must exist and it should correspond to
+a set of regions created by a previous filemap operation.
+.
+.HP
+.BR abs_path
+.br
+The absolute path to the file being monitored, at the time that
+it was opened. The use of \fBpath\fP by the daemon differs,
+depending on the filemap following mode in use; see \fBMODES\fP
+and the \fBmode\fP option for more information.
+
+.br
+.HP
+.BR mode
+.br
+The filemap monitoring mode the daemon should use: either "inode"
+(\fBDM_FILEMAP_FOLLOW_INODE\fP), or "path"
+(\fBDM_FILEMAP_FOLLOW_PATH\fP), to enable follow-inode or
+follow-path mode respectively.
+.
+.HP
+.BR [foreground]
+.br
+If set to 1, disable forking and allow the daemon to run in the
+foreground.
+.
+.HP
+.BR [verbose]
+Control daemon logging. If set to zero, the daemon will close all
+stdio streams and run silently. If \fBverbose\fP is a number
+between 1 and 3, stdio will be retained and the daemon will log
+messages to stdout and stderr that match the specified verbosity
+level.
+.
+.
+.SH MODES
+.
+The file map monitoring daemon can monitor files in two distinct
+ways: the mode affects the behaviour of the daemon when a file
+under monitoring is renamed or unlinked, and the conditions which
+cause the daemon to terminate.
+
+In both modes, the daemon will always shut down when the group
+being monitored is deleted.
+
+.P
+.B Follow inode
+.P
+The daemon follows the inode of the file, as it was at the time the
+daemon started. The file descriptor referencing the file is kept
+open at all times, and the daemon will exit when it detects that
+the file has been unlinked and it is the last holder of a reference
+to the file.
+
+This mode is useful if the file is expected to be renamed, or moved
+within the file system, while it is being monitored.
+
+.P
+.B Follow path
+.P
+The daemon follows the path that was given on the daemon command
+line. The file descriptor referencing the file is re-opened on each
+iteration of the daemon, and the daemon will exit if no file exists
+at this location (a tolerance is allowed so that a brief delay
+between removal and replacement is permitted).
+
+This mode is useful if the file is updated by unlinking the original
+and placing a new file at the same path.
+.
+.SH LIMITATIONS
+.
+The daemon attempts to maintain good synchronisation between the file
+extents and the regions contained in the group, however, since the
+daemon can only react to new allocations once they have been written,
+there are inevitably some IO events that cannot be counted when a
+file is growing, particularly if the file is being extended by a
+single thread writing beyond EOF (for example, the \fBdd\fP program).
+
+There is a further loss of events in that there is currently no way
+to atomically resize a \fBdmstats\fP region and preserve its current
+counter values. This affects files when they grow by extending the
+final extent, rather than allocating a new extent: any events that
+had accumulated in the region between any prior operation and the
+resize are lost.
+
+File mapping is currently most effective in cases where the majority
+of IO does not trigger extent allocation. Future updates may address
+these limitations when kernel support is available.
+.
+.SH EXAMPLES
+.
+Normally the daemon is started automatically by the \fBdmstats\fP
+\fBcreate\fP or \fBupdate_filemap\fP commands but it can be run
+manually for debugging or testing purposes.
+.P
+Start the daemon in the background, in follow-path mode
+.br
+#
+.B dmfilemapd 3 0 /srv/images/vm.img path 0 0 3< /srv/images/vm.img
+.br
+.P
+Start the daemon in follow-inode mode, disable forking and enable
+verbose logging
+.br
+#
+.B dmfilemapd 3 0 /var/tmp/data inode 1 3 3< /var/tmp/data
+.br
+Starting dmfilemapd with fd=3, group_id=0 mode=inode, path=/var/tmp/data
+.br
+dm version   [ opencount flush ]   [16384] (*1)
+.br
+dm info   (253:0) [ opencount flush ]   [16384] (*1)
+.br
+dm message   (253:0) [ opencount flush ]  @stats_list dmstats [16384] (*1)
+.br
+Read alias 'data' from aux_data
+.br
+Found group_id 0: alias="data"
+.br
+dm_stats_walk_init: initialised flags to 4000000000000
+.br
+starting stats walk with   GROUP
+.br
+exiting _filemap_monitor_get_events() with deleted=0, check=0
+.br
+Waiting for check interval
+.br
+.P
+.
+.SH AUTHORS
+.
+Bryn M. Reeves <bmr@redhat.com>
+.
+.SH SEE ALSO
+.
+.BR dmstats (8)
+
+LVM2 resource page: https://www.sourceware.org/lvm2/
+.br
+Device-mapper resource page: http://sources.redhat.com/dm/
+.br

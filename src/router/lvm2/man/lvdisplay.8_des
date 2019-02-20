@@ -1,0 +1,5 @@
+lvdisplay shows the attributes of LVs, like size, read/write status,
+snapshot information, etc.
+
+\fBlvs\fP(8) is a preferred alternative that shows the same information
+and more, using a more compact and configurable output format.

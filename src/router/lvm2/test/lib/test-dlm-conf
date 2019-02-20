@@ -1,0 +1,4 @@
+# created by lvm test suite
+log_debug=1
+enable_fencing=0
+

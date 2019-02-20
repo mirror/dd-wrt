@@ -1,0 +1,2 @@
+d @DEFAULT_LOCK_DIR@ 0700 root root -
+d @DEFAULT_RUN_DIR@ 0700 root root -

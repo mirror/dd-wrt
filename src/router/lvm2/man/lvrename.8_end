@@ -1,0 +1,9 @@
+.SH EXAMPLES
+
+Rename "lvold" to "lvnew":
+.br
+.B lvrename /dev/vg02/lvold vg02/lvnew
+
+An alternate syntax to rename "lvold" to "lvnew":
+.br
+.B lvrename vg02 lvold lvnew

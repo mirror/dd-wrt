@@ -1,0 +1,12 @@
+dm_bounds_check_debug
+dm_dump_memory_debug
+dm_free_aux
+dm_log
+dm_log_with_errno
+dm_malloc_aux
+dm_malloc_aux_debug
+dm_realloc_aux
+dm_strdup_aux
+dm_task_get_info_with_deferred_remove
+dm_zalloc_aux
+dm_zalloc_aux_debug

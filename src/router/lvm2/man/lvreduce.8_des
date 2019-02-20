@@ -1,0 +1,18 @@
+lvreduce reduces the size of an LV. The freed logical extents are returned
+to the VG to be used by other LVs. A copy-on-write snapshot LV can also
+be reduced if less space is needed to hold COW blocks. Use
+\fBlvconvert\fP(8) to change the number of data images in a RAID or
+mirrored LV.
+
+Be careful when reducing an LV's size, because data in the reduced area is
+lost. Ensure that any file system on the LV is resized \fBbefore\fP
+running lvreduce so that the removed extents are not in use by the file
+system.
+
+Sizes will be rounded if necessary. For example, the LV size must be an
+exact number of extents, and the size of a striped segment must be a
+multiple of the number of stripes.
+
+In the usage section below, \fB--size\fP \fISize\fP can be replaced
+with \fB--extents\fP \fINumber\fP.  See both descriptions
+the options section.

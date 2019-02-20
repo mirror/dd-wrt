@@ -1,0 +1,15 @@
+pvmove moves the allocated physical extents (PEs) on a source PV to one or
+more destination PVs.  You can optionally specify a source LV in which
+case only extents used by that LV will be moved to free (or specified)
+extents on the destination PV. If no destination PV is specified, the
+normal allocation rules for the VG are used.
+
+If pvmove is interrupted for any reason (e.g. the machine crashes) then
+run pvmove again without any PV arguments to restart any operations that
+were in progress from the last checkpoint. Alternatively, use the abort
+option at any time to abort the operation. The resulting location of LVs
+after an abort depends on whether the atomic option was used.
+
+More than one pvmove can run concurrently if they are moving data from
+different source PVs, but additional pvmoves will ignore any LVs already
+in the process of being changed, so some data might not get moved.

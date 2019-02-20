@@ -1,0 +1,110 @@
+#!/bin/bash
+#
+# chkconfig: - 22 78
+# description: Starts and stops cmirrord
+# pidfile: @CMIRRORD_PIDFILE@
+#
+# For Red-Hat-based distributions such as Fedora, RHEL, CentOS.
+#
+### BEGIN INIT INFO
+# Provides: cmirrord
+# Required-Start:       $network $time $local_fs
+# Required-Stop:	$network $time $local_fs
+# Short-Description:    Starts and stops cmirrord
+# Description:	  Starts and stops the cluster mirror log daemon
+### END INIT INFO
+
+. /etc/init.d/functions
+
+DAEMON=cmirrord
+
+usrsbindir="@USRSBINDIR@"
+
+LOCK_FILE="@DEFAULT_SYS_LOCK_DIR@/subsys/$DAEMON"
+
+start()
+{
+	rtrn=0
+	if ! pidof "$DAEMON" > /dev/null
+	then
+		echo -n "Starting $DAEMON: "
+		daemon "$usrsbindir/$DAEMON"
+		rtrn=$?
+		echo
+	fi
+
+	return $rtrn
+}
+
+stop()
+{
+	echo -n "Stopping $DAEMON:"
+	killproc "$DAEMON" -TERM
+	rtrn=$?
+	echo
+
+	return $rtrn
+}
+
+wait_for_finish()
+{
+	count=0
+
+	while [ "$count" -le 10 -a -n "`pidof $DAEMON`" ]
+	do
+		sleep 1
+		count=$((count + 1))
+	done
+
+	if [ "$(pidof "$DAEMON")" ]
+	then
+		return 1
+	else
+		return 0
+	fi
+}
+
+cmirror_status()
+{
+	status "$DAEMON"
+}
+
+rtrn=1
+
+# See how we were called.
+case "$1" in
+	start)
+		start
+		rtrn=$?
+		[ "$rtrn" = 0 ] && touch "$LOCK_FILE"
+		;;
+
+	stop)
+		stop
+		rtrn=$?
+		[ "$rtrn" = 0 ] && rm -f "$LOCK_FILE"
+		;;
+
+	restart)
+		if stop
+		then
+			wait_for_finish
+			start
+		fi
+		rtrn=$?
+		;;
+
+	status)
+		cmirror_status
+		rtrn=$?
+		if [ "$rtrn" -eq 0 ]; then
+			echo "cmirror is running."
+		fi
+		;;
+
+	*)
+		echo $"Usage: $0 {start|stop|restart|status}"
+		;;
+esac
+
+exit $rtrn

@@ -1,0 +1,11 @@
+vgextend adds one or more PVs to a VG. This increases the space available
+for LVs in the VG.
+
+Also, PVs that have gone missing and then returned, e.g. due to a
+transient device failure, can be added back to the VG without
+re-initializing them (see --restoremissing).
+
+If the specified PVs have not yet been initialized with pvcreate, vgextend
+will initialize them. In this case pvcreate options can be used, e.g.
+--labelsector, --metadatasize, --metadataignore,
+--pvmetadatacopies, --dataalignment, --dataalignmentoffset.

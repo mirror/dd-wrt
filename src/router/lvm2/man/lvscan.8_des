@@ -1,0 +1,5 @@
+lvscan scans all VGs or all supported LVM block devices in the system for
+LVs. The output consists of one line for each LV indicating whether or not
+it is active, a snapshot or origin, the size of the device and its
+allocation policy. Use \fBlvs\fP(8) or \fBlvdisplay\fP(8) to obtain more
+comprehensive information about LVs.

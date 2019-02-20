@@ -1,0 +1,98 @@
+#
+# Copyright (C) 2001-2004 Sistina Software, Inc. All rights reserved.
+# Copyright (C) 2004-2018 Red Hat, Inc. All rights reserved.
+#
+# This file is part of LVM2.
+#
+# This copyrighted material is made available to anyone wishing to use,
+# modify, copy, or redistribute it subject to the terms and conditions
+# of the GNU General Public License v.2.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+top_builddir = @top_builddir@
+
+all: device-mapper
+
+SOURCES2 = dmsetup.c
+TARGETS_DM = dmsetup
+install_device-mapper: install_dmsetup_dynamic
+
+ifeq ("@STATIC_LINK@", "yes")
+  TARGETS_DM += dmsetup.static
+  install_device-mapper: install_dmsetup_static
+endif
+
+# dmfilemapd support
+ifeq ("@BUILD_DMFILEMAPD@", "yes")
+  SOURCES2 += dmfilemapd.c
+  TARGETS_DM += dmfilemapd
+  install_dmfilemapd: install_dmfilemapd_dynamic
+
+  ifeq ("@STATIC_LINK@", "yes")
+    TARGETS_DM += dmfilemapd.static
+    install_dmfilemapd: install_dmfilemapd_static
+  endif
+endif
+
+CLEAN_TARGETS = $(LDDEPS) .exported_symbols_generated \
+	dmfilemapd dmfilemapd.static \
+	dmsetup dmsetup.static
+
+include $(top_builddir)/libdm/make.tmpl
+
+CFLAGS_dmsetup.o += $(UDEV_CFLAGS) $(EXTRA_EXEC_CFLAGS)
+CFLAGS_dmfilemapd.o += $(EXTRA_EXEC_CFLAGS)
+LDFLAGS += -L$(interfacebuilddir)
+DMLIBS = -ldevmapper
+
+dmsetup: dmsetup.o
+	@echo "    [CC] $@"
+	$(Q) $(CC) $(CFLAGS) $(LDFLAGS) $(EXTRA_EXEC_LDFLAGS) $(ELDFLAGS) \
+	      -o $@ $+ $(DMLIBS)
+
+dmsetup.static: dmsetup.o
+	@echo "    [CC] $@"
+	$(Q) $(CC) $(CFLAGS) $(LDFLAGS) -static \
+	      -o $@ $+ $(DMLIBS) $(STATIC_LIBS)
+
+install_dmsetup_dynamic: dmsetup
+	@echo "    [INSTALL] $<"
+	$(Q) $(INSTALL_PROGRAM) -D $< $(sbindir)/$(<F)
+	$(Q) $(LN_S) -f $(<F) $(sbindir)/dmstats
+
+install_dmsetup_static: dmsetup.static
+	@echo "    [INSTALL] $<"
+	$(Q) $(INSTALL_PROGRAM) -D $< $(staticdir)/$(<F)
+	$(Q) $(LN_S) -f $(<F) $(staticdir)/dmstats
+
+
+dmfilemapd: $(LIB_SHARED) dmfilemapd.o
+	@echo "    [CC] $@"
+	$(Q) $(CC) $(CFLAGS) $(LDFLAGS) $(EXTRA_EXEC_LDFLAGS) $(ELDFLAGS) \
+	      -o $@ $+ $(DMLIBS)
+
+dmfilemapd.static: $(LIB_STATIC) dmfilemapd.o
+	@echo "    [CC] $@"
+	$(Q) $(CC) $(CFLAGS) $(LDFLAGS) $(ELDFLAGS) -static \
+	      -o $@ $+ $(DMLIBS) $(STATIC_LIBS)
+
+install_dmfilemapd_dynamic: dmfilemapd
+	@echo "    [INSTALL] $<"
+	$(Q) $(INSTALL_PROGRAM) -D $< $(sbindir)/$(<F)
+
+install_dmfilemapd_static: dmfilemapd.static
+	@echo "    [INSTALL] $<"
+	$(Q) $(INSTALL_PROGRAM) -D $< $(staticdir)/$(<F)
+
+
+.PHONY: install_dmsetup_dynamic install_dmsetup_static
+.PHONY: install_dmfilemapd install_dmfilemapd_static
+
+install: install_device-mapper install_dmfilemapd
+
+device-mapper: $(TARGETS_DM)

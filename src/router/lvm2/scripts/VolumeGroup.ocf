@@ -1,0 +1,279 @@
+#!/bin/sh
+#
+# VolumeGroup
+#
+# Description:	Manages an LVM2 volume group as an HA resource in
+#               an OCF-compliant cluster
+#
+#
+# Authors:	Alan Robertson, Lars Marowsky-Bree, Florian Haas,
+#               and others from the Linux-HA project
+# License:	GNU General Public License (GPL)
+# Copyright:	(C) 2002 - 2005 International Business Machines, Inc.
+#               (C) 2010 LINBIT HA-Solutions GmbH
+#
+#	This code significantly inspired by the LVM resource
+#	in FailSafe by Lars Marowsky-Bree
+#
+#######################################################################
+# Initialization:
+
+: ${OCF_FUNCTIONS_DIR=${OCF_ROOT}/resource.d/heartbeat}
+. ${OCF_FUNCTIONS_DIR}/.ocf-shellfuncs
+
+#######################################################################
+
+
+usage() {
+  methods=`VolumeGroup_methods`
+  methods=`echo $methods | tr ' ' '|'`
+  cat <<EOF
+	usage: $0 $methods
+
+	$0 manages an LVM Volume Group (VG) as an HA resource
+
+	The 'start' operation brings the given volume online
+	The 'stop' operation takes the given volume offline
+	The 'status' operation reports whether the volume is available
+	The 'monitor' operation reports whether the volume seems present
+	The 'validate-all' operation checks whether the OCF parameters are valid
+	The 'methods' operation reports on the methods $0 supports
+
+EOF
+}
+
+meta_data() {
+	cat <<EOF
+<?xml version="1.0"?>
+<!DOCTYPE resource-agent SYSTEM "ra-api-1.dtd">
+<resource-agent name="VolumeGroup">
+<version>1.0</version>
+
+<longdesc lang="en">
+Resource script for an LVM Volume Group.
+</longdesc>
+<shortdesc lang="en">Controls the availability of an LVM Volume Group</shortdesc>
+
+<parameters>
+<parameter name="volgrpname" unique="0" required="1">
+<longdesc lang="en">
+The name of volume group.
+</longdesc>
+<shortdesc lang="en">Volume group name</shortdesc>
+<content type="string" default="" />
+</parameter>
+<parameter name="exclusive" unique="0" required="0">
+<longdesc lang="en">
+If set, the volume group will be activated exclusively.
+</longdesc>
+<shortdesc lang="en">Exclusive activation</shortdesc>
+<content type="boolean" default="false" />
+</parameter>
+</parameters>
+
+<actions>
+<action name="start" timeout="30" />
+<action name="stop" timeout="30" />
+<action name="status" timeout="30" />
+<action name="monitor" depth="0" timeout="30" interval="10" />
+<action name="methods" timeout="5" />
+<action name="meta-data" timeout="5" />
+<action name="validate-all" timeout="5" />
+</actions>
+</resource-agent>
+EOF
+}
+
+#
+# methods: What methods/operations do we support?
+#
+VolumeGroup_methods() {
+  cat <<EOF
+	start
+	stop
+	status
+	monitor
+	methods
+	validate-all
+	usage
+EOF
+}
+
+#
+# Report on LVM volume status. VG may be reported as active
+# ($OCF_SUCCESS) or inactive ($OCF_NOT_RUNNING)
+#
+VolumeGroup_status() {
+
+    VGOUT=`vgdisplay -v $OCF_RESKEY_volgrpname 2>&1` || exit $OCF_ERR_GENERIC
+    echo "$VGOUT" | grep -i 'Status[ \t]*available' >/dev/null
+    rc=$?
+
+    if [ $rc -eq 0 ]; then
+	ocf_log debug "LVM Volume Group $OCF_RESKEY_volgrpname is available (started)"
+    else
+	ocf_log debug "LVM Volume Group $OCF_RESKEY_volgrpname is not available (stopped)"
+	return $OCF_NOT_RUNNING
+    fi
+
+    if echo "$VGOUT" | grep -i 'Access.*read/write' >/dev/null; then
+	ocf_log debug "Volume $OCF_RESKEY_volgrpname is available read/write (running)"
+    else
+	ocf_log debug "Volume $OCF_RESKEY_volgrpname is available read-only (running)"
+    fi
+
+    return $OCF_SUCCESS
+}
+
+#
+# Monitor the volume - does it really seem to be working? May report
+# $OCF_SUCCESS or $OCF_NOT_RUNNING like VolumeGroup_status, plus
+# $OCF_ERR_GENERIC in case vgck reports an error.
+#
+VolumeGroup_monitor() {
+    if ! VolumeGroup_status $OCF_RESKEY_volgrpname; then
+	ocf_log info "LVM Volume Group $OCF_RESKEY_volgrpname is offline"
+	return $OCF_NOT_RUNNING
+    fi
+
+    ocf_run vgck $OCF_RESKEY_volgrpname || exit $OCF_ERR_GENERIC
+
+    return $OCF_SUCCESS
+}
+
+#
+# Activate the volume group, either locally (if $OCF_RESKEY_exclusive
+# is false or unset), or exclusively (if $OCF_RESKEY_exclusive is
+# true).
+# Either returns successfully, or exits with $OCF_ERR_GENERIC.
+#
+VolumeGroup_start() {
+
+  ocf_log info "Activating volume group $OCF_RESKEY_volgrpname"
+  ocf_run vgscan
+
+  local active_mode
+  active_mode="ly"
+  if ocf_is_true "$OCF_RESKEY_exclusive" ; then
+      active_mode="ey"
+  fi
+
+  ocf_run vgchange -a $active_mode $OCF_RESKEY_volgrpname || exit $OCF_ERR_GENERIC
+
+  if ! VolumeGroup_status $OCF_RESKEY_volgrpname; then
+    ocf_log err "LVM: $OCF_RESKEY_volgrpname did not activate correctly"
+    exit $OCF_ERR_GENERIC
+  fi
+
+  return $OCF_SUCCESS
+}
+
+#
+# Deactivate the volume group.
+# Either returns successfully, or exits with $OCF_ERR_GENERIC.
+#
+VolumeGroup_stop() {
+    if ! VolumeGroup_status; then
+	ocf_log debug "Volume Group $OCF_RESKEY_volgrpname already stopped"
+	return $OCF_SUCCESS
+    fi
+
+    ocf_log info "Deactivating volume group $OCF_RESKEY_volgrpname"
+    ocf_run vgchange -a ln $OCF_RESKEY_volgrpname || exit $OCF_ERR_GENERIC
+
+    if VolumeGroup_status; then
+	ocf_log err "LVM: $OCF_RESKEY_volgrpname did not stop correctly"
+	exit $OCF_ERR_GENERIC
+    fi
+
+    return $OCF_SUCCESS
+}
+
+#
+# Check whether the OCF instance parameters are valid.
+# Either returns successfully, or exits with
+# $OCF_ERR_CONFIGURED if required parameters are missing;
+# $OCF_ERR_INSTALLED if required binaries are missing;
+# $OCF_ERR_GENERIC in case of any other error.
+#
+VolumeGroup_validate_all() {
+
+    if [ -z $OCF_RESKEY_volgrpname ]; then
+	ocf_log err 'Missing required parameter "volgrpname"!'
+	exit $OCF_ERR_CONFIGURED
+    fi
+
+    check_binary vgchange
+    check_binary vgck
+    check_binary vgdisplay
+
+    # Run the following tests only if we're not invoked by a probe
+    # operation
+    if ! ocf_is_probe; then
+        # Off-the-shelf tests...
+	vgck "$OCF_RESKEY_volgrpname" >/dev/null 2>&1
+	if [ $? -ne 0 ]; then
+	    ocf_log err "Volume group $OCF_RESKEY_volgrpname does not exist or contains error!"
+	    exit $OCF_ERR_GENERIC
+	fi
+
+        # Double-check
+	vgdisplay -v "$OCF_RESKEY_volgrpname" >/dev/null 2>&1
+	if [ $? -ne 0 ]; then
+	    ocf_log err "Volume group $OCF_RESKEY_volgrpname does not exist or contains error!"
+	    exit $OCF_ERR_GENERIC
+	fi
+    fi
+
+    return $OCF_SUCCESS
+}
+
+#
+# 'main' starts here...
+#
+if [ $# -ne 1 ]; then
+    usage
+    exit $OCF_ERR_ARGS
+fi
+
+case $1 in
+  meta-data)	meta_data
+		exit $OCF_SUCCESS;;
+
+  methods)	VolumeGroup_methods
+		exit $OCF_SUCCESS;;
+
+  usage)	usage
+		exit $OCF_SUCCESS;;
+  *)		;;
+esac
+
+# Everything except usage and meta-data must pass the validate test
+VolumeGroup_validate_all
+
+# What kind of method was invoked?
+case "$1" in
+    start)
+	VolumeGroup_start
+	;;
+    stop)
+	VolumeGroup_stop
+	;;
+    status)
+	VolumeGroup_status
+	;;
+    monitor)
+	VolumeGroup_monitor
+	;;
+    validate-all)
+	;;
+    notify|promote|demote|migrate_from|migrate_to)
+	usage
+	exit $OCF_ERR_UNIMPLEMENTED
+	;;
+    *)	usage
+	exit $OCF_ERR_ARGS
+	;;
+esac
+
+exit $?

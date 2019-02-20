@@ -1,0 +1,523 @@
+.TH PVMOVE 8 "LVM TOOLS #VERSION#" "Red Hat, Inc."
+.SH NAME
+pvmove - Move extents from one physical volume to another
+.
+.SH SYNOPSIS
+\fBpvmove\fP \fIposition_args\fP
+.br
+    [ \fIoption_args\fP ]
+.br
+    [ \fIposition_args\fP ]
+.br
+.SH DESCRIPTION
+pvmove moves the allocated physical extents (PEs) on a source PV to one or
+more destination PVs.  You can optionally specify a source LV in which
+case only extents used by that LV will be moved to free (or specified)
+extents on the destination PV. If no destination PV is specified, the
+normal allocation rules for the VG are used.
+
+If pvmove is interrupted for any reason (e.g. the machine crashes) then
+run pvmove again without any PV arguments to restart any operations that
+were in progress from the last checkpoint. Alternatively, use the abort
+option at any time to abort the operation. The resulting location of LVs
+after an abort depends on whether the atomic option was used.
+
+More than one pvmove can run concurrently if they are moving data from
+different source PVs, but additional pvmoves will ignore any LVs already
+in the process of being changed, so some data might not get moved.
+.SH USAGE
+Move PV extents.
+.br
+.P
+\fBpvmove\fP \fIPV\fP
+.br
+.RS 4
+.ad l
+[ \fB-A\fP|\fB--autobackup\fP \fBy\fP|\fBn\fP ]
+.ad b
+.br
+.ad l
+[ \fB-n\fP|\fB--name\fP \fILV\fP ]
+.ad b
+.br
+.ad l
+[    \fB--alloc\fP \fBcontiguous\fP|\fBcling\fP|\fBcling_by_tags\fP|\fBnormal\fP|\fBanywhere\fP|\fBinherit\fP ]
+.ad b
+.br
+.ad l
+[    \fB--atomic\fP ]
+.ad b
+.br
+.ad l
+[    \fB--noudevsync\fP ]
+.ad b
+.br
+.ad l
+[    \fB--reportformat\fP \fBbasic\fP|\fBjson\fP ]
+.ad b
+.br
+[ COMMON_OPTIONS ]
+.RE
+.br
+.RS 4
+[ \fIPV\fP ... ]
+.RE
+
+Continue or abort existing pvmove operations.
+.br
+.P
+\fBpvmove\fP
+.br
+.RS 4
+[ COMMON_OPTIONS ]
+.RE
+.br
+
+Common options for command:
+.
+.RS 4
+.ad l
+[ \fB-b\fP|\fB--background\fP ]
+.ad b
+.br
+.ad l
+[ \fB-i\fP|\fB--interval\fP \fINumber\fP ]
+.ad b
+.br
+.ad l
+[    \fB--abort\fP ]
+.ad b
+.RE
+
+Common options for lvm:
+.
+.RS 4
+.ad l
+[ \fB-d\fP|\fB--debug\fP ]
+.ad b
+.br
+.ad l
+[ \fB-h\fP|\fB--help\fP ]
+.ad b
+.br
+.ad l
+[ \fB-q\fP|\fB--quiet\fP ]
+.ad b
+.br
+.ad l
+[ \fB-t\fP|\fB--test\fP ]
+.ad b
+.br
+.ad l
+[ \fB-v\fP|\fB--verbose\fP ]
+.ad b
+.br
+.ad l
+[ \fB-y\fP|\fB--yes\fP ]
+.ad b
+.br
+.ad l
+[    \fB--commandprofile\fP \fIString\fP ]
+.ad b
+.br
+.ad l
+[    \fB--config\fP \fIString\fP ]
+.ad b
+.br
+.ad l
+[    \fB--driverloaded\fP \fBy\fP|\fBn\fP ]
+.ad b
+.br
+.ad l
+[    \fB--lockopt\fP \fIString\fP ]
+.ad b
+.br
+.ad l
+[    \fB--longhelp\fP ]
+.ad b
+.br
+.ad l
+[    \fB--nolocking\fP ]
+.ad b
+.br
+.ad l
+[    \fB--profile\fP \fIString\fP ]
+.ad b
+.br
+.ad l
+[    \fB--version\fP ]
+.ad b
+.RE
+.SH OPTIONS
+.HP
+.ad l
+\fB--abort\fP
+.br
+Abort any pvmove operations in progress. If a pvmove was started
+with the --atomic option, then all LVs will remain on the source PV.
+Otherwise, segments that have been moved will remain on the
+destination PV, while unmoved segments will remain on the source PV.
+.ad b
+.HP
+.ad l
+\fB--alloc\fP \fBcontiguous\fP|\fBcling\fP|\fBcling_by_tags\fP|\fBnormal\fP|\fBanywhere\fP|\fBinherit\fP
+.br
+Determines the allocation policy when a command needs to allocate
+Physical Extents (PEs) from the VG. Each VG and LV has an allocation policy
+which can be changed with vgchange/lvchange, or overriden on the
+command line.
+\fBnormal\fP applies common sense rules such as not placing parallel stripes
+on the same PV.
+\fBinherit\fP applies the VG policy to an LV.
+\fBcontiguous\fP requires new PEs be placed adjacent to existing PEs.
+\fBcling\fP places new PEs on the same PV as existing PEs in the same
+stripe of the LV.
+If there are sufficient PEs for an allocation, but normal does not
+use them, \fBanywhere\fP will use them even if it reduces performance,
+e.g. by placing two stripes on the same PV.
+Optional positional PV args on the command line can also be used to limit
+which PVs the command will use for allocation.
+See \fBlvm\fP(8) for more information about allocation.
+.ad b
+.HP
+.ad l
+\fB--atomic\fP
+.br
+Makes a pvmove operation atomic, ensuring that all affected LVs are
+moved to the destination PV, or none are if the operation is aborted.
+.ad b
+.HP
+.ad l
+\fB-A\fP|\fB--autobackup\fP \fBy\fP|\fBn\fP
+.br
+Specifies if metadata should be backed up automatically after a change.
+Enabling this is strongly advised! See \fBvgcfgbackup\fP(8) for more information.
+.ad b
+.HP
+.ad l
+\fB-b\fP|\fB--background\fP
+.br
+If the operation requires polling, this option causes the command to
+return before the operation is complete, and polling is done in the
+background.
+.ad b
+.HP
+.ad l
+\fB--commandprofile\fP \fIString\fP
+.br
+The command profile to use for command configuration.
+See \fBlvm.conf\fP(5) for more information about profiles.
+.ad b
+.HP
+.ad l
+\fB--config\fP \fIString\fP
+.br
+Config settings for the command. These override lvm.conf settings.
+The String arg uses the same format as lvm.conf,
+or may use section/field syntax.
+See \fBlvm.conf\fP(5) for more information about config.
+.ad b
+.HP
+.ad l
+\fB-d\fP|\fB--debug\fP ...
+.br
+Set debug level. Repeat from 1 to 6 times to increase the detail of
+messages sent to the log file and/or syslog (if configured).
+.ad b
+.HP
+.ad l
+\fB--driverloaded\fP \fBy\fP|\fBn\fP
+.br
+If set to no, the command will not attempt to use device-mapper.
+For testing and debugging.
+.ad b
+.HP
+.ad l
+\fB-h\fP|\fB--help\fP
+.br
+Display help text.
+.ad b
+.HP
+.ad l
+\fB-i\fP|\fB--interval\fP \fINumber\fP
+.br
+Report progress at regular intervals.
+.ad b
+.HP
+.ad l
+\fB--lockopt\fP \fIString\fP
+.br
+Used to pass options for special cases to lvmlockd.
+See \fBlvmlockd\fP(8) for more information.
+.ad b
+.HP
+.ad l
+\fB--longhelp\fP
+.br
+Display long help text.
+.ad b
+.HP
+.ad l
+\fB-n\fP|\fB--name\fP \fIString\fP
+.br
+Move only the extents belonging to the named LV.
+.ad b
+.HP
+.ad l
+\fB--nolocking\fP
+.br
+Disable locking.
+.ad b
+.HP
+.ad l
+\fB--noudevsync\fP
+.br
+Disables udev synchronisation. The process will not wait for notification
+from udev. It will continue irrespective of any possible udev processing
+in the background. Only use this if udev is not running or has rules that
+ignore the devices LVM creates.
+.ad b
+.HP
+.ad l
+\fB--profile\fP \fIString\fP
+.br
+An alias for --commandprofile or --metadataprofile, depending
+on the command.
+.ad b
+.HP
+.ad l
+\fB-q\fP|\fB--quiet\fP ...
+.br
+Suppress output and log messages. Overrides --debug and --verbose.
+Repeat once to also suppress any prompts with answer 'no'.
+.ad b
+.HP
+.ad l
+\fB--reportformat\fP \fBbasic\fP|\fBjson\fP
+.br
+Overrides current output format for reports which is defined globally by
+the report/output_format setting in lvm.conf.
+\fBbasic\fP is the original format with columns and rows.
+If there is more than one report per command, each report is prefixed
+with the report name for identification. \fBjson\fP produces report
+output in JSON format. See \fBlvmreport\fP(7) for more information.
+.ad b
+.HP
+.ad l
+\fB-t\fP|\fB--test\fP
+.br
+Run in test mode. Commands will not update metadata.
+This is implemented by disabling all metadata writing but nevertheless
+returning success to the calling function. This may lead to unusual
+error messages in multi-stage operations if a tool relies on reading
+back metadata it believes has changed but hasn't.
+.ad b
+.HP
+.ad l
+\fB-v\fP|\fB--verbose\fP ...
+.br
+Set verbose level. Repeat from 1 to 4 times to increase the detail
+of messages sent to stdout and stderr.
+.ad b
+.HP
+.ad l
+\fB--version\fP
+.br
+Display version information.
+.ad b
+.HP
+.ad l
+\fB-y\fP|\fB--yes\fP
+.br
+Do not prompt for confirmation interactively but always assume the
+answer yes. Use with extreme caution.
+(For automatic no, see -qq.)
+.ad b
+.SH VARIABLES
+.HP
+\fIPV\fP
+.br
+Physical Volume name, a device path under /dev.
+For commands managing physical extents, a PV positional arg
+generally accepts a suffix indicating a range (or multiple ranges)
+of physical extents (PEs). When the first PE is omitted, it defaults
+to the start of the device, and when the last PE is omitted it defaults to end.
+Start and end range (inclusive): \fIPV\fP[\fB:\fP\fIPE\fP\fB-\fP\fIPE\fP]...
+Start and length range (counting from 0): \fIPV\fP[\fB:\fP\fIPE\fP\fB+\fP\fIPE\fP]...
+.HP
+\fIString\fP
+.br
+See the option description for information about the string content.
+.HP
+\fISize\fP[UNIT]
+.br
+Size is an input number that accepts an optional unit.
+Input units are always treated as base two values, regardless of
+capitalization, e.g. 'k' and 'K' both refer to 1024.
+The default input unit is specified by letter, followed by |UNIT.
+UNIT represents other possible input units: \fBbBsSkKmMgGtTpPeE\fP.
+b|B is bytes, s|S is sectors of 512 bytes, k|K is kilobytes,
+m|M is megabytes, g|G is gigabytes, t|T is terabytes,
+p|P is petabytes, e|E is exabytes.
+(This should not be confused with the output control --units, where
+capital letters mean multiple of 1000.)
+.SH ENVIRONMENT VARIABLES
+See \fBlvm\fP(8) for information about environment variables used by lvm.
+For example, LVM_VG_NAME can generally be substituted for a required VG parameter.
+.SH NOTES
+pvmove works as follows:
+
+1. A temporary 'pvmove' LV is created to store details of all the data
+movements required.
+
+2. Every LV in the VG is searched for contiguous data that need moving
+according to the command line arguments.
+For each piece of data found, a new segment is added to the end of the
+pvmove LV.
+This segment takes the form of a temporary mirror to copy the data
+from the original location to a newly allocated location.
+The original LV is updated to use the new temporary mirror segment
+in the pvmove LV instead of accessing the data directly.
+
+3. The VG metadata is updated on disk.
+
+4. The first segment of the pvmove LV is activated and starts to mirror
+the first part of the data.  Only one segment is mirrored at once as this
+is usually more efficient.
+
+5. A daemon repeatedly checks progress at the specified time interval.
+When it detects that the first temporary mirror is in sync, it breaks that
+mirror so that only the new location for that data gets used and writes a
+checkpoint into the VG metadata on disk.  Then it activates the mirror for
+the next segment of the pvmove LV.
+
+6. When there are no more segments left to be mirrored, the temporary LV
+is removed and the VG metadata is updated so that the LVs reflect the new
+data locations.
+
+Note that this new process cannot support the original LVM1
+type of on-disk metadata.  Metadata can be converted using
+\fBvgconvert\fP(8).
+
+If the \fB--atomic\fP option is used, a slightly different approach is
+used for the move.  Again, a temporary 'pvmove' LV is created to store the
+details of all the data movements required.  This temporary LV contains
+all the segments of the various LVs that need to be moved.  However, in
+this case, an identical LV is allocated that contains the same number of
+segments and a mirror is created to copy the contents from the first
+temporary LV to the second.  After a complete copy is made, the temporary
+LVs are removed, leaving behind the segments on the destination PV.  If an
+abort is issued during the move, all LVs being moved will remain on the
+source PV.
+
+.SH EXAMPLES
+
+Move all physical extents that are used by simple LVs on the specified PV to
+free physical extents elsewhere in the VG.
+.br
+.B pvmove /dev/sdb1
+
+Use a specific destination PV when moving physical extents.
+.br
+.B pvmove /dev/sdb1 /dev/sdc1
+
+Move extents belonging to a single LV.
+.br
+.B pvmove -n lvol1 /dev/sdb1 /dev/sdc1
+
+Rather than moving the contents of an entire device, it is possible to
+move a range of physical extents, for example numbers 1000 to 1999
+inclusive on the specified PV.
+.br
+.B pvmove /dev/sdb1:1000-1999
+
+A range of physical extents to move can be specified as start+length. For
+example, starting from PE 1000. (Counting starts from 0, so this refers to the
+1001st to the 2000th PE inclusive.)
+.br
+.B pvmove /dev/sdb1:1000+1000
+
+Move a range of physical extents to a specific PV (which must have
+sufficient free extents).
+.br
+.B pvmove /dev/sdb1:1000-1999 /dev/sdc1
+
+Move a range of physical extents to specific new extents on a new PV.
+.br
+.B pvmove /dev/sdb1:1000-1999 /dev/sdc1:0-999
+
+If the source and destination are on the same disk, the
+\fBanywhere\fP allocation policy is needed.
+.br
+.B pvmove --alloc anywhere /dev/sdb1:1000-1999 /dev/sdb1:0-999
+
+The part of a specific LV present within in a range of physical
+extents can also be picked out and moved.
+.br
+.B pvmove -n lvol1 /dev/sdb1:1000-1999 /dev/sdc1
+.SH SEE ALSO
+
+.BR lvm (8)
+.BR lvm.conf (5)
+.BR lvmconfig (8)
+
+.BR pvchange (8)
+.BR pvck (8)
+.BR pvcreate (8)
+.BR pvdisplay (8)
+.BR pvmove (8)
+.BR pvremove (8)
+.BR pvresize (8)
+.BR pvs (8)
+.BR pvscan (8) 
+
+.BR vgcfgbackup (8)
+.BR vgcfgrestore (8)
+.BR vgchange (8)
+.BR vgck (8)
+.BR vgcreate (8)
+.BR vgconvert (8)
+.BR vgdisplay (8)
+.BR vgexport (8)
+.BR vgextend (8)
+.BR vgimport (8)
+.BR vgimportclone (8)
+.BR vgmerge (8)
+.BR vgmknodes (8)
+.BR vgreduce (8)
+.BR vgremove (8)
+.BR vgrename (8)
+.BR vgs (8)
+.BR vgscan (8)
+.BR vgsplit (8) 
+
+.BR lvcreate (8)
+.BR lvchange (8)
+.BR lvconvert (8)
+.BR lvdisplay (8)
+.BR lvextend (8)
+.BR lvreduce (8)
+.BR lvremove (8)
+.BR lvrename (8)
+.BR lvresize (8)
+.BR lvs (8)
+.BR lvscan (8)
+
+.BR lvm-fullreport (8)
+.BR lvm-lvpoll (8)
+.BR lvm2-activation-generator (8)
+.BR blkdeactivate (8)
+.BR lvmdump (8)
+
+.BR dmeventd (8)
+.BR lvmpolld (8)
+.BR lvmlockd (8)
+.BR lvmlockctl (8)
+.BR cmirrord (8)
+.BR lvmdbusd (8)
+
+.BR lvmsystemid (7)
+.BR lvmreport (7)
+.BR lvmraid (7)
+.BR lvmthin (7)
+.BR lvmcache (7)

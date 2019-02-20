@@ -1,0 +1,5 @@
+.SH EXAMPLES
+
+Extend an LV by 16MB using specific physical extents:
+.br
+.B lvresize -L+16M vg1/lv1 /dev/sda:0-1 /dev/sdb:0-1

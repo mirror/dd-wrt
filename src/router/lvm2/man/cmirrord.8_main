@@ -1,0 +1,36 @@
+.TH CMIRRORD 8 "LVM TOOLS #VERSION#" "Red Hat Inc" \" -*- nroff -*-
+.SH NAME
+cmirrord \(em cluster mirror log daemon
+
+.SH SYNOPSIS
+\fBcmirrord\fR [\fB-f\fR] [\fB-h\fR]
+
+.SH DESCRIPTION
+\fBcmirrord\fP is the daemon that tracks mirror log information in a cluster.
+It is specific to device-mapper based mirrors (and by extension, LVM
+cluster mirrors).  Cluster mirrors are not possible without this daemon
+running.
+
+This daemon relies on the cluster infrastructure provided by the corosync,
+which must be set up and running in order for cmirrord to function.
+
+Output is logged via \fBsyslog\fP(3). The \fBSIGUSR1 signal\fP(7) can be
+issued to \fBcmirrord\fP to gather current status information for debugging
+purposes.
+
+Once started, \fBcmirrord\fP will run until it is shutdown via \fBSIGINT\fP
+signal. If there are still active cluster mirrors, however, the signal will be
+ignored. Active cluster mirrors should be shutdown before stopping the cluster
+mirror log daemon.
+
+.SH OPTIONS
+.IP "\fB-f\fR, \fB--foreground\fR" 4
+Do not fork and log to the terminal.
+.IP "\fB-h\fR, \fB--help\fR" 4
+Print usage.
+
+.SH SEE ALSO
+.BR lvmlockd (8),
+.BR lvm (8),
+.BR syslog (3),
+.BR signal (7)

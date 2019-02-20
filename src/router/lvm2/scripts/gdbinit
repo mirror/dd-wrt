@@ -1,0 +1,629 @@
+# Copyright (C) 2011 Red Hat, Inc. All rights reserved.
+# This file is part of LVM2.
+
+# This copyrighted material is made available to anyone wishing to use,
+# modify, copy, or redistribute it subject to the terms and conditions
+# of the GNU Lesser General Public License v.2.1.
+
+# You should have received a copy of the GNU Lesser General Public License
+# along with this program; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Author(s):
+#	Jonathan Brassow <jbrassow@redhat.com>
+#
+# Copy this file to ~/.gdbinit or <working_dir>/.gdbinit
+
+printf "\n\n"
+printf "Loading commands:\n"
+printf " - dm_list_size <list ptr>\n"
+printf " - pv_dev_name <PV ptr>\n"
+printf " - first_seg <LV ptr>\n"
+printf " - lv_status <LV ptr>\n"
+printf " - lv_status_r <LV ptr>\n"
+printf " - lv_is_mirrored <LV ptr>\n"
+printf " - seg_item <seg ptr> <index>\n"
+printf " - seg_status <seg ptr>\n"
+printf " - segs_using_this_lv <seg ptr>\n"
+printf " - seg_pvs <list ptr>\n"
+printf " - \n"
+printf "Use 'help <command>' for more info\n"
+printf "\n\n"
+printf "Popular breakpoints:\n"
+printf "break _alloc_image_components\n"
+printf "run --repair --use-policies vg/lv\n"
+printf "\n\n"
+
+set follow-fork-mode child
+
+# Conventions:
+# foo     : function named 'foo' available to user
+# __foo   : an internal function
+#
+# External functions should have a corresponding 'document'
+# section.  Internal functions should have leading comments
+
+
+
+define dm_list_size
+	set $_DLS_list_head = (struct dm_list *)$arg0
+	set $_DLS_list = $_DLS_list_head->n
+	set $_DLS_size = 0
+	
+	while (($_DLS_list != $_DLS_list_head) && ($_DLS_size < 100))
+		set $_DLS_list = $_DLS_list->n
+		set $_DLS_size++
+	end
+
+	printf "%d list items\n", $_DLS_size
+end
+
+document dm_list_size
+Returns the number of elements in the dm_list
+
+	Usage: dm_list_size <list ptr>
+end
+
+define pv_dev_name
+	set $_PDN_pv = (struct physical_volume *)$arg0
+	set $_PDN_dev = $_PDN_pv->dev
+	set $_PDN_strl = (struct str_list *)$_PDN_dev->aliases.n
+
+	printf "%s\n", $_PDN_strl->str
+end
+
+document pv_dev_name
+Print the name of the PV for the given PV pointer
+
+	Usage: pv_dev_name <PV ptr>
+end
+
+define seg_pvs
+	set $_SP_list_head = (struct dm_list *)$arg0
+	set $_SP_list = $_SP_list_head->n
+	
+	while (($_SP_list != $_SP_list_head) && ($_SP_size < 100))
+		set $_SP_spv = (struct seg_pvs *)$_SP_list
+
+		printf "* Can't print PV list\n"
+
+		set $_SP_list = $_SP_list->n
+	end
+
+	printf "%d list items\n", $_SP_size
+end
+
+document seg_pvs
+Print the elements of a seg_pvs list
+
+	Usage: seg_pvs <list ptr>
+end
+
+#
+# __first_seg <return> <LV>
+define __first_seg
+	set $arg0 = 0x0
+	set $_FS_lv  = (struct logical_volume *)$arg1
+
+	if ($_FS_lv->segments.n != &$_FS_lv->segments)
+		set $arg0 = (struct lv_segment *)$_FS_lv->segments.n
+	end
+end
+
+define first_seg
+	set $_seg = 0
+	set $_lv=(struct logical_volume *)$arg0
+
+	__first_seg $_seg $_lv
+
+	if ($_seg)
+		p $_seg
+	else
+		printf "No segments (list empty)\n"
+	end
+end
+
+document first_seg
+Returns the pointer to the first segment of an LV
+
+	Usage: first_seg <LV ptr>
+
+WARNING: If the list pointer in 'struct lv_segment' moves,
+	 this function will be wrong.
+end
+
+#
+# __seg_type <return> <seg> <index>
+define __seg_type
+	set $arg0  = 0x0
+	set $_ST_seg  = (struct lv_segment *)$arg1
+	set $_ST_index= $arg2
+	set $_ST_area = $_ST_seg->areas[$_ST_index]
+	set $_ST_type = $_ST_area.type
+
+	set $arg0 = $_ST_type
+end
+
+#
+# __seg_item <return> <seg> <index>
+define __seg_item
+	set $arg0  = 0x0
+	set $_SI_seg  = (struct lv_segment *)$arg1
+	set $_SI_index= $arg2
+
+	if ($_SI_index < $_SI_seg->area_count)
+		set $_SI_area = $_SI_seg->areas[$_SI_index]
+		set $_SI_type = $_SI_area.type
+
+		if ($_SI_type == AREA_PV)
+			set $arg0 = $_SI_area.u.pv.pvseg->pv
+		else
+			if ($_SI_type == AREA_LV)
+				set $arg0 = $_SI_area.u.lv.lv
+			end
+		end
+	end
+end
+
+#
+# __seg_metaitem <return> <seg> <index>
+define __seg_metaitem
+	set $arg0  = 0x0
+	set $_SMI_seg  = (struct lv_segment *)$arg1
+	set $_SMI_index= $arg2
+
+	if (($_SMI_index < $_SMI_seg->area_count) && $_SMI_seg->meta_areas)
+		set $_SMI_area = $_SMI_seg->meta_areas[$_SMI_index]
+		set $_SMI_type = $_SMI_area.type
+
+		if ($_SMI_type == AREA_PV)
+			set $arg0 = $_SMI_area.u.pv.pvseg->pv
+		else
+			if ($_SMI_type == AREA_LV)
+				set $arg0 = $_SMI_area.u.lv.lv
+			end
+		end
+	end
+end
+
+define seg_item
+	set $_item = 0x0
+
+	__seg_item $_item $arg0 $arg1	
+	if ($_item)
+		p $_item
+	else
+		printf "AREA_UNASSIGNED or invalid\n"
+	end
+end
+
+define seg_metaitem
+	set $_metaitem = 0x0
+
+	__seg_metaitem $_metaitem $arg0 $arg1	
+	if ($_metaitem)
+		p $_metaitem
+	else
+		printf "AREA_UNASSIGNED or invalid\n"
+	end
+end
+
+document seg_item
+Returns the pointer to the LV or PV for the indexed area of a segment
+
+	Usage: seg_item <struct lv_segment *> <index>
+
+Example - Getting to the sub-lv of a mirror:
+	(gdb) p lv->name
+	$1 = 0x712548 "lv"
+
+	(gdb) first_seg lv
+	$2 = (struct lv_segment *) 0x7128b8
+
+	(gdb) seg_item $2 0
+	$3 = (struct logical_volume *) 0x712688
+
+	(gdb) p $3->name
+	$4 = 0x712770 "lv_mimage_0"
+end
+
+define __status
+	set $_s_status = $arg0->status
+
+#	Constants defined in metadata-exported.h
+
+#	if ($_s_status & RAID)
+	if ($_s_status & 0x0000000100000000LU)
+		set $_s_status = $_s_status & ~0x0000000100000000LU
+		printf " RAID"
+	end
+#	if ($_s_status & RAID_META)
+	if ($_s_status & 0x0000000200000000LU)
+		set $_s_status = $_s_status & ~0x0000000200000000LU
+		printf " RAID_META"
+	end
+#	if ($_s_status & RAID_IMAGE)
+	if ($_s_status & 0x0000000400000000LU)
+		set $_s_status = $_s_status & ~0x0000000400000000LU
+		printf " RAID_IMAGE"
+	end
+#	if ($_s_status & MIRRORED)
+	if ($_s_status & 0x00008000U)
+		set $_s_status = $_s_status & ~0x00008000U
+		printf " MIRRORED"
+	end
+#	if ($_s_status & MIRROR_LOG)
+	if ($_s_status & 0x00020000U)
+		set $_s_status = $_s_status & ~0x00020000U
+		printf " MIRROR_LOG"
+	end
+#	if ($_s_status & MIRROR_IMAGE)
+	if ($_s_status & 0x00040000U)
+		set $_s_status = $_s_status & ~0x00040000U
+		printf " MIRROR_IMAGE"
+	end
+#	if ($_s_status & VISIBLE_LV)
+	if ($_s_status & 0x00000040U)
+		printf " VISIBLE_LV"
+		set $_s_status = $_s_status & ~0x00000040U
+	else
+		printf " *HIDDEN_LV*"
+	end
+#	if ($_s_status & FIXED_MINOR)
+	if ($_s_status & 0x00000080U)
+		set $_s_status = $_s_status & ~0x00000080U
+		printf " FIXED_MINOR"
+	end
+#	if ($_s_status & LVM_READ)
+	if ($_s_status & 0x00000100U)
+		set $_s_status = $_s_status & ~0x00000100U
+		printf " LVM_READ"
+	end
+#	if ($_s_status & LVM_WRITE)
+	if ($_s_status & 0x00000200U)
+		set $_s_status = $_s_status & ~0x00000200U
+		printf " LVM_WRITE"
+	end
+#	if ($_s_status & SNAPSHOT)
+	if ($_s_status & 0x00001000U)
+		set $_s_status = $_s_status & ~0x00001000U
+		printf " SNAPSHOT"
+	end
+#	if ($_s_status & PVMOVE)
+	if ($_s_status & 0x00002000U)
+		set $_s_status = $_s_status & ~0x00002000U
+		printf " PVMOVE"
+	end
+#	if ($_s_status & LOCKED)
+	if ($_s_status & 0x00004000U)
+		set $_s_status = $_s_status & ~0x00004000U
+		printf " LOCKED"
+	end
+#	if ($_s_status & LV_NOTSYNCED)
+	if ($_s_status & 0x00080000U)
+		set $_s_status = $_s_status & ~0x00080000U
+		printf " LV_NOTSYNCED"
+	end
+#	if ($_s_status & CONVERTING)
+	if ($_s_status & 0x00400000U)
+		set $_s_status = $_s_status & ~0x00400000U
+		printf " CONVERTING"
+	end
+#	if ($_s_status & LV_REBUILD)
+	if ($_s_status & 0x100000U)
+		set $_s_status = $_s_status & ~0x100000U
+		printf " LV_REBUILD"
+	end
+#	if ($_s_status & PARTIAL_LV)
+	if ($_s_status & 0x1000000U)
+		set $_s_status = $_s_status & ~0x1000000U
+		printf " PARTIAL_LV"
+	end
+#	if ($_s_status & MERGING)
+	if ($_s_status & 0x10000000U)
+		set $_s_status = $_s_status & ~0x10000000U
+		printf " MERGING"
+	end
+#	if ($_s_status & LV_WRITEMOSTLY)
+	if ($_s_status & 0x10000000000U)
+		set $_s_status = $_s_status & ~0x10000000000U
+		printf " LV_WRITEMOSTLY"
+	end
+
+	if ($_s_status)
+		printf " 0x%x", $_s_status
+	end
+end
+
+#
+# __print_indent <num indents> [No marks]
+define __print_indent
+	set $_PI_indent = $arg0
+	set $_PI_lead_mark = 0
+
+	while ($_PI_indent)
+		if ($_PI_indent == 1)
+			if ($argc > 1)
+				if ($_PI_lead_mark)
+					printf "        "
+				else
+					printf "|       "
+				end
+			else
+				printf "|-----> "
+			end
+		else
+			printf "|       "
+			set $_PI_lead_mark = 1
+		end
+		set $_PI_indent--
+	end
+end
+
+define lv_status
+	# Use __lv because we don't want to overwrite higher functions
+	set $__lv = (struct logical_volume *)$arg0
+
+	if ($argc == 2)
+		__print_indent $arg1
+	end
+	printf "%s->status:", $__lv->name
+	__status $__lv
+	printf "\n"
+end
+
+document lv_status
+Display the flags that are set on an LV.
+
+	Usage: lv_status <LV ptr>
+end
+
+define seg_status
+	set $_seg=(struct lv_segment *)$arg0
+
+	if ($argc == 2)
+		__print_indent $arg1 1
+	end
+	printf "[ (%s) seg->status:", $_seg->lv->name
+	__status $_seg
+	printf " ]\n"
+end
+
+document seg_status
+Display the flags that are set on an lv_segment.
+
+        Usage: seg_status <(struct lv_segment *)>
+end
+
+#
+# get_only_segment_using_this_lv <return> <LV>
+define __get_only_segment_using_this_lv
+	set $arg0 = 0x0
+	set $_lv=(struct logical_volume *)$arg1
+	set $_seg_list_head = &$_lv->segs_using_this_lv
+	set $_s = $_lv->segs_using_this_lv.n
+	set $_i = 0
+
+	while (($_s != $_seg_list_head) && ($_i < 100))
+		set $_seg_list = (struct seg_list *)$_s
+		set $_seg = (struct lv_segment *)$_seg_list->seg
+
+		set $_i++
+		set $_s = $_s->n
+	end
+
+	if ($_i > 1)
+		printf "More than %s using %s\n", ($_i > 99) ? "100 segments" : "one segment", $_lv->name
+	end
+	if ($_i == 1)
+		set $arg0 = $_seg
+	end
+end
+
+define segs_using_this_lv
+	set $_lv=(struct logical_volume *)$arg0
+	set $_seg_list_head = &$_lv->segs_using_this_lv
+	set $_s = $_lv->segs_using_this_lv.n
+	set $_i = 0
+
+	if ($_s != $_seg_list_head)
+		printf "Segments using %s\n", $_lv->name
+	else
+		printf "No segments using %s\n", $_lv->name
+	end
+	while ($_s != $_seg_list_head)
+		set $_seg_list = (struct seg_list *)$_s
+		set $_seg = (struct lv_segment *)$_seg_list->seg
+		printf "  %d) seg: %p", $_i, $_seg
+		if ($_seg->lv < 0x200)
+			printf "  [BAD LV POINTER FROM THIS SEG]\n"
+		else
+			printf "  [seg found in %s]\n", $_seg->lv->name
+		end
+		set $_i++
+		set $_s = $_s->n
+	end
+end
+
+document segs_using_this_lv
+Display the segments (and their associated LV) using an LV
+
+	Usage: segs_using_this_lv <LV ptr>
+
+Example:
+	(gdb) lv_is_mirrored lv
+	lv is mirrored ('core' log)
+
+	(gdb) segs_using_this_lv lv
+	No segments using lv
+
+	(gdb) first_seg lv
+	$1 = (struct lv_segment *) 0x92d360
+
+	(gdb) seg_item $1 0
+	$2 = (struct logical_volume *) 0x928f58
+
+	(gdb) segs_using_this_lv $2
+	Segments using lv_mimage_0
+	  0) seg: 0x92d360  [seg found in lv]
+end
+
+#
+# __next_area_index <return> <seg> <seg_item>
+define __next_area_index
+	set $arg0 = 0x0
+	set $_seg = (struct lv_segment *)$arg1
+	set $_item = 0x0
+	set $_i = 0
+
+	__seg_item $_item $_seg $_i
+	while ($_item && ($_item != $arg2))
+		set $_i++
+		__seg_item $_item $_seg $_i
+	end
+
+	# $_i points to current, now get next (if there)
+	set $_i++
+	__seg_item $_item $_seg $_i
+
+	if ($_item)
+		set $arg0 = $_i
+	end
+end
+
+#
+# __lv_status_r <LV>
+# Decend tree, printing LV and seg status as we go.  This
+# performs a depth first approach (but can't come up) 
+#
+# or
+#
+# __lv_status_r <sub_lv> <seg using sub_lv>
+# Try continuing decent of tree by first shifting to the
+# next 'area' in the seg ($arg1).  If no more areas, then
+# try going to the next segment.
+define __lv_status_r
+	if ($argc == 1)
+	        set $_lv=(struct logical_volume *)$arg0
+		set $_seg_list_head = &$_lv->segments
+		set $_s = $_lv->segments.n
+		set $_area_index = 0
+
+#		printf "\n"
+		lv_status $_lv $indent
+	else
+		set $_seg = (struct lv_segment *)$arg1
+
+		__next_area_index $_area_index $_seg $arg0
+
+		# Don't fuck this up.  We need the next two lines here.
+	        set $_lv=(struct logical_volume *)$_seg->lv
+		set $_seg_list_head = &$_lv->segments
+		set $_s = (struct dm_list *)$_seg
+
+		if (!$_area_index)
+			set $_s = $_s->n
+		end
+	end
+
+	if ($_s == $_seg_list_head)
+		if ($argc == 1)
+			__print_indent $indent 1
+			printf "[ No segments for %s ]\n", $_lv->name
+		end
+		__get_only_segment_using_this_lv $_seg $_lv
+
+		if ($_seg && $indent)
+			set $indent--
+			__lv_status_r $_lv $_seg
+		end
+	else
+		set $_seg = (struct lv_segment *)$_s
+		set $_type = 0x0
+
+		if (!$_area_index)
+			seg_status $_seg $indent
+		end
+		__seg_type $_type $_seg $_area_index
+		if ($_type == AREA_LV)
+			set $indent++
+
+			__seg_metaitem $_lv $_seg $_area_index
+			if ($_lv)
+				set $rindent = $indent
+				set $rseg = $_seg
+				set $rarea_index = $_area_index
+				set $rlv = $_lv
+
+				__lv_status_r $_lv
+
+				set $indent = $rindent
+				set $_seg = $rseg
+				set $_area_index = $rarea_index
+				set $_lv = $rlv
+			end
+
+			__seg_item $_lv $_seg $_area_index
+			__lv_status_r $_lv
+		else
+			if ($_seg->log_lv)
+				set $indent++
+				set $_log_seg = 0x0
+
+				__first_seg $_log_seg $_seg->log_lv
+				lv_status $_seg->log_lv $indent
+				seg_status $_log_seg $indent
+
+				set $indent--
+			end
+			__get_only_segment_using_this_lv $_seg $_lv
+			if ($_seg)
+				set $indent--
+				__lv_status_r $_lv $_seg
+			end
+		end
+	end
+end
+
+define lv_status_r
+	set $indent = 0
+	__lv_status_r $arg0
+end
+
+document lv_status_r
+Display the status flags of an LV and its sub_lvs.
+
+	Usage: lv_status_r <LV ptr>
+
+This function is useful for checking that all the LVs that
+compose a logical volume have the correct flags set (and also
+their associated lv_segments)
+end
+
+define lv_is_mirrored
+	set $_lv=(struct logical_volume *)$arg0
+	set $_fs=(struct lv_segment *)$_lv->segments.n
+	set $_log_lv=(struct logical_volume *)$_fs->log_lv
+
+#	if ($_lv->status & MIRRORED)
+	if ($_lv->status & 0x00008000U)
+		printf "%s is mirrored (", $_lv->name
+		if ($_log_lv)
+			if ($_log_lv->status & 0x00008000U)
+				printf "'mirrored' log)\n"
+			else
+				printf "'disk' log)\n"
+			end
+		else
+			printf "'core' log)\n"
+		end
+	else
+		printf "%s is not mirrored\n", $_lv->name
+	end
+end
+
+document lv_is_mirrored
+Report whether the given LV is mirrored (and its log type).
+
+	Usage: lv_is_mirrored <LV ptr>
+end

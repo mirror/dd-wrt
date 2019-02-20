@@ -1,0 +1,112 @@
+.SH NOTES
+This previous command syntax would perform two different operations:
+.br
+\fBlvconvert --thinpool\fP \fILV1\fP \fB--poolmetadata\fP \fILV2\fP
+.br
+If LV1 was not a thin pool, the command would convert LV1 to
+a thin pool, optionally using a specified LV for metadata.
+But, if LV1 was already a thin pool, the command would swap
+the current metadata LV with LV2 (for repair purposes.)
+
+In the same way, this previous command syntax would perform two different
+operations:
+.br
+\fBlvconvert --cachepool\fP \fILV1\fP \fB--poolmetadata\fP \fILV2\fP
+.br
+If LV1 was not a cache pool, the command would convert LV1 to
+a cache pool, optionally using a specified LV for metadata.
+But, if LV1 was already a cache pool, the command would swap
+the current metadata LV with LV2 (for repair purposes.)
+.SH EXAMPLES
+Convert a linear LV to a two-way mirror LV.
+.br
+.B lvconvert --type mirror --mirrors 1 vg/lvol1
+
+Convert a linear LV to a two-way RAID1 LV.
+.br
+.B lvconvert --type raid1 --mirrors 1 vg/lvol1
+
+Convert a mirror LV to use an in-memory log.
+.br
+.B lvconvert --mirrorlog core vg/lvol1
+
+Convert a mirror LV to use a disk log.
+.br
+.B lvconvert --mirrorlog disk vg/lvol1
+
+Convert a mirror or raid1 LV to a linear LV.
+.br
+.B lvconvert --type linear vg/lvol1
+
+Convert a mirror LV to a raid1 LV with the same number of images.
+.br
+.B lvconvert --type raid1 vg/lvol1
+
+Convert a linear LV to a two-way mirror LV, allocating new extents from specific
+PV ranges.
+.br
+.B lvconvert --mirrors 1 vg/lvol1 /dev/sda:0-15 /dev/sdb:0-15
+
+Convert a mirror LV to a linear LV, freeing physical extents from a specific PV.
+.br
+.B lvconvert --type linear vg/lvol1 /dev/sda
+
+Split one image from a mirror or raid1 LV, making it a new LV.
+.br
+.B lvconvert --splitmirrors 1 --name lv_split vg/lvol1
+
+Split one image from a raid1 LV, and track changes made to the raid1 LV
+while the split image remains detached.
+.br
+.B lvconvert --splitmirrors 1 --trackchanges vg/lvol1
+
+Merge an image (that was previously created with --splitmirrors and
+--trackchanges) back into the original raid1 LV.
+.br
+.B lvconvert --mergemirrors vg/lvol1_rimage_1
+
+Replace PV /dev/sdb1 with PV /dev/sdf1 in a raid1/4/5/6/10 LV.
+.br
+.B lvconvert --replace /dev/sdb1 vg/lvol1 /dev/sdf1
+
+Replace 3 PVs /dev/sd[b-d]1 with PVs /dev/sd[f-h]1 in a raid1 LV.
+.br
+.B lvconvert --replace /dev/sdb1 --replace /dev/sdc1 --replace /dev/sdd1
+.RS
+.B vg/lvol1 /dev/sd[fgh]1
+.RE
+
+Replace the maximum of 2 PVs /dev/sd[bc]1 with PVs /dev/sd[gh]1 in a raid6 LV.
+.br
+.B lvconvert --replace /dev/sdb1 --replace /dev/sdc1 vg/lvol1 /dev/sd[gh]1
+
+Convert an LV into a thin LV in the specified thin pool.  The existing LV
+is used as an external read-only origin for the new thin LV.
+.br
+.B lvconvert --type thin --thinpool vg/tpool1 vg/lvol1
+
+Convert an LV into a thin LV in the specified thin pool.  The existing LV
+is used as an external read-only origin for the new thin LV, and is
+renamed "external".
+.br
+.B lvconvert --type thin --thinpool vg/tpool1
+.RS
+.B --originname external vg/lvol1
+.RE
+
+Convert an LV to a cache pool LV using another specified LV for cache pool
+metadata.
+.br
+.B lvconvert --type cache-pool --poolmetadata vg/poolmeta1 vg/lvol1
+
+Convert an LV to a cache LV using the specified cache pool and chunk size.
+.br
+.B lvconvert --type cache --cachepool vg/cpool1 -c 128 vg/lvol1
+
+Detach and keep the cache pool from a cache LV.
+.br
+.B lvconvert --splitcache vg/lvol1
+
+Detach and remove the cache pool from a cache LV.
+.br
+.B lvconvert --uncache vg/lvol1

@@ -1,0 +1,7 @@
+pvremove wipes the label on a device so that LVM will no longer recognise
+it as a PV.
+
+A PV cannot be removed from a VG while it is used by an active LV.
+
+Repeat the force option (\fB-ff\fP) to forcibly remove a PV belonging to
+an existing VG. Normally, \fBvgreduce\fP(8) should be used instead.

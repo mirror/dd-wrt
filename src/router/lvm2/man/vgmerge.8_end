@@ -1,0 +1,6 @@
+.SH EXAMPLES
+
+Merge an inactive VG named "vg00" into the active or inactive VG named
+"databases", giving verbose runtime information.
+.br
+.B vgmerge -v databases vg00

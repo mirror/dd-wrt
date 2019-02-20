@@ -1,0 +1,11 @@
+[Unit]
+Description=LVM2 D-Bus service
+Documentation=man:lvmdbusd(8)
+
+[Service]
+Type=dbus
+BusName=com.redhat.lvmdbus1
+ExecStart=@SBINDIR@/lvmdbusd
+
+[Install]
+WantedBy=multi-user.target

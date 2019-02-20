@@ -1,0 +1,6 @@
+vgimportclone imports a VG from duplicated PVs, e.g. created by a hardware
+snapshot of existing PVs.
+
+A duplicated VG cannot used until it is made to coexist with the original
+VG. vgimportclone renames the VG associated with the specified PVs and
+changes the associated VG and PV UUIDs.

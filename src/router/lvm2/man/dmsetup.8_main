@@ -1,0 +1,1101 @@
+.TH DMSETUP 8 "Apr 06 2006" "Linux" "MAINTENANCE COMMANDS"
+.
+.SH NAME
+.
+dmsetup \(em low level logical volume management
+.
+.SH SYNOPSIS
+.
+.\".nh
+.ad l
+.PD 0
+.HP 9
+.B dmsetup
+.de CMD_CLEAR
+.  BR clear
+.  IR device_name
+..
+.CMD_CLEAR
+.
+.HP
+.B dmsetup
+.de CMD_CREATE
+.  ad l
+.  BR create
+.  IR device_name
+.  RB [ -u | --uuid
+.  IR uuid ]
+.  RB \%[ --addnodeoncreate | --addnodeonresume ]
+.  RB \%[ -n | --notable | --table
+.  IR \%table | table_file ]
+.  RB [ --readahead
+.  RB \%[ + ] \fIsectors | auto | none ]
+.  ad b
+..
+.CMD_CREATE
+.
+.HP
+.B dmsetup
+.de CMD_CREATE_CONCISE
+.  ad l
+.  BR create
+.  BR --concise
+.  RI [ concise_device_specification ]
+.  ad b
+..
+.CMD_CREATE_CONCISE
+.
+.HP
+.B dmsetup
+.de CMD_DEPS
+.  ad l
+.  BR deps
+.  RB [ -o
+.  IR options ]
+.  RI [ device_name ...]
+.  ad b
+..
+.CMD_DEPS
+.
+.HP
+.B dmsetup
+.de CMD_HELP
+.  BR help
+.  RB [ -c | -C | --columns ]
+..
+.CMD_HELP
+.
+.HP
+.B dmsetup
+.de CMD_INFO
+.  BR info
+.  RI [ device_name ...]
+..
+.CMD_INFO
+.
+.HP
+.B dmsetup
+.de CMD_INFOLONG
+.  ad l
+.  BR info
+.  BR -c | -C | --columns
+.  RB [ --count
+.  IR count ]
+.  RB [ --interval
+.  IR seconds ]
+.  RB \%[ --nameprefixes ]
+.  RB \%[ --noheadings ]
+.  RB [ -o
+.  IR fields ]
+.  RB [ -O | --sort
+.  IR sort_fields ]
+.  RB [ --separator
+.  IR separator ]
+.  RI [ device_name ]
+.  ad b
+..
+.CMD_INFOLONG
+.
+.HP
+.B dmsetup
+.de CMD_LOAD
+.  ad l
+.  BR load
+.  IR device_name
+.  RB [ --table
+.  IR table | table_file ]
+.  ad b
+..
+.CMD_LOAD
+.
+.HP
+.B dmsetup
+.de CMD_LS
+.  ad l
+.  BR ls
+.  RB [ --target
+.  IR target_type ]
+.  RB [ --exec
+.  IR command ]
+.  RB [ --tree ]
+.  RB [ -o
+.  IR options ]
+.  ad b
+..
+.CMD_LS
+.
+.HP
+.B dmsetup
+.de CMD_MANGLE
+.  BR mangle
+.  RI [ device_name ...]
+..
+.CMD_MANGLE
+.
+.HP
+.B dmsetup
+.de CMD_MESSAGE
+.  BR message
+.  IR device_name
+.  IR sector
+.  IR message
+..
+.CMD_MESSAGE
+.
+.HP
+.B dmsetup
+.de CMD_MKNODES
+.  BR mknodes
+.  RI [ device_name ...]
+..
+.CMD_MKNODES
+.
+.HP
+.B dmsetup
+.de CMD_RELOAD
+.  ad l
+.  BR reload
+.  IR device_name
+.  RB [ --table
+.  IR table | table_file ]
+.  ad b
+..
+.CMD_RELOAD
+.
+.HP
+.B dmsetup
+.de CMD_REMOVE
+.  ad l
+.  BR remove
+.  RB [ -f | --force ]
+.  RB [ --retry ]
+.  RB [ --deferred ]
+.  IR device_name ...
+.  ad b
+..
+.CMD_REMOVE
+.
+.HP
+.B dmsetup
+.de CMD_REMOVE_ALL
+.  BR remove_all
+.  RB [ -f | --force ]
+.  RB [ --deferred ]
+..
+.CMD_REMOVE_ALL
+.
+.HP
+.B dmsetup
+.de CMD_RENAME
+.  BR rename
+.  IR device_name
+.  IR new_name
+..
+.CMD_RENAME
+.
+.HP
+.B dmsetup
+.de CMD_RENAME_UUID
+.  BR rename
+.  IR device_name
+.  BR --setuuid
+.  IR uuid
+..
+.CMD_RENAME_UUID
+.
+.HP
+.B dmsetup
+.de CMD_RESUME
+.  ad l
+.  BR resume
+.  IR device_name ...
+.  RB [ --addnodeoncreate | --addnodeonresume ]
+.  RB [ --noflush ]
+.  RB [ --nolockfs ]
+.  RB \%[ --readahead
+.  RB \%[ + ] \fIsectors | auto | none ]
+.  ad b
+..
+.CMD_RESUME
+.
+.HP
+.B dmsetup
+.de CMD_SETGEOMETRY
+.  ad l
+.  BR setgeometry
+.  IR device_name
+.  IR cyl
+.  IR head
+.  IR sect
+.  IR start
+.  ad b
+..
+.CMD_SETGEOMETRY
+.
+.HP
+.B dmsetup
+.de CMD_SPLITNAME
+.  BR splitname
+.  IR device_name
+.  RI [ subsystem ]
+..
+.CMD_SPLITNAME
+.
+.HP
+.B dmsetup
+.de CMD_STATS
+.  BR stats
+.  IR command
+.  RI [ options ]
+..
+.CMD_STATS
+.
+.HP
+.B dmsetup
+.de CMD_STATUS
+.  ad l
+.  BR status
+.  RB [ --target
+.  IR target_type ]
+.  RB [ --noflush ]
+.  RI [ device_name ...]
+.  ad b
+..
+.CMD_STATUS
+.
+.HP
+.B dmsetup
+.de CMD_SUSPEND
+.  ad l
+.  BR suspend
+.  RB [ --nolockfs ]
+.  RB [ --noflush ]
+.  IR device_name ...
+.  ad b
+..
+.CMD_SUSPEND
+.
+.HP
+.B dmsetup
+.de CMD_TABLE
+.  ad l
+.  BR table
+.  RB [ --concise ]
+.  RB [ --target
+.  IR target_type ]
+.  RB [ --showkeys ]
+.  RI [ device_name ...]
+.  ad b
+..
+.CMD_TABLE
+.
+.HP
+.B dmsetup
+.de CMD_TARGETS
+.  BR targets
+..
+.CMD_TARGETS
+.
+.HP
+.B dmsetup
+.de CMD_UDEVCOMPLETE
+.  BR udevcomplete
+.  IR cookie
+..
+.CMD_UDEVCOMPLETE
+.
+.HP
+.B dmsetup
+.de CMD_UDEVCOMPLETE_ALL
+.  BR udevcomplete_all
+.  RI [ age_in_minutes ]
+..
+.CMD_UDEVCOMPLETE_ALL
+.
+.HP
+.B dmsetup
+.de CMD_UDEVCOOKIES
+.  BR udevcookie
+..
+.CMD_UDEVCOOKIES
+.
+.HP
+.B dmsetup
+.de CMD_UDEVCREATECOOKIE
+.  BR udevcreatecookie
+..
+.CMD_UDEVCREATECOOKIE
+.
+.HP
+.B dmsetup
+.de CMD_UDEVFLAGS
+.  BR udevflags
+.  IR cookie
+..
+.CMD_UDEVFLAGS
+.
+.HP
+.B dmsetup
+.de CMD_UDEVRELEASECOOKIE
+.  BR udevreleasecookie
+.  RI [ cookie ]
+..
+.CMD_UDEVRELEASECOOKIE
+.
+.HP
+.B dmsetup
+.de CMD_VERSION
+.  BR version
+..
+.CMD_VERSION
+.
+.HP
+.B dmsetup
+.de CMD_WAIT
+.  ad l
+.  BR wait
+.  RB [ --noflush ]
+.  IR device_name
+.  RI [ event_nr ]
+.  ad b
+..
+.CMD_WAIT
+.
+.HP
+.B dmsetup
+.de CMD_WIPE_TABLE
+.  ad l
+.  BR wipe_table
+.  IR device_name ...
+.  RB [ -f | --force ]
+.  RB [ --noflush ]
+.  RB [ --nolockfs ]
+.  ad b
+..
+.CMD_WIPE_TABLE
+.PD
+.P
+.HP
+.PD 0
+.B devmap_name \fImajor minor
+.HP
+.B devmap_name \fImajor:minor
+.PD
+.ad b
+.
+.SH DESCRIPTION
+.
+dmsetup manages logical devices that use the device-mapper driver.
+Devices are created by loading a table that specifies a target for
+each sector (512 bytes) in the logical device.
+
+The first argument to dmsetup is a command.
+The second argument is the logical device name or uuid.
+
+Invoking the dmsetup tool as \fBdevmap_name\fP
+(which is not normally distributed and is supported
+only for historical reasons) is equivalent to
+.BI \%dmsetup\ info\ -c\ --noheadings\ -j \ major\  -m \ minor \c
+\fR.
+.\" dot above here fixes -Thtml rendering for next HP option
+.
+.SH OPTIONS
+.
+.HP
+.BR --addnodeoncreate
+.br
+Ensure \fI/dev/mapper\fP node exists after \fBdmsetup create\fP.
+.
+.HP
+.BR --addnodeonresume
+.br
+Ensure \fI/dev/mapper\fP node exists after \fBdmsetup resume\fP (default with udev).
+.
+.HP
+.BR --checks
+.br
+Perform additional checks on the operations requested and report
+potential problems.  Useful when debugging scripts.
+In some cases these checks may slow down operations noticeably.
+.
+.HP
+.BR -c | -C | --columns
+.br
+Display output in columns rather than as Field: Value lines.
+.
+.HP
+.BR --count
+.IR count
+.br
+Specify the number of times to repeat a report. Set this to zero
+continue until interrupted.  The default interval is one second.
+.
+.HP
+.BR -f | --force
+.br
+Try harder to complete operation.
+.
+.HP
+.BR -h | --help
+.br
+Outputs a summary of the commands available, optionally including
+the list of report fields (synonym with \fBhelp\fP command).
+.
+.HP
+.BR --inactive
+.br
+When returning any table information from the kernel report on the
+inactive table instead of the live table.
+Requires kernel driver version 4.16.0 or above.
+.
+.HP
+.BR --interval
+.IR seconds
+.br
+Specify the interval in seconds between successive iterations for
+repeating reports. If \fB--interval\fP is specified but \fB--count\fP
+is not, reports will continue to repeat until interrupted.
+The default interval is one second.
+.
+.HP
+.BR --manglename
+.BR auto | hex | none
+.br
+Mangle any character not on a whitelist using mangling_mode when
+processing device-mapper device names and UUIDs. The names and UUIDs
+are mangled on input and unmangled on output where the mangling mode
+is one of:
+\fBauto\fP (only do the mangling if not mangled yet, do nothing
+if already mangled, error on mixed),
+\fBhex\fP (always do the mangling) and
+\fBnone\fP (no mangling).
+Default mode is \fB#DEFAULT_MANGLING#\fP.
+Character whitelist: 0-9, A-Z, a-z, #+-.:=@_. This whitelist is
+also supported by udev. Any character not on a whitelist is replaced
+with its hex value (two digits) prefixed by \\x.
+Mangling mode could be also set through
+\fBDM_DEFAULT_NAME_MANGLING_MODE\fP
+environment variable.
+.
+.HP
+.BR -j | --major
+.IR major
+.br
+Specify the major number.
+.
+.HP
+.BR -m | --minor
+.IR minor
+.br
+Specify the minor number.
+.
+.HP
+.BR -n | --notable
+.br
+When creating a device, don't load any table.
+.
+.HP
+.BR --nameprefixes
+.br
+Add a "DM_" prefix plus the field name to the output.  Useful with
+\fB--noheadings\fP to produce a list of
+field=value pairs that can be used to set environment variables
+(for example, in
+.BR udev (7)
+rules).
+.
+.HP
+.BR --noheadings
+Suppress the headings line when using columnar output.
+.
+.HP
+.BR --noflush
+Do not flush outstading I/O when suspending a device, or do not
+commit thin-pool metadata when obtaining thin-pool status.
+.
+.HP
+.BR --nolockfs
+.br
+Do not attempt to synchronize filesystem eg, when suspending a device.
+.
+.HP
+.BR --noopencount
+.br
+Tell the kernel not to supply the open reference count for the device.
+.
+.HP
+.BR --noudevrules
+.br
+Do not allow udev to manage nodes for devices in device-mapper directory.
+.
+.HP
+.BR --noudevsync
+.br
+Do not synchronise with udev when creating, renaming or removing devices.
+.
+.HP
+.BR -o | --options
+.IR options
+.br
+Specify which fields to display.
+.
+.HP
+.BR --readahead
+.RB [ + ] \fIsectors | auto | none
+.br
+Specify read ahead size in units of sectors.
+The default value is \fBauto\fP which allows the kernel to choose
+a suitable value automatically.  The \fB+\fP prefix lets you
+specify a minimum value which will not be used if it is
+smaller than the value chosen by the kernel.
+The value \fBnone\fP is equivalent to specifying zero.
+.
+.HP
+.BR -r | --readonly
+.br
+Set the table being loaded read-only.
+.
+.HP
+.BR -S | --select
+.IR selection
+.br
+Process only items that match \fIselection\fP criteria.  If the command is
+producing report output, adding the "selected" column (\fB-o
+selected\fP) displays all rows and shows 1 if the row matches the
+\fIselection\fP and 0 otherwise. The selection criteria are defined by
+specifying column names and their valid values while making use of supported
+comparison operators. As a quick help and to see full list of column names that
+can be used in selection and the set of supported selection operators, check
+the output of \fBdmsetup\ info\ -c\ -S\ help\fP command.
+.
+.HP
+.BR --table
+.IR table
+.br
+Specify a one-line table directly on the command line.
+See below for more information on the table format.
+.
+.HP
+.BR --udevcookie
+.IR cookie
+.br
+Use cookie for udev synchronisation.
+Note: Same cookie should be used for same type of operations i.e. creation of
+multiple different devices. It's not adviced to combine different
+operations on the single device.
+.
+.HP
+.BR -u | --uuid
+.br
+Specify the \fIuuid\fP.
+.
+.HP
+.BR -y | --yes
+.br
+Answer yes to all prompts automatically.
+.
+.HP
+.BR -v | --verbose
+.RB [ -v | --verbose ]
+.br
+Produce additional output.
+.
+.HP
+.BR --verifyudev
+.br
+If udev synchronisation is enabled, verify that udev operations get performed
+correctly and try to fix up the device nodes afterwards if not.
+.
+.HP
+.BR --version
+.br
+Display the library and kernel driver version.
+.br
+.
+.SH COMMANDS
+.
+.HP
+.CMD_CLEAR
+.br
+Destroys the table in the inactive table slot for device_name.
+.
+.HP
+.CMD_CREATE
+.br
+Creates a device with the given name.
+If \fItable\fP or \fItable_file\fP is supplied, the table is loaded and made live.
+Otherwise a table is read from standard input unless \fB--notable\fP is used.
+The optional \fIuuid\fP can be used in place of
+device_name in subsequent dmsetup commands.
+If successful the device will appear in table and for live
+device the node \fI/dev/mapper/device_name\fP is created.
+See below for more information on the table format.
+.
+.HP
+.CMD_CREATE_CONCISE
+.br
+Creates one or more devices from a concise device specification.
+Each device is specified by a comma-separated list: name, uuid, minor number, flags, comma-separated table lines.
+Flags defaults to read-write (rw) or may be read-only (ro).
+Uuid, minor number and flags are optional so those fields may be empty.
+A semi-colon separates specifications of different devices.
+Use a backslash to escape the following character, for example a comma or semi-colon in a name or table. See also CONCISE FORMAT below.
+. 
+.HP
+.CMD_DEPS
+.br
+Outputs a list of devices referenced by the live table for the specified
+device. Device names on output can be customised by following \fIoptions\fP:
+\fBdevno\fP (major and minor pair, used by default),
+\fBblkdevname\fP (block device name),
+\fBdevname\fP (map name for device-mapper devices, equal to blkdevname otherwise).
+.
+.HP
+.CMD_HELP
+.br
+Outputs a summary of the commands available, optionally including
+the list of report fields.
+.
+.HP
+.CMD_INFO
+.br
+Outputs some brief information about the device in the form:
+.RS
+.RS
+ State: SUSPENDED|ACTIVE, READ-ONLY
+ Tables present: LIVE and/or INACTIVE
+ Open reference count
+ Last event sequence number (used by \fBwait\fP)
+ Major and minor device number
+ Number of targets in the live table
+ UUID
+.RE
+.RE
+.HP
+.CMD_INFOLONG
+.br
+Output you can customise.
+Fields are comma-separated and chosen from the following list:
+.BR name ,
+.BR major ,
+.BR minor ,
+.BR attr ,
+.BR open ,
+.BR segments ,
+.BR events ,
+.BR uuid .
+Attributes are:
+.RI ( L )ive,
+.RI ( I )nactive,
+.RI ( s )uspended,
+.RI ( r )ead-only,
+.RI read-( w )rite.
+Precede the list with '\fB+\fP' to append
+to the default selection of columns instead of replacing it.
+Precede any sort field with '\fB-\fP' for a reverse sort on that column.
+.
+.HP
+.CMD_LS
+.br
+List device names.  Optionally only list devices that have at least
+one target of the specified type.  Optionally execute a command for
+each device.  The device name is appended to the supplied command.
+Device names on output can be customised by following options:
+\fBdevno\fP (major and minor pair, used by default),
+\fBblkdevname\fP (block device name),
+\fBdevname\fP (map name for device-mapper devices, equal to blkdevname otherwise).
+\fB--tree\fP displays dependencies between devices as a tree.
+It accepts a comma-separate list of \fIoptions\fP.
+Some specify the information displayed against each node:
+.BR device / nodevice ;
+.BR blkdevname ;
+.BR active ", " open ", " rw ", " uuid .
+Others specify how the tree is displayed:
+.BR ascii ", " utf ", " vt100 ;
+.BR compact ", " inverted ", " notrunc .
+.
+.HP
+.BR load | \c
+.CMD_RELOAD
+.br
+Loads \fItable\fP or \fItable_file\fP into the inactive table slot for device_name.
+If neither is supplied, reads a table from standard input.
+.
+.HP
+.CMD_MANGLE
+.br
+Ensure existing device-mapper \fIdevice_name\fP and UUID is in the correct mangled
+form containing only whitelisted characters (supported by udev) and do
+a rename if necessary. Any character not on the whitelist will be mangled
+based on the \fB--manglename\fP setting. Automatic rename works only for device
+names and not for device UUIDs because the kernel does not allow changing
+the UUID of active devices. Any incorrect UUIDs are reported only and they
+must be manually corrected by deactivating the device first and then
+reactivating it with proper mangling mode used (see also \fB--manglename\fP).
+.
+.HP
+.CMD_MESSAGE
+.br
+Send message to target. If sector not needed use 0.
+.
+.HP
+.CMD_MKNODES
+.br
+Ensure that the node in \fI/dev/mapper\fP for \fIdevice_name\fP is correct.
+If no device_name is supplied, ensure that all nodes in \fI/dev/mapper\fP
+correspond to mapped devices currently loaded by the device-mapper kernel
+driver, adding, changing or removing nodes as necessary.
+.
+.HP
+.CMD_REMOVE
+.br
+Removes a device.  It will no longer be visible to dmsetup.  Open devices
+cannot be removed, but adding \fB--force\fP will replace the table with one
+that fails all I/O.  \fB--deferred\fP will enable deferred removal of open
+devices - the device will be removed when the last user closes it. The deferred
+removal feature is supported since version 4.27.0 of the device-mapper
+driver available in upstream kernel version 3.13.  (Use \fBdmsetup version\fP
+to check this.)  If an attempt to remove a device fails, perhaps because a process run
+from a quick udev rule temporarily opened the device, the \fB--retry\fP
+option will cause the operation to be retried for a few seconds before failing.
+Do NOT combine
+\fB--force\fP and \fB--udevcookie\fP, as udev may start to process udev
+rules in the middle of error target replacement and result in nondeterministic
+result.
+.
+.HP
+.CMD_REMOVE_ALL
+.br
+Attempts to remove all device definitions i.e. reset the driver.  This also runs
+\fBmknodes\fP afterwards.  Use with care!  Open devices cannot be removed, but
+adding \fB--force\fP will replace the table with one that fails all I/O.
+\fB--deferred\fP will enable deferred removal of open devices - the device
+will be removed when the last user closes it.  The deferred removal feature is
+supported since version 4.27.0 of the device-mapper driver available in
+upstream kernel version 3.13.
+.
+.HP
+.CMD_RENAME
+.br
+Renames a device.
+.
+.HP
+.CMD_RENAME_UUID
+.br
+Sets the uuid of a device that was created without a uuid.
+After a uuid has been set it cannot be changed.
+.
+.HP
+.CMD_RESUME
+.br
+Un-suspends a device.
+If an inactive table has been loaded, it becomes live.
+Postponed I/O then gets re-queued for processing.
+.
+.HP
+.CMD_SETGEOMETRY
+.br
+Sets the device geometry to C/H/S.
+.
+.HP
+.CMD_SPLITNAME
+.br
+Splits given \fIdevice name\fP into \fIsubsystem\fP constituents.
+The default subsystem is LVM.
+LVM currently generates device names by concatenating the names of the Volume
+Group, Logical Volume and any internal Layer with a hyphen as separator.
+Any hyphens within the names are doubled to escape them.
+The precise encoding might change without notice in any future
+release, so we recommend you always decode using the current version of
+this command.
+.HP
+.CMD_STATS
+.br
+Manages IO statistics regions for devices.
+See
+.BR dmstats (8)
+for more details.
+.HP
+.CMD_STATUS
+.br
+Outputs status information for each of the device's targets.
+With \fB--target\fP, only information relating to the specified target type
+any is displayed.  With \fB--noflush\fP, the thin target (from version 1.3.0)
+doesn't commit any outstanding changes to disk before reporting its statistics.
+
+.HP
+.CMD_SUSPEND
+.br
+Suspends a device.  Any I/O that has already been mapped by the device
+but has not yet completed will be flushed.  Any further I/O to that
+device will be postponed for as long as the device is suspended.
+If there's a filesystem on the device which supports the operation,
+an attempt will be made to sync it first unless \fB--nolockfs\fP is specified.
+Some targets such as recent (October 2006) versions of multipath may support
+the \fB--noflush\fP option.  This lets outstanding I/O that has not yet reached the
+device to remain unflushed.
+.
+.HP
+.CMD_TABLE
+.br
+Outputs the current table for the device in a format that can be fed
+back in using the create or load commands.
+With \fB--target\fP, only information relating to the specified target type
+is displayed.
+Real encryption keys are suppressed in the table output for crypt and integrity
+targets unless the \fB--showkeys\fP parameter is supplied. Kernel key
+references prefixed with \fB:\fP are not affected by the parameter and get
+displayed always (crypt target only).
+With \fB--concise\fP, the output is presented concisely on a single line.
+Commas then separate the name, uuid, minor device number, flags ('ro' or 'rw')
+and the table (if present). Semi-colons separate devices. Backslashes escape
+any commas, semi-colons or backslashes.  See CONCISE FORMAT below.
+.
+.HP
+.CMD_TARGETS
+.br
+Displays the names and versions of the currently-loaded targets.
+.
+.HP
+.CMD_UDEVCOMPLETE
+.br
+Wake any processes that are waiting for udev to complete processing the specified cookie.
+.
+.HP
+.CMD_UDEVCOMPLETE_ALL
+.br
+Remove all cookies older than the specified number of minutes.
+Any process waiting on a cookie will be resumed immediately.
+.
+.HP
+.CMD_UDEVCOOKIES
+.br
+List all existing cookies. Cookies are system-wide semaphores with keys
+prefixed by two predefined bytes (0x0D4D).
+.
+.HP
+.CMD_UDEVCREATECOOKIE
+.br
+Creates a new cookie to synchronize actions with udev processing.
+The output is a cookie value. Normally we don't need to create cookies since
+dmsetup creates and destroys them for each action automatically. However, we can
+generate one explicitly to group several actions together and use only one
+cookie instead. We can define a cookie to use for each relevant command by using
+\fB--udevcookie\fP option. Alternatively, we can export this value into the environment
+of the dmsetup process as \fBDM_UDEV_COOKIE\fP variable and it will be used automatically
+with all subsequent commands until it is unset.
+Invoking this command will create system-wide semaphore that needs to be cleaned
+up explicitly by calling udevreleasecookie command.
+.
+.HP
+.CMD_UDEVFLAGS
+.br
+Parses given \fIcookie\fP value and extracts any udev control flags encoded.
+The output is in environment key format that is suitable for use in udev
+rules. If the flag has its symbolic name assigned then the output is
+DM_UDEV_FLAG_<flag_name> = '1', DM_UDEV_FLAG<flag_position> = '1' otherwise.
+Subsystem udev flags don't have symbolic names assigned and these ones are
+always reported as DM_SUBSYSTEM_UDEV_FLAG<flag_position> = '1'. There are
+16 udev flags altogether.
+.
+.HP
+.CMD_UDEVRELEASECOOKIE
+.br
+Waits for all pending udev processing bound to given cookie value and clean up
+the cookie with underlying semaphore. If the cookie is not given directly,
+the command will try to use a value defined by \fBDM_UDEV_COOKIE\fP environment variable.
+.
+.HP
+.CMD_VERSION
+.br
+Outputs version information.
+.
+.HP
+.CMD_WAIT
+.br
+Sleeps until the event counter for device_name exceeds event_nr.
+Use \fB-v\fP to see the event number returned.
+To wait until the next event is triggered, use \fBinfo\fP to find
+the last event number.
+With \fB--noflush\fP, the thin target (from version 1.3.0) doesn't commit
+any outstanding changes to disk before reporting its statistics.
+.
+.HP
+.CMD_WIPE_TABLE
+.br
+Wait for any I/O in-flight through the device to complete, then
+replace the table with a new table that fails any new I/O
+sent to the device.  If successful, this should release any devices
+held open by the device's table(s).
+.
+.SH TABLE FORMAT
+.
+Each line of the table specifies a single target and is of the form:
+.sp
+.I logical_start_sector num_sectors
+.B target_type
+.I target_args
+.sp
+Simple target types and target args include:
+.
+.TP
+.B linear \fIdestination_device start_sector
+The traditional linear mapping.
+.TP
+.B striped \fInum_stripes chunk_size \fR[\fIdestination start_sector\fR]...
+Creates a striped area.
+.br
+e.g. striped 2 32 /dev/hda1 0 /dev/hdb1 0
+will map the first chunk (16k) as follows:
+.RS
+.RS
+ LV chunk 1 -> hda1, chunk 1
+ LV chunk 2 -> hdb1, chunk 1
+ LV chunk 3 -> hda1, chunk 2
+ LV chunk 4 -> hdb1, chunk 2
+ etc.
+.RE
+.RE
+.TP
+.B error
+Errors any I/O that goes to this area.  Useful for testing or
+for creating devices with holes in them.
+.TP
+.B zero
+Returns blocks of zeroes on reads.  Any data written is discarded silently.
+This is a block-device equivalent of the \fI/dev/zero\fP
+character-device data sink described in \fBnull\fP(4).
+.P
+More complex targets include:
+.TP
+.B cache
+Improves performance of a block device (eg, a spindle) by dynamically
+migrating some of its data to a faster smaller device (eg, an SSD).
+.TP
+.B crypt
+Transparent encryption of block devices using the kernel crypto API.
+.TP
+.B delay
+Delays reads and/or writes to different devices.  Useful for testing.
+.TP
+.B flakey
+Creates a similar mapping to the linear target but
+exhibits unreliable behaviour periodically.
+Useful for simulating failing devices when testing.
+.TP
+.B mirror
+Mirrors data across two or more devices.
+.TP
+.B multipath
+Mediates access through multiple paths to the same device.
+.TP
+.B raid
+Offers an interface to the kernel's software raid driver, md.
+.TP
+.B snapshot
+Supports snapshots of devices.
+.TP
+.BR thin ", " thin-pool
+Supports thin provisioning of devices and also provides a better snapshot support.
+.P
+To find out more about the various targets and their table formats and status
+lines, please read the files in the Documentation/device-mapper directory in
+the kernel source tree.
+(Your distribution might include a copy of this information in the
+documentation directory for the device-mapper package.)
+.
+.SH EXAMPLES
+.
+# A table to join two disks together
+.br
+0 1028160 linear /dev/hda 0
+.br
+1028160 3903762 linear /dev/hdb 0
+.br
+# A table to stripe across the two disks,
+.br
+# and add the spare space from
+.br
+# hdb to the back of the volume
+.br
+0 2056320 striped 2 32 /dev/hda 0 /dev/hdb 0
+.br
+2056320 2875602 linear /dev/hdb 1028160
+.
+.SH CONCISE FORMAT
+.
+A concise representation of one of more devices.
+.sp
+.br
+- A comma separates the fields of each device.
+.br
+- A semi-colon separates devices.
+.TP
+The representation of a device takes the form:
+.sp
+<name>,<uuid>,<minor>,<flags>,<table>[,<table>+][;<dev_name>,<uuid>,<minor>,<flags>,<table>[,<table>+]]
+.TP
+The fields are:
+.
+.TP
+.B name
+The name of the device.
+.TP
+.B uuid
+The UUID of the device (or empty).
+.TP
+.B minor
+The minor number of the device.  If empty, the kernel assigns a suitable minor number.
+.TP
+.B flags
+Supported flags are:
+.sp
+.B ro
+Sets the table being loaded for the device read-only
+.br
+.B rw
+Sets the table being loaded for the device read-write (default)
+.TP
+.B table
+One line of the table. See TABLE FORMAT above.
+.
+.SH EXAMPLES
+.
+# A simple linear read-only device
+.br
+test-linear-small,,,ro,0 2097152 linear /dev/loop0 0, 2097152 2097152 linear /dev/loop1 0
+.br
+.sp
+# Two linear devices
+.br
+test-linear-small,,,,0 2097152 linear /dev/loop0 0;test-linear-large,,,, 0 2097152 linear /dev/loop1 0, 2097152 2097152 linear /dev/loop2 0
+.br
+.
+.SH ENVIRONMENT VARIABLES
+.
+.TP
+.B DM_DEV_DIR
+The device directory name.
+Defaults to "\fI/dev\fP" and must be an absolute path.
+.TP
+.B DM_UDEV_COOKIE
+A cookie to use for all relevant commands to synchronize with udev processing.
+It is an alternative to using \fB--udevcookie\fP option.
+.TP
+.B DM_DEFAULT_NAME_MANGLING_MODE
+A default mangling mode. Defaults to "\fB#DEFAULT_MANGLING#\fP"
+and it is an alternative to using \fB--manglename\fP option.
+.
+.SH AUTHORS
+.
+Original version: Joe Thornber <thornber@redhat.com>
+.
+.SH SEE ALSO
+.
+.BR dmstats (8),
+.BR udev (7),
+.BR udevadm (8)
+.P
+LVM2 resource page: https://www.sourceware.org/lvm2/
+.br
+Device-mapper resource page: http://sources.redhat.com/dm/

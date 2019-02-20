@@ -1,0 +1,38 @@
+.TH LVMDBUSD 8 "LVM TOOLS #VERSION#" "Red Hat Inc" \" -*- nroff -*-
+.
+.SH NAME
+.
+lvmdbusd \(em LVM D-Bus daemon
+.
+.SH SYNOPSIS
+.
+.ad l
+.B lvmdbusd
+.RB [ --debug \]
+.RB [ --udev \]
+.ad b
+.
+.SH DESCRIPTION
+.
+lvmdbusd is a service which provides a D-Bus API to the logical volume manager (LVM).
+Run 
+.BR lvmdbusd (8)
+as root.
+.
+.SH OPTIONS
+.
+.HP
+.BR --debug 
+.br
+Enable debug statements 
+.
+.HP
+.BR --udev
+.br
+Use udev events to trigger updates
+.
+.SH SEE ALSO
+.
+.nh
+.BR dbus-send (1),
+.BR lvm (8)

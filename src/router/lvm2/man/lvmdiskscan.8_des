@@ -1,0 +1,7 @@
+lvmdiskscan scans all SCSI, (E)IDE disks, multiple devices and a bunch of
+other block devices in the system looking for LVM PVs. The size reported
+is the real device size. Define a filter in \fBlvm.conf\fP(5) to restrict
+the scan to avoid a CD ROM, for example.
+
+This command is deprecated, use \fBpvs\fP instead.
+

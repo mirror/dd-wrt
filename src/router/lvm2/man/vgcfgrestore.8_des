@@ -1,0 +1,11 @@
+vgcfgrestore restores the metadata of a VG from a text back up file
+produced by \fBvgcfgbackup\fP. This writes VG metadata onto the devices
+specifed in back up file.
+
+A back up file can be specified with \fB--file\fP.  If no backup file is
+specified, the most recent one is used. Use \fB--list\fP for a list of
+the available back up and archive files of a VG.
+
+WARNING: When a VG contains thin pools, changes to thin metadata cannot be
+reverted, and data loss may occur if thin metadata has changed. The force
+option is required to restore in this case.

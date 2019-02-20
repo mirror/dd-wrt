@@ -1,0 +1,217 @@
+.TH LVM.CONF 5 "LVM TOOLS #VERSION#" "Red Hat, Inc." \" -*- nroff -*-
+.SH NAME
+lvm.conf \(em Configuration file for LVM2
+.SH SYNOPSIS
+.B #DEFAULT_SYS_DIR#/lvm.conf
+.SH DESCRIPTION
+\fBlvm.conf\fP is loaded during the initialisation phase of
+\fBlvm\fP(8).  This file can in turn lead to other files
+being loaded - settings read in later override earlier
+settings.  File timestamps are checked between commands and if
+any have changed, all the files are reloaded.
+
+For a description of each lvm.conf setting, run:
+
+.B lvmconfig --typeconfig default --withcomments --withspaces
+
+The settings defined in lvm.conf can be overridden by any
+of these extended configuration methods:
+.TP
+.B direct config override on command line
+The \fB--config ConfigurationString\fP command line option takes the
+ConfigurationString as direct string representation of the configuration
+to override the existing configuration. The ConfigurationString is of
+exactly the same format as used in any LVM configuration file.
+
+.TP
+.B profile config
+.br
+A profile is a set of selected customizable configuration settings
+that are aimed to achieve a certain characteristics in various
+environments or uses. It's used to override existing configuration.
+Normally, the name of the profile should reflect that environment or use.
+
+There are two groups of profiles recognised: \fBcommand profiles\fP and
+\fBmetadata profiles\fP.
+
+The \fBcommand profile\fP is used to override selected configuration
+settings at global LVM command level - it is applied at the very beginning
+of LVM command execution and it is used throughout the whole time of LVM
+command execution. The command profile is applied by using the
+\fB--commandprofile ProfileName\fP command line option that is recognised by
+all LVM2 commands.
+
+The \fBmetadata profile\fP is used to override selected configuration
+settings at Volume Group/Logical Volume level - it is applied independently
+for each Volume Group/Logical Volume that is being processed. As such,
+each Volume Group/Logical Volume can store the profile name used
+in its metadata so next time the Volume Group/Logical Volume is
+processed, the profile is applied automatically. If Volume Group and
+any of its Logical Volumes have different profiles defined, the profile
+defined for the Logical Volume is preferred. The metadata profile can be
+attached/detached by using the \fBlvchange\fP and \fBvgchange\fP commands
+and their \fB--metadataprofile ProfileName\fP and
+\fB--detachprofile\fP options or the \fB--metadataprofile\fP
+option during creation when using \fBvgcreate\fP or \fBlvcreate\fP command.
+The \fBvgs\fP and \fBlvs\fP reporting commands provide \fB-o vg_profile\fP
+and \fB-o lv_profile\fP output options to show the metadata profile
+currently attached to a Volume Group or a Logical Volume.
+
+The set of options allowed for command profiles is mutually exclusive
+when compared to the set of options allowed for metadata profiles. The
+settings that belong to either of these two sets can't be mixed together
+and LVM tools will reject such profiles.
+
+LVM itself provides a few predefined configuration profiles.
+Users are allowed to add more profiles with different values if needed.
+For this purpose, there's the \fBcommand_profile_template.profile\fP
+(for command profiles) and \fBmetadata_profile_template.profile\fP
+(for metadata profiles) which contain all settings that are customizable
+by profiles of certain type. Users are encouraged to copy these template
+profiles and edit them as needed. Alternatively, the
+\fBlvmconfig --file <ProfileName.profile> --type profilable-command <section>\fP
+or \fBlvmconfig --file <ProfileName.profile> --type profilable-metadata <section>\fP
+can be used to generate a configuration with profilable settings in either
+of the type for given section and save it to new ProfileName.profile
+(if the section is not specified, all profilable settings are reported).
+
+The profiles are stored in #DEFAULT_PROFILE_DIR# directory by default.
+This location can be changed by using the \fBconfig/profile_dir\fP setting.
+Each profile configuration is stored in \fBProfileName.profile\fP file
+in the profile directory. When referencing the profile, the \fB.profile\fP
+suffix is left out.
+
+.TP
+.B tag config
+.br
+See \fBtags\fP configuration setting description below.
+
+.LP
+When several configuration methods are used at the same time
+and when LVM looks for the value of a particular setting, it traverses
+this \fBconfig cascade\fP from left to right:
+
+\fBdirect config override on command line\fP -> \fBcommand profile config\fP -> \fBmetadata profile config\fP -> \fBtag config\fP -> \fBlvmlocal.conf\fB -> \fBlvm.conf\fP
+
+No part of this cascade is compulsory. If there's no setting value found at
+the end of the cascade, a default value is used for that setting.
+Use \fBlvmconfig\fP to check what settings are in use and what
+the default values are.
+.SH SYNTAX
+.LP
+This section describes the configuration file syntax.
+.LP
+Whitespace is not significant unless it is within quotes.
+This provides a wide choice of acceptable indentation styles.
+Comments begin with # and continue to the end of the line.
+They are treated as whitespace.
+.LP
+Here is an informal grammar:
+.TP
+.BR file " = " value *
+.br
+A configuration file consists of a set of values.
+.TP
+.BR value " = " section " | " assignment
+.br
+A value can either be a new section, or an assignment.
+.TP
+.BR section " = " identifier " '" { "' " value "* '" } '
+.br
+A section groups associated values together. If the same section is
+encountered multiple times, the contents of all instances are concatenated
+together in the order of appearance.
+.br
+It is denoted by a name and delimited by curly brackets.
+.br
+e.g.	backup {
+.br
+		...
+.br
+	}
+.TP
+.BR assignment " = " identifier " '" = "' ( " array " | " type " )"
+.br
+An assignment associates a type with an identifier. If the identifier contains
+forward slashes, those are interpreted as path delimiters. The statement
+\fBsection/key = value\fP is equivalent to \fBsection { key = value }\fP. If
+multiple instances of the same key are encountered, only the last value is used
+(and a warning is issued).
+.br
+e.g.	\fBlevel = 7\fP
+.br
+.TP
+.BR array " =  '" [ "' ( " type " '" , "')* " type " '" ] "' | '" [ "' '" ] '
+.br
+Inhomogeneous arrays are supported.
+.br
+Elements must be separated by commas.
+.br
+An empty array is acceptable.
+.TP
+.BR type " = " integer " | " float " | " string
+.BR integer " = [0-9]*"
+.br
+.BR float " = [0-9]*'" . '[0-9]*
+.br
+.B string \fR= '\fB"\fR'.*'\fB"\fR'
+.IP
+Strings with spaces must be enclosed in double quotes, single words that start
+with a letter can be left unquoted.
+
+.SH SETTINGS
+
+The
+.B lvmconfig
+command prints the LVM configuration settings in various ways.
+See the man page
+.BR lvmconfig (8).
+
+Command to print a list of all possible config settings, with their
+default values:
+.br
+.B lvmconfig --type default
+
+Command to print a list of all possible config settings, with their
+default values, and a full description of each as a comment:
+.br
+.B lvmconfig --type default --withcomments
+
+Command to print a list of all possible config settings, with their
+current values (configured, non-default values are shown):
+.br
+.B lvmconfig --type current
+
+Command to print all config settings that have been configured with a
+different value than the default (configured, non-default values are
+shown):
+.br
+.B lvmconfig --type diff
+
+Command to print a single config setting, with its default value,
+and a full description, where "Section" refers to the config section,
+e.g. global, and "Setting" refers to the name of the specific setting,
+e.g. umask:
+.br
+.B lvmconfig --type default --withcomments Section/Setting
+
+
+.SH FILES
+.I #DEFAULT_SYS_DIR#/lvm.conf
+.br
+.I #DEFAULT_SYS_DIR#/lvmlocal.conf
+.br
+.I #DEFAULT_ARCHIVE_DIR#
+.br
+.I #DEFAULT_BACKUP_DIR#
+.br
+.I #DEFAULT_CACHE_DIR#/.cache
+.br
+.I #DEFAULT_LOCK_DIR#
+.br
+.I #DEFAULT_PROFILE_DIR#
+
+.SH SEE ALSO
+.BR lvm (8)
+.BR lvmconfig (8)
+

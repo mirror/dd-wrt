@@ -1,0 +1,3 @@
+vgconvert is no longer a part of LVM.  It was removed along with
+support for the LVM1 format.  Use an older version of LVM to
+convert VGs from the LVM1 format to LVM2.

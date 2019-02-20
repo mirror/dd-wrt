@@ -1,0 +1,5 @@
+dm_report_group_create
+dm_report_group_push
+dm_report_group_pop
+dm_report_group_destroy
+dm_report_set_selection

@@ -1,0 +1,338 @@
+LVM disk reading
+
+Reading disks happens in two phases.  The first is a discovery phase,
+which determines what's on the disks.  The second is a working phase,
+which does a particular job for the command.
+
+
+Phase 1: Discovery
+------------------
+
+Read all the disks on the system to find out:
+- What are the LVM devices?
+- What VG's exist on those devices?
+
+This phase is called "label scan" (although it reads and scans everything,
+not just the label.)  It stores the information it discovers (what LVM
+devices exist, and what VGs exist on them) in lvmcache.  The devs/VGs info
+in lvmcache is the starting point for phase two.
+
+
+Phase 1 in outline:
+
+For each device:
+
+a. Read the first <N> KB of the device. (N is configurable.)
+
+b. Look for the lvm label_header in the first four sectors,
+   if none exists, it's not an lvm device, so quit looking at it.
+   (By default, label_header is in the second sector.)
+
+c. Look at the pv_header, which follows the label_header.
+   This tells us the location of VG metadata on the device.
+   There can be 0, 1 or 2 copies of VG metadata.  The first
+   is always at the start of the device, the second (if used)
+   is at the end.
+
+d. Look at the first mda_header (location came from pv_header
+   in the previous step).  This is by default in sector 8,
+   4096 bytes from the start of the device.  This tells us the
+   location of the actual VG metadata text.
+
+e. Look at the first copy of the text VG metadata (location came
+   from mda_header in the previous step).  This is by default
+   in sector 9, 4608 bytes from the start of the device.
+   The VG metadata is only partially analyzed to create a basic
+   summary of the VG.
+
+f. Store an "info" entry in lvmcache for this device,
+   indicating that it is an lvm device, and store a "vginfo"
+   entry in lvmcache indicating the name of the VG seen
+   in the metadata in step e.
+
+g. If the pv_header in step c shows a second mda_header
+   location at the end of the device, then read that as
+   in step d, and repeat steps e-f for it.
+
+At the end of phase 1, lvmcache will have a list of devices
+that belong to LVM, and a list of VG names that exist on
+those devices.  Each device (info struct) is associated
+with the VG (vginfo struct) it is used in.
+
+
+Phase 1 in code:
+
+The most relevant functions are listed for each step in the outline.
+
+lvmcache_label_scan()
+label_scan()
+
+. dev_cache_scan()
+  choose which devices on the system to look at
+
+. for each dev in dev_cache: bcache prefetch/read
+
+. _process_block() to process data from bcache
+  _find_lvm_header() checks if this is an lvm dev by looking at label_header
+  _text_read() via ops->read() looks at mda/pv/vg data to populate lvmcache
+
+. _read_mda_header_and_metadata()
+   raw_read_mda_header()
+
+. _read_mda_header_and_metadata()
+   read_metadata_location()
+   text_read_metadata_summary()
+   config_file_read_fd()
+   _read_vgsummary() via ops->read_vgsummary()
+
+. _text_read(): lvmcache_add()
+     [adds this device to list of lvm devices]
+  _read_mda_header_and_metadata(): lvmcache_update_vgname_and_id()
+     [adds the VG name to list of VGs]
+
+
+Phase 2: Work
+-------------
+
+This phase carries out the operation requested by the command that was
+run.
+
+Whereas the first phase is based on iterating through each device on the
+system, this phase is based on iterating through each VG name.  The list
+of VG names comes from phase 1, which stored the list in lvmcache to be
+used by phase 2.
+
+Some commands may need to iterate through all VG names, while others may
+need to iterate through just one or two.
+
+This phase includes locking each VG as work is done on it, so that two
+commands do not interfere with each other.
+
+
+Phase 2 in outline:
+
+For each VG name:
+
+a. Lock the VG.
+
+b. Repeat the phase 1 scan steps for each device in this VG.
+   The phase 1 information in lvmcache may have changed because no VG lock
+   was held during phase 1.  So, repeat the phase 1 steps, but only for the
+   devices in this VG.  N.B. for commands that are just reporting data,
+   we skip this step if the data from phase 1 was complete and consistent.
+
+c. Get the list of on-disk metadata locations for this VG.
+   Phase 1 created this list in lvmcache to be used here.  At this
+   point we copy it out of lvmcache.  In the simple/common case,
+   this is a list of devices in the VG.  But, some devices may
+   have 0 or 2 metadata locations instead of the default 1, so it
+   is not always equal to the list of devices.  We want to read
+   every copy of the metadata for this VG.
+
+d. For each metadata location on each device in the VG
+   (the list from the previous step):
+
+    1) Look at the mda_header.  The location of the mda_header was saved
+       in the lvmcache info struct by phase 1 (where it came from the
+       pv_header.) The mda_header tells us where the text VG metadata is
+       located.
+
+    2) Look at the text VG metadata.  The location came from mda_header
+       in the previous step.  The VG metadata is fully analyzed and used
+       to create an in-memory 'struct volume_group'.
+
+e. Compare the copies of VG metadata that were found in each location.
+   If some copies are older, choose the newest one to use, and update
+   any older copies.
+
+f. Update details about the devices/VG in lvmcache.
+
+g. Pass the 'vg' struct to the command-specific code to work with.
+
+
+Phase 2 in code:
+
+The most relevant functions are listed for each step in the outline.
+
+For each VG name:
+   process_each_vg()
+
+. vg_read()
+   lock_vol()
+
+. vg_read()
+   lvmcache_label_rescan_vg() (if needed)
+   [insert phase 1 steps for scanning devs, but only devs in this vg]
+
+. vg_read()
+   create_instance()
+   _text_create_text_instance()
+   _create_vg_text_instance()
+   lvmcache_fid_add_mdas_vg()
+   [Copies mda locations from info->mdas where it was saved
+    by phase 1, into fid->metadata_areas_in_use.  This is
+    the key connection between phase 1 and phase 2.]
+
+. dm_list_iterate_items(mda, &fid->metadata_areas_in_use)
+
+    . _vg_read_raw() via ops->vg_read()
+      raw_read_mda_header()
+
+    . _vg_read_raw()
+      text_read_metadata()
+      config_file_read_fd()
+      _read_vg() via ops->read_vg()
+
+. return the 'vg' struct from vg_read() and use it to do
+  command-specific work
+
+
+
+Filter i/o
+----------
+
+Some filters must be applied before reading a device, and other filters
+must be applied after reading a device.  In all cases, the filters must be
+applied before lvm processes the device, i.e. before it looks for an lvm
+label.
+
+1. Some filters need to be applied prior to reading any devices
+   because the purpose of the filter is to avoid submitting any
+   io on the excluded devices.  The regex filter is the primary
+   example.  Other filters benefit from being applied prior to
+   reading devices because they can tell which devices to
+   exclude without doing io to the device.  An example of this
+   is the mpath filter.
+
+2. Some filters need to be applied after reading a device because
+   they are based on data/signatures seen on the device.
+   The partitioned filter is an example of this; lvm needs to
+   read a device to see if it has a partition table before it can
+   know whether to exclude the device from further processing.
+
+We apply filters from 1 before reading devices, and we apply filters from
+2 after populating bcache, but before processing the device (i.e. before
+checking for an lvm label, which is the first step in processing.)
+
+The current implementation of this makes filters return -EAGAIN if they
+want to read the device, but bcache data is not yet available.  This will
+happen when filtering runs prior to populating bcache.  In this case the
+device is flagged.  After bcache is populated, the filters are reapplied
+to the flagged devices.  The filters which need to look at device content
+are now able to get it from bcache.  Devices that do not pass filters at
+this point are excluded just like devices which were excluded earlier.
+
+(Some filters from 2 can be skipped by consulting udev for the information
+instead of reading the device.  This is not entirely reliable, so it is
+disabled by default with the config setting external_device_info_source.
+It may be worthwhile to change the filters to use the udev info as a hint,
+or only use udev info for filtering in reporting commands where
+inaccuracies are not a big problem.)
+
+
+
+I/O Performance
+---------------
+
+. 400 loop devices used as PVs
+. 40 VGs each with 10 PVs
+. each VG has one active LV
+. each of the 10 PVs in vg0 has an artificial 100 ms read delay
+. read/write/io_submit are system call counts using strace
+. old is lvm 2.2.175
+. new is lvm 2.2.178 (shortly before)
+
+
+Command: pvs
+------------
+old: 0m17.422s
+new: 0m0.331s
+
+old: read 7773 write 497
+new: read 2807 write 495 io_submit 448
+
+
+Command: vgs
+------------
+old: 0m20.383s
+new: 0m0.325s
+
+old: read 10684 write 129
+new: read  2807 write 129 io_submit 448
+
+
+Command: vgck vg0
+-----------------
+old: 0m16.212s
+new: 0m1.290s
+
+old: read 6372 write 4
+new: read 2807 write 4 io_submit 458
+
+
+Command: lvcreate -n test -l1 -an vg0
+-------------------------------------
+old: 0m29.271s
+new: 0m1.351s
+
+old: read 6503 write 39
+new: read 2808 write 9 io_submit 488
+
+
+Command: lvremove vg0/test
+--------------------------
+old: 0m29.262s
+new: 0m1.348s
+
+old: read 6502 write 36
+new: read 2807 write 6 io_submit 488
+
+
+io_submit sources
+-----------------
+
+vgs:
+  reads:
+  - 400 for each PV
+  - 40 for each LV
+  - 8 for other devs on the system
+
+vgck vg0:
+  reads:
+  - 400 for each PV
+  - 40 for each LV
+  - 10 for each PV in vg0 (rescan)
+  - 8 for other devs on the system
+
+lvcreate -n test -l1 -an vg0
+  reads:
+  - 400 for each PV
+  - 40 for each LV
+  - 10 for each PV in vg0 (rescan)
+  - 8 for other devs on the system
+  writes:
+  - 10 for metadata on each PV in vg0
+  - 10 for precommit on each PV in vg0
+  - 10 for commit on each PV in vg0
+
+
+
+With lvmetad
+------------
+
+Command: pvs
+------------
+old: 0m5.405s
+new: 0m1.404s
+
+Command: vgs
+------------
+old: 0m0.222s
+new: 0m0.223s
+
+Command: lvcreate -n test -l1 -an vg0
+-------------------------------------
+old: 0m10.128s
+new: 0m1.137s
+
+

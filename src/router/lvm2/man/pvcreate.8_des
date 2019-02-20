@@ -1,0 +1,21 @@
+pvcreate initializes a PV so that it is recognized as belonging to LVM,
+and allows the PV to be used in a VG. A PV can be a disk partition, whole
+disk, meta device, or loopback file.
+
+For DOS disk partitions, the partition id should be set to 0x8e using
+.BR fdisk (8),
+.BR cfdisk (8),
+or a equivalent. For GUID Partition Table (GPT), the id is
+E6D6D379-F507-44C2-A23C-238F2A3DF928. For
+whole disk devices only
+the partition table must be erased, which will effectively destroy all
+data on that disk. This can be done by zeroing the first sector with:
+
+.BI "dd if=/dev/zero of=" PhysicalVolume " bs=512 count=1"
+
+Use \fBvgcreate\fP(8) to create a new VG on the PV, or \fBvgextend\fP(8)
+to add the PV to existing VG.
+
+The force option will create a PV without confirmation.  Repeating the
+force option (\fB-ff\fP) will forcibly create a PV, overriding checks that
+normally prevent it, e.g. if the PV is already in a VG.

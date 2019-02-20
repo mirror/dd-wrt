@@ -1,0 +1,4 @@
+lvm lvpoll is an internal command used by \fBlvmpolld\fP(8) to monitor and
+complete \fBlvconvert\fP(8) and \fBpvmove\fP(8) operations. lvpoll itself
+does not initiate these operations and should not normally need to be run
+directly.

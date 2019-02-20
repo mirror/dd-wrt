@@ -1,0 +1,114 @@
+#
+# Copyright (C) 2005-2011 Red Hat, Inc. All rights reserved.
+#
+# This file is part of the device-mapper userspace tools.
+#
+# This copyrighted material is made available to anyone wishing to use,
+# modify, copy, or redistribute it subject to the terms and conditions
+# of the GNU Lesser General Public License v.2.1.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with this program; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+top_builddir = @top_builddir@
+
+SOURCES = libdevmapper-event.c
+SOURCES2 = dmeventd.c
+
+TARGETS = dmeventd
+
+.PHONY: install_lib_dynamic install_lib_static install_include \
+	install_pkgconfig install_dmeventd_dynamic install_dmeventd_static \
+	install_lib install_dmeventd
+
+INSTALL_DMEVENTD_TARGETS = install_dmeventd_dynamic
+INSTALL_LIB_TARGETS = install_lib_dynamic
+
+LIB_NAME = libdevmapper-event
+ifeq ("@STATIC_LINK@", "yes")
+  LIB_STATIC = $(LIB_NAME).a
+  TARGETS += $(LIB_STATIC) dmeventd.static
+  INSTALL_DMEVENTD_TARGETS += install_dmeventd_static
+  INSTALL_LIB_TARGETS += install_lib_static
+endif
+
+LIB_VERSION = $(LIB_VERSION_DM)
+LIB_SHARED = $(LIB_NAME).$(LIB_SUFFIX)
+
+CLEAN_TARGETS = dmeventd.static $(LIB_NAME).a
+
+ifneq ($(MAKECMDGOALS),device-mapper)
+  SUBDIRS+=plugins
+endif
+
+CFLOW_LIST = $(SOURCES)
+CFLOW_LIST_TARGET = $(LIB_NAME).cflow
+CFLOW_TARGET = dmeventd
+
+EXPORTED_HEADER = $(srcdir)/libdevmapper-event.h
+EXPORTED_FN_PREFIX = dm_event
+
+include $(top_builddir)/make.tmpl
+
+all: device-mapper
+device-mapper: $(TARGETS)
+
+CFLAGS_dmeventd.o += $(EXTRA_EXEC_CFLAGS)
+LIBS += $(PTHREAD_LIBS) -L$(top_builddir)/libdm -ldevmapper
+
+dmeventd: $(LIB_SHARED) dmeventd.o
+	@echo "    [CC] $@"
+	$(Q) $(CC) $(CFLAGS) -L. $(LDFLAGS) $(EXTRA_EXEC_LDFLAGS) $(ELDFLAGS) dmeventd.o \
+		-o $@ $(DL_LIBS) $(DMEVENT_LIBS) $(LIBS) -lm
+
+dmeventd.static: $(LIB_STATIC) dmeventd.o
+	@echo "    [CC] $@"
+	$(Q) $(CC) $(CFLAGS) $(LDFLAGS) -static -L. -L$(interfacebuilddir) dmeventd.o \
+		-o $@ $(DL_LIBS) $(DMEVENT_LIBS) $(LIBS) $(STATIC_LIBS)
+
+ifeq ("@PKGCONFIG@", "yes")
+  INSTALL_LIB_TARGETS += install_pkgconfig
+endif
+
+ifneq ("$(CFLOW_CMD)", "")
+CFLOW_SOURCES = $(addprefix $(srcdir)/, $(SOURCES))
+-include $(top_builddir)/lib/liblvm-internal.cflow
+-include $(top_builddir)/lib/liblvm2cmd.cflow
+-include $(top_builddir)/daemons/dmeventd/$(LIB_NAME).cflow
+-include $(top_builddir)/daemons/dmeventd/plugins/mirror/$(LIB_NAME)-lvm2mirror.cflow
+endif
+
+install_include: $(srcdir)/libdevmapper-event.h
+	@echo "    [INSTALL] $<"
+	$(Q) $(INSTALL_DATA) -D $< $(includedir)/$(<F)
+
+install_pkgconfig: libdevmapper-event.pc
+	@echo "    [INSTALL] $<"
+	$(Q) $(INSTALL_DATA) -D $< $(pkgconfigdir)/devmapper-event.pc
+
+install_lib_dynamic: install_lib_shared
+
+install_lib_static: $(LIB_STATIC)
+	@echo "    [INSTALL] $<"
+	$(Q) $(INSTALL_DATA) -D $< $(usrlibdir)/$(<F)
+
+install_lib: $(INSTALL_LIB_TARGETS)
+
+install_dmeventd_dynamic: dmeventd
+	@echo "    [INSTALL] $<"
+	$(Q) $(INSTALL_PROGRAM) -D $< $(sbindir)/$(<F)
+
+install_dmeventd_static: dmeventd.static
+	@echo "    [INSTALL] $<"
+	$(Q) $(INSTALL_PROGRAM) -D $< $(staticdir)/$(<F)
+
+install_dmeventd: $(INSTALL_DMEVENTD_TARGETS)
+
+install: install_include install_lib install_dmeventd
+
+install_device-mapper: install_include install_lib install_dmeventd
+
+DISTCLEAN_TARGETS += libdevmapper-event.pc

@@ -1,0 +1,5 @@
+pvdisplay shows the attributes of PVs, like size, physical extent size,
+space used for the VG descriptor area, etc.
+
+\fBpvs\fP(8) is a preferred alternative that shows the same information
+and more, using a more compact and configurable output format.
