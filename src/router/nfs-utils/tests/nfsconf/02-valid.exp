@@ -1,0 +1,26 @@
+[environment]
+ one = 1
+ three = 3
+ two = 2
+
+[extra_section]
+ bar = baz
+ foo = bar
+
+[section_one]
+ five six = seven eight
+ four = "six  "
+ one = 11
+ three = $three
+ two = 22
+
+[section_two "one"]
+ one = Un
+ two = Deux
+
+[section_two "two"]
+ five = " Pump "
+ four = Pedwar
+ one = Un
+ three = Tri
+ two = Dau

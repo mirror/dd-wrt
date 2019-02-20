@@ -1,0 +1,15 @@
+[Unit]
+Description=RPC security service for NFS server
+DefaultDependencies=no
+After=local-fs.target
+PartOf=nfs-server.service
+PartOf=nfs-utils.service
+
+After=gssproxy.service
+ConditionPathExists=|!/run/gssproxy.pid
+ConditionPathExists=|!/proc/net/rpc/use-gss-proxy
+ConditionPathExists=/etc/krb5.keytab
+
+[Service]
+Type=forking
+ExecStart=/usr/sbin/rpc.svcgssd

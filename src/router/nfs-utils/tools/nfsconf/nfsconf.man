@@ -1,0 +1,107 @@
+.\"
+.\" nfsconf(8)
+.\"
+.TH nfsconf 8 "2 May 2018"
+.SH NAME
+nfsconf \- Query various NFS configuration settings
+.SH SYNOPSIS
+.B nfsconf \-\-dump
+.RB [ \-v | \-\-verbose ]
+.RB [ \-f | \-\-file
+.IR infile.conf ]
+.RI [ outfile ]
+.P
+.B nfsconf \-\-get
+.RB [ \-v | \-\-verbose ]
+.RB [ \-f | \-\-file
+.IR infile.conf ]
+.RB [ \-a | \-\-arg
+.IR subsection ]
+.IR section
+.IR tag
+.P
+.B nfsconf \-\-isset
+.RB [ \-v | \-\-verbose ]
+.RB [ \-f | \-\-file
+.IR infile.conf ]
+.RB [ \-a | \-\-arg
+.IR subsection ]
+.IR section
+.IR tag
+.P
+.B nfsconf \-\-set
+.RB [ \-v | \-\-verbose ]
+.RB [ \-f | \-\-file
+.IR infile.conf ]
+.RB [ \-a | \-\-arg
+.IR subsection ]
+.IR section
+.IR tag
+.IR value
+.P
+.B nfsconf \-\-unset
+.RB [ \-v | \-\-verbose ]
+.RB [ \-f | \-\-file
+.IR infile.conf ]
+.RB [ \-a | \-\-arg
+.IR subsection ]
+.IR section
+.IR tag
+.SH DESCRIPTION
+The
+.B nfsconf
+command can be used to test for and retrieve configuration settings
+from a range of nfs-utils configuration files.
+.SS Modes
+The following modes are available:
+.IP "\fB\-d, \-\-dump\fP"
+Output an alphabetically sorted dump of the current configuration in conf file format. Accepts an optional filename in which to write the output.
+.IP "\fB\-i, \-\-isset\fP"
+Test if a specific tag has a value set.
+.IP "\fB\-g, \-\-get\fP"
+Output the current value of the specified tag.
+.IP "\fB\-s, \-\-set\fP"
+Update or Add a tag and value to the config file, creating the file if necessary.
+.IP "\fB\-u, \-\-unset\fP"
+Remove the specified tag and its value from the config file.
+.SH OPTIONS
+.SS Options valid in all modes
+.TP
+.B \-v, \-\-verbose
+Increase verbosity and print debugging information.
+.TP
+.B \-f, \-\-file \fIinfile\fR
+Select a different config file to operate upon, default is
+.I /etc/nfs.conf
+.SS Options only valid in \fB\-\-get\fR and \fB\-\-isset\fR modes.
+.TP
+.B \-a, \-\-arg \fIsubsection\fR
+Select a specific sub-section
+.SH EXIT STATUS
+.SS \fB\-\-isset\fR mode
+In this mode the command will return success (0) if the selected tag has a value, any other exit code indicates the value is not set, or some other error has occurred.
+.SS all other modes
+Success is indicated by an exit status of zero, any other status indicates an error. Error messages are output on stderr, and increasing verbosity will give more detailed explanations if any are available.
+.SH EXAMPLES
+.TP
+.B nfsconf -v --dump --file /tmp/testconf.conf  sorted.conf
+Check a new config file for syntax errors and output a sorted version for ease of comparison with existing settings.
+.TP
+.B if ! nfsconf --isset gssd preferred-realm ; then echo 'No preferred realm configured for gss'; fi
+The tool allows for easy testing of configuration values from shell scripts, here we test if a specific value has been set.
+.TP
+.B nfsconf --file /etc/nfsmount.conf --get --arg /home MountPoint background
+Show default value for \fIbackground\fR option for NFS mounts of the \fI/home\fR path.
+.TP
+.B nfsconf --file /etc/nfs.conf --set nfsd debug 1
+Enable debugging in nfsd
+.SH FILES
+.TP
+.B /etc/nfs.conf
+.SH SEE ALSO
+.BR nfsd (8),
+.BR exportfs (8),
+.BR idmapd (8),
+.BR statd (8)
+.SH AUTHOR
+Justin Mitchell <jumitche@redhat.com>

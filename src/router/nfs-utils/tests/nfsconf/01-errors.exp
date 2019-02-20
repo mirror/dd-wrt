@@ -1,0 +1,14 @@
+nfsconf: config error at 01-errors.conf:5: non-matched ']', ignoring until next section
+nfsconf: config error at 01-errors.conf:7: non-matched '"', ignoring until next section
+nfsconf: config error at 01-errors.conf:10: non-matched ']', ignoring until next section
+nfsconf: config error at 01-errors.conf:11: ignoring line not in a section
+nfsconf: config error at 01-errors.conf:14: line not empty and not an assignment
+nfsconf: config error at 01-errors.conf:15: missing tag in assignment
+nfsconf: config error at 01-errors.conf:16: missing value in assignment
+nfsconf: config error at 01-errors.conf:18: unmatched quotes
+[four]
+ four = foo = bar
+ six = normal
+
+[two]
+ aa = foo

@@ -1,0 +1,308 @@
+.\"
+.\" idmapd.conf(5)
+.\"
+.\" COPYRIGHT (c) 2008
+.\" The Regents of the University of Michigan
+.\" ALL RIGHTS RESERVED
+.\" 
+.\" Permission is granted to use, copy, create derivative works
+.\" and redistribute this software and such derivative works
+.\" for any purpose, so long as the name of The University of
+.\" Michigan is not used in any advertising or publicity
+.\" pertaining to the use of distribution of this software
+.\" without specific, written prior authorization.  If the
+.\" above copyright notice or any other identification of the
+.\" University of Michigan is included in any copy of any
+.\" portion of this software, then the disclaimer below must
+.\" also be included.
+.\" 
+.\" THIS SOFTWARE IS PROVIDED AS IS, WITHOUT REPRESENTATION
+.\" FROM THE UNIVERSITY OF MICHIGAN AS TO ITS FITNESS FOR ANY
+.\" PURPOSE, AND WITHOUT WARRANTY BY THE UNIVERSITY OF
+.\" MICHIGAN OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+.\" WITHOUT LIMITATION THE IMPLIED WARRANTIES OF
+.\" MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE
+.\" REGENTS OF THE UNIVERSITY OF MICHIGAN SHALL NOT BE LIABLE
+.\" FOR ANY DAMAGES, INCLUDING SPECIAL, INDIRECT, INCIDENTAL, OR
+.\" CONSEQUENTIAL DAMAGES, WITH RESPECT TO ANY CLAIM ARISING
+.\" OUT OF OR IN CONNECTION WITH THE USE OF THE SOFTWARE, EVEN
+.\" IF IT HAS BEEN OR IS HEREAFTER ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGES.
+.\"
+.TH idmapd.conf 5 "19 Nov 2008"
+.SH NAME
+idmapd.conf \- configuration file for libnfsidmap
+.SH SYNOPSIS
+Configuration file for libnfsidmap.  Used by idmapd and svcgssd to map NFSv4 name to and from ids.
+.SH DESCRIPTION
+The
+.B idmapd.conf
+configuration file consists of several sections, initiated by strings of the
+form [General] and [Mapping].  Each section may contain lines of the form
+.nf
+  variable = value
+.fi
+The recognized sections and their recognized variables are as follows:
+.\"
+.\" -------------------------------------------------------------------
+.\" The [General] section
+.\" -------------------------------------------------------------------
+.\"
+.SS "[General] section variables"
+.nf
+
+
+.fi
+.TP
+.B Verbosity
+Verbosity level of debugging
+(Default: 0)
+.TP
+.B Domain
+The local NFSv4 domain name.  An NFSv4 domain is a namespace with
+a unique username<->UID and groupname<->GID mapping.
+(Default: Host's fully-qualified DNS domain name)
+.TP
+.B No-Strip
+In multi-domain environments, some NFS servers will append the identity
+management domain to the owner and owner_group in lieu of a true NFSv4
+domain.  This option can facilitate lookups in such environments.  If
+set to a value other than "none", the nsswitch  plugin will first pass
+the name to the password/group lookup function without stripping the
+domain off.  If that mapping fails then the plugin will try again using
+the old method (comparing the domain in the string to the Domain value,
+stripping it if it matches, and passing the resulting short name to the
+lookup function).  Valid values are "user", "group", "both", and
+"none".
+(Default: "none")
+.TP
+.B Reformat-Group
+Winbind has a quirk whereby doing a group lookup in UPN format
+(e.g. staff@americas.example.com) will cause the group to be
+displayed prefixed with the full domain in uppercase
+(e.g. AMERICAS.EXAMPLE.COM\\staff) instead of in the familiar netbios
+name format (e.g. AMERICAS\\staff).  Setting this option to true
+causes the name to be reformatted before passing it to the group
+lookup function in order to work around this.  This setting is
+ignored unless No-Strip is set to either "both" or "group".
+(Default: "false")
+.TP
+.B Local-Realms
+A comma-separated list of Kerberos realm names that may be considered equivalent to the
+local realm name.  For example, users juser@ORDER.EDU and juser@MAIL.ORDER.EDU
+may be considered to be the same user in the specified
+.B Domain.
+(Default: the host's default realm name)
+.br
+.B Note:
+If a value is specified here, the default local realm must be included as well.
+.\"
+.\" -------------------------------------------------------------------
+.\" The [Mapping] section
+.\" -------------------------------------------------------------------
+.\"
+.SS "[Mapping] section variables"
+.nf
+
+.fi
+.TP
+.B Nobody-User
+Local user name to be used when a mapping cannot be completed.
+.TP
+.B Nobody-Group
+Local group name to be used when a mapping cannot be completed.
+.\"
+.\" -------------------------------------------------------------------
+.\" The [Translation] section
+.\" -------------------------------------------------------------------
+.\"
+.SS "[Translation] section variables"
+.nf
+
+.fi
+.TP
+.B Method
+A comma-separated, ordered list of mapping methods (plug-ins)
+to use when mapping between NFSv4 names and local IDs.  Each
+specified method is tried in order until a mapping is found,
+or there are no more methods to try.  The methods included in
+the default distribution include "nsswitch", "umich_ldap", and
+"static".
+(Default: nsswitch)
+.TP
+.B GSS-Methods
+An optional comma-separated, ordered list of mapping methods (plug-ins)
+to use when mapping between GSS Authenticated names and local IDs.
+(Default: the same list as specified for
+.B Method)
+.\"
+.\" -------------------------------------------------------------------
+.\" The [Static] section
+.\" -------------------------------------------------------------------
+.\"
+.SS "[Static] section variables"
+.nf
+
+.fi
+The "static" translation method uses a static list of GSS-Authenticated
+names to local user names.  Entries in the list are of the form:
+.nf
+ principal@REALM = localusername
+.fi
+.\"
+.\" -------------------------------------------------------------------
+.\" The [UMICH_SCHEMA] section
+.\" -------------------------------------------------------------------
+.\"
+.SS "[UMICH_SCHEMA] section variables"
+.nf
+
+.fi
+If the "umich_ldap" translation method is specified, the following
+variables within the [UMICH_SCHEMA] section are used.
+.TP
+.B LDAP_server
+LDAP server name or address
+(Required if using UMICH_LDAP)
+.TP
+.B LDAP_base
+Absolute LDAP search base.
+(Required if using UMICH_LDAP)
+.TP
+.B LDAP_people_base
+Absolute LDAP search base for people accounts.
+(Default: The
+.B LDAP_base
+value)
+.TP
+.B LDAP_group_base
+Absolute LDAP search base for group accounts.
+(Default: The
+.B LDAP_base
+value)
+.TP
+.B LDAP_canonicalize_name
+Whether or not to perform name canonicalization on the
+name given as
+.B LDAP_server
+(Default: "true")
+.TP
+.B LDAP_use_ssl
+Set to "true" to enable SSL communication with the LDAP server.
+(Default: "false")
+.TP
+.B LDAP_ca_cert
+Location of a trusted CA certificate used when SSL is enabled
+(Required if
+.B LDAP_use_ssl
+is true)
+.TP
+.B NFSv4_person_objectclass
+The object class name for people accounts in your local LDAP schema
+(Default: NFSv4RemotePerson)
+.TP
+.B NFSv4_name_attr
+Your local schema's attribute name to be used for NFSv4 user names
+(Default: NFSv4Name)
+.TP
+.B NFSv4_uid_attr
+Your local schema's attribute name to be used for uidNumber
+(Default: uidNumber)
+.TP
+.B GSS_principal_attr
+Your local schema's attribute name for GSSAPI Principal names
+(Default: GSSAuthName)
+.TP
+.B NFSv4_acctname_attr
+Your local schema's attribute name to be used for account names
+(Default: uid)
+.TP
+.B NFSv4_group_objectclass
+The object class name for group accounts in your local LDAP schema
+(Default: NFSv4RemoteGroup)
+.TP
+.B NFSv4_gid_attr
+Your local schema's attribute name to be used for gidNumber
+(Default: gidNumber)
+.TP
+.B NFSv4_group_attr
+Your local schema's attribute name to be used for NFSv4 group names
+(Default: NFSv4Name)
+.TP
+.B LDAP_use_memberof_for_groups
+Some LDAP servers do a better job with indexing where searching
+through all the groups searching for the user in the memberuid
+list.  Others like SunOne directory that search can takes minutes
+if there are thousands of groups. So setting
+.B LDAP_use_memberof_for_groups
+to true in the configuration file will use the memberof lists of 
+the account and search through only those groups to obtain gids.
+(Default: false)
+.TP
+.B NFSv4_member_attr
+If
+.B LDAP_use_memberof_for_groups
+is true, this is the attribute to be searched for.
+(Default: memberUid)
+.TP
+.B NFSv4_grouplist_filter
+An optional search filter for determining group membership.
+(No Default)
+.TP
+.B LDAP_timeout_seconds
+Number of seconds before timing out an LDAP request
+(Default: 4)
+.\"
+.\" -------------------------------------------------------------------
+.\" An Example
+.\" -------------------------------------------------------------------
+.\"
+.SH EXAMPLES
+An example
+.I /etc/idmapd.conf
+file:
+.nf
+
+
+[General]
+
+Verbosity = 0
+Domain = domain.org
+Local-Realms = DOMAIN.ORG,MY.DOMAIN.ORG,YOUR.DOMAIN.ORG
+
+[Mapping]
+
+Nobody-User = nfsnobody
+Nobody-Group = nfsnobody
+
+[Translation]
+
+Method = umich_ldap,nsswitch
+GSS-Methods = umich_ldap,static
+
+[Static]
+
+johndoe@OTHER.DOMAIN.ORG = johnny
+
+[UMICH_SCHEMA]
+
+LDAP_server = ldap.domain.org
+LDAP_base = dc=org,dc=domain
+
+.fi
+.\"
+.\" -------------------------------------------------------------------
+.\" Additional sections
+.\" -------------------------------------------------------------------
+.\"
+.SH SEE ALSO
+.BR idmapd (8)
+.BR svcgssd (8)
+.\".SH COMPATIBILITY
+.\".SH STANDARDS
+.\".SH ACKNOWLEDGEMENTS
+.\".SH AUTHORS
+.\".SH HISTORY
+.SH BUGS
+Report bugs to <nfsv4@linux-nfs.org>
+.\".SH CAVEATS
