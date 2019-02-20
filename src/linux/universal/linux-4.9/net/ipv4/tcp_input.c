@@ -6262,8 +6262,9 @@ int tcp_rcv_state_process(struct sock *sk, struct sk_buff *skb)
 				mptcp_update_metasocket(mptcp_meta_sk(sk));
 			} else {
 				tcp_send_ack(sk);
-
+#ifdef CONFIG_MPTCP
 				mptcp_push_pending_frames(mptcp_meta_sk(sk));
+#endif
 			}
 		}
 		break;
