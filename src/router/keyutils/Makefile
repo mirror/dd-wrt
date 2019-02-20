@@ -1,5 +1,5 @@
 CPPFLAGS	:= -I.
-CFLAGS		:= -g -Wall -Werror
+CFLAGS		:= $(COPTS) $(MIPS16_OPT)
 INSTALL		:= install
 DESTDIR		:=
 SPECFILE	:= keyutils.spec
@@ -177,52 +177,52 @@ pkgconfig:
 	< $(PKGCONFIG).in > $(PKGCONFIG) || rm $(PKGCONFIG)
 
 install: all
-ifeq ($(NO_ARLIB),0)
-	$(INSTALL) -D -m 0644 $(ARLIB) $(DESTDIR)$(USRLIBDIR)/$(ARLIB)
-endif
-ifeq ($(NO_SOLIB),0)
-	$(INSTALL) -D $(LIBNAME) $(DESTDIR)$(LIBDIR)/$(LIBNAME)
-	$(LNS) $(LIBNAME) $(DESTDIR)$(LIBDIR)/$(SONAME)
-	mkdir -p $(DESTDIR)$(USRLIBDIR)
-	$(LNS) $(LIBDIR)/$(SONAME) $(DESTDIR)$(USRLIBDIR)/$(DEVELLIB)
-	sed \
-	-e 's,@VERSION\@,$(VERSION),g' \
-	-e 's,@prefix\@,$(PREFIX),g' \
-	-e 's,@exec_prefix\@,$(PREFIX),g' \
-	-e 's,@libdir\@,$(USRLIBDIR),g' \
-	-e 's,@includedir\@,$(INCLUDEDIR),g' \
-	< $(PKGCONFIG).in > $(PKGCONFIG) || rm $(PKGCONFIG)
-	$(INSTALL) -D $(PKGCONFIG) $(DESTDIR)$(LIBDIR)/$(PKGCONFIG_DIR)/$(PKGCONFIG)
-	rm $(PKGCONFIG)
-endif
+#ifeq ($(NO_ARLIB),0)
+#	$(INSTALL) -D -m 0644 $(ARLIB) $(DESTDIR)$(USRLIBDIR)/$(ARLIB)
+#endif
+#ifeq ($(NO_SOLIB),0)
+#	$(INSTALL) -D $(LIBNAME) $(DESTDIR)$(LIBDIR)/$(LIBNAME)
+#	$(LNS) $(LIBNAME) $(DESTDIR)$(LIBDIR)/$(SONAME)
+#	mkdir -p $(DESTDIR)$(USRLIBDIR)
+#	$(LNS) $(LIBDIR)/$(SONAME) $(DESTDIR)$(USRLIBDIR)/$(DEVELLIB)
+#	sed \
+#	-e 's,@VERSION\@,$(VERSION),g' \
+#	-e 's,@prefix\@,$(PREFIX),g' \
+#	-e 's,@exec_prefix\@,$(PREFIX),g' \
+#	-e 's,@libdir\@,$(USRLIBDIR),g' \
+#	-e 's,@includedir\@,$(INCLUDEDIR),g' \
+#	< $(PKGCONFIG).in > $(PKGCONFIG) || rm $(PKGCONFIG)
+#	$(INSTALL) -D $(PKGCONFIG) $(DESTDIR)$(LIBDIR)/$(PKGCONFIG_DIR)/$(PKGCONFIG)
+#	rm $(PKGCONFIG)
+#endif
 	$(INSTALL) -D keyctl $(DESTDIR)$(BINDIR)/keyctl
 	$(INSTALL) -D request-key $(DESTDIR)$(SBINDIR)/request-key
 	$(INSTALL) -D request-key-debug.sh $(DESTDIR)$(SHAREDIR)/request-key-debug.sh
 	$(INSTALL) -D key.dns_resolver $(DESTDIR)$(SBINDIR)/key.dns_resolver
 	$(INSTALL) -D -m 0644 request-key.conf $(DESTDIR)$(ETCDIR)/request-key.conf
 	mkdir -p $(DESTDIR)$(ETCDIR)/request-key.d
-	mkdir -p $(DESTDIR)$(MAN1)
-	$(INSTALL) -m 0644 $(wildcard man/*.1) $(DESTDIR)$(MAN1)
-	mkdir -p $(DESTDIR)$(MAN3)
-	$(INSTALL) -m 0644 $(wildcard man/*.3) $(DESTDIR)$(MAN3)
-	mkdir -p $(DESTDIR)$(MAN5)
-	$(INSTALL) -m 0644 $(wildcard man/*.5) $(DESTDIR)$(MAN5)
-	mkdir -p $(DESTDIR)$(MAN7)
-	$(INSTALL) -m 0644 $(wildcard man/*.7) $(DESTDIR)$(MAN7)
-	mkdir -p $(DESTDIR)$(MAN8)
-	$(INSTALL) -m 0644 $(wildcard man/*.8) $(DESTDIR)$(MAN8)
-	$(LNS) keyctl_describe.3 $(DESTDIR)$(MAN3)/keyctl_describe_alloc.3
-	$(LNS) keyctl_get_security.3 $(DESTDIR)$(MAN3)/keyctl_get_security_alloc.3
-	$(LNS) keyctl_instantiate.3 $(DESTDIR)$(MAN3)/keyctl_instantiate_iov.3
-	$(LNS) keyctl_instantiate.3 $(DESTDIR)$(MAN3)/keyctl_reject.3
-	$(LNS) keyctl_instantiate.3 $(DESTDIR)$(MAN3)/keyctl_negate.3
-	$(LNS) keyctl_instantiate.3 $(DESTDIR)$(MAN3)/keyctl_assume_authority.3
-	$(LNS) keyctl_link.3 $(DESTDIR)$(MAN3)/keyctl_unlink.3
-	$(LNS) keyctl_read.3 $(DESTDIR)$(MAN3)/keyctl_read_alloc.3
-	$(LNS) recursive_key_scan.3 $(DESTDIR)$(MAN3)/recursive_session_key_scan.3
-	$(LNS) keyctl_dh_compute.3 $(DESTDIR)$(MAN3)/keyctl_dh_compute_alloc.3
-	$(LNS) keyctl_dh_compute.3 $(DESTDIR)$(MAN3)/keyctl_dh_compute_kdf.3
-	$(INSTALL) -D -m 0644 keyutils.h $(DESTDIR)$(INCLUDEDIR)/keyutils.h
+#	mkdir -p $(DESTDIR)$(MAN1)
+#	$(INSTALL) -m 0644 $(wildcard man/*.1) $(DESTDIR)$(MAN1)
+#	mkdir -p $(DESTDIR)$(MAN3)
+#	$(INSTALL) -m 0644 $(wildcard man/*.3) $(DESTDIR)$(MAN3)
+#	mkdir -p $(DESTDIR)$(MAN5)
+#	$(INSTALL) -m 0644 $(wildcard man/*.5) $(DESTDIR)$(MAN5)
+#	mkdir -p $(DESTDIR)$(MAN7)
+#	$(INSTALL) -m 0644 $(wildcard man/*.7) $(DESTDIR)$(MAN7)
+#	mkdir -p $(DESTDIR)$(MAN8)
+#	$(INSTALL) -m 0644 $(wildcard man/*.8) $(DESTDIR)$(MAN8)
+#	$(LNS) keyctl_describe.3 $(DESTDIR)$(MAN3)/keyctl_describe_alloc.3
+#	$(LNS) keyctl_get_security.3 $(DESTDIR)$(MAN3)/keyctl_get_security_alloc.3
+#	$(LNS) keyctl_instantiate.3 $(DESTDIR)$(MAN3)/keyctl_instantiate_iov.3
+#	$(LNS) keyctl_instantiate.3 $(DESTDIR)$(MAN3)/keyctl_reject.3
+#	$(LNS) keyctl_instantiate.3 $(DESTDIR)$(MAN3)/keyctl_negate.3
+#	$(LNS) keyctl_instantiate.3 $(DESTDIR)$(MAN3)/keyctl_assume_authority.3
+#	$(LNS) keyctl_link.3 $(DESTDIR)$(MAN3)/keyctl_unlink.3
+#	$(LNS) keyctl_read.3 $(DESTDIR)$(MAN3)/keyctl_read_alloc.3
+#	$(LNS) recursive_key_scan.3 $(DESTDIR)$(MAN3)/recursive_session_key_scan.3
+#	$(LNS) keyctl_dh_compute.3 $(DESTDIR)$(MAN3)/keyctl_dh_compute_alloc.3
+#	$(LNS) keyctl_dh_compute.3 $(DESTDIR)$(MAN3)/keyctl_dh_compute_kdf.3
+#	$(INSTALL) -D -m 0644 keyutils.h $(DESTDIR)$(INCLUDEDIR)/keyutils.h
 
 ###############################################################################
 #
