@@ -1,6 +1,8 @@
 #ifndef _INET_COMMON_H
 #define _INET_COMMON_H
 
+#include <net/sock.h>
+
 extern const struct proto_ops inet_stream_ops;
 extern const struct proto_ops inet_dgram_ops;
 
@@ -13,6 +15,8 @@ struct sock;
 struct sockaddr;
 struct socket;
 
+int inet_create(struct net *net, struct socket *sock, int protocol, int kern);
+int inet6_create(struct net *net, struct socket *sock, int protocol, int kern);
 int inet_release(struct socket *sock);
 int inet_stream_connect(struct socket *sock, struct sockaddr *uaddr,
 			int addr_len, int flags);
