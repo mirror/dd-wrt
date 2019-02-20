@@ -137,12 +137,12 @@ static void set_stp_state(char *bridge, char *stp)
 #endif
 
 }
-void apply_bridgeif(char *ifname) 
+void apply_bridgeif(char *ifname, char *realport) 
 {
 	char stp[256];
 	char word[256];
 	char *next, *wordlist;
-
+	dd_loginfo("bridge", "apply parameters for %s and station %s\n", ifname, realport);
 	wordlist = nvram_safe_get("bridgesif");
 	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(tag, word, 0);
@@ -154,13 +154,13 @@ void apply_bridgeif(char *ifname)
 
 		if (!strcmp(ifname, port)) {
 			if (prio)
-				br_set_port_prio(tag, port, atoi(prio));
+				br_set_port_prio(tag, realport, atoi(prio));
 			if (hairpin)
-				br_set_port_hairpin(tag, port, atoi(hairpin));
+				br_set_port_hairpin(tag, realport, atoi(hairpin));
 			if (stp)
-				br_set_port_stp(tag, port, atoi(stp));
+				br_set_port_stp(tag, realport, atoi(stp));
 			if (pathcost)
-				br_set_path_cost(tag, port, atoi(pathcost));
+				br_set_path_cost(tag, realport, atoi(pathcost));
 		}
 	}
 
