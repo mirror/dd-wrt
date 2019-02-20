@@ -47,7 +47,7 @@ COVERITY_FLAGS=-include coverity-gcc-hack.h
 endif
 
 CC ?= $(CROSS_COMPILE)gcc
-CXFLAGS ?= -DNEED_PRINTF $(COPTS) $(MIPS16_OPT)
+CXFLAGS ?= -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections
 CWFLAGS = -Wall -Wstrict-prototypes -Wextra -Wno-unused-parameter
 ifdef WARN_UNUSED
 CWFLAGS += -Wp,-D_FORTIFY_SOURCE=2
@@ -114,13 +114,14 @@ MON_LDFLAGS += -pthread
 endif
 
 # If you want a static binary, you might uncomment these
-# LDFLAGS = -static
+LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 STRIP =
 LDLIBS=-ldl
 
 INSTALL = /usr/bin/install
 DESTDIR = $(INSTALLDIR)
 BINDIR  = /sbin
+LIBDIR  = /lib
 MANDIR  = /usr/share/man
 MAN4DIR = $(MANDIR)/man4
 MAN5DIR = $(MANDIR)/man5
@@ -136,35 +137,35 @@ ifeq (,$(findstring s,$(MAKEFLAGS)))
 else
 	ECHO=:
 endif
+SHARE_OBJS = util.o maps.o sysfs.o sha1.o crc32.o msg.o xmalloc.o \
+	platform-intel.o probe_roms.o crc32c.o super-mbr.o \
+	super-gpt.o super-ddf.o super-intel.o bitmap.o dlink.o \
+	restripe.o lib.o sg_io.o mdstat.o policy.o
 
-OBJS =  mdadm.o config.o policy.o mdstat.o  ReadMe.o util.o maps.o lib.o \
+
+OBJS =  mdadm.o config.o ReadMe.o \
 	Manage.o Assemble.o Build.o \
-	Create.o Detail.o Examine.o Grow.o Monitor.o dlink.o Kill.o Query.o \
+	Create.o Detail.o Examine.o Grow.o Monitor.o Kill.o Query.o \
 	Incremental.o Dump.o \
-	mdopen.o super0.o super1.o super-ddf.o super-intel.o bitmap.o \
-	super-mbr.o super-gpt.o \
-	restripe.o sysfs.o sha1.o mapfile.o crc32.o sg_io.o msg.o xmalloc.o \
-	platform-intel.o probe_roms.o crc32c.o
+	mdopen.o super0.o super1.o \
+	mapfile.o
+	
 
-CHECK_OBJS = restripe.o sysfs.o maps.o lib.o xmalloc.o dlink.o
+CHECK_OBJS =
 
 SRCS =  $(patsubst %.o,%.c,$(OBJS))
 
 INCL = mdadm.h part.h bitmap.h
 
-MON_OBJS = mdmon.o monitor.o managemon.o util.o maps.o mdstat.o sysfs.o \
-	policy.o lib.o \
-	Kill.o sg_io.o dlink.o ReadMe.o super-intel.o \
-	super-mbr.o super-gpt.o \
-	super-ddf.o sha1.o crc32.o msg.o bitmap.o xmalloc.o \
-	platform-intel.o probe_roms.o crc32c.o
+MON_OBJS = mdmon.o monitor.o managemon.o \
+	Kill.o ReadMe.o
 
 MON_SRCS = $(patsubst %.o,%.c,$(MON_OBJS))
 
 STATICSRC = pwgr.c
 STATICOBJS = pwgr.o
 
-all : mdadm mdmon
+all : libmdadm.so mdadm mdmon
 man : mdadm.man md.man mdadm.conf.man mdmon.man raid6check.man
 
 check_rundir:
@@ -185,7 +186,7 @@ everything-test: all mdadm.static swap_super test_stripe \
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(COVERITY_FLAGS) -o $@ -c $<
 
 mdadm : $(OBJS) | check_rundir
-	$(CC) $(CFLAGS) $(LDFLAGS) -o mdadm $(OBJS) $(LDLIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o mdadm $(OBJS) $(LDLIBS) -L. -lmdadm
 
 mdadm.static : $(OBJS) $(STATICOBJS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -static -o mdadm.static $(OBJS) $(STATICOBJS) $(LDLIBS)
@@ -206,16 +207,21 @@ mdadm.O2 : $(SRCS) $(INCL) mdmon.O2
 mdmon.O2 : $(MON_SRCS) $(INCL) mdmon.h
 	$(CC) -o mdmon.O2 $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) $(MON_LDFLAGS) -DHAVE_STDINT_H -O2 -D_FORTIFY_SOURCE=2 $(MON_SRCS) $(LDLIBS)
 
+libmdadm.so: $(SHARE_OBJS)
+	$(CC) --shared $(CFLAGS) -o libmdadm.so $(SHARE_OBJS)
+
 # use '-z now' to guarantee no dynamic linker interactions with the monitor thread
 mdmon : $(MON_OBJS) | check_rundir
-	$(CC) $(CFLAGS) $(LDFLAGS) $(MON_LDFLAGS) -Wl,-z,now -o mdmon $(MON_OBJS) $(LDLIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(MON_LDFLAGS) -Wl,-z,now -o mdmon $(MON_OBJS) $(LDLIBS) -L. -lmdadm
+
+
 msg.o: msg.c msg.h
 
 test_stripe : restripe.c xmalloc.o mdadm.h
 	$(CC) $(CFLAGS) $(CXFLAGS) $(LDFLAGS) -o test_stripe xmalloc.o  -DMAIN restripe.c
 
-raid6check : raid6check.o mdadm.h $(CHECK_OBJS)
-	$(CC) $(CXFLAGS) $(LDFLAGS) -o raid6check raid6check.o $(CHECK_OBJS)
+raid6check : raid6check.o mdadm.h 
+	$(CC) $(CXFLAGS) $(LDFLAGS) -o raid6check raid6check.o -L. -lmdadm
 
 mdadm.8 : mdadm.8.in
 	sed -e 's/{DEFAULT_METADATA}/$(DEFAULT_METADATA)/g' \
@@ -238,6 +244,7 @@ raid6check.man : raid6check.8
 
 $(OBJS) : $(INCL) mdmon.h
 $(MON_OBJS) : $(INCL) mdmon.h
+$(SHARE_OBJS) : $(INCL) mdmon.h
 
 sha1.o : sha1.c sha1.h md5.h
 	$(CC) $(CFLAGS) -DHAVE_STDINT_H -o sha1.o -c sha1.c
@@ -245,6 +252,7 @@ sha1.o : sha1.c sha1.h md5.h
 install : mdadm mdmon
 	$(INSTALL) -D $(STRIP) -m 755 mdadm $(DESTDIR)$(BINDIR)/mdadm
 	$(INSTALL) -D $(STRIP) -m 755 mdmon $(DESTDIR)$(BINDIR)/mdmon
+	$(INSTALL) -D $(STRIP) -m 755 libmdadm.so $(DESTDIR)$(LIBDIR)/libmdadm.so
 
 install-static : mdadm.static install-man
 	$(INSTALL) -D $(STRIP) -m 755 mdadm.static $(DESTDIR)$(BINDIR)/mdadm
@@ -297,7 +305,7 @@ test: mdadm mdmon test_stripe swap_super raid6check
 	@echo "Please run './test' as root"
 
 clean :
-	rm -f mdadm mdmon $(OBJS) $(MON_OBJS) $(STATICOBJS) core *.man \
+	rm -f mdadm mdmon $(OBJS) $(MON_OBJS) $(SHARE_OBJS) $(STATICOBJS) core *.man \
 	mdadm.tcc mdadm.uclibc mdadm.static *.orig *.porig *.rej *.alt \
 	.merge_file_* mdadm.Os mdadm.O2 mdmon.O2 swap_super init.cpio.gz \
 	mdadm.uclibc.static test_stripe raid6check raid6check.o mdmon mdadm.8
