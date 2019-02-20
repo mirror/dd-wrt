@@ -46,7 +46,7 @@ int getservport(u_long number, const char *proto)
 	struct rpcent *rpcp;
 	struct servent servbuf, *servp = NULL;
 	int ret = 0;
-#if HAVE_GETRPCBYNUMBER_R
+#ifdef HAVE_GETRPCBYNUMBER_R
 	char rpcdata[1024];
 	struct rpcent rpcbuf;
 
