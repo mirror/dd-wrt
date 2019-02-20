@@ -18,6 +18,6 @@ nfs-utils-install:
 	rm -rf $(INSTALLDIR)/nfs-utils/usr/include
 	rm -rf $(INSTALLDIR)/nfs-utils/usr/lib/pkgconfig
 	rm -rf $(INSTALLDIR)/nfs-utils/usr/share
-	rm -rf $(INSTALLDIR)/nfs-utils/usr/var
+	rm -rf $(INSTALLDIR)/nfs-utils/var
 	rm -f $(INSTALLDIR)/nfs-utils/usr/lib/*.a
 	rm -f $(INSTALLDIR)/nfs-utils/usr/lib/*.la
