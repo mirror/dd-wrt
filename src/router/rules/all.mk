@@ -318,7 +318,7 @@ include rules/libzip.mk
 include rules/qrencode.mk
 include rules/iozone.mk
 include rules/lvm2.mk
-include rules/keyzone.mk
+include rules/keyutils.mk
 include rules/nfs-utils.mk
 
 #
