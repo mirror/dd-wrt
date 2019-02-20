@@ -1,5 +1,5 @@
 CPPFLAGS	:= -I.
-CFLAGS		:= $(COPTS) $(MIPS16_OPT)
+CFLAGS		:= $(COPTS) $(MIPS16_OPT) -DNEED_PRINTF
 INSTALL		:= install
 DESTDIR		:=
 SPECFILE	:= keyutils.spec
