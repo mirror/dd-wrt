@@ -37,8 +37,8 @@ void start_emf(void)
 	for (i = 0; i < cnt; i++) {
 		if (nvram_nmatch("1", "wl%d_wmf_bss_enable", i))
 			eval("emf", "start", getBridge(get_wl_instance_name(i), tmp));
-		else
-			eval("emf", "stop", getBridge(get_wl_instance_name(i), tmp));
+//		else
+//			eval("emf", "stop", getBridge(get_wl_instance_name(i), tmp));
 
 		char *next;
 		char var[80];
@@ -47,8 +47,8 @@ void start_emf(void)
 			foreach(var, vifs, next) {
 				if (nvram_nmatch("1", "%s_wmf_bss_enable", var))
 					eval("emf", "start", getBridge(var, tmp));
-				else
-					eval("emf", "stop", getBridge(var, tmp));
+//				else
+//					eval("emf", "stop", getBridge(var, tmp));
 
 			}
 		}
