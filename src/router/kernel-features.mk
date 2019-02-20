@@ -222,6 +222,9 @@ define kernelfeatures
 	echo "CONFIG_IP_VS_NFCT=y" >> $(LINUXDIR)/.config; \
 	echo "CONFIG_IP_VS_PE_SIP=m" >> $(LINUXDIR)/.config; \
 	fi
+	if [ "$(CONFIG_NFS)" = "y" ]; then \
+		sed -i 's/\# CONFIG_NFS_FS is not set/CONFIG_NFS_FS=m/g' $(LINUXDIR)/.config; \
+	fi
 	if [ "$(CONFIG_VSOCKETS)" = "y" ]; then \
 		sed -i 's/\# CONFIG_VSOCKETS is not set/CONFIG_VSOCKETS=m/g' $(LINUXDIR)/.config; \
 		echo "CONFIG_VMWARE_VMCI_VSOCKETS=m" >> $(LINUXDIR)/.config; \
