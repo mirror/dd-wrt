@@ -55,7 +55,7 @@ void start_igmprt(void)
 	if ((nvram_matchi("dtag_bng", 1) && nvram_matchi("wan_vdsl", 1) && nvram_match("wan_proto", "pppoe")) || !fromvlan) {
 		fprintf(fp, "quickleave\nphyint %s upstream  ratelimit 0  threshold 1\n", get_wan_face());
 	} else {
-		fprintf(fp, "quickleave\nphyint %s upstream  ratelimit 0  threshold 1\n", nvram_safe_get("tvnicfrom"));
+		fprintf(fp, "quickleave\nphyint %s upstream  ratelimit 0  threshold 1 altnet 0.0.0.0/0\n", nvram_safe_get("tvnicfrom"));
 		fprintf(fp, "phyint %s disabled\n", get_wan_face());
 	}
 	if (nvram_matchi("block_multicast", 0)) {
