@@ -1,0 +1,7 @@
+# Included configs don't need a section, it is inherited
+three=Tri
+
+# But if they do, that works also
+[extra_section]
+foo = bar
+bar = baz

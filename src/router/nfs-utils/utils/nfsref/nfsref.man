@@ -1,0 +1,180 @@
+.\"@(#)nfsref.8"
+.\"
+.\" @file utils/nfsref/nfsref.man
+.\" @brief man page for nfsref command
+.\"
+
+.\"
+.\" Copyright 2011, 2018 Oracle.  All rights reserved.
+.\"
+.\" This file is part of nfs-utils.
+.\"
+.\" nfs-utils is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License version 2.0 as
+.\" published by the Free Software Foundation.
+.\"
+.\" nfs-utils is distributed in the hope that it will be useful, but
+.\" WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License version 2.0 for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" version 2.0 along with nfs-utils.  If not, see:
+.\"
+.\"	http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
+.\"
+.TH NFSREF 8 "9 Jan 2018"
+.SH NAME
+nfsref \- manage NFS referrals
+.SH SYNOPSIS
+.B nfsref
+.RB [ \-?d ]
+.RB [ \-t
+.IB type ]
+.B add
+.I pathname server export
+.RI [ " server"
+.IR export " ... ]"
+.P
+.B nfsref
+.RB [ \-?d ]
+.RB [ \-t
+.IB type ]
+.B remove
+.I pathname
+.P
+.B nfsref
+.RB [ \-?d ]
+.RB [ \-t
+.IB type ]
+.B lookup
+.I pathname
+.SH INTRODUCTION
+NFS version 4 introduces the concept of
+.I file system referrals
+to NFS.
+A file system referral is like a symbolic link on a file server
+to another file system share, possibly on another file server.
+On an NFS client, a referral behaves like an automounted directory.
+The client, under the server's direction, mounts a new NFS export
+automatically when an application first accesses that directory.
+.P
+Referrals are typically used to construct a single file name space
+across multiple file servers.
+Because file servers control the shape of the name space,
+no client configuration is required,
+and all clients see the same referral information.
+.P
+The Linux NFS server supports NFS version 4 referrals.
+Administrators can specify the
+.B refer=
+export option in
+.I /etc/exports
+to configure a list of exports from which the client can choose.
+See
+.BR exports (5)
+for details.
+.P
+.SH DESCRIPTION
+The
+.BR nfsref (8)
+command is a simple way to get started managing junction metadata.
+Other administrative commands provide richer access to junction information.
+.SS Subcommands
+Valid
+.BR nfsref (8)
+subcommands are:
+.IP "\fBadd\fP"
+Adds junction information to the directory named by
+.IR pathname .
+The named directory must already exist,
+and must not already contain junction information.
+Regular directory contents are obscured to NFS clients by this operation.
+.IP
+A list of one or more file server and export path pairs
+is also specified on the command line.
+When creating an NFS basic junction, this list is
+stored in an extended attribute of the directory.
+.IP
+If junction creation is successful, the
+.BR nfsref (8)
+command flushes the kernel's export cache
+to remove previously cached junction information.
+.IP "\fBremove\fP"
+Removes junction information from the directory named by
+.IR pathname .
+The named directory must exist,
+and must contain junction information.
+Regular directory contents are made visible to NFS clients again by this operation.
+.IP
+If junction deletion is successful, the
+.BR nfsref (8)
+command flushes the kernel's export cache
+to remove previously cached junction information.
+.IP "\fBlookup\fP"
+Displays junction information stored in the directory named by
+.IR pathname .
+The named directory must exist,
+and must contain junction information.
+.IP
+When looking up an NFS basic junction, the junction information
+in the directory is listed on
+.IR stdout .
+.SS Command line options
+.IP "\fB\-d, \-\-debug"
+Enables debugging messages during operation.
+.IP "\fB\-t, \-\-type=\fIjunction-type\fP"
+Specifies the junction type for the operation.  Valid values for
+.I junction-type
+are
+.B nfs-basic
+or
+.BR nfs-fedfs .
+.IP
+For the
+.B add
+subcommand, the default value if this option is not specified is
+.BR nfs-basic .
+For the
+.B remove
+and
+.B lookup
+subcommands, the
+.B \-\-type
+option is not required.  The
+.BR nfsref (8)
+command operates on whatever junction contents are available.
+.SH EXAMPLES
+Suppose you have two file servers,
+.I top.example.net
+and
+.IR home.example.net .
+You want all your clients to mount
+.I top.example.net:/
+and then see the files under
+.I home.example.net:/
+automatically in
+.IR top:/home .
+.P
+On
+.IR top.example.net ,
+you might issue this command as root:
+.RS
+.sp
+# mkdir /home
+.br
+# nfsref --type=nfs-basic add /home home.example.net /
+.br
+Created junction /home.
+.sp
+.RE
+.SH FILES
+.TP
+.I /etc/exports
+NFS server export table
+.SH "SEE ALSO"
+.BR exports (5)
+.sp
+RFC 5661 for a description of NFS version 4 referrals
+.SH "AUTHOR"
+Chuck Lever <chuck.lever@oracle.com>
