@@ -24,18 +24,18 @@
 <% ifndef("HAVE_IPV6", "<!--"); %>
 <div class="setting">
 	<div class="label"><% tran("idx.dhcp6c_userclass"); %></div>
-	<input name="dhcp_userclass" size="63" maxlength="1023" value="<% nvg("dhcp6c_userclass"); %>" />
+	<input name="dhcp6c_userclass" size="63" maxlength="1023" value="<% nvg("dhcp6c_userclass"); %>" />
 </div>
 <div class="setting">
 	<div class="label"><% tran("service.dhcp6c_vendor"); %></div>
-	<input maxlength="79" size="63" name="dhcpc_vendorclass" value="<% nvg("dhcp6c_vendorclass"); %>" />
+	<input maxlength="79" size="63" name="dhcp6c_vendorclass" value="<% nvg("dhcp6c_vendorclass"); %>" />
 </div>
 <div class="setting">
 	<div class="label"><% tran("idx.dhcp6c_clientid"); %></div>
-	<input name="dhcp_clientid" size="63" maxlength="1023" value="<% nvg("dhcp6c_clientid"); %>" />
+	<input name="dhcp6c_clientid" size="63" maxlength="1023" value="<% nvg("dhcp6c_clientid"); %>" />
 </div>
 <div class="setting">
 	<div class="label"><% tran("idx.dhcp6c_authentication"); %></div>
-	<input name="dhcp_authentication" size="63" maxlength="1023" value="<% nvg("dhcp6c_authentication"); %>" />
+	<input name="dhcp6c_authentication" size="63" maxlength="1023" value="<% nvg("dhcp6c_authentication"); %>" />
 </div>
 <% ifndef("HAVE_IPV6", "-->"); %>
