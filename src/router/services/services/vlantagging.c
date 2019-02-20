@@ -142,7 +142,6 @@ void apply_bridgeif(char *ifname, char *realport)
 	char stp[256];
 	char word[256];
 	char *next, *wordlist;
-	dd_loginfo("bridge", "apply parameters for %s and station %s\n", ifname, realport);
 	wordlist = nvram_safe_get("bridgesif");
 	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(tag, word, 0);
