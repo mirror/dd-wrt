@@ -10,6 +10,8 @@ libtirpc-clean:
 
 libtirpc-install:
 	make -C libtirpc install DESTDIR=$(INSTALLDIR)/libtirpc
+	rm -rf $(INSTALLDIR)/libtirpc/etc
+	mv $(INSTALLDIR)/libtirpc/usr/etc $(INSTALLDIR)/libtirpc/etc
 	rm -rf $(INSTALLDIR)/libtirpc/usr/include
 	rm -rf $(INSTALLDIR)/libtirpc/usr/lib/pkgconfig
 	rm -rf $(INSTALLDIR)/libtirpc/usr/share
