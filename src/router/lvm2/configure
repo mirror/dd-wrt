@@ -7327,9 +7327,6 @@ else
  ;;
 esac
 
-
-$as_echo "#define malloc rpl_malloc" >>confdefs.h
-
 fi
 
 
@@ -7900,9 +7897,6 @@ else
   *) LIBOBJS="$LIBOBJS realloc.$ac_objext"
  ;;
 esac
-
-
-$as_echo "#define realloc rpl_realloc" >>confdefs.h
 
 fi
 
