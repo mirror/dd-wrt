@@ -224,6 +224,25 @@ define kernelfeatures
 	fi
 	if [ "$(CONFIG_NFS)" = "y" ]; then \
 		sed -i 's/\# CONFIG_NFS_FS is not set/CONFIG_NFS_FS=m/g' $(LINUXDIR)/.config; \
+		echo "CONFIG_NFS_V2=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFS_V3=y" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_NFS_V3_ACL is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFS_V4=y" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_NFS_SWAP is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFS_V4_1=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFS_V4_2=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFS_V4_1_IMPLEMENTATION_ID_DOMAIN=\"kernel.org\"" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFS_V4_1_MIGRATION=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFS_FSCACHE=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFS_USE_LEGACY_DNS=y" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_SUNRPC_DEBUG is not set" >> $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_NFSD is not set/CONFIG_NFSD=m/g' $(LINUXDIR)/.config; \
+		echo "CONFIG_NFSD_V3=y" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_NFSD_V3_ACL is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFSD_V4=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFSD_BLOCKLAYOUT=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFSD_SCSILAYOUT=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFSD_FLEXFILELAYOUT=y" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_VSOCKETS)" = "y" ]; then \
 		sed -i 's/\# CONFIG_VSOCKETS is not set/CONFIG_VSOCKETS=m/g' $(LINUXDIR)/.config; \
