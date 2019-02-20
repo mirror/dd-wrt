@@ -1151,11 +1151,14 @@ idx.legend3="Time Settings";
 idx.timeset="Time Zone";
 idx.static_ip="Static IP";
 idx.dhcp="Automatic Configuration - DHCP";
-idx.dhcp_auth="DHCP Authenticated";
-idx.dhcp_userclass="Userclass";
+idx.dhcp_auth="DHCP Authentication";
+idx.dhcp6c_auth="DHCP IPV6 Authentication";
+idx.dhcp_userclass="DHCP Userclass";
+idx.dhcp6c_userclass="DHCP IPV6 Userclass";
 idx.dhcp_authentication="Authentication";
 idx.dhcp_classid="Class ID";
-idx.dhcp_clientid="Client ID";
+idx.dhcp_clientid="DHCP Client ID";
+idx.dhcp6c_clientid="DHCP IPV6 Client ID";
 idx.dhcp_legend="Network Address Server Settings (DHCP)";
 idx.dhcp_type="DHCP Type";
 idx.dhcp_srv="DHCP Server";
@@ -1629,7 +1632,8 @@ service.kaid_orbdeepport="ORB Deep Port";
 
 //DHCPd
 service.dhcp_legend="DHCP Client";
-service.dhcp_vendor="Set Vendorclass";
+service.dhcp_vendor="DHCP Vendorclass";
+service.dhcp6c_vendor="DHCP IPV6 Vendorclass";
 service.dhcp_reqip="Request IP";
 service.dhcp_legend2="DHCP Server";
 service.dhcp_srv="DHCP Daemon";
