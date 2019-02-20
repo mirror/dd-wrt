@@ -5208,7 +5208,9 @@ void start_hotplug_net(void)
 		eval("ifconfig", interface, "up");
 		if (nvram_matchi(bridged, 1)) {
 			br_add_interface(getBridge(ifname, tmp), interface);
-			apply_bridgeif(ifname, interface);
+#ifdef HAVE_VLANTAGGING
+			apply_bridgeif(interface);
+#endif
 		}
 
 	}
