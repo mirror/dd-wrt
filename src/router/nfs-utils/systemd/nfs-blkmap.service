@@ -1,0 +1,16 @@
+[Unit]
+Description=pNFS block layout mapping daemon
+DefaultDependencies=no
+Conflicts=umount.target
+After=rpc_pipefs.target
+Requires=rpc_pipefs.target
+
+PartOf=nfs-utils.service
+
+[Service]
+Type=forking
+PIDFile=/var/run/blkmapd.pid
+ExecStart=/usr/sbin/blkmapd
+
+[Install]
+WantedBy=nfs-client.target

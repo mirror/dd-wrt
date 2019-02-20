@@ -1,0 +1,249 @@
+.TH NFS.CONF 5
+.SH NAME
+nfs.conf \- general configuration for NFS daemons and tools
+.SH SYNOPSIS
+.I /etc/nfs.conf
+.SH DESCRIPTION
+.PP
+This file contains site-specific configuration for various NFS daemons
+and other processes.  Most configuration can also be passed to
+processes via command line arguments, but it can be more convenient to
+have a central file.  In particular, this encourages consistent
+configuration across different processes.
+.PP
+When command line options are provided, they override values set in
+this file.  When this file does not specify a particular parameter,
+and no command line option is provided, each tool provides its own
+default values.
+.PP
+The file format supports multiple sections, each of which can contain
+multiple value assignments.  A section is introduced by a line
+containing the section name enclosed in square brackets, so
+.RS
+.B [global]
+.RE
+would introduce a section called
+.BR global .
+A value assignment is a single line that has the name of the value, an
+equals sign, and a setting for the value, so
+.RS
+.B threads = 4
+.RE
+would set the value named
+.B threads
+in the current section to
+.BR 4 .
+Leading and trailing spaces and tab
+are ignored, as are spaces and tabs surrounding the equals sign.
+Single and double quotes surrounding the assigned value are also
+removed.  If the resulting string is empty, the whole assignment
+is ignored.
+.PP
+Any line starting with
+.RB \*(lq # \*(rq
+or
+.RB \*(lq ; \*(rq
+is ignored, as is any blank line.
+.PP
+If the assigned value started with a
+.RB \*(lq $ \*(rq
+then the remainder is treated as a name and looked for in the section
+.B [environment]
+or in the processes environment (see
+.BR environ (7)).
+The value found is used for this value.
+.PP
+The value name
+.B include
+is special.  If a section contains
+.RS
+.B include = /some/file/name
+.RE
+then the named file will be read, and any value assignments found
+there-in will be added to the current section.  If the file contains
+section headers, then new sections will be created just as if the
+included file appeared in place of the
+.B include
+line.
+.PP
+Lookup of section and value names is case-insensitive.
+
+Where a Boolean value is expected, any of
+.BR true ,
+.BR t ,
+.BR yes ,
+.BR y ,
+.BR on ", or"
+.B 1
+can be used for "true", while
+.BR false ,
+.BR f ,
+.BR no ,
+.BR n ,
+.BR off ", or"
+.B 0
+can be used for "false".  Comparisons are case-insensitive.
+
+.SH SECTIONS
+The following sections are known to various programs, and can contain
+the given named values.  Most sections can also contain a
+.B debug
+value, which can be one or more from the list
+.BR general ,
+.BR call ,
+.BR auth ,
+.BR parse ,
+.BR all .
+When a list is given, the members should be comma-separated.
+.TP
+.B general
+Recognized values:
+.BR pipefs-directory .
+
+See
+.BR blkmapd (8),
+.BR rpc.idmapd (8),
+and
+.BR rpc.gssd (8)
+for details.
+
+.TP
+.B nfsdcltrack
+Recognized values:
+.BR storagedir .
+
+The
+.B nfsdcltrack
+program is run directly by the Linux kernel and there is no
+opportunity to provide command line arguments, so the configuration
+file is the only way to configure this program.  See
+.BR nfsdcltrack (8)
+for details.
+
+.TP
+.B nfsd
+Recognized values:
+.BR threads ,
+.BR host ,
+.BR port ,
+.BR grace-time ,
+.BR lease-time ,
+.BR udp ,
+.BR tcp ,
+.BR vers2 ,
+.BR vers3 ,
+.BR vers4 ,
+.BR vers4.0 ,
+.BR vers4.1 ,
+.BR vers4.2 ,
+.BR rdma .
+
+Version and protocol values are Boolean values as described above,
+and are also used by
+.BR rpc.mountd .
+Threads and the two times are integers.
+.B port
+and
+.B rdma
+are service names or numbers.  See
+.BR rpc.nfsd (8)
+for details.
+
+.TP
+.B mountd
+Recognized values:
+.BR manage-gids ,
+.BR descriptors ,
+.BR port ,
+.BR threads ,
+.BR reverse-lookup ,
+.BR state-directory-path ,
+.BR ha-callout .
+
+These, together with the protocol and version values in the
+.B [nfsd]
+section, are used to configure mountd.  See
+.BR rpc.mountd (8)
+for details.
+
+The
+.B state-directory-path
+value in the
+.B [mountd]
+section is also used by
+.BR exportfs (8).
+
+.TP
+.B statd
+Recognized values:
+.BR port ,
+.BR outgoing-port ,
+.BR name ,
+.BR state-directory-path ,
+.BR ha-callout .
+
+See
+.BR rpc.statd (8)
+for details.
+
+.TP
+.B lockd
+Recognized values:
+.B port
+and
+.BR udp-port .
+
+See
+.BR rpc.statd (8)
+for details.
+
+.TP
+.B sm-notify
+Recognized values:
+.BR retry-time ,
+.BR outgoing-port ", and"
+.BR outgoing-addr .
+
+See
+.BR sm-notify (8)
+for details.
+
+.TP
+.B gssd
+Recognized values:
+.BR use-memcache ,
+.BR use-machine-creds ,
+.BR avoid-dns ,
+.BR limit-to-legacy-enctypes ,
+.BR context-timeout ,
+.BR rpc-timeout ,
+.BR keytab-file ,
+.BR cred-cache-directory ,
+.BR preferred-realm .
+
+See
+.BR rpc.gssd (8)
+for details.
+
+.TP
+.B svcgssd
+Recognized values:
+.BR principal .
+
+See
+.BR rpc.svcgssd (8)
+for details.
+
+.TP
+.B exportfs
+Only
+.B debug=
+is recognized.
+
+.SH FILES
+.I /etc/nfs.conf
+.SH SEE ALSO
+.BR nfsdcltrack (8),
+.BR rpc.nfsd (8),
+.BR rpc.mountd (8),
+.BR nfsmount.conf (5).
