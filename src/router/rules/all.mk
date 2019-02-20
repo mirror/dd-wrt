@@ -312,10 +312,12 @@ include rules/xz.mk
 include rules/zstd.mk
 include rules/exfat-utils.mk
 include rules/dosfstools.mk
+include rules/libtirpc.mk
 include rules/zfs.mk
 include rules/libzip.mk
 include rules/qrencode.mk
 include rules/iozone.mk
+include rules/nfs-utils.mk
 
 #
 # Generic rules

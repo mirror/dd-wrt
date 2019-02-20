@@ -1,22 +1,3 @@
-libtirpc-configure:
-	cd libtirpc && ./bootstrap
-	cd libtirpc && ./configure --enable-fast-install --with-sysroot=yes --libdir=/usr/lib --host=$(ARCH)-linux CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF" LDFLAGS="-L$(TOP)/zlib" --disable-gssapi --disable-static --prefix=/usr
-
-libtirpc:
-	make -C libtirpc
-
-libtirpc-clean:
-	make -C libtirpc clean
-
-libtirpc-install:
-	make -C libtirpc install DESTDIR=$(INSTALLDIR)/libtirpc
-	rm -rf $(INSTALLDIR)/libtirpc/usr/include
-	rm -rf $(INSTALLDIR)/libtirpc/usr/lib/pkgconfig
-	rm -rf $(INSTALLDIR)/libtirpc/usr/share
-	rm -f $(INSTALLDIR)/libtirpc/usr/lib/*.a
-	rm -f $(INSTALLDIR)/libtirpc/usr/lib/*.la
-
-
 zfs-configure: libtirpc-configure libtirpc libudev openssl
 	cd zfs && ./autogen.sh
 	cd zfs && autoreconf
