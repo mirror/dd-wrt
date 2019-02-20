@@ -1,0 +1,5 @@
+vgmknodes checks the LVM device nodes in /dev that are needed for active
+LVs and creates any that are missing and removes unused ones.
+
+This command should not usually be needed if all the system components are
+interoperating correctly.

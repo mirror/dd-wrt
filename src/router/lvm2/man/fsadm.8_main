@@ -1,0 +1,120 @@
+.TH "FSADM" "8" "LVM TOOLS #VERSION#" "Red Hat, Inc" "\""
+.SH "NAME"
+fsadm \(em utility to resize or check filesystem on a device
+.SH SYNOPSIS
+.
+.PD 0
+.ad l
+.HP 5
+.B fsadm
+.RI [ options ]
+.BR check
+.IR device
+.
+.HP
+.B fsadm
+.RI [ options ]
+.BR resize
+.IR device
+.RI [ new_size ]
+.PD
+.ad b
+.
+.SH DESCRIPTION
+.
+fsadm utility checks or resizes the filesystem on a device.
+It tries to use the same API for
+.BR ext2 ,
+.BR ext3 ,
+.BR ext4 ,
+.BR ReiserFS
+.RB and
+.BR XFS
+filesystem.
+.
+.SH OPTIONS
+.
+.HP
+.BR -e | --ext-offline
+.br
+Unmount ext2/ext3/ext4 filesystem before doing resize.
+.
+.HP
+.BR -f | --force
+.br
+Bypass some sanity checks.
+.
+.HP
+.BR -h | --help
+.br
+Display the help text.
+.
+.HP
+.BR -n | --dry-run
+.br
+Print commands without running them.
+.
+.HP
+.BR -v | --verbose
+.br
+Be more verbose.
+.
+.HP
+.BR -y | --yes
+.br
+Answer "yes" at any prompts.
+.
+.HP
+.BR -c | --cryptresize
+.br
+Resize dm-crypt mapping together with filesystem detected on the device. The dm-crypt device must be recognizable by cryptsetup(8).
+.
+.HP
+.BR \fInew_size [ B | K | M | G | T | P | E ]
+.br
+Absolute number of filesystem blocks to be in the filesystem,
+or an absolute size using a suffix (in powers of 1024).
+If new_size is not supplied, the whole device is used.
+.
+.SH DIAGNOSTICS
+.
+On successful completion, the status code is 0.
+A status code of 2 indicates the operation was interrupted by the user.
+A status code of 3 indicates the requested check operation could not be performed
+because the filesystem is mounted and does not support an online
+.BR fsck (8).
+A status code of 1 is used for other failures.
+.
+.SH EXAMPLES
+.
+Resize the filesystem on logical volume \fI/dev/vg/test\fP to 1000 megabytes.
+If \fI/dev/vg/test\fP contains ext2/ext3/ext4
+filesystem it will be unmounted prior the resize.
+All [y/n] questions will be answered 'y'.
+.sp
+.B fsadm -e -y resize /dev/vg/test 1000M
+.
+.SH ENVIRONMENT VARIABLES
+.
+.TP
+.B "TMPDIR   "
+The temporary directory name for mount points. Defaults to "\fI/tmp\fP".
+.TP
+.B DM_DEV_DIR
+The device directory name.
+Defaults to "\fI/dev\fP" and must be an absolute path.
+
+.SH SEE ALSO
+.nh
+.BR lvm (8),
+.BR lvresize (8),
+.BR lvm.conf (5),
+.BR fsck (8),
+.BR tune2fs (8),
+.BR resize2fs (8),
+.BR reiserfstune (8),
+.BR resize_reiserfs (8),
+.BR xfs_info (8),
+.BR xfs_growfs (8),
+.BR xfs_check (8),
+.BR cryptsetup (8)

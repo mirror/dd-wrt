@@ -1,0 +1,15 @@
+[Unit]
+Description=Device-mapper event daemon
+Documentation=man:dmeventd(8)
+Requires=dm-event.socket
+After=dm-event.socket
+Before=local-fs-pre.target shutdown.target
+Conflicts=shutdown.target
+DefaultDependencies=no
+
+[Service]
+Type=simple
+ExecStart=@SBINDIR@/dmeventd -f
+Environment=SD_ACTIVATION=1
+PIDFile=@DMEVENTD_PIDFILE@
+OOMScoreAdjust=-1000

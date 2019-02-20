@@ -1,0 +1,13 @@
+[Unit]
+Description=LVM2 poll daemon socket
+Documentation=man:lvmpolld(8)
+DefaultDependencies=no
+Conflicts=shutdown.target
+
+[Socket]
+ListenStream=@DEFAULT_RUN_DIR@/lvmpolld.socket
+SocketMode=0600
+RemoveOnStop=true
+
+[Install]
+WantedBy=sysinit.target

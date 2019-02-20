@@ -1,0 +1,159 @@
+#
+# Copyright (C) 2006-2015 Red Hat, Inc. All rights reserved.
+#
+# This file is part of LVM2.
+#
+# This copyrighted material is made available to anyone wishing to use,
+# modify, copy, or redistribute it subject to the terms and conditions
+# of the GNU General Public License v.2.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+top_builddir = @top_builddir@
+
+SOURCES = lvm2_activation_generator_systemd_red_hat.c
+TARGETS = lvm2_activation_generator_systemd_red_hat
+
+include $(top_builddir)/make.tmpl
+
+ifeq ("@BUILD_DMEVENTD@", "yes")
+	LDFLAGS += -Wl,-rpath-link,$(top_builddir)/daemons/dmeventd
+endif
+
+LVM_SCRIPTS = lvmdump.sh
+DM_SCRIPTS =
+
+ifeq ("@FSADM@", "yes")
+	LVM_SCRIPTS += fsadm.sh
+endif
+
+ifeq ("@BLKDEACTIVATE@", "yes")
+	DM_SCRIPTS += blkdeactivate.sh
+endif
+
+OCF_SCRIPTS =
+ifeq ("@OCF@", "yes")
+        OCF_SCRIPTS += VolumeGroup.ocf
+endif
+
+vpath %.sh $(srcdir)
+vpath %.ocf $(srcdir)
+
+%_install: %.sh
+	$(Q) $(INSTALL_PROGRAM) -D $< $(sbindir)/$(basename $(<F))
+
+%_install: %.ocf
+	$(Q) $(INSTALL_DIR) $(ocf_scriptdir)
+	$(Q) $(INSTALL_SCRIPT) $< $(ocf_scriptdir)/$(basename $(<F))
+
+install_lvm2: $(LVM_SCRIPTS:.sh=_install)
+install_device-mapper: $(DM_SCRIPTS:.sh=_install)
+
+install_ocf: $(OCF_SCRIPTS:.ocf=_install)
+
+install: install_lvm2 install_ocf install_device-mapper
+
+# FIXME Customise for other distributions
+install_initscripts:
+	@echo "    [INSTALL] $<"
+	$(Q) $(INSTALL_DIR) $(initdir)
+ifeq ("@BUILD_DMEVENTD@", "yes")
+	$(Q) $(INSTALL_SCRIPT) lvm2_monitoring_init_red_hat $(initdir)/lvm2-monitor
+endif
+ifeq ("@BUILD_LVMPOLLD@", "yes")
+	$(Q) $(INSTALL_SCRIPT) lvm2_lvmpolld_init_red_hat $(initdir)/lvm2-lvmpolld
+endif
+ifeq ("@BUILD_CMIRRORD@", "yes")
+	$(Q) $(INSTALL_SCRIPT) cmirrord_init_red_hat $(initdir)/cmirrord
+endif
+ifeq ("@BLKDEACTIVATE@", "yes")
+	$(Q) $(INSTALL_SCRIPT) blk_availability_init_red_hat $(initdir)/blk-availability
+endif
+
+CFLAGS_lvm2_activation_generator_systemd_red_hat.o += $(EXTRA_EXEC_CFLAGS)
+
+lvm2_activation_generator_systemd_red_hat: $(OBJECTS) $(LVMINTERNAL_LIBS)
+	@echo "    [CC] $@"
+	$(Q) $(CC) -o $@ $(OBJECTS) $(CFLAGS) $(LDFLAGS) $(EXTRA_EXEC_LDFLAGS) $(ELDFLAGS) $(LVMINTERNAL_LIBS) $(LIBS)
+
+install_systemd_generators:
+	@echo "    [INSTALL] $<"
+	$(Q) $(INSTALL_DIR) $(systemd_generator_dir)
+	$(Q) $(INSTALL_PROGRAM) lvm2_activation_generator_systemd_red_hat $(systemd_generator_dir)/lvm2-activation-generator
+
+install_systemd_units:	install_dbus_service
+	@echo "    [INSTALL] $<"
+	$(Q) $(INSTALL_DIR) $(systemd_unit_dir)
+	$(Q) $(INSTALL_DATA) lvm2-pvscan.service $(systemd_unit_dir)/lvm2-pvscan@.service
+ifeq ("@BUILD_DMEVENTD@", "yes")
+	$(Q) $(INSTALL_DATA) dm_event_systemd_red_hat.socket $(systemd_unit_dir)/dm-event.socket
+	$(Q) $(INSTALL_DATA) dm_event_systemd_red_hat.service $(systemd_unit_dir)/dm-event.service
+	$(Q) $(INSTALL_DATA) lvm2_monitoring_systemd_red_hat.service $(systemd_unit_dir)/lvm2-monitor.service
+endif
+ifeq ("@BLKDEACTIVATE@", "yes")
+	$(Q) $(INSTALL_DATA) blk_availability_systemd_red_hat.service $(systemd_unit_dir)/blk-availability.service
+endif
+ifeq ("@BUILD_LVMPOLLD@", "yes")
+	$(Q) $(INSTALL_DATA) lvm2_lvmpolld_systemd_red_hat.socket $(systemd_unit_dir)/lvm2-lvmpolld.socket
+	$(Q) $(INSTALL_DATA) lvm2_lvmpolld_systemd_red_hat.service $(systemd_unit_dir)/lvm2-lvmpolld.service
+endif
+ifeq ("@BUILD_LVMLOCKD@", "yes")
+	$(Q) $(INSTALL_DATA) lvmlockd.service $(systemd_unit_dir)/lvmlockd.service
+	$(Q) $(INSTALL_DATA) lvmlocks.service $(systemd_unit_dir)/lvmlocks.service
+endif
+ifeq ("@BUILD_CMIRRORD@", "yes")
+	$(Q) $(INSTALL_DATA) lvm2_cmirrord_systemd_red_hat.service $(systemd_unit_dir)/lvm2-cmirrord.service
+endif
+ifeq ("@BUILD_LVMDBUSD@", "yes")
+	$(Q) $(INSTALL_DATA) lvm2_lvmdbusd_systemd_red_hat.service $(systemd_unit_dir)/lvm2-lvmdbusd.service
+endif
+
+ifeq ("@BUILD_LVMDBUSD@", "yes")
+install_dbus_service:
+	@echo "    [INSTALL] $<"
+	$(Q) $(INSTALL_DIR) $(dbusconfdir)
+	$(Q) $(INSTALL_DIR) $(dbusservicedir)
+	$(Q) $(INSTALL_DATA) $(top_srcdir)/scripts/com.redhat.lvmdbus1.conf $(dbusconfdir)
+	$(Q) $(INSTALL_DATA) com.redhat.lvmdbus1.service $(dbusservicedir)
+
+install_systemd_units:	install_dbus_service
+endif
+
+install_tmpfiles_configuration:
+	@echo "    [INSTALL] $<"
+	$(Q) $(INSTALL_DIR) $(tmpfiles_dir)
+	$(Q) $(INSTALL_DATA) lvm2_tmpfiles_red_hat.conf $(tmpfiles_dir)/lvm2.conf
+
+DISTCLEAN_TARGETS += \
+	blkdeactivate.sh \
+	blk_availability_init_red_hat \
+	blk_availability_systemd_red_hat.service \
+	clvmd_init_red_hat \
+	cmirrord_init_red_hat \
+	com.redhat.lvmdbus1.service \
+	dm_event_systemd_red_hat.service \
+	dm_event_systemd_red_hat.socket \
+	lvmdump.sh \
+	lvm2-pvscan.service \
+	lvm2_cluster_activation_red_hat.sh \
+	lvm2_cluster_activation_systemd_red_hat.service \
+	lvm2_clvmd_systemd_red_hat.service \
+	lvm2_cmirrord_systemd_red_hat.service \
+	lvm2_lvmdbusd_systemd_red_hat.service \
+	lvm2_lvmpolld_init_red_hat \
+	lvm2_lvmpolld_systemd_red_hat.service \
+	lvm2_lvmpolld_systemd_red_hat.socket \
+	lvmlockd.service \
+	lvmlocks.service \
+	lvm2_monitoring_init_red_hat \
+	lvm2_monitoring_systemd_red_hat.service \
+	lvm2_pvscan_systemd_red_hat@.service \
+	lvm2_tmpfiles_red_hat.conf
+
+# Remove ancient files
+DISTCLEAN_TARGETS += \
+	lvm2_lvmlocking_systemd_red_hat.service

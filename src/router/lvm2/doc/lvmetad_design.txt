@@ -1,0 +1,208 @@
+The design of LVMetaD
+=====================
+
+Invocation and setup
+--------------------
+
+The daemon should be started automatically by the first LVM command issued on
+the system, when needed. The usage of the daemon should be configurable in
+lvm.conf, probably with its own section. Say
+
+    lvmetad {
+        enabled = 1 # default
+        autostart = 1 # default
+        socket = "/path/to/socket" # defaults to /var/run/lvmetad or such
+    }
+
+Library integration
+-------------------
+
+When a command needs to access metadata, it currently needs to perform a scan
+of the physical devices available in the system. This is a possibly quite
+expensive operation, especially if many devices are attached to the system. In
+most cases, LVM needs a complete image of the system's PVs to operate
+correctly, so all devices need to be read, to at least determine presence (and
+content) of a PV label. Additional IO is done to obtain or write metadata
+areas, but this is only marginally related and addressed by Dave's
+metadata-balancing work.
+
+In the existing scanning code, a cache layer exists, under
+lib/cache/lvmcache.[hc]. This layer is keeping a textual copy of the metadata
+for a given volume group, in a format_text form, as a character string. We can
+plug the lvmetad interface at this level: in lvmcache_get_vg, which is
+responsible for looking up metadata in a local cache, we can, if the metadata
+is not available in the local cache, query lvmetad. Under normal circumstances,
+when a VG is not cached yet, this operation fails and prompts the caller to
+perform a scan. Under the lvmetad enabled scenario, this would never happen and
+the fall-through would only be activated when lvmetad is disabled, which would
+lead to local cache being populated as usual through a locally executed scan.
+
+Therefore, existing stand-alone (i.e. no lvmetad) functionality of the tools
+would be not compromised by adding lvmetad. With lvmetad enabled, however,
+significant portions of the code would be short-circuited.
+
+Scanning
+--------
+
+Initially (at least), the lvmetad will be not allowed to read disks: it will
+rely on an external program to provide the metadata. In the ideal case, this
+will be triggered by udev. The role of lvmetad is then to collect and maintain
+an accurate (up to the data it has received) image of the VGs available in the
+system. I imagine we could extend the pvscan command (or add a new one, say
+lvmetad_client, if pvscan is found to be inappropriate):
+
+    $ pvscan --cache /dev/foo
+    $ pvscan --cache --remove /dev/foo
+
+These commands would simply read the label and the MDA (if applicable) from the
+given PV and feed that data to the running lvmetad, using
+lvmetad_{add,remove}_pv (see lvmetad_client.h).
+
+We however need to ensure a couple of things here:
+
+1) only LVM commands ever touch PV labels and VG metadata
+2) when a device is added or removed, udev fires a rule to notify lvmetad
+
+While the latter is straightforward, there are issues with the first. We
+*might* want to invoke the dreaded "watch" udev rule in this case, however it
+ends up being implemented. Of course, we can also rely on the sysadmin to be
+reasonable and not write over existing LVM metadata without first telling LVM
+to let go of the respective device(s).
+
+Even if we simply ignore the problem, metadata write should fail in these
+cases, so the admin should be unable to do substantial damage to the system. If
+there were active LVs on top of the vanished PV, they are in trouble no matter
+what happens there.
+
+Incremental scan
+----------------
+
+There are some new issues arising with the "udev" scan mode. Namely, the
+devices of a volume group will be appearing one by one. The behaviour in this
+case will be very similar to the current behaviour when devices are missing:
+the volume group, until *all* its physical volumes have been discovered and
+announced by udev, will be in a state with some of its devices flagged as
+MISSING_PV. This means that the volume group will be, for most purposes,
+read-only until it is complete and LVs residing on yet-unknown PVs won't
+activate without --partial. Under usual circumstances, this is not a problem
+and the current code for dealing with MISSING_PVs should be adequate.
+
+However, the code for reading volume groups from disks will need to be adapted,
+since it currently does not work incrementally. Such support will need to track
+metadata-less PVs that have been encountered so far and to provide a way to
+update an existing volume group. When the first PV with metadata of a given VG
+is encountered, the VG is created in lvmetad (probably in the form of "struct
+volume_group") and it is assigned any previously cached metadata-less PVs it is
+referencing. Any PVs that were not yet encountered will be marked as MISSING_PV
+in the "struct volume_group". Upon scanning a new PV, if it belongs to any
+already-known volume group, this PV is checked for consistency with the already
+cached metadata (in a case of mismatch, the VG needs to be recovered or
+declared conflicted), and is subsequently unmarked MISSING_PV. Care need be
+taken not to unmark MISSING_PV on PVs that have this flag in their persistent
+metadata, though.
+
+The most problematic aspect of the whole design may be orphan PVs. At any given
+point, a metadata-less PV may appear orphaned, if a PV of its VG with metadata
+has not been scanned yet. Eventually, we will have to decide that this PV is
+really an orphan and enable its usage for creating or extending VGs. In
+practice, the decision might be governed by a timeout or assumed immediately --
+the former case is a little safer, the latter is probably more transparent. I
+am not very keen on using timeouts and we can probably assume that the admin
+won't blindly try to re-use devices in a way that would trip up LVM in this
+respect. I would be in favour of just assuming that metadata-less VGs with no
+known referencing VGs are orphans -- after all, this is the same approach as we
+use today. The metadata balancing support may stress this a bit more than the
+usual contemporary setups do, though.
+
+Automatic activation
+--------------------
+
+It may also be prudent to provide a command that will block until a volume
+group is complete, so that scripts can reliably activate/mount LVs and such. Of
+course, some PVs may never appear, so a timeout is necessary. Again, this is
+something not handled by current tools, but may become more important in
+future. It probably does not need to be implemented right away though.
+
+The other aspect of the progressive VG assembly is automatic activation. The
+currently only problem with that is that we would like to avoid having
+activation code in lvmetad, so we would prefer to fire up an event of some sort
+and let someone else handle the activation and whatnot.
+
+Cluster support
+---------------
+
+When working in a cluster, clvmd integration will be necessary: clvmd will need
+to instruct lvmetad to re-read metadata as appropriate due to writes on remote
+hosts. Overall, this is not hard, but the devil is in the details. I would
+possibly disable lvmetad for clustered volume groups in the first phase and
+only proceed when the local mode is robust and well tested.
+
+With lvmlockd, lvmetad state is kept up to date by flagging either an
+individual VG as "invalid", or the global state as "invalid".  When either
+the VG or the global state are read, this invalid flag is returned along
+with the data.  The client command can check for this invalid state and
+decide to read the information from disk rather than use the stale cached
+data.  After the latest data is read from disk, the command may choose to
+send it to lvmetad to update the cache.  lvmlockd uses version numbers
+embedded in its VG and global locks to detect when cached data becomes
+invalid, and it then tells lvmetad to set the related invalid flag.
+dct, 2015-06-23
+
+Protocol & co.
+--------------
+
+I expect a simple text-based protocol executed on top of an Unix Domain Socket
+to be the communication interface for lvmetad. Ideally, the requests and
+replies will be well-formed "config file" style strings, so we can re-use
+existing parsing infrastructure.
+
+Since we already have two daemons, I would probably look into factoring some
+common code for daemon-y things, like sockets, communication (including thread
+management) and maybe logging and re-using it in all the daemons (clvmd,
+dmeventd and lvmetad). This shared infrastructure should live under
+daemons/common, and the existing daemons shall be gradually migrated to the
+shared code.
+
+Future extensions
+-----------------
+
+The above should basically cover the use of lvmetad as a cache-only
+daemon. Writes could still be executed locally, and the new metadata version
+can be provided to lvmetad through the socket the usual way. This is fairly
+natural and in my opinion reasonable. The lvmetad acts like a cache that will
+hold metadata, no more no less.
+
+Above this, there is a couple of things that could be worked on later, when the
+above basic design is finished and implemented.
+
+_Metadata writing_: We may want to support writing new metadata through
+lvmetad. This may or may not be a better design, but the write itself should be
+more or less orthogonal to the rest of the story outlined above.
+
+_Locking_: Other than directing metadata writes through lvmetad, one could
+conceivably also track VG/LV locking through the same.
+
+_Clustering_: A deeper integration of lvmetad with clvmd might be possible and
+maybe desirable. Since clvmd communicates over the network with other clvmd
+instances, this could be extended to metadata exchange between lvmetad's,
+further cutting down scanning costs. This would combine well with the
+write-through-lvmetad approach.
+
+Testing
+-------
+
+Since (at least bare-bones) lvmetad has no disk interaction and is fed metadata
+externally, it should be very amenable to automated testing. We need to provide
+a client that can feed arbitrary, synthetic metadata to the daemon and request
+the data back, providing reasonable (nearly unit-level) testing infrastructure.
+
+Battle plan & code layout
+=========================
+
+- config_tree from lib/config needs to move to libdm/
+- daemon/common *client* code can go to libdm/ as well (say
+  libdm/libdm-daemon.{h,c} or such)
+- daemon/common *server* code stays, is built in daemon/ toplevel as a static
+  library, say libdaemon-common.a
+- daemon/lvmetad *client* code goes to lib/lvmetad
+- daemon/lvmetad *server* code stays (links in daemon/libdaemon_common.a)

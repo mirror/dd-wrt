@@ -1,0 +1,12 @@
+.TH "LVMSAR" "8" "LVM TOOLS #VERSION#" "Red Hat, Inc" "\""
+.SH "NAME"
+lvmsar \(em LVM system activity reporter
+.SH "SYNOPSIS"
+.B lvmsar
+.SH "DESCRIPTION"
+lvmsar is not supported under LVM2. The device-mapper statistics
+facility provides similar performance metrics using the \fBdmstats(8)\fP
+command.
+.SH "SEE ALSO"
+.BR dmstats (8)
+.BR lvm (8)

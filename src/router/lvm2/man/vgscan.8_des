@@ -1,0 +1,1 @@
+vgscan scans all supported LVM block devices in the system for VGs.

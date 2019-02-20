@@ -1,0 +1,14 @@
+dm_bitset_parse_list
+dm_stats_create_group
+dm_stats_current_object_type
+dm_stats_delete_group
+dm_stats_get_alias
+dm_stats_get_counter
+dm_stats_get_group_descriptor
+dm_stats_get_group_id
+dm_stats_get_metric
+dm_stats_get_nr_groups
+dm_stats_group_present
+dm_stats_object_type
+dm_stats_set_alias
+dm_stats_walk_init

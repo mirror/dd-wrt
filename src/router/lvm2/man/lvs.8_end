@@ -1,0 +1,77 @@
+.SH NOTES
+.
+The lv_attr bits are:
+.IP 1 3
+Volume type: (C)ache, (m)irrored, (M)irrored without initial sync, (o)rigin,
+(O)rigin with merging snapshot, (r)aid, (R)aid without initial sync,
+(s)napshot, merging (S)napshot, (p)vmove, (v)irtual,
+mirror or raid (i)mage, mirror or raid (I)mage out-of-sync, mirror (l)og device,
+under (c)onversion, thin (V)olume, (t)hin pool, (T)hin pool data, raid or
+pool m(e)tadata or pool metadata spare.
+.IP 2 3
+Permissions: (w)riteable, (r)ead-only, (R)ead-only activation of non-read-only
+volume
+.IP 3 3
+Allocation policy:  (a)nywhere, (c)ontiguous, (i)nherited, c(l)ing, (n)ormal
+This is capitalised if the volume is currently locked against allocation
+changes, for example during
+.BR pvmove (8).
+.IP 4 3
+fixed (m)inor
+.IP 5 3
+State: (a)ctive, (h)istorical, (s)uspended, (I)nvalid snapshot,
+invalid (S)uspended snapshot, snapshot (m)erge failed,
+suspended snapshot (M)erge failed, mapped (d)evice present without tables,
+mapped device present with (i)nactive table, thin-pool (c)heck needed,
+suspended thin-pool (C)heck needed, (X) unknown
+.IP 6 3
+device (o)pen, (X) unknown
+.IP 7 3
+Target type: (C)ache, (m)irror, (r)aid, (s)napshot, (t)hin, (u)nknown, (v)irtual.
+This groups logical volumes related to the same kernel target together.  So,
+for example, mirror images, mirror logs as well as mirrors themselves appear as
+(m) if they use the original device-mapper mirror kernel driver; whereas the raid
+equivalents using the md raid kernel driver all appear as (r).
+Snapshots using the original device-mapper driver appear as (s); whereas
+snapshots of thin volumes using the new thin provisioning driver appear as (t).
+.IP 8 3
+Newly-allocated data blocks are overwritten with blocks of (z)eroes before use.
+.IP 9 3
+Volume Health, where there are currently three groups of attributes identified:
+.IP
+Common ones for all Logical Volumes: (p)artial, (X) unknown.
+.br
+(p)artial signifies that one or more of the Physical Volumes this Logical
+Volume uses is missing from the system. (X) unknown signifies the status
+is unknown.
+.IP
+Related to RAID Logical Volumes: (r)efresh needed, (m)ismatches exist, (w)ritemostly.
+.br
+(r)efresh signifies that one or more of the Physical Volumes this RAID Logical
+Volume uses had suffered a write error. The write error could be due to a
+temporary failure of that Physical Volume or an indication that it is failing.
+The device should be refreshed or replaced. (m)ismatches signifies that the
+RAID logical volume has portions of the array that are not coherent.
+Inconsistencies are detected by initiating a "check" on a RAID logical volume.
+(The scrubbing operations, "check" and "repair", can be performed on a RAID
+logical volume via the 'lvchange' command.)  (w)ritemostly signifies the
+devices in a RAID 1 logical volume that have been marked write-mostly.
+Re(s)haping signifies a RAID Logical Volume is either undergoing a stripe
+addition/removal, a stripe size or RAID algorithm change.
+(R)emove after reshape signifies freed striped raid images to be removed.
+.IP
+Related to Thin pool Logical Volumes: (F)ailed, out of (D)ata space,
+(M)etadata read only.
+.br
+(F)ailed is set if thin pool encounters serious failures and hence no further I/O
+is permitted at all. The out of (D)ata space is set if thin pool has run out of
+data space. (M)etadata read only signifies that thin pool encounters certain
+types of failures but it's still possible to do reads at least,
+but no metadata changes are allowed.
+.IP
+Related to Thin Logical Volumes: (F)ailed.
+.br
+(F)ailed is set when related thin pool enters Failed state and no further I/O
+is permitted at all.
+.IP 10 3
+s(k)ip activation: this volume is flagged to be skipped during activation.

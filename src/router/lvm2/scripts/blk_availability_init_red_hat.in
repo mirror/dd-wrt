@@ -1,0 +1,56 @@
+#!/bin/bash
+#
+# Copyright (C) 2012-2017 Red Hat, Inc. All rights reserved.
+#
+# This copyrighted material is made available to anyone wishing to use,
+# modify, copy, or redistribute it subject to the terms and conditions
+# of the GNU General Public License v.2.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# This script is responsible for executing blkdeactivate at shutdown
+# to properly unmount filesystems and deactivate device stacks containing
+# device-mapper devices (including plain device-mapper devices, LVM2 and
+# multipath devices) and MD devices.
+#
+# chkconfig: 12345 25 75
+# description: Controls availability of block devices
+#
+# For Red-Hat-based distributions such as Fedora, RHEL, CentOS.
+#	       
+### BEGIN INIT INFO
+# Provides: blk-availability
+# Required-Start:
+# Required-Stop:
+# Default-Start: 1 2 3 4 5
+# Default-Stop: 0 6
+# Short-Description: Availability of block devices
+### END INIT INFO
+
+. /etc/init.d/functions
+
+script=blkdeactivate
+
+sbindir=@SBINDIR@
+options="-u -l wholevg -m disablequeueing -r wait"
+
+LOCK_FILE="@DEFAULT_LOCK_DIR@/subsys/blk-availability"
+
+case "$1" in
+  start)
+	touch "$LOCK_FILE"
+	;;
+
+  stop)
+	action "Stopping block device availability:" "$sbindir/$script" $options
+	rm -f "$LOCK_FILE"
+	;;
+
+  status)
+	;;
+  *)
+	echo $"Usage: $0 {start|stop|status}"
+	;;
+esac

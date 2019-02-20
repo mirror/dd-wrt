@@ -1,0 +1,34 @@
+#
+# Copyright (C) 2011-2014 Red Hat, Inc. All rights reserved.
+#
+# This file is part of LVM2.
+#
+# This copyrighted material is made available to anyone wishing to use,
+# modify, copy, or redistribute it subject to the terms and conditions
+# of the GNU General Public License v.2.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+top_builddir = @top_builddir@
+
+CLDFLAGS += -L$(top_builddir)/daemons/dmeventd/plugins/lvm2
+LIBS += -ldevmapper-event-lvm2
+
+SOURCES = dmeventd_raid.c
+
+LIB_NAME = libdevmapper-event-lvm2raid
+LIB_SHARED = $(LIB_NAME).$(LIB_SUFFIX)
+LIB_VERSION = $(LIB_VERSION_LVM)
+
+CFLOW_LIST = $(SOURCES)
+CFLOW_LIST_TARGET = $(LIB_NAME).cflow
+
+include $(top_builddir)/make.tmpl
+
+install_lvm2: install_dm_plugin
+
+install: install_lvm2

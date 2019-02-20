@@ -1,0 +1,1 @@
+export LVM_TEST_LOCKING=1

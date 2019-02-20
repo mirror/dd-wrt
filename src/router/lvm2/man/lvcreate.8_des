@@ -1,0 +1,35 @@
+lvcreate creates a new LV in a VG. For standard LVs, this requires
+allocating logical extents from the VG's free physical extents. If there
+is not enough free space, the VG can be extended with other PVs
+(\fBvgextend\fP(8)), or existing LVs can be reduced or removed
+(\fBlvremove\fP(8), \fBlvreduce\fP(8).)
+
+To control which PVs a new LV will use, specify one or more PVs as
+position args at the end of the command line. lvcreate will allocate
+physical extents only from the specified PVs.
+
+lvcreate can also create snapshots of existing LVs, e.g. for backup
+purposes. The data in a new snapshot LV represents the content of the
+original LV from the time the snapshot was created.
+
+RAID LVs can be created by specifying an LV type when creating the LV (see
+\fBlvmraid\fP(7)). Different RAID levels require different numbers of
+unique PVs be available in the VG for allocation.
+
+Thin pools (for thin provisioning) and cache pools (for caching) are
+represented by special LVs with types thin-pool and cache-pool (see
+\fBlvmthin\fP(7) and \fBlvmcache\fP(7)). The pool LVs are not usable as
+standard block devices, but the LV names act as references to the pools.
+
+Thin LVs are thinly provisioned from a thin pool, and are created with a
+virtual size rather than a physical size. A cache LV is the combination of
+a standard LV with a cache pool, used to cache active portions of the LV
+to improve performance.
+.SS Usage notes
+In the usage section below, \fB--size\fP \fISize\fP can be replaced
+with \fB--extents\fP \fINumber\fP. See descriptions in the options section.
+
+In the usage section below, \fB--name\fP is omitted from the required
+options, even though it is typically used. When the name is not
+specified, a new LV name is generated with the "lvol" prefix and a unique
+numeric suffix.

@@ -1,0 +1,4 @@
+pvchange changes PV attributes in the VG.
+
+For options listed in parentheses, any one is required, after which the
+others are optional.

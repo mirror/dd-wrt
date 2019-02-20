@@ -1,0 +1,5 @@
+.SH EXAMPLES
+
+Create a VG with two PVs, using the default physical extent size.
+.br
+.B vgcreate myvg /dev/sdk1 /dev/sdl1

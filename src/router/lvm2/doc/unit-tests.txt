@@ -1,0 +1,257 @@
+Building unit tests
+===================
+
+  make unit-unit/unit-test
+
+
+Running unit tests
+==================
+
+The tests leave no artifacts at the moment, so you can just run
+unit-test/unit-test from wherever you want.
+
+  ./unit-test <list|run> [pattern]
+
+Listing tests
+-------------
+
+Every test has a symbolic path associated with it.  Just like file paths they
+are split into components separated by '/'s.  The 'list' command will show you
+a tree of these tests, along with some description text.
+
+
+ejt@devel-vm1:~/lvm2/unit-test/$ ./unit-test list
+base
+  data-struct
+    bitset
+      and  .................................................  and all bits
+      equal  ...............................................  equality
+      get_next  ............................................  get next set bit
+    list
+      splice  ..............................................  joining lists together
+    string
+      asprint  .............................................  tests asprint
+      strncpy  .............................................  tests string copying
+  device
+    bcache
+      block-size-multiple-page  ............................  block size must be a multiple of page size
+      block-size-positive  .................................  block size must be positive
+      blocks-get-evicted  ..................................  block get evicted with many reads
+      cache-blocks-positive  ...............................  nr cache blocks must be positive
+      create-destroy  ......................................  simple create/destroy
+      flush-waits  .........................................  flush waits for all dirty
+      get-reads  ...........................................  bcache_get() triggers read
+      prefetch-never-waits  ................................  too many prefetches does not trigger a wait
+      prefetch-reads  ......................................  prefetch issues a read
+      read-multiple-files  .................................  read from multiple files
+      reads-cached  ........................................  repeated reads are cached
+      writeback-occurs  ....................................  dirty data gets written back
+      zero-flag-dirties  ...................................  zeroed data counts as dirty
+  formatting
+    percent
+      0  ...................................................  Pretty printing of percentages near 0%
+      100  .................................................  Pretty printing of percentages near 100%
+  regex
+    fingerprints  ..........................................  not sure
+    matching  ..............................................  test the matcher with a variety of regexes
+dm
+  target
+    mirror
+      status  ..............................................  parsing mirror status
+metadata
+  config
+    cascade  ...............................................  cascade
+    clone  .................................................  duplicating a config tree
+    parse  .................................................  parsing various
+
+
+An optional 'pattern' argument may be specified to select subsets of tests.
+This pattern is a posix regex and does a substring match, so you will need to
+use anchors if you particularly want the match at the beginning or end of the
+string.
+
+ejt@devel-vm1:~/lvm2/unit-test/$ ./unit-test list data-struct
+base
+  data-struct
+    bitset
+      and  .................................................  and all bits
+      equal  ...............................................  equality
+      get_next  ............................................  get next set bit
+    list
+      splice  ..............................................  joining lists together
+    string
+      asprint  .............................................  tests asprint
+      strncpy  .............................................  tests string copying
+
+ejt@devel-vm1:~/lvm2/unit-test/$ ./unit-test list s$
+base
+  device
+    bcache
+      flush-waits  .........................................  flush waits for all dirty
+      get-reads  ...........................................  bcache_get() triggers read
+      prefetch-never-waits  ................................  too many prefetches does not trigger a wait
+      prefetch-reads  ......................................  prefetch issues a read
+      read-multiple-files  .................................  read from multiple files
+      writeback-occurs  ....................................  dirty data gets written back
+      zero-flag-dirties  ...................................  zeroed data counts as dirty
+  regex
+    fingerprints  ..........................................  not sure
+dm
+  target
+    mirror
+      status  ..............................................  parsing mirror status
+
+
+Running tests
+=============
+
+'make run-unit-test' from the top level will run all unit tests.  But I tend to
+run it by hand to I can select just the tests I'm working on.
+
+Use the 'run' command to run the tests.  Currently all logging goes to stderr,
+so the test runner prints a line at the start of the test and a line
+indicating success or failure at the end.
+
+ejt@devel-vm1:~/lvm2/unit-test/$ ./unit-test run bcache/block-size
+[RUN    ] /base/device/bcache/block-size-multiple-page
+bcache block size must be a multiple of page size
+bcache block size must be a multiple of page size
+bcache block size must be a multiple of page size
+bcache block size must be a multiple of page size
+[     OK] /base/device/bcache/block-size-multiple-page
+
+[RUN    ] /base/device/bcache/block-size-positive
+bcache must have a non zero block size
+[     OK] /base/device/bcache/block-size-positive
+
+
+2/2 tests passed
+
+
+ejt@devel-vm1:~/lvm2/unit-test/$ ./unit-test run data-struct
+[RUN    ] /base/data-struct/bitset/and
+[     OK] /base/data-struct/bitset/and
+
+[RUN    ] /base/data-struct/bitset/equal
+[     OK] /base/data-struct/bitset/equal
+
+[RUN    ] /base/data-struct/bitset/get_next
+[     OK] /base/data-struct/bitset/get_next
+
+[RUN    ] /base/data-struct/list/splice
+[     OK] /base/data-struct/list/splice
+
+[RUN    ] /base/data-struct/string/asprint
+[     OK] /base/data-struct/string/asprint
+
+[RUN    ] /base/data-struct/string/strncpy
+[     OK] /base/data-struct/string/strncpy
+
+
+6/6 tests passed
+
+
+Writing tests
+=============
+
+[See unit-test/framework.h and unit-test/units.h for the details]
+
+Tests are grouped together into 'suites', all tests in a suite share a
+'fixture'.  A fixture is a void * to any object you want; use it to set up any
+common environment that you need for the tests to run (eg, creating a dm_pool).
+
+Test suites have nothing to do with the test paths, you can have tests from
+different suites with similar paths, the runner sorts things for you.
+
+Put your tests in a file in unit-test/, with '_t' at the end of the name
+(convention only, nothing relies on this).
+
+#include "units.h"
+
+Then write any fixtures you need:
+
+eg,
+static void *_mem_init(void) {
+	struct dm_pool *mem = dm_pool_create("bitset test", 1024);
+	if (!mem) {
+		fprintf(stderr, "out of memory\n");
+		exit(1);
+	}
+
+	return mem;
+}
+
+static void _mem_exit(void *mem)
+{
+	dm_pool_destroy(mem);
+}
+
+Then write your tests, which should take the void * that was returned by your
+fixture.  Use the T_ASSERT* macros to indicate failure.
+
+eg,
+static void test_equal(void *fixture)
+{
+	struct dm_pool *mem = fixture;
+        dm_bitset_t bs1 = dm_bitset_create(mem, NR_BITS);
+        dm_bitset_t bs2 = dm_bitset_create(mem, NR_BITS);
+
+        int i, j;
+        for (i = 0, j = 1; i < NR_BITS; i += j, j++) {
+                dm_bit_set(bs1, i);
+                dm_bit_set(bs2, i);
+        }
+
+        T_ASSERT(dm_bitset_equal(bs1, bs2));
+        T_ASSERT(dm_bitset_equal(bs2, bs1));
+
+        for (i = 0; i < NR_BITS; i++) {
+                bit_flip(bs1, i);
+                T_ASSERT(!dm_bitset_equal(bs1, bs2));
+                T_ASSERT(!dm_bitset_equal(bs2, bs1));
+
+                T_ASSERT(dm_bitset_equal(bs1, bs1)); /* comparing with self */
+                bit_flip(bs1, i);
+        }
+}
+
+At the end of your test file you should write a function that builds one or
+more test suites and adds them to the list of all suites that is passed in.  I
+tend to write a little macro (T) to save typing the same test path repeatedly.
+
+eg,
+#define T(path, desc, fn) register_test(ts, "/base/data-struct/bitset/" path, desc, fn)
+
+void bitset_tests(struct dm_list *all_tests)
+{
+	struct test_suite *ts = test_suite_create(_mem_init, _mem_exit);
+	if (!ts) {
+		fprintf(stderr, "out of memory\n");
+		exit(1);
+	}
+
+	T("get_next", "get next set bit", test_get_next);
+	T("equal", "equality", test_equal);
+	T("and", "and all bits", test_and);
+
+	dm_list_add(all_tests, &ts->list);
+}
+
+Then you need to declare your registration function and call it in units.h.
+
+
+// Declare the function that adds tests suites here ...
+  ...
+void bitset_tests(struct dm_list *suites);
+  ...
+
+// ... and call it in here.
+static inline void register_all_tests(struct dm_list *suites)
+{
+	...
+	bitset_tests(suites);
+	...
+}
+
+Finally add your test file to the Makefile.in and rerun configure.
+

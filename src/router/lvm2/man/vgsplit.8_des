@@ -1,0 +1,13 @@
+vgsplit moves one or more PVs from a source VG to a destination VG. The
+PVs can be specified explicitly or implicitly by naming an LV, in which
+case on PVs underlying the LV are moved.
+
+If the destination VG does not exist, a new VG is created (command options
+can be used to specify properties of the new VG, also see
+\fBvgcreate\fP(8).)
+
+LVs cannot be split between VGs; each LV must be entirely on the PVs in
+the source or destination VG.
+
+vgsplit can only move complete PVs. (See \fBpvmove\fP(8) for moving part
+of a PV.)

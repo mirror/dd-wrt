@@ -1,0 +1,5 @@
+vgimport makes exported VGs known to the system again, perhaps after
+moving the PVs from a different system.
+
+vgexport clears the VG system ID, and vgimport sets the VG system ID to
+match the host running vgimport (if the host has a system ID).

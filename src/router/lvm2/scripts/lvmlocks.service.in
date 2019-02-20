@@ -1,0 +1,18 @@
+[Unit]
+Description=LVM locking start and stop
+Documentation=man:lvmlockd(8)
+After=lvmlockd.service sanlock.service dlm.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+
+# start lockspaces and wait for them to finish starting
+ExecStart=@SBINDIR@/lvm vgchange --lock-start --lock-opt autowait
+
+# stop lockspaces and wait for them to finish stopping
+ExecStop=@SBINDIR@/lvmlockctl --stop-lockspaces --wait 1
+
+[Install]
+WantedBy=multi-user.target
+

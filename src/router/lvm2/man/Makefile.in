@@ -1,0 +1,269 @@
+#
+# Copyright (C) 2001-2004 Sistina Software, Inc. All rights reserved.
+# Copyright (C) 2004-2017 Red Hat, Inc. All rights reserved.
+#
+# This file is part of LVM2.
+#
+# This copyrighted material is made available to anyone wishing to use,
+# modify, copy, or redistribute it subject to the terms and conditions
+# of the GNU General Public License v.2.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+top_builddir = @top_builddir@
+
+ifeq ($(V),1)
+	Q=
+else
+	Q=@
+endif
+
+FSADMMAN = fsadm.8
+BLKDEACTIVATEMAN = blkdeactivate.8
+DMEVENTDMAN = dmeventd.8
+DMFILEMAPDMAN = dmfilemapd.8
+LVMPOLLDMAN = lvmpolld.8
+LVMLOCKDMAN = lvmlockd.8 lvmlockctl.8
+CMIRRORDMAN = cmirrord.8
+LVMCACHEMAN = lvmcache.7
+LVMTHINMAN = lvmthin.7
+LVMDBUSDMAN = lvmdbusd.8
+LVMRAIDMAN = lvmraid.7
+
+MAN5=lvm.conf.5
+MAN7=lvmsystemid.7 lvmreport.7 
+MAN8=lvm.8 lvmdump.8 lvm-fullreport.8 lvm-lvpoll.8 \
+     lvcreate.8 lvchange.8 lvmconfig.8 lvconvert.8 lvdisplay.8 \
+     lvextend.8 lvreduce.8 lvremove.8 lvrename.8 lvresize.8 lvs.8 \
+     lvscan.8 pvchange.8 pvck.8 pvcreate.8 pvdisplay.8 pvmove.8 pvremove.8 \
+     pvresize.8 pvs.8 pvscan.8 vgcfgbackup.8 vgcfgrestore.8 vgchange.8 \
+     vgck.8 vgcreate.8 vgconvert.8 vgdisplay.8 vgexport.8 vgextend.8 \
+     vgimport.8 vgimportclone.8 vgmerge.8 vgmknodes.8 vgreduce.8 vgremove.8 \
+     vgrename.8 vgs.8 vgscan.8 vgsplit.8 \
+     lvmsar.8 lvmsadc.8 lvmdiskscan.8
+MAN8SO=lvm-config.8 lvm-dumpconfig.8
+MAN8DM=dmsetup.8 dmstats.8
+MAN8CLUSTER=
+MAN8SYSTEMD_GENERATORS=lvm2-activation-generator.8
+
+ifeq ($(MAKECMDGOALS),all_man)
+  MAN_ALL="yes"
+endif
+
+ifeq ($(MAKECMDGOALS),install_all_man)
+  MAN_ALL="yes"
+endif
+
+ifeq ($(MAN_ALL),"yes")
+  MAN8+=$(FSADMMAN) $(LVMPOLLDMAN) $(LVMLOCKDMAN) $(LVMDBUSDMAN)
+  MAN8DM+=$(BLKDEACTIVATEMAN) $(DMEVENTDMAN) $(DMFILEMAPDMAN)
+  MAN8CLUSTER+=$(CMIRRORDMAN)
+else
+  ifeq ("@FSADM@", "yes")
+    MAN8+=$(FSADMMAN)
+  endif
+
+  ifeq ("@BUILD_LVMDBUSD@", "yes")
+    MAN8+=$(LVMDBUSDMAN)
+  endif
+
+  ifeq ("@BUILD_LVMPOLLD@", "yes")
+    MAN8+=$(LVMPOLLDMAN)
+  endif
+
+  ifeq ("@BUILD_LVMLOCKD@", "yes")
+    MAN8+=$(LVMLOCKDMAN)
+  endif
+
+  ifeq ("@BLKDEACTIVATE@", "yes")
+    MAN8DM+=$(BLKDEACTIVATEMAN)
+  endif
+
+  ifeq ("@BUILD_DMEVENTD@", "yes")
+    MAN8DM+=$(DMEVENTDMAN)
+  endif
+
+  ifeq ("@BUILD_DMFILEMAPD@", "yes")
+    MAN8DM+=$(DMFILEMAPDMAN)
+  endif
+
+  ifeq ("@BUILD_CMIRRORD@", "yes")
+    MAN8CLUSTER+=$(CMIRRORDMAN)
+  endif
+endif
+
+MAN7+=$(LVMCACHEMAN) $(LVMTHINMAN) $(LVMRAIDMAN)
+MAN5DIR=$(mandir)/man5
+MAN7DIR=$(mandir)/man7
+MAN8DIR=$(mandir)/man8
+
+MANGENERATOR=$(top_builddir)/tools/man-generator
+TESTMAN=test.gen
+
+include $(top_builddir)/make.tmpl
+
+CLEAN_TARGETS+=$(MAN5) $(MAN7) $(MAN8) $(MAN8SO) $(MAN8:%.8=%.8_gen) $(MAN8CLUSTER) \
+	$(MAN8SYSTEMD_GENERATORS) $(MAN8DM) $(TESTMAN)
+DISTCLEAN_TARGETS+=$(FSADMMAN) $(BLKDEACTIVATEMAN) $(DMEVENTDMAN) \
+	$(LVMPOLLDMAN) $(LVMLOCKDMAN) $(CMIRRORDMAN) \
+	$(LVMCACHEMAN) $(LVMTHINMAN) $(LVMDBUSDMAN) $(LVMRAIDMAN) \
+	$(DMFILEMAPDMAN)
+
+all: man device-mapper
+
+.PHONY: man install_man5 install_man7 install_man8 pregenerated_man
+
+device-mapper: $(MAN8DM)
+
+man: $(MAN5) $(MAN7) $(MAN8) $(MAN8SO) $(MAN8CLUSTER) $(MAN8SYSTEMD_GENERATORS)
+
+all_man: man
+
+$(MAN5) $(MAN7) $(MAN8) $(MAN8SO) $(MAN8DM) $(MAN8CLUSTER) $(MAN8SYSTEMD_GENERATORS): Makefile
+
+# Test whether or not the man page generator works
+$(TESTMAN): $(MANGENERATOR) Makefile
+	- $(MANGENERATOR) --primary lvmconfig > $@
+
+SEE_ALSO=$(srcdir)/see_also.end
+
+.PRECIOUS: %.8_gen
+
+%.8_gen: $(srcdir)/%.8_des $(srcdir)/%.8_end $(MANGENERATOR) $(TESTMAN)
+	$(Q)set -e ; ( \
+	    if [ ! -s $(TESTMAN) ] ; then \
+		cat $(srcdir)/$(@:%.8_gen=%.8_pregen) ; \
+	    else \
+		MANCMD=$(basename $@) && \
+		$(MANGENERATOR) --primary $$MANCMD $< && \
+		$(MANGENERATOR) --secondary $$MANCMD && \
+		cat $(srcdir)/$(basename $@).8_end && \
+		cat $(SEE_ALSO) ; \
+	    fi \
+	) > $@
+
+define SUBSTVARS
+$(Q)$(SED) -e "s+#VERSION#+$(LVM_VERSION)+" \
+	-e "s+#DEFAULT_SYS_DIR#+$(DEFAULT_SYS_DIR)+" \
+	-e "s+#DEFAULT_ARCHIVE_DIR#+$(DEFAULT_ARCHIVE_DIR)+" \
+	-e "s+#DEFAULT_BACKUP_DIR#+$(DEFAULT_BACKUP_DIR)+" \
+	-e "s+#DEFAULT_PROFILE_DIR#+$(DEFAULT_PROFILE_DIR)+" \
+	-e "s+#DEFAULT_CACHE_DIR#+$(DEFAULT_CACHE_DIR)+" \
+	-e "s+#DEFAULT_LOCK_DIR#+$(DEFAULT_LOCK_DIR)+" \
+	-e "s+#LVM_PATH#+$(exec_prefix)/lvm+" \
+	-e "s+#DEFAULT_RUN_DIR#+$(DEFAULT_RUN_DIR)+" \
+	-e "s+#DEFAULT_PID_DIR#+$(DEFAULT_PID_DIR)+" \
+	-e "s+#SYSTEMD_GENERATOR_DIR#+$(SYSTEMD_GENERATOR_DIR)+" \
+	-e "s+#DEFAULT_MANGLING#+$(DEFAULT_MANGLING)+" $< > $@
+endef
+
+# Escape any '-':
+#
+# - multiple (>= 2)
+# - in ' -'
+# - in ranges
+# - in middle of options (e.g. '--use-policies') and their arguments
+# - in symbolic use (e.g. '->')
+# - in "$vg-$lv"
+# - in single one in '\\f.-'
+define ESCAPEHYPHENS
+$(Q)$(SED) -i -e "s+\([ [:alpha:]]\)-\{7\}+\1\\\-\\\-\\\-\\\-\\\-\\\-\\\-+g" \
+	  -e "s+\([ [:alpha:]]\)-\{6\}+\1\\\-\\\-\\\-\\\-\\\-\\\-+g" \
+	  -e "s+\([ [:alpha:]]\)-\{5\}+\1\\\-\\\-\\\-\\\-\\\-+g" \
+	  -e "s+\([ [:alpha:]]\)-\{4\}+\1\\\-\\\-\\\-\\\-+g" \
+	  -e "s+\([ [:alpha:]]\)-\{3\}+\1\\\-\\\-\\\-+g" \
+	  -e "s+\([ [:alpha:]]\)-\{2\}+\1\\\-\\\-+g" \
+	  -e "s+\([^\]\)-\([[:alnum:]\?]\)+\1\\\-\2+g" \
+	  -e "s+ --+\\\-\\\-+g" \
+	  -e "s+|-|+|\\\-|+g" \
+	  -e "s+|-\\\-+\\\-\\\-+g" \
+	  -e "s+ -\"+ \\\-\"+g" \
+	  -e "s+'--'+'\\\-\\\-'+g" \
+	  -e "s+^--+\\\-\\\-+g" \
+	  -e "s+\([[:alnum:]]\) - \([[:alnum:]]\)+\1 \\\- \2+g" \
+	  -e "s+\(<\)-+\1\\\-+g" \
+	  -e "s+[^\\]-\(>\)+\\\-\1+g" \
+	  -e "s+\([[:alnum:]]\{2,\}\)\\\-\([[:alnum:]]\{2,\}\)+\1-\2+g" \
+	  -e "s+\(\\\-\\\-[[:alnum:]]\{2,\}\)-+\1\\\-+g" \
+	  -e "s+\(lvm2\-activation\)+lvm2\\\-activation+" \
+	  -e "s+\([^\\]\)-pool+\1\\\-pool+g" \
+	  -e "s+\([[:digit:]]\)-\([[:digit:]]\)+\1\\\-\2+g" \
+	  -e "s+\\\-git+\-git+g" \
+	  -e "s+\(vg.*\)\-lv+\1\\\-lv+g" \
+	  -e "s+\([[:digit:]]\{4\}\)\\\-\([[:digit:]]\{2\}\)\\\-\([[:digit:]]\{2\}\)+\1-\2-\3+g" $@
+endef
+
+%.5: $(srcdir)/%.5_main
+	@echo "    [MAN] $@"
+	$(Q) $(SUBSTVARS)
+	$(Q) $(ESCAPEHYPHENS)
+
+%.7: $(srcdir)/%.7_main
+	@echo "    [MAN] $@"
+	$(Q) $(SUBSTVARS)
+	$(Q) $(ESCAPEHYPHENS)
+
+%.8: $(srcdir)/%.8_main
+	@echo "    [MAN] $@"
+	$(Q) $(SUBSTVARS)
+	$(Q) $(ESCAPEHYPHENS)
+
+%.8: %.8_gen
+	@echo "    [MAN] $@"
+	$(Q) $(SUBSTVARS)
+	$(Q) $(ESCAPEHYPHENS)
+
+$(MAN8SO): lvmconfig.8
+	@echo "    [MAN] $@"
+	$(Q) echo ".so $<" > $@
+
+install_man5: $(MAN5)
+	@echo "    [INSTALL] $<"
+	$(Q) $(INSTALL) -d $(MAN5DIR)
+	$(Q) $(INSTALL_DATA) $(MAN5) $(MAN5DIR)/
+
+install_man7: $(MAN7)
+	@echo "    [INSTALL] $<"
+	$(Q) $(INSTALL) -d $(MAN7DIR)
+	$(Q) $(INSTALL_DATA) $(MAN7) $(MAN7DIR)/
+
+install_man8: $(MAN8) $(MAN8SO)
+	@echo "    [INSTALL] $<"
+	$(Q) $(INSTALL) -d $(MAN8DIR)
+	$(Q) $(INSTALL_DATA) $(MAN8) $(MAN8SO) $(MAN8DIR)/
+
+install_lvm2: install_man5 install_man7 install_man8
+
+install_cluster: $(MAN8CLUSTER)
+ifdef MAN8CLUSTER
+	@echo "    [INSTALL] $<"
+	$(Q) $(INSTALL) -d $(MAN8DIR)
+	$(Q) $(INSTALL_DATA) $(MAN8CLUSTER) $(MAN8DIR)/
+endif
+
+install_device-mapper: $(MAN8DM)
+	@echo "    [INSTALL] $<"
+	$(Q) $(INSTALL) -d $(MAN8DIR)
+	$(Q) $(INSTALL_DATA) $(MAN8DM) $(MAN8DIR)/
+
+install_systemd_generators: $(MAN8SYSTEMD_GENERATORS)
+	@echo "    [INSTALL] $<"
+	$(Q) $(INSTALL) -d $(MAN8DIR)
+	$(Q) $(INSTALL_DATA) $(MAN8SYSTEMD_GENERATORS) $(MAN8DIR)/
+
+install: install_lvm2 install_device-mapper install_cluster
+
+install_all_man: install install_systemd_generators
+
+# Copy generated man pages back to source tree as fallback for machines where generator doesn't work
+pregenerated_man: all
+	set -e ; for i in $(srcdir)/*.8_des; do \
+		CMD=`basename $$i .8_des`; \
+		cat $${CMD}.8_gen > $(srcdir)/$$CMD.8_pregen ; \
+	done
+
+generate: pregenerated_man

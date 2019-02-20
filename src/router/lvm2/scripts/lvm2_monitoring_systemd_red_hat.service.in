@@ -1,0 +1,18 @@
+[Unit]
+Description=Monitoring of LVM2 mirrors, snapshots etc. using dmeventd or progress polling
+Documentation=man:dmeventd(8) man:lvcreate(8) man:lvchange(8) man:vgchange(8)
+Requires=dm-event.socket
+After=dm-event.socket dm-event.service lvm2-activation.service
+Before=local-fs-pre.target
+DefaultDependencies=no
+Conflicts=shutdown.target
+
+[Service]
+Type=oneshot
+Environment=LVM_SUPPRESS_LOCKING_FAILURE_MESSAGES=1
+ExecStart=@SBINDIR@/lvm vgchange --monitor y
+ExecStop=@SBINDIR@/lvm vgchange --monitor n
+RemainAfterExit=yes
+
+[Install]
+WantedBy=sysinit.target

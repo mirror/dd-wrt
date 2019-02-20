@@ -1,0 +1,16 @@
+vgcfgbackup creates back up files containing metadata of VGs.
+If no VGs are named, back up files are created for all VGs.
+See \fBvgcfgrestore\fP for information on using the back up
+files.
+
+In a default installation, each VG is backed up into a separate file
+bearing the name of the VG in the directory \fI#DEFAULT_BACKUP_DIR#\fP.
+
+To use an alternative back up file, use \fB-f\fP. In this case, when
+backing up multiple VGs, the file name is treated as a template, with %s
+replaced by the VG name.
+
+NB. This DOES NOT back up the data content of LVs.
+
+It may also be useful to regularly back up the files in
+\fI#DEFAULT_SYS_DIR#\fP.

@@ -1,0 +1,475 @@
+=======================
+= LVM RAID Design Doc =
+=======================
+
+#############################
+# Chapter 1: User-Interface #
+#############################
+
+***************** CREATING A RAID DEVICE ******************
+
+01: lvcreate --type <RAID type> \
+02:	     [--regionsize <size>] \
+03:	     [-i/--stripes <#>] [-I,--stripesize <size>] \
+04:	     [-m/--mirrors <#>] \
+05:	     [--[min|max]recoveryrate <kB/sec/disk>] \
+06:	     [--stripecache <size>] \
+07:	     [--writemostly <devices>] \
+08:	     [--maxwritebehind <size>] \
+09:	     [[no]sync] \
+10:	     <Other normal args, like: -L 5G -n lv vg> \
+11:	     [devices]
+
+Line 01:
+I don't intend for there to be shorthand options for specifying the
+segment type.  The available RAID types are:
+	"raid0"  - Stripe [NOT IMPLEMENTED]
+	"raid1"  - should replace DM Mirroring
+	"raid10" - striped mirrors, [NOT IMPLEMENTED]
+	"raid4"  - RAID4
+	"raid5"  - Same as "raid5_ls" (Same default as MD)
+	"raid5_la" - RAID5 Rotating parity 0 with data continuation
+	"raid5_ra" - RAID5 Rotating parity N with data continuation
+	"raid5_ls" - RAID5 Rotating parity 0 with data restart
+	"raid5_rs" - RAID5 Rotating parity N with data restart
+	"raid6"    - Same as "raid6_zr"
+	"raid6_zr" - RAID6 Rotating parity 0 with data restart
+	"raid6_nr" - RAID6 Rotating parity N with data restart
+	"raid6_nc" - RAID6 Rotating parity N with data continuation
+The exception to 'no shorthand options' will be where the RAID implementations
+can displace traditional tagets.  This is the case with 'mirror' and 'raid1'.
+In this case, "mirror_segtype_default" - found under the "global" section in
+lvm.conf - can be set to "mirror" or "raid1".  The segment type inferred when
+the '-m' option is used will be taken from this setting.  The default segment
+types can be overridden on the command line by using the '--type' argument.
+
+Line 02:
+Region size is relevant for all RAID types.  It defines the granularity for
+which the bitmap will track the active areas of disk.  The default is currently
+4MiB.  I see no reason to change this unless it is a problem for MD performance.
+MD does impose a restriction of 2^21 regions for a given device, however.  This
+means two things: 1) we should never need a metadata area larger than
+8kiB+sizeof(superblock)+bitmap_offset (IOW, pretty small) and 2) the region
+size will have to be upwardly revised if the device is larger than 8TiB
+(assuming defaults).
+
+Line 03/04:
+The '-m/--mirrors' option is only relevant to RAID1 and will be used just like
+it is today for DM mirroring.  For all other RAID types, -i/--stripes and
+-I/--stripesize are relevant.  The former will specify the number of data
+devices that will be used for striping.  For example, if the user specifies
+'--type raid0 -i 3', then 3 devices are needed.  If the user specifies
+'--type raid6 -i 3', then 5 devices are needed.  The -I/--stripesize may be
+confusing to MD users, as they use the term "chunksize".  I think they will
+adapt without issue and I don't wish to create a conflict with the term
+"chunksize" that we use for snapshots.
+
+Line 05/06/07:
+I'm still not clear on how to specify these options.  Some are easier than
+others.  '--writemostly' is particularly hard because it involves specifying
+which devices shall be 'write-mostly' and thus, also have 'max-write-behind'
+applied to them.  It has been suggested that a '--readmostly'/'--readfavored'
+or similar option could be introduced as a way to specify a primary disk vs.
+specifying all the non-primary disks via '--writemostly'.  I like this idea,
+but haven't come up with a good name yet.  Thus, these will remain
+unimplemented until future specification.
+
+Line 09/10/11:
+These are familiar.
+
+Further creation related ideas:
+Today, you can specify '--type mirror' without an '-m/--mirrors' argument
+necessary.  The number of devices defaults to two (and the log defaults to
+'disk').  A similar thing should happen with the RAID types.  All of them
+should default to having two data devices unless otherwise specified.  This
+would mean a total number of 2 devices for RAID 0/1, 3 devices for RAID 4/5,
+and 4 devices for RAID 6/10.
+
+
+***************** CONVERTING A RAID DEVICE ******************
+
+01: lvconvert [--type <RAID type>] \
+02:	      [-R/--regionsize <size>] \
+03:	      [-i/--stripes <#>] [-I,--stripesize <size>] \
+04:	      [-m/--mirrors <#>] \
+05:	      [--merge]
+06:	      [--splitmirrors <#> [--trackchanges]] \
+07:	      [--replace <sub_lv|device>] \
+08:	      [--[min|max]recoveryrate <kB/sec/disk>] \
+09:	      [--stripecache <size>] \
+10:	      [--writemostly <devices>] \
+11:	      [--maxwritebehind <size>] \
+12:	      vg/lv
+13:	      [devices]
+
+lvconvert should work exactly as it does now when dealing with mirrors -
+even if(when) we switch to MD RAID1.  Of course, there are no plans to
+allow the presense of the metadata area to be configurable (e.g. --corelog).
+It will be simple enough to detect if the LV being up/down-converted is
+new or old-style mirroring.
+
+If we choose to use MD RAID0 as well, it will be possible to change the
+number of stripes and the stripesize.  It is therefore conceivable to see
+something like, 'lvconvert -i +1 vg/lv'.
+
+Line 01:
+It is possible to change the RAID type of an LV - even if that LV is already
+a RAID device of a different type.  For example, you could change from
+RAID4 to RAID5 or RAID5 to RAID6.
+
+Line 02/03/04:
+These are familiar options - all of which would now be available as options
+for change.  (However, it'd be nice if we didn't have regionsize in there.
+It's simple on the kernel side, but is just an extra - often unecessary -
+parameter to many functions in the LVM codebase.)
+
+Line 05:
+This option is used to merge an LV back into a RAID1 array - provided it was
+split for temporary read-only use by '--splitmirrors 1 --trackchanges'.
+
+Line 06:
+The '--splitmirrors <#>' argument should be familiar from the "mirror" segment
+type.  It allows RAID1 images to be split from the array to form a new LV.
+Either the original LV or the split LV - or both - could become a linear LV as
+a result.  If the '--trackchanges' argument is specified in addition to
+'--splitmirrors', an LV will be split from the array.  It will be read-only.
+This operation does not change the original array - except that it uses an empty
+slot to hold the position of the split LV which it expects to return in the
+future (see the '--merge' argument).  It tracks any changes that occur to the
+array while the slot is kept in reserve.  If the LV is merged back into the
+array, only the changes are resync'ed to the returning image.  Repeating the
+'lvconvert' operation without the '--trackchanges' option will complete the
+split of the LV permanently.
+
+Line 07:
+This option allows the user to specify a sub_lv (e.g. a mirror image) or
+a particular device for replacement.  The device (or all the devices in
+the sub_lv) will be removed and replaced with different devices from the
+VG.
+
+Line 08/09/10/11:
+It should be possible to alter these parameters of a RAID device.  As with
+lvcreate, however, I'm not entirely certain how to best define some of these.
+We don't need all the capabilities at once though, so it isn't a pressing
+issue.
+
+Line 12:
+The LV to operate on.
+
+Line 13:
+Devices that are to be used to satisfy the conversion request.  If the
+operation removes devices or splits a mirror, then the devices specified
+form the list of candidates for removal.  If the operation adds or replaces
+devices, then the devices specified form the list of candidates for allocation.
+
+
+
+###############################################
+# Chapter 2: LVM RAID internal representation #
+###############################################
+
+The internal representation is somewhat like mirroring, but with alterations
+for the different metadata components.  LVM mirroring has a single log LV,
+but RAID will have one for each data device.  Because of this, I've added a
+new 'areas' list to the 'struct lv_segment' - 'meta_areas'.  There is exactly
+a one-to-one relationship between 'areas' and 'meta_areas'.  The 'areas' array
+still holds the data sub-lv's (similar to mirroring), while the 'meta_areas'
+array holds the metadata sub-lv's (akin to the mirroring log device).
+
+The sub_lvs will be named '%s_rimage_%d' instead of '%s_mimage_%d' as it is
+for mirroring, and '%s_rmeta_%d' instead of '%s_mlog'.  Thus, you can imagine
+an LV named 'foo' with the following layout:
+foo
+[foo's lv_segment]
+|
+|-> foo_rimage_0 (areas[0])
+|   [foo_rimage_0's lv_segment]
+|-> foo_rimage_1 (areas[1])
+|   [foo_rimage_1's lv_segment]
+|
+|-> foo_rmeta_0 (meta_areas[0])
+|   [foo_rmeta_0's lv_segment]
+|-> foo_rmeta_1 (meta_areas[1])
+|   [foo_rmeta_1's lv_segment]
+
+LVM Meta-data format
+====================
+The RAID format will need to be able to store parameters that are unique to
+RAID and unique to specific RAID sub-devices.  It will be modeled after that
+of mirroring.
+
+Here is an example of the mirroring layout:
+lv {
+	id = "agL1vP-1B8Z-5vnB-41cS-lhBJ-Gcvz-dh3L3H"
+	status = ["READ", "WRITE", "VISIBLE"]
+	flags = []
+	segment_count = 1
+
+	segment1 {
+		start_extent = 0
+		extent_count = 125      # 500 Megabytes
+
+		type = "mirror"
+		mirror_count = 2
+		mirror_log = "lv_mlog"
+		region_size = 1024
+
+		mirrors = [
+			"lv_mimage_0", 0,
+			"lv_mimage_1", 0
+		]
+	}
+}
+
+The real trick is dealing with the metadata devices.  Mirroring has an entry,
+'mirror_log', in the top-level segment.  This won't work for RAID because there
+is a one-to-one mapping between the data devices and the metadata devices.  The
+mirror devices are layed-out in sub-device/le pairs.  The 'le' parameter is
+redundant since it will always be zero.  So for RAID, I have simple put the
+metadata and data devices in pairs without the 'le' parameter.
+
+RAID metadata:
+lv {
+	id = "EnpqAM-5PEg-i9wB-5amn-P116-1T8k-nS3GfD"
+	status = ["READ", "WRITE", "VISIBLE"]
+	flags = []
+	segment_count = 1
+
+	segment1 {
+		start_extent = 0
+		extent_count = 125      # 500 Megabytes
+
+		type = "raid1"
+		device_count = 2
+		region_size = 1024
+
+		raids = [
+			"lv_rmeta_0", "lv_rimage_0",
+			"lv_rmeta_1", "lv_rimage_1",
+		]
+	}
+}
+
+The metadata also must be capable of representing the various tunables.  We
+already have a good example for one from mirroring, region_size.
+'max_write_behind', 'stripe_cache', and '[min|max]_recovery_rate' could also
+be handled in this way.  However, 'write_mostly' cannot be handled in this
+way, because it is a characteristic associated with the sub_lvs, not the
+array as a whole.  In these cases, the status field of the sub-lv's themselves
+will hold these flags - the meaning being only useful in the larger context.
+
+
+##############################################
+# Chapter 3: LVM RAID implementation details #
+##############################################
+
+New Segment Type(s)
+===================
+I've created a new file 'lib/raid/raid.c' that will handle the various different
+RAID types.  While there will be a unique segment type for each RAID variant,
+they will all share a common backend - segtype_handler functions and
+segtype->flags = SEG_RAID.
+
+I'm also adding a new field to 'struct segment_type', parity_devs.  For every
+segment_type except RAID4/5/6, this will be 0.  This field facilitates in
+allocation and size calculations.  For example, the lvcreate for RAID5 would
+look something like:
+~> lvcreate --type raid5 -L 30G -i 3 -n my_raid5 my_vg
+or
+~> lvcreate --type raid5 -n my_raid5 my_vg /dev/sd[bcdef]1
+
+In the former case, the stripe count (3) and device size are computed, and
+then 'segtype->parity_devs' extra devices are allocated of the same size.  In
+the latter case, the number of PVs is determined and 'segtype->parity_devs' is
+subtracted off to determine the number of stripes.
+
+This should also work in the case of RAID10 and doing things in this manor
+should not affect the way size is calculated via the area_multiple.
+
+Allocation
+==========
+When a RAID device is created, metadata LVs must be created along with the
+data LVs that will ultimately compose the top-level RAID array.  For the
+foreseeable future, the metadata LVs must reside on the same device as (or
+at least one of the devices that compose) the data LV.  We use this property
+to simplify the allocation process.  Rather than allocating for the data LVs
+and then asking for a small chunk of space on the same device (or the other
+way around), we simply ask for the aggregate size of the data LV plus the
+metadata LV.  Once we have the space allocated, we divide it between the
+metadata and data LVs.  This also greatly simplifies the process of finding
+parallel space for all the data LVs that will compose the RAID array.  When
+a RAID device is resized, we will not need to take the metadata LV into
+account, because it will already be present.
+
+Apart from the metadata areas, the other unique characteristic of RAID
+devices is the parity device count.  The number of parity devices does nothing
+to the calculation of size-per-device.  The 'area_multiple' means nothing
+here.  The parity devices will simply be the same size as all the other devices
+and will also require a metadata LV (i.e. it is treated no differently than
+the other devices).
+
+Therefore, to allocate space for RAID devices, we need to know two things:
+1) how many parity devices are required and 2) does an allocated area need to
+be split out for the metadata LVs after finding the space to fill the request.
+We simply add these two fields to the 'alloc_handle' data structure as,
+'parity_count' and 'alloc_and_split_meta'.  These two fields get set in
+'_alloc_init'.   The 'segtype->parity_devs' holds the number of parity
+drives and can be directly copied to 'ah->parity_count' and
+'alloc_and_split_meta' is set when a RAID segtype is detected and
+'metadata_area_count' has been specified.  With these two variables set, we
+can calculate how many allocated areas we need.  Also, in the routines that
+find the actual space, they stop not when they have found ah->area_count but
+when they have found (ah->area_count + ah->parity_count).
+
+Conversion
+==========
+RAID -> RAID, adding images
+---------------------------
+When adding images to a RAID array, metadata and data components must be added
+as a pair.  It is best to perform as many operations as possible before writing
+new LVM metadata.  This allows us to error-out without having to unwind any
+changes.  It also makes things easier if the machine should crash during a
+conversion operation.  Thus, the actions performed when adding a new image are:
+        1) Allocate the required number of metadata/data pairs using the method
+	   describe above in 'Allocation' (i.e. find the metadata/data space
+	   as one unit and split the space between them after found - this keeps
+	   them together on the same device).
+	2) Form the metadata/data LVs from the allocated space (leave them
+	   visible) - setting required RAID_[IMAGE | META] flags as appropriate.
+	3) Write the LVM metadata
+	4) Activate and clear the metadata LVs.  The clearing of the metadata
+	   requires the LVM metadata be written (step 3) and is a requirement
+	   before adding the new metadata LVs to the array.  If the metadata
+	   is not cleared, it carry residual superblock state from a previous
+	   array the device may have been part of.
+	5) Deactivate new sub-LVs and set them "hidden".
+	6) expand the 'first_seg(raid_lv)->areas' and '->meta_areas' array
+	   for inclusion of the new sub-LVs
+	7) Add new sub-LVs and update 'first_seg(raid_lv)->area_count'
+	8) Commit new LVM metadata
+Failure during any of these steps will not affect the original RAID array.  In
+the worst scenario, the user may have to remove the new sub-LVs that did not
+yet make it into the array.
+
+RAID -> RAID, removing images
+-----------------------------
+To remove images from a RAID, the metadata/data LV pairs must be removed
+together.  This is pretty straight-forward, but one place where RAID really
+differs from the "mirror" segment type is how the resulting "holes" are filled.
+When a device is removed from a "mirror" segment type, it is identified, moved
+to the end of the 'mirrored_seg->areas' array, and then removed.  This action
+causes the other images to shift down and fill the position of the device which
+was removed.  While "raid1" could be handled in this way, the other RAID types
+could not be - it would corrupt the ordering of the data on the array.  Thus,
+when a device is removed from a RAID array, the corresponding metadata/data
+sub-LVs are removed from the 'raid_seg->meta_areas' and 'raid_seg->areas' arrays.
+The slot in these 'lv_segment_area' arrays are set to 'AREA_UNASSIGNED'.  RAID
+is perfectly happy to construct a DM table mapping with '- -' if it comes across
+area assigned in such a way.  The pair of dashes is a valid way to tell the RAID
+kernel target that the slot should be considered empty.  So, we can remove
+devices from a RAID array without affecting the correct operation of the RAID.
+(It also becomes easy to replace the empty slots properly if a spare device is
+available.)  In the case of RAID1 device removal, the empty slot can be safely
+eliminated.  This is done by shifting the higher indexed devices down to fill
+the slot.  Even the names of the images will be renamed to properly reflect
+their index in the array.  Unlike the "mirror" segment type, you will never have
+an image named "*_rimage_1" occupying the index position 0.
+
+As with adding images, removing images holds off on commiting LVM metadata
+until all possible changes have been made.  This reduces the likelyhood of bad
+intermediate stages being left due to a failure of operation or machine crash.
+
+RAID1 '--splitmirrors', '--trackchanges', and '--merge' operations
+------------------------------------------------------------------
+This suite of operations is only available to the "raid1" segment type.
+
+Splitting an image from a RAID1 array is almost identical to the removal of
+an image described above.  However, the metadata LV associated with the split
+image is removed and the data LV is kept and promoted to a top-level device.
+(i.e.  It is made visible and stripped of its RAID_IMAGE status flags.)
+
+When the '--trackchanges' option is given along with the '--splitmirrors'
+argument, the metadata LV is left as part of the original array.  The data LV
+is set as 'VISIBLE' and read-only (~LVM_WRITE).  When the array DM table is
+being created, it notices the read-only, VISIBLE nature of the sub-LV and puts
+in the '- -' sentinel.  Only a single image can be split from the mirror and
+the name of the sub-LV cannot be changed.  Unlike '--splitmirrors' on its own,
+the '--name' argument must not be specified.  Therefore, the name of the newly
+split LV will remain the same '<lv>_rimage_<N>', where 'N' is the index of the
+slot in the array for which it is associated.
+
+When an LV which was split from a RAID1 array with the '--trackchanges' option
+is merged back into the array, its read/write status is restored and it is
+set as "hidden" again.  Recycling the array (suspend/resume) restores the sub-LV
+to its position in the array and begins the process of sync'ing the changes that
+were made since the time it was split from the array.
+
+RAID device replacement with '--replace'
+----------------------------------------
+This option is available to all RAID segment types.
+
+The '--replace' option can be used to remove a particular device from a RAID
+logical volume and replace it with a different one in one action (CLI command).
+The device device to be removed is specified as the argument to the '--replace'
+option.  This option can be specified more than once in a single command,
+allowing multiple devices to be replaced at the same time - provided the RAID
+logical volume has the necessary redundancy to allow the action.  The devices
+to be used as replacements can also be specified in the command; similar to the
+way allocatable devices are specified during an up-convert.
+
+Example> lvconvert --replace /dev/sdd1 --replace /dev/sde1 vg/lv /dev/sd[bc]1
+
+RAID '--repair'
+---------------
+This 'lvconvert' option is available to all RAID segment types and is described
+under "RAID Fault Handling".
+
+
+RAID Fault Handling
+===================
+RAID is not like traditional LVM mirroring (i.e. the "mirror" segment type).
+LVM mirroring required failed devices to be removed or the logical volume would
+simply hang.  RAID arrays can keep on running with failed devices.  In fact, for
+RAID types other than RAID1 removing a device would mean substituting an error
+target or converting to a lower level RAID (e.g. RAID6 -> RAID5, or RAID4/5 to
+RAID0).  Therefore, rather than removing a failed device unconditionally, the
+user has a couple of options to choose from.
+
+The automated response to a device failure is handled according to the user's
+preference defined in lvm.conf:activation.raid_fault_policy.  The options are:
+    # "warn"    - Use the system log to warn the user that a device in the RAID
+    #             logical volume has failed.  It is left to the user to run
+    #             'lvconvert --repair' manually to remove or replace the failed
+    #             device.  As long as the number of failed devices does not
+    #             exceed the redundancy of the logical volume (1 device for
+    #             raid4/5, 2 for raid6, etc) the logical volume will remain
+    #             usable.
+    #
+    # "remove"  - NOT CURRENTLY IMPLEMENTED OR DOCUMENTED IN example.conf.in.
+    #             Remove the failed device and reduce the RAID logical volume
+    #             accordingly.  If a single device dies in a 3-way mirror,
+    #             remove it and reduce the mirror to 2-way.  If a single device
+    #             dies in a RAID 4/5 logical volume, reshape it to a striped
+    #             volume, etc - RAID 6 -> RAID 4/5 -> RAID 0.  If devices
+    #             cannot be removed for lack of redundancy, fail.
+    #             THIS OPTION CANNOT YET BE IMPLEMENTED BECAUSE RESHAPE IS NOT
+    #             YET SUPPORTED IN linux/drivers/md/dm-raid.c.  The superblock
+    #             does not yet hold enough information to support reshaping.
+    #
+    # "allocate" - Attempt to use any extra physical volumes in the volume
+    #             group as spares and replace faulty devices.
+
+If manual intervention is taken, either in response to the automated solution's
+"warn" mode or simply because dmeventd hadn't run, then the user can call
+'lvconvert --repair vg/lv' and follow the prompts.  They will be prompted
+whether or not to replace the device and cause a full recovery of the failed
+device.
+
+If replacement is chosen via the manual method or "allocate" is the policy taken
+by the automated response, then 'lvconvert --replace' is the mechanism used to
+attempt the replacement of the failed device.
+
+'vgreduce --removemissing' is ineffectual at repairing RAID logical volumes.  It
+will remove the failed device, but the RAID logical volume will simply continue
+to operate with an <unknown> sub-LV.  The user should clear the failed device
+with 'lvconvert --repair'.

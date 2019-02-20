@@ -1,0 +1,379 @@
+.TH "LVMCACHE" "7" "LVM TOOLS #VERSION#" "Red Hat, Inc" "\""
+.SH NAME
+lvmcache \(em LVM caching
+
+.SH DESCRIPTION
+
+\fBlvm\fP(8) includes two kinds of caching that can be used to improve the
+performance of a Logical Volume (LV). Typically, a smaller, faster device
+is used to improve i/o performance of a larger, slower LV. To do this, a
+separate LV is created from the faster device, and then the original LV is
+converted to start using the fast LV.
+
+The two kinds of caching are:
+
+.IP \[bu] 2
+A read and write hot-spot cache, using the dm-cache kernel module.  This
+cache is slow moving, and adjusts the cache content over time so that the
+most used parts of the LV are kept on the faster device.  Both reads and
+writes use the cache. LVM refers to this using the LV type \fBcache\fP.
+
+.IP \[bu] 2
+A streaming write cache, using the dm-writecache kernel module.  This
+cache is intended to be used with SSD or PMEM devices to speed up all
+writes to an LV.  Reads do not use this cache.  LVM refers to this using
+the LV type \fBwritecache\fP.
+
+.SH USAGE
+
+Both kinds of caching use similar lvm commands:
+
+.B 1. Identify main LV that needs caching
+
+A main LV exists on slower devices.
+
+.nf
+  $ lvcreate -n main -L Size vg /dev/slow
+.fi
+
+.B 2. Identify fast LV to use as the cache
+
+A fast LV exists on faster devices.  This LV will be used to hold the
+cache.
+
+.nf
+  $ lvcreate -n fast -L Size vg /dev/fast
+
+  $ lvs vg -o+devices
+  LV   VG  Attr       LSize   Devices
+  fast vg -wi-------  xx.00m /dev/fast(0)
+  main vg -wi------- yyy.00m /dev/slow(0)
+.fi
+
+.B 3. Start caching the main LV
+
+To start caching the main LV using the fast LV, convert the main LV to the
+desired caching type, and specify the fast LV to use:
+
+.nf
+using dm-cache:
+
+  $ lvconvert --type cache --cachepool fast vg/main
+
+or dm-writecache:
+
+  $ lvconvert --type writecache --cachepool fast vg/main
+.fi
+
+.B 4. Display LVs
+
+Once the fast LV has been attached to the main LV, lvm reports the main LV
+type as either \fBcache\fP or \fBwritecache\fP depending on the type used.
+While attached, the fast LV is hidden, and only displayed when lvs is
+given -a.  The _corig or _wcorig LV represents the original LV without the
+cache.
+
+.nf
+using dm-cache:
+
+  $ lvs -a -o name,vgname,lvattr,origin,segtype,devices vg
+  LV           VG Attr       Origin       Type   Devices       
+  [fast]       vg Cwi-aoC---                     linear /dev/fast(xx)
+  main         vg Cwi-a-C--- [main_corig] cache  main_corig(0) 
+  [main_corig] vg owi-aoC---                     linear /dev/slow(0) 
+
+or dm-writecache:
+
+  $ lvs -a -o name,vgname,lvattr,origin,segtype,devices vg
+  LV            VG Attr       Origin        Type       Devices       
+  [fast]        vg -wi-ao----               linear     /dev/fast(xx)
+  main          vg Cwi-a----- [main_wcorig] writecache main_wcorig(0)
+  [main_wcorig] vg -wi-ao----               linear     /dev/slow(0)   
+.fi
+
+.B 5. Use the main LV
+
+Use the LV until the cache is no longer wanted, or needs to be changed.
+
+.B 6. Stop caching
+
+To stop caching the main LV, separate the fast LV from the main LV.  This
+changes the type of the main LV back to what it was before the cache was
+attached.
+
+.nf
+   $ lvconvert --splitcache vg/main
+.fi
+
+
+.SH OPTIONS
+
+\&
+
+.SS dm-writecache block size
+
+\&
+
+The dm-writecache block size can be 4096 bytes (the default), or 512
+bytes.  The default 4096 has better performance and should be used except
+when 512 is necessary for compatibility.  The dm-writecache block size is
+specified with --writecacheblocksize 4096b|512b when caching is started.
+
+When a file system like xfs already exists on the main LV prior to
+caching, and the file system is using a block size of 512, then the
+writecache block size should be set to 512.  (The file system will likely
+fail to mount if writecache block size of 4096 is used in this case.)
+
+Check the xfs sector size while the fs is mounted:
+
+.nf
+$ xfs_info /dev/vg/main
+Look for sectsz=512 or sectsz=4096
+.fi
+
+The writecache block size should be chosen to match the xfs sectsz value.
+
+It is also possible to specify a sector size of 4096 to mkfs.xfs when
+creating the file system.  In this case the writecache block size of 4096
+can be used.
+
+.SS dm-writecache settings
+
+\&
+
+Tunable parameters can be passed to the dm-writecache kernel module using
+the --cachesettings option when caching is started, e.g.
+
+.nf
+$ lvconvert --type writecache --cachepool fast \\
+	--cachesettings 'high_watermark=N writeback_jobs=N' vg/main
+.fi
+
+Tunable options are:
+
+.IP \[bu] 2
+high_watermark = <count>
+
+Start writeback when the number of used blocks reach this watermark
+
+.IP \[bu] 2
+low_watermark = <count>
+
+Stop writeback when the number of used blocks drops below this watermark
+
+.IP \[bu] 2
+writeback_jobs = <count>
+
+Limit the number of blocks that are in flight during writeback.  Setting
+this value reduces writeback throughput, but it may improve latency of
+read requests.
+
+.IP \[bu] 2
+autocommit_blocks = <count>
+
+When the application writes this amount of blocks without issuing the
+FLUSH request, the blocks are automatically commited.
+
+.IP \[bu] 2
+autocommit_time = <milliseconds>
+
+The data is automatically commited if this time passes and no FLUSH
+request is received.
+
+.IP \[bu] 2
+fua = 0|1
+
+Use the FUA flag when writing data from persistent memory back to the
+underlying device.
+Applicable only to persistent memory.
+
+.IP \[bu] 2
+nofua = 0|1
+
+Don't use the FUA flag when writing back data and send the FLUSH request
+afterwards.  Some underlying devices perform better with fua, some with
+nofua.  Testing is necessary to determine which.
+Applicable only to persistent memory.
+
+
+.SS dm-cache with separate data and metadata LVs
+
+\&
+
+When using dm-cache, the cache metadata and cache data can be stored on
+separate LVs.  To do this, a "cache-pool LV" is created, which is a
+special LV that references two sub LVs, one for data and one for metadata.
+
+To create a cache-pool LV from two separate LVs:
+
+.nf
+$ lvcreate -n fastpool -L DataSize vg /dev/fast1
+$ lvcreate -n fastpoolmeta -L MetadataSize vg /dev/fast2
+$ lvconvert --type cache-pool --poolmetadata fastpoolmeta vg/fastpool
+.fi
+
+Then use the cache-pool LV to start caching the main LV:
+
+.nf
+$ lvconvert --type cache --cachepool fastpool vg/main
+.fi
+
+A variation of the same procedure automatically creates a cache-pool when
+caching is started.  To do this, use a standard LV as the --cachepool
+(this will hold cache data), and use another standard LV as the
+--poolmetadata (this will hold cache metadata).  LVM will create a
+cache-pool LV from the two specified LVs, and use the cache-pool to start
+caching the main LV.
+
+.nf
+$ lvcreate -n fastpool -L DataSize vg /dev/fast1
+$ lvcreate -n fastpoolmeta -L MetadataSize vg /dev/fast2
+$ lvconvert --type cache --cachepool fastpool \\
+	--poolmetadata fastpoolmeta vg/main
+.fi
+
+.SS dm-cache cache modes
+
+\&
+
+The default dm-cache cache mode is "writethrough".  Writethrough ensures
+that any data written will be stored both in the cache and on the origin
+LV.  The loss of a device associated with the cache in this case would not
+mean the loss of any data.
+
+A second cache mode is "writeback".  Writeback delays writing data blocks
+from the cache back to the origin LV.  This mode will increase
+performance, but the loss of a cache device can result in lost data.
+
+With the --cachemode option, the cache mode can be set when caching is
+started, or changed on an LV that is already cached.  The current cache
+mode can be displayed with the cache_mode reporting option:
+
+.B lvs -o+cache_mode VG/LV
+
+.BR lvm.conf (5)
+.B allocation/cache_mode
+.br
+defines the default cache mode.
+
+.nf
+$ lvconvert --type cache --cachepool fast \\
+	--cachemode writethrough vg/main
+.nf
+
+.SS dm-cache chunk size
+
+\&
+
+The size of data blocks managed by dm-cache can be specified with the
+--chunksize option when caching is started.  The default unit is KiB.  The
+value must be a multiple of 32KiB between 32KiB and 1GiB.
+
+Using a chunk size that is too large can result in wasteful use of the
+cache, in which small reads and writes cause large sections of an LV to be
+stored in the cache.  However, choosing a chunk size that is too small
+can result in more overhead trying to manage the numerous chunks that
+become mapped into the cache.  Overhead can include both excessive CPU
+time searching for chunks, and excessive memory tracking chunks.
+
+Command to display the chunk size:
+.br
+.B lvs -o+chunksize VG/LV
+
+.BR lvm.conf (5)
+.B cache_pool_chunk_size
+.br
+controls the default chunk size.
+
+The default value is shown by:
+.br
+.B lvmconfig --type default allocation/cache_pool_chunk_size
+
+
+.SS dm-cache cache policy
+
+\&
+
+The dm-cache subsystem has additional per-LV parameters: the cache policy
+to use, and possibly tunable parameters for the cache policy.  Three
+policies are currently available: "smq" is the default policy, "mq" is an
+older implementation, and "cleaner" is used to force the cache to write
+back (flush) all cached writes to the origin LV.
+
+The older "mq" policy has a number of tunable parameters. The defaults are
+chosen to be suitable for the majority of systems, but in special
+circumstances, changing the settings can improve performance.
+
+With the --cachepolicy and --cachesettings options, the cache policy and
+settings can be set when caching is started, or changed on an existing
+cached LV (both options can be used together).  The current cache policy
+and settings can be displayed with the cache_policy and cache_settings
+reporting options:
+
+.B lvs -o+cache_policy,cache_settings VG/LV
+
+.nf
+Change the cache policy and settings of an existing LV.
+
+$ lvchange --cachepolicy mq --cachesettings \\
+	\(aqmigration_threshold=2048 random_threshold=4\(aq vg/main
+.fi
+
+.BR lvm.conf (5)
+.B allocation/cache_policy
+.br
+defines the default cache policy.
+
+.BR lvm.conf (5)
+.B allocation/cache_settings
+.br
+defines the default cache settings.
+
+.SS dm-cache spare metadata LV
+
+\&
+
+See
+.BR lvmthin (7)
+for a description of the "pool metadata spare" LV.
+The same concept is used for cache pools.
+
+.SS dm-cache metadata formats
+
+\&
+
+There are two disk formats for dm-cache metadata.  The metadata format can
+be specified with --cachemetadataformat when caching is started, and
+cannot be changed.  Format \fB2\fP has better performance; it is more
+compact, and stores dirty bits in a separate btree, which improves the
+speed of shutting down the cache.  With \fBauto\fP, lvm selects the best
+option provided by the current dm-cache kernel module.
+
+.SS mirrored cache device
+
+\&
+
+The fast LV holding the cache can be created as a raid1 mirror so that it
+can tolerate a device failure.  (When using dm-cache with separate data
+and metadata LVs, each of the sub-LVs can use raid1.)
+
+.nf
+$ lvcreate -n main -L Size vg /dev/slow
+$ lvcreate --type raid1 -m 1 -n fast -L Size vg /dev/fast1 /dev/fast2
+$ lvconvert --type cache --cachepool fast vg/main
+.fi
+
+.SH SEE ALSO
+.BR lvm.conf (5),
+.BR lvchange (8),
+.BR lvcreate (8),
+.BR lvdisplay (8),
+.BR lvextend (8),
+.BR lvremove (8),
+.BR lvrename (8),
+.BR lvresize (8),
+.BR lvs (8),
+.BR vgchange (8),
+.BR vgmerge (8),
+.BR vgreduce (8),
+.BR vgsplit (8)

@@ -1,0 +1,6 @@
+.SH EXAMPLES
+
+Disallow the allocation of physical extents on a PV (e.g. because of
+disk errors, or because it will be removed after freeing it).
+.br
+.B pvchange -x n /dev/sdk1

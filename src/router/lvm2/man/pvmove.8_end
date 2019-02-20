@@ -1,0 +1,91 @@
+.SH NOTES
+pvmove works as follows:
+
+1. A temporary 'pvmove' LV is created to store details of all the data
+movements required.
+
+2. Every LV in the VG is searched for contiguous data that need moving
+according to the command line arguments.
+For each piece of data found, a new segment is added to the end of the
+pvmove LV.
+This segment takes the form of a temporary mirror to copy the data
+from the original location to a newly allocated location.
+The original LV is updated to use the new temporary mirror segment
+in the pvmove LV instead of accessing the data directly.
+
+3. The VG metadata is updated on disk.
+
+4. The first segment of the pvmove LV is activated and starts to mirror
+the first part of the data.  Only one segment is mirrored at once as this
+is usually more efficient.
+
+5. A daemon repeatedly checks progress at the specified time interval.
+When it detects that the first temporary mirror is in sync, it breaks that
+mirror so that only the new location for that data gets used and writes a
+checkpoint into the VG metadata on disk.  Then it activates the mirror for
+the next segment of the pvmove LV.
+
+6. When there are no more segments left to be mirrored, the temporary LV
+is removed and the VG metadata is updated so that the LVs reflect the new
+data locations.
+
+Note that this new process cannot support the original LVM1
+type of on-disk metadata.  Metadata can be converted using
+\fBvgconvert\fP(8).
+
+If the \fB--atomic\fP option is used, a slightly different approach is
+used for the move.  Again, a temporary 'pvmove' LV is created to store the
+details of all the data movements required.  This temporary LV contains
+all the segments of the various LVs that need to be moved.  However, in
+this case, an identical LV is allocated that contains the same number of
+segments and a mirror is created to copy the contents from the first
+temporary LV to the second.  After a complete copy is made, the temporary
+LVs are removed, leaving behind the segments on the destination PV.  If an
+abort is issued during the move, all LVs being moved will remain on the
+source PV.
+
+.SH EXAMPLES
+
+Move all physical extents that are used by simple LVs on the specified PV to
+free physical extents elsewhere in the VG.
+.br
+.B pvmove /dev/sdb1
+
+Use a specific destination PV when moving physical extents.
+.br
+.B pvmove /dev/sdb1 /dev/sdc1
+
+Move extents belonging to a single LV.
+.br
+.B pvmove -n lvol1 /dev/sdb1 /dev/sdc1
+
+Rather than moving the contents of an entire device, it is possible to
+move a range of physical extents, for example numbers 1000 to 1999
+inclusive on the specified PV.
+.br
+.B pvmove /dev/sdb1:1000-1999
+
+A range of physical extents to move can be specified as start+length. For
+example, starting from PE 1000. (Counting starts from 0, so this refers to the
+1001st to the 2000th PE inclusive.)
+.br
+.B pvmove /dev/sdb1:1000+1000
+
+Move a range of physical extents to a specific PV (which must have
+sufficient free extents).
+.br
+.B pvmove /dev/sdb1:1000-1999 /dev/sdc1
+
+Move a range of physical extents to specific new extents on a new PV.
+.br
+.B pvmove /dev/sdb1:1000-1999 /dev/sdc1:0-999
+
+If the source and destination are on the same disk, the
+\fBanywhere\fP allocation policy is needed.
+.br
+.B pvmove --alloc anywhere /dev/sdb1:1000-1999 /dev/sdb1:0-999
+
+The part of a specific LV present within in a range of physical
+extents can also be picked out and moved.
+.br
+.B pvmove -n lvol1 /dev/sdb1:1000-1999 /dev/sdc1

@@ -1,0 +1,202 @@
+LVM device fault handling
+=========================
+
+Introduction
+------------
+This document is to serve as the definitive source for information
+regarding the policies and procedures surrounding device failures
+in LVM.  It codifies LVM's responses to device failures as well as
+the responsibilities of administrators.
+
+Device failures can be permanent or transient.  A permanent failure
+is one where a device becomes inaccessible and will never be
+revived.  A transient failure is a failure that can be recovered
+from (e.g. a power failure, intermittent network outage, block
+relocation, etc).  The policies for handling both types of failures
+is described herein.
+
+Users need to be aware that there are two implementations of RAID1 in LVM.
+The first is defined by the "mirror" segment type.  The second is defined by
+the "raid1" segment type.  The characteristics of each of these are defined
+in lvm.conf under 'mirror_segtype_default' - the configuration setting used to
+identify the default RAID1 implementation used for LVM operations.
+
+Available Operations During a Device Failure
+--------------------------------------------
+When there is a device failure, LVM behaves somewhat differently because
+only a subset of the available devices will be found for the particular
+volume group.  The number of operations available to the administrator
+is diminished.  It is not possible to create new logical volumes while
+PVs cannot be accessed, for example.  Operations that create, convert, or
+resize logical volumes are disallowed, such as:
+- lvcreate
+- lvresize
+- lvreduce
+- lvextend
+- lvconvert (unless '--repair' is used)
+Operations that activate, deactivate, remove, report, or repair logical
+volumes are allowed, such as:
+- lvremove
+- vgremove (will remove all LVs, but not the VG until consistent)
+- pvs
+- vgs
+- lvs
+- lvchange -a [yn]
+- vgchange -a [yn]
+Operations specific to the handling of failed devices are allowed and
+are as follows:
+
+- 'vgreduce --removemissing <VG>':  This action is designed to remove
+  the reference of a failed device from the LVM metadata stored on the
+  remaining devices.  If there are (portions of) logical volumes on the
+  failed devices, the ability of the operation to proceed will depend
+  on the type of logical volumes found.  If an image (i.e leg or side)
+  of a mirror is located on the device, that image/leg of the mirror
+  is eliminated along with the failed device.  The result of such a
+  mirror reduction could be a no-longer-redundant linear device.  If
+  a linear, stripe, or snapshot device is located on the failed device
+  the command will not proceed without a '--force' option.  The result
+  of using the '--force' option is the entire removal and complete
+  loss of the non-redundant logical volume.  If an image or metadata area
+  of a RAID logical volume is on the failed device, the sub-LV affected is
+  replace with an error target device - appearing as <unknown> in 'lvs'
+  output.  RAID logical volumes cannot be completely repaired by vgreduce -
+  'lvconvert --repair' (listed below) must be used.  Once this operation is
+  complete on volume groups not containing RAID logical volumes, the volume
+  group will again have a complete and consistent view of the devices it
+  contains.  Thus, all operations will be permitted - including creation,
+  conversion, and resizing operations.  It is currently the preferred method
+  to call 'lvconvert --repair' on the individual logical volumes to repair
+  them followed by 'vgreduce --removemissing' to extract the physical volume's
+  representation in the volume group.
+
+- 'lvconvert --repair <VG/LV>':  This action is designed specifically
+  to operate on individual logical volumes.  If, for example, a failed
+  device happened to contain the images of four distinct mirrors, it would
+  be necessary to run 'lvconvert --repair' on each of them.  The ultimate
+  result is to leave the faulty device in the volume group, but have no logical
+  volumes referencing it.  (This allows for 'vgreduce --removemissing' to
+  removed the physical volumes cleanly.)  In addition to removing mirror or
+  RAID images that reside on failed devices, 'lvconvert --repair' can also
+  replace the failed device if there are spare devices available in the
+  volume group.  The user is prompted whether to simply remove the failed
+  portions of the mirror or to also allocate a replacement, if run from the
+  command-line.  Optionally, the '--use-policies' flag can be specified which
+  will cause the operation not to prompt the user, but instead respect
+  the policies outlined in the LVM configuration file - usually,
+  /etc/lvm/lvm.conf.  Once this operation is complete, the logical volumes
+  will be consistent.  However, the volume group will still be inconsistent -
+  due to the refernced-but-missing device/PV - and operations will still be
+  restricted to the aformentioned actions until either the device is
+  restored or 'vgreduce --removemissing' is run.
+
+Device Revival (transient failures):
+------------------------------------
+During a device failure, the above section describes what limitations
+a user can expect.  However, if the device returns after a period of
+time, what to expect will depend on what has happened during the time
+period when the device was failed.  If no automated actions (described
+below) or user actions were necessary or performed, then no change in
+operations or logical volume layout will occur.  However, if an
+automated action or one of the aforementioned repair commands was
+manually run, the returning device will be perceived as having stale
+LVM metadata.  In this case, the user can expect to see a warning
+concerning inconsistent metadata.  The metadata on the returning
+device will be automatically replaced with the latest copy of the
+LVM metadata - restoring consistency.  Note, while most LVM commands
+will automatically update the metadata on a restored devices, the
+following possible exceptions exist:
+- pvs (when it does not read/update VG metadata)
+
+Automated Target Response to Failures:
+--------------------------------------
+The only LVM target types (i.e. "personalities") that have an automated
+response to failures are the mirror and RAID logical volumes.  The other target
+types (linear, stripe, snapshot, etc) will simply propagate the failure.
+[A snapshot becomes invalid if its underlying device fails, but the
+origin will remain valid - presuming the origin device has not failed.]
+
+Starting with the "mirror" segment type, there are three types of errors that
+a mirror can suffer - read, write, and resynchronization errors.  Each is
+described in depth below.
+
+Mirror read failures:
+If a mirror is 'in-sync' (i.e. all images have been initialized and
+are identical), a read failure will only produce a warning.  Data is
+simply pulled from one of the other images and the fault is recorded.
+Sometimes - like in the case of bad block relocation - read errors can
+be recovered from by the storage hardware.  Therefore, it is up to the
+user to decide whether to reconfigure the mirror and remove the device
+that caused the error.  Managing the composition of a mirror is done with
+'lvconvert' and removing a device from a volume group can be done with
+'vgreduce'.
+
+If a mirror is not 'in-sync', a read failure will produce an I/O error.
+This error will propagate all the way up to the applications above the
+logical volume (e.g. the file system).  No automatic intervention will
+take place in this case either.  It is up to the user to decide what
+can be done/salvaged in this senario.  If the user is confident that the
+images of the mirror are the same (or they are willing to simply attempt
+to retreive whatever data they can), 'lvconvert' can be used to eliminate
+the failed image and proceed.
+
+Mirror resynchronization errors:
+A resynchronization error is one that occurs when trying to initialize
+all mirror images to be the same.  It can happen due to a failure to
+read the primary image (the image considered to have the 'good' data), or
+due to a failure to write the secondary images.  This type of failure
+only produces a warning, and it is up to the user to take action in this
+case.  If the error is transient, the user can simply reactivate the
+mirrored logical volume to make another attempt at resynchronization.
+If attempts to finish resynchronization fail, 'lvconvert' can be used to
+remove the faulty device from the mirror.
+
+TODO...
+Some sort of response to this type of error could be automated.
+Since this document is the definitive source for how to handle device
+failures, the process should be defined here.  If the process is defined
+but not implemented, it should be noted as such.  One idea might be to
+make a single attempt to suspend/resume the mirror in an attempt to
+redo the sync operation that failed.  On the other hand, if there is
+a permanent failure, it may simply be best to wait for the user or the
+automated response that is sure to follow from a write failure.
+...TODO
+
+Mirror write failures:
+When a write error occurs on a mirror constituent device, an attempt
+to handle the failure is automatically made.  This is done by calling
+'lvconvert --repair --use-policies'.  The policies implied by this
+command are set in the LVM configuration file.  They are:
+- mirror_log_fault_policy:  This defines what action should be taken
+  if the device containing the log fails.  The available options are
+  "remove" and "allocate".  Either of these options will cause the
+  faulty log device to be removed from the mirror.  The "allocate"
+  policy will attempt the further action of trying to replace the
+  failed disk log by using space that might be available in the
+  volume group.  If the allocation fails (or the "remove" policy
+  is specified), the mirror log will be maintained in memory.  Should
+  the machine be rebooted or the logical volume deactivated, a
+  complete resynchronization of the mirror will be necessary upon
+  the follow activation - such is the nature of a mirror with a 'core'
+  log.  The default policy for handling log failures is "allocate".
+  The service disruption incurred by replacing the failed log is
+  negligible, while the benefits of having persistent log is
+  pronounced.
+- mirror_image_fault_policy:  This defines what action should be taken
+  if a device containing an image fails.  Again, the available options
+  are "remove" and "allocate".  Both of these options will cause the
+  faulty image device to be removed - adjusting the logical volume
+  accordingly.  For example, if one image of a 2-way mirror fails, the
+  mirror will be converted to a linear device.  If one image of a
+  3-way mirror fails, the mirror will be converted to a 2-way mirror.
+  The "allocate" policy takes the further action of trying to replace
+  the failed image using space that is available in the volume group.
+  Replacing a failed mirror image will incure the cost of
+  resynchronizing - degrading the performance of the mirror.  The
+  default policy for handling an image failure is "remove".  This
+  allows the mirror to still function, but gives the administrator the
+  choice of when to incure the extra performance costs of replacing
+  the failed image.
+
+RAID logical volume device failures are handled differently from the "mirror"
+segment type.  Discussion of this can be found in lvm2-raid.txt.

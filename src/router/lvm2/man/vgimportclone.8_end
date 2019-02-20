@@ -1,0 +1,8 @@
+.SH EXAMPLES
+
+An original VG "vg00" has PVs "/dev/sda" and "/dev/sdb".
+The corresponding PVs from a hardware snapshot are "/dev/sdc" and "/dev/sdd".
+Rename the VG associated with "/dev/sdc" and "/dev/sdd" from "vg00" to "vg00_snap"
+(and change associated UUIDs).
+.br
+.B vgimportclone --basevgname vg00_snap /dev/sdc /dev/sdd

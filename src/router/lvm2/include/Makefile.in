@@ -1,0 +1,102 @@
+#
+# Copyright (C) 2001-2004 Sistina Software, Inc. All rights reserved.
+# Copyright (C) 2004-2018 Red Hat, Inc. All rights reserved.
+#
+# This file is part of LVM2.
+#
+# This copyrighted material is made available to anyone wishing to use,
+# modify, copy, or redistribute it subject to the terms and conditions
+# of the GNU General Public License v.2.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+top_builddir = @top_builddir@
+
+include $(top_builddir)/make.tmpl
+
+DISTCLEAN_TARGETS += configure.h lvm-version.h
+CLEAN_TARGETS += \
+ .symlinks \
+ .symlinks_created \
+ activate.h \
+ archiver.h \
+ bcache.h \
+ btree.h \
+ clvm.h \
+ config-util.h \
+ config.h \
+ config_settings.h \
+ crc.h \
+ daemon-client.h \
+ daemon-io.h \
+ defaults.h \
+ dev-cache.h \
+ dev-ext-udev-constants.h \
+ dev-type.h \
+ device-types.h \
+ device.h \
+ display.h \
+ dm-ioctl.h \
+ dm-log-userspace.h \
+ dm-logging.h \
+ dmlib.h \
+ filter.h \
+ format-text.h \
+ format1.h \
+ format_pool.h \
+ intl.h \
+ kdev_t.h \
+ label.h \
+ last-path-component.h \
+ lib.h \
+ libdevmapper-event.h \
+ libdevmapper.h \
+ locking.h \
+ log.h \
+ lv.h \
+ lvm-exec.h \
+ lvm-file.h \
+ lvm-flock.h \
+ lvm-globals.h \
+ lvm-logging.h \
+ lvm-maths.h \
+ lvm-percent.h \
+ lvm-signal.h \
+ lvm-string.h \
+ lvm-wrappers.h \
+ lvm2app.h \
+ lvm2cmd.h \
+ lvmcache.h \
+ lvmlockd-client.h \
+ lvmlockd.h \
+ lvmnotify.h \
+ lvmpolld-client.h \
+ lvmpolld-protocol.h \
+ lv_alloc.h \
+ memlock.h \
+ metadata-exported.h \
+ metadata.h \
+ pogen.h \
+ polldaemon.h \
+ polling_ops.h \
+ properties.h \
+ prop_common.h \
+ pv.h \
+ pv_alloc.h \
+ report.h \
+ segtype.h \
+ sharedlib.h \
+ str_list.h \
+ targets.h \
+ text_export.h \
+ text_import.h \
+ tool.h \
+ toolcontext.h \
+ util.h \
+ uuid.h \
+ vg.h \
+ xlate.h

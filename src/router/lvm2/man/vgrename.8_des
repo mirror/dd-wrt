@@ -1,0 +1,9 @@
+vgrename renames a VG.
+
+All VGs visible to a system need to have different names, otherwise many
+LVM commands will refuse to run or give warning messages. VGs with the
+same name can occur when disks are moved between machines, or filters are
+changed. If a newly connected disk has a VG with the same name as the VG
+containing the root filesystem, the machine may not boot correctly. When
+two VGs have the same name, the VG UUID can be used in place of the source
+VG name.
