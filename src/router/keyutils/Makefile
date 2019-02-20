@@ -57,27 +57,9 @@ LIBNAME		:= libkeyutils.so.$(APIVERSION)
 # Guess at the appropriate lib directory and word size
 #
 ###############################################################################
-ifeq ($(origin LIBDIR),undefined)
-LIBDIR		:= $(shell ldd /usr/bin/make | grep '\(/libc\)' | sed -e 's!.*\(/.*\)/libc[.].*!\1!')
-endif
-ifeq ($(origin USRLIBDIR),undefined)
-USRLIBDIR	:= $(patsubst /lib/%,/usr/lib/%,$(LIBDIR))
-endif
+LIBDIR=/lib
+USRLIBDIR=/usr/lib
 BUILDFOR	:= $(shell file /usr/bin/make | sed -e 's!.*ELF \(32\|64\)-bit.*!\1!')-bit
-
-ifeq ($(origin CFLAGS),undefined)
-ifeq ($(BUILDFOR),32-bit)
-CFLAGS		+= -m32
-LIBDIR		:= /lib
-USRLIBDIR	:= /usr/lib
-else
-ifeq ($(BUILDFOR),64-bit)
-CFLAGS		+= -m64
-LIBDIR		:= /lib64
-USRLIBDIR	:= /usr/lib64
-endif
-endif
-endif
 
 PKGCONFIG 	:= libkeyutils.pc
 PKGCONFIG_DIR 	:= pkgconfig
@@ -181,10 +163,10 @@ install: all
 #	$(INSTALL) -D -m 0644 $(ARLIB) $(DESTDIR)$(USRLIBDIR)/$(ARLIB)
 #endif
 #ifeq ($(NO_SOLIB),0)
-#	$(INSTALL) -D $(LIBNAME) $(DESTDIR)$(LIBDIR)/$(LIBNAME)
-#	$(LNS) $(LIBNAME) $(DESTDIR)$(LIBDIR)/$(SONAME)
-#	mkdir -p $(DESTDIR)$(USRLIBDIR)
-#	$(LNS) $(LIBDIR)/$(SONAME) $(DESTDIR)$(USRLIBDIR)/$(DEVELLIB)
+	$(INSTALL) -D $(LIBNAME) $(DESTDIR)$(LIBDIR)/$(LIBNAME)
+	$(LNS) $(LIBNAME) $(DESTDIR)$(LIBDIR)/$(SONAME)
+	mkdir -p $(DESTDIR)$(USRLIBDIR)
+	$(LNS) $(LIBDIR)/$(SONAME) $(DESTDIR)$(USRLIBDIR)/$(DEVELLIB)
 #	sed \
 #	-e 's,@VERSION\@,$(VERSION),g' \
 #	-e 's,@prefix\@,$(PREFIX),g' \
