@@ -1068,13 +1068,13 @@ static int br_ip4_multicast_igmp3_report(struct net_bridge *br,
 		default:
 			continue;
 		}
+		src = eth_hdr(skb)->h_source;
 
 		if ((type == IGMPV3_CHANGE_TO_INCLUDE ||
 		     type == IGMPV3_MODE_IS_INCLUDE) &&
 		    ntohs(grec->grec_nsrcs) == 0) {
 			br_ip4_multicast_leave_group(br, port, group, vid, src);
 		} else {
-			src = eth_hdr(skb)->h_source;
 			err = br_ip4_multicast_add_group(br, port, group, vid, src);
 			if (err)
 				break;
@@ -1090,7 +1090,7 @@ static int br_ip6_multicast_mld2_report(struct net_bridge *br,
 					struct sk_buff *skb,
 					u16 vid)
 {
-	const unsigned char *src = eth_hdr(skb)->h_source;
+	const unsigned char *src;
 	struct icmp6hdr *icmp6h;
 	struct mld2_grec *grec;
 	int i;
@@ -1137,6 +1137,8 @@ static int br_ip6_multicast_mld2_report(struct net_bridge *br,
 		default:
 			continue;
 		}
+ 
+		src = eth_hdr(skb)->h_source;
 
 		if ((grec->grec_type == MLD2_CHANGE_TO_INCLUDE ||
 		     grec->grec_type == MLD2_MODE_IS_INCLUDE) &&
