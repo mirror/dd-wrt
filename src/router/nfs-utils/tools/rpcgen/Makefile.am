@@ -9,10 +9,11 @@ rpcgen_SOURCES = rpc_clntout.c rpc_cout.c rpc_hout.c rpc_main.c \
 		 rpc_util.c rpc_sample.c rpc_output.h rpc_parse.h \
 		 rpc_scan.h rpc_util.h
 
-rpcgen_CFLAGS=$(CFLAGS_FOR_BUILD)
-rpcgen_CPPLAGS=$(CPPFLAGS_FOR_BUILD)
-rpcgen_LDFLAGS=$(LDFLAGS_FOR_BUILD)
-rpcgen_LDADD=$(LIBTIRPC)
+CFLAGS=
+rpcgen_CFLAGS=
+rpcgen_CPPLAGS=
+rpcgen_LDFLAGS=
+rpcgen_LDADD=
 
 MAINTAINERCLEANFILES = Makefile.in
 

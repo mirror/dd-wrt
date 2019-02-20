@@ -204,7 +204,7 @@ static void auth_unix_gid(int f)
 		xlog(L_ERROR, "auth_unix_gid: error writing reply");
 }
 
-#if USE_BLKID
+#ifdef USE_BLKID
 static const char *get_uuid_blkdev(char *path)
 {
 	/* We set *safe if we know that we need the
@@ -426,7 +426,7 @@ static int same_path(char *child, char *parent, int len)
 	if (count_slashes(p) != count_slashes(parent))
 		return 0;
 
-#if HAVE_NAME_TO_HANDLE_AT
+#ifdef HAVE_NAME_TO_HANDLE_AT
 	struct {
 		struct file_handle fh;
 		unsigned char handle[128];
