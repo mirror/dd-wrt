@@ -30,6 +30,7 @@
 
 struct inet_bind_bucket;
 struct tcp_congestion_ops;
+struct tcp_options_received;
 
 /*
  * Pointers to address related TCP functions
