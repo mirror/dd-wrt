@@ -121,15 +121,10 @@ void start_dhcp6c(void)
 #define DH6OPT_ORO 6
 #define DH6OPT_AUTH 11
 */
-#ifdef HAVE_FREECWMP
-			char *vendorclass = "dslforum.org";
-#else
-			char *vendorclass = nvram_safe_get("dhcpc_vendorclass");
-#endif
-			char *userclass = nvram_safe_get("dhcp_userclass");
-			char *auth = nvram_safe_get("dhcp_authentication");
-			char *clientid = nvram_safe_get("dhcp_clientid");
-			char *requestip = nvram_safe_get("dhcpc_requestip");
+			char *vendorclass = nvram_safe_get("dhcp6c_vendorclass");
+			char *userclass = nvram_safe_get("dhcp6c_userclass");
+			char *auth = nvram_safe_get("dhcp6c_authentication");
+			char *clientid = nvram_safe_get("dhcp6c_clientid");
 
 			if (nvram_match("wan_proto", "dhcp_auth")) {
 				fprintf(fpc, "send raw-option 6 00:0b:00:11:00:17:00:18;\n");
