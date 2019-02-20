@@ -1,8 +1,5 @@
 /* include/configure.h.in.  Generated from configure.ac by autoheader.  */
 
-/* Define to 1 to use libblkid detection of signatures when wiping. */
-#undef BLKID_WIPING_SUPPORT
-
 /* The path to 'cache_check', if available. */
 #undef CACHE_CHECK_CMD
 
@@ -217,9 +214,6 @@
 
 /* Define to 1 if you have the <langinfo.h> header file. */
 #undef HAVE_LANGINFO_H
-
-/* Define to 1 if you have the <libaio.h> header file. */
-#undef HAVE_LIBAIO_H
 
 /* Define to 1 if dynamic libraries are available. */
 #undef HAVE_LIBDL
@@ -522,12 +516,6 @@
 /* Define to 1 if the system has the type `_Bool'. */
 #undef HAVE__BOOL
 
-/* Define to 1 if the system has the `__builtin_clz' built-in function */
-#undef HAVE___BUILTIN_CLZ
-
-/* Define to 1 if the system has the `__builtin_clzll' built-in function */
-#undef HAVE___BUILTIN_CLZLL
-
 /* Internalization package */
 #undef INTL_PACKAGE
 
@@ -668,9 +656,6 @@
 
 /* Define to 1 to include built-in support for vdo. */
 #undef VDO_INTERNAL
-
-/* Define to 1 to include built-in support for writecache. */
-#undef WRITECACHE_INTERNAL
 
 /* Define to get access to GNU/Linux extension */
 #undef _GNU_SOURCE
