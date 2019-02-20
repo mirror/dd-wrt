@@ -63,6 +63,7 @@ endif
 
 config DEFAULT_MPTCP_PM
 	string
+	depends on MPTCP=y
 	default "default" if DEFAULT_DUMMY
 	default "fullmesh" if DEFAULT_FULLMESH 
 	default "ndiffports" if DEFAULT_NDIFFPORTS
