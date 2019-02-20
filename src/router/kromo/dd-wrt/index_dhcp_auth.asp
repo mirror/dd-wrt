@@ -18,7 +18,7 @@
 	<input name="dhcp_clientid" size="63" maxlength="1023" value="<% nvg("dhcp_clientid"); %>" />
 </div>
 <div class="setting">
-	<div class="label"><% tran("idx.dhcp_authentication"); %></div>
+	<div class="label"><% tran("idx.dhcp_auth"); %></div>
 	<input name="dhcp_authentication" size="63" maxlength="1023" value="<% nvg("dhcp_authentication"); %>" />
 </div>
 <% ifndef("HAVE_IPV6", "<!--"); %>
@@ -35,7 +35,7 @@
 	<input name="dhcp6c_clientid" size="63" maxlength="1023" value="<% nvg("dhcp6c_clientid"); %>" />
 </div>
 <div class="setting">
-	<div class="label"><% tran("idx.dhcp6c_authentication"); %></div>
+	<div class="label"><% tran("idx.dhcp6c_auth"); %></div>
 	<input name="dhcp6c_authentication" size="63" maxlength="1023" value="<% nvg("dhcp6c_authentication"); %>" />
 </div>
 <% ifndef("HAVE_IPV6", "-->"); %>
