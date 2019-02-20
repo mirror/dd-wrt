@@ -137,10 +137,9 @@ static void set_stp_state(char *bridge, char *stp)
 #endif
 
 }
-void apply_bridgeif(char *match, char *ifname) 
+void apply_bridgeif(char *ifname) 
 {
 	char stp[256];
-	set_stp_state("br0", getBridgeSTPType("br0", stp));
 	char word[256];
 	char *next, *wordlist;
 
@@ -153,16 +152,15 @@ void apply_bridgeif(char *match, char *ifname)
 		GETENTRYBYIDX(stp, word, 4);
 		GETENTRYBYIDX(pathcost, word, 5);
 
-		if (strncmp(tag, "EOP", 3) && !strcmp(match, tag)) {
-			br_add_interface(ifname, port);
+		if (!strcmp(ifname, port)) {
 			if (prio)
-				br_set_port_prio(ifname, port, atoi(prio));
+				br_set_port_prio(tag, port, atoi(prio));
 			if (hairpin)
-				br_set_port_hairpin(ifname, port, atoi(hairpin));
+				br_set_port_hairpin(tag, port, atoi(hairpin));
 			if (stp)
-				br_set_port_stp(ifname, port, atoi(stp));
+				br_set_port_stp(tag, port, atoi(stp));
 			if (pathcost)
-				br_set_path_cost(ifname, port, atoi(pathcost));
+				br_set_path_cost(tag, port, atoi(pathcost));
 		}
 	}
 

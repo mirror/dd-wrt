@@ -81,7 +81,7 @@ extern int br_refresh(void);
 extern void br_shutdown(void);
 
 extern const char *br_get_state_name(int state);
-void apply_bridgeif(char *match, char *ifname);
+void apply_bridgeif(char *ifname);
 extern int br_add_bridge(const char *brname);
 extern int br_del_bridge(const char *brname);
 extern int br_add_interface(const char *br, const char *dev);
