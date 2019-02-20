@@ -1294,8 +1294,8 @@ static void br_multicast_query_received(struct net_bridge *br,
 	 * the arrival port for IGMP Queries where the source address
 	 * is 0.0.0.0 should not be added to router port list.
 	 */
-	if ((port->flags & BR_MULTICAST_TO_UCAST) || !br->multicast_disabled || (saddr->proto == htons(ETH_P_IP) && saddr->u.ip4) ||
-	    saddr->proto == htons(ETH_P_IPV6))
+//	if ((port->flags & BR_MULTICAST_TO_UCAST) || !br->multicast_disabled || (saddr->proto == htons(ETH_P_IP) && saddr->u.ip4) ||
+//	    saddr->proto == htons(ETH_P_IPV6))
 		br_multicast_mark_router(br, port);
 }
 
