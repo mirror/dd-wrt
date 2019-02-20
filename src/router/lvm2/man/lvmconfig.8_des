@@ -1,0 +1,4 @@
+lvmconfig, lvm config, lvm dumpconfig (for compatibility reasons, to be phased out) produce
+formatted output from the LVM configuration tree. The
+sources of the configuration data include \fBlvm.conf\fP(5) and command
+line settings from --config.

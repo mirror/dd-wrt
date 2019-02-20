@@ -1,0 +1,134 @@
+#!/bin/bash
+#
+# Copyright (C) 2007-2009 Red Hat, Inc. All rights reserved.
+#
+# This copyrighted material is made available to anyone wishing to use,
+# modify, copy, or redistribute it subject to the terms and conditions
+# of the GNU General Public License v.2.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# This file is part of LVM2.
+# It is required for the proper handling of failures of LVM2 mirror
+# devices that were created using the -m option of lvcreate.
+#
+#
+# chkconfig: 12345 02 99
+# description: Starts and stops dmeventd monitoring for lvm2
+#
+# For Red-Hat-based distributions such as Fedora, RHEL, CentOS.
+#	       
+### BEGIN INIT INFO
+# Provides: lvm2-monitor
+# Required-Start: $local_fs
+# Required-Stop: $local_fs
+# Default-Start: 1 2 3 4 5
+# Default-Stop: 0 6
+# Short-Description: Monitoring of LVM2 mirrors, snapshots etc. using dmeventd or progress polling
+### END INIT INFO
+
+. /etc/init.d/functions
+
+DAEMON=lvm2-monitor
+DMEVENTD_DAEMON=dmeventd
+
+sbindir=@SBINDIR@
+
+VGCHANGE="$sbindir/vgchange"
+VGS="$sbindir/vgs"
+LVS="$sbindir/lvs"
+
+LOCK_FILE="@DEFAULT_SYS_LOCK_DIR@/subsys/$DAEMON"
+PID_FILE="@DMEVENTD_PIDFILE@"
+
+WARN=1
+export LVM_SUPPRESS_LOCKING_FAILURE_MESSAGES=1
+
+rh_status() {
+	status -p "$PID_FILE" "$DMEVENTD_DAEMON"
+}
+
+rh_status_q() {
+	rh_status >/dev/null 2>&1
+}
+start()
+{
+	ret=0
+	# TODO do we want to separate out already active groups only?
+	VGSLIST=`$VGS --noheadings -o name --ignoreskippedcluster --config 'log{command_names=0 prefix="  "}' 2> /dev/null`
+	for vg in $VGSLIST
+	do
+	    action "Starting monitoring for VG $vg:" "$VGCHANGE" --monitor y --poll y --ignoreskippedcluster --config 'log{command_names=0 prefix="  "}' $vg || ret=$?
+	done
+
+	return $ret
+}
+
+
+stop()
+{
+	ret=0
+	# TODO do we want to separate out already active groups only?
+	if test "$WARN" = "1"; then
+	   echo "Not stopping monitoring, this is a dangerous operation. Please use force-stop to override."
+	   return 1
+	fi
+	VGSLIST=`$VGS --noheadings -o name --ignoreskippedcluster --config 'log{command_names=0 prefix="  "}' 2> /dev/null`
+	for vg in $VGSLIST
+	do
+	    action "Stopping monitoring for VG $vg:" "$VGCHANGE" --monitor n --ignoreskippedcluster --config 'log{command_names=0 prefix="  "}' $vg || ret=$?
+	done
+	return $ret
+}
+
+rtrn=1
+
+# See how we were called.
+case "$1" in
+  start)
+	rh_status_q && exit 0
+	start
+	rtrn=$?
+	[ "$rtrn" = 0 ] && touch "$LOCK_FILE"
+	;;
+
+  force-stop)
+	rh_status_q || exit 0
+	WARN=0
+	stop
+	rtrn=$?
+	[ "$rtrn" = 0 ] && rm -f "$LOCK_FILE"
+	;;
+
+  stop)
+	rh_status_q || exit 0
+	test "$runlevel" = "0" && WARN=0
+	test "$runlevel" = "6" && WARN=0
+	stop
+	rtrn=$?
+	[ "$rtrn" = 0 ] && rm -f "$LOCK_FILE"
+	;;
+
+  restart)
+	WARN=0
+	if stop
+	then
+		start
+	fi 
+	rtrn=$?
+	;;
+
+  status)
+	rh_status
+	rtrn=$?
+	[ "$rtrn" = 0 ] && "$LVS" -S 'seg_monitor=monitored' -o lv_full_name,seg_monitor
+	;;
+
+  *)
+	echo $"Usage: $0 {start|stop|restart|status|force-stop}"
+	;;
+esac
+
+exit $rtrn

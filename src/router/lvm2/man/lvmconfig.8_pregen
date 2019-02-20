@@ -1,0 +1,545 @@
+.TH LVMCONFIG 8 "LVM TOOLS #VERSION#" "Red Hat, Inc."
+.SH NAME
+lvmconfig - Display and manipulate configuration information
+.
+.SH SYNOPSIS
+\fBlvmconfig\fP
+.br
+    [ \fIoption_args\fP ]
+.br
+    [ \fIposition_args\fP ]
+.br
+.SH DESCRIPTION
+lvmconfig, lvm config, lvm dumpconfig (for compatibility reasons, to be phased out) produce
+formatted output from the LVM configuration tree. The
+sources of the configuration data include \fBlvm.conf\fP(5) and command
+line settings from --config.
+.SH USAGE
+\fBlvmconfig\fP
+.br
+.RS 4
+.ad l
+[ \fB-f\fP|\fB--file\fP \fIString\fP ]
+.ad b
+.br
+.ad l
+[ \fB-l\fP|\fB--list\fP ]
+.ad b
+.br
+.ad l
+[    \fB--atversion\fP \fIString\fP ]
+.ad b
+.br
+.ad l
+[    \fB--typeconfig\fP \fBcurrent\fP|\fBdefault\fP|\fBdiff\fP|\fBfull\fP|\fBlist\fP|\fBmissing\fP|\fBnew\fP|\fBprofilable\fP|\fBprofilable-command\fP|\fBprofilable-metadata\fP ]
+.ad b
+.br
+.ad l
+[    \fB--ignoreadvanced\fP ]
+.ad b
+.br
+.ad l
+[    \fB--ignoreunsupported\fP ]
+.ad b
+.br
+.ad l
+[    \fB--ignorelocal\fP ]
+.ad b
+.br
+.ad l
+[    \fB--mergedconfig\fP ]
+.ad b
+.br
+.ad l
+[    \fB--metadataprofile\fP \fIString\fP ]
+.ad b
+.br
+.ad l
+[    \fB--sinceversion\fP \fIString\fP ]
+.ad b
+.br
+.ad l
+[    \fB--showdeprecated\fP ]
+.ad b
+.br
+.ad l
+[    \fB--showunsupported\fP ]
+.ad b
+.br
+.ad l
+[    \fB--validate\fP ]
+.ad b
+.br
+.ad l
+[    \fB--withsummary\fP ]
+.ad b
+.br
+.ad l
+[    \fB--withcomments\fP ]
+.ad b
+.br
+.ad l
+[    \fB--withgeneralpreamble\fP ]
+.ad b
+.br
+.ad l
+[    \fB--withlocalpreamble\fP ]
+.ad b
+.br
+.ad l
+[    \fB--withspaces\fP ]
+.ad b
+.br
+.ad l
+[    \fB--unconfigured\fP ]
+.ad b
+.br
+.ad l
+[    \fB--withversions\fP ]
+.ad b
+.br
+[ COMMON_OPTIONS ]
+.RE
+.br
+.RS 4
+[ \fIString\fP ... ]
+.RE
+
+Common options for lvm:
+.
+.RS 4
+.ad l
+[ \fB-d\fP|\fB--debug\fP ]
+.ad b
+.br
+.ad l
+[ \fB-h\fP|\fB--help\fP ]
+.ad b
+.br
+.ad l
+[ \fB-q\fP|\fB--quiet\fP ]
+.ad b
+.br
+.ad l
+[ \fB-t\fP|\fB--test\fP ]
+.ad b
+.br
+.ad l
+[ \fB-v\fP|\fB--verbose\fP ]
+.ad b
+.br
+.ad l
+[ \fB-y\fP|\fB--yes\fP ]
+.ad b
+.br
+.ad l
+[    \fB--commandprofile\fP \fIString\fP ]
+.ad b
+.br
+.ad l
+[    \fB--config\fP \fIString\fP ]
+.ad b
+.br
+.ad l
+[    \fB--driverloaded\fP \fBy\fP|\fBn\fP ]
+.ad b
+.br
+.ad l
+[    \fB--lockopt\fP \fIString\fP ]
+.ad b
+.br
+.ad l
+[    \fB--longhelp\fP ]
+.ad b
+.br
+.ad l
+[    \fB--nolocking\fP ]
+.ad b
+.br
+.ad l
+[    \fB--profile\fP \fIString\fP ]
+.ad b
+.br
+.ad l
+[    \fB--version\fP ]
+.ad b
+.RE
+.SH OPTIONS
+.HP
+.ad l
+\fB--atversion\fP \fIString\fP
+.br
+Specify an LVM version in x.y.z format where x is the major version,
+the y is the minor version and z is the patchlevel (e.g. 2.2.106).
+When configuration is displayed, the configuration settings recognized
+at this LVM version will be considered only. This can be used
+to display a configuration that a certain LVM version understands and
+which does not contain any newer settings for which LVM would
+issue a warning message when checking the configuration.
+.ad b
+.HP
+.ad l
+\fB--commandprofile\fP \fIString\fP
+.br
+The command profile to use for command configuration.
+See \fBlvm.conf\fP(5) for more information about profiles.
+.ad b
+.HP
+.ad l
+\fB--config\fP \fIString\fP
+.br
+Config settings for the command. These override lvm.conf settings.
+The String arg uses the same format as lvm.conf,
+or may use section/field syntax.
+See \fBlvm.conf\fP(5) for more information about config.
+.ad b
+.HP
+.ad l
+\fB-d\fP|\fB--debug\fP ...
+.br
+Set debug level. Repeat from 1 to 6 times to increase the detail of
+messages sent to the log file and/or syslog (if configured).
+.ad b
+.HP
+.ad l
+\fB--driverloaded\fP \fBy\fP|\fBn\fP
+.br
+If set to no, the command will not attempt to use device-mapper.
+For testing and debugging.
+.ad b
+.HP
+.ad l
+\fB-f\fP|\fB--file\fP \fIString\fP
+.br
+Write output to the named file.
+.ad b
+.HP
+.ad l
+\fB-h\fP|\fB--help\fP
+.br
+Display help text.
+.ad b
+.HP
+.ad l
+\fB--ignoreadvanced\fP
+.br
+Exclude advanced configuration settings from the output.
+.ad b
+.HP
+.ad l
+\fB--ignorelocal\fP
+.br
+Ignore the local section. The local section should be defined in
+the lvmlocal.conf file, and should contain config settings
+specific to the local host which should not be copied to
+other hosts.
+.ad b
+.HP
+.ad l
+\fB--ignoreunsupported\fP
+.br
+Exclude unsupported configuration settings from the output. These settings are
+either used for debugging and development purposes only or their support is not
+yet complete and they are not meant to be used in production. The \fBcurrent\fP
+and \fBdiff\fP types include unsupported settings in their output by default,
+all the other types ignore unsupported settings.
+.ad b
+.HP
+.ad l
+\fB-l\fP|\fB--list\fP
+.br
+List config settings with summarizing comment. This is the same as using
+options --typeconfig list --withsummary.
+.ad b
+.HP
+.ad l
+\fB--lockopt\fP \fIString\fP
+.br
+Used to pass options for special cases to lvmlockd.
+See \fBlvmlockd\fP(8) for more information.
+.ad b
+.HP
+.ad l
+\fB--longhelp\fP
+.br
+Display long help text.
+.ad b
+.HP
+.ad l
+\fB--mergedconfig\fP
+.br
+When the command is run with --config
+and/or --commandprofile (or using LVM_COMMAND_PROFILE
+environment variable), --profile, or --metadataprofile,
+merge all the contents of the "config cascade" before displaying it.
+Without merging, only the configuration at the front of the
+cascade is displayed.
+See \fBlvm.conf\fP(5) for more information about config.
+.ad b
+.HP
+.ad l
+\fB--metadataprofile\fP \fIString\fP
+.br
+The metadata profile to use for command configuration.
+See \fBlvm.conf\fP(5) for more information about profiles.
+.ad b
+.HP
+.ad l
+\fB--nolocking\fP
+.br
+Disable locking.
+.ad b
+.HP
+.ad l
+\fB--profile\fP \fIString\fP
+.br
+An alias for --commandprofile or --metadataprofile, depending
+on the command.
+.ad b
+.HP
+.ad l
+\fB-q\fP|\fB--quiet\fP ...
+.br
+Suppress output and log messages. Overrides --debug and --verbose.
+Repeat once to also suppress any prompts with answer 'no'.
+.ad b
+.HP
+.ad l
+\fB--showdeprecated\fP
+.br
+Include deprecated configuration settings in the output. These settings
+are deprecated after a certain version. If a concrete version is specified
+with --atversion, deprecated settings are automatically included
+if the specified version is lower than the version in which the settings were
+deprecated. The current and diff types include deprecated settings
+in their output by default, all the other types ignore deprecated settings.
+.ad b
+.HP
+.ad l
+\fB--showunsupported\fP
+.br
+Include unsupported configuration settings in the output. These settings
+are either used for debugging or development purposes only, or their support
+is not yet complete and they are not meant to be used in production. The
+current and diff types include unsupported settings in their
+output by default, all the other types ignore unsupported settings.
+.ad b
+.HP
+.ad l
+\fB--sinceversion\fP \fIString\fP
+.br
+Specify an LVM version in x.y.z format where x is the major version,
+the y is the minor version and z is the patchlevel (e.g. 2.2.106).
+This option is currently applicable only with --typeconfig new
+to display all configuration settings introduced since given version.
+.ad b
+.HP
+.ad l
+\fB-t\fP|\fB--test\fP
+.br
+Run in test mode. Commands will not update metadata.
+This is implemented by disabling all metadata writing but nevertheless
+returning success to the calling function. This may lead to unusual
+error messages in multi-stage operations if a tool relies on reading
+back metadata it believes has changed but hasn't.
+.ad b
+.HP
+.ad l
+\fB--typeconfig\fP \fBcurrent\fP|\fBdefault\fP|\fBdiff\fP|\fBfull\fP|\fBlist\fP|\fBmissing\fP|\fBnew\fP|\fBprofilable\fP|\fBprofilable-command\fP|\fBprofilable-metadata\fP
+.br
+\fBcurrent\fP prints the config settings that would be applied
+to an lvm command (assuming the command does not override them
+on the command line.) This includes:
+settings that have been modified in lvm config files,
+settings that get their default values from config files,
+and default settings that have been uncommented in config files.
+\fBdefault\fP prints all settings with their default values.
+Changes made in lvm config files are not reflected in the output.
+Some settings get their default values internally,
+and these settings are printed as comments.
+Other settings get their default values from config files,
+and these settings are not printed as comments.
+\fBdiff\fP prints only config settings that have been modified
+from their default values in config files (the difference between
+current and default.)
+\fBfull\fP prints every setting uncommented and set to the
+current value, i.e. how it would be used by an lvm command.
+This includes settings modified in config files, settings that usually
+get defaults internally, and settings that get defaults from config files.
+\fBlist\fP prints all config names without values.
+\fBmissing\fP prints settings that are missing from the
+lvm config files. A missing setting that usually gets its default
+from config files is printed uncommented and set to the internal default.
+Settings that get their default internally and are not set in config files
+are printed commented with the internal default.
+\fBnew\fP prints config settings that have been added since
+the lvm version specified by --sinceversion. They are printed
+with their default values.
+\fBprofilable\fP prints settings with their default values that can be set from a profile.
+\fBprofilable-command\fP prints settings with their default values that can be set from a command profile.
+\fBprofilable-metadata\fP prints settings with their default values that can be set from a metadata profile.
+Also see \fBlvm.conf\fP(5).
+.ad b
+.HP
+.ad l
+\fB--unconfigured\fP
+.br
+Internal option used for generating config file during build.
+.ad b
+.HP
+.ad l
+\fB--validate\fP
+.br
+Validate current configuration used and exit with appropriate
+return code. The validation is done only for the configuration
+at the front of the "config cascade". To validate the whole
+merged configuration tree, also use --mergedconfig.
+The validation is done even if lvm.conf config/checks is disabled.
+.ad b
+.HP
+.ad l
+\fB-v\fP|\fB--verbose\fP ...
+.br
+Set verbose level. Repeat from 1 to 4 times to increase the detail
+of messages sent to stdout and stderr.
+.ad b
+.HP
+.ad l
+\fB--version\fP
+.br
+Display version information.
+.ad b
+.HP
+.ad l
+\fB--withcomments\fP
+.br
+Display a full comment for each configuration node. For deprecated
+settings, also display comments about deprecation.
+.ad b
+.HP
+.ad l
+\fB--withgeneralpreamble\fP
+.br
+Include general config file preamble.
+.ad b
+.HP
+.ad l
+\fB--withlocalpreamble\fP
+.br
+Include local config file preamble.
+.ad b
+.HP
+.ad l
+\fB--withspaces\fP
+.br
+Where appropriate, add more spaces in output for better readability.
+.ad b
+.HP
+.ad l
+\fB--withsummary\fP
+.br
+Display a one line comment for each configuration node.
+.ad b
+.HP
+.ad l
+\fB--withversions\fP
+.br
+Also display a comment containing the version of introduction for
+each configuration node. If the setting is deprecated, also display
+the version since which it is deprecated.
+.ad b
+.HP
+.ad l
+\fB-y\fP|\fB--yes\fP
+.br
+Do not prompt for confirmation interactively but always assume the
+answer yes. Use with extreme caution.
+(For automatic no, see -qq.)
+.ad b
+.SH VARIABLES
+.HP
+\fIString\fP
+.br
+See the option description for information about the string content.
+.HP
+\fISize\fP[UNIT]
+.br
+Size is an input number that accepts an optional unit.
+Input units are always treated as base two values, regardless of
+capitalization, e.g. 'k' and 'K' both refer to 1024.
+The default input unit is specified by letter, followed by |UNIT.
+UNIT represents other possible input units: \fBbBsSkKmMgGtTpPeE\fP.
+b|B is bytes, s|S is sectors of 512 bytes, k|K is kilobytes,
+m|M is megabytes, g|G is gigabytes, t|T is terabytes,
+p|P is petabytes, e|E is exabytes.
+(This should not be confused with the output control --units, where
+capital letters mean multiple of 1000.)
+.SH ENVIRONMENT VARIABLES
+See \fBlvm\fP(8) for information about environment variables used by lvm.
+For example, LVM_VG_NAME can generally be substituted for a required VG parameter.
+.SH SEE ALSO
+
+.BR lvm (8)
+.BR lvm.conf (5)
+.BR lvmconfig (8)
+
+.BR pvchange (8)
+.BR pvck (8)
+.BR pvcreate (8)
+.BR pvdisplay (8)
+.BR pvmove (8)
+.BR pvremove (8)
+.BR pvresize (8)
+.BR pvs (8)
+.BR pvscan (8) 
+
+.BR vgcfgbackup (8)
+.BR vgcfgrestore (8)
+.BR vgchange (8)
+.BR vgck (8)
+.BR vgcreate (8)
+.BR vgconvert (8)
+.BR vgdisplay (8)
+.BR vgexport (8)
+.BR vgextend (8)
+.BR vgimport (8)
+.BR vgimportclone (8)
+.BR vgmerge (8)
+.BR vgmknodes (8)
+.BR vgreduce (8)
+.BR vgremove (8)
+.BR vgrename (8)
+.BR vgs (8)
+.BR vgscan (8)
+.BR vgsplit (8) 
+
+.BR lvcreate (8)
+.BR lvchange (8)
+.BR lvconvert (8)
+.BR lvdisplay (8)
+.BR lvextend (8)
+.BR lvreduce (8)
+.BR lvremove (8)
+.BR lvrename (8)
+.BR lvresize (8)
+.BR lvs (8)
+.BR lvscan (8)
+
+.BR lvm-fullreport (8)
+.BR lvm-lvpoll (8)
+.BR lvm2-activation-generator (8)
+.BR blkdeactivate (8)
+.BR lvmdump (8)
+
+.BR dmeventd (8)
+.BR lvmpolld (8)
+.BR lvmlockd (8)
+.BR lvmlockctl (8)
+.BR cmirrord (8)
+.BR lvmdbusd (8)
+
+.BR lvmsystemid (7)
+.BR lvmreport (7)
+.BR lvmraid (7)
+.BR lvmthin (7)
+.BR lvmcache (7)

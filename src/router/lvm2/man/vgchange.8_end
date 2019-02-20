@@ -1,0 +1,12 @@
+.SH NOTES
+If vgchange recognizes COW snapshot LVs that were dropped because they ran
+out of space, it displays a message informing the administrator that the
+snapshots should be removed.
+.SH EXAMPLES
+Activate all LVs in all VGs on all existing devices.
+.br
+.B vgchange -a y
+
+Change the maximum number of LVs for an inactive VG.
+.br
+.B vgchange -l 128 vg00

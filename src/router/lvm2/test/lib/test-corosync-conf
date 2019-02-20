@@ -1,0 +1,19 @@
+# created by lvm test suite
+totem {
+        version: 2
+        secauth: off
+        cluster_name: test
+}
+nodelist {
+        node {
+                ring0_addr: @LOCAL_NODE@
+                nodeid: 1
+        }
+}
+quorum {
+        provider: corosync_votequorum
+}
+logging {
+        to_syslog: yes
+}
+

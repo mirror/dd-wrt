@@ -1,0 +1,57 @@
+# This is a local configuration file template for the LVM2 system
+# which should be installed as @DEFAULT_SYS_DIR@/lvmlocal.conf .
+#
+# Refer to 'man lvm.conf' for information about the file layout.
+#
+# To put this file in a different directory and override
+# @DEFAULT_SYS_DIR@ set the environment variable LVM_SYSTEM_DIR before
+# running the tools.
+#
+# The lvmlocal.conf file is normally expected to contain only the
+# "local" section which contains settings that should not be shared or
+# repeated among different hosts.  (But if other sections are present,
+# they *will* get processed.  Settings in this file override equivalent
+# ones in lvm.conf and are in turn overridden by ones in any enabled
+# lvm_<tag>.conf files.)
+#
+# Please take care that each setting only appears once if uncommenting
+# example settings in this file and never copy this file between hosts.
+
+
+# Configuration section local.
+# LVM settings that are specific to the local host.
+local {
+
+	# Configuration option local/system_id.
+	# Defines the local system ID for lvmlocal mode.
+	# This is used when global/system_id_source is set to 'lvmlocal' in the
+	# main configuration file, e.g. lvm.conf. When used, it must be set to
+	# a unique value among all hosts sharing access to the storage,
+	# e.g. a host name.
+	# 
+	# Example
+	# Set no system ID:
+	# system_id = ""
+	# Set the system_id to a specific name:
+	# system_id = "host1"
+	# 
+	# This configuration option has an automatic default value.
+	# system_id = ""
+
+	# Configuration option local/extra_system_ids.
+	# A list of extra VG system IDs the local host can access.
+	# VGs with the system IDs listed here (in addition to the host's own
+	# system ID) can be fully accessed by the local host. (These are
+	# system IDs that the host sees in VGs, not system IDs that identify
+	# the local host, which is determined by system_id_source.)
+	# Use this only after consulting 'man lvmsystemid' to be certain of
+	# correct usage and possible dangers.
+	# This configuration option does not have a default value defined.
+
+	# Configuration option local/host_id.
+	# The lvmlockd sanlock host_id.
+	# This must be unique among all hosts, and must be between 1 and 2000.
+	# Applicable only if LVM is compiled with lockd support
+	# This configuration option has an automatic default value.
+	# host_id = 0
+}

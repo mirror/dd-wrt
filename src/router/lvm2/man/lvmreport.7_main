@@ -1,0 +1,1810 @@
+.TH "LVMREPORT" "7" "LVM TOOLS #VERSION#" "Red Hat, Inc" "\""
+
+.SH NAME
+lvmreport \(em LVM reporting and related features
+
+.SH DESCRIPTION
+LVM uses single reporting infrastructure that sets standard on LVM command's
+output and it provides wide range of configuration settings and command line
+options to customize report and filter the report's output.
+
+.SH Categorization based on reporting facility
+
+Based on functionality, commands which make use of the reporting infrastructure
+are divided in two groups:
+.IP \fBReport-oriented commands\fP
+These commands inform about current LVM state and their primary role is to
+display this information in compendious way. To make a distinction, we will
+name this report as \fBmain report\fP. The set of report-only commands include:
+pvs, vgs, lvs, pvdisplay, vgdisplay, lvdisplay, lvm devtypes, lvm fullreport.
+For further information about main report, see \fBmain report specifics\fP.
+.IP \fBProcessing-oriented commands\fP
+These commands are responsible for changing LVM state and they do not contain
+any main report as identified for report-oriented commands, they only perform
+some kind of processing. The set of processing-oriented commands includes:
+pvcreate, vgcreate, lvcreate, pvchange, vgchange, lvchange, pvremove, vgremove,
+lvremove, pvresize, vgextend, vgreduce, lvextend, lvreduce, lvresize, lvrename,
+pvscan, vgscan, lvscan, pvmove, vgcfgbackup, vgck, vgconvert, vgexport,
+vgimport, vgmknodes.
+
+.RE
+If enabled, so called \fBlog report\fP is either displayed solely
+(for processing-oriented commands) or in addition to main report
+(for report-oriented commands). The log report contains a log of operations,
+messages and per-object status with complete object identification collected
+during LVM command execution. See \fBlog report specifics\fP for more
+information about this report type.
+
+
+.SH Terms
+
+When describing reporting functionality and features in this text, we will
+use terms \fBrow\fP and \fBcolumn\fP. By row we mean series of values reported
+for single entity (for example single PV, VG or LV). Each value from the row
+then belongs to a column of certain type. The columns have \fBcolumn headings\fP
+which are short descriptions for the columns. The columns are referenced by
+\fBcolumn names\fP. Please note that this text is also using term \fBfield\fP
+interchangeably with the term \fBcolumn\fP. Most of the time the term columns
+is abbreviated as \fBcol\fP in configuration.
+
+.SH Common report configuration settings and command line options
+
+There are common configuration settings and command line options which apply
+to both \fBmain report\fP and \fBlog report\fP. Following lists contain all
+of them, separated into groups based on their use.
+
+.RS
+\fBCommon configuration settings:\fP
+
+.RS
+
+.IP \[bu] 3
+Changing report output format, composition and other output modifiers:
+.RS
+.IP - 3
+global/units
+.IP - 3
+global/suffix
+.IP - 3
+report/output_format
+.IP - 3
+report/compact_output
+.IP - 3
+report/compact_output_cols
+.IP - 3
+report/aligned
+.IP - 3
+report/headings
+.IP - 3
+report/separator
+.IP - 3
+report/list_item_separator
+.IP - 3
+report/prefixes
+.IP - 3
+report/quoted
+.IP - 3
+report/columns_as_rows
+.IP - 3
+report/binary_values_as_numeric
+.IP - 3
+report/time_format
+.IP - 3
+report/mark_hidden_devices
+.IP - 3
+report/two_word_unknown_device
+.RE
+
+.IP \[bu] 3
+Special settings
+.RS
+.IP - 3
+report/buffered
+.RE
+
+.RE
+
+.RE
+
+This document does not describe these settings in more detail - if you need
+detailed information, including values which are accepted for the settings,
+please run \fBlvmconfig --type default --withcomments <setting>\fP. There are
+more configuration settings in addition to the common set listed above, but
+they are specific to either \fBmain report\fP or \fBlog report\fP,
+see \fBmain report specifics\fP and \fBlog report specifics\fP for
+these settings. Besides configuring reports globally by using configuration
+settings, there are also command line options you can use to extend, override
+or further specify the report configuration.
+
+.RS
+\fBCommon command line options:\fP
+
+.RS
+
+.IP \[bu] 3
+Definition of the set set of fields to use
+.RS
+.IP - 3
+--options|-o FieldSet
+.br
+Field set to use. See \fBmain report specifics\fP and
+\fBlog report specifics\fP for information about field sets configured with
+global configuratin settings that this option overrides.
+.IP - 3
+--options|-o+ FieldSet
+.br
+Fields to include to current field set. See \fBmain report specifics\fP\ and
+\fBlog report specifics\fP for information about field sets configured with
+global configuration settings that this option extends.
+.IP - 3
+--options|-o- FieldSet
+.br
+Fields to exclude from current field set. See \fBmain report specifics\fP and
+\fBlog report specifics\fP for information about field sets configured with
+global configuration settings that this option reduces.
+.IP - 3
+--options|-o# FieldSet
+.br
+Compaction of unused fields. Overrides report/compact_output_cols configuration
+setting.
+.RE
+
+.IP \[bu] 3
+Sorting
+.RS
+.IP - 3
+--sort|-O+ FieldSet
+.br
+Fields to sort by in ascending order. See \fBmain report specifics\fP and
+\fBlog report specifics\fP for information about field sets configured with
+global configuration settings that this option overrides.
+.IP - 3
+--sort|-O- FieldSet
+.br
+Fields to sort by in descending order. See \fBmain report specifics\fP and
+\fBlog report specifics\fP for information about fields sets configured with
+global configuration settings that this options overrides.
+.RE
+
+.IP \[bu] 3
+Selection
+.RS
+.IP - 3
+--select|-S Selection
+.br
+Define selection criteria for report output. For \fBlog report\fP, this also
+overrides log/command_log_selection configuration setting, see also
+\fBlog report specifics\fP.
+.RE
+
+.IP \[bu] 3
+Changing output format and composition
+.RS
+.IP - 3
+--reportformat
+.br
+Overrides report/output_format configuration setting.
+.IP - 3
+--aligned
+.br
+Overrides report/aligned configuration setting.
+.IP - 3
+--binary
+.br
+Overrides report/binary_values_as_numeric configuration setting.
+.IP - 3
+--nameprefixes
+.br
+Overrides report/prefixes configuration setting.
+.IP - 3
+--noheadings
+.br
+Overrides report/noheadings configuration setting.
+.IP - 3
+--nosuffix
+.br
+Overrides global/suffix configuration setting.
+.IP - 3
+--rows
+.br
+Overrides report/columns_as_rows configuration setting.
+.IP - 3
+--separator
+.br
+Overrides report/separator configuration setting.
+.IP - 3
+--units
+.br
+Overrides global/units configuration setting.
+.IP - 3
+--unquoted
+.br
+Overrides report/quoted configuration setting.
+.RE
+
+.IP \[bu] 3
+Special options
+.RS
+.IP - 3
+--configreport \fBReportName\fP
+.br
+This defines the \fBReportName\fP for which any subsequent -o|--columns,
+-O|--sort or -S|--select applies to. See also \fBmain report specifics\fP
+and \fBlog report specifics\fP for possible \fBReportName\fP values.
+.IP - 3
+--logonly
+.br
+When an LVM command contains both \fBmain report\fP and \fBlog report\fP,
+this option suppresses the \fBmain report\fP output and it causes the
+\fBlog report\fP output to be displayed only.
+.IP - 3
+--unbuffered
+.br
+Overrides report/bufffered configuration setting.
+.RE
+
+.RE
+
+.RE
+
+The \fBFieldSet\fP mentioned in the lists above is a set of field names where
+each field name is delimited by "," character. Field set definition, sorting
+and selection may be repeated on command line (-o+/-o- includes/excludes fields
+to/from current list, for all the other repeatable options, the last value
+typed for the option on the command line is used). The \fBSelection\fP
+is a string with \fBselection criteria\fP, see also \fBSelection\fP paragraph
+below for more information about constructing these criteria.
+
+
+.SH Main report specifics
+
+The \fBmain report\fP currently encompasses these distinct subtypes, referenced
+by their name - \fBReportName\fP as listed below. The command in parenthesis is
+representative command that uses the main report subtype by default.
+Each subtype has its own configuration setting for global field set definition
+as well as sort field definition (listed below each individual \fBReportName\fP):
+
+.RS
+
+.IP \[bu] 3
+\fBpv\fP representing report about Physical Volumes (\fBpvs\fP)
+.RS
+.IP - 3
+report/pvs_cols
+.IP - 3
+report/pvs_sort
+.RE
+
+.IP \[bu] 3
+\fBpvseg\fP representing report about Physical Volume Segments (\fBpvs --segments\fP)
+.RS
+.IP - 3
+report/pvseg_cols
+.IP - 3
+report/pvseg_sort
+.RE
+
+.IP \[bu] 3
+\fBvg\fP representing report about Volume Groups (\fBvgs\fP)
+.RS
+.IP - 3
+report/vgs_cols
+.IP - 3
+report/vgs_sort
+.RE
+
+.IP \[bu] 3
+\fBlv\fP representing report about Logical Volumes (\fBlvs\fP)
+.RS
+.IP - 3
+report/lvs_cols
+.IP - 3
+report/lvs_sort
+.RE
+
+.IP \[bu] 3
+\fBseg\fP representing report about Logical Volume Segments (\fBlvs --segments\fP)
+.RS
+.IP - 3
+report/segs_cols
+.IP - 3
+report/segs_sort
+.RE
+
+.IP \[bu] 3
+\fBfull\fP representing report combining all of the above as a whole (\fBlvm fullreport\fP)
+.RS
+.IP - 3
+report/pvs_cols_full
+.IP - 3
+report/pvs_sort_full
+.IP - 3
+report/pvsegs_cols_full
+.IP - 3
+report/pvseg_sort_full
+.IP - 3
+report/vgs_cols_full
+.IP - 3
+report/vgs_sort_full
+.IP - 3
+report/lvs_cols_full
+.IP - 3
+report/lvs_sort_full
+.IP - 3
+report/segs_cols_full
+.IP - 3
+report/segs_sort_full
+.RE
+
+.IP \[bu] 3
+\fBdevtype\fP representing report about device types (\fBlvm devtypes\fP)
+.RS
+.IP - 3
+report/devtypes_cols
+.IP - 3
+report/devtypes_sort
+.RE
+
+.RE
+
+Use \fBpvs, vgs, lvs -o help\fP or \fBlvm devtypes -o help\fP to get complete
+list of fields that you can use for main report. The list of fields in the
+help output is separated in groups based on which report type they belong to.
+Note that LVM can change final report type used if fields from different
+groups are combined together. Some of these combinations are not allowed in
+which case LVM will issue an error.
+
+For all main report subtypes except \fBfull\fP, it's not necessary to use
+\fB--configreport ReportName\fP to denote which report any subsequent
+\fB-o, -O or -S\fP option applies to as they always apply to the single main
+report type. Currently, \fBlvm fullreport\fP is the only command that
+includes more than one \fBmain report\fP subtype. Therefore, the --configreport
+is particularly suitable for the full report if you need to configure each of
+its subreports in a different way.
+
+
+.SH Log report specifics
+
+You can enable log report with \fBlog/report_command_log\fP configuration
+setting - this functionality is disabled by default. The \fBlog report\fP
+contains a log collected during LVM command execution and then the log is
+displayed just like any other report known from main report. There is only one
+log report subtype as shown below together with related configuration settings
+for fields, sorting and selection:
+
+.RS
+
+.IP \[bu] 3
+\fBlog\fP representing log report
+.RS
+.IP - 3
+log/command_log_cols
+.IP - 3
+log/command_log_sort
+.IP - 3
+log/command_log_selection
+.RE
+
+.RE
+
+You always need to use \fB--configreport log\fP together with \fB-o|--options,
+-O|--sort or -S|--selection\fP to override configuration settings directly on
+command line for \fBlog report\fP. When compared to \fBmain report\fP, in
+addition to usual configuration settings for report fields and sorting, the
+\fBlog report\fP has also configuration option for selection -
+\fBreport/command_log_selection\fP. This configuration setting is provided for
+convenience so it's not necessary to use \fB-S|--select\fP on command line
+each time an LVM command is executed and we need the same selection criteria
+to be applied for \fBlog report\fP. Default selection criteria used for
+\fBlog report\fP are
+\fBlog/command_log_selection="!(log_type=status && message=success)"\fP.
+This means that, by default, \fBlog report\fP doesn't display status messages
+about successful operation and it displays only rows with error, warning,
+print-type messages and messages about failure states (for more information,
+see \fBlog report content\fP below).
+
+.B Log report coverage
+.br
+Currently, when running LVM commands directly (not in LVM shell), the log
+report covers command's \fBprocessing stage\fP which is the moment when LVM
+entities are iterated and processed one by one. It does not cover any command
+initialization nor command finalization stage. If there is any message issued
+out of log report's coverage range, such message goes directly to output,
+bypassing the \fBlog report\fP. By default, that is \fBstandard error output\fP
+for error and warning messages and \fBstandard output\fP for common print-like
+messages.
+
+When running LVM commands in \fBLVM shell\fP, the log report covers the whole
+LVM command's execution, including command's \fBprocessing\fP as well as
+\fBinitialization\fP and \fBfinalization stage\fP. So from this point of view,
+the log report coverage is complete for executed LVM commands. Note that there
+are still a few moments when LVM shell needs to initialize itself before it
+even enters the main loop in which it executes LVM commands. Also, there is a
+moment when \fBLVM shell\fP needs to prepare \fBlog report\fP properly for
+next command executed in the shell and then, after the command's run, the shell
+needs to display the log report for that recently executed command. If there
+is a failure or any other message issued during this time, the LVM will bypass
+\fBlog report\fP and display messages on output directly.
+
+For these reasons and for completeness, it's not possible to rely fully on
+\fBlog report\fP as the only indicator of LVM command's status and the only
+place where all messages issued during LVM command execution are collected.
+You always need to check whether the command has not failed out of log
+report's range by checking the non-report output too.
+
+To help with this, LVM can separate output which you can then redirect to
+any \fBcustom file descriptor\fP that you prepare before running an LVM
+command or LVM shell and then you make LVM to use these file descriptors
+for different kinds of output by defining environment variables with file
+descriptor numbers. See also \fBLVM_OUT_FD\fP, \fBLVM_ERR_FD\fP and
+\fBLVM_REPORT_FD\fP environment variable description in \fBlvm\fP(8)
+man page.
+
+Also note that, by default, reports use the same file descriptor as
+common print-like messages, which is \fBstandard output\fP. If you plan to
+use \fBlog report\fP in your scripts or any external tool, you should use
+\fBLVM_OUT_FD\fP, \fBLVM_ERR_FD\fP and \fBLVM_REPORT_FD\fP to separate all
+output types to different file descriptors. For example, with bash, that
+would be:
+
+.RS
+LVM_OUT_FD=3 LVM_ERR_FD=4 LVM_REPORT_FD=5 <lvm command> 3>out_file 4>err_file 5>report_file
+.RE
+
+Where the <lvm_command> is either direct LVM command or LVM shell.
+You can collect all three types of output in particular files then.
+
+.B Log report content
+.br
+Each item in the log report consists of these set of fields providing various
+information:
+
+.RS
+
+.IP \[bu] 3
+Basic information (mandatory):
+.RS
+.IP - 3
+log_seq_num
+.br
+Item sequence number. The sequence number is unique for each log item and it
+increases in the order of the log items as they appeared during LVM command
+execution.
+
+.IP - 3
+log_type
+.br
+Type of log for the item. Currently, these types are used:
+.RS
+.IP
+\fBstatus\fP for any status information that is logged
+.IP
+\fBprint\fP for any common message printed while the log is collected
+.IP
+\fBerror\fP for any error message printed while the log is collected
+.IP
+\fBwarn\fP for any warning message printed while the log is collected
+.RE
+
+.IP - 3
+log_context
+.br
+Context of the log for the item. Currently, two contexts are identified:
+.RS
+.IP
+\fBshell\fP for the log collected in the outermost code before and after
+executing concrete LVM commands
+.IP
+\fBprocessing\fP for the log collected while processing LVM entities during
+LVM command execution
+.RE
+
+.RE
+
+.IP \[bu] 3
+Message (mandatory):
+.RS
+.IP - 3
+log_message
+.br
+Any message associated with current item. For \fBstatus\fP log type,
+the message contains either \fBsuccess\fP or \fBfailure\fP denoting
+current state. For \fBprint\fP, \fBerror\fP and \fBwarn\fP log types,
+the message contains the exact message of that type that got issued.
+.RE
+
+.IP \[bu] 3
+Object information (used only if applicable):
+.RS
+.IP - 3
+log_object_type field
+.br
+Type of the object processed. Currently, these object types are recognized:
+.RS
+.IP
+\fBcmd\fP for command as a whole
+.IP
+\fBorphan\fP for processing group of PVs not in any VG yet
+.IP
+\fBpv\fP for PV processing
+.IP
+\fBlabel\fP for direct PV label processing (without VG metadata)
+.IP
+\fBvg\fP for VG processing
+.IP
+\fBlv\fP for LV processing
+.RE
+
+.IP - 3
+log_object_name
+.br
+Name of the object processed.
+
+.IP - 3
+log_object_id
+.br
+ID of the object processed.
+
+.IP - 3
+log_object_group
+.br
+A group where the processed object belongs to.
+
+.IP - 3
+log_object_group_id
+.br
+An ID of a group where the processed object belongs to.
+.RE
+
+.IP \[bu] 3
+Numeric status (used only if applicable)
+.RS
+.IP - 3
+log_errno
+.br
+Error number associated with current item.
+.IP - 3
+log_ret_code
+.br
+Rreturn code associated with current item.
+.RE
+
+.RE
+
+
+You can also run \fB<lvm_command> --configreport log -o help\fP to
+to display complete list of fields that you may use for the \fBlog report\fP.
+
+.SH Selection
+Selection is used for a report to display only rows that match
+\fBselection criteria\fP. All rows are displayed with the additional
+\fBselected\fP field (\fB-o selected\fP) displaying 1 if the row matches the
+\fISelection\fP and 0 otherwise. The \fBselection criteria\fP are a set of
+\fBstatements\fP combined by \fBlogical and grouping operators\fP.
+The \fBstatement\fP consists of a \fBfield\fP name for which a set of valid
+\fBvalues\fP is defined using \fBcomparison operators\fP. For complete list
+of fields names that you can use in selection, see the output of
+\fB<lvm_command> -S help\fP. The help output also contains type of values
+that each field displays enclosed in brackets.
+
+.B List of operators recognized in selection criteria
+.RS
+.IP \[bu] 3
+Comparison operators (cmp_op)
+.RS
+.IP
+\fB=~\fP matching regular expression.
+.IP
+\fB!~\fP not matching regular expression.
+.IP
+\fB= \fP equal to.
+.IP
+\fB!=\fP not equal to.
+.IP
+\fB>=\fP greater than or equal to.
+.IP
+\fB> \fP greater than
+.IP
+\fB<=\fP less than or equal to.
+.IP
+\fB< \fP less than.
+.RE
+
+.IP \[bu] 3
+Binary logical operators (cmp_log)
+.RS
+.IP
+\fB&&\fP all fields must match
+.IP
+\fB, \fP all fields must match
+.IP
+\fB||\fP at least one field must match
+.IP
+\fB# \fP at least one field must match
+.RE
+
+.IP \[bu] 3
+Unary logical operators
+.RS
+.IP
+\fB! \fP logical negation
+.RE
+
+.IP \[bu] 3
+Grouping operators
+.RS
+.IP
+\fB( \fP left parenthesis
+.IP
+\fB) \fP right parenthesis
+.IP
+\fB[ \fP list start
+.IP
+\fB] \fP list end
+.IP
+\fB{ \fP list subset start
+.IP
+\fB} \fP list subset end
+.RE
+
+.RE
+
+.B Field types and selection operands
+.br
+Field type restricts the set of operators and values that you may use with
+the field when defining selection criteria. You can see field type for each
+field if you run \fB<lvm command> -S help\fP where you can find the type name
+enclosed in square brackets. Currently, LVM recognizes these field types in
+reports:
+
+.RS
+.IP \[bu] 3
+\fBstring\fP for set of characters (for each string field type, you can use
+either string or regular expression - regex for the value used in selection
+criteria)
+.IP \[bu] 3
+\fBstring list\fP for set of strings
+.IP \[bu] 3
+\fBnumber\fP for integer value
+.IP \[bu] 3
+\fBsize\fP for integer or floating point number with size unit suffix
+(see also \fBlvcreate\fP(8) man page and description for "-L|--size"
+option for the list of recognized suffixes)
+.IP \[bu] 3
+\fBpercent\fP for floating point number with or without "%" suffix
+(e.g. 50 or 50%)
+.IP \[bu] 3
+\fBtime\fP for time values
+.RE
+
+When using \fBstring list\fP in selection criteria, there are several ways
+how LVM can match string list fields from report, depending on what list
+grouping operator is used and what item separator is used within that set
+of items. Also, note that order of items does not matter here.
+
+.RS
+.IP \[bu] 3
+\fBmatching the set strictly\fP where all items must match - use [ ], e.g.
+["a","b","c"]
+.IP \[bu] 3
+\fBmatching a subset of the set\fP - use { } with "," or "&&" as item
+delimiter, e.g. {"a","b","c"}
+.IP \[bu] 3
+\fBmatching an intersection with the set\fP - use { } with "#" or
+"||" as item delimiter, e.g. {"a" || "b" || "c"}
+.RE
+
+When using \fBtime\fP in your selection criteria, LVM can recognize various
+time formats using standard, absolute or freeform expressions. For examples
+demonstrating time expressions in selection criteria, see \fBEXAMPLES\fP section.
+
+.RS
+
+.IP \[bu] 3
+\fBStandard time format\fP
+
+.RS
+.IP - 3
+date
+.RS
+.IP
+YYYY-MM-DD
+.IP
+YYYY-MM, auto DD=1
+.IP
+YYYY, auto MM=01 and DD=01
+.RE
+
+.IP - 3
+time
+.RS
+.IP
+hh:mm:ss
+.IP
+hh:mm, auto ss=0
+.IP
+hh, auto mm=0, auto ss=0
+.RE
+
+.IP - 3
+timezone
+.RS
+.IP
++hh:mm or -hh:mm
+.IP
++hh or -hh
+.RE
+
+The full date/time specification is YYYY-MM-DD hh:mm:ss. Users are able
+to leave date/time parts from right to left. Whenever these parts are left out,
+a range is assumed automatically with second granularity. For example:
+
+.RS
+.IP
+"2015-07-07 9:51" means range of "2015-07-07 9:51:00" - "2015-07-07 9:51:59".
+.IP
+"2015-07" means range of "2015-07-01 0:00:00" - "2015-07-31 23:59:59"
+.IP
+"2015" means range of "2015-01-01 0:00:00" - "2015-12-31 23:59:59"
+.RE
+
+.RE
+
+.IP \[bu] 3
+\fBAbsolute time format\fP
+
+Absolute time is defined as number of seconds since the Epoch
+(1970:01:01 00:00 +00:00).
+
+.RS
+.IP - 3
+@seconds
+.RE
+
+.IP \[bu] 3
+\fBFreeform time format\fP
+.RS
+.IP - 3
+weekday names ("Sunday" - "Saturday" or abbreviated as "Sun" - "Sat")
+.IP - 3
+labels for points in time ("noon", "midnight")
+.IP - 3
+labels for a day relative to current day ("today", "yesterday")
+.IP - 3
+points back in time with relative offset from today (N is a number)
+.RS
+.IP
+"N" "seconds" / "minutes" / "hours" / "days" / "weeks" / "years" "ago"
+.IP
+"N" "secs" / "mins" / "hrs" ... "ago"
+.IP
+"N" "s" / "m" / "h" ... "ago"
+.RE
+.IP - 3
+time specification either in hh:mm:ss format or with AM/PM suffixes
+.IP - 3
+month names ("January" - "December" or abbreviated as "Jan" - "Dec")
+.RE
+
+.RE
+
+.B Informal grammar specification
+.RS
+.IP
+.BR STATEMENT " = " column " cmp_op " VALUE " | " \%STATEMENT " log_op " STATEMENT " | " \%(STATEMENT) " | " \%!(STATEMENT)
+.IP
+.BR VALUE " = " [VALUE " log_op " VALUE]
+.br
+For list-based types: string list. Matches strictly.
+The log_op must always be of one type within the whole list value.
+.IP
+.BR VALUE " = " {VALUE " log_op " VALUE}
+.br
+For list-based types: string list. Matches a subset.
+The log_op must always be of one type within the whole list value.
+.IP
+.BR VALUE " = " value
+.br
+For scalar types: number, size, percent, string (or string regex).
+.RE
+
+.SH EXAMPLES
+
+.SS Basic usage
+
+We start our examples with default configuration - \fBlvmconfig\fP(8) is
+helpful command to display configuration settings which are currently used,
+including all configuration related to reporting. We will use it throughout
+examples below to display current configuration.
+
+.nf
+# lvmconfig --type full global/units global/suffix \\
+   report/output_format  report/compact_output \\
+   report/compact_output_cols report/aligned \\
+   report/headings report/separator \\
+   report/list_item_separator report/prefixes \\
+   report/quoted report/columns_as_rows \\
+   report/binary_values_as_numeric report/time_format \\
+   report/mark_hidden_devices report/two_word_unknown_device \\
+   report/buffered
+units="h"
+suffix=1
+output_format="basic"
+compact_output=0
+compact_output_cols=""
+aligned=1
+headings=1
+separator=" "
+list_item_separator=","
+prefixes=0
+quoted=1
+columns_as_rows=0
+binary_values_as_numeric=0
+time_format="%Y-%m-%d %T %z"
+mark_hidden_devices=1
+two_word_unknown_device=0
+buffered=1
+.fi
+
+Also, we start with simple LVM layout with two PVs (/dev/sda, /dev/sdb),
+VG (vg) and two LVs (lvol0 and lvol1) in the VG. We display all possible
+reports as single commands here, see also \fBpvs\fP(8), \fBvgs\fP(8),
+\fBlvs\fP(8) man pages for more information. The field set for each report
+type is configured with configuration settings as we already mentioned in
+\fBmain report specifics\fP section in this man page.
+
+.nf
+# lvmconfig --type full report/pvs_cols report/pvs_sort \\
+   report/pvsegs_cols report/pvsegs_sort report/vgs_cols \\
+   report/vgs_sort report/lvs_cols report/lvs_sort \\
+   report/segs_cols report/segs_sort
+pvs_cols="pv_name,vg_name,pv_fmt,pv_attr,pv_size,pv_free"
+pvs_sort="pv_name"
+pvsegs_cols="pv_name,vg_name,pv_fmt,pv_attr,pv_size,pv_free,
+             pvseg_start,pvseg_size"
+pvsegs_sort="pv_name,pvseg_start"
+vgs_cols="vg_name,pv_count,lv_count,snap_count,vg_attr,vg_size,vg_free"
+vgs_sort="vg_name"
+lvs_cols="lv_name,vg_name,lv_attr,lv_size,pool_lv,origin,move_pv,
+          mirror_log,copy_percent,convert_lv"
+lvs_sort="vg_name,lv_name"
+segs_cols="lv_name,vg_name,lv_attr,stripes,segtype,seg_size"
+segs_sort="vg_name,lv_name,seg_start"
+.fi
+
+.nf
+# pvs
+  PV         VG Fmt  Attr PSize   PFree 
+  /dev/sda   vg lvm2 a--  100.00m 88.00m
+  /dev/sdb   vg lvm2 a--  100.00m 92.00m
+
+# pvs --segments
+  PV         VG Fmt  Attr PSize   PFree  Start SSize
+  /dev/sda   vg lvm2 a--  100.00m 88.00m     0     1
+  /dev/sda   vg lvm2 a--  100.00m 88.00m     1     1
+  /dev/sda   vg lvm2 a--  100.00m 88.00m     2     1
+  /dev/sda   vg lvm2 a--  100.00m 88.00m     3    22
+  /dev/sdb   vg lvm2 a--  100.00m 92.00m     0     1
+  /dev/sdb   vg lvm2 a--  100.00m 92.00m     1     1
+  /dev/sdb   vg lvm2 a--  100.00m 92.00m     2    23
+
+# vgs
+  VG #PV #LV #SN Attr   VSize   VFree  
+  vg   2   2   0 wz--n- 200.00m 180.00m
+
+# lvs
+  LV    VG Attr       LSize Pool Origin Move Log Cpy%Sync Convert
+  lvol0 vg -wi-a----- 4.00m                                    
+  lvol1 vg rwi-a-r--- 4.00m                      100.00          
+
+# lvs --segments
+  LV    VG Attr       #Str Type   SSize
+  lvol0 vg -wi-a-----    1 linear 4.00m
+  lvol1 vg rwi-a-r---    2 raid1  4.00m
+.fi
+
+We will use \fBreport/lvs_cols\fP and \fBreport/lvs_sort\fP configuration
+settings to define our own list of fields to use and to sort by that is
+different from defaults. You can do this for other reports in same manner
+with \fBreport/{pvs,pvseg,vgs,seg}_{cols,sort}\fP configuration settings.
+Also note that in the example below, we don't display the "lv_time" field
+even though we're using it for sorting - this is allowed.
+
+.nf
+# lvmconfig --type full report/lvs_cols report/lvs_sort
+lvs_cols="lv_name,lv_size,origin,pool_lv,copy_percent"
+lvs_sort="-lv_time"
+
+# lvs
+  LV    LSize Origin Pool Cpy%Sync
+  lvol1 4.00m             100.00  
+  lvol0 4.00m  
+.fi
+
+You can use \fB-o|--options\fP command line option to override current
+configuration directly on command line.
+
+.nf
+# lvs -o lv_name,lv_size
+  LV    LSize
+  lvol1 4.00m
+  lvol0 4.00m
+
+# lvs -o+lv_layout
+  LV    LSize Origin Pool Cpy%Sync Layout    
+  lvol1 4.00m             100.00   raid,raid1
+  lvol0 4.00m                      linear    
+
+# lvs -o-origin
+  LV    LSize Pool Cpy%Sync
+  lvol1 4.00m      100.00  
+  lvol0 4.00m              
+
+# lvs -o lv_name,lv_size,origin -o+lv_layout -o-origin -O lv_name
+  LV    LSize Layout    
+  lvol0 4.00m linear    
+  lvol1 4.00m raid,raid1
+.fi
+
+You can obtain the same information with single command where all the
+information about PVs, PV segments, LVs and LV segments are obtained
+per VG under a single VG lock for consistency, see also \fBlvm-fullreport\fP(8)
+man page for more information. The fullreport has its own configuration
+settings to define field sets to use, similar to individual reports as
+displayed above, but configuration settings have "_full" suffix now.
+This way, it's possible to configure different sets of fields to display
+and to sort by for individual reports as well as the full report.
+
+.nf
+# lvmconfig --type full report/pvs_cols_full \\
+   report/pvs_sort_full report/pvsegs_cols_full \\
+   report/pvsegs_sort_full report/vgs_cols_full \\
+   report/vgs_sort_full report/lvs_cols_full \\
+   report/lvs_sort_full report/segs_cols_full \\
+   report/segs_sort_full
+pvs_cols_full="pv_name,vg_name"
+pvs_sort_full="pv_name"
+pvsegs_cols_full="pv_name,pvseg_start,pvseg_size"
+pvsegs_sort_full="pv_uuid,pvseg_start"
+vgs_cols_full="vg_name"
+vgs_sort_full="vg_name"
+lvs_cols_full="lv_name,vg_name"
+lvs_sort_full="vg_name,lv_name"
+segs_cols_full="lv_name,seg_start,seg_size"
+segs_sort_full="lv_uuid,seg_start"
+.fi
+
+.nf
+# lvm fullreport
+  VG
+  vg
+  PV         VG
+  /dev/sda   vg
+  /dev/sdb   vg
+  LV    VG
+  lvol0 vg
+  lvol1 vg
+  PV         Start SSize
+  /dev/sda       0     1
+  /dev/sda       1     1
+  /dev/sda       2     1
+  /dev/sda       3    22
+  /dev/sdb       0     1
+  /dev/sdb       1     1
+  /dev/sdb       2    23
+  LV    Start SSize
+  lvol0    0  4.00m
+  lvol1    0  4.00m
+.fi
+
+.SS Automatic output compaction
+
+If you look at the lvs output above, you can see that the report also contains
+fields for which there is no information to display (e.g. the columns under
+"Origin" and "Pool" heading - the "origin" and "pool_lv" fields). LVM can
+automatically compact report output so such fields are not included in final
+output. To enable this feature and to compact all fields, use
+\fBreport/compact_output=1\fP in your configuration.
+
+.nf
+# lvmconfig --type full report/compact_output
+compact_output=1
+
+# lvs
+  LV    LSize Cpy%Sync
+  lvol1 4.00m 100.00  
+  lvol0 4.00m  
+
+# lvs vg/lvol0
+  LV    LSize 
+  lvol0 4.00m
+.fi
+
+Alternatively, you can define which fields should be compacted by configuring
+\fBreport/compact_output_cols\fP configuration setting (or \fB-o|--options #\fP
+command line option).
+
+.nf
+# lvmconfig --type full report/compact_output report/compact_output_cols
+compact_output=0
+compact_output_cols="origin"
+
+# lvs
+  LV    LSize Pool Cpy%Sync
+  lvol1 4.00m      100.00  
+  lvol0 4.00m    
+
+# lvs vg/lvol0
+  LV    LSize Pool 
+  lvol0 4.00m    
+
+# lvs -o#pool_lv        
+  LV    LSize Origin Cpy%Sync
+  lvol1 4.00m        100.00  
+  lvol0 4.00m                
+.fi
+
+We will use \fBreport/compact_output=1\fP for subsequent examples.
+
+.SS Further formatting options
+
+By default, LVM displays sizes in reports in human-readable form which means
+that the most suitable unit is used so it's easy to read. You can use
+\fBreport/units\fP configuration setting (or \fB--units\fP option directly
+on command line) and \fBreport/suffix\fP
+configuration setting (or \fB--nosuffix\fP command line option) to change this.
+
+.nf
+# lvs --units b --nosuffix
+  LV    LSize   Cpy%Sync
+  lvol1 4194304 100.00  
+  lvol0 4194304    
+.fi
+
+If you want to configure whether report headings are displayed or not, use
+\fBreport/headings\fP configuration settings (or \fB--noheadings\fP command
+line option).
+
+.nf
+# lvs --noheadings
+  lvol1 4.00m 100.00  
+  lvol0 4.00m     
+.fi
+
+In some cases, it may be useful to display report content as key=value pairs
+where key here is actually the field name. Use \fBreport/prefixes\fP
+configuration setting (or \fB--nameprefixes\fP command line option) to switch
+between standard output and the key=value output. The key=value pair is the
+output that is suitable for use in scripts and for other tools to parse easily.
+Usually, you also don't want to display headings with the output that has these
+key=value pairs.
+
+.nf
+# lvs --noheadings --nameprefixes
+  LVM2_LV_NAME='lvol1' LVM2_LV_SIZE='4.00m' LVM2_COPY_PERCENT='100.00'
+  LVM2_LV_NAME='lvol0' LVM2_LV_SIZE='4.00m' LVM2_COPY_PERCENT=''
+.fi
+
+To define whether quotation marks in key=value pairs should be used or not,
+use \fBreport/quoted\fP configuration setting (or \fB--unquoted\fP command
+line option).
+
+.nf
+# lvs --noheadings --nameprefixes --unquoted
+  LVM2_LV_NAME=lvol1 LVM2_LV_SIZE=4.00m LVM2_COPY_PERCENT=100.00
+  LVM2_LV_NAME=lvol0 LVM2_LV_SIZE=4.00m LVM2_COPY_PERCENT=
+.fi
+
+For easier parsing, you can even transpose the report so each column now
+becomes a row in the output. This is done with \fBreport/output_as_rows\fP
+configuration setting (or \fB--rows\fP command line option).
+
+.nf
+# lvs --noheadings --nameprefixes --unquoted --rows
+  LVM2_LV_NAME=lvol1 LVM2_LV_NAME=lvol0
+  LVM2_LV_SIZE=4.00m LVM2_LV_SIZE=4.00m
+  LVM2_COPY_PERCENT=100.00 LVM2_COPY_PERCENT=
+.fi
+
+Use \fBreport/separator\fP configuration setting (or \fB--separator\fP command
+line option) to define your own field separator to use.
+
+.nf
+# lvs --noheadings --nameprefixes --unquoted --separator " | "
+  LVM2_LV_NAME=lvol1 | LVM2_LV_SIZE=4.00m | LVM2_COPY_PERCENT=100.00
+  LVM2_LV_NAME=lvol0 | LVM2_LV_SIZE=4.00m | LVM2_COPY_PERCENT=
+.fi
+
+If you are using your own separator, the columns in the output are not aligned
+by default. Use \fBreport/aligned\fP configuration setting (or \fB--aligned\fP
+command line option) for LVM to add extra spaces in report to align the output
+properly.
+
+.nf
+# lvs --separator " | "
+  LV | LSize | Cpy%Sync
+  lvol1 | 4.00m | 100.00
+  lvol0 | 4.00m | 
+
+# lvs --separator " | " --aligned
+  LV    | LSize | Cpy%Sync
+  lvol1 | 4.00m | 100.00  
+  lvol0 | 4.00m |         
+.fi
+
+Let's display one one more field in addition ("lv_tags" in this example)
+for the lvs report output.
+
+.nf
+# lvs -o+lv_tags
+  LV    LSize Cpy%Sync LV Tags  
+  lvol1 4.00m 100.00            
+  lvol0 4.00m          tagA,tagB
+.fi
+
+The "LV Tags" column in the example above displays two list values,
+separated by "," character for LV lvol0. If you need different list item
+separator, use \fBreport/list_item_separator\fP configuration setting its
+definition.
+
+.nf
+# lvmconfig --type full report/list_item_separator
+list_item_separator=";"
+
+# lvs -o+tags
+  LV    LSize Cpy%Sync LV Tags  
+  lvol1 4.00m 100.00            
+  lvol0 4.00m          tagA;tagB
+.fi
+
+But let's still use the original "," character for list_item_separator
+for subsequent examples.
+
+Format for any of time values displayed in reports can be configured with
+\fBreport/time_format\fP configuretion setting. By default complete date
+and time is displayed, including timezone.
+
+.nf
+# lvmconfig --type full report/time_format
+time_format="%Y-%m-%d %T %z"
+
+# lvs -o+time
+  LV    LSize Cpy%Sync CTime                     
+  lvol1 4.00m 100.00   2016-08-29 12:53:36 +0200 
+  lvol0 4.00m          2016-08-29 10:15:17 +0200 
+.fi
+
+We can change time format in similar way as we do when using \fBdate\fP(1)
+command or \fBstrftime\fP(3) function
+(\fBlvmconfig --type default --withcomments report/time_format\fP will
+give you complete list of available formatting options). In the example
+below, we decided to use %s for number of seconds since Epoch (1970-01-01 UTC).
+
+.nf
+# lvmconfig --type full report/time_format
+time_format="%s"
+
+# lvs
+  LV    Attr       LSize Cpy%Sync LV Tags   CTime                     
+  lvol1 rwi-a-r--- 4.00m 100.00             1472468016                
+  lvol0 -wi-a----- 4.00m          tagA,tagB 1472458517     
+.fi
+
+The \fBlvs\fP does not display hidden LVs by default - to include these LVs
+in the output, you need to use \fB-a|--all\fP command line option. Names for
+these hidden LVs are displayed within square brackets.
+
+.nf
+# lvs -a
+  LV               LSize Cpy%Sync
+  lvol1            4.00m 100.00  
+  [lvol1_rimage_0] 4.00m         
+  [lvol1_rmeta_0]  4.00m         
+  [lvol1_rimage_1] 4.00m         
+  [lvol1_rmeta_1]  4.00m         
+  lvol0            4.00m      
+.fi
+
+You can configure LVM to display the square brackets for hidden LVs or not with
+\fBreport/mark_hidden_devices\fP configuration setting.
+
+.nf
+# lvmconfig --type full report/mark_hidden_devices
+mark_hidden_devices=0
+
+# lvs -a
+  LV             LSize Cpy%Sync
+  lvol1          4.00m 100.00  
+  lvol1_rimage_0 4.00m         
+  lvol1_rmeta_0  4.00m         
+  lvol1_rimage_1 4.00m         
+  lvol1_rmeta_1  4.00m         
+  lvol0          4.00m     
+.fi
+
+It's not recommended to use LV marks for hidden devices to decide whether the
+LV is the one to use by end users or not. Please, use "lv_role" field instead
+which can report whether the LV is "public" or "private". The private LVs are
+used by LVM only and they should not be accessed directly by end users.
+
+.nf
+# lvs -a -o+lv_role
+  LV             LSize Cpy%Sync Role                 
+  lvol1          4.00m 100.00   public               
+  lvol1_rimage_0 4.00m          private,raid,image   
+  lvol1_rmeta_0  4.00m          private,raid,metadata
+  lvol1_rimage_1 4.00m          private,raid,image   
+  lvol1_rmeta_1  4.00m          private,raid,metadata
+  lvol0          4.00m          public     
+.fi
+
+Some of the reporting fields that LVM reports are of binary nature. For such
+fields, it's either  possible to display word representation of the value
+(this is used by default) or numeric value (0/1 or -1 in case the value is
+undefined).
+
+.nf
+# lvs -o+lv_active_locally
+  LV    LSize Cpy%Sync ActLocal      
+  lvol1 4.00m 100.00   active locally
+  lvol0 4.00m          active locally
+.fi
+
+We can change the way how these binary values are displayed with
+\fBreport/binary_values_as_numeric\fP configuration setting.
+
+.nf
+# lvmconfig --type full report/binary_values_as_numeric
+binary_values_as_numeric=1
+
+# lvs -o+lv_active_locally
+  LV    LSize Cpy%Sync ActLocal  
+  lvol1 4.00m 100.00            1
+  lvol0 4.00m                   1
+.fi
+
+.SS Changing output format
+
+LVM can output reports in different formats - use \fBreport/output_format\fP
+configuration setting (or \fB--reportformat\fP command line option) to swith
+the report output format. Currently, LVM supports \fB"basic"\fP (all the examples
+we used above used this format) and \fB"JSON"\fP output format.
+
+.nf
+# lvs -o lv_name,lv_size --reportformat json
+  {
+      "report": [
+          {
+              "lv": [
+                  {"lv_name":"lvol1", "lv_size":"4.00m"},
+                  {"lv_name":"lvol0", "lv_size":"4.00m"}
+              ]
+          }
+      ]
+  }
+.fi
+
+Note that some configuration settings and command line options have no
+effect with certain report formats. For example, with \fBJSON\fP output,
+it doesn't have any meaning to use \fBreport/aligned\fP (\fB--aligned\fP),
+\fBreport/noheadings\fP (\fB--noheadings\fP), \fBreport/columns_as_rows\fP
+(\fB--rows\fP) or \fBreport/buffered\fP (\fB--unbuffered\fP). All these
+configuration settings and command line options are ignored if using the
+\fBJSON\fP report output format.
+
+.SS Selection
+
+If you need to select only specific rows from report, you can use LVM's
+report selection feature. If you call \fB<lvm_command> -S help\fP, you'll get
+quick help on selection. The help contains list of all fields that LVM
+can use in reports together with its type enclosed in square brackets.
+The example below contains a line from lvs -S help.
+
+.nf
+# lvs -S help
+    ...
+    lv_size                - Size of LV in current units. [size]
+    ...
+.fi
+
+This line tells you you that the "lv_size" field is of "size" type. If you
+look at the bottom of the help output, you can see section about
+"Selection operators" and its "Comparison operators".
+
+.nf
+# lvs -S help
+ ...
+Selection operators
+-------------------
+Comparison operators:
+   =~  - Matching regular expression. [regex]
+   !~  - Not matching regular expression. [regex]
+    =  - Equal to. [number, size, percent, string, string list, time]
+   !=  - Not equal to. [number, size, percent, string, string_list, time]
+   >=  - Greater than or equal to. [number, size, percent, time]
+    >  - Greater than. [number, size, percent, time]
+   <=  - Less than or equal to. [number, size, percent, time]
+    <  - Less than. [number, size, percent, time]
+since  - Since specified time (same as '>='). [time]
+after  - After specified time (same as '>'). [time]
+until  - Until specified time (same as '<='). [time]
+before  - Before specified time (same as '<'). [time]
+ ...
+.fi
+
+Here you can match comparison operators that you may use with the "lv_size"
+field which is of type "size" - it's =, !=, >=, >, <= and <. You can find
+applicable comparison operators for other fields and other field types the
+same way.
+
+To demostrate selection functionality in LVM, we will create more LVs in
+addition to lvol0 and lvol1 we used in our previous examples.
+
+.nf
+# lvs -o name,size,origin,snap_percent,tags,time
+  LV    LSize Origin Snap%  LV Tags        CTime                     
+  lvol4 4.00m lvol2  24.61                 2016-09-09 16:57:44 +0200 
+  lvol3 4.00m lvol2  5.08                  2016-09-09 16:56:48 +0200 
+  lvol2 8.00m               tagA,tagC,tagD 2016-09-09 16:55:12 +0200 
+  lvol1 4.00m                              2016-08-29 12:53:36 +0200 
+  lvol0 4.00m               tagA,tagB      2016-08-29 10:15:17 +0200
+.fi
+
+When selecting size and percent fields, we don't need to use units.
+For sizes, default "m" (for MiB) is used - this is the same behaviour
+as already used for LVM commands when specifying sizes (e.g. lvcreate -L).
+For percent fields, "%" is assumed automatically if it's not specified.
+The example below also demonstrates how several criteria can be combined
+together.
+
+.nf
+# lvs -o name,size,snap_percent -S 'size=8m'
+  LV    LSize 
+  lvol2 8.00m
+
+# lvs -o name,size,snap_percent -S 'size=8'
+  LV    LSize 
+  lvol2 8.00m
+
+# lvs -o name,size,snap_percent -S 'size < 5000k'
+  LV    LSize Snap% 
+  lvol4 4.00m 24.61 
+  lvol3 4.00m 5.08  
+  lvol1 4.00m       
+  lvol0 4.00m 
+
+# lvs -o name,size,snap_percent -S 'size < 5000k && snap_percent > 20'
+  LV    LSize Snap% 
+  lvol4 4.00m 24.61 
+
+# lvs -o name,size,snap_percent \\
+    -S '(size < 5000k && snap_percent > 20%) || name=lvol2'
+  LV    LSize Snap% 
+  lvol4 4.00m 24.61 
+  lvol2 8.00m       
+.fi
+
+You can also use selection together with processing-oriented commands.
+
+.nf
+# lvchange --addtag test -S 'size < 5000k'
+  Logical volume vg/lvol1 changed.
+  Logical volume vg/lvol0 changed.
+  Logical volume vg/lvol3 changed.
+  Logical volume vg/lvol4 changed.
+
+# lvchange --deltag test -S 'tags = test'
+  Logical volume vg/lvol1 changed.
+  Logical volume vg/lvol0 changed.
+  Logical volume vg/lvol3 changed.
+  Logical volume vg/lvol4 changed.
+.fi
+
+LVM can recognize more complex values used in selection criteria for
+string list and time field types. For string lists, you can match
+whole list strictly, its subset or intersection. Let's take "lv_tags"
+field as an example - we select only rows which contain "tagA" within
+tags field. We're using { } to denote that we're interested in subset
+that matches. If the subset has only one item, we can leave out { }.
+
+.nf
+# lvs -o name,tags -S 'tags={tagA}'
+  LV    LV Tags       
+  lvol2 tagA,tagC,tagD
+  lvol0 tagA,tagB   
+  
+# lvs -o name,tags -S 'tags=tagA'
+  LV    LV Tags       
+  lvol2 tagA,tagC,tagD
+  lvol0 tagA,tagB   
+.fi
+
+Depending on whether we use "&&" (or ",") or "||" ( or "#") as delimiter
+for items in the set we define in selection criterion for string list,
+we either match subset ("&&" or ",") or even intersection ("||" or "#").
+
+.nf
+# lvs -o name,tags -S 'tags={tagA,tagC,tagD}'
+  LV    LV Tags       
+  lvol2 tagA,tagC,tagD
+
+# lvs -o name,tags -S 'tags={tagA || tagC || tagD}'
+  LV    LV Tags       
+  lvol2 tagA,tagC,tagD
+  lvol0 tagA,tagB     
+.fi
+
+To match the complete set, use [ ] with "&&" (or ",") as delimiter for items.
+Also note that the order in which we define items in the set is not relevant.
+
+.nf
+# lvs -o name,tags -S 'tags=[tagA]'                
+
+# lvs -o name,tags -S 'tags=[tagB,tagA]'
+  LV    LV Tags  
+  lvol0 tagA,tagB
+.fi
+
+If you use [ ] with "||" (or "#"), this is exactly the same as using { }.
+
+.nf
+# lvs -o name,tags -S 'tags=[tagA || tagC || tagD]'
+  LV    LV Tags       
+  lvol2 tagA,tagC,tagD
+  lvol0 tagA,tagB  
+.fi
+
+To match a set with no items, use "" to denote this (note that we have
+output compaction enabled so the "LV Tags" column is not displayed in
+the example below because it's blank and so it gets compacted).
+
+.nf
+# lvs -o name,tags -S 'tags=""'
+  LV    
+  lvol4
+  lvol3
+  lvol1
+
+# lvs -o name,tags -S 'tags!=""'
+  LV    LV Tags       
+  lvol2 tagA,tagC,tagD
+  lvol0 tagA,tagB  
+.fi
+
+When doing selection based on time fields, we can use either standard,
+absolute or freeform time expressions in selection criteria. Examples below
+are using standard forms.
+
+.nf
+# lvs -o name,time
+  LV    CTime                     
+  lvol4 2016-09-09 16:57:44 +0200 
+  lvol3 2016-09-09 16:56:48 +0200 
+  lvol2 2016-09-09 16:55:12 +0200 
+  lvol1 2016-08-29 12:53:36 +0200 
+  lvol0 2016-08-29 10:15:17 +0200 
+
+# lvs -o name,time -S 'time since "2016-09-01"'
+  LV    CTime                     
+  lvol4 2016-09-09 16:57:44 +0200 
+  lvol3 2016-09-09 16:56:48 +0200 
+  lvol2 2016-09-09 16:55:12 +0200 
+
+# lvs -o name,time -S 'time since "2016-09-09 16:56"'
+  LV    CTime                     
+  lvol4 2016-09-09 16:57:44 +0200 
+  lvol3 2016-09-09 16:56:48 +0200 
+
+# lvs -o name,time -S 'time since "2016-09-09 16:57:30"'
+  LV    CTime                     
+  lvol4 2016-09-09 16:57:44 +0200 
+
+# lvs -o name,time \\ 
+    -S 'time since "2016-08-29" && time until "2016-09-09 16:55:12"'
+  LV    CTime                     
+  lvol2 2016-09-09 16:55:12 +0200 
+  lvol1 2016-08-29 12:53:36 +0200 
+  lvol0 2016-08-29 10:15:17 +0200 
+
+# lvs -o name,time \\
+    -S 'time since "2016-08-29" && time before "2016-09-09 16:55:12"'
+  LV    CTime                     
+  lvol1 2016-08-29 12:53:36 +0200 
+  lvol0 2016-08-29 10:15:17 +0200 
+.fi
+
+Time operators have synonyms: ">=" for since, "<=" for until,
+">" for "after" and "<" for "before".
+
+.nf
+# lvs -o name,time \\
+    -S 'time >= "2016-08-29" && time <= "2016-09-09 16:55:30"'
+  LV    CTime                     
+  lvol2 2016-09-09 16:55:12 +0200 
+  lvol1 2016-08-29 12:53:36 +0200 
+  lvol0 2016-08-29 10:15:17 +0200 
+
+# lvs -o name,time \\
+    -S 'time since "2016-08-29" && time < "2016-09-09 16:55:12"'
+  LV    CTime                     
+  lvol1 2016-08-29 12:53:36 +0200 
+  lvol0 2016-08-29 10:15:17 +0200 
+.fi
+
+Example below demonstrates using absolute time expression.
+
+.nf
+# lvs -o name,time --config report/time_format="%s"
+  LV    CTime                     
+  lvol4 1473433064                
+  lvol3 1473433008                
+  lvol2 1473432912                
+  lvol1 1472468016                
+  lvol0 1472458517  
+
+# lvs -o name,time -S 'time since @1473433008'
+  LV    CTime                     
+  lvol4 2016-09-09 16:57:44 +0200 
+  lvol3 2016-09-09 16:56:48 +0200 
+.fi
+
+Examples below demonstrates using freeform time expressions.
+
+.nf
+# lvs -o name,time -S 'time since "2 weeks ago"'
+  LV    CTime                     
+  lvol4 2016-09-09 16:57:44 +0200 
+  lvol3 2016-09-09 16:56:48 +0200 
+  lvol2 2016-09-09 16:55:12 +0200 
+  lvol1 2016-08-29 12:53:36 +0200 
+  lvol0 2016-08-29 10:15:17 +0200 
+
+# lvs -o name,time -S 'time since "1 week ago"'
+  LV    CTime                     
+  lvol4 2016-09-09 16:57:44 +0200 
+  lvol3 2016-09-09 16:56:48 +0200 
+  lvol2 2016-09-09 16:55:12 +0200 
+
+# lvs -o name,time -S 'time since "2 weeks ago"'
+  LV    CTime                     
+  lvol1 2016-08-29 12:53:36 +0200 
+  lvol0 2016-08-29 10:15:17 +0200 
+
+# lvs -o name,time -S 'time before "1 week ago"'
+  LV    CTime                     
+  lvol1 2016-08-29 12:53:36 +0200 
+  lvol0 2016-08-29 10:15:17 +0200 
+
+# lvs -o name,time -S 'time since "68 hours ago"'
+  LV    CTime                     
+  lvol4 2016-09-09 16:57:44 +0200 
+  lvol3 2016-09-09 16:56:48 +0200 
+  lvol2 2016-09-09 16:55:12 +0200 
+
+# lvs -o name,time -S 'time since "1 year 3 months ago"'
+  LV    CTime                     
+  lvol4 2016-09-09 16:57:44 +0200 
+  lvol3 2016-09-09 16:56:48 +0200 
+  lvol2 2016-09-09 16:55:12 +0200 
+  lvol1 2016-08-29 12:53:36 +0200 
+  lvol0 2016-08-29 10:15:17 +0200 
+.fi
+
+.SS Command log reporting
+
+As described in \fBcategorization based on reporting facility\fP section
+at the beginning of this document, both \fBreport-oriented\fP and
+\fBprocessing-oriented\fP LVM commands can report the command log if
+this is enabled with \fBlog/report_command_log\fP configuration setting.
+Just like any other report, we can set the set of fields to display
+(\fBlog/command_log_cols\fP) and to sort by (\fBlog/command_log_sort\fP)
+for this report.
+
+.nf
+# lvmconfig --type full log/report_command_log log/command_log_cols \\
+   log/command_log_sort log/command_log_selection
+report_command_log=1
+command_log_cols="log_seq_num,log_type,log_context,log_object_type,
+                  log_object_name,log_object_group,log_message,
+                  log_errno,log_ret_code"
+command_log_sort="log_seq_num"
+command_log_selection="!(log_type=status && message=success)"
+
+
+# lvs
+  Logical Volume
+  ==============
+  LV    LSize Cpy%Sync
+  lvol1 4.00m 100.00  
+  lvol0 4.00m         
+  
+  Command Log
+  ===========
+  Seq LogType Context ObjType ObjName ObjGrp  Msg     Errno RetCode
+.fi
+
+As you can see, the command log is empty (it contains only field names).
+By default, LVM uses selection on the command log report and this case
+no row matched the selection criteria, see also \fBlog report specifics\fP
+section in this document for more information. We're displaying complete
+log report in the example below where we can see that both LVs lvol0 and
+lvol1 were successfully processed as well as the VG vg they are part of.
+
+.nf
+# lvmconfig --type full log/command_log_selection
+command_log_selection="all"
+
+# lvs
+  Logical Volume
+  ==============
+  LV    LSize Cpy%Sync
+  lvol1 4.00m 100.00  
+  lvol0 4.00m         
+  
+  Command Log
+  ===========
+  Seq LogType Context    ObjType ObjName ObjGrp  Msg     Errno RetCode
+    1 status  processing lv      lvol0   vg      success     0       1
+    2 status  processing lv      lvol1   vg      success     0       1
+    3 status  processing vg      vg              success     0       1
+
+# lvchange -an vg/lvol1
+  Command Log
+  ===========
+  Seq LogType Context    ObjType ObjName ObjGrp  Msg     Errno RetCode
+    1 status  processing lv      lvol1   vg      success     0       1
+    2 status  processing vg      vg              success     0       1
+.fi
+
+.SS Handling multiple reports per single command
+
+To configure the log report directly on command line, we need to use
+\fB--configreport\fP option before we start any \fB-o|--options\fP,
+\fB-O|--sort\fP or \fB-S|--select\fP that is targeted for log report.
+
+.nf
+# lvs -o lv_name,lv_size --configreport log -o log_object_type, \\
+   log_object_name,log_message,log_ret_code
+  Logical Volume
+  ==============
+  LV    LSize
+  lvol1 4.00m
+  lvol0 4.00m
+  
+  Command Log
+  ===========
+  ObjType ObjName Msg     RetCode
+  lv      lvol0   success       1
+  lv      lvol1   success       1
+  vg      vg      success       1
+.fi
+
+The \fBlvm fullreport\fP, with or without log report, consists of several
+reports - the \fB--configreport\fP is also used to target particular
+subreport here.
+
+Below is an extended example with \fBlvm fullreport\fP to illustrate
+combination of various options. The report output is in JSON format.
+Also, we configure "vg", "pvseg", "seg" and "log" subreport to contain
+only specified fields. For the "pvseg" subreport, we're intested only
+in PV names having "sda" in their name. For the "log" subreport we're
+intested only in log lines related to either "lvol0" object or object
+having "sda" in its name. Also, for the log subreport we define ordering
+to be based on "log_object_type" field.
+
+.nf
+# lvm fullreport --reportformat json \\
+   --configreport vg -o vg_name,vg_size \\
+   --configreport pvseg -o pv_name,pvseg_start \\
+                        -S 'pv_name=~sda' \\
+   --configreport seg -o lv_name,seg_start \\
+   --configreport log -o log_object_type,log_object_name \\
+                      -O log_object_type \\
+                      -S 'log_object_name=lvol0 || \\
+                          log_object_name=~sda'
+  {
+      "report": [
+          {
+              "vg": [
+                  {"vg_name":"vg", "vg_size":"200.00m"}
+              ]
+              ,
+              "pv": [
+                  {"pv_name":"/dev/sda", "vg_name":"vg"},
+                  {"pv_name":"/dev/sdb", "vg_name":"vg"}
+              ]
+              ,
+              "lv": [
+                  {"lv_name":"lvol0", "vg_name":"vg"},
+                  {"lv_name":"lvol1", "vg_name":"vg"}
+              ]
+              ,
+              "pvseg": [
+                  {"pv_name":"/dev/sda", "pvseg_start":"0"},
+                  {"pv_name":"/dev/sda", "pvseg_start":"1"},
+                  {"pv_name":"/dev/sda", "pvseg_start":"2"},
+                  {"pv_name":"/dev/sda", "pvseg_start":"3"}
+              ]
+              ,
+              "seg": [
+                  {"lv_name":"lvol0", "seg_start":"0 "},
+                  {"lv_name":"lvol1", "seg_start":"0 "}
+              ]
+          }
+      ]
+      ,
+      "log": [
+          {"log_object_type":"lv", "log_object_name":"lvol0"},
+          {"log_object_type":"lv", "log_object_name":"lvol0"},
+          {"log_object_type":"pv", "log_object_name":"/dev/sda"},
+          {"log_object_type":"pv", "log_object_name":"/dev/sda"},
+      ]
+  }
+.fi
+
+.SS Report extensions for LVM shell
+
+As already stated in \fBlog report coverage\fP paragraph under
+\fBlog report specifics\fP in this documentation, when using \fBLVM shell\fP
+the \fBlog report\fP coverage is wider. There's also special command
+designed to query last command's log report in the \fBLVM shell\fP -
+the \fBlastlog\fP command.
+
+The example below illustrates a situation where we called lvs command.
+After that, we inspected the log report with the \fBlastlog\fP, without
+any selection so all the log report is displayed on output. Then we called
+\fBlastlog\fP further, giving various selection criteria. Then we ran
+unknown LVM command "abc" for which the log report displays appropriate
+failure state.
+
+.nf
+# lvm
+lvm> lvs
+  Logical Volume
+  ==============
+  LV    LSize Cpy%Sync
+  lvol1 4.00m 100.00  
+  lvol0 4.00m         
+  
+  Command Log
+  ===========
+  Seq LogType Context    ObjType ObjName ObjGrp  Msg     Errno RetCode
+    1 status  processing lv      lvol0   vg      success     0       1
+    2 status  processing lv      lvol1   vg      success     0       1
+    3 status  processing vg      vg              success     0       1
+    4 status  shell      cmd     lvs             success     0       1
+
+lvm> lastlog    
+  Command Log
+  ===========
+  Seq LogType Context    ObjType ObjName ObjGrp  Msg     Errno RetCode
+    1 status  processing lv      lvol0   vg      success     0       1
+    2 status  processing lv      lvol1   vg      success     0       1
+    3 status  processing vg      vg              success     0       1
+    4 status  shell      cmd     lvs             success     0       1
+
+lvm> lastlog -S log_object_type=lv
+  Command Log
+  ===========
+  Seq LogType Context    ObjType ObjName ObjGrp  Msg     Errno RetCode
+    1 status  processing lv      lvol0   vg      success     0       1
+    2 status  processing lv      lvol1   vg      success     0       1
+
+lvm> lastlog -S log_context=shell
+  Command Log
+  ===========
+  Seq LogType Context ObjType ObjName ObjGrp  Msg     Errno RetCode
+    4 status  shell   cmd     lvs             success     0       1
+
+lvm> abc
+  Command Log
+  ===========
+  Seq LogType Context ObjType ObjName ObjGrp  Msg                                 Errno RetCode
+    1 error   shell   cmd     abc             No such command 'abc'.  Try 'help'.    -1       0
+    2 status  shell   cmd     abc             failure                                -1       2
+.fi
+
+.SH SEE ALSO
+\fBlvm\fP (8),
+\fBlvmconfig\fP (8),
+\fBlvm fullreport\fP (8)

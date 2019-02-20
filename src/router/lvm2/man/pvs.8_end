@@ -1,0 +1,9 @@
+.SH NOTES
+.
+The pv_attr bits are:
+.IP 1 3
+(d)uplicate, (a)llocatable, (u)sed
+.IP 2 3
+e(x)ported
+.IP 3 3
+(m)issing

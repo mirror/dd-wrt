@@ -1,0 +1,81 @@
+LVM poll daemon overview
+========================
+
+(last updated: 2015-05-09)
+
+LVM poll daemon (lvmpolld) is the alternative for lvm2 classical polling
+mechanisms. The motivation behind new lvmpolld was to create persistent
+system service that would be more durable and transparent. It's suited
+particularly for any systemd enabled distribution.
+
+Before lvmpolld any background polling process originating in a lvm2 command
+initiated inside cgroup of a systemd service could get killed if the main
+process (service) exited in such cgroup. That could lead to premature termination
+of such lvm2 polling process.
+
+Also without lvmpolld there were no means to detect a particular polling process
+suited for monitoring of specific operation is already in-progress and therefore
+it's not desirable to start next one with exactly same task. lvmpolld is able to
+detect such duplicate requests and not spawn such redundant process.
+
+lvmpolld is primarily targeted for systems with systemd as init process. For systems
+without systemd there's no need to install lvmpolld because there is no issue
+with observation described in second paragraph. You can still benefit from
+avoiding duplicate polling process being spawned, but without systemd lvmpolld
+can't easily be run on-demand (activated by a socket maintained by systemd).
+
+lvmpolld implement shutdown on idle and can shutdown automatically when idle
+for requested time. 60 second is recommended default here. This behaviour can be
+turned off if found useless.
+
+Data structures
+---------------
+
+a) Logical Volume (struct lvmpolld_lv)
+
+Each operation is identified by LV. Internal identifier within lvmpolld
+is full LV uuid (vg_uuid+lv_uuid) prefixed with LVM_SYSTEM_DIR if set by client.
+
+such full identifier may look like:
+
+  "/etc/lvm/lvm.confWFd2dU67S8Av29IcJCnYzqQirdfElnxzhCdzEh7EJrfCn9R1TIQjIj58weUZDre4"
+
+or without LVM_SYSTEM_DIR being set explicitly:
+
+  "WFd2dU67S8Av29IcJCnYzqQirdfElnxzhCdzEh7EJrfCn9R1TIQjIj58weUZDre4"
+
+
+LV carries various metadata about polling operation. The most significant are:
+
+VG name
+LV name
+polling interval (usually --interval passed to lvm2 command or default from lvm2 
+		  configuration)
+operation type (one of: pvmove, convert, merge, thin_merge)
+LVM_SYSTEM_DIR (if set, this is also passed among environment variables of lvpoll
+		command spawned by lvmpolld)
+
+b) LV stores (struct lvmpolld_store)
+
+lvmpolld uses two stores for Logical volumes (struct lvmpolld_lv). One store for polling
+operations in-progress. These operations are as of now: PV move, mirror up-conversion,
+classical snapshot merge, thin snapshot merge.
+
+The second store is suited only for pvmove --abort operations in-progress. Both
+stores are independent and identical LVs (pvmove /dev/sda3 and pvmove --abort /dev/sda3)
+can be run concurently from lvmpolld point of view (on lvm2 side the consistency is
+guaranteed by lvm2 locking mechanism).
+
+Locking order
+-------------
+
+There are two types of locks in lvmpolld. Each store has own store lock and each LV has
+own lv lock.
+
+Locking order is:
+1) store lock
+2) LV lock
+
+Each LV has to be inside a store. When daemon requires to take both locks it has
+to take a store lock first and LV lock has to be taken afterwards (after the
+appropriate store lock where the LV is being stored :))

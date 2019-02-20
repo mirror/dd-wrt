@@ -1,0 +1,190 @@
+#
+# Copyright (C) 2001-2004 Sistina Software, Inc. All rights reserved.
+# Copyright (C) 2004-2018 Red Hat, Inc. All rights reserved.
+#
+# This file is part of LVM2.
+#
+# This copyrighted material is made available to anyone wishing to use,
+# modify, copy, or redistribute it subject to the terms and conditions
+# of the GNU General Public License v.2.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+top_builddir = @top_builddir@
+abs_top_builddir = @abs_top_builddir@
+abs_top_srcdir = @abs_top_srcdir@
+
+SUBDIRS = conf daemons include lib libdaemon libdm man scripts tools
+
+ifeq ("@UDEV_RULES@", "yes")
+  SUBDIRS += udev
+endif
+
+ifeq ("@INTL@", "yes")
+  SUBDIRS += po
+endif
+
+ifeq ($(MAKECMDGOALS),clean)
+  SUBDIRS += test
+endif
+# FIXME Should use intermediate Makefiles here!
+ifeq ($(MAKECMDGOALS),distclean)
+  SUBDIRS = conf include man test scripts \
+    libdaemon lib tools daemons libdm \
+    udev po
+tools.distclean: test.distclean
+endif
+DISTCLEAN_DIRS += lcov_reports*
+DISTCLEAN_TARGETS += config.cache config.log config.status make.tmpl
+
+include make.tmpl
+
+include $(top_srcdir)/base/Makefile
+include $(top_srcdir)/device_mapper/Makefile
+include $(top_srcdir)/test/unit/Makefile
+
+libdm: include
+libdaemon: include
+lib: libdaemon $(BASE_TARGET) $(DEVICE_MAPPER_TARGET)
+daemons: lib libdaemon tools
+scripts: lib
+tools: lib libdaemon
+po: tools daemons
+man: tools
+all_man: tools
+scripts: libdm
+test: tools daemons
+unit-test  run-unit-test: test
+
+lib.device-mapper: include.device-mapper
+libdm.device-mapper: include.device-mapper
+daemons.device-mapper: libdm.device-mapper
+tools.device-mapper: libdm.device-mapper
+scripts.device-mapper: include.device-mapper
+device-mapper: tools.device-mapper daemons.device-mapper man.device-mapper
+
+ifeq ("@INTL@", "yes")
+lib.pofile: include.pofile
+tools.pofile: lib.pofile
+daemons.pofile: lib.pofile
+po.pofile: tools.pofile daemons.pofile
+pofile: po.pofile
+endif
+
+ifneq ("$(CFLOW_CMD)", "")
+tools.cflow: libdm.cflow lib.cflow
+daemons.cflow: tools.cflow
+cflow: include.cflow
+endif
+
+ifneq ("@CSCOPE_CMD@", "")
+cscope.out:
+	@CSCOPE_CMD@ -b -R -s$(top_srcdir)
+all: cscope.out
+endif
+DISTCLEAN_TARGETS += cscope.out
+CLEAN_DIRS += autom4te.cache
+
+check check_system check_cluster check_local check_lvmpolld check_lvmlockd_test check_lvmlockd_dlm check_lvmlockd_sanlock: test
+	$(MAKE) -C test $(@)
+
+conf.generate man.generate: tools
+
+# how to use parenthesis in makefiles
+leftparen:=(
+LVM_VER := $(firstword $(subst $(leftparen), ,$(LVM_VERSION)))
+VER := LVM2.$(LVM_VER)
+# release file name
+FILE_VER := $(VER).tgz
+CLEAN_TARGETS += $(FILE_VER)
+CLEAN_DIRS += $(rpmbuilddir)
+
+dist:
+	@echo "Generating $(FILE_VER)";\
+	(cd $(top_srcdir); git ls-tree -r HEAD --name-only | xargs tar --transform "s,^,$(VER)/," -c) | gzip >$(FILE_VER)
+
+rpm: dist
+	$(RM) -r $(rpmbuilddir)/SOURCES
+	$(MKDIR_P) $(rpmbuilddir)/SOURCES
+	$(LN_S) -f $(abs_top_builddir)/$(FILE_VER) $(rpmbuilddir)/SOURCES
+	$(LN_S) -f $(abs_top_srcdir)/spec/build.inc $(rpmbuilddir)/SOURCES
+	$(LN_S) -f $(abs_top_srcdir)/spec/macros.inc $(rpmbuilddir)/SOURCES
+	$(LN_S) -f $(abs_top_srcdir)/spec/packages.inc $(rpmbuilddir)/SOURCES
+	DM_VER=$$(cut -d- -f1 $(top_srcdir)/VERSION_DM);\
+	GIT_VER=$$(cd $(top_srcdir); git describe | cut -d- --output-delimiter=. -f2,3 || echo 0);\
+	sed -e "s,\(device_mapper_version\) [0-9.]*$$,\1 $$DM_VER," \
+	    -e "s,^\(Version:[^0-9%]*\)[0-9.]*$$,\1 $(LVM_VER)," \
+	    -e "s,^\(Release:[^0-9%]*\)[0-9.]\+,\1 $$GIT_VER," \
+	    $(top_srcdir)/spec/source.inc >$(rpmbuilddir)/SOURCES/source.inc
+	rpmbuild -v --define "_topdir $(rpmbuilddir)" -ba $(top_srcdir)/spec/lvm2.spec
+
+generate: conf.generate man.generate
+	$(MAKE) -C conf generate
+	$(MAKE) -C man generate
+
+all_man:
+	$(MAKE) -C man all_man
+
+install_system_dirs:
+	$(INSTALL_DIR) $(DESTDIR)$(DEFAULT_SYS_DIR)
+	$(INSTALL_ROOT_DIR) $(DESTDIR)$(DEFAULT_ARCHIVE_DIR)
+	$(INSTALL_ROOT_DIR) $(DESTDIR)$(DEFAULT_BACKUP_DIR)
+	$(INSTALL_ROOT_DIR) $(DESTDIR)$(DEFAULT_CACHE_DIR)
+	$(INSTALL_ROOT_DIR) $(DESTDIR)$(DEFAULT_LOCK_DIR)
+	$(INSTALL_ROOT_DIR) $(DESTDIR)$(DEFAULT_RUN_DIR)
+	$(INSTALL_ROOT_DATA) /dev/null $(DESTDIR)$(DEFAULT_CACHE_DIR)/.cache
+
+install_initscripts:
+	$(MAKE) -C scripts install_initscripts
+
+install_systemd_generators:
+	$(MAKE) -C scripts install_systemd_generators
+	$(MAKE) -C man install_systemd_generators
+
+install_systemd_units:
+	$(MAKE) -C scripts install_systemd_units
+
+install_all_man:
+	$(MAKE) -C man install_all_man
+
+install_tmpfiles_configuration:
+	$(MAKE) -C scripts install_tmpfiles_configuration
+
+ifneq ("$(LCOV)", "")
+.PHONY: lcov-reset lcov lcov-dated
+
+ifeq ($(MAKECMDGOALS),lcov-dated)
+LCOV_REPORTS_DIR := lcov_reports-$(shell date +%Y%m%d%k%M%S)
+lcov-dated: lcov
+else
+LCOV_REPORTS_DIR := lcov_reports
+endif
+
+lcov-reset:
+	$(LCOV) --zerocounters --directory $(top_builddir)
+
+ifneq ("$(GENHTML)", "")
+lcov:
+	$(RM) -rf $(LCOV_REPORTS_DIR)
+	$(MKDIR_P) $(LCOV_REPORTS_DIR)
+	$(LCOV) --capture --directory $(top_builddir) --ignore-errors source \
+		--output-file $(LCOV_REPORTS_DIR)/out.info
+	-test ! -s $(LCOV_REPORTS_DIR)/out.info || \
+		$(GENHTML) -o $(LCOV_REPORTS_DIR) --ignore-errors source \
+		$(LCOV_REPORTS_DIR)/out.info
+endif
+
+endif
+
+ifneq ($(shell which ctags 2>/dev/null),)
+.PHONY: tags
+tags:
+	test -z "$(shell find $(top_srcdir) -type f -name '*.[ch]' -newer tags 2>/dev/null | head -1)" || $(RM) tags
+	test -f tags || find $(top_srcdir) -maxdepth 5 -type f -name '*.[ch]' -exec ctags -a '{}' +
+
+CLEAN_TARGETS += tags
+endif

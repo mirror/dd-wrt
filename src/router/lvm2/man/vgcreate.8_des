@@ -1,0 +1,4 @@
+vgcreate creates a new VG on block devices. If the devices were not
+previously intialized as PVs with \fBpvcreate\fP(8), vgcreate will
+inititialize them, making them PVs. The pvcreate options for initializing
+devices are also available with vgcreate.

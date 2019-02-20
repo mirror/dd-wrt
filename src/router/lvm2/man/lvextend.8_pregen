@@ -1,0 +1,741 @@
+.TH LVEXTEND 8 "LVM TOOLS #VERSION#" "Red Hat, Inc."
+.SH NAME
+lvextend - Add space to a logical volume
+.
+.SH SYNOPSIS
+\fBlvextend\fP \fIoption_args\fP \fIposition_args\fP
+.br
+    [ \fIoption_args\fP ]
+.br
+    [ \fIposition_args\fP ]
+.br
+.P
+.ad l
+    \fB--alloc\fP \fBcontiguous\fP|\fBcling\fP|\fBcling_by_tags\fP|\fBnormal\fP|\fBanywhere\fP|\fBinherit\fP
+.ad b
+.br
+.ad l
+ \fB-A\fP|\fB--autobackup\fP \fBy\fP|\fBn\fP
+.ad b
+.br
+.ad l
+    \fB--commandprofile\fP \fIString\fP
+.ad b
+.br
+.ad l
+    \fB--config\fP \fIString\fP
+.ad b
+.br
+.ad l
+ \fB-d\fP|\fB--debug\fP
+.ad b
+.br
+.ad l
+    \fB--driverloaded\fP \fBy\fP|\fBn\fP
+.ad b
+.br
+.ad l
+ \fB-l\fP|\fB--extents\fP [\fB+\fP]\fINumber\fP[PERCENT]
+.ad b
+.br
+.ad l
+ \fB-f\fP|\fB--force\fP
+.ad b
+.br
+.ad l
+ \fB-h\fP|\fB--help\fP
+.ad b
+.br
+.ad l
+    \fB--lockopt\fP \fIString\fP
+.ad b
+.br
+.ad l
+    \fB--longhelp\fP
+.ad b
+.br
+.ad l
+ \fB-m\fP|\fB--mirrors\fP \fINumber\fP
+.ad b
+.br
+.ad l
+ \fB-n\fP|\fB--nofsck\fP
+.ad b
+.br
+.ad l
+    \fB--nolocking\fP
+.ad b
+.br
+.ad l
+    \fB--nosync\fP
+.ad b
+.br
+.ad l
+    \fB--noudevsync\fP
+.ad b
+.br
+.ad l
+    \fB--poolmetadatasize\fP [\fB+\fP]\fISize\fP[m|UNIT]
+.ad b
+.br
+.ad l
+    \fB--profile\fP \fIString\fP
+.ad b
+.br
+.ad l
+ \fB-q\fP|\fB--quiet\fP
+.ad b
+.br
+.ad l
+    \fB--reportformat\fP \fBbasic\fP|\fBjson\fP
+.ad b
+.br
+.ad l
+ \fB-r\fP|\fB--resizefs\fP
+.ad b
+.br
+.ad l
+ \fB-L\fP|\fB--size\fP [\fB+\fP]\fISize\fP[m|UNIT]
+.ad b
+.br
+.ad l
+ \fB-i\fP|\fB--stripes\fP \fINumber\fP
+.ad b
+.br
+.ad l
+ \fB-I\fP|\fB--stripesize\fP \fISize\fP[k|UNIT]
+.ad b
+.br
+.ad l
+ \fB-t\fP|\fB--test\fP
+.ad b
+.br
+.ad l
+    \fB--type\fP \fBlinear\fP|\fBstriped\fP|\fBsnapshot\fP|\fBmirror\fP|\fBraid\fP|\fBthin\fP|\fBcache\fP|\fBthin-pool\fP|\fBcache-pool\fP
+.ad b
+.br
+.ad l
+    \fB--usepolicies\fP
+.ad b
+.br
+.ad l
+ \fB-v\fP|\fB--verbose\fP
+.ad b
+.br
+.ad l
+    \fB--version\fP
+.ad b
+.br
+.ad l
+ \fB-y\fP|\fB--yes\fP
+.ad b
+.SH DESCRIPTION
+lvextend extends the size of an LV. This requires allocating logical
+extents from the VG's free physical extents. If the extension adds a new
+LV segment, the new segment will use the existing segment type of the LV.
+
+Extending a copy-on-write snapshot LV adds space for COW blocks.
+
+Use \fBlvconvert\fP(8) to change the number of data images in a RAID or
+mirrored LV.
+
+In the usage section below, \fB--size\fP \fISize\fP can be replaced
+with \fB--extents\fP \fINumber\fP.  See both descriptions
+the options section.
+.SH USAGE
+Extend an LV by a specified size.
+.br
+.P
+\fBlvextend\fP \fB-L\fP|\fB--size\fP [\fB+\fP]\fISize\fP[m|UNIT] \fILV\fP
+.br
+.RS 4
+.ad l
+[ \fB-l\fP|\fB--extents\fP [\fB+\fP]\fINumber\fP[PERCENT] ]
+.ad b
+.br
+.ad l
+[ \fB-r\fP|\fB--resizefs\fP ]
+.ad b
+.br
+.ad l
+[ \fB-i\fP|\fB--stripes\fP \fINumber\fP ]
+.ad b
+.br
+.ad l
+[ \fB-I\fP|\fB--stripesize\fP \fISize\fP[k|UNIT] ]
+.ad b
+.br
+.ad l
+[    \fB--poolmetadatasize\fP [\fB+\fP]\fISize\fP[m|UNIT] ]
+.ad b
+.br
+[ COMMON_OPTIONS ]
+.RE
+.br
+.RS 4
+[ \fIPV\fP ... ]
+.RE
+-
+
+Extend an LV by specified PV extents.
+.br
+.P
+\fBlvextend\fP \fILV\fP \fIPV\fP ...
+.br
+.RS 4
+.ad l
+[ \fB-r\fP|\fB--resizefs\fP ]
+.ad b
+.br
+.ad l
+[ \fB-i\fP|\fB--stripes\fP \fINumber\fP ]
+.ad b
+.br
+.ad l
+[ \fB-I\fP|\fB--stripesize\fP \fISize\fP[k|UNIT] ]
+.ad b
+.br
+[ COMMON_OPTIONS ]
+.RE
+.br
+-
+
+Extend a pool metadata SubLV by a specified size.
+.br
+.P
+\fBlvextend\fP \fB--poolmetadatasize\fP [\fB+\fP]\fISize\fP[m|UNIT] \fILV\fP\fI_thinpool\fP
+.br
+.RS 4
+.ad l
+[ \fB-i\fP|\fB--stripes\fP \fINumber\fP ]
+.ad b
+.br
+.ad l
+[ \fB-I\fP|\fB--stripesize\fP \fISize\fP[k|UNIT] ]
+.ad b
+.br
+[ COMMON_OPTIONS ]
+.RE
+.br
+.RS 4
+[ \fIPV\fP ... ]
+.RE
+-
+
+Extend an LV according to a predefined policy.
+.br
+.P
+\fBlvextend\fP \fB--usepolicies\fP \fILV\fP\fI_snapshot_thinpool\fP
+.br
+.RS 4
+.ad l
+[ \fB-r\fP|\fB--resizefs\fP ]
+.ad b
+.br
+[ COMMON_OPTIONS ]
+.RE
+.br
+.RS 4
+[ \fIPV\fP ... ]
+.RE
+-
+
+Common options for command:
+.
+.RS 4
+.ad l
+[ \fB-A\fP|\fB--autobackup\fP \fBy\fP|\fBn\fP ]
+.ad b
+.br
+.ad l
+[ \fB-f\fP|\fB--force\fP ]
+.ad b
+.br
+.ad l
+[ \fB-m\fP|\fB--mirrors\fP \fINumber\fP ]
+.ad b
+.br
+.ad l
+[ \fB-n\fP|\fB--nofsck\fP ]
+.ad b
+.br
+.ad l
+[    \fB--alloc\fP \fBcontiguous\fP|\fBcling\fP|\fBcling_by_tags\fP|\fBnormal\fP|\fBanywhere\fP|\fBinherit\fP ]
+.ad b
+.br
+.ad l
+[    \fB--nosync\fP ]
+.ad b
+.br
+.ad l
+[    \fB--noudevsync\fP ]
+.ad b
+.br
+.ad l
+[    \fB--reportformat\fP \fBbasic\fP|\fBjson\fP ]
+.ad b
+.br
+.ad l
+[    \fB--type\fP \fBlinear\fP|\fBstriped\fP|\fBsnapshot\fP|\fBmirror\fP|\fBraid\fP|\fBthin\fP|\fBcache\fP|\fBthin-pool\fP|\fBcache-pool\fP ]
+.ad b
+.RE
+
+Common options for lvm:
+.
+.RS 4
+.ad l
+[ \fB-d\fP|\fB--debug\fP ]
+.ad b
+.br
+.ad l
+[ \fB-h\fP|\fB--help\fP ]
+.ad b
+.br
+.ad l
+[ \fB-q\fP|\fB--quiet\fP ]
+.ad b
+.br
+.ad l
+[ \fB-t\fP|\fB--test\fP ]
+.ad b
+.br
+.ad l
+[ \fB-v\fP|\fB--verbose\fP ]
+.ad b
+.br
+.ad l
+[ \fB-y\fP|\fB--yes\fP ]
+.ad b
+.br
+.ad l
+[    \fB--commandprofile\fP \fIString\fP ]
+.ad b
+.br
+.ad l
+[    \fB--config\fP \fIString\fP ]
+.ad b
+.br
+.ad l
+[    \fB--driverloaded\fP \fBy\fP|\fBn\fP ]
+.ad b
+.br
+.ad l
+[    \fB--lockopt\fP \fIString\fP ]
+.ad b
+.br
+.ad l
+[    \fB--longhelp\fP ]
+.ad b
+.br
+.ad l
+[    \fB--nolocking\fP ]
+.ad b
+.br
+.ad l
+[    \fB--profile\fP \fIString\fP ]
+.ad b
+.br
+.ad l
+[    \fB--version\fP ]
+.ad b
+.RE
+.SH OPTIONS
+.HP
+.ad l
+\fB--alloc\fP \fBcontiguous\fP|\fBcling\fP|\fBcling_by_tags\fP|\fBnormal\fP|\fBanywhere\fP|\fBinherit\fP
+.br
+Determines the allocation policy when a command needs to allocate
+Physical Extents (PEs) from the VG. Each VG and LV has an allocation policy
+which can be changed with vgchange/lvchange, or overriden on the
+command line.
+\fBnormal\fP applies common sense rules such as not placing parallel stripes
+on the same PV.
+\fBinherit\fP applies the VG policy to an LV.
+\fBcontiguous\fP requires new PEs be placed adjacent to existing PEs.
+\fBcling\fP places new PEs on the same PV as existing PEs in the same
+stripe of the LV.
+If there are sufficient PEs for an allocation, but normal does not
+use them, \fBanywhere\fP will use them even if it reduces performance,
+e.g. by placing two stripes on the same PV.
+Optional positional PV args on the command line can also be used to limit
+which PVs the command will use for allocation.
+See \fBlvm\fP(8) for more information about allocation.
+.ad b
+.HP
+.ad l
+\fB-A\fP|\fB--autobackup\fP \fBy\fP|\fBn\fP
+.br
+Specifies if metadata should be backed up automatically after a change.
+Enabling this is strongly advised! See \fBvgcfgbackup\fP(8) for more information.
+.ad b
+.HP
+.ad l
+\fB--commandprofile\fP \fIString\fP
+.br
+The command profile to use for command configuration.
+See \fBlvm.conf\fP(5) for more information about profiles.
+.ad b
+.HP
+.ad l
+\fB--config\fP \fIString\fP
+.br
+Config settings for the command. These override lvm.conf settings.
+The String arg uses the same format as lvm.conf,
+or may use section/field syntax.
+See \fBlvm.conf\fP(5) for more information about config.
+.ad b
+.HP
+.ad l
+\fB-d\fP|\fB--debug\fP ...
+.br
+Set debug level. Repeat from 1 to 6 times to increase the detail of
+messages sent to the log file and/or syslog (if configured).
+.ad b
+.HP
+.ad l
+\fB--driverloaded\fP \fBy\fP|\fBn\fP
+.br
+If set to no, the command will not attempt to use device-mapper.
+For testing and debugging.
+.ad b
+.HP
+.ad l
+\fB-l\fP|\fB--extents\fP [\fB+\fP]\fINumber\fP[PERCENT]
+.br
+Specifies the new size of the LV in logical extents.
+The --size and --extents options are alternate methods of specifying size.
+The total number of physical extents used will be
+greater when redundant data is needed for RAID levels.
+An alternate syntax allows the size to be determined indirectly
+as a percentage of the size of a related VG, LV, or set of PVs. The
+suffix \fB%VG\fP denotes the total size of the VG, the suffix \fB%FREE\fP
+the remaining free space in the VG, and the suffix \fB%PVS\fP the free
+space in the specified PVs.  For a snapshot, the size
+can be expressed as a percentage of the total size of the origin LV
+with the suffix \fB%ORIGIN\fP (\fB100%ORIGIN\fP provides space for
+the whole origin).
+When expressed as a percentage, the size defines an upper limit for the
+number of logical extents in the new LV. The precise number of logical
+extents in the new LV is not determined until the command has completed.
+When the plus \fB+\fP or minus \fB-\fP prefix is used,
+the value is not an absolute size, but is relative and added or subtracted
+from the current size.
+.ad b
+.HP
+.ad l
+\fB-f\fP|\fB--force\fP ...
+.br
+Override various checks, confirmations and protections.
+Use with extreme caution.
+.ad b
+.HP
+.ad l
+\fB-h\fP|\fB--help\fP
+.br
+Display help text.
+.ad b
+.HP
+.ad l
+\fB--lockopt\fP \fIString\fP
+.br
+Used to pass options for special cases to lvmlockd.
+See \fBlvmlockd\fP(8) for more information.
+.ad b
+.HP
+.ad l
+\fB--longhelp\fP
+.br
+Display long help text.
+.ad b
+.HP
+.ad l
+\fB-m\fP|\fB--mirrors\fP \fINumber\fP
+.br
+Not used.
+.ad b
+.HP
+.ad l
+\fB-n\fP|\fB--nofsck\fP
+.br
+Do not perform fsck before resizing filesystem when filesystem
+requires it. You may need to use --force to proceed with
+this option.
+.ad b
+.HP
+.ad l
+\fB--nolocking\fP
+.br
+Disable locking.
+.ad b
+.HP
+.ad l
+\fB--nosync\fP
+.br
+Causes the creation of mirror, raid1, raid4, raid5 and raid10 to skip the
+initial synchronization. In case of mirror, raid1 and raid10, any data
+written afterwards will be mirrored, but the original contents will not be
+copied. In case of raid4 and raid5, no parity blocks will be written,
+though any data written afterwards will cause parity blocks to be stored.
+This is useful for skipping a potentially long and resource intensive initial
+sync of an empty mirror/raid1/raid4/raid5 and raid10 LV.
+This option is not valid for raid6, because raid6 relies on proper parity
+(P and Q Syndromes) being created during initial synchronization in order
+to reconstruct proper user date in case of device failures.
+raid0 and raid0_meta do not provide any data copies or parity support
+and thus do not support initial synchronization.
+.ad b
+.HP
+.ad l
+\fB--noudevsync\fP
+.br
+Disables udev synchronisation. The process will not wait for notification
+from udev. It will continue irrespective of any possible udev processing
+in the background. Only use this if udev is not running or has rules that
+ignore the devices LVM creates.
+.ad b
+.HP
+.ad l
+\fB--poolmetadatasize\fP [\fB+\fP]\fISize\fP[m|UNIT]
+.br
+Specifies the new size of the pool metadata LV.
+The plus prefix \fB+\fP can be used, in which case
+the value is added to the current size.
+.ad b
+.HP
+.ad l
+\fB--profile\fP \fIString\fP
+.br
+An alias for --commandprofile or --metadataprofile, depending
+on the command.
+.ad b
+.HP
+.ad l
+\fB-q\fP|\fB--quiet\fP ...
+.br
+Suppress output and log messages. Overrides --debug and --verbose.
+Repeat once to also suppress any prompts with answer 'no'.
+.ad b
+.HP
+.ad l
+\fB--reportformat\fP \fBbasic\fP|\fBjson\fP
+.br
+Overrides current output format for reports which is defined globally by
+the report/output_format setting in lvm.conf.
+\fBbasic\fP is the original format with columns and rows.
+If there is more than one report per command, each report is prefixed
+with the report name for identification. \fBjson\fP produces report
+output in JSON format. See \fBlvmreport\fP(7) for more information.
+.ad b
+.HP
+.ad l
+\fB-r\fP|\fB--resizefs\fP
+.br
+Resize underlying filesystem together with the LV using fsadm(8).
+.ad b
+.HP
+.ad l
+\fB-L\fP|\fB--size\fP [\fB+\fP]\fISize\fP[m|UNIT]
+.br
+Specifies the new size of the LV.
+The --size and --extents options are alternate methods of specifying size.
+The total number of physical extents used will be
+greater when redundant data is needed for RAID levels.
+When the plus \fB+\fP or minus \fB-\fP prefix is used,
+the value is not an absolute size, but is relative and added or subtracted
+from the current size.
+.ad b
+.HP
+.ad l
+\fB-i\fP|\fB--stripes\fP \fINumber\fP
+.br
+Specifies the number of stripes in a striped LV. This is the number of
+PVs (devices) that a striped LV is spread across. Data that
+appears sequential in the LV is spread across multiple devices in units of
+the stripe size (see --stripesize). This does not change existing
+allocated space, but only applies to space being allocated by the command.
+When creating a RAID 4/5/6 LV, this number does not include the extra
+devices that are required for parity. The largest number depends on
+the RAID type (raid0: 64, raid10: 32, raid4/5: 63, raid6: 62), and
+when unspecified, the default depends on the RAID type
+(raid0: 2, raid10: 2, raid4/5: 3, raid6: 5.)
+To stripe a new raid LV across all PVs by default,
+see lvm.conf allocation/raid_stripe_all_devices.
+.ad b
+.HP
+.ad l
+\fB-I\fP|\fB--stripesize\fP \fISize\fP[k|UNIT]
+.br
+The amount of data that is written to one device before
+moving to the next in a striped LV.
+.ad b
+.HP
+.ad l
+\fB-t\fP|\fB--test\fP
+.br
+Run in test mode. Commands will not update metadata.
+This is implemented by disabling all metadata writing but nevertheless
+returning success to the calling function. This may lead to unusual
+error messages in multi-stage operations if a tool relies on reading
+back metadata it believes has changed but hasn't.
+.ad b
+.HP
+.ad l
+\fB--type\fP \fBlinear\fP|\fBstriped\fP|\fBsnapshot\fP|\fBmirror\fP|\fBraid\fP|\fBthin\fP|\fBcache\fP|\fBthin-pool\fP|\fBcache-pool\fP
+.br
+The LV type, also known as "segment type" or "segtype".
+See usage descriptions for the specific ways to use these types.
+For more information about redundancy and performance (\fBraid\fP<N>, \fBmirror\fP, \fBstriped\fP, \fBlinear\fP) see \fBlvmraid\fP(7).
+For thin provisioning (\fBthin\fP, \fBthin-pool\fP) see \fBlvmthin\fP(7).
+For performance caching (\fBcache\fP, \fBcache-pool\fP) see \fBlvmcache\fP(7).
+For copy-on-write snapshots (\fBsnapshot\fP) see usage definitions.
+Several commands omit an explicit type option because the type
+is inferred from other options or shortcuts
+(e.g. --stripes, --mirrors, --snapshot, --virtualsize, --thin, --cache).
+Use inferred types with care because it can lead to unexpected results.
+.ad b
+.HP
+.ad l
+\fB--usepolicies\fP
+.br
+Perform an operation according to the policy configured in lvm.conf
+or a profile.
+.ad b
+.HP
+.ad l
+\fB-v\fP|\fB--verbose\fP ...
+.br
+Set verbose level. Repeat from 1 to 4 times to increase the detail
+of messages sent to stdout and stderr.
+.ad b
+.HP
+.ad l
+\fB--version\fP
+.br
+Display version information.
+.ad b
+.HP
+.ad l
+\fB-y\fP|\fB--yes\fP
+.br
+Do not prompt for confirmation interactively but always assume the
+answer yes. Use with extreme caution.
+(For automatic no, see -qq.)
+.ad b
+.SH VARIABLES
+.HP
+\fILV\fP
+.br
+Logical Volume name.  See \fBlvm\fP(8) for valid names.
+An LV positional arg generally includes the VG name and LV name, e.g. VG/LV.
+LV followed by _<type> indicates that an LV of the
+given type is required. (raid represents raid<N> type)
+.HP
+\fIPV\fP
+.br
+Physical Volume name, a device path under /dev.
+For commands managing physical extents, a PV positional arg
+generally accepts a suffix indicating a range (or multiple ranges)
+of physical extents (PEs). When the first PE is omitted, it defaults
+to the start of the device, and when the last PE is omitted it defaults to end.
+Start and end range (inclusive): \fIPV\fP[\fB:\fP\fIPE\fP\fB-\fP\fIPE\fP]...
+Start and length range (counting from 0): \fIPV\fP[\fB:\fP\fIPE\fP\fB+\fP\fIPE\fP]...
+.HP
+\fIString\fP
+.br
+See the option description for information about the string content.
+.HP
+\fISize\fP[UNIT]
+.br
+Size is an input number that accepts an optional unit.
+Input units are always treated as base two values, regardless of
+capitalization, e.g. 'k' and 'K' both refer to 1024.
+The default input unit is specified by letter, followed by |UNIT.
+UNIT represents other possible input units: \fBbBsSkKmMgGtTpPeE\fP.
+b|B is bytes, s|S is sectors of 512 bytes, k|K is kilobytes,
+m|M is megabytes, g|G is gigabytes, t|T is terabytes,
+p|P is petabytes, e|E is exabytes.
+(This should not be confused with the output control --units, where
+capital letters mean multiple of 1000.)
+.SH ENVIRONMENT VARIABLES
+See \fBlvm\fP(8) for information about environment variables used by lvm.
+For example, LVM_VG_NAME can generally be substituted for a required VG parameter.
+.SH EXAMPLES
+Extend the size of an LV by 54MiB, using a specific PV.
+.br
+.B lvextend -L +54 vg01/lvol10 /dev/sdk3
+
+Extend the size of an LV by the amount of free
+space on PV /dev/sdk3. This is equivalent to specifying
+"-l +100%PVS" on the command line.
+.br
+.B lvextend vg01/lvol01 /dev/sdk3
+
+Extend an LV by 16MiB using specific physical extents.
+.br
+.B lvextend -L+16m vg01/lvol01 /dev/sda:8-9 /dev/sdb:8-9
+.SH SEE ALSO
+
+.BR lvm (8)
+.BR lvm.conf (5)
+.BR lvmconfig (8)
+
+.BR pvchange (8)
+.BR pvck (8)
+.BR pvcreate (8)
+.BR pvdisplay (8)
+.BR pvmove (8)
+.BR pvremove (8)
+.BR pvresize (8)
+.BR pvs (8)
+.BR pvscan (8) 
+
+.BR vgcfgbackup (8)
+.BR vgcfgrestore (8)
+.BR vgchange (8)
+.BR vgck (8)
+.BR vgcreate (8)
+.BR vgconvert (8)
+.BR vgdisplay (8)
+.BR vgexport (8)
+.BR vgextend (8)
+.BR vgimport (8)
+.BR vgimportclone (8)
+.BR vgmerge (8)
+.BR vgmknodes (8)
+.BR vgreduce (8)
+.BR vgremove (8)
+.BR vgrename (8)
+.BR vgs (8)
+.BR vgscan (8)
+.BR vgsplit (8) 
+
+.BR lvcreate (8)
+.BR lvchange (8)
+.BR lvconvert (8)
+.BR lvdisplay (8)
+.BR lvextend (8)
+.BR lvreduce (8)
+.BR lvremove (8)
+.BR lvrename (8)
+.BR lvresize (8)
+.BR lvs (8)
+.BR lvscan (8)
+
+.BR lvm-fullreport (8)
+.BR lvm-lvpoll (8)
+.BR lvm2-activation-generator (8)
+.BR blkdeactivate (8)
+.BR lvmdump (8)
+
+.BR dmeventd (8)
+.BR lvmpolld (8)
+.BR lvmlockd (8)
+.BR lvmlockctl (8)
+.BR cmirrord (8)
+.BR lvmdbusd (8)
+
+.BR lvmsystemid (7)
+.BR lvmreport (7)
+.BR lvmraid (7)
+.BR lvmthin (7)
+.BR lvmcache (7)

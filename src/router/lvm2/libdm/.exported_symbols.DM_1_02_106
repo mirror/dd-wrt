@@ -1,0 +1,5 @@
+dm_message_supports_precise_timestamps
+dm_stats_create_region
+dm_stats_driver_supports_precise
+dm_stats_get_current_region_precise_timestamps
+dm_stats_get_region_precise_timestamps

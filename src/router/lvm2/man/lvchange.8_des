@@ -1,0 +1,2 @@
+lvchange changes LV attributes in the VG, changes LV activation in the
+kernel, and includes other utilities for LV maintenance.

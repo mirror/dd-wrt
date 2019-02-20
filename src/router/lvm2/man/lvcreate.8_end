@@ -1,0 +1,97 @@
+.SH EXAMPLES
+
+Create a striped LV with 3 stripes, a stripe size of 8KiB and a size of 100MiB.
+The LV name is chosen by lvcreate.
+.br
+.B lvcreate -i 3 -I 8 -L 100m vg00
+
+Create a raid1 LV with two images, and a useable size of 500 MiB. This
+operation requires two devices, one for each mirror image. RAID metadata
+(superblock and bitmap) is also included on the two devices.
+.br
+.B lvcreate --type raid1 -m1 -L 500m -n mylv vg00
+
+Create a mirror LV with two images, and a useable size of 500 MiB.
+This operation requires three devices: two for mirror images and
+one for a disk log.
+.br
+.B lvcreate --type mirror -m1 -L 500m -n mylv vg00
+
+Create a mirror LV with 2 images, and a useable size of 500 MiB.
+This operation requires 2 devices because the log is in memory.
+.br
+.B lvcreate --type mirror -m1 --mirrorlog core -L 500m -n mylv vg00
+
+Create a copy-on-write snapshot of an LV:
+.br
+.B lvcreate --snapshot --size 100m --name mysnap vg00/mylv
+
+Create a copy-on-write snapshot with a size sufficient
+for overwriting 20% of the size of the original LV.
+.br
+.B lvcreate -s -l 20%ORIGIN -n mysnap vg00/mylv
+
+Create a sparse LV with 1TiB of virtual space, and actual space just under
+100MiB.
+.br
+.B lvcreate --snapshot --virtualsize 1t --size 100m --name mylv vg00
+
+Create a linear LV with a usable size of 64MiB on specific physical extents.
+.br
+.B lvcreate -L 64m -n mylv vg00 /dev/sda:0-7 /dev/sdb:0-7
+
+Create a RAID5 LV with a usable size of 5GiB, 3 stripes, a stripe size of
+64KiB, using a total of 4 devices (including one for parity).
+.br
+.B lvcreate --type raid5 -L 5G -i 3 -I 64 -n mylv vg00
+
+Create a RAID5 LV using all of the free space in the VG and spanning all the
+PVs in the VG (note that the command will fail if there are more than 8 PVs in
+the VG, in which case \fB-i 7\fP must be used to get to the current maximum of
+8 devices including parity for RaidLVs).
+.br
+.B lvcreate --config allocation/raid_stripe_all_devices=1
+.RS
+.B --type raid5 -l 100%FREE -n mylv vg00
+.RE
+
+Create RAID10 LV with a usable size of 5GiB, using 2 stripes, each on
+a two-image mirror. (Note that the \fB-i\fP and \fB-m\fP arguments behave
+differently:
+\fB-i\fP specifies the total number of stripes,
+but \fB-m\fP specifies the number of images in addition
+to the first image).
+.br
+.B lvcreate --type raid10 -L 5G -i 2 -m 1 -n mylv vg00
+
+Create a 1TiB thin LV, first creating a new thin pool for it, where
+the thin pool has 100MiB of space, uses 2 stripes, has a 64KiB stripe
+size, and 256KiB chunk size.
+.br
+.B lvcreate --type thin --name mylv --thinpool mypool
+.RS
+.B -V 1t -L 100m -i 2 -I 64 -c 256 vg00
+.RE
+
+Create a thin snapshot of a thin LV (the size option must not be
+used, otherwise a copy-on-write snapshot would be created).
+.br
+.B lvcreate --snapshot --name mysnap vg00/thinvol
+
+Create a thin snapshot of the read-only inactive LV named "origin"
+which becomes an external origin for the thin snapshot LV.
+.br
+.B lvcreate --snapshot --name mysnap --thinpool mypool vg00/origin
+
+Create a cache pool from a fast physical device. The cache pool can
+then be used to cache an LV.
+.br
+.B lvcreate --type cache-pool -L 1G -n my_cpool vg00 /dev/fast1
+
+Create a cache LV, first creating a new origin LV on a slow physical device,
+then combining the new origin LV with an existing cache pool.
+.br
+.B lvcreate --type cache --cachepool my_cpool
+.RS
+.B -L 100G -n mylv vg00 /dev/slow1
+.RE

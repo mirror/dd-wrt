@@ -1,0 +1,12 @@
+.SH EXAMPLES
+
+Initialize a partition and a full device.
+.br
+.B pvcreate /dev/sdc4 /dev/sde
+
+If a device is a 4KiB sector drive that compensates for windows
+partitioning (sector 7 is the lowest aligned logical block, the 4KiB
+sectors start at LBA -1, and consequently sector 63 is aligned on a 4KiB
+boundary) manually account for this when initializing for use by LVM.
+.br
+.B pvcreate --dataalignmentoffset 7s /dev/sdb

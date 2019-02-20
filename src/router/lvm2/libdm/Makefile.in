@@ -1,0 +1,108 @@
+#
+# Copyright (C) 2001-2004 Sistina Software, Inc. All rights reserved.
+# Copyright (C) 2004-2010 Red Hat, Inc. All rights reserved.
+#
+# This file is part of the device-mapper userspace tools.
+#
+# This copyrighted material is made available to anyone wishing to use,
+# modify, copy, or redistribute it subject to the terms and conditions
+# of the GNU Lesser General Public License v.2.1.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with this program; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+top_builddir = @top_builddir@
+
+SUBDIRS=dm-tools
+
+SOURCES =\
+	datastruct/bitset.c \
+	datastruct/hash.c \
+	datastruct/list.c \
+	libdm-common.c \
+	libdm-config.c \
+	libdm-deptree.c \
+	libdm-file.c \
+	libdm-report.c \
+	libdm-stats.c \
+	libdm-string.c \
+	libdm-targets.c \
+	libdm-timestamp.c \
+	mm/dbg_malloc.c \
+	mm/pool.c \
+	regex/matcher.c \
+	regex/parse_rx.c \
+	regex/ttree.c \
+	$(interface)/libdm-iface.c
+
+INCLUDES = -I$(srcdir)/$(interface)
+
+ifeq ("@STATIC_LINK@", "yes")
+LIB_STATIC = $(interface)/libdevmapper.a
+endif
+
+LIB_SHARED = $(interface)/libdevmapper.$(LIB_SUFFIX)
+LIB_VERSION = $(LIB_VERSION_DM)
+TARGETS = libdevmapper.$(LIB_SUFFIX) libdevmapper.$(LIB_SUFFIX).$(LIB_VERSION)
+
+CFLOW_LIST = $(SOURCES)
+CFLOW_LIST_TARGET = libdevmapper.cflow
+
+EXPORTED_HEADER = $(srcdir)/libdevmapper.h
+EXPORTED_FN_PREFIX = dm
+
+include $(top_builddir)/libdm/make.tmpl
+
+PROGS_CFLAGS = $(UDEV_CFLAGS)
+
+LIBS += $(SELINUX_LIBS) $(UDEV_LIBS) $(PTHREAD_LIBS) $(RT_LIBS) $(M_LIBS)
+
+device-mapper: all
+
+dm-tools.device-mapper: $(TARGETS)
+
+libdevmapper.$(LIB_SUFFIX) libdevmapper.$(LIB_SUFFIX).$(LIB_VERSION): $(LIB_SHARED)
+	@echo "    [LN] $<"
+	$(Q) $(LN_S) -f $< $@
+
+.PHONY: install_dynamic install_static install_include \
+	install_ioctl install_ioctl_static \
+	install_pkgconfig
+
+INSTALL_TYPE = install_dynamic
+
+ifeq ("@STATIC_LINK@", "yes")
+  INSTALL_TYPE += install_static
+endif
+
+ifeq ("@PKGCONFIG@", "yes")
+  INSTALL_TYPE += install_pkgconfig
+endif
+
+install: $(INSTALL_TYPE) install_include
+
+install_device-mapper: install
+
+install_include: $(srcdir)/libdevmapper.h
+	@echo "    [INSTALL] $<"
+	$(Q) $(INSTALL_DATA) -D $< $(includedir)/$(<F)
+
+install_dynamic: install_@interface@
+
+install_static: install_@interface@_static
+
+install_ioctl: install_lib_shared
+
+install_pkgconfig: libdevmapper.pc
+	@echo "    [INSTALL] $<"
+	$(Q) $(INSTALL_DATA) -D $< $(pkgconfigdir)/devmapper.pc
+
+install_ioctl_static: $(LIB_STATIC)
+	@echo "    [INSTALL] $<"
+	$(Q) $(INSTALL_DATA) -D $< $(usrlibdir)/$(<F)
+
+CLEAN_TARGETS += ioctl/libdevmapper.a
+DISTCLEAN_TARGETS += libdevmapper.pc make.tmpl

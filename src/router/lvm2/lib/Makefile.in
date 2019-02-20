@@ -1,0 +1,138 @@
+#
+# Copyright (C) 2001-2004 Sistina Software, Inc. All rights reserved.
+# Copyright (C) 2004-2014 Red Hat, Inc. All rights reserved.
+#
+# This file is part of LVM2.
+#
+# This copyrighted material is made available to anyone wishing to use,
+# modify, copy, or redistribute it subject to the terms and conditions
+# of the GNU General Public License v.2.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+top_builddir = @top_builddir@
+
+SOURCES =\
+	activate/activate.c \
+	cache/lvmcache.c \
+	cache_segtype/cache.c \
+	commands/toolcontext.c \
+	config/config.c \
+	datastruct/btree.c \
+	datastruct/str_list.c \
+	device/bcache.c \
+	device/bcache-utils.c \
+	device/dev-cache.c \
+	device/dev-ext.c \
+	device/dev-io.c \
+	device/dev-md.c \
+	device/dev-swap.c \
+	device/dev-type.c \
+	device/dev-luks.c \
+	device/dev-dasd.c \
+	device/dev-lvm1-pool.c \
+	display/display.c \
+	error/errseg.c \
+	unknown/unknown.c \
+	filters/filter-composite.c \
+	filters/filter-persistent.c \
+	filters/filter-regex.c \
+	filters/filter-sysfs.c \
+	filters/filter-md.c \
+	filters/filter-fwraid.c \
+	filters/filter-mpath.c \
+	filters/filter-partitioned.c \
+	filters/filter-type.c \
+	filters/filter-usable.c \
+	filters/filter-internal.c \
+	filters/filter-signature.c \
+	format_text/archive.c \
+	format_text/archiver.c \
+	format_text/export.c \
+	format_text/flags.c \
+	format_text/format-text.c \
+	format_text/import.c \
+	format_text/import_vsn1.c \
+	format_text/text_label.c \
+	freeseg/freeseg.c \
+	label/label.c \
+	locking/file_locking.c \
+	locking/locking.c \
+	log/log.c \
+	metadata/cache_manip.c \
+	metadata/lv.c \
+	metadata/lv_manip.c \
+	metadata/merge.c \
+	metadata/metadata.c \
+	metadata/mirror.c \
+	metadata/pool_manip.c \
+	metadata/pv.c \
+	metadata/pv_manip.c \
+	metadata/pv_map.c \
+	metadata/raid_manip.c \
+	metadata/segtype.c \
+	metadata/snapshot_manip.c \
+	metadata/thin_manip.c \
+	metadata/vdo_manip.c \
+	metadata/vg.c \
+	mirror/mirrored.c \
+	misc/crc.c \
+	misc/lvm-exec.c \
+	misc/lvm-file.c \
+	misc/lvm-flock.c \
+	misc/lvm-globals.c \
+	misc/lvm-maths.c \
+	misc/lvm-signal.c \
+	misc/lvm-string.c \
+	misc/lvm-wrappers.c \
+	misc/lvm-percent.c \
+	misc/sharedlib.c \
+	mm/memlock.c \
+	notify/lvmnotify.c \
+	properties/prop_common.c \
+	raid/raid.c \
+	report/properties.c \
+	report/report.c \
+	snapshot/snapshot.c \
+	striped/striped.c \
+	thin/thin.c \
+	uuid/uuid.c \
+	zero/zero.c
+
+ifeq ("@DEVMAPPER@", "yes")
+  SOURCES +=\
+	activate/dev_manager.c \
+	activate/fs.c
+endif
+
+ifeq ("@BUILD_LVMPOLLD@", "yes")
+  SOURCES +=\
+	lvmpolld/lvmpolld-client.c
+endif
+
+ifeq ("@BUILD_LVMLOCKD@", "yes")
+  SOURCES +=\
+	locking/lvmlockd.c
+endif
+
+ifeq ("@VDO@", "internal")
+  SOURCES += vdo/vdo.c
+endif
+
+LIB_NAME = liblvm-internal
+LIB_STATIC = $(LIB_NAME).a
+
+CFLOW_LIST = $(SOURCES)
+CFLOW_LIST_TARGET = $(LIB_NAME).cflow
+
+PROGS_CFLAGS = $(BLKID_CFLAGS) $(UDEV_CFLAGS)
+
+include $(top_builddir)/make.tmpl
+
+$(SUBDIRS): $(LIB_STATIC)
+
+CLEAN_TARGETS += misc/configure.h misc/lvm-version.h

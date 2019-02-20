@@ -1,0 +1,583 @@
+# @configure_input@
+#
+# Copyright (C) 2001-2004 Sistina Software, Inc. All rights reserved.
+# Copyright (C) 2004-2014 Red Hat, Inc. All rights reserved.
+#
+# This file is part of LVM2.
+#
+# This copyrighted material is made available to anyone wishing to use,
+# modify, copy, or redistribute it subject to the terms and conditions
+# of the GNU General Public License v.2.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+
+ifneq ("@SILENT_RULES@","yes")
+	V ?= 1
+endif
+
+ifeq ($(V),1)
+	Q=
+else
+	Q=@
+endif
+
+SHELL = @SHELL@
+
+@SET_MAKE@
+
+# Allow environment to override any built-in default value for CC.
+# If there is a built-in default, CC is NOT set to @CC@ here.
+CC ?= @CC@
+
+# If $(CC) holds the usual built-in default value of 'cc' then replace it with
+# the configured value.
+# (To avoid this and force the use of 'cc' from the environment, supply its
+# full path.)
+ifeq ($(CC), cc)
+  CC = @CC@
+endif
+
+RANLIB = @RANLIB@
+INSTALL = @INSTALL@
+MKDIR_P = @MKDIR_P@
+MSGFMT = @MSGFMT@
+LCOV = @LCOV@
+GENHTML = @GENHTML@
+LN_S = @LN_S@
+SED = @SED@
+CFLOW_CMD = @CFLOW_CMD@
+AWK = @AWK@
+CHMOD = @CHMOD@
+EGREP = @EGREP@
+GREP = @GREP@
+SORT = @SORT@
+WC = @WC@
+AR = @AR@
+RM = rm -f
+
+PYTHON2 = @PYTHON2@
+PYTHON3 = @PYTHON3@
+PYCOMPILE = $(top_srcdir)/autoconf/py-compile
+
+LIBS += @LIBS@ $(SELINUX_LIBS) $(UDEV_LIBS) $(BLKID_LIBS) $(RT_LIBS) $(M_LIBS)
+# Extra libraries always linked with static binaries
+STATIC_LIBS = $(SELINUX_LIBS) $(UDEV_LIBS) $(BLKID_LIBS)
+DEFS += @DEFS@
+# FIXME set this only where it's needed, not globally?
+CFLAGS ?= @COPTIMISE_FLAG@ @CFLAGS@
+LDFLAGS ?= @LDFLAGS@
+CLDFLAGS += @CLDFLAGS@
+ELDFLAGS += @ELDFLAGS@
+LDDEPS += @LDDEPS@
+LIB_SUFFIX = @LIB_SUFFIX@
+DL_LIBS = @DL_LIBS@
+RT_LIBS = @RT_LIBS@
+M_LIBS = @M_LIBS@
+PTHREAD_LIBS = @PTHREAD_LIBS@
+READLINE_LIBS = @READLINE_LIBS@
+SELINUX_LIBS = @SELINUX_LIBS@
+UDEV_CFLAGS = @UDEV_CFLAGS@
+UDEV_LIBS = @UDEV_LIBS@
+BLKID_CFLAGS = @BLKID_CFLAGS@
+BLKID_LIBS = @BLKID_LIBS@
+SYSTEMD_LIBS = @SYSTEMD_LIBS@
+VALGRIND_CFLAGS = @VALGRIND_CFLAGS@
+USE_TRACKING = @USE_TRACKING@
+
+# Setup directory variables
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+udev_prefix = @udev_prefix@
+sysconfdir = @sysconfdir@
+rootdir = $(DESTDIR)/
+bindir = $(DESTDIR)@bindir@
+confdir = $(DESTDIR)@CONFDIR@/lvm
+profiledir = $(confdir)/@DEFAULT_PROFILE_SUBDIR@
+includedir = $(DESTDIR)@includedir@
+libdir = $(DESTDIR)@libdir@
+libexecdir = $(DESTDIR)@libexecdir@
+usrlibdir = $(DESTDIR)@usrlibdir@
+sbindir = $(DESTDIR)@sbindir@
+usrsbindir = $(DESTDIR)@usrsbindir@
+datarootdir = @datarootdir@
+datadir = $(DESTDIR)@datadir@
+infodir = $(DESTDIR)@infodir@
+mandir = $(DESTDIR)@mandir@
+localedir = $(DESTDIR)@localedir@
+staticdir = $(DESTDIR)@STATICDIR@
+udevdir = $(DESTDIR)@udevdir@
+pkgconfigdir = $(usrlibdir)/pkgconfig
+initdir = $(DESTDIR)$(sysconfdir)/rc.d/init.d
+dbusconfdir = $(DESTDIR)$(sysconfdir)/dbus-1/system.d
+dbusservicedir = $(datadir)/dbus-1/system-services
+systemd_unit_dir = $(DESTDIR)@systemdsystemunitdir@
+systemd_generator_dir = $(DESTDIR)$(SYSTEMD_GENERATOR_DIR)
+systemd_dir = $(DESTDIR)@systemdutildir@
+tmpfiles_dir = $(DESTDIR)@tmpfilesdir@
+ocf_scriptdir = $(DESTDIR)@OCFDIR@
+pythonprefix = $(DESTDIR)$(prefix)
+
+# N.B. No $(DESTDIR) prefix here.
+python2dir = @PYTHON2DIR@
+python3dir = @PYTHON3DIR@
+
+USRLIB_RELPATH = $(shell echo $(abspath $(usrlibdir) $(libdir)) | \
+  $(AWK) -f $(top_srcdir)/scripts/relpath.awk)
+
+SYSTEMD_GENERATOR_DIR = @systemdutildir@/system-generators
+DEFAULT_SYS_DIR = @DEFAULT_SYS_DIR@
+DEFAULT_ARCHIVE_DIR = $(DEFAULT_SYS_DIR)/@DEFAULT_ARCHIVE_SUBDIR@
+DEFAULT_BACKUP_DIR = $(DEFAULT_SYS_DIR)/@DEFAULT_BACKUP_SUBDIR@
+DEFAULT_CACHE_DIR = $(DEFAULT_SYS_DIR)/@DEFAULT_CACHE_SUBDIR@
+DEFAULT_PROFILE_DIR = $(DEFAULT_SYS_DIR)/@DEFAULT_PROFILE_SUBDIR@
+DEFAULT_LOCK_DIR = @DEFAULT_LOCK_DIR@
+DEFAULT_RUN_DIR = @DEFAULT_RUN_DIR@
+DEFAULT_PID_DIR = @DEFAULT_PID_DIR@
+DEFAULT_MANGLING = @MANGLING@
+
+# Setup vpath search paths for some suffixes
+vpath %.c $(srcdir)
+vpath %.cpp $(srcdir)
+vpath %.in $(srcdir)
+vpath %.po $(srcdir)
+vpath %.exported_symbols $(srcdir)
+
+interface = @interface@
+rpmbuilddir = $(abs_top_builddir)/build
+
+# The number of jobs to run, if blank, defaults to the make standard
+ifndef MAKEFLAGS
+MAKEFLAGS = @JOBS@
+endif
+
+# Handle installation of files
+ifeq ("@WRITE_INSTALL@", "yes")
+# leaving defaults
+M_INSTALL_SCRIPT =
+M_INSTALL_DATA = -m 644
+else
+M_INSTALL_PROGRAM = -m 555
+M_INSTALL_DATA = -m 444
+endif
+INSTALL_PROGRAM = $(INSTALL) $(M_INSTALL_PROGRAM) $(STRIP)
+INSTALL_DATA = $(INSTALL) -p $(M_INSTALL_DATA)
+INSTALL_WDATA = $(INSTALL) -p -m 644
+
+INSTALL_DIR = $(INSTALL) -m 755 -d
+INSTALL_ROOT_DIR = $(INSTALL) -m 700 -d
+INSTALL_ROOT_DATA = $(INSTALL) -m 600
+INSTALL_SCRIPT = $(INSTALL) -p $(M_INSTALL_PROGRAM)
+
+.SUFFIXES:
+.SUFFIXES: .c .cpp .d .o .so .a .po .pot .mo .dylib
+
+ifeq ("$(notdir $(CC))", "gcc")
+WFLAGS +=\
+ -Wall\
+ -Wcast-align\
+ -Wfloat-equal\
+ -Wformat-security\
+ -Winline\
+ -Wmissing-format-attribute\
+ -Wmissing-include-dirs\
+ -Wmissing-noreturn\
+ -Wpointer-arith\
+ -Wredundant-decls\
+ -Wshadow\
+ -Wundef\
+ -Wwrite-strings
+
+WCFLAGS +=\
+ -Wmissing-declarations\
+ -Wmissing-prototypes\
+ -Wnested-externs\
+ -Wold-style-definition\
+ -Wstrict-prototypes\
+ -Wuninitialized
+
+ifeq ("@HAVE_WJUMP@", "yes")
+WCFLAGS += -Wjump-misses-init
+endif
+
+ifeq ("@HAVE_WCLOBBERED@", "yes")
+WFLAGS +=\
+ -Wclobbered\
+ -Wempty-body\
+ -Wignored-qualifiers\
+ -Wlogical-op\
+ -Wtype-limits
+
+WCFLAGS +=\
+ -Wmissing-parameter-type\
+ -Wold-style-declaration\
+ -Woverride-init
+endif
+
+ifeq ("@HAVE_WSYNCNAND@", "yes")
+WFLAGS += -Wsync-nand
+endif
+endif
+
+ifneq ("@STATIC_LINK@", "yes")
+ifeq ("@HAVE_PIE@", "yes")
+ifeq ("@HAVE_FULL_RELRO@", "yes")
+  EXTRA_EXEC_CFLAGS += -fPIE
+  EXTRA_EXEC_LDFLAGS += -Wl,-z,relro,-z,now -pie -fPIE
+  CLDFLAGS += -Wl,-z,relro
+endif
+endif
+endif
+
+#WFLAGS += -W -Wno-sign-compare -Wno-unused-parameter -Wno-missing-field-initializers
+#WFLAGS += -Wsign-compare -Wunused-parameter -Wmissing-field-initializers
+#WFLAGS += -Wconversion -Wbad-function-cast -Wcast-qual -Waggregate-return -Wpacked
+#WFLAGS += -pedantic -std=gnu99
+#DEFS += -DDEBUG_CRC32
+
+#
+# Avoid recursive extension of CFLAGS
+# by checking whether CFLAGS already has fPIC string
+#
+ifeq (,$(findstring fPIC,$(CFLAGS)))
+
+CFLAGS += -fPIC
+
+ifeq ("@DEBUG@", "yes")
+ifeq (,$(findstring -g,$(CFLAGS)))
+  CFLAGS += -g
+endif
+  CFLAGS += -fno-omit-frame-pointer
+  DEFS += -DDEBUG
+  # memory debugging is not thread-safe yet
+  ifneq ("@BUILD_DMEVENTD@", "yes")
+  ifneq ("@BUILD_LVMLOCKD@", "yes")
+  ifneq ("@BUILD_LVMPOLLD@", "yes")
+    DEFS += -DDEBUG_MEM
+  endif
+  endif
+  endif
+endif
+
+# end of fPIC protection
+endif
+
+ifeq ("@BUILD_DMEVENTD@", "yes")
+  DMEVENT_LIBS = -ldevmapper-event
+  LDFLAGS += -L$(top_builddir)/daemons/dmeventd
+  CLDFLAGS += -L$(top_builddir)/daemons/dmeventd
+endif
+
+# Combination of DEBUG_POOL and DEBUG_ENFORCE_POOL_LOCKING is not suppored.
+#DEFS += -DDEBUG_POOL
+# Default pool locking is using the crc checksum. With mprotect memory
+# enforcing compilation faulty memory write could be easily found.
+#DEFS += -DDEBUG_ENFORCE_POOL_LOCKING
+#DEFS += -DBOUNDS_CHECK
+
+# LVM is not supposed to use mmap while devices are suspended.
+# This code causes a core dump if gets called.
+#DEFS += -DDEBUG_MEMLOCK
+
+#CFLAGS += -pg
+#LDFLAGS += -pg
+
+STRIP=
+#STRIP = -s
+
+LVM_VERSION := $(shell cat $(top_srcdir)/VERSION)
+
+LIB_VERSION_LVM := $(shell $(AWK) -F '.' '{printf "%s.%s",$$1,$$2}' $(top_srcdir)/VERSION)
+
+LIB_VERSION_DM := $(shell $(AWK) -F '.' '{printf "%s.%s",$$1,$$2}' $(top_srcdir)/VERSION_DM)
+
+LIB_VERSION_APP := $(shell $(AWK) -F '[(). ]' '{printf "%s.%s",$$1,$$4}' $(top_srcdir)/VERSION)
+
+INCLUDES += -I$(srcdir) -I$(top_srcdir) -I$(top_builddir)/include
+
+#VDO_INCLUDES=-I@VDO_INCLUDE@
+
+DEPS = $(top_builddir)/make.tmpl $(top_srcdir)/VERSION \
+       $(top_builddir)/Makefile
+
+OBJECTS = $(SOURCES:%.c=%.o) $(CXXSOURCES:%.cpp=%.o)
+POTFILES = $(SOURCES:%.c=%.pot)
+
+.PHONY: all pofile distclean clean cleandir cflow device-mapper
+.PHONY: install install_cluster install_device-mapper install_lvm2
+.PHONY: install_dbus_service
+.PHONY: install_lib_shared install_dm_plugin install_lvm2_plugin
+.PHONY: install_ocf install_systemd_generators install_all_man all_man man help
+.PHONY: python_bindings install_python_bindings
+.PHONY: $(SUBDIRS) $(SUBDIRS.install) $(SUBDIRS.clean) $(SUBDIRS.distclean)
+.PHONY: $(SUBDIRS.pofile) $(SUBDIRS.install_cluster) $(SUBDIRS.cflow)
+.PHONY: $(SUBDIRS.device-mapper) $(SUBDIRS.install-device-mapper)
+.PHONY: $(SUBDIRS.generate) generate
+
+SUBDIRS.device-mapper := $(SUBDIRS:=.device-mapper)
+SUBDIRS.install := $(SUBDIRS:=.install)
+SUBDIRS.install_cluster := $(SUBDIRS:=.install_cluster)
+SUBDIRS.install_device-mapper := $(SUBDIRS:=.install_device-mapper)
+SUBDIRS.install_lvm2 := $(SUBDIRS:=.install_lvm2)
+SUBDIRS.install_ocf := $(SUBDIRS:=.install_ocf)
+SUBDIRS.pofile := $(SUBDIRS:=.pofile)
+SUBDIRS.cflow := $(SUBDIRS:=.cflow)
+SUBDIRS.clean := $(SUBDIRS:=.clean)
+SUBDIRS.distclean := $(SUBDIRS:=.distclean)
+
+TARGETS += $(LIB_SHARED) $(LIB_STATIC)
+
+INTERNAL_LIBS = \
+	$(top_builddir)/libdaemon/client/libdaemonclient.a \
+	$(top_builddir)/device_mapper/libdevice-mapper.a \
+	$(top_builddir)/base/libbase.a
+LVMINTERNAL_LIBS = $(top_builddir)/lib/liblvm-internal.a $(INTERNAL_LIBS)
+
+all: $(SUBDIRS) $(TARGETS)
+
+install: all $(SUBDIRS.install)
+install_cluster: all $(SUBDIRS.install_cluster)
+install_device-mapper: $(SUBDIRS.install_device-mapper)
+install_lvm2: $(SUBDIRS.install_lvm2)
+install_ocf: $(SUBDIRS.install_ocf)
+cflow: $(SUBDIRS.cflow)
+
+$(SUBDIRS): $(SUBDIRS.device-mapper)
+	$(MAKE) -C $@
+
+$(SUBDIRS.device-mapper):
+	$(MAKE) -C $(@:.device-mapper=) device-mapper
+
+$(SUBDIRS.install): $(SUBDIRS)
+	$(MAKE) -C $(@:.install=) install
+
+$(SUBDIRS.install_cluster): $(SUBDIRS)
+	$(MAKE) -C $(@:.install_cluster=) install_cluster
+
+$(SUBDIRS.install_device-mapper): device-mapper
+	$(MAKE) -C $(@:.install_device-mapper=) install_device-mapper
+
+$(SUBDIRS.install_lvm2): $(SUBDIRS)
+	$(MAKE) -C $(@:.install_lvm2=) install_lvm2
+
+$(SUBDIRS.install_ocf):
+	$(MAKE) -C $(@:.install_ocf=) install_ocf
+
+$(SUBDIRS.clean):
+	-$(MAKE) -C $(@:.clean=) clean
+
+$(SUBDIRS.distclean):
+	-$(MAKE) -C $(@:.distclean=) distclean
+
+$(SUBDIRS.cflow):
+	$(MAKE) -C $(@:.cflow=) cflow
+
+ifeq ("@INTL@", "yes")
+pofile: $(SUBDIRS.pofile) $(POTFILES)
+
+$(SUBDIRS.pofile):
+	$(MAKE) -C $(@:.pofile=) pofile
+endif
+
+$(SUBDIRS.generate):
+	$(MAKE) -C $(@:.generate=) generate
+
+ifneq ("$(CFLOW_LIST_TARGET)", "")
+CLEAN_CFLOW += $(CFLOW_LIST_TARGET)
+$(CFLOW_LIST_TARGET): $(CFLOW_LIST)
+	echo "CFLOW_SOURCES += $(addprefix \
+		\$$(top_srcdir)$(subst $(top_srcdir),,$(srcdir))/, $(CFLOW_LIST))" > $@
+cflow: $(CFLOW_LIST_TARGET)
+endif
+
+ifneq ("$(CFLOW_TARGET)", "")
+CLEAN_CFLOW += \
+	$(CFLOW_TARGET).cflow \
+	$(CFLOW_TARGET).xref \
+	$(CFLOW_TARGET).tree \
+	$(CFLOW_TARGET).rtree \
+	$(CFLOW_TARGET).rxref
+
+ifneq ("$(CFLOW_CMD)", "")
+CFLOW_FLAGS +=\
+ --cpp="$(CC) -E" \
+ --symbol _ISbit:wrapper \
+ --symbol __attribute__:wrapper \
+ --symbol __const__:wrapper \
+ --symbol __const:type \
+ --symbol __restrict:type \
+ --symbol __extension__:wrapper \
+ --symbol __nonnull:wrapper \
+ --symbol __nothrow__:wrapper \
+ --symbol __pure__:wrapper \
+ --symbol __REDIRECT:wrapper \
+ --symbol __REDIRECT_NTH:wrapper \
+ --symbol __wur:wrapper \
+ -I$(top_srcdir)/daemons/dmeventd/plugins/lvm2/ \
+ $(INCLUDES) $(DEFS)
+
+$(CFLOW_TARGET).cflow: $(CFLOW_SOURCES)
+	$(CFLOW_CMD) -o$@ $(CFLOW_FLAGS) $(CFLOW_SOURCES)
+$(CFLOW_TARGET).rxref: $(CFLOW_SOURCES)
+	$(CFLOW_CMD) -o$@ $(CFLOW_FLAGS) -r --omit-arguments $(CFLOW_SOURCES)
+$(CFLOW_TARGET).tree: $(CFLOW_SOURCES)
+	$(CFLOW_CMD) -o$@ $(CFLOW_FLAGS) --omit-arguments -T -b $(CFLOW_SOURCES)
+$(CFLOW_TARGET).xref: $(CFLOW_SOURCES)
+	$(CFLOW_CMD) -o$@ $(CFLOW_FLAGS) --omit-arguments -x $(CFLOW_SOURCES)
+#$(CFLOW_TARGET).rtree:  $(CFLOW_SOURCES)
+#	$(CFLOW_CMD) -o$@ $(CFLOW_FLAGS) -r --omit-arguments -T -b $(CFLOW_SOURCES)
+cflow: $(CFLOW_TARGET).cflow $(CFLOW_TARGET).tree $(CFLOW_TARGET).rxref $(CFLOW_TARGET).xref
+#$(CFLOW_TARGET).rtree
+endif
+endif
+
+.LIBPATTERNS = lib%.so lib%.a
+
+# still needed in 2018 for 32bit builds
+DEFS+=-D_FILE_OFFSET_BITS=64
+
+%.o: %.c
+	@echo "    [CC] $<"
+	$(Q) $(CC) -c $(INCLUDES) $(VALGRIND_CFLAGS) $(PROGS_CFLAGS) $(DEFS) $(DEFS_$@) $(WFLAGS) $(WCFLAGS) $(CFLAGS) $(CFLAGS_$@) $< -o $@
+
+%.o: %.cpp
+	@echo "    [CXX] $<"
+	$(Q) $(CXX) -c $(INCLUDES) $(VALGRIND_CFLAGS) $(DEFS) $(DEFS_$@) $(WFLAGS) $(CXXFLAGS) $(CXXFLAGS_$@) $< -o $@
+
+%.pot: %.c Makefile
+	@echo "    [CC] $@"
+	$(Q) $(CC) -E $(INCLUDES) $(VALGRIND_CFLAGS) $(PROGS_CFLAGS) -include $(top_builddir)/include/pogen.h $(DEFS) $(WFLAGS) $(CFLAGS) $< >$@
+
+%.so: %.o
+	@echo "    [CC] $<"
+	$(Q) $(CC) -c $(CFLAGS) $(CLDFLAGS) $< $(LIBS) -o $@
+
+ifneq (,$(LIB_SHARED))
+
+TARGETS += $(LIB_SHARED).$(LIB_VERSION)
+$(LIB_SHARED).$(LIB_VERSION): $(OBJECTS) $(LDDEPS)
+	@echo "    [CC] $@"
+ifeq ("@LIB_SUFFIX@","so")
+	$(Q) $(CC) -shared -Wl,-soname,$(notdir $@) \
+		$(CFLAGS) $(CLDFLAGS) $(OBJECTS) $(LIBS) -o $@
+endif
+ifeq ("@LIB_SUFFIX@","dylib")
+	$(Q) $(CC) -dynamiclib -dylib_current_version,$(LIB_VERSION) \
+		$(CFLAGS) $(CLDFLAGS) $(OBJECTS) $(LIBS) -o $@
+endif
+
+$(LIB_SHARED): $(LIB_SHARED).$(LIB_VERSION)
+	@echo "    [LN] $@"
+	$(Q) $(LN_S) -f $(<F) $@
+
+CLEAN_TARGETS += $(LDDEPS) .exported_symbols_generated
+
+install_lib_shared: $(LIB_SHARED)
+	@echo "    [INSTALL] $<"
+	$(Q) $(INSTALL_PROGRAM) -D $< $(libdir)/$(<F).$(LIB_VERSION)
+	$(Q) $(INSTALL_DIR) $(usrlibdir)
+	$(Q) $(LN_S) -f $(USRLIB_RELPATH)$(<F).$(LIB_VERSION) $(usrlibdir)/$(<F)
+
+# FIXME: plugins are installed to subdirs
+#        and for compatibility links in libdir are created
+#        when the code is fixed links could be removed.
+install_dm_plugin: $(LIB_SHARED)
+	@echo "    [INSTALL] $<"
+	$(Q) $(INSTALL_PROGRAM) -D $< $(libdir)/device-mapper/$(<F)
+	$(Q) $(LN_S) -f device-mapper/$(<F) $(libdir)/$(<F)
+
+install_lvm2_plugin: $(LIB_SHARED)
+	@echo "    [INSTALL] $<"
+	$(Q) $(INSTALL_PROGRAM) -D $< $(libdir)/lvm2/$(<F)
+	$(Q) $(LN_S) -f lvm2/$(<F) $(libdir)/$(<F)
+	$(Q) $(LN_S) -f $(<F) $(libdir)/$(<F).$(LIB_VERSION)
+endif
+
+$(LIB_STATIC): $(OBJECTS)
+	@echo "    [AR] $@"
+	$(Q) $(RM) $@
+	$(Q) $(AR) rsv $@ $(OBJECTS) > /dev/null
+
+%.d: %.c
+	@echo "    [DEP] $<"
+	$(Q) $(MKDIR_P) $(dir $@); \
+	set -e; \
+	FILE=`echo $@ | sed 's/\\//\\\\\\//g;s/\\.d//g'`; \
+	DEPS=`echo $(DEPS) | sed -e 's/\\//\\\\\\//g'`; \
+	$(CC) -MM $(INCLUDES) $(VALGRIND_CFLAGS) $(PROGS_CFLAGS) $(DEFS) -o $@ $<; \
+	sed -i "s/\(.*\)\.o[ :]*/$$FILE.o $$FILE.d $$FILE.pot: $$DEPS /g" $@; \
+	DEPLIST=`sed 's/ \\\\//;s/.*://;' < $@`; \
+	echo $$DEPLIST | fmt -1 | sed 's/ //g;s/\(.*\)/\1:/' >> $@; \
+	[ -s $@ ] || $(RM) $@
+
+%.mo: %.po
+	@echo "    [MSGFMT] $<"
+	$(Q) $(MSGFMT) -o $@ $<
+
+CLEAN_TARGETS += \
+	$(SOURCES:%.c=%.d) $(SOURCES:%.c=%.gcno) $(SOURCES:%.c=%.gcda) \
+	$(SOURCES2:%.c=%.o) $(SOURCES2:%.c=%.d) $(SOURCES2:%.c=%.gcno) $(SOURCES2:%.c=%.gcda) \
+	$(POTFILES) $(CLEAN_CFLOW)
+
+cleandir:
+	@echo "    [CLEANDIR]"
+ifneq (,$(firstword $(CLEAN_DIRS)))
+	$(Q) $(RM) -r $(CLEAN_DIRS)
+endif
+	$(Q) $(RM) $(OBJECTS) $(TARGETS) $(CLEAN_TARGETS) core
+
+clean: $(SUBDIRS.clean) cleandir
+
+distclean: cleandir $(SUBDIRS.distclean)
+	@echo "    [DISTCLEAN]"
+ifneq (,$(firstword $(DISTCLEAN_DIRS)))
+	$(Q) $(RM) -r $(DISTCLEAN_DIRS)
+endif
+	$(Q) $(RM) $(DISTCLEAN_TARGETS) Makefile
+
+.exported_symbols_generated: $(EXPORTED_HEADER) .exported_symbols $(DEPS)
+	$(Q) set -e; \
+	( cat $(srcdir)/.exported_symbols; \
+	  if test -n "$(EXPORTED_HEADER)"; then \
+		$(CC) -E -P $(INCLUDES) $(DEFS) $(EXPORTED_HEADER) | \
+		$(SED) -ne "/^typedef|}/!s/.*[ *]\($(EXPORTED_FN_PREFIX)_[a-z0-9_]*\)(.*/\1/p"; \
+	  fi \
+	) > $@
+
+EXPORTED_UC := $(shell echo $(EXPORTED_FN_PREFIX) | tr '[a-z]' '[A-Z]')
+EXPORTED_SYMBOLS := $(wildcard $(srcdir)/.exported_symbols.Base $(srcdir)/.exported_symbols.$(EXPORTED_UC)_[0-9_]*[0-9])
+
+.export.sym: .exported_symbols_generated $(EXPORTED_SYMBOLS)
+ifeq (,$(firstword $(EXPORTED_SYMBOLS)))
+	$(Q) set -e; (echo "Base {"; echo "	global:";\
+		 $(SED) "s/^/		/;s/$$/;/" $<;\
+		 echo "};";\
+		 echo "Local {"; echo "	local:"; echo "		*;"; echo "};";\
+		 ) > $@
+else
+	$(Q) set -e;\
+	R=$$($(SORT) $^ | uniq -u);\
+	test -z "$$R" || { echo "Mismatch between symbols in shared library and lists in .exported_symbols.* files: $$R"; false; } ;\
+	( for i in $$(echo $(EXPORTED_SYMBOLS) | tr ' ' '\n' | $(SORT) -rnt_ -k5 ); do\
+		echo "$${i##*.} {"; echo "	global:";\
+		$(SED) "s/^/		/;s/$$/;/" $$i;\
+		echo "};";\
+	  done;\
+	  echo "Local {"; echo "	local:"; echo "		*;"; echo "};";\
+	) > $@
+endif
+
+ifeq ("$(USE_TRACKING)","yes")
+ifeq (,$(findstring $(MAKECMDGOALS),cscope.out cflow clean distclean lcov lcov-reset \
+ help check check_local check_cluster check_lvmpolld run-unit-test tags))
+# Note: no tabs before -include
+    ifdef SOURCES
+       -include $(SOURCES:.c=.d) $(CXXSOURCES:.cpp=.d)
+    endif
+    ifdef SOURCES2
+       -include $(SOURCES2:.c=.d)
+    endif
+    DEPENDS = yes
+endif
+endif

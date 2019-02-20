@@ -1,0 +1,19 @@
+vgexport changes a VG into the exported state, which ensures that the VG
+and its disks are not being used, and cannot be used until the VG is
+imported by \fBvgimport\fP(8).  Putting a VG into an unusable, offline
+state can be useful when doing things like moving a VG's disks to another
+system.  Exporting a VG provides some protection from its LVs being
+accidentally used, or being used by an automated system before it's ready.
+
+A VG cannot be exported until all of its LVs are inactive.
+
+LVM commands will ignore an exported VG or report an error if a command
+tries to use it.
+
+For an exported VG, the vgs command will display \"x\" in the third VG
+attribute, and the pvs command will display \"x\" in the second PV
+attribute.  Both vgs and pvs will display \"exported\" from the export
+report field.
+
+vgexport clears the VG system ID, and vgimport sets the VG system ID to
+match the host running vgimport (if the host has a system ID).

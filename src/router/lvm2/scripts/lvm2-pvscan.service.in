@@ -1,0 +1,14 @@
+[Unit]
+Description=LVM event activation on device %i
+Documentation=man:pvscan(8)
+DefaultDependencies=no
+StartLimitInterval=0
+BindsTo=dev-block-%i.device
+Before=shutdown.target
+Conflicts=shutdown.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=@SBINDIR@/lvm pvscan --cache --activate ay %i
+ExecStop=@SBINDIR@/lvm pvscan --cache %i

@@ -1,0 +1,62 @@
+LVM2 Test Suite
+===============
+
+The codebase contains many tests in the test subdirectory.
+
+Before running tests
+--------------------
+
+Keep in mind the testsuite MUST run under root user.
+
+It is recommended not to use LVM on the test machine, especially when running
+tests with udev (`make check_system`.)
+
+You MUST disable (or mask) any LVM daemons:
+
+- lvmetad
+- dmeventd
+- lvmpolld
+- lvmdbusd
+- lvmlockd
+- clvmd
+- cmirrord
+
+For running cluster tests, we are using singlenode locking. Pass
+`--with-clvmd=singlenode` to configure.
+
+NOTE: This is useful only for testing, and should not be used in produciton
+code.
+
+To run D-Bus daemon tests, existing D-Bus session is required.
+
+Running tests
+-------------
+
+As root run:
+
+    make check
+
+To run only tests matching a string:
+
+    make check T=test
+
+To skip tests matching a string:
+
+    make check S=test
+
+There are other targets and many environment variables can be used to tweak the
+testsuite - for full list and description run `make -C test help`.
+
+Installing testsuite
+--------------------
+
+It is possible to install and run a testsuite against installed LVM. Run the
+following:
+
+    make -C test install
+
+Then lvm2-testsuite binary can be executed to test installed binaries.
+
+See `lvm2-testsuite --help` for options. The same environment variables can be
+used as with `make check`.
+

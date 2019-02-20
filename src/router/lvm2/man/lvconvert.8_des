@@ -1,0 +1,71 @@
+lvconvert changes the LV type and includes utilities for LV data
+maintenance. The LV type controls data layout and redundancy.
+The LV type is also called the segment type or segtype.
+
+To display the current LV type, run the command:
+
+.B lvs -o name,segtype
+.I LV
+
+In some cases, an LV is a single device mapper (dm) layer above physical
+devices.  In other cases, hidden LVs (dm devices) are layered between the
+visible LV and physical devices.  LVs in the middle layers are called sub LVs.
+A command run on a visible LV sometimes operates on a sub LV rather than
+the specified LV.  In other cases, a sub LV must be specified directly on
+the command line.
+
+Sub LVs can be displayed with the command:
+
+.B lvs -a
+
+The
+.B linear
+type is equivalent to the
+.B striped
+type when one stripe exists.
+In that case, the types can sometimes be used interchangably.
+
+In most cases, the
+.B mirror
+type is deprecated and the
+.B raid1
+type should be used.  They are both implementations of mirroring.
+
+Striped raid types are
+\fBraid0/raid0_meta\fP,
+\fBraid5\fP (an alias for raid5_ls),
+\fBraid6\fP (an alias for raid6_zr) and
+\fBraid10\fP (an alias for raid10_near).
+
+As opposed to mirroring, raid5 and raid6 stripe data and calculate parity
+blocks. The parity blocks can be used for data block recovery in case
+devices fail. A maximum number of one device in a raid5 LV may fail, and
+two in case of raid6. Striped raid types typically rotate the parity and
+data blocks for performance reasons, thus avoiding contention on a single
+device. Specific arrangements of parity and data blocks (layouts) can be
+used to optimize I/O performance, or to convert between raid levels.  See
+\fBlvmraid\fP(7) for more information.
+
+Layouts of raid5 rotating parity blocks can be: left-asymmetric
+(raid5_la), left-symmetric (raid5_ls with alias raid5), right-asymmetric
+(raid5_ra), right-symmetric (raid5_rs) and raid5_n, which doesn't rotate
+parity blocks. Layouts of raid6 are: zero-restart (raid6_zr with alias
+raid6), next-restart (raid6_nr), and next-continue (raid6_nc).
+
+Layouts including _n allow for conversion between raid levels (raid5_n to
+raid6 or raid5_n to striped/raid0/raid0_meta). Additionally, special raid6
+layouts for raid level conversions between raid5 and raid6 are:
+raid6_ls_6, raid6_rs_6, raid6_la_6 and raid6_ra_6. Those correspond to
+their raid5 counterparts (e.g. raid5_rs can be directly converted to
+raid6_rs_6 and vice-versa).
+
+raid10 (an alias for raid10_near) is currently limited to one data copy
+and even number of sub LVs. This is a mirror group layout, thus a single
+sub LV may fail per mirror group without data loss.
+
+Striped raid types support converting the layout, their stripesize and
+their number of stripes.
+
+The striped raid types combined with raid1 allow for conversion from
+linear -> striped/raid0/raid0_meta and vice-versa by e.g. linear <-> raid1
+<-> raid5_n (then adding stripes) <-> striped/raid0/raid0_meta.

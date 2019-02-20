@@ -1,0 +1,2 @@
+vgchange changes VG attributes, changes LV activation in the kernel, and
+includes other utilities for VG maintenance.

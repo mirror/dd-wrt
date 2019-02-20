@@ -1,0 +1,4 @@
+dm_report_is_empty
+dm_stats_get_area_offset
+dm_stats_get_current_area_offset
+dm_timestamp_copy
