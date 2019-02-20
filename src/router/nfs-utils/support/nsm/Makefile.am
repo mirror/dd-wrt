@@ -14,13 +14,9 @@ libnsm_a_SOURCES = $(GENFILES) file.c rpc.c
 
 BUILT_SOURCES = $(GENFILES)
 
-if CONFIG_RPCGEN
-RPCGEN	= $(top_builddir)/tools/rpcgen/rpcgen
+RPCGEN	= rpcgen
 $(RPCGEN):
 	make -C ../../tools/rpcgen all
-else
-RPCGEN = @RPCGEN_PATH@
-endif
 
 $(GENFILES_CLNT): %_clnt.c: %.x $(RPCGEN)
 	test -f $@ && rm -rf $@ || true
@@ -37,6 +33,7 @@ $(GENFILES_XDR): %_xdr.c: %.x $(RPCGEN)
 $(GENFILES_H): %.h: %.x $(RPCGEN)
 	test -f $@ && rm -rf $@ || true
 	$(RPCGEN) -h -o $@ $<
+	echo "#include <rpc/svc.h>" >> $@
 	echo "void sm_prog_1(struct svc_req *, SVCXPRT *);" >> $@
 	rm -f $(top_builddir)/support/include/sm_inter.h
 	$(LN_S) ../nsm/sm_inter.h $(top_builddir)/support/include/sm_inter.h

@@ -21,13 +21,9 @@ dist-hook:
 	  rm ${distdir}/$$f; \
 	done
 
-if CONFIG_RPCGEN
 RPCGEN		= $(top_builddir)/tools/rpcgen/rpcgen
 $(RPCGEN):
 	make -C $(top_srcdir)/tools/rpcgen all
-else
-RPCGEN = @RPCGEN_PATH@
-endif
 
 $(GENFILES_CLNT): %_clnt.c: %.x $(RPCGEN)
 	test -f $@ && rm -rf $@ || true
