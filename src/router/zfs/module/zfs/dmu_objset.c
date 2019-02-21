@@ -2449,7 +2449,8 @@ dmu_objset_userobjspace_upgradable(objset_t *os)
 	return (dmu_objset_type(os) == DMU_OST_ZFS &&
 	    !dmu_objset_is_snapshot(os) &&
 	    dmu_objset_userobjused_enabled(os) &&
-	    !dmu_objset_userobjspace_present(os));
+	    !dmu_objset_userobjspace_present(os) &&
+	    spa_writeable(dmu_objset_spa(os)));
 }
 
 boolean_t
@@ -2458,7 +2459,8 @@ dmu_objset_projectquota_upgradable(objset_t *os)
 	return (dmu_objset_type(os) == DMU_OST_ZFS &&
 	    !dmu_objset_is_snapshot(os) &&
 	    dmu_objset_projectquota_enabled(os) &&
-	    !dmu_objset_projectquota_present(os));
+	    !dmu_objset_projectquota_present(os) &&
+	    spa_writeable(dmu_objset_spa(os)));
 }
 
 void
