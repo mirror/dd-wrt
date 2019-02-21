@@ -23,6 +23,34 @@ define kernelfeatures
 		sed -i 's/\# CONFIG_CRYPTO_GCM is not set/CONFIG_CRYPTO_GCM=m/g' $(LINUXDIR)/.config; \
 		echo "# CONFIG_CRYPTO_DRBG_CTR is not set" >> $(LINUXDIR)/.config; \
 	fi
+	if [ "$(CONFIG_MPTCP)" = "y" ]; then \
+		sed -i 's/\# CONFIG_MPTCP is not set/CONFIG_MPTCP=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_IPV6 is not set/CONFIG_IPV6=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\CONFIG_IPV6=m/CONFIG_IPV6=y/g' $(LINUXDIR)/.config; \
+		echo "CONFIG_MPTCP=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_TCP_CONG_LIA=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_TCP_CONG_OLIA=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_TCP_CONG_WVEGAS=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_TCP_CONG_BALIA=y" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEFAULT_LIA is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEFAULT_OLIA is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEFAULT_WVEGAS is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEFAULT_BALIA is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_MPTCP_PM_ADVANCED=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_MPTCP_FULLMESH=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_MPTCP_NDIFFPORTS=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_MPTCP_BINDER=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_DEFAULT_FULLMESH=y" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEFAULT_NDIFFPORTS is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEFAULT_BINDER is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEFAULT_DUMMY is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_MPTCP_SCHED_ADVANCED=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_MPTCP_ROUNDROBIN=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_MPTCP_REDUNDANT=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_DEFAULT_SCHEDULER=y" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEFAULT_ROUNDROBIN is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DEFAULT_REDUNDANT is not set" >> $(LINUXDIR)/.config; \
+	fi
 	if [ "$(CONFIG_EOP_TUNNEL)" = "y" ]; then \
 		echo CONFIG_NET_ETHERIP=m >> $(LINUXDIR)/.config; \
 		echo CONFIG_NET_EOIP=m >> $(LINUXDIR)/.config; \
