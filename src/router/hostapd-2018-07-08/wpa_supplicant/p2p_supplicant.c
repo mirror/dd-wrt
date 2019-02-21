@@ -1584,20 +1584,27 @@ static int wpas_send_action_work(struct wpa_supplicant *wpa_s,
 
 static int wpas_send_action(void *ctx, unsigned int freq, const u8 *dst,
 			    const u8 *src, const u8 *bssid, const u8 *buf,
-			    size_t len, unsigned int wait_time)
+			    size_t len, unsigned int wait_time, int *scheduled)
 {
 	struct wpa_supplicant *wpa_s = ctx;
 	int listen_freq = -1, send_freq = -1;
 
+	if (scheduled)
+		*scheduled = 0;
 	if (wpa_s->p2p_listen_work)
 		listen_freq = wpa_s->p2p_listen_work->freq;
 	if (wpa_s->p2p_send_action_work)
 		send_freq = wpa_s->p2p_send_action_work->freq;
 	if (listen_freq != (int) freq && send_freq != (int) freq) {
-		wpa_printf(MSG_DEBUG, "P2P: Schedule new radio work for Action frame TX (listen_freq=%d send_freq=%d)",
-			   listen_freq, send_freq);
-		return wpas_send_action_work(wpa_s, freq, dst, src, bssid, buf,
-					     len, wait_time);
+		int res;
+
+		wpa_printf(MSG_DEBUG, "P2P: Schedule new radio work for Action frame TX (listen_freq=%d send_freq=%d freq=%u)",
+			   listen_freq, send_freq, freq);
+		res = wpas_send_action_work(wpa_s, freq, dst, src, bssid, buf,
+					    len, wait_time);
+		if (res == 0 && scheduled)
+			*scheduled = 1;
+		return res;
 	}
 
 	wpa_printf(MSG_DEBUG, "P2P: Use ongoing radio work for Action frame TX");
@@ -1649,7 +1656,7 @@ static void wpas_start_wps_enrollee(struct wpa_supplicant *wpa_s,
 	wpa_supplicant_ap_deinit(wpa_s);
 	wpas_copy_go_neg_results(wpa_s, res);
 	if (res->wps_method == WPS_PBC) {
-		wpas_wps_start_pbc(wpa_s, res->peer_interface_addr, 1);
+		wpas_wps_start_pbc(wpa_s, res->peer_interface_addr, 1, 0);
 #ifdef CONFIG_WPS_NFC
 	} else if (res->wps_method == WPS_NFC) {
 		wpas_wps_start_nfc(wpa_s, res->peer_device_addr,

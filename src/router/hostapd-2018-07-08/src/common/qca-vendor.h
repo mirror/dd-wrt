@@ -507,6 +507,9 @@ enum qca_radiotap_vendor_ids {
  * @QCA_NL80211_VENDOR_SUBCMD_GET_SUPPORTED_AKMS: This command is used to query
  *	the supported AKM suite selectorss from the driver. It returns the list
  *	of supported AKMs in the attribute NL80211_ATTR_AKM_SUITES.
+ * @QCA_NL80211_VENDOR_SUBCMD_GET_FW_STATE: This command is used to get firmware
+ *	state from the driver. It returns the firmware state in the attribute
+ *	QCA_WLAN_VENDOR_ATTR_FW_STATE.
  */
 enum qca_nl80211_vendor_subcmds {
 	QCA_NL80211_VENDOR_SUBCMD_UNSPEC = 0,
@@ -672,6 +675,7 @@ enum qca_nl80211_vendor_subcmds {
 	QCA_NL80211_VENDOR_SUBCMD_THROUGHPUT_CHANGE_EVENT = 174,
 	QCA_NL80211_VENDOR_SUBCMD_COEX_CONFIG = 175,
 	QCA_NL80211_VENDOR_SUBCMD_GET_SUPPORTED_AKMS = 176,
+	QCA_NL80211_VENDOR_SUBCMD_GET_FW_STATE = 177,
 };
 
 enum qca_wlan_vendor_attr {
@@ -858,6 +862,12 @@ enum qca_wlan_vendor_attr {
 	 * for each antenna ID, and application extract them in user space.
 	 */
 	QCA_WLAN_VENDOR_ATTR_CHAIN_EVM = 41,
+	/*
+	 * Used in QCA_NL80211_VENDOR_SUBCMD_GET_FW_STATE command to report
+	 * wlan firmware current state. FW state is an unsigned 8 bit value,
+	 * one of the values in enum qca_wlan_vendor_attr_fw_state.
+	 */
+	QCA_WLAN_VENDOR_ATTR_FW_STATE = 42,
 
 	/* keep last */
 	QCA_WLAN_VENDOR_ATTR_AFTER_LAST,
@@ -2450,6 +2460,18 @@ enum qca_wlan_vendor_attr_dmg_rf_sector_type {
 	QCA_WLAN_VENDOR_ATTR_DMG_RF_SECTOR_TYPE_RX,
 	QCA_WLAN_VENDOR_ATTR_DMG_RF_SECTOR_TYPE_TX,
 	QCA_WLAN_VENDOR_ATTR_DMG_RF_SECTOR_TYPE_MAX
+};
+
+/**
+ * enum qca_wlan_vendor_attr_fw_state - State of firmware
+ *
+ * @QCA_WLAN_VENDOR_ATTR_FW_STATE_ERROR: FW is in bad state
+ * @QCA_WLAN_VENDOR_ATTR_FW_STATE_ACTIVE: FW is active
+ */
+enum qca_wlan_vendor_attr_fw_state {
+	QCA_WLAN_VENDOR_ATTR_FW_STATE_ERROR,
+	QCA_WLAN_VENDOR_ATTR_FW_STATE_ACTIVE,
+	QCA_WLAN_VENDOR_ATTR_FW_STATE_MAX
 };
 
 /**
@@ -4886,6 +4908,10 @@ enum qca_wlan_vendor_attr_offloaded_packets {
 	QCA_WLAN_VENDOR_ATTR_OFFLOADED_PACKETS_DST_MAC_ADDR,
 	/* Unsigned 32-bit value, in milli seconds */
 	QCA_WLAN_VENDOR_ATTR_OFFLOADED_PACKETS_PERIOD,
+	/* This optional unsigned 16-bit attribute is used for specifying
+	 * ethernet protocol type. If not specified ethertype defaults to IPv4.
+	 */
+	QCA_WLAN_VENDOR_ATTR_OFFLOADED_PACKETS_ETHER_PROTO_TYPE,
 
 	/* keep last */
 	QCA_WLAN_VENDOR_ATTR_OFFLOADED_PACKETS_AFTER_LAST,
@@ -6290,13 +6316,35 @@ enum qca_coex_config_profiles {
 	QCA_WIFI_SAP_CLASS_3_MGMT = 7,
 	QCA_WIFI_SAP_DATA = 8,
 	QCA_WIFI_SAP_ALL = 9,
+	QCA_WIFI_CASE_MAX = 31,
 	/* 32 - 63 corresponds to BT */
 	QCA_BT_A2DP = 32,
 	QCA_BT_BLE = 33,
 	QCA_BT_SCO = 34,
+	QCA_BT_CASE_MAX = 63,
 	/* 64 - 95 corresponds to Zigbee */
 	QCA_ZB_LOW = 64,
-	QCA_ZB_HIGH = 65
+	QCA_ZB_HIGH = 65,
+	QCA_ZB_CASE_MAX = 95,
+	/* 0xff is default value if the u8 profile value is not set. */
+	QCA_COEX_CONFIG_PROFILE_DEFAULT_VALUE = 255
+};
+
+/**
+ * enum qca_vendor_attr_coex_config_types - Coex configurations types.
+ * This enum defines the valid set of values of coex configuration types. These
+ * values may used by attribute
+ * %QCA_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_CONFIG_TYPE.
+ *
+ * @QCA_WLAN_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_COEX_RESET: Reset all the
+ *	weights to default values.
+ * @QCA_WLAN_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_COEX_START: Start to config
+ *	weights with configurability value.
+ */
+enum qca_vendor_attr_coex_config_types {
+	QCA_WLAN_VENDOR_ATTR_COEX_CONFIG_INVALID = 0,
+	QCA_WLAN_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_COEX_RESET = 1,
+	QCA_WLAN_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_COEX_START = 2,
 };
 
 /**
@@ -6325,6 +6373,80 @@ enum qca_vendor_attr_coex_config {
 	QCA_VENDOR_ATTR_COEX_CONFIG_AFTER_LAST,
 	QCA_VENDOR_ATTR_COEX_CONFIG_MAX =
 	QCA_VENDOR_ATTR_COEX_CONFIG_AFTER_LAST - 1,
+};
+
+/**
+ * enum qca_vendor_attr_coex_config_three_way - Specifies vendor coex config
+ * attributes
+ * Attributes for data used by QCA_NL80211_VENDOR_SUBCMD_COEX_CONFIG
+ *
+ * QCA_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_CONFIG_TYPE: u32 attribute.
+ * Indicate config type.
+ * The config types are 32-bit values from qca_vendor_attr_coex_config_types
+ *
+ * @QCA_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_PRIORITY_1: u32 attribute.
+ *	Indicate the Priority 1 profiles.
+ *	The profiles are 8-bit values from enum qca_coex_config_profiles.
+ *	In same priority level, maximum to 4 profiles can be set here.
+ * @QCA_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_PRIORITY_2: u32 attribute.
+ *	Indicate the Priority 2 profiles.
+ *	The profiles are 8-bit values from enum qca_coex_config_profiles.
+ *	In same priority level, maximum to 4 profiles can be set here.
+ * @QCA_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_PRIORITY_3: u32 attribute.
+ *	Indicate the Priority 3 profiles.
+ *	The profiles are 8-bit values from enum qca_coex_config_profiles.
+ *	In same priority level, maximum to 4 profiles can be set here.
+ * @QCA_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_PRIORITY_4: u32 attribute.
+ *	Indicate the Priority 4 profiles.
+ *	The profiles are 8-bit values from enum qca_coex_config_profiles.
+ *	In same priority level, maximum to 4 profiles can be set here.
+ * NOTE:
+ * Limitations for QCA_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_PRIORITY_x priority
+ * arrangement:
+ *	1: In the same u32 attribute (priority x), the profiles enum values own
+ *	same priority level.
+ *	2: 0xff is default value if the u8 profile value is not set.
+ *	3: max to 4 rules/profiles in same priority level.
+ *	4: max to 4 priority level (priority 1 - priority 4)
+ *	5: one priority level only supports one scenario from WLAN/BT/ZB,
+ *	hybrid rules not support.
+ *	6: if WMI_COEX_CONFIG_THREE_WAY_COEX_RESET called, priority x will
+ *	remain blank to reset all parameters.
+ * For example:
+ *
+ *	If the attributes as follow:
+ *	priority 1:
+ *	------------------------------------
+ *	|  0xff  |    0   |   1   |    2   |
+ *	------------------------------------
+ *	priority 2:
+ *	-------------------------------------
+ *	|  0xff  |  0xff  |  0xff  |   32   |
+ *	-------------------------------------
+ *	priority 3:
+ *	-------------------------------------
+ *	|  0xff  |  0xff  |  0xff  |   65   |
+ *	-------------------------------------
+ *	then it means:
+ *	1: WIFI_STA_DISCOVERY, WIFI_STA_CLASS_3_MGMT and WIFI_STA_CONNECTION
+ *		owns same priority level.
+ *	2: WIFI_STA_DISCOVERY, WIFI_STA_CLASS_3_MGMT and WIFI_STA_CONNECTION
+ *		has priority over BT_A2DP and ZB_HIGH.
+ *	3: BT_A2DP has priority over ZB_HIGH.
+ */
+
+enum qca_vendor_attr_coex_config_three_way {
+	QCA_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_INVALID = 0,
+	QCA_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_CONFIG_TYPE = 1,
+	QCA_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_PRIORITY_1 = 2,
+	QCA_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_PRIORITY_2 = 3,
+	QCA_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_PRIORITY_3 = 4,
+	QCA_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_PRIORITY_4 = 5,
+
+	/* Keep last */
+	QCA_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_AFTER_LAST,
+	QCA_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_MAX =
+	QCA_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_AFTER_LAST - 1,
 };
 
 /**

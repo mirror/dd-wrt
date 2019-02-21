@@ -114,12 +114,13 @@ static inline int wpa_auth_get_eapol(struct wpa_authenticator *wpa_auth,
 static inline const u8 * wpa_auth_get_psk(struct wpa_authenticator *wpa_auth,
 					  const u8 *addr,
 					  const u8 *p2p_dev_addr,
-					  const u8 *prev_psk, size_t *psk_len)
+					  const u8 *prev_psk, size_t *psk_len,
+					  int *vlan_id)
 {
 	if (wpa_auth->cb->get_psk == NULL)
 		return NULL;
 	return wpa_auth->cb->get_psk(wpa_auth->cb_ctx, addr, p2p_dev_addr,
-				     prev_psk, psk_len);
+				     prev_psk, psk_len, vlan_id);
 }
 
 
@@ -252,6 +253,15 @@ static int wpa_channel_info(struct wpa_authenticator *wpa_auth,
 #endif /* CONFIG_OCV */
 
 
+static int wpa_auth_update_vlan(struct wpa_authenticator *wpa_auth,
+				const u8 *addr, int vlan_id)
+{
+	if (!wpa_auth->cb->update_vlan)
+		return -1;
+	return wpa_auth->cb->update_vlan(wpa_auth->cb_ctx, addr, vlan_id);
+}
+
+
 static void wpa_rekey_gmk(void *eloop_ctx, void *timeout_ctx)
 {
 	struct wpa_authenticator *wpa_auth = eloop_ctx;
@@ -346,6 +356,10 @@ static int wpa_group_init_gmk_and_counter(struct wpa_authenticator *wpa_auth,
 	wpa_get_ntp_timestamp(buf + ETH_ALEN);
 	ptr = (unsigned long) group;
 	os_memcpy(buf + ETH_ALEN + 8, &ptr, sizeof(ptr));
+#ifdef TEST_FUZZ
+	os_memset(buf + ETH_ALEN, 0xab, 8);
+	os_memset(buf + ETH_ALEN + 8, 0xcd, sizeof(ptr));
+#endif /* TEST_FUZZ */
 	if (random_get_bytes(rkey, sizeof(rkey)) < 0)
 		return -1;
 
@@ -849,13 +863,15 @@ static int wpa_try_alt_snonce(struct wpa_state_machine *sm, u8 *data,
 	int ok = 0;
 	const u8 *pmk = NULL;
 	size_t pmk_len;
+	int vlan_id = 0;
 
 	os_memset(&PTK, 0, sizeof(PTK));
 	for (;;) {
 		if (wpa_key_mgmt_wpa_psk(sm->wpa_key_mgmt) &&
 		    !wpa_key_mgmt_sae(sm->wpa_key_mgmt)) {
 			pmk = wpa_auth_get_psk(sm->wpa_auth, sm->addr,
-					       sm->p2p_dev_addr, pmk, &pmk_len);
+					       sm->p2p_dev_addr, pmk, &pmk_len,
+					       &vlan_id);
 			if (pmk == NULL)
 				break;
 #ifdef CONFIG_IEEE80211R_AP
@@ -894,6 +910,11 @@ static int wpa_try_alt_snonce(struct wpa_state_machine *sm, u8 *data,
 	wpa_printf(MSG_DEBUG,
 		   "WPA: Earlier SNonce resulted in matching MIC");
 	sm->alt_snonce_valid = 0;
+
+	if (vlan_id && wpa_key_mgmt_wpa_psk(sm->wpa_key_mgmt) &&
+	    wpa_auth_update_vlan(sm->wpa_auth, sm->addr, vlan_id) < 0)
+		return -1;
+
 	os_memcpy(sm->SNonce, sm->alt_SNonce, WPA_NONCE_LEN);
 	os_memcpy(&sm->PTK, &PTK, sizeof(PTK));
 	sm->PTK_valid = TRUE;
@@ -1218,6 +1239,11 @@ continue_processing:
 		     wpa_try_alt_snonce(sm, data, data_len))) {
 			wpa_auth_logger(wpa_auth, sm->addr, LOGGER_INFO,
 					"received EAPOL-Key with invalid MIC");
+#ifdef TEST_FUZZ
+			wpa_printf(MSG_INFO,
+				   "TEST: Ignore Key MIC failure for fuzz testing");
+			goto continue_fuzz;
+#endif /* TEST_FUZZ */
 			return;
 		}
 #ifdef CONFIG_FILS
@@ -1226,9 +1252,17 @@ continue_processing:
 				     &key_data_length) < 0) {
 			wpa_auth_logger(wpa_auth, sm->addr, LOGGER_INFO,
 					"received EAPOL-Key with invalid MIC");
+#ifdef TEST_FUZZ
+			wpa_printf(MSG_INFO,
+				   "TEST: Ignore Key MIC failure for fuzz testing");
+			goto continue_fuzz;
+#endif /* TEST_FUZZ */
 			return;
 		}
 #endif /* CONFIG_FILS */
+#ifdef TEST_FUZZ
+	continue_fuzz:
+#endif /* TEST_FUZZ */
 		sm->MICVerified = TRUE;
 		eloop_cancel_timeout(wpa_send_eapol_timeout, wpa_auth, sm);
 		sm->pending_1_of_4_timeout = 0;
@@ -1333,6 +1367,9 @@ static int wpa_gmk_to_gtk(const u8 *gmk, const char *label, const u8 *addr,
 	os_memcpy(data + ETH_ALEN, gnonce, WPA_NONCE_LEN);
 	pos = data + ETH_ALEN + WPA_NONCE_LEN;
 	wpa_get_ntp_timestamp(pos);
+#ifdef TEST_FUZZ
+	os_memset(pos, 0xef, 8);
+#endif /* TEST_FUZZ */
 	pos += 8;
 	if (random_get_bytes(pos, gtk_len) < 0)
 		ret = -1;
@@ -1612,6 +1649,9 @@ static void wpa_send_eapol(struct wpa_authenticator *wpa_auth,
 		timeout_ms = eapol_key_timeout_no_retrans;
 	if (pairwise && ctr == 1 && !(key_info & WPA_KEY_INFO_MIC))
 		sm->pending_1_of_4_timeout = 1;
+#ifdef TEST_FUZZ
+	timeout_ms = 1;
+#endif /* TEST_FUZZ */
 	wpa_printf(MSG_DEBUG, "WPA: Use EAPOL-Key timeout of %u ms (retry "
 		   "counter %u)", timeout_ms, ctr);
 	eloop_register_timeout(timeout_ms / 1000, (timeout_ms % 1000) * 1000,
@@ -2001,7 +2041,7 @@ SM_STATE(WPA_PTK, INITPSK)
 
 	SM_ENTRY_MA(WPA_PTK, INITPSK, wpa_ptk);
 	psk = wpa_auth_get_psk(sm->wpa_auth, sm->addr, sm->p2p_dev_addr, NULL,
-			       &psk_len);
+			       &psk_len, NULL);
 	if (psk) {
 		os_memcpy(sm->PMK, psk, psk_len);
 		sm->pmk_len = psk_len;
@@ -2689,6 +2729,7 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
 	struct ieee802_1x_hdr *hdr;
 	struct wpa_eapol_key *key;
 	struct wpa_eapol_ie_parse kde;
+	int vlan_id;
 
 	SM_ENTRY_MA(WPA_PTK, PTKCALCNEGOTIATING, wpa_ptk);
 	sm->EAPOLKeyReceived = FALSE;
@@ -2704,7 +2745,8 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
 		if (wpa_key_mgmt_wpa_psk(sm->wpa_key_mgmt) &&
 		    !wpa_key_mgmt_sae(sm->wpa_key_mgmt)) {
 			pmk = wpa_auth_get_psk(sm->wpa_auth, sm->addr,
-					       sm->p2p_dev_addr, pmk, &pmk_len);
+					       sm->p2p_dev_addr, pmk, &pmk_len,
+					       &vlan_id);
 			if (pmk == NULL)
 				break;
 			psk_found = 1;
@@ -2872,6 +2914,13 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
 		}
 	}
 #endif /* CONFIG_IEEE80211R_AP */
+
+	if (vlan_id && wpa_key_mgmt_wpa_psk(sm->wpa_key_mgmt) &&
+	    wpa_auth_update_vlan(wpa_auth, sm->addr, vlan_id) < 0) {
+		wpa_sta_disconnect(wpa_auth, sm->addr,
+				   WLAN_REASON_PREV_AUTH_NOT_VALID);
+		return;
+	}
 
 	sm->pending_1_of_4_timeout = 0;
 	eloop_cancel_timeout(wpa_send_eapol_timeout, sm->wpa_auth, sm);
@@ -3312,7 +3361,7 @@ SM_STEP(WPA_PTK)
 		break;
 	case WPA_PTK_INITPSK:
 		if (wpa_auth_get_psk(sm->wpa_auth, sm->addr, sm->p2p_dev_addr,
-				     NULL, NULL)) {
+				     NULL, NULL, NULL)) {
 			SM_ENTER(WPA_PTK, PTKSTART);
 #ifdef CONFIG_SAE
 		} else if (wpa_auth_uses_sae(sm) && sm->pmksa) {

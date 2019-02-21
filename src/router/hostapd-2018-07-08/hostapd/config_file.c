@@ -1406,10 +1406,26 @@ static int hostapd_config_vht_capab(struct hostapd_config *conf,
 
 
 #ifdef CONFIG_IEEE80211AX
+
+static u8 find_bit_offset(u8 val)
+{
+	u8 res = 0;
+
+	for (; val; val >>= 1) {
+		if (val & 1)
+			break;
+		res++;
+	}
+
+	return res;
+}
+
+
 static u8 set_he_cap(int val, u8 mask)
 {
-	return (u8) (mask & (val << ffs(mask)));
+	return (u8) (mask & (val << find_bit_offset(mask)));
 }
+
 #endif /* CONFIG_IEEE80211AX */
 
 
@@ -2341,6 +2357,14 @@ static int parse_sae_password(struct hostapd_bss_config *bss, const char *val)
 		if (hwaddr_aton(pos2, pw->peer_addr) < 0)
 			goto fail;
 		pos = pos2 + ETH_ALEN * 3 - 1;
+	}
+
+	pos2 = os_strstr(pos, "|vlanid=");
+	if (pos2) {
+		if (!end)
+			end = pos2;
+		pos2 += 8;
+		pw->vlan_id = atoi(pos2);
 	}
 
 	pos2 = os_strstr(pos, "|id=");
@@ -3650,6 +3674,56 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 				   line, pos);
 			return 1;
 		}
+	} else if (os_strcmp(buf, "multi_ap_backhaul_ssid") == 0) {
+		size_t slen;
+		char *str = wpa_config_parse_string(pos, &slen);
+
+		if (!str || slen < 1 || slen > SSID_MAX_LEN) {
+			wpa_printf(MSG_ERROR, "Line %d: invalid SSID '%s'",
+				   line, pos);
+			os_free(str);
+			return 1;
+		}
+		os_memcpy(bss->multi_ap_backhaul_ssid.ssid, str, slen);
+		bss->multi_ap_backhaul_ssid.ssid_len = slen;
+		bss->multi_ap_backhaul_ssid.ssid_set = 1;
+		os_free(str);
+	} else if (os_strcmp(buf, "multi_ap_backhaul_wpa_passphrase") == 0) {
+		int len = os_strlen(pos);
+
+		if (len < 8 || len > 63) {
+			wpa_printf(MSG_ERROR,
+				   "Line %d: invalid WPA passphrase length %d (expected 8..63)",
+				   line, len);
+			return 1;
+		}
+		os_free(bss->multi_ap_backhaul_ssid.wpa_passphrase);
+		bss->multi_ap_backhaul_ssid.wpa_passphrase = os_strdup(pos);
+		if (bss->multi_ap_backhaul_ssid.wpa_passphrase) {
+			hostapd_config_clear_wpa_psk(
+				&bss->multi_ap_backhaul_ssid.wpa_psk);
+			bss->multi_ap_backhaul_ssid.wpa_passphrase_set = 1;
+		}
+	} else if (os_strcmp(buf, "multi_ap_backhaul_wpa_psk") == 0) {
+		hostapd_config_clear_wpa_psk(
+			&bss->multi_ap_backhaul_ssid.wpa_psk);
+		bss->multi_ap_backhaul_ssid.wpa_psk =
+			os_zalloc(sizeof(struct hostapd_wpa_psk));
+		if (!bss->multi_ap_backhaul_ssid.wpa_psk)
+			return 1;
+		if (hexstr2bin(pos, bss->multi_ap_backhaul_ssid.wpa_psk->psk,
+			       PMK_LEN) ||
+		    pos[PMK_LEN * 2] != '\0') {
+			wpa_printf(MSG_ERROR, "Line %d: Invalid PSK '%s'.",
+				   line, pos);
+			hostapd_config_clear_wpa_psk(
+				&bss->multi_ap_backhaul_ssid.wpa_psk);
+			return 1;
+		}
+		bss->multi_ap_backhaul_ssid.wpa_psk->group = 1;
+		os_free(bss->multi_ap_backhaul_ssid.wpa_passphrase);
+		bss->multi_ap_backhaul_ssid.wpa_passphrase = NULL;
+		bss->multi_ap_backhaul_ssid.wpa_psk_set = 1;
 	} else if (os_strcmp(buf, "upnp_iface") == 0) {
 		os_free(bss->upnp_iface);
 		bss->upnp_iface = os_strdup(pos);
