@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 #
 # Parallel VM test case executor
 # Copyright (c) 2014-2018, Jouni Malinen <j@w1.fi>
@@ -14,6 +14,7 @@ import os
 import subprocess
 import sys
 import time
+import errno
 
 logger = logging.getLogger()
 
@@ -91,8 +92,13 @@ def vm_read_stdout(vm, i):
     ready = False
     try:
         out = vm['proc'].stdout.read()
-    except:
-        return False
+        if out == None:
+            return False
+        out = out.decode()
+    except IOError as e:
+        if e.errno == errno.EAGAIN:
+            return False
+        raise
     logger.debug("VM[%d] stdout.read[%s]" % (i, out))
     pending = vm['pending'] + out
     lines = []
@@ -192,10 +198,13 @@ def show_progress(scr):
             first_running = True
             try:
                 err = vm[i]['proc'].stderr.read()
-                vm[i]['err'] += err
-                logger.debug("VM[%d] stderr.read[%s]" % (i, err))
-            except:
-                pass
+                if err != None:
+                    err = err.decode()
+                    vm[i]['err'] += err
+                    logger.debug("VM[%d] stderr.read[%s]" % (i, err))
+            except IOError as e:
+                if e.errno != errno.EAGAIN:
+                    raise
 
             if vm_read_stdout(vm[i], i):
                 scr.move(i + 1, 10)
@@ -208,7 +217,8 @@ def show_progress(scr):
                     continue
                 else:
                     name = tests.pop(0)
-                    vm[i]['proc'].stdin.write(name + '\n')
+                    vm[i]['proc'].stdin.write(name.encode() + b'\n')
+                    vm[i]['proc'].stdin.flush()
                     scr.addstr(name)
                     logger.debug("VM[%d] start test %s" % (i, name))
 
@@ -246,10 +256,13 @@ def show_progress(scr):
             running = True
             try:
                 err = vm[i]['proc'].stderr.read()
-                vm[i]['err'] += err
-                logger.debug("VM[%d] stderr.read[%s]" % (i, err))
-            except:
-                pass
+                if err != None:
+                    err = err.decode()
+                    vm[i]['err'] += err
+                    logger.debug("VM[%d] stderr.read[%s]" % (i, err))
+            except IOError as e:
+                if e.errno != errno.EAGAIN:
+                    raise
 
             ready = False
             if vm[i]['first_run_done']:
@@ -262,12 +275,14 @@ def show_progress(scr):
                 scr.clrtoeol()
                 updated = True
                 if not rerun_tests:
-                    vm[i]['proc'].stdin.write('\n')
+                    vm[i]['proc'].stdin.write(b'\n')
+                    vm[i]['proc'].stdin.flush()
                     scr.addstr("shutting down")
                     logger.info("VM[%d] shutting down" % i)
                 else:
                     name = rerun_tests.pop(0)
-                    vm[i]['proc'].stdin.write(name + '\n')
+                    vm[i]['proc'].stdin.write(name.encode() + b'\n')
+                    vm[i]['proc'].stdin.flush()
                     scr.addstr(name + "(*)")
                     logger.debug("VM[%d] start test %s (*)" % (i, name))
 
@@ -364,8 +379,9 @@ def main():
     dir = os.environ.get('HWSIM_TEST_LOG_DIR', '/tmp/hwsim-test-logs')
     try:
         os.makedirs(dir)
-    except:
-        pass
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
 
     num_servers = args.num_servers
     rerun_failures = not args.no_retry
@@ -400,7 +416,7 @@ def main():
             cmd += args.testmodules
         lst = subprocess.Popen(cmd, stdout=subprocess.PIPE)
         for l in lst.stdout.readlines():
-            name = l.split(' ')[0]
+            name = l.decode().split(' ')[0]
             tests.append(name)
     if len(tests) == 0:
         sys.exit("No test cases selected")

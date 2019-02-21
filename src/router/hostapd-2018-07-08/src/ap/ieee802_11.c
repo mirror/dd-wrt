@@ -420,6 +420,15 @@ static struct wpabuf * auth_build_sae_commit(struct hostapd_data *hapd,
 		return NULL;
 	}
 
+	if (pw && pw->vlan_id) {
+		if (!sta->sae->tmp) {
+			wpa_printf(MSG_INFO,
+				   "SAE: No temporary data allocated - cannot store VLAN ID");
+			return NULL;
+		}
+		sta->sae->tmp->vlan_id = pw->vlan_id;
+	}
+
 	buf = wpabuf_alloc(SAE_COMMIT_MAX_LEN +
 			   (rx_id ? 3 + os_strlen(rx_id) : 0));
 	if (buf == NULL)
@@ -629,6 +638,35 @@ static void sae_set_retransmit_timer(struct hostapd_data *hapd,
 
 void sae_accept_sta(struct hostapd_data *hapd, struct sta_info *sta)
 {
+#ifndef CONFIG_NO_VLAN
+	struct vlan_description vlan_desc;
+
+	if (sta->sae->tmp && sta->sae->tmp->vlan_id > 0) {
+		wpa_printf(MSG_DEBUG, "SAE: Assign STA " MACSTR
+			   " to VLAN ID %d",
+			   MAC2STR(sta->addr), sta->sae->tmp->vlan_id);
+
+		os_memset(&vlan_desc, 0, sizeof(vlan_desc));
+		vlan_desc.notempty = 1;
+		vlan_desc.untagged = sta->sae->tmp->vlan_id;
+		if (!hostapd_vlan_valid(hapd->conf->vlan, &vlan_desc)) {
+			wpa_printf(MSG_INFO,
+				   "Invalid VLAN ID %d in sae_password",
+				   sta->sae->tmp->vlan_id);
+			return;
+		}
+
+		if (ap_sta_set_vlan(hapd, sta, &vlan_desc) < 0 ||
+		    ap_sta_bind_vlan(hapd, sta) < 0) {
+			wpa_printf(MSG_INFO,
+				   "Failed to assign VLAN ID %d from sae_password to "
+				   MACSTR, sta->sae->tmp->vlan_id,
+				   MAC2STR(sta->addr));
+			return;
+		}
+	}
+#endif /* CONFIG_NO_VLAN */
+
 	sta->flags |= WLAN_STA_AUTH;
 	sta->auth_alg = WLAN_AUTH_SAE;
 	mlme_authenticate_indication(hapd, sta);
@@ -1290,6 +1328,7 @@ void handle_auth_fils(struct hostapd_data *hapd, struct sta_info *sta,
 	}
 
 	res = wpa_validate_wpa_ie(hapd->wpa_auth, sta->wpa_sm,
+				  hapd->iface->freq,
 				  elems.rsn_ie - 2, elems.rsn_ie_len + 2,
 				  elems.mdie, elems.mdie_len, NULL, 0);
 	resp = wpa_res_to_status_code(res);
@@ -2267,28 +2306,30 @@ static u16 check_multi_ap(struct hostapd_data *hapd, struct sta_info *sta,
 		}
 	}
 
-	if (multi_ap_value == MULTI_AP_BACKHAUL_STA)
-		sta->flags |= WLAN_STA_MULTI_AP;
+	if (multi_ap_value && multi_ap_value != MULTI_AP_BACKHAUL_STA)
+		hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_IEEE80211,
+			       HOSTAPD_LEVEL_INFO,
+			       "Multi-AP IE with unexpected value 0x%02x",
+			       multi_ap_value);
 
-	if ((hapd->conf->multi_ap & BACKHAUL_BSS) &&
-	    multi_ap_value == MULTI_AP_BACKHAUL_STA)
-		return WLAN_STATUS_SUCCESS;
+	if (!(multi_ap_value & MULTI_AP_BACKHAUL_STA)) {
+		if (hapd->conf->multi_ap & FRONTHAUL_BSS)
+			return WLAN_STATUS_SUCCESS;
 
-	if (hapd->conf->multi_ap & FRONTHAUL_BSS) {
-		if (multi_ap_value == MULTI_AP_BACKHAUL_STA) {
-			hostapd_logger(hapd, sta->addr,
-				       HOSTAPD_MODULE_IEEE80211,
-				       HOSTAPD_LEVEL_INFO,
-				       "Backhaul STA tries to associate with fronthaul-only BSS");
-			return WLAN_STATUS_ASSOC_DENIED_UNSPEC;
-		}
-		return WLAN_STATUS_SUCCESS;
+		hostapd_logger(hapd, sta->addr,
+			       HOSTAPD_MODULE_IEEE80211,
+			       HOSTAPD_LEVEL_INFO,
+			       "Non-Multi-AP STA tries to associate with backhaul-only BSS");
+		return WLAN_STATUS_ASSOC_DENIED_UNSPEC;
 	}
 
-	hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_IEEE80211,
-		       HOSTAPD_LEVEL_INFO,
-		       "Non-Multi-AP STA tries to associate with backhaul-only BSS");
-	return WLAN_STATUS_ASSOC_DENIED_UNSPEC;
+	if (!(hapd->conf->multi_ap & BACKHAUL_BSS))
+		hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_IEEE80211,
+			       HOSTAPD_LEVEL_DEBUG,
+			       "Backhaul STA tries to associate with fronthaul-only BSS");
+
+	sta->flags |= WLAN_STA_MULTI_AP;
+	return WLAN_STATUS_SUCCESS;
 }
 
 
@@ -2668,6 +2709,7 @@ static u16 check_assoc_ies(struct hostapd_data *hapd, struct sta_info *sta,
 			return WLAN_STATUS_UNSPECIFIED_FAILURE;
 		}
 		res = wpa_validate_wpa_ie(hapd->wpa_auth, sta->wpa_sm,
+					  hapd->iface->freq,
 					  wpa_ie, wpa_ie_len,
 					  elems.mdie, elems.mdie_len,
 					  elems.owe_dh, elems.owe_dh_len);
