@@ -16,13 +16,9 @@ BUILT_SOURCES = $(GENFILES)
 nsm_client_LDADD = ../../support/nfs/libnfs.a \
 		   ../../support/nsm/libnsm.a $(LIBCAP) $(LIBTIRPC)
 
-if CONFIG_RPCGEN
-RPCGEN	= $(top_builddir)/tools/rpcgen/rpcgen
+RPCGEN	= rpcgen
 $(RPCGEN):
 	make -C ../../tools/rpcgen all
-else
-RPCGEN = @RPCGEN_PATH@
-endif
 
 $(GENFILES_CLNT): %_clnt.c: %.x $(RPCGEN)
 	test -f $@ && rm -rf $@ || true
