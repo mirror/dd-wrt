@@ -21,3 +21,6 @@ nfs-utils-install:
 	rm -rf $(INSTALLDIR)/nfs-utils/var
 	rm -f $(INSTALLDIR)/nfs-utils/usr/lib/*.a
 	rm -f $(INSTALLDIR)/nfs-utils/usr/lib/*.la
+	mkdir -p $(INSTALLDIR)/nfs-utils/etc
+	rm -f $(INSTALLDIR)/nfs-utils/etc/exports
+	-cd $(INSTALLDIR)/nfs-utils/etc && ln -s /tmp/exports exports
