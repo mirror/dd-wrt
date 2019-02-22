@@ -320,6 +320,7 @@ include rules/iozone.mk
 include rules/lvm2.mk
 include rules/keyutils.mk
 include rules/nfs-utils.mk
+include rules/rpcbind.mk
 
 #
 # Generic rules
