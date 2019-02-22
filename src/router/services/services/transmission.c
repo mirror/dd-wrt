@@ -249,7 +249,7 @@ void start_transmission(void)
 		snprintf(allow, sizeof(allow), "127.0.0.1,%s", allowed);
 		char *whitelist = nvram_safe_get("transmission_whitelist");
 		if (*whitelist)
-			sprintf(allow, "%s,%s", whitelist);
+			sprintf(allow, "%s,%s", allow, whitelist);
 		set_config_alloc("rpc-whitelist", strdup(allow), 1, 0);
 		set_config("rpc-whitelist-enabled", "true", 0);
 		set_config_alloc("rpc-port", strdup(nvram_safe_get("transmission_rpc")), 1, 0);
