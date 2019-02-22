@@ -261,7 +261,7 @@ struct cf_list {
 	int line;		/* the line number of the config file */
 
 	/* type dependent values: */
-	long long num;
+	long num;
 	struct cf_list *list;
 	void *ptr;
 };
@@ -305,7 +305,7 @@ extern struct dhcp6_list nisplist;
 extern struct dhcp6_list nispnamelist;
 extern struct dhcp6_list bcmcslist;
 extern struct dhcp6_list bcmcsnamelist;
-extern long long optrefreshtime;
+extern long optrefreshtime;
 
 extern struct dhcp6_if *ifinit __P((char *));
 extern int ifreset __P((struct dhcp6_if *));

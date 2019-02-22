@@ -95,7 +95,7 @@ struct cf_list *cf_sip_list, *cf_sip_name_list;
 struct cf_list *cf_nis_list, *cf_nis_name_list;
 struct cf_list *cf_nisp_list, *cf_nisp_name_list;
 struct cf_list *cf_bcmcs_list, *cf_bcmcs_name_list;
-long long cf_refreshtime = -1;
+long cf_refreshtime = -1;
 
 extern int yylex __P((void));
 extern int cfswitch_buffer __P((char *));
@@ -128,7 +128,7 @@ static void cleanup_cflist __P((struct cf_list *));
 %token COMMA
 
 %union {
-	long long num;
+	long num;
 	char* str;
 	struct cf_list *list;
 	struct dhcp6_prefix *prefix;
