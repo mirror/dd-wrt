@@ -1,0 +1,25 @@
+image: Visual Studio 2017
+
+build_script:
+  - mkdir C:\kfw
+  - set KRB_INSTALL_DIR=C:\kfw
+  - cd %APPVEYOR_BUILD_FOLDER%\src
+  - set PATH=%PATH%;%wix%bin
+  - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars32.bat"
+  - set
+  - nmake -f Makefile.in prep-windows
+  - nmake
+  - nmake install
+  - cd windows\installer\wix
+  - nmake
+  - rename kfw.msi kfw32.msi
+  - cd ..\..\..
+  - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"
+  - set
+  - nmake clean
+  - nmake
+  - nmake install
+  - cd windows\installer\wix
+  - nmake clean
+  - nmake
+  - rename kfw.msi kfw64.msi
