@@ -247,11 +247,11 @@ void start_transmission(void)
 		set_config("incomplete-dir", strdup(inc), 1);
 		char allow[512];
 		snprintf(allow, sizeof(allow), "127.0.0.1,%s", allowed);
-		set_config("rpc-whitelist", strdup(allow), 1);
+		set_config_alloc("rpc-whitelist", strdup(allow), 1, 0);
 		set_config("rpc-whitelist-enabled", "true", 0);
-		set_config("rpc-port", strdup(nvram_safe_get("transmission_rpc")), 1);
-		set_config("rpc-username", strdup(nvram_safe_get("transmission_username")), 1);
-		set_config("rpc-password", strdup(nvram_safe_get("transmission_password")), 1);
+		set_config_alloc("rpc-port", strdup(nvram_safe_get("transmission_rpc")), 1, 0);
+		set_config_alloc("rpc-username", strdup(nvram_safe_get("transmission_username")), 1, 1);
+		set_config_alloc("rpc-password", strdup(nvram_safe_get("transmission_password")), 1, 1);
 		set_config("rpc-authentication-required", "true", 0);
 		writeconfig(fp);
 
@@ -267,6 +267,7 @@ void start_transmission(void)
 	char *web = nvram_default_get("transmission_style", "default");
 	sysprintf("export TRANSMISSION_WEB_HOME=\"/usr/share/transmission/%s\" && transmissiond --config-dir \"%s\"", web, nvram_safe_get("transmission_dir"));
 	dd_loginfo("transmission", "daemon successfully started\n");
+
 	return;
 }
 
