@@ -14,6 +14,10 @@
 		<input size="25" maxlength="40" class="text" name="transmission_download" value="<% nvram_get("transmission_download"); %>" />
 	</div>
 	<div class="setting">
+		<div class="label"><% tran("service.transmission_whitelist"); %></div>
+		<input size="25" maxlength="40" class="text" name="transmission_whitelist" value="<% nvram_get("transmission_whitelist"); %>" />
+	</div>
+	<div class="setting">
 		<div class="label"><% tran("service.transmission_rpc"); %></div>
 		<input size="6" maxlength="5" class="num" name="transmission_rpc" value="<% nvram_get("transmission_rpc"); %>" />
 	</div>
