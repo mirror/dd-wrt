@@ -269,8 +269,18 @@ define kernelfeatures
 		echo "# CONFIG_NFSD_V3_ACL is not set" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFSD_V4=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFSD_BLOCKLAYOUT=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_RPCSEC_GSS_KRB5=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFSD_SCSILAYOUT=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFSD_FLEXFILELAYOUT=y" >> $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_MD5 is not set/CONFIG_CRYPTO_MD5=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_DES is not set/CONFIG_CRYPTO_DES=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_CBC is not set/CONFIG_CRYPTO_CBC=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_CTS is not set/CONFIG_CRYPTO_CTS=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_ECB is not set/CONFIG_CRYPTO_ECB=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_HMAC is not set/CONFIG_CRYPTO_HMAC=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_SHA1 is not set/CONFIG_CRYPTO_SHA1=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_AES is not set/CONFIG_CRYPTO_AES=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_ARC4 is not set/CONFIG_CRYPTO_ARC4=m/g' $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_VSOCKETS)" = "y" ]; then \
 		sed -i 's/\# CONFIG_VSOCKETS is not set/CONFIG_VSOCKETS=m/g' $(LINUXDIR)/.config; \
