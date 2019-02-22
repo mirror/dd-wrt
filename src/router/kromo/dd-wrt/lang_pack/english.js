@@ -1982,6 +1982,7 @@ service.transmission_dir="Transmission Config Directory";
 service.transmission_download="Transmission Download Directory";
 service.transmission_style="Web UI Style";
 service.transmission_rpc="Web UI Port";
+service.transmission_whitelist="Whitelist IP's";
 
 // ** eop-tunnel.asp **//
 var eoip=new Object();
