@@ -79,7 +79,7 @@ void start_raid(void)
 		if (!strcmp(type, "btrfs"))
 			btrfs = 1;
 		if (!*raid)
-			break;)
+			break;
 		todo = 1;
 		i++;
 	}
