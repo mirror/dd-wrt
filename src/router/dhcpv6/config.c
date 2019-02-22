@@ -69,7 +69,7 @@ struct dhcp6_list siplist, sipnamelist, dnslist, dnsnamelist, ntplist;
 struct dhcp6_list nislist, nisnamelist;
 struct dhcp6_list nisplist, nispnamelist;
 struct dhcp6_list bcmcslist, bcmcsnamelist;
-long long optrefreshtime;
+long optrefreshtime;
 dhcp6_mode_t dhcp6_mode = DHCP6_MODE_CLIENT;
 static struct dhcp6_ifconf *dhcp6_ifconflist;
 struct ia_conflist ia_conflist0;
@@ -80,7 +80,7 @@ static struct dhcp6_list siplist0, sipnamelist0, dnslist0, dnsnamelist0, ntplist
 static struct dhcp6_list nislist0, nisnamelist0;
 static struct dhcp6_list nisplist0, nispnamelist0;
 static struct dhcp6_list bcmcslist0, bcmcsnamelist0;
-static long long optrefreshtime0 = -1;
+static long optrefreshtime0 = -1;
 #ifndef DHCP6_DYNAMIC_HOSTCONF_MAX
 #define DHCP6_DYNAMIC_HOSTCONF_MAX	1024
 #endif
@@ -126,7 +126,7 @@ extern struct cf_list *cf_sip_list, *cf_sip_name_list;
 extern struct cf_list *cf_nis_list, *cf_nis_name_list;
 extern struct cf_list *cf_nisp_list, *cf_nisp_name_list;
 extern struct cf_list *cf_bcmcs_list, *cf_bcmcs_name_list;
-extern long long cf_refreshtime;
+extern long cf_refreshtime;
 extern char *configfilename;
 
 static struct keyinfo *find_keybyname __P((struct keyinfo *, char *));
@@ -688,7 +688,7 @@ configure_keys(keylist)
 	char secret[1024];
 	int secretlen;
 	struct keyinfo *kinfo;
-	long long keyid;
+	long keyid;
 	char *expire = NULL;
 
 	for (key = keylist; key; key = key->next) {
