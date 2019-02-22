@@ -1679,6 +1679,12 @@ service.zabbix_cl="Client";
 service.zabbix_serverip="Zabbix Server IP";
 service.zabbix_usrpara="User Parameter";
 
+service.transmission_dir="Transmission Konfigurationsverzeichniss";
+service.transmission_download="Transmission Download Verzeichniss";
+service.transmission_style="Webinterface Stil";
+service.transmission_rpc="Webinterface Port";
+service.transmission_whitelist="Erlaubte IP's";
+
 // ** eop-tunnel.asp **//
 
 eoip.titl="Tunnels";
