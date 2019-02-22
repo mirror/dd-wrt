@@ -384,7 +384,7 @@ client6_script(scriptpath, state, optinfo)
 	/* XXX */
 	for (rawop = TAILQ_FIRST(&optinfo->rawops); rawop; rawop = TAILQ_NEXT(rawop, link)) {
 		// max of 5 numbers after last underscore (seems like max DHCPv6 option could be 65535)
-		elen = sizeof(raw_dhcp_option_str) + 1 /* underscore */ + 1 /* equals sign */ + 5;
+		elen = sizeof(raw_dhcp_option_str) + 1 /* underscore */ + 1 /* equals sign */ + 6;
 		elen += rawop->datalen * 2;
 		if ((s = envp[i++] = malloc(elen)) == NULL) {
 			dprintf(LOG_NOTICE, FNAME,
@@ -396,15 +396,14 @@ client6_script(scriptpath, state, optinfo)
 		// make raw options available as raw_dhcp_option_xyz=hexresponse
 		snprintf(s, elen, "%s_%d=", raw_dhcp_option_str, rawop->opnum);
 		const char * hex = "0123456789abcdef";
-		char * val = (char*)malloc(3);
+		char val[16];
 		int o;
 		for (o = 0; o < rawop->datalen; o++) {
 			val[0] = hex[(rawop->data[o]>>4) & 0x0F];
 			val[1] = hex[(rawop->data[o]   ) & 0x0F];
 			val[2] = 0x00;
-			strlcat(s, val, 1);
+			strcat(s, val);
 		}
-		free(val);
 	}
 
 	/* launch the script */
