@@ -128,10 +128,6 @@ int hostapd_acl_comp(const void *a, const void *b)
 {
 	const struct mac_acl_entry *aa = a;
 	const struct mac_acl_entry *bb = b;
-
-	if (!!aa->mask != !!bb->mask)
-		return !!aa->mask - !!bb->mask;
-
 	return os_memcmp(aa->addr, bb->addr, sizeof(macaddr));
 }
 
@@ -178,11 +174,10 @@ static int hostapd_config_read_maclist(const char *fname,
 				       struct mac_acl_entry **acl, int *num)
 {
 	FILE *f;
-	char buf[128], *pos, *macpos, *sep;
+	char buf[128], *pos;
 	int line = 0;
 	u8 addr[ETH_ALEN];
-	int vlan_id, mask;
-	int i;
+	int vlan_id;
 
 	f = fopen(fname, "r");
 	if (!f) {
@@ -212,27 +207,8 @@ static int hostapd_config_read_maclist(const char *fname,
 			rem = 1;
 			pos++;
 		}
-		pos = buf;	
-		macpos = buf;
-		while (*pos != '\0' && *pos != ' ' && *pos != '\t')
-			pos++;
 
-		sep = strchr(buf, '/');
-		if (sep && sep < pos) {
-			*(sep++) = 0;
-			mask = strtoul(sep, &pos, 10);
-			if (mask >= 8 * ETH_ALEN) {
-				wpa_printf(MSG_ERROR, "Invalid MAC address mask '%d'\n",
-					   mask);
-				fclose(f);
-				return -1;
-			}
-		}
-		else {
-			mask = 0;
-		}
-
-		if (hwaddr_aton(macpos, addr)) {
+		if (hwaddr_aton(pos, addr)) {
 			wpa_printf(MSG_ERROR, "Invalid MAC address '%s' at "
 				   "line %d in '%s'", pos, line, fname);
 			fclose(f);
