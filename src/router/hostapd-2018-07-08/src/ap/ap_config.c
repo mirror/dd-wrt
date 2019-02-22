@@ -805,6 +805,7 @@ int hostapd_maclist_found(struct mac_acl_entry *list, int num_entries,
 	while (start <= end) {
 		middle = (start + end) / 2;
 		res = os_memcmp(list[middle].addr, addr, ETH_ALEN);
+		fprintf(stderr, "check %02X:%02X:%02X:%02X:%02X:%02X with %02X:%02X:%02X:%02X:%02X:%02X\n",addr[0],addr[1],addr[2],addr[3],addr[4],addr[5],list[middle].addr[0],list[middle].addr[1],list[middle].addr[2],list[middle].addr[3],list[middle].addr[4],list[middle].addr[5]);
 		if (res == 0) {
 			if (vlan_id)
 				*vlan_id = list[middle].vlan_id;

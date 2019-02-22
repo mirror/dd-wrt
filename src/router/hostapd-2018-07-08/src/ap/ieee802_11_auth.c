@@ -217,16 +217,24 @@ int hostapd_check_acl(struct hostapd_data *hapd, const u8 *addr,
 {
 	if (hostapd_maclist_found(hapd->conf->accept_mac,
 				  hapd->conf->num_accept_mac, addr, vlan_id))
+	{
+		fprintf(stderr, "accept_mac %02X:%02X:%02X:%02X:%02X:%02X found, accept\n",addr[0],addr[1],addr[2],addr[3],addr[4],addr[5]);
 		return HOSTAPD_ACL_ACCEPT;
-
+	}
 	if (hostapd_maclist_found(hapd->conf->deny_mac,
-				  hapd->conf->num_deny_mac, addr, vlan_id))
+				  hapd->conf->num_deny_mac, addr, vlan_id)) {
+				  
+		fprintf(stderr, "deny_mac %02X:%02X:%02X:%02X:%02X:%02X found, rejected\n",addr[0],addr[1],addr[2],addr[3],addr[4],addr[5]);
 		return HOSTAPD_ACL_REJECT;
-
-	if (hapd->conf->macaddr_acl == ACCEPT_UNLESS_DENIED)
+	}
+	if (hapd->conf->macaddr_acl == ACCEPT_UNLESS_DENIED) {
+		fprintf(stderr, "accept: not in list %02X:%02X:%02X:%02X:%02X:%02X accept\n",addr[0],addr[1],addr[2],addr[3],addr[4],addr[5]);
 		return HOSTAPD_ACL_ACCEPT;
-	if (hapd->conf->macaddr_acl == DENY_UNLESS_ACCEPTED)
+	}
+	if (hapd->conf->macaddr_acl == DENY_UNLESS_ACCEPTED) {
+		fprintf(stderr, "deny: not in list %02X:%02X:%02X:%02X:%02X:%02X deny\n",addr[0],addr[1],addr[2],addr[3],addr[4],addr[5]);
 		return HOSTAPD_ACL_REJECT;
+	}
 
 	return HOSTAPD_ACL_PENDING;
 }
