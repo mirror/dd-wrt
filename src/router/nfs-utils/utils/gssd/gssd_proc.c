@@ -46,6 +46,8 @@
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
+#define authgss_create_default	gssrpc_authgss_create_default
+#define authgss_get_private_data	gssrpc_authgss_get_private_data
 
 #include <sys/param.h>
 #include <rpc/rpc.h>
