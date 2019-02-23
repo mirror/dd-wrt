@@ -782,8 +782,10 @@ static void *handle_request(void *arg)
 	int cnt = 0;
 	for (;;) {
 		wfgets(line, LINE_LEN, conn_fp);
-		if (!*(line) && (errno == EINTR || errno == EAGAIN))
+		if (!*(line) && (errno == EINTR || errno == EAGAIN)) {
+		    usleep(1000);
 		    continue;
+		}
 		break;
 	}	
 
