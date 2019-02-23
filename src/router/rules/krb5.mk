@@ -1,7 +1,8 @@
 krb5-configure:
 #	cd krb5 && ./autogen.sh
 	cd krb5/src && ./configure --libdir=/usr/lib --host=$(ARCH)-linux \
-		CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -D_GNU_SOURCE" \
+		CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -D_GNU_SOURCE -I$(TOP)/openssl/include" \
+		LDFLAGS="-L$(TOP)/openssl" \
 		--prefix=/usr \
 		krb5_cv_attr_constructor_destructor=yes \
 		ac_cv_func_regcomp=yes \
