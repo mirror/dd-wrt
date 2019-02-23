@@ -1,24 +1,31 @@
-rpcbind-configure: libtirpc
-	cd rpcbind && ./autogen.sh
-	cd rpcbind && ./configure --libdir=/usr/lib --host=$(ARCH)-linux \
-		CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -D_GNU_SOURCE -I$(TOP)/libtirpc -I$(TOP)/libtirpc/tirpc" \
-		LDFLAGS="-L$(TOP)/libtirpc/src/.libs" \
-		TIRPC_CFLAGS="-I$(TOP)/libtirpc -I$(TOP)/libtirpc/tirpc" \
-		TIRPC_LIBS="-L$(TOP)/libtirpc/src/.libs -ltirpc" \
-		--prefix=/usr --with-systemdsystemunitdir=no
+nfs-utils-configure: libtirpc lvm2 keyutils
+	cd nfs-utils && ./autogen.sh
+	cd nfs-utils && ./configure --enable-fast-install --with-sysroot=yes --libdir=/usr/lib --with-tirpcinclude=$(TOP)/libtirpc/tirpc --host=$(ARCH)-linux \
+		--with-rpcgen=internal --disable-uuid --disable-gssapi --disable-static --prefix=/usr \
+		--enable-gss --disable-nfsdcltrack \
+		--with-krb5=yes \
+		KRBCFLAGS="-I$(TOP)/krb5/src/include" \
+		KRBLDFLAGS="-L$(TOP)/krb5/src/lib" \
+		KRBLIBS="-lkrb5 -lk5crypto -lkrb5support -lcom_err" \
+		GSSKRB_LIBS="-lgssapi_krb5 -lgssrpc" \
+		CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -I$(TOP)/libevent -I$(TOP)/libevent/include -I$(TOP)/libtirpc -I$(TOP)/libtirpc/tirpc -I$(TOP)/lvm2/libdm  -I$(TOP)/keyutils -D_GNU_SOURCE" \
+		LDFLAGS="-L$(TOP)/libtirpc/src/.libs  -L$(TOP)/libevent/.libs -L$(TOP)/lvm2/libdm/ioctl -L$(TOP)/keyutils -L$(TOP)/krb5/src/lib" \
 
-rpcbind: libtirpc
-	make -C rpcbind
+nfs-utils: libtirpc lvm2 keyutils
+	make -C nfs-utils
 
-rpcbind-clean:
-	make -C rpcbind clean
+nfs-utils-clean:
+	make -C nfs-utils clean
 
-rpcbind-install:
-	make -C rpcbind install DESTDIR=$(INSTALLDIR)/rpcbind
-	find $(INSTALLDIR)/rpcbind -name *.la -delete
-	rm -rf $(INSTALLDIR)/rpcbind/usr/include
-	rm -rf $(INSTALLDIR)/rpcbind/usr/lib/pkgconfig
-	rm -rf $(INSTALLDIR)/rpcbind/usr/share
-	rm -rf $(INSTALLDIR)/rpcbind/var
-	rm -f $(INSTALLDIR)/rpcbind/usr/lib/*.a
-	rm -f $(INSTALLDIR)/rpcbind/usr/lib/*.la
+nfs-utils-install:
+	make -C nfs-utils install DESTDIR=$(INSTALLDIR)/nfs-utils
+	find $(INSTALLDIR)/nfs-utils -name *.la -delete
+	rm -rf $(INSTALLDIR)/nfs-utils/usr/include
+	rm -rf $(INSTALLDIR)/nfs-utils/usr/lib/pkgconfig
+	rm -rf $(INSTALLDIR)/nfs-utils/usr/share
+	rm -rf $(INSTALLDIR)/nfs-utils/var
+	rm -f $(INSTALLDIR)/nfs-utils/usr/lib/*.a
+	rm -f $(INSTALLDIR)/nfs-utils/usr/lib/*.la
+	mkdir -p $(INSTALLDIR)/nfs-utils/etc
+	rm -f $(INSTALLDIR)/nfs-utils/etc/exports
+	-cd $(INSTALLDIR)/nfs-utils/etc && ln -s /tmp/exports exports
