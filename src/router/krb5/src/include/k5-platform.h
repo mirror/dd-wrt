@@ -295,7 +295,7 @@ typedef struct { k5_once_t once; int error, did_run; void (*fn)(void); } k5_init
 
 # define PROGRAM_EXITING()              (0)
 
-#elif defined(__GNUC__) && !defined(_WIN32) && defined(CONSTRUCTOR_ATTR_WORKS)
+#elif defined(__GNUC__) && !defined(_WIN32)
 
 /* Run initializer at load time, via GCC/C++ hook magic.  */
 
@@ -406,7 +406,7 @@ typedef struct { int error; unsigned char did_run; } k5_init_t;
 # define MAKE_FINI_FUNCTION(NAME)               \
         static void NAME(void) UNUSED
 
-#elif defined(__GNUC__) && defined(DESTRUCTOR_ATTR_WORKS)
+#elif defined(__GNUC__)
 /* If we're using gcc, if the C++ support works, the compiler should
    build executables and shared libraries that support the use of
    static constructors and destructors.  The C compiler supports a
