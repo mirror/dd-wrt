@@ -5,24 +5,20 @@
 <!entity history SYSTEM "history.sgml">
 <!entity copyright SYSTEM "copyright.sgml">
 <!entity license SYSTEM "license.sgml">
-<!entity p-version "3.0.27">
-<!entity p-status "UNRELEASED">
-<!entity % p-not-stable "INCLUDE">
-<!entity % p-stable "IGNORE">
+<!entity p-version "3.0.28">
+<!entity p-status "stable">
+<!entity % p-not-stable "IGNORE">
+<!entity % p-stable "INCLUDE">
 <!entity  my-copy "&copy;">        <!-- kludge for docbook2man            -->
 <!entity % p-homepage "IGNORE">    <!-- toggle for webserver index.html   -->
 <!entity % p-index "IGNORE">       <!-- toggle for local doc index        -->
 ]>
 <!--
- File        :  $Source: /cvsroot/ijbswa/current/doc/source/webserver/index.sgml,v $
+ File        :  doc/source/webserver/index.sgml
 
  Purpose     :  Index file of the project's homepage and also documentation index
-                This file belongs into
-                ijbswa.sourceforge.net:/home/groups/i/ij/ijbswa/htdocs/
                 
- $Id: index.sgml,v 2.54 2017/03/27 10:20:52 fabiankeil Exp $
-
- Copyright (C) 2001-2017 Privoxy developers <privoxy-devel@lists.privoxy.org>
+ Copyright (C) 2001-2018 Privoxy developers <privoxy-devel@lists.privoxy.org>
  See LICENSE.
 
  ========================================================================
@@ -78,7 +74,7 @@
 <sect1 renderas="sect2" id="download" label=""><title>Download</title>
 <para>
  You can <ulink url="/sf-download-mirror/">download Privoxy here</ulink>,
- from <ulink url="http://www.silvester.org.uk/privoxy/">this mirror</ulink>,
+ from <ulink url="https://www.silvester.org.uk/privoxy/">this mirror</ulink>,
  or from <ulink url="https://sourceforge.net/projects/ijbswa/files/">SourceForge</ulink>.
 </para>
 <para>
@@ -183,10 +179,7 @@
 <![%p-homepage;[
 <para>
  <subscript>
-   Hosting and development is funded in part by:
- </subscript>
- <subscript>
-   <ulink url="http://www.7binaryoptions.com/robot/">7binaryoptions.com</ulink>
+   Hosting and development is funded in part by sponsors:
  </subscript>
 </para>
 <para>

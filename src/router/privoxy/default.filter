@@ -1,12 +1,10 @@
 #################################################################################
 # 
-#  File        :  $Source: /cvsroot/ijbswa/current/default.filter,v $
+#  File        :  default.filter
 # 
-#  $Id: default.filter,v 1.94 2016/05/25 10:51:41 fabiankeil Exp $
-#
 #  Purpose     :  Rules to process the content of web pages
 # 
-#  Copyright   :  Written by and Copyright (C) 2001-2014 the
+#  Copyright   :  Written by and Copyright (C) 2001-2018 the
 #                 Privoxy team. https://www.privoxy.org/
 #
 #                 This program is free software; you can redistribute it
@@ -221,8 +219,8 @@ FILTER: img-reorder Reorder attributes in <img> tags to make the banners-by-* fi
 # and banners-by-link to preserve the original image URL in the title attribute.
 
 s|<img\s+?([^>]*)\ssrc\s*=\s*(['"])([^>'" ]+)\2|<img src=$2$3$2 $1|siUg
-s|<img\s+?([^>]*)\ssrc\s*=\s*([^'">\\\s]+)|<img src=$2 $1|sig
-s|(<img[^>]+height)\s*=\s*|$1=|sig
+s|<img\s+?([^>]*)\ssrc\s*=\s*([^'">\\\s]+)|<img src=$2 $1|siUg
+s|(<img[^>]+height)\s*=\s*|$1=|siUg
 
 s|<img (src=(?:(['"])[^>'" ]*\2\|[^'">\\\s]+?))([^>]*)\s+width\s*=\s*((["']?)\d+?\5)(?=[\s>])|<img $1 width=$4$3|siUg
 

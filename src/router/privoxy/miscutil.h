@@ -1,6 +1,5 @@
 #ifndef MISCUTIL_H_INCLUDED
 #define MISCUTIL_H_INCLUDED
-#define MISCUTIL_H_VERSION "$Id: miscutil.h,v 1.37 2012/11/24 13:58:17 fabiankeil Exp $"
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/miscutil.h,v $
@@ -51,7 +50,7 @@ extern char *strdup_or_die(const char *str);
 extern void *malloc_or_die(size_t buffer_size);
 
 #if defined(unix)
-extern void write_pid_file(void);
+extern void write_pid_file(const char *pidfile);
 #endif /* unix */
 
 extern unsigned int hash_string(const char* s);
@@ -92,9 +91,7 @@ size_t privoxy_strlcat(char *destination, const char *source, size_t size);
 #define strlcat privoxy_strlcat
 #endif /* ndef HAVE_STRLCAT */
 
-/* Revision control strings from this header and associated .c file */
-extern const char miscutil_rcs[];
-extern const char miscutil_h_rcs[];
+extern int privoxy_millisleep(unsigned milliseconds);
 
 #if defined(__cplusplus)
 }

@@ -1,4 +1,3 @@
-const char cgi_rcs[] = "$Id: cgi.c,v 1.173 2017/03/08 13:16:26 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/cgi.c,v $
@@ -69,8 +68,6 @@ const char cgi_rcs[] = "$Id: cgi.c,v 1.173 2017/03/08 13:16:26 fabiankeil Exp $"
 /* jcc.h is for mutex semaphore globals only */
 #include "jcc.h"
 
-const char cgi_h_rcs[] = CGI_H_VERSION;
-
 /*
  * List of CGI functions: name, handler, description
  * Note: Do NOT use single quotes in the description;
@@ -96,10 +93,6 @@ static const struct cgi_dispatcher cgi_dispatchers[] = {
         "View the current configuration",
 #endif
          TRUE },
-   { "show-version",
-         cgi_show_version,
-          NULL, /* Not considered important enough to include in the menu */
-          TRUE },
 #ifdef FEATURE_CLIENT_TAGS
    /*
     * This is marked as harmless because despite the description
@@ -223,9 +216,6 @@ static const struct cgi_dispatcher cgi_dispatchers[] = {
    { "user-manual",
           cgi_send_user_manual,
           NULL, TRUE /* Send user-manual */ },
-   { "wpad.dat",
-         cgi_send_wpad,
-         NULL, TRUE /* Send a built-in image */ },
    { NULL, /* NULL Indicates end of list and default page */
          cgi_error_404,
          NULL, TRUE /* Unknown CGI page */ }

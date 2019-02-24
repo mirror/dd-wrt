@@ -1,4 +1,3 @@
-const char errlog_rcs[] = "$Id: errlog.c,v 1.129 2017/05/29 10:06:57 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/errlog.c,v $
@@ -78,9 +77,6 @@ const char errlog_rcs[] = "$Id: errlog.c,v 1.129 2017/05/29 10:06:57 fabiankeil 
 #ifdef FEATURE_EXTERNAL_FILTERS
 #include "jbsockets.h"
 #endif
-
-const char errlog_h_rcs[] = ERRLOG_H_VERSION;
-
 
 /*
  * LOG_LEVEL_FATAL cannot be turned off.  (There are
@@ -968,17 +964,13 @@ void log_error(int loglevel, const char *fmt, ...)
  *
  * Description :  Translates JB_ERR_FOO codes into strings.
  *
- *                XXX: the type of error codes is jb_err
- *                but the typedef'inition is currently not
- *                visible to all files that include errlog.h.
- *
  * Parameters  :
  *          1  :  jb_error = a valid jb_err code
  *
  * Returns     :  A string with the jb_err translation
  *
  *********************************************************************/
-const char *jb_err_to_string(int jb_error)
+const char *jb_err_to_string(jb_err jb_error)
 {
    switch (jb_error)
    {

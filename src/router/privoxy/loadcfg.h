@@ -1,6 +1,5 @@
 #ifndef LOADCFG_H_INCLUDED
 #define LOADCFG_H_INCLUDED
-#define LOADCFG_H_VERSION "$Id: loadcfg.h,v 1.17 2013/11/24 14:23:28 fabiankeil Exp $"
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/loadcfg.h,v $
@@ -66,10 +65,6 @@ extern struct configuration_spec * load_config(void);
 #ifdef FEATURE_GRACEFUL_TERMINATION
 void unload_current_config_file(void);
 #endif
-
-/* Revision control strings from this header and associated .c file */
-extern const char loadcfg_rcs[];
-extern const char loadcfg_h_rcs[];
 
 #endif /* ndef LOADCFG_H_INCLUDED */
 

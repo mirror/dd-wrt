@@ -2,7 +2,6 @@
  * Vary the gereneral Privoxy Stlyesheet to
  * meet the needs of small popups:
  *
- * $Id: p_feedback.css,v 1.3 2002/04/08 16:59:56 oes Exp $
  */
 body,td,th  { font-size:10px; }
 div.info    { width: 60%; }

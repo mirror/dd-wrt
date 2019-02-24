@@ -1,12 +1,10 @@
 <!--
- File        :  $Source: /cvsroot/ijbswa/current/doc/source/history.sgml,v $
+ File        :  doc/source/history.sgml
 
  Purpose     :  Entity included in other project documents.
 
- $Id: history.sgml,v 2.9 2012/06/19 12:49:25 fabiankeil Exp $
-
-  Copyright (C) 2001-2009 Privoxy Developers https://www.privoxy.org/
-  See LICENSE.
+ Copyright (C) 2001-2018 Privoxy Developers https://www.privoxy.org/
+ See LICENSE.
 
  ======================================================================
   This file used for inclusion with other documents only.

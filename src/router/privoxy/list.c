@@ -1,4 +1,3 @@
-const char list_rcs[] = "$Id: list.c,v 1.32 2014/11/14 10:39:49 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/list.c,v $
@@ -55,9 +54,6 @@ const char list_rcs[] = "$Id: list.c,v 1.32 2014/11/14 10:39:49 fabiankeil Exp $
 #include "project.h"
 #include "list.h"
 #include "miscutil.h"
-
-const char list_h_rcs[] = LIST_H_VERSION;
-
 
 static int list_is_valid (const struct list *the_list);
 

@@ -1,14 +1,12 @@
-$Id: TODO,v 1.165 2017/05/29 10:40:28 fabiankeil Exp $
-
 Some Privoxy-related tasks, sorted by the time they
 have been added, not by priority.
 
 The latest version should be available at:
-http://ijbswa.cvs.sourceforge.net/viewvc/ijbswa/current/TODO
+https://www.privoxy.org/gitweb/?p=privoxy.git;a=blob_plain;f=TODO;hb=HEAD
 
 There's work in progress to fund development on these items using
 donations. If you want to donate, please have a look at:
-http://www.privoxy.org/faq/general.html#DONATE
+https://www.privoxy.org/faq/general.html#DONATE
 
 1)  Add more regression tests. Filters should be tested automatically
     (variables too). Could probably reuse large parts of Privoxy-Filter-Test.
@@ -348,7 +346,7 @@ http://www.privoxy.org/faq/general.html#DONATE
      running out of stack space, causing the kernel to kill Privoxy
      ungracefully.
 
-121) Add HTTP/2 support. As a first step, incomming HTTP/1.x requests
+121) Add HTTP/2 support. As a first step, incoming HTTP/1.x requests
      should be translated to outgoing HTTP/2 requests where possible
      (and if desired by the user).
      Interested donors: 1.

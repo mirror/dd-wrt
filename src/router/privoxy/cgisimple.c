@@ -1,4 +1,3 @@
-const char cgisimple_rcs[] = "$Id: cgisimple.c,v 1.149 2017/05/04 14:33:17 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/cgisimple.c,v $
@@ -64,9 +63,6 @@ const char cgisimple_rcs[] = "$Id: cgisimple.c,v 1.149 2017/05/04 14:33:17 fabia
 #include "client-tags.h"
 #endif
 
-const char cgisimple_h_rcs[] = CGISIMPLE_H_VERSION;
-
-static char *show_rcs(void);
 static jb_err show_defines(struct map *exports);
 static jb_err cgi_show_file(struct client_state *csp,
                             struct http_response *rsp,
@@ -857,50 +853,6 @@ jb_err cgi_send_stylesheet(struct client_state *csp,
 
 }
 
-/*********************************************************************
- *
- * Function    :  cgi_send_wpad
- *
- * Description :  CGI function that sends a proxy pac file
- *
- * Parameters  :
- *          1  :  csp = Current client state (buffers, headers, etc...)
- *          2  :  rsp = http_response data structure for output
- *          3  :  parameters = map of cgi parameters
- *
- * CGI Parameters : None
- *
- * Returns     :  JB_ERR_OK on success
- *                JB_ERR_MEMORY on out-of-memory error.
- *
- *********************************************************************/
-jb_err cgi_send_wpad(struct client_state *csp,
-                           struct http_response *rsp,
-                           const struct map *parameters)
-{
- 
-   struct map *exports;
-
-   assert(csp);
-   assert(rsp);
-   assert(parameters);
-
-   if (NULL == (exports = default_exports(csp, NULL)))
-   {
-      return JB_ERR_MEMORY;
-   }
-   
-   if (enlist(rsp->headers, "Content-Type: application/x-ns-proxy-autoconfig"))
-   {
-      return JB_ERR_MEMORY;
-   }
-
-   //rsp->status = strdup_or_die("404 Privoxy configuration page not found");
-
-   return template_fill_for_cgi(csp, "wpad.dat", exports, rsp);
-
-}
-
 
 /*********************************************************************
  *
@@ -966,12 +918,11 @@ static const char *get_content_type(const char *filename)
    struct content_type
    {
       const char extension[6];
-      const char content_type[34];
+      const char content_type[11];
    };
    static const struct content_type content_types[] =
    {
       {".css",  "text/css"},
-      {".dat",  "application/x-ns-proxy-autoconfig"},
       {".jpg",  "image/jpeg"},
       {".jpeg", "image/jpeg"},
       {".png",  "image/png"},
@@ -1077,49 +1028,6 @@ jb_err cgi_send_user_manual(struct client_state *csp,
 
    return enlist_unique_header(rsp->headers, "Content-Type", content_type);
 
-}
-
-
-/*********************************************************************
- *
- * Function    :  cgi_show_version
- *
- * Description :  CGI function that returns a a web page describing the
- *                file versions of Privoxy.
- *
- * Parameters  :
- *          1  :  csp = Current client state (buffers, headers, etc...)
- *          2  :  rsp = http_response data structure for output
- *          3  :  parameters = map of cgi parameters
- *
- * CGI Parameters : none
- *
- * Returns     :  JB_ERR_OK on success
- *                JB_ERR_MEMORY on out-of-memory error.
- *
- *********************************************************************/
-jb_err cgi_show_version(struct client_state *csp,
-                        struct http_response *rsp,
-                        const struct map *parameters)
-{
-   struct map *exports;
-
-   assert(csp);
-   assert(rsp);
-   assert(parameters);
-
-   if (NULL == (exports = default_exports(csp, "show-version")))
-   {
-      return JB_ERR_MEMORY;
-   }
-
-   if (map(exports, "sourceversions", 1, show_rcs(), 0))
-   {
-      free_map(exports);
-      return JB_ERR_MEMORY;
-   }
-
-   return template_fill_for_cgi(csp, "show-version", exports, rsp);
 }
 
 
@@ -2014,99 +1922,6 @@ static jb_err show_defines(struct map *exports)
    }
 
    return err;
-
-}
-
-
-/*********************************************************************
- *
- * Function    :  show_rcs
- *
- * Description :  Create a string with the rcs info for all sourcefiles
- *
- * Parameters  :  None
- *
- * Returns     :  A string, or NULL on out-of-memory.
- *
- *********************************************************************/
-static char *show_rcs(void)
-{
-   char *result = strdup_or_die("");
-   char buf[BUFFER_SIZE];
-
-   /* Instead of including *all* dot h's in the project (thus creating a
-    * tremendous amount of dependencies), I will concede to declaring them
-    * as extern's.  This forces the developer to add to this list, but oh well.
-    */
-
-#define SHOW_RCS(__x)              \
-   {                               \
-      extern const char __x[];     \
-      snprintf(buf, sizeof(buf), " %s\n", __x);   \
-      string_append(&result, buf); \
-   }
-
-   /* In alphabetical order */
-   SHOW_RCS(actions_h_rcs)
-   SHOW_RCS(actions_rcs)
-#ifdef AMIGA
-   SHOW_RCS(amiga_h_rcs)
-   SHOW_RCS(amiga_rcs)
-#endif /* def AMIGA */
-   SHOW_RCS(cgi_h_rcs)
-   SHOW_RCS(cgi_rcs)
-#ifdef FEATURE_CGI_EDIT_ACTIONS
-   SHOW_RCS(cgiedit_h_rcs)
-   SHOW_RCS(cgiedit_rcs)
-#endif /* def FEATURE_CGI_EDIT_ACTIONS */
-   SHOW_RCS(cgisimple_h_rcs)
-   SHOW_RCS(cgisimple_rcs)
-   SHOW_RCS(deanimate_h_rcs)
-   SHOW_RCS(deanimate_rcs)
-   SHOW_RCS(encode_h_rcs)
-   SHOW_RCS(encode_rcs)
-   SHOW_RCS(errlog_h_rcs)
-   SHOW_RCS(errlog_rcs)
-   SHOW_RCS(filters_h_rcs)
-   SHOW_RCS(filters_rcs)
-   SHOW_RCS(gateway_h_rcs)
-   SHOW_RCS(gateway_rcs)
-   SHOW_RCS(jbsockets_h_rcs)
-   SHOW_RCS(jbsockets_rcs)
-   SHOW_RCS(jcc_h_rcs)
-   SHOW_RCS(jcc_rcs)
-   SHOW_RCS(list_h_rcs)
-   SHOW_RCS(list_rcs)
-   SHOW_RCS(loadcfg_h_rcs)
-   SHOW_RCS(loadcfg_rcs)
-   SHOW_RCS(loaders_h_rcs)
-   SHOW_RCS(loaders_rcs)
-   SHOW_RCS(miscutil_h_rcs)
-   SHOW_RCS(miscutil_rcs)
-   SHOW_RCS(parsers_h_rcs)
-   SHOW_RCS(parsers_rcs)
-   SHOW_RCS(pcrs_rcs)
-   SHOW_RCS(pcrs_h_rcs)
-   SHOW_RCS(project_h_rcs)
-   SHOW_RCS(ssplit_h_rcs)
-   SHOW_RCS(ssplit_rcs)
-   SHOW_RCS(urlmatch_h_rcs)
-   SHOW_RCS(urlmatch_rcs)
-#ifdef _WIN32
-#ifndef _WIN_CONSOLE
-   SHOW_RCS(w32log_h_rcs)
-   SHOW_RCS(w32log_rcs)
-   SHOW_RCS(w32res_h_rcs)
-   SHOW_RCS(w32taskbar_h_rcs)
-   SHOW_RCS(w32taskbar_rcs)
-#endif /* ndef _WIN_CONSOLE */
-   SHOW_RCS(win32_h_rcs)
-   SHOW_RCS(win32_rcs)
-#endif /* def _WIN32 */
-
-#undef SHOW_RCS
-
-   return result;
 
 }
 

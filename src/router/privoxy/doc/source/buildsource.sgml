@@ -1,11 +1,9 @@
 <!--
- File        :  $Source: /cvsroot/ijbswa/current/doc/source/buildsource.sgml,v $
+ File        :  doc/source/buildsource.sgml
 
  Purpose     :  Entity included in other project documents.
 
- $Id: buildsource.sgml,v 2.20 2016/03/04 13:20:35 fabiankeil Exp $
-
- Copyright (C) 2001-2009 Privoxy Developers https://www.privoxy.org/
+ Copyright (C) 2001-2018 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
 
  ======================================================================
@@ -24,60 +22,55 @@
 <para>
  To build <application>Privoxy</application> from source,
  <ulink url="http://www.gnu.org/software/autoconf/autoconf.html">autoconf</ulink>,
- <ulink
- url="http://www.gnu.org/software/make/make.html">GNU make
- (gmake)</ulink>, and, of course, a C compiler like <ulink
- url="http://www.gnu.org/software/gcc/gcc.html">gcc</ulink> are required.
+ <ulink url="http://www.gnu.org/software/make/make.html">GNU make (gmake)</ulink>,
+ and, of course, a C compiler like
+ <ulink url="http://www.gnu.org/software/gcc/gcc.html">gcc</ulink> are required.
 </para>
 
 <para>
  When building from a source tarball,
-<!--
- no longer available ...
- <ulink
- url="http://cvs.sourceforge.net/cvstarballs/ijbswa-cvsroot.tar.gz">nightly CVS
- tarball</ulink>),
---> first unpack the source:
+<!-- no longer available ...
+ <ulink url="http://cvs.sourceforge.net/cvstarballs/ijbswa-cvsroot.tar.gz">
+ nightly CVS tarball</ulink>),
+-->
+ first unpack the source:
 </para>
 
-<para>
- <screen>
+<screen>
  tar xzvf privoxy-&p-version;<![%p-not-stable;[-beta]]><![%p-stable;[-stable]]>-src.tar.gz
  cd privoxy-&p-version;<![%p-not-stable;[-beta]]><![%p-stable;[-stable]]>
 </screen>
-</para>
 
 <para>
- For retrieving the current CVS sources, you'll need a CVS client installed.
- Note that sources from CVS are typically development quality, and may not be
- stable, or well tested. To download CVS source, check the Sourceforge
- documentation, which might give commands like:
+ To build the development version, you can get the source code by doing:
 </para>
 
-<para>
- <screen>
-  cvs -d:pserver:anonymous@ijbswa.cvs.sourceforge.net:/cvsroot/ijbswa login
-  cvs -z3 -d:pserver:anonymous@ijbswa.cvs.sourceforge.net:/cvsroot/ijbswa co current
-  cd current
+<screen>
+  cd &lt;root-dir>
+  git clone https://www.privoxy.org/git/privoxy.git
 </screen>
+
+<para>
+ This will create a directory named <filename>&lt;root-dir>/privoxy/</filename>,
+ which will contain the source tree.
 </para>
 
 <para>
- This will create a directory named <filename>current/</filename>, which will
- contain the source tree.
+ Note that source code in GIT is development quality, and may not be
+ stable or well tested.
 </para>
 
-<para>
+<!-- para>
  You can also check out any <application>Privoxy</application>
  <quote>branch</quote>, just exchange the <application>current</application>
  name with the wanted branch name (Example: v_3_0_branch for the 3.0 cvs
  tree).
-</para>
+</para -->
 
 <para>
- It is also strongly recommended to not run <application>Privoxy</application>
+ It is strongly recommended to not run <application>Privoxy</application>
  as root. You should configure/install/run <application>Privoxy</application> as
- an unprivileged user, preferably by  creating a <quote>privoxy</quote> user
+ an unprivileged user, preferably by creating a <quote>privoxy</quote> user
  and group just for this purpose. See your local documentation for the correct
  command line to do add new users and groups (something like
  <command>adduser</command>, but the command syntax may vary from platform
@@ -88,17 +81,13 @@
  <filename>/etc/passwd</filename> might then look like:
 </para>
 
-<para>
  <screen>  privoxy:*:7777:7777:privoxy proxy:/no/home:/no/shell</screen>
-</para>
 
 <para>
  And then <filename>/etc/group</filename>, like:
 </para>
 
-<para>
  <screen>  privoxy:*:7777:</screen>
-</para>
 
 <para>
  Some binary packages may do this for you.
@@ -108,7 +97,6 @@
  Then, to build from either unpacked tarball or CVS source:
 </para>
 
-<para>
  <screen>
  autoheader
  autoconf
@@ -117,18 +105,15 @@
  su               # Possibly required
  make -n install  # (to see where all the files will go)
  make -s install  # (to really install, -s to silence output)</screen>
-</para>
 
 <para>
   Using GNU <command>make</command>, you can have the first four steps
   automatically done for you by just typing:
 </para>
 
-<para>
  <screen>
   make
 </screen>
-</para>
 
 <para>
   in the freshly downloaded or unpacked source directory.
@@ -139,10 +124,8 @@
  users cannot easily bypass the proxy (e.g. <quote>Go There Anyway</quote>), or
  alter their own configurations, <command>configure</command> like this:
 </para>
-<para>
  <screen>
  ./configure  --disable-toggle  --disable-editor  --disable-force</screen>
-</para>
 <para>
  Note that all of these options can also be disabled through the configuration file.
 </para>
@@ -170,10 +153,8 @@
  on the <command>make</command> command line, but be sure both already exist:
 </para>
 
-<para>
  <screen>
  make -s install  USER=privoxy GROUP=privoxy</screen>
-</para>
 
 <para>
  The default installation path for <command>make install</command> is

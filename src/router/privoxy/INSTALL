@@ -1,6 +1,6 @@
 /*********************************************************************
  *
- * File        :  $Source: /cvsroot/ijbswa/current/INSTALL,v $
+ * File        :  $Source: /cvsroot/ijbswa/current/doc/source/install.sgml,v $
  *
  * Purpose     :  INSTALL file to help with installing from source.
  *
@@ -31,7 +31,6 @@
  *                USA
  *
  *********************************************************************/
-   
 
 -------------------------------------------------------------------------------
 
@@ -40,29 +39,25 @@ compiler like gcc are required.
 
 When building from a source tarball, first unpack the source:
 
- tar xzvf privoxy-3.0.26-stable-src.tar.gz
- cd privoxy-3.0.26-stable
+ tar xzvf privoxy-3.0.28-stable-src.tar.gz
+ cd privoxy-3.0.28-stable
 
-For retrieving the current CVS sources, you'll need a CVS client installed.
-Note that sources from CVS are typically development quality, and may not be
-stable, or well tested. To download CVS source, check the Sourceforge
-documentation, which might give commands like:
+To build the development version, you can get the source code by doing:
 
-  cvs -d:pserver:anonymous@ijbswa.cvs.sourceforge.net:/cvsroot/ijbswa login
-  cvs -z3 -d:pserver:anonymous@ijbswa.cvs.sourceforge.net:/cvsroot/ijbswa co current
-  cd current
+  cd <root-dir>
+  git clone https://www.privoxy.org/git/privoxy.git
 
-This will create a directory named current/, which will contain the source
-tree.
+This will create a directory named <root-dir>/privoxy/, which will contain the
+source tree.
 
-You can also check out any Privoxy "branch", just exchange the current name
-with the wanted branch name (Example: v_3_0_branch for the 3.0 cvs tree).
+Note that source code in GIT is development quality, and may not be stable or
+well tested.
 
-It is also strongly recommended to not run Privoxy as root. You should
-configure/install/run Privoxy as an unprivileged user, preferably by creating a
-"privoxy" user and group just for this purpose. See your local documentation
-for the correct command line to do add new users and groups (something like
-adduser, but the command syntax may vary from platform to platform).
+It is strongly recommended to not run Privoxy as root. You should configure/
+install/run Privoxy as an unprivileged user, preferably by creating a "privoxy"
+user and group just for this purpose. See your local documentation for the
+correct command line to do add new users and groups (something like adduser,
+but the command syntax may vary from platform to platform).
 
 /etc/passwd might then look like:
 

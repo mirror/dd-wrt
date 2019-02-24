@@ -1,6 +1,5 @@
 #ifndef ACTIONS_H_INCLUDED
 #define ACTIONS_H_INCLUDED
-#define ACTIONS_H_VERSION "$Id: actions.h,v 1.25 2016/12/24 16:00:49 fabiankeil Exp $"
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/actions.h,v $
@@ -86,10 +85,6 @@ extern int load_one_actions_file(struct client_state *csp, int fileid);
 void unload_current_actions_file(void);
 #endif
 
-
-/* Revision control strings from this header and associated .c file */
-extern const char actions_rcs[];
-extern const char actions_h_rcs[];
 
 #endif /* ndef ACTIONS_H_INCLUDED */
 

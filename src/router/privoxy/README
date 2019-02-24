@@ -1,10 +1,10 @@
 /*********************************************************************
  *
- * File        :  $Source: /cvsroot/ijbswa/current/README,v $
+ * File        :  doc/source/readme.sgml
  *
  * Purpose     :  README file to give a short intro.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2011 the
+ * Copyright   :  Written by and Copyright (C) 2001-2018 the
  *                Privoxy team. https://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -32,7 +32,7 @@
  *
  *********************************************************************/
 
-This README is included with Privoxy 3.0.26. See https://www.privoxy.org/ for
+This README is included with Privoxy 3.0.28. See https://www.privoxy.org/ for
 more information. The current code maturity level is "stable".
 
 -------------------------------------------------------------------------------
@@ -177,23 +177,26 @@ requesting support:
     directive is being used and the following debug options are enabled (all of
     them):
 
-    debug     1 # Log the destination for each request Privoxy let through. See also debug 1024.
+    debug     1 # Log the destination for each request Privoxy let through.
+                #   See also debug 1024.
     debug     2 # show each connection status
     debug     4 # show I/O status
     debug     8 # show header parsing
     debug   128 # debug redirects
     debug   256 # debug GIF de-animation
     debug   512 # Common Log Format
-    debug  1024 # Log the destination for requests Privoxy didn't let through, and the reason why.
+    debug  1024 # Log the destination for requests Privoxy didn't let through,
+                #   and the reason why.
     debug  4096 # Startup banner and warnings.
     debug  8192 # Non-fatal errors
+    debug 65536 # Log applying actions
 
     If you are having trouble with a filter, please additionally enable
 
     debug    64 # debug regular expression filters
 
-    If you are using Privoxy 3.0.17 or later and suspect that it interprets the
-    request or the response incorrectly, please enable
+    If you suspect that Privoxy interprets the request or the response
+    incorrectly, please enable
 
     debug 32768 # log all data read from the network
 

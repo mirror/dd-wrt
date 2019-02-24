@@ -1,4 +1,3 @@
-const char parsers_rcs[] = "$Id: parsers.c,v 1.313 2017/07/01 17:14:12 ler762 Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/parsers.c,v $
@@ -89,8 +88,6 @@ const char parsers_rcs[] = "$Id: parsers.c,v 1.313 2017/07/01 17:14:12 ler762 Ex
 #ifndef HAVE_STRPTIME
 #include "strptime.h"
 #endif
-
-const char parsers_h_rcs[] = PARSERS_H_VERSION;
 
 static char *get_header_line(struct iob *iob);
 static jb_err scan_headers(struct client_state *csp);
@@ -252,13 +249,14 @@ static const add_header_func_ptr add_server_headers[] = {
 
 /*********************************************************************
  *
- * Function    :  flush_socket
+ * Function    :  flush_iob
  *
  * Description :  Write any pending "buffered" content.
  *
  * Parameters  :
  *          1  :  fd = file descriptor of the socket to read
  *          2  :  iob = The I/O buffer to flush, usually csp->iob.
+ *          3  :  delay = Number of milliseconds to delay the writes
  *
  * Returns     :  On success, the number of bytes written are returned (zero
  *                indicates nothing was written).  On error, -1 is returned,
@@ -268,7 +266,7 @@ static const add_header_func_ptr add_server_headers[] = {
  *                file, the results are not portable.
  *
  *********************************************************************/
-long flush_socket(jb_socket fd, struct iob *iob)
+long flush_iob(jb_socket fd, struct iob *iob, unsigned int delay)
 {
    long len = iob->eod - iob->cur;
 
@@ -277,7 +275,7 @@ long flush_socket(jb_socket fd, struct iob *iob)
       return(0);
    }
 
-   if (write_socket(fd, iob->cur, (size_t)len))
+   if (write_socket_delayed(fd, iob->cur, (size_t)len, delay))
    {
       return(-1);
    }

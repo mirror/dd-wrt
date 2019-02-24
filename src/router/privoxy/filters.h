@@ -1,6 +1,5 @@
 #ifndef FILTERS_H_INCLUDED
 #define FILTERS_H_INCLUDED
-#define FILTERS_H_VERSION "$Id: filters.h,v 1.48 2016/12/24 16:00:49 fabiankeil Exp $"
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/filters.h,v $
@@ -99,12 +98,6 @@ extern int filters_available(const struct client_state *csp);
  * Handling Max-Forwards:
  */
 extern struct http_response *direct_response(struct client_state *csp);
-
-/*
- * Revision control strings from this header and associated .c file
- */
-extern const char filters_rcs[];
-extern const char filters_h_rcs[];
 
 #ifdef FUZZ
 extern char *gif_deanimate_response(struct client_state *csp);

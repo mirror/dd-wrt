@@ -1,11 +1,9 @@
 <!--
- File        :  $Source: /cvsroot/ijbswa/current/doc/source/newfeatures.sgml,v $
+ File        :  doc/source/newfeatures.sgml
 
  Purpose     :  Entity included in other project documents.
 
- $Id: newfeatures.sgml,v 2.14 2009/10/10 05:51:13 fabiankeil Exp $
-
- Copyright (C) 2001-2009 Privoxy Developers https://www.privoxy.org/
+ Copyright (C) 2001-2018 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
 
  ======================================================================
@@ -21,7 +19,7 @@
   faq
 
 -->
-<para>
+
  <itemizedlist>
 
 <!--
@@ -32,6 +30,7 @@
   </para>
  </listitem>
 -->
+
  <listitem>
   <para>
      Supports "Connection: keep-alive". Outgoing connections can
@@ -141,4 +140,4 @@
 </listitem>
 
  </itemizedlist>
-</para>
+

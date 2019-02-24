@@ -1,10 +1,10 @@
 <!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook V3.1//EN" [
 <!entity % dummy "IGNORE">
 <!entity buildsource SYSTEM "buildsource.sgml">
-<!entity p-version "3.0.27">
-<!entity p-status "UNRELEASED">
-<!entity % p-stable "IGNORE">
-<!entity % p-not-stable "INCLUDE">
+<!entity p-version "3.0.28">
+<!entity p-status "stable">
+<!entity % p-stable "INCLUDE">
+<!entity % p-not-stable "IGNORE">
 <!entity % p-alpha "IGNORE">
 <!entity % p-beta "IGNORE">
 <!entity % p-text "INCLUDE">       <!-- define we are a text only doc    -->
@@ -12,13 +12,11 @@
 <!entity % p-readme "INCLUDE">     <!-- This is now in INSTALL           -->
 ]>
 <!--
- File        :  $Source: /cvsroot/ijbswa/current/doc/source/install.sgml,v $
+ File        :  doc/source/install.sgml
 
  Purpose     :  INSTALL file for Privoxy
 
- $Id: install.sgml,v 2.33 2016/08/26 12:27:34 fabiankeil Exp $
-
- Copyright (C) 2001-2009 Privoxy Developers https://www.privoxy.org/
+ Copyright (C) 2001-2018 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
 
  ========================================================================
@@ -85,7 +83,7 @@
  *                USA
  *
  *********************************************************************/
-   </literallayout>
+</literallayout>
   </msgtext>
  </literal>
 </para>

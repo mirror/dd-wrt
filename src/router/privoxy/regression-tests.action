@@ -1,6 +1,4 @@
 #############################################################################
-# $Id: regression-tests.action,v 1.69 2017/01/23 13:06:31 fabiankeil Exp $
-#############################################################################
 #
 # This is a configuration file for Privoxy-Regression-Test
 # (included in the source tarball's tools directory).
@@ -10,7 +8,7 @@
 #
 #############################################################################
 #
-# Copyright (c) 2007-2017 Fabian Keil <fk@fabiankeil.de>
+# Copyright (c) 2007-2018 Fabian Keil <fk@fabiankeil.de>
 #
 # Permission to use, copy, modify, and distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -43,8 +41,8 @@ for-privoxy-version=3.0.27
 # Level 17 needs = feature status FEATURE_64_BIT_TIME_T Yes
 # Level 18 needs = feature status FEATURE_GRACEFUL_TERMINATION No
 # Level 19 needs = feature status FEATURE_GRACEFUL_TERMINATION Yes
-# Level 20 needs = feature status FEATURE_TOGGLE Yes
-# Level 21 needs = feature status FEATURE_TOGGLE No
+# Level 20 needs = config line enable-remote-toggle\s+1
+# Level 21 needs = config line enable-remote-toggle\s+0
 # Level 22 needs = config line enable-proxy-authentication-forwarding\s+0
 # Level 23 needs = config line enable-proxy-authentication-forwarding\s+1
 # Level 24 needs = feature status FEATURE_CLIENT_TAGS Yes
@@ -705,6 +703,7 @@ TAG:^Proxy-Authorization header forwarding$
 # Fetch Test = http://config.privoxy.org/show-status?file=invalid
 # Fetch Test = http://config.privoxy.org/show-status?file=trust
 # Fetch Test = http://p.p/show-version
+# Expect Status Code = 404
 # Fetch Test = http://p.p/show-request
 # Fetch Test = http://p.p/show-url-info
 # Fetch Test = http://p.p/show-url-info?url=www.privoxy.org%2F
@@ -720,7 +719,7 @@ TAG:^Proxy-Authorization header forwarding$
 # Fetch Test = http://p.p/toggle
 # Level = 20
 # Fetch Test = http://p.p/toggle
-# Expect Status Code = 404
+# Expect Status Code = 403
 # Level = 21
 # Fetch Test = http://p.p/edit-actions
 # Level = 12

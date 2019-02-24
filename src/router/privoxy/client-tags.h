@@ -1,6 +1,5 @@
 #ifndef CLIENT_TAGS_H_INCLUDED
 #define CLIENT_TAGS_H_INCLUDED
-#define CLIENT_TAGS_H_VERSION "$Id: client-tags.h,v 1.3 2016/05/22 12:43:07 fabiankeil Exp $"
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/client-tags.h,v $
