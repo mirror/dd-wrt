@@ -2441,6 +2441,8 @@ static void mangle_table(char *wanface, char *wanaddr, char *vifs)
 		save2file_A_postrouting("-o %s -j CLASSIFY --set-class 0:1", wanface);
 		save2file_A_postrouting("-o %s -p udp --dport 67 -j CLASSIFY --set-class 0:0", wanface);
 
+		eval("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-o", wanface, "-j", "CLASSIFY", "--set-class", "0:1");
+		eval("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-o", wanface, "-p", "udp", "--dport", "67", "-j", "CLASSIFY", "--set-class", "0:0");
 		eval("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-o", wanface, "-j", "CLASSIFY", "--set-class", "0:1");
 		eval("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-o", wanface, "-p", "udp", "--dport", "67", "-j", "CLASSIFY", "--set-class", "0:0");
 
