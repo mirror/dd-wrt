@@ -1,11 +1,9 @@
 <!--
- File        :  $Source: /cvsroot/ijbswa/current/doc/source/contacting.sgml,v $
+ File        :  doc/source/contacting.sgml
 
  Purpose     :  Entity included in other project documents.
 
- $Id: contacting.sgml,v 2.46 2017/01/23 13:03:06 fabiankeil Exp $
-
- Copyright (C) 2001-2011 Privoxy Developers https://www.privoxy.org/
+ Copyright (C) 2001-2018 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
 
  ======================================================================
@@ -65,7 +63,6 @@
   Please be sure to provide the following information when reporting problems
   or requesting support:
 </para>
-<para>
  <itemizedlist>
 
   <listitem>
@@ -128,25 +125,29 @@
     is being used and the following <ulink
     url="../user-manual/config.html#DEBUG">debug options</ulink> are enabled
     (all of them):
-    <literallayout>debug     1 # Log the destination for each request Privoxy let through. See also debug 1024.
+   </para>
+    <literallayout>debug     1 # Log the destination for each request Privoxy let through.
+            #   See also debug 1024.
 debug     2 # show each connection status
 debug     4 # show I/O status
 debug     8 # show header parsing
 debug   128 # debug redirects
 debug   256 # debug GIF de-animation
 debug   512 # Common Log Format
-debug  1024 # Log the destination for requests Privoxy didn't let through, and the reason why.
+debug  1024 # Log the destination for requests Privoxy didn't let through,
+            #   and the reason why.
 debug  4096 # Startup banner and warnings.
 debug  8192 # Non-fatal errors
 debug 65536 # Log applying actions</literallayout>
-   </para>
    <para>
     If you are having trouble with a filter, please additionally enable
+   </para>
     <literallayout>debug    64 # debug regular expression filters</literallayout>
+   <para>
     If you suspect that Privoxy interprets the request or the response
     incorrectly, please enable
-    <literallayout>debug 32768 # log all data read from the network</literallayout>
    </para>
+    <literallayout>debug 32768 # log all data read from the network</literallayout>
    <para>
     It's easy for us to ignore log messages that aren't relevant but missing
     log messages may make it impossible to investigate a problem. If you aren't
@@ -161,7 +162,6 @@ debug 65536 # Log applying actions</literallayout>
   </listitem>
 
 </itemizedlist>
-</para>
 
 <para>
  You don't have to tell us your actual name when filing a problem

@@ -1,4 +1,3 @@
-const char jcc_rcs[] = "$Id: jcc.c,v 1.469 2017/08/12 09:36:42 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/jcc.c,v $
@@ -6,7 +5,7 @@ const char jcc_rcs[] = "$Id: jcc.c,v 1.469 2017/08/12 09:36:42 fabiankeil Exp $"
  * Purpose     :  Main file.  Contains main() method, main loop, and
  *                the main connection-handling function.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2017 the
+ * Copyright   :  Written by and Copyright (C) 2001-2018 the
  *                Privoxy team. http://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -128,9 +127,6 @@ const char jcc_rcs[] = "$Id: jcc.c,v 1.469 2017/08/12 09:36:42 fabiankeil Exp $"
 #include "client-tags.h"
 #endif
 
-const char jcc_h_rcs[] = JCC_H_VERSION;
-const char project_h_rcs[] = PROJECT_H_VERSION;
-
 int daemon_mode = 1;
 struct client_states clients[1];
 struct file_list     files[1];
@@ -144,7 +140,7 @@ int urls_rejected = 0;     /* total nr of urls rejected */
 int g_terminate = 0;
 #endif
 
-#if !defined(_WIN32) && !defined(__OS2__) && !defined(AMIGA)
+#if !defined(_WIN32) && !defined(__OS2__)
 static void sig_handler(int the_signal);
 #endif
 static int client_protocol_is_unsupported(const struct client_state *csp, char *req);
@@ -167,12 +163,7 @@ static jb_socket bind_port_helper(const char *haddr, int hport, int backlog);
 static void bind_ports_helper(struct configuration_spec *config, jb_socket sockets[]);
 static void close_ports_helper(jb_socket sockets[]);
 static void listen_loop(void);
-
-#ifdef AMIGA
-void serve(struct client_state *csp);
-#else /* ifndef AMIGA */
 static void serve(struct client_state *csp);
-#endif /* def AMIGA */
 
 #ifdef __BEOS__
 static int32 server_thread(void *data);
@@ -343,7 +334,7 @@ static const struct cruncher crunchers_light[] = {
  *
  * here?
  */
-#if !defined(_WIN32) && !defined(__OS2__) && !defined(AMIGA)
+#if !defined(_WIN32) && !defined(__OS2__)
 /*********************************************************************
  *
  * Function    :  sig_handler
@@ -392,6 +383,42 @@ static void sig_handler(int the_signal)
 
 }
 #endif
+
+
+/*********************************************************************
+ *
+ * Function    :  get_write_delay
+ *
+ * Description :  Parse the delay-response parameter.
+ *
+ * Parameters  :
+ *          1  :  csp = Current client state (buffers, headers, etc...)
+ *
+ * Returns     :  Number of milliseconds to delay writes.
+ *
+ *********************************************************************/
+static unsigned int get_write_delay(const struct client_state *csp)
+{
+   unsigned int delay;
+   char *endptr;
+   char *newval;
+
+   if ((csp->action->flags & ACTION_DELAY_RESPONSE) == 0)
+   {
+      return 0;
+   }
+   newval = csp->action->string[ACTION_STRING_DELAY_RESPONSE];
+
+   delay = (unsigned)strtol(newval, &endptr, 0);
+   if (*endptr != '\0')
+   {
+      log_error(LOG_LEVEL_FATAL,
+         "Invalid delay-response{} parameter: '%s'", newval);
+   }
+
+   return delay;
+
+}
 
 
 /*********************************************************************
@@ -446,7 +473,8 @@ static int client_protocol_is_unsupported(const struct client_state *csp, char *
       log_error(LOG_LEVEL_CLF,
          "%s - - [%T] \"%s\" 400 0", csp->ip_addr_str, req);
       freez(req);
-      write_socket(csp->cfd, response, strlen(response));
+      write_socket_delayed(csp->cfd, response, strlen(response),
+         get_write_delay(csp));
 
       return TRUE;
    }
@@ -478,8 +506,10 @@ static int client_has_unsupported_expectations(const struct client_state *csp)
          csp->ip_addr_str);
       log_error(LOG_LEVEL_CLF,
          "%s - - [%T] \"%s\" 417 0", csp->ip_addr_str, csp->http->cmd);
-      write_socket(csp->cfd, UNSUPPORTED_CLIENT_EXPECTATION_ERROR_RESPONSE,
-         strlen(UNSUPPORTED_CLIENT_EXPECTATION_ERROR_RESPONSE));
+      write_socket_delayed(csp->cfd,
+         UNSUPPORTED_CLIENT_EXPECTATION_ERROR_RESPONSE,
+         strlen(UNSUPPORTED_CLIENT_EXPECTATION_ERROR_RESPONSE),
+         get_write_delay(csp));
 
       return TRUE;
    }
@@ -529,7 +559,8 @@ static jb_err get_request_destination_elsewhere(struct client_state *csp, struct
       log_error(LOG_LEVEL_CLF, "%s - - [%T] \"%s\" 400 0",
          csp->ip_addr_str, csp->http->cmd);
 
-      write_socket(csp->cfd, CHEADER, strlen(CHEADER));
+      write_socket_delayed(csp->cfd, CHEADER, strlen(CHEADER),
+         get_write_delay(csp));
       destroy_list(headers);
 
       return JB_ERR_PARSE;
@@ -557,7 +588,8 @@ static jb_err get_request_destination_elsewhere(struct client_state *csp, struct
          csp->ip_addr_str, csp->http->cmd, req);
       freez(req);
 
-      write_socket(csp->cfd, MISSING_DESTINATION_RESPONSE, strlen(MISSING_DESTINATION_RESPONSE));
+      write_socket_delayed(csp->cfd, MISSING_DESTINATION_RESPONSE,
+         strlen(MISSING_DESTINATION_RESPONSE), get_write_delay(csp));
       destroy_list(headers);
 
       return JB_ERR_PARSE;
@@ -762,7 +794,7 @@ static void log_applied_actions(const struct current_action_spec *actions)
  *
  * Parameters  :
  *          1  :  csp = Current client state (buffers, headers, etc...)
- *          1  :  rsp = Fully prepared response. Will be freed on exit.
+ *          2  :  rsp = Fully prepared response. Will be freed on exit.
  *
  * Returns     :  Nothing.
  *
@@ -802,13 +834,13 @@ static void send_crunch_response(const struct client_state *csp, struct http_res
          csp->ip_addr_str, http->ocmd, status_code, rsp->content_length);
 
       /* Write the answer to the client */
-      if (write_socket(csp->cfd, rsp->head, rsp->head_length)
-       || write_socket(csp->cfd, rsp->body, rsp->content_length))
+      if (write_socket_delayed(csp->cfd, rsp->head, rsp->head_length, get_write_delay(csp))
+       || write_socket_delayed(csp->cfd, rsp->body, rsp->content_length, get_write_delay(csp)))
       {
          /* There is nothing we can do about it. */
-         log_error(LOG_LEVEL_ERROR,
-            "Couldn't deliver the error message through client socket %d: %E",
-            csp->cfd);
+         log_error(LOG_LEVEL_CONNECT,
+            "Couldn't deliver the error message for %s through client socket %d: %E",
+            http->url, csp->cfd);
       }
 
       /* Clean up and return */
@@ -1069,7 +1101,7 @@ static void wait_for_alive_connections(void)
  *          1  :  sfd  = Open socket to remember.
  *          2  :  http = The destination for the connection.
  *          3  :  fwd  = The forwarder settings used.
- *          3  :  server_connection  = storage.
+ *          4  :  server_connection  = storage.
  *
  * Returns     : void
  *
@@ -1304,8 +1336,9 @@ static char *get_request_line(struct client_state *csp)
             log_error(LOG_LEVEL_CONNECT,
                "No request line on socket %d received in time. Timeout: %d.",
                csp->cfd, csp->config->socket_timeout);
-            write_socket(csp->cfd, CLIENT_CONNECTION_TIMEOUT_RESPONSE,
-               strlen(CLIENT_CONNECTION_TIMEOUT_RESPONSE));
+            write_socket_delayed(csp->cfd, CLIENT_CONNECTION_TIMEOUT_RESPONSE,
+               strlen(CLIENT_CONNECTION_TIMEOUT_RESPONSE),
+               get_write_delay(csp));
          }
          else
          {
@@ -1467,8 +1500,8 @@ static jb_err receive_chunked_client_request_body(struct client_state *csp)
    }
    if (status != CHUNK_STATUS_BODY_COMPLETE)
    {
-      write_socket(csp->cfd, CLIENT_BODY_PARSE_ERROR_RESPONSE,
-         strlen(CLIENT_BODY_PARSE_ERROR_RESPONSE));
+      write_socket_delayed(csp->cfd, CLIENT_BODY_PARSE_ERROR_RESPONSE,
+         strlen(CLIENT_BODY_PARSE_ERROR_RESPONSE), get_write_delay(csp));
       log_error(LOG_LEVEL_CLF,
          "%s - - [%T] \"Failed reading chunked client body\" 400 0", csp->ip_addr_str);
       return JB_ERR_PARSE;
@@ -1676,7 +1709,8 @@ static jb_err receive_client_request(struct client_state *csp)
    freez(req);
    if (JB_ERR_OK != err)
    {
-      write_socket(csp->cfd, CHEADER, strlen(CHEADER));
+      write_socket_delayed(csp->cfd, CHEADER, strlen(CHEADER),
+         get_write_delay(csp));
       /* XXX: Use correct size */
       log_error(LOG_LEVEL_CLF, "%s - - [%T] \"Invalid request\" 400 0", csp->ip_addr_str);
       log_error(LOG_LEVEL_ERROR,
@@ -1866,7 +1900,7 @@ static jb_err parse_client_request(struct client_state *csp)
          csp->ip_addr_str);
       log_error(LOG_LEVEL_CLF, "%s - - [%T] \"%s\" 400 0",
          csp->ip_addr_str, csp->http->cmd);
-      write_socket(csp->cfd, CHEADER, strlen(CHEADER));
+      write_socket_delayed(csp->cfd, CHEADER, strlen(CHEADER), get_write_delay(csp));
       return JB_ERR_PARSE;
    }
    csp->flags |= CSP_FLAG_CLIENT_HEADER_PARSING_DONE;
@@ -1879,7 +1913,8 @@ static jb_err parse_client_request(struct client_state *csp)
       /*
        * A header filter broke the request line - bail out.
        */
-      write_socket(csp->cfd, MESSED_UP_REQUEST_RESPONSE, strlen(MESSED_UP_REQUEST_RESPONSE));
+      write_socket_delayed(csp->cfd, MESSED_UP_REQUEST_RESPONSE,
+         strlen(MESSED_UP_REQUEST_RESPONSE), get_write_delay(csp));
       /* XXX: Use correct size */
       log_error(LOG_LEVEL_CLF,
          "%s - - [%T] \"Invalid request generated\" 500 0", csp->ip_addr_str);
@@ -1910,7 +1945,7 @@ static jb_err parse_client_request(struct client_state *csp)
  * Parameters  :
  *          1  :  csp = Current client state (buffers, headers, etc...)
  *
- * Returns     :  0 on success, anything else is na error.
+ * Returns     :  0 on success, anything else is an error.
  *
  *********************************************************************/
 static int send_http_request(struct client_state *csp)
@@ -1939,7 +1974,7 @@ static int send_http_request(struct client_state *csp)
          csp->http->hostport);
    }
    else if (((csp->flags & CSP_FLAG_PIPELINED_REQUEST_WAITING) == 0)
-      && (flush_socket(csp->server_connection.sfd, csp->client_iob) < 0))
+      && (flush_iob(csp->server_connection.sfd, csp->client_iob, 0) < 0))
    {
       write_failure = 1;
       log_error(LOG_LEVEL_CONNECT, "Failed sending request body to: %s: %E",
@@ -1982,6 +2017,7 @@ static void handle_established_connection(struct client_state *csp)
    struct http_request *http;
    long len = 0; /* for buffer sizes (and negative error codes) */
    int buffer_and_filter_content = 0;
+   unsigned int write_delay;
 
    /* Skeleton for HTTP response, if we should intercept the request */
    struct http_response *rsp;
@@ -2016,6 +2052,7 @@ static void handle_established_connection(struct client_state *csp)
 #ifdef FEATURE_CONNECTION_KEEP_ALIVE
    watch_client_socket = 0 == (csp->flags & CSP_FLAG_PIPELINED_REQUEST_WAITING);
 #endif
+   write_delay = get_write_delay(csp);
 
    for (;;)
    {
@@ -2173,7 +2210,7 @@ static void handle_established_connection(struct client_state *csp)
                 */
                watch_client_socket = 0;
                log_error(LOG_LEVEL_CONNECT,
-                  "Stopping to watch the client socket %d. "
+                  "Stop watching client socket %d. "
                   "There's already another request waiting.",
                   csp->cfd);
                continue;
@@ -2413,9 +2450,10 @@ static void handle_established_connection(struct client_state *csp)
                      log_error(LOG_LEVEL_FATAL, "Out of memory parsing server header");
                   }
 
-                  if (write_socket(csp->cfd, hdr, strlen(hdr))
-                   || write_socket(csp->cfd,
-                         ((p != NULL) ? p : csp->iob->cur), (size_t)csp->content_length))
+                  if (write_socket_delayed(csp->cfd, hdr, strlen(hdr), write_delay)
+                   || write_socket_delayed(csp->cfd,
+                      ((p != NULL) ? p : csp->iob->cur),
+                      (size_t)csp->content_length, write_delay))
                   {
                      log_error(LOG_LEVEL_ERROR, "write modified content to client failed: %E");
                      freez(hdr);
@@ -2483,9 +2521,10 @@ static void handle_established_connection(struct client_state *csp)
                   }
                   hdrlen = strlen(hdr);
 
-                  if (write_socket(csp->cfd, hdr, hdrlen)
-                   || ((flushed = flush_socket(csp->cfd, csp->iob)) < 0)
-                   || (write_socket(csp->cfd, csp->receive_buffer, (size_t)len)))
+                  if (write_socket_delayed(csp->cfd, hdr, hdrlen, write_delay)
+                   || ((flushed = flush_iob(csp->cfd, csp->iob, write_delay)) < 0)
+                   || write_socket_delayed(csp->cfd, csp->receive_buffer,
+                         (size_t)len, write_delay))
                   {
                      log_error(LOG_LEVEL_CONNECT,
                         "Flush header and buffers to client failed: %E");
@@ -2507,7 +2546,8 @@ static void handle_established_connection(struct client_state *csp)
             }
             else
             {
-               if (write_socket(csp->cfd, csp->receive_buffer, (size_t)len))
+               if (write_socket_delayed(csp->cfd, csp->receive_buffer,
+                     (size_t)len, write_delay))
                {
                   log_error(LOG_LEVEL_ERROR, "write to client failed: %E");
                   mark_server_socket_tainted(csp);
@@ -2547,8 +2587,9 @@ static void handle_established_connection(struct client_state *csp)
                      "Applying the MS IIS5 hack didn't help.");
                   log_error(LOG_LEVEL_CLF,
                      "%s - - [%T] \"%s\" 502 0", csp->ip_addr_str, http->cmd);
-                  write_socket(csp->cfd, INVALID_SERVER_HEADERS_RESPONSE,
-                     strlen(INVALID_SERVER_HEADERS_RESPONSE));
+                  write_socket_delayed(csp->cfd,
+                     INVALID_SERVER_HEADERS_RESPONSE,
+                     strlen(INVALID_SERVER_HEADERS_RESPONSE), write_delay);
                   mark_server_socket_tainted(csp);
                   return;
                }
@@ -2616,8 +2657,8 @@ static void handle_established_connection(struct client_state *csp)
                   csp->headers->first->str);
                log_error(LOG_LEVEL_CLF,
                   "%s - - [%T] \"%s\" 502 0", csp->ip_addr_str, http->cmd);
-               write_socket(csp->cfd, INVALID_SERVER_HEADERS_RESPONSE,
-                  strlen(INVALID_SERVER_HEADERS_RESPONSE));
+               write_socket_delayed(csp->cfd, INVALID_SERVER_HEADERS_RESPONSE,
+                  strlen(INVALID_SERVER_HEADERS_RESPONSE), write_delay);
                free_http_request(http);
                mark_server_socket_tainted(csp);
                return;
@@ -2631,8 +2672,8 @@ static void handle_established_connection(struct client_state *csp)
             {
                log_error(LOG_LEVEL_CLF,
                   "%s - - [%T] \"%s\" 502 0", csp->ip_addr_str, http->cmd);
-               write_socket(csp->cfd, INVALID_SERVER_HEADERS_RESPONSE,
-                  strlen(INVALID_SERVER_HEADERS_RESPONSE));
+               write_socket_delayed(csp->cfd, INVALID_SERVER_HEADERS_RESPONSE,
+                  strlen(INVALID_SERVER_HEADERS_RESPONSE), write_delay);
                free_http_request(http);
                mark_server_socket_tainted(csp);
                return;
@@ -2688,8 +2729,8 @@ static void handle_established_connection(struct client_state *csp)
                 * may be in the buffer)
                 */
 
-               if (write_socket(csp->cfd, hdr, strlen(hdr))
-                || ((len = flush_socket(csp->cfd, csp->iob)) < 0))
+               if (write_socket_delayed(csp->cfd, hdr, strlen(hdr), write_delay)
+                  || ((len = flush_iob(csp->cfd, csp->iob, write_delay)) < 0))
                {
                   log_error(LOG_LEVEL_CONNECT, "write header to client failed: %E");
 
@@ -2720,8 +2761,8 @@ static void handle_established_connection(struct client_state *csp)
                   "Applying the MS IIS5 hack didn't help.");
                log_error(LOG_LEVEL_CLF,
                   "%s - - [%T] \"%s\" 502 0", csp->ip_addr_str, http->cmd);
-               write_socket(csp->cfd, INVALID_SERVER_HEADERS_RESPONSE,
-                  strlen(INVALID_SERVER_HEADERS_RESPONSE));
+               write_socket_delayed(csp->cfd, INVALID_SERVER_HEADERS_RESPONSE,
+                  strlen(INVALID_SERVER_HEADERS_RESPONSE), write_delay);
                mark_server_socket_tainted(csp);
                return;
             }
@@ -2999,7 +3040,8 @@ static void chat(struct client_state *csp)
        * message to the client, flush the rest, and get out of the way.
        */
       list_remove_all(csp->headers);
-      if (write_socket(csp->cfd, CSUCCEED, strlen(CSUCCEED)))
+      if (write_socket_delayed(csp->cfd, CSUCCEED,
+            strlen(CSUCCEED), get_write_delay(csp)))
       {
          return;
       }
@@ -3170,11 +3212,7 @@ static void prepare_csp_for_next_request(struct client_state *csp)
  * Returns     :  N/A
  *
  *********************************************************************/
-#ifdef AMIGA
-void serve(struct client_state *csp)
-#else /* ifndef AMIGA */
 static void serve(struct client_state *csp)
-#endif /* def AMIGA */
 {
    int config_file_change_detected = 0; /* Only used for debugging */
 #ifdef FEATURE_CONNECTION_KEEP_ALIVE
@@ -3819,9 +3857,7 @@ int main(int argc, char **argv)
    clients->next = NULL;
 
    /* XXX: factor out initialising after the next stable release. */
-#ifdef AMIGA
-   InitAmiga();
-#elif defined(_WIN32)
+#ifdef _WIN32
    InitWin32();
 #endif
 
@@ -3844,7 +3880,7 @@ int main(int argc, char **argv)
     * are handled when and where they occur without relying
     * on a signal.
     */
-#if !defined(_WIN32) && !defined(__OS2__) && !defined(AMIGA)
+#if !defined(_WIN32) && !defined(__OS2__)
 {
    int idx;
    const int catched_signals[] = { SIGTERM, SIGINT, SIGHUP };
@@ -3985,8 +4021,10 @@ int main(int argc, char **argv)
     * As soon as we have written the PID file, we can switch
     * to the user and group ID indicated by the --user option
     */
-   write_pid_file();
-
+   if (pidfile != NULL)
+   {
+      write_pid_file(pidfile);
+   }
    if (NULL != pw)
    {
       if (setgid((NULL != grp) ? grp->gr_gid : pw->pw_gid))
@@ -4304,12 +4342,12 @@ static void listen_loop(void)
    for (;;)
 #endif
    {
-#if !defined(FEATURE_PTHREAD) && !defined(_WIN32) && !defined(__BEOS__) && !defined(AMIGA) && !defined(__OS2__)
+#if !defined(FEATURE_PTHREAD) && !defined(_WIN32) && !defined(__BEOS__) && !defined(__OS2__)
       while (waitpid(-1, NULL, WNOHANG) > 0)
       {
          /* zombie children */
       }
-#endif /* !defined(FEATURE_PTHREAD) && !defined(_WIN32) && !defined(__BEOS__) && !defined(AMIGA) */
+#endif /* !defined(FEATURE_PTHREAD) && !defined(_WIN32) && !defined(__BEOS__) */
 
       /*
        * Free data that was used by died threads
@@ -4346,13 +4384,6 @@ static void listen_loop(void)
       if (!accept_connection(csp, bfds))
       {
          log_error(LOG_LEVEL_CONNECT, "accept failed: %E");
-
-#ifdef AMIGA
-         if (!childs)
-         {
-            exit(1);
-         }
-#endif
          freez(csp_list);
          continue;
       }
@@ -4415,8 +4446,8 @@ static void listen_loop(void)
          log_error(LOG_LEVEL_CONNECT,
             "Rejecting connection from %s. Maximum number of connections reached.",
             csp->ip_addr_str);
-         write_socket(csp->cfd, TOO_MANY_CONNECTIONS_RESPONSE,
-            strlen(TOO_MANY_CONNECTIONS_RESPONSE));
+         write_socket_delayed(csp->cfd, TOO_MANY_CONNECTIONS_RESPONSE,
+            strlen(TOO_MANY_CONNECTIONS_RESPONSE), get_write_delay(csp));
          close_socket(csp->cfd);
          freez(csp->ip_addr_str);
          freez(csp->listen_addr_str);
@@ -4478,34 +4509,6 @@ static void listen_loop(void)
             {
                child_id = -1;
             }
-         }
-#endif
-
-#if defined(AMIGA) && !defined(SELECTED_ONE_OPTION)
-#define SELECTED_ONE_OPTION
-         csp->cfd = ReleaseSocket(csp->cfd, -1);
-
-#ifdef __amigaos4__
-         child_id = (int)CreateNewProcTags(NP_Entry, (ULONG)server_thread,
-                                           NP_Output, Output(),
-                                           NP_CloseOutput, FALSE,
-                                           NP_Name, (ULONG)"privoxy child",
-                                           NP_Child, TRUE,
-                                           TAG_DONE);
-#else
-         child_id = (int)CreateNewProcTags(NP_Entry, (ULONG)server_thread,
-                                           NP_Output, Output(),
-                                           NP_CloseOutput, FALSE,
-                                           NP_Name, (ULONG)"privoxy child",
-                                           NP_StackSize, 200*1024,
-                                           TAG_DONE);
-#endif
-         if (0 != child_id)
-         {
-            childs++;
-            ((struct Task *)child_id)->tc_UserData = csp;
-            Signal((struct Task *)child_id, SIGF_SINGLE);
-            Wait(SIGF_SINGLE);
          }
 #endif
 
@@ -4596,8 +4599,8 @@ static void listen_loop(void)
             log_error(LOG_LEVEL_ERROR,
                "Unable to take any additional connections: %E. Active threads: %d",
                active_threads);
-            write_socket(csp->cfd, TOO_MANY_CONNECTIONS_RESPONSE,
-               strlen(TOO_MANY_CONNECTIONS_RESPONSE));
+            write_socket_delayed(csp->cfd, TOO_MANY_CONNECTIONS_RESPONSE,
+               strlen(TOO_MANY_CONNECTIONS_RESPONSE), get_write_delay(csp));
             close_socket(csp->cfd);
             csp->flags &= ~CSP_FLAG_ACTIVE;
          }

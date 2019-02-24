@@ -4,8 +4,6 @@
 # Created: 1993-05-16
 # Public domain
 
-# $Id: mkinstalldirs,v 1.3.2.1 2002/10/25 02:44:22 hal9 Exp $
-
 errstatus=0
 
 for file

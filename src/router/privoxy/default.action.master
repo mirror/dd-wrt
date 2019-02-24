@@ -9,9 +9,7 @@
 #MASTER# COMMENT:
 ######################################################################
 #
-#  File        :  $Source: /cvsroot/ijbswa/current/default.action.master,v $
-#
-#  $Id: default.action.master,v 1.338 2017/06/26 12:09:30 fabiankeil Exp $
+#  File        :  default.action.master
 #
 #  Requires    :  This version requires Privoxy v3.0.11 or later due to
 #                 syntax changes.
@@ -23,7 +21,7 @@
 #                 and enhancements are better placed in user.action,
 #                 the match-all section has been moved to match-all.action.
 #
-#  Copyright   :  Written by and Copyright (C) 2001-2017 the
+#  Copyright   :  Written by and Copyright (C) 2001-2018 the
 #                 Privoxy team. https://www.privoxy.org/
 #
 # Feedback welcome, for details please have a look at:

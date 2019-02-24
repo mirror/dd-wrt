@@ -1,11 +1,9 @@
 <!--
- File        :  $Source: /cvsroot/ijbswa/current/doc/source/seealso.sgml,v $
+ File        :  doc/source/seealso.sgml
 
  Purpose     :  Entity included in other project documents.
 
- $Id: seealso.sgml,v 2.15 2014/11/11 12:19:52 fabiankeil Exp $
-
- Copyright (C) 2001-2009 Privoxy Developers https://www.privoxy.org/
+ Copyright (C) 2001-2018 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
 
  ======================================================================
@@ -32,7 +30,6 @@
  users:
 </para>
 
-<para>
  <simplelist>
   <member>
    <ulink
@@ -98,4 +95,4 @@
   </member>
  </simplelist>
  ]]>
-</para>
+

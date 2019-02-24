@@ -11,8 +11,6 @@
  *
  *********************************************************************/
 
-#define PCRS_H_VERSION "$Id: pcrs.h,v 1.18 2013/11/24 14:23:28 fabiankeil Exp $"
-
 
 #ifndef _PCRE_H
 #include <pcre.h>

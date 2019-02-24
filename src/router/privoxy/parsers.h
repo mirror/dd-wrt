@@ -1,6 +1,5 @@
 #ifndef PARSERS_H_INCLUDED
 #define PARSERS_H_INCLUDED
-#define PARSERS_H_VERSION "$Id: parsers.h,v 1.56 2013/11/24 14:23:28 fabiankeil Exp $"
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/parsers.h,v $
@@ -50,7 +49,7 @@
 #define FILTER_CLIENT_HEADERS 0
 #define FILTER_SERVER_HEADERS 1
 
-extern long flush_socket(jb_socket fd, struct iob *iob);
+extern long flush_iob(jb_socket fd, struct iob *iob, unsigned int delay);
 extern jb_err add_to_iob(struct iob *iob, const size_t buffer_limit, char *src, long n);
 extern void clear_iob(struct iob *iob);
 extern jb_err decompress_iob(struct client_state *csp);
@@ -66,10 +65,6 @@ extern jb_err client_transfer_encoding(struct client_state *csp, char **header);
 #ifdef FEATURE_FORCE_LOAD
 extern int strclean(char *string, const char *substring);
 #endif /* def FEATURE_FORCE_LOAD */
-
-/* Revision control strings from this header and associated .c file */
-extern const char parsers_rcs[];
-extern const char parsers_h_rcs[];
 
 #endif /* ndef PARSERS_H_INCLUDED */
 

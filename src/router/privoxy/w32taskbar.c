@@ -1,4 +1,3 @@
-const char w32taskbar_rcs[] = "$Id: w32taskbar.c,v 1.13 2012/03/09 16:23:50 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/w32taskbar.c,v $
@@ -45,8 +44,6 @@ const char w32taskbar_rcs[] = "$Id: w32taskbar.c,v 1.13 2012/03/09 16:23:50 fabi
 #include "w32taskbar.h"
 #include "w32res.h"
 #include "w32log.h"
-
-const char w32taskbar_h_rcs[] = W32TASKBAR_H_VERSION;
 
 #ifndef _WIN_CONSOLE /* entire file */
 

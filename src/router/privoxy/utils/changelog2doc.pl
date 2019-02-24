@@ -2,8 +2,6 @@
 
 ##########################################################################
 #
-# $Id: changelog2doc.pl,v 1.7 2010/10/31 13:29:31 fabiankeil Exp $
-#
 # Filter to parse the ChangeLog and translate the changes for
 # the most recent version into something that looks like markup
 # for the documentation but still needs fine-tuning.

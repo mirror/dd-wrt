@@ -1,8 +1,6 @@
 # Note:  GNUmakefile is built automatically from GNUmakefile.in
 #
-# $Id: GNUmakefile.in,v 1.263 2017/06/01 13:22:46 ler762 Exp $
-#
-# Written by and Copyright (C) 2001-2017 members of the
+# Written by and Copyright (C) 2001-2018 members of the
 # Privoxy team. https://www.privoxy.org/
 #
 # Based on the Internet Junkbuster originally written
@@ -132,11 +130,21 @@ CHMOD      = chmod
 CHOWN      = chown
 CHGRP      = chgrp
 GROUPS     = groups
-W3M_DUMP   = env -u LANG LC_ALL=C @W3M@ -dump
-W3M_DUMP_UTF8 = @W3M@ -dump
+W3M_DUMP   = @W3M@ -I ISO-8859 -O ASCII -dump
+W3M_DUMP_UTF8 = @W3M@ -I ISO-8859 -O UTF-8 -dump
+# docbook output is ISO-8859 (which is a superset of ascii)
 JADECAT    = @JADECAT@
 JADEBIN    = @JADEBIN@
+NSGMLS     = @NSGMLS@
 DB         = $(JADEBIN) $(JADECAT) -ihtml -t sgml  -D.. -d ldp.dsl\#html
+DB_TXT     = $(JADEBIN) $(JADECAT) -ihtml -t sgml  -D.. -d ldp.dsl\#print
+# -d dsssl_spec
+#     This specifies that dsssl_spec is the system identifier of the DSSSL specification to be used.
+# ldp.dsl#html  : keep '&char;' strings as is
+# ldp.dsl#print : convert '&char;' strings to ISO-8859 equivalent
+# NOTE: '-d ldp.dsl\#whatever' _MUST_ be last and _MUST NOT_ have
+#       a trailing space so that '$(DB)-notoc' or '$(DB_TXT)-notoc'
+#       pulls in the correct dsl stylesheet
 DB2HTML    = @DB2HTML@
 MAN2HTML   = @MAN2HTML@
 G2H_CMD    = groff -mandoc -Thtml
@@ -145,7 +153,21 @@ PERL       = perl
 DOC_DIR    = doc/source
 DOC_TMP    = $(DOC_DIR)/tmp
 DOC_STATUS = @DOC_STATUS@
-TIDY       = tidy -modify -indent -wrap 78 --tidy-mark no
+TIDY       = tidy -latin1 -q -modify -indent -wrap 120 --tidy-mark no --preserve-entities yes \
+ --mute MISSING_ATTRIBUTE --mute TRIM_EMPTY_ELEMENT
+# -latin1
+#     use ISO-8859-1 for both input and output
+#     docbook output is ISO-8859 and tidy assumes UTF-8
+# -q
+#     suppress nonessential output
+# -modify
+#     modify the original input file
+# --mute MISSING_ATTRIBUTE
+#     don't show <img> lacks "alt" attribute
+#             or <table> lacks "summary" attribute
+# --mute TRIM_EMPTY_ELEMENT
+#     don't show trimming empty <p>
+#
 RSYNC	   = rsync -av -c --chmod=D755,F644
 
 # Program to do LF->CRLF
@@ -505,7 +527,7 @@ dok-man:
 # target for man page generation!
 man: dok-release
 	mkdir -p doc/source/temp && cd doc/source/temp && $(RM) * ;\
-	nsgmls ../privoxy-man-page.sgml  | sgmlspl ../../../utils/docbook2man/docbook2man-spec.pl &&\
+	$(NSGMLS) ../privoxy-man-page.sgml  | sgmlspl ../../../utils/docbook2man/docbook2man-spec.pl &&\
 	perl -pi.bak -e 's/ <URL:.*>//; s/\[ /\[/g' $(MAN_PAGE) ;\
 	perl -pi.bak -e "s/\[ /\[/g;s/á/\\\\['a]/g;s/é/\\\\['e]/g" $(MAN_PAGE); \
 	perl -pi.bak -e "s/ö/\\\\[:o]/g" $(MAN_PAGE); \
@@ -536,9 +558,9 @@ groff2html:
 
 # readme page and INSTALL file
 dok-readme: dok-release
-	cd doc/source && $(DB)-notoc -V nochunks readme.sgml > tmp.html &&\
+	cd doc/source && $(DB_TXT)-notoc -V nochunks readme.sgml > tmp.html &&\
 	$(W3M_DUMP) tmp.html > ../../README ;\
-	$(DB)-notoc -V nochunks install.sgml > tmp.html &&\
+	$(DB_TXT)-notoc -V nochunks install.sgml > tmp.html &&\
 	$(W3M_DUMP) tmp.html > ../../INSTALL ;\
 	$(RM) tmp.*
 
@@ -565,13 +587,13 @@ dok-index:
      doc/webserver/privoxy-index.html && $(RM) doc/webserver/*.bak
 
 # Main documentation target.
-dok: dok-release dok-devel dok-user dok-faq dok-readme dok-webserver dok-authors dok-index dok-tidy
+dok: dok-release dok-devel dok-user dok-faq dok-readme dok-webserver dok-authors dok-index
 	@$(ECHO) Documentation created.
 
 ## Make AUTHORS file
 dok-authors:
-	cd doc/source && $(DB) -V nochunks authors.sgml > tmp.html && $(W3M_DUMP_UTF8) \
-	  tmp.html > ../../AUTHORS && $(RM) tmp.html
+	cd doc/source && $(DB_TXT) -V nochunks authors.sgml > tmp.html && \
+	  $(W3M_DUMP_UTF8) tmp.html > ../../AUTHORS && $(RM) tmp.html
 
 # Set doc entities for VERSION and CODE_STATUS in sgml docs. Toggle content
 # exceptions accordingly. This needs to go before any doc building (doh).
@@ -609,7 +631,7 @@ config-file: dok-release generate-config-file
 	@$(ECHO)  "****************************************************"
 
 generate-config-file:
-	cd doc/source && $(DB)-notoc -iconfig-file -V nochunks config.sgml > ../../config.html
+	cd doc/source && $(DB_TXT)-notoc -iconfig-file -V nochunks config.sgml > ../../config.html
 	$(W3M_DUMP) -cols 67 config.html > config
 	$(PERL) -i.bak utils/prepare-configfile.pl config
 
@@ -659,6 +681,10 @@ web-faq:
 	@$(ECHO) Updating the FAQ on the webserver ...
 	@$(RSYNC) doc/webserver/faq/*.html shell.sourceforge.net:$(WWW_ROOT)/htdocs/faq
 
+web-sponsors:
+	@$(ECHO) "Updating the sponsor page (index.html) only ..."
+	@$(RSYNC) doc/webserver/sponsors/index.html shell.sourceforge.net:$(WWW_ROOT)/htdocs/sponsors/
+
 web-user-manual:
 	@$(ECHO) Updating the user manual on the webserver (do not use in case of version changes) ...
 	@$(RSYNC) doc/webserver/user-manual/*.html shell.sourceforge.net:$(WWW_ROOT)/htdocs/user-manual/
@@ -675,6 +701,7 @@ web-user-manual:
 #############################################################################
 dok-tidy:
 	for html_file in `find doc/webserver -name "*.html"`; do \
+		$(ECHO) "------ begin processing $$html_file" >&2 ; \
 		$(TIDY) $$html_file || $(TIDY) $$html_file; \
 		$(PERL) -i'' -e 's@^\s*<br>\s*$$@@; s@ +$$@@;' -n -p $$html_file; \
 	done
@@ -733,18 +760,6 @@ win32.@OBJEXT@: win32.c config.h jcc.h loadcfg.h pcre/pcre.h pcre/pcreposix.h pc
 
 w32.res: w32.rc w32res.h icons/radar-01.ico icons/radar-02.ico icons/radar-03.ico icons/radar-04.ico icons/radar-05.ico icons/radar-06.ico icons/radar-07.ico icons/radar-08.ico icons/idle.ico icons/privoxy.ico config.h
 	windres -F pe-i386 -D__MINGW32__=0.2 -O coff -i $< -o $@
-
-# AmigaOS
-@AMIGAOS_ONLY@OBJS += amiga.o
-@AMIGAOS_ONLY@ifeq ($(shell $(CC) -dumpmachine), m68k-amigaos)
-@AMIGAOS_ONLY@CFLAGS += -D__AMIGAVERSION__=\"$(VERSION_MAJOR).$(VERSION_MINOR)$(VERSION_POINT)\" -D__AMIGADATE__=\"`date +%d.%m.%Y`\" -W -m68020 -noixemul -fbaserel -msmall-code
-@AMIGAOS_ONLY@LDFLAGS += -m68020 -noixemul -fbaserel
-@AMIGAOS_ONLY@LIBS = -lm /gg/lib/libb/libm020/libnix/swapstack.o
-@AMIGAOS_ONLY@else
-@AMIGAOS_ONLY@CFLAGS += -D__AMIGAVERSION__=\"$(VERSION_MAJOR).$(VERSION_MINOR)$(VERSION_POINT)\" -D__AMIGADATE__=\"`date +%d.%m.%Y`\" -Wextra -D__USE_INLINE__ -D__NO_INTUITION_RJ_MACROS
-@AMIGAOS_ONLY@endif
-@AMIGAOS_ONLY@amiga.o: amiga.c amiga.h config.h
-
 
 $(PROGRAM): $(OBJS) $(W32_FILES)
 	$(LD) $(LDFLAGS) -o $(PROGRAM) $(OBJS) $(LIBS)

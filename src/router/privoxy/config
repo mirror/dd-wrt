@@ -1,8 +1,6 @@
-#        Sample Configuration File for Privoxy 3.0.27
+#        Sample Configuration File for Privoxy 3.0.28
 #
-# $Id: config,v 1.115 2017/06/26 12:17:17 fabiankeil Exp $
-#
-# Copyright (C) 2001-2017 Privoxy Developers https://www.privoxy.org/
+# Copyright (C) 2001-2018 Privoxy Developers https://www.privoxy.org/
 #
 #####################################################################
 #                                                                   #

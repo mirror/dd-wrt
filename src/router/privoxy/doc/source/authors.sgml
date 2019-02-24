@@ -1,12 +1,9 @@
 <!--
- File        :  $Source: /cvsroot/ijbswa/current/doc/source/authors.sgml,v $
+ File        :  doc/source/authors.sgml
 
  Purpose     :  AUTHORS file for Privoxy
 
- $Id: authors.sgml,v 2.34 2016/08/26 12:27:34 fabiankeil Exp $
-
-
- Copyright (C) 2001-2009 Privoxy Developers https://www.privoxy.org/
+ Copyright (C) 2001-2018 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
 
  ========================================================================
@@ -26,10 +23,10 @@
 <!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook V3.1//EN" [
 <!entity % dummy "IGNORE">
 <!entity authors SYSTEM "p-authors.sgml">
-<!entity p-version "3.0.27">
-<!entity p-status "UNRELEASED">
-<!entity % p-not-stable "INCLUDE">
-<!entity % p-stable "IGNORE">
+<!entity p-version "3.0.28">
+<!entity p-status "stable">
+<!entity % p-not-stable "IGNORE">
+<!entity % p-stable "INCLUDE">
 <!entity % p-text "INCLUDE">           <!-- define we are a text only doc -->
 <!entity % p-authors-formal "INCLUDE"> <!-- include additional text, etc  -->
 ]>

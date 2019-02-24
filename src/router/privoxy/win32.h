@@ -1,6 +1,5 @@
 #ifndef WIN32_H_INCLUDED
 #define WIN32_H_INCLUDED
-#define WIN32_H_VERSION "$Id: win32.h,v 1.9 2011/09/04 11:10:56 fabiankeil Exp $"
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/win32.h,v $
@@ -46,10 +45,6 @@ extern HINSTANCE g_hInstance;
 extern int g_nCmdShow;
 
 extern int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow);
-
-/* Revision control strings from this header and associated .c file */
-extern const char win32_rcs[];
-extern const char win32_h_rcs[];
 
 #endif /* ndef WIN32_H_INCLUDED */
 

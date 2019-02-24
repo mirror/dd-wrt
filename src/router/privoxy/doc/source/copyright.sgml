@@ -1,11 +1,9 @@
 <!--
- File        :  $Source: /cvsroot/ijbswa/current/doc/source/copyright.sgml,v $
+ File        :  doc/source/copyright.sgml
 
  Purpose     :  Entity included in other project documents.
 
- $Id: copyright.sgml,v 2.20 2017/06/08 13:12:45 fabiankeil Exp $
-
- Copyright (C) 2001-2016 Privoxy Developers https://www.privoxy.org/
+ Copyright (C) 2001-2018 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
 
  ======================================================================
@@ -31,7 +29,7 @@
 -->
 
 <para>
- Copyright &my-copy; 2001-2017 by Privoxy Developers <email>privoxy-devel@lists.privoxy.org</email>
+ Copyright &my-copy; 2001-2018 by Privoxy Developers <email>privoxy-devel@lists.privoxy.org</email>
 </para>
 
 <para>

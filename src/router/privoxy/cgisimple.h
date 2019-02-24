@@ -1,6 +1,5 @@
 #ifndef CGISIMPLE_H_INCLUDED
 #define CGISIMPLE_H_INCLUDED
-#define CGISIMPLE_H_VERSION "$Id: cgisimple.h,v 1.22 2017/01/23 13:04:58 fabiankeil Exp $"
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/cgisimple.h,v $
@@ -62,9 +61,6 @@ extern jb_err cgi_show_status  (struct client_state *csp,
 extern jb_err cgi_show_url_info(struct client_state *csp,
                                 struct http_response *rsp,
                                 const struct map *parameters);
-extern jb_err cgi_show_version (struct client_state *csp,
-                                struct http_response *rsp,
-                                const struct map *parameters);
 extern jb_err cgi_show_request (struct client_state *csp,
                                 struct http_response *rsp,
                                 const struct map *parameters);
@@ -88,9 +84,6 @@ extern jb_err cgi_send_default_favicon (struct client_state *csp,
 extern jb_err cgi_send_stylesheet(struct client_state *csp,
                                   struct http_response *rsp,
                                   const struct map *parameters);
-extern jb_err cgi_send_wpad(struct client_state *csp,
-                                  struct http_response *rsp,
-                                  const struct map *parameters);
 extern jb_err cgi_send_url_info_osd(struct client_state *csp,
                                     struct http_response *rsp,
                                     const struct map *parameters);
@@ -104,10 +97,6 @@ extern jb_err cgi_die (struct client_state *csp,
                        struct http_response *rsp,
                        const struct map *parameters);
 #endif
-
-/* Revision control strings from this header and associated .c file */
-extern const char cgisimple_rcs[];
-extern const char cgisimple_h_rcs[];
 
 #endif /* ndef CGISIMPLE_H_INCLUDED */
 

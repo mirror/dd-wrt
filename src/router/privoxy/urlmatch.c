@@ -1,4 +1,3 @@
-const char urlmatch_rcs[] = "$Id: urlmatch.c,v 1.88 2016/03/17 10:40:53 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/urlmatch.c,v $
@@ -55,8 +54,6 @@ const char urlmatch_rcs[] = "$Id: urlmatch.c,v 1.88 2016/03/17 10:40:53 fabianke
 #include "ssplit.h"
 #include "miscutil.h"
 #include "errlog.h"
-
-const char urlmatch_h_rcs[] = URLMATCH_H_VERSION;
 
 enum regex_anchoring
 {
@@ -494,7 +491,7 @@ static int unknown_method(const char *method)
  *                JB_ERR_PARSE if the HTTP version is unsupported
  *
  *********************************************************************/
-jb_err static normalize_http_version(char *http_version)
+static jb_err normalize_http_version(char *http_version)
 {
    unsigned int major_version;
    unsigned int minor_version;

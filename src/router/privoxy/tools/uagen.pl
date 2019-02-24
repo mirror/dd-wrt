@@ -3,8 +3,6 @@
 ##############################################################################################
 # uagen (http://www.fabiankeil.de/sourcecode/uagen/)
 #
-# $Id: uagen.pl,v 1.25 2013/01/17 14:28:57 fabiankeil Exp $
-#
 # Generates a pseudo-random Firefox user agent and writes it into a Privoxy action file
 # and optionally into a Mozilla prefs file. For documentation see 'perldoc uagen(.pl)'.
 #

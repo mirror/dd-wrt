@@ -1,11 +1,9 @@
 <!--
- File        :  $Source: /cvsroot/ijbswa/current/doc/source/supported.sgml,v $
+ File        :  doc/source/supported.sgml
 
  Purpose     :  Entity included in other project documents.
 
- $Id: supported.sgml,v 2.15 2015/01/24 16:40:47 fabiankeil Exp $
-
- Copyright (C) 2001-2008 Privoxy Developers https://www.privoxy.org/
+ Copyright (C) 2001-2018 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
 
  ======================================================================
@@ -33,13 +31,6 @@
  DragonFly, ElectroBSD, FreeBSD, NetBSD, OpenBSD,
  Solaris,
  and various other flavors of Unix.
-</para>
-
-<para>
- <application>Privoxy</application> used to work on AmigaOS and QNX,
- too, but the code currently isn't maintained and its status unknown.
- It might no longer compile, but getting it working again shouldn't
- be too hard.
 </para>
 
 <![%p-supp-userman;[

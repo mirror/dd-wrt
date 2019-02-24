@@ -1,6 +1,5 @@
 #ifndef CGI_H_INCLUDED
 #define CGI_H_INCLUDED
-#define CGI_H_VERSION "$Id: cgi.h,v 1.42 2012/11/09 10:47:42 fabiankeil Exp $"
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/cgi.h,v $
@@ -121,10 +120,6 @@ extern const char image_pattern_data[];
 extern const size_t  image_pattern_length;
 extern const char image_blank_data[];
 extern const size_t  image_blank_length;
-
-/* Revision control strings from this header and associated .c file */
-extern const char cgi_rcs[];
-extern const char cgi_h_rcs[];
 
 #endif /* ndef CGI_H_INCLUDED */
 
