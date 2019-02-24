@@ -3088,8 +3088,17 @@ void start_drivers(void)
 
 		mount("devpts", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL);
 	} else {
+		eval("stopservice", "cron");
 		eval("stopservice", "samba3");
+		eval("stopservice", "nfs");
+		eval("stopservice", "dlna");
 		eval("stopservice", "ftpsrv");
+#ifdef HAVE_WEBSERVER
+		eval("stopservice", "lighttpd");
+#endif
+#ifdef HAVE_TRANSMISSION
+		eval("stopservice", "transmission");
+#endif
 		sysprintf("umount /%s", nvram_default_get("usb_mntpoint", "mnt"));
 		rmmod("phy-qcom-hsusb");
 		rmmod("phy-qcom-ssusb");
@@ -3164,6 +3173,17 @@ void start_drivers(void)
 
 		led_control(LED_USB, LED_OFF);
 		led_control(LED_USB1, LED_OFF);
+		eval("startservice_f", "cron");
+		eval("startservice_f", "samba3");
+		eval("startservice_f", "nfs");
+		eval("startservice_f", "dlna");
+		eval("startservice_f", "ftpsrv");
+#ifdef HAVE_WEBSERVER
+		eval("startservice_f", "lighttpd");
+#endif
+#ifdef HAVE_TRANSMISSION
+		eval("startservice_f", "transmission");
+#endif
 
 	}
 #endif
