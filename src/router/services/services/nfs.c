@@ -57,7 +57,8 @@ void start_nfs(void)
 				continue;	// if its not public, ignore until we implemented kerberos based user management for NFS4.
 			}
 			// we export only to local lan network now for security reasons. so know what you're doing
-			fprintf(fp, "%s/%s\t%s/%d%s\n", cs->mp, cs->sd, nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")), !strcmp(cs->access_perms, "ro") ? "(ro,no_subtree_check,no_root_squash,fsid=0)" : "(rw,no_subtree_check,no_root_squash,fsid=0)");
+			fprintf(fp, "%s/%s\t%s/%d%s\n", cs->mp, cs->sd, nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")),
+				!strcmp(cs->access_perms, "ro") ? "(ro,no_subtree_check,no_root_squash,fsid=0)" : "(rw,no_subtree_check,no_root_squash,fsid=0)");
 			csnext = cs->next;
 			free(cs);
 		}
