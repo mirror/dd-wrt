@@ -178,8 +178,6 @@ void start_dhcp6c(void)
 	char *wan_ifname = get_wan_face();
 	if (nvram_match("wan_priority", "1") && isvlan(wan_ifname)) {
 		eval("vconfig", "set_egress_map", wan_ifname, "6", "6");
-		eval("vconfig", "set_egress_map", wan_ifname, "0", "0");
-		eval("iptables", "-t", "mangle", "-A", "POSTROUTING", "-j", "CLASSIFY", "--set-class", "0:0");
 		eval("iptables", "-t", "mangle", "-A", "POSTROUTING", "-o", wan_ifname, "-p", "udp", "--dport", "67", "-j", "CLASSIFY", "--set-class", "0:6");
 	}
 
