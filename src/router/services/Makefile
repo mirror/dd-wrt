@@ -1057,6 +1057,10 @@ endif
 ifeq ($(CONFIG_TFTP),y)
 CFLAGS_EXTRA += -DHAVE_TFTP
 endif
+ifeq ($(CONFIG_NFS),y)
+CFLAGS_EXTRA += -DHAVE_NFS
+OBJS += nfs.o
+endif
 ifeq ($(CONFIG_ERC),y)
 CFLAGS_EXTRA += -DHAVE_ERC
 endif
