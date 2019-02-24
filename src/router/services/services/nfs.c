@@ -64,7 +64,7 @@ void start_nfs(void)
 	mkdir("/var/lib", 0777);
 	mkdir("/var/lib/nfs", 0777);
 	//rpc.mountd requires ipv6 support. so load the drivers
-	insmod("ipv6 tunnel4 ip_tunnel sit xfrm_algo esp6 ah6 mip6 tunnel6 ip6_tunnel xfrm6_mode_beet xfrm6_mode_ro xfrm6_mode_transport xfrm6_mode_tunnel xfrm6_tunnel xfrm_ipcomp ipcomp6");
+	insmod("ipv6");
 	insmod("oid_registry");
 	insmod("sunrpc");
 	insmod("auth_rpcgss");
