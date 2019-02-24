@@ -168,6 +168,14 @@ static void save2file_A_postrouting(const char *fmt, ...)
 	va_end(args);
 }
 
+static void save2file_I_postrouting(const char *fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+	va_save2file("-I POSTROUTING ", fmt, args);
+	va_end(args);
+}
+
 static void save2file_A_forward(const char *fmt, ...)
 {
 	va_list args;
@@ -2428,10 +2436,23 @@ static void mangle_table(char *wanface, char *wanaddr, char *vifs)
 	save2file("*mangle\n:PREROUTING ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]");
 
 	if (nvram_match("wan_priority", "1") && isvlan(wanface)) {
+		eval("vconfig", "set_egress_map", wanface, "0", "0");
+		eval("vconfig", "set_egress_map", wanface, "1", "0");
+		eval("vconfig", "set_egress_map", wanface, "2", "0");
+		eval("vconfig", "set_egress_map", wanface, "3", "0");
+		eval("vconfig", "set_egress_map", wanface, "4", "0");
+		eval("vconfig", "set_egress_map", wanface, "5", "0");
+		eval("vconfig", "set_egress_map", wanface, "6", "0");
+		eval("vconfig", "set_egress_map", wanface, "7", "0");
 		eval("vconfig", "set_egress_map", wanface, "6", "6");
-		save2file_A_postrouting("-o %s -p udp --dport 67 -j CLASSIFY --set-class 0:6", wanface);
+		save2file_I_postrouting("-o %s -p udp --dport 67 -j CLASSIFY --set-class 0000:0006", wanface);
+		save2file_I_postrouting("-o %s -m dscp --dscp 0x2e -j CLASSIFY --set-class 0000:0005", wanface); // voip
+		save2file_I_postrouting("-o %s -p icmp -j CLASSIFY --set-class 0000:0006", wanface);
+		save2file_I_postrouting("-o %s -p igmp -j CLASSIFY --set-class 0000:0006", wanface);
+		save2file_I_postrouting("-o %s -j CLASSIFY --set-class 0000:0001", wanface);
+
 	}
-	if (strcmp(get_wan_face(), "wwan0")) {
+	if (strcmp(wanface, "wwan0")) {
 
 		if (wanactive(wanaddr) && (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off"))) {
 			insmod("ipt_mark xt_mark ipt_CONNMARK xt_CONNMARK xt_connmark");
