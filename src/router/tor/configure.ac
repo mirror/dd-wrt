@@ -1,10 +1,10 @@
 dnl Copyright (c) 2001-2004, Roger Dingledine
 dnl Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson
-dnl Copyright (c) 2007-2018, The Tor Project, Inc.
+dnl Copyright (c) 2007-2019, The Tor Project, Inc.
 dnl See LICENSE for licensing information
 
 AC_PREREQ([2.63])
-AC_INIT([tor],[0.3.5.7])
+AC_INIT([tor],[0.3.5.8])
 AC_CONFIG_SRCDIR([src/app/main/tor_main.c])
 AC_CONFIG_MACRO_DIR([m4])
 

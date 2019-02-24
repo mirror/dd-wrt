@@ -1,4 +1,4 @@
-/* Copyright (c) 2017-2018, The Tor Project, Inc. */
+/* Copyright (c) 2017-2019, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #define SCHEDULER_KIST_PRIVATE
@@ -286,7 +286,7 @@ update_socket_info_impl, (socket_table_ent_t *ent))
   extra_space =
     clamp_double_to_int64(
                  (ent->cwnd * (int64_t)ent->mss) * sock_buf_size_factor) -
-    ent->notsent;
+    ent->notsent - (int64_t)channel_outbuf_length((channel_t *) ent->chan);
   if ((tcp_space + extra_space) < 0) {
     /* This means that the "notsent" queue is just too big so we shouldn't put
      * more in the kernel for now. */

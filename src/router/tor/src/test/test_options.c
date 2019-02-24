@@ -1,6 +1,6 @@
 /* Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2018, The Tor Project, Inc. */
+ * Copyright (c) 2007-2019, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #define CONFIG_PRIVATE
@@ -22,6 +22,10 @@
 #include "core/or/policies.h"
 #include "test/test_helpers.h"
 #include "lib/net/resolve.h"
+
+#ifdef HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif
 
 #define NS_MODULE test_options
 

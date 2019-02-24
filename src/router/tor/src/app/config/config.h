@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2018, The Tor Project, Inc. */
+ * Copyright (c) 2007-2019, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -142,6 +142,16 @@ MOCK_DECL(char *,
   options_get_cachedir_fname2_suffix(get_options(), (sub1), NULL, NULL)
 #define get_cachedir_fname_suffix(sub1, suffix) \
   options_get_cachedir_fname2_suffix(get_options(), (sub1), NULL, (suffix))
+
+#define safe_str_client(address) \
+  safe_str_client_opts(NULL, address)
+#define safe_str(address) \
+  safe_str_opts(NULL, address)
+
+const char * safe_str_client_opts(const or_options_t *options,
+                                  const char *address);
+const char * safe_str_opts(const or_options_t *options,
+                           const char *address);
 
 int using_default_dir_authorities(const or_options_t *options);
 

@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2018, The Tor Project, Inc. */
+ * Copyright (c) 2007-2019, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -89,8 +89,9 @@ int networkstatus_consensus_reasonably_live(const networkstatus_t *consensus,
                                             time_t now);
 int networkstatus_valid_until_is_reasonably_live(time_t valid_until,
                                                  time_t now);
-networkstatus_t *networkstatus_get_reasonably_live_consensus(time_t now,
-                                                             int flavor);
+MOCK_DECL(networkstatus_t *,networkstatus_get_reasonably_live_consensus,
+                                                        (time_t now,
+                                                         int flavor));
 MOCK_DECL(int, networkstatus_consensus_is_bootstrapping,(time_t now));
 int networkstatus_consensus_can_use_multiple_directories(
                                                 const or_options_t *options);

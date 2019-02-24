@@ -1,4 +1,4 @@
-/* Copyright (c) 2010-2018, The Tor Project, Inc. */
+/* Copyright (c) 2010-2019, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #include "orconfig.h"
@@ -788,7 +788,9 @@ test_rend_cache_clean(void *data)
   desc_two->pk = pk_generate(1);
 
   strmap_set_lc(rend_cache, "foo1", one);
+  rend_cache_increment_allocation(rend_cache_entry_allocation(one));
   strmap_set_lc(rend_cache, "foo2", two);
+  rend_cache_increment_allocation(rend_cache_entry_allocation(two));
 
   rend_cache_clean(time(NULL), REND_CACHE_TYPE_CLIENT);
   tt_int_op(strmap_size(rend_cache), OP_EQ, 0);
@@ -806,7 +808,9 @@ test_rend_cache_clean(void *data)
   desc_one->pk = pk_generate(0);
   desc_two->pk = pk_generate(1);
 
+  rend_cache_increment_allocation(rend_cache_entry_allocation(one));
   strmap_set_lc(rend_cache, "foo1", one);
+  rend_cache_increment_allocation(rend_cache_entry_allocation(two));
   strmap_set_lc(rend_cache, "foo2", two);
 
   rend_cache_clean(time(NULL), REND_CACHE_TYPE_CLIENT);
