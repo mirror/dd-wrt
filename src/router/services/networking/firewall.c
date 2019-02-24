@@ -2428,9 +2428,9 @@ static void mangle_table(char *wanface, char *wanaddr, char *vifs)
 	save2file("*mangle\n:PREROUTING ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]");
 
 	if (nvram_match("wan_priority", "1") && isvlan(wanface)) {
-		eval("vconfig", "set_egress_map", wanface, "0", "6");
-		eval("vconfig", "set_egress_map", wanface, "1", "0");
-		save2file_A_postrouting("-j CLASSIFY --set-class 1:0");
+		eval("vconfig", "set_egress_map", wanface, "6", "6");
+		eval("vconfig", "set_egress_map", wanface, "0", "0");
+		save2file_A_postrouting("-j CLASSIFY --set-class 0:0");
 		save2file_A_postrouting("-o %s -p udp --dport 67 -j CLASSIFY --set-class 0:6", wanface);
 	}
 	if (strcmp(get_wan_face(), "wwan0")) {
