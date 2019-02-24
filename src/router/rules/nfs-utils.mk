@@ -29,3 +29,5 @@ nfs-utils-install:
 	mkdir -p $(INSTALLDIR)/nfs-utils/etc
 	rm -f $(INSTALLDIR)/nfs-utils/etc/exports
 	-cd $(INSTALLDIR)/nfs-utils/etc && ln -s /tmp/exports exports
+	install -D nfs-utils/config/samba3.webnas $(INSTALLDIR)/nfs-utils/etc/config/nfs.webnas
+	install -D nfs-utils/config/samba3.nvramconfig $(INSTALLDIR)/nfs-utils/etc/config/nfs.nvramconfig
