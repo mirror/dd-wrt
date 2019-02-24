@@ -487,104 +487,184 @@ void ej_startswith(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-static char *s_conditions[] = {
+typedef struct defrule {
+	char *name;
+	int (*rulefn) (char *name);
+};
+
+static int rule_ismini(char *name)
+{
+	if (startswith(nvram_safe_get("dist_type"), "mini")) {
+		return 1;
+	}
+	return 0;
+
+}
+
+static int rule_isvpn(char *name)
+{
+	if (startswith(nvram_safe_get("dist_type"), "vpn")) {
+		return 1;
+	}
+}
+
+static int rule_iswet(char *name)
+{
+	return getWET()? 1 : 0;
+}
+
+static int rule_issta(char *name)
+{
+	return getSTA()? 1 : 0;
+}
+
+static int rule_haswifi(char *name)
+{
+	return haswifi()? 1 : 0;
+}
+
+static int rule_wanvlan(char *name)
+{
+	char *wan_iface = nvram_safe_get("wan_ifname");
+	if (!*wan_iface)
+		wan_iface = nvram_safe_get("wan_ifname2");
+	return isvlan(wan_iface);
+
+}
+
+static int rule_afterburner(char *name)
+{
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+	int afterburner = 0;
+	char cap[WLC_IOCTL_SMLEN];
+	char caps[WLC_IOCTL_SMLEN];
+	char *ifname;
+	name = name + 11;
+	if (!strncmp(name, "_wl0", 4))
+		ifname = nvram_safe_get("wl0_ifname");
+	else if (!strncmp(name, "_wl1", 4))
+		ifname = nvram_safe_get("wl1_ifname");
+	else			// "_wl1"
+		ifname = nvram_safe_get("wl2_ifname");
+	char *next;
+
+	if (wl_iovar_get(ifname, "cap", (void *)caps, WLC_IOCTL_SMLEN)
+	    == 0) {
+		foreach(cap, caps, next) {
+			if (!strcmp(cap, "afterburner"))
+				return 1;
+		}
+	}
+#endif
+	return 0;
+
+}
+
+static struct defrule s_conditions[] = {
 #ifdef HAVE_MICRO
-	"MICRO",
+	{"MICRO", NULL},
 #endif
 #ifdef HAVE_EXTHELP
-	"EXTHELP",
+	{"EXTHELP", NULL},
 #endif
 #ifdef HAVE_MULTICAST
-	"MULTICAST",
+	{"MULTICAST", NULL},
 #endif
 #ifdef HAVE_SNMP
-	"SNMP",
+	{"SNMP", NULL},
 #endif
 #ifdef HAVE_WIVIZ
-	"WIVIZ",
+	{"WIVIZ", NULL},
 #endif
 #ifdef HAVE_RSTATS
-	"RSTATS",
+	{"RSTATS", NULL},
 #endif
 #ifdef HAVE_ACK
-	"ACK",
+	{"ACK", NULL},
 #endif
 #ifdef HAVE_SSHD
-	"SSHD",
+	{"SSHD", NULL},
 #endif
 #ifdef HAVE_PPTPD
-	"PPTPD",
+	{"PPTPD", NULL},
 #endif
 #ifdef HAVE_QUAGGA
-	"QUAGGA",
+	{"QUAGGA", NULL},
 #endif
 #ifdef HAVE_SAMBA
-	"SAMBA",
+	{"SAMBA", NULL},
 #endif
 #ifdef HAVE_SAMBA3
-	"SAMBA3",
+	{"SAMBA3", NULL},
 #endif
 #ifdef HAVE_JFFS2
-	"JFFS2",
+	{"JFFS2", NULL},
 #endif
 #ifdef HAVE_GPSI
-	"GPSI",
+	{"GPSI", NULL},
 #endif
 #ifdef HAVE_MMC
-	"MMC",
+	{"MMC", NULL},
 #endif
 #ifdef HAVE_SPUTNIK_APD
-	"SPUTNIK_APD",
+	{"SPUTNIK_APD", NULL},
 #endif
 #ifdef HAVE_RFLOW
-	"RFLOW",
+	{"RFLOW", NULL},
 #endif
 #ifdef HAVE_USB
-	"USB",
+	{"USB", NULL},
 #endif
 #ifdef HAVE_RADIUSPLUGIN
-	"RADIUSPLUGIN",
+	{"RADIUSPLUGIN", NULL},
 #endif
 #ifdef HAVE_PPPOESERVER
-	"PPPOESERVER",
+	{"PPPOESERVER", NULL},
 #endif
 #ifdef HAVE_MILKFISH
-	"MILKFISH",
+	{"MILKFISH", NULL},
 #endif
 #ifdef HAVE_LANGUAGE
-	"LANGUAGE",
+	{"LANGUAGE", NULL},
 #endif
 #ifdef HAVE_BUFFALO
-	"HAVE_BUFFALO",
+	{"HAVE_BUFFALO", NULL},
 #endif
 #ifdef HAVE_WPS
-	"HAVE_WPS",
+	{"HAVE_WPS", NULL},
 #endif
 #ifdef HAVE_IPV6
-	"HAVE_IPV6",
+	{"HAVE_IPV6", NULL},
 #endif
 #ifdef HAVE_ATH9K
-	"HAVE_ATH9K",
+	{"HAVE_ATH9K", NULL},
 #endif
 #ifdef HAVE_USBIP
-	"USBIP",
+	{"USBIP", NULL},
 #endif
 #ifdef HAVE_80211AC
-	"80211AC",
+	{"80211AC", NULL},
 #endif
 #ifdef HAVE_DNSSEC
-	"DNSSEC",
+	{"DNSSEC", NULL},
 #endif
 #ifdef HAVE_DNSCRYPT
-	"DNSCRYPT",
+	{"DNSCRYPT", NULL},
 #endif
 #if defined(HAVE_BKM) || defined(HAVE_TMK)
-	"MULTISIM",
+	{"MULTISIM", NULL},
 #endif
 #ifdef HAVE_ATH9K
-	"MAC80211",
+	{"MAC80211", NULL},
 #endif
-	NULL
+	{"MINI", rule_ismini},
+	{"VPN", rule_isvpn},
+	{"WET", rule_iswet},
+	{"WET", rule_issta},
+	{"WANVLAN", rule_wanvlan},
+	{"HASWIFI", rule_haswifi},
+	{"AFTERBURNER", rule_afterburner},
+	{NULL, NULL}
 };
 
 void ej_ifdef(webs_t wp, int argc, char_t ** argv)
@@ -594,42 +674,15 @@ void ej_ifdef(webs_t wp, int argc, char_t ** argv)
 	name = argv[0];
 	output = argv[1];
 	int cnt = 0;
-	while (s_conditions[cnt]) {
-		if (!strcmp(name, s_conditions[cnt++])) {
+	while (s_conditions[cnt].name) {
+		if (!strcmp(name, s_conditions[cnt].name)) {
+			if (s_conditions[cnt].rulefn && !s_conditions[cnt].rulefn(name)) {
+				return;
+			}
 			websWrite(wp, output);
 			return;
 		}
-	}
-
-	if (!strcmp(name, "MINI"))	// to include mini + mini-special
-	{
-		if (startswith(nvram_safe_get("dist_type"), "mini")) {
-			websWrite(wp, output);
-			return;
-		}
-	}
-	if (!strcmp(name, "VPN"))	// to include vpn + vpn-special
-	{
-		if (startswith(nvram_safe_get("dist_type"), "vpn")) {
-			websWrite(wp, output);
-			return;
-		}
-	}
-	if (!strcmp(name, "WET")) {
-		if (getWET())
-			websWrite(wp, output);
-		return;
-	}
-	if (!strcmp(name, "STA")) {
-		if (getSTA())
-			websWrite(wp, output);
-		return;
-	}
-
-	if (!strcmp(name, "WANVLAN")) {
-		if (isvlan(get_wan_face()))
-			websWrite(wp, output);
-		return;
+		cnt++;
 	}
 
 	return;
@@ -643,65 +696,17 @@ void ej_ifndef(webs_t wp, int argc, char_t ** argv)
 	output = argv[1];
 
 	int cnt = 0;
-	while (s_conditions[cnt]) {
-		if (!strcmp(name, s_conditions[cnt++])) {
-			return;
-		}
-	}
-
-	// HAVE_AFTERBURNER
-	if (!strncmp(name, "AFTERBURNER", 11)) {
-#if defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
-		return;
-#else
-		int afterburner = 0;
-		char cap[WLC_IOCTL_SMLEN];
-		char caps[WLC_IOCTL_SMLEN];
-		char *ifname;
-		name = name + 11;
-		if (!strncmp(name, "_wl0", 4))
-			ifname = nvram_safe_get("wl0_ifname");
-		else if (!strncmp(name, "_wl1", 4))
-			ifname = nvram_safe_get("wl1_ifname");
-		else		// "_wl1"
-			ifname = nvram_safe_get("wl2_ifname");
-		char *next;
-
-		if (wl_iovar_get(ifname, "cap", (void *)caps, WLC_IOCTL_SMLEN)
-		    == 0) {
-			foreach(cap, caps, next) {
-				if (!strcmp(cap, "afterburner"))
-					afterburner = 1;
-			}
-
-			if (afterburner)
+	while (s_conditions[cnt].name) {
+		if (!strcmp(name, s_conditions[cnt].name)) {
+			if (!s_conditions[cnt].rulefn || (s_conditions[cnt].rulefn && s_conditions[cnt].rulefn(name))) {
 				return;
+			}
+			websWrite(wp, output);
+			return;
 		}
-#endif
+		cnt++;
 	}
-	// end HAVE_AFTERBURNER
-	// HAVE_HASWIFI
-	if (!strcmp(name, "HASWIFI")) {
-		if (haswifi())
-			return;
-	}
-	// end HAVE_HASWIFI
-	if (!strcmp(name, "WET")) {
-		if (getWET())
-			return;
-	}
-	if (!strcmp(name, "STA")) {
-		if (getSTA())
-			return;
-	}
-
-	if (!strcmp(name, "WANVLAN")) {
-		if (isvlan(get_wan_face()))
-			return;
-	}
-
 	websWrite(wp, output);
-
 	return;
 }
 
