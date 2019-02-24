@@ -1,6 +1,6 @@
 /* Copyright (c) 2003-2004, Roger Dingledine
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2018, The Tor Project, Inc. */
+ * Copyright (c) 2007-2019, The Tor Project, Inc. */
 
 #include "lib/cc/torint.h"
 #include "lib/net/socketpair.h"
@@ -62,7 +62,7 @@ get_local_listener(int family, int type)
     len = sizeof(sin);
   } else {
     sa = (struct sockaddr *) &sin6;
-    sin6.sin6_family = AF_INET;
+    sin6.sin6_family = AF_INET6;
     sin6.sin6_addr.s6_addr[15] = 1;
     len = sizeof(sin6);
   }

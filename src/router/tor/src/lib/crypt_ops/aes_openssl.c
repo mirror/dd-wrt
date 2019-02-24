@@ -1,7 +1,7 @@
 /* Copyright (c) 2001, Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2018, The Tor Project, Inc. */
+ * Copyright (c) 2007-2019, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -43,7 +43,7 @@ ENABLE_GCC_WARNING(redundant-decls)
 #include "lib/log/log.h"
 #include "lib/ctime/di_ops.h"
 
-#ifdef ANDROID
+#ifdef OPENSSL_NO_ENGINE
 /* Android's OpenSSL seems to have removed all of its Engine support. */
 #define DISABLE_ENGINES
 #endif
