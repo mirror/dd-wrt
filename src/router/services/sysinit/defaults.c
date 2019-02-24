@@ -3474,6 +3474,9 @@ struct nvram_param srouter_defaults[] = {
 	{"proftpd_acctserverport", "1813"},
 	{"proftpd_sharedkey", ""},
 #endif
+#ifdef HAVE_NFS
+	{"nfs_enable", "0"},
+#endif
 #ifdef HAVE_SAMBA3
 	{"samba3_enable", "0"},
 	{"samba3_pub", "0"},
