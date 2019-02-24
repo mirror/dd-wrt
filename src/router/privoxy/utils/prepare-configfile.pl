@@ -51,6 +51,13 @@ sub main() {
             s/^\s+/ /;
             $unfold_mode = 0;
         } else {
+            if ( $hit_option ) {
+               # processing a continuation of a @@ line
+               if ( /^\s*$/ ) { # blank line
+                  $hit_option = 0;
+                  next;
+               }
+            }
             s/^/#  /;
         }
         if ($unfolding_enabled and
@@ -62,8 +69,6 @@ sub main() {
         # XXX: someone should figure out what this stuff
         # is supposed to do (and if it really does that).
         s/^#  #/####/ if /^#  #{12,}/;
-        s/^.*$// if $hit_option;
-        $hit_option = 0;
         s/^\n//;
         s/^#\s*-{20,}//;
         s/ *$//;

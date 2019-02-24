@@ -1,7 +1,5 @@
 #ifndef PROJECT_H_INCLUDED
 #define PROJECT_H_INCLUDED
-/** Version string. */
-#define PROJECT_H_VERSION "$Id: project.h,v 1.223 2017/06/26 12:13:52 fabiankeil Exp $"
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/project.h,v $
@@ -90,10 +88,6 @@
 #    include <pcreposix.h>
 #  endif
 #endif
-
-#ifdef AMIGA
-#include "amiga.h"
-#endif /* def AMIGA */
 
 #ifdef _WIN32
 /*
@@ -507,6 +501,8 @@ struct iob
 #define ACTION_HIDE_ACCEPT_LANGUAGE                  0x04000000UL
 /** Action bitmap: Limit the cookie lifetime */
 #define ACTION_LIMIT_COOKIE_LIFETIME                 0x08000000UL
+/** Action bitmap: Delay writes */
+#define ACTION_DELAY_RESPONSE                        0x10000000UL
 
 
 /** Action string index: How to deanimate GIFs */
@@ -547,8 +543,10 @@ struct iob
 #define ACTION_STRING_CHANGE_X_FORWARDED_FOR 17
 /** Action string index: how many minutes cookies should be valid. */
 #define ACTION_STRING_LIMIT_COOKIE_LIFETIME 18
+/** Action string index: how many milliseconds writes should be delayed. */
+#define ACTION_STRING_DELAY_RESPONSE       19
 /** Number of string actions. */
-#define ACTION_STRING_COUNT                19
+#define ACTION_STRING_COUNT                20
 
 
 /* To make the ugly hack in sed easier to understand */

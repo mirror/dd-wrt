@@ -5,7 +5,6 @@ Current Privoxy Team:
 
  Fabian Keil, lead developer
  David Schmidt
- Hal Burgiss
  Lee Rian
  Roland Rosenfeld
  Ian Silvester
@@ -15,6 +14,7 @@ Former Privoxy Team Members:
  Johny Agotnes
  Rodrigo Barbosa
  Moritz Barsnick
+ Hal Burgiss
  Ian Cummings
  Brian Dessent
  Jon Foster
@@ -48,6 +48,7 @@ include (in alphabetical order):
  Natxo Asenjo
  Devin Bayer
  Havard Berland
+ David Binderman
  David Bo
  Gergely Bor
  Francois Botha

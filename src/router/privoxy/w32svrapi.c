@@ -1,4 +1,3 @@
-const char w32_svrapi_rcs[] = "$Id: w32svrapi.c,v 1.5 2011/09/04 11:10:56 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/w32svrapi.c,v $
@@ -64,8 +63,6 @@ const char w32_svrapi_rcs[] = "$Id: w32svrapi.c,v 1.5 2011/09/04 11:10:56 fabian
 #endif /* ndef _WIN_CONSOLE */
 
 #include "w32svrapi.h"
-const char w32_svrapi_h_rcs[] = W32_SVRAPI_H_VERSION;
-
 
 /* Only the ANSI Win32 APIs are used at this time. If for some
  * reason, we're building under unicode then we must stop

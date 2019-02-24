@@ -1,8 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 dnl
-dnl $Id: configure.in,v 1.213 2017/05/25 11:17:11 fabiankeil Exp $
-dnl
-dnl Written by and Copyright (C) 2001-2017 the
+dnl Written by and Copyright (C) 2001-2018 the
 dnl Privoxy team. https://www.privoxy.org/
 dnl
 dnl Based on the Internet Junkbuster originally written
@@ -78,12 +76,12 @@ dnl =================================================================
 
 VERSION_MAJOR=3
 VERSION_MINOR=0
-VERSION_POINT=27
-CODE_STATUS="UNRELEASED"
+VERSION_POINT=28
+CODE_STATUS="stable"
 
 dnl Timestamp (date +%s) used by the mtree-spec target.
 dnl Should be updated before releases but forgetting it isn't critical.
-SOURCE_DATE_EPOCH=1494070262
+SOURCE_DATE_EPOCH=1545411710
 
 dnl CODE_STATUS can be "alpha", "beta", "stable" or "UNRELEASED",
 dnl and will be used for CGI output. Increment version number and
@@ -308,6 +306,9 @@ if test $target_type = mingw; then
   WIN_ONLY=
   CFLAGS="$CFLAGS -DWINVER=0x501"
   SPECIAL_CFLAGS="-mwindows"
+dnl from the cygwin FAQ: The regular setup allows you to use the -mwindows option
+dnl to include a set of the basic libraries user32, gdi32 and comdlg32.
+dnl (and also make your program a GUI program instead of a console program)
   PTHREAD_LIB=-lpthread
   echo "Using mingw32 (Win32 GUI)"
 else
@@ -348,9 +349,15 @@ if test $RPMBIN != false; then
 fi
 AC_SUBST(RPM_BASE)
 
+dnl prefer openjade to jade
 dnl Check for jade, so we can build the documentation
-AC_CHECK_PROGS(JADEBIN,jade openjade,false)
+AC_CHECK_PROGS(JADEBIN,openjade jade,false)
 AC_SUBST(JADEBIN)
+
+dnl Prefer OpenSP to SP
+dnl   ref: https://lists.privoxy.org/pipermail/privoxy-devel/2018-November/000293.html
+AC_CHECK_PROGS(NSGMLS,onsgmls nsgmls,false)
+AC_SUBST(NSGMLS)
 
 dnl Check for man2html for docs.
 AC_CHECK_PROGS(MAN2HTML,man2html,false)
@@ -700,19 +707,6 @@ case "$host" in
 esac
 
 dnl =================================================================
-dnl AmigaOS specific
-dnl =================================================================
-
-AMIGAOS_ONLY=#
-
-case "$host" in
-*-amigaos) AMIGAOS_ONLY=
-;;
-esac
-
-AC_SUBST(AMIGAOS_ONLY)
-
-dnl =================================================================
 dnl Haiku specific
 dnl =================================================================
 
@@ -793,6 +787,7 @@ AC_CHECK_FUNCS([ \
  memchr \
  memmove \
  memset \
+ nanosleep \
  poll \
  putenv \
  random \

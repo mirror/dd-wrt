@@ -1,4 +1,3 @@
-const char gateway_rcs[] = "$Id: gateway.c,v 1.103 2017/07/01 18:34:07 ler762 Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/gateway.c,v $
@@ -78,8 +77,6 @@ const char gateway_rcs[] = "$Id: gateway.c,v 1.103 2017/07/01 18:34:07 ler762 Ex
 #endif /* def __GLIBC__ */
 #endif /* HAVE_POLL */
 #endif /* def FEATURE_CONNECTION_KEEP_ALIVE */
-
-const char gateway_h_rcs[] = GATEWAY_H_VERSION;
 
 static jb_socket socks4_connect(const struct forward_spec * fwd,
                                 const char * target_host,

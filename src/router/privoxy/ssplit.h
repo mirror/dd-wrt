@@ -1,6 +1,5 @@
 #ifndef SSPLIT_H_INCLUDED
 #define SSPLIT_H_INCLUDED
-#define SSPLIT_H_VERSION "$Id: ssplit.h,v 1.12 2013/11/24 14:23:28 fabiankeil Exp $"
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/ssplit.h,v $
@@ -36,10 +35,6 @@
 
 
 extern int ssplit(char *str, const char *delim, char *vec[], size_t vec_len);
-
-/* Revision control strings from this header and associated .c file */
-extern const char ssplit_rcs[];
-extern const char ssplit_h_rcs[];
 
 #endif /* ndef SSPLIT_H_INCLUDED */
 

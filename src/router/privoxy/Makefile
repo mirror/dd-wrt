@@ -1,5 +1,3 @@
-# $Id: Makefile,v 1.11 2006/07/18 14:48:45 david__schmidt Exp $
-#
 # Written by and Copyright (C) 2001 the SourceForge
 # Privoxy team. http://www.privoxy.org/
 #

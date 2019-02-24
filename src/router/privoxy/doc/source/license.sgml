@@ -1,12 +1,10 @@
 <!--
- File        :  $Source: /cvsroot/ijbswa/current/doc/source/license.sgml,v $
+ File        :  doc/source/license.sgml
 
  Purpose     :  Entity included in other project documents.
 
- $Id: license.sgml,v 2.9 2013/03/01 17:42:16 fabiankeil Exp $
-
-  Copyright (C) 2001-2013 the Privoxy Developers https://www.privoxy.org/
-  See LICENSE.
+ Copyright (C) 2001-2018 the Privoxy Developers https://www.privoxy.org/
+ See LICENSE.
 
  ======================================================================
   This file used for inclusion with other documents only.

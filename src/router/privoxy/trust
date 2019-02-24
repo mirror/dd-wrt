@@ -1,9 +1,7 @@
 ######################################################################
 # 
-#  File        :  $Source: /cvsroot/ijbswa/current/trust,v $
+#  File        :  trust
 # 
-#  $Id: trust,v 1.5 2007/02/14 17:15:36 fabiankeil Exp $
-#
 #  Purpose     :  Trustfiles are an experimental feature and can be used
 #                 to build "whitelists" (versus the usual "blacklists"
 #                 techniques).

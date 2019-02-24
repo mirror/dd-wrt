@@ -1,4 +1,3 @@
-const char cgiedit_rcs[] = "$Id: cgiedit.c,v 1.88 2016/02/26 12:29:38 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/cgiedit.c,v $
@@ -70,8 +69,6 @@ const char cgiedit_rcs[] = "$Id: cgiedit.c,v 1.88 2016/02/26 12:29:38 fabiankeil
 #include "loadcfg.h"
 #endif /* def FEATURE_TOGGLE */
 #include "urlmatch.h"
-
-const char cgiedit_h_rcs[] = CGIEDIT_H_VERSION;
 
 
 #ifdef FEATURE_CGI_EDIT_ACTIONS
@@ -2836,7 +2833,7 @@ jb_err cgi_edit_actions_for_url(struct client_state *csp,
                char number[20];
                struct list_entry *filter_name;
                struct map *line_exports;
-               const int type = filter_group->type;
+               const enum filter_type type = filter_group->type;
                const int multi_action_index = filter_type_info[type].multi_action_index;
 
                assert(type < MAX_FILTER_TYPES);

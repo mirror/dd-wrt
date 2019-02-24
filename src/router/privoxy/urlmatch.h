@@ -1,6 +1,5 @@
 #ifndef URLMATCH_H_INCLUDED
 #define URLMATCH_H_INCLUDED
-#define URLMATCH_H_VERSION "$Id: urlmatch.h,v 1.20 2013/11/24 14:23:28 fabiankeil Exp $"
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/urlmatch.h,v $
@@ -57,11 +56,6 @@ extern jb_err create_pattern_spec(struct pattern_spec *url, char *buf);
 extern void free_pattern_spec(struct pattern_spec *url);
 extern int match_portlist(const char *portlist, int port);
 extern jb_err parse_forwarder_address(char *address, char **hostname, int *port);
-
-
-/* Revision control strings from this header and associated .c file */
-extern const char urlmatch_rcs[];
-extern const char urlmatch_h_rcs[];
 
 #endif /* ndef URLMATCH_H_INCLUDED */
 
