@@ -3,7 +3,7 @@
   <legend><% tran("service.nfs_srv"); %></legend>
 	<div class="setting">
 		<div class="label"><% tran("service.nfs_srv"); %></div>
-		<input class="spaceradio" type="radio" name="nfs_enable" value="1" <% nvram_checked("nfs_enable", "1"); %> <% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" name="nfs_enable" value="0" <% nvram_checked("nfs_enable", "0"); %> <% tran("share.disable"); %>
+		<input class="spaceradio" type="radio" name="nfs_enable" value="1" <% nvram_checked("nfs_enable", "1"); %> /> <% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="nfs_enable" value="0" <% nvram_checked("nfs_enable", "0"); %> /> <% tran("share.disable"); %>
 	</div>
 </fieldset><br />
