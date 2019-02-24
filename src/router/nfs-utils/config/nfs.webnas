@@ -1,6 +1,6 @@
 <h2><% tran("nas.nfs"); %></h2>
 <fieldset>
-  <legend><% tran("service.nfs_srv"); %></legend>
+  <legend><% tran("service.nfs"); %></legend>
 	<div class="setting">
 		<div class="label"><% tran("service.nfs_srv"); %></div>
 		<input class="spaceradio" type="radio" name="nfs_enable" value="1" <% nvram_checked("nfs_enable", "1"); %> /> <% tran("share.enable"); %>&nbsp;
