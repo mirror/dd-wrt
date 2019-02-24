@@ -838,6 +838,7 @@ nas.proftpd_anon="Anonymous Login (Read-only)";
 nas.proftpd_anon_dir="Anonymous Home Directory";
 nas.samba3_legend="File Sharing";
 nas.samba3="Samba Server";
+nas.nfs="Network File System Server";
 // ** DLNA **
 nas.dlna_legend="DLNA Server";
 nas.dlna_srv="MiniDLNA";
@@ -1960,6 +1961,7 @@ service.samba3_user_shares="Access Shares";
 service.dlna_type_audio="Audio";
 service.dlna_type_video="Video";
 service.dlna_type_images="Images";
+service.nfs="NFS";
 
 // SoftEther
 
