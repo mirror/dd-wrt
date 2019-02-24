@@ -137,7 +137,8 @@ static void set_stp_state(char *bridge, char *stp)
 #endif
 
 }
-void apply_bridgeif(char *ifname, char *realport) 
+
+void apply_bridgeif(char *ifname, char *realport)
 {
 	char stp[256];
 	char word[256];
@@ -164,8 +165,6 @@ void apply_bridgeif(char *ifname, char *realport)
 	}
 
 }
-
-
 
 void start_bridgesif(void)
 {
