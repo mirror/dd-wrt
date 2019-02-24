@@ -1,4 +1,4 @@
-/* Copyright (c) 2013-2018, The Tor Project, Inc. */
+/* Copyright (c) 2013-2019, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -31,6 +31,9 @@
 #endif
 #ifdef HAVE_SIGNAL_H
 #include <signal.h>
+#endif
+#ifdef HAVE_SYS_PARAM_H
+#include <sys/param.h>
 #endif
 #include <errno.h>
 #include <stdlib.h>

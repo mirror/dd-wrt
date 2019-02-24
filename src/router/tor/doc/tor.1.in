@@ -2,12 +2,12 @@
 .\"     Title: tor
 .\"    Author: [see the "AUTHORS" section]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 12/17/2018
+.\"      Date: 02/21/2019
 .\"    Manual: Tor Manual
 .\"    Source: Tor
 .\"  Language: English
 .\"
-.TH "TOR" "1" "12/17/2018" "Tor" "Tor Manual"
+.TH "TOR" "1" "02/21/2019" "Tor" "Tor Manual"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -2628,7 +2628,7 @@ To configure client authorization on the service side, the "<HiddenServiceDir>/a
 .RE
 .\}
 .sp
-The supported <auth\-type> are: "descriptor"\&. The supported <key\-type> are: "x25519"\&. The <base32\-encoded\-privkey> is the base32 representation of the raw key bytes only (32 bytes for x25519)\&.
+The supported <auth\-type> are: "descriptor"\&. The supported <key\-type> are: "x25519"\&. The <base32\-encoded\-public\-key> is the base32 representation of the raw key bytes only (32 bytes for x25519)\&.
 .sp
 Each file MUST contain one line only\&. Any malformed file will be ignored\&. Client authorization will only be enabled for the service if tor successfully loads at least one authorization file\&.
 .sp

@@ -1,6 +1,6 @@
 /* Copyright (c) 2003-2004, Roger Dingledine
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2018, The Tor Project, Inc. */
+ * Copyright (c) 2007-2019, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -27,6 +27,9 @@
 #endif
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
+#endif
+#ifdef HAVE_SYS_PARAM_H
+#include <sys/param.h>
 #endif
 
 #ifdef _WIN32
@@ -60,7 +63,7 @@ struct in6_addr
 /** @{ */
 /** Many BSD variants seem not to define these. */
 #if defined(__APPLE__) || defined(__darwin__) || \
-  defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+  defined(__FreeBSD__) || defined(__NetBSD__) || defined(OpenBSD)
 #ifndef s6_addr16
 #define s6_addr16 __u6_addr.__u6_addr16
 #endif

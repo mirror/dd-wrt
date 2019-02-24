@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2018, The Tor Project, Inc. */
+ * Copyright (c) 2007-2019, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -138,6 +138,9 @@
 #endif
 #ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
+#endif
+#ifdef HAVE_SYS_PARAM_H
+#include <sys/param.h>
 #endif
 
 #if defined(HAVE_NET_IF_H) && defined(HAVE_NET_PFVAR_H)
@@ -1352,6 +1355,21 @@ connection_ap_mark_as_non_pending_circuit(entry_connection_t *entry_conn)
     return;
   UNMARK();
   smartlist_remove(pending_entry_connections, entry_conn);
+}
+
+/** Mark <b>entry_conn</b> as waiting for a rendezvous descriptor. This
+ * function will remove the entry connection from the waiting for a circuit
+ * list (pending_entry_connections).
+ *
+ * This pattern is used across the code base because a connection in state
+ * AP_CONN_STATE_RENDDESC_WAIT must not be in the pending list. */
+void
+connection_ap_mark_as_waiting_for_renddesc(entry_connection_t *entry_conn)
+{
+  tor_assert(entry_conn);
+
+  connection_ap_mark_as_non_pending_circuit(entry_conn);
+  ENTRY_TO_CONN(entry_conn)->state = AP_CONN_STATE_RENDDESC_WAIT;
 }
 
 /* DOCDOC */

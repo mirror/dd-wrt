@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2018, The Tor Project, Inc. */
+ * Copyright (c) 2007-2019, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -130,6 +130,9 @@
 #endif
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
+#endif
+#ifdef HAVE_SYS_PARAM_H
+#include <sys/param.h>
 #endif
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -1083,10 +1086,14 @@ config_free_all(void)
  * (We return "[scrubbed]" if SafeLogging is "1", and address otherwise.)
  */
 const char *
-safe_str_client(const char *address)
+safe_str_client_opts(const or_options_t *options, const char *address)
 {
   tor_assert(address);
-  if (get_options()->SafeLogging_ == SAFELOG_SCRUB_ALL)
+  if (!options) {
+    options = get_options();
+  }
+
+  if (options->SafeLogging_ == SAFELOG_SCRUB_ALL)
     return "[scrubbed]";
   else
     return address;
@@ -1100,10 +1107,14 @@ safe_str_client(const char *address)
  * otherwise.)
  */
 const char *
-safe_str(const char *address)
+safe_str_opts(const or_options_t *options, const char *address)
 {
   tor_assert(address);
-  if (get_options()->SafeLogging_ != SAFELOG_SCRUB_NONE)
+  if (!options) {
+    options = get_options();
+  }
+
+  if (options->SafeLogging_ != SAFELOG_SCRUB_NONE)
     return "[scrubbed]";
   else
     return address;
@@ -2654,7 +2665,7 @@ print_usage(void)
   printf(
 "Copyright (c) 2001-2004, Roger Dingledine\n"
 "Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson\n"
-"Copyright (c) 2007-2018, The Tor Project, Inc.\n\n"
+"Copyright (c) 2007-2019, The Tor Project, Inc.\n\n"
 "tor -f <torrc> [args]\n"
 "See man page for options, or https://www.torproject.org/ for "
 "documentation.\n");

@@ -5381,8 +5381,8 @@ file name is irrelevant) and its content format MUST be:</p></div>
 <pre><code>&lt;auth-type&gt;:&lt;key-type&gt;:&lt;base32-encoded-public-key&gt;</code></pre>
 </div></div>
 <div class="paragraph"><p>The supported &lt;auth-type&gt; are: "descriptor". The supported &lt;key-type&gt; are:
-"x25519". The &lt;base32-encoded-privkey&gt; is the base32 representation of the raw
-key bytes only (32 bytes for x25519).</p></div>
+"x25519". The &lt;base32-encoded-public-key&gt; is the base32 representation of
+the raw key bytes only (32 bytes for x25519).</p></div>
 <div class="paragraph"><p>Each file MUST contain one line only. Any malformed file will be
 ignored. Client authorization will only be enabled for the service if tor
 successfully loads at least one authorization file.</p></div>
@@ -6378,7 +6378,7 @@ A short history of bandwidth usage, as produced in the server
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2018-12-11 14:40:49 UTC
+ 2019-01-22 13:04:55 UTC
 </div>
 </div>
 </body>

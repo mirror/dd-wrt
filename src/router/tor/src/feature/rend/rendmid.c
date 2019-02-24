@@ -1,5 +1,5 @@
 /* Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2018, The Tor Project, Inc. */
+ * Copyright (c) 2007-2019, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -230,9 +230,9 @@ rend_mid_establish_rendezvous(or_circuit_t *circ, const uint8_t *request,
            (unsigned)circ->p_circ_id);
 
   if (circ->base_.purpose != CIRCUIT_PURPOSE_OR) {
-    log_warn(LD_PROTOCOL,
-             "Tried to establish rendezvous on non-OR circuit with purpose %s",
-             circuit_purpose_to_string(circ->base_.purpose));
+    log_fn(LOG_PROTOCOL_WARN, LD_PROTOCOL,
+           "Tried to establish rendezvous on non-OR circuit with purpose %s",
+           circuit_purpose_to_string(circ->base_.purpose));
     goto err;
   }
 

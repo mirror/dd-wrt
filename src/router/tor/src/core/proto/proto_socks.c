@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2018, The Tor Project, Inc. */
+ * Copyright (c) 2007-2019, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #include "core/or/or.h"
@@ -450,17 +450,21 @@ parse_socks5_userpass_auth(const uint8_t *raw_data, socks_request_t *req,
     tor_free(req->username);
     req->username = tor_memdup_nulterm(username, usernamelen);
     req->usernamelen = usernamelen;
-
-    req->got_auth = 1;
   }
 
   if (passwordlen && password) {
     tor_free(req->password);
     req->password = tor_memdup_nulterm(password, passwordlen);
     req->passwordlen = passwordlen;
-
-    req->got_auth = 1;
   }
+
+  /**
+   * Yes, we allow username and/or password to be empty. Yes, that does
+   * violate RFC 1929. However, some client software can send a username/
+   * password message with these fields being empty and we want to allow them
+   * to be used with Tor.
+   */
+  req->got_auth = 1;
 
   end:
   socks5_client_userpass_auth_free(trunnel_req);
