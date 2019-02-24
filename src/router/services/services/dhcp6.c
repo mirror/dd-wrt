@@ -313,8 +313,5 @@ int dhcp6c_state_main(int argc, char **argv)
 		start_dhcp6s();
 	}
 
-	if (nvram_match("wan_priority", "1")) {
-		eval("vconfig", get_wan_face(), "set_egress_map", "0", "0");
-	}
 	return 0;
 }
