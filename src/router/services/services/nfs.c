@@ -51,7 +51,11 @@ void start_nfs(void)
 	if (fp) {
 		nfsshares = getsamba3shares();
 		for (cs = nfsshares; cs; cs = csnext) {
-			fprintf(fp, "%s/%s\t%s/%d\n", cs->mp, cs->sd, nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")));
+			if (!cs->public)
+				continue;	// if its not public, ignore until we implemented kerberos based user management for NFS4.
+
+			// we export only to local lan network now for security reasons. so know what you're doing
+			fprintf(fp, "%s/%s\t%s/%d%s\n", cs->mp, cs->sd, nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")), !strcmp(cs->access_perms, "ro") ? "(ro)" : "(rw)");
 			csnext = cs->next;
 			free(cs);
 		}
