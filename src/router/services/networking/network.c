@@ -459,9 +459,9 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int le
 		}
 	}
 	if (nvram_match("wan_priority", "1") && isvlan(wan_ifname)) {
-		eval("vconfig", "set_egress_map", wan_ifname, "0", "6");
-		eval("vconfig", "set_egress_map", wan_ifname, "1", "0");
-		eval("iptables", "-t", "mangle", "-A", "POSTROUTING", "-j", "CLASSIFY", "--set-class", "1:0");
+		eval("vconfig", "set_egress_map", wan_ifname, "6", "6");
+		eval("vconfig", "set_egress_map", wan_ifname, "0", "0");
+		eval("iptables", "-t", "mangle", "-A", "POSTROUTING", "-j", "CLASSIFY", "--set-class", "0:0");
 		eval("iptables", "-t", "mangle", "-A", "POSTROUTING", "-o", wan_ifname, "-p", "udp", "--dport", "67", "-j", "CLASSIFY", "--set-class", "0:6");
 	}
 	_evalpid(dhcp_argv, NULL, 0, &pid);
