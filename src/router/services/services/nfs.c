@@ -51,11 +51,13 @@ void start_nfs(void)
 	if (fp) {
 		nfsshares = getsamba3shares();
 		for (cs = nfsshares; cs; cs = csnext) {
-			if (!cs->public)
+			if (!cs->public) {
+				csnext = cs->next;
+				free(cs);
 				continue;	// if its not public, ignore until we implemented kerberos based user management for NFS4.
-
+			}
 			// we export only to local lan network now for security reasons. so know what you're doing
-			fprintf(fp, "%s/%s\t%s/%d%s\n", cs->mp, cs->sd, nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")), !strcmp(cs->access_perms, "ro") ? "(ro)" : "(rw)");
+			fprintf(fp, "%s/%s\t%s/%d%s\n", cs->mp, cs->sd, nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")), !strcmp(cs->access_perms, "ro") ? "(ro,no_subtree_check,no_root_squash,fsid=0)" : "(rw,no_subtree_check,no_root_squash,fsid=0)");
 			csnext = cs->next;
 			free(cs);
 		}
@@ -63,6 +65,7 @@ void start_nfs(void)
 	}
 	mkdir("/var/lib", 0777);
 	mkdir("/var/lib/nfs", 0777);
+	mkdir("/var/lib/nfs/v4recovery", 0777);
 	//rpc.mountd requires ipv6 support. so load the drivers
 	insmod("ipv6");
 	insmod("oid_registry");
@@ -90,8 +93,11 @@ void start_nfs(void)
 void stop_nfs(void)
 {
 	eval("exportfs", "-a", "-u");
-	eval("rpc.nfsd", "0");
-	stop_process("rpc.statd", "NSM Service Daemon");
-	stop_process("rpc.mountd", "NFS Mount Daemon");
+}
+#endif
+#ifdef TEST
+int main(int argc, char *argv[])
+{
+	start_nfs();
 }
 #endif
