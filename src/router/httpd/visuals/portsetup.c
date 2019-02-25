@@ -98,7 +98,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 
 		// qlen end
 		if (!isbridge) {
-			if (has_multicast_to_unicast(var)) {
+			if (has_multicast_to_unicast(var) && !nvram_nmatch("0", "%s_bridged", var)) {
 				char unicast[32];
 				sprintf(unicast, "%s_multicast_to_unicast", var);
 				nvram_default_get(unicast, "0");
