@@ -2104,6 +2104,12 @@ static void showbridgesettings(webs_t wp, char *var, int mcast, int dual)
 
 	strcpy(vvar, var);
 	rep(vvar, '.', 'X');
+	if (has_multicast_to_unicast(var)) {
+		char unicast[32];
+		sprintf(unicast, "%s_multicast_to_unicast", var);
+		nvram_default_get(unicast, "0");
+		showRadio(wp, "networking.unicast", unicast);
+	}
 	websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.network)</script></div>\n");
 	websWrite(wp,
 		  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idnetvifs', true);\" name=\"%s_bridged\" %s><script type=\"text/javascript\">Capture(wl_basic.unbridged)</script></input>&nbsp;\n",
@@ -2121,12 +2127,6 @@ static void showbridgesettings(webs_t wp, char *var, int mcast, int dual)
 		nvram_default_get(mcastvar, "0");
 		showRadio(wp, "wl_basic.multicast", mcastvar);
 
-		if (has_multicast_to_unicast(var)) {
-			char unicast[32];
-			sprintf(unicast, "%s_multicast_to_unicast", var);
-			nvram_default_get(unicast, "0");
-			showRadio(wp, "networking.unicast", unicast);
-		}
 	}
 	if (has_gateway()) {
 		char natvar[32];
