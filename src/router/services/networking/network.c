@@ -464,9 +464,9 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int le
 		eval("iptables", "-t", "mangle", "-A", "POSTROUTING", "-o", wan_ifname, "-j", "CLASSIFY", "--set-class", "0:1");
 		eval("iptables", "-t", "mangle", "-A", "POSTROUTING", "-o", wan_ifname, "-p", "udp", "--dport", "67", "-j", "CLASSIFY", "--set-class", "0:0");
 		eval("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-o", wan_ifname, "-j", "CLASSIFY", "--set-class", "0:1");
-		eval("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-o", wan_ifname, "-p", "udp", "--dport", "67", "-j", "CLASSIFY", "--set-class", "0:0");
+		eval("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-o", wan_ifname, "-p", "udp", "--dport", "547", "-j", "CLASSIFY", "--set-class", "0:0");
 		eval("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-o", wan_ifname, "-j", "CLASSIFY", "--set-class", "0:1");
-		eval("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-o", wan_ifname, "-p", "udp", "--dport", "67", "-j", "CLASSIFY", "--set-class", "0:0");
+		eval("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-o", wan_ifname, "-p", "udp", "--dport", "547", "-j", "CLASSIFY", "--set-class", "0:0");
 
 	}
 	_evalpid(dhcp_argv, NULL, 0, &pid);

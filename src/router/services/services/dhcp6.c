@@ -182,9 +182,9 @@ void start_dhcp6c(void)
 		eval("iptables", "-t", "mangle", "-A", "POSTROUTING", "-o", wan_ifname, "-j", "CLASSIFY", "--set-class", "0:1");
 		eval("iptables", "-t", "mangle", "-A", "POSTROUTING", "-o", wan_ifname, "-p", "udp", "--dport", "67", "-j", "CLASSIFY", "--set-class", "0:0");
 		eval("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-o", wan_ifname, "-j", "CLASSIFY", "--set-class", "0:1");
-		eval("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-o", wan_ifname, "-p", "udp", "--dport", "67", "-j", "CLASSIFY", "--set-class", "0:0");
+		eval("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-o", wan_ifname, "-p", "udp", "--dport", "547", "-j", "CLASSIFY", "--set-class", "0:0");
 		eval("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-o", wan_ifname, "-j", "CLASSIFY", "--set-class", "0:1");
-		eval("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-o", wan_ifname, "-p", "udp", "--dport", "67", "-j", "CLASSIFY", "--set-class", "0:0");
+		eval("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-o", wan_ifname, "-p", "udp", "--dport", "547", "-j", "CLASSIFY", "--set-class", "0:0");
 
 	}
 
