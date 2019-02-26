@@ -196,11 +196,7 @@ void ej_nvram_get(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_nvg(webs_t wp, int argc, char_t ** argv)
-{
-	ej_nvram_get(wp, argc, argv);
-	return;
-}
+EJALIAS(ej_nvram_get, ej_nvg);
 
 void ej_nvram_real_get(webs_t wp, int argc, char_t ** argv)
 {
@@ -396,11 +392,7 @@ void ej_nvram_selmatch(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_nvsm(webs_t wp, int argc, char_t ** argv)
-{
-	ej_nvram_selmatch(wp, argc, argv);
-	return;
-}
+EJALIAS(ej_nvram_selmatch, ej_nvsm);
 
 void ej_nvram_else_selmatch(webs_t wp, int argc, char_t ** argv)
 {
@@ -472,11 +464,7 @@ void ej_nvram_else_match(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_nvem(webs_t wp, int argc, char_t ** argv)
-{
-	ej_nvram_else_match(wp, argc, argv);
-	return;
-}
+EJALIAS(ej_nvram_else_match, ej_nvem);
 
 void ej_startswith(webs_t wp, int argc, char_t ** argv)
 {
@@ -725,11 +713,7 @@ void ej_nvram_match(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_nvm(webs_t wp, int argc, char_t ** argv)
-{
-	ej_nvram_match(wp, argc, argv);
-	return;
-}
+EJALIAS(ej_nvram_match, ej_nvm);
 
 /*
  * Example:
@@ -744,11 +728,7 @@ void ej_nvram_invmatch(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_nvim(webs_t wp, int argc, char_t ** argv)
-{
-	ej_nvram_invmatch(wp, argc, argv);
-	return;
-}
+EJALIAS(ej_nvram_invmatch, ej_nvim);
 
 /*
  * Example:
@@ -2175,12 +2155,7 @@ void ej_nvram_checked(webs_t wp, int argc, char_t ** argv)
 
 	return;
 }
-
-void ej_nvc(webs_t wp, int argc, char_t ** argv)
-{
-	ej_nvram_checked(wp, argc, argv);
-	return;
-}
+EJALIAS(ej_nvram_checked, nvc);
 
 void ej_nvram_checked_js(webs_t wp, int argc, char_t ** argv)
 {
