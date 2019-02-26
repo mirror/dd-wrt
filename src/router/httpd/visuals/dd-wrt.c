@@ -2493,7 +2493,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 #endif				// end BUFFALO
 		sprintf(ssid, "%s_ap_isolate", var);
 		showRadio(wp, "wl_adv.label11", ssid);
-#ifdef HAVE_80211AC
+#if 0 //def HAVE_80211AC
 #ifndef HAVE_NOAC
 		if (!has_qtn(var)) {
 			char wl_igmp[16];
@@ -3430,13 +3430,14 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	}
 #ifdef HAVE_80211AC
 #ifndef HAVE_NOAC
+#if 0
 	if (!has_qtn(prefix)) {
 		char wl_igmp[16];
 		sprintf(wl_igmp, "%s_wmf_bss_enable", prefix);
 		nvram_default_get(wl_igmp, "0");
 		showRadio(wp, "wl_basic.igmpsnooping", wl_igmp);
 	}
-
+#endif
 	if (has_ac(prefix) && nvram_nmatch("15", "%s_hw_rxchain", prefix)) {
 		char wl_nitroqam[16];
 		sprintf(wl_nitroqam, "%s_nitro_qam", prefix);
