@@ -1461,7 +1461,12 @@ char *zencrypt(char *passwd, char *passout)
 
 	strcpy(salt, "$1$");
 	crypt_make_salt(salt + 3, 4, 0);
+#ifndef __UCLIBC__
+	struct crypt_data data;
+	strcpy(passout, crypt_r((char *)passwd, (char *)salt, &data));
+#else
 	strcpy(passout, crypt((char *)passwd, (char *)salt));
+#endif
 	return passout;
 }
 
