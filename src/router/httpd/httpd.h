@@ -181,4 +181,9 @@ typedef char char_t;
 #define websWriteDataNonBlock websWriteData
 #define a_assert(a)
 
+#define EJALIAS(old, new) \
+	void new(webs_t wp, int argc, char **argv) { \
+	old(wp, argc, argv); \
+	} \
+
 #endif				/* _httpd_h_ */
