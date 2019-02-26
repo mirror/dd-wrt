@@ -580,16 +580,25 @@ function to_apply(F) {
 var update;
 
 addEvent(window, "load", function() {
-	show_layer_ext(document.setup.proftpd_rad, 'idftprad', <% nvem("proftpd_rad", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.proftpd_enable, 'ftpen', <% nvem("proftpd_enable", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.proftpd_enable, 'ftpenext', <% nvem("proftpd_enable", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.proftpd_anon, 'ftpanon', <% nvem("proftpd_anon", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.samba3_enable, 'samba3config', <% nvem("samba3_enable", "1", "1", "0"); %> == 1);
+	if (document.setup.proftpd_rad)
+		show_layer_ext(document.setup.proftpd_rad, 'idftprad', <% nvem("proftpd_rad", "1", "1", "0"); %> == 1);
+	if (document.setup.proftpd_enable)
+		show_layer_ext(document.setup.proftpd_enable, 'ftpen', <% nvem("proftpd_enable", "1", "1", "0"); %> == 1);
+	if (document.setup.proftpd_enable)
+		show_layer_ext(document.setup.proftpd_enable, 'ftpenext', <% nvem("proftpd_enable", "1", "1", "0"); %> == 1);
+	if (document.setup.proftpd_anon)
+		show_layer_ext(document.setup.proftpd_anon, 'ftpanon', <% nvem("proftpd_anon", "1", "1", "0"); %> == 1);
+	if (document.setup.samba3_enable)
+		show_layer_ext(document.setup.samba3_enable, 'samba3config', <% nvem("samba3_enable", "1", "1", "0"); %> == 1);
+	if (document.setup.transmission_enable)
+		show_layer_ext(document.setup.transmission_enable, 'transmissionconfig', <% nvem("transmission_enable", "1", "1", "0"); %> == 1);
 	//show_layer_ext(document.setup.samba3_pub, 'samba3pub', <% nvem("samba3_pub", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.samba3_advanced, 'samba3advanced', <% nvem("samba3_advanced", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.samba3_advanced, 'samba3basic', <% nvem("samba3_advanced", "1", "1", "0"); %> != 1);
-	
-	show_layer_ext(document.setup.dlna_enable, 'dlnaen', <% nvem("dlna_enable", "1", "1", "0"); %> == 1);
+	if (document.setup.samba3_advanced)
+		show_layer_ext(document.setup.samba3_advanced, 'samba3advanced', <% nvem("samba3_advanced", "1", "1", "0"); %> == 1);
+	if (document.setup.samba3_advanced)
+		show_layer_ext(document.setup.samba3_advanced, 'samba3basic', <% nvem("samba3_advanced", "1", "1", "0"); %> != 1);
+	if (document.setup.dlna_enable)
+		show_layer_ext(document.setup.dlna_enable, 'dlnaen', <% nvem("dlna_enable", "1", "1", "0"); %> == 1);
 
 	update = new StatusbarUpdate();
 	update.start();

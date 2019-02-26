@@ -2,39 +2,41 @@
 	<legend><% tran("service.transmission_legend"); %></legend>
 	<div class="setting">
 		<div class="label"><% tran("service.transmission_srv"); %></div>
-		<input class="spaceradio" type="radio" value="1" name="transmission_enable" <% nvram_checked("transmission_enable","1"); %>  /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" value="0" name="transmission_enable" <% nvram_checked("transmission_enable","0"); %>  /><% tran("share.disable"); %>
+		<input class="spaceradio" type="radio" value="1" name="transmission_enable" <% nvram_checked("transmission_enable","1"); %> onclick="show_layer_ext(this, 'transmissionconfig', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" value="0" name="transmission_enable" <% nvram_checked("transmission_enable","0"); %> onclick="show_layer_ext(this, 'transmissionconfig', false)" /><% tran("share.disable"); %>
 	</div>
-	<div class="setting">
-		<div class="label"><% tran("service.transmission_dir"); %></div>
-		<input size="25" maxlength="40" class="text" name="transmission_dir" value="<% nvram_get("transmission_dir"); %>" />
-	</div>
-	<div class="setting">
-		<div class="label"><% tran("service.transmission_download"); %></div>
-		<input size="25" maxlength="40" class="text" name="transmission_download" value="<% nvram_get("transmission_download"); %>" />
-	</div>
-	<div class="setting">
-		<div class="label"><% tran("service.transmission_whitelist"); %></div>
-		<input size="25" maxlength="40" class="text" name="transmission_whitelist" value="<% nvram_get("transmission_whitelist"); %>" />
-	</div>
-	<div class="setting">
-		<div class="label"><% tran("service.transmission_rpc"); %></div>
-		<input size="6" maxlength="5" class="num" name="transmission_rpc" value="<% nvram_get("transmission_rpc"); %>" />
-	</div>
-	<div class="setting">
-		<div class="label"><% tran("service.transmission_style"); %></div>
-		<select name="transmission_style">
-			<option value="default" <% nvram_selected("transmission_style","default"); %>>Default</option>
-			<option value="combustion" <% nvram_selected("transmission_style","combustion"); %>>Combustion</option>
-			<option value="transmission-web-control" <% nvram_selected("transmission_style","transmission-web-control"); %>>Transmission Web Control</option>
-		</select>
-	</div>
-	<div class="setting">
-		<div class="label"><% tran("share.usrname"); %></div>
-		<input size="20" maxlength="63" class="text" name="transmission_username" value="<% nvram_get("transmission_username"); %>" />
-	</div>
-	<div class="setting">
-		<div class="label"><% tran("share.passwd"); %></div>
-		<input type="password" maxlength="63" size="20" value="d6nw5v1x2pc7st9m" autocomplete="off" name="transmission_password" />
+	<div id="transmissionconfig">	
+		<div class="setting">
+			<div class="label"><% tran("service.transmission_dir"); %></div>
+			<input size="25" maxlength="40" class="text" name="transmission_dir" value="<% nvram_get("transmission_dir"); %>" />
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("service.transmission_download"); %></div>
+			<input size="25" maxlength="40" class="text" name="transmission_download" value="<% nvram_get("transmission_download"); %>" />
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("service.transmission_whitelist"); %></div>
+			<input size="25" maxlength="40" class="text" name="transmission_whitelist" value="<% nvram_get("transmission_whitelist"); %>" />
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("service.transmission_rpc"); %></div>
+			<input size="6" maxlength="5" class="num" name="transmission_rpc" value="<% nvram_get("transmission_rpc"); %>" />
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("service.transmission_style"); %></div>
+			<select name="transmission_style">
+				<option value="default" <% nvram_selected("transmission_style","default"); %>>Default</option>
+				<option value="combustion" <% nvram_selected("transmission_style","combustion"); %>>Combustion</option>
+				<option value="transmission-web-control" <% nvram_selected("transmission_style","transmission-web-control"); %>>Transmission Web Control</option>
+			</select>
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("share.usrname"); %></div>
+			<input size="20" maxlength="63" class="text" name="transmission_username" value="<% nvram_get("transmission_username"); %>" />
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("share.passwd"); %></div>
+			<input type="password" maxlength="63" size="20" value="d6nw5v1x2pc7st9m" autocomplete="off" name="transmission_password" />
+		</div>
 	</div>
 </fieldset><br/>
