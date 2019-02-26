@@ -1532,6 +1532,11 @@ struct ext4_sb_info {
 	/* Barrier between changing inodes' journal flags and writepages ops. */
 	struct percpu_rw_semaphore s_journal_flag_rwsem;
 	struct dax_device *s_daxdev;
+
+	/* for lazyinit stats */
+	unsigned long lazyinit_finished_cnt;
+	unsigned long lazyinit_total_cnt;
+
 };
 
 static inline struct ext4_sb_info *EXT4_SB(struct super_block *sb)
@@ -2083,10 +2088,6 @@ struct ext4_filename {
 #ifdef CONFIG_EXT4_FS_ENCRYPTION
 	struct fscrypt_str crypto_buf;
 #endif
-
-	/* for lazyinit stats */
-	unsigned long lazyinit_finished_cnt;
-	unsigned long lazyinit_total_cnt;
 };
 
 #define fname_name(p) ((p)->disk_name.name)
