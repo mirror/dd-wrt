@@ -31,6 +31,7 @@
 
 void start_emf(void)
 {
+#if 0
 	int i;
 	int cnt = get_wl_instances();
 	char tmp[256];
@@ -53,11 +54,13 @@ void start_emf(void)
 			}
 		}
 	}
+#endif
 	return;
 }
 
 void stop_emf(void)
 {
+#if 0
 	int i;
 	int cnt = get_wl_instances();
 	char tmp[256];
@@ -74,5 +77,6 @@ void stop_emf(void)
 		eval("emf", "stop", getBridge(get_wl_instance_name(i), tmp));
 	}
 	return;
+#endif
 }
 #endif
