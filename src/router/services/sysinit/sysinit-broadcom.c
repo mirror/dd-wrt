@@ -291,7 +291,7 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_D1800H:
 	case ROUTER_UBNT_UNIFIAC:
 	case ROUTER_DLINK_DIR865:
-		insmod("emf igs wl");	// load module
+		insmod("wl");	// load module
 		break;
 	case ROUTER_LINKSYS_EA6500:
 		if (!sv_valid_hwaddr(nvram_safe_get("pci/2/1/macaddr"))
@@ -308,7 +308,7 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 		nvram_seti("bootpartition", 0);
 		nvram_seti("partialboots", 0);
 		nvram_commit();
-		insmod("emf igs wl");	// load module
+		insmod("wl");	// load module
 		break;
 	case ROUTER_WRT600N:
 		fprintf(stderr, "fixing wrt600n\n");
