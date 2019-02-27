@@ -287,7 +287,7 @@ obj-$(CONFIG_DOSFSTOOLS) += dosfstools
 ifeq ($(CONFIG_BCMMODERN),y)
 obj-$(CONFIG_WPS) += brcmwps
 endif
-obj-$(CONFIG_80211AC) += emf
+#obj-$(CONFIG_80211AC) += emf
 #obj-y+=anchorfree
 obj-y+=ttraff
 #obj-y+=speedtest
