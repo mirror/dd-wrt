@@ -2155,7 +2155,7 @@ void ej_nvram_checked(webs_t wp, int argc, char_t ** argv)
 
 	return;
 }
-EJALIAS(ej_nvram_checked, nvc);
+EJALIAS(ej_nvram_checked, ej_nvc);
 
 void ej_nvram_checked_js(webs_t wp, int argc, char_t ** argv)
 {
