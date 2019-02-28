@@ -124,9 +124,9 @@ tst_types: tst_types.o blkid_types.h
 	$(Q) $(CC) $(ALL_CFLAGS) -c $(top_srcdir)/misc/blkid.c \
 		-o ../../misc/blkid.o
 
-blkid: ../../misc/blkid.o libblkid.a $(DEPLIBUUID)
+blkid: ../../misc/blkid.o libe2fsblkid.a $(DEPLIBUUID)
 	$(E) "	LD $@"
-	$(Q) $(CC) -o blkid ../../misc/blkid.o libblkid.a $(LIBUUID)
+	$(Q) $(CC) -o blkid ../../misc/blkid.o libe2fsblkid.a $(LIBUUID)
 
 test_probe: test_probe.in Makefile
 	$(E) "Creating test_probe..."
@@ -151,10 +151,10 @@ installdirs::
 		$(DESTDIR)$(includedir)/blkid $(DESTDIR)$(pkgconfigdir)
 
 install:: all installdirs 
-	$(E) "	INSTALL_DATA $(libdir)/libblkid.a"
-	$(Q) $(INSTALL_DATA) libblkid.a $(DESTDIR)$(libdir)/libblkid.a
-	-$(Q) $(RANLIB) $(DESTDIR)$(libdir)/libblkid.a
-	$(Q) $(CHMOD) $(LIBMODE) $(DESTDIR)$(libdir)/libblkid.a
+	$(E) "	INSTALL_DATA $(libdir)/libe2fsblkid.a"
+	$(Q) $(INSTALL_DATA) libe2fsblkid.a $(DESTDIR)$(libdir)/libe2fsblkid.a
+	-$(Q) $(RANLIB) $(DESTDIR)$(libdir)/libe2fsblkid.a
+	$(Q) $(CHMOD) $(LIBMODE) $(DESTDIR)$(libdir)/libe2fsblkid.a
 	$(Q) set -e; for i in $(HFILES_IN); do \
 		echo "	INSTALL_DATA $(includedir)/blkid/$$i"; \
 		$(INSTALL_DATA) $$i $(DESTDIR)$(includedir)/blkid/$$i; \
@@ -167,7 +167,7 @@ install:: all installdirs
 	$(Q) $(INSTALL_DATA) blkid.pc $(DESTDIR)$(pkgconfigdir)/blkid.pc
 
 uninstall::
-	$(RM) -f $(DESTDIR)$(libdir)/libblkid.a \
+	$(RM) -f $(DESTDIR)$(libdir)/libe2fsblkid.a \
 		$(DESTDIR)$(pkgconfigdir)/blkid.pc
 	$(RM) -rf $(DESTDIR)$(includedir)/blkid
 	for i in $(SMANPAGES); do \
@@ -179,7 +179,7 @@ clean::
 		tst_devno tst_getsize tst_probe tst_read tst_resolve tst_save \
 		tst_tag tst_types tests/*.out tests/*.ok \
 		tests/*.img results test_probe core profiled/* \
-		blkid.h blkid_types.h ../libblkid.a ../libblkid_p.a \
+		blkid.h blkid_types.h ../libe2fsblkid.a ../libe2fsblkid_p.a \
 		$(SMANPAGES) blkid blkid.pc
 	@echo rmdir tests/tmp tests
 	@(rmdir tests/tmp tests 2> /dev/null ; exit 0)
