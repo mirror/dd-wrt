@@ -172,6 +172,7 @@ libext2fs.so.2 libext2fs2 #MINVER#
  ext2fs_dirhash@Base 1.37
  ext2fs_div64_ceil@Base 1.42
  ext2fs_div_ceil@Base 1.40
+ ext2fs_djb2_hash@Base 1.44.3~rc1
  ext2fs_dup_handle@Base 1.37
  ext2fs_expand_dir@Base 1.37
  ext2fs_ext_attr_block_csum_set@Base 1.43
@@ -324,6 +325,11 @@ libext2fs.so.2 libext2fs2 #MINVER#
  ext2fs_group_of_blk2@Base 1.42
  ext2fs_group_of_blk@Base 1.37
  ext2fs_group_of_ino@Base 1.37
+ ext2fs_hashmap_add@Base 1.44.3~rc1
+ ext2fs_hashmap_create@Base 1.44.3~rc1
+ ext2fs_hashmap_free@Base 1.44.3~rc1
+ ext2fs_hashmap_iter_in_order@Base 1.44.3~rc1
+ ext2fs_hashmap_lookup@Base 1.44.3~rc1
  ext2fs_htree_intnode_maxrecs@Base 1.44.0~rc1
  ext2fs_iblk_add_blocks@Base 1.41.0
  ext2fs_iblk_set@Base 1.41.0

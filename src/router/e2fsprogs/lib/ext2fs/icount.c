@@ -89,7 +89,7 @@ void ext2fs_free_icount(ext2_icount_t icount)
 	if (icount->tdb)
 		tdb_close(icount->tdb);
 	if (icount->tdb_fn) {
-		unlink(icount->tdb_fn);
+		(void) unlink(icount->tdb_fn);
 		free(icount->tdb_fn);
 	}
 #endif

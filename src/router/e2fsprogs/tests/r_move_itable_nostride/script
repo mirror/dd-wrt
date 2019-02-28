@@ -10,7 +10,10 @@ if [ $(uname -s) = "Darwin" ]; then
 	return 0
 fi
 
-if test -x $RESIZE2FS_EXE -a -x $DEBUGFS_EXE; then
+if ! test -x $RESIZE2FS_EXE -o ! -x $DEBUGFS_EXE; then
+	echo "$test_name: $test_description: skipped (no debugfs/resize2fs)"
+	return 0
+fi
 
 FSCK_OPT=-yf
 OUT=$test_name.log
@@ -21,24 +24,18 @@ else
 	EXP=$test_dir/expect
 fi
 
-cp /dev/null $OUT
-
 dd if=/dev/zero of=$TMPFILE bs=1k count=512 > /dev/null 2>&1
 
 echo mke2fs -q -F -o Linux -b 1024 -i 1024 -E stride=8192 -t ext4 test.img 1024000 > $OUT
 $MKE2FS -q -F -o Linux -b 1024 -i 1024 -E stride=8192 -t ext4 \
-	$TMPFILE 1024000 2>&1 |
-	sed -f $cmd_dir/filter.sed -e "s;$TMPFILE;test.img;" >> $OUT
+	$TMPFILE 1024000 >> $OUT 2>&1
 
 echo resize2fs -p test.img 10240000 >> $OUT
-$RESIZE2FS -p $TMPFILE 100000000 2>&1 |
-	sed -f $cmd_dir/filter.sed -e "s;$TMPFILE;test.img;" >> $OUT
+$RESIZE2FS -p $TMPFILE 100000000 >> $OUT 2>&1
 
-$FSCK $FSCK_OPT  -N test_filesys $TMPFILE > $OUT.new 2>&1
+$FSCK $FSCK_OPT  -N test_filesys $TMPFILE >> $OUT 2>&1
 status=$?
-echo Exit status is $status >> $OUT.new
-sed -f $cmd_dir/filter.sed -e "s;$TMPFILE;test.img;" $OUT.new >> $OUT
-rm -f $OUT.new
+echo Exit status is $status >> $OUT
 
 $DEBUGFS -R "set_super_value lastcheck 0" -w $TMPFILE >/dev/null 2>&1
 $DEBUGFS -R "set_super_value hash_seed null" -w $TMPFILE >/dev/null 2>&1
@@ -46,8 +43,9 @@ $DEBUGFS -R "set_super_value mkfs_time 0" -w $TMPFILE >/dev/null 2>&1
 $TUNE2FS -c 20 -U clear $TMPFILE  >/dev/null 2>&1
 
 echo dumpe2fs -h test.img >> $OUT
-$DUMPE2FS -h $TMPFILE 2>&1 | sed -f $cmd_dir/filter.sed -e '/Block bitmap.*$/N;s/\n  Inode bitmap/, Inode bitmap/g' >> $OUT
-
+$DUMPE2FS -h $TMPFILE >> $OUT 2>&1
+sed -f $cmd_dir/filter.sed -e '/Block bitmap.*$/N;s/\n  Inode bitmap/, Inode bitmap/g' < $OUT > $OUT.new
+mv $OUT.new $OUT
 rm -f $TMPFILE
 
 cmp -s $OUT $EXP
@@ -63,7 +61,3 @@ else
 fi
 
 unset IMAGE FSCK_OPT OUT EXP
-
-else #if test -x $RESIZE2FS_EXE -a -x $DEBUGFS_EXE; then
-	echo "$test_name: $test_description: skipped"
-fi 

@@ -112,7 +112,7 @@ int journal_bmap(journal_t *journal, blk64_t block, unsigned long long *phys)
 	retval= ext2fs_bmap2(inode->i_ctx->fs, inode->i_ino,
 			     &inode->i_ext2, NULL, 0, block, 0, &pblk);
 	*phys = pblk;
-	return (int) retval;
+	return -1 * ((int) retval);
 #endif
 }
 
@@ -153,7 +153,7 @@ int sync_blockdev(kdev_t kdev)
 	else
 		io = kdev->k_ctx->journal_io;
 
-	return io_channel_flush(io) ? EIO : 0;
+	return io_channel_flush(io) ? -EIO : 0;
 }
 
 void ll_rw_block(int rw, int nr, struct buffer_head *bhp[])
@@ -289,6 +289,7 @@ static errcode_t e2fsck_get_journal(e2fsck_t ctx, journal_t **ret_journal)
 	errcode_t		retval = 0;
 	io_manager		io_ptr = 0;
 	unsigned long long	start = 0;
+	int			ret;
 	int			ext_journal = 0;
 	int			tried_backup_jnl = 0;
 
@@ -389,8 +390,10 @@ static errcode_t e2fsck_get_journal(e2fsck_t ctx, journal_t **ret_journal)
 #else
 		journal->j_inode = j_inode;
 		ctx->journal_io = ctx->fs->io;
-		if ((retval = (errcode_t) journal_bmap(journal, 0, &start)) != 0)
+		if ((ret = journal_bmap(journal, 0, &start)) != 0) {
+			retval = (errcode_t) (-1 * ret);
 			goto errout;
+		}
 #endif
 	} else {
 		ext_journal = 1;

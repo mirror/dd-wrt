@@ -67,7 +67,7 @@ static void free_sparse_blocks(struct sparse_map *sm)
 	sm->blocks = NULL;
 }
 
-static int sparse_import_segment(void *priv, const void *data, int len,
+static int sparse_import_segment(void *priv, const void *data, size_t len,
 				 unsigned int block, unsigned int nr_blocks)
 {
 	struct sparse_map *sm = priv;
@@ -185,14 +185,22 @@ err_params:
 static errcode_t sparse_open_channel(struct sparse_io_params *sparse_params,
 				     int flags, io_channel *channel)
 {
+	errcode_t retval;
 	io_channel io;
 
 	io = calloc(1, sizeof(struct struct_io_channel));
 	io->magic = EXT2_ET_MAGIC_IO_CHANNEL;
 	io->block_size = 0;
 	io->refcount = 1;
+
+	retval = io_manager_configure(sparse_params, flags, io);
+	if (retval) {
+		free(io);
+		return retval;
+	}
+
 	*channel = io;
-	return io_manager_configure(sparse_params, flags, io);
+	return 0;
 }
 
 static errcode_t read_sparse_argv(const char *name, bool is_fd,

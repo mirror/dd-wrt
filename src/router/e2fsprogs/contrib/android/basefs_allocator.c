@@ -6,7 +6,7 @@
 #include "base_fs.h"
 
 struct base_fs_allocator {
-	struct hashmap *entries;
+	struct ext2fs_hashmap *entries;
 	struct basefs_entry *cur_entry;
 };
 
@@ -36,9 +36,9 @@ errcode_t base_fs_alloc_load(ext2_filsys fs, const char *file,
 {
 	errcode_t retval;
 	struct basefs_entry *e;
-	struct hashmap_entry *it = NULL;
+	struct ext2fs_hashmap_entry *it = NULL;
 	struct base_fs_allocator *allocator;
-	struct hashmap *entries = basefs_parse(file, mountpoint);
+	struct ext2fs_hashmap *entries = basefs_parse(file, mountpoint);
 	if (!entries)
 		return -1;
 
@@ -49,7 +49,7 @@ errcode_t base_fs_alloc_load(ext2_filsys fs, const char *file,
 	retval = ext2fs_read_bitmaps(fs);
 	if (retval)
 		goto err_bitmap;
-	while ((e = hashmap_iter_in_order(entries, &it)))
+	while ((e = ext2fs_hashmap_iter_in_order(entries, &it)))
 		fs_reserve_blocks_range(fs, e->head);
 
 	allocator->cur_entry = NULL;
@@ -64,7 +64,7 @@ errcode_t base_fs_alloc_load(ext2_filsys fs, const char *file,
 err_bitmap:
 	free(allocator);
 err_alloc:
-	hashmap_free(entries);
+	ext2fs_hashmap_free(entries);
 	return EXIT_FAILURE;
 }
 
@@ -97,10 +97,10 @@ static errcode_t basefs_block_allocator(ext2_filsys fs, blk64_t goal,
 void base_fs_alloc_cleanup(ext2_filsys fs)
 {
 	struct basefs_entry *e;
-	struct hashmap_entry *it = NULL;
+	struct ext2fs_hashmap_entry *it = NULL;
 	struct base_fs_allocator *allocator = fs->priv_data;
 
-	while ((e = hashmap_iter_in_order(allocator->entries, &it))) {
+	while ((e = ext2fs_hashmap_iter_in_order(allocator->entries, &it))) {
 		fs_free_blocks_range(fs, e->head);
 		delete_block_ranges(e->head);
 		e->head = e->tail = NULL;
@@ -108,7 +108,7 @@ void base_fs_alloc_cleanup(ext2_filsys fs)
 
 	fs->priv_data = NULL;
 	fs->get_alloc_block2 = NULL;
-	hashmap_free(allocator->entries);
+	ext2fs_hashmap_free(allocator->entries);
 	free(allocator);
 }
 
@@ -123,8 +123,9 @@ errcode_t base_fs_alloc_set_target(ext2_filsys fs, const char *target_path,
 		return 0;
 
 	if (allocator)
-		allocator->cur_entry = hashmap_lookup(allocator->entries,
-						      target_path);
+		allocator->cur_entry = ext2fs_hashmap_lookup(allocator->entries,
+						      target_path,
+						      strlen(target_path));
 	return 0;
 }
 

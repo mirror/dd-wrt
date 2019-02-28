@@ -287,7 +287,7 @@ static int is_on_batt(void)
 {
 	FILE	*f;
 	DIR	*d;
-	char	tmp[80], tmp2[80], fname[80];
+	char	tmp[80], tmp2[80], fname[NAME_MAX+30];
 	unsigned int	acflag;
 	struct dirent*	de;
 
@@ -311,7 +311,8 @@ static int is_on_batt(void)
 		while ((de=readdir(d)) != NULL) {
 			if (!strncmp(".", de->d_name, 1))
 				continue;
-			snprintf(fname, 80, "/proc/acpi/ac_adapter/%s/state",
+			snprintf(fname, sizeof(fname),
+				 "/proc/acpi/ac_adapter/%s/state",
 				 de->d_name);
 			f = fopen(fname, "r");
 			if (!f)
@@ -396,7 +397,12 @@ static void check_if_skip(e2fsck_t ctx)
 		if (batt && ((ctx->now - fs->super->s_lastcheck) <
 			     fs->super->s_checkinterval*2))
 			reason = 0;
+	} else if (broken_system_clock && fs->super->s_checkinterval) {
+		log_out(ctx, "%s: ", ctx->device_name);
+		log_out(ctx, "%s",
+			_("ignoring check interval, broken_system_clock set\n"));
 	}
+
 	if (reason) {
 		log_out(ctx, "%s", ctx->device_name);
 		log_out(ctx, reason, reason_arg);
@@ -611,9 +617,10 @@ static void reserve_stdio_fds(void)
 			fprintf(stderr, _("ERROR: Couldn't open "
 				"/dev/null (%s)\n"),
 				strerror(errno));
-			break;
+			return;
 		}
 	}
+	(void) close(fd);
 }
 
 #ifdef HAVE_SIGNAL_H
@@ -735,6 +742,10 @@ static void parse_extended_opts(e2fsck_t ctx, const char *opts)
 		} else if (strcmp(token, "fixes_only") == 0) {
 			ctx->options |= E2F_OPT_FIXES_ONLY;
 			continue;
+		} else if (strcmp(token, "unshare_blocks") == 0) {
+			ctx->options |= E2F_OPT_UNSHARE_BLOCKS;
+			ctx->options |= E2F_OPT_FORCE;
+			continue;
 		} else {
 			fprintf(stderr, _("Unknown extended option: %s\n"),
 				token);
@@ -759,6 +770,7 @@ static void parse_extended_opts(e2fsck_t ctx, const char *opts)
 		fputs("\tno_inode_count_fullmap\n", stderr);
 		fputs(_("\treadahead_kb=<buffer size>\n"), stderr);
 		fputs("\tbmap2extent\n", stderr);
+		fputs("\tunshare_blocks\n", stderr);
 		fputs("\tfixes_only\n", stderr);
 		fputc('\n', stderr);
 		exit(1);
@@ -924,6 +936,7 @@ static errcode_t PRS(int argc, char *argv[], e2fsck_t *ret_ctx)
 			break;
 		case 'L':
 			replace_bad_blocks++;
+			/* fall through */
 		case 'l':
 			if (bad_blocks_file)
 				free(bad_blocks_file);
@@ -1245,7 +1258,8 @@ check_error:
 		dump_mmp_msg(fs->mmp_buf,
 			     _("If you are sure the filesystem is not "
 			       "in use on any node, run:\n"
-			       "'tune2fs -f -E clear_mmp {device}'\n"));
+			       "'tune2fs -f -E clear_mmp %s'\n"),
+			     ctx->device_name);
 	} else if (retval == EXT2_ET_MMP_MAGIC_INVALID) {
 		if (fix_problem(ctx, PR_0_MMP_INVALID_MAGIC, &pctx)) {
 			ext2fs_mmp_clear(fs);
@@ -1359,7 +1373,7 @@ int main (int argc, char *argv[])
 	const char	*lib_ver_date;
 	int		my_ver, lib_ver;
 	e2fsck_t	ctx;
-	blk64_t		orig_superblock;
+	blk64_t		orig_superblock = ~(blk64_t)0;
 	struct problem_context pctx;
 	int flags, run_result, was_changed;
 	int journal_size;
@@ -1566,6 +1580,27 @@ failure:
 					     "check of the device.\n"));
 #endif
 		else {
+			/*
+			 * Let's try once more will less consistency checking
+			 * so that we are able to recover from more errors
+			 * (e.g. some tool messing up some value in the sb).
+			 */
+			if ((retval == EXT2_ET_CORRUPT_SUPERBLOCK) &&
+			    !(flags & EXT2_FLAG_IGNORE_SB_ERRORS)) {
+				if (fs)
+					ext2fs_close_free(&fs);
+				log_out(ctx, _("%s: Trying to load superblock "
+					"despite errors...\n"),
+					ctx->program_name);
+				flags |= EXT2_FLAG_IGNORE_SB_ERRORS;
+				/*
+				 * If we tried backup sb, revert to the
+				 * original one now.
+				 */
+				if (orig_superblock != ~(blk64_t)0)
+					ctx->superblock = orig_superblock;
+				goto restart;
+			}
 			fix_problem(ctx, PR_0_SB_CORRUPT, &pctx);
 			if (retval == EXT2_ET_BAD_MAGIC)
 				check_plausibility(ctx->filesystem_name,
@@ -1919,6 +1954,14 @@ no_journal:
 		ext2fs_mark_super_dirty(fs);
 	}
 
+	if (ext2fs_has_feature_shared_blocks(ctx->fs->super) &&
+	    (ctx->options & E2F_OPT_UNSHARE_BLOCKS) &&
+	    (ctx->options & E2F_OPT_NO))
+		/* Don't try to write or flush I/O, we just wanted to know whether or
+		 * not there were enough free blocks to undo deduplication.
+		 */
+		goto skip_write;
+
 	if (!(ctx->options & E2F_OPT_READONLY)) {
 		e2fsck_write_bitmaps(ctx);
 		if (fs->flags & EXT2_FLAG_DIRTY) {
@@ -1955,6 +1998,8 @@ no_journal:
 			exit_value |= FSCK_REBOOT;
 		}
 	}
+
+skip_write:
 	if (!ext2fs_test_valid(fs) ||
 	    ((exit_value & FSCK_CANCELED) &&
 	     (sb->s_state & EXT2_ERROR_FS))) {

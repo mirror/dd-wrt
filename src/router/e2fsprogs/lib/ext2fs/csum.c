@@ -563,7 +563,7 @@ int ext2fs_inode_bitmap_csum_verify(ext2_filsys fs, dgrp_t group,
 	provided = gdp->bg_inode_bitmap_csum_lo;
 	calculated = ext2fs_crc32c_le(fs->csum_seed, (unsigned char *)bitmap,
 				      size);
-	if (fs->super->s_desc_size >= EXT4_BG_INODE_BITMAP_CSUM_HI_END)
+	if (EXT2_DESC_SIZE(fs->super) >= EXT4_BG_INODE_BITMAP_CSUM_HI_END)
 		provided |= (__u32)gdp->bg_inode_bitmap_csum_hi << 16;
 	else
 		calculated &= 0xFFFF;
@@ -583,7 +583,7 @@ errcode_t ext2fs_inode_bitmap_csum_set(ext2_filsys fs, dgrp_t group,
 
 	crc = ext2fs_crc32c_le(fs->csum_seed, (unsigned char *)bitmap, size);
 	gdp->bg_inode_bitmap_csum_lo = crc & 0xFFFF;
-	if (fs->super->s_desc_size >= EXT4_BG_INODE_BITMAP_CSUM_HI_END)
+	if (EXT2_DESC_SIZE(fs->super) >= EXT4_BG_INODE_BITMAP_CSUM_HI_END)
 		gdp->bg_inode_bitmap_csum_hi = crc >> 16;
 
 	return 0;
@@ -601,7 +601,7 @@ int ext2fs_block_bitmap_csum_verify(ext2_filsys fs, dgrp_t group,
 	provided = gdp->bg_block_bitmap_csum_lo;
 	calculated = ext2fs_crc32c_le(fs->csum_seed, (unsigned char *)bitmap,
 				      size);
-	if (fs->super->s_desc_size >= EXT4_BG_BLOCK_BITMAP_CSUM_HI_LOCATION)
+	if (EXT2_DESC_SIZE(fs->super) >= EXT4_BG_BLOCK_BITMAP_CSUM_HI_LOCATION)
 		provided |= (__u32)gdp->bg_block_bitmap_csum_hi << 16;
 	else
 		calculated &= 0xFFFF;
@@ -621,7 +621,7 @@ errcode_t ext2fs_block_bitmap_csum_set(ext2_filsys fs, dgrp_t group,
 
 	crc = ext2fs_crc32c_le(fs->csum_seed, (unsigned char *)bitmap, size);
 	gdp->bg_block_bitmap_csum_lo = crc & 0xFFFF;
-	if (fs->super->s_desc_size >= EXT4_BG_BLOCK_BITMAP_CSUM_HI_LOCATION)
+	if (EXT2_DESC_SIZE(fs->super) >= EXT4_BG_BLOCK_BITMAP_CSUM_HI_LOCATION)
 		gdp->bg_block_bitmap_csum_hi = crc >> 16;
 
 	return 0;

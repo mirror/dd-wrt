@@ -5,11 +5,10 @@ EXP=$test_dir/expect
 
 gunzip < $test_dir/../f_yesall/image.gz > $TMPFILE
 
-rm -rf $OUT
 echo "yyyyyyyyyyannnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn" | E2FSCK_FORCE_INTERACTIVE=y $FSCK $FSCK_OPT -N test_filesys $TMPFILE > $OUT.new 2>&1
 status=$?
 echo Exit status is $status >> $OUT.new
-sed -f $cmd_dir/filter.sed $OUT.new >> $OUT
+sed -f $cmd_dir/filter.sed $OUT.new > $OUT
 rm -f $OUT.new
 
 cmp -s $OUT $EXP

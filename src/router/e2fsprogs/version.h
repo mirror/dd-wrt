@@ -7,5 +7,5 @@
  * file may be redistributed under the GNU Public License v2.
  */
 
-#define E2FSPROGS_VERSION "1.44.1"
-#define E2FSPROGS_DATE "24-Mar-2018"
+#define E2FSPROGS_VERSION "1.44.5"
+#define E2FSPROGS_DATE "15-Dec-2018"

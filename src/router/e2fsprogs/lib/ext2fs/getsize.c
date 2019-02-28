@@ -151,9 +151,12 @@ errcode_t ext2fs_get_device_size2(const char *file, int blocksize,
 	if (fd < 0)
 		return errno;
 
-#ifdef DKIOCGETBLOCKCOUNT	/* For Apple Darwin */
-	if (ioctl(fd, DKIOCGETBLOCKCOUNT, &size64) >= 0) {
-		*retblocks = size64 / (blocksize / 512);
+#if defined DKIOCGETBLOCKCOUNT && defined DKIOCGETBLOCKSIZE	/* For Apple Darwin */
+	unsigned int size;
+
+	if (ioctl(fd, DKIOCGETBLOCKCOUNT, &size64) >= 0 &&
+	    ioctl(fd, DKIOCGETBLOCKSIZE, &size) >= 0) {
+		*retblocks = size64 * size / blocksize;
 		goto out;
 	}
 #endif

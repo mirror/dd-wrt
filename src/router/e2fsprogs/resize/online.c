@@ -61,7 +61,7 @@ errcode_t online_resize_fs(ext2_filsys fs, const char *mtpt,
 	double			percent;
 	dgrp_t			i;
 	blk_t			size;
-	int			fd, overhead;
+	int			fd;
 	int			use_old_ioctl = 1;
 	int			no_meta_bg_resize = 0;
 	int			no_resize_ioctl = 0;
@@ -233,13 +233,6 @@ errcode_t online_resize_fs(ext2_filsys fs, const char *mtpt,
 
 	for (i = fs->group_desc_count;
 	     i < new_fs->group_desc_count; i++) {
-
-		overhead = (int) (2 + new_fs->inode_blocks_per_group);
-
-		if (ext2fs_bg_has_super(new_fs, new_fs->group_desc_count - 1))
-			overhead += 1 + new_fs->desc_blocks +
-				new_fs->super->s_reserved_gdt_blocks;
-
 		input.group = i;
 		input.block_bitmap = ext2fs_block_bitmap_loc(new_fs, i);
 		input.inode_bitmap = ext2fs_inode_bitmap_loc(new_fs, i);

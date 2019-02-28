@@ -171,7 +171,7 @@ static int find_blocks(ext2_filsys fs, blk64_t *blocknr, e2_blkcnt_t blockcnt,
 					     list->count - 1;
 		blk64_t end = last->e_len + 1;
 
-		if (last->e_lblk + last->e_len == blockcnt &&
+		if (last->e_lblk + last->e_len == (__u64) blockcnt &&
 		    last->e_pblk + last->e_len == *blocknr &&
 		    end < (1ULL << 32)) {
 			last->e_len++;

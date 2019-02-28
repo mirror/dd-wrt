@@ -240,7 +240,7 @@ static void write_image_file(ext2_filsys fs, int fd)
 	write_header(fd, NULL, sizeof(struct ext2_image_hdr), fs->blocksize);
 	memset(&hdr, 0, sizeof(struct ext2_image_hdr));
 
-	hdr.offset_super = seek_relative(fd, 0);
+	hdr.offset_super = ext2fs_cpu_to_le32(seek_relative(fd, 0));
 	retval = ext2fs_image_super_write(fs, fd, 0);
 	if (retval) {
 		com_err(program_name, retval, "%s",
@@ -248,7 +248,7 @@ static void write_image_file(ext2_filsys fs, int fd)
 		exit(1);
 	}
 
-	hdr.offset_inode = seek_relative(fd, 0);
+	hdr.offset_inode = ext2fs_cpu_to_le32(seek_relative(fd, 0));
 	retval = ext2fs_image_inode_write(fs, fd,
 				  (fd != 1) ? IMAGER_FLAG_SPARSEWRITE : 0);
 	if (retval) {
@@ -257,7 +257,7 @@ static void write_image_file(ext2_filsys fs, int fd)
 		exit(1);
 	}
 
-	hdr.offset_blockmap = seek_relative(fd, 0);
+	hdr.offset_blockmap = ext2fs_cpu_to_le32(seek_relative(fd, 0));
 	retval = ext2fs_image_bitmap_write(fs, fd, 0);
 	if (retval) {
 		com_err(program_name, retval, "%s",
@@ -265,7 +265,7 @@ static void write_image_file(ext2_filsys fs, int fd)
 		exit(1);
 	}
 
-	hdr.offset_inodemap = seek_relative(fd, 0);
+	hdr.offset_inodemap = ext2fs_cpu_to_le32(seek_relative(fd, 0));
 	retval = ext2fs_image_bitmap_write(fs, fd, IMAGER_FLAG_INODEMAP);
 	if (retval) {
 		com_err(program_name, retval, "%s",
@@ -273,23 +273,23 @@ static void write_image_file(ext2_filsys fs, int fd)
 		exit(1);
 	}
 
-	hdr.magic_number = EXT2_ET_MAGIC_E2IMAGE;
+	hdr.magic_number = ext2fs_cpu_to_le32(EXT2_ET_MAGIC_E2IMAGE);
 	strcpy(hdr.magic_descriptor, "Ext2 Image 1.0");
 	gethostname(hdr.fs_hostname, sizeof(hdr.fs_hostname));
 	strncpy(hdr.fs_device_name, device_name, sizeof(hdr.fs_device_name)-1);
 	hdr.fs_device_name[sizeof(hdr.fs_device_name) - 1] = 0;
-	hdr.fs_blocksize = fs->blocksize;
+	hdr.fs_blocksize = ext2fs_cpu_to_le32(fs->blocksize);
 
 	if (stat(device_name, &st) == 0)
-		hdr.fs_device = st.st_rdev;
+		hdr.fs_device = ext2fs_cpu_to_le32(st.st_rdev);
 
 	if (fstat(fd, &st) == 0) {
-		hdr.image_device = st.st_dev;
-		hdr.image_inode = st.st_ino;
+		hdr.image_device = ext2fs_cpu_to_le32(st.st_dev);
+		hdr.image_inode = ext2fs_cpu_to_le32(st.st_ino);
 	}
 	memcpy(hdr.fs_uuid, fs->super->s_uuid, sizeof(hdr.fs_uuid));
 
-	hdr.image_time = time(0);
+	hdr.image_time = ext2fs_cpu_to_le32(time(0));
 	write_header(fd, &hdr, sizeof(struct ext2_image_hdr), fs->blocksize);
 }
 
@@ -415,6 +415,14 @@ static void mark_table_blocks(ext2_filsys fs)
 			 ext2fs_descriptor_block_loc2(fs, first_block, j));
 	}
 	meta_blocks_count += fs->desc_blocks;
+
+	/*
+	 *  Mark MMP block
+	 */
+	if (fs->super->s_feature_incompat & EXT4_FEATURE_INCOMPAT_MMP) {
+		ext2fs_mark_block_bitmap2(meta_block_map, fs->super->s_mmp_block);
+		meta_blocks_count++;
+	}
 
 	for (i = 0; i < fs->group_desc_count; i++) {
 		/*
@@ -552,7 +560,7 @@ static void sigint_handler(int unused EXT2FS_ATTR((unused)))
 
 #define calc_percent(a, b) ((int) ((100.0 * (((float) (a)) / \
 					     ((float) (b)))) + 0.5))
-#define calc_rate(t, b, d) (((float)(t) / ((1024 * 1024) / (b))) / (d))
+#define calc_rate(t, b, d) (((float)(t) / ((float)(1024 * 1024) / (b))) / (d))
 
 static int print_progress(blk64_t num, blk64_t total)
 {
@@ -874,14 +882,17 @@ static int init_refcount(struct ext2_qcow2_image *img, blk64_t table_offset)
 	return ret;
 }
 
-static int initialize_qcow2_image(int fd, ext2_filsys fs,
-			    struct ext2_qcow2_image *image)
+static errcode_t initialize_qcow2_image(int fd, ext2_filsys fs,
+					struct ext2_qcow2_image *image)
 {
 	struct ext2_qcow2_hdr *header;
 	blk64_t total_size, offset;
 	int shift, l2_bits, header_size, l1_size, ret;
 	int cluster_bits = get_bits_from_size(fs->blocksize);
 	struct ext2_super_block *sb = fs->super;
+
+	if (fs->blocksize < 1024)
+		return EINVAL;	/* Can never happen, but just in case... */
 
 	/* Allocate header */
 	ret = ext2fs_get_memzero(sizeof(struct ext2_qcow2_hdr), &header);
@@ -1423,7 +1434,7 @@ static void install_image(char *device, char *image_fn, int type)
 
 	ext2fs_rewrite_to_io(fs, io);
 
-	seek_set(fd, fs->image_header->offset_inode);
+	seek_set(fd, ext2fs_le32_to_cpu(fs->image_header->offset_inode));
 
 	retval = ext2fs_image_inode_read(fs, fd, 0);
 	if (retval) {
@@ -1630,13 +1641,18 @@ skip_device:
 			if (ret == -QCOW_COMPRESSED)
 				fprintf(stderr, _("Image (%s) is compressed\n"),
 					image_fn);
-			if (ret == -QCOW_ENCRYPTED)
+			else if (ret == -QCOW_ENCRYPTED)
 				fprintf(stderr, _("Image (%s) is encrypted\n"),
 					image_fn);
-			com_err(program_name, ret,
-				_("while trying to convert qcow2 image"
-				  " (%s) into raw image (%s)"),
-				device_name, image_fn);
+			else if (ret == -QCOW_CORRUPTED)
+				fprintf(stderr, _("Image (%s) is corrupted\n"),
+					image_fn);
+			else
+				com_err(program_name, ret,
+					_("while trying to convert qcow2 image"
+					  " (%s) into raw image (%s)"),
+					image_fn, device_name);
+			ret = 1;
 		}
 		goto out;
 	}

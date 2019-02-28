@@ -22,7 +22,7 @@ ENDL
 echo "tune2fs ^metadata_csum test" > $OUT
 
 MKE2FS_CONFIG=$CONF $MKE2FS -F -T ext4h $TMPFILE 524288 >> $OUT 2>&1
-rm -rf $CONF
+rm -f $CONF
 
 # dump and check
 $DUMPE2FS $TMPFILE 2> /dev/null | grep '^Group 0:' -B99 -A20 | sed -f $cmd_dir/filter.sed > $OUT.before

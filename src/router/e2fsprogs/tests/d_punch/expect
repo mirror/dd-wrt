@@ -127,37 +127,37 @@ Level Entries       Logical      Physical Length Flags
  0/ 0   1/  2     0 -     0  9000 -  9000      1 Uninit
  0/ 0   2/  2  8999 -  8999 17999 - 17999      1 Uninit
 Pass 1: Checking inodes, blocks, and sizes
-Inode 15 extent tree (at level 1) could be shorter.  Fix? yes
+Inode 15 extent tree (at level 1) could be shorter.  Optimize? yes
 
-Inode 16 extent tree (at level 1) could be shorter.  Fix? yes
+Inode 16 extent tree (at level 1) could be shorter.  Optimize? yes
 
-Inode 17 extent tree (at level 1) could be shorter.  Fix? yes
+Inode 17 extent tree (at level 1) could be shorter.  Optimize? yes
 
-Inode 18 extent tree (at level 1) could be shorter.  Fix? yes
+Inode 18 extent tree (at level 1) could be shorter.  Optimize? yes
 
-Inode 19 extent tree (at level 1) could be shorter.  Fix? yes
+Inode 19 extent tree (at level 1) could be shorter.  Optimize? yes
 
-Inode 20 extent tree (at level 1) could be shorter.  Fix? yes
+Inode 20 extent tree (at level 1) could be shorter.  Optimize? yes
 
-Inode 21 extent tree (at level 1) could be shorter.  Fix? yes
+Inode 21 extent tree (at level 1) could be shorter.  Optimize? yes
 
-Inode 22 extent tree (at level 1) could be shorter.  Fix? yes
+Inode 22 extent tree (at level 1) could be shorter.  Optimize? yes
 
-Inode 23 extent tree (at level 1) could be shorter.  Fix? yes
+Inode 23 extent tree (at level 1) could be shorter.  Optimize? yes
 
-Inode 24 extent tree (at level 1) could be shorter.  Fix? yes
+Inode 24 extent tree (at level 1) could be shorter.  Optimize? yes
 
-Inode 25 extent tree (at level 1) could be shorter.  Fix? yes
+Inode 25 extent tree (at level 1) could be shorter.  Optimize? yes
 
-Inode 26 extent tree (at level 1) could be shorter.  Fix? yes
+Inode 26 extent tree (at level 1) could be shorter.  Optimize? yes
 
-Inode 27 extent tree (at level 1) could be shorter.  Fix? yes
+Inode 27 extent tree (at level 1) could be shorter.  Optimize? yes
 
-Inode 28 extent tree (at level 1) could be shorter.  Fix? yes
+Inode 28 extent tree (at level 1) could be shorter.  Optimize? yes
 
-Inode 29 extent tree (at level 1) could be shorter.  Fix? yes
+Inode 29 extent tree (at level 1) could be shorter.  Optimize? yes
 
-Inode 30 extent tree (at level 1) could be shorter.  Fix? yes
+Inode 30 extent tree (at level 1) could be shorter.  Optimize? yes
 
 Pass 1E: Optimizing extent trees
 Pass 2: Checking directory structure

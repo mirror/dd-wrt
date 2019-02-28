@@ -726,7 +726,6 @@ start_again:
 		left_adjacent = NULL;
 	}
 	goal = left_extent.e_pblk + (range_start - left_extent.e_lblk);
-	goal_distance = range_start - next;
 
 	do {
 		err = ext2fs_extent_get(handle, EXT2_EXTENT_NEXT_LEAF,
@@ -749,12 +748,11 @@ start_again:
 			range_end = right_extent.e_lblk - 1;
 			right_adjacent = &right_extent;
 		}
+		goal_distance = range_start - next;
 		if (err != EXT2_ET_EXTENT_NO_NEXT &&
-		    goal_distance > (range_end - right_extent.e_lblk)) {
+		    goal_distance > (range_end - right_extent.e_lblk))
 			goal = right_extent.e_pblk -
 					(right_extent.e_lblk - range_start);
-			goal_distance = range_end - right_extent.e_lblk;
-		}
 
 		dbg_printf("%s: ino=%d rstart=%llu rend=%llu\n", __func__, ino,
 			   range_start, range_end);
@@ -779,7 +777,6 @@ start_again:
 		left_adjacent = &left_extent;
 		range_start = next;
 		goal = left_extent.e_pblk + (range_start - left_extent.e_lblk);
-		goal_distance = range_start - next;
 	} while (range_end < end);
 
 errout:

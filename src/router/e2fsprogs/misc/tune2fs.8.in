@@ -94,7 +94,7 @@ tune2fs \- adjust tunable filesystem parameters on ext2/ext3/ext4 filesystems
 ]
 device
 .SH DESCRIPTION
-.BI tune2fs
+.B tune2fs
 allows the system administrator to adjust various tunable filesystem
 parameters on Linux ext2, ext3, or ext4 filesystems.  The current values
 of these options can be displayed by using the
@@ -327,7 +327,7 @@ must be run from a rescue floppy in order to effect this transition.
 On some distributions, such as Debian, if an initial ramdisk is used,
 the initrd scripts will automatically convert an ext2 root filesystem
 to ext3 if the
-.BR /etc/fstab
+.B /etc/fstab
 file specifies the ext3 filesystem for the root filesystem in order to
 avoid requiring the use of a rescue floppy to add an ext3 journal to
 the root filesystem.
@@ -649,9 +649,9 @@ feature,
 can be run to convert existing directories to the hashed B-tree format.
 Enabling certain filesystem features may prevent the filesystem from being
 mounted by kernels which do not support those features.  In particular, the
-.BR uninit_bg
+.B uninit_bg
 and
-.BR flex_bg
+.B flex_bg
 features are only supported by the ext4 filesystem.
 .TP
 .BI \-r " reserved-blocks-count"
@@ -662,13 +662,13 @@ Sets 'quota' feature on the superblock and works on the quota files for the
 given quota type. Quota options could be one or more of the following:
 .RS 1.2i
 .TP
-.BR [^]usrquota
+.B [^]usrquota
 Sets/clears user quota inode in the superblock.
 .TP
-.BR [^]grpquota
+.B [^]grpquota
 Sets/clears group quota inode in the superblock.
 .TP
-.BR [^]prjquota
+.B [^]prjquota
 Sets/clears project quota inode in the superblock.
 .RE
 .TP

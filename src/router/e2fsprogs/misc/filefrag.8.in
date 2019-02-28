@@ -43,7 +43,7 @@ is unspecified it defaults to 1024 bytes.
 .B \-e
 Print output in extent format, even for block-mapped files.
 .TP
-.BI \-k
+.B \-k
 Use 1024\-byte blocksize for output (identical to '\-b 1024').
 .TP
 .B \-s

@@ -46,6 +46,7 @@ static struct flags_name flags_array[] = {
 	{ FS_NOCOW_FL, "C", "No_COW" },
 	{ EXT4_INLINE_DATA_FL, "N", "Inline_Data" },
 	{ EXT4_PROJINHERIT_FL, "P", "Project_Hierarchy" },
+	{ EXT4_VERITY_FL, "V", "Verity" },
 	{ 0, NULL, NULL }
 };
 

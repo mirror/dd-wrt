@@ -12,7 +12,7 @@ Pass 2: Checking directory structure
 Pass 3: Checking directory connectivity
 Pass 4: Checking reference counts
 Pass 5: Checking group summary information
-
+test_filesys: 13/1048576 files (0.0% non-contiguous), 1073709417/1073741824 blocks
 Exit status is 0
 debugfs -R "extents /store/big-data" test.img
 Last logical block: 1073610751

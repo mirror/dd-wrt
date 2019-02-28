@@ -93,6 +93,10 @@ void do_create_icount(int argc, char **argv)
 
 void do_free_icount(int argc, char **argv)
 {
+	if (argc != 1) {
+		printf("Usage: free_icount\n");
+		return;
+	}
 	if (check_icount(argv[0]))
 		return;
 
@@ -206,6 +210,10 @@ void do_dump(int argc, char **argv)
 	ext2_ino_t	i;
 	__u16		count;
 
+	if (argc != 1) {
+		printf("Usage: dump\n");
+		return;
+	}
 	if (check_icount(argv[0]))
 		return;
 	for (i=1; i <= test_fs->super->s_inodes_count; i++) {
@@ -224,6 +232,10 @@ void do_validate(int argc, char **argv)
 {
 	errcode_t	retval;
 
+	if (argc != 1) {
+		printf("Usage: validate\n");
+		return;
+	}
 	if (check_icount(argv[0]))
 		return;
 	retval = ext2fs_icount_validate(test_icount, stdout);
@@ -238,6 +250,10 @@ void do_get_size(int argc, char **argv)
 {
 	ext2_ino_t	size;
 
+	if (argc != 1) {
+		printf("Usage: get_size\n");
+		return;
+	}
 	if (check_icount(argv[0]))
 		return;
 	size = ext2fs_get_icount_size(test_icount);

@@ -282,6 +282,11 @@ struct problem_context {
 /* Invalid quota inode number */
 #define PR_0_INVALID_QUOTA_INO			0x00004F
 
+/* Inode count in the superblock incorrect */
+#define PR_0_INODE_COUNT_BIG			0x000050
+
+/* Meta_bg and resize_inode are not compatible, remove resize_inode*/
+#define PR_0_DISABLE_RESIZE_INODE		0x000051
 
 /*
  * Pass 1 errors
@@ -1136,6 +1141,9 @@ struct problem_context {
 
 /* Extended attribute inode ref count wrong */
 #define PR_4_EA_INODE_REF_COUNT		0x040005
+
+/* directory exceeds max links, but no DIR_NLINK feature in superblock */
+#define PR_4_DIR_NLINK_FEATURE		0x040006
 
 /*
  * Pass 5 errors

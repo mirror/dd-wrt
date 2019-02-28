@@ -6,5 +6,5 @@ Abstract: The EXT2FS library is designed to allow
 Section: Programming
 
 Format: HTML
-Index: /usr/share/doc/libext2fs/html-info/libext2fs.html
-Files: /usr/share/doc/libext2fs/html-info/*.html 
+Index: /usr/share/doc/libext2fs2/html-info/libext2fs.html
+Files: /usr/share/doc/libext2fs2/html-info/*.html 

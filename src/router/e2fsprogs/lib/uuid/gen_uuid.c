@@ -484,9 +484,11 @@ static void close_all_fds(void)
 }
 #endif /* defined(USE_UUIDD) && defined(HAVE_SYS_UN_H) */
 
+#if __GNUC_PREREQ (4, 6)
 #pragma GCC diagnostic push
 #if !defined(USE_UUIDD) || !defined(HAVE_SYS_UN_H)
 #pragma GCC diagnostic ignored "-Wunused-parameter"
+#endif
 #endif
 /*
  * Try using the uuidd daemon to generate the UUID
@@ -570,7 +572,9 @@ fail:
 #endif
 	return -1;
 }
+#if __GNUC_PREREQ (4, 6)
 #pragma GCC diagnostic pop
+#endif
 
 void uuid__generate_time(uuid_t out, int *num)
 {

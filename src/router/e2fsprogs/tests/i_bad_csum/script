@@ -5,7 +5,7 @@ OUT=$test_name.log
 EXP=$test_dir/expect
 
 gzip -d < $IMAGE > $TMPFILE
-$E2IMAGE -r $TMPFILE $TMPFILE.bin >> $OUT 2>&1
+$E2IMAGE -r $TMPFILE $TMPFILE.bin > $OUT 2>&1
 $FSCK -fn $TMPFILE.bin >> $OUT 2>&1
 
 sed -f $cmd_dir/filter.sed -e "s;$TMPFILE;test_filesys;" $OUT > $OUT.new
@@ -22,5 +22,5 @@ else
         rm -f $test_name.tmp
 fi
 
-rm -rf $OUT $TMPFILE $TMPFILE.bin $TMPFILE.test
+rm -f $OUT $TMPFILE $TMPFILE.bin $TMPFILE.test
 unset IMAGE FSCK_OPT OUT EXP

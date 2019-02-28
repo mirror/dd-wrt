@@ -1,4 +1,7 @@
-if test -x $RESIZE2FS_EXE -a -x $DEBUGFS_EXE; then
+if ! test -x $RESIZE2FS_EXE -o ! -x $DEBUGFS_EXE; then
+	echo "$test_name: $test_description: skipped (no debugfs/resize2fs)"
+	return 0
+fi
 
 FSCK_OPT=-fn
 OUT=$test_name.log
@@ -26,7 +29,7 @@ ENDL
 echo "resize2fs test" > $OUT
 
 MKE2FS_CONFIG=$CONF $MKE2FS -F -T ext4h $TMPFILE 786432 >> $OUT 2>&1
-rm -rf $CONF
+rm -f $CONF
 
 # check
 $FSCK $FSCK_OPT -N test_filesys $TMPFILE >> $OUT 2>&1
@@ -35,18 +38,18 @@ echo Exit status is $status >> $OUT
 
 # convert it
 echo "resize2fs -b test.img" >> $OUT
-$RESIZE2FS -b -f $TMPFILE 2>&1 >> $OUT 2>&1
-$DUMPE2FS -g $TMPFILE 2>&1 >> $OUT.before 2> /dev/null
+$RESIZE2FS -b -f $TMPFILE >> $OUT 2>&1
+$DUMPE2FS -g $TMPFILE >> $OUT.before 2> /dev/null
 
 # grow it
 echo "resize2fs test.img" >> $OUT
 dd if=/dev/zero of=$TMPFILE conv=notrunc bs=1 count=1 seek=1207959552 2> /dev/null
-$RESIZE2FS -f $TMPFILE 2>&1 >> $OUT 2>&1
+$RESIZE2FS -f $TMPFILE >> $OUT 2>&1
 status=$?
 echo Exit status is $status >> $OUT
 
 # dump and check
-$DUMPE2FS -g $TMPFILE 2>&1 >> $OUT.after 2> /dev/null
+$DUMPE2FS -g $TMPFILE >> $OUT.after 2> /dev/null
 echo "Change in FS metadata:" >> $OUT
 diff -u $OUT.before $OUT.after | tail -n +3 >> $OUT
 $FSCK $FSCK_OPT -N test_filesys $TMPFILE >> $OUT 2>&1
@@ -76,8 +79,3 @@ fi
 rm $OUT.before $OUT.after
 
 unset IMAGE FSCK_OPT OUT EXP CONF
-
-else #if test -x $RESIZE2FS_EXE -a -x $DEBUGFS_EXE; then
-	echo "$test_name: $test_description: skipped"
-fi
-

@@ -245,6 +245,24 @@ void e2fsck_pass1_dupblocks(e2fsck_t ctx, char *block_buf)
 	pass1d(ctx, block_buf);
 	print_resource_track(ctx, "Pass 1d", &rtrack, ctx->fs->io);
 
+	if (ext2fs_has_feature_shared_blocks(ctx->fs->super) &&
+	    (ctx->options & E2F_OPT_UNSHARE_BLOCKS)) {
+		/*
+		 * If we successfully managed to unshare all blocks, unset the
+		 * shared block feature.
+		 */
+		blk64_t next;
+		int result = ext2fs_find_first_set_block_bitmap2(
+			ctx->block_dup_map,
+			ctx->fs->super->s_first_data_block,
+			ext2fs_blocks_count(ctx->fs->super) - 1,
+			&next);
+		if (result == ENOENT && !(ctx->options & E2F_OPT_NO)) {
+			ext2fs_clear_feature_shared_blocks(ctx->fs->super);
+			ext2fs_mark_super_dirty(ctx->fs);
+		}
+	}
+
 	/*
 	 * Time to free all of the accumulated data structures that we
 	 * don't need anymore.
@@ -582,14 +600,21 @@ static void pass1d(e2fsck_t ctx, char *block_buf)
 			fix_problem(ctx, PR_1D_DUP_BLOCKS_DEALT, &pctx);
 			continue;
 		}
-		if (fix_problem(ctx, PR_1D_CLONE_QUESTION, &pctx)) {
+		if ((ctx->options & E2F_OPT_UNSHARE_BLOCKS) ||
+                    fix_problem(ctx, PR_1D_CLONE_QUESTION, &pctx)) {
 			pctx.errcode = clone_file(ctx, ino, p, block_buf);
 			if (pctx.errcode)
 				fix_problem(ctx, PR_1D_CLONE_ERROR, &pctx);
 			else
 				continue;
 		}
-		if (fix_problem(ctx, PR_1D_DELETE_QUESTION, &pctx))
+		/*
+		 * Note: When unsharing blocks, we don't prompt to delete
+		 * files. If the clone operation fails than the unshare
+		 * operation should fail too.
+		 */
+		if (!(ctx->options & E2F_OPT_UNSHARE_BLOCKS) &&
+                    fix_problem(ctx, PR_1D_DELETE_QUESTION, &pctx))
 			delete_file(ctx, ino, p, block_buf);
 		else
 			ext2fs_unmark_valid(fs);
@@ -771,12 +796,18 @@ static int clone_file_block(ext2_filsys fs,
 	e2fsck_t ctx;
 	blk64_t c;
 	int is_meta = 0;
+	int should_write = 1;
 
 	ctx = cs->ctx;
 	deferred_dec_badcount(cs);
 
 	if (*block_nr == 0)
 		return 0;
+
+	if (ext2fs_has_feature_shared_blocks(ctx->fs->super) &&
+	    (ctx->options & E2F_OPT_UNSHARE_BLOCKS) &&
+	    (ctx->options & E2F_OPT_NO))
+		should_write = 0;
 
 	c = EXT2FS_B2C(fs, blockcnt);
 	if (check_if_fs_cluster(ctx, EXT2FS_B2C(fs, *block_nr)))
@@ -820,6 +851,13 @@ static int clone_file_block(ext2_filsys fs,
 			cs->errcode = retval;
 			return BLOCK_ABORT;
 		}
+		if (ext2fs_has_feature_shared_blocks(fs->super)) {
+			/*
+			 * Update the block stats so we don't get a prompt to fix block
+			 * counts in the final pass.
+			 */
+			ext2fs_block_alloc_stats2(fs, new_block, +1);
+		}
 cluster_alloc_ok:
 		cs->alloc_block = new_block;
 
@@ -843,16 +881,25 @@ cluster_alloc_ok:
 			cs->errcode = retval;
 			return BLOCK_ABORT;
 		}
-		retval = io_channel_write_blk64(fs->io, new_block, 1, cs->buf);
-		if (retval) {
-			cs->errcode = retval;
-			return BLOCK_ABORT;
+		if (should_write) {
+			retval = io_channel_write_blk64(fs->io, new_block, 1, cs->buf);
+			if (retval) {
+				cs->errcode = retval;
+				return BLOCK_ABORT;
+			}
 		}
 		cs->save_dup_cluster = (is_meta ? NULL : p);
 		cs->save_blocknr = *block_nr;
 		*block_nr = new_block;
 		ext2fs_mark_block_bitmap2(ctx->block_found_map, new_block);
 		ext2fs_mark_block_bitmap2(fs->block_map, new_block);
+
+		if (!should_write) {
+			/* Don't try to change extent information; we want e2fsck to
+			 * return success.
+			 */
+			return 0;
+		}
 		return BLOCK_CHANGED;
 	}
 	return 0;

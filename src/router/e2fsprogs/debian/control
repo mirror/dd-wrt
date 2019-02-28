@@ -3,10 +3,10 @@ Section: admin
 Priority: required
 Maintainer: Theodore Y. Ts'o <tytso@mit.edu>
 Build-Depends: gettext, texinfo, pkg-config, libfuse-dev [linux-any kfreebsd-any] <!pkg.e2fsprogs.no-fuse2fs>, libattr1-dev, debhelper (>= 9.0), libblkid-dev, uuid-dev, m4
-Standards-Version: 4.1.3
+Standards-Version: 4.2.1
 Homepage: http://e2fsprogs.sourceforge.net
 Vcs-Browser: https://git.kernel.org/pub/scm/fs/ext2/e2fsprogs.git
-Vcs-Git: https://git.kernel.org/pub/scm/fs/ext2/e2fsprogs.git
+Vcs-Git: https://git.kernel.org/pub/scm/fs/ext2/e2fsprogs.git -b debian/master
 
 Package: fuse2fs
 Build-Profiles: <!pkg.e2fsprogs.no-fuse2fs>
@@ -187,7 +187,7 @@ Description: ext2/ext3/ext4 file system libraries - headers and static libraries
  libraries.
 
 Package: e2fsprogs
-Essential: yes
+XB-Important: yes
 Pre-Depends: ${shlibs:Depends}, ${misc:Depends}, libblkid1, libuuid1
 Multi-Arch: foreign
 Suggests: gpart, parted, fuse2fs, e2fsck-static

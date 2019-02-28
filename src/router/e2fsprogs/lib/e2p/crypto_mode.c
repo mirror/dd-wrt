@@ -20,7 +20,7 @@
 #include "e2p.h"
 
 struct mode {
-	unsigned int	num;
+	int		num;
 	const char	*string;
 };
 

@@ -181,7 +181,7 @@ the
 option to
 .BR mke2fs (8)
 or
-.BR tune2fs(8).
+.BR tune2fs(8) .
 .TP
 .B large_dir
 .br
@@ -756,13 +756,13 @@ ext4, 3.16
 ext4, 3.18
 .IP "\fBencrypt\fR" 2in
 ext4, 4.1
-.IP "\fBmetadata_csum_seed\fR" 2in
+.IP "\fBmetadata_csum_seed\fR" 2i
 ext4, 4.4
-.IP "\fBproject\fR" 2in
+.IP "\fBproject\fR" 2i
 ext4, 4.5
-.IP "\fBea_inode\fR" 2in
+.IP "\fBea_inode\fR" 2i
 ext4, 4.13
-.IP "\fBlarge_dir\fR" 2in
+.IP "\fBlarge_dir\fR" 2i
 ext4, 4.13
 .SH SEE ALSO
 .BR mke2fs (8),

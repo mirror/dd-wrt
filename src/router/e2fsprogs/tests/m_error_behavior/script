@@ -24,11 +24,11 @@ write_section_conf()
 ENDL
 }
 
-trap "rm -rf $TMPFILE $TMPFILE.conf" EXIT INT QUIT
+trap "rm -f $TMPFILE $TMPFILE.conf" EXIT INT QUIT
 dd if=/dev/zero of=$TMPFILE bs=1k count=512 > /dev/null 2>&1
 OUT=$test_name.log
 EXP=$test_dir/expect
-rm -rf $OUT
+rm -f $OUT
 
 # Test command line option
 echo "error default" >> $OUT

@@ -170,6 +170,8 @@ misc/e2image
 misc/e2image.8
 misc/e2initrd_helper
 misc/e2label.8
+misc/e2mmpstatus
+misc/e2mmpstatus.8
 misc/e2undo
 misc/e2undo.8
 misc/e4crypt
@@ -223,6 +225,7 @@ tests/*.failed
 tests/*.log
 tests/*.tmp
 tests/*.slow
+tests/test_data.tmp
 tests/mke2fs.conf
 tests/test_script
 tests/test_one

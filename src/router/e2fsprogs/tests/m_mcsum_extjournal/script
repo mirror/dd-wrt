@@ -7,9 +7,7 @@ else
 	EXP=$test_dir/expect
 fi
 
-cp /dev/null $OUT
-
-$MKE2FS -F -o Linux -b 1024 -O journal_dev,metadata_csum -T ext4 $TMPFILE 4096 2>&1 | sed -f $cmd_dir/filter.sed >> $OUT 2>&1
+$MKE2FS -F -o Linux -b 1024 -O journal_dev,metadata_csum -T ext4 $TMPFILE 4096 2>&1 | sed -f $cmd_dir/filter.sed > $OUT
 $DUMPE2FS -h $TMPFILE 2>&1 | grep 'Filesystem features:' >> $OUT
 
 rm -f $TMPFILE

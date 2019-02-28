@@ -26,7 +26,7 @@ Last Changed Date: 2007-06-22 13:36:10 -0400 (Fri, 22 Jun 2007)
 
    You should have received a copy of the GNU Lesser General Public
    License along with this library; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 */
 
 #ifdef CONFIG_STAND_ALONE
@@ -79,12 +79,10 @@ static char *rep_strdup(const char *s)
 {
 	char *ret;
 	int length;
+
 	if (!s)
 		return NULL;
-
-	if (!length)
-		length = strlen(s);
-
+	length = strlen(s);
 	ret = malloc(length + 1);
 	if (ret) {
 		strncpy(ret, s, length);

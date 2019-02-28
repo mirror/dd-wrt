@@ -130,7 +130,7 @@ If both the user and the
 .B mke2fs.conf
 file do not specify a default filesystem type, mke2fs will use a
 default filesystem type of
-.IR ext3
+.I ext3
 if a journal was requested via a command-line option, or
 .I ext2
 if not.
@@ -508,7 +508,7 @@ huge file number.
 .I zero_hugefiles
 This boolean relation specifies whether or not zero blocks will be
 written to the hugefiles while
-.BR mke2fs(8)
+.BR mke2fs (8)
 is creating them.  By default, zero blocks will be written to the huge
 files to avoid stale data from being made available to potentially
 untrusted user programs, unless the device supports a discard/trim

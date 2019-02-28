@@ -299,3 +299,4 @@ Drop the sparc assembly bitwise operations; it's less efficient
 than the GCC 3.4 compile code and triggers compiler warnings on
 sparc64.  Thanks to Matthias Andree for his analysis and suggestions.
 (Addresses Debian Bug #232326)
+
