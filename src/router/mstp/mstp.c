@@ -129,6 +129,7 @@ static void port_default_internal_vars(port_t *prt)
     assign(prt->rapidAgeingWhile, 0u);
     assign(prt->brAssuRcvdInfoWhile, 0u);
     prt->BaInconsistent = false;
+    prt->num_rx_bpdu_filtered = 0;
     prt->num_rx_bpdu = 0;
     prt->num_rx_tcn = 0;
     prt->num_tx_bpdu = 0;
@@ -300,6 +301,7 @@ bool MSTP_IN_port_create_and_add_tail(port_t *prt, __u16 portno)
     prt->BpduGuardError = false;
     prt->NetworkPort = false;
     prt->dontTxmtBpdu = false;
+    prt->bpduFilterPort = false;
     prt->deleted = false;
 
     port_default_internal_vars(prt);
@@ -500,6 +502,7 @@ void MSTP_IN_set_port_enable(port_t *prt, bool up, int speed, int duplex)
             prt->portEnabled = true;
             prt->BpduGuardError = false;
             prt->BaInconsistent = false;
+            prt->num_rx_bpdu_filtered = 0;
             prt->num_rx_bpdu = 0;
             prt->num_rx_tcn = 0;
             prt->num_tx_bpdu = 0;
@@ -576,6 +579,14 @@ void MSTP_IN_rx_bpdu(port_t *prt, bpdu_t *bpdu, int size)
 {
     int mstis_size;
     bridge_t *br = prt->bridge;
+
+    if(prt->bpduFilterPort)
+    {
+        LOG_PRTNAME(br, prt,
+                   "Received BPDU on BPDU Filtered Port - discarded");
+        ++(prt->num_rx_bpdu_filtered);
+        return;
+    }
 
     ++(prt->num_rx_bpdu);
 
@@ -1023,6 +1034,8 @@ void MSTP_IN_get_cist_port_status(port_t *prt, CIST_PortStatus *status)
     status->bpdu_guard_error = prt->BpduGuardError;
     status->network_port = prt->NetworkPort;
     status->ba_inconsistent = prt->BaInconsistent;
+    status->bpdu_filter_port = prt->bpduFilterPort;
+    status->num_rx_bpdu_filtered = prt->num_rx_bpdu_filtered;
     status->num_rx_bpdu = prt->num_rx_bpdu;
     status->num_rx_tcn = prt->num_rx_tcn;
     status->num_tx_bpdu = prt->num_tx_bpdu;
@@ -1193,6 +1206,16 @@ int MSTP_IN_set_cist_port_config(port_t *prt, CIST_PortConfig *cfg)
         {
             prt->dontTxmtBpdu = cfg->dont_txmt;
             INFO_PRTNAME(br, prt, "donttxmt new=%d", prt->dontTxmtBpdu);
+        }
+    }
+
+    if(cfg->set_bpdu_filter_port)
+    {
+        if (prt->bpduFilterPort != cfg->bpdu_filter_port)
+        {
+            prt->bpduFilterPort = cfg->bpdu_filter_port;
+            prt->num_rx_bpdu_filtered = 0;
+            INFO_PRTNAME(br, prt,"bpduFilterPort new=%d", prt->bpduFilterPort);
         }
     }
 
@@ -3252,6 +3275,10 @@ static bool PTSM_run(port_t *prt, bool dry_run)
             }
             if(!(prt->txCount < prt->bridge->Transmit_Hold_Count))
                 return false;
+
+            if(prt->bpduFilterPort)
+                return false;
+
             if(prt->sendRSTP)
             { /* implement MSTP */
                 if(prt->newInfo || (prt->newInfoMsti && !mstiMasterPort)

@@ -82,6 +82,11 @@ sets the ethernet (MAC) address ageing <time>, in seconds, for the <bridge>. Use
 Enables/disables the bridge assurance capability for a <port> in <bridge>,
 default is no.
 
+.B mstpctl setportbpdufilter <bridge> <port> {yes|no}
+Enables/disables the BPDU filter capability for a port <port> in
+bridge <bridge>, i.e. discard any ingress BPDUs and do not issue any
+BPDUs for this port. The default is no.
+
 .SH SPANNING TREE PROTOCOL SHOW COMMANDS
 .B mstpctl showbridge [<bridge>]
 will show information of the <bridge>'s CIST instance. If <bridge> parameter is omitted - shows info for all bridges.
