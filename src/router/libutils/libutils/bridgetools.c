@@ -131,7 +131,7 @@ int br_set_port_prio(const char *br, char *port, int prio)
 	if (!ifexists(port))
 		return -1;
 	char sprio[32];
-	snprintf(sprio, sizeof(sprio), "%d", prio);
+	snprintf(sprio, sizeof(sprio), "%d", (prio / 16));
 	return eval("mstpctl", "settreeportprio", br, port, "0", sprio);
 }
 
@@ -140,7 +140,7 @@ int br_set_bridge_prio(const char *br, int prio)
 	if (!ifexists(br))
 		return -1;
 	char sprio[32];
-	snprintf(sprio, sizeof(sprio), "%d", prio);
+	snprintf(sprio, sizeof(sprio), "%d", (prio / 4096));
 	return eval("mstpctl", "settreeprio", br, "0", sprio);
 }
 
