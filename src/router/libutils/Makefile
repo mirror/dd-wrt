@@ -313,6 +313,9 @@ endif
 ifeq ($(CONFIG_WILLY),y)
 CFLAGS += -DHAVE_WILLY
 endif
+ifeq ($(CONFIG_MSTP),y)
+CFLAGS += -DHAVE_MSTP
+endif
 ifeq ($(CONFIG_E380AC),y)
 CFLAGS += -DHAVE_E380AC
 endif
