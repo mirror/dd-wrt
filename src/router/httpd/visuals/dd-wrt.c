@@ -1316,17 +1316,22 @@ static void showOptionsNames(webs_t wp, char *label, char *propname, char *value
 	websWrite(wp, "//]]>\n</script>\n</select></div>\n");
 }
 
-static void showIfOptions(webs_t wp, char *propname, char *names, char *select)
+static void showIfOptions_ext(webs_t wp, char *propname, char *names, char *select, int disabled)
 {
 	char *next;
 	char var[80];
 
-	websWrite(wp, "<select name=\"%s\">\n", propname);
+	websWrite(wp, "<select name=\"%s\"%s>\n", propname, disabled ? " disabled=\"true\"" : "");
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 	foreach(var, names, next) {
 		websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", var, !strcmp(var, select) ? "selected=\\\"selected\\\"" : "", getNetworkLabel(wp, var));
 	}
 	websWrite(wp, "//]]>\n</script>\n</select>\n");
+}
+
+static void showIfOptions(webs_t wp, char *propname, char *names, char *select)
+{
+	showIfOptions_ext(wp, propname, names, select, 0);
 }
 
 static void showOptionsChoose(webs_t wp, char *propname, char *names, char *select)
@@ -2493,7 +2498,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 #endif				// end BUFFALO
 		sprintf(ssid, "%s_ap_isolate", var);
 		showRadio(wp, "wl_adv.label11", ssid);
-#if 0 //def HAVE_80211AC
+#if 0				//def HAVE_80211AC
 #ifndef HAVE_NOAC
 		if (!has_qtn(var)) {
 			char wl_igmp[16];
