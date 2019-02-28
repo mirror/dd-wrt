@@ -254,7 +254,7 @@ static void show_bridgeifname(webs_t wp, char *bridges, char *devs, int count, c
 	if (hasstp)
 		showIfOptions(wp, vlan_name, "On Off", stp ? !strcmp(stp, "1") ? "On" : "Off" : "On");
 	else
-		showIfOptions_ext(wp, vlan_name, "Off", "Off", 0);
+		showIfOptions_ext(wp, vlan_name, "Off", "Off", 1);
 	websWrite(wp, "</td>");
 #endif
 	sprintf(vlan_name, "bridgeifprio%d", count);
