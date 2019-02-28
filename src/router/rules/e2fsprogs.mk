@@ -35,6 +35,5 @@ ifneq ($(CONFIG_E2FSPROGS_ADV),y)
 endif
 	rm -rf $(INSTALLDIR)/e2fsprogs/usr/share
 	rm -rf $(INSTALLDIR)/e2fsprogs/usr/man
-	rm -rf $(INSTALLDIR)/e2fsprogs/usr
 	-cd $(INSTALLDIR)/e2fsprogs/etc && ln -sf /proc/mounts mtab
 	true
