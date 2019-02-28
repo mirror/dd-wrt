@@ -1420,8 +1420,6 @@ struct nvram_param srouter_defaults[] = {
 	{"ath0_channel", "2412"},
 	{"ath1_channel", "2437"},
 	{"ath2_channel", "2462"},
-#elif HAVE_ONNET
-	{"ath0_channel", "5300"},
 #else
 	{"ath0_channel", "0"},	/* Channel number */
 	{"ath1_channel", "0"},	/* Channel number */
