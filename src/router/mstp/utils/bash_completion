@@ -16,8 +16,8 @@ _mstpctl()
                 setportautoedge setportp2p setportrestrrole setportrestrtcn \
                 setbpduguard settreeportprio settreeportcost showbridge \
                 showmstilist showmstconfid showvid2fid showfid2mstid showport \
-                showportdetail showtree showtreeport \
-                sethello setageing setportnetwork" -- "$cur" ) )
+                showportdetail showtree showtreeport sethello \
+                setageing setportnetwork setportbpdufilter" -- "$cur" ) )
             ;;
         2)
             case $command in
@@ -33,7 +33,8 @@ _mstpctl()
                 showport|showportdetail|showtreeport|showportpathcode|\
                 setportadminedge|setportautoedge|setportp2p|\
                 setportrestrrole|setportrestrtcn|portmcheck|\
-                settreeportprio|settreeportcost|setportnetwork)
+                settreeportprio|settreeportcost|setportnetwork|\
+                setportbpdufilter)
                     COMPREPLY=( $( compgen -W "$(for x in \
                         `ls /sys/class/net/${words[2]}/brif/`; do echo $x; \
                         done)" -- "$cur" ) )
@@ -45,8 +46,8 @@ _mstpctl()
             ;;
         4)
             case $command in
-                setportadminedge|setportautoedge|\
-                setportrestrrole|setportrestrtcn|setbpduguard|setportnetwork)
+                setportadminedge|setportautoedge|setportrestrrole|\
+                setportrestrtcn|setbpduguard|setportnetwork|setportbpdufilter)
                     COMPREPLY=( $( compgen -W 'yes no' -- "$cur" ) )
                     ;;
                 setportp2p)

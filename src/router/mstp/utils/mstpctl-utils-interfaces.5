@@ -38,7 +38,7 @@ auto br0
 iface br0 inet static
     address 12.0.0.3
     netmask 255.255.255.0
-    mstpctl_ports swp1 swp2 swp3
+    mstpctl_ports swp1 swp2 swp3 swp4
     mstpctl_stp on
     mstpctl_maxwait auto
     mstpctl_maxage 20
@@ -47,16 +47,17 @@ iface br0 inet static
     mstpctl_txholdcount 6
     mstpctl_forcevers rstp
     mstpctl_portpathcost swp1=0 swp2=0
-    mstpctl_portadminedge swp1=no swp2=no
+    mstpctl_portadminedge swp1=no swp2=no swp4=yes
     mstpctl_portautoedge swp1=yes swp2=yes
     mstpctl_portp2p swp1=no swp2=no
     mstpctl_portrestrrole swp1=no swp2=no
-    mstpctl_bpduguard swp1=no swp2=no
+    mstpctl_bpduguard swp1=no swp2=no swp4=yes
     mstpctl_portrestrtcn swp1=no swp2=no
     mstpctl_treeprio 8
     mstpctl_treeportprio swp3=8
     mstpctl_hello 2
     mstpctl_portnetwork swp1=no
+    mstpctl_portbpdufilter swp4=yes
 
 .EE
 .SH IFACE OPTIONS
@@ -143,6 +144,10 @@ sets the ethernet (MAC) address ageing \fItime\fP, in seconds. Used only when pr
 .TP
 .BI mstpctl_portnetwork " port yes|no"
 Enables/disables the bridge assurance capability for a \fIport\fP,
+default is no.
+.TP
+.BI mstpctl_portbpdufilter " port yes|no"
+Enables/disables the bridge BPDU filter capability for a \fIport\fP,
 default is no.
 .RE
 .SH FILES
