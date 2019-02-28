@@ -208,6 +208,17 @@ if [ "$MODE" = 'start' ]; then
     done
   fi
 
+  if [ "$IF_MSTPCTL_PORTBPDUFILTER" ]; then
+    portbpdufilters="$(echo "$IF_MSTPCTL_PORTBPDUFILTER" | tr '\n' ' ' | tr -s ' ')"
+    for portbpdufilter in $portbpdufilters; do
+      port="$(echo "$portbpdufilter" | cut -d '=' -f1)"
+      bpdufilter="$(echo "$portbpdufilter" | cut -d '=' -f2)"
+      if [ -n "$port" ] && [ -n "$bpdufilter" ]; then
+        "$mstpctl" setportbpdufilter "$IFACE" "$port" "$bpdufilter"
+      fi
+    done
+  fi
+
   if [ "$IF_MSTPCTL_TREEPORTPRIO" ]; then
     treeportprios="$(echo "$IF_MSTPCTL_TREEPORTPRIO" | tr '\n' ' ' | tr -s ' ')"
     for treeportprio in $treeportprios; do
