@@ -770,7 +770,7 @@ errcode_t ext2fs_read_inode_full(ext2_filsys fs, ext2_ino_t ino,
 	}
 	if (fs->flags & EXT2_FLAG_IMAGE_FILE) {
 		inodes_per_block = fs->blocksize / EXT2_INODE_SIZE(fs->super);
-		block_nr = fs->image_header->offset_inode / fs->blocksize;
+		block_nr = ext2fs_le32_to_cpu(fs->image_header->offset_inode) / fs->blocksize;
 		block_nr += (ino - 1) / inodes_per_block;
 		offset = ((ino - 1) % inodes_per_block) *
 			EXT2_INODE_SIZE(fs->super);

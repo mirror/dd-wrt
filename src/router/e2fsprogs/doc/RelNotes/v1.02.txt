@@ -22,3 +22,4 @@ Patch lsattr so that it won't hang when checking a named pipe.
 Minor compilation fixes:
 	* Fix the order of libraries that were linked in debugfs.
 	* Allow the sources to be compiled with -ansi turned on.
+

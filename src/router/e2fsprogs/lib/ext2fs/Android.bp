@@ -3,6 +3,7 @@
 cc_library {
     name: "libext2fs",
     host_supported: true,
+    recovery_available: true,
     unique_host_soname: true,
     defaults: ["e2fsprogs-defaults"],
     srcs: [
@@ -47,6 +48,7 @@ cc_library {
         "get_pathname.c",
         "getsize.c",
         "getsectsize.c",
+        "hashmap.c",
         "i_block.c",
         "icount.c",
         "imager.c",

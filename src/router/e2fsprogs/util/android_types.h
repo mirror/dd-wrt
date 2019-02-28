@@ -24,10 +24,14 @@ typedef __signed__ long long __s64;
 #define EXT2_ENDIAN_H_
 
 #ifdef __CHECKER__
+#ifndef __bitwise
 #define __bitwise		__attribute__((bitwise))
+#endif
 #define __force			__attribute__((force))
 #else
+#ifndef __bitwise
 #define __bitwise
+#endif
 #define __force
 #endif
 

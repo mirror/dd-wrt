@@ -166,6 +166,7 @@ int qcow2_write_raw_image(int qcow2_fd, int raw_fd,
 	blk64_t *l1_table, *l2_table = NULL;
 	void *copy_buf = NULL;
 	size_t size;
+	unsigned int max_l1_size;
 
 	if (hdr->crypt_method)
 		return -QCOW_ENCRYPTED;
@@ -175,12 +176,21 @@ int qcow2_write_raw_image(int qcow2_fd, int raw_fd,
 	img.l2_cache = NULL;
 	img.l1_table = NULL;
 	img.cluster_bits = ext2fs_be32_to_cpu(hdr->cluster_bits);
+	if (img.cluster_bits < 9 || img.cluster_bits > 31)
+		return -QCOW_CORRUPTED;
 	img.cluster_size = 1 << img.cluster_bits;
 	img.l1_size = ext2fs_be32_to_cpu(hdr->l1_size);
 	img.l1_offset = ext2fs_be64_to_cpu(hdr->l1_table_offset);
 	img.l2_size = 1 << (img.cluster_bits - 3);
 	img.image_size = ext2fs_be64_to_cpu(hdr->size);
 
+	if (img.l1_offset & (img.cluster_size - 1))
+		return -QCOW_CORRUPTED;
+
+	max_l1_size = (img.image_size >> ((2 * img.cluster_bits) - 3)) +
+		img.cluster_size;
+	if (img.l1_size > max_l1_size)
+		return -QCOW_CORRUPTED;
 
 	ret = ext2fs_get_memzero(img.cluster_size, &l2_table);
 	if (ret)

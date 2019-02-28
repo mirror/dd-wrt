@@ -53,7 +53,7 @@ static int blocks64 = 0;
 
 static void usage(void)
 {
-	fprintf(stderr, _("Usage: %s [-bfghixV] [-o superblock=<num>] "
+	fprintf(stderr, _("Usage: %s [-bfghimxV] [-o superblock=<num>] "
 		 "[-o blocksize=<num>] device\n"), program_name);
 	exit(1);
 }
@@ -420,6 +420,79 @@ static void print_journal_information(ext2_filsys fs)
 	e2p_list_journal_super(stdout, buf, fs->blocksize, 0);
 }
 
+static int check_mmp(ext2_filsys fs)
+{
+	int retval;
+
+	/* This won't actually start MMP on the filesystem, since fs is opened
+	 * readonly, but it will do the proper activity checking for us. */
+	retval = ext2fs_mmp_start(fs);
+	if (retval) {
+		com_err(program_name, retval, _("while trying to open %s"),
+			fs->device_name);
+		if (retval == EXT2_ET_MMP_FAILED ||
+		    retval == EXT2_ET_MMP_FSCK_ON ||
+		    retval == EXT2_ET_MMP_CSUM_INVALID ||
+		    retval == EXT2_ET_MMP_UNKNOWN_SEQ) {
+			if (fs->mmp_buf) {
+				struct mmp_struct *mmp = fs->mmp_buf;
+				time_t mmp_time = mmp->mmp_time;
+
+				fprintf(stderr,
+					"%s: MMP last updated by '%s' on %s",
+					program_name, mmp->mmp_nodename,
+					ctime(&mmp_time));
+			}
+			retval = 1;
+		} else {
+			retval = 2;
+		}
+	} else {
+		printf("%s: it is safe to mount '%s', MMP is clean\n",
+		       program_name, fs->device_name);
+	}
+
+	return retval;
+}
+
+static void print_mmp_block(ext2_filsys fs)
+{
+	struct mmp_struct *mmp;
+	time_t mmp_time;
+	errcode_t retval;
+
+	if (fs->mmp_buf == NULL) {
+		retval = ext2fs_get_mem(fs->blocksize, &fs->mmp_buf);
+		if (retval) {
+			com_err(program_name, retval,
+				_("failed to alloc MMP buffer\n"));
+			return;
+		}
+	}
+
+	retval = ext2fs_mmp_read(fs, fs->super->s_mmp_block, fs->mmp_buf);
+	/* this is only dumping, not checking status, so OK to skip this */
+	if (retval == EXT2_ET_OP_NOT_SUPPORTED)
+		return;
+	if (retval) {
+		com_err(program_name, retval,
+			_("reading MMP block %llu from '%s'\n"),
+			fs->super->s_mmp_block, fs->device_name);
+		return;
+	}
+
+	mmp = fs->mmp_buf;
+	mmp_time = mmp->mmp_time;
+	printf("MMP_block:\n");
+	printf("    mmp_magic: 0x%x\n", mmp->mmp_magic);
+	printf("    mmp_check_interval: %d\n", mmp->mmp_check_interval);
+	printf("    mmp_sequence: %#08x\n", mmp->mmp_seq);
+	printf("    mmp_update_date: %s", ctime(&mmp_time));
+	printf("    mmp_update_time: %lld\n", mmp->mmp_time);
+	printf("    mmp_node_name: %s\n", mmp->mmp_nodename);
+	printf("    mmp_device_name: %s\n", mmp->mmp_bdevname);
+}
+
 static void parse_extended_opts(const char *opts, blk64_t *superblock,
 				int *blocksize)
 {
@@ -500,11 +573,15 @@ static void parse_extended_opts(const char *opts, blk64_t *superblock,
 int main (int argc, char ** argv)
 {
 	errcode_t	retval;
+	errcode_t	retval_csum = 0;
+	const char	*error_csum = NULL;
 	ext2_filsys	fs;
 	int		print_badblocks = 0;
 	blk64_t		use_superblock = 0;
 	int		use_blocksize = 0;
 	int		image_dump = 0;
+	int		mmp_check = 0;
+	int		mmp_info = 0;
 	int		force = 0;
 	int		flags;
 	int		header_only = 0;
@@ -519,12 +596,23 @@ int main (int argc, char ** argv)
 	set_com_err_gettext(gettext);
 #endif
 	add_error_table(&et_ext2_error_table);
-	fprintf (stderr, "dumpe2fs %s (%s)\n", E2FSPROGS_VERSION,
-		 E2FSPROGS_DATE);
-	if (argc && *argv)
-		program_name = *argv;
+	if (argc && *argv) {
+		if (strrchr(*argv, '/'))
+			program_name = strrchr(*argv, '/') + 1;
+		else
+			program_name = *argv;
 
-	while ((c = getopt(argc, argv, "bfghixVo:")) != EOF) {
+		if (strstr(program_name, "mmpstatus") != NULL) {
+			mmp_check = 1;
+			header_only = 1;
+		}
+	}
+
+	if (!mmp_check)
+		fprintf(stderr, "dumpe2fs %s (%s)\n", E2FSPROGS_VERSION,
+			E2FSPROGS_DATE);
+
+	while ((c = getopt(argc, argv, "bfghimxVo:")) != EOF) {
 		switch (c) {
 		case 'b':
 			print_badblocks++;
@@ -539,7 +627,18 @@ int main (int argc, char ** argv)
 			header_only++;
 			break;
 		case 'i':
-			image_dump++;
+			if (mmp_check)
+				mmp_info++;
+			else
+				image_dump++;
+			break;
+		case 'm':
+			mmp_check++;
+			header_only++;
+			if (image_dump) {
+				mmp_info = image_dump;
+				image_dump = 0;
+			}
 			break;
 		case 'o':
 			parse_extended_opts(optarg, &use_superblock,
@@ -557,12 +656,12 @@ int main (int argc, char ** argv)
 			usage();
 		}
 	}
-	if (optind != argc - 1) {
+	if (optind != argc - 1)
 		usage();
-		exit(1);
-	}
+
 	device_name = argv[optind++];
-	flags = EXT2_FLAG_JOURNAL_DEV_OK | EXT2_FLAG_SOFTSUPP_FEATURES | EXT2_FLAG_64BITS;
+	flags = EXT2_FLAG_JOURNAL_DEV_OK | EXT2_FLAG_SOFTSUPP_FEATURES |
+		EXT2_FLAG_64BITS;
 	if (force)
 		flags |= EXT2_FLAG_FORCE;
 	if (image_dump)
@@ -579,64 +678,87 @@ try_open_again:
 			if (!retval)
 				break;
 		}
-	} else
-		retval = ext2fs_open (device_name, flags, use_superblock,
-				      use_blocksize, unix_io_manager, &fs);
-	if (retval && !(flags & EXT2_FLAG_IGNORE_CSUM_ERRORS)) {
-		flags |= EXT2_FLAG_IGNORE_CSUM_ERRORS;
+	} else {
+		retval = ext2fs_open(device_name, flags, use_superblock,
+				     use_blocksize, unix_io_manager, &fs);
+	}
+	flags |= EXT2_FLAG_IGNORE_CSUM_ERRORS;
+	if (retval && !retval_csum) {
+		retval_csum = retval;
+		error_csum = _("while trying to open %s");
 		goto try_open_again;
 	}
-	if (!retval && (fs->flags & EXT2_FLAG_IGNORE_CSUM_ERRORS))
-		printf("%s", _("\n*** Checksum errors detected in filesystem!  Run e2fsck now!\n\n"));
-	flags |= EXT2_FLAG_IGNORE_CSUM_ERRORS;
 	if (retval) {
-		com_err (program_name, retval, _("while trying to open %s"),
-			 device_name);
+		com_err(program_name, retval, _("while trying to open %s"),
+			device_name);
 		printf("%s", _("Couldn't find valid filesystem superblock.\n"));
 		if (retval == EXT2_ET_BAD_MAGIC)
 			check_plausibility(device_name, CHECK_FS_EXIST, NULL);
-		exit (1);
+		goto out;
 	}
 	fs->default_bitmap_type = EXT2FS_BMAP64_RBTREE;
 	if (ext2fs_has_feature_64bit(fs->super))
 		blocks64 = 1;
-	if (print_badblocks) {
+	if (mmp_check) {
+		if (ext2fs_has_feature_mmp(fs->super) &&
+		    fs->super->s_mmp_block != 0) {
+			if (mmp_info) {
+				print_mmp_block(fs);
+				printf("    mmp_block_number: ");
+				print_number(fs->super->s_mmp_block);
+				printf("\n");
+			} else {
+				retval = check_mmp(fs);
+			}
+			if (!retval && retval_csum)
+				retval = 2;
+		} else {
+			fprintf(stderr, _("%s: MMP feature not enabled.\n"),
+				program_name);
+			retval = 2;
+		}
+	} else if (print_badblocks) {
 		list_bad_blocks(fs, 1);
 	} else {
 		if (grp_only)
 			goto just_descriptors;
-		list_super (fs->super);
+		list_super(fs->super);
 		if (ext2fs_has_feature_journal_dev(fs->super)) {
 			print_journal_information(fs);
-			ext2fs_close_free(&fs);
-			exit(0);
+
+			goto out_close;
 		}
 		if (ext2fs_has_feature_journal(fs->super) &&
 		    (fs->super->s_journal_inum != 0))
 			print_inline_journal_information(fs);
+		if (ext2fs_has_feature_mmp(fs->super) &&
+		    fs->super->s_mmp_block != 0)
+			print_mmp_block(fs);
 		list_bad_blocks(fs, 0);
-		if (header_only) {
-			ext2fs_close_free(&fs);
-			exit (0);
-		}
+		if (header_only)
+			goto out_close;
+
 		fs->flags &= ~EXT2_FLAG_IGNORE_CSUM_ERRORS;
 try_bitmaps_again:
-		retval = ext2fs_read_bitmaps (fs);
-		if (retval && !(fs->flags & EXT2_FLAG_IGNORE_CSUM_ERRORS)) {
+		retval = ext2fs_read_bitmaps(fs);
+		if (retval && !retval_csum) {
 			fs->flags |= EXT2_FLAG_IGNORE_CSUM_ERRORS;
+			retval_csum = retval;
+			error_csum = _("while trying to read '%s' bitmaps\n");
 			goto try_bitmaps_again;
 		}
-		if (!retval && (fs->flags & EXT2_FLAG_IGNORE_CSUM_ERRORS))
-			printf("%s", _("\n*** Checksum errors detected in bitmaps!  Run e2fsck now!\n\n"));
 just_descriptors:
 		list_desc(fs, grp_only);
-		if (retval) {
-			printf(_("\n%s: %s: error reading bitmaps: %s\n"),
-			       program_name, device_name,
-			       error_message(retval));
-		}
+	}
+out_close:
+	if (retval_csum) {
+		com_err(program_name, retval_csum, error_csum, device_name);
+		printf("%s", _("*** Run e2fsck now!\n\n"));
+		if (!retval)
+			retval = retval_csum;
 	}
 	ext2fs_close_free(&fs);
 	remove_error_table(&et_ext2_error_table);
-	exit (0);
+out:
+	return retval;
 }

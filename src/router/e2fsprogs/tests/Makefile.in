@@ -15,6 +15,7 @@ all:: @DO_TEST_SUITE@ test_one test_script
 
 test_one: $(srcdir)/test_one.in Makefile mke2fs.conf
 	@echo "Creating test_one script..."
+	@[ -f test_one ] && chmod u+w test_one || true
 	@echo "#!/bin/sh" > test_one
 	@echo "HTREE=y" >> test_one
 	@echo "QUOTA=y" >> test_one
@@ -23,14 +24,15 @@ test_one: $(srcdir)/test_one.in Makefile mke2fs.conf
 	@echo "SIZEOF_TIME_T=@SIZEOF_TIME_T@" >> test_one
 	@echo "DD=@DD@" >>test_one
 	@cat $(srcdir)/test_one.in >> test_one
-	@chmod +x test_one
+	@chmod +x-w test_one
 
 test_script: test_one test_script.in Makefile mke2fs.conf
 	@echo "Creating test_script..."
+	@[ -f test_script ] && chmod u+w test_script || true
 	@echo "#!/bin/sh" > test_script
 	@echo "SRCDIR=@srcdir@" >> test_script
 	@cat $(srcdir)/test_script.in >> test_script
-	@chmod +x test_script
+	@chmod +x-w test_script
 
 mke2fs.conf: $(srcdir)/mke2fs.conf.in
 	$(CP) $(srcdir)/mke2fs.conf.in mke2fs.conf
@@ -94,7 +96,7 @@ testend: test_one ${TDIR}/image
 
 clean::
 	$(RM) -f *~ *.log *.new *.failed *.ok *.tmp *.slow
-	$(RM) -f test_one test_script mke2fs.conf
+	$(RM) -f test_one test_script mke2fs.conf test_data.tmp
 
 distclean:: clean
 	$(RM) -f Makefile

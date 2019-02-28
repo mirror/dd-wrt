@@ -99,24 +99,25 @@ static void free_base_fs_entry(void *e)
 	}
 }
 
-struct hashmap *basefs_parse(const char *file, const char *mountpoint)
+struct ext2fs_hashmap *basefs_parse(const char *file, const char *mountpoint)
 {
 	int err;
-	struct hashmap *entries = NULL;
+	struct ext2fs_hashmap *entries = NULL;
 	struct basefs_entry *entry;
 	FILE *f = basefs_open(file);
 	if (!f)
 		return NULL;
-	entries = hashmap_create(djb2_hash, free_base_fs_entry, 1024);
+	entries = ext2fs_hashmap_create(ext2fs_djb2_hash, free_base_fs_entry, 1024);
 	if (!entries)
 		goto end;
 
 	while ((entry = basefs_readline(f, mountpoint, &err)))
-		hashmap_add(entries, entry, entry->path);
+		ext2fs_hashmap_add(entries, entry, entry->path,
+				   strlen(entry->path));
 
 	if (err) {
 		fclose(f);
-		hashmap_free(entries);
+		ext2fs_hashmap_free(entries);
 		return NULL;
 	}
 end:

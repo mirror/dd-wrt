@@ -23,7 +23,7 @@ ENDL
 echo "rebuild extent metadata_csum test" > $OUT
 
 MKE2FS_CONFIG=$CONF $MKE2FS -F -T ext4h $TMPFILE 524288 >> $OUT 2>&1
-rm -rf $CONF
+rm -f $CONF
 
 # dump and check
 $DUMPE2FS $TMPFILE 2> /dev/null | grep '^Group 0:' -B99 -A20 | sed -f $cmd_dir/filter.sed > $OUT.before
@@ -48,7 +48,7 @@ rm $TMPFILE $OUT.before $OUT.after
 # Do the verification
 #
 
-sed -f $cmd_dir/filter.sed -e "s;$TMPFILE;test.img;" -e 's/test_filesys:.*//g' < $OUT > $OUT.new
+sed -f $cmd_dir/filter.sed -e 's/test_filesys:.*//g' < $OUT > $OUT.new
 mv $OUT.new $OUT
 
 cmp -s $OUT $EXP

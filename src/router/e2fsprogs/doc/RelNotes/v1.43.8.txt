@@ -46,4 +46,3 @@ Clean up Makefile output.
 Fix compatibility problems with glibc 2.27 casued by a collision with
 copy_file_range().
 
-

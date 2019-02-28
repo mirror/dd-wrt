@@ -37,7 +37,7 @@ cc_defaults {
     ],
     cflags: [
         "-Wno-sign-compare",
-        "-fno-strict-aliasing"
+        "-fno-strict-aliasing",
     ],
 }
 
@@ -46,7 +46,6 @@ e2fsck_libs = [
     "libext2_blkid",
     "libext2_uuid",
     "libext2_quota",
-    "libext2_com_err",
     "libext2_e2p",
 ]
 

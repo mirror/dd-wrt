@@ -129,7 +129,7 @@ void e2fsck_pass2(e2fsck_t ctx)
 #endif
 	struct check_dir_struct cd;
 	struct dx_dir_info	*dx_dir;
-	struct dx_dirblock_info	*dx_db, *dx_parent;
+	struct dx_dirblock_info	*dx_db;
 	int			b;
 	int			i, depth;
 	problem_t		code;

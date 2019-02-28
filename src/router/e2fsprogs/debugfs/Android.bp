@@ -51,6 +51,7 @@ debugfs_libs = [
     "libext2_quota",
     "libext2_com_err",
     "libext2_e2p",
+    "libext2_support",
 ]
 
 cc_binary {

@@ -87,14 +87,6 @@ struct journal_s
 	__u32			j_csum_seed;
 };
 
-#define J_ASSERT(assert)						\
-	do { if (!(assert)) {						\
-		printf ("Assertion failure in %s() at %s line %d: "	\
-			"\"%s\"\n",					\
-			__FUNCTION__, __FILE__, __LINE__, # assert);	\
-		fatal_error(e2fsck_global_ctx, 0);			\
-	} } while (0)
-
 #define is_journal_abort(x) 0
 
 #define BUFFER_TRACE(bh, info)	do {} while (0)

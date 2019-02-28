@@ -12,18 +12,18 @@ else
 	EXP=$test_dir/expect.nodebugfs
 fi
 OUT=$test_name.log
-rm -rf $test_name.failed $test_name.ok
+rm -f $test_name.failed $test_name.ok
 
 echo "*** e2fsck" > $OUT
 $FSCK $FSCK_OPT $TMPFILE >> $OUT 2>&1
 echo "*** debugfs" >> $OUT
-test -x $DEBUGFS_EXE && $DEBUGFS_EXE -R 'quit' $TMPFILE >> $OUT 2>&1
+test -x $DEBUGFS_EXE && $DEBUGFS -R 'quit' $TMPFILE >> $OUT 2>&1
 echo "*** tune2fs" >> $OUT
 $TUNE2FS -i 0 $TMPFILE >> $OUT 2>&1
 echo "*** mke2fs" >> $OUT
 $MKE2FS -n -b 1024 $TMPFILE >> $OUT 2>&1
 
-sed -f $cmd_dir/filter.sed -e "s|$TMPFILE|test.img|g" < $OUT > $OUT.new
+sed -f $cmd_dir/filter.sed < $OUT > $OUT.new
 mv $OUT.new $OUT
 
 # Figure out what happened

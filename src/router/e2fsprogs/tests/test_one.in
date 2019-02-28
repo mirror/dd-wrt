@@ -57,11 +57,11 @@ if [ -n "$SKIP_SLOW_TESTS" -a -f $test_dir/is_slow_test ]; then
     exit 0
 fi
 
-rm -f $test_name.ok $test_name.failed
+rm -f $test_name.ok $test_name.failed $test_name.log $test_name.slow
 #echo -e -n "$test_name: $test_description:\r"
 
 TMPFILE=$(mktemp ${TMPDIR:-/tmp}/e2fsprogs-tmp-$test_name.XXXXXX)
-trap 'rm -f $TMPFILE ; exit' 1 2 15
+[ "$SKIP_UNLINK" != "true" ] && trap 'rm -f $TMPFILE ; exit' 0 1 2 15
 
 start=$SECONDS
 if [ -f $test_dir/script ]; then

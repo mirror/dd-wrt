@@ -151,10 +151,10 @@ int e2fsck_pass1_check_device_inode(ext2_filsys fs EXT2FS_ATTR((unused)),
 	int	i;
 
 	/*
-	 * If the index flag is set, then this is a bogus
+	 * If the index or extents flag is set, then this is a bogus
 	 * device/fifo/socket
 	 */
-	if (inode->i_flags & EXT2_INDEX_FL)
+	if (inode->i_flags & (EXT2_INDEX_FL | EXT4_EXTENTS_FL))
 		return 0;
 
 	/*
@@ -819,7 +819,6 @@ extern errcode_t e2fsck_setup_icount(e2fsck_t ctx, const char *icount_name,
 	errcode_t		retval;
 	char			*tdb_dir;
 	int			enable;
-	int			full_map;
 
 	*ret = 0;
 
@@ -1173,8 +1172,8 @@ void e2fsck_pass1(e2fsck_t ctx)
 	const char	*old_op;
 	int		imagic_fs, extent_fs, inlinedata_fs;
 	int		low_dtime_check = 1;
-	int		inode_size = EXT2_INODE_SIZE(fs->super);
-	int		bufsize;
+	unsigned int	inode_size = EXT2_INODE_SIZE(fs->super);
+	unsigned int	bufsize;
 	int		failed_csum = 0;
 	ext2_ino_t	ino_threshold = 0;
 	dgrp_t		ra_group = 0;
@@ -1497,8 +1496,8 @@ void e2fsck_pass1(e2fsck_t ctx)
 		    (ino >= EXT2_FIRST_INODE(fs->super))) {
 			size_t size = 0;
 
-			pctx.errcode = ext2fs_inline_data_size(fs, ino, &size);
-			if (!pctx.errcode && size &&
+			pctx.errcode = get_inline_data_ea_size(fs, ino, &size);
+			if (!pctx.errcode &&
 			    fix_problem(ctx, PR_1_INLINE_DATA_FEATURE, &pctx)) {
 				ext2fs_set_feature_inline_data(sb);
 				ext2fs_mark_super_dirty(fs);
@@ -1542,6 +1541,7 @@ void e2fsck_pass1(e2fsck_t ctx)
 			case EXT2_ET_NO_INLINE_DATA:
 			case EXT2_ET_EXT_ATTR_CSUM_INVALID:
 			case EXT2_ET_EA_BAD_VALUE_OFFSET:
+			case EXT2_ET_EA_INODE_CORRUPTED:
 				/* broken EA or no system.data EA; truncate */
 				if (fix_problem(ctx, PR_1_INLINE_DATA_NO_ATTR,
 						&pctx)) {
@@ -2260,6 +2260,10 @@ static _INLINE_ void mark_block_used(e2fsck_t ctx, blk64_t block)
 	clear_problem_context(&pctx);
 
 	if (ext2fs_fast_test_block_bitmap2(ctx->block_found_map, block)) {
+		if (ext2fs_has_feature_shared_blocks(ctx->fs->super) &&
+		    !(ctx->options & E2F_OPT_UNSHARE_BLOCKS)) {
+			return;
+		}
 		if (!ctx->block_dup_map) {
 			pctx.errcode = e2fsck_allocate_block_bitmap(ctx->fs,
 					_("multiply claimed block map"),
@@ -2290,7 +2294,8 @@ static _INLINE_ void mark_blocks_used(e2fsck_t ctx, blk64_t block,
 	if (ext2fs_test_block_bitmap_range2(ctx->block_found_map, block, num))
 		ext2fs_mark_block_bitmap_range2(ctx->block_found_map, block, num);
 	else {
-		int i;
+		unsigned int i;
+
 		for (i = 0; i < num; i += EXT2FS_CLUSTER_RATIO(ctx->fs))
 			mark_block_used(ctx, block + i);
 	}
@@ -2569,7 +2574,7 @@ static int check_ext_attr(e2fsck_t ctx, struct problem_context *pctx,
 			return 0;
 	}
 
-	if (quota_blocks != EXT2FS_C2B(fs, 1)) {
+	if (quota_blocks != EXT2FS_C2B(fs, 1U)) {
 		if (!ctx->ea_block_quota_blocks) {
 			pctx->errcode = ea_refcount_create(0,
 						&ctx->ea_block_quota_blocks);
@@ -3439,15 +3444,11 @@ static void check_blocks(e2fsck_t ctx, struct problem_context *pctx,
 				bad_size = 2;
 		}
 	} else {
-		e2_blkcnt_t blkpg = ctx->blocks_per_page;
-
 		size = EXT2_I_SIZE(inode);
 		if ((pb.last_init_lblock >= 0) &&
-		    /* allow allocated blocks to end of PAGE_SIZE */
+		    /* Do not allow initialized allocated blocks past i_size*/
 		    (size < (__u64)pb.last_init_lblock * fs->blocksize) &&
-		    (pb.last_init_lblock / blkpg * blkpg != pb.last_init_lblock ||
-		     size < (__u64)(pb.last_init_lblock & ~(blkpg-1)) *
-		     fs->blocksize))
+		    !(inode->i_flags & EXT4_VERITY_FL))
 			bad_size = 3;
 		else if (!(extent_fs && (inode->i_flags & EXT4_EXTENTS_FL)) &&
 			 size > ext2_max_sizes[fs->super->s_log_block_size])

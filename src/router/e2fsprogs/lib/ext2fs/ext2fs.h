@@ -94,6 +94,8 @@ typedef __u32 __bitwise		ext2_dirhash_t;
 #include <ext2fs/ext2_ext_attr.h>
 #endif
 
+#include "hashmap.h"
+
 /*
  * Portability help for Microsoft Visual C++
  */
@@ -195,6 +197,8 @@ typedef struct ext2_file *ext2_file_t;
 #define EXT2_FLAG_DIRECT_IO		0x80000
 #define EXT2_FLAG_SKIP_MMP		0x100000
 #define EXT2_FLAG_IGNORE_CSUM_ERRORS	0x200000
+#define EXT2_FLAG_SHARE_DUP		0x400000
+#define EXT2_FLAG_IGNORE_SB_ERRORS	0x800000
 
 /*
  * Special flag in the ext2 inode i_flag field that means that this is
@@ -295,6 +299,9 @@ struct struct_ext2_filsys {
 			       blk64_t len, blk64_t *pblk, blk64_t *plen);
 	void (*block_alloc_stats_range)(ext2_filsys fs, blk64_t blk, blk_t num,
 					int inuse);
+
+	/* hashmap for SHA of data blocks */
+	struct ext2fs_hashmap* block_sha_map;
 };
 
 #if EXT2_FLAT_INCLUDES
@@ -617,7 +624,9 @@ typedef struct ext2_icount *ext2_icount_t;
 					 EXT4_FEATURE_RO_COMPAT_QUOTA|\
 					 EXT4_FEATURE_RO_COMPAT_METADATA_CSUM|\
 					 EXT4_FEATURE_RO_COMPAT_READONLY |\
-					 EXT4_FEATURE_RO_COMPAT_PROJECT)
+					 EXT4_FEATURE_RO_COMPAT_PROJECT |\
+					 EXT4_FEATURE_RO_COMPAT_SHARED_BLOCKS |\
+					 EXT4_FEATURE_RO_COMPAT_VERITY)
 
 /*
  * These features are only allowed if EXT2_FLAG_SOFTSUPP_FEATURES is passed
@@ -1730,6 +1739,7 @@ extern blk_t ext2fs_group_first_block(ext2_filsys fs, dgrp_t group);
 extern blk_t ext2fs_group_last_block(ext2_filsys fs, dgrp_t group);
 extern blk_t ext2fs_inode_data_blocks(ext2_filsys fs,
 				      struct ext2_inode *inode);
+extern int ext2fs_htree_intnode_maxrecs(ext2_filsys fs, int blocks);
 extern unsigned int ext2fs_div_ceil(unsigned int a, unsigned int b);
 extern __u64 ext2fs_div64_ceil(__u64 a, __u64 b);
 extern int ext2fs_dirent_name_len(const struct ext2_dir_entry *entry);
@@ -1961,18 +1971,6 @@ _INLINE_ blk_t ext2fs_inode_data_blocks(ext2_filsys fs,
 	return (blk_t) ext2fs_inode_data_blocks2(fs, inode);
 }
 
-/* htree levels for ext4 */
-#define EXT4_HTREE_LEVEL_COMPAT 2
-#define EXT4_HTREE_LEVEL	3
-
-static inline unsigned int ext2_dir_htree_level(ext2_filsys fs)
-{
-	if (ext2fs_has_feature_largedir(fs->super))
-		return EXT4_HTREE_LEVEL;
-
-	return EXT4_HTREE_LEVEL_COMPAT;
-}
-
 _INLINE_ int ext2fs_htree_intnode_maxrecs(ext2_filsys fs, int blocks)
 {
 	return blocks * ((fs->blocksize - 8) / sizeof(struct ext2_dx_entry));
@@ -2030,6 +2028,18 @@ ext2fs_const_inode(const struct ext2_inode_large * large_inode)
 
 #undef _INLINE_
 #endif
+
+/* htree levels for ext4 */
+#define EXT4_HTREE_LEVEL_COMPAT 2
+#define EXT4_HTREE_LEVEL	3
+
+static inline unsigned int ext2_dir_htree_level(ext2_filsys fs)
+{
+	if (ext2fs_has_feature_largedir(fs->super))
+		return EXT4_HTREE_LEVEL;
+
+	return EXT4_HTREE_LEVEL_COMPAT;
+}
 
 #ifdef __cplusplus
 }

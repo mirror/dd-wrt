@@ -1,4 +1,7 @@
-if test -x $DEBUGFS_EXE; then
+if ! test -x $DEBUGFS_EXE; then
+	echo "$test_name: $test_description: skipped (no debugfs)"
+	return 0
+fi
 
 FSCK_OPT=-fy
 OUT=$test_name.log
@@ -9,42 +12,33 @@ else
 	EXP=$test_dir/expect
 fi
 
-cp /dev/null $OUT
+$MKE2FS -F -o Linux -b 4096 -O has_journal -T ext4 $TMPFILE 65536 > $OUT.new 2>&1
 
-$MKE2FS -F -o Linux -b 4096 -O has_journal -T ext4 $TMPFILE 65536 2>&1 | sed -f $cmd_dir/filter.sed >> $OUT 2>&1
-
-$FSCK -fy -N test_filesys $TMPFILE > $OUT.new 2>&1
+$FSCK -fy -N test_filesys $TMPFILE >> $OUT.new 2>&1
 status=$?
 echo Exit status is $status >> $OUT.new
-sed -f $cmd_dir/filter.sed -e "s;$TMPFILE;test.img;" $OUT.new >> $OUT
-rm -f $OUT.new
 
 bitmaps="$($DUMPE2FS $TMPFILE 2>&1 | grep 'bitmap at' | sed -e 's/^.*bitmap at \([0-9]*\).*$/\1/g' | tr '\n' ',')"
 
-$DUMPE2FS $TMPFILE 2>&1 | grep '^Journal features:' >> $OUT
+$DUMPE2FS $TMPFILE 2>&1 | grep '^Journal features:' >> $OUT.new
 
-echo "debugfs write journal" >> $OUT
+echo "debugfs write journal" >> $OUT.new
 echo "jo -c" > $TMPFILE.cmd
 echo "jw -b $bitmaps /dev/zero" >> $TMPFILE.cmd
 echo "jc" >> $TMPFILE.cmd
-$DEBUGFS_EXE -w -f $TMPFILE.cmd $TMPFILE 2>> $OUT.new > /dev/null
-sed -f $cmd_dir/filter.sed < $OUT.new >> $OUT
-rm -rf $OUT.new
+$DEBUGFS -w -f $TMPFILE.cmd $TMPFILE 2>> $OUT.new > /dev/null
 
-$DUMPE2FS $TMPFILE 2>&1 | grep '^Journal features:' >> $OUT
+$DUMPE2FS $TMPFILE 2>&1 | grep '^Journal features:' >> $OUT.new
 
 test -d "$JOURNAL_DUMP_DIR" -a -w "$JOURNAL_DUMP_DIR" && cp "$TMPFILE" "$JOURNAL_DUMP_DIR/$test_name.img"
 echo "logdump -c" > $TMPFILE.cmd
-$DEBUGFS_EXE -f $TMPFILE.cmd $TMPFILE 2>&1 | sed -f $cmd_dir/filter.sed >> $OUT
-rm -rf $TMPFILE.cmd
+$DEBUGFS -f $TMPFILE.cmd $TMPFILE >> $OUT.new 2>&1
 
-$FSCK -fy -N test_filesys $TMPFILE > $OUT.new 2>&1
+$FSCK -fy -N test_filesys $TMPFILE >> $OUT.new 2>&1
 status=$?
 echo Exit status is $status >> $OUT.new
-sed -f $cmd_dir/filter.sed -e "s;$TMPFILE;test.img;" $OUT.new >> $OUT
-rm -f $OUT.new
-
-rm -f $TMPFILE
+sed -f $cmd_dir/filter.sed $OUT.new > $OUT
+rm -f $TMPFILE $TMPFILE.cmd $OUT.new
 
 cmp -s $OUT $EXP
 status=$?
@@ -59,7 +53,3 @@ else
 fi
 
 unset IMAGE FSCK_OPT OUT EXP
-
-else #if test -x $DEBUGFS_EXE; then
-	echo "$test_name: $test_description: skipped"
-fi

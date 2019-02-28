@@ -7,23 +7,17 @@ else
 	EXP=$test_dir/expect
 fi
 
-cp /dev/null $OUT
-
 gunzip < $test_dir/image.gz > $TMPFILE
 
-echo "e2fsck external journal" >> $OUT
-$FSCK -fy -N test_filesys $TMPFILE > $OUT.new 2>&1
+echo "e2fsck external journal" > $OUT.new
+$FSCK -fy -N test_filesys $TMPFILE >> $OUT.new 2>&1
 status=$?
 echo Exit status is $status >> $OUT.new
-sed -f $cmd_dir/filter.sed -e "s;$TMPFILE;test.img;" $OUT.new >> $OUT
-rm -f $OUT.new
 
-echo "dumpe2fs external journal" >> $OUT
-$DUMPE2FS $TMPFILE > $OUT.new 2>&1
-sed -f $cmd_dir/filter.sed -e "s;$TMPFILE;test.img;" $OUT.new >> $OUT
-rm -f $OUT.new
-
-rm -f $TMPFILE
+echo "dumpe2fs external journal" >> $OUT.new
+$DUMPE2FS $TMPFILE >> $OUT.new 2>&1
+sed -f $cmd_dir/filter.sed -e "s;$TMPFILE;test.img;" $OUT.new > $OUT
+rm -f $TMPFILE $OUT.new
 
 cmp -s $OUT $EXP
 status=$?

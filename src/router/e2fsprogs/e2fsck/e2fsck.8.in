@@ -266,6 +266,20 @@ Convert block-mapped files to extent-mapped files.
 Only fix damaged metadata; do not optimize htree directories or compress
 extent trees.  This option is incompatible with the -D and -E bmap2extent
 options.
+.TP
+.BI unshare_blocks
+If the filesystem has shared blocks, with the shared blocks read-only feature
+enabled, then this will unshare all shared blocks and unset the read-only
+feature bit. If there is not enough free space then the operation will fail.
+If the filesystem does not have the read-only feature bit, but has shared
+blocks anyway, then this option will have no effect. Note when using this
+option, if there is no free space to clone blocks, there is no prompt to
+delete files and instead the operation will fail.
+.IP
+Note that unshare_blocks implies the "-f" option to ensure that all passes
+are run. Additionally, if "-n" is also specified, e2fsck will simulate trying
+to allocate enough space to deduplicate. If this fails, the exit code will
+be non-zero.
 .RE
 .TP
 .B \-f

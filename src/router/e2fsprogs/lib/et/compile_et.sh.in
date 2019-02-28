@@ -2,7 +2,6 @@
 #
 #
 
-datarootdir=@datarootdir@
 AWK=@AWK@
 DIR=@datadir@/et
 

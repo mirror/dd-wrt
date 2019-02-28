@@ -23,7 +23,7 @@ ENDL
 
 echo "mke2fs -F -T ext4h -I 128 test.img 786432" > $OUT
 MKE2FS_CONFIG=$CONF $MKE2FS -F -T ext4h -I 128 $TMPFILE 786432 >> $OUT 2>&1
-rm -rf $CONF
+rm -f $CONF
 
 # dump and check. if we get this far, we succeeded...
 $FSCK $FSCK_OPT -N test_filesys $TMPFILE >> $OUT 2>&1

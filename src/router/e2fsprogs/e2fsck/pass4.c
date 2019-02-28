@@ -145,6 +145,7 @@ void e2fsck_pass4(e2fsck_t ctx)
 #endif
 	struct problem_context	pctx;
 	__u16	link_count, link_counted;
+	int dir_nlink_fs;
 	char	*buf = 0;
 	dgrp_t	group, maxgroup;
 
@@ -167,6 +168,8 @@ void e2fsck_pass4(e2fsck_t ctx)
 
 	if (!(ctx->options & E2F_OPT_PREEN))
 		fix_problem(ctx, PR_4_PASS_HEADER, &pctx);
+
+	dir_nlink_fs = ext2fs_has_feature_dir_nlink(fs->super);
 
 	group = 0;
 	maxgroup = fs->group_desc_count;
@@ -224,8 +227,15 @@ void e2fsck_pass4(e2fsck_t ctx)
 					    &link_counted);
 		}
 		isdir = ext2fs_test_inode_bitmap2(ctx->inode_dir_map, i);
-		if (isdir && (link_counted > EXT2_LINK_MAX))
+		if (isdir && (link_counted > EXT2_LINK_MAX)) {
+			if (!dir_nlink_fs &&
+			    fix_problem(ctx, PR_4_DIR_NLINK_FEATURE, &pctx)) {
+				ext2fs_set_feature_dir_nlink(fs->super);
+				ext2fs_mark_super_dirty(fs);
+				dir_nlink_fs = 1;
+			}
 			link_counted = 1;
+		}
 		if (link_counted != link_count) {
 			e2fsck_read_inode_full(ctx, i, EXT2_INODE(inode),
 					       inode_size, "pass4");

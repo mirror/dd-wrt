@@ -124,8 +124,8 @@ ss.pc: $(srcdir)/ss.pc.in $(top_builddir)/config.status
 	$(Q) cd $(top_builddir); CONFIG_FILES=lib/ss/ss.pc ./config.status
 
 installdirs::
-	$(E) "	MKINSTALLDIRS $(libdir) $(includedir)/ss $(datadir)/ss $(bindir)"
-	$(Q) $(MKINSTALLDIRS) $(DESTDIR)$(libdir) \
+	$(E) "	MKDIR_P $(libdir) $(includedir)/ss $(datadir)/ss $(bindir)"
+	$(Q) $(MKDIR_P) $(DESTDIR)$(libdir) \
 		$(DESTDIR)$(includedir)/ss $(DESTDIR)$(datadir)/ss \
 		$(DESTDIR)$(bindir) $(DESTDIR)$(pkgconfigdir)
 

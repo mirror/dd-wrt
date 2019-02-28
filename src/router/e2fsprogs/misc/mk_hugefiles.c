@@ -68,7 +68,7 @@ static char *fn_buf;
 static char *fn_numbuf;
 int zero_hugefile = 1;
 
-#define SYSFS_PATH_LEN 256
+#define SYSFS_PATH_LEN 300
 typedef char sysfs_path_t[SYSFS_PATH_LEN];
 
 #ifndef HAVE_SNPRINTF

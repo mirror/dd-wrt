@@ -401,6 +401,8 @@ errcode_t ext2fs_add_journal_device(ext2_filsys fs, ext2_filsys journal_dev)
 
 	/* Check and see if this filesystem has already been added */
 	nr_users = ntohl(jsb->s_nr_users);
+	if (nr_users > JFS_USERS_MAX)
+		return EXT2_ET_CORRUPT_JOURNAL_SB;
 	for (i=0; i < nr_users; i++) {
 		if (memcmp(fs->super->s_uuid,
 			   &jsb->s_users[i*16], 16) == 0)

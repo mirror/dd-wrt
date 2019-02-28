@@ -246,8 +246,8 @@ int check_plausibility(const char *device, int flags, int *ret_is_dev)
 
 	if (fs_type) {
 		if (fs_label)
-			printf(_("%s contains a %s file system "
-				 "labelled '%s'\n"), device, fs_type, fs_label);
+			printf(_("%s contains a %s file system labelled '%s'\n"),
+			       device, fs_type, fs_label);
 		else
 			printf(_("%s contains a %s file system\n"), device,
 			       fs_type);

@@ -142,6 +142,9 @@ static errcode_t set_inode_xattr(ext2_filsys fs, ext2_ino_t ino,
 	char				*list = NULL;
 	int				i;
 
+	if (no_copy_xattrs)
+		return 0;
+
 	size = llistxattr(filename, NULL, 0);
 	if (size == -1) {
 		retval = errno;
@@ -235,7 +238,7 @@ static errcode_t set_inode_xattr(ext2_filsys fs EXT2FS_ATTR((unused)),
 #ifndef _WIN32
 /* Make a special files (block and character devices), fifo's, and sockets  */
 errcode_t do_mknod_internal(ext2_filsys fs, ext2_ino_t cwd, const char *name,
-			    struct stat *st)
+			    unsigned int st_mode, unsigned int st_rdev)
 {
 	ext2_ino_t		ino;
 	errcode_t		retval;
@@ -243,7 +246,7 @@ errcode_t do_mknod_internal(ext2_filsys fs, ext2_ino_t cwd, const char *name,
 	unsigned long		devmajor, devminor, mode;
 	int			filetype;
 
-	switch(st->st_mode & S_IFMT) {
+	switch(st_mode & S_IFMT) {
 	case S_IFCHR:
 		mode = LINUX_S_IFCHR;
 		filetype = EXT2_FT_CHRDEV;
@@ -299,8 +302,8 @@ errcode_t do_mknod_internal(ext2_filsys fs, ext2_ino_t cwd, const char *name,
 		fs->now ? fs->now : time(0);
 
 	if (filetype != S_IFIFO) {
-		devmajor = major(st->st_rdev);
-		devminor = minor(st->st_rdev);
+		devmajor = major(st_rdev);
+		devminor = minor(st_rdev);
 
 		if ((devmajor < 256) && (devminor < 256)) {
 			inode.i_block[0] = devmajor * 256 + devminor;
@@ -798,7 +801,8 @@ static errcode_t __populate_fs(ext2_filsys fs, ext2_ino_t parent_ino,
 		case S_IFIFO:
 #ifndef _WIN32
 		case S_IFSOCK:
-			retval = do_mknod_internal(fs, parent_ino, name, &st);
+			retval = do_mknod_internal(fs, parent_ino, name,
+						   st.st_mode, st.st_rdev);
 			if (retval) {
 				com_err(__func__, retval,
 					_("while creating special file "

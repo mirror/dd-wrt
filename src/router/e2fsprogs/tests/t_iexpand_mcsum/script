@@ -1,4 +1,8 @@
-if test -x $RESIZE2FS_EXE -a -x $DEBUGFS_EXE; then
+if ! test -x $RESIZE2FS_EXE -o ! -x $DEBUGFS_EXE; then
+	echo "$test_name: $test_description: skipped (no debugfs/resize2fs)"
+	return 0
+fi
+
 if [ $(uname -s) = "Darwin" ]; then
 	# creates a 3GB filesystem
 	echo "$test_name: $DESCRIPTION: skipped for HFS+ (no sparse files)"
@@ -31,10 +35,10 @@ ENDL
 echo "tune2fs test" > $OUT
 
 MKE2FS_CONFIG=$CONF $MKE2FS -F -T ext4h -I 128 $TMPFILE 786432 >> $OUT 2>&1
-rm -rf $CONF
+rm -f $CONF
 
 # dump and check
-($DUMPE2FS -h $TMPFILE | grep -v '^Free blocks:'; $DUMPE2FS -g $TMPFILE) 2>&1 | sed -f $cmd_dir/filter.sed -e '/^Checksum:.*/d' >> $OUT.before 2> /dev/null
+($DUMPE2FS -h $TMPFILE | grep -v '^Free blocks:'; $DUMPE2FS -g $TMPFILE) 2>&1 | sed -f $cmd_dir/filter.sed >> $OUT.before 2> /dev/null
 $FSCK $FSCK_OPT -N test_filesys $TMPFILE >> $OUT 2>&1
 status=$?
 echo Exit status is $status >> $OUT
@@ -48,7 +52,7 @@ echo Exit status is $status >> $OUT
 $FSCK -N test_filesys -y -f -D $TMPFILE >> $OUT 2>&1
 
 # dump and check
-($DUMPE2FS -h $TMPFILE | grep -v '^Free blocks:'; $DUMPE2FS -g $TMPFILE) 2>&1 | sed -f $cmd_dir/filter.sed -e '/^Checksum:.*/d' >> $OUT.after 2> /dev/null
+($DUMPE2FS -h $TMPFILE | grep -v '^Free blocks:'; $DUMPE2FS -g $TMPFILE) 2>&1 | sed -f $cmd_dir/filter.sed >> $OUT.after 2> /dev/null
 echo "Change in FS metadata:" >> $OUT
 diff -U 0 $OUT.before $OUT.after | sed -e '/^---.*/d' -e '/^+++.*/d' >> $OUT
 $FSCK $FSCK_OPT -N test_filesys $TMPFILE >> $OUT 2>&1
@@ -61,7 +65,7 @@ rm $TMPFILE
 # Do the verification
 #
 
-sed -f $cmd_dir/filter.sed -e "s;$TMPFILE;test.img;" -e 's/test_filesys:.*//g' < $OUT > $OUT.new
+sed -f $cmd_dir/filter.sed -e 's/test_filesys:.*//g' < $OUT > $OUT.new
 mv $OUT.new $OUT
 
 cmp -s $OUT $EXP
@@ -78,8 +82,3 @@ fi
 rm $OUT.before $OUT.after
 
 unset IMAGE FSCK_OPT OUT EXP CONF
-
-else #if test -x $RESIZE2FS_EXE -a -x $DEBUGFS_EXE; then
-	echo "$test_name: $test_description: skipped"
-fi
-

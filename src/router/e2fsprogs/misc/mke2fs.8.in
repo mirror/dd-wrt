@@ -338,6 +338,15 @@ small risk if the system crashes before the journal has been overwritten
 entirely one time.  If the option value is omitted, it defaults to 1 to
 enable lazy journal inode zeroing.
 .TP
+.B no_copy_xattrs
+Normally
+.B mke2fs
+will copy the extended attributes of the files in the directory
+hierarchy specified via the (optional)
+.B \-d
+option.  This will disable the copy and leaves the files in the newly
+created file system without any extended attributes.
+.TP
 .BI num_backup_sb= <0|1|2>
 If the
 .B sparse_super2
@@ -367,7 +376,7 @@ filesystem to change based on the user running \fBmke2fs\fR.
 Set a flag in the filesystem superblock indicating that it may be
 mounted using experimental kernel code, such as the ext4dev filesystem.
 .TP
-.BI discard
+.B discard
 Attempt to discard blocks at mkfs time (discarding blocks initially is useful
 on solid state devices and sparse / thin-provisioned storage). When the device
 advertises that discard also zeroes data (any subsequent read after the discard
@@ -375,10 +384,10 @@ and before write returns zero), then mark all not-yet-zeroed inode tables as
 zeroed. This significantly speeds up filesystem initialization. This is set
 as default.
 .TP
-.BI nodiscard
+.B nodiscard
 Do not attempt to discard blocks at mkfs time.
 .TP
-.BI quotatype
+.B quotatype
 Specify the which  quota types (usrquota, grpquota, prjquota) which
 should be enabled in the created file system.  The argument of this
 extended option should be a colon separated list.  This option has
@@ -665,7 +674,7 @@ touching the inode table and the block and inode bitmaps.  The
 program should be run immediately after this option is used, and there
 is no guarantee that any data will be salvageable.  Due to the wide
 variety of possible options to
-.BR mke2fs
+.B mke2fs
 that affect the on-disk layout, it is critical to specify exactly
 the same format options, such as blocksize, fs-type, feature flags, and
 other tunables when using this option, or the filesystem will be further
@@ -782,30 +791,30 @@ in the configuration file.
 WARNING: The undo file cannot be used to recover from a power or system crash.
 .SH ENVIRONMENT
 .TP
-.BI MKE2FS_SYNC
+.B MKE2FS_SYNC
 If set to non-zero integer value, its value is used to determine how often
 .BR sync (2)
 is called during inode table initialization.
 .TP
-.BI MKE2FS_CONFIG
+.B MKE2FS_CONFIG
 Determines the location of the configuration file (see
 .BR mke2fs.conf (5)).
 .TP
-.BI MKE2FS_FIRST_META_BG
+.B MKE2FS_FIRST_META_BG
 If set to non-zero integer value, its value is used to determine first meta
 block group. This is mostly for debugging purposes.
 .TP
-.BI MKE2FS_DEVICE_SECTSIZE
+.B MKE2FS_DEVICE_SECTSIZE
 If set to non-zero integer value, its value is used to determine logical
 sector size of the
 .IR device .
 .TP
-.BI MKE2FS_DEVICE_PHYS_SECTSIZE
+.B MKE2FS_DEVICE_PHYS_SECTSIZE
 If set to non-zero integer value, its value is used to determine physical
 sector size of the
 .IR device .
 .TP
-.BI MKE2FS_SKIP_CHECK_MSG
+.B MKE2FS_SKIP_CHECK_MSG
 If set, do not show the message of filesystem automatic check caused by
 mount count or check interval.
 .SH AUTHOR

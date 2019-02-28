@@ -98,6 +98,8 @@ static errcode_t e2fsck_readahead_bitmap(ext2_filsys fs,
 		if (err == ENOENT) {
 			out = end;
 			err = 0;
+			if (out == start)
+				break;
 		} else if (err)
 			break;
 

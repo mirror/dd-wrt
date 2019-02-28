@@ -137,6 +137,7 @@ extern void do_rm(int argc, char **argv);
 extern void do_link(int argc, char **argv);
 extern void do_undel(int argc, char **argv);
 extern void do_unlink(int argc, char **argv);
+extern void do_copy_inode(int argc, char *argv[]);
 extern void do_find_free_block(int argc, char **argv);
 extern void do_find_free_inode(int argc, char **argv);
 extern void do_stat(int argc, char **argv);
@@ -198,6 +199,8 @@ void do_get_xattr(int argc, char **argv);
 void do_set_xattr(int argc, char **argv);
 void do_rm_xattr(int argc, char **argv);
 void do_list_xattr(int argc, char **argv);
+void raw_inode_xattr_dump(FILE *f, unsigned char *buf, unsigned int len);
+void block_xattr_dump(FILE *f, unsigned char *buf, unsigned int len);
 
 /* zap.c */
 extern void do_zap_block(int argc, char **argv);

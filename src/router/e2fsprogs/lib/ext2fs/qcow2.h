@@ -35,6 +35,7 @@
 
 #define QCOW_COMPRESSED		1
 #define QCOW_ENCRYPTED		2
+#define QCOW_CORRUPTED		3
 
 struct ext2_qcow2_hdr {
 	__u32	magic;

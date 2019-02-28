@@ -3,6 +3,7 @@
 cc_library {
     name: "libext2_e2p",
     host_supported: true,
+    recovery_available: true,
     unique_host_soname: true,
     defaults: ["e2fsprogs-defaults"],
     srcs: [
@@ -17,6 +18,7 @@ cc_library {
         "getversion.c",
         "hashstr.c",
         "iod.c",
+        "ljs.c",
         "ls.c",
         "mntopts.c",
         "parse_num.c",
@@ -30,7 +32,10 @@ cc_library {
         "percent.c",
     ],
 
-    cflags: ["-Wno-error=attributes"],
+    cflags: [
+        "-Wno-error=attributes",
+        "-Wno-unused-parameter",
+    ],
 
     target: {
         windows: {
@@ -38,10 +43,12 @@ cc_library {
             enabled: true,
             cflags: [
                 "-Wno-unused-variable",
-                "-Wno-unused-parameter",
             ],
             clang_cflags: [
                 "-Wno-error=typedef-redefinition",
+            ],
+            host_ldlibs: [
+                "-lws2_32",
             ],
         },
     },

@@ -94,6 +94,12 @@ errcode_t ext2fs_open(const char *name, int flags, int superblock,
 			    manager, ret_fs);
 }
 
+static void block_sha_map_free_entry(void *data)
+{
+	free(data);
+	return;
+}
+
 /*
  *  Note: if superblock is non-zero, block-size must also be non-zero.
  * 	Superblock and block_size can be zero to use the default size.
@@ -121,7 +127,7 @@ errcode_t ext2fs_open2(const char *name, const char *io_options,
 	blk64_t		group_block, blk;
 	char		*dest, *cp;
 	int		group_zero_adjust = 0;
-	int		inode_size;
+	unsigned int	inode_size;
 	__u64		groups_cnt;
 #ifdef WORDS_BIGENDIAN
 	unsigned int	groups_per_block;
@@ -185,10 +191,10 @@ errcode_t ext2fs_open2(const char *name, const char *io_options,
 					     fs->image_header);
 		if (retval)
 			goto cleanup;
-		if (fs->image_header->magic_number != EXT2_ET_MAGIC_E2IMAGE)
+		if (ext2fs_le32_to_cpu(fs->image_header->magic_number) != EXT2_ET_MAGIC_E2IMAGE)
 			return EXT2_ET_MAGIC_E2IMAGE;
 		superblock = 1;
-		block_size = fs->image_header->fs_blocksize;
+		block_size = ext2fs_le32_to_cpu(fs->image_header->fs_blocksize);
 	}
 
 	/*
@@ -319,12 +325,6 @@ errcode_t ext2fs_open2(const char *name, const char *io_options,
 			retval = EXT2_ET_BAD_DESC_SIZE;
 			goto cleanup;
 		}
-	} else {
-		if (fs->super->s_desc_size &&
-		    fs->super->s_desc_size != EXT2_MIN_DESC_SIZE) {
-			retval = EXT2_ET_BAD_DESC_SIZE;
-			goto cleanup;
-		}
 	}
 
 	fs->cluster_ratio_bits = fs->super->s_log_cluster_size -
@@ -386,7 +386,8 @@ errcode_t ext2fs_open2(const char *name, const char *io_options,
 		goto cleanup;
 	}
 	fs->group_desc_count = 	groups_cnt;
-	if (fs->group_desc_count * EXT2_INODES_PER_GROUP(fs->super) !=
+	if (!(flags & EXT2_FLAG_IGNORE_SB_ERRORS) &&
+	    (__u64)fs->group_desc_count * EXT2_INODES_PER_GROUP(fs->super) !=
 	    fs->super->s_inodes_count) {
 		retval = EXT2_ET_CORRUPT_SUPERBLOCK;
 		goto cleanup;
@@ -489,6 +490,16 @@ errcode_t ext2fs_open2(const char *name, const char *io_options,
 			ext2fs_mmp_stop(fs);
 			goto cleanup;
 		}
+	}
+
+	if (fs->flags & EXT2_FLAG_SHARE_DUP) {
+		fs->block_sha_map = ext2fs_hashmap_create(ext2fs_djb2_hash,
+					block_sha_map_free_entry, 4096);
+		if (!fs->block_sha_map) {
+			retval = EXT2_ET_NO_MEMORY;
+			goto cleanup;
+		}
+		ext2fs_set_feature_shared_blocks(fs->super);
 	}
 
 	fs->flags &= ~EXT2_FLAG_NOFREE_ON_ERROR;

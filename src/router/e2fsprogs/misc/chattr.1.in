@@ -121,9 +121,9 @@ although it can be displayed by
 .PP
 A file with the 'i' attribute cannot be modified: it cannot be deleted or
 renamed, no link can be created to this file, most of the file's
-metadata can not be modified, and no data can be written
-to the file.  Only the superuser or a process possessing the
-CAP_LINUX_IMMUTABLE capability can set or clear this attribute.
+metadata can not be modified, and the file can not be opened in write mode.
+Only the superuser or a process possessing the CAP_LINUX_IMMUTABLE
+capability can set or clear this attribute.
 .PP
 The 'I' attribute is used by the htree code to indicate that a directory
 is being indexed using hashed trees.  It may not be set or reset using
@@ -191,6 +191,8 @@ maintained by Theodore Ts'o <tytso@alum.mit.edu>.
 The 'c', 's',  and 'u' attributes are not honored
 by the ext2, ext3, and ext4 filesystems as implemented in the current
 mainline Linux kernels.
+Setting 'a' and 'i' attributes will not affect the ability to write
+to already existing file descriptors.
 .PP
 The 'j' option is only useful for ext3 and ext4 file systems.
 .PP

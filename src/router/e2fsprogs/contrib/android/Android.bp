@@ -6,6 +6,7 @@
 cc_binary {
     name: "e2fsdroid",
     host_supported: true,
+    recovery_available: true,
     defaults: ["e2fsprogs-defaults"],
 
     srcs: [
@@ -16,7 +17,6 @@ cc_binary {
         "base_fs.c",
         "perms.c",
         "basefs_allocator.c",
-        "hashmap.c",
     ],
     target: {
         host: {

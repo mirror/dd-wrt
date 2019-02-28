@@ -170,7 +170,8 @@ static __u32 ok_features[3] = {
 		EXT4_FEATURE_RO_COMPAT_QUOTA |
 		EXT4_FEATURE_RO_COMPAT_METADATA_CSUM |
 		EXT4_FEATURE_RO_COMPAT_READONLY |
-		EXT4_FEATURE_RO_COMPAT_PROJECT
+		EXT4_FEATURE_RO_COMPAT_PROJECT |
+		EXT4_FEATURE_RO_COMPAT_VERITY
 };
 
 static __u32 clear_ok_features[3] = {
@@ -291,6 +292,12 @@ static int remove_journal_device(ext2_filsys fs)
 	jsb = (journal_superblock_t *) buf;
 	/* Find the filesystem UUID */
 	nr_users = ntohl(jsb->s_nr_users);
+	if (nr_users > JFS_USERS_MAX) {
+		fprintf(stderr, _("Journal superblock is corrupted, nr_users\n"
+				 "is too high (%d).\n"), nr_users);
+		commit_remove_journal = 1;
+		goto no_valid_journal;
+	}
 
 	if (!journal_user(fs->super->s_uuid, jsb->s_users, nr_users)) {
 		fputs(_("Filesystem's UUID not found on journal device.\n"),
@@ -753,7 +760,8 @@ static void update_ea_inode_hash(struct rewrite_context *ctx, ext2_ino_t ino,
 	if (retval)
 		fatal_err(retval, "close ea_inode");
 
-	hash = ext2fs_crc32c_le(ctx->fs->csum_seed, ctx->ea_buf, inode->i_size);
+	hash = ext2fs_crc32c_le(ctx->fs->csum_seed,
+				(unsigned char *) ctx->ea_buf, inode->i_size);
 	ext2fs_set_ea_inode_hash(inode, hash);
 }
 
@@ -802,7 +810,7 @@ static void update_inline_xattr_hashes(struct rewrite_context *ctx,
 }
 
 static void update_block_xattr_hashes(struct rewrite_context *ctx,
-				      void *block_buf)
+				      char *block_buf)
 {
 	struct ext2_ext_attr_header *header;
 	struct ext2_ext_attr_entry *start, *end;
@@ -2848,6 +2856,11 @@ fs_update_journal_user(struct ext2_super_block *sb, __u8 old_uuid[UUID_SIZE])
 	jsb = (journal_superblock_t *) buf;
 	/* Find the filesystem UUID */
 	nr_users = ntohl(jsb->s_nr_users);
+	if (nr_users > JFS_USERS_MAX) {
+		fprintf(stderr, _("Journal superblock is corrupted, nr_users\n"
+				 "is too high (%d).\n"), nr_users);
+		return EXT2_ET_CORRUPT_JOURNAL_SB;
+	}
 
 	j_uuid = journal_user(old_uuid, jsb->s_users, nr_users);
 	if (j_uuid == NULL) {
@@ -3049,6 +3062,7 @@ _("Warning: The journal is dirty. You may wish to replay the journal like:\n\n"
 				ext2fs_close_free(&fs);
 			exit(1);
 		}
+		sb = fs->super;
 	}
 #endif
 
@@ -3207,6 +3221,15 @@ _("Warning: The journal is dirty. You may wish to replay the journal like:\n\n"
 		char buf[SUPERBLOCK_SIZE] __attribute__ ((aligned(8)));
 		__u8 old_uuid[UUID_SIZE];
 
+		if (!ext2fs_has_feature_csum_seed(fs->super) &&
+		    (ext2fs_has_feature_metadata_csum(fs->super) ||
+		     ext2fs_has_feature_ea_inode(fs->super))) {
+			check_fsck_needed(fs,
+				_("Setting the UUID on this "
+				  "filesystem could take some time."));
+			rewrite_checksums = 1;
+		}
+
 		if (ext2fs_has_group_desc_csum(fs)) {
 			/*
 			 * Changing the UUID on a metadata_csum FS requires
@@ -3227,10 +3250,6 @@ _("Warning: The journal is dirty. You may wish to replay the journal like:\n\n"
 				try_confirm_csum_seed_support();
 				exit(1);
 			}
-			if (!ext2fs_has_feature_csum_seed(fs->super))
-				check_fsck_needed(fs,
-					_("Setting UUID on a checksummed "
-					  "filesystem could take some time."));
 
 			/*
 			 * Determine if the block group checksums are
@@ -3288,10 +3307,6 @@ _("Warning: The journal is dirty. You may wish to replay the journal like:\n\n"
 		}
 
 		ext2fs_mark_super_dirty(fs);
-		if (!ext2fs_has_feature_csum_seed(fs->super) &&
-		    (ext2fs_has_feature_metadata_csum(fs->super) ||
-		     ext2fs_has_feature_ea_inode(fs->super)))
-			rewrite_checksums = 1;
 	}
 
 	if (I_flag) {

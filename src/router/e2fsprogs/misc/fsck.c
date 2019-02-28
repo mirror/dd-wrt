@@ -408,9 +408,12 @@ static char *find_fsck(char *type)
   tpl = (strncmp(type, "fsck.", 5) ? "%s/fsck.%s" : "%s/%s");
 
   for(s = strtok(p, ":"); s; s = strtok(NULL, ":")) {
-	if (snprintf(prog, sizeof(prog), tpl, s, type) >= sizeof(prog))
-		continue;
-	if (stat(prog, &st) == 0) break;
+	  int len = snprintf(prog, sizeof(prog), tpl, s, type);
+
+	  if ((len < 0) || (len >= (int) sizeof(prog)))
+		  continue;
+	  if (stat(prog, &st) == 0)
+		  break;
   }
   free(p);
   return(s ? prog : NULL);
@@ -437,11 +440,12 @@ static int execute(const char *type, const char *device, const char *mntpt,
 		   int interactive)
 {
 	char *s, *argv[80], prog[256];
-	int  argc, i;
+	int  argc, i, len;
 	struct fsck_instance *inst, *p;
 	pid_t	pid;
 
-	if (snprintf(prog, sizeof(prog), "fsck.%s", type) >= sizeof(prog))
+	len = snprintf(prog, sizeof(prog), "fsck.%s", type);
+	if ((len < 0) || (len >= (int) sizeof(prog)))
 		return EINVAL;
 
 	inst = malloc(sizeof(struct fsck_instance));

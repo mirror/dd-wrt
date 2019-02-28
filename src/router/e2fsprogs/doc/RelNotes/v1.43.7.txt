@@ -27,4 +27,3 @@ Test descritions have been shorted to fit in 80 columns.
 
 Fix various tests to avoid leaving temp files in /tmp.
 
-

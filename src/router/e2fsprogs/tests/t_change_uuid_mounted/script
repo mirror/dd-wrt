@@ -1,10 +1,10 @@
 test_description="change uuid on a mounted pre-metadata-csum"
 
-trap "rm -rf $TMPFILE $TMPFILE.conf" EXIT INT QUIT
+trap "rm -f $TMPFILE $TMPFILE.conf" EXIT INT QUIT
 dd if=/dev/zero of=$TMPFILE bs=1k count=512 > /dev/null 2>&1
 OUT=$test_name.log
 EXP=$test_dir/expect
-rm -rf $OUT
+rm -f $OUT
 
 # Test command line option
 echo "create fs without metadata_csum" >> $OUT

@@ -1040,3 +1040,4 @@ which require the backups to be touched.
 
 Add new function to libext2fs, ext2fs_default_journal_size(), which
 returns the default journal size.
+

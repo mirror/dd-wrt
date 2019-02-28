@@ -326,7 +326,9 @@ void e2fsck_free_dir_info(e2fsck_t ctx)
 		if (ctx->dir_info->tdb)
 			tdb_close(ctx->dir_info->tdb);
 		if (ctx->dir_info->tdb_fn) {
-			unlink(ctx->dir_info->tdb_fn);
+			if (unlink(ctx->dir_info->tdb_fn) < 0)
+				com_err("e2fsck_free_dir_info", errno,
+					_("while freeing dir_info tdb file"));
 			free(ctx->dir_info->tdb_fn);
 		}
 #endif
