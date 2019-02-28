@@ -31,7 +31,14 @@ struct fiemap {
 	__u32 fm_mapped_extents;/* number of extents that were mapped (out) */
 	__u32 fm_extent_count;  /* size of fm_extents array (in) */
 	__u32 fm_reserved;
+#if __GNUC_PREREQ (4, 8)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#endif
 	struct fiemap_extent fm_extents[0]; /* array of mapped extents (out) */
+#if __GNUC_PREREQ (4, 8)
+#pragma GCC diagnostic pop
+#endif
 };
 
 #if defined(__linux__) && !defined(FS_IOC_FIEMAP)

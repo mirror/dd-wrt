@@ -69,6 +69,17 @@ using
 .I device
 as the pathname to the image file.
 .TP
+.B \-m
+If the
+.B mmp
+feature is enabled on the filesystem, check if
+.I device
+is in use by another node, see
+.BR e2mmpstatus (8)
+for full details.  If used together with the
+.B \-i
+option, only the MMP block information is printed.
+.TP
 .B \-x
 print the detailed group information block numbers in hexadecimal format
 .TP
@@ -76,8 +87,16 @@ print the detailed group information block numbers in hexadecimal format
 print the version number of
 .B dumpe2fs
 and exit.
+.SH EXIT CODE
+.B dumpe2fs
+exits with a return code of 0 if the operation completed without errors.
+It will exit with a non-zero return code if there are any errors, such
+as problems reading a valid superblock, bad checksums, or if the device
+is in use by another node and
+.B -m
+is specified.
 .SH BUGS
-You need to know the physical filesystem structure to understand the
+You may need to know the physical filesystem structure to understand the
 output.
 .SH AUTHOR
 .B dumpe2fs
@@ -89,6 +108,7 @@ is part of the e2fsprogs package and is available from
 http://e2fsprogs.sourceforge.net.
 .SH SEE ALSO
 .BR e2fsck (8),
+.BR e2mmpstatus (8),
 .BR mke2fs (8),
 .BR tune2fs (8).
 .BR ext4 (5)

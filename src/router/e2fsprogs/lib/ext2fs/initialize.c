@@ -295,7 +295,7 @@ retry:
 	i = fs->blocksize >= 4096 ? 1 : 4096 / fs->blocksize;
 
 	if (ext2fs_has_feature_64bit(super) &&
-	    (ext2fs_blocks_count(super) / i) > (1ULL << 32))
+	    (ext2fs_blocks_count(super) / i) >= (1ULL << 32))
 		set_field(s_inodes_count, ~0U);
 	else
 		set_field(s_inodes_count, ext2fs_blocks_count(super) / i);
@@ -382,6 +382,13 @@ ipg_retry:
 		retval = EXT2_ET_RES_GDT_BLOCKS;
 		goto cleanup;
 	}
+	/* Enable meta_bg if we'd lose more than 3/4 of a BG to GDT blocks. */
+	if (super->s_reserved_gdt_blocks + fs->desc_blocks >
+	    super->s_blocks_per_group * 3 / 4) {
+		ext2fs_set_feature_meta_bg(fs->super);
+		ext2fs_clear_feature_resize_inode(fs->super);
+		set_field(s_reserved_gdt_blocks, 0);
+	}
 
 	/*
 	 * Calculate the maximum number of bookkeeping blocks per
@@ -391,11 +398,6 @@ ipg_retry:
 	 */
 	overhead = (int) (3 + fs->inode_blocks_per_group +
 			  super->s_reserved_gdt_blocks);
-
-	/* Enable meta_bg if we'd lose more than 3/4 of a BG to GDT blocks. */
-	if (super->s_reserved_gdt_blocks + fs->desc_blocks >
-	    super->s_blocks_per_group * 3 / 4)
-		ext2fs_set_feature_meta_bg(fs->super);
 
 	if (ext2fs_has_feature_meta_bg(fs->super))
 		overhead++;

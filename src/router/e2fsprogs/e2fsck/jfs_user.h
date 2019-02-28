@@ -30,6 +30,14 @@
 #include "e2fsck.h"
 #endif
 
+#if __STDC_VERSION__ < 199901L
+# if __GNUC__ >= 2 || _MSC_VER >= 1300
+#  define __func__ __FUNCTION__
+# else
+#  define __func__ "<unknown>"
+# endif
+#endif
+
 struct buffer_head {
 #ifdef DEBUGFS
 	ext2_filsys	b_fs;
@@ -100,6 +108,9 @@ typedef struct {
 extern lkmem_cache_t *do_cache_create(int len);
 extern void do_cache_destroy(lkmem_cache_t *cache);
 extern size_t journal_tag_bytes(journal_t *journal);
+extern __u32 __hash_32(__u32 val);
+extern __u32 hash_32(__u32 val, unsigned int bits);
+extern __u32 hash_64(__u64 val, unsigned int bits);
 #endif
 
 #if (defined(E2FSCK_INCLUDE_INLINE_FUNCS) || !defined(NO_INLINE_FUNCS))
@@ -120,7 +131,6 @@ extern size_t journal_tag_bytes(journal_t *journal);
 #endif /* __GNUC__ */
 #endif /* __STDC_VERSION__ >= 199901L */
 #endif /* E2FSCK_INCLUDE_INLINE_FUNCS */
-
 
 _INLINE_ lkmem_cache_t *do_cache_create(int len)
 {
@@ -201,7 +211,7 @@ extern e2fsck_t e2fsck_global_ctx;  /* Try your very best not to use this! */
 	do { if (!(assert)) {						\
 		printf ("Assertion failure in %s() at %s line %d: "	\
 			"\"%s\"\n",					\
-			__FUNCTION__, __FILE__, __LINE__, # assert);	\
+			__func__, __FILE__, __LINE__, # assert);	\
 		fatal_error(e2fsck_global_ctx, 0);			\
 	} } while (0)
 

@@ -68,4 +68,3 @@ artifacts.
 
 Removed legacy entries for ext4dev in the default mke2fs.conf file.
 
-

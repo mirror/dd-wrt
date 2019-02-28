@@ -357,7 +357,7 @@ void ext2fs_swap_inode_full(ext2_filsys fs, struct ext2_inode_large *t,
 	if (inode_includes(inode_size, i_version_hi))
 		t->i_version_hi = ext2fs_swab32(f->i_version_hi);
 	if (inode_includes(inode_size, i_projid))
-                t->i_projid = ext2fs_swab16(f->i_projid);
+                t->i_projid = ext2fs_swab32(f->i_projid);
 	/* catch new static fields added after i_projid */
 	EXT2FS_BUILD_BUG_ON(sizeof(struct ext2_inode_large) != 160);
 

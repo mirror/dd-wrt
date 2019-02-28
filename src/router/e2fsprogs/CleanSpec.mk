@@ -49,3 +49,4 @@
 # ************************************************
 
 $(call add-clean-step, rm -rf $(PRODUCT_OUT)/obj/SHARED_LIBRARIES/libext2_uuid_intermediates)
+$(call add-clean-step, rm -rf $(TARGET_RECOVERY_OUT)/root/sbin)

@@ -43,6 +43,13 @@ rm -f $MARKFILE
 echo "kill debugfs abruptly (simulates e2fsck failure) ..." >> $test_name.log
 kill_debugfs
 
+$E2MMPSTATUS $TMPFILE > $test_name.log 2>&1
+status=$?
+if [ "$status" != 1 ] ; then
+	echo "$E2MMPSTATUS with EXT2_MMP_SEQ_FSCK passed!" > $test_name.failed
+	echo "$test_name: $test_description: failed"
+	return 1
+fi
 
 echo "e2fsck (should fail mmp_seq = EXT2_MMP_SEQ_FSCK) ..." >> $test_name.log
 $FSCK $FSCK_OPT $TMPFILE >> $test_name.log 2>&1

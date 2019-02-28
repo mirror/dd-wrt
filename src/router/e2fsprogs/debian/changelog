@@ -1,3 +1,117 @@
+e2fsprogs (1.44.5-1) unstable; urgency=medium
+
+  * New upstream version
+  * Avoid overflows when tracking the number of files defragged
+    by e4defrag (Closes: #888899)
+  * Fix groff formatting nits in various man pages (Closes: #916188)
+  * Fix location of libext2fs documentation (Closes: #915942)
+  * Fix regression so we are correctly translating Posix ACL's
+    in libext2fs
+  * Use the online free block counts so e2freefrag's percentages
+    are correct
+  * Fix a false warning that tune2fs will take long time to change
+    a UUID if the metadata_csum feature is not enabled
+  * Fix mk_cmds so it works on a usrmerge system when e2fsprogs is built
+    on a non-usrmerge system (Closes: #914087)
+  * E2fsck will avoid offering to set the inline_data feature flag
+    unnecessarily
+  * E4defrag will handle the case where it is running as root and it can't
+    find the file system to open more gracefully (Closes: #907634)
+  * Fix a bug where resize2fs was failing to update the extent tree
+    checksums in an corner case
+  * Fix fuse2fs's command line parsing when options are specified after
+    the target device/image
+  * Fix a bug which could cause e2fsprogs tools to segfault on a corrupted
+    file system where the journal's s_nr_users is impossibly large.
+  * E2image now includes the mmp block (if needed) when creating a
+    metadata-only image.
+  * When e2fsck notices it could optimize an extent tree, it will now ask
+    "Optimize?" instead of "Fix?", which was confusing some users since it
+    implied that something was broken.
+
+ -- Theodore Y. Ts'o <tytso@mit.edu>  Sat, 15 Dec 2018 22:46:49 -0500
+
+e2fsprogs (1.44.4-2) unstable; urgency=medium
+
+  * tune2fs fix dereference of freed memory after journal
+  * fix verity support
+  * Generate NEWS.gz for e2fsprogs's package documentation directory
+  * Update Debian policy compliance to 4.2.0
+  * Improve version dependency for libcom-err and ss2 for e2fsprogs
+
+ -- Theodore Y. Ts'o <tytso@mit.edu>  Wed, 22 Aug 2018 19:30:17 -0400
+
+e2fsprogs (1.44.4-1) unstable; urgency=medium
+
+  * New upstream release
+  * Add basic support for the ext4 verity (fsverity) feature
+  * E2fsck will fix file systems that have both the resize_inode
+    and meta_bg feature enabled
+  * Debugfs's ncheck command will now correctly inodes that have
+    multiple hard links
+  * Remove kilo/kibi rant (Closes: #757831)
+  * Update Danish, Spanish, and Swedish translations
+  * Fix symlink to directory conversions (Closes: #905195)
+
+ -- Theodore Y. Ts'o <tytso@mit.edu>  Sat, 18 Aug 2018 20:46:29 -0400
+
+e2fsprogs (1.44.3-1) unstable; urgency=medium
+
+  * New upstream release
+  * Include hashmap.h in the libext2fs2 package
+  * Update debian policy compliance to 4.1.5
+
+ -- Theodore Y. Ts'o <tytso@mit.edu>  Tue, 10 Jul 2018 01:23:17 -0400
+
+e2fsprogs (1.44.3~rc2-1) unstable; urgency=low
+
+  * New upstream release
+  * Debugfs's inode_dump and xattr_dump commands have new options to
+    display the low-level contents of an inode's i_blocks and extra
+    space, and to better be able to debug corrupted extended attributes.
+  * The dumpe2fs command now will show information about the Multi-Mount
+    Protection (MMP) block, if present
+  * E2fsck, dumpe2fs, and debugfs is now much more robust at handling
+    badly (or maliciously) corrupted file systems.
+  * E2fsck will now offer to enable the dir_nlink feature if it is
+    required by the file system
+  * The project id field in the inode is now properly byte-swapped on
+    big-endian systems
+  * E2fsprogs better handles recent kernels which reports old error
+    conditions via the first fsync() after the file is opened
+  * Updated/fixed various man pages
+  * Update Czech, Dutch, Spanish, French, Polish, Swedish, Ukrainian, and
+    Vietnamese translations
+  * Update debian policy compliance to 4.1.4
+
+ -- Theodore Y. Ts'o <tytso@mit.edu>  Tue, 3 Jul 2018 23:31:40 -0400
+
+e2fsprogs (1.44.2-1) unstable; urgency=medium
+
+  * New upstream release
+  * Demote e2fsprogs from Essential: yes to XB-Important: yes
+    (Closes: #474540)
+  * Fix mke2fs to print a more useful/correct error message if
+    ext2fs_close_free() fails at the end of the file system
+    creation process
+  * Improve chattr's man page
+  * Update Polish translation
+
+ -- Theodore Y. Ts'o <tytso@mit.edu>  Mon, 14 May 2018 19:59:27 -0400
+
+e2fsprogs (1.44.1-2) unstable; urgency=medium
+
+  * Fix e2image handling of e2i files on big endian systems
+  * Add sanity checks for inodes containing xattr values to prevent
+    maliciously crafted file systems from causing crashes caused by
+    infinite recursion
+  * Fix e2fsck so that quota usage is adjusted when clearing orphaned
+    inodes
+  * Fix filefrag so that unknown flags returned by FIEMAP won't cause a
+    buffer overrun
+
+ -- Theodore Y. Ts'o <tytso@mit.edu>  Tue, 10 Apr 2018 11:04:36 -0400
+
 e2fsprogs (1.44.1-1) unstable; urgency=medium
 
   * New upstream release

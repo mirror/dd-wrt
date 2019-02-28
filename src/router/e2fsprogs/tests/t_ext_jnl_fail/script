@@ -7,13 +7,13 @@ else
 	EXP=$test_dir/expect
 fi
 
-cp /dev/null $OUT
-
-$MKE2FS -F -o Linux -b 1024 -O journal_dev,metadata_csum -T ext4 $TMPFILE 4096 2>&1 | sed -f $cmd_dir/filter.sed >> $OUT 2>&1
+$MKE2FS -F -o Linux -b 1024 -O journal_dev,metadata_csum -T ext4 $TMPFILE 4096 > $OUT 2>&1
 echo "tune2fs external journal" >> $OUT
-$TUNE2FS -i 0 $TMPFILE 2>&1 | sed -f $cmd_dir/filter.sed >> $OUT
-
+$TUNE2FS -i 0 $TMPFILE >> $OUT 2>&1
 rm -f $TMPFILE
+
+sed -f $cmd_dir/filter.sed < $OUT > $OUT.new
+mv $OUT.new $OUT
 
 cmp -s $OUT $EXP
 status=$?

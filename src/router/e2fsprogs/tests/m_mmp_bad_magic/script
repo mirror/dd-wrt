@@ -12,8 +12,15 @@ gzip -dc < $test_dir/image.gz > $TMPFILE
 
 OUT=$test_name.log
 EXP=$test_dir/expect
-$FSCK -fy $TMPFILE 2>&1 | sed -f $cmd_dir/filter.sed > $OUT
+$E2MMPSTATUS $TMPFILE > $OUT 2>&1
 echo Exit status is $? >> $OUT
+$FSCK -fy $TMPFILE >> $OUT 2>&1
+echo Exit status is $? >> $OUT
+$E2MMPSTATUS $TMPFILE >> $OUT 2>&1
+echo Exit status is $? >> $OUT
+$E2MMPSTATUS -i $TMPFILE >> $OUT 2>&1
+sed -f $cmd_dir/filter.sed $OUT > $OUT.new
+mv $OUT.new $OUT
 
 rm -f $TMPFILE
 cmp -s $OUT $EXP

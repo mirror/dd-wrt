@@ -75,8 +75,10 @@ static errcode_t parse_gd_csum(struct field_set_info *info, char *field, char *a
 static errcode_t parse_mmp_clear(struct field_set_info *info, char *field,
 				 char *arg);
 
+#if __GNUC_PREREQ (4, 6) || defined(__clang__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+#endif
 
 static struct field_set_info super_fields[] = {
 	{ "inodes_count", &set_sb.s_inodes_count, NULL, 4, parse_uint },
@@ -289,7 +291,9 @@ static struct field_set_info mmp_fields[] = {
 	{ "checksum", &set_mmp.mmp_checksum, NULL, 4, parse_uint },
 	{ 0, 0, 0, 0 }
 };
+#if __GNUC_PREREQ (4, 6)
 #pragma GCC diagnostic pop
+#endif
 
 #ifdef UNITTEST
 
@@ -495,7 +499,7 @@ static errcode_t parse_uint(struct field_set_info *info, char *field,
 	}
 	if (!field2)
 		return 0;
-	n = num >> (size*8);
+	n = (size == 8) ? 0 : (num >> (size*8));
 	u.ptr8 = (__u8 *) field2;
 	if (info->size == 6)
 		size = 2;

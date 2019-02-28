@@ -630,7 +630,6 @@ CFLAGS_STLIB
 CFLAGS_SHLIB
 BUILD_LDFLAGS
 BUILD_CFLAGS
-MKINSTALLDIRS
 INCLUDES
 DO_TEST_SUITE
 LDFLAGS_STATIC
@@ -742,6 +741,8 @@ DEFRAG_CMT
 RESIZER_CMT
 IMAGER_CMT
 DEBUGFS_CMT
+SUBSET_CMT
+ALL_CMT
 BLKID_CMT
 DEPPROFILED_LIBBLKID
 PROFILED_LIBBLKID
@@ -868,6 +869,7 @@ enable_blkid_debug
 enable_testio_debug
 enable_libuuid
 enable_libblkid
+enable_subset
 enable_backtrace
 enable_debugfs
 enable_imager
@@ -1531,6 +1533,7 @@ Optional Features:
   --disable-testio-debug  disable the use of the test I/O manager for debugging
   --enable-libuuid	  build and use private uuid library
   --enable-libblkid	  build and use private blkid library
+  --enable-subset  	  enable subset-only build
   --disable-backtrace	  disable use backtrace
   --disable-debugfs   	  disable support of debugfs program
   --disable-imager   	  disable support of e2image program
@@ -5626,6 +5629,25 @@ fi
 
 
 
+
+
+
+ALL_CMT=
+SUBSET_CMT=
+# Check whether --enable-subset was given.
+if test "${enable_subset+set}" = set; then :
+  enableval=$enable_subset; if test "$enableval" = "no"
+then
+	SUBSET_CMT=#
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: Disabling subset-only build" >&5
+$as_echo "Disabling subset-only build" >&6; }
+else
+	ALL_CMT=#
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: Enabling subset-only-build" >&5
+$as_echo "Enabling subset-only-build" >&6; }
+fi
+
+fi
 
 
 
@@ -11573,6 +11595,7 @@ $as_echo "no" >&6; }
 fi
 
 
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ln -s works" >&5
 $as_echo_n "checking whether ln -s works... " >&6; }
 LN_S=$as_ln_s
@@ -13083,7 +13106,7 @@ fi
 if test -n "$DLOPEN_LIB" ; then
    ac_cv_func_dlopen=yes
 fi
-for ac_func in  	__secure_getenv 	add_key 	backtrace 	blkid_probe_get_topology 	blkid_probe_enable_partitions 	chflags 	dlopen 	fadvise64 	fallocate 	fallocate64 	fchown 	fcntl 	fdatasync 	fstat64 	fsync 	ftruncate64 	futimes 	getcwd 	getdtablesize 	getmntinfo 	getpwuid_r 	getrlimit 	getrusage 	jrand48 	keyctl 	llistxattr 	llseek 	lseek64 	mallinfo 	mbstowcs 	memalign 	mempcpy 	mmap 	msync 	nanosleep 	open64 	pathconf 	posix_fadvise 	posix_fadvise64 	posix_memalign 	prctl 	pread 	pwrite 	pread64 	pwrite64 	secure_getenv 	setmntent 	setresgid 	setresuid 	snprintf 	srandom 	stpcpy 	strcasecmp 	strdup 	strnlen 	strptime 	strtoull 	sync_file_range 	sysconf 	usleep 	utime 	utimes 	valloc
+for ac_func in  	__secure_getenv 	add_key 	backtrace 	blkid_probe_get_topology 	blkid_probe_enable_partitions 	chflags 	dlopen 	fadvise64 	fallocate 	fallocate64 	fchown 	fcntl 	fdatasync 	fstat64 	fsync 	ftruncate64 	futimes 	getcwd 	getdtablesize 	gethostname 	getmntinfo 	getpwuid_r 	getrlimit 	getrusage 	jrand48 	keyctl 	llistxattr 	llseek 	lseek64 	mallinfo 	mbstowcs 	memalign 	mempcpy 	mmap 	msync 	nanosleep 	open64 	pathconf 	posix_fadvise 	posix_fadvise64 	posix_memalign 	prctl 	pread 	pwrite 	pread64 	pwrite64 	secure_getenv 	setmntent 	setresgid 	setresuid 	snprintf 	srandom 	stpcpy 	strcasecmp 	strdup 	strnlen 	strptime 	strtoull 	sync_file_range 	sysconf 	usleep 	utime 	utimes 	valloc
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -13839,19 +13862,6 @@ if test -n "$WITH_DIET_LIBC" ; then
 	INCLUDES="$INCLUDES -D_REENTRANT"
 fi
 
-
-        MKINSTALLDIRS=
-  if test -n "$ac_aux_dir"; then
-    case "$ac_aux_dir" in
-      /*) MKINSTALLDIRS="$ac_aux_dir/mkinstalldirs" ;;
-      *) MKINSTALLDIRS="\$(top_builddir)/$ac_aux_dir/mkinstalldirs" ;;
-    esac
-  fi
-  if test -z "$MKINSTALLDIRS"; then
-    MKINSTALLDIRS="\$(top_srcdir)/mkinstalldirs"
-  fi
-
-
 if test $cross_compiling = no; then
    BUILD_CFLAGS="$CFLAGS $CPPFLAGS $INCLUDES -DHAVE_CONFIG_H"
    BUILD_LDFLAGS="$LDFLAGS"
@@ -13876,7 +13886,7 @@ if test -z "$BLKID_CMT" ; then
 	blkid_out_list="lib/blkid/Makefile lib/blkid/blkid.pc \
 		lib/blkid/blkid_types.h"
 fi
-for i in MCONFIG Makefile e2fsprogs.spec \
+for i in MCONFIG Makefile \
 	util/Makefile util/subst.conf util/gen-tarball util/install-symlink \
 	lib/et/Makefile lib/ss/Makefile lib/e2p/Makefile \
 	lib/ext2fs/Makefile lib/ext2fs/ext2_types.h \

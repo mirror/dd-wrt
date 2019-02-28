@@ -55,13 +55,15 @@ int sci_idx;
 ext2_filsys	current_fs;
 quota_ctx_t	current_qctx;
 ext2_ino_t	root, cwd;
+int		no_copy_xattrs;
 
 static int debugfs_setup_tdb(const char *device_name, char *undo_file,
 			     io_manager *io_ptr)
 {
 	errcode_t retval = ENOMEM;
-	char *tdb_dir = NULL, *tdb_file = NULL;
-	char *dev_name, *tmp_name;
+	const char	*tdb_dir = NULL;
+	char		*tdb_file = NULL;
+	char		*dev_name, *tmp_name;
 
 	/* (re)open a specific undo file */
 	if (undo_file && undo_file[0] != 0) {
@@ -159,13 +161,8 @@ static void open_filesystem(char *device, int open_flags, blk64_t superblock,
 		}
 	}
 
-	if (catastrophic && (open_flags & EXT2_FLAG_RW)) {
-		com_err(device, 0,
-			"opening read-only because of catastrophic mode");
-		open_flags &= ~EXT2_FLAG_RW;
-	}
 	if (catastrophic)
-		open_flags |= EXT2_FLAG_SKIP_MMP;
+		open_flags |= EXT2_FLAG_SKIP_MMP | EXT2_FLAG_IGNORE_SB_ERRORS;
 
 	if (undo_file) {
 		retval = debugfs_setup_tdb(device, undo_file, &io_ptr);
@@ -176,13 +173,15 @@ static void open_filesystem(char *device, int open_flags, blk64_t superblock,
 try_open_again:
 	retval = ext2fs_open(device, open_flags, superblock, blocksize,
 			     io_ptr, &current_fs);
-	if (retval && !(open_flags & EXT2_FLAG_IGNORE_CSUM_ERRORS)) {
+	if (retval && (retval == EXT2_ET_SB_CSUM_INVALID) &&
+	    !(open_flags & EXT2_FLAG_IGNORE_CSUM_ERRORS)) {
 		open_flags |= EXT2_FLAG_IGNORE_CSUM_ERRORS;
 		printf("Checksum errors in superblock!  Retrying...\n");
 		goto try_open_again;
 	}
 	if (retval) {
-		com_err(device, retval, "while opening filesystem");
+		com_err(debug_prog_name, retval,
+			"while trying to open %s", device);
 		if (retval == EXT2_ET_BAD_MAGIC)
 			check_plausibility(device, CHECK_FS_EXIST, NULL);
 		current_fs = NULL;
@@ -1769,7 +1768,8 @@ void do_mknod(int argc, char *argv[])
 		goto usage;
 
 	st.st_rdev = makedev(major, minor);
-	retval = do_mknod_internal(current_fs, cwd, argv[1], &st);
+	retval = do_mknod_internal(current_fs, cwd, argv[1],
+				   st.st_mode, st.st_rdev);
 	if (retval)
 		com_err(argv[0], retval, 0);
 }
@@ -2097,15 +2097,29 @@ void do_imap(int argc, char *argv[])
 
 void do_idump(int argc, char *argv[])
 {
+	struct ext2_inode_large *inode;
 	ext2_ino_t	ino;
 	unsigned char	*buf;
 	errcode_t	err;
-	int		isize;
+	unsigned int	isize, size, offset = 0;
+	int		c, mode = 0;
 
-	if (common_args_process(argc, argv, 2, 2, argv[0],
-				"<file>", 0))
+	reset_getopt();
+	while ((c = getopt (argc, argv, "bex")) != EOF) {
+		if (mode || c == '?') {
+			com_err(argv[0], 0,
+				"Usage: inode_dump [-b]|[-e] <file>");
+			return;
+		}
+		mode = c;
+	}
+	if (optind != argc-1)
 		return;
-	ino = string_to_inode(argv[1]);
+
+	if (check_fs_open(argv[0]))
+		return;
+
+	ino = string_to_inode(argv[optind]);
 	if (!ino)
 		return;
 
@@ -2123,7 +2137,29 @@ void do_idump(int argc, char *argv[])
 		goto err;
 	}
 
-	do_byte_hexdump(stdout, buf, isize);
+	inode = (struct ext2_inode_large *) buf;
+	size = isize;
+	switch (mode) {
+	case 'b':
+		offset = ((char *) (&inode->i_block)) - ((char *) buf);
+		size = sizeof(inode->i_block);
+		break;
+	case 'x':
+	case 'e':
+		if (size <= EXT2_GOOD_OLD_INODE_SIZE) {
+			com_err(argv[0], 0, "No extra space in inode");
+			goto err;
+		}
+		offset = EXT2_GOOD_OLD_INODE_SIZE + inode->i_extra_isize;
+		if (offset > size)
+			goto err;
+		size -= offset;
+		break;
+	}
+	if (mode == 'x')
+		raw_inode_xattr_dump(stdout, buf + offset, size);
+	else
+		do_byte_hexdump(stdout, buf + offset, size);
 err:
 	ext2fs_free_mem(&buf);
 }

@@ -190,16 +190,21 @@ Print or set the physical block number corresponding to the logical block number
 in the inode
 .IR filespec .
 If the
-.I -a
+.I \-a
 flag is specified, try to allocate a block if necessary.
 .TP
-.BI block_dump " [-f filespec] block_num"
+.BI block_dump " '[ -x ] [-f filespec] block_num"
 Dump the filesystem block given by
 .I block_num
 in hex and ASCII format to the console.  If the
-.I -f
+.I \-f
 option is specified, the block number is relative to the start of the given
 .BR filespec .
+If the
+.I \-x
+option is specified, the block is interpreted as an extended attribute
+block and printed to show the structure of extended attribute data
+structures.
 .TP
 .BI cat " filespec"
 Dump the contents of the inode
@@ -424,8 +429,20 @@ showing its tree structure.
 Print a listing of the inodes which use the one or more blocks specified
 on the command line.
 .TP
-.BI inode_dump " filespec"
+.BI inode_dump " [-b]|[-e]|[-x] filespec"
 Print the contents of the inode data structure in hex and ASCII format.
+The
+.I \-b
+option causes the command to only dump the contents of the
+.B i_blocks
+array.  The
+.I \-e
+option causes the command to only dump the contents of the extra inode
+space, which is used to store in-line extended attributes. The
+.I \-x
+option causes the command to dump the extra inode space interpreted and
+extended attributes.  This is useful to debug corrupted inodes
+containing extended attributes.
 .TP
 .BI imap " filespec"
 Print the location of the inode data structure (in the inode table)

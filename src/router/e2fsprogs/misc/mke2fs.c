@@ -95,6 +95,7 @@ int	journal_size;
 int	journal_flags;
 static int	lazy_itable_init;
 static int	packed_meta_blocks;
+int		no_copy_xattrs;
 static char	*bad_blocks_filename = NULL;
 static __u32	fs_stride;
 /* Initialize usr/grp quotas by default */
@@ -359,9 +360,15 @@ static void write_reserved_inodes(ext2_filsys fs)
 		exit(1);
 	}
 
-	for (ino = 1; ino < EXT2_FIRST_INO(fs->super); ino++)
-		ext2fs_write_inode_full(fs, ino, inode,
-					EXT2_INODE_SIZE(fs->super));
+	for (ino = 1; ino < EXT2_FIRST_INO(fs->super); ino++) {
+		retval = ext2fs_write_inode_full(fs, ino, inode,
+						 EXT2_INODE_SIZE(fs->super));
+		if (retval) {
+			com_err("ext2fs_write_inode_full", retval,
+				_("while writing reserved inodes"));
+			exit(1);
+		}
+	}
 
 	ext2fs_free_mem(&inode);
 }
@@ -874,6 +881,9 @@ static void parse_extended_opts(struct ext2_super_block *param,
 				r_usage++;
 				continue;
 			}
+		} else if (strcmp(token, "no_copy_xattrs") == 0) {
+			no_copy_xattrs = 1;
+			continue;
 		} else if (strcmp(token, "num_backup_sb") == 0) {
 			if (!arg) {
 				r_usage++;
@@ -1114,7 +1124,8 @@ static __u32 ok_features[3] = {
 		EXT4_FEATURE_RO_COMPAT_BIGALLOC|
 		EXT4_FEATURE_RO_COMPAT_QUOTA|
 		EXT4_FEATURE_RO_COMPAT_METADATA_CSUM|
-		EXT4_FEATURE_RO_COMPAT_PROJECT
+		EXT4_FEATURE_RO_COMPAT_PROJECT|
+		EXT4_FEATURE_RO_COMPAT_VERITY
 };
 
 
@@ -3295,8 +3306,9 @@ no_journal:
 	max_mnt_count = fs->super->s_max_mnt_count;
 	retval = ext2fs_close_free(&fs);
 	if (retval) {
-		fprintf(stderr, "%s",
-			_("\nWarning, had trouble writing out superblocks.\n"));
+		com_err(program_name, retval, "%s",
+			_("while writing out and closing file system"));
+		retval = 1;
 	} else if (!quiet) {
 		printf("%s", _("done\n\n"));
 		if (!getenv("MKE2FS_SKIP_CHECK_MSG"))

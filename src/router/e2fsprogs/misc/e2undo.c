@@ -81,8 +81,14 @@ struct undo_key_block {
 	__le32 magic;		/* KEYBLOCK_MAGIC number */
 	__le32 crc;		/* block checksum */
 	__le64 reserved;	/* zero */
-
+#if __GNUC_PREREQ (4, 8)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#endif
 	struct undo_key keys[0];	/* keys, which come immediately after */
+#if __GNUC_PREREQ (4, 8)
+#pragma GCC diagnostic pop
+#endif
 };
 
 struct undo_key_info {

@@ -13,4 +13,3 @@ Fix a build failure in lib/ext2fs/swapfs.c on big-endian systems.
 
 Fix various Debian packaging issues.  (Addresses Debian Bug #269569).
 
-

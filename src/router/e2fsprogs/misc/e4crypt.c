@@ -566,7 +566,7 @@ static void insert_key_into_keyring(const char *keyring, struct salt *salt)
 		return;
 	} else if ((rc == -1) && (errno != ENOKEY)) {
 		printf("keyctl_search failed: %s\n", strerror(errno));
-		if (errno == -EINVAL)
+		if (errno == EINVAL)
 			printf("Keyring [%s] is not available.\n", keyring);
 		exit(1);
 	}
@@ -676,8 +676,10 @@ static void do_add_key(int argc, char **argv, const struct cmd_desc *cmd)
 			options |= OPT_QUIET;
 			break;
 		default:
-			fprintf(stderr, "Unrecognized option: %c\n", opt);
 		case '?':
+			if (opt != '?')
+				fprintf(stderr, "Unrecognized option: %c\n",
+					opt);
 			fputs("USAGE:\n  ", stderr);
 			fputs(cmd->cmd_help, stderr);
 			exit(1);
@@ -758,7 +760,6 @@ static void do_set_policy(int argc, char **argv, const struct cmd_desc *cmd)
 static void do_get_policy(int argc, char **argv, const struct cmd_desc *cmd)
 {
 	struct ext4_encryption_policy policy;
-	struct stat st;
 	int i, j, fd, rc;
 
 	if (argc < 2) {
@@ -769,12 +770,7 @@ static void do_get_policy(int argc, char **argv, const struct cmd_desc *cmd)
 	}
 
 	for (i = 1; i < argc; i++) {
-		if (stat(argv[i], &st) < 0) {
-			perror(argv[i]);
-			continue;
-		}
-		fd = open(argv[i],
-			  S_ISDIR(st.st_mode) ? O_DIRECTORY : O_RDONLY);
+		fd = open(argv[i], O_RDONLY);
 		if (fd == -1) {
 			perror(argv[i]);
 			exit(1);

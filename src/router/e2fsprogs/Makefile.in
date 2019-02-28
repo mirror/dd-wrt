@@ -13,9 +13,13 @@ INSTALL = @INSTALL@
 @DEBUGFS_CMT@DEBUGFS_DIR= debugfs
 @UUID_CMT@UUID_LIB_SUBDIR= lib/uuid
 @BLKID_CMT@BLKID_LIB_SUBDIR= lib/blkid
-SUPPORT_LIB_SUBDIR= lib/support
+@ALL_CMT@SUPPORT_LIB_SUBDIR= lib/support
+@ALL_CMT@E2P_LIB_SUBDIR= lib/e2p
+@ALL_CMT@EXT2FS_LIB_SUBDIR= lib/ext2fs
 
-LIB_SUBDIRS=lib/et lib/ss lib/e2p $(UUID_LIB_SUBDIR) $(BLKID_LIB_SUBDIR) $(SUPPORT_LIB_SUBDIR) lib/ext2fs intl
+LIB_SUBDIRS=lib/et lib/ss $(E2P_LIB_SUBDIR) $(UUID_LIB_SUBDIR) \
+	$(BLKID_LIB_SUBDIR) $(SUPPORT_LIB_SUBDIR) $(EXT2FS_LIB_SUBDIR) intl
+
 PROG_SUBDIRS=e2fsck $(DEBUGFS_DIR) misc $(RESIZE_DIR) tests/progs po
 SUBDIRS=util $(LIB_SUBDIRS) $(PROG_SUBDIRS) tests
 
@@ -26,8 +30,8 @@ TAR=tar
 
 all:: subs
 	$(MAKE) libs
-	$(MAKE) progs
-	$(MAKE) docs
+@ALL_CMT@	$(MAKE) progs
+@ALL_CMT@	$(MAKE) docs
 
 subs: $(DEP_SUBSTITUTE)
 	@for i in $(SUBS) ; do if test -d `dirname $$i` ; \
@@ -38,12 +42,9 @@ subs: $(DEP_SUBSTITUTE)
 
 progs: all-progs-recursive
 libs: all-libs-recursive
-all-progs-recursive all-libs-recursive: subs
+all-progs-recursive all-libs-recursive:: subs
 
-e2fsprogs.spec: $(DEP_SUBSTITUTE) e2fsprogs.spec.in
-	cd $(top_builddir); CONFIG_FILES=./e2fsprogs.spec ./config.status
-
-rpm: e2fsprogs.spec
+rpm:
 	sh contrib/build-rpm
 
 docs:
@@ -63,7 +64,7 @@ distclean-doc:
 
 install: subs all-libs-recursive install-progs-recursive \
   install-shlibs-libs-recursive install-doc-libs
-	if test ! -d e2fsck && test ! -d debugfs && test ! -d misc && test ! -d ext2ed ; then $(MAKE) install-libs ; fi
+@SUBSET_CMT@	$(MAKE) install-libs
 
 install-strip: subs all-libs-recursive install-strip-progs-recursive \
   install-shlibs-strip-libs-recursive install-doc-libs
@@ -90,19 +91,23 @@ TAGS clean-recursive distclean-recursive depend-recursive fullcheck-recursive \
 	done
 
 all-progs-recursive install-progs-recursive install-strip-progs-recursive \
-  uninstall-progs-recursive coverage.txt-progs-recursive: all-libs-recursive
-	@for subdir in $(PROG_SUBDIRS); do \
-	  if test -d $$subdir ; then \
-	    target=`echo $@|$(SED) 's/-progs-recursive//'`; \
-	    echo making $$target in $$subdir; \
-	    (cd $$subdir && $(MAKE) $$target) || exit 1; \
-	  fi ; \
-	done
+  uninstall-progs-recursive coverage.txt-progs-recursive:: all-libs-recursive
+
+
+@ALL_CMT@all-progs-recursive install-progs-recursive install-strip-progs-recursive \
+@ALL_CMT@  uninstall-progs-recursive coverage.txt-progs-recursive:: all-libs-recursive
+@ALL_CMT@	@for subdir in $(PROG_SUBDIRS); do \
+@ALL_CMT@	  if test -d $$subdir ; then \
+@ALL_CMT@	    target=`echo $@|$(SED) 's/-progs-recursive//'`; \
+@ALL_CMT@	    echo making $$target in $$subdir; \
+@ALL_CMT@	    (cd $$subdir && $(MAKE) $$target) || exit 1; \
+@ALL_CMT@	  fi ; \
+@ALL_CMT@	done
 
 all-libs-recursive install-libs-recursive install-strip-libs-recursive \
   uninstall-libs-recursive install-shlibs-libs-recursive \
   install-shlibs-strip-libs-recursive uninstall-shlibs-libs-recursive \
-  coverage.txt-libs-recursive:
+  coverage.txt-libs-recursive::
 	@for subdir in $(LIB_SUBDIRS); do \
 	  if test -d $$subdir ; then \
 	    target=`echo $@|$(SED) 's/-libs-recursive//'`; \
@@ -117,7 +122,7 @@ clean:: clean-recursive clean-local clean-doc
 	$(RM) -f $(SUBS) 
 
 distclean: distclean-doc distclean-recursive
-	$(RM) -rf autom4te.cache e2fsprogs.spec ext2ed/Makefile po/stamp-po \
+	$(RM) -rf autom4te.cache ext2ed/Makefile po/stamp-po \
 		asm_types.h config.log public_config.h parse-types.log
 	$(MAKE) distclean-local 
 

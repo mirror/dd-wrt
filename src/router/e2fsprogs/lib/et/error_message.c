@@ -257,7 +257,14 @@ static void init_debug(void)
 		if (fd >= 0) {
 			flags = fcntl(fd, F_GETFD);
 			if (flags >= 0)
-				fcntl(fd, F_SETFD, flags | FD_CLOEXEC);
+				flags = fcntl(fd, F_SETFD, flags | FD_CLOEXEC);
+			if (flags < 0) {
+				fprintf(debug_f, "Couldn't set FD_CLOEXEC "
+					"on debug FILE: %s\n", strerror(errno));
+				fclose(debug_f);
+				debug_f = NULL;
+				debug_mask = DEBUG_INIT;
+			}
 		}
 #endif
 	} else

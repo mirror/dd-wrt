@@ -653,7 +653,6 @@ static errcode_t calculate_tree(ext2_filsys fs,
 	struct ext2_dx_entry		*root, *int_ent, *dx_ent = 0;
 	struct ext2_dx_countlimit	*root_limit, *int_limit, *limit;
 	errcode_t			retval;
-	char				* block_start;
 	int				i, c1, c2, c3, nblks;
 	int				limit_offset, int_offset, root_offset;
 

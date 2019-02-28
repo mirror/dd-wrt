@@ -50,13 +50,12 @@ eval $PREP_CMD
 echo 'stat /a' > $TMPFILE.cmd
 echo 'ex /zero' >> $TMPFILE.cmd
 $DEBUGFS -f $TMPFILE.cmd $TMPFILE > $OUT1.new 2>&1
-rm -rf $TMPFILE.cmd
+rm -f $TMPFILE.cmd
 $TUNE2FS -O extent $TMPFILE >> $OUT1.new 2>&1
 $FSCK $FSCK_OPT -E bmap2extent -N test_filesys $TMPFILE >> $OUT1.new 2>&1
 status=$?
 echo Exit status is $status >> $OUT1.new
-sed -f $cmd_dir/filter.sed -e "s;$TMPFILE;test.img;" $OUT1.new >> $OUT1
-rm -f $OUT1.new
+sed -f $cmd_dir/filter.sed $OUT1.new > $OUT1
 
 $FSCK $SECOND_FSCK_OPT -N test_filesys $TMPFILE > $OUT2.new 2>&1 
 status=$?
@@ -64,9 +63,8 @@ echo Exit status is $status >> $OUT2.new
 echo 'ex /a' > $TMPFILE.cmd
 echo 'ex /zero' >> $TMPFILE.cmd
 $DEBUGFS -f $TMPFILE.cmd $TMPFILE >> $OUT2.new 2>&1
-rm -rf $TMPFILE.cmd
-sed -f $cmd_dir/filter.sed -e "s;$TMPFILE;test.img;" $OUT2.new > $OUT2
-rm -f $OUT2.new
+sed -f $cmd_dir/filter.sed $OUT2.new > $OUT2
+rm -f $TMPFILE.cmd $OUT1.new $OUT2.new
 
 eval $AFTER_CMD
 

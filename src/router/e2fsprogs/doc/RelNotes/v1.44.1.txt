@@ -37,7 +37,7 @@ Performance, Internal Implementation, Development Support etc.
 Debugfs now reads allocation bitmaps much more efficiently when opening
 a file system.
 
-Update Sweedish translation file.
+Update Swedish translation file.
 
 Add Vcs-* fields to debian packaging.  (Addresses Debian Bug: #887512)
 
@@ -45,3 +45,4 @@ Fix some test failures on GNU Hurd caused by a different default block
 size.
 
 Add new regression tests.
+

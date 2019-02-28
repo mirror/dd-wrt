@@ -565,6 +565,24 @@ AC_SUBST(PROFILED_LIBBLKID)
 AC_SUBST(DEPPROFILED_LIBBLKID)
 AC_SUBST(BLKID_CMT)
 dnl
+dnl handle --enable-subset
+dnl
+ALL_CMT=
+SUBSET_CMT=
+AC_ARG_ENABLE([subset],
+[  --enable-subset  	  enable subset-only build],
+if test "$enableval" = "no"
+then
+	SUBSET_CMT=#
+	AC_MSG_RESULT([Disabling subset-only build])
+else
+	ALL_CMT=#
+	AC_MSG_RESULT([Enabling subset-only-build])
+fi
+,)
+AC_SUBST(ALL_CMT)
+AC_SUBST(SUBSET_CMT)
+dnl
 dnl handle --disable-backtrace
 dnl
 AH_TEMPLATE([DISABLE_BACKTRACE], [Define to 1 to disable use of backtrace])
@@ -862,6 +880,7 @@ AC_SUBST(BINARY_TYPE)
 AC_PROG_MAKE_SET
 CHECK_GNU_MAKE
 AC_PATH_PROG(LN, ln, ln)
+AC_PROG_MKDIR_P
 AC_PROG_LN_S
 AC_PATH_PROG(MV, mv, mv)
 AC_PATH_PROG(CP, cp, cp)
@@ -1124,6 +1143,7 @@ AC_CHECK_FUNCS(m4_flatten([
 	futimes
 	getcwd
 	getdtablesize
+	gethostname
 	getmntinfo
 	getpwuid_r
 	getrlimit
@@ -1450,7 +1470,6 @@ if test -n "$WITH_DIET_LIBC" ; then
 	INCLUDES="$INCLUDES -D_REENTRANT"
 fi
 AC_SUBST(INCLUDES)
-AM_MKINSTALLDIRS
 dnl
 dnl Build CFLAGS
 dnl
@@ -1485,7 +1504,7 @@ if test -z "$BLKID_CMT" ; then
 	blkid_out_list="lib/blkid/Makefile lib/blkid/blkid.pc \
 		lib/blkid/blkid_types.h"
 fi
-for i in MCONFIG Makefile e2fsprogs.spec \
+for i in MCONFIG Makefile \
 	util/Makefile util/subst.conf util/gen-tarball util/install-symlink \
 	lib/et/Makefile lib/ss/Makefile lib/e2p/Makefile \
 	lib/ext2fs/Makefile lib/ext2fs/ext2_types.h \

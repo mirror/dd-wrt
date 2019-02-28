@@ -5,6 +5,7 @@
 cc_library {
     name: "libext2_misc",
     host_supported: true,
+    recovery_available: true,
     defaults: ["e2fsprogs-defaults"],
 
     target: {
@@ -33,6 +34,7 @@ cc_library {
 cc_binary {
     name: "mke2fs",
     host_supported: true,
+    recovery_available: true,
     defaults: ["e2fsprogs-defaults"],
 
     srcs: [
@@ -115,7 +117,6 @@ cc_defaults {
 }
 
 tune2fs_libs = [
-    "libext2_com_err",
     "libext2_blkid",
     "libext2_quota",
     "libext2_uuid",

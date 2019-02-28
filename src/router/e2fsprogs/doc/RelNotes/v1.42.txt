@@ -1687,3 +1687,4 @@ Allow ext2fs_get_memalign() to compile on systems that don't have
 posix_memalign().
 
 Fixed a namespace leak in libext2fs (tdb_null).
+

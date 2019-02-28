@@ -46,23 +46,15 @@ If no units are specified, the units of the
 parameter shall be the filesystem blocksize of the filesystem.
 Optionally, the
 .I size
-parameter may be suffixed by one of the following the units
-designators: 's', 'K', 'M', or 'G',
-for 512 byte sectors, kilobytes, megabytes, or gigabytes, respectively.
-The
+parameter may be suffixed by one of the following units
+designators: 'K', 'M', 'G', 'T' (either upper-case or lower-case) or 's'
+for power-of-two kilobytes, megabytes, gigabytes, terabytes or 512 byte
+sectors respectively. The
 .I size
 of the filesystem may never be larger than the size of the partition.
 If
 .I size
 parameter is not specified, it will default to the size of the partition.
-.PP
-Note: when kilobytes is used above, I mean
-.IR real ,
-power-of-2 kilobytes, (i.e., 1024 bytes), which some politically correct
-folks insist should be the stupid-sounding ``kibibytes''.  The same
-holds true for megabytes, also sometimes known as ``mebibytes'', or
-gigabytes, as the amazingly silly ``gibibytes''.  Makes you want to
-gibber, doesn't it?
 .PP
 The
 .B resize2fs

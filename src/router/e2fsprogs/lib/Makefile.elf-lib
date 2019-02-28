@@ -35,8 +35,8 @@ $(ELF_LIB): $(OBJS)
 	$(Q) (cd ..; $(LN) $(LINK_BUILD_FLAGS) $(ELF_LIB) $(ELF_SONAME))
 
 installdirs-elf-lib::
-	$(E) "	MKINSTALLDIRS $(ELF_INSTALL_DIR) $(libdir)"
-	$(Q) $(MKINSTALLDIRS) $(DESTDIR)$(ELF_INSTALL_DIR) \
+	$(E) "	MKDIR_P $(ELF_INSTALL_DIR) $(libdir)"
+	$(Q) $(MKDIR_P) $(DESTDIR)$(ELF_INSTALL_DIR) \
 		$(DESTDIR)$(libdir)
 
 installdirs:: installdirs-elf-lib
