@@ -211,14 +211,21 @@ void start_bridging(void)
 		GETENTRYBYIDX(stp, word, 1);
 		GETENTRYBYIDX(prio, word, 2);
 		GETENTRYBYIDX(mtu, word, 3);
+		GETENTRYBYIDX(forward_delay, word, 4);
+		GETENTRYBYIDX(max_age, word, 5);
 		if (!bridge || !stp)
 			break;
+		if (!forward_delay)
+			forward_delay = "15";
+		if (!max_age)
+			max_age = "20";
 
 		if (prio && mtu && *mtu)
 			nvram_nset(mtu, "%s_mtu", bridge);
 		br_add_bridge(bridge);
 		set_stp_state(bridge, stp);
-		br_set_bridge_forward_delay(bridge, 15);
+		br_set_bridge_max_age(bridge, max_age);
+		br_set_bridge_forward_delay(bridge, forward_delay);
 		if (prio)
 			br_set_bridge_prio(bridge, atoi(prio));
 
