@@ -1909,7 +1909,7 @@ int getBridgeSTP(char *br, char *word)
 
 int getBridgeForwardDelay(char *br)
 {
-	char *next, *wordlist;
+	char *next, *wordlist, word[128];
 	wordlist = nvram_safe_get("bridges");
 	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(bridge, word, 0);
@@ -1925,7 +1925,7 @@ int getBridgeForwardDelay(char *br)
 
 int getBridgeMaxAge(char *br)
 {
-	char *next, *wordlist;
+	char *next, *wordlist, word[128];
 	wordlist = nvram_safe_get("bridges");
 	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(bridge, word, 0);

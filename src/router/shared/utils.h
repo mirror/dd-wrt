@@ -830,6 +830,9 @@ extern int dns_to_resolv(void);
 extern char *get_wan_face(void);
 extern int getBridgeSTP(char *br, char *word);
 extern char *getBridgeSTPType(char *br, char *word);
+
+extern int getBridgeForwardDelay(char *br);
+extern int getBridgeMaxAge(char *br);
 extern unsigned char *get_ether_hwaddr(const char *name, unsigned char *hwaddr);
 extern int set_ether_hwaddr(const char *name, unsigned char *hwaddr);
 
