@@ -2004,11 +2004,8 @@ void start_lan(void)
 		eval("ifconfig", lan_ifname, "promisc");
 		char word[256];
 		br_set_stp_state(lan_ifname, getBridgeSTP(lan_ifname, word));
-#ifdef HAVE_MICRO
-		br_set_bridge_forward_delay(lan_ifname, 15);
-#else
-		br_set_bridge_forward_delay(lan_ifname, 15);
-#endif
+		br_set_bridge_max_age(lan_ifname, getBridgeMaxAge(lan_ifname));
+		br_set_bridge_forward_delay(lan_ifname, getBridgeForwardDelay(lan_ifname));
 #ifdef HAVE_EAD
 		eval("killall", "-9", "ead");
 #endif
@@ -2422,7 +2419,8 @@ void start_lan(void)
 			char word[256];
 
 			br_set_stp_state("br1", getBridgeSTP("br1", word));
-			br_set_bridge_forward_delay("br1", 15);
+			br_set_bridge_max_age("br1", getBridgeMaxAge("br1"));
+			br_set_bridge_forward_delay("br1", getBridgeForwardDelay("br1"));
 
 			/*
 			 * Bring up and configure br1 interface 
