@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 3676e83817055c61fa9797b296d10477d9b5a1a6 $
+ * $Id: 58b3f49c8e3b56a10af06a4bd6b2b3651d04884f $
  *
  * @brief Multi-packet state handling
  * @file main/state.c
@@ -24,10 +24,11 @@
  *
  * @copyright 2014 The FreeRADIUS server project
  */
-RCSID("$Id: 3676e83817055c61fa9797b296d10477d9b5a1a6 $")
+RCSID("$Id: 58b3f49c8e3b56a10af06a4bd6b2b3651d04884f $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/state.h>
+#include <freeradius-devel/md5.h>
 #include <freeradius-devel/rad_assert.h>
 
 typedef struct state_entry_t {
@@ -289,12 +290,27 @@ static state_entry_t *fr_state_create(fr_state_t *state, const char *server, RAD
 	 *	one we created above.
 	 */
 	if (vp) {
-		if (rad_debug_lvl && (vp->vp_length > sizeof(entry->state))) {
-			WARN("State should be %zd octets!",
-			     sizeof(entry->state));
-		}
-		memcpy(entry->state, vp->vp_octets, sizeof(entry->state));
+		/*
+		 *	Assume our own State first.
+		 */
+		if (vp->vp_length == sizeof(entry->state)) {
+			memcpy(entry->state, vp->vp_octets, sizeof(entry->state));
 
+			/*
+			 *	Too big?  Get the MD5 hash, in order
+			 *	to depend on the entire contents of State.
+			 */
+		} else if (vp->vp_length > sizeof(entry->state)) {
+			fr_md5_calc(entry->state, vp->vp_octets, vp->vp_length);
+
+			/*
+			 *	Too small?  Use the whole thing, and
+			 *	set the rest of entry->state to zero.
+			 */
+		} else {
+			memcpy(entry->state, vp->vp_octets, vp->vp_length);
+			memset(&entry->state[vp->vp_length], 0, sizeof(entry->state) - vp->vp_length);
+		}
 	} else {
 		vp = fr_pair_afrom_num(packet, PW_STATE, 0);
 		fr_pair_value_memcpy(vp, entry->state, sizeof(entry->state));
@@ -342,9 +358,27 @@ static state_entry_t *fr_state_find(fr_state_t *state, const char *server, RADIU
 	vp = fr_pair_find_by_num(packet->vps, PW_STATE, 0, TAG_ANY);
 	if (!vp) return NULL;
 
-	if (vp->vp_length != sizeof(my_entry.state)) return NULL;
+	/*
+	 *	Assume our own State first.
+	 */
+	if (vp->vp_length == sizeof(my_entry.state)) {
+		memcpy(my_entry.state, vp->vp_octets, sizeof(my_entry.state));
 
-	memcpy(my_entry.state, vp->vp_octets, sizeof(my_entry.state));
+		/*
+		 *	Too big?  Get the MD5 hash, in order
+		 *	to depend on the entire contents of State.
+		 */
+	} else if (vp->vp_length > sizeof(my_entry.state)) {
+		fr_md5_calc(my_entry.state, vp->vp_octets, vp->vp_length);
+
+		/*
+		 *	Too small?  Use the whole thing, and
+		 *	set the rest of my_entry.state to zero.
+		 */
+	} else {
+		memcpy(my_entry.state, vp->vp_octets, vp->vp_length);
+		memset(&my_entry.state[vp->vp_length], 0, sizeof(my_entry.state) - vp->vp_length);
+	}
 
 	/*	Make unique for different virtual servers handling same request
 	 */

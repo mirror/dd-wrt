@@ -1,10 +1,12 @@
 # -*- text -*-
-# Copyright (C) 2015 The FreeRADIUS Server project and contributors
+# Copyright (C) 2019 The FreeRADIUS Server project and contributors
+# This work is licensed under CC-BY version 4.0 https://creativecommons.org/licenses/by/4.0
+#
 ##############################################################################
 #
 #	Ascend dictionary that illegally uses the RFC space.
 #
-#	$Id: c9184b1317ac27b08cb071fde738fa85bbe29f74 $
+#	$Id: b741c1f9d48d42dee068dd18e17932ab4aa8bc5d $
 #
 ##############################################################################
 #

@@ -1,6 +1,6 @@
 # -*- text -*-
 #
-#  $Id: 9a575bf6e271a966d1d9831b85b52619d35c5183 $
+#  $Id: 443d74dc08f19ddb59ea342f756c90066623e1c6 $
 
 #  This module is only used when the server is running on the same
 #  system as OpenDirectory.  The configuration of the module is hard-coded
@@ -14,6 +14,10 @@
 #  /config/dirserv OpenDirectory record.  You will probably also need
 #  to change the user passwords in order to re-generate the
 #  appropriate hashes.
+#
+#  Complete OSX configuration information is available on Apple's web site:
+#
+#	https://developer.apple.com/support/macos-server/macOS-Server-Service-Migration-Guide.pdf
 #
 #  See also https://discussions.apple.com/thread/6053980?tstart=0
 #

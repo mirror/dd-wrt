@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: b2494b5151f7d2e32aa11749d65ea32940084963 $
+ * $Id: a7992647cd0febc5248b34d18acebd017f6825d7 $
  * @file rlm_sql_mysql.c
  * @brief MySQL driver.
  *
@@ -24,7 +24,7 @@
  * @copyright 2000  Mike Machado <mike@innercite.com>
  * @copyright 2000  Alan DeKok <aland@ox.org>
  */
-RCSID("$Id: b2494b5151f7d2e32aa11749d65ea32940084963 $")
+RCSID("$Id: a7992647cd0febc5248b34d18acebd017f6825d7 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -43,6 +43,20 @@ RCSID("$Id: b2494b5151f7d2e32aa11749d65ea32940084963 $")
 #  include <errmsg.h>
 #  include <mysql.h>
 #  include <mysqld_error.h>
+#endif
+
+#if (MYSQL_VERSION_ID >= 50555) && (MYSQL_VERSION_ID < 50600)
+#  define HAVE_TLS_OPTIONS        1
+#  define HAVE_CRL_OPTIONS        0
+#  define HAVE_TLS_VERIFY_OPTIONS 0
+#elif (MYSQL_VERSION_ID >= 50636) && (MYSQL_VERSION_ID < 50700)
+#  define HAVE_TLS_OPTIONS        1
+#  define HAVE_CRL_OPTIONS        1
+#  define HAVE_TLS_VERIFY_OPTIONS 0
+#elif MYSQL_VERSION_ID >= 50700
+#  define HAVE_TLS_OPTIONS        1
+#  define HAVE_CRL_OPTIONS        1
+#  define HAVE_TLS_VERIFY_OPTIONS 1
 #endif
 
 #include "rlm_sql.h"
@@ -69,14 +83,24 @@ typedef struct rlm_sql_mysql_conn {
 } rlm_sql_mysql_conn_t;
 
 typedef struct rlm_sql_mysql_config {
-	char const *tls_ca_file;		//!< Path to the CA used to validate the server's certificate.
-	char const *tls_ca_path;		//!< Directory containing CAs that may be used to validate the
+	char const	*tls_ca_file;		//!< Path to the CA used to validate the server's certificate.
+	char const	*tls_ca_path;		//!< Directory containing CAs that may be used to validate the
 						//!< servers certificate.
-	char const *tls_certificate_file;	//!< Public certificate we present to the server.
-	char const *tls_private_key_file;	//!< Private key for the certificate we present to the server.
-	char const *tls_cipher;
+	char const	*tls_certificate_file;	//!< Public certificate we present to the server.
+	char const	*tls_private_key_file;	//!< Private key for the certificate we present to the server.
 
-	char const *warnings_str;		//!< Whether we always query the server for additional warnings.
+	char const	*tls_crl_file;		//!< Public certificate we present to the server.
+	char const	*tls_crl_path;		//!< Private key for the certificate we present to the server.
+
+	char const	*tls_cipher;		//!< Colon separated list of TLS ciphers for TLS <= 1.2.
+
+	bool		tls_required;		//!< Require that the connection is encrypted.
+	bool		tls_check_cert;		//!< Verify there's a trust relationship between the server's
+						///< cert and one of the CAs we have configured.
+	bool		tls_check_cert_cn;	//!< Verify that the CN in the server cert matches the host
+						///< we passed to mysql_real_connect().
+
+	char const	*warnings_str;		//!< Whether we always query the server for additional warnings.
 	rlm_sql_mysql_warnings	warnings;	//!< mysql_warning_count() doesn't
 						//!< appear to work with NDB cluster
 } rlm_sql_mysql_config_t;
@@ -87,10 +111,30 @@ static CONF_PARSER tls_config[] = {
 	{ "certificate_file", FR_CONF_OFFSET(PW_TYPE_FILE_INPUT, rlm_sql_mysql_config_t, tls_certificate_file), NULL },
 	{ "private_key_file", FR_CONF_OFFSET(PW_TYPE_FILE_INPUT, rlm_sql_mysql_config_t, tls_private_key_file), NULL },
 
+#if HAVE_CRL_OPTIONS
+	{ "crl_file", FR_CONF_OFFSET(PW_TYPE_FILE_INPUT, rlm_sql_mysql_config_t, tls_crl_file), NULL },
+	{ "crl_path", FR_CONF_OFFSET(PW_TYPE_FILE_INPUT, rlm_sql_mysql_config_t, tls_crl_path), NULL },
+#endif
 	/*
 	 *	MySQL Specific TLS attributes
 	 */
 	{ "cipher", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_sql_mysql_config_t, tls_cipher), NULL },
+
+	/*
+	 *	The closest thing we have to these options in other modules is
+	 *	in rlm_rest.  rlm_ldap has its own bizarre option set.
+	 *
+	 *	There, the options can be toggled independently, here they can't
+	 *	but for consistency we break them out anyway, and warn if the user
+	 *	has provided an invalid list of flags.
+	 */
+#if HAVE_TLS_OPTIONS
+	{ "tls_required", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_sql_mysql_config_t, tls_required), "no" },
+#  if HAVE_TLS_VERIFY_OPTIONS
+	{ "check_cert", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_sql_mysql_config_t, tls_check_cert), "no" },
+	{ "check_cert_cn", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_sql_mysql_config_t, tls_check_cert_cn), "no" },
+#  endif
+#endif
 	CONF_PARSER_TERMINATOR
 };
 
@@ -119,6 +163,23 @@ static int _mod_destructor(UNUSED rlm_sql_mysql_config_t *driver)
 {
 	if (--mysql_instance_count == 0) mysql_library_end();
 
+#if HAVE_TLS_VERIFY_OPTIONS
+	if (driver->tls_check_cert && !driver->tls_required) {
+		WARN("Implicitly setting tls_required = yes, as tls_check_cert = yes");
+		driver->tls_required = true;
+	}
+	if (driver->tls_check_cert_cn) {
+		if (!driver->tls_required) {
+			WARN("Implicitly setting tls_required = yes, as check_cert_cn = yes");
+			driver->tls_required = true;
+		}
+
+		if (!driver->tls_check_cert) {
+			WARN("Implicitly setting check_cert = yes, as check_cert_cn = yes");
+			driver->tls_check_cert = true;
+		}
+	}
+#endif
 	return 0;
 }
 
@@ -186,15 +247,58 @@ static sql_rcode_t sql_socket_init(rlm_sql_handle_t *handle, rlm_sql_config_t *c
 			      driver->tls_ca_file, driver->tls_ca_path, driver->tls_cipher);
 	}
 
+#if HAVE_TLS_OPTIONS
+	{
+		enum mysql_option ssl_mysql_opt;
+		bool              ssl_mysql_arg = false;
+		bool              ssl_mode_isset = false;
+
+#  if defined(MARIADB_VERSION_ID) || defined(MARIADB_BASE_VERSION)
+#    if HAVE_TLS_VERIFY_OPTIONS
+		if (driver->tls_required || driver->tls_check_cert || driver->tls_check_cert_cn) {
+#    else
+		if (driver->tls_required) {
+#    endif
+			ssl_mode_isset = ssl_mysql_arg = true;
+			ssl_mysql_opt = MYSQL_OPT_SSL_VERIFY_SERVER_CERT;
+		}
+#  else
+		ssl_mysql_opt = MYSQL_OPT_SSL_MODE;
+
+		if (driver->tls_required) {
+			ssl_mysql_arg = SSL_MODE_REQUIRED;
+			ssl_mode_isset = true;
+		}
+#    if HAVE_TLS_VERIFY_OPTIONS
+		if (driver->tls_check_cert) {
+			ssl_mysql_arg = SSL_MODE_VERIFY_CA;
+			ssl_mode_isset = true;
+		}
+		if (driver->tls_check_cert_cn) {
+			ssl_mysql_arg = SSL_MODE_VERIFY_IDENTITY;
+			ssl_mode_isset = true;
+		}
+#    endif /* MARIADB_VERSION_ID */
+#  endif
+
+		if (ssl_mode_isset) mysql_options(&(conn->db), ssl_mysql_opt, &ssl_mysql_arg);
+	}
+#endif
+
+#if HAVE_CRL_OPTIONS
+	if (driver->tls_crl_file) mysql_options(&(conn->db), MYSQL_OPT_SSL_CRL, driver->tls_crl_file);
+	if (driver->tls_crl_path) mysql_options(&(conn->db), MYSQL_OPT_SSL_CRLPATH, driver->tls_crl_path);
+#endif
+
 	mysql_options(&(conn->db), MYSQL_READ_DEFAULT_GROUP, "freeradius");
 
 	/*
 	 *	We need to know about connection errors, and are capable
 	 *	of reconnecting automatically.
 	 */
-#ifdef MYSQL_OPT_RECONNECT
+#if MYSQL_VERSION_ID >= 50013
 	{
-		my_bool reconnect = 0;
+		int reconnect = 0;
 		mysql_options(&(conn->db), MYSQL_OPT_RECONNECT, &reconnect);
 	}
 #endif
@@ -437,32 +541,6 @@ static int sql_num_rows(rlm_sql_handle_t *handle, UNUSED rlm_sql_config_t *confi
 	}
 
 	return 0;
-}
-
-static sql_rcode_t sql_fields(char const **out[], rlm_sql_handle_t *handle, UNUSED rlm_sql_config_t *config)
-{
-	rlm_sql_mysql_conn_t *conn = handle->conn;
-
-	unsigned int	fields, i;
-	MYSQL_FIELD	*field_info;
-	char const	**names;
-
-	fields = mysql_num_fields(conn->result);
-	if (fields == 0) return RLM_SQL_ERROR;
-
-	/*
-	 *	https://bugs.mysql.com/bug.php?id=32318
-	 * 	Hints that we don't have to free field_info.
-	 */
-	field_info = mysql_fetch_fields(conn->result);
-	if (!field_info) return RLM_SQL_ERROR;
-
-	MEM(names = talloc_zero_array(handle, char const *, fields + 1));
-
-	for (i = 0; i < fields; i++) names[i] = field_info[i].name;
-	*out = names;
-
-	return RLM_SQL_OK;
 }
 
 static sql_rcode_t sql_fetch_row(rlm_sql_handle_t *handle, rlm_sql_config_t *config)
@@ -733,6 +811,21 @@ static int sql_affected_rows(rlm_sql_handle_t *handle, UNUSED rlm_sql_config_t *
 	return mysql_affected_rows(conn->sock);
 }
 
+static size_t sql_escape_func(UNUSED REQUEST *request, char *out, size_t outlen, char const *in, void *arg)
+{
+	size_t			inlen;
+	rlm_sql_handle_t	*handle = talloc_get_type_abort(arg, rlm_sql_handle_t);
+	rlm_sql_mysql_conn_t	*conn = handle->conn;
+
+	/* Check for potential buffer overflow */
+	inlen = strlen(in);
+	if ((inlen * 2 + 1) > outlen) return 0;
+	/* Prevent integer overflow */
+	if ((inlen * 2 + 1) <= inlen) return 0;
+
+	return mysql_real_escape_string(conn->sock, out, in, inlen);
+}
+
 
 /* Exported to rlm_sql */
 extern rlm_sql_module_t rlm_sql_mysql;
@@ -747,10 +840,10 @@ rlm_sql_module_t rlm_sql_mysql = {
 	.sql_num_fields			= sql_num_fields,
 	.sql_num_rows			= sql_num_rows,
 	.sql_affected_rows		= sql_affected_rows,
-	.sql_fields			= sql_fields,
 	.sql_fetch_row			= sql_fetch_row,
 	.sql_free_result		= sql_free_result,
 	.sql_error			= sql_error,
 	.sql_finish_query		= sql_finish_query,
-	.sql_finish_select_query	= sql_finish_query
+	.sql_finish_select_query	= sql_finish_query,
+	.sql_escape_func		= sql_escape_func
 };

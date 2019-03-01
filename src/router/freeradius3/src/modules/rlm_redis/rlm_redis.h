@@ -1,7 +1,7 @@
 /*
  * rlm_redis.h
  *
- * Version:	$Id: 63dde691d4091e3632b532565e305b002422bf8d $
+ * Version:	$Id: 8767b2af493a662969e596e06e4c7a2dc3e65cfd $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 #ifndef RLM_REDIS_H
 #define	RLM_REDIS_H
 
-RCSIDH(rlm_redis_h, "$Id: 63dde691d4091e3632b532565e305b002422bf8d $")
+RCSIDH(rlm_redis_h, "$Id: 8767b2af493a662969e596e06e4c7a2dc3e65cfd $")
 
 #ifdef HAVE_PTHREAD_H
 #include <pthread.h>
@@ -55,7 +55,7 @@ typedef struct rlm_redis_t {
 } rlm_redis_t;
 
 #define MAX_QUERY_LEN			4096
-#define MAX_REDIS_ARGS			16
+#define MAX_REDIS_ARGS			32
 
 int rlm_redis_query(REDISSOCK **dissocket_p, REDIS_INST *inst,
 		    char const *query, REQUEST *request);

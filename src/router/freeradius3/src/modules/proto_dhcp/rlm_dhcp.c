@@ -15,13 +15,13 @@
  */
 
 /**
- * $Id: 8fffa7630112141badd33b67cfda8744236f99d4 $
+ * $Id: 9fed166e624360e921c80ac43bf734d51f8faa29 $
  * @file rlm_dhcp.c
  * @brief Will contain dhcp listener code.
  *
  * @copyright 2012  The FreeRADIUS server project
  */
-RCSID("$Id: 8fffa7630112141badd33b67cfda8744236f99d4 $")
+RCSID("$Id: 9fed166e624360e921c80ac43bf734d51f8faa29 $")
 
 #include <freeradius-devel/libradius.h>
 
@@ -111,34 +111,38 @@ static ssize_t dhcp_options_xlat(UNUSED void *instance, REQUEST *request,
 static ssize_t dhcp_xlat(UNUSED void *instance, REQUEST *request, char const *fmt, char *out, size_t freespace)
 {
 	vp_cursor_t cursor;
-	VALUE_PAIR *vp;
-	uint8_t binbuf[255];
-	ssize_t len;
+	VALUE_PAIR *head = NULL, *vp;
+	uint8_t binbuf[1024];
+	uint8_t *p = binbuf, *end = p + sizeof(binbuf);
+	ssize_t slen;
 
 	while (isspace((int) *fmt)) fmt++;
 
-	if ((radius_copy_vp(request, &vp, request, fmt) < 0) || !vp) {
+	if ((radius_copy_vp(request, &head, request, fmt) < 0) || !head) {
 		 *out = '\0';
 		 return 0;
 	}
-	fr_cursor_init(&cursor, &vp);
+	fr_cursor_init(&cursor, &head);
 
-	len = fr_dhcp_encode_option(request, binbuf, sizeof(binbuf), &cursor);
-	talloc_free(vp);
-	if (len <= 0) {
-		REDEBUG("DHCP option encoding failed: %s", fr_strerror());
+	while ((vp = fr_cursor_current(&cursor))) {
+		slen = fr_dhcp_encode_option(request, p, end - p, &cursor);
+		talloc_free(vp);
+		if (slen <= 0) {
+			REDEBUG("DHCP option encoding failed: %s", fr_strerror());
 
-		return -1;
+			return -1;
+		}
+		p += (size_t)slen;
 	}
 
-	if ((size_t)((len * 2) + 1) > freespace) {
+	if ((size_t)(((p - binbuf) * 2) + 1) > freespace) {
 		REDEBUG("DHCP option encoding failed: Output buffer exhausted, needed %zd bytes, have %zd bytes",
-			(len * 2) + 1, freespace);
+			((p - binbuf) * 2) + 1, freespace);
 
 		return -1;
 	}
 
-	return fr_bin2hex(out, binbuf, len);
+	return fr_bin2hex(out, binbuf, (p - binbuf));
 }
 
 

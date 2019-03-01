@@ -1,7 +1,7 @@
 /*
  * radclient.c	General radius packet debug tool.
  *
- * Version:	$Id: cd7118552c481c4b22b06c35614677982f456ac2 $
+ * Version:	$Id: 0523c7769f5b51a0534338e86f994eb228323fa9 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: cd7118552c481c4b22b06c35614677982f456ac2 $")
+RCSID("$Id: 0523c7769f5b51a0534338e86f994eb228323fa9 $")
 
 #include <freeradius-devel/radclient.h>
 #include <freeradius-devel/radpaths.h>
@@ -351,11 +351,11 @@ static int radclient_init(TALLOC_CTX *ctx, rc_file_pair_t *files)
 			goto error;
 		}
 
-#ifdef WITH_TCP
 		request->packet->src_ipaddr = client_ipaddr;
 		request->packet->src_port = client_port;
 		request->packet->dst_ipaddr = server_ipaddr;
 		request->packet->dst_port = server_port;
+#ifdef WITH_TCP
 		request->packet->proto = ipproto;
 #endif
 

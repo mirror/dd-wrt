@@ -1,3 +1,159 @@
+FreeRADIUS 3.0.18 Mon 25 Feb 2019 15:00:00 EST urgency=low
+	Feature improvements
+	* cleanup_delay can now be 30 seconds.  This helps
+	  with proxies that have packet loss.
+	* Do-Not-Respond policies can now be set in the
+	  "post-auth" section.
+	* Encode / Decode ADSL Forum DHCP options.
+	* Fix module ordering issues.  e.g. when "sqlippool" needs
+	  "sql".  See the "instantiate" section of radiusd.conf.
+	* Add Big Switch dictionary.  Fixes #2252.
+	* Add sql_session_start policy (raddb/policy.d/accounting)
+	  This minimizes race conditions when using Simultaneous-Use
+	  Patch from Philippe Wooding (#2257).
+	* For rlm_perl, all variables are now tainted by default.  See
+	  raddb/mods-available/perl, and the "perl_flags" configuration
+	  item.  This change should only affect people who are using
+	  variables in insecure ways.
+	* Allow "sqlcounter" module to be listed in "post-auth".
+	* Add support for IPv6 attributes in SQL.  Fixes #2280.
+	  Patches from Michael Ducharme.
+	* The server is better at handling fail-over for outbound
+	  RadSec and TCP connections.  Fixes #2284.
+	* The server is now more aggressive about retrying failed
+	  outbound RadSec and TCP connections.  Fixes #2284.
+	* Add TLS-Session-Version and TLS-Session-Cipher-Suite to
+	  the "session_state" list.
+	* Add expansion for Radsec connections.  "%{listen:TLS-...}"
+	  for TLS-Client-Cert-* and TLS-Cert-* attributes.
+	* Add notes on running "ldapsearch" using the parameters from
+	  the LDAP module.
+	* "ipaddr" attributes can now be cast to "integer" type attributes
+	  in an "update" section.
+	* Move main thread queue to using atomic queues.  This should help
+	  with contention in high load scenarios.
+	* Add "recv_buff" setting to listeners. For more details,
+	  see sites-available/default
+	* The sqlippool module can now use attributes other than "Pool-Name"
+	  to assign IP pools.  The "Pool-Name" attribute is still the default.
+	* The "unpack" expansion can now unpack substrings.  See
+	  mods-available/unpack for documentation and examples.
+	* The preprocess module now does "ciscvo_vsa_hack" for Eltex-AVPair.
+	  Fixes #2301.  Vendors SHOULD NOT USE THAT KIND OF ATTRIBUTE.
+	* Allow for <instance>-LDAP-UserDN.  See mods-available/ldap for
+	  more information.
+	* Add sanitizing of control list for moonshot.  Fixes #2318
+	* Update rlm_sql_mysql to be compatible with MySQL 8.
+	  Fixes https://bugs.launchpad.net/bugs/1795310.
+	* Allow logging of only Access-Accept or Access-Reject messages.
+	  See radiusd.conf, "auth_accept" and "auth_reject".
+	* Removed Connect-Rate comparison.  It was unused and broken.
+	* Add dictionary.infinera.
+	* RPMs can now change raddb location with rpmbuild parameter
+	  --define '_sysconfdir /etc'
+	* OpenDirectory module now points to Apple documentation for help
+	  with build and configuration.
+	* Use OpenSSL HMAC functions instead of local ones.
+	* Some SQL modules can now use "auto_escape" to escape unsafe strings.
+	  See mods-config/sql/main/mysql/queries.conf
+	* Add wispr2date conversion in mods-available/date
+	* Implement dictionary-based handling in rlm_python.  Fixes #2334.
+	  See mods-available/python for details.
+	* Add support for SKIP LOCKED in sqlippool.  This can improve
+	  performance by an order of magnitude or more.  See
+	  raddb/mods-config/sql/ippool/*/queries.conf
+	  Fixes #2383.  Patch from Nathan Ward.
+	* Updated Debian packages to allow for libssl1.1.
+	  Fixes #2384.  Patch from Alejandro Perez.
+	* Allow PSK and certificates at the same time.
+	  Except for TLS 1.3 which does not support that.
+	* Update Debian packages for newer releases.
+	  Fixes #2391.  Patch from Matthew Newton.
+	* Update docker scripts.  Fixes #2306.
+	  Patch from Matthew Newton.
+	* Add crypt xlat.
+	* MySQL connections can now skip verifying the server
+	  certificate.  Fixes #2481.  See mods-available/sql
+	* Add better mechanism to detect MariaDB (Old MySQL).
+	* Add RFC 7532 "bang path" support for realms.
+	  Fixes #2492.
+	* Update dictionary.ukerna documentation.  Fixes #2493
+	* Add support for systemd service and watchdogs.
+	  Fixes #2499.
+	* Check for openss/rand.h, and allow building without
+	  OpenSSL engine.  Patch from Eneas U de Queiroz.
+	  Fixes #2517.
+	* The default PosgtreSQL queries now use "ON CONFLICT"
+	  to better deal with issues.  This requires PostgreSQL
+	  9.5 or later.  Please use a recent version of PostgreSQL,
+	  or edit the default queries to remove "ON CONFLICT".
+
+	Bug fixes
+	* The session-state list is no longer cleaned in the
+	  inner-tunnel.  This lets the outer Access-Reject
+	  section access session-state.
+	* Fix typo in lock initialization for TLS sockets
+	  Found by Sergio NNX.
+	* Add check for crash when home server down.
+	  Fixes #2233.
+	* Add username key for postauth table.
+	* Better libpcap checks, when the header files or
+	  libraries are missing.  Fixes #2245.
+	* Allow building with old versions of OpenSSL.
+	  Fixes #2247.
+	* Allow non-FreeRADIUS State attributes to be used with
+	  the "session-state" list.  i.e. State length != 16.
+	* Be more aggressive about cleaning up zombie children
+	  when running in debug mode.
+	* Use LTDL_DEEPBIND, which fixes issues with Oracle
+	  libraries exporting LDAP API functions.
+	* unlock files when asked to unlock them.
+	* return error instead of asserting in map code.
+	* Don't write 0 bytes to SSL.  Fixes #2270.
+	* Remove "expiry_time IS NULL" from allocate_update
+	  query.  Fixes #2262.
+	* Various dictionary cleanups and consistency checks.
+	  Fixes #2281.  Patches from Peter Lemenkov.
+	* rlm_python has stronger thread locking to prevent
+	  reported issues.  Performance may be affected.
+	* Don't allow Message-Authenticator to overflow
+	  past the end of a large packet.
+	* Fix crash in sqlippool when SQL server goes away.
+	  Fixes #2300.
+	* Typos in man pages.  Patch from Nikolai Kondrashov.
+	  Fixes #2303.
+	* Check for correct OpenSSL version in vulnerability
+	  list.  Patch from Christian Hesse.
+	* Fix crash with CoA packets/  Fixes #2304.
+	* Fix crash in rlm_exec with CoA.  Fixes #2328.
+	* Print errors while parsing the log config, and don't
+	  quit when deprecated log settings are found.
+	* Fix DHCP encoder xlat so that it can be used with
+	  a list of attributes.  It previously only encoded the
+	  first member of the list, and now encodes all
+	  members.
+	* The "expr" module now skips more whitespace.
+	* Remove internal FreeRADIUS-Response-Delay attributes
+	  from attr_filter Access-Reject.
+	* Don't send junk to redis when maximum args reached.
+	* Small updates to IPv6 for accounting schema.
+	  Fixes #2364.
+	* Fix OpenDirectory integration in rlm_mschap
+	* Fix slow memory leak with dynamic clients
+	* Don't artificially truncate debug output for long
+	  strings.
+	* Fix memory leak in EAP-PWD.
+	* Fix crash in "hints" file with Fall-Through = yes
+	* Fix crash / timer issues with many CoA packets.
+	* Fix attr_filter so that it does not treat
+	  vendor attributes of number 26 as Vendor-Specific.
+	* Fix reconnect correctly in rlm_sql_mysql.
+	* Fix rlm_cache to properly use Cache-TTL < 0.
+	  Fixes #2485.
+	* Fix rare occurance of bad xlat expansion.
+	* Check for rare race condition when a proxy reply
+	  arrives too late.
+
 FreeRADIUS 3.0.17 Tue 17 Apr 2018 14:00:00 EDT urgency=low
 	Feature improvements
 	* Add CURLOPT_CAINFO.  Patch from Nicolas C.
@@ -11,6 +167,8 @@ FreeRADIUS 3.0.17 Tue 17 Apr 2018 14:00:00 EDT urgency=low
 	  Patch from Isaac Boukris.  Fixes #2205.
 	* Update main READMEs.  Patches from Matthew Newton.
 	* Added dictionary.mimosa
+	* TLS-based EAP methods now create TLS-Session-Version
+	  and TLS-Session-Cipher-Suite attributes.
 
 	Bug fixes
 	* Don't call post-proxy twice when proxying to

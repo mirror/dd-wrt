@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: faa51869af7a6d50e8cf4a793050ca319c8ed155 $
+ * $Id: 9e278d16c4e9d399853d84d66d582bc8da40cefb $
  *
  * @brief Function prototypes and datatypes for the REST (HTTP) transport.
  * @file rest.h
@@ -23,7 +23,7 @@
  * @copyright 2012-2014  Arran Cudbard-Bell <a.cudbard-bell@freeradius.org>
  */
 
-RCSIDH(other_h, "$Id: faa51869af7a6d50e8cf4a793050ca319c8ed155 $")
+RCSIDH(other_h, "$Id: 9e278d16c4e9d399853d84d66d582bc8da40cefb $")
 
 #include <freeradius-devel/connection.h>
 #include "config.h"
@@ -158,10 +158,15 @@ typedef struct rlm_rest_t {
 
 	rlm_rest_section_t	authorize;	//!< Configuration specific to authorisation.
 	rlm_rest_section_t	authenticate;	//!< Configuration specific to authentication.
+	rlm_rest_section_t	preacct;	//!< Configuration specific to preacct.
 	rlm_rest_section_t	accounting;	//!< Configuration specific to accounting.
 	rlm_rest_section_t	checksimul;	//!< Configuration specific to simultaneous session
 						//!< checking.
 	rlm_rest_section_t	post_auth;	//!< Configuration specific to Post-auth
+
+	rlm_rest_section_t	pre_proxy;	//!< Configuration specific to pre_proxy
+	rlm_rest_section_t	post_proxy;	//!< Configuration specific to post_proxy
+
 #ifdef WITH_COA
 	rlm_rest_section_t	recv_coa;		//!< Configuration specific to recv-coa
 #endif

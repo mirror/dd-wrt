@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: 8d43e7394c68921216e94e66054c1eb4c9aca88a $
+ * $Id: 47ebfe0b3a342df5ee8fb4f22f90f20984e1e99f $
  * @file rlm_sqlcounter.c
  * @brief Tracks data usage and other counters using SQL.
  *
  * @copyright 2001,2006  The FreeRADIUS server project
  * @copyright 2001  Alan DeKok <aland@ox.org>
  */
-RCSID("$Id: 8d43e7394c68921216e94e66054c1eb4c9aca88a $")
+RCSID("$Id: 47ebfe0b3a342df5ee8fb4f22f90f20984e1e99f $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -668,7 +668,8 @@ module_t rlm_sqlcounter = {
 	.bootstrap	= mod_bootstrap,
 	.instantiate	= mod_instantiate,
 	.methods = {
-		[MOD_AUTHORIZE]		= mod_authorize
+		[MOD_AUTHORIZE]		= mod_authorize,
+		[MOD_POST_AUTH]		= mod_authorize,
 	},
 };
 

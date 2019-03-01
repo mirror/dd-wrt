@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: 6215b03dbdec2ac256072f39167981c08cf9b7d1 $
+ * $Id: 1d7d1d2f75e6f02e39f88bc3254c024a5c8107d6 $
  * @file rlm_smsotp.c
  * @brief Supports OTP authentication using SMS.
  *
  * @copyright 2000,2006  The FreeRADIUS server project
  * @copyright 2009  Siemens AG, Holger Wolff holger.wolff@siemens.com
  */
-RCSID("$Id: 6215b03dbdec2ac256072f39167981c08cf9b7d1 $")
+RCSID("$Id: 1d7d1d2f75e6f02e39f88bc3254c024a5c8107d6 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -67,6 +67,7 @@ static void *mod_conn_create(TALLOC_CTX *ctx, void *instance)
 	}
 
 	if (connect(fd, (struct sockaddr *) &sa, socklen) < -1) {
+		close(fd);
 		ERROR("Failed connecting to SMSOTP file %s: %s",
 		       inst->socket, fr_syserror(errno));
 		return NULL;

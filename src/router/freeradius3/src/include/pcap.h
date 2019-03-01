@@ -17,7 +17,7 @@
  */
 
 /**
- * $Id: 6444943ca294eeb4296d5e3bf35272208917503c $
+ * $Id: 1d57d93b49afcb6b228f0f4ef4d617c0e56bc4b5 $
  * @file include/pcap.h
  * @brief Prototypes and constants for PCAP functions.
  *
@@ -94,5 +94,8 @@ fr_pcap_t	*fr_pcap_init(TALLOC_CTX *ctx, char const *name, fr_pcap_type_t type);
 int		fr_pcap_open(fr_pcap_t *handle);
 int		fr_pcap_apply_filter(fr_pcap_t *handle, char const *expression);
 char		*fr_pcap_device_names(TALLOC_CTX *ctx, fr_pcap_t *handle, char c);
+
+bool		fr_pcap_link_layer_supported(int link_layer);
+ssize_t		fr_pcap_link_layer_offset(uint8_t const *data, size_t len, int link_layer);
 #endif
 #endif

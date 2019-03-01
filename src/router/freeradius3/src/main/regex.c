@@ -15,7 +15,7 @@
  */
 
 /*
- * $Id: 10ffd57a85a5dd4291d0c7e9e1e21eb9ba521e85 $
+ * $Id: 19ddf02e83a86918df8b266da0c3c0adb349f8e8 $
  *
  * @file main/regex.c
  * @brief Regular expression functions used by the server library.
@@ -23,7 +23,7 @@
  * @copyright 2014  The FreeRADIUS server project
  */
 
-RCSID("$Id: 10ffd57a85a5dd4291d0c7e9e1e21eb9ba521e85 $")
+RCSID("$Id: 19ddf02e83a86918df8b266da0c3c0adb349f8e8 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -131,6 +131,7 @@ int regex_request_to_sub(TALLOC_CTX *ctx, char **out, REQUEST *request, uint32_t
 	switch (ret) {
 	case PCRE_ERROR_NOMEMORY:
 		MEM(NULL);
+		/* FALL-THROUGH */
 
 	/*
 	 *	Not finding a substring is fine
@@ -189,6 +190,7 @@ int regex_request_to_sub_named(TALLOC_CTX *ctx, char **out, REQUEST *request, ch
 	switch (ret) {
 	case PCRE_ERROR_NOMEMORY:
 		MEM(NULL);
+		/* FALL-THROUGH */
 
 	/*
 	 *	Not finding a substring is fine

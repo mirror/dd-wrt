@@ -1,7 +1,7 @@
 /*
  * sql_db2.c		IBM DB2 rlm_sql driver
  *
- * Version:	$Id: 7f922b389e63b6ff495ef968800069972f81ed69 $
+ * Version:	$Id: 14e6c40fa2ea3e98cc13c6d0a8abbb54b1ccbe27 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@
  * by Joerg Wendland <wendland@scan-plus.de>
  */
 
-RCSID("$Id: 7f922b389e63b6ff495ef968800069972f81ed69 $")
+RCSID("$Id: 14e6c40fa2ea3e98cc13c6d0a8abbb54b1ccbe27 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -135,44 +135,6 @@ static int sql_num_fields(rlm_sql_handle_t *handle, UNUSED rlm_sql_config_t *con
 	conn = handle->conn;
 	SQLNumResultCols(conn->stmt, &c);
 	return c;
-}
-
-static sql_rcode_t sql_fields(char const **out[], rlm_sql_handle_t *handle, UNUSED rlm_sql_config_t *config)
-{
-	rlm_sql_db2_conn_t *conn = handle->conn;
-
-	SQLSMALLINT	fields, len, i;
-
-	char const	**names;
-	char		field[128];
-
-	SQLNumResultCols(conn->stmt, &fields);
-	if (fields == 0) return RLM_SQL_ERROR;
-
-	MEM(names = talloc_array(handle, char const *, fields));
-
-	for (i = 0; i < fields; i++) {
-		char *p;
-
-		switch (SQLColAttribute(conn->stmt, i, SQL_DESC_BASE_COLUMN_NAME,
-					field, sizeof(field), &len, NULL)) {
-		case SQL_INVALID_HANDLE:
-		case SQL_ERROR:
-			ERROR("Failed retrieving field name at index %i", i);
-			talloc_free(names);
-			return RLM_SQL_ERROR;
-
-		default:
-			break;
-		}
-
-		MEM(p = talloc_array(names, char, (size_t)len + 1));
-		strlcpy(p, field, (size_t)len + 1);
-		names[i] = p;
-	}
-	*out = names;
-
-	return RLM_SQL_OK;
 }
 
 static sql_rcode_t sql_fetch_row(rlm_sql_handle_t *handle, rlm_sql_config_t *config)
@@ -285,7 +247,6 @@ rlm_sql_module_t rlm_sql_db2 = {
 	.sql_select_query		= sql_select_query,
 	.sql_num_fields			= sql_num_fields,
 	.sql_affected_rows		= sql_affected_rows,
-	.sql_fields			= sql_fields,
 	.sql_fetch_row			= sql_fetch_row,
 	.sql_free_result		= sql_free_result,
 	.sql_error			= sql_error,

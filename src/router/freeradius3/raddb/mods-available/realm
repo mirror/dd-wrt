@@ -1,6 +1,6 @@
 # -*- text -*-
 #
-#  $Id: 36825e0fe77cb515219ba7febc37192988ed9fba $
+#  $Id: f3f4620aaf1bfb97a6a545b236ae3e5080553a11 $
 
 # Realm module, for proxying.
 #
@@ -29,13 +29,30 @@ realm suffix {
 	format = suffix
 	delimiter = "@"
 
-	# The next 3 configuration items are valid ONLY
-	# for a trust-router.  For all other realms,
-	# they are ignored.
+	# The next configuration items are valid ONLY for a trust-router.
+	# For all other realms, they are ignored.
 #	trust_router = "localhost"
 #	tr_port = 12309
-#	rp_realm = "painless-security.com"
-#	default_community = "apc.moonshot.ja.net"
+#	rp_realm = "realm.example.com"
+#	default_community = "apc.communities.example.com"
+#	rekey_enabled = no
+#	realm_lifetime = 0
+}
+
+#  'realm!username'
+#
+realm bangpath {
+	format = prefix
+	delimiter = "!"
+
+	# The next configuration items are valid ONLY for a trust-router.
+	# For all other realms, they are ignored.
+#	trust_router = "localhost"
+#	tr_port = 12309
+#	rp_realm = "realm.example.com"
+#	default_community = "apc.communities.example.com"
+#	rekey_enabled = no
+#	realm_lifetime = 0
 }
 
 #  'username%realm'

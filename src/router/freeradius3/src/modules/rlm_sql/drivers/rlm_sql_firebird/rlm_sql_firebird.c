@@ -19,7 +19,7 @@
  * Copyright 2006  Vitaly Bodzhgua <vitaly@eastera.net>
  */
 
-RCSID("$Id: 966ddc3914e63cf6031985a97b17b862875c0784 $")
+RCSID("$Id: 49bcf739920d69df88980edf560c95a4a2979bff $")
 
 #include "sql_fbapi.h"
 #include <freeradius-devel/rad_assert.h>
@@ -182,27 +182,6 @@ static int sql_num_rows(rlm_sql_handle_t *handle, rlm_sql_config_t *config)
 	return sql_affected_rows(handle, config);
 }
 
-/** Returns name of fields.
- *
- */
-static sql_rcode_t sql_fields(char const **out[], rlm_sql_handle_t *handle, UNUSED rlm_sql_config_t *config)
-{
-	rlm_sql_firebird_conn_t	*conn = handle->conn;
-
-	int		fields, i;
-	char const	**names;
-
-	fields = conn->sqlda_out->sqld;
-	if (fields <= 0) return RLM_SQL_ERROR;
-
-	MEM(names = talloc_array(handle, char const *, fields));
-
-	for (i = 0; i < fields; i++) names[i] = conn->sqlda_out->sqlvar[i].sqlname;
-	*out = names;
-
-	return RLM_SQL_OK;
-}
-
 /** Returns an individual row.
  *
  */
@@ -312,7 +291,6 @@ rlm_sql_module_t rlm_sql_firebird = {
 	.sql_num_rows			= sql_num_rows,
 	.sql_affected_rows		= sql_affected_rows,
 	.sql_fetch_row			= sql_fetch_row,
-	.sql_fields			= sql_fields,
 	.sql_free_result		= sql_free_result,
 	.sql_error			= sql_error,
 	.sql_finish_query		= sql_finish_query,

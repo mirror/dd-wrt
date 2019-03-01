@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 60f2c7d20526a9ce32cce5480a9898a01178aca9 $
+ * $Id: aeafddb5a4e28993e0e802421a66edb0f3e29853 $
  *
  * @file radius.c
  * @brief Functions to send/receive radius packets.
@@ -23,7 +23,7 @@
  * @copyright 2000-2003,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 60f2c7d20526a9ce32cce5480a9898a01178aca9 $")
+RCSID("$Id: aeafddb5a4e28993e0e802421a66edb0f3e29853 $")
 
 #include	<freeradius-devel/libradius.h>
 
@@ -436,72 +436,23 @@ static ssize_t rad_recvfrom(int sockfd, RADIUS_PACKET *packet, int flags,
 	socklen_t		sizeof_src = sizeof(src);
 	socklen_t		sizeof_dst = sizeof(dst);
 	ssize_t			data_len;
-	uint8_t			header[4];
 	size_t			len;
 	uint16_t		port;
+	uint8_t			buffer[MAX_PACKET_LEN];
 
 	memset(&src, 0, sizeof_src);
 	memset(&dst, 0, sizeof_dst);
-
-	/*
-	 *	Read the length of the packet, from the packet.
-	 *	This lets us allocate the buffer to use for
-	 *	reading the rest of the packet.
-	 */
-	data_len = recvfrom(sockfd, header, sizeof(header), MSG_PEEK,
-			    (struct sockaddr *)&src, &sizeof_src);
-	if (data_len < 0) {
-		if ((errno == EAGAIN) || (errno == EINTR)) return 0;
-		return -1;
-	}
-
-	/*
-	 *	Too little data is available, discard the packet.
-	 */
-	if (data_len < 4) {
-		rad_recv_discard(sockfd);
-
-		return 0;
-
-	} else {		/* we got 4 bytes of data. */
-		/*
-		 *	See how long the packet says it is.
-		 */
-		len = (header[2] * 256) + header[3];
-
-		/*
-		 *	The length in the packet says it's less than
-		 *	a RADIUS header length: discard it.
-		 */
-		if (len < RADIUS_HDR_LEN) {
-			recvfrom(sockfd, header, sizeof(header), flags,
-				 (struct sockaddr *)&src, &sizeof_src);
-			return 0;
-
-			/*
-			 *	Enforce RFC requirements, for sanity.
-			 *	Anything after 4k will be discarded.
-			 */
-		} else if (len > MAX_PACKET_LEN) {
-			recvfrom(sockfd, header, sizeof(header), flags,
-				 (struct sockaddr *)&src, &sizeof_src);
-			return len;
-		}
-	}
-
-	packet->data = talloc_array(packet, uint8_t, len);
-	if (!packet->data) return -1;
 
 	/*
 	 *	Receive the packet.  The OS will discard any data in the
 	 *	packet after "len" bytes.
 	 */
 #ifdef WITH_UDPFROMTO
-	data_len = recvfromto(sockfd, packet->data, len, flags,
+	data_len = recvfromto(sockfd, buffer, sizeof(buffer), flags,
 			      (struct sockaddr *)&src, &sizeof_src,
 			      (struct sockaddr *)&dst, &sizeof_dst);
 #else
-	data_len = recvfrom(sockfd, packet->data, len, flags,
+	data_len = recvfrom(sockfd, buffer, sizeof(buffer), flags,
 			    (struct sockaddr *)&src, &sizeof_src);
 
 	/*
@@ -510,9 +461,21 @@ static ssize_t rad_recvfrom(int sockfd, RADIUS_PACKET *packet, int flags,
 	if (getsockname(sockfd, (struct sockaddr *)&dst,
 			&sizeof_dst) < 0) return -1;
 #endif
-	if (data_len < 0) {
+	if (data_len <= 0) {
 		return data_len;
 	}
+
+	/*
+	 *      See how long the packet says it is.
+	 */
+	len = (buffer[2] * 256) + buffer[3];
+
+	/*
+	 *	Header says it's smaller than a RADIUS header, *or*
+	 *	the RADIUS header says that the RADIUS packet islarger
+	 *	than our buffer.  Discard it.
+	 */
+	if ((len < RADIUS_HDR_LEN) || (len > (size_t) data_len)) return 0;
 
 	if (!fr_sockaddr2ipaddr(&src, sizeof_src, src_ipaddr, &port)) {
 		return -1;	/* Unknown address family, Die Die Die! */
@@ -529,7 +492,17 @@ static ssize_t rad_recvfrom(int sockfd, RADIUS_PACKET *packet, int flags,
 		return -1;
 	}
 
-	return data_len;
+	packet->data = talloc_memdup(packet, buffer, len);
+	if (!packet->data) return -1;
+
+	packet->data_len = len;
+
+	/*
+	 *	Return the length of the RADIUS packet.  There may be
+	 *	stuff after the end of the RADIUS packet, so we don't
+	 *	want to parse that as RADIUS.
+	 */
+	return len;
 }
 
 
@@ -1851,10 +1824,17 @@ int rad_encode(RADIUS_PACKET *packet, RADIUS_PACKET const *original,
 		}
 
 		/*
+		 *	How much room do we have left?
+		 */
+		room = ((uint8_t *) data) + sizeof(data) - ptr;
+
+		/*
 		 *	Set the Message-Authenticator to the correct
 		 *	length and initial value.
 		 */
 		if (!reply->da->vendor && (reply->da->attr == PW_MESSAGE_AUTHENTICATOR)) {
+			if (room < 18) break;
+
 			/*
 			 *	Cache the offset to the
 			 *	Message-Authenticator
@@ -1862,14 +1842,16 @@ int rad_encode(RADIUS_PACKET *packet, RADIUS_PACKET const *original,
 			packet->offset = total_length;
 			last_len = 16;
 		} else {
+			if (room < (2 + reply->vp_length)) break;
+
 			last_len = reply->vp_length;
 		}
 		last_name = reply->da->name;
 
-		room = ((uint8_t *) data) + sizeof(data) - ptr;
-
-		if (room <= 2) break;
-
+		/*
+		 *	Note that this also checks "room", as the
+		 *	attribute may be a VSA, etc.
+		 */
 		len = rad_vp2attr(packet, original, secret, &reply, ptr, room);
 		if (len < 0) return -1;
 
@@ -1980,7 +1962,7 @@ int rad_sign(RADIUS_PACKET *packet, RADIUS_PACKET const *original,
 	 *	If there's a Message-Authenticator, update it
 	 *	now.
 	 */
-	if (packet->offset > 0) {
+	if ((packet->offset > 0) && ((size_t) (packet->offset + 18) <= packet->data_len)) {
 		uint8_t calc_auth_vector[AUTH_VECTOR_LEN];
 
 		switch (packet->code) {
@@ -1988,6 +1970,7 @@ int rad_sign(RADIUS_PACKET *packet, RADIUS_PACKET const *original,
 			if (original && original->code == PW_CODE_STATUS_SERVER) {
 				goto do_ack;
 			}
+			/* FALL-THROUGH */
 
 		case PW_CODE_ACCOUNTING_REQUEST:
 		case PW_CODE_DISCONNECT_REQUEST:
@@ -2697,28 +2680,11 @@ RADIUS_PACKET *rad_recv(TALLOC_CTX *ctx, int fd, int flags)
 		rad_free(&packet);
 		return NULL;
 	}
-	packet->data_len = data_len; /* unsigned vs signed */
 
 	/*
-	 *	If the packet is too big, then rad_recvfrom did NOT
-	 *	allocate memory.  Instead, it just discarded the
-	 *	packet.
+	 *	No data read from the network.
 	 */
-	if (packet->data_len > MAX_PACKET_LEN) {
-		FR_DEBUG_STRERROR_PRINTF("Discarding packet: Larger than RFC limitation of 4096 bytes");
-		/* packet->data is NULL */
-		rad_free(&packet);
-		return NULL;
-	}
-
-	/*
-	 *	Read no data.  Continue.
-	 *	This check is AFTER the MAX_PACKET_LEN check above, because
-	 *	if the packet is larger than MAX_PACKET_LEN, we also have
-	 *	packet->data == NULL
-	 */
-	if ((packet->data_len == 0) || !packet->data) {
-		FR_DEBUG_STRERROR_PRINTF("Empty packet: Socket is not ready");
+	if (data_len == 0) {
 		rad_free(&packet);
 		return NULL;
 	}
@@ -2801,6 +2767,7 @@ int rad_verify(RADIUS_PACKET *packet, RADIUS_PACKET *original, char const *secre
 				    (original->code == PW_CODE_STATUS_SERVER)) {
 					goto do_ack;
 				}
+				/* FALL-THROUGH */
 
 			case PW_CODE_ACCOUNTING_REQUEST:
 			case PW_CODE_DISCONNECT_REQUEST:

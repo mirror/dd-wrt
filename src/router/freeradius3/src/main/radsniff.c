@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 55b78cef598ef694de6155b7ab48397dff172891 $
+ * $Id: 9b0bfd4f47a2e8f1a3e2eb030ca7f6bced76aa6a $
  * @file radsniff.c
  * @brief Capture, filter, and generate statistics for RADIUS traffic
  *
@@ -24,7 +24,7 @@
  * @copyright 2006 Nicolas Baradakis <nicolas.baradakis@cegetel.net>
  */
 
-RCSID("$Id: 55b78cef598ef694de6155b7ab48397dff172891 $")
+RCSID("$Id: 9b0bfd4f47a2e8f1a3e2eb030ca7f6bced76aa6a $")
 
 #define _LIBRADIUS 1
 #include <time.h>
@@ -1045,7 +1045,7 @@ static void rs_packet_process(uint64_t count, rs_event_t *event, struct pcap_pkt
 		rs_time_print(timestr, sizeof(timestr), &header->ts);
 	}
 
-	len = fr_link_layer_offset(data, header->caplen, event->in->link_layer);
+	len = fr_pcap_link_layer_offset(data, header->caplen, event->in->link_layer);
 	if (len < 0) {
 		REDEBUG("Failed determining link layer header offset");
 		return;
@@ -2404,7 +2404,7 @@ int main(int argc, char *argv[])
 				continue;
 			}
 
-			if (!fr_link_layer_supported(link_layer)) {
+			if (!fr_pcap_link_layer_supported(link_layer)) {
 				DEBUG2("Skipping %s: datalink type %s not supported",
 				       dev_p->name, pcap_datalink_val_to_name(link_layer));
 				continue;
@@ -2504,7 +2504,7 @@ int main(int argc, char *argv[])
 				goto finish;
 			}
 
-			if (!fr_link_layer_supported(in_p->link_layer)) {
+			if (!fr_pcap_link_layer_supported(in_p->link_layer)) {
 				ERROR("Failed opening pcap handle (%s): Datalink type %s not supported",
 				      in_p->name, pcap_datalink_val_to_name(in_p->link_layer));
 				goto finish;

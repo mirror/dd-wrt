@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 76eb3dea4ab2ecd94ee4b3ed7cc4ff9040d9f450 $
+ * $Id: 9c0af64623b753d2aeac7ebc2e30690913037781 $
  *
  * @file process.c
  * @brief Defines the state machines that control how requests are processed.
@@ -24,7 +24,7 @@
  * @copyright 2012  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: 76eb3dea4ab2ecd94ee4b3ed7cc4ff9040d9f450 $")
+RCSID("$Id: 9c0af64623b753d2aeac7ebc2e30690913037781 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/process.h>
@@ -44,8 +44,18 @@ RCSID("$Id: 76eb3dea4ab2ecd94ee4b3ed7cc4ff9040d9f450 $")
 #	include <sys/wait.h>
 #endif
 
+#ifdef HAVE_SYSTEMD_WATCHDOG
+#  include <systemd/sd-daemon.h>
+#endif
+
 extern pid_t radius_pid;
 extern fr_cond_t *debug_condition;
+
+#ifdef HAVE_SYSTEMD_WATCHDOG
+struct timeval sd_watchdog_interval;
+static fr_event_t *sd_watchdog_ev;
+
+#endif
 
 static bool spawn_flag = false;
 static bool just_started = true;
@@ -347,6 +357,32 @@ void radius_update_listener(rad_listen_t *this)
 #  define FD_MUTEX_UNLOCK(_x)
 #endif
 
+/*
+ *	Emit a systemd watchdog notification and reschedule the event.
+ */
+#ifdef HAVE_SYSTEMD_WATCHDOG
+typedef struct {
+	fr_event_list_t *el;
+	struct timeval now;
+} sd_watchdog_data_t;
+
+static sd_watchdog_data_t sdwd;
+
+static void sd_watchdog_event(void *ctx)
+{
+	sd_watchdog_data_t *s = (sd_watchdog_data_t *)ctx;
+	struct timeval when;
+
+	DEBUG("Emitting systemd watchdog notification");
+	sd_notify(0, "WATCHDOG=1");
+
+	timeradd(&when, &sd_watchdog_interval, &s->now);
+	if (!fr_event_insert(s->el, sd_watchdog_event, ctx, &when, &sd_watchdog_ev)) {
+		rad_panic("Failed to insert event");
+	}
+}
+#endif
+
 static int request_num_counter = 1;
 #ifdef WITH_PROXY
 static int request_will_proxy(REQUEST *request) CC_HINT(nonnull);
@@ -378,13 +414,13 @@ static void request_coa_originate(REQUEST *request) CC_HINT(nonnull);
 STATE_MACHINE_DECL(coa_wait_for_reply) CC_HINT(nonnull);
 STATE_MACHINE_DECL(coa_no_reply) CC_HINT(nonnull);
 STATE_MACHINE_DECL(coa_running) CC_HINT(nonnull);
-static void coa_separate(REQUEST *request) CC_HINT(nonnull);
-#  define COA_SEPARATE if (request->coa) coa_separate(request->coa);
+static void coa_separate(REQUEST *request, bool retransmit) CC_HINT(nonnull);
+#  define COA_SEPARATE if (request->coa) coa_separate(request->coa, true);
 #else
 #  define COA_SEPARATE
 #endif
 
-#define CHECK_FOR_STOP do { if (request->master_state == REQUEST_STOP_PROCESSING) {request_done(request, FR_ACTION_DONE);return;}} while (0)
+#define CHECK_FOR_STOP do { if (request->master_state == REQUEST_STOP_PROCESSING) {request_done(request, FR_ACTION_CANCELLED);return;}} while (0)
 
 #undef USEC
 #define USEC (1000000)
@@ -431,7 +467,7 @@ static void debug_packet(REQUEST *request, RADIUS_PACKET *packet, bool received)
 	 *	This really belongs in a utility library
 	 */
 	if (is_radius_code(packet->code)) {
-		RDEBUG("%s %s Id %i from %s%s%s:%i to %s%s%s:%i length %zu",
+		RDEBUG("%s %s Id %u from %s%s%s:%i to %s%s%s:%i length %zu",
 		       received ? "Received" : "Sent",
 		       fr_packet_codes[packet->code],
 		       packet->id,
@@ -449,7 +485,7 @@ static void debug_packet(REQUEST *request, RADIUS_PACKET *packet, bool received)
 		       packet->dst_port,
 		       packet->data_len);
 	} else {
-		RDEBUG("%s code %u Id %i from %s%s%s:%i to %s%s%s:%i length %zu\n",
+		RDEBUG("%s code %u Id %u from %s%s%s:%i to %s%s%s:%i length %zu\n",
 		       received ? "Received" : "Sent",
 		       packet->code,
 		       packet->id,
@@ -593,6 +629,7 @@ static void proxy_reply_too_late(REQUEST *request)
  *
  *  \dot
  *	digraph done {
+ *		stopped -> done
  *		done -> done [ label = "still running" ];
  *	}
  *  \enddot
@@ -639,16 +676,53 @@ static void request_done(REQUEST *request, int action)
 	 */
 	request->master_state = REQUEST_STOP_PROCESSING;
 
-#ifdef WITH_COA
+#ifdef WITH_PROXY
 	/*
-	 *	Move the CoA request to its own handler.
+	 *	Walk through the server pool to see if we need to mark
+	 *	connections as dead.
 	 */
-	if (request->coa) {
-		coa_separate(request->coa);
-	} else if (request->parent && (request->parent->coa == request)) {
-		coa_separate(request);
+	if (request->home_pool) {
+		fr_event_now(el, &now);
+		if (request->home_pool->last_serviced < now.tv_sec) {
+			int i;
+
+			request->home_pool->last_serviced = now.tv_sec;
+
+			for (i = 0; i < request->home_pool->num_home_servers; i++) {
+				home_server_t *home = request->home_pool->servers[i];
+
+				if (home->state == HOME_STATE_CONNECTION_FAIL) {
+					mark_home_server_dead(home, &now);
+				}
+			}
+		}
 	}
 #endif
+
+	/*
+	 *	If it was administratively canceled, then it's done.
+	 */
+	if (action == FR_ACTION_CANCELLED) {
+		action = FR_ACTION_DONE;
+
+#ifdef WITH_COA
+		/*
+		 *	Don't touch request->coa, it's in the middle
+		 *	of being processed...
+		 */
+	} else {
+		/*
+		 *	Move the CoA request to its own handler, but
+		 *	only if the request finished normally, and was
+		 *	not administratively canceled.
+		 */
+		if (request->coa) {
+			coa_separate(request->coa, true);
+		} else if (request->parent && (request->parent->coa == request)) {
+			coa_separate(request, true);
+		}
+#endif
+	}
 
 	/*
 	 *	It doesn't hurt to send duplicate replies.  All other
@@ -787,6 +861,15 @@ static void request_done(REQUEST *request, int action)
 	rad_assert(request->child_pid == NO_SUCH_CHILD_PID);
 #endif
 
+#ifdef WITH_COA
+	/*
+	 *	Now that the child is done, free the CoA packet.  If
+	 *	the CoA is running, it's already been separated.
+	 */
+	if (request->coa) TALLOC_FREE(request->coa);
+#endif
+
+
 	/*
 	 *	@todo: do final states for TCP sockets, too?
 	 */
@@ -914,7 +997,7 @@ static bool request_max_time(REQUEST *request)
 	 */
 	if (request->child_state == REQUEST_DONE) {
 	done:
-		request_done(request, FR_ACTION_DONE);
+		request_done(request, FR_ACTION_CANCELLED);
 		return true;
 	}
 
@@ -984,7 +1067,7 @@ static void request_queue_or_run(REQUEST *request,
 				       child_state_names[request->child_state],
 				       child_state_names[REQUEST_DONE]);
 #endif
-		request_done(request, FR_ACTION_DONE);
+		request_done(request, FR_ACTION_CANCELLED);
 		return;
 	}
 
@@ -1015,7 +1098,7 @@ static void request_queue_or_run(REQUEST *request,
 			 *	Otherwise we're not going to do anything with
 			 *	it...
 			 */
-			request_done(request, FR_ACTION_DONE);
+			request_done(request, FR_ACTION_CANCELLED);
 			return;
 		}
 #endif
@@ -1085,6 +1168,10 @@ static void request_cleanup_delay(REQUEST *request, int action)
 	switch (action) {
 	case FR_ACTION_DUP:
 		if (request->reply->code != 0) {
+			DEBUG("(%u) Sending duplicate reply to "
+			      "client %s port %d - ID: %u",
+			      request->number, request->client->shortname,
+			      request->packet->src_port,request->packet->id);
 			request->listener->send(request->listener, request);
 		} else {
 			RDEBUG("No reply.  Ignoring retransmit");
@@ -1300,6 +1387,7 @@ static void request_finish(REQUEST *request, int action)
 	if (vp) {
 		if (vp->vp_integer == 256) {
 			RDEBUG2("Not responding to request");
+			fr_pair_delete_by_num(&request->reply->vps, PW_RESPONSE_PACKET_TYPE, 0, TAG_ANY);
 			request->reply->code = 0;
 		} else {
 			request->reply->code = vp->vp_integer;
@@ -1332,6 +1420,12 @@ static void request_finish(REQUEST *request, int action)
 	 */
 	if (request->packet->code == PW_CODE_ACCESS_REQUEST) {
 		rad_postauth(request);
+
+		vp = fr_pair_find_by_num(request->config, PW_RESPONSE_PACKET_TYPE, 0, TAG_ANY);
+		if (vp && (vp->vp_integer == 256)) {
+			RDEBUG2("Not responding to request");
+			request->reply->code = 0;
+		}
 	}
 
 #ifdef WITH_COA
@@ -1513,7 +1607,6 @@ static void request_running(REQUEST *request, int action)
 
 	switch (action) {
 	case FR_ACTION_TIMER:
-		COA_SEPARATE;
 		(void) request_max_time(request);
 		break;
 
@@ -1616,10 +1709,12 @@ int request_receive(TALLOC_CTX *ctx, rad_listen_t *listener, RADIUS_PACKET *pack
 	packet_p = rbtree_finddata(pl, &packet);
 	if (packet_p) {
 		rad_child_state_t child_state;
+		char const *old_module;
 
 		request = fr_packet2myptr(REQUEST, packet, packet_p);
 		rad_assert(request->in_request_hash);
 		child_state = request->child_state;
+		old_module = request->module;
 
 		/*
 		 *	Same src/dst ip/port, length, and
@@ -1669,7 +1764,7 @@ int request_receive(TALLOC_CTX *ctx, rad_listen_t *listener, RADIUS_PACKET *pack
 		 *	the request just as we're logging the
 		 *	complaint.
 		 */
-		request_done(request, FR_ACTION_DONE);
+		request_done(request, FR_ACTION_CANCELLED);
 		request = NULL;
 
 		/*
@@ -1682,9 +1777,10 @@ int request_receive(TALLOC_CTX *ctx, rad_listen_t *listener, RADIUS_PACKET *pack
 			 */
 			ERROR("Received conflicting packet from "
 			      "client %s port %d - ID: %u due to "
-			      "unfinished request.  Giving up on old request.",
+			      "unfinished request in module %s.  Giving up on old request.",
 			      client->shortname,
-			      packet->src_port, packet->id);
+			      packet->src_port, packet->id,
+			      old_module);
 		}
 
 		/*
@@ -1757,7 +1853,7 @@ skip_dup:
 	if (!listener->nodup) {
 		if (!rbtree_insert(pl, &request->packet)) {
 			RERROR("Failed to insert request in the list of live requests: discarding it");
-			request_done(request, FR_ACTION_DONE);
+			request_done(request, FR_ACTION_CANCELLED);
 			return 1;
 		}
 
@@ -2207,6 +2303,7 @@ static int insert_into_proxy_hash(REQUEST *request)
 		RDEBUG3("proxy: Trying to open a new listener to the home server");
 		this = proxy_new_listener(proxy_ctx, request->home_server, 0);
 		if (!this) {
+			request->home_server->state = HOME_STATE_CONNECTION_FAIL;
 			PTHREAD_MUTEX_UNLOCK(&proxy_mutex);
 			goto fail;
 		}
@@ -2508,6 +2605,15 @@ int request_proxy_reply(RADIUS_PACKET *packet)
 		    packet->vector,
 		    sizeof(request->proxy_reply->vector)) != 0)) {
 		RDEBUG2("Ignoring conflicting proxy reply");
+		return 0;
+	}
+
+	/*
+	 *	This shouldn't happen, but threads and race
+	 *	conditions.
+	 */
+	if (!request->proxy_listener || !request->proxy_listener->data) {
+		proxy_reply_too_late(request);
 		return 0;
 	}
 
@@ -2935,7 +3041,7 @@ static int request_will_proxy(REQUEST *request)
 		 *	The home server is alive (or may be alive).
 		 *	Send the packet to the IP.
 		 */
-		if (home->state != HOME_STATE_IS_DEAD) goto do_home;
+		if (home->state < HOME_STATE_IS_DEAD) goto do_home;
 
 		/*
 		 *	The home server is dead.  If you wanted
@@ -2976,7 +3082,7 @@ do_home:
 	 *	Once we've decided to proxy a request, we cannot send
 	 *	a CoA packet.  So we free up any CoA packet here.
 	 */
-	if (request->coa) request_done(request->coa, FR_ACTION_DONE);
+	if (request->coa) request_done(request->coa, FR_ACTION_CANCELLED);
 #endif
 
 	/*
@@ -3063,13 +3169,13 @@ do_home:
 	}
 
 	/*
-	 *	home_pool may be NULL when originating CoA packets,
-	 *	because they go directly to an IP address.
+	 *	If the home server is virtual, just run pre_proxy from
+	 *	that section.
 	 */
-	if (request->home_pool && request->home_pool->virtual_server) {
+	if (request->home_server->server) {
 		char const *old_server = request->server;
 
-		request->server = request->home_pool->virtual_server;
+		request->server = request->home_server->server;
 
 		RDEBUG2("server %s {", request->server);
 		RINDENT();
@@ -3187,7 +3293,7 @@ static int request_proxy(REQUEST *request)
 #ifdef WITH_COA
 	if (request->coa) {
 		RWDEBUG("Cannot proxy and originate CoA packets at the same time.  Cancelling CoA request");
-		request_done(request->coa, FR_ACTION_DONE);
+		request_done(request->coa, FR_ACTION_CANCELLED);
 	}
 #endif
 
@@ -3416,7 +3522,7 @@ static void request_ping(REQUEST *request, int action)
 		 *
 		 *	If it's zombie, we mark it alive immediately.
 		 */
-		if ((home->state == HOME_STATE_IS_DEAD) &&
+		if ((home->state >= HOME_STATE_IS_DEAD) &&
 		    (home->num_received_pings < home->num_pings_to_alive)) {
 			return;
 		}
@@ -3731,7 +3837,11 @@ void mark_home_server_dead(home_server_t *home, struct timeval *when)
 	home->state = HOME_STATE_IS_DEAD;
 	home_trigger(home, "home_server.dead");
 
-	if (home->ping_check != HOME_PING_CHECK_NONE) {
+	/*
+	 *	Ping it if configured, AND we can ping it.
+	 */
+	if ((home->ping_check != HOME_PING_CHECK_NONE) &&
+	    (previous_state != HOME_STATE_CONNECTION_FAIL)) {
 		/*
 		 *	If the control socket marks us dead, start
 		 *	pinging.  Otherwise, we already started
@@ -3796,15 +3906,23 @@ static void proxy_wait_for_reply(REQUEST *request, int action)
 	switch (action) {
 	case FR_ACTION_DUP:
 		/*
-		 *	We have a reply, ignore the retransmit.
-		 */
-		if (request->proxy_reply) return;
-
-		/*
 		 *	The request was proxied to a virtual server.
 		 *	Ignore the retransmit.
 		 */
 		if (request->home_server->server) return;
+
+		/*
+		 *	Failed connections get the home server marked
+		 *	as dead.
+		 */
+		if (home->state == HOME_STATE_CONNECTION_FAIL) {
+			mark_home_server_dead(home, &now);
+		}
+
+		/*
+		 *	We have a reply, ignore the retransmit.
+		 */
+		if (request->proxy_reply) return;
 
 		/*
 		 *	Use a new connection when the home server is
@@ -3814,7 +3932,7 @@ static void proxy_wait_for_reply(REQUEST *request, int action)
 		 *	If the listener is known or frozen, use it for
 		 *	retransmits.
 		 */
-		if ((home->state == HOME_STATE_IS_DEAD) ||
+		if ((home->state >= HOME_STATE_IS_DEAD) ||
 		    !request->proxy_listener ||
 		    (request->proxy_listener->status >= RAD_LISTEN_STATUS_EOL)) {
 			request_proxy_anew(request);
@@ -3884,6 +4002,14 @@ static void proxy_wait_for_reply(REQUEST *request, int action)
 		break;
 
 	case FR_ACTION_TIMER:
+		/*
+		 *	Failed connections get the home server marked
+		 *	as dead.
+		 */
+		if (home->state == HOME_STATE_CONNECTION_FAIL) {
+			mark_home_server_dead(home, &now);
+		}
+
 		response_window = request_response_window(request);
 
 #ifdef WITH_TCP
@@ -3938,9 +4064,8 @@ static void proxy_wait_for_reply(REQUEST *request, int action)
 		 *	This check should really be part of a home
 		 *	server state machine.
 		 */
-		if (((home->state == HOME_STATE_ALIVE) ||
-		     (home->state == HOME_STATE_UNKNOWN))
-			) {
+		if ((home->state == HOME_STATE_ALIVE) ||
+		     (home->state == HOME_STATE_UNKNOWN)) {
 			home->response_timeouts++;
 			if (home->response_timeouts >= home->max_response_timeouts)
 				mark_home_server_zombie(home, &now, response_window);
@@ -4025,11 +4150,6 @@ static void proxy_wait_for_reply(REQUEST *request, int action)
  *
  ***********************************************************************/
 #ifdef WITH_COA
-static int null_handler(UNUSED REQUEST *request)
-{
-	return 0;
-}
-
 /*
  *	See if we need to originate a CoA request.
  */
@@ -4167,7 +4287,6 @@ static void request_coa_originate(REQUEST *request)
 
 	coa->config = fr_pair_list_copy(coa, request->config);
 	coa->num_coa_requests = 0;
-	coa->handle = null_handler;
 	coa->number = request->number; /* it's associated with the same request */
 
 	/*
@@ -4263,7 +4382,7 @@ static void request_coa_originate(REQUEST *request)
 	coa->child_pid = NO_SUCH_CHILD_PID;
 #endif
 
-	if (we_are_master()) coa_separate(request->coa);
+	if (we_are_master()) coa_separate(request->coa, true);
 
 	/*
 	 *	And send the packet.
@@ -4280,7 +4399,27 @@ static void coa_retransmit(REQUEST *request)
 
 	VERIFY_REQUEST(request);
 
+	/*
+	 *	Don't do fail-over.  This is a 3.1 feature.
+	 */
+	if (!request->home_server ||
+	    (request->home_server->state >= HOME_STATE_IS_DEAD) ||
+	    request->proxy_reply ||
+	    !request->proxy_listener ||
+	    (request->proxy_listener->status >= RAD_LISTEN_STATUS_EOL)) {
+		request_done(request, FR_ACTION_CANCELLED);
+		return;
+	}
+
 	fr_event_now(el, &now);
+
+	/*
+	 *	Home server has gone away.  The request is done.
+	 */
+	if (!request->home_server) {
+		RDEBUG("No home server for CoA packet.  Failing it.");
+		goto fail;
+	}
 
 	if (request->delay == 0) {
 		/*
@@ -4325,6 +4464,7 @@ static void coa_retransmit(REQUEST *request)
 					 buffer, sizeof(buffer)),
 			       request->proxy->dst_port);
 
+	fail:
 		if (setup_post_proxy_fail(request)) {
 			request_queue_or_run(request, coa_no_reply);
 		} else {
@@ -4396,6 +4536,112 @@ static void coa_retransmit(REQUEST *request)
 }
 
 
+/*
+ *	Enforce maximum time for CoA packets
+ */
+static bool coa_max_time(REQUEST *request)
+{
+	struct timeval now, when;
+	rad_assert(request->magic == REQUEST_MAGIC);
+#ifdef DEBUG_STATE_MACHINE
+	int action = FR_ACTION_TIMER;
+#endif
+	int mrd;
+
+	VERIFY_REQUEST(request);
+
+	TRACE_STATE_MACHINE;
+	ASSERT_MASTER;
+
+	/*
+	 *	The child thread has acknowledged it's done.
+	 *	Transition to the DONE state.
+	 *
+	 *	If the request was marked STOP, then the "check for
+	 *	stop" macro already took care of it.
+	 */
+	if (request->child_state == REQUEST_DONE) {
+	done:
+		request_done(request, FR_ACTION_CANCELLED);
+		return true;
+	}
+
+	/*
+	 *	The request is still running.  Enforce max_request_time.
+	 *
+	 *	Note that the *proxy* timestamp is the one we use, as
+	 *	that's when the CoA packet was sent.
+	 *
+	 *	Note also that if there's an error, the home server
+	 *	may not exist.
+	 */
+	fr_event_now(el, &now);
+	when = request->proxy->timestamp;
+	if (request->home_server && (request->process != coa_running)) {
+		mrd = request->home_server->coa_mrd;
+	} else {
+		mrd = request->root->max_request_time;
+	}
+	when.tv_sec += mrd;
+
+	/*
+	 *	Taking too long: tell it to die.
+	 */
+	if (timercmp(&now, &when, >=)) {
+		char buffer[256];
+
+		if (request->process != coa_running) {
+			RERROR("Failing request - originate-coa ID %u, due to lack of any response from coa server %s port %d within %d seconds",
+			       request->proxy->id,
+			       inet_ntop(request->proxy->dst_ipaddr.af,
+					 &request->proxy->dst_ipaddr.ipaddr,
+					 buffer, sizeof(buffer)),
+			       request->proxy->dst_port,
+			       mrd);
+			goto done;
+		}
+
+#ifdef HAVE_PTHREAD_H
+		/*
+		 *	If there's a child thread processing it,
+		 *	complain.
+		 */
+		if (spawn_flag &&
+		    (pthread_equal(request->child_pid, NO_SUCH_CHILD_PID) == 0)) {
+			RERROR("Unresponsive child for originate-coa, in component %s module %s",
+			      request->component ? request->component : "<core>",
+			      request->module ? request->module : "<core>");
+			exec_trigger(request, NULL, "server.thread.unresponsive", true);
+		} else
+#endif
+		{
+			RERROR("originate-coa hit max_request_time.  Cancelling it.");
+		}
+
+		/*
+		 *	Tell the request that it's done.
+		 */
+		goto done;
+	}
+
+	/*
+	 *	Let coa_retransmit() handle the retransmission timers.
+	 */
+	if (request->process != coa_running) return false;
+
+	/*
+	 *	Sleep for some more.  We HOPE that the child will
+	 *	become responsive at some point in the future.  We do
+	 *	this by adding 50% to the current timer.
+	 */
+	when = now;
+	tv_add(&when, request->delay);
+	request->delay += request->delay >> 1;
+	STATE_MACHINE_TIMER(FR_ACTION_TIMER);
+	return false;
+}
+
+
 /** Wait for a reply after originating a CoA a request.
  *
  *  Retransmit the proxied packet, or time out and go to
@@ -4422,27 +4668,23 @@ static void coa_wait_for_reply(REQUEST *request, int action)
 	ASSERT_MASTER;
 	CHECK_FOR_STOP;
 
-	if (request->parent) coa_separate(request);
+	if (request->parent) coa_separate(request, false);
 
 	switch (action) {
 	case FR_ACTION_TIMER:
-		if (request_max_time(request)) break;
-
-		/*
-		 *	Don't do fail-over.  This is a 3.1 feature.
-		 */
-		if (!request->home_server ||
-		    (request->home_server->state == HOME_STATE_IS_DEAD) ||
-		    !request->proxy_listener ||
-		    (request->proxy_listener->status >= RAD_LISTEN_STATUS_EOL)) {
-			request_done(request, FR_ACTION_DONE);
-			break;
-		}
+		if (coa_max_time(request)) break;
 
 		coa_retransmit(request);
 		break;
 
 	case FR_ACTION_PROXY_REPLY:
+		/*
+		 *	Reset the initial delay for checking if we
+		 *	should still run.
+		 */
+		request->delay = (int)request->root->init_delay.tv_sec * USEC +
+			(int)request->root->init_delay.tv_usec;
+
 		request_queue_or_run(request, coa_running);
 		break;
 
@@ -4452,7 +4694,7 @@ static void coa_wait_for_reply(REQUEST *request, int action)
 	}
 }
 
-static void coa_separate(REQUEST *request)
+static void coa_separate(REQUEST *request, bool retransmit)
 {
 	VERIFY_REQUEST(request);
 #ifdef DEBUG_STATE_MACHINE
@@ -4468,14 +4710,11 @@ static void coa_separate(REQUEST *request)
 	rad_assert(!request->in_request_hash);
 	rad_assert(request->coa == NULL);
 
-	rad_assert(request->proxy_reply || request->proxy_listener);
-
 	(void) talloc_steal(NULL, request);
 	request->parent->coa = NULL;
 	request->parent = NULL;
 
-	if (we_are_master()) {
-		request->delay = 0;
+	if (retransmit && (request->delay == 0) && !request->proxy_reply) {
 		coa_retransmit(request);
 	}
 }
@@ -4508,7 +4747,7 @@ static void coa_no_reply(REQUEST *request, int action)
 
 	switch (action) {
 	case FR_ACTION_TIMER:
-		(void) request_max_time(request);
+		(void) coa_max_time(request);
 		break;
 
 	case FR_ACTION_PROXY_REPLY: /* too late! */
@@ -4557,7 +4796,7 @@ static void coa_running(REQUEST *request, int action)
 
 	switch (action) {
 	case FR_ACTION_TIMER:
-		(void) request_max_time(request);
+		(void) coa_max_time(request);
 		break;
 
 	case FR_ACTION_RUN:
@@ -4654,10 +4893,6 @@ static void event_poll_detail(void *ctx)
 
 static void event_status(struct timeval *wake)
 {
-#if !defined(HAVE_PTHREAD_H) && defined(WNOHANG)
-	int argval;
-#endif
-
 	if (rad_debug_lvl == 0) {
 		if (just_started) {
 			INFO("Ready to process requests");
@@ -4681,18 +4916,19 @@ static void event_status(struct timeval *wake)
 	 *	all of the time...
 	 */
 
-#if !defined(HAVE_PTHREAD_H) && defined(WNOHANG)
-	/*
-	 *	If there are no child threads, then there may
-	 *	be child processes.  In that case, wait for
-	 *	their exit status, and throw that exit status
-	 *	away.  This helps get rid of zxombie children.
-	 */
-	while (waitpid(-1, &argval, WNOHANG) > 0) {
-		/* do nothing */
-	}
-#endif
+	if (!spawn_flag) {
+		int argval;
 
+		/*
+		 *	If there are no child threads, then there may
+		 *	be child processes.  In that case, wait for
+		 *	their exit status, and throw that exit status
+		 *	away.  This helps get rid of zxombie children.
+		 */
+		while (waitpid(-1, &argval, WNOHANG) > 0) {
+			/* do nothing */
+		}
+	}
 }
 
 #ifdef WITH_TCP
@@ -5162,7 +5398,7 @@ static void handle_signal_self(int flag)
 	}
 #endif
 
-#if defined(WITH_TCP) && defined(WITH_PROXY) && defined(HAVE_PTHREAD_H)
+#if defined(WITH_PROXY) && defined(HAVE_PTHREAD_H)
 	/*
 	 *	There are new listeners in the list.  Run
 	 *	event_new_fd() on them.
@@ -5266,6 +5502,19 @@ static void event_signal_handler(UNUSED fr_event_list_t *xel,
 int radius_event_init(TALLOC_CTX *ctx) {
 	el = fr_event_list_create(ctx, event_status);
 	if (!el) return 0;
+
+#ifdef HAVE_SYSTEMD_WATCHDOG
+	if (sd_watchdog_interval.tv_sec || sd_watchdog_interval.tv_usec) {
+		struct timeval now;
+
+		fr_event_now(el, &now);
+
+		sdwd.now = now;
+		sdwd.el = el;
+
+		sd_watchdog_event(&sdwd);
+	}
+#endif
 
 	return 1;
 }
@@ -5557,7 +5806,7 @@ static int proxy_delete_cb(UNUSED void *ctx, void *data)
 	request->in_proxy_hash = false;
 
 	if (!request->in_request_hash) {
-		request_done(request, FR_ACTION_DONE);
+		request_done(request, FR_ACTION_CANCELLED);
 	}
 
 	/*

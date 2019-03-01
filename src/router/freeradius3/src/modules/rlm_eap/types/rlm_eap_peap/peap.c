@@ -1,7 +1,7 @@
 /*
  * peap.c contains the interfaces that are called from eap
  *
- * Version:     $Id: 801bd7c8667ad6d5e94f6b3cb51084cb1d30dcc2 $
+ * Version:     $Id: deaf702d61eb13d714737f322fd1637000f4c3b8 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  *   Copyright 2006 The FreeRADIUS server project
  */
 
-RCSID("$Id: 801bd7c8667ad6d5e94f6b3cb51084cb1d30dcc2 $")
+RCSID("$Id: deaf702d61eb13d714737f322fd1637000f4c3b8 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include "eap_peap.h"
@@ -895,10 +895,10 @@ rlm_rcode_t eappeap_process(eap_handler_t *handler, tls_session_t *tls_session, 
 	case PEAP_STATUS_SENT_TLV_FAILURE:
 		RINDENT();
 		REDEBUG("The users session was previously rejected: returning reject (again.)");
-		RIDEBUG("This means you need to read the PREVIOUS messages in the debug output");
-		RIDEBUG("to find out the reason why the user was rejected");
-		RIDEBUG("Look for \"reject\" or \"fail\".  Those earlier messages will tell you");
-		RIDEBUG("what went wrong, and how to fix the problem");
+		RDEBUG("This means you need to read the PREVIOUS messages in the debug output");
+		RDEBUG("to find out the reason why the user was rejected");
+		RDEBUG("Look for \"reject\" or \"fail\".  Those earlier messages will tell you");
+		RDEBUG("what went wrong, and how to fix the problem");
 		REXDENT();
 
 		return RLM_MODULE_REJECT;

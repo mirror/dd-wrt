@@ -1,9 +1,10 @@
 # -*- text -*-
-# Copyright (C) 2015 The FreeRADIUS Server project and contributors
+# Copyright (C) 2019 The FreeRADIUS Server project and contributors
+# This work is licensed under CC-BY version 4.0 https://creativecommons.org/licenses/by/4.0
 #
 #	Non Protocol Attributes used by FreeRADIUS
 #
-#	$Id: 88810fb97d5ad479c7f93791854f4999a2379d07 $
+#	$Id: 145f1b6aacbdf8dd0cb6a8284d3bdbdcc741f587 $
 #
 
 #	The attributes number ranges are allocates as follows:
@@ -38,7 +39,7 @@ ATTRIBUTE	Prefix					1003	string
 ATTRIBUTE	Suffix					1004	string
 ATTRIBUTE	Group					1005	string
 ATTRIBUTE	Crypt-Password				1006	string
-ATTRIBUTE	Connect-Rate				1007	integer
+#ATTRIBUTE	Connect-Rate				1007	integer
 ATTRIBUTE	Add-Prefix				1008	string
 ATTRIBUTE	Add-Suffix				1009	string
 ATTRIBUTE	Expiration				1010	date
@@ -537,7 +538,7 @@ ATTRIBUTE	TLS-Client-Cert-X509v3-Extended-Key-Usage-OID 1936	string
 
 # 1937 - 1939: reserved for future cert attributes
 
-# 1940 - 1949: reserved for TLS session caching, mostly in 3.1
+# 1940 - 1949: reserved for TLS session caching, mostly in 4.0
 
 # Set by EAP-TLS code
 ATTRIBUTE	TLS-OCSP-Cert-Valid			1943    integer
@@ -548,8 +549,11 @@ VALUE	TLS-OCSP-Cert-Valid		no			0
 
 ATTRIBUTE	TLS-Cache-Filename			1946	string
 
+ATTRIBUTE	TLS-Session-Version			1947	string
+ATTRIBUTE	TLS-Session-Cipher-Suite		1948	string
+
 #
-#	Range:	1940-2099
+#	Range:	1950-2099
 #		Free
 #
 #	Range:	2100-2199

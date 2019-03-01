@@ -1,5 +1,5 @@
 /*
- * $Id: d70cc522d1266eb92c7013c5a326dc6d89c7a05c $
+ * $Id: f5700a080f72a982bab4dc04b7f52a1cf9ac765e $
  *
  * Oracle schema for FreeRADIUS
  *
@@ -33,6 +33,10 @@ CREATE TABLE radacct (
 	servicetype		VARCHAR(32),
 	framedprotocol		VARCHAR(32),
 	framedipaddress		VARCHAR(15),
+	framedipv6address	VARCHAR(45),
+	framedipv6prefix	VARCHAR(45),
+	framedinterfaceid	VARCHAR(44),
+	delegatedipv6prefix	VARCHAR(45),
 	acctstartdelay		NUMERIC(12),
 	acctstopdelay		NUMERIC(12),
 	XAscendSessionSvrKey	VARCHAR(10)
@@ -42,7 +46,7 @@ CREATE UNIUQE INDEX radacct_idx0
 	ON radacct(acctuniqueid);
 CREATE UNIQUE INDEX radacct_idx1
 	ON radacct(acctsessionid,username,acctstarttime,
-		acctstoptime,nasipaddress,framedipaddress);
+		acctstoptime,nasipaddress,framedipaddress,framedipv6address,framedipv6prefix,framedinterfaceid,delegatedipv6prefix);
 
 CREATE SEQUENCE radacct_seq START WITH 1 INCREMENT BY 1;
 

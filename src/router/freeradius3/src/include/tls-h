@@ -18,7 +18,7 @@
 
 #ifdef WITH_TLS
 /**
- * $Id: ee4ea76396bea6cbbc7410eb2a8e4a9c396b08b1 $
+ * $Id: 90d2f97b6477c9ca6084464f0b5c343f009762aa $
  *
  * @file tls.h
  * @brief Structures and prototypes for TLS wrappers
@@ -26,7 +26,7 @@
  * @copyright 2010 Network RADIUS SARL <info@networkradius.com>
  */
 
-RCSIDH(tls_h, "$Id: ee4ea76396bea6cbbc7410eb2a8e4a9c396b08b1 $")
+RCSIDH(tls_h, "$Id: 90d2f97b6477c9ca6084464f0b5c343f009762aa $")
 
 #include <freeradius-devel/conffile.h>
 
@@ -138,6 +138,7 @@ typedef struct _tls_session_t {
 
 	bool		invalid_hb_used;		//!< Whether heartbleed attack was detected.
 	bool		connected;			//!< whether the outgoing socket is connected
+	bool		is_init_finished;		//!< whether or not init is finished
 
 	/*
 	 *	Framed-MTU attribute in RADIUS, if present, can also be used to set this

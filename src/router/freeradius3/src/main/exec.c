@@ -15,7 +15,7 @@
  */
 
 /*
- * $Id: d5b3a9aca93b8ab1f81f5cb262d8dcd4ca7e15fd $
+ * $Id: a5c1060676061f75d734899860085993a5d3554c $
  *
  * @file exec.c
  * @brief Execute external programs.
@@ -23,7 +23,7 @@
  * @copyright 2000-2004,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: d5b3a9aca93b8ab1f81f5cb262d8dcd4ca7e15fd $")
+RCSID("$Id: a5c1060676061f75d734899860085993a5d3554c $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -608,6 +608,10 @@ int radius_exec_program(TALLOC_CTX *ctx, char *out, size_t outlen, VALUE_PAIR **
 			strlcpy(out, answer, len);
 			ret = -1;
 		}
+
+		VERIFY_REQUEST(request);
+
+
 	/*
 	 *	We've not been told to extract output pairs,
 	 *	just copy the programs output to the out

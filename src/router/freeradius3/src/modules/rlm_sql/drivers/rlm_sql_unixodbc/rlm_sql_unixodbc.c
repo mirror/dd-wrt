@@ -19,7 +19,7 @@
  * Copyright 2000  Dmitri Ageev <d_ageev@ortcc.ru>
  */
 
-RCSID("$Id: 9c7d30a34c5f478422fe5b7c388ce8c5ce279ec4 $")
+RCSID("$Id: 847f81a3748ee7d8c548c7fe5634733789f92c51 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -179,44 +179,6 @@ static int sql_num_fields(rlm_sql_handle_t *handle, rlm_sql_config_t *config)
 	if (sql_check_error(err_handle, handle, config)) return -1;
 
 	return num_fields;
-}
-
-static sql_rcode_t sql_fields(char const **out[], rlm_sql_handle_t *handle, UNUSED rlm_sql_config_t *config)
-{
-	rlm_sql_unixodbc_conn_t *conn = handle->conn;
-
-	SQLSMALLINT	fields, len, i;
-
-	char const	**names;
-	char		field[128];
-
-	SQLNumResultCols(conn->stmt, &fields);
-	if (fields == 0) return RLM_SQL_ERROR;
-
-	MEM(names = talloc_array(handle, char const *, fields));
-
-	for (i = 0; i < fields; i++) {
-		char *p;
-
-		switch (SQLColAttribute(conn->stmt, i, SQL_DESC_BASE_COLUMN_NAME,
-					field, sizeof(field), &len, NULL)) {
-		case SQL_INVALID_HANDLE:
-		case SQL_ERROR:
-			ERROR("Failed retrieving field name at index %i", i);
-			talloc_free(names);
-			return RLM_SQL_ERROR;
-
-		default:
-			break;
-		}
-
-		MEM(p = talloc_array(names, char, (size_t)len + 1));
-		strlcpy(p, field, (size_t)len + 1);
-		names[i] = p;
-	}
-	*out = names;
-
-	return RLM_SQL_OK;
 }
 
 static sql_rcode_t sql_fetch_row(rlm_sql_handle_t *handle, rlm_sql_config_t *config)
@@ -393,7 +355,6 @@ rlm_sql_module_t rlm_sql_unixodbc = {
 	.sql_select_query		= sql_select_query,
 	.sql_num_fields			= sql_num_fields,
 	.sql_affected_rows		= sql_affected_rows,
-	.sql_fields			= sql_fields,
 	.sql_fetch_row			= sql_fetch_row,
 	.sql_free_result		= sql_free_result,
 	.sql_error			= sql_error,

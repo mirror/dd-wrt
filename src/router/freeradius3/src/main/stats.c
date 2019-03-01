@@ -1,7 +1,7 @@
 /*
  * stats.c	Internal statistics handling.
  *
- * Version:	$Id: 776f096fa3065cdc0aa01a97064fdd620d437604 $
+ * Version:	$Id: 55b1852ac8a9e00ac317901ce1648aa090d92890 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2008  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: 776f096fa3065cdc0aa01a97064fdd620d437604 $")
+RCSID("$Id: 55b1852ac8a9e00ac317901ce1648aa090d92890 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -464,7 +464,7 @@ static void request_stats_addvp(REQUEST *request,
 				fr_stats2vp *table, fr_stats_t *stats)
 {
 	int i;
-	fr_uint_t counter;
+	uint64_t counter;
 	VALUE_PAIR *vp;
 
 	for (i = 0; table[i].attribute != 0; i++) {
@@ -472,7 +472,7 @@ static void request_stats_addvp(REQUEST *request,
 				       table[i].attribute, VENDORPEC_FREERADIUS);
 		if (!vp) continue;
 
-		counter = *(fr_uint_t *) (((uint8_t *) stats) + table[i].offset);
+		counter = *(uint64_t *) (((uint8_t *) stats) + table[i].offset);
 		vp->vp_integer = counter;
 	}
 }

@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: f33816748c749f8b1f1a9cf318109ff2ac8af17e $
+ * $Id: d0f3292ff0ec5fac9051ac18da04411abcef90a7 $
  * @file rlm_chap.c
  * @brief Process chap authentication requests.
  *
  * @copyright 2001,2006  The FreeRADIUS server project
  * @copyright 2001  Kostas Kalevras <kkalev@noc.ntua.gr>
  */
-RCSID("$Id: f33816748c749f8b1f1a9cf318109ff2ac8af17e $")
+RCSID("$Id: d0f3292ff0ec5fac9051ac18da04411abcef90a7 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -102,7 +102,7 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authenticate(UNUSED void *instance, REQU
 		uint8_t const *p;
 		size_t length;
 		VALUE_PAIR *vp;
-		char buffer[CHAP_VALUE_LENGTH * 2 + 1];
+		char buffer[MAX_STRING_LEN * 2 + 1];
 
 		RDEBUG3("Comparing with \"known good\" &control:Cleartext-Password value \"%s\"",
 			password->vp_strvalue);

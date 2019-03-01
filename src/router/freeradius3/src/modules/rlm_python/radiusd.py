@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python2
 #
 # Definitions for RADIUS programs
 #
@@ -8,7 +8,7 @@
 # Inside freeradius, the 'radiusd' Python module is created by the C module
 # and the definitions are automatically created.
 #
-# $Id: c535bb3caff5010ce06279f4e0d00d44377d0c4f $
+# $Id: 7129923994fcc3cdffef1fb17e34b975796bf8aa $
 
 # from modules.h
 

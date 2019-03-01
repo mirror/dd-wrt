@@ -1,5 +1,5 @@
 -----------------------------------------------------------------------------
--- $Id: 83cd0df8c3764436abe5c4751a3a1fff90a5c4e5 $                 	   --
+-- $Id: 9517823742379b59a753184cda7823de6989b643 $                 	   --
 --                                                                         --
 --  schema.sql                       rlm_sql - FreeRADIUS SQLite Module    --
 --                                                                         --
@@ -34,12 +34,20 @@ CREATE TABLE radacct (
 	acctterminatecause varchar(32) NOT NULL default '',
 	servicetype varchar(32) default NULL,
 	framedprotocol varchar(32) default NULL,
-	framedipaddress varchar(15) NOT NULL default ''
+	framedipaddress varchar(15) NOT NULL default '',
+	framedipv6address varchar(45) NOT NULL default '',
+	framedipv6prefix varchar(45) NOT NULL default '',
+	framedinterfaceid varchar(44) NOT NULL default '',
+	delegatedipv6prefix varchar(45) NOT NULL default ''
 );
 
 CREATE UNIQUE INDEX acctuniqueid ON radacct(acctuniqueid);
 CREATE INDEX username ON radacct(username);
 CREATE INDEX framedipaddress ON radacct (framedipaddress);
+CREATE INDEX framedipv6address ON radacct (framedipv6address);
+CREATE INDEX framedipv6prefix ON radacct (framedipv6prefix);
+CREATE INDEX framedinterfaceid ON radacct (framedinterfaceid);
+CREATE INDEX delegatedipv6prefix ON radacct (delegatedipv6prefix);
 CREATE INDEX acctsessionid ON radacct(acctsessionid);
 CREATE INDEX acctsessiontime ON radacct(acctsessiontime);
 CREATE INDEX acctstarttime ON radacct(acctstarttime);

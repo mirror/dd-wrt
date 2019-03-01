@@ -1,7 +1,7 @@
 /*
  * rlm_eap_fast.c  contains the interfaces that are called from eap
  *
- * Version:     $Id: a2af8be8c80e1c08e1190d735966cfc415d10bf2 $
+ * Version:     $Id: 2ce2dd0c3bc36794013ad24325450ecc6e8e5348 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2016 The FreeRADIUS server project
  */
 
-RCSID("$Id: a2af8be8c80e1c08e1190d735966cfc415d10bf2 $")
+RCSID("$Id: 2ce2dd0c3bc36794013ad24325450ecc6e8e5348 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 
@@ -566,12 +566,24 @@ static int mod_session_init(void *type_arg, eap_handler_t *handler)
 		}
 	}
 
-// FIXME TLSv1.2 uses a different PRF and SSL_export_keying_material("key expansion") is forbidden
 #ifdef SSL_OP_NO_TLSv1_2
 	/*
 	 *	Forcibly disable TLSv1.2
+	 *
+	 *	@fixme - TLSv1.2 uses a different PRF and
+	 *	SSL_export_keying_material("key expansion") is
+	 *	forbidden
 	 */
 	SSL_set_options(tls_session->ssl, SSL_OP_NO_TLSv1_2);
+#endif
+#ifdef SSL_OP_NO_TLSv1_3
+	/*
+	 *	Forcibly disable TLSv1.3
+	 *
+	 *	TLSv1.3 does not support opaque session tickets, which
+	 *	are needed for EAP-FAST.
+	 */
+	SSL_set_options(tls_session->ssl, SSL_OP_NO_TLSv1_3);
 #endif
 
 	/*

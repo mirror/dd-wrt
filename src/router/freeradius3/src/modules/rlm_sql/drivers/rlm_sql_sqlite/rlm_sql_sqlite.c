@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: 9cf1aff604053f2e70ad4c6a930f16e409e8bd71 $
+ * $Id: 3282f401ec14c365c5dd4c5e113d288a3b1347ea $
  * @file rlm_sql_sqlite.c
  * @brief SQLite driver.
  *
  * @copyright 2013 Network RADIUS SARL <info@networkradius.com>
  * @copyright 2007 Apple Inc.
  */
-RCSID("$Id: 9cf1aff604053f2e70ad4c6a930f16e409e8bd71 $")
+RCSID("$Id: 3282f401ec14c365c5dd4c5e113d288a3b1347ea $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -634,24 +634,6 @@ static int sql_num_rows(rlm_sql_handle_t *handle, UNUSED rlm_sql_config_t *confi
 	return 0;
 }
 
-static sql_rcode_t sql_fields(char const **out[], rlm_sql_handle_t *handle, UNUSED rlm_sql_config_t *config)
-{
-	rlm_sql_sqlite_conn_t *conn = handle->conn;
-
-	int		fields, i;
-	char const	**names;
-
-	fields = sqlite3_column_count(conn->statement);
-	if (fields <= 0) return RLM_SQL_ERROR;
-
-	MEM(names = talloc_zero_array(handle, char const *, fields + 1));
-
-	for (i = 0; i < fields; i++) names[i] = sqlite3_column_name(conn->statement, i);
-	*out = names;
-
-	return RLM_SQL_OK;
-}
-
 static sql_rcode_t sql_fetch_row(rlm_sql_handle_t *handle, rlm_sql_config_t *config)
 {
 	int status;
@@ -810,7 +792,6 @@ rlm_sql_module_t rlm_sql_sqlite = {
 	.sql_num_rows			= sql_num_rows,
 	.sql_affected_rows		= sql_affected_rows,
 	.sql_fetch_row			= sql_fetch_row,
-	.sql_fields			= sql_fields,
 	.sql_free_result		= sql_free_result,
 	.sql_error			= sql_error,
 	.sql_finish_query		= sql_finish_query,

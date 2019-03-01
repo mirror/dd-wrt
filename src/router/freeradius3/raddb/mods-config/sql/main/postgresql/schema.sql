@@ -1,5 +1,5 @@
 /*
- * $Id: ccc77f926542bf0e05b627b7f78fdeaebd00364f $
+ * $Id: 677925ab2076ad5316cbdb7acfa87e7795a97087 $
  *
  * Postgresql schema for FreeRADIUS
  *
@@ -37,7 +37,11 @@ CREATE TABLE radacct (
 	AcctTerminateCause	text,
 	ServiceType		text,
 	FramedProtocol		text,
-	FramedIPAddress		inet
+	FramedIPAddress		inet,
+	FramedIPv6Address	inet,
+	FramedIPv6Prefix	inet,
+	FramedInterfaceId	text,
+	DelegatedIPv6Prefix	inet
 );
 -- This index may be useful..
 -- CREATE UNIQUE INDEX radacct_whoson on radacct (AcctStartTime, nasipaddress);

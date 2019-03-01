@@ -23,7 +23,7 @@
  * @copyright 2012  The FreeRADIUS server project
  * @copyright 2012  Alan DeKok <aland@deployingradius.com>
  */
-RCSID("$Id: a228678ca641c64ea5b9961c45441b7f4d9b7fa0 $")
+RCSID("$Id: ce7427b5bc16579a0f01854679d2aa149ab33447 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/heap.h>
@@ -39,6 +39,14 @@ static int fr_connection_pool_check(fr_connection_pool_t *pool);
 /* #define PTHREAD_DEBUG (1) */
 #endif
 #endif
+
+/*
+ *	We don't need to pollute the logs with "open / close"
+ *	connection information.  Instead, only print these messages
+ *	when debugging.
+ */
+#undef INFO
+#define INFO(fmt, ...) if (rad_debug_lvl) radlog(L_INFO,  fmt, ## __VA_ARGS__)
 
 /** An individual connection within the connection pool
  *

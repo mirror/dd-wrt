@@ -1,11 +1,12 @@
 # -*- text -*-
-# Copyright (C) 2015 The FreeRADIUS Server project and contributors
+# Copyright (C) 2019 The FreeRADIUS Server project and contributors
+# This work is licensed under CC-BY version 4.0 https://creativecommons.org/licenses/by/4.0
 #
 #        Cisco Adaptative Security Appliance (ASA) Dictionary
 #
 #       http://www.cisco.com/en/US/docs/security/asa/asa90/configuration/guide/ref_extserver.html#wp1802187
 #
-#       $Id: 5b6ff356a8f4e85fd8b057c3ecf30465cd487ba6 $
+#       $Id: e1738fe7e20d1076d4a1818650f4f424d10d0e04 $
 #
 
 VENDOR		Cisco-ASA			3076
@@ -61,10 +62,9 @@ ATTRIBUTE	ASA-Allow-Network-Extension-Mode	64	integer
 ATTRIBUTE	ASA-Authorization-Type			65	integer
 ATTRIBUTE	ASA-Authorization-Required		66	integer
 ATTRIBUTE	ASA-Authorization-DN-Field		67	string
-ATTRIBUTE	ASA-Authorization-DN-Field		67	string
 ATTRIBUTE	ASA-IKE-KeepAlive-Confidence-Interval	68	integer
 ATTRIBUTE	ASA-WebVPN-Content-Filter-Parameters	69	integer
-ATTRIBUTE	ASA-WebVPN-HTML-Filter			69	integer
+ATTRIBUTE	ASA-WebVPN-HTML-Filter			70	integer
 ATTRIBUTE	ASA-WebVPN-URL-List			71	string
 ATTRIBUTE	ASA-WebVPN-Port-Forwarding-List		72	string
 ATTRIBUTE	ASA-WebVPN-Access-List			73	string
