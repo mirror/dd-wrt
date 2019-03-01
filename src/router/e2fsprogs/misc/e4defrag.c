@@ -196,7 +196,15 @@ static struct frag_statistic_ino	frag_rank[SHOW_FRAG_FILES];
 #endif
 
 #ifndef HAVE_FALLOCATE64
-#error fallocate64 not available!
+#define __SYSCALL_LL_E(x) \
+((union { long long ll; long l[2]; }){ .ll = x }).l[0], \
+((union { long long ll; long l[2]; }){ .ll = x }).l[1]
+#define __SYSCALL_LL_O(x) 0, __SYSCALL_LL_E((x))
+int fallocate64(int fd, int mode, off_t base, off_t len)
+{
+	return syscall(SYS_fallocate, fd, mode, __SYSCALL_LL_E(base),
+		__SYSCALL_LL_E(len));
+}
 #endif /* ! HAVE_FALLOCATE64 */
 
 /*
