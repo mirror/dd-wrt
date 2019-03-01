@@ -25,6 +25,8 @@
  */
 RCSID("$Id: 605b3a77beb1cdaab16526700ab2442133cd90f8 $")
 
+#ifdef HAVE_STDATOMIC_H
+
 #ifdef HAVE_STDALIGN_H
 
 #include <stdint.h>
@@ -287,3 +289,4 @@ void fr_atomic_queue_debug(fr_atomic_queue_t *aq, FILE *fp)
 #endif
 
 #endif	/* HAVE_STDALIGN_H */
+#endif
