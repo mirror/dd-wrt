@@ -1920,8 +1920,7 @@ int getBridgeForwardDelay(char *br)
 			fd = "15";
 		return atoi(fd);
 	}
-	if (!strcmp(br, "br0"))
-		return 15;
+	return 15;
 }
 
 int getBridgeMaxAge(char *br)
@@ -1937,8 +1936,7 @@ int getBridgeMaxAge(char *br)
 			age = "20";
 		return atoi(age);
 	}
-	if (!strcmp(br, "br0"))
-		return 20;
+	return 20;
 }
 
 unsigned char *get_ether_hwaddr(const char *name, unsigned char *hwaddr)
