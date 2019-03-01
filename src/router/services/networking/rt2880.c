@@ -1413,7 +1413,7 @@ void init_network(int idx)
 		br_add_bridge("br1");
 
 		// "br1", "off");
-		br_set_bridge_forward_delay("br1", 2);
+		br_set_bridge_forward_delay("br1", 4);
 
 		/*
 		 * Bring up and configure br1 interface 
