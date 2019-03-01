@@ -1964,6 +1964,7 @@ service.dlna_type_audio="Audio";
 service.dlna_type_video="Video";
 service.dlna_type_images="Images";
 service.nfs="NFS";
+service.nfs_srv="NFS Server";
 
 // SoftEther
 
