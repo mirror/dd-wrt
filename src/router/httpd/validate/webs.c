@@ -3317,7 +3317,7 @@ void save_networking(webs_t wp)
 			max_age = 40;
 
 		if (2 * (forward_delay - 1) < max_age) {
-			forward_delay = max_age;
+			forward_delay = (max_age / 2) + 1;
 		}
 		sprintf(s_forward_delay, "%d", forward_delay);
 		sprintf(s_max_age, "%d", max_age);
