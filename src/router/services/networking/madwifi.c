@@ -2916,7 +2916,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 			char word[256];
 
 			br_set_stp_state("br1", getBridgeSTP("br1", word));
-			br_set_bridge_forward_delay("br1", 4);
+			br_set_bridge_forward_delay("br1", 15);
 
 			/*
 			 * Bring up and configure br1 interface 
