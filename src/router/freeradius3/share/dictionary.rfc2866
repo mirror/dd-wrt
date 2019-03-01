@@ -1,10 +1,11 @@
 # -*- text -*-
-# Copyright (C) 2015 The FreeRADIUS Server project and contributors
+# Copyright (C) 2019 The FreeRADIUS Server project and contributors#
+# This work is licensed under CC-BY version 4.0 https://creativecommons.org/licenses/by/4.0
 #
 #	Attributes and values defined in RFC 2866.
 #	http://www.ietf.org/rfc/rfc2866.txt
 #
-#	$Id: 32158051df0baf0ed565de61706b6c3adac931d1 $
+#	$Id: 4b6bda40c1098b488c0f10414c287004790df486 $
 #
 ATTRIBUTE	Acct-Status-Type			40	integer
 ATTRIBUTE	Acct-Delay-Time				41	integer

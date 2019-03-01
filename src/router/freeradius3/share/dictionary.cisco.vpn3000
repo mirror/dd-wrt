@@ -1,5 +1,6 @@
 # -*- text -*-
-# Copyright (C) 2017 The FreeRADIUS Server project and contributors
+# Copyright (C) 2019 The FreeRADIUS Server project and contributors
+# This work is licensed under CC-BY version 4.0 https://creativecommons.org/licenses/by/4.0
 #
 #	 Cisco VPN 3000 Concentrator Dictionary
 #
@@ -8,7 +9,7 @@
 #
 # http://www.cisco.com/en/US/docs/security/asa/asa80/configuration/guide/extsvr.html#wp1661512
 #
-#	$Id: e2dae38c900647cd5afc19deb2e65c8fceae4f14 $
+#	$Id: 676e785c9bbe6404d270ba4adcd4fce7cdf0cc4b $
 #
 VENDOR		Cisco-VPN3000			3076
 

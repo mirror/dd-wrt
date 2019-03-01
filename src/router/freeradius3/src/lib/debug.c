@@ -106,11 +106,19 @@ static struct rlimit core_limits;
 static TALLOC_CTX *talloc_null_ctx;
 static TALLOC_CTX *talloc_autofree_ctx;
 
+/*
+ * On BSD systems, ptrace(PT_DETACH) uses a third argument for
+ * resume address, with the magic value (void *)1 to resume where
+ * process stopped. Specifying NULL there leads to a crash because
+ * process resumes at address 0.
+ */
 #ifdef HAVE_SYS_PTRACE_H
 #  ifdef __linux__
 #    define _PTRACE(_x, _y) ptrace(_x, _y, NULL, NULL)
+#    define _PTRACE_DETACH(_x) ptrace(PT_DETACH, _x, NULL, NULL)
 #  else
 #    define _PTRACE(_x, _y) ptrace(_x, _y, NULL, 0)
+#    define _PTRACE_DETACH(_x) ptrace(PT_DETACH, _x, (void *)1, 0)
 #  endif
 
 #  ifdef HAVE_CAPABILITY_H
@@ -206,7 +214,7 @@ static int fr_get_debug_state(void)
 			}
 
 			/* Detach */
-			_PTRACE(PT_DETACH, ppid);
+			_PTRACE_DETACH(ppid);
 			exit(0);
 		}
 
@@ -732,7 +740,7 @@ NEVER_RETURNS void fr_fault(int sig)
 		if (disable) {
 			FR_FAULT_LOG("Resetting PR_DUMPABLE to 0");
 			if (fr_set_dumpable_flag(false) < 0) {
-				FR_FAULT_LOG("Failed reseting dumpable flag to off: %s", fr_strerror());
+				FR_FAULT_LOG("Failed resetting dumpable flag to off: %s", fr_strerror());
 				FR_FAULT_LOG("Exiting due to insecure process state");
 				fr_exit_now(1);
 			}

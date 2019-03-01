@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 762064e46f04832bf46e3b67b6f121c90fbcf141 $
+ * $Id: acc2d0981ef3808f8815a7f061b743aadea07be4 $
  * @file trustrouter.c
  * @brief Integration with external trust router code
  *
@@ -134,7 +134,7 @@ static bool tidc_send_recv(const char *trustrouter, int port, const char *rpreal
 	int rcode;
 
 	/* Open TIDC connection */
-	DEBUG2("Opening TIDC connection to %s:%u", trustrouter, port);
+	DEBUG2("Opening TIDC connection to %s:%u for resolving realm %s", trustrouter, port, realm_name);
 	conn = tidc_open_connection(global_tidc, (char *) trustrouter, port, &gssctx);
 	if (conn < 0) {
 		DEBUG2("Error in tidc_open_connection.");
@@ -144,8 +144,8 @@ static bool tidc_send_recv(const char *trustrouter, int port, const char *rpreal
 	/* Send TIDC request */
 	rcode = tidc_send_request(global_tidc, conn, gssctx, (char *) rprealm, (char *) realm_name,
 				  (char *) community, &tr_response_func, cookie);
-	if (rcode > 0) {
-		DEBUG2("Error in tidc_send_request, rc = %d.", rcode);
+	if (rcode < 0) {
+		DEBUG2("Error in tidc_send_request for %s, rc = %d.", realm_name, rcode);
 		return false;
 	}
 
@@ -313,7 +313,7 @@ static fr_tls_server_conf_t *construct_tls(TIDC_INSTANCE *inst,
 	tls->psk_password = hexbuf;
 	tls->psk_identity = talloc_strdup(tls, tid_srvr_get_key_name(server)->buf);
 
-	tls->cipher_list = talloc_strdup(tls, "PSK");
+	tls->cipher_list = talloc_strdup(tls, "aPSK");
 	tls->fragment_size = 4200;
 	tls->ctx = tls_init_ctx(tls, 1);
 	if (!tls->ctx) goto error;
@@ -500,7 +500,7 @@ static void tr_response_func( TIDC_INSTANCE *inst,
 		nr = talloc_zero(NULL, REALM);
 		if (!nr) goto error;
 		nr->name = talloc_move(nr, &opaque->fr_realm_name);
-		nr->auth_pool = servers_to_pool(nr, inst, resp, opaque->fr_realm_name);
+		nr->auth_pool = servers_to_pool(nr, inst, resp, nr->name);
 		if (!realm_realm_add(nr, NULL)) goto error;
 
 	} else {
@@ -625,11 +625,17 @@ REALM *tr_query_realm(REQUEST *request, char const *realm,
 	pthread_mutex_unlock(&tidc_mutex);
 
 	/* If we weren't able to get a response from the trust router server, goto cleanup (hence return NULL realm) */
-	if (!rv) goto cleanup;
+	if (!rv) {
+		DEBUG2("Could not connect with Trust Router server for realm %s, rv = %d\n", realm, rv);
+		module_failure_msg(request, "Could not connect with Trust Router server for realm %s", realm);
+		goto cleanup;
+	}
 
 	/* If we got a response but it is an error one, include a Reply-Message and Error-Cause attributes */
 	if (cookie.result != TID_SUCCESS) {
 		DEBUG2("TID response is error, rc = %d: %s.\n", cookie.result,
+		       cookie.err_msg?cookie.err_msg:"(NO ERROR TEXT)");
+		module_failure_msg(request, "TID response is error, rc = %d: %s.\n", cookie.result,
 		       cookie.err_msg?cookie.err_msg:"(NO ERROR TEXT)");
 		if (cookie.err_msg)
 			pair_make_reply("Reply-Message", cookie.err_msg, T_OP_SET);

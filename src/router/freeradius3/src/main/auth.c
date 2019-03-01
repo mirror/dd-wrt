@@ -1,7 +1,7 @@
 /*
  * auth.c	User authentication.
  *
- * Version:	$Id: 4776b3a248d17af7f057c4563ebf989dee9cb35b $
+ * Version:	$Id: dec5c9f5e64009570a4a6bc338704d9b2982f960 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2000  Miquel van Smoorenburg <miquels@cistron.nl>
  * Copyright 2000  Jeff Carneal <jeff@apex.net>
  */
-RCSID("$Id: 4776b3a248d17af7f057c4563ebf989dee9cb35b $")
+RCSID("$Id: dec5c9f5e64009570a4a6bc338704d9b2982f960 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -82,7 +82,11 @@ static int rad_authlog(char const *msg, REQUEST *request, int goodpass)
 	char *p;
 	VALUE_PAIR *username = NULL;
 
-	if (!request->root->log_auth) {
+	if ((request->reply->code == PW_CODE_ACCESS_ACCEPT) && !request->root->log_accept) {
+		return 0;
+	}
+
+	if ((request->reply->code == PW_CODE_ACCESS_REJECT) && !request->root->log_reject) {
 		return 0;
 	}
 
@@ -224,12 +228,14 @@ static int CC_HINT(nonnull) rad_check_password(REQUEST *request)
 	 */
 	if (auth_type < 0) {
 		if (fr_pair_find_by_num(request->config, PW_CRYPT_PASSWORD, 0, TAG_ANY) != NULL) {
-			RWDEBUG2("Please update your configuration, and remove 'Auth-Type = Crypt'");
-			RWDEBUG2("Use the PAP module instead");
+			RWDEBUG2("No module configured to handle comparisons with &control:Crypt-Password");
+			RWDEBUG2("Add pap to the authorize { ... } and authenticate { ... } sections of this "
+				 "virtual server to handle this \"known good\" password type");
 		}
 		else if (fr_pair_find_by_num(request->config, PW_CLEARTEXT_PASSWORD, 0, TAG_ANY) != NULL) {
-			RWDEBUG2("Please update your configuration, and remove 'Auth-Type = Local'");
-			RWDEBUG2("Use the PAP or CHAP modules instead");
+			RWDEBUG2("No module configured to handle comparisons with &control:Cleartext-Password");
+			RWDEBUG2("Add pap or chap to the authorize { ... } and authenticate { ... } sections "
+				 "of this virtual server to handle this \"known good\" password type");
 		}
 
 		/*
@@ -336,7 +342,16 @@ int rad_postauth(REQUEST *request)
 			process_post_auth(PW_POST_AUTH_TYPE_REJECT, request);
 		}
 
-		fr_state_discard(request, request->packet);
+		/*
+		 *	Only discard session state when we're sending
+		 *	packets to the network.  The State attribute
+		 *	is use both for the outer session and copied
+		 *	to the inner-tunnel session for (e.g.) PEAP.
+		 *	So we don't want to delete the information in
+		 *	the inner tunnel, and then have it no longer
+		 *	accessible from the outer session.
+		 */
+		if (!request->parent) fr_state_discard(request, request->packet);
 		result = RLM_MODULE_REJECT;
 		break;
 	/*
@@ -469,13 +484,11 @@ int rad_authenticate(REQUEST *request)
 			rad_authlog("Login incorrect (Home Server says so)",
 				    request, 0);
 			request->reply->code = PW_CODE_ACCESS_REJECT;
-			fr_state_discard(request, request->packet);
 			return RLM_MODULE_REJECT;
 
 		default:
 			rad_authlog("Login incorrect (Home Server failed to respond)",
 				    request, 0);
-			fr_state_discard(request, request->packet);
 			return RLM_MODULE_REJECT;
 		}
 	}

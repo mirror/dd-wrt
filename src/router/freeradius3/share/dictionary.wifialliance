@@ -1,10 +1,12 @@
 # -*- text -*-
-# Copyright (C) 2015 The FreeRADIUS Server project and contributors
+# Copyright (C) 2019 The FreeRADIUS Server project and contributors
+# This work is licensed under CC-BY version 4.0 https://creativecommons.org/licenses/by/4.0
+#
 ##############################################################################
 #
 #       WiFi-Alliance attributes for Hotspot 2.0
 #
-#       $Id: 124f062362c9d95403ab27b290e07f80a5b0ea6e $
+#       $Id: 8f330ad2c3ad0bc23bb960503c44e13096fa7f72 $
 #
 ##############################################################################
 

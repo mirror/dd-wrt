@@ -60,9 +60,6 @@
 /* Define to 1 if you have the <sys/capability.h> header file. */
 #undef HAVE_CAPABILITY_H
 
-/* Define to 1 if you have the <linux/if_packet.h> header file. */
-#undef HAVE_LINUX_IF_PACKET_H
-
 /* Define to 1 if you have the `clock_gettime' function. */
 #undef HAVE_CLOCK_GETTIME
 
@@ -86,6 +83,9 @@
 
 /* Define to 1 if you have the <crypt.h> header file. */
 #undef HAVE_CRYPT_H
+
+/* Do we have the crypt_r function */
+#undef HAVE_CRYPT_R
 
 /* Define to 1 if you have the `ctime_r' function. */
 #undef HAVE_CTIME_R
@@ -221,7 +221,8 @@
 /* Define to 1 if you have the `nsl' library (-lnsl). */
 #undef HAVE_LIBNSL
 
-/* Define to 1 if you have the `pcap' library (-lpcap). */
+/* Define to 1 if you have the `pcap' library (-lpcap) and header file
+   <pcap.h>. */
 #undef HAVE_LIBPCAP
 
 /* Define if you have a readline compatible library */
@@ -241,6 +242,9 @@
 
 /* Define to 1 if you have the <limits.h> header file. */
 #undef HAVE_LIMITS_H
+
+/* Define to 1 if you have the <linux/if_packet.h> header file. */
+#undef HAVE_LINUX_IF_PACKET_H
 
 /* Define to 1 if you have the `localtime_r' function. */
 #undef HAVE_LOCALTIME_R
@@ -302,6 +306,9 @@
 /* Define to 1 if you have the <openssl/ocsp.h> header file. */
 #undef HAVE_OPENSSL_OCSP_H
 
+/* Define to 1 if you have the <openssl/rand.h> header file. */
+#undef HAVE_OPENSSL_RAND_H
+
 /* Define to 1 if you have the <openssl/sha.h> header file. */
 #undef HAVE_OPENSSL_SHA_H
 
@@ -319,9 +326,6 @@
 
 /* Define to 1 if you have the `pcap_fopen_offline' function. */
 #undef HAVE_PCAP_FOPEN_OFFLINE
-
-/* Define to 1 if you have the <pcap.h> header file. */
-#undef HAVE_PCAP_H
 
 /* define this if we have libpcre */
 #undef HAVE_PCRE
@@ -413,6 +417,12 @@
 /* Define to 1 if you have the `SSL_SESSION_get_master_key' function. */
 #undef HAVE_SSL_SESSION_GET_MASTER_KEY
 
+/* Define to 1 if you have the <stdalign.h> header file. */
+#undef HAVE_STDALIGN_H
+
+/* Define to 1 if you have the <stdatomic.h> header file. */
+#undef HAVE_STDATOMIC_H
+
 /* Define to 1 if you have the <stdbool.h> header file. */
 #undef HAVE_STDBOOL_H
 
@@ -466,6 +476,16 @@
 
 /* Define to 1 if you have the <syslog.h> header file. */
 #undef HAVE_SYSLOG_H
+
+/* Define to 1 if you have the `systemd' library (-lsystemd). */
+#undef HAVE_SYSTEMD
+
+/* Define to 1 if you have the <systemd/sd-daemon.h> header file. */
+#undef HAVE_SYSTEMD_SD_DAEMON_H
+
+/* Define to 1 if you have watchdog support in the `systemd' library
+   (-lsystemd). */
+#undef HAVE_SYSTEMD_WATCHDOG
 
 /* Define to 1 if you have the <sys/dir.h> header file, and it defines `DIR'.
    */

@@ -15,13 +15,13 @@
  */
 
 /**
- * $Id: 248de8bf9b7de8faa736192a20839120533697bb $
+ * $Id: 9dcf5ff42231a9678d9c6aa3a3663a45293ae6c9 $
  * @file rlm_cache.c
  * @brief Cache values and merge them back into future requests.
  *
  * @copyright 2012-2014 The FreeRADIUS server project
  */
-RCSID("$Id: 248de8bf9b7de8faa736192a20839120533697bb $")
+RCSID("$Id: 9dcf5ff42231a9678d9c6aa3a3663a45293ae6c9 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -477,7 +477,12 @@ static rlm_rcode_t CC_HINT(nonnull) mod_cache_it(void *instance, REQUEST *reques
 	 *	If there's no existing cache entry, go and create a new one.
 	 */
 	if (!c) {
-		if (ttl <= 0) ttl = inst->ttl;
+		if (ttl == 0) {
+			ttl = inst->ttl;
+
+		} else if (ttl < 0) {
+			ttl = -ttl;
+		}
 		goto insert;
 	}
 

@@ -1,5 +1,5 @@
 #
-# Version:	$Id: 396b679cdf3a02798112ae0844cf08aaf009acae $
+# Version:	$Id: e666f1403a068a348be17fad00aa7ff5b8fba3ad $
 #
 
 #
@@ -15,6 +15,7 @@
 HEADERS_DY = attributes.h features.h missing.h radpaths.h tls.h
 
 HEADERS	= \
+	autoconf.h \
 	build.h \
 	conf.h \
 	conffile.h \
@@ -33,9 +34,12 @@ HEADERS	= \
 	radiusd.h \
 	radutmp.h \
 	realms.h \
+	regex.h \
 	sha1.h \
 	stats.h \
 	sysutmp.h \
+	tcp.h \
+	threads.h \
 	token.h \
 	udpfromto.h \
 	base64.h \

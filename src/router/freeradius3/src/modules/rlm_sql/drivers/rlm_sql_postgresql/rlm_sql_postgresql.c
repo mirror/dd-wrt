@@ -1,7 +1,7 @@
 /*
  * sql_postgresql.c		Postgresql rlm_sql driver
  *
- * Version:	$Id: 1afe07d2d95e6cfb6e03fb4e446d2c4a5ecdc083 $
+ * Version:	$Id: 0e4545ce089cef72af105502fab9fc1155a696b9 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@
  * Bernhard Herzog <bh@intevation.de>
  */
 
-RCSID("$Id: 1afe07d2d95e6cfb6e03fb4e446d2c4a5ecdc083 $")
+RCSID("$Id: 0e4545ce089cef72af105502fab9fc1155a696b9 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -69,7 +69,7 @@ typedef struct rlm_sql_postgres_conn {
 	char		**row;
 } rlm_sql_postgres_conn_t;
 
-static CONF_PARSER driver_config[] = {
+static const CONF_PARSER driver_config[] = {
 	{ "send_application_name", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_sql_postgres_config_t, send_application_name), "no" },
 	CONF_PARSER_TERMINATOR
 };
@@ -388,24 +388,6 @@ static sql_rcode_t sql_select_query(rlm_sql_handle_t * handle, rlm_sql_config_t 
 	return sql_query(handle, config, query);
 }
 
-static sql_rcode_t sql_fields(char const **out[], rlm_sql_handle_t *handle, UNUSED rlm_sql_config_t *config)
-{
-	rlm_sql_postgres_conn_t *conn = handle->conn;
-
-	int		fields, i;
-	char const	**names;
-
-	fields = PQnfields(conn->result);
-	if (fields <= 0) return RLM_SQL_ERROR;
-
-	MEM(names = talloc_zero_array(handle, char const *, fields + 1));
-
-	for (i = 0; i < fields; i++) names[i] = PQfname(conn->result, i);
-	*out = names;
-
-	return RLM_SQL_OK;
-}
-
 static sql_rcode_t sql_fetch_row(rlm_sql_handle_t *handle, UNUSED rlm_sql_config_t *config)
 {
 
@@ -505,6 +487,28 @@ static int sql_affected_rows(rlm_sql_handle_t * handle, UNUSED rlm_sql_config_t 
 	return conn->affected_rows;
 }
 
+static size_t sql_escape_func(UNUSED REQUEST *request, char *out, size_t outlen, char const *in, void *arg)
+{
+	size_t			inlen, ret;
+	rlm_sql_handle_t	*handle = talloc_get_type_abort(arg, rlm_sql_handle_t);
+	rlm_sql_postgres_conn_t	*conn = handle->conn;
+	int			err;
+
+	/* Check for potential buffer overflow */
+	inlen = strlen(in);
+	if ((inlen * 2 + 1) > outlen) return 0;
+	/* Prevent integer overflow */
+	if ((inlen * 2 + 1) <= inlen) return 0;
+
+	ret = PQescapeStringConn(conn->db, out, in, inlen, &err);
+	if (err) {
+		REDEBUG("Error escaping string \"%s\": %s", in, PQerrorMessage(conn->db));
+		return 0;
+	}
+
+	return ret;
+}
+
 /* Exported to rlm_sql */
 extern rlm_sql_module_t rlm_sql_postgresql;
 rlm_sql_module_t rlm_sql_postgresql = {
@@ -515,10 +519,10 @@ rlm_sql_module_t rlm_sql_postgresql = {
 	.sql_query			= sql_query,
 	.sql_select_query		= sql_select_query,
 	.sql_num_fields			= sql_num_fields,
-	.sql_fields			= sql_fields,
 	.sql_fetch_row			= sql_fetch_row,
 	.sql_error			= sql_error,
 	.sql_finish_query		= sql_free_result,
 	.sql_finish_select_query	= sql_free_result,
-	.sql_affected_rows		= sql_affected_rows
+	.sql_affected_rows		= sql_affected_rows,
+	.sql_escape_func		= sql_escape_func
 };

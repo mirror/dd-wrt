@@ -11,7 +11,7 @@
  *  rather than being able to move 1/2 of the entries in the chain with
  *  one update.
  *
- * Version:	$Id: 9810431c65483d7bcd51fd8b44e74c3432f2e807 $
+ * Version:	$Id: d509388841e9194c5228d4bcb0a420d6d009efa9 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -30,7 +30,7 @@
  *  Copyright 2005,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 9810431c65483d7bcd51fd8b44e74c3432f2e807 $")
+RCSID("$Id: d509388841e9194c5228d4bcb0a420d6d009efa9 $")
 
 #include <freeradius-devel/libradius.h>
 
@@ -560,10 +560,7 @@ void fr_hash_table_free(fr_hash_table_t *ht)
 					 node = next) {
 			next = node->next;
 
-			if (!node->data) continue; /* dummy entry */
-
-
-			if (ht->free) {
+			if (node->data && ht->free) {
 				void *tofree;
 				memcpy(&tofree, &node->data, sizeof(tofree));
 				ht->free(tofree);

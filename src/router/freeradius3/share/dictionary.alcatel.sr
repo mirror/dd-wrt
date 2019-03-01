@@ -1,10 +1,12 @@
 # -*- text -*-
-# Copyright (C) 2015 The FreeRADIUS Server project and contributors
+# Copyright (C) 2019 The FreeRADIUS Server project and contributors
+# This work is licensed under CC-BY version 4.0 https://creativecommons.org/licenses/by/4.0
+#
 ##############################################################################
 #
 #	Alcatel-Lucent Service Router dictionary.
 #
-#	$Id: b6df8bf340a380abf56dacad96093270f9d6214e $
+#	$Id: 20f99c600d79255994b6eeff19af3ed20af8ad7f $
 #
 ##############################################################################
 
@@ -21,12 +23,12 @@ VALUE	Timetra-Access			both			3
 
 ATTRIBUTE	Timetra-Home-Directory			2	string
 
-VALUE	Timetra-Restrict-To-Home	true			1
-VALUE	Timetra-Restrict-To-Home	false			2
-
 ATTRIBUTE	Timetra-Restrict-To-Home		3	integer
 ATTRIBUTE	Timetra-Profile				4	string
 ATTRIBUTE	Timetra-Default-Action			5	integer
+
+VALUE	Timetra-Restrict-To-Home	true			1
+VALUE	Timetra-Restrict-To-Home	false			2
 
 VALUE	Timetra-Default-Action		permit-all		1
 VALUE	Timetra-Default-Action		deny-all		2

@@ -15,13 +15,13 @@
  */
 
 /**
- * $Id: 7cd1b45fba23b5f819bf90ca100e64d6b74ebdc7 $
+ * $Id: 564667271d765cd411a36ea5bd67642af53acd8c $
  * @file rlm_rest.c
  * @brief Integrate FreeRADIUS with RESTfull APIs
  *
  * @copyright 2012-2014  Arran Cudbard-Bell <arran.cudbardb@freeradius.org>
  */
-RCSID("$Id: 7cd1b45fba23b5f819bf90ca100e64d6b74ebdc7 $")
+RCSID("$Id: 564667271d765cd411a36ea5bd67642af53acd8c $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -542,13 +542,10 @@ finish:
 }
 
 /*
- *	Send accounting info to a REST API endpoint
+ *	Do common work.
  */
-static rlm_rcode_t CC_HINT(nonnull) mod_accounting(void *instance, REQUEST *request)
+static rlm_rcode_t CC_HINT(nonnull) mod_common(rlm_rest_t *inst, REQUEST *request, rlm_rest_section_t *section)
 {
-	rlm_rest_t *inst = instance;
-	rlm_rest_section_t *section = &inst->accounting;
-
 	void *handle;
 	int hcode;
 	int rcode = RLM_MODULE_OK;
@@ -597,6 +594,28 @@ finish:
 	return rcode;
 }
 
+
+/*
+ *      Send preacct info to a REST API endpoint
+ */
+static rlm_rcode_t CC_HINT(nonnull) mod_preacct(void *instance, REQUEST *request)
+{
+        rlm_rest_t *inst = instance;
+        rlm_rest_section_t *section = &inst->preacct;
+
+        return mod_common(inst, request, section);
+}
+/*
+ *	Send accounting info to a REST API endpoint
+ */
+static rlm_rcode_t CC_HINT(nonnull) mod_accounting(void *instance, REQUEST *request)
+{
+	rlm_rest_t *inst = instance;
+	rlm_rest_section_t *section = &inst->accounting;
+
+	return mod_common(inst, request, section);
+}
+
 /*
  *	Send post-auth info to a REST API endpoint
  */
@@ -605,52 +624,29 @@ static rlm_rcode_t CC_HINT(nonnull) mod_post_auth(void *instance, REQUEST *reque
 	rlm_rest_t *inst = instance;
 	rlm_rest_section_t *section = &inst->post_auth;
 
-	void *handle;
-	int hcode;
-	int rcode = RLM_MODULE_OK;
-	int ret;
+	return mod_common(inst, request, section);
+}
 
-	if (!section->name) return RLM_MODULE_NOOP;
+/*
+ *	Send pre-proxy info to a REST API endpoint
+ */
+static rlm_rcode_t CC_HINT(nonnull) mod_pre_proxy(void *instance, REQUEST *request)
+{
+	rlm_rest_t *inst = instance;
+	rlm_rest_section_t *section = &inst->pre_proxy;
 
-	handle = fr_connection_get(inst->pool);
-	if (!handle) return RLM_MODULE_FAIL;
+	return mod_common(inst, request, section);
+}
 
-	ret = rlm_rest_perform(inst, section, handle, request, NULL, NULL);
-	if (ret < 0) {
-		rcode = RLM_MODULE_FAIL;
-		goto finish;
-	}
+/*
+ *	Send post-proxy info to a REST API endpoint
+ */
+static rlm_rcode_t CC_HINT(nonnull) mod_post_proxy(void *instance, REQUEST *request)
+{
+	rlm_rest_t *inst = instance;
+	rlm_rest_section_t *section = &inst->post_proxy;
 
-	hcode = rest_get_handle_code(handle);
-	if (hcode >= 500) {
-		rcode = RLM_MODULE_FAIL;
-	} else if (hcode == 204) {
-		rcode = RLM_MODULE_OK;
-	} else if ((hcode >= 200) && (hcode < 300)) {
-		ret = rest_response_decode(inst, section, request, handle);
-		if (ret < 0) 	   rcode = RLM_MODULE_FAIL;
-		else if (ret == 0) rcode = RLM_MODULE_OK;
-		else		   rcode = RLM_MODULE_UPDATED;
-	} else {
-		rcode = RLM_MODULE_INVALID;
-	}
-
-finish:
-	switch (rcode) {
-	case RLM_MODULE_INVALID:
-	case RLM_MODULE_FAIL:
-		rest_response_error(request, handle);
-		break;
-
-	default:
-		break;
-	}
-
-	rlm_rest_cleanup(inst, section, handle);
-
-	fr_connection_release(inst->pool, handle);
-
-	return rcode;
+	return mod_common(inst, request, section);
 }
 
 #ifdef WITH_COA
@@ -914,7 +910,10 @@ static int mod_instantiate(CONF_SECTION *conf, void *instance)
 	if (
 		(parse_sub_section(conf, &inst->authorize, MOD_AUTHORIZE) < 0) ||
 		(parse_sub_section(conf, &inst->authenticate, MOD_AUTHENTICATE) < 0) ||
+		(parse_sub_section(conf, &inst->preacct, MOD_PREACCT) < 0) ||
 		(parse_sub_section(conf, &inst->accounting, MOD_ACCOUNTING) < 0) ||
+		(parse_sub_section(conf, &inst->pre_proxy, MOD_PRE_PROXY) < 0) ||
+		(parse_sub_section(conf, &inst->post_proxy, MOD_POST_PROXY) < 0) ||
 
 #ifdef WITH_COA
 		(parse_sub_section(conf, &inst->recv_coa, MOD_RECV_COA) < 0) ||
@@ -980,8 +979,11 @@ module_t rlm_rest = {
 	.methods = {
 		[MOD_AUTHENTICATE]	= mod_authenticate,
 		[MOD_AUTHORIZE]		= mod_authorize,
+		[MOD_PREACCT]		= mod_preacct,
 		[MOD_ACCOUNTING]	= mod_accounting,
 		[MOD_POST_AUTH]		= mod_post_auth,
+		[MOD_PRE_PROXY]		= mod_pre_proxy,
+		[MOD_POST_PROXY]	= mod_post_proxy,
 #ifdef WITH_COA
 		[MOD_RECV_COA]		= mod_recv_coa
 #endif

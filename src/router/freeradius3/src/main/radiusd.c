@@ -1,7 +1,7 @@
 /*
  * radiusd.c	Main loop of the radius server.
  *
- * Version:	$Id: aac9263ffb851d7ded17b6bb56c94a47fa64d7eb $
+ * Version:	$Id: 4f64184210ac0734e745840a10ee567ba778879c $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  *
- * Copyright 2000-2012  The FreeRADIUS server project
+ * Copyright 2000-2019  The FreeRADIUS server project
  * Copyright 1999,2000  Miquel van Smoorenburg <miquels@cistron.nl>
  * Copyright 2000  Alan DeKok <aland@ox.org>
  * Copyright 2000  Alan Curry <pacman-radius@cqc.com>
@@ -25,12 +25,13 @@
  * Copyright 2000  Chad Miller <cmiller@surfsouth.com>
  */
 
-RCSID("$Id: aac9263ffb851d7ded17b6bb56c94a47fa64d7eb $")
+RCSID("$Id: 4f64184210ac0734e745840a10ee567ba778879c $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
 #include <freeradius-devel/state.h>
 #include <freeradius-devel/rad_assert.h>
+#include <freeradius-devel/autoconf.h>
 
 #include <sys/file.h>
 
@@ -49,6 +50,10 @@ RCSID("$Id: aac9263ffb851d7ded17b6bb56c94a47fa64d7eb $")
 #endif
 #ifndef WIFEXITED
 #	define WIFEXITED(stat_val) (((stat_val) & 255) == 0)
+#endif
+
+#ifdef HAVE_SYSTEMD
+#  include <systemd/sd-daemon.h>
 #endif
 
 /*
@@ -378,6 +383,25 @@ int main(int argc, char *argv[])
 			exit(EXIT_FAILURE);
 		}
 	}
+
+	/*
+	 *  The systemd watchdog enablement must be checked before we
+	 *  daemonize, but the notifications can come from any process.
+	 */
+#ifdef HAVE_SYSTEMD_WATCHDOG
+	if (!check_config) {
+		uint64_t usec;
+
+		if ((sd_watchdog_enabled(0, &usec) > 0) && (usec > 0)) {
+			usec /= 2;
+			fr_timeval_from_usec(&sd_watchdog_interval, usec);
+
+			INFO("systemd watchdog interval is %pT secs", &sd_watchdog_interval);
+		} else {
+			INFO("systemd watchdog is disabled");
+		}
+	}
+#endif
 
 #ifndef __MINGW32__
 	/*

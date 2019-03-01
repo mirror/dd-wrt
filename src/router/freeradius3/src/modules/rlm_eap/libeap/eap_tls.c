@@ -1,7 +1,7 @@
 /*
  * eap_tls.c
  *
- * Version:     $Id: 5819a87cadaa57e24c0f1dc67a6fd2b71e7d0958 $
+ * Version:     $Id: 8eccbe5e49ced6c71afd56a413d6bd679580be50 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@
  *
  */
 
-RCSID("$Id: 5819a87cadaa57e24c0f1dc67a6fd2b71e7d0958 $")
+RCSID("$Id: 8eccbe5e49ced6c71afd56a413d6bd679580be50 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <assert.h>
@@ -727,7 +727,7 @@ static fr_tls_status_t eaptls_operation(fr_tls_status_t status, eap_handler_t *h
 	 *	EPTLS_SUCCESS
 	 */
 
-	if (SSL_is_init_finished(tls_session->ssl)) {
+	if (tls_session->is_init_finished) {
 		/*
 		 *	Init is finished.  The rest is
 		 *	application data.
@@ -874,7 +874,7 @@ fr_tls_status_t eaptls_process(eap_handler_t *handler)
 	 *
 	 *	The TLS data will be in the tls_session structure.
 	 */
-	if (SSL_is_init_finished(tls_session->ssl)) {
+	if (tls_session->is_init_finished) {
 		/*
 		 *	The initialization may be finished, but if
 		 *	there more fragments coming, then send ACK,

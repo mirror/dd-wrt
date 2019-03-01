@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: b6d3a5dc19b713108a1a9ce6a6ccc7c75cb5b66f $
+ * $Id: e6e12d4481ccb4818d524d5007be85d8419fc959 $
  * @file rlm_preprocess.c
  * @brief Fixes up requests, and processes huntgroups/hints files.
  *
  * @copyright 2000,2006  The FreeRADIUS server project
  * @copyright 2000  Alan DeKok <aland@ox.org>
  */
-RCSID("$Id: b6d3a5dc19b713108a1a9ce6a6ccc7c75cb5b66f $")
+RCSID("$Id: e6e12d4481ccb4818d524d5007be85d8419fc959 $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/modules.h>
@@ -113,8 +113,8 @@ static void cisco_vsa_hack(REQUEST *request)
 	     vp;
 	     vp = fr_cursor_next(&cursor)) {
 		vendorcode = vp->da->vendor;
-		if (!((vendorcode == 9) || (vendorcode == 6618))) {
-			continue; /* not a Cisco or Quintum VSA, continue */
+		if (!((vendorcode == 9) || (vendorcode == 6618) || (vendorcode == 35265))) {
+			continue; /* not a Cisco, Quintum or Eltex VSA, continue */
 		}
 
 		if (vp->da->type != PW_TYPE_STRING) {
@@ -375,18 +375,15 @@ static int hints_setup(PAIR_LIST *hints, REQUEST *request)
 	VALUE_PAIR	*add;
 	VALUE_PAIR	*tmp;
 	PAIR_LIST	*i;
-	VALUE_PAIR	*request_pairs;
 	int		updated = 0, ft;
 
-	request_pairs = request->packet->vps;
-
-	if (!hints || !request_pairs)
+	if (!hints || !request->packet->vps)
 		return RLM_MODULE_NOOP;
 
 	/*
 	 *	Check for valid input, zero length names not permitted
 	 */
-	name = (tmp = fr_pair_find_by_num(request_pairs, PW_USER_NAME, 0, TAG_ANY)) ?
+	name = (tmp = fr_pair_find_by_num(request->packet->vps, PW_USER_NAME, 0, TAG_ANY)) ?
 		tmp->vp_strvalue : NULL;
 	if (!name || name[0] == 0) {
 		/*
@@ -400,7 +397,7 @@ static int hints_setup(PAIR_LIST *hints, REQUEST *request)
 		 *	Use "paircompare", which is a little more general...
 		 */
 		if (((strcmp(i->name, "DEFAULT") == 0) || (strcmp(i->name, name) == 0)) &&
-		    (paircompare(request, request_pairs, i->check, NULL) == 0)) {
+		    (paircompare(request, request->packet->vps, i->check, NULL) == 0)) {
 			RDEBUG2("hints: Matched %s at %d", i->name, i->lineno);
 			/*
 			 *	Now add all attributes to the request list,

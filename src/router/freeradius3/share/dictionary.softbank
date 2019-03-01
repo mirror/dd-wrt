@@ -1,10 +1,12 @@
 # -*- text -*-
-# Copyright (C) 2018 The FreeRADIUS Server project and contributors
-##############################################################################
+# Copyright (C) 2019 The FreeRADIUS Server project and contributors#
+# This work is licensed under CC-BY version 4.0 https://creativecommons.org/licenses/by/4.0
+#
+#############################################################################
 #
 #	Softbank VSAs
 #
-#	$Id: d3f69898e4edc93d7453fea23476609e7119bcc5 $
+#	$Id: 9ee8c0361f6dc7b94386c9cec0c78286454f35eb $
 #
 ##############################################################################
 

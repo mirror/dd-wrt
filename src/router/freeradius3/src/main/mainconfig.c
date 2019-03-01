@@ -1,7 +1,7 @@
 /*
  * mainconf.c	Handle the server's configuration.
  *
- * Version:	$Id: 938a47ae2ec849d72376c5cd8d39d4dc24920848 $
+ * Version:	$Id: 67fbd21391fb8587ac78585a9bb52ecd527f7bd9 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2002  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 938a47ae2ec849d72376c5cd8d39d4dc24920848 $")
+RCSID("$Id: 67fbd21391fb8587ac78585a9bb52ecd527f7bd9 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -135,6 +135,8 @@ static const CONF_PARSER startup_server_config[] = {
 static const CONF_PARSER log_config[] = {
 	{ "stripped_names", FR_CONF_POINTER(PW_TYPE_BOOLEAN, &log_stripped_names),"no" },
 	{ "auth", FR_CONF_POINTER(PW_TYPE_BOOLEAN, &main_config.log_auth), "no" },
+	{ "auth_accept", FR_CONF_POINTER(PW_TYPE_BOOLEAN, &main_config.log_accept), NULL},
+	{ "auth_reject", FR_CONF_POINTER(PW_TYPE_BOOLEAN, &main_config.log_reject), NULL},
 	{ "auth_badpass", FR_CONF_POINTER(PW_TYPE_BOOLEAN, &main_config.log_auth_badpass), "no" },
 	{ "auth_goodpass", FR_CONF_POINTER(PW_TYPE_BOOLEAN, &main_config.log_auth_goodpass), "no" },
 	{ "msg_badpass", FR_CONF_POINTER(PW_TYPE_STRING, &main_config.auth_badpass_msg), NULL},
@@ -469,6 +471,22 @@ static ssize_t xlat_listen(UNUSED void *instance, REQUEST *request,
 		*out = '\0';
 		return 0;
 	}
+
+#ifdef WITH_TLS
+	/*
+	 *	Look for TLS certificate data.
+	 */
+	if (strncmp(fmt, "TLS-", 4) == 0) {
+		VALUE_PAIR *vp;
+		listen_socket_t *sock = request->listener->data;
+
+		for (vp = sock->certs; vp != NULL; vp = vp->next) {
+			if (strcmp(fmt, vp->da->name) == 0) {
+				return vp_prints_value(out, outlen, vp, 0);
+			}
+		}
+	}
+#endif
 
 	cp = cf_pair_find(request->listener->cs, fmt);
 	if (!cp || !(value = cf_pair_value(cp))) {
@@ -866,7 +884,10 @@ do {\
 	 *	set it now.
 	 */
 	if (default_log.dst == L_DST_NULL) {
-		if (cf_section_parse(cs, NULL, startup_server_config) < 0) {
+		default_log.dst = L_DST_STDERR;
+		default_log.fd = STDERR_FILENO;
+
+		if (cf_section_parse(cs, NULL, startup_server_config) == -1) {
 			fprintf(stderr, "%s: Error: Failed to parse log{} section.\n",
 				main_config.name);
 			cf_file_free(cs);
@@ -880,6 +901,7 @@ do {\
 			return -1;
 		}
 
+		default_log.fd = -1;
 		default_log.dst = fr_str2int(log_str2dst, radlog_dest,
 					      L_DST_NUM_DEST);
 		if (default_log.dst == L_DST_NUM_DEST) {
@@ -940,6 +962,13 @@ do {\
 	if (cf_section_parse(cs, NULL, server_config) < 0) return -1;
 
 	/*
+	 *	Fix up log_auth, and log_accept and log_reject
+	 */
+	if (main_config.log_auth) {
+		main_config.log_accept = main_config.log_reject = true;
+	}
+
+	/*
 	 *	We ignore colourization of output until after the
 	 *	configuration files have been parsed.
 	 */
@@ -971,7 +1000,7 @@ do {\
 	}
 	FR_TIMEVAL_BOUND_CHECK("reject_delay", &main_config.reject_delay, <=, 10, 0);
 
-	FR_INTEGER_BOUND_CHECK("cleanup_delay", main_config.cleanup_delay, <=, 10);
+	FR_INTEGER_BOUND_CHECK("cleanup_delay", main_config.cleanup_delay, <=, 30);
 
 	FR_INTEGER_BOUND_CHECK("resources.talloc_pool_size", main_config.talloc_pool_size, >=, 2 * 1024);
 	FR_INTEGER_BOUND_CHECK("resources.talloc_pool_size", main_config.talloc_pool_size, <=, 1024 * 1024);

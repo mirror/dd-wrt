@@ -1,12 +1,14 @@
 # -*- text -*-
-# Copyright (C) 2015 The FreeRADIUS Server project and contributors
+# Copyright (C) 2019 The FreeRADIUS Server project and contributors
+# This work is licensed under CC-BY version 4.0 https://creativecommons.org/licenses/by/4.0
+#
 ##############################################################################
 #
 #	Nortel Passport 8600 VSA's.
 #
 #	http://www142.nortelnetworks.com/bvdoc/setips/july04/engineeringtipstricksv12.pdf
 #
-#	$Id: 922991260cb7c3fc61b0f41b59503c05fc2cf370 $
+#	$Id: 419285b0d45b3d5987ca3fe4f901af998072348b $
 #
 ##############################################################################
 

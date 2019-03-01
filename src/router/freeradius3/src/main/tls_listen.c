@@ -1,7 +1,7 @@
 /*
  * tls.c
  *
- * Version:     $Id: 40b26c0b1288b97cf7bfdb38e2fc0e545f0a372c $
+ * Version:     $Id: 0eed87b64ffe76e861b7b205e7522fd5fcc400e3 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 40b26c0b1288b97cf7bfdb38e2fc0e545f0a372c $")
+RCSID("$Id: 0eed87b64ffe76e861b7b205e7522fd5fcc400e3 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <freeradius-devel/radiusd.h>
@@ -236,7 +236,7 @@ static int tls_socket_recv(rad_listen_t *listener)
 	/*
 	 *	If we need to do more initialization, do that here.
 	 */
-	if (!SSL_is_init_finished(sock->ssn->ssl)) {
+	if (!sock->ssn->is_init_finished) {
 		if (!tls_handshake_recv(request, sock->ssn)) {
 			RDEBUG("FAILED in TLS handshake receive");
 			goto do_close;
@@ -596,6 +596,7 @@ static ssize_t proxy_tls_read(rad_listen_t *listener)
 			case SSL_ERROR_ZERO_RETURN:
 				/* remote end sent close_notify, send one back */
 				SSL_shutdown(sock->ssn->ssl);
+				/* FALL-THROUGH */
 
 			case SSL_ERROR_SYSCALL:
 			do_close:

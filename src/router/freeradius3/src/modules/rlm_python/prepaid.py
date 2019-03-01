@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python2
 #
 # Example Python module for prepaid usage using MySQL
 
@@ -17,7 +17,7 @@
 # Copyright 2002 Miguel A.L. Paraz <mparaz@mparaz.com>
 # Copyright 2002 Imperium Technology, Inc.
 #
-# $Id: c3cbf57b8fc99d6b57f1865308c2fec3719cab67 $
+# $Id: 3b1dc2e2e8e1456ae917c414b515b4f1f0df7a65 $
 
 import radiusd
 import MySQLdb

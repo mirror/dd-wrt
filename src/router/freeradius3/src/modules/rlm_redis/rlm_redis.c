@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: f7e6749fba782250e549f8eece641b385b31e5a0 $
+ * $Id: 7fc5c26769b935ad6e0c5482072bc207ccfa120c $
  * @file rlm_redis.c
  * @brief Driver for the REDIS noSQL key value stores.
  *
@@ -23,7 +23,7 @@
  * @copyright 2011  TekSavvy Solutions <gabe@teksavvy.com>
  */
 
-RCSID("$Id: f7e6749fba782250e549f8eece641b385b31e5a0 $")
+RCSID("$Id: 7fc5c26769b935ad6e0c5482072bc207ccfa120c $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -237,6 +237,12 @@ int rlm_redis_query(REDISSOCK **dissocket_p, REDIS_INST *inst,
 				sizeof(argv_buf), argv_buf);
 	if (argc <= 0)
 		return -1;
+
+	if (argc >= (MAX_REDIS_ARGS - 1)) {
+		RERROR("rlm_redis (%s): query has too many parameters; increase "
+				"MAX_REDIS_ARGS and recompile", inst->xlat_name);
+		return -1;
+	}
 
 	dissocket = *dissocket_p;
 

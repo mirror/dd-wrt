@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: c80ec25d6e3b381409f447da0ba4a6219dffe892 $
+ * $Id: 68c7c74c006ebdd06caf47c52ff07c3e45a3eea5 $
  * @file rlm_krb5.c
  * @brief Authenticate users, retrieving their TGT from a Kerberos V5 TDC.
  *
@@ -24,7 +24,7 @@
  * @copyright 2000  Nathan Neulinger <nneul@umr.edu>
  * @copyright 2000  Alan DeKok <aland@ox.org>
  */
-RCSID("$Id: c80ec25d6e3b381409f447da0ba4a6219dffe892 $")
+RCSID("$Id: 68c7c74c006ebdd06caf47c52ff07c3e45a3eea5 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -171,7 +171,7 @@ static int mod_instantiate(CONF_SECTION *conf, void *instance)
 	ret = krb5_get_init_creds_opt_alloc(inst->context, &(inst->gic_options)); /* For some reason the 'init' version
 										    of this function is deprecated */
 	if (ret) {
-		ERROR("rlm_krb5 (%s): Couldn't allocated inital credential options: %s", inst->xlat_name,
+		ERROR("rlm_krb5 (%s): Couldn't allocated initial credential options: %s", inst->xlat_name,
 		      rlm_krb5_error(inst->context, ret));
 
 		return -1;

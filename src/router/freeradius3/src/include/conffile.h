@@ -4,11 +4,11 @@
 /*
  * conffile.h	Defines for the conffile parsing routines.
  *
- * Version:	$Id: 60c12b787b29ee4287d82aad4d711c09fb5a596a $
+ * Version:	$Id: 8cb045c946a2b046ef998f83ef4aaf65b06ebdef $
  *
  */
 
-RCSIDH(conffile_h, "$Id: 60c12b787b29ee4287d82aad4d711c09fb5a596a $")
+RCSIDH(conffile_h, "$Id: 8cb045c946a2b046ef998f83ef4aaf65b06ebdef $")
 
 #include <stddef.h>
 #include <freeradius-devel/token.h>
@@ -145,7 +145,7 @@ typedef struct timeval _timeval_t;
 #define FR_INTEGER_COND_CHECK(_name, _var, _cond, _new)\
 do {\
 	if (!(_cond)) {\
-		WARN("WARNING: Ignoring \"" _name " = %i\", forcing to \"" _name " = %i\"", _var, _new);\
+		WARN("Ignoring \"" _name " = %i\", forcing to \"" _name " = %i\"", _var, _new);\
 		_var = _new;\
 	}\
 } while (0)
@@ -156,7 +156,7 @@ do {\
 do {\
 	struct timeval _bound = {_bound_sec, _bound_usec};\
 	if (!timercmp(_var, &_bound, _op)) {\
-		WARN("WARNING: Ignoring \"" _name " = %d.%.06d\", forcing to \"" _name " = %d.%06d\"",\
+		WARN("Ignoring \"" _name " = %d.%.06d\", forcing to \"" _name " = %d.%06d\"",\
 			(int)(_var)->tv_sec, (int)(_var)->tv_usec,\
 			(int)_bound.tv_sec, (int)_bound.tv_usec);\
 		*_var = _bound;\

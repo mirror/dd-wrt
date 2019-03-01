@@ -1,5 +1,5 @@
 /**
- * $Id: 8d0c826970e344578fc40fcbbdcbce2e8a90c37a $
+ * $Id: fddcf7fb9084852183b2a72aa374dcff0f4dc158 $
  * @file ldap.h
  * @brief LDAP authorization and authentication module headers.
  *
@@ -161,6 +161,9 @@ typedef struct ldap_instance {
 	LDAPControl	*userobj_sort_ctrl;		//!< Server side sort control.
 
 	int		userobj_scope;			//!< Search scope.
+
+	char const	*user_dn;			//!< for multiple LDAP modules
+	DICT_ATTR const *user_dn_da;			//!< cached user DN
 
 	char const	*userobj_membership_attr;	//!< Attribute that describes groups the user is a member of.
 	char const	*userobj_access_attr;		//!< Attribute to check to see if the user should be locked out.

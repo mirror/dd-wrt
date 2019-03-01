@@ -16,7 +16,7 @@
 #ifndef RADIUSD_H
 #define RADIUSD_H
 /**
- * $Id: 379d58742a6efd67a61af55a31d62f5752cf9ebb $
+ * $Id: 0af3f5145831d637e6d817662eb216dfa91be8f3 $
  *
  * @file radiusd.h
  * @brief Structures, prototypes and global variables for the FreeRADIUS server.
@@ -24,7 +24,7 @@
  * @copyright 1999-2000,2002-2008  The FreeRADIUS server project
  */
 
-RCSIDH(radiusd_h, "$Id: 379d58742a6efd67a61af55a31d62f5752cf9ebb $")
+RCSIDH(radiusd_h, "$Id: 0af3f5145831d637e6d817662eb216dfa91be8f3 $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/radpaths.h>
@@ -114,7 +114,9 @@ typedef struct main_config {
 	fr_ipaddr_t	myip;				//!< IP to bind to. Set on command line.
 	uint16_t	port;				//!< Port to bind to. Set on command line.
 
-	bool		log_auth;			//!< Log authentication attempts.
+	bool		log_auth;			//!< Log all authentication attempts.
+	bool		log_accept;			//!< Log Access-Accept
+	bool		log_reject;			//!< Log Access-Reject
 	bool		log_auth_badpass;		//!< Log successful authentications.
 	bool		log_auth_goodpass;		//!< Log failed authentications.
 	char const	*auth_badpass_msg;		//!< Additional text to append to successful auth messages.

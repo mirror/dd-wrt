@@ -2,7 +2,7 @@
 ##
 ## sql.conf -- SQL modules
 ##
-##	$Id: 4a59483c35c77f573fb177919e19ba4434cc3da1 $
+##	$Id: 1034cfd349b171d2afecd2df526f4f8d89f1ff1f $
 
 ######################################################################
 #
@@ -59,6 +59,10 @@ sql {
 #			certificate_file = "/etc/ssl/certs/private/client.crt"
 #			private_key_file = "/etc/ssl/certs/private/client.key"
 #			cipher = "DHE-RSA-AES256-SHA:AES128-SHA"
+#
+#			tls_required = yes
+#			tls_check_cert = no
+#			tls_check_cert_cn = no
 #		}
 #
 #		# If yes, (or auto and libmysqlclient reports warnings are

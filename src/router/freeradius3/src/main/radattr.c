@@ -1,7 +1,7 @@
 /*
  * radattr.c	RADIUS Attribute debugging tool.
  *
- * Version:	$Id: c402f079d16598be8005a39a05345a1c65ec6e22 $
+ * Version:	$Id: 882eae9d32ebb38b408ab2102610cd0ff3453b01 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  * Copyright 2010  Alan DeKok <aland@freeradius.org>
  */
 
-RCSID("$Id: c402f079d16598be8005a39a05345a1c65ec6e22 $")
+RCSID("$Id: 882eae9d32ebb38b408ab2102610cd0ff3453b01 $")
 
 #include <freeradius-devel/libradius.h>
 
@@ -786,6 +786,7 @@ static void process_file(const char *root_dir, char const *filename)
 			continue;
 		}
 
+#ifdef WITH_DHCP
 		/*
 		 *	And some DHCP tests
 		 */
@@ -868,6 +869,7 @@ static void process_file(const char *root_dir, char const *filename)
 			}
 			continue;
 		}
+#endif
 
 		if (strncmp(p, "attribute ", 10) == 0) {
 			p += 10;

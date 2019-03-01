@@ -1,7 +1,7 @@
 /*
  * radmin.c	RADIUS Administration tool.
  *
- * Version:	$Id: 4e941aa123e3cf1b7c384323705d82b92e68904c $
+ * Version:	$Id: cdad3c50fa3743e6fed2193cd479b7eeff2d6947 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2012   Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: 4e941aa123e3cf1b7c384323705d82b92e68904c $")
+RCSID("$Id: cdad3c50fa3743e6fed2193cd479b7eeff2d6947 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/md5.h>
@@ -607,7 +607,7 @@ int main(int argc, char **argv)
 
 	if (!quiet) {
 		printf("%s - FreeRADIUS Server administration tool.\n", radmin_version);
-		printf("Copyright (C) 2008-2017 The FreeRADIUS server project and contributors.\n");
+		printf("Copyright (C) 2008-2019 The FreeRADIUS server project and contributors.\n");
 		printf("There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A\n");
 		printf("PARTICULAR PURPOSE.\n");
 		printf("You may redistribute copies of FreeRADIUS under the terms of the\n");
@@ -696,7 +696,7 @@ int main(int argc, char **argv)
 			continue;
 		}
 
-		if (memcmp(line, "secret ", 7) == 0) {
+		if (strncmp(line, "secret ", 7) == 0) {
 			if (!secret) {
 				secret = line + 7;
 				do_challenge(sockfd);

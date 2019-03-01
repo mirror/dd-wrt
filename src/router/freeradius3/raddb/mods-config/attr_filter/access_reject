@@ -2,7 +2,7 @@
 #	Configuration file for the rlm_attr_filter module.
 #	Please see rlm_attr_filter(5) manpage for more information.
 #
-#	$Id: afd89473dc50e4ff62389e35e5cb73b512e9d352 $
+#	$Id: 47f167b085c2a4e22701fe9fe74b8fe0b9575421 $
 #
 #	This configuration file is used to remove almost all of the attributes
 #	From an Access-Reject message.  The RFCs say that an Access-Reject
@@ -15,6 +15,4 @@ DEFAULT
 	Error-Cause =* ANY,
 	Reply-Message =* ANY,
 	MS-CHAP-Error =* ANY,
-	Proxy-State =* ANY,
-	FreeRADIUS-Response-Delay =* ANY,
-	FreeRADIUS-Response-Delay-USec =* ANY
+	Proxy-State =* ANY

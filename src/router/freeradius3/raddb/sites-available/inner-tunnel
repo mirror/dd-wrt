@@ -4,7 +4,7 @@
 #	This is a virtual server that handles *only* inner tunnel
 #	requests for EAP-TTLS and PEAP types.
 #
-#	$Id: 70b1d8da255a740d2d1b59808393722766dc6a60 $
+#	$Id: b838373443cacf937650f057d6f49dbc6ecd0340 $
 #
 ######################################################################
 
@@ -288,6 +288,14 @@ post-auth {
 	#  Chargeable-User-Identity attribute from RFC 4372.
 	#  If you want to use it just uncomment the line below.
 #       cui-inner
+
+	#
+	#  If you want the Access-Accept to contain the inner
+	#  User-Name, uncomment the following lines.
+	#
+#	update outer.session-state {
+#	       User-Name := &User-Name
+#	}
 
 	#
 	#  If you want to have a log of authentication replies,

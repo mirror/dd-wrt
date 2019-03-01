@@ -1,7 +1,7 @@
 /*
  * version.c	Print version number and exit.
  *
- * Version:	$Id: 2190444b814e4d4a71f2602f7e21404b7174c91b $
+ * Version:	$Id: 5bd565294d6a41e5fa56d6ebf93397c8956b6e5d $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -17,12 +17,12 @@
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  *
- * Copyright 1999-2014  The FreeRADIUS server project
+ * Copyright 1999-2019  The FreeRADIUS server project
  * Copyright 2012  Alan DeKok <aland@ox.org>
  * Copyright 2000  Chris Parker <cparker@starnetusa.com>
  */
 
-RCSID("$Id: 2190444b814e4d4a71f2602f7e21404b7174c91b $")
+RCSID("$Id: 5bd565294d6a41e5fa56d6ebf93397c8956b6e5d $")
 
 #include <freeradius-devel/radiusd.h>
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
@@ -577,7 +577,7 @@ void version_print(void)
 		DEBUG2("  ");
 	}
 	INFO("FreeRADIUS Version " RADIUSD_VERSION_STRING);
-	INFO("Copyright (C) 1999-2017 The FreeRADIUS server project and contributors");
+	INFO("Copyright (C) 1999-2019 The FreeRADIUS server project and contributors");
 	INFO("There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A");
 	INFO("PARTICULAR PURPOSE");
 	INFO("You may redistribute copies of FreeRADIUS under the terms of the");

@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: 910f23ef1acb0e0471ee382bd8de47ba10bdb26a $
+ * $Id: 083b8d35fbd0d6f646d2db6453b4edb12417ca0e $
  * @file rlm_perl.c
  * @brief Translates requests between the server an a perl interpreter.
  *
  * @copyright 2002,2006  The FreeRADIUS server project
  * @copyright 2002  Boian Jordanov <bjordanov@orbitel.bg>
  */
-RCSID("$Id: 910f23ef1acb0e0471ee382bd8de47ba10bdb26a $")
+RCSID("$Id: 083b8d35fbd0d6f646d2db6453b4edb12417ca0e $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -624,23 +624,28 @@ static void perl_vp_to_svpvn_element(REQUEST *request, AV *av, VALUE_PAIR const 
 				     int *i, const char *hash_name, const char *list_name)
 {
 	size_t len;
-
+	SV *sv;
 	char buffer[1024];
+
 
 	switch (vp->da->type) {
 	case PW_TYPE_STRING:
 		RDEBUG("$%s{'%s'}[%i] = &%s:%s -> '%s'", hash_name, vp->da->name, *i,
 		       list_name, vp->da->name, vp->vp_strvalue);
-		av_push(av, newSVpvn(vp->vp_strvalue, vp->vp_length));
+		sv = newSVpvn(vp->vp_strvalue, vp->vp_length);
 		break;
 
 	default:
 		len = vp_prints_value(buffer, sizeof(buffer), vp, 0);
 		RDEBUG("$%s{'%s'}[%i] = &%s:%s -> '%s'", hash_name, vp->da->name, *i,
 		       list_name, vp->da->name, buffer);
-		av_push(av, newSVpvn(buffer, truncate_len(len, sizeof(buffer))));
+		sv = newSVpvn(buffer, truncate_len(len, sizeof(buffer)));
 		break;
 	}
+
+	if (!sv) return;
+	SvTAINTED_on(sv);
+	av_push(av, sv);
 	(*i)++;
 }
 
@@ -809,7 +814,7 @@ static void get_hv_content(TALLOC_CTX *ctx, REQUEST *request, HV *my_hv, VALUE_P
 		}
 	}
 
-	if (*vps) VERIFY_LIST(*vps);
+	if (*vps) VERIFY_LIST(*vps, "perl");
 }
 
 /*

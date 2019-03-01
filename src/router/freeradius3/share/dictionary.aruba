@@ -1,7 +1,8 @@
 # -*- text -*-
-# Copyright (C) 2015 The FreeRADIUS Server project and contributors
+# Copyright (C) 2019 The FreeRADIUS Server project and contributors
+# This work is licensed under CC-BY version 4.0 https://creativecommons.org/licenses/by/4.0
 #
-#	Version: $Id: c0d3955876d80823caccd12810fd4cc7a69ab1e8 $
+#	Version: $Id: 7965a64ee64630c53a35408756a77dc904e9de50 $
 #
 VENDOR		Aruba				14823
 BEGIN-VENDOR	Aruba

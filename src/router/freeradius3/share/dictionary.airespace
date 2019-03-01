@@ -1,9 +1,10 @@
 # -*- text -*-
-# Copyright (C) 2015 The FreeRADIUS Server project and contributors
+# Copyright (C) 2019 The FreeRADIUS Server project and contributors
+# This work is licensed under CC-BY version 4.0 https://creativecommons.org/licenses/by/4.0
 #
 #	As found on the net.
 #
-#	$Id: 5d952f9bb26324e61f139aef9ae9e552ed36dcb9 $
+#	$Id: b761f235c5d878ee76ee62c4a57a10ae252ce0e9 $
 #
 VENDOR		Airespace			14179
 

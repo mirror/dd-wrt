@@ -1,6 +1,6 @@
 # -*- text -*-
 #
-#  $Id: 3220393f94cb7a58244fee4d358d2d7bef861fea $
+#  $Id: 0d2ed050b8d10901cd8615506534aac035ead4db $
 
 # Microsoft CHAP authentication
 #
@@ -60,6 +60,20 @@ mschap {
 	#	--allow-mschapv2
 	#
 	#  to the list of command-line options.
+	#
+	#  For Samba 4, you should also set the "ntlmauth" parameter
+	#  in the Samba configuration:
+	#
+	#	ntlm auth = yes
+	#
+	#  or
+	#
+	#	ntlm auth = mschapv2-and-ntlmv2-only
+	#
+	#  That will let Samba 4 accept the MS-CHAP authentication
+	#  method that is needed by FreeRADIUS.
+	#
+	#  Run the ntml_auth command line too:
 	#
 #	ntlm_auth = "/path/to/ntlm_auth --request-nt-key --username=%{%{Stripped-User-Name}:-%{%{User-Name}:-None}} --challenge=%{%{mschap:Challenge}:-00} --nt-response=%{%{mschap:NT-Response}:-00}"
 
