@@ -3267,7 +3267,8 @@ void save_networking(webs_t wp)
 	// save bridges
 
 	for (i = 0; i < bridgescount; i++) {
-		char *ifname, *tag, *prio, *mtu, *mcast;
+		int max_age, forward_delay;
+		char *ifname, *tag, *prio, *mtu, *mcast, s_forward_delay[32], s_max_age[32];
 		char var[32];
 		char ipaddr[32];
 		char netmask[32];
@@ -3298,9 +3299,28 @@ void save_networking(webs_t wp)
 		prio = websGetVar(wp, var, "32768");
 		if (*(prio) == 0)
 			prio = "32768";
-
 		if (atoi(prio) > 61440)
 			prio = "61440";
+
+		sprintf(var, "bridgeforward_delay%d", i);
+		forward_delay = atoi(websGetVar(wp, var, "15"));
+		if (forward_delay < 4)
+			forward_delay = 4;
+		if (forward_delay > 30)
+			forward_delay = 30;
+
+		sprintf(var, "bridgemax_age%d", i);
+		max_age = atoi(websGetVar(wp, var, "20"));
+		if (max_age < 6)
+			max_age = 6;
+		if (max_age > 40)
+			max_age = 40;
+
+		if (2 * (forward_delay - 1) < max_age) {
+			forward_delay = max_age;
+		}
+		sprintf(s_forward_delay, "%d", forward_delay);
+		sprintf(s_max_age, "%d", max_age);
 
 		sprintf(var, "bridgemtu%d", i);
 		mtu = websGetVar(wp, var, NULL);
@@ -3320,6 +3340,10 @@ void save_networking(webs_t wp)
 		strcat(buffer, prio);
 		strcat(buffer, ">");
 		strcat(buffer, mtu);
+		strcat(buffer, ">");
+		strcat(buffer, forward_delay);
+		strcat(buffer, ">");
+		strcat(buffer, max_age);
 		if (i < bridgescount - 1)
 			strcat(buffer, " ");
 
