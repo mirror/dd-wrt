@@ -50,3 +50,4 @@ SRC_CFLAGS	:= -D_LIBRADIUS -I$(top_builddir)/src
 # like pthread and the regexp libraries.
 TGT_LDLIBS	:= $(LIBS) $(PCAP_LIBS)
 TGT_LDFLAGS	:= $(LDFLAGS) $(PCAP_LDFLAGS)
+TGT_LDLIBS	+= -latomic
