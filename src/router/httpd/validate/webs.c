@@ -3341,9 +3341,9 @@ void save_networking(webs_t wp)
 		strcat(buffer, ">");
 		strcat(buffer, mtu);
 		strcat(buffer, ">");
-		strcat(buffer, forward_delay);
+		strcat(buffer, s_forward_delay);
 		strcat(buffer, ">");
-		strcat(buffer, max_age);
+		strcat(buffer, s_max_age);
 		if (i < bridgescount - 1)
 			strcat(buffer, " ");
 
