@@ -54,6 +54,8 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 #endif
 	show_caption_pp(wp, NULL, "networking.snooping", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.prio", "<th>", "</th>\n");
+	show_caption_pp(wp, NULL, "networking.forward_delay", "<th>", "</th>\n");
+	show_caption_pp(wp, NULL, "networking.max_age", "<th>", "</th>\n");
 	websWrite(wp, "<th>MTU</th>\n");
 	websWrite(wp, "<th>Root MAC</th>\n");
 	websWrite(wp, "<th>&nbsp;</th></tr>\n");
@@ -75,6 +77,12 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<td>");
 		showOptions(wp, bridge_name, "0 4096 8192 12288 16384 20480 24576 28672 32768 36864 40960 45056 49152 53248 57344 61440", "32768");
 		websWrite(wp, "</td>");
+
+		sprintf(bridge_name, "bridgeforward_delay%d", count);
+		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"2\" value=\"15\" /></td>\n", bridge_name);
+		sprintf(bridge_name, "bridgemax_age%d", count);
+		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"2\" value=\"20\" /></td>\n", bridge_name);
+
 		// Bridges are bridges, Ports are ports, show it again HERE          
 		sprintf(bridge_name, "bridgemtu%d", count);
 		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"3\" value=\"1500\" /></td>\n", bridge_name);
@@ -97,6 +105,14 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		if (!mtu) {
 			mtu = "1500";
 		}
+		GETENTRYBYIDX(forward_delay, word, 4);
+		if (!forward_delay) {
+			forward_delay = "15";
+		}
+		GETENTRYBYIDX(max_age, word, 5);
+		if (!max_age) {
+			max_age = "20";
+		}
 
 		if (!bridge || !stp)
 			break;
@@ -114,10 +130,14 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		showOptions(wp, bridge_name, "On Off", nvram_default_matchi(mcast, 1, 0) ? "On" : "Off");
 		websWrite(wp, "</td>");
 		sprintf(bridge_name, "bridgeprio%d", count);
-
 		websWrite(wp, "<td>");
 		showOptions(wp, bridge_name, "0 4096 8192 12288 16384 20480 24576 28672 32768 36864 40960 45056 49152 53248 57344 61440", prio != NULL ? prio : "32768");
 		websWrite(wp, "</td>");
+
+		sprintf(bridge_name, "bridgeforward_delay%d", count);
+		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"2\" value=\"%s\" /></td>\n", bridge_name, forward_delay);
+		sprintf(bridge_name, "bridgemax_age%d", count);
+		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"2\" value=\"%s\" /></td>\n", bridge_name, max_age);
 
 		// Bridges are bridges, Ports are ports, show it again HERE          
 		sprintf(bridge_name, "bridgemtu%d", count);
