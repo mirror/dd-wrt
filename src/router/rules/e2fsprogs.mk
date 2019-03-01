@@ -30,10 +30,23 @@ ifneq ($(CONFIG_E2FSPROGS_ADV),y)
 	rm -f $(INSTALLDIR)/e2fsprogs/sbin/e2label
 	rm -f $(INSTALLDIR)/e2fsprogs/sbin/findfs
 	rm -f $(INSTALLDIR)/e2fsprogs/sbin/fsck*
-	rm -f $(INSTALLDIR)/e2fsprogs/lib/libss*
 	rm -f $(INSTALLDIR)/e2fsprogs/lib/e2initrd_helper	
 endif
+	rm -f $(INSTALLDIR)/e2fsprogs/lib/libss*
+	rm -f $(INSTALLDIR)/e2fsprogs/lib/*.a
+	rm -f $(INSTALLDIR)/e2fsprogs/sbin/debugfs
+	rm -f $(INSTALLDIR)/e2fsprogs/sbin/blkid
+	rm -f $(INSTALLDIR)/e2fsprogs/sbin/dumpe2fs
+	rm -f $(INSTALLDIR)/e2fsprogs/sbin/e2image
+	rm -f $(INSTALLDIR)/e2fsprogs/sbin/e2undo
+	rm -f $(INSTALLDIR)/e2fsprogs/sbin/e2mmp*
+	rm -f $(INSTALLDIR)/e2fsprogs/sbin/logsave
+	rm -f $(INSTALLDIR)/e2fsprogs/usr/sbin/uuidd
+	rm -f $(INSTALLDIR)/e2fsprogs/usr/sbin/mklost+found
 	rm -rf $(INSTALLDIR)/e2fsprogs/usr/share
+	rm -rf $(INSTALLDIR)/e2fsprogs/usr/bin
+	rm -rf $(INSTALLDIR)/e2fsprogs/usr/include
+	rm -rf $(INSTALLDIR)/e2fsprogs/lib/pkgconfig
 	rm -rf $(INSTALLDIR)/e2fsprogs/usr/man
 	-cd $(INSTALLDIR)/e2fsprogs/etc && ln -sf /proc/mounts mtab
 	true
