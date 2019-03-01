@@ -1907,6 +1907,40 @@ int getBridgeSTP(char *br, char *word)
 		return 0;
 }
 
+int getBridgeForwardDelay(char *br)
+{
+	char *next, *wordlist;
+	wordlist = nvram_safe_get("bridges");
+	foreach(word, wordlist, next) {
+		GETENTRYBYIDX(bridge, word, 0);
+		GETENTRYBYIDX(fd, word, 4);
+		if (strcmp(bridge, br))
+			continue;
+		if (!fd)
+			fd = "15";
+		return atoi(fd);
+	}
+	if (!strcmp(br, "br0"))
+		return 15;
+}
+
+int getBridgeMaxAge(char *br)
+{
+	char *next, *wordlist;
+	wordlist = nvram_safe_get("bridges");
+	foreach(word, wordlist, next) {
+		GETENTRYBYIDX(bridge, word, 0);
+		GETENTRYBYIDX(age, word, 5);
+		if (strcmp(bridge, br))
+			continue;
+		if (!age)
+			age = "20";
+		return atoi(age);
+	}
+	if (!strcmp(br, "br0"))
+		return 20;
+}
+
 unsigned char *get_ether_hwaddr(const char *name, unsigned char *hwaddr)
 {
 	struct ifreq ifr;
