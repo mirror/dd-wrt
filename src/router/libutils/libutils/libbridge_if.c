@@ -318,6 +318,17 @@ int br_set_bridge_forward_delay(const char *br, int sec)
 	return br_set(br, "forward_delay", __tv_to_jiffies(&tv), BRCTL_SET_BRIDGE_FORWARD_DELAY);
 }
 
+int br_set_bridge_max_age(const char *br, int sec)
+{
+	if (!ifexists(br))
+		return -1;
+	struct timeval tv;
+
+	tv.tv_sec = sec;
+	tv.tv_usec = 0;
+	return br_set(br, "max_age", __tv_to_jiffies(&tv), BRCTL_SET_BRIDGE_MAX_AGE);
+}
+
 int br_set_stp_state(const char *br, int stp_state)
 {
 	if (!ifexists(br))
