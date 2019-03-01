@@ -7,12 +7,12 @@
 #	This file does not include a TLS listener; see abfab-tls for a simple
 #	example of a RADSEC listener for ABFAB.
 #
-#	$Id: e0224864ec1d81405f57a6d872f86c8a7958fdab $
+#	$Id: ff5608e4901a3046e1cfe4fc3de6b167a82db5f6 $
 #
 
 server abfab-idp {
 authorize {
-        psk_authorize
+	psk_authorize
 	abfab_client_check
 	filter_username
 	preprocess
@@ -29,10 +29,19 @@ authorize {
 	#  cui below and set "add_cui = yes" for these clients in clients.conf
 #	cui
 
-	suffix {
-	        updated = 1
-		noop = reject
-        }
+	#
+	# Do RFC 7542 bang path routing. If you want to only do standard
+	# RADIUS NAI routing, comment out the below line.
+	rfc7542
+
+	#  Standard RADIUS NAI routing
+	if (!updated) {
+		suffix {
+			updated = 1
+			noop = reject
+		}
+	}
+
 	eap {
 		ok = return
 	}
@@ -61,6 +70,15 @@ post-auth {
 	#  The session-state attributes are automatically deleted after
 	#  an Access-Reject or Access-Accept is sent.
 	#
+	#  If both session-state and reply contain a User-Name attribute, remove
+	#  the one in the reply if it is just a copy of the one in the request, so
+	#  we don't end up with two User-Name attributes.
+
+	if (session-state:User-Name && reply:User-Name && request:User-Name && (reply:User-Name == request:User-Name)) {
+		update reply {
+			User-Name !* ANY
+		}
+	}
 	update {
 		&reply: += &session-state:
 	}

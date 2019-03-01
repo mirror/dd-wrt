@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: a2ffe6f9d10af1f4036fe2c4bd7154f4870b249a $
+ * $Id: 41098972b15ae366f8f7ccff22d10c5e102ea951 $
  * @file rlm_attr_filter.c
  * @brief Filter the contents of a list, allowing only certain attributes.
  *
  * @copyright (C) 2001,2006 The FreeRADIUS server project
  * @copyright (C) 2001 Chris Parker <cparker@starnetusa.net>
  */
-RCSID("$Id: a2ffe6f9d10af1f4036fe2c4bd7154f4870b249a $")
+RCSID("$Id: 41098972b15ae366f8f7ccff22d10c5e102ea951 $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/modules.h>
@@ -260,7 +260,9 @@ static rlm_rcode_t CC_HINT(nonnull(1,2)) attr_filter_common(void *instance, REQU
 				 *  Vendor-Specific is special, and matches any VSA if the
 				 *  comparison is always true.
 				 */
-				if ((check_item->da->attr == PW_VENDOR_SPECIFIC) && (input_item->da->vendor != 0) &&
+				if ((check_item->da->vendor == 0) &&
+				    (check_item->da->attr == PW_VENDOR_SPECIFIC) &&
+				    (input_item->da->vendor != 0) &&
 				    (check_item->op == T_OP_CMP_TRUE)) {
 					pass++;
 					continue;

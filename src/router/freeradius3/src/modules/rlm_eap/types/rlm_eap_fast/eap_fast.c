@@ -1,7 +1,7 @@
 /*
  * eap_fast.c  contains the interfaces that are called from the main handler
  *
- * Version:     $Id: 44e6bce7ad10c8153802ab92890c35f5448b0ec5 $
+ * Version:     $Id: fa9c58f3c33517576bc8a648209c560e96ac5b3e $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  *   Copyright 2016 The FreeRADIUS server project
  */
 
-RCSID("$Id: 44e6bce7ad10c8153802ab92890c35f5448b0ec5 $")
+RCSID("$Id: fa9c58f3c33517576bc8a648209c560e96ac5b3e $")
 
 #include "eap_fast.h"
 #include "eap_fast_crypto.h"
@@ -769,6 +769,13 @@ static rlm_rcode_t CC_HINT(nonnull) process_reply( eap_handler_t *eap_session,
 
 		for (vp = fr_cursor_init(&cursor, &reply->vps); vp; vp = fr_cursor_next(&cursor)) {
 			if (vp->da->vendor != VENDORPEC_MICROSOFT) continue;
+
+			if (vp->vp_length != 16) {
+				REDEBUG("Found CHAP-Challenge with incorrect length.  Expected %u, got %zu",
+					16, vp->vp_length);
+				rcode = RLM_MODULE_INVALID;
+				break;
+			}
 
 			/* FIXME must be a better way to capture/re-derive this later for ISK */
 			switch (vp->da->attr) {

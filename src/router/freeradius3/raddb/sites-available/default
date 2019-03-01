@@ -11,7 +11,7 @@
 #	the "inner-tunnel" virtual server.  You will likely have to edit
 #	that, too, for authentication to work.
 #
-#	$Id: 3616050e7625eb6b5e2ba44782fcb737b2ae6136 $
+#	$Id: f67e4484c288bcf83c5fcd09d14d24f54d946c7c $
 #
 ######################################################################
 #
@@ -150,6 +150,17 @@ listen {
 	#  See clients.conf for the configuration of "per_socket_clients".
 	#
 #	clients = per_socket_clients
+
+	#
+	#  Set the default UDP receive buffer size.  In most cases,
+	#  the default values set by the kernel are fine.  However, in
+	#  some cases the NASes will send large packets, and many of
+	#  them at a time.  It is then possible to overflow the
+	#  buffer, causing the kernel to drop packets before they
+	#  reach FreeRADIUS.  Increasing the size of the buffer will
+	#  avoid these packet drops.
+	#
+#	recv_buff = 65536
 
 	#
 	#  Connection limiting for sockets with "proto = tcp".
@@ -707,6 +718,15 @@ session {
 	#  The session-state attributes are automatically deleted after
 	#  an Access-Reject or Access-Accept is sent.
 	#
+	#  If both session-state and reply contain a User-Name attribute, remove
+	#  the one in the reply if it is just a copy of the one in the request, so
+	#  we don't end up with two User-Name attributes.
+
+#	if (session-state:User-Name && reply:User-Name && request:User-Name && (reply:User-Name == request:User-Name)) {
+#		update reply {
+#			&User-Name !* ANY
+#		}
+#	}
 #	update {
 #		&reply: += &session-state:
 #	}
@@ -718,6 +738,14 @@ session {
 	#  Create the CUI value and add the attribute to Access-Accept.
 	#  Uncomment the line below if *returning* the CUI.
 #	cui
+
+	#  Create empty accounting session to make simultaneous check
+	#  more robust. See the accounting queries configuration in
+	#  raddb/mods-config/sql/main/*/queries.conf for details.
+	#
+	#  The "sql_session_start" policy is defined in
+	#  raddb/policy.d/accounting.  See that file for more details.
+#	sql_session_start
 
 	#
 	#  If you want to have a log of authentication replies,

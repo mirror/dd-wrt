@@ -1,7 +1,8 @@
 # -*- text -*-
-# Copyright (C) 2015 The FreeRADIUS Server project and contributors
+# Copyright (C) 2019 The FreeRADIUS Server project and contributors
+# This work is licensed under CC-BY version 4.0 https://creativecommons.org/licenses/by/4.0
 #
-# Version $Id: 39d8a65caf85f02e0116e77f0ddb7911873f6c32 $
+# Version $Id: 720c64027bcdab65670d33d3d1fe59d035e48ab2 $
 #
 #	DO NOT EDIT THE FILES IN THIS DIRECTORY
 #
@@ -115,6 +116,7 @@ $INCLUDE dictionary.rfc7155
 $INCLUDE dictionary.rfc7268
 $INCLUDE dictionary.rfc7499
 $INCLUDE dictionary.rfc7930
+$INCLUDE dictionary.rfc8045
 
 #
 #	Mostly values which have been allocated by IANA under
@@ -146,6 +148,7 @@ $INCLUDE dictionary.aruba
 $INCLUDE dictionary.azaire
 $INCLUDE dictionary.ascend
 $INCLUDE dictionary.bay
+$INCLUDE dictionary.bigswitch
 $INCLUDE dictionary.bintec
 $INCLUDE dictionary.bluecoat
 $INCLUDE dictionary.boingo
@@ -202,6 +205,7 @@ $INCLUDE dictionary.hillstone
 $INCLUDE dictionary.hp
 $INCLUDE dictionary.huawei
 $INCLUDE dictionary.iea
+$INCLUDE dictionary.infinera
 $INCLUDE dictionary.infonet
 $INCLUDE dictionary.issanni
 $INCLUDE dictionary.itk
@@ -281,6 +285,7 @@ $INCLUDE dictionary.unix
 $INCLUDE dictionary.usr
 $INCLUDE dictionary.utstarcom
 $INCLUDE dictionary.valemount
+$INCLUDE dictionary.verizon
 $INCLUDE dictionary.versanet
 $INCLUDE dictionary.waverider
 $INCLUDE dictionary.walabi

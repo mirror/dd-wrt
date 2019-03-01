@@ -1,10 +1,12 @@
 # -*- text -*-
-# Copyright (C) 2015 The FreeRADIUS Server project and contributors
+# Copyright (C) 2019 The FreeRADIUS Server project and contributors
+# This work is licensed under CC-BY version 4.0 https://creativecommons.org/licenses/by/4.0
+#
 ##############################################################################
 #
 #	From yqsi@hillstonenet.com 2015/11/2
 #
-#	$Id: 15e1eaa23d37d76d752af113fc0a25a88483cf47 $
+#	$Id: b1cf2e2b41345d832ff58581dc33b3b0e90341b4 $
 #
 ##############################################################################
 

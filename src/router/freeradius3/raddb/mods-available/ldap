@@ -1,6 +1,6 @@
 # -*- text -*-
 #
-#  $Id: b1cb352d0023bc691cf5114b772f4980fddbb213 $
+#  $Id: b2f17885952381c8533d1e407b32132282001ddc $
 
 #
 #  Lightweight Directory Access Protocol (LDAP)
@@ -31,6 +31,22 @@ ldap {
 	#  Unless overridden in another section, the dn from which all
 	#  searches will start from.
 	base_dn = 'dc=example,dc=org'
+
+	#
+	#  You can run the 'ldapsearch' command line tool using the
+	#  parameters from this module's configuration.
+	#
+	#    ldapsearch -D ${identity} -w ${password} -h ${server}  -b 'CN=user,${base_dn}'
+	#
+	#  That will give you the LDAP information for 'user'.
+	#
+	#  Group membership can be queried by using the above "ldapsearch" string,
+	#  and adding "memberof" qualifiers.  For ActiveDirectory, use:
+	#
+	#    ldapsearch ... '(&(objectClass=user)(sAMAccountName=user)(memberof=CN=group,${base_dn}))'
+	#
+	#  Where 'user' is the user as above, and 'group' is the group you are querying for.
+	#
 
 	#
 	#  SASL parameters to use for admin binds
@@ -146,6 +162,20 @@ ldap {
 	#    }
 
 	#
+	#  Name of the attribute that contains the user DN.
+	#  The default name is LDAP-UserDn.
+	#
+	#  If you have multiple LDAP instances, you should
+	#  change this configuration item to:
+	#
+	#	${.:instance}-LDAP-UserDn
+	#
+	#  That change allows the modules to set their own
+	#  User DN, and to not conflict with each other.
+	#
+	user_dn = "LDAP-UserDn"
+
+	#
 	#  User object identification.
 	#
 	user {
@@ -234,6 +264,9 @@ ldap {
 
 		#  Filter for group objects, should match all available
 		#  group objects a user might be a member of.
+		#
+		#  If using Active Directory you are likely to need "group"
+		#  instead of "posixGroup".
 		filter = '(objectClass=posixGroup)'
 
 		# Search scope, may be 'base', 'one', sub' or 'children'
@@ -244,17 +277,28 @@ ldap {
 		#  names.
 #		name_attribute = cn
 
-		#  Filter to find group objects a user is a member of.
+		#  Filter to find all group objects a user is a member of.
 		#  That is, group objects with attributes that
 		#  identify members (the inverse of membership_attribute).
-#		membership_filter = "(|(member=%{control:Ldap-UserDn})(memberUid=%{%{Stripped-User-Name}:-%{User-Name}}))"
+		#
+		#  Note that this configuration references the "user_dn"
+		#  configuration defined above.
+		#
+#		membership_filter = "(|(member=%{control:${..user_dn}})(memberUid=%{%{Stripped-User-Name}:-%{User-Name}}))"
 
-		#  The attribute in user objects which contain the names
+		#  The attribute, in user objects, which contain the names
 		#  or DNs of groups a user is a member of.
 		#
 		#  Unless a conversion between group name and group DN is
 		#  needed, there's no requirement for the group objects
 		#  referenced to actually exist.
+		#
+		#  If the LDAP server does not support the "memberOf"
+		#  attribute (or equivalent), then you will need to use the
+		#  membership_filter option above instead. If you can't see
+		#  the memberOf attribute then it is also possible that the
+		#  LDAP bind user does not have the correct permissions to
+		#  view it.
 		membership_attribute = 'memberOf'
 
 		#  If cacheable_name or cacheable_dn are enabled,

@@ -31,7 +31,7 @@
  * license (including the GNU public license).
  */
 
-RCSID("$Id: 3c043f728460d7e1fd8b29fb4211551f6fb4c490 $")
+RCSID("$Id: db8d619ca134aaed25dbf79e8d41c5b1c11e0424 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include "rlm_eap_pwd.h"
@@ -278,7 +278,6 @@ static int mod_process(void *arg, eap_handler_t *handler)
 	uint16_t offset;
 	uint8_t exch, *in, *ptr, msk[MSK_EMSK_LEN], emsk[MSK_EMSK_LEN];
 	uint8_t peer_confirm[SHA256_DIGEST_LENGTH];
-	BIGNUM *x = NULL, *y = NULL;
 
 	if (((eap_ds = handler->eap_ds) == NULL) || !inst) return 0;
 
@@ -380,6 +379,9 @@ static int mod_process(void *arg, eap_handler_t *handler)
 
 	switch (session->state) {
 	case PWD_STATE_ID_REQ:
+	{
+		BIGNUM	*x = NULL, *y = NULL;
+
 		if (EAP_PWD_GET_EXCHANGE(hdr) != EAP_PWD_EXCH_ID) {
 			RDEBUG2("pwd exchange is incorrect: not ID");
 			return 0;
@@ -496,10 +498,8 @@ static int mod_process(void *arg, eap_handler_t *handler)
 			return 0;
 		}
 
-		if (((x = BN_new()) == NULL) || ((y = BN_new()) == NULL)) {
-			DEBUG2("server point allocation failed");
-			return 0;
-		}
+		MEM(x = BN_new());
+		MEM(y = BN_new());
 
 		/*
 		 * element is a point, get both coordinates: x and y
@@ -524,10 +524,12 @@ static int mod_process(void *arg, eap_handler_t *handler)
 		ptr = session->out;
 		offset = BN_num_bytes(session->prime) - BN_num_bytes(x);
 		BN_bn2bin(x, ptr + offset);
+		BN_clear_free(x);
 
 		ptr += BN_num_bytes(session->prime);
 		offset = BN_num_bytes(session->prime) - BN_num_bytes(y);
 		BN_bn2bin(y, ptr + offset);
+		BN_clear_free(y);
 
 		ptr += BN_num_bytes(session->prime);
 		offset = BN_num_bytes(session->order) - BN_num_bytes(session->my_scalar);
@@ -535,6 +537,7 @@ static int mod_process(void *arg, eap_handler_t *handler)
 
 		session->state = PWD_STATE_COMMIT;
 		ret = send_pwd_request(session, eap_ds);
+	}
 		break;
 
 		case PWD_STATE_COMMIT:

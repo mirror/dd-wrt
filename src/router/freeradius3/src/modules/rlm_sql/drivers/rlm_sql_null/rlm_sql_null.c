@@ -1,7 +1,7 @@
 /*
  * sql_null.c		SQL Module
  *
- * Version:	$Id: ee450d16b77f31b6afcd3b42fd3ec20a8db2e053 $
+ * Version:	$Id: 8f3a8f05fe1732c2edb3a1d468891ffd61e328c3 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  * Copyright 2012  Alan DeKok <aland@freeradius.org>
  */
 
-RCSID("$Id: ee450d16b77f31b6afcd3b42fd3ec20a8db2e053 $")
+RCSID("$Id: 8f3a8f05fe1732c2edb3a1d468891ffd61e328c3 $")
 
 #include <freeradius-devel/radiusd.h>
 
@@ -52,6 +52,12 @@ static int sql_num_fields(UNUSED rlm_sql_handle_t * handle, UNUSED rlm_sql_confi
 static sql_rcode_t sql_select_query(UNUSED rlm_sql_handle_t *handle,
 				    UNUSED rlm_sql_config_t *config, UNUSED char const *query)
 {
+	if (rad_debug_lvl >= L_DBG_LVL_1) {
+		radlog(L_DBG | L_WARN, "The 'rlm_sql_null' driver CANNOT be used for SELECTS.");
+		radlog(L_DBG | L_WARN, "Please update the 'sql' module configuration to use a real database.");
+		radlog(L_DBG | L_WARN, "Set 'driver = ...' to the database you want to use.");
+	}
+
 	return 0;
 }
 

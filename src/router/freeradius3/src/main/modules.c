@@ -1,7 +1,7 @@
 /*
  * modules.c	Radius module support.
  *
- * Version:	$Id: 749c07ebcd9fe9f6adea0c7957fcfd5aca64fb2f $
+ * Version:	$Id: 0938415537369081ef9bfa8de62341e49dec1f7a $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2000  Alan Curry <pacman@world.std.com>
  */
 
-RCSID("$Id: 749c07ebcd9fe9f6adea0c7957fcfd5aca64fb2f $")
+RCSID("$Id: 0938415537369081ef9bfa8de62341e49dec1f7a $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modpriv.h>
@@ -168,6 +168,9 @@ fr_dlhandle fr_dlopenext(char const *name)
 	} else
 #endif
 		flags |= RTLD_LOCAL;
+#ifdef RTLD_DEEPBIND
+		flags |= RTLD_DEEPBIND;
+#endif
 
 #ifndef NDEBUG
 	/*

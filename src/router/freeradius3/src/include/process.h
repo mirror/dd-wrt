@@ -4,7 +4,7 @@
 /*
  * process.h	State machine for a server to process packets.
  *
- * Version:	$Id: d39ddba93fc4269b01ab8c192bdc09a9083212a7 $
+ * Version:	$Id: 8c3c7275e0e9cf189565c1c0eef8ed65677e7b4d $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,13 +24,17 @@
  * Copyright 2012 Alan DeKok <aland@deployingradius.com>
  */
 
-RCSIDH(process_h, "$Id: d39ddba93fc4269b01ab8c192bdc09a9083212a7 $")
+RCSIDH(process_h, "$Id: 8c3c7275e0e9cf189565c1c0eef8ed65677e7b4d $")
 
 #include <freeradius-devel/clients.h>
 #include <freeradius-devel/listen.h>
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#ifdef HAVE_SYSTEMD_WATCHDOG
+extern struct timeval sd_watchdog_interval;
 #endif
 
 typedef enum fr_state_action_t {	/* server action */
@@ -42,6 +46,7 @@ typedef enum fr_state_action_t {	/* server action */
 #ifdef WITH_PROXY
 	FR_ACTION_PROXY_REPLY,
 #endif
+	FR_ACTION_CANCELLED,
 } fr_state_action_t;
 
 /*

@@ -4,7 +4,7 @@
 #		NOTE: This top-level Makefile must not
 #		use GNU-make extensions. The lower ones can.
 #
-# Version:	$Id: bab88499db58253d148599ec5e8e872d30ba1cd1 $
+# Version:	$Id: 2bda54af3597555a87a063e89e883b248107ab41 $
 #
 
 #
@@ -317,10 +317,12 @@ docker-push: docker
 .PHONY: docker-tag-latest
 docker-tag-latest: docker
 	docker tag freeradius/freeradius-server:$(RADIUSD_VERSION_STRING) freeradius/freeradius-server:latest
+	docker tag freeradius/freeradius-server:$(RADIUSD_VERSION_STRING)-alpine freeradius/freeradius-server:latest-alpine
 
 .PHONY: docker-push-latest
 docker-push-latest: docker-push docker-tag-latest
 	docker push freeradius/freeradius-server:latest
+	docker push freeradius/freeradius-server:latest-alpine
 
 .PHONY: docker-publish
 docker-publish: docker-push-latest
@@ -330,6 +332,7 @@ docker-publish: docker-push-latest
 #
 .PHONY: deb
 deb:
+	fakeroot debian/rules debian/control #clean
 	fakeroot dpkg-buildpackage -b -uc
 
 # Developer checks

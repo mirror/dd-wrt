@@ -26,7 +26,7 @@ Many sites run multiple radius servers; at least one primary and one
 backup server. When the primary goes down, most NASes detect that and
 switch to the backup server.
 
-That will cause your accounting packets to go the the backup server -
+That will cause your accounting packets to go to the backup server -
 and some NASes don't even switch back to the primary server when it
 comes back up.
 
@@ -134,7 +134,7 @@ running as radrelay.  Please edit \fBradrelay.conf\fP.
 The original "radrelay" program was written by Miquel van Smoorenburg
 for the Cistron radius project, and ported to FreeRADIUS by Simon
 Ekstrand.  The "radsqlrelay" was written by Kostas Kalavras.  It was
-never released as part of an offical FreeRADIUS release, but served as
+never released as part of an official FreeRADIUS release, but served as
 a basis for the design of this implementation.
 .PP
 .SH FILES

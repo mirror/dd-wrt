@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: fe0bfb1deb658bf050a1a17eb52137227c75cf93 $
+ * $Id: 83bdfe8e9cff3a9ce8002b46afe069b6f7604231 $
  * @file rlm_sqlippool.c
  * @brief Allocates an IP address / prefix from pools stored in SQL.
  *
@@ -23,7 +23,7 @@
  * @copyright 2006  The FreeRADIUS server project
  * @copyright 2006  Suntel Communications
  */
-RCSID("$Id: fe0bfb1deb658bf050a1a17eb52137227c75cf93 $")
+RCSID("$Id: 83bdfe8e9cff3a9ce8002b46afe069b6f7604231 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -44,16 +44,18 @@ typedef struct rlm_sqlippool_t {
 
 	rlm_sql_t	*sql_inst;
 
-	char const	*pool_name;
+	char const	*pool_name;		//!< Name of the attribute in the check VPS for which the value will be used as key
 	bool		ipv6;			//!< Whether or not we do IPv6 pools.
 	bool		allow_duplicates;	//!< assign even if it already exists
 	char const	*attribute_name;	//!< name of the IP address attribute
 
 	DICT_ATTR const *framed_ip_address; 	//!< the attribute for IP address allocation
+	DICT_ATTR const *pool_attribute; 	//!< the attribute corresponding to the pool_name
 
 	time_t		last_clear;		//!< So we only do it once a second.
 	char const	*allocate_begin;	//!< SQL query to begin.
 	char const	*allocate_clear;	//!< SQL query to clear an IP.
+	uint32_t	allocate_clear_timeout; //!< Number of second between two allocate_clear SQL query
 	char const	*allocate_find;		//!< SQL query to find an unused IP.
 	char const	*allocate_update;	//!< SQL query to mark an IP as used.
 	char const	*allocate_commit;	//!< SQL query to commit.
@@ -123,7 +125,7 @@ static CONF_PARSER module_config[] = {
 	{ "lease_duration", FR_CONF_OFFSET(PW_TYPE_INTEGER, rlm_sqlippool_t, lease_duration), "86400" },
 
 	{ "pool-name", FR_CONF_OFFSET(PW_TYPE_STRING | PW_TYPE_DEPRECATED, rlm_sqlippool_t, pool_name), NULL },
-	{ "pool_name", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_sqlippool_t, pool_name), "" },
+	{ "pool_name", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_sqlippool_t, pool_name), "Pool-Name" },
 
 	{ "default-pool", FR_CONF_OFFSET(PW_TYPE_STRING | PW_TYPE_DEPRECATED, rlm_sqlippool_t, defaultpool), NULL },
 	{ "default_pool", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_sqlippool_t, defaultpool), "main_pool" },
@@ -138,6 +140,8 @@ static CONF_PARSER module_config[] = {
 
 	{ "allocate-clear", FR_CONF_OFFSET(PW_TYPE_STRING | PW_TYPE_XLAT | PW_TYPE_DEPRECATED, rlm_sqlippool_t, allocate_clear), NULL },
 	{ "allocate_clear", FR_CONF_OFFSET(PW_TYPE_STRING | PW_TYPE_XLAT , rlm_sqlippool_t, allocate_clear), ""  },
+
+	{ "allocate_clear_timeout", FR_CONF_OFFSET(PW_TYPE_INTEGER, rlm_sqlippool_t, allocate_clear_timeout), "1" },
 
 	{ "allocate-find", FR_CONF_OFFSET(PW_TYPE_STRING | PW_TYPE_XLAT | PW_TYPE_DEPRECATED, rlm_sqlippool_t, allocate_find), NULL },
 	{ "allocate_find", FR_CONF_OFFSET(PW_TYPE_STRING | PW_TYPE_XLAT | PW_TYPE_REQUIRED, rlm_sqlippool_t, allocate_find), ""  },
@@ -322,6 +326,11 @@ static int sqlippool_command(char const *fmt, rlm_sql_handle_t **handle,
 	}
 	talloc_free(expanded);
 
+	/*
+	 *	No handle, we can't continue.
+	 */
+	if (!*handle) return -1;
+
 	if (*handle) (data->sql_inst->module->sql_finish_query)(*handle, data->sql_inst->config);
 
 	return 0;
@@ -410,20 +419,30 @@ static int mod_instantiate(CONF_SECTION *conf, void *instance)
 {
 	module_instance_t *sql_inst;
 	rlm_sqlippool_t *inst = instance;
-	char const *pool_name = NULL;
 
-	pool_name = cf_section_name2(conf);
-	if (pool_name != NULL) {
-		inst->pool_name = talloc_typed_strdup(inst, pool_name);
-	} else {
-		inst->pool_name = talloc_typed_strdup(inst, "ippool");
-	}
 	sql_inst = module_instantiate(cf_section_find("modules"),
 					inst->sql_instance_name);
 	if (!sql_inst) {
 		cf_log_err_cs(conf, "failed to find sql instance named %s",
 			   inst->sql_instance_name);
 		return -1;
+	}
+
+	if (inst->pool_name) {
+		DICT_ATTR const *da;
+
+		da = dict_attrbyname(inst->pool_name);
+		if (!da) {
+			cf_log_err_cs(conf, "Unknown attribute 'pool_name = %s'", inst->pool_name);
+			return -1;
+		}
+
+		if (da->type != PW_TYPE_STRING) {
+			cf_log_err_cs(conf, "Cannot use non-string attributes for 'pool_name = %s'", inst->pool_name);
+			return -1;
+		}
+
+		inst->pool_attribute = da;
 	}
 
 	if (inst->attribute_name) {
@@ -469,6 +488,11 @@ static int mod_instantiate(CONF_SECTION *conf, void *instance)
 		return -1;
 	}
 
+	if (inst->allocate_clear) {
+		FR_INTEGER_BOUND_CHECK("allocate_clear_timeout", inst->allocate_clear_timeout, >, 1);
+		FR_INTEGER_BOUND_CHECK("allocate_clear_timeout", inst->allocate_clear_timeout, <=, 2*86400);
+	}
+	
 	inst->sql_inst = (rlm_sql_t *) sql_inst->insthandle;
 	return 0;
 }
@@ -507,6 +531,7 @@ static rlm_rcode_t CC_HINT(nonnull) mod_post_auth(void *instance, REQUEST *reque
 	VALUE_PAIR *vp;
 	rlm_sql_handle_t *handle;
 	time_t now;
+	uint32_t diff_time;
 
 	/*
 	 *	If there is already an attribute in the reply do nothing
@@ -517,8 +542,8 @@ static rlm_rcode_t CC_HINT(nonnull) mod_post_auth(void *instance, REQUEST *reque
 		return do_logging(request, inst->log_exists, RLM_MODULE_NOOP);
 	}
 
-	if (fr_pair_find_by_num(request->config, PW_POOL_NAME, 0, TAG_ANY) == NULL) {
-		RDEBUG("No Pool-Name defined");
+	if (fr_pair_find_by_num(request->config, inst->pool_attribute->attr, inst->pool_attribute->vendor, TAG_ANY) == NULL) {
+		RDEBUG("No %s defined", inst->pool_name);
 
 		return do_logging(request, inst->log_nopool, RLM_MODULE_NOOP);
 	}
@@ -538,10 +563,14 @@ static rlm_rcode_t CC_HINT(nonnull) mod_post_auth(void *instance, REQUEST *reque
 	 *	race conditions for the check, but so what.  The
 	 *	actual work is protected by a transaction.  The idea
 	 *	here is that if we're allocating 100 IPs a second,
-	 *	we're only do 1 CLEAR per second.
+	 *	we're only do 1 CLEAR per allocate_clear_timeout.
+	 *
+	 *	This will avoid having several queries to deadlock and blocking all
+	 *	the sqlippool module.
 	 */
 	now = time(NULL);
-	if (inst->last_clear < now) {
+	diff_time = difftime(now, inst->last_clear);
+	if (inst->allocate_clear && *inst->allocate_clear && (diff_time >= inst->allocate_clear_timeout)) {
 		inst->last_clear = now;
 
 		DO_PART(allocate_begin);
@@ -755,7 +784,7 @@ static rlm_rcode_t CC_HINT(nonnull) mod_accounting(void *instance, REQUEST *requ
 		break;
 	}
 
-	fr_connection_release(inst->sql_inst->pool, handle);
+	if (handle) fr_connection_release(inst->sql_inst->pool, handle);
 
 	return rcode;
 }

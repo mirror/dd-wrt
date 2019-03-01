@@ -16,14 +16,14 @@
 #ifndef LIBRADIUS_H
 #define LIBRADIUS_H
 /*
- * $Id: c8fa97518814848062d9d392f84639df361ec962 $
+ * $Id: ce2f713de184e08ba2e74624896772e55112ce23 $
  *
  * @file libradius.h
  * @brief Structures and prototypes for the radius library.
  *
  * @copyright 1999-2014 The FreeRADIUS server project
  */
-RCSIDH(libradius_h, "$Id: c8fa97518814848062d9d392f84639df361ec962 $")
+RCSIDH(libradius_h, "$Id: ce2f713de184e08ba2e74624896772e55112ce23 $")
 
 /*
  *  Compiler hinting macros.  Included here for 3rd party consumers
@@ -112,7 +112,7 @@ typedef void (*sig_t)(int);
  *  to the macro below when dictionaries are talloced.
  */
 #  define VERIFY_VP(_x)		fr_pair_verify(__FILE__,  __LINE__, _x)
-#  define VERIFY_LIST(_x)	fr_pair_list_verify(__FILE__,  __LINE__, NULL, _x)
+#  define VERIFY_LIST(_x, _name)	fr_pair_list_verify(__FILE__,  __LINE__, NULL, _x, _name)
 #  define VERIFY_PACKET(_x)	(void) talloc_get_type_abort(_x, RADIUS_PACKET)
 #else
 /*
@@ -121,7 +121,7 @@ typedef void (*sig_t)(int);
  *  so we can add some sneaky soft asserts.
  */
 #  define VERIFY_VP(_x)		fr_assert(_x)
-#  define VERIFY_LIST(_x)	fr_assert(_x)
+#  define VERIFY_LIST(_x, _name) fr_assert(_x)
 #  define VERIFY_PACKET(_x)	fr_assert(_x)
 #endif
 
@@ -749,6 +749,10 @@ size_t		fr_prints_uint128(char *out, size_t outlen, uint128_t const num);
 int		fr_get_time(char const *date_str, time_t *date);
 int8_t		fr_pointer_cmp(void const *a, void const *b);
 void		fr_quick_sort(void const *to_sort[], int min_idx, int max_idx, fr_cmp_t cmp);
+
+void 		fr_timeval_from_ms(struct timeval *out, uint64_t ms);
+void 		fr_timeval_from_usec(struct timeval *out, uint64_t usec);
+
 /*
  *	Define TALLOC_DEBUG to check overflows with talloc.
  *	we can't use valgrind, because the memory used by
@@ -843,7 +847,7 @@ void		fr_fault_log(char const *msg, ...) CC_HINT(format (printf, 1, 2));
 
 #  ifdef WITH_VERIFY_PTR
 void		fr_pair_verify(char const *file, int line, VALUE_PAIR const *vp);
-void		fr_pair_list_verify(char const *file, int line, TALLOC_CTX *expected, VALUE_PAIR *vps);
+void		fr_pair_list_verify(char const *file, int line, TALLOC_CTX *expected, VALUE_PAIR *vps, char const *name);
 #  endif
 
 bool		fr_assert_cond(char const *file, int line, char const *expr, bool cond);

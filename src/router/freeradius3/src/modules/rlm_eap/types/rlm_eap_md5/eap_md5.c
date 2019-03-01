@@ -1,7 +1,7 @@
 /*
  * eap_md5.c  EAP MD5 functionality.
  *
- * Version:     $Id: 56baac0b41c54d346d0cbc60af1c79588e4ef26b $
+ * Version:     $Id: e8acb5ce977be5758a6cc9e67d6813d57804dd08 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@
  *
  */
 
-RCSID("$Id: 56baac0b41c54d346d0cbc60af1c79588e4ef26b $")
+RCSID("$Id: e8acb5ce977be5758a6cc9e67d6813d57804dd08 $")
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -167,6 +167,7 @@ int eapmd5_verify(MD5_PACKET *packet, VALUE_PAIR* password,
 	 *	The length of the response is always 16 for MD5.
 	 */
 	if (rad_digest_cmp(digest, packet->value, 16) != 0) {
+		DEBUG("EAP-MD5 digests do not match.");
 		return 0;
 	}
 

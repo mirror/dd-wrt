@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: 572f6f619bac504f854502da3ace9ff24d43920d $
+ * $Id: a51274cb04042701a19ba1bca11a688cc1ad7c62 $
  * @file rlm_expr.c
  * @brief Register many xlat expansions including the expr expansion.
  *
  * @copyright 2001,2006  The FreeRADIUS server project
  * @copyright 2002  Alan DeKok <aland@ox.org>
  */
-RCSID("$Id: 572f6f619bac504f854502da3ace9ff24d43920d $")
+RCSID("$Id: a51274cb04042701a19ba1bca11a688cc1ad7c62 $")
 USES_APPLE_DEPRECATED_API
 
 #include <freeradius-devel/radiusd.h>
@@ -34,6 +34,10 @@ USES_APPLE_DEPRECATED_API
 
 #ifdef HAVE_OPENSSL_EVP_H
 #  include <openssl/evp.h>
+#endif
+
+#ifdef HAVE_CRYPT_H
+#  include <crypt.h>
 #endif
 
 #include <ctype.h>
@@ -107,24 +111,30 @@ static int64_t fr_pow(int64_t base, int64_t exp)
 		if (exp & 1) result *= base;
 		exp >>= 1;
 		base *= base;
+		/* FALL-THROUGH */
 	case 5:
 		if (exp & 1) result *= base;
 		exp >>= 1;
 		base *= base;
+		/* FALL-THROUGH */
 	case 4:
 		if (exp & 1) result *= base;
 		exp >>= 1;
 		base *= base;
+		/* FALL-THROUGH */
 	case 3:
 		if (exp & 1) result *= base;
 		exp >>= 1;
 		base *= base;
+		/* FALL-THROUGH */
 	case 2:
 		if (exp & 1) result *= base;
 		exp >>= 1;
 		base *= base;
+		/* FALL-THROUGH */
 	case 1:
 		if (exp & 1) result *= base;
+		/* FALL-THROUGH */
 	default:
 		return result;
 	}
@@ -285,6 +295,8 @@ static bool get_number(REQUEST *request, char const **string, int64_t *answer)
 		p++;
 		goto done;
 	}
+
+	while (isspace((int) *p)) p++;
 
 	if ((*p < '0') || (*p > '9')) {
 		RDEBUG2("Not a number at \"%s\"", p);
@@ -1150,6 +1162,91 @@ static ssize_t hmac_sha1_xlat(UNUSED void *instance, REQUEST *request,
 	return fr_bin2hex(out, digest, sizeof(digest));
 }
 
+/** Crypt a string or attribute.
+ *
+ * Example: "%{crypt:ab:foo}" == "abQ9KY.KfrYrc"
+ * Example: "%{crypt:$1$abcdefgh:foo}" == "$1$abcdefgh$XxzGe9Muun7wTYbZO4sdr0"
+ * Example: "%{crypt:$1$%{randstr:aaaaaaaa}:&User-Password}" -> "$1$Z9hrfzst$hRkQwmSUApr/r10kb/d3W0"
+ */
+#ifdef HAVE_CRYPT_R
+static ssize_t crypt_xlat(UNUSED void *instance, REQUEST *request,
+			  char const *fmt, char *out, size_t outlen)
+{
+	ssize_t inlen;
+	size_t len;
+	uint8_t const *salt;
+	uint8_t const *pass;
+	char *p;
+	struct crypt_data cdata;
+
+	cdata.initialized = 0;
+
+	/*
+	 *      DES passwords will be at least 13 chars long.
+	 */
+	if (outlen < 14) {
+		*out = '\0';
+		return 0;
+	}
+
+	p = strchr(fmt, ':');
+	if (!p) {
+		REDEBUG("No salt specified in crypt xlat");
+		return -1;
+	}
+
+	*p = '\0';
+	p++;
+
+	/*
+	 *	Get salt
+	 */
+	inlen = xlat_fmt_to_ref(&salt, request, fmt);
+	if (inlen < 0) {
+		return -1;
+	}
+
+	/*
+	 *	Get cleartext password
+	 */
+	inlen = xlat_fmt_to_ref(&pass, request, p);
+	if (inlen < 0) {
+		return -1;
+	}
+
+	p = crypt_r((const char *) pass, (const char *) salt, &cdata);
+
+	if (!p) {
+		switch (errno) {
+		case EINVAL:
+			REDEBUG("Crypt salt has the wrong format: '%s'", salt);
+			break;
+		default:
+			REDEBUG("Crypt error");
+		}
+		return -1;
+	}
+
+	len = strlen(p);
+	if (outlen < len) {
+		*out = '\0';
+		return 0;
+	}
+
+	strncpy(out, p, outlen);
+
+	return len;
+}
+#else
+static ssize_t crypt_xlat(UNUSED void *instance, REQUEST *request,
+			  UNUSED char const *fmt, UNUSED char *out,
+			  UNUSED size_t outlen)
+{
+	RERROR("Crypt not available at compile time (no 'crypt_r' support)");
+	return 0;
+}
+#endif
+
 /** Encode attributes as a series of string attribute/value pairs
  *
  * This is intended to serialize one or more attributes as a comma
@@ -1672,6 +1769,7 @@ static int mod_bootstrap(CONF_SECTION *conf, void *instance)
 #endif
 	xlat_register("hmacmd5", hmac_md5_xlat, NULL, inst);
 	xlat_register("hmacsha1", hmac_sha1_xlat, NULL, inst);
+	xlat_register("crypt", crypt_xlat, NULL, inst);
 	xlat_register("pairs", pairs_xlat, NULL, inst);
 
 	xlat_register("base64", base64_xlat, NULL, inst);

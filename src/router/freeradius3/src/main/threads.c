@@ -1,7 +1,7 @@
 /*
  * threads.c	request threading support
  *
- * Version:	$Id: 91050329d8f7ddf0e8dfb43870524671d251186f $
+ * Version:	$Id: cd0b912938eb7b433cf369a24e88fb3a473f03ad $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,11 +21,16 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 91050329d8f7ddf0e8dfb43870524671d251186f $")
+RCSID("$Id: cd0b912938eb7b433cf369a24e88fb3a473f03ad $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/process.h>
+
+#ifdef HAVE_STDATOMIC_H
+#include <freeradius-devel/atomic_queue.h>
+#endif
+
 #include <freeradius-devel/rad_assert.h>
 
 /*
@@ -80,6 +85,22 @@ USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #define NUM_FIFOS	       RAD_LISTEN_MAX
 
+#ifndef HAVE_STDALIGN_H
+#undef HAVE_STDATOMIC_H
+#endif
+
+#ifdef HAVE_STDATOMIC_H
+#define CAS_INCR(_x) do { uint32_t num; \
+			  num = load(_x); \
+			  if (cas_incr(_x, num)) break; \
+                     } while (true)
+
+#define CAS_DECR(_x) do { uint32_t num; \
+			  num = load(_x); \
+			  if (cas_decr(_x, num)) break; \
+                     } while (true)
+#endif
+
 /*
  *  A data structure which contains the information about
  *  the current thread.
@@ -126,10 +147,8 @@ typedef struct THREAD_POOL {
 	THREAD_HANDLE	*head;
 	THREAD_HANDLE	*tail;
 
-	uint32_t	active_threads;	/* protected by queue_mutex */
 	uint32_t	total_threads;
 
-	uint32_t	exited_threads;
 	uint32_t	max_thread_num;
 	uint32_t	start_threads;
 	uint32_t	max_threads;
@@ -165,14 +184,23 @@ typedef struct THREAD_POOL {
 	 */
 	sem_t		semaphore;
 
+	uint32_t	max_queue_size;
+
+#ifndef HAVE_STDATOMIC_H
 	/*
 	 *	To ensure only one thread at a time touches the queue.
 	 */
 	pthread_mutex_t	queue_mutex;
 
-	uint32_t	max_queue_size;
+	uint32_t	active_threads;	/* protected by queue_mutex */
+	uint32_t	exited_threads;
 	uint32_t	num_queued;
 	fr_fifo_t	*fifo[NUM_FIFOS];
+#else
+	atomic_uint32_t	  active_threads;
+	atomic_uint32_t	  exited_threads;
+	fr_atomic_queue_t *queue[NUM_FIFOS];
+#endif	/* STDATOMIC */
 #endif	/* WITH_GCD */
 } THREAD_POOL;
 
@@ -347,6 +375,8 @@ static void reap_children(void)
  */
 int request_enqueue(REQUEST *request)
 {
+	bool managed = false;
+
 	rad_assert(pool_initialized == true);
 
 	/*
@@ -354,12 +384,51 @@ int request_enqueue(REQUEST *request)
 	 *	in a while, OR if the thread pool appears to be full,
 	 *	go manage it.
 	 */
-	if ((last_cleaned < request->timestamp) ||
-	    (thread_pool.active_threads == thread_pool.total_threads) ||
-	    (thread_pool.exited_threads > 0)) {
+	if (last_cleaned < request->timestamp) {
 		thread_pool_manage(request->timestamp);
+		managed = true;
 	}
 
+#ifdef HAVE_STDATOMIC_H
+	if (!managed) {
+		uint32_t num;
+
+		num = load(thread_pool.active_threads);
+		if (num == thread_pool.total_threads) {
+			thread_pool_manage(request->timestamp);
+			managed = true;
+		}
+
+		if (!managed) {
+			num = load(thread_pool.exited_threads);
+			if (num > 0) {
+				thread_pool_manage(request->timestamp);
+			}
+		}
+	}
+
+	/*
+	 *	Use atomic queues where possible.  They're substantially faster than mutexes.
+	 */
+	request->component = "<core>";
+	request->module = "<queue>";
+	request->child_state = REQUEST_QUEUED;
+
+	/*
+	 *	Push the request onto the appropriate fifo for that
+	 */
+	if (!fr_atomic_queue_push(thread_pool.queue[request->priority], request)) {
+		ERROR("!!! ERROR !!! Failed inserting request %d into the queue", request->number);
+		return 0;
+	}
+
+#else  /* no atomic queues */
+
+	if (!managed && 
+	    ((thread_pool.active_threads == thread_pool.total_threads) ||
+	     (thread_pool.exited_threads > 0))) {
+		thread_pool_manage(request->timestamp);
+	}
 
 	pthread_mutex_lock(&thread_pool.queue_mutex);
 
@@ -454,6 +523,7 @@ int request_enqueue(REQUEST *request)
 				 "waiting to be processed.  Ignoring the new request.", thread_pool.num_queued));
 		return 0;
 	}
+
 	request->component = "<core>";
 	request->module = "<queue>";
 	request->child_state = REQUEST_QUEUED;
@@ -470,6 +540,7 @@ int request_enqueue(REQUEST *request)
 	thread_pool.num_queued++;
 
 	pthread_mutex_unlock(&thread_pool.queue_mutex);
+#endif
 
 	/*
 	 *	There's one more request in the queue.
@@ -494,12 +565,40 @@ static int request_dequeue(REQUEST **prequest)
 	static time_t last_complained = 0;
 	static time_t total_blocked = 0;
 	int num_blocked = 0;
-	RAD_LISTEN_TYPE i, start;
+#ifndef HAVE_STDATOMIC_H
+	RAD_LISTEN_TYPE start;
+#endif
+	RAD_LISTEN_TYPE i;
 	REQUEST *request = NULL;
 	reap_children();
 
 	rad_assert(pool_initialized == true);
 
+#ifdef HAVE_STDATOMIC_H
+retry:
+	for (i = 0; i < NUM_FIFOS; i++) {
+		if (!fr_atomic_queue_pop(thread_pool.queue[i], (void **) &request)) continue;
+
+		rad_assert(request != NULL);
+
+		VERIFY_REQUEST(request);
+
+		if (request->master_state != REQUEST_STOP_PROCESSING) {
+			break;
+		}
+
+		/*
+		 *	This entry was marked to be stopped.  Acknowledge it.
+		 */
+		request->child_state = REQUEST_DONE;
+	}
+
+	/*
+	 *	Popping might fail.  If so, return.
+	 */
+	if (!request) return 0;
+
+#else
 	pthread_mutex_lock(&thread_pool.queue_mutex);
 
 #ifdef WITH_STATS
@@ -530,7 +629,7 @@ static int request_dequeue(REQUEST **prequest)
 	 *	do N checks for one request de-queued, the old
 	 *	requests will be quickly cleared.
 	 */
-	for (i = 0; i < RAD_LISTEN_MAX; i++) {
+	for (i = 0; i < NUM_FIFOS; i++) {
 		request = fr_fifo_peek(thread_pool.fifo[i]);
 		if (!request) continue;
 
@@ -555,7 +654,7 @@ static int request_dequeue(REQUEST **prequest)
 	/*
 	 *	Pop results from the top of the queue
 	 */
-	for (i = start; i < RAD_LISTEN_MAX; i++) {
+	for (i = start; i < NUM_FIFOS; i++) {
 		request = fr_fifo_pop(thread_pool.fifo[i]);
 		if (request) {
 			VERIFY_REQUEST(request);
@@ -572,6 +671,8 @@ static int request_dequeue(REQUEST **prequest)
 
 	rad_assert(thread_pool.num_queued > 0);
 	thread_pool.num_queued--;
+#endif	/* HAVE_STD_ATOMIC_H */
+
 	*prequest = request;
 
 	rad_assert(*prequest != NULL);
@@ -598,7 +699,11 @@ static int request_dequeue(REQUEST **prequest)
 	/*
 	 *	The thread is currently processing a request.
 	 */
+#ifdef HAVE_STDATOMIC_H
+	CAS_INCR(thread_pool.active_threads);
+#else
 	thread_pool.active_threads++;
+#endif
 
 	blocked = time(NULL);
 	if (!request->proxy && (blocked - request->timestamp) > 5) {
@@ -615,7 +720,9 @@ static int request_dequeue(REQUEST **prequest)
 		blocked = 0;
 	}
 
+#ifndef HAVE_STDATOMIC_H
 	pthread_mutex_unlock(&thread_pool.queue_mutex);
+#endif
 
 	if (blocked) {
 		ERROR("%d requests have been waiting in the processing queue for %d seconds.  Check that all databases are running properly!",
@@ -690,6 +797,7 @@ static void *request_handler_thread(void *arg)
 		       self->thread_num, self->request->number,
 		       self->request_count);
 
+#ifndef HAVE_STDATOMIC_H
 #ifdef WITH_ACCOUNTING
 		if ((self->request->packet->code == PW_CODE_ACCOUNTING_REQUEST) &&
 		    thread_pool.auto_limit_acct) {
@@ -713,10 +821,14 @@ static void *request_handler_thread(void *arg)
 			}
 		}
 #endif
+#endif
 
 		self->request->process(self->request, FR_ACTION_RUN);
 		self->request = NULL;
 
+#ifdef HAVE_STDATOMIC_H
+		CAS_DECR(thread_pool.active_threads);
+#else
 		/*
 		 *	Update the active threads.
 		 */
@@ -724,6 +836,7 @@ static void *request_handler_thread(void *arg)
 		rad_assert(thread_pool.active_threads > 0);
 		thread_pool.active_threads--;
 		pthread_mutex_unlock(&thread_pool.queue_mutex);
+#endif
 
 		/*
 		 *	If the thread has handled too many requests, then make it
@@ -752,9 +865,13 @@ static void *request_handler_thread(void *arg)
 #endif
 #endif
 
+#ifdef HAVE_STDATOMIC_H
+	CAS_INCR(thread_pool.exited_threads);
+#else
 	pthread_mutex_lock(&thread_pool.queue_mutex);
 	thread_pool.exited_threads++;
 	pthread_mutex_unlock(&thread_pool.queue_mutex);
+#endif
 
 	/*
 	 *  Do this as the LAST thing before exiting.
@@ -927,6 +1044,9 @@ int thread_pool_init(CONF_SECTION *cs, bool *spawn_flag)
 #endif
 	CONF_SECTION	*pool_cf;
 	time_t		now;
+#ifdef HAVE_STDATOMIC_H
+	int num;
+#endif
 
 	now = time(NULL);
 
@@ -1028,22 +1148,36 @@ int thread_pool_init(CONF_SECTION *cs, bool *spawn_flag)
 		return -1;
 	}
 
+#ifndef HAVE_STDATOMIC_H
 	rcode = pthread_mutex_init(&thread_pool.queue_mutex,NULL);
 	if (rcode != 0) {
 		ERROR("FATAL: Failed to initialize queue mutex: %s",
 		       fr_syserror(errno));
 		return -1;
 	}
+#else
+	num = 0;
+	store(thread_pool.active_threads, num);
+	store(thread_pool.exited_threads, num);
+#endif
 
 	/*
 	 *	Allocate multiple fifos.
 	 */
-	for (i = 0; i < RAD_LISTEN_MAX; i++) {
+	for (i = 0; i < NUM_FIFOS; i++) {
+#ifdef HAVE_STDATOMIC_H
+		thread_pool.queue[i] = fr_atomic_queue_create(NULL, thread_pool.max_queue_size);
+		if (!thread_pool.queue[i]) {
+			ERROR("FATAL: Failed to set up request fifo");
+			return -1;
+		}
+#else
 		thread_pool.fifo[i] = fr_fifo_create(NULL, thread_pool.max_queue_size, NULL);
 		if (!thread_pool.fifo[i]) {
 			ERROR("FATAL: Failed to set up request fifo");
 			return -1;
 		}
+#endif
 	}
 #endif
 
@@ -1107,8 +1241,12 @@ void thread_pool_stop(void)
 		delete_thread(handle);
 	}
 
-	for (i = 0; i < RAD_LISTEN_MAX; i++) {
+	for (i = 0; i < NUM_FIFOS; i++) {
+#ifdef HAVE_STDATOMIC_H
+		talloc_free(thread_pool.queue[i]);
+#else
 		fr_fifo_free(thread_pool.fifo[i]);
+#endif
 	}
 
 #ifdef WNOHANG
@@ -1176,9 +1314,14 @@ static void thread_pool_manage(time_t now)
 		if (handle->status == THREAD_EXITED) {
 			pthread_join(handle->pthread_id, NULL);
 			delete_thread(handle);
+
+#ifdef HAVE_STDATOMIC_H
+			CAS_DECR(thread_pool.exited_threads);
+#else
 			pthread_mutex_lock(&thread_pool.queue_mutex);
 			thread_pool.exited_threads--;
 			pthread_mutex_unlock(&thread_pool.queue_mutex);
+#endif
 		}
 	}
 
@@ -1188,7 +1331,11 @@ static void thread_pool_manage(time_t now)
 	 *	approximation of the number of active threads, and this
 	 *	is good enough.
 	 */
+#ifdef HAVE_STDATOMIC_H
+	active_threads = load(thread_pool.active_threads);
+#else
 	active_threads = thread_pool.active_threads;
+#endif
 	spare = thread_pool.total_threads - active_threads;
 	if (rad_debug_lvl) {
 		static uint32_t old_total = 0;
@@ -1401,7 +1548,11 @@ void thread_pool_queue_stats(int array[RAD_LISTEN_MAX], int pps[2])
 		struct timeval now;
 
 		for (i = 0; i < RAD_LISTEN_MAX; i++) {
+#ifndef HAVE_STDATOMIC_H
 			array[i] = fr_fifo_num_elements(thread_pool.fifo[i]);
+#else
+			array[i] = 0;
+#endif
 		}
 
 		gettimeofday(&now, NULL);
@@ -1537,7 +1688,7 @@ void exec_trigger(REQUEST *request, CONF_SECTION *cs, char const *name, int quen
 
 	DEBUG("Trigger %s -> %s", name, value);
 
-	radius_exec_program(request, NULL, 0, NULL, request, value, vp, false, true, EXEC_TIMEOUT);
+	radius_exec_program(request, NULL, 0, NULL, request, value, vp, false, true, 0);
 
 	if (alloc) talloc_free(request);
 }

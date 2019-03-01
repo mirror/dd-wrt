@@ -1,11 +1,12 @@
 # -*- text -*-
-# Copyright (C) 2015 The FreeRADIUS Server project and contributors
+# Copyright (C) 2019 The FreeRADIUS Server project and contributors
+# This work is licensed under CC-BY version 4.0 https://creativecommons.org/licenses/by/4.0
 #
 #	3GPP stuff.
 #
 #	ftp://ftp.3gpp.org/specs/2002-06/R1999/29_series/29061-3a0.zip
 #
-#	$Id: 6bc84b1a9aa5cd76db35ac20137c905964385c01 $
+#	$Id: 6926ca14d8d15aa8bdb93194ddf0c3beefe9dccd $
 #
 VENDOR		3GPP				10415
 

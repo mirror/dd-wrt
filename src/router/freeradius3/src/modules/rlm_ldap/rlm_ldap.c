@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: c6fbedf1ace4347a6ca0a0deef8cc0548e897bae $
+ * $Id: a67ca719b1d63c0bc771a9b05f57180b9bc34e32 $
  * @file rlm_ldap.c
  * @brief LDAP authorization and authentication module.
  *
@@ -27,7 +27,7 @@
  * @copyright 2012 Alan DeKok <aland@freeradius.org>
  * @copyright 1999-2013 The FreeRADIUS Server Project.
  */
-RCSID("$Id: c6fbedf1ace4347a6ca0a0deef8cc0548e897bae $")
+RCSID("$Id: a67ca719b1d63c0bc771a9b05f57180b9bc34e32 $")
 
 #include	<freeradius-devel/rad_assert.h>
 
@@ -224,6 +224,8 @@ static const CONF_PARSER module_config[] = {
 	{ "sasl", FR_CONF_OFFSET(PW_TYPE_SUBSECTION, rlm_ldap_t, admin_sasl), (void const *) sasl_mech_static },
 
 	{ "valuepair_attribute", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_ldap_t, valuepair_attr), NULL },
+
+	{ "user_dn", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_ldap_t, user_dn), NULL },
 
 #ifdef WITH_EDIR
 	/* support for eDirectory Universal Password */
@@ -613,6 +615,24 @@ static int mod_bootstrap(CONF_SECTION *conf, void *instance)
 		inst->cache_da = dict_attrbyname(inst->cache_attribute);
 	} else {
 		inst->cache_da = inst->group_da;	/* Default to the group_da */
+	}
+
+	if (!inst->user_dn || !*inst->user_dn) {
+		inst->user_dn = talloc_strdup(inst, "LDAP-UserDn");
+	}
+
+	/*
+	 *	Check or create the LDAP-UserDn attribute.
+	 */
+	if (inst->user_dn) {
+		ATTR_FLAGS flags;
+
+		memset(&flags, 0, sizeof(flags));
+		if (dict_addattr(inst->user_dn, -1, 0, PW_TYPE_STRING, flags) < 0) {
+			LDAP_ERR("Error creating %s attribute: %s", inst->user_dn, fr_strerror());
+			return -1;
+		}
+		inst->user_dn_da = dict_attrbyname(inst->user_dn);
 	}
 
 	xlat_register(inst->name, ldap_xlat, rlm_ldap_escape_func, inst);

@@ -15,13 +15,13 @@
  */
 
 /**
- * $Id: 25135365148225ae26d1178589e2db21f4400d72 $
+ * $Id: 3f7e3fb30d8799a429f5717738da8a440c5f53d9 $
  * @file rlm_realm.c
  * @brief Parses NAIs and assigns requests to realms.
  *
  * @copyright 2000-2013  The FreeRADIUS server project
  */
-RCSID("$Id: 25135365148225ae26d1178589e2db21f4400d72 $")
+RCSID("$Id: 3f7e3fb30d8799a429f5717738da8a440c5f53d9 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -175,11 +175,14 @@ static int check_for_realm(void *instance, REQUEST *request, REALM **returnrealm
 	/*
 	 *	Try querying for the dynamic realm.
 	 */
-	if (!realm && inst->trust_router) {
-		realm = tr_query_realm(request, realmname, inst->default_community, inst->rp_realm, inst->trust_router,
-				       inst->tr_port);
-	} else {
-		RDEBUG2("No trust router configured, skipping dynamic realm lookup");
+	if (!realm) {
+		if (inst->trust_router) {
+			realm = tr_query_realm(request, realmname, inst->default_community, inst->rp_realm,
+					       inst->trust_router, inst->tr_port);
+		}
+		else {
+			RDEBUG2("No trust router configured, skipping dynamic realm lookup");
+		}
 	}
 #endif
 

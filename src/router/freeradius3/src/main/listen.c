@@ -1,7 +1,7 @@
 /*
  * listen.c	Handle socket stuff
  *
- * Version:	$Id: 61c299e126a95f4e8fe341539a790df1c817c6fa $
+ * Version:	$Id: 6edbfd62594364657ecd0fd56faa2208c9055b20 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2005  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 61c299e126a95f4e8fe341539a790df1c817c6fa $")
+RCSID("$Id: 6edbfd62594364657ecd0fd56faa2208c9055b20 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -78,6 +78,15 @@ static int command_write_magic(int newfd, listen_socket_t *sock);
 #endif
 
 static fr_protocol_t master_listen[];
+
+#ifdef WITH_DYNAMIC_CLIENTS
+static void client_timer_free(void *ctx)
+{
+	RADCLIENT *client = ctx;
+
+	client_free(client);
+}
+#endif
 
 /*
  *	Find a per-socket client.
@@ -161,6 +170,8 @@ RADCLIENT *client_listener_find(rad_listen_t *listener,
 #ifdef HAVE_SYS_STAT_H
 		char const *filename;
 #endif
+		fr_event_list_t *el;
+		struct timeval when;
 
 		/*
 		 *	Lives forever.  Return it.
@@ -201,10 +212,22 @@ RADCLIENT *client_listener_find(rad_listen_t *listener,
 
 
 		/*
-		 *	This really puts them onto a queue for later
-		 *	deletion.
+		 *	Delete the client from the known list.
 		 */
 		client_delete(clients, client);
+
+		/*
+		 *	Add a timer to free the client in 120s
+		 */
+		el = radius_event_list_corral(EVENT_CORRAL_MAIN);
+
+		gettimeofday(&when, NULL);
+		when.tv_sec += main_config.max_request_time + 20;
+
+		/*
+		 *	If this fails, we leak memory.  That's better than crashing...
+		 */
+		(void) fr_event_insert(el, client_timer_free, client, &when, &client->ev);
 
 		/*
 		 *	Go find the enclosing network again.
@@ -971,6 +994,9 @@ int common_socket_parse(CONF_SECTION *cs, rad_listen_t *this)
 	rcode = cf_item_parse(cs, "port", FR_ITEM_POINTER(PW_TYPE_SHORT, &listen_port), "0");
 	if (rcode < 0) return -1;
 
+	rcode = cf_item_parse(cs, "recv_buff", PW_TYPE_INTEGER, &sock->recv_buff, NULL);
+	if (rcode < 0) return -1;
+
 	sock->proto = IPPROTO_UDP;
 
 	if (cf_pair_find(cs, "proto")) {
@@ -1034,7 +1060,7 @@ int common_socket_parse(CONF_SECTION *cs, rad_listen_t *this)
 				return -1;
 			}
 
-#ifdef HAVE_PTRHEAD_H
+#ifdef HAVE_PTHREAD_H
 			if (pthread_mutex_init(&sock->mutex, NULL) < 0) {
 				rad_assert(0 == 1);
 				listen_free(&this);
@@ -2578,6 +2604,17 @@ static int listen_bind(rad_listen_t *this)
 #endif
 #endif
 
+#ifdef SO_RCVBUF
+	if (sock->recv_buff > 0) {
+		int opt;
+
+		opt = sock->recv_buff;
+		if (setsockopt(this->fd, SOL_SOCKET, SO_RCVBUF, &opt, sizeof(int)) < 0) {
+			WARN("Failed setting 'recv_buf': %s", fr_syserror(errno));
+		}
+	}
+#endif
+
 	/*
 	 *	May be binding to priviledged ports.
 	 */
@@ -2689,10 +2726,6 @@ static int _listener_free(rad_listen_t *this)
 		(((fr_command_socket_t *) this->data)->magic != COMMAND_SOCKET_MAGIC))
 #endif
 		) {
-		listen_socket_t *sock = this->data;
-
-		rad_assert(talloc_parent(sock) == this);
-		rad_assert(sock->ev == NULL);
 
 		/*
 		 *	Remove the child from the parent tree.
@@ -2715,6 +2748,11 @@ static int _listener_free(rad_listen_t *this)
 		 *	may be used by multiple listeners.
 		 */
 		if (this->tls) {
+			listen_socket_t *sock = this->data;
+
+			rad_assert(talloc_parent(sock) == this);
+			rad_assert(sock->ev == NULL);
+
 			rad_assert(!sock->ssn || (talloc_parent(sock->ssn) == sock));
 			rad_assert(!sock->request || (talloc_parent(sock->request) == sock));
 #ifdef HAVE_PTHREAD_H
@@ -2952,9 +2990,11 @@ static rad_listen_t *listen_parse(CONF_SECTION *cs, char const *server)
 
 		proto = dlsym(handle, buffer);
 		if (!proto) {
+#if 0
 			cf_log_err_cs(cs,
 				      "Failed linking to protocol %s : %s\n",
 				      value, dlerror());
+#endif
 			dlclose(handle);
 			return NULL;
 		}

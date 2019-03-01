@@ -17,7 +17,7 @@
 #ifndef CLIENTS_H
 #define CLIENTS_H
 /*
- * $Id: ea57aae9319a2a7df097da3d97e0a5612c02c9ef $
+ * $Id: 560211557f63a832ebe5adbd872879ef7c40fcf4 $
  *
  * @file clients.h
  * @brief Function declarations and structures to manage clients.
@@ -86,6 +86,7 @@ typedef struct radclient {
 							//!< clients.
 
 	bool			rate_limit;		//!< Where addition of clients should be rate limited.
+	fr_event_t		*ev;			//!< for deleting dynamic clients
 #endif
 
 #ifdef WITH_COA

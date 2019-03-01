@@ -1,11 +1,12 @@
 # -*- text -*-
-# Copyright (C) 2015 The FreeRADIUS Server project and contributors
+# Copyright (C) 2019 The FreeRADIUS Server project and contributors
+# This work is licensed under CC-BY version 4.0 https://creativecommons.org/licenses/by/4.0
 #
 #  dictionary.juniper
 #
 #	As posted to the list by Eric Kilfoil <ekilfoil@uslec.net>
 #
-# Version:	$Id: 7528abf4ad976050dd27c389900ea3e28797e394 $
+# Version:	$Id: 51a52ec63cbc3f6e2f8df5a28bf8c03893527057 $
 #
 
 VENDOR		Juniper				2636

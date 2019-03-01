@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 2959b6837cc4a6fe04e551c03a66ee8939f817db $
+ * $Id: cf7a84e0693351ce61566b0502ee80c66b2e7bd3 $
  * @file ldap.c
  * @brief LDAP module library functions.
  *
@@ -1101,7 +1101,7 @@ char const *rlm_ldap_find_user(rlm_ldap_t const *inst, REQUEST *request, ldap_ha
 	 *	If the caller isn't looking for the result we can just return the current userdn value.
 	 */
 	if (!force) {
-		vp = fr_pair_find_by_num(request->config, PW_LDAP_USERDN, 0, TAG_ANY);
+		vp = fr_pair_find_by_da(request->config, inst->user_dn_da, TAG_ANY);
 		if (vp) {
 			RDEBUG("Using user DN from request \"%s\"", vp->vp_strvalue);
 			*rcode = RLM_MODULE_OK;
@@ -1213,8 +1213,9 @@ char const *rlm_ldap_find_user(rlm_ldap_t const *inst, REQUEST *request, ldap_ha
 	 *	we pass the string back to libldap we must not alter it.
 	 */
 	RDEBUG("User object found at DN \"%s\"", dn);
-	vp = fr_pair_make(request, &request->config, "LDAP-UserDN", NULL, T_OP_EQ);
+	vp = fr_pair_afrom_da(request, inst->user_dn_da);
 	if (vp) {
+		fr_pair_add(&request->config, vp);
 		fr_pair_value_strcpy(vp, dn);
 		*rcode = RLM_MODULE_OK;
 	}

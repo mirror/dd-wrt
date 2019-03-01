@@ -1,10 +1,11 @@
 # -*- text -*-
-# Copyright (C) 2015 The FreeRADIUS Server project and contributors
+# Copyright (C) 2019 The FreeRADIUS Server project and contributors
+# This work is licensed under CC-BY version 4.0 https://creativecommons.org/licenses/by/4.0
 #
 #	Attributes and values defined in RFC 2865.
 #	http://www.ietf.org/rfc/rfc2865.txt
 #
-#	$Id: b800f754257b91c455ebcf9601343e933ce4ccd8 $
+#	$Id: 6e2319a96710c2a341e24133abd81fde98a6eb55 $
 #
 ATTRIBUTE	User-Name				1	string
 ATTRIBUTE	User-Password				2	string encrypt=1

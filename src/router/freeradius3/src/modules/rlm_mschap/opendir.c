@@ -18,7 +18,7 @@
  * Copyright 2007 Apple Inc.
  */
 
-RCSID("$Id: 1b37811fe5ffcc3fefcb8f4d563fabb1737732ba $")
+RCSID("$Id: 1b8909cf4b00eff24cfbfdda9cf583c4589a0cef $")
 USES_APPLE_DEPRECATED_API
 
 #include	<freeradius-devel/radiusd.h>
@@ -37,8 +37,8 @@ USES_APPLE_DEPRECATED_API
 /*
  *	In rlm_mschap.c
  */
-void mschap_add_reply(REQUEST *request, VALUE_PAIR** vp, unsigned char ident,
-		      char const* name, char const* value, int len);
+void mschap_add_reply(REQUEST *request, unsigned char ident,
+		      char const *name, char const *value, size_t len);
 
 /*
  *	Only used by rlm_mschap.c
@@ -369,20 +369,19 @@ rlm_rcode_t od_mschap_auth(REQUEST *request, VALUE_PAIR *challenge, VALUE_PAIR *
 				 pStepBuff, NULL);
 	if (status == eDSNoErr) {
 		if (pStepBuff->fBufferLength > 4) {
-			size_t len;
+			uint32_t len;
 
 			memcpy(&len, pStepBuff->fBufferData, sizeof(len));
 			if (len == 40) {
 				char mschap_reply[42] = { '\0' };
-				pStepBuff->fBufferData[len+4] = '\0';
 				mschap_reply[0] = 'S';
 				mschap_reply[1] = '=';
 				memcpy(&(mschap_reply[2]), &(pStepBuff->fBufferData[4]), len);
-				mschap_add_reply(request, &request->reply->vps,
+				mschap_add_reply(request,
 						 *response->vp_strvalue,
 						 "MS-CHAP2-Success",
 						 mschap_reply, len+2);
-				RDEBUG2("dsDoDirNodeAuth returns stepbuff: %s (len=%zu)\n", mschap_reply, len);
+				RDEBUG2("dsDoDirNodeAuth returns stepbuff: %s (len=%u)\n", mschap_reply, (unsigned int) len);
 			}
 		}
 	}

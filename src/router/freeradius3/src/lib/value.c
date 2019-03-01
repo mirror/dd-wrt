@@ -1,7 +1,7 @@
 /*
  * value.c	Functions to handle value_data_t
  *
- * Version:	$Id: 3d58883f591ef8cee2dc448bb1d6ecdd78d27998 $
+ * Version:	$Id: 5658767fc67d76eb56609f91771013f8b3e8d904 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,7 @@
  * Copyright 2014 The FreeRADIUS server project
  */
 
-RCSID("$Id: 3d58883f591ef8cee2dc448bb1d6ecdd78d27998 $")
+RCSID("$Id: 5658767fc67d76eb56609f91771013f8b3e8d904 $")
 
 #include <freeradius-devel/libradius.h>
 #include <ctype.h>
@@ -1226,6 +1226,10 @@ ssize_t value_data_cast(TALLOC_CTX *ctx, value_data_t *dst,
 
 		case PW_TYPE_DATE:
 			dst->integer = src->date;
+			break;
+
+		case PW_TYPE_IPV4_ADDR:
+			dst->integer = ntohl(src->ipaddr.s_addr);
 			break;
 
 		case PW_TYPE_OCTETS:

@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: 345a60eab725b04c0d6f151dc3c3cb078691775c $
+ * $Id: e7dbfa685e9c78cf07514db282246c42da554489 $
  * @file rlm_exec.c
  * @brief Execute commands and parse the results.
  *
  * @copyright 2002,2006  The FreeRADIUS server project
  * @copyright 2002  Alan DeKok <aland@ox.org>
  */
-RCSID("$Id: 345a60eab725b04c0d6f151dc3c3cb078691775c $")
+RCSID("$Id: e7dbfa685e9c78cf07514db282246c42da554489 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -353,7 +353,7 @@ static rlm_rcode_t CC_HINT(nonnull) mod_exec_dispatch(void *instance, REQUEST *r
 	 *	If we're not waiting, then there are no output pairs.
 	 */
 	if (inst->output) {
-		fr_pair_list_move(request, output_pairs, &answer);
+		fr_pair_list_move(ctx, output_pairs, &answer);
 	}
 	fr_pair_list_free(&answer);
 

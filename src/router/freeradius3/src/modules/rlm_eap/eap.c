@@ -1,7 +1,7 @@
 /*
  * eap.c    rfc2284 & rfc2869 implementation
  *
- * Version:     $Id: b03654fed8148d9d3933496fa4e99a9f6fc0a1e7 $
+ * Version:     $Id: 90cc44330f88e6dafaf479894fe5eccfbba8a611 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -56,7 +56,7 @@
 
 #include <freeradius-devel/modpriv.h>
 
-RCSID("$Id: b03654fed8148d9d3933496fa4e99a9f6fc0a1e7 $")
+RCSID("$Id: 90cc44330f88e6dafaf479894fe5eccfbba8a611 $")
 
 #include "rlm_eap.h"
 #include <ctype.h>
@@ -970,7 +970,7 @@ static int eap_validation(REQUEST *request, eap_packet_raw_t **eap_packet_p)
 
 			*eap_packet_p = (eap_packet_raw_t *) p;
 			RWARN("Converting Expanded EAP to normal EAP.");
-			RWARN("Unnecessary use of Expanded EAP types is not recommened.");
+			RWARN("Unnecessary use of Expanded EAP types is not recommended.");
 
 			return EAP_VALID;
 		}

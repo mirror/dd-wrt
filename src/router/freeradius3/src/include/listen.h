@@ -16,7 +16,7 @@
 #ifndef LISTEN_H
 #define LISTEN_H
 /**
- * $Id: f7fd99825b1e4723c783e9c927d32b26ddf84fd9 $
+ * $Id: 4f50bbf8088b0a8f08f38baf65fd304325d01168 $
  *
  * @file listen.h
  * @brief The listener API.
@@ -110,6 +110,9 @@ typedef struct listen_socket_t {
 #ifdef SO_BROADCAST
 	int		broadcast;
 #endif
+
+	int		recv_buff;
+
 	time_t		rate_time;
 	uint32_t	rate_pps_old;
 	uint32_t	rate_pps_now;
