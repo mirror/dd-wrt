@@ -88,7 +88,7 @@ extern int br_add_interface(const char *br, const char *dev);
 extern int br_del_interface(const char *br, const char *dev);
 extern int br_set_bridge_forward_delay(const char *br, int delay);
 extern int br_set_bridge_hello_time(const char *br, struct timeval *tv);
-extern int br_set_bridge_max_age(const char *br, struct timeval *tv);
+extern int br_set_bridge_max_age(const char *br, int age);
 extern int br_set_ageing_time(const char *br, struct timeval *tv);
 extern int br_set_stp_state(const char *br, int stp_state);
 extern int br_set_bridge_priority(const char *br, int bridge_priority);

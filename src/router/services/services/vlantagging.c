@@ -140,7 +140,6 @@ static void set_stp_state(char *bridge, char *stp)
 
 void apply_bridgeif(char *ifname, char *realport)
 {
-	char stp[256];
 	char word[256];
 	char *next, *wordlist;
 	wordlist = nvram_safe_get("bridgesif");
@@ -224,8 +223,8 @@ void start_bridging(void)
 			nvram_nset(mtu, "%s_mtu", bridge);
 		br_add_bridge(bridge);
 		set_stp_state(bridge, stp);
-		br_set_bridge_max_age(bridge, max_age);
-		br_set_bridge_forward_delay(bridge, forward_delay);
+		br_set_bridge_max_age(bridge, atoi(max_age));
+		br_set_bridge_forward_delay(bridge, atoi(forward_delay));
 		if (prio)
 			br_set_bridge_prio(bridge, atoi(prio));
 
