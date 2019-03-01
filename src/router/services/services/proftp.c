@@ -76,6 +76,7 @@ void start_ftpsrv(void)
 	samba3users = getsamba3users();
 	for (cu = samba3users; cu; cu = cunext) {
 		if (*cu->username && cu->sharetype & SHARETYPE_FTP) {
+			sysprintf("rm -rf \"/tmp/proftpd/users/%s\"", cu->username);
 			sysprintf("mkdir -p \"/tmp/proftpd/users/%s\"", cu->username);
 			char passout[MD5_OUT_BUFSIZE];
 			fprintf(fp, "%s:%s:0:0:Ftp User,,,:/tmp/proftpd/users/%s:/bin/sh\n", cu->username, zencrypt(cu->password, passout), cu->username);
