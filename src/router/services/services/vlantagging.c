@@ -218,7 +218,7 @@ void start_bridging(void)
 			nvram_nset(mtu, "%s_mtu", bridge);
 		br_add_bridge(bridge);
 		set_stp_state(bridge, stp);
-		br_set_bridge_forward_delay(bridge, 15);
+		br_set_bridge_forward_delay(bridge, 4);
 		if (prio)
 			br_set_bridge_prio(bridge, atoi(prio));
 
