@@ -189,7 +189,8 @@ int check_rdnss_presence(struct AdvRDNSS *rdnss, struct in6_addr *addr)
 	while (rdnss) {
 		if (!memcmp(&rdnss->AdvRDNSSAddr1, addr, sizeof(struct in6_addr)) ||
 		    !memcmp(&rdnss->AdvRDNSSAddr2, addr, sizeof(struct in6_addr)) ||
-		    !memcmp(&rdnss->AdvRDNSSAddr3, addr, sizeof(struct in6_addr)))
+		    !memcmp(&rdnss->AdvRDNSSAddr3, addr, sizeof(struct in6_addr)) ||
+		    !memcmp(&rdnss->AdvRDNSSAddr4, addr, sizeof(struct in6_addr)))
 			return 1; /* rdnss address found in the list */
 		rdnss = rdnss->next;
 	}
