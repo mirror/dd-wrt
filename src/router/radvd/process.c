@@ -330,6 +330,15 @@ static void process_ra(struct Interface *iface, unsigned char *msg, int len, str
 
 			/* Check the RNDSS addresses received */
 			switch (count) {
+			case 9:
+				rdnss = iface->AdvRDNSSList;
+				if (!check_rdnss_presence(rdnss, &rdnssinfo->nd_opt_rdnssi_addr4)) {
+					/* no match found in iface->AdvRDNSSList */
+					addrtostr(&rdnssinfo->nd_opt_rdnssi_addr4, rdnss_str, sizeof(rdnss_str));
+					flog(LOG_WARNING, "RDNSS address %s received on %s from %s is not advertised by us",
+					     rdnss_str, iface->props.name, addr_str);
+				}
+			/* FALLTHROUGH */
 			case 7:
 				rdnss = iface->AdvRDNSSList;
 				if (!check_rdnss_presence(rdnss, &rdnssinfo->nd_opt_rdnssi_addr3)) {

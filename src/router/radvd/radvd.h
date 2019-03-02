@@ -184,6 +184,7 @@ struct AdvRDNSS {
 	struct in6_addr AdvRDNSSAddr1;
 	struct in6_addr AdvRDNSSAddr2;
 	struct in6_addr AdvRDNSSAddr3;
+	struct in6_addr AdvRDNSSAddr4;
 
 	struct AdvRDNSS *next;
 };
