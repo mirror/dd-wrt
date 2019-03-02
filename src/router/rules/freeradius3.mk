@@ -154,7 +154,9 @@ freeradius3-configure: libtalloc openssl
 	--without-rlm_sqlhpwippool \
 	--without-rlm_sqlippool \
 	--without-rlm_unbound \
-	--without-rlm_yubikey \
+	--without-rlm_yubikey
+	sed -i 's/-isystem \/usr\/include/ /g' $(TOP)/freeradius3/Make.inc
+
 
 freeradius3: libtalloc
 	cd freeradius3 && mkdir -p build/make; gcc scripts/jlibtool.c -o build/make/jlibtool
