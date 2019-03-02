@@ -271,7 +271,7 @@ static void process_ra(struct Interface *iface, unsigned char *msg, int len, str
 				return;
 
 			if (iface->AdvLinkMTU && (ntohl(mtu->nd_opt_mtu_mtu) != iface->AdvLinkMTU)) {
-				flog(LOG_WARNING, "our AdvLinkMTU on %s doesn't agree with %s (ours %d, others %d)", iface->props.name, addr_str, iface->AdvLinkMTU,mtu->nd_opt_mtu_mtu);
+				flog(LOG_WARNING, "our AdvLinkMTU on %s doesn't agree with %s (ours %d, others %d)", iface->props.name, addr_str, iface->AdvLinkMTU,ntohl(mtu->nd_opt_mtu_mtu));
 			}
 			break;
 		}
