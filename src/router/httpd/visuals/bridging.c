@@ -146,8 +146,11 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 			sprintf(bridge_name, "lan_hwaddr");
 			websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"16\" value=\"%s\" /></td>\n", bridge_name, nvram_safe_get(bridge_name));
 		} else {
-			sprintf(bridge_name, "%s_hwaddr", bridge);
-			mac = nvram_safe_get(bridge_name);
+			char *hwmac = get_hwaddr(var, mac);
+			mac = nvram_nget("%s_hwaddr", bridge);
+			if (hwmac && !*(mac))
+				nvram_nset(hwmac, "%s_hwaddr", bridge);
+			mac = nvram_nget("%s_hwaddr", bridge);
 			if (!strcmp(mac, "")) {
 				websWrite(wp, "<td align=\"center\">...</td>\n");
 			} else {
