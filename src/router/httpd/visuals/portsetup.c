@@ -51,7 +51,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		}
 		websWrite(wp, "</select></div>\n");
 	}
-	bzero(bufferif, 256);
+	bzero(bufferif, sizeof(bufferif));
 	getIfListB(bufferif, NULL, 1, 1);
 	foreach(var, eths, next) {
 		int isbridge = 0;
@@ -62,11 +62,8 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 				continue;
 			if (!strcmp(nvram_safe_get("lan_ifname"), var))
 				continue;
-			foreach(bword, bufferif, bnext) {
-				if (!strcmp(bword, var)) {
-					isbridge = 1;
-				}
-			}
+			if (isbridge(var))
+				isbridge = 1;
 		}
 
 		char layer[64];
@@ -77,13 +74,16 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<fieldset>\n");
 		websWrite(wp, "<legend><script type=\"text/javascript\">Capture(wl_basic.network)</script> %s</legend>\n", getNetworkLabel(wp, var));
 		// mac address
-		unsigned char mac[20];
-		char *r = get_hwaddr(var, mac);
-		char *nvmac = nvram_nget("%s_hwaddr", var);
-		if (r && !*(nvmac) && strncmp(var, "wl", 2))
-			nvram_nset(r, "%s_hwaddr", var);
-		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(share.mac)</script></div>\n");
-		websWrite(wp, "<input class=\"num\" maxlength=\"17\" size=\"16\" name=\"%s_hwaddr\" value=\"%s\" /></div>\n", var, nvram_nget("%s_hwaddr", var));
+
+		if (!isbridge) {
+			unsigned char mac[20];
+			char *r = get_hwaddr(var, mac);
+			char *nvmac = nvram_nget("%s_hwaddr", var);
+			if (r && !*(nvmac) && strncmp(var, "wl", 2))
+				nvram_nset(r, "%s_hwaddr", var);
+			websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(share.mac)</script></div>\n");
+			websWrite(wp, "<input class=\"num\" maxlength=\"17\" size=\"16\" name=\"%s_hwaddr\" value=\"%s\" /></div>\n", var, nvram_nget("%s_hwaddr", var));
+		}
 		// label here
 		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(idx.label)</script></div>\n");
 		websWrite(wp, "<input maxlength=\"32\" size=\"25\" name=\"%s_label\" value=\"%s\" /></div>\n", var, nvram_nget("%s_label", var));
@@ -177,7 +177,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		if (registered_has_cap(21))
 #endif
 		{
-			char nld_enable[32], nld_bridge[32], bufferif[256];
+			char nld_enable[32], nld_bridge[32];
 			char word[256];
 			char *next;
 
@@ -190,8 +190,6 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">/*Capture(idx.wanport)*/</script>ZCM Bridge</div>\n");
 			websWrite(wp, "<select name=\"nld_%s_bridge\">\n", var);
 			websWrite(wp, "  <option value=\"\">none</option>\n");
-			bzero(bufferif, 256);
-			getIfListB(bufferif, NULL, 1, 1);
 			foreach(word, bufferif, next) {
 				// if( strcmp( word, "br0" ) ) {
 				websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", word, nvram_match(nld_bridge, word) ? "selected=\"selected\"" : "", word);
@@ -210,7 +208,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		if (registered_has_cap(19))
 #endif
 		{
-			char bat_enable[32], bat_bridge[32], bufferif[256];
+			char bat_enable[32], bat_bridge[32];
 			char word[256];
 			char *next;
 
@@ -223,8 +221,6 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">/*Capture(idx.wanport)*/</script>L2Mesh Bridge</div>\n");
 			websWrite(wp, "<select name=\"bat_%s_bridge\">\n", var);
 			websWrite(wp, "  <option value=\"\">none</option>\n");
-			bzero(bufferif, 256);
-			getIfListB(bufferif, NULL, 1, 1);
 			foreach(word, bufferif, next) {
 				// if( strcmp( word, "br0" ) ) {
 				websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", word, nvram_match(bat_bridge, word) ? "selected=\"selected\"" : "", word);
