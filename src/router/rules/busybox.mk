@@ -572,6 +572,9 @@ endif
 	echo "# CONFIG_FEATURE_DC_BIG is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_DC_LIBM is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_SH_EMBEDDED_SCRIPTS is not set" >> busybox/.config
+ifeq ($(CONFIG_RAID),y)
+	sed -i 's/\# CONFIG_FEATURE_GETOPT_LONG is not set/CONFIG_FEATURE_GETOPT_LONG=y/g' busybox/.config
+endif
 	cd busybox && make oldconfig
 	
 	-$(MAKE) -j 4 -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox
