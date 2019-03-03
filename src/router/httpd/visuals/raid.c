@@ -258,6 +258,24 @@ static char *getfsname(char *drive)
 	return retvalue;
 }
 
+static int ismember(char *name)
+{
+	int i = 0;
+	while (1) {
+		char *raid = nvram_nget("raid%d", i);
+		char *raidtype = nvram_nget("raidtype%d", i);
+		if (!*(raidtype))
+			return 0;
+		char var[128];
+		char *next;
+		foreach(var, raid, next) {
+			if (!strcmp(name, var))
+				return 1;
+		}
+	}
+	return 0;
+}
+
 void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 {
 	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(nas.raidmanager)</script></h2>");
@@ -484,6 +502,8 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 			int canformat = 0;
 			char *fs = getfsname(drive);
 			if (!fs)
+				continue;
+			if (ismember(drive))
 				continue;
 			websWrite(wp, "<input type=\"hidden\" name=\"drivename%d\" value=\"%s\"\n", idx, &drive[5]);
 			websWrite(wp, "<tr>\n");
