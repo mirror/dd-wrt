@@ -63,11 +63,6 @@ int brctl_main(int argc, char **argv)
 	br_shutdown();
 }
 
-int br_set_port_hairpin(const char *br, char *port, int on)	// unsupported
-{
-	return 0;
-}
-
 int br_set_port_stp(const char *br, char *port, int on)	// unsupported
 {
 	return 0;
@@ -146,8 +141,9 @@ int br_set_bridge_prio(const char *br, int prio)
 
 int br_set_bridge_forward_delay(const char *br, int sec)
 {
+	if (!ifexists(br))
+		return -1;
 	char delay[32];
-
 	sprintf(delay, "%d", sec);
 	return eval("mstpctl", "setfdelay", br, delay);
 
@@ -155,6 +151,8 @@ int br_set_bridge_forward_delay(const char *br, int sec)
 
 int br_set_bridge_max_age(const char *br, int sec)
 {
+	if (!ifexists(br))
+		return -1;
 	char age[32];
 	sprintf(age, "%d", sec);
 	return eval("mstpctl", "setmaxage", br, age);
@@ -169,14 +167,17 @@ int br_set_port_stp(const char *br, char *port, int on)	// unsupported
 
 int br_set_bridge_forward_delay(const char *br, int sec)
 {
+	if (!ifexists(br))
+		return -1;
 	char delay[32];
-
 	sprintf(delay, "%d", sec);
 	return eval("brctl", "setfd", br, delay);
 }
 
 int br_set_bridge_max_age(const char *br, int sec)
 {
+	if (!ifexists(br))
+		return -1;
 	char age[32];
 	sprintf(age, "%d", sec);
 	return eval("brctl", "setmaxage", br, age);
