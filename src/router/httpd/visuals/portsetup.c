@@ -54,7 +54,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 	bzero(bufferif, sizeof(bufferif));
 	getIfListB(bufferif, NULL, 1, 1);
 	foreach(var, eths, next) {
-		int isbridge = 0;
+		int isb = 0;
 		if (!strcmp("etherip0", var))
 			continue;
 		if (strchr(var, '.') == NULL) {
@@ -63,7 +63,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 			if (!strcmp(nvram_safe_get("lan_ifname"), var))
 				continue;
 			if (isbridge(var))
-				isbridge = 1;
+				isb = 1;
 		}
 
 		char layer[64];
@@ -75,7 +75,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<legend><script type=\"text/javascript\">Capture(wl_basic.network)</script> %s</legend>\n", getNetworkLabel(wp, var));
 		// mac address
 
-		if (!isbridge) {
+		if (!isb) {
 			unsigned char mac[20];
 			char *r = get_hwaddr(var, mac);
 			char *nvmac = nvram_nget("%s_hwaddr", var);
@@ -97,7 +97,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "</div>\n");
 
 		// qlen end
-		if (!isbridge) {
+		if (!isb) {
 			if (has_multicast_to_unicast(var) && !nvram_nmatch("0", "%s_bridged", var)) {
 				char unicast[32];
 				sprintf(unicast, "%s_multicast_to_unicast", var);
@@ -114,7 +114,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 				  layer, var, nvram_default_matchi(ssid, 1, 1) ? "checked=\"checked\"" : "");
 			websWrite(wp, "</div>\n");
 		}
-		if (!isbridge) {
+		if (!isb) {
 			websWrite(wp, "<div id=\"%s_idnet\">\n", layer);
 		}
 		websWrite(wp, "<div class=\"setting\">\n");
@@ -230,11 +230,11 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		}
 #endif
 		websWrite(wp, "<br />\n");
-		if (!isbridge) {
+		if (!isb) {
 			websWrite(wp, "</div>\n");
 		}
 		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n ");
-		if (!isbridge)
+		if (!isb)
 			websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_bridged\"), \"%s_idnet\", %s);\n", var, layer, nvram_matchi(ssid, 0) ? "true" : "false");
 		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_dns_redirect\"), \"%s_idredirect\", %s);\n", var, layer, nvram_matchi(redirect, 1) ? "true" : "false");
 		websWrite(wp, "//]]>\n</script>\n");
