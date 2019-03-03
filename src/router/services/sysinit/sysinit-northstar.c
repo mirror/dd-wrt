@@ -6623,8 +6623,6 @@ void start_sysinit(void)
 	}
 	if (getRouterBrand() == ROUTER_ASUS_AC88U)
 		eval("rtkswitch", "1");
-//	insmod("emf");
-//	insmod("igs");
 #ifdef HAVE_BRCMFMAC
 	system("nvram show > /tmp/b1.txt");
 	system("nvram show > /tmp/b2.txt");
@@ -6635,6 +6633,8 @@ void start_sysinit(void)
 	if (!nvram_match("brcmfmac", "0"))
 		insmod("brcmfmac");
 #else
+	insmod("emf");
+	insmod("igs");
 	insmod("wl");
 #ifdef HAVE_DHDAP
 	insmod("dhd");
