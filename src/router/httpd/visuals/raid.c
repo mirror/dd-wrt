@@ -272,6 +272,7 @@ static int ismember(char *name)
 			if (!strcmp(name, var))
 				return 1;
 		}
+		i++;
 	}
 	return 0;
 }
