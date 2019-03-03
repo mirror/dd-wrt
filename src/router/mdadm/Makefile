@@ -252,6 +252,7 @@ sha1.o : sha1.c sha1.h md5.h
 install : mdadm mdmon
 	$(INSTALL) -D $(STRIP) -m 755 mdadm $(DESTDIR)$(BINDIR)/mdadm
 	$(INSTALL) -D $(STRIP) -m 755 mdmon $(DESTDIR)$(BINDIR)/mdmon
+	$(INSTALL) -D $(STRIP) -m 755 misc/mdcheck $(DESTDIR)$(BINDIR)/mdcheck
 	$(INSTALL) -D $(STRIP) -m 755 libmdadm.so $(DESTDIR)$(LIBDIR)/libmdadm.so
 
 install-static : mdadm.static install-man
