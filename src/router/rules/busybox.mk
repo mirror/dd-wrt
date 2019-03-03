@@ -574,6 +574,8 @@ endif
 	echo "# CONFIG_FEATURE_SH_EMBEDDED_SCRIPTS is not set" >> busybox/.config
 ifeq ($(CONFIG_RAID),y)
 	sed -i 's/\# CONFIG_FEATURE_GETOPT_LONG is not set/CONFIG_FEATURE_GETOPT_LONG=y/g' busybox/.config
+	sed -i 's/\# CONFIG_READLINK is not set/CONFIG_READLINK=y/g' busybox/.config
+	sed -i 's/\# CONFIG_FEATURE_READLINK_FOLLOW is not set/CONFIG_FEATURE_READLINK_FOLLOW=y/g' busybox/.config
 endif
 	cd busybox && make oldconfig
 	
