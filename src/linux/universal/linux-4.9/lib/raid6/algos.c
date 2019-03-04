@@ -39,35 +39,35 @@ const struct raid6_calls * const raid6_algos[] = {
 	&raid6_intx32,
 #endif
 #if defined(__i386__) && !defined(__arch_um__)
-	&raid6_mmxx1,
-	&raid6_mmxx2,
-	&raid6_sse1x1,
-	&raid6_sse1x2,
-	&raid6_sse2x1,
-	&raid6_sse2x2,
-#ifdef CONFIG_AS_AVX2
-	&raid6_avx2x1,
-	&raid6_avx2x2,
-#endif
 #ifdef CONFIG_AS_AVX512
-	&raid6_avx512x1,
 	&raid6_avx512x2,
+	&raid6_avx512x1,
 #endif
+#ifdef CONFIG_AS_AVX2
+	&raid6_avx2x2,
+	&raid6_avx2x1,
+#endif
+	&raid6_sse2x2,
+	&raid6_sse2x1,
+	&raid6_sse1x2,
+	&raid6_sse1x1,
+	&raid6_mmxx2,
+	&raid6_mmxx1,
 #endif
 #if defined(__x86_64__) && !defined(__arch_um__)
-	&raid6_sse2x1,
-	&raid6_sse2x2,
-	&raid6_sse2x4,
-#ifdef CONFIG_AS_AVX2
-	&raid6_avx2x1,
-	&raid6_avx2x2,
-	&raid6_avx2x4,
-#endif
 #ifdef CONFIG_AS_AVX512
-	&raid6_avx512x1,
-	&raid6_avx512x2,
 	&raid6_avx512x4,
+	&raid6_avx512x2,
+	&raid6_avx512x1,
 #endif
+#ifdef CONFIG_AS_AVX2
+	&raid6_avx2x4,
+	&raid6_avx2x2,
+	&raid6_avx2x1,
+#endif
+	&raid6_sse2x4,
+	&raid6_sse2x2,
+	&raid6_sse2x1,
 #endif
 #ifdef CONFIG_ALTIVEC
 	&raid6_altivec1,
@@ -112,6 +112,9 @@ const struct raid6_recov_calls *const raid6_recov_algos[] = {
 #endif
 #ifdef CONFIG_S390
 	&raid6_recov_s390xc,
+#endif
+#if defined(CONFIG_KERNEL_MODE_NEON)
+	&raid6_recov_neon,
 #endif
 	&raid6_recov_intx1,
 	NULL
