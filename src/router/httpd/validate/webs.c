@@ -4001,6 +4001,9 @@ static void save_prefix(webs_t wp, char *prefix)
 		copytonv(wp, "%s_txbf", prefix);
 		copytonv(wp, "%s_itxbf", prefix);
 	}
+	if (has_mumimo(prefix)) {
+		copytonv(wp, "%s_mumimo", prefix);
+	}
 #endif
 #endif
 
