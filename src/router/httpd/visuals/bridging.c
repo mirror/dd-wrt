@@ -155,7 +155,7 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 			if (!strcmp(mac, "")) {
 				websWrite(wp, "<td align=\"center\">...</td>\n");
 			} else {
-				websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"16\" value=\"%s\" /></td>\n", bridge_name, nvram_safe_get(bridge_name));
+				websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s_hwaddr\" size=\"16\" value=\"%s\" /></td>\n", bridge, mac);
 			}
 		}
 
