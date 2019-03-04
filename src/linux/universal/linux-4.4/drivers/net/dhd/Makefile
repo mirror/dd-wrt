@@ -18,14 +18,14 @@
 # $Id: Makefile,v 1.13 2010-12-13 20:23:49 $
 #
 ifeq ($(CONFIG_MIPS),y)
-EXTRA_CFLAGS+=-I$(srctree)/brcm/mipsel/include -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -DBCMDRIVER -Dlinux -DCONFIG_NOPRINTK
-EXTRA_AFLAGS+=-I$(srctree)/brcm/mipsel/include -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -DBCMDRIVER -Dlinux -DCONFIG_NOPRINTK
+EXTRA_CFLAGS+=-I$(srctree)/brcm/mipsel/include -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+EXTRA_AFLAGS+=-I$(srctree)/brcm/mipsel/include -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -DBCMDRIVER -Dlinux
 SRCBASE := $(srctree)/drivers/net/wl/../../../brcm/mipsel/dhd/src
 SRCBASE_DHD := $(srctree)/drivers/net/dhd/../../../brcm/mipsel/dhd/src
 SRCBASE_OFFSET := ../../../brcm/mipsel/dhd/src
 else
-EXTRA_CFLAGS+=-I$(srctree)/brcm/arm/dongle/include -I$(srctree)/brcm/arm/dhd/src/dhd/sys -DBCMDRIVER -Dlinux -DCONFIG_NOPRINTK
-EXTRA_AFLAGS+=-I$(srctree)/brcm/arm/dongle/include -I$(srctree)/brcm/arm/dhd/src/dhd/sys -DBCMDRIVER -Dlinux -DCONFIG_NOPRINTK
+EXTRA_CFLAGS+=-I$(srctree)/brcm/arm/dongle/include -I$(srctree)/brcm/arm/dhd/src/dhd/sys -DBCMDRIVER -Dlinux
+EXTRA_AFLAGS+=-I$(srctree)/brcm/arm/dongle/include -I$(srctree)/brcm/arm/dhd/src/dhd/sys -DBCMDRIVER -Dlinux
 SRCBASE := $(srctree)/drivers/net/wl/../../../brcm/arm/dhd/src
 SRCBASE_DHD := $(srctree)/drivers/net/dhd/../../../brcm/arm/dhd/src
 SRCBASE_OFFSET := ../../../brcm/arm/dhd/src
