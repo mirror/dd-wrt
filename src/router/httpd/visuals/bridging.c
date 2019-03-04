@@ -191,6 +191,12 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<td>");
 		showOptions(wp, bridge_name, "0 4096 8192 12288 16384 20480 24576 28672 32768 36864 40960 45056 49152 53248 57344 61440", "32768");
 		websWrite(wp, "</td>");
+
+		sprintf(bridge_name, "bridgeforward_delay%d", count);
+		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"2\" value=\"15\" /></td>\n", bridge_name);
+		sprintf(bridge_name, "bridgemax_age%d", count);
+		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"2\" value=\"20\" /></td>\n", bridge_name);
+
 		sprintf(bridge_name, "bridgemtu%d", count);
 		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"3\" value=\"%s\" /></td>\n", bridge_name, "1500");
 		websWrite(wp, "<td></td><td>");
