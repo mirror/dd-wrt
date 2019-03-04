@@ -43,7 +43,7 @@ endif
 DHDFLAGS        += -DLINUX
 DHDFLAGS        += -DBCMDRIVER
 DHDFLAGS        += -DBCMDONGLEHOST
-
+DHDFLAGS	+= -DWAR4360_UCODE
 # PCIe specific flags
 DHDFLAGS        += -DPCIE_FULL_DONGLE
 DHDFLAGS        += -DBCMPCIE
@@ -76,9 +76,9 @@ endif
 
 # WMF Specific Flags
 #ifneq ($(CONFIG_EMF_ENABLED),)
-DHDFLAGS        += -DDHD_WMF
-DHDFLAGS        += -DDHD_IGMP_UCQUERY
-DHDFLAGS        += -DDHD_UCAST_UPNP
+#DHDFLAGS        += -DDHD_WMF
+#DHDFLAGS        += -DDHD_IGMP_UCQUERY
+#DHDFLAGS        += -DDHD_UCAST_UPNP
 #endif
 
 # DHD Include Paths
@@ -122,7 +122,7 @@ DHDFILES_SRC    += src/dhd/sys/dhd_flowring.c
 DHDFILES_SRC    += src/dhd/sys/dhd_pcie.c
 DHDFILES_SRC    += src/dhd/sys/dhd_pcie_linux.c
 #ifneq ($(CONFIG_EMF_ENABLED)),)
-DHDFILES_SRC    += src/dhd/sys/dhd_wmf_linux.c
+#DHDFILES_SRC    += src/dhd/sys/dhd_wmf_linux.c
 #endif
 DHDFILES_SRC    += src/dhd/sys/dhd_l2_filter.c
 DHDFILES_SRC    += src/dhd/sys/dhd_psta.c
