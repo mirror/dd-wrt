@@ -2118,6 +2118,7 @@ bcm_robo_enable_switch(robo_info_t *robo)
 	char *boardrev = nvram_get("boardrev");
 	char *boardtype = nvram_get("boardtype");
 	char *cardbus = nvram_get("cardbus");
+	char *et2phyaddr = nvram_get("et2phyaddr");
 
 	/* Enable management interface access */
 	if (robo->ops->enable_mgmtif)
@@ -2229,18 +2230,30 @@ bcm_robo_enable_switch(robo_info_t *robo)
 		robo->ops->write_reg(robo, PAGE_CTRL, 0x16, &val16, sizeof(val16));    
 	}
 
-	if (boardnum != NULL && boardtype != NULL && boardrev != NULL)
-	if (!strcmp(boardnum, "32") && (!strcmp(boardtype, "0x0665") || !strcmp(boardtype, "0x072F"))){
-		/* WAN port LED fix*/
-		val16 = 0x3000 ;
-		robo->ops->write_reg(robo, PAGE_CTRL, 0x10, &val16, sizeof(val16));
-		val8 = 0x78 ;
-		robo->ops->write_reg(robo, PAGE_CTRL, 0x12, &val8, sizeof(val8)); 
-		if(!strcmp(boardrev, "0x1301") || (!strcmp(boardrev, "0x1101") && !strcmp(boardtype, "0x072F")))
-		val8 = 0x01 ;
-		if(!strcmp(boardrev, "0x1101") && strcmp(boardtype, "0x072F"))
-		val8 = 0x10 ;
-		robo->ops->write_reg(robo, PAGE_CTRL, 0x14, &val8, sizeof(val8)); 
+	if (boardnum != NULL && boardtype != NULL && boardrev != NULL){
+		if (!strcmp(boardnum, "32") && (!strcmp(boardtype, "0x0665") || !strcmp(boardtype, "0x072F"))){
+			/* WAN port LED fix*/
+			val16 = 0x3000 ;
+			robo->ops->write_reg(robo, PAGE_CTRL, 0x10, &val16, sizeof(val16));
+			val8 = 0x78 ;
+			robo->ops->write_reg(robo, PAGE_CTRL, 0x12, &val8, sizeof(val8)); 
+			if(!strcmp(boardrev, "0x1301") || (!strcmp(boardrev, "0x1101") && !strcmp(boardtype, "0x072F")))
+			val8 = 0x01 ;
+			if(!strcmp(boardrev, "0x1101") && strcmp(boardtype, "0x072F"))
+			val8 = 0x10 ;
+			robo->ops->write_reg(robo, PAGE_CTRL, 0x14, &val8, sizeof(val8)); 
+		}
+		
+		if (et2phyaddr != NULL)
+		if (!strcmp(boardnum, "32") && !strcmp(boardtype, "0x0646") && !strcmp(boardrev, "0x1601") && !strcmp(et2phyaddr, "30")){
+			printk(KERN_EMERG "R7000P LED fix.\n");
+			val16 = 0x3000 ;
+			robo->ops->write_reg(robo, PAGE_CTRL, 0x10, &val16, sizeof(val16));
+			val8 = 0x78 ;
+			robo->ops->write_reg(robo, PAGE_CTRL, 0x12, &val8, sizeof(val8)); 
+			val8 = 0x01;
+			robo->ops->write_reg(robo, PAGE_CTRL, 0x14, &val8, sizeof(val8));
+		}
 	}
 
 	if (SRAB_ENAB(robo->sih) && ROBO_IS_BCM5301X(robo->devid)) {
