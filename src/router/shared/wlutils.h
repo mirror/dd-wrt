@@ -271,6 +271,7 @@ extern int has_ht40(const char *prefix);
 #endif
 #ifdef HAVE_80211AC
 extern int has_beamforming(const char *prefix);
+extern int has_mumimo(const char *prefix);
 #endif
 
 #define SITE_SURVEY_DB  "/tmp/site_survey"
