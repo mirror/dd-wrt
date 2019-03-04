@@ -868,9 +868,9 @@ struct nvram_param srouter_defaults[] = {
 	{"wl1_txbf", "0"},
 	{"wl2_txbf", "0"},
 
-	{"wl0_itxbf", "0"},
-	{"wl1_itxbf", "0"},
-	{"wl2_itxbf", "0"},
+	{"wl0_txbf_imp", "0"},
+	{"wl1_txbf_imp", "0"},
+	{"wl2_txbf_imp", "0"},
 
 	{"wl0_txbf_bfr_cap", "1"},
 	{"wl0_txbf_bfe_cap", "1"},
