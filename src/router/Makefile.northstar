@@ -212,8 +212,8 @@ ifeq ($(CONFIG_ATH9K),y)
 	-$(MAKE) -f Makefile.northstar ath9k-install
 endif
 	-$(MAKE) -f Makefile.northstar libutils
-	-$(MAKE) -f Makefile.northstar emf
-	-$(MAKE) -f Makefile.northstar emf-install
+#	-$(MAKE) -f Makefile.northstar emf
+#	-$(MAKE) -f Makefile.northstar emf-install
 #	-$(MAKE) -f Makefile.northstar madwifi
 #	-$(MAKE) -f Makefile.northstar madwifi-install
 ifeq ($(CONFIG_BATMANADV),y)
