@@ -41,7 +41,7 @@ CFLAGS += -D__CONFIG_DHDAP__
 endif
 
 ifeq ($(CONFIG_80211AC),y)
-OBJS := wlconf_3.x.o 
+OBJS := wlconf_3.x.c 
 CFLAGS	+= -I. -I$(TOP)/shared -Wall -I$(SRCBASE)/
 CFLAGS +=  -I$(LINUXDIR)/brcm/$(ARCH)/include  -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
 else
@@ -50,18 +50,22 @@ CFLAGS	+= -I. -I$(TOP)/shared -I$(LINUXDIR)/brcm/include -Wall -I$(SRCBASE)/ -I$
 
 ifeq ($(CONFIG_MSSID),y)
 ifeq ($(CONFIG_BUFFALO),y)
-OBJS := wlconf.o 
+OBJS := wlconf.c
 #OBJS := wlconfbcm.o 
 else
-OBJS := wlconf.o 
+OBJS := wlconf.c 
 endif
 else
 OBJS := 
 endif
 
 endif
-all: wlconf
-
+all:
+ifeq ($(CONFIG_MSSID),y)
+	$(CC) -o wlconf $(OBJS) $(CFLAGS) $(LDFLAGS) $(ADDLIBS)
+else
+	@true
+endif
 clean:
 	rm -f *.o
 
@@ -74,9 +78,9 @@ else
 endif
 	$(STRIP) $(INSTALLDIR)/usr/sbin/wlconf
 
-wlconf: $(OBJS)
+wlconf: 
 ifeq ($(CONFIG_MSSID),y)
-	$(CC) -o $@ $^ $(LDFLAGS) $(ADDLIBS)
+	$(CC) -o $@ $(OBJS) $(LDFLAGS) $(ADDLIBS)
 else
 	@true
 endif
