@@ -3449,10 +3449,10 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		showRadio(wp, "wl_basic.nitroqam", wl_nitroqam);
 	}
 
+	char wl_bft[16];
+	sprintf(wl_bft, "%s_txbf", prefix);
 	if (has_beamforming(prefix)) {
 
-		char wl_bft[16];
-		sprintf(wl_bft, "%s_txbf", prefix);
 		showRadio(wp, "wl_basic.bft", wl_bft);
 		char wl_bfr[16];
 		sprintf(wl_bfr, "%s_itxbf", prefix);
@@ -3460,6 +3460,12 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		char wl_atf[16];
 		sprintf(wl_atf, "%s_atf", prefix);
 		showRadio(wp, "wl_basic.atf", wl_atf);
+	}
+	if (has_mumimo(prefix) && nvram_match(wl_bft, "1")) {
+		char wl_mu[16];
+		sprintf(wl_mu, "%s_mumimo", prefix);
+		nvram_default_get(wl_mu, "0");
+		showRadio(wp, "wl_basic.mubf", wl_mu);
 	}
 #endif
 #endif
