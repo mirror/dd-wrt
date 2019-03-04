@@ -840,6 +840,30 @@ int has_beamforming(const char *prefix)
 	return 1;
 
 }
+
+int has_mumimo(const char *prefix)
+{
+	char cap[WLC_IOCTL_SMLEN];
+	char caps[WLC_IOCTL_MEDLEN];
+	char *next;
+	int c = 0;
+	if (!strcmp(prefix, "wl0"))
+		c = 0;
+	else if (!strcmp(prefix, "wl1"))
+		c = 1;
+	else if (!strcmp(prefix, "wl2"))
+		c = 2;
+
+	char *name = get_wl_instance_name(c);
+	if (wl_iovar_get(name, "cap", (void *)caps, sizeof(caps)))
+		return -1;
+
+	foreach(cap, caps, next) {
+		if (!strcmp(cap, "multi-user-beamformer"))
+			return 1;
+	}
+	return 0;
+}
 #endif
 
 int getchannels(unsigned int *retlist, char *ifname)
@@ -3056,6 +3080,22 @@ int wlconf_up(char *name)
 #if (defined(HAVE_NORTHSTAR) || defined(HAVE_80211AC)) && !defined(HAVE_BUFFALO)
 	setRegulationDomain(nvram_safe_get("wl_regdomain"));
 #endif
+	if (nvram_nmatchi(1, "wl%d_txbf", instance)) {
+
+		if (nvram_nmatchi(1, "wl%d_mumimo", instance)) {
+			nvram_nseti(2, "wl%d_txbf_bfr_cap", instance);
+			nvram_nseti(2, "wl%d_txbf_bfe_cap", instance);
+			nvram_nset("0x8000", "wl%d_mu_features", instance);
+		} else {
+			nvram_nseti(1, "wl%d_txbf_bfr_cap", instance);
+			nvram_nseti(1, "wl%d_txbf_bfe_cap", instance);
+			nvram_nseti(0, "wl%d_mu_features", instance);
+		}
+
+	} else {
+		nvram_nseti(0, "wl%d_txbf_bfr_cap", instance);
+		nvram_nseti(0, "wl%d_txbf_bfe_cap", instance);
+	}
 
 	ret = eval("wlconf", name, "up");
 	sprintf(ifinst, "wl%d", instance);
@@ -3204,7 +3244,7 @@ int wlconf_up(char *name)
 		}
 	}
 	eval("ifconfig", name, "up");
-//	eval("startservice", "emf", "-f");
+//      eval("startservice", "emf", "-f");
 	return ret;
 }
 
@@ -3282,7 +3322,7 @@ void radio_on(int idx)
 	}
 	eval("startservice", "nas", "-f");
 	eval("startservice", "guest_nas", "-f");
-//	eval("startservice", "emf", "-f");
+//      eval("startservice", "emf", "-f");
 }
 
 /*
