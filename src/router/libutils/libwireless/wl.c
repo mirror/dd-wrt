@@ -3038,20 +3038,6 @@ int wlconf_up(char *name)
 		nvram_nset("1", "wl%d_infra", instance);
 	}
 #ifdef HAVE_80211AC
-	if (has_beamforming(prefix)) {
-		if (nvram_nmatch("1", "wl%d_txbf", instance)) {
-			nvram_nset("1", "wl%d_txbf_bfr_cap", instance);
-			nvram_nset("1", "wl%d_txbf_bfe_cap", instance);
-		} else {
-			nvram_nset("0", "wl%d_txbf_bfr_cap", instance);
-			nvram_nset("0", "wl%d_txbf_bfe_cap", instance);
-		}
-		if (nvram_nmatch("1", "wl%d_itxbf", instance))
-			eval("wl", "-i", name, "txbf_imp", "1");
-		else
-			eval("wl", "-i", name, "txbf_imp", "0");
-
-	}
 	if (has_ac(prefix)) {
 		if (nvram_nmatch("1", "wl%d_nband", instance)) {
 			if (nvram_nmatch("1", "wl%d_nitro_qam", instance))
