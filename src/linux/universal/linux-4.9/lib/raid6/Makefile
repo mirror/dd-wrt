@@ -26,6 +26,7 @@ NEON_FLAGS := -ffreestanding
 ifeq ($(ARCH),arm)
 NEON_FLAGS += -mfloat-abi=softfp -mfpu=neon
 endif
+CFLAGS_recov_neon_inner.o += $(NEON_FLAGS)
 ifeq ($(ARCH),arm64)
 CFLAGS_REMOVE_neon1.o += -mgeneral-regs-only
 CFLAGS_REMOVE_neon2.o += -mgeneral-regs-only
