@@ -110,7 +110,7 @@ static const struct ipv6_stub_type *ipv6_stub = &ipv6_stub_impl;
 #include <net/addrconf.h>
 static inline bool ipv6_mod_enabled(void)
 {
-	return ipv6_stub->udpv6_encap_enable != NULL;
+	return ipv6_stub != NULL && ipv6_stub->udpv6_encap_enable != NULL;
 }
 #endif
 
@@ -777,6 +777,18 @@ struct __kernel_timespec {
 	int64_t tv_sec, tv_nsec;
 };
 #endif
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 12, 0)
+#include <linux/kernel.h>
+#ifndef ALIGN_DOWN
+#define ALIGN_DOWN(x, a) __ALIGN_KERNEL((x) - ((a) - 1), (a))
+#endif
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 1, 0)
+#include <linux/skbuff.h>
+#define skb_probe_transport_header(a) skb_probe_transport_header(a, 0)
 #endif
 
 /* https://github.com/ClangBuiltLinux/linux/issues/7 */
