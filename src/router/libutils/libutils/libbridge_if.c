@@ -442,6 +442,10 @@ int br_set_port_prio(const char *bridge, char *port, int prio)
 
 int br_set_path_cost(const char *bridge, const char *port, int cost)
 {
+	if (!ifexists(bridge))
+		return -1;
+	if (!ifexists(port))
+		return -1;
 	return port_set(bridge, port, "path_cost", cost, BRCTL_SET_PATH_COST);
 }
 
