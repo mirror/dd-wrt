@@ -7,6 +7,7 @@ PREFIX ?= /usr
 DESTDIR ?=
 SRCDIR ?= $(PREFIX)/src
 DKMSDIR ?= $(SRCDIR)/wireguard
+DEPMOD ?= depmod
 
 PWD := $(shell pwd)
 
@@ -44,12 +45,9 @@ clean:
 
 module-install:
 	@$(MAKE) -C $(KERNELDIR) M=$(PWD) modules_install
-	depmod -a
+	$(DEPMOD) -a
 
-install:
-	@$(MAKE) -C $(KERNELDIR) M=$(PWD) modules_install
-	depmod -a
-	@$(MAKE) -C tools install
+install: module-install tools-install
 
 DKMS_TOP_LEVEL := Makefile Kbuild Kconfig $(filter-out wireguard.mod.c, $(wildcard *.c)) $(filter-out version.h, $(wildcard *.h)) version.h dkms.conf
 DKMS_SELFTEST_LEVEL := $(wildcard selftest/*.c) $(wildcard selftest/*.h)
@@ -69,6 +67,9 @@ tools:
 tools-debug:
 	@$(MAKE) -C tools V=1 DEBUG_TOOLS=y
 
+tools-install:
+	@$(MAKE) -C tools install
+
 style:
 	$(KERNELDIR)/scripts/checkpatch.pl -f --max-line-length=4000 --codespell --color=always $(filter-out wireguard.mod.c,$(wildcard *.c)) $(wildcard *.h) $(wildcard selftest/*.c)
 
@@ -83,4 +84,4 @@ cloc:
 
 -include tests/debug.mk
 
-.PHONY: all module module-debug module-install tools install dkms-install clean core-cloc check style version.h dkms.conf
+.PHONY: all module module-debug module-install tools tools-install install dkms-install clean core-cloc check style version.h dkms.conf
