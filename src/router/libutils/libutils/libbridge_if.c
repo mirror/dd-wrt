@@ -428,7 +428,7 @@ int br_set_port_hairpin(const char *br, char *port, int on)
 		return -1;
 	if (!ifexists(port))
 		return -1;
-	return port_set(br, port, "hairpin_mode", hairpin_mode, 0);
+	return port_set(br, port, "hairpin_mode", on, 0);
 }
 
 int br_set_port_prio(const char *bridge, char *port, int prio)
