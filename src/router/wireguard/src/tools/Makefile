@@ -56,6 +56,9 @@ BUILT_IN_COMPILE.c := $(COMPILE.c)
 COMPILE.c = @echo "  CC      $$(pwd)/$@";
 COMPILE.c += $(BUILT_IN_COMPILE.c)
 endif
+ifeq ($(PLATFORM),haiku)
+LDLIBS += -lnetwork -lbsd
+endif
 
 wg: $(patsubst %.c,%.o,$(wildcard *.c))
 
