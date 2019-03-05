@@ -1728,7 +1728,13 @@ cprintf("get instance\n");
 	WL_IOCTL(name, WLC_GET_INSTANCE, &unit, sizeof(unit));
 	
 	unit+=offset;
-	
+#ifdef __CONFIG_DHDAP__
+	fprintf(stderr, "dhd probe eth1 %d\n", dhd_probe("eth1"));
+	fprintf(stderr, "dhd probe eth2 %d\n", dhd_probe("eth2"));
+	fprintf(stderr, "wl probe eth1 %d\n", wl_probe("eth1"));
+	fprintf(stderr, "wl probe eth2 %d\n", wl_probe("eth2"));
+	fprintf(stderr, "unit %d, offset %d\n", unit, offset);
+#endif
     	sprintf(tmp, "wl%d_mbss", unit);
 	if (mbsscap)
 	    {
