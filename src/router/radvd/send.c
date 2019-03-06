@@ -527,8 +527,8 @@ static struct safe_buffer_list *add_ra_options_dnssl(struct safe_buffer_list *sb
 
 		dnssl = dnssl->next;
 	}
-	return sbl;
 	safe_buffer_free(serialized_domains);
+	return sbl;
 }
 
 /*
@@ -619,9 +619,9 @@ static void add_ra_option_lowpanco(struct safe_buffer *sb, struct AdvLowpanCo co
 	co.nd_opt_6co_type = ND_OPT_6CO;
 	co.nd_opt_6co_len = 3;
 	co.nd_opt_6co_context_len = lowpanco->ContextLength;
-	co.nd_opt_6co_c = lowpanco->ContextCompressionFlag;
-	co.nd_opt_6co_cid = lowpanco->AdvContextID;
-	co.nd_opt_6co_valid_lifetime = lowpanco->AdvLifeTime;
+	co.nd_opt_6co_res_c_cid = ((lowpanco->ContextCompressionFlag ? 1 : 0) << 4)
+				| (lowpanco->AdvContextID & 0x0F);
+	co.nd_opt_6co_valid_lifetime = htons(lowpanco->AdvLifeTime);
 	co.nd_opt_6co_con_prefix = lowpanco->AdvContextPrefix;
 
 	safe_buffer_append(sb, &co, sizeof(co));
@@ -635,9 +635,9 @@ static void add_ra_option_abro(struct safe_buffer *sb, struct AdvAbro const *abr
 
 	abro.nd_opt_abro_type = ND_OPT_ABRO;
 	abro.nd_opt_abro_len = 3;
-	abro.nd_opt_abro_ver_low = abroo->Version[1];
-	abro.nd_opt_abro_ver_high = abroo->Version[0];
-	abro.nd_opt_abro_valid_lifetime = abroo->ValidLifeTime;
+	abro.nd_opt_abro_ver_low = htons(abroo->Version[1]);
+	abro.nd_opt_abro_ver_high = htons(abroo->Version[0]);
+	abro.nd_opt_abro_valid_lifetime = htons(abroo->ValidLifeTime);
 	abro.nd_opt_abro_6lbr_address = abroo->LBRaddress;
 
 	safe_buffer_append(sb, &abro, sizeof(abro));
@@ -797,7 +797,7 @@ static int send_ra(int sock, struct Interface *iface, struct in6_addr const *des
 		}
 
 		// RA built, now send it.
-		dlog(LOG_DEBUG, 5, "sending RA to %s on %s (%s), %lu options (using %lu/%u bytes)", dest_text, iface->props.name,
+		dlog(LOG_DEBUG, 5, "sending RA to %s on %s (%s), %lu options (using %zd/%u bytes)", dest_text, iface->props.name,
 		     src_text, option_count, sb->used, iface->props.max_ra_option_size);
 		int err = really_send(sock, dest, &iface->props, sb);
 		if (err < 0) {

@@ -219,6 +219,32 @@ int set_interface_reachtime(const char *iface, uint32_t rtime) { return privsep_
 
 int set_interface_retranstimer(const char *iface, uint32_t rettimer) { return privsep_interface_retranstimer(iface, rettimer); }
 
+int check_ip6_iface_forwarding(const char *iface)
+{
+	int value = -1;
+	FILE *fp = NULL;
+	char path[sizeof(PROC_SYS_IP6_IFACE_FORWARDING) + IFNAMSIZ];
+
+	snprintf(path, sizeof(PROC_SYS_IP6_IFACE_FORWARDING) + IFNAMSIZ, PROC_SYS_IP6_IFACE_FORWARDING, iface);
+
+	fp = fopen(path, "r");
+	if (fp) {
+		int rc = fscanf(fp, "%d", &value);
+		if (rc != 1) {
+			flog(LOG_ERR, "cannot read value from %s: %s", path, strerror(errno));
+			exit(1);
+		}
+		fclose(fp);
+	} else {
+		flog(LOG_DEBUG, "Correct IPv6 forwarding procfs entry for interface "
+				"not found, perhaps the procfs is disabled, "
+				"or the kernel interface has changed?");
+		value = -1;
+	}
+
+	return value;
+}
+
 int check_ip6_forwarding(void)
 {
 	int value;

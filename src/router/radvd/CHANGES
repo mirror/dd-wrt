@@ -1,3 +1,20 @@
+2019/02/25  	Release v2.18
+
+2019/02/15  	Add TravisCI config
+		Fix double-free scenario in case if duplicate interface was specified (Fixes #100).
+		Separate systemd and SysV packaging
+		Update fedora packaging files
+		No router advertisements on tunnel interfaces
+		Add nodaemon option to the manpage
+		Write to stderr in non-daemonized mode
+		Fixes memory leak in add_ra_options_dnssl
+		Check forwarding on interface
+		Added contrib/95-radvd-gen.
+		Allow quoted strings in config.
+		nd_opt_6co: use uint8_t as a bitfield to be endianness-agnostic
+
+2017/12/18	Allow quoted strings in config.
+
 2017/07/03	Release v2.17
 
 2017/07/01	Fix STDERR_SYSLOG log level bug.
