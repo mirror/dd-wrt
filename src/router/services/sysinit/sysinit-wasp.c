@@ -268,7 +268,7 @@ void start_sysinit(void)
 		set_hwaddr("eth1", mac);
 
 	}
-#elif defined(HAVE_WNDR3700V4) || defined(HAVE_CPE880)
+#elif defined(HAVE_WNDR3700V4) || defined(HAVE_CPE880) || defined(HAVE_XD9531)
 	fp = fopen("/dev/mtdblock/5", "rb");
 	if (fp) {
 		unsigned char buf2[256];
@@ -281,6 +281,21 @@ void start_sysinit(void)
 		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
 		set_hwaddr("eth0", mac);
+#ifdef HAVE_XD9531
+		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[6], copy[7], copy[8], copy[9], copy[10], copy[11]);
+		fprintf(stderr, "configure eth1 to %s\n", mac);
+		set_hwaddr("eth1", mac);
+
+		FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
+		rewind(fp);
+		fseek(fp, 0x1000, SEEK_SET);
+		for (i = 0; i < 1087; i++)
+			putc(getc(fp), out);
+		fclose(out);
+		eval("rm", "-f", "/tmp/ath10k-board.bin");
+		eval("ln", "-s", "/tmp/archerc7-board.bin", "/tmp/ath10k-board.bin");
+#endif
+		fclose(fp);
 	}
 #elif defined(HAVE_MMS344) && !defined(HAVE_DAP3662)
 	fp = fopen("/dev/mtdblock/6", "rb");
