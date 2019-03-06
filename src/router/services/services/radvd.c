@@ -68,6 +68,8 @@ static int write_ipv6_dns_servers(FILE * f, const char *prefix, char *dns, const
 			fprintf(f, "%s%s%s", (once && cnt) ? "" : prefix, p, suffix);
 			++cnt;
 		}
+		if (cnt == 3)
+		    break;
 	}
 
 	return cnt;
