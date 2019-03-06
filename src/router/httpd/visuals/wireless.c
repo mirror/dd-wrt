@@ -822,6 +822,10 @@ void ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *prefix)
 		sprintf(var, "%s_wpa_gtk_rekey", prefix);
 		websWrite(wp, "<input name=\"%s_wpa_gtk_rekey\" maxlength=\"5\" size=\"10\" onblur=\"valid_range(this,0,99999,wpa.rekey)\" value=\"%s\" />", prefix, nvram_default_get(var, "3600"));
 		websWrite(wp, "</div>\n");
+	} else if (strstr(security_mode, "wep")) {
+		show_wep(wp, prefix);
+	} else if (strstr(security_mode, "radius")) {
+		show_radius(wp, prefix, 1, 0);
 	}
 #ifdef HAVE_WPA_SUPPLICANT
 #ifndef HAVE_MICRO
