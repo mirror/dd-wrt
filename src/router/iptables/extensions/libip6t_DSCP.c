@@ -123,7 +123,7 @@ print_dscp(u_int8_t dscp, int numeric)
 
 /* Prints out the targinfo. */
 static void
-print(const struct ip6t_ip *ip,
+print(const struct ip6t_ip6 *ip,
       const struct ip6t_entry_target *target,
       int numeric)
 {
@@ -135,7 +135,7 @@ print(const struct ip6t_ip *ip,
 
 /* Saves the union ipt_targinfo in parsable form to stdout. */
 static void
-save(const struct ip6t_ip *ip, const struct ip6t_entry_target *target)
+save(const struct ip6t_ip6 *ip, const struct ip6t_entry_target *target)
 {
 	const struct ipt_DSCP_info *dinfo =
 		(const struct ipt_DSCP_info *)target->data;
