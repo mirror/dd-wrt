@@ -45,11 +45,15 @@ int check_device(int sock, struct Interface *iface)
 		dlog(LOG_ERR, 4, "%s is running", iface->props.name);
 	}
 
-	if (!iface->UnicastOnly && !(ifr.ifr_flags & IFF_MULTICAST)) {
-		flog(LOG_INFO, "%s does not support multicast, forcing UnicastOnly", iface->props.name);
+	if (!iface->UnicastOnly &&
+	    !(ifr.ifr_flags & (IFF_MULTICAST | IFF_POINTOPOINT))) {
+		flog(LOG_INFO,
+		     "%s does not support multicast or point-to-point, forcing UnicastOnly",
+		     iface->props.name);
 		iface->UnicastOnly = 1;
 	} else {
-		dlog(LOG_ERR, 4, "%s supports multicast", iface->props.name);
+		dlog(LOG_ERR, 4, "%s supports multicast or is point-to-point",
+		     iface->props.name);
 	}
 
 	return 0;

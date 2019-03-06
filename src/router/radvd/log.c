@@ -32,6 +32,7 @@ int log_open(int method, char const *ident, char const *log, int facility)
 
 	switch (log_method) {
 	case L_NONE:
+	case L_UNSPEC:
 	case L_STDERR:
 		break;
 	case L_STDERR_CLEAN:
@@ -76,6 +77,7 @@ __attribute__((format(printf, 2, 0))) static int vlog(int prio, char const *form
 
 	switch (log_method) {
 	case L_NONE:
+	case L_UNSPEC:
 		break;
 	case L_SYSLOG:
 		syslog(prio, "%s", buff);
@@ -136,6 +138,7 @@ int log_close(void)
 {
 	switch (log_method) {
 	case L_NONE:
+	case L_UNSPEC:
 	case L_STDERR:
 		break;
 	case L_STDERR_SYSLOG:

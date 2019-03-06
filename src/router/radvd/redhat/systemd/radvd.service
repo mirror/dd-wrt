@@ -1,0 +1,14 @@
+[Unit]
+Description=Router advertisement daemon for IPv6
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+EnvironmentFile=/etc/sysconfig/radvd
+ExecStart=/usr/sbin/radvd $OPTIONS
+Type=forking
+PIDFile=/var/run/radvd/radvd.pid
+ExecReload=/bin/kill -HUP $MAINPID
+
+[Install]
+WantedBy=multi-user.target

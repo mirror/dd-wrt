@@ -259,9 +259,7 @@ struct nd_opt_6co {
 	uint8_t nd_opt_6co_type;
 	uint8_t nd_opt_6co_len;
 	uint8_t nd_opt_6co_context_len;
-	uint8_t nd_opt_6co_res : 3;
-	uint8_t nd_opt_6co_c : 1;
-	uint8_t nd_opt_6co_cid : 4;
+	uint8_t nd_opt_6co_res_c_cid; /* [ res=3-bits | c=1-bit | cid=4-bits ] */
 	uint16_t nd_opt_6co_reserved;
 	uint16_t nd_opt_6co_valid_lifetime;
 	struct in6_addr nd_opt_6co_con_prefix;
@@ -281,6 +279,7 @@ uint64_t next_time_msec(struct Interface const *iface);
 /* device.c */
 int check_device(int sock, struct Interface *);
 int check_ip6_forwarding(void);
+int check_ip6_iface_forwarding(const char *iface);
 int get_v4addr(const char *, unsigned int *);
 int set_interface_curhlim(const char *, uint8_t);
 int set_interface_linkmtu(const char *, uint32_t);
