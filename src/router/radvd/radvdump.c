@@ -382,10 +382,6 @@ static void print_ff(unsigned char *msg, int len, struct sockaddr_in6 *addr, int
 				addrtostr(&rdnss_info->nd_opt_rdnssi_addr3, prefix_str, sizeof(prefix_str));
 				printf(" %s", prefix_str);
 			}
-			if (rdnss_info->nd_opt_rdnssi_len >= 9) {
-				addrtostr(&rdnss_info->nd_opt_rdnssi_addr4, prefix_str, sizeof(prefix_str));
-				printf(" %s", prefix_str);
-			}
 
 			printf("\n\t{\n");
 			/* as AdvRDNSSLifetime may depend on MaxRtrAdvInterval, it could change */

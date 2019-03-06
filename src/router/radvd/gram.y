@@ -635,10 +635,6 @@ rdnssaddr	: IPV6ADDR
 					memcpy(&rdnss->AdvRDNSSAddr3, $1, sizeof(struct in6_addr));
 					rdnss->AdvRDNSSNumber++;
 					break;
-				case 4:
-					memcpy(&rdnss->AdvRDNSSAddr4, $1, sizeof(struct in6_addr));
-					rdnss->AdvRDNSSNumber++;
-					break;
 				default:
 					flog(LOG_CRIT, "too many addresses in RDNSS section");
 					ABORT;
