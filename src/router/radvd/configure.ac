@@ -13,7 +13,7 @@ dnl
 dnl
 
 dnl If adding rcX to version, be sure to separate with a '-' 
-AC_INIT(radvd, [2.17])
+AC_INIT(radvd, [2.18])
 AC_CONFIG_SRCDIR(radvd.c)
 AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE
@@ -239,7 +239,8 @@ AM_CONFIG_HEADER(config.h)
 AC_OUTPUT(
 	Makefile \
 	radvd.service \
-	redhat/radvd.spec\
+	redhat/systemd/radvd.spec \
+	redhat/SysV/radvd.spec \
 )
 
 cat << EOF

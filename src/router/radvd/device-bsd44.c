@@ -157,3 +157,9 @@ int check_ip6_forwarding(void)
 	dlog(LOG_DEBUG, 4, "checking ipv6 forwarding not supported");
 	return 0;
 }
+
+int check_ip6_iface_forwarding(const char *iface)
+{
+	dlog(LOG_DEBUG, 4, "checking ipv6 forwarding of interface not supported");
+	return -1;
+}

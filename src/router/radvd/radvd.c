@@ -65,7 +65,7 @@ static struct option prog_opt[] = {
 #else
 
 static char usage_str[] = {
-"[-hsvcn] [-d level] [-C config_path] [-m log_method] [-l log_file]\n"
+"[-hvcn] [-d level] [-C config_path] [-m log_method] [-l log_file]\n"
 "\t[-f facility] [-p pid_file] [-u username] [-t chrootdir]"
 
 };
@@ -181,7 +181,7 @@ static pid_t daemonp(char const *daemon_pid_file_ident)
 int main(int argc, char *argv[])
 {
 	int c;
-	int log_method = L_STDERR_SYSLOG;
+	int log_method = L_UNSPEC;
 	char *logfile = PATH_RADVD_LOG;
 	int facility = LOG_FACILITY;
 	char *username = NULL;
@@ -294,6 +294,7 @@ int main(int argc, char *argv[])
 			break;
 		case L_STDERR_SYSLOG:
 		case L_NONE:
+		case L_UNSPEC:
 		case L_SYSLOG:
 		case L_LOGFILE:
 		default:
@@ -301,7 +302,8 @@ int main(int argc, char *argv[])
 			break;
 		}
 	}
-
+	if (log_method == L_UNSPEC)
+		log_method = daemonize ? L_STDERR_SYSLOG : L_STDERR;
 	if (log_open(log_method, pname, logfile, facility) < 0) {
 		perror("log_open");
 		exit(1);
