@@ -27,6 +27,12 @@ struct TOS_value
 	{ IPTOS_NORMALSVC,   "Normal-Service" },
 };
 
+
+struct xt_tos_target_info {
+	unsigned char tos_value;
+	unsigned char tos_mask;
+};
+
 /* Function which prints out usage message. */
 static void
 help(void)
@@ -52,6 +58,7 @@ static struct option opts[] = {
 	{ 0 }
 };
 
+
 /* Initialize the target. */
 static void
 init(struct ipt_entry_target *t, unsigned int *nfcache)
@@ -59,7 +66,7 @@ init(struct ipt_entry_target *t, unsigned int *nfcache)
 }
 
 static void
-parse_tos(const char *s, struct ipt_tos_target_info *info)
+parse_tos_v1(const char *s, struct ipt_tos_target_info *info)
 {
 	unsigned int i, tos;
 
@@ -82,8 +89,44 @@ parse_tos(const char *s, struct ipt_tos_target_info *info)
 	exit_error(PARAMETER_PROBLEM, "Bad TOS value `%s'", s);
 }
 
+static void
+parse_tos_v2(const char *s, struct xt_tos_target_info *info)
+{
+	unsigned int i, tos;
+	if (string_to_number(s, 0, 255, &tos) != -1) {
+		info->tos_value = tos;
+		info->tos_mask = 0xff;
+		return;
+	} 
+	exit_error(PARAMETER_PROBLEM, "Bad TOS value `%s'", s);
+}
+
 /* Function which parses command options; returns true if it
    ate an option */
+static int
+parse_v2(int c, char **argv, int invert, unsigned int *flags,
+      const struct ipt_entry *entry,
+      struct ipt_entry_target **target)
+{
+	struct xt_tos_target_info *tosinfo
+		= (struct xt_tos_target_info *)(*target)->data;
+
+	switch (c) {
+	case '1':
+		if (*flags)
+			exit_error(PARAMETER_PROBLEM,
+			           "TOS target: Cant specify --set-tos twice");
+		parse_tos_v2(optarg, tosinfo);
+		*flags = 1;
+		break;
+
+	default:
+		return 0;
+	}
+
+	return 1;
+}
+
 static int
 parse(int c, char **argv, int invert, unsigned int *flags,
       const struct ipt_entry *entry,
@@ -97,7 +140,7 @@ parse(int c, char **argv, int invert, unsigned int *flags,
 		if (*flags)
 			exit_error(PARAMETER_PROBLEM,
 			           "TOS target: Cant specify --set-tos twice");
-		parse_tos(optarg, tosinfo);
+		parse_tos_v1(optarg, tosinfo);
 		*flags = 1;
 		break;
 
@@ -153,10 +196,11 @@ save(const struct ipt_ip *ip, const struct ipt_entry_target *target)
 	printf("--set-tos 0x%02x ", tosinfo->tos);
 }
 
-static struct iptables_target tos = {
+static struct iptables_target tos_v0 = {
 	.next		= NULL,
 	.name		= "TOS",
 	.version	= IPTABLES_VERSION,
+	.revision	= 0,
 	.size		= IPT_ALIGN(sizeof(struct ipt_tos_target_info)),
 	.userspacesize	= IPT_ALIGN(sizeof(struct ipt_tos_target_info)),
 //	.help		= &help,
@@ -168,7 +212,24 @@ static struct iptables_target tos = {
 	.extra_opts	= opts
 };
 
+static struct iptables_target tos_v1 = {
+	.next		= NULL,
+	.name		= "TOS",
+	.version	= IPTABLES_VERSION,
+	.revision	= 1,
+	.size		= IPT_ALIGN(sizeof(struct xt_tos_target_info)),
+	.userspacesize	= IPT_ALIGN(sizeof(struct xt_tos_target_info)),
+//	.help		= &help,
+	.init		= &init,
+	.parse		= &parse_v2,
+	.final_check	= &final_check,
+	.print		= &print,
+	.save		= &save,
+	.extra_opts	= opts
+};
+
 void _init(void)
 {
-	register_target(&tos);
+	register_target(&tos_v0);
+	register_target(&tos_v1);
 }
