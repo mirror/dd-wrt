@@ -185,7 +185,6 @@ struct nd_opt_rdnss_info_local {
 	struct in6_addr nd_opt_rdnssi_addr1;
 	struct in6_addr nd_opt_rdnssi_addr2;
 	struct in6_addr nd_opt_rdnssi_addr3;
-	struct in6_addr nd_opt_rdnssi_addr4;
 };
 /* pref/flag/reserved field : yyyyx00000000000 (big endian) - 00000000yyyyx000 (little indian); where yyyy = pref, x = flag */
 #if BYTE_ORDER == BIG_ENDIAN
