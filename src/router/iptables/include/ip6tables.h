@@ -98,6 +98,9 @@ struct ip6tables_target
 	
 	ip6t_chainlabel name;
 
+	/* Revision of match (0 by default). */
+	u_int8_t revision;
+
 	const char *version;
 
 	/* Size of target data. */

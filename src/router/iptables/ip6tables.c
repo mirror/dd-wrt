@@ -1149,6 +1149,11 @@ static int compatible_match_revision(const char *name, u_int8_t revision)
 	return compatible_revision(name, revision, IP6T_SO_GET_REVISION_MATCH);
 }
 
+static int compatible_target_revision(const char *name, u_int8_t revision)
+{
+	return compatible_revision(name, revision, IP6T_SO_GET_REVISION_TARGET);
+}
+
 void
 register_match6(struct ip6tables_match *me)
 {
@@ -1208,16 +1213,35 @@ register_match6(struct ip6tables_match *me)
 void
 register_target6(struct ip6tables_target *me)
 {
+	struct ip6tables_target **i, *old;
+
 	if (strcmp(me->version, program_version) != 0) {
 		fprintf(stderr, "%s: target `%s' v%s (I'm v%s).\n",
 			program_name, me->name, me->version, program_version);
 		exit(1);
 	}
 
-	if (find_target(me->name, DURING_LOAD)) {
-		fprintf(stderr, "%s: target `%s' already registered.\n",
-			program_name, me->name);
-		exit(1);
+	old = find_target(me->name, DURING_LOAD);
+	if (old) {
+		if (old->revision == me->revision) {
+			fprintf(stderr,
+				"%s: target `%s' already registered.\n",
+				program_name, me->name);
+			exit(1);
+		}
+
+		/* Now we have two (or more) options, check compatibility. */
+		if (compatible_target_revision(old->name, old->revision)
+		    && old->revision > me->revision)
+			return;
+
+		/* Replace if compatible. */
+		if (!compatible_target_revision(me->name, me->revision))
+			return;
+
+		/* Delete old one. */
+		for (i = &ip6tables_targets; *i!=old; i = &(*i)->next);
+		*i = old->next;
 	}
 
 	if (me->size != IP6T_ALIGN(me->size)) {
@@ -2087,6 +2111,8 @@ int do_command6(int argc, char *argv[], char **table, ip6tc_handle_t *handle)
 				target->t = fw_calloc(1, size);
 				target->t->u.target_size = size;
 				strcpy(target->t->u.user.name, jumpto);
+				set_revision(target->t->u.user.name,
+					     target->revision);
 				if (target->init != NULL)
 					target->init(target->t, &fw.nfcache);
 				opts = merge_options(opts, target->extra_opts, &target->option_offset);
@@ -2408,6 +2434,9 @@ int do_command6(int argc, char *argv[], char **table, ip6tc_handle_t *handle)
 			target->t = fw_calloc(1, size);
 			target->t->u.target_size = size;
 			strcpy(target->t->u.user.name, jumpto);
+			if (!ip6tc_is_chain(jumpto, *handle))
+				set_revision(target->t->u.user.name,
+					     target->revision);
 			if (target->init != NULL)
 				target->init(target->t, &fw.nfcache);
 		}
