@@ -472,7 +472,6 @@ static struct safe_buffer_list *add_ra_options_rdnss(struct safe_buffer_list *sb
 		memcpy(&rdnssinfo.nd_opt_rdnssi_addr1, &rdnss->AdvRDNSSAddr1, sizeof(struct in6_addr));
 		memcpy(&rdnssinfo.nd_opt_rdnssi_addr2, &rdnss->AdvRDNSSAddr2, sizeof(struct in6_addr));
 		memcpy(&rdnssinfo.nd_opt_rdnssi_addr3, &rdnss->AdvRDNSSAddr3, sizeof(struct in6_addr));
-		memcpy(&rdnssinfo.nd_opt_rdnssi_addr4, &rdnss->AdvRDNSSAddr4, sizeof(struct in6_addr));
 
 		sbl = safe_buffer_list_append(sbl);
 		safe_buffer_append(sbl->sb, &rdnssinfo,
