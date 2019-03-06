@@ -33,14 +33,14 @@ dscp_tg(struct sk_buff *skb, const struct xt_action_param *par)
 	const struct xt_DSCP_info *dinfo = par->targinfo;
 	u_int8_t dscp = ipv4_get_dsfield(ip_hdr(skb)) >> XT_DSCP_SHIFT;
 
-//	if (dscp != dinfo->dscp) {
+	if (dscp != dinfo->dscp) {
 		if (!skb_make_writable(skb, sizeof(struct iphdr)))
 			return NF_DROP;
 
 		ipv4_change_dsfield(ip_hdr(skb), (__u8)(~XT_DSCP_MASK),
 				    dinfo->dscp << XT_DSCP_SHIFT);
 
-//	}
+	}
 	return XT_CONTINUE;
 }
 
@@ -50,13 +50,13 @@ dscp_tg6(struct sk_buff *skb, const struct xt_action_param *par)
 	const struct xt_DSCP_info *dinfo = par->targinfo;
 	u_int8_t dscp = ipv6_get_dsfield(ipv6_hdr(skb)) >> XT_DSCP_SHIFT;
 
-//	if (dscp != dinfo->dscp) {
+	if (dscp != dinfo->dscp) {
 		if (!skb_make_writable(skb, sizeof(struct ipv6hdr)))
 			return NF_DROP;
 
 		ipv6_change_dsfield(ipv6_hdr(skb), (__u8)(~XT_DSCP_MASK),
 				    dinfo->dscp << XT_DSCP_SHIFT);
-//	}
+	}
 	return XT_CONTINUE;
 }
 
@@ -81,12 +81,12 @@ tos_tg(struct sk_buff *skb, const struct xt_action_param *par)
 	orig = ipv4_get_dsfield(iph);
 	nv   = (orig & ~info->tos_mask) ^ info->tos_value;
 
-//	if (orig != nv) {
+	if (orig != nv) {
 		if (!skb_make_writable(skb, sizeof(struct iphdr)))
 			return NF_DROP;
 		iph = ip_hdr(skb);
 		ipv4_change_dsfield(iph, 0, nv);
-//	}
+	}
 
 	return XT_CONTINUE;
 }
@@ -101,12 +101,12 @@ tos_tg6(struct sk_buff *skb, const struct xt_action_param *par)
 	orig = ipv6_get_dsfield(iph);
 	nv   = (orig & ~info->tos_mask) ^ info->tos_value;
 
-//	if (orig != nv) {
+	if (orig != nv) {
 		if (!skb_make_writable(skb, sizeof(struct iphdr)))
 			return NF_DROP;
 		iph = ipv6_hdr(skb);
 		ipv6_change_dsfield(iph, 0, nv);
-//	}
+	}
 
 	return XT_CONTINUE;
 }
