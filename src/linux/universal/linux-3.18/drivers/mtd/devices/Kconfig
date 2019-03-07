@@ -299,6 +299,9 @@ config WR615N
 	bool "support for WR615N"
 	depends on DIR859
 	select COMFAST_WATCHDOG
+config XD9531
+	bool "support for XD9531"
+	depends on DIR859
 config E355AC
 	bool "support for E355AC"
 	depends on DIR859
