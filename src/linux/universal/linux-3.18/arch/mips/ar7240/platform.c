@@ -1108,6 +1108,10 @@ int __init ar7240_platform_init(void)
 	mac = (u8 *)KSEG1ADDR(0x1f010000);
 	ee = (u8 *)KSEG1ADDR(0x1f011000);
 #endif
+#ifdef CONFIG_XD9531
+	mac = (u8 *)KSEG1ADDR(0x1f7f0000);
+	ee = (u8 *)KSEG1ADDR(0x1f7f1000);
+#endif
 #ifdef CONFIG_E355AC
 	mac = (u8 *)KSEG1ADDR(0x1f010000);
 	ee = (u8 *)KSEG1ADDR(0x1f011000);
@@ -1164,6 +1168,10 @@ int __init ar7240_platform_init(void)
 	ath79_init_mac(mac1, mac + ALFA_AP120C_MAC_OFFSET, 2);	
     #elif CONFIG_E380AC
 	mac = (u8 *)KSEG1ADDR(0x1f020000);
+	ath79_init_mac(mac0, mac, -1);
+	ath79_init_mac(mac1, mac, 0);	
+    #elif CONFIG_XD9531
+	mac = (u8 *)KSEG1ADDR(0x1f010000);
 	ath79_init_mac(mac0, mac, -1);
 	ath79_init_mac(mac1, mac, 0);	
     #elif CONFIG_WR615N
@@ -1341,6 +1349,7 @@ int __init ar7240_platform_init(void)
 //    	ap136_gmac_setup(QCA955X_ETH_CFG_RGMII_EN);
     #elif CONFIG_E380AC
     	ap136_gmac_setup(QCA955X_ETH_CFG_RGMII_EN);
+    #elif CONFIG_XD9531
     #elif CONFIG_WR615N
     #elif CONFIG_E325N
     #elif CONFIG_E355AC
@@ -1924,6 +1933,7 @@ int __init ar7240_platform_init(void)
 		#endif
 	#ifndef CONFIG_WR650AC
 	#ifndef CONFIG_E355AC
+	#ifndef CONFIG_XD9531
 	#ifndef CONFIG_WR615N
 	#ifndef CONFIG_E380AC
 	#ifndef CONFIG_AP120C
@@ -1967,6 +1977,7 @@ int __init ar7240_platform_init(void)
 	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
 	ar71xx_eth0_pll_data.pll_1000 = 0x06000000;
 	ar71xx_add_device_eth(0);
+	#endif
 	#endif
 	#endif
 	#endif
