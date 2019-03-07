@@ -445,7 +445,7 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 	{
 	 .name = "generic_17",
 	 .gpio = 17,
-#if defined(CONFIG_DIR615E) || defined(CONFIG_ERC) || defined(CONFIG_ARCHERC7V5)
+#if defined(CONFIG_DIR615E) || defined(CONFIG_ERC) || defined(CONFIG_ARCHERC7V5) || defined(CONFIG_XD9531)
 	 .active_low = 1,
 #elif defined(CONFIG_CPE880)
 	 .active_low = 1,
@@ -977,6 +977,10 @@ void __init ar71xx_gpio_init(void)
 //WR650AC
 #ifdef CONFIG_COMFAST_WATCHDOG
 
+#ifdef CONFIG_XD9531
+#define	XWDT_TRIGGER	17
+	printk(KERN_INFO "setup watchdog XD9531\n");
+#endif
 #ifdef CONFIG_WR615N
 #define	XWDT_TRIGGER	13
 	printk(KERN_INFO "setup watchdog WR615N\n");
