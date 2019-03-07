@@ -267,6 +267,7 @@ define kernelfeatures
 		sed -i 's/\# CONFIG_NFSD is not set/CONFIG_NFSD=m/g' $(LINUXDIR)/.config; \
 		echo "CONFIG_NFSD_V3=y" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFSD_V3_ACL is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_NFSD_FAULT_INJECTION is not set" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFSD_V4=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFSD_BLOCKLAYOUT=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_RPCSEC_GSS_KRB5=m" >> $(LINUXDIR)/.config; \
