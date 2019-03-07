@@ -1308,6 +1308,7 @@ ifeq ($(CONFIG_UBNTM),y)
 	./tools/trx_n  -m 40000000 -o $(ARCH)-uclibc/ar7420-firmware.bin $(ARCH)-uclibc/aligned.uimage
 	-tools/ubnt/src/mkfwimage -v XM.ar7240.v6.0.0.133900.2000 -o $(ARCH)-uclibc/ubntm-dd-wrt.bin -i tools/ubnt/m-dd-wrt.txt
 	-tools/ubnt/src/mkfwimage -v BZ.ar7240.v6.0.0.133900.2000 -o $(ARCH)-uclibc/ubntbz-dd-wrt.bin -i tools/ubnt/m-dd-wrt.txt
+	cd ubnt_mtd && make clean && make
 endif
 
 ifeq ($(CONFIG_UBNTXW),y)
@@ -1315,7 +1316,6 @@ ifeq ($(CONFIG_UBNTXW),y)
 	-tools/ubnt/src/mkfwimage -v BZ.qca9342.v6.0.0.133900.2000 -o $(ARCH)-uclibc/ubntbz2-dd-wrt.bin -i tools/ubnt/m-dd-wrt.txt
 #	-tools/ubnt/src/mkfwimage2 -f 0x9f000000 -v BZ.qca9342.v6.0.0.133900.2000 -p kernel:0x50000:0x760000:0:0:mips-uclibc/aligned.uimage -o $(ARCH)-uclibc/ubntbz2-dd-wrt.bin 
 #	-tools/ubnt/src/mkfwimage -v BZ.ar7240.v6.0.0.133900.2000 -o $(ARCH)-uclibc/ubntbz-dd-wrt.bin -i tools/ubnt/m-dd-wrt.txt
-	cd ubnt_mtd && make clean && make
 endif
 ifeq ($(CONFIG_DAP3410),y)
 	tools/dap3410/makedap $(ARCH)-uclibc/root.uimage $(ARCH)-uclibc/root.fs $(ARCH)-uclibc/dap3410.bin DAP3410
