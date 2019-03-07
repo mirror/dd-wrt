@@ -1,3 +1,5 @@
+//typedef long __kernel_loff_t;
+
 /*
  * mtd - simple memory technology device manipulation tool
  *
@@ -577,8 +579,8 @@ static void ar7240_spi_poll()
 
 static void ar7240_spi_flash_unblock(void)	// note gpio 16 is another flash protect mechanism found on the uap v2
 {
-	return;
-	fprintf(stderr, "enter %s\n", __func__);
+#ifdef SPLIT
+//	fprintf(stderr, "enter %s\n", __func__);
 	u_int32_t mfrid = 0;
 	ar7240_reg_wr_nf(AR7240_SPI_FS, 1);
 	ar7240_spi_poll();
@@ -602,12 +604,16 @@ static void ar7240_spi_flash_unblock(void)	// note gpio 16 is another flash prot
 	ar7240_spi_bit_banger(0x0);
 	ar7240_spi_go();
 	ar7240_spi_poll();
-	fprintf(stderr, "leave %s\n", __func__);
-
+//	fprintf(stderr, "leave %s\n", __func__);
+#endif
 }
 
+#ifdef SPLIT
+#include "kernel.h"
+#include "rootfs.h"
+#else
 #include "image.h"
-
+#endif
 int main(int argc, char **argv)
 {
 	int ch, i, boot, imagefd = 0, force, unlocked;
@@ -643,7 +649,18 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 	mtd_unlock(device);
+#ifdef SPLIT
+	mtd_write(kernel, sizeof(kernel), device, fis_layout, part_offset);
+	device = "rootfs";
+	if (!mtd_check(device)) {
+		fprintf(stderr, "Can't open device for writing!\n");
+		exit(1);
+	}
+	mtd_unlock(device);
+	mtd_write(rootfs, sizeof(rootfs), device, fis_layout, part_offset);
+#else
 	mtd_write(image, sizeof(image), device, fis_layout, part_offset);
+#endif
 	sync();
 
 	return 0;
