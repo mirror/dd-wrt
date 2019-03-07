@@ -12,7 +12,7 @@ ifeq ($(CONFIG_IPV6),m)
 SFE_SUPPORT_IPV6=y
 endif
 
-ccflags-$(SFE_SUPPORT_IPV6) += -DSFE_SUPPORT_IPV6
+ccflags-$(SFE_SUPPORT_IPV6) += -DSFE_SUPPORT_IPV6 -DSFE_TOS
 
 shortcut-fe-objs := sfe_cm.o
 
