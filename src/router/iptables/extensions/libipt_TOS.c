@@ -93,10 +93,16 @@ static void
 parse_tos_v2(const char *s, struct xt_tos_target_info *info)
 {
 	unsigned int i, tos;
+	info->tos_mask = 0xff;
 	if (string_to_number(s, 0, 255, &tos) != -1) {
 		info->tos_value = tos;
-		info->tos_mask = 0xff;
 		return;
+	} else {
+		for (i = 0; i<sizeof(TOS_values)/sizeof(struct TOS_value); i++)
+			if (strcasecmp(s,TOS_values[i].name) == 0) {
+				info->tos_value = TOS_values[i].TOS;
+				return;
+			}
 	} 
 	exit_error(PARAMETER_PROBLEM, "Bad TOS value `%s'", s);
 }
