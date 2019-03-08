@@ -1,0 +1,243 @@
+#!/usr/bin/perl
+# Name: /usr/local/bin/rrsync (should also have a symlink in /usr/bin)
+# Purpose: Restricts rsync to subdirectory declared in .ssh/authorized_keys
+# Author: Joe Smith <js-cgi@inwap.com> 30-Sep-2004
+# Modified by: Wayne Davison <wayned@samba.org>
+use strict;
+
+use Socket;
+use Cwd 'abs_path';
+use File::Glob ':glob';
+
+# You may configure these values to your liking.  See also the section
+# of options if you want to disable any options that rsync accepts.
+use constant RSYNC => '/usr/bin/rsync';
+use constant LOGFILE => 'rrsync.log';
+
+my $Usage = <<EOM;
+Use 'command="$0 [-ro|-wo] SUBDIR"'
+	in front of lines in $ENV{HOME}/.ssh/authorized_keys
+EOM
+
+# Handle the -ro and -wo options.
+our $only = '';
+while (@ARGV && $ARGV[0] =~ /^-([rw])o$/) {
+    my $r_or_w = $1;
+    if ($only && $only ne $r_or_w) {
+	die "$0: the -ro and -wo options conflict.\n";
+    }
+    $only = $r_or_w;
+    shift;
+}
+
+our $subdir = shift;
+die "$0: No subdirectory specified\n$Usage" unless defined $subdir;
+$subdir = abs_path($subdir);
+die "$0: Restricted directory does not exist!\n" if $subdir ne '/' && !-d $subdir;
+
+# The client uses "rsync -av -e ssh src/ server:dir/", and sshd on the server
+# executes this program when .ssh/authorized_keys has 'command="..."'.
+# For example:
+# command="rrsync logs/client" ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAIEAzGhEeNlPr...
+# command="rrsync -ro results" ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAIEAmkHG1WCjC...
+#
+# Format of the environment variables set by sshd:
+# SSH_ORIGINAL_COMMAND=rsync --server          -vlogDtpr --partial . ARG # push
+# SSH_ORIGINAL_COMMAND=rsync --server --sender -vlogDtpr --partial . ARGS # pull
+# SSH_CONNECTION=client_addr client_port server_port
+
+my $command = $ENV{SSH_ORIGINAL_COMMAND};
+die "$0: Not invoked via sshd\n$Usage"	unless defined $command;
+die "$0: SSH_ORIGINAL_COMMAND='$command' is not rsync\n" unless $command =~ s/^rsync\s+//;
+die "$0: --server option is not first\n" unless $command =~ /^--server\s/;
+our $am_sender = $command =~ /^--server\s+--sender\s/; # Restrictive on purpose!
+die "$0 sending to read-only server not allowed\n" if $only eq 'r' && !$am_sender;
+die "$0 reading from write-only server not allowed\n" if $only eq 'w' && $am_sender;
+
+### START of options data produced by the cull_options script. ###
+
+# These options are the only options that rsync might send to the server,
+# and only in the option format that the stock rsync produces.
+
+# To disable a short-named option, add its letter to this string:
+our $short_disabled = 's';
+
+our $short_no_arg = 'ACDEHIJKLORSWXbcdgklmnoprstuvxyz'; # DO NOT REMOVE ANY
+our $short_with_num = 'B'; # DO NOT REMOVE ANY
+
+# To disable a long-named option, change its value to a -1.  The values mean:
+# 0 = the option has no arg; 1 = the arg doesn't need any checking; 2 = only
+# check the arg when receiving; and 3 = always check the arg.
+our %long_opt = (
+  'append' => 0,
+  'backup-dir' => 2,
+  'block-size' => 1,
+  'bwlimit' => 1,
+  'checksum-seed' => 1,
+  'compare-dest' => 2,
+  'compress-level' => 1,
+  'copy-dest' => 2,
+  'copy-unsafe-links' => 0,
+  'daemon' => -1,
+  'debug' => 1,
+  'delay-updates' => 0,
+  'delete' => 0,
+  'delete-after' => 0,
+  'delete-before' => 0,
+  'delete-delay' => 0,
+  'delete-during' => 0,
+  'delete-excluded' => 0,
+  'delete-missing-args' => 0,
+  'existing' => 0,
+  'fake-super' => 0,
+  'files-from' => 3,
+  'force' => 0,
+  'from0' => 0,
+  'fuzzy' => 0,
+  'group' => 0,
+  'groupmap' => 1,
+  'hard-links' => 0,
+  'iconv' => 1,
+  'ignore-errors' => 0,
+  'ignore-existing' => 0,
+  'ignore-missing-args' => 0,
+  'ignore-times' => 0,
+  'info' => 1,
+  'inplace' => 0,
+  'link-dest' => 2,
+  'links' => 0,
+  'list-only' => 0,
+  'log-file' => 3,
+  'log-format' => 1,
+  'max-delete' => 1,
+  'max-size' => 1,
+  'min-size' => 1,
+  'modify-window' => 1,
+  'new-compress' => 0,
+  'no-implied-dirs' => 0,
+  'no-r' => 0,
+  'no-relative' => 0,
+  'no-specials' => 0,
+  'numeric-ids' => 0,
+  'one-file-system' => 0,
+  'only-write-batch' => 1,
+  'owner' => 0,
+  'partial' => 0,
+  'partial-dir' => 2,
+  'perms' => 0,
+  'preallocate' => 0,
+  'recursive' => 0,
+  'remove-sent-files' => $only eq 'r' ? -1 : 0,
+  'remove-source-files' => $only eq 'r' ? -1 : 0,
+  'safe-links' => 0,
+  'sender' => 0,
+  'server' => 0,
+  'size-only' => 0,
+  'skip-compress' => 1,
+  'specials' => 0,
+  'stats' => 0,
+  'suffix' => 1,
+  'super' => 0,
+  'temp-dir' => 2,
+  'timeout' => 1,
+  'times' => 0,
+  'use-qsort' => 0,
+  'usermap' => 1,
+);
+
+### END of options data produced by the cull_options script. ###
+
+if ($short_disabled ne '') {
+    $short_no_arg =~ s/[$short_disabled]//go;
+    $short_with_num =~ s/[$short_disabled]//go;
+}
+$short_no_arg = "[$short_no_arg]" if length($short_no_arg) > 1;
+$short_with_num = "[$short_with_num]" if length($short_with_num) > 1;
+
+my $write_log = -f LOGFILE && open(LOG, '>>', LOGFILE);
+
+chdir($subdir) or die "$0: Unable to chdir to restricted dir: $!\n";
+
+my(@opts, @args);
+my $in_options = 1;
+my $last_opt = '';
+my $check_type;
+while ($command =~ /((?:[^\s\\]+|\\.[^\s\\]*)+)/g) {
+  $_ = $1;
+  if ($check_type) {
+    push(@opts, check_arg($last_opt, $_, $check_type));
+    $check_type = 0;
+  } elsif ($in_options) {
+    push(@opts, $_);
+    if ($_ eq '.') {
+      $in_options = 0;
+    } else {
+      die "$0: invalid option: '-'\n" if $_ eq '-';
+      next if /^-$short_no_arg*(e\d*\.\w*)?$/o || /^-$short_with_num\d+$/o;
+
+      my($opt,$arg) = /^--([^=]+)(?:=(.*))?$/;
+      my $disabled;
+      if (defined $opt) {
+	my $ct = $long_opt{$opt};
+	last unless defined $ct;
+	next if $ct == 0;
+	if ($ct > 0) {
+	  if (!defined $arg) {
+	    $check_type = $ct;
+	    $last_opt = $opt;
+	    next;
+	  }
+	  $arg = check_arg($opt, $arg, $ct);
+	  $opts[-1] =~ s/=.*/=$arg/;
+	  next;
+	}
+	$disabled = 1;
+	$opt = "--$opt";
+      } elsif ($short_disabled ne '') {
+	$disabled = /^-$short_no_arg*([$short_disabled])/o;
+	$opt = "-$1";
+      }
+
+      last unless $disabled; # Generate generic failure
+      die "$0: option $opt has been disabled on this server.\n";
+    }
+  } else {
+    if ($subdir ne '/') {
+      # Validate args to ensure they don't try to leave our restricted dir.
+      s{//+}{/}g;
+      s{^/}{};
+      s{^$}{.};
+      die "$0: do not use .. in any path!\n" if m{(^|/)\\?\.\\?\.(\\?/|$)};
+    }
+    push(@args, bsd_glob($_, GLOB_LIMIT|GLOB_NOCHECK|GLOB_BRACE|GLOB_QUOTE));
+  }
+}
+die "$0: invalid rsync-command syntax or options\n" if $in_options;
+
+@args = ( '.' ) if !@args;
+
+if ($write_log) {
+  my ($mm,$hh) = (localtime)[1,2];
+  my $host = $ENV{SSH_CONNECTION} || 'unknown';
+  $host =~ s/ .*//; # Keep only the client's IP addr
+  $host =~ s/^::ffff://;
+  $host = gethostbyaddr(inet_aton($host),AF_INET) || $host;
+  printf LOG "%02d:%02d %-13s [%s]\n", $hh, $mm, $host, "@opts @args";
+  close LOG;
+}
+
+# Note: This assumes that the rsync protocol will not be maliciously hijacked.
+exec(RSYNC, @opts, @args) or die "exec(rsync @opts @args) failed: $? $!";
+
+sub check_arg
+{
+  my($opt, $arg, $type) = @_;
+  $arg =~ s/\\(.)/$1/g;
+  if ($subdir ne '/' && ($type == 3 || ($type == 2 && !$am_sender))) {
+    $arg =~ s{//}{/}g;
+    die "Do not use .. in --$opt; anchor the path at the root of your restricted dir.\n"
+      if $arg =~ m{(^|/)\.\.(/|$)};
+    $arg =~ s{^/}{$subdir/};
+  }
+  $arg;
+}

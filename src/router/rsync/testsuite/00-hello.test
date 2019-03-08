@@ -1,0 +1,14 @@
+#! /bin/sh
+
+test_fail() {
+    echo "$@" >&2
+    exit 1
+}
+
+echo $0 running
+
+$RSYNC --version || test_fail '--version output failed'
+
+$RSYNC --info=help || test_fail '--info=help output failed'
+
+$RSYNC --debug=help || test_fail '--debug=help output failed'

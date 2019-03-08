@@ -1,0 +1,312 @@
+#!/usr/bin/perl
+#
+# This script parses the default logfile format produced by rsync when running
+# as a daemon with transfer logging enabled.  It also parses a slightly tweaked
+# version of the default format where %o has been replaced with %i.
+#
+# This script is derived from the xferstats script that comes with wuftpd.  See
+# the usage message at the bottom for the options it takes.
+#
+# Andrew Tridgell, October 1998
+
+use Getopt::Long;
+
+# You may wish to edit the next line to customize for your default log file.
+$usage_file = "/var/log/rsyncd.log";
+
+# Edit the following lines for default report settings.
+# Entries defined here will be over-ridden by the command line.
+
+$hourly_report = 0; 
+$domain_report = 0;
+$total_report = 0;
+$depth_limit = 9999;
+$only_section = '';
+
+&Getopt::Long::Configure('bundling');
+&usage if !&GetOptions(
+    'hourly-report|h' => \$hourly_report,
+    'domain-report|d' => \$domain_report,
+    'domain|D:s' => \$only_domain,
+    'total-report|t' => \$total_report,
+    'depth-limit|l:i' => \$depth_limit,
+    'real|r' => \$real,
+    'anon|a' => \$anon,
+    'section|s:s' => \$only_section,
+    'file|f:s' => \$usage_file,
+);
+
+$anon = 1 if !$real && !$anon;
+
+open(LOG, $usage_file) || die "Error opening usage log file: $usage_file\n";
+
+if ($only_domain) {
+    print "Transfer Totals include the '$only_domain' domain only.\n";
+    print "All other domains are filtered out for this report.\n\n";
+}
+
+if ($only_section) {
+    print "Transfer Totals include the '$only_section' section only.\n";
+    print "All other sections are filtered out for this report.\n\n";
+}
+
+line: while (<LOG>) {
+
+my $syslog_prefix = '\w\w\w +\d+ \d\d:\d\d:\d\d \S+ rsyncd';
+my $rsyncd_prefix = '\d\d\d\d/\d\d/\d\d \d\d:\d\d:\d\d ';
+
+   next unless ($day,$time,$op,$host,$module,$file,$bytes)
+      = m{^
+	  ( \w\w\w\s+\d+ | \d+/\d\d/\d\d ) \s+ # day
+	  (\d\d:\d\d:\d\d) \s+                 # time
+	  [^[]* \[\d+\]:? \s+                  # pid (ignored)
+	  (send|recv|[<>]f\S+) \s+             # op (%o or %i)
+	  (\S+) \s+                            # host
+	  \[\d+\.\d+\.\d+\.\d+\] \s+           # IP (ignored)
+	  (\S+) \s+                            # module
+	  \(\S*\) \s+                          # user (ignored)
+	  (.*) \s+                             # file name
+	  (\d+)                                # file length in bytes
+	  $ }x;
+
+   # TODO actually divide the data by into send/recv categories
+   if ($op =~ /^>/) {
+      $op = 'send';
+   } elsif ($op =~ /^</) {
+      $op = 'recv';
+   }
+
+   $daytime = $day;
+   $hour = substr($time,0,2); 
+
+   $file = $module . "/" . $file;
+
+   $file =~ s|//|/|mg;
+
+   @path = split(/\//, $file);
+
+   $pathkey = "";
+   for ($i=0; $i <= $#path && $i <= $depth_limit; $i++) {
+	$pathkey = $pathkey . "/" . $path[$i];
+   }
+
+   if ($only_section ne '') {
+       next unless (substr($pathkey,0,length($only_section)) eq $only_section);
+   }
+
+   $host =~ tr/A-Z/a-z/;
+
+   @address = split(/\./, $host);
+
+   $domain = $address[$#address];
+   if ( int($address[0]) > 0 || $#address < 2 )
+      { $domain = "unresolved"; }
+
+   if ($only_domain ne '') {
+       next unless (substr($domain,0,length($only_domain)) eq $only_domain);
+   }
+
+
+#   printf("c=%d day=%s bytes=%d file=%s path=%s\n", 
+#	   $#line, $daytime, $bytes, $file, $pathkey);
+
+   $xferfiles++;                                # total files sent
+   $xfertfiles++;                               # total files sent
+   $xferfiles{$daytime}++;                      # files per day
+   $groupfiles{$pathkey}++;                     # per-group accesses
+   $domainfiles{$domain}++;
+
+   $xferbytes{$daytime}   += $bytes;          # bytes per day
+   $domainbytes{$domain}  += $bytes;		# xmit bytes to domain
+   $xferbytes             += $bytes;          # total bytes sent
+   $groupbytes{$pathkey}  += $bytes;          # per-group bytes sent
+
+   $xfertfiles{$hour}++;                        # files per hour
+   $xfertbytes{$hour}     += $bytes;          # bytes per hour
+   $xfertbytes            += $bytes;          # total bytes sent
+}
+close LOG;
+
+#@syslist = keys %systemfiles;
+@dates = sort datecompare keys %xferbytes;
+
+if ($xferfiles == 0) {die "There was no data to process.\n";}
+
+
+print "TOTALS FOR SUMMARY PERIOD ", $dates[0], " TO ", $dates[$#dates], "\n\n";
+printf("Files Transmitted During Summary Period  %12.0f\n", $xferfiles);
+printf("Bytes Transmitted During Summary Period  %12.0f\n", $xferbytes); 
+#printf("Systems Using Archives                   %12.0f\n\n", $#syslist+1);
+
+printf("Average Files Transmitted Daily          %12.0f\n",
+   $xferfiles / ($#dates + 1));
+printf("Average Bytes Transmitted Daily          %12.0f\n",
+   $xferbytes / ($#dates + 1));
+
+format top1 =
+
+Daily Transmission Statistics
+
+                 Number Of    Number of   Percent Of  Percent Of
+     Date        Files Sent   MB  Sent    Files Sent  Bytes Sent
+---------------  ----------  -----------  ----------  ----------
+.
+
+format line1 =
+@<<<<<<<<<<<<<<  @>>>>>>>>>  @>>>>>>>>>>  @>>>>>>>    @>>>>>>>  
+$date,           $nfiles,    $nbytes/(1024*1024), $pctfiles,  $pctbytes
+.
+
+$^ = top1;
+$~ = line1;
+
+foreach $date (sort datecompare keys %xferbytes) {
+
+   $nfiles   = $xferfiles{$date};
+   $nbytes   = $xferbytes{$date};
+   $pctfiles = sprintf("%8.2f", 100*$xferfiles{$date} / $xferfiles);
+   $pctbytes = sprintf("%8.2f", 100*$xferbytes{$date} / $xferbytes);
+   write;
+}
+
+if ($total_report) {
+format top2 =
+
+Total Transfers from each Archive Section (By bytes)
+
+                                                           - Percent -
+     Archive Section                   NFiles     MB      Files   Bytes
+------------------------------------- ------- ----------- ----- -------
+.
+
+format line2 =
+@<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< @>>>>>> @>>>>>>>>>> @>>>>   @>>>>
+$section,                 $files,    $bytes/(1024*1024),     $pctfiles, $pctbytes
+.
+
+$| = 1;
+$- = 0;
+$^ = top2;
+$~ = line2;
+
+foreach $section (sort bytecompare keys %groupfiles) {
+
+   $files = $groupfiles{$section};
+   $bytes = $groupbytes{$section};
+   $pctbytes = sprintf("%8.2f", 100 * $groupbytes{$section} / $xferbytes);
+   $pctfiles = sprintf("%8.2f", 100 * $groupfiles{$section} / $xferfiles);
+   write;
+
+}
+
+if ( $xferfiles < 1 ) { $xferfiles = 1; }
+if ( $xferbytes < 1 ) { $xferbytes = 1; }
+}
+
+if ($domain_report) {
+format top3 =
+
+Total Transfer Amount By Domain
+
+             Number Of    Number of    Percent Of  Percent Of
+Domain Name  Files Sent    MB Sent     Files Sent  Bytes Sent
+-----------  ----------  ------------  ----------  ----------
+.
+
+format line3 =
+@<<<<<<<<<<  @>>>>>>>>>  @>>>>>>>>>>>  @>>>>>>>    @>>>>>>>  
+$domain,     $files,     $bytes/(1024*1024), $pctfiles,  $pctbytes
+.
+
+$- = 0;
+$^ = top3;
+$~ = line3;
+
+foreach $domain (sort domnamcompare keys %domainfiles) {
+
+   if ( $domainsecs{$domain} < 1 ) { $domainsecs{$domain} = 1; }
+
+   $files = $domainfiles{$domain};
+   $bytes = $domainbytes{$domain};
+   $pctfiles = sprintf("%8.2f", 100 * $domainfiles{$domain} / $xferfiles);
+   $pctbytes = sprintf("%8.2f", 100 * $domainbytes{$domain} / $xferbytes);
+   write;
+
+}
+
+}
+
+if ($hourly_report) {
+
+format top8 =
+
+Hourly Transmission Statistics
+
+                 Number Of    Number of   Percent Of  Percent Of
+     Time        Files Sent    MB  Sent   Files Sent  Bytes Sent
+---------------  ----------  -----------  ----------  ----------
+.
+
+format line8 =
+@<<<<<<<<<<<<<<  @>>>>>>>>>  @>>>>>>>>>>  @>>>>>>>    @>>>>>>>  
+$hour,           $nfiles,    $nbytes/(1024*1024), $pctfiles,  $pctbytes
+.
+
+
+$| = 1;
+$- = 0;
+$^ = top8;
+$~ = line8;
+
+foreach $hour (sort keys %xfertbytes) {
+
+   $nfiles   = $xfertfiles{$hour};
+   $nbytes   = $xfertbytes{$hour};
+   $pctfiles = sprintf("%8.2f", 100*$xfertfiles{$hour} / $xferfiles);
+   $pctbytes = sprintf("%8.2f", 100*$xfertbytes{$hour} / $xferbytes);
+   write;
+}
+}
+exit(0);
+
+sub datecompare {
+    $a cmp $b;
+}
+
+sub domnamcompare {
+
+   $sdiff = length($a) - length($b);
+   ($sdiff < 0) ? -1 : ($sdiff > 0) ? 1 : $a cmp $b;
+
+}
+
+sub bytecompare {
+
+   $bdiff = $groupbytes{$b} - $groupbytes{$a};
+   ($bdiff < 0) ? -1 : ($bdiff > 0) ? 1 : $a cmp $b;
+
+}
+
+sub faccompare {
+
+   $fdiff = $fac{$b} - $fac{$a};
+   ($fdiff < 0) ? -1 : ($fdiff > 0) ? 1 : $a cmp $b;
+
+}
+
+sub usage
+{
+    die <<EOT;
+USAGE: rsyncstats [options]
+
+OPTIONS:
+  -f FILENAME   Use FILENAME for the log file.
+  -h            Include report on hourly traffic.
+  -d            Include report on domain traffic.
+  -t            Report on total traffic by section.
+  -D DOMAIN     Report only on traffic from DOMAIN.
+  -l DEPTH      Set DEPTH of path detail for sections.
+  -s SECTION    Set SECTION to report on. For example, "-s /pub"
+                will report only on paths under "/pub".
+EOT
+}

@@ -1,0 +1,421 @@
+#!/usr/bin/perl
+# This script expects the directory ~/samba-rsync-ftp to exist and to be a
+# copy of the /home/ftp/pub/rsync dir on samba.org.  When the script is done,
+# the git repository in the current directory will be updated, and the local
+# ~/samba-rsync-ftp dir will be ready to be rsynced to samba.org.
+
+use strict;
+use warnings;
+use Cwd;
+use Getopt::Long;
+use Term::ReadKey;
+use Date::Format;
+
+my $dest = $ENV{HOME} . '/samba-rsync-ftp';
+my $passfile = $ENV{HOME} . '/.rsyncpass';
+my $path = $ENV{PATH};
+my $make_gen_cmd = 'make -f prepare-source.mak conf && ./config.status && make gen';
+
+&Getopt::Long::Configure('bundling');
+&usage if !&GetOptions(
+    'branch|b=s' => \( my $master_branch = 'master' ),
+    'help|h' => \( my $help_opt ),
+);
+&usage if $help_opt;
+
+my $now = time;
+my $cl_today = time2str('* %a %b %d %Y', $now);
+my $year = time2str('%Y', $now);
+my $ztoday = time2str('%d %b %Y', $now);
+(my $today = $ztoday) =~ s/^0//;
+
+my $curdir = Cwd::cwd;
+
+END {
+    unlink($passfile);
+}
+
+my @extra_files;
+open(IN, '<', 'Makefile.in') or die "Couldn't open Makefile.in: $!\n";
+while (<IN>) {
+    if (s/^GENFILES=//) {
+	while (s/\\$//) {
+	    $_ .= <IN>;
+	}
+	@extra_files = split(' ', $_);
+	last;
+    }
+}
+close IN;
+
+my $break = <<EOT;
+==========================================================================
+EOT
+
+print $break, <<EOT, $break, "\n";
+== This will release a new version of rsync onto an unsuspecting world. ==
+EOT
+
+die "$dest does not exist\n" unless -d $dest;
+die "There is no .git dir in the current directory.\n" unless -d '.git';
+die "'a' must not exist in the current directory.\n" if -e 'a';
+die "'b' must not exist in the current directory.\n" if -e 'b';
+
+require 'packaging/git-status.pl';
+check_git_state($master_branch, 1, 1);
+
+my $confversion;
+open(IN, '<', 'configure.ac') or die $!;
+while (<IN>) {
+    if (/^AC_INIT\(\[rsync\],\s*\[(\d.+?)\]/) {
+	$confversion = $1;
+	last;
+    }
+}
+close IN;
+die "Unable to find AC_INIT with version in configure.ac\n" unless defined $confversion;
+
+open(IN, '<', 'OLDNEWS') or die $!;
+$_ = <IN>;
+my($lastversion) = /(\d+\.\d+\.\d+)/;
+my($last_protocol_version, %pdate);
+while (<IN>) {
+    if (my($ver,$pdate,$pver) = /^\s+\S\S\s\S\S\S\s\d\d\d\d\s+(\d+\.\d+\.\d+)\s+(\d\d \w\w\w \d\d\d\d\s+)?(\d+)$/) {
+	$pdate{$ver} = $pdate if defined $pdate;
+	$last_protocol_version = $pver if $ver eq $lastversion;
+    }
+}
+close IN;
+die "Unable to determine protocol_version for $lastversion.\n" unless defined $last_protocol_version;
+
+my $protocol_version;
+open(IN, '<', 'rsync.h') or die $!;
+while (<IN>) {
+    if (/^#define\s+PROTOCOL_VERSION\s+(\d+)/) {
+	$protocol_version = $1;
+	last;
+    }
+}
+close IN;
+die "Unable to determine the current PROTOCOL_VERSION.\n" unless defined $protocol_version;
+
+my $version = $confversion;
+$version =~ s/dev/pre1/ || $version =~ s/pre(\d+)/ 'pre' . ($1 + 1) /e;
+
+print "Please enter the version number of this release: [$version] ";
+chomp($_ = <STDIN>);
+if ($_ eq '.') {
+    $version =~ s/pre\d+//;
+} elsif ($_ ne '') {
+    $version = $_;
+}
+die "Invalid version: `$version'\n" unless $version =~ /^[\d.]+(pre\d+)?$/;
+
+if (`git tag -l v$version` ne '') {
+    print "Tag v$version already exists.\n\nDelete tag or quit? [q/del] ";
+    $_ = <STDIN>;
+    exit 1 unless /^del/i;
+    system "git tag -d v$version";
+}
+
+if ($version =~ s/[-.]*pre[-.]*/pre/ && $confversion !~ /dev$/) {
+    $lastversion = $confversion;
+}
+
+print "Enter the previous version to produce a patch against: [$lastversion] ";
+chomp($_ = <STDIN>);
+$lastversion = $_ if $_ ne '';
+$lastversion =~ s/[-.]*pre[-.]*/pre/;
+
+my $pre = $version =~ /(pre\d+)/ ? $1 : '';
+
+my $release = $pre ? '0.1' : '1';
+print "Please enter the RPM release number of this release: [$release] ";
+chomp($_ = <STDIN>);
+$release = $_ if $_ ne '';
+$release .= ".$pre" if $pre;
+
+(my $finalversion = $version) =~ s/pre\d+//;
+my($proto_changed,$proto_change_date);
+if ($protocol_version eq $last_protocol_version) {
+    $proto_changed = 'unchanged';
+    $proto_change_date = "\t\t";
+} else {
+    $proto_changed = 'changed';
+    if (!defined($proto_change_date = $pdate{$finalversion})) {
+	while (1) {
+	    print "On what date did the protocol change to $protocol_version get checked in? (dd Mmm yyyy) ";
+	    chomp($_ = <STDIN>);
+	    last if /^\d\d \w\w\w \d\d\d\d$/;
+	}
+	$proto_change_date = "$_\t";
+    }
+}
+
+my($srcdir,$srcdiffdir,$lastsrcdir,$skipping);
+if ($lastversion =~ /pre/) {
+    if (!$pre) {
+	die "You should not diff a release version against a pre-release version.\n";
+    }
+    $srcdir = $srcdiffdir = $lastsrcdir = 'src-previews';
+    $skipping = ' ** SKIPPING **';
+} elsif ($pre) {
+    $srcdir = $srcdiffdir = 'src-previews';
+    $lastsrcdir = 'src';
+    $skipping = ' ** SKIPPING **';
+} else {
+    $srcdir = $lastsrcdir = 'src';
+    $srcdiffdir = 'src-diffs';
+    $skipping = '';
+}
+
+print "\n", $break, <<EOT;
+\$version is "$version"
+\$lastversion is "$lastversion"
+\$dest is "$dest"
+\$curdir is "$curdir"
+\$srcdir is "$srcdir"
+\$srcdiffdir is "$srcdiffdir"
+\$lastsrcdir is "$lastsrcdir"
+\$release is "$release"
+
+About to:
+    - tweak SUBPROTOCOL_VERSION in rsync.h, if needed
+    - tweak the version in configure.ac and the spec files
+    - tweak NEWS and OLDNEWS to ensure header values are correct
+    - tweak the date in the *.yo files and generate the manpages
+    - generate configure.sh, config.h.in, and proto.h
+    - page through the differences
+
+EOT
+print "<Press Enter to continue> ";
+$_ = <STDIN>;
+
+my %specvars = ( 'Version:' => $finalversion, 'Release:' => $release,
+		 '%define fullversion' => "\%{version}$pre", 'Released' => "$version.",
+		 '%define srcdir' => $srcdir );
+my @tweak_files = ( glob('packaging/*.spec'), glob('packaging/*/*.spec'), glob('*.yo'),
+		    qw( configure.ac rsync.h NEWS OLDNEWS options.c ) );
+
+foreach my $fn (@tweak_files) {
+    open(IN, '<', $fn) or die $!;
+    undef $/; $_ = <IN>; $/ = "\n";
+    close IN;
+    if ($fn =~ /configure/) {
+	s/^(AC_INIT\(\[rsync\],\s*\[)\d.+?(\])/$1$version$2/m
+	    or die "Unable to update AC_INIT with version in $fn\n";
+    } elsif ($fn =~ /\.spec/) {
+	while (my($str, $val) = each %specvars) {
+	    s/^\Q$str\E .*/$str $val/m
+		or die "Unable to update $str in $fn\n";
+	}
+	s/^\* \w\w\w \w\w\w \d\d \d\d\d\d (.*)/$cl_today $1/m
+	    or die "Unable to update ChangeLog header in $fn\n";
+    } elsif ($fn =~ /\.yo/) {
+	s/^(manpage\([^)]+\)\(\d+\)\()[^)]+(\).*)/$1$today$2/m
+	    or die "Unable to update date in manpage() header in $fn\n";
+	s/^(This man ?page is current for version) \S+ (of rsync)/$1 $version $2/m
+	    or die "Unable to update current version info in $fn\n";
+    } elsif ($fn eq 'rsync.h') {
+	s{(#define\s+SUBPROTOCOL_VERSION)\s+(\d+)}
+	 { $1 . ' ' . get_subprotocol_version($2) }e
+	    or die "Unable to find SUBPROTOCOL_VERSION define in $fn\n";
+    } elsif ($fn eq 'NEWS') {
+	s{^(NEWS for rsync \Q$finalversion\E )(\(UNRELEASED\))\s*(\nProtocol: )(\d+) (\([^)]+\))\n}
+	 { $1 . ($pre ? $2 : "($today)") . "$3$protocol_version ($proto_changed)\n" }ei
+	    or die "The first 2 lines of $fn are not in the right format.  They must be:\n"
+		 . "NEWS for rsync $finalversion (UNRELEASED)\n"
+		 . "Protocol: $protocol_version ($proto_changed)\n";
+    } elsif ($fn eq 'OLDNEWS') {
+	s{^(\t\S\S\s\S\S\S\s\d\d\d\d)(\t\Q$finalversion\E\t).*}
+	 { ($pre ? $1 : "\t$ztoday") . $2 . $proto_change_date . $protocol_version }em
+	    or die "Unable to find \"?? ??? $year\t$finalversion\" line in $fn\n";
+    } elsif ($fn eq 'options.c') {
+	if (s/(Copyright \(C\) 2002-)(\d+)( Wayne Davison)/$1$year$3/
+	 && $2 ne $year) {
+	    die "Copyright comments need to be updated to $year in all files!\n";
+	}
+	# Adjust the year in the --version output.
+	s/(rprintf\(f, "Copyright \(C\) 1996-)(\d+)/$1$year/
+	    or die "Unable to find Copyright string in --version output of $fn\n";
+	next if $2 eq $year;
+    } else {
+	die "Unrecognized file in \@tweak_files: $fn\n";
+    }
+    open(OUT, '>', $fn) or die $!;
+    print OUT $_;
+    close OUT;
+}
+
+print $break;
+system "git diff --color | less -p '^diff .*'";
+
+my $srctar_name = "rsync-$version.tar.gz";
+my $pattar_name = "rsync-patches-$version.tar.gz";
+my $diff_name = "rsync-$lastversion-$version.diffs.gz";
+my $srctar_file = "$dest/$srcdir/$srctar_name";
+my $pattar_file = "$dest/$srcdir/$pattar_name";
+my $diff_file = "$dest/$srcdiffdir/$diff_name";
+my $news_file = "$dest/$srcdir/rsync-$version-NEWS";
+my $lasttar_file = "$dest/$lastsrcdir/rsync-$lastversion.tar.gz";
+
+print $break, <<EOT;
+
+About to:
+    - commit all version changes
+    - merge the $master_branch branch into the patch/$master_branch/* branches
+    - update the files in the "patches" dir and OPTIONALLY
+      (if you type 'y') to launch a shell for each patch
+
+EOT
+print "<Press Enter OR 'y' to continue> ";
+my $ans = <STDIN>;
+
+system "git commit -a -m 'Preparing for release of $version'" and exit 1;
+
+print "Updating files in \"patches\" dir ...\n";
+system "packaging/patch-update --branch=$master_branch";
+
+if ($ans =~ /^y/i) {
+    print "\nVisiting all \"patch/$master_branch/*\" branches ...\n";
+    system "packaging/patch-update --branch=$master_branch --skip-check --shell";
+}
+
+if (-d 'patches/.git') {
+    system "cd patches && git commit -a -m 'The patches for $version.'" and exit 1;
+}
+
+print $break, <<EOT;
+
+About to:
+    - create signed tag for this release: v$version
+    - create release diffs, "$diff_name"
+    - create release tar, "$srctar_name"
+    - generate rsync-$version/patches/* files
+    - create patches tar, "$pattar_name"
+    - update top-level README, *NEWS, TODO, and ChangeLog
+    - update top-level rsync*.html manpages
+    - gpg-sign the release files
+    - update hard-linked top-level release files$skipping
+
+EOT
+print "<Press Enter to continue> ";
+$_ = <STDIN>;
+
+# We want to use our passphrase-providing "gpg" script, so modify the PATH.
+$ENV{PATH} = "$curdir/packaging/bin:$path";
+
+my $passphrase;
+while (1) {
+    ReadMode('noecho');
+    print "\nEnter your GPG pass-phrase: ";
+    chomp($passphrase = <STDIN>);
+    ReadMode(0);
+    print "\n";
+
+    # Briefly create a temp file with the passphrase for git's tagging use.
+    my $oldmask = umask 077;
+    unlink($passfile);
+    open(OUT, '>', $passfile) or die $!;
+    print OUT $passphrase, "\n";
+    close OUT;
+    umask $oldmask;
+    $ENV{'GPG_PASSFILE'} = $passfile;
+
+    $_ = `git tag -s -m 'Version $version.' v$version 2>&1`;
+    print $_;
+    next if /bad passphrase/;
+    exit 1 if /failed/;
+
+    if (-d 'patches/.git') {
+	$_ = `cd patches && git tag -s -m 'Version $version.' v$version 2>&1`;
+	print $_;
+	exit 1 if /bad passphrase|failed/;
+    }
+
+    unlink($passfile);
+    last;
+}
+
+$ENV{PATH} = $path;
+
+# Extract the generated files from the old tar.
+@_ = @extra_files;
+map { s#^#rsync-$lastversion/# } @_;
+system "tar xzf $lasttar_file @_";
+rename("rsync-$lastversion", 'a');
+
+print "Creating $diff_file ...\n";
+system "$make_gen_cmd && rsync -a @extra_files b/" and exit 1;
+my $sed_script = 's:^((---|\+\+\+) [ab]/[^\t]+)\t.*:\1:';
+system "(git diff v$lastversion v$version; diff -upN a b | sed -r '$sed_script') | gzip -9 >$diff_file";
+system "rm -rf a";
+rename('b', "rsync-$version");
+
+print "Creating $srctar_file ...\n";
+system "git archive --format=tar --prefix=rsync-$version/ v$version | tar xf -";
+system "support/git-set-file-times --prefix=rsync-$version/";
+system "fakeroot tar czf $srctar_file rsync-$version; rm -rf rsync-$version";
+
+print "Updating files in \"rsync-$version/patches\" dir ...\n";
+mkdir("rsync-$version", 0755);
+mkdir("rsync-$version/patches", 0755);
+system "packaging/patch-update --skip-check --branch=$master_branch --gen=rsync-$version/patches";
+
+print "Creating $pattar_file ...\n";
+system "fakeroot tar chzf $pattar_file rsync-$version/patches; rm -rf rsync-$version";
+
+print "Updating the other files in $dest ...\n";
+system "rsync -a README NEWS OLDNEWS TODO $dest";
+unlink($news_file);
+link("$dest/NEWS", $news_file);
+system "git log --name-status | gzip -9 >$dest/ChangeLog.gz";
+
+system "yodl2html -o $dest/rsync.html rsync.yo";
+system "yodl2html -o $dest/rsyncd.conf.html rsyncd.conf.yo";
+
+foreach my $fn ($srctar_file, $pattar_file, $diff_file) {
+    unlink("$fn.asc");
+    open(GPG, '|-', "gpg --batch --passphrase-fd=0 -ba $fn") or die $!;
+    print GPG $passphrase, "\n";
+    close GPG;
+}
+
+if (!$pre) {
+    system "rm $dest/rsync-*.gz $dest/rsync-*.asc $dest/rsync-*-NEWS $dest/src-previews/rsync-*diffs.gz*";
+
+    foreach my $fn ($srctar_file, "$srctar_file.asc",
+		    $pattar_file, "$pattar_file.asc",
+		    $diff_file, "$diff_file.asc", $news_file) {
+	(my $top_fn = $fn) =~ s#/src(-\w+)?/#/#;
+	link($fn, $top_fn);
+    }
+}
+
+print $break, <<'EOT';
+
+Local changes are done.  When you're satisfied, push the git repository
+and rsync the release files.  Remember to announce the release on *BOTH*
+rsync-announce@lists.samba.org and rsync@lists.samba.org (and the web)!
+EOT
+
+exit;
+
+sub get_subprotocol_version
+{
+    my($subver) = @_;
+    if ($pre && $proto_changed eq 'changed') {
+	return $subver == 0 ? 1 : $subver;
+    }
+    0;
+}
+
+sub usage
+{
+    die <<EOT;
+Usage: release-rsync [OPTIONS]
+
+-b, --branch=BRANCH   The branch to release (default: master)
+-h, --help            Display this help message
+EOT
+}
