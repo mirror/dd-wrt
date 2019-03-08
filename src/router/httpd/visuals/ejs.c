@@ -1170,6 +1170,8 @@ void ej_get_sysmodel(webs_t wp, int argc, char_t ** argv)
 		}
 	} else if (nvram_match(NVROUTER, "Compex WP546")) {
 		websWrite(wp, "546");
+	} else if (nvram_match(NVROUTER, "Yuncore XD9531")) {
+		websWrite(wp, "AP-9531");
 	} else if (nvram_match(NVROUTER, "Yuncore XD3200")) {
 		websWrite(wp, "AP-9563AC");
 	} else if (nvram_match(NVROUTER, "Yuncore SR3200")) {
@@ -1202,6 +1204,8 @@ void ej_get_sysmodel(webs_t wp, int argc, char_t ** argv)
 		}
 	} else if (nvram_match(NVROUTER, "Compex WP546")) {
 		websWrite(wp, "OTAi 724S");
+	} else if (nvram_match(NVROUTER, "Yuncore XD9531")) {
+		websWrite(wp, "OtAi 9531");
 	} else if (nvram_match(NVROUTER, "Yuncore XD3200")) {
 		websWrite(wp, "OTAi 9563-AC");
 	} else if (nvram_match(NVROUTER, "Yuncore SR3200")) {
