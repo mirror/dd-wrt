@@ -1,0 +1,49 @@
+#!/usr/bin/perl
+# This script takes a command-line arg of a source directory
+# that will be passed to rsync, and generates a set of excludes
+# that will exclude all mount points from the list.  This is
+# useful if you have "bind" mounts since the --one-file-system
+# option won't notice the transition to a different spot on
+# the same disk.  For example:
+#
+# mnt-excl /dir | rsync --exclude-from=- ... /dir /dest/
+# mnt-excl /dir/ | rsync --exclude-from=- ... /dir/ /dest/
+# ssh host mnt-excl /dir | rsync --exclude-from=- ... host:/dir /dest/
+#
+# Imagine that /dir/foo is a mount point: the first invocation of
+# mnt-excl would have output /dir/foo, while the second would have
+# output /foo (which are the properly anchored excludes).
+#
+# NOTE:  This script expects /proc/mounts to exist, but could be
+# easily adapted to read /etc/mtab or similar.
+#
+# ADDENDUM:  The addition of the --filter option (which has support for
+# absolute-anchored excludes) can make this script unneeded in some
+# scenarios.  If you don't need delete protection on the receiving side
+# (or if the destination path is identical to the source path), then you
+# can exclude some absolute paths from the transfer based on the mount
+# dirs.  For instance:
+#
+# awk '{print $2}' /proc/mounts | grep -v '^/$' | \
+#   rsync -avf 'merge,/- -' /dir host:/dest/
+
+use strict;
+use warnings;
+use Cwd 'abs_path';
+
+my $file = '/proc/mounts';
+my $dir = shift || '/';
+my $trailing_slash = $dir =~ m{./$} ? '/' : '';
+$dir = abs_path($dir) . $trailing_slash;
+$dir =~ s{([^/]*)$}{};
+my $trailing = $1;
+$trailing = '' if $trailing eq '.' || !-d "$dir$trailing";
+$trailing .= '/' if $trailing ne '';
+
+open(IN, $file) or die "Unable to open $file: $!\n";
+while (<IN>) {
+    $_ = (split)[1];
+    next unless s{^\Q$dir$trailing\E}{}o && $_ ne '';
+    print "- /$trailing$_\n";
+}
+close IN;
