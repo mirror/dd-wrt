@@ -214,19 +214,17 @@ void start_dnsmasq(void)
 			if (!*(nvram_nget("%s_ipaddr", ifname)) || !*(nvram_nget("%s_netmask", ifname)))
 				continue;
 			if (canlan() || i > 0) {
-				if (nvram_matchi("pptpd_enable", 1))
-					fprintf(fp, ",%s", nvram_nget("%s_ipaddr", ifname));
-				else
-					fprintf(fp, ",%s", ifname);
-			} else {
-				if (nvram_matchi("pptpd_enable", 1))
-					fprintf(fp, "%s", nvram_nget("%s_ipaddr", ifname));
-				else
-					fprintf(fp, "%s", ifname);
-
+				fprintf(fp, ",");
 			}
+			if (nvram_matchi("pptpd_enable", 1))
+				fprintf(fp, "%s", nvram_nget("%s_ipaddr", ifname));
+			else
+				fprintf(fp, "%s", ifname);
 		}
 		free(word);
+	}
+	if (nvram_exists("dnsmasq_addif")) {
+		fprintf(fp, ",%s", nvram_safe_get("dnsmasq_addif"));
 	}
 	fprintf(fp, "\n");
 	fprintf(fp, "resolv-file=/tmp/resolv.dnsmasq\n");
@@ -380,10 +378,11 @@ void start_dnsmasq(void)
 
 				if (mac == NULL || host == NULL || ip == NULL)
 					continue;
+				fprintf(fp, "dhcp-host=%s,%s,%s,", mac, host, ip);
 				if (!time || !*time)
-					fprintf(fp, "dhcp-host=%s,%s,%s,infinite\n", mac, host, ip);
+					fprintf(fp, "infinite\n");
 				else
-					fprintf(fp, "dhcp-host=%s,%s,%s,%sm\n", mac, host, ip, time);
+					fprintf(fp, "%sm\n", time);
 
 #ifdef HAVE_UNBOUND
 				if (!nvram_matchi("recursive_dns", 1))
