@@ -416,6 +416,11 @@ ifeq ($(CONFIG_WR615N),y)
 else
 	echo "# CONFIG_WR615N is not set" >> $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_XD9531),y)
+	echo CONFIG_XD9531=y >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_XD9531 is not set" >> $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_E380AC),y)
 	sed -i 's/\# CONFIG_AT803X_PHY is not set/CONFIG_AT803X_PHY=y/g' $(LINUXDIR)/.config
 	echo CONFIG_E380AC=y >> $(LINUXDIR)/.config
