@@ -1550,6 +1550,11 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_rxantenna", "3");
 	nvram_default_get("ath0_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
+#elif HAVE_XD9531
+	setRouter("Yuncore XD9531");
+	nvram_default_get("ath0_rxantenna", "3");
+	nvram_default_get("ath0_txantenna", "3");
+	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WR615N
 	setRouter("Comfast WR615N");
 	nvram_default_get("ath0_rxantenna", "3");
