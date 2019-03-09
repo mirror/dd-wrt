@@ -1065,6 +1065,10 @@ ifeq ($(CONFIG_NFS),y)
 CFLAGS_EXTRA += -DHAVE_NFS
 OBJS += nfs.o
 endif
+ifeq ($(CONFIG_RSYNC),y)
+CFLAGS_EXTRA += -DHAVE_RSYNC
+OBJS += rsync.o
+endif
 ifeq ($(CONFIG_ERC),y)
 CFLAGS_EXTRA += -DHAVE_ERC
 endif
