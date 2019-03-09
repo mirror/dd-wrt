@@ -3476,6 +3476,9 @@ struct nvram_param srouter_defaults[] = {
 #ifdef HAVE_NFS
 	{"nfs_enable", "0"},
 #endif
+#ifdef HAVE_RSYNC
+	{"rsyncd_enable", "0"},
+#endif
 #ifdef HAVE_SAMBA3
 	{"samba3_enable", "0"},
 	{"samba3_pub", "0"},
