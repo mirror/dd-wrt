@@ -2441,7 +2441,7 @@ static void mangle_table(char *wanface, char *wanaddr, char *vifs)
 		insmod("nf_defrag_ipv6 nf_log_ipv6 ip6_tables nf_conntrack_ipv6 ip6table_filter ip6table_mangle xt_DSCP xt_CLASSIFY");
 		save2file_A_prerouting("-i %s -j MARK --set-mark 0x100000", wanface);
 		save2file_A_postrouting("-o %s -j MARK --set-mark 0x100000", wanface);
-		save2file_A_postrouting("-m mark --mark 0x100000 -j CLASSIFY --set-class 0:1", wanface);
+		save2file_A_postrouting("-m mark --mark 0x100000 -j CLASSIFY --set-class 0:1");
 		save2file_A_postrouting("-o %s -p udp --dport 67 -j CLASSIFY --set-class 0:0", wanface);
 
 		eval("ip6tables", "-t", "mangle", "-D", "PREROUTING", "-i", wanface, "-j", "MARK", "--set-mark", "0x100000");
@@ -2455,9 +2455,9 @@ static void mangle_table(char *wanface, char *wanaddr, char *vifs)
 
 	}
 	if (nvram_matchi("filter_tos", 1)) {
-		save2file_A_postrouting("-o %s -j TOS --set-tos 0x00", wanface);
-		eval("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-o", wanface, "-j", "TOS", "--set-tos", "0x00");
-		eval("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-o", wanface, "-j", "TOS", "--set-tos", "0x00");
+		save2file_A_postrouting("-m mark --mark 0x100000 -j TOS --set-tos 0x00");
+		eval("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-m", "mark", "0x100000", "-j", "TOS", "--set-tos", "0x00");
+		eval("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-m", "mark", "0x100000", "-j", "TOS", "--set-tos", "0x00");
 	}
 	if (strcmp(wanface, "wwan0")) {
 
