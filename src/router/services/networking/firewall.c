@@ -2456,8 +2456,8 @@ static void mangle_table(char *wanface, char *wanaddr, char *vifs)
 	}
 	if (nvram_matchi("filter_tos", 1)) {
 		save2file_A_postrouting("-m mark --mark 0x100000 -j TOS --set-tos 0x00");
-		eval("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-m", "mark", "0x100000", "-j", "TOS", "--set-tos", "0x00");
-		eval("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-m", "mark", "0x100000", "-j", "TOS", "--set-tos", "0x00");
+		eval("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-m", "mark", "--mark", "0x100000", "-j", "TOS", "--set-tos", "0x00");
+		eval("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-m", "mark", "--mark", "0x100000", "-j", "TOS", "--set-tos", "0x00");
 	}
 	if (strcmp(wanface, "wwan0")) {
 
