@@ -840,6 +840,7 @@ nas.proftpd_anon_dir="Anonymous Home Directory";
 nas.samba3_legend="File Sharing";
 nas.samba3="Samba Server";
 nas.nfs="Network File System Server";
+nas.rsync="Remote Synchronisation";
 // ** DLNA **
 nas.dlna_legend="DLNA Server";
 nas.dlna_srv="MiniDLNA";
@@ -1966,6 +1967,8 @@ service.dlna_type_video="Video";
 service.dlna_type_images="Images";
 service.nfs="NFS";
 service.nfs_srv="NFS Server";
+service.rsync="rsync";
+service.rsync_srv="rsync Daemon";
 
 // SoftEther
 

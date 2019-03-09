@@ -773,6 +773,8 @@ nas.fs="Dateisystem";
 nas.drivemanager="Laufwerksverwaltung";
 nas.drive="Laufwerk";
 nas.compression="Kompression";
+nas.nfs="Network File System Server";
+nas.rsync="Fern-synchronisierung";
 
 //** Privoxy.asp **//
 privoxy.titl="Werbefilter";
@@ -1673,6 +1675,10 @@ service.samba3_user_shares="Zugang zu Freigaben";
 service.dlna_type_video="Filme";
 service.dlna_type_audio="Musik";
 service.dlna_type_images="Bilder";
+service.nfs="NFS";
+service.nfs_srv="NFS Server";
+service.rsync="rsync";
+service.rsync_srv="rsync Dienst";
 
 // Zabbix
 service.zabbix_legend="Zabbix";
