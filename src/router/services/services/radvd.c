@@ -69,7 +69,7 @@ static int write_ipv6_dns_servers(FILE * f, const char *prefix, char *dns, const
 			++cnt;
 		}
 		if (cnt == 3)
-		    break;
+			break;
 	}
 
 	return cnt;
