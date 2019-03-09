@@ -816,6 +816,12 @@ endif
 ifeq ($(CONFIG_SAMBA3),y)
 CFLAGS += -DHAVE_SAMBA3
 endif
+ifeq ($(CONFIG_NFS),y)
+CFLAGS += -DHAVE_NFS
+endif
+ifeq ($(CONFIG_RSYNC),y)
+CFLAGS += -DHAVE_RSYNC
+endif
 ifeq ($(CONFIG_RAID),y)
 CFLAGS += -DHAVE_RAID
 endif
