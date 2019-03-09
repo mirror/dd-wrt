@@ -82,6 +82,13 @@ void start_vlantagging(void)
 
 		sprintf(vlan_name, "%s.%s", tag, port);
 		eval("vconfig", "set_egress_map", vlan_name, "0", prio);
+		eval("vconfig", "set_egress_map", vlan_name, "1", prio);
+		eval("vconfig", "set_egress_map", vlan_name, "2", prio);
+		eval("vconfig", "set_egress_map", vlan_name, "3", prio);
+		eval("vconfig", "set_egress_map", vlan_name, "4", prio);
+		eval("vconfig", "set_egress_map", vlan_name, "5", prio);
+		eval("vconfig", "set_egress_map", vlan_name, "6", prio);
+		eval("vconfig", "set_egress_map", vlan_name, "7", prio);
 
 		char var[64];
 
