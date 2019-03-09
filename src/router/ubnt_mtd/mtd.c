@@ -291,7 +291,7 @@ static int mtd_erase(const char *mtd)
 static void indicate_writing(const char *mtd)
 {
 	if (quiet < 2)
-		fprintf(stderr, "\nWriting from %s to %s ... ", imagefile, mtd);
+		fprintf(stderr, "\nWriting %s ... ", imagefile, mtd);
 
 	if (!quiet)
 		fprintf(stderr, " [ ]");
@@ -661,6 +661,7 @@ int main(int argc, char **argv)
 #else
 	mtd_write(image, sizeof(image), device, fis_layout, part_offset);
 #endif
+	fprintf(stderr,"\nDone. Please power cycle device now\n");
 	sync();
 
 	return 0;
