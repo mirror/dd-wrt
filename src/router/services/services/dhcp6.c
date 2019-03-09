@@ -180,16 +180,24 @@ void start_dhcp6c(void)
 		eval("vconfig", "set_egress_map", wan_ifname, "0", "6");
 		eval("vconfig", "set_egress_map", wan_ifname, "1", "0");
 		insmod("nf_defrag_ipv6 nf_log_ipv6 ip6_tables nf_conntrack_ipv6 ip6table_filter ip6table_mangle xt_DSCP xt_CLASSIFY");
-		eval("iptables", "-t", "mangle", "-D", "PREROUTING", "-i", wan_ifname, "-j", "CLASSIFY", "--set-class", "0:1");
-		eval("iptables", "-t", "mangle", "-A", "PREROUTING", "-i", wan_ifname, "-j", "CLASSIFY", "--set-class", "0:1");
-		eval("ip6tables", "-t", "mangle", "-D", "PREROUTING", "-i", wan_ifname, "-j", "CLASSIFY", "--set-class", "0:1");
-		eval("ip6tables", "-t", "mangle", "-A", "PREROUTING", "-i", wan_ifname, "-j", "CLASSIFY", "--set-class", "0:1");
+		eval("iptables", "-t", "mangle", "-D", "PREROUTING", "-i", wan_ifname, "-j", "MARK", "--set-mark", "0x100000");
+		eval("iptables", "-t", "mangle", "-A", "PREROUTING", "-i", wan_ifname, "-j", "MARK", "--set-mark", "0x100000");
 
-		eval("iptables", "-t", "mangle", "-A", "POSTROUTING", "-o", wan_ifname, "-j", "CLASSIFY", "--set-class", "0:1");
-		eval("iptables", "-t", "mangle", "-A", "POSTROUTING", "-o", wan_ifname, "-p", "udp", "--dport", "67", "-j", "CLASSIFY", "--set-class", "0:0");
-		eval("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-o", wan_ifname, "-j", "CLASSIFY", "--set-class", "0:1");
+		eval("iptables", "-t", "mangle", "-D", "POSTROUTING", "-o", wan_ifname, "-j", "MARK", "--set-mark", "0x100000");
+		eval("iptables", "-t", "mangle", "-A", "POSTROUTING", "-o", wan_ifname, "-j", "MARK", "--set-mark", "0x100000");
+
+		eval("iptables", "-t", "mangle", "-D", "POSTROUTING", "-m", "--mark", "0x100000", "-j", "CLASSIFY", "--set-class", "0:1");
+		eval("iptables", "-t", "mangle", "-A", "POSTROUTING", "-m", "--mark", "0x100000", "-j", "CLASSIFY", "--set-class", "0:1");
+
+		eval("ip6tables", "-t", "mangle", "-D", "PREROUTING", "-i", wan_ifname, "-j", "MARK", "--set-mark", "0x100000");
+		eval("ip6tables", "-t", "mangle", "-A", "PREROUTING", "-i", wan_ifname, "-j", "MARK", "--set-mark", "0x100000");
+		eval("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-o", wan_ifname, "-j", "MARK", "--set-mark", "0x100000");
+		eval("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-o", wan_ifname, "-j", "MARK", "--set-mark", "0x100000");
+
+		eval("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-m", "mark", "--mark", "0x100000", "-j", "CLASSIFY", "--set-class", "0:1");
+		eval("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-m", "mark", "--mark", "0x100000", "-j", "CLASSIFY", "--set-class", "0:1");
+
 		eval("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-o", wan_ifname, "-p", "udp", "--dport", "547", "-j", "CLASSIFY", "--set-class", "0:0");
-		eval("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-o", wan_ifname, "-j", "CLASSIFY", "--set-class", "0:1");
 		eval("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-o", wan_ifname, "-p", "udp", "--dport", "547", "-j", "CLASSIFY", "--set-class", "0:0");
 
 	}
