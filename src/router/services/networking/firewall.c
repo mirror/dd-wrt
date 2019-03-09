@@ -2435,7 +2435,7 @@ static void mangle_table(char *wanface, char *wanaddr, char *vifs)
 {
 	save2file("*mangle\n:PREROUTING ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]");
 
-	if (nvram_match("wan_priority", "1") && isvlan(wanface)) {
+	if (nvram_matchi("wan_priority", 1) && isvlan(wanface)) {
 		eval("vconfig", "set_egress_map", wanface, "0", "6");
 		eval("vconfig", "set_egress_map", wanface, "1", "0");
 		insmod("nf_defrag_ipv6 nf_log_ipv6 ip6_tables nf_conntrack_ipv6 ip6table_filter ip6table_mangle xt_DSCP xt_CLASSIFY");
@@ -2453,6 +2453,11 @@ static void mangle_table(char *wanface, char *wanaddr, char *vifs)
 		eval("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-o", wanface, "-p", "udp", "--dport", "547", "-j", "CLASSIFY", "--set-class", "0:0");
 		eval("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-o", wanface, "-p", "udp", "--dport", "547", "-j", "CLASSIFY", "--set-class", "0:0");
 
+	}
+	if (nvram_matchi("filter_tos", 1)) {
+		save2file_A_postrouting("-o %s -j TOS --set-tos 0x00", wanface);
+		eval("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-o", wanface, "-j", "TOS", "--set-tos", "0x00");
+		eval("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-o", wanface, "-j", "TOS", "--set-tos", "0x00");
 	}
 	if (strcmp(wanface, "wwan0")) {
 

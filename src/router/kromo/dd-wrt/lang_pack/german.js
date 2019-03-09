@@ -671,6 +671,7 @@ firewall.telnet=" Telnet Zugriff Limitieren";
 firewall.pptp="PPTP Server Zugriff Limitieren";
 firewall.ftp="FTP Server Zugriff Limitieren";
 firewall.arp_spoofing="ARP Spoofing Schutz";
+firewall.filter_tos="Filtere TOS/DSCP";
 
 
 filter.nat="WAN-NAT-Umleitung filtern";
