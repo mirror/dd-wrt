@@ -201,6 +201,7 @@ static int usb_process_path(char *path, char *fs, char *target)
 	eval("stopservice", "dlna");
 	eval("stopservice", "samba3");
 	eval("stopservice", "nfs");
+	eval("stopservice", "rsync");
 	eval("stopservice", "ftpsrv");
 
 	if (nvram_match("usb_mntpoint", "mnt") && target)
@@ -279,6 +280,7 @@ static int usb_process_path(char *path, char *fs, char *target)
 //      writeprocsys("vm/overcommit_ratio","145");
 	eval("startservice_f", "samba3");
 	eval("startservice_f", "nfs");
+	eval("startservice_f", "rsync");
 	eval("startservice_f", "ftpsrv");
 	eval("startservice_f", "dlna");
 	return ret;
@@ -328,6 +330,7 @@ static void usb_unmount(char *path)
 	eval("stopservice", "dlna");
 	eval("stopservice", "samba3");
 	eval("stopservice", "nfs");
+	eval("stopservice", "rsync");
 	eval("stopservice", "ftpsrv");
 	writeprocsys("vm/drop_caches", "3");	// flush fs cache
 /* todo: how to unmount correct drive */
@@ -340,6 +343,7 @@ static void usb_unmount(char *path)
 	eval("startservice_f", "samba3");
 	eval("startservice_f", "ftpsrv");
 	eval("startservice_f", "nfs");
+	eval("startservice_f", "rsync");
 	eval("startservice_f", "dlna");
 	return;
 }

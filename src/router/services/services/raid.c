@@ -100,6 +100,7 @@ void start_raid(void)
 		eval("stopservice", "cron");
 		eval("stopservice", "samba3");
 		eval("stopservice", "nfs");
+		eval("stopservice", "rsync");
 		eval("stopservice", "dlna");
 		eval("stopservice", "ftpsrv");
 #ifdef HAVE_WEBSERVER
@@ -343,6 +344,7 @@ void start_raid(void)
 	if (todo) {
 		eval("startservice_f", "cron");
 		eval("startservice_f", "samba3");
+		eval("startservice_f", "rsync");
 		eval("startservice_f", "nfs");
 		eval("startservice_f", "dlna");
 		eval("startservice_f", "ftpsrv");
