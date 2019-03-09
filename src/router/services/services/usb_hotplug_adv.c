@@ -63,6 +63,7 @@ static bool usb_stop_services()
 	eval("stopservice", "cron");
 	eval("stopservice", "samba3");
 	eval("stopservice", "nfs");
+	eval("stopservice", "rsync");
 	eval("stopservice", "dlna");
 	eval("stopservice", "ftpsrv");
 #ifdef HAVE_WEBSERVER
@@ -80,6 +81,7 @@ static bool usb_start_services()
 	eval("startservice_f", "cron");
 	eval("startservice_f", "samba3");
 	eval("startservice_f", "nfs");
+	eval("startservice_f", "rsync");
 	eval("startservice_f", "dlna");
 	eval("startservice_f", "ftpsrv");
 #ifdef HAVE_WEBSERVER
