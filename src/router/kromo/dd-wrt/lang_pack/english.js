@@ -718,6 +718,7 @@ firewall.telnet="Limit Telnet Access";
 firewall.pptp="Limit PPTP Server Access";
 firewall.ftp="Limit FTP Server Access";
 firewall.arp_spoofing="ARP Spoofing Protection";
+firewall.filter_tos="Filter TOS/DSCP";
 
 //help container
 var hfirewall=new Object();
