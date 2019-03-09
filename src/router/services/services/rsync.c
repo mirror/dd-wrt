@@ -1,5 +1,5 @@
 /*
- * nfs.c
+ * rsync.c
  *
  * Copyright (C) 2019 dd-wrt
  *
@@ -36,7 +36,7 @@
 #include <services.h>
 #include <samba3.h>
 
-void start_nfs(void)
+void start_rsync(void)
 {
 	struct samba3_share *cs, *csnext;
 	struct samba3_share *rsyncshares;
@@ -64,7 +64,7 @@ void start_nfs(void)
 			if (!cs->public) {
 				csnext = cs->next;
 				free(cs);
-				continue;	// if its not public, ignore until we implemented kerberos based user management for NFS4.
+				continue;	// if its not public, ignore
 			}
 			fprintf(fp, "[%s]\n", cs->label);
 			fprintf(fp, "\tpath = %s/%s\n", cs->mp, cs->sd);
@@ -78,7 +78,7 @@ void start_nfs(void)
 	return;
 }
 
-void stop_nfs(void)
+void stop_rsync(void)
 {
 	stop_process("rsyncd", "rsync daemon");
 }
