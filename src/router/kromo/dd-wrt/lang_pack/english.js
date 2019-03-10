@@ -1969,7 +1969,7 @@ service.nfs="NFS";
 service.nfs_srv="NFS Server";
 service.rsync="rsync";
 service.rsync_srv="rsync Daemon";
-
+service.rsync_allowed="Allowed Hosts";
 // SoftEther
 
 service.softether_legend="SoftEther VPN";
