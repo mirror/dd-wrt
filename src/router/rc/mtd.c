@@ -214,6 +214,32 @@ int mtd_erase(const char *mtd)
 	return 0;
 }
 
+typedef struct NETGEAR_IDS {
+	int id;
+	char *name;
+	char *name2;
+	char *name3;
+};
+
+static struct NETGEAR_IDS netgear_ids[] = {
+	{ROUTER_NETGEAR_WNR3500LV2, "U12H172T00_NETGEAR"},
+	{ROUTER_NETGEAR_WNDR4000, "U12H181T00_NETGEAR"},
+	{ROUTER_NETGEAR_WNDR4500, "U12H189T00_NETGEAR"},
+	{ROUTER_NETGEAR_WNDR4500V2, "U12H224T00_NETGEAR"},
+	{ROUTER_NETGEAR_EX6200, "U12H269T00_NETGEAR"},
+	{ROUTER_NETGEAR_AC1450, "U12H240T99_NETGEAR"},
+	{ROUTER_NETGEAR_R6250, "U12H245T00_NETGEAR"},
+	{ROUTER_NETGEAR_R6300, "U12H218T00_NETGEAR"},
+	{ROUTER_NETGEAR_R6300V2, "U12H240T00_NETGEAR", "U12H240T70_NETGEAR"},
+	{ROUTER_NETGEAR_R6400, "U12H332T20_NETGEAR", "U12H332T30_NETGEAR", "U12H332T00_NETGEAR"},
+	{ROUTER_NETGEAR_R6400V2, "U12H332T20_NETGEAR", "U12H332T30_NETGEAR", "U12H332T00_NETGEAR"},
+	{ROUTER_NETGEAR_R6700V3, "U12H332T20_NETGEAR", "U12H332T30_NETGEAR", "U12H332T00_NETGEAR"},
+	{ROUTER_NETGEAR_R7000, "U12H270T00_NETGEAR", "U12H270T10_NETGEAR", "QU12H270T00_NETGEAR"},
+	{ROUTER_NETGEAR_R7000P, "U12H270T20_NETGEAR"},
+	{ROUTER_NETGEAR_R8000, "U12H315T00_NETGEAR"},
+	{ROUTER_NETGEAR_R8500, "U12H334T00_NETGEAR"}
+};
+
 extern int http_get(const char *server, char *buf, size_t count, off_t offset);
 
 /* 
@@ -393,111 +419,38 @@ static int write_main(int argc, char *argv[])
 			char board_id[18];
 			safe_fread(&trx, 1, sizeof(struct chk_header) - sizeof(struct trx_header), fp);
 			safe_fread(board_id, 1, sizeof(board_id), fp);
-
-			switch (brand) {
-			case ROUTER_NETGEAR_WNR3500LV2:
-				if (strncmp(board_id, "U12H172T00_NETGEAR", sizeof(board_id))) {
-					fprintf(stderr, "Error: board id %s expected %s\n", board_id, "U12H172T00_NETGEAR");
-					fclose(fp);
-					return -1;
+			int fail = 1;
+			int c = 0;
+			for (i = 0; i < (sizeof(netgear_ids) / sizeof(netgear_ids[0])); i++) {
+				if (netgear_ids[i].id == brand) {
+					if (!strncmp(board_id, netgear_ids[i].name, sizeof(board_id)))
+						fail = 0;
+					else
+						c++;
+					if (netgear_ids[i].name2 && !strncmp(board_id, netgear_ids[i].name2, sizeof(board_id)))
+						fail = 0;
+					else
+						c++;
+					if (netgear_ids[i].name3 && !strncmp(board_id, netgear_ids[i].name3, sizeof(board_id)))
+						fail = 0;
+					else
+						c++;
+					break;
 				}
-				break;
-			case ROUTER_NETGEAR_WNDR4000:
-				if (strncmp(board_id, "U12H181T00_NETGEAR", sizeof(board_id))) {
-					fprintf(stderr, "Error: board id %s expected %s\n", board_id, "U12H181T00_NETGEAR");
-					fclose(fp);
-					return -1;
-				}
-				break;
-			case ROUTER_NETGEAR_WNDR4500:
-				if (strncmp(board_id, "U12H189T00_NETGEAR", sizeof(board_id))) {
-					fprintf(stderr, "Error: board id %s expected %s\n", board_id, "U12H189T00_NETGEAR");
-					fclose(fp);
-					return -1;
-				}
-				break;
-			case ROUTER_NETGEAR_WNDR4500V2:
-				if (strncmp(board_id, "U12H224T00_NETGEAR", sizeof(board_id))) {
-					fprintf(stderr, "Error: board id %s expected %s\n", board_id, "U12H224T00_NETGEAR");
-					fclose(fp);
-					return -1;
-				}
-				break;
-			case ROUTER_NETGEAR_EX6200:
-				if (strncmp(board_id, "U12H269T00_NETGEAR", sizeof(board_id))) {
-					fprintf(stderr, "Error: board id %s expected %s\n", board_id, "U12H269T00_NETGEAR");
-					fclose(fp);
-					return -1;
-				}
-				break;
-			case ROUTER_NETGEAR_AC1450:
-				if (strncmp(board_id, "U12H240T99_NETGEAR", sizeof(board_id))) {
-					fprintf(stderr, "Error: board id %s expected %s\n", board_id, "U12H240T99_NETGEAR");
-					fclose(fp);
-					return -1;
-				}
-				break;
-			case ROUTER_NETGEAR_R6250:
-				if (strncmp(board_id, "U12H245T00_NETGEAR", sizeof(board_id))) {
-					fprintf(stderr, "Error: board id %s expected %s\n", board_id, "U12H245T00_NETGEAR");
-					fclose(fp);
-					return -1;
-				}
-				break;
-			case ROUTER_NETGEAR_R6300:
-				if (strncmp(board_id, "U12H218T00_NETGEAR", sizeof(board_id))) {
-					fprintf(stderr, "Error: board id %s expected %s\n", board_id, "U12H218T00_NETGEAR");
-					fclose(fp);
-					return -1;
-				}
-				break;
-			case ROUTER_NETGEAR_R6300V2:
-				if (strncmp(board_id, "U12H240T00_NETGEAR", sizeof(board_id)) && strncmp(board_id, "U12H240T70_NETGEAR", sizeof(board_id))) {
-					fprintf(stderr, "Error: board id %s expected %s\n", board_id, "U12H240T00_NETGEAR or U12H240T70_NETGEAR");
-					fclose(fp);
-					return -1;
-				}
-				break;
-			case ROUTER_NETGEAR_R6400:
-			case ROUTER_NETGEAR_R6400V2:
-			case ROUTER_NETGEAR_R6700V3:
-				if (strncmp(board_id, "U12H332T20_NETGEAR", sizeof(board_id)) && strncmp(board_id, "U12H332T30_NETGEAR", sizeof(board_id)) && strncmp(board_id, "U12H332T00_NETGEAR", sizeof(board_id))) {
-					fprintf(stderr, "Error: board id %s expected %s\n", board_id, "U12H332T00_NETGEAR U12H332T20_NETGEAR or U12H332T30_NETGEAR");
-					fclose(fp);
-					return -1;
-				}
-				break;
-			case ROUTER_NETGEAR_R7000:
-				if (strncmp(board_id, "U12H270T00_NETGEAR", sizeof(board_id)) && strncmp(board_id, "U12H270T10_NETGEAR", sizeof(board_id)) && strncmp(board_id, "QU12H270T00_NETGEAR", sizeof(board_id))) {
-					fprintf(stderr, "Error: board id %s expected %s\n", board_id, "U12H270T00_NETGEAR U12H270T10_NETGEAR or QU12H270T00_NETGEAR");
-					fclose(fp);
-					return -1;
-				}
-				break;
-			case ROUTER_NETGEAR_R7000P:
-				if (strncmp(board_id, "U12H270T20_NETGEAR", sizeof(board_id))) {
-					fprintf(stderr, "Error: board id %s expected %s\n", board_id, "U12H270T20_NETGEAR");
-					fclose(fp);
-					return -1;
-				}
-				break;
-			case ROUTER_NETGEAR_R8000:
-				if (strncmp(board_id, "U12H315T00_NETGEAR", sizeof(board_id))) {
-					fprintf(stderr, "Error: board id %s expected %s\n", board_id, "U12H315T00_NETGEAR");
-					fclose(fp);
-					return -1;
-				}
-				break;
-			case ROUTER_NETGEAR_R8500:
-				if (strncmp(board_id, "U12H334T00_NETGEAR", sizeof(board_id))) {
-					fprintf(stderr, "Error: board id %s expected %s\n", board_id, "U12H334T00_NETGEAR");
-					fclose(fp);
-					return -1;
-				}
-				break;
-			default:
+			}
+			if (fail) {
+				fprintf(stderr, "Error: board id! but %s expected ", board_id);
+				if (c)
+					fprintf(stderr, "%s", netgear_ids[i].name);
+				if (c > 1)
+					fprintf(stderr, " %s %s", c == 2 ? "and" : "or", netgear_ids[i].name2);
+				if (c > 2)
+					fprintf(stderr, " or %s", netgear_ids[i].name3);
+				fprintf(stderr, "\n");
+				return -1;
+			}
+			if (i == (sizeof(netgear_ids) / sizeof(netgear_ids[0]))) {
 				fprintf(stderr, "Error: Flash to OEM for board %s not supported yet\n", board_id);
-				fclose(fp);
 				return -1;
 			}
 
