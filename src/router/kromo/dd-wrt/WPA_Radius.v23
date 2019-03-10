@@ -13,7 +13,7 @@
 </div>
 <div class="setting">
 	<div class="label"><% tran("wpa.radius_port"); %></div>
-	<input class="num" name="wl_radius_port" size="5" maxlength="5" onblur=valid_range(this,1,65535,share.port) value="<% nvram_get("wl_radius_port"); %>" />
+	<input class="num" name="wl_radius_port" size="5" maxlength="5" onblur=valid_range(this,1,65535,share.port) value="<% nvg("wl_radius_port"); %>" />
 	<span class="default"><script type="text/javascript">
 	//<![CDATA[
 	document.write("(" + share.deflt + ": 1812)");
@@ -22,10 +22,10 @@
 </div>
 <div class="setting">
 	<div class="label"><% tran("wpa.shared_key"); %></div>
-	<input type="password" id="wl_radius_key" name="wl_radius_key" size="20" maxlength="79" value="<% nvram_get("wl_radius_key"); %>" />&nbsp;&nbsp;&nbsp;
+	<input type="password" id="wl_radius_key" name="wl_radius_key" size="20" maxlength="79" value="<% nvg("wl_radius_key"); %>" />&nbsp;&nbsp;&nbsp;
 	<input type="checkbox" name="_wl_radius_unmask" value="0" onclick="setElementMask('wl_radius_key', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 </div>
 <div class="setting">
 	<div class="label"><% tran("wpa.rekey"); %></div>
-	<input class="num" name="wl_wpa_gtk_rekey" maxlength="5" size="5" onblur="valid_range(this,0,99999,wpa.rekeyInt)" value="<% nvram_get("wl_wpa_gtk_rekey"); %>" />
+	<input class="num" name="wl_wpa_gtk_rekey" maxlength="5" size="5" onblur="valid_range(this,0,99999,wpa.rekeyInt)" value="<% nvg("wl_wpa_gtk_rekey"); %>" />
 </div>

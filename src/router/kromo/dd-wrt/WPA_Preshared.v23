@@ -8,12 +8,12 @@
 </div>
 <div class="setting">
 	<div class="label"><% tran("wpa.shared_key"); %></div>
-	<input type="password" id="wl_wpa_psk" name="wl_wpa_psk" maxlength="64" size="32" value="<% nvram_get("wl_wpa_psk"); %>" />&nbsp;&nbsp;&nbsp;
+	<input type="password" id="wl_wpa_psk" name="wl_wpa_psk" maxlength="64" size="32" value="<% nvg("wl_wpa_psk"); %>" />&nbsp;&nbsp;&nbsp;
 	<input type="checkbox" name="_wl_unmask" value="0" onclick="setElementMask('wl_wpa_psk', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 </div>
 <div class="setting">
 	<div class="label"><% tran("wpa.rekey"); %></div>
-	<input class="num" name="wl_wpa_gtk_rekey" maxlength="5" size="5" onblur="valid_range(this,0,99999,errmsg.err43)" value="<% nvram_get("wl_wpa_gtk_rekey"); %>" />
+	<input class="num" name="wl_wpa_gtk_rekey" maxlength="5" size="5" onblur="valid_range(this,0,99999,errmsg.err43)" value="<% nvg("wl_wpa_gtk_rekey"); %>" />
 	<span class="default"><script type="text/javascript">
 	//<![CDATA[
 	document.write("(" + share.deflt + ": 3600, " + share.range + ": 1 - 99999)");

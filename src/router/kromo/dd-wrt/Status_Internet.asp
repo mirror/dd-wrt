@@ -63,7 +63,7 @@ function reloadIt() {
 
 addEvent(window, "load", function() {
 	setElementVisible("wan_show", "<% getWET(); %>" == "0");
-	setElementVisible("wan_showtraff", "<% nvg("ttraff_enable"); %>" == "1" && ("<% getWET(); %>" == "0" && "<% nvram_get("wan_proto"); %>" != "disabled" || "<% nvram_get("ttraff_iface"); %>" != "") );
+	setElementVisible("wan_showtraff", "<% nvg("ttraff_enable"); %>" == "1" && ("<% getWET(); %>" == "0" && "<% nvg("wan_proto"); %>" != "disabled" || "<% nvg("ttraff_iface"); %>" != "") );
 	setElementVisible("wan_showdisabled", "<% getWET(); %>" == "1");
 	setElementVisible("wan_info", "<% nvg("wan_proto"); %>" != "disabled");
 	setElementVisible("wan_dhcp", "<% nvg("wan_proto"); %>" == "dhcp" || "<% nvg("wan_proto"); %>" == "dhcp_auth");
@@ -141,7 +141,7 @@ addEvent(window, "unload", function() {
 										</div>
 										<div class="setting" id="wan_acname">
 											<div class="label"><% tran("status_inet.acname"); %></div>
-											<span id="pppoe_ac_name"><% nvram_get("pppoe_ac_name"); %></span>&nbsp;
+											<span id="pppoe_ac_name"><% nvg("pppoe_ac_name"); %></span>&nbsp;
 										</div>
 										 <div class="setting">
 											<div class="label"><% tran("status_inet.wanuptime"); %></div>
