@@ -78,7 +78,7 @@ addEvent(window, "load", function() {
 	setWDSTable(<% active_wds(0); %>);
 	setPacketInfo("<% wl_packet_get(); %>");
 
-	update = new StatusUpdate("Status_Wireless.live.asp", <% nvram_get("refresh_time"); %>);
+	update = new StatusUpdate("Status_Wireless.live.asp", <% nvg("refresh_time"); %>);
 	update.onUpdate("active_wireless", function(u) {
 		eval('setWirelessTable(' + u.active_wireless + ')');
 	});
@@ -139,7 +139,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.ssid"); %></div>
-									<span id="wl_ssid"><% nvram_get("wl_ssid"); %></span>&nbsp;
+									<span id="wl_ssid"><% nvg("wl_ssid"); %></span>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.channel"); %></div>
@@ -147,7 +147,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label">Xmit</div>
-									<span id="wl_xmit"><% nvram_get("txpwr"); %> mW</span>&nbsp;
+									<span id="wl_xmit"><% nvg("txpwr"); %> mW</span>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.rates"); %></div>
