@@ -1,1 +1,2 @@
  "rsyncd_enable"  "rsync Daemon"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
+ "rsync_allowed"  "access list"  "NULL"  "FALSE" "0"
