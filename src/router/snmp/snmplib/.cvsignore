@@ -1,5 +1,0 @@
-Makefile
-.libs
-*.lo
-*.la
-snmpsm_init.h
