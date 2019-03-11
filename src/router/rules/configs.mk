@@ -63,7 +63,9 @@ obj-$(CONFIG_PPTPD) += pptpd
 obj-$(CONFIG_PIPSEC) += pipsec
 obj-$(CONFIG_FROTTLE) += frottle
 obj-$(CONFIG_WOL) += wol
+ifeq ($(CONFIG_OPENSSL),y)
 obj-$(CONFIG_SNMP) += snmp
+endif
 obj-$(CONFIG_RADVD) += radvd aiccu
 obj-$(CONFIG_L2TPV3TUN) += l2tpv3tun
 obj-$(CONFIG_SPUTNIK_APD) += sputnik
