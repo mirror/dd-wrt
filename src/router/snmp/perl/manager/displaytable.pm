@@ -461,6 +461,7 @@ sub maybe_from_hex {
 
 1;
 __END__
+
 =head1 NAME
 
 SNMP - The Perl5 'SNMP' Extension Module v3.1.0 for the UCD SNMPv3 Library

@@ -5,6 +5,7 @@ BEGIN {
         chdir 't' if -d 't';
         @INC = '../lib' if -d '../lib';
     }
+    $ENV{'MIBS'} = '';
 }
 
 # This merely checks to see if the default_store routines work from
@@ -15,7 +16,9 @@ BEGIN {
 use Test;
 BEGIN {plan tests => 3}
 
-$ENV{'SNMPCONFPATH'} = ".:t";
+my $envsep = ($^O =~ /win32/i) ? ';' : ':';
+
+SNMP::setenv('SNMPCONFPATH', '.' . $envsep . 't', 1);
 
 ok(1); # just start up
 
@@ -40,9 +43,9 @@ ok($myint == 1);
 # print a big big warning.  Technically, I suspect this is a bad thing
 # to do in perl tests but...
 if ($myint != 1) {
-    die "\n\n\n" . "*" x 75 . "\nBIG PROBLEM: I wasn't able to read
+    die "\n\n\n" . "*" x 75 . "\nBIG PROBLEM($myint): I wasn't able to read
     data from a configuration file.  This likely means that you've
-    complied th net-snmp package with static libraries, which can
+    compiled the net-snmp package with static libraries, which can
     cause real problems with the perl module.  Please reconfigure your
     net-snmp package for use with shared libraries (run configure with
     --enable-shared)\n" . "*" x 75 . "\n\n\n\n";

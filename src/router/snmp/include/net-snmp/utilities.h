@@ -9,6 +9,10 @@
      *    particular O/S distributiones.
      */
 
+#ifndef NET_SNMP_CONFIG_H
+#error "Please include <net-snmp/net-snmp-config.h> before this file"
+#endif
+
 #include <net-snmp/types.h>
 
     /*
@@ -23,7 +27,11 @@
 
 #include <net-snmp/library/snmp_api.h>
 #include <net-snmp/library/snmp_client.h>
+#if HAVE_GETOPT_H
+#include <getopt.h>
+#else
 #include <net-snmp/library/getopt.h>
+#endif
 
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>         /* for in_addr_t */
@@ -36,13 +44,19 @@
 #include <net-snmp/library/mt_support.h>
 /*  #include <net-snmp/library/snmp_locking.h>  */
 #include <net-snmp/library/snmp_alarm.h>
-#include <net-snmp/library/data_list.h>
 #include <net-snmp/library/callback.h>
+#include <net-snmp/library/data_list.h>
 #include <net-snmp/library/oid_stash.h>
 #include <net-snmp/library/snmp.h>
 #include <net-snmp/library/snmp_impl.h>
 #include <net-snmp/library/snmp-tc.h>
 #include <net-snmp/library/check_varbind.h>
+#include <net-snmp/library/container.h>
+#include <net-snmp/library/container_binary_array.h>
+#include <net-snmp/library/container_list_ssll.h>
+#include <net-snmp/library/container_iterator.h>
+
+#include <net-snmp/library/snmp_assert.h>
 
 #include <net-snmp/version.h>
 

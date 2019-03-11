@@ -1,8 +1,11 @@
-#undef CAN_USE_SYSCTL
 /*
  * snmp_var_route.c - return a pointer to the named variable.
  *
  *
+ */
+/* Portions of this file are subject to the following copyright(s).  See
+ * the Net-SNMP's COPYING file for more details and other copyrights
+ * that may apply:
  */
 /***********************************************************
 	Copyright 1988, 1989 by Carnegie Mellon University
@@ -27,179 +30,46 @@ OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ******************************************************************/
 /*
+ * Portions of this file are copyrighted by:
+ * Copyright © 2003 Sun Microsystems, Inc. All rights reserved.
+ * Use is subject to license terms specified in the COPYING file
+ * distributed with the Net-SNMP package.
+ */
+
+/*
  * additions, fixes and enhancements for Linux by Erik Schoenfelder
  * (schoenfr@ibr.cs.tu-bs.de) 1994/1995.
  * Linux additions taken from CMU to UCD stack by Jennifer Bray of Origin
  * (jbray@origin-at.co.uk) 1997
- * Support for system({CTL_NET,PF_ROUTE,...) by Simon Leinen
+ * Support for sysctl({CTL_NET,PF_ROUTE,...) by Simon Leinen
  * (simon@switch.ch) 1997
  */
 
+
 #include <net-snmp/net-snmp-config.h>
+#include <net-snmp/net-snmp-features.h>
 
-#if !defined(CAN_USE_SYSCTL)
-
-#define GATEWAY                 /* MultiNet is always configured this way! */
-#include <stdio.h>
-#include <sys/types.h>
-#if HAVE_SYS_PARAM_H
-#include <sys/param.h>
-#endif
-#if HAVE_SYS_SOCKET_H
-#include <sys/socket.h>
-#endif
-#if TIME_WITH_SYS_TIME
-# ifdef WIN32
-#  include <sys/timeb.h>
-# else
-# include <sys/time.h>
-# endif
-# include <time.h>
-#else
-# if HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
-#endif
-#if HAVE_SYS_SELECT_H
-#include <sys/select.h>
-#endif
-#if HAVE_NETINET_IN_H
-#include <netinet/in.h>
-#endif
-#if HAVE_ARPA_INET_H
-#include <arpa/inet.h>
-#endif
-#if HAVE_SYSLOG_H
-#include <syslog.h>
-#endif
-#if HAVE_MACHINE_PARAM_H
-#include <machine/param.h>
-#endif
-#if HAVE_SYS_MBUF_H
-#include <sys/mbuf.h>
-#endif
-#if HAVE_NET_IF_H
-#include <net/if.h>
-#endif
-#ifdef HAVE_NET_IF_VAR_H
-#include <net/if_var.h>
-#endif
-#if HAVE_SYS_HASHING_H
-#include <sys/hashing.h>
-#endif
-#if HAVE_NETINET_IN_VAR_H
-#include <netinet/in_var.h>
-#endif
-#define KERNEL                  /* to get routehash and RTHASHSIZ */
-#if HAVE_SYS_STREAM_H
-#include <sys/stream.h>
-#endif
-#if HAVE_NET_ROUTE_H
-#include <net/route.h>
-#endif
-#undef	KERNEL
-#ifdef RTENTRY_4_4
-#ifndef STRUCT_RTENTRY_HAS_RT_UNIT
-#define rt_unit rt_refcnt       /* Reuse this field for device # */
-#endif
-#ifndef STRUCT_RTENTRY_HAS_RT_DST
-#define rt_dst rt_nodes->rn_key
-#endif
-#else                           /* RTENTRY_4_3 */
-#ifndef STRUCT_RTENTRY_HAS_RT_DST
-#define rt_dst rt_nodes->rn_key
-#endif
-#ifndef STRUCT_RTENTRY_HAS_RT_HASH
-#define rt_hash rt_pad1
-#endif
-#ifndef STRUCT_RTENTRY_HAS_RT_REFCNT
-#ifndef hpux10
-#define rt_refcnt rt_pad2
-#endif
-#endif
-#ifndef STRUCT_RTENTRY_HAS_RT_USE
-#define rt_use rt_pad3
-#endif
-#ifndef STRUCT_RTENTRY_HAS_RT_UNIT
-#define rt_unit rt_refcnt       /* Reuse this field for device # */
-#endif
-#endif
-#ifndef NULL
-#define NULL 0
-#endif
-#if HAVE_KVM_OPENFILES
-#include <fcntl.h>
-#endif
-#if HAVE_KVM_H
-#include <kvm.h>
-#endif
-
-#if HAVE_STRING_H
-#include <string.h>
-#else
-#include <strings.h>
-#endif
-#if HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
-#if HAVE_INET_MIB2_H
-#include <inet/mib2.h>
-#endif
-#if HAVE_SYS_SYSCTL_H
-#include <sys/sysctl.h>
-#endif
-#if HAVE_NET_IF_DL_H
-#ifndef dynix
-#include <net/if_dl.h>
-#else
-#include <sys/net/if_dl.h>
-#endif
-#endif
-
-#if HAVE_WINSOCK_H
-#include <winsock.h>
-#endif
-
-#if HAVE_NLIST_H
-#include <nlist.h>
-#endif
-
-#if solaris2
-#include "kernel_sunos5.h"
-#endif
-
-#ifdef HAVE_SYS_SYSCTL_H
-# ifdef CTL_NET
-#  ifdef PF_ROUTE
-#   ifdef NET_RT_DUMP
-#    define USE_SYSCTL_ROUTE_DUMP
-#   endif
-#  endif
-# endif
-#endif
-
-#if HAVE_DMALLOC_H
-#include <dmalloc.h>
-#endif
-
-#ifdef cygwin
-#define WIN32
-#include <windows.h>
-#endif
-
+#include "route_headers.h"
 #define CACHE_TIME (120)        /* Seconds */
+
+#if !defined(NETSNMP_CAN_USE_SYSCTL)
 
 #include <net-snmp/net-snmp-includes.h>
 #include <net-snmp/agent/net-snmp-agent-includes.h>
 #include <net-snmp/agent/auto_nlist.h>
+#include <net-snmp/data_access/interface.h>
 
 #include "ip.h"
 #include "kernel.h"
 #include "interfaces.h"
 #include "struct.h"
 #include "util_funcs.h"
+
+#if defined(cygwin) || defined(mingw32)
+#include <winerror.h>
+#endif
+
+netsnmp_feature_child_of(get_routes, libnetsnmpmibs)
 
 #ifndef  MIN
 #define  MIN(a,b)                     (((a) < (b)) ? (a) : (b))
@@ -210,9 +80,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <netinet/mib_kern.h>
 #endif                          /* hpux */
 
-extern WriteMethod write_rte;
-
-#ifndef WIN32
+#if !defined (WIN32) && !defined (cygwin)
 
 #ifdef USE_SYSCTL_ROUTE_DUMP
 
@@ -221,9 +89,6 @@ static void     Route_Scan_Reload(void);
 static unsigned char *all_routes = 0;
 static unsigned char *all_routes_end;
 static size_t   all_routes_size;
-
-extern const struct sockaddr *get_address(const void *, int, int);
-extern const struct in_addr *get_in_address(const void *, int, int);
 
 /*
  * var_ipRouteEntry(...
@@ -253,6 +118,10 @@ var_ipRouteEntry(struct variable *vp,
     u_char         *cp;
     u_char         *ap;
     oid            *op;
+    static in_addr_t addr_ret;
+
+    *write_method = NULL;  /* write_rte;  XXX:  SET support not really implemented */
+
 #if 0
   /** 
   ** this optimisation fails, if there is only a single route avail.
@@ -358,11 +227,11 @@ var_ipRouteEntry(struct variable *vp,
     }
 #endif                          /* 0 */
 
-    *write_method = write_rte;
     *var_len = sizeof(long_return);
 
     switch (vp->magic) {
     case IPROUTEDEST:
+    	*var_len = sizeof(addr_ret);
         return (u_char *) get_in_address((struct sockaddr *) (rtp + 1),
                                          rtp->rtm_addrs, RTA_DST);
     case IPROUTEIFINDEX:
@@ -372,31 +241,32 @@ var_ipRouteEntry(struct variable *vp,
         long_return = (rtp->rtm_flags & RTF_UP) ? 1 : 0;
         return (u_char *) & long_return;
     case IPROUTEMETRIC2:
-#if NO_DUMMY_VALUES
+#if NETSNMP_NO_DUMMY_VALUES
         return NULL;
 #endif
         long_return = -1;
         return (u_char *) & long_return;
     case IPROUTEMETRIC3:
-#if NO_DUMMY_VALUES
+#if NETSNMP_NO_DUMMY_VALUES
         return NULL;
 #endif
         long_return = -1;
         return (u_char *) & long_return;
     case IPROUTEMETRIC4:
-#if NO_DUMMY_VALUES
+#if NETSNMP_NO_DUMMY_VALUES
         return NULL;
 #endif
         long_return = -1;
         return (u_char *) & long_return;
     case IPROUTEMETRIC5:
-#if NO_DUMMY_VALUES
+#if NETSNMP_NO_DUMMY_VALUES
         return NULL;
 #endif
         long_return = -1;
         return (u_char *) & long_return;
     case IPROUTENEXTHOP:
-        return (u_char *) get_in_address((struct sockaddr *) (rtp + 1),
+    	*var_len = sizeof(addr_ret);
+    	return (u_char *) get_in_address((struct sockaddr *) (rtp + 1),
                                          rtp->rtm_addrs, RTA_GATEWAY);
     case IPROUTETYPE:
         if (rtp->rtm_flags & RTF_UP) {
@@ -415,15 +285,16 @@ var_ipRouteEntry(struct variable *vp,
             ? 2 : (rtp->rtm_flags & RTF_DYNAMIC) ? 4 : 1;
         return (u_char *) & long_return;
     case IPROUTEAGE:
-#if NO_DUMMY_VALUES
+#if NETSNMP_NO_DUMMY_VALUES
         return NULL;
 #endif
         long_return = 0;
         return (u_char *) & long_return;
     case IPROUTEMASK:
+    	*var_len = sizeof(addr_ret);   	     
         if (rtp->rtm_flags & RTF_HOST) {
-            long_return = 0x00000001;
-            return (u_char *) & long_return;
+            addr_ret = 0x00000001;
+            return (u_char *) & addr_ret;
         } else {
             return (u_char *) get_in_address((struct sockaddr *) (rtp + 1),
                                              rtp->rtm_addrs, RTA_NETMASK);
@@ -440,17 +311,27 @@ var_ipRouteEntry(struct variable *vp,
 
 #else                           /* not USE_SYSCTL_ROUTE_DUMP */
 
-static void     Route_Scan_Reload(void);
-
 #ifdef hpux11
 static int      rtsize = 0;
 static mib_ipRouteEnt *rt = (mib_ipRouteEnt *) 0;
-#else                           /* hpux11 */
-static RTENTRY **rthead = 0;
+static void     Route_Scan_Reload(void);
+#elif !defined(solaris2)
+static RTENTRY **rthead = NULL;
 static int      rtsize = 0, rtallocate = 0;
+
+static void     Route_Scan_Reload(void);
+
+#ifndef NETSNMP_FEATURE_REMOVE_GET_ROUTES
+RTENTRY **netsnmp_get_routes(size_t *size) {
+    Route_Scan_Reload();
+    if (size)
+        *size = rtsize;
+    return rthead;
+}
+#endif /* NETSNMP_FEATURE_REMOVE_GET_ROUTES */
 #endif                          /* hpux11 */
 
-#if !(defined(linux) || defined(solaris2) || defined(hpux11))
+#if !(defined(linux) || defined(solaris2) || defined(hpux11)) && defined(RTHOST_SYMBOL) && defined(RTNET_SYMBOL)
 #define NUM_ROUTE_SYMBOLS 2
 static char    *route_symbols[] = {
     RTHOST_SYMBOL,
@@ -530,10 +411,16 @@ static union {
 struct sockaddr_in *
 klgetsa(struct sockaddr_in *dst)
 {
-    klookup((u_long) dst, (char *) &klgetsatmp.sin, sizeof klgetsatmp.sin);
-    if (klgetsatmp.sin.sin_len > sizeof(klgetsatmp.sin))
-        klookup((u_long) dst, (char *) &klgetsatmp.sin,
-                klgetsatmp.sin.sin_len);
+    if (!NETSNMP_KLOOKUP(dst, (char *) &klgetsatmp.sin, sizeof klgetsatmp.sin)) {
+        DEBUGMSGTL(("mibII/var_route", "klookup failed\n"));
+        return NULL;
+    }
+    if (klgetsatmp.sin.sin_len > sizeof(klgetsatmp.sin)) {
+        if (!NETSNMP_KLOOKUP(dst, (char *) &klgetsatmp.sin, klgetsatmp.sin.sin_len)) {
+            DEBUGMSGTL(("mibII/var_route", "klookup failed\n"));
+            return NULL;
+        }
+    }
     return (&klgetsatmp.sin);
 }
 #endif
@@ -550,10 +437,12 @@ var_ipRouteEntry(struct variable * vp,
      * IPADDR starts at offset 10.
      */
     register int    Save_Valid, result, RtIndex;
-    static int      saveNameLen = 0, saveExact = 0, saveRtIndex = 0;
+    static size_t   saveNameLen = 0;
+    static int      saveExact = 0, saveRtIndex = 0;
     static oid      saveName[MAX_OID_LEN], Current[MAX_OID_LEN];
     u_char         *cp;
     oid            *op;
+    static in_addr_t addr_ret;
 #if NEED_KLGETSA
     struct sockaddr_in *sa;
 #endif
@@ -561,11 +450,14 @@ var_ipRouteEntry(struct variable * vp,
     struct ifnet    rt_ifnet;
     struct in_ifaddr rt_ifnetaddr;
 #endif
+
+    *write_method = NULL;  /* write_rte;  XXX:  SET support not really implemented */
+
     /** 
      ** this optimisation fails, if there is only a single route avail.
      ** it is a very special case, but better leave it out ...
      **/
-#if NO_DUMMY_VALUES
+#if NETSNMP_NO_DUMMY_VALUES
     saveNameLen = 0;
 #endif
     if (rtsize <= 1)
@@ -651,17 +543,17 @@ var_ipRouteEntry(struct variable * vp,
         *length = 14;
     }
 
-    *write_method = write_rte;
     *var_len = sizeof(long_return);
 
     switch (vp->magic) {
     case IPROUTEDEST:
+        *var_len = sizeof(addr_ret);
 #if NEED_KLGETSA
         sa = klgetsa((struct sockaddr_in *) rthead[RtIndex]->rt_dst);
         return (u_char *) & (sa->sin_addr.s_addr);
 #elif defined(hpux11)
-        long_return = rt[RtIndex].Dest;
-        return (u_char *) & long_return;
+        addr_ret = rt[RtIndex].Dest;
+        return (u_char *) & addr_ret;
 #else
         return (u_char *) & ((struct sockaddr_in *) &rthead[RtIndex]->
                              rt_dst)->sin_addr.s_addr;
@@ -684,7 +576,7 @@ var_ipRouteEntry(struct variable * vp,
 #ifdef hpux11
         long_return = rt[RtIndex].Metric2;
         return (u_char *) & long_return;
-#elif defined(NO_DUMMY_VALUES)
+#elif defined(NETSNMP_NO_DUMMY_VALUES)
         return NULL;
 #endif
         long_return = -1;
@@ -693,7 +585,7 @@ var_ipRouteEntry(struct variable * vp,
 #ifdef hpux11
         long_return = rt[RtIndex].Metric3;
         return (u_char *) & long_return;
-#elif defined(NO_DUMMY_VALUES)
+#elif defined(NETSNMP_NO_DUMMY_VALUES)
         return NULL;
 #endif
         long_return = -1;
@@ -702,24 +594,25 @@ var_ipRouteEntry(struct variable * vp,
 #ifdef hpux11
         long_return = rt[RtIndex].Metric4;
         return (u_char *) & long_return;
-#elif defined(NO_DUMMY_VALUES)
+#elif defined(NETSNMP_NO_DUMMY_VALUES)
         return NULL;
 #endif
         long_return = -1;
         return (u_char *) & long_return;
     case IPROUTEMETRIC5:
-#if NO_DUMMY_VALUES
+#if NETSNMP_NO_DUMMY_VALUES
         return NULL;
 #endif
         long_return = -1;
         return (u_char *) & long_return;
     case IPROUTENEXTHOP:
+        *var_len = sizeof(addr_ret);
 #if NEED_KLGETSA
         sa = klgetsa((struct sockaddr_in *) rthead[RtIndex]->rt_gateway);
         return (u_char *) & (sa->sin_addr.s_addr);
 #elif defined(hpux11)
-        long_return = rt[RtIndex].NextHop;
-        return (u_char *) & long_return;
+        addr_ret = rt[RtIndex].NextHop;
+        return (u_char *) & addr_ret;
 #else
         return (u_char *) & ((struct sockaddr_in *) &rthead[RtIndex]->
                              rt_gateway)->sin_addr.s_addr;
@@ -750,36 +643,43 @@ var_ipRouteEntry(struct variable * vp,
 #ifdef hpux11
         long_return = rt[RtIndex].Age;
         return (u_char *) & long_return;
-#elif defined(NO_DUMMY_VALUES)
+#elif defined(NETSNMP_NO_DUMMY_VALUES)
         return NULL;
 #endif
         long_return = 0;
         return (u_char *) & long_return;
     case IPROUTEMASK:
+        *var_len = sizeof(addr_ret);
 #if NEED_KLGETSA
         /*
          * XXX - Almost certainly not right
          * but I don't have a suitable system to test this on 
          */
-#if NO_DUMMY_VALUES
+#if NETSNMP_NO_DUMMY_VALUES
         return NULL;
 #endif
-        long_return = 0;
+        addr_ret = 0;
 #elif defined(hpux11)
-        long_return = rt[RtIndex].Mask;
-        return (u_char *) & long_return;
+        addr_ret = rt[RtIndex].Mask;
+        return (u_char *) & addr_ret;
 #else                           /* !NEED_KLGETSA && !hpux11 */
         if (((struct sockaddr_in *) &rthead[RtIndex]->rt_dst)->sin_addr.
             s_addr == 0)
-            long_return = 0;    /* Default route */
+            addr_ret = 0;    /* Default route */
         else {
 #ifndef linux
-            klookup((unsigned long) rthead[RtIndex]->rt_ifp,
-                    (char *) &rt_ifnet, sizeof(rt_ifnet));
-            klookup((unsigned long) rt_ifnet.if_addrlist,
-                    (char *) &rt_ifnetaddr, sizeof(rt_ifnetaddr));
+            if (!NETSNMP_KLOOKUP(rthead[RtIndex]->rt_ifp,
+                    (char *) &rt_ifnet, sizeof(rt_ifnet))) {
+                DEBUGMSGTL(("mibII/var_route", "klookup failed\n"));
+                return NULL;
+            }
+            if (!NETSNMP_KLOOKUP(rt_ifnet.if_addrlist,
+                    (char *) &rt_ifnetaddr, sizeof(rt_ifnetaddr))) {
+                DEBUGMSGTL(("mibII/var_route", "klookup failed\n"));
+                return NULL;
+            }
 
-            long_return = rt_ifnetaddr.ia_subnetmask;
+            addr_ret = rt_ifnetaddr.ia_subnetmask;
 #else                           /* linux */
             cp = (u_char *) &
                 (((struct sockaddr_in *) &(rthead[RtIndex]->rt_dst))->
@@ -790,7 +690,7 @@ var_ipRouteEntry(struct variable * vp,
 #endif                          /* linux */
         }
 #endif                          /* NEED_KLGETSA */
-        return (u_char *) & long_return;
+        return (u_char *) & addr_ret;
     case IPROUTEINFO:
         *var_len = nullOidLen;
         return (u_char *) nullOid;
@@ -847,6 +747,9 @@ var_ipRouteEntry(struct variable * vp,
     mib2_ipRouteEntry_t Lowentry, Nextentry, entry;
     int             Found = 0;
     req_e           req_type;
+    static in_addr_t addr_ret;
+
+    *write_method = NULL;  /* write_rte;  XXX:  SET support not really implemented */
 
     /*
      * fill in object part of name for current (less sizeof instance part) 
@@ -856,13 +759,21 @@ var_ipRouteEntry(struct variable * vp,
     if (*length == IP_ROUTENAME_LENGTH) /* Assume that the input name is the lowest */
         memcpy((char *) lowest, (char *) name,
                IP_ROUTENAME_LENGTH * sizeof(oid));
-    else
+    else {
         name[IP_ROUTEADDR_OFF] = (oid) - 1;     /* Grhhh: to prevent accidental comparison :-( */
+	lowest[0] = 0xff;
+    }
     for (Nextentry.ipRouteDest = (u_long) - 2, req_type = GET_FIRST;;
          Nextentry = entry, req_type = GET_NEXT) {
         if (getMibstat(MIB_IP_ROUTE, &entry, sizeof(mib2_ipRouteEntry_t),
                        req_type, &IP_Cmp_Route, &Nextentry) != 0)
             break;
+#ifdef HAVE_DEFINED_IRE_CACHE
+        if(entry.ipRouteInfo.re_ire_type&IRE_CACHE)
+            continue;
+#endif /* HAVE_DEFINED_IRE_CACHE */
+        if(entry.ipRouteInfo.re_ire_type & IRE_BROADCAST)
+            continue;
         COPY_IPADDR(cp, (u_char *) & entry.ipRouteDest, op,
                     current + IP_ROUTEADDR_OFF);
         if (exact) {
@@ -903,17 +814,24 @@ var_ipRouteEntry(struct variable * vp,
     memcpy((char *) name, (char *) lowest,
            IP_ROUTENAME_LENGTH * sizeof(oid));
     *length = IP_ROUTENAME_LENGTH;
-    *write_method = write_rte;
     *var_len = sizeof(long_return);
 
     switch (vp->magic) {
     case IPROUTEDEST:
-        long_return = Lowentry.ipRouteDest;
-        return (u_char *) & long_return;
+        *var_len = sizeof(addr_ret);
+        addr_ret = Lowentry.ipRouteDest;
+        return (u_char *) & addr_ret;
     case IPROUTEIFINDEX:
+#ifdef NETSNMP_INCLUDE_IFTABLE_REWRITES
+        Lowentry.ipRouteIfIndex.o_bytes[Lowentry.ipRouteIfIndex.o_length] = '\0';
         long_return =
-            Interface_Index_By_Name(Lowentry.ipRouteIfIndex.o_bytes,
-                                    Lowentry.ipRouteIfIndex.o_length);
+            netsnmp_access_interface_index_find(
+                Lowentry.ipRouteIfIndex.o_bytes);
+#else
+        long_return =
+           Interface_Index_By_Name(Lowentry.ipRouteIfIndex.o_bytes,
+                                   Lowentry.ipRouteIfIndex.o_length);
+#endif
         return (u_char *) & long_return;
     case IPROUTEMETRIC1:
         long_return = Lowentry.ipRouteMetric1;
@@ -928,8 +846,9 @@ var_ipRouteEntry(struct variable * vp,
         long_return = Lowentry.ipRouteMetric4;
         return (u_char *) & long_return;
     case IPROUTENEXTHOP:
-        long_return = Lowentry.ipRouteNextHop;
-        return (u_char *) & long_return;
+        *var_len = sizeof(addr_ret);
+        addr_ret = Lowentry.ipRouteNextHop;
+        return (u_char *) & addr_ret;
     case IPROUTETYPE:
         long_return = Lowentry.ipRouteType;
         return (u_char *) & long_return;
@@ -942,8 +861,9 @@ var_ipRouteEntry(struct variable * vp,
         long_return = Lowentry.ipRouteAge;
         return (u_char *) & long_return;
     case IPROUTEMASK:
-        long_return = Lowentry.ipRouteMask;
-        return (u_char *) & long_return;
+        *var_len = sizeof(addr_ret);
+        addr_ret = Lowentry.ipRouteMask;
+        return (u_char *) & addr_ret;
     default:
         DEBUGMSGTL(("snmpd", "unknown sub-id %d in var_ipRouteEntry\n",
                     vp->magic));
@@ -957,7 +877,7 @@ var_ipRouteEntry(struct variable * vp,
 static int      qsort_compare(const void *, const void *);
 #endif
 
-#if defined(RTENTRY_4_4) || defined(RTENTRY_RT_NEXT)
+#if defined(RTENTRY_4_4) || defined(RTENTRY_RT_NEXT) || defined (hpux11)
 
 #if defined(RTENTRY_4_4) && !defined(hpux11)
 void
@@ -967,13 +887,12 @@ load_rtentries(struct radix_node *pt)
     RTENTRY         rt;
     struct ifnet    ifnet;
     char            name[16], temp[16];
-#if !STRUCT_IFNET_HAS_IF_XNAME
+#if !HAVE_STRUCT_IFNET_IF_XNAME
     register char  *cp;
 #endif
 
-    if (!klookup
-        ((unsigned long) pt, (char *) &node, sizeof(struct radix_node))) {
-        DEBUGMSGTL(("mibII/var_route", "Fail\n"));
+    if (!NETSNMP_KLOOKUP(pt, (char *) &node, sizeof(struct radix_node))) {
+        DEBUGMSGTL(("mibII/var_route", "klookup failed\n"));
         return;
     }
     if (node.rn_b >= 0) {
@@ -991,24 +910,42 @@ load_rtentries(struct radix_node *pt)
         /*
          * get the route 
          */
-        klookup((unsigned long) pt, (char *) &rt, sizeof(RTENTRY));
+        if (!NETSNMP_KLOOKUP(pt, (char *) &rt, sizeof(RTENTRY))) {
+            DEBUGMSGTL(("mibII/var_route", "klookup failed\n"));
+            return;
+        }
 
         if (rt.rt_ifp != 0) {
-            klookup((unsigned long) rt.rt_ifp, (char *) &ifnet,
-                    sizeof(ifnet));
-#if STRUCT_IFNET_HAS_IF_XNAME
+            if (!NETSNMP_KLOOKUP(rt.rt_ifp, (char *) &ifnet, sizeof(ifnet))) {
+                DEBUGMSGTL(("mibII/var_route", "klookup failed\n"));
+                return;
+            }
+#if HAVE_STRUCT_IFNET_IF_XNAME
 #if defined(netbsd1) || defined(openbsd2)
-            strncpy(name, ifnet.if_xname, sizeof name);
+            strlcpy(name, ifnet.if_xname, sizeof(name));
 #else
-            klookup((unsigned long) ifnet.if_xname, name, sizeof name);
+            if (!NETSNMP_KLOOKUP(ifnet.if_xname, name, sizeof name)) {
+                DEBUGMSGTL(("mibII/var_route", "klookup failed\n"));
+                return;
+            }
 #endif
             name[sizeof(name) - 1] = '\0';
 #else
-            klookup((unsigned long) ifnet.if_name, name, sizeof name);
+#ifdef NETSNMP_FEATURE_CHECKIN
+            /* this exists here just so we don't copy ifdef logic elsewhere */
+            netsnmp_feature_require(string_append_int);
+#endif
+            if (!NETSNMP_KLOOKUP(ifnet.if_name, name, sizeof name)) {
+                DEBUGMSGTL(("mibII/var_route", "klookup failed\n"));
+                return;
+            }
             name[sizeof(name) - 1] = '\0';
             cp = (char *) strchr(name, '\0');
             string_append_int(cp, ifnet.if_unit);
 #endif
+#ifdef NETSNMP_FEATURE_CHECKIN
+            netsnmp_feature_require(interface_legacy)
+#endif /* NETSNMP_FEATURE_CHECKIN */
             Interface_Scan_Init();
             rt.rt_unit = 0;
             while (Interface_Scan_Next
@@ -1113,10 +1050,10 @@ Route_Scan_Reload(void)
     char            name[16], temp[16];
     int             hashsize;
 #endif
-    static int      Time_Of_Last_Reload = 0;
+    static time_t   Time_Of_Last_Reload;
     struct timeval  now;
 
-    gettimeofday(&now, (struct timezone *) 0);
+    netsnmp_get_monotonic_clock(&now);
     if (Time_Of_Last_Reload + CACHE_TIME > now.tv_sec)
         return;
     Time_Of_Last_Reload = now.tv_sec;
@@ -1152,13 +1089,17 @@ Route_Scan_Reload(void)
     for (i = 0; i <= AF_MAX; i++) {
         if (rt_table[i] == 0)
             continue;
-        if (klookup
-            ((unsigned long) rt_table[i], (char *) &head, sizeof(head))) {
+        if (NETSNMP_KLOOKUP(rt_table[i], (char *) &head, sizeof(head))) {
             load_rtentries(head.rnh_treetop);
         }
     }
 
 #else                           /* rtentry is a BSD 4.3 compat */
+#ifdef NETSNMP_FEATURE_CHECKIN
+    /* this exists here just so we don't copy ifdef logic elsewhere */
+    netsnmp_feature_require(string_append_int);
+    netsnmp_feature_require(interface_legacy)
+#endif
     for (table = 0; table < NUM_ROUTE_SYMBOLS; table++) {
         auto_nlist(RTHASHSIZE_SYMBOL, (char *) &hashsize,
                    sizeof(hashsize));
@@ -1173,13 +1114,22 @@ Route_Scan_Reload(void)
                 /*
                  *      Dig the route out of the kernel...
                  */
-                klookup(m, (char *) &mb, sizeof(mb));
+                if (!NETSNMP_KLOOKUP(m, (char *) &mb, sizeof(mb))) {
+                    DEBUGMSGTL(("mibII/var_route", "klookup failed\n"));
+                    return;
+                }
                 m = mb.rt_next;
 
                 rt = &mb;
                 if (rt->rt_ifp != 0) {
-                    klookup(rt->rt_ifp, (char *) &ifnet, sizeof(ifnet));
-                    klookup(ifnet.if_name, name, 16);
+                    if (!NETSNMP_KLOOKUP(rt->rt_ifp, (char *) &ifnet, sizeof(ifnet))) {
+                        DEBUGMSGTL(("mibII/var_route", "klookup failed\n"));
+                        return;
+                    }
+                    if (!NETSNMP_KLOOKUP(ifnet.if_name, name, 16)) {
+                        DEBUGMSGTL(("mibII/var_route", "klookup failed\n"));
+                        return;
+                    }
                     name[15] = '\0';
                     cp = (char *) strchr(name, '\0');
                     string_append_int(cp, ifnet.if_unit);
@@ -1234,6 +1184,8 @@ Route_Scan_Reload(void)
 #else
 
 #if HAVE_SYS_MBUF_H
+netsnmp_feature_require(string_append_int)
+netsnmp_feature_require(interface_legacy)
 static void
 Route_Scan_Reload(void)
 {
@@ -1244,11 +1196,11 @@ Route_Scan_Reload(void)
     int             i, table;
     register char  *cp;
     char            name[16], temp[16];
-    static int      Time_Of_Last_Reload = 0;
+    static time_t   Time_Of_Last_Reload;
     struct timeval  now;
     int             hashsize;
 
-    gettimeofday(&now, (struct timezone *) 0);
+    netsnmp_get_monotonic_clock(&now);
     if (Time_Of_Last_Reload + CACHE_TIME > now.tv_sec)
         return;
     Time_Of_Last_Reload = now.tv_sec;
@@ -1290,15 +1242,23 @@ Route_Scan_Reload(void)
                 /*
                  *  Dig the route out of the kernel...
                  */
-                klookup((unsigned long) m, (char *) &mb, sizeof(mb));
+                if (!NETSNMP_KLOOKUP(m, (char *) &mb, sizeof(mb))) {
+                    DEBUGMSGTL(("mibII/var_route", "klookup failed\n"));
+                    return;
+                }
                 m = mb.m_next;
                 rt = mtod(&mb, RTENTRY *);
 
                 if (rt->rt_ifp != 0) {
 
-                    klookup((unsigned long) rt->rt_ifp, (char *) &ifnet,
-                            sizeof(ifnet));
-                    klookup((unsigned long) ifnet.if_name, name, 16);
+                    if (!NETSNMP_KLOOKUP(rt->rt_ifp, (char *) &ifnet, sizeof(ifnet))) {
+                        DEBUGMSGTL(("mibII/var_route", "klookup failed\n"));
+                        return;
+                    }
+                    if (!NETSNMP_KLOOKUP(ifnet.if_name, name, 16)) {
+                        DEBUGMSGTL(("mibII/var_route", "klookup failed\n"));
+                        return;
+                    }
                     name[15] = '\0';
                     cp = (char *) strchr(name, '\0');
                     string_append_int(cp, ifnet.if_unit);
@@ -1351,15 +1311,12 @@ Route_Scan_Reload(void)
     FILE           *in;
     char            line[256];
     struct rtentry *rt;
-    char            name[16], temp[16];
-    static int      Time_Of_Last_Reload = 0;
+    char            name[16];
+    static time_t   Time_Of_Last_Reload;
     struct timeval  now;
 
-    /*
-     * allow 20 seconds in cache: 
-     */
-    gettimeofday(&now, (struct timezone *) 0);
-    if (Time_Of_Last_Reload + 20 > now.tv_sec)
+    netsnmp_get_monotonic_clock(&now);
+    if (Time_Of_Last_Reload + CACHE_TIME > now.tv_sec)
         return;
     Time_Of_Last_Reload = now.tv_sec;
 
@@ -1382,15 +1339,15 @@ Route_Scan_Reload(void)
     rtsize = 0;
 
     if (!(in = fopen("/proc/net/route", "r"))) {
-        snmp_log(LOG_ERR, "cannot open /proc/net/route - burps\n");
+        NETSNMP_LOGONCE((LOG_ERR, "cannot open /proc/net/route - burps\n"));
         return;
     }
 
     while (fgets(line, sizeof(line), in)) {
         struct rtentry  rtent;
         char            rtent_name[32];
-        int             refcnt, flags, metric;
-        unsigned        use;
+        int             refcnt, metric;
+        unsigned        flags, use;
 
         rt = &rtent;
         memset((char *) rt, (0), sizeof(*rt));
@@ -1401,36 +1358,23 @@ Route_Scan_Reload(void)
          * Iface Dest GW Flags RefCnt Use Metric Mask MTU Win IRTT
          * eth0 0A0A0A0A 00000000 05 0 0 0 FFFFFFFF 1500 0 0 
          */
-        if (8 != sscanf(line, "%s %x %x %x %u %d %d %x %*d %*d %*d\n",
+        if (8 != sscanf(line, "%s %x %x %x %d %u %d %x %*d %*d %*d\n",
                         rt->rt_dev,
-                        &(((struct sockaddr_in *) &(rtent.rt_dst))->
-                          sin_addr.s_addr),
-                        &(((struct sockaddr_in *) &(rtent.rt_gateway))->
-                          sin_addr.s_addr),
+                        &(((struct sockaddr_in *) &(rtent.rt_dst))->sin_addr.s_addr),
+                        &(((struct sockaddr_in *) &(rtent.rt_gateway))->sin_addr.s_addr),
                         /*
                          * XXX: fix type of the args 
                          */
                         &flags, &refcnt, &use, &metric,
-                        &(((struct sockaddr_in *) &(rtent.rt_genmask))->
-                          sin_addr.s_addr)))
+                        &(((struct sockaddr_in *) &(rtent.rt_genmask))->sin_addr.s_addr)))
             continue;
 
-        strncpy(name, rt->rt_dev, sizeof(name));
-        name[ sizeof(name)-1 ] = 0;
-        /*
-         * linux says ``lo'', but the interface is stored as ``lo0'': 
-         */
-        if (!strcmp(name, "lo"))
-            strcat(name, "0");
+        strlcpy(name, rt->rt_dev, sizeof(name));
 
         rt->rt_flags = flags, rt->rt_refcnt = refcnt;
         rt->rt_use = use, rt->rt_metric = metric;
 
-        Interface_Scan_Init();
-        while (Interface_Scan_Next
-               ((short *) &rt->rt_unit, temp, NULL, NULL) != 0)
-            if (strcmp(name, temp) == 0)
-                break;
+        rt->rt_unit = netsnmp_access_interface_index_find(name);
 
         /*
          *  Allocate a block to hold it and add it to the database
@@ -1474,14 +1418,14 @@ Route_Scan_Reload(void)
 static int
 qsort_compare(const void *v1, const void *v2)
 {
-    mib_ipRouteEnt * const *r1 = (mib_ipRouteEnt * const *) v1;
-    mib_ipRouteEnt * const *r2 = (mib_ipRouteEnt * const *) v2;
+    const mib_ipRouteEnt *r1 = (const mib_ipRouteEnt *) v1;
+    const mib_ipRouteEnt *r2 = (const mib_ipRouteEnt *) v2;
     /*
      *      Do the comparison
      */
-    if ((*r1)->Dest == (*r2)->Dest)
+    if (r1->Dest == r2->Dest)
         return (0);
-    if ((*r1)->Dest  > (*r2)->Dest)
+    if (r1->Dest  > r2->Dest)
         return (1);
     return (-1);
 }
@@ -1521,7 +1465,7 @@ qsort_compare(const void *v1, const void *v2)
 
 #endif                          /* solaris2 */
 
-#else                           /* WIN32 */
+#elif defined(HAVE_IPHLPAPI_H)  /* WIN32 cygwin */
 #include <iphlpapi.h>
 #ifndef MIB_IPPROTO_NETMGMT
 #define MIB_IPPROTO_NETMGMT 3
@@ -1545,7 +1489,7 @@ var_ipRouteEntry(struct variable *vp,
      * 1.3.6.1.2.1.4.21.1.?.A.B.C.D,  where A.B.C.D is IP address.
      * IPADDR starts at offset 10.
      */
-    register int    Save_Valid, result, RtIndex;
+    register int    Save_Valid, result, RtIndex = 0;
     static int      saveNameLen = 0, saveExact = 0, saveRtIndex =
         0, rtsize = 0;
     static oid      saveName[MAX_OID_LEN], Current[MAX_OID_LEN];
@@ -1555,16 +1499,15 @@ var_ipRouteEntry(struct variable *vp,
     DWORD           dwActualSize = 0;
     static PMIB_IPFORWARDTABLE pIpRtrTable = NULL;
     struct timeval  now;
-    static long     Time_Of_Last_Reload = 0;
-    u_char          dest_addr[4];
-    MIB_IPFORWARDROW temp_row;
+    static time_t    Time_Of_Last_Reload;
+    static in_addr_t addr_ret;
 
 
     /** 
      ** this optimisation fails, if there is only a single route avail.
      ** it is a very special case, but better leave it out ...
      **/
-#if NO_DUMMY_VALUES
+#if NETSNMP_NO_DUMMY_VALUES
     saveNameLen = 0;
 #endif
     if (route_row == NULL) {
@@ -1573,7 +1516,7 @@ var_ipRouteEntry(struct variable *vp,
          */
         route_row = (PMIB_IPFORWARDROW) malloc(sizeof(MIB_IPFORWARDROW));
     }
-    gettimeofday(&now, (struct timezone *) 0);
+    netsnmp_get_monotonic_clock(&now);
     if ((rtsize <= 1) || (Time_Of_Last_Reload + 5 <= now.tv_sec))
         Save_Valid = 0;
     else
@@ -1651,12 +1594,16 @@ var_ipRouteEntry(struct variable *vp,
              * for creation of new row, only ipNetToMediaTable case is considered 
              */
             if (*length == 14) {
+                u_char           dest_addr[4];
+                MIB_IPFORWARDROW temp_row;
+
                 create_flag = 1;
                 *write_method = write_rte;
                 dest_addr[0] = (u_char) name[10];
                 dest_addr[1] = (u_char) name[11];
                 dest_addr[2] = (u_char) name[12];
                 dest_addr[3] = (u_char) name[13];
+                memset(&temp_row, 0, sizeof(temp_row));
                 temp_row.dwForwardDest = *((DWORD *) dest_addr);
                 temp_row.dwForwardPolicy = 0;
                 temp_row.dwForwardProto = MIB_IPPROTO_NETMGMT;
@@ -1689,9 +1636,10 @@ var_ipRouteEntry(struct variable *vp,
 
     switch (vp->magic) {
     case IPROUTEDEST:
+        *var_len = sizeof(addr_ret);
         *write_method = write_rte;
-        long_return = pIpRtrTable->table[RtIndex].dwForwardDest;
-        return (u_char *) & long_return;
+        addr_ret = pIpRtrTable->table[RtIndex].dwForwardDest;
+        return (u_char *) & addr_ret;
     case IPROUTEIFINDEX:
         *write_method = write_rte;
         long_return = pIpRtrTable->table[RtIndex].dwForwardIfIndex;
@@ -1717,9 +1665,10 @@ var_ipRouteEntry(struct variable *vp,
         long_return = pIpRtrTable->table[RtIndex].dwForwardMetric5;
         return (u_char *) & long_return;
     case IPROUTENEXTHOP:
+        *var_len = sizeof(addr_ret);
         *write_method = write_rte;
-        long_return = pIpRtrTable->table[RtIndex].dwForwardNextHop;
-        return (u_char *) & long_return;
+        addr_ret = pIpRtrTable->table[RtIndex].dwForwardNextHop;
+        return (u_char *) & addr_ret;
     case IPROUTETYPE:
         *write_method = write_rte;
         long_return = pIpRtrTable->table[RtIndex].dwForwardType;
@@ -1733,8 +1682,9 @@ var_ipRouteEntry(struct variable *vp,
         return (u_char *) & long_return;
     case IPROUTEMASK:
         *write_method = write_rte;
-        long_return = pIpRtrTable->table[RtIndex].dwForwardMask;
-        return (u_char *) & long_return;
+        *var_len = sizeof(addr_ret);
+        addr_ret = pIpRtrTable->table[RtIndex].dwForwardMask;
+        return (u_char *) & addr_ret;
     case IPROUTEINFO:
         *var_len = nullOidLen;
         return (u_char *) nullOid;
@@ -1745,41 +1695,9 @@ var_ipRouteEntry(struct variable *vp,
     return NULL;
 }
 
-#endif                          /* WIN32 */
+#endif                          /* WIN32 cygwin */
 
-#else                           /* CAN_USE_SYSCTL */
-
-#include <stddef.h>
-#include <stdlib.h>
-#include <syslog.h>
-#include <time.h>
-
-#include <sys/types.h>
-#include <sys/param.h>
-#include <sys/queue.h>
-#include <sys/socket.h>
-#include <sys/sysctl.h>
-#if HAVE_SYS_TIME_H
-#include <sys/time.h>
-#endif
-
-#include <net/if_dl.h>
-#if HAVE_SYS_STREAM_H
-#include <sys/stream.h>
-#endif
-#include <net/route.h>
-#include <netinet/in.h>
-
-#define CACHE_TIME (120)        /* Seconds */
-
-#include <net-snmp/net-snmp-includes.h>
-#include <net-snmp/agent/net-snmp-agent-includes.h>
-
-#include "ip.h"
-#include "kernel.h"
-#include "interfaces.h"
-#include "struct.h"
-#include "util_funcs.h"
+#else                           /* NETSNMP_CAN_USE_SYSCTL */
 
 static
 TAILQ_HEAD(, snmprt)
@@ -1940,6 +1858,9 @@ var_ipRouteEntry(struct variable * vp,
     static struct snmprt *savert;
     static int      saveNameLen, saveExact;
     static oid      saveName[14], Current[14];
+    static in_addr_t addr_ret;
+    
+    *write_method = NULL;  /* write_rte;  XXX:  SET support not really implemented */
 
 #if 0
     /*
@@ -2010,13 +1931,13 @@ var_ipRouteEntry(struct variable * vp,
         *length = 14;
     }
 
-    *write_method = write_rte;
-    *var_len = sizeof long_return;
+    *var_len = sizeof(long_return);
 
     switch (vp->magic) {
     case IPROUTEDEST:
-        long_return = rt->dest.s_addr;
-        return (u_char *) & long_return;
+        addr_ret = rt->dest.s_addr;
+        *var_len = sizeof(addr_ret);
+        return (u_char *) & addr_ret;
 
     case IPROUTEIFINDEX:
         long_return = rt->index;
@@ -2039,13 +1960,14 @@ var_ipRouteEntry(struct variable * vp,
         return (u_char *) & long_return;
 
     case IPROUTENEXTHOP:
+        *var_len = sizeof(addr_ret);
         if (rt->gateway.s_addr == 0 && rt->ifa.s_addr == 0)
-            long_return = 0;
+            addr_ret = 0;
         else if (rt->gateway.s_addr == 0)
-            long_return = rt->ifa.s_addr;
+            addr_ret = rt->ifa.s_addr;
         else
-            long_return = rt->gateway.s_addr;
-        return (u_char *) & long_return;
+            addr_ret = rt->gateway.s_addr;
+        return (u_char *) & addr_ret;
 
     case IPROUTETYPE:
         if (rt->hdr->rtm_flags & RTF_UP) {
@@ -2064,15 +1986,16 @@ var_ipRouteEntry(struct variable * vp,
         return (u_char *) & long_return;
 
     case IPROUTEAGE:
-#if NO_DUMMY_VALUES
+#if NETSNMP_NO_DUMMY_VALUES
         return NULL;
 #endif
         long_return = 0;
         return (u_char *) & long_return;
 
     case IPROUTEMASK:
-        long_return = rt->netmask.s_addr;
-        return (u_char *) & long_return;
+        addr_ret = rt->netmask.s_addr;
+        *var_len = sizeof(addr_ret);
+        return (u_char *) & addr_ret;
 
     case IPROUTEINFO:
         *var_len = nullOidLen;
@@ -2090,7 +2013,7 @@ init_var_route(void)
     ;
 }
 
-#endif                          /* CAN_USE_SYSCTL */
+#endif                          /* NETSNMP_CAN_USE_SYSCTL */
 
 #if defined(HAVE_SYS_SYSCTL_H) && !defined(linux)
 /*
@@ -2116,7 +2039,7 @@ snmp_socket_length(int family)
 
     switch (family) {
 #ifndef cygwin
-#ifndef WIN32
+#if !defined (WIN32) && !defined (cygwin)
 #ifdef AF_UNIX
     case AF_UNIX:
         length = sizeof(struct sockaddr_un);

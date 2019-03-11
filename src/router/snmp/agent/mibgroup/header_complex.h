@@ -57,6 +57,10 @@ struct header_complex_index *header_complex_add_data(struct
                                                      **thedata,
                                                      netsnmp_variable_list
                                                      * var, void *data);
+struct header_complex_index *header_complex_maybe_add_data(struct header_complex_index **thedata,
+                                                           netsnmp_variable_list * var,
+                                                           void *data,
+                                                           int dont_allow_duplicates);
 
 /*
  * Note: newoid is copied/cloned for you 
@@ -68,5 +72,10 @@ struct header_complex_index *header_complex_add_data_by_oid(struct
                                                             size_t
                                                             newoid_len,
                                                             void *data);
+struct header_complex_index *header_complex_maybe_add_data_by_oid(struct header_complex_index **thedata,
+                                                                  oid * newoid,
+                                                                  size_t newoid_len,
+                                                                  void *data,
+                                                                  int dont_allow_duplicates);
 
 #endif                          /* _MIBGROUP_HEADER_COMPLEX_H */

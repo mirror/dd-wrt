@@ -1,4 +1,14 @@
-top_builddir=../..
+#
+# Makefile for libnetsnmphelpers
+#
+
+# use GNU vpath, if available, to only set a path for source and headers
+# VPATH will pick up objects too, which is bad if you are sharing a
+# source dir...
+@GNU_vpath@ %.h $(srcdir)
+@GNU_vpath@ %.c $(srcdir)
+# fallback to regular VPATH for non-gnu...
+@NON_GNU_VPATH@ $(srcdir)
 
 #
 # What to install
@@ -6,90 +16,21 @@ top_builddir=../..
 
 INSTALLLIBS=libnetsnmphelpers.$(LIB_EXTENSION)$(LIB_VERSION)
 INCLUDESUBDIR=agent
-INCLUDESUBDIRHEADERS=all_helpers.h \
-	instance.h \
-	scalar.h \
-	watcher.h \
-        multiplexer.h \
-	bulk_to_next.h \
-        null.h \
-        debug_handler.h \
-        old_api.h \
-        read_only.h \
-        serialize.h \
-        set_helper.h \
-        table_data.h \
-        table_dataset.h \
-	table_array.h \
-        table.h \
-        table_iterator.h \
-	mode_end_call.h
-
 
 #
 # Build info
 #
-CPPFLAGS=-I../../include -I$(top_srcdir)/include \
-	-I. -I.. -I../.. -I$(srcdir) -I$(srcdir)/..  \
-	-I$(srcdir)/../mibgroup -I$(srcdir)/../.. -I$(srcdir)/../../snmplib \
-	@CPPFLAGS@ $(LIB_CFLAGS)
+HELPERLIB       = libnetsnmphelpers.$(LIB_EXTENSION)$(LIB_VERSION)
+# -I. -I.. -I../..
+CPPFLAGS= $(TOP_INCLUDES) -I. $(AGENT_INCLUDES) $(MIBGROUP_INCLUDES) \
+	$(SNMPLIB_INCLUDES) @CPPFLAGS@
 
-OBJS =  all_helpers.o \
-	multiplexer.o \
-	read_only.o \
-	bulk_to_next.o \
-	instance.o \
-	scalar.o \
-	watcher.o \
-	null.o \
-	debug_handler.o \
-	old_api.o \
-	serialize.o \
-	table_array.o \
-	table_iterator.o \
-	table_data.o \
-	table_dataset.o \
-	table.o \
-	mode_end_call.o
+OBJS = dummy.o
 
-LOBJS = all_helpers.lo \
-	multiplexer.lo \
-	read_only.lo \
-	bulk_to_next.lo \
-	instance.lo \
-	scalar.lo \
-	watcher.lo \
-	null.lo \
-	debug_handler.lo \
-	old_api.lo \
-	serialize.lo \
-	table_array.lo \
-	table_iterator.lo \
-	table_data.lo \
-	table_dataset.lo \
-	table.lo \
-	mode_end_call.lo
-
-SRCS =  all_helpers.c \
-	multiplexer.c \
-	read_only.c \
-	bulk_to_next.c \
-	instance.c \
-	scalar.c \
-	watcher.c \
-	null.c \
-	debug_handler.c \
-	old_api.c \
-	serialize.c \
-	table_array.c \
-	table_iterator.c \
-	table_data.c \
-	table_dataset.c \
-	table.c \
-	mode_end_call.c
+LOBJS = dummy.lo
 
 all: standardall
 
-libnetsnmphelpers.$(LIB_EXTENSION)$(LIB_VERSION):    ${LOBJS}
-	$(LIB_LD_CMD) libnetsnmphelpers.$(LIB_EXTENSION)$(LIB_VERSION) ${LOBJS}  $(LIB_LD_LIBS)
-	$(RANLIB) libnetsnmphelpers.$(LIB_EXTENSION)$(LIB_VERSION)
+libnetsnmphelpers.$(LIB_EXTENSION)$(LIB_VERSION):    $(LOBJS)
+	$(LIB_LD_CMD) $@ $(LOBJS) @LD_NO_UNDEFINED@ $(LDFLAGS) $(LIB_LD_LIBS)
+	$(RANLIB) $@

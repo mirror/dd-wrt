@@ -1,6 +1,8 @@
 #ifndef AGENTX_PROTOCOL_H
 #define AGENTX_PROTOCOL_H
 
+config_belongs_in(agent_module)
+
 #ifdef __cplusplus
 extern          "C" {
 #endif
@@ -10,7 +12,9 @@ extern          "C" {
      */
 
 #define AGENTX_PORT	705
-#define AGENTX_SOCKET	"/var/agentx/master"
+#ifndef NETSNMP_AGENTX_SOCKET
+#define NETSNMP_AGENTX_SOCKET	"/var/agentx/master"
+#endif
 
     /*
      * AgentX versions 
@@ -94,8 +98,6 @@ extern          "C" {
 
 
 
-    int             agentx_build(netsnmp_session *, netsnmp_pdu *,
-                                 u_char *, size_t *);
     int             agentx_realloc_build(netsnmp_session * session,
                                          netsnmp_pdu *pdu, u_char ** buf,
                                          size_t * buf_len,

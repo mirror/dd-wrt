@@ -49,7 +49,7 @@
 #include <net-snmp/agent/net-snmp-agent-includes.h>
 #include <net-snmp/agent/auto_nlist.h>
 
-#include "util_funcs.h"
+#include "util_funcs/header_generic.h"
 #include "vmstat.h"
 
 /*
@@ -66,42 +66,49 @@ init_vmstat_netbsd1(void)
 {
 
     struct variable2 extensible_vmstat_variables[] = {
-        {MIBINDEX, ASN_INTEGER, RONLY, var_extensible_vmstat, 1,
-         {MIBINDEX}},
-        {ERRORNAME, ASN_OCTET_STR, RONLY, var_extensible_vmstat, 1,
-         {ERRORNAME}},
-        {SWAPIN, ASN_INTEGER, RONLY, var_extensible_vmstat, 1, {SWAPIN}},
-        {SWAPOUT, ASN_INTEGER, RONLY, var_extensible_vmstat, 1, {SWAPOUT}},
-        {IOSENT, ASN_INTEGER, RONLY, var_extensible_vmstat, 1, {IOSENT}},
-        {IORECEIVE, ASN_INTEGER, RONLY, var_extensible_vmstat, 1,
-         {IORECEIVE}},
-        {SYSINTERRUPTS, ASN_INTEGER, RONLY, var_extensible_vmstat, 1,
-         {SYSINTERRUPTS}},
-        {SYSCONTEXT, ASN_INTEGER, RONLY, var_extensible_vmstat, 1,
-         {SYSCONTEXT}},
-        {CPUUSER, ASN_INTEGER, RONLY, var_extensible_vmstat, 1, {CPUUSER}},
-        {CPUSYSTEM, ASN_INTEGER, RONLY, var_extensible_vmstat, 1,
-         {CPUSYSTEM}},
-        {CPUIDLE, ASN_INTEGER, RONLY, var_extensible_vmstat, 1, {CPUIDLE}},
-        {CPURAWUSER, ASN_COUNTER, RONLY, var_extensible_vmstat, 1,
-         {CPURAWUSER}},
-        {CPURAWNICE, ASN_COUNTER, RONLY, var_extensible_vmstat, 1,
-         {CPURAWNICE}},
-        {CPURAWSYSTEM, ASN_COUNTER, RONLY, var_extensible_vmstat, 1,
-         {CPURAWSYSTEM}},
-        {CPURAWIDLE, ASN_COUNTER, RONLY, var_extensible_vmstat, 1,
-         {CPURAWIDLE}},
-        {CPURAWKERNEL, ASN_COUNTER, RONLY, var_extensible_vmstat, 1,
-         {CPURAWKERNEL}},
-        {CPURAWINTR, ASN_COUNTER, RONLY, var_extensible_vmstat, 1,
-         {CPURAWINTR}},
+        {MIBINDEX, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {MIBINDEX}},
+        {ERRORNAME, ASN_OCTET_STR, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {ERRORNAME}},
+        {SWAPIN, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {SWAPIN}},
+        {SWAPOUT, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {SWAPOUT}},
+        {IOSENT, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {IOSENT}},
+        {IORECEIVE, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {IORECEIVE}},
+        {SYSINTERRUPTS, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {SYSINTERRUPTS}},
+        {SYSCONTEXT, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {SYSCONTEXT}},
+        {CPUUSER, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {CPUUSER}},
+        {CPUSYSTEM, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {CPUSYSTEM}},
+        {CPUIDLE, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {CPUIDLE}},
+        {CPURAWUSER, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {CPURAWUSER}},
+        {CPURAWNICE, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {CPURAWNICE}},
+        {CPURAWSYSTEM, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {CPURAWSYSTEM}},
+        {CPURAWIDLE, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {CPURAWIDLE}},
+        {CPURAWKERNEL, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {CPURAWKERNEL}},
+        {CPURAWINTR, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {CPURAWINTR}},
 
         /*
          * Future use: 
          */
         /*
-         * {ERRORFLAG, ASN_INTEGER, RONLY, var_extensible_vmstat, 1, {ERRORFLAG }},
-         * {ERRORMSG, ASN_OCTET_STR, RONLY, var_extensible_vmstat, 1, {ERRORMSG }}
+         * {ERRORFLAG, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         *  var_extensible_vmstat, 1, {ERRORFLAG }},
+         * {ERRORMSG, ASN_OCTET_STR, NETSNMP_OLDAPI_RONLY,
+         *  var_extensible_vmstat, 1, {ERRORMSG }}
          */
     };
 
@@ -109,7 +116,7 @@ init_vmstat_netbsd1(void)
      * Define the OID pointer to the top of the mib tree that we're
      * registering underneath 
      */
-    oid             vmstat_variables_oid[] = { UCDAVIS_MIB, 11 };
+    oid             vmstat_variables_oid[] = { NETSNMP_UCDAVIS_MIB, 11 };
 
     /*
      * register ourselves with the agent to handle our mib tree 
@@ -150,10 +157,10 @@ var_extensible_vmstat(struct variable *vp,
     static time_t   time_diff;
 
 #if defined(KERN_CP_TIME)
-    static u_int64_t cpu_old[CPUSTATES];
-    static u_int64_t cpu_new[CPUSTATES];
-    static u_int64_t cpu_diff[CPUSTATES];
-    static u_int64_t cpu_total;
+    static uint64_t  cpu_old[CPUSTATES];
+    static uint64_t  cpu_new[CPUSTATES];
+    static uint64_t  cpu_diff[CPUSTATES];
+    static uint64_t  cpu_total;
 #elif defined(KERN_CPTIME)
     static long     cpu_old[CPUSTATES];
     static long     cpu_new[CPUSTATES];
@@ -170,7 +177,7 @@ var_extensible_vmstat(struct variable *vp,
 
     static struct uvmexp mem_old, mem_new;
     int             mem_mib[] = { CTL_VM, VM_UVMEXP };
-    int             mem_size = sizeof(struct uvmexp);
+    size_t          mem_size = sizeof(struct uvmexp);
 
     static long     long_ret;
     static char     errmsg[300];
@@ -186,13 +193,13 @@ var_extensible_vmstat(struct variable *vp,
     if (time_new != time_old) {
 #ifdef KERN_CP_TIME
         int             mib[2] = { CTL_KERN, KERN_CP_TIME };
-        int             ssize = sizeof(cpu_new);
+        size_t          ssize = sizeof(cpu_new);
 
         if (sysctl(mib, 2, cpu_new, &ssize, NULL, 0) < 0)
             memset(cpu_new, 0, sizeof(cpu_new));
 #elif defined(KERN_CPTIME)
         int             mib[2] = { CTL_KERN, KERN_CPTIME };
-        int             ssize = sizeof(cpu_new);
+        size_t          ssize = sizeof(cpu_new);
 
         if (sysctl(mib, 2, cpu_new, &ssize, NULL, 0) < 0)
             memset(cpu_new, 0, sizeof(cpu_new));
@@ -251,13 +258,13 @@ var_extensible_vmstat(struct variable *vp,
         long_ret = rate(long_ret);
         return ((u_char *) (&long_ret));
     case IOSENT:
-#if NO_DUMMY_VALUES
+#if NETSNMP_NO_DUMMY_VALUES
         return NULL;
 #endif
         long_ret = -1;
         return ((u_char *) (&long_ret));
     case IORECEIVE:
-#if NO_DUMMY_VALUES
+#if NETSNMP_NO_DUMMY_VALUES
         return NULL;
 #endif
         long_ret = -1;

@@ -1,10 +1,10 @@
 #include "freebsd.h"
 
 /*
- * freebsd4 is a superset of freebsd2 and freebsd3 
+ * freebsd4 is a superset of all since freebsd2
  */
-#define freebsd2 1
-#define freebsd3 1
+#define freebsd2 freebsd2
+#define freebsd3 freebsd3
 
 #undef IFADDR_SYMBOL
 #define IFADDR_SYMBOL "in_ifaddrhead"
@@ -16,3 +16,8 @@
 #define NPROC_SYMBOL "nprocs"
 
 #undef TOTAL_MEMORY_SYMBOL
+
+#undef MBSTAT_SYMBOL
+
+#undef INP_NEXT_SYMBOL
+#define INP_NEXT_SYMBOL inp_next

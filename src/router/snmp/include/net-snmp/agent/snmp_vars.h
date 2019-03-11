@@ -10,6 +10,10 @@
 extern          "C" {
 #endif
 
+/* Portions of this file are subject to the following copyright(s).  See
+ * the Net-SNMP's COPYING file for more details and other copyrights
+ * that may apply:
+ */
 /***********************************************************
 	Copyright 1988, 1989 by Carnegie Mellon University
 	Copyright 1989	TGV, Incorporated
@@ -32,8 +36,31 @@ USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ******************************************************************/
+/*
+ * Portions of this file are copyrighted by:
+ * Copyright © 2003 Sun Microsystems, Inc. All rights reserved.
+ * Use is subject to license terms specified in the COPYING file
+ * distributed with the Net-SNMP package.
+ */
 
     struct variable;
+
+    /**
+     * Duplicates a variable.
+     *
+     * @return Pointer to the duplicate variable upon success; NULL upon
+     *   failure.
+     *
+     * @see struct variable
+     * @see struct variable1
+     * @see struct variable2
+     * @see struct variable3
+     * @see struct variable4
+     * @see struct variable7
+     * @see struct variable8
+     * @see struct variable13
+     */
+    struct variable *netsnmp_duplicate_variable(const struct variable *var);
 
     /*
      * Function pointer called by the master agent for writes. 
@@ -84,6 +111,14 @@ PERFORMANCE OF THIS SOFTWARE.
     };
 
     int             init_agent(const char *);
+    void            shutdown_agent(void);
+
+    int             should_init(const char *module_name);
+    void            add_to_init_list(char *module_list);
+
+#ifdef USING_AGENTX_SUBAGENT_MODULE
+    void            netsnmp_enable_subagent(void);
+#endif
 
 #ifndef _AGENT_REGISTRY_H
 #include <net-snmp/agent/agent_handler.h>

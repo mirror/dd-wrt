@@ -7,17 +7,16 @@
 .\" Use is subject to license terms specified in the COPYING file
 .\" distributed with the Net-SNMP package.
 .\" ******************************************************************/
-.TH MIB2C 1 "25 Jul 2003" VVERSIONINFO "Net-SNMP"
-.UC 4
+.TH MIB2C 1 "05 Apr 2010" VVERSIONINFO "Net-SNMP"
 .SH NAME
-mib2c -- produces template code from mib definitions
+mib2c -- generate template code for extending the agent
 .SH SYNOPSIS
 .B mib2c
-[-h] -c CONFIGFILE [-f OUTNAME] [-i][q][-S VAR=VAL] MIBNODE
+[-h] -c CONFIGFILE [-I PATH] [-f OUTNAME] [-i][-s][-q][-S VAR=VAL] MIBNODE
 .SH DESCRIPTION
 The mib2c tool is designed to take a portion of the MIB tree (as defined
 by a MIB file) and generate the template C code necessary to implement
-the corresponding MIB module.
+the relevant management objects within it.
 .PP
 In order to implement a new MIB module, three files are necessary:
 .PP
@@ -34,8 +33,8 @@ to add logic necessary to obtain information from the
 operating system or application to complete the module.
 .PP
 MIBNODE is the top level mib node you want to generate code for.
-You must give mib2c a mib node (e.g., ifTable), not a mib file 
-on the command line.  (this is the most common mistake).
+You must give mib2c a mib node (e.g. ifTable) on the command line,
+not a mib file.  This is the single most common mistake.
 .PP
 The mib2c tool accepts both SMIv1 and SMIv2 MIBs.
 .PP
@@ -88,6 +87,8 @@ for CONFIGFILE.
 .IP 
 The following values are supported for CONFIGFILE:
 .IP 
+mib2c.mfd.conf
+.br
 mib2c.scalar.conf
 .br
 mib2c.int_watch.conf
@@ -114,6 +115,14 @@ scalars, use:
 	mib2c -c mib2c.int_watch.conf MIBNODE
 .IP 
 GENERATING CODE FOR TABLES:
+
+The recommended configuration file for tables is the MIBs for
+Dummies, or MFD, configuration file. It hides as much of the SNMP
+details as possible, generating small, easy to understand functions.
+It is also the most flexible and well documented configuration file.
+See the agent/mibgroup/if-mib/ifTable/ifTable*.c files for an example:
+
+        mib2c -c mib2c.mfd.conf MIBNODE
 
 If your table data is kept somewhere else (e.g. it's in the
 kernel and not in the memory of the agent itself) and you need to
@@ -153,6 +162,11 @@ column containing enums:
 
 	mib2c -c mib2c.old-api.conf MIBNODE
 .TP
+.BI -I PATH
+Search for configuration files in PATH.  Multiple paths can be
+specified using multiple -I switches or by using one with a comma
+separated list of paths in it.
+.TP
 .BI -f " OUTNAME"
 Places the output code into OUTNAME.c and OUTNAME.h. Normally, mib2c
 will place the output code into files which correspond to the table
@@ -160,6 +174,10 @@ names it is generating code for, which is probably what you want anyway.
 .TP
 .BI -i
 Do not run indent on the resulting code.
+.TP
+.BI -s
+Do not look for MIBNODE.sed and run sed on the resulting code. This
+is useful to shorten long mib variable names in the code.
 .TP
 .BI -q
 Run in "quiet" mode, which minimizes the status messages

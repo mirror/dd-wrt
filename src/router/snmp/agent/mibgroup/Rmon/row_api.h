@@ -29,7 +29,7 @@ typedef enum {
     RMON1_ENTRY_VALID = 1,
     RMON1_ENTRY_CREATE_REQUEST,
     RMON1_ENTRY_UNDER_CREATION,
-    RMON1_ENTRY_INVALID,
+    RMON1_ENTRY_INVALID
 } RMON1_ENTRY_STATUS_T;
 
 #define MAX_OWNERSTRING		128
@@ -62,7 +62,7 @@ typedef struct tagEntry {
 typedef int     (ENTRY_CALLBACK_T) (RMON_ENTRY_T *);
 
 typedef struct {
-    char           *name;
+    const char     *name;
     RMON_ENTRY_T   *first;
     u_long          max_number_of_entries;      /* '<0' means without limit */
     u_long          current_number_of_entries;
@@ -79,7 +79,7 @@ typedef struct {
  * Api prototypes 
  */
 void            ROWAPI_init_table(TABLE_DEFINTION_T * table_ptr,
-                                  char *name,
+                                  const char *name,
                                   u_long max_number_of_entries,
                                   ENTRY_CALLBACK_T * ClbkCreate,
                                   ENTRY_CALLBACK_T * ClbkClone,

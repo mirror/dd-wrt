@@ -21,28 +21,20 @@
 .\" distributed with the Net-SNMP package.
 .\" ******************************************************************/
 .TH SNMPTABLE 1 "25 Jul 2003" VVERSIONINFO "Net-SNMP"
-.UC 4
 .SH NAME
-snmptable - obtain and print an SNMP table
+snmptable - retrieve an SNMP table and display it in tabular form
 .SH SYNOPSIS
 .B snmptable
-[COMMON OPTIONS] [-Cb] [-CB] [-Ch] [-CH] [-Ci] [-Cf STRING] [-Cw WIDTH]
-AGENT TABLE-OID
+[COMMON OPTIONS] [\-Cb] [\-CB] [\-Ch] [\-CH] [\-Ci] [\-Cf STRING] [\-Cw WIDTH]
+AGENT TABLE\-OID
 .SH DESCRIPTION
 .B snmptable
 is an SNMP application that repeatedly uses the SNMP GETNEXT or
 GETBULK requests to query for information on a network entity.  The
-parameter
-.I TABLE-OID
-must specify an SNMP table.
-.PP
-snmptable is an SNMP application that repeatedly uses the
-SNMP GETNEXT or GETBULK requests to query for  information
-on a network entity.  The parameter TABLE-OID must specify
-an SNMP table.
+parameter TABLE\-OID must specify an SNMP table.
 
 AGENT identifies a target SNMP agent, which is instrumented
-to monitor the gievn objects.  At its simplest, the AGENT
+to monitor the given objects.  At its simplest, the AGENT
 specification will consist of a hostname or an IPv4
 address.  In this situation, the command will attempt
 communication with the agent, using UDP/IPv4 to port 161
@@ -58,14 +50,19 @@ Please see
 for a list of possible values for COMMON OPTIONS
 as well as their descriptions.
 .TP
-.B -Cb
+.B \-Cb
 Display only a brief heading. Any common prefix of the table field
 names will be deleted.
 .TP 
-.B -CB
+.B \-CB
 Do not use GETBULK requests to retrieve data, only GETNEXT.
+.TP 
+.BI \-Cc " CHARS"
+Print table in columns of
+.I CHARS
+characters width.
 .TP
-.BI -Cf " STRING"
+.BI \-Cf " STRING"
 The string
 .I STRING
 is used to separate table columns.  With this option, each table entry
@@ -73,18 +70,28 @@ will be printed in compact form, just with the string given to
 separate the columns (useful if you want to import it into a
 database).  Otherwise it is printed in nicely aligned columns.
 .TP
-.B -Ch
+.B \-Ch
 Display
 .I only
 the column headings.
 .TP
-.B -CH
+.B \-CH
 Do not display the column headings.
 .TP
-.B -Ci
+.B \-Ci
 This option prepends the index of the entry to all printed lines.
+.TP
+.B \-Cl
+Left justify the data in each column.
 .TP 
-.BI -Cw " WIDTH"
+.BI \-Cr " REPEATERS"
+For GETBULK requests, 
+.I REPEATERS
+specifies the max-repeaters value to use.  For GETNEXT requests,
+.I REPEATERS
+specifies the number of entries to retrieve at a time.
+.TP 
+.BI \-Cw " WIDTH"
 Specifies the width of the lines when the table is printed.
 If the lines will be longer, the table will be printed in sections of
 at most 
@@ -94,24 +101,58 @@ characters.  If
 is less than the length of the contents of
 a single column, then that single column will still be printed.
 .PP
+Note that
+.B snmptable
+REQUIRES  an argument specifying the agent to query
+and exactly one OID argument, as described in the 
+.I snmpcmd(1)
+manual page.  This OID \fBmust\fP be that of a MIB table object.
 .SH EXAMPLES
-$ snmptable -v 2c -c public localhost at.atTable
+$ snmptable \-v 2c \-c public localhost at.atTable
 
-SNMP table: at.atTable RFC1213-MIB::atTable
+SNMP table: at.atTable RFC1213\-MIB::atTable
 
 atIfIndex   atPhysAddress   atNetAddress
         1  8:0:20:20:0:ab 130.225.243.33
 .PP
-$ snmptable -v 2c -c public -Cf + localhost at.atTable
+$ snmptable \-v 2c \-c public \-Cf + localhost at.atTable
 
 SNMP table: at.atTable
 
 atIfIndex+atPhysAddress+atNetAddress
 1+8:0:20:20:0:ab+130.225.243.33
 .PP
+.nf
+$ snmptable localhost \-Cl \-CB \-Ci \-OX \-Cb \-Cc 16 \-Cw 64 ifTable
+
+SNMP table: ifTable
+
+Index           Descr           Type            Mtu             
+Speed           PhysAddress     AdminStatus     OperStatus      
+LastChange      InOctets        InUcastPkts     InNUcastPkts    
+InDiscards      InErrors        InUnknownProtos OutOctets       
+OutUcastPkts    OutNUcastPkts   OutDiscards     OutErrors       
+OutQLen         Specific        
+
+index: [1]
+1               lo              softwareLoopbac 16436           
+10000000                        up              up              
+?               2837283786      3052466         ?               
+0               0               ?               2837283786      
+3052466         ?               0               0               
+0               zeroDotZero     
+
+index: [2]
+2               eth0            ethernetCsmacd  1500            
+10000000        0:5:5d:d1:f7:cf up              up              
+?               2052604234      44252973        ?               
+0               0               ?               149778187       
+65897282        ?               0               0               
+0               zeroDotZero     
+.PP
 .SH "BUGS"
 The test for
-.I TABLE-OID
+.I TABLE\-OID
 actually specifying a table is rather heuristic.  Note also that the
 test requires the defining MIB file to be loaded.
 .PP

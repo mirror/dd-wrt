@@ -11,10 +11,10 @@ extern          "C" {
 #define nlist nlist64
 #endif
 
-#ifdef CAN_USE_NLIST
-int             auto_nlist(const char *, char *, int);
+#ifdef NETSNMP_CAN_USE_NLIST
+int             auto_nlist(const char *, char *, size_t);
 long            auto_nlist_value(const char *);
-int             KNLookup(struct nlist *, int, char *, int);
+int             KNLookup(struct nlist *, int, char *, size_t);
 #else
 int             auto_nlist_noop(void);
 #	define auto_nlist(x,y,z) auto_nlist_noop()

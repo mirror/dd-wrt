@@ -15,10 +15,10 @@
 #define USM_LENGTH_OID_MAX	66
 
 /*
- * we use header_generic and checkmib from the util_funcs module 
+ * we use header_generic from the util_funcs module
  */
 
-config_require(util_funcs)
+config_require(util_funcs/header_generic)
 config_add_mib(SNMP-USER-BASED-SM-MIB)
 
     /*
@@ -41,6 +41,7 @@ config_add_mib(SNMP-USER-BASED-SM-MIB)
      */
      extern void     init_usmUser(void);
      extern FindVarMethod var_usmUser;
+     void init_register_usmUser_context(const char *contextName);
 
      void            shutdown_usmUser(void);
      int             store_usmUser(int majorID, int minorID,
@@ -53,6 +54,7 @@ config_add_mib(SNMP-USER-BASED-SM-MIB)
                                    size_t * engineIDLen,
                                    unsigned char **name, size_t * nameLen);
 
+#ifndef NETSNMP_NO_WRITE_SUPPORT 
      WriteMethod     write_usmUserSpinLock;
      WriteMethod     write_usmUserCloneFrom;
      WriteMethod     write_usmUserAuthProtocol;
@@ -62,5 +64,6 @@ config_add_mib(SNMP-USER-BASED-SM-MIB)
      WriteMethod     write_usmUserPublic;
      WriteMethod     write_usmUserStorageType;
      WriteMethod     write_usmUserStatus;
+#endif /* !NETSNMP_NO_WRITE_SUPPORT */ 
 
 #endif                          /* _MIBGROUP_USMUSER_H */

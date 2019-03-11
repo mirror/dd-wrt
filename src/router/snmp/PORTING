@@ -25,7 +25,7 @@ architectures is much easier than before.  However, new people porting
 the package to new architectures rarely take advantage of this setup
 and send me patches with lots of '#ifdef ARCH' type C code in it.  Let
 me say up front, I *hate* this type of coding now (even though I used
-to use it a lot).  What is better is to check for the necissary
+to use it a lot).  What is better is to check for the necessary
 functionality using the configure script and then use the results of
 those tests.
 
@@ -75,17 +75,13 @@ In source code:
 --- STRUCTURE MEMBER CHECKS
 
 In configure.in:
-  AC_CHECK_STRUCT_FOR([
+  AC_CHECK_MEMBERS([struct STRUCTURE.MEMBER],,,[[
 #include lines
-], STRUCTURE, MEMBER)
-   ^^^^^^^^^  ^^^^^^  (change)
-
-In acconfig.h:
-  #undef STRUCT_STRUCTURE_HAS_MEMBER
-                ^^^^^^^^^     ^^^^^^  (change)
+]])
+                           ^^^^^^^^^ ^^^^^^  (change)
 
 In source code:
-  #ifdef STRUCT_STRUCTURE_HAS_MEMBER
+  #ifdef HAVE_STRUCT_STRUCTURE_MEMBER
     /* use it */
   #endif
 

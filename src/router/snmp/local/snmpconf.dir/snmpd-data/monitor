@@ -26,7 +26,7 @@ info # disk PATH [MIN=100000]
 info #
 info # PATH:  mount path to the disk in question.
 info # MIN:   Disks with space below this value will have the Mib's errorFlag set.
-info #        Can be a raw byte value or a percentage followed by the %
+info #        Can be a raw integer value (units of kB) or a percentage followed by the %
 info #        symbol.  Default value = 100000.
 info #
 info The results are reported in the dskTable section of the UCD-SNMP-MIB tree
@@ -57,13 +57,13 @@ info Check on the size of a file.
 info Display a files size statistics.
 info If it grows to be too large, report an error about it.
 info
-info # file /path/to/file [maxsize_in_bytes]
+info # file /path/to/file [maxsize_in_kilobytes]
 info #
 info #   if maxsize is not specified, assume only size reporting is needed.
 info #
 info The results are reported in the fileTable section of the UCD-SNMP-MIB tree
 question 1 Enter the path to the file you wish to monitor
-question 2 Enter the maximum size (in bytes) allowable for $1
+question 2 Enter the maximum size (in kilobytes) allowable for $1
 
 group monitoring_services
 multiple proc Do you want to configure the agents ability to monitor processes?

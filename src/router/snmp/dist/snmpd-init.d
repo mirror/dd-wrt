@@ -7,13 +7,13 @@
 # description: snmpd is net-snmp SNMP daemon.
 
 # Source function library.
-. /etc/init.d/functions
+. /etc/rc.d/init.d/functions
 
 # Source networking configuration.
 . /etc/sysconfig/network
 
 # Check that networking is up.
-[ ${NETWORKING} = "no" ] && exit 0
+[ "${NETWORKING}" = "no" ] && exit 0
 
 RETVAL=0
 name="snmpd"

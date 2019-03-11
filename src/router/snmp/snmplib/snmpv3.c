@@ -1,17 +1,26 @@
 /*
  * snmpv3.c
+ *
+ * Portions of this file are subject to the following copyright(s).  See
+ * the Net-SNMP's COPYING file for more details and other copyrights
+ * that may apply:
+ *
+ * Portions of this file are copyrighted by:
+ * Copyright (c) 2016 VMware, Inc. All rights reserved.
+ * Use is subject to license terms specified in the COPYING file
+ * distributed with the Net-SNMP package.
  */
 
 #include <net-snmp/net-snmp-config.h>
-
+#include <errno.h>
+#ifdef HAVE_LIMITS_H
+#include <limits.h>
+#endif
 #include <stdio.h>
 #include <sys/types.h>
+
 #if TIME_WITH_SYS_TIME
-# ifdef WIN32
-#  include <sys/timeb.h>
-# else
-#  include <sys/time.h>
-# endif
+# include <sys/time.h>
 # include <time.h>
 #else
 # if HAVE_SYS_TIME_H
@@ -19,6 +28,9 @@
 # else
 #  include <time.h>
 # endif
+#endif
+#if HAVE_SYS_TIMES_H
+#include <sys/times.h>
 #endif
 #if HAVE_STRING_H
 #include <string.h>
@@ -31,9 +43,6 @@
 #endif
 #if HAVE_UNISTD_H
 #include <unistd.h>
-#endif
-#if HAVE_WINSOCK_H
-#include <winsock.h>
 #endif
 #if HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
@@ -75,8 +84,10 @@
 #include <net-snmp/library/snmpusm.h>
 #include <net-snmp/library/transform_oids.h>
 
+#include <net-snmp/net-snmp-features.h>
+
 static u_long   engineBoots = 1;
-static unsigned int engineIDType = ENGINEID_TYPE_UCD_RND;
+static unsigned int engineIDType = ENGINEID_TYPE_NETSNMP_RND;
 static unsigned char *engineID = NULL;
 static size_t   engineIDLength = 0;
 static unsigned char *engineIDNic = NULL;
@@ -85,74 +96,9 @@ static unsigned char *oldEngineID = NULL;
 static size_t   oldEngineIDLength = 0;
 static struct timeval snmpv3starttime;
 
-/*
- * Set up default snmpv3 parameter value storage.
- */
-static const oid *defaultAuthType = NULL;
-static size_t   defaultAuthTypeLen = 0;
-static const oid *defaultPrivType = NULL;
-static size_t   defaultPrivTypeLen = 0;
-
 #if defined(IFHWADDRLEN) && defined(SIOCGIFHWADDR)
 static int      getHwAddress(const char *networkDevice, char *addressOut);
 #endif
-
-void
-snmpv3_authtype_conf(const char *word, char *cptr)
-{
-    if (strcasecmp(cptr, "MD5") == 0)
-        defaultAuthType = usmHMACMD5AuthProtocol;
-    else if (strcasecmp(cptr, "SHA") == 0)
-        defaultAuthType = usmHMACSHA1AuthProtocol;
-    else
-        config_perror("Unknown authentication type");
-    defaultAuthTypeLen = USM_LENGTH_OID_TRANSFORM;
-    DEBUGMSGTL(("snmpv3", "set default authentication type: %s\n", cptr));
-}
-
-const oid      *
-get_default_authtype(size_t * len)
-{
-    if (defaultAuthType == NULL) {
-        defaultAuthType = SNMP_DEFAULT_AUTH_PROTO;
-        defaultAuthTypeLen = SNMP_DEFAULT_AUTH_PROTOLEN;
-    }
-    if (len)
-        *len = defaultAuthTypeLen;
-    return defaultAuthType;
-}
-
-void
-snmpv3_privtype_conf(const char *word, char *cptr)
-{
-    if (strcasecmp(cptr, "DES") == 0)
-        defaultPrivType = usmDESPrivProtocol;
-#if HAVE_AES
-    /* XXX AES: assumes oid length == des oid length */
-    else if (strcasecmp(cptr, "AES128") == 0)
-        defaultPrivType = usmAES128PrivProtocol;
-    else if (strcasecmp(cptr, "AES192") == 0)
-        defaultPrivType = usmAES192PrivProtocol;
-    else if (strcasecmp(cptr, "AES256") == 0)
-        defaultPrivType = usmAES256PrivProtocol;
-#endif
-    else
-        config_perror("Unknown privacy type");
-    defaultPrivTypeLen = SNMP_DEFAULT_PRIV_PROTOLEN;
-    DEBUGMSGTL(("snmpv3", "set default privacy type: %s\n", cptr));
-}
-
-const oid      *
-get_default_privtype(size_t * len)
-{
-    if (defaultPrivType == NULL) {
-        defaultPrivType = usmDESPrivProtocol;
-        defaultPrivTypeLen = USM_LENGTH_OID_TRANSFORM;
-    }
-    if (len)
-        *len = defaultPrivTypeLen;
-    return defaultPrivType;
-}
 
 /*******************************************************************-o-******
  * snmpv3_secLevel_conf
@@ -164,27 +110,33 @@ get_default_privtype(size_t * len)
  * Line syntax:
  *	defSecurityLevel "noAuthNoPriv" | "authNoPriv" | "authPriv"
  */
+
+int
+parse_secLevel_conf(const char *word, char *cptr) {
+    if (strcasecmp(cptr, "noAuthNoPriv") == 0 || strcmp(cptr, "1") == 0 ||
+	strcasecmp(cptr, "nanp") == 0) {
+        return SNMP_SEC_LEVEL_NOAUTH;
+    } else if (strcasecmp(cptr, "authNoPriv") == 0 || strcmp(cptr, "2") == 0 ||
+	       strcasecmp(cptr, "anp") == 0) {
+        return SNMP_SEC_LEVEL_AUTHNOPRIV;
+    } else if (strcasecmp(cptr, "authPriv") == 0 || strcmp(cptr, "3") == 0 ||
+	       strcasecmp(cptr, "ap") == 0) {
+        return SNMP_SEC_LEVEL_AUTHPRIV;
+    } else {
+        return -1;
+    }
+}
+
 void
 snmpv3_secLevel_conf(const char *word, char *cptr)
 {
-    char            buf[1024];
+    int             secLevel;
 
-    if (strcasecmp(cptr, "noAuthNoPriv") == 0 || strcmp(cptr, "1") == 0 ||
-	strcasecmp(cptr, "nanp") == 0) {
+    if ((secLevel = parse_secLevel_conf( word, cptr )) >= 0 ) {
         netsnmp_ds_set_int(NETSNMP_DS_LIBRARY_ID, 
-			   NETSNMP_DS_LIB_SECLEVEL, SNMP_SEC_LEVEL_NOAUTH);
-    } else if (strcasecmp(cptr, "authNoPriv") == 0 || strcmp(cptr, "2") == 0 ||
-	       strcasecmp(cptr, "anp") == 0) {
-        netsnmp_ds_set_int(NETSNMP_DS_LIBRARY_ID, 
-			   NETSNMP_DS_LIB_SECLEVEL, SNMP_SEC_LEVEL_AUTHNOPRIV);
-    } else if (strcasecmp(cptr, "authPriv") == 0 || strcmp(cptr, "3") == 0 ||
-	       strcasecmp(cptr, "ap") == 0) {
-        netsnmp_ds_set_int(NETSNMP_DS_LIBRARY_ID, 
-			   NETSNMP_DS_LIB_SECLEVEL, SNMP_SEC_LEVEL_AUTHPRIV);
+			   NETSNMP_DS_LIB_SECLEVEL, secLevel);
     } else {
-        snprintf(buf, sizeof(buf), "Unknown security level: %s", cptr);
-        buf[ sizeof(buf)-1 ] = 0;
-        config_perror(buf);
+	netsnmp_config_error("Unknown security level: %s", cptr);
     }
     DEBUGMSGTL(("snmpv3", "default secLevel set to: %s = %d\n", cptr,
                 netsnmp_ds_get_int(NETSNMP_DS_LIBRARY_ID, 
@@ -193,53 +145,42 @@ snmpv3_secLevel_conf(const char *word, char *cptr)
 
 
 int
-snmpv3_options(char *optarg, netsnmp_session * session, char **Apsz,
-               char **Xpsz, int argc, char *const *argv)
+snmpv3_parse_arg(int arg, char *optarg, netsnmp_session *session, char **Apsz,
+                 char **Xpsz, int argc, char *const *argv, int flags)
 {
-    char           *cp = optarg;
-    optarg++;
-    /*
-     * Support '... -3x=value ....' syntax
-     */
-    if (*optarg == '=') {
-        optarg++;
-    }
-    /*
-     * and '.... "-3x value" ....'  (*with* the quotes)
-     */
-    while (*optarg && isspace(*optarg)) {
-        optarg++;
-    }
-    /*
-     * Finally, handle ".... -3x value ...." syntax
-     *   (*without* surrounding quotes)
-     */
-    if (!*optarg) {
-        /*
-         * We've run off the end of the argument
-         *  so move on the the next.
-         */
-        optarg = argv[optind++];
-        if (optind > argc) {
-            printf(
-                    "Missing argument after SNMPv3 '-3%c' option.\n", *cp);
-            return (-1);
-        }
-    }
+    int        priv_type;
+    char      *cp;
+    int        zero_sensitive = !( flags & NETSNMP_PARSE_ARGS_NOZERO );
 
-    switch (*cp) {
+    switch (arg) {
 
     case 'Z':
-        session->engineBoots = strtoul(optarg, NULL, 10);
-        if (session->engineBoots == 0 || !isdigit(optarg[0])) {
-            printf( "Need engine boots value after -3Z flag.\n");
+        errno=0;
+        session->engineBoots = strtoul(optarg, &cp, 10);
+        if (errno || cp == optarg) {
+            fprintf(stderr, "Need engine boots value after -3Z flag.\n");
             return (-1);
         }
-        cp = strchr(optarg, ',');
-        if (cp && *(++cp) && isdigit(*cp))
-            session->engineTime = strtoul(cp, NULL, 10);
-        else {
-            printf( "Need engine time value after -3Z flag.\n");
+        if (*cp == ',') {
+            char *endptr;
+            cp++;
+            session->engineTime = strtoul(cp, &endptr, 10);
+            if (errno || cp == endptr) {
+                fprintf(stderr, "Need engine time after \"-3Z engineBoot,\".\n");
+                return (-1);
+            }
+        }
+        /*
+         * Handle previous '-Z boot time' syntax
+         */
+        else if (optind < argc) {
+            session->engineTime = strtoul(argv[optind], &cp, 10);
+            if (errno || cp == argv[optind]) {
+                fprintf(stderr, "Need engine time after \"-Z engineBoot\".\n");
+                return (-1);
+            }
+        } else {
+            fprintf(stderr, "Need engine time after \"-3Z engineBoot,\".\n");
             return (-1);
         }
         break;
@@ -249,12 +190,17 @@ snmpv3_options(char *optarg, netsnmp_session * session, char **Apsz,
             u_char         *ebuf = (u_char *) malloc(ebuf_len);
 
             if (ebuf == NULL) {
-                printf( "malloc failure processing -3e flag.\n");
+                fprintf(stderr, "malloc failure processing -3e flag.\n");
                 return (-1);
             }
             if (!snmp_hex_to_binary
                 (&ebuf, &ebuf_len, &eout_len, 1, optarg)) {
-                printf( "Bad engine ID value after -3e flag.\n");
+                fprintf(stderr, "Bad engine ID value after -3e flag.\n");
+                SNMP_FREE(ebuf);
+                return (-1);
+            }
+            if ((eout_len < 5) || (eout_len > 32)) {
+                fprintf(stderr, "Invalid engine ID value after -e flag.\n");
                 free(ebuf);
                 return (-1);
             }
@@ -268,12 +214,17 @@ snmpv3_options(char *optarg, netsnmp_session * session, char **Apsz,
             u_char         *ebuf = (u_char *) malloc(ebuf_len);
 
             if (ebuf == NULL) {
-                printf( "malloc failure processing -3E flag.\n");
+                fprintf(stderr, "malloc failure processing -3E flag.\n");
                 return (-1);
             }
             if (!snmp_hex_to_binary
                 (&ebuf, &ebuf_len, &eout_len, 1, optarg)) {
-                printf( "Bad engine ID value after -3E flag.\n");
+                fprintf(stderr, "Bad engine ID value after -3E flag.\n");
+                SNMP_FREE(ebuf);
+                return (-1);
+            }
+            if ((eout_len < 5) || (eout_len > 32)) {
+                fprintf(stderr, "Invalid engine ID value after -E flag.\n");
                 free(ebuf);
                 return (-1);
             }
@@ -294,74 +245,178 @@ snmpv3_options(char *optarg, netsnmp_session * session, char **Apsz,
 
     case 'l':
         if (!strcasecmp(optarg, "noAuthNoPriv") || !strcmp(optarg, "1") ||
-            !strcasecmp(optarg, "nanp")) {
+            !strcasecmp(optarg, "noauth") || !strcasecmp(optarg, "nanp")) {
             session->securityLevel = SNMP_SEC_LEVEL_NOAUTH;
         } else if (!strcasecmp(optarg, "authNoPriv")
+                   || !strcasecmp(optarg, "auth")
                    || !strcmp(optarg, "2") || !strcasecmp(optarg, "anp")) {
             session->securityLevel = SNMP_SEC_LEVEL_AUTHNOPRIV;
         } else if (!strcasecmp(optarg, "authPriv") || !strcmp(optarg, "3")
+                   || !strcasecmp(optarg, "priv")
                    || !strcasecmp(optarg, "ap")) {
             session->securityLevel = SNMP_SEC_LEVEL_AUTHPRIV;
         } else {
-            printf(
+            fprintf(stderr,
                     "Invalid security level specified after -3l flag: %s\n",
                     optarg);
             return (-1);
         }
-
         break;
 
-    case 'a':
-        if (!strcasecmp(optarg, "MD5")) {
-            session->securityAuthProto = usmHMACMD5AuthProtocol;
-            session->securityAuthProtoLen = USM_AUTH_PROTO_MD5_LEN;
-        } else if (!strcasecmp(optarg, "SHA")) {
-            session->securityAuthProto = usmHMACSHA1AuthProtocol;
-            session->securityAuthProtoLen = USM_AUTH_PROTO_SHA_LEN;
-        } else {
-            printf(
+#ifdef NETSNMP_SECMOD_USM
+    case 'a': {
+        int auth_type = usm_lookup_auth_type(optarg);
+        if (auth_type > 0) {
+            session->securityAuthProto =
+                sc_get_auth_oid(auth_type, &session->securityAuthProtoLen);
+         } else {
+            fprintf(stderr,
                     "Invalid authentication protocol specified after -3a flag: %s\n",
                     optarg);
             return (-1);
         }
+    }
         break;
 
     case 'x':
-        if (!strcasecmp(optarg, "DES")) {
-            session->securityPrivProto = usmDESPrivProtocol;
-            session->securityPrivProtoLen = USM_PRIV_PROTO_DES_LEN;
-#ifdef HAVE_AES
-        } else if (!strcasecmp(optarg, "AES128")) {
-            session->securityPrivProto = usmAES128PrivProtocol;
-            session->securityPrivProtoLen = USM_PRIV_PROTO_AES128_LEN;
-        } else if (!strcasecmp(optarg, "AES192")) {
-            session->securityPrivProto = usmAES192PrivProtocol;
-            session->securityPrivProtoLen = USM_PRIV_PROTO_AES192_LEN;
-        } else if (!strcasecmp(optarg, "AES256")) {
-            session->securityPrivProto = usmAES256PrivProtocol;
-            session->securityPrivProtoLen = USM_PRIV_PROTO_AES256_LEN;
-#endif
-        } else {
-            printf(
+        priv_type = usm_lookup_priv_type(optarg);
+        if (priv_type < 0) {
+            fprintf(stderr,
                     "Invalid privacy protocol specified after -3x flag: %s\n",
                     optarg);
             return (-1);
         }
+        session->securityPrivProto =
+            sc_get_priv_oid(priv_type, &session->securityPrivProtoLen);
         break;
 
     case 'A':
-        *Apsz = optarg;
+        *Apsz = strdup(optarg);
+        if (NULL == *Apsz) {
+            fprintf(stderr, "malloc failure processing -%c flag.\n",
+                    (char)arg);
+            return -1;
+        }
+        if (zero_sensitive)
+            memset(optarg, 0x0, strlen(optarg));
         break;
 
     case 'X':
-        *Xpsz = optarg;
+        *Xpsz = strdup(optarg);
+        if (NULL == *Xpsz) {
+            fprintf(stderr, "malloc failure processing -%c flag.\n",
+                    (char)arg);
+            return -1;
+        }
+        if (zero_sensitive)
+            memset(optarg, 0x0, strlen(optarg));
         break;
+#endif /* NETSNMP_SECMOD_USM */
 
+    case 'm': {
+        size_t bufSize = sizeof(session->securityAuthKey);
+        u_char *tmpp = session->securityAuthKey;
+        if (!snmp_hex_to_binary(&tmpp, &bufSize,
+                                &session->securityAuthKeyLen, 0, optarg)) {
+            fprintf(stderr, "Bad key value after -3m flag.\n");
+            return (-1);
+        }
+        break;
+    }
+
+    case 'M': {
+        size_t bufSize = sizeof(session->securityPrivKey);
+        u_char *tmpp = session->securityPrivKey;
+        if (!snmp_hex_to_binary(&tmpp, &bufSize,
+             &session->securityPrivKeyLen, 0, optarg)) {
+            fprintf(stderr, "Bad key value after -3M flag.\n");
+            return (-1);
+        }
+        break;
+    }
+
+    case 'k': {
+        size_t          kbuf_len = 32, kout_len = 0;
+        u_char         *kbuf = (u_char *) malloc(kbuf_len);
+
+        if (kbuf == NULL) {
+            fprintf(stderr, "malloc failure processing -3k flag.\n");
+            return (-1);
+        }
+        if (!snmp_hex_to_binary
+            (&kbuf, &kbuf_len, &kout_len, 1, optarg)) {
+            fprintf(stderr, "Bad key value after -3k flag.\n");
+            SNMP_FREE(kbuf);
+            return (-1);
+        }
+        session->securityAuthLocalKey = kbuf;
+        session->securityAuthLocalKeyLen = kout_len;
+        break;
+    }
+
+    case 'K': {
+        size_t          kbuf_len = 32, kout_len = 0;
+        u_char         *kbuf = (u_char *) malloc(kbuf_len);
+
+        if (kbuf == NULL) {
+            fprintf(stderr, "malloc failure processing -3K flag.\n");
+            return (-1);
+        }
+        if (!snmp_hex_to_binary
+            (&kbuf, &kbuf_len, &kout_len, 1, optarg)) {
+            fprintf(stderr, "Bad key value after -3K flag.\n");
+            SNMP_FREE(kbuf);
+            return (-1);
+        }
+        session->securityPrivLocalKey = kbuf;
+        session->securityPrivLocalKeyLen = kout_len;
+        break;
+    }
+        
     default:
-        printf( "Unknown SNMPv3 option passed to -3: %c.\n", *cp);
+        fprintf(stderr, "Unknown SNMPv3 option passed to -3: %c.\n", arg);
         return -1;
     }
     return 0;
+}
+
+int
+snmpv3_parse_args(char *optarg, netsnmp_session * session, char **Apsz,
+                  char **Xpsz, int argc, char *const *argv, int flags)
+{
+    char           *cp = optarg;
+    optarg++;
+    /*
+     * Support '... -3x=value ....' syntax
+     */
+    if (*optarg == '=') {
+        optarg++;
+    }
+    /*
+     * and '.... "-3x value" ....'  (*with* the quotes)
+     */
+    while (*optarg && isspace((unsigned char)(*optarg))) {
+        optarg++;
+    }
+    /*
+     * Finally, handle ".... -3x value ...." syntax
+     *   (*without* surrounding quotes)
+     */
+    if (!*optarg) {
+        /*
+         * We've run off the end of the argument
+         *  so move on the the next.
+         */
+        if (optind >= argc) {
+            fprintf(stderr,
+                    "Missing argument after SNMPv3 '-3%c' option.\n", *cp);
+            return (-1);
+        }
+        optarg = argv[optind++];
+    }
+
+    return snmpv3_parse_arg(*cp, optarg, session, Apsz, Xpsz, argc, argv,
+                            flags);
 }
 
 /*******************************************************************-o-******
@@ -392,15 +447,16 @@ snmpv3_options(char *optarg, netsnmp_session * session, char **Apsz,
 int
 setup_engineID(u_char ** eidp, const char *text)
 {
-    int             enterpriseid = htonl(ENTERPRISE_OID),
-        ucdavisid = htonl(UCDAVIS_OID), localsetup = (eidp) ? 0 : 1;
+    int             enterpriseid = htonl(NETSNMP_ENTERPRISE_OID),
+        netsnmpoid = htonl(NETSNMP_OID),
+        localsetup = (eidp) ? 0 : 1;
 
     /*
      * Use local engineID if *eidp == NULL.  
      */
 #ifdef HAVE_GETHOSTNAME
     u_char          buf[SNMP_MAXBUF_SMALL];
-    struct hostent *hent;
+    struct hostent *hent = NULL;
 #endif
     u_char         *bufp = NULL;
     size_t          len;
@@ -410,21 +466,18 @@ setup_engineID(u_char ** eidp, const char *text)
 
     engineIDIsSet = 1;
 
-    /*
-     * get the host name and save the information 
-     */
 #ifdef HAVE_GETHOSTNAME
-    gethostname((char *) buf, sizeof(buf));
-    hent = gethostbyname((char *) buf);
-    /*
-     * Determine if we are using IPV6 
-     */
 #ifdef AF_INET6
     /*
      * see if they selected IPV4 or IPV6 support 
      */
     if ((ENGINEID_TYPE_IPV6 == localEngineIDType) ||
         (ENGINEID_TYPE_IPV4 == localEngineIDType)) {
+        /*
+         * get the host name and save the information 
+         */
+        gethostname((char *) buf, sizeof(buf));
+        hent = netsnmp_gethostbyname((char *) buf);
         if (hent && hent->h_addrtype == AF_INET6) {
             localEngineIDType = ENGINEID_TYPE_IPV6;
         } else {
@@ -436,11 +489,18 @@ setup_engineID(u_char ** eidp, const char *text)
     }
 #else
     /*
-     * No IPV6 support.  Check if they selected IPV6 engineID type.  If so
-     * * make it IPV4 for them 
+     * No IPV6 support.  Check if they selected IPV6 engineID type.
+     *  If so make it IPV4 instead 
      */
     if (ENGINEID_TYPE_IPV6 == localEngineIDType) {
         localEngineIDType = ENGINEID_TYPE_IPV4;
+    }
+    if (ENGINEID_TYPE_IPV4 == localEngineIDType) {
+        /*
+         * get the host name and save the information 
+         */
+        gethostname((char *) buf, sizeof(buf));
+        hent = netsnmp_gethostbyname((char *) buf);
     }
 #endif
 #endif                          /* HAVE_GETHOSTNAME */
@@ -458,6 +518,11 @@ setup_engineID(u_char ** eidp, const char *text)
     len = 5;                    /* always have 5 leading bytes */
     switch (localEngineIDType) {
     case ENGINEID_TYPE_TEXT:
+        if (NULL == text) {
+            snmp_log(LOG_ERR,
+                     "Can't set up engineID of type text from an empty string.\n");
+            return -1;
+        }
         len += strlen(text);    /* 5 leading bytes+text. No NULL char */
         break;
 #if defined(IFHWADDRLEN) && defined(SIOCGIFHWADDR)
@@ -471,7 +536,7 @@ setup_engineID(u_char ** eidp, const char *text)
     case ENGINEID_TYPE_IPV6:   /* IPv6 */
         len += 16;              /* + 16 byte IPV6 address */
         break;
-    case ENGINEID_TYPE_UCD_RND:        /* UCD specific encoding */
+    case ENGINEID_TYPE_NETSNMP_RND:        /* Net-SNMP specific encoding */
         if (engineID)           /* already setup, keep current value */
             return engineIDLength;
         if (oldEngineID) {
@@ -493,15 +558,15 @@ setup_engineID(u_char ** eidp, const char *text)
     /*
      * Allocate memory and store enterprise ID.
      */
-    if ((bufp = (u_char *) malloc(len)) == NULL) {
+    if ((bufp = (u_char *) calloc(1, len)) == NULL) {
         snmp_log_perror("setup_engineID malloc");
         return -1;
     }
-    if (localEngineIDType == ENGINEID_TYPE_UCD_RND)
+    if (localEngineIDType == ENGINEID_TYPE_NETSNMP_RND)
         /*
          * we must use the net-snmp enterprise id here, regardless 
          */
-        memcpy(bufp, &ucdavisid, sizeof(ucdavisid));    /* XXX Must be 4 bytes! */
+        memcpy(bufp, &netsnmpoid, sizeof(netsnmpoid));    /* XXX Must be 4 bytes! */
     else
         memcpy(bufp, &enterpriseid, sizeof(enterpriseid));      /* XXX Must be 4 bytes! */
 
@@ -509,10 +574,12 @@ setup_engineID(u_char ** eidp, const char *text)
 
 
     /*
-     * Store the given text  -OR-   the first found IP address.
+     * Store the given text  -OR-   the first found IP address
+     *  -OR-  the MAC address  -OR-  random elements
+     * (the latter being the recommended default)
      */
     switch (localEngineIDType) {
-    case ENGINEID_TYPE_UCD_RND:
+    case ENGINEID_TYPE_NETSNMP_RND:
         if (oldEngineID) {
             /*
              * keep our previous notion of the engineID 
@@ -530,8 +597,8 @@ setup_engineID(u_char ** eidp, const char *text)
              * that may not have a correct clock setting and random number
              * seed at startup, but few OSes should have that problem.
              */
-            bufp[4] = ENGINEID_TYPE_UCD_RND;
-            tmpint = random();
+            bufp[4] = ENGINEID_TYPE_NETSNMP_RND;
+            tmpint = netsnmp_random();
             memcpy(bufp + 5, &tmpint, sizeof(tmpint));
             tmptime = time(NULL);
             memcpy(bufp + 5 + sizeof(tmpint), &tmptime, sizeof(tmptime));
@@ -539,13 +606,14 @@ setup_engineID(u_char ** eidp, const char *text)
         break;
     case ENGINEID_TYPE_TEXT:
         bufp[4] = ENGINEID_TYPE_TEXT;
-        memcpy((char *) bufp + 5, text, strlen(text));
+        memcpy((char *) bufp + 5, (text), strlen(text));
         break;
 #ifdef HAVE_GETHOSTNAME
 #ifdef AF_INET6
     case ENGINEID_TYPE_IPV6:
         bufp[4] = ENGINEID_TYPE_IPV6;
-        memcpy(bufp + 5, hent->h_addr_list[0], hent->h_length);
+        if (hent)
+            memcpy(bufp + 5, hent->h_addr_list[0], hent->h_length);
         break;
 #endif
 #endif
@@ -558,9 +626,9 @@ setup_engineID(u_char ** eidp, const char *text)
              * use default NIC if none provided 
              */
             if (NULL == engineIDNic) {
-                x = getHwAddress(DEFAULT_NIC, &bufp[5]);
+	      x = getHwAddress(DEFAULT_NIC, (char *)&bufp[5]);
             } else {
-                x = getHwAddress(engineIDNic, &bufp[5]);
+	      x = getHwAddress((char *)engineIDNic, (char *)&bufp[5]);
             }
             if (0 != x)
                 /*
@@ -615,196 +683,15 @@ setup_engineID(u_char ** eidp, const char *text)
 
 }                               /* end setup_engineID() */
 
-void
-usm_parse_create_usmUser(const char *token, char *line)
+int
+free_engineID(int majorid, int minorid, void *serverarg,
+	      void *clientarg)
 {
-    char           *cp;
-    char            buf[SNMP_MAXBUF_MEDIUM];
-    struct usmUser *newuser;
-    u_char          userKey[SNMP_MAXBUF_SMALL];
-    size_t          userKeyLen = SNMP_MAXBUF_SMALL;
-    size_t          ret;
-
-    newuser = usm_create_user();
-
-    /*
-     * READ: Security Name 
-     */
-    cp = copy_nword(line, buf, sizeof(buf));
-
-    /*
-     * might be a -e ENGINEID argument 
-     */
-    if (strcmp(buf, "-e") == 0) {
-        size_t          ebuf_len = 32, eout_len = 0;
-        u_char         *ebuf = (u_char *) malloc(ebuf_len);
-
-        if (ebuf == NULL) {
-            config_perror("malloc failure processing -e flag");
-            usm_free_user(newuser);
-            return;
-        }
-
-        /*
-         * Get the specified engineid from the line.  
-         */
-        cp = copy_nword(cp, buf, sizeof(buf));
-        if (!snmp_hex_to_binary(&ebuf, &ebuf_len, &eout_len, 1, buf)) {
-            config_perror("invalid EngineID argument to -e");
-            usm_free_user(newuser);
-            free(ebuf);
-            return;
-        }
-
-        newuser->engineID = ebuf;
-        newuser->engineIDLen = eout_len;
-        cp = copy_nword(cp, buf, sizeof(buf));
-    } else {
-        newuser->engineID = snmpv3_generate_engineID(&ret);
-        if (ret == 0) {
-            usm_free_user(newuser);
-            return;
-        }
-        newuser->engineIDLen = ret;
-    }
-
-    newuser->secName = strdup(buf);
-    newuser->name = strdup(buf);
-
-    if (!cp)
-        goto add;               /* no authentication or privacy type */
-
-    /*
-     * READ: Authentication Type 
-     */
-    if (strncmp(cp, "MD5", 3) == 0) {
-        memcpy(newuser->authProtocol, usmHMACMD5AuthProtocol,
-               sizeof(usmHMACMD5AuthProtocol));
-    } else if (strncmp(cp, "SHA", 3) == 0) {
-        memcpy(newuser->authProtocol, usmHMACSHA1AuthProtocol,
-               sizeof(usmHMACSHA1AuthProtocol));
-    } else {
-        config_perror("Unknown authentication protocol");
-        usm_free_user(newuser);
-        return;
-    }
-
-    cp = skip_token(cp);
-
-    /*
-     * READ: Authentication Pass Phrase 
-     */
-    if (!cp) {
-        config_perror("no authentication pass phrase");
-        usm_free_user(newuser);
-        return;
-    }
-    cp = copy_nword(cp, buf, sizeof(buf));
-    /*
-     * And turn it into a localized key 
-     */
-    ret = generate_Ku(newuser->authProtocol, newuser->authProtocolLen,
-                      (u_char *) buf, strlen(buf), userKey, &userKeyLen);
-    if (ret != SNMPERR_SUCCESS) {
-        config_perror("could not generate the authentication key from the "
-                      "suppiled pass phrase.");
-        usm_free_user(newuser);
-        return;
-    }
-    newuser->authKeyLen =
-        sc_get_properlength(newuser->authProtocol,
-                            newuser->authProtocolLen);
-    newuser->authKey = (u_char *) malloc(newuser->authKeyLen);
-    ret = generate_kul(newuser->authProtocol, newuser->authProtocolLen,
-                       newuser->engineID, newuser->engineIDLen,
-                       userKey, userKeyLen,
-                       newuser->authKey, &newuser->authKeyLen);
-    if (ret != SNMPERR_SUCCESS) {
-        config_perror("could not generate localized authentication key (Kul) "
-                      "from the master key (Ku).");
-        usm_free_user(newuser);
-        return;
-    }
-
-    if (!cp)
-        goto add;               /* no privacy type (which is legal) */
-
-    /*
-     * READ: Privacy Type 
-     */
-    if (strncmp(cp, "DES", 3) == 0) {
-        memcpy(newuser->privProtocol, usmDESPrivProtocol,
-               sizeof(usmDESPrivProtocol));
-#ifdef HAVE_AES
-    } else if (strncmp(cp, "AES128", 3) == 0) {
-        memcpy(newuser->privProtocol, usmAES128PrivProtocol,
-               sizeof(usmAES128PrivProtocol));
-    } else if (strncmp(cp, "AES192", 3) == 0) {
-        memcpy(newuser->privProtocol, usmAES192PrivProtocol,
-               sizeof(usmAES192PrivProtocol));
-    } else if (strncmp(cp, "AES256", 3) == 0) {
-        memcpy(newuser->privProtocol, usmAES256PrivProtocol,
-               sizeof(usmAES256PrivProtocol));
-#endif
-    } else {
-        config_perror("Unknown privacy protocol");
-        usm_free_user(newuser);
-        return;
-    }
-
-    cp = skip_token(cp);
-    /*
-     * READ: Authentication Pass Phrase 
-     */
-    if (!cp) {
-        /*
-         * assume the same as the authentication key 
-         */
-        memdup(&newuser->privKey, newuser->authKey, newuser->authKeyLen);
-        newuser->privKeyLen = newuser->authKeyLen;
-    } else {
-        cp = copy_nword(cp, buf, sizeof(buf));
-        /*
-         * And turn it into a localized key 
-         */
-        ret = generate_Ku(newuser->authProtocol, newuser->authProtocolLen,
-                          (u_char *) buf, strlen(buf),
-                          userKey, &userKeyLen);
-        if (ret != SNMPERR_SUCCESS) {
-            config_perror("could not generate privacy key from the supplied "
-                          "pass phrase.");
-            usm_free_user(newuser);
-            return;
-        }
-
-        ret =
-            sc_get_properlength(newuser->authProtocol,
-                                newuser->authProtocolLen);
-        if (ret < 0) {
-            config_perror("could not get proper key length to use for the "
-                          "privacy algorithm.");
-            usm_free_user(newuser);
-            return;
-        }
-        newuser->privKeyLen = ret;
-
-        newuser->privKey = (u_char *) malloc(newuser->privKeyLen);
-        ret = generate_kul(newuser->authProtocol, newuser->authProtocolLen,
-                           newuser->engineID, newuser->engineIDLen,
-                           userKey, userKeyLen,
-                           newuser->privKey, &newuser->privKeyLen);
-        if (ret != SNMPERR_SUCCESS) {
-            config_perror("could not generate the localized privacy key (Kul) "
-                          "from the master key (Ku).");
-            usm_free_user(newuser);
-            return;
-        }
-    }
-  add:
-    usm_add_user(newuser);
-    DEBUGMSGTL(("usmUser", "created a new user %s at ", newuser->secName));
-    DEBUGMSGHEX(("usmUser", newuser->engineID, newuser->engineIDLen));
-    DEBUGMSG(("usmUser", "\n"));
+    SNMP_FREE(engineID);
+    SNMP_FREE(engineIDNic);
+    SNMP_FREE(oldEngineID);
+    engineIDIsSet = 0;
+    return 0;
 }
 
 /*******************************************************************-o-******
@@ -821,7 +708,7 @@ void
 engineBoots_conf(const char *word, char *cptr)
 {
     engineBoots = atoi(cptr) + 1;
-    DEBUGMSGTL(("snmpv3", "engineBoots: %d\n", engineBoots));
+    DEBUGMSGTL(("snmpv3", "engineBoots: %lu\n", engineBoots));
 }
 
 /*******************************************************************-o-******
@@ -892,9 +779,7 @@ engineIDNic_conf(const char *word, char *cptr)
         /*
          * See if already set if so erase & release it 
          */
-        if (NULL != engineIDNic) {
-            free(engineIDNic);
-        }
+        SNMP_FREE(engineIDNic);
         engineIDNic = (u_char *) malloc(strlen(cptr) + 1);
         if (NULL != engineIDNic) {
             strcpy((char *) engineIDNic, cptr);
@@ -930,19 +815,30 @@ engineID_conf(const char *word, char *cptr)
 void
 version_conf(const char *word, char *cptr)
 {
+    int valid = 0;
+#ifndef NETSNMP_DISABLE_SNMPV1
     if ((strcmp(cptr,  "1") == 0) ||
         (strcmp(cptr, "v1") == 0)) {
         netsnmp_ds_set_int(NETSNMP_DS_LIBRARY_ID, NETSNMP_DS_LIB_SNMPVERSION, 
 			   NETSNMP_DS_SNMP_VERSION_1);       /* bogus value */
-    } else if ((strcasecmp(cptr,  "2c") == 0) ||
+        valid = 1;
+    }
+#endif
+#ifndef NETSNMP_DISABLE_SNMPV2C
+    if ((strcasecmp(cptr,  "2c") == 0) ||
                (strcasecmp(cptr, "v2c") == 0)) {
         netsnmp_ds_set_int(NETSNMP_DS_LIBRARY_ID, NETSNMP_DS_LIB_SNMPVERSION, 
 			   NETSNMP_DS_SNMP_VERSION_2c);
-    } else if ((strcasecmp(cptr,  "3" ) == 0) ||
+        valid = 1;
+    }
+#endif
+    if ((strcasecmp(cptr,  "3" ) == 0) ||
                (strcasecmp(cptr, "v3" ) == 0)) {
         netsnmp_ds_set_int(NETSNMP_DS_LIBRARY_ID, NETSNMP_DS_LIB_SNMPVERSION, 
 			   NETSNMP_DS_SNMP_VERSION_3);
-    } else {
+        valid = 1;
+    }
+    if (!valid) {
         config_perror("Unknown version specification");
         return;
     }
@@ -952,7 +848,7 @@ version_conf(const char *word, char *cptr)
 }
 
 /*
- * engineID_old_conf(const char *, char *):
+ * oldengineID_conf(const char *, char *):
  * 
  * Reads a octet string encoded engineID into the oldEngineID and
  * oldEngineIDLen pointers.
@@ -963,6 +859,81 @@ oldengineID_conf(const char *word, char *cptr)
     read_config_read_octet_string(cptr, &oldEngineID, &oldEngineIDLength);
 }
 
+/*
+ * set_exact_engineID_conf(const oid *, size_t):
+ *
+ * Specifies an exact engineID OID.
+ */
+int
+set_exact_engineID(const u_char *id, size_t len)
+{
+    int rc = SNMPERR_SUCCESS;
+    u_char *newID = NULL;
+
+    if (NULL == id || 0 == len)
+        return SNMPERR_GENERR;
+
+    if (len > MAX_ENGINEID_LENGTH)
+        return SNMPERR_TOO_LONG;
+
+    newID = malloc(len+1);
+    if (NULL == newID) {
+        snmp_log(LOG_ERR, "malloc failed for engineID\n");
+        return SNMPERR_GENERR;
+    }
+    if (NULL != engineID)
+        free(engineID);
+
+    memcpy(newID, id, len);
+    newID[len] = 0;
+
+    engineID = newID;
+    engineIDLength = len;
+    engineIDIsSet = 1;
+    engineIDType = ENGINEID_TYPE_EXACT;
+
+    return rc;
+}
+
+/*
+ * exactEngineID_conf(const char *, char *):
+ * 
+ * Reads a octet string encoded engineID into the engineID and
+ * engineIDLen pointers.
+ */
+void
+exactEngineID_conf(const char *word, char *cptr)
+{
+    /** we want buf > max so we know if there is truncation */
+    u_char new_engineID[MAX_ENGINEID_LENGTH+2],
+        *new_engineIDptr = new_engineID;
+    size_t new_engineIDLength = sizeof(new_engineID);
+
+    read_config_read_octet_string(cptr, &new_engineIDptr, &new_engineIDLength);
+    if (new_engineIDLength > MAX_ENGINEID_LENGTH) {
+        new_engineIDLength = MAX_ENGINEID_LENGTH;
+	netsnmp_config_error(
+	    "exactEngineID '%s' too long; truncating to %d bytes",
+	    cptr, MAX_ENGINEID_LENGTH);
+    }
+
+    set_exact_engineID( new_engineIDptr, new_engineIDLength);
+}
+
+
+/*
+ * merely call 
+ */
+netsnmp_feature_child_of(get_enginetime_alarm, netsnmp_unused)
+#ifndef NETSNMP_FEATURE_REMOVE_GET_ENGINETIME_ALARM
+void
+get_enginetime_alarm(unsigned int regnum, void *clientargs)
+{
+    /* we do this every so (rarely) often just to make sure we watch
+       wrapping of the times() output */
+    snmpv3_local_snmpEngineTime();
+}
+#endif /* NETSNMP_FEATURE_REMOVE_GET_ENGINETIME_ALARM */
 
 /*******************************************************************-o-******
  * init_snmpv3
@@ -977,8 +948,7 @@ oldengineID_conf(const char *word, char *cptr)
 void
 init_snmpv3(const char *type)
 {
-
-    gettimeofday(&snmpv3starttime, NULL);
+    netsnmp_get_monotonic_clock(&snmpv3starttime);
 
     if (!type)
         type = "__snmpapp__";
@@ -989,6 +959,7 @@ init_snmpv3(const char *type)
     snmp_register_callback(SNMP_CALLBACK_LIBRARY,
                            SNMP_CALLBACK_POST_READ_CONFIG,
                            init_snmpv3_post_config, NULL);
+
     snmp_register_callback(SNMP_CALLBACK_LIBRARY,
                            SNMP_CALLBACK_POST_PREMIB_READ_CONFIG,
                            init_snmpv3_post_premib_config, NULL);
@@ -1018,6 +989,8 @@ init_snmpv3(const char *type)
                                     "string");
     register_prenetsnmp_mib_handler(type, "oldEngineID", oldengineID_conf,
                                     NULL, NULL);
+    register_prenetsnmp_mib_handler(type, "exactEngineID", exactEngineID_conf,
+                                    NULL, NULL);
     register_prenetsnmp_mib_handler(type, "engineIDType",
                                     engineIDType_conf, NULL, "num");
     register_prenetsnmp_mib_handler(type, "engineIDNic", engineIDNic_conf,
@@ -1033,38 +1006,32 @@ init_snmpv3(const char *type)
     netsnmp_ds_register_config(ASN_OCTET_STR, "snmp", "defContext", 
 			       NETSNMP_DS_LIBRARY_ID, NETSNMP_DS_LIB_CONTEXT);
     netsnmp_ds_register_config(ASN_OCTET_STR, "snmp", "defPassphrase",
-			     NETSNMP_DS_LIBRARY_ID, NETSNMP_DS_LIB_PASSPHRASE);
+                               NETSNMP_DS_LIBRARY_ID,
+                               NETSNMP_DS_LIB_PASSPHRASE);
     netsnmp_ds_register_config(ASN_OCTET_STR, "snmp", "defAuthPassphrase",
-			 NETSNMP_DS_LIBRARY_ID, NETSNMP_DS_LIB_AUTHPASSPHRASE);
+                               NETSNMP_DS_LIBRARY_ID,
+                               NETSNMP_DS_LIB_AUTHPASSPHRASE);
     netsnmp_ds_register_config(ASN_OCTET_STR, "snmp", "defPrivPassphrase",
-			 NETSNMP_DS_LIBRARY_ID, NETSNMP_DS_LIB_PRIVPASSPHRASE);
+                               NETSNMP_DS_LIBRARY_ID,
+                               NETSNMP_DS_LIB_PRIVPASSPHRASE);
+    netsnmp_ds_register_config(ASN_OCTET_STR, "snmp", "defAuthMasterKey",
+                               NETSNMP_DS_LIBRARY_ID,
+                               NETSNMP_DS_LIB_AUTHMASTERKEY);
+    netsnmp_ds_register_config(ASN_OCTET_STR, "snmp", "defPrivMasterKey",
+                               NETSNMP_DS_LIBRARY_ID,
+                               NETSNMP_DS_LIB_PRIVMASTERKEY);
+    netsnmp_ds_register_config(ASN_OCTET_STR, "snmp", "defAuthLocalizedKey",
+                               NETSNMP_DS_LIBRARY_ID,
+                               NETSNMP_DS_LIB_AUTHLOCALIZEDKEY);
+    netsnmp_ds_register_config(ASN_OCTET_STR, "snmp", "defPrivLocalizedKey",
+                               NETSNMP_DS_LIBRARY_ID,
+                               NETSNMP_DS_LIB_PRIVLOCALIZEDKEY);
     register_config_handler("snmp", "defVersion", version_conf, NULL,
                             "1|2c|3");
 
-    register_config_handler("snmp", "defAuthType", snmpv3_authtype_conf,
-                            NULL, "MD5|SHA");
-    register_config_handler("snmp", "defPrivType", snmpv3_privtype_conf,
-                            NULL,
-#ifdef HAVE_AES
-                            "DES (AES support not available)");
-#else
-                            "DES|AES128|AES192|AES256");
-#endif
     register_config_handler("snmp", "defSecurityLevel",
                             snmpv3_secLevel_conf, NULL,
                             "noAuthNoPriv|authNoPriv|authPriv");
-    register_config_handler(type, "userSetAuthPass", usm_set_password,
-                            NULL, NULL);
-    register_config_handler(type, "userSetPrivPass", usm_set_password,
-                            NULL, NULL);
-    register_config_handler(type, "userSetAuthKey", usm_set_password, NULL,
-                            NULL);
-    register_config_handler(type, "userSetPrivKey", usm_set_password, NULL,
-                            NULL);
-    register_config_handler(type, "userSetAuthLocalKey", usm_set_password,
-                            NULL, NULL);
-    register_config_handler(type, "userSetPrivLocalKey", usm_set_password,
-                            NULL, NULL);
 }
 
 /*
@@ -1082,30 +1049,33 @@ init_snmpv3_post_config(int majorid, int minorid, void *serverarg,
 
     c_engineID = snmpv3_generate_engineID(&engineIDLen);
 
-    if (engineIDLen == 0) {
+    if (engineIDLen == 0 || !c_engineID) {
         /*
          * Somethine went wrong - help! 
          */
+        SNMP_FREE(c_engineID);
         return SNMPERR_GENERR;
     }
 
     /*
      * if our engineID has changed at all, the boots record must be set to 1 
      */
-    if (engineIDLen != (int) oldEngineIDLength ||
+    if (engineIDLen != oldEngineIDLength ||
         oldEngineID == NULL || c_engineID == NULL ||
         memcmp(oldEngineID, c_engineID, engineIDLen) != 0) {
         engineBoots = 1;
     }
 
+#ifdef NETSNMP_SECMOD_USM
     /*
-     * set our local engineTime in the LCD timing cache 
+     * for USM set our local engineTime in the LCD timing cache 
      */
     set_enginetime(c_engineID, engineIDLen,
                    snmpv3_local_snmpEngineBoots(),
                    snmpv3_local_snmpEngineTime(), TRUE);
+#endif /* NETSNMP_SECMOD_USM */
 
-    free(c_engineID);
+    SNMP_FREE(c_engineID);
     return SNMPERR_SUCCESS;
 }
 
@@ -1184,6 +1154,9 @@ snmpv3_get_engineID(u_char * buf, size_t buflen)
     if (!buf || (buflen < engineIDLength)) {
         return 0;
     }
+    if (!engineID) {
+        return 0;
+    }
 
     memcpy(buf, engineID, engineIDLength);
     return engineIDLength;
@@ -1214,10 +1187,7 @@ snmpv3_clone_engineID(u_char ** dest, size_t * destlen, u_char * src,
     if (!dest || !destlen)
         return 0;
 
-    if (*dest) {
-        SNMP_FREE(*dest);
-        *dest = NULL;
-    }
+    SNMP_FREE(*dest);
     *destlen = 0;
 
     if (srclen && src) {
@@ -1254,29 +1224,44 @@ snmpv3_generate_engineID(size_t * length)
 
     if (newID) {
         *length = snmpv3_get_engineID(newID, engineIDLength);
+        if (*length == 0) {
+            SNMP_FREE(newID);
+            newID = NULL;
+        }
     }
-
-    if (*length == 0) {
-        SNMP_FREE(newID);
-        newID = NULL;
-    }
-
     return newID;
 
 }                               /* end snmpv3_generate_engineID() */
 
-/*
- * snmpv3_local_snmpEngineTime(): return the number of seconds since the
- * snmpv3 engine last incremented engine_boots 
+/**
+ * Return the value of snmpEngineTime. According to RFC 3414 snmpEngineTime
+ * is a 31-bit counter. engineBoots must be incremented every time that
+ * counter wraps around.
+ *
+ * @see See also <a href="http://tools.ietf.org/html/rfc3414">RFC 3414</a>.
+ *
+ * @note It is assumed that this function is called at least once every
+ *   2**31 seconds.
  */
 u_long
 snmpv3_local_snmpEngineTime(void)
 {
-    struct timeval  now;
+#ifdef NETSNMP_FEATURE_CHECKING
+    netsnmp_feature_require(calculate_sectime_diff)
+#endif /* NETSNMP_FEATURE_CHECKING */
 
-    gettimeofday(&now, NULL);
-    return calculate_time_diff(&now, &snmpv3starttime) / 100;
+    static uint32_t last_engineTime;
+    struct timeval  now;
+    uint32_t engineTime;
+
+    netsnmp_get_monotonic_clock(&now);
+    engineTime = calculate_sectime_diff(&now, &snmpv3starttime) & 0x7fffffffL;
+    if (engineTime < last_engineTime)
+        engineBoots++;
+    last_engineTime = engineTime;
+    return engineTime;
 }
+
 
 
 /*
@@ -1331,7 +1316,7 @@ getHwAddress(const char *networkDevice, /* e.g. "eth0", "eth1" */
     /*
      * copy the name of the net device we want to find the HW address for 
      */
-    strncpy(request.ifr_name, networkDevice, IFNAMSIZ - 1);
+    strlcpy(request.ifr_name, networkDevice, IFNAMSIZ);
     /*
      * Get the HW address 
      */
@@ -1345,19 +1330,18 @@ getHwAddress(const char *networkDevice, /* e.g. "eth0", "eth1" */
 }
 #endif
 
-#ifdef SNMP_TESTING_CODE
-/*
- * snmpv3_set_engineBootsAndTime(): this function does not exist.  Go away. 
- */
-/*
- * It certainly should never be used, unless in a testing scenero,
- * which is why it was created 
+#ifdef NETSNMP_ENABLE_TESTING_CODE
+/**
+ * Set SNMPv3 engineBoots and start time.
+ *
+ * @note This function does not exist. Go away. It certainly should never be
+ *   used, unless in a testing scenario, which is why it was created
  */
 void
 snmpv3_set_engineBootsAndTime(int boots, int ttime)
 {
     engineBoots = boots;
-    gettimeofday(&snmpv3starttime, NULL);
+    netsnmp_get_monotonic_clock(&snmpv3starttime);
     snmpv3starttime.tv_sec -= ttime;
 }
 #endif

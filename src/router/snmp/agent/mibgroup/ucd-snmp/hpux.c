@@ -30,15 +30,21 @@ int_hpux(void)
      * information at 
      */
     struct variable2 hp_variables[] = {
-        {HPCONF, ASN_INTEGER, RWRITE, var_hp, 1, {HPCONF}},
-        {HPRECONFIG, ASN_INTEGER, RWRITE, var_hp, 1, {HPRECONFIG}},
-        {HPFLAG, ASN_INTEGER, RWRITE, var_hp, 1, {HPFLAG}},
-        {HPLOGMASK, ASN_INTEGER, RWRITE, var_hp, 1, {ERRORFLAG}},
-        {HPSTATUS, ASN_INTEGER, RWRITE, var_hp, 1, {ERRORMSG}}
+        {HPCONF, ASN_INTEGER, NETSNMP_OLDAPI_RWRITE,
+         var_hp, 1, {HPCONF}},
+        {HPRECONFIG, ASN_INTEGER, NETSNMP_OLDAPI_RWRITE,
+         var_hp, 1, {HPRECONFIG}},
+        {HPFLAG, ASN_INTEGER, NETSNMP_OLDAPI_RWRITE,
+         var_hp, 1, {HPFLAG}},
+        {HPLOGMASK, ASN_INTEGER, NETSNMP_OLDAPI_RWRITE,
+         var_hp, 1, {ERRORFLAG}},
+        {HPSTATUS, ASN_INTEGER, NETSNMP_OLDAPI_RWRITE,
+         var_hp, 1, {ERRORMSG}}
     };
 
     struct variable2 hptrap_variables[] = {
-        {HPTRAP, ASN_IPADDRESS, RWRITE, var_hp, 1, {HPTRAP}},
+        {HPTRAP, ASN_IPADDRESS, NETSNMP_OLDAPI_RWRITE,
+         var_hp, 1, {HPTRAP}},
     };
 
     /*

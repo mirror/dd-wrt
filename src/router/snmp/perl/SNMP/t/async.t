@@ -1,16 +1,26 @@
 #!./perl
-
 BEGIN {
     unless(grep /blib/, @INC) {
         chdir 't' if -d 't';
         @INC = '../lib' if -d '../lib';
     }
+    eval "use Cwd qw(abs_path)";
+    $ENV{'SNMPCONFPATH'} = 'nopath';
+    $ENV{'MIBDIRS'} = '+' . abs_path("../../mibs");
+
+    $skipped_tests = ($^O =~ /win32/i) ? 20 : 0;
 }
 
 use Test;
-BEGIN {plan tests => 20}
+BEGIN {plan tests => 20 - $skipped_tests}
 use SNMP;
 use vars qw($agent_port $comm $agent_host);
+
+if ($^O =~ /win32/i) {
+  warn "Win32/Win64 detected - skipping async calls\n";
+  exit;
+}
+
 require "t/startagent.pl";
 
 
@@ -40,6 +50,10 @@ $result = $sess->get([["sysDescr","0"]], [\&cb1, $sess]);
 ok($result);
 
 SNMP::MainLoop();
+
+snmptest_cleanup();
+
+exit 0;
 
 sub cb1{
     my $sess = shift;
@@ -146,9 +160,7 @@ sub cb7{
 
     ok(@{$vlist} == 23);
 
-    snmptest_cleanup();
-
-    exit(0);
+    SNMP::finish();
 } # end of cb7
 
 sub cbDummy {

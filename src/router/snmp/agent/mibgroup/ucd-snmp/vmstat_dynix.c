@@ -11,7 +11,7 @@
  * To make lint skip the debug code and stop complaining 
  */
 #ifdef __lint
-#define SNMP_NO_DEBUGGING 1
+#define NETSNMP_NO_DEBUGGING 1
 #endif
 
 #define __NO_ASM_MACRO 1
@@ -34,7 +34,7 @@
 #include <net-snmp/agent/net-snmp-agent-includes.h>
 
 #include "mibdefs.h"
-#include "util_funcs.h"
+#include "util_funcs/header_generic.h"
 
 /*
  * Header file for this module 
@@ -165,43 +165,50 @@ init_vmstat_dynix(void)
      * Which variables do we service ? 
      */
     struct variable2 extensible_vmstat_variables[] = {
-        {MIBINDEX, ASN_INTEGER, RONLY, var_extensible_vmstat, 1,
-         {MIBINDEX}},
-        {ERRORNAME, ASN_OCTET_STR, RONLY, var_extensible_vmstat, 1,
-         {ERRORNAME}},
-        {SWAPIN, ASN_INTEGER, RONLY, var_extensible_vmstat, 1, {SWAPIN}},
-        {SWAPOUT, ASN_INTEGER, RONLY, var_extensible_vmstat, 1, {SWAPOUT}},
-        {IOSENT, ASN_INTEGER, RONLY, var_extensible_vmstat, 1, {IOSENT}},
-        {IORECEIVE, ASN_INTEGER, RONLY, var_extensible_vmstat, 1,
-         {IORECEIVE}},
-        {SYSINTERRUPTS, ASN_INTEGER, RONLY, var_extensible_vmstat, 1,
-         {SYSINTERRUPTS}},
-        {SYSCONTEXT, ASN_INTEGER, RONLY, var_extensible_vmstat, 1,
-         {SYSCONTEXT}},
-        {CPUUSER, ASN_INTEGER, RONLY, var_extensible_vmstat, 1, {CPUUSER}},
-        {CPUSYSTEM, ASN_INTEGER, RONLY, var_extensible_vmstat, 1,
-         {CPUSYSTEM}},
-        {CPUIDLE, ASN_INTEGER, RONLY, var_extensible_vmstat, 1, {CPUIDLE}},
-        {CPURAWUSER, ASN_COUNTER, RONLY, var_extensible_vmstat, 1,
-         {CPURAWUSER}},
-        {CPURAWSYSTEM, ASN_COUNTER, RONLY, var_extensible_vmstat, 1,
-         {CPURAWSYSTEM}},
-        {CPURAWIDLE, ASN_COUNTER, RONLY, var_extensible_vmstat, 1,
-         {CPURAWIDLE}},
-        {CPURAWWAIT, ASN_COUNTER, RONLY, var_extensible_vmstat, 1,
-         {CPURAWWAIT}},
-        {CPURAWKERNEL, ASN_COUNTER, RONLY, var_extensible_vmstat, 1,
-         {CPURAWKERNEL}},
-        {IORAWSENT, ASN_COUNTER, RONLY, var_extensible_vmstat, 1,
-         {IORAWSENT}},
-        {IORAWRECEIVE, ASN_COUNTER, RONLY, var_extensible_vmstat, 1,
-         {IORAWRECEIVE}},
+        {MIBINDEX, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {MIBINDEX}},
+        {ERRORNAME, ASN_OCTET_STR, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {ERRORNAME}},
+        {SWAPIN, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {SWAPIN}},
+        {SWAPOUT, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {SWAPOUT}},
+        {IOSENT, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {IOSENT}},
+        {IORECEIVE, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {IORECEIVE}},
+        {SYSINTERRUPTS, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {SYSINTERRUPTS}},
+        {SYSCONTEXT, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {SYSCONTEXT}},
+        {CPUUSER, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {CPUUSER}},
+        {CPUSYSTEM, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {CPUSYSTEM}},
+        {CPUIDLE, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {CPUIDLE}},
+        {CPURAWUSER, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {CPURAWUSER}},
+        {CPURAWSYSTEM, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {CPURAWSYSTEM}},
+        {CPURAWIDLE, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {CPURAWIDLE}},
+        {CPURAWWAIT, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {CPURAWWAIT}},
+        {CPURAWKERNEL, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {CPURAWKERNEL}},
+        {IORAWSENT, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {IORAWSENT}},
+        {IORAWRECEIVE, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {IORAWRECEIVE}},
         /*
          * Future use: 
          */
         /*
-         * {ERRORFLAG, ASN_INTEGER, RONLY, var_extensible_vmstat, 1, {ERRORFLAG }},
-         * {ERRORMSG, ASN_OCTET_STR, RONLY, var_extensible_vmstat, 1, {ERRORMSG }}
+         * {ERRORFLAG, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         *  var_extensible_vmstat, 1, {ERRORFLAG }},
+         * {ERRORMSG, ASN_OCTET_STR, NETSNMP_OLDAPI_RONLY,
+         *  var_extensible_vmstat, 1, {ERRORMSG }}
          */
     };
 
@@ -211,7 +218,7 @@ init_vmstat_dynix(void)
     /*
      * registering underneath 
      */
-    oid             vmstat_variables_oid[] = { UCDAVIS_MIB, 11 };
+    oid             vmstat_variables_oid[] = { NETSNMP_UCDAVIS_MIB, 11 };
 
     /*
      * register ourselves with the agent to handle our mib tree 

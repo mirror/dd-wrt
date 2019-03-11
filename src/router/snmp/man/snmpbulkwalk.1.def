@@ -1,3 +1,7 @@
+.\" -*- nroff -*-
+.\" Portions of this file are subject to the following copyright.  See
+.\" the Net-SNMP COPYING file for more details and other copyrights
+.\" that may apply:
 .\" /***********************************************************
 .\" 	Copyright 1988, 1989 by Carnegie Mellon University
 .\" 
@@ -19,13 +23,12 @@
 .\" ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
 .\" SOFTWARE.
 .\" ******************************************************************/
-.TH SNMPBULKWALK 1 "17 Jun 1998" "" "Net-SNMP"
-.UC 4
+.TH SNMPBULKWALK 1 "01 May 2002" VVERSIONINFO "Net-SNMP"
 .SH NAME
-snmpbulkwalk - communicates with a network entity using SNMP BULK Requests.
+snmpbulkwalk - retrieve a subtree of management values using SNMP GETBULK requests
 .SH SYNOPSIS
 .B snmpbulkwalk
-[APPLICATION OPTIONS] [COMMON OPTIONS] [OID]
+[APPLICATION OPTIONS] [COMMON OPTIONS] AGENT [OID]
 .SH DESCRIPTION
 .B snmpbulkwalk
 is an SNMP application that uses SNMP GETBULK requests to query a
@@ -39,7 +42,7 @@ Each variable name is given in the format specified in
 .IR variables(5) .
 If no OID argument is present,
 .B snmpbulkwalk
-will search MIB-2.
+will search MIB\-2.
 .PP
 If the network entity has an error processing the request packet, an
 error packet will be returned and a message will be shown, helping to
@@ -49,7 +52,7 @@ If the tree search causes attempts to search beyond the end of the
 MIB, the message "End of MIB" will be displayed.
 .SH OPTIONS
 .TP 8
-.B -Cc
+.B \-Cc
 Do not check whether the returned OIDs are increasing.  Some agents
 (LaserJets are an example) return OIDs out of order, but can
 complete the walk anyway.  Other agents return OIDs that are out of
@@ -59,10 +62,10 @@ to loop indefinitely.  By default,
 .B snmpbulkwalk
 tries to detect this behavior and warns you when it hits an agent
 acting illegally.  Use
-.B -Cc
+.B \-Cc
 to turn off this behaviour.
 .TP
-.B -Ci
+.B \-Ci
 Include the given OID in the search range.  Normally
 .B snmpbulkwalk
 uses GETBULK requests starting with the OID you specified and returns
@@ -71,16 +74,16 @@ to include the OID specified on the command line in the printed
 results if it is a valid OID in the tree itself.  This option lets you
 do this.
 .TP
-.BI -Cn <NUM>
+.BI \-Cn <NUM>
 Set the
 .I non-repeaters
 field in the GETBULK PDUs.  This specifies the number of supplied
 variables that should not be iterated over.  The default is 0.
 .TP
-.B -Cp
+.B \-Cp
 Upon completion of the walk, print the number of variables found.
 .TP
-.BI -Cr <NUM>
+.BI \-Cr <NUM>
 Set the
 .I max-repetitions
 field in the GETBULK PDUs.  This specifies the maximum number of
@@ -91,10 +94,14 @@ In addition to these options,
 takes the common options described in the 
 .I snmpcmd(1)
 manual page.
+Note that
+.B snmpbulkget
+REQUIRES an argument specifying the agent to query
+and at most one OID argument, as described above.
 .SH EXAMPLE
 The command:
 .PP
-snmpbulkwalk -v2c -Os -c public zeus system
+snmpbulkwalk \-v2c \-Os \-c public zeus system
 .PP
 will retrieve all of the variables under system:
 .PP

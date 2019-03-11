@@ -3,18 +3,6 @@ Microsoft Developer Studio Workspace File, Format Version 6.00
 
 ###############################################################################
 
-Project: "encode_keychange"=".\encode_keychange\encode_keychange.dsp" - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-}}}
-
-###############################################################################
-
 Project: "libagent"=".\libagent\libagent.dsp" - Package Owner=<4>
 
 Package=<5>
@@ -23,11 +11,14 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name libsnmp
+    End Project Dependency
 }}}
 
 ###############################################################################
 
-Project: "libhelpers"=".\libhelpers\libhelpers.dsp" - Package Owner=<4>
+Project: "netsnmpmibs"=".\netsnmpmibs\netsnmpmibs.dsp" - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -35,6 +26,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name libsnmp
+    End Project Dependency
 }}}
 
 ###############################################################################
@@ -51,7 +45,7 @@ Package=<4>
 
 ###############################################################################
 
-Project: "libsnmp_dll"=".\libsnmp_dll\libsnmp_dll.dsp" - Package Owner=<4>
+Project: "libnetsnmptrapd"=".\libnetsnmptrapd\libnetsnmptrapd.dsp" - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -59,11 +53,14 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name libsnmp
+    End Project Dependency
 }}}
 
 ###############################################################################
 
-Project: "netsnmpmibs"=".\netsnmpmibs\netsnmpmibs.dsp" - Package Owner=<4>
+Project: "encode_keychange"=".\encode_keychange\encode_keychange.dsp" - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -71,6 +68,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name libsnmp
+    End Project Dependency
 }}}
 
 ###############################################################################
@@ -83,6 +83,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name libsnmp
+    End Project Dependency
 }}}
 
 ###############################################################################
@@ -95,6 +98,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name libsnmp
+    End Project Dependency
 }}}
 
 ###############################################################################
@@ -108,13 +114,13 @@ Package=<5>
 Package=<4>
 {{{
     Begin Project Dependency
-    Project_Dep_Name libucdmibs
-    End Project Dependency
-    Begin Project Dependency
     Project_Dep_Name libagent
     End Project Dependency
     Begin Project Dependency
-    Project_Dep_Name libhelpers
+    Project_Dep_Name libsnmp
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name netsnmpmibs
     End Project Dependency
 }}}
 
@@ -128,6 +134,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name libsnmp
+    End Project Dependency
 }}}
 
 ###############################################################################
@@ -140,6 +149,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name libsnmp
+    End Project Dependency
 }}}
 
 ###############################################################################
@@ -152,6 +164,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name libsnmp
+    End Project Dependency
 }}}
 
 ###############################################################################
@@ -164,6 +179,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name libsnmp
+    End Project Dependency
 }}}
 
 ###############################################################################
@@ -176,6 +194,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name libsnmp
+    End Project Dependency
 }}}
 
 ###############################################################################
@@ -188,6 +209,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name libsnmp
+    End Project Dependency
 }}}
 
 ###############################################################################
@@ -200,6 +224,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name libsnmp
+    End Project Dependency
 }}}
 
 ###############################################################################
@@ -212,6 +239,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name libsnmp
+    End Project Dependency
 }}}
 
 ###############################################################################
@@ -224,6 +254,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name libsnmp
+    End Project Dependency
 }}}
 
 ###############################################################################
@@ -236,6 +269,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name libsnmp
+    End Project Dependency
 }}}
 
 ###############################################################################
@@ -248,6 +284,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name libsnmp
+    End Project Dependency
 }}}
 
 ###############################################################################
@@ -264,7 +303,13 @@ Package=<4>
     Project_Dep_Name libagent
     End Project Dependency
     Begin Project Dependency
-    Project_Dep_Name libhelpers
+    Project_Dep_Name libnetsnmptrapd
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name libsnmp
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name netsnmpmibs
     End Project Dependency
 }}}
 
@@ -278,6 +323,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name libsnmp
+    End Project Dependency
 }}}
 
 ###############################################################################
@@ -290,6 +338,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name libsnmp
+    End Project Dependency
 }}}
 
 ###############################################################################
@@ -302,6 +353,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name libsnmp
+    End Project Dependency
 }}}
 
 ###############################################################################

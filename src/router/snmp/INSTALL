@@ -3,7 +3,7 @@ TABLE OF CONTENTS
 
   Table Of Contents
   Quick Instructions
-* Ucd-Snmp Specific Information
+* Net-SNMP Specific Information
   Long (but you should read these) Instructions
   Installing the Perl/SNMP Module
 * Compilers and Options
@@ -21,7 +21,7 @@ QUICK INSTRUCTIONS
   1) Run ./configure
      (type "./configure --help" for a quick usage summary.)
      (--prefix=PATH will change the default /usr/local installation path.)
-     (see "Compilers and Options" on changing the complier to use)
+     (see "Compilers and Options" on changing the compiler to use)
 
   2) Optionally edit include/net-snmp/net-snmp-config.h
      (due to prompting done by the configure script, this is very rarely
@@ -29,23 +29,26 @@ QUICK INSTRUCTIONS
 
   3) make
 
-  4) Run the next two commands as root:
-  5) umask 022   # <-- zero-two-two
-  6) make install
+  4) Run the next command as root:
+  5) make install
+
+  6) configure the agent
+     (either using 'snmpconf' or by crafting an snmpd.conf file manually.
+      The file 'EXAMPLE.conf' may be a suitable starting point)
 
 Note: By default, everything will be installed in /usr/local.
       (see below for more instructions)
 
-UCD-SNMP Specific Information
+Net-SNMP Specific Information
 =============================
 
-As of V3.3.1 the configuration files are now looked for in
+As of UCD-SNMP V3.3.1 the configuration files are now looked for in
 $(prefix)/share/snmp, where ($prefix) is defined as the value passed
 to the --prefix argument of the configure script, or /usr/local if
 undefined.  In version 3.0.3 till 3.3, the files were kept in
 $(prefix)/lib/snmp
 
-Optional features to pass to configure for ucd-snmp can be obtained by
+Optional features to pass to configure for Net-SNMP can be obtained by
 running configure --help.
 
 LONG (but you should read these) INSTRUCTIONS
@@ -58,8 +61,19 @@ It may also create one or more `.h' files containing system-dependent
 definitions.  Finally, it creates a shell script `config.status' that
 you can run in the future to recreate the current configuration, a file
 `config.cache' that saves the results of its tests to speed up
-reconfiguring, and a file `config.log' containing compiler output
-(useful mainly for debugging `configure').
+reconfiguring, a file `config.log' containing compiler output
+(useful mainly for debugging `configure') and a file `configure-summary'
+containing the summary displayed at the end of the `configure' run.
+
+   The file `include/net-snmp/net-snmp-config.h' is also generated
+at this time.  It contains IMPORTANT information such as the location
+of log and configuration files.  In some special cases you may need to
+modify this file but it is prefererable to work out a way of getting
+`configure' to set things up for your particular environment.
+
+As the `configure' invocation often gets lengthy and difficult to
+type or if you have several different ways you want to configure a
+system, you may want to create a shell script containing your invocation.
 
    If you need to do unusual things to compile the package, please try
 to figure out how `configure' could check whether to do them, and mail
@@ -80,45 +94,65 @@ The simplest way to compile this package is:
      `configure' itself.
 
      Running `configure' takes awhile.  While running, it prints some
-     messages telling which features it is checking for.
+     messages telling which features it is checking for.  When it
+     completes it prints a short message (also available in configure-summary)
+     indicating what functionality will be available when compiled.
 
-  2. Edit config.h.  IMPORTANT information is in here.  Like the
-     location of the log file and the location of the configuration
-     files.  Again, you should really edit config.h.in instead and
-     then run config.status, which will generate config.h from config.h.in.
+  2. If necessary, edit include/net-snmp/net-snmp-config.h (see above).  
 
   3. Type `make' to compile the package.
 
-  4. Type `make install' to install the programs and any data files and
+  4. Type `make test' which runs a variety of tests to see what functionality
+     has been incorporated and if it works.
+
+  5. Type `make install' to install the programs and any data files and
      documentation.
 
-  5. You can remove the program binaries and object files from the
+  6. You can remove the program binaries and object files from the
      source code directory by typing `make clean'.  To also remove the
      files that `configure' created (so you can compile the package for
      a different kind of computer), type `make distclean'.
 
+  7. You can remove the application (but not the perl or python modules)
+     by typing `make uninstall'.
+
+There may be additional installation issues discussed in the 
+README's for various platforms such as README.solaris.
+
 
 Installing the Perl/SNMP Module
 ===============================
-   The Perl/SNMP Module is now bundled with the ucd-snmp package and is
-located in the ucd-snmp/perl/SNMP directory. This module is an interface
-to the ucd-snmp SNMP client side management API. The Perl package
-provides a high level abstract interface to these functions for rapid
-application development. Following are the steps required to build and
-install this perl module.
 
-   1.) Be sure to read the ucd-snmp/perl/SNMP/README
+   The Perl/SNMP Module is now bundled with the net-snmp package
+(which includes other Net-SNMP specific modules as well), all of which
+are located in the net-snmp/perl directory. The Perl package provides
+a high level abstract interface to the functionality found in the
+Net-SNMP libraries and demon applications.
 
-   2.) Be sure that ucd-snmp has been sucessfully tested and installed -
-       the headers and libraries will be required to build, the
-       applications and mibs will be required to test the perl module
+   It is recommended you install the perl modules as you build the
+   Net-SNMP package.  The configure script can be run as follows to
+   automatically find perl and use it to install the perl modules:
 
-   3.) cd to ucd-snmp/perl/SNMP and run
+      ./configure --with-perl-modules
+
+   If you wish to use the embedded perl support available in the
+   Net-SNMP agent (and starting in Net-SNMP 5.2, the trap receiver),
+   then use the following option instead:
+
+      ./configure --enable-embedded-perl --enable-shared
+
+   Starting with Net-SNMP 5.4, configure enables embedded Perl and the 
+   Perl modules by default when possible unless explicitly disabled.
+
+   If you wish to build the perl modules by hand, *install Net-SNMP
+   first* and then change directories to the perl subdirectory and:
+
+   Run:
+            cd perl
             perl Makefile.PL
             make
             make test
             make install (as root)
-
 
 
 Compilers and Options
@@ -242,5 +276,4 @@ operates.
      script, and exit.
 
 `configure' also accepts some other, not widely useful, options.
-
 

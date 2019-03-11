@@ -2,6 +2,8 @@
 #ifndef _WINSTUB_H_
 #define _WINSTUB_H_
 
+#include <net-snmp/types.h>
+
 #if (defined(WIN32) || defined(cygwin))
 
 /*

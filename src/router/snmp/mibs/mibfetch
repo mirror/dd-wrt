@@ -10,19 +10,26 @@
 # The script fetches the file from the givn directory on the given
 # host, and then runs the file through smistrip to extract the mibs.
 
+exact=0
+verbose=
+
+while getopts xvd: c
+do
+    case $c in
+    d)	mdir="-d $OPTARG"
+    	;;
+    x)	exact=1
+    	;;
+    v)	verbose=-v
+    	;;
+    \?)	exit 2
+    	;;
+    esac
+done
+
+shift `expr $OPTIND - 1`
+
 set -e
-
-if [ "$1" = "-d" ]; then
-  mdir="-d $2"; shift 2
-else
-  mdir=
-fi
-
-if [ "$1" = "-x" ]; then
-    exact=1; shift
-else
-    exact=0
-fi
 
 host=$1
 dir=$2
@@ -39,8 +46,6 @@ if [ -n "$4" ]; then
 fi
 
 # ncftpget -FV ftp://$host/$dir/$file
-wget -O - -nv $host/$dir/$file | tr -d \\r > $file
-
-./smistrip -x .txt $mdir $mibs $file
-
-rm $file
+wget -O - -q -nv $host/$dir/$file | \
+	tr -d \\r | \
+	./smistrip $verbose -x .txt $mdir $mibs -

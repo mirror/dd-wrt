@@ -3,7 +3,7 @@
  *
  * Contributed by: Robert Story <rstory@freesnmp.com>
  *
- * $Id: object_monitor.h,v 1.1.2.1 2004/06/20 21:54:36 nikki Exp $
+ * $Id$
  *
  * functions and data structures for cooperating code to monitor objects.
  *
@@ -58,7 +58,7 @@ extern          "C" {
      */
 
 
-    /*
+    /**
      * callback header
      */
     typedef struct netsnmp_monitor_callback_header_s {

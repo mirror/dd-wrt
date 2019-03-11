@@ -1,4 +1,5 @@
 #include <net-snmp/net-snmp-config.h>
+#include <net-snmp/net-snmp-features.h>
 
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
@@ -8,6 +9,11 @@
 #else
 #include <strings.h>
 #endif
+
+netsnmp_feature_require(ulong_instance)
+netsnmp_feature_require(register_read_only_table_data)
+netsnmp_feature_require(table_build_result)
+netsnmp_feature_require(table_dataset)
 
 #include <net-snmp/net-snmp-includes.h>
 #include <net-snmp/agent/net-snmp-agent-includes.h>
@@ -23,7 +29,6 @@ static oid      my_test_oid[4] = { 1, 2, 3, 4 };
 static oid      my_table_oid[4] = { 1, 2, 3, 5 };
 static oid      my_instance_oid[5] = { 1, 2, 3, 6, 1 };
 static oid      my_data_table_oid[4] = { 1, 2, 3, 7 };
-static oid      my_data_table_set_oid[4] = { 1, 2, 3, 8 };
 static oid      my_data_ulong_instance[4] = { 1, 2, 3, 9 };
 
 u_long          my_ulong = 0;
@@ -38,7 +43,6 @@ init_testhandler(void)
     netsnmp_table_registration_info *table_info;
     u_long          ind1;
     netsnmp_table_data *table;
-    netsnmp_table_data_set *table_set;
     netsnmp_table_row *row;
 
     DEBUGMSGTL(("testhandler", "initializing\n"));
@@ -74,6 +78,8 @@ init_testhandler(void)
         return;
 
     table_info = SNMP_MALLOC_TYPEDEF(netsnmp_table_registration_info);
+    if (table_info == NULL)
+        return;
 
     netsnmp_table_helper_add_indexes(table_info, ASN_INTEGER, ASN_INTEGER,
                                      0);
@@ -104,7 +110,7 @@ init_testhandler(void)
     netsnmp_table_row_add_index(row, ASN_INTEGER, &ind1, sizeof(ind1));
     netsnmp_table_row_add_index(row, ASN_OCTET_STR, "partridge",
                                 strlen("partridge"));
-    row->data = (void *) "pear tree";
+    row->data = NETSNMP_REMOVE_CONST(void *, "pear tree");
     netsnmp_table_data_add_row(table, row);
 
     /*
@@ -115,7 +121,7 @@ init_testhandler(void)
     netsnmp_table_row_add_index(row, ASN_INTEGER, &ind1, sizeof(ind1));
     netsnmp_table_row_add_index(row, ASN_OCTET_STR, "turtle",
                                 strlen("turtle"));
-    row->data = (void *) "doves";
+    row->data = NETSNMP_REMOVE_CONST(void *, "doves");
     netsnmp_table_data_add_row(table, row);
 
     /*
@@ -123,6 +129,8 @@ init_testhandler(void)
      * automatically parsed column and index information 
      */
     table_info = SNMP_MALLOC_TYPEDEF(netsnmp_table_registration_info);
+    if (table_info == NULL)
+        return;
 
     netsnmp_table_helper_add_indexes(table_info, ASN_INTEGER,
                                      ASN_OCTET_STR, 0);
@@ -204,26 +212,12 @@ my_test_table_handler(netsnmp_mib_handler *handler,
 {
 
     netsnmp_table_registration_info
-     
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
         *handler_reg_info =
         (netsnmp_table_registration_info *) handler->prev->myvoid;
+
     netsnmp_table_request_info *table_info;
     u_long          result;
     int             x, y;
-
 
     while (requests) {
         netsnmp_variable_list *var = requests->requestvb;
@@ -257,7 +251,7 @@ my_test_table_handler(netsnmp_mib_handler *handler,
                 /*
                  * or no index specified 
                  */
-                table_info->indexes->val.integer == 0) {
+                table_info->indexes->val.integer == NULL) {
                 table_info->colnum = RESULT_COLUMN;
                 x = 0;
                 y = 0;
@@ -339,6 +333,7 @@ my_test_instance_handler(netsnmp_mib_handler *handler,
                                  (u_char *) & accesses, sizeof(accesses));
         break;
 
+#ifndef NETSNMP_NO_WRITE_SUPPORT
     case MODE_SET_RESERVE1:
         if (requests->requestvb->type != ASN_UNSIGNED)
             netsnmp_set_request_error(reqinfo, requests,
@@ -349,8 +344,7 @@ my_test_instance_handler(netsnmp_mib_handler *handler,
         /*
          * store old info for undo later 
          */
-        memdup((u_char **) & accesses_cache,
-               (u_char *) & accesses, sizeof(accesses));
+        accesses_cache = netsnmp_memdup(&accesses, sizeof(accesses));
         if (accesses_cache == NULL) {
             netsnmp_set_request_error(reqinfo, requests,
                                       SNMP_ERR_RESOURCEUNAVAILABLE);
@@ -367,7 +361,7 @@ my_test_instance_handler(netsnmp_mib_handler *handler,
          * update current 
          */
         accesses = *(requests->requestvb->val.integer);
-        DEBUGMSGTL(("testhandler", "updated accesses -> %d\n", accesses));
+        DEBUGMSGTL(("testhandler", "updated accesses -> %lu\n", accesses));
         break;
 
     case MODE_SET_UNDO:
@@ -382,6 +376,7 @@ my_test_instance_handler(netsnmp_mib_handler *handler,
          * nothing to do 
          */
         break;
+#endif /* NETSNMP_NO_WRITE_SUPPORT */
     }
 
     return SNMP_ERR_NOERROR;
@@ -399,25 +394,26 @@ my_data_table_handler(netsnmp_mib_handler *handler,
     netsnmp_table_row *row;
 
     while (requests) {
-        if (requests->processed)
+        if (requests->processed) {
+            requests = requests->next;
             continue;
+        }
 
         /*
          * extract our stored data and table info 
          */
         row = netsnmp_extract_table_row(requests);
         table_info = netsnmp_extract_table_info(requests);
-        if (row)
-            column3 = (char *) row->data;
-        if (!row || !table_info || !column3)
+        if (!table_info || !row || !row->data)
             continue;
+        column3 = (char *) row->data;
 
         /*
          * there's only one column, we don't need to check if it's right 
          */
         netsnmp_table_data_build_result(reginfo, reqinfo, requests, row,
                                         table_info->colnum,
-                                        ASN_OCTET_STR, column3,
+                                        ASN_OCTET_STR, (u_char*)column3,
                                         strlen(column3));
         requests = requests->next;
     }

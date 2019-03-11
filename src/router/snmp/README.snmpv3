@@ -4,10 +4,12 @@ How to setup SNMPv3, a very brief document for Dave to elaborate and
 do a better job on since I suck at writing documentation and he
 doesn't ;-) --Wes:
 
-Note: SHA authentication and DES encryption support is only available
-if you have OpenSSL installed.
+Note: SHA authentication and DES/AES encryption support is only available
+if you have OpenSSL installed or if you've compiled using
+--with-openssl=internal.  If you use --with-openssl=internal please
+read the documentation in snmplib/openssl/README for important details.
 
-Note: encryption support isn't enabled in the binary releases downloadable
+Note: encryption support now *is* enabled in the binary releases downloadable
 from the net-snmp web site.
 
 Note: this description assumes you're using the software compiled from

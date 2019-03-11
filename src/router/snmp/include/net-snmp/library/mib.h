@@ -34,7 +34,13 @@ SOFTWARE.
 
 #include <stdio.h>              /* for FILE */
 
-#define MIB 1, 3, 6, 1, 2, 1
+#include <net-snmp/mib_api.h>
+
+#define NETSNMP_MIB2_OID 1, 3, 6, 1, 2, 1
+
+#ifndef NETSNMP_NO_LEGACY_DEFINITIONS
+#define MIB NETSNMP_MIB2_OID
+#endif
 
 #define MIB_IFTYPE_OTHER		    1
 #define MIB_IFTYPE_REGULAR1822		    2
@@ -111,63 +117,60 @@ SOFTWARE.
     struct variable_list;
     struct enum_list;
 
-    void            print_mib(FILE * fp);
+    NETSNMP_IMPORT
     void            print_ascii_dump(FILE *);
-    int             read_objid(const char *, oid *, size_t *);
     void            register_mib_handlers(void);
     void            netsnmp_set_mib_directory(const char *dir);
+    NETSNMP_IMPORT
     char            *netsnmp_get_mib_directory(void);
     void            netsnmp_fixup_mib_directory(void);
-    void            init_mib(void);
-    void            shutdown_mib(void);
-    void            print_description(oid *, size_t, int);
-    void            fprint_description(FILE *, oid *, size_t, int);
-    int             get_module_node(const char *, const char *, oid *,
-                                    size_t *);
+    void            netsnmp_mibindex_load( void );
+    char *          netsnmp_mibindex_lookup( const char * );
+    FILE *          netsnmp_mibindex_new( const char * );
+    int             sprint_realloc_description(u_char ** buf, size_t * buf_len,
+                                size_t * out_len, int allow_realloc,
+                                oid * objid, size_t objidlen, int width);
+    NETSNMP_IMPORT
     int             get_wild_node(const char *, oid *, size_t *);
+    NETSNMP_IMPORT
     int             get_node(const char *, oid *, size_t *);
-    oid            *snmp_parse_oid(const char *, oid *, size_t *);
-    struct tree    *get_symbol(oid *, size_t, struct tree *, char *);
+    NETSNMP_IMPORT
     struct tree    *get_tree(const oid *, size_t, struct tree *);
+    NETSNMP_IMPORT
     struct tree    *get_tree_head(void);
     void            set_function(struct tree *);
 
+    NETSNMP_IMPORT
     int             parse_one_oid_index(oid ** oidStart, size_t * oidLen,
                                         netsnmp_variable_list * data,
                                         int complete);
+    NETSNMP_IMPORT
     int             parse_oid_indexes(oid * oidIndex, size_t oidLen,
                                       netsnmp_variable_list * data);
+    NETSNMP_IMPORT
     int             build_oid_noalloc(oid * in, size_t in_len,
                                       size_t * out_len, oid * prefix,
                                       size_t prefix_len,
                                       netsnmp_variable_list * indexes);
+    NETSNMP_IMPORT
     int             build_oid(oid ** out, size_t * out_len, oid * prefix,
                               size_t prefix_len,
                               netsnmp_variable_list * indexes);
     int             build_oid_segment(netsnmp_variable_list * var);
 
-
-    void            print_variable(const oid * objid, size_t objidlen,
+    NETSNMP_IMPORT
+    int             sprint_realloc_variable(u_char ** buf, size_t * buf_len,
+                                   size_t * out_len, int allow_realloc,
+                                   const oid * objid, size_t objidlen,
                                    const netsnmp_variable_list * variable);
 
-    void            fprint_variable(FILE * fp,
-                                    const oid * objid, size_t objidlen,
-                                    const netsnmp_variable_list * variable);
-
-    int             snprint_variable(char *buf, size_t buf_len,
-                                     const oid * objid, size_t objidlen,
-                                     const netsnmp_variable_list * variable);
-
-    int             sprint_realloc_variable(u_char ** buf,
-                                            size_t * buf_len,
-                                            size_t * out_len,
-                                            int allow_realloc,
-                                            const oid * objid,
-                                            size_t objidlen,
-                                            const netsnmp_variable_list *
-                                            variable);
-
-    struct tree    *netsnmp_sprint_realloc_objid_tree(u_char ** buf,
+    NETSNMP_IMPORT
+#ifndef NETSNMP_DISABLE_MIB_LOADING
+    struct tree    *
+#else
+    void
+#endif
+                    netsnmp_sprint_realloc_objid_tree(u_char ** buf,
                                                       size_t * buf_len,
                                                       size_t * out_len,
                                                       int allow_realloc,
@@ -175,40 +178,28 @@ SOFTWARE.
                                                       const oid * objid,
                                                       size_t objidlen);
 
-    void            print_value(const oid * objid, size_t objidlen,
-                                const netsnmp_variable_list * variable);
+    NETSNMP_IMPORT
+    void
+                    netsnmp_sprint_realloc_objid(u_char ** buf,
+                                                 size_t * buf_len,
+                                                 size_t * out_len,
+                                                 int allow_realloc,
+                                                 int *buf_overflow,
+                                                 const oid * objid,
+                                                 size_t objidlen);
 
-    void            fprint_value(FILE * fp,
+    NETSNMP_IMPORT
+    int             sprint_realloc_value(u_char ** buf, size_t * buf_len,
+                                 size_t * out_len, int allow_realloc,
                                  const oid * objid, size_t objidlen,
                                  const netsnmp_variable_list * variable);
 
-    int             snprint_value(char *buf, size_t buf_len,
-                                  const oid * objid, size_t objidlen,
-                                  const netsnmp_variable_list * variable);
-
-    int             sprint_realloc_value(u_char ** buf, size_t * buf_len,
-                                         size_t * out_len,
-                                         int allow_realloc,
-                                         const oid * objid,
-                                         size_t objidlen,
-                                         const netsnmp_variable_list * variable);
-
-
-    void            print_objid(const oid * objid, size_t objidlen);
-
-    void            fprint_objid(FILE * fp,
+    NETSNMP_IMPORT
+    int             sprint_realloc_objid(u_char ** buf, size_t * buf_len,
+                                 size_t * out_len, int allow_realloc,
                                  const oid * objid, size_t objidlen);
 
-    int             snprint_objid(char *buf, size_t buf_len,
-                                  const oid * objid, size_t objidlen);
-
-    int             sprint_realloc_objid(u_char ** buf, size_t * buf_len,
-                                         size_t * out_len,
-                                         int allow_realloc,
-                                         const oid * objid,
-                                         size_t objidlen);
-
-
+    NETSNMP_IMPORT
     int             sprint_realloc_by_type(u_char ** buf, size_t * buf_len,
                                            size_t * out_len,
                                            int allow_realloc,
@@ -217,12 +208,14 @@ SOFTWARE.
                                            const char *hint,
                                            const char *units);
 
+    NETSNMP_IMPORT
     int             sprint_realloc_hexstring(u_char ** buf,
                                              size_t * buf_len,
                                              size_t * out_len,
                                              int allow_realloc,
                                              const u_char *, size_t);
 
+    NETSNMP_IMPORT
     int             sprint_realloc_asciistring(u_char ** buf,
                                                size_t * buf_len,
                                                size_t * out_len,
@@ -354,7 +347,7 @@ SOFTWARE.
                                            const struct enum_list *,
                                            const char *, const char *);
 
-#ifdef OPAQUE_SPECIAL_TYPES
+#ifdef NETSNMP_WITH_OPAQUE_SPECIAL_TYPES
     int             sprint_realloc_float(u_char ** buf, size_t * buf_len,
                                          size_t * out_len,
                                          int allow_realloc,
@@ -441,6 +434,7 @@ SOFTWARE.
                                  const struct enum_list *, const char *,
                                  const char *);
 
+    NETSNMP_IMPORT
     int             snprint_bitstring(char *buf, size_t buf_len,
                                       const netsnmp_variable_list *,
                                       const struct enum_list *, const char *,
@@ -461,7 +455,7 @@ SOFTWARE.
                                     const struct enum_list *, const char *,
                                     const char *);
 
-#ifdef OPAQUE_SPECIAL_TYPES
+#ifdef NETSNMP_WITH_OPAQUE_SPECIAL_TYPES
     int             snprint_float(char *buf, size_t buf_len,
                                   const netsnmp_variable_list *,
                                   const struct enum_list *, const char *,
@@ -473,25 +467,43 @@ SOFTWARE.
                                    const char *);
 #endif
 
+    NETSNMP_IMPORT
     void            print_oid_report(FILE *);
+    NETSNMP_IMPORT
     void            print_oid_report_enable_labeledoid(void);
+    NETSNMP_IMPORT
     void            print_oid_report_enable_oid(void);
+    NETSNMP_IMPORT
     void            print_oid_report_enable_suffix(void);
+    NETSNMP_IMPORT
     void            print_oid_report_enable_symbolic(void);
+    NETSNMP_IMPORT
+    void            print_oid_report_enable_mibchildoid(void);
 
     const char     *parse_octet_hint(const char *hint, const char *value,
 	                             unsigned char **new_val, int *new_val_len);
 
+    NETSNMP_IMPORT
     void            clear_tree_flags(register struct tree *tp);
 
+    NETSNMP_IMPORT
     char           *snmp_out_toggle_options(char *);
+    NETSNMP_IMPORT
+    char           *snmp_out_options(char *, int, char * const *);
+    NETSNMP_IMPORT
     void            snmp_out_toggle_options_usage(const char *, FILE *);
+    NETSNMP_IMPORT
     char           *snmp_in_toggle_options(char *);
+    NETSNMP_IMPORT
+    char           *snmp_in_options(char *, int, char * const *);
+    NETSNMP_IMPORT
     void            snmp_in_toggle_options_usage(const char *, FILE *);
+    NETSNMP_IMPORT
     u_char          mib_to_asn_type(int mib_type);
 
 
     int             netsnmp_str2oid(const char *S, oid * O, int L);
+    char            *make_printf_format_string(const char *);
 
 
 #define NETSNMP_STRING_OUTPUT_GUESS  1

@@ -1,217 +1,92 @@
-/****************************************************************
-	Copyright 1989, 1991, 1992 by Carnegie Mellon University
-
-                      All Rights Reserved
-
-Permission to use, copy, modify, and distribute this software and its 
-documentation for any purpose and without fee is hereby granted, 
-provided that the above copyright notice appear in all copies and that
-both that copyright notice and this permission notice appear in 
-supporting documentation, and that the name of CMU not be
-used in advertising or publicity pertaining to distribution of the
-software without specific, written prior permission.  
-
-CMU DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
-ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL
-CMU BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR
-ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
-WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,
-ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
-SOFTWARE.
-******************************************************************/
+/*	$OpenBSD: inet6.c,v 1.31 2004/11/17 01:47:20 itojun Exp $	*/
+/*	BSDI inet.c,v 2.3 1995/10/24 02:19:29 prb Exp	*/
 /*
- * Copyright (c) 1983,1988 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1983, 1988, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
- * Redistribution and use in source and binary forms are permitted
- * provided that this notice is preserved and that due credit is given
- * to the University of California at Berkeley. The name of the University
- * may not be used to endorse or promote products derived from this
- * software without specific prior written permission. This software
- * is provided ``as is'' without express or implied warranty.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
  */
+
+#ifdef  INHERITED_CODE
+#ifndef lint
+#if 0
+static char sccsid[] = "@(#)inet.c	8.4 (Berkeley) 4/20/94";
+#else
+/*__RCSID("$OpenBSD: inet6.c,v 1.31 2004/11/17 01:47:20 itojun Exp $");*/
+/*__RCSID("KAME Id: inet6.c,v 1.10 2000/02/09 10:49:31 itojun Exp");*/
+#endif
+#endif /* not lint */
+#endif
 
 #include <net-snmp/net-snmp-config.h>
 
-#ifdef INET6
-
-#if HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#if HAVE_STRING_H
-#include <string.h>
-#else
-#include <strings.h>
+#if HAVE_WINSOCK_H
+#include "winstub.h"
+#endif
+#if HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+#if HAVE_NETDB_H
+#include <netdb.h>
+#endif
+#if HAVE_SYS_TYPES_H
+#include <sys/types.h>
 #endif
 
-#include <stdio.h>
-
-#if HAVE_SYS_PARAM_H
-#include <sys/param.h>
-#endif
-#if HAVE_SYS_SELECT_H
-#include <sys/select.h>
-#endif
 #if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
 #if HAVE_ARPA_INET_H
 #include <arpa/inet.h>
 #endif
-#if HAVE_WINSOCK_H
-#include <winsock.h>
-#include "winstub.h"
-#else
-#include <sys/socket.h>
-#include <netdb.h>
-#endif
+
+#include <net-snmp/net-snmp-includes.h>
 
 #include "main.h"
-#include <net-snmp/net-snmp-includes.h>
 #include "netstat.h"
 
-static char    *inet6name(struct in6_addr *);
-
 struct stat_table {
-    int             entry;      /* entry number in table */
+    unsigned int entry;      /* entry number in table */
     /*
-     * format string to printf(description, value, plural(value)); 
-     */
-    /*
+     * format string to printf(description, value) 
      * warning: the %d must be before the %s 
      */
     char            description[80];
 };
 
-#if DEBUGGING_INFORMATION
-        /*
-         * The following tables provide useful debugging information.
-         * This isn't normally needed or easily accessible,
-         *   but could potentially be very useful.
-         * Rather than delete it totally, it's commented out
-         */
-static oid      oid_ipstats[] = { 1, 3, 6, 1, 2, 1, 4, 0, 0 };
-struct stat_table ip_stattab[] = {
-    {3, "%d total datagram%s received"},
-    {4, "%d datagram%s with header errors"},
-    {5, "%d datagram%s with an invalid destination address"},
-    {6, "%d datagram%s forwarded"},
-    {7, "%d datagram%s with unknown protocol"},
-    {8, "%d datagram%s discarded"},
-    {9, "%d datagram%s delivered"},
-    {10, "%d output datagram request%s"},
-    {11, "%d output datagram%s discarded"},
-    {12, "%d datagram%s with no route"},
-    {14, "%d fragment%s received"},
-    {15, "%d datagram%s reassembled"},
-    {16, "%d reassembly failure%s"},
-    {17, "%d datagram%s fragmented"},
-    {18, "%d fragmentation failure%s"},
-    {19, "%d fragment%s created"}
-};
+static char *inet6name(const unsigned char *);
 
-static oid      oid_udpstats[] = { 1, 3, 6, 1, 2, 1, 7, 0, 0 };
-struct stat_table udp_stattab[] = {
-    {1, "%d total datagram%s received"},
-    {2, "%d datagram%s to invalid port"},
-    {3, "%d datagram%s dropped due to errors"},
-    {4, "%d output datagram request%s"}
-};
-
-static oid      oid_tcpstats[] = { 1, 3, 6, 1, 2, 1, 6, 0, 0 };
-struct stat_table tcp_stattab[] = {
-    {5, "%d active open%s"},
-    {6, "%d passive open%s"},
-    {7, "%d failed attempt%s"},
-    {8, "%d reset%s of established connections"},
-    {9, "%d current established connection%s"},
-    {10, "%d segment%s received"},
-    {11, "%d segment%s sent"},
-    {12, "%d segment%s retransmitted"}
-};
-
-static oid      oid_icmpstats[] = { 1, 3, 6, 1, 2, 1, 5, 0, 0 };
-struct stat_table icmp_stattab[] = {
-    {1, "%d total message%s received"},
-    {2, "%d message%s dropped due to errors"},
-    {14, "%d ouput message request%s"},
-    {15, "%d output message%s discarded"}
-};
-
-struct stat_table icmp_inhistogram[] = {
-    {3, "Destination unreachable: %d"},
-    {4, "Time Exceeded: %d"},
-    {5, "Parameter Problem: %d"},
-    {6, "Source Quench: %d"},
-    {7, "Redirect: %d"},
-    {8, "Echo Request: %d"},
-    {9, "Echo Reply: %d"},
-    {10, "Timestamp Request: %d"},
-    {11, "Timestamp Reply: %d"},
-    {12, "Address Mask Request: %d"},
-    {13, "Addrss Mask Reply:%d"},
-};
-
-struct stat_table icmp_outhistogram[] = {
-    {16, "Destination unreachable: %d"},
-    {17, "Time Exceeded: %d"},
-    {18, "Parameter Problem: %d"},
-    {19, "Source Quench: %d"},
-    {20, "Redirect: %d"},
-    {21, "Echo Request: %d"},
-    {22, "Echo Reply: %d"},
-    {23, "Timestamp Request: %d"},
-    {24, "Timestamp Reply: %d"},
-    {25, "Address Mask Request: %d"},
-    {26, "Addrss Mask Reply:%d"},
-};
-#endif
-
-struct tcpconn_entry {
-    oid             instance[16 + 1 + 16 + 1 + 1];
-    struct in6_addr localAddress;
-    int             locAddrSet;
-    u_short         localPort;
-    int             locPortSet;
-    struct in6_addr remoteAddress;
-    int             remAddrSet;
-    u_short         remotePort;
-    int             remPortSet;
-    int             state;
-    int             stateSet;
-    struct tcpconn_entry *next;
-};
-
-struct udp_entry {
-    oid             instance[16 + 1 + 1];
-    struct in6_addr localAddress;
-    int             locAddrSet;
-    u_short         localPort;
-    int             locPortSet;
-    struct udp_entry *next;
-};
-
-#define TCPCONN_LOCADDR	1
-#define TCPCONN_LOCPORT	2
-#define TCPCONN_REMADDR	3
-#define TCPCONN_REMPORT	4
-#define TCPCONN_IFINDEX	5
-#define TCPCONN_STATE	6
-
-static oid      oid_tcpconntable[] = { 1, 3, 6, 1, 3, 86, 1, 16, 1 };
-#define TCP_ENTRY 9
-
-#define UDP_LOCADDR 	1
-#define UDP_LOCPORT	2
-#define UDP_IFINDEX	3
-
-static oid      oid_udptable[] = { 1, 3, 6, 1, 3, 87, 1, 1, 1 };
-#define UDP_ENTRY 9
-
-static const char *tcpstates[] = {
+/*
+ * Print a summary of TCPv6 connections
+ * Listening processes are suppressed unless the
+ *   -a (all) flag is specified.
+ */
+const char     *tcp6states[] = {
     "",
     "CLOSED",
     "LISTEN",
@@ -227,478 +102,414 @@ static const char *tcpstates[] = {
 };
 #define TCP_NSTATES 11
 
-static int      validUShortAssign(unsigned short *, int, const char *);
-
-/*
- * Print a summary of connections related to an Internet
- * protocol (currently only TCP).  For TCP, also give state of connection.
- */
 void
-protopr6(const char *name)
+tcp6protopr(const char *name)
 {
-    struct tcpconn_entry *tcpconn = NULL, *tcplast = NULL, *tp, *newtp;
-    struct udp_entry *udpconn = NULL, *udplast = NULL, *up, *newup;
-    netsnmp_pdu    *request = NULL, *response = NULL;
-    netsnmp_variable_list *vp;
-    oid            *instance;
-    int             first, status;
+    netsnmp_variable_list *var, *vp;
+    oid    ipv6TcpConnState_oid[] = { 1,3,6,1,2,1,6,16,1,6 };
+    size_t ipv6TcpConnState_len   = OID_LENGTH( ipv6TcpConnState_oid );
+    int    state, i;
+    unsigned char   localAddr[16], remoteAddr[16];
+    int    localPort,     remotePort,  ifIndex;
+    int    first = 1;
 
-    response = NULL;
-    if (strncmp(name, "tcp", 3) == 0) {
-        request = snmp_pdu_create(SNMP_MSG_GETNEXT);
-        snmp_add_null_var(request, oid_tcpconntable,
-                          sizeof(oid_tcpconntable) / sizeof(oid));
-        status = STAT_SUCCESS;
-    } else
-        status = STAT_TIMEOUT;
-    while (status == STAT_SUCCESS) {
-        if (response)
-            snmp_free_pdu(response);
-        response = NULL;
-        status = snmp_synch_response(Session, request, &response);
-        if (status != STAT_SUCCESS
-            || response->errstat != SNMP_ERR_NOERROR) {
-            snmp_perror("SNMP request failed");
-            break;
-        }
-        vp = response->variables;
-        if (!vp)
-            break;
-        if (vp->name_length != 46 ||
-            memcmp(vp->name, oid_tcpconntable, sizeof(oid_tcpconntable))) {
-            break;
-        }
+    /*
+     * Walking the v6 tcpConnState column will provide all
+     *   the necessary information.
+     */
+    var = NULL;
+    snmp_varlist_add_variable( &var, ipv6TcpConnState_oid,
+                                     ipv6TcpConnState_len,
+                                     ASN_NULL, NULL,  0);
+    if (netsnmp_query_walk( var, ss ) != SNMP_ERR_NOERROR)
+        return;
+    if ((var->type & 0xF0) == 0x80)		/* exception */
+        return;
 
-        request = snmp_pdu_create(SNMP_MSG_GETNEXT);
-        snmp_add_null_var(request, vp->name, vp->name_length);
-
-        instance = vp->name + 10;
-        for (tp = tcpconn; tp != NULL; tp = tp->next) {
-            if (!memcmp(instance, tp->instance, sizeof(tp->instance)))
-                break;
-        }
-        if (tp == NULL) {
-            tp = (struct tcpconn_entry *) calloc(1,
-                                                 sizeof(struct
-                                                        tcpconn_entry));
-            if (tp == NULL)
-                break;
-            if (tcplast != NULL)
-                tcplast->next = tp;
-            tcplast = tp;
-            if (tcpconn == NULL)
-                tcpconn = tp;
-            memmove(tp->instance, instance, sizeof(tp->instance));
-        }
-
-        if (vp->name[TCP_ENTRY] == TCPCONN_STATE) {
-            tp->state = *vp->val.integer;
-            tp->stateSet = 1;
-        }
-
-        if (vp->name[TCP_ENTRY] == TCPCONN_LOCADDR) {
-            memmove(&tp->localAddress, vp->val.string,
-                    sizeof(struct in6_addr));
-            tp->locAddrSet = 1;
-        }
-
-        if (vp->name[TCP_ENTRY] == TCPCONN_LOCPORT) {
-            if (validUShortAssign(&tp->localPort, *vp->val.integer,
-                                  "TCPCONN_LOCPORT"))
-                tp->locPortSet = 1;
-        }
-
-        if (vp->name[TCP_ENTRY] == TCPCONN_REMADDR) {
-            memmove(&tp->remoteAddress, vp->val.string,
-                    sizeof(struct in6_addr));
-            tp->remAddrSet = 1;
-        }
-
-        if (vp->name[TCP_ENTRY] == TCPCONN_REMPORT) {
-            if (validUShortAssign(&tp->remotePort, *vp->val.integer,
-                                  "TCPCONN_REMPORT"))
-                tp->remPortSet = 1;
-        }
-    }
-    if (response)
-        snmp_free_pdu(response);
-    response = NULL;
-
-    for (first = 1, tp = tcpconn, newtp = NULL; tp != NULL; tp = tp->next) {
-        if (newtp)
-            free(newtp);
-        newtp = tp;
-        if (!(tp->stateSet && tp->locAddrSet
-              && tp->locPortSet && tp->remAddrSet && tp->remPortSet)) {
-            printf("incomplete entry\n");
+    for (vp = var; vp ; vp=vp->next_variable) {
+        state = *vp->val.integer;
+        if (!aflag && state == MIB_TCPCONNSTATE_LISTEN)
             continue;
-        }
-        if (!aflag && tp->state == MIB_TCPCONNSTATE_LISTEN)
-            continue;
+
         if (first) {
-            printf("Active Internet (%s) Connections", name);
+            printf("Active Internet Connections");
             if (aflag)
                 printf(" (including servers)");
             putchar('\n');
-            printf("%-5.5s %-28.28s %-28.28s %s\n",
-                   "Proto", "Local Address", "Foreign Address", "(state)");
+            printf("%-5.5s %-27.27s %-27.27s %4s %s\n",
+                   "Proto", "Local Address", "Remote Address", "I/F", "(state)");
             first = 0;
         }
-        printf("%-5.5s ", name);
-        inet6print(&tp->localAddress, tp->localPort, name);
-        inet6print(&tp->remoteAddress, tp->remotePort, name);
-        if (tp->state < 1 || tp->state > TCP_NSTATES)
-            printf(" %d", tp->state);
+        
+        /* Extract the local/remote information from the index values */
+        for (i=0; i<16; i++)
+            localAddr[i]  = vp->name[ 10+i ];
+        localPort    = vp->name[ 26 ];
+        for (i=0; i<16; i++)
+            remoteAddr[i] = vp->name[ 27+i ];
+        remotePort   = vp->name[ 43 ];
+        ifIndex      = vp->name[ 44 ];
+
+        printf("%-5.5s", name);
+        inet6print(localAddr,  localPort,  name, 1);
+        inet6print(remoteAddr, remotePort, name, 0);
+        if ( state < 1 || state > TCP_NSTATES )
+            printf(" %4d %d\n", ifIndex, state );
         else
-            printf(" %s", tcpstates[tp->state]);
-        putchar('\n');
+            printf(" %4d %s\n", ifIndex, tcp6states[ state ]);
     }
-    if (newtp)
-        free(newtp);
-
-    response = NULL;
-    if (strncmp(name, "udp", 3) == 0) {
-        request = snmp_pdu_create(SNMP_MSG_GETNEXT);
-        snmp_add_null_var(request, oid_udptable,
-                          sizeof(oid_udptable) / sizeof(oid));
-        status = STAT_SUCCESS;
-    } else
-        status = STAT_TIMEOUT;
-    while (status == STAT_SUCCESS) {
-        if (response)
-            snmp_free_pdu(response);
-        response = NULL;
-        status = snmp_synch_response(Session, request, &response);
-        if (status != STAT_SUCCESS
-            || response->errstat != SNMP_ERR_NOERROR) {
-            printf( "SNMP request failed\n");
-            break;
-        }
-        vp = response->variables;
-        if (!vp)
-            break;
-        if (vp->name_length != 28 ||
-            memcmp(vp->name, oid_udptable, sizeof(oid_udptable))) {
-            break;
-        }
-
-        request = snmp_pdu_create(SNMP_MSG_GETNEXT);
-        snmp_add_null_var(request, vp->name, vp->name_length);
-
-        instance = vp->name + 10;
-        for (up = udpconn; up != NULL; up = up->next) {
-            if (!memcmp(instance, up->instance, sizeof(up->instance)))
-                break;
-        }
-        if (up == NULL) {
-            up = (struct udp_entry *) calloc(1, sizeof(struct udp_entry));
-            if (up == NULL)
-                break;
-            if (udplast != NULL)
-                udplast->next = up;
-            udplast = up;
-            if (udpconn == NULL)
-                udpconn = up;
-            memmove(up->instance, instance, sizeof(up->instance));
-        }
-
-        if (vp->name[UDP_ENTRY] == UDP_LOCADDR) {
-            memmove(&up->localAddress, vp->val.string,
-                    sizeof(struct in6_addr));
-            up->locAddrSet = 1;
-        }
-
-        if (vp->name[UDP_ENTRY] == UDP_LOCPORT) {
-            if (validUShortAssign(&up->localPort, *vp->val.integer,
-                                  "UDP_LOCPORT"))
-                up->locPortSet = 1;
-        }
-    }
-    if (response)
-        snmp_free_pdu(response);
-    response = NULL;
-
-    for (first = 1, up = udpconn, newup = NULL; up != NULL; up = up->next) {
-        if (newup)
-            free(newup);
-        newup = up;
-        if (!(up->locAddrSet && up->locPortSet)) {
-            printf("incomplete entry\n");
-            continue;
-        }
-        if (first) {
-            printf("Active Internet (%s) Connections", name);
-            putchar('\n');
-            printf("%-5.5s %-28.28s\n", "Proto", "Local Address");
-            first = 0;
-        }
-        printf("%-5.5s ", name);
-        inet6print(&up->localAddress, up->localPort, name);
-        putchar('\n');
-    }
-    if (newup)
-        free(newup);
-
+    snmp_free_varbind( var );
 }
 
-static int
-validUShortAssign(unsigned short *pushort, int ival, const char *errstr)
+/*
+ * Print a summary of UDPv6 "connections"
+ *    XXX - what about "listening" services ??
+ */
+void
+udp6protopr(const char *name)
 {
-    u_long          ulval = (u_long) ival;
-    if (ival > 65535) {
-        printf("Warning: %s value %ld (0x%lx) is not a port address\n",
-               errstr, ulval, ulval);
-        return 0;
-    }
-    *pushort = (unsigned short) ulval;
-    return 1;
-}
+    netsnmp_variable_list *var, *vp;
+    oid    ipv6UdpLocalAddress_oid[] = { 1,3,6,1,2,1,7,6,1,1 };
+    size_t ipv6UdpLocalAddress_len   = OID_LENGTH( ipv6UdpLocalAddress_oid );
+    int    localPort, ifIndex;
 
+    /*
+     * Walking a single column of the udpTable will provide
+     *   all the necessary information from the index values.
+     */
+    var = NULL;
+    snmp_varlist_add_variable( &var, ipv6UdpLocalAddress_oid,
+                                     ipv6UdpLocalAddress_len,
+                                     ASN_NULL, NULL,  0);
+    if (netsnmp_query_walk( var, ss ) != SNMP_ERR_NOERROR)
+        return;
+    if ((var->type & 0xF0) == 0x80)		/* exception */
+        return;
 
-#if DEBUGGING_INFORMATION
+    printf("Active Internet Connections\n");
+    printf("%-5.5s %-27.27s %4s\n", "Proto", "Local Address", "I/F");
+    for (vp = var; vp ; vp=vp->next_variable) {
+        printf("%-5.5s", name);
         /*
-         * The following routines print out useful debugging information.
-         * This isn't normally needed or easily accessible,
-         *   but could potentially be very useful.
-         * Rather than delete it totally, it's commented out
+         * Extract the local port from the index values, but take
+         *   the IP address from the varbind value, (which is why
+         *   we walked udpLocalAddress rather than udpLocalPort)
          */
+        localPort = vp->name[ vp->name_length-2 ];
+        ifIndex   = vp->name[ vp->name_length-1 ];
+        inet6print(vp->val.string, localPort, name, 1);
+        printf(" %4d\n", ifIndex );
+    }
+    snmp_free_varbind( var );
+}
+
+
+	/*********************
+	 *
+	 *  IPv6 statistics
+	 *
+	 *********************/
+
 /*
- * Dump UDP statistics structure.
+ *  Unlike the equivalent IPv4 statistics display routine,
+ *    the IPv6 version must walk the columns of a table
+ *    and total the statistics for each column (rather
+ *    than simply retrieving individual scalar values)
  */
 void
-udp_stats(void)
+_dump_v6stats( const char *name, oid *oid_buf, size_t buf_len,
+               struct stat_table *stable )
 {
-    oid             varname[MAX_OID_LEN], *udpentry;
-    int             varname_len;
-    netsnmp_variable_list *var;
-    int             count;
-    struct stat_table *sp = udp_stattab;
+    netsnmp_variable_list *var, *vp;
+    struct stat_table     *sp;
+    long   *stats;
+    oid stat;
+    unsigned int max_stat = 0;
+    int    active   = 0;
 
-    memmove(varname, oid_udpstats, sizeof(oid_udpstats));
-    varname_len = sizeof(oid_udpstats) / sizeof(oid);
-    udpentry = varname + 7;
-    printf("udp:\n");
-    count = sizeof(udp_stattab) / sizeof(struct stat_table);
-    while (count--) {
-        *udpentry = sp->entry;
-        var = getvarbyname(Session, varname, varname_len);
-        if (var && var->val.integer) {
-            putchar('\t');
-            printf(sp->description, *var->val.integer,
-                   plural((int) *var->val.integer));
-            putchar('\n');
+    var = NULL;
+    for (sp=stable; sp->entry; sp++) {
+        oid_buf[buf_len-1] = sp->entry;
+        if (sp->entry > max_stat)
+            max_stat = sp->entry;
+        snmp_varlist_add_variable( &var, oid_buf, buf_len,
+                                   ASN_NULL, NULL,  0);
+    }
+    oid_buf[buf_len-1] = stable[0].entry;
+    stats = (long *)calloc(max_stat+1, sizeof(long));
+    
+    /*
+     * Walk the specified column(s), and total the individual statistics
+     */
+    while (1) {
+        if (netsnmp_query_getnext( var, ss ) != SNMP_ERR_NOERROR)
+            break;
+        if ((var->type & 0xF0) == 0x80)		/* exception */
+            break;
+        if ( snmp_oid_compare( oid_buf,   buf_len,
+                               var->name, buf_len) != 0 )
+            break;    /* End of Table */
+            
+        for ( vp=var; vp; vp=vp->next_variable ) {
+            stat = vp->name[ buf_len-1 ];
+            stats[stat] += *vp->val.integer;
         }
-        if (var)
-            snmp_free_var(var);
-        sp++;
+        active=1;
+    }
+    if (!active) {
+        free( stats );
+        snmp_free_varbind( var );
+        return;     /* No statistics to display */
     }
 
+    /*
+     * Display the results
+     */
+    printf("%s:\n", name);
+    for (sp=stable; sp->entry; sp++) {
+        /*
+         * If '-Cs' was specified twice,
+         *   then only display non-zero stats.
+         */
+        if ( stats[sp->entry] > 0 || sflag == 1 ) {
+            printf(sp->description, stats[sp->entry],
+                             plural(stats[sp->entry]));
+            putchar('\n');
+        }
+    }
+    free( stats );
+    snmp_free_varbind( var );
+}
+
+
+/*
+ * Dump IP6 statistics.
+ */
+void
+ip6_stats(const char *name)
+{
+    oid               ip6stats_oid[] = { 1, 3, 6, 1, 2, 1, 55, 1, 6, 1, 0 };
+    size_t            ip6stats_len   = OID_LENGTH( ip6stats_oid );
+    struct stat_table ip6stats_tbl[] = {
+        { 1, "%14d total datagram%s received"},
+        { 2, "%14d datagram%s with header errors"},
+        { 3, "%14d oversized datagram%s"},
+        { 4, "%14d datagram%s with no route"},
+        { 5, "%14d datagram%s with an invalid destination address"},
+        { 6, "%14d datagram%s with unknown protocol"},
+        { 7, "%14d short datagram%s discarded"},
+        { 8, "%14d datagram%s discarded"},
+        { 9, "%14d datagram%s delivered"},
+        {10, "%14d datagram%s forwarded"},
+        {11, "%14d output datagram request%s"},
+        {12, "%14d output datagram%s discarded"},
+        {13, "%14d datagram%s fragmented"},
+        {14, "%14d fragmentation failure%s"},
+        {15, "%14d fragment%s created"},
+        {16, "%14d fragment%s received"},
+        {17, "%14d datagram%s reassembled"},
+        {18, "%14d reassembly failure%s"},
+        {19, "%14d multicast datagram%s received"},
+        {20, "%14d multicast datagram%s transmitted"},
+        { 0, ""}
+    };
+
+    _dump_v6stats( name, ip6stats_oid, ip6stats_len, ip6stats_tbl );
 }
 
 /*
- * Dump TCP statistics structure.
+ * Dump IPv6 per-interface statistics - Omitted
+ */
+
+
+/*
+ * Dump ICMP6 statistics.
  */
 void
-tcp_stats(void)
+icmp6_stats(const char *name)
 {
-    oid             varname[MAX_OID_LEN], *tcpentry;
-    int             varname_len;
-    netsnmp_variable_list *var;
-    int             count;
-    struct stat_table *sp = tcp_stattab;
+    oid               icmp6stats_oid[] = { 1, 3, 6, 1, 2, 1, 56, 1, 1, 1, 0 };
+    size_t            icmp6stats_len   = OID_LENGTH( icmp6stats_oid );
+    struct stat_table icmp6stats_tbl[] = {
+        { 1, "%14d total message%s received"},
+        { 2, "%14d message%s dropped due to errors"},
+        {18, "%14d ouput message request%s"},
+        {19, "%14d output message%s discarded"},
+        { 0, ""}
+    };
+    struct stat_table icmp6_inhistogram[] = {
+        { 3, "        Destination unreachable: %d"},
+        { 4, "        Admin Prohibit: %d"},
+        { 5, "        Time Exceeded: %d"},
+        { 6, "        Parameter Problem: %d"},
+        { 7, "        Too Big: %d"},
+        { 8, "        Echo Request: %d"},
+        { 9, "        Echo Reply: %d"},
+        {10, "        Router Solicit: %d"},
+        {11, "        Router Advert: %d"},
+        {12, "        Neighbor Solicit: %d"},
+        {13, "        Neighbor Advert: %d"},
+        {14, "        Redirect: %d"},
+        {15, "        Group Member Request: %d"},
+        {16, "        Group Member Reply: %d"},
+        {17, "        Group Member Reduce: %d"},
+        { 0, ""}
+    };
+    struct stat_table icmp6_outhistogram[] = {
+        {20, "        Destination unreachable: %d"},
+        {21, "        Admin Prohibit: %d"},
+        {22, "        Time Exceeded: %d"},
+        {23, "        Parameter Problem: %d"},
+        {24, "        Too Big: %d"},
+        {25, "        Echo Request: %d"},
+        {26, "        Echo Reply: %d"},
+        {27, "        Router Solicit: %d"},
+        {28, "        Router Advert: %d"},
+        {29, "        Neighbor Solicit: %d"},
+        {30, "        Neighbor Advert: %d"},
+        {31, "        Redirect: %d"},
+        {32, "        Group Member Request: %d"},
+        {33, "        Group Member Reply: %d"},
+        {34, "        Group Member Reduce: %d"},
+        {0, ""}
+    };
 
-    memmove(varname, oid_tcpstats, sizeof(oid_tcpstats));
-    varname_len = sizeof(oid_tcpstats) / sizeof(oid);
-    tcpentry = varname + 7;
-    printf("tcp:\n");
-    count = sizeof(tcp_stattab) / sizeof(struct stat_table);
-    while (count--) {
-        *tcpentry = sp->entry;
-        var = getvarbyname(Session, varname, varname_len);
-        if (var && var->val.integer) {
-            putchar('\t');
-            printf(sp->description, *var->val.integer,
-                   plural((int) *var->val.integer));
-            putchar('\n');
-        }
-        if (var)
-            snmp_free_var(var);
-        sp++;
-    }
-
+    _dump_v6stats( name, icmp6stats_oid, icmp6stats_len, icmp6stats_tbl );
+    _dump_v6stats( "    Input Histogram",
+                         icmp6stats_oid, icmp6stats_len, icmp6_inhistogram );
+    _dump_v6stats( "    Output Histogram",
+                         icmp6stats_oid, icmp6stats_len, icmp6_outhistogram );
 }
 
 /*
- * Dump IP statistics structure.
+ * Dump ICMPv6 per-interface statistics - Omitted
  */
-void
-ip_stats(void)
-{
-    oid             varname[MAX_OID_LEN], *ipentry;
-    int             varname_len;
-    netsnmp_variable_list *var;
-    int             count;
-    struct stat_table *sp = ip_stattab;
 
-    memmove(varname, oid_ipstats, sizeof(oid_ipstats));
-    varname_len = sizeof(oid_ipstats) / sizeof(oid);
-    ipentry = varname + 7;
-    printf("ip:\n");
-    count = sizeof(ip_stattab) / sizeof(struct stat_table);
-    while (count--) {
-        *ipentry = sp->entry;
-        var = getvarbyname(Session, varname, varname_len);
-        if (var && var->val.integer) {
-            putchar('\t');
-            printf(sp->description, *var->val.integer,
-                   plural((int) *var->val.integer));
-            putchar('\n');
-        }
-        if (var)
-            snmp_free_var(var);
-        sp++;
-    }
-
-}
 
 /*
- * Dump ICMP statistics.
+ * Ommitted:
+ *     Dump PIM statistics
+ *     Dump raw ip6 statistics
  */
-void
-icmp_stats(void)
-{
-    oid             varname[MAX_OID_LEN], *icmpentry;
-    int             varname_len;
-    netsnmp_variable_list *var;
-    int             count, first;
-    struct stat_table *sp;
 
-    memmove(varname, oid_icmpstats, sizeof(oid_icmpstats));
-    varname_len = sizeof(oid_icmpstats) / sizeof(oid);
-    icmpentry = varname + 7;
-    printf("icmp:\n");
-    sp = icmp_stattab;
-    count = sizeof(icmp_stattab) / sizeof(struct stat_table);
-    while (count--) {
-        *icmpentry = sp->entry;
-        var = getvarbyname(Session, varname, varname_len);
-        if (var && var->val.integer) {
-            putchar('\t');
-            printf(sp->description, *var->val.integer,
-                   plural((int) *var->val.integer));
-            putchar('\n');
-        }
-        if (var)
-            snmp_free_var(var);
-        sp++;
-    }
 
-    sp = icmp_outhistogram;
-    first = 1;
-    count = sizeof(icmp_outhistogram) / sizeof(struct stat_table);
-    while (count--) {
-        *icmpentry = sp->entry;
-        var = getvarbyname(Session, varname, varname_len);
-        if (var && var->val.integer && *var->val.integer != 0) {
-            if (first) {
-                printf("\tOutput Histogram:\n");
-                first = 0;
-            }
-            printf("\t\t");
-            printf(sp->description, *var->val.integer,
-                   plural((int) *var->val.integer));
-            putchar('\n');
-        }
-        if (var)
-            snmp_free_var(var);
-        sp++;
-    }
-
-    sp = icmp_inhistogram;
-    first = 1;
-    count = sizeof(icmp_inhistogram) / sizeof(struct stat_table);
-    while (count--) {
-        *icmpentry = sp->entry;
-        var = getvarbyname(Session, varname, varname_len);
-        if (var && var->val.integer && *var->val.integer != 0) {
-            if (first) {
-                printf("\tInput Histogram:\n");
-                first = 0;
-            }
-            printf("\t\t");
-            printf(sp->description, *var->val.integer,
-                   plural((int) *var->val.integer));
-            putchar('\n');
-        }
-        if (var)
-            snmp_free_var(var);
-        sp++;
-    }
-}
-#endif
 
 /*
  * Pretty print an Internet address (net address + port).
  * If the nflag was specified, use numbers instead of names.
  */
-void
-inet6print(struct in6_addr *in, u_short port, const char *proto)
-{
-    struct servent *sp = 0;
-    char            line[80], *cp;
-    int             width;
 
-    sprintf(line, "%.*s.", 22, inet6name(in));
-    cp = strchr(line, '\0');
-    if (!nflag && port)
-        sp = getservbyport(htons(port), proto);
-    if (sp || port == 0)
-        sprintf(cp, "%.8s", sp ? sp->s_name : "*");
-    else
-        sprintf(cp, "%d", port);
-    width = 28;
-    printf(" %-*.*s", width, width, line);
+void
+inet6print(unsigned char *in6, int port, const char *proto, int local)
+{
+
+#define GETSERVBYPORT6(port, proto, ret) do { \
+	if (strcmp((proto), "tcp6") == 0) \
+		(ret) = getservbyport((int)(port), "tcp"); \
+	else if (strcmp((proto), "udp6") == 0) \
+		(ret) = getservbyport((int)(port), "udp"); \
+	else \
+		(ret) = getservbyport((int)(port), (proto)); \
+	} while (0)
+
+	struct servent *sp = NULL;
+	char line[80], *cp;
+	int width = 27-9;
+	int len = sizeof line;
+
+	if (vflag && width < strlen(inet6name(in6)))
+		width = strlen(inet6name(in6));
+	snprintf(line, len, "%.*s.", width, inet6name(in6));
+	len -= strlen(line);
+	if (len <= 0)
+		goto bail;
+
+	cp = strchr(line, '\0');
+	if (!nflag && port && local)
+		GETSERVBYPORT6(htons(port), proto, sp);
+	if (sp || port == 0)
+		snprintf(cp, len, vflag ? "%s" : "%.8s", sp ? sp->s_name : "*");
+	else
+		snprintf(cp, len, "%d", port);
+	width = 27;
+	if (vflag && width < strlen(line))
+		width = strlen(line);
+bail:
+	printf(" %-*.*s", width, width, line);
 }
 
 /*
  * Construct an Internet address representation.
- * If the nflag has been supplied, give 
+ * If the nflag has been supplied, give
  * numeric value, otherwise try for symbolic name.
  */
-static char    *
-inet6name(struct in6_addr *in)
-{
-    register char  *cp;
-    static char     line[50];
-    struct hostent *hp;
-    static char     domain[MAXHOSTNAMELEN + 1];
-    static int      first = 1;
 
-    if (first && !nflag) {
-        first = 0;
-        if (gethostname(domain, MAXHOSTNAMELEN) == 0 &&
-            (cp = strchr(domain, '.')))
-            (void) strcpy(domain, cp + 1);
-        else
-            domain[0] = 0;
-    }
-    cp = 0;
-    if (!nflag && !IN6_IS_ADDR_UNSPECIFIED(in)) {
-        hp = gethostbyaddr((char *) in, sizeof(*in), AF_INET6);
-        if (hp) {
-            if ((cp = strchr(hp->h_name, '.')) && !strcmp(cp + 1, domain))
-                *cp = 0;
-            cp = hp->h_name;
-        }
-    }
-    if (IN6_IS_ADDR_UNSPECIFIED(in))
-        strcpy(line, "*");
-    else if (cp) {
-        strncpy(line, cp, sizeof(line));
-        line[ sizeof(line)-1 ] = 0;
-    } else
-        inet_ntop(AF_INET6, in, line, sizeof(line));
-    return (line);
+char *
+inet6name(const unsigned char *in6)
+{
+	char *cp;
+	static char line[NI_MAXHOST];
+	static char domain[MAXHOSTNAMELEN];
+	static int first = 1;
+#ifdef NETSNMP_ENABLE_IPV6
+	struct hostent *hp;
+	char hbuf[NI_MAXHOST];
+	const int niflag = NI_NUMERICHOST;
+	struct sockaddr_in6 sin6;
+	const struct in6_addr *in6p = (const struct in6_addr *)in6;
+#endif
+
+	if (first && !nflag) {
+		first = 0;
+		if (gethostname(line, sizeof(line)) == 0 &&
+		    (cp = strchr(line, '.')))
+			(void) strlcpy(domain, cp + 1, sizeof domain);
+		else
+			domain[0] = '\0';
+	}
+#ifdef NETSNMP_ENABLE_IPV6
+	cp = NULL;
+	if (!nflag && !IN6_IS_ADDR_UNSPECIFIED(in6p)) {
+		hp = netsnmp_gethostbyaddr((const char *)in6p, sizeof(*in6p),
+                                           AF_INET6);
+		if (hp) {
+			if ((cp = strchr(hp->h_name, '.')) &&
+			    !strcmp(cp + 1, domain))
+				*cp = 0;
+			cp = hp->h_name;
+		}
+	}
+	if (IN6_IS_ADDR_UNSPECIFIED(in6p))
+		strlcpy(line, "*", sizeof(line));
+	else if (cp)
+		strlcpy(line, cp, sizeof(line));
+	else {
+		memset(&sin6, 0, sizeof(sin6));
+/*		sin6.sin6_len = sizeof(sin6);   */
+		sin6.sin6_family = AF_INET6;
+		sin6.sin6_addr = *in6p;
+#ifdef __KAME__
+		if (IN6_IS_ADDR_LINKLOCAL(in6p) ||
+		    IN6_IS_ADDR_MC_LINKLOCAL(in6p)) {
+			sin6.sin6_scope_id =
+			    ntohs(*(const uint16_t *)&in6p->s6_addr[2]);
+			sin6.sin6_addr.s6_addr[2] = 0;
+			sin6.sin6_addr.s6_addr[3] = 0;
+		}
+#endif
+		if (getnameinfo((struct sockaddr *)&sin6, sizeof(sin6),
+		    hbuf, sizeof(hbuf), NULL, 0, niflag) != 0)
+			strlcpy(hbuf, "?", sizeof hbuf);
+		strlcpy(line, hbuf, sizeof(line));
+	}
+#else
+	strlcpy(line, "[[XXX - inet6 address]]", sizeof(line));
+#endif
+	return (line);
 }
 
-#endif                          /* INET6 */
+#ifdef TCP6
+/*
+ * Dump the contents of a TCP6 PCB - Omitted
+ */
+#endif

@@ -30,8 +30,10 @@ config_require(header_complex)
      void            init_mteTriggerDeltaTable(void);
      FindVarMethod   var_mteTriggerDeltaTable;
 
+#ifndef NETSNMP_NO_WRITE_SUPPORT
      WriteMethod     write_mteTriggerDeltaDiscontinuityID;
      WriteMethod     write_mteTriggerDeltaDiscontinuityIDWildcard;
      WriteMethod     write_mteTriggerDeltaDiscontinuityIDType;
+#endif /* !NETSNMP_NO_WRITE_SUPPORT */
 
 #endif                          /* _MIBGROUP_MTETRIGGERDELTATABLE_H */

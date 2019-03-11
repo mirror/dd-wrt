@@ -5,8 +5,31 @@
 #ifndef _MIBGROUP_INTERFACES_H
 #define _MIBGROUP_INTERFACES_H
 
-config_require(util_funcs)
-    config_arch_require(solaris2, kernel_sunos5)
+/***********************************************************************
+ * configure macros
+ */
+config_require(util_funcs/header_generic)
+
+/*
+ * conflicts with the new MFD rewrite
+ */
+config_exclude(if-mib/ifTable/ifTable)
+
+#if !defined(WIN32) && !defined(cygwin)
+config_require(if-mib/data_access/interface)
+#endif
+
+config_arch_require(solaris2, kernel_sunos5)
+/*
+ * need get_address in var_route for some platforms (USE_SYSCTL_IFLIST).
+ * Not sure if that can be translated into a config_arch_require, so be
+ * indiscriminate for now.
+ */
+config_require(mibII/var_route)
+
+/***********************************************************************
+ */
+#ifndef USING_IF_MIB_IFTABLE_MODULE
 #ifdef hpux11
 #include <sys/mib.h>
 #else
@@ -24,8 +47,11 @@ config_require(util_funcs)
 #endif
 #if defined(hpux11)
      int             Interface_Scan_Next(short *, char *, nmapi_phystat *);
+     int             Interface_Scan_NextInt(int *, char *, nmapi_phystat *);
 #else
      int             Interface_Scan_Next(short *, char *, struct ifnet *,
+                                         struct in_ifaddr *);
+     int             Interface_Scan_NextInt(int *, char *, struct ifnet *,
                                          struct in_ifaddr *);
 #endif
 
@@ -33,29 +59,31 @@ config_require(util_funcs)
      extern FindVarMethod var_interfaces;
      extern FindVarMethod var_ifEntry;
 
-#define IFNUMBER        0
-#define IFINDEX         1
-#define IFDESCR         2
-#define IFTYPE          3
-#define IFMTU           4
-#define IFSPEED         5
-#define IFPHYSADDRESS   6
-#define IFADMINSTATUS   7
-#define IFOPERSTATUS    8
-#define IFLASTCHANGE    9
-#define IFINOCTETS      10
-#define IFINUCASTPKTS   11
-#define IFINNUCASTPKTS  12
-#define IFINDISCARDS    13
-#define IFINERRORS      14
-#define IFINUNKNOWNPROTOS 15
-#define IFOUTOCTETS     16
-#define IFOUTUCASTPKTS  17
-#define IFOUTNUCASTPKTS 18
-#define IFOUTDISCARDS   19
-#define IFOUTERRORS     20
-#define IFOUTQLEN       21
-#define IFSPECIFIC      22
+#endif /* USING_IF_MIB_IFTABLE_MODULE */
+
+#define NETSNMP_IFNUMBER        0
+#define NETSNMP_IFINDEX         1
+#define NETSNMP_IFDESCR         2
+#define NETSNMP_IFTYPE          3
+#define NETSNMP_IFMTU           4
+#define NETSNMP_IFSPEED         5
+#define NETSNMP_IFPHYSADDRESS   6
+#define NETSNMP_IFADMINSTATUS   7
+#define NETSNMP_IFOPERSTATUS    8
+#define NETSNMP_IFLASTCHANGE    9
+#define NETSNMP_IFINOCTETS      10
+#define NETSNMP_IFINUCASTPKTS   11
+#define NETSNMP_IFINNUCASTPKTS  12
+#define NETSNMP_IFINDISCARDS    13
+#define NETSNMP_IFINERRORS      14
+#define NETSNMP_IFINUNKNOWNPROTOS 15
+#define NETSNMP_IFOUTOCTETS     16
+#define NETSNMP_IFOUTUCASTPKTS  17
+#define NETSNMP_IFOUTNUCASTPKTS 18
+#define NETSNMP_IFOUTDISCARDS   19
+#define NETSNMP_IFOUTERRORS     20
+#define NETSNMP_IFOUTQLEN       21
+#define NETSNMP_IFSPECIFIC      22
 
 #ifdef linux
 /*
@@ -95,5 +123,5 @@ config_require(util_funcs)
           */
          struct ifnet   *if_next;
      };
-#endif
+#endif   /* linux */
 #endif                          /* _MIBGROUP_INTERFACES_H */

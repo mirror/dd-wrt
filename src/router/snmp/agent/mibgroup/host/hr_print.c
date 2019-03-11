@@ -28,7 +28,6 @@
 
 void            Init_HR_Print(void);
 int             Get_Next_HR_Print(void);
-void            Save_HR_Print(void);
 const char     *describe_printer(int);
 int             printer_status(int);
 int             printer_detail_status(int);
@@ -48,8 +47,10 @@ FILE           *run_lpstat(int *);
 #define	HRPRINT_ERROR		2
 
 struct variable4 hrprint_variables[] = {
-    {HRPRINT_STATUS, ASN_INTEGER, RONLY, var_hrprint, 2, {1, 1}},
-    {HRPRINT_ERROR, ASN_OCTET_STR, RONLY, var_hrprint, 2, {1, 2}}
+    {HRPRINT_STATUS, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+     var_hrprint, 2, {1, 1}},
+    {HRPRINT_ERROR, ASN_OCTET_STR, NETSNMP_OLDAPI_RONLY,
+     var_hrprint, 2, {1, 2}}
 };
 oid             hrprint_variables_oid[] = { 1, 3, 6, 1, 2, 1, 25, 3, 5 };
 
@@ -139,7 +140,7 @@ header_hrprint(struct variable *vp,
     memcpy((char *) name, (char *) newname,
            (vp->namelen + 1) * sizeof(oid));
     *length = vp->namelen + 1;
-    *write_method = 0;
+    *write_method = (WriteMethod*)0;
     *var_len = sizeof(long);    /* default to 'long' results */
 
     DEBUGMSGTL(("host/hr_print", "... get print stats "));
@@ -175,11 +176,12 @@ var_hrprint(struct variable * vp,
         long_return = printer_detail_status(print_idx);
         return (u_char *) & long_return;
     case HRPRINT_ERROR:
-#if NO_DUMMY_VALUES
+#if NETSNMP_NO_DUMMY_VALUES
         return NULL;
-#endif
+#else
         long_return = 0;        /* Null string */
         return (u_char *) & long_return;
+#endif
     default:
         DEBUGMSGTL(("host/hr_print", "unknown sub-id %d in var_hrprint\n",
                     vp->magic));
@@ -196,47 +198,38 @@ var_hrprint(struct variable * vp,
 
 static int      HRP_index;
 static char   **HRP_name;
-static int      HRP_names, HRP_maxnames;
+static int      HRP_nbrnames;
+#if HAVE_LPSTAT || HAVE_CGETNEXT || HAVE_PRINTCAP
+static int      HRP_maxnames;
+#endif
+
+#define HRP_MAX_INCR 10
 
 void
 Init_HR_Print(void)
 {
 #if HAVE_LPSTAT || HAVE_CGETNEXT || HAVE_PRINTCAP
-    int             i, fd;
-#if HAVE_LPSTAT
+    int             i;
+#if HAVE_PRINTCAP
     FILE           *p;
 #elif HAVE_CGETNEXT
     const char     *caps[] = { "/etc/printcap", NULL };
-#elif HAVE_PRINTCAP
+#elif HAVE_LPSTAT
+    int	            fd;
     FILE           *p;
 #endif
 
+    HRP_index = 0;		/* fail safe at Get_Next_HR_Print */
+
     if (HRP_name) {
-        for (i = 0; i < HRP_names; i++)
+        for (i = 0; i < HRP_nbrnames; i++)
             free(HRP_name[i]);
-        HRP_names = 0;
-    } else {
-        HRP_maxnames = 5;
-        HRP_name = (char **) calloc(HRP_maxnames, sizeof(char *));
-        if (!HRP_name)
-            return;
+        HRP_nbrnames = 0;
+        HRP_maxnames = 0;
+        SNMP_FREE(HRP_name);
     }
 
-#if HAVE_LPSTAT
-    if ((p = run_lpstat(&fd)) != NULL) {
-        char            buf[BUFSIZ], ptr[BUFSIZ];
-        while (fgets(buf, sizeof buf, p)) {
-            sscanf(buf, "%*s %*s %[^:]", ptr);
-#elif HAVE_CGETNEXT
-    {
-        char           *buf = NULL, *ptr;
-        while (cgetnext(&buf, caps)) {
-            if ((ptr = strchr(buf, ':')))
-                *ptr = 0;
-            if ((ptr = strchr(buf, '|')))
-                *ptr = 0;
-            ptr = buf;
-#elif HAVE_PRINTCAP
+#if HAVE_PRINTCAP
     if ((p = fopen("/etc/printcap", "r")) != NULL) {
         char            buf[BUFSIZ], *ptr;
         while (fgets(buf, sizeof buf, p)) {
@@ -251,35 +244,50 @@ Init_HR_Print(void)
             if ((ptr = strchr(buf, '|')))
                 *ptr = 0;
             ptr = buf;
+#elif HAVE_CGETNEXT
+    {
+        char           *buf = NULL, *ptr;
+        while (cgetnext(&buf, caps) > 0) {
+            if ((ptr = strchr(buf, ':')))
+                *ptr = 0;
+            if ((ptr = strchr(buf, '|')))
+                *ptr = 0;
+            ptr = buf;
+#elif HAVE_LPSTAT
+    if ((p = run_lpstat(&fd)) != NULL) {
+        char            buf[BUFSIZ], ptr[BUFSIZ];
+        while (fgets(buf, sizeof buf, p)) {
+            sscanf(buf, "%*s %*s %[^:]", ptr);
 #endif
-            if (HRP_names == HRP_maxnames) {
+            if (HRP_nbrnames == HRP_maxnames) {
                 char          **tmp;
-                HRP_maxnames += 5;
-                tmp = (char **) calloc(HRP_maxnames, sizeof(char *));
+                tmp = (char **) calloc(HRP_maxnames + HRP_MAX_INCR, sizeof(char *));
                 if (!tmp)
                     goto finish;
-                memcpy(tmp, HRP_name, HRP_names * sizeof(char *));
+		if (HRP_name) {
+			memcpy(tmp, HRP_name, HRP_nbrnames * sizeof(char *));
+			free(HRP_name);
+		}
+                HRP_maxnames += HRP_MAX_INCR;
                 HRP_name = tmp;
             }
-            HRP_name[HRP_names++] = strdup(ptr);
-#if HAVE_CGETNEXT
+            HRP_name[HRP_nbrnames++] = strdup(ptr);
+#if !defined(HAVE_PRINTCAP) && defined(HAVE_CGETNEXT)
             if (buf)
                 free(buf);
 #endif
         }
 finish:
-#if HAVE_LPSTAT
+#if HAVE_PRINTCAP
         fclose(p);
-        close(fd);
 #elif HAVE_CGETNEXT
         cgetclose();
-#elif HAVE_PRINTCAP
+#elif HAVE_LPSTAT
         fclose(p);
+        close(fd);
 #endif
     }
 #endif                          /* HAVE_anything */
-
-    HRP_index = 0;
 }
 
 int
@@ -291,7 +299,7 @@ Get_Next_HR_Print(void)
      *   no real idea how to detect them,
      *   so don't bother.
      */
-    if (HRP_index < HRP_names)  /* No printer */
+    if (HRP_index < HRP_nbrnames)  /* No printer */
         return (HRDEV_PRINTER << HRDEV_TYPE_SHIFT) + HRP_index++;
     else
         return -1;
@@ -300,6 +308,9 @@ Get_Next_HR_Print(void)
 const char     *
 describe_printer(int idx)
 {
+    if (HRP_index == 0)  /* return empty string if not initialized */
+	return "";
+
     DEBUGMSGTL(("host/hr_print", "describe p: %d/%d %s\n", HRP_index, idx,
                 HRP_name[HRP_index - 1]));
     return HRP_name[HRP_index - 1];
@@ -350,10 +361,9 @@ run_lpstat(int *fd)
     struct extensible ex;
 
     memset(&ex, 0, sizeof(ex));
-    strcpy(ex.command, LPSTAT_PATH " -v");
-    if ((*fd = get_exec_output(&ex)) < 0)
-        return NULL;
-
-    return fdopen(*fd, "r");
+    ex.command = strdup(LPSTAT_PATH " -v");
+    *fd = get_exec_output(&ex);
+    free(ex.command);
+    return *fd >= 0 ? fdopen(*fd, "r") : NULL;
 }
 #endif

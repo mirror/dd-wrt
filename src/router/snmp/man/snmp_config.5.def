@@ -1,7 +1,6 @@
-.TH SNMP.CONF 5 "28 Aug 2001" VVERSIONINFO "Net-SNMP"
-.UC 4
+.TH SNMP_CONFIG 5 "08 Mar 2010" VVERSIONINFO "Net-SNMP"
 .SH NAME
-snmp_config - describes how to configure the Net-SNMP applications.
+snmp_config - handling of Net-SNMP configuration files
 .SH DESCRIPTION
 The Net-SNMP package uses various configuration files to configure its 
 applications.  This manual page merely describes the overall nature of 
@@ -12,18 +11,73 @@ found and read from.  By default, the applications look for
 configuration files in the following 4 directories, in order:
 SYSCONFDIR/snmp,
 DATADIR/snmp, LIBDIR/snmp, and $HOME/.snmp.  In each of these
-directories, it looks for files with the extension of both
-.IR .conf " and " .local.conf
-(reading the second ones last).  In this manner, there are
+directories, it looks for files snmp.conf, snmpd.conf and/or
+snmptrapd.conf, as well as snmp.local.conf, snmpd.local.conf
+and/or snmptrapd.local.conf. *.local.conf are always
+read last. In this manner, there are
 8 default places a configuration file can exist for any given
 configuration file type.
 .PP
 Additionally, the above default search path can be overridden by
 setting the environment variable SNMPCONFPATH to a colon-separated
-list of directories to search for.
+list of directories to search for.  The path for the persistent
+data should be included when running applications that use
+persistent storage, such as snmpd.
 .PP
-Finally, applications that store persistent data will also look in the 
-PERSISTENT_DIRECTORY directory for configuration files there.
+Applications will read persistent configuration files 
+in the following order of preference:
+.RS
+.PP
+file in 
+.B SNMP_PERSISTENT_FILE
+environment variable
+.br
+directories in 
+.B SNMPCONFPATH
+environment variable
+.br
+directory defined by 
+.B
+persistentDir 
+snmp.conf variable
+.br
+directory in 
+.B
+SNMP_PERSISTENT_DIR 
+environment variable
+.br
+default 
+.B
+PERSISTENT_DIRECTORY 
+directory
+.RE
+.PP
+Finally, applications will write persistent configuration files 
+in the following order of preference:
+.RS
+.PP
+file in 
+.B SNMP_PERSISTENT_FILE
+environment variable
+.br
+directory defined by 
+.B
+persistentDir 
+snmp.conf variable
+.br
+directory in 
+.B
+SNMP_PERSISTENT_DIR 
+environment variable
+.br
+default 
+.B
+PERSISTENT_DIRECTORY 
+directory
+.RE
+.PP
+Note:  When using SNMP_PERSISTENT_FILE, the filename should match the 
+application name.  For example, /var/net-snmp/snmpd.conf.
 .SH "CONFIGURATION FILE TYPES"
 Each application may use multiple configuration files, which will
 configure various different aspects of the application.  For instance, 
@@ -84,19 +138,80 @@ logTimestamp true
 # return to our original snmpd.conf tokens:
 [snmpd]
 rocommunity mypublic
+.fi
 .RE
+.PP
+The same approach can be used to set configuration directives for a
+particular client application (or group of applications).  For example,
+any program that uses the 'snmp_parse_args()' call to handle command-line
+arguments (including the standard command-line tools shipped as part of the
+Net-SNMP distributions) will automatically read the config file 'snmpapp.conf'.
+To set library-level settings for these applications (but not other
+more-specific tools), use configuration such as the following:
+.PP
+.RS
+[snmp] defCommunity myCommunity
+.RE
+.PP
+for a single directive, or
+.PP
+.RS
+.nf
+# make this file handle snmp.conf tokens:
+[snmp]
+defCommunity myCommunity
+defVersion   2c
+# return to our original snmpapp.conf tokens:
+[snmpapp]
+.fi
+.RE
+.PP
+for multiple settings.
+Similarly for any other application token (as passed to init_snmp()).
 .SH COMMENTS
 .PP
 Any lines beginning with the character '#' in the configuration files
 are treated as a comment and are not parsed.
+.SH "INCLUDING OTHER CONFIGURATION FILES"
+It is possible to include other configuration files for processing
+during normal configuration file processing.:
+.PP
+.RS
+.nf
+# include site specific config
+includeFile site.conf
+.RE
+.PP
+This will load the specified configuration file. The
+path to file must be either absolute, starting with '/',
+or relative. The relative path is then relative to the directory
+where the parent file with 'includeFile' directive resides.
+.PP
+The included file name does not need to have '.conf' suffix.
+.PP
+.RS
+.nf
+# include a all *.conf files in a directory
+includeDir /etc/snmp/config.d
+.RE
+.PP
+This will search specified directory for all files with '.conf'
+suffix and process them as if they were included using includeFile
+directive. The configuration files are not processed in any particular
+order.
+.PP
+The specified directory must be absolute directory path.
 .SH "API INTERFACE"
 .PP
 Information about writing C code that makes use of this system in
 either the agent's MIB modules or in applications can be found in the
-.I read_config(3)
+.I netsnmp_config_api(3)
 manual page.
 .SH "SEE ALSO"
-read_config(3).
+snmpconf(1),
+netsnmp_config_api(3),
+snmp.conf(5),
+snmpd.conf(5)
 .\" Local Variables:
 .\"  mode: nroff
 .\" End:

@@ -1,10 +1,7 @@
 :
 
 # Rmon Alarms/Events testing script
-# $Log: test_alarm.sh,v $
-# Revision 1.1.2.1  2004/06/20 21:54:16  nikki
-# Adding WOL, SNMP, RFLOW
-#
+# $Log$
 # Revision 5.0  2002/04/20 07:30:01  hardaker
 # cvs file version number change
 #

@@ -4,6 +4,7 @@ package AnyData::Format::SNMP;
 #
 
 use strict;
+use warnings;
 use AnyData::Format::Base;
 use vars qw( @ISA );
 @AnyData::Format::SNMP::ISA = qw( AnyData::Format::Base );

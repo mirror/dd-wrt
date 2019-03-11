@@ -182,11 +182,11 @@ nexthost: while (  $hostrow = $cursor->fetchrow_hashref ) {
 	print STDERR " starting $tablelist->{tablename}\n" if ($verbose);
 	my %tbl_ids;
 	while (1) {
-	    my $varlabel = $var->[$SNMP::Varbind::tag_f];
+	    my $varlabel = SNMP::Varbind::tag($var);
 	    print STDERR "last $host " . SNMP::translateObj($varlabel) . ": $void\n" if ($verbose && SNMP::translateObj($varlabel) !~ /^$void/);
 
 	    last if (SNMP::translateObj($varlabel) !~ /^$void/);
-	    $varlabel = SNMP::translateObj($var->[$SNMP::Varbind::tag_f]) if ($varlabel =~ /^[\.0-9]+$/);
+	    $varlabel = SNMP::translateObj(SNMP::Varbind::tag($var)) if ($varlabel =~ /^[\.0-9]+$/);
 	    $initlabel = $varlabel if ($initlabel eq "");
 
 	    my $val = $sess->getnext($var);
@@ -196,7 +196,7 @@ nexthost: while (  $hostrow = $cursor->fetchrow_hashref ) {
 		next nexthost;
 	    }
 	    last if ($sess->{'ErrorStr'});
-	    my $id = $var->[$SNMP::Varbind::iid_f];
+	    my $id = SNMP::Varbind::iid($var);
 	    print STDERR "$initlabel = $varlabel\n" if ($verbose);
 	    last if ($varlabel ne $initlabel);
 	    my %vals;

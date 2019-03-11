@@ -48,42 +48,65 @@ oid             mteTriggerBooleanTable_variables_oid[] =
  */
 
 
+#ifndef NETSNMP_NO_WRITE_SUPPORT
 struct variable2 mteTriggerBooleanTable_variables[] = {
     /*
      * magic number        , variable type , ro/rw , callback fn  , L, oidsuffix 
      */
 #define   MTETRIGGERBOOLEANCOMPARISON  3
-    {MTETRIGGERBOOLEANCOMPARISON, ASN_INTEGER, RWRITE,
+    {MTETRIGGERBOOLEANCOMPARISON, ASN_INTEGER, NETSNMP_OLDAPI_RWRITE,
      var_mteTriggerBooleanTable, 2, {1, 1}},
 #define   MTETRIGGERBOOLEANVALUE  4
-    {MTETRIGGERBOOLEANVALUE, ASN_INTEGER, RWRITE,
+    {MTETRIGGERBOOLEANVALUE, ASN_INTEGER, NETSNMP_OLDAPI_RWRITE,
      var_mteTriggerBooleanTable, 2, {1, 2}},
 #define   MTETRIGGERBOOLEANSTARTUP  5
-    {MTETRIGGERBOOLEANSTARTUP, ASN_INTEGER, RWRITE,
+    {MTETRIGGERBOOLEANSTARTUP, ASN_INTEGER, NETSNMP_OLDAPI_RWRITE,
      var_mteTriggerBooleanTable, 2, {1, 3}},
 #define   MTETRIGGERBOOLEANOBJECTSOWNER  6
-    {MTETRIGGERBOOLEANOBJECTSOWNER, ASN_OCTET_STR, RWRITE,
+    {MTETRIGGERBOOLEANOBJECTSOWNER, ASN_OCTET_STR, NETSNMP_OLDAPI_RWRITE,
      var_mteTriggerBooleanTable, 2, {1, 4}},
 #define   MTETRIGGERBOOLEANOBJECTS  7
-    {MTETRIGGERBOOLEANOBJECTS, ASN_OCTET_STR, RWRITE,
+    {MTETRIGGERBOOLEANOBJECTS, ASN_OCTET_STR, NETSNMP_OLDAPI_RWRITE,
      var_mteTriggerBooleanTable, 2, {1, 5}},
 #define   MTETRIGGERBOOLEANEVENTOWNER  8
-    {MTETRIGGERBOOLEANEVENTOWNER, ASN_OCTET_STR, RWRITE,
+    {MTETRIGGERBOOLEANEVENTOWNER, ASN_OCTET_STR, NETSNMP_OLDAPI_RWRITE,
      var_mteTriggerBooleanTable, 2, {1, 6}},
 #define   MTETRIGGERBOOLEANEVENT  9
-    {MTETRIGGERBOOLEANEVENT, ASN_OCTET_STR, RWRITE,
+    {MTETRIGGERBOOLEANEVENT, ASN_OCTET_STR, NETSNMP_OLDAPI_RWRITE,
      var_mteTriggerBooleanTable, 2, {1, 7}},
-
 };
+#else /* !NETSNMP_NO_WRITE_SUPPORT */
+struct variable2 mteTriggerBooleanTable_variables[] = {
+    /*
+     * magic number        , variable type , ro/rw , callback fn  , L, oidsuffix 
+     */
+#define   MTETRIGGERBOOLEANCOMPARISON  3
+    {MTETRIGGERBOOLEANCOMPARISON, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+     var_mteTriggerBooleanTable, 2, {1, 1}},
+#define   MTETRIGGERBOOLEANVALUE  4
+    {MTETRIGGERBOOLEANVALUE, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+     var_mteTriggerBooleanTable, 2, {1, 2}},
+#define   MTETRIGGERBOOLEANSTARTUP  5
+    {MTETRIGGERBOOLEANSTARTUP, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+     var_mteTriggerBooleanTable, 2, {1, 3}},
+#define   MTETRIGGERBOOLEANOBJECTSOWNER  6
+    {MTETRIGGERBOOLEANOBJECTSOWNER, ASN_OCTET_STR, NETSNMP_OLDAPI_RONLY,
+     var_mteTriggerBooleanTable, 2, {1, 4}},
+#define   MTETRIGGERBOOLEANOBJECTS  7
+    {MTETRIGGERBOOLEANOBJECTS, ASN_OCTET_STR, NETSNMP_OLDAPI_RONLY,
+     var_mteTriggerBooleanTable, 2, {1, 5}},
+#define   MTETRIGGERBOOLEANEVENTOWNER  8
+    {MTETRIGGERBOOLEANEVENTOWNER, ASN_OCTET_STR, NETSNMP_OLDAPI_RONLY,
+     var_mteTriggerBooleanTable, 2, {1, 6}},
+#define   MTETRIGGERBOOLEANEVENT  9
+    {MTETRIGGERBOOLEANEVENT, ASN_OCTET_STR, NETSNMP_OLDAPI_RONLY,
+     var_mteTriggerBooleanTable, 2, {1, 7}},
+};
+#endif /* !NETSNMP_NO_WRITE_SUPPORT */
+
 /*
  * (L = length of the oidsuffix) 
  */
-
-
-/*
- * global storage of our data, saved in and configured by header_complex() 
- */
-extern struct header_complex_index *mteTriggerTableStorage;
 
 
 /*
@@ -126,6 +149,10 @@ var_mteTriggerBooleanTable(struct variable *vp,
 
     DEBUGMSGTL(("mteTriggerBooleanTable",
                 "var_mteTriggerBooleanTable: Entering...  \n"));
+
+	/* set default value */
+	*write_method = NULL;
+
     /*
      * this assumes you have registered all your data properly
      */
@@ -144,37 +171,51 @@ var_mteTriggerBooleanTable(struct variable *vp,
 
 
     case MTETRIGGERBOOLEANCOMPARISON:
+#ifndef NETSNMP_NO_WRITE_SUPPORT
         *write_method = write_mteTriggerBooleanComparison;
+#endif /* !NETSNMP_NO_WRITE_SUPPORT */
         *var_len = sizeof(StorageTmp->mteTriggerBooleanComparison);
         return (u_char *) & StorageTmp->mteTriggerBooleanComparison;
 
     case MTETRIGGERBOOLEANVALUE:
+#ifndef NETSNMP_NO_WRITE_SUPPORT
         *write_method = write_mteTriggerBooleanValue;
+#endif /* !NETSNMP_NO_WRITE_SUPPORT */
         *var_len = sizeof(StorageTmp->mteTriggerBooleanValue);
         return (u_char *) & StorageTmp->mteTriggerBooleanValue;
 
     case MTETRIGGERBOOLEANSTARTUP:
+#ifndef NETSNMP_NO_WRITE_SUPPORT
         *write_method = write_mteTriggerBooleanStartup;
+#endif /* !NETSNMP_NO_WRITE_SUPPORT */
         *var_len = sizeof(StorageTmp->mteTriggerBooleanStartup);
         return (u_char *) & StorageTmp->mteTriggerBooleanStartup;
 
     case MTETRIGGERBOOLEANOBJECTSOWNER:
+#ifndef NETSNMP_NO_WRITE_SUPPORT
         *write_method = write_mteTriggerBooleanObjectsOwner;
+#endif /* !NETSNMP_NO_WRITE_SUPPORT */
         *var_len = StorageTmp->mteTriggerBooleanObjectsOwnerLen;
         return (u_char *) StorageTmp->mteTriggerBooleanObjectsOwner;
 
     case MTETRIGGERBOOLEANOBJECTS:
+#ifndef NETSNMP_NO_WRITE_SUPPORT
         *write_method = write_mteTriggerBooleanObjects;
+#endif /* !NETSNMP_NO_WRITE_SUPPORT */
         *var_len = StorageTmp->mteTriggerBooleanObjectsLen;
         return (u_char *) StorageTmp->mteTriggerBooleanObjects;
 
     case MTETRIGGERBOOLEANEVENTOWNER:
+#ifndef NETSNMP_NO_WRITE_SUPPORT
         *write_method = write_mteTriggerBooleanEventOwner;
+#endif /* !NETSNMP_NO_WRITE_SUPPORT */
         *var_len = StorageTmp->mteTriggerBooleanEventOwnerLen;
         return (u_char *) StorageTmp->mteTriggerBooleanEventOwner;
 
     case MTETRIGGERBOOLEANEVENT:
+#ifndef NETSNMP_NO_WRITE_SUPPORT
         *write_method = write_mteTriggerBooleanEvent;
+#endif /* !NETSNMP_NO_WRITE_SUPPORT */
         *var_len = StorageTmp->mteTriggerBooleanEventLen;
         return (u_char *) StorageTmp->mteTriggerBooleanEvent;
 
@@ -187,6 +228,7 @@ var_mteTriggerBooleanTable(struct variable *vp,
 
 
 
+#ifndef NETSNMP_NO_WRITE_SUPPORT
 
 int
 write_mteTriggerBooleanComparison(int action,
@@ -218,7 +260,7 @@ write_mteTriggerBooleanComparison(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_INTEGER) {
-            printf(
+            fprintf(stderr,
                     "write to mteTriggerBooleanComparison not ASN_INTEGER\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -302,7 +344,7 @@ write_mteTriggerBooleanValue(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_INTEGER) {
-            printf(
+            fprintf(stderr,
                     "write to mteTriggerBooleanValue not ASN_INTEGER\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -386,7 +428,7 @@ write_mteTriggerBooleanStartup(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_INTEGER) {
-            printf(
+            fprintf(stderr,
                     "write to mteTriggerBooleanStartup not ASN_INTEGER\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -472,7 +514,7 @@ write_mteTriggerBooleanObjectsOwner(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_OCTET_STR) {
-            printf(
+            fprintf(stderr,
                     "write to mteTriggerBooleanObjectsOwner not ASN_OCTET_STR\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -562,7 +604,7 @@ write_mteTriggerBooleanObjects(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_OCTET_STR) {
-            printf(
+            fprintf(stderr,
                     "write to mteTriggerBooleanObjects not ASN_OCTET_STR\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -653,7 +695,7 @@ write_mteTriggerBooleanEventOwner(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_OCTET_STR) {
-            printf(
+            fprintf(stderr,
                     "write to mteTriggerBooleanEventOwner not ASN_OCTET_STR\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -743,7 +785,7 @@ write_mteTriggerBooleanEvent(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_OCTET_STR) {
-            printf(
+            fprintf(stderr,
                     "write to mteTriggerBooleanEvent not ASN_OCTET_STR\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -800,3 +842,5 @@ write_mteTriggerBooleanEvent(int action,
     }
     return SNMP_ERR_NOERROR;
 }
+
+#endif /* !NETSNMP_NO_WRITE_SUPPORT */

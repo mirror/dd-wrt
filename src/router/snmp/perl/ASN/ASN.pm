@@ -1,6 +1,7 @@
 package NetSNMP::ASN;
 
 use strict;
+use warnings;
 use Carp;
 
 require Exporter;
@@ -65,7 +66,7 @@ use vars qw(@ISA %EXPORT_TAGS @EXPORT_OK @EXPORT $VERSION $AUTOLOAD);
 	ASN_UNSIGNED
 	ASN_UNSIGNED64
 );
-$VERSION = '0.01';
+$VERSION = '5.08';
 
 sub AUTOLOAD {
     # This AUTOLOAD is used to 'autoload' constants from the constant()
@@ -75,7 +76,8 @@ sub AUTOLOAD {
     my $constname;
     ($constname = $AUTOLOAD) =~ s/.*:://;
     croak "& not defined" if $constname eq 'constant';
-    my $val = constant($constname, @_ ? $_[0] : 0);
+    my $val;
+    ($!, $val) = constant($constname);
     if ($! != 0) {
 	if ($! =~ /Invalid/ || $!{EINVAL}) {
 	    $AutoLoader::AUTOLOAD = $AUTOLOAD;
@@ -106,24 +108,19 @@ bootstrap NetSNMP::ASN $VERSION;
 
 1;
 __END__
-# Below is stub documentation for your module. You better edit it!
 
 =head1 NAME
 
-NetSNMP::ASN - Perl extension for blah blah blah
+NetSNMP::ASN - Perl extension for SNMP ASN.1 types
 
 =head1 SYNOPSIS
 
-  use NetSNMP::ASN;
-  blah blah blah
+  use NetSNMP::ASN qw(:all);
+  my $asn_int = ASN_INTEGER;
 
 =head1 DESCRIPTION
 
-Stub documentation for NetSNMP::ASN, created by h2xs. It looks like the
-author of the extension was negligent enough to leave the stub
-unedited.
-
-Blah blah blah.
+The NetSNMP::ASN module provides the ASN.1 types for SNMP.
 
 =head2 EXPORT
 
@@ -155,9 +152,11 @@ None by default.
 
 =head1 AUTHOR
 
-A. U. Thor, a.u.thor@a.galaxy.far.far.away
+Wes Hardaker, E<lt>hardaker@users.sourceforge.netE<gt>
 
 =head1 SEE ALSO
+
+SNMP(3pm), NetSNMP::OID(3pm)
 
 perl(1).
 

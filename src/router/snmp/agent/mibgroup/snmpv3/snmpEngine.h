@@ -10,10 +10,10 @@
 #define _MIBGROUP_SNMPENGINE_H
 
 /*
- * we use header_generic and checkmib from the util_funcs module 
+ * we use header_generic from the util_funcs module
  */
 
-config_require(util_funcs)
+config_require(util_funcs/header_generic)
 config_add_mib(SNMP-FRAMEWORK-MIB)
 
     /*
@@ -27,6 +27,7 @@ config_add_mib(SNMP-FRAMEWORK-MIB)
      * function definitions 
      */
      extern void     init_snmpEngine(void);
+     extern void register_snmpEngine_scalars_context(const char *contextName);
      extern FindVarMethod var_snmpEngine;
 
 #endif                          /* _MIBGROUP_SNMPENGINE_H */

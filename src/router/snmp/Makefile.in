@@ -1,10 +1,12 @@
+
 #
 # Makefile.in (at the root of net-snmp)
 #
 
-top_builddir	= .
+VPATH		= @srcdir@
 
-SUBDIRS		= snmplib agent apps local man mibs
+SUBDIRS		= snmplib @MAINSUBS@
+FTSUBDIRS	= @FTMAINSUBS@ snmplib
 TESTDIRS	= testing
 
 CPP		= @CPP@ 					        \
@@ -12,22 +14,33 @@ CPP		= @CPP@ 					        \
 		-DDONT_INC_STRUCTS -DBINDIR=$(bindir) 		        \
 		$(EXTRACPPFLAGS)
 
-INSTALLHEADERS=version.h
+INSTALLHEADERS=version.h net-snmp-features.h
 INCLUDESUBDIR=system
-INCLUDESUBDIRHEADERS= aix.h bsd.h bsdi3.h bsdi4.h bsdi.h cygwin.h darwin.h \
-	dynix.h freebsd2.h freebsd3.h freebsd4.h freebsd.h generic.h hpux.h \
-	irix.h linux.h mips.h netbsd.h openbsd.h solaris2.6.h solaris2.7.h \
-	solaris2.8.h solaris2.9.h solaris.h sunos.h svr5.h sysv.h ultrix4.h
+INCLUDESUBDIRHEADERS= aix.h bsd.h bsdi3.h bsdi4.h bsdi.h cygwin.h \
+	darwin.h darwin7.h darwin8.h darwin9.h darwin10.h darwin11.h darwin12.h \
+	darwin13.h darwin14.h darwin15.h darwin16.h darwin17.h \
+	dragonfly.h dynix.h \
+	freebsd2.h freebsd3.h freebsd4.h freebsd5.h freebsd6.h \
+	freebsd7.h freebsd8.h freebsd9.h freebsd10.h freebsd11.h \
+	freebsd12.h freebsd.h kfreebsd.h \
+	generic.h \
+	hpux.h irix.h linux.h mingw32.h mingw32msvc.h mips.h \
+	netbsd.h nto-qnx6.h osf5.h \
+	openbsd.h openbsd6.h openbsd5.h openbsd4.h \
+	solaris2.3.h solaris2.4.h solaris2.5.h solaris2.6.h \
+	solaris.h sunos.h svr5.h sysv.h ultrix4.h
 INCLUDESUBDIR2=machine
 INCLUDESUBDIRHEADERS2=generic.h
 INSTALLBUILTHEADERS=include/net-snmp/net-snmp-config.h
-INSTALLBINSCRIPTS=net-snmp-config
+INSTALLBUILTINCLUDEHEADERS=@FEATUREHEADERS@
+INSTALLBINSCRIPTS=net-snmp-config net-snmp-create-v3-user
 INSTALLUCDHEADERS=ucd-snmp-config.h version.h mib_module_config.h
 
 #
 # other install rules.
 #
-OTHERINSTALL=copypersistentfiles @PERLINSTALLTARGS@
+OTHERINSTALL=copypersistentfiles @PERLINSTALLTARGS@ @PYTHONINSTALLTARGS@
+OTHERUNINSTALL=@PERLUNINSTALLTARGS@ @PYTHONUNINSTALLTARGS@
 COPY_PERSISTENT_FILES=@COPY_PERSISTENT_FILES@
 PERSISTENT_DIRECTORY=@PERSISTENT_DIRECTORY@
 UCDPERSISTENT_DIRECTORY=@UCDPERSISTENT_DIRECTORY@
@@ -36,13 +49,35 @@ UCDPERSISTENT_DIRECTORY=@UCDPERSISTENT_DIRECTORY@
 # perl specific
 #
 # yes, order matters here.  default_store must occur before anything else
-PERLMODULES=default_store SNMP ASN OID agent
+PERLMODULES=default_store SNMP ASN OID agent TrapReceiver
+PERLMODULEFTS=perl/default_store/netsnmp-feature-definitions.ft \
+	perl/SNMP/netsnmp-feature-definitions.ft \
+	perl/ASN/netsnmp-feature-definitions.ft \
+	perl/OID/netsnmp-feature-definitions.ft \
+	perl/agent/netsnmp-feature-definitions.ft \
+	perl/TrapReceiver/netsnmp-feature-definitions.ft
 PERLARGS=@PERLARGS@
+
+#
+# python specific
+#
+PYTHONARGS=@PYTHONARGS@
+PYTHONMODULEFTS=python/netsnmp/netsnmp-feature-definitions.ft
+
+#
+# libtool
+#
+LIBTOOL_DEPS = @LIBTOOL_DEPS@
+
+#
+# feature checks for optional components
+#
+FTOTHERTARGS=@PERLFEATURES@ @PYTHONFEATURES@
 
 #
 # targets
 #
-all:    sedscript EXAMPLE.conf standardall @PERLTARGS@ 
+all:    sedscript EXAMPLE.conf  @FEATURETARGS@ standardall net-snmp-config-x net-snmp-create-v3-user @PERLTARGS@ @PYTHONTARGS@
 
 start-flag:
 	@touch build-in-progress-flag
@@ -50,35 +85,60 @@ start-flag:
 end-flag:
 	@rm -f build-in-progress-flag > /dev/null 2>&1 
 
+libtool:	$(LIBTOOL_DEPS)
+	$(SHELL) ./config.status --recheck
+
+
+snmplib: @FEATURETARGS@
+	@(cd snmplib; $(MAKE) )
+
+agent: @FEATURETARGS@
+	@(cd snmplib; $(MAKE) )
+	@(cd agent; $(MAKE) )
+
+apps: @FEATURETARGS@
+	@(cd snmplib; $(MAKE) )
+	@(cd agent; $(MAKE) libs)
+	@(cd apps; $(MAKE) )
+
+snmpget snmpbulkget snmpwalk snmpbulkwalk snmptranslate snmpstatus snmpdelta snmptable snmptest snmpset snmpusm snmpvacm snmpgetnext encode_keychange snmpdf snmptrap snmptls: @FEATURETARGS@
+	@(cd snmplib; $(MAKE) )
+	@(cd apps; $(MAKE) $@ )
+
+agentxtrap snmptrapd: @FEATURETARGS@
+	@(cd snmplib; $(MAKE) )
+	@(cd agent; $(MAKE) libs)
+	@(cd apps; $(MAKE) $@ )
+
 #
 # local build rules
 #
 sedscript: sedscript.in include/net-snmp/net-snmp-config.h $(srcdir)/agent/mibgroup/mibdefs.h
 	$(CPP) $(srcdir)/sedscript.in | egrep '^s[/#]' | sed 's/REMOVEME//g;s# */#/#g;s/ *#/#/g;s#/ *#/#g;s/# g/#g/;' > sedscript
+	echo 's/VERSIONINFO/$(VERSION)/g' >> sedscript
 	echo 's#DATADIR#$(datadir)#g' >> sedscript
 	echo 's#LIBDIR#$(libdir)#g' >> sedscript
 	echo 's#BINDIR#$(bindir)#g' >> sedscript
 	echo 's#PERSISTENT_DIRECTORY#$(PERSISTENT_DIRECTORY)#g' >> sedscript
-	echo 's#SYSCONFDIR#$(sysconfdir)#g' >> sedscript
+	echo 's#SYSCONFDIR#@sysconfdir@#g' >> sedscript
 
 EXAMPLE.conf: sedscript EXAMPLE.conf.def
 	$(SED) -f sedscript $(srcdir)/EXAMPLE.conf.def > EXAMPLE.conf
 
-docs: docsdir mancp
+docs: docsdir 
 
-docsdir: docsdox docsmunge
+docsdir: docsdox
 
 docsdox: doxygen.conf
-	srcdir=$(srcdir) doxygen $(srcdir)/doxygen.conf
+	srcdir=$(srcdir) VERSION=$(VERSION) doxygen $(srcdir)/doxygen.conf
 
-docsmunge:
-	find docs/html -name \*.html -exec perl -p -i -e 's/Generated on/<!--#include virtual=\"\/sfbutton.html\" --><br>Generated on\n/; s/<body/<body bgcolor=white/' {} \;
+net-snmp-config-x: net-snmp-config
+	chmod a+x net-snmp-config
+	touch net-snmp-config-x
 
-
-mancp:
-	@for i in docs/man/man3/* ; do \
-	     cp $$i man/netsnmp_`basename $$i` ; \
-	done
+net-snmp-create-v3-user-x: net-snmp-create-v3-user
+	chmod a+x net-snmp-create-v3-user
+	touch net-snmp-create-v3-user-x
 
 #
 # extra install rules
@@ -92,8 +152,8 @@ copypersistentfiles:
 #
 # test targets
 #
-test: all testdirs
-	( cd testing; $(MAKE) test )
+test test-mibs testall testfailed testsimple: all testdirs
+	( cd testing; $(MAKE) $@ )
 
 testdirs:
 	for i in $(TESTDIRS) ; do	\
@@ -106,29 +166,38 @@ testdirs:
 distall: ${srcdir}/configure ${srcdir}/include/net-snmp/net-snmp-config.h 
 
 OTHERCLEANTARGETS=EXAMPLE.conf sedscript
-OTHERCLEANTODOS=perlclean
+OTHERCLEANTODOS=perlclean @PYTHONCLEANTARGS@ cleanfeatures perlcleanfeatures pythoncleanfeatures
 
 #
 # perl specific build rules
 #
-perlmodules: perlmakefiles
-	@(cd perl ; $(MAKE)) ; \
+# override LD_RUN_PATH to avoid dependencies on the build directory
+perlmodules: perlmakefiles subdirs
+	@(cd perl ; $(MAKE) LD_RUN_PATH="$(libdir):`$(PERL) -e 'use Config; print qq($$Config{archlibexp}/CORE);'`") ; \
         if test $$? != 0 ; then \
            exit 1 ; \
         fi
 
-perlmakefiles:
-	@if test ! -f perl/Makefile; then \
-	  (dir=`pwd`; \
-	   cd perl ; \
-	   perl Makefile.PL -NET-SNMP-IN-SOURCE=true -NET-SNMP-CONFIG="sh $$dir/net-snmp-config") $(PERLARGS) ; \
-        fi
+perlmakefiles: perl/Makefile net-snmp-config-x
+
+perl/Makefile: perl/Makefile.PL
+	dir=`pwd` &&							\
+	cd perl &&							\
+	if false; then							\
+	    carp=-MCarp::Always;					\
+	fi &&								\
+	export PERL5LIB="$$dir/perl" &&					\
+	$(PERL) $$carp Makefile.PL -NET-SNMP-IN-SOURCE=true		\
+	    -NET-SNMP-CONFIG="sh $$dir/net-snmp-config" $(PERLARGS)
 
 perlinstall:
 	@(cd perl ; $(MAKE) install) ; \
         if test $$? != 0 ; then \
            exit 1 ; \
         fi
+
+perluninstall:
+	echo "WARNING: perl doesn't support uninstall"
 
 perltest:
 	@(cd perl ; $(MAKE) test) ; \
@@ -141,11 +210,57 @@ perlclean:
 	   ( cd perl ; $(MAKE) clean ) ; \
 	fi
 
+perlrealclean:
+	@if test -f perl/Makefile; then \
+	   ( cd perl ; $(MAKE) realclean ) ; \
+	fi
+
+.h.ft:
+	$(FEATURECHECK) --feature-global $(top_builddir)/include/net-snmp/feature-details.h `dirname $<` $< $@ $(CC) -I $(top_builddir)/include -I $(top_srcdir)/include -E $(CPPFLAGS) $(CFLAGS) -c
+
+perlfeatures: $(PERLMODULEFTS)
+
+perlcleanfeatures:
+	$(RM) $(PERLMODULEFTS)
+
+
+# python specific build rules
+#
+PYMAKE=$(PYTHON) setup.py $(PYTHONARGS)
+pythonmodules: subdirs
+	@(dir=`pwd`; cd python; $(PYMAKE) build --basedir=$$dir) ; \
+        if test $$? != 0 ; then \
+           exit 1 ; \
+        fi
+
+pythoninstall:
+	@(dir=`pwd`; cd python; $(PYMAKE) install --basedir=$$dir --root=$(DESTDIR) --prefix=$(prefix)) ; \
+        if test $$? != 0 ; then \
+           exit 1 ; \
+        fi
+
+pythonuninstall:
+	echo "WARNING: python doesn't support uninstall"
+
+pythontest:
+	@(dir=`pwd`; cd python; $(PYMAKE) test --basedir=$$dir) ; \
+	if test $$? != 0 ; then \
+	   exit 1 ; \
+	fi
+
+pythonclean:
+	@(dir=`pwd`; cd python; $(PYMAKE) clean --basedir=$$dir)
+
+pythonfeatures: $(PYTHONMODULEFTS)
+
+pythoncleanfeatures:
+	$(RM) $(PYTHONMODULEFTS)
+
 #
 # make distclean completely removes all traces of building including
 # any files generated by configure itself.
 #
-distclean: clean configclean tarclean
+distclean: perlrealclean clean configclean tarclean
 
 makefileclean:
 	rm -f Makefile snmplib/Makefile				\
@@ -158,14 +273,25 @@ makefileclean:
 configclean: makefileclean
 	rm -f config.cache config.status config.log \
 		libtool include/net-snmp/net-snmp-config.h \
-		net-snmp-config configure-summary
+		net-snmp-config net-snmp-config-x configure-summary \
+		net-snmp-create-v3-user net-snmp-create-v3-user-x
 	rm -f mibs/.index
 	rm -f include/net-snmp/agent/mib_module_config.h		\
-		snmplib/snmpsm_init.h                   \
+		include/net-snmp/agent/agent_module_config.h		\
+		include/net-snmp/library/snmpv3-security-includes.h \
+		include/net-snmp/feature-details.h                  \
+		snmplib/snmpsm_init.h snmplib/snmpsm_shutdown.h     \
+                snmplib/transports/snmp_transport_inits.h           \
+		agent/mibgroup/agent_module_includes.h 	\
+		agent/mibgroup/agent_module_inits.h 	\
+		agent/mibgroup/agent_module_shutdown.h 	\
+		agent/mibgroup/agent_module_dot_conf.h  \
 		agent/mibgroup/mib_module_includes.h 	\
 		agent/mibgroup/mib_module_inits.h 	\
 		agent/mibgroup/mib_module_shutdown.h 	\
-		agent/mibgroup/mib_module_dot_conf.h
+		agent/mibgroup/mib_module_dot_conf.h    \
+		local/snmpconf
+	rm -rf mk
 	rm -f *.core
 
 #
@@ -178,13 +304,36 @@ touchit:
 
 Makefile: Makefile.in config.status Makefile.rules Makefile.top
 	@if test "x$(NOAUTODEPS)" = "x"; then \
+	    echo "running config.status because the following file(s) changed:"; \
+	    echo "  $?"; \
 	    ./config.status; \
 	else \
 	    echo "WARNING: not running config.status"; \
 	fi
 
+configure_ac = configure.ac \
+	configure.d/config_modules_agent \
+	configure.d/config_modules_lib \
+	configure.d/config_net_snmp_config_h \
+	configure.d/config_os_functions \
+	configure.d/config_os_headers \
+	configure.d/config_os_libs1 \
+	configure.d/config_os_libs2 \
+	configure.d/config_os_misc1 \
+	configure.d/config_os_misc2 \
+	configure.d/config_os_misc3 \
+	configure.d/config_os_misc4 \
+	configure.d/config_os_progs \
+	configure.d/config_os_struct_members \
+	configure.d/config_project_ipv6_types \
+	configure.d/config_project_manual \
+	configure.d/config_project_paths \
+	configure.d/config_project_perl_python \
+	configure.d/config_project_types \
+	configure.d/config_project_with_enable
+
 $(srcdir)/include/net-snmp/net-snmp-config.h.in: stamp-h.in
-$(srcdir)/stamp-h.in: configure.in acconfig.h
+$(srcdir)/stamp-h.in: $(configure_ac)
 	@if test "x$(NOAUTODEPS)" = "x" -a "x$(AUTOHEADER)" != "x:"; then \
 	    cd ${srcdir} && LC_COLLATE=C $(AUTOHEADER); \
 	    echo timestamp > ${srcdir}/stamp-h.in; \
@@ -195,13 +344,15 @@ $(srcdir)/stamp-h.in: configure.in acconfig.h
 include/net-snmp/net-snmp-config.h: stamp-h
 stamp-h: include/net-snmp/net-snmp-config.h.in config.status
 	@if test "x$(NOAUTODEPS)" = "x"; then \
+	    echo "running config.status because the following file(s) changed:"; \
+	    echo "  $?"; \
 	    ./config.status; \
 	    echo timestamp > stamp-h; \
 	else \
 	    echo "WARNING: not running config.status"; \
 	fi
 
-$(srcdir)/configure: configure.in aclocal.m4
+$(srcdir)/configure: $(configure_ac) aclocal.m4
 	@if test "x$(NOAUTODEPS)" = "x" -a "x$(AUTOCONF)" != "x:"; then \
 	    cd ${srcdir} && $(AUTOCONF); \
 	    echo "Please run configure now."; \
@@ -210,8 +361,33 @@ $(srcdir)/configure: configure.in aclocal.m4
 	    echo "WARNING: not running autoconf"; \
 	fi
 
+gendir=dist/generation-scripts
+generation-scripts: generation-scripts-dirs $(gendir)/gen-transport-headers $(gendir)/gen-security-headers
+
+$(gendir)/gen-variables: $(gendir)/gen-variables.in
+	./config.status
+
+generation-scripts-dirs:
+	@if [ ! -d dist ] ; then \
+	    mkdir dist ;        \
+	fi
+	@if [ ! -d dist/generation-scripts ] ; then \
+	    mkdir dist/generation-scripts ;        \
+	fi
+
+$(gendir)/gen-transport-headers: $(gendir)/gen-transport-headers.in $(gendir)/gen-variables
+	rm -f $@
+	autoconf -o $@ $<
+	chmod a+x $@
+
+$(gendir)/gen-security-headers: $(gendir)/gen-security-headers.in $(gendir)/gen-variables
+	rm -f $@
+	autoconf -o $@ $<
+	chmod a+x $@
+
 config.status: configure
 	@if test "x$(NOAUTODEPS)" = "x"; then \
+	    echo "running config.status because $? changed"; \
 	    ./config.status --recheck; \
 	else \
 	    echo "WARNING: not running config.status --recheck"; \
@@ -221,24 +397,17 @@ config.status: configure
 # Emacs TAGS file
 #
 TAGS:
-	find $(srcdir) -name '*.[ch]' -print | etags -
+	$(FIND) $(srcdir) -path $(srcdir)/dist/rpm -prune -o -name '*.[ch]' -print | etags -
 
 #
 # Internal distribution packaging, etc.
 #
-version:
-	@if test "x$(VERSION)" = "x"; then \
-	  echo "you need to supply a VERSION string."; \
-	  exit 2; \
-	fi
-	${srcdir}/agent/mibgroup/versiontag $(VERSION) reverse
-
-tag:
-	@if test "x$(VERSION)" = "x"; then \
-	  echo "you need to supply a VERSION string."; \
-	  exit 2; \
-	fi
-	${srcdir}/agent/mibgroup/versiontag $(VERSION) tag
+#tag:
+#	@if test "x$(VERSION)" = "x"; then \
+#	  echo "you need to supply a VERSION string."; \
+#	  exit 2; \
+#	fi
+#	${srcdir}/agent/mibgroup/versiontag $(VERSION) tag
 
 tar:
 	@if test "x$(VERSION)" = "x"; then \
@@ -252,13 +421,46 @@ tarclean:
 	  ${srcdir}/agent/mibgroup/versiontag Ext clean ; \
 	fi
 
-commentcheck:
-	grep -n // `find $(srcdir)/ -name \*.\[ch\]` | egrep -v "(ftp|http|/win32/)"
+checks:
+	$(MAKE) -k makefilecheck commentcheck warningcheck dependcheck \
+	assertcheck perlcalloccheck
 
-dist: version tag tar
+dependcheck:
+	@echo "Checking for full paths in dependency files..."
+	@if grep -n -E "^/" `$(FIND) $(top_srcdir) -name Makefile.depend`; then false; fi
+
+warningcheck:
+	@echo "Checking for cpp warnings..."
+	@if grep -n "#warning" `$(FIND) $(top_srcdir) -name \*.\[ch\]`; then false; fi
+
+assertcheck:
+	@echo "Checking for non-snmp asserts..."
+	@if grep -n -w "assert" `$(FIND) $(top_srcdir) -name \*.\[ch\] | grep -v snmp_assert.h`; then false; fi
+
+commentcheck:
+	@echo "Checking for C++ style comments..."
+	@if grep -n -E "([^:)n]|^)//" `$(FIND) $(top_srcdir) -path './win32' -prune -o -name \*.\[ch\] | grep -v agent/mibgroup/winExtDLL.c`; then false; fi
+
+makefilecheck:
+	@echo "Checking for non-portable Makefile constructs..."
+	@if grep -n "\.c=" `$(FIND) $(top_srcdir) -name .svn -prune -o -path ./Makefile.in -prune -o -name "Makefile.*" -print`; then false; fi
+
+# Invoking calloc() directly or indirectly from a Perl XSUB and freeing that
+# memory by calling free() from the XSUB is a sure way to trigger "Free to
+# wrong pool" errors on Windows.
+perlcalloccheck:
+	@echo "Checking for calloc() in Perl's external subroutines ..."
+	@if grep -nwE 'calloc|SNMP_MALLOC_STRUCT|SNMP_MALLOC_TYPEDEF' `$(FIND) $(top_srcdir) -name '*.xs'`; then false; fi
+
+dist: tar
 
 FAQ.html:
 	local/FAQ2HTML FAQ
 
 .PHONY: docs docsdir mancp testdirs test TAGS
 # note: tags and docs are phony to force rebulding
+.PHONY: snmplib agent apps \
+	snmpget snmpbulkget snmpwalk snmpbulkwalk snmptranslate snmpstatus \
+	snmpdelta snmptable snmptest snmpset snmpusm snmpvacm snmpgetnext \
+	encode_keychange snmpdf snmptrap snmptrapd
+.PHONY: perlfeatures pythonfeatures

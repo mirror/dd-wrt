@@ -80,11 +80,11 @@ static char convert_to_snmp_bitfield(int value)
 	return (ret);
 }
 
-int snmp_set_var_typed_integer(netsnmp_variable_list * newvar, u_char type, long val)
+/*int snmp_set_var_typed_integer(netsnmp_variable_list * newvar, u_char type, long val)
 {
 	newvar->type = type;
 	return snmp_set_var_value(newvar, (u_char *) & val, sizeof(long));
-}
+}*/
 
 /** Initializes the ddwrt module */
 void init_ddwrt(void)

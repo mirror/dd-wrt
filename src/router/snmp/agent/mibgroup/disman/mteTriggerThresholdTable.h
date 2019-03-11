@@ -27,6 +27,7 @@ config_require(header_complex)
      void            init_mteTriggerThresholdTable(void);
      FindVarMethod   var_mteTriggerThresholdTable;
 
+#ifndef NETSNMP_NO_WRITE_SUPPORT
      WriteMethod     write_mteTriggerThresholdStartup;
      WriteMethod     write_mteTriggerThresholdRising;
      WriteMethod     write_mteTriggerThresholdFalling;
@@ -42,5 +43,6 @@ config_require(header_complex)
      WriteMethod     write_mteTriggerThresholdDeltaRisingEvent;
      WriteMethod     write_mteTriggerThresholdDeltaFallingEventOwner;
      WriteMethod     write_mteTriggerThresholdDeltaFallingEvent;
+#endif /* !NETSNMP_NO_WRITE_SUPPORT */
 
 #endif                          /* _MIBGROUP_MTETRIGGERTHRESHOLDTABLE_H */

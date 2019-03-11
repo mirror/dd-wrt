@@ -7,9 +7,14 @@
 
 void            init_extensible(void);
 
+config_require(util_funcs/header_simple_table)
 config_require(util_funcs)
+config_require(utilities/execute)
 
-     struct extensible *get_exten_instance(struct extensible *, size_t);
+     extern struct extensible *extens;
+     extern struct extensible *relocs;
+     extern int numextens, numrelocs;
+
      extern FindVarMethod var_extensible_shell;
      extern WriteMethod fixExecError;
      extern FindVarMethod var_extensible_relocatable;
@@ -21,6 +26,7 @@ config_require(util_funcs)
      void            extensible_free_config(void);
      void            extensible_parse_config(const char *, char *);
      void            execfix_parse_config(const char *, char *);
+     int             extensible_unregister(int, int, void *, void *);
 
 #include "mibdefs.h"
 

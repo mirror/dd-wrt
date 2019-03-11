@@ -1,31 +1,20 @@
-/*
- *  System MIB group interface - system.h
- *
- */
 #ifndef _MIBGROUP_SYSTEM_MIB_H
 #define _MIBGROUP_SYSTEM_MIB_H
 
-config_require(util_funcs)
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-     extern char     version_descr[];
+config_require(util_funcs mibII/updates)
 
-     void            init_system_mib(void);
-     extern FindVarMethod var_system;
+extern oid system_module_oid[];
+extern int system_module_oid_len;
+extern int system_module_count;
 
-/*
- * config file parsing routines 
- */
-     void            system_parse_config_sysloc(const char *, char *);
-     void            system_parse_config_syscon(const char *, char *);
-     void            system_parse_config_sysname(const char *, char *);
+void init_system_mib(void);
 
-#define	VERSION_DESCR		1
-#define	VERSIONID		2
-#define	UPTIME			3
-#define SYSCONTACT		4
-#define SYSTEMNAME		5
-#define SYSLOCATION		6
-#define SYSSERVICES		7
-#define SYSORLASTCHANGE		8
+#ifdef __cplusplus
+}
+#endif
 
 #endif                          /* _MIBGROUP_SYSTEM_MIB_H */

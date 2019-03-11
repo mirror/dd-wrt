@@ -5,6 +5,15 @@
 extern          "C" {
 #endif
 
+#include <net-snmp/library/snmp_transport.h>
+
+/* Locally defined security models.
+ * (Net-SNMP enterprise number = 8072)*256 + local_num
+ */
+#define NETSNMP_SEC_MODEL_KSM     2066432
+#define NETSNMP_KSM_SECURITY_MODEL     NETSNMP_SEC_MODEL_KSM
+#define NETSNMP_TSM_SECURITY_MODEL     SNMP_SEC_MODEL_TSM
+
 struct snmp_secmod_def;
 
 /*
@@ -77,7 +86,16 @@ typedef int     (Secmod2PduCallback) (netsnmp_pdu *, netsnmp_pdu *);
 typedef int     (SecmodOutMsg) (struct snmp_secmod_outgoing_params *);
 typedef int     (SecmodInMsg) (struct snmp_secmod_incoming_params *);
 typedef void    (SecmodFreeState) (void *);
+typedef void    (SecmodHandleReport) (void *sessp,
+                                      netsnmp_transport *transport,
+                                      netsnmp_session *,
+                                      int result,
+                                      netsnmp_pdu *origpdu);
+typedef int     (SecmodDiscoveryMethod) (void *slp, netsnmp_session *session);
+typedef int     (SecmodPostDiscovery) (void *slp, netsnmp_session *session);
 
+typedef int     (SecmodSessionSetup) (netsnmp_session *in_session,
+                                      netsnmp_session *out_session);
 /*
  * definition of a security module
  */
@@ -92,6 +110,7 @@ struct snmp_secmod_def {
      */
     SecmodSessionCallback *session_open;        /* called in snmp_sess_open()  */
     SecmodSessionCallback *session_close;       /* called in snmp_sess_close() */
+    SecmodSessionSetup    *session_setup;
 
     /*
      * pdu manipulation routines 
@@ -107,6 +126,17 @@ struct snmp_secmod_def {
     SecmodOutMsg   *encode_reverse;     /* encode packet back to front */
     SecmodOutMsg   *encode_forward;     /* encode packet forward */
     SecmodInMsg    *decode;     /* decode & validate incoming */
+
+   /*
+    * error and report handling
+    */
+   SecmodHandleReport *handle_report;
+
+   /*
+    * default engineID discovery mechanism
+    */
+   SecmodDiscoveryMethod *probe_engineid;
+   SecmodPostDiscovery   *post_probe_engineid;
 };
 
 
@@ -128,12 +158,21 @@ int             register_sec_mod(int, const char *,
 /*
  * find a security service definition 
  */
+NETSNMP_IMPORT
 struct snmp_secmod_def *find_sec_mod(int);
 /*
  * register a security service 
  */
 int             unregister_sec_mod(int);        /* register a security service */
 void            init_secmod(void);
+NETSNMP_IMPORT
+void            shutdown_secmod(void);
+
+/*
+ * clears the sec_mod list
+ */
+NETSNMP_IMPORT
+void            clear_sec_mod(void);
 
 #ifdef __cplusplus
 }

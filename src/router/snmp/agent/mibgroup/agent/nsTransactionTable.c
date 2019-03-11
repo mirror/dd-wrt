@@ -3,22 +3,23 @@
  */
 
 #include <net-snmp/net-snmp-config.h>
+#include <net-snmp/net-snmp-features.h>
 #include <net-snmp/net-snmp-includes.h>
 #include <net-snmp/agent/net-snmp-agent-includes.h>
+#include "agent_global_vars.h"
 
 #include <net-snmp/agent/table.h>
 #include <net-snmp/agent/table_iterator.h>
 #include "nsTransactionTable.h"
+
+netsnmp_feature_require(table_dataset)
 
 /** Initialize the nsTransactionTable table by defining it's contents
    and how it's structured */
 void
 initialize_table_nsTransactionTable(void)
 {
-    static oid      nsTransactionTable_oid[] =
-        { 1, 3, 6, 1, 4, 1, 8072, 1, 8, 1 };
-    size_t          nsTransactionTable_oid_len =
-        OID_LENGTH(nsTransactionTable_oid);
+    const oid nsTransactionTable_oid[] = { 1, 3, 6, 1, 4, 1, 8072, 1, 8, 1 };
     netsnmp_table_registration_info *table_info;
     netsnmp_handler_registration *my_handler;
     netsnmp_iterator_info *iinfo;
@@ -33,14 +34,18 @@ initialize_table_nsTransactionTable(void)
      * if your table is read only, it's easiest to change the
      * HANDLER_CAN_RWRITE definition below to HANDLER_CAN_RONLY 
      */
-    my_handler = netsnmp_create_handler_registration("nsTransactionTable",
-                                                     nsTransactionTable_handler,
-                                                     nsTransactionTable_oid,
-                                                     nsTransactionTable_oid_len,
-                                                     HANDLER_CAN_RONLY);
+    my_handler = netsnmp_create_handler_registration(
+        "nsTransactionTable", nsTransactionTable_handler,
+        nsTransactionTable_oid, OID_LENGTH(nsTransactionTable_oid),
+        HANDLER_CAN_RONLY);
 
-    if (!my_handler || !table_info || !iinfo)
+    if (!my_handler || !table_info || !iinfo) {
+        if (my_handler)
+            netsnmp_handler_registration_free(my_handler);
+        SNMP_FREE(table_info);
+        SNMP_FREE(iinfo);
         return;                 /* mallocs failed */
+    }
 
     /***************************************************
      * Setting up the table's definition
@@ -60,10 +65,10 @@ initialize_table_nsTransactionTable(void)
      */
     DEBUGMSGTL(("initialize_table_nsTransactionTable",
                 "Registering table nsTransactionTable as a table iterator\n"));
-    netsnmp_register_table_iterator(my_handler, iinfo);
+    netsnmp_register_table_iterator2(my_handler, iinfo);
 }
 
-/** Initialzies the nsTransactionTable module */
+/** Initializes the nsTransactionTable module */
 void
 init_nsTransactionTable(void)
 {
@@ -91,8 +96,6 @@ init_nsTransactionTable(void)
     each appropriately according to the data matching the first row
     and return the put_index_data variable at the end of the function.
 */
-extern netsnmp_agent_session *agent_delegated_list;
-
 netsnmp_variable_list *
 nsTransactionTable_get_first_data_point(void **my_loop_context,
                                         void **my_data_context,
@@ -114,6 +117,7 @@ nsTransactionTable_get_first_data_point(void **my_loop_context,
     snmp_set_var_value(vptr,
                        (u_char *) & agent_delegated_list->pdu->transid,
                        sizeof(agent_delegated_list->pdu->transid));
+
     return put_index_data;
 }
 
@@ -165,7 +169,7 @@ nsTransactionTable_handler(netsnmp_mib_handler *handler,
     netsnmp_variable_list *var;
     netsnmp_agent_session *asp;
 
-    while (requests) {
+    for (; requests; requests = requests->next) {
         var = requests->requestvb;
         if (requests->processed != 0)
             continue;
@@ -189,6 +193,7 @@ nsTransactionTable_handler(netsnmp_mib_handler *handler,
         if (asp == NULL) {
             netsnmp_set_request_error(reqinfo, requests,
                                       SNMP_NOSUCHINSTANCE);
+            continue;
         }
 
         /*
@@ -205,7 +210,6 @@ nsTransactionTable_handler(netsnmp_mib_handler *handler,
          * been set corresponding to the indexes of the request 
          */
         if (table_info == NULL) {
-            requests = requests->next;
             continue;
         }
 
@@ -238,7 +242,6 @@ nsTransactionTable_handler(netsnmp_mib_handler *handler,
             snmp_log(LOG_ERR,
                      "problem encountered in nsTransactionTable_handler: unsupported mode\n");
         }
-        requests = requests->next;
     }
     return SNMP_ERR_NOERROR;
 }

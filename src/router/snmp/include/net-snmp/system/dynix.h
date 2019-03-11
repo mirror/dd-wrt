@@ -5,7 +5,7 @@
  * Author:       Patrick Hess  <phess@hds.com>
  */
 
-#include "generic.h"
+#include <net-snmp/system/generic.h>
 
 /*
  * from s/sysv.h 
@@ -18,7 +18,7 @@
 /*
  * maybe I should have used _SEQUENT_ in all this code..  dunno 
  */
-#define dynix 1
+#define dynix dynix
 
 #undef TOTAL_MEMORY_SYMBOL
 #undef MBSTAT_SYMBOL
@@ -40,7 +40,9 @@
 #endif
 
 /*
- * stole these from Solaris... 
+ * These definitions date from early BSD-based headers,
+ *   and are included in modern NetBSD and OpenBSD distributions.
+ * As such, the relevant copyright probably resides with UCB.
  */
 #ifndef TCPTV_MIN
 #define TCPTV_MIN       (1*PR_SLOWHZ)   /* minimum allowable value */
@@ -93,14 +95,12 @@
 #define HAVE_GETHOSTBYNAME 1
 
 /*
- * lives in libsocket.so 
- */
-#define HAVE_GETSERVBYNAME 1
-
-/*
  * Might as well include this here, since a significant
  * number of files seem to need it.  DTS 
  */
 #if HAVE_SYS_SELECT_H
 #include <sys/select.h>
 #endif
+
+/* define the extra mib modules that are supported */
+#define NETSNMP_INCLUDE_HOST_RESOURCES

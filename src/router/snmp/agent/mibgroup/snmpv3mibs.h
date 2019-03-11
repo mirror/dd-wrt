@@ -8,6 +8,9 @@
 
 config_require(snmpv3/snmpEngine)
 config_require(snmpv3/snmpMPDStats)
+#ifdef NETSNMP_SECMOD_USM
 config_require(snmpv3/usmStats)
+config_require(snmpv3/usmConf)
 config_require(snmpv3/usmUser)
-#endif                          /* NSMPV3MIBS_H */
+#endif /* NETSNMP_SECMOD_USM */
+#endif                          /* SNMPV3MIBS_H */

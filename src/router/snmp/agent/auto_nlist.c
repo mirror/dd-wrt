@@ -1,6 +1,6 @@
 #include <net-snmp/net-snmp-config.h>
 
-#ifdef CAN_USE_NLIST
+#ifdef NETSNMP_CAN_USE_NLIST
 #if HAVE_STRING_H
 #include <string.h>
 #else
@@ -19,10 +19,6 @@
 #endif
 #if HAVE_KVM_H
 #include <kvm.h>
-#endif
-
-#if HAVE_DMALLOC_H
-#include <dmalloc.h>
 #endif
 
 #include <net-snmp/agent/auto_nlist.h>
@@ -56,7 +52,11 @@ auto_nlist_value(const char *string)
         }
     }
     if (*ptr == 0) {
+#if !(defined(aix4) || defined(aix5) || defined(aix6) || defined(aix7))
+        static char *n_name = NULL;
+#endif
         *ptr = (struct autonlist *) malloc(sizeof(struct autonlist));
+        memset(*ptr, 0, sizeof(struct autonlist));
         it = *ptr;
         it->left = 0;
         it->right = 0;
@@ -66,16 +66,46 @@ auto_nlist_value(const char *string)
          * allocate an extra byte for inclusion of a preceding '_' later 
          */
         it->nl[0].n_name = (char *) malloc(strlen(string) + 2);
-#ifdef aix4
+#if defined(aix4) || defined(aix5) || defined(aix6) || defined(aix7)
         strcpy(it->nl[0].n_name, string);
+        it->nl[0].n_name[strlen(string)+1] = '\0';
+#elif defined(freebsd9)
+        sprintf(__DECONST(char*, it->nl[0].n_name), "_%s", string);
 #else
-        sprintf(it->nl[0].n_name, "_%s", string);
+
+        if (n_name != NULL)
+            free(n_name);
+
+        n_name = malloc(strlen(string) + 2);
+        if (n_name == NULL) {
+            snmp_log(LOG_ERR, "nlist err: failed to allocate memory");
+            return (-1);
+        }
+        snprintf(n_name, strlen(string) + 2, "_%s", string);
+        it->nl[0].n_name = (const char*)n_name;
 #endif
         it->nl[1].n_name = 0;
         init_nlist(it->nl);
-#ifndef aix4
+#if !(defined(aix4) || defined(aix5) || defined(aix6) || defined(aix7) || \
+                    defined(netbsd1) || defined(dragonfly))
         if (it->nl[0].n_type == 0) {
-            strcpy(it->nl[0].n_name, string);
+#if defined(freebsd9)
+            strcpy(__DECONST(char*, it->nl[0].n_name), string);
+            __DECONST(char*, it->nl[0].n_name)[strlen(string)+1] = '\0';
+#else
+            static char *n_name2 = NULL;
+
+            if (n_name2 != NULL)
+                free(n_name2);
+
+            n_name2 = malloc(strlen(string) + 1);
+            if (n_name2 == NULL) {
+                snmp_log(LOG_ERR, "nlist err: failed to allocate memory");
+                return (-1);
+            }
+            strcpy(n_name2, string);
+            it->nl[0].n_name = (const char*)n_name2;
+#endif
             init_nlist(it->nl);
         }
 #endif
@@ -87,7 +117,8 @@ auto_nlist_value(const char *string)
 	    }
             return (-1);
         } else {
-            DEBUGMSGTL(("auto_nlist", "nlist:  found symbol %s at %x.\n",
+            DEBUGMSGTL(("auto_nlist:auto_nlist_value",
+			"found symbol %s at %lx.\n",
                         it->symbol, it->nl[0].n_value));
             return (it->nl[0].n_value);
         }
@@ -96,7 +127,7 @@ auto_nlist_value(const char *string)
 }
 
 int
-auto_nlist(const char *string, char *var, int size)
+auto_nlist(const char *string, char *var, size_t size)
 {
     long            result;
     int             ret;
@@ -118,7 +149,6 @@ auto_nlist(const char *string, char *var, int size)
 static void
 init_nlist(struct nlist nl[])
 {
-#ifdef CAN_USE_NLIST
     int             ret;
 #if HAVE_KVM_OPENFILES
     kvm_t          *kernel;
@@ -146,9 +176,9 @@ init_nlist(struct nlist nl[])
     }
     kvm_close(kernel);
 #else                           /* ! HAVE_KVM_OPENFILES */
-#if defined(aix4) && defined(HAVE_KNLIST)
+#if (defined(aix4) || defined(aix5) || defined(aix6) || defined(aix7)) && defined(HAVE_KNLIST)
     if (knlist(nl, 1, sizeof(struct nlist)) == -1) {
-        DEBUGMSGTL(("auto_nlist", "knlist failed on symbol:  %s\n",
+        DEBUGMSGTL(("auto_nlist:init_nlist", "knlist failed on symbol:  %s\n",
                     nl[0].n_name));
         if (errno == EFAULT) {
             nl[0].n_type = 0;
@@ -176,26 +206,25 @@ init_nlist(struct nlist nl[])
 #endif                          /*aix4 */
 #endif                          /* ! HAVE_KVM_OPENFILES */
     for (ret = 0; nl[ret].n_name != NULL; ret++) {
-#ifdef aix4
+#if defined(aix4) || defined(aix5) || defined(aix6) || defined(aix7)
         if (nl[ret].n_type == 0 && nl[ret].n_value != 0)
             nl[ret].n_type = 1;
 #endif
         if (nl[ret].n_type == 0) {
             if (!netsnmp_ds_get_boolean(NETSNMP_DS_APPLICATION_ID, 
 					NETSNMP_DS_AGENT_NO_ROOT_ACCESS)) {
-                DEBUGMSGTL(("auto_nlist", "nlist err:  %s not found\n",
+                DEBUGMSGTL(("auto_nlist:init_nlist", "nlist err:  %s not found\n",
                             nl[ret].n_name));
 	    }
         } else {
-            DEBUGMSGTL(("auto_nlist", "nlist: %s 0x%X\n", nl[ret].n_name,
+            DEBUGMSGTL(("auto_nlist:init_nlist", "nlist: %s 0x%X\n", nl[ret].n_name,
                         (unsigned int) nl[ret].n_value));
         }
     }
-#endif                          /* CAN_USE_NLIST */
 }
 
 int
-KNLookup(struct nlist nl[], int nl_which, char *buf, int s)
+KNLookup(struct nlist nl[], int nl_which, char *buf, size_t s)
 {
     struct nlist   *nlp = &nl[nl_which];
 
@@ -232,10 +261,11 @@ auto_nlist_print_tree(int indent, struct autonlist *ptr)
     }
 }
 #endif
-#else                           /* !CAN_USE_NLIST */
+#else                           /* !NETSNMP_CAN_USE_NLIST */
+#include <net-snmp/agent/auto_nlist.h>
 int
 auto_nlist_noop(void)
 {
     return 0;
 }
-#endif                          /* CAN_USE_NLIST */
+#endif                          /* NETSNMP_CAN_USE_NLIST */

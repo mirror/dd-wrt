@@ -7,14 +7,36 @@
 
 #include <net-snmp/types.h>
 
+#ifdef __cplusplus
+extern          "C" {
+#endif
+
+NETSNMP_IMPORT
+netsnmp_pdu    *snmp_pdu_create(int type);
+NETSNMP_IMPORT
+netsnmp_pdu    *snmp_clone_pdu(netsnmp_pdu *pdu);
+NETSNMP_IMPORT
+netsnmp_pdu    *snmp_fix_pdu(  netsnmp_pdu *pdu, int idx);
+NETSNMP_IMPORT
+void            snmp_free_pdu( netsnmp_pdu *pdu);
+
+#ifdef __cplusplus
+}
+#endif
+
     /*
-     *  For the initial release, this will just refer to the
-     *  relevant UCD header files.
-     *    In due course, the routines relevant to this area of the
-     *  API will be identified, and listed here directly.
+     *    Having extracted the main ("public API") calls relevant
+     *  to this area of the Net-SNMP project, the next step is to
+     *  identify the related "public internal API" routines.
      *
-     *  But for the time being, this header file is a placeholder,
-     *  to allow application writers to adopt the new header file names.
+     *    In due course, these should probably be gathered
+     *  together into a companion 'library/pdu_api.h' header file.
+     *  [Or some suitable name]
+     *
+     *    But for the time being, the expectation is that the
+     *  traditional headers that provided the above definitions
+     *  will probably also cover the relevant internal API calls.
+     *  Hence they are listed here:
      */
 
 #include <net-snmp/library/snmp_api.h>

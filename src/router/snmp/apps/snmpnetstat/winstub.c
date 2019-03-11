@@ -9,6 +9,7 @@
  */
 
 #include <net-snmp/net-snmp-config.h>
+#include <net-snmp/net-snmp-includes.h>
 
 #if (defined(WIN32) || defined(cygwin) || defined(aix4))
 
@@ -24,19 +25,27 @@
 #if HAVE_STRING_H
 #include <string.h>
 #endif
-#if HAVE_WINSOCK_H
-#include <winsock.h>
-#endif
 #if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
 #if HAVE_NETDB_H
+#ifdef cygwin
+#define getnetent cygwin_getnetent
+#define getnetbyaddr cygwin_getnetbyaddr
+#endif
 #include <netdb.h>
+#ifdef cygwin
+#undef getnetent
+#undef getnetbyaddr
+#endif
 #endif
 
 static int      h_stay_open, s_stay_open, p_stay_open, n_stay_open;
 static FILE    *h_fp, *s_fp, *p_fp, *n_fp;
-static char    *h_fn, *s_fn, *p_fn, *n_fn;
+static char    *p_fn;
+#ifdef notused
+static char    *h_fn, *s_fn, *n_fn;
+#endif
 
 #ifdef aix4
 #define ROOT_BASE "/etc/"
@@ -186,6 +195,7 @@ getprotoent(void)
     static char    *ali[10];
     struct protoent *px = &spx;
     int             linecnt = 0;
+    char            *st;
 
     for (alp = ali; *alp; free(*alp), *alp = 0, alp++);
     if (px->p_name)
@@ -205,13 +215,13 @@ getprotoent(void)
         if (*cp == '#')
             continue;
 
-        cp = strtok(lbuf, STRTOK_DELIMS);
+        cp = strtok_r(lbuf, STRTOK_DELIMS, &st);
         if (!cp)
             continue;
         if (cp)
             px->p_name = strdup(cp);
 
-        cp = strtok(NULL, STRTOK_DELIMS);
+        cp = strtok_r(NULL, STRTOK_DELIMS, &st);
         if (!cp) {
             free(px->p_name);
             continue;
@@ -219,7 +229,7 @@ getprotoent(void)
         px->p_proto = (short) atoi(cp);
 
         for (alp = px->p_aliases; cp; alp++) {
-            cp = strtok(NULL, STRTOK_DELIMS);
+            cp = strtok_r(NULL, STRTOK_DELIMS, &st);
             if (!cp)
                 break;
             if (*cp == '#')
