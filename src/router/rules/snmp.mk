@@ -41,11 +41,11 @@ snmp-configure:
 				--with-cc="$(CC)" \
 				--with-ar=$(ARCH)-linux-uclibc-ar \
 				--with-endianness=$(SNMP_ENDIAN) \
-				--with-cflags="$(COPTS) $(MIPS16_OPT) $(SNMP_EXTRACFLAGS) -DCAN_USE_SYSCTL=1 -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/shared -I$(TOP)/../include.v24" \
-				--with-ldflags="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/libutils -L$(TOP)/nvram -L$(TOP)/libnl-tiny -L$(TOP)/wireless-tools -lshutils -lutils -lwireless -liw -lnl-tiny -lnvram" \
+				--with-cflags="$(COPTS) $(MIPS16_OPT) $(SNMP_EXTRACFLAGS) -I$(TOP)/openssl/include -D_GNU_SOURCE -DCAN_USE_SYSCTL=1 -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/shared -I$(TOP)/../include.v24" \
+				--with-ldflags="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/openssl -L$(TOP)/libutils -L$(TOP)/nvram -L$(TOP)/libnl-tiny -L$(TOP)/wireless-tools -lshutils -lutils -lwireless -liw -lnl-tiny -lnvram" \
 				--enable-mini-agent \
 				--disable-debugging \
-				--disable-privacy \
+				--enable-privacy \
 				--without-opaque-special-types \
 				--with-persistent-directory=/tmp/snmp-persist \
 				--with-default-snmp-version=3 \
@@ -58,10 +58,10 @@ snmp-configure:
 				--with-gnu-ld \
 				--enable-internal-md5 \
 				--with-copy-persistent-files=no \
-				--without-openssl \
+				--with-openssl=$(TOP)/openssl \
 				--sysconfdir=/tmp \
 				--with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,ucd_snmp$(SNMP_EXTRAMIB) \
-				--with-out-mib-modules=host/hr_swrun,agent_mips,agentx,notification,utilities,target \
+				--with-out-mib-modules=host/hr_swrun,agent_mips,agentx,notification,utilities,target,etherlike-mib,notification-log-mib,snmp-notification-mib,tsm-mib,tlstm-lib \
 				--disable-ipv6 \
 				--with-defaults \
 				--without-efence \
