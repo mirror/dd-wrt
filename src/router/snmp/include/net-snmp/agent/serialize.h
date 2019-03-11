@@ -19,6 +19,6 @@ extern          "C" {
     Netsnmp_Node_Handler netsnmp_serialize_helper_handler;
 
 #ifdef __cplusplus
-};
+}
 #endif
 #endif

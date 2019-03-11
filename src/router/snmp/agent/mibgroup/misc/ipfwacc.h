@@ -6,10 +6,10 @@
 #define _MIBGROUP_IPFWACC_H
 
 /*
- * we use checkmib from the util_funcs module 
+ * we use header_simple_table from the util_funcs module
  */
 
-config_require(util_funcs)
+config_require(util_funcs/header_simple_table)
 
     /*
      * add the mib we implement to the list of default mibs to load 

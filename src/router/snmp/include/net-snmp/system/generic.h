@@ -1,5 +1,7 @@
+#ifndef __NET_SNMP_SYSTEM_GENERIC_H__
+#define __NET_SNMP_SYSTEM_GENERIC_H__
 
-#define bsdlike 1
+#define bsdlike bsdlike
 
 /*
  * nlist symbols in ip.c 
@@ -13,12 +15,6 @@
  */
 #define IFNET_SYMBOL "ifnet"
 #define IFADDR_SYMBOL "in_ifaddr"
-
-/*
- * nlist symbols in at.c 
- */
-#define ARPTAB_SYMBOL "arptab"
-#define ARPTAB_SIZE_SYMBOL "arptab_size"
 
 /*
  * load average lookup symbol 
@@ -72,3 +68,5 @@
  */
 #define INP_NEXT_SYMBOL inp_next
 #define INP_PREV_SYMBOL inp_prev
+
+#endif /* !__NET_SNMP_SYSTEM_GENERIC_H__ */

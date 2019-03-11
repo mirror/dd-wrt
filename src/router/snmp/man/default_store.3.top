@@ -1,5 +1,4 @@
 .TH DEFAULT_STORE 3 "25 Jun 2002" VVERSIONINFO "Net-SNMP"
-.UC 5
 .SH NAME
 default_store \- generic storage of global data.
 .SH SYNOPSIS

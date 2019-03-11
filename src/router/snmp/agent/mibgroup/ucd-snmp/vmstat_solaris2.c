@@ -19,7 +19,7 @@
  * To make lint skip the debug code and stop complaining 
  */
 #ifdef __lint
-#define SNMP_NO_DEBUGGING 1
+#define NETSNMP_NO_DEBUGGING 1
 #endif
 
 /*
@@ -46,7 +46,7 @@
 #include <net-snmp/agent/net-snmp-agent-includes.h>
 
 #include "mibdefs.h"
-#include "util_funcs.h"
+#include "util_funcs/header_generic.h"
 
 /*
  * Header file for this module 
@@ -65,14 +65,8 @@
 
 /*
  * A structure to save data gathered from the kernel kstat interface to.  
- */
-/*
  * We used to have the sys/sysinfo.h cpu_stat_t here but we did not need 
- */
-/*
  * all of it, some in a different size and some additional ones so we build 
- */
-/*
  * our own 
  */
 struct cpu_stat_snapshot {
@@ -98,34 +92,18 @@ struct cpu_stat_snapshot {
 
 /*
  * From kstat.h: 
- */
-/*
  * Provides access to the kernel statistics library by 
- */
-/*
  * initializing a kstat control structure and returning a pointer 
- */
-/*
  * to this structure.  This pointer must be used as the kc argument in  
- */
-/*
  * following function calls from libkstat (here kc is called kstat_fd). 
- */
-/*
  * Pointer to structure to be opened with kstat_open in main procedure. 
- */
-/*
  * We share this one with memory_solaris2 and kernel_sunos5, where it's 
- */
-/*
  * defined. 
  */
 extern kstat_ctl_t *kstat_fd;
 
 /*
  * Variables for the calculated values, filled in update_stats    
- */
-/*
  * Need to be global since we need them in more than one function 
  */
 static ulong    swapin;
@@ -142,8 +120,6 @@ static long     cpu_perc[CPU_STATES + 1];
 
 /*
  * How many snapshots we have already taken, needed for the first 
- */
-/*
  * POLL_INTERVAL * POLL_VALUES seconds of agent running 
  */
 static unsigned int number_of_snapshots;
@@ -155,11 +131,7 @@ static struct cpu_stat_snapshot snapshot[POLL_VALUES + 1];
 
 /*
  * And one for the raw counters, which we fill when the raw values are 
- */
-/*
  * requested, as opposed to the absolute values, which are taken every 
- */
-/*
  * POLL_INTERVAL seconds and calculated over POLL_INTERVAL * POLL_VALUES time 
  */
 static struct cpu_stat_snapshot raw_values;
@@ -182,14 +154,8 @@ static int      take_snapshot(struct cpu_stat_snapshot *css);
 
 /*
  * init_vmstat_solaris2 starts here 
- */
-/*
  * Init function for this module, from prototype 
- */
-/*
  * Defines variables handled by this module, defines root OID for 
- */
-/*
  * this module and registers it with the agent 
  */
 
@@ -203,62 +169,59 @@ init_vmstat_solaris2(void)
      * Which variables do we service ? 
      */
     struct variable2 extensible_vmstat_variables[] = {
-        {MIBINDEX, ASN_INTEGER, RONLY, var_extensible_vmstat, 1,
-         {MIBINDEX}},
-        {ERRORNAME, ASN_OCTET_STR, RONLY, var_extensible_vmstat, 1,
-         {ERRORNAME}},
-        {SWAPIN, ASN_INTEGER, RONLY, var_extensible_vmstat, 1, {SWAPIN}},
-        {SWAPOUT, ASN_INTEGER, RONLY, var_extensible_vmstat, 1, {SWAPOUT}},
-        {IOSENT, ASN_INTEGER, RONLY, var_extensible_vmstat, 1, {IOSENT}},
-        {IORECEIVE, ASN_INTEGER, RONLY, var_extensible_vmstat, 1,
-         {IORECEIVE}},
-        {SYSINTERRUPTS, ASN_INTEGER, RONLY, var_extensible_vmstat, 1,
-         {SYSINTERRUPTS}},
-        {SYSCONTEXT, ASN_INTEGER, RONLY, var_extensible_vmstat, 1,
-         {SYSCONTEXT}},
-        {CPUUSER, ASN_INTEGER, RONLY, var_extensible_vmstat, 1, {CPUUSER}},
-        {CPUSYSTEM, ASN_INTEGER, RONLY, var_extensible_vmstat, 1,
-         {CPUSYSTEM}},
-        {CPUIDLE, ASN_INTEGER, RONLY, var_extensible_vmstat, 1, {CPUIDLE}},
-        {CPURAWUSER, ASN_COUNTER, RONLY, var_extensible_vmstat, 1,
-         {CPURAWUSER}},
-        {CPURAWSYSTEM, ASN_COUNTER, RONLY, var_extensible_vmstat, 1,
-         {CPURAWSYSTEM}},
-        {CPURAWIDLE, ASN_COUNTER, RONLY, var_extensible_vmstat, 1,
-         {CPURAWIDLE}},
-        {CPURAWWAIT, ASN_COUNTER, RONLY, var_extensible_vmstat, 1,
-         {CPURAWWAIT}},
-        {CPURAWKERNEL, ASN_COUNTER, RONLY, var_extensible_vmstat, 1,
-         {CPURAWKERNEL}},
-        {IORAWSENT, ASN_COUNTER, RONLY, var_extensible_vmstat, 1,
-         {IORAWSENT}},
-        {IORAWRECEIVE, ASN_COUNTER, RONLY, var_extensible_vmstat, 1,
-         {IORAWRECEIVE}},
-        {SYSRAWINTERRUPTS, ASN_COUNTER, RONLY, var_extensible_vmstat, 1,
-         {SYSRAWINTERRUPTS}},
-        {SYSRAWCONTEXT, ASN_COUNTER, RONLY, var_extensible_vmstat, 1,
-         {SYSRAWCONTEXT}},
+        {MIBINDEX, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {MIBINDEX}},
+        {ERRORNAME, ASN_OCTET_STR, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {ERRORNAME}},
+        {SWAPIN, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {SWAPIN}},
+        {SWAPOUT, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {SWAPOUT}},
+        {IOSENT, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {IOSENT}},
+        {IORECEIVE, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {IORECEIVE}},
+        {SYSINTERRUPTS, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {SYSINTERRUPTS}},
+        {SYSCONTEXT, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {SYSCONTEXT}},
+        {CPUUSER, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {CPUUSER}},
+        {CPUSYSTEM, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {CPUSYSTEM}},
+        {CPUIDLE, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {CPUIDLE}},
+        {CPURAWUSER, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {CPURAWUSER}},
+        {CPURAWSYSTEM, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {CPURAWSYSTEM}},
+        {CPURAWIDLE, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {CPURAWIDLE}},
+        {CPURAWWAIT, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {CPURAWWAIT}},
+        {CPURAWKERNEL, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {CPURAWKERNEL}},
+        {IORAWSENT, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {IORAWSENT}},
+        {IORAWRECEIVE, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_vmstat, 1, {IORAWRECEIVE}},
         /*
          * Future use: 
-         */
-        /*
-         * {ERRORFLAG, ASN_INTEGER, RONLY, var_extensible_vmstat, 1, {ERRORFLAG }},
-         * {ERRORMSG, ASN_OCTET_STR, RONLY, var_extensible_vmstat, 1, {ERRORMSG }}
+         * {ERRORFLAG, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         *  var_extensible_vmstat, 1, {ERRORFLAG }},
+         * {ERRORMSG, ASN_OCTET_STR, NETSNMP_OLDAPI_RONLY,
+         *  var_extensible_vmstat, 1, {ERRORMSG }}
          */
     };
 
     /*
      * Define the OID pointer to the top of the mib tree that we're 
-     */
-    /*
      * registering underneath 
      */
-    oid             vmstat_variables_oid[] = { UCDAVIS_MIB, 11 };
+    oid             vmstat_variables_oid[] = { NETSNMP_UCDAVIS_MIB, 11 };
 
     /*
      * register ourselves with the agent to handle our mib tree 
-     */
-    /*
      * LINTED Trust me, I know what I'm doing 
      */
     REGISTER_MIB("ucd-snmp/vmstat", extensible_vmstat_variables, variable2,
@@ -266,8 +229,6 @@ init_vmstat_solaris2(void)
 
     /*
      * First check whether shared kstat contol is NULL, if so, try to open our 
-     */
-    /*
      * own. 
      */
     if (kstat_fd == NULL) {
@@ -276,8 +237,6 @@ init_vmstat_solaris2(void)
 
     /*
      * Then check whether either shared kstat was found or we succeeded in 
-     */
-    /*
      * opening our own. 
      */
     if (kstat_fd == NULL) {
@@ -292,11 +251,7 @@ init_vmstat_solaris2(void)
 
     /*
      * update_stats is run every POLL_INTERVAL seconds using this routine 
-     */
-    /*
      * (see 'man snmp_alarm') 
-     */
-    /*
      * This is only executed once to get some useful data in the beginning 
      */
     if (snmp_alarm_register(5, NULL, update_stats, NULL) == 0) {
@@ -316,11 +271,7 @@ init_vmstat_solaris2(void)
 
 /*
  * Data collection function take_snapshot starts here 
- */
-/*
  * Get data from kernel and save into the snapshot strutcs 
- */
-/*
  * Argument is the snapshot struct to save to. Global anyway, but looks nicer 
  */
 static int
@@ -332,8 +283,6 @@ take_snapshot(struct cpu_stat_snapshot *css)
 
     /*
      * From sys/kstat.h (included from kstat.h): 
-     */
-    /*
      * Pointer to current kstat 
      */
     kstat_t        *ksp;
@@ -373,14 +322,8 @@ take_snapshot(struct cpu_stat_snapshot *css)
 
     /*
      * If we have just gotten the data, return the values from last run (skip if-clause) 
-     */
-    /*
      * This happens on a snmpwalk request.  No need to read the kstat again 
-     */
-    /*
      * if we just did it less than 2 seconds ago 
-     */
-    /*
      * Jumps into if-clause either when snapshot is empty or when too old 
      */
 
@@ -398,14 +341,8 @@ take_snapshot(struct cpu_stat_snapshot *css)
 
         /*
          * Look thru all the cpu slots on the machine whether they holds a CPU 
-         */
-        /*
          * and if so, get the data from that CPU 
-         */
-        /*
          * We walk through the whole kstat chain and sum up all the found cpu_stat kstats, 
-         */
-        /*
          * there's one for every CPU in a machine 
          */
         for (ksp = kstat_fd->kc_chain; ksp != NULL; ksp = ksp->ks_next) {
@@ -424,11 +361,7 @@ take_snapshot(struct cpu_stat_snapshot *css)
 
                 /*
                  * Read data from kstat into cs structure 
-                 */
-                /*
                  * kstat_fd is the control structure, ksp the kstat we are reading 
-                 */
-                /*
                  * and cs the buffer we are writing to. 
                  */
                 if ((ksp->ks_type != KSTAT_TYPE_RAW) ||
@@ -458,6 +391,8 @@ take_snapshot(struct cpu_stat_snapshot *css)
                 /*
                  * We need a for-loop for the CPU values 
                  */
+		cs.cpu_sysinfo.cpu[CPU_WAIT] = cs.cpu_sysinfo.wait[W_IO] +
+		                               cs.cpu_sysinfo.wait[W_PIO];
                 for (i = 0; i < CPU_STATES; i++) {
                     css->css_cpu[i] +=
                         (unsigned long long) cs.cpu_sysinfo.cpu[i];
@@ -478,14 +413,10 @@ take_snapshot(struct cpu_stat_snapshot *css)
 }                               /* take_snapshot ends here */
 
 /*
- * This gets called every POLL_INTERVAL seconds to update the snapshots.
- * It takes a new snapshot and drops the oldest one.  This way we move
- * the time window so we always take the values over 
- * POLL_INTERVAL * POLL_VALUES seconds and update the data used every
- * POLL_INTERVAL seconds 
+ * This gets called every POLL_INTERVAL seconds to update the snapshots.  It takes a new snapshot and 
+ * drops the oldest one.  This way we move the time window so we always take the values over 
+ * POLL_INTERVAL * POLL_VALUES seconds and update the data used every POLL_INTERVAL seconds 
  * The alarm timer is in the init function of this module (snmp_alarm_register) 
- */
-/*
  * ARGSUSED0 
  */
 static void
@@ -513,8 +444,6 @@ update_stats(unsigned int registrationNumber, void *clientarg)
 
     /*
      * The sum of the CPU ticks that have passed on the different CPU states, so we can calculate 
-     */
-    /*
      * the percentages of each state 
      */
     unsigned long long cpu_sum = 0;
@@ -533,8 +462,6 @@ update_stats(unsigned int registrationNumber, void *clientarg)
         } else {
             /*
              * On some machines this floods the logfile, thus commented out 
-             */
-            /*
              * snmp_log(LOG_INFO, "vmstat_solaris2 (update_stats): Kstat chain changed."); 
              */
         }
@@ -555,8 +482,6 @@ update_stats(unsigned int registrationNumber, void *clientarg)
     if (number_of_snapshots > 0) {
         /*
          * Huh, the number of CPUs changed during run time.  That is indeed s.th. worth noting, we 
-         */
-        /*
          * output a humorous (more or less) syslog message and need to retake the snapshots 
          */
         if (snapshot[0].css_cpus != snapshot[1].css_cpus) {
@@ -597,33 +522,22 @@ update_stats(unsigned int registrationNumber, void *clientarg)
 
         /*
          * How much time has passed between the snapshots we get the values from ? 
-         */
-        /*
          * Time is in nanoseconds so a few zeros here to juggle with 
-         */
-        /*
          * But the hrtime is not subject to change (s.b. setting the clock), unlike the normal time 
          */
         time_diff =
             (snapshot[0].css_time -
              snapshot[number_of_snapshots].css_time) / 1000000;
+        if ( time_diff == 0 ) { time_diff = 1; }  /* Protect against division-by-zero */
 
         DEBUGMSGTL(("ucd-snmp/vmstat_solaris2.c:update_stats",
                     "time_diff: %lld\n", time_diff));
 
         /*
          * swapin and swapout are in pages, MIB wants kB/s,so we just need to get kB and seconds 
-         */
-        /*
          * For the others we need to get value per second 
-         */
-        /*
          * getpagesize() returns pagesize in bytes 
-         */
-        /*
          * decided to use sysconf(_SC_PAGESIZE) instead to get around an #ifndef (I don't like those) 
-         */
-        /*
          * that was needed b/c some old Solaris versions don't have getpagesize() 
          */
         /*
@@ -678,15 +592,11 @@ update_stats(unsigned int registrationNumber, void *clientarg)
 
         /*
          * Now calculate the absolute percentage values 
-         */
-        /*
          * Looks somewhat complicated sometimes but tries to get around using floats to increase speed 
          */
         for (i = 0; i < CPU_STATES; i++) {
             /*
              * Since we don't return fractions we use + 0.5 to get between 99 and 101 percent adding the values 
-             */
-            /*
              * together, otherwise we would get less than 100 most of the time 
              */
             /*
@@ -734,8 +644,6 @@ update_stats(unsigned int registrationNumber, void *clientarg)
 
 /*
  * *var_extensible_vmstat starts here 
- */
-/*
  * The guts of the module, this routine gets called to service a request 
  */
 unsigned char *
@@ -758,8 +666,6 @@ var_extensible_vmstat(struct variable *vp,
 
     /*
      * generic check whether the options passed make sense and whether the 
-     */
-    /*
      * right variable is requested 
      */
     if (header_generic(vp, name, length, exact, var_len, write_method) !=
@@ -806,14 +712,8 @@ var_extensible_vmstat(struct variable *vp,
         return ((u_char *) (&long_ret));
         /*
          * We are missing CPURAWNICE, Solaris does not account for this in the kernel so this OID can not 
-         */
-        /*
          * be returned.  Also, these values will roll over sooner or later and then return inaccurate data 
-         */
-        /*
          * but the MIB wants Integer32 so we cannot put a counter here 
-         */
-        /*
          * (Has been changed to Counter32 in the latest MIB version!) 
          */
     case CPURAWSYSTEM:
@@ -855,12 +755,6 @@ var_extensible_vmstat(struct variable *vp,
     case IORAWRECEIVE:
         long_ret = (long) (raw_values.css_blocks_read);
         return ((u_char *) (&long_ret));
-    case SYSRAWINTERRUPTS:
-        long_ret = (long) (raw_values.css_interrupts);
-        return ((u_char *) (&long_ret));
-    case SYSRAWCONTEXT:
-        long_ret = (long) (raw_values.css_context_sw);
-        return ((u_char *) (&long_ret));
 
         /*
          * reserved for future use 
@@ -873,7 +767,8 @@ var_extensible_vmstat(struct variable *vp,
          */
     default:
         snmp_log(LOG_ERR,
-                 "vmstat_solaris2: Error in request, no match found.\n");
+                 "vmstat_solaris2: Error in request, no match for %d.\n",
+		 vp->magic);
     }
     return (NULL);
 }                               /* *var_extensible_vmstat ends here */

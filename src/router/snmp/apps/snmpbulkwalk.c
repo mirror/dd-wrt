@@ -42,11 +42,7 @@ SOFTWARE.
 #include <netinet/in.h>
 #endif
 #if TIME_WITH_SYS_TIME
-# ifdef WIN32
-#  include <sys/timeb.h>
-# else
-#  include <sys/time.h>
-# endif
+# include <sys/time.h>
 # include <time.h>
 #else
 # if HAVE_SYS_TIME_H
@@ -60,9 +56,6 @@ SOFTWARE.
 #endif
 #include <stdio.h>
 #include <ctype.h>
-#if HAVE_WINSOCK_H
-#include <winsock.h>
-#endif
 #if HAVE_NETDB_H
 #include <netdb.h>
 #endif
@@ -83,20 +76,20 @@ int             reps = 10, non_reps = 0;
 void
 usage(void)
 {
-    printf( "USAGE: snmpbulkwalk ");
+    fprintf(stderr, "USAGE: snmpbulkwalk ");
     snmp_parse_args_usage(stderr);
-    printf( " [OID]\n\n");
+    fprintf(stderr, " [OID]\n\n");
     snmp_parse_args_descriptions(stderr);
-    printf(
+    fprintf(stderr,
             "  -C APPOPTS\t\tSet various application specific behaviours:\n");
-    printf(
+    fprintf(stderr,
             "\t\t\t  c:       do not check returned OIDs are increasing\n");
-    printf(
+    fprintf(stderr,
             "\t\t\t  i:       include given OIDs in the search range\n");
-    printf( "\t\t\t  n<NUM>:  set non-repeaters to <NUM>\n");
-    printf(
+    fprintf(stderr, "\t\t\t  n<NUM>:  set non-repeaters to <NUM>\n");
+    fprintf(stderr,
             "\t\t\t  p:       print the number of variables found\n");
-    printf( "\t\t\t  r<NUM>:  set max-repeaters to <NUM>\n");
+    fprintf(stderr, "\t\t\t  r<NUM>:  set max-repeaters to <NUM>\n");
 }
 
 static void
@@ -157,7 +150,7 @@ optProc(int argc, char *const *argv, int opt)
                     exit(1);
                 } else {
                     optarg = endptr;
-                    if (isspace(*optarg)) {
+                    if (isspace((unsigned char)(*optarg))) {
                         return;
                     }
                 }
@@ -169,7 +162,7 @@ optProc(int argc, char *const *argv, int opt)
                 break;
 
             default:
-                printf( "Unknown flag passed to -C: %c\n",
+                fprintf(stderr, "Unknown flag passed to -C: %c\n",
                         optarg[-1]);
                 exit(1);
             }
@@ -191,9 +184,11 @@ main(int argc, char *argv[])
     size_t          rootlen;
     int             count;
     int             running;
-    int             status;
+    int             status = STAT_ERROR;
     int             check;
-    int             exitval = 0;
+    int             exitval = 1;
+
+    SOCK_STARTUP;
 
     netsnmp_ds_register_config(ASN_BOOLEAN, "snmpwalk", "includeRequested",
 			       NETSNMP_DS_APPLICATION_ID, 
@@ -209,11 +204,14 @@ main(int argc, char *argv[])
      * get the common command line arguments 
      */
     switch (arg = snmp_parse_args(argc, argv, &session, "C:", optProc)) {
-    case -2:
-        exit(0);
-    case -1:
+    case NETSNMP_PARSE_ARGS_ERROR:
+        goto out;
+    case NETSNMP_PARSE_ARGS_SUCCESS_EXIT:
+        exitval = 0;
+        goto out;
+    case NETSNMP_PARSE_ARGS_ERROR_USAGE:
         usage();
-        exit(1);
+        goto out;
     default:
         break;
     }
@@ -228,7 +226,7 @@ main(int argc, char *argv[])
         rootlen = MAX_OID_LEN;
         if (snmp_parse_oid(argv[arg], root, &rootlen) == NULL) {
             snmp_perror(argv[arg]);
-            exit(1);
+            goto out;
         }
     } else {
         /*
@@ -237,8 +235,6 @@ main(int argc, char *argv[])
         memmove(root, objid_mib, sizeof(objid_mib));
         rootlen = sizeof(objid_mib) / sizeof(oid);
     }
-
-    SOCK_STARTUP;
 
     /*
      * open an SNMP session 
@@ -249,8 +245,7 @@ main(int argc, char *argv[])
          * diagnose snmp_open errors with the input netsnmp_session pointer 
          */
         snmp_sess_perror("snmpbulkwalk", &session);
-        SOCK_CLEANUP;
-        exit(1);
+        goto out;
     }
 
     /*
@@ -267,6 +262,8 @@ main(int argc, char *argv[])
 			       NETSNMP_DS_WALK_INCLUDE_REQUESTED)) {
         snmp_get_and_print(ss, root, rootlen);
     }
+
+    exitval = 0;
 
     while (running) {
         /*
@@ -309,12 +306,12 @@ main(int argc, char *argv[])
                             && snmp_oid_compare(name, name_length,
                                                 vars->name,
                                                 vars->name_length) >= 0) {
-                            printf( "Error: OID not increasing: ");
+                            fprintf(stderr, "Error: OID not increasing: ");
                             fprint_objid(stderr, name, name_length);
-                            printf( " >= ");
+                            fprintf(stderr, " >= ");
                             fprint_objid(stderr, vars->name,
                                          vars->name_length);
-                            printf( "\n");
+                            fprintf(stderr, "\n");
                             running = 0;
                             exitval = 1;
                         }
@@ -341,10 +338,10 @@ main(int argc, char *argv[])
                 if (response->errstat == SNMP_ERR_NOSUCHNAME) {
                     printf("End of MIB\n");
                 } else {
-                    printf( "Error in packet.\nReason: %s\n",
+                    fprintf(stderr, "Error in packet.\nReason: %s\n",
                             snmp_errstring(response->errstat));
                     if (response->errindex != 0) {
-                        printf( "Failed object: ");
+                        fprintf(stderr, "Failed object: ");
                         for (count = 1, vars = response->variables;
                              vars && count != response->errindex;
                              vars = vars->next_variable, count++)
@@ -352,13 +349,13 @@ main(int argc, char *argv[])
                         if (vars)
                             fprint_objid(stderr, vars->name,
                                          vars->name_length);
-                        printf( "\n");
+                        fprintf(stderr, "\n");
                     }
                     exitval = 2;
                 }
             }
         } else if (status == STAT_TIMEOUT) {
-            printf( "Timeout: No Response from %s\n",
+            fprintf(stderr, "Timeout: No Response from %s\n",
                     session.peername);
             running = 0;
             exitval = 1;
@@ -386,6 +383,7 @@ main(int argc, char *argv[])
         printf("Variables found: %d\n", numprinted);
     }
 
+out:
     SOCK_CLEANUP;
     return exitval;
 }

@@ -29,11 +29,13 @@ config_require(header_complex)
      void            init_mteTriggerExistenceTable(void);
      FindVarMethod   var_mteTriggerExistenceTable;
 
+#ifndef NETSNMP_NO_WRITE_SUPPORT
      WriteMethod     write_mteTriggerExistenceTest;
      WriteMethod     write_mteTriggerExistenceStartup;
      WriteMethod     write_mteTriggerExistenceObjectsOwner;
      WriteMethod     write_mteTriggerExistenceObjects;
      WriteMethod     write_mteTriggerExistenceEventOwner;
      WriteMethod     write_mteTriggerExistenceEvent;
+#endif /* !NETSNMP_NO_WRITE_SUPPORT */
 
 #endif                          /* _MIBGROUP_MTETRIGGEREXISTENCETABLE_H */

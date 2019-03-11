@@ -10,8 +10,12 @@
  */
 #include <sys/param.h>
 #include <sys/time.h>
+#ifdef dragonfly
+#include <sys/user.h>
+#else
 #include <sys/proc.h>
 #include <sys/dkstat.h>
+#endif
 #ifdef freebsd5
 #include <sys/bio.h>
 #endif
@@ -42,10 +46,6 @@
 #include <string.h>
 #include <paths.h>
 #include <limits.h>
-
-#if HAVE_DMALLOC_H
-#include <dmalloc.h>
-#endif
 
 #include <net-snmp/net-snmp-includes.h>
 #include <net-snmp/agent/net-snmp-agent-includes.h>
@@ -87,45 +87,47 @@ init_memory_freebsd2(void)
 {
 
     struct variable2 extensible_mem_variables[] = {
-        {MIBINDEX, ASN_INTEGER, RONLY, var_extensible_mem, 1, {MIBINDEX}},
-        {ERRORNAME, ASN_OCTET_STR, RONLY, var_extensible_mem, 1,
-         {ERRORNAME}},
-        {MEMTOTALSWAP, ASN_INTEGER, RONLY, var_extensible_mem, 1,
-         {MEMTOTALSWAP}},
-        {MEMAVAILSWAP, ASN_INTEGER, RONLY, var_extensible_mem, 1,
-         {MEMAVAILSWAP}},
-        {MEMTOTALREAL, ASN_INTEGER, RONLY, var_extensible_mem, 1,
-         {MEMTOTALREAL}},
-        {MEMAVAILREAL, ASN_INTEGER, RONLY, var_extensible_mem, 1,
-         {MEMAVAILREAL}},
-        {MEMTOTALSWAPTXT, ASN_INTEGER, RONLY, var_extensible_mem, 1,
-         {MEMTOTALSWAPTXT}},
-        {MEMUSEDSWAPTXT, ASN_INTEGER, RONLY, var_extensible_mem, 1,
-         {MEMUSEDSWAPTXT}},
-        {MEMTOTALREALTXT, ASN_INTEGER, RONLY, var_extensible_mem, 1,
-         {MEMTOTALREALTXT}},
-        {MEMUSEDREALTXT, ASN_INTEGER, RONLY, var_extensible_mem, 1,
-         {MEMUSEDREALTXT}},
-        {MEMTOTALFREE, ASN_INTEGER, RONLY, var_extensible_mem, 1,
-         {MEMTOTALFREE}},
-        {MEMSWAPMINIMUM, ASN_INTEGER, RONLY, var_extensible_mem, 1,
-         {MEMSWAPMINIMUM}},
-        {MEMSHARED, ASN_INTEGER, RONLY, var_extensible_mem, 1,
-         {MEMSHARED}},
-        {MEMBUFFER, ASN_INTEGER, RONLY, var_extensible_mem, 1,
-         {MEMBUFFER}},
-        {MEMCACHED, ASN_INTEGER, RONLY, var_extensible_mem, 1,
-         {MEMCACHED}},
-        {ERRORFLAG, ASN_INTEGER, RONLY, var_extensible_mem, 1,
-         {ERRORFLAG}},
-        {ERRORMSG, ASN_OCTET_STR, RONLY, var_extensible_mem, 1, {ERRORMSG}}
+        {MIBINDEX, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_mem, 1, {MIBINDEX}},
+        {ERRORNAME, ASN_OCTET_STR, NETSNMP_OLDAPI_RONLY,
+         var_extensible_mem, 1, {ERRORNAME}},
+        {MEMTOTALSWAP, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_mem, 1, {MEMTOTALSWAP}},
+        {MEMAVAILSWAP, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_mem, 1, {MEMAVAILSWAP}},
+        {MEMTOTALREAL, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_mem, 1, {MEMTOTALREAL}},
+        {MEMAVAILREAL, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_mem, 1, {MEMAVAILREAL}},
+        {MEMTOTALSWAPTXT, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_mem, 1, {MEMTOTALSWAPTXT}},
+        {MEMUSEDSWAPTXT, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_mem, 1, {MEMUSEDSWAPTXT}},
+        {MEMTOTALREALTXT, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_mem, 1, {MEMTOTALREALTXT}},
+        {MEMUSEDREALTXT, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_mem, 1, {MEMUSEDREALTXT}},
+        {MEMTOTALFREE, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_mem, 1, {MEMTOTALFREE}},
+        {MEMSWAPMINIMUM, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_mem, 1, {MEMSWAPMINIMUM}},
+        {MEMSHARED, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_mem, 1, {MEMSHARED}},
+        {MEMBUFFER, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_mem, 1, {MEMBUFFER}},
+        {MEMCACHED, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_mem, 1, {MEMCACHED}},
+        {ERRORFLAG, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_mem, 1, {ERRORFLAG}},
+        {ERRORMSG, ASN_OCTET_STR, NETSNMP_OLDAPI_RONLY,
+         var_extensible_mem, 1, {ERRORMSG}}
     };
 
     /*
      * Define the OID pointer to the top of the mib tree that we're
      * registering underneath 
      */
-    oid             mem_variables_oid[] = { UCDAVIS_MIB, MEMMIBNUM };
+    oid             mem_variables_oid[] = { NETSNMP_UCDAVIS_MIB, NETSNMP_MEMMIBNUM };
 
     /*
      * register ourselves with the agent to handle our mib tree 
@@ -188,30 +190,16 @@ swapmode(void)
 
 #include <sys/conf.h>
 
-#define NSWDEV_SYMBOL     "nswdev"
-#define DMMAX_SYMBOL      "dmmax"
-#define SWDEVT_SYMBOL     "swdevt"
-
 void
 swapmode(void)
 {
-    int             nswdev, dmmax, pagesize;
+    int             pagesize;
     int             i, n;
-    struct swdevt  *sw;
     static kvm_t   *kd = NULL;
     struct kvm_swap kswap[16];
 
     if (kd == NULL)
         kd = kvm_openfiles(NULL, NULL, NULL, O_RDONLY, NULL);
-
-    auto_nlist(NSWDEV_SYMBOL, (char *) &nswdev, sizeof(nswdev));
-    auto_nlist(DMMAX_SYMBOL, (char *) &dmmax, sizeof(dmmax));
-
-    sw = (struct swdevt *) malloc(nswdev * sizeof(*sw));
-    if (sw == NULL)
-        return;
-
-    auto_nlist(SWDEVT_SYMBOL, (char *) sw, nswdev * sizeof(*sw));
 
     n = kvm_getswapinfo(kd, kswap, sizeof(kswap) / sizeof(kswap[0]), 0);
 
@@ -241,8 +229,6 @@ swapmode(void)
     swapTotal *= pagesize;
     swapUsed *= pagesize;
     swapFree *= pagesize;
-
-    free(sw);
 }
 #endif
 
@@ -267,16 +253,22 @@ var_extensible_mem(struct variable *vp,
                    size_t * var_len, WriteMethod ** write_method)
 {
     static long     long_ret;
-    static char     errmsg[300];
+    static char     errmsg[1024];
 
+#ifdef dragonfly
+    static struct vmstats mem;
+    size_t        vmstats_size = sizeof(mem);
+#endif
     static struct vmmeter mem;
+#endif
     static struct vmtotal total;
+
     size_t          total_size = sizeof(total);
     int             total_mib[] = { CTL_VM, VM_METER };
 
-    long            phys_mem;
+    u_long          phys_mem;
     size_t          phys_mem_size = sizeof(phys_mem);
-    int             phys_mem_mib[] = { CTL_HW, HW_USERMEM };
+    int             phys_mem_mib[] = { CTL_HW, HW_PHYSMEM };
 
 #ifdef BUFSPACE_SYMBOL
     long            bufspace;
@@ -288,7 +280,11 @@ var_extensible_mem(struct variable *vp,
     /*
      * Memory info 
      */
+#ifdef dragonfly
+    sysctlbyname("vm.vmstats", &vmstats, &vmstats_size, NULL, 0);
+#else
     auto_nlist(SUM_SYMBOL, (char *) &mem, sizeof(mem));
+#endif
     sysctl(total_mib, 2, &total, &total_size, NULL, 0);
 
     /*
@@ -346,7 +342,7 @@ var_extensible_mem(struct variable *vp,
     case MEMUSEDSWAPTXT:
     case MEMTOTALREALTXT:
     case MEMUSEDREALTXT:
-#if NO_DUMMY_VALUES
+#if NETSNMP_NO_DUMMY_VALUES
         return NULL;
 #endif
         long_ret = -1;
@@ -371,8 +367,10 @@ var_extensible_mem(struct variable *vp,
     case MEMCACHED:
 #ifdef darwin
         long_ret = ptok(mem.v_lookups);
-#else
+#elif  defined(dragonfly)
         long_ret = ptok(mem.v_cache_count);
+#else
+        long_ret = ptok(mem.v_cache_count) + ptok(mem.v_inactive_count);
 #endif
         return ((u_char *) (&long_ret));
 #endif

@@ -42,11 +42,7 @@ SOFTWARE.
 #include <netinet/in.h>
 #endif
 #if TIME_WITH_SYS_TIME
-# ifdef WIN32
-#  include <sys/timeb.h>
-# else
-#  include <sys/time.h>
-# endif
+# include <sys/time.h>
 # include <time.h>
 #else
 # if HAVE_SYS_TIME_H
@@ -60,9 +56,6 @@ SOFTWARE.
 #endif
 #include <stdio.h>
 #include <ctype.h>
-#if HAVE_WINSOCK_H
-#include <winsock.h>
-#endif
 #if HAVE_NETDB_H
 #include <netdb.h>
 #endif
@@ -84,14 +77,14 @@ int             names;
 void
 usage(void)
 {
-    printf( "USAGE: snmpbulkget ");
+    fprintf(stderr, "USAGE: snmpbulkget ");
     snmp_parse_args_usage(stderr);
-    printf( " OID [OID]...\n\n");
+    fprintf(stderr, " OID [OID]...\n\n");
     snmp_parse_args_descriptions(stderr);
-    printf(
+    fprintf(stderr,
             "  -C APPOPTS\t\tSet various application specific behaviours:\n");
-    printf( "\t\t\t  n<NUM>:  set non-repeaters to <NUM>\n");
-    printf( "\t\t\t  r<NUM>:  set max-repeaters to <NUM>\n");
+    fprintf(stderr, "\t\t\t  n<NUM>:  set non-repeaters to <NUM>\n");
+    fprintf(stderr, "\t\t\t  r<NUM>:  set max-repeaters to <NUM>\n");
 }
 
 static
@@ -120,14 +113,14 @@ optProc(int argc, char *const *argv, int opt)
                     exit(1);
                 } else {
                     optarg = endptr;
-                    if (isspace(*optarg)) {
+                    if (isspace((unsigned char)(*optarg))) {
                         return;
                     }
                 }
                 break;
 
             default:
-                printf( "Unknown flag passed to -C: %c\n",
+                fprintf(stderr, "Unknown flag passed to -C: %c\n",
                         optarg[-1]);
                 exit(1);
             }
@@ -144,27 +137,31 @@ main(int argc, char *argv[])
     netsnmp_variable_list *vars;
     int             arg;
     int             count;
-    int             running;
     int             status;
-    int             exitval = 0;
+    int             exitval = 1;
+
+    SOCK_STARTUP;
 
     /*
      * get the common command line arguments 
      */
     switch (arg = snmp_parse_args(argc, argv, &session, "C:", optProc)) {
-    case -2:
-        exit(0);
-    case -1:
+    case NETSNMP_PARSE_ARGS_ERROR:
+        goto out;
+    case NETSNMP_PARSE_ARGS_SUCCESS_EXIT:
+        exitval = 0;
+        goto out;
+    case NETSNMP_PARSE_ARGS_ERROR_USAGE:
         usage();
-        exit(1);
+        goto out;
     default:
         break;
     }
 
     names = argc - arg;
     if (names < non_repeaters) {
-        printf( "snmpbulkget: need more objects than <nonrep>\n");
-        exit(1);
+        fprintf(stderr, "snmpbulkget: need more objects than <nonrep>\n");
+        goto out;
     }
 
     namep = name = (struct nameStruct *) calloc(names, sizeof(*name));
@@ -173,13 +170,11 @@ main(int argc, char *argv[])
         if (snmp_parse_oid(argv[arg], namep->name, &namep->name_len) ==
             NULL) {
             snmp_perror(argv[arg]);
-            exit(1);
+            goto out;
         }
         arg++;
         namep++;
     }
-
-    SOCK_STARTUP;
 
     /*
      * open an SNMP session 
@@ -190,9 +185,10 @@ main(int argc, char *argv[])
          * diagnose snmp_open errors with the input netsnmp_session pointer 
          */
         snmp_sess_perror("snmpbulkget", &session);
-        SOCK_CLEANUP;
-        exit(1);
+        goto out;
     }
+
+    exitval = 0;
 
     /*
      * create PDU for GETBULK request and add object name to request 
@@ -219,14 +215,13 @@ main(int argc, char *argv[])
             /*
              * error in response, print it 
              */
-            running = 0;
             if (response->errstat == SNMP_ERR_NOSUCHNAME) {
                 printf("End of MIB.\n");
             } else {
-                printf( "Error in packet.\nReason: %s\n",
+                fprintf(stderr, "Error in packet.\nReason: %s\n",
                         snmp_errstring(response->errstat));
                 if (response->errindex != 0) {
-                    printf( "Failed object: ");
+                    fprintf(stderr, "Failed object: ");
                     for (count = 1, vars = response->variables;
                          vars && (count != response->errindex);
                          vars = vars->next_variable, count++)
@@ -234,19 +229,17 @@ main(int argc, char *argv[])
                     if (vars)
                         fprint_objid(stderr, vars->name,
                                      vars->name_length);
-                    printf( "\n");
+                    fprintf(stderr, "\n");
                 }
                 exitval = 2;
             }
         }
     } else if (status == STAT_TIMEOUT) {
-        printf( "Timeout: No Response from %s\n",
+        fprintf(stderr, "Timeout: No Response from %s\n",
                 session.peername);
-        running = 0;
         exitval = 1;
     } else {                    /* status == STAT_ERROR */
         snmp_sess_perror("snmpbulkget", ss);
-        running = 0;
         exitval = 1;
     }
 
@@ -254,6 +247,8 @@ main(int argc, char *argv[])
         snmp_free_pdu(response);
 
     snmp_close(ss);
+
+out:
     SOCK_CLEANUP;
     return exitval;
 }

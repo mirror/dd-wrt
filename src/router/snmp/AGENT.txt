@@ -6,12 +6,13 @@ Extending the UCD-SNMP agent
 
 This document describes the procedure for writing code to extend
 the functionality of the v4 UCD-SNMP network management agent.
-Modules written using this procedure will also work with the v5
-Net-SNMP agent, though this will not take advantage of the new
-handler-based helper mechanisms.  See the on-line documentation
-for more information and examples of that mechanism.
+Modules written using this procedure should also work with the v5
+Net-SNMP agent, though such modules would not take advantage of the
+new handler-based helper mechanism.  See the on-line documentation
+for more information and examples of the newer approach.
 We would be very interested in comment and feedback about how useful
-useful you find this description, and ways in which it could be improved.
+(or otherwise) you find this description, and ways in which it could
+be improved.
 
 The information is designed to be read in order - the structure being:
 
@@ -126,6 +127,8 @@ advisable to start with this for three reasons:
      relevant question in the FAQ)
    * The tool mib2c uses this description to produce the two code files.
      This is by far the easiest way to develop a new module.
+     (Note that the v5 version of mib2c is generally similar, but does
+     not correspond exactly to the v4 version described here)
 
 If the intention is to implement a 'standard' MIB module, or a
 vendor-specific one, then the construction of this file will have already
@@ -261,7 +264,7 @@ each of these, of the form:
 
 These prototypes are in fact typedef'ed in <agent/snmp_vars.h>.
 
-Module dependancies
+Module dependencies
 -------------------
 
 This header file is also used to inform the compilation system of any
@@ -269,6 +272,7 @@ dependancies between this module and any others. There is one utility module
 which is required by almost every module, and this is included using the
 directive
 
+        config_require( util_funcs )
 
 (which is produced automatically by mib2c). This same syntax can be used to
 trigger the inclusion of other related modules. An example of this can be
@@ -414,14 +418,16 @@ A single entry consists of six fields:
 
    * a magic number (the #defined integer constant described above)
    * a type indicator (from the values listed in <snmplib/snmp_impl.h>)
-   * an access indicator (essentially RWRITE or RONLY)
+   * an access indicator (essentially NETSNMP_OLDAPI_RWRITE or
+     NETSNMP_OLDAPI_RONLY)
    * the name of the routine used to handle this entry
    * the length of the OID suffix used, and
    * an array of integers specifying this suffix (more on this in a moment)
 
 Thus a typical variable entry would look like:
 
-        { EXAMPLESTRING, ASN_OCTET_STR, RONLY, var_example, 1, {1}}
+        { EXAMPLESTRING, ASN_OCTET_STR, NETSNMP_OLDAPI_RONLY,
+          var_example, 1, {1}}
 
 If the magic numbers have not been defined in the header file, then they
 should be defined here, usually comming immediately before the corresponding
@@ -1160,4 +1166,6 @@ above all feedback, would be most appreciated :-)
 
   ------------------------------------------------------------------------
 Copyright 1999, 2000 - D.T.Shield.
-Not to be distributed without the explicit permission of the author.
+This file may be distributed as part of a source or binary packaging
+of the Net-SNMP software suite.  It may not be distributed independently
+without the explicit permission of the author.

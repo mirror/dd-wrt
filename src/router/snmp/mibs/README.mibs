@@ -35,6 +35,12 @@ sources:
 - using _ in identifiers. A - may be used in its place
 - various misspellings
 
+There is a short-cut rule
+	make -f Makefile.mib rfc
+that will also apply the patches. Note that Makefile.mib and smistrip has
+configurable versions of awk and patch. If you are running Solaris you
+must set these to nawk and gpatch respectively.
+
 DISCLAIMER: The patches provided here for the IETF standard MIB files
 are not endorsed by anyone, and I don't guarantee that they bring them
 accordance with what the authors intended. All I will promise, is that

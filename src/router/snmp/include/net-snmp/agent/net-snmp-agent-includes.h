@@ -6,6 +6,9 @@
 #ifndef NET_SNMP_AGENT_INCLUDES_H
 #define NET_SNMP_AGENT_INCLUDES_H
 
+#include <net-snmp/agent/mib_module_config.h>
+#include <net-snmp/agent/agent_module_config.h>
+
 #include <net-snmp/agent/snmp_agent.h>
 #include <net-snmp/agent/snmp_vars.h>
 #include <net-snmp/agent/ds_agent.h>
@@ -15,7 +18,5 @@
 #include <net-snmp/agent/agent_handler.h>
 #include <net-snmp/agent/all_helpers.h>
 #include <net-snmp/agent/var_struct.h>
-
-#include <net-snmp/agent/mib_module_config.h>
 
 #endif                          /* NET_SNMP_AGENT_INCLUDES_H */

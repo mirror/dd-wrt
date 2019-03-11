@@ -19,10 +19,7 @@
  ******************************************************************/
 
 /*
- * $Log: Rmon.h,v $
- * Revision 1.1.2.1  2004/06/20 21:54:13  nikki
- * Adding WOL, SNMP, RFLOW
- *
+ * $Log$
  * Revision 5.0  2002/04/20 07:30:00  hardaker
  * cvs file version number change
  *
@@ -50,7 +47,9 @@
 config_require(Rmon/rows)
 config_require(Rmon/agutil)
 config_require(Rmon/statistics)
-config_require(Rmon/alarm)
+/* older implementation: */
+/* config_require(Rmon/alarm) */
+config_require(Rmon/alarmTable)
 config_require(Rmon/history)
 config_require(Rmon/event)
 config_add_mib(RMON-MIB)

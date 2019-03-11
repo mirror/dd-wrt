@@ -24,21 +24,31 @@ extern          "C" {
     /*
      * Prototypes.h
      */
+    NETSNMP_IMPORT
     int             generate_Ku(const oid * hashtype, u_int hashtype_len,
-                                u_char * P, size_t pplen,
+                                const u_char * P, size_t pplen,
                                 u_char * Ku, size_t * kulen);
 
+    NETSNMP_IMPORT
     int             generate_kul(const oid * hashtype, u_int hashtype_len,
-                                 u_char * engineID, size_t engineID_len,
-                                 u_char * Ku, size_t ku_len,
+                                 const u_char * engineID, size_t engineID_len,
+                                 const u_char * Ku, size_t ku_len,
                                  u_char * Kul, size_t * kul_len);
 
+    NETSNMP_IMPORT
+    int netsnmp_extend_kul(u_int needKeyLen, oid *hashoid, u_int hashoid_len,
+                           int privType, u_char *engineID, u_int engineIDLen,
+                           u_char **kulBuf, size_t *kulBufLen,
+                           u_int kulBufSize);
+
+    NETSNMP_IMPORT
     int             encode_keychange(const oid * hashtype,
                                      u_int hashtype_len, u_char * oldkey,
                                      size_t oldkey_len, u_char * newkey,
                                      size_t newkey_len, u_char * kcstring,
                                      size_t * kcstring_len);
 
+    NETSNMP_IMPORT
     int             decode_keychange(const oid * hashtype,
                                      u_int hashtype_len, u_char * oldkey,
                                      size_t oldkey_len, u_char * kcstring,

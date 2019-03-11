@@ -1,3 +1,14 @@
+/*
+ * Portions of this file are subject to the following copyright(s).  See
+ * the Net-SNMP's COPYING file for more details and other copyrights
+ * that may apply:
+ *
+ * Portions of this file are copyrighted by:
+ * Copyright (c) 2016 VMware, Inc. All rights reserved.
+ * Use is subject to license terms specified in the COPYING file
+ * distributed with the Net-SNMP package.
+ */
+
 #include <net-snmp/net-snmp-config.h>
 
 #if HAVE_STRING_H
@@ -92,8 +103,12 @@ init_vacm_context(void)
     table_info = SNMP_MALLOC_TYPEDEF(netsnmp_table_registration_info);
     iinfo = SNMP_MALLOC_TYPEDEF(netsnmp_iterator_info);
 
-    if (!table_info || !iinfo)
+    if (!table_info || !iinfo) {
+        SNMP_FREE(table_info);
+        SNMP_FREE(iinfo);
+        netsnmp_handler_registration_free(my_handler);
         return;
+    }
 
     netsnmp_table_helper_add_index(table_info, ASN_OCTET_STR)
         table_info->min_column = 1;
@@ -101,7 +116,7 @@ init_vacm_context(void)
     iinfo->get_first_data_point = get_first_context;
     iinfo->get_next_data_point = get_next_context;
     iinfo->table_reginfo = table_info;
-    netsnmp_register_table_iterator(my_handler, iinfo);
+    netsnmp_register_table_iterator2(my_handler, iinfo);
 }
 
 /*
@@ -116,7 +131,7 @@ vacm_context_handler(netsnmp_mib_handler *handler,
 {
     subtree_context_cache *context_ptr;
 
-    while (requests) {
+    for(; requests; requests = requests->next) {
         netsnmp_variable_list *var = requests->requestvb;
 
         if (requests->processed != 0)
@@ -129,7 +144,6 @@ vacm_context_handler(netsnmp_mib_handler *handler,
         if (context_ptr == NULL) {
             snmp_log(LOG_ERR,
                      "vacm_context_handler called without data\n");
-            requests = requests->next;
             continue;
         }
 
@@ -146,7 +160,6 @@ vacm_context_handler(netsnmp_mib_handler *handler,
                                      strlen(context_ptr->context_name));
 
             break;
-
         default:
             /*
              * We should never get here, getnext already have been
@@ -156,11 +169,7 @@ vacm_context_handler(netsnmp_mib_handler *handler,
                      "vacm_context table accessed as mode=%d.  We're improperly registered!",
                      reqinfo->mode);
             break;
-
-
         }
-
-        requests = requests->next;
     }
 
     return SNMP_ERR_NOERROR;

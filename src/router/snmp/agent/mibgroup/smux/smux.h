@@ -3,6 +3,12 @@
  * Rewritten by Nick Amato <naamato@merit.net>.
  */
 
+#ifndef NETSNMP_TRANSPORT_IPV4BASE_DOMAIN
+config_error(smux/smux depends on the IPv4Base transport domain)
+#endif
+
+config_belongs_in(agent_module)
+
 #define SMUXPORT 199
 
 #define SMUXMAXPKTSIZE 1500
@@ -54,14 +60,27 @@ typedef struct _smux_reg {
     int             sr_priority;        /* priority of registration     */
     int             sr_fd;      /* descriptor of owner          */
     struct _smux_reg *sr_next;  /* next one                     */
+    netsnmp_handler_registration *reginfo;
 } smux_reg;
 
 extern void     init_smux(void);
+extern void     real_init_smux(void);
 extern int      smux_accept(int);
 extern u_char  *smux_snmp_process(int, oid *, size_t *, size_t *, u_char *,
                                   int);
 extern int      smux_process(int);
 extern void     smux_parse_peer_auth(const char *, char *);
 extern void     smux_free_peer_auth(void);
-extern void     send_enterprise_trap_vars(int, int, oid *, int,
-                                          netsnmp_variable_list *);
+
+/* Add socket-fd to list */
+int smux_snmp_select_list_add(int sd);
+
+/* Remove socket-fd from list */
+int smux_snmp_select_list_del(int sd);
+
+/* Returns the count of added socket-fd's in the list */
+int smux_snmp_select_list_get_length(void);
+
+/* Returns the socket-fd number from the position of the list */
+int smux_snmp_select_list_get_SD_from_List(int pos);
+

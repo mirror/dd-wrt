@@ -17,12 +17,12 @@
 #include <net-snmp/agent/auto_nlist.h>
 
 
-#include "util_funcs.h"         /* utility function declarations */
+#include "util_funcs/header_generic.h" /* utility function declarations */
 #include "memory.h"             /* the module-specific header */
 #include "memory_dynix.h"       /* the module-specific header */
 
 int             minimumswap;
-static char     errmsg[300];
+static char     errmsg[1024];
 
 static FindVarMethod var_extensible_mem;
 static long     getFreeSwap(void);
@@ -34,45 +34,47 @@ init_memory_dynix(void)
 {
 
     struct variable2 extensible_mem_variables[] = {
-        {MIBINDEX, ASN_INTEGER, RONLY, var_extensible_mem, 1, {MIBINDEX}},
-        {ERRORNAME, ASN_OCTET_STR, RONLY, var_extensible_mem, 1,
-         {ERRORNAME}},
-        {MEMTOTALSWAP, ASN_INTEGER, RONLY, var_extensible_mem, 1,
-         {MEMTOTALSWAP}},
-        {MEMAVAILSWAP, ASN_INTEGER, RONLY, var_extensible_mem, 1,
-         {MEMAVAILSWAP}},
-        {MEMTOTALREAL, ASN_INTEGER, RONLY, var_extensible_mem, 1,
-         {MEMTOTALREAL}},
-        {MEMAVAILREAL, ASN_INTEGER, RONLY, var_extensible_mem, 1,
-         {MEMAVAILREAL}},
-        {MEMTOTALSWAPTXT, ASN_INTEGER, RONLY, var_extensible_mem, 1,
-         {MEMTOTALSWAPTXT}},
-        {MEMUSEDSWAPTXT, ASN_INTEGER, RONLY, var_extensible_mem, 1,
-         {MEMUSEDSWAPTXT}},
-        {MEMTOTALREALTXT, ASN_INTEGER, RONLY, var_extensible_mem, 1,
-         {MEMTOTALREALTXT}},
-        {MEMUSEDREALTXT, ASN_INTEGER, RONLY, var_extensible_mem, 1,
-         {MEMUSEDREALTXT}},
-        {MEMTOTALFREE, ASN_INTEGER, RONLY, var_extensible_mem, 1,
-         {MEMTOTALFREE}},
-        {MEMSWAPMINIMUM, ASN_INTEGER, RONLY, var_extensible_mem, 1,
-         {MEMSWAPMINIMUM}},
-        {MEMSHARED, ASN_INTEGER, RONLY, var_extensible_mem, 1,
-         {MEMSHARED}},
-        {MEMBUFFER, ASN_INTEGER, RONLY, var_extensible_mem, 1,
-         {MEMBUFFER}},
-        {MEMCACHED, ASN_INTEGER, RONLY, var_extensible_mem, 1,
-         {MEMCACHED}},
-        {ERRORFLAG, ASN_INTEGER, RONLY, var_extensible_mem, 1,
-         {ERRORFLAG}},
-        {ERRORMSG, ASN_OCTET_STR, RONLY, var_extensible_mem, 1, {ERRORMSG}}
+        {MIBINDEX, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_mem, 1, {MIBINDEX}},
+        {ERRORNAME, ASN_OCTET_STR, NETSNMP_OLDAPI_RONLY,
+         var_extensible_mem, 1, {ERRORNAME}},
+        {MEMTOTALSWAP, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_mem, 1, {MEMTOTALSWAP}},
+        {MEMAVAILSWAP, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_mem, 1, {MEMAVAILSWAP}},
+        {MEMTOTALREAL, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_mem, 1, {MEMTOTALREAL}},
+        {MEMAVAILREAL, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_mem, 1, {MEMAVAILREAL}},
+        {MEMTOTALSWAPTXT, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_mem, 1, {MEMTOTALSWAPTXT}},
+        {MEMUSEDSWAPTXT, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_mem, 1, {MEMUSEDSWAPTXT}},
+        {MEMTOTALREALTXT, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_mem, 1, {MEMTOTALREALTXT}},
+        {MEMUSEDREALTXT, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_mem, 1, {MEMUSEDREALTXT}},
+        {MEMTOTALFREE, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_mem, 1, {MEMTOTALFREE}},
+        {MEMSWAPMINIMUM, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_mem, 1, {MEMSWAPMINIMUM}},
+        {MEMSHARED, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_mem, 1, {MEMSHARED}},
+        {MEMBUFFER, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_mem, 1, {MEMBUFFER}},
+        {MEMCACHED, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_mem, 1, {MEMCACHED}},
+        {ERRORFLAG, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_extensible_mem, 1, {ERRORFLAG}},
+        {ERRORMSG, ASN_OCTET_STR, NETSNMP_OLDAPI_RONLY,
+         var_extensible_mem, 1, {ERRORMSG}}
     };
 
     /*
      * Define the OID pointer to the top of the mib tree that we're
      * registering underneath 
      */
-    oid             mem_variables_oid[] = { UCDAVIS_MIB, MEMMIBNUM };
+    oid             mem_variables_oid[] = { NETSNMP_UCDAVIS_MIB, NETSNMP_MEMMIBNUM };
 
     /*
      * register ourselves with the agent to handle our mib tree 

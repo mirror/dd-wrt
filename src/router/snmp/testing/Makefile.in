@@ -2,20 +2,63 @@
 # Makefile for testing
 #
 
-#TARG		= etest ktest misctest stest
+# use GNU vpath, if available, to only set a path for source and headers
+# VPATH will pick up objects too, which is bad if you are sharing a
+# source dir...
+@GNU_vpath@ %.h $(srcdir)
+@GNU_vpath@ %.c $(srcdir)
+# fallback to regular VPATH for non-gnu...
+@NON_GNU_VPATH@ $(srcdir)
 
 USELIBS		= ../snmplib/libsnmp.$(LIB_EXTENSION)$(LIB_VERSION)
 LIBS		= -L../snmplib $(CC_RUNTIME_ARG) -lsnmp @LIBS@
 
 PARSEOBJS	=
 
-CPPFLAGS	= -I.. -I$(srcdir)/.. -I$(srcdir)/../snmplib @CPPFLAGS@
+CPPFLAGS	= $(SNMPLIB_INCLUDES) @CPPFLAGS@
 CC		= @CC@ $(CPPFLAGS)
 
-all: $(TARG)
+all:
+	@echo "Select one of the following targets to run:"
+	@echo ""
+	@echo "  make test        -- default test suites"
+	@echo "  make testall     -- Run all available tests"
+	@echo "  make testfailed  -- Run only the tests that failed last time."
+	@echo "  make testsimple  -- Run tests directly with simple_run"
+	@echo ""
+	@echo "Set additional test parameters with TESTOPTS=args"
+	@echo ""
+	@echo "Also see the RUNFULLTESTS script for details"
 
 test:
-	$(srcdir)/RUNTESTS -a -D `pwd`/..
+	@$(srcdir)/check_for_pskill
+	@if test "x$(PERL)" = "x" \
+	         -o "x@PERL_SYSTEM_INVOKES_POSIX_SHELL@" != xyes \
+		 || { ! $(PERL) -e 'require TAP::Harness;' >/dev/null 2>&1 \
+		    && ! $(PERL) -e 'require Test::Harness; die if $$Test::Harness::VERSION < 1.21;' >/dev/null 2>&1; };\
+	then \
+		echo $(srcdir)/RUNTESTS ; \
+		$(srcdir)/RUNTESTS ; \
+	else \
+		echo $(srcdir)/RUNFULLTESTS $(TESTOPTS) ; \
+		$(PERL) $(srcdir)/RUNFULLTESTS $(TESTOPTS) ; \
+	fi
+
+testsimple:
+	@(export srcdir=$(top_srcdir) ; \
+		export builddir=$(top_builddir) ; \
+		$(srcdir)/fulltests/support/simple_run $(TESTOPTS) \
+	)
+
+testall:
+	$(srcdir)/RUNFULLTESTS -g all $(TESTOPTS)
+
+testfailed:
+	$(srcdir)/RUNFULLTESTS -f $(TESTOPTS)
+
+
+test-mibs:
+	cd $(srcdir)/rfc1213 ; ./run
 
 etest:    etimetest.o $(PARSEOBJS) $(USELIBS)
 	${CC} -o $@ etimetest.o $(PARSEOBJS) ${LDFLAGS} ${LIBS} 
@@ -37,12 +80,12 @@ testclean:
 
 install: installdirs $(TARG)
 	@for i in $(TARG) ; \
-		do $(INSTALL) $$i $(bindir) ; \
-		echo "install:  installed $$i in $(bindir)" ; \
+		do $(INSTALL) $$i $(INSTALL_PREFIX)$(bindir) ; \
+		echo "install:  installed $$i in $(INSTALL_PREFIX)$(bindir)" ; \
 	done
 
 installdirs:
-	@$(SHELL) $(srcdir)/../mkinstalldirs $(snmplibdir) $(bindir)
+	@$(SHELL) $(srcdir)/../mkinstalldirs $(INSTALL_PREFIX)$(snmplibdir) $(INSTALL_PREFIX)$(bindir)
 
 dependlocal: 
 	makedepend $(CPPFLAGS) -o.lo $(srcdir)/*.c
@@ -51,10 +94,10 @@ depend: dependlocal
 
 nosysdepend: 
 	makedepend $(CPPFLAGS) -o.lo *.c
-	perl -n -i.bak $(top_srcdir)/makenosysdepend.pl Makefile
+	$(PERL) -n -i.bak $(top_srcdir)/makenosysdepend.pl Makefile
 
 makefileindepend: nosysdepend
-	perl $(top_srcdir)/makefileindepend.pl
+	$(PERL) $(top_srcdir)/makefileindepend.pl
 
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.

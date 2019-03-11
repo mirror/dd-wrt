@@ -48,66 +48,114 @@ oid             mteTriggerThresholdTable_variables_oid[] =
  */
 
 
+#ifndef NETSNMP_NO_WRITE_SUPPORT
 struct variable2 mteTriggerThresholdTable_variables[] = {
     /*
      * magic number        , variable type , ro/rw , callback fn  , L, oidsuffix 
      */
 #define   MTETRIGGERTHRESHOLDSTARTUP  3
-    {MTETRIGGERTHRESHOLDSTARTUP, ASN_INTEGER, RWRITE,
+    {MTETRIGGERTHRESHOLDSTARTUP, ASN_INTEGER, NETSNMP_OLDAPI_RWRITE,
      var_mteTriggerThresholdTable, 2, {1, 1}},
 #define   MTETRIGGERTHRESHOLDRISING  4
-    {MTETRIGGERTHRESHOLDRISING, ASN_INTEGER, RWRITE,
+    {MTETRIGGERTHRESHOLDRISING, ASN_INTEGER, NETSNMP_OLDAPI_RWRITE,
      var_mteTriggerThresholdTable, 2, {1, 2}},
 #define   MTETRIGGERTHRESHOLDFALLING  5
-    {MTETRIGGERTHRESHOLDFALLING, ASN_INTEGER, RWRITE,
+    {MTETRIGGERTHRESHOLDFALLING, ASN_INTEGER, NETSNMP_OLDAPI_RWRITE,
      var_mteTriggerThresholdTable, 2, {1, 3}},
 #define   MTETRIGGERTHRESHOLDDELTARISING  6
-    {MTETRIGGERTHRESHOLDDELTARISING, ASN_INTEGER, RWRITE,
+    {MTETRIGGERTHRESHOLDDELTARISING, ASN_INTEGER, NETSNMP_OLDAPI_RWRITE,
      var_mteTriggerThresholdTable, 2, {1, 4}},
 #define   MTETRIGGERTHRESHOLDDELTAFALLING  7
-    {MTETRIGGERTHRESHOLDDELTAFALLING, ASN_INTEGER, RWRITE,
+    {MTETRIGGERTHRESHOLDDELTAFALLING, ASN_INTEGER, NETSNMP_OLDAPI_RWRITE,
      var_mteTriggerThresholdTable, 2, {1, 5}},
 #define   MTETRIGGERTHRESHOLDOBJECTSOWNER  8
-    {MTETRIGGERTHRESHOLDOBJECTSOWNER, ASN_OCTET_STR, RWRITE,
+    {MTETRIGGERTHRESHOLDOBJECTSOWNER, ASN_OCTET_STR, NETSNMP_OLDAPI_RWRITE,
      var_mteTriggerThresholdTable, 2, {1, 6}},
 #define   MTETRIGGERTHRESHOLDOBJECTS  9
-    {MTETRIGGERTHRESHOLDOBJECTS, ASN_OCTET_STR, RWRITE,
+    {MTETRIGGERTHRESHOLDOBJECTS, ASN_OCTET_STR, NETSNMP_OLDAPI_RWRITE,
      var_mteTriggerThresholdTable, 2, {1, 7}},
 #define   MTETRIGGERTHRESHOLDRISINGEVENTOWNER  10
-    {MTETRIGGERTHRESHOLDRISINGEVENTOWNER, ASN_OCTET_STR, RWRITE,
+    {MTETRIGGERTHRESHOLDRISINGEVENTOWNER, ASN_OCTET_STR, NETSNMP_OLDAPI_RWRITE,
      var_mteTriggerThresholdTable, 2, {1, 8}},
 #define   MTETRIGGERTHRESHOLDRISINGEVENT  11
-    {MTETRIGGERTHRESHOLDRISINGEVENT, ASN_OCTET_STR, RWRITE,
+    {MTETRIGGERTHRESHOLDRISINGEVENT, ASN_OCTET_STR, NETSNMP_OLDAPI_RWRITE,
      var_mteTriggerThresholdTable, 2, {1, 9}},
 #define   MTETRIGGERTHRESHOLDFALLINGEVENTOWNER  12
-    {MTETRIGGERTHRESHOLDFALLINGEVENTOWNER, ASN_OCTET_STR, RWRITE,
+    {MTETRIGGERTHRESHOLDFALLINGEVENTOWNER, ASN_OCTET_STR, NETSNMP_OLDAPI_RWRITE,
      var_mteTriggerThresholdTable, 2, {1, 10}},
 #define   MTETRIGGERTHRESHOLDFALLINGEVENT  13
-    {MTETRIGGERTHRESHOLDFALLINGEVENT, ASN_OCTET_STR, RWRITE,
+    {MTETRIGGERTHRESHOLDFALLINGEVENT, ASN_OCTET_STR, NETSNMP_OLDAPI_RWRITE,
      var_mteTriggerThresholdTable, 2, {1, 11}},
 #define   MTETRIGGERTHRESHOLDDELTARISINGEVENTOWNER  14
-    {MTETRIGGERTHRESHOLDDELTARISINGEVENTOWNER, ASN_OCTET_STR, RWRITE,
+    {MTETRIGGERTHRESHOLDDELTARISINGEVENTOWNER, ASN_OCTET_STR, NETSNMP_OLDAPI_RWRITE,
      var_mteTriggerThresholdTable, 2, {1, 12}},
 #define   MTETRIGGERTHRESHOLDDELTARISINGEVENT  15
-    {MTETRIGGERTHRESHOLDDELTARISINGEVENT, ASN_OCTET_STR, RWRITE,
+    {MTETRIGGERTHRESHOLDDELTARISINGEVENT, ASN_OCTET_STR, NETSNMP_OLDAPI_RWRITE,
      var_mteTriggerThresholdTable, 2, {1, 13}},
 #define   MTETRIGGERTHRESHOLDDELTAFALLINGEVENTOWNER  16
-    {MTETRIGGERTHRESHOLDDELTAFALLINGEVENTOWNER, ASN_OCTET_STR, RWRITE,
+    {MTETRIGGERTHRESHOLDDELTAFALLINGEVENTOWNER, ASN_OCTET_STR, NETSNMP_OLDAPI_RWRITE,
      var_mteTriggerThresholdTable, 2, {1, 14}},
 #define   MTETRIGGERTHRESHOLDDELTAFALLINGEVENT  17
-    {MTETRIGGERTHRESHOLDDELTAFALLINGEVENT, ASN_OCTET_STR, RWRITE,
+    {MTETRIGGERTHRESHOLDDELTAFALLINGEVENT, ASN_OCTET_STR, NETSNMP_OLDAPI_RWRITE,
      var_mteTriggerThresholdTable, 2, {1, 15}},
-
 };
+#else /* !NETSNMP_NO_WRITE_SUPPORT */
+struct variable2 mteTriggerThresholdTable_variables[] = {
+    /*
+     * magic number        , variable type , ro/rw , callback fn  , L, oidsuffix 
+     */
+#define   MTETRIGGERTHRESHOLDSTARTUP  3
+    {MTETRIGGERTHRESHOLDSTARTUP, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+     var_mteTriggerThresholdTable, 2, {1, 1}},
+#define   MTETRIGGERTHRESHOLDRISING  4
+    {MTETRIGGERTHRESHOLDRISING, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+     var_mteTriggerThresholdTable, 2, {1, 2}},
+#define   MTETRIGGERTHRESHOLDFALLING  5
+    {MTETRIGGERTHRESHOLDFALLING, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+     var_mteTriggerThresholdTable, 2, {1, 3}},
+#define   MTETRIGGERTHRESHOLDDELTARISING  6
+    {MTETRIGGERTHRESHOLDDELTARISING, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+     var_mteTriggerThresholdTable, 2, {1, 4}},
+#define   MTETRIGGERTHRESHOLDDELTAFALLING  7
+    {MTETRIGGERTHRESHOLDDELTAFALLING, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+     var_mteTriggerThresholdTable, 2, {1, 5}},
+#define   MTETRIGGERTHRESHOLDOBJECTSOWNER  8
+    {MTETRIGGERTHRESHOLDOBJECTSOWNER, ASN_OCTET_STR, NETSNMP_OLDAPI_RONLY,
+     var_mteTriggerThresholdTable, 2, {1, 6}},
+#define   MTETRIGGERTHRESHOLDOBJECTS  9
+    {MTETRIGGERTHRESHOLDOBJECTS, ASN_OCTET_STR, NETSNMP_OLDAPI_RONLY,
+     var_mteTriggerThresholdTable, 2, {1, 7}},
+#define   MTETRIGGERTHRESHOLDRISINGEVENTOWNER  10
+    {MTETRIGGERTHRESHOLDRISINGEVENTOWNER, ASN_OCTET_STR, NETSNMP_OLDAPI_RONLY,
+     var_mteTriggerThresholdTable, 2, {1, 8}},
+#define   MTETRIGGERTHRESHOLDRISINGEVENT  11
+    {MTETRIGGERTHRESHOLDRISINGEVENT, ASN_OCTET_STR, NETSNMP_OLDAPI_RONLY,
+     var_mteTriggerThresholdTable, 2, {1, 9}},
+#define   MTETRIGGERTHRESHOLDFALLINGEVENTOWNER  12
+    {MTETRIGGERTHRESHOLDFALLINGEVENTOWNER, ASN_OCTET_STR, NETSNMP_OLDAPI_RONLY,
+     var_mteTriggerThresholdTable, 2, {1, 10}},
+#define   MTETRIGGERTHRESHOLDFALLINGEVENT  13
+    {MTETRIGGERTHRESHOLDFALLINGEVENT, ASN_OCTET_STR, NETSNMP_OLDAPI_RONLY,
+     var_mteTriggerThresholdTable, 2, {1, 11}},
+#define   MTETRIGGERTHRESHOLDDELTARISINGEVENTOWNER  14
+    {MTETRIGGERTHRESHOLDDELTARISINGEVENTOWNER, ASN_OCTET_STR, NETSNMP_OLDAPI_RONLY,
+     var_mteTriggerThresholdTable, 2, {1, 12}},
+#define   MTETRIGGERTHRESHOLDDELTARISINGEVENT  15
+    {MTETRIGGERTHRESHOLDDELTARISINGEVENT, ASN_OCTET_STR, NETSNMP_OLDAPI_RONLY,
+     var_mteTriggerThresholdTable, 2, {1, 13}},
+#define   MTETRIGGERTHRESHOLDDELTAFALLINGEVENTOWNER  16
+    {MTETRIGGERTHRESHOLDDELTAFALLINGEVENTOWNER, ASN_OCTET_STR, NETSNMP_OLDAPI_RONLY,
+     var_mteTriggerThresholdTable, 2, {1, 14}},
+#define   MTETRIGGERTHRESHOLDDELTAFALLINGEVENT  17
+    {MTETRIGGERTHRESHOLDDELTAFALLINGEVENT, ASN_OCTET_STR, NETSNMP_OLDAPI_RONLY,
+     var_mteTriggerThresholdTable, 2, {1, 15}},
+};
+#endif /* !NETSNMP_NO_WRITE_SUPPORT */
+
+
 /*
  * (L = length of the oidsuffix) 
  */
-
-
-/*
- * global storage of our data, saved in and configured by header_complex() 
- */
-extern struct header_complex_index *mteTriggerTableStorage;
 
 
 /*
@@ -151,6 +199,10 @@ var_mteTriggerThresholdTable(struct variable *vp,
 
     DEBUGMSGTL(("mteTriggerThresholdTable",
                 "var_mteTriggerThresholdTable: Entering...  \n"));
+
+	/* set default value */
+	*write_method = NULL;
+
     /*
      * this assumes you have registered all your data properly
      */
@@ -170,80 +222,110 @@ var_mteTriggerThresholdTable(struct variable *vp,
 
 
     case MTETRIGGERTHRESHOLDSTARTUP:
+#ifndef NETSNMP_NO_WRITE_SUPPORT
         *write_method = write_mteTriggerThresholdStartup;
+#endif /* !NETSNMP_NO_WRITE_SUPPORT */
         *var_len = sizeof(StorageTmp->mteTriggerThresholdStartup);
         return (u_char *) & StorageTmp->mteTriggerThresholdStartup;
 
     case MTETRIGGERTHRESHOLDRISING:
+#ifndef NETSNMP_NO_WRITE_SUPPORT
         *write_method = write_mteTriggerThresholdRising;
+#endif /* !NETSNMP_NO_WRITE_SUPPORT */
         *var_len = sizeof(StorageTmp->mteTriggerThresholdRising);
         return (u_char *) & StorageTmp->mteTriggerThresholdRising;
 
     case MTETRIGGERTHRESHOLDFALLING:
+#ifndef NETSNMP_NO_WRITE_SUPPORT
         *write_method = write_mteTriggerThresholdFalling;
+#endif /* !NETSNMP_NO_WRITE_SUPPORT */
         *var_len = sizeof(StorageTmp->mteTriggerThresholdFalling);
         return (u_char *) & StorageTmp->mteTriggerThresholdFalling;
 
     case MTETRIGGERTHRESHOLDDELTARISING:
+#ifndef NETSNMP_NO_WRITE_SUPPORT
         *write_method = write_mteTriggerThresholdDeltaRising;
+#endif /* !NETSNMP_NO_WRITE_SUPPORT */
         *var_len = sizeof(StorageTmp->mteTriggerThresholdDeltaRising);
         return (u_char *) & StorageTmp->mteTriggerThresholdDeltaRising;
 
     case MTETRIGGERTHRESHOLDDELTAFALLING:
+#ifndef NETSNMP_NO_WRITE_SUPPORT
         *write_method = write_mteTriggerThresholdDeltaFalling;
+#endif /* !NETSNMP_NO_WRITE_SUPPORT */
         *var_len = sizeof(StorageTmp->mteTriggerThresholdDeltaFalling);
         return (u_char *) & StorageTmp->mteTriggerThresholdDeltaFalling;
 
     case MTETRIGGERTHRESHOLDOBJECTSOWNER:
+#ifndef NETSNMP_NO_WRITE_SUPPORT
         *write_method = write_mteTriggerThresholdObjectsOwner;
+#endif /* !NETSNMP_NO_WRITE_SUPPORT */
         *var_len = StorageTmp->mteTriggerThresholdObjectsOwnerLen;
         return (u_char *) StorageTmp->mteTriggerThresholdObjectsOwner;
 
     case MTETRIGGERTHRESHOLDOBJECTS:
+#ifndef NETSNMP_NO_WRITE_SUPPORT
         *write_method = write_mteTriggerThresholdObjects;
+#endif /* !NETSNMP_NO_WRITE_SUPPORT */
         *var_len = StorageTmp->mteTriggerThresholdObjectsLen;
         return (u_char *) StorageTmp->mteTriggerThresholdObjects;
 
     case MTETRIGGERTHRESHOLDRISINGEVENTOWNER:
+#ifndef NETSNMP_NO_WRITE_SUPPORT
         *write_method = write_mteTriggerThresholdRisingEventOwner;
+#endif /* !NETSNMP_NO_WRITE_SUPPORT */
         *var_len = StorageTmp->mteTriggerThresholdRisingEventOwnerLen;
         return (u_char *) StorageTmp->mteTriggerThresholdRisingEventOwner;
 
     case MTETRIGGERTHRESHOLDRISINGEVENT:
+#ifndef NETSNMP_NO_WRITE_SUPPORT
         *write_method = write_mteTriggerThresholdRisingEvent;
+#endif /* !NETSNMP_NO_WRITE_SUPPORT */
         *var_len = StorageTmp->mteTriggerThresholdRisingEventLen;
         return (u_char *) StorageTmp->mteTriggerThresholdRisingEvent;
 
     case MTETRIGGERTHRESHOLDFALLINGEVENTOWNER:
+#ifndef NETSNMP_NO_WRITE_SUPPORT
         *write_method = write_mteTriggerThresholdFallingEventOwner;
+#endif /* !NETSNMP_NO_WRITE_SUPPORT */
         *var_len = StorageTmp->mteTriggerThresholdFallingEventOwnerLen;
         return (u_char *) StorageTmp->mteTriggerThresholdFallingEventOwner;
 
     case MTETRIGGERTHRESHOLDFALLINGEVENT:
+#ifndef NETSNMP_NO_WRITE_SUPPORT
         *write_method = write_mteTriggerThresholdFallingEvent;
+#endif /* !NETSNMP_NO_WRITE_SUPPORT */
         *var_len = StorageTmp->mteTriggerThresholdFallingEventLen;
         return (u_char *) StorageTmp->mteTriggerThresholdFallingEvent;
 
     case MTETRIGGERTHRESHOLDDELTARISINGEVENTOWNER:
+#ifndef NETSNMP_NO_WRITE_SUPPORT
         *write_method = write_mteTriggerThresholdDeltaRisingEventOwner;
+#endif /* !NETSNMP_NO_WRITE_SUPPORT */
         *var_len = StorageTmp->mteTriggerThresholdDeltaRisingEventOwnerLen;
         return (u_char *) StorageTmp->
             mteTriggerThresholdDeltaRisingEventOwner;
 
     case MTETRIGGERTHRESHOLDDELTARISINGEVENT:
+#ifndef NETSNMP_NO_WRITE_SUPPORT
         *write_method = write_mteTriggerThresholdDeltaRisingEvent;
+#endif /* !NETSNMP_NO_WRITE_SUPPORT */
         *var_len = StorageTmp->mteTriggerThresholdDeltaRisingEventLen;
         return (u_char *) StorageTmp->mteTriggerThresholdDeltaRisingEvent;
 
     case MTETRIGGERTHRESHOLDDELTAFALLINGEVENTOWNER:
+#ifndef NETSNMP_NO_WRITE_SUPPORT
         *write_method = write_mteTriggerThresholdDeltaFallingEventOwner;
+#endif /* !NETSNMP_NO_WRITE_SUPPORT */
         *var_len =
             StorageTmp->mteTriggerThresholdDeltaFallingEventOwnerLen;
         return (u_char *) StorageTmp->
             mteTriggerThresholdDeltaFallingEventOwner;
 
     case MTETRIGGERTHRESHOLDDELTAFALLINGEVENT:
+#ifndef NETSNMP_NO_WRITE_SUPPORT
         *write_method = write_mteTriggerThresholdDeltaFallingEvent;
+#endif /* !NETSNMP_NO_WRITE_SUPPORT */
         *var_len = StorageTmp->mteTriggerThresholdDeltaFallingEventLen;
         return (u_char *) StorageTmp->mteTriggerThresholdDeltaFallingEvent;
 
@@ -256,7 +338,7 @@ var_mteTriggerThresholdTable(struct variable *vp,
 
 
 
-
+#ifndef NETSNMP_NO_WRITE_SUPPORT 
 int
 write_mteTriggerThresholdStartup(int action,
                                  u_char * var_val,
@@ -288,7 +370,7 @@ write_mteTriggerThresholdStartup(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_INTEGER) {
-            printf(
+            fprintf(stderr,
                     "write to mteTriggerThresholdStartup not ASN_INTEGER\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -374,7 +456,7 @@ write_mteTriggerThresholdRising(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_INTEGER) {
-            printf(
+            fprintf(stderr,
                     "write to mteTriggerThresholdRising not ASN_INTEGER\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -460,7 +542,7 @@ write_mteTriggerThresholdFalling(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_INTEGER) {
-            printf(
+            fprintf(stderr,
                     "write to mteTriggerThresholdFalling not ASN_INTEGER\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -546,7 +628,7 @@ write_mteTriggerThresholdDeltaRising(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_INTEGER) {
-            printf(
+            fprintf(stderr,
                     "write to mteTriggerThresholdDeltaRising not ASN_INTEGER\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -632,7 +714,7 @@ write_mteTriggerThresholdDeltaFalling(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_INTEGER) {
-            printf(
+            fprintf(stderr,
                     "write to mteTriggerThresholdDeltaFalling not ASN_INTEGER\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -719,7 +801,7 @@ write_mteTriggerThresholdObjectsOwner(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_OCTET_STR) {
-            printf(
+            fprintf(stderr,
                     "write to mteTriggerThresholdObjectsOwner not ASN_OCTET_STR\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -750,8 +832,8 @@ write_mteTriggerThresholdObjectsOwner(int action,
          */
         tmpvar = StorageTmp->mteTriggerThresholdObjectsOwner;
         tmplen = StorageTmp->mteTriggerThresholdObjectsOwnerLen;
-        memdup((u_char **) & StorageTmp->mteTriggerThresholdObjectsOwner,
-               var_val, var_val_len);
+        StorageTmp->mteTriggerThresholdObjectsOwner =
+            netsnmp_memdup(var_val, var_val_len);
         StorageTmp->mteTriggerThresholdObjectsOwnerLen = var_val_len;
         break;
 
@@ -811,7 +893,7 @@ write_mteTriggerThresholdObjects(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_OCTET_STR) {
-            printf(
+            fprintf(stderr,
                     "write to mteTriggerThresholdObjects not ASN_OCTET_STR\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -842,8 +924,8 @@ write_mteTriggerThresholdObjects(int action,
          */
         tmpvar = StorageTmp->mteTriggerThresholdObjects;
         tmplen = StorageTmp->mteTriggerThresholdObjectsLen;
-        memdup((u_char **) & StorageTmp->mteTriggerThresholdObjects,
-               var_val, var_val_len);
+        StorageTmp->mteTriggerThresholdObjects =
+            netsnmp_memdup(var_val, var_val_len);
         StorageTmp->mteTriggerThresholdObjectsLen = var_val_len;
         break;
 
@@ -903,7 +985,7 @@ write_mteTriggerThresholdRisingEventOwner(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_OCTET_STR) {
-            printf(
+            fprintf(stderr,
                     "write to mteTriggerThresholdRisingEventOwner not ASN_OCTET_STR\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -934,8 +1016,8 @@ write_mteTriggerThresholdRisingEventOwner(int action,
          */
         tmpvar = StorageTmp->mteTriggerThresholdRisingEventOwner;
         tmplen = StorageTmp->mteTriggerThresholdRisingEventOwnerLen;
-        memdup((u_char **) & StorageTmp->
-               mteTriggerThresholdRisingEventOwner, var_val, var_val_len);
+        StorageTmp->mteTriggerThresholdRisingEventOwner =
+            netsnmp_memdup(var_val, var_val_len);
         StorageTmp->mteTriggerThresholdRisingEventOwnerLen = var_val_len;
         break;
 
@@ -995,7 +1077,7 @@ write_mteTriggerThresholdRisingEvent(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_OCTET_STR) {
-            printf(
+            fprintf(stderr,
                     "write to mteTriggerThresholdRisingEvent not ASN_OCTET_STR\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -1026,8 +1108,8 @@ write_mteTriggerThresholdRisingEvent(int action,
          */
         tmpvar = StorageTmp->mteTriggerThresholdRisingEvent;
         tmplen = StorageTmp->mteTriggerThresholdRisingEventLen;
-        memdup((u_char **) & StorageTmp->mteTriggerThresholdRisingEvent,
-               var_val, var_val_len);
+        StorageTmp->mteTriggerThresholdRisingEvent =
+            netsnmp_memdup(var_val, var_val_len);
         StorageTmp->mteTriggerThresholdRisingEventLen = var_val_len;
         break;
 
@@ -1087,7 +1169,7 @@ write_mteTriggerThresholdFallingEventOwner(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_OCTET_STR) {
-            printf(
+            fprintf(stderr,
                     "write to mteTriggerThresholdFallingEventOwner not ASN_OCTET_STR\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -1118,8 +1200,8 @@ write_mteTriggerThresholdFallingEventOwner(int action,
          */
         tmpvar = StorageTmp->mteTriggerThresholdFallingEventOwner;
         tmplen = StorageTmp->mteTriggerThresholdFallingEventOwnerLen;
-        memdup((u_char **) & StorageTmp->
-               mteTriggerThresholdFallingEventOwner, var_val, var_val_len);
+        StorageTmp->mteTriggerThresholdFallingEventOwner =
+            netsnmp_memdup(var_val, var_val_len);
         StorageTmp->mteTriggerThresholdFallingEventOwnerLen = var_val_len;
         break;
 
@@ -1179,7 +1261,7 @@ write_mteTriggerThresholdFallingEvent(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_OCTET_STR) {
-            printf(
+            fprintf(stderr,
                     "write to mteTriggerThresholdFallingEvent not ASN_OCTET_STR\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -1210,8 +1292,8 @@ write_mteTriggerThresholdFallingEvent(int action,
          */
         tmpvar = StorageTmp->mteTriggerThresholdFallingEvent;
         tmplen = StorageTmp->mteTriggerThresholdFallingEventLen;
-        memdup((u_char **) & StorageTmp->mteTriggerThresholdFallingEvent,
-               var_val, var_val_len);
+        StorageTmp->mteTriggerThresholdFallingEvent =
+            netsnmp_memdup(var_val, var_val_len);
         StorageTmp->mteTriggerThresholdFallingEventLen = var_val_len;
         break;
 
@@ -1271,7 +1353,7 @@ write_mteTriggerThresholdDeltaRisingEventOwner(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_OCTET_STR) {
-            printf(
+            fprintf(stderr,
                     "write to mteTriggerThresholdDeltaRisingEventOwner not ASN_OCTET_STR\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -1302,9 +1384,8 @@ write_mteTriggerThresholdDeltaRisingEventOwner(int action,
          */
         tmpvar = StorageTmp->mteTriggerThresholdDeltaRisingEventOwner;
         tmplen = StorageTmp->mteTriggerThresholdDeltaRisingEventOwnerLen;
-        memdup((u_char **) & StorageTmp->
-               mteTriggerThresholdDeltaRisingEventOwner, var_val,
-               var_val_len);
+        StorageTmp->mteTriggerThresholdDeltaRisingEventOwner =
+            netsnmp_memdup(var_val, var_val_len);
         StorageTmp->mteTriggerThresholdDeltaRisingEventOwnerLen =
             var_val_len;
         break;
@@ -1365,7 +1446,7 @@ write_mteTriggerThresholdDeltaRisingEvent(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_OCTET_STR) {
-            printf(
+            fprintf(stderr,
                     "write to mteTriggerThresholdDeltaRisingEvent not ASN_OCTET_STR\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -1396,8 +1477,8 @@ write_mteTriggerThresholdDeltaRisingEvent(int action,
          */
         tmpvar = StorageTmp->mteTriggerThresholdDeltaRisingEvent;
         tmplen = StorageTmp->mteTriggerThresholdDeltaRisingEventLen;
-        memdup((u_char **) & StorageTmp->
-               mteTriggerThresholdDeltaRisingEvent, var_val, var_val_len);
+        StorageTmp->mteTriggerThresholdDeltaRisingEvent =
+            netsnmp_memdup(var_val, var_val_len);
         StorageTmp->mteTriggerThresholdDeltaRisingEventLen = var_val_len;
         break;
 
@@ -1458,7 +1539,7 @@ write_mteTriggerThresholdDeltaFallingEventOwner(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_OCTET_STR) {
-            printf(
+            fprintf(stderr,
                     "write to mteTriggerThresholdDeltaFallingEventOwner not ASN_OCTET_STR\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -1489,9 +1570,8 @@ write_mteTriggerThresholdDeltaFallingEventOwner(int action,
          */
         tmpvar = StorageTmp->mteTriggerThresholdDeltaFallingEventOwner;
         tmplen = StorageTmp->mteTriggerThresholdDeltaFallingEventOwnerLen;
-        memdup((u_char **) & StorageTmp->
-               mteTriggerThresholdDeltaFallingEventOwner, var_val,
-               var_val_len);
+        StorageTmp->mteTriggerThresholdDeltaFallingEventOwner =
+            netsnmp_memdup(var_val, var_val_len);
         StorageTmp->mteTriggerThresholdDeltaFallingEventOwnerLen =
             var_val_len;
         break;
@@ -1552,7 +1632,7 @@ write_mteTriggerThresholdDeltaFallingEvent(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_OCTET_STR) {
-            printf(
+            fprintf(stderr,
                     "write to mteTriggerThresholdDeltaFallingEvent not ASN_OCTET_STR\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -1583,8 +1663,8 @@ write_mteTriggerThresholdDeltaFallingEvent(int action,
          */
         tmpvar = StorageTmp->mteTriggerThresholdDeltaFallingEvent;
         tmplen = StorageTmp->mteTriggerThresholdDeltaFallingEventLen;
-        memdup((u_char **) & StorageTmp->
-               mteTriggerThresholdDeltaFallingEvent, var_val, var_val_len);
+        StorageTmp->mteTriggerThresholdDeltaFallingEvent =
+            netsnmp_memdup(var_val, var_val_len);
         StorageTmp->mteTriggerThresholdDeltaFallingEventLen = var_val_len;
         break;
 
@@ -1609,3 +1689,5 @@ write_mteTriggerThresholdDeltaFallingEvent(int action,
     }
     return SNMP_ERR_NOERROR;
 }
+
+#endif /* !NETSNMP_NO_WRITE_SUPPORT */

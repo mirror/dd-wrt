@@ -1,5 +1,5 @@
 /*
- * $Id: snmp_bgp.c,v 1.1.2.1 2004/06/20 21:54:23 nikki Exp $ 
+ * $Id$ 
  */
 
 /*
@@ -52,32 +52,55 @@
 #include "snmp_bgp.h"
 
 struct variable13 bgp_variables[] = {
-    {BGPVERSION, ASN_OCTET_STR, RONLY, var_bgp, 1, {1}},
-    {BGPLOCALAS, ASN_INTEGER, RONLY, var_bgp, 1, {2}},
-    {BGPIDENTIFIER, ASN_IPADDRESS, RONLY, var_bgp, 1, {4}},
-    {BGPPEERIDENTIFIER, ASN_IPADDRESS, RONLY, var_bgp, 3, {3, 1, 1}},
-    {BGPPEERSTATE, ASN_INTEGER, RONLY, var_bgp, 3, {3, 1, 2}},
-    {BGPPEERADMINSTATUS, ASN_INTEGER, RONLY, var_bgp, 3, {3, 1, 3}},
-    {BGPPEERNEGOTIATEDVERSION, ASN_INTEGER, RONLY, var_bgp, 3, {3, 1, 4}},
-    {BGPPEERLOCALADDR, ASN_IPADDRESS, RONLY, var_bgp, 3, {3, 1, 5}},
-    {BGPPEERLOCALPORT, ASN_INTEGER, RONLY, var_bgp, 3, {3, 1, 6}},
-    {BGPPEERREMOTEADDR, ASN_IPADDRESS, RONLY, var_bgp, 3, {3, 1, 7}},
-    {BGPPEERREMOTEPORT, ASN_INTEGER, RONLY, var_bgp, 3, {3, 1, 8}},
-    {BGPPEERREMOTEAS, ASN_INTEGER, RONLY, var_bgp, 3, {3, 1, 9}},
-    {BGPPEERINUPDATES, ASN_COUNTER, RONLY, var_bgp, 3, {3, 1, 10}},
-    {BGPPEEROUTUPDATES, ASN_COUNTER, RONLY, var_bgp, 3, {3, 1, 11}},
-    {BGPPEERINTOTALMESSAGES, ASN_COUNTER, RONLY, var_bgp, 3, {3, 1, 12}},
-    {BGPPEEROUTTOTALMESSAGES, ASN_COUNTER, RONLY, var_bgp, 3, {3, 1, 13}},
-    {BGPPEERLASTERROR, ASN_OCTET_STR, RONLY, var_bgp, 3, {3, 1, 14}},
-    {BGPPATHATTRPEER, ASN_IPADDRESS, RONLY, var_bgp, 3, {5, 1, 1}},
-    {BGPPATHATTRDESTNETWORK, ASN_IPADDRESS, RONLY, var_bgp, 3, {5, 1, 2}},
-    {BGPPATHATTRORIGIN, ASN_INTEGER, RONLY, var_bgp, 3, {5, 1, 3}},
-    {BGPPATHATTRASPATH, ASN_OCTET_STR, RONLY, var_bgp, 3, {5, 1, 4}},
-    {BGPPATHATTRNEXTHOP, ASN_INTEGER, RONLY, var_bgp, 3, {5, 1, 5}},
-    {BGPPATHATTRINTERASMETRIC, ASN_OCTET_STR, RONLY, var_bgp, 3, {5, 1, 6}}
+    {BGPVERSION, ASN_OCTET_STR, NETSNMP_OLDAPI_RONLY,
+     var_bgp, 1, {1}},
+    {BGPLOCALAS, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+     var_bgp, 1, {2}},
+    {BGPIDENTIFIER, ASN_IPADDRESS, NETSNMP_OLDAPI_RONLY,
+     var_bgp, 1, {4}},
+    {BGPPEERIDENTIFIER, ASN_IPADDRESS, NETSNMP_OLDAPI_RONLY,
+     var_bgp, 3, {3, 1, 1}},
+    {BGPPEERSTATE, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+     var_bgp, 3, {3, 1, 2}},
+    {BGPPEERADMINSTATUS, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+     var_bgp, 3, {3, 1, 3}},
+    {BGPPEERNEGOTIATEDVERSION, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+     var_bgp, 3, {3, 1, 4}},
+    {BGPPEERLOCALADDR, ASN_IPADDRESS, NETSNMP_OLDAPI_RONLY,
+     var_bgp, 3, {3, 1, 5}},
+    {BGPPEERLOCALPORT, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+     var_bgp, 3, {3, 1, 6}},
+    {BGPPEERREMOTEADDR, ASN_IPADDRESS, NETSNMP_OLDAPI_RONLY,
+     var_bgp, 3, {3, 1, 7}},
+    {BGPPEERREMOTEPORT, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+     var_bgp, 3, {3, 1, 8}},
+    {BGPPEERREMOTEAS, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+     var_bgp, 3, {3, 1, 9}},
+    {BGPPEERINUPDATES, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+     var_bgp, 3, {3, 1, 10}},
+    {BGPPEEROUTUPDATES, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+     var_bgp, 3, {3, 1, 11}},
+    {BGPPEERINTOTALMESSAGES, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+     var_bgp, 3, {3, 1, 12}},
+    {BGPPEEROUTTOTALMESSAGES, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+     var_bgp, 3, {3, 1, 13}},
+    {BGPPEERLASTERROR, ASN_OCTET_STR, NETSNMP_OLDAPI_RONLY,
+     var_bgp, 3, {3, 1, 14}},
+    {BGPPATHATTRPEER, ASN_IPADDRESS, NETSNMP_OLDAPI_RONLY,
+     var_bgp, 3, {5, 1, 1}},
+    {BGPPATHATTRDESTNETWORK, ASN_IPADDRESS, NETSNMP_OLDAPI_RONLY,
+     var_bgp, 3, {5, 1, 2}},
+    {BGPPATHATTRORIGIN, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+     var_bgp, 3, {5, 1, 3}},
+    {BGPPATHATTRASPATH, ASN_OCTET_STR, NETSNMP_OLDAPI_RONLY,
+     var_bgp, 3, {5, 1, 4}},
+    {BGPPATHATTRNEXTHOP, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+     var_bgp, 3, {5, 1, 5}},
+    {BGPPATHATTRINTERASMETRIC, ASN_OCTET_STR, NETSNMP_OLDAPI_RONLY,
+     var_bgp, 3, {5, 1, 6}}
 };
 
-oid             bgp_variables_oid[] = { MIB, 15 };
+oid             bgp_variables_oid[] = { NETSNMP_MIB2_OID, 15 };
 
 void
 init_snmp_bdp(void)
@@ -86,12 +109,9 @@ init_snmp_bdp(void)
                  bgp_variables_oid);
 }
 
-
-#endif
 static oid      max_bgp_mib[] =
     { 1, 3, 6, 1, 2, 1, 15, 5, 1, 6, 255, 255, 255, 255 };
 static oid      min_bgp_mib[] = { 1, 3, 6, 1, 2, 1, 15, 1, 0 };
-extern u_char   smux_type;
 
 u_char         *
 var_bgp(struct variable *vp,

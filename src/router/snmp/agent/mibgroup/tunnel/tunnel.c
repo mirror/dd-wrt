@@ -62,8 +62,8 @@
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 #include <net-snmp/agent/net-snmp-agent-includes.h>
+#include <net-snmp/agent/sysORTable.h>
 
-#include "util_funcs.h"
 #include "tunnel.h"
 
 #ifndef MIN
@@ -75,12 +75,10 @@
 
 
 
-/*
- * This is used, because the TUNNEL-MIB augments ifTable. 
- */
-extern unsigned char *var_ifEntry(struct variable *,
-                                  oid *, size_t *,
-                                  int, size_t *, WriteMethod **);
+#ifdef USING_IF_MIB_IFTABLE_IFTABLE_MODULE
+#include "if-mib/ifTable/ifTable.h"
+#include "if-mib/ifTable/ifTable_defs.h"
+#endif
 
 
 /*
@@ -92,10 +90,6 @@ extern unsigned char *var_ifEntry(struct variable *,
 oid             tunnel_variables_oid[] =
     { 1, 3, 6, 1, 2, 1, 10, 131, 1, 1 };
 const int       tunnel_len = 10;
-
-oid             tunnel_ifEntry_oid[] =
-    { 1, 3, 6, 1, 2, 1, 10, 131, 1, 1, 1, 1 };
-const int       tunnel_ifEntry_len = 12;
 
 oid             tunnel_configEntry_oid[] =
     { 1, 3, 6, 1, 2, 1, 10, 131, 1, 1, 2, 1 };
@@ -132,32 +126,35 @@ struct variable4 tunnel_variables[] = {
      * magic number        , variable type , ro/rw , callback fn  , L, oidsuffix 
      */
 #define   LOCALADDRESS          1
-    {LOCALADDRESS, ASN_IPADDRESS, RWRITE, var_tunnelIfEntry, 3, {1, 1, 1}},
+    {LOCALADDRESS, ASN_IPADDRESS, NETSNMP_OLDAPI_RWRITE,
+     var_tunnelIfEntry, 3, {1, 1, 1}},
 #define   REMOTEADDRESS         2
-    {REMOTEADDRESS, ASN_IPADDRESS, RWRITE, var_tunnelIfEntry, 3,
-     {1, 1, 2}},
+    {REMOTEADDRESS, ASN_IPADDRESS, NETSNMP_OLDAPI_RWRITE,
+     var_tunnelIfEntry, 3, {1, 1, 2}},
 #define   ENCAPSMETHOD          3
-    {ENCAPSMETHOD, ASN_INTEGER, RONLY, var_tunnelIfEntry, 3, {1, 1, 3}},
+    {ENCAPSMETHOD, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+     var_tunnelIfEntry, 3, {1, 1, 3}},
 #define   HOPLIMIT              4
-    {HOPLIMIT, ASN_INTEGER, RWRITE, var_tunnelIfEntry, 3, {1, 1, 4}},
+    {HOPLIMIT, ASN_INTEGER, NETSNMP_OLDAPI_RWRITE,
+     var_tunnelIfEntry, 3, {1, 1, 4}},
 #define   SECURITY              5
-    {SECURITY, ASN_INTEGER, RONLY, var_tunnelIfEntry, 3, {1, 1, 5}},
+    {SECURITY, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+     var_tunnelIfEntry, 3, {1, 1, 5}},
 #define   TOS                   6
-    {TOS, ASN_INTEGER, RWRITE, var_tunnelIfEntry, 3, {1, 1, 6}},
+    {TOS, ASN_INTEGER, NETSNMP_OLDAPI_RWRITE,
+     var_tunnelIfEntry, 3, {1, 1, 6}},
 
 #define   IFINDEX               7
-    {IFINDEX, ASN_INTEGER, RONLY, var_tunnelConfigEntry, 3, {2, 1, 5}},
+    {IFINDEX, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+     var_tunnelConfigEntry, 3, {2, 1, 5}},
 #define   ROWSTATUS             8
-    {ROWSTATUS, ASN_INTEGER, RWRITE, var_tunnelConfigEntry, 3, {2, 1, 6}},
+    {ROWSTATUS, ASN_INTEGER, NETSNMP_OLDAPI_RWRITE,
+     var_tunnelConfigEntry, 3, {2, 1, 6}},
 };
 
 
 
-extern int      register_sysORTable(oid *, size_t, const char *);
-extern int      unregister_sysORTable(oid *, size_t);
-
 static oid      sysORTable_reg[] = { 1, 3, 6, 1, 2, 1, 10, 131 };
-static size_t   sysORTable_reglen = 8;
 
 static struct tunnel *tunnels;
 
@@ -166,7 +163,7 @@ static struct tunnel *tunnels;
 void
 deinit_tunnel(void)
 {
-    unregister_sysORTable(sysORTable_reg, sysORTable_reglen);
+    UNREGISTER_SYSOR_ENTRY(sysORTable_reg);
 }
 
 
@@ -183,11 +180,9 @@ term_tunnel(int majorID, int minorID, void *serverarg, void *clientarg)
 void
 init_tunnel(void)
 {
-    register_sysORTable(sysORTable_reg, sysORTable_reglen,
+    REGISTER_SYSOR_ENTRY(sysORTable_reg,
                         "RFC 2667 TUNNEL-MIB implementation for "
                         "Linux 2.2.x kernels.");
-
-    netsnmp_ds_set_string(NETSNMP_DS_LIBRARY_ID, NETSNMP_DS_LIB_APPTYPE, "snmpd");
 
     /*
      * register ourselves with the agent to handle our mib tree 
@@ -206,11 +201,12 @@ init_tunnel(void)
 static int
 getType(int index)
 {
+#ifndef USING_IF_MIB_IFTABLE_IFTABLE_MODULE
     oid             name[MAX_OID_LEN] = { 1, 3, 6, 1, 2, 1, 2, 2, 1, 3 };
     size_t          length = 10;
     struct variable ifType_variable =
-        { 3, ASN_INTEGER, RONLY, var_ifEntry, 10,
-        {1, 3, 6, 1, 2, 1, 2, 2, 1, 3}
+        { 3, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+          var_ifEntry, 10, {1, 3, 6, 1, 2, 1, 2, 2, 1, 3}
     };
     unsigned char  *p;
     size_t          var_len;
@@ -226,18 +222,30 @@ getType(int index)
         return 0;
 
     return *(int *) p;
+#else
+    ifTable_mib_index imi;
+    ifTable_rowreq_ctx *rr;
+
+    imi.ifIndex = index;
+    rr = ifTable_row_find_by_mib_index(&imi);
+    if (NULL == rr)
+        return 0;
+
+    return rr->data.ifType;
+#endif
 }
 
 
 
-static char    *
+static const char *
 getName(int index)
 {
+#ifndef USING_IF_MIB_IFTABLE_IFTABLE_MODULE
     oid             name[MAX_OID_LEN] = { 1, 3, 6, 1, 2, 1, 2, 2, 1, 2 };
     size_t          length = 10;
     struct variable ifName_variable =
-        { 2, ASN_INTEGER, RONLY, var_ifEntry, 10,
-        {1, 3, 6, 1, 2, 1, 2, 2, 1, 2}
+        { 2, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+          var_ifEntry, 10, {1, 3, 6, 1, 2, 1, 2, 2, 1, 2}
     };
     unsigned char  *p;
     size_t          var_len;
@@ -253,6 +261,9 @@ getName(int index)
         return NULL;
 
     return p;
+#else
+    return netsnmp_access_interface_name_find(index);
+#endif
 }
 
 
@@ -269,7 +280,7 @@ getTunnelParm(char *ifname)
     }
 
     memset(&parm, 0, sizeof(struct ip_tunnel_parm));
-    strcpy(ifrq.ifr_name, ifname);
+    strlcpy(ifrq.ifr_name, ifname, sizeof(ifrq.ifr_name));
     ifrq.ifr_ifru.ifru_data = (void *) &parm;
     if (ioctl(fd, SIOCGETTUNNEL, &ifrq) < 0) {
         /*
@@ -302,7 +313,7 @@ setTunnelParm(char *ifname, struct ip_tunnel_parm *parm)
         return -1;
     }
 
-    strcpy(ifrq.ifr_name, ifname);
+    strlcpy(ifrq.ifr_name, ifname, sizeof(ifrq.ifr_name));
     ifrq.ifr_ifru.ifru_data = (void *) parm;
     err = ioctl(fd, SIOCCHGTUNNEL, &ifrq);
     close(fd);
@@ -343,21 +354,27 @@ updateTunnel(struct tunnel *tunnel)
         DEBUGMSGTL(("snmpd", "socket open failure in updateTunnels()\n"));
         return NULL;
     } else {
-        strcpy(ifrq.ifr_name, tunnel->ifname);
+        /*
+         * NOTE: this ioctl does not guarantee 6 bytes of a physaddr.
+         * In particular, a 'sit0' interface only appears to get back
+         * 4 bytes of sa_data. We don't use sa_data here, or we'd
+         * need to memset it to 0 before the ioct.
+         */
+        strlcpy(ifrq.ifr_name, tunnel->ifname, sizeof(ifrq.ifr_name));
         if (ioctl(fd, SIOCGIFHWADDR, &ifrq) == 0)
             switch (ifrq.ifr_hwaddr.sa_family) {
             case ARPHRD_TUNNEL:
                 tunnel->encaps = 2;
-                break;;         /* direct */
+                break;         /* direct */
             case ARPHRD_TUNNEL6:
                 tunnel->encaps = 2;
-                break;;         /* direct */
+                break;         /* direct */
             case ARPHRD_IPGRE:
                 tunnel->encaps = 3;
-                break;;         /* gre */
+                break;         /* gre */
             case ARPHRD_SIT:
                 tunnel->encaps = 2;
-                break;;         /* direct */
+                break;         /* direct */
             default:
                 tunnel->encaps = 1;     /* other */
             }
@@ -382,7 +399,7 @@ updateTunnels(void)
     static int      max_index = 1;
     static struct tunnel *last_tunnel = NULL;
     struct tunnel  *tunnel;
-    char           *ifname;
+    const char     *ifname;
     int             type;
 
     /*
@@ -390,7 +407,7 @@ updateTunnels(void)
      */
     for (tunnel = tunnels; tunnel; tunnel = tunnel->next) {
         DEBUGMSG(("tunnel",
-                  "updateTunnels(): updating %s (index=%d)\n",
+                  "updateTunnels(): updating %s (index=%" NETSNMP_PRIo "u)\n",
                   tunnel->ifname, tunnel->ifindex));
         updateTunnel(tunnel);
     }
@@ -436,7 +453,8 @@ updateTunnels(void)
             last_tunnel = tunnel;
 
             DEBUGMSG(("tunnel",
-                      "updateTunnels(): added %s (index=%d state=%d)\n",
+                      "updateTunnels(): added %s (index=%" NETSNMP_PRIo
+                      "u state=%d)\n",
                       tunnel->ifname, tunnel->ifindex, tunnel->active));
         }
         if (type == 0)
@@ -457,8 +475,8 @@ getTunnelByIfIndex(int index)
         if (tunnel->ifindex == index) {
             if (!tunnel->active)
                 break;
-            DEBUGMSG(("tunnel",
-                      "%s (index=%d)\n", tunnel->ifname, tunnel->ifindex));
+            DEBUGMSG(("tunnel", "%s (index=%" NETSNMP_PRIo "u)\n",
+                     tunnel->ifname, tunnel->ifindex));
             return tunnel;
         }
     }
@@ -479,8 +497,8 @@ getNextTunnelByIfIndex(int index)
         if (tunnel->ifindex > index) {
             if (!tunnel->active)
                 continue;
-            DEBUGMSG(("tunnel",
-                      "%s (index=%d)\n", tunnel->ifname, tunnel->ifindex));
+            DEBUGMSG(("tunnel", "%s (index=%" NETSNMP_PRIo "u)\n",
+                      tunnel->ifname, tunnel->ifindex));
             return tunnel;
         }
     }
@@ -523,8 +541,8 @@ getTunnelByConfigOid(oid * name, size_t * length)
                               (*length) - tunnel_len - 3)) {
             if (!tunnel->active)
                 break;
-            DEBUGMSG(("tunnel",
-                      "%s (index=%d)\n", tunnel->ifname, tunnel->ifindex));
+            DEBUGMSG(("tunnel", "%s (index=%" NETSNMP_PRIo "u)\n",
+                      tunnel->ifname, tunnel->ifindex));
             return tunnel;
         }
     }
@@ -567,8 +585,7 @@ getNextTunnelByConfigOid(oid * name, size_t * length)
     }
 
     if (last_tunnel) {
-        DEBUGMSG(("tunnel",
-                  "%s (index=%d)\n",
+        DEBUGMSG(("tunnel", "%s (index=%" NETSNMP_PRIo "u)\n",
                   last_tunnel->ifname, last_tunnel->ifindex));
     } else {
         DEBUGMSG(("tunnel", "NONE\n"));
@@ -595,6 +612,7 @@ writeLocalAddress(int action, unsigned char *var_val,
         if (var_val_len != 4) {
             return SNMP_ERR_WRONGLENGTH;
         }
+	/* FALL THROUGH */
     case RESERVE2:
         tunnel = getTunnelByIfIndex((int) name[name_len - 1]);
         if (!tunnel) {
@@ -640,11 +658,13 @@ writeRemoteAddress(int action, unsigned char *var_val,
         if (var_val_len != 4) {
             return SNMP_ERR_WRONGLENGTH;
         }
+	/* FALL THROUGH */
     case RESERVE2:
         tunnel = getTunnelByIfIndex((int) name[name_len - 1]);
         if (!tunnel) {
             return SNMP_ERR_NOSUCHNAME;
         }
+	break;
     case FREE:
         break;
     case ACTION:
@@ -685,11 +705,13 @@ writeHopLimit(int action, unsigned char *var_val,
         if (var_val_len > sizeof(long)) {
             return SNMP_ERR_WRONGLENGTH;
         }
+	/* FALL THROUGH */
     case RESERVE2:
         tunnel = getTunnelByIfIndex((int) name[name_len - 1]);
         if (!tunnel) {
             return SNMP_ERR_NOSUCHNAME;
         }
+	break;
     case FREE:
         break;
     case ACTION:
@@ -730,11 +752,13 @@ writeTOS(int action, unsigned char *var_val,
         if (var_val_len > sizeof(long)) {
             return SNMP_ERR_WRONGLENGTH;
         }
+	/* FALL THROUGH */
     case RESERVE2:
         tunnel = getTunnelByIfIndex((int) name[name_len - 1]);
         if (!tunnel) {
             return SNMP_ERR_NOSUCHNAME;
         }
+	break;
     case FREE:
         break;
     case ACTION:
@@ -869,7 +893,7 @@ var_tunnelIfEntry(struct variable *vp,
         *write_method = writeTOS;
         return (u_char *) & ret_int;
     default:
-        return 0;
+        return NULL;
     }
 
     return NULL;
@@ -966,7 +990,7 @@ var_tunnelConfigEntry(struct variable *vp,
         vp->type = ASN_INTEGER;
         return (u_char *) & ret_int;
     default:
-        return 0;
+        return NULL;
     }
 
     return NULL;

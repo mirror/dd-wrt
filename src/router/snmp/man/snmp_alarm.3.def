@@ -1,7 +1,8 @@
-.TH SNMP_ALARM 3 "07 Mar 2002" VVERSIONINFO "Net-SNMP"
-.UC 5
+.TH SNMP_ALARM 3 "01 Aug 2002" VVERSIONINFO "Net-SNMP"
 .SH NAME
-snmp_alarm_register, snmp_alarm_register_hr, snmp_alarm_unregister - alarm functions
+snmp_alarm_register,
+snmp_alarm_register_hr,
+snmp_alarm_unregister - alarm functions
 .SH SYNOPSIS
 .B #include <net-snmp/utilities.h>
 .PP
@@ -162,7 +163,7 @@ depend on the presence of the
 system call, although overall precision is of course still determined
 by the underlying operating system.  Recommended.
 .SH "SEE ALSO"
-.BR snmp_api "(3), " default_store "(3), " snmp_select_info "(3), "
+.BR netsnmp_session_api "(3), " default_store "(3), "
 .BR alarm "(2), " setitimer "(2), " select "(2)"
 .\" Local Variables:
 .\"  mode: nroff

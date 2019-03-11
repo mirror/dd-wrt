@@ -154,7 +154,7 @@ case "$1" in
 	gzip -r $LOGDIR	2>/dev/null &
 
 	snmpd -a -d -V $DEBUGFLAG
-	snmptrapd -P >>$TRAPLOG &
+	snmptrapd -Lf "$TRAPLOG"
 
 	echo
 	;;

@@ -1,4 +1,4 @@
-#include "generic.h"
+#include <net-snmp/system/generic.h>
 
 typedef int     ssize_t;
 

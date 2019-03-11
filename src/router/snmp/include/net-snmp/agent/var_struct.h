@@ -41,6 +41,7 @@ typedef struct netsnmp_subtree_s {
     netsnmp_handler_registration *reginfo;      /* new API */
     int             cacheid;
     int             global_cacheid;
+    size_t          oid_off;
 } netsnmp_subtree;
 
 /*

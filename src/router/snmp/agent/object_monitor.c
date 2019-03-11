@@ -1,7 +1,7 @@
 /*
  * object_monitor.c
  *
- * $Id: object_monitor.c,v 1.1.2.1 2004/06/20 21:54:09 nikki Exp $
+ * $Id$
  *
  * functions and data structures for cooperating code to monitor objects.
  *
@@ -197,7 +197,7 @@ netsnmp_monitor_register(oid * object, size_t oid_len, int priority,
  * @param object  pointer to the OID of the object to monitor.
  * @param oid_len length of the OID pointed to by object.
  * @param priority the priority to associate with this callback.
- * @param watcher_data pointer to data that was supplied when the
+ * @param wd pointer to data that was supplied when the
  *                     callback was registered.
  * @param cb pointer to the function to be called when an event occurs.
  */
@@ -368,13 +368,13 @@ netsnmp_monitor_process_callbacks(void)
  * Notifies the object monitor of a cooperative event.
  *
  * This convenience function will build a
- * @link netsnmp_monitor_callback_header@endlink and call
- * @link netsnmp_notify_monitor@endlink.
+ * ::netsnmp_monitor_callback_header and call
+ * netsnmp_notify_monitor().
  *
  * @param event the event type
- * @param object pointer to the oid of the object sending the event
- * @param len    the lenght of the oid
- * @param oid_steal set to true if the function may keep the pointer
+ * @param  o pointer to the oid of the object sending the event
+ * @param o_len    the lenght of the oid
+ * @param o_steal set to true if the function may keep the pointer
  *                  to the memory (and free it later). set to false
  *                  to make the function allocate and copy the oid.
  * @param object_info pointer to data supplied by the object for
@@ -411,7 +411,7 @@ netsnmp_notify_cooperative(int event, oid * o, size_t o_len, char o_steal,
     netsnmp_notify_monitor((netsnmp_monitor_callback_header *) cbh);
 }
 
-#ifndef DOXYGEN_SHOULD_IGNORE_THIS
+/** @cond */
 /*************************************************************************
  *************************************************************************
  *************************************************************************
@@ -562,7 +562,7 @@ check_registered(unsigned int event, oid * o, int o_l,
 /**
  *@internal
  */
-NETSNMP_INLINE void
+inline void
 insert_ready(callback_placeholder * new_cbr)
 {
     callback_placeholder *current_cbr, *last_cbr;
@@ -752,4 +752,6 @@ main(int argc, char **argv)
 }
 #endif /** defined TESTING_OBJECT_MONITOR */
 
-#endif /** DOXYGEN_SHOULD_IGNORE_THIS */
+/** @endcond */
+
+

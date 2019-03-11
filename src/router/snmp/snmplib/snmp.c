@@ -51,9 +51,6 @@ SOFTWARE.
 #ifdef HAVE_SYS_SELECT_H
 #include <sys/select.h>
 #endif
-#if HAVE_WINSOCK_H
-#include <winsock.h>
-#endif
 #ifndef NULL
 #define NULL 0
 #endif
@@ -74,11 +71,32 @@ SOFTWARE.
 #include <net-snmp/library/snmp_api.h>
 #include <net-snmp/library/mib.h>
 
+/** @mainpage Net-SNMP Coding Documentation
+ * @section Introduction
+  
+   This is the Net-SNMP coding and API reference documentation.  It is
+   incomplete, but when combined with the manual page set and
+   tutorials forms a pretty comprehensive starting point.
+
+   @section Starting out
+
+   The best places to start learning are the @e Net-SNMP @e tutorial
+   (http://www.Net-SNMP.org/tutorial-5/) and the @e Modules and @e
+   Examples sections of this document.
+
+*/
+
 void
-xdump(const u_char * cp, size_t length, const char *prefix)
+xdump(const void * data, size_t length, const char *prefix)
 {
-    int             col, count;
-    char           *buffer;
+    const u_char * const cp = (const u_char*)data;
+    int                  col, count;
+    char                *buffer;
+#ifndef NETSNMP_DISABLE_DYNAMIC_LOG_LEVEL
+    int      debug_log_level = netsnmp_get_debug_log_level();
+#else
+#define debug_log_level LOG_DEBUG
+#endif /* NETSNMP_DISABLE_DYNAMIC_LOG_LEVEL */
 
     buffer = (char *) malloc(strlen(prefix) + 80);
     if (!buffer) {
@@ -109,10 +127,10 @@ xdump(const u_char * cp, size_t length, const char *prefix)
         }
         buffer[col + 60] = '\n';
         buffer[col + 60 + 1] = 0;
-        snmp_log(LOG_DEBUG, "%s", buffer);
+        snmp_log(debug_log_level, "%s", buffer);
         count += col;
     }
-    snmp_log(LOG_DEBUG, "\n");
+    snmp_log(debug_log_level, "\n");
     free(buffer);
 
 }                               /* end xdump() */
@@ -241,7 +259,7 @@ snmp_build_var_op(u_char * data,
         data = asn_build_unsigned_int(data, listlength, var_val_type,
                                       (u_long *) var_val, var_val_len);
         break;
-#ifdef OPAQUE_SPECIAL_TYPES
+#ifdef NETSNMP_WITH_OPAQUE_SPECIAL_TYPES
     case ASN_OPAQUE_COUNTER64:
     case ASN_OPAQUE_U64:
 #endif
@@ -273,7 +291,7 @@ snmp_build_var_op(u_char * data,
     case SNMP_ENDOFMIBVIEW:
         data = asn_build_null(data, listlength, var_val_type);
         break;
-#ifdef OPAQUE_SPECIAL_TYPES
+#ifdef NETSNMP_WITH_OPAQUE_SPECIAL_TYPES
     case ASN_OPAQUE_FLOAT:
         data = asn_build_float(data, listlength, var_val_type,
                                (float *) var_val, var_val_len);
@@ -287,14 +305,18 @@ snmp_build_var_op(u_char * data,
                                       (struct counter64 *) var_val,
                                       var_val_len);
         break;
-#endif                          /* OPAQUE_SPECIAL_TYPES */
+#endif                          /* NETSNMP_WITH_OPAQUE_SPECIAL_TYPES */
     default:
-        ERROR_MSG("wrong type");
-        return NULL;
+	{
+	char error_buf[64];
+	snprintf(error_buf, sizeof(error_buf),
+		"wrong type in snmp_build_var_op: %d", var_val_type);
+        ERROR_MSG(error_buf);
+        data = NULL;
+	}
     }
     DEBUGINDENTLESS();
     if (data == NULL) {
-        ERROR_MSG("Can't build value");
         return NULL;
     }
     dummyLen = (data - dataPtr) - headerLen;
@@ -305,7 +327,7 @@ snmp_build_var_op(u_char * data,
     return data;
 }
 
-#ifdef USE_REVERSE_ASNENCODING
+#ifdef NETSNMP_USE_REVERSE_ASNENCODING
 int
 snmp_realloc_rbuild_var_op(u_char ** pkt, size_t * pkt_len,
                            size_t * offset, int allow_realloc,
@@ -338,7 +360,7 @@ snmp_realloc_rbuild_var_op(u_char ** pkt, size_t * pkt_len,
                                              var_val_len);
         break;
 
-#ifdef OPAQUE_SPECIAL_TYPES
+#ifdef NETSNMP_WITH_OPAQUE_SPECIAL_TYPES
     case ASN_OPAQUE_COUNTER64:
     case ASN_OPAQUE_U64:
 #endif
@@ -381,7 +403,7 @@ snmp_realloc_rbuild_var_op(u_char ** pkt, size_t * pkt_len,
                                      var_val_type);
         break;
 
-#ifdef OPAQUE_SPECIAL_TYPES
+#ifdef NETSNMP_WITH_OPAQUE_SPECIAL_TYPES
     case ASN_OPAQUE_FLOAT:
         rc = asn_realloc_rbuild_float(pkt, pkt_len, offset, allow_realloc,
                                       var_val_type, (float *) var_val,
@@ -400,15 +422,19 @@ snmp_realloc_rbuild_var_op(u_char ** pkt, size_t * pkt_len,
                                              (struct counter64 *) var_val,
                                              var_val_len);
         break;
-#endif                          /* OPAQUE_SPECIAL_TYPES */
+#endif                          /* NETSNMP_WITH_OPAQUE_SPECIAL_TYPES */
     default:
-        ERROR_MSG("wrong type");
-        return 0;
+	{
+	char error_buf[64];
+	snprintf(error_buf, sizeof(error_buf),
+		"wrong type in snmp_realloc_rbuild_var_op: %d", var_val_type);
+        ERROR_MSG(error_buf);
+        rc = 0;
+	}
     }
     DEBUGINDENTLESS();
 
     if (rc == 0) {
-        ERROR_MSG("Can't build value");
         return 0;
     }
 
@@ -438,4 +464,4 @@ snmp_realloc_rbuild_var_op(u_char ** pkt, size_t * pkt_len,
     return rc;
 }
 
-#endif                          /* USE_REVERSE_ASNENCODING */
+#endif                          /* NETSNMP_USE_REVERSE_ASNENCODING */

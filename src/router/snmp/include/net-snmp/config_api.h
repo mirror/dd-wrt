@@ -8,14 +8,84 @@
 
 #include <net-snmp/types.h>
 
+#ifdef __cplusplus
+extern          "C" {
+#endif
+
+    /* Config Handlers */
+    NETSNMP_IMPORT
+    struct config_line *register_config_handler(const char *filePrefix,
+                                                const char *token,
+                                                void (*parser) (const char *, char *),
+                                                void (*releaser) (void),
+                                                const char *usageLine);
+    NETSNMP_IMPORT
+    struct config_line *register_const_config_handler(const char *filePrefix,
+                                  const char *token,
+                                  void (*parser) (const char *, const char *),
+                                  void (*releaser) (void),
+                                  const char *usageLine);
+    NETSNMP_IMPORT
+    struct config_line *register_prenetsnmp_mib_handler(const char *filePrefix,
+                                                const char *token,
+                                                void (*parser) (const char *, char *),
+                                                void (*releaser) (void),
+                                                const char *usageLine);
+    NETSNMP_IMPORT
+    void            unregister_config_handler(const char *filePrefix, const char *token);
+
+    				/* Defined in mib.c, rather than read_config.c */
+    void            register_mib_handlers(void);
+    void            unregister_all_config_handlers(void);
+
+    /* Application Handlers */
+    NETSNMP_IMPORT
+    struct config_line *register_app_config_handler(
+                                                const char *token,
+                                                void (*parser) (const char *, char *),
+                                                void (*releaser) (void),
+                                                const char *usageLine);
+
+    NETSNMP_IMPORT
+    struct config_line *register_app_prenetsnmp_mib_handler(
+                                                const char *token,
+                                                void (*parser) (const char *, char *),
+                                                void (*releaser) (void),
+                                                const char *usageLine);
+    NETSNMP_IMPORT
+    void            unregister_app_config_handler(                    const char *token);
+
+    /* Reading Config Files */
+    NETSNMP_IMPORT
+    void            read_configs(void);
+    NETSNMP_IMPORT
+    void            read_premib_configs(void);
+
+    /* Help Strings and Errors */
+    NETSNMP_IMPORT
+    void            read_config_print_usage(const char *lead);
+    NETSNMP_IMPORT
+    void            config_perror(const char *);
+    NETSNMP_IMPORT
+    void            config_pwarn(const char *);
+
+#ifdef __cplusplus
+}
+#endif
+
     /*
-     *  For the initial release, this will just refer to the
-     *  relevant UCD header files.
-     *    In due course, the routines relevant to this area of the
-     *  API will be identified, and listed here directly.
+     *    Having extracted the main ("public API") calls relevant
+     *  to this area of the Net-SNMP project, the next step is to
+     *  identify the related "public internal API" routines.
      *
-     *  But for the time being, this header file is a placeholder,
-     *  to allow application writers to adopt the new header file names.
+     *    In due course, these should probably be gathered
+     *  together into a companion 'library/config_api.h' header file.
+     *  [Or some suitable name]
+     *
+     *    But for the time being, the expectation is that the
+     *  traditional headers that provided the above definitions
+     *  will probably also cover the relevant internal API calls.
+     *  Hence they are listed here:
      */
 #include <net-snmp/library/snmp_api.h>
 

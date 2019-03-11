@@ -1,2 +1,2 @@
 #include "solaris.h"
-#define _SLASH_PROC_METHOD_ 1
+#undef NETSNMP_DONT_USE_NLIST

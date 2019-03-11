@@ -1,6 +1,7 @@
 package NetSNMP::OID;
 
 use strict;
+use warnings;
 use Carp;
 
 require Exporter;
@@ -24,6 +25,10 @@ sub quote_oid {
 
 sub length {
     return $_[0]->{'oidptr'}->length();
+}
+
+sub get_indexes {
+    return $_[0]->{'oidptr'}->get_indexes();
 }
 
 sub append {
@@ -87,7 +92,7 @@ use vars qw(@ISA %EXPORT_TAGS @EXPORT_OK @EXPORT $VERSION $AUTOLOAD);
 	snmp_oid_compare
         compare
 );
-$VERSION = '0.1';
+$VERSION = '5.08';
 
 sub new {
     my $type = shift;
@@ -137,6 +142,8 @@ sub to_array($) {
     return $self->{oidptr}->to_array();
 }
 
+sub DESTROY {}
+
 sub AUTOLOAD {
     # This AUTOLOAD is used to 'autoload' constants from the constant()
     # XS function.  If a constant is not found then control is passed
@@ -145,7 +152,8 @@ sub AUTOLOAD {
     my $constname;
     ($constname = $AUTOLOAD) =~ s/.*:://;
     croak "& not defined" if $constname eq 'constant';
-    my $val = constant($constname, @_ ? $_[0] : 0);
+    my $val;
+    ($!, $val) = constant($constname);
     if ($! != 0) {
 	if ($! =~ /Invalid/ || $!{EINVAL}) {
 	    $AutoLoader::AUTOLOAD = $AUTOLOAD;
@@ -176,7 +184,6 @@ bootstrap NetSNMP::OID $VERSION;
 
 1;
 __END__
-# Below is stub documentation for your module. You better edit it!
 
 =head1 NAME
 
@@ -209,6 +216,9 @@ NetSNMP::OID - Perl extension for manipulating OIDs
 
   $len = $oid3->length();
   # -> 7
+
+  # retrieving indexes from an oid:
+  $arrayref = $tableoid->get_indexes()
 
 =head1 DESCRIPTION
 

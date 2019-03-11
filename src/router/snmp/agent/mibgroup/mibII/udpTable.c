@@ -3,266 +3,565 @@
  *
  */
 
+/* Portions of this file are subject to the following copyright(s).  See
+ * the Net-SNMP's COPYING file for more details and other copyrights
+ * that may apply:
+ */
+/*
+ * Portions of this file are copyrighted by:
+ * Copyright © 2003 Sun Microsystems, Inc. All rights reserved.
+ * Use is subject to license terms specified in the COPYING file
+ * distributed with the Net-SNMP package.
+ */
+
 #include <net-snmp/net-snmp-config.h>
+#include "mibII_common.h"
 
-#if HAVE_STRING_H
-#include <string.h>
-#else
-#include <strings.h>
-#endif
-#include <sys/types.h>
-#if HAVE_WINSOCK_H
-#include <winsock.h>
-#endif
-
-#if HAVE_SYS_PARAM_H
-#include <sys/param.h>
-#endif
-
-#if HAVE_NETINET_IN_H
-#include <netinet/in.h>
-#endif
-#if HAVE_SYS_SYSMP_H
-#include <sys/sysmp.h>
-#endif
-#if HAVE_SYS_TCPIPSTATS_H
-#include <sys/tcpipstats.h>
-#endif
-#if defined(IFNET_NEEDS_KERNEL) && !defined(_KERNEL)
-#define _KERNEL 1
-#define _I_DEFINED_KERNEL
-#endif
-#if HAVE_SYS_SOCKET_H
-#include <sys/socket.h>
-#endif
-#if HAVE_NET_IF_H
-#include <net/if.h>
-#endif
-#if HAVE_NET_IF_VAR_H
-#include <net/if_var.h>
-#endif
-#ifdef _I_DEFINED_KERNEL
-#undef _KERNEL
-#endif
-
-#if HAVE_SYS_STREAM_H
-#include <sys/stream.h>
-#endif
-#if HAVE_NET_ROUTE_H
-#include <net/route.h>
-#endif
-#if HAVE_NETINET_IN_SYSTM_H
-#include <netinet/in_systm.h>
-#endif
-#if HAVE_NETINET_IP_H
-#include <netinet/ip.h>
-#endif
-#if HAVE_SYS_QUEUE_H
-#include <sys/queue.h>
-#endif
-#if HAVE_SYS_SOCKETVAR_H
-#include <sys/socketvar.h>
-#endif
-#if HAVE_NETINET_IP_VAR_H
-#include <netinet/ip_var.h>
-#endif
-#ifdef INET6
-#if HAVE_NETINET6_IP6_VAR_H
-#include <netinet6/ip6_var.h>
-#endif
-#endif
-#if HAVE_NETINET_IN_PCB_H
-#include <netinet/in_pcb.h>
-#endif
 #if HAVE_NETINET_UDP_H
 #include <netinet/udp.h>
 #endif
 #if HAVE_NETINET_UDP_VAR_H
 #include <netinet/udp_var.h>
 #endif
-#if HAVE_INET_MIB2_H
-#include <inet/mib2.h>
+
+#if HAVE_KVM_GETFILES
+#if defined(HAVE_KVM_GETFILE2) || !defined(openbsd5)
+#undef HAVE_KVM_GETFILES
+#endif
 #endif
 
-#ifdef solaris2
-#include "kernel_sunos5.h"
-#else
-#include "kernel.h"
+#if HAVE_KVM_GETFILES
+#include <kvm.h>
+#include <sys/sysctl.h>
+#define _KERNEL
+#include <sys/file.h>
+#undef _KERNEL
 #endif
 
-#ifdef cygwin
-#define WIN32
-#include <windows.h>
+#if defined(cygwin) || defined(mingw32)
+#include <winerror.h>
 #endif
 
 #include <net-snmp/net-snmp-includes.h>
 #include <net-snmp/agent/net-snmp-agent-includes.h>
 #include <net-snmp/agent/auto_nlist.h>
 
-#ifdef hpux
-#include <sys/mib.h>
-#include <netinet/mib_kern.h>
-#endif                          /* hpux */
-
 #ifdef linux
 #include "tcpTable.h"
 #endif
 #include "udp.h"
 #include "udpTable.h"
-#include "sysORTable.h"
 
-#if HAVE_SYS_SYSCTL_H
-#ifdef CAN_USE_SYSCTL
-#include <sys/sysctl.h>
-#endif
-#endif
-#if HAVE_DMALLOC_H
-#include <dmalloc.h>
-#endif
-
-        /*********************
-	 *
-	 *  Kernel & interface information,
-	 *   and internal forward declarations
-	 *
-	 *********************/
-
-#ifndef solaris2
-static void     UDP_Scan_Init(void);
 #ifdef hpux11
-static int      UDP_Scan_Next(mib_udpLsnEnt *);
+#define	UDPTABLE_ENTRY_TYPE	mib_udpLsnEnt 
+#define	UDPTABLE_LOCALADDRESS	LocalAddress 
+#define	UDPTABLE_LOCALPORT	LocalPort 
+#define	UDPTABLE_IS_TABLE
+
+#elif defined(solaris2)
+typedef struct netsnmp_udpEntry_s netsnmp_udpEntry;
+struct netsnmp_udpEntry_s {
+    mib2_udpEntry_t   entry;
+    netsnmp_udpEntry *inp_next;
+};
+#define	UDPTABLE_ENTRY_TYPE	netsnmp_udpEntry
+#define	UDPTABLE_LOCALADDRESS	entry.udpLocalAddress 
+#define	UDPTABLE_LOCALPORT	entry.udpLocalPort 
+#define	UDPTABLE_IS_LINKED_LIST
+
+#elif defined(HAVE_IPHLPAPI_H)
+#include <iphlpapi.h>
+#define	UDPTABLE_ENTRY_TYPE	MIB_UDPROW		/* ??? */
+#define	UDPTABLE_LOCALADDRESS	dwLocalAddr
+#define	UDPTABLE_LOCALPORT	dwLocalPort 
+#define	UDPTABLE_IS_TABLE
+
+#elif defined(HAVE_KVM_GETFILES)
+#define	UDPTABLE_ENTRY_TYPE	struct kinfo_file
+#define	UDPTABLE_LOCALADDRESS	inp_laddru[0]
+#define	UDPTABLE_LOCALPORT	inp_lport 
+#define	UDPTABLE_IS_TABLE
+
+#elif defined(linux)
+#define INP_NEXT_SYMBOL		inp_next
+#define	UDPTABLE_ENTRY_TYPE	struct inpcb 
+#define	UDPTABLE_LOCALADDRESS	inp_laddr.s_addr 
+#define	UDPTABLE_LOCALPORT	inp_lport
+#define	UDPTABLE_IS_LINKED_LIST
+
 #else
-static int      UDP_Scan_Next(struct inpcb *);
+#ifdef openbsd4
+#define INP_NEXT_SYMBOL		inp_queue.cqe_next	/* or set via <net-snmp/system/openbsd.h> */
 #endif
-#endif
 
-        /*********************
-	 *
-	 *  Initialisation & common implementation functions
-	 *
-	 *********************/
-
-
-        /*********************
-	 *
-	 *  System specific implementation functions
-	 *
-	 *********************/
-
-#ifndef WIN32
-#ifndef solaris2
-
-u_char         *
-var_udpEntry(struct variable *vp,
-             oid * name,
-             size_t * length,
-             int exact, size_t * var_len, WriteMethod ** write_method)
-{
-    int             i;
-    oid             newname[MAX_OID_LEN], lowest[MAX_OID_LEN], *op;
-    u_char         *cp;
-    int             LowState;
-#ifdef hpux11
-    static mib_udpLsnEnt udp, Lowudp;
+#if defined(freebsd4) || defined(darwin) || defined(osf5)
+typedef struct netsnmp_inpcb_s netsnmp_inpcb;
+struct netsnmp_inpcb_s {
+    struct inpcb    pcb;
+    int             state;
+    netsnmp_inpcb  *inp_next;
+};
+#define	UDPTABLE_ENTRY_TYPE	netsnmp_inpcb 
+#define	UDPTABLE_LOCALADDRESS	pcb.inp_laddr.s_addr 
+#define	UDPTABLE_LOCALPORT	pcb.inp_lport
 #else
-    static struct inpcb inpcb, Lowinpcb;
+#define	UDPTABLE_ENTRY_TYPE	struct inpcb 
+#define	UDPTABLE_LOCALADDRESS	inp_laddr.s_addr 
+#define	UDPTABLE_LOCALPORT	inp_lport
 #endif
+#define	UDPTABLE_IS_LINKED_LIST
 
-    memcpy((char *) newname, (char *) vp->name,
-           (int) vp->namelen * sizeof(oid));
-    /*
-     * find the "next" pseudo-connection 
-     */
-#ifndef hpux11
-  Again:
-#endif
-    LowState = -1;              /* UDP doesn't have 'State', but it's a useful flag */
-    UDP_Scan_Init();
-    for (;;) {
-#ifdef hpux11
-        if ((i = UDP_Scan_Next(&udp)) == 0)
-            break;              /* Done */
-        cp = (u_char *) & udp.LocalAddress;
-#else                           /* hpux11 */
-        if ((i = UDP_Scan_Next(&inpcb)) < 0)
-            goto Again;
-        if (i == 0)
-            break;              /* Done */
-        cp = (u_char *) & inpcb.inp_laddr.s_addr;
 #endif                          /* hpux11 */
-        op = newname + 10;
-        *op++ = *cp++;
-        *op++ = *cp++;
-        *op++ = *cp++;
-        *op++ = *cp++;
 
-#ifdef hpux11
-        newname[14] = (unsigned short) udp.LocalPort;
-#else
-        newname[14] = ntohs(inpcb.inp_lport);
+				/* Head of linked list, or root of table */
+UDPTABLE_ENTRY_TYPE	*udp_head  = NULL;
+int                      udp_size  = 0;	/* Only used for table-based systems */
+
+
+	/*
+	 *
+	 * Initialization and handler routines are common to all architectures
+	 *
+	 */
+#ifndef MIB_STATS_CACHE_TIMEOUT
+#define MIB_STATS_CACHE_TIMEOUT	5
+#endif
+#ifndef UDP_STATS_CACHE_TIMEOUT
+#define UDP_STATS_CACHE_TIMEOUT	MIB_STATS_CACHE_TIMEOUT
 #endif
 
-        if (exact) {
-            if (snmp_oid_compare(newname, 15, name, *length) == 0) {
-                memcpy((char *) lowest, (char *) newname,
-                       15 * sizeof(oid));
-                LowState = 0;
-#ifdef hpux11
-                Lowudp = udp;
+#ifdef UDP_ADDRESSES_IN_HOST_ORDER
+#define UDP_ADDRESS_TO_HOST_ORDER(x) x
+#define UDP_ADDRESS_TO_NETWORK_ORDER(x) htonl(x)
 #else
-                Lowinpcb = inpcb;
+#define UDP_ADDRESS_TO_HOST_ORDER(x) ntohl(x)
+#define UDP_ADDRESS_TO_NETWORK_ORDER(x) x
 #endif
-                break;          /* no need to search further */
-            }
-        } else {
-            if ((snmp_oid_compare(newname, 15, name, *length) > 0) &&
-                ((LowState < 0)
-                 || (snmp_oid_compare(newname, 15, lowest, 15) < 0))) {
-                /*
-                 * if new one is greater than input and closer to input than
-                 * previous lowest, save this one as the "next" one.
-                 */
-                memcpy((char *) lowest, (char *) newname,
-                       15 * sizeof(oid));
-                LowState = 0;
-#ifdef hpux11
-                Lowudp = udp;
+
+#ifdef UDP_PORTS_IN_HOST_ORDER
+#define UDP_PORT_TO_HOST_ORDER(x) x
 #else
-                Lowinpcb = inpcb;
+#define UDP_PORT_TO_HOST_ORDER(x) ntohs(x)
 #endif
-            }
-        }
+
+
+oid             udpTable_oid[] = { SNMP_OID_MIB2, 7, 5 };
+
+void
+init_udpTable(void)
+{
+    netsnmp_table_registration_info *table_info;
+    netsnmp_iterator_info           *iinfo;
+    netsnmp_handler_registration    *reginfo;
+    int                              rc;
+
+    DEBUGMSGTL(("mibII/udpTable", "Initialising UDP Table\n"));
+    /*
+     * Create the table data structure, and define the indexing....
+     */
+    table_info = SNMP_MALLOC_TYPEDEF(netsnmp_table_registration_info);
+    if (!table_info) {
+        return;
     }
-    if (LowState < 0)
-        return (NULL);
-    memcpy((char *) name, (char *) lowest,
-           ((int) vp->namelen + 10) * sizeof(oid));
-    *length = vp->namelen + 5;
-    *write_method = 0;
-    *var_len = sizeof(long);
-    switch (vp->magic) {
-    case UDPLOCALADDRESS:
-#ifdef hpux11
-        return (u_char *) & Lowudp.LocalAddress;
-#else
-        return (u_char *) & Lowinpcb.inp_laddr.s_addr;
-#endif
-    case UDPLOCALPORT:
-#ifdef hpux11
-        long_return = (unsigned short) Lowudp.LocalPort;
-#else
-        long_return = ntohs(Lowinpcb.inp_lport);
-#endif
-        return (u_char *) & long_return;
-    default:
-        DEBUGMSGTL(("snmpd", "unknown sub-id %d in var_udpEntry\n",
-                    vp->magic));
+    netsnmp_table_helper_add_indexes(table_info, ASN_IPADDRESS,
+                                                 ASN_INTEGER, 0);
+    table_info->min_column = UDPLOCALADDRESS;
+    table_info->max_column = UDPLOCALPORT;
+
+
+    /*
+     * .... and iteration information ....
+     */
+    iinfo      = SNMP_MALLOC_TYPEDEF(netsnmp_iterator_info);
+    if (!iinfo) {
+        netsnmp_table_registration_info_free(table_info);
+        return;
     }
-    return NULL;
+    iinfo->get_first_data_point = udpTable_first_entry;
+    iinfo->get_next_data_point  = udpTable_next_entry;
+    iinfo->table_reginfo        = table_info;
+#if defined (WIN32) || defined (cygwin)
+    iinfo->flags               |= NETSNMP_ITERATOR_FLAG_SORTED;
+#endif /* WIN32 || cygwin */
+
+
+    /*
+     * .... and register the table with the agent.
+     */
+    reginfo = netsnmp_create_handler_registration("udpTable",
+            udpTable_handler,
+            udpTable_oid, OID_LENGTH(udpTable_oid),
+            HANDLER_CAN_RONLY),
+    rc = netsnmp_register_table_iterator2(reginfo, iinfo);
+    if (rc != SNMPERR_SUCCESS)
+        return;
+
+    /*
+     * .... with a local cache
+     */
+    netsnmp_inject_handler( reginfo,
+		    netsnmp_get_cache_handler(UDP_STATS_CACHE_TIMEOUT,
+			   		udpTable_load, udpTable_free,
+					udpTable_oid, OID_LENGTH(udpTable_oid)));
 }
 
-#else                           /* solaris2 - udp */
 
+
+int
+udpTable_handler(netsnmp_mib_handler          *handler,
+                 netsnmp_handler_registration *reginfo,
+                 netsnmp_agent_request_info   *reqinfo,
+                 netsnmp_request_info         *requests)
+{
+    netsnmp_request_info  *request;
+    netsnmp_variable_list *requestvb;
+    netsnmp_table_request_info *table_info;
+    UDPTABLE_ENTRY_TYPE	  *entry;
+    oid      subid;
+    long     port;
+    in_addr_t addr;
+
+    DEBUGMSGTL(("mibII/udpTable", "Handler - mode %s\n",
+                    se_find_label_in_slist("agent_mode", reqinfo->mode)));
+    switch (reqinfo->mode) {
+    case MODE_GET:
+        for (request=requests; request; request=request->next) {
+            requestvb = request->requestvb;
+            DEBUGMSGTL(( "mibII/udpTable", "oid: "));
+            DEBUGMSGOID(("mibII/udpTable", requestvb->name,
+                                           requestvb->name_length));
+            DEBUGMSG((   "mibII/udpTable", "\n"));
+
+            entry = (UDPTABLE_ENTRY_TYPE *)netsnmp_extract_iterator_context(request);
+            if (!entry)
+                continue;
+            table_info = netsnmp_extract_table_info(request);
+            subid      = table_info->colnum;
+
+            switch (subid) {
+            case UDPLOCALADDRESS:
+#if defined(osf5) && defined(IN6_EXTRACT_V4ADDR)
+                addr = ntohl(IN6_EXTRACT_V4ADDR(&entry->pcb.inp_laddr));
+	        snmp_set_var_typed_value(requestvb, ASN_IPADDRESS,
+                                         (u_char*)&addr,
+                                         sizeof(uint32_t));
+#else
+                addr = UDP_ADDRESS_TO_HOST_ORDER(entry->UDPTABLE_LOCALADDRESS);
+	        snmp_set_var_typed_value(requestvb, ASN_IPADDRESS,
+                                         (u_char *)&addr,
+                                         sizeof(uint32_t));
+#endif
+                break;
+            case UDPLOCALPORT:
+                port = UDP_PORT_TO_HOST_ORDER((u_short)entry->UDPTABLE_LOCALPORT);
+	        snmp_set_var_typed_value(requestvb, ASN_INTEGER,
+                                 (u_char *)&port, sizeof(port));
+                break;
+	    }
+	}
+        break;
+
+    case MODE_GETNEXT:
+    case MODE_GETBULK:
+#ifndef NETSNMP_NO_WRITE_SUPPORT
+    case MODE_SET_RESERVE1:
+    case MODE_SET_RESERVE2:
+    case MODE_SET_ACTION:
+    case MODE_SET_COMMIT:
+    case MODE_SET_FREE:
+    case MODE_SET_UNDO:
+#endif /* !NETSNMP_NO_WRITE_SUPPORT */
+        snmp_log(LOG_WARNING, "mibII/udpTable: Unsupported mode (%d)\n",
+                               reqinfo->mode);
+        break;
+    default:
+        snmp_log(LOG_WARNING, "mibII/udpTable: Unrecognised mode (%d)\n",
+                               reqinfo->mode);
+        break;
+    }
+
+    return SNMP_ERR_NOERROR;
+}
+
+	/*
+	 * Two forms of iteration hook routines:
+	 *    One for when the UDP table is stored as a table
+	 *    One for when the UDP table is stored as a linked list
+	 *
+	 * Also applies to the cache-handler free routine
+	 */
+
+#ifdef	UDPTABLE_IS_TABLE
+netsnmp_variable_list *
+udpTable_first_entry(void **loop_context,
+                     void **data_context,
+                     netsnmp_variable_list *index,
+                     netsnmp_iterator_info *data)
+{
+    /*
+     * XXX - How can we tell if the cache is valid?
+     *       No access to 'reqinfo'
+     */
+    if (udp_size == 0)
+        return NULL;
+
+    /*
+     * Point to the first entry, and use the
+     * 'next_entry' hook to retrieve this row
+     */
+    *loop_context = 0;
+    return udpTable_next_entry( loop_context, data_context, index, data );
+}
+
+netsnmp_variable_list *
+udpTable_next_entry( void **loop_context,
+                     void **data_context,
+                     netsnmp_variable_list *index,
+                     netsnmp_iterator_info *data)
+{
+    int i = (intptr_t)*loop_context;
+    long port;
+
+#if HAVE_KVM_GETFILES
+    while (i < udp_size && (udp_head[i].so_protocol != IPPROTO_UDP
+	    || udp_head[i].so_family != AF_INET))
+	i++;
+#endif
+    if (udp_size < i)
+        return NULL;
+
+    /*
+     * Set up the indexing for the specified row...
+     */
+#if defined (WIN32) || defined (cygwin) || defined(openbsd5)
+    port = ntohl((u_long)udp_head[i].UDPTABLE_LOCALADDRESS);
+    snmp_set_var_value(index, (u_char *)&port,
+                                  sizeof(udp_head[i].UDPTABLE_LOCALADDRESS));
+#else
+    snmp_set_var_value(index, (u_char *)&udp_head[i].UDPTABLE_LOCALADDRESS,
+                                  sizeof(udp_head[i].UDPTABLE_LOCALADDRESS));
+#endif
+    port = UDP_PORT_TO_HOST_ORDER((u_short)udp_head[i].UDPTABLE_LOCALPORT);
+    snmp_set_var_value(index->next_variable,
+                               (u_char*)&port, sizeof(port));
+    /*
+     * ... return the data structure for this row,
+     * and update the loop context ready for the next one.
+     */
+    *data_context = (void*)&udp_head[i];
+    *loop_context = (void*)(intptr_t)++i;
+    return index;
+}
+
+void
+udpTable_free(netsnmp_cache *cache, void *magic)
+{
+#if defined (WIN32) || defined (cygwin)
+    if (udp_head) {
+		/* the allocated structure is a count followed by table entries */
+		free((char *)(udp_head) - sizeof(DWORD));
+	}
+#elif defined(openbsd5)
+#else
+    if (udp_head)
+        free(udp_head);
+#endif
+    udp_head = NULL;
+    udp_size = 0;
+}
+#else
+#ifdef UDPTABLE_IS_LINKED_LIST
+netsnmp_variable_list *
+udpTable_first_entry(void **loop_context,
+                     void **data_context,
+                     netsnmp_variable_list *index,
+                     netsnmp_iterator_info *data)
+{
+    /*
+     * XXX - How can we tell if the cache is valid?
+     *       No access to 'reqinfo'
+     */
+    if (udp_head == NULL)
+        return NULL;
+
+    /*
+     * Point to the first entry, and use the
+     * 'next_entry' hook to retrieve this row
+     */
+    *loop_context = (void*)udp_head;
+    return udpTable_next_entry( loop_context, data_context, index, data );
+}
+
+netsnmp_variable_list *
+udpTable_next_entry( void **loop_context,
+                     void **data_context,
+                     netsnmp_variable_list *index,
+                     netsnmp_iterator_info *data)
+{
+    UDPTABLE_ENTRY_TYPE	 *entry = (UDPTABLE_ENTRY_TYPE *)*loop_context;
+    long port;
+    in_addr_t addr;
+
+    if (!entry)
+        return NULL;
+
+    /*
+     * Set up the indexing for the specified row...
+     */
+#if defined(osf5) && defined(IN6_EXTRACT_V4ADDR)
+                snmp_set_var_value(index,
+                              (u_char*)&IN6_EXTRACT_V4ADDR(&entry->pcb.inp_laddr),
+                                 sizeof(IN6_EXTRACT_V4ADDR(&entry->pcb.inp_laddr)));
+#else
+    addr = UDP_ADDRESS_TO_NETWORK_ORDER((in_addr_t)entry->UDPTABLE_LOCALADDRESS);
+    snmp_set_var_value(index, (u_char *)&addr,
+                                 sizeof(addr));
+#endif
+    port = UDP_PORT_TO_HOST_ORDER(entry->UDPTABLE_LOCALPORT);
+    snmp_set_var_value(index->next_variable,
+                               (u_char*)&port, sizeof(port));
+
+    /*
+     * ... return the data structure for this row,
+     * and update the loop context ready for the next one.
+     */
+    *data_context = (void*)entry;
+    *loop_context = (void*)entry->INP_NEXT_SYMBOL;
+    return index;
+}
+
+void
+udpTable_free(netsnmp_cache *cache, void *magic)
+{
+    UDPTABLE_ENTRY_TYPE	 *p;
+    while (udp_head) {
+        p = udp_head;
+        udp_head = udp_head->INP_NEXT_SYMBOL;
+        free(p);
+    }
+
+    udp_head = NULL;
+}
+#endif		/* UDPTABLE_IS_LINKED_LIST */
+#endif		/* UDPTABLE_IS_TABLE */
+
+
+	/*
+	 *
+	 * The cache-handler loading routine is the main
+	 *    place for architecture-specific code
+	 *
+	 * Load into either a table structure, or a linked list
+	 *    depending on the system architecture
+	 */
+
+
+#ifdef hpux11
+int
+udpTable_load(netsnmp_cache *cache, void *vmagic)
+{
+    int             fd;
+    struct nmparms  p;
+    int             val = 0;
+    unsigned int    ulen;
+    int             ret;
+
+    udpTable_free(NULL, NULL);
+
+    if ((fd = open_mib("/dev/ip", O_RDONLY, 0, NM_ASYNC_OFF)) >= 0) {
+        p.objid = ID_udpLsnNumEnt;
+        p.buffer = (void *) &val;
+        ulen = sizeof(int);
+        p.len = &ulen;
+        if ((ret = get_mib_info(fd, &p)) == 0)
+            udp_size = val;
+
+        if (udp_size > 0) {
+            ulen = (unsigned) udp_size *sizeof(mib_udpLsnEnt);
+            udp_head = (mib_udpLsnEnt *) malloc(ulen);
+            p.objid = ID_udpLsnTable;
+            p.buffer = (void *) udp_head;
+            p.len = &ulen;
+            if ((ret = get_mib_info(fd, &p)) < 0) {
+                udp_size = 0;
+            }
+        }
+
+        close_mib(fd);
+    }
+
+    if (udp_size > 0) {
+        DEBUGMSGTL(("mibII/udpTable", "Loaded UDP Table (hpux11)\n"));
+        return 0;
+    }
+    DEBUGMSGTL(("mibII/udpTable", "Failed to load UDP Table (hpux11)\n"));
+    return -1;
+}
+
+#elif defined(linux)
+int
+udpTable_load(netsnmp_cache *cache, void *vmagic)
+{
+    FILE           *in;
+    char            line[256];
+
+    udpTable_free(cache, NULL);
+
+    if (!(in = fopen("/proc/net/udp", "r"))) {
+        DEBUGMSGTL(("mibII/udpTable", "Failed to load UDP Table (linux)\n"));
+        NETSNMP_LOGONCE((LOG_ERR, "snmpd: cannot open /proc/net/udp ...\n"));
+        return -1;
+    }
+
+    /*
+     * scan proc-file and build up a linked list 
+     * This will actually be built up in reverse,
+     *   but since the entries are unsorted, that doesn't matter.
+     */
+    while (line == fgets(line, sizeof(line), in)) {
+        struct inpcb    pcb, *nnew;
+        unsigned int    state, lport;
+
+        memset(&pcb, 0, sizeof(pcb));
+
+        if (3 != sscanf(line, "%*d: %x:%x %*x:%*x %x",
+                        &pcb.inp_laddr.s_addr, &lport, &state))
+            continue;
+
+        if (state != 7)         /* fix me:  UDP_LISTEN ??? */
+            continue;
+
+        /* store in network byte order */
+        pcb.inp_laddr.s_addr = htonl(pcb.inp_laddr.s_addr);
+        pcb.inp_lport = htons((unsigned short) (lport));
+
+        nnew = SNMP_MALLOC_TYPEDEF(struct inpcb);
+        if (nnew == NULL)
+            break;
+        memcpy(nnew, &pcb, sizeof(struct inpcb));
+        nnew->inp_next = udp_head;
+        udp_head       = nnew;
+    }
+
+    fclose(in);
+
+    DEBUGMSGTL(("mibII/udpTable", "Loaded UDP Table (linux)\n"));
+    return 0;
+}
+
+#elif HAVE_KVM_GETFILES
+
+int
+udpTable_load(netsnmp_cache *cache, void *vmagic)
+{
+    int count;
+    udp_head = kvm_getfiles(kd, KERN_FILE_BYFILE, DTYPE_SOCKET, sizeof(struct kinfo_file), &count);
+    udp_size = count;
+    DEBUGMSGTL(("mibII/udpTable", "Loaded UDP Table (kvm_getfiles)\n"));
+    return 0;
+}
+
+#elif defined(solaris2)
 static int
 UDP_Cmp(void *addr, void *ep)
 {
@@ -273,476 +572,256 @@ UDP_Cmp(void *addr, void *ep)
         return (1);
 }
 
-u_char         *
-var_udpEntry(struct variable * vp,
-             oid * name,
-             size_t * length,
-             int exact, size_t * var_len, WriteMethod ** write_method)
+
+int
+udpTable_load(netsnmp_cache *cache, void *vmagic)
 {
-    oid             newname[MAX_OID_LEN], lowest[MAX_OID_LEN], *op;
-    u_char         *cp;
-
-#define UDP_LISTEN_LENGTH 15
-#define UDP_LOCADDR_OFF   10
-#define UDP_LOCPORT_OFF   14
-    mib2_udpEntry_t Lowentry, Nextentry, entry;
-    req_e           req_type;
-    int             Found = 0;
-
-    memset(&Lowentry, 0, sizeof(Lowentry));
-    memcpy((char *) newname, (char *) vp->name, vp->namelen * sizeof(oid));
-    if (*length == UDP_LISTEN_LENGTH)   /* Assume that the input name is the lowest */
-        memcpy((char *) lowest, (char *) name,
-               UDP_LISTEN_LENGTH * sizeof(oid));
-    for (Nextentry.udpLocalAddress = (u_long) - 1, req_type = GET_FIRST;;
-         req_type = GET_NEXT) {
-        if (getMibstat
-            (MIB_UDP_LISTEN, &entry, sizeof(mib2_udpEntry_t), req_type,
-             &UDP_Cmp, &entry) != 0)
-            break;
-        if (entry.udpEntryInfo.ue_state != MIB2_UDP_idle)
-            continue;           /* we only want to get listen ports */
-        COPY_IPADDR(cp, (u_char *) & entry.udpLocalAddress, op,
-                    newname + UDP_LOCADDR_OFF);
-        newname[UDP_LOCPORT_OFF] = entry.udpLocalPort;
-
-        if (exact) {
-            if (snmp_oid_compare(newname, UDP_LISTEN_LENGTH, name, *length)
-                == 0) {
-                memcpy((char *) lowest, (char *) newname,
-                       UDP_LISTEN_LENGTH * sizeof(oid));
-                Lowentry = entry;
-                Found++;
-                break;          /* no need to search further */
-            }
-        } else {
-            if ((snmp_oid_compare
-                 (newname, UDP_LISTEN_LENGTH, name, *length) > 0)
-                && ((Nextentry.udpLocalAddress == (u_long) - 1)
-                    ||
-                    (snmp_oid_compare
-                     (newname, UDP_LISTEN_LENGTH, lowest,
-                      UDP_LISTEN_LENGTH) < 0)
-                    ||
-                    (snmp_oid_compare
-                     (name, *length, lowest, UDP_LISTEN_LENGTH) == 0))) {
-                /*
-                 * if new one is greater than input and closer to input than
-                 * * previous lowest, and is not equal to it, save this one as
-                 * * the "next" one.
-                 */
-                memcpy((char *) lowest, (char *) newname,
-                       UDP_LISTEN_LENGTH * sizeof(oid));
-                Lowentry = entry;
-                Found++;
-            }
-        }
-        Nextentry = entry;
-    }
-    if (Found == 0)
-        return (NULL);
-    memcpy((char *) name, (char *) lowest,
-           (vp->namelen + UDP_LISTEN_LENGTH -
-            UDP_LOCADDR_OFF) * sizeof(oid));
-    *length = vp->namelen + UDP_LISTEN_LENGTH - UDP_LOCADDR_OFF;
-    *write_method = 0;
-    *var_len = sizeof(long);
-    switch (vp->magic) {
-    case UDPLOCALADDRESS:
-        long_return = Lowentry.udpLocalAddress;
-        return (u_char *) & long_return;
-    case UDPLOCALPORT:
-        long_return = Lowentry.udpLocalPort;
-        return (u_char *) & long_return;
-    default:
-        DEBUGMSGTL(("snmpd", "unknown sub-id %d in var_udpEntry\n",
-                    vp->magic));
-    }
-    return NULL;
-}
-#endif                          /* solaris2 - udp */
+    mib2_udpEntry_t   entry;
+    netsnmp_udpEntry *nnew;
+    netsnmp_udpEntry *prev_entry = NULL;
 
 
-        /*********************
-	 *
-	 *  Internal implementation functions
-	 *
-	 *********************/
+    udpTable_free(NULL, NULL);
 
-#ifdef linux
-static struct inpcb *udp_inpcb_list;
-#endif
-
-#ifndef solaris2
-
-#ifdef hpux11
-static int      udptab_size, udptab_current;
-static mib_udpLsnEnt *udp = (mib_udpLsnEnt *) 0;
-#else                           /* hpux11 */
-static struct inpcb udp_inpcb, *udp_prev;
-#ifdef PCB_TABLE
-static struct inpcb *udp_head, *udp_next;
-#endif
-#if defined(CAN_USE_SYSCTL) && defined(UDPCTL_PCBLIST)
-static char    *udpcb_buf = NULL;
-static struct xinpgen *xig = NULL;
-#endif                          /* !defined(CAN_USE_SYSCTL) || !define(UDPCTL_PCBLIST) */
-#endif                          /* hpux11 */
-
-
-static void
-UDP_Scan_Init(void)
-{
-#ifdef hpux11
-
-    int             fd;
-    struct nmparms  p;
-    int             val;
-    unsigned int    ulen;
-    int             ret;
-
-    if (udp)
-        free(udp);
-    udp = (mib_udpLsnEnt *) 0;
-    udptab_size = 0;
-
-    if ((fd = open_mib("/dev/ip", O_RDONLY, 0, NM_ASYNC_OFF)) >= 0) {
-        p.objid = ID_udpLsnNumEnt;
-        p.buffer = (void *) &val;
-        ulen = sizeof(int);
-        p.len = &ulen;
-        if ((ret = get_mib_info(fd, &p)) == 0)
-            udptab_size = val;
-
-        if (udptab_size > 0) {
-            ulen = (unsigned) udptab_size *sizeof(mib_udpLsnEnt);
-            udp = (mib_udpLsnEnt *) malloc(ulen);
-            p.objid = ID_udpLsnTable;
-            p.buffer = (void *) udp;
-            p.len = &ulen;
-            if ((ret = get_mib_info(fd, &p)) < 0)
-                udptab_size = 0;
-        }
-
-        close_mib(fd);
+    if (getMibstat(MIB_UDP_LISTEN, &entry, sizeof(mib2_udpEntry_t),
+                   GET_FIRST, &UDP_Cmp, &entry) != 0) {
+        DEBUGMSGTL(("mibII/udpTable", "Failed to load UDP Table (solaris)\n"));
+        return -1;
     }
 
-    udptab_current = 0;
-
-#else                           /* hpux11 */
-
-#if !defined(CAN_USE_SYSCTL) || !defined(UDPCTL_PCBLIST)
-#ifdef PCB_TABLE
-    struct inpcbtable table;
-#endif
-#ifndef linux
-#ifdef PCB_TABLE
-    auto_nlist(UDB_SYMBOL, (char *) &table, sizeof(table));
-    udp_next = table.inpt_queue.cqh_first;
-    udp_head = udp_prev =
-        (struct inpcb *) &((struct inpcbtable *)
-                           auto_nlist_value(UDB_SYMBOL))->inpt_queue.
-        cqh_first;
-#else
-    auto_nlist(UDB_SYMBOL, (char *) &udp_inpcb, sizeof(udp_inpcb));
-#if !(defined(freebsd2) || defined(netbsd1) || defined(openbsd2))
-    udp_prev = (struct inpcb *) auto_nlist_value(UDB_SYMBOL);
-#endif
-#endif
-#else                           /* linux */
-    FILE           *in;
-    char            line[256];
-    struct inpcb  **pp;
-    struct timeval  now;
-    static unsigned long Time_Of_Last_Reload = 0;
-
-    /*
-     * save some cpu-cycles, and reload after 5 secs...
-     */
-    gettimeofday(&now, (struct timezone *) 0);
-    if (Time_Of_Last_Reload + 5 > now.tv_sec) {
-        udp_prev = udp_inpcb_list;
-        return;
-    }
-    Time_Of_Last_Reload = now.tv_sec;
-
-
-    if (!(in = fopen("/proc/net/udp", "r"))) {
-        snmp_log(LOG_ERR, "snmpd: cannot open /proc/net/udp ...\n");
-        udp_prev = 0;
-        return;
-    }
-
-    /*
-     * free old chain: 
-     */
-    while (udp_inpcb_list) {
-        struct inpcb   *p = udp_inpcb_list;
-        udp_inpcb_list = udp_inpcb_list->inp_next;
-        free(p);
-    }
-
-    /*
-     * scan proc-file and append: 
-     */
-
-    pp = &udp_inpcb_list;
-
-    while (line == fgets(line, sizeof(line), in)) {
-        struct inpcb    pcb, *nnew;
-        unsigned int    state, lport;
-
-        if (3 != sscanf(line, "%*d: %x:%x %*x:%*x %x",
-                        &pcb.inp_laddr.s_addr, &lport, &state))
-            continue;
-
-        if (state != 7)         /* fix me:  UDP_LISTEN ??? */
-            continue;
-
-        pcb.inp_lport = htons((unsigned short) (lport));
-        pcb.inp_fport = htons(pcb.inp_fport);
-
-        nnew = (struct inpcb *) malloc(sizeof(struct inpcb));
-        if (nnew == NULL)
-            break;
-        *nnew = pcb;
-        nnew->inp_next = 0;
-
-        *pp = nnew;
-        pp = &nnew->inp_next;
-    }
-
-    fclose(in);
-
-    /*
-     * first entry to go: 
-     */
-    udp_prev = udp_inpcb_list;
-#endif                          /*linux */
-#else                           /*  !defined(CAN_USE_SYSCTL) || !defined(UDPCTL_PCBLIST) */
-    {
-        size_t          len;
-        int             sname[] =
-            { CTL_NET, PF_INET, IPPROTO_UDP, UDPCTL_PCBLIST };
-
-        if (udpcb_buf) {
-            free(udpcb_buf);
-            udpcb_buf = NULL;
-        }
-        xig = NULL;
-
-        len = 0;
-        if (sysctl(sname, 4, 0, &len, 0, 0) < 0) {
-            return;
-        }
-        if ((udpcb_buf = malloc(len)) == NULL) {
-            return;
-        }
-        if (sysctl(sname, 4, udpcb_buf, &len, 0, 0) < 0) {
-            free(udpcb_buf);
-            udpcb_buf = NULL;
-            return;
-        }
-
-        xig = (struct xinpgen *) udpcb_buf;
-        xig = (struct xinpgen *) ((char *) xig + xig->xig_len);
-        return;
-    }
-#endif                          /*  !defined(CAN_USE_SYSCTL) || !defined(UDPCTL_PCBLIST) */
-
-#endif                          /* hpux11 */
-}
-
-#ifdef hpux11
-static int
-UDP_Scan_Next(mib_udpLsnEnt * RetUdp)
-{
-    if (udptab_current < udptab_size) {
+    while (1) {
         /*
-         * copy values 
+         * Not interested in 'idle' entries, apparently....
          */
-        *RetUdp = udp[udptab_current];
-        /*
-         * increment to point to next entry 
-         */
-        udptab_current++;
-        /*
-         * return success 
-         */
-        return (1);
+        DEBUGMSGTL(("mibII/udpTable", "UDP Entry %x:%d (%d)\n",
+                     entry.udpLocalAddress, entry.udpLocalPort, entry.udpEntryInfo.ue_state));
+        if (entry.udpEntryInfo.ue_state == MIB2_UDP_idle) {
+            /*
+             * Build up a linked list copy of the getMibstat results
+             * Note that since getMibstat returns rows in sorted order,
+	     *    we need to retain this order while building the list
+	     *    so new entries are added onto the end of the list.
+             * xxx-rks: WARNING: this is NOT TRUE on the sf cf solaris boxes.
+             */
+            nnew = SNMP_MALLOC_TYPEDEF(netsnmp_udpEntry);
+            if (nnew == NULL)
+                break;
+            memcpy(&(nnew->entry), &entry, sizeof(mib2_udpEntry_t));
+            if (!prev_entry)
+	        udp_head = nnew;
+	    else
+	        prev_entry->inp_next = nnew;
+	    prev_entry = nnew;
+	}
+
+        if (getMibstat(MIB_UDP_LISTEN, &entry, sizeof(mib2_udpEntry_t),
+                       GET_NEXT, &UDP_Cmp, &entry) != 0)
+	    break;
     }
 
-    /*
-     * return done 
-     */
-    return (0);
-}
-#else                           /* hpux11 */
-static int
-UDP_Scan_Next(struct inpcb *RetInPcb)
-{
-#if !defined(CAN_USE_SYSCTL) || !defined(UDPCTL_PCBLIST)
-    register struct inpcb *next;
-
-#ifndef linux
-#ifdef PCB_TABLE
-    if (udp_next == udp_head)
+    if (udp_head) {
+        DEBUGMSGTL(("mibII/udpTable", "Loaded UDP Table (solaris)\n"));
         return 0;
-#else
-    if ((udp_inpcb.INP_NEXT_SYMBOL == NULL) ||
-        (udp_inpcb.INP_NEXT_SYMBOL ==
-         (struct inpcb *) auto_nlist_value(UDB_SYMBOL))) {
-        return (0);             /* "EOF" */
     }
-#endif
-
-#ifdef PCB_TABLE
-    klookup((unsigned long) udp_next, (char *) &udp_inpcb,
-            sizeof(udp_inpcb));
-    udp_next = udp_inpcb.inp_queue.cqe_next;
-#else
-    next = udp_inpcb.INP_NEXT_SYMBOL;
-
-    klookup((unsigned long) next, (char *) &udp_inpcb, sizeof(udp_inpcb));
-#if !(defined(netbsd1) || defined(freebsd2) || defined(linux) || defined(openbsd2))
-    if (udp_inpcb.INP_PREV_SYMBOL != udp_prev)  /* ??? */
-        return (-1);            /* "FAILURE" */
-#endif
-#endif
-    *RetInPcb = udp_inpcb;
-#if !(defined(netbsd1) || defined(freebsd2) || defined(openbsd2))
-    udp_prev = next;
-#endif
-#else                           /* linux */
-    if (!udp_prev)
-        return 0;
-
-    udp_inpcb = *udp_prev;
-    next = udp_inpcb.inp_next;
-    *RetInPcb = udp_inpcb;
-    udp_prev = next;
-#endif                          /* linux */
-#else                           /*  !defined(CAN_USE_SYSCTL) || !defined(UDPCTL_PCBLIST) */
-    /*
-     * Are we done? 
-     */
-    if ((xig == NULL) || (xig->xig_len <= sizeof(struct xinpgen)))
-        return (0);
-
-    *RetInPcb = ((struct xinpcb *) xig)->xi_inp;
-
-    /*
-     * Prepare for Next read 
-     */
-    xig = (struct xinpgen *) ((char *) xig + xig->xig_len);
-#endif                          /*  !defined(CAN_USE_SYSCTL) || !defined(UDPCTL_PCBLIST) */
-    return (1);                 /* "OK" */
+    DEBUGMSGTL(("mibII/udpTable", "Failed to load UDP Table (solaris)\n"));
+    return -1;
 }
-#endif                          /* hpux11 */
-#endif                          /* solaris2 */
 
-#else                           /* WIN32 */
-#include <iphlpapi.h>
-
-u_char         *
-var_udpEntry(struct variable *vp,
-             oid * name,
-             size_t * length,
-             int exact, size_t * var_len, WriteMethod ** write_method)
+#elif defined (WIN32) || defined (cygwin)
+int
+udpTable_load(netsnmp_cache *cache, void *vmagic)
 {
-    oid             newname[MAX_OID_LEN], lowest[MAX_OID_LEN], *op;
-    u_char         *cp;
-    int             LowState = -1;
-    static PMIB_UDPTABLE pUdpTable = NULL;
-    DWORD           status = NO_ERROR;
-    DWORD           dwActualSize = 0;
-    UINT            i;
-    struct timeval  now;
-    static long     Time_Of_Last_Reload = 0;
-    struct in_addr  inadLocal;
-    memcpy((char *) newname, (char *) vp->name,
-           (int) vp->namelen * sizeof(oid));
+    PMIB_UDPTABLE pUdpTable = NULL;
+    DWORD         dwActualSize = 0;
+    DWORD         status = NO_ERROR;
 
     /*
-     * save some cpu-cycles, and reload after 5 secs...
+     * query for the buffer size needed 
      */
-    gettimeofday(&now, (struct timezone *) 0);
-    if ((Time_Of_Last_Reload + 5 <= now.tv_sec) || (pUdpTable == NULL)) {
-        if (pUdpTable != NULL)
-            free(pUdpTable);
-        Time_Of_Last_Reload = now.tv_sec;
-        /*
-         * query for the buffer size needed 
-         */
-        status = GetUdpTable(pUdpTable, &dwActualSize, TRUE);
-        if (status == ERROR_INSUFFICIENT_BUFFER) {
-            pUdpTable = (PMIB_UDPTABLE) malloc(dwActualSize);
-            if (pUdpTable != NULL) {
-                /*
-                 * Get the sorted UDP table 
-                 */
-                status = GetUdpTable(pUdpTable, &dwActualSize, TRUE);
-
-            }
+    status = GetUdpTable(pUdpTable, &dwActualSize, TRUE);
+    if (status == ERROR_INSUFFICIENT_BUFFER) {
+        pUdpTable = (PMIB_UDPTABLE) malloc(dwActualSize);
+        if (pUdpTable != NULL) {
+            /*
+             * Get the sorted UDP table 
+             */
+            status = GetUdpTable(pUdpTable, &dwActualSize, TRUE);
         }
     }
     if (status == NO_ERROR) {
-        for (i = 0; i < pUdpTable->dwNumEntries; ++i) {
-            inadLocal.s_addr = pUdpTable->table[i].dwLocalAddr;
-            cp = (u_char *) & pUdpTable->table[i].dwLocalAddr;
-
-            op = newname + 10;
-            *op++ = *cp++;
-            *op++ = *cp++;
-            *op++ = *cp++;
-            *op++ = *cp++;
-
-            newname[14] =
-                ntohs((unsigned short) (0x0000FFFF & pUdpTable->table[i].
-                                        dwLocalPort));
-
-            if (exact) {
-                if (snmp_oid_compare(newname, 15, name, *length) == 0) {
-                    memcpy((char *) lowest, (char *) newname,
-                           15 * sizeof(oid));
-                    LowState = 0;
-                    break;      /* no need to search further */
-                }
-            } else {
-                if (snmp_oid_compare(newname, 15, name, *length) > 0) {
-                    memcpy((char *) lowest, (char *) newname,
-                           15 * sizeof(oid));
-                    LowState = 0;
-                    inadLocal.s_addr = pUdpTable->table[i].dwLocalAddr;
-                    break;      /* As the table is sorted, no need to search further */
-                }
-            }
-        }
+        DEBUGMSGTL(("mibII/udpTable", "Loaded UDP Table (win32)\n"));
+        udp_size = pUdpTable->dwNumEntries -1;  /* entries are counted starting with 0 */
+        udp_head = pUdpTable->table;
+        return 0;
     }
-
-    if (LowState < 0) {
-        free(pUdpTable);
-        pUdpTable = NULL;
-        return (NULL);
-    }
-    memcpy((char *) name, (char *) lowest,
-           ((int) vp->namelen + 10) * sizeof(oid));
-    *length = vp->namelen + 5;
-    *write_method = 0;
-    *var_len = sizeof(long);
-    switch (vp->magic) {
-    case UDPLOCALADDRESS:
-        return (u_char *) & pUdpTable->table[i].dwLocalAddr;
-    case UDPLOCALPORT:
-        long_return =
-            ntohs((unsigned short) (0x0000FFFF & pUdpTable->table[i].
-                                    dwLocalPort));
-        return (u_char *) & long_return;
-    default:
-        DEBUGMSGTL(("snmpd", "unknown sub-id %d in var_udpEntry\n",
-                    vp->magic));
-    }
-    return NULL;
+    DEBUGMSGTL(("mibII/udpTable", "Failed to load UDP Table (win32)\n"));
+    if (pUdpTable)
+	free(pUdpTable);
+    return -1;
 }
 
-#endif                          /* WIN32 */
+#elif (defined(NETSNMP_CAN_USE_SYSCTL) && defined(UDPCTL_PCBLIST))
+int
+udpTable_load(netsnmp_cache *cache, void *vmagic)
+{
+    size_t   len;
+    int      sname[] = { CTL_NET, PF_INET, IPPROTO_UDP, UDPCTL_PCBLIST };
+    char     *udpcb_buf = NULL;
+#if defined(dragonfly)
+    struct xinpcb  *xig = NULL;
+#else
+    struct xinpgen *xig = NULL;
+#endif
+    UDPTABLE_ENTRY_TYPE  *nnew;
+
+    udpTable_free(NULL, NULL);
+
+    /*
+     *  Read in the buffer containing the UDP table data
+     */
+    len = 0;
+    if (sysctl(sname, 4, 0, &len, 0, 0) < 0 ||
+       (udpcb_buf = malloc(len)) == NULL)
+        return -1;
+    if (sysctl(sname, 4, udpcb_buf, &len, 0, 0) < 0) {
+        free(udpcb_buf);
+        return -1;
+    }
+
+    /*
+     *  Unpick this into the constituent 'xinpgen' structures, and extract
+     *     the 'inpcb' elements into a linked list (built in reverse)
+     */
+#if defined(dragonfly)
+    xig = (struct xinpcb  *) udpcb_buf;
+#else
+    xig = (struct xinpgen *) udpcb_buf;
+    xig = (struct xinpgen *) ((char *) xig + xig->xig_len);
+#endif
+
+#if defined(dragonfly)
+    while (xig && ((char *)xig + xig->xi_len < udpcb_buf + len))
+#else
+    while (xig && (xig->xig_len > sizeof(struct xinpgen)))
+#endif
+    {
+        nnew = SNMP_MALLOC_TYPEDEF(UDPTABLE_ENTRY_TYPE);
+        if (!nnew)
+            break;
+        memcpy(&nnew->pcb, &((struct xinpcb *) xig)->xi_inp, sizeof(struct inpcb));
+	nnew->inp_next = udp_head;
+	udp_head   = nnew;
+#if defined(dragonfly)
+        xig = (struct xinpcb  *) ((char *) xig + xig->xi_len);
+#else
+        xig = (struct xinpgen *) ((char *) xig + xig->xig_len);
+#endif
+    }
+
+    free(udpcb_buf);
+    if (udp_head) {
+        DEBUGMSGTL(("mibII/udpTable", "Loaded UDP Table (sysctl)\n"));
+        return 0;
+    }
+    DEBUGMSGTL(("mibII/udpTable", "Failed to load UDP Table (sysctl)\n"));
+    return -1;
+}
+
+#elif defined(PCB_TABLE)
+int
+udpTable_load(netsnmp_cache *cache, void *vmagic)
+{
+    struct inpcbtable table;
+    struct inpcb   *nnew, *entry;
+
+    udpTable_free(NULL, NULL);
+
+    if (!auto_nlist(UDB_SYMBOL, (char *) &table, sizeof(table))) {
+        DEBUGMSGTL(("mibII/udpTable", "Failed to read inpcbtable\n"));
+        return -1;
+    }
+
+    /*
+     *  Set up a linked list
+     */
+    entry  = table.INP_FIRST_SYMBOL;
+    while (entry) {
+   
+        nnew = SNMP_MALLOC_TYPEDEF(struct inpcb);
+        if (!nnew)
+            break;
+
+        if (!NETSNMP_KLOOKUP(entry, (char *) nnew, sizeof(struct inpcb))) {
+            DEBUGMSGTL(("mibII/udpTable:udpTable_load", "klookup failed\n"));
+            break;
+        }
+
+        entry    = nnew->INP_NEXT_SYMBOL;	/* Next kernel entry */
+	nnew->INP_NEXT_SYMBOL = udp_head;
+	udp_head = nnew;
+
+        if (entry == table.INP_FIRST_SYMBOL)
+            break;
+    }
+
+    if (udp_head) {
+        DEBUGMSGTL(("mibII/udpTable", "Loaded UDP Table (pcb_table)\n"));
+        return 0;
+    }
+    DEBUGMSGTL(("mibII/udpTable", "Failed to load UDP Table (pcb_table)\n"));
+    return -1;
+}
+
+#elif defined(UDB_SYMBOL)
+int
+udpTable_load(netsnmp_cache *cache, void *vmagic)
+{
+    struct inpcb   udp_inpcb;
+    struct inpcb   *nnew, *entry;
+
+    udpTable_free(NULL, NULL);
+
+    if (!auto_nlist(UDB_SYMBOL, (char *) &udp_inpcb, sizeof(udp_inpcb))) {
+        DEBUGMSGTL(("mibII/udpTable", "Failed to read udb_symbol\n"));
+        return -1;
+    }
+
+    /*
+     *  Set up a linked list
+     */
+    entry  = udp_inpcb.INP_NEXT_SYMBOL;
+    while (entry) {
+   
+        nnew = SNMP_MALLOC_TYPEDEF(struct inpcb);
+        if (!nnew)
+            break;
+
+        if (!NETSNMP_KLOOKUP(entry, (char *) nnew, sizeof(struct inpcb))) {
+            DEBUGMSGTL(("mibII/udpTable:udpTable_load", "klookup failed\n"));
+            break;
+        }
+
+        entry    = nnew->INP_NEXT_SYMBOL;		/* Next kernel entry */
+	nnew->INP_NEXT_SYMBOL = udp_head;
+	udp_head = nnew;
+
+        if (entry == udp_inpcb.INP_NEXT_SYMBOL)
+            break;
+    }
+
+    if (udp_head) {
+        DEBUGMSGTL(("mibII/udpTable", "Loaded UDP Table (udb_symbol)\n"));
+        return 0;
+    }
+    DEBUGMSGTL(("mibII/udpTable", "Failed to load UDP Table (udb_symbol)\n"));
+    return -1;
+}
+
+#else				/* UDB_SYMBOL */
+int
+udpTable_load(netsnmp_cache *cache, void *vmagic)
+{
+    DEBUGMSGTL(("mibII/udpTable", "Loading UDP Table not implemented\n"));
+    return -1;
+}
+#endif				/* UDB_SYMBOL */

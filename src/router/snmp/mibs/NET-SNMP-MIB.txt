@@ -36,6 +36,15 @@ netSnmpAgentOIDs            OBJECT IDENTIFIER ::= {netSnmpEnumerations 2}
 netSnmpDomains              OBJECT IDENTIFIER ::= {netSnmpEnumerations 3}
 netSnmpExperimental         OBJECT IDENTIFIER ::= {netSnmp 9999}
 
+--
+-- A subtree specifically designed for private testing purposes.
+-- No "public" management objects should ever be defined within this tree.
+--
+-- It is provided for private experimentation, prior to transferring a MIB
+-- structure to another part of the overall OID tree
+--
+netSnmpPlaypen              OBJECT IDENTIFIER ::= {netSnmpExperimental 9999}
+
 
 --
 --  Notifications

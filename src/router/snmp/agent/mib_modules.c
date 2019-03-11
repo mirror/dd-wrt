@@ -17,11 +17,7 @@
 #endif
 #include <sys/types.h>
 #if TIME_WITH_SYS_TIME
-# ifdef WIN32
-#  include <sys/timeb.h>
-# else
-#  include <sys/time.h>
-# endif
+# include <sys/time.h>
 # include <time.h>
 #else
 # if HAVE_SYS_TIME_H
@@ -33,106 +29,59 @@
 #if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
-#if HAVE_WINSOCK_H
-#include <winsock.h>
-#endif
-
-#if HAVE_DMALLOC_H
-#include <dmalloc.h>
-#endif
 
 #include <net-snmp/net-snmp-includes.h>
 #include <net-snmp/agent/net-snmp-agent-includes.h>
 #include "m2m.h"
+#ifdef USING_IF_MIB_DATA_ACCESS_INTERFACE_MODULE
+#include <net-snmp/data_access/interface.h>
+#endif
 
 #include "mibgroup/struct.h"
 #include <net-snmp/agent/mib_modules.h>
 #include <net-snmp/agent/table.h>
 #include <net-snmp/agent/table_iterator.h>
 #include "mib_module_includes.h"
-#ifdef USING_AGENTX_SUBAGENT_MODULE
-#include "mibgroup/agentx/subagent.h"
-#endif
 
-struct module_init_list *initlist = NULL;
-struct module_init_list *noinitlist = NULL;
+static int need_shutdown = 0;
 
-
-void
-add_to_init_list(char *module_list)
+static int
+_shutdown_mib_modules(int majorID, int minorID, void *serve, void *client)
 {
-    struct module_init_list *newitem, **list;
-    char           *cp;
+    if (! need_shutdown) {
+        netsnmp_assert(need_shutdown == 1);
+    }
+    else {
+#include "mib_module_shutdown.h"
 
-    if (module_list == NULL) {
-        return;
-    } else {
-        cp = (char *) module_list;
+        need_shutdown = 0;
     }
 
-    if (*cp == '-' || *cp == '!') {
-        cp++;
-        list = &noinitlist;
-    } else {
-        list = &initlist;
-    }
-
-    cp = strtok(cp, ", :");
-    while (cp) {
-        newitem = (struct module_init_list *) calloc(1, sizeof(*initlist));
-        newitem->module_name = strdup(cp);
-        newitem->next = *list;
-        *list = newitem;
-        cp = strtok(NULL, ", :");
-    }
-}
-
-int
-should_init(const char *module_name)
-{
-    struct module_init_list *listp;
-
-    /*
-     * a definitive list takes priority 
-     */
-    if (initlist) {
-        listp = initlist;
-        while (listp) {
-            if (strcmp(listp->module_name, module_name) == 0) {
-                DEBUGMSGTL(("mib_init", "initializing: %s\n",
-                            module_name));
-                return DO_INITIALIZE;
-            }
-            listp = listp->next;
-        }
-        DEBUGMSGTL(("mib_init", "skipping:     %s\n", module_name));
-        return DONT_INITIALIZE;
-    }
-
-    /*
-     * initialize it only if not on the bad list (bad module, no bone) 
-     */
-    if (noinitlist) {
-        listp = noinitlist;
-        while (listp) {
-            if (strcmp(listp->module_name, module_name) == 0) {
-                DEBUGMSGTL(("mib_init", "skipping:     %s\n",
-                            module_name));
-                return DONT_INITIALIZE;
-            }
-            listp = listp->next;
-        }
-    }
-    DEBUGMSGTL(("mib_init", "initializing: %s\n", module_name));
-
-    /*
-     * initialize it 
-     */
-    return DO_INITIALIZE;
+    return SNMPERR_SUCCESS; /* callback rc ignored */
 }
 
 void
 init_mib_modules(void)
 {
+    static int once = 0;
+
+#ifdef USING_IF_MIB_DATA_ACCESS_INTERFACE_MODULE
+    netsnmp_access_interface_init();
+#endif
 #  include "mib_module_inits.h"
+
+    need_shutdown = 1;
+
+    if (once == 0) {
+        int rc;
+        once = 1;
+        rc = snmp_register_callback( SNMP_CALLBACK_LIBRARY,
+                                     SNMP_CALLBACK_SHUTDOWN,
+                                     _shutdown_mib_modules,
+                                     NULL);
+
+        if( rc != SNMP_ERR_NOERROR )
+            snmp_log(LOG_ERR, "error registering for SHUTDOWN callback "
+                     "for mib modules\n");
+    }
 }

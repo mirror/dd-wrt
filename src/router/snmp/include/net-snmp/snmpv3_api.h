@@ -28,7 +28,7 @@
 #include <net-snmp/library/keytools.h>
 #include <net-snmp/library/scapi.h>
 #include <net-snmp/library/lcd_time.h>
-#ifdef USE_INTERNAL_MD5
+#ifdef NETSNMP_USE_INTERNAL_MD5
 #include <net-snmp/library/md5.h>
 #endif
 

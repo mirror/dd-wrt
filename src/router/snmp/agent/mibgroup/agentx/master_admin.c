@@ -2,6 +2,7 @@
  *  AgentX Administrative request handling
  */
 #include <net-snmp/net-snmp-config.h>
+#include <net-snmp/net-snmp-features.h>
 
 #include <sys/types.h>
 #ifdef HAVE_STRING_H
@@ -13,11 +14,7 @@
 #include <stdlib.h>
 #endif
 #if TIME_WITH_SYS_TIME
-# ifdef WIN32
-#  include <sys/timeb.h>
-# else
-#  include <sys/time.h>
-# endif
+# include <sys/time.h>
 # include <time.h>
 #else
 # if HAVE_SYS_TIME_H
@@ -29,30 +26,30 @@
 #if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
-#if HAVE_WINSOCK_H
-#include <winsock.h>
-#endif
 #if HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
-#endif
-#if HAVE_DMALLOC_H
-#include <dmalloc.h>
 #endif
 
 #include <net-snmp/net-snmp-includes.h>
 #include <net-snmp/agent/net-snmp-agent-includes.h>
+#include "agent_global_vars.h"
 
 #include "agentx/protocol.h"
 #include "agentx/client.h"
+#include "agentx/subagent.h"
+#include "agentx/master_admin.h"
 
 #include <net-snmp/agent/agent_index.h>
 #include <net-snmp/agent/agent_trap.h>
-#include "mibII/sysORTable.h"
+#include <net-snmp/agent/agent_callbacks.h>
+#include <net-snmp/agent/agent_sysORTable.h>
 #include "master.h"
 
-extern struct timeval starttime;
-
-
+netsnmp_feature_require(unregister_mib_table_row)
+netsnmp_feature_require(trap_vars_with_context)
+netsnmp_feature_require(calculate_sectime_diff)
+netsnmp_feature_require(allocate_globalcacheid)
+netsnmp_feature_require(remove_index)
 
 netsnmp_session *
 find_agentx_session(netsnmp_session * session, int sessid)
@@ -70,9 +67,8 @@ int
 open_agentx_session(netsnmp_session * session, netsnmp_pdu *pdu)
 {
     netsnmp_session *sp;
-    struct timeval  now;
 
-    DEBUGMSGTL(("agentx/master", "open %08p\n", session));
+    DEBUGMSGTL(("agentx/master", "open %8p\n", session));
     sp = (netsnmp_session *) malloc(sizeof(netsnmp_session));
     if (sp == NULL) {
         session->s_snmp_errno = AGENTX_ERR_OPEN_FAILED;
@@ -110,8 +106,7 @@ open_agentx_session(netsnmp_session * session, netsnmp_pdu *pdu)
                                                  name_length);
     sp->securityAuthProtoLen = pdu->variables->name_length;
     sp->securityName = strdup((char *) pdu->variables->val.string);
-    gettimeofday(&now, NULL);
-    sp->engineTime = calculate_time_diff(&now, &starttime);
+    sp->engineTime = (uint32_t)((netsnmp_get_agent_runtime() + 50) / 100) & 0x7fffffffL;
 
     sp->subsession = session;   /* link back to head */
     sp->flags |= SNMP_FLAGS_SUBSESSION;
@@ -119,7 +114,7 @@ open_agentx_session(netsnmp_session * session, netsnmp_pdu *pdu)
     sp->flags |= (pdu->flags & AGENTX_MSG_FLAG_NETWORK_BYTE_ORDER);
     sp->next = session->subsession;
     session->subsession = sp;
-    DEBUGMSGTL(("agentx/master", "opened %08p = %d with flags = %02x\n",
+    DEBUGMSGTL(("agentx/master", "opened %8p = %ld with flags = %02lx\n",
                 sp, sp->sessid, sp->flags & AGENTX_MSG_FLAGS_MASK));
 
     return sp->sessid;
@@ -130,28 +125,34 @@ close_agentx_session(netsnmp_session * session, int sessid)
 {
     netsnmp_session *sp, **prevNext;
 
-    DEBUGMSGTL(("agentx/master", "close %08p, %d\n", session, sessid));
-    if (session != NULL && sessid == -1) {
-        unregister_mibs_by_session(session);
-        unregister_index_by_session(session);
-        unregister_sysORTable_by_session(session);
-	if (session->myvoid != NULL) {
-	  free(session->myvoid);
-	}
+    if (!session)
+        return AGENTX_ERR_NOT_OPEN;
+
+    DEBUGMSGTL(("agentx/master", "close %8p, %d\n", session, sessid));
+    if (sessid == -1) {
         /*
          * The following is necessary to avoid locking up the agent when
          * a sugagent dies during a set request. We must clean up the
          * requests, so that the delegated request will be completed and
          * further requests can be processed
          */
-        netsnmp_remove_delegated_requests_for_session(session);
+	while (netsnmp_remove_delegated_requests_for_session(session)) {
+		DEBUGMSGTL(("agentx/master", "Continue removing delegated reqests\n"));
+	}
+
         if (session->subsession != NULL) {
             netsnmp_session *subsession = session->subsession;
             for(; subsession; subsession = subsession->next) {
-                netsnmp_remove_delegated_requests_for_session(subsession);
+                while (netsnmp_remove_delegated_requests_for_session(subsession)) {
+			DEBUGMSGTL(("agentx/master", "Continue removing delegated subsession reqests\n"));
+		}
             }
         }
                 
+        unregister_mibs_by_session(session);
+        unregister_index_by_session(session);
+        unregister_sysORTable_by_session(session);
+	SNMP_FREE(session->myvoid);
         return AGENTX_ERR_NOERROR;
     }
 
@@ -160,6 +161,7 @@ close_agentx_session(netsnmp_session * session, int sessid)
     for (sp = session->subsession; sp != NULL; sp = sp->next) {
 
         if (sp->sessid == sessid) {
+            netsnmp_remove_delegated_requests_for_session(sp);
             unregister_mibs_by_session(sp);
             unregister_index_by_session(sp);
             unregister_sysORTable_by_session(sp);
@@ -175,7 +177,7 @@ close_agentx_session(netsnmp_session * session, int sessid)
             free(sp);
             sp = NULL;
 
-            DEBUGMSGTL(("agentx/master", "closed %08p, %d okay\n",
+            DEBUGMSGTL(("agentx/master", "closed %8p, %d okay\n",
                         session, sessid));
             return AGENTX_ERR_NOERROR;
         }
@@ -229,11 +231,14 @@ register_agentx_list(netsnmp_session * session, netsnmp_pdu *pdu)
 
     reg->handler->myvoid = session;
     reg->global_cacheid = cacheid;
+    if (NULL != pdu->community)
+        reg->contextName = strdup((char *)pdu->community);
+
     /*
      * register mib. Note that for failure cases, the registration info
      * (reg) will be freed, and thus is no longer a valid pointer.
      */
-    switch (netsnmp_register_mib(buf, NULL, 0, 1,
+    switch (netsnmp_register_mib(buf, NULL, 0, 0,
                                  pdu->variables->name,
                                  pdu->variables->name_length,
                                  pdu->priority, pdu->range_subid, ubound,
@@ -374,14 +379,17 @@ int
 add_agent_caps_list(netsnmp_session * session, netsnmp_pdu *pdu)
 {
     netsnmp_session *sp;
+    char* description;
 
     sp = find_agentx_session(session, pdu->sessid);
     if (sp == NULL)
         return AGENTX_ERR_NOT_OPEN;
 
-    register_sysORTable_sess(pdu->variables->name,
-                             pdu->variables->name_length,
-                             (char *) pdu->variables->val.string, sp);
+    description = netsnmp_strdup_and_null(pdu->variables->val.string,
+                                          pdu->variables->val_len);
+    register_sysORTable_sess(pdu->variables->name, pdu->variables->name_length,
+                             description, sp);
+    free(description);
     return AGENTX_ERR_NOERROR;
 }
 
@@ -389,26 +397,26 @@ int
 remove_agent_caps_list(netsnmp_session * session, netsnmp_pdu *pdu)
 {
     netsnmp_session *sp;
+    int rc;
 
     sp = find_agentx_session(session, pdu->sessid);
     if (sp == NULL)
         return AGENTX_ERR_NOT_OPEN;
 
-    if (unregister_sysORTable_sess(pdu->variables->name,
-                                   pdu->variables->name_length, sp) < 0)
-        return AGENTX_ERR_UNKNOWN_AGENTCAPS;
-    else
-        return AGENTX_ERR_NOERROR;
+    rc = unregister_sysORTable_sess(pdu->variables->name,
+                                    pdu->variables->name_length, sp);
+
+    if (rc < 0)
+      return AGENTX_ERR_UNKNOWN_AGENTCAPS;
+
+    return AGENTX_ERR_NOERROR;
 }
 
 int
 agentx_notify(netsnmp_session * session, netsnmp_pdu *pdu)
 {
-    netsnmp_session *sp;
+    netsnmp_session       *sp;
     netsnmp_variable_list *var;
-    int             got_sysuptime = 0;
-    extern oid      sysuptime_oid[], snmptrap_oid[];
-    extern size_t   sysuptime_oid_len, snmptrap_oid_len;
 
     sp = find_agentx_session(session, pdu->sessid);
     if (sp == NULL)
@@ -420,7 +428,6 @@ agentx_notify(netsnmp_session * session, netsnmp_pdu *pdu)
 
     if (snmp_oid_compare(var->name, var->name_length,
                          sysuptime_oid, sysuptime_oid_len) == 0) {
-        got_sysuptime = 1;
         var = var->next_variable;
     }
 
@@ -437,7 +444,18 @@ agentx_notify(netsnmp_session * session, netsnmp_pdu *pdu)
      *     as this is valid AgentX syntax.
      */
 
-    send_trap_vars(-1, -1, pdu->variables);
+	/* If a context name was specified, send the trap using that context.
+	 * Otherwise, send the trap without the context using the old method */
+	if (pdu->contextName != NULL)
+	{
+        send_trap_vars_with_context(-1, -1, pdu->variables, 
+                       pdu->contextName);
+	}
+	else
+	{
+        send_trap_vars(-1, -1, pdu->variables);
+	}
+
     return AGENTX_ERR_NOERROR;
 }
 
@@ -460,15 +478,18 @@ handle_master_agentx_packet(int operation,
                             int reqid, netsnmp_pdu *pdu, void *magic)
 {
     netsnmp_agent_session *asp;
-    struct timeval  now;
 
     if (operation == NETSNMP_CALLBACK_OP_DISCONNECT) {
         DEBUGMSGTL(("agentx/master",
-                    "transport disconnect on session %08p\n", session));
+                    "transport disconnect on session %8p\n", session));
         /*
          * Shut this session down gracefully.  
          */
         close_agentx_session(session, -1);
+        return 1;
+    } else if (operation == NETSNMP_CALLBACK_OP_CONNECT) {
+        DEBUGMSGTL(("agentx/master",
+                    "transport connect on session %8p\n", session));
         return 1;
     } else if (operation != NETSNMP_CALLBACK_OP_RECEIVED_MESSAGE) {
         DEBUGMSGTL(("agentx/master", "unexpected callback op %d\n",
@@ -486,8 +507,9 @@ handle_master_agentx_packet(int operation,
         asp = init_agent_snmp_session(session, pdu);
     }
 
-    DEBUGMSGTL(("agentx/master", "handle pdu (req=0x%x,trans=0x%x,sess=0x%x)\n",
-                pdu->reqid,pdu->transid, pdu->sessid));
+    DEBUGMSGTL(("agentx/master", "handle pdu (req=0x%lx,trans=0x%lx,sess=0x%lx)\n",
+                (unsigned long)pdu->reqid, (unsigned long)pdu->transid,
+		(unsigned long)pdu->sessid));
     
     switch (pdu->command) {
     case AGENTX_MSG_OPEN:
@@ -558,13 +580,13 @@ handle_master_agentx_packet(int operation,
         break;
     }
 
-    gettimeofday(&now, NULL);
-    asp->pdu->time = calculate_time_diff(&now, &starttime);
+    asp->pdu->time = netsnmp_get_agent_uptime();
     asp->pdu->command = AGENTX_MSG_RESPONSE;
     asp->pdu->errstat = asp->status;
-    DEBUGMSGTL(("agentx/master", "send response, stat %d (req=0x%x,trans="
-                "0x%x,sess=0x%x)\n",
-                asp->status, pdu->reqid,pdu->transid, pdu->sessid));
+    DEBUGMSGTL(("agentx/master", "send response, stat %d (req=0x%lx,trans="
+                "0x%lx,sess=0x%lx)\n",
+                asp->status, (unsigned long)pdu->reqid,
+		(unsigned long)pdu->transid, (unsigned long)pdu->sessid));
     if (!snmp_send(asp->session, asp->pdu)) {
         char           *eb = NULL;
         int             pe, pse;

@@ -2,6 +2,15 @@
  * vacm.h
  *
  * SNMPv3 View-based Access Control Model
+ *
+ * Portions of this file are subject to the following copyright(s).  See
+ * the Net-SNMP's COPYING file for more details and other copyrights
+ * that may apply:
+ *
+ * Portions of this file are copyrighted by:
+ * Copyright (c) 2016 VMware, Inc. All rights reserved.
+ * Use is subject to license terms specified in the COPYING file
+ * distributed with the Net-SNMP package.
  */
 
 #ifndef VACM_H
@@ -42,7 +51,7 @@ extern          "C" {
 #define VIEWMASK	4
 #define VIEWTYPE	5
 #define VIEWSTORAGE	6
-#define VIEWSTATUS	7
+#define VACMVIEWSTATUS	7
 
 #define VACM_MAX_STRING 32
 #define VACMSTRINGLEN   34      /* VACM_MAX_STRING + 2 */
@@ -61,15 +70,47 @@ extern          "C" {
 
 #define CONTEXT_MATCH_EXACT  1
 #define CONTEXT_MATCH_PREFIX 2
+
+/* VIEW ENUMS ---------------------------------------- */
+
+/* SNMPD usage: get/set/send-notification views */
+#define VACM_VIEW_READ     0
+#define VACM_VIEW_WRITE    1
+#define VACM_VIEW_NOTIFY   2
+
+/* SNMPTRAPD usage: log execute and net-access (forward) usage */
+#define VACM_VIEW_LOG      3
+#define VACM_VIEW_EXECUTE  4
+#define VACM_VIEW_NET      5
+
+/* VIEW BIT MASK VALUES-------------------------------- */
+
+/* SNMPD usage: get/set/send-notification views */
+#define VACM_VIEW_READ_BIT      (1 << VACM_VIEW_READ)
+#define VACM_VIEW_WRITE_BIT     (1 << VACM_VIEW_WRITE)
+#define VACM_VIEW_NOTIFY_BIT    (1 << VACM_VIEW_NOTIFY)
+
+/* SNMPTRAPD usage: log execute and net-access (forward) usage */
+#define VACM_VIEW_LOG_BIT      (1 << VACM_VIEW_LOG)
+#define VACM_VIEW_EXECUTE_BIT  (1 << VACM_VIEW_EXECUTE)
+#define VACM_VIEW_NET_BIT      (1 << VACM_VIEW_NET)
+    
+#define VACM_VIEW_NO_BITS      0
+
+/* Maximum number of views in the view array */
+#define VACM_MAX_VIEWS     8
+
+#define VACM_VIEW_ENUM_NAME "vacmviews"
+    
+    void init_vacm(void);
+    
     struct vacm_accessEntry {
         char            groupName[VACMSTRINGLEN];
         char            contextPrefix[VACMSTRINGLEN];
         int             securityModel;
         int             securityLevel;
         int             contextMatch;
-        char            readView[VACMSTRINGLEN];
-        char            writeView[VACMSTRINGLEN];
-        char            notifyView[VACMSTRINGLEN];
+        char            views[VACM_MAX_VIEWS][VACMSTRINGLEN];
         int             storageType;
         int             status;
 
@@ -80,7 +121,7 @@ extern          "C" {
 
     struct vacm_viewEntry {
         char            viewName[VACMSTRINGLEN];
-        oid             viewSubtree[MAX_OID_LEN];
+        oid             viewSubtree[MAX_OID_LEN+1]; /* keep len in [0] */
         size_t          viewSubtreeLen;
         u_char          viewMask[VACMSTRINGLEN];
         size_t          viewMaskLen;
@@ -94,12 +135,15 @@ extern          "C" {
         struct vacm_viewEntry *next;
     };
 
+    NETSNMP_IMPORT
     void            vacm_destroyViewEntry(const char *, oid *, size_t);
+    NETSNMP_IMPORT
     void            vacm_destroyAllViewEntries(void);
 
 #define VACM_MODE_FIND                0
 #define VACM_MODE_IGNORE_MASK         1
 #define VACM_MODE_CHECK_SUBTREE       2
+    NETSNMP_IMPORT
     struct vacm_viewEntry *vacm_getViewEntry(const char *, oid *, size_t,
                                              int);
     /*
@@ -108,6 +152,7 @@ extern          "C" {
      * Returns NULL if that entry does not exist.
      */
 
+    NETSNMP_IMPORT
     int vacm_checkSubtree(const char *, oid *, size_t);
 
     /*
@@ -123,6 +168,7 @@ extern          "C" {
      *                         disallowed portions.
      */
 
+    NETSNMP_IMPORT
     void
                     vacm_scanViewInit(void);
     /*
@@ -132,6 +178,7 @@ extern          "C" {
      */
 
 
+    NETSNMP_IMPORT
     struct vacm_viewEntry *vacm_scanViewNext(void);
     /*
      * Returns a pointer to the next viewEntry.
@@ -142,6 +189,7 @@ extern          "C" {
      * view_scanInit() starts the scan over.
      */
 
+    NETSNMP_IMPORT
     struct vacm_viewEntry *vacm_createViewEntry(const char *, oid *,
                                                 size_t);
     /*
@@ -150,22 +198,34 @@ extern          "C" {
      * The status of this entry is created as invalid.
      */
 
+    NETSNMP_IMPORT
     void            vacm_destroyGroupEntry(int, const char *);
+    NETSNMP_IMPORT
     void            vacm_destroyAllGroupEntries(void);
+    NETSNMP_IMPORT
     struct vacm_groupEntry *vacm_createGroupEntry(int, const char *);
+    NETSNMP_IMPORT
     struct vacm_groupEntry *vacm_getGroupEntry(int, const char *);
+    NETSNMP_IMPORT
     void            vacm_scanGroupInit(void);
+    NETSNMP_IMPORT
     struct vacm_groupEntry *vacm_scanGroupNext(void);
 
+    NETSNMP_IMPORT
     void            vacm_destroyAccessEntry(const char *, const char *,
                                             int, int);
+    NETSNMP_IMPORT
     void            vacm_destroyAllAccessEntries(void);
+    NETSNMP_IMPORT
     struct vacm_accessEntry *vacm_createAccessEntry(const char *,
                                                     const char *, int,
                                                     int);
+    NETSNMP_IMPORT
     struct vacm_accessEntry *vacm_getAccessEntry(const char *,
                                                  const char *, int, int);
+    NETSNMP_IMPORT
     void            vacm_scanAccessInit(void);
+    NETSNMP_IMPORT
     struct vacm_accessEntry *vacm_scanAccessNext(void);
 
     void            vacm_destroySecurityEntry(const char *);
@@ -173,6 +233,7 @@ extern          "C" {
     struct vacm_securityEntry *vacm_getSecurityEntry(const char *);
     void            vacm_scanSecurityInit(void);
     struct vacm_securityEntry *vacm_scanSecurityEntry(void);
+    NETSNMP_IMPORT
     int             vacm_is_configured(void);
 
     void            vacm_save(const char *token, const char *type);
@@ -180,17 +241,42 @@ extern          "C" {
                                    const char *token, const char *type);
     void            vacm_save_access(struct vacm_accessEntry *access_entry,
                                      const char *token, const char *type);
+    void            vacm_save_auth_access(struct vacm_accessEntry *access_entry,
+                                     const char *token, const char *type, int authtype);
     void            vacm_save_group(struct vacm_groupEntry *group_entry,
                                     const char *token, const char *type);
 
-    void            vacm_parse_config_view(const char *token, char *line);
-    void            vacm_parse_config_group(const char *token, char *line);
+    NETSNMP_IMPORT
+    void            vacm_parse_config_view(const char *token, const char *line);
+    NETSNMP_IMPORT
+    void            vacm_parse_config_group(const char *token,
+                                            const char *line);
+    NETSNMP_IMPORT
     void            vacm_parse_config_access(const char *token,
-                                             char *line);
+                                             const char *line);
+    NETSNMP_IMPORT
+    void            vacm_parse_config_auth_access(const char *token,
+                                                  const char *line);
 
+    NETSNMP_IMPORT
     int             store_vacm(int majorID, int minorID, void *serverarg,
                                void *clientarg);
 
+    NETSNMP_IMPORT
+    struct vacm_viewEntry *netsnmp_view_get(struct vacm_viewEntry *head,
+                                            const char *viewName,
+                                            oid * viewSubtree,
+                                            size_t viewSubtreeLen, int mode);
+
+    NETSNMP_IMPORT
+    int    netsnmp_vacm_simple_usm_add(const char *user, int rw, int authLevel,
+                                       const char *view, oid *oidView,
+                                       size_t oidViewLen, const char *context);
+
+    NETSNMP_IMPORT
+    int    netsnmp_vacm_simple_usm_del(const char *user, int authLevel,
+                                       const char *view, oid *oidView,
+                                       size_t oidViewLen, const char *context);
 
 #ifdef __cplusplus
 }

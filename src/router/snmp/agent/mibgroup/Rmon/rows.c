@@ -18,15 +18,13 @@
  * SOFTWARE.
  ******************************************************************/
 
+#include <net-snmp/net-snmp-config.h>
 #include <stddef.h>
 #include <string.h>
 #include <stdlib.h>
 
-#include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 #include <net-snmp/agent/net-snmp-agent-includes.h>
-
-#include "util_funcs.h"
 
 #include "agutil_api.h"
 #include "rows.h"
@@ -257,7 +255,7 @@ ROWAPI_new(TABLE_DEFINTION_T * table_ptr, u_long ctrl_index)
 
 void
 ROWAPI_init_table(TABLE_DEFINTION_T * table_ptr,
-                  char *name,
+                  const char *name,
                   u_long max_number_of_entries,
                   ENTRY_CALLBACK_T * ClbkCreate,
                   ENTRY_CALLBACK_T * ClbkClone,
@@ -269,7 +267,7 @@ ROWAPI_init_table(TABLE_DEFINTION_T * table_ptr,
 {
     table_ptr->name = name;
     if (!table_ptr->name)
-        table_ptr->name = "Unknown";
+        table_ptr->name = NETSNMP_REMOVE_CONST(char*,"Unknown");
 
     table_ptr->max_number_of_entries = max_number_of_entries;
     table_ptr->ClbkCreate = ClbkCreate;
@@ -756,7 +754,7 @@ ROWDATAAPI_locate_new_data(SCROLLER_T * scrlr)
         scrlr->first_data_ptr = bptr->next;
         scrlr->last_data_ptr->next = bptr;
         scrlr->last_data_ptr = (NEXTED_PTR_T *) bptr;
-        bptr->next = 0;
+        bptr->next = NULL;
     } else {
         bptr = scrlr->current_data_ptr;
         scrlr->current_data_ptr = bptr->next;
@@ -796,7 +794,7 @@ ROWDATAAPI_header_DataEntry(struct variable * vp, oid * name,
     ctrl_indx = vp->namelen >= *length ? 0 : name[vp->namelen];
     if (ctrl_indx)
         data_index =
-            (vp->namelen + 1 >= *length) ? 0 : name[vp->namelen + 1];
+            ((int)(vp->namelen + 1) >= (int)*length) ? 0 : name[vp->namelen + 1];
     else
         data_index = 0;
 
@@ -808,7 +806,7 @@ ROWDATAAPI_header_DataEntry(struct variable * vp, oid * name,
                 bptr = scrlr->first_data_ptr;
                 for (iii = 0; iii < scrlr->data_stored && bptr;
                      iii++, bptr = bptr->next) {
-                    if (bptr->data_index == data_index)
+                    if ((long)bptr->data_index == data_index)
                         break;
                 }
                 if (!bptr)
@@ -829,11 +827,11 @@ ROWDATAAPI_header_DataEntry(struct variable * vp, oid * name,
             bptr = scrlr->first_data_ptr;
             for (iii = 0; iii < scrlr->data_stored && bptr;
                  iii++, bptr = bptr->next) {
-                if (bptr->data_index && bptr->data_index > data_index)
+                if (bptr->data_index && (long)bptr->data_index > data_index)
                     break;
             }
 
-            if (bptr && bptr->data_index <= data_index)
+            if (bptr && (long)bptr->data_index <= data_index)
                 bptr = NULL;
 
             if (!bptr) {        /* travel to next row */

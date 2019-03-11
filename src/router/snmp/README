@@ -1,4 +1,4 @@
-	       README file for net-snmp Version: 5.0.9
+	       README file for net-snmp Version: 5.8
 
 DISCLAIMER
 
@@ -38,6 +38,13 @@ INTRODUCTION
   was renamed from cmu-snmp to ucd-snmp in 1995 and later renamed from
   ucd-snmp to net-snmp in November 2000.
 
+  This README file serves as a starting place to learn about the
+  package, but very little of the documentation is contained within
+  this file.  The FAQ is an excellent place to start as well.
+  Additionally, there are a bunch of README files for specific
+  architectures and specific features.  You might wish to look at some
+  of these other files as well.
+
 SUPPORTED ARCHITECTURES
 
   Please see the FAQ for this information.
@@ -47,20 +54,20 @@ SUPPORTED ARCHITECTURES
 
   Porting:  Please! read the PORTING file.
 
+  Also note that many architecture have architecture specific README
+  files, so you should check to see if there is one appropriate to
+  your platform.
+
 AVAILABILITY
 
   Download:
     - http://www.net-snmp.org/download/
-    - ftp://ftp.net-snmp.org/pub/sourceforge/net-snmp/
   Web page:
     - http://www.net-snmp.org/
+  Project Wiki:
+    - http://www.net-snmp.org/wiki/
   Sourceforge Project page:
-    - http://www.net-snmp.org/project/
-  Mirrors:
-    - US:        ftp://ftp.freesnmp.com/mirrors/net-snmp/
-    - Bulgaria:  http://rtfm.uni-svishtov.bg/net-snmp/
-    - Japan:     ftp://ftp.ayamura.org/pub/net-snmp/
-    - Germany:   ftp://ftp.mpg.goe.ni.schule.de/pub/internet/net-snmp/
+    - http://sourceforge.net/projects/net-snmp
 
   The old ucd-snmp.ucdavis.edu web site and ftp server is now
   offline and should not be accessed any longer.
@@ -68,11 +75,8 @@ AVAILABILITY
 WEB PAGES
 
   http://www.net-snmp.org/
-  http://www.net-snmp.org/project/
-
-  Make sure you check out the logo there, which is created using
-  postcards submitted from various locations that make use of the
-  net-snmp package.
+  http://sourceforge.net/projects/net-snmp
+  http://www.net-snmp.org/wiki/
 
 INSTALLATION
 
@@ -85,6 +89,11 @@ COPYING AND COPYRIGHTS
 FREQUENTLY ASKED QUESTIONS
 
   See the FAQ file distributed with this package.
+  This is also available on the project Wiki at
+
+     http://www.net-snmp.org/wiki/index.php/FAQ
+
+  so that the wider Net-SNMP community can help maintain it!
 
 HELPING OUT
 
@@ -130,24 +139,39 @@ MAILING LISTS
 
   The lists:
 
-    The following mailing lists have been created for your use:
+    A number of mailing lists have been created for support of the project:
+    The main ones are:
 
-      net-snmp-announce@lists.sourceforge.net  -- For announcements
+      net-snmp-announce@lists.sourceforge.net  -- For official announcements
       net-snmp-users@lists.sourceforge.net     -- For usage discussions
       net-snmp-coders@lists.sourceforge.net    -- For development discussions
-      net-snmp-cvs@lists.sourceforge.net       -- For cvs update announcements
 
-    To subscribe to these lists, please see:
-  
-      http://www.net-snmp.org/lists/
-
-    The lists you definitely want to subscribe to is the
-    net-snmp-announce@lists.sourceforge.net list and the
-    net-snmp-users@lists.sourceforge.net list.
+    The -coders list is intended for discussion on development of code
+    that will be shipped as part of the package.  The -users list is
+    for general discussion on configuring and using the package,
+    including issues with coding user-developed applications (clients,
+    managers, MIB modules, etc).
 
     Please do *NOT* send messages to both -users and -coders lists.
     This is completely unnecessary, and simply serves to further
-    overload (and annoy) the core development team.  Thank you.
+    overload (and annoy) the core development team.   If in doubt,
+    just use the -users list.
+
+
+    The other lists of possible interest are:
+
+      net-snmp-cvs@lists.sourceforge.net       -- For cvs update announcements
+      net-snmp-bugs@lists.sourceforge.net      -- For Bug database update announcements
+      net-snmp-patches@lists.sourceforge.net   -- For Patch database update announcements
+
+    Please do NOT post messages to these lists (or to the announce list above).
+    Bug reports and Patches should be submitted via the Source Forge tracker
+    system.  See the main project web pages for details.
+
+    To subscribe to any of these lists, please see:
+  
+      http://www.net-snmp.org/lists/
+
 
   Archives:
     The archives for these mailing lists can be found by following links at
@@ -229,7 +253,7 @@ THANKS
     Dan A. Dickey <ddickey@transition.com>
     Dave Shield <D.T.Shield@csc.liv.ac.uk>
     Giovanni S. Marzot <gmarzot@nortelnetworks.com>
-    Niels Baggesen <recnba@mediator.uni-c.dk>
+    Niels Baggesen <nba@users.sourceforge.net>
     Simon Leinen <simon@limmat.switch.ch>
     David T. Perkins <dperkins@dsperkins.com>
     Mike Perik <mikep@crt.com>
@@ -273,7 +297,7 @@ THANKS
     Bert Driehuis <driehuis@playbeing.org>
     Juergen Schoenwaelder <schoenw@ibr.cs.tu-bs.de>
     Frank Strauss <strauss@ibr.cs.tu-bs.de>
-    Ragnar Kjørstad <ucd@ragnark.vestdata.no>
+    Ragnar KjÃ¸rstad <ucd@ragnark.vestdata.no>
     Jochen Kmietsch <jochen.kmietsch@tu-clausthal.de>
     Jun-ichiro itojun Hagino <itojun@iijlab.net>
     John L Villalovos <john.l.villalovos@intel.com>
@@ -299,8 +323,39 @@ THANKS
     Stefan Radman <sradman@users.sourceforge.net>
     Stephen J. Friedl <sjfriedl@users.sourceforge.net>
     Alex Burger <alex_b@users.sourceforge.net>
+    Christophe Varoqui <ext.devoteam.varoqui@sncf.fr>
+    Srikanth Pindiproli <sripindip@users.sourceforge.net>
+    Kevin Graham <kevgraham7@users.sourceforge.net>
+    Xiaofeng Ling <xfling@users.sourceforge.net>
+    Brandon Knitter <knitterb@bl...>
     Andrew Findlay <andrew.findlay@skills-1st.co.uk>
+    Ron Tabor <rtabor@users.sourceforge.net>
+    Peter Warasin <drg-r3@users.sourceforge.net>
     Bob Rowlands <robert.rowlands@sun.com>
+    Peter Hicks <Peter.Hicks@POGGS.CO.UK>
+    Andy Smith <wasmith32@earthlink.net>
+    Nick Barkas <nbarkas@users.sourceforge.net>
+    Noah Friedman <friedman@prep.ai.mit.edu>
+    Geert De Peuter <geert@depeuter.org>
+    Magnus Fromreide <magfr@lysator.liu.se>
+    Marcus Meissner <marcusmeissner@users.sourceforge.net>
+    Andrew Rucker Jones <arjones@users.sourceforge.net>
+    Dai.H. <dg-f@users.sourceforge.net>
+    Thomas Anders <tanders@users.sourceforge.net>
+    Vladislav Bogdanov <slava_reg@nsys.by>
+    Peter Martin <pnmartin@users.sourceforge.net>
+    Thomas Lackey <telackey@users.sourceforge.net>
+    Joe Buehler <jbuehler@spirentcom.com>
+    Anders Persson <apersson@users.sourceforge.net>
+    Rojer <rojer@users.sourceforge.net>
+    Bart Van Assche <bart.vanassche@gmail.com>
+    Pablo Carboni <pcarboni@users.sourceforge.net>
+    Bill Fenner <fenner@gmail.com>
+    Brian Sipos <bsiposrkf@users.sourceforge.net>
+    Eugene M. Kim <eugene.kim@ntti3.com>
+    Anders Wallin <wallinux@gmail.com>
+    Andrew Stormont <andy-js@users.sourceforge.net>
+    Keith Mendoza <keith@icei.org>
 
   We've probably forgotten people on this list.  Let us know if you've
   contributed code and we've left you out.

@@ -1,11 +1,21 @@
-
-/*
- *  13 Jun 91  wsak (wk0x@andrew) added mips support
+/***********************************************************************
+   Net-SNMP - Simple Network Management Protocol agent library.
+ ***********************************************************************/
+/** @file kernel.c
+ *     Net-SNMP Kernel Data Access Library.
+ *     Provides access to kernel virtual memory for systems that
+ *     support it.
+ * @author   See README file for a list of contributors
  */
+/* Copyrights:
+ *     Copyright holders are listed in README file.
+ *     Redistribution and use in source and binary forms, with or
+ *     without modification, are permitted. License terms are specified
+ *     in COPYING file distributed with the Net-SNMP package.
+ */
+/***********************************************************************/
 
 #include <net-snmp/net-snmp-config.h>
-
-#ifdef CAN_USE_NLIST
 
 #include <sys/types.h>
 #if HAVE_STDLIB_H
@@ -40,18 +50,32 @@
 
 
 #if HAVE_KVM_H
-kvm_t          *kd;
+kvm_t *kd = NULL;
 
-void
+/**
+ * Initialize the support for accessing kernel virtual memory.
+ *
+ * @return TRUE upon success; FALSE upon failure.
+ */
+int
 init_kmem(const char *file)
 {
+    int res = TRUE;
+
 #if HAVE_KVM_OPENFILES
     char            err[4096];
+
     kd = kvm_openfiles(NULL, NULL, NULL, O_RDONLY, err);
-    if (kd == NULL && !netsnmp_ds_get_boolean(NETSNMP_DS_APPLICATION_ID, 
-					   NETSNMP_DS_AGENT_NO_ROOT_ACCESS)) {
+    if (!kd)
+#ifdef KVM_NO_FILES
+	kd = kvm_openfiles(NULL, NULL, NULL, KVM_NO_FILES, err);
+#else
+	kd = kvm_openfiles(NULL, "/dev/null", NULL, O_RDONLY, err);
+#endif
+    if (!kd && !netsnmp_ds_get_boolean(NETSNMP_DS_APPLICATION_ID, 
+                                       NETSNMP_DS_AGENT_NO_ROOT_ACCESS)) {
         snmp_log(LOG_CRIT, "init_kmem: kvm_openfiles failed: %s\n", err);
-        exit(1);
+        res = FALSE;
     }
 #else
     kd = kvm_open(NULL, NULL, NULL, O_RDONLY, NULL);
@@ -59,37 +83,39 @@ init_kmem(const char *file)
 				       NETSNMP_DS_AGENT_NO_ROOT_ACCESS)) {
         snmp_log(LOG_CRIT, "init_kmem: kvm_open failed: %s\n",
                  strerror(errno));
-        exit(1);
+        res = FALSE;
     }
 #endif                          /* HAVE_KVM_OPENFILES */
+    return res;
 }
 
-
-/*
- *  klookup:
+/** Reads kernel memory.
+ *  Seeks to the specified location in kmem, then
+ *  does a read of given amount ob bytes into target buffer.
  *
- *  It seeks to the location  off  in kmem
- *  It does a read into  target  of  siz  bytes.
+ * @param off The location to seek.
  *
- *  Return 0 on failure and 1 on sucess.
+ * @param target The target buffer to read into.
  *
+ * @param siz Number of bytes to read.
+ *
+ * @return gives 1 on success and 0 on failure.
  */
-
-
 int
-klookup(unsigned long off, char *target, int siz)
+klookup(unsigned long off, void *target, size_t siz)
 {
     int             result;
+
     if (kd == NULL)
         return 0;
     result = kvm_read(kd, off, target, siz);
     if (result != siz) {
 #if HAVE_KVM_OPENFILES
-        snmp_log(LOG_ERR, "kvm_read(*, %lx, %p, %d) = %d: %s\n", off,
-                 target, siz, result, kvm_geterr(kd));
+        snmp_log(LOG_ERR, "kvm_read(*, %lx, %p, %x) = %d: %s\n", off,
+                 target, (unsigned) siz, result, kvm_geterr(kd));
 #else
         snmp_log(LOG_ERR, "kvm_read(*, %lx, %p, %d) = %d: ", off, target,
-                 siz, result);
+                 (unsigned) siz, result);
         snmp_log_perror("klookup");
 #endif
         return 0;
@@ -97,53 +123,75 @@ klookup(unsigned long off, char *target, int siz)
     return 1;
 }
 
+/** Closes the kernel memory support.
+ */
+void
+free_kmem(void)
+{
+    if (kd != NULL)
+    {
+      kvm_close(kd);
+      kd = NULL;
+    }
+}
+
 #else                           /* HAVE_KVM_H */
+
+#ifdef HAVE_KMEM
 
 static off_t    klseek(off_t);
 static int      klread(char *, int);
-int             swap, mem, kmem;
+int             swap = -1, mem = -1, kmem = -1;
 
-void
+/**
+ * Initialize the support for accessing kernel virtual memory.
+ *
+ * @return TRUE upon success; FALSE upon failure.
+ */
+int
 init_kmem(const char *file)
 {
+    const int no_root_access = netsnmp_ds_get_boolean(NETSNMP_DS_APPLICATION_ID,
+                                              NETSNMP_DS_AGENT_NO_ROOT_ACCESS);
+    int res = TRUE;
+
     kmem = open(file, O_RDONLY);
-    if (kmem < 0 && !netsnmp_ds_get_boolean(NETSNMP_DS_APPLICATION_ID, 
-					    NETSNMP_DS_AGENT_NO_ROOT_ACCESS)) {
+    if (kmem < 0 && !no_root_access) {
         snmp_log_perror(file);
-        exit(1);
+        res = FALSE;
     }
-    fcntl(kmem, F_SETFD, 1);
+    if (kmem >= 0)
+        fcntl(kmem, F_SETFD, 1/*FD_CLOEXEC*/);
     mem = open("/dev/mem", O_RDONLY);
-    if (mem < 0 && !netsnmp_ds_get_boolean(NETSNMP_DS_APPLICATION_ID, 
-					   NETSNMP_DS_AGENT_NO_ROOT_ACCESS)) {
+    if (mem < 0 && !no_root_access) {
         snmp_log_perror("/dev/mem");
-        exit(1);
+        res = FALSE;
     }
-    fcntl(mem, F_SETFD, 1);
+    if (mem >= 0)
+        fcntl(mem, F_SETFD, 1/*FD_CLOEXEC*/);
 #ifdef DMEM_LOC
     swap = open(DMEM_LOC, O_RDONLY);
-    if (swap < 0 && !netsnmp_ds_get_boolean(NETSNMP_DS_APPLICATION_ID, 
-					    NETSNMP_DS_AGENT_NO_ROOT_ACCESS)) {
+    if (swap < 0 && !no_root_access) {
         snmp_log_perror(DMEM_LOC);
-        exit(1);
+        res = FALSE;
     }
-    fcntl(swap, F_SETFD, 1);
+    if (swap >= 0)
+        fcntl(swap, F_SETFD, 1/*FD_CLOEXEC*/);
 #endif
+    return res;
 }
 
-
-/*
+/** @private
  *  Seek into the kernel for a value.
  */
-static          off_t
+static off_t
 klseek(off_t base)
 {
     return (lseek(kmem, (off_t) base, SEEK_SET));
 }
 
-
-/*
- *  Read from the kernel 
+/** @private
+ *  Read from the kernel.
  */
 static int
 klread(char *buf, int buflen)
@@ -151,20 +199,20 @@ klread(char *buf, int buflen)
     return (read(kmem, buf, buflen));
 }
 
-
-/*
- *  klookup:
+/** Reads kernel memory.
+ *  Seeks to the specified location in kmem, then
+ *  does a read of given amount ob bytes into target buffer.
  *
- *  It seeks to the location  off  in kmem
- *  It does a read into  target  of  siz  bytes.
+ * @param off The location to seek.
  *
- *  Return 0 on failure and 1 on sucess.
+ * @param target The target buffer to read into.
  *
+ * @param siz Number of bytes to read.
+ *
+ * @return gives 1 on success and 0 on failure.
  */
-
-
 int
-klookup(unsigned long off, char *target, int siz)
+klookup(unsigned long off, void *target, size_t siz)
 {
     long            retsiz;
 
@@ -172,11 +220,8 @@ klookup(unsigned long off, char *target, int siz)
         return 0;
 
     if ((retsiz = klseek((off_t) off)) != off) {
-        snmp_log(LOG_ERR, "klookup(%lx, %p, %d): ", off, target, siz);
+        snmp_log(LOG_ERR, "klookup(%lx, %p, %d): ", off, target, (int) siz);
         snmp_log_perror("klseek");
-#ifdef EXIT_ON_BAD_KLREAD
-        exit(1);
-#endif
         return (0);
     }
     if ((retsiz = klread(target, siz)) != siz) {
@@ -185,17 +230,35 @@ klookup(unsigned long off, char *target, int siz)
              * these happen too often on too many architectures to print them
              * unless we're in debugging mode. People get very full log files. 
              */
-            snmp_log(LOG_ERR, "klookup(%lx, %p, %d): ", off, target, siz);
+            snmp_log(LOG_ERR, "klookup(%lx, %p, %d): ", off, target, (int) siz);
             snmp_log_perror("klread");
         }
-#ifdef EXIT_ON_BAD_KLREAD
-        exit(1);
-#endif
         return (0);
     }
+    DEBUGMSGTL(("verbose:kernel:klookup", "klookup(%lx, %p, %d) succeeded",
+                off, target, (int) siz));
     return (1);
 }
 
-#endif                          /* HAVE_KVM_H */
+/** Closes the kernel memory support.
+ */
+void
+free_kmem(void)
+{
+    if (swap >= 0) {
+        close(swap);
+        swap = -1;
+    }
+    if (mem >= 0) {
+        close(mem);
+        mem = -1;
+    }
+    if (kmem >= 0) {
+        close(kmem);
+        kmem = -1;
+    }
+}
 
-#endif                          /* CAN_USE_NLIST */
+#endif                          /* HAVE_KMEM */
+
+#endif                          /* HAVE_KVM_H */

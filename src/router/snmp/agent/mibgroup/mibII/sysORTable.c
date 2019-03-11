@@ -1,292 +1,290 @@
-/*
- *  Template MIB group implementation - sysORTable.c
- *
- */
 #include <net-snmp/net-snmp-config.h>
-#if HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
-#include <sys/types.h>
-#if TIME_WITH_SYS_TIME
-# ifdef WIN32
-#  include <sys/timeb.h>
-# else
-#  include <sys/time.h>
-# endif
-# include <time.h>
-#else
-# if HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
-#endif
-#if HAVE_STRING_H
-#include <string.h>
-#else
-#include <strings.h>
-#endif
-
-#if HAVE_WINSOCK_H
-#include <winsock.h>
-#endif
-#if HAVE_NETINET_IN_H
-#include <netinet/in.h>
-#endif
-
-#if HAVE_DMALLOC_H
-#include <dmalloc.h>
-#endif
-
 #include <net-snmp/net-snmp-includes.h>
 #include <net-snmp/agent/net-snmp-agent-includes.h>
-#include <net-snmp/agent/agent_callbacks.h>
+#include <net-snmp/agent/net-snmp-agent-includes.h>
+#include <net-snmp/agent/table_container.h>
+#include <net-snmp/agent/agent_sysORTable.h>
+#include <net-snmp/agent/sysORTable.h>
 
-#include "struct.h"
-#include "util_funcs.h"
 #include "sysORTable.h"
-#include "snmpd.h"
+#include "system_mib.h"
 
-#ifdef USING_AGENTX_SUBAGENT_MODULE
-#include "agentx/subagent.h"
-#include "agentx/client.h"
-#endif
+#include <net-snmp/net-snmp-features.h>
+
+netsnmp_feature_require(table_container)
 
 
-struct timeval  sysOR_lastchange;
-static struct sysORTable *table = NULL;
-static int      numEntries = 0;
-
-/*
- * define the structure we're going to ask the agent to register our
- * information at 
- */
-struct variable1 sysORTable_variables[] = {
-    {SYSORTABLEID, ASN_OBJECT_ID, RONLY, var_sysORTable, 1, {2}},
-    {SYSORTABLEDESCR, ASN_OCTET_STR, RONLY, var_sysORTable, 1, {3}},
-    {SYSORTABLEUPTIME, ASN_TIMETICKS, RONLY, var_sysORTable, 1, {4}}
-};
+/** Typical data structure for a row entry */
+typedef struct sysORTable_entry_s {
+    netsnmp_index            oid_index;
+    oid                      sysORIndex;
+    const struct sysORTable* data;
+} sysORTable_entry;
 
 /*
- * Define the OID pointer to the top of the mib tree that we're
- * registering underneath 
+ * column number definitions for table sysORTable
  */
-oid             sysORTable_variables_oid[] = { SNMP_OID_MIB2, 1, 9, 1 };
-#ifdef USING_MIBII_SYSTEM_MIB_MODULE
-extern oid      system_module_oid[];
-extern int      system_module_oid_len;
-extern int      system_module_count;
-#endif
+#define COLUMN_SYSORINDEX	1
+#define COLUMN_SYSORID		2
+#define COLUMN_SYSORDESCR	3
+#define COLUMN_SYSORUPTIME	4
 
+static netsnmp_container *table = NULL;
+static u_long             sysORLastChange;
+static oid                sysORNextIndex = 1;
+
+/** create a new row in the table */
+static void
+register_foreach(const struct sysORTable* data, void* dummy)
+{
+    sysORTable_entry *entry;
+
+    sysORLastChange = data->OR_uptime;
+
+    entry = SNMP_MALLOC_TYPEDEF(sysORTable_entry);
+    if (!entry) {
+	snmp_log(LOG_ERR,
+		 "could not allocate storage, sysORTable is inconsistent\n");
+    } else {
+	const oid firstNext = sysORNextIndex;
+	netsnmp_iterator* it = CONTAINER_ITERATOR(table);
+
+	do {
+	    const sysORTable_entry* value;
+	    const oid cur = sysORNextIndex;
+
+	    if (sysORNextIndex == SNMP_MIN(MAX_SUBID, 2147483647UL))
+		sysORNextIndex = 1;
+	    else
+		++sysORNextIndex;
+
+	    for (value = (sysORTable_entry*)it->curr(it);
+		 value && value->sysORIndex < cur;
+		 value = (sysORTable_entry*)ITERATOR_NEXT(it)) {
+	    }
+
+	    if (value && value->sysORIndex == cur) {
+		if (sysORNextIndex < cur)
+		    it->reset(it);
+	    } else {
+		entry->sysORIndex = cur;
+		break;
+	    }
+	} while (firstNext != sysORNextIndex);
+
+	ITERATOR_RELEASE(it);
+
+	if(firstNext == sysORNextIndex) {
+            snmp_log(LOG_ERR, "Failed to locate a free index in sysORTable\n");
+            free(entry);
+	} else {
+	    entry->data = data;
+	    entry->oid_index.len = 1;
+	    entry->oid_index.oids = &entry->sysORIndex;
+
+	    CONTAINER_INSERT(table, entry);
+	}
+    }
+}
+
+static int
+register_cb(int major, int minor, void* serv, void* client)
+{
+    DEBUGMSGTL(("mibII/sysORTable/register_cb",
+                "register_cb(%d, %d, %p, %p)\n", major, minor, serv, client));
+    register_foreach((struct sysORTable*)serv, NULL);
+    return SNMP_ERR_NOERROR;
+}
+
+/** remove a row from the table */
+static int
+unregister_cb(int major, int minor, void* serv, void* client)
+{
+    sysORTable_entry *value;
+    netsnmp_iterator* it = CONTAINER_ITERATOR(table);
+
+    DEBUGMSGTL(("mibII/sysORTable/unregister_cb",
+                "unregister_cb(%d, %d, %p, %p)\n", major, minor, serv, client));
+    sysORLastChange = ((struct sysORTable*)(serv))->OR_uptime;
+
+    while ((value = (sysORTable_entry*)ITERATOR_NEXT(it)) && value->data != serv);
+    ITERATOR_RELEASE(it);
+    if(value) {
+	CONTAINER_REMOVE(table, value);
+	free(value);
+    }
+    return SNMP_ERR_NOERROR;
+}
+
+/** handles requests for the sysORTable table */
+static int
+sysORTable_handler(netsnmp_mib_handler *handler,
+                   netsnmp_handler_registration *reginfo,
+                   netsnmp_agent_request_info *reqinfo,
+                   netsnmp_request_info *requests)
+{
+    netsnmp_request_info *request;
+
+    DEBUGMSGTL(("mibII/sysORTable/sysORTable_handler",
+                "sysORTable_handler called\n"));
+
+    if (reqinfo->mode != MODE_GET) {
+	snmp_log(LOG_ERR,
+		 "Got unexpected operation for sysORTable\n");
+	return SNMP_ERR_GENERR;
+    }
+
+    /*
+     * Read-support (also covers GetNext requests)
+     */
+    request = requests;
+    while(request && request->processed)
+	request = request->next;
+    while(request) {
+	sysORTable_entry *table_entry;
+	netsnmp_table_request_info *table_info;
+
+	if (NULL == (table_info = netsnmp_extract_table_info(request))) {
+	    snmp_log(LOG_ERR,
+		     "could not extract table info for sysORTable\n");
+	    snmp_set_var_typed_value(
+		    request->requestvb, SNMP_ERR_GENERR, NULL, 0);
+	} else if(NULL == (table_entry = (sysORTable_entry *)
+			   netsnmp_container_table_extract_context(request))) {
+	    switch (table_info->colnum) {
+	    case COLUMN_SYSORID:
+	    case COLUMN_SYSORDESCR:
+	    case COLUMN_SYSORUPTIME:
+		netsnmp_set_request_error(reqinfo, request,
+					  SNMP_NOSUCHINSTANCE);
+		break;
+	    default:
+		netsnmp_set_request_error(reqinfo, request, SNMP_NOSUCHOBJECT);
+		break;
+	    }
+	} else {
+	    switch (table_info->colnum) {
+	    case COLUMN_SYSORID:
+		snmp_set_var_typed_value(
+			request->requestvb, ASN_OBJECT_ID,
+			(const u_char*)table_entry->data->OR_oid,
+                        table_entry->data->OR_oidlen * sizeof(oid));
+		break;
+	    case COLUMN_SYSORDESCR:
+		snmp_set_var_typed_value(
+			request->requestvb, ASN_OCTET_STR,
+			(const u_char*)table_entry->data->OR_descr,
+			strlen(table_entry->data->OR_descr));
+		break;
+	    case COLUMN_SYSORUPTIME:
+		snmp_set_var_typed_integer(
+			request->requestvb, ASN_TIMETICKS,
+                        table_entry->data->OR_uptime);
+		break;
+	    default:
+		netsnmp_set_request_error(reqinfo, request, SNMP_NOSUCHOBJECT);
+		break;
+	    }
+	}
+	do {
+	    request = request->next;
+	} while(request && request->processed);
+    }
+    return SNMP_ERR_NOERROR;
+}
+
+static netsnmp_handler_registration *sysORLastChange_reg;
+static netsnmp_watcher_info sysORLastChange_winfo;
+static netsnmp_handler_registration *sysORTable_reg;
+static netsnmp_table_registration_info *sysORTable_table_info;
+
+/** Initializes the sysORTable module */
 void
 init_sysORTable(void)
 {
-    /*
-     * register ourselves with the agent to handle our mib tree 
-     */
+    const oid sysORLastChange_oid[] = { 1, 3, 6, 1, 2, 1, 1, 8 };
+    const oid sysORTable_oid[] = { 1, 3, 6, 1, 2, 1, 1, 9 };
 
-#ifdef USING_AGENTX_SUBAGENT_MODULE
-    if (netsnmp_ds_get_boolean(NETSNMP_DS_APPLICATION_ID, NETSNMP_DS_AGENT_ROLE) == MASTER_AGENT)
-        (void) register_mib_priority("mibII/sysORTable",
-                                     (struct variable *)
-                                     sysORTable_variables,
-                                     sizeof(struct variable1),
-                                     sizeof(sysORTable_variables) /
-                                     sizeof(struct variable1),
-                                     sysORTable_variables_oid,
-                                     sizeof(sysORTable_variables_oid) /
-                                     sizeof(oid), 1);
-    else
-#endif
-        REGISTER_MIB("mibII/sysORTable", sysORTable_variables, variable1,
-                     sysORTable_variables_oid);
+    sysORTable_table_info =
+        SNMP_MALLOC_TYPEDEF(netsnmp_table_registration_info);
+
+    table = netsnmp_container_find("sysORTable:table_container");
+
+    if (sysORTable_table_info == NULL || table == NULL) {
+        SNMP_FREE(sysORTable_table_info);
+        CONTAINER_FREE(table);
+        return;
+    }
+    table->container_name = strdup("sysORTable");
+
+    netsnmp_table_helper_add_indexes(sysORTable_table_info,
+                                     ASN_INTEGER, /** index: sysORIndex */
+                                     0);
+    sysORTable_table_info->min_column = COLUMN_SYSORID;
+    sysORTable_table_info->max_column = COLUMN_SYSORUPTIME;
+
+    sysORLastChange_reg =
+        netsnmp_create_handler_registration(
+            "mibII/sysORLastChange", NULL,
+            sysORLastChange_oid, OID_LENGTH(sysORLastChange_oid),
+            HANDLER_CAN_RONLY);
+    netsnmp_init_watcher_info(
+	    &sysORLastChange_winfo,
+            &sysORLastChange, sizeof(u_long),
+            ASN_TIMETICKS, WATCHER_FIXED_SIZE);
+    netsnmp_register_watched_scalar(sysORLastChange_reg,
+				    &sysORLastChange_winfo);
+
+    sysORTable_reg =
+        netsnmp_create_handler_registration(
+            "mibII/sysORTable", sysORTable_handler,
+            sysORTable_oid, OID_LENGTH(sysORTable_oid), HANDLER_CAN_RONLY);
+    netsnmp_container_table_register(sysORTable_reg, sysORTable_table_info,
+                                     table, TABLE_CONTAINER_KEY_NETSNMP_INDEX);
+
+    sysORLastChange = netsnmp_get_agent_uptime();
+
+    /*
+     * Initialise the contents of the table here
+     */
+    netsnmp_sysORTable_foreach(&register_foreach, NULL);
+
+    /*
+     * Register callbacks
+     */
+    snmp_register_callback(SNMP_CALLBACK_APPLICATION,
+                           SNMPD_CALLBACK_REG_SYSOR, register_cb, NULL);
+    snmp_register_callback(SNMP_CALLBACK_APPLICATION,
+                           SNMPD_CALLBACK_UNREG_SYSOR, unregister_cb, NULL);
 
 #ifdef USING_MIBII_SYSTEM_MIB_MODULE
     if (++system_module_count == 3)
         REGISTER_SYSOR_TABLE(system_module_oid, system_module_oid_len,
                              "The MIB module for SNMPv2 entities");
 #endif
-
-    gettimeofday(&sysOR_lastchange, NULL);
-}
-
-        /*********************
-	 *
-	 *  System specific implementation functions
-	 *
-	 *********************/
-
-u_char         *
-var_sysORTable(struct variable *vp,
-               oid * name,
-               size_t * length,
-               int exact, size_t * var_len, WriteMethod ** write_method)
-{
-    unsigned long   i = 0;
-    static unsigned long ret;
-    struct sysORTable *ptr = table;
-
-    if (header_simple_table
-        (vp, name, length, exact, var_len, write_method, numEntries))
-        return NULL;
-
-    for (i = 1; ptr != NULL && i < name[*length - 1]; ptr = ptr->next, i++) {
-        DEBUGMSGTL(("mibII/sysORTable", "sysORTable -- %lu != %lu\n",
-                    i, name[*length - 1]));
-    }
-    if (ptr == NULL) {
-        DEBUGMSGTL(("mibII/sysORTable", "sysORTable -- no match: %lu\n",
-                    i));
-        return NULL;
-    }
-    DEBUGMSGTL(("mibII/sysORTable", "sysORTable -- match: %lu\n", i));
-
-    switch (vp->magic) {
-    case SYSORTABLEID:
-        *var_len = ptr->OR_oidlen * sizeof(ptr->OR_oid[0]);
-        return (u_char *) ptr->OR_oid;
-
-    case SYSORTABLEDESCR:
-        *var_len = strlen(ptr->OR_descr);
-        return (u_char *) ptr->OR_descr;
-
-    case SYSORTABLEUPTIME:
-        ret = netsnmp_timeval_uptime(&ptr->OR_uptime);
-        return (u_char *) & ret;
-
-    default:
-        DEBUGMSGTL(("snmpd", "unknown sub-id %d in var_sysORTable\n",
-                    vp->magic));
-    }
-    return NULL;
-}
-
-
-int
-register_sysORTable_sess(oid * oidin,
-                         size_t oidlen,
-                         const char *descr, netsnmp_session * ss)
-{
-    struct sysORTable **ptr = &table;
-    struct register_sysOR_parameters reg_sysOR_parms;
-
-    DEBUGMSGTL(("mibII/sysORTable", "sysORTable registering: "));
-    DEBUGMSGOID(("mibII/sysORTable", oidin, oidlen));
-    DEBUGMSG(("mibII/sysORTable", "\n"));
-
-    while (*ptr != NULL)
-        ptr = &((*ptr)->next);
-    *ptr = (struct sysORTable *) malloc(sizeof(struct sysORTable));
-    if (*ptr == NULL) {
-        return SYS_ORTABLE_REGISTRATION_FAILED;
-    }
-    (*ptr)->OR_descr = (char *) malloc(strlen(descr) + 1);
-    if ((*ptr)->OR_descr == NULL) {
-        free(*ptr);
-        return SYS_ORTABLE_REGISTRATION_FAILED;
-    }
-    strcpy((*ptr)->OR_descr, descr);
-    (*ptr)->OR_oidlen = oidlen;
-    (*ptr)->OR_oid = (oid *) malloc(sizeof(oid) * oidlen);
-    if ((*ptr)->OR_oid == NULL) {
-        free(*ptr);
-        free((*ptr)->OR_descr);
-        return SYS_ORTABLE_REGISTRATION_FAILED;
-    }
-    memcpy((*ptr)->OR_oid, oidin, sizeof(oid) * oidlen);
-    gettimeofday(&((*ptr)->OR_uptime), NULL);
-    gettimeofday(&(sysOR_lastchange), NULL);
-    (*ptr)->OR_sess = ss;
-    (*ptr)->next = NULL;
-    numEntries++;
-
-    reg_sysOR_parms.name = oidin;
-    reg_sysOR_parms.namelen = oidlen;
-    reg_sysOR_parms.descr = descr;
-    snmp_call_callbacks(SNMP_CALLBACK_APPLICATION,
-                        SNMPD_CALLBACK_REG_SYSOR, &reg_sysOR_parms);
-
-    return SYS_ORTABLE_REGISTERED_OK;
-}
-
-int
-register_sysORTable(oid * oidin, size_t oidlen, const char *descr)
-{
-    return register_sysORTable_sess(oidin, oidlen, descr, NULL);
-}
-
-
-
-int
-unregister_sysORTable_sess(oid * oidin,
-                           size_t oidlen, netsnmp_session * ss)
-{
-    struct sysORTable **ptr = &table, *prev = NULL;
-    int             found = SYS_ORTABLE_NO_SUCH_REGISTRATION;
-    struct register_sysOR_parameters reg_sysOR_parms;
-
-    DEBUGMSGTL(("mibII/sysORTable", "sysORTable unregistering: "));
-    DEBUGMSGOID(("mibII/sysORTable", oidin, oidlen));
-    DEBUGMSG(("mibII/sysORTable", "\n"));
-
-    while (*ptr != NULL) {
-        if (snmp_oid_compare
-            (oidin, oidlen, (*ptr)->OR_oid, (*ptr)->OR_oidlen) == 0) {
-            if ((*ptr)->OR_sess != ss)
-                continue;       /* different session */
-            if (prev == NULL)
-                table = (*ptr)->next;
-            else
-                prev->next = (*ptr)->next;
-
-            free((*ptr)->OR_descr);
-            free((*ptr)->OR_oid);
-            free((*ptr));
-            numEntries--;
-            gettimeofday(&(sysOR_lastchange), NULL);
-            found = SYS_ORTABLE_UNREGISTERED_OK;
-            break;
-        }
-        prev = *ptr;
-        ptr = &((*ptr)->next);
-    }
-
-    reg_sysOR_parms.name = oidin;
-    reg_sysOR_parms.namelen = oidlen;
-    snmp_call_callbacks(SNMP_CALLBACK_APPLICATION,
-                        SNMPD_CALLBACK_UNREG_SYSOR, &reg_sysOR_parms);
-
-    return found;
-}
-
-
-int
-unregister_sysORTable(oid * oidin, size_t oidlen)
-{
-    return unregister_sysORTable_sess(oidin, oidlen, NULL);
 }
 
 void
-unregister_sysORTable_by_session(netsnmp_session * ss)
+shutdown_sysORTable(void)
 {
-    struct sysORTable *ptr = table, *prev = NULL, *next;
+#ifdef USING_MIBII_SYSTEM_MIB_MODULE
+    if (system_module_count-- == 3)
+        UNREGISTER_SYSOR_TABLE(system_module_oid, system_module_oid_len);
+#endif
 
-    while (ptr != NULL) {
-        next = ptr->next;
-        if (((ss->flags & SNMP_FLAGS_SUBSESSION) && ptr->OR_sess == ss) ||
-            (!(ss->flags & SNMP_FLAGS_SUBSESSION) && ptr->OR_sess &&
-             ptr->OR_sess->subsession == ss)) {
-            if (prev == NULL)
-                table = next;
-            else
-                prev->next = next;
-            free(ptr->OR_descr);
-            free(ptr->OR_oid);
-            free(ptr);
-            numEntries--;
-            gettimeofday(&(sysOR_lastchange), NULL);
-        } else
-            prev = ptr;
-        ptr = next;
-    }
+    snmp_unregister_callback(SNMP_CALLBACK_APPLICATION,
+                             SNMPD_CALLBACK_UNREG_SYSOR, unregister_cb, NULL,
+                             1);
+    snmp_unregister_callback(SNMP_CALLBACK_APPLICATION,
+                             SNMPD_CALLBACK_REG_SYSOR, register_cb, NULL, 1);
+
+    if (table)
+        CONTAINER_CLEAR(table, netsnmp_container_simple_free, NULL);
+    netsnmp_container_table_unregister(sysORTable_reg);
+    sysORTable_reg = NULL;
+    table = NULL;
+    netsnmp_table_registration_info_free(sysORTable_table_info);
+    sysORTable_table_info = NULL;
+    netsnmp_unregister_handler(sysORLastChange_reg);
+    sysORLastChange_reg = NULL;
 }

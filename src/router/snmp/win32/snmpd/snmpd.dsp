@@ -41,16 +41,16 @@ RSC=rc.exe
 # PROP Intermediate_Dir "Release"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /O2 /I "..\..\agent\mibgroup" /I "..\..\agent" /I "." /I ".." /I "..\..\snmplib" /I "..\.." /I "..\..\include" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
+# ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_CRT_SECURE_NO_WARNINGS" /D "_CRT_NONSTDC_NO_WARNINGS" /D "_MBCS" /YX /FD /c
+# ADD CPP /nologo /MD /W3 /GX /O2 /I "." /I ".." /I "..\..\snmplib" /I "..\.." /I "..\..\include" /I "..\..\agent" /I "..\..\agent\mibgroup" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_CRT_SECURE_NO_WARNINGS" /D "_CRT_NONSTDC_NO_WARNINGS" /D "_MBCS" /YX /FD /c
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386
-# ADD LINK32 netsnmpagent.lib netsnmpmibs.lib netsnmphelpers.lib libsnmp.lib msvcrt.lib Advapi32.lib advapi32.lib wsock32.lib kernel32.lib user32.lib oldnames.lib /nologo /subsystem:console /machine:I386 /nodefaultlib /out:"../bin/snmpd.exe" /libpath:"..\lib"
+# ADD BASE LINK32 kernel32.lib user32.lib advapi32.lib /nologo /subsystem:console /machine:I386
+# ADD LINK32 advapi32.lib ws2_32.lib kernel32.lib user32.lib /nologo /subsystem:console /pdb:none /machine:I386 /out:"../bin/release/snmpd.exe" /libpath:"../lib/release"
 
 !ELSEIF  "$(CFG)" == "snmpd - Win32 Debug"
 
@@ -65,17 +65,16 @@ LINK32=link.exe
 # PROP Intermediate_Dir "Debug"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /MTd /W3 /GX /ZI /Od /I "..\..\agent\mibgroup" /I "..\..\agent" /I "." /I ".." /I "..\..\snmplib" /I "..\.." /I "..\..\include" /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /FR /YX /FD /c
+# ADD BASE CPP /nologo /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_CRT_SECURE_NO_WARNINGS" /D "_CRT_NONSTDC_NO_WARNINGS" /D "_MBCS" /YX /FD /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "." /I ".." /I "..\..\snmplib" /I "..\.." /I "..\..\include" /I "..\..\agent" /I "..\..\agent\mibgroup" /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_CRT_SECURE_NO_WARNINGS" /D "_CRT_NONSTDC_NO_WARNINGS" /D "_MBCS" /FR /YX /FD /c
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
-# ADD RSC /l 0xffffffff /d "_DEBUG"
+# ADD RSC /l 0x409 /d "_DEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 netsnmpagent_d.lib netsnmpmibs_d.lib netsnmphelpers_d.lib snmp_d.lib libcmt.lib advapi32.lib shlwapi.lib wsock32.lib kernel32.lib user32.lib oldnames.lib /nologo /subsystem:console /incremental:no /debug /machine:I386 /nodefaultlib /out:"../bin/snmpd_d.exe" /pdbtype:sept /libpath:"../lib"
-# SUBTRACT LINK32 /pdb:none
+# ADD BASE LINK32 kernel32.lib user32.lib advapi32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept
+# ADD LINK32 advapi32.lib ws2_32.lib kernel32.lib user32.lib /nologo /subsystem:console /incremental:no /debug /machine:I386 /out:"../bin/debug/snmpd.exe" /pdbtype:sept /libpath:"../lib/debug"
 
 !ENDIF 
 
@@ -83,6 +82,9 @@ LINK32=link.exe
 
 # Name "snmpd - Win32 Release"
 # Name "snmpd - Win32 Debug"
+# Begin Group "Source Files"
+
+# PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
 SOURCE=..\..\agent\auto_nlist.c
@@ -103,5 +105,30 @@ SOURCE=..\..\snmplib\winservice.c
 
 SOURCE=..\..\snmplib\winservice.rc
 # End Source File
+# End Group
+# Begin Group "Header Files"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE="..\..\include\net-snmp\agent\auto_nlist.h"
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\agent\autonlist.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\agent\kernel.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\agent\snmpd.h
+# End Source File
+# Begin Source File
+
+SOURCE="..\..\include\net-snmp\library\winservice.h"
+# End Source File
+# End Group
 # End Target
 # End Project

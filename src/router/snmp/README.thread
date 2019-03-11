@@ -11,6 +11,11 @@ API is recommended to fully appreciate the concepts discussed.
 The document ends with a list of restrictions for using the Single API
 in a multi-threaded application.
 
+Unfortunately, the SNMPv3 support was added about the same time as
+the thread support and since they occurred in parallel the SNMPv3
+support was never checked for multi-threading correctness.  It is
+most likely that it is not thread-safe at this time.
+
   ***** IMPORTANT ANNOUNCEMENT *****
   To the point, no resource locks are applied within the SNMP Library.
   The APDU encoding and some session management functions can be used

@@ -1,9 +1,14 @@
+#include <net-snmp/net-snmp-config.h>
 #include <net-snmp/version.h>
 
-const char     *NetSnmpVersionInfo = "5.0.9";
+/* expose ONLY for benefit of grandfathered code */
+#ifndef UCD_COMPATIBLE
+static
+#endif
+const char     *NetSnmpVersionInfo = PACKAGE_VERSION;
 
 const char     *
-netsnmp_get_version()
+netsnmp_get_version(void)
 {
     return NetSnmpVersionInfo;
 }

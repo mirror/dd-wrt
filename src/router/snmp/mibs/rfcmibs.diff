@@ -476,15 +476,24 @@ diff -ru /usr/local/share/snmp/rfc.orig/UPS-MIB.txt /usr/local/share/snmp/rfc/UP
          FROM SNMPv2-SMI
      DisplayString, TimeStamp, TimeInterval, TestAndIncr,
        AutonomousType
-diff -ru /usr/local/share/snmp/rfc.orig/Printer-MIB.txt /usr/local/share/snmp/rfc/Printer-MIB.txt
---- /usr/local/share/snmp/rfc.orig/Printer-MIB.txt     Wed Mar 28 09:03:28 2001
-+++ /usr/local/share/snmp/rfc/Printer-MIB.txt   Wed Mar 28 09:07:08 2001
-@@ -1,7 +1,7 @@
- Printer-MIB DEFINITIONS ::= BEGIN
- 
+diff -ru /usr/local/share/snmp/rfc.orig/SMUX-MIB.txt /usr/local/share/snmp/rfc/SMUX-MIB.txt
+--- /usr/local/share/snmp/rfc.orig/SMUX-MIB.txt	2002-06-15 15:31:22.000000000 +0200
++++ /usr/local/share/snmp/rfc/SMUX-MIB.txt	2002-06-15 15:31:22.000000000 +0200
+@@ -3,6 +3,8 @@
  IMPORTS
--    MODULE-IDENTITY, OBJECT-TYPE, experimental, Counter32, Integer32,
-+    MODULE-IDENTITY, OBJECT-TYPE, mib-2, Counter32, Integer32,
-         TimeTicks, NOTIFICATION-TYPE, OBJECT-IDENTITY FROM SNMPv2-SMI
-     TEXTUAL-CONVENTION FROM SNMPv2-TC
-     MODULE-COMPLIANCE, OBJECT-GROUP FROM SNMPv2-CONF
+         enterprises
+                 FROM RFC1155-SMI
++        DisplayString
++                FROM RFC1213-MIB
+         OBJECT-TYPE
+                 FROM RFC1212;
+ 
+@@ -120,7 +122,7 @@
+         ::= { smuxTreeEntry 1 }
+ 
+ smuxTpriority OBJECT-TYPE
+-        SYNTAX  INTEGER (0..'07fffffff'h)
++        SYNTAX  INTEGER (0..'7fffffff'h)
+         ACCESS  read-only
+         STATUS  mandatory
+         DESCRIPTION

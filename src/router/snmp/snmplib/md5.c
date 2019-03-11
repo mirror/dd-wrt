@@ -46,6 +46,8 @@
 
 #include <net-snmp/net-snmp-config.h>
 
+#ifndef NETSNMP_DISABLE_MD5
+
 #include <stdio.h>
 #include <sys/types.h>
 #if HAVE_STRING_H
@@ -53,14 +55,12 @@
 #else
 #include <strings.h>
 #endif
-#if HAVE_WINSOCK_H
-#include <winsock.h>
-#endif
 
 #if HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
 
+#include <net-snmp/net-snmp-includes.h>
 #include <net-snmp/utilities.h>
 #include <net-snmp/library/md5.h>
 
@@ -112,9 +112,9 @@
 #endif                          /* STDC_HEADERS */
 
 void            MDreverse(unsigned int *);
-static void     MDblock(MDptr, unsigned int *);
+static void     MDblock(MDptr, const unsigned int *);
 
-#ifdef SNMP_TESTING_CODE
+#ifdef NETSNMP_ENABLE_TESTING_CODE
 /*
  * MDprint(MDp)
  * ** Print message digest buffer MDp as 32 hexadecimal digits.
@@ -132,7 +132,7 @@ MDprint(MDptr MDp)
     printf("\n");
     fflush(stdout);
 }
-#endif                          /* SNMP_TESTING_CODE */
+#endif                          /* NETSNMP_ENABLE_TESTING_CODE */
 
 /*
  * MDbegin(MDp)
@@ -191,7 +191,7 @@ MDreverse(unsigned int *X)
  * ** This routine is not user-callable. 
  */
 static void
-MDblock(MDptr MDp, unsigned int *X)
+MDblock(MDptr MDp, const unsigned int *X)
 {
     register unsigned int tmp, A, B, C, D;      /* hpux sysv sun */
 #ifdef WORDS_BIGENDIAN
@@ -297,7 +297,7 @@ MDblock(MDptr MDp, unsigned int *X)
  * **          -2 if count was too large
  */
 int
-MDupdate(MDptr MDp, unsigned char *X, unsigned int count)
+MDupdate(MDptr MDp, const unsigned char *X, unsigned int count)
 {
     unsigned int    i, tmp, bit, byte, mask;
     unsigned char   XX[64];
@@ -315,7 +315,7 @@ MDupdate(MDptr MDp, unsigned char *X, unsigned int count)
         return -1;
     }
     /*
-     * if (MDp->done) { printf("\nError: MDupdate MD already done."); return; }
+     * if (MDp->done) { fprintf(stderr,"\nError: MDupdate MD already done."); return; }
      */
     /*
      * Add count to MDp->count 
@@ -331,11 +331,11 @@ MDupdate(MDptr MDp, unsigned char *X, unsigned int count)
      * Process data 
      */
     if (count == 512) {         /* Full block of data to handle */
-        MDblock(MDp, (unsigned int *) X);
+        MDblock(MDp, (const unsigned int *) X);
     } else if (count > 512)     /* Check for count too large */
         return -2;
     /*
-     * { printf("\nError: MDupdate called with illegal count value %d.",count);
+     * { fprintf(stderr,"\nError: MDupdate called with illegal count value %d.",count);
      * return;
      * }
      */
@@ -387,7 +387,7 @@ MDupdate(MDptr MDp, unsigned char *X, unsigned int count)
  * MDchecksum(data, len, MD5): do a checksum on an arbirtrary amount of data 
  */
 int
-MDchecksum(u_char * data, size_t len, u_char * mac, size_t maclen)
+MDchecksum(const u_char * data, size_t len, u_char * mac, size_t maclen)
 {
     MDstruct        md;
     MDstruct       *MD = &md;
@@ -421,8 +421,8 @@ MDchecksum(u_char * data, size_t len, u_char * mac, size_t maclen)
  * of data, and prepended with a secret in the standard fashion 
  */
 int
-MDsign(u_char * data, size_t len, u_char * mac, size_t maclen,
-       u_char * secret, size_t secretlen)
+MDsign(const u_char * data, size_t len, u_char * mac, size_t maclen,
+       const u_char * secret, size_t secretlen)
 {
 #define HASHKEYLEN 64
 
@@ -432,7 +432,8 @@ MDsign(u_char * data, size_t len, u_char * mac, size_t maclen,
     u_char          extendedAuthKey[HASHKEYLEN];
     u_char          buf[HASHKEYLEN];
     size_t          i;
-    u_char         *cp, *newdata = 0;
+    const u_char   *cp;
+    u_char         *newdata = NULL;
     int             rc = 0;
 
     /*
@@ -463,12 +464,12 @@ MDsign(u_char * data, size_t len, u_char * mac, size_t maclen,
         goto update_end;
 
     i = len;
-    if (((unsigned int) data) % 32 != 0) {
+    if (((uintptr_t) data) % sizeof(long) != 0) {
         /*
          * this relies on the ability to use integer math and thus we
          * must rely on data that aligns on 32-bit-word-boundries 
          */
-        memdup(&newdata, data, len);
+        newdata = netsnmp_memdup(data, len);
         cp = newdata;
     } else {
         cp = data;
@@ -531,3 +532,5 @@ MDget(MDstruct * MD, u_char * buf, size_t buflen)
  * ** End of md5.c
  * ****************************(cut)****************************************
  */
+
+#endif /* NETSNMP_DISABLE_MD5 */

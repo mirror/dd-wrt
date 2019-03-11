@@ -64,8 +64,8 @@ token defPrivType
 info  The default snmpv3 privacy (encryption) type name to use
 info  override: with -x on the command line.
 info  arguments: privtype
-question 1 Enter the default privacy type to use (DES)
-validanswer 1 ^(DES)$
+question 1 Enter the default privacy type to use (DES|AES)
+validanswer 1 ^(DES|AES)$
 
 token defPrivPassphrase
 info  The default snmpv3 privacy pass phrase to use

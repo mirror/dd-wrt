@@ -21,8 +21,6 @@
 #ifndef _MIBGROUP_HISTORY_H
 #define _MIBGROUP_HISTORY_H
 
-config_require(util_funcs)
-
     /*
      * function prototypes 
      */

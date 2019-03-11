@@ -23,7 +23,7 @@ config_arch_require(solaris2, kernel_sunos5)
     /*
      * Directive to include utility module 
      */
-config_require(util_funcs)
+config_require(util_funcs/header_generic)
 
     /*
      * MIB wants CPU_SYSTEM which is sysinfo CPU_KERNEL + CPU_WAIT 

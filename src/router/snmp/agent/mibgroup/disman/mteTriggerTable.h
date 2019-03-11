@@ -14,6 +14,11 @@
 
 
 config_require(header_complex)
+config_require(utilities/iquery)
+
+#ifndef NETSNMP_TRANSPORT_CALLBACK_DOMAIN
+config_error(disman/mteTriggerTable depends on the Callback transport)
+#endif
 
     /*
      * our storage structure(s) 
@@ -210,6 +215,8 @@ config_require(header_complex)
 #define MTE_FAILURE_SAMPLEOVERRUN		-6
 
 
+     extern struct header_complex_index *mteTriggerTableStorage;
+
 /*
  * function prototypes 
  */
@@ -224,7 +231,7 @@ config_require(header_complex)
      netsnmp_pdu    *mte_get_response(struct mteTriggerTable_data *,
                                       netsnmp_pdu *);
 
-
+#ifndef NETSNMP_NO_WRITE_SUPPORT
      WriteMethod     write_mteTriggerComment;
      WriteMethod     write_mteTriggerTest;
      WriteMethod     write_mteTriggerSampleType;
@@ -238,8 +245,7 @@ config_require(header_complex)
      WriteMethod     write_mteTriggerObjects;
      WriteMethod     write_mteTriggerEnabled;
      WriteMethod     write_mteTriggerEntryStatus;
-
-     WriteMethod     write_mteTriggerEntryStatus;
+#endif /* !NETSNMP_NO_WRITE_SUPPORT */
 
      void            mte_enable_trigger(struct mteTriggerTable_data *item);
      void            mte_disable_trigger(struct mteTriggerTable_data

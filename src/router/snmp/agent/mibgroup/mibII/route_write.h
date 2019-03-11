@@ -5,7 +5,9 @@
 #ifndef _MIBGROUP_ROUTE_WRITE_H
 #define _MIBGROUP_ROUTE_WRITE_H
 
+#if !defined(NETSNMP_ENABLE_MFD_REWRITES)
 config_require(mibII/ip)
+#endif
 
      int             addRoute(u_long, u_long, u_long, u_short);
      int             delRoute(u_long, u_long, u_long, u_short);

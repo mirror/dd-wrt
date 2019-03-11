@@ -4,6 +4,8 @@
  */
 
 #include <net-snmp/net-snmp-config.h>
+#include <net-snmp/net-snmp-includes.h>
+#include <net-snmp/agent/net-snmp-agent-includes.h>
 #if HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
@@ -12,11 +14,13 @@
 #else
 #include <strings.h>
 #endif
+#include <ctype.h>
 
 #include "host_res.h"
 #include "hr_proc.h"
 #include <net-snmp/agent/auto_nlist.h>
 #include <net-snmp/agent/agent_read_config.h>
+#include <net-snmp/agent/hardware/cpu.h>
 #include "ucd-snmp/loadave.h"
 
 #define HRPROC_MONOTONICALLY_INCREASING
@@ -30,22 +34,27 @@
 
 extern void     Init_HR_Proc(void);
 extern int      Get_Next_HR_Proc(void);
+const char     *describe_proc(int);
+int             proc_status(int);
 int             header_hrproc(struct variable *, oid *, size_t *, int,
                               size_t *, WriteMethod **);
+
 
         /*********************
 	 *
 	 *  Initialisation & common implementation functions
 	 *
 	 *********************/
-
+netsnmp_cpu_info *HRP_cpu;
 
 #define	HRPROC_ID		1
 #define	HRPROC_LOAD		2
 
 struct variable4 hrproc_variables[] = {
-    {HRPROC_ID, ASN_OBJECT_ID, RONLY, var_hrproc, 2, {1, 1}},
-    {HRPROC_LOAD, ASN_INTEGER, RONLY, var_hrproc, 2, {1, 2}}
+    {HRPROC_ID, ASN_OBJECT_ID, NETSNMP_OLDAPI_RONLY,
+     var_hrproc, 2, {1, 1}},
+    {HRPROC_LOAD, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+     var_hrproc, 2, {1, 2}}
 };
 oid             hrproc_variables_oid[] = { 1, 3, 6, 1, 2, 1, 25, 3, 3 };
 
@@ -55,6 +64,8 @@ init_hr_proc(void)
 {
     init_device[HRDEV_PROC] = Init_HR_Proc;
     next_device[HRDEV_PROC] = Get_Next_HR_Proc;
+    device_descr[HRDEV_PROC] = describe_proc;
+    device_status[HRDEV_PROC] = proc_status;
 #ifdef HRPROC_MONOTONICALLY_INCREASING
     dev_idx_inc[HRDEV_PROC] = 1;
 #endif
@@ -129,7 +140,7 @@ header_hrproc(struct variable *vp,
     memcpy((char *) name, (char *) newname,
            (vp->namelen + 1) * sizeof(oid));
     *length = vp->namelen + 1;
-    *write_method = 0;
+    *write_method = (WriteMethod*)0;
     *var_len = sizeof(long);    /* default to 'long' results */
 
     DEBUGMSGTL(("host/hr_proc", "... get proc stats "));
@@ -153,14 +164,12 @@ var_hrproc(struct variable * vp,
            int exact, size_t * var_len, WriteMethod ** write_method)
 {
     int             proc_idx;
-    double          avenrun[3];
+    unsigned long long value;
+    netsnmp_cpu_info *cpu;
 
     proc_idx =
         header_hrproc(vp, name, length, exact, var_len, write_method);
     if (proc_idx == MATCH_FAILED)
-        return NULL;
-    if (try_getloadavg(&avenrun[0], sizeof(avenrun) / sizeof(avenrun[0]))
-        == -1)
         return NULL;
 
     switch (vp->magic) {
@@ -168,15 +177,19 @@ var_hrproc(struct variable * vp,
         *var_len = nullOidLen;
         return (u_char *) nullOid;
     case HRPROC_LOAD:
-#if NO_DUMMY_VALUES
-        return NULL;
-#endif
-        long_return = avenrun[0] * 100; /* 1 minute average */
-        if (long_return > 100)
-            long_return = 100;
+        cpu = netsnmp_cpu_get_byIdx( proc_idx & HRDEV_TYPE_MASK, 0 );
+        if ( !cpu || !cpu->history || !cpu->history[0].total_hist ||
+           ( cpu->history[0].total_hist == cpu->total_ticks ))
+            return NULL;
+
+        value = (cpu->idle_ticks  - cpu->history[0].idle_hist)*100;
+        value /= (cpu->total_ticks - cpu->history[0].total_hist);
+        long_return = 100 - value;
+        if (long_return < 0)
+            long_return = 0;
         return (u_char *) & long_return;
     default:
-        DEBUGMSGTL(("snmpd", "unknown sub-id %d in var_hrproc\n",
+        DEBUGMSGTL(("host/hr_proc", "unknown sub-id %d in var_hrproc\n",
                     vp->magic));
     }
     return NULL;
@@ -189,25 +202,32 @@ var_hrproc(struct variable * vp,
 	 *
 	 *********************/
 
-static int      HRP_index;
-
 void
 Init_HR_Proc(void)
 {
-    HRP_index = 1;
+    HRP_cpu   = netsnmp_cpu_get_first();  /* 'Overall' entry */
 }
 
 int
 Get_Next_HR_Proc(void)
 {
-    /*
-     * Silly question time:
-     *   How do you detect processors?
-     *   Assume we've just got one.
-     */
-
-    if (HRP_index < 2)
-        return (HRDEV_PROC << HRDEV_TYPE_SHIFT) + HRP_index++;
+    HRP_cpu   = netsnmp_cpu_get_next( HRP_cpu );
+    if ( HRP_cpu )
+        return (HRDEV_PROC << HRDEV_TYPE_SHIFT) + HRP_cpu->idx;
     else
         return -1;
+}
+
+const char     *
+describe_proc(int idx)
+{
+    netsnmp_cpu_info *cpu = netsnmp_cpu_get_byIdx( idx & HRDEV_TYPE_MASK, 0 );
+    return (cpu ? cpu->descr : NULL );
+}
+
+int
+proc_status(int idx)
+{
+    netsnmp_cpu_info *cpu = netsnmp_cpu_get_byIdx( idx & HRDEV_TYPE_MASK, 0 );
+    return (cpu ? cpu->status : 0 );
 }

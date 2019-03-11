@@ -3,51 +3,111 @@
 $TOCHEADER=" TABLE OF CONTENTS";
 
 open(O, ">FAQ.html");
-print O "<body bgcolor=\"#ffffff\" background=\"ucd-snmp-bg3.gif\">
-<title>NET-SNMP FAQ</title>
-<div align=center>
-<h1>Frequently Asked Questions (FAQ) for the Net-SNMP package</h1>
-FAQ Maintainer: Dave Shield<br>
-Email: <a href=\"mailto:net-snmp-coders\@lists.sourceforge.net\">net-snmp-coders\@list.sourceforge.net</a><br>
-</div>
-<hr>
-<h2>Table of Contents</h2>\n";
 
+
+# Load FAQ into memory
 while(<>) {
+  push (@faqfile, $_);
+}
+my $current_line = 0;
+my $version;
+
+# Skip header up to table of contents
+while($current_line <= $#faqfile) {
+    $_ = $faqfile[$current_line];
+    $current_line++;
+
+    if (/Net-SNMP Version: (.*)/) {
+      $version = $1;
+    }
+
     last if (/$TOCHEADER/);
 }
 
-while(<>) {
-    last if (/^\s*$/);
+print O '<p class="SectionTitle">
+FAQ
+</p>
+FAQ Maintainer: Dave Shield<br/>
+Email: <a href="mailto:net-snmp-coders@lists.sourceforge.net">net-snmp-coders@list.sourceforge.net</a><br/>
+';
+print O "Version: $version<br/>\n";
+print O '<hr/>
+<h2>Table of Contents</h2>
+';
+
+# Create table of contents
+while($current_line <= $#faqfile) {
+    $_ = $faqfile[$current_line];
+    
+    #Skip blank lines
+    if (/^\s*$/) {
+      $current_line++;
+      last;
+    }
+
     chomp();
-    if (/^     */) {
-	# continuation of the question.
-	print O "<a href=\"#$x\">$_</a>\n";
-	next;
-    }
+
+    # Remove white space at start of line
     $_ =~ s/^ *//;
+    
     $x = $_;
+
+    # Remove white space at start of line
     $x =~ s/^ *//g;
+
+    # Replace all non alpha characters with _
     $x =~ s/[^a-zA-Z]/_/g;
+
+    # Save cleaned up line
     $xlate{$_} = $x;
+
+    if ( /&/ ) { $_ =~ s/&/&amp;/g; }
+    if ( /</ ) { $_ =~ s/</&lt;/g; }
+    if ( />/ ) { $_ =~ s/>/&gt;/g; }
     if (/^[ A-Z]+$/) {
-	print O "</ul><li><b>$_</b><ul>\n";
+        # Section header (eg: GENERAL)
+	print O "</ul><b>$_</b><ul>\n";
     } else {
-	print O "<li> <a href=\"#$x\">$_</a>\n";
+        # Question / answer - create link to it
+        if ($faqfile[$current_line+1] =~ /^     */) {
+          
+          # Continuation of the question.
+          $current_line++;
+          my $part2 = $faqfile[$current_line];
+          
+          # Remove white space at start of line
+          $part2 =~ s/^ *//;
+
+          print O "<li> <a href=\"#$x\">$_ $part2</a></li>\n";
+        }
+        else {
+          print O "<li> <a href=\"#$x\">$_</a></li>\n";
+        }
     }
+    $current_line++;
 }
 
-print O "</ul><hr><pre>\n";
+print O "</ul><hr/><pre>\n";
 
-while(<>) {
+# Print contents with targets defined
+while($current_line <= $#faqfile) {
+    $_ = $faqfile[$current_line];
+    $current_line++;
+
+    chomp();
+
     $y = $_;
-    chomp($y);
+
     if (defined($xlate{$y})) {
-	print O "<a name=\"$xlate{$y}\">\n";
+	print O "<a name=\"$xlate{$y}\"></a>\n";
     }
-    print O $_;
+    if ( /&/ ) { $_ =~ s/&/&amp;/g; }
+    if ( /</ ) { $_ =~ s/</&lt;/g; }
+    if ( />/ ) { $_ =~ s/>/&gt;/g; }
+    print O "$_\n";
 }
 
-$dt = localtime(time());
-print O "</pre><hr>
-Last modified: $dt\n";
+print O '
+</pre>
+';
+

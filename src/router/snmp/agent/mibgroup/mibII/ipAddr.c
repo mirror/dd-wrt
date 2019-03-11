@@ -3,9 +3,21 @@
  *
  */
 
-#include <net-snmp/net-snmp-config.h>
+/* Portions of this file are subject to the following copyright(s).  See
+ * the Net-SNMP's COPYING file for more details and other copyrights
+ * that may apply:
+ */
+/*
+ * Portions of this file are copyrighted by:
+ * Copyright © 2003 Sun Microsystems, Inc. All rights reserved.
+ * Use is subject to license terms specified in the COPYING file
+ * distributed with the Net-SNMP package.
+ */
 
-#if defined(IFNET_NEEDS_KERNEL) && !defined(_KERNEL)
+#include <net-snmp/net-snmp-config.h>
+#include <net-snmp/net-snmp-features.h>
+
+#if defined(NETSNMP_IFNET_NEEDS_KERNEL) && !defined(_KERNEL)
 #define _KERNEL 1
 #define _I_DEFINED_KERNEL
 #endif
@@ -28,9 +40,6 @@
 #include <strings.h>
 #endif
 #include <sys/types.h>
-#if HAVE_WINSOCK_H
-#include <winsock.h>
-#endif
 #if HAVE_SYS_SYSCTL_H
 #ifdef _I_DEFINED_KERNEL
 #undef _KERNEL
@@ -103,15 +112,18 @@
 #include <net-snmp/net-snmp-includes.h>
 #include <net-snmp/agent/net-snmp-agent-includes.h>
 #include <net-snmp/agent/auto_nlist.h>
+#include <net-snmp/data_access/interface.h>
 
 #include "ip.h"
+#include "ipAddr.h"
 #include "interfaces.h"
-#include "sysORTable.h"
 
-#ifdef cygwin
-#define WIN32
+#if defined(cygwin) || defined(mingw32)
 #include <windows.h>
+#include <winerror.h>
 #endif
+
+netsnmp_feature_require(interface_legacy)
 
         /*********************
 	 *
@@ -132,9 +144,9 @@
 	 *
 	 *********************/
 
-#ifndef WIN32
+#if !defined (WIN32) && !defined (cygwin)
 
-#if !defined(CAN_USE_SYSCTL) || !defined(IPCTL_STATS)
+#if !defined(NETSNMP_CAN_USE_SYSCTL) || !defined(IPCTL_STATS)
 #ifndef solaris2
 
 #if defined(freebsd2) || defined(hpux11) || defined(linux)
@@ -191,6 +203,7 @@ var_ipAddrEntry(struct variable *vp,
 #endif
     static struct ifnet ifnet;
 #endif                          /* hpux11 */
+    static in_addr_t	addr_ret;
 
     /*
      * fill in object part of name for current (less sizeof instance part) 
@@ -209,7 +222,7 @@ var_ipAddrEntry(struct variable *vp,
 #if !defined(freebsd2) && !defined(hpux11) && !defined(linux)
         if (Interface_Scan_Next(&interface, NULL, &ifnet, &in_ifaddr) == 0)
             break;
-#ifdef STRUCT_IFNET_HAS_IF_ADDRLIST
+#ifdef HAVE_STRUCT_IFNET_IF_ADDRLIST
         if (ifnet.if_addrlist == 0)
             continue;           /* No address found for interface */
 #endif
@@ -271,20 +284,21 @@ var_ipAddrEntry(struct variable *vp,
     }
 
 #if defined(linux)
-    free(ifc.ifc_buf);
+    SNMP_FREE(ifc.ifc_buf);
 #endif
 
     if (!lowinterface)
         return (NULL);
     memcpy((char *) name, (char *) lowest, 14 * sizeof(oid));
     *length = 14;
-    *write_method = 0;
+    *write_method = (WriteMethod*)0;
     *var_len = sizeof(long_return);
     switch (vp->magic) {
     case IPADADDR:
+    	*var_len = sizeof(addr_ret);
 #ifdef hpux11
-        long_return = lowin_ifaddr.Addr;
-        return (u_char *) & long_return;
+        addr_ret = lowin_ifaddr.Addr;
+        return (u_char *) & addr_ret;
 #elif defined(linux) || defined(sunV3)
         return (u_char *) & ((struct sockaddr_in *) &lowin_ifnet.if_addr)->
             sin_addr.s_addr;
@@ -296,20 +310,22 @@ var_ipAddrEntry(struct variable *vp,
         long_return = lowinterface;
         return (u_char *) & long_return;
     case IPADNETMASK:
+        *var_len = sizeof(addr_ret);
 #ifdef hpux11
-        long_return = lowin_ifaddr.NetMask;
-        return (u_char *) & long_return;
+        addr_ret = lowin_ifaddr.NetMask;
+        return (u_char *) & addr_ret;
 #elif defined(linux)
         return (u_char *) & ((struct sockaddr_in *) &lowin_ifnet.
                              ia_subnetmask)->sin_addr.s_addr;
 #elif !defined(sunV3)
-        long_return = lowin_ifaddr.ia_subnetmask;
-        return (u_char *) & long_return;
+        addr_ret = lowin_ifaddr.ia_subnetmask;
+        return (u_char *) & addr_ret;
 #endif
     case IPADBCASTADDR:
 #ifdef hpux11
-        long_return = lowin_ifaddr.BcastAddr;
+        long_return = lowin_ifaddr.BcastAddr & 1;
 #elif defined(linux) || defined(sunV3)
+        *var_len = sizeof(long_return);
         long_return =
             ntohl(((struct sockaddr_in *) &lowin_ifnet.ifu_broadaddr)->
                   sin_addr.s_addr) & 1;
@@ -327,7 +343,7 @@ var_ipAddrEntry(struct variable *vp,
 #ifdef hpux11
         long_return = lowin_ifaddr.ReasmMaxSize;
         return (u_char *) & long_return;
-#elif defined(NO_DUMMY_VALUES)
+#elif defined(NETSNMP_NO_DUMMY_VALUES)
         return NULL;
 #else
         long_return = -1;
@@ -341,13 +357,15 @@ var_ipAddrEntry(struct variable *vp,
 }
 
 #ifdef freebsd2
-static struct in_ifaddr *in_ifaddraddr;
+static struct in_ifaddr *in_ifaddraddr = NULL;
 
 static void
 Address_Scan_Init(void)
 {
-    auto_nlist(IFADDR_SYMBOL, (char *) &in_ifaddraddr,
+    int rc = auto_nlist(IFADDR_SYMBOL, (char *) &in_ifaddraddr,
                sizeof(in_ifaddraddr));
+    if (0 == rc)
+        in_ifaddraddr = NULL;
 }
 
 /*
@@ -366,8 +384,11 @@ Address_Scan_Next(Index, Retin_ifaddr)
         /*
          *      Get the "in_ifaddr" structure
          */
-        klookup((unsigned long) in_ifaddraddr, (char *) &in_ifaddr,
-                sizeof in_ifaddr);
+        if (!NETSNMP_KLOOKUP(in_ifaddraddr, (char *) &in_ifaddr, sizeof in_ifaddr)) {
+            DEBUGMSGTL(("mibII/ip:Address_Scan_Next", "klookup failed\n"));
+            return 0;
+        }
+
         in_ifaddraddr = in_ifaddr.ia_next;
 
         if (Retin_ifaddr)
@@ -380,8 +401,10 @@ Address_Scan_Next(Index, Retin_ifaddr)
 
         auto_nlist(IFNET_SYMBOL, (char *) &ifnetaddr, sizeof(ifnetaddr));
         while (ifnetaddr && ifnetaddr != in_ifaddr.ia_ifp) {
-            klookup((unsigned long) ifnetaddr, (char *) &ifnet,
-                    sizeof ifnet);
+            if (!NETSNMP_KLOOKUP(ifnetaddr, (char *) &ifnet, sizeof ifnet)) {
+                DEBUGMSGTL(("mibII/ip:Address_Scan_Next", "klookup failed\n"));
+                return 0;
+            }
             ifnetaddr = ifnet.if_next;
             iindex++;
         }
@@ -484,21 +507,21 @@ Address_Scan_Init(void)
     /* get info about all interfaces */
 
     ifc.ifc_len = 0;
-    ifc.ifc_buf = NULL;
+    SNMP_FREE(ifc.ifc_buf);
     ifr_counter = 0;
 
     do
     {
+	if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+	{
+	    DEBUGMSGTL(("snmpd", "socket open failure in Address_Scan_Init\n"));
+	    return;
+	}
 	num_interfaces += 16;
 
 	ifc.ifc_len = sizeof(struct ifreq) * num_interfaces;
 	ifc.ifc_buf = (char*) realloc(ifc.ifc_buf, ifc.ifc_len);
 	
-	if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
-	{
-	    DEBUGMSGTL(("snmpd", "socket open failure in Address_Scan_Init\n"));
-	    return;
-	} else {
 	    if (ioctl(fd, SIOCGIFCONF, &ifc) < 0)
 	    {
 		ifr=NULL;
@@ -506,22 +529,17 @@ Address_Scan_Init(void)
 	   	return;
 	    }
 	    close(fd);
-	}
     }
     while (ifc.ifc_len >= (sizeof(struct ifreq) * num_interfaces));
     
     ifr = ifc.ifc_req;
-    close(fd);
 }
 
 /*
  * NB: Index is the number of the corresponding interface, not of the address 
  */
 static int
-Address_Scan_Next(Index, Retifnet)
-    short          *Index;
-    struct ifnet   *Retifnet;
-
+Address_Scan_Next(short *Index, struct ifnet *Retifnet)
 {
     struct ifnet   ifnet_store;
     int fd;
@@ -559,12 +577,7 @@ Address_Scan_Next(Index, Retifnet)
         if (Index)
 	{
 	    ifr->ifr_addr = ifnet_store.if_addr;
-	    if (ioctl(fd, SIOCGIFINDEX, ifr) < 0)
-	    {
-	        *Index = -1;
-	    }
-	    else
-        	*Index = ifr->ifr_ifindex;
+            *Index = netsnmp_access_interface_index_find(ifr->ifr_name);
 	}
 	
 	ifr++;
@@ -612,9 +625,11 @@ var_ipAddrEntry(struct variable * vp,
     oid             current[IP_ADDRNAME_LENGTH], *op;
     u_char         *cp;
     IpAddress       NextAddr;
-    mib2_ipAddrEntry_t entry, Lowentry;
+    mib2_ipAddrEntry_t entry;
+    static mib2_ipAddrEntry_t Lowentry;
     int             Found = 0;
     req_e           req_type;
+    static in_addr_t addr_ret;
 
     /*
      * fill in object part of name for current (less sizeof instance part) 
@@ -630,6 +645,8 @@ var_ipAddrEntry(struct variable * vp,
     if (*length == IP_ADDRNAME_LENGTH)  /* Assume that the input name is the lowest */
         memcpy((char *) lowest, (char *) name,
                IP_ADDRNAME_LENGTH * sizeof(oid));
+    else
+	lowest[0] = 0xff;
     for (NextAddr = (u_long) - 1, req_type = GET_FIRST;;
          NextAddr = entry.ipAdEntAddr, req_type = GET_NEXT) {
         if (getMibstat
@@ -679,19 +696,31 @@ var_ipAddrEntry(struct variable * vp,
     *var_len = sizeof(long_return);
     switch (vp->magic) {
     case IPADADDR:
-        long_return = Lowentry.ipAdEntAddr;
-        return (u_char *) & long_return;
+	*var_len = sizeof(addr_ret);
+        addr_ret = Lowentry.ipAdEntAddr;
+        return (u_char *) & addr_ret;
     case IPADIFINDEX:
+#ifdef NETSNMP_INCLUDE_IFTABLE_REWRITES
+        Lowentry.ipAdEntIfIndex.o_bytes[Lowentry.ipAdEntIfIndex.o_length] = '\0';
         long_return =
-            Interface_Index_By_Name(Lowentry.ipAdEntIfIndex.o_bytes,
-                                    Lowentry.ipAdEntIfIndex.o_length);
+            netsnmp_access_interface_index_find(Lowentry.
+                                                ipAdEntIfIndex.o_bytes);
+#else
+        long_return =
+           Interface_Index_By_Name(Lowentry.ipAdEntIfIndex.o_bytes,
+                                   Lowentry.ipAdEntIfIndex.o_length);
+#endif
         return (u_char *) & long_return;
     case IPADNETMASK:
-        long_return = Lowentry.ipAdEntNetMask;
-        return (u_char *) & long_return;
+	*var_len = sizeof(addr_ret);
+        addr_ret = Lowentry.ipAdEntNetMask;
+        return (u_char *) & addr_ret;
     case IPADBCASTADDR:
-        long_return = Lowentry.ipAdEntBcastAddr;
-        return (u_char *) & long_return;
+	long_return = Lowentry.ipAdEntBcastAddr;
+	return (u_char *) & long_return;
+    case IPADREASMMAX:
+	long_return = Lowentry.ipAdEntReasmMaxSize;
+	return (u_char *) & long_return;
     default:
         DEBUGMSGTL(("snmpd", "unknown sub-id %d in var_ipAddrEntry\n",
                     vp->magic));
@@ -710,7 +739,7 @@ var_ipAddrEntry(struct variable * vp,
 	 *********************/
 
 
-#else                           /* CAN_USE_SYSCTL && IPCTL_STATS */
+#else                           /* NETSNMP_CAN_USE_SYSCTL && IPCTL_STATS */
 
 /*
  * Ideally, this would be combined with the code in interfaces.c.
@@ -846,8 +875,9 @@ var_ipAddrEntry(struct variable *vp,
     oid             current[14], *op;
     u_char         *cp;
     int             lowinterface = -1;
-    int             i, interface;
-
+    int             i;
+    static in_addr_t	addr_ret;
+    
     /*
      * fill in object part of name for current (less sizeof instance part) 
      */
@@ -896,23 +926,25 @@ var_ipAddrEntry(struct variable *vp,
     *var_len = sizeof(long_return);
     switch (vp->magic) {
     case IPADADDR:
-        long_return = ifs[i].addr.s_addr;
-        return (u_char *) & long_return;
+        *var_len = sizeof(addr_ret);
+        addr_ret = ifs[i].addr.s_addr;
+        return (u_char *) & addr_ret;
 
     case IPADIFINDEX:
         long_return = ifs[i].index;
         return (u_char *) & long_return;
 
     case IPADNETMASK:
-        long_return = ifs[i].mask.s_addr;
-        return (u_char *) & long_return;
+        *var_len = sizeof(addr_ret);
+        addr_ret = ifs[i].mask.s_addr;
+        return (u_char *) & addr_ret;
 
     case IPADBCASTADDR:
         long_return = ntohl(ifs[i].bcast.s_addr) & 1;
         return (u_char *) & long_return;
 
     case IPADREASMMAX:
-#if NO_DUMMY_VALUES
+#if NETSNMP_NO_DUMMY_VALUES
         return NULL;
 #else
         long_return = -1;
@@ -926,9 +958,9 @@ var_ipAddrEntry(struct variable *vp,
     return NULL;
 }
 
-#endif                          /* CAN_USE_SYSCTL && IPCTL_STATS */
+#endif                          /* NETSNMP_CAN_USE_SYSCTL && IPCTL_STATS */
 
-#else                           /* WIN32 */
+#elif defined(HAVE_IPHLPAPI_H)  /* WIN32 cygwin */
 #include <iphlpapi.h>
 u_char         *
 var_ipAddrEntry(struct variable *vp,
@@ -950,7 +982,9 @@ var_ipAddrEntry(struct variable *vp,
     DWORD           status = NO_ERROR;
     DWORD           statusRetry = NO_ERROR;
     DWORD           dwActualSize = 0;
-
+    void           *result = NULL;
+    static in_addr_t 	addr_ret;
+    
     /*
      * fill in object part of name for current (less sizeof instance part) 
      */
@@ -985,7 +1019,6 @@ var_ipAddrEntry(struct variable *vp,
                 }
             } else {
                 if (snmp_oid_compare(current, 14, name, *length) > 0) {
-
                     lowinterface = i;
                     memcpy(lowest, current, 14 * sizeof(oid));
                     break;      /* Since the table is sorted, no need to search further  */
@@ -994,44 +1027,52 @@ var_ipAddrEntry(struct variable *vp,
         }
     }
 
-    if (lowinterface < 0) {
-        free(pIpAddrTable);
-        return NULL;
-    }
+    if (lowinterface < 0)
+        goto out;
+
     i = lowinterface;
     memcpy(name, lowest, 14 * sizeof(oid));
     *length = 14;
     *write_method = 0;
-    *var_len = sizeof(long_return);
     switch (vp->magic) {
     case IPADADDR:
-        long_return = pIpAddrTable->table[i].dwAddr;
-        return (u_char *) & long_return;
+        *var_len = sizeof(addr_ret);
+        addr_ret = pIpAddrTable->table[i].dwAddr;
+        result = &addr_ret;
+        break;
 
     case IPADIFINDEX:
+        *var_len = sizeof(long_return);
         long_return = pIpAddrTable->table[i].dwIndex;
-        free(pIpAddrTable);
-        return (u_char *) & long_return;
+        result = &long_return;
+        break;
 
     case IPADNETMASK:
-        long_return = pIpAddrTable->table[i].dwMask;
-        free(pIpAddrTable);
-        return (u_char *) & long_return;
+        *var_len = sizeof(addr_ret);
+        addr_ret = pIpAddrTable->table[i].dwMask;
+        result = &addr_ret;
+        break;
 
     case IPADBCASTADDR:
+        *var_len = sizeof(long_return);
         long_return = pIpAddrTable->table[i].dwBCastAddr;
-        free(pIpAddrTable);
-        return (u_char *) & long_return;
+        result = &long_return;
+        break;
 
     case IPADREASMMAX:
+        *var_len = sizeof(long_return);
         long_return = pIpAddrTable->table[i].dwReasmSize;
-        free(pIpAddrTable);
-        return (u_char *) & long_return;
+        result = &long_return;
+        break;
 
     default:
         DEBUGMSGTL(("snmpd", "unknown sub-id %d in var_ipAddrEntry\n",
                     vp->magic));
+        break;
     }
-    return NULL;
+
+out:
+    free(pIpAddrTable);
+    return result;
 }
-#endif                          /* WIN32 */
+#endif                          /* WIN32 cygwin */
