@@ -187,6 +187,10 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 4");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "5 6");
+#elif defined (HAVE_XD9531)
+	eval("swconfig", "dev", "eth0", "set", "reset", "1");
+	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
+	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 4");
 #elif defined (HAVE_CPE880)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
@@ -323,7 +327,7 @@ void start_sysinit(void)
 	set_hwaddr("vlan1", mac);
 	MAC_ADD(mac);
 	set_hwaddr("vlan2", mac);
-#elif defined(HAVE_WZR450HP2) || defined(HAVE_WDR3500)
+#elif defined(HAVE_WZR450HP2) || defined(HAVE_WDR3500) || defined(HAVE_XD9531)
 	eval("ifconfig", "eth1", "up");
 #elif defined(HAVE_RAMBUTAN)
 	eval("ifconfig", "eth0", "up");
