@@ -1,34 +1,75 @@
-snmp-configure:
-	cd snmp && rm -f config.cache
 ifeq ($(ARCH),arm)
-	cd snmp && ./configure  --quiet --prefix=/tmp/snmp --target=$(ARCH)-linux --host=$(ARCH) --with-cc="$(CC)" --with-ar=$(ARCH)-linux-uclibc-ar --with-endianness=little --with-cflags="$(COPTS) -DCAN_USE_SYSCTL=1 -ffunction-sections -fdata-sections -Wl,--gc-sections" --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,ucd_snmp --with-out-mib-modules=host/hr_swrun,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc -with-opaque-special-types
-#	cd snmp && ./configure  --quiet --prefix=/tmp/snmp --target=$(ARCH)-linux --host=$(ARCH) --with-cc="$(CC)"ARCH)-linux-uclibc-gcc --with-ar=$(ARCH)-linux-uclibc-ar --with-endianness=little --with-cflags="$(COPTS) -DCAN_USE_SYSCTL=1 -ffunction-sections -fdata-sections -Wl,--gc-sections" --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,ucd_snmp --with-out-mib-modules=host/hr_swrun,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc
-endif	
+SNMP_ENDIAN=little
+endif
 ifeq ($(ARCH),aarch64)
-	cd snmp && ./configure  --quiet --prefix=/tmp/snmp --target=$(ARCH)-linux --host=$(ARCH) --with-cc="$(CC)" --with-ar=$(ARCH)-linux-uclibc-ar --with-endianness=little --with-cflags="$(COPTS) -DCAN_USE_SYSCTL=1 -ffunction-sections -fdata-sections -Wl,--gc-sections" --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,ucd_snmp --with-out-mib-modules=host/hr_swrun,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc -with-opaque-special-types
-#	cd snmp && ./configure  --quiet --prefix=/tmp/snmp --target=$(ARCH)-linux --host=$(ARCH) --with-cc="$(CC)"ARCH)-linux-uclibc-gcc --with-ar=$(ARCH)-linux-uclibc-ar --with-endianness=little --with-cflags="$(COPTS) -DCAN_USE_SYSCTL=1 -ffunction-sections -fdata-sections -Wl,--gc-sections" --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,ucd_snmp --with-out-mib-modules=host/hr_swrun,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc
-endif	
+SNMP_ENDIAN=little
+endif
 ifeq ($(ARCH),armeb)
-	cd snmp && ./configure  --quiet --prefix=/tmp/snmp --target=$(ARCH)-linux --host=$(ARCH) --with-cc="$(CC)" --with-ar=$(ARCH)-linux-uclibc-ar --with-endianness=big --with-cflags="$(COPTS) -DCAN_USE_SYSCTL=1 -ffunction-sections -fdata-sections -Wl,--gc-sections" --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,ucd_snmp --with-out-mib-modules=host/hr_swrun,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc -with-opaque-special-types
-endif	
+SNMP_ENDIAN=big
+endif
 ifeq ($(ARCH),i386)
-	cd snmp && ./configure  --quiet --prefix=/tmp/snmp --target=$(ARCH)-linux  --host=$(ARCH) --with-cc="$(CC)" --with-ar=$(ARCH)-linux-uclibc-ar --with-endianness=little --with-cflags="$(COPTS) -DCAN_USE_SYSCTL=1 -ffunction-sections -fdata-sections -Wl,--gc-sections" --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,ucd_snmp --with-out-mib-modules=host/hr_swrun,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc -with-opaque-special-types
+SNMP_ENDIAN=little
 endif
 ifeq ($(ARCH),x86_64)
-	cd snmp && ./configure  --quiet --prefix=/tmp/snmp --target=$(ARCH)-linux  --host=$(ARCH) --with-cc="$(CC)" --with-ar=$(ARCH)-linux-uclibc-ar --with-endianness=little --with-cflags="$(COPTS) -DCAN_USE_SYSCTL=1 -ffunction-sections -fdata-sections -Wl,--gc-sections" --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,ucd_snmp --with-out-mib-modules=host/hr_swrun,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc -with-opaque-special-types
+SNMP_ENDIAN=little
 endif
 ifeq ($(ARCH),mips)
-	cd snmp && ./configure  --quiet --prefix=/tmp/snmp --target=$(ARCH)-linux  --host=$(ARCH) --with-cc="$(CC)" --with-ar=$(ARCH)-linux-uclibc-ar --with-endianness=big --with-cflags="$(COPTS) $(MIPS16_OPT) -DCAN_USE_SYSCTL=1 -ffunction-sections -fdata-sections -Wl,--gc-sections" --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,ucd_snmp --with-out-mib-modules=host/hr_swrun,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc  -with-opaque-special-types
+SNMP_ENDIAN=big
 endif
 ifeq ($(ARCH),mips64)
-	cd snmp && ./configure  --quiet --prefix=/tmp/snmp --target=$(ARCH)-linux  --host=$(ARCH) --with-cc="$(CC)" --with-ar=$(ARCH)-linux-uclibc-ar --with-endianness=big --with-cflags="$(COPTS) $(MIPS16_OPT) -DCAN_USE_SYSCTL=1 -ffunction-sections -fdata-sections -Wl,--gc-sections" --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,ucd_snmp --with-out-mib-modules=host/hr_swrun,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc  -with-opaque-special-types
+SNMP_ENDIAN=big
 endif
 ifeq ($(ARCH),mipsel)
-	cd snmp && ./configure  --quiet --prefix=/tmp/snmp --target=$(ARCH)-linux  --host=$(ARCH) --with-cc="$(CC)" --with-ar=$(ARCH)-linux-uclibc-ar --with-endianness=little --with-cflags="$(COPTS) $(MIPS16_OPT) -DCAN_USE_SYSCTL=1 -ffunction-sections -fdata-sections -Wl,--gc-sections" --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,ucd_snmp --with-out-mib-modules=host/hr_swrun,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmall  -with-opaque-special-typesoc
+SNMP_ENDIAN=little
 endif
 ifeq ($(ARCH),powerpc)
-	cd snmp && ./configure  --quiet --prefix=/tmp/snmp --target=$(ARCH)-linux  --host=$(ARCH) --with-cc="$(CC)" --with-ar=$(ARCH)-linux-uclibc-ar --with-endianness=big --with-cflags="$(COPTS) -DCAN_USE_SYSCTL=1 -ffunction-sections -fdata-sections -Wl,--gc-sections" --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,ucd_snmp --with-out-mib-modules=host/hr_swrun,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc  -with-opaque-special-types
+SNMP_ENDIAN=big
 endif
+ifeq ($(CONFIG_MADWIFI),y)
+SNMP_EXTRACFLAGS+=-DHAVE_MADWIFI -I$(TOP)/madwifi.dev/madwifi.dev -include $(TOP)/madwifi.dev/madwifi.dev/include/compat.h -I$(TOP)/wireless-tools -I$(TOP)/shared -DHEADERS_KERNEL 
+SNMP_EXTRAMIB=,ddwrt/ddwrt
+endif
+ifeq ($(CONFIG_ATH9K),y)
+SNMP_EXTRACFLAGS+=-DHAVE_ATH9K
+endif
+snmp-configure:
+	cd snmp && rm -f config.cache
+	cd snmp && ./configure  --quiet \
+				--prefix=/tmp/snmp \
+				--target=$(ARCH)-linux \
+				--host=$(ARCH) \
+				--with-cc="$(CC)" \
+				--with-ar=$(ARCH)-linux-uclibc-ar \
+				--with-endianness=$(SNMP_ENDIAN) \
+				--with-cflags="$(COPTS) $(MIPS16_OPT) $(SNMP_EXTRACFLAGS) -DCAN_USE_SYSCTL=1 -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/shared -I$(TOP)/../include.v24" \
+				--with-ldflags="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/libutils -L$(TOP)/nvram -L$(TOP)/libnl-tiny -L$(TOP)/wireless-tools -lshutils -lutils -lwireless -liw -lnl-tiny -lnvram" \
+				--enable-mini-agent \
+				--disable-debugging \
+				--disable-privacy \
+				--without-opaque-special-types \
+				--with-persistent-directory=/tmp/snmp-persist \
+				--with-default-snmp-version=3 \
+				--with-sys-contact=root \
+				--with-sys-location=Unknown \
+				--with-logfile=/dev/null \
+				--with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix \
+				--enable-shared=no \
+				--enable-static \
+				--with-gnu-ld \
+				--enable-internal-md5 \
+				--with-copy-persistent-files=no \
+				--without-openssl \
+				--sysconfdir=/tmp \
+				--with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,ucd_snmp$(SNMP_EXTRAMIB) \
+				--with-out-mib-modules=host/hr_swrun,agent_mips,agentx,notification,utilities,target \
+				--disable-ipv6 \
+				--with-defaults \
+				--without-efence \
+				--without-rsaref \
+				--without-kmem-usage \
+				--without-rpm \
+				--without-dmalloc \
+				--with-opaque-special-types
 
 snmp:
 ifeq ($(CONFIG_SNMP),y)
