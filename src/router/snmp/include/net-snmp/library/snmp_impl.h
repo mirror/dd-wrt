@@ -72,10 +72,15 @@ SOFTWARE.
     /*
      * Access control statements for the agent 
      */
-#define RONLY	0x1             /* read access only */
-#define RWRITE	0x2             /* read and write access (must have 0x2 bit set) */
+#define NETSNMP_OLDAPI_RONLY	0x1     /* read access only */
+#define NETSNMP_OLDAPI_RWRITE	0x2     /* read and write access (must have 0x2 bit set) */
+#define NETSNMP_OLDAPI_NOACCESS 0x0000  /* no access for anybody */
 
-#define NOACCESS 0x0000         /* no access for anybody */
+#ifndef NETSNMP_NO_LEGACY_DEFINITIONS
+#define RONLY           NETSNMP_OLDAPI_RONLY
+#define RWRITE          NETSNMP_OLDAPI_RWRITE
+#define NOACCESS        NETSNMP_OLDAPI_NOACCESS
+#endif
 
     /*
      * defined types (from the SMI, RFC 1157) 
@@ -94,7 +99,7 @@ SOFTWARE.
 #define ASN_COUNTER64   (ASN_APPLICATION | 6)
 #define ASN_UINTEGER    (ASN_APPLICATION | 7)   /* historic - don't use */
 
-#ifdef OPAQUE_SPECIAL_TYPES
+#ifdef NETSNMP_WITH_OPAQUE_SPECIAL_TYPES
     /*
      * defined types from draft-perkins-opaque-01.txt 
      */
@@ -102,7 +107,7 @@ SOFTWARE.
 #define ASN_DOUBLE	    (ASN_APPLICATION | 9)
 #define ASN_INTEGER64        (ASN_APPLICATION | 10)
 #define ASN_UNSIGNED64       (ASN_APPLICATION | 11)
-#endif                          /* OPAQUE_SPECIAL_TYPES */
+#endif                          /* NETSNMP_WITH_OPAQUE_SPECIAL_TYPES */
 
     /*
      * changed to ERROR_MSG to eliminate conflict with other includes 
@@ -115,7 +120,7 @@ SOFTWARE.
      * from snmp.c 
      */
     extern u_char   sid[];      /* size SID_MAX_LEN */
-    extern int      snmp_errno;
+    NETSNMP_IMPORT int      snmp_errno;
 
 
     /*

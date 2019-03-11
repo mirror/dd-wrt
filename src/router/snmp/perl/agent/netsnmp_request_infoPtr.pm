@@ -4,6 +4,7 @@ package NetSNMP::agent::netsnmp_request_infoPtr;
 
 1;
 __END__
+
 =head1 NAME
 
 NetSNMP::agent::netsnmp_request_infoPtr - Perl extension for request information

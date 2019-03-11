@@ -59,11 +59,12 @@ config_require(header_complex)
                                              oid * oidname,
                                              size_t oidname_len,
                                              int iswild);
+
+#ifndef NETSNMP_NO_WRITE_SUPPORT
      WriteMethod     write_mteObjectsID;
      WriteMethod     write_mteObjectsIDWildcard;
      WriteMethod     write_mteObjectsEntryStatus;
-
-     WriteMethod     write_mteObjectsEntryStatus;
+#endif /* !NETSNMP_NO_WRITE_SUPPORT */
 
 
 

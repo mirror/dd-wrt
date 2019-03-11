@@ -7,21 +7,24 @@ BEGIN {
         chdir 't' if -d 't';
         @INC = '../lib' if -d '../lib';
     }
+    eval "use Cwd qw(abs_path)";
+    $ENV{'SNMPCONFPATH'} = 'nopath';
+    $ENV{'MIBDIRS'} = '+' . abs_path("../../mibs");
+    $ENV{'MIBS'} = 'ALL';
 }
 
 # to print the description...
 $SNMP::save_descriptions = 1;
 
 use Test;
-BEGIN {plan tests => 28}
+BEGIN {plan tests => 35}
 use SNMP;
 
 $SNMP::verbose = 0;
+$SNMP::best_guess = 2;
 
 use vars qw($bad_oid);
 require "t/startagent.pl";
-my $mib_file = 't/mib.txt';
-my $bad_mib_file = 'mib.txt';
 
 #############################  1  ######################################
 #check if
@@ -49,8 +52,7 @@ ok($res eq 'OCTETSTR');
 #############################  6  ####################################
 $res =  $SNMP::MIB{sysLocation}{status};
 #print STDERR ("status is: $res\n");
-#XXX: test fails due SMIv1 codes being returned intstead of SMIv2...
-#ok($res eq 'Current');
+ok($res eq 'Current');
 #print STDERR ("\n");
 #############################  7  #################################
 $res =  $SNMP::MIB{sysORTable}{access};
@@ -73,9 +75,8 @@ ok($res eq 'IPADDR');
 #print("\n");
 ##########################  11  ##########################
 $res = $SNMP::MIB{atNetAddress}{syntax};
-#print("syntax is: $res\n");
-#XXX: test fails due SMIv1 codes being returned intstead of SMIv2...
-#ok($res eq 'IPADDR');
+#print ("syntax is: $res\n");
+ok($res eq 'NETADDR');
 #print("\n");
 ########################   12  ###############################
 $res = $SNMP::MIB{ipReasmOKs}{syntax};
@@ -148,23 +149,58 @@ my $type3 = SNMP::getType($name);
 ok(defined($type3));
 
 ######################################################################
-# Translation tests from Name -> oid -> Name
-######################################################################
-# name -> OID
+# Translation tests from Name -> OID
+# sysDescr to .1.3.6.1.2.1.1.1
 $oid_tag = SNMP::translateObj($name);
 ok($oid eq $oid_tag);
 
 ######################################################################
-# bad name returns 'undef'
+# Translation tests from Name -> OID
+# RFC1213-MIB::sysDescr to .1.3.6.1.2.1.1.1
+$oid_tag = SNMP::translateObj($name_module);
+ok($oid eq $oid_tag);
 
+######################################################################
+# Translation tests from Name -> OID
+# .iso.org.dod.internet.mgmt.mib-2.system.sysDescr to .1.3.6.1.2.1.1.1
+$oid_tag = SNMP::translateObj($name_long);
+ok($oid eq $oid_tag);
+
+######################################################################
+# bad name returns 'undef'
 $oid_tag = '';
 $oid_tag = SNMP::translateObj($bad_name);
 ok(!defined($oid_tag));
+
+
 ######################################################################
 # OID -> name
-
+# .1.3.6.1.2.1.1.1 to sysDescr
 $name_tag = SNMP::translateObj($oid);
 ok($name eq $name_tag);
+
+######################################################################
+# OID -> name
+# .1.3.6.1.2.1.1.1 to RFC1213-MIB::sysDescr or
+# .1.3.6.1.2.1.1.1 to SNMPv2-MIB::sysDescr
+$name_tag = SNMP::translateObj($oid,0,1);
+$name_module2 = $name_module2; # To eliminate 'only use once' variable warning
+ok(($name_module eq $name_tag) || ($name_module2 eq $name_tag));
+
+######################################################################
+# OID -> name
+# .1.3.6.1.2.1.1.1 to .iso.org.dod.internet.mgmt.mib-2.system.sysDescr
+$name_tag = SNMP::translateObj($oid,1);
+ok($name_long eq $name_tag);
+
+######################################################################
+# OID -> name
+# .1.3.6.1.2.1.1.1 to RFC1213-MIB::.iso.org.dod.internet.mgmt.mib-2.system.sysDescr or
+# .1.3.6.1.2.1.1.1 to SNMPv2-MIB::.iso.org.dod.internet.mgmt.mib-2.system.sysDescr
+$name_module_long = $name_module_long; # To eliminate 'only use once' variable warning
+$name_module_long2 = $name_module_long2; # To eliminate 'only use once' variable warning
+$name_tag = SNMP::translateObj($oid,1,1);
+ok(($name_module_long eq $name_tag) || ($name_module_long2 eq $name_tag));
 
 ######################################################################
 # bad OID -> Name
@@ -172,6 +208,7 @@ ok($name eq $name_tag);
 $name_tag = SNMP::translateObj($bad_oid);
 ok($name ne $name_tag);
 #printf "%s %d\n", ($name ne $name_tag) ? "ok" :"not ok", $n++;
+
 
 ######################################################################
 # ranges

@@ -4,9 +4,13 @@
  */
 
 #include <net-snmp/net-snmp-config.h>
+#include <net-snmp/net-snmp-features.h>
 #include <net-snmp/net-snmp-includes.h>
 #include <net-snmp/agent/net-snmp-agent-includes.h>
 #include "mteEventNotificationTable.h"
+
+netsnmp_feature_require(table_dataset)
+netsnmp_feature_require(table_set_multi_add_default_row)
 
 netsnmp_table_data_set *mteEventNotif_table_set;
 
@@ -61,12 +65,21 @@ initialize_table_mteEventNotificationTable(void)
      * note: if you don't need a subhandler to deal with any aspects
      * of the request, change mteEventNotificationTable_handler to "NULL" 
      */
+#ifndef NETSNMP_NO_WRITE_SUPPORT
     netsnmp_register_table_data_set(netsnmp_create_handler_registration
                                     ("mteEventNotificationTable",
                                      mteEventNotificationTable_handler,
                                      mteEventNotificationTable_oid,
                                      mteEventNotificationTable_oid_len,
                                      HANDLER_CAN_RWRITE), mteEventNotif_table_set, NULL);
+#else /* !NETSNMP_NO_WRITE_SUPPORT */
+    netsnmp_register_table_data_set(netsnmp_create_handler_registration
+                                    ("mteEventNotificationTable",
+                                     mteEventNotificationTable_handler,
+                                     mteEventNotificationTable_oid,
+                                     mteEventNotificationTable_oid_len,
+                                     HANDLER_CAN_RONLY), mteEventNotif_table_set, NULL);
+#endif /* !NETSNMP_NO_WRITE_SUPPORT */
 }
 
 /** Initializes the mteEventNotificationTable module */

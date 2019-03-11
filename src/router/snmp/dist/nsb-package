@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/bin/sh
 #
-# $Id: nsb-package,v 1.1.2.1 2004/06/20 21:54:35 nikki Exp $
+# $Id$
 # Author: Robert Story <rstory@freesnmp.com>
 #
 ########################################################################
@@ -13,11 +13,11 @@ usage()
    echo "  params: [-c] [-d] [-P] [-s NSB_SRC_DIR] [-b BUILDD] [-i NSB_INSTALL_DIR]"
    echo "          [-h host] [-p path]"
    echo ""
-   echo " VERSION    : relase number (eg 5.0.3)"
-   echo " -s NSB_SRC_DIRIR  : soure directory [$HOME/src/net-snmp-VERSION]"
+   echo " VERSION    : release number (eg 5.2.2)"
+   echo " -s NSB_SRC_DIR  : source directory [$HOME/src/net-snmp-VERSION]"
    echo " -b BUILDD  : build directory [$HOME/build/]"
    echo "              NOTE-platform will be appended to build directory"
-   echo " -i NSB_INSTALL_DIR: install directory [$HOME/build/\$PLATFORM/usr/local]"
+   echo " -i NSB_INSTALL_DIR: install directory [$HOME/build/\$PLATFORM/usr]"
    echo ""
    echo " -x : configure extra features for pre-release testing"
    echo " -c : skip configure"
@@ -27,6 +27,7 @@ usage()
    echo " -r : remove build dir (rm -fR) before build"
    echo " -R : remove build dir (rm -fR) after successful build"
    echo " -t : skip 'make test'"
+   echo " -C : don't source $HOME/.snmp/nsb-package"
    echo ""
    echo " -h : host to upload results to"
    echo " -p : path to upload results to"
@@ -37,23 +38,35 @@ usage()
 
 #set -x
 
-#
-# find nsb-platform based on te path to this script
-#
-EXE_PATH=${0%nsb-package}
-EXE_PATH=${EXE_PATH%/}
-if [ -f $EXE_PATH/nsb-functions ];then
-   source $EXE_PATH/nsb-functions
-elif [ -f $HOME/bin/nsb-functions ]; then
-   source $HOME/bin/nsb-functions
-   EXE_PATH=$HOME/bin
-elif [ -f nsb-functions ];then
-   source nsb-functions
-else
-   echo "Cannot find nsb-functions in $EXE_PATH, $HOME/bin or $PWD"
-   exit 1
+# make getopts work on Tru64 by respawning in Posix mode
+if [ "`uname`" = "OSF1" -a "$BIN_SH" != "xpg4" ]; then
+    BIN_SH=xpg4
+    export BIN_SH
+    exec $0 $*
 fi
 
+#
+# find nsb-platform based on the path to this script
+#
+EXE_PATH=`dirname $0`
+if [ ! -f $EXE_PATH/nsb-functions ];then
+   if [ -f $HOME/bin/nsb-functions ]; then
+      EXE_PATH=$HOME/bin
+   elif [ -f nsb-functions ];then
+      EXE_PATH=$PWD
+   else
+      echo "Cannot find nsb-functions in $EXE_PATH, $HOME/bin or $PWD"
+      exit 1
+   fi
+fi
+
+if [ "x$1" = "x-C" ]; then
+    shift
+else
+    if [ -f $HOME/.snmp/nsb-package ];then
+        . $HOME/.snmp/nsb-package
+    fi
+fi
 
 ########################################################################
 ########################################################################
@@ -88,6 +101,12 @@ if [ $# -ne 1 ]; then
    usage
 fi
 
+NSB_VERSION=$1
+
+. $EXE_PATH/nsb-functions
+
+nsb_default_paths
+
 if [ $NSB_CLEAN -eq 1 ]; then
    if [ $NSB_SKIP_CONFIG -eq 1 ]; then
       echo "A clean build also requires configuration (-d and -c"
@@ -96,30 +115,23 @@ if [ $NSB_CLEAN -eq 1 ]; then
    fi
 fi
 
-VERSION=$1
-
-nsb-default-paths
-
-if [ $NSB_SRC_DIR != $NSB_BUILD_DIR ];then
-   NSB_BUILD_DIR=$NSB_BUILD_DIR/$VERSION-`nsb-sysname`
-fi
-
 
 ########################################################################
 ########################################################################
-nsb-prompt "press enter to build $NSB_SRC_DIR in $NSB_BUILD_DIR, and install in $NSB_INSTALL_DIR"
-nsb-build $VERSION $NSB_SRC_DIR $NSB_BUILD_DIR $NSB_INSTALL_DIR $NSB_CONFIG_ALL
+nsb_prompt "press enter to build $NSB_SRC_DIR in $NSB_BUILD_DIR, and install in $NSB_INSTALL_DIR"
+nsb_build $NSB_VERSION $NSB_SRC_DIR $NSB_BUILD_DIR $NSB_INSTALL_DIR $NSB_CONFIG_ALL
 rc=$?
-if [ ! -z $NSB_SCP_HOST ]; then
-   nsb-upload $NSB_BUILD_DIR $NSB_SCP_HOST:$NSB_SCP_DEST/$VERSION-`nsb-sysname`
+if [ "x$NSB_SCP_HOST" != "x" ]; then
+   nsb_upload $NSB_BUILD_DIR $NSB_SCP_HOST:$NSB_SCP_DEST/$NSB_VERSION/$NSB_HOST/
 fi
 if [ $rc -eq 0 ] && [ $REMOVE_SUCCESS -eq 1 ];then
-    nsb-prompt "press enter to remove $NSB_BUILD_DIR"
+    nsb_prompt "press enter to remove $NSB_BUILD_DIR"
     if [ "x$NSB_BUILD_DIR" = "/" ]; then
-       nsb-abort "Not running rm -fR from /"
+       nsb_abort "Not running rm -fR from /"
+    else
+       /bin/rm -fR $NSB_BUILD_DIR > /dev/null 2>&1
     fi
-    /bin/rm -fR $NSB_BUILD_DIR > /dev/null 2>&1
 fi
 
-nsb-prompt "press enter to exit with rc $RC"
+nsb_prompt "press enter to exit with rc $RC"
 exit $rc

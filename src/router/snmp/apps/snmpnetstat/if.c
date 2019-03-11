@@ -1,119 +1,170 @@
-/*****************************************************************
-	Copyright 1989, 1991, 1992 by Carnegie Mellon University
+/*	$OpenBSD: if.c,v 1.42 2005/03/13 16:05:50 mpf Exp $	*/
+/*	$NetBSD: if.c,v 1.16.4.2 1996/06/07 21:46:46 thorpej Exp $	*/
 
-                      All Rights Reserved
-
-Permission to use, copy, modify, and distribute this software and its 
-documentation for any purpose and without fee is hereby granted, 
-provided that the above copyright notice appear in all copies and that
-both that copyright notice and this permission notice appear in 
-supporting documentation, and that the name of CMU not be
-used in advertising or publicity pertaining to distribution of the
-software without specific, written prior permission.  
-
-CMU DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
-ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL
-CMU BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR
-ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
-WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,
-ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
-SOFTWARE.
-******************************************************************/
 /*
- * Copyright (c) 1983,1988 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1983, 1988, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
- * Redistribution and use in source and binary forms are permitted
- * provided that this notice is preserved and that due credit is given
- * to the University of California at Berkeley. The name of the University
- * may not be used to endorse or promote products derived from this
- * software without specific prior written permission. This software
- * is provided ``as is'' without express or implied warranty.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
  */
 
-#include <net-snmp/net-snmp-config.h>
-
-#if HAVE_STDLIB_H
-#include <stdlib.h>
+#ifdef  INHERITED_CODE
+#ifndef lint
+#if 0
+static char sccsid[] = "from: @(#)if.c	8.2 (Berkeley) 2/21/94";
+#else
+static char *rcsid = "$OpenBSD: if.c,v 1.42 2005/03/13 16:05:50 mpf Exp $";
 #endif
+#endif /* not lint */
+#endif
+
+#include <net-snmp/net-snmp-config.h>
+#include <net-snmp/net-snmp-includes.h>
+
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#if HAVE_STRING_H
-#include <string.h>
-#else
-#include <strings.h>
+#if HAVE_NET_IF_H
+#include <net/if.h>
 #endif
-
-#include <sys/types.h>
-#if TIME_WITH_SYS_TIME
-# ifdef WIN32
-#  include <sys/timeb.h>
-# else
-#  include <sys/time.h>
-# endif
-# include <time.h>
-#else
-# if HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
+#ifndef _XOPEN_SOURCE
+#define _XOPEN_SOURCE 1
 #endif
-#if HAVE_SYS_SELECT_H
-#include <sys/select.h>
+#ifndef _XOPEN_SOURCE_EXTENDED
+#define _XOPEN_SOURCE_EXTENDED 1
 #endif
-#if HAVE_NETINET_IN_H
-#include <netinet/in.h>
-#endif
-
-#include <stdio.h>
 #include <signal.h>
 
-#if HAVE_WINSOCK_H
-#include <winsock.h>
-#endif
-#if HAVE_SYS_SOCKET_H
-#include <sys/socket.h>
-#endif
-#if HAVE_NETDB_H
-#include <netdb.h>
-#endif
-
 #include "main.h"
-#include <net-snmp/net-snmp-includes.h>
 #include "netstat.h"
 
 #define	YES	1
 #define	NO	0
 
-static void     sidewaysintpr(unsigned int);
-static void     timerSet(int interval_seconds);
-static void     timerPause(void);
+static void sidewaysintpr(u_int);
+static void timerSet(int interval_seconds);
+static void timerPause(void);
 
-static oid      oid_ifname[] = { 1, 3, 6, 1, 2, 1, 2, 2, 1, 2, 1 };
-static oid      oid_ifinucastpkts[] = { 1, 3, 6, 1, 2, 1, 2, 2, 1, 11, 1 };
-static oid      oid_cfg_nnets[] = { 1, 3, 6, 1, 2, 1, 2, 1, 0 };
-static oid      oid_ipadentaddr[] =
-    { 1, 3, 6, 1, 2, 1, 4, 20, 1, 1, 0, 0, 0, 0 };
+    struct _if_info {
+        char            name[128];
+        char            descr[128];
+        char            ip[128], route[128];
+        int             mtu;
+        int             drops;
+        unsigned int    ifindex;
+                        /*
+                         * Save "expandable" fields as string values
+                         *  rather than integer statistics
+                         */
+        char            s_ipkts[20], s_ierrs[20];
+        char            s_opkts[20], s_oerrs[20];
+        char            s_ibytes[20], s_obytes[20];
+        char            s_outq[20];
+        unsigned long   ipkts, opkts;  /* Need to combine 2 MIB values */
+        int             operstatus;
+/*
+        u_long          netmask;
+        struct in_addr  ifip, ifroute;
+ */
+        struct _if_info *next;
+    };
 
-#define IFINDEX		1
-#define IFNAME		2
-#define IFMTU		4
-#define IFOPERSTATUS	8
-#define INOCTETS	10
-#define INUCASTPKTS	11
-#define INNUCASTPKTS	12
-#define INERRORS	14
-#define OUTOCTETS	16
-#define OUTUCASTPKTS	17
-#define OUTNUCASTPKTS	18
-#define OUTERRORS	20
-#define OUTQLEN		21
 
-#define IPADDR		1
-#define	IPIFINDEX	2
-#define IPNETMASK	3
+/*
+ * Retrieve the interface addressing information
+ * XXX - This could also be extended to handle non-IP interfaces
+ */
+void
+_set_address( struct _if_info *cur_if )
+{
+    oid    ipaddr_oid[] = { 1,3,6,1,2,1,4,20,1,0 };
+    size_t ipaddr_len   = OID_LENGTH( ipaddr_oid );
+    static netsnmp_variable_list *addr_if_var  =NULL;
+    static netsnmp_variable_list *addr_mask_var=NULL;
+    netsnmp_variable_list *vp, *vp2;
+    union {
+        in_addr_t addr;
+        char      data[4];
+    } tmpAddr;
+    char *cp;
+    in_addr_t ifAddr, mask;
+
+        /*
+         *  Note that this information only needs to be retrieved 
+         *    once, and can be re-used for subsequent calls.
+         */
+    if ( addr_if_var == NULL ) {
+        ipaddr_oid[ 9 ] = 2;  /* ipAdEntIfIndex */
+        snmp_varlist_add_variable( &addr_if_var, ipaddr_oid, ipaddr_len,
+                                   ASN_NULL, NULL,  0);
+        netsnmp_query_walk( addr_if_var, ss );
+
+        ipaddr_oid[ 9 ] = 3;  /* ipAdEntNetMask */
+        snmp_varlist_add_variable( &addr_mask_var, ipaddr_oid, ipaddr_len,
+                                   ASN_NULL, NULL,  0);
+        netsnmp_query_walk( addr_mask_var, ss );
+    }
+
+    /*
+     * Find the address row relevant to this interface
+     */
+    for (vp=addr_if_var, vp2=addr_mask_var;  vp;
+         vp=vp->next_variable, vp2=vp2->next_variable) {
+        if ( vp->val.integer && *vp->val.integer == (int)cur_if->ifindex )
+            break;
+    }
+    if (vp2) {
+        /*
+         * Always want a numeric interface IP address
+         */
+        snprintf( cur_if->ip, 128, "%" NETSNMP_PRIo "u.%" NETSNMP_PRIo "u."
+                  "%" NETSNMP_PRIo "u.%" NETSNMP_PRIo "u",
+                  vp2->name[10],
+                  vp2->name[11],
+                  vp2->name[12],
+                  vp2->name[13]);
+
+        /*
+         * But re-use the routing table utilities/code for
+         *   displaying the local network information
+         */
+        cp = tmpAddr.data;
+        cp[0] = (uint8_t) vp2->name[10];
+        cp[1] = (uint8_t) vp2->name[11];
+        cp[2] = (uint8_t) vp2->name[12];
+        cp[3] = (uint8_t) vp2->name[13];
+        ifAddr = tmpAddr.addr;
+        cp = tmpAddr.data;
+        cp[0] = (uint8_t) vp2->val.string[0];
+        cp[1] = (uint8_t) vp2->val.string[1];
+        cp[2] = (uint8_t) vp2->val.string[2];
+        cp[3] = (uint8_t) vp2->val.string[3];
+        mask = tmpAddr.addr;
+        snprintf( cur_if->route, 128, "%s", netname(ifAddr, mask));
+    }
+}
 
 
 /*
@@ -122,527 +173,679 @@ static oid      oid_ipadentaddr[] =
 void
 intpr(int interval)
 {
-    oid             varname[MAX_OID_LEN], *instance, *ifentry;
-    size_t          varname_len;
-    int             ifnum, cfg_nnets;
-    oid             curifip[4];
-    netsnmp_variable_list *var;
-    netsnmp_pdu    *request, *response;
-    int             status;
-    int             ifindex, oldindex = 0;
-    struct _if_info {
-        char            name[128];
-        char            ip[128], route[128];
-        int             mtu;
-        int             ifindex;
-        char            s_ipkts[20], s_ierrs[20], s_opkts[20], s_oerrs[20],
-            s_outq[20];
-        unsigned long   ipkts, opkts;
-        int             operstatus;
-        u_long          netmask;
-        struct in_addr  ifip, ifroute;
-    }              *if_table, *cur_if;
-    int             max_name = 4, max_ip = 7, max_route = 7, max_ipkts = 5,
-        max_ierrs = 5, max_opkts = 5, max_oerrs = 5, max_outq = 5;
-    int             i;
+    oid    ifcol_oid[]  = { 1,3,6,1,2,1,2,2,1,0 };
+    size_t ifcol_len    = OID_LENGTH( ifcol_oid );
+    oid    ifxcol_oid[] = { 1,3,6,1,2,1,31,1,1,1,0 };
+    size_t ifxcol_len   = OID_LENGTH( ifxcol_oid );
+
+    struct _if_info *if_head, *if_tail, *cur_if;
+    netsnmp_variable_list *var, *vp;
+           /*
+            * Track maximum field widths, expanding as necessary
+            *   This is one reason why results can't be
+            *   displayed immediately they are retrieved.
+            */
+    int    max_name  = 4, max_ip    = 7, max_route = 7, max_outq  = 5;
+    int    max_ipkts = 5, max_ierrs = 5, max_opkts = 5, max_oerrs = 5;
+    int    max_ibytes = 6, max_obytes = 6;
+    int    i;
+
 
     if (interval) {
-        sidewaysintpr((unsigned) interval);
+        sidewaysintpr((unsigned)interval);
         return;
     }
-    var =
-        getvarbyname(Session, oid_cfg_nnets,
-                     sizeof(oid_cfg_nnets) / sizeof(oid));
-    if (var && var->val.integer) {
-        cfg_nnets = *var->val.integer;
-        snmp_free_var(var);
-    } else {
-        printf(
-                "No response when requesting number of interfaces.\n");
-        return;
+
+        /*
+         * The traditional "netstat -i" output combines information
+         *   from two SNMP tables:
+         *      ipAddrTable   (for the IP address/network)
+         *      ifTable       (for the interface statistics)
+         *
+         * The previous approach was to retrieve (and save) the
+         *   address information first. Then walk the main ifTable,
+         *   add the relevant stored addresses, and saving the
+         *   full information for each interface, before displaying 
+         *   the results as a separate pass.
+         *
+         * This code reverses this general structure, by first retrieving
+         *   (and storing) the interface statistics for the whole table,
+         *   then inserting the address information obtained from the
+         *   ipAddrTable, and finally displaying the results.
+         * Such an arrangement should make it easier to extend this
+         *   to handle non-IP interfaces (hence not in ipAddrTable)
+         */
+    if_head = NULL;
+    if_tail = NULL;
+    var     = NULL;
+
+#define ADD_IFVAR( x ) ifcol_oid[ ifcol_len-1 ] = x; \
+    snmp_varlist_add_variable( &var, ifcol_oid, ifcol_len, ASN_NULL, NULL,  0)
+    ADD_IFVAR( 2 );                 /* ifName  */
+    ADD_IFVAR( 4 );                 /* ifMtu   */
+    ADD_IFVAR( 8 );                 /* ifOperStatus */
+    /*
+     * The Net/Open-BSD behaviour is to display *either* byte
+     *   counts *or* packet/error counts (but not both). FreeBSD
+     *   integrates the byte counts into the traditional display.
+     *
+     * The previous 'snmpnetstat' implementation followed the
+     *   separatist model.  This re-write offers an opportunity
+     *   to adopt the (more useful, IMO) Free-BSD approach.
+     *
+     * Or we could perhaps support both styles? :-)
+     */
+    if (bflag || oflag) {
+        ADD_IFVAR( 10 );            /* ifInOctets   */
+        ADD_IFVAR( 16 );            /* ifOutOctets  */
     }
-    DEBUGMSGTL(("netstat:if", "cfg_nnets = %d\n", cfg_nnets));
+    if (!oflag) {
+        ADD_IFVAR( 11 );            /* ifInUcastPkts  */
+        ADD_IFVAR( 12 );            /* ifInNUcastPkts */
+        ADD_IFVAR( 14 );            /* ifInErrors     */
+        ADD_IFVAR( 17 );            /* ifOutUcastPkts */
+        ADD_IFVAR( 18 );            /* ifOutNUcastPkts */
+        ADD_IFVAR( 20 );            /* ifOutErrors    */
+        ADD_IFVAR( 21 );            /* ifOutQLen      */
+    }
+#if 0
+    if (tflag) {
+        ADD_IFVAR( XX );            /* ??? */
+    }
+#endif
+    if (dflag) {
+        ADD_IFVAR( 19 );            /* ifOutDiscards  */
+    }
+#undef ADD_IFVAR
+#define ADD_IFXVAR( x ) ifxcol_oid[ ifxcol_len-1 ] = x; \
+    snmp_varlist_add_variable( &var, ifxcol_oid, ifxcol_len, ASN_NULL, NULL,  0)
+    ADD_IFXVAR(1);                  /* ifName */
+#undef ADD_IFXVAR
 
-    memset(curifip, 0, sizeof(curifip));
-    if_table = (struct _if_info *) calloc(cfg_nnets, sizeof(*if_table));
-    cur_if = if_table;
-
-    for (ifnum = 1; ifnum <= cfg_nnets; ifnum++) {
-        register char  *cp;
-
-        request = snmp_pdu_create(SNMP_MSG_GETNEXT);
-        memmove(varname, oid_ipadentaddr, sizeof(oid_ipadentaddr));
-        varname_len = sizeof(oid_ipadentaddr) / sizeof(oid);
-        instance = varname + 9;
-        memmove(varname + 10, curifip, sizeof(curifip));
-        *instance = IPIFINDEX;
-        snmp_add_null_var(request, varname, varname_len);
-        *instance = IPADDR;
-        snmp_add_null_var(request, varname, varname_len);
-        *instance = IPNETMASK;
-        snmp_add_null_var(request, varname, varname_len);
-
-        status = snmp_synch_response(Session, request, &response);
-        if (status != STAT_SUCCESS
-            || response->errstat != SNMP_ERR_NOERROR) {
-            printf(
-                    "SNMP request failed after %d out of %d interfaces (IP)\n",
-                    ifnum, cfg_nnets);
-            if (snmp_get_do_debugging()) {
-                printf(
-                        "status = %d, errstat = %ld, errindex = %ld\n",
-                        status, response->errstat, response->errindex);
-            }
-            cfg_nnets = ifnum;
+        /*
+	 * Now walk the ifTable, creating a list of interfaces
+	 */
+    while ( 1 ) {
+        if (netsnmp_query_getnext( var, ss ) != SNMP_ERR_NOERROR)
             break;
-        }
-        for (var = response->variables; var; var = var->next_variable) {
-            if (snmp_get_do_debugging()) {
-                print_variable(var->name, var->name_length, var);
-            }
-            switch (var->name[9]) {
-            case IPIFINDEX:
-                ifindex = *var->val.integer;
-                for (cur_if = if_table;
-                     cur_if < (if_table + cfg_nnets) &&
-                     cur_if->ifindex != ifindex &&
-                     cur_if->ifindex != 0; cur_if++);
-                if (cur_if >= (if_table + cfg_nnets)) {
-                    printf(
-                            "Inconsistent reponse from server. Aborting.\n");
-                    exit(0);
-                }
-                cur_if->ifindex = ifindex;
-                break;
-            case IPADDR:
-                memmove(curifip, var->name + 10, sizeof(curifip));
-                memmove(&cur_if->ifip, var->val.string, sizeof(u_long));
-                break;
-            case IPNETMASK:
-                memmove(&cur_if->netmask, var->val.string, sizeof(u_long));
-            }
-        }
-        cur_if->ifroute.s_addr = cur_if->ifip.s_addr & cur_if->netmask;
-        if (cur_if->ifroute.s_addr)
-            strcpy(cur_if->route,
-                   netname(cur_if->ifroute, cur_if->netmask));
-        else
-            strcpy(cur_if->route, "none");
-        if ((i = strlen(cur_if->route)) > max_route)
-            max_route = i;
-        if (cur_if->ifip.s_addr)
-            strcpy(cur_if->ip, routename(cur_if->ifip));
-        else
-            strcpy(cur_if->ip, "none");
-        if ((i = strlen(cur_if->ip)) > max_ip)
-            max_ip = i;
-
-        snmp_free_pdu(response);
-
-        memmove(varname, oid_ifname, sizeof(oid_ifname));
-        varname_len = sizeof(oid_ifname) / sizeof(oid);
-        ifentry = varname + 9;
-        instance = varname + 10;
-        request = snmp_pdu_create(SNMP_MSG_GETNEXT);
-
-        *instance = oldindex;
-        *ifentry = IFINDEX;
-        snmp_add_null_var(request, varname, varname_len);
-        *ifentry = IFNAME;
-        snmp_add_null_var(request, varname, varname_len);
-        *ifentry = IFMTU;
-        snmp_add_null_var(request, varname, varname_len);
-        *ifentry = IFOPERSTATUS;
-        snmp_add_null_var(request, varname, varname_len);
-        *ifentry = INUCASTPKTS;
-        snmp_add_null_var(request, varname, varname_len);
-        *ifentry = INNUCASTPKTS;
-        snmp_add_null_var(request, varname, varname_len);
-        *ifentry = INERRORS;
-        snmp_add_null_var(request, varname, varname_len);
-        *ifentry = OUTUCASTPKTS;
-        snmp_add_null_var(request, varname, varname_len);
-        *ifentry = OUTNUCASTPKTS;
-        snmp_add_null_var(request, varname, varname_len);
-        *ifentry = OUTERRORS;
-        snmp_add_null_var(request, varname, varname_len);
-        *ifentry = OUTQLEN;
-        snmp_add_null_var(request, varname, varname_len);
-
-        while ((status =
-                snmp_synch_response(Session, request,
-                                    &response)) == STAT_SUCCESS) {
-            if (response->errstat != SNMP_ERR_NOSUCHNAME)
-                break;
-            if ((request =
-                 snmp_fix_pdu(response, SNMP_MSG_GETNEXT)) == NULL)
-                break;
-            snmp_free_pdu(response);
-        }
-        if (status != STAT_SUCCESS
-            || response->errstat != SNMP_ERR_NOERROR) {
-            printf(
-                    "SNMP request failed after %d out of %d interfaces (IF)\n",
-                    ifnum, cfg_nnets);
-            cfg_nnets = ifnum;
+        if ((var->type & 0xF0) == 0x80)     /* Exception */
             break;
-        }
-        cur_if = if_table + ifnum - 1;
-        for (var = response->variables; var; var = var->next_variable) {
-            if (snmp_get_do_debugging()) {
-                print_variable(var->name, var->name_length, var);
+        ifcol_oid[ ifcol_len-1 ] = 2;	/* ifDescr */
+        if ( snmp_oid_compare( ifcol_oid, ifcol_len,
+                               var->name, ifcol_len) != 0 )
+            break;    /* End of Table */
+        cur_if = SNMP_MALLOC_TYPEDEF( struct _if_info );
+        if (!cur_if)
+            break;
+        cur_if->ifindex = var->name[ var->name_length-1 ];
+        for ( vp=var; vp; vp=vp->next_variable ) {
+            if ((vp->type & 0xF0) == 0x80)     /* Exception */
+                continue;
+            if ( ! vp->val.integer )
+                continue;
+            if ( var->name[ var->name_length-1 ] != cur_if->ifindex ) {
+                /*
+                 * Inconsistent index information
+                 * XXX - Try to recover ?
+                 */
+                SNMP_FREE( cur_if );
+                break;    /* not for now, no */
             }
-            if (!var->val.integer)
-                continue;
-            if (memcmp(var->name, oid_ifname, 8 * sizeof(oid)))
-                continue;
-            switch (var->name[9]) {
-            case IFINDEX:
-                ifindex = *var->val.integer;
-                for (cur_if = if_table;
-                     cur_if->ifindex != ifindex && cur_if->ifindex != 0;
-                     cur_if++);
-                if (cur_if >= (if_table + cfg_nnets)) {
-                    printf(
-                            "Inconsistent reponse from server. Aborting\n");
-                    exit(0);
-                }
-                cur_if->ifindex = ifindex;
+            switch ( vp->name[ var->name_length-2 ] ) {
+            case 2:     /* ifDescr */
+                if (vp->val_len >= sizeof(cur_if->name))
+                    vp->val_len  = sizeof(cur_if->name)-1;
+                memmove( cur_if->name, vp->val.string, vp->val_len );
+                cur_if->name[vp->val_len] = 0;
+                memmove( cur_if->descr, vp->val.string, vp->val_len );
+                cur_if->descr[vp->val_len] = 0;
                 break;
-            case OUTQLEN:
-                sprintf(cur_if->s_outq, "%lu", *var->val.integer);
-                i = strlen(cur_if->s_outq);
-                if (i > max_outq)
-                    max_outq = i;
+            case 4:     /* ifMtu   */
+                cur_if->mtu = *vp->val.integer;
                 break;
-            case OUTERRORS:
-                sprintf(cur_if->s_oerrs, "%lu", *var->val.integer);
-                i = strlen(cur_if->s_oerrs);
-                if (i > max_oerrs)
-                    max_oerrs = i;
+            case 8:     /* ifOperStatus   */
+                cur_if->operstatus = *vp->val.integer;
+                /* XXX - any special processing ?? */
                 break;
-            case INERRORS:
-                sprintf(cur_if->s_ierrs, "%lu", *var->val.integer);
+            case 10:	/* ifInOctets     */
+                sprintf(cur_if->s_ibytes, "%lu", *vp->val.integer);
+                i = strlen(cur_if->s_ibytes);
+                if (i > max_ibytes)
+                    max_ibytes = i;
+                break;
+            case 11:	/* ifInUcastPkts  */
+                cur_if->ipkts += *vp->val.integer;
+                sprintf(cur_if->s_ipkts, "%lu", cur_if->ipkts);
+                i = strlen(cur_if->s_ipkts);
+                if (i > max_ipkts)
+                    max_ipkts = i;
+                break;
+            case 12:	/* ifInNUcastPkts  */
+                cur_if->ipkts += *vp->val.integer;
+                sprintf(cur_if->s_ipkts, "%lu", cur_if->ipkts);
+                i = strlen(cur_if->s_ipkts);
+                if (i > max_ipkts)
+                    max_ipkts = i;
+                break;
+            case 14:	/* ifInErrors      */
+                sprintf(cur_if->s_ierrs, "%lu", *vp->val.integer);
                 i = strlen(cur_if->s_ierrs);
                 if (i > max_ierrs)
                     max_ierrs = i;
                 break;
-            case IFMTU:
-                cur_if->mtu = *var->val.integer;
+            case 16:	/* ifOutOctets      */
+                sprintf(cur_if->s_obytes, "%lu", *vp->val.integer);
+                i = strlen(cur_if->s_obytes);
+                if (i > max_obytes)
+                    max_obytes = i;
                 break;
-            case INUCASTPKTS:
-                cur_if->ipkts += *var->val.integer;
-                sprintf(cur_if->s_ipkts, "%lu", cur_if->ipkts);
-                i = strlen(cur_if->s_ipkts);
-                if (i > max_ipkts)
-                    max_ipkts = i;
-                break;
-            case INNUCASTPKTS:
-                cur_if->ipkts += *var->val.integer;
-                sprintf(cur_if->s_ipkts, "%lu", cur_if->ipkts);
-                i = strlen(cur_if->s_ipkts);
-                if (i > max_ipkts)
-                    max_ipkts = i;
-                break;
-            case OUTUCASTPKTS:
-                cur_if->opkts += *var->val.integer;
+            case 17:	/* ifOutUcastPkts */
+                cur_if->opkts += *vp->val.integer;
                 sprintf(cur_if->s_opkts, "%lu", cur_if->opkts);
                 i = strlen(cur_if->s_opkts);
                 if (i > max_opkts)
                     max_opkts = i;
                 break;
-            case OUTNUCASTPKTS:
-                cur_if->opkts += *var->val.integer;
+            case 18:	/* ifOutNUcastPkts */
+                cur_if->opkts += *vp->val.integer;
                 sprintf(cur_if->s_opkts, "%lu", cur_if->opkts);
                 i = strlen(cur_if->s_opkts);
                 if (i > max_opkts)
                     max_opkts = i;
                 break;
-            case IFNAME:
-                oldindex = var->name[10];
-                if (var->val_len >= sizeof(cur_if->name))
-                    var->val_len = sizeof(cur_if->name) - 1;
-                memmove(cur_if->name, var->val.string, var->val_len);
-                cur_if->name[var->val_len] = 0;
+            case 19:    /* ifOutDiscards   */
+                cur_if->drops = *vp->val.integer;
+                break;
+            case 20:	/* ifOutErrors     */
+                sprintf(cur_if->s_oerrs, "%lu", *vp->val.integer);
+                i = strlen(cur_if->s_oerrs);
+                if (i > max_oerrs)
+                    max_oerrs = i;
+                break;
+            case 21:	/* ifOutQLen       */
+                sprintf(cur_if->s_outq, "%lu", *vp->val.integer);
+                i = strlen(cur_if->s_outq);
+                if (i > max_outq)
+                    max_outq = i;
+                break;
+            case 1:     /* ifName */
+                if (vp->val_len >= sizeof(cur_if->name))
+                    vp->val_len  = sizeof(cur_if->name)-1;
+                memmove( cur_if->name, vp->val.string, vp->val_len );
+                cur_if->name[vp->val_len] = 0;
                 if ((i = strlen(cur_if->name) + 1) > max_name)
                     max_name = i;
-                break;
-            case IFOPERSTATUS:
-                cur_if->operstatus = *var->val.integer;
                 break;
             }
         }
 
-        snmp_free_pdu(response);
+        /*
+         *  XXX - Perhaps query ifXTable for additional info ??
+         *    (ifName/ifAlias, or HC counters)
+         */
 
-        if (intrface != NULL && strcmp(cur_if->name, intrface) != 0) {
-            cur_if->name[0] = 0;
-            continue;
+        /*
+         * If we're to monitor a particular interface, then
+         *   ignore all others.  It would be more efficient
+         *   to check this earlier (as part of processing 
+         *   the varbind list).  But performing this test here
+         *   means we can recognise ifXTable names as well)
+         */
+        if ( intrface && strcmp( cur_if->name, intrface) != 0 && strcmp( cur_if->descr, intrface) != 0) {
+            SNMP_FREE( cur_if );
         }
-        if (cur_if->operstatus != MIB_IFSTATUS_UP) {
-            cp = strchr(cur_if->name, '\0');
-            *cp++ = '*';
-            *cp = '\0';
-        }
-    }
 
-    printf("%*.*s %5.5s %*.*s %*.*s %*s %*s %*s %*s %*s",
-           -max_name, max_name, "Name", "Mtu",
+        /*
+         * Insert the IP address and network settings, and
+         *   add the new _if_stat structure to the list.
+         */
+        if ( cur_if ) {
+            if ((i = strlen(cur_if->name) + 1) > max_name)
+                max_name = i;
+            _set_address( cur_if );
+            i = strlen(cur_if->ip);
+            if (i > max_ip)
+                max_ip = i;
+            i = strlen(cur_if->route);
+            if (i > max_route)
+                max_route = i;
+
+            if ( if_tail ) {
+                if_tail->next = cur_if;
+                if_tail       = cur_if;
+            } else {
+                if_head       = cur_if;
+                if_tail       = cur_if;
+            }
+        }
+    }   /* while (1) */
+    snmp_free_varbind(var);
+
+        /*
+         * Now display the specified results (in Free-BSD format)
+         *   setting the field widths appropriately....
+         */
+    printf("%*.*s %5.5s %*.*s %*.*s",
+           -max_name,  max_name,  "Name", "Mtu",
            -max_route, max_route, "Network",
-           -max_ip, max_ip, "Address",
-           max_ipkts, "Ipkts",
-           max_ierrs, "Ierrs",
-           max_opkts, "Opkts", max_oerrs, "Oerrs", max_outq, "Queue");
+           -max_ip,    max_ip,    "Address");
+    if (oflag) {
+        printf(" %*s %*s", max_ibytes,  "Ibytes",
+                           max_obytes,  "Obytes");
+    } else {
+        printf(" %*s %*s", max_ipkts,   "Ipkts",
+                           max_ierrs,   "Ierrs");
+        if (bflag) 
+            printf(" %*s", max_ibytes,  "Ibytes");
+
+        printf(" %*s %*s", max_opkts,   "Opkts",
+                           max_oerrs,   "Oerrs");
+        if (bflag) 
+            printf(" %*s", max_obytes,  "Obytes");
+
+        printf(" %*s",     max_outq,    "Queue");
+    }
+ /* if (tflag)
+        printf(" %s", "Time");
+  */
+    if (dflag)
+        printf(" %s", "Drop");
     putchar('\n');
-    for (ifnum = 0, cur_if = if_table; ifnum < cfg_nnets;
-         ifnum++, cur_if++) {
+
+    for (cur_if = if_head; cur_if; cur_if=cur_if->next) {
         if (cur_if->name[0] == 0)
             continue;
-        printf("%*.*s %5d ", -max_name, max_name, cur_if->name,
-               cur_if->mtu);
-        printf("%*.*s ", -max_route, max_route, cur_if->route);
-        printf("%*.*s ", -max_ip, max_ip, cur_if->ip);
-        printf("%*s %*s %*s %*s %*s",
-               max_ipkts, cur_if->s_ipkts, max_ierrs, cur_if->s_ierrs,
-               max_opkts, cur_if->s_opkts, max_oerrs, cur_if->s_oerrs,
-               max_outq, cur_if->s_outq);
+        printf( "%*.*s %5d", -max_name,  max_name,  cur_if->name, cur_if->mtu);
+        printf(" %*.*s",     -max_route, max_route, cur_if->route);
+        printf(" %*.*s",     -max_ip,    max_ip,    cur_if->ip);
+
+        if (oflag) {
+            printf(" %*s %*s", max_ibytes,  cur_if->s_ibytes,
+                               max_obytes,  cur_if->s_obytes);
+        } else {
+            printf(" %*s %*s", max_ipkts,   cur_if->s_ipkts,
+                               max_ierrs,   cur_if->s_ierrs);
+            if (bflag) 
+                printf(" %*s", max_ibytes,  cur_if->s_ibytes);
+    
+            printf(" %*s %*s", max_opkts,   cur_if->s_opkts,
+                               max_oerrs,   cur_if->s_oerrs);
+            if (bflag) 
+                printf(" %*s", max_obytes,  cur_if->s_obytes);
+            printf(" %*s",     max_outq,    cur_if->s_outq);
+        }
+     /* if (tflag)
+            printf(" %4d", cur_if->???);
+      */
+        if (dflag)
+            printf(" %4d", cur_if->drops);
         putchar('\n');
     }
-    free(if_table);
+
+        /*
+         * ... and tidy up.
+         */
+    for (cur_if = if_head; cur_if; cur_if=if_head) {
+        if_head=cur_if->next;
+        cur_if->next = NULL;
+        SNMP_FREE( cur_if );
+    }
 }
+
+
+#define	MAXIF	100
+struct	iftot {
+	char	ift_name[128];		/* interface name */
+        int     ifIndex;
+	u_long	ift_ip;			/* input packets */
+	u_long	ift_ib;			/* input bytes */
+	u_long	ift_ie;			/* input errors */
+	u_long	ift_op;			/* output packets */
+	u_long	ift_ob;			/* output bytes */
+	u_long	ift_oe;			/* output errors */
+	u_long	ift_co;			/* collisions */
+	u_long	ift_dr;			/* drops */
+};
+
+int signalled;	/* set if alarm goes off "early" */
 
 /*
- * Print a description of the network interfaces.
+ * Print a running summary of interface statistics.
+ * Repeat display every interval seconds, showing statistics
+ * collected over that interval.  Assumes that interval is non-zero.
+ * First line printed at top of screen is always cumulative.
  */
-void
-intpro(int interval)
+static void
+sidewaysintpr(unsigned int interval)
 {
-    oid             varname[MAX_OID_LEN], *instance, *ifentry;
-    size_t          varname_len;
-    int             ifnum, cfg_nnets;
-    oid             curifip[4];
-    netsnmp_variable_list *var;
-    netsnmp_pdu    *request, *response;
-    int             status;
-    int             ifindex, oldindex = 0;
-    struct _if_info {
-        int             ifindex;
-        char            name[128];
-        char            ip[128], route[128];
-        char            ioctets[20], ierrs[20], ooctets[20], oerrs[20],
-            outqueue[20];
-        int             operstatus;
-        u_long          netmask;
-        struct in_addr  ifip, ifroute;
-    }              *if_table, *cur_if;
-    int             max_name = 4, max_route = 7, max_ip = 7, max_ioctets =
-        7, max_ooctets = 7;
-    int             i;
+    /*
+     * As with the "one-shot" interface display, there are
+     *   two different possible output formats.  The Net/
+     *   Open-BSD style displays both information about a
+     *   single interface *and* the overall totals.
+     * The equivalent Free-BSD approach is to report on one
+     *   or the other (rather than both).  This is probably
+     *   more useful (IMO), and significantly more efficient.
+     *   So that's the style implemented here.
+     *
+     * Note that the 'ifcol' OID buffer can represent a full
+     *   instance (including ifIndex), rather than just a
+     *   column object OID, as with the one-shot code.
+     */
+    oid    ifcol_oid[]  = { 1,3,6,1,2,1,2,2,1,0,0 };
+    size_t ifcol_len    = OID_LENGTH( ifcol_oid );
+    netsnmp_variable_list *var, *vp;
+    struct iftot *ip  = NULL, *cur_if = NULL;    /* single I/F display */
+    struct iftot *sum = NULL, *total  = NULL;    /* overall summary    */
+    int    line;
+    int    first;
+    size_t i;
 
-    if (interval) {
-        sidewaysintpr((unsigned) interval);
-        return;
-    }
-    var =
-        getvarbyname(Session, oid_cfg_nnets,
-                     sizeof(oid_cfg_nnets) / sizeof(oid));
-    if (var && var->val.integer) {
-        cfg_nnets = *var->val.integer;
-        snmp_free_var(var);
+    var = NULL;
+    if ( intrface ) {
+        /*
+         * Locate the ifIndex of the interface to monitor,
+         *   by walking the ifDescr column of the ifTable
+         */
+        ifcol_oid[ ifcol_len-2 ] = 2;   /* ifDescr  */
+        snmp_varlist_add_variable( &var, ifcol_oid, ifcol_len-1,
+                                   ASN_NULL, NULL,  0);
+        i = strlen(intrface);
+        netsnmp_query_walk( var, ss );
+        for (vp=var; vp; vp=vp->next_variable) {
+            if (strncmp(intrface, (char *)vp->val.string, i) == 0 &&
+                i == vp->val_len)
+                break;  /* found requested interface */
+        }
+        /*
+         * XXX - Might be worth searching ifName/ifAlias as well
+         */
+        if (!vp) {
+            oid    ifname_oid[]  = { 1,3,6,1,2,1,31,1,1,1,1,0 };
+            size_t ifname_len    = OID_LENGTH( ifname_oid );
+            snmp_free_var( var );
+            var = NULL;
+            snmp_varlist_add_variable( &var, ifname_oid, ifname_len-1,
+                                       ASN_NULL, NULL,  0);
+            i = strlen(intrface);
+            netsnmp_query_walk( var, ss );
+            for (vp=var; vp; vp=vp->next_variable) {
+                if (strncmp(intrface, (char *)vp->val.string, i) == 0 &&
+                    i == vp->val_len)
+                    break;  /* found requested interface */
+            }
+        }
+        if (!vp) {
+            oid    ifalias_oid[]  = { 1,3,6,1,2,1,31,1,1,1,18,0 };
+            size_t ifalias_len    = OID_LENGTH( ifalias_oid );
+            snmp_free_var( var );
+            var = NULL;
+            snmp_varlist_add_variable( &var, ifalias_oid, ifalias_len-1,
+                                       ASN_NULL, NULL,  0);
+            i = strlen(intrface);
+            netsnmp_query_walk( var, ss );
+            for (vp=var; vp; vp=vp->next_variable) {
+                if (strncmp(intrface, (char *)vp->val.string, i) == 0 &&
+                    i == vp->val_len)
+                    break;  /* found requested interface */
+            }
+        }
+        if (!vp) {
+            fprintf(stderr, "%s: unknown interface\n", intrface );
+            exit(1);
+        }
+
+        /*
+         *  Prepare the current and previous 'iftot' structures,
+         *    and set the ifIndex value in the OID buffer.
+         */
+        ip     = SNMP_MALLOC_TYPEDEF( struct iftot );
+        cur_if = SNMP_MALLOC_TYPEDEF( struct iftot );
+        if (!ip || !cur_if) {
+            fprintf(stderr, "internal error\n");
+            exit(1);
+        }
+        ifcol_oid[ ifcol_len-1 ] = vp->name[ ifcol_len-1 ];
+        snmp_free_var( var );
+        var = NULL;
     } else {
-        printf(
-                "No response when requesting number of interfaces.\n");
-        return;
-    }
-    DEBUGMSGTL(("netstat:if", "cfg_nnets = %d\n", cfg_nnets));
-
-    memset(curifip, 0, sizeof(curifip));
-    if_table = (struct _if_info *) calloc(cfg_nnets, sizeof(*if_table));
-    cur_if = if_table;
-
-    for (ifnum = 1; ifnum <= cfg_nnets; ifnum++) {
-        register char  *cp;
-
-        request = snmp_pdu_create(SNMP_MSG_GETNEXT);
-        memmove(varname, oid_ipadentaddr, sizeof(oid_ipadentaddr));
-        varname_len = sizeof(oid_ipadentaddr) / sizeof(oid);
-        instance = varname + 9;
-        memmove(varname + 10, curifip, sizeof(curifip));
-        *instance = IPIFINDEX;
-        snmp_add_null_var(request, varname, varname_len);
-        *instance = IPADDR;
-        snmp_add_null_var(request, varname, varname_len);
-        *instance = IPNETMASK;
-        snmp_add_null_var(request, varname, varname_len);
-
-        status = snmp_synch_response(Session, request, &response);
-        if (status != STAT_SUCCESS
-            || response->errstat != SNMP_ERR_NOERROR) {
-            printf(
-                    "SNMP request failed for interface %d, variable %ld out of %d interfaces (IP)\n",
-                    ifnum, response->errindex, cfg_nnets);
-            cfg_nnets = ifnum;
-            break;
-        }
-        for (var = response->variables; var; var = var->next_variable) {
-            if (snmp_get_do_debugging()) {
-                print_variable(var->name, var->name_length, var);
-            }
-            switch (var->name[9]) {
-            case IPIFINDEX:
-                ifindex = *var->val.integer;
-                for (cur_if = if_table;
-                     cur_if->ifindex != ifindex && cur_if->ifindex != 0;
-                     cur_if++);
-                cur_if->ifindex = ifindex;
-                break;
-            case IPADDR:
-                memmove(curifip, var->name + 10, sizeof(curifip));
-                memmove(&cur_if->ifip, var->val.string, sizeof(u_long));
-                break;
-            case IPNETMASK:
-                memmove(&cur_if->netmask, var->val.string, sizeof(u_long));
-            }
-        }
-        cur_if->ifroute.s_addr = cur_if->ifip.s_addr & cur_if->netmask;
-        if (cur_if->ifroute.s_addr)
-            strcpy(cur_if->route,
-                   netname(cur_if->ifroute, cur_if->netmask));
-        else
-            strcpy(cur_if->route, "none");
-        if ((i = strlen(cur_if->route)) > max_route)
-            max_route = i;
-        if (cur_if->ifip.s_addr)
-            strcpy(cur_if->ip, routename(cur_if->ifip));
-        else
-            strcpy(cur_if->ip, "none");
-        if ((i = strlen(cur_if->ip)) > max_ip)
-            max_ip = i;
-
-        snmp_free_pdu(response);
-
-        memmove(varname, oid_ifname, sizeof(oid_ifname));
-        varname_len = sizeof(oid_ifname) / sizeof(oid);
-        ifentry = varname + 9;
-        instance = varname + 10;
-        request = snmp_pdu_create(SNMP_MSG_GETNEXT);
-
-        *instance = oldindex;
-        *ifentry = IFINDEX;
-        snmp_add_null_var(request, varname, varname_len);
-        *ifentry = IFNAME;
-        snmp_add_null_var(request, varname, varname_len);
-        *ifentry = IFOPERSTATUS;
-        snmp_add_null_var(request, varname, varname_len);
-        *ifentry = INOCTETS;
-        snmp_add_null_var(request, varname, varname_len);
-        *ifentry = OUTOCTETS;
-        snmp_add_null_var(request, varname, varname_len);
-
-        while ((status =
-                snmp_synch_response(Session, request,
-                                    &response)) == STAT_SUCCESS) {
-            if (response->errstat != SNMP_ERR_NOSUCHNAME)
-                break;
-            if ((request =
-                 snmp_fix_pdu(response, SNMP_MSG_GETNEXT)) == NULL)
-                break;
-            snmp_free_pdu(response);
-        }
-        if (status != STAT_SUCCESS
-            || response->errstat != SNMP_ERR_NOERROR) {
-            printf(
-                    "SNMP request failed for interface %d, variable %ld out of %d interfaces (IF)\n",
-                    ifnum, response->errindex, cfg_nnets);
-            cfg_nnets = ifnum;
-            break;
-        }
-        for (var = response->variables; var; var = var->next_variable) {
-            if (snmp_get_do_debugging()) {
-                print_variable(var->name, var->name_length, var);
-            }
-            if (!var->val.integer)
-                continue;
-            switch (var->name[9]) {
-            case IFINDEX:
-                ifindex = *var->val.integer;
-                for (cur_if = if_table;
-                     cur_if->ifindex != ifindex && cur_if->ifindex != 0;
-                     cur_if++);
-                cur_if->ifindex = ifindex;
-                break;
-            case INOCTETS:
-                sprintf(cur_if->ioctets, "%lu", *var->val.integer);
-                i = strlen(cur_if->ioctets);
-                if (i > max_ioctets)
-                    max_ioctets = i;
-                break;
-            case OUTOCTETS:
-                sprintf(cur_if->ooctets, "%lu", *var->val.integer);
-                i = strlen(cur_if->ooctets);
-                if (i > max_ooctets)
-                    max_ooctets = i;
-                break;
-            case IFNAME:
-                oldindex = var->name[10];
-                if (var->val_len >= sizeof(cur_if->name))
-                    var->val_len = sizeof(cur_if->name) - 1;
-                memmove(cur_if->name, var->val.string, var->val_len);
-                cur_if->name[var->val_len] = 0;
-                if ((i = strlen(cur_if->name) + 1) > max_name)
-                    max_name = i;
-                break;
-            case IFOPERSTATUS:
-                cur_if->operstatus = *var->val.integer;
-                break;
-            }
-        }
-
-        snmp_free_pdu(response);
-
-        if (intrface != NULL && strcmp(cur_if->name, intrface) != 0) {
-            cur_if->name[0] = 0;
-            continue;
-        }
-        if (cur_if->operstatus != MIB_IFSTATUS_UP) {
-            cp = strchr(cur_if->name, '\0');
-            *cp++ = '*';
-            *cp = '\0';
+        /*
+         *  Prepare the current and previous 'iftot' structures.
+         *    (using different pointers, for consistency with *BSD code)
+         */
+        sum   = SNMP_MALLOC_TYPEDEF( struct iftot );
+        total = SNMP_MALLOC_TYPEDEF( struct iftot );
+        if (!sum || !total) {
+            fprintf(stderr, "internal error\n");
+            exit(1);
         }
     }
 
-    printf("%*.*s %*.*s %*.*s %*.*s %*.*s ",
-           -max_name, max_name, "Name",
-           -max_route, max_route, "Network",
-           -max_ip, max_ip, "Address",
-           max_ioctets, max_ioctets, "Ioctets",
-           max_ooctets, max_ooctets, "Ooctets");
+    timerSet( interval );
+    first = 1;
+banner:
+    printf( "%17s %14s %16s", "input",
+        intrface ? intrface : "(Total)", "output");
     putchar('\n');
-    for (ifnum = 0, cur_if = if_table; ifnum < cfg_nnets;
-         ifnum++, cur_if++) {
-        if (cur_if->name[0] == 0)
-            continue;
-        printf("%*.*s ", -max_name, max_name, cur_if->name);
-        printf("%*.*s ", -max_route, max_route, cur_if->route);
-        printf("%*.*s ", -max_ip, max_ip, cur_if->ip);
-        printf("%*s %*s", max_ioctets, cur_if->ioctets,
-               max_ioctets, cur_if->ooctets);
-        putchar('\n');
-    }
-    free(if_table);
+    printf( "%10s %5s %10s %10s %5s %10s %5s",
+        "packets", "errs", "bytes", "packets", "errs", "bytes", "colls");
+    if (dflag)
+	printf(" %5.5s", "drops");
+    putchar('\n');
+    fflush(stdout);
+    line = 0;
+loop:
+    if ( intrface ) {
+#define ADD_IFVAR( x ) ifcol_oid[ ifcol_len-2 ] = x; \
+    snmp_varlist_add_variable( &var, ifcol_oid, ifcol_len, ASN_NULL, NULL,  0)
+    /*  if (bflag) { */
+            ADD_IFVAR( 10 );        /* ifInOctets     */
+            ADD_IFVAR( 16 );        /* ifOutOctets    */
+    /*  } */
+        ADD_IFVAR( 11 );            /* ifInUcastPkts  */
+        ADD_IFVAR( 12 );            /* ifInNUcastPkts */
+        ADD_IFVAR( 14 );            /* ifInErrors     */
+        ADD_IFVAR( 17 );            /* ifOutUcastPkts */
+        ADD_IFVAR( 18 );            /* ifOutNUcastPkts */
+        ADD_IFVAR( 20 );            /* ifOutErrors    */
+        ADD_IFVAR( 21 );            /* ifOutQLen      */
+        if (dflag) {
+            ADD_IFVAR( 19 );        /* ifOutDiscards  */
+        }
+#undef ADD_IFVAR
+
+        netsnmp_query_get( var, ss );   /* Or parallel walk ?? */
+        cur_if->ift_ip = 0;
+        cur_if->ift_ib = 0;
+        cur_if->ift_ie = 0;
+        cur_if->ift_op = 0;
+        cur_if->ift_ob = 0;
+        cur_if->ift_oe = 0;
+        cur_if->ift_co = 0;
+        cur_if->ift_dr = 0;
+        cur_if->ifIndex = var->name[ ifcol_len-1 ];
+        for (vp=var; vp; vp=vp->next_variable) {
+            if ((var->type & 0xF0) == 0x80)     /* Exception */
+                continue;
+            if ( ! vp->val.integer )
+                continue;
+            switch (vp->name[ifcol_len-2]) {
+            case 10:    /* ifInOctets */
+                cur_if->ift_ib = *vp->val.integer;
+                break;
+            case 11:    /* ifInUcastPkts */
+                cur_if->ift_ip += *vp->val.integer;
+                break;
+            case 12:    /* ifInNUcastPkts */
+                cur_if->ift_ip += *vp->val.integer;
+                break;
+            case 14:    /* ifInErrors */
+                cur_if->ift_ie = *vp->val.integer;
+                break;
+            case 16:    /* ifOutOctets */
+                cur_if->ift_ob = *vp->val.integer;
+                break;
+            case 17:    /* ifOutUcastPkts */
+                cur_if->ift_op += *vp->val.integer;
+                break;
+            case 18:    /* ifOutNUcastPkts */
+                cur_if->ift_op += *vp->val.integer;
+                break;
+            case 19:    /* ifOutDiscards */
+                cur_if->ift_dr = *vp->val.integer;
+                break;
+            case 20:    /* ifOutErrors */
+                cur_if->ift_oe = *vp->val.integer;
+                break;
+            case 21:    /* ifOutQLen */
+                cur_if->ift_co = *vp->val.integer;
+                break;
+            }
+        }
+        snmp_free_varbind( var );
+        var = NULL;
+ 
+        if (!first) {
+ 	    printf("%10lu %5lu %10lu %10lu %5lu %10lu %5lu",
+ 		cur_if->ift_ip - ip->ift_ip,
+ 		cur_if->ift_ie - ip->ift_ie,
+		cur_if->ift_ib - ip->ift_ib,
+		cur_if->ift_op - ip->ift_op,
+		cur_if->ift_oe - ip->ift_oe,
+		cur_if->ift_ob - ip->ift_ob,
+		cur_if->ift_co - ip->ift_co);
+	    if (dflag)
+		printf(" %5lu", cur_if->ift_dr - ip->ift_dr);
+            putchar('\n');
+            fflush(stdout);
+	}
+	ip->ift_ip = cur_if->ift_ip;
+	ip->ift_ie = cur_if->ift_ie;
+	ip->ift_ib = cur_if->ift_ib;
+	ip->ift_op = cur_if->ift_op;
+	ip->ift_oe = cur_if->ift_oe;
+	ip->ift_ob = cur_if->ift_ob;
+	ip->ift_co = cur_if->ift_co;
+	ip->ift_dr = cur_if->ift_dr;
+    }  /* (single) interface */
+    else {
+	sum->ift_ip = 0;
+	sum->ift_ib = 0;
+	sum->ift_ie = 0;
+	sum->ift_op = 0;
+	sum->ift_ob = 0;
+	sum->ift_oe = 0;
+	sum->ift_co = 0;
+	sum->ift_dr = 0;
+#define ADD_IFVAR( x ) ifcol_oid[ ifcol_len-2 ] = x; \
+    snmp_varlist_add_variable( &var, ifcol_oid, ifcol_len-1, ASN_NULL, NULL,  0)
+        ADD_IFVAR( 11 );            /* ifInUcastPkts  */
+        ADD_IFVAR( 12 );            /* ifInNUcastPkts */
+        ADD_IFVAR( 14 );            /* ifInErrors     */
+        ADD_IFVAR( 17 );            /* ifOutUcastPkts */
+        ADD_IFVAR( 18 );            /* ifOutNUcastPkts */
+        ADD_IFVAR( 20 );            /* ifOutErrors    */
+        ADD_IFVAR( 21 );            /* ifOutQLen      */
+    /*  if (bflag) { */
+            ADD_IFVAR( 10 );        /* ifInOctets     */
+            ADD_IFVAR( 16 );        /* ifOutOctets    */
+    /*  } */
+        if (dflag) {
+            ADD_IFVAR( 19 );        /* ifOutDiscards  */
+        }
+#undef ADD_IFVAR
+
+        ifcol_oid[ ifcol_len-2 ] = 11;       /* ifInUcastPkts */
+        while ( 1 ) {
+            if (netsnmp_query_getnext( var, ss ) != SNMP_ERR_NOERROR)
+                break;
+            if ((var->type & 0xF0) == 0x80)     /* Exception */
+                break;
+            if ( snmp_oid_compare( ifcol_oid, ifcol_len-2,
+                                   var->name, ifcol_len-2) != 0 )
+                break;    /* End of Table */
+            
+            for ( vp=var; vp; vp=vp->next_variable ) {
+                if ((vp->type & 0xF0) == 0x80)     /* Exception */
+                    continue;
+                if ( ! vp->val.integer )
+                    continue;
+                switch ( vp->name[ ifcol_len-2 ] ) {
+                case 10:    /* ifInOctets */
+                    sum->ift_ib += *vp->val.integer;
+                    break;
+                case 11:    /* ifInUcastPkts */
+                    sum->ift_ip += *vp->val.integer;
+                    break;
+                case 12:    /* ifInNUcastPkts */
+                    sum->ift_ip += *vp->val.integer;
+                    break;
+                case 14:    /* ifInErrors */
+                    sum->ift_ie += *vp->val.integer;
+                    break;
+                case 16:    /* ifOutOctets */
+                    sum->ift_ob += *vp->val.integer;
+                    break;
+                case 17:    /* ifOutUcastPkts */
+                    sum->ift_op += *vp->val.integer;
+                    break;
+                case 18:    /* ifOutNUcastPkts */
+                    sum->ift_op += *vp->val.integer;
+                    break;
+                case 19:    /* ifOutDiscards */
+                    sum->ift_dr += *vp->val.integer;
+                    break;
+                case 20:    /* ifOutErrors */
+                    sum->ift_oe += *vp->val.integer;
+                    break;
+                case 21:    /* ifOutQLen */
+                    sum->ift_co += *vp->val.integer;
+                    break;
+                }
+            }
+            /*
+             * Now loop to retrieve the next entry from the table.
+             */
+        }   /* while (1) */
+
+        snmp_free_varbind( var );
+        var = NULL;
+ 
+        if (!first) {
+ 	    printf("%10lu %5lu %10lu %10lu %5lu %10lu %5lu",
+ 		sum->ift_ip - total->ift_ip,
+ 		sum->ift_ie - total->ift_ie,
+		sum->ift_ib - total->ift_ib,
+		sum->ift_op - total->ift_op,
+		sum->ift_oe - total->ift_oe,
+		sum->ift_ob - total->ift_ob,
+		sum->ift_co - total->ift_co);
+	    if (dflag)
+		printf(" %5lu", sum->ift_dr - total->ift_dr);
+            putchar('\n');
+            fflush(stdout);
+	}
+	total->ift_ip = sum->ift_ip;
+	total->ift_ie = sum->ift_ie;
+	total->ift_ib = sum->ift_ib;
+	total->ift_op = sum->ift_op;
+	total->ift_oe = sum->ift_oe;
+	total->ift_ob = sum->ift_ob;
+	total->ift_co = sum->ift_co;
+	total->ift_dr = sum->ift_dr;
+    }  /* overall summary */
+
+    timerPause();
+    timerSet(interval);
+    line++;
+    first = 0;
+    if (line == 21)
+    	goto banner;
+    else
+    	goto loop;
+    /*NOTREACHED*/
 }
 
-#define	MAXIF	128
-struct iftot {
-    char            ift_name[128];      /* interface name */
-    unsigned int    ift_ip;     /* input packets */
-    unsigned int    ift_ie;     /* input errors */
-    unsigned int    ift_op;     /* output packets */
-    unsigned int    ift_oe;     /* output errors */
-    unsigned int    ift_co;     /* collisions */
-} iftot[MAXIF];
-
-u_char          signalled;      /* set if alarm goes off "early" */
 
 /*
  * timerSet sets or resets the timer to fire in "interval" seconds.
@@ -723,169 +926,3 @@ timerPause(void)
 }
 
 #endif                          /* !WIN32 && !cygwin */
-
-/*
- * Print a running summary of interface statistics.
- * Repeat display every interval seconds, showing statistics
- * collected over that interval.  Assumes that interval is non-zero.
- * First line printed at top of screen is always cumulative.
- */
-static void
-sidewaysintpr(unsigned int interval)
-{
-    register struct iftot *ip, *total;
-    register int    line;
-    struct iftot   *lastif, *sum, *interesting, ifnow, *now = &ifnow;
-    netsnmp_variable_list *var;
-    oid             varname[MAX_OID_LEN], *instance, *ifentry;
-    size_t          varname_len;
-    int             ifnum, cfg_nnets;
-
-    lastif = iftot;
-    sum = iftot + MAXIF - 1;
-    total = sum - 1;
-    interesting = iftot;
-    var =
-        getvarbyname(Session, oid_cfg_nnets,
-                     sizeof(oid_cfg_nnets) / sizeof(oid));
-    if (var) {
-        cfg_nnets = *var->val.integer;
-        snmp_free_var(var);
-    } else
-        return;
-    memmove(varname, oid_ifname, sizeof(oid_ifname));
-    varname_len = sizeof(oid_ifname) / sizeof(oid);
-    for (ifnum = 1, ip = iftot; ifnum <= cfg_nnets; ifnum++) {
-        char           *cp;
-
-        ip->ift_name[0] = '(';
-        varname[10] = ifnum;
-        var = getvarbyname(Session, varname, varname_len);
-        if (var) {
-            if (var->val_len >= (sizeof(ip->ift_name) - 3))
-                var->val_len = (sizeof(ip->ift_name) - 4);
-            memmove(ip->ift_name + 1, var->val.string, var->val_len);
-            snmp_free_var(var);
-        }
-        cp = (char *) strchr(ip->ift_name, ' ');
-        if (cp != NULL)
-            *cp = '\0';
-        if (intrface && strcmp(ip->ift_name + 1, intrface) == 0)
-            interesting = ip;
-        ip->ift_name[15] = '\0';
-        cp = (char *) strchr(ip->ift_name, '\0');
-        sprintf(cp, ")");
-        ip++;
-        if (ip >= iftot + MAXIF - 2)
-            break;
-    }
-    lastif = ip;
-
-    timerSet(interval);
-
-  banner:
-    printf("     input   %-6.6s     output       ", interesting->ift_name);
-    if (lastif - iftot > 0)
-        printf("                 input  (Total)     output");
-    for (ip = iftot; ip < iftot + MAXIF; ip++) {
-        ip->ift_ip = 0;
-        ip->ift_ie = 0;
-        ip->ift_op = 0;
-        ip->ift_oe = 0;
-        ip->ift_co = 0;
-    }
-    putchar('\n');
-    printf("%10.10s %8.8s %10.10s %8.8s %8.8s ",
-           "packets", "errs", "packets", "errs", "colls");
-    if (lastif - iftot > 0)
-        printf("%10.10s %8.8s %10.10s %8.8s %8.8s ",
-               "packets", "errs", "packets", "errs", "colls");
-    putchar('\n');
-    fflush(stdout);
-    line = 0;
-  loop:
-    sum->ift_ip = 0;
-    sum->ift_ie = 0;
-    sum->ift_op = 0;
-    sum->ift_oe = 0;
-    sum->ift_co = 0;
-    memmove(varname, oid_ifinucastpkts, sizeof(oid_ifinucastpkts));
-    varname_len = sizeof(oid_ifinucastpkts) / sizeof(oid);
-    ifentry = varname + 9;
-    instance = varname + 10;
-    for (ifnum = 1, ip = iftot; ifnum <= cfg_nnets && ip < lastif;
-         ip++, ifnum++) {
-        memset(now, 0, sizeof(*now));
-        *instance = ifnum;
-        *ifentry = INUCASTPKTS;
-        var = getvarbyname(Session, varname, varname_len);
-        if (var) {
-            now->ift_ip = *var->val.integer;
-            snmp_free_var(var);
-        }
-        *ifentry = INNUCASTPKTS;
-        var = getvarbyname(Session, varname, varname_len);
-        if (var) {
-            now->ift_ip += *var->val.integer;
-            snmp_free_var(var);
-        }
-        *ifentry = INERRORS;
-        var = getvarbyname(Session, varname, varname_len);
-        if (var) {
-            now->ift_ie = *var->val.integer;
-            snmp_free_var(var);
-        }
-        *ifentry = OUTUCASTPKTS;
-        var = getvarbyname(Session, varname, varname_len);
-        if (var) {
-            now->ift_op = *var->val.integer;
-            snmp_free_var(var);
-        }
-        *ifentry = OUTNUCASTPKTS;
-        var = getvarbyname(Session, varname, varname_len);
-        if (var) {
-            now->ift_op += *var->val.integer;
-            snmp_free_var(var);
-        }
-        *ifentry = OUTERRORS;
-        var = getvarbyname(Session, varname, varname_len);
-        if (var) {
-            now->ift_oe = *var->val.integer;
-            snmp_free_var(var);
-        }
-
-        if (ip == interesting)
-            printf("%10d %8d %10d %8d %8d ",
-                   now->ift_ip - ip->ift_ip,
-                   now->ift_ie - ip->ift_ie,
-                   now->ift_op - ip->ift_op,
-                   now->ift_oe - ip->ift_oe, now->ift_co - ip->ift_co);
-        ip->ift_ip = now->ift_ip;
-        ip->ift_ie = now->ift_ie;
-        ip->ift_op = now->ift_op;
-        ip->ift_oe = now->ift_oe;
-        ip->ift_co = now->ift_co;
-        sum->ift_ip += ip->ift_ip;
-        sum->ift_ie += ip->ift_ie;
-        sum->ift_op += ip->ift_op;
-        sum->ift_oe += ip->ift_oe;
-        sum->ift_co += ip->ift_co;
-    }
-    if (lastif - iftot > 0)
-        printf("%10d %8d %10d %8d %8d ",
-               sum->ift_ip - total->ift_ip,
-               sum->ift_ie - total->ift_ie,
-               sum->ift_op - total->ift_op,
-               sum->ift_oe - total->ift_oe, sum->ift_co - total->ift_co);
-    *total = *sum;
-    putchar('\n');
-    fflush(stdout);
-    line++;
-
-    timerPause();
-    timerSet(interval);
-
-    if (line == 21)
-        goto banner;
-    goto loop;
- /*NOTREACHED*/}

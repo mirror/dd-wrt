@@ -21,7 +21,6 @@
 #ifndef _statistics_h_included__
 #define _statistics_h_included__
 
-config_require(util_funcs)
      void            init_statistics(void);
 
 #endif                          /* _statistics_h_included__ */

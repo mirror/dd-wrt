@@ -2,6 +2,16 @@
  *  Host Resources MIB - Device group implementation - hr_device.c
  *
  */
+/* Portions of this file are subject to the following copyright(s).  See
+ * the Net-SNMP's COPYING file for more details and other copyrights
+ * that may apply:
+ */
+/*
+ * Portions of this file are copyrighted by:
+ * Copyright © 2003 Sun Microsystems, Inc. All rights reserved.
+ * Use is subject to license terms specified in the COPYING file
+ * distributed with the Net-SNMP package.
+ */
 
 #include <net-snmp/net-snmp-config.h>
 #if HAVE_STRING_H
@@ -53,12 +63,18 @@ int             header_hrdevice(struct variable *, oid *, size_t *, int,
 #define	HRDEV_ERRORS		6
 
 struct variable4 hrdevice_variables[] = {
-    {HRDEV_INDEX, ASN_INTEGER, RONLY, var_hrdevice, 2, {1, 1}},
-    {HRDEV_TYPE, ASN_OBJECT_ID, RONLY, var_hrdevice, 2, {1, 2}},
-    {HRDEV_DESCR, ASN_OCTET_STR, RONLY, var_hrdevice, 2, {1, 3}},
-    {HRDEV_ID, ASN_OBJECT_ID, RONLY, var_hrdevice, 2, {1, 4}},
-    {HRDEV_STATUS, ASN_INTEGER, RONLY, var_hrdevice, 2, {1, 5}},
-    {HRDEV_ERRORS, ASN_COUNTER, RONLY, var_hrdevice, 2, {1, 6}}
+    {HRDEV_INDEX, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+     var_hrdevice, 2, {1, 1}},
+    {HRDEV_TYPE, ASN_OBJECT_ID, NETSNMP_OLDAPI_RONLY,
+     var_hrdevice, 2, {1, 2}},
+    {HRDEV_DESCR, ASN_OCTET_STR, NETSNMP_OLDAPI_RONLY,
+     var_hrdevice, 2, {1, 3}},
+    {HRDEV_ID, ASN_OBJECT_ID, NETSNMP_OLDAPI_RONLY,
+     var_hrdevice, 2, {1, 4}},
+    {HRDEV_STATUS, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+     var_hrdevice, 2, {1, 5}},
+    {HRDEV_ERRORS, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+     var_hrdevice, 2, {1, 6}}
 };
 oid             hrdevice_variables_oid[] = { 1, 3, 6, 1, 2, 1, 25, 3, 2 };
 
@@ -181,7 +197,7 @@ header_hrdevice(struct variable *vp,
     memcpy((char *) name, (char *) newname,
            ((int) vp->namelen + 1) * sizeof(oid));
     *length = vp->namelen + 1;
-    *write_method = 0;
+    *write_method = (WriteMethod*)0;
     *var_len = sizeof(long);    /* default to 'long' results */
 
     DEBUGMSGTL(("host/hr_device", "... get device stats "));
@@ -212,8 +228,10 @@ var_hrdevice(struct variable *vp,
 {
     int             dev_idx, type;
     oid            *oid_p;
-    static char     string[100];
+    const char     *tmp_str;
+    static char     string[1024];
 
+really_try_next:
     dev_idx =
         header_hrdevice(vp, name, length, exact, var_len, write_method);
     if (dev_idx == MATCH_FAILED)
@@ -230,13 +248,12 @@ var_hrdevice(struct variable *vp,
         *var_len = sizeof(device_type_id);
         return (u_char *) device_type_id;
     case HRDEV_DESCR:
-        if (device_descr[type] != NULL) {
-            strncpy(string, ((*device_descr[type]) (dev_idx)),
-                    sizeof(string)-1);
-            string[ sizeof(string)-1] = 0;
+        if ((device_descr[type] != NULL) &&
+            (NULL!=(tmp_str=((*device_descr[type])(dev_idx))))) {
+            strlcpy(string, tmp_str, sizeof(string));
         } else
-#if NO_DUMMY_VALUES
-            return NULL;
+#if NETSNMP_NO_DUMMY_VALUES
+            goto try_next;
 #else
             sprintf(string, "a black box of some sort");
 #endif
@@ -254,18 +271,20 @@ var_hrdevice(struct variable *vp,
         if (device_status[type] != NULL)
             long_return = ((*device_status[type]) (dev_idx));
         else
-#if NO_DUMMY_VALUES
-            return NULL;
+#if NETSNMP_NO_DUMMY_VALUES
+            goto try_next;
 #else
             long_return = 2;    /* Assume running */
 #endif
+        if ( !long_return )
+            goto try_next;
         return (u_char *) & long_return;
     case HRDEV_ERRORS:
         if (device_errors[type] != NULL)
             long_return = (*device_errors[type]) (dev_idx);
         else
-#if NO_DUMMY_VALUES
-            return NULL;
+#if NETSNMP_NO_DUMMY_VALUES
+            goto try_next;
 #else
             long_return = 0;    /* Assume OK */
 #endif
@@ -274,6 +293,11 @@ var_hrdevice(struct variable *vp,
         DEBUGMSGTL(("snmpd", "unknown sub-id %d in var_hrdevice\n",
                     vp->magic));
     }
+
+  try_next:
+    if (!exact)
+        goto really_try_next;
+
     return NULL;
 }
 
@@ -296,7 +320,9 @@ Init_Device(void)
            init_device[current_type] == NULL)
         if (++current_type >= HRDEV_TYPE_MAX)
             return;
-    (*init_device[current_type]) ();
+    /* Check current_type, if >= MAX first time into loop, would fail below */
+    if (current_type < HRDEV_TYPE_MAX)
+        (*init_device[current_type]) ();
 }
 
 int

@@ -1,3 +1,7 @@
+.\" -*- nroff -*-
+.\" Portions of this file are subject to the following copyright.  See
+.\" the Net-SNMP COPYING file for more details and other copyrights
+.\" that may apply:
 .\" /***********************************************************
 .\" 	Copyright 1988, 1989 by Carnegie Mellon University
 .\" 
@@ -19,13 +23,12 @@
 .\" ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
 .\" SOFTWARE.
 .\" ******************************************************************/
-.TH SNMPWALK 1 "08 Feb 2002" VVERSIONINFO "Net-SNMP"
-.UC 4
+.TH SNMPWALK 1 "28 May 2007" VVERSIONINFO "Net-SNMP"
 .SH NAME
-snmpwalk - communicates with a network entity using SNMP GETNEXT requests.
+snmpwalk - retrieve a subtree of management values using SNMP GETNEXT requests
 .SH SYNOPSIS
 .B snmpwalk
-[APPLICATION OPTIONS] [COMMON OPTIONS] [OID]
+[APPLICATION OPTIONS] [COMMON OPTIONS] AGENT [OID]
 .SH DESCRIPTION
 .B snmpwalk
 is an SNMP application that uses SNMP GETNEXT requests to query a
@@ -40,7 +43,9 @@ Each variable name is given in the format specified in
 .PP
 If no OID argument is present,
 .B snmpwalk
-will search MIB-2.
+will search the subtree rooted at SNMPv2\-SMI::mib\-2
+(including any MIB object values from other MIB modules,
+that are defined as lying within this subtree).
 If the network entity has an error processing the request packet, an
 error packet will be returned and a message will be shown, helping to
 pinpoint why the request was malformed.
@@ -49,7 +54,7 @@ If the tree search causes attempts to search beyond the end of the
 MIB, the message "End of MIB" will be displayed.
 .SH OPTIONS
 .TP 8
-.B -Cc
+.B \-Cc
 Do not check whether the returned OIDs are increasing.  Some agents
 (LaserJets are an example) return OIDs out of order, but can
 complete the walk anyway.  Other agents return OIDs that are out of
@@ -59,30 +64,56 @@ to loop indefinitely.  By default,
 .B snmpwalk
 tries to detect this behavior and warns you when it hits an agent
 acting illegally.  Use
-.B -Cc
-to turn off this behaviour.
+.B \-Cc
+to turn off this check.
 .TP
-.B -Ci
+.B \-CE {OID}
+End the walk at the specified OID, rather than a simple subtree.
+This can be used to walk a partial subtree, selected columns of
+a table, or even two or more tables within a single command.
+.TP
+.B \-Ci
 Include the given OID in the search range.  Normally
 .B snmpwalk
 uses GETNEXT requests starting with the OID you specified and returns
-all results in the MIB tree after that OID.  Sometimes, you may wish
-to include the OID specified on the command line in the printed
+all results in the MIB subtree rooted at that OID.  Sometimes, you may
+wish to include the OID specified on the command line in the printed
 results if it is a valid OID in the tree itself.  This option lets you
-do this.
+do this explicitly.
 .TP
-.B -Cp
+.B \-CI
+In fact, the given OID will be retrieved automatically if the main
+subtree walk returns no useable values.  This allows a walk of a
+single instance to behave as generally expected, and return the
+specified instance value.
+This option turns off this final GET request, so a walk of a
+single instance will return nothing.
+.TP
+.B \-Cp
 Upon completion of the walk, print the number of variables found.
+.TP
+.B \-Ct
+Upon completion of the walk, print the total wall-clock time it took
+to collect the data (in seconds).  Note that the timer is started just
+before the beginning of the data request series and stopped just after
+it finishes.  Most importantly, this means that it does not include
+snmp library initialization, shutdown, argument processing, and any
+other overhead.
 .PP
 In addition to these options,
 .B snmpwalk
 takes the common options described in the 
 .I snmpcmd(1)
 manual page.
-.SH EXAMPLE
+.SH EXAMPLES
+.br
+Note that
+.B snmpwalk
+REQUIRES  an argument specifying the agent to query
+and at most one OID argument, as described there.
 The command:
 .PP
-snmpwalk -Os -c public -v 1 zeus system
+snmpwalk \-Os \-c public \-v 1 zeus system
 .PP
 will retrieve all of the variables under system:
 .PP
@@ -99,5 +130,13 @@ sysName.0 = STRING: "zeus.net.cmu.edu"
 sysLocation.0 = STRING: ""
 .br
 sysServices.0 = INTEGER: 72
+.br
+(plus the contents of the sysORTable).
+
+The command:
+.PP
+snmpwalk \-Os \-c public \-v 1 \-CE sysORTable zeus system
+.PP
+will retrieve the scalar values, but omit the sysORTable.
 .SH "SEE ALSO"
 snmpcmd(1), snmpbulkwalk(1), variables(5).

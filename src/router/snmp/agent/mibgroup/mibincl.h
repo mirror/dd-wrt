@@ -12,11 +12,7 @@
 #include <malloc.h>
 #endif
 #if TIME_WITH_SYS_TIME
-# ifdef WIN32
-#  include <sys/timeb.h>
-# else
-#  include <sys/time.h>
-# endif
+# include <sys/time.h>
 # include <time.h>
 #else
 # if HAVE_SYS_TIME_H

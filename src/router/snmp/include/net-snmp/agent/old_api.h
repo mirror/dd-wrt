@@ -25,10 +25,10 @@ typedef struct old_opi_cache_s {
 } netsnmp_old_api_cache;
 
 int             netsnmp_register_old_api(const char *moduleName,
-                                         struct variable *var,
+                                         const struct variable *var,
                                          size_t varsize,
                                          size_t numvars,
-                                         oid * mibloc,
+                                         const oid * mibloc,
                                          size_t mibloclen,
                                          int priority,
                                          int range_subid,

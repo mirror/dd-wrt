@@ -7,7 +7,7 @@ IMPORTS
 	FROM UCD-SNMP-MIB;
 
 ucdIpFilter MODULE-IDENTITY
-    LAST-UPDATED "9912150000Z"
+    LAST-UPDATED "200001260000Z"
     ORGANIZATION "University of California, Davis"
     CONTACT-INFO    
 	"This mib is no longer being maintained by the University of
@@ -33,6 +33,11 @@ ucdIpFilter MODULE-IDENTITY
          IP Filter UCD-SNMP module URL
          ftp://ftp.polynet.lviv.ua/pub/UNIX/security/ipf/ucd-snmp-ipf-mod.tgz
          Yaroslav Terletsky <ts@polynet.lviv.ua>"
+
+    REVISION	 "200001260000Z"
+    DESCRIPTION
+	"Renamed MIB root object"
+
     REVISION	 "9912150000Z"
     DESCRIPTION
 	"SMIv2 version converted from an older MIB definition."

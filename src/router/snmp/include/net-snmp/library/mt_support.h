@@ -42,7 +42,7 @@ extern          "C" {
 #define MT_LIB_MAXIMUM     6    /* must be one greater than the last one */
 
 
-#if defined(NS_REENTRANT) || defined(WIN32)
+#if defined(NETSNMP_REENTRANT) || defined(WIN32)
 
 #if HAVE_PTHREAD_H
 #include <pthread.h>
@@ -63,12 +63,16 @@ error "There is no re-entrant support as defined."
 #endif /*  HAVE_PTHREAD_H  */
 
 
+NETSNMP_IMPORT
 int             snmp_res_init(void);
+NETSNMP_IMPORT
 int             snmp_res_lock(int groupID, int resourceID);
+NETSNMP_IMPORT
 int             snmp_res_unlock(int groupID, int resourceID);
+NETSNMP_IMPORT
 int             snmp_res_destroy_mutex(int groupID, int resourceID);
 
-#else /*  NS_REENTRANT  */
+#else /*  NETSNMP_REENTRANT  */
 
 #ifndef WIN32
 #define snmp_res_init() do {} while (0)
@@ -77,7 +81,7 @@ int             snmp_res_destroy_mutex(int groupID, int resourceID);
 #define snmp_res_destroy_mutex(x,y) do {} while (0)
 #endif /*  WIN32  */
 
-#endif /*  NS_REENTRANT  */
+#endif /*  NETSNMP_REENTRANT  */
 
 #ifdef __cplusplus
 }

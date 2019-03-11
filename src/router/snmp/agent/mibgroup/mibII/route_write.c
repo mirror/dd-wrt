@@ -1,3 +1,13 @@
+/* Portions of this file are subject to the following copyright(s).  See
+ * the Net-SNMP's COPYING file for more details and other copyrights
+ * that may apply:
+ */
+/*
+ * Portions of this file are copyrighted by:
+ * Copyright © 2003 Sun Microsystems, Inc. All rights reserved.
+ * Use is subject to license terms specified in the COPYING file
+ * distributed with the Net-SNMP package.
+ */
 #include <net-snmp/net-snmp-config.h>
 
 #include <sys/types.h>
@@ -50,31 +60,24 @@
 #include <stdlib.h>
 #endif
 
-#if HAVE_WINSOCK_H
-#include <winsock.h>
-#endif
-
-#if HAVE_DMALLOC_H
-#include <dmalloc.h>
-#endif
-
 #include <net-snmp/net-snmp-includes.h>
 #include <net-snmp/agent/net-snmp-agent-includes.h>
 
 #include "ip.h"
 #include "route_write.h"
+#include "var_route.h"
 
-#ifdef cygwin
-#define WIN32
+#if defined(cygwin) || defined(mingw32)
 #include <windows.h>
+#include <winerror.h>
 #endif
 
-#ifndef WIN32
+#if !defined (WIN32) && !defined (cygwin)
 
-#ifndef STRUCT_RTENTRY_HAS_RT_DST
+#ifndef HAVE_STRUCT_RTENTRY_RT_DST
 #define rt_dst rt_nodes->rn_key
 #endif
-#ifndef STRUCT_RTENTRY_HAS_RT_HASH
+#ifndef HAVE_STRUCT_RTENTRY_RT_HASH
 #define rt_hash rt_pad1
 #endif
 
@@ -83,31 +86,39 @@
 #define SIOCDELRT SIOCDELMULTI
 #endif
 
+#ifdef linux
+#define NETSNMP_ROUTE_WRITE_PROTOCOL PF_ROUTE
+#else
+#define NETSNMP_ROUTE_WRITE_PROTOCOL 0
+#endif
+
 int
 addRoute(u_long dstip, u_long gwip, u_long iff, u_short flags)
 {
-#ifndef dynix
+#if defined SIOCADDRT && !(defined(irix6) || defined(__OpenBSD__) || defined(darwin))
     struct sockaddr_in dst;
     struct sockaddr_in gateway;
-    int             s;
+    int             s, rc;
     RTENTRY         route;
 
-    s = socket(AF_INET, SOCK_RAW, 0);
+    s = socket(AF_INET, SOCK_RAW, NETSNMP_ROUTE_WRITE_PROTOCOL);
     if (s < 0) {
         snmp_log_perror("socket");
-        return 0;
+        return -1;
     }
 
 
     flags |= RTF_UP;
 
+    memset(&dst, 0, sizeof(dst));
     dst.sin_family = AF_INET;
     dst.sin_addr.s_addr = htonl(dstip);
 
-
+    memset(&gateway, 0, sizeof(gateway));
     gateway.sin_family = AF_INET;
     gateway.sin_addr.s_addr = htonl(gwip);
 
+    memset(&route, 0, sizeof(route));
     memcpy(&route.rt_dst, &dst, sizeof(struct sockaddr_in));
     memcpy(&route.rt_gateway, &gateway, sizeof(struct sockaddr_in));
 
@@ -115,30 +126,59 @@ addRoute(u_long dstip, u_long gwip, u_long iff, u_short flags)
 #ifndef RTENTRY_4_4
     route.rt_hash = iff;
 #endif
-#ifdef irix6
-    return 0;
-#else
-    return (ioctl(s, SIOCADDRT, (caddr_t) & route));
-#endif
 
-#else                           /* dynix */
-    /*
-     *  Throws up the following errors:
-     *
-     * "mibII/route_write.c", line 113: undefined struct/union member: rt_nodes
-     * "mibII/route_write.c", line 113: undefined struct/union member: rn_key
-     * "mibII/route_write.c", line 113: left operand of "->" must be pointer to struct/union
-     * "mibII/route_write.c", line 118: undefined struct/union member: rt_pad1
-     * "mibII/route_write.c", line 123: undefined symbol: SIOCADDRT
-     * "mibII/route_write.c", line 155: undefined struct/union member: rt_nodes
-     * "mibII/route_write.c", line 155: undefined struct/union member: rn_key
-     * "mibII/route_write.c", line 155: left operand of "->" must be pointer to struct/union
-     * "mibII/route_write.c", line 160: undefined struct/union member: rt_pad1
-     * "mibII/route_write.c", line 166: undefined symbol: SIOCDELRT
-     */
-    return 0;
-#endif
+    rc = ioctl(s, SIOCADDRT, (caddr_t) & route);
+    close(s);
+    if (rc < 0)
+        snmp_log_perror("ioctl");
+    return rc;
 
+#elif (defined __OpenBSD__ || defined(darwin))
+
+       int     s, rc;
+       struct {
+               struct  rt_msghdr hdr;
+               struct  sockaddr_in dst;
+               struct  sockaddr_in gateway;
+       } rtmsg;
+
+       s = socket(PF_ROUTE, SOCK_RAW, 0);
+       if (s < 0) {
+            snmp_log_perror("socket");
+            return -1;
+       }
+
+       shutdown(s, SHUT_RD);
+
+       /* possible panic otherwise */
+       flags |= (RTF_UP | RTF_GATEWAY);
+
+       bzero(&rtmsg, sizeof(rtmsg));
+
+       rtmsg.hdr.rtm_type = RTM_ADD;
+       rtmsg.hdr.rtm_version = RTM_VERSION;
+       rtmsg.hdr.rtm_addrs = RTA_DST | RTA_GATEWAY;
+       rtmsg.hdr.rtm_flags = RTF_GATEWAY;
+
+       rtmsg.dst.sin_len = sizeof(rtmsg.dst);
+       rtmsg.dst.sin_family = AF_INET;
+       rtmsg.dst.sin_addr.s_addr = htonl(dstip);
+
+       rtmsg.gateway.sin_len = sizeof(rtmsg.gateway);
+       rtmsg.gateway.sin_family = AF_INET;
+       rtmsg.gateway.sin_addr.s_addr = htonl(gwip);
+
+       rc = sizeof(rtmsg);
+       rtmsg.hdr.rtm_msglen = rc;
+
+       if ((rc = write(s, &rtmsg, rc)) < 0) {
+               snmp_log_perror("writing to routing socket");
+               return -1;
+       }
+       return (rc);
+#else                           /* SIOCADDRT */
+    return -1;
+#endif
 }
 
 
@@ -146,14 +186,14 @@ addRoute(u_long dstip, u_long gwip, u_long iff, u_short flags)
 int
 delRoute(u_long dstip, u_long gwip, u_long iff, u_short flags)
 {
-#ifndef dynix
+#if defined SIOCADDRT && !(defined(irix6) || defined(__OpenBSD__) || defined(darwin))
 
     struct sockaddr_in dst;
     struct sockaddr_in gateway;
-    int             s;
+    int             s, rc;
     RTENTRY         route;
 
-    s = socket(AF_INET, SOCK_RAW, 0);
+    s = socket(AF_INET, SOCK_RAW, NETSNMP_ROUTE_WRITE_PROTOCOL);
     if (s < 0) {
         snmp_log_perror("socket");
         return 0;
@@ -162,10 +202,11 @@ delRoute(u_long dstip, u_long gwip, u_long iff, u_short flags)
 
     flags |= RTF_UP;
 
+    memset(&dst, 0, sizeof(dst));
     dst.sin_family = AF_INET;
     dst.sin_addr.s_addr = htonl(dstip);
 
-
+    memset(&gateway, 0, sizeof(gateway));
     gateway.sin_family = AF_INET;
     gateway.sin_addr.s_addr = htonl(gwip);
 
@@ -177,22 +218,59 @@ delRoute(u_long dstip, u_long gwip, u_long iff, u_short flags)
     route.rt_hash = iff;
 #endif
 
-#ifdef irix6
-    return 0;
-#else
-    return (ioctl(s, SIOCDELRT, (caddr_t) & route));
-#endif
+    rc = ioctl(s, SIOCDELRT, (caddr_t) & route);
+    close(s);
+    return rc;
+#elif (defined __OpenBSD__ || defined(darwin))
+ 
+       int     s, rc;
+       struct {
+               struct  rt_msghdr hdr;
+               struct  sockaddr_in dst;
+               struct  sockaddr_in gateway;
+       } rtmsg;
 
-#else                           /* dynix */
-    /*
-     * See 'addRoute' for the list of errors.
-     */
+       s = socket(PF_ROUTE, SOCK_RAW, 0);
+       if (s < 0) {
+            snmp_log_perror("socket");
+            return -1;
+       }
+
+       shutdown(s, SHUT_RD);
+
+       /* possible panic otherwise */
+       flags |= (RTF_UP | RTF_GATEWAY);
+
+       bzero(&rtmsg, sizeof(rtmsg));
+
+       rtmsg.hdr.rtm_type = RTM_DELETE;
+       rtmsg.hdr.rtm_version = RTM_VERSION;
+       rtmsg.hdr.rtm_addrs = RTA_DST | RTA_GATEWAY;
+       rtmsg.hdr.rtm_flags = RTF_GATEWAY;
+
+       rtmsg.dst.sin_len = sizeof(rtmsg.dst);
+       rtmsg.dst.sin_family = AF_INET;
+       rtmsg.dst.sin_addr.s_addr = htonl(dstip);
+
+       rtmsg.gateway.sin_len = sizeof(rtmsg.gateway);
+       rtmsg.gateway.sin_family = AF_INET;
+       rtmsg.gateway.sin_addr.s_addr = htonl(gwip);
+
+       rc = sizeof(rtmsg);
+       rtmsg.hdr.rtm_msglen = rc;
+
+       if ((rc = write(s, &rtmsg, rc)) < 0) {
+               snmp_log_perror("writing to routing socket");
+               return -1;
+       }
+       return (rc);
+#else                           /* SIOCDELRT */
     return 0;
 #endif
 }
 
 
-#ifndef STRUCT_RTENTRY_HAS_RT_DST
+#ifndef HAVE_STRUCT_RTENTRY_RT_DST
 #undef rt_dst
 #endif
 
@@ -236,7 +314,7 @@ findCacheRTE(u_long dst)
             return (&rtcache[i]);
         }
     }
-    return 0;
+    return NULL;
 }
 
 struct rtent   *
@@ -252,7 +330,7 @@ newCacheRTE(void)
             return (&rtcache[i]);
         }
     }
-    return 0;
+    return NULL;
 
 }
 
@@ -274,7 +352,7 @@ delCacheRTE(u_long dst)
 struct rtent   *
 cacheKernelRTE(u_long dst)
 {
-    return 0;                   /* for now */
+    return NULL;                /* for now */
     /*
      * ...... 
      */
@@ -311,6 +389,10 @@ write_rte(int action,
         return SNMP_ERR_NOCREATION;
     }
 
+#ifdef solaris2		/* not implemented */
+    return SNMP_ERR_NOTWRITABLE;
+#endif
+
     var = name[9];
 
     dst = *((u_long *) & name[10]);
@@ -329,18 +411,19 @@ write_rte(int action,
             snmp_log(LOG_ERR, "newCacheRTE");
             return SNMP_ERR_RESOURCEUNAVAILABLE;
         }
+        rp->rt_dst = dst;
         rp->rt_type = rp->xx_type = 2;
 
     } else if (action == COMMIT) {
 
 
     } else if (action == FREE) {
-        if (rp->rt_type == 2) { /* was invalid before */
+        if (rp && rp->rt_type == 2) { /* was invalid before */
             delCacheRTE(dst);
         }
     }
 
-
+    netsnmp_assert(NULL != rp); /* should have found or created rp */
 
 
     switch (var) {
@@ -349,17 +432,12 @@ write_rte(int action,
 
         if (action == RESERVE1) {
 
-            if (var_val_type != ASN_OCTET_STR) {
-                snmp_log(LOG_ERR, "not octet");
+            if (var_val_type != ASN_IPADDRESS) {
+                snmp_log(LOG_ERR, "not IP address");
                 return SNMP_ERR_WRONGTYPE;
             }
 
             memcpy(buf, var_val, (var_val_len > 8) ? 8 : var_val_len);
-
-            if (var_val_type != ASN_OCTET_STR) {
-                snmp_log(LOG_ERR, "not octet2");
-                return SNMP_ERR_WRONGTYPE;
-            }
 
             rp->xx_dst = *((u_long *) buf);
 
@@ -424,23 +502,19 @@ write_rte(int action,
 
         if (action == RESERVE1) {
 
-            if (var_val_type != ASN_OCTET_STR) {
+            if (var_val_type != ASN_IPADDRESS) {
                 snmp_log(LOG_ERR, "not right4");
                 return SNMP_ERR_WRONGTYPE;
             }
 
             memcpy(buf, var_val, (var_val_len > 8) ? 8 : var_val_len);
 
-            if (var_val_type != ASN_OCTET_STR) {
-                snmp_log(LOG_ERR, "not right5");
-                return SNMP_ERR_WRONGTYPE;
-            }
-
             rp->xx_nextIR = *((u_long *) buf);
 
         } else if (action == COMMIT) {
             rp->rt_nextIR = rp->xx_nextIR;
         }
+	break;
 
 
     case IPROUTETYPE:
@@ -524,11 +598,8 @@ write_rte(int action,
     return SNMP_ERR_NOERROR;
 }
 
-#else                           /* WIN32 */
+#elif defined(HAVE_IPHLPAPI_H)  /* WIN32 cygwin */
 #include <iphlpapi.h>
-
-extern PMIB_IPFORWARDROW route_row;
-extern int      create_flag;
 
 int
 write_rte(int action,
@@ -729,7 +800,7 @@ write_rte(int action,
                     if ((status =
                          CreateIpForwardEntry(route_row)) != NO_ERROR) {
                         snmp_log(LOG_ERR,
-                                 "Inside COMMIT: CreateIpNetEntry failed, status %d\n",
+                                 "Inside COMMIT: CreateIpNetEntry failed, status %lu\n",
                                  status);
                         retval = SNMP_ERR_COMMITFAILED;
                     }
@@ -759,4 +830,4 @@ write_rte(int action,
     return retval;
 }
 
-#endif                          /* WIN32 */
+#endif                          /* WIN32 cygwin */

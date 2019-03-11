@@ -1,5 +1,14 @@
 /*
  * security service wrapper to support pluggable security models 
+ *
+ * Portions of this file are subject to the following copyright(s).  See
+ * the Net-SNMP's COPYING file for more details and other copyrights
+ * that may apply:
+ *
+ * Portions of this file are copyrighted by:
+ * Copyright (c) 2016 VMware, Inc. All rights reserved.
+ * Use is subject to license terms specified in the COPYING file
+ * distributed with the Net-SNMP package.
  */
 
 #include <net-snmp/net-snmp-config.h>
@@ -30,7 +39,9 @@
 #include <net-snmp/library/snmp_enum.h>
 #include <net-snmp/library/callback.h>
 #include <net-snmp/library/snmp_secmod.h>
-#include <net-snmp/library/snmpusm.h>
+#include <net-snmp/library/snmpv3-security-includes.h>
+
+#include <net-snmp/net-snmp-features.h>
 
 static struct snmp_secmod_list *registered_services = NULL;
 
@@ -51,14 +62,19 @@ init_secmod(void)
 #include "snmpsm_init.h"
 }
 
+void
+shutdown_secmod(void)
+{
+    #include "snmpsm_shutdown.h"
+}
 
 int
 register_sec_mod(int secmod, const char *modname,
                  struct snmp_secmod_def *newdef)
 {
-    int             result;
+    int             result = 0;
     struct snmp_secmod_list *sptr;
-    char           *othername;
+    char           *othername, *modname2 = NULL;
 
     for (sptr = registered_services; sptr; sptr = sptr->next) {
         if (sptr->securityModel == secmod) {
@@ -72,9 +88,12 @@ register_sec_mod(int secmod, const char *modname,
     sptr->securityModel = secmod;
     sptr->next = registered_services;
     registered_services = sptr;
-    if ((result =
-         se_add_pair_to_slist("snmp_secmods", strdup(modname), secmod))
-        != SE_OK) {
+    modname2 = strdup(modname);
+    if (!modname2)
+        result = SE_NOMEM;
+    else
+        result = se_add_pair_to_slist("snmp_secmods", modname2, secmod);
+    if (result != SE_OK) {
         switch (result) {
         case SE_NOMEM:
             snmp_log(LOG_CRIT, "snmp_secmod: no memory\n");
@@ -85,7 +104,7 @@ register_sec_mod(int secmod, const char *modname,
             if (strcmp(othername, modname) != 0) {
                 snmp_log(LOG_ERR,
                          "snmp_secmod: two security modules %s and %s registered with the same security number\n",
-                         secmod, othername);
+                         modname, othername);
             }
             break;
 
@@ -99,6 +118,8 @@ register_sec_mod(int secmod, const char *modname,
     return SNMPERR_SUCCESS;
 }
 
+netsnmp_feature_child_of(unregister_sec_mod, netsnmp_unused)
+#ifndef NETSNMP_FEATURE_REMOVE_UNREGISTER_SEC_MOD
 int
 unregister_sec_mod(int secmod)
 {
@@ -107,8 +128,12 @@ unregister_sec_mod(int secmod)
     for (sptr = registered_services, lptr = NULL; sptr;
          lptr = sptr, sptr = sptr->next) {
         if (sptr->securityModel == secmod) {
-            lptr->next = sptr->next;
-            free(sptr);
+            if ( lptr )
+                lptr->next = sptr->next;
+            else
+                registered_services = sptr->next;
+	    SNMP_FREE(sptr->secDef);
+            SNMP_FREE(sptr);
             return SNMPERR_SUCCESS;
         }
     }
@@ -117,6 +142,22 @@ unregister_sec_mod(int secmod)
      */
     return SNMPERR_GENERR;
 }
+#endif /* NETSNMP_FEATURE_REMOVE_UNREGISTER_SEC_MOD */
+
+void            
+clear_sec_mod(void)
+{
+    struct snmp_secmod_list *tmp = registered_services, *next = NULL;
+
+    while (tmp != NULL) {
+	next = tmp->next;
+	SNMP_FREE(tmp->secDef);
+	SNMP_FREE(tmp);
+	tmp = next;
+    }
+    registered_services = NULL;
+}
+
 
 struct snmp_secmod_def *
 find_sec_mod(int secmod)
@@ -133,6 +174,19 @@ find_sec_mod(int secmod)
      */
     return NULL;
 }
+
+/* try to pick a reasonable security module default based on what was
+   compiled into the net-snmp package */
+#ifdef USM_SEC_MODEL_NUMBER
+#define NETSNMP_SECMOD_DEFAULT_MODEL  USM_SEC_MODEL_NUMBER
+#elif defined(TSM_SEC_MODEL_NUMBER)
+#define NETSNMP_SECMOD_DEFAULT_MODEL  TSM_SEC_MODEL_NUMBER
+#elif defined(KSM_SEC_MODEL_NUMBER)
+#define NETSNMP_SECMOD_DEFAULT_MODEL  KSM_SEC_MODEL_NUMBER
+#else
+/* else we give up and leave it blank */
+#define NETSNMP_SECMOD_DEFAULT_MODEL  -1
+#endif
 
 static int
 set_default_secmod(int major, int minor, void *serverarg, void *clientarg)
@@ -153,11 +207,11 @@ set_default_secmod(int major, int minor, void *serverarg, void *clientarg)
                 snmp_log(LOG_ERR,
                          "unknown security model name: %s.  Forcing USM instead.\n",
                          cptr);
-                sess->securityModel = USM_SEC_MODEL_NUMBER;
+                sess->securityModel = NETSNMP_SECMOD_DEFAULT_MODEL;
                 return SNMPERR_GENERR;
             }
         } else {
-            sess->securityModel = USM_SEC_MODEL_NUMBER;
+            sess->securityModel = NETSNMP_SECMOD_DEFAULT_MODEL;
         }
     }
     return SNMPERR_SUCCESS;

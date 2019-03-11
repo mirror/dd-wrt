@@ -26,6 +26,12 @@ SOFTWARE.
 #ifndef SNMP_CLIENT_H
 #define SNMP_CLIENT_H
 
+#include <net-snmp/types.h>
+#include <net-snmp/varbind_api.h>
+#include <net-snmp/pdu_api.h>
+#include <net-snmp/output_api.h>
+#include <net-snmp/session_api.h>
+
 #ifdef __cplusplus
 extern          "C" {
 #endif
@@ -48,51 +54,112 @@ extern          "C" {
         netsnmp_pdu    *pdu;
     };
 
-    int             snmp_set_var_value(netsnmp_variable_list *,
-                                       const u_char *, size_t);
-    int             snmp_set_var_objid(netsnmp_variable_list * vp,
-                                       const oid * objid,
-                                       size_t name_length);
-    int             snmp_set_var_typed_value(netsnmp_variable_list *
-                                             newvar, u_char type,
-                                             const u_char * val_str,
-                                             size_t val_len);
+    NETSNMP_IMPORT
     void            snmp_replace_var_types(netsnmp_variable_list * vbl,
                                            u_char old_type,
                                            u_char new_type);
+    NETSNMP_IMPORT
     void            snmp_reset_var_buffers(netsnmp_variable_list * var);
     void            snmp_reset_var_types(netsnmp_variable_list * vbl,
                                          u_char new_type);
+    NETSNMP_IMPORT
     int             count_varbinds(netsnmp_variable_list * var_ptr);
+    NETSNMP_IMPORT
     int             count_varbinds_of_type(netsnmp_variable_list * var_ptr,
                                            u_char type);
     netsnmp_variable_list *find_varbind_of_type(netsnmp_variable_list *
                                                 var_ptr, u_char type);
+    NETSNMP_IMPORT
+    netsnmp_variable_list *find_varbind_in_list(netsnmp_variable_list *vblist,
+                                                const oid *name, size_t len);
 
-    netsnmp_variable_list *snmp_add_null_var(netsnmp_pdu *, const oid *, size_t);
-    netsnmp_pdu    *snmp_pdu_create(int);
-    netsnmp_pdu    *snmp_fix_pdu(netsnmp_pdu *, int);
-    netsnmp_pdu    *snmp_clone_pdu(netsnmp_pdu *);
     netsnmp_pdu    *snmp_split_pdu(netsnmp_pdu *, int skipCount,
                                    int copyCount);
 
     unsigned long   snmp_varbind_len(netsnmp_pdu *pdu);
+    NETSNMP_IMPORT
     int             snmp_clone_var(netsnmp_variable_list *,
                                    netsnmp_variable_list *);
-    netsnmp_variable_list *snmp_clone_varbind(netsnmp_variable_list *);
-    const char     *snmp_errstring(int);
-    int             snmp_synch_response(netsnmp_session *, netsnmp_pdu *,
-                                        netsnmp_pdu **);
+    NETSNMP_IMPORT
     int             snmp_synch_response_cb(netsnmp_session *,
                                            netsnmp_pdu *, netsnmp_pdu **,
                                            snmp_callback);
-    int             snmp_clone_mem(void **, void *, unsigned);
+    NETSNMP_IMPORT
+    int             snmp_clone_mem(void **, const void *, unsigned);
 
-    /*
-     * single session API - see snmp_api.h for full details 
-     */
-    int             snmp_sess_synch_response(void *, netsnmp_pdu *,
-                                             netsnmp_pdu **);
+
+NETSNMP_IMPORT
+void              netsnmp_query_set_default_session(netsnmp_session *);
+NETSNMP_IMPORT
+netsnmp_session * netsnmp_query_get_default_session_unchecked( void );
+NETSNMP_IMPORT
+netsnmp_session * netsnmp_query_get_default_session( void );
+NETSNMP_IMPORT
+int netsnmp_query_get(     netsnmp_variable_list *, netsnmp_session *);
+NETSNMP_IMPORT
+int netsnmp_query_getnext( netsnmp_variable_list *, netsnmp_session *);
+NETSNMP_IMPORT
+int netsnmp_query_walk(    netsnmp_variable_list *, netsnmp_session *);
+#ifndef NETSNMP_NO_WRITE_SUPPORT
+NETSNMP_IMPORT
+int netsnmp_query_set(     netsnmp_variable_list *, netsnmp_session *);
+#endif /* !NETSNMP_NO_WRITE_SUPPORT */
+
+/** **************************************************************************
+ *
+ * state machine
+ *
+ */
+    /** forward declare */
+    struct netsnmp_state_machine_step_s;
+    struct netsnmp_state_machine_input_s;
+
+    /** state machine process */
+    typedef int (netsnmp_state_machine_func)(struct netsnmp_state_machine_input_s *input,
+                                             struct netsnmp_state_machine_step_s *step);
+
+    typedef struct netsnmp_state_machine_step_s {
+
+        const char   *name; /* primarily for logging/debugging */
+        u_int         sm_flags;
+        
+        netsnmp_state_machine_func *run;
+        int                         result; /* return code for this step */
+        
+        
+        struct netsnmp_state_machine_step_s *on_success;
+        struct netsnmp_state_machine_step_s *on_error;
+        
+        /*
+         * user fields (not touched by state machine functions)
+         */
+        u_int         flags;
+        void         *step_context;
+        
+    } netsnmp_state_machine_step;
+
+    typedef struct netsnmp_state_machine_input_s {
+        const char                  *name;
+        int                          steps_so_far;
+        netsnmp_state_machine_step  *steps;
+        netsnmp_state_machine_step  *cleanup;
+        netsnmp_state_machine_step  *last_run;
+
+        /*
+         * user fields (not touched by state machine functions)
+         */
+        void         *input_context;
+
+    } netsnmp_state_machine_input;
+
+
+    NETSNMP_IMPORT int
+    netsnmp_state_machine_run( netsnmp_state_machine_input *input );
+
+    NETSNMP_IMPORT int
+    netsnmp_row_create(netsnmp_session *sess, netsnmp_variable_list *vars,
+                       int row_status_index);
+
 
 #ifdef __cplusplus
 }

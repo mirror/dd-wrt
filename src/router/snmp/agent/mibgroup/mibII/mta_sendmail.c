@@ -37,7 +37,7 @@
 
 /** "include files" */
 #ifdef __lint
-# define SNMP_NO_DEBUGGING 1    /* keeps lint from complaining about the DEBUGMSG* macros */
+# define NETSNMP_NO_DEBUGGING 1    /* keeps lint from complaining about the DEBUGMSG* macros */
 #endif
 
 #include <net-snmp/net-snmp-config.h>
@@ -101,13 +101,8 @@
 # endif
 #endif
 
-#if HAVE_STDARG_H
-#include <stdarg.h>
-#else
-#include <varargs.h>
-#endif
-
 #include <errno.h>
+#include <stdarg.h>
 
  /**/
 /** "macros and variables for registering the OID tree" */
@@ -145,38 +140,44 @@ enum {
     MTAGROUPRECEIVEDVOLUME = 23 | NEEDS_STATS,
     MTAGROUPTRANSMITTEDVOLUME = 25 | NEEDS_STATS,
     MTAGROUPNAME = 43,
-    MTAGROUPHIERARCHY = 49,
+    MTAGROUPHIERARCHY = 49
 };
 
 /*
  * structure that tells the agent, which function returns what values 
  */
 static struct variable3 mta_variables[] = {
-    {MTARECEIVEDMESSAGES, ASN_COUNTER, RONLY, var_mtaEntry, 3, {1, 1, 1}},
-    {MTASTOREDMESSAGES, ASN_GAUGE, RONLY, var_mtaEntry, 3, {1, 1, 2}},
-    {MTATRANSMITTEDMESSAGES, ASN_COUNTER, RONLY, var_mtaEntry, 3,
-     {1, 1, 3}},
-    {MTARECEIVEDVOLUME, ASN_COUNTER, RONLY, var_mtaEntry, 3, {1, 1, 4}},
-    {MTASTOREDVOLUME, ASN_GAUGE, RONLY, var_mtaEntry, 3, {1, 1, 5}},
-    {MTATRANSMITTEDVOLUME, ASN_COUNTER, RONLY, var_mtaEntry, 3, {1, 1, 6}},
+    {MTARECEIVEDMESSAGES, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+     var_mtaEntry, 3, {1, 1, 1}},
+    {MTASTOREDMESSAGES, ASN_GAUGE, NETSNMP_OLDAPI_RONLY,
+     var_mtaEntry, 3, {1, 1, 2}},
+    {MTATRANSMITTEDMESSAGES, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+     var_mtaEntry, 3, {1, 1, 3}},
+    {MTARECEIVEDVOLUME, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+     var_mtaEntry, 3, {1, 1, 4}},
+    {MTASTOREDVOLUME, ASN_GAUGE, NETSNMP_OLDAPI_RONLY,
+     var_mtaEntry, 3, {1, 1, 5}},
+    {MTATRANSMITTEDVOLUME, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+     var_mtaEntry, 3, {1, 1, 6}},
 
-    {MTAGROUPRECEIVEDMESSAGES, ASN_COUNTER, RONLY, var_mtaGroupEntry, 3,
-     {2, 1, 2}},
-    {MTAGROUPREJECTEDMESSAGES, ASN_COUNTER, RONLY, var_mtaGroupEntry, 3,
-     {2, 1, 3}},
-    {MTAGROUPSTOREDMESSAGES, ASN_GAUGE, RONLY, var_mtaGroupEntry, 3,
-     {2, 1, 4}},
-    {MTAGROUPTRANSMITTEDMESSAGES, ASN_COUNTER, RONLY, var_mtaGroupEntry, 3,
-     {2, 1, 5}},
-    {MTAGROUPRECEIVEDVOLUME, ASN_COUNTER, RONLY, var_mtaGroupEntry, 3,
-     {2, 1, 6}},
-    {MTAGROUPSTOREDVOLUME, ASN_GAUGE, RONLY, var_mtaGroupEntry, 3,
-     {2, 1, 7}},
-    {MTAGROUPTRANSMITTEDVOLUME, ASN_COUNTER, RONLY, var_mtaGroupEntry, 3,
-     {2, 1, 8}},
-    {MTAGROUPNAME, ASN_OCTET_STR, RONLY, var_mtaGroupEntry, 3, {2, 1, 25}},
-    {MTAGROUPHIERARCHY, ASN_INTEGER, RONLY, var_mtaGroupEntry, 3,
-     {2, 1, 31}},
+    {MTAGROUPRECEIVEDMESSAGES, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+     var_mtaGroupEntry, 3, {2, 1, 2}},
+    {MTAGROUPREJECTEDMESSAGES, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+     var_mtaGroupEntry, 3, {2, 1, 3}},
+    {MTAGROUPSTOREDMESSAGES, ASN_GAUGE, NETSNMP_OLDAPI_RONLY,
+     var_mtaGroupEntry, 3, {2, 1, 4}},
+    {MTAGROUPTRANSMITTEDMESSAGES, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+     var_mtaGroupEntry, 3, {2, 1, 5}},
+    {MTAGROUPRECEIVEDVOLUME, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+     var_mtaGroupEntry, 3, {2, 1, 6}},
+    {MTAGROUPSTOREDVOLUME, ASN_GAUGE, NETSNMP_OLDAPI_RONLY,
+     var_mtaGroupEntry, 3, {2, 1, 7}},
+    {MTAGROUPTRANSMITTEDVOLUME, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+     var_mtaGroupEntry, 3, {2, 1, 8}},
+    {MTAGROUPNAME, ASN_OCTET_STR, NETSNMP_OLDAPI_RONLY,
+     var_mtaGroupEntry, 3, {2, 1, 25}},
+    {MTAGROUPHIERARCHY, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+     var_mtaGroupEntry, 3, {2, 1, 31}}
 };
  /**/
 /** "other macros and structures" */
@@ -201,10 +202,29 @@ static struct variable3 mta_variables[] = {
 #define MNAMELEN         20     /* maximum length of mailernames (copied from the sendmail sources) */
 #define STAT_VERSION_8_9  2     /* version of sendmail V8.9.x statistics files (copied from the sendmail sources) */
 #define STAT_VERSION_8_10 3     /* version of sendmail V8.10.x statistics files (copied from the sendmail sources) */
+#define STAT_VERSION_8_12_QUAR 4     /* version of sendmail V8.12.x statistics files using -D_FFR_QUARANTINE (commercial and edge-living opensource*/
 #define STAT_MAGIC  0x1B1DE     /* magic value to identify statistics files from sendmail V8.9.x or higher (copied from the sendmail sources) */
     /*
      * structure of sendmail.st file from sendmail V8.10.x (copied from the sendmail sources) 
      */
+
+struct statisticsV8_12_QUAR {
+    int             stat_magic; /* magic number */
+    int             stat_version;       /* stat file version */
+    time_t          stat_itime; /* file initialization time */
+    short           stat_size;  /* size of this structure */
+    long            stat_cf;    /* # from connections */
+    long            stat_ct;    /* # to connections */
+    long            stat_cr;    /* # rejected connections */
+    long            stat_nf[MAXMAILERS];        /* # msgs from each mailer */
+    long            stat_bf[MAXMAILERS];        /* kbytes from each mailer */
+    long            stat_nt[MAXMAILERS];        /* # msgs to each mailer */
+    long            stat_bt[MAXMAILERS];        /* kbytes to each mailer */
+    long            stat_nr[MAXMAILERS];        /* # rejects by each mailer */
+    long            stat_nd[MAXMAILERS];        /* # discards by each mailer */
+    long            stat_nq[MAXMAILERS];        /* # quarantines by each mailer*/
+};
+
     struct statisticsV8_10 {
     int             stat_magic; /* magic number */
     int             stat_version;       /* stat file version */
@@ -219,6 +239,7 @@ static struct variable3 mta_variables[] = {
     long            stat_bt[MAXMAILERS];        /* kbytes to each mailer */
     long            stat_nr[MAXMAILERS];        /* # rejects by each mailer */
     long            stat_nd[MAXMAILERS];        /* # discards by each mailer */
+
 };
 
 /*
@@ -252,8 +273,8 @@ struct statisticsV8_8 {
     /*
      * queue groups (strictly a sendmail 8.12+ thing 
      */
-    struct QDir {
-    char            dir[FILENAMELEN + 1];
+struct QDir {
+    char           *dir;
     struct QDir    *next;
 };
 
@@ -290,7 +311,7 @@ static long    *stat_nr;        /* pointer to stat_nr array within the statistic
 static long    *stat_nd;        /* pointer to stat_nd array within the statistics structure,
                                  * only valid for statistics files from sendmail >=V8.9.0    */
 static int      stats_size;     /* size of statistics structure */
-static long     stats[sizeof(struct statisticsV8_10) / sizeof(long) + 1];       /* buffer for statistics structure */
+static long     stats[sizeof(struct statisticsV8_12_QUAR) / sizeof(long) + 1];       /* buffer for statistics structure */
 static time_t   lastreadstats;  /* time stats file has been read */
 static long     applindex = 1;  /* ApplIndex value for OIDs */
 static long     stat_cache_time = 5;    /* time (in seconds) to wait before reading stats file again */
@@ -322,37 +343,15 @@ static long     dir_cache_time = 10;    /* time (in seconds) to wait before scan
  *    ...:         additional parameters to insert into the error message string
  *
  */
-#if HAVE_STDARG_H
-    static void
+static void
 print_error(int priority, BOOL config, BOOL config_only,
             const char *function, const char *format, ...)
-#else
-    static void
-print_error(va_alist)
-     va_dcl
-#endif
 {
     va_list         ap;
     char            buffer[2 * FILENAMELEN + 200];      /* I know, that's not perfectly safe, but since I don't use more
                                                          * than two filenames in one error message, that should be enough */
 
-#if HAVE_STDARG_H
     va_start(ap, format);
-#else
-    int             priority;
-    BOOL            config;
-    BOOL            config_only;
-    const char     *function;
-    const char     *format;
-
-    va_start(ap);
-    priority = va_arg(ap, int);
-    config = va_arg(ap, BOOL);
-    config_only = va_arg(ap, BOOL);
-    function = va_arg(ap, char *);
-    format = va_arg(ap, char *);
-#endif
-
     vsnprintf(buffer, sizeof(buffer), format, ap);
 
     if (config) {
@@ -399,14 +398,32 @@ open_sendmailst(BOOL config)
     if (sendmailst_fh == -1) {
         print_error(LOG_ERR, config, TRUE,
                     "mibII/mta_sendmail.c:open_sendmailst",
-                    "could not open file \"%s\"\n", sendmailst_fn);
+                    "could not open file \"%s\"", sendmailst_fn);
         return;
     }
 
     filelen = read(sendmailst_fh, (void *) &stats, sizeof stats);
 
     if (((struct statisticsV8_10 *) stats)->stat_magic == STAT_MAGIC) {
-        if (((struct statisticsV8_10 *) stats)->stat_version ==
+
+        if (((struct statisticsV8_12_QUAR *) stats)->stat_version ==
+            STAT_VERSION_8_12_QUAR
+            && ((struct statisticsV8_12_QUAR *) stats)->stat_size ==
+            sizeof(struct statisticsV8_12_QUAR)
+            && filelen == sizeof(struct statisticsV8_12_QUAR)) {
+            DEBUGMSGTL(("mibII/mta_sendmail.c:open_sendmailst",
+                        "looks like file \"%s\" has been created by sendmail V8.10.0 or newer\n",
+                        sendmailst_fn));
+            stat_nf = (((struct statisticsV8_12_QUAR *) stats)->stat_nf);
+            stat_bf = (((struct statisticsV8_12_QUAR *) stats)->stat_bf);
+            stat_nt = (((struct statisticsV8_12_QUAR *) stats)->stat_nt);
+            stat_bt = (((struct statisticsV8_12_QUAR *) stats)->stat_bt);
+            stat_nr = (((struct statisticsV8_12_QUAR *) stats)->stat_nr);
+            stat_nd = (((struct statisticsV8_12_QUAR *) stats)->stat_nd);
+            stats_size = sizeof(struct statisticsV8_12_QUAR);
+        } else
+
+		 if (((struct statisticsV8_10 *) stats)->stat_version ==
             STAT_VERSION_8_10
             && ((struct statisticsV8_10 *) stats)->stat_size ==
             sizeof(struct statisticsV8_10)
@@ -421,6 +438,7 @@ open_sendmailst(BOOL config)
             stat_nr = (((struct statisticsV8_10 *) stats)->stat_nr);
             stat_nd = (((struct statisticsV8_10 *) stats)->stat_nd);
             stats_size = sizeof(struct statisticsV8_10);
+
         } else if (((struct statisticsV8_9 *) stats)->stat_version ==
                    STAT_VERSION_8_9
                    && ((struct statisticsV8_9 *) stats)->stat_size ==
@@ -439,7 +457,7 @@ open_sendmailst(BOOL config)
         } else {
             print_error(LOG_WARNING, config, FALSE,
                         "mibII/mta_sendmail.c:open_sendmailst",
-                        "could not guess version of statistics file \"%s\"\n",
+                        "could not guess version of statistics file \"%s\"",
                         sendmailst_fn);
             while (close(sendmailst_fh) == -1 && errno == EINTR) {
                 /*
@@ -465,7 +483,7 @@ open_sendmailst(BOOL config)
         } else {
             print_error(LOG_WARNING, config, FALSE,
                         "mibII/mta_sendmail.c:open_sendmailst",
-                        "could not guess version of statistics file \"%s\"\n",
+                        "could not guess version of statistics file \"%s\"",
                         sendmailst_fn);
             while (close(sendmailst_fh) == -1 && errno == EINTR) {
                 /*
@@ -481,7 +499,7 @@ open_sendmailst(BOOL config)
 count_queuegroup(struct QGrp *qg)
 {
     struct QDir    *d;
-    char            cwd[200];
+    char            cwd[SNMP_MAXPATH];
     time_t          current_time = time(NULL);
 
     if (current_time <= (qg->last + dir_cache_time)) {
@@ -568,7 +586,7 @@ add_queuegroup(const char *name, char *path)
          */
         *p = '\0';
 
-        strcpy(parentdir, path);
+        strlcpy(parentdir, path, sizeof(parentdir));
         /*
          * remove last directory component from parentdir 
          */
@@ -611,11 +629,14 @@ add_queuegroup(const char *name, char *path)
                 /*
                  * single queue directory 
                  */
-                subdir = (struct QDir *) malloc(sizeof(struct QDir));
-                snprintf(subdir->dir, FILENAMELEN - 5, "%s/%s", parentdir,
-                         dirp->d_name);
-                subdir->next = new;
-                new = subdir;
+                if ((subdir = calloc(1, sizeof(*subdir))) != NULL &&
+                    asprintf(&subdir->dir, "%s/%s", parentdir, dirp->d_name) >=
+                    0) {
+                    subdir->next = new;
+                    new = subdir;
+                } else {
+                    free(subdir);
+                }
             }
         }
 
@@ -624,8 +645,8 @@ add_queuegroup(const char *name, char *path)
         /*
          * single queue directory 
          */
-        new = (struct QDir *) malloc(sizeof(struct QDir));
-        strcpy(new->dir, path);
+        new = malloc(sizeof(*new));
+        new->dir = strdup(path);
         new->next = NULL;
     }
 
@@ -633,16 +654,19 @@ add_queuegroup(const char *name, char *path)
      * check 'new' for /qf directories 
      */
     for (subdir = new; subdir != NULL; subdir = subdir->next) {
-        char            qf[FILENAMELEN + 1];
+        char *qf = NULL;
 
-        snprintf(qf, FILENAMELEN, "%s/qf", subdir->dir);
-        if ((dp = opendir(qf)) != NULL) {
+        if (asprintf(&qf, "%s/qf", subdir->dir) >= 0 &&
+            (dp = opendir(qf)) != NULL) {
             /*
              * it exists ! 
              */
-            strcpy(subdir->dir, qf);
+            free(subdir->dir);
+            subdir->dir = qf;
+            qf = NULL;
             closedir(dp);
         }
+        free(qf);
     }
 
     /*
@@ -694,7 +718,7 @@ read_sendmailcf(BOOL config)
     if (sendmailcf_fp == NULL) {
         print_error(LOG_ERR, config, TRUE,
                     "mibII/mta_sendmail.c:read_sendmailcf",
-                    "could not open file \"%s\"\n", sendmailcf_fn);
+                    "could not open file \"%s\"", sendmailcf_fn);
         return FALSE;
     }
 
@@ -717,7 +741,7 @@ read_sendmailcf(BOOL config)
         if (line[linelen - 1] != '\n') {
             print_error(LOG_WARNING, config, FALSE,
                         "mibII/mta_sendmail.c:read_sendmailcf",
-                        "line %d in config file \"%s\" is too long\n",
+                        "line %d in config file \"%s is too long\n",
                         linenr, sendmailcf_fn);
             while (fgets(line, sizeof line, sendmailcf_fp) != NULL && line[strlen(line) - 1] != '\n') { /* skip rest of the line */
                 /*
@@ -736,7 +760,7 @@ read_sendmailcf(BOOL config)
 
             if (mailers < MAXMAILERS) {
                 for (i = 1;
-                     line[i] != ',' && !isspace(line[i]) && line[i] != '\0'
+                     line[i] != ',' && !isspace(line[i] & 0xFF) && line[i] != '\0'
                      && i <= MNAMELEN; i++) {
                     mailernames[mailers][i - 1] = line[i];
                 }
@@ -772,7 +796,7 @@ read_sendmailcf(BOOL config)
             } else {
                 print_error(LOG_WARNING, config, FALSE,
                             "mibII/mta_sendmail.c:read_sendmailcf",
-                            "found too many mailers in config file \"%s\"\n",
+                            "found too many mailers in config file \"%s\"",
                             sendmailcf_fn);
             }
 
@@ -815,7 +839,7 @@ read_sendmailcf(BOOL config)
                 if (*filename++ != '=') {
                     print_error(LOG_WARNING, config, FALSE,
                                 "mibII/mta_sendmail.c:read_sendmailcf",
-                                "line %d in config file \"%s\" ist missing an '='\n",
+                                "line %d in config file \"%s\" ist missing an '='",
                                 linenr, sendmailcf_fn);
                     break;
                 }
@@ -829,14 +853,13 @@ read_sendmailcf(BOOL config)
                 if (strlen(filename) > FILENAMELEN) {
                     print_error(LOG_WARNING, config, FALSE,
                                 "mibII/mta_sendmail.c:read_sendmailcf",
-                                "line %d config file \"%s\" contains a filename that's too long\n",
+                                "line %d config file \"%s\" contains a filename that's too long",
                                 linenr, sendmailcf_fn);
                     break;
                 }
 
                 if (strncasecmp(line + 2, "StatusFile", 10) == 0) {
-                    strncpy(sendmailst_fn, filename, sizeof(sendmailst_fn));
-                    sendmailst_fn[ sizeof(sendmailst_fn)-1 ] = 0;
+                    strlcpy(sendmailst_fn, filename, sizeof(sendmailst_fn));
                     found_sendmailst = TRUE;
                     DEBUGMSGTL(("mibII/mta_sendmail.c:read_sendmailcf",
                                 "found statatistics file \"%s\"\n",
@@ -847,7 +870,7 @@ read_sendmailcf(BOOL config)
                 } else {
                     print_error(LOG_CRIT, config, FALSE,
                                 "mibII/mta_sendmail.c:read_sendmailcf",
-                                "This shouldn't happen.\n");
+                                "This shouldn't happen.");
                     abort();
                 }
                 break;
@@ -856,11 +879,11 @@ read_sendmailcf(BOOL config)
                 if (strlen(line + 2) > FILENAMELEN) {
                     print_error(LOG_WARNING, config, FALSE,
                                 "mibII/mta_sendmail.c:read_sendmailcf",
-                                "line %d config file \"%s\" contains a filename that's too long\n",
+                                "line %d config file \"%s\" contains a filename that's too long",
                                 linenr, sendmailcf_fn);
                     break;
                 }
-                strcpy(sendmailst_fn, line + 2);
+                strlcpy(sendmailst_fn, line + 2, sizeof(sendmailst_fn));
                 found_sendmailst = TRUE;
                 DEBUGMSGTL(("mibII/mta_sendmail.c:read_sendmailcf",
                             "found statatistics file \"%s\"\n",
@@ -871,7 +894,7 @@ read_sendmailcf(BOOL config)
                 if (strlen(line + 2) > FILENAMELEN) {
                     print_error(LOG_WARNING, config, FALSE,
                                 "mibII/mta_sendmail.c:read_sendmailcf",
-                                "line %d config file \"%s\" contains a filename that's too long\n",
+                                "line %d config file \"%s\" contains a filename that's too long",
                                 linenr, sendmailcf_fn);
                     break;
                 }
@@ -892,7 +915,7 @@ read_sendmailcf(BOOL config)
             if (*p == '\0') {
                 print_error(LOG_WARNING, config, FALSE,
                             "mibII/mta_sendmail.c:read_sendmailcf",
-                            "line %d config file \"%s\" contains a weird queuegroup\n",
+                            "line %d config file \"%s\" contains a weird queuegroup",
                             linenr, sendmailcf_fn);
                 break;
             }
@@ -915,7 +938,7 @@ read_sendmailcf(BOOL config)
                     if (*p++ != '=') {
                         print_error(LOG_WARNING, config, FALSE,
                                     "mibII/mta_sendmail.c:read_sendmailcf",
-                                    "line %d config file \"%s\" contains a weird queuegroup\n",
+                                    "line %d config file \"%s\" contains a weird queuegroup",
                                     linenr, sendmailcf_fn);
                         break;
                     }
@@ -930,10 +953,13 @@ read_sendmailcf(BOOL config)
                 }
 
                 /*
-                 * skip to next , 
+                 * skip to one past the next , 
                  */
-                while (*p && *p != ',')
+                while (*p && *p != ',') {
                     p++;
+                }
+		if (*p)
+		    p++;
             }
 
             /*
@@ -944,7 +970,7 @@ read_sendmailcf(BOOL config)
             } else {
                 print_error(LOG_WARNING, config, FALSE,
                             "mibII/mta_sendmail.c:read_sendmailcf",
-                            "line %d config file \"%s\" contains a weird queuegroup: no directory\n",
+                            "line %d config file \"%s\" contains a weird queuegroup: no directory",
                             linenr, sendmailcf_fn);
             }
 
@@ -954,11 +980,7 @@ read_sendmailcf(BOOL config)
         linenr++;
     }
 
-    for (i = 0; i < 10 && fclose(sendmailcf_fp) != 0; i++) {
-        /*
-         * nothing to do 
-         */
-    }
+    fclose(sendmailcf_fp);
 
     for (i = mailers; i < MAXMAILERS; i++) {
         mailernames[i][0] = '\0';
@@ -1009,7 +1031,7 @@ mta_sendmail_parse_config(const char *token, char *line)
     }
 
     if (strcasecmp(token, "sendmail_stats") == 0) {
-        while (isspace(*line)) {
+        while (isspace(*line & 0xFF)) {
             line++;
         }
         copy_nword(line, sendmailst_fn, sizeof(sendmailst_fn));
@@ -1017,9 +1039,7 @@ mta_sendmail_parse_config(const char *token, char *line)
         open_sendmailst(TRUE);
 
         if (sendmailst_fh == -1) {
-            char            str[FILENAMELEN + 50];
-            sprintf(str, "couldn't open file \"%s\"", sendmailst_fn);
-            config_perror(str);
+	    netsnmp_config_error("couldn't open file \"%s\"", sendmailst_fn);
             return;
         }
 
@@ -1027,7 +1047,7 @@ mta_sendmail_parse_config(const char *token, char *line)
                     "opened statistics file \"%s\"\n", sendmailst_fn));
         return;
     } else if (strcasecmp(token, "sendmail_config") == 0) {
-        while (isspace(*line)) {
+        while (isspace(*line & 0xFF)) {
             line++;
         }
         copy_nword(line, sendmailcf_fn, sizeof(sendmailcf_fn));
@@ -1038,14 +1058,14 @@ mta_sendmail_parse_config(const char *token, char *line)
                     "read config file \"%s\"\n", sendmailcf_fn));
         return;
     } else if (strcasecmp(token, "sendmail_queue") == 0) {
-        while (isspace(*line)) {
+        while (isspace(*line & 0xFF)) {
             line++;
         }
         add_queuegroup("mqueue", line);
 
         return;
     } else if (strcasecmp(token, "sendmail_index") == 0) {
-        while (isspace(*line)) {
+        while (isspace(*line & 0xFF)) {
             line++;
         }
         applindex = atol(line);
@@ -1054,7 +1074,7 @@ mta_sendmail_parse_config(const char *token, char *line)
             applindex = 1;
         }
     } else if (strcasecmp(token, "sendmail_stats_t") == 0) {
-        while (isspace(*line)) {
+        while (isspace(*line & 0xFF)) {
             line++;
         }
         stat_cache_time = atol(line);
@@ -1063,7 +1083,7 @@ mta_sendmail_parse_config(const char *token, char *line)
             applindex = 5;
         }
     } else if (strcasecmp(token, "sendmail_queue_t") == 0) {
-        while (isspace(*line)) {
+        while (isspace(*line & 0xFF)) {
             line++;
         }
         dir_cache_time = atol(line);
@@ -1382,7 +1402,7 @@ var_mtaGroupEntry(struct variable *vp,
         *length = vp->namelen + 2;
     }
 
-    *write_method = 0;
+    *write_method = NULL;
     *var_len = sizeof(long);    /* default to 'long' results */
 
     if (vp->magic & NEEDS_STATS) {

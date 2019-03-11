@@ -4,7 +4,7 @@
 *
 * Author: Robert Story <rstory@freesnmp.com>
 *
-* $Id: README.build-scripts,v 1.1.2.1 2004/06/20 21:54:34 nikki Exp $
+* $Id$
 *
 ******************************************************************************
 
@@ -20,7 +20,7 @@ The usage of nsb-package is:
 
  Usage: nsb-package [-c] [-d] [-p] [-s SRCD] [-b BUILDD] [-i INSTALLD] VERSION
   
-    VERSION    : relase number (eg 5.0.3)
+    VERSION    : release number (eg 5.2.2)
     -s SRCDIR  : soure directory [$HOME/src/net-snmp-VERSION]
     -b BUILDD  : build directory [$HOME/build/]
                  NOTE-platform will be appended to build directory
@@ -74,7 +74,7 @@ Recommended Procedure
      >bin
      >put *.gz
 
-8) Update binaries vi Sourceforge admin page
+8) Update binaries via Sourceforge admin page
 
 
 
@@ -103,6 +103,6 @@ OTHER PROBLEMS
 
 * "gcc: snmp_version.lo: No such file or directory"
 
-   This is a good indication that you have previously built in your
+   This is a good indication that you have previously build in your
    source directory. 'make distclean' in your source directory, or
    check out a fresh new version from CVS.

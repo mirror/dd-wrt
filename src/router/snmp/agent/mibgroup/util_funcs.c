@@ -1,9 +1,22 @@
 /*
  * util_funcs.c
  */
+/*
+ * Portions of this file are copyrighted by:
+ * Copyright Copyright 2003 Sun Microsystems, Inc. All rights reserved.
+ * Use is subject to license terms specified in the COPYING file
+ * distributed with the Net-SNMP package.
+ *
+ * Portions of this file are copyrighted by:
+ * Copyright (c) 2016 VMware, Inc. All rights reserved.
+ * Use is subject to license terms specified in the COPYING file
+ * distributed with the Net-SNMP package.
+ */
 
 #include <net-snmp/net-snmp-config.h>
+#include <net-snmp/net-snmp-features.h>
 
+#include <sys/types.h>
 #if HAVE_IO_H
 #include <io.h>
 #endif
@@ -14,7 +27,6 @@
 #if HAVE_MALLOC_H
 #include <malloc.h>
 #endif
-#include <sys/types.h>
 #ifdef __alpha
 #ifndef _BSD
 #define _BSD
@@ -37,11 +49,7 @@
 # define WIFEXITED(stat_val) (((stat_val) & 255) == 0)
 #endif
 #if TIME_WITH_SYS_TIME
-# ifdef WIN32
-#  include <sys/timeb.h>
-# else
-#  include <sys/time.h>
-# endif
+# include <sys/time.h>
 # include <time.h>
 #else
 # if HAVE_SYS_TIME_H
@@ -64,9 +72,6 @@
 #include <strings.h>
 #endif
 #include <ctype.h>
-#if HAVE_WINSOCK_H
-#include <winsock.h>
-#endif
 #if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
@@ -77,12 +82,17 @@
 #if HAVE_RAISE
 #define alarm raise
 #endif
-
+#ifdef HAVE_SYS_STAT_H
+#include <sys/stat.h>
+#endif
 #include <net-snmp/net-snmp-includes.h>
 #include <net-snmp/agent/net-snmp-agent-includes.h>
+#include <net-snmp/library/snmp_logging.h>
+#include <net-snmp/agent/netsnmp_close_fds.h>
 
 #include "struct.h"
 #include "util_funcs.h"
+#include "utilities/execute.h"
 
 #if HAVE_LIMITS_H
 #include "limits.h"
@@ -93,46 +103,43 @@
 #define setPerrorstatus(x) snmp_log_perror(x)
 #endif
 
+netsnmp_feature_child_of(util_funcs, libnetsnmpmibs)
 
-#ifdef EXCACHETIME
+netsnmp_feature_child_of(shell_command, util_funcs)
+netsnmp_feature_child_of(get_exten_instance, util_funcs)
+netsnmp_feature_child_of(clear_cache, util_funcs)
+netsnmp_feature_child_of(find_field, util_funcs)
+netsnmp_feature_child_of(parse_miboid, util_funcs)
+netsnmp_feature_child_of(string_append_int, util_funcs)
+netsnmp_feature_child_of(internal_mib_table, util_funcs)
+
+#if defined(HAVE_LINUX_RTNETLINK_H)
+netsnmp_feature_child_of(prefix_info_all, util_funcs)
+netsnmp_feature_child_of(prefix_info, prefix_info_all)
+netsnmp_feature_child_of(update_prefix_info, prefix_info_all)
+netsnmp_feature_child_of(delete_prefix_info, prefix_info_all)
+netsnmp_feature_child_of(find_prefix_info, prefix_info_all)
+netsnmp_feature_child_of(create_prefix_info, prefix_info_all)
+#endif /* HAVE_LINUX_RTNETLINK_H */
+
+#if defined(NETSNMP_EXCACHETIME) && defined(USING_UTILITIES_EXECUTE_MODULE) && defined(HAVE_EXECV)
 static long     cachetime;
 #endif
 
-extern int      numprocs, numextens;
-
-void
-Exit(int var)
-{
-    snmp_log(LOG_ERR, "Server Exiting with code %d\n", var);
-    exit(var);
-}
-
-static const char *
+/** deprecated, use netsnmp_mktemp instead */
+const char *
 make_tempfile(void)
 {
-    static char     name[32];
-    int             fd = -1;
-
-    strcpy(name, "/tmp/snmpdXXXXXX");
-#ifdef HAVE_MKSTEMP
-    fd = mkstemp(name);
-#else
-    if (mktemp(name))
-        fd = open(name, O_CREAT | O_EXCL | O_WRONLY);
-#endif
-    if (fd >= 0) {
-        close(fd);
-        return name;
-    }
-    return NULL;
+    return netsnmp_mktemp();
 }
 
+#ifndef NETSNMP_FEATURE_REMOVE_SHELL_COMMAND
 int
 shell_command(struct extensible *ex)
 {
 #if HAVE_SYSTEM
     const char     *ofname;
-    char            shellline[STRMAX];
+    char           *shellline = NULL;
     FILE           *shellout;
 
     ofname = make_tempfile();
@@ -142,10 +149,11 @@ shell_command(struct extensible *ex)
         return ex->result;
     }
 
-    snprintf(shellline, sizeof(shellline), "%s > %s", ex->command, ofname);
-    shellline[ sizeof(shellline)-1 ] = 0;
-    ex->result = system(shellline);
-    ex->result = WEXITSTATUS(ex->result);
+    if (asprintf(&shellline, "%s > %s", ex->command, ofname) >= 0) {
+        ex->result = system(shellline);
+        ex->result = WEXITSTATUS(ex->result);
+        free(shellline);
+    }
     shellout = fopen(ofname, "r");
     if (shellout != NULL) {
         if (fgets(ex->output, sizeof(ex->output), shellout) == NULL) {
@@ -160,13 +168,14 @@ shell_command(struct extensible *ex)
 #endif
     return (ex->result);
 }
+#endif /* NETSNMP_FEATURE_REMOVE_SHELL_COMMAND */
 
 #define MAXOUTPUT 300
 
 int
 exec_command(struct extensible *ex)
 {
-#if HAVE_EXECV
+#if defined (HAVE_EXECV) || defined (WIN32)
     int             fd;
     FILE           *file;
 
@@ -178,7 +187,7 @@ exec_command(struct extensible *ex)
         fclose(file);
         wait_on_exec(ex);
     } else
-#endif
+#endif /* HAVE_EXECV */
     {
         ex->output[0] = 0;
         ex->result = 0;
@@ -186,15 +195,45 @@ exec_command(struct extensible *ex)
     return (ex->result);
 }
 
+#ifndef NETSNMP_FEATURE_REMOVE_GET_EXTEN_INSTANCE
+struct extensible *
+get_exten_instance(struct extensible *exten, size_t inst)
+{
+    int             i;
+
+    if (exten == NULL)
+        return (NULL);
+    for (i = 1; i != (int) inst && exten != NULL; i++)
+        exten = exten->next;
+    return (exten);
+}
+#endif /* NETSNMP_FEATURE_REMOVE_GET_EXTEN_INSTANCE */
+
 void
 wait_on_exec(struct extensible *ex)
 {
-#ifndef EXCACHETIME
+#if defined(WIN32) && !defined (mingw32)
+  int rc;
+  if (ex->tid != 0 && ex->pid != 0) {
+    HANDLE hThread = ex->tid;
+    HANDLE hProcess = ex->pid;
+    rc = WaitForSingleObject(hProcess, NETSNMP_TIMEOUT_WAITFORSINGLEOBJECT);
+    DEBUGMSGT(("exec:wait_on_exec","WaitForSingleObject rc=(%d)\n",rc ));
+    rc = CloseHandle( hThread );
+    DEBUGMSGT(("exec:wait_on_exec","CloseHandle hThread=(%d)\n",rc ));
+    rc = CloseHandle( hProcess );
+    DEBUGMSGT(("exec:wait_on_exec","CloseHandle hProcess=(%d)\n",rc ));
+    ex->pid = 0;
+    ex->tid = 0;
+  }
+#else
+#ifndef NETSNMP_EXCACHETIME
     if (ex->pid && waitpid(ex->pid, &ex->result, 0) < 0) {
         setPerrorstatus("waitpid");
     }
     ex->pid = 0;
-#endif
+#endif  /* NETSNMP_EXCACHETIME */
+#endif  /* WIN32 */
 }
 
 #define MAXARGS 30
@@ -202,173 +241,222 @@ wait_on_exec(struct extensible *ex)
 int
 get_exec_output(struct extensible *ex)
 {
+#ifndef USING_UTILITIES_EXECUTE_MODULE
+    ex->result = -1;
+    NETSNMP_LOGONCE((LOG_WARNING, "support for run_exec_command not available\n"));
+#else
 #if HAVE_EXECV
-    int             fd[2], i, cnt;
-    char            ctmp[STRMAX], *cptr1, *cptr2, argvs[STRMAX], **argv,
-        **aptr;
-#ifdef EXCACHETIME
     char            cachefile[STRMAX];
-    char            cache[MAXCACHESIZE];
-    ssize_t         cachebytes;
+    char            cache[NETSNMP_MAXCACHESIZE];
+    int             cachebytes;
+    int             cfd;
+#ifdef NETSNMP_EXCACHETIME
     long            curtime;
     static char     lastcmd[STRMAX];
-    int             cfd;
     static int      lastresult;
-    int             readcount;
 #endif
 
-#ifdef EXCACHETIME
-    sprintf(cachefile, "%s/%s", get_persistent_directory(), CACHEFILE);
+    DEBUGMSGTL(("exec:get_exec_output","calling %s\n", ex->command));
+
+    sprintf(cachefile, "%s/%s", get_persistent_directory(), NETSNMP_CACHEFILE);
+#ifdef NETSNMP_EXCACHETIME
     curtime = time(NULL);
-    if (curtime > (cachetime + EXCACHETIME) ||
+    if (curtime > (cachetime + NETSNMP_EXCACHETIME) ||
         strcmp(ex->command, lastcmd) != 0) {
-        strcpy(lastcmd, ex->command);
+        strlcpy(lastcmd, ex->command, sizeof(lastcmd));
         cachetime = curtime;
 #endif
-        if (pipe(fd)) {
-            setPerrorstatus("pipe");
-#ifdef EXCACHETIME
-            cachetime = 0;
-#endif
-            return -1;
-        }
-        if ((ex->pid = fork()) == 0) {
-            close(1);
-            if (dup(fd[1]) != 1) {
-                setPerrorstatus("dup");
-                return -1;
-            }
 
-            /*
-             * write standard output and standard error to pipe. 
-             */
-            /*
-             * close all other file descriptors. 
-             */
-            for (cnt = getdtablesize() - 1; cnt >= 2; --cnt)
-                (void) close(cnt);
-            (void) dup(1);      /* stderr */
+        cachebytes = NETSNMP_MAXCACHESIZE;
+        ex->result = run_exec_command( ex->command, NULL, cache, &cachebytes );
 
-            /*
-             * set standard input to /dev/null 
-             */
-            close(0);
-            (void) open("/dev/null", O_RDWR);
-
-            for (cnt = 1, cptr1 = ex->command, cptr2 = argvs;
-                 cptr1 && *cptr1 != 0; cptr2++, cptr1++) {
-                *cptr2 = *cptr1;
-                if (*cptr1 == ' ') {
-                    *(cptr2++) = 0;
-                    if ((cptr1 = skip_white(cptr1)) == NULL)
-                        break;
-                    if (cptr1) {
-                        *cptr2 = *cptr1;
-                        if (*cptr1 != 0)
-                            cnt++;
-                    }
-                }
-            }
-            *cptr2 = 0;
-            *(cptr2 + 1) = 0;
-            argv = (char **) malloc((cnt + 2) * sizeof(char *));
-            if (argv == NULL)
-                return 0;       /* memory alloc error */
-            aptr = argv;
-            *(aptr++) = argvs;
-            for (cptr2 = argvs, i = 1; i != cnt; cptr2++)
-                if (*cptr2 == 0) {
-                    *(aptr++) = cptr2 + 1;
-                    i++;
-                }
-            while (*cptr2 != 0)
-                cptr2++;
-            *(aptr++) = NULL;
-            copy_nword(ex->command, ctmp, sizeof(ctmp));
-            execv(ctmp, argv);
-            perror(ctmp);
-            exit(1);
-        } else {
-            close(fd[1]);
-            if (ex->pid < 0) {
-                close(fd[0]);
-                setPerrorstatus("fork");
-#ifdef EXCACHETIME
-                cachetime = 0;
-#endif
-                return -1;
-            }
-#ifdef EXCACHETIME
-            unlink(cachefile);
+        unlink(cachefile);
             /*
              * XXX  Use SNMP_FILEMODE_CLOSED instead of 644? 
              */
-            if ((cfd =
-                 open(cachefile, O_WRONLY | O_TRUNC | O_CREAT,
-                      0644)) < 0) {
+        if ((cfd = open(cachefile, O_WRONLY | O_TRUNC | O_CREAT, 0600)) < 0) {
+                snmp_log(LOG_ERR,"can not create cache file\n");
                 setPerrorstatus(cachefile);
+#ifdef NETSNMP_EXCACHETIME
                 cachetime = 0;
+#endif
                 return -1;
-            }
-            fcntl(fd[0], F_SETFL, O_NONBLOCK);  /* don't block on reads */
-#ifdef HAVE_USLEEP
-            for (readcount = 0; readcount <= MAXREADCOUNT * 100 &&
-                 (cachebytes = read(fd[0], (void *) cache, MAXCACHESIZE));
-                 readcount++) {
-#else
-            for (readcount = 0; readcount <= MAXREADCOUNT &&
-                 (cachebytes = read(fd[0], (void *) cache, MAXCACHESIZE));
-                 readcount++) {
-#endif
-                if (cachebytes > 0)
-                    write(cfd, (void *) cache, cachebytes);
-                else if (cachebytes == -1 && errno != EAGAIN) {
-                    setPerrorstatus("read");
-                    break;
-                } else
-#ifdef HAVE_USLEEP
-                    usleep(10000);      /* sleeps for 0.01 sec */
-#else
-                    sleep(1);
-#endif
-            }
-            close(cfd);
-            close(fd[0]);
-            /*
-             * wait for the child to finish 
-             */
-            if (ex->pid > 0 && waitpid(ex->pid, &ex->result, 0) < 0) {
-                setPerrorstatus("waitpid()");
-                cachetime = 0;
-                return -1;
-            }
-            ex->pid = 0;
-            ex->result = WEXITSTATUS(ex->result);
-            lastresult = ex->result;
-#else                           /* !EXCACHETIME */
-            return (fd[0]);
-#endif
         }
-#ifdef EXCACHETIME
+        if (cachebytes > 0)
+            write(cfd, (void *) cache, cachebytes);
+        close(cfd);
+#ifdef NETSNMP_EXCACHETIME
+        lastresult = ex->result;
     } else {
         ex->result = lastresult;
     }
+#endif
+    DEBUGMSGTL(("exec:get_exec_output","using cached value\n"));
     if ((cfd = open(cachefile, O_RDONLY)) < 0) {
+        snmp_log(LOG_ERR,"can not open cache file\n");
         setPerrorstatus(cachefile);
         return -1;
     }
     return (cfd);
-#endif
-
 #else                           /* !HAVE_EXECV */
-    return -1;
-#endif
-}
+#if defined(WIN32) && !defined(HAVE_EXECV)
+/* MSVC and MinGW.  Cygwin already works as it has execv and fork */
+    int         fd;   
+    
+    /* Reference:  MS tech note: 190351 */
+    HANDLE hOutputReadTmp, hOutputRead, hOutputWrite = NULL;
+        
+    HANDLE hErrorWrite;
+    SECURITY_ATTRIBUTES sa;
+    PROCESS_INFORMATION pi;
+    STARTUPINFO si;
+    
+    sa.nLength= sizeof(SECURITY_ATTRIBUTES);
+    sa.lpSecurityDescriptor = NULL;
+    sa.bInheritHandle = TRUE;
 
+    DEBUGMSGTL(("exec:get_exec_output","calling %s\n", ex->command));
+    
+    /* Child temporary output pipe with Inheritance on (sa.bInheritHandle is true) */    
+    if (!CreatePipe(&hOutputReadTmp,&hOutputWrite,&sa,0)) {
+      DEBUGMSGTL(("util_funcs", "get_exec_pipes CreatePipe ChildOut: %lu\n",
+            GetLastError()));
+      return -1;
+    }
+    
+    /* Copy the stdout handle to the stderr handle in case the child closes one of 
+     * its stdout handles. */
+    if (!DuplicateHandle(GetCurrentProcess(),hOutputWrite, GetCurrentProcess(),
+          &hErrorWrite,0, TRUE,DUPLICATE_SAME_ACCESS)) {
+      DEBUGMSGTL(("util_funcs", "get_exec_output DuplicateHandle: %lu\n", GetLastError()));
+      return -1;
+    }
+
+    /* Create new copies of the input and output handles but set bInheritHandle to 
+     * FALSE so the new handle can not be inherited.  Otherwise the handles can not
+     * be closed.  */
+    if (!DuplicateHandle(GetCurrentProcess(), hOutputReadTmp, GetCurrentProcess(),
+          &hOutputRead, 0, FALSE, DUPLICATE_SAME_ACCESS)) {
+      DEBUGMSGTL(("util_funcs", "get_exec_output DupliateHandle ChildOut: %lu\n", GetLastError()));
+      CloseHandle(hErrorWrite);
+      return -1;
+    }   
+
+    /* Close the temporary output and input handles */
+    if (!CloseHandle(hOutputReadTmp)) {
+      DEBUGMSGTL(("util_funcs", "get_exec_output CloseHandle (hOutputReadTmp): %lu\n", GetLastError()));
+      CloseHandle(hErrorWrite);
+      CloseHandle(hOutputRead);
+      return -1;
+    }
+    
+    /* Associates a C run-time file descriptor with an existing operating-system file handle. */
+    fd = _open_osfhandle((intptr_t) hOutputRead, 0);
+    
+    /* Set up STARTUPINFO for CreateProcess with the handles and have it hide the window
+     * for the new process. */
+    ZeroMemory(&si,sizeof(STARTUPINFO));
+    si.cb = sizeof(STARTUPINFO);
+    si.dwFlags = STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
+    si.hStdOutput = hOutputWrite;
+    si.hStdError = hErrorWrite;
+    si.wShowWindow = SW_HIDE;
+   
+    /* Launch the process that you want to redirect.  Example snmpd.conf pass_persist:
+     * pass_persist    .1.3.6.1.4.1.2021.255  c:/perl/bin/perl c:/temp/pass_persisttest
+    */
+    if (!CreateProcess(NULL, ex->command, NULL, NULL, TRUE, CREATE_NEW_CONSOLE, NULL, NULL, &si, &pi)) {
+      DEBUGMSGTL(("util_funcs","get_exec_output CreateProcess:'%s' %lu\n",ex->command, GetLastError()));
+      CloseHandle(hErrorWrite);
+      CloseHandle(hOutputRead);
+      return -1;
+    }
+    
+    /* Set global child process handle */
+    ex->pid = pi.hProcess;
+    ex->tid = pi.hThread;
+
+    /* Close pipe handles to make sure that no handles to the write end of the
+     * output pipe are maintained in this process or else the pipe will
+     * not close when the child process exits and any calls to ReadFile 
+     * will hang.
+     */
+
+    if (!CloseHandle(hOutputWrite)){
+      DEBUGMSGTL(("util_funcs","get_exec_output CloseHandle hOutputWrite: %lu\n",
+                  GetLastError()));
+      return -1;
+    }
+    if (!CloseHandle(hErrorWrite)) {
+      DEBUGMSGTL(("util_funcs","get_exec_output CloseHandle hErrorWrite: %lu\n",
+                  GetLastError()));
+      return -1;
+    }
+    return fd;
+#endif                          /* WIN32 */
+#endif       /* HAVE_EXEC */
+#endif /* !defined(USING_UTILITIES_EXECUTE_MODULE) */
+    return -1;
+}
 int
-get_exec_pipes(char *cmd, int *fdIn, int *fdOut, int *pid)
+get_exec_pipes(char *cmd, int *fdIn, int *fdOut, netsnmp_pid_t *pid)
 {
+/* 	Alexander Prömel, alexander@proemel.de 08/24/2006
+	The following code, is tested on picotux rev. 1.01.
+	I think, it will be better to put the named pipes, into /var/run or make it selectable via CONFIG file.
+	If the pipe file already exist, the creation will fail.
+	I put the pipes into /flash, the pipepath has to change in ucd-snmp/pass_persist.c too, if you change it here.
+*/
 #if HAVE_EXECV
+#ifdef __uClinux__ /* HAVE uClinux */
+	int in,out;
+	char fifo_in_path[256];
+	char fifo_out_path[256];
+	pid_t tpid;
+        
+    if ((tpid = vfork()) == 0) { /*temp child*/
+        execve(cmd, NULL,NULL);
+        perror(cmd);
+        exit(1);
+    } else { 
+		if(tpid > 0) {
+			/*initialize workspace*/
+			snprintf(fifo_in_path, 256, "/flash/cp_%d", tpid);
+			snprintf(fifo_out_path, 256, "/flash/pc_%d", tpid);
+
+			in = mkfifo(fifo_in_path, S_IRWXU);	/*Create Input Pipe, 700*/
+			if ( in ) {
+				perror("parent: inpipe");
+				exit(0);
+			}
+			out = mkfifo(fifo_out_path, S_IRWXU);	/*Create Output Pipe, 700*/
+			if ( out ) {
+				perror("parent: outpipe");
+				exit(0);
+			}
+						
+			in = open(fifo_in_path,O_RDONLY);	/*open the Input Pipe read Only*/
+			if(in < 0) {
+				perror("parent: input");
+				exit(0);
+			}
+			out = open(fifo_out_path,O_WRONLY); 	/*open the Output Pipe write Only*/
+			if(out < 0) {
+				perror("parent: output");
+				exit(0);
+			}
+			
+			*fdIn = in;	/*read*/
+			*fdOut = out;	/*write*/
+			*pid = tpid;	
+			return (1);     /* We are returning 0 for error... */
+		} else { /*pid < 0*/
+			setPerrorstatus("vfork");
+			return 0;
+		}
+
+    }
+#else /*HAVE x86*/
     int             fd[2][2], i, cnt;
     char            ctmp[STRMAX], *cptr1, *cptr2, argvs[STRMAX], **argv,
         **aptr;
@@ -380,16 +468,20 @@ get_exec_pipes(char *cmd, int *fdIn, int *fdOut, int *pid)
         return 0;
     }
     if ((*pid = fork()) == 0) { /* First handle for the child */
+        close(fd[0][1]);
+        close(fd[1][0]);
         close(0);
         if (dup(fd[0][0]) != 0) {
             setPerrorstatus("dup 0");
             return 0;
         }
+        close(fd[0][0]);
         close(1);
         if (dup(fd[1][1]) != 1) {
             setPerrorstatus("dup 1");
             return 0;
         }
+        close(fd[1][1]);
 
         /*
          * write standard output and standard error to pipe. 
@@ -397,8 +489,7 @@ get_exec_pipes(char *cmd, int *fdIn, int *fdOut, int *pid)
         /*
          * close all non-standard open file descriptors 
          */
-        for (cnt = getdtablesize() - 1; cnt >= 2; --cnt)
-            (void) close(cnt);
+        netsnmp_close_fds(1);
         (void) dup(1);          /* stderr */
 
         for (cnt = 1, cptr1 = cmd, cptr2 = argvs; *cptr1 != 0;
@@ -445,10 +536,135 @@ get_exec_pipes(char *cmd, int *fdIn, int *fdOut, int *pid)
         *fdOut = fd[0][1];
         return (1);             /* We are returning 0 for error... */
     }
+#endif				/* uClinux or x86 */
 #endif                          /* !HAVE_EXECV */
+#if defined(WIN32) && !defined (mingw32) && !defined(HAVE_EXECV)
+/* MSVC (MinGW not working but should use this code).  Cygwin already works as it has execv and fork */
+    /* Reference:  MS tech note: 190351 */
+    HANDLE hInputWriteTmp, hInputRead, hInputWrite = NULL;
+    HANDLE hOutputReadTmp, hOutputRead, hOutputWrite = NULL;
+        
+    HANDLE hErrorWrite;
+    SECURITY_ATTRIBUTES sa;
+    PROCESS_INFORMATION pi;
+    STARTUPINFO si;
+    
+    sa.nLength= sizeof(SECURITY_ATTRIBUTES);
+    sa.lpSecurityDescriptor = NULL;
+    sa.bInheritHandle = TRUE;
+
+    /* Child temporary output pipe with Inheritance on (sa.bInheritHandle is true) */    
+    if (!CreatePipe(&hOutputReadTmp,&hOutputWrite,&sa,0)) {
+      DEBUGMSGTL(("util_funcs", "get_exec_pipes CreatePipe ChildOut: %d\n",
+            GetLastError()));
+      return 0;
+    }
+    /* Child temporary input pipe with Inheritance on (sa.bInheritHandle is true) */    
+    if (!CreatePipe(&hInputRead,&hInputWriteTmp,&sa,0)) {
+      DEBUGMSGTL(("util_funcs", "get_exec_pipes CreatePipe ChildIn: %d\n", GetLastError()));
+      return 0;
+    }
+    
+    /* Copy the stdout handle to the stderr handle in case the child closes one of 
+     * its stdout handles. */
+    if (!DuplicateHandle(GetCurrentProcess(),hOutputWrite, GetCurrentProcess(),
+          &hErrorWrite,0, TRUE,DUPLICATE_SAME_ACCESS)) {
+      DEBUGMSGTL(("util_funcs", "get_exec_pipes DuplicateHandle: %d\n", GetLastError()));
+      return 0;
+    }
+
+    /* Create new copies of the input and output handles but set bInheritHandle to 
+     * FALSE so the new handle can not be inherited.  Otherwise the handles can not
+     * be closed.  */
+    if (!DuplicateHandle(GetCurrentProcess(), hOutputReadTmp, GetCurrentProcess(),
+          &hOutputRead, 0, FALSE, DUPLICATE_SAME_ACCESS)) {
+      DEBUGMSGTL(("util_funcs", "get_exec_pipes DupliateHandle ChildOut: %d\n", GetLastError()));
+      CloseHandle(hErrorWrite);
+      return 0;
+    }   
+    if (!DuplicateHandle(GetCurrentProcess(),hInputWriteTmp,
+          GetCurrentProcess(), &hInputWrite, 0, FALSE, DUPLICATE_SAME_ACCESS)) {
+      DEBUGMSGTL(("util_funcs","get_exec_pipes DupliateHandle ChildIn: %d\n", GetLastError()));
+      CloseHandle(hErrorWrite);
+      CloseHandle(hOutputRead);
+      return 0;
+    }
+
+    /* Close the temporary output and input handles */
+    if (!CloseHandle(hOutputReadTmp)) {
+      DEBUGMSGTL(("util_funcs", "get_exec_pipes CloseHandle (hOutputReadTmp): %d\n", GetLastError()));
+      CloseHandle(hErrorWrite);
+      CloseHandle(hOutputRead);
+      CloseHandle(hInputWrite);
+      return 0;
+    }
+    if (!CloseHandle(hInputWriteTmp)) {
+      DEBUGMSGTL(("util_funcs", "get_exec_pipes CloseHandle (hInputWriteTmp): %d\n", GetLastError()));
+      CloseHandle(hErrorWrite);
+      CloseHandle(hOutputRead);
+      CloseHandle(hInputWrite);
+      return 0;
+    }
+    
+    /* Associates a C run-time file descriptor with an existing operating-system file handle. */
+    *fdIn = _open_osfhandle((intptr_t) hOutputRead, 0);
+    *fdOut = _open_osfhandle((intptr_t) hInputWrite, 0);
+    
+    /* Set up STARTUPINFO for CreateProcess with the handles and have it hide the window
+     * for the new process. */
+    ZeroMemory(&si,sizeof(STARTUPINFO));
+    si.cb = sizeof(STARTUPINFO);
+    si.dwFlags = STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
+    si.hStdOutput = hOutputWrite;
+    si.hStdInput = hInputRead;
+    si.hStdError = hErrorWrite;
+    si.wShowWindow = SW_HIDE;
+   
+    /* Launch the process that you want to redirect.  Example snmpd.conf pass_persist:
+     * pass_persist    .1.3.6.1.4.1.2021.255  c:/perl/bin/perl c:/temp/pass_persisttest
+    */
+    if (!CreateProcess(NULL, cmd, NULL, NULL, TRUE, CREATE_NEW_CONSOLE, NULL, NULL, &si, &pi)) {
+      DEBUGMSGTL(("util_funcs","get_exec_pipes CreateProcess:'%s' %d\n",cmd, GetLastError()));
+      CloseHandle(hErrorWrite);
+      CloseHandle(hOutputRead);
+      CloseHandle(hInputWrite);
+      return 0;
+    }
+    
+    DEBUGMSGTL(("util_funcs","child hProcess (stored in pid): %p\n", pi.hProcess));
+    DEBUGMSGTL(("util_funcs","child dwProcessId (task manager): %d\n",(int)pi.dwProcessId));
+
+    /* Set global child process handle */
+    *pid = pi.hProcess;
+
+    /* Cleanup */
+    if (!CloseHandle(pi.hThread))
+      DEBUGMSGTL(("util_funcs","get_exec_pipes CloseHandle pi.hThread: %d\n",cmd));
+
+   /* Close pipe handles to make sure that no handles to the write end of the
+     * output pipe are maintained in this process or else the pipe will
+     * not close when the child process exits and any calls to ReadFile 
+     * will hang.
+     */
+
+    if (!CloseHandle(hOutputWrite)){
+      DEBUGMSGTL(("util_funcs","get_exec_pipes CloseHandle hOutputWrite: %d\n",cmd, GetLastError()));
+      return 0;
+    }
+    if (!CloseHandle(hInputRead)) {
+      DEBUGMSGTL(("util_funcs","get_exec_pipes CloseHandle hInputRead: %d\n",cmd, GetLastError()));
+      return 0;
+    }
+    if (!CloseHandle(hErrorWrite)) {
+      DEBUGMSGTL(("util_funcs","get_exec_pipes CloseHandle hErrorWrite: %d\n",cmd, GetLastError()));
+      return 0;
+    }
+    return 1;
+#endif                          /* WIN32 */
     return 0;
 }
 
+#ifndef NETSNMP_FEATURE_REMOVE_CLEAR_CACHE
 int
 clear_cache(int action,
             u_char * var_val,
@@ -456,61 +672,22 @@ clear_cache(int action,
             size_t var_val_len,
             u_char * statP, oid * name, size_t name_len)
 {
-
-    long            tmp = 0;
-
     if (var_val_type != ASN_INTEGER) {
         snmp_log(LOG_NOTICE, "Wrong type != int\n");
         return SNMP_ERR_WRONGTYPE;
     }
-    tmp = *((long *) var_val);
-    if (tmp == 1 && action == COMMIT) {
-#ifdef EXCACHETIME
-        cachetime = 0;          /* reset the cache next read */
-#endif
+#if defined(NETSNMP_EXCACHETIME) && defined(USING_UTILITIES_EXECUTE_MODULE) && defined(HAVE_EXECV)
+    else {
+        long            tmp = 0;
+        tmp = *((long *) var_val);
+        if (tmp == 1 && action == COMMIT) {
+            cachetime = 0;          /* reset the cache next read */
+        }
     }
+#endif
     return SNMP_ERR_NOERROR;
 }
-
-char          **argvrestartp, *argvrestartname, *argvrestart;
-
-RETSIGTYPE
-restart_doit(int a)
-{
-    snmp_shutdown("snmpd");
-
-    /*
-     * do the exec 
-     */
-#if HAVE_EXECV
-    execv(argvrestartname, argvrestartp);
-    setPerrorstatus(argvrestartname);
-#endif
-}
-
-int
-restart_hook(int action,
-             u_char * var_val,
-             u_char var_val_type,
-             size_t var_val_len,
-             u_char * statP, oid * name, size_t name_len)
-{
-
-    long            tmp = 0;
-
-    if (var_val_type != ASN_INTEGER) {
-        snmp_log(LOG_NOTICE, "Wrong type != int\n");
-        return SNMP_ERR_WRONGTYPE;
-    }
-    tmp = *((long *) var_val);
-    if (tmp == 1 && action == COMMIT) {
-#ifdef SIGALRM
-        signal(SIGALRM, restart_doit);
-#endif
-        alarm(RESTARTSLEEP);
-    }
-    return SNMP_ERR_NOERROR;
-}
+#endif /* NETSNMP_FEATURE_REMOVE_CLEAR_CACHE */
 
 void
 print_mib_oid(oid name[], size_t len)
@@ -527,176 +704,12 @@ print_mib_oid(oid name[], size_t len)
 }
 
 void
-sprint_mib_oid(char *buf, oid name[], size_t len)
+sprint_mib_oid(char *buf, const oid *name, size_t len)
 {
     int             i;
-    for (i = 0; i < (int) len; i++) {
-        sprintf(buf, ".%d", (int) name[i]);
-        while (*buf != 0)
-            buf++;
-    }
-}
 
-/*******************************************************************-o-******
- * header_simple_table
- *
- * Parameters:
- *	  *vp		 Variable data.
- *	  *name		 Fully instantiated OID name.
- *	  *length	 Length of name.
- *	   exact	 TRUE if an exact match is desired.
- *	  *var_len	 Hook for size of returned data type.
- *	(**write_method) Hook for write method (UNUSED).
- *	   max
- *      
- * Returns:
- *	0	If name matches vp->name (accounting for 'exact') and is
- *			not greater in length than 'max'.
- *	1	Otherwise.
- *
- *
- * Compare 'name' to vp->name for the best match or an exact match (if
- *	requested).  Also check that 'name' is not longer than 'max' if
- *	max is greater-than/equal 0.
- * Store a successful match in 'name', and increment the OID instance if
- *	the match was not exact.  
- *
- * 'name' and 'length' are undefined upon failure.
- *
- */
-int
-header_simple_table(struct variable *vp, oid * name, size_t * length,
-                    int exact, size_t * var_len,
-                    WriteMethod ** write_method, int max)
-{
-    int             i, rtest;   /* Set to:      -1      If name < vp->name,
-                                 *              1       If name > vp->name,
-                                 *              0       Otherwise.
-                                 */
-    oid             newname[MAX_OID_LEN];
-
-    for (i = 0, rtest = 0;
-         i < (int) vp->namelen && i < (int) (*length) && !rtest; i++) {
-        if (name[i] != vp->name[i]) {
-            if (name[i] < vp->name[i])
-                rtest = -1;
-            else
-                rtest = 1;
-        }
-    }
-    if (rtest > 0 ||
-        (exact == 1
-         && (rtest || (int) *length != (int) (vp->namelen + 1)))) {
-        if (var_len)
-            *var_len = 0;
-        return MATCH_FAILED;
-    }
-
-    memset(newname, 0, sizeof(newname));
-
-    if (((int) *length) <= (int) vp->namelen || rtest == -1) {
-        memmove(newname, vp->name, (int) vp->namelen * sizeof(oid));
-        newname[vp->namelen] = 1;
-        *length = vp->namelen + 1;
-    } else if (((int) *length) > (int) vp->namelen + 1) {       /* exact case checked earlier */
-        *length = vp->namelen + 1;
-        memmove(newname, name, (*length) * sizeof(oid));
-        if (name[*length - 1] < ULONG_MAX) {
-            newname[*length - 1] = name[*length - 1] + 1;
-        } else {
-            /*
-             * Careful not to overflow...  
-             */
-            newname[*length - 1] = name[*length - 1];
-        }
-    } else {
-        *length = vp->namelen + 1;
-        memmove(newname, name, (*length) * sizeof(oid));
-        if (!exact) {
-            if (name[*length - 1] < ULONG_MAX) {
-                newname[*length - 1] = name[*length - 1] + 1;
-            } else {
-                /*
-                 * Careful not to overflow...  
-                 */
-                newname[*length - 1] = name[*length - 1];
-            }
-        } else {
-            newname[*length - 1] = name[*length - 1];
-        }
-    }
-    if ((max >= 0 && (newname[*length - 1] > max)) ||
-               ( 0 == newname[*length - 1] )) {
-        if (var_len)
-            *var_len = 0;
-        return MATCH_FAILED;
-    }
-
-    memmove(name, newname, (*length) * sizeof(oid));
-    if (write_method)
-        *write_method = 0;
-    if (var_len)
-        *var_len = sizeof(long);        /* default */
-    return (MATCH_SUCCEEDED);
-}
-
-/*
- * header_generic(...
- * Arguments:
- * vp     IN      - pointer to variable entry that points here
- * name    IN/OUT  - IN/name requested, OUT/name found
- * length  IN/OUT  - length of IN/OUT oid's 
- * exact   IN      - TRUE if an exact match was requested
- * var_len OUT     - length of variable or 0 if function returned
- * write_method
- * 
- */
-
-/*******************************************************************-o-******
- * generic_header
- *
- * Parameters:
- *	  *vp	   (I)     Pointer to variable entry that points here.
- *	  *name	   (I/O)   Input name requested, output name found.
- *	  *length  (I/O)   Length of input and output oid's.
- *	   exact   (I)     TRUE if an exact match was requested.
- *	  *var_len (O)     Length of variable or 0 if function returned.
- *	(**write_method)   Hook to name a write method (UNUSED).
- *      
- * Returns:
- *	MATCH_SUCCEEDED	If vp->name matches name (accounting for exact bit).
- *	MATCH_FAILED	Otherwise,
- *
- *
- * Check whether variable (vp) matches name.
- */
-int
-header_generic(struct variable *vp,
-               oid * name,
-               size_t * length,
-               int exact, size_t * var_len, WriteMethod ** write_method)
-{
-    oid             newname[MAX_OID_LEN];
-    int             result;
-
-    DEBUGMSGTL(("util_funcs", "header_generic: "));
-    DEBUGMSGOID(("util_funcs", name, *length));
-    DEBUGMSG(("util_funcs", " exact=%d\n", exact));
-
-    memcpy((char *) newname, (char *) vp->name,
-           (int) vp->namelen * sizeof(oid));
-    newname[vp->namelen] = 0;
-    result = snmp_oid_compare(name, *length, newname, vp->namelen + 1);
-    DEBUGMSGTL(("util_funcs", "  result: %d\n", result));
-    if ((exact && (result != 0)) || (!exact && (result >= 0)))
-        return (MATCH_FAILED);
-    memcpy((char *) name, (char *) newname,
-           ((int) vp->namelen + 1) * sizeof(oid));
-    *length = vp->namelen + 1;
-
-    *write_method = 0;
-    *var_len = sizeof(long);    /* default to 'long' results */
-    return (MATCH_SUCCEEDED);
+    for (i = 0; i < (int) len; i++)
+        buf += sprintf(buf, ".%" NETSNMP_PRIo "u", name[i]);
 }
 
 /*
@@ -715,13 +728,14 @@ checkmib(struct variable *vp, oid * name, size_t * length,
                                  write_method, max));
 }
 
+#ifndef NETSNMP_FEATURE_REMOVE_FIND_FIELD
 char           *
 find_field(char *ptr, int field)
 {
     int             i;
     char           *init = ptr;
 
-    if (field == LASTFIELD) {
+    if (field == NETSNMP_LASTFIELD) {
         /*
          * skip to end 
          */
@@ -730,15 +744,15 @@ find_field(char *ptr, int field)
         /*
          * rewind a field length 
          */
-        while (*ptr != 0 && isspace(*ptr) && init <= ptr)
+        while (*ptr != 0 && isspace((unsigned char)(*ptr)) && init <= ptr)
             ptr--;
-        while (*ptr != 0 && !isspace(*ptr) && init <= ptr)
+        while (*ptr != 0 && !isspace((unsigned char)(*ptr)) && init <= ptr)
             ptr--;
-        if (isspace(*ptr))
+        if (isspace((unsigned char)(*ptr)))
             ptr++;              /* past space */
         if (ptr < init)
             ptr = init;
-        if (!isspace(*ptr) && *ptr != 0)
+        if (!isspace((unsigned char)(*ptr)) && *ptr != 0)
             return (ptr);
     } else {
         if ((ptr = skip_white(ptr)) == NULL)
@@ -755,7 +769,9 @@ find_field(char *ptr, int field)
     }
     return (NULL);
 }
+#endif /* NETSNMP_FEATURE_REMOVE_FIND_FIELD */
 
+#ifndef NETSNMP_FEATURE_REMOVE_PARSE_MIBOID
 int
 parse_miboid(const char *buf, oid * oidout)
 {
@@ -765,9 +781,12 @@ parse_miboid(const char *buf, oid * oidout)
         return 0;
     if (*buf == '.')
         buf++;
-    for (i = 0; isdigit(*buf); i++) {
-        oidout[i] = atoi(buf);
-        while (isdigit(*buf++));
+    for (i = 0; isdigit((unsigned char)(*buf)); i++) {
+        /* Subidentifiers are unsigned values, up to 2^32-1
+         * so we need to use 'strtoul' rather than 'atoi'
+         */
+        oidout[i] = strtoul(buf, NULL, 10) & 0xffffffff;
+        while (isdigit((unsigned char)(*buf))) buf++;
         if (*buf == '.')
             buf++;
     }
@@ -776,7 +795,9 @@ parse_miboid(const char *buf, oid * oidout)
      */
     return i;
 }
+#endif /* NETSNMP_FEATURE_REMOVE_PARSE_MIBOID */
 
+#ifndef NETSNMP_FEATURE_REMOVE_STRING_APPEND_INT
 void
 string_append_int(char *s, int val)
 {
@@ -791,13 +812,16 @@ string_append_int(char *s, int val)
     strcpy(s, textVal);
     return;
 }
+#endif /* NETSNMP_FEATURE_REMOVE_STRING_APPEND_INT */
+
+#ifndef NETSNMP_FEATURE_REMOVE_INTERNAL_MIB_TABLE
 
 struct internal_mib_table {
     int             max_size;   /* Size of the current data table */
     int             next_index; /* Index of the next free entry */
     int             current_index;      /* Index of the 'current' entry */
     int             cache_timeout;
-    marker_t        cache_marker;
+    marker_t        cache_markerM;
     RELOAD         *reload;     /* Routine to read in the data */
     COMPARE        *compare;    /* Routine to compare two entries */
     int             data_size;  /* Size of an individual entry */
@@ -805,7 +829,7 @@ struct internal_mib_table {
 };
 
 mib_table_t
-Initialise_Table(int size, int timeout, RELOAD reload, COMPARE compare)
+Initialise_Table(int size, int timeout, RELOAD *reload, COMPARE *compare)
 {
     struct internal_mib_table *t;
 
@@ -818,7 +842,7 @@ Initialise_Table(int size, int timeout, RELOAD reload, COMPARE compare)
     t->next_index = 1;          /* Don't use index 0 */
     t->current_index = 1;
     t->cache_timeout = timeout;
-    t->cache_marker = NULL;
+    t->cache_markerM = NULL;
     t->reload = reload;
     t->compare = compare;
     t->data_size = size;
@@ -840,8 +864,9 @@ check_and_reload_table(struct internal_mib_table *table)
      * If the saved data is fairly recent,
      *    we don't need to reload it
      */
-    if (table->cache_marker &&
-        !(atime_ready(table->cache_marker, table->cache_timeout * 1000)))
+    if (table->cache_markerM &&
+        !(netsnmp_ready_monotonic(table->cache_markerM,
+                                  table->cache_timeout * 1000)))
         return 1;
 
 
@@ -851,20 +876,17 @@ check_and_reload_table(struct internal_mib_table *table)
      * N.B:  Update the cache marker *before* calling
      *   this routine, to avoid problems with recursion
      */
-    if (!table->cache_marker)
-        table->cache_marker = atime_newMarker();
-    else
-        atime_setMarker(table->cache_marker);
+    netsnmp_set_monotonic_marker(&table->cache_markerM);
 
     table->next_index = 1;
     if (table->reload((mib_table_t) table) < 0) {
-        free(table->cache_marker);
-        table->cache_marker = NULL;
+        free(table->cache_markerM);
+        table->cache_markerM = NULL;
         return 0;
     }
     table->current_index = 1;
     if (table->compare != NULL) /* Sort the table */
-        qsort(TABLE_START(table), table->next_index,
+        qsort(TABLE_START(table), table->next_index-1,
               table->data_size, table->compare);
     return 1;
 }
@@ -969,3 +991,147 @@ Retrieve_Table_Data(mib_table_t t, int *max_idx)
     *max_idx = table->next_index - 1;
     return table->data;
 }
+#endif /* NETSNMP_FEATURE_REMOVE_INTERNAL_MIB_TABLE */
+
+#if defined(HAVE_LINUX_RTNETLINK_H)
+
+#ifndef NETSNMP_FEATURE_REMOVE_CREATE_PREFIX_INFO
+prefix_cbx *net_snmp_create_prefix_info(unsigned long OnLinkFlag,
+                                        unsigned long AutonomousFlag,
+                                        char *in6ptr)
+{
+   prefix_cbx *node = SNMP_MALLOC_TYPEDEF(prefix_cbx);
+   if(!in6ptr) {
+      free(node);
+      return NULL;
+   }
+   if(!node) {
+      free(node);
+      return NULL;
+   }
+   node->next_info = NULL;
+   node->ipAddressPrefixOnLinkFlag = OnLinkFlag;
+   node->ipAddressPrefixAutonomousFlag = AutonomousFlag;
+   memcpy(node->in6p, in6ptr, sizeof(node->in6p));
+
+   return node;
+}
+#endif /* NETSNMP_FEATURE_REMOVE_CREATE_PREFIX_INFO */
+
+#ifndef NETSNMP_FEATURE_REMOVE_FIND_PREFIX_INFO
+int net_snmp_find_prefix_info(prefix_cbx **head,
+                              char *address,
+                              prefix_cbx *node_to_find)
+{
+    int iret;
+    memset(node_to_find, 0, sizeof(prefix_cbx));
+    if(!*head)
+       return -1;
+    memcpy(node_to_find->in6p, address, sizeof(node_to_find->in6p));
+
+    iret = net_snmp_search_update_prefix_info(head, node_to_find, 1);
+    if(iret < 0) {
+       DEBUGMSGTL(("util_funcs:prefix", "Unable to search the list\n"));
+       return -1;
+    } else if (!iret) {
+       DEBUGMSGTL(("util_funcs:prefix", "Could not find prefix info\n"));
+       return -1;
+    } else
+       return 0;
+}
+#endif /* NETSNMP_FEATURE_REMOVE_FIND_PREFIX_INFO */
+
+#ifndef NETSNMP_FEATURE_REMOVE_UPDATE_PREFIX_INFO
+int net_snmp_update_prefix_info(prefix_cbx **head,
+                                prefix_cbx *node_to_update)
+{
+    int iret;
+    iret = net_snmp_search_update_prefix_info(head, node_to_update, 0);
+    if(iret < 0) {
+       DEBUGMSGTL(("util_funcs:prefix", "Unable to update prefix info\n"));
+       return -1;
+    } else if (!iret) {
+       DEBUGMSGTL(("util_funcs:prefix", "Unable to find the node to update\n"));
+       return -1;
+    } else
+       return 0;
+}
+#endif /* NETSNMP_FEATURE_REMOVE_UPDATE_PREFIX_INFO */
+
+int net_snmp_search_update_prefix_info(prefix_cbx **head,
+                                       prefix_cbx *node_to_use,
+                                       int functionality)
+{
+
+   /* We define functionality based on need                                                         *
+    * 0 - Need to do a search and update. We have to provide the node_to_use structure filled fully *
+    * 1 - Need to do only search. Provide the node_to_use with in6p value filled                    */
+
+    prefix_cbx *temp_node;
+    netsnmp_assert(NULL != head);
+    netsnmp_assert(NULL != node_to_use);
+
+    if(functionality > 1)
+       return -1;
+    if(!node_to_use)
+       return -1;
+
+
+    if (!functionality) {
+       if (!*head) {
+           *head = node_to_use;
+           return 1;
+       }
+
+       for (temp_node = *head; temp_node->next_info != NULL ; temp_node = temp_node->next_info) {
+            if (0 == strcmp(temp_node->in6p, node_to_use->in6p)) {
+                temp_node->ipAddressPrefixOnLinkFlag = node_to_use->ipAddressPrefixOnLinkFlag;
+                temp_node->ipAddressPrefixAutonomousFlag = node_to_use->ipAddressPrefixAutonomousFlag;
+                return 2;
+            }
+       }
+       temp_node->next_info = node_to_use;
+       return 1;
+    } else {
+         for (temp_node = *head; temp_node != NULL ; temp_node = temp_node->next_info) {
+              if (0 == strcmp(temp_node->in6p, node_to_use->in6p)) {
+                /*need yo put sem here as i read here */
+                node_to_use->ipAddressPrefixOnLinkFlag = temp_node->ipAddressPrefixOnLinkFlag;
+                node_to_use->ipAddressPrefixAutonomousFlag = temp_node->ipAddressPrefixAutonomousFlag;
+                return 1;
+              }
+         }
+         return 0;
+    }
+}
+
+#ifndef NETSNMP_FEATURE_REMOVE_DELETE_PREFIX_INFO
+int net_snmp_delete_prefix_info(prefix_cbx **head,
+                                char *address)
+{
+
+    prefix_cbx *temp_node,*prev_node;
+    if(!address)
+       return -1;
+    if(!head)
+       return -1;
+
+    for (temp_node = *head, prev_node = NULL; temp_node;
+         prev_node = temp_node, temp_node = temp_node->next_info) {
+
+         if (temp_node->in6p && strcmp(temp_node->in6p, address) == 0) {
+            if (prev_node)
+                prev_node->next_info = temp_node->next_info;
+            else
+                *head = temp_node->next_info;
+            free(temp_node);
+            return 1;
+        }
+
+    }
+    return 0;
+}
+#endif /* NETSNMP_FEATURE_REMOVE_DELETE_PREFIX_INFO */
+
+#endif /* HAVE_LINUX_RTNETLINK_H */
+         

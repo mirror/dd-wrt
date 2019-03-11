@@ -12,8 +12,29 @@
  * Use is subject to license terms specified in the COPYING file
  * distributed with the Net-SNMP package.
  */
+/*
+ * Portions of this file are copyrighted by:
+ * Copyright (C) 2007 Apple, Inc. All rights reserved.
+ * Use is subject to license terms specified in the COPYING file
+ * distributed with the Net-SNMP package.
+ *
+ * Portions of this file are copyrighted by:
+ * Copyright (c) 2016 VMware, Inc. All rights reserved.
+ * Use is subject to license terms specified in the COPYING file
+ * distributed with the Net-SNMP package.
+ */
 
 #include <net-snmp/net-snmp-config.h>
+
+#include <net-snmp/net-snmp-features.h>
+#include <net-snmp/net-snmp-includes.h>
+#include <net-snmp/agent/net-snmp-agent-includes.h>
+
+#include <net-snmp/agent/table.h>
+
+#ifndef NETSNMP_NO_WRITE_SUPPORT
+netsnmp_feature_require(oid_stash)
+#endif /* !NETSNMP_NO_WRITE_SUPPORT */
 
 #if HAVE_STRING_H
 #include <string.h>
@@ -21,23 +42,27 @@
 #include <strings.h>
 #endif
 
-
-#include <net-snmp/net-snmp-includes.h>
-#include <net-snmp/agent/net-snmp-agent-includes.h>
-
-#include <net-snmp/agent/table.h>
 #include <net-snmp/library/snmp_assert.h>
 
-#if HAVE_DMALLOC_H
-#include <dmalloc.h>
-#endif
+netsnmp_feature_child_of(table_all, mib_helpers)
+
+netsnmp_feature_child_of(table_build_result, table_all)
+netsnmp_feature_child_of(table_get_or_create_row_stash, table_all)
+netsnmp_feature_child_of(registration_owns_table_info, table_all)
+netsnmp_feature_child_of(table_sparse, table_all)
 
 static void     table_helper_cleanup(netsnmp_agent_request_info *reqinfo,
                                      netsnmp_request_info *request,
                                      int status);
 static void     table_data_free_func(void *data);
+static int
+sparse_table_helper_handler(netsnmp_mib_handler *handler,
+                            netsnmp_handler_registration *reginfo,
+                            netsnmp_agent_request_info *reqinfo,
+                            netsnmp_request_info *requests);
 
-/** @defgroup table table: Helps you implement a table.
+/** @defgroup table table
+ *  Helps you implement a table.
  *  @ingroup handler
  *
  *  This handler helps you implement a table by doing some of the
@@ -64,6 +89,20 @@ static void     table_data_free_func(void *data);
  *  You can use this table handler by injecting it into a calling
  *  chain.  When the handler gets called, it'll do processing and
  *  store it's information into the request->parent_data structure.
+ *
+ *  The table helper handler pulls out the column number and indexes from 
+ *  the request oid so that you don't have to do the complex work of
+ *  parsing within your own code.
+ *
+ *  @param tabreq is a pointer to a netsnmp_table_registration_info struct.
+ *	The table handler needs to know up front how your table is structured.
+ *	A netsnmp_table_registeration_info structure that is 
+ *	passed to the table handler should contain the asn index types for the 
+ *	table as well as the minimum and maximum column that should be used.
+ *
+ *  @return Returns a pointer to a netsnmp_mib_handler struct which contains
+ *	the handler's name and the access method
+ *
  */
 netsnmp_mib_handler *
 netsnmp_get_table_handler(netsnmp_table_registration_info *tabreq)
@@ -83,6 +122,31 @@ netsnmp_get_table_handler(netsnmp_table_registration_info *tabreq)
     return ret;
 }
 
+/** Configures a handler such that table registration information is freed by
+ *  netsnmp_handler_free(). Should only be called if handler->myvoid points to
+ *  an object of type netsnmp_table_registration_info.
+ */
+void netsnmp_handler_owns_table_info(netsnmp_mib_handler *handler)
+{
+    netsnmp_assert(handler);
+    netsnmp_assert(handler->myvoid);
+    handler->data_clone
+	= (void *(*)(void *)) netsnmp_table_registration_info_clone;
+    handler->data_free
+	= (void (*)(void *)) netsnmp_table_registration_info_free;
+}
+
+/** Configures a handler such that table registration information is freed by
+ *  netsnmp_handler_free(). Should only be called if reg->handler->myvoid
+ *  points to an object of type netsnmp_table_registration_info.
+ */
+#ifndef NETSNMP_FEATURE_REMOVE_REGISTRATION_OWNS_TABLE_INFO
+void netsnmp_registration_owns_table_info(netsnmp_handler_registration *reg)
+{
+    if (reg)
+        netsnmp_handler_owns_table_info(reg->handler);
+}
+#endif /* NETSNMP_FEATURE_REMOVE_REGISTRATION_OWNS_TABLE_INFO */
 
 /** creates a table handler given the netsnmp_table_registration_info object,
  *  inserts it into the request chain and then calls
@@ -92,14 +156,34 @@ int
 netsnmp_register_table(netsnmp_handler_registration *reginfo,
                        netsnmp_table_registration_info *tabreq)
 {
-    netsnmp_inject_handler(reginfo, netsnmp_get_table_handler(tabreq));
+    netsnmp_mib_handler *handler = netsnmp_get_table_handler(tabreq);
+    if (!handler ||
+        (netsnmp_inject_handler(reginfo, handler) != SNMPERR_SUCCESS)) {
+        snmp_log(LOG_ERR, "could not create table handler\n");
+        netsnmp_handler_free(handler);
+        netsnmp_handler_registration_free(reginfo);
+        return MIB_REGISTRATION_FAILED;
+    }
+
     return netsnmp_register_handler(reginfo);
 }
 
-/** extracts the processed table information from a given request.
- *  call this from subhandlers on a request to extract the processed
+int
+netsnmp_unregister_table(netsnmp_handler_registration *reginfo)
+{
+    /* Locate "this" reginfo */
+    /* SNMP_FREE(reginfo->myvoid); */
+    return netsnmp_unregister_handler(reginfo);
+}
+
+/** Extracts the processed table information from a given request.
+ *  Call this from subhandlers on a request to extract the processed
  *  netsnmp_request_info information.  The resulting information includes the
  *  index values and the column number.
+ *
+ * @param request populated netsnmp request structure
+ *
+ * @return populated netsnmp_table_request_info structure
  */
 NETSNMP_INLINE netsnmp_table_request_info *
 netsnmp_extract_table_info(netsnmp_request_info *request)
@@ -130,8 +214,8 @@ table_helper_handler(netsnmp_mib_handler *handler,
     int             oid_index_pos;
     unsigned int    oid_column_pos;
     unsigned int    tmp_idx;
-    size_t	    tmp_len;
-    int             incomplete, out_of_range, cleaned_up = 0;
+    ssize_t 	    tmp_len;
+    int             incomplete, out_of_range;
     int             status = SNMP_ERR_NOERROR, need_processing = 0;
     oid            *tmp_name;
     netsnmp_table_request_info *tbl_req_info;
@@ -145,7 +229,9 @@ table_helper_handler(netsnmp_mib_handler *handler,
     tbl_info = (netsnmp_table_registration_info *) handler->myvoid;
 
     if ((!handler->myvoid) || (!tbl_info->indexes)) {
-        snmp_log(LOG_INFO, "improperly registered table found\n");
+        snmp_log(LOG_ERR, "improperly registered table found\n");
+        snmp_log(LOG_ERR, "name: %s, table info: %p, indexes: %p\n",
+                 handler->handler_name, handler->myvoid, tbl_info->indexes);
 
         /*
          * XXX-rks: unregister table? 
@@ -153,10 +239,15 @@ table_helper_handler(netsnmp_mib_handler *handler,
         return SNMP_ERR_GENERR;
     }
 
-    DEBUGMSGTL(("helper:table", "Got request for handler %s: base oid:",
-                handler->handler_name));
-    DEBUGMSGOID(("helper:table", reginfo->rootoid, reginfo->rootoid_len));
-    DEBUGMSG(("helper:table", "\n"));
+    DEBUGIF("helper:table:req") {
+        DEBUGMSGTL(("helper:table:req",
+                    "Got %s (%d) mode request for handler %s: base oid:",
+                    se_find_label_in_slist("agent_mode", reqinfo->mode),
+                    reqinfo->mode, handler->handler_name));
+        DEBUGMSGOID(("helper:table:req", reginfo->rootoid,
+                     reginfo->rootoid_len));
+        DEBUGMSG(("helper:table:req", "\n"));
+    }
     
     /*
      * if the agent request info has a state reference, then this is a 
@@ -167,28 +258,39 @@ table_helper_handler(netsnmp_mib_handler *handler,
      * in the netsnmp_agent_request_info. 
      */
     if (netsnmp_agent_get_list_data(reqinfo, handler->next->handler_name)) {
+#ifndef NETSNMP_NO_WRITE_SUPPORT
         if (MODE_IS_SET(reqinfo->mode)) {
             return netsnmp_call_next_handler(handler, reginfo, reqinfo,
                                              requests);
         } else {
+#endif /* NETSNMP_NO_WRITE_SUPPORT */
 /** XXX-rks: memory leak. add cleanup handler? */
             netsnmp_free_agent_data_sets(reqinfo);
+#ifndef NETSNMP_NO_WRITE_SUPPORT
         }
+#endif /* NETSNMP_NO_WRITE_SUPPORT */
     }
 
+#ifndef NETSNMP_NO_WRITE_SUPPORT
     if ( MODE_IS_SET(reqinfo->mode) &&
          (reqinfo->mode != MODE_SET_RESERVE1)) {
         /*
          * for later set modes, we can skip all the index parsing,
          * and we always need to let child handlers have a chance
-         * to clean up.
+         * to clean up, if they were called in the first place (i.e. have
+         * a valid table info pointer).
          */
-        need_processing = 1;
+        if(NULL == netsnmp_extract_table_info(requests)) {
+            DEBUGMSGTL(("helper:table","no table info for set - skipping\n"));
+        }
+        else
+            need_processing = 1;
     }
     else {
+#endif /* NETSNMP_NO_WRITE_SUPPORT */
         /*
-         * for RESERVE1 and GETS, only continue if we have at least
-         * one valid request.
+         * for GETS, only continue if we have at least one valid request.
+         * for RESERVE1, only continue if we have indexes for all requests.
          */
            
     /*
@@ -202,7 +304,7 @@ table_helper_handler(netsnmp_mib_handler *handler,
         DEBUGMSG(("verbose:table", "\n"));
 
         if (request->processed) {
-            DEBUGMSG(("helper:table", "already processed\n"));
+            DEBUGMSG(("verbose:table", "already processed\n"));
             continue;
         }
         netsnmp_assert(request->status == SNMP_ERR_NOERROR);
@@ -221,24 +323,25 @@ table_helper_handler(netsnmp_mib_handler *handler,
             continue;
         }
 
+#ifndef NETSNMP_NO_WRITE_SUPPORT
         if (reqinfo->mode == MODE_SET_RESERVE1) {
-            DEBUGIF("helper:table") {
+            DEBUGIF("helper:table:set") {
                 u_char         *buf = NULL;
                 size_t          buf_len = 0, out_len = 0;
-                DEBUGMSGTL(("helper:table", " SET_REQUEST for OID: "));
-                DEBUGMSGOID(("helper:table", var->name, var->name_length));
+                DEBUGMSGTL(("helper:table:set", " SET_REQUEST for OID: "));
+                DEBUGMSGOID(("helper:table:set", var->name, var->name_length));
                 out_len = 0;
                 if (sprint_realloc_by_type(&buf, &buf_len, &out_len, 1,
-                                           var, 0, 0, 0)) {
-                    DEBUGMSG(("helper:table"," type=%d(%02x), value=%s\n",
+                                           var, NULL, NULL, NULL)) {
+                    DEBUGMSG(("helper:table:set"," type=%d(%02x), value=%s\n",
                               var->type, var->type, buf));
                 } else {
                     if (buf != NULL) {
-                        DEBUGMSG(("helper:table",
+                        DEBUGMSG(("helper:table:set",
                                   " type=%d(%02x), value=%s [TRUNCATED]\n",
                                   var->type, var->type, buf));
                     } else {
-                        DEBUGMSG(("helper:table",
+                        DEBUGMSG(("helper:table:set",
                                   " type=%d(%02x), value=[NIL] [TRUNCATED]\n",
                                   var->type, var->type));
                     }
@@ -248,6 +351,7 @@ table_helper_handler(netsnmp_mib_handler *handler,
                 }
             }
         }
+#endif /* NETSNMP_NO_WRITE_SUPPORT */
 
         /*
          * check to make sure its in table range 
@@ -267,7 +371,7 @@ table_helper_handler(netsnmp_mib_handler *handler,
                              var->name, tmp_len) > 0) {
             if (reqinfo->mode == MODE_GETNEXT) {
                 if (var->name != var->name_loc)
-                    free(var->name);
+                    SNMP_FREE(var->name);
                 snmp_set_var_objid(var, reginfo->rootoid,
                                    reginfo->rootoid_len);
             } else {
@@ -292,9 +396,8 @@ table_helper_handler(netsnmp_mib_handler *handler,
         }
         /*
          * if it is not in range, then mark it in the request list 
-         * because we can't process it. If the request is not a GETNEXT 
-         * then set the error to NOSUCHOBJECT so nobody else wastes time
-         * trying to process it.  
+         * because we can't process it, and set an error so
+         * nobody else wastes time trying to process it either.  
          */
         if (out_of_range) {
             DEBUGMSGTL(("helper:table", "  Not processed: "));
@@ -304,10 +407,17 @@ table_helper_handler(netsnmp_mib_handler *handler,
             /*
              *  Reject requests of the form 'myTable.N'   (N != 1)
              */
-            if (reqinfo->mode != MODE_GETNEXT) {
+#ifndef NETSNMP_NO_WRITE_SUPPORT
+            if (reqinfo->mode == MODE_SET_RESERVE1)
+                table_helper_cleanup(reqinfo, request,
+                                     SNMP_ERR_NOTWRITABLE);
+            else
+#endif /* NETSNMP_NO_WRITE_SUPPORT */
+            if (reqinfo->mode == MODE_GET)
                 table_helper_cleanup(reqinfo, request,
                                      SNMP_NOSUCHOBJECT);
-            }
+            else
+                request->processed = 1; /* skip if next handler called */
             continue;
         }
 
@@ -317,24 +427,43 @@ table_helper_handler(netsnmp_mib_handler *handler,
          */
 
         incomplete = 0;
-        tbl_req_info = SNMP_MALLOC_TYPEDEF(netsnmp_table_request_info);
-        tbl_req_info->reg_info = tbl_info;
-        tbl_req_info->indexes = snmp_clone_varbind(tbl_info->indexes);
-        tbl_req_info->number_indexes = 0;       /* none yet */
-        netsnmp_request_add_list_data(request,
-                                      netsnmp_create_data_list
-                                      (TABLE_HANDLER_NAME,
-                                       (void *) tbl_req_info,
-                                       table_data_free_func));
+        tbl_req_info = netsnmp_extract_table_info(request);
+        if (NULL == tbl_req_info) {
+            tbl_req_info = SNMP_MALLOC_TYPEDEF(netsnmp_table_request_info);
+            if (tbl_req_info == NULL) {
+                table_helper_cleanup(reqinfo, request,
+                                     SNMP_ERR_GENERR);
+                continue;
+            }
+            tbl_req_info->reg_info = tbl_info;
+            tbl_req_info->indexes = snmp_clone_varbind(tbl_info->indexes);
+            tbl_req_info->number_indexes = 0;       /* none yet */
+            netsnmp_request_add_list_data(request,
+                                          netsnmp_create_data_list
+                                          (TABLE_HANDLER_NAME,
+                                           (void *) tbl_req_info,
+                                           table_data_free_func));
+        } else {
+            DEBUGMSGTL(("helper:table", "  using existing tbl_req_info\n "));
+        }
 
+        /*
+         * do we have a column?
+         */
         if (var->name_length > oid_column_pos) {
             /*
-             * oid is long enough to contain index info
+             * oid is long enough to contain COLUMN info
              */
+            DEBUGMSGTL(("helper:table:col",
+                        "  have at least a column (%" NETSNMP_PRIo "d)\n",
+                        var->name[oid_column_pos]));
             if (var->name[oid_column_pos] < tbl_info->min_column) {
+                DEBUGMSGTL(("helper:table:col",
+                            "    but it's less than min (%d)\n",
+                            tbl_info->min_column));
                 if (reqinfo->mode == MODE_GETNEXT) {
                     /*
-                     * fix column, truncate useless index info 
+                     * fix column, truncate useless column info 
                      */
                     var->name_length = oid_column_pos;
                     tbl_req_info->colnum = tbl_info->min_column;
@@ -342,6 +471,8 @@ table_helper_handler(netsnmp_mib_handler *handler,
                     out_of_range = 1;
             } else if (var->name[oid_column_pos] > tbl_info->max_column)
                 out_of_range = 1;
+            else
+                tbl_req_info->colnum = var->name[oid_column_pos];
 
             if (out_of_range) {
                 /*
@@ -349,17 +480,24 @@ table_helper_handler(netsnmp_mib_handler *handler,
                  * memory 
                  */
                 DEBUGMSGTL(("helper:table",
-                            "  oid is out of range. Not processed: "));
+                            "    oid is out of range. Not processed: "));
                 DEBUGMSGOID(("helper:table", var->name, var->name_length));
                 DEBUGMSG(("helper:table", "\n"));
 
                 /*
                  *  Reject requests of the form 'myEntry.N'   (invalid N)
                  */
-                if (reqinfo->mode != MODE_GETNEXT) {
+#ifndef NETSNMP_NO_WRITE_SUPPORT
+                if (reqinfo->mode == MODE_SET_RESERVE1)
+                    table_helper_cleanup(reqinfo, request,
+                                         SNMP_ERR_NOTWRITABLE);
+                else
+#endif /* NETSNMP_NO_WRITE_SUPPORT */
+                if (reqinfo->mode == MODE_GET)
                     table_helper_cleanup(reqinfo, request,
                                          SNMP_NOSUCHOBJECT);
-                }
+                else
+                    request->processed = 1; /* skip if next handler called */
                 continue;
             }
             /*
@@ -369,46 +507,68 @@ table_helper_handler(netsnmp_mib_handler *handler,
                 tbl_req_info->colnum =
                     netsnmp_closest_column(var->name[oid_column_pos],
                                            tbl_info->valid_columns);
+                DEBUGMSGTL(("helper:table:col", "    closest column is %d\n",
+                            tbl_req_info->colnum));
+                /*
+                 * xxx-rks: document why the continue...
+                 */
                 if (tbl_req_info->colnum == 0)
                     continue;
                 if (tbl_req_info->colnum != var->name[oid_column_pos]) {
+                    DEBUGMSGTL(("helper:table:col",
+                                "    which doesn't match req "
+                                "%" NETSNMP_PRIo "d - truncating index info\n",
+                                var->name[oid_column_pos]));
                     /*
                      * different column! truncate useless index info 
                      */
-                    var->name_length = oid_column_pos;
+                    var->name_length = oid_column_pos + 1; /* pos is 0 based */
                 }
             }
             /*
              * var->name_length may have changed - check again 
              */
-            if (var->name_length <= oid_column_pos) { /** none available */
-                tbl_req_info->index_oid_len = 0;
+            if ((int)var->name_length <= oid_index_pos) { /* pos is 0 based */
+                DEBUGMSGTL(("helper:table", "    not enough for indexes\n"));
+                tbl_req_info->index_oid_len = 0; /** none available */
             } else {
-                tbl_req_info->colnum = var->name[oid_column_pos];
+                /*
+                 * oid is long enough to contain INDEX info
+                 */
                 tbl_req_info->index_oid_len =
                     var->name_length - oid_index_pos;
+                DEBUGMSGTL(("helper:table", "    have %lu bytes of index\n",
+                            (unsigned long)tbl_req_info->index_oid_len));
                 netsnmp_assert(tbl_req_info->index_oid_len < MAX_OID_LEN);
                 memcpy(tbl_req_info->index_oid, &var->name[oid_index_pos],
                        tbl_req_info->index_oid_len * sizeof(oid));
                 tmp_name = tbl_req_info->index_oid;
             }
-        } else if (reqinfo->mode != MODE_GETNEXT) {
-            /*
-             * oid is NOT long enough to contain index info, and this is
-             * NOT a GETNEXT, so we can't do anything with it.
-             *
-             * Reject requests of the form 'myTable' or 'myEntry'
-             */
-            table_helper_cleanup(reqinfo, request, SNMP_NOSUCHOBJECT);
-            continue;
-        } else {
+        } else if (reqinfo->mode == MODE_GETNEXT ||
+                   reqinfo->mode == MODE_GETBULK) {
             /*
              * oid is NOT long enough to contain column or index info, so start
              * at the minimum column. Set index oid len to 0 because we don't
              * have any index info in the OID.
              */
+            DEBUGMSGTL(("helper:table", "  no column/index in request\n"));
             tbl_req_info->index_oid_len = 0;
             tbl_req_info->colnum = tbl_info->min_column;
+        } else {
+            /*
+             * oid is NOT long enough to contain index info,
+             * so we can't do anything with it.
+             *
+             * Reject requests of the form 'myTable' or 'myEntry'
+             */
+            if (reqinfo->mode == MODE_GET ) {
+                table_helper_cleanup(reqinfo, request, SNMP_NOSUCHOBJECT);
+#ifndef NETSNMP_NO_WRITE_SUPPORT
+            } else if (reqinfo->mode == MODE_SET_RESERVE1 ) {
+                table_helper_cleanup(reqinfo, request, SNMP_ERR_NOTWRITABLE);
+#endif /* NETSNMP_NO_WRITE_SUPPORT */
+            }
+            continue;
         }
 
         /*
@@ -427,10 +587,13 @@ table_helper_handler(netsnmp_mib_handler *handler,
         /*
          * for each index type, try to extract the index from var->name
          */
-
+        DEBUGMSGTL(("helper:table", "  looking for %d indexes\n",
+                    tbl_info->number_indexes));
         for (tmp_idx = 0, vb = tbl_req_info->indexes;
              tmp_idx < tbl_info->number_indexes;
              ++tmp_idx, vb = vb->next_variable) {
+            size_t parsed_oid_len;
+
             if (incomplete && tmp_len) {
                 /*
                  * incomplete/illegal OID, set up dummy 0 to parse 
@@ -445,24 +608,24 @@ table_helper_handler(netsnmp_mib_handler *handler,
                  *
                  * Reject requests of the form 'myObject'   (no instance)
                  */
-                if (reqinfo->mode != MODE_GETNEXT) {
-                    table_helper_cleanup(reqinfo, requests,
-                                         SNMP_NOSUCHINSTANCE);
-                    cleaned_up = 1;
-                }
                 tmp_len = 0;
-                tmp_name = (oid *) & tmp_len;
+                tmp_name = NULL;
                 break;
             }
             /*
              * try and parse current index 
              */
-            if (parse_one_oid_index(&tmp_name, &tmp_len,
+            netsnmp_assert(tmp_len >= 0);
+            parsed_oid_len = tmp_len;
+            if (parse_one_oid_index(&tmp_name, &parsed_oid_len,
                                     vb, 1) != SNMPERR_SUCCESS) {
                 incomplete = 1;
                 tmp_len = -1;   /* is this necessary? Better safe than
                                  * sorry */
             } else {
+                tmp_len = parsed_oid_len;
+                DEBUGMSGTL(("helper:table", "  got 1 (incomplete=%d)\n",
+                            incomplete));
                 /*
                  * do not count incomplete indexes 
                  */
@@ -477,30 +640,32 @@ table_helper_handler(netsnmp_mib_handler *handler,
             }
         }                       /** for loop */
 
-        DEBUGIF("helper:table") {
-            if (!cleaned_up) {
+        DEBUGIF("helper:table:results") {
                 unsigned int    count;
                 u_char         *buf = NULL;
                 size_t          buf_len = 0, out_len = 0;
-                DEBUGMSGTL(("helper:table", "  column: %d, indexes: %d",
+                DEBUGMSGTL(("helper:table:results", "  found %d indexes\n",
+                            tbl_req_info->number_indexes));
+                DEBUGMSGTL(("helper:table:results",
+                            "  column: %d, indexes: %d",
                             tbl_req_info->colnum,
                             tbl_req_info->number_indexes));
                 for (vb = tbl_req_info->indexes, count = 0;
-                     vb && count < tbl_info->number_indexes;
+                     vb && count < tbl_req_info->number_indexes;
                      count++, vb = vb->next_variable) {
                     out_len = 0;
                     if (sprint_realloc_by_type(&buf, &buf_len, &out_len, 1,
-                                               vb, 0, 0, 0)) {
-                        DEBUGMSG(("helper:table",
+                                               vb, NULL, NULL, NULL)) {
+                        DEBUGMSG(("helper:table:results",
                                   "   index: type=%d(%02x), value=%s",
                                   vb->type, vb->type, buf));
                     } else {
                         if (buf != NULL) {
-                            DEBUGMSG(("helper:table",
+                            DEBUGMSG(("helper:table:results",
                                       "   index: type=%d(%02x), value=%s [TRUNCATED]",
                                       vb->type, vb->type, buf));
                         } else {
-                            DEBUGMSG(("helper:table",
+                            DEBUGMSG(("helper:table:results",
                                       "   index: type=%d(%02x), value=[NIL] [TRUNCATED]",
                                       vb->type, vb->type));
                         }
@@ -509,18 +674,35 @@ table_helper_handler(netsnmp_mib_handler *handler,
                 if (buf != NULL) {
                     free(buf);
                 }
-                DEBUGMSG(("helper:table", "\n"));
-            }
+                DEBUGMSG(("helper:table:results", "\n"));
         }
 
 
         /*
-         * do we have sufficent index info to continue?
+         * do we have sufficient index info to continue?
          */
 
         if ((reqinfo->mode != MODE_GETNEXT) &&
             ((tbl_req_info->number_indexes != tbl_info->number_indexes) ||
              (tmp_len != -1))) {
+
+            DEBUGMSGTL(("helper:table",
+                        "invalid index(es) for table - skipping\n"));
+
+#ifndef NETSNMP_NO_WRITE_SUPPORT
+            if ( MODE_IS_SET(reqinfo->mode) ) {
+                /*
+                 * no point in continuing without indexes for set.
+                 */
+                netsnmp_assert(reqinfo->mode == MODE_SET_RESERVE1);
+                /** clear first request so we wont try to run FREE mode */
+                netsnmp_free_request_data_sets(requests);
+                /** set actual error */
+                table_helper_cleanup(reqinfo, request, SNMP_ERR_NOCREATION);
+                need_processing = 0; /* don't call next handler */
+                break;
+            }
+#endif /* NETSNMP_NO_WRITE_SUPPORT */
             table_helper_cleanup(reqinfo, request, SNMP_NOSUCHINSTANCE);
             continue;
         }
@@ -529,18 +711,169 @@ table_helper_handler(netsnmp_mib_handler *handler,
         ++need_processing;
 
     }                           /* for each request */
+#ifndef NETSNMP_NO_WRITE_SUPPORT
     }
+#endif /* NETSNMP_NO_WRITE_SUPPORT */
 
     /*
-     * * call our child access function 
+     * bail if there is nothing for our child handlers
      */
-    if (need_processing)
-        status =
-            netsnmp_call_next_handler(handler, reginfo, reqinfo, requests);
+    if (0 == need_processing)
+        return status;
+
+    /*
+     * call our child access function 
+     */
+    status =
+        netsnmp_call_next_handler(handler, reginfo, reqinfo, requests);
+
+    /*
+     * check for sparse tables
+     */
+    if (reqinfo->mode == MODE_GETNEXT)
+        sparse_table_helper_handler( handler, reginfo, reqinfo, requests );
 
     return status;
 }
 
+#define SPARSE_TABLE_HANDLER_NAME "sparse_table"
+
+/** implements the sparse table helper handler
+ * @internal
+ *
+ * @note
+ * This function is static to prevent others from calling it
+ * directly. It it automatically called by the table helper,
+ * 
+ */
+static int
+sparse_table_helper_handler(netsnmp_mib_handler *handler,
+                     netsnmp_handler_registration *reginfo,
+                     netsnmp_agent_request_info *reqinfo,
+                     netsnmp_request_info *requests)
+{
+    int             status = SNMP_ERR_NOERROR;
+    netsnmp_request_info *request;
+    oid             coloid[MAX_OID_LEN];
+    netsnmp_table_request_info *table_info;
+
+    /*
+     * since we don't call child handlers, warn if one was registered
+     * beneath us. A special exception for the table helper, which calls
+     * the handler directly. Use handle custom flag to only log once.
+     */
+    if((table_helper_handler != handler->access_method) &&
+       (NULL != handler->next)) {
+        /*
+         * always warn if called without our own handler. If we
+         * have our own handler, use custom bit 1 to only log once.
+         */
+        if((sparse_table_helper_handler != handler->access_method) ||
+           !(handler->flags & MIB_HANDLER_CUSTOM1)) {
+            snmp_log(LOG_WARNING, "handler (%s) registered after sparse table "
+                     "hander will not be called\n",
+                     handler->next->handler_name ?
+                     handler->next->handler_name : "" );
+            if(sparse_table_helper_handler == handler->access_method)
+                handler->flags |= MIB_HANDLER_CUSTOM1;
+        }
+    }
+
+    if (reqinfo->mode == MODE_GETNEXT) {
+        for(request = requests ; request; request = request->next) {
+            if ((request->requestvb->type == ASN_NULL && request->processed) ||
+                request->delegated)
+                continue;
+            if (request->requestvb->type == SNMP_NOSUCHINSTANCE) {
+                /*
+                 * get next skipped this value for this column, we
+                 * need to keep searching forward 
+                 */
+                DEBUGMSGT(("sparse", "retry for NOSUCHINSTANCE\n"));
+                request->requestvb->type = ASN_PRIV_RETRY;
+            }
+            if (request->requestvb->type == SNMP_NOSUCHOBJECT ||
+                request->requestvb->type == SNMP_ENDOFMIBVIEW) {
+                /*
+                 * get next has completely finished with this column,
+                 * so we need to try with the next column (if any)
+                 */
+                DEBUGMSGT(("sparse", "retry for NOSUCHOBJECT\n"));
+                table_info = netsnmp_extract_table_info(request);
+                table_info->colnum = netsnmp_table_next_column(table_info);
+                if (0 != table_info->colnum) {
+                    memcpy(coloid, reginfo->rootoid,
+                           reginfo->rootoid_len * sizeof(oid));
+                    coloid[reginfo->rootoid_len]   = 1;   /* table.entry node */
+                    coloid[reginfo->rootoid_len+1] = table_info->colnum;
+                    snmp_set_var_objid(request->requestvb,
+                                       coloid, reginfo->rootoid_len + 2);
+                    
+                    request->requestvb->type = ASN_PRIV_RETRY;
+                }
+                else {
+                    /*
+                     * If we don't have column info, reset to null so
+                     * the agent will move on to the next table.
+                     */
+                    request->requestvb->type = ASN_NULL;
+                }
+            }
+        }
+    }
+    return status;
+}
+
+/** create sparse table handler
+ */
+#ifndef NETSNMP_FEATURE_REMOVE_TABLE_SPARSE
+netsnmp_mib_handler *
+netsnmp_sparse_table_handler_get(void)
+{
+    return netsnmp_create_handler(SPARSE_TABLE_HANDLER_NAME,
+                                  sparse_table_helper_handler);
+}
+
+/** creates a table handler given the netsnmp_table_registration_info object,
+ *  inserts it into the request chain and then calls
+ *  netsnmp_register_handler() to register the table into the agent.
+ */
+int
+netsnmp_sparse_table_register(netsnmp_handler_registration *reginfo,
+                       netsnmp_table_registration_info *tabreq)
+{
+    netsnmp_mib_handler *handler1, *handler2;
+
+    handler1 = netsnmp_create_handler(SPARSE_TABLE_HANDLER_NAME,
+                                     sparse_table_helper_handler);
+    if (NULL == handler1)
+        return MIB_REGISTRATION_FAILED;
+
+    handler2 = netsnmp_get_table_handler(tabreq);
+    if (NULL == handler2 ) {
+        netsnmp_handler_free(handler1);
+        return SNMP_ERR_GENERR;
+    }
+
+    if (SNMPERR_SUCCESS != netsnmp_inject_handler(reginfo, handler1)) {
+        netsnmp_handler_free(handler1);
+        netsnmp_handler_free(handler2);
+        return MIB_REGISTRATION_FAILED;
+    }
+
+    if (SNMPERR_SUCCESS != netsnmp_inject_handler(reginfo, handler2)) {
+        /** handler1 is in reginfo... remove and free?? */
+        netsnmp_handler_free(handler2);
+        return MIB_REGISTRATION_FAILED;
+    }
+
+    /** both handlers now in reginfo, so nothing to do on error */
+    return netsnmp_register_handler(reginfo);
+}
+#endif /* NETSNMP_FEATURE_REMOVE_TABLE_SPARSE */
+
+
+#ifndef NETSNMP_FEATURE_REMOVE_TABLE_BUILD_RESULT
 /** Builds the result to be returned to the agent given the table information.
  *  Use this function to return results from lowel level handlers to
  *  the agent.  It takes care of building the proper resulting oid
@@ -574,11 +907,10 @@ netsnmp_table_build_result(netsnmp_handler_registration *reginfo,
     return SNMPERR_SUCCESS;
 }
 
-
 /** given a registration info object, a request object and the table
  *  info object it builds the request->requestvb->name oid from the
  *  index values and column information found in the table_info
- *  object.
+ *  object. Index values are extracted from the table_info varbinds.
  */
 int
 netsnmp_table_build_oid(netsnmp_handler_registration *reginfo,
@@ -591,6 +923,14 @@ netsnmp_table_build_oid(netsnmp_handler_registration *reginfo,
     if (!reginfo || !reqinfo || !table_info)
         return SNMPERR_GENERR;
 
+    /*
+     * xxx-rks: inefficent. we do a copy here, then build_oid does it
+     *          again. either come up with a new utility routine, or
+     *          do some hijinks here to eliminate extra copy.
+     *          Probably could make sure all callers have the
+     *          index & variable list updated, and use
+     *          netsnmp_table_build_oid_from_index() instead of all this.
+     */
     memcpy(tmpoid, reginfo->rootoid, reginfo->rootoid_len * sizeof(oid));
     tmpoid[reginfo->rootoid_len] = 1;   /** .Entry */
     tmpoid[reginfo->rootoid_len + 1] = table_info->colnum; /** .column */
@@ -603,8 +943,12 @@ netsnmp_table_build_oid(netsnmp_handler_registration *reginfo,
 
     return SNMPERR_SUCCESS;
 }
+#endif /* NETSNMP_FEATURE_REMOVE_TABLE_BUILD_RESULT */
 
-/** Builds an oid from index information.
+/** given a registration info object, a request object and the table
+ *  info object it builds the request->requestvb->name oid from the
+ *  index values and column information found in the table_info
+ *  object.  Index values are extracted from the table_info index oid.
  */
 int
 netsnmp_table_build_oid_from_index(netsnmp_handler_registration *reginfo,
@@ -626,8 +970,7 @@ netsnmp_table_build_oid_from_index(netsnmp_handler_registration *reginfo,
     memcpy(&tmpoid[len], table_info->index_oid,
            table_info->index_oid_len * sizeof(oid));
     len += table_info->index_oid_len;
-    snmp_clone_mem((void **) &var->name, tmpoid, len * sizeof(oid));
-    var->name_length = len;
+    snmp_set_var_objid( var, tmpoid, len );
 
     return SNMPERR_SUCCESS;
 }
@@ -638,6 +981,11 @@ netsnmp_update_variable_list_from_index(netsnmp_table_request_info *tri)
 {
     if (!tri)
         return SNMPERR_GENERR;
+
+    /*
+     * free any existing allocated memory, then parse oid into varbinds
+     */
+    snmp_reset_var_buffers( tri->indexes);
 
     return parse_oid_indexes(tri->index_oid, tri->index_oid_len,
                              tri->indexes);
@@ -691,14 +1039,63 @@ netsnmp_check_getnext_reply(netsnmp_request_info *request,
             /*
              * the new result must be better than the old 
              */
+#ifdef ONLY_WORKS_WITH_ONE_VARBIND
             if (!*outvar)
                 *outvar = snmp_clone_varbind(newvar);
+	    else
+                /* 
+                 * TODO: walk the full varbind list, setting
+                 *       *all* the values - not just the first.
+                 */
+                snmp_set_var_typed_value(*outvar, newvar->type,
+				newvar->val.string, newvar->val_len);
+#else  /* Interim replacement approach - less efficient, but it works! */
+            if (*outvar)
+                snmp_free_varbind(*outvar);
+            *outvar = snmp_clone_varbind(newvar);
+#endif
             snmp_set_var_objid(*outvar, myname, myname_len);
 
             return 1;
         }
     }
     return 0;
+}
+
+netsnmp_table_registration_info *
+netsnmp_table_registration_info_clone(netsnmp_table_registration_info *tri)
+{
+    netsnmp_table_registration_info *copy;
+    copy = malloc(sizeof(*copy));
+    if (copy) {
+        *copy = *tri;
+        copy->indexes = snmp_clone_varbind(tri->indexes);
+        if (!copy->indexes) {
+            free(copy);
+            copy = NULL;
+        }
+    }
+    return copy;
+}
+
+void
+netsnmp_table_registration_info_free(netsnmp_table_registration_info *tri)
+{
+    if (NULL == tri)
+        return;
+
+    if (NULL != tri->indexes)
+        snmp_free_varbind(tri->indexes);
+
+#if 0
+    /*
+     * sigh... example use of valid_columns points to static memory,
+     * so freeing it would be bad... we'll just have to live with any
+     * leaks, for now...
+     */
+#endif
+
+    free(tri);
 }
 
 /** @} */
@@ -730,90 +1127,122 @@ table_helper_cleanup(netsnmp_agent_request_info *reqinfo,
 }
 
 
+/*
+ * find the closest column to current (which may be current).
+ *
+ * called when a table runs out of rows for column X. This
+ * function is called with current = X + 1, to verify that
+ * X + 1 is a valid column, or find the next closest column if not.
+ *
+ * All list types should be sorted, lowest to highest.
+ */
 unsigned int
 netsnmp_closest_column(unsigned int current,
                        netsnmp_column_info *valid_columns)
 {
     unsigned int    closest = 0;
-    char            done = 0;
     int             idx;
 
     if (valid_columns == NULL)
         return 0;
 
-    do {
+    for( ; valid_columns; valid_columns = valid_columns->next) {
 
         if (valid_columns->isRange) {
-
+            /*
+             * if current < low range, it might be closest.
+             * otherwise, if it's < high range, current is in
+             * the range, and thus is an exact match.
+             */
             if (current < valid_columns->details.range[0]) {
-                if (valid_columns->details.range[0] < closest) {
+                if ( (valid_columns->details.range[0] < closest) ||
+                     (0 == closest)) {
                     closest = valid_columns->details.range[0];
                 }
             } else if (current <= valid_columns->details.range[1]) {
                 closest = current;
-                done = 1;       /* can not get any closer! */
+                break;       /* can not get any closer! */
             }
 
         } /* range */
         else {                  /* list */
-
+            /*
+             * if current < first item, no need to iterate over list.
+             * that item is either closest, or not.
+             */
             if (current < valid_columns->details.list[0]) {
-                if (valid_columns->details.list[0] < closest)
+                if ((valid_columns->details.list[0] < closest) ||
+                    (0 == closest))
                     closest = valid_columns->details.list[0];
                 continue;
             }
 
+            /** if current > last item in list, no need to iterate */
             if (current >
-                valid_columns->details.list[(int)valid_columns->list_count])
+                valid_columns->details.list[(int)valid_columns->list_count - 1])
                 continue;       /* not in list range. */
 
-            for (idx = 0; idx < (int)valid_columns->list_count; ++idx) {
-                if (current == valid_columns->details.list[idx]) {
-                    closest = current;
-                    done = 1;   /* can not get any closer! */
-                    break;      /* for */
-                } else if (current < valid_columns->details.list[idx]) {
-                    if (valid_columns->details.list[idx] < closest)
-                        closest = valid_columns->details.list[idx];
-                    break;      /* list should be sorted */
-                }
-            }                   /* for */
+            /** skip anything less than current*/
+            for (idx = 0; valid_columns->details.list[idx] < current; ++idx)
+                ;
+            
+            /** check for exact match */
+            if (current == valid_columns->details.list[idx]) {
+                closest = current;
+                break;      /* can not get any closer! */
+            }
+            
+            /** list[idx] > current; is it < closest? */
+            if ((valid_columns->details.list[idx] < closest) ||
+                (0 == closest))
+                closest = valid_columns->details.list[idx];
 
         }                       /* list */
-
-        valid_columns = valid_columns->next;
-
-    } while (!done && valid_columns);
+    }                           /* for */
 
     return closest;
 }
 
+/**
+ * This function can be used to setup the table's definition within
+ * your module's initialize function, it takes a variable index parameter list
+ * for example: the table_info structure is followed by two integer index types
+ * netsnmp_table_helper_add_indexes(
+ *                  table_info,   
+ *	            ASN_INTEGER,  
+ *		    ASN_INTEGER,  
+ *		    0);
+ *
+ * @param tinfo is a pointer to a netsnmp_table_registration_info struct.
+ *	The table handler needs to know up front how your table is structured.
+ *	A netsnmp_table_registeration_info structure that is 
+ *	passed to the table handler should contain the asn index types for the 
+ *	table as well as the minimum and maximum column that should be used.
+ *
+ * @return void
+ *
+ */
 void
-#if HAVE_STDARG_H
 netsnmp_table_helper_add_indexes(netsnmp_table_registration_info *tinfo,
                                  ...)
-#else
-netsnmp_table_helper_add_indexes(va_alist)
-     va_dcl
-#endif
 {
     va_list         debugargs;
     int             type;
 
-#if HAVE_STDARG_H
     va_start(debugargs, tinfo);
-#else
-    netsnmp_table_registration_info *tinfo;
-
-    va_start(debugargs);
-    tinfo = va_arg(debugargs, table_info *);
-#endif
-
     while ((type = va_arg(debugargs, int)) != 0) {
         netsnmp_table_helper_add_index(tinfo, type);
     }
-
     va_end(debugargs);
+}
+
+#ifndef NETSNMP_NO_WRITE_SUPPORT
+#ifndef NETSNMP_FEATURE_REMOVE_TABLE_GET_OR_CREATE_ROW_STASH
+static void
+_row_stash_data_list_free(void *ptr) {
+    netsnmp_oid_stash_node **tmp = (netsnmp_oid_stash_node **)ptr;
+    netsnmp_oid_stash_free(tmp, NULL);
+    free(ptr);
 }
 
 /** returns a row-wide place to store data in.
@@ -824,7 +1253,7 @@ netsnmp_table_get_or_create_row_stash(netsnmp_agent_request_info *reqinfo,
 {
     netsnmp_oid_stash_node **stashp = NULL;
     stashp = (netsnmp_oid_stash_node **)
-        netsnmp_agent_get_list_data(reqinfo, storage_name);
+        netsnmp_agent_get_list_data(reqinfo, (const char *) storage_name);
 
     if (!stashp) {
         /*
@@ -836,12 +1265,38 @@ netsnmp_table_get_or_create_row_stash(netsnmp_agent_request_info *reqinfo,
             return NULL;        /* ack. out of mem */
 
         netsnmp_agent_add_list_data(reqinfo,
-                                    /*
-                                     * XXX: free: wrong 
-                                     */
-                                    netsnmp_create_data_list(storage_name,
+                                    netsnmp_create_data_list((const char *) storage_name,
                                                              stashp,
-                                                             free));
+                                                             _row_stash_data_list_free));
     }
     return stashp;
+}
+#endif /* NETSNMP_FEATURE_REMOVE_TABLE_GET_OR_CREATE_ROW_STASH */
+#endif /* NETSNMP_NO_WRITE_SUPPORT */
+
+/*
+ * advance the table info colnum to the next column, or 0 if there are no more
+ *
+ * @return new column, or 0 if there are no more
+ */
+unsigned int
+netsnmp_table_next_column(netsnmp_table_request_info *table_info)
+{
+    if (NULL == table_info)
+        return 0;
+
+    /*
+     * try and validate next column
+     */
+    if (table_info->reg_info->valid_columns)
+        return netsnmp_closest_column(table_info->colnum + 1,
+                                      table_info->reg_info->valid_columns);
+    
+    /*
+     * can't validate. assume 1..max_column are valid
+     */
+    if (table_info->colnum < table_info->reg_info->max_column)
+        return table_info->colnum + 1;
+    
+    return 0; /* out of range */
 }

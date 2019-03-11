@@ -4,6 +4,9 @@
 #ifdef __cplusplus
 extern          "C" {
 #endif
+
+#include <net-snmp/mib_api.h>
+
     /*
      * parse.h
      */
@@ -29,9 +32,18 @@ ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
 SOFTWARE.
 ******************************************************************/
 
-#define MAXLABEL        64      /* maximum characters in a label */
+#define NETSNMP_MAXLABEL 64      /* maximum characters in a label */
 #define MAXTOKEN        128     /* maximum characters in a token */
 #define MAXQUOTESTR     4096    /* maximum characters in a quoted string */
+
+/*
+ * MAXLABEL appears to be unused in code, and conflicts with
+ * <arpa/nameser.h>. Only define it if requested. This will
+ * cause problems if local DNSSEC validation is also enabled.
+ */
+#ifdef UCD_COMPATIBLE
+#define MAXLABEL        NETSNMP_MAXLABEL
+#endif
 
     struct variable_list;
 
@@ -70,32 +82,6 @@ SOFTWARE.
     };
 
     /*
-     * A linked list of nodes.
-     */
-    struct node {
-        struct node    *next;
-        char           *label;  /* This node's (unique) textual name */
-        u_long          subid;  /* This node's integer subidentifier */
-        int             modid;  /* The module containing this node */
-        char           *parent; /* The parent's textual name */
-        int             tc_index;       /* index into tclist (-1 if NA) */
-        int             type;   /* The type of object this represents */
-        int             access;
-        int             status;
-        struct enum_list *enums;        /* (optional) list of enumerated integers */
-        struct range_list *ranges;
-        struct index_list *indexes;
-        char           *augments;
-        struct varbind_list *varbinds;
-        char           *hint;
-        char           *units;
-        char           *description;    /* description (a quoted string) */
-        char           *defaultValue;
-	char           *filename;
-        int             lineno;
-    };
-
-    /*
      * A tree in the format of the tree structure of the MIB.
      */
     struct tree {
@@ -125,8 +111,10 @@ SOFTWARE.
                                       const char *);
         void            (*printer) (char *, const netsnmp_variable_list *, const struct enum_list *, const char *, const char *);   /* Value printing function */
         char           *description;    /* description (a quoted string) */
+        char           *reference;    /* references (a quoted string) */
         int             reported;       /* 1=report started in print_subtree... */
         char           *defaultValue;
+       char	       *parseErrorString; /* Contains the error string if there are errors in parsing MIBs */
     };
 
     /*
@@ -189,6 +177,7 @@ SOFTWARE.
 #define TYPE_MODID	    24
 #define TYPE_AGENTCAP       25
 #define TYPE_MODCOMP        26
+#define TYPE_OBJIDENTITY    27
 
 #define MIB_ACCESS_READONLY    18
 #define MIB_ACCESS_READWRITE   19
@@ -206,36 +195,51 @@ SOFTWARE.
 #define	ANON	"anonymous#"
 #define	ANON_LEN  strlen(ANON)
 
-    struct tree    *read_module(const char *);
-    struct tree    *read_mib(const char *);
-    struct tree    *read_all_mibs(void);
+    int             netsnmp_unload_module(const char *name);
+#ifndef NETSNMP_NO_LEGACY_DEFINITIONS
     int             unload_module(const char *name);
+#endif
+    void            netsnmp_init_mib_internals(void);
     void            unload_all_mibs(void);
-    void            init_mib_internals(void);
-    int             add_mibdir(const char *);
-    void            add_module_replacement(const char *, const char *,
-                                           const char *, int);
+    int             add_mibfile(const char*, const char*, FILE *);
     int             which_module(const char *);
+    NETSNMP_IMPORT
     char           *module_name(int, char *);
+    NETSNMP_IMPORT
     void            print_subtree(FILE *, struct tree *, int);
+    NETSNMP_IMPORT
     void            print_ascii_dump_tree(FILE *, struct tree *, int);
+    NETSNMP_IMPORT
     struct tree    *find_tree_node(const char *, int);
+    NETSNMP_IMPORT
     const char     *get_tc_descriptor(int);
+    NETSNMP_IMPORT
+    const char     *get_tc_description(int);
+    NETSNMP_IMPORT
     struct tree    *find_best_tree_node(const char *, struct tree *,
                                         u_int *);
     /*
      * backwards compatability 
      */
+    NETSNMP_IMPORT
     struct tree    *find_node(const char *, struct tree *);
+    struct tree    *find_node2(const char *, const char *); 
+    NETSNMP_IMPORT
     struct module  *find_module(int);
     void            adopt_orphans(void);
+    NETSNMP_IMPORT
     char           *snmp_mib_toggle_options(char *options);
+    NETSNMP_IMPORT
     void            snmp_mib_toggle_options_usage(const char *lead,
                                                   FILE * outf);
+    NETSNMP_IMPORT
     void            print_mib(FILE *);
+    NETSNMP_IMPORT
     void            print_mib_tree(FILE *, struct tree *, int);
     int             get_mib_parse_error_count(void);
+    NETSNMP_IMPORT
     int             snmp_get_token(FILE * fp, char *token, int maxtlen);
+    NETSNMP_IMPORT
     struct tree    *find_best_tree_node(const char *name,
                                         struct tree *tree_top,
                                         u_int * match);

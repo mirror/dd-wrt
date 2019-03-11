@@ -13,7 +13,7 @@ struct ip6_mib {
 };
 #endif
 
-config_require(mibII/interfaces mibII/at mibII/var_route mibII/route_write)
+config_require(mibII/ifTable mibII/at mibII/var_route mibII/route_write)
 config_add_mib(IPV6-ICMP-MIB:IPV6-MIB:IPV6-TCP-MIB:IPV6-UDP-MIB)
 config_arch_require(solaris2, kernel_sunos5)
 #include "var_route.h"
@@ -130,15 +130,8 @@ extern FindVarMethod var_tcp6;
 #define IPV6IFICMPOUTGRPMERSPS	33
 #define IPV6IFICMPOUTGRPMEREDCS	34
 
-#define IPV6UDPLOCALADDRESS	1
-#define IPV6UDPLOCALPORT	2
 #define IPV6UDPIFINDEX		3
 
-#define IPV6TCPLOCALADDR	1
-#define IPV6TCPLOCALPORT	2
-#define IPV6TCPREMOTEADDR	3
-#define IPV6TCPREMOTEPORT	4
-#define IPV6TCPIFINDEX		5
 #define IPV6TCPCONNSTATE	6
 
 #endif                          /* _MIBGROUP_IPV6_H */

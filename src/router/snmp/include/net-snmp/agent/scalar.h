@@ -30,7 +30,7 @@ netsnmp_mib_handler *netsnmp_get_scalar_handler(void);
 Netsnmp_Node_Handler netsnmp_scalar_helper_handler;
 
 #ifdef __cplusplus
-};
+}
 #endif
 
 #endif /** NETSNMP_SCALAR_H */

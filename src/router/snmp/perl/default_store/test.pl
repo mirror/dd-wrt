@@ -6,11 +6,17 @@
 # Change 1..1 below to 1..last_test_to_print .
 # (It may become useful if the test is moved to ./t subdirectory.)
 
+use strict;
+use warnings;
+
+my %tests;
+my $loaded;
+
 BEGIN { $| = 1; 
 
 	%tests = ( 
                   "NETSNMP_DS_MAX_IDS"                     => 3,
-                  "NETSNMP_DS_MAX_SUBIDS"                  => 32,
+                  "NETSNMP_DS_MAX_SUBIDS"                  => 48,
                   "NETSNMP_DS_LIBRARY_ID"                  => 0,
                   "NETSNMP_DS_APPLICATION_ID"              => 1,
                   "NETSNMP_DS_TOKEN_ID"                    => 2,
@@ -43,11 +49,27 @@ BEGIN { $| = 1;
                   "NETSNMP_DS_LIB_HAVE_READ_PREMIB_CONFIG" => 26,
                   "NETSNMP_DS_LIB_HAVE_READ_CONFIG"        => 27,
                   "NETSNMP_DS_LIB_QUICKE_PRINT"            => 28,
+                  "NETSNMP_DS_LIB_DONT_PRINT_UNITS"        => 29,
+                  "NETSNMP_DS_LIB_NO_DISPLAY_HINT"         => 30,
+                  "NETSNMP_DS_LIB_16BIT_IDS"               => 31,
+                  "NETSNMP_DS_LIB_DONT_PERSIST_STATE"      => 32,
+                  "NETSNMP_DS_LIB_2DIGIT_HEX_OUTPUT"       => 33,
+                  "NETSNMP_DS_LIB_IGNORE_NO_COMMUNITY"     => 34,
+                  "NETSNMP_DS_LIB_DISABLE_PERSISTENT_LOAD" => 35,
+                  "NETSNMP_DS_LIB_DISABLE_PERSISTENT_SAVE" => 36,
+                  "NETSNMP_DS_LIB_APPEND_LOGFILES"         => 37,
+                  "NETSNMP_DS_LIB_CLIENT_ADDR_USES_PORT"   => 42,
                   "NETSNMP_DS_LIB_MIB_WARNINGS"            => 0,
                   "NETSNMP_DS_LIB_SECLEVEL"                => 1,
                   "NETSNMP_DS_LIB_SNMPVERSION"             => 2,
                   "NETSNMP_DS_LIB_DEFAULT_PORT"            => 3,
                   "NETSNMP_DS_LIB_OID_OUTPUT_FORMAT"       => 4,
+                  "NETSNMP_DS_LIB_STRING_OUTPUT_FORMAT"    => 5,
+                  "NETSNMP_DS_LIB_HEX_OUTPUT_LENGTH"       => 6,
+                  "NETSNMP_DS_LIB_SERVERSENDBUF"           => 7,
+                  "NETSNMP_DS_LIB_SERVERRECVBUF"           => 8,
+                  "NETSNMP_DS_LIB_CLIENTSENDBUF"           => 9,
+                  "NETSNMP_DS_LIB_CLIENTRECVBUF"           => 10,
                   "NETSNMP_DS_SNMP_VERSION_1"              => 128,
                   "NETSNMP_DS_SNMP_VERSION_2c"             => 1,
                   "NETSNMP_DS_SNMP_VERSION_3"              => 3,
@@ -63,6 +85,17 @@ BEGIN { $| = 1;
                   "NETSNMP_DS_LIB_CONFIGURATION_DIR"       => 9,
                   "NETSNMP_DS_LIB_SECMODEL"                => 10,
                   "NETSNMP_DS_LIB_MIBDIRS"                 => 11,
+                  "NETSNMP_DS_LIB_OIDSUFFIX"               => 12,
+                  "NETSNMP_DS_LIB_OIDPREFIX"               => 13,
+                  "NETSNMP_DS_LIB_CLIENT_ADDR"             => 14,
+                  "NETSNMP_DS_LIB_TEMP_FILE_PATTERN"       => 15,
+                  "NETSNMP_DS_LIB_AUTHMASTERKEY"           => 16,
+                  "NETSNMP_DS_LIB_PRIVMASTERKEY"           => 17,
+                  "NETSNMP_DS_LIB_AUTHLOCALIZEDKEY"        => 18,
+                  "NETSNMP_DS_LIB_PRIVLOCALIZEDKEY"        => 19,
+                  "NETSNMP_DS_LIB_APPTYPES"                => 20,
+                  "NETSNMP_DS_LIB_KSM_KEYTAB"              => 21,
+                  "NETSNMP_DS_LIB_KSM_SERVICE_NAME"        => 22,
 		  );
 
 	print "1.." . (scalar(keys(%tests)) + 10) . "\n"; 
@@ -85,10 +118,10 @@ print ((netsnmp_ds_get_int(1, 1) == 42) ? "ok 5\n" : "not ok 5\n");
 print ((netsnmp_ds_get_int(1, 2) == 0) ? "ok 6\n" : "not ok 6\n"); 
 print ((NETSNMP_DS_LIB_REGEX_ACCESS == 15) ? "ok 7\n" : "not ok 7\n"); 
 print ((netsnmp_ds_get_int(NETSNMP_DS_APPLICATION_ID, 1) == 42) ? "ok 8\n" : "not ok 8\n"); 
-print ((netsnmp_ds_set_int(NETSNMP_DS_LIBRARY_ID, DS_LIB_DEFAULT_PORT, 9161) == 0) ? "ok 9\n" : "not ok 9\n"); 
-print ((netsnmp_ds_get_int(NETSNMP_DS_LIBRARY_ID, DS_LIB_DEFAULT_PORT) == 9161) ? "ok 10\n" : "not ok 10\n"); 
+print ((netsnmp_ds_set_int(NETSNMP_DS_LIBRARY_ID, NETSNMP_DS_LIB_DEFAULT_PORT, 9161) == 0) ? "ok 9\n" : "not ok 9\n");
+print ((netsnmp_ds_get_int(NETSNMP_DS_LIBRARY_ID, NETSNMP_DS_LIB_DEFAULT_PORT) == 9161) ? "ok 10\n" : "not ok 10\n");
 
-$c = 10;
+my $c = 10;
 foreach my $i (keys(%tests)) {
     my $str = "NetSNMP::default_store::$i";
     my $val = eval $str;

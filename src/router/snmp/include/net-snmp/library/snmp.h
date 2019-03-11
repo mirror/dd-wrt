@@ -31,6 +31,12 @@ ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
 SOFTWARE.
 ******************************************************************/
 
+/*
+ * Portions of this file are copyrighted by:
+ * Copyright (c) 2016 VMware, Inc. All rights reserved.
+ * Use is subject to license terms specified in the COPYING file
+ */
+
 
 #define SNMP_PORT	    161 /* standard UDP port for SNMP agents
                                  * to receive requests messages */
@@ -40,6 +46,7 @@ SOFTWARE.
 
 #define SNMP_MAX_LEN	    1500        /* typical maximum message size */
 #define SNMP_MIN_MAX_LEN    484 /* minimum maximum message size */
+#define SNMP_MAX_PACKET_LEN (0x7fffffff)
 
     /*
      * SNMP versions 
@@ -96,8 +103,12 @@ SOFTWARE.
     /*
      * versions based on version field 
      */
+#ifndef NETSNMP_DISABLE_SNMPV1
 #define SNMP_VERSION_1	   0
+#endif
+#ifndef NETSNMP_DISABLE_SNMPV2C
 #define SNMP_VERSION_2c    1
+#endif
 #define SNMP_VERSION_2u    2    /* not (will never be) supported by this code */
 #define SNMP_VERSION_3     3
 
@@ -105,37 +116,42 @@ SOFTWARE.
      * versions not based on a version field 
      */
 #define SNMP_VERSION_sec   128  /* not (will never be) supported by this code */
-#define SNMP_VERSION_2p	   129
+#define SNMP_VERSION_2p	   129  /* no longer supported by this code (> 4.0) */
 #define SNMP_VERSION_2star 130  /* not (will never be) supported by this code */
 
     /*
      * PDU types in SNMPv1, SNMPsec, SNMPv2p, SNMPv2c, SNMPv2u, SNMPv2*, and SNMPv3 
      */
-#define SNMP_MSG_GET	    (ASN_CONTEXT | ASN_CONSTRUCTOR | 0x0)
-#define SNMP_MSG_GETNEXT    (ASN_CONTEXT | ASN_CONSTRUCTOR | 0x1)
-#define SNMP_MSG_RESPONSE   (ASN_CONTEXT | ASN_CONSTRUCTOR | 0x2)
-#define SNMP_MSG_SET	    (ASN_CONTEXT | ASN_CONSTRUCTOR | 0x3)
+#define SNMP_MSG_GET        (ASN_CONTEXT | ASN_CONSTRUCTOR | 0x0) /* a0=160 */
+#define SNMP_MSG_GETNEXT    (ASN_CONTEXT | ASN_CONSTRUCTOR | 0x1) /* a1=161 */
+#define SNMP_MSG_RESPONSE   (ASN_CONTEXT | ASN_CONSTRUCTOR | 0x2) /* a2=162 */
+#ifndef NETSNMP_NO_WRITE_SUPPORT
+#define SNMP_MSG_SET        (ASN_CONTEXT | ASN_CONSTRUCTOR | 0x3) /* a3=163 */
+#endif /* !NETSNMP_NO_WRITE_SUPPORT */
 
     /*
      * PDU types in SNMPv1 and SNMPsec 
      */
-#define SNMP_MSG_TRAP	    (ASN_CONTEXT | ASN_CONSTRUCTOR | 0x4)       /* c4 = 196 */
+#define SNMP_MSG_TRAP       (ASN_CONTEXT | ASN_CONSTRUCTOR | 0x4) /* a4=164 */
 
     /*
      * PDU types in SNMPv2p, SNMPv2c, SNMPv2u, SNMPv2*, and SNMPv3 
      */
-#define SNMP_MSG_GETBULK    (ASN_CONTEXT | ASN_CONSTRUCTOR | 0x5)       /* c5 = 197 */
-#define SNMP_MSG_INFORM	    (ASN_CONTEXT | ASN_CONSTRUCTOR | 0x6)       /* c6 = 198 */
-#define SNMP_MSG_TRAP2	    (ASN_CONTEXT | ASN_CONSTRUCTOR | 0x7)       /* c7 = 199 */
+#define SNMP_MSG_GETBULK    (ASN_CONTEXT | ASN_CONSTRUCTOR | 0x5) /* a5=165 */
+#define SNMP_MSG_INFORM     (ASN_CONTEXT | ASN_CONSTRUCTOR | 0x6) /* a6=166 */
+#define SNMP_MSG_TRAP2      (ASN_CONTEXT | ASN_CONSTRUCTOR | 0x7) /* a7=167 */
 
     /*
      * PDU types in SNMPv2u, SNMPv2*, and SNMPv3 
      */
-#define SNMP_MSG_REPORT	    (ASN_CONTEXT | ASN_CONSTRUCTOR | 0x8)       /* c8 = 200 */
+#define SNMP_MSG_REPORT     (ASN_CONTEXT | ASN_CONSTRUCTOR | 0x8) /* a8=168 */
 
+#ifndef NETSNMP_NO_WRITE_SUPPORT
     /*
      * internal modes that should never be used by the protocol for the
-     * pdu type. 
+     * pdu type.
+     *
+     * All modes < 128 are reserved for SET requests.
      */
 #define SNMP_MSG_INTERNAL_SET_BEGIN        -1
 #define SNMP_MSG_INTERNAL_SET_RESERVE1     0    /* these should match snmp.h */
@@ -144,20 +160,47 @@ SOFTWARE.
 #define SNMP_MSG_INTERNAL_SET_COMMIT       3
 #define SNMP_MSG_INTERNAL_SET_FREE         4
 #define SNMP_MSG_INTERNAL_SET_UNDO         5
+#define SNMP_MSG_INTERNAL_SET_MAX          6
+
+#define SNMP_MSG_INTERNAL_CHECK_VALUE           17
+#define SNMP_MSG_INTERNAL_ROW_CREATE            18
+#define SNMP_MSG_INTERNAL_UNDO_SETUP            19
+#define SNMP_MSG_INTERNAL_SET_VALUE             20
+#define SNMP_MSG_INTERNAL_CHECK_CONSISTENCY     21
+#define SNMP_MSG_INTERNAL_UNDO_SET              22
+#define SNMP_MSG_INTERNAL_COMMIT                23
+#define SNMP_MSG_INTERNAL_UNDO_COMMIT           24
+#define SNMP_MSG_INTERNAL_IRREVERSIBLE_COMMIT   25
+#define SNMP_MSG_INTERNAL_UNDO_CLEANUP          26
+#endif /* !NETSNMP_NO_WRITE_SUPPORT */
+
+    /*
+     * modes > 128 for non sets.
+     * Note that 160-168 overlap with SNMP ASN1 pdu types
+     */
+#define SNMP_MSG_INTERNAL_PRE_REQUEST           128
+#define SNMP_MSG_INTERNAL_OBJECT_LOOKUP         129
+#define SNMP_MSG_INTERNAL_POST_REQUEST          130
+#define SNMP_MSG_INTERNAL_GET_STASH             131
 
     /*
      * test for member of Confirmed Class i.e., reportable 
      */
+#ifdef NETSNMP_NO_WRITE_SUPPORT
+#define SNMP_CMD_CONFIRMED(c) (c == SNMP_MSG_INFORM || c == SNMP_MSG_GETBULK ||\
+                               c == SNMP_MSG_GETNEXT || c == SNMP_MSG_GET )
+#else /* !NETSNMP_NO_WRITE_SUPPORT */
 #define SNMP_CMD_CONFIRMED(c) (c == SNMP_MSG_INFORM || c == SNMP_MSG_GETBULK ||\
                                c == SNMP_MSG_GETNEXT || c == SNMP_MSG_GET || \
-                               c == SNMP_MSG_SET)
+                               c == SNMP_MSG_SET )
+#endif /* !NETSNMP_NO_WRITE_SUPPORT */
 
     /*
      * Exception values for SNMPv2p, SNMPv2c, SNMPv2u, SNMPv2*, and SNMPv3 
      */
-#define SNMP_NOSUCHOBJECT    (ASN_CONTEXT | ASN_PRIMITIVE | 0x0)        /* 80 = 128 */
-#define SNMP_NOSUCHINSTANCE  (ASN_CONTEXT | ASN_PRIMITIVE | 0x1)        /* 81 = 129 */
-#define SNMP_ENDOFMIBVIEW    (ASN_CONTEXT | ASN_PRIMITIVE | 0x2)        /* 82 = 130 */
+#define SNMP_NOSUCHOBJECT    (ASN_CONTEXT | ASN_PRIMITIVE | 0x0) /* 80=128 */
+#define SNMP_NOSUCHINSTANCE  (ASN_CONTEXT | ASN_PRIMITIVE | 0x1) /* 81=129 */
+#define SNMP_ENDOFMIBVIEW    (ASN_CONTEXT | ASN_PRIMITIVE | 0x2) /* 82=130 */
 
     /*
      * Error codes (the value of the field error-status in PDUs) 
@@ -196,6 +239,11 @@ SOFTWARE.
 
 #define MAX_SNMP_ERR	18
 
+#define SNMP_VALIDATE_ERR(x)  ( (x > MAX_SNMP_ERR) ? \
+                                   SNMP_ERR_GENERR : \
+                                   (x < SNMP_ERR_NOERROR) ? \
+                                      SNMP_ERR_GENERR : \
+                                      x )
 
     /*
      * values of the generic-trap field in trap PDUs 
@@ -245,6 +293,7 @@ SOFTWARE.
 #define SNMP_SEC_MODEL_SNMPv1		1
 #define SNMP_SEC_MODEL_SNMPv2c		2
 #define SNMP_SEC_MODEL_USM		3
+#define SNMP_SEC_MODEL_TSM              4
 #define SNMP_SEC_MODEL_SNMPv2p		256
 
 #define SNMP_SEC_LEVEL_NOAUTH		1
@@ -258,12 +307,18 @@ SOFTWARE.
     /*
      * control PDU handling characteristics 
      */
+/** NOTE low byte used for AGENTX_MSG_FLAG_*   */
 #define UCD_MSG_FLAG_RESPONSE_PDU            0x100
 #define UCD_MSG_FLAG_EXPECT_RESPONSE         0x200
 #define UCD_MSG_FLAG_FORCE_PDU_COPY          0x400
 #define UCD_MSG_FLAG_ALWAYS_IN_VIEW          0x800
 #define UCD_MSG_FLAG_PDU_TIMEOUT            0x1000
 #define UCD_MSG_FLAG_ONE_PASS_ONLY          0x2000
+#define UCD_MSG_FLAG_TUNNELED               0x4000
+#ifdef NETSNMP_USE_REVERSE_ASNENCODING
+#define UCD_MSG_FLAG_FORWARD_ENCODE         0x8000
+#endif
+#define UCD_MSG_FLAG_BULK_TOOBIG          0x010000
 
     /*
      * view status 
@@ -286,15 +341,20 @@ SOFTWARE.
 #define SNMPADMINLENGTH 255
 
 
+    NETSNMP_IMPORT
     char           *uptime_string(u_long, char *);
-    void            xdump(const u_char *, size_t, const char *);
+    char           *uptime_string_n(u_long, char *, size_t);
+    NETSNMP_IMPORT
+    void            xdump(const void *, size_t, const char *);
+    NETSNMP_IMPORT
     u_char         *snmp_parse_var_op(u_char *, oid *, size_t *, u_char *,
                                       size_t *, u_char **, size_t *);
+    NETSNMP_IMPORT
     u_char         *snmp_build_var_op(u_char *, oid *, size_t *, u_char,
                                       size_t, u_char *, size_t *);
 
 
-#ifdef USE_REVERSE_ASNENCODING
+#ifdef NETSNMP_USE_REVERSE_ASNENCODING
     int             snmp_realloc_rbuild_var_op(u_char ** pkt,
                                                size_t * pkt_len,
                                                size_t * offset,

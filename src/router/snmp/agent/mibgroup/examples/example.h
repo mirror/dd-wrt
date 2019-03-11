@@ -9,11 +9,15 @@
 #ifndef _MIBGROUP_EXAMPLE_H
 #define _MIBGROUP_EXAMPLE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
     /*
-     * We use 'header_generic' from the util_funcs module,
+     * We use 'header_generic' from the util_funcs/header_generic module,
      *  so make sure this module is included in the agent.
      */
-config_require(util_funcs)
+config_require(util_funcs/header_generic)
 
 
     /*
@@ -24,11 +28,11 @@ config_require(util_funcs)
      * Function prototypes are provided for the callback routine ('FindVarMethod')
      *  and writeable object methods ('WriteMethod').
      */
-     extern void     init_example(void);
-     extern FindVarMethod var_example;
-     extern WriteMethod write_exampleint;
-     extern WriteMethod write_exampletrap;
-     extern WriteMethod write_exampletrap2;
+     void     init_example(void);
+     FindVarMethod var_example;
+     WriteMethod write_exampleint;
+     WriteMethod write_exampletrap;
+     WriteMethod write_exampletrap2;
 
 
     /*
@@ -55,5 +59,9 @@ config_require(util_funcs)
 #define	EXAMPLEGAUGE            6
 #define	EXAMPLETRIGGERTRAP      7
 #define	EXAMPLETRIGGERTRAP2     8
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif                          /* _MIBGROUP_EXAMPLE_H */

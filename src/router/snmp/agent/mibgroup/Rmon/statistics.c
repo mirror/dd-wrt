@@ -18,13 +18,27 @@
  * SOFTWARE.
  ******************************************************************/
 
-#include <stdlib.h>
-#include <sys/time.h>
-#include <unistd.h>
 #include <net-snmp/net-snmp-config.h>
+
+#if HAVE_STDLIB
+#include <stdlib.h>
+#endif
+#if TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# if HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
+#if HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 #include <net-snmp/net-snmp-includes.h>
 #include <net-snmp/agent/net-snmp-agent-includes.h>
-#include "util_funcs.h"
 #include "statistics.h"
         /*
          * Implementation headers 
@@ -258,7 +272,7 @@ write_etherStatsEntry(int action, u_char * var_val, u_char var_val_type,
         case Leaf_etherStatsOwner:
             if (hdr->new_owner)
                 AGFREE(hdr->new_owner);
-            hdr->new_owner = AGMALLOC(MAX_OWNERSTRING);;
+            hdr->new_owner = AGMALLOC(MAX_OWNERSTRING);
             if (!hdr->new_owner)
                 return SNMP_ERR_TOOBIG;
             snmp_status = AGUTIL_get_string_value(var_val, var_val_type,
@@ -303,6 +317,7 @@ var_etherStatsEntry(struct variable * vp, oid * name, size_t * length,
                     int exact, size_t * var_len,
                     WriteMethod ** write_method)
 {
+    static unsigned char zero_octet_string[1];
     static long     long_return;
     static CRTL_ENTRY_T theEntry;
     RMON_ENTRY_T   *hdr;
@@ -383,7 +398,7 @@ var_etherStatsEntry(struct variable * vp, oid * name, size_t * length,
             return (unsigned char *) hdr->owner;
         } else {
             *var_len = 0;
-            return (unsigned char *) "";
+            return zero_octet_string;
         }
     case IDetherStatsStatus:
         long_return = hdr->status;
@@ -448,52 +463,52 @@ add_statistics_entry(int ctrl_index, int ifIndex)
 oid             oidstatisticsVariablesOid[] = { 1, 3, 6, 1, 2, 1, 16, 1 };
 
 struct variable7 oidstatisticsVariables[] = {
-    {IDetherStatsIndex, ASN_INTEGER, RONLY, var_etherStatsEntry, 3,
-     {1, 1, 1}},
-    {IDetherStatsDataSource, ASN_OBJECT_ID, RWRITE, var_etherStatsEntry, 3,
-     {1, 1, 2}},
-    {IDetherStatsDropEvents, ASN_COUNTER, RONLY, var_etherStatsEntry, 3,
-     {1, 1, 3}},
-    {IDetherStatsOctets, ASN_COUNTER, RONLY, var_etherStatsEntry, 3,
-     {1, 1, 4}},
-    {IDetherStatsPkts, ASN_COUNTER, RONLY, var_etherStatsEntry, 3,
-     {1, 1, 5}},
-    {IDetherStatsBroadcastPkts, ASN_COUNTER, RONLY, var_etherStatsEntry, 3,
-     {1, 1, 6}},
-    {IDetherStatsMulticastPkts, ASN_COUNTER, RONLY, var_etherStatsEntry, 3,
-     {1, 1, 7}},
-    {IDetherStatsCRCAlignErrors, ASN_COUNTER, RONLY, var_etherStatsEntry,
-     3, {1, 1, 8}},
-    {IDetherStatsUndersizePkts, ASN_COUNTER, RONLY, var_etherStatsEntry, 3,
-     {1, 1, 9}},
-    {IDetherStatsOversizePkts, ASN_COUNTER, RONLY, var_etherStatsEntry, 3,
-     {1, 1, 10}},
-    {IDetherStatsFragments, ASN_COUNTER, RONLY, var_etherStatsEntry, 3,
-     {1, 1, 11}},
-    {IDetherStatsJabbers, ASN_COUNTER, RONLY, var_etherStatsEntry, 3,
-     {1, 1, 12}},
-    {IDetherStatsCollisions, ASN_COUNTER, RONLY, var_etherStatsEntry, 3,
-     {1, 1, 13}},
-    {IDetherStatsPkts64Octets, ASN_COUNTER, RONLY, var_etherStatsEntry, 3,
-     {1, 1, 14}},
-    {IDetherStatsPkts65to127Octets, ASN_COUNTER, RONLY,
+    {IDetherStatsIndex, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+     var_etherStatsEntry, 3, {1, 1, 1}},
+    {IDetherStatsDataSource, ASN_OBJECT_ID, NETSNMP_OLDAPI_RWRITE,
+     var_etherStatsEntry, 3, {1, 1, 2}},
+    {IDetherStatsDropEvents, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+     var_etherStatsEntry, 3, {1, 1, 3}},
+    {IDetherStatsOctets, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+     var_etherStatsEntry, 3, {1, 1, 4}},
+    {IDetherStatsPkts, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+     var_etherStatsEntry, 3, {1, 1, 5}},
+    {IDetherStatsBroadcastPkts, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+     var_etherStatsEntry, 3, {1, 1, 6}},
+    {IDetherStatsMulticastPkts, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+     var_etherStatsEntry, 3, {1, 1, 7}},
+    {IDetherStatsCRCAlignErrors, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+     var_etherStatsEntry, 3, {1, 1, 8}},
+    {IDetherStatsUndersizePkts, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+     var_etherStatsEntry, 3, {1, 1, 9}},
+    {IDetherStatsOversizePkts, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+     var_etherStatsEntry, 3, {1, 1, 10}},
+    {IDetherStatsFragments, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+     var_etherStatsEntry, 3, {1, 1, 11}},
+    {IDetherStatsJabbers, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+     var_etherStatsEntry, 3, {1, 1, 12}},
+    {IDetherStatsCollisions, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+     var_etherStatsEntry, 3, {1, 1, 13}},
+    {IDetherStatsPkts64Octets, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+     var_etherStatsEntry, 3, {1, 1, 14}},
+    {IDetherStatsPkts65to127Octets, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
      var_etherStatsEntry, 3, {1, 1, 15}},
-    {IDetherStatsPkts128to255Octets, ASN_COUNTER, RONLY,
+    {IDetherStatsPkts128to255Octets, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
      var_etherStatsEntry, 3, {1, 1, 16}},
-    {IDetherStatsPkts256to511Octets, ASN_COUNTER, RONLY,
+    {IDetherStatsPkts256to511Octets, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
      var_etherStatsEntry, 3, {1, 1, 17}},
-    {IDetherStatsPkts512to1023Octets, ASN_COUNTER, RONLY,
+    {IDetherStatsPkts512to1023Octets, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
      var_etherStatsEntry, 3, {1, 1, 18}},
-    {IDetherStatsPkts1024to1518Octets, ASN_COUNTER, RONLY,
+    {IDetherStatsPkts1024to1518Octets, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
      var_etherStatsEntry, 3, {1, 1, 19}},
-    {IDetherStatsOwner, ASN_OCTET_STR, RWRITE, var_etherStatsEntry, 3,
-     {1, 1, 20}},
-    {IDetherStatsStatus, ASN_INTEGER, RWRITE, var_etherStatsEntry, 3,
-     {1, 1, 21}},
-    {IDetherStatsDroppedFrames, ASN_COUNTER, RONLY, var_etherStats2Entry,
-     3, {4, 1, 1}},
-    {IDetherStatsCreateTime, ASN_TIMETICKS, RONLY, var_etherStats2Entry, 3,
-     {4, 1, 2}},
+    {IDetherStatsOwner, ASN_OCTET_STR, NETSNMP_OLDAPI_RWRITE,
+     var_etherStatsEntry, 3, {1, 1, 20}},
+    {IDetherStatsStatus, ASN_INTEGER, NETSNMP_OLDAPI_RWRITE,
+     var_etherStatsEntry, 3, {1, 1, 21}},
+    {IDetherStatsDroppedFrames, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+     var_etherStats2Entry, 3, {4, 1, 1}},
+    {IDetherStatsCreateTime, ASN_TIMETICKS, NETSNMP_OLDAPI_RONLY,
+     var_etherStats2Entry, 3, {4, 1, 2}},
 };
 
 /***************************************************

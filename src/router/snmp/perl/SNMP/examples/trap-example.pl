@@ -1,5 +1,3 @@
-#!/usr/bin/perl -w
-
 use strict;
 use vars qw();
 use SNMP qw();
@@ -79,8 +77,8 @@ sub trap_call_setup
 }
 
 my $session = new SNMP::Session(
-  DestHost => '0.0.0.0',
-  LocalPort => 162,
+  DestHost => 'udp:162',
+  LocalPort => 1,
   Version => '2c',
   UseEnums => 0,
   );

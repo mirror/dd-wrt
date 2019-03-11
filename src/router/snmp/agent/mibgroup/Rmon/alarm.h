@@ -21,8 +21,6 @@
 #ifndef _MIBGROUP_ALARM_H
 #define _MIBGROUP_ALARM_H
 
-config_require(util_funcs)
-
     /*
      * function prototypes 
      */

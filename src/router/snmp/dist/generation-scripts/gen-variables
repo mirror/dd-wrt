@@ -1,0 +1,10 @@
+#
+# common variables used by configure scripts
+#
+SED="/xfs/toolchains/toolchain-arm_mpcore+vfp_gcc-8.2.0_musl_eabi/bin/sed"
+CPP="ccache arm-linux-uclibc-gcc -E"
+GREP="/usr/bin/grep"
+PARTIALTARGETFLAGS="-Ulinux -Dlinux=linux"
+NETSNMP_SYSTEM_INCLUDE_FILE="net-snmp/system/linux.h"
+
+srcdir=.

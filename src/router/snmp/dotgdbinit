@@ -127,3 +127,12 @@ document poidl
   poid NAME
   shorthand for 'printoid NAME_length NAME"
 end
+
+define printindex
+  printoid $arg0->len $arg0->oids
+end
+document printindex
+  printindex NETSNMP_INDEX_PTR
+  prints the OID contained in a netsnmp_index struct variable.
+end
+

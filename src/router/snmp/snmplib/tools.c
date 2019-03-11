@@ -1,18 +1,31 @@
 /*
  * tools.c
+ *
+ * Portions of this file are copyrighted by:
+ * Copyright (c) 2016 VMware, Inc. All rights reserved.
+ * Use is subject to license terms specified in the COPYING file
+ * distributed with the Net-SNMP package.
  */
 
+#define NETSNMP_TOOLS_C 1 /* dont re-define malloc wrappers here */
+
+#ifdef HAVE_CRTDBG_H
+/*
+ * Define _CRTDBG_MAP_ALLOC such that in debug builds (when _DEBUG has been
+ * defined) e.g. malloc() is rerouted to _malloc_dbg().
+ */
+#define _CRTDBG_MAP_ALLOC 1
+#include <crtdbg.h>
+#endif
+
 #include <net-snmp/net-snmp-config.h>
+#include <net-snmp/net-snmp-features.h>
 
 #include <ctype.h>
 #include <stdio.h>
 #include <sys/types.h>
 #if TIME_WITH_SYS_TIME
-# ifdef WIN32
-#  include <sys/timeb.h>
-# else
-#  include <sys/time.h>
-# endif
+# include <sys/time.h>
 # include <time.h>
 #else
 # if HAVE_SYS_TIME_H
@@ -24,8 +37,8 @@
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
-#if HAVE_WINSOCK_H
-#include <winsock.h>
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
 #endif
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
@@ -41,7 +54,16 @@
 #ifdef HAVE_ARPA_INET_H
 #include <arpa/inet.h>
 #endif
+#ifdef HAVE_VALGRIND_MEMCHECK_H
+#include <valgrind/memcheck.h>
+#endif
+#if defined(cygwin) || defined(mingw32)
+#include <windows.h>
+#endif
 
+#if HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 #if HAVE_DMALLOC_H
 #include <dmalloc.h>
 #endif
@@ -55,22 +77,87 @@
 #include <net-snmp/library/mib.h>
 #include <net-snmp/library/scapi.h>
 
+netsnmp_feature_child_of(tools_all, libnetsnmp)
 
-/*
- * snmp_realloc:
- * 
- * Parameters:
- * 
- * buf  pointer to a buffer pointer
- * buf_len      pointer to current size of buffer in bytes
- * 
+netsnmp_feature_child_of(memory_wrappers, tools_all)
+netsnmp_feature_child_of(valgrind, tools_all)
+netsnmp_feature_child_of(string_time_to_secs, tools_all)
+netsnmp_feature_child_of(netsnmp_check_definedness, valgrind)
+
+netsnmp_feature_child_of(uatime_ready, netsnmp_unused)
+netsnmp_feature_child_of(timeval_tticks, netsnmp_unused)
+
+netsnmp_feature_child_of(memory_strdup, memory_wrappers)
+netsnmp_feature_child_of(memory_calloc, memory_wrappers)
+netsnmp_feature_child_of(memory_malloc, memory_wrappers)
+netsnmp_feature_child_of(memory_realloc, memory_wrappers)
+netsnmp_feature_child_of(memory_free, memory_wrappers)
+
+#ifndef NETSNMP_FEATURE_REMOVE_MEMORY_WRAPPERS
+/**
+ * This function is a wrapper for the strdup function.
+ *
+ * @note The strdup() implementation calls _malloc_dbg() when linking with
+ * MSVCRT??D.dll and malloc() when linking with MSVCRT??.dll
+ */
+char * netsnmp_strdup( const char * ptr)
+{
+    return strdup(ptr);
+}
+#endif /* NETSNMP_FEATURE_REMOVE_MEMORY_STRDUP */
+#ifndef NETSNMP_FEATURE_REMOVE_MEMORY_CALLOC
+/**
+ * This function is a wrapper for the calloc function.
+ */
+void * netsnmp_calloc(size_t nmemb, size_t size)
+{
+    return calloc(nmemb, size);
+}
+#endif /* NETSNMP_FEATURE_REMOVE_MEMORY_CALLOC */
+#ifndef NETSNMP_FEATURE_REMOVE_MEMORY_MALLOC
+/**
+ * This function is a wrapper for the malloc function.
+ */
+void * netsnmp_malloc(size_t size)
+{
+    return malloc(size);
+}
+#endif /* NETSNMP_FEATURE_REMOVE_MEMORY_MALLOC */
+#ifndef NETSNMP_FEATURE_REMOVE_MEMORY_REALLOC
+/**
+ * This function is a wrapper for the realloc function.
+ */
+void * netsnmp_realloc( void * ptr, size_t size)
+{
+    return realloc(ptr, size);
+}
+#endif /* NETSNMP_FEATURE_REMOVE_MEMORY_REALLOC */
+#ifndef NETSNMP_FEATURE_REMOVE_MEMORY_FREE
+/**
+ * This function is a wrapper for the free function.
+ * It calls free only if the calling parameter has a non-zero value.
+ */
+void netsnmp_free( void * ptr)
+{
+    if (ptr)
+        free(ptr);
+}
+#endif /* NETSNMP_FEATURE_REMOVE_MEMORY_FREE */
+
+/**
  * This function increase the size of the buffer pointed at by *buf, which is
  * initially of size *buf_len.  Contents are preserved **AT THE BOTTOM END OF
  * THE BUFFER**.  If memory can be (re-)allocated then it returns 1, else it
  * returns 0.
  * 
+ * @param buf  pointer to a buffer pointer
+ * @param buf_len      pointer to current size of buffer in bytes
+ * 
+ * @note
+ * The current re-allocation algorithm is to increase the buffer size by
+ * whichever is the greater of 256 bytes or the current buffer size, up to
+ * a maximum increase of 8192 bytes.  
  */
-
 int
 snmp_realloc(u_char ** buf, size_t * buf_len)
 {
@@ -80,12 +167,6 @@ snmp_realloc(u_char ** buf, size_t * buf_len)
     if (buf == NULL) {
         return 0;
     }
-
-    /*
-     * The current re-allocation algorithm is to increase the buffer size by
-     * whichever is the greater of 256 bytes or the current buffer size, up to
-     * a maximum increase of 8192 bytes.  
-     */
 
     if (*buf_len <= 255) {
         new_buf_len = *buf_len + 256;
@@ -131,17 +212,18 @@ snmp_strcat(u_char ** buf, size_t * buf_len, size_t * out_len,
         }
     }
 
+    if (!*buf)
+        return 0;
+
     strcpy((char *) (*buf + *out_len), (const char *) s);
     *out_len += strlen((char *) (*buf + *out_len));
     return 1;
 }
 
-/*******************************************************************-o-******
- * free_zero
+/** zeros memory before freeing it.
  *
- * Parameters:
- *	*buf	Pointer at bytes to free.
- *	size	Number of bytes in buf.
+ *	@param *buf	Pointer at bytes to free.
+ *	@param size	Number of bytes in buf.
  */
 void
 free_zero(void *buf, size_t size)
@@ -153,19 +235,15 @@ free_zero(void *buf, size_t size)
 
 }                               /* end free_zero() */
 
-
-
-
-/*******************************************************************-o-******
- * malloc_random
- *
- * Parameters:
- *	size	Number of bytes to malloc() and fill with random bytes.
- *      
+#ifndef NETSNMP_FEATURE_REMOVE_USM_SCAPI
+/**
  * Returns pointer to allocaed & set buffer on success, size contains
- * number of random bytes filled.
+ * number of random bytes filled.  buf is NULL and *size set to KMT
+ * error value upon failure.
  *
- * buf is NULL and *size set to KMT error value upon failure.
+ *	@param size	Number of bytes to malloc() and fill with random bytes.
+ *
+ * @return a malloced buffer
  *
  */
 u_char         *
@@ -188,37 +266,93 @@ malloc_random(size_t * size)
     return buf;
 
 }                               /* end malloc_random() */
+#endif /* NETSNMP_FEATURE_REMOVE_USM_SCAPI */
 
-
-
-
-/*******************************************************************-o-******
- * memdup
+/**
+ * Duplicates a memory block.
  *
- * Parameters:
- *	to       Pointer to allocate and copy memory to.
- *      from     Pointer to copy memory from.
- *      size     Size of the data to be copied.
+ * @param[in] from Pointer to copy memory from.
+ * @param[in] size Size of the data to be copied.
  *      
- * Returns
- *	SNMPERR_SUCCESS	On success.
- *      SNMPERR_GENERR	On failure.
+ * @return Pointer to the duplicated memory block, or NULL if memory allocation
+ * failed.
  */
-int
-memdup(u_char ** to, const u_char * from, size_t size)
+void *netsnmp_memdup(const void *from, size_t size)
 {
-    if (to == NULL)
-        return SNMPERR_GENERR;
-    if (from == NULL) {
-        *to = NULL;
-        return SNMPERR_SUCCESS;
-    }
-    if ((*to = (u_char *) malloc(size)) == NULL)
-        return SNMPERR_GENERR;
-    memcpy(*to, from, size);
-    return SNMPERR_SUCCESS;
+    void *to = NULL;
 
-}                               /* end memdup() */
+    if (from) {
+        to = malloc(size);
+        if (to)
+            memcpy(to, from, size);
+    }
+    return to;
+}                               /* end netsnmp_memdup() */
+
+/**
+ * Duplicates a memory block, adding a NULL at the end.
+ *
+ * NOTE: the returned size DOES NOT include the extra byte for the NULL
+ *       termination, just the raw data (i.e. from_size).
+ *
+ * This is mainly to protect agains code that uses str* functions on
+ * a fixed buffer that may not have a terminating NULL.
+ *
+ * @param[in] from Pointer to copy memory from.
+ * @param[in] from_size Size of the data to be copied.
+ * @param[out] new_size Pointer to size var for new block (OPTIONAL)
+ *
+ * @return Pointer to the duplicated memory block, or NULL if memory allocation
+ * failed.
+ */
+void *netsnmp_memdup_nt(const void *from, size_t from_size, size_t *to_size)
+{
+    char *to = NULL;
+
+    if (from) {
+        to = malloc(from_size+1);
+        if (to) {
+            memcpy(to, from, from_size);
+            to[from_size] = 0;
+            if (to_size)
+               *to_size = from_size;
+        }
+    }
+    return to;
+}                               /* end netsnmp_memdupNT() */
+
+#ifndef NETSNMP_FEATURE_REMOVE_NETSNMP_CHECK_DEFINEDNESS
+/**
+ * When running under Valgrind, check whether all bytes in the range [packet,
+ * packet+length) are defined. Let Valgrind print a backtrace if one or more
+ * bytes with uninitialized values have been found. This function can help to
+ * find the cause of undefined value errors if --track-origins=yes is not
+ * sufficient. Does nothing when not running under Valgrind.
+ *
+ * Note: this requires a fairly recent valgrind.
+ */
+void
+netsnmp_check_definedness(const void *packet, size_t length)
+{
+#if defined(__VALGRIND_MAJOR__) && defined(__VALGRIND_MINOR__)   \
+    && (__VALGRIND_MAJOR__ > 3                                   \
+        || (__VALGRIND_MAJOR__ == 3 && __VALGRIND_MINOR__ >= 6))
+
+    if (RUNNING_ON_VALGRIND) {
+        int i;
+        char vbits;
+
+        for (i = 0; i < length; ++i) {
+            if (VALGRIND_GET_VBITS((const char *)packet + i, &vbits, 1) == 1
+                && vbits)
+                VALGRIND_PRINTF_BACKTRACE("Undefined: byte %d/%d", i,
+                                          (int)length);
+        }
+    }
+
+#endif
+}
+#endif /* NETSNMP_FEATURE_REMOVE_NETSNMP_CHECK_DEFINEDNESS */
 
 /** copies a (possible) unterminated string of a given length into a
  *  new buffer and null terminates it as well (new buffer MAY be one
@@ -226,33 +360,77 @@ memdup(u_char ** to, const u_char * from, size_t size)
 char           *
 netsnmp_strdup_and_null(const u_char * from, size_t from_len)
 {
-    u_char         *ret;
+    char         *ret;
 
-    if (from_len == 0 || from[from_len - 1] != '\0') {
-        ret = malloc(from_len + 1);
-        if (!ret)
-            return NULL;
+    if (from_len > 0 && from[from_len - 1] == '\0')
+        from_len--;
+    ret = malloc(from_len + 1);
+    if (ret) {
+        memcpy(ret, from, from_len);
         ret[from_len] = '\0';
-    } else {
-        ret = malloc(from_len);
-        if (!ret)
-            return NULL;
-        ret[from_len - 1] = '\0';
     }
-    memcpy(ret, from, from_len);
     return ret;
 }
 
-/*******************************************************************-o-******
- * binary_to_hex
+/** converts binary to hexidecimal
  *
- * Parameters:
- *	*input		Binary data.
- *	len		Length of binary data.
- *	**output	NULL terminated string equivalent in hex.
+ *     @param *input            Binary data.
+ *     @param len               Length of binary data.
+ *     @param **dest            NULL terminated string equivalent in hex.
+ *     @param *dest_len         size of destination buffer
+ *     @param allow_realloc     flag indicating if buffer can be realloc'd
  *      
- * Returns:
- *	olen	Length of output string not including NULL terminator.
+ * @return olen	Length of output string not including NULL terminator.
+ */
+u_int
+netsnmp_binary_to_hex(u_char ** dest, size_t *dest_len, int allow_realloc, 
+                      const u_char * input, size_t len)
+{
+    u_int           olen = (len * 2) + 1;
+    u_char         *s, *op;
+    const u_char   *ip = input;
+
+    if (dest == NULL || dest_len == NULL || input == NULL)
+        return 0;
+
+    if (NULL == *dest) {
+        s = (unsigned char *) calloc(1, olen);
+        *dest_len = olen;
+    }
+    else
+        s = *dest;
+
+    if (*dest_len < olen) {
+        if (!allow_realloc)
+            return 0;
+        *dest_len = olen;
+        if (snmp_realloc(dest, dest_len))
+            return 0;
+    }
+
+    op = s;
+    while (ip - input < (int) len) {
+        *op++ = VAL2HEX((*ip >> 4) & 0xf);
+        *op++ = VAL2HEX(*ip & 0xf);
+        ip++;
+    }
+    *op = '\0';
+
+    if (s != *dest)
+        *dest = s;
+    *dest_len = olen;
+
+    return olen;
+
+}                               /* end netsnmp_binary_to_hex() */
+
+/** converts binary to hexidecimal
+ *
+ *	@param *input		Binary data.
+ *	@param len		Length of binary data.
+ *	@param **output	NULL terminated string equivalent in hex.
+ *      
+ * @return olen	Length of output string not including NULL terminator.
  *
  * FIX	Is there already one of these in the UCD SNMP codebase?
  *	The old one should be used, or this one should be moved to
@@ -261,38 +439,23 @@ netsnmp_strdup_and_null(const u_char * from, size_t from_len)
 u_int
 binary_to_hex(const u_char * input, size_t len, char **output)
 {
-    u_int           olen = (len * 2) + 1;
-    char           *s = (char *) calloc(1, olen), *op = s;
-    const u_char   *ip = input;
+    size_t out_len = 0;
 
+    *output = NULL; /* will alloc new buffer */
 
-    while (ip - input < (int) len) {
-        *op++ = VAL2HEX((*ip >> 4) & 0xf);
-        *op++ = VAL2HEX(*ip & 0xf);
-        ip++;
-    }
-    *op = '\0';
-
-    *output = s;
-    return olen;
-
+    return netsnmp_binary_to_hex((u_char**)output, &out_len, 1, input, len);
 }                               /* end binary_to_hex() */
 
 
 
 
-/*******************************************************************-o-******
+/**
  * hex_to_binary2
- *
- * Parameters:
- *	*input		Printable data in base16.
- *	len		Length in bytes of data.
- *	**output	Binary data equivalent to input.
+ *	@param *input		Printable data in base16.
+ *	@param len		Length in bytes of data.
+ *	@param **output	Binary data equivalent to input.
  *      
- * Returns:
- *	SNMPERR_GENERR	Failure.
- *	<len>		Otherwise, Length of allocated string.
- *
+ * @return SNMPERR_GENERR on failure, otherwise length of allocated string.
  *
  * Input of an odd length is right aligned.
  *
@@ -304,11 +467,14 @@ int
 hex_to_binary2(const u_char * input, size_t len, char **output)
 {
     u_int           olen = (len / 2) + (len % 2);
-    char           *s = (char *) calloc(1, (olen) ? olen : 1), *op = s;
+    char           *s = calloc(1, olen ? olen : 1), *op = s;
     const u_char   *ip = input;
 
 
     *output = NULL;
+    if (!s)
+        goto hex_to_binary2_quit;
+
     *op = 0;
     if (len % 2) {
         if (!isxdigit(*ip))
@@ -317,7 +483,7 @@ hex_to_binary2(const u_char * input, size_t len, char **output)
         ip++;
     }
 
-    while (ip - input < (int) len) {
+    while (ip < input + len) {
         if (!isxdigit(*ip))
             goto hex_to_binary2_quit;
         *op = HEX2VAL(*ip) << 4;
@@ -374,14 +540,41 @@ snmp_decimal_to_binary(u_char ** buf, size_t * buf_len, size_t * out_len,
     return 1;
 }
 
+/**
+ * convert an ASCII hex string (with specified delimiters) to binary
+ *
+ * @param buf     address of a pointer (pointer to pointer) for the output buffer.
+ *                If allow_realloc is set, the buffer may be grown via snmp_realloc
+ *                to accomodate the data.
+ *
+ * @param buf_len pointer to a size_t containing the initial size of buf.
+ *
+ * @param offset On input, a pointer to a size_t indicating an offset into buf.
+ *                The  binary data will be stored at this offset.
+ *                On output, this pointer will have updated the offset to be
+ *                the first byte after the converted data.
+ *
+ * @param allow_realloc If true, the buffer can be reallocated. If false, and
+ *                      the buffer is not large enough to contain the string,
+ *                      an error will be returned.
+ *
+ * @param hex     pointer to hex string to be converted. May be prefixed by
+ *                "0x" or "0X".
+ *
+ * @param delim   point to a string of allowed delimiters between bytes.
+ *                If not specified, any non-hex characters will be an error.
+ *
+ * @retval 1  success
+ * @retval 0  error
+ */
 int
-snmp_hex_to_binary(u_char ** buf, size_t * buf_len, size_t * out_len,
-                   int allow_realloc, const char *hex)
+netsnmp_hex_to_binary(u_char ** buf, size_t * buf_len, size_t * offset,
+                      int allow_realloc, const char *hex, const char *delim)
 {
-    int             subid = 0;
+    unsigned int    subid = 0;
     const char     *cp = hex;
 
-    if (buf == NULL || buf_len == NULL || out_len == NULL || hex == NULL) {
+    if (buf == NULL || buf_len == NULL || offset == NULL || hex == NULL) {
         return 0;
     }
 
@@ -390,22 +583,27 @@ snmp_hex_to_binary(u_char ** buf, size_t * buf_len, size_t * out_len,
     }
 
     while (*cp != '\0') {
-        if (isspace((int) *cp)) {
-            cp++;
-            continue;
-        }
-        if (!isxdigit((int) *cp)) {
+        if (!isxdigit((int) *cp) ||
+            !isxdigit((int) *(cp+1))) {
+            if ((NULL != delim) && (NULL != strchr(delim, *cp))) {
+                cp++;
+                continue;
+            }
             return 0;
         }
         if (sscanf(cp, "%2x", &subid) == 0) {
             return 0;
         }
-        if ((*out_len >= *buf_len) &&
+        /*
+         * if we dont' have enough space, realloc.
+         * (snmp_realloc will adjust buf_len to new size)
+         */
+        if ((*offset >= *buf_len) &&
             !(allow_realloc && snmp_realloc(buf, buf_len))) {
             return 0;
         }
-        *(*buf + *out_len) = (u_char) subid;
-        (*out_len)++;
+        *(*buf + *offset) = (u_char) subid;
+        (*offset)++;
         if (*++cp == '\0') {
             /*
              * Odd number of hex digits is an error.  
@@ -416,6 +614,24 @@ snmp_hex_to_binary(u_char ** buf, size_t * buf_len, size_t * out_len,
         }
     }
     return 1;
+}
+
+/**
+ * convert an ASCII hex string to binary
+ *
+ * @note This is a wrapper which calls netsnmp_hex_to_binary with a
+ * delimiter string of " ".
+ *
+ * See netsnmp_hex_to_binary for parameter descriptions.
+ *
+ * @retval 1  success
+ * @retval 0  error
+ */
+int
+snmp_hex_to_binary(u_char ** buf, size_t * buf_len, size_t * offset,
+                   int allow_realloc, const char *hex)
+{
+    return netsnmp_hex_to_binary(buf, buf_len, offset, allow_realloc, hex, " ");
 }
 
 /*******************************************************************-o-******
@@ -430,7 +646,7 @@ void
 dump_chunk(const char *debugtoken, const char *title, const u_char * buf,
            int size)
 {
-    u_int           printunit = 64;     /* XXX  Make global. */
+    int             printunit = 64;     /* XXX  Make global. */
     char            chunk[SNMP_MAXBUF], *s, *sp;
 
     if (title && (*title != '\0')) {
@@ -443,8 +659,8 @@ dump_chunk(const char *debugtoken, const char *title, const u_char * buf,
     sp = s;
 
     while (size > 0) {
-        if (size > (int) printunit) {
-            strncpy(chunk, sp, printunit);
+        if (size > printunit) {
+            memcpy(chunk, sp, printunit);
             chunk[printunit] = '\0';
             DEBUGMSGTL((debugtoken, "\t%s\n", chunk));
         } else {
@@ -513,16 +729,16 @@ dump_chunk(const char *debugtoken, const char *title, const u_char * buf,
  * XXX	Need a switch to decide whether to use DNS name instead of a simple
  *	IP address.
  *
- * FIX	Use something other than sprint_hexstring which doesn't add 
+ * FIX	Use something other than snprint_hexstring which doesn't add 
  *	trailing spaces and (sometimes embedded) newlines...
  */
-#ifdef SNMP_TESTING_CODE
+#ifdef NETSNMP_ENABLE_TESTING_CODE
 char           *
 dump_snmpEngineID(const u_char * estring, size_t * estring_len)
 {
 #define eb(b)	( *(esp+b) & 0xff )
 
-    int             rval = SNMPERR_SUCCESS, gotviolation = 0, slen = 0;
+    int             gotviolation = 0, slen = 0;
     u_int           remaining_len;
 
     char            buf[SNMP_MAXBUF], *s = NULL, *t;
@@ -536,7 +752,7 @@ dump_snmpEngineID(const u_char * estring, size_t * estring_len)
      * Sanity check.
      */
     if (!estring || (*estring_len <= 0)) {
-        QUITFUN(SNMPERR_GENERR, dump_snmpEngineID_quit);
+        goto dump_snmpEngineID_quit;
     }
     remaining_len = *estring_len;
     memset(buf, 0, SNMP_MAXBUF);
@@ -548,7 +764,7 @@ dump_snmpEngineID(const u_char * estring, size_t * estring_len)
      * begin by formatting the enterprise ID.
      */
     if (!(*esp & 0x80)) {
-        sprint_hexstring(buf, esp, remaining_len);
+        snprint_hexstring(buf, SNMP_MAXBUF, esp, remaining_len);
         s = strchr(buf, '\0');
         s -= 1;
         goto dump_snmpEngineID_quit;
@@ -620,35 +836,34 @@ dump_snmpEngineID(const u_char * estring, size_t * estring_len)
 
     case 4:                    /* Text. */
 
-        /*
-         * Doesn't exist on all (many) architectures 
-         */
-        /*
-         * s += snprintf(s, remaining_len+3, "\"%s\"", esp); 
-         */
-        s += sprintf(s, "\"%s\"", esp);
+        s += sprintf(s, "\"%.*s\"", (int) (sizeof(buf)-strlen(buf)-3), esp);
         goto dump_snmpEngineID_quit;
         break;
+
      /*NOTREACHED*/ case 5:    /* Octets. */
 
-        sprint_hexstring(s, esp, remaining_len);
+        snprint_hexstring(s, (SNMP_MAXBUF - (s-buf)),
+                          esp, remaining_len);
         s = strchr(buf, '\0');
         s -= 1;
         goto dump_snmpEngineID_quit;
         break;
+
        /*NOTREACHED*/ dump_snmpEngineID_violation:
     case 0:                    /* Violation of RESERVED, 
                                  * *   -OR- of expected length.
                                  */
         gotviolation = 1;
         s += sprintf(s, "!!! ");
+        /* FALLTHROUGH */
 
     default:                   /* Unknown encoding. */
 
         if (!gotviolation) {
             s += sprintf(s, "??? ");
         }
-        sprint_hexstring(s, esp, remaining_len);
+        snprint_hexstring(s, (SNMP_MAXBUF - (s-buf)),
+                          esp, remaining_len);
         s = strchr(buf, '\0');
         s -= 1;
 
@@ -665,7 +880,8 @@ dump_snmpEngineID(const u_char * estring, size_t * estring_len)
     if (remaining_len > 0) {
         s += sprintf(s, " (??? ");
 
-        sprint_hexstring(s, esp, remaining_len);
+        snprint_hexstring(s, (SNMP_MAXBUF - (s-buf)),
+                          esp, remaining_len);
         s = strchr(buf, '\0');
         s -= 1;
 
@@ -687,23 +903,27 @@ dump_snmpEngineID(const u_char * estring, size_t * estring_len)
 
 #undef eb
 }                               /* end dump_snmpEngineID() */
-#endif                          /* SNMP_TESTING_CODE */
+#endif                          /* NETSNMP_ENABLE_TESTING_CODE */
 
 
-/*
- * create a new time marker.
- * NOTE: Caller must free time marker when no longer needed.
+/**
+ * Create a new real-time marker.
+ *
+ * \deprecated Use netsnmp_set_monotonic_marker() instead.
+ *
+ * @note Caller must free time marker when no longer needed.
  */
 marker_t
 atime_newMarker(void)
 {
     marker_t        pm = (marker_t) calloc(1, sizeof(struct timeval));
-    gettimeofday((struct timeval *) pm, 0);
+    gettimeofday((struct timeval *) pm, NULL);
     return pm;
 }
 
-/*
- * set a time marker.
+/**
+ * Set a time marker to the current value of the real-time clock.
+ * \deprecated Use netsnmp_set_monotonic_marker() instead.
  */
 void
 atime_setMarker(marker_t pm)
@@ -711,70 +931,140 @@ atime_setMarker(marker_t pm)
     if (!pm)
         return;
 
-    gettimeofday((struct timeval *) pm, 0);
+    gettimeofday((struct timeval *) pm, NULL);
 }
 
+/**
+ * Query the current value of the monotonic clock.
+ *
+ * Returns the current value of a monotonic clock if such a clock is provided by
+ * the operating system or the wall clock time if no such clock is provided by
+ * the operating system. A monotonic clock is a clock that is never adjusted
+ * backwards and that proceeds at the same rate as wall clock time.
+ *
+ * @param[out] tv Pointer to monotonic clock time.
+ */
+void netsnmp_get_monotonic_clock(struct timeval* tv)
+{
+#if defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
+    struct timespec ts;
+    int res;
 
-/*
+    res = clock_gettime(CLOCK_MONOTONIC, &ts);
+    if (res >= 0) {
+        tv->tv_sec = ts.tv_sec;
+        tv->tv_usec = ts.tv_nsec / 1000;
+    } else {
+        gettimeofday(tv, NULL);
+    }
+#elif defined(WIN32)
+    /*
+     * Windows: return tick count. Note: the rate at which the tick count
+     * increases is not adjusted by the time synchronization algorithm, so
+     * expect an error of <= 100 ppm for the rate at which this clock
+     * increases.
+     */
+    typedef ULONGLONG (WINAPI * pfGetTickCount64)(void);
+    static int s_initialized;
+    static pfGetTickCount64 s_pfGetTickCount64;
+    uint64_t now64;
+
+    if (!s_initialized) {
+        HMODULE hKernel32 = GetModuleHandle("kernel32");
+        s_pfGetTickCount64 =
+            (pfGetTickCount64) GetProcAddress(hKernel32, "GetTickCount64");
+        s_initialized = TRUE;
+    }
+
+    if (s_pfGetTickCount64) {
+        /* Windows Vista, Windows 2008 or any later Windows version */
+        now64 = (*s_pfGetTickCount64)();
+    } else {
+        /* Windows XP, Windows 2003 or any earlier Windows version */
+        static uint32_t s_wraps, s_last;
+        uint32_t now;
+
+        now = GetTickCount();
+        if (now < s_last)
+            s_wraps++;
+        s_last = now;
+        now64 = ((uint64_t)s_wraps << 32) | now;
+    }
+    tv->tv_sec = now64 / 1000;
+    tv->tv_usec = (now64 % 1000) * 1000;
+#else
+    /* At least FreeBSD 4 doesn't provide monotonic clock support. */
+#warning Not sure how to query a monotonically increasing clock on your system. \
+Timers will not work correctly if the system clock is adjusted by e.g. ntpd.
+    gettimeofday(tv, NULL);
+#endif
+}
+
+/**
+ * Set a time marker to the current value of the monotonic clock.
+ */
+void
+netsnmp_set_monotonic_marker(marker_t *pm)
+{
+    if (!*pm)
+        *pm = malloc(sizeof(struct timeval));
+    if (*pm)
+        netsnmp_get_monotonic_clock(*pm);
+}
+
+/**
  * Returns the difference (in msec) between the two markers
+ *
+ * \deprecated Don't use in new code.
  */
 long
-atime_diff(marker_t first, marker_t second)
+atime_diff(const_marker_t first, const_marker_t second)
 {
-    struct timeval *tv1, *tv2, diff;
+    struct timeval diff;
 
-    tv1 = (struct timeval *) first;
-    tv2 = (struct timeval *) second;
+    NETSNMP_TIMERSUB((const struct timeval *) second, (const struct timeval *) first, &diff);
 
-    diff.tv_sec = tv2->tv_sec - tv1->tv_sec - 1;
-    diff.tv_usec = tv2->tv_usec - tv1->tv_usec + 1000000;
-
-    return (diff.tv_sec * 1000 + diff.tv_usec / 1000);
+    return (long)(diff.tv_sec * 1000 + diff.tv_usec / 1000);
 }
 
-/*
+/**
  * Returns the difference (in u_long msec) between the two markers
+ *
+ * \deprecated Don't use in new code.
  */
 u_long
-uatime_diff(marker_t first, marker_t second)
+uatime_diff(const_marker_t first, const_marker_t second)
 {
-    struct timeval *tv1, *tv2, diff;
+    struct timeval diff;
 
-    tv1 = (struct timeval *) first;
-    tv2 = (struct timeval *) second;
-
-    diff.tv_sec = tv2->tv_sec - tv1->tv_sec - 1;
-    diff.tv_usec = tv2->tv_usec - tv1->tv_usec + 1000000;
+    NETSNMP_TIMERSUB((const struct timeval *) second, (const struct timeval *) first, &diff);
 
     return (((u_long) diff.tv_sec) * 1000 + diff.tv_usec / 1000);
 }
 
-/*
+/**
  * Returns the difference (in u_long 1/100th secs) between the two markers
  * (functionally this is what sysUpTime needs)
+ *
+ * \deprecated Don't use in new code.
  */
 u_long
-uatime_hdiff(marker_t first, marker_t second)
+uatime_hdiff(const_marker_t first, const_marker_t second)
 {
-    struct timeval *tv1, *tv2, diff;
-    u_long          res;
+    struct timeval diff;
 
-    tv1 = (struct timeval *) first;
-    tv2 = (struct timeval *) second;
-
-    diff.tv_sec = tv2->tv_sec - tv1->tv_sec - 1;
-    diff.tv_usec = tv2->tv_usec - tv1->tv_usec + 1000000;
-
-    res = ((u_long) diff.tv_sec) * 100 + diff.tv_usec / 10000;
-    return res;
+    NETSNMP_TIMERSUB((const struct timeval *) second, (const struct timeval *) first, &diff);
+    return ((u_long) diff.tv_sec) * 100 + diff.tv_usec / 10000;
 }
 
-/*
- * Test: Has (marked time plus delta) exceeded current time (in msec) ?
+/**
+ * Test: Has (marked time plus delta) exceeded current time ?
  * Returns 0 if test fails or cannot be tested (no marker).
+ *
+ * \deprecated Use netsnmp_ready_monotonic() instead.
  */
 int
-atime_ready(marker_t pm, int deltaT)
+atime_ready(const_marker_t pm, int delta_ms)
 {
     marker_t        now;
     long            diff;
@@ -785,18 +1075,21 @@ atime_ready(marker_t pm, int deltaT)
 
     diff = atime_diff(pm, now);
     free(now);
-    if (diff < deltaT)
+    if (diff < delta_ms)
         return 0;
 
     return 1;
 }
 
-/*
- * Test: Has (marked time plus delta) exceeded current time (in msec) ?
+#ifndef NETSNMP_FEATURE_REMOVE_UATIME_READY
+/**
+ * Test: Has (marked time plus delta) exceeded current time ?
  * Returns 0 if test fails or cannot be tested (no marker).
+ *
+ * \deprecated Use netsnmp_ready_monotonic() instead.
  */
 int
-uatime_ready(marker_t pm, unsigned int deltaT)
+uatime_ready(const_marker_t pm, unsigned int delta_ms)
 {
     marker_t        now;
     u_long          diff;
@@ -807,10 +1100,37 @@ uatime_ready(marker_t pm, unsigned int deltaT)
 
     diff = uatime_diff(pm, now);
     free(now);
-    if (diff < deltaT)
+    if (diff < delta_ms)
         return 0;
 
     return 1;
+}
+#endif /* NETSNMP_FEATURE_REMOVE_UATIME_READY */
+
+/**
+ * Is the current time past (marked time plus delta) ?
+ *
+ * @param[in] pm Pointer to marked time as obtained via
+ *   netsnmp_set_monotonic_marker().
+ * @param[in] delta_ms Time delta in milliseconds.
+ *
+ * @return pm != NULL && now >= (*pm + delta_ms)
+ */
+int
+netsnmp_ready_monotonic(const_marker_t pm, int delta_ms)
+{
+    struct timeval  now, diff, delta;
+
+    netsnmp_assert(delta_ms >= 0);
+    if (pm) {
+        netsnmp_get_monotonic_clock(&now);
+        NETSNMP_TIMERSUB(&now, (const struct timeval *) pm, &diff);
+        delta.tv_sec = delta_ms / 1000;
+        delta.tv_usec = (delta_ms % 1000) * 1000UL;
+        return timercmp(&diff, &delta, >=) ? TRUE : FALSE;
+    } else {
+        return FALSE;
+    }
 }
 
 
@@ -818,11 +1138,13 @@ uatime_ready(marker_t pm, unsigned int deltaT)
          * Time-related utility functions
          */
 
-                /*
-                 * Return the number of timeTicks since the given marker 
-                 */
+/**
+ * Return the number of timeTicks since the given marker
+ *
+ * \deprecated Don't use in new code.
+ */
 int
-marker_tticks(marker_t pm)
+marker_tticks(const_marker_t pm)
 {
     int             res;
     marker_t        now = atime_newMarker();
@@ -832,8 +1154,256 @@ marker_tticks(marker_t pm)
     return res / 10;            /* atime_diff works in msec, not csec */
 }
 
+#ifndef NETSNMP_FEATURE_REMOVE_TIMEVAL_TTICKS
+/**
+ * \deprecated Don't use in new code.
+ */
 int
-timeval_tticks(struct timeval *tv)
+timeval_tticks(const struct timeval *tv)
 {
-    return marker_tticks((marker_t) tv);
+    return marker_tticks((const_marker_t) tv);
 }
+#endif /* NETSNMP_FEATURE_REMOVE_TIMEVAL_TTICKS */
+
+/**
+ * Non Windows:  Returns a pointer to the desired environment variable  
+ *               or NULL if the environment variable does not exist.  
+ *               
+ * Windows:      Returns a pointer to the desired environment variable  
+ *               if it exists.  If it does not, the variable is looked up
+ *               in the registry in HKCU\\Net-SNMP or HKLM\\Net-SNMP
+ *               (whichever it finds first) and stores the result in the 
+ *               environment variable.  It then returns a pointer to 
+ *               environment variable.
+ */
+
+char *netsnmp_getenv(const char *name)
+{
+#if !defined (WIN32) && !defined (cygwin)
+  return (getenv(name));
+#else
+  char *temp = NULL;  
+  HKEY hKey;
+  unsigned char * key_value = NULL;
+  DWORD key_value_size = 0;
+  DWORD key_value_type = 0;
+  DWORD getenv_worked = 0;
+
+  DEBUGMSGTL(("read_config", "netsnmp_getenv called with name: %s\n",name));
+
+  if (!(name))
+    return NULL;
+  
+  /* Try environment variable first */ 
+  temp = getenv(name);
+  if (temp) {
+    getenv_worked = 1;
+    DEBUGMSGTL(("read_config", "netsnmp_getenv will return from ENV: %s\n",temp));
+  }
+  
+  /* Next try HKCU */
+  if (temp == NULL)
+  {
+    if (getenv("SNMP_IGNORE_WINDOWS_REGISTRY"))
+      return NULL;
+
+    if (RegOpenKeyExA(
+          HKEY_CURRENT_USER, 
+          "SOFTWARE\\Net-SNMP", 
+          0, 
+          KEY_QUERY_VALUE, 
+          &hKey) == ERROR_SUCCESS) {   
+      
+      if (RegQueryValueExA(
+            hKey, 
+            name, 
+            NULL, 
+            &key_value_type, 
+            NULL,               /* Just get the size */
+            &key_value_size) == ERROR_SUCCESS) {
+
+        SNMP_FREE(key_value);
+
+        /* Allocate memory needed +1 to allow RegQueryValueExA to NULL terminate the
+         * string data in registry is missing one (which is unlikely).
+         */
+        key_value = malloc((sizeof(char) * key_value_size)+sizeof(char));
+        
+        if (RegQueryValueExA(
+              hKey, 
+              name, 
+              NULL, 
+              &key_value_type, 
+              key_value, 
+              &key_value_size) == ERROR_SUCCESS) {
+        }
+        temp = (char *) key_value;
+      }
+      RegCloseKey(hKey);
+      if (temp)
+        DEBUGMSGTL(("read_config", "netsnmp_getenv will return from HKCU: %s\n",temp));
+    }
+  }
+
+  /* Next try HKLM */
+  if (temp == NULL)
+  {
+    if (RegOpenKeyExA(
+          HKEY_LOCAL_MACHINE, 
+          "SOFTWARE\\Net-SNMP", 
+          0, 
+          KEY_QUERY_VALUE, 
+          &hKey) == ERROR_SUCCESS) {   
+      
+      if (RegQueryValueExA(
+            hKey, 
+            name, 
+            NULL, 
+            &key_value_type, 
+            NULL,               /* Just get the size */
+            &key_value_size) == ERROR_SUCCESS) {
+
+        SNMP_FREE(key_value);
+
+        /* Allocate memory needed +1 to allow RegQueryValueExA to NULL terminate the
+         * string data in registry is missing one (which is unlikely).
+         */
+        key_value = malloc((sizeof(char) * key_value_size)+sizeof(char));
+        
+        if (RegQueryValueExA(
+              hKey, 
+              name, 
+              NULL, 
+              &key_value_type, 
+              key_value, 
+              &key_value_size) == ERROR_SUCCESS) {
+        }
+        temp = (char *) key_value;
+
+      }
+      RegCloseKey(hKey);
+      if (temp)
+        DEBUGMSGTL(("read_config", "netsnmp_getenv will return from HKLM: %s\n",temp));
+    }
+  }
+  
+  if (temp && !getenv_worked) {
+    setenv(name, temp, 1);
+    SNMP_FREE(temp);
+  }
+
+  DEBUGMSGTL(("read_config", "netsnmp_getenv returning: %s\n",getenv(name)));
+
+  return(getenv(name));
+#endif
+}
+
+/**
+ * Set an environment variable.
+ *
+ * This function is only necessary on Windows for the MSVC and MinGW
+ * environments. If the process that uses the Net-SNMP DLL (e.g. a Perl
+ * interpreter) and the Net-SNMP have been built with a different compiler
+ * version then each will have a separate set of environment variables.
+ * This function allows to set an environment variable such that it gets
+ * noticed by the Net-SNMP DLL.
+ */
+int netsnmp_setenv(const char *envname, const char *envval, int overwrite)
+{
+    return setenv(envname, envval, overwrite);
+}
+
+/*
+ * swap the order of an inet addr string
+ */
+int
+netsnmp_addrstr_hton(char *ptr, size_t len)
+{
+#ifndef WORDS_BIGENDIAN
+    char tmp[8];
+    
+    if (8 == len) {
+        tmp[0] = ptr[6];
+        tmp[1] = ptr[7];
+        tmp[2] = ptr[4];
+        tmp[3] = ptr[5];
+        tmp[4] = ptr[2];
+        tmp[5] = ptr[3];
+        tmp[6] = ptr[0];
+        tmp[7] = ptr[1];
+        memcpy (ptr, &tmp, 8);
+    }
+    else if (32 == len) {
+        netsnmp_addrstr_hton(ptr   , 8);
+        netsnmp_addrstr_hton(ptr+8 , 8);
+        netsnmp_addrstr_hton(ptr+16, 8);
+        netsnmp_addrstr_hton(ptr+24, 8);
+    }
+    else
+        return -1;
+#endif
+
+    return 0;
+}
+
+#ifndef NETSNMP_FEATURE_REMOVE_STRING_TIME_TO_SECS
+/**
+ * Takes a time string like 4h and converts it to seconds.
+ * The string time given may end in 's' for seconds (the default
+ * anyway if no suffix is specified),
+ * 'm' for minutes, 'h' for hours, 'd' for days, or 'w' for weeks.  The
+ * upper case versions are also accepted.
+ *
+ * @param time_string The time string to convert.
+ *
+ * @return seconds converted from the string
+ * @return -1  : on failure
+ */
+int
+netsnmp_string_time_to_secs(const char *time_string) {
+    int secs = -1;
+    if (!time_string || !time_string[0])
+        return secs;
+
+    secs = atoi(time_string);
+
+    if (isdigit((unsigned char)time_string[strlen(time_string)-1]))
+        return secs; /* no letter specified, it's already in seconds */
+    
+    switch (time_string[strlen(time_string)-1]) {
+    case 's':
+    case 'S':
+        /* already in seconds */
+        break;
+
+    case 'm':
+    case 'M':
+        secs = secs * 60;
+        break;
+
+    case 'h':
+    case 'H':
+        secs = secs * 60 * 60;
+        break;
+
+    case 'd':
+    case 'D':
+        secs = secs * 60 * 60 * 24;
+        break;
+
+    case 'w':
+    case 'W':
+        secs = secs * 60 * 60 * 24 * 7;
+        break;
+
+    default:
+        snmp_log(LOG_ERR, "time string %s contains an invalid suffix letter\n",
+                 time_string);
+        return -1;
+    }
+
+    DEBUGMSGTL(("string_time_to_secs", "Converted time string %s to %d\n",
+                time_string, secs));
+    return secs;
+}
+#endif /* NETSNMP_FEATURE_REMOVE_STRING_TIME_TO_SECS */

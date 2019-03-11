@@ -12,11 +12,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #if TIME_WITH_SYS_TIME
-# ifdef WIN32
-#  include <sys/timeb.h>
-# else
-#  include <sys/time.h>
-# endif
+# include <sys/time.h>
 # include <time.h>
 #else
 # if HAVE_SYS_TIME_H
@@ -24,9 +20,6 @@
 # else
 #  include <time.h>
 # endif
-#endif
-#if HAVE_WINSOCK_H
-#include <winsock.h>
 #endif
 #if HAVE_STRING_H
 #include <string.h>
@@ -41,11 +34,7 @@
 
 #include "struct.h"
 #include "file.h"
-#include "util_funcs.h"
-
-#if HAVE_DMALLOC_H
-#include <dmalloc.h>
-#endif
+#include "util_funcs/header_simple_table.h"
 
 #define MAXFILE   20
 
@@ -56,19 +45,25 @@ void
 init_file(void)
 {
     struct variable2 file_table[] = {
-        {FILE_INDEX, ASN_INTEGER, RONLY, var_file_table, 1, {1}},
-        {FILE_NAME, ASN_OCTET_STR, RONLY, var_file_table, 1, {2}},
-        {FILE_SIZE, ASN_INTEGER, RONLY, var_file_table, 1, {3}},
-        {FILE_MAX, ASN_INTEGER, RONLY, var_file_table, 1, {4}},
-        {FILE_ERROR, ASN_INTEGER, RONLY, var_file_table, 1, {100}},
-        {FILE_MSG, ASN_OCTET_STR, RONLY, var_file_table, 1, {101}}
+        {FILE_INDEX, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_file_table, 1, {1}},
+        {FILE_NAME, ASN_OCTET_STR, NETSNMP_OLDAPI_RONLY,
+         var_file_table, 1, {2}},
+        {FILE_SIZE, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_file_table, 1, {3}},
+        {FILE_MAX, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_file_table, 1, {4}},
+        {FILE_ERROR, ASN_INTEGER, NETSNMP_OLDAPI_RONLY,
+         var_file_table, 1, {100}},
+        {FILE_MSG, ASN_OCTET_STR, NETSNMP_OLDAPI_RONLY,
+         var_file_table, 1, {101}}
     };
 
     /*
      * Define the OID pointer to the top of the mib tree that we're
      * registering underneath 
      */
-    oid             file_variables_oid[] = { UCDAVIS_MIB, 15, 1 };
+    oid             file_variables_oid[] = { NETSNMP_UCDAVIS_MIB, 15, 1 };
 
     /*
      * register ourselves with the agent to handle our mib tree 
@@ -90,23 +85,22 @@ file_free_config(void)
 void
 file_parse_config(const char *token, char *cptr)
 {
-    char space;
+    char *cp;
 	
     if (fileCount < MAXFILE) {
         fileTable[fileCount].max = -1;
 
-        sscanf(cptr, "%255s%c%d",
-               fileTable[fileCount].name, &space, &fileTable[fileCount].max);
-	/*
-	 * Log an error then return if the string scanned in was larger then
-	 * it should have been.
-	 */
-	if (space != ' ') {
-		snmp_log(LOG_ERR, "file_parse_config: file name scanned " \
-		    "in from line %s is too large.  fileCount = %d\n", cptr,
-		    fileCount);
-		return;
+        cp = copy_nword(cptr, fileTable[fileCount].name, FILE_NAME_MAX);
+
+	if (strlen(fileTable[fileCount].name) >= FILE_NAME_MAX - 1) {
+            config_perror("file name too long");
+            return;
 	}
+
+        if (cp)
+            fileTable[fileCount].max = strtoul(cp, NULL, 10);
+        else
+            fileTable[fileCount].max = -1;
 
         fileCount++;
     }

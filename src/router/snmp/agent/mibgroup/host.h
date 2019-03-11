@@ -2,9 +2,18 @@
  *  Host Resources 'wrapper' interface
  *	calls the per-group interfaces from 'hr_*.h'
  */
+/* Portions of this file are subject to the following copyright(s).  See
+ * the Net-SNMP's COPYING file for more details and other copyrights
+ * that may apply:
+ */
+/*
+ * Portions of this file are copyrighted by:
+ * Copyright (C) 2007 Apple, Inc. All rights reserved.
+ * Use is subject to license terms specified in the COPYING file
+ * distributed with the Net-SNMP package.
+ */
 
 	config_require(host/hr_system)
-	config_require(host/hr_storage)
 	config_require(host/hr_device)
 	config_require(host/hr_other)
 	config_require(host/hr_proc)
@@ -12,8 +21,12 @@
 	config_require(host/hr_print)
 	config_require(host/hr_disk)
 	config_require(host/hr_partition)
-	config_require(host/hr_filesys)
-	config_require(host/hr_swinst)
+
+	config_version_require((host/hr_storage, 5.7, host/hrh_storage))
+	config_version_require((host/hr_filesys, 5.7, host/hrh_filesys))
+
+	config_version_require((host/hr_swinst,  5.6, host/hrSWInstalledTable))
+	config_version_require((host/hr_swrun,   5.6, host/hrSWRunTable))
 
 /* add the host resources mib to the default mibs to load */
 config_add_mib(HOST-RESOURCES-MIB)

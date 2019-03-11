@@ -1,3 +1,7 @@
+.\" -*- nroff -*-
+.\" Portions of this file are subject to the following copyright.  See
+.\" the Net-SNMP COPYING file for more details and other copyrights
+.\" that may apply:
 .\" /***********************************************************
 .\" 	Copyright 1988, 1989 by Carnegie Mellon University
 .\" 
@@ -19,13 +23,12 @@
 .\" ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
 .\" SOFTWARE.
 .\" ******************************************************************/
-.TH SNMPSET 1 "08 Feb 2002" VVERSIONINFO "Net-SNMP"
-.UC 4
+.TH SNMPSET 1 "19 Jun 2003" VVERSIONINFO "Net-SNMP"
 .SH NAME
-snmpset - communicates with a network entity using SNMP SET Requests.
+snmpset - communicates with a network entity using SNMP SET requests
 .SH SYNOPSIS
 .B snmpset
-[COMMON OPTIONS] OID TYPE VALUE [OID TYPE VALUE]...
+[COMMON OPTIONS] AGENT OID TYPE VALUE [OID TYPE VALUE]...
 .SH DESCRIPTION
 .B snmpset
 is an SNMP application that uses the SNMP SET request to set
@@ -72,6 +75,10 @@ IPADDRESS
 BITS
 .PD
 .RE
+Most of these will use the obvious corresponding ASN.1 type.
+\&'s', 'x', 'd' and 'b' are all different ways of specifying an OCTET STRING
+value, and the 'u' unsigned type is also used for handling Gauge32 values.
+.PP
 If you have the proper MIB file loaded, you can, in most cases, replace the
 type with an '=' sign. For an object of type OCTET STRING this will assume
 a string like the 's' type notation. For other types it will do "The
@@ -79,13 +86,13 @@ Right Thing".
 .PP
 For example:
 .PP
-snmpset -c private -v 1 test-hub system.sysContact.0 s dpz@noc.rutgers.edu ip.ipforwarding.0 = 2
+snmpset \-c private \-v 1 test\-hub system.sysContact.0 s dpz@noc.rutgers.edu ip.ipforwarding.0 = 2
 .PP
 will set the variables sysContact.0 and ipForwarding.0:
 .PP
 system.sysContact.0 = STRING: "dpz@noc.rutgers.edu"
 .br
-ip.ipForwarding.0 = INTEGER: not-forwarding(2)
+ip.ipForwarding.0 = INTEGER: not\-forwarding(2)
 .PP
 If the network entity has an error processing the request packet, an
 error packet will be returned and a message will be shown, helping to
@@ -95,5 +102,9 @@ pinpoint in what way the request was malformed.
 takes the common options described in the
 .I snmpcmd(1)
 manual page.
+Note that
+.B snmpset
+REQUIRES  an argument specifying the agent to query
+and at least one set of OID/type/value arguments, as described in there.
 .SH "SEE ALSO"
 snmpcmd(1), variables(5).

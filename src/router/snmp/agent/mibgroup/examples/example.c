@@ -16,38 +16,13 @@
 #include <strings.h>
 #endif
 
-/*
- * needed by util_funcs.h 
- */
-#if TIME_WITH_SYS_TIME
-# ifdef WIN32
-#  include <sys/timeb.h>
-# else
-#  include <sys/time.h>
-# endif
-# include <time.h>
-#else
-# if HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
-#endif
-
-#if HAVE_WINSOCK_H
-#include <winsock.h>
-#endif
-#if HAVE_NETINET_IN_H
-#include <netinet/in.h>
-#endif
-
 #include <net-snmp/net-snmp-includes.h>
 #include <net-snmp/agent/net-snmp-agent-includes.h>
 
 /*
  * header_generic() comes from here 
  */
-#include "util_funcs.h"
+#include "util_funcs/header_generic.h"
 
 /*
  * include our .h file 
@@ -106,7 +81,7 @@ void            example_free_config_examplestr(void);
      *      2: ASN_OCTET_STR:
      *          The type of the object.
      *          Valid types are listed in <snmp_impl.h>
-     *      3: RONLY (or RWRITE):
+     *      3: NETSNMP_OLDAPI_RONLY (or NETSNMP_OLDAPI_RWRITE):
      *          Whether this object can be SET or not.
      *      4: var_example:
      *          The callback routine, used when the object is queried.
@@ -122,15 +97,24 @@ void            example_free_config_examplestr(void);
      *            to obtain the full OID of each entry.
      */
 struct variable2 example_variables[] = {
-    {EXAMPLESTRING, ASN_OCTET_STR, RONLY, var_example, 1, {1}},
-    {EXAMPLEINTEGER, ASN_INTEGER, RWRITE, var_example, 2, {2, 1}},
-    {EXAMPLEOBJECTID, ASN_OBJECT_ID, RONLY, var_example, 2, {2, 2}},
-    {EXAMPLETIMETICKS, ASN_TIMETICKS, RONLY, var_example, 1, {3}},
-    {EXAMPLEIPADDRESS, ASN_IPADDRESS, RONLY, var_example, 1, {4}},
-    {EXAMPLECOUNTER, ASN_COUNTER, RONLY, var_example, 1, {5}},
-    {EXAMPLEGAUGE, ASN_GAUGE, RONLY, var_example, 1, {6}},
-    {EXAMPLETRIGGERTRAP, ASN_INTEGER, RWRITE, var_example, 1, {7}},
-    {EXAMPLETRIGGERTRAP2, ASN_INTEGER, RWRITE, var_example, 1, {8}}
+    {EXAMPLESTRING, ASN_OCTET_STR, NETSNMP_OLDAPI_RONLY,
+     var_example, 1, {1}},
+    {EXAMPLEINTEGER, ASN_INTEGER, NETSNMP_OLDAPI_RWRITE,
+     var_example, 2, {2, 1}},
+    {EXAMPLEOBJECTID, ASN_OBJECT_ID, NETSNMP_OLDAPI_RONLY,
+     var_example, 2, {2, 2}},
+    {EXAMPLETIMETICKS, ASN_TIMETICKS, NETSNMP_OLDAPI_RONLY,
+     var_example, 1, {3}},
+    {EXAMPLEIPADDRESS, ASN_IPADDRESS, NETSNMP_OLDAPI_RONLY,
+     var_example, 1, {4}},
+    {EXAMPLECOUNTER, ASN_COUNTER, NETSNMP_OLDAPI_RONLY,
+     var_example, 1, {5}},
+    {EXAMPLEGAUGE, ASN_GAUGE, NETSNMP_OLDAPI_RONLY,
+     var_example, 1, {6}},
+    {EXAMPLETRIGGERTRAP, ASN_INTEGER, NETSNMP_OLDAPI_RWRITE,
+     var_example, 1, {7}},
+    {EXAMPLETRIGGERTRAP2, ASN_INTEGER, NETSNMP_OLDAPI_RWRITE,
+     var_example, 1, {8}}
 };
 
     /*
@@ -179,7 +163,7 @@ init_example(void)
      *  Also set a default value for the string object.  Note that the
      *   example integer variable was initialised above.
      */
-    strncpy(example_str, EXAMPLE_STR_DEFAULT, EXAMPLE_STR_LEN);
+    strlcpy(example_str, EXAMPLE_STR_DEFAULT, sizeof(example_str));
 
     snmpd_register_config_handler("exampleint",
                                   example_parse_config_exampleint,
@@ -225,7 +209,7 @@ example_parse_config_examplestr(const char *token, char *cptr)
     /*
      * Make sure the string fits in the space allocated for it.
      */
-    if (strlen(cptr) < EXAMPLE_STR_LEN)
+    if (strlen(cptr) < sizeof(example_str))
         strcpy(example_str, cptr);
     else {
         /*
@@ -233,10 +217,8 @@ example_parse_config_examplestr(const char *token, char *cptr)
          * An alternative approach would be to log an error,
          *  and discard this value altogether.
          */
-        strncpy(example_str, cptr, EXAMPLE_STR_LEN - 4);
-        example_str[EXAMPLE_STR_LEN - 4] = 0;
-        strcat(example_str, "...");
-        example_str[EXAMPLE_STR_LEN - 1] = 0;
+        sprintf(example_str, "%.*s...", (int) (sizeof(example_str) - 4), cptr);
+        netsnmp_assert(strlen(example_str) < sizeof(example_str));
     }
 }
 
@@ -341,7 +323,7 @@ var_example(struct variable *vp,
      */
     switch (vp->magic) {
     case EXAMPLESTRING:
-        sprintf(string, example_str);
+        strcpy(string, example_str);
         /*
          * Note that the assumption that the answer will be an
          *  integer does not hold true in this case, so the length
@@ -388,8 +370,12 @@ var_example(struct variable *vp,
         /*
          * we're returning 127.0.0.1 
          */
-        long_ret = ntohl(INADDR_LOOPBACK);
-        return (u_char *) & long_ret;
+        {
+            in_addr_t addr = ntohl(INADDR_LOOPBACK);
+            memcpy(string, &addr, sizeof(addr));
+            *var_len = sizeof(addr);
+        }
+        return (u_char *) string;
 
     case EXAMPLECOUNTER:
         long_ret = 42;
@@ -466,13 +452,14 @@ write_exampleint(int action,
             return SNMP_ERR_WRONGTYPE;
         }
         if (var_val_len > sizeof(long)) {
-            DEBUGMSGTL(("example", "wrong length %x", var_val_len));
+            DEBUGMSGTL(("example", "wrong length %" NETSNMP_PRIz "u",
+                        var_val_len));
             return SNMP_ERR_WRONGLENGTH;
         }
 
         intval = *((long *) var_val);
         if (intval > MAX_EXAMPLE_INT) {
-            DEBUGMSGTL(("example", "wrong value %x", intval));
+            DEBUGMSGTL(("example", "wrong value %lx", intval));
             return SNMP_ERR_WRONGVALUE;
         }
         break;
@@ -551,13 +538,14 @@ write_exampletrap(int action,
             return SNMP_ERR_WRONGTYPE;
         }
         if (var_val_len > sizeof(long)) {
-            DEBUGMSGTL(("example", "wrong length %x", var_val_len));
+            DEBUGMSGTL(("example", "wrong length %" NETSNMP_PRIz "u",
+                        var_val_len));
             return SNMP_ERR_WRONGLENGTH;
         }
 
         intval = *((long *) var_val);
         if (intval != 1) {
-            DEBUGMSGTL(("example", "wrong value %x", intval));
+            DEBUGMSGTL(("example", "wrong value %lx", intval));
             return SNMP_ERR_WRONGVALUE;
         }
         break;
@@ -598,10 +586,9 @@ write_exampletrap(int action,
          *  (In fact, they can fail, but they return no
          *   indication of this, which is the next best thing!)
          */
-        DEBUGMSGTL(("example", "write_exampletrap sending the trap\n",
-                    action));
+        DEBUGMSGTL(("example", "write_exampletrap sending the trap\n"));
         send_easy_trap(SNMP_TRAP_ENTERPRISESPECIFIC, 99);
-        DEBUGMSGTL(("example", "write_exampletrap trap sent\n", action));
+        DEBUGMSGTL(("example", "write_exampletrap trap sent\n"));
         break;
 
     }
@@ -619,10 +606,10 @@ write_exampletrap(int action,
  * second since the netwok management portion of system was last
  * reinitialized.  - snmpTrapOID.0 which is part of the trap group SNMPv2
  * MIB whose value is the object-id of the specific trap you have defined
- * in your own MIB.  Other variables can be added to caracterize the
+ * in your own MIB.  Other variables can be added to characterize the
  * trap.
  * 
- * The function send_v2trap adds automaticallys the two objects but the
+ * The function send_v2trap adds automatically the two objects but the
  * value of snmpTrapOID.0 is 0.0 by default. If you want to add your trap
  * name, you have to reconstruct this object and to add your own
  * variable.
@@ -641,7 +628,7 @@ write_exampletrap2(int action,
     long            intval;
 
     /*
-     * these variales will be used when we send the trap 
+     * these variables will be used when we send the trap
      */
     oid             objid_snmptrap[] = { 1, 3, 6, 1, 6, 3, 1, 1, 4, 1, 0 };     /* snmpTrapOID.0 */
     oid             demo_trap[] = { 1, 3, 6, 1, 4, 1, 2021, 13, 990 };  /*demo-trap */
@@ -662,13 +649,14 @@ write_exampletrap2(int action,
             return SNMP_ERR_WRONGTYPE;
         }
         if (var_val_len > sizeof(long)) {
-            DEBUGMSGTL(("example", "wrong length %x", var_val_len));
+            DEBUGMSGTL(("example", "wrong length %" NETSNMP_PRIz "u",
+                        var_val_len));
             return SNMP_ERR_WRONGLENGTH;
         }
 
         intval = *((long *) var_val);
         if (intval != 1) {
-            DEBUGMSGTL(("example", "wrong value %x", intval));
+            DEBUGMSGTL(("example", "wrong value %lx", intval));
             return SNMP_ERR_WRONGVALUE;
         }
         break;
@@ -731,13 +719,11 @@ write_exampletrap2(int action,
         var_obj.name = example_string_oid;
         var_obj.name_length = sizeof(example_string_oid) / sizeof(oid); /* number of sub-ids */
         var_obj.type = ASN_OCTET_STR;   /* type of variable */
-        var_obj.val.string = example_str;       /* value */
+        var_obj.val.string = (u_char *)example_str;       /* value */
         var_obj.val_len = strlen(example_str);
-        DEBUGMSGTL(("example", "write_exampletrap2 sending the v2 trap\n",
-                    action));
+        DEBUGMSGTL(("example", "write_exampletrap2 sending the v2 trap\n"));
         send_v2trap(&var_trap);
-        DEBUGMSGTL(("example", "write_exampletrap2 v2 trap sent\n",
-                    action));
+        DEBUGMSGTL(("example", "write_exampletrap2 v2 trap sent\n"));
 
         break;
 

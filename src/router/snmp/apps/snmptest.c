@@ -45,11 +45,7 @@ SOFTWARE.
 #include <stdio.h>
 #include <ctype.h>
 #if TIME_WITH_SYS_TIME
-# ifdef WIN32
-#  include <sys/timeb.h>
-# else
-#  include <sys/time.h>
-# endif
+# include <sys/time.h>
 # include <time.h>
 #else
 # if HAVE_SYS_TIME_H
@@ -60,9 +56,6 @@ SOFTWARE.
 #endif
 #if HAVE_SYS_SELECT_H
 #include <sys/select.h>
-#endif
-#if HAVE_WINSOCK_H
-#include <winsock.h>
 #endif
 #if HAVE_NETDB_H
 #include <netdb.h>
@@ -75,14 +68,14 @@ SOFTWARE.
 
 int             command = SNMP_MSG_GET;
 
-int             input_variable(netsnmp_variable_list *);
+static int      input_variable(netsnmp_variable_list *);
 
 void
 usage(void)
 {
-    printf( "USAGE: snmptest ");
+    fprintf(stderr, "USAGE: snmptest ");
     snmp_parse_args_usage(stderr);
-    printf( "\n\n");
+    fprintf(stderr, "\n\n");
     snmp_parse_args_descriptions(stderr);
 }
 
@@ -94,24 +87,28 @@ main(int argc, char *argv[])
     netsnmp_variable_list *vars, *vp;
     netsnmp_transport *transport = NULL;
     int             ret;
+    int             exit_code = 1;
     int             status, count;
     char            input[128];
     int             varcount, nonRepeaters = -1, maxRepetitions;
+
+    SOCK_STARTUP;
 
     /*
      * get the common command line arguments 
      */
     switch (snmp_parse_args(argc, argv, &session, NULL, NULL)) {
-    case -2:
-        exit(0);
-    case -1:
+    case NETSNMP_PARSE_ARGS_ERROR:
+        goto out;
+    case NETSNMP_PARSE_ARGS_SUCCESS_EXIT:
+        exit_code = 0;
+        goto out;
+    case NETSNMP_PARSE_ARGS_ERROR_USAGE:
         usage();
-        exit(1);
+        goto out;
     default:
         break;
     }
-
-    SOCK_STARTUP;
 
     /*
      * open an SNMP session 
@@ -122,12 +119,11 @@ main(int argc, char *argv[])
          * diagnose snmp_open errors with the input netsnmp_session pointer 
          */
         snmp_sess_perror("snmptest", &session);
-        SOCK_CLEANUP;
-        exit(1);
+        goto out;
     }
 
     varcount = 0;
-    while (1) {
+    for(;;) {
         vars = NULL;
         for (ret = 1; ret != 0;) {
             vp = (netsnmp_variable_list *)
@@ -168,7 +164,11 @@ main(int argc, char *argv[])
                     } else {
                         printf("What repeat count? ");
                         fflush(stdout);
-                        fgets(input, sizeof(input), stdin);
+                        if (!fgets(input, sizeof(input), stdin)) {
+                            printf("Quitting,  Goodbye\n");
+                            exit_code = 0;
+                            goto out;
+                        }
                         maxRepetitions = atoi(input);
                         pdu->non_repeaters = nonRepeaters;
                         pdu->max_repetitions = maxRepetitions;
@@ -211,9 +211,11 @@ main(int argc, char *argv[])
                     case SNMP_MSG_RESPONSE:
                         printf("Received Get Response ");
                         break;
+#ifndef NETSNMP_NO_WRITE_SUPPORT
                     case SNMP_MSG_SET:
                         printf("Received Set Request ");
                         break;
+#endif /* NETSNMP_NO_WRITE_SUPPORT */
                     case SNMP_MSG_TRAP:
                         printf("Received Trap Request ");
                         break;
@@ -229,12 +231,15 @@ main(int argc, char *argv[])
                     }
                     transport = snmp_sess_transport(snmp_sess_pointer(ss));
                     if (transport != NULL && transport->f_fmtaddr != NULL) {
-                        char           *s = transport->f_fmtaddr(transport,
+                        char *addr_string = transport->f_fmtaddr(transport,
                                                                  response->
                                                                  transport_data,
                                                                  response->
                                                                  transport_data_length);
-                        printf("from %s\n", s);
+                        if (addr_string != NULL) {
+                            printf("from %s\n", addr_string);
+                            free(addr_string);
+                        }
                     } else {
                         printf("from <UNKNOWN>\n");
                     }
@@ -274,17 +279,19 @@ main(int argc, char *argv[])
         varcount = 0;
         nonRepeaters = -1;
     }
+    /* NOTREACHED */
+
+out:
     SOCK_CLEANUP;
-    return 0;
+    return exit_code;
 }
 
 int
 input_variable(netsnmp_variable_list * vp)
 {
     char            buf[256];
-    int             val_len;
-    u_char          value[256], ch;
-    oid             name[MAX_OID_LEN];
+    size_t          val_len;
+    u_char          ch;
 
     printf("Variable: ");
     fflush(stdout);
@@ -302,7 +309,7 @@ input_variable(netsnmp_variable_list * vp)
     if (buf[val_len - 1] == '\n')
         buf[--val_len] = 0;
     if (*buf == '$') {
-        switch (toupper(buf[1])) {
+        switch (toupper((unsigned char)(buf[1]))) {
         case 'G':
             command = SNMP_MSG_GET;
             printf("Request type is Get Request\n");
@@ -311,10 +318,12 @@ input_variable(netsnmp_variable_list * vp)
             command = SNMP_MSG_GETNEXT;
             printf("Request type is Getnext Request\n");
             break;
+#ifndef NETSNMP_NO_WRITE_SUPPORT
         case 'S':
             command = SNMP_MSG_SET;
             printf("Request type is Set Request\n");
             break;
+#endif /* NETSNMP_NO_WRITE_SUPPORT */
         case 'B':
             command = SNMP_MSG_GETBULK;
             printf("Request type is Bulk Request\n");
@@ -333,16 +342,19 @@ input_variable(netsnmp_variable_list * vp)
             printf("(Are you sending to the right port?)\n");
             break;
         case 'D':
-            if (snmp_get_dump_packet()) {
-                snmp_set_dump_packet(0);
+            if (netsnmp_ds_get_boolean(NETSNMP_DS_LIBRARY_ID, 
+                                       NETSNMP_DS_LIB_DUMP_PACKET)) {
+                netsnmp_ds_set_boolean(NETSNMP_DS_LIBRARY_ID, 
+                                       NETSNMP_DS_LIB_DUMP_PACKET, 0);
                 printf("Turned packet dump off\n");
             } else {
-                snmp_set_dump_packet(1);
+                netsnmp_ds_set_boolean(NETSNMP_DS_LIBRARY_ID, 
+                                       NETSNMP_DS_LIB_DUMP_PACKET, 1);
                 printf("Turned packet dump on\n");
             }
             break;
         case 'Q':
-            switch ((toupper(buf[2]))) {
+            switch ((toupper((unsigned char)(buf[2])))) {
             case '\n':
             case 0:
                 printf("Quitting,  Goodbye\n");
@@ -350,11 +362,14 @@ input_variable(netsnmp_variable_list * vp)
                 exit(0);
                 break;
             case 'P':
-                if (snmp_get_quick_print()) {
-                    snmp_set_quick_print(0);
+                if (netsnmp_ds_get_boolean(NETSNMP_DS_LIBRARY_ID, 
+                                           NETSNMP_DS_LIB_QUICK_PRINT)) {
+                    netsnmp_ds_set_boolean(NETSNMP_DS_LIBRARY_ID, 
+                                           NETSNMP_DS_LIB_QUICK_PRINT, 0);
                     printf("Turned quick printing off\n");
                 } else {
-                    snmp_set_quick_print(1);
+                    netsnmp_ds_set_boolean(NETSNMP_DS_LIBRARY_ID, 
+                                           NETSNMP_DS_LIB_QUICK_PRINT, 1);
                     printf("Turned quick printing on\n");
                 }
                 break;
@@ -365,19 +380,29 @@ input_variable(netsnmp_variable_list * vp)
         }
         return -1;
     }
-    vp->name_length = MAX_OID_LEN;
-    if (!snmp_parse_oid(buf, name, &vp->name_length)) {
-        snmp_perror(buf);
-        return -1;
+    {
+	oid     name[MAX_OID_LEN];
+	vp->name_length = MAX_OID_LEN;
+	if (!snmp_parse_oid(buf, name, &vp->name_length)) {
+	    snmp_perror(buf);
+	    return -1;
+	}
+	vp->name = snmp_duplicate_objid(name, vp->name_length);
     }
-    vp->name = (oid *) malloc(vp->name_length * sizeof(oid));
-    memmove(vp->name, name, vp->name_length * sizeof(oid));
 
-    if (command == SNMP_MSG_SET || command == SNMP_MSG_INFORM
-        || command == SNMP_MSG_TRAP2) {
+    if (command == SNMP_MSG_INFORM
+        || command == SNMP_MSG_TRAP2
+#ifndef NETSNMP_NO_WRITE_SUPPORT
+        || command == SNMP_MSG_SET
+#endif /* NETSNMP_NO_WRITE_SUPPORT */
+        ) {
         printf("Type [i|u|s|x|d|n|o|t|a]: ");
         fflush(stdout);
-        fgets(buf, sizeof(buf), stdin);
+        if (!fgets(buf, sizeof(buf), stdin)) {
+            printf("Quitting,  Goodbye\n");
+            SOCK_CLEANUP;
+            exit(0);
+        }
         ch = *buf;
         switch (ch) {
         case 'i':
@@ -416,7 +441,11 @@ input_variable(netsnmp_variable_list * vp)
       getValue:
         printf("Value: ");
         fflush(stdout);
-        fgets(buf, sizeof(buf), stdin);
+        if (!fgets(buf, sizeof(buf), stdin)) {
+            printf("Quitting,  Goodbye\n");
+            SOCK_CLEANUP;
+            exit(0);
+        }
         switch (vp->type) {
         case ASN_INTEGER:
             vp->val.integer = (long *) malloc(sizeof(long));
@@ -453,6 +482,7 @@ input_variable(netsnmp_variable_list * vp)
                     goto getValue;
                 }
                 memcpy(vp->val.string, buf, strlen(buf) - 1);
+                vp->val.string[sizeof(vp->val.string)-1] = 0;
                 vp->val_len = strlen(buf) - 1;
             } else if (ch == 'x') {
                 size_t          buf_len = 256;
@@ -477,11 +507,16 @@ input_variable(netsnmp_variable_list * vp)
         case ASN_OBJECT_ID:
             if ('\n' == buf[strlen(buf) - 1])
                 buf[strlen(buf) - 1] = '\0';
-            vp->val_len = MAX_OID_LEN;;
-            read_objid(buf, (oid *) value, &vp->val_len);
-            vp->val_len *= sizeof(oid);
-            vp->val.objid = (oid *) malloc(vp->val_len);
-            memmove(vp->val.objid, value, vp->val_len);
+	    else {
+		oid value[MAX_OID_LEN];
+		vp->val_len = MAX_OID_LEN;
+		if (0 == read_objid(buf, value, &vp->val_len)) {
+		    printf("Unrecognised OID value\n");
+		    goto getValue;
+		}
+		vp->val.objid = snmp_duplicate_objid(value, vp->val_len);
+		vp->val_len *= sizeof(oid);
+	    }
             break;
         case ASN_TIMETICKS:
             vp->val.integer = (long *) malloc(sizeof(long));

@@ -1,118 +1,98 @@
-/*****************************************************************
-	Copyright 1989, 1991, 1992 by Carnegie Mellon University
+/*	$OpenBSD: route.c,v 1.66 2004/11/17 01:47:20 itojun Exp $	*/
+/*	$NetBSD: route.c,v 1.15 1996/05/07 02:55:06 thorpej Exp $	*/
 
-                      All Rights Reserved
-
-Permission to use, copy, modify, and distribute this software and its 
-documentation for any purpose and without fee is hereby granted, 
-provided that the above copyright notice appear in all copies and that
-both that copyright notice and this permission notice appear in 
-supporting documentation, and that the name of CMU not be
-used in advertising or publicity pertaining to distribution of the
-software without specific, written prior permission.  
-
-CMU DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
-ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL
-CMU BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR
-ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
-WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,
-ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
-SOFTWARE.
-******************************************************************/
 /*
- * Copyright (c) 1983,1988 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1983, 1988, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
- * Redistribution and use in source and binary forms are permitted
- * provided that this notice is preserved and that due credit is given
- * to the University of California at Berkeley. The name of the University
- * may not be used to endorse or promote products derived from this
- * software without specific prior written permission. This software
- * is provided ``as is'' without express or implied warranty.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
  */
+
+#ifdef  INHERITED_CODE
+#ifndef lint
+#if 0
+static char sccsid[] = "from: @(#)route.c	8.3 (Berkeley) 3/9/94";
+#else
+static char *rcsid = "$OpenBSD: route.c,v 1.66 2004/11/17 01:47:20 itojun Exp $";
+#endif
+#endif /* not lint */
+#endif
 
 #include <net-snmp/net-snmp-config.h>
 
-#if HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
-#if HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-#if HAVE_STRING_H
-#include <string.h>
-#else
-#include <strings.h>
+#if HAVE_SYS_TYPES_H
+#include <sys/types.h>
 #endif
 
-#include <stdio.h>
-#include <ctype.h>
-
-#if HAVE_SYS_PARAM_H
-#include <sys/param.h>
-#endif
-
-#if HAVE_SYS_SELECT_H
-#include <sys/select.h>
-#endif
 #if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
 #if HAVE_ARPA_INET_H
 #include <arpa/inet.h>
 #endif
-#define	LOOPBACKNET 127
 
-#if HAVE_WINSOCK_H
-#include <winsock.h>
-#include "winstub.h"
-#endif
-#if HAVE_SYS_SOCKET_H
-#include <sys/socket.h>
+#include <net-snmp/net-snmp-includes.h>
+
+#if HAVE_UNISTD_H
+#include <unistd.h>
 #endif
 #if HAVE_NETDB_H
 #include <netdb.h>
 #endif
 
+#ifndef INET
+#define INET
+#endif
+
 #include "main.h"
-#include <net-snmp/net-snmp-includes.h>
 #include "netstat.h"
+#include "ffs.h"
+#if HAVE_WINSOCK_H
+#include "winstub.h"
+#endif
+
+#define SET_MASK 0x01
+#define SET_GWAY 0x02
+#define SET_IFNO 0x04
+#define SET_TYPE 0x08
+#define SET_PRTO 0x10
+#define SET_ALL  0x1f
 
 struct route_entry {
-    oid             instance[4];
-    struct in_addr  destination;
-    int             set_destination;
-    struct in_addr  mask;
-    int             set_mask;
-    struct in_addr  gateway;
-    int             set_gateway;
+    in_addr_t       destination;
+    in_addr_t       mask;
+    in_addr_t       gateway;
     int             ifNumber;
-    int             set_ifNumber;
     int             type;
-    int             set_type;
     int             proto;
-    int             set_proto;
+    int             af;
+    int             set_bits;
     char            ifname[64];
-    int             set_name;
 };
 
-#define RTDEST	    1
-#define RTIFINDEX   2
-#define RTNEXTHOP   7
-#define RTTYPE	    8
-#define RTPROTO	    9
-#define RTMASK	   11
-
-static oid      oid_rttable[] = { 1, 3, 6, 1, 2, 1, 4, 21, 1 };
-static oid      oid_rtdest[] = { 1, 3, 6, 1, 2, 1, 4, 21, 1, 1 };
-static oid      oid_rtifindex[] = { 1, 3, 6, 1, 2, 1, 4, 21, 1, 2 };
-static oid      oid_rtnexthop[] = { 1, 3, 6, 1, 2, 1, 4, 21, 1, 7 };
-static oid      oid_rttype[] = { 1, 3, 6, 1, 2, 1, 4, 21, 1, 8 };
-static oid      oid_rtproto[] = { 1, 3, 6, 1, 2, 1, 4, 21, 1, 9 };
-static oid      oid_rtmask[] = { 1, 3, 6, 1, 2, 1, 4, 21, 1, 11 };
-static oid      oid_ifdescr[] = { 1, 3, 6, 1, 2, 1, 2, 2, 1, 2 };
-static oid      oid_ipnoroutes[] = { 1, 3, 6, 1, 2, 1, 4, 12, 0 };
-
+void p_rtnode( struct route_entry *rp );
 
 /*
  * Print routing tables.
@@ -120,145 +100,183 @@ static oid      oid_ipnoroutes[] = { 1, 3, 6, 1, 2, 1, 4, 12, 0 };
 void
 routepr(void)
 {
-    struct route_entry route, *rp = &route;
-    netsnmp_pdu    *request, *response;
-    netsnmp_variable_list *vp;
-    char            name[16], *flags;
-    oid            *instance, type;
-    int             toloopback, status;
-    char            ch;
+    struct route_entry  route, *rp = &route;
+    oid    rtcol_oid[]  = { 1,3,6,1,2,1,4,21,1,0 };
+    size_t rtcol_len    = OID_LENGTH( rtcol_oid );
+    union {
+        in_addr_t addr;
+        char      data[4];
+    } tmpAddr;
+    netsnmp_variable_list *var=NULL, *vp;
+    char  *cp;
+    
+    printf("Routing tables (ipRouteTable)\n");
+    pr_rthdr(AF_INET);
 
-    printf("Routing tables\n");
-    printf("%-26.26s %-18.18s %-6.6s  %s\n",
-           "Destination", "Gateway", "Flags", "Interface");
+#define ADD_RTVAR( x ) rtcol_oid[ rtcol_len-1 ] = x; \
+    snmp_varlist_add_variable( &var, rtcol_oid, rtcol_len, ASN_NULL, NULL,  0)
+    ADD_RTVAR( 2 );                 /* ipRouteIfIndex */
+    ADD_RTVAR( 7 );                 /* ipRouteNextHop */
+    ADD_RTVAR( 8 );                 /* ipRouteType    */
+    ADD_RTVAR( 9 );                 /* ipRouteProto   */
+    ADD_RTVAR( 11 );                /* ipRouteMask    */
+#undef ADD_RTVAR
 
-
-    request = snmp_pdu_create(SNMP_MSG_GETNEXT);
-
-    snmp_add_null_var(request, oid_rtdest,
-                      sizeof(oid_rtdest) / sizeof(oid));
-    snmp_add_null_var(request, oid_rtmask,
-                      sizeof(oid_rtmask) / sizeof(oid));
-    snmp_add_null_var(request, oid_rtifindex,
-                      sizeof(oid_rtifindex) / sizeof(oid));
-    snmp_add_null_var(request, oid_rtnexthop,
-                      sizeof(oid_rtnexthop) / sizeof(oid));
-    snmp_add_null_var(request, oid_rttype,
-                      sizeof(oid_rttype) / sizeof(oid));
-    snmp_add_null_var(request, oid_rtproto,
-                      sizeof(oid_rtproto) / sizeof(oid));
-
-    while (request) {
-        status = snmp_synch_response(Session, request, &response);
-        if (status != STAT_SUCCESS
-            || response->errstat != SNMP_ERR_NOERROR) {
-            printf( "SNMP request failed\n");
-            break;
-        }
-        instance = NULL;
-        request = NULL;
-        rp->set_destination = 0;
-        rp->set_mask = 0;
-        rp->set_ifNumber = 0;
-        rp->set_gateway = 0;
-        rp->set_type = 0;
-        rp->set_proto = 0;
-        for (vp = response->variables; vp; vp = vp->next_variable) {
-            if (vp->name_length != 14 ||
-                memcmp(vp->name, oid_rttable, sizeof(oid_rttable))) {
-                continue;       /* if it isn't in this subtree, just continue */
-            }
-
-            if (instance != NULL) {
-                oid            *ip, *op;
-                int             count;
-
-                ip = instance;
-                op = vp->name + 10;
-                for (count = 0; count < 4; count++) {
-                    if (*ip++ != *op++)
-                        break;
-                }
-                if (count < 4)
-                    continue;   /* not the right instance, ignore */
-            } else {
-                instance = vp->name + 10;
-            }
-            /*
-             * At this point, this variable is known to be in the routing table
-             * subtree, and is of the right instance for this transaction.
-             */
-
-            if (request == NULL)
-                request = snmp_pdu_create(SNMP_MSG_GETNEXT);
-            snmp_add_null_var(request, vp->name, vp->name_length);
-
-            type = vp->name[9];
-            switch ((char) type) {
-            case RTDEST:
-                memmove(&rp->destination, vp->val.string, sizeof(u_long));
-                rp->set_destination = 1;
-                break;
-            case RTMASK:
-                memmove(&rp->mask, vp->val.string, sizeof(u_long));
-                rp->set_mask = 1;
-                break;
-            case RTIFINDEX:
-                rp->ifNumber = *vp->val.integer;
-                rp->set_ifNumber = 1;
-                break;
-            case RTNEXTHOP:
-                memmove(&rp->gateway, vp->val.string, sizeof(u_long));
-                rp->set_gateway = 1;
-                break;
-            case RTTYPE:
-                rp->type = *vp->val.integer;
-                rp->set_type = 1;
-                break;
-            case RTPROTO:
-                rp->proto = *vp->val.integer;
-                rp->set_proto = 1;
-                break;
-            }
-        }
-        snmp_free_pdu(response);
-        if (!(rp->set_destination && rp->set_gateway
-              && rp->set_type && rp->set_ifNumber)) {
-            if (request)
-                snmp_free_pdu(request);
-            request = NULL;
-            continue;
-        }
-        toloopback = *(char *) &rp->gateway == LOOPBACKNET;
-        printf("%-26.26s ",
-               (rp->destination.s_addr == INADDR_ANY) ? "default" :
-               (toloopback) ? routename(rp->destination) :
-               rp->set_mask ? netname(rp->destination, rp->mask.s_addr) :
-               netname(rp->destination, 0L));
-        printf("%-18.18s ", routename(rp->gateway));
-        flags = name;
-        *flags++ = 'U';         /* route is in use */
         /*
-         * this !toloopback shouldnt be necessary 
-         */
-        if (!toloopback && rp->type == MIB_IPROUTETYPE_REMOTE)
-            *flags++ = 'G';
-        if (toloopback)
-            *flags++ = 'H';
-        if (rp->proto == MIB_IPROUTEPROTO_ICMP)
-            *flags++ = 'D';     /* redirect */
-        *flags = '\0';
-        printf("%-6.6s ", name);
-        get_ifname(rp->ifname, rp->ifNumber);
-        ch = rp->ifname[strlen(rp->ifname) - 1];
-        ch = '5';               /* force the if statement */
-        if (isdigit(ch))
-            printf(" %.32s\n", rp->ifname);
-        else
-            printf(" %.32s%d\n", rp->ifname, rp->ifNumber);
+	 * Now walk the ipRouteTable, reporting the various route entries
+	 */
+    while ( 1 ) {
+        if (netsnmp_query_getnext( var, ss ) != SNMP_ERR_NOERROR)
+            break;
+        rtcol_oid[ rtcol_len-1 ] = 2;	/* ifRouteIfIndex */
+        if ( snmp_oid_compare( rtcol_oid, rtcol_len,
+                               var->name, rtcol_len) != 0 )
+            break;    /* End of Table */
+	if (var->type == SNMP_NOSUCHOBJECT ||
+                var->type == SNMP_NOSUCHINSTANCE ||
+                var->type == SNMP_ENDOFMIBVIEW)
+	    break;
+        memset( &route, 0, sizeof( struct route_entry ));
+        /* Extract ipRouteDest index value */
+        cp = tmpAddr.data;
+        cp[0] = var->name[ 10 ] & 0xff;
+        cp[1] = var->name[ 11 ] & 0xff;
+        cp[2] = var->name[ 12 ] & 0xff;
+        cp[3] = var->name[ 13 ] & 0xff;
+        rp->destination = tmpAddr.addr;
 
+        for ( vp=var; vp; vp=vp->next_variable ) {
+            switch ( vp->name[ 9 ] ) {
+            case 2:     /* ifRouteIfIndex */
+                rp->ifNumber  = *vp->val.integer;
+                rp->set_bits |= SET_IFNO;
+                break;
+            case 7:                 /* ipRouteNextHop */
+                memmove(&rp->gateway, vp->val.string, 4);
+                rp->set_bits |= SET_GWAY;
+                break;
+            case 8:                 /* ipRouteType    */
+                rp->type      = *vp->val.integer;
+                rp->set_bits |= SET_TYPE;
+                break;
+            case 9:                 /* ipRouteProto   */
+                rp->proto     = *vp->val.integer;
+                rp->set_bits |= SET_PRTO;
+                break;
+            case 11:                /* ipRouteMask    */
+                memmove(&rp->mask, vp->val.string, 4);
+                rp->set_bits |= SET_MASK;
+                break;
+            }
+        }
+        if (rp->set_bits != SET_ALL) {
+            continue;   /* Incomplete query */
+        }
+
+        p_rtnode( rp );
     }
 }
+
+
+int
+route4pr(int af)
+{
+    struct route_entry  route, *rp = &route;
+    oid    rtcol_oid[]  = { 1,3,6,1,2,1,4,24,4,1,0 }; /* ipCidrRouteEntry */
+    size_t rtcol_len    = OID_LENGTH( rtcol_oid );
+    netsnmp_variable_list *var = NULL, *vp;
+    union {
+        in_addr_t addr;
+        unsigned char data[4];
+    } tmpAddr;
+    int printed = 0;
+    int hdr_af = AF_UNSPEC;
+
+    if (af != AF_UNSPEC && af != AF_INET)
+        return 0;
+
+#define ADD_RTVAR( x ) rtcol_oid[ rtcol_len-1 ] = x; \
+    snmp_varlist_add_variable( &var, rtcol_oid, rtcol_len, ASN_NULL, NULL,  0)
+    ADD_RTVAR( 5 );                 /* ipCidrRouteIfIndex */
+    ADD_RTVAR( 6 );                 /* ipCidrRouteType    */
+    ADD_RTVAR( 7 );                 /* ipCidrRouteProto   */
+#undef ADD_RTVAR
+
+    /*
+     * Now walk the ipCidrRouteTable, reporting the various route entries
+     */
+    while ( 1 ) {
+        oid *op;
+        unsigned char *cp;
+
+        if (netsnmp_query_getnext( var, ss ) != SNMP_ERR_NOERROR)
+            break;
+        rtcol_oid[ rtcol_len-1 ] = 5;        /* ipRouteIfIndex */
+        if ( snmp_oid_compare( rtcol_oid, rtcol_len,
+                               var->name, rtcol_len) != 0 )
+            break;    /* End of Table */
+        if (var->type == SNMP_NOSUCHOBJECT ||
+                var->type == SNMP_NOSUCHINSTANCE ||
+                var->type == SNMP_ENDOFMIBVIEW)
+            break;
+        memset( &route, 0, sizeof( struct route_entry ));
+	rp->af = AF_INET;
+	op = var->name+rtcol_len;
+        cp = tmpAddr.data;
+        cp[0] = *op++ & 0xff;
+        cp[1] = *op++ & 0xff;
+        cp[2] = *op++ & 0xff;
+        cp[3] = *op++ & 0xff;
+        rp->destination = tmpAddr.addr;
+        cp = tmpAddr.data;
+        cp[0] = *op++ & 0xff;
+        cp[1] = *op++ & 0xff;
+        cp[2] = *op++ & 0xff;
+        cp[3] = *op++ & 0xff;
+        rp->mask = tmpAddr.addr;
+	op++; /* ipCidrRouteTos */
+        cp = tmpAddr.data;
+        cp[0] = *op++ & 0xff;
+        cp[1] = *op++ & 0xff;
+        cp[2] = *op++ & 0xff;
+        cp[3] = *op++ & 0xff;
+        rp->gateway = tmpAddr.addr;
+	rp->set_bits = SET_MASK | SET_GWAY;
+
+        for ( vp=var; vp; vp=vp->next_variable ) {
+            switch ( vp->name[ rtcol_len - 1 ] ) {
+            case 5:     /* ipCidrRouteIfIndex */
+                rp->ifNumber  = *vp->val.integer;
+                rp->set_bits |= SET_IFNO;
+                break;
+            case 6:     /* ipCidrRouteType    */
+                rp->type      = *vp->val.integer;
+                rp->set_bits |= SET_TYPE;
+                break;
+            case 7:     /* ipCidrRouteProto   */
+                rp->proto     = *vp->val.integer;
+                rp->set_bits |= SET_PRTO;
+                break;
+            }
+        }
+        if (rp->set_bits != SET_ALL) {
+            continue;   /* Incomplete query */
+        }
+
+        if (hdr_af != rp->af) {
+            if (hdr_af != AF_UNSPEC)
+                printf("\n");
+            hdr_af = rp->af;
+	    printf("Routing tables (ipCidrRouteTable)\n");
+            pr_rthdr(hdr_af);
+        }
+        p_rtnode( rp );
+        printed++;
+    }
+    snmp_free_varbind(var);
+    return printed;
+}
+
 
 struct iflist {
     int             index;
@@ -269,11 +287,12 @@ struct iflist {
 void
 get_ifname(char *name, int ifIndex)
 {
-    netsnmp_pdu    *pdu, *response;
-    netsnmp_variable_list *vp;
-    struct iflist  *ip;
-    oid             varname[MAX_OID_LEN];
-    int             status;
+    oid    ifdescr_oid[]  = { 1,3,6,1,2,1,2,2,1,2,0 };
+    size_t ifdescr_len    = OID_LENGTH( ifdescr_oid );
+    oid    ifxcol_oid[] = { 1,3,6,1,2,1,31,1,1,1,1,0 };
+    size_t ifxcol_len   = OID_LENGTH( ifxcol_oid );
+    netsnmp_variable_list *var = NULL;
+    struct iflist         *ip;
 
     for (ip = Iflist; ip; ip = ip->next) {
         if (ip->index == ifIndex)
@@ -289,235 +308,299 @@ get_ifname(char *name, int ifIndex)
     ip->next = Iflist;
     Iflist = ip;
     ip->index = ifIndex;
-    pdu = snmp_pdu_create(SNMP_MSG_GET);
-    memmove(varname, oid_ifdescr, sizeof(oid_ifdescr));
-    varname[10] = (oid) ifIndex;
-    snmp_add_null_var(pdu, varname, sizeof(oid_ifdescr) / sizeof(oid) + 1);
-    status = snmp_synch_response(Session, pdu, &response);
-    if (status == STAT_SUCCESS && response->errstat == SNMP_ERR_NOERROR) {
-        vp = response->variables;
-        if (vp->val_len >= sizeof(ip->name))
-            vp->val_len = sizeof(ip->name) - 1;
-        memmove(ip->name, vp->val.string, vp->val_len);
-        ip->name[vp->val_len] = '\0';
-        snmp_free_pdu(response);
+
+    ifxcol_oid[ ifxcol_len-1 ] = ifIndex;
+    snmp_varlist_add_variable( &var, ifxcol_oid, ifxcol_len,
+                               ASN_NULL, NULL,  0);
+    if (netsnmp_query_get( var, ss ) == SNMP_ERR_NOERROR) {
+        if (var->val_len >= sizeof(ip->name))
+            var->val_len  = sizeof(ip->name) - 1;
+        memmove(ip->name, var->val.string, var->val_len);
+        ip->name[var->val_len] = '\0';
+	strcpy(name, ip->name);
+	snmp_free_varbind(var);
+	return;
+    }
+
+    ifdescr_oid[ ifdescr_len-1 ] = ifIndex;
+    snmp_varlist_add_variable( &var, ifdescr_oid, ifdescr_len,
+                               ASN_NULL, NULL,  0);
+    if (netsnmp_query_get( var, ss ) == SNMP_ERR_NOERROR) {
+        if (var->val_len >= sizeof(ip->name))
+            var->val_len  = sizeof(ip->name) - 1;
+        memmove(ip->name, var->val.string, var->val_len);
+        ip->name[var->val_len] = '\0';
+	snmp_free_varbind(var);
     } else {
         sprintf(ip->name, "if%d", ifIndex);
     }
     strcpy(name, ip->name);
 }
 
-static          u_long
-forgemask(u_long a)
+/* column widths; each followed by one space */
+#ifndef NETSNMP_ENABLE_IPV6
+#define	WID_DST(af)	26	/* width of destination column */
+#define	WID_GW(af)	18	/* width of gateway column */
+#else
+/* width of destination/gateway column */
+#if 1
+/* strlen("fe80::aaaa:bbbb:cccc:dddd@gif0") == 30, strlen("/128") == 4 */
+#define	WID_DST(af)	((af) == AF_INET6 ? (nflag ? 34 : 26) : 26)
+#define	WID_GW(af)	((af) == AF_INET6 ? (nflag ? 30 : 18) : 18)
+#else
+/* strlen("fe80::aaaa:bbbb:cccc:dddd") == 25, strlen("/128") == 4 */
+#define	WID_DST(af)	((af) == AF_INET6 ? (nflag ? 29 : 18) : 18)
+#define	WID_GW(af)	((af) == AF_INET6 ? (nflag ? 25 : 18) : 18)
+#endif
+#endif /* NETSNMP_ENABLE_IPV6 */
+
+/*
+ * Print header for routing table columns.
+ */
+void
+pr_rthdr(int af)
 {
-    u_long          m;
-    if (IN_CLASSA(a))
-        m = IN_CLASSA_NET;
-    else if (IN_CLASSB(a))
-        m = IN_CLASSB_NET;
-    else
-        m = IN_CLASSC_NET;
-    return m;
+   /*
+	if (Aflag)
+		printf("%-*.*s ", PLEN, PLEN, "Address");
+	if (Sflag)
+		printf("%-*.*s ",
+		    WID_DST(af), WID_DST(af), "Source");
+    */
+	printf("%-*.*s ",
+	    WID_DST(af), WID_DST(af), "Destination");
+	printf("%-*.*s %-6.6s  %s\n",
+	    WID_GW(af), WID_GW(af), "Gateway",
+	    "Flags", "Interface");
 }
 
-static void
-domask(char *dst, u_long addr, u_long mask)
+/*
+ * Print header for PF_KEY entries.
+void
+pr_encaphdr(void)
 {
-    int             b, i;
-    if (!mask || forgemask(addr) == mask) {
-        *dst = '\0';
-        return;
-    }
-    i = 0;
-    for (b = 0; b < 32; b++)
-        if (mask & (1 << b)) {
-            int             bb;
-            i = b;
-            for (bb = b + 1; bb < 32; bb++)
-                if (!(mask & (1 << bb))) {
-                    i = -1;     /* non-contig */
-                    break;
-                }
-            break;
-        }
-    if (i == -1)
-        sprintf(dst, "&0x%lx", mask);
-    else
-        sprintf(dst, "/%d", 32 - i);
+	if (Aflag)
+		printf("%-*s ", PLEN, "Address");
+	printf("%-18s %-5s %-18s %-5s %-5s %-22s\n",
+	    "Source", "Port", "Destination",
+	    "Port", "Proto", "SA(Address/Proto/Type/Direction)");
 }
+ */
 
-char           *
-routename(struct in_addr in)
+char *
+routename(in_addr_t in)
 {
-    register char  *cp;
-    static char     line[MAXHOSTNAMELEN + 1];
-    struct hostent *hp;
-    static char     domain[MAXHOSTNAMELEN + 1];
-    static int      first = 1;
+	char *cp;
+	static char line[MAXHOSTNAMELEN];
+	struct hostent *hp;
+	static char domain[MAXHOSTNAMELEN];
+	static int first = 1;
 
-    if (first) {
-        first = 0;
-        if (gethostname(domain, MAXHOSTNAMELEN) == 0 &&
-            (cp = (char *) strchr(domain, '.')))
-            (void) strcpy(domain, cp + 1);
-        else
-            domain[0] = 0;
-    }
-    cp = 0;
-    if (!nflag) {
-        hp = gethostbyaddr((char *) &in, sizeof(struct in_addr), AF_INET);
-        if (hp) {
-            if ((cp = (char *) strchr(hp->h_name, '.')) &&
-                !strcmp(cp + 1, domain))
-                *cp = 0;
-            cp = (char *) hp->h_name;
-        }
-    }
-    if (cp)
-        strncpy(line, cp, sizeof(line) - 1);
-    else {
+	if (first) {
+		first = 0;
+		if (gethostname(line, sizeof line) == 0 &&
+		    (cp = strchr(line, '.')))
+			(void) strlcpy(domain, cp + 1, sizeof domain);
+		else
+			domain[0] = '\0';
+	}
+	cp = NULL;
+	if (!nflag) {
+		hp = netsnmp_gethostbyaddr((char *)&in, sizeof (struct in_addr),
+		    AF_INET);
+		if (hp) {
+			if ((cp = strchr(hp->h_name, '.')) &&
+			    !strcmp(cp + 1, domain))
+				*cp = '\0';
+			cp = hp->h_name;
+		}
+	}
+	if (cp) {
+		strlcpy(line, cp, sizeof(line));
+	} else {
 #define C(x)	(unsigned)((x) & 0xff)
-        in.s_addr = ntohl(in.s_addr);
-        sprintf(line, "%u.%u.%u.%u", C(in.s_addr >> 24),
-                C(in.s_addr >> 16), C(in.s_addr >> 8), C(in.s_addr));
-    }
-    return (line);
+		in = ntohl(in);
+		snprintf(line, sizeof line, "%u.%u.%u.%u",
+		    C(in >> 24), C(in >> 16), C(in >> 8), C(in));
+	}
+	return (line);
 }
 
 /*
  * Return the name of the network whose address is given.
  * The address is assumed to be that of a net or subnet, not a host.
  */
-char           *
-netname(struct in_addr in, u_long mask)
+char *
+netname(in_addr_t in, in_addr_t mask)
 {
-    char           *cp = NULL;
-    static char     line[MAXHOSTNAMELEN + 1];
-    struct netent  *np = 0;
-    u_long          net, omask;
-    u_long          i;
-    int             subnetshift;
+	char *cp = NULL;
+	static char line[MAXHOSTNAMELEN];
+	struct netent *np = NULL;
+	int mbits;
 
-    i = ntohl(in.s_addr);
-    omask = mask = ntohl(mask);
-    if (!nflag && i != INADDR_ANY) {
-        if (mask == INADDR_ANY) {
-            if (IN_CLASSA(i)) {
-                mask = IN_CLASSA_NET;
-                subnetshift = 8;
-            } else if (IN_CLASSB(i)) {
-                mask = IN_CLASSB_NET;
-                subnetshift = 8;
-            } else {
-                mask = IN_CLASSC_NET;
-                subnetshift = 4;
-            }
-            /*
-             * If there are more bits than the standard mask
-             * would suggest, subnets must be in use.
-             * Guess at the subnet mask, assuming reasonable
-             * width subnet fields.
-             */
-            while (i & ~mask)
-                mask = (long) mask >> subnetshift;
-        }
-        net = i & mask;
-        while ((mask & 1) == 0)
-            mask >>= 1, net >>= 1;
-        np = getnetbyaddr(net, AF_INET);
-        if (np)
-            cp = np->n_name;
-    }
-    if (cp)
-        strncpy(line, cp, sizeof(line) - 1);
-    else if ((i & 0xffffff) == 0)
-        sprintf(line, "%u", C(i >> 24));
-    else if ((i & 0xffff) == 0)
-        sprintf(line, "%u.%u", C(i >> 24), C(i >> 16));
-    else if ((i & 0xff) == 0)
-        sprintf(line, "%u.%u.%u", C(i >> 24), C(i >> 16), C(i >> 8));
-    else
-        sprintf(line, "%u.%u.%u.%u", C(i >> 24),
-                C(i >> 16), C(i >> 8), C(i));
-    domask(line + strlen(line), i, omask);
-    return (line);
+	in = ntohl(in);
+	mask = ntohl(mask);
+	if (!nflag && in != INADDR_ANY) {
+		if ((np = getnetbyaddr(in, AF_INET)) != NULL)
+			cp = np->n_name;
+	}
+	mbits = mask ? 33 - _ffs(mask) : 0;
+	if (cp) {
+		strlcpy(line, cp, sizeof(line));
+	} else if (mbits < 9)
+		snprintf(line, sizeof line, "%u/%d", C(in >> 24), mbits);
+	else if (mbits < 17)
+		snprintf(line, sizeof line, "%u.%u/%d",
+		    C(in >> 24) , C(in >> 16), mbits);
+	else if (mbits < 25)
+		snprintf(line, sizeof line, "%u.%u.%u/%d",
+		    C(in >> 24), C(in >> 16), C(in >> 8), mbits);
+	else
+		snprintf(line, sizeof line, "%u.%u.%u.%u/%d", C(in >> 24),
+		    C(in >> 16), C(in >> 8), C(in), mbits);
+	return (line);
 }
 
-/*
- * Print routing statistics
- */
+#undef NETSNMP_ENABLE_IPV6
+#ifdef NETSNMP_ENABLE_IPV6
+char *
+netname6(struct sockaddr_in6 *sa6, struct in6_addr *mask)
+{
+	static char line[MAXHOSTNAMELEN + 1];
+	struct sockaddr_in6 sin6;
+	u_char *p;
+	u_char *lim;
+	int masklen, final = 0, illegal = 0;
+	int i;
+	char hbuf[NI_MAXHOST];
+	int flag = 0;
+	int error;
+
+	sin6 = *sa6;
+
+	masklen = 0;
+	lim = (u_char *)(mask + 1);
+	i = 0;
+	if (mask) {
+		for (p = (u_char *)mask; p < lim; p++) {
+			if (final && *p) {
+				illegal++;
+				sin6.sin6_addr.s6_addr[i++] = 0x00;
+				continue;
+			}
+
+			switch (*p & 0xff) {
+			case 0xff:
+				masklen += 8;
+				break;
+			case 0xfe:
+				masklen += 7;
+				final++;
+				break;
+			case 0xfc:
+				masklen += 6;
+				final++;
+				break;
+			case 0xf8:
+				masklen += 5;
+				final++;
+				break;
+			case 0xf0:
+				masklen += 4;
+				final++;
+				break;
+			case 0xe0:
+				masklen += 3;
+				final++;
+				break;
+			case 0xc0:
+				masklen += 2;
+				final++;
+				break;
+			case 0x80:
+				masklen += 1;
+				final++;
+				break;
+			case 0x00:
+				final++;
+				break;
+			default:
+				final++;
+				illegal++;
+				break;
+			}
+
+			if (!illegal)
+				sin6.sin6_addr.s6_addr[i++] &= *p;
+			else
+				sin6.sin6_addr.s6_addr[i++] = 0x00;
+		}
+	} else
+		masklen = 128;
+
+	if (masklen == 0 && IN6_IS_ADDR_UNSPECIFIED(&sin6.sin6_addr))
+		return("default");
+
+	if (illegal)
+		fprintf(stderr, "illegal prefixlen\n");
+
+	if (nflag)
+		flag |= NI_NUMERICHOST;
+	error = getnameinfo((struct sockaddr *)&sin6, sin6.sin6_len,
+	    hbuf, sizeof(hbuf), NULL, 0, flag);
+	if (error)
+		snprintf(hbuf, sizeof(hbuf), "invalid");
+
+	snprintf(line, sizeof(line), "%s/%d", hbuf, masklen);
+	return line;
+}
+
+char *
+routename6(struct sockaddr_in6 *sa6)
+{
+	static char line[NI_MAXHOST];
+	const int niflag = NI_NUMERICHOST;
+
+	if (getnameinfo((struct sockaddr *)sa6, sa6->sin6_len,
+	    line, sizeof(line), NULL, 0, niflag) != 0)
+		strlcpy(line, "", sizeof line);
+	return line;
+}
+#endif /*NETSNMP_ENABLE_IPV6*/
+
+char *
+s_rtflags( struct route_entry *rp )
+{
+    static char flag_buf[10];
+    char  *cp = flag_buf;
+
+    *cp++ = '<';
+    *cp++ = 'U';   /* route is in use */
+    if (rp->mask  == 0xffffffff)
+        *cp++ = 'H';   /* host */
+    if (rp->proto == 4)
+        *cp++ = 'D';   /* ICMP redirect */
+    if (rp->type  == 4)
+        *cp++ = 'G';   /* remote destination/net */
+    *cp++ = '>';
+    *cp = 0;
+    return flag_buf;
+}
+
 void
-rt_stats(void)
+p_rtnode( struct route_entry *rp )
 {
-    netsnmp_variable_list *var;
-
-    printf("routing:\n");
-    var =
-        getvarbyname(Session, oid_ipnoroutes,
-                     sizeof(oid_ipnoroutes) / sizeof(oid));
-    if (var) {
-        printf("\t%lu destination%s found unreachable\n",
-               *var->val.integer, plural((int) *var->val.integer));
-        snmp_free_var(var);
-    } else {
-        printf("\tCouldn't get ipOutNoRoutes variable\n");
-    }
-}
-
-/*
- * Request a variable with a GET REQUEST message on the given
- * session.  If the variable is found, a
- * pointer to a netsnmp_variable_list object will be returned.
- * Otherwise, NULL is returned.  The caller must free the returned
- * variable_list object when done with it.
- */
-netsnmp_variable_list *
-getvarbyname(netsnmp_session * sp, oid * name, size_t len)
-{
-    netsnmp_pdu    *request, *response;
-    netsnmp_variable_list *var = NULL, *vp;
-    int             status;
-
-    request = snmp_pdu_create(SNMP_MSG_GET);
-
-    snmp_add_null_var(request, name, len);
-
-    status = snmp_synch_response(sp, request, &response);
-
-    if (status == STAT_SUCCESS) {
-        if (response->errstat == SNMP_ERR_NOERROR) {
-            for (var = response->variables; var; var = var->next_variable) {
-                if (var->name_length == len
-                    && !memcmp(name, var->name, len * sizeof(oid)))
-                    break;      /* found our match */
-            }
-            if (var != NULL) {
-                /*
-                 * Now unlink this var from pdu chain so it doesn't get freed.
-                 * The caller will free the var.
-                 */
-                if (response->variables == var) {
-                    response->variables = var->next_variable;
-                } else {
-                    for (vp = response->variables; vp;
-                         vp = vp->next_variable) {
-                        if (vp->next_variable == var) {
-                            vp->next_variable = var->next_variable;
-                            break;
-                        }
-                    }
-                }
-                if (var->type == SNMP_NOSUCHOBJECT ||
-                    var->type == SNMP_NOSUCHINSTANCE ||
-                    var->type == SNMP_ENDOFMIBVIEW) {
-                       snmp_free_var(var);
-                       var =  NULL;
-                }
-            }
-        }
-    } else if (status != STAT_TIMEOUT)
-        snmp_sess_perror("snmpnetstat", sp);
-    if (response)
-        snmp_free_pdu(response);
-    return var;
+    get_ifname(rp->ifname, rp->ifNumber);
+    printf("%-*.*s ",
+	    WID_DST(AF_INET), WID_DST(AF_INET),
+            (rp->destination == INADDR_ANY) ? "default" :
+                (rp->set_bits & SET_MASK) ?
+                    (rp->mask == 0xffffffff ?
+                        routename(rp->destination) :
+                        netname(rp->destination, rp->mask)) :
+                    netname(rp->destination, 0L));
+    printf("%-*.*s %-6.6s  %s\n",
+	    WID_GW(af), WID_GW(af),
+	    rp->gateway ? routename(rp->gateway) : "*",
+            s_rtflags(rp), rp->ifname);
 }

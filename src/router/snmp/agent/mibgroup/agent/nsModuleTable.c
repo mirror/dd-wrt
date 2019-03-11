@@ -4,9 +4,12 @@
  */
 
 #include <net-snmp/net-snmp-config.h>
+#include <net-snmp/net-snmp-features.h>
 #include <net-snmp/net-snmp-includes.h>
 #include <net-snmp/agent/net-snmp-agent-includes.h>
 #include "nsModuleTable.h"
+
+netsnmp_feature_require(table_dataset)
 
 void
 nsModuleTable_free(void *context, netsnmp_iterator_info *dont_care)
@@ -18,8 +21,7 @@ nsModuleTable_free(void *context, netsnmp_iterator_info *dont_care)
 void
 initialize_table_nsModuleTable(void)
 {
-    static oid      nsModuleTable_oid[] =
-        { 1, 3, 6, 1, 4, 1, 8072, 1, 2, 1 };
+    const oid nsModuleTable_oid[] = { 1, 3, 6, 1, 4, 1, 8072, 1, 2, 1 };
     netsnmp_table_registration_info *table_info;
     netsnmp_handler_registration *my_handler;
     netsnmp_iterator_info *iinfo;
@@ -41,8 +43,13 @@ initialize_table_nsModuleTable(void)
                                                      (nsModuleTable_oid),
                                                      HANDLER_CAN_RWRITE);
 
-    if (!my_handler || !table_info || !iinfo)
+    if (!my_handler || !table_info || !iinfo) {
+        if (my_handler)
+            netsnmp_handler_registration_free(my_handler);
+        SNMP_FREE(table_info);
+        SNMP_FREE(iinfo);
         return;                 /* mallocs failed */
+    }
 
     /***************************************************
      * Setting up the table's definition
@@ -68,10 +75,10 @@ initialize_table_nsModuleTable(void)
      */
     DEBUGMSGTL(("initialize_table_nsModuleTable",
                 "Registering table nsModuleTable as a table iterator\n"));
-    netsnmp_register_table_iterator(my_handler, iinfo);
+    netsnmp_register_table_iterator2(my_handler, iinfo);
 }
 
-/** Initialzies the nsModuleTable module */
+/** Initializes the nsModuleTable module */
 void
 init_nsModuleTable(void)
 {
@@ -118,24 +125,32 @@ nsModuleTable_get_first_data_point(void **my_loop_context,
     ctree = SNMP_MALLOC_TYPEDEF(context_tree_ptr);
 
     ctree->context_ptr = get_top_context_cache();
+    /* Skip empty context registrations */
+    while (!ctree->context_ptr->first_subtree) {
+        ctree->context_ptr = ctree->context_ptr->next;
+        if (!ctree->context_ptr) {
+            SNMP_FREE(ctree);
+            return NULL;
+        }
+    }
     ctree->tree = ctree->context_ptr->first_subtree;
 
     *my_loop_context = ctree;
     *my_data_context = ctree->tree;
 
     vptr = put_index_data;
-    snmp_set_var_value(vptr, (u_char *) ctree->context_ptr->context_name,
+    snmp_set_var_value(vptr, ctree->context_ptr->context_name,
                        strlen(ctree->context_ptr->context_name));
 
     vptr = vptr->next_variable;
     snmp_set_var_value(vptr,
-                       (u_char *)ctree->context_ptr->first_subtree->name_a,
+                       ctree->context_ptr->first_subtree->name_a,
                        ctree->context_ptr->first_subtree->namelen *
                        sizeof(oid));
 
     ultmp = ctree->context_ptr->first_subtree->priority;
     vptr = vptr->next_variable;
-    snmp_set_var_value(vptr, (u_char *) & ultmp, sizeof(ultmp));
+    snmp_set_var_value(vptr, & ultmp, sizeof(ultmp));
 
     return put_index_data;
 }
@@ -172,16 +187,16 @@ nsModuleTable_get_next_data_point(void **my_loop_context,
     *my_data_context = ctree->tree;
 
     vptr = put_index_data;
-    snmp_set_var_value(vptr, (u_char *) ctree->context_ptr->context_name,
+    snmp_set_var_value(vptr, ctree->context_ptr->context_name,
                        strlen(ctree->context_ptr->context_name));
 
     vptr = vptr->next_variable;
-    snmp_set_var_value(vptr, (u_char *) ctree->tree->name_a,
+    snmp_set_var_value(vptr, ctree->tree->name_a,
                        ctree->tree->namelen * sizeof(oid));
 
     ultmp = ctree->tree->priority;
     vptr = vptr->next_variable;
-    snmp_set_var_value(vptr, (u_char *) & ultmp, sizeof(ultmp));
+    snmp_set_var_value(vptr, & ultmp, sizeof(ultmp));
 
     return put_index_data;
 }

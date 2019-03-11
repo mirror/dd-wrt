@@ -28,7 +28,6 @@
 .\" distributed with the Net-SNMP package.
 .\" ******************************************************************/
 .TH SNMPTEST 1 "25 Jul 2003" VVERSIONINFO "Net-SNMP"
-.UC 4
 .SH NAME
 snmptest - communicates with a network entity using SNMP requests
 .SH SYNOPSIS
@@ -44,7 +43,7 @@ accept commands.  This intepreter enables the user to send different
 types of SNMP requests to target agents.
 .PP
 AGENT identifies a target SNMP agent, which is instrumented
-to monitor the gievn objects.  At its simplest, the AGENT
+to monitor the given objects.  At its simplest, the AGENT
 specification will consist of a hostname or an IPv4
 address.  In this situation, the command will attempt
 communication with the agent, using UDP/IPv4 to port 161
@@ -63,7 +62,7 @@ in the format specified in
 .IR variables(5) .
 For example:
 .PP
-snmptest -c public -v 1 zeus
+snmptest \-c public \-v 1 zeus
 .br
 .BR Variable: " system.sysDescr.0"
 .br
@@ -115,7 +114,7 @@ the GET request.
 .PP
 GETNEXT Request:
 .PP
-The "GETNEXT request" mode ($N) is simlar to the "Get request"
+The "GETNEXT request" mode ($N) is similar to the "Get request"
 mode, described above.
 .PP
 SET Request:
@@ -176,7 +175,7 @@ manual page.
 .PP
 The following is an example of sending a GET request for two OIDs:
 .PP
-% snmptest -v 2c -c public testhost:9999
+% snmptest \-v 2c \-c public testhost:9999
 .PP
 .nf
 Variable: system.sysDescr.0
@@ -184,18 +183,18 @@ Variable: system.sysContact.0
 Variable:
 Received Get Response from 128.2.56.220
 requestid 0x7D9FCD63 errstat 0x0 errindex 0x0
-SNMPv2-MIB::sysDescr.0 = STRING: SunOS testhost 5.9 Generic_112233-02 sun4u
-SNMPv2-MIB::sysContact.0 = STRING: x1111
+SNMPv2\-MIB::sysDescr.0 = STRING: SunOS testhost 5.9 Generic_112233\-02 sun4u
+SNMPv2\-MIB::sysContact.0 = STRING: x1111
 .fi
 .PP
 The following is an example of sending a GETNEXT request:
 .PP
 .nf
-Variable: SNMPv2-MIB::sysORUpTime
+Variable: SNMPv2\-MIB::sysORUpTime
 Variable:
 Received Get Response from 128.2.56.220
 requestid 0x7D9FCD64 errstat 0x0 errindex 0x0
-SNMPv2-MIB::sysORUpTime.1 = Timeticks: (6) 0:00:00.06
+SNMPv2\-MIB::sysORUpTime.1 = Timeticks: (6) 0:00:00.06
 Variable:
 .fi
 .PP
@@ -210,7 +209,7 @@ Value: building 17
 Variable:
 Received Get Response from 128.2.56.220
 requestid 0x7D9FCD65 errstat 0x0 errindex 0x0
-SNMPv2-MIB::sysLocation.0 = STRING: building A
+SNMPv2\-MIB::sysLocation.0 = STRING: building A
 Variable:
 .fi
 .PP
@@ -229,17 +228,17 @@ Variable:
 What repeat count? 2
 Received Get Response from 128.2.56.220
 requestid 0x2EA7942A errstat 0x0 errindex 0x0
-SNMPv2-MIB::sysName.0 = STRING: testhost
-SNMPv2-MIB::sysORLastChange.0 = Timeticks: (58) 0:00:00.58
-SNMPv2-MIB::sysLocation.0 = STRING: bldg A
-SNMPv2-MIB::sysORID.1 = OID: IF-MIB::ifMIB
+SNMPv2\-MIB::sysName.0 = STRING: testhost
+SNMPv2\-MIB::sysORLastChange.0 = Timeticks: (58) 0:00:00.58
+SNMPv2\-MIB::sysLocation.0 = STRING: bldg A
+SNMPv2\-MIB::sysORID.1 = OID: IF\-MIB::ifMIB
 Variable:
 .fi
 .PP
 The following is an example of sending an Inform request:
 .PP
 .nf
-snmptest -v 2c -c public snmptrapd_host
+snmptest \-v 2c \-c public snmptrapd_host
 Variable: $I
 Request type is Inform Request
 (Are you sending to the right port?)
@@ -253,13 +252,13 @@ Variable:
 .PP
 The snmptrapd_host will show:
 .PP
-snmptrapd_host [<ip address>]: Trap SNMPv2-MIB::sysContact.0 = STRING:
+snmptrapd_host [<ip address>]: Trap SNMPv2\-MIB::sysContact.0 = STRING:
 x12345
 .PP
 The following is an example of sending an SNMPv2 Trap request:
 .PP
 .nf
-snmptest -v 2c -c public snmptrapd_host
+snmptest \-v 2c \-c public snmptrapd_host
 Variable: $T
 Request type is SNMPv2 Trap Request
 (Are you sending to the right port?)
@@ -272,7 +271,7 @@ Variable:
 The snmptrapd_host will show:
 .PP
 .nf
-snmptrapd_host [<ip address>]: Trap SNMPv2-MIB::sys.0 = STRING:
+snmptrapd_host [<ip address>]: Trap SNMPv2\-MIB::sys.0 = STRING:
 building a
 .fi
 .SH "SEE ALSO"

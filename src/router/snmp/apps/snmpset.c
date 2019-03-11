@@ -43,11 +43,7 @@ SOFTWARE.
 #include <stdio.h>
 #include <ctype.h>
 #if TIME_WITH_SYS_TIME
-# ifdef WIN32
-#  include <sys/timeb.h>
-# else
-#  include <sys/time.h>
-# endif
+# include <sys/time.h>
 # include <time.h>
 #else
 # if HAVE_SYS_TIME_H
@@ -59,9 +55,6 @@ SOFTWARE.
 #if HAVE_SYS_SELECT_H
 #include <sys/select.h>
 #endif
-#if HAVE_WINSOCK_H
-#include <winsock.h>
-#endif
 #if HAVE_NETDB_H
 #include <netdb.h>
 #endif
@@ -71,27 +64,25 @@ SOFTWARE.
 
 #include <net-snmp/net-snmp-includes.h>
 
-int             failures = 0;
-
 void
 usage(void)
 {
-    printf( "USAGE: snmpset ");
+    fprintf(stderr, "USAGE: snmpset ");
     snmp_parse_args_usage(stderr);
-    printf( " OID TYPE VALUE [OID TYPE VALUE]...\n\n");
+    fprintf(stderr, " OID TYPE VALUE [OID TYPE VALUE]...\n\n");
     snmp_parse_args_descriptions(stderr);
-    printf(
+    fprintf(stderr,
             "  -C APPOPTS\t\tSet various application specific behaviours:\n");
-    printf( "\t\t\t  q:  don't print results on success\n");
-    printf( "\n  TYPE: one of i, u, t, a, o, s, x, d, b, n\n");
-    printf(
+    fprintf(stderr, "\t\t\t  q:  don't print results on success\n");
+    fprintf(stderr, "\n  TYPE: one of i, u, t, a, o, s, x, d, b\n");
+    fprintf(stderr,
             "\ti: INTEGER, u: unsigned INTEGER, t: TIMETICKS, a: IPADDRESS\n");
-    printf(
+    fprintf(stderr,
             "\to: OBJID, s: STRING, x: HEX STRING, d: DECIMAL STRING, b: BITS\n");
-#ifdef OPAQUE_SPECIAL_TYPES
-    printf(
+#ifdef NETSNMP_WITH_OPAQUE_SPECIAL_TYPES
+    fprintf(stderr,
             "\tU: unsigned int64, I: signed int64, F: float, D: double\n");
-#endif                          /* OPAQUE_SPECIAL_TYPES */
+#endif                          /* NETSNMP_WITH_OPAQUE_SPECIAL_TYPES */
 
 }
 
@@ -110,7 +101,7 @@ optProc(int argc, char *const *argv, int opt)
                 break;
 
             default:
-                printf( "Unknown flag passed to -C: %c\n",
+                fprintf(stderr, "Unknown flag passed to -C: %c\n",
                         optarg[-1]);
                 exit(1);
             }
@@ -129,13 +120,16 @@ main(int argc, char *argv[])
     int             current_name = 0;
     int             current_type = 0;
     int             current_value = 0;
-    char           *names[128];
-    char            types[128];
-    char           *values[128];
+    char           *names[SNMP_MAX_CMDLINE_OIDS];
+    char            types[SNMP_MAX_CMDLINE_OIDS];
+    char           *values[SNMP_MAX_CMDLINE_OIDS];
     oid             name[MAX_OID_LEN];
     size_t          name_length;
     int             status;
-    int             exitval = 0;
+    int             failures = 0;
+    int             exitval = 1;
+
+    SOCK_STARTUP;
 
     putenv(strdup("POSIXLY_CORRECT=1"));
 
@@ -143,19 +137,28 @@ main(int argc, char *argv[])
      * get the common command line arguments 
      */
     switch (arg = snmp_parse_args(argc, argv, &session, "C:", optProc)) {
-    case -2:
-        exit(0);
-    case -1:
+    case NETSNMP_PARSE_ARGS_ERROR:
+        goto out;
+    case NETSNMP_PARSE_ARGS_SUCCESS_EXIT:
+        exitval = 0;
+        goto out;
+    case NETSNMP_PARSE_ARGS_ERROR_USAGE:
         usage();
-        exit(1);
+        goto out;
     default:
         break;
     }
 
     if (arg >= argc) {
-        printf( "Missing object name\n");
+        fprintf(stderr, "Missing object name\n");
         usage();
-        exit(1);
+        goto out;
+    }
+    if ((argc - arg) > 3*SNMP_MAX_CMDLINE_OIDS) {
+        fprintf(stderr, "Too many assignments specified. ");
+        fprintf(stderr, "Only %d allowed in one request.\n", SNMP_MAX_CMDLINE_OIDS);
+        usage();
+        goto out;
     }
 
     /*
@@ -171,6 +174,7 @@ main(int argc, char *argv[])
             case '=':
             case 'i':
             case 'u':
+            case '3':
             case 't':
             case 'a':
             case 'o':
@@ -178,32 +182,30 @@ main(int argc, char *argv[])
             case 'x':
             case 'd':
             case 'b':
-#ifdef OPAQUE_SPECIAL_TYPES
+#ifdef NETSNMP_WITH_OPAQUE_SPECIAL_TYPES
             case 'I':
             case 'U':
             case 'F':
             case 'D':
-#endif                          /* OPAQUE_SPECIAL_TYPES */
+#endif                          /* NETSNMP_WITH_OPAQUE_SPECIAL_TYPES */
                 types[current_type++] = *argv[arg++];
                 break;
             default:
-                printf( "%s: Bad object type: %c\n", argv[arg - 1],
+                fprintf(stderr, "%s: Bad object type: %c\n", argv[arg - 1],
                         *argv[arg]);
-                exit(1);
+                goto out;
             }
         } else {
-            printf( "%s: Needs type and value\n", argv[arg - 1]);
-            exit(1);
+            fprintf(stderr, "%s: Needs type and value\n", argv[arg - 1]);
+            goto out;
         }
         if (arg < argc)
             values[current_value++] = argv[arg];
         else {
-            printf( "%s: Needs value\n", argv[arg - 2]);
-            exit(1);
+            fprintf(stderr, "%s: Needs value\n", argv[arg - 2]);
+            goto out;
         }
     }
-
-    SOCK_STARTUP;
 
     /*
      * open an SNMP session 
@@ -214,8 +216,7 @@ main(int argc, char *argv[])
          * diagnose snmp_open errors with the input netsnmp_session pointer 
          */
         snmp_sess_perror("snmpset", &session);
-        SOCK_CLEANUP;
-        exit(1);
+        goto out;
     }
 
     /*
@@ -235,10 +236,10 @@ main(int argc, char *argv[])
         }
     }
 
-    if (failures) {
-        SOCK_CLEANUP;
-        exit(1);
-    }
+    if (failures)
+        goto close_session;
+
+    exitval = 0;
 
     /*
      * do the request 
@@ -252,21 +253,21 @@ main(int argc, char *argv[])
                     print_variable(vars->name, vars->name_length, vars);
             }
         } else {
-            printf( "Error in packet.\nReason: %s\n",
+            fprintf(stderr, "Error in packet.\nReason: %s\n",
                     snmp_errstring(response->errstat));
             if (response->errindex != 0) {
-                printf( "Failed object: ");
+                fprintf(stderr, "Failed object: ");
                 for (count = 1, vars = response->variables;
                      vars && (count != response->errindex);
                      vars = vars->next_variable, count++);
                 if (vars)
                     fprint_objid(stderr, vars->name, vars->name_length);
-                printf( "\n");
+                fprintf(stderr, "\n");
             }
             exitval = 2;
         }
     } else if (status == STAT_TIMEOUT) {
-        printf( "Timeout: No Response from %s\n",
+        fprintf(stderr, "Timeout: No Response from %s\n",
                 session.peername);
         exitval = 1;
     } else {                    /* status == STAT_ERROR */
@@ -276,7 +277,11 @@ main(int argc, char *argv[])
 
     if (response)
         snmp_free_pdu(response);
+
+close_session:
     snmp_close(ss);
+
+out:
     SOCK_CLEANUP;
     return exitval;
 }

@@ -1,77 +1,80 @@
 /**  
  *  This file implements the snmpSetSerialNo TestAndIncr counter
  */
-
-/*
- * start be including the appropriate header files 
- */
 #include <net-snmp/net-snmp-config.h>
+#include <net-snmp/net-snmp-features.h>
 #include <net-snmp/net-snmp-includes.h>
 #include <net-snmp/agent/net-snmp-agent-includes.h>
+
+netsnmp_feature_require(watcher_spinlock)
+
 
 #include "setSerialNo.h"
 
 /*
- * Then, we declare the variables we want to be accessed 
+ * A watched spinlock can be fully implemented by the spinlock helper,
+ *  but we still need a suitable variable to hold the value.
  */
-static long     setserialno = 0;        /* default value */
+static int     setserialno;
 
-/*
- * our initialization routine, automatically called by the agent 
- */
-/*
- * (to get called, the function name must match init_FILENAME() 
- */
+    /*
+     * TestAndIncr values should persist across agent restarts,
+     * so we need config handling routines to load and save the
+     * current value (incrementing this whenever it's loaded).
+     */
+static void
+setserial_parse_config( const char *token, char *cptr )
+{
+    setserialno = atoi(cptr);
+    setserialno++;
+    DEBUGMSGTL(("snmpSetSerialNo",
+                "Re-setting SnmpSetSerialNo to %d\n", setserialno));
+}
+static int
+setserial_store_config( int a, int b, void *c, void *d )
+{
+    char line[SNMP_MAXBUF_SMALL];
+    snprintf(line, SNMP_MAXBUF_SMALL, "setserialno %d", setserialno);
+    snmpd_store_config( line );
+    return 0;
+}
+
 void
 init_setSerialNo(void)
 {
-    oid             my_registration_oid[] =
-        { 1, 3, 6, 1, 6, 3, 1, 1, 6, 1, 0 };
+    oid set_serial_oid[] = { 1, 3, 6, 1, 6, 3, 1, 1, 6, 1 };
 
     /*
-     * a debugging statement.  Run the agent with -Dscalar_int to see
-     * the output of this debugging statement. 
+     * If we can't retain the TestAndIncr value across an agent restart,
+     *  then it should be initialised to a pseudo-random value.  So set it
+     *  as such, before registering the config handlers to override this.
      */
+    setserialno = netsnmp_random();
     DEBUGMSGTL(("snmpSetSerialNo",
                 "Initalizing SnmpSetSerialNo to %d\n", setserialno));
+    snmpd_register_config_handler("setserialno", setserial_parse_config,
+                                  NULL, "integer");
+    snmp_register_callback(SNMP_CALLBACK_LIBRARY, SNMP_CALLBACK_STORE_DATA,
+                           setserial_store_config, NULL);
 
-    netsnmp_register_long_instance("snmpSetSerialNo",
-                                   my_registration_oid,
-                                   OID_LENGTH(my_registration_oid),
-                                   &setserialno,
-                                   netsnmp_setserialno_handler);
-
+    /*
+     * Register 'setserialno' as a watched spinlock object
+     */
+#ifndef NETSNMP_NO_WRITE_SUPPORT
+    netsnmp_register_watched_spinlock(
+        netsnmp_create_handler_registration("snmpSetSerialNo", NULL,
+                                   set_serial_oid,
+                                   OID_LENGTH(set_serial_oid),
+                                   HANDLER_CAN_RWRITE),
+                                       &setserialno );
+#else  /* !NETSNMP_NO_WRITE_SUPPORT */
+    netsnmp_register_watched_spinlock(
+        netsnmp_create_handler_registration("snmpSetSerialNo", NULL,
+                                   set_serial_oid,
+                                   OID_LENGTH(set_serial_oid),
+                                   HANDLER_CAN_RONLY),
+                                       &setserialno );
+#endif /* !NETSNMP_NO_WRITE_SUPPORT */
     DEBUGMSGTL(("scalar_int", "Done initalizing example scalar int\n"));
 }
 
-/*
- * additional support for the given node.  Everything else (value
- * retrival, undo support, etc) is handled by the instance helper for
- * us. 
- */
-int
-netsnmp_setserialno_handler(netsnmp_mib_handler *handler,
-                            netsnmp_handler_registration *reginfo,
-                            netsnmp_agent_request_info *reqinfo,
-                            netsnmp_request_info *requests)
-{
-    switch (reqinfo->mode) {
-    case MODE_SET_RESERVE1:
-        /*
-         * the set value must be exactly the same as the current value 
-         */
-        if (*(requests->requestvb->val.integer) != setserialno)
-            netsnmp_set_request_error(reqinfo, requests,
-                                      SNMP_ERR_WRONGVALUE);
-        break;
-
-    case MODE_SET_ACTION:
-        /*
-         * we actually increment the value once when it's set. 
-         */
-        setserialno++;
-        break;
-
-    }
-    return SNMP_ERR_NOERROR;
-}

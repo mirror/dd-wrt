@@ -1,5 +1,6 @@
 /*
- * snmpstatus.c - send snmp GET requests to a network entity.
+ * snmpstatus.c - retrieves a fixed set of management information from
+ * a network entity.
  *
  */
 /***********************************************************************
@@ -43,11 +44,7 @@ SOFTWARE.
 #include <stdio.h>
 #include <ctype.h>
 #if TIME_WITH_SYS_TIME
-# ifdef WIN32
-#  include <sys/timeb.h>
-# else
-#  include <sys/time.h>
-# endif
+# include <sys/time.h>
 # include <time.h>
 #else
 # if HAVE_SYS_TIME_H
@@ -58,9 +55,6 @@ SOFTWARE.
 #endif
 #if HAVE_SYS_SELECT_H
 #include <sys/select.h>
-#endif
-#if HAVE_WINSOCK_H
-#include <winsock.h>
 #endif
 #if HAVE_NETDB_H
 #include <netdb.h>
@@ -114,7 +108,7 @@ optProc(int argc, char *const *argv, int opt)
 					  NETSNMP_DS_APP_DONT_FIX_PDUS);
                 break;
             default:
-                printf( "Unknown flag passed to -C: %c\n",
+                fprintf(stderr, "Unknown flag passed to -C: %c\n",
                         optarg[-1]);
                 exit(1);
             }
@@ -126,13 +120,13 @@ optProc(int argc, char *const *argv, int opt)
 void
 usage(void)
 {
-    printf( "USAGE: snmpstatus ");
+    fprintf(stderr, "USAGE: snmpstatus ");
     snmp_parse_args_usage(stderr);
-    printf( "\n\n");
+    fprintf(stderr, "\n\n");
     snmp_parse_args_descriptions(stderr);
-    printf(
+    fprintf(stderr,
             "  -C APPOPTS\t\tSet various application specific behaviours:\n");
-    printf(
+    fprintf(stderr,
             "\t\t\t  f:  do not fix errors and retry the request\n");
 }
 
@@ -153,22 +147,25 @@ main(int argc, char *argv[])
     char            buf[40];
     int             interfaces;
     int             count;
-    int             exitval = 0;
+    int             exitval = 1;
+
+    SOCK_STARTUP;
 
     /*
      * get the common command line arguments 
      */
     switch (snmp_parse_args(argc, argv, &session, "C:", &optProc)) {
-    case -2:
-        exit(0);
-    case -1:
+    case NETSNMP_PARSE_ARGS_ERROR:
+        goto out;
+    case NETSNMP_PARSE_ARGS_SUCCESS_EXIT:
+        exitval = 0;
+        goto out;
+    case NETSNMP_PARSE_ARGS_ERROR_USAGE:
         usage();
-        exit(1);
+        goto out;
     default:
         break;
     }
-
-    SOCK_STARTUP;
 
     /*
      * open an SNMP session 
@@ -179,8 +176,7 @@ main(int argc, char *argv[])
          * diagnose snmp_open errors with the input netsnmp_session pointer 
          */
         snmp_sess_perror("snmpstatus", &session);
-        SOCK_CLEANUP;
-        exit(1);
+        goto out;
     }
 
     /*
@@ -210,31 +206,34 @@ main(int argc, char *argv[])
                 }
                 if (vars->name_length == length_sysUpTime &&
                     !memcmp(objid_sysUpTime, vars->name,
-                            sizeof(objid_sysUpTime))) {
+                            sizeof(objid_sysUpTime)) &&
+                    vars->val.integer) {
                     uptime = *vars->val.integer;
                 }
                 if (vars->name_length == length_ipInReceives &&
                     !memcmp(objid_ipInReceives, vars->name,
-                            sizeof(objid_ipInReceives))) {
+                            sizeof(objid_ipInReceives)) &&
+                    vars->val.integer) {
                     ipin = *vars->val.integer;
                 }
                 if (vars->name_length == length_ipOutRequests &&
                     !memcmp(objid_ipOutRequests, vars->name,
-                            sizeof(objid_ipOutRequests))) {
+                            sizeof(objid_ipOutRequests)) &&
+                    vars->val.integer) {
                     ipout = *vars->val.integer;
                 }
             }
         } else {
-            printf( "Error in packet.\nReason: %s\n",
+            fprintf(stderr, "Error in packet.\nReason: %s\n",
                     snmp_errstring(response->errstat));
             if (response->errindex != 0) {
-                printf( "Failed object: ");
+                fprintf(stderr, "Failed object: ");
                 for (count = 1, vars = response->variables;
                      vars && count != response->errindex;
                      vars = vars->next_variable, count++);
                 if (vars)
                     fprint_objid(stderr, vars->name, vars->name_length);
-                printf( "\n");
+                fprintf(stderr, "\n");
             }
 
             /*
@@ -250,24 +249,28 @@ main(int argc, char *argv[])
             }
         }
     } else if (status == STAT_TIMEOUT) {
-        printf( "Timeout: No Response from %s\n",
+        fprintf(stderr, "Timeout: No Response from %s\n",
                 session.peername);
-        SOCK_CLEANUP;
-        exit(1);
+        goto out;
     } else {                    /* status == STAT_ERROR */
         snmp_sess_perror("snmpstatus", ss);
-        SOCK_CLEANUP;
-        exit(2);
+        exitval = 2;
+        goto out;
     }
+
+    exitval = 0;
 
     transport = snmp_sess_transport(snmp_sess_pointer(ss));
     if (transport != NULL && transport->f_fmtaddr != NULL) {
-        char           *s = transport->f_fmtaddr(transport,
+        char *addr_string = transport->f_fmtaddr(transport,
                                                  response->transport_data,
                                                  response->
                                                  transport_data_length);
-        printf("[%s]=>[%s] Up: %s\n", s, sysdescr,
-               uptime_string(uptime, buf));
+        if (addr_string != NULL) {
+            printf("[%s]=>[%s] Up: %s\n", addr_string, sysdescr,
+                   uptime_string(uptime, buf));
+            free(addr_string);
+        }
     } else {
         printf("[<UNKNOWN>]=>[%s] Up: %s\n", sysdescr,
                uptime_string(uptime, buf));
@@ -299,31 +302,43 @@ main(int argc, char *argv[])
                 pdu = snmp_pdu_create(SNMP_MSG_GETNEXT);
                 for (vars = response->variables; vars;
                      vars = vars->next_variable) {
+                    if ((vars->type & 0xF0) == 0x80) {
+			print_variable(vars->name, vars->name_length, vars);
+                        continue;
+                    }
                     if (vars->name_length >= length_ifOperStatus
-                        && !memcmp(objid_ifOperStatus, vars->name,
-                                   sizeof(objid_ifOperStatus))) {
+                            && !memcmp(objid_ifOperStatus, vars->name,
+                                    sizeof(objid_ifOperStatus))
+                            && vars->type == ASN_INTEGER
+                            && vars->val.integer) {
                         if (*vars->val.integer != MIB_IFSTATUS_UP)
                             down_interfaces++;
                         snmp_add_null_var(pdu, vars->name,
                                           vars->name_length);
                         good_var++;
-                    } else if (vars->name_length >= length_ifInUCastPkts &&
-                               !memcmp(objid_ifInUCastPkts, vars->name,
-                                       sizeof(objid_ifInUCastPkts))) {
+                    } else if (vars->name_length >= length_ifInUCastPkts
+                            &&!memcmp(objid_ifInUCastPkts, vars->name,
+                                    sizeof(objid_ifInUCastPkts))
+                            && vars->type == ASN_COUNTER
+                            && vars->val.integer) {
                         ipackets += *vars->val.integer;
                         snmp_add_null_var(pdu, vars->name,
                                           vars->name_length);
                         good_var++;
                     } else if (vars->name_length >= length_ifInNUCastPkts
                                && !memcmp(objid_ifInNUCastPkts, vars->name,
-                                          sizeof(objid_ifInNUCastPkts))) {
+                                          sizeof(objid_ifInNUCastPkts))
+                               && vars->type == ASN_COUNTER
+                               && vars->val.integer) {
                         ipackets += *vars->val.integer;
                         snmp_add_null_var(pdu, vars->name,
                                           vars->name_length);
                         good_var++;
                     } else if (vars->name_length >= length_ifOutUCastPkts
                                && !memcmp(objid_ifOutUCastPkts, vars->name,
-                                          sizeof(objid_ifOutUCastPkts))) {
+                                          sizeof(objid_ifOutUCastPkts))
+                               && vars->type == ASN_COUNTER
+                               && vars->val.integer) {
                         opackets += *vars->val.integer;
                         snmp_add_null_var(pdu, vars->name,
                                           vars->name_length);
@@ -331,7 +346,9 @@ main(int argc, char *argv[])
                     } else if (vars->name_length >= length_ifOutNUCastPkts
                                && !memcmp(objid_ifOutNUCastPkts,
                                           vars->name,
-                                          sizeof(objid_ifOutNUCastPkts))) {
+                                          sizeof(objid_ifOutNUCastPkts))
+                               && vars->type == ASN_COUNTER
+                               && vars->val.integer) {
                         opackets += *vars->val.integer;
                         snmp_add_null_var(pdu, vars->name,
                                           vars->name_length);
@@ -341,22 +358,22 @@ main(int argc, char *argv[])
                 if (good_var == 5)
                     interfaces++;
             } else {
-                printf( "Error in packet.\nReason: %s\n",
+                fprintf(stderr, "Error in packet.\nReason: %s\n",
                         snmp_errstring(response->errstat));
                 if (response->errindex != 0) {
-                    printf( "Failed object: ");
+                    fprintf(stderr, "Failed object: ");
                     for (count = 1, vars = response->variables;
                          vars && count != response->errindex;
                          vars = vars->next_variable, count++);
                     if (vars)
                         fprint_objid(stderr, vars->name,
                                      vars->name_length);
-                    printf( "\n");
+                    fprintf(stderr, "\n");
                 }
                 exitval = 2;
             }
         } else if (status == STAT_TIMEOUT) {
-            printf( "Timeout: No Response from %s\n",
+            fprintf(stderr, "Timeout: No Response from %s\n",
                     session.peername);
             exitval = 1;
         } else {                /* status == STAT_ERROR */
@@ -375,6 +392,8 @@ main(int argc, char *argv[])
     }
 
     snmp_close(ss);
+
+out:
     SOCK_CLEANUP;
     return exitval;
 }
