@@ -1518,7 +1518,7 @@ int __init ar7240_platform_init(void)
 	ath79_setup_ar933x_phy4_switch(false, false);
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac0, 2);
 	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac1, 0);
-	ar71xx_add_device_mdio(0, 0x0);	
+	ar71xx_add_device_mdio(1, 0x0);	
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
 //	ar71xx_eth1_data.duplex = DUPLEX_FULL;
 	// wan
@@ -1535,7 +1535,7 @@ int __init ar7240_platform_init(void)
 
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac0, 2);
 	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac1, 0);
-	ar71xx_add_device_mdio(0, 0x0);	
+	ar71xx_add_device_mdio(1, 0x0);	
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
 //	ar71xx_eth1_data.duplex = DUPLEX_FULL;
 	// wan
@@ -1683,7 +1683,8 @@ int __init ar7240_platform_init(void)
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
 	ar71xx_add_device_eth(0);
     #elif CONFIG_WR841V9
-	ar71xx_add_device_mdio(0, 0x0);
+//	ar71xx_add_device_mdio(0, 0x0);
+	ar71xx_add_device_mdio(1, 0x0);
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, 1);
 	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, 0);
 
@@ -1701,7 +1702,7 @@ int __init ar7240_platform_init(void)
 	ar71xx_eth0_data.phy_mask = BIT(4);
 	ar71xx_add_device_eth(0);
     #elif CONFIG_WR810N
-	ar71xx_add_device_mdio(0, 0x0);
+	ar71xx_add_device_mdio(1, 0x0);
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, -1);
 	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, 0);
 
