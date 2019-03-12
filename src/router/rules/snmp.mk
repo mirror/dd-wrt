@@ -28,6 +28,7 @@ endif
 ifeq ($(CONFIG_MADWIFI),y)
 SNMP_EXTRACFLAGS+=-DHAVE_MADWIFI -I$(TOP)/madwifi.dev/madwifi.dev -include $(TOP)/madwifi.dev/madwifi.dev/include/compat.h -I$(TOP)/wireless-tools -I$(TOP)/shared -DHEADERS_KERNEL 
 SNMP_EXTRAMIB=,ddwrt/ddwrt
+SNMP_EXTRALIB=-liw
 endif
 ifeq ($(CONFIG_ATH9K),y)
 SNMP_EXTRACFLAGS+=-DHAVE_ATH9K
@@ -42,7 +43,7 @@ snmp-configure:
 				--with-ar=$(ARCH)-linux-uclibc-ar \
 				--with-endianness=$(SNMP_ENDIAN) \
 				--with-cflags="$(COPTS) $(MIPS16_OPT) $(SNMP_EXTRACFLAGS) -I$(TOP)/openssl/include -D_GNU_SOURCE -DCAN_USE_SYSCTL=1 -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/shared -I$(TOP)/../include.v24" \
-				--with-ldflags="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/openssl -L$(TOP)/libutils -L$(TOP)/nvram -L$(TOP)/libnl-tiny -L$(TOP)/wireless-tools -lshutils -lutils -lwireless -liw -lnl-tiny -lnvram" \
+				--with-ldflags="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/openssl -L$(TOP)/libutils -L$(TOP)/nvram -L$(TOP)/libnl-tiny -L$(TOP)/wireless-tools -lshutils -lutils -lwireless -lnl-tiny -lnvram" \
 				--enable-mini-agent \
 				--disable-debugging \
 				--enable-privacy \
@@ -73,7 +74,7 @@ snmp-configure:
 
 snmp:
 ifeq ($(CONFIG_SNMP),y)
-	$(MAKE) -C snmp 
+	$(MAKE) -C snmp LDFLAGS="$(SNMP_EXTRALIB)"
 else
 	@true
 endif
