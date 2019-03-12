@@ -530,6 +530,10 @@ void start_sysinit(void)
 #ifdef HAVE_WNDR3700V4
 	setWirelessLed(0, 11);
 	setWirelessLed(1, 14);
+#elif HAVE_XD9531
+	insmod("ledtrig-netdev");
+	setEthLED(16, "eth1");
+	setWirelessLed(0, 12);
 #elif HAVE_CPE880
 	insmod("ledtrig-netdev");
 	setEthLED(19, "vlan2");
