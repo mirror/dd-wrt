@@ -1742,7 +1742,7 @@ int __init ar7240_platform_init(void)
 
     #elif CONFIG_LIMA
 #define LIMA_ETH_PHYS		(BIT(0) | BIT(1))
-	ar71xx_add_device_mdio(0, ~LIMA_ETH_PHYS);
+	ar71xx_add_device_mdio(1, ~LIMA_ETH_PHYS);
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, -1);
 	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, 0);
 
