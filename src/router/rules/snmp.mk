@@ -74,7 +74,7 @@ snmp-configure:
 
 snmp:
 ifeq ($(CONFIG_SNMP),y)
-	$(MAKE) -C snmp LDFLAGS="$(SNMP_EXTRALIB)"
+	$(MAKE) -C snmp LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/openssl -L$(TOP)/libutils -L$(TOP)/nvram -L$(TOP)/libnl-tiny -L$(TOP)/wireless-tools -lshutils -lutils -lwireless -lnl-tiny -lnvram $(SNMP_EXTRALIB)"
 else
 	@true
 endif
