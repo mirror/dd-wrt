@@ -277,13 +277,13 @@ typedef double		float64;
  */
 
 #ifndef TYPEDEF_FLOAT_T
-
+#if 0
 #if defined(FLOAT32)
 typedef float32 float_t;
 #else /* default to double precision floating point */
 typedef float64 float_t;
 #endif
-
+#endif
 #endif /* TYPEDEF_FLOAT_T */
 
 /* define macro values */
@@ -329,6 +329,7 @@ typedef float64 float_t;
 #else
 
 #define INLINE
+
 
 #endif /* _MSC_VER */
 
