@@ -47,6 +47,7 @@ static __inline__ void atomic_##op(int i, atomic_t * v)			      \
 	if (kernel_uses_llsc && R10000_LLSC_WAR) {			      \
 		int temp;						      \
 									      \
+		loongson_llsc_mb();					      \
 		__asm__ __volatile__(					      \
 		"	.set	arch=r4000				\n"   \
 		"1:	ll	%0, %1		# atomic_" #op "	\n"   \
@@ -86,6 +87,7 @@ static __inline__ int atomic_##op##_return_relaxed(int i, atomic_t * v)	      \
 	if (kernel_uses_llsc && R10000_LLSC_WAR) {			      \
 		int temp;						      \
 									      \
+		loongson_llsc_mb();					      \
 		__asm__ __volatile__(					      \
 		"	.set	arch=r4000				\n"   \
 		"1:	ll	%1, %2		# atomic_" #op "_return	\n"   \
@@ -134,6 +136,7 @@ static __inline__ int atomic_fetch_##op##_relaxed(int i, atomic_t * v)	      \
 	if (kernel_uses_llsc && R10000_LLSC_WAR) {			      \
 		int temp;						      \
 									      \
+		loongson_llsc_mb();					      \
 		__asm__ __volatile__(					      \
 		"	.set	arch=r4000				\n"   \
 		"1:	ll	%1, %2		# atomic_fetch_" #op "	\n"   \
@@ -389,6 +392,7 @@ static __inline__ void atomic64_##op(long i, atomic64_t * v)		      \
 	if (kernel_uses_llsc && R10000_LLSC_WAR) {			      \
 		long temp;						      \
 									      \
+		loongson_llsc_mb();					      \
 		__asm__ __volatile__(					      \
 		"	.set	arch=r4000				\n"   \
 		"1:	lld	%0, %1		# atomic64_" #op "	\n"   \
@@ -428,6 +432,7 @@ static __inline__ long atomic64_##op##_return_relaxed(long i, atomic64_t * v) \
 	if (kernel_uses_llsc && R10000_LLSC_WAR) {			      \
 		long temp;						      \
 									      \
+		loongson_llsc_mb();					      \
 		__asm__ __volatile__(					      \
 		"	.set	arch=r4000				\n"   \
 		"1:	lld	%1, %2		# atomic64_" #op "_return\n"  \
@@ -477,6 +482,7 @@ static __inline__ long atomic64_fetch_##op##_relaxed(long i, atomic64_t * v)  \
 	if (kernel_uses_llsc && R10000_LLSC_WAR) {			      \
 		long temp;						      \
 									      \
+		loongson_llsc_mb();					      \
 		__asm__ __volatile__(					      \
 		"	.set	arch=r4000				\n"   \
 		"1:	lld	%1, %2		# atomic64_fetch_" #op "\n"   \
