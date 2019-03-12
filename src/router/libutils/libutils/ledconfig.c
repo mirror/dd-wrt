@@ -677,6 +677,11 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->connected_gpio = 0x116;	// green
 		cfg->disconnected_gpio = 0x117;	// orange
 		break;
+#elif HAVE_XD9531
+	case ROUTER_BOARD_WHRHPGN:
+		cfg->connected_gpio = 0x104;
+		cfg->diag_gpio = 0x10D;
+		break;
 #elif HAVE_CPE880
 	case ROUTER_BOARD_WHRHPGN:
 		cfg->connected_gpio = 0x112;
