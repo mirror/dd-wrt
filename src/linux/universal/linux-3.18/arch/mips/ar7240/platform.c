@@ -1109,7 +1109,7 @@ int __init ar7240_platform_init(void)
 	ee = (u8 *)KSEG1ADDR(0x1f011000);
 #endif
 #ifdef CONFIG_XD9531
-	mac = (u8 *)KSEG1ADDR(0x1f7f0000);
+	mac = (u8 *)KSEG1ADDR(0x1f7f1002);
 	ee = (u8 *)KSEG1ADDR(0x1f7f1000);
 #endif
 #ifdef CONFIG_E355AC
@@ -1171,7 +1171,7 @@ int __init ar7240_platform_init(void)
 	ath79_init_mac(mac0, mac, -1);
 	ath79_init_mac(mac1, mac, 0);	
     #elif CONFIG_XD9531
-	mac = (u8 *)KSEG1ADDR(0x1f010000);
+	mac = (u8 *)KSEG1ADDR(0x1f011002);
 	ath79_init_mac(mac0, mac, -1);
 	ath79_init_mac(mac1, mac, 0);	
     #elif CONFIG_WR615N
