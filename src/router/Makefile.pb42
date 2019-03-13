@@ -417,6 +417,7 @@ else
 	echo "# CONFIG_WR615N is not set" >> $(LINUXDIR)/.config
 endif
 ifeq ($(CONFIG_XD9531),y)
+	sed -i 's/\# CONFIG_LEDS_TRIGGER_NETDEV is not set/CONFIG_LEDS_TRIGGER_NETDEV=y/g' $(LINUXDIR)/.config
 	echo CONFIG_XD9531=y >> $(LINUXDIR)/.config
 else
 	echo "# CONFIG_XD9531 is not set" >> $(LINUXDIR)/.config
@@ -1298,8 +1299,10 @@ ifeq ($(CONFIG_MMS344),y)
 #	dd if=$(ARCH)-uclibc/vmlinux.lzma of=$(ARCH)-uclibc/vmlinux.lsx bs=65536 conv=sync
 #	cat $(ARCH)-uclibc/root.fs>>$(ARCH)-uclibc/vmlinux.lsx
 	-./tools/compex/mkmylofw -B MMS344HV \
-		-p0x30000:0x7d0000:al:0x80060000 \
-		-b0x30000:0x7d0000::$(ARCH)-uclibc/aligned.uimage 	\
+		-p0x30000:0x630000:: \
+		-b0x30000:0x630000::$(ARCH)-uclibc/root.fs 	\
+		-p0x660000:0x150000:al:0x80060000 \
+		-b0x660000:0x150000::$(ARCH)-uclibc/root.uimage 	\
 		mips-uclibc/mms344.img
 
 	-./tools/compex/mkmylofw -B DR342 \
