@@ -63,7 +63,25 @@ obj-$(CONFIG_PPTPD) += pptpd
 obj-$(CONFIG_PIPSEC) += pipsec
 obj-$(CONFIG_FROTTLE) += frottle
 obj-$(CONFIG_WOL) += wol
-ifeq ($(CONFIG_OPENSSL),y)
+ifeq ($(CONFIG_FREERADIUS),y)
+obj-$(CONFIG_SNMP) += snmp
+endif
+ifeq ($(CONFIG_ASTERISK),y)
+obj-$(CONFIG_SNMP) += snmp
+endif
+ifeq ($(CONFIG_AIRCRACK),y)
+obj-$(CONFIG_SNMP) += snmp
+endif
+ifeq ($(CONFIG_POUND),y)
+obj-$(CONFIG_SNMP) += snmp
+endif
+ifeq ($(CONFIG_IPETH),y)
+obj-$(CONFIG_SNMP) += snmp
+endif
+ifeq ($(CONFIG_VPNC),y)
+obj-$(CONFIG_SNMP) += snmp
+endif
+ifeq ($(CONFIG_TOR),y)
 obj-$(CONFIG_SNMP) += snmp
 endif
 obj-$(CONFIG_RADVD) += radvd aiccu
