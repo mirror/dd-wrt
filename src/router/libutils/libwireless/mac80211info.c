@@ -121,6 +121,11 @@ static void __attribute__((constructor)) mac80211_init(void)
 	}
 }
 
+void special_mac80211_init(void)
+{
+	unl_genl_init(&unl, "nl80211");
+}
+
 static int phy_lookup_by_number(int idx)
 {
 	int err;
@@ -539,7 +544,6 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 //              [NL80211_RATE_INFO_5_MHZ_WIDTH] = {.type = NLA_FLAG},
 #endif
 	};
-
 	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
 	if (!tb[NL80211_ATTR_STA_INFO]) {
 		fprintf(stderr, "sta stats missing!\n");
