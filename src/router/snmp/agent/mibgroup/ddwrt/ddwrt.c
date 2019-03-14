@@ -85,10 +85,16 @@ static char convert_to_snmp_bitfield(int value)
 	newvar->type = type;
 	return snmp_set_var_value(newvar, (u_char *) & val, sizeof(long));
 }*/
-
+#ifdef HAVE_ATH9K
+void special_mac80211_init(void);
+#endif
 /** Initializes the ddwrt module */
 void init_ddwrt(void)
 {
+#ifdef HAVE_ATH9K
+	special_mac80211_init();
+#endif
+
 	/* here we initialize all the tables we're planning on supporting */
 	initialize_table_ddxrWlStatTable();
 	initialize_table_ddWlRtabTable();
@@ -1191,7 +1197,7 @@ void ddxrWlStatTable_madwifi()
 		set_ddxrWlStatnetmode(entry, (long)madwifi_getwirelessnetmode(var));
 		set_ddxrWlStatmode(entry, (long)madwifi_getwirelessmode(var));
 #ifdef HAVE_ATH9K
-		sprintf(temp, "A 2ghz:%d 5ghz:%d 802.11n:%d", has_2ghz(var), has_5ghz(var), is_ath9k(var));
+		sprintf(temp, "A 2ghz:%d 5ghz:%d 802.11n:%d", has_2ghz(var), has_5ghz(var), is_mac80211(var));
 #else
 		sprintf(temp, "A 2ghz:%d 5ghz:%d 802.11n:%d", has_2ghz(var), has_5ghz(var), 0);
 #endif
@@ -1199,7 +1205,7 @@ void ddxrWlStatTable_madwifi()
 		sprintf(temp, "%s_minrate", var);
 		set_ddxrWlStatminrate(entry, get_minmaxrates_madwifi(var, atoi(nvram_safe_get(temp))));
 #ifdef HAVE_ATH9K
-		if (is_ath9k(var)) {
+		if (is_mac80211(var)) {
 			set_ddxrWlStatmaxrate(entry, wifi_getrate(var));
 		} else {
 #else
@@ -1211,7 +1217,7 @@ void ddxrWlStatTable_madwifi()
 		sprintf(temp, "%s_ff", var);
 		set_ddxrWlStatfastframing(entry, (long)atoi(nvram_safe_get(temp)) + 1);
 #ifdef HAVE_ATH9K
-		if (is_ath9k(var))
+		if (is_mac80211(var))
 			set_ddxrWlStatack(entry, (long)(mac80211_get_coverageclass(var) * 450));
 		else
 #endif
@@ -1228,7 +1234,7 @@ void ddxrWlStatTable_madwifi()
 		set_ddxrWlStatChannelBW(entry, (long)atoi(nvram_safe_get(temp)));
 
 #ifdef HAVE_ATH9K
-		if (is_ath9k(var) && (atoi(nvram_safe_get(temp)) == 40 || atoi(nvram_safe_get(temp)) == 2040)) {
+		if (is_mac80211(var) && (atoi(nvram_safe_get(temp)) == 40 || atoi(nvram_safe_get(temp)) == 2040)) {
 			sprintf(temp, "%s_nctrlsb", var);
 			if (!strcmp(nvram_safe_get(temp), "upper"))
 				set_ddxrWlStat80211nWideChannel(entry, (long)3);
@@ -1393,9 +1399,9 @@ void ddWlRtabTable_madwifi()
 			turbo = 1;
 #ifdef HAVE_MADWIFI
 #ifdef HAVE_ATH9K
-		if (is_ath9k(var))
+		if (is_mac80211(var)) {
 			ddWlRtabTable_mac80211_assoc(var, 0, i, vap, 0, 0);
-		else
+		} else
 #endif
 			ddWlRtabTable_madwifi_assoc(var, 0, turbo, i, vap, 0, 0);
 #endif
@@ -1407,6 +1413,14 @@ void ddWlRtabTable_madwifi()
 				vap = vapindex - 48;
 			else
 				vap = 99;
+#ifdef HAVE_MADWIFI
+#ifdef HAVE_ATH9K
+			if (is_mac80211(var)) {
+				ddWlRtabTable_mac80211_assoc(var, 0, i, vap, 0, 0);
+			} else
+#endif
+				ddWlRtabTable_madwifi_assoc(var, 0, turbo, i, vap, 0, 0);
+#endif
 			DEBUGMSGTL(("ddwrt:madwifiassoc", "ASSOC interace %d %d\n", i, vap));
 		}
 	}
@@ -1444,7 +1458,7 @@ void ddWlRtabTable_madwifi()
 				continue;
 			// wds-links are already shown aboave
 #ifdef HAVE_ATH9K
-			if (!is_ath9k(var))
+			if (!is_mac80211(var))
 #endif
 #ifdef HAVE_MADWIFI
 				ddWlRtabTable_madwifi_assoc(dev, 0, turbo, i, vap, 1, s);
@@ -1647,7 +1661,6 @@ void ddWlRtabTable_mac80211_assoc(char *ifname, int cnt, int ciface, int cvap, i
 	bias = atoi(nvram_default_get(nb, "0"));
 	// sprintf(it, "inactivity_time", ifname);
 	it = atoi(nvram_default_get("inacttime", "300000"));
-
 	mac80211_info = mac80211_assoclist(ifname);
 	for (wc = mac80211_info->wci; wc; wc = wc->next) {
 		if (cnt && wc->inactive_time < it)
