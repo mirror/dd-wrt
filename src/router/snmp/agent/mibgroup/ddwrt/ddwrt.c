@@ -1158,7 +1158,7 @@ void ddxrWlStatTable_madwifi()
 	for (i = 0; i < count; i++) {
 		sprintf(var, "ath%d", i);
 		vap = 0;
-		DEBUGMSGTL(("ddwrt:madwifi", "main interace %d %d\n", i, vap));
+		DEBUGMSGTL(("ddwrt:madwifi", "main interface %d %d\n", i, vap));
 		//  printf("<option value=\"%s\" %s >%s</option>\n", var, nvram_match("wifi_display", var) ? "selected=\"selected\"" : "", var);
 		entry = ddxrWlStatTable_createEntry(i, vap);
 		set_ddxrWlStatMajorInterface(entry, i);
@@ -1197,9 +1197,9 @@ void ddxrWlStatTable_madwifi()
 		set_ddxrWlStatnetmode(entry, (long)madwifi_getwirelessnetmode(var));
 		set_ddxrWlStatmode(entry, (long)madwifi_getwirelessmode(var));
 #ifdef HAVE_ATH9K
-		sprintf(temp, "A 2ghz:%d 5ghz:%d 802.11n:%d", has_2ghz(var), has_5ghz(var), is_mac80211(var));
+		sprintf(temp, "A 2ghz:%d 5ghz:%d 802.11n:%d 80211ac:%d", has_2ghz(var), has_5ghz(var), is_ath9k(var) | has_ac(var), has_ac(var));
 #else
-		sprintf(temp, "A 2ghz:%d 5ghz:%d 802.11n:%d", has_2ghz(var), has_5ghz(var), 0);
+		sprintf(temp, "A 2ghz:%d 5ghz:%d 802.11n:%d 80211ac:%d", has_2ghz(var), has_5ghz(var), 0, 0);
 #endif
 		set_ddxrWlStatcardtype(entry, temp);
 		sprintf(temp, "%s_minrate", var);
