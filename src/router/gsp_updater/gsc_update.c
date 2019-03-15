@@ -244,7 +244,7 @@ int main(int argc, char **argv)
 	crc |= (ret & 0xff) << 8;
 	ret = i2c_smbus_read_byte_data(file, 14);
 	printf("Current GSC Firmware Rev: %i (crc=0x%04x)\n", ret & 0xff, crc);
-	if (rev>0 && (ret & 0xff) >= rev)
+	if (rev>0 && (ret & 0xff) == rev)
 	    {
 	    printf("no update required\n");
 	    exit(0);
