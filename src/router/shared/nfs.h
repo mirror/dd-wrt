@@ -5,10 +5,11 @@
 struct nfs_share {
 	char mp[32];
 	char sd[64];
+	char access_perms[4];
 	struct nfs_share *next;
 };
 
 struct nfs_share *getnfsshares(void);
-struct nfs_share *getnfsshare(char *mp, char *sd);
+struct nfs_share *getnfsshare(char *mp, char *sd, char *access_perms);
 
 #endif

@@ -1516,6 +1516,18 @@ ifeq ($(CONFIG_MINIDLNA),y)
   CFLAGS += -DHAVE_MINIDLNA
   ADDLIB += libsharetools.so
 endif
+ifeq ($(CONFIG_NFS),y)
+  SHARETOOLSOBJS += libsharetools/nfs.o
+  CFLAGS += -I$(TOP)/jansson/src 
+  CFLAGS += -DHAVE_NFS
+  ADDLIB += libsharetools.so
+endif
+ifeq ($(CONFIG_RSYNC),y)
+  SHARETOOLSOBJS += libsharetools/rsync.o
+  CFLAGS += -I$(TOP)/jansson/src
+  CFLAGS += -DHAVE_RSYNC
+  ADDLIB += libsharetools.so
+endif
 
 
 
