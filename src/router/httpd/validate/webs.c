@@ -5007,6 +5007,61 @@ static void dlna_save(webs_t wp)
 	json_array_clear(entries);
 }
 #endif
+#ifdef HAVE_NFS
+#include <nfs.h>
+static void nfs_save(webs_t wp)
+{
+	int c, j;
+	char var[128], val[128];
+	json_t *entry = NULL;
+
+	// nfs shares
+	json_t *entries = json_array();
+	int share_number = websGetVari(wp, "nfs_shares_count", 0);
+	for (c = 1; c <= share_number; c++) {
+		entry = json_object();
+		sprintf(var, "nfsshare_mp_%d", c);
+		json_object_set_new(entry, "mp", json_string(websGetVar(wp, var, "")));
+		sprintf(var, "nfsshare_subdir_%d", c);
+		json_object_set_new(entry, "sd", json_string(websGetVar(wp, var, "")));
+		sprintf(var, "nfsshare_access_perms_%d", c);
+		sprintf(val, "%s", websGetVar(wp, var, "-"));
+		if (!strcmp(val, "-")) {
+			sprintf(var, "nfsshare_access_perms_prev_%d", c);
+			sprintf(val, "%s", websGetVar(wp, var, "x"));
+		}
+		json_object_set_new(entry, "perms", json_string(val));
+		json_array_append(entries, entry);
+	}
+	nvram_set("nfs_shares", json_dumps(entries, JSON_COMPACT));
+	json_array_clear(entries);
+}
+#endif
+#ifdef HAVE_RSYNC
+#include <rsync.h>
+static void rsync_save(webs_t wp)
+{
+	int c, j;
+	char var[128], val[128];
+	json_t *entry = NULL;
+
+	// rsync shares
+	json_t *entries = json_array();
+	int share_number = websGetVari(wp, "rsync_shares_count", 0);
+	for (c = 1; c <= share_number; c++) {
+		entry = json_object();
+		sprintf(var, "rsyncshare_mp_%d", c);
+		json_object_set_new(entry, "mp", json_string(websGetVar(wp, var, "")));
+		sprintf(var, "rsyncshare_subdir_%d", c);
+		json_object_set_new(entry, "sd", json_string(websGetVar(wp, var, "")));
+		sprintf(var, "rsyncshare_label_%d", c);
+		json_object_set_new(entry, "label", json_string(websGetVar(wp, var, "")));
+		json_array_append(entries, entry);
+	}
+	nvram_set("rsync_shares", json_dumps(entries, JSON_COMPACT));
+	json_array_clear(entries);
+}
+#endif
 
 #ifdef HAVE_NAS_SERVER
 #include <samba3.h>
@@ -5083,6 +5138,12 @@ void nassrv_save(webs_t wp)
 	nvram_seti("nowebaction", 1);
 #ifdef HAVE_MINIDLNA
 	dlna_save(wp);
+#endif
+#ifdef HAVE_NFS
+	nfs_save(wp);
+#endif
+#ifdef HAVE_RSYNC
+	rsync_save(wp);
 #endif
 #ifdef HAVE_RAID
 	raid_save(wp);

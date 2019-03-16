@@ -86,9 +86,7 @@ void ej_dlna_sharepaths(webs_t wp, int argc, char_t ** argv)
 		found = 0;
 		//sprintf( perms, "");
 		perms[0] = '\0';
-		websWrite(wp,
-			  "			<td id=\"n_dlna_mp%s\" style=\"width: 17.816em;\"><select name=\"dlnashare_mp%s\" id=\"dlnashare_mp%s\" style=\"width: 100%%;\" onchange=\"setDlnaShareAccessOptions(this);\">\n",
-			  number, number, number);
+		websWrite(wp, "			<td id=\"n_dlna_mp%s\" style=\"width: 17.816em;\"><select name=\"dlnashare_mp%s\" id=\"dlnashare_mp%s\" style=\"width: 100%%;\" >\n", number, number, number);
 		websWrite(wp, "				<option value=\"\" rel=\"\">-</option>\n");
 		//fprintf(stderr, "[SAMBA] FS %s:%s public:%d\n", cs->label, cs->mp, cs->public );
 		for (current = fs; current; current = current->next) {
