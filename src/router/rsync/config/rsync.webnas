@@ -10,4 +10,5 @@
 		<div class="label"><% tran("service.rsync_allowed"); %></div>
 		<input size="25" maxlength="40" class="text" name="rsync_allowed" value="<% nvg("rsync_allowed"); %>" />
 	</div>
+	<% rsync_sharepaths(); %>
 </fieldset><br />
