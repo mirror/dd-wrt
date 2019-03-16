@@ -1404,6 +1404,7 @@ snmp_log_string(int priority, const char *str)
  *
  * @see snmp_log
  */
+#ifdef NEED_PRINTF
 int
 snmp_vlog(int priority, const char *format, va_list ap)
 {
@@ -1420,7 +1421,7 @@ snmp_vlog(int priority, const char *format, va_list ap)
     free(buffer);
     return 0;
 }
-
+#endif
 /**
  * This snmp logging function allows variable argument list given the
  * specified format and priority.  Calls the snmp_vlog function.
@@ -1428,6 +1429,7 @@ snmp_vlog(int priority, const char *format, va_list ap)
  *
  * @see snmp_vlog
  */
+#ifdef NEED_PRINTF
 int
 snmp_log(int priority, const char *format, ...)
 {
@@ -1438,7 +1440,7 @@ snmp_log(int priority, const char *format, ...)
     va_end(ap);
     return (ret);
 }
-
+#endif
 /*
  * log a critical error.
  */
