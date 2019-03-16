@@ -34,12 +34,12 @@
 #include <bcmnvram.h>
 #include <shutils.h>
 #include <services.h>
-#include <samba3.h>
+#include <rsync.h>
 
 void start_rsync(void)
 {
-	struct samba3_share *cs, *csnext;
-	struct samba3_share *rsyncshares;
+	struct rsync_share *cs, *csnext;
+	struct rsync_share *rsyncshares;
 
 	if (!nvram_matchi("rsyncd_enable", 1))
 		return;
@@ -59,13 +59,8 @@ void start_rsync(void)
 	fprintf(fp, "use slp = false\n");
 
 	if (fp) {
-		rsyncshares = getsamba3shares();
+		rsyncshares = getrsyncshares();
 		for (cs = rsyncshares; cs; cs = csnext) {
-			if (!cs->public) {
-				csnext = cs->next;
-				free(cs);
-				continue;	// if its not public, ignore
-			}
 			fprintf(fp, "[%s]\n", cs->label);
 			fprintf(fp, "\tpath = %s/%s\n", cs->mp, cs->sd);
 			csnext = cs->next;
