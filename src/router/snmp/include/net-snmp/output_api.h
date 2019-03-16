@@ -39,12 +39,17 @@ extern "C" {
 
     /* Logging messages */
 
+#ifdef NEED_PRINTF
     NETSNMP_IMPORT
     int  snmp_log( int priority, const char *format, ...)
         NETSNMP_ATTRIBUTE_FORMAT(printf, 2, 3);
     NETSNMP_IMPORT
     int  snmp_vlog(int priority, const char *format, va_list ap);
     NETSNMP_IMPORT
+#else
+#define snmp_log(prio, fmt, ...) do {} while(0)
+#define snmp_vlog(prio, fmt, valist) do {} while(0)
+#endif
     int  snmp_get_do_logging(    void);
     NETSNMP_IMPORT
     void netsnmp_logging_restart(void);
