@@ -325,7 +325,7 @@ void start_raid(void)
 			}
 		}
 		if (!strcmp(type, "btrfs")) {
-			char *r = strdup(raid));
+			char *r = strdup(raid);
 			strcpy(r, raid);
 			strstrtok(r, ' ');
 			sysprintf("mkdir -p \"/tmp/mnt/%s\"", poolname);
@@ -339,8 +339,8 @@ void start_raid(void)
 					sysprintf("mount -t btrfs -o compression=gzip %s \"/tmp/mnt/%s\"", r, poolname);
 				else
 					sysprintf("mount -t btrfs -o compression=gzip:%s %s \"/tmp/mnt/%s\"", nvram_nget("raidlzlevel%d", i), r, poolname);
-			}else 
-			sysprintf("mount -t btrfs %s \"/tmp/mnt/%s\"", r, poolname);
+			} else
+				sysprintf("mount -t btrfs %s \"/tmp/mnt/%s\"", r, poolname);
 			free(r);
 		}
 
