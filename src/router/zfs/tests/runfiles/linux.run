@@ -344,7 +344,7 @@ tags = ['functional', 'cli_root', 'zpool_detach']
 
 [tests/functional/cli_root/zpool_events]
 tests = ['zpool_events_clear', 'zpool_events_cliargs', 'zpool_events_follow',
-    'zpool_events_poolname']
+    'zpool_events_poolname', 'zpool_events_errors']
 tags = ['functional', 'cli_root', 'zpool_events']
 
 [tests/functional/cli_root/zpool_expand]
@@ -378,7 +378,7 @@ tests = ['zpool_import_001_pos', 'zpool_import_002_pos',
     'zpool_import_missing_002_pos', 'zpool_import_missing_003_pos',
     'zpool_import_rename_001_pos', 'zpool_import_all_001_pos',
     'zpool_import_encrypted', 'zpool_import_encrypted_load',
-    'zpool_import_errata3',
+    'zpool_import_errata3', 'zpool_import_errata4',
     'import_cachefile_device_added',
     'import_cachefile_device_removed',
     'import_cachefile_device_replaced',
@@ -444,7 +444,7 @@ tags = ['functional', 'cli_root', 'zpool_resilver']
 tests = ['zpool_scrub_001_neg', 'zpool_scrub_002_pos', 'zpool_scrub_003_pos',
     'zpool_scrub_004_pos', 'zpool_scrub_005_pos',
     'zpool_scrub_encrypted_unloaded', 'zpool_scrub_print_repairing',
-    'zpool_scrub_offline_device']
+    'zpool_scrub_offline_device', 'zpool_scrub_multiple_copies']
 tags = ['functional', 'cli_root', 'zpool_scrub']
 
 [tests/functional/cli_root/zpool_set]
@@ -557,10 +557,10 @@ tests = ['exec_001_pos', 'exec_002_neg']
 tags = ['functional', 'exec']
 
 [tests/functional/fault]
-tests = ['auto_online_001_pos', 'auto_replace_001_pos', 'auto_spare_001_pos',
-    'auto_spare_002_pos', 'auto_spare_ashift', 'auto_spare_multiple',
-    'auto_spare_shared', 'scrub_after_resilver', 'decrypt_fault',
-    'decompress_fault','zpool_status_-s']
+tests = ['auto_offline_001_pos', 'auto_online_001_pos', 'auto_replace_001_pos',
+    'auto_spare_001_pos', 'auto_spare_002_pos', 'auto_spare_ashift',
+    'auto_spare_multiple', 'auto_spare_shared', 'scrub_after_resilver',
+    'decrypt_fault', 'decompress_fault', 'zpool_status_-s']
 tags = ['functional', 'fault']
 
 [tests/functional/features/async_destroy]
@@ -640,7 +640,7 @@ tags = ['functional', 'mmap']
 tests = ['mmp_on_thread', 'mmp_on_uberblocks', 'mmp_on_off', 'mmp_interval',
     'mmp_active_import', 'mmp_inactive_import', 'mmp_exported_import',
     'mmp_write_uberblocks', 'mmp_reset_interval', 'multihost_history',
-    'mmp_on_zdb']
+    'mmp_on_zdb', 'mmp_write_distribution']
 tags = ['functional', 'mmp']
 
 [tests/functional/mount]
@@ -793,7 +793,8 @@ tests = ['rsend_001_pos', 'rsend_002_pos', 'rsend_003_pos', 'rsend_004_pos',
     'send-c_embedded_blocks', 'send-c_resume', 'send-cpL_varied_recsize',
     'send-c_recv_dedup', 'send_encrypted_files', 'send_encrypted_heirarchy',
     'send_encrypted_props', 'send_freeobjects', 'send_realloc_dnode_size',
-    'send_holds', 'send_hole_birth', 'send-wDR_encrypted_zvol']
+    'send_holds', 'send_hole_birth', 'send_mixed_raw',
+    'send-wDR_encrypted_zvol']
 tags = ['functional', 'rsend']
 
 [tests/functional/scrub_mirror]
