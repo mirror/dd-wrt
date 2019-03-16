@@ -9,6 +9,6 @@ struct rsync_share {
 };
 
 struct rsync_share *getrsyncshares(void);
-struct rsync_share *getrsyncshare(char *mp, char *sd, int types);
+struct rsync_share *getrsyncshare(char *mp, char *sd);
 
 #endif
