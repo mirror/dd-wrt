@@ -62,6 +62,7 @@ void ej_rsync_sharepaths(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "		<tr>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_path", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_subdir", "<th>", "</th>\n");
+	show_caption_pp(wp, NULL, "service.samba3_share_label", "<th>", "</th>\n");
 	websWrite(wp, "			<th style=\"width: 50px;\">&nbsp;</th>\n");
 	websWrite(wp, "		</tr>\n");
 
@@ -83,9 +84,7 @@ void ej_rsync_sharepaths(webs_t wp, int argc, char_t ** argv)
 		found = 0;
 		//sprintf( perms, "");
 		perms[0] = '\0';
-		websWrite(wp,
-			  "			<td id=\"n_rsync_mp%s\" style=\"width: 17.816em;\"><select name=\"rsyncshare_mp%s\" id=\"rsyncshare_mp%s\" style=\"width: 100%%;\" onchange=\"setrsyncShareAccessOptions(this);\">\n",
-			  number, number, number);
+		websWrite(wp, "			<td id=\"n_rsync_mp%s\" style=\"width: 17.816em;\"><select name=\"rsyncshare_mp%s\" id=\"rsyncshare_mp%s\" style=\"width: 100%%;\" >\n", number, number, number);
 		websWrite(wp, "				<option value=\"\" rel=\"\">-</option>\n");
 		//fprintf(stderr, "[SAMBA] FS %s:%s public:%d\n", cs->label, cs->mp, cs->public );
 		for (current = fs; current; current = current->next) {
@@ -126,6 +125,9 @@ void ej_rsync_sharepaths(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp,
 			  "				<td style=\"width: 1%%;\"><input type=\"text\" name=\"rsyncshare_subdir%s\" id=\"rsyncshare_subdir%s\" value=\"%s\" style=\"width: 150px;\"/></td>\n",
 			  number, number, cs->sd);
+		websWrite(wp,
+			  "				<td style=\"width: 1%%;\"><input type=\"text\" name=\"rsyncshare_label%s\" id=\"rsyncshare_label%s\" value=\"%s\" style=\"width: 100px;\" /></td>\n",
+			  number, number, cs->label);
 		websWrite(wp, "				<td style=\"width: 50px; text-align: center;\">\n");
 		websWrite(wp,
 			  "					<script type=\"text/javascript\">document.write(\"<input type=\\\"button\\\" class=\\\"button\\\" name=\\\"rsyncshare_del%s\\\" value=\\\"\"+nas.sharedel+\"\\\"  style=\\\"width: 100%%;\\\" onclick=\\\"removersyncShare(this);\\\"i />\")</script>\n",
