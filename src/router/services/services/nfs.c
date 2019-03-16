@@ -34,12 +34,12 @@
 #include <bcmnvram.h>
 #include <shutils.h>
 #include <services.h>
-#include <samba3.h>
+#include <nfs.h>
 
 void start_nfs(void)
 {
-	struct samba3_share *cs, *csnext;
-	struct samba3_share *nfsshares;
+	struct nfs_share *cs, *csnext;
+	struct nfs_share *nfsshares;
 #ifdef _SC_NPROCESSORS_ONLN
 	int cpucount = sysconf(_SC_NPROCESSORS_ONLN);
 #else
@@ -49,13 +49,8 @@ void start_nfs(void)
 		return;
 	FILE *fp = fopen("/tmp/exports", "wb");
 	if (fp) {
-		nfsshares = getsamba3shares();
+		nfsshares = getnfsshares();
 		for (cs = nfsshares; cs; cs = csnext) {
-			if (!cs->public) {
-				csnext = cs->next;
-				free(cs);
-				continue;	// if its not public, ignore until we implemented kerberos based user management for NFS4.
-			}
 			// we export only to local lan network now for security reasons. so know what you're doing
 			fprintf(fp, "%s/%s\t%s/%d%s\n", cs->mp, cs->sd, nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")),
 				!strcmp(cs->access_perms, "ro") ? "(ro,no_subtree_check,no_root_squash,fsid=0)" : "(rw,no_subtree_check,no_root_squash,fsid=0)");
