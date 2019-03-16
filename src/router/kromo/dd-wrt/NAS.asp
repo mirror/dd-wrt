@@ -79,6 +79,156 @@ function checkDlnaShares() {
 
 
 
+function addnfsShare() {	
+	addTableEntry('nfs_shares');
+}
+
+function removenfsShare( button ) {
+	
+	tableId = 'nfs_shares';
+	
+	// remove the share
+	removeTableEntry( tableId, button );
+}
+
+
+function verifynfsSettings() {
+	
+	var error = false;
+	
+	// get the share entries
+	var table = $('nfs_shares');
+	var section = table.childElements()[0];
+	var rows = section.childElements();
+	
+	// walk through the rows
+	for(i = 0; i < rows.length; i++) {
+		for(j = 0; j < rows[i].childElements().length; j++) {
+			//alert(rows[i].childElements(j));
+		}
+	}
+	return false;
+}
+
+function checknfsShares() {
+	
+	var shares = $('nfs_shares').childElements()[0].childElements();
+	var mp = '';
+	var label = '';
+	var sublabel = 'nfs_shares_row_';
+	var index = 0;
+	var error = false;
+		
+	for( i = 0; i < shares.length; i++ ) {
+		mp = '';
+		
+		if( shares[i].id.substr( 0, sublabel.length ) == sublabel && shares[i].id.substr(shares[i].id.length - 9, 9) != '_template') {
+			index = shares[i].id.substr( sublabel.length, shares[i].id.length - sublabel.length );
+			for(j = 0; j < shares[i].childElements().length; j++) {
+				element = shares[i].childElements()[j].childElements()[0];
+				error = false;
+				if( element.name ) {
+					if( element.name.substr(0, element.name.length - index.length - 1 ) == 'nfsshare_mp' ) {
+						mp = element.value.replace(/^\s+|\s+$/g,"");
+						if(mp.length == 0) error = true;
+					} 
+				}
+				
+				// error handling
+				if(error) {
+					element.className = "value_error";
+				} else if( element.className == 'value_error') {
+					element.className = '';
+				}
+			}
+			
+			// error handling
+			if( mp.length == 0) {
+				alert( 'Please select a mountpoint and enter a share label to proceed.' );
+				return false;
+			}
+		}
+	}
+	
+	return true;
+}
+
+
+function addrsyncShare() {	
+	addTableEntry('rsync_shares');
+}
+
+function removersyncShare( button ) {
+	
+	tableId = 'rsync_shares';
+	
+	// remove the share
+	removeTableEntry( tableId, button );
+}
+
+
+function verifyrsyncSettings() {
+	
+	var error = false;
+	
+	// get the share entries
+	var table = $('rsync_shares');
+	var section = table.childElements()[0];
+	var rows = section.childElements();
+	
+	// walk through the rows
+	for(i = 0; i < rows.length; i++) {
+		for(j = 0; j < rows[i].childElements().length; j++) {
+			//alert(rows[i].childElements(j));
+		}
+	}
+	return false;
+}
+
+function checkrsyncShares() {
+	
+	var shares = $('rsync_shares').childElements()[0].childElements();
+	var mp = '';
+	var label = '';
+	var sublabel = 'rsync_shares_row_';
+	var index = 0;
+	var error = false;
+		
+	for( i = 0; i < shares.length; i++ ) {
+		mp = '';
+		
+		if( shares[i].id.substr( 0, sublabel.length ) == sublabel && shares[i].id.substr(shares[i].id.length - 9, 9) != '_template') {
+			index = shares[i].id.substr( sublabel.length, shares[i].id.length - sublabel.length );
+			for(j = 0; j < shares[i].childElements().length; j++) {
+				element = shares[i].childElements()[j].childElements()[0];
+				error = false;
+				if( element.name ) {
+					if( element.name.substr(0, element.name.length - index.length - 1 ) == 'rsyncshare_mp' ) {
+						mp = element.value.replace(/^\s+|\s+$/g,"");
+						if(mp.length == 0) error = true;
+					} 
+				}
+				
+				// error handling
+				if(error) {
+					element.className = "value_error";
+				} else if( element.className == 'value_error') {
+					element.className = '';
+				}
+			}
+			
+			// error handling
+			if( mp.length == 0) {
+				alert( 'Please select a mountpoint and enter a share label to proceed.' );
+				return false;
+			}
+		}
+	}
+	
+	return true;
+}
+
+
 
 function addSambaShare() {
 	
@@ -556,6 +706,16 @@ function to_submit(F) {
 		if(!checkDlnaShares())
 			return false;
 	}	
+
+	if($('nfs_shares')) {
+		if(!checknfsShares())
+			return false;
+	}	
+
+	if($('rsync_shares')) {
+		if(!checkrsyncShares())
+			return false;
+	}	
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "save";
 	F.save_button.value = sbutton.saving;
@@ -569,6 +729,16 @@ function to_apply(F) {
 	
 	if($('dlna_shares')) {
 		if(!checkDlnaShares())
+			return false;	
+	}
+
+	if($('nfs_shares')) {
+		if(!checknfsShares())
+			return false;	
+	}
+
+	if($('rsync_shares')) {
+		if(!checkrsyncShares())
 			return false;	
 	}
 	F.change_action.value="gozila_cgi";
