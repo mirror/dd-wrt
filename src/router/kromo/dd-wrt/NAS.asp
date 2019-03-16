@@ -91,6 +91,50 @@ function removenfsShare( button ) {
 	removeTableEntry( tableId, button );
 }
 
+function setnfsShareAccessOptions( shareElement ) {
+
+	var position = shareElement.name.lastIndexOf('_') + 1;	
+	
+	// get the select
+	var shareSelect = document.getElementById('nfsshare_mp_' + shareElement.name.substr( position, shareElement.name.length - position ) );
+	if(!shareSelect) return;
+	
+	var label = 'nfsshare_public_perms_' + shareSelect.name.substr(12,shareSelect.name.length - 12);
+	var properties = null;
+	
+	// remove options
+	var len = $(label).options.length;
+	for(i = 0; i < len; i++) {
+		$(label).removeChild($(label).childElements()[0]);
+	}
+	
+	// read properties in case something is selected
+	if( shareSelect.selectedIndex > 0 ) {
+		properties = eval('(' + shareSelect.options[shareSelect.selectedIndex].getAttribute('rel') + ')' );
+	}
+	
+	// add options from default
+	var options = $('nfsshare_public_perms').childElements();
+	for(i = 0; i < options.length; i++) {
+		var option = options[i].cloneNode(true);
+		if(properties) {
+			// check if value exists
+			for(j = 0; j < properties.perms.length; j++) {
+				if( properties.perms[j] == option.value) {
+					$(label).appendChild(option);
+				}
+			}
+		} else {
+			$(label).appendChild(option);	
+		}
+	}
+		
+	if(shareSelect.selectedIndex > 0) {
+		$(label).disabled = false;
+	} else {
+		$(label).disabled = true;
+	}
+}
 
 function verifynfsSettings() {
 	
