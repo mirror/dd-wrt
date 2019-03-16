@@ -9,6 +9,6 @@ struct nfs_share {
 };
 
 struct nfs_share *getnfsshares(void);
-struct nfs_share *getnfsshare(char *mp, char *sd, int types);
+struct nfs_share *getnfsshare(char *mp, char *sd);
 
 #endif
