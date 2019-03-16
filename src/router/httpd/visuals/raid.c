@@ -313,7 +313,14 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 				  "<th><script type=\"text/javascript\">Capture(nas.fs)</script></th>\n" "<th>&nbsp;</th>\n" "</tr>\n");
 		}
 		if (!strcmp(raidtype, "btrfs")) {
-			websWrite(wp, "<tr>\n" "<th>Name</th>\n" "<th><script type=\"text/javascript\">Capture(ddns.typ)</script></th>\n" "<th>Level</th>\n " "<th>&nbsp;</th>\n" "</tr>\n");
+			if (!strcmp(raidlz, "gzip") || !strcmp(raidlz, "zstd"))
+				websWrite(wp,
+					  "<tr>\n" "<th>Name</th>\n" "<th><script type=\"text/javascript\">Capture(ddns.typ)</script></th>\n" "<th>Level</th>\n "
+					  "<th><script type=\"text/javascript\">Capture(nas.compression)</script></th>\n" "<th>Level</th>\n" "<th>&nbsp;</th>\n" "</tr>\n");
+			else
+				websWrite(wp,
+					  "<tr>\n" "<th>Name</th>\n" "<th><script type=\"text/javascript\">Capture(ddns.typ)</script></th>\n" "<th>Level</th>\n "
+					  "<th><script type=\"text/javascript\">Capture(nas.compression)</script></th>\n" "<th>&nbsp;</th>\n" "<th>&nbsp;</th>\n" "</tr>\n");
 		}
 		if (!strcmp(raidtype, "zfs")) {
 			if (!strcmp(raidlz, "gzip") || !strcmp(raidlz, "zstd"))
@@ -387,6 +394,35 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "document.write(\"<option value=\\\"10\\\" %s >Raid10</option>\");\n", !strcmp(raidlevel, "10") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "//]]>\n</script></select>\n");
 			websWrite(wp, "</td>\n");
+			websWrite(wp, "<td>\n");
+			websWrite(wp, "<select name=\"raidlz%d\" onchange=\"raid_save_submit(this.form)\">\n", i);
+			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + service.vpnd_lzooff + \"</option>\");\n", !strcmp(raidlz, "0") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"lzo\\\" %s >lzo</option>\");\n", !strcmp(raidlz, "lzo") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"gzip\\\" %s >gzip</option>\");\n", !strcmp(raidlz, "gzip") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"zstd\\\" %s >zstd</option>\");\n", !strcmp(raidlz, "zstd") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "//]]>\n</script></select>\n");
+			websWrite(wp, "</td>\n");
+			if (!strcmp(raidlz, "gzip") || !strcmp(raidlz, "zstd")) {
+				websWrite(wp, "<td>\n");
+				websWrite(wp, "<select name=\"raidlzlevel%d\">\n", i);
+				websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+				int level;
+				int maxlevel = 19;
+				if (!strcmp(raidlz, "gzip"))
+					maxlevel = 10;
+
+				for (level = 0; level < maxlevel; level++) {
+					char num[16];
+					sprintf(num, "%d", level);
+					if (!level)
+						websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + share.deflt + \"</option>\");\n", !strcmp(raidlzlevel, "0") ? "selected=\\\"selected\\\"" : "");
+					else
+						websWrite(wp, "document.write(\"<option value=\\\"%d\\\" %s >%d</option>\");\n", level, !strcmp(raidlzlevel, num) ? "selected=\\\"selected\\\"" : "", level);
+				}
+				websWrite(wp, "//]]>\n</script></select>\n");
+				websWrite(wp, "</td>\n");
+			}
 		}
 #ifdef HAVE_ZFS
 		if (!strcmp(raidtype, "zfs")) {
@@ -421,7 +457,7 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, "<select name=\"raidlzlevel%d\">\n", i);
 				websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 				int level;
-				int maxlevel = 23;
+				int maxlevel = 19;
 				if (!strcmp(raidlz, "gzip"))
 					maxlevel = 10;
 
