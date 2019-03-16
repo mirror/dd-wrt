@@ -73,9 +73,9 @@ samba3-install:
 	mkdir -p $(INSTALLDIR)/samba3
 	install -D samba36/source3/bin/samba_multicall $(INSTALLDIR)/samba3/usr/sbin/samba_multicall
 	install -D samba36/source3/bin/smbpasswd $(INSTALLDIR)/samba3/usr/sbin/smbpasswd
-	install -D samba36/config/samba3.webnas $(INSTALLDIR)/samba3/etc/config/samba3.webnas
+	install -D samba36/config/samba3.webnas $(INSTALLDIR)/samba3/etc/config/02samba3.webnas
 	install -D samba36/config/samba3.nvramconfig $(INSTALLDIR)/samba3/etc/config/samba3.nvramconfig
-	install -D filesharing/config/zfilesharing.webnas $(INSTALLDIR)/samba3/etc/config/zfilesharing.webnas
+	install -D filesharing/config/zfilesharing.webnas $(INSTALLDIR)/samba3/etc/config/04zfilesharing.webnas
 	cd  $(INSTALLDIR)/samba3/usr/sbin && ln -sf samba_multicall smbd
 	cd  $(INSTALLDIR)/samba3/usr/sbin && ln -sf samba_multicall nmbd
 
