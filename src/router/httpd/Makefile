@@ -885,6 +885,14 @@ ifeq ($(CONFIG_PRIVOXY),y)
 CFLAGS += -DHAVE_PRIVOXY
 endif
 
+ifeq ($(CONFIG_NFS),y)
+CFLAGS += -DHAVE_NFS
+endif
+
+ifeq ($(CONFIG_RSYNC),y)
+CFLAGS += -DHAVE_RSYNC
+endif
+
 ifeq ($(CONFIG_WEBSERVER),y)
 CFLAGS += -DHAVE_WEBSERVER
 endif
@@ -1430,7 +1438,7 @@ validate.so: validators.o webs.o wepkey.o setupassist.o aoss_save.o wps.o $(WEBS
 	@echo "[LD] $@"
 	@$(CC) --shared -o $@ $^ $(CFLAGS) -DVALIDSOURCE -DGETREGCODE $(LDFLAGS) $(WEBSLDFLAGS)
 
-visuals.so: dd-wrt.o lib.o ejs.o wireless.o getservice.o ddns.o index.o status.o filters.o forward.o static_route.o dynamic_route.o log.o dhcp.o diag.o find_pattern.o setupassistant.o gps.o aoss.o ejwps.o fs_common.o minidlna.o samba3.o status_gpio.o eoptunnel.o raid.o $(VISOBJS) $(REGOBJS2)
+visuals.so: dd-wrt.o lib.o ejs.o wireless.o getservice.o ddns.o index.o status.o filters.o forward.o static_route.o dynamic_route.o log.o dhcp.o diag.o find_pattern.o setupassistant.o gps.o aoss.o ejwps.o fs_common.o minidlna.o nfs.o rsync.o samba3.o status_gpio.o eoptunnel.o raid.o $(VISOBJS) $(REGOBJS2)
 	@echo "[LD] $@"
 ifeq ($(CONFIG_ATH9K),y)
 	@$(CC) --shared -c -o $(ATH9KVISOBJS) $(ATH9KVISFILES) $(CFLAGS) -DVISUALSOURCE $(LDFLAGS)
