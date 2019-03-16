@@ -30,13 +30,14 @@ void refjson(void)
 }
 #endif
 
-struct nfs_share *getnfsshare(char *mp, char *sd)
+struct nfs_share *getnfsshare(char *mp, char *sd, char *access_perms)
 {
 
 	struct nfs_share *share = calloc(1, sizeof(struct nfs_share));
 
 	strncpy(share->mp, mp, sizeof(share->mp) - 1);
 	strncpy(share->sd, sd, sizeof(share->sd) - 1);
+	strncpy(share->access_perms, access_perms, sizeof(share->access_perms) - 1);
 	return share;
 }
 
@@ -49,10 +50,10 @@ struct nfs_share *getnfsshares(void)
 	json_error_t error;
 	const char *key;
 	json_t *iterator, *entry, *value;
-	char mp[64], sd[64];
+	char mp[64], sd[64], access_perms[4];
 
 	// first create dummy entry
-	list = getnfsshare("", "");
+	list = getnfsshare("", "", "");
 	current = list;
 
 //      json = json_loads( "[{\"mp\":\"/jffs\",\"label\":\"testshare\",\"perms\":\"rw\",\"public\":0},{\"mp\":\"/mnt\",\"label\":\"othertest\",\"perms\":\"ro\",\"public\":1},{\"label\":\"blah\"}]", &error );
@@ -77,11 +78,13 @@ struct nfs_share *getnfsshares(void)
 					strncpy(mp, json_string_value(value), sizeof(mp) - 1);
 				} else if (!strcmp(key, "sd")) {
 					strncpy(sd, json_string_value(value), sizeof(sd) - 1);
+				} else if (!strcmp(key, "perms")) {
+					strncpy(access_perms, json_string_value(value), sizeof(access_perms) - 1);
 				}
 				iterator = json_object_iter_next(entry, iterator);
 			}
 			if (mp[0] != 0) {
-				current->next = getnfsshare(mp, sd);
+				current->next = getnfsshare(mp, sd, access_perms);
 				current = current->next;
 			}
 		}

@@ -30,13 +30,14 @@ void refjson(void)
 }
 #endif
 
-struct rsync_share *getrsyncshare(char *mp, char *sd)
+struct rsync_share *getrsyncshare(char *mp, char *sd, char *label)
 {
 
 	struct rsync_share *share = calloc(1, sizeof(struct rsync_share));
 
 	strncpy(share->mp, mp, sizeof(share->mp) - 1);
 	strncpy(share->sd, sd, sizeof(share->sd) - 1);
+	strncpy(share->label, label, sizeof(share->label) - 1);
 	return share;
 }
 
@@ -49,10 +50,10 @@ struct rsync_share *getrsyncshares(void)
 	json_error_t error;
 	const char *key;
 	json_t *iterator, *entry, *value;
-	char mp[64], sd[64];
+	char mp[64], sd[64], label[64];
 
 	// first create dummy entry
-	list = getrsyncshare("", "");
+	list = getrsyncshare("", "", "");
 	current = list;
 
 //      json = json_loads( "[{\"mp\":\"/jffs\",\"label\":\"testshare\",\"perms\":\"rw\",\"public\":0},{\"mp\":\"/mnt\",\"label\":\"othertest\",\"perms\":\"ro\",\"public\":1},{\"label\":\"blah\"}]", &error );
@@ -77,11 +78,13 @@ struct rsync_share *getrsyncshares(void)
 					strncpy(mp, json_string_value(value), sizeof(mp) - 1);
 				} else if (!strcmp(key, "sd")) {
 					strncpy(sd, json_string_value(value), sizeof(sd) - 1);
+				} else if (!strcmp(key, "label")) {
+					strncpy(label, json_string_value(value), sizeof(label) - 1);
 				}
 				iterator = json_object_iter_next(entry, iterator);
 			}
 			if (mp[0] != 0) {
-				current->next = getrsyncshare(mp, sd);
+				current->next = getrsyncshare(mp, sd, label);
 				current = current->next;
 			}
 		}
