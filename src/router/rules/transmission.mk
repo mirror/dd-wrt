@@ -16,7 +16,7 @@ transmission-install:
 	rm -f $(INSTALLDIR)/transmission/usr/lib/*.la
 	rm -f $(INSTALLDIR)/transmission/usr/lib/*.a
 	install -D transmission/configs/transmission.nvramconfig $(INSTALLDIR)/transmission/etc/config/transmission.nvramconfig
-	install -D transmission/configs/transmission.webnas $(INSTALLDIR)/transmission/etc/config/transmission.webnas
+	install -D transmission/configs/transmission.webnas $(INSTALLDIR)/transmission/etc/config/05transmission.webnas
 	mv -f $(INSTALLDIR)/transmission/usr/share/transmission/web $(INSTALLDIR)/transmission/usr/share/transmission/default
 	cp -r transmission/combustion/ $(INSTALLDIR)/transmission/usr/share/transmission/combustion
 	cp -r transmission/transmission-web-control/ $(INSTALLDIR)/transmission/usr/share/transmission/transmission-web-control
