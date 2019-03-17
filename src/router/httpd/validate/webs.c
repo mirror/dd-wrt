@@ -5024,6 +5024,8 @@ static void nfs_save(webs_t wp)
 		json_object_set_new(entry, "mp", json_string(websGetVar(wp, var, "")));
 		sprintf(var, "nfsshare_subdir_%d", c);
 		json_object_set_new(entry, "sd", json_string(websGetVar(wp, var, "")));
+		sprintf(var, "nfsshare_allowed_%d", c);
+		json_object_set_new(entry, "allowed", json_string(websGetVar(wp, var, "")));
 		sprintf(var, "nfsshare_access_perms_%d", c);
 		sprintf(val, "%s", websGetVar(wp, var, "-"));
 		if (!strcmp(val, "-")) {

@@ -127,6 +127,10 @@ void ej_nfs_sharepaths(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp,
 			  "				<td style=\"width: 1%%;\"><input type=\"text\" name=\"nfsshare_subdir%s\" id=\"nfsshare_subdir%s\" value=\"%s\" style=\"width: 150px;\"/></td>\n",
 			  number, number, cs->sd);
+
+		websWrite(wp,
+			  "				<td style=\"width: 1%%;\"><input type=\"text\" name=\"nfsshare_allowed%s\" id=\"nfsshare_allowed%s\" value=\"%s\" style=\"width: 150px;\"/></td>\n",
+			  number, number, cs->allowed);
 		websWrite(wp, "				<td>\n");
 		websWrite(wp,
 			  "					<select name=\"nfsshare_access_perms%s\" id=\"nfsshare_access_perms%s\" style=\"width: 100%%;\"%s>\n",
@@ -165,3 +169,4 @@ void ej_nfs_sharepaths(webs_t wp, int argc, char_t ** argv)
 }
 
 #endif
+[5~
