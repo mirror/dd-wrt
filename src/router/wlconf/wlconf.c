@@ -1405,34 +1405,6 @@ cprintf("set reg mode %s\n",name);
 		val = 1;
 		WL_IOCTL(name, WLC_SET_REGULATORY, &val, sizeof(val));
 	}
-cprintf("set maclist %s\n",name);
-
-	/* Set the MAC list */
-	maclist = (struct maclist *) buf;
-	maclist->count = 0;
-	if (!nvram_default_match(strcat_r(prefix, "macmode", tmp), "disabled","disabled")) {
-		ea = maclist->ea;
-		foreach(var, nvram_safe_get(strcat_r(prefix, "maclist", tmp)), next) {
-			if (((char *)((&ea[1])->octet)) > ((char *)(&buf[sizeof(buf)])))
-				break;
-			if (ether_atoe(var, ea->octet)) {
-				maclist->count++;
-				ea++;
-			}
-		}
-	}
-	WL_IOCTL(name, WLC_SET_MACLIST, buf, sizeof(buf));
-
-cprintf("set macmode %s\n",name);
-	/* Set the MAC list mode */
-	(void) strcat_r(prefix, "macmode", tmp);
-	if (nvram_default_match(tmp, "deny","disabled"))
-		val = WLC_MACMODE_DENY;
-	else if (nvram_match(tmp, "allow"))
-		val = WLC_MACMODE_ALLOW;
-	else
-		val = WLC_MACMODE_DISABLED;
-	WL_IOCTL(name, WLC_SET_MACMODE, &val, sizeof(val));
 
 	/* Change LED Duty Cycle */
 	leddc = (uint32)strtoul(nvram_default_get(strcat_r(prefix, "leddc", tmp),"0x640000"), NULL, 16);
@@ -2203,6 +2175,8 @@ cprintf("set antdiv mode %s\n",name);
 	 */
 	for (i = 0; i < bclist->count; i++) {
 		struct {int bsscfg_idx; int enable;} setbuf;
+		char vifname[VIFNAME_LEN];
+		char *name_ptr = name;
 
 		setbuf.bsscfg_idx = bclist->bsscfgs[i].idx;
 		setbuf.enable = 1;
@@ -2211,6 +2185,52 @@ cprintf("set antdiv mode %s\n",name);
 		nas_will_run = wlconf_akm_options(bclist->bsscfgs[i].prefix) ||
 		        nvram_default_match(strcat_r(bclist->bsscfgs[i].prefix, "auth_mode", tmp),
 		                    "radius","disabled");
+
+		/* Set the MAC list */
+		maclist = (struct maclist *)buf;
+		maclist->count = 0;
+		if (!nvram_match(strcat_r(bsscfg->prefix, "macmode", tmp), "disabled")) {
+			ea = maclist->ea;
+			foreach(var, nvram_safe_get(strcat_r(bsscfg->prefix, "maclist", tmp)),
+				next) {
+				if (((char *)((&ea[1])->octet)) > ((char *)(&buf[sizeof(buf)])))
+					break;
+				if (ether_atoe(var, ea->octet)) {
+					maclist->count++;
+					ea++;
+				}
+			}
+		}
+
+		if (setbuf.bsscfg_idx == 0) {
+			name_ptr = name;
+		} else { /* Non-primary BSS; changes name syntax */
+			char tmp[VIFNAME_LEN];
+			int len;
+
+			/* Remove trailing _ if present */
+			memset(tmp, 0, sizeof(tmp));
+			strncpy(tmp, bsscfg->prefix, VIFNAME_LEN - 1);
+			if (((len = strlen(tmp)) > 0) && (tmp[len - 1] == '_')) {
+				tmp[len - 1] = 0;
+			}
+			nvifname_to_osifname(tmp, vifname, VIFNAME_LEN);
+			name_ptr = vifname;
+		}
+
+		WL_IOCTL(name_ptr, WLC_SET_MACLIST, buf, sizeof(buf));
+
+		/* Set macmode for each VIF */
+		(void) strcat_r(bsscfg->prefix, "macmode", tmp);
+
+		if (nvram_match(tmp, "deny"))
+			val = WLC_MACMODE_DENY;
+		else if (nvram_match(tmp, "allow"))
+			val = WLC_MACMODE_ALLOW;
+		else
+			val = WLC_MACMODE_DISABLED;
+
+		WL_IOCTL(name_ptr, WLC_SET_MACMODE, &val, sizeof(val));
 
 		if (((ap || apsta) && !nas_will_run) || sta || (wet && !apsta)) {
 			for (ii = 0; ii < MAX_BSS_UP_RETRIES; ii++) {
