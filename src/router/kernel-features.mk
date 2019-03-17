@@ -79,6 +79,7 @@ define kernelfeatures
 		sed -i 's/\# CONFIG_DEBUG_FS is not set/CONFIG_DEBUG_FS=y/g' $(LINUXDIR)/.config; \
 		echo "# CONFIG_GCOV_KERNEL is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_DYNAMIC_DEBUG is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_IRQ_DOMAIN_DEBUG is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_L2TP_DEBUGFS is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_LKDTM is not set" >> $(LINUXDIR)/.config; \
 	fi
@@ -266,6 +267,7 @@ define kernelfeatures
 		echo "# CONFIG_SUNRPC_DEBUG is not set" >> $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_NFSD is not set/CONFIG_NFSD=m/g' $(LINUXDIR)/.config; \
 		echo "CONFIG_NFSD_V3=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NFSD_PNFS=y" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFSD_V3_ACL is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_NFSD_FAULT_INJECTION is not set" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NFSD_V4=y" >> $(LINUXDIR)/.config; \
