@@ -6,6 +6,7 @@ struct nfs_share {
 	char mp[32];
 	char sd[64];
 	char access_perms[4];
+	char allowed[64];
 	struct nfs_share *next;
 };
 
