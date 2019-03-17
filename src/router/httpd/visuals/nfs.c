@@ -62,6 +62,7 @@ void ej_nfs_sharepaths(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "		<tr>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_path", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_subdir", "<th>", "</th>\n");
+	show_caption_pp(wp, NULL, "service.nfs_allowed", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "service.samba3_share_access", "<th>", "</th>\n");
 	websWrite(wp, "			<th style=\"width: 50px;\">&nbsp;</th>\n");
 	websWrite(wp, "		</tr>\n");
@@ -129,7 +130,7 @@ void ej_nfs_sharepaths(webs_t wp, int argc, char_t ** argv)
 			  number, number, cs->sd);
 
 		websWrite(wp,
-			  "				<td style=\"width: 1%%;\"><input type=\"text\" name=\"nfsshare_allowed%s\" id=\"nfsshare_allowed%s\" value=\"%s\" style=\"width: 150px;\"/></td>\n",
+			  "				<td style=\"width: 1%%;\"><input type=\"text\" name=\"nfsshare_allowed%s\" id=\"nfsshare_allowed%s\" size=\"20\" maxlength=\"18\" value=\"%s\" style=\"width: 150px;\"/></td>\n",
 			  number, number, cs->allowed);
 		websWrite(wp, "				<td>\n");
 		websWrite(wp,
