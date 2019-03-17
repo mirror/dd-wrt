@@ -69,7 +69,7 @@ struct nfs_share *getnfsshares(void)
 			// reset
 			mp[0] = 0;
 			sd[0] = 0;
-
+			access_perms[0] = 0;
 			while (iterator) {
 				key = json_object_iter_key(iterator);
 				value = json_object_iter_value(iterator);
@@ -83,7 +83,7 @@ struct nfs_share *getnfsshares(void)
 				}
 				iterator = json_object_iter_next(entry, iterator);
 			}
-			if (mp[0] != 0) {
+			if (mp[0] && sd[0] && access_perms[0]) {
 				current->next = getnfsshare(mp, sd, access_perms);
 				current = current->next;
 			}
