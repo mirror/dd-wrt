@@ -84,7 +84,7 @@ struct dlna_share *getdlnashares(void)
 				}
 				iterator = json_object_iter_next(entry, iterator);
 			}
-			if (mp[0] != 0) {
+			if (*mp) {
 				current->next = getdlnashare(mp, sd, types);
 				current = current->next;
 			}

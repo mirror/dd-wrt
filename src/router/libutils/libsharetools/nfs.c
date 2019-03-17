@@ -83,7 +83,7 @@ struct nfs_share *getnfsshares(void)
 				}
 				iterator = json_object_iter_next(entry, iterator);
 			}
-			if (mp[0] && sd[0] && access_perms[0]) {
+			if (*mp && *access_perms) {
 				current->next = getnfsshare(mp, sd, access_perms);
 				current = current->next;
 			}

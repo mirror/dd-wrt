@@ -84,7 +84,7 @@ struct rsync_share *getrsyncshares(void)
 				}
 				iterator = json_object_iter_next(entry, iterator);
 			}
-			if (mp[0] && sd[0] && label[0]) {
+			if (*mp && *label) {
 				current->next = getrsyncshare(mp, sd, label);
 				current = current->next;
 			}
