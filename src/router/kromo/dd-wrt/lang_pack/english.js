@@ -1966,6 +1966,7 @@ service.dlna_type_audio="Audio";
 service.dlna_type_video="Video";
 service.dlna_type_images="Images";
 service.nfs="NFS";
+service.nfs_allowed="Allowed Networks";
 service.nfs_srv="NFS Server";
 service.rsync="rsync";
 service.rsync_srv="rsync Daemon";

@@ -1677,6 +1677,7 @@ service.dlna_type_audio="Musik";
 service.dlna_type_images="Bilder";
 service.nfs="NFS";
 service.nfs_srv="NFS Server";
+service.nfs_allowed="Erlaubte Netze";
 service.rsync="rsync";
 service.rsync_srv="rsync Dienst";
 service.rsync_allowed="Erlaubte Rechner";
