@@ -61,8 +61,10 @@ void start_rsync(void)
 	if (fp) {
 		rsyncshares = getrsyncshares();
 		for (cs = rsyncshares; cs; cs = csnext) {
-			fprintf(fp, "[%s]\n", cs->label);
-			fprintf(fp, "\tpath = %s/%s\n", cs->mp, cs->sd);
+			if (*cs->label && *cs->mp) {
+				fprintf(fp, "[%s]\n", cs->label);
+				fprintf(fp, "\tpath = %s/%s\n", cs->mp, cs->sd);
+			}
 			csnext = cs->next;
 			free(cs);
 		}
