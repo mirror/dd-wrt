@@ -11,6 +11,6 @@ struct nfs_share {
 };
 
 struct nfs_share *getnfsshares(void);
-struct nfs_share *getnfsshare(char *mp, char *sd, char *access_perms);
+struct nfs_share *getnfsshare(char *mp, char *sd, char *access_perms, char *allowed);
 
 #endif
