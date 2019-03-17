@@ -392,7 +392,7 @@ output_msg:
 		fflush(f);
 	}
 }
-
+#ifdef NEED_PRINTF
 /* This is the rsync debugging function. Call it with FINFO, FERROR_*,
  * FWARNING, FLOG, or FCLIENT. */
 void rprintf(enum logcode code, const char *format, ...)
@@ -464,6 +464,7 @@ void rsyserr(enum logcode code, int errcode, const char *format, ...)
 
 	rwrite(code, buf, len, 0);
 }
+#endif
 
 void rflush(enum logcode code)
 {
