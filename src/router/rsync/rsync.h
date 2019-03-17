@@ -1190,6 +1190,7 @@ extern int errno;
 #define new_array0(type, num) ((type*)_new_array((num), sizeof (type), 1))
 #define realloc_array(ptr, type, num) ((type*)_realloc_array((ptr), sizeof(type), (num)))
 
+#ifdef NEED_PRINTF
 /* use magic gcc attributes to catch format errors */
  void rprintf(enum logcode , const char *, ...)
      __attribute__((format (printf, 2, 3)))
@@ -1200,7 +1201,12 @@ extern int errno;
 void rsyserr(enum logcode, int, const char *, ...)
      __attribute__((format (printf, 3, 4)))
      ;
+#else
 
+#define rprintf(logcode, fmt, ...) do { } while(0)
+#define rsyserr(logcode, fmt, ...) do { } while(0)
+
+#endif
 /* Make sure that the O_BINARY flag is defined. */
 #ifndef O_BINARY
 #define O_BINARY 0
