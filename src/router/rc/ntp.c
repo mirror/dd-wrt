@@ -96,6 +96,9 @@ static struct syncservice service[] = {
 #ifdef HAVE_DNSCRYPT
 	{"dns_crypt", "dnsmasq"},
 #endif
+#ifdef HAVE_TOR
+	{"tor_enable", "tor"},
+#endif
 };
 
 static void sync_daemons(void)
