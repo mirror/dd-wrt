@@ -71,6 +71,7 @@ struct nfs_share *getnfsshares(void)
 			mp[0] = 0;
 			sd[0] = 0;
 			access_perms[0] = 0;
+			allowed[0] = 0;
 			while (iterator) {
 				key = json_object_iter_key(iterator);
 				value = json_object_iter_value(iterator);
