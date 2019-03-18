@@ -83,7 +83,7 @@ struct nfs_share *getnfsshares(void)
 				} else if (!strcmp(key, "perms")) {
 					strncpy(access_perms, json_string_value(value), sizeof(access_perms) - 1);
 				} else if (!strcmp(key, "allowed")) {
-					strncpy(allowed, json_string_value(value), sizeof(access_perms) - 1);
+					strncpy(allowed, json_string_value(value), sizeof(allowed) - 1);
 				}
 				iterator = json_object_iter_next(entry, iterator);
 			}
