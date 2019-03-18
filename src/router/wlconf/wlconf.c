@@ -2167,6 +2167,8 @@ cprintf("set antdiv mode %s\n",name);
 		wlconf_security_options(name, bsscfg->prefix, bsscfg->idx, wet);
 	}
 
+#define VIFNAME_LEN 16
+
 	/*
 	 * Finally enable BSS Configs or Join BSS
 	 *
