@@ -4,7 +4,7 @@
 	<div class="setting">
 		<div class="label"><% tran("service.rsync_srv"); %></div>
 		<input class="spaceradio" type="radio" name="rsyncd_enable" value="1" <% nvc("rsyncd_enable", "1"); %> onclick="show_layer_ext(this, 'idrsync', true)" /> <% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" name="rsyncd_enable" value="0" <% nvc("rsyncd_enable", "0"); %> onclick="show_layer_ext(this, 'idrsync', false)" /> /> <% tran("share.disable"); %>
+		<input class="spaceradio" type="radio" name="rsyncd_enable" value="0" <% nvc("rsyncd_enable", "0"); %> onclick="show_layer_ext(this, 'idrsync', false)" /> <% tran("share.disable"); %>
 	</div>
 	<div id="idrsync">
 	<div class="setting">
