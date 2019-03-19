@@ -104,7 +104,7 @@ static int vty_close_pager(struct vty *vty)
 	return 0;
 }
 
-static void vtysh_pager_envdef(void)
+static void vtysh_pager_envdef(bool fallback)
 {
 	char *pager_defined;
 
@@ -112,7 +112,7 @@ static void vtysh_pager_envdef(void)
 
 	if (pager_defined)
 		vtysh_pager_name = strdup(pager_defined);
-	else
+	else if (fallback)
 		vtysh_pager_name = strdup(VTYSH_PAGER);
 }
 
@@ -132,6 +132,7 @@ struct vtysh_client vtysh_client[] = {
 	{.fd = -1, .name = "eigrpd", .flag = VTYSH_EIGRPD, .next = NULL},
 	{.fd = -1, .name = "babeld", .flag = VTYSH_BABELD, .next = NULL},
 	{.fd = -1, .name = "sharpd", .flag = VTYSH_SHARPD, .next = NULL},
+	{.fd = -1, .name = "fabricd", .flag = VTYSH_FABRICD, .next = NULL},
 	{.fd = -1, .name = "watchfrr", .flag = VTYSH_WATCHFRR, .next = NULL},
 	{.fd = -1, .name = "pbrd", .flag = VTYSH_PBRD, .next = NULL},
 	{.fd = -1, .name = "staticd", .flag = VTYSH_STATICD, .next = NULL},
@@ -576,7 +577,7 @@ static int vtysh_execute_func(const char *line, int pager)
 				    && (cmd->daemon == vtysh_client[i].flag)) {
 					for (vc = &vtysh_client[i]; vc;
 					     vc = vc->next)
-						if (vc->fd < 0)
+						if (vc->fd == VTYSH_WAS_ACTIVE)
 							vtysh_reconnect(vc);
 				}
 				if (vtysh_client[i].fd < 0
@@ -855,7 +856,7 @@ int vtysh_config_from_file(struct vty *vty, FILE *fp)
 	while (fgets(vty->buf, VTY_BUFSIZ, fp)) {
 		lineno++;
 
-		ret = command_config_read_one_line(vty, &cmd, 1);
+		ret = command_config_read_one_line(vty, &cmd, lineno, 1);
 
 		switch (ret) {
 		case CMD_WARNING:
@@ -1112,7 +1113,7 @@ static char *command_generator(const char *text, int state)
 	return NULL;
 }
 
-static char **new_completion(char *text, int start, int end)
+static char **new_completion(const char *text, int start, int end)
 {
 	char **matches;
 
@@ -1139,6 +1140,10 @@ static struct cmd_node rip_node = {
 
 static struct cmd_node isis_node = {
 	ISIS_NODE, "%s(config-router)# ",
+};
+
+static struct cmd_node openfabric_node = {
+	OPENFABRIC_NODE, "%s(config-router)# ",
 };
 
 static struct cmd_node interface_node = {
@@ -1453,7 +1458,7 @@ DEFUNSH_HIDDEN(VTYSH_BGPD, address_family_evpn2, address_family_evpn2_cmd,
 }
 #endif
 
-DEFUNSH(VTYSH_BGPD, bgp_evpn_vni, bgp_evpn_vni_cmd, "vni (1-16777215)",
+DEFUNSH(VTYSH_BGPD, bgp_evpn_vni, bgp_evpn_vni_cmd, "vni " CMD_VNI_RANGE,
 	"VXLAN Network Identifier\n"
 	"VNI number\n")
 {
@@ -1497,7 +1502,7 @@ DEFUNSH(VTYSH_BGPD, vnc_l2_group, vnc_l2_group_cmd, "vnc l2-group NAME",
 }
 #endif
 
-DEFUNSH(VTYSH_RIPD, key_chain, key_chain_cmd, "key chain WORD",
+DEFUNSH(VTYSH_KEYS, key_chain, key_chain_cmd, "key chain WORD",
 	"Authentication key management\n"
 	"Key-chain management\n"
 	"Key-chain name\n")
@@ -1506,7 +1511,7 @@ DEFUNSH(VTYSH_RIPD, key_chain, key_chain_cmd, "key chain WORD",
 	return CMD_SUCCESS;
 }
 
-DEFUNSH(VTYSH_RIPD, key, key_cmd, "key (0-2147483647)",
+DEFUNSH(VTYSH_KEYS, key, key_cmd, "key (0-2147483647)",
 	"Configure a key\n"
 	"Key identifier number\n")
 {
@@ -1648,6 +1653,15 @@ DEFUNSH(VTYSH_ISISD, router_isis, router_isis_cmd, "router isis WORD",
 	return CMD_SUCCESS;
 }
 
+DEFUNSH(VTYSH_FABRICD, router_openfabric, router_openfabric_cmd, "router openfabric WORD",
+	ROUTER_STR
+	"OpenFabric routing protocol\n"
+	"ISO Routing area tag\n")
+{
+	vty->node = OPENFABRIC_NODE;
+	return CMD_SUCCESS;
+}
+
 DEFUNSH(VTYSH_RMAP, vtysh_route_map, vtysh_route_map_cmd,
 	"route-map WORD <deny|permit> (1-65535)",
 	"Create route-map or enter route-map command mode\n"
@@ -1762,6 +1776,7 @@ static int vtysh_exit(struct vty *vty)
 	case LDP_NODE:
 	case LDP_L2VPN_NODE:
 	case ISIS_NODE:
+	case OPENFABRIC_NODE:
 	case RMAP_NODE:
 	case PBRMAP_NODE:
 	case VTY_NODE:
@@ -2035,6 +2050,18 @@ ALIAS(vtysh_exit_bfdd, vtysh_quit_bfdd_cmd, "quit",
       "Exit current mode and down to previous mode\n")
 #endif
 
+DEFUNSH(VTYSH_FABRICD, vtysh_exit_fabricd, vtysh_exit_fabricd_cmd, "exit",
+	"Exit current mode and down to previous mode\n")
+{
+	return vtysh_exit(vty);
+}
+
+DEFUNSH(VTYSH_FABRICD, vtysh_quit_fabricd, vtysh_quit_fabricd_cmd, "quit",
+	"Exit current mode and down to previous mode\n")
+{
+	return vtysh_exit_fabricd(self, vty, argc, argv);
+}
+
 DEFUNSH(VTYSH_ALL, vtysh_exit_line_vty, vtysh_exit_line_vty_cmd, "exit",
 	"Exit current mode and down to previous mode\n")
 {
@@ -2083,7 +2110,7 @@ DEFSH(VTYSH_ZEBRA, vtysh_no_logicalrouter_cmd,
       "The Name Space\n"
       "The file name in " NS_RUN_DIR ", or a full pathname\n")
 
-DEFUNSH(VTYSH_PBRD, vtysh_nexthop_group, vtysh_nexthop_group_cmd,
+DEFUNSH(VTYSH_PBRD | VTYSH_SHARPD, vtysh_nexthop_group, vtysh_nexthop_group_cmd,
 	"nexthop-group NAME",
 	"Nexthop Group configuration\n"
 	"Name of the Nexthop Group\n")
@@ -2092,7 +2119,8 @@ DEFUNSH(VTYSH_PBRD, vtysh_nexthop_group, vtysh_nexthop_group_cmd,
 	return CMD_SUCCESS;
 }
 
-DEFSH(VTYSH_PBRD, vtysh_no_nexthop_group_cmd, "no nexthop-group NAME",
+DEFSH(VTYSH_PBRD | VTYSH_SHARPD, vtysh_no_nexthop_group_cmd,
+      "no nexthop-group NAME",
       NO_STR
       "Nexthop Group Configuration\n"
       "Name of the Nexthop Group\n")
@@ -2238,7 +2266,7 @@ DEFUN (vtysh_show_work_queues,
 
 DEFUN (vtysh_show_work_queues_daemon,
        vtysh_show_work_queues_daemon_cmd,
-       "show work-queues <zebra|ripd|ripngd|ospfd|ospf6d|bgpd|isisd|pbrd>",
+       "show work-queues <zebra|ripd|ripngd|ospfd|ospf6d|bgpd|isisd|pbrd|fabricd|pimd|staticd>",
        SHOW_STR
        "Work Queue information\n"
        "For the zebra daemon\n"
@@ -2248,7 +2276,10 @@ DEFUN (vtysh_show_work_queues_daemon,
        "For the ospfv6 daemon\n"
        "For the bgp daemon\n"
        "For the isis daemon\n"
-       "For the pbr daemon\n")
+       "For the pbr daemon\n"
+       "For the fabricd daemon\n"
+       "For the pim daemon\n"
+       "For the static daemon\n")
 {
 	int idx_protocol = 2;
 	unsigned int i;
@@ -2586,7 +2617,7 @@ DEFUNSH(VTYSH_ALL, no_vtysh_config_enable_password,
 
 DEFUN (vtysh_write_terminal,
        vtysh_write_terminal_cmd,
-       "write terminal [<zebra|ripd|ripngd|ospfd|ospf6d|ldpd|bgpd|isisd|pimd>]",
+       "write terminal [<zebra|ripd|ripngd|ospfd|ospf6d|ldpd|bgpd|isisd|fabricd|pimd|staticd>]",
        "Write running configuration to memory, network, or terminal\n"
        "Write to terminal\n"
        "For the zebra daemon\n"
@@ -2597,7 +2628,9 @@ DEFUN (vtysh_write_terminal,
        "For the ldpd daemon\n"
        "For the bgp daemon\n"
        "For the isis daemon\n"
-       "For the pim daemon\n")
+       "For the fabricd daemon\n"
+       "For the pim daemon\n"
+       "For the static daemon\n")
 {
 	unsigned int i;
 	char line[] = "do write terminal\n";
@@ -2623,7 +2656,7 @@ DEFUN (vtysh_write_terminal,
 
 DEFUN (vtysh_show_running_config,
        vtysh_show_running_config_cmd,
-       "show running-config [<zebra|ripd|ripngd|ospfd|ospf6d|ldpd|bgpd|isisd|pimd>]",
+       "show running-config [<zebra|ripd|ripngd|ospfd|ospf6d|ldpd|bgpd|isisd|fabricd|pimd|staticd>]",
        SHOW_STR
        "Current operating configuration\n"
        "For the zebra daemon\n"
@@ -2634,7 +2667,9 @@ DEFUN (vtysh_show_running_config,
        "For the ldp daemon\n"
        "For the bgp daemon\n"
        "For the isis daemon\n"
-       "For the pim daemon\n")
+       "For the fabricd daemon\n"
+       "For the pim daemon\n"
+       "For the static daemon\n")
 {
 	return vtysh_write_terminal(self, vty, argc, argv);
 }
@@ -2859,7 +2894,7 @@ DEFUN (vtysh_terminal_paginate,
 	vtysh_pager_name = NULL;
 
 	if (strcmp(argv[0]->text, "no"))
-		vtysh_pager_envdef();
+		vtysh_pager_envdef(true);
 	return CMD_SUCCESS;
 }
 
@@ -2879,7 +2914,7 @@ DEFUN (vtysh_terminal_length,
 
 	if (!strcmp(argv[0]->text, "no") || !strcmp(argv[1]->text, "no")) {
 		/* "terminal no length" = use VTYSH_PAGER */
-		vtysh_pager_envdef();
+		vtysh_pager_envdef(true);
 		return CMD_SUCCESS;
 	}
 
@@ -2888,7 +2923,7 @@ DEFUN (vtysh_terminal_length,
 		vty_out(vty,
 			"%% The \"terminal length\" command is deprecated and its value is ignored.\n"
 			"%% Please use \"terminal paginate\" instead with OS TTY length handling.\n");
-		vtysh_pager_envdef();
+		vtysh_pager_envdef(true);
 	}
 
 	return CMD_SUCCESS;
@@ -3386,8 +3421,7 @@ void vtysh_readline_init(void)
 	rl_initialize();
 	rl_bind_key('?', (rl_command_func_t *)vtysh_rl_describe);
 	rl_completion_entry_function = vtysh_completion_entry_function;
-	rl_attempted_completion_function =
-		(rl_completion_func_t *)new_completion;
+	rl_attempted_completion_function = new_completion;
 }
 
 char *vtysh_prompt(void)
@@ -3446,6 +3480,7 @@ void vtysh_init_vty(void)
 
 	/* set default output */
 	vty->of = stdout;
+	vtysh_pager_envdef(false);
 
 	/* Initialize commands. */
 	cmd_init(0);
@@ -3494,6 +3529,7 @@ void vtysh_init_vty(void)
 	install_node(&keychain_node, NULL);
 	install_node(&keychain_key_node, NULL);
 	install_node(&isis_node, NULL);
+	install_node(&openfabric_node, NULL);
 	install_node(&vty_node, NULL);
 	install_node(&rpki_node, NULL);
 #if HAVE_BFDD > 0
@@ -3586,6 +3622,8 @@ void vtysh_init_vty(void)
 #endif
 	install_element(ISIS_NODE, &vtysh_exit_isisd_cmd);
 	install_element(ISIS_NODE, &vtysh_quit_isisd_cmd);
+	install_element(OPENFABRIC_NODE, &vtysh_exit_fabricd_cmd);
+	install_element(OPENFABRIC_NODE, &vtysh_quit_fabricd_cmd);
 	install_element(KEYCHAIN_NODE, &vtysh_exit_ripd_cmd);
 	install_element(KEYCHAIN_NODE, &vtysh_quit_ripd_cmd);
 	install_element(KEYCHAIN_KEY_NODE, &vtysh_exit_ripd_cmd);
@@ -3646,6 +3684,7 @@ void vtysh_init_vty(void)
 	install_element(BGP_VNC_NVE_GROUP_NODE, &vtysh_end_all_cmd);
 	install_element(BGP_VNC_L2_GROUP_NODE, &vtysh_end_all_cmd);
 	install_element(ISIS_NODE, &vtysh_end_all_cmd);
+	install_element(OPENFABRIC_NODE, &vtysh_end_all_cmd);
 	install_element(KEYCHAIN_NODE, &vtysh_end_all_cmd);
 	install_element(KEYCHAIN_KEY_NODE, &vtysh_end_all_cmd);
 	install_element(RMAP_NODE, &vtysh_end_all_cmd);
@@ -3695,6 +3734,7 @@ void vtysh_init_vty(void)
 	install_element(LDP_L2VPN_NODE, &ldp_member_pseudowire_ifname_cmd);
 #endif
 	install_element(CONFIG_NODE, &router_isis_cmd);
+	install_element(CONFIG_NODE, &router_openfabric_cmd);
 	install_element(CONFIG_NODE, &router_bgp_cmd);
 	install_element(BGP_NODE, &address_family_vpnv4_cmd);
 	install_element(BGP_NODE, &address_family_vpnv6_cmd);
@@ -3774,6 +3814,7 @@ void vtysh_init_vty(void)
 	/* "write memory" command. */
 	install_element(ENABLE_NODE, &vtysh_write_memory_cmd);
 
+	install_element(CONFIG_NODE, &vtysh_terminal_paginate_cmd);
 	install_element(VIEW_NODE, &vtysh_terminal_paginate_cmd);
 	install_element(VIEW_NODE, &vtysh_terminal_length_cmd);
 	install_element(VIEW_NODE, &vtysh_terminal_no_length_cmd);

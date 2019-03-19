@@ -365,7 +365,7 @@ static int ospf6_path_cmp(struct ospf6_path *a, struct ospf6_path *b)
 void ospf6_path_free(struct ospf6_path *op)
 {
 	if (op->nh_list)
-		list_delete_and_null(&op->nh_list);
+		list_delete(&op->nh_list);
 	XFREE(MTYPE_OSPF6_PATH, op);
 }
 
@@ -413,9 +413,9 @@ void ospf6_route_delete(struct ospf6_route *route)
 {
 	if (route) {
 		if (route->nh_list)
-			list_delete_and_null(&route->nh_list);
+			list_delete(&route->nh_list);
 		if (route->paths)
-			list_delete_and_null(&route->paths);
+			list_delete(&route->paths);
 		XFREE(MTYPE_OSPF6_ROUTE, route);
 	}
 }
@@ -574,8 +574,9 @@ static void route_table_assert(struct ospf6_route_table *table)
 	if (link_error == 0 && num == table->count)
 		return;
 
-	flog_err(LIB_ERR_DEVELOPMENT, "PANIC !!");
-	flog_err(LIB_ERR_DEVELOPMENT, "Something has gone wrong with ospf6_route_table[%p]", table);
+	flog_err(EC_LIB_DEVELOPMENT, "PANIC !!");
+	flog_err(EC_LIB_DEVELOPMENT,
+		 "Something has gone wrong with ospf6_route_table[%p]", table);
 	zlog_debug("table count = %d, real number = %d", table->count, num);
 	zlog_debug("DUMP START");
 	for (r = ospf6_route_head(table); r; r = ospf6_route_next(r)) {
@@ -732,7 +733,7 @@ struct ospf6_route *ospf6_route_add(struct ospf6_route *route,
 		route->next = next;
 
 		if (node->info == next) {
-			assert(next->rnode == node);
+			assert(next && next->rnode == node);
 			node->info = route;
 			UNSET_FLAG(next->flag, OSPF6_ROUTE_BEST);
 			SET_FLAG(route->flag, OSPF6_ROUTE_BEST);

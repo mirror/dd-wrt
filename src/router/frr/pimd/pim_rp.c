@@ -52,7 +52,7 @@ void pim_rp_list_hash_clean(void *data)
 {
 	struct pim_nexthop_cache *pnc = (struct pim_nexthop_cache *)data;
 
-	list_delete_and_null(&pnc->rp_list);
+	list_delete(&pnc->rp_list);
 
 	hash_clean(pnc->upstream_hash, NULL);
 	hash_free(pnc->upstream_hash);
@@ -113,9 +113,9 @@ void pim_rp_init(struct pim_instance *pim)
 	rp_info = XCALLOC(MTYPE_PIM_RP, sizeof(*rp_info));
 
 	if (!str2prefix("224.0.0.0/4", &rp_info->group)) {
-		flog_err(LIB_ERR_DEVELOPMENT,
-			  "Unable to convert 224.0.0.0/4 to prefix");
-		list_delete_and_null(&pim->rp_list);
+		flog_err(EC_LIB_DEVELOPMENT,
+			 "Unable to convert 224.0.0.0/4 to prefix");
+		list_delete(&pim->rp_list);
 		route_table_finish(pim->rp_table);
 		XFREE(MTYPE_PIM_RP, rp_info);
 		return;
@@ -138,7 +138,7 @@ void pim_rp_init(struct pim_instance *pim)
 void pim_rp_free(struct pim_instance *pim)
 {
 	if (pim->rp_list)
-		list_delete_and_null(&pim->rp_list);
+		list_delete(&pim->rp_list);
 }
 
 /*
@@ -236,7 +236,7 @@ static struct rp_info *pim_rp_find_match_group(struct pim_instance *pim,
 	rn = route_node_match(pim->rp_table, group);
 	if (!rn) {
 		flog_err(
-			LIB_ERR_DEVELOPMENT,
+			EC_LIB_DEVELOPMENT,
 			"%s: BUG We should have found default group information\n",
 			__PRETTY_FUNCTION__);
 		return best;
@@ -625,7 +625,7 @@ int pim_rp_del(struct pim_instance *pim, const char *rp,
 		if (rn) {
 			if (rn->info != rp_info)
 				flog_err(
-					LIB_ERR_DEVELOPMENT,
+					EC_LIB_DEVELOPMENT,
 					"Expected rn->info to be equal to rp_info");
 
 			if (PIM_DEBUG_TRACE) {
@@ -951,8 +951,7 @@ int pim_rp_check_is_my_ip_address(struct pim_instance *pim,
 	return 0;
 }
 
-void pim_rp_show_information(struct pim_instance *pim, struct vty *vty,
-			     uint8_t uj)
+void pim_rp_show_information(struct pim_instance *pim, struct vty *vty, bool uj)
 {
 	struct rp_info *rp_info;
 	struct rp_info *prev_rp_info = NULL;

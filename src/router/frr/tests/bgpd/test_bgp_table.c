@@ -28,6 +28,8 @@
 #include "bgpd/bgp_table.h"
 #include "linklist.h"
 
+/* Satisfy link requirements from including bgpd.h */
+struct zebra_privs_t bgpd_privs = {0};
 /*
  * test_node_t
  *
@@ -134,7 +136,7 @@ static void do_test(struct bgp_table *table, const char *prefix,
 
 	check_lookup_result(list, arglist);
 
-	list_delete_and_null(&list);
+	list_delete(&list);
 
 	va_end(arglist);
 

@@ -52,7 +52,7 @@ void pim_ssmpingd_init(struct pim_instance *pim)
 void pim_ssmpingd_destroy(struct pim_instance *pim)
 {
 	if (pim->ssmpingd_list)
-		list_delete_and_null(&pim->ssmpingd_list);
+		list_delete(&pim->ssmpingd_list);
 }
 
 static struct ssmpingd_sock *ssmpingd_find(struct pim_instance *pim,
@@ -83,7 +83,7 @@ static int ssmpingd_socket(struct in_addr addr, int port, int mttl)
 
 	fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	if (fd < 0) {
-		flog_err_sys(LIB_ERR_SOCKET,
+		flog_err_sys(EC_LIB_SOCKET,
 			     "%s: could not create socket: errno=%d: %s",
 			     __PRETTY_FUNCTION__, errno, safe_strerror(errno));
 		return -1;
@@ -127,7 +127,7 @@ static int ssmpingd_socket(struct in_addr addr, int port, int mttl)
 		}
 #else
 		flog_err(
-			LIB_ERR_DEVELOPMENT,
+			EC_LIB_DEVELOPMENT,
 			"%s %s: missing IP_PKTINFO and IP_RECVDSTADDR: unable to get dst addr from recvmsg()",
 			__FILE__, __PRETTY_FUNCTION__);
 		close(fd);

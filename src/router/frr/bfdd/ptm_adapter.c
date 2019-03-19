@@ -289,7 +289,7 @@ static int _ptm_msg_read(struct stream *msg, int command,
 {
 	uint32_t pid;
 	uint8_t ttl __attribute__((unused));
-	uint8_t ifnamelen;
+	size_t ifnamelen;
 
 	/*
 	 * Register/Deregister/Update Message format:
@@ -581,7 +581,7 @@ static void bfdd_zebra_connected(struct zclient *zc)
 
 void bfdd_zclient_init(struct zebra_privs_t *bfdd_priv)
 {
-	zclient = zclient_new_notify(master, &zclient_options_default);
+	zclient = zclient_new(master, &zclient_options_default);
 	assert(zclient != NULL);
 	zclient_init(zclient, ZEBRA_ROUTE_BFD, 0, bfdd_priv);
 

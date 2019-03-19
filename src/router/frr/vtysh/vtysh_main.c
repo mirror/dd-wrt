@@ -30,6 +30,16 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
+/*
+ * The append_history function only appears in newer versions
+ * of the readline library it appears like.  Since we don't
+ * need this just silently ignore the code on these
+ * ancient platforms.
+ */
+#if !defined HAVE_APPEND_HISTORY
+#define append_history(A, B)
+#endif
+
 #include <lib/version.h>
 #include "getopt.h"
 #include "command.h"
@@ -586,7 +596,6 @@ int main(int argc, char **argv, char **env)
 			vtysh_execute("enable");
 
 		while (cmd != NULL) {
-			int ret;
 			char *eol;
 
 			while ((eol = strchr(cmd->line, '\n')) != NULL) {
@@ -652,7 +661,7 @@ int main(int argc, char **argv, char **env)
 	/* Boot startup configuration file. */
 	if (boot_flag) {
 		vtysh_flock_config(frr_config);
-		int ret = vtysh_read_config(frr_config);
+		ret = vtysh_read_config(frr_config);
 		vtysh_unflock_config();
 		if (ret) {
 			fprintf(stderr,

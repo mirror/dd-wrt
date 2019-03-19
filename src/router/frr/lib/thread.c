@@ -33,6 +33,7 @@
 #include "network.h"
 #include "jhash.h"
 #include "frratomic.h"
+#include "lib_errors.h"
 
 DEFINE_MTYPE_STATIC(LIB, THREAD, "Thread")
 DEFINE_MTYPE_STATIC(LIB, THREAD_MASTER, "Thread master")
@@ -67,7 +68,7 @@ static unsigned int cpu_record_hash_key(struct cpu_thread_history *a)
 	return jhash(&a->func, size, 0);
 }
 
-static int cpu_record_hash_cmp(const struct cpu_thread_history *a,
+static bool cpu_record_hash_cmp(const struct cpu_thread_history *a,
 			       const struct cpu_thread_history *b)
 {
 	return a->func == b->func;
@@ -433,7 +434,7 @@ struct thread_master *thread_master_create(const char *name)
 
 	rv->cpu_record = hash_create_size(
 		8, (unsigned int (*)(void *))cpu_record_hash_key,
-		(int (*)(const void *, const void *))cpu_record_hash_cmp,
+		(bool (*)(const void *, const void *))cpu_record_hash_cmp,
 		"Thread Hash");
 
 
@@ -625,7 +626,7 @@ void thread_master_free(struct thread_master *m)
 	{
 		listnode_delete(masters, m);
 		if (masters->count == 0) {
-			list_delete_and_null(&masters);
+			list_delete(&masters);
 		}
 	}
 	pthread_mutex_unlock(&masters_mtx);
@@ -640,7 +641,7 @@ void thread_master_free(struct thread_master *m)
 	pthread_cond_destroy(&m->cancel_cond);
 	close(m->io_pipe[0]);
 	close(m->io_pipe[1]);
-	list_delete_and_null(&m->cancel_req);
+	list_delete(&m->cancel_req);
 	m->cancel_req = NULL;
 
 	hash_clean(m->cpu_record, cpu_record_hash_free);
@@ -654,18 +655,24 @@ void thread_master_free(struct thread_master *m)
 	XFREE(MTYPE_THREAD_MASTER, m);
 }
 
-/* Return remain time in second. */
-unsigned long thread_timer_remain_second(struct thread *thread)
+/* Return remain time in miliseconds. */
+unsigned long thread_timer_remain_msec(struct thread *thread)
 {
 	int64_t remain;
 
 	pthread_mutex_lock(&thread->mtx);
 	{
-		remain = monotime_until(&thread->u.sands, NULL) / 1000000LL;
+		remain = monotime_until(&thread->u.sands, NULL) / 1000LL;
 	}
 	pthread_mutex_unlock(&thread->mtx);
 
 	return remain < 0 ? 0 : remain;
+}
+
+/* Return remain time in seconds. */
+unsigned long thread_timer_remain_second(struct thread *thread)
+{
+	return thread_timer_remain_msec(thread) / 1000LL;
 }
 
 #define debugargdef  const char *funcname, const char *schedfrom, int fromln
@@ -1495,7 +1502,8 @@ struct thread *thread_fetch(struct thread_master *m, struct thread *fetch)
 			}
 
 			/* else die */
-			zlog_warn("poll() error: %s", safe_strerror(errno));
+			flog_err(EC_LIB_SYSTEM_CALL, "poll() error: %s",
+				 safe_strerror(errno));
 			pthread_mutex_unlock(&m->mtx);
 			fetch = NULL;
 			break;
@@ -1564,8 +1572,13 @@ void thread_set_yield_time(struct thread *thread, unsigned long yield_time)
 
 void thread_getrusage(RUSAGE_T *r)
 {
+#if defined RUSAGE_THREAD
+#define FRR_RUSAGE RUSAGE_THREAD
+#else
+#define FRR_RUSAGE RUSAGE_SELF
+#endif
 	monotime(&r->real);
-	getrusage(RUSAGE_SELF, &(r->cpu));
+	getrusage(FRR_RUSAGE, &(r->cpu));
 }
 
 /*
@@ -1632,7 +1645,8 @@ void thread_call(struct thread *thread)
 		 * Whinge about it now, so we're aware this is yet another task
 		 * to fix.
 		 */
-		zlog_warn(
+		flog_warn(
+			EC_LIB_SLOW_THREAD,
 			"SLOW THREAD: task %s (%lx) ran for %lums (cpu time %lums)",
 			thread->funcname, (unsigned long)thread->func,
 			realtime / 1000, cputime / 1000);

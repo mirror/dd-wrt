@@ -58,8 +58,8 @@ int zclient_debug = 0;
 struct zclient_options zclient_options_default = {.receive_notify = false};
 
 /* Allocate zclient structure. */
-struct zclient *zclient_new_notify(struct thread_master *master,
-				   struct zclient_options *opt)
+struct zclient *zclient_new(struct thread_master *master,
+			    struct zclient_options *opt)
 {
 	struct zclient *zclient;
 	zclient = XCALLOC(MTYPE_ZCLIENT, sizeof(struct zclient));
@@ -133,7 +133,7 @@ void redist_del_instance(struct redist_proto *red, unsigned short instance)
 	XFREE(MTYPE_REDIST_INST, id);
 	if (!red->instances->count) {
 		red->enabled = 0;
-		list_delete_and_null(&red->instances);
+		list_delete(&red->instances);
 	}
 }
 
@@ -173,10 +173,10 @@ void zclient_stop(struct zclient *zclient)
 		redist_del_instance(
 			&zclient->mi_redist[afi][zclient->redist_default],
 			zclient->instance);
-	}
 
-	vrf_bitmap_free(zclient->default_information);
-	zclient->default_information = VRF_BITMAP_NULL;
+		vrf_bitmap_free(zclient->default_information[afi]);
+		zclient->default_information[afi] = VRF_BITMAP_NULL;
+	}
 }
 
 void zclient_reset(struct zclient *zclient)
@@ -199,7 +199,7 @@ void zclient_reset(struct zclient *zclient)
  * @param zclient a pointer to zclient structure
  * @return socket fd just to make sure that connection established
  * @see zclient_init
- * @see zclient_new_notify
+ * @see zclient_new
  */
 int zclient_socket_connect(struct zclient *zclient)
 {
@@ -221,9 +221,9 @@ int zclient_socket_connect(struct zclient *zclient)
 	ret = connect(sock, (struct sockaddr *)&zclient_addr, zclient_addr_len);
 	if (ret < 0) {
 		if (zclient_debug)
-			zlog_warn("%s connect failure: %d(%s)",
-				  __PRETTY_FUNCTION__, errno,
-				  safe_strerror(errno));
+			zlog_debug("%s connect failure: %d(%s)",
+				   __PRETTY_FUNCTION__, errno,
+				   safe_strerror(errno));
 		close(sock);
 		return -1;
 	}
@@ -249,7 +249,8 @@ static int zclient_flush_data(struct thread *thread)
 		return -1;
 	switch (buffer_flush_available(zclient->wb, zclient->sock)) {
 	case BUFFER_ERROR:
-		zlog_warn(
+		flog_err(
+			EC_LIB_ZAPI_SOCKET,
 			"%s: buffer_flush_available failed on zclient fd %d, closing",
 			__func__, zclient->sock);
 		return zclient_failed(zclient);
@@ -273,8 +274,9 @@ int zclient_send_message(struct zclient *zclient)
 			     STREAM_DATA(zclient->obuf),
 			     stream_get_endp(zclient->obuf))) {
 	case BUFFER_ERROR:
-		zlog_warn("%s: buffer_write failed to zclient fd %d, closing",
-			  __func__, zclient->sock);
+		flog_err(EC_LIB_ZAPI_SOCKET,
+			 "%s: buffer_write failed to zclient fd %d, closing",
+			 __func__, zclient->sock);
 		return zclient_failed(zclient);
 		break;
 	case BUFFER_EMPTY:
@@ -313,9 +315,10 @@ int zclient_read_header(struct stream *s, int sock, uint16_t *size,
 	STREAM_GETW(s, *cmd);
 
 	if (*version != ZSERV_VERSION || *marker != ZEBRA_HEADER_MARKER) {
-		flog_err(LIB_ERR_ZAPI_MISSMATCH,
-			  "%s: socket %d version mismatch, marker %d, version %d",
-			  __func__, sock, *marker, *version);
+		flog_err(
+			EC_LIB_ZAPI_MISSMATCH,
+			"%s: socket %d version mismatch, marker %d, version %d",
+			__func__, sock, *marker, *version);
 		return -1;
 	}
 
@@ -444,7 +447,7 @@ void zclient_send_reg_requests(struct zclient *zclient, vrf_id_t vrf_id)
 	}
 
 	/* Resend all redistribute request. */
-	for (afi = AFI_IP; afi < AFI_MAX; afi++)
+	for (afi = AFI_IP; afi < AFI_MAX; afi++) {
 		for (i = 0; i < ZEBRA_ROUTE_MAX; i++)
 			if (i != zclient->redist_default
 			    && vrf_bitmap_check(zclient->redist[afi][i],
@@ -453,10 +456,12 @@ void zclient_send_reg_requests(struct zclient *zclient, vrf_id_t vrf_id)
 							zclient, afi, i, 0,
 							vrf_id);
 
-	/* If default information is needed. */
-	if (vrf_bitmap_check(zclient->default_information, VRF_DEFAULT))
-		zebra_message_send(zclient, ZEBRA_REDISTRIBUTE_DEFAULT_ADD,
-				   vrf_id);
+		/* If default information is needed. */
+		if (vrf_bitmap_check(zclient->default_information[afi], vrf_id))
+			zebra_redistribute_default_send(
+				ZEBRA_REDISTRIBUTE_DEFAULT_ADD, zclient, afi,
+				vrf_id);
+	}
 }
 
 /* Send unregister requests to zebra daemon for the information in a VRF. */
@@ -509,7 +514,7 @@ void zclient_send_dereg_requests(struct zclient *zclient, vrf_id_t vrf_id)
 	}
 
 	/* Flush all redistribute request. */
-	for (afi = AFI_IP; afi < AFI_MAX; afi++)
+	for (afi = AFI_IP; afi < AFI_MAX; afi++) {
 		for (i = 0; i < ZEBRA_ROUTE_MAX; i++)
 			if (i != zclient->redist_default
 			    && vrf_bitmap_check(zclient->redist[afi][i],
@@ -518,10 +523,12 @@ void zclient_send_dereg_requests(struct zclient *zclient, vrf_id_t vrf_id)
 					ZEBRA_REDISTRIBUTE_DELETE, zclient, afi,
 					i, 0, vrf_id);
 
-	/* If default information is needed. */
-	if (vrf_bitmap_check(zclient->default_information, VRF_DEFAULT))
-		zebra_message_send(zclient, ZEBRA_REDISTRIBUTE_DEFAULT_DELETE,
-				   vrf_id);
+		/* If default information is needed. */
+		if (vrf_bitmap_check(zclient->default_information[afi], vrf_id))
+			zebra_redistribute_default_send(
+				ZEBRA_REDISTRIBUTE_DEFAULT_DELETE, zclient, afi,
+				vrf_id);
+	}
 }
 
 /* Send request to zebra daemon to start or stop RA. */
@@ -575,8 +582,8 @@ int zclient_start(struct zclient *zclient)
 	}
 
 	if (set_nonblocking(zclient->sock) < 0)
-		zlog_warn("%s: set_nonblocking(%d) failed", __func__,
-			  zclient->sock);
+		flog_err(EC_LIB_ZAPI_SOCKET, "%s: set_nonblocking(%d) failed",
+			 __func__, zclient->sock);
 
 	/* Clear fail count. */
 	zclient->fail = 0;
@@ -617,12 +624,13 @@ void zclient_init(struct zclient *zclient, int redist_default,
 	zclient->redist_default = redist_default;
 	zclient->instance = instance;
 	/* Pending: make afi(s) an arg. */
-	for (afi = AFI_IP; afi < AFI_MAX; afi++)
+	for (afi = AFI_IP; afi < AFI_MAX; afi++) {
 		redist_add_instance(&zclient->mi_redist[afi][redist_default],
 				    instance);
 
-	/* Set default-information redistribute to zero. */
-	zclient->default_information = vrf_bitmap_init();
+		/* Set default-information redistribute to zero. */
+		zclient->default_information[afi] = vrf_bitmap_init();
+	}
 
 	if (zclient_debug)
 		zlog_debug("zclient_start is called");
@@ -771,9 +779,9 @@ int zapi_route_encode(uint8_t cmd, struct stream *s, struct zapi_route *api)
 			char buf[PREFIX2STR_BUFFER];
 
 			prefix2str(&api->prefix, buf, sizeof(buf));
-			zlog_warn(
-				"%s: prefix %s: can't encode %u nexthops "
-				"(maximum is %u)",
+			flog_err(
+				EC_LIB_ZAPI_ENCODE,
+				"%s: prefix %s: can't encode %u nexthops (maximum is %u)",
 				__func__, buf, api->nexthop_num, MULTIPATH_NUM);
 			return -1;
 		}
@@ -808,11 +816,6 @@ int zapi_route_encode(uint8_t cmd, struct stream *s, struct zapi_route *api)
 					     16);
 				stream_putl(s, api_nh->ifindex);
 				break;
-			default:
-				zlog_warn(
-					"%s: Specified Nexthop type %d does not exist",
-					__PRETTY_FUNCTION__, api_nh->type);
-				return -1;
 			}
 
 			/* MPLS labels for BGP-LU or Segment Routing */
@@ -821,12 +824,12 @@ int zapi_route_encode(uint8_t cmd, struct stream *s, struct zapi_route *api)
 					char buf[PREFIX2STR_BUFFER];
 					prefix2str(&api->prefix, buf,
 						   sizeof(buf));
-					flog_err(LIB_ERR_ZAPI_ENCODE,
-						  "%s: prefix %s: can't encode "
-						  "%u labels (maximum is %u)",
-						  __func__, buf,
-						  api_nh->label_num,
-						  MPLS_MAX_LABELS);
+					flog_err(EC_LIB_ZAPI_ENCODE,
+						 "%s: prefix %s: can't encode "
+						 "%u labels (maximum is %u)",
+						 __func__, buf,
+						 api_nh->label_num,
+						 MPLS_MAX_LABELS);
 					return -1;
 				}
 
@@ -871,8 +874,9 @@ int zapi_route_decode(struct stream *s, struct zapi_route *api)
 	/* Type, flags, message. */
 	STREAM_GETC(s, api->type);
 	if (api->type > ZEBRA_ROUTE_MAX) {
-		zlog_warn("%s: Specified route type: %d is not a legal value\n",
-			  __PRETTY_FUNCTION__, api->type);
+		flog_err(EC_LIB_ZAPI_ENCODE,
+			 "%s: Specified route type: %d is not a legal value\n",
+			 __PRETTY_FUNCTION__, api->type);
 		return -1;
 	}
 
@@ -887,7 +891,8 @@ int zapi_route_decode(struct stream *s, struct zapi_route *api)
 	switch (api->prefix.family) {
 	case AF_INET:
 		if (api->prefix.prefixlen > IPV4_MAX_PREFIXLEN) {
-			zlog_warn(
+			flog_err(
+				EC_LIB_ZAPI_ENCODE,
 				"%s: V4 prefixlen is %d which should not be more than 32",
 				__PRETTY_FUNCTION__, api->prefix.prefixlen);
 			return -1;
@@ -895,15 +900,17 @@ int zapi_route_decode(struct stream *s, struct zapi_route *api)
 		break;
 	case AF_INET6:
 		if (api->prefix.prefixlen > IPV6_MAX_PREFIXLEN) {
-			zlog_warn(
+			flog_err(
+				EC_LIB_ZAPI_ENCODE,
 				"%s: v6 prefixlen is %d which should not be more than 128",
 				__PRETTY_FUNCTION__, api->prefix.prefixlen);
 			return -1;
 		}
 		break;
 	default:
-		zlog_warn("%s: Specified family %d is not v4 or v6",
-			  __PRETTY_FUNCTION__, api->prefix.family);
+		flog_err(EC_LIB_ZAPI_ENCODE,
+			 "%s: Specified family %d is not v4 or v6",
+			 __PRETTY_FUNCTION__, api->prefix.family);
 		return -1;
 	}
 	STREAM_GET(&api->prefix.u.prefix, s, PSIZE(api->prefix.prefixlen));
@@ -912,7 +919,8 @@ int zapi_route_decode(struct stream *s, struct zapi_route *api)
 		api->src_prefix.family = AF_INET6;
 		STREAM_GETC(s, api->src_prefix.prefixlen);
 		if (api->src_prefix.prefixlen > IPV6_MAX_PREFIXLEN) {
-			zlog_warn(
+			flog_err(
+				EC_LIB_ZAPI_ENCODE,
 				"%s: SRC Prefix prefixlen received: %d is too large",
 				__PRETTY_FUNCTION__, api->src_prefix.prefixlen);
 			return -1;
@@ -922,7 +930,8 @@ int zapi_route_decode(struct stream *s, struct zapi_route *api)
 
 		if (api->prefix.family != AF_INET6
 		    || api->src_prefix.prefixlen == 0) {
-			zlog_warn(
+			flog_err(
+				EC_LIB_ZAPI_ENCODE,
 				"%s: SRC prefix specified in some manner that makes no sense",
 				__PRETTY_FUNCTION__);
 			return -1;
@@ -933,8 +942,9 @@ int zapi_route_decode(struct stream *s, struct zapi_route *api)
 	if (CHECK_FLAG(api->message, ZAPI_MESSAGE_NEXTHOP)) {
 		STREAM_GETW(s, api->nexthop_num);
 		if (api->nexthop_num > MULTIPATH_NUM) {
-			zlog_warn("%s: invalid number of nexthops (%u)",
-				  __func__, api->nexthop_num);
+			flog_err(EC_LIB_ZAPI_ENCODE,
+				 "%s: invalid number of nexthops (%u)",
+				 __func__, api->nexthop_num);
 			return -1;
 		}
 
@@ -966,11 +976,6 @@ int zapi_route_decode(struct stream *s, struct zapi_route *api)
 				STREAM_GET(&api_nh->gate.ipv6, s, 16);
 				STREAM_GETL(s, api_nh->ifindex);
 				break;
-			default:
-				zlog_warn(
-					"%s: Specified nexthop type %d does not exist",
-					__PRETTY_FUNCTION__, api_nh->type);
-				return -1;
 			}
 
 			/* MPLS labels for BGP-LU or Segment Routing */
@@ -978,9 +983,9 @@ int zapi_route_decode(struct stream *s, struct zapi_route *api)
 				STREAM_GETC(s, api_nh->label_num);
 
 				if (api_nh->label_num > MPLS_MAX_LABELS) {
-					zlog_warn(
-						"%s: invalid number of MPLS "
-						"labels (%u)",
+					flog_err(
+						EC_LIB_ZAPI_ENCODE,
+						"%s: invalid number of MPLS labels (%u)",
 						__func__, api_nh->label_num);
 					return -1;
 				}
@@ -1217,6 +1222,7 @@ bool zapi_nexthop_update_decode(struct stream *s, struct zapi_route *nhr)
 	STREAM_GETC(s, nhr->nexthop_num);
 
 	for (i = 0; i < nhr->nexthop_num; i++) {
+		STREAM_GETL(s, nhr->nexthops[i].vrf_id);
 		STREAM_GETC(s, nhr->nexthops[i].type);
 		switch (nhr->nexthops[i].type) {
 		case NEXTHOP_TYPE_IPV4:
@@ -1239,8 +1245,9 @@ bool zapi_nexthop_update_decode(struct stream *s, struct zapi_route *nhr)
 		}
 		STREAM_GETC(s, nhr->nexthops[i].label_num);
 		if (nhr->nexthops[i].label_num > MPLS_MAX_LABELS) {
-			zlog_warn("%s: invalid number of MPLS labels (%u)",
-				  __func__, nhr->nexthops[i].label_num);
+			flog_err(EC_LIB_ZAPI_ENCODE,
+				 "%s: invalid number of MPLS labels (%u)",
+				 __func__, nhr->nexthops[i].label_num);
 			return false;
 		}
 		if (nhr->nexthops[i].label_num)
@@ -1272,6 +1279,22 @@ int zebra_redistribute_send(int command, struct zclient *zclient, afi_t afi,
 	stream_putc(s, afi);
 	stream_putc(s, type);
 	stream_putw(s, instance);
+
+	stream_putw_at(s, 0, stream_get_endp(s));
+
+	return zclient_send_message(zclient);
+}
+
+int zebra_redistribute_default_send(int command, struct zclient *zclient,
+				    afi_t afi, vrf_id_t vrf_id)
+{
+	struct stream *s;
+
+	s = zclient->obuf;
+	stream_reset(s);
+
+	zclient_create_header(s, command, vrf_id);
+	stream_putc(s, afi);
 
 	stream_putw_at(s, 0, stream_get_endp(s));
 
@@ -1366,6 +1389,9 @@ static void zclient_vrf_add(struct zclient *zclient, vrf_id_t vrf_id)
 	vrf = vrf_get(vrf_id, vrfname_tmp);
 	vrf->data.l.table_id = data.l.table_id;
 	memcpy(vrf->data.l.netns_name, data.l.netns_name, NS_NAMSIZ);
+	/* overwrite default vrf */
+	if (vrf_id == VRF_DEFAULT)
+		vrf_set_default_name(vrfname_tmp, false);
 	vrf_enable(vrf);
 }
 
@@ -1396,7 +1422,7 @@ struct interface *zebra_interface_add_read(struct stream *s, vrf_id_t vrf_id)
 	stream_get(ifname_tmp, s, INTERFACE_NAMSIZ);
 
 	/* Lookup/create interface by name. */
-	ifp = if_get_by_name(ifname_tmp, vrf_id, 0);
+	ifp = if_get_by_name(ifname_tmp, vrf_id);
 
 	zebra_interface_if_set_value(s, ifp);
 
@@ -1421,8 +1447,9 @@ struct interface *zebra_interface_state_read(struct stream *s, vrf_id_t vrf_id)
 	/* Lookup this by interface index. */
 	ifp = if_lookup_by_name(ifname_tmp, vrf_id);
 	if (ifp == NULL) {
-		zlog_warn("INTERFACE_STATE: Cannot find IF %s in VRF %d",
-			  ifname_tmp, vrf_id);
+		flog_err(EC_LIB_ZAPI_ENCODE,
+			 "INTERFACE_STATE: Cannot find IF %s in VRF %d",
+			 ifname_tmp, vrf_id);
 		return NULL;
 	}
 
@@ -1447,10 +1474,11 @@ static void link_params_set_value(struct stream *s, struct if_link_params *iflp)
 		for (i = 0; i < bwclassnum && i < MAX_CLASS_TYPE; i++)
 			iflp->unrsv_bw[i] = stream_getf(s);
 		if (i < bwclassnum)
-			flog_err(LIB_ERR_ZAPI_MISSMATCH,
-				  "%s: received %d > %d (MAX_CLASS_TYPE) bw entries"
-				  " - outdated library?",
-				  __func__, bwclassnum, MAX_CLASS_TYPE);
+			flog_err(
+				EC_LIB_ZAPI_MISSMATCH,
+				"%s: received %d > %d (MAX_CLASS_TYPE) bw entries"
+				" - outdated library?",
+				__func__, bwclassnum, MAX_CLASS_TYPE);
 	}
 	iflp->admin_grp = stream_getl(s);
 	iflp->rmt_as = stream_getl(s);
@@ -1467,7 +1495,8 @@ static void link_params_set_value(struct stream *s, struct if_link_params *iflp)
 	iflp->use_bw = stream_getf(s);
 }
 
-struct interface *zebra_interface_link_params_read(struct stream *s)
+struct interface *zebra_interface_link_params_read(struct stream *s,
+						   vrf_id_t vrf_id)
 {
 	struct if_link_params *iflp;
 	ifindex_t ifindex;
@@ -1476,12 +1505,12 @@ struct interface *zebra_interface_link_params_read(struct stream *s)
 
 	ifindex = stream_getl(s);
 
-	struct interface *ifp = if_lookup_by_index(ifindex, VRF_DEFAULT);
+	struct interface *ifp = if_lookup_by_index(ifindex, vrf_id);
 
 	if (ifp == NULL) {
-		flog_err(LIB_ERR_ZAPI_ENCODE,
-			  "%s: unknown ifindex %u, shouldn't happen", __func__,
-			  ifindex);
+		flog_err(EC_LIB_ZAPI_ENCODE,
+			 "%s: unknown ifindex %u, shouldn't happen", __func__,
+			 ifindex);
 		return NULL;
 	}
 
@@ -1630,9 +1659,10 @@ struct connected *zebra_interface_address_read(int type, struct stream *s,
 	/* Lookup index. */
 	ifp = if_lookup_by_index(ifindex, vrf_id);
 	if (ifp == NULL) {
-		zlog_warn("INTERFACE_ADDRESS_%s: Cannot find IF %u in VRF %d",
-			  (type == ZEBRA_INTERFACE_ADDRESS_ADD) ? "ADD" : "DEL",
-			  ifindex, vrf_id);
+		flog_err(EC_LIB_ZAPI_ENCODE,
+			 "INTERFACE_ADDRESS_%s: Cannot find IF %u in VRF %d",
+			 (type == ZEBRA_INTERFACE_ADDRESS_ADD) ? "ADD" : "DEL",
+			 ifindex, vrf_id);
 		return NULL;
 	}
 
@@ -1667,9 +1697,9 @@ struct connected *zebra_interface_address_read(int type, struct stream *s,
 				/* carp interfaces on OpenBSD with 0.0.0.0/0 as
 				 * "peer" */
 				char buf[PREFIX_STRLEN];
-				zlog_warn(
-					"warning: interface %s address %s "
-					"with peer flag set, but no peer address!",
+				flog_err(
+					EC_LIB_ZAPI_ENCODE,
+					"warning: interface %s address %s with peer flag set, but no peer address!",
 					ifp->name,
 					prefix2str(ifc->address, buf,
 						   sizeof buf));
@@ -1722,10 +1752,11 @@ zebra_interface_nbr_address_read(int type, struct stream *s, vrf_id_t vrf_id)
 	/* Lookup index. */
 	ifp = if_lookup_by_index(ifindex, vrf_id);
 	if (ifp == NULL) {
-		zlog_warn("INTERFACE_NBR_%s: Cannot find IF %u in VRF %d",
-			  (type == ZEBRA_INTERFACE_NBR_ADDRESS_ADD) ? "ADD"
-								    : "DELETE",
-			  ifindex, vrf_id);
+		flog_err(EC_LIB_ZAPI_ENCODE,
+			 "INTERFACE_NBR_%s: Cannot find IF %u in VRF %d",
+			 (type == ZEBRA_INTERFACE_NBR_ADDRESS_ADD) ? "ADD"
+								   : "DELETE",
+			 ifindex, vrf_id);
 		return NULL;
 	}
 
@@ -1761,18 +1792,19 @@ struct interface *zebra_interface_vrf_update_read(struct stream *s,
 						  vrf_id_t vrf_id,
 						  vrf_id_t *new_vrf_id)
 {
-	unsigned int ifindex;
+	char ifname[INTERFACE_NAMSIZ];
 	struct interface *ifp;
 	vrf_id_t new_id;
 
-	/* Get interface index. */
-	ifindex = stream_getl(s);
+	/* Read interface name. */
+	stream_get(ifname, s, INTERFACE_NAMSIZ);
 
 	/* Lookup interface. */
-	ifp = if_lookup_by_index(ifindex, vrf_id);
+	ifp = if_lookup_by_name(ifname, vrf_id);
 	if (ifp == NULL) {
-		zlog_warn("INTERFACE_VRF_UPDATE: Cannot find IF %u in VRF %d",
-			  ifindex, vrf_id);
+		flog_err(EC_LIB_ZAPI_ENCODE,
+			 "INTERFACE_VRF_UPDATE: Cannot find IF %s in VRF %d",
+			 ifname, vrf_id);
 		return NULL;
 	}
 
@@ -1816,8 +1848,8 @@ static int zclient_read_sync_response(struct zclient *zclient,
 				   size);
 	}
 	if (ret != 0) {
-		flog_err(LIB_ERR_ZAPI_ENCODE,
-			 "%s: Invalid Sync Message Reply", __func__);
+		flog_err(EC_LIB_ZAPI_ENCODE, "%s: Invalid Sync Message Reply",
+			 __func__);
 		return -1;
 	}
 
@@ -1864,13 +1896,13 @@ int lm_label_manager_connect(struct zclient *zclient, int async)
 
 	ret = writen(zclient->sock, s->data, stream_get_endp(s));
 	if (ret < 0) {
-		flog_err(LIB_ERR_ZAPI_SOCKET, "Can't write to zclient sock");
+		flog_err(EC_LIB_ZAPI_SOCKET, "Can't write to zclient sock");
 		close(zclient->sock);
 		zclient->sock = -1;
 		return -1;
 	}
 	if (ret == 0) {
-		flog_err(LIB_ERR_ZAPI_SOCKET, "Zclient sock closed");
+		flog_err(EC_LIB_ZAPI_SOCKET, "Zclient sock closed");
 		close(zclient->sock);
 		zclient->sock = -1;
 		return -1;
@@ -1894,13 +1926,15 @@ int lm_label_manager_connect(struct zclient *zclient, int async)
 
 	/* sanity */
 	if (proto != zclient->redist_default)
-		flog_err(LIB_ERR_ZAPI_ENCODE,
-			  "Wrong proto (%u) in LM connect response. Should be %u",
-			  proto, zclient->redist_default);
+		flog_err(
+			EC_LIB_ZAPI_ENCODE,
+			"Wrong proto (%u) in LM connect response. Should be %u",
+			proto, zclient->redist_default);
 	if (instance != zclient->instance)
-		flog_err(LIB_ERR_ZAPI_ENCODE,
-			  "Wrong instId (%u) in LM connect response. Should be %u",
-			  instance, zclient->instance);
+		flog_err(
+			EC_LIB_ZAPI_ENCODE,
+			"Wrong instId (%u) in LM connect response. Should be %u",
+			instance, zclient->instance);
 
 	/* result code */
 	result = stream_getc(s);
@@ -1989,15 +2023,13 @@ int lm_get_label_chunk(struct zclient *zclient, uint8_t keep,
 
 	ret = writen(zclient->sock, s->data, stream_get_endp(s));
 	if (ret < 0) {
-		flog_err(LIB_ERR_ZAPI_SOCKET,
-			  "Can't write to zclient sock");
+		flog_err(EC_LIB_ZAPI_SOCKET, "Can't write to zclient sock");
 		close(zclient->sock);
 		zclient->sock = -1;
 		return -1;
 	}
 	if (ret == 0) {
-		flog_err(LIB_ERR_ZAPI_SOCKET,
-			  "Zclient sock closed");
+		flog_err(EC_LIB_ZAPI_SOCKET, "Zclient sock closed");
 		close(zclient->sock);
 		zclient->sock = -1;
 		return -1;
@@ -2018,13 +2050,13 @@ int lm_get_label_chunk(struct zclient *zclient, uint8_t keep,
 
 	/* sanities */
 	if (proto != zclient->redist_default)
-		flog_err(LIB_ERR_ZAPI_ENCODE,
-			  "Wrong proto (%u) in get chunk response. Should be %u",
-			  proto, zclient->redist_default);
+		flog_err(EC_LIB_ZAPI_ENCODE,
+			 "Wrong proto (%u) in get chunk response. Should be %u",
+			 proto, zclient->redist_default);
 	if (instance != zclient->instance)
-		flog_err(LIB_ERR_ZAPI_ENCODE,
-			  "Wrong instId (%u) in get chunk response Should be %u",
-			  instance, zclient->instance);
+		flog_err(EC_LIB_ZAPI_ENCODE,
+			 "Wrong instId (%u) in get chunk response Should be %u",
+			 instance, zclient->instance);
 
 	/* keep */
 	response_keep = stream_getc(s);
@@ -2034,15 +2066,16 @@ int lm_get_label_chunk(struct zclient *zclient, uint8_t keep,
 
 	/* not owning this response */
 	if (keep != response_keep) {
-		flog_err(LIB_ERR_ZAPI_ENCODE,
-			  "Invalid Label chunk: %u - %u, keeps mismatch %u != %u",
-			  *start, *end, keep, response_keep);
+		flog_err(
+			EC_LIB_ZAPI_ENCODE,
+			"Invalid Label chunk: %u - %u, keeps mismatch %u != %u",
+			*start, *end, keep, response_keep);
 	}
 	/* sanity */
 	if (*start > *end || *start < MPLS_LABEL_UNRESERVED_MIN
 	    || *end > MPLS_LABEL_UNRESERVED_MAX) {
-		flog_err(LIB_ERR_ZAPI_ENCODE,
-			  "Invalid Label chunk: %u - %u", *start, *end);
+		flog_err(EC_LIB_ZAPI_ENCODE, "Invalid Label chunk: %u - %u",
+			 *start, *end);
 		return -1;
 	}
 
@@ -2092,14 +2125,13 @@ int lm_release_label_chunk(struct zclient *zclient, uint32_t start,
 
 	ret = writen(zclient->sock, s->data, stream_get_endp(s));
 	if (ret < 0) {
-		flog_err(LIB_ERR_ZAPI_SOCKET, "Can't write to zclient sock");
+		flog_err(EC_LIB_ZAPI_SOCKET, "Can't write to zclient sock");
 		close(zclient->sock);
 		zclient->sock = -1;
 		return -1;
 	}
 	if (ret == 0) {
-		flog_err(LIB_ERR_ZAPI_SOCKET,
-			  "Zclient sock connection closed");
+		flog_err(EC_LIB_ZAPI_SOCKET, "Zclient sock connection closed");
 		close(zclient->sock);
 		zclient->sock = -1;
 		return -1;
@@ -2202,15 +2234,15 @@ int tm_get_table_chunk(struct zclient *zclient, uint32_t chunk_size,
 
 	ret = writen(zclient->sock, s->data, stream_get_endp(s));
 	if (ret < 0) {
-		flog_err(LIB_ERR_ZAPI_SOCKET,
-			  "%s: can't write to zclient->sock", __func__);
+		flog_err(EC_LIB_ZAPI_SOCKET, "%s: can't write to zclient->sock",
+			 __func__);
 		close(zclient->sock);
 		zclient->sock = -1;
 		return -1;
 	}
 	if (ret == 0) {
-		flog_err(LIB_ERR_ZAPI_SOCKET,
-			  "%s: zclient->sock connection closed", __func__);
+		flog_err(EC_LIB_ZAPI_SOCKET,
+			 "%s: zclient->sock connection closed", __func__);
 		close(zclient->sock);
 		zclient->sock = -1;
 		return -1;
@@ -2296,8 +2328,7 @@ int zebra_send_pw(struct zclient *zclient, int command, struct zapi_pw *pw)
 		stream_write(s, (uint8_t *)&pw->nexthop.ipv6, 16);
 		break;
 	default:
-		flog_err(LIB_ERR_ZAPI_ENCODE,
-			  "%s: unknown af", __func__);
+		flog_err(EC_LIB_ZAPI_ENCODE, "%s: unknown af", __func__);
 		return -1;
 	}
 
@@ -2340,7 +2371,11 @@ static void zclient_capability_decode(int command, struct zclient *zclient,
 {
 	struct zclient_capabilities cap;
 	struct stream *s = zclient->ibuf;
+	int vrf_backend;
 	uint8_t mpls_enabled;
+
+	STREAM_GETL(s, vrf_backend);
+	vrf_configure_backend(vrf_backend);
 
 	memset(&cap, 0, sizeof(cap));
 	STREAM_GETC(s, mpls_enabled);
@@ -2399,23 +2434,25 @@ static int zclient_read(struct thread *thread)
 	command = stream_getw(zclient->ibuf);
 
 	if (marker != ZEBRA_HEADER_MARKER || version != ZSERV_VERSION) {
-		flog_err(LIB_ERR_ZAPI_MISSMATCH,
-			  "%s: socket %d version mismatch, marker %d, version %d",
-			  __func__, zclient->sock, marker, version);
+		flog_err(
+			EC_LIB_ZAPI_MISSMATCH,
+			"%s: socket %d version mismatch, marker %d, version %d",
+			__func__, zclient->sock, marker, version);
 		return zclient_failed(zclient);
 	}
 
 	if (length < ZEBRA_HEADER_SIZE) {
-		flog_err(LIB_ERR_ZAPI_MISSMATCH,
-			  "%s: socket %d message length %u is less than %d ",
-			  __func__, zclient->sock, length, ZEBRA_HEADER_SIZE);
+		flog_err(EC_LIB_ZAPI_MISSMATCH,
+			 "%s: socket %d message length %u is less than %d ",
+			 __func__, zclient->sock, length, ZEBRA_HEADER_SIZE);
 		return zclient_failed(zclient);
 	}
 
 	/* Length check. */
 	if (length > STREAM_SIZE(zclient->ibuf)) {
 		struct stream *ns;
-		zlog_warn(
+		flog_err(
+			EC_LIB_ZAPI_ENCODE,
 			"%s: message size %u exceeds buffer size %lu, expanding...",
 			__func__, length,
 			(unsigned long)STREAM_SIZE(zclient->ibuf));
@@ -2548,7 +2585,7 @@ static int zclient_read(struct thread *thread)
 	case ZEBRA_INTERFACE_LINK_PARAMS:
 		if (zclient->interface_link_params)
 			(*zclient->interface_link_params)(command, zclient,
-							  length);
+							  length, vrf_id);
 		break;
 	case ZEBRA_FEC_UPDATE:
 		if (zclient_debug)
@@ -2697,21 +2734,22 @@ void zclient_redistribute(int command, struct zclient *zclient, afi_t afi,
 
 
 void zclient_redistribute_default(int command, struct zclient *zclient,
-				  vrf_id_t vrf_id)
+				  afi_t afi, vrf_id_t vrf_id)
 {
 
 	if (command == ZEBRA_REDISTRIBUTE_DEFAULT_ADD) {
-		if (vrf_bitmap_check(zclient->default_information, vrf_id))
+		if (vrf_bitmap_check(zclient->default_information[afi], vrf_id))
 			return;
-		vrf_bitmap_set(zclient->default_information, vrf_id);
+		vrf_bitmap_set(zclient->default_information[afi], vrf_id);
 	} else {
-		if (!vrf_bitmap_check(zclient->default_information, vrf_id))
+		if (!vrf_bitmap_check(zclient->default_information[afi],
+				      vrf_id))
 			return;
-		vrf_bitmap_unset(zclient->default_information, vrf_id);
+		vrf_bitmap_unset(zclient->default_information[afi], vrf_id);
 	}
 
 	if (zclient->sock > 0)
-		zebra_message_send(zclient, command, vrf_id);
+		zebra_redistribute_default_send(command, zclient, afi, vrf_id);
 }
 
 static void zclient_event(enum event event, struct zclient *zclient)

@@ -47,6 +47,7 @@
 #include "ospfd/ospf_abr.h"
 #include "ospfd/ospf_dump.h"
 #include "ospfd/ospf_sr.h"
+#include "ospfd/ospf_errors.h"
 
 /* Variables to ensure a SPF scheduled log message is printed only once */
 
@@ -208,10 +209,10 @@ static void ospf_vertex_free(void *data)
 	// assert (listcount (v->parents) == 0);
 
 	if (v->children)
-		list_delete_and_null(&v->children);
+		list_delete(&v->children);
 
 	if (v->parents)
-		list_delete_and_null(&v->parents);
+		list_delete(&v->parents);
 
 	v->lsa = NULL;
 
@@ -859,7 +860,8 @@ static void ospf_spf_next(struct vertex *v, struct ospf *ospf,
 						zlog_debug("found the LSA");
 				break;
 			default:
-				zlog_warn("Invalid LSA link type %d", type);
+				flog_warn(EC_OSPF_LSA,
+					  "Invalid LSA link type %d", type);
 				continue;
 			}
 		} else {
@@ -1084,7 +1086,7 @@ void ospf_rtrs_free(struct route_table *rtrs)
 			for (ALL_LIST_ELEMENTS(or_list, node, nnode, or))
 				ospf_route_free(or);
 
-			list_delete_and_null(&or_list);
+			list_delete(&or_list);
 
 			/* Unlock the node. */
 			rn->info = NULL;

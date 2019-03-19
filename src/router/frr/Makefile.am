@@ -4,6 +4,9 @@ AUTOMAKE_OPTIONS = subdir-objects 1.12
 ACLOCAL_AMFLAGS = -I m4
 
 AM_CFLAGS = \
+	$(LIBYANG_CFLAGS) \
+	$(SQLITE3_CFLAGS) \
+	$(UNWIND_CFLAGS) \
 	$(SAN_FLAGS) \
 	$(WERROR) \
 	# end
@@ -12,10 +15,10 @@ AM_CPPFLAGS = \
 	-I$(top_builddir) -I$(top_builddir)/include -I$(top_builddir)/lib
 AM_LDFLAGS = \
 	-export-dynamic \
+	$(AC_LDFLAGS) \
 	$(SAN_FLAGS) \
 	# end
 DEFS = @DEFS@ -DSYSCONFDIR=\"$(sysconfdir)/\" -DCONFDATE=$(CONFDATE)
-LIBCAP = @LIBCAP@
 
 AR_FLAGS = @AR_FLAGS@
 ARFLAGS = @ARFLAGS@
@@ -93,9 +96,11 @@ noinst_LIBRARIES =
 nodist_noinst_DATA =
 lib_LTLIBRARIES =
 module_LTLIBRARIES =
+libyang_plugins_LTLIBRARIES =
 pkginclude_HEADERS =
 nodist_pkginclude_HEADERS =
 dist_examples_DATA =
+dist_yangmodels_DATA =
 man_MANS =
 vtysh_scan =
 
@@ -106,6 +111,7 @@ vtysh_scan =
 $(AUTOMAKE_DUMMY)install-moduleLTLIBRARIES: install-libLTLIBRARIES
 $(AUTOMAKE_DUMMY)install-binPROGRAMS: install-libLTLIBRARIES
 $(AUTOMAKE_DUMMY)install-sbinPROGRAMS: install-libLTLIBRARIES
+$(AUTOMAKE_DUMMY)install-libyang_pluginsLTLIBRARIES: install-libLTLIBRARIES
 
 include doc/subdir.am
 include doc/user/subdir.am
@@ -138,9 +144,12 @@ include pimd/subdir.am
 include pbrd/subdir.am
 include staticd/subdir.am
 include bfdd/subdir.am
+include yang/subdir.am
+include yang/libyang_plugins/subdir.am
 
 include vtysh/subdir.am
 include tests/subdir.am
+include tests/topotests/subdir.am
 
 if PKGSRC
 rcdir=@pkgsrcrcdir@
@@ -158,6 +167,7 @@ EXTRA_DIST += \
 	aclocal.m4 \
 	README.md \
 	m4/README.txt \
+	m4/libtool-whole-archive.patch \
 	config.version \
 	changelog-auto \
 	changelog-auto.in \

@@ -126,9 +126,6 @@ struct route_table {
                                                                                \
 	/* Each node of route. */                                              \
 	void *info;                                                            \
-                                                                               \
-	/* Aggregation. */                                                     \
-	void *aggregate;
 
 
 /* Each routing entry. */
@@ -181,6 +178,16 @@ extern struct route_table *
 route_table_init_with_delegate(route_table_delegate_t *delegate);
 
 extern route_table_delegate_t *route_table_get_default_delegate(void);
+
+static inline void *route_table_get_info(struct route_table *table)
+{
+	return table->info;
+}
+
+static inline void route_table_set_info(struct route_table *table, void *d)
+{
+	table->info = d;
+}
 
 extern void route_table_finish(struct route_table *table);
 extern struct route_node *route_top(struct route_table *table);

@@ -28,6 +28,7 @@
 #include "vrf.h"
 #include "vty.h"
 
+#include "zebra/zebra_router.h"
 #include "zebra/debug.h"
 #include "zebra/zapi_msg.h"
 #include "zebra/rib.h"
@@ -39,6 +40,7 @@
 #include "zebra/zebra_mpls.h"
 #include "zebra/zebra_vxlan.h"
 #include "zebra/zebra_netns_notify.h"
+#include "zebra/zebra_routemap.h"
 
 extern struct zebra_t zebrad;
 
@@ -143,7 +145,6 @@ static int zebra_vrf_enable(struct vrf *vrf)
 static int zebra_vrf_disable(struct vrf *vrf)
 {
 	struct zebra_vrf *zvrf = vrf->info;
-	struct route_table *table;
 	struct interface *ifp;
 	afi_t afi;
 	safi_t safi;
@@ -201,15 +202,16 @@ static int zebra_vrf_disable(struct vrf *vrf)
 
 	/* Cleanup (free) routing tables and NHT tables. */
 	for (afi = AFI_IP; afi <= AFI_IP6; afi++) {
-		void *table_info;
-
-		for (safi = SAFI_UNICAST; safi <= SAFI_MULTICAST; safi++) {
-			table = zvrf->table[afi][safi];
-			table_info = table->info;
-			route_table_finish(table);
-			XFREE(MTYPE_RIB_TABLE_INFO, table_info);
+		/*
+		 * Set the table pointer to NULL as that
+		 * we no-longer need a copy of it, nor do we
+		 * own this data, the zebra_router structure
+		 * owns these tables.  Once we've cleaned up the
+		 * table, see rib_close_table above
+		 * we no-longer need this pointer.
+		 */
+		for (safi = SAFI_UNICAST; safi <= SAFI_MULTICAST; safi++)
 			zvrf->table[afi][safi] = NULL;
-		}
 
 		route_table_finish(zvrf->rnh_table[afi]);
 		zvrf->rnh_table[afi] = NULL;
@@ -261,7 +263,7 @@ static int zebra_vrf_delete(struct vrf *vrf)
 		for (safi = SAFI_UNICAST; safi <= SAFI_MULTICAST; safi++) {
 			table = zvrf->table[afi][safi];
 			if (table) {
-				table_info = table->info;
+				table_info = route_table_get_info(table);
 				route_table_finish(table);
 				XFREE(MTYPE_RIB_TABLE_INFO, table_info);
 			}
@@ -281,6 +283,19 @@ static int zebra_vrf_delete(struct vrf *vrf)
 
 	return 0;
 }
+
+static int zebra_vrf_update(struct vrf *vrf)
+{
+	struct zebra_vrf *zvrf = vrf->info;
+
+	assert(zvrf);
+	if (IS_ZEBRA_DEBUG_EVENT)
+		zlog_debug("VRF %s id %u, name updated", vrf->name,
+			   zvrf_id(zvrf));
+	zebra_vrf_add_update(zvrf);
+	return 0;
+}
+
 
 /* Return if this VRF has any FRR configuration or not.
  * IMPORTANT: This function needs to be updated when additional configuration
@@ -360,18 +375,17 @@ static void zebra_vrf_table_create(struct zebra_vrf *zvrf, afi_t afi,
 
 	assert(!zvrf->table[afi][safi]);
 
-	if (afi == AFI_IP6)
-		table = srcdest_table_init();
-	else
-		table = route_table_init();
+	table = zebra_router_get_table(zvrf, zvrf->table_id, afi, safi);
+
 	table->cleanup = zebra_rtable_node_cleanup;
 	zvrf->table[afi][safi] = table;
 
+	XFREE(MTYPE_RIB_TABLE_INFO, table->info);
 	info = XCALLOC(MTYPE_RIB_TABLE_INFO, sizeof(*info));
 	info->zvrf = zvrf;
 	info->afi = afi;
 	info->safi = safi;
-	table->info = info;
+	route_table_set_info(table, info);
 }
 
 /* Allocate new zebra VRF. */
@@ -428,13 +442,10 @@ struct route_table *zebra_vrf_other_route_table(afi_t afi, uint32_t table_id,
 						vrf_id_t vrf_id)
 {
 	struct zebra_vrf *zvrf;
-	struct zebra_ns *zns;
 
 	zvrf = vrf_info_lookup(vrf_id);
 	if (!zvrf)
 		return NULL;
-
-	zns = zvrf->zns;
 
 	if (afi >= AFI_MAX)
 		return NULL;
@@ -447,7 +458,8 @@ struct route_table *zebra_vrf_other_route_table(afi_t afi, uint32_t table_id,
 			 * so in all cases, it does not use specific table
 			 * so it is possible to configure tables in this VRF
 			 */
-			return zebra_ns_get_table(zns, zvrf, table_id, afi);
+			return zebra_router_get_table(zvrf, table_id, afi,
+						      SAFI_UNICAST);
 		}
 	}
 
@@ -468,7 +480,6 @@ static int vrf_config_write(struct vty *vty)
 		if (zvrf_id(zvrf) == VRF_DEFAULT) {
 			if (zvrf->l3vni)
 				vty_out(vty, "vni %u\n", zvrf->l3vni);
-			vty_out(vty, "!\n");
 		} else {
 			vty_frame(vty, "vrf %s\n", zvrf_name(zvrf));
 			if (zvrf->l3vni)
@@ -478,11 +489,14 @@ static int vrf_config_write(struct vty *vty)
 						? " prefix-routes-only"
 						: "");
 			zebra_ns_config_write(vty, (struct ns *)vrf->ns_ctxt);
-
 		}
+
+		zebra_routemap_config_write_protocol(vty, zvrf);
 
 		if (zvrf_id(zvrf) != VRF_DEFAULT)
 			vty_endframe(vty, " exit-vrf\n!\n");
+		else
+			vty_out(vty, "!\n");
 	}
 	return 0;
 }
@@ -491,7 +505,7 @@ static int vrf_config_write(struct vty *vty)
 void zebra_vrf_init(void)
 {
 	vrf_init(zebra_vrf_new, zebra_vrf_enable, zebra_vrf_disable,
-		 zebra_vrf_delete);
+		 zebra_vrf_delete, zebra_vrf_update);
 
 	vrf_cmd_init(vrf_config_write, &zserv_privs);
 }
