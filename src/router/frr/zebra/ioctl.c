@@ -33,6 +33,7 @@
 #include "zebra/rib.h"
 #include "zebra/rt.h"
 #include "zebra/interface.h"
+#include "zebra/zebra_errors.h"
 
 #ifndef SUNOS_5
 
@@ -396,7 +397,7 @@ void if_get_flags(struct interface *ifp)
 
 	ret = vrf_if_ioctl(SIOCGIFFLAGS, (caddr_t)&ifreq, ifp->vrf_id);
 	if (ret < 0) {
-		flog_err_sys(LIB_ERR_SYSTEM_CALL,
+		flog_err_sys(EC_LIB_SYSTEM_CALL,
 			     "vrf_if_ioctl(SIOCGIFFLAGS) failed: %s",
 			     safe_strerror(errno));
 		return;
@@ -414,8 +415,9 @@ void if_get_flags(struct interface *ifp)
 		strncpy(ifmr.ifm_name, ifp->name, IFNAMSIZ);
 
 		/* Seems not all interfaces implement this ioctl */
-		if (if_ioctl(SIOCGIFMEDIA, (caddr_t)&ifmr) < 0)
-			flog_err_sys(LIB_ERR_SYSTEM_CALL,
+		if (if_ioctl(SIOCGIFMEDIA, (caddr_t)&ifmr) == -1 &&
+		    errno != EINVAL)
+			flog_err_sys(EC_LIB_SYSTEM_CALL,
 				     "if_ioctl(SIOCGIFMEDIA) failed: %s",
 				     safe_strerror(errno));
 		else if (ifmr.ifm_status & IFM_AVALID) /* Link state is valid */

@@ -71,7 +71,7 @@ unsigned int baa_hash_key(void *p)
 	return attrhash_key_make(baa->attr);
 }
 
-int baa_hash_cmp(const void *p1, const void *p2)
+bool baa_hash_cmp(const void *p1, const void *p2)
 {
 	const struct bgp_advertise_attr *baa1 = p1;
 	const struct bgp_advertise_attr *baa2 = p2;
@@ -90,9 +90,9 @@ struct bgp_advertise *bgp_advertise_new(void)
 
 void bgp_advertise_free(struct bgp_advertise *adv)
 {
-	if (adv->binfo)
-		bgp_info_unlock(
-			adv->binfo); /* bgp_advertise bgp_info reference */
+	if (adv->pathi)
+		/* bgp_advertise bgp_path_info reference */
+		bgp_path_info_unlock(adv->pathi);
 	XFREE(MTYPE_BGP_ADVERTISE, adv);
 }
 
@@ -154,7 +154,7 @@ int bgp_adj_out_lookup(struct peer *peer, struct bgp_node *rn,
 	safi_t safi;
 	int addpath_capable;
 
-	for (adj = rn->adj_out; adj; adj = adj->next)
+	RB_FOREACH (adj, bgp_adj_out_rb, &rn->adj_out)
 		SUBGRP_FOREACH_PEER (adj->subgroup, paf)
 			if (paf->peer == peer) {
 				afi = SUBGRP_AFI(adj->subgroup);

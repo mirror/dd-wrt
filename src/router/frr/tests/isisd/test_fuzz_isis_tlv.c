@@ -1,3 +1,7 @@
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "test_fuzz_isis_tlv_tests.h"
 
 #include <zebra.h>
@@ -114,7 +118,11 @@ static int test(FILE *input, FILE *output)
 	const char *s_tlvs = isis_format_tlvs(tlvs);
 	fprintf(output, "Unpacked TLVs:\n%s", s_tlvs);
 
+	struct isis_item *orig_auth = tlvs->isis_auth.head;
+	tlvs->isis_auth.head = NULL;
+	s_tlvs = isis_format_tlvs(tlvs);
 	struct isis_tlvs *tlv_copy = isis_copy_tlvs(tlvs);
+	tlvs->isis_auth.head = orig_auth;
 	isis_free_tlvs(tlvs);
 
 	struct stream *s2 = stream_new(TEST_STREAM_SIZE);
@@ -168,7 +176,7 @@ static int test(FILE *input, FILE *output)
 		sbuf_push(&fragment_format, 0, "%s", isis_format_tlvs(tlvs));
 		isis_free_tlvs(tlvs);
 	}
-	list_delete_and_null(&fragments);
+	list_delete(&fragments);
 	stream_free(s);
 
 	char *fragment_content = sortlines((char *)sbuf_buf(&fragment_format));

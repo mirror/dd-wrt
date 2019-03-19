@@ -44,6 +44,8 @@
 #include "zebra/zapi_msg.h"
 #include "zebra/zebra_ns.h"
 #include "zebra/zebra_vrf.h"
+#include "zebra/zebra_errors.h"
+#include "zebra/zebra_router.h"
 
 extern struct zebra_privs_t zserv_privs;
 
@@ -181,7 +183,7 @@ static void rtadv_send_packet(int sock, struct interface *ifp)
 		adata = calloc(1, CMSG_SPACE(sizeof(struct in6_pktinfo)));
 
 		if (adata == NULL) {
-			zlog_warn(
+			zlog_debug(
 				"rtadv_send_packet: can't malloc control data");
 			exit(-1);
 		}
@@ -374,7 +376,7 @@ static void rtadv_send_packet(int sock, struct interface *ifp)
 
 	ret = sendmsg(sock, &msg, 0);
 	if (ret < 0) {
-		flog_err_sys(LIB_ERR_SOCKET,
+		flog_err_sys(EC_LIB_SOCKET,
 			     "%s(%u): Tx RA failed, socket %u error %d (%s)",
 			     ifp->name, ifp->ifindex, sock, errno,
 			     safe_strerror(errno));
@@ -390,8 +392,8 @@ static int rtadv_timer(struct thread *thread)
 	struct zebra_if *zif;
 	int period;
 
-	zns->rtadv.ra_timer = NULL;
-	if (zns->rtadv.adv_msec_if_count == 0) {
+	zrouter.rtadv.ra_timer = NULL;
+	if (zrouter.rtadv.adv_msec_if_count == 0) {
 		period = 1000; /* 1 s */
 		rtadv_event(zns, RTADV_TIMER, 1 /* 1 s */);
 	} else {
@@ -423,7 +425,8 @@ static int rtadv_timer(struct thread *thread)
 							"Fast RA Rexmit on interface %s",
 							ifp->name);
 
-					rtadv_send_packet(zns->rtadv.sock, ifp);
+					rtadv_send_packet(zrouter.rtadv.sock,
+							  ifp);
 				} else {
 					zif->rtadv.AdvIntervalTimer -= period;
 					if (zif->rtadv.AdvIntervalTimer <= 0) {
@@ -436,7 +439,8 @@ static int rtadv_timer(struct thread *thread)
 							zif->rtadv
 								.MaxRtrAdvInterval;
 						rtadv_send_packet(
-							zns->rtadv.sock, ifp);
+							zrouter.rtadv.sock,
+							ifp);
 					}
 				}
 			}
@@ -451,7 +455,39 @@ static void rtadv_process_solicit(struct interface *ifp)
 	struct zebra_ns *zns = zvrf->zns;
 
 	assert(zns);
-	rtadv_send_packet(zns->rtadv.sock, ifp);
+	rtadv_send_packet(zrouter.rtadv.sock, ifp);
+}
+
+/*
+ * This function processes optional attributes off of
+ * end of a RA packet received.  At this point in
+ * time we only care about this in one situation
+ * which is when a interface does not have a LL
+ * v6 address.  We still need to be able to install
+ * the mac address for v4 to v6 resolution
+ */
+static void rtadv_process_optional(uint8_t *optional, unsigned int len,
+				   struct interface *ifp,
+				   struct sockaddr_in6 *addr)
+{
+	char *mac;
+
+	while (len > 0) {
+		struct nd_opt_hdr *opt_hdr = (struct nd_opt_hdr *)optional;
+
+		switch(opt_hdr->nd_opt_type) {
+		case ND_OPT_SOURCE_LINKADDR:
+			mac = (char *)(optional+2);
+			if_nbr_mac_to_ipv4ll_neigh_update(ifp, mac,
+							  &addr->sin6_addr, 1);
+			break;
+		default:
+			break;
+		}
+
+		len -= 8 * opt_hdr->nd_opt_len;
+		optional += 8 * opt_hdr->nd_opt_len;
+	}
 }
 
 static void rtadv_process_advert(uint8_t *msg, unsigned int len,
@@ -468,14 +504,19 @@ static void rtadv_process_advert(uint8_t *msg, unsigned int len,
 	inet_ntop(AF_INET6, &addr->sin6_addr, addr_str, INET6_ADDRSTRLEN);
 
 	if (len < sizeof(struct nd_router_advert)) {
-		zlog_warn("%s(%u): Rx RA with invalid length %d from %s",
-			  ifp->name, ifp->ifindex, len, addr_str);
+		if (IS_ZEBRA_DEBUG_PACKET)
+			zlog_debug("%s(%u): Rx RA with invalid length %d from %s",
+				   ifp->name, ifp->ifindex, len, addr_str);
 		return;
 	}
+
 	if (!IN6_IS_ADDR_LINKLOCAL(&addr->sin6_addr)) {
-		zlog_warn(
-			"%s(%u): Rx RA with non-linklocal source address from %s",
-			ifp->name, ifp->ifindex, addr_str);
+		rtadv_process_optional(msg + sizeof(struct nd_router_advert),
+				       len - sizeof(struct nd_router_advert),
+				       ifp, addr);
+		if (IS_ZEBRA_DEBUG_PACKET)
+			zlog_debug("%s(%u): Rx RA with non-linklocal source address from %s",
+				   ifp->name, ifp->ifindex, addr_str);
 		return;
 	}
 
@@ -483,21 +524,24 @@ static void rtadv_process_advert(uint8_t *msg, unsigned int len,
 
 	if ((radvert->nd_ra_curhoplimit && zif->rtadv.AdvCurHopLimit)
 	    && (radvert->nd_ra_curhoplimit != zif->rtadv.AdvCurHopLimit)) {
-		zlog_warn(
+		flog_warn(
+			EC_ZEBRA_RA_PARAM_MISMATCH,
 			"%s(%u): Rx RA - our AdvCurHopLimit doesn't agree with %s",
 			ifp->name, ifp->ifindex, addr_str);
 	}
 
 	if ((radvert->nd_ra_flags_reserved & ND_RA_FLAG_MANAGED)
 	    && !zif->rtadv.AdvManagedFlag) {
-		zlog_warn(
+		flog_warn(
+			EC_ZEBRA_RA_PARAM_MISMATCH,
 			"%s(%u): Rx RA - our AdvManagedFlag doesn't agree with %s",
 			ifp->name, ifp->ifindex, addr_str);
 	}
 
 	if ((radvert->nd_ra_flags_reserved & ND_RA_FLAG_OTHER)
 	    && !zif->rtadv.AdvOtherConfigFlag) {
-		zlog_warn(
+		flog_warn(
+			EC_ZEBRA_RA_PARAM_MISMATCH,
 			"%s(%u): Rx RA - our AdvOtherConfigFlag doesn't agree with %s",
 			ifp->name, ifp->ifindex, addr_str);
 	}
@@ -505,7 +549,8 @@ static void rtadv_process_advert(uint8_t *msg, unsigned int len,
 	if ((radvert->nd_ra_reachable && zif->rtadv.AdvReachableTime)
 	    && (ntohl(radvert->nd_ra_reachable)
 		!= zif->rtadv.AdvReachableTime)) {
-		zlog_warn(
+		flog_warn(
+			EC_ZEBRA_RA_PARAM_MISMATCH,
 			"%s(%u): Rx RA - our AdvReachableTime doesn't agree with %s",
 			ifp->name, ifp->ifindex, addr_str);
 	}
@@ -513,7 +558,8 @@ static void rtadv_process_advert(uint8_t *msg, unsigned int len,
 	if ((radvert->nd_ra_retransmit && zif->rtadv.AdvRetransTimer)
 	    && (ntohl(radvert->nd_ra_retransmit)
 		!= (unsigned int)zif->rtadv.AdvRetransTimer)) {
-		zlog_warn(
+		flog_warn(
+			EC_ZEBRA_RA_PARAM_MISMATCH,
 			"%s(%u): Rx RA - our AdvRetransTimer doesn't agree with %s",
 			ifp->name, ifp->ifindex, addr_str);
 	}
@@ -543,7 +589,8 @@ static void rtadv_process_packet(uint8_t *buf, unsigned int len,
 	/* Interface search. */
 	ifp = if_lookup_by_index_per_ns(zns, ifindex);
 	if (ifp == NULL) {
-		zlog_warn("RA/RS received on unknown IF %u from %s", ifindex,
+		flog_warn(EC_ZEBRA_UNKNOWN_INTERFACE,
+			  "RA/RS received on unknown IF %u from %s", ifindex,
 			  addr_str);
 		return;
 	}
@@ -563,8 +610,8 @@ static void rtadv_process_packet(uint8_t *buf, unsigned int len,
 
 	/* ICMP message length check. */
 	if (len < sizeof(struct icmp6_hdr)) {
-		zlog_warn("%s(%u): Rx RA with Invalid ICMPV6 packet length %d",
-			  ifp->name, ifp->ifindex, len);
+		zlog_debug("%s(%u): Rx RA with Invalid ICMPV6 packet length %d",
+			   ifp->name, ifp->ifindex, len);
 		return;
 	}
 
@@ -573,15 +620,15 @@ static void rtadv_process_packet(uint8_t *buf, unsigned int len,
 	/* ICMP message type check. */
 	if (icmph->icmp6_type != ND_ROUTER_SOLICIT
 	    && icmph->icmp6_type != ND_ROUTER_ADVERT) {
-		zlog_warn("%s(%u): Rx RA - Unwanted ICMPV6 message type %d",
-			  ifp->name, ifp->ifindex, icmph->icmp6_type);
+		zlog_debug("%s(%u): Rx RA - Unwanted ICMPV6 message type %d",
+			   ifp->name, ifp->ifindex, icmph->icmp6_type);
 		return;
 	}
 
 	/* Hoplimit check. */
 	if (hoplimit >= 0 && hoplimit != 255) {
-		zlog_warn("%s(%u): Rx RA - Invalid hoplimit %d", ifp->name,
-			  ifp->ifindex, hoplimit);
+		zlog_debug("%s(%u): Rx RA - Invalid hoplimit %d", ifp->name,
+			   ifp->ifindex, hoplimit);
 		return;
 	}
 
@@ -605,7 +652,7 @@ static int rtadv_read(struct thread *thread)
 	struct zebra_ns *zns = THREAD_ARG(thread);
 
 	sock = THREAD_FD(thread);
-	zns->rtadv.ra_read = NULL;
+	zrouter.rtadv.ra_read = NULL;
 
 	/* Register myself. */
 	rtadv_event(zns, RTADV_READ, sock);
@@ -614,8 +661,9 @@ static int rtadv_read(struct thread *thread)
 				&hoplimit);
 
 	if (len < 0) {
-		zlog_warn("RA/RS recv failed, socket %u error %s", sock,
-			  safe_strerror(errno));
+		flog_err_sys(EC_LIB_SOCKET,
+			     "RA/RS recv failed, socket %u error %s", sock,
+			     safe_strerror(errno));
 		return len;
 	}
 
@@ -763,18 +811,18 @@ static void ipv6_nd_suppress_ra_set(struct interface *ifp,
 		if (zif->rtadv.AdvSendAdvertisements) {
 			zif->rtadv.AdvSendAdvertisements = 0;
 			zif->rtadv.AdvIntervalTimer = 0;
-			zns->rtadv.adv_if_count--;
+			zrouter.rtadv.adv_if_count--;
 
-			if_leave_all_router(zns->rtadv.sock, ifp);
+			if_leave_all_router(zrouter.rtadv.sock, ifp);
 
-			if (zns->rtadv.adv_if_count == 0)
+			if (zrouter.rtadv.adv_if_count == 0)
 				rtadv_event(zns, RTADV_STOP, 0);
 		}
 	} else {
 		if (!zif->rtadv.AdvSendAdvertisements) {
 			zif->rtadv.AdvSendAdvertisements = 1;
 			zif->rtadv.AdvIntervalTimer = 0;
-			zns->rtadv.adv_if_count++;
+			zrouter.rtadv.adv_if_count++;
 
 			if (zif->rtadv.MaxRtrAdvInterval >= 1000) {
 				/* Enable Fast RA only when RA interval is in
@@ -784,10 +832,11 @@ static void ipv6_nd_suppress_ra_set(struct interface *ifp,
 					RTADV_NUM_FAST_REXMITS;
 			}
 
-			if_join_all_router(zns->rtadv.sock, ifp);
+			if_join_all_router(zrouter.rtadv.sock, ifp);
 
-			if (zns->rtadv.adv_if_count == 1)
-				rtadv_event(zns, RTADV_START, zns->rtadv.sock);
+			if (zrouter.rtadv.adv_if_count == 1)
+				rtadv_event(zns, RTADV_START,
+					    zrouter.rtadv.sock);
 		}
 	}
 }
@@ -822,15 +871,17 @@ static void zebra_interface_radv_set(ZAPI_HANDLER_ARGS, int enable)
 	/* Locate interface and check VRF match. */
 	ifp = if_lookup_by_index_per_ns(zebra_ns_lookup(NS_DEFAULT), ifindex);
 	if (!ifp) {
-		zlog_warn("%u: IF %u RA %s client %s - interface unknown",
+		flog_warn(EC_ZEBRA_UNKNOWN_INTERFACE,
+			  "%u: IF %u RA %s client %s - interface unknown",
 			  zvrf_id(zvrf), ifindex, enable ? "enable" : "disable",
 			  zebra_route_string(client->proto));
 		return;
 	}
 	if (ifp->vrf_id != zvrf_id(zvrf)) {
-		zlog_warn("%u: IF %u RA %s client %s - VRF mismatch, IF VRF %u",
-			  zvrf_id(zvrf), ifindex, enable ? "enable" : "disable",
-			  zebra_route_string(client->proto), ifp->vrf_id);
+		zlog_debug(
+			"%u: IF %u RA %s client %s - VRF mismatch, IF VRF %u",
+			zvrf_id(zvrf), ifindex, enable ? "enable" : "disable",
+			zebra_route_string(client->proto), ifp->vrf_id);
 		return;
 	}
 
@@ -925,10 +976,7 @@ DEFUN (ipv6_nd_ra_interval_msec,
 	VTY_DECLVAR_CONTEXT(interface, ifp);
 	unsigned interval;
 	struct zebra_if *zif = ifp->info;
-	struct zebra_vrf *zvrf = vrf_info_lookup(ifp->vrf_id);
-	struct zebra_ns *zns;
 
-	zns = zvrf->zns;
 	interval = strtoul(argv[idx_number]->arg, NULL, 10);
 	if ((zif->rtadv.AdvDefaultLifetime != -1
 	     && interval > (unsigned)zif->rtadv.AdvDefaultLifetime * 1000)) {
@@ -938,10 +986,10 @@ DEFUN (ipv6_nd_ra_interval_msec,
 	}
 
 	if (zif->rtadv.MaxRtrAdvInterval % 1000)
-		zns->rtadv.adv_msec_if_count--;
+		zrouter.rtadv.adv_msec_if_count--;
 
 	if (interval % 1000)
-		zns->rtadv.adv_msec_if_count++;
+		zrouter.rtadv.adv_msec_if_count++;
 
 	SET_FLAG(zif->rtadv.ra_configured, VTY_RA_INTERVAL_CONFIGURED);
 	zif->rtadv.MaxRtrAdvInterval = interval;
@@ -963,10 +1011,7 @@ DEFUN (ipv6_nd_ra_interval,
 	VTY_DECLVAR_CONTEXT(interface, ifp);
 	unsigned interval;
 	struct zebra_if *zif = ifp->info;
-	struct zebra_vrf *zvrf = vrf_info_lookup(ifp->vrf_id);
-	struct zebra_ns *zns;
 
-	zns = zvrf->zns;
 	interval = strtoul(argv[idx_number]->arg, NULL, 10);
 	if ((zif->rtadv.AdvDefaultLifetime != -1
 	     && interval > (unsigned)zif->rtadv.AdvDefaultLifetime)) {
@@ -976,7 +1021,7 @@ DEFUN (ipv6_nd_ra_interval,
 	}
 
 	if (zif->rtadv.MaxRtrAdvInterval % 1000)
-		zns->rtadv.adv_msec_if_count--;
+		zrouter.rtadv.adv_msec_if_count--;
 
 	/* convert to milliseconds */
 	interval = interval * 1000;
@@ -1002,14 +1047,9 @@ DEFUN (no_ipv6_nd_ra_interval,
 {
 	VTY_DECLVAR_CONTEXT(interface, ifp);
 	struct zebra_if *zif = ifp->info;
-	struct zebra_vrf *zvrf;
-	struct zebra_ns *zns;
-
-	zvrf = vrf_info_lookup(ifp->vrf_id);
-	zns = zvrf->zns;
 
 	if (zif->rtadv.MaxRtrAdvInterval % 1000)
-		zns->rtadv.adv_msec_if_count--;
+		zrouter.rtadv.adv_msec_if_count--;
 
 	UNSET_FLAG(zif->rtadv.ra_configured, VTY_RA_INTERVAL_CONFIGURED);
 
@@ -1654,7 +1694,7 @@ static int rtadv_config_write(struct vty *vty, struct interface *ifp)
 
 static void rtadv_event(struct zebra_ns *zns, enum rtadv_event event, int val)
 {
-	struct rtadv *rtadv = &zns->rtadv;
+	struct rtadv *rtadv = &zrouter.rtadv;
 
 	switch (event) {
 	case RTADV_START:
@@ -1693,19 +1733,19 @@ static void rtadv_event(struct zebra_ns *zns, enum rtadv_event event, int val)
 
 void rtadv_init(struct zebra_ns *zns)
 {
-	zns->rtadv.sock = rtadv_make_socket(zns->ns_id);
+	zrouter.rtadv.sock = rtadv_make_socket(zns->ns_id);
 }
 
 void rtadv_terminate(struct zebra_ns *zns)
 {
 	rtadv_event(zns, RTADV_STOP, 0);
-	if (zns->rtadv.sock >= 0) {
-		close(zns->rtadv.sock);
-		zns->rtadv.sock = -1;
+	if (zrouter.rtadv.sock >= 0) {
+		close(zrouter.rtadv.sock);
+		zrouter.rtadv.sock = -1;
 	}
 
-	zns->rtadv.adv_if_count = 0;
-	zns->rtadv.adv_msec_if_count = 0;
+	zrouter.rtadv.adv_if_count = 0;
+	zrouter.rtadv.adv_msec_if_count = 0;
 }
 
 void rtadv_cmd_init(void)
@@ -1757,8 +1797,10 @@ static int if_join_all_router(int sock, struct interface *ifp)
 	ret = setsockopt(sock, IPPROTO_IPV6, IPV6_JOIN_GROUP, (char *)&mreq,
 			 sizeof mreq);
 	if (ret < 0)
-		zlog_warn("%s(%u): Failed to join group, socket %u error %s",
-			  ifp->name, ifp->ifindex, sock, safe_strerror(errno));
+		flog_err_sys(EC_LIB_SOCKET,
+			     "%s(%u): Failed to join group, socket %u error %s",
+			     ifp->name, ifp->ifindex, sock,
+			     safe_strerror(errno));
 
 	if (IS_ZEBRA_DEBUG_EVENT)
 		zlog_debug(
@@ -1781,8 +1823,10 @@ static int if_leave_all_router(int sock, struct interface *ifp)
 	ret = setsockopt(sock, IPPROTO_IPV6, IPV6_LEAVE_GROUP, (char *)&mreq,
 			 sizeof mreq);
 	if (ret < 0)
-		zlog_warn("%s(%u): Failed to leave group, socket %u error %s",
-			  ifp->name, ifp->ifindex, sock, safe_strerror(errno));
+		flog_err_sys(
+			EC_LIB_SOCKET,
+			"%s(%u): Failed to leave group, socket %u error %s",
+			ifp->name, ifp->ifindex, sock, safe_strerror(errno));
 
 	if (IS_ZEBRA_DEBUG_EVENT)
 		zlog_debug(

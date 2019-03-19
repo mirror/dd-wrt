@@ -297,35 +297,31 @@ DECLARE_QOBJ_TYPE(interface)
 
 #define IFNAME_RB_INSERT(vrf, ifp)                                             \
 	if (RB_INSERT(if_name_head, &vrf->ifaces_by_name, (ifp)))              \
-		flog_err(                                                     \
-			LIB_ERR_INTERFACE,                                     \
-			"%s(%s): corruption detected -- interface with this "  \
-			"name exists already in VRF %u!",                      \
-			__func__, (ifp)->name, (ifp)->vrf_id);
+		flog_err(EC_LIB_INTERFACE,                                     \
+			 "%s(%s): corruption detected -- interface with this " \
+			 "name exists already in VRF %u!",                     \
+			 __func__, (ifp)->name, (ifp)->vrf_id);
 
 #define IFNAME_RB_REMOVE(vrf, ifp)                                             \
 	if (RB_REMOVE(if_name_head, &vrf->ifaces_by_name, (ifp)) == NULL)      \
-		flog_err(                                                     \
-			LIB_ERR_INTERFACE,                                     \
-			"%s(%s): corruption detected -- interface with this "  \
-			"name doesn't exist in VRF %u!",                       \
-			__func__, (ifp)->name, (ifp)->vrf_id);
+		flog_err(EC_LIB_INTERFACE,                                     \
+			 "%s(%s): corruption detected -- interface with this " \
+			 "name doesn't exist in VRF %u!",                      \
+			 __func__, (ifp)->name, (ifp)->vrf_id);
 
 #define IFINDEX_RB_INSERT(vrf, ifp)                                            \
 	if (RB_INSERT(if_index_head, &vrf->ifaces_by_index, (ifp)))            \
-		flog_err(                                                     \
-			LIB_ERR_INTERFACE,                                     \
-			"%s(%u): corruption detected -- interface with this "  \
-			"ifindex exists already in VRF %u!",                   \
-			__func__, (ifp)->ifindex, (ifp)->vrf_id);
+		flog_err(EC_LIB_INTERFACE,                                     \
+			 "%s(%u): corruption detected -- interface with this " \
+			 "ifindex exists already in VRF %u!",                  \
+			 __func__, (ifp)->ifindex, (ifp)->vrf_id);
 
 #define IFINDEX_RB_REMOVE(vrf, ifp)                                            \
 	if (RB_REMOVE(if_index_head, &vrf->ifaces_by_index, (ifp)) == NULL)    \
-		flog_err(                                                     \
-			LIB_ERR_INTERFACE,                                     \
-			"%s(%u): corruption detected -- interface with this "  \
-			"ifindex doesn't exist in VRF %u!",                    \
-			__func__, (ifp)->ifindex, (ifp)->vrf_id);
+		flog_err(EC_LIB_INTERFACE,                                     \
+			 "%s(%u): corruption detected -- interface with this " \
+			 "ifindex doesn't exist in VRF %u!",                   \
+			 __func__, (ifp)->ifindex, (ifp)->vrf_id);
 
 #define FOR_ALL_INTERFACES(vrf, ifp)                                           \
 	if (vrf)                                                               \
@@ -455,7 +451,7 @@ struct nbr_connected {
 #endif /* IFF_VIRTUAL */
 
 /* Prototypes. */
-extern int if_cmp_name_func(char *, char *);
+extern int if_cmp_name_func(const char *p1, const char *p2);
 
 /*
  * Passing in VRF_UNKNOWN is a valid thing to do, unless we
@@ -478,8 +474,7 @@ extern struct interface *if_lookup_prefix(struct prefix *prefix,
    by a '\0' character: */
 extern struct interface *if_lookup_by_name_all_vrf(const char *ifname);
 extern struct interface *if_lookup_by_name(const char *ifname, vrf_id_t vrf_id);
-extern struct interface *if_get_by_name(const char *ifname, vrf_id_t vrf_id,
-					int vty);
+extern struct interface *if_get_by_name(const char *ifname, vrf_id_t vrf_id);
 extern void if_set_index(struct interface *ifp, ifindex_t ifindex);
 
 /* Delete the interface, but do not free the structure, and leave it in the
@@ -501,7 +496,6 @@ extern bool if_is_loopback_or_vrf(struct interface *ifp);
 extern int if_is_broadcast(struct interface *);
 extern int if_is_pointopoint(struct interface *);
 extern int if_is_multicast(struct interface *);
-extern void if_cmd_init(void);
 struct vrf;
 extern void if_terminate(struct vrf *vrf);
 extern void if_dump_all(void);
@@ -537,5 +531,9 @@ struct nbr_connected *nbr_connected_check(struct interface *, struct prefix *);
 /* link parameters */
 struct if_link_params *if_link_params_get(struct interface *);
 void if_link_params_free(struct interface *);
+
+/* Northbound. */
+extern void if_cmd_init(void);
+extern const struct frr_yang_module_info frr_interface_info;
 
 #endif /* _ZEBRA_IF_H */

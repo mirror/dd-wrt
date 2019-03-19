@@ -14,6 +14,10 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
@@ -60,7 +64,7 @@ static void err_key_fini(void)
 pthread_mutex_t refs_mtx = PTHREAD_MUTEX_INITIALIZER;
 struct hash *refs;
 
-static int ferr_hash_cmp(const void *a, const void *b)
+static bool ferr_hash_cmp(const void *a, const void *b)
 {
 	const struct log_ref *f_a = a;
 	const struct log_ref *f_b = b;
@@ -148,7 +152,7 @@ void log_ref_display(struct vty *vty, uint32_t code, bool json)
 			snprintf(pbuf, sizeof(pbuf), "\nError %"PRIu32" - %s",
 				 ref->code, ref->title);
 			memset(ubuf, '=', strlen(pbuf));
-			ubuf[sizeof(ubuf) - 1] = '\0';
+			ubuf[strlen(pbuf)] = '\0';
 
 			vty_out(vty, "%s\n%s\n", pbuf, ubuf);
 			vty_out(vty, "Description:\n%s\n\n", ref->description);
@@ -163,7 +167,7 @@ void log_ref_display(struct vty *vty, uint32_t code, bool json)
 		json_object_free(top);
 	}
 
-	list_delete_and_null(&errlist);
+	list_delete(&errlist);
 }
 
 DEFUN_NOSH(show_error_code,

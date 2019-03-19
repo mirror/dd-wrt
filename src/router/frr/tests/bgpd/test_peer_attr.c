@@ -254,6 +254,8 @@ TEST_STR_ATTR_HANDLER_DECL(password, password, "FRR-Peer", "FRR-Group");
 TEST_ATTR_HANDLER_DECL(local_as, change_local_as, 1, 2);
 TEST_ATTR_HANDLER_DECL(timers_1, keepalive, 10, 20);
 TEST_ATTR_HANDLER_DECL(timers_2, holdtime, 30, 60);
+TEST_ATTR_HANDLER_DECL(addpath_types, addpath_type[pa->afi][pa->safi],
+		       BGP_ADDPATH_ALL, BGP_ADDPATH_BEST_PER_AS);
 TEST_SU_ATTR_HANDLER_DECL(update_source_su, update_source, "255.255.255.1",
 			  "255.255.255.2");
 TEST_STR_ATTR_HANDLER_DECL(update_source_if, update_if, "IF-PEER", "IF-GROUP");
@@ -414,12 +416,11 @@ static struct test_peer_attr test_peer_attrs[] = {
 
 	/* Address Family Attributes */
 	{
-		.cmd = "addpath-tx-all-paths",
-		.u.flag = PEER_FLAG_ADDPATH_TX_ALL_PATHS,
-	},
-	{
-		.cmd = "addpath-tx-bestpath-per-AS",
-		.u.flag = PEER_FLAG_ADDPATH_TX_BESTPATH_PER_AS,
+		.cmd = "addpath",
+		.peer_cmd = "addpath-tx-all-paths",
+		.group_cmd = "addpath-tx-bestpath-per-AS",
+		.type = PEER_AT_AF_CUSTOM,
+		.handlers[0] = TEST_HANDLER(addpath_types),
 	},
 	{
 		.cmd = "allowas-in",
@@ -966,7 +967,7 @@ static void test_finish(struct test *test)
 		test->vty = NULL;
 	}
 	if (test->log)
-		list_delete_and_null(&test->log);
+		list_delete(&test->log);
 	if (test->desc)
 		XFREE(MTYPE_TMP, test->desc);
 	if (test->error)
@@ -1385,9 +1386,11 @@ static void bgp_startup(void)
 	zprivs_init(&bgpd_privs);
 
 	master = thread_master_create(NULL);
+	yang_init();
+	nb_init(master, NULL, 0);
 	bgp_master_init(master);
 	bgp_option_set(BGP_OPT_NO_LISTEN);
-	vrf_init(NULL, NULL, NULL, NULL);
+	vrf_init(NULL, NULL, NULL, NULL, NULL);
 	bgp_init(0);
 	bgp_pthreads_run();
 }
@@ -1423,11 +1426,13 @@ static void bgp_shutdown(void)
 	bgp_zebra_destroy();
 
 	bf_free(bm->rd_idspace);
-	list_delete_and_null(&bm->bgp);
+	list_delete(&bm->bgp);
 	memset(bm, 0, sizeof(*bm));
 
 	vty_terminate();
 	cmd_terminate();
+	nb_terminate();
+	yang_terminate();
 	zprivs_terminate(&bgpd_privs);
 	thread_master_free(master);
 	master = NULL;
@@ -1502,7 +1507,7 @@ int main(void)
 		XFREE(MTYPE_TMP, pa);
 	}
 
-	list_delete_and_null(&pa_list);
+	list_delete(&pa_list);
 	bgp_shutdown();
 
 	return 0;

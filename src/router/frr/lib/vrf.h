@@ -41,8 +41,6 @@ enum { IFLA_VRF_UNSPEC, IFLA_VRF_TABLE, __IFLA_VRF_MAX };
 #define VRF_NAMSIZ      36
 #define NS_NAMSIZ       16
 
-#define VRF_DEFAULT_NAME    "Default-IP-Routing-Table"
-
 /*
  * The command strings
  */
@@ -113,8 +111,8 @@ extern vrf_id_t vrf_name_to_id(const char *);
 
 #define VRF_GET_ID(V, NAME, USE_JSON)                                          \
 	do {                                                                   \
-		struct vrf *vrf;                                               \
-		if (!(vrf = vrf_lookup_by_name(NAME))) {                       \
+		struct vrf *_vrf;                                              \
+		if (!(_vrf = vrf_lookup_by_name(NAME))) {                      \
 			if (USE_JSON) {                                        \
 				vty_out(vty, "{}\n");                          \
 			} else {                                               \
@@ -122,7 +120,7 @@ extern vrf_id_t vrf_name_to_id(const char *);
 			}                                                      \
 			return CMD_WARNING;                                    \
 		}                                                              \
-		if (vrf->vrf_id == VRF_UNKNOWN) {                              \
+		if (_vrf->vrf_id == VRF_UNKNOWN) {                             \
 			if (USE_JSON) {                                        \
 				vty_out(vty, "{}\n");                          \
 			} else {                                               \
@@ -130,7 +128,7 @@ extern vrf_id_t vrf_name_to_id(const char *);
 			}                                                      \
 			return CMD_WARNING;                                    \
 		}                                                              \
-		(V) = vrf->vrf_id;                                             \
+		(V) = _vrf->vrf_id;                                            \
 	} while (0)
 
 /*
@@ -201,8 +199,10 @@ extern int vrf_bitmap_check(vrf_bitmap_t, vrf_id_t);
  * delete -> Called back when a vrf is being deleted from
  *           the system ( 2 and 3 ) above.
  */
-extern void vrf_init(int (*create)(struct vrf *), int (*enable)(struct vrf *),
-		     int (*disable)(struct vrf *), int (*delete)(struct vrf *));
+extern void vrf_init(int (*create)(struct vrf *vrf), int (*enable)(struct vrf *vrf),
+		     int (*disable)(struct vrf *vrf), int (*delete)(struct vrf *vrf),
+		     int (*update)(struct vrf *vrf));
+
 /*
  * Call vrf_terminate when the protocol is being shutdown
  */
@@ -236,8 +236,9 @@ extern vrf_id_t vrf_get_default_id(void);
 /* The default VRF ID */
 #define VRF_DEFAULT vrf_get_default_id()
 
-/* VRF is mapped on netns or not ? */
-int vrf_is_mapped_on_netns(struct vrf *vrf);
+extern void vrf_set_default_name(const char *default_name, bool force);
+extern const char *vrf_get_default_name(void);
+#define VRF_DEFAULT_NAME    vrf_get_default_name()
 
 /* VRF switch from NETNS */
 extern int vrf_switch_to_netns(vrf_id_t vrf_id);
@@ -289,5 +290,6 @@ extern int vrf_netns_handler_create(struct vty *vty, struct vrf *vrf,
 extern void vrf_disable(struct vrf *vrf);
 extern int vrf_enable(struct vrf *vrf);
 extern void vrf_delete(struct vrf *vrf);
+extern vrf_id_t vrf_generate_id(void);
 
 #endif /*_ZEBRA_VRF_H*/

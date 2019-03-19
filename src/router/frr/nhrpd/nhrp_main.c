@@ -7,6 +7,10 @@
  * (at your option) any later version.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <unistd.h>
 
 #include "zebra.h"
@@ -112,13 +116,18 @@ static struct quagga_signal_t sighandlers[] = {
 	},
 };
 
+static const struct frr_yang_module_info *nhrpd_yang_modules[] = {
+	&frr_interface_info,
+};
+
 FRR_DAEMON_INFO(nhrpd, NHRP, .vty_port = NHRP_VTY_PORT,
 
 		.proghelp = "Implementation of the NHRP routing protocol.",
 
 		.signals = sighandlers, .n_signals = array_size(sighandlers),
 
-		.privs = &nhrpd_privs, )
+		.privs = &nhrpd_privs, .yang_modules = nhrpd_yang_modules,
+		.n_yang_modules = array_size(nhrpd_yang_modules), )
 
 int main(int argc, char **argv)
 {
@@ -130,7 +139,7 @@ int main(int argc, char **argv)
 	/* Library inits. */
 	master = frr_init();
 	nhrp_error_init();
-	vrf_init(NULL, NULL, NULL, NULL);
+	vrf_init(NULL, NULL, NULL, NULL, NULL);
 	nhrp_interface_init();
 	resolver_init();
 

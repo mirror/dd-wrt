@@ -48,6 +48,7 @@
 #include "isisd/isis_events.h"
 #include "isisd/isis_mt.h"
 #include "isisd/isis_tlvs.h"
+#include "isisd/fabricd.h"
 
 extern struct isis *isis;
 
@@ -121,6 +122,8 @@ struct isis_adjacency *isis_adj_lookup_snpa(const uint8_t *ssnpa,
 	return NULL;
 }
 
+DEFINE_HOOK(isis_adj_state_change_hook, (struct isis_adjacency *adj), (adj))
+
 void isis_delete_adj(void *arg)
 {
 	struct isis_adjacency *adj = arg;
@@ -129,6 +132,10 @@ void isis_delete_adj(void *arg)
 		return;
 
 	THREAD_TIMER_OFF(adj->t_expire);
+	if (adj->adj_state != ISIS_ADJ_DOWN) {
+		adj->adj_state = ISIS_ADJ_DOWN;
+		hook_call(isis_adj_state_change_hook, adj);
+	}
 
 	/* remove from SPF trees */
 	spftree_area_adj_del(adj->circuit->area, adj);
@@ -193,6 +200,9 @@ void isis_adj_process_threeway(struct isis_adjacency *adj,
 		}
 	}
 
+	if (next_tw_state != ISIS_THREEWAY_DOWN)
+		fabricd_initial_sync_hello(adj->circuit);
+
 	if (next_tw_state == ISIS_THREEWAY_DOWN) {
 		isis_adj_state_change(adj, ISIS_ADJ_DOWN, "Neighbor restarted");
 		return;
@@ -205,21 +215,24 @@ void isis_adj_process_threeway(struct isis_adjacency *adj,
 		}
 	}
 
+	if (adj->threeway_state != next_tw_state) {
+		send_hello_sched(adj->circuit, 0, TRIGGERED_IIH_DELAY);
+	}
+
 	adj->threeway_state = next_tw_state;
 }
 
 void isis_adj_state_change(struct isis_adjacency *adj,
 			   enum isis_adj_state new_state, const char *reason)
 {
-	int old_state;
-	int level;
-	struct isis_circuit *circuit;
+	enum isis_adj_state old_state = adj->adj_state;
+	struct isis_circuit *circuit = adj->circuit;
 	bool del;
 
-	old_state = adj->adj_state;
 	adj->adj_state = new_state;
-
-	circuit = adj->circuit;
+	if (new_state != old_state) {
+		send_hello_sched(circuit, adj->level, TRIGGERED_IIH_DELAY);
+	}
 
 	if (isis->debugs & DEBUG_ADJ_PACKETS) {
 		zlog_debug("ISIS-Adj (%s): Adjacency state change %d->%d: %s",
@@ -245,15 +258,19 @@ void isis_adj_state_change(struct isis_adjacency *adj,
 			reason ? reason : "unspecified");
 	}
 
+#ifndef FABRICD
+	/* send northbound notification */
+	isis_notif_adj_state_change(adj, new_state, reason);
+#endif /* ifndef FABRICD */
+
 	if (circuit->circ_type == CIRCUIT_T_BROADCAST) {
 		del = false;
-		for (level = IS_LEVEL_1; level <= IS_LEVEL_2; level++) {
+		for (int level = IS_LEVEL_1; level <= IS_LEVEL_2; level++) {
 			if ((adj->level & level) == 0)
 				continue;
 			if (new_state == ISIS_ADJ_UP) {
 				circuit->upadjcount[level - 1]++;
-				isis_event_adjacency_state_change(adj,
-								  new_state);
+				hook_call(isis_adj_state_change_hook, adj);
 				/* update counter & timers for debugging
 				 * purposes */
 				adj->last_flap = time(NULL);
@@ -264,10 +281,9 @@ void isis_adj_state_change(struct isis_adjacency *adj,
 
 				circuit->upadjcount[level - 1]--;
 				if (circuit->upadjcount[level - 1] == 0)
-					isis_circuit_lsp_queue_clean(circuit);
+					isis_tx_queue_clean(circuit->tx_queue);
 
-				isis_event_adjacency_state_change(adj,
-								  new_state);
+				hook_call(isis_adj_state_change_hook, adj);
 				del = true;
 			}
 
@@ -290,35 +306,35 @@ void isis_adj_state_change(struct isis_adjacency *adj,
 
 	} else if (circuit->circ_type == CIRCUIT_T_P2P) {
 		del = false;
-		for (level = IS_LEVEL_1; level <= IS_LEVEL_2; level++) {
+		for (int level = IS_LEVEL_1; level <= IS_LEVEL_2; level++) {
 			if ((adj->level & level) == 0)
 				continue;
 			if (new_state == ISIS_ADJ_UP) {
 				circuit->upadjcount[level - 1]++;
-				isis_event_adjacency_state_change(adj,
-								  new_state);
-
-				if (adj->sys_type == ISIS_SYSTYPE_UNKNOWN)
-					send_hello(circuit, level);
+				hook_call(isis_adj_state_change_hook, adj);
 
 				/* update counter & timers for debugging
 				 * purposes */
 				adj->last_flap = time(NULL);
 				adj->flaps++;
 
-				/* 7.3.17 - going up on P2P -> send CSNP */
-				/* FIXME: yup, I know its wrong... but i will do
-				 * it! (for now) */
-				send_csnp(circuit, level);
+				if (level == IS_LEVEL_1) {
+					thread_add_timer(master, send_l1_csnp,
+							 circuit, 0,
+							 &circuit->t_send_csnp[0]);
+				} else {
+					thread_add_timer(master, send_l2_csnp,
+							 circuit, 0,
+							 &circuit->t_send_csnp[1]);
+				}
 			} else if (new_state == ISIS_ADJ_DOWN) {
 				if (adj->circuit->u.p2p.neighbor == adj)
 					adj->circuit->u.p2p.neighbor = NULL;
 				circuit->upadjcount[level - 1]--;
 				if (circuit->upadjcount[level - 1] == 0)
-					isis_circuit_lsp_queue_clean(circuit);
+					isis_tx_queue_clean(circuit->tx_queue);
 
-				isis_event_adjacency_state_change(adj,
-								  new_state);
+				hook_call(isis_adj_state_change_hook, adj);
 				del = true;
 			}
 		}
@@ -326,8 +342,6 @@ void isis_adj_state_change(struct isis_adjacency *adj,
 		if (del)
 			isis_delete_adj(adj);
 	}
-
-	return;
 }
 
 

@@ -20,6 +20,10 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "command.h"
 #include "graph.h"
 #include "vector.h"
@@ -35,7 +39,8 @@ int main(int argc, char *argv[])
 		fprintf(stdout, USAGE "\n");
 		exit(EXIT_SUCCESS);
 	}
-	struct cmd_element *cmd = calloc(1, sizeof(struct cmd_element));
+	struct cmd_element *cmd = XCALLOC(MTYPE_TMP,
+					  sizeof(struct cmd_element));
 	cmd->string = strdup(argv[1]);
 
 	struct graph *graph = graph_new();

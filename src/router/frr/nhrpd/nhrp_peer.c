@@ -7,6 +7,10 @@
  * (at your option) any later version.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <netinet/if_ether.h>
 
 #include "zebra.h"
@@ -153,10 +157,11 @@ static unsigned int nhrp_peer_key(void *peer_data)
 	return sockunion_hash(&p->vc->remote.nbma);
 }
 
-static int nhrp_peer_cmp(const void *cache_data, const void *key_data)
+static bool nhrp_peer_cmp(const void *cache_data, const void *key_data)
 {
 	const struct nhrp_peer *a = cache_data;
 	const struct nhrp_peer *b = key_data;
+
 	return a->ifp == b->ifp && a->vc == b->vc;
 }
 
@@ -810,8 +815,9 @@ static void nhrp_packet_debug(struct zbuf *zb, const char *dir)
 
 	reply = packet_types[hdr->type].type == PACKET_REPLY;
 	debugf(NHRP_DEBUG_COMMON, "%s %s(%d) %s -> %s", dir,
-	       packet_types[hdr->type].name ?: "Unknown", hdr->type,
-	       reply ? buf[1] : buf[0], reply ? buf[0] : buf[1]);
+	       (packet_types[hdr->type].name ? packet_types[hdr->type].name
+					     : "Unknown"),
+	       hdr->type, reply ? buf[1] : buf[0], reply ? buf[0] : buf[1]);
 }
 
 static int proto2afi(uint16_t proto)

@@ -253,13 +253,13 @@ static void isis_route_info_delete(struct isis_route_info *route_info)
 	if (route_info->nexthops) {
 		route_info->nexthops->del =
 			(void (*)(void *))isis_nexthop_delete;
-		list_delete_and_null(&route_info->nexthops);
+		list_delete(&route_info->nexthops);
 	}
 
 	if (route_info->nexthops6) {
 		route_info->nexthops6->del =
 			(void (*)(void *))isis_nexthop6_delete;
-		list_delete_and_null(&route_info->nexthops6);
+		list_delete(&route_info->nexthops6);
 	}
 
 	XFREE(MTYPE_ISIS_ROUTE_INFO, route_info);
@@ -492,7 +492,7 @@ static void _isis_route_verify_table(struct isis_area *area,
 
 void isis_route_verify_table(struct isis_area *area, struct route_table *table)
 {
-	return _isis_route_verify_table(area, table, NULL);
+	_isis_route_verify_table(area, table, NULL);
 }
 
 /* Function to validate route tables for L1L2 areas. In this case we can't use

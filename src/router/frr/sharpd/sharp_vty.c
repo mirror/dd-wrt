@@ -28,6 +28,7 @@
 #include "log.h"
 #include "vrf.h"
 #include "zclient.h"
+#include "nexthop_group.h"
 
 #include "sharpd/sharp_zebra.h"
 #include "sharpd/sharp_vty.h"
@@ -81,13 +82,16 @@ DEFPY(watch_nexthop_v4, watch_nexthop_v4_cmd,
 
 DEFPY (install_routes,
        install_routes_cmd,
-       "sharp install routes A.B.C.D$start nexthop A.B.C.D$nexthop (1-1000000)$routes [instance (0-255)$instance]",
+       "sharp install routes A.B.C.D$start <nexthop <A.B.C.D$nexthop4|X:X::X:X$nexthop6>|nexthop-group NAME$nexthop_group> (1-1000000)$routes [instance (0-255)$instance]",
        "Sharp routing Protocol\n"
        "install some routes\n"
        "Routes to install\n"
        "Address to start /32 generation at\n"
-       "Nexthop to use\n"
-       "Nexthop address\n"
+       "Nexthop to use(Can be an IPv4 or IPv6 address)\n"
+       "V4 Nexthop address to use\n"
+       "V6 Nexthop address to use\n"
+       "Nexthop-Group to use\n"
+       "The Name of the nexthop-group\n"
        "How many to create\n"
        "Instance to use\n"
        "Instance\n")
@@ -95,6 +99,7 @@ DEFPY (install_routes,
 	int i;
 	struct prefix p;
 	struct nexthop nhop;
+	struct nexthop_group nhg;
 	uint32_t temp;
 
 	total_routes = routes;
@@ -102,19 +107,38 @@ DEFPY (install_routes,
 
 	memset(&p, 0, sizeof(p));
 	memset(&nhop, 0, sizeof(nhop));
+	memset(&nhg, 0, sizeof(nhg));
 
 	p.family = AF_INET;
 	p.prefixlen = 32;
 	p.u.prefix4 = start;
 
-	nhop.gate.ipv4 = nexthop;
-	nhop.type = NEXTHOP_TYPE_IPV4;
+	if (nexthop_group) {
+		struct nexthop_group_cmd *nhgc = nhgc_find(nexthop_group);
+		if (!nhgc) {
+			vty_out(vty,
+				"Specified Nexthop Group: %s does not exist\n",
+				nexthop_group);
+			return CMD_WARNING;
+		}
 
+		nhg.nexthop = nhgc->nhg.nexthop;
+	} else {
+		if (nexthop4.s_addr != INADDR_ANY) {
+			nhop.gate.ipv4 = nexthop4;
+			nhop.type = NEXTHOP_TYPE_IPV4;
+		} else {
+			nhop.gate.ipv6 = nexthop6;
+			nhop.type = NEXTHOP_TYPE_IPV6;
+		}
+
+		nhg.nexthop = &nhop;
+	}
 	zlog_debug("Inserting %ld routes", routes);
 
 	temp = ntohl(p.u.prefix4.s_addr);
 	for (i = 0; i < routes; i++) {
-		route_add(&p, (uint8_t)instance, &nhop);
+		route_add(&p, (uint8_t)instance, &nhg);
 		p.u.prefix4.s_addr = htonl(++temp);
 	}
 
@@ -185,6 +209,18 @@ DEFPY (remove_routes,
 	return CMD_SUCCESS;
 }
 
+DEFUN_NOSH (show_debugging_sharpd,
+	    show_debugging_sharpd_cmd,
+	    "show debugging [sharp]",
+	    SHOW_STR
+	    DEBUG_STR
+	    "Sharp Information\n")
+{
+	vty_out(vty, "Sharp debugging status\n");
+
+	return CMD_SUCCESS;
+}
+
 void sharp_vty_init(void)
 {
 	install_element(ENABLE_NODE, &install_routes_cmd);
@@ -192,5 +228,8 @@ void sharp_vty_init(void)
 	install_element(ENABLE_NODE, &vrf_label_cmd);
 	install_element(ENABLE_NODE, &watch_nexthop_v6_cmd);
 	install_element(ENABLE_NODE, &watch_nexthop_v4_cmd);
+
+	install_element(VIEW_NODE, &show_debugging_sharpd_cmd);
+
 	return;
 }

@@ -79,8 +79,8 @@ struct eigrp {
 	char *name;
 
 	/* EIGRP Router ID. */
-	uint32_t router_id;	/* Configured automatically. */
-	uint32_t router_id_static; /* Configured manually. */
+	struct in_addr router_id;	/* Configured automatically. */
+	struct in_addr router_id_static; /* Configured manually. */
 
 	struct list *eiflist;		  /* eigrp interfaces */
 	uint8_t passive_interface_default; /* passive-interface default */
@@ -131,6 +131,9 @@ struct eigrp {
 		uint32_t metric;
 	} route_map[ZEBRA_ROUTE_MAX];
 
+	/* distribute_ctx */
+	struct distribute_ctx *distribute_ctx;
+
 	QOBJ_FIELDS
 };
 DECLARE_QOBJ_TYPE(eigrp)
@@ -178,7 +181,6 @@ struct eigrp_interface {
 	uint8_t type;
 
 	struct prefix *address;      /* Interface prefix */
-	struct connected *connected; /* Pointer to connected */
 
 	/* Neighbor information. */
 	struct list *nbrs; /* EIGRP Neighbor List */

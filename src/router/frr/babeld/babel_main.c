@@ -136,6 +136,11 @@ struct option longopts[] =
     { 0 }
   };
 
+static const struct frr_yang_module_info *babeld_yang_modules[] =
+  {
+    &frr_interface_info,
+  };
+
 FRR_DAEMON_INFO(babeld, BABELD,
 		.vty_port = BABEL_VTY_PORT,
 		.proghelp = "Implementation of the BABEL routing protocol.",
@@ -144,6 +149,9 @@ FRR_DAEMON_INFO(babeld, BABELD,
 		.n_signals = array_size(babel_signals),
 
 		.privs = &babeld_privs,
+
+		.yang_modules = babeld_yang_modules,
+		.n_yang_modules = array_size(babeld_yang_modules),
 		)
 
 int
@@ -225,7 +233,7 @@ babel_init_random(void)
 
     rc = read_random_bytes(&seed, sizeof(seed));
     if(rc < 0) {
-        flog_err_sys(LIB_ERR_SYSTEM_CALL, "read(random): %s",
+        flog_err_sys(EC_LIB_SYSTEM_CALL, "read(random): %s",
 		  safe_strerror(errno));
         seed = 42;
     }
@@ -246,13 +254,13 @@ babel_replace_by_null(int fd)
 
     fd_null = open("/dev/null", O_RDONLY);
     if(fd_null < 0) {
-        flog_err_sys(LIB_ERR_SYSTEM_CALL, "open(null): %s", safe_strerror(errno));
+        flog_err_sys(EC_LIB_SYSTEM_CALL, "open(null): %s", safe_strerror(errno));
         exit(1);
     }
 
     rc = dup2(fd_null, fd);
     if(rc < 0) {
-        flog_err_sys(LIB_ERR_SYSTEM_CALL, "dup2(null, 0): %s",
+        flog_err_sys(EC_LIB_SYSTEM_CALL, "dup2(null, 0): %s",
 		  safe_strerror(errno));
         exit(1);
     }
@@ -272,11 +280,11 @@ babel_load_state_file(void)
 
     fd = open(state_file, O_RDONLY);
     if(fd < 0 && errno != ENOENT)
-        flog_err_sys(LIB_ERR_SYSTEM_CALL, "open(babel-state: %s)",
+        flog_err_sys(EC_LIB_SYSTEM_CALL, "open(babel-state: %s)",
 		  safe_strerror(errno));
     rc = unlink(state_file);
     if(fd >= 0 && rc < 0) {
-        flog_err_sys(LIB_ERR_SYSTEM_CALL, "unlink(babel-state): %s",
+        flog_err_sys(EC_LIB_SYSTEM_CALL, "unlink(babel-state): %s",
 		  safe_strerror(errno));
         /* If we couldn't unlink it, it's probably stale. */
         goto fini;
@@ -288,7 +296,7 @@ babel_load_state_file(void)
         long t;
         rc = read(fd, buf, 99);
         if(rc < 0) {
-            flog_err_sys(LIB_ERR_SYSTEM_CALL, "read(babel-state): %s",
+            flog_err_sys(EC_LIB_SYSTEM_CALL, "read(babel-state): %s",
 		      safe_strerror(errno));
         } else {
             buf[rc] = '\0';
@@ -297,7 +305,7 @@ babel_load_state_file(void)
                 unsigned char sid[8];
                 rc = parse_eui64(buf2, sid);
                 if(rc < 0) {
-                    flog_err(BABEL_ERR_CONFIG, "Couldn't parse babel-state.");
+                    flog_err(EC_BABEL_CONFIG, "Couldn't parse babel-state.");
                 } else {
                     struct timeval realnow;
                     debugf(BABEL_DEBUG_COMMON,
@@ -307,13 +315,13 @@ babel_load_state_file(void)
                     if(memcmp(sid, myid, 8) == 0)
                         myseqno = seqno_plus(s, 1);
                     else
-                        flog_err(BABEL_ERR_CONFIG,
+                        flog_err(EC_BABEL_CONFIG,
 				 "ID mismatch in babel-state. id=%s; old=%s",
                                  format_eui64(myid),
                                  format_eui64(sid));
                 }
             } else {
-                flog_err(BABEL_ERR_CONFIG, "Couldn't parse babel-state.");
+                flog_err(EC_BABEL_CONFIG, "Couldn't parse babel-state.");
             }
         }
         goto fini;
@@ -353,7 +361,7 @@ babel_save_state_file(void)
     debugf(BABEL_DEBUG_COMMON, "Save state file.");
     fd = open(state_file, O_WRONLY | O_TRUNC | O_CREAT, 0644);
     if(fd < 0) {
-        flog_err_sys(LIB_ERR_SYSTEM_CALL, "creat(babel-state): %s",
+        flog_err_sys(EC_LIB_SYSTEM_CALL, "creat(babel-state): %s",
 		  safe_strerror(errno));
         unlink(state_file);
     } else {
@@ -364,12 +372,12 @@ babel_save_state_file(void)
                       format_eui64(myid), (int)myseqno,
                       (long)realnow.tv_sec);
         if(rc < 0 || rc >= 100) {
-            flog_err(BABEL_ERR_CONFIG, "write(babel-state): overflow.");
+            flog_err(EC_BABEL_CONFIG, "write(babel-state): overflow.");
             unlink(state_file);
         } else {
             rc = write(fd, buf, rc);
             if(rc < 0) {
-                flog_err(BABEL_ERR_CONFIG, "write(babel-state): %s",
+                flog_err(EC_BABEL_CONFIG, "write(babel-state): %s",
 			  safe_strerror(errno));
                 unlink(state_file);
             }

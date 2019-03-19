@@ -53,6 +53,10 @@
 #define DEFAULT_MIN_RESTART	60
 #define DEFAULT_MAX_RESTART	600
 
+#define DEFAULT_RESTART_CMD	WATCHFRR_SH_PATH " restart %s"
+#define DEFAULT_START_CMD	WATCHFRR_SH_PATH " start %s"
+#define DEFAULT_STOP_CMD	WATCHFRR_SH_PATH " stop %s"
+
 #define PING_TOKEN	"PING"
 
 DEFINE_MGROUP(WATCHFRR, "watchfrr")
@@ -124,6 +128,9 @@ static struct global_state {
 	.loglevel = DEFAULT_LOGLEVEL,
 	.min_restart_interval = DEFAULT_MIN_RESTART,
 	.max_restart_interval = DEFAULT_MAX_RESTART,
+	.restart_command = DEFAULT_RESTART_CMD,
+	.start_command = DEFAULT_START_CMD,
+	.stop_command = DEFAULT_STOP_CMD,
 };
 
 typedef enum {
@@ -227,14 +234,17 @@ Otherwise, the interval is doubled (but capped at the -M value).\n\n",
 -r, --restart	Supply a Bourne shell command to use to restart a single\n\
 		daemon.  The command string should include '%%s' where the\n\
 		name of the daemon should be substituted.\n\
+		(default: '%s')\n\
 -s, --start-command\n\
 		Supply a Bourne shell to command to use to start a single\n\
 		daemon.  The command string should include '%%s' where the\n\
 		name of the daemon should be substituted.\n\
+		(default: '%s')\n\
 -k, --kill-command\n\
 		Supply a Bourne shell to command to use to stop a single\n\
 		daemon.  The command string should include '%%s' where the\n\
 		name of the daemon should be substituted.\n\
+		(default: '%s')\n\
     --dry	Do not start or restart anything, just log.\n\
 -p, --pid-file	Set process identifier file name\n\
 		(default is %s/watchfrr.pid).\n\
@@ -247,7 +257,9 @@ Otherwise, the interval is doubled (but capped at the -M value).\n\n",
 -h, --help	Display this help and exit\n",
 		frr_vtydir, DEFAULT_LOGLEVEL, LOG_EMERG, LOG_DEBUG, LOG_DEBUG,
 		DEFAULT_MIN_RESTART, DEFAULT_MAX_RESTART, DEFAULT_PERIOD,
-		DEFAULT_TIMEOUT, DEFAULT_RESTART_TIMEOUT, frr_vtydir);
+		DEFAULT_TIMEOUT, DEFAULT_RESTART_TIMEOUT,
+		DEFAULT_RESTART_CMD, DEFAULT_START_CMD, DEFAULT_STOP_CMD,
+		frr_vtydir);
 }
 
 static pid_t run_background(char *shell_cmd)
@@ -256,7 +268,7 @@ static pid_t run_background(char *shell_cmd)
 
 	switch (child = fork()) {
 	case -1:
-		flog_err_sys(LIB_ERR_SYSTEM_CALL,
+		flog_err_sys(EC_LIB_SYSTEM_CALL,
 			     "fork failed, cannot run command [%s]: %s",
 			     shell_cmd, safe_strerror(errno));
 		return -1;
@@ -272,14 +284,14 @@ static pid_t run_background(char *shell_cmd)
 			char dashc[] = "-c";
 			char *const argv[4] = {shell, dashc, shell_cmd, NULL};
 			execv("/bin/sh", argv);
-			flog_err_sys(LIB_ERR_SYSTEM_CALL,
+			flog_err_sys(EC_LIB_SYSTEM_CALL,
 				     "execv(/bin/sh -c '%s') failed: %s",
 				     shell_cmd, safe_strerror(errno));
 			_exit(127);
 		}
 	default:
 		/* Parent process: we will reap the child later. */
-		flog_err_sys(LIB_ERR_SYSTEM_CALL,
+		flog_err_sys(EC_LIB_SYSTEM_CALL,
 			     "Forked background command [pid %d]: %s",
 			     (int)child, shell_cmd);
 		return child;
@@ -342,7 +354,7 @@ static void sigchild(void)
 
 	switch (child = waitpid(-1, &status, WNOHANG)) {
 	case -1:
-		flog_err_sys(LIB_ERR_SYSTEM_CALL, "waitpid failed: %s",
+		flog_err_sys(EC_LIB_SYSTEM_CALL, "waitpid failed: %s",
 			     safe_strerror(errno));
 		return;
 	case 0:
@@ -367,7 +379,7 @@ static void sigchild(void)
 		gettimeofday(&restart->time, NULL);
 	} else {
 		flog_err_sys(
-			LIB_ERR_SYSTEM_CALL,
+			EC_LIB_SYSTEM_CALL,
 			"waitpid returned status for an unknown child process %d",
 			(int)child);
 		name = "(unknown)";
@@ -398,7 +410,7 @@ static void sigchild(void)
 		}
 	} else
 		flog_err_sys(
-			LIB_ERR_SYSTEM_CALL,
+			EC_LIB_SYSTEM_CALL,
 			"cannot interpret %s %s process %d wait status 0x%x",
 			what, name, (int)child, status);
 	phase_check();
@@ -509,7 +521,7 @@ static int wakeup_init(struct thread *t_wakeup)
 
 	dmn->t_wakeup = NULL;
 	if (try_connect(dmn) < 0) {
-		flog_err(WATCHFRR_ERR_CONNECTION,
+		flog_err(EC_WATCHFRR_CONNECTION,
 			 "%s state -> down : initial connection attempt failed",
 			 dmn->name);
 		dmn->state = DAEMON_DOWN;
@@ -533,8 +545,8 @@ static void restart_done(struct daemon *dmn)
 static void daemon_down(struct daemon *dmn, const char *why)
 {
 	if (IS_UP(dmn) || (dmn->state == DAEMON_INIT))
-		flog_err(WATCHFRR_ERR_CONNECTION,
-			  "%s state -> down : %s", dmn->name, why);
+		flog_err(EC_WATCHFRR_CONNECTION, "%s state -> down : %s",
+			 dmn->name, why);
 	else if (gs.loglevel > LOG_DEBUG)
 		zlog_debug("%s still down : %s", dmn->name, why);
 	if (IS_UP(dmn))
@@ -643,12 +655,12 @@ static void daemon_send_ready(int exitcode)
 	if (exitcode == 0)
 		zlog_notice("all daemons up, doing startup-complete notify");
 	else if (gs.numdown < gs.numdaemons)
-		flog_err(WATCHFRR_ERR_CONNECTION,
+		flog_err(EC_WATCHFRR_CONNECTION,
 			 "startup did not complete within timeout"
 			 " (%d/%d daemons running)",
 			 gs.numdaemons - gs.numdown, gs.numdaemons);
 	else {
-		flog_err(WATCHFRR_ERR_CONNECTION,
+		flog_err(EC_WATCHFRR_CONNECTION,
 			 "all configured daemons failed to start"
 			 " -- exiting watchfrr");
 		exit(exitcode);
@@ -744,7 +756,7 @@ static int try_connect(struct daemon *dmn)
 	   of creating a socket. */
 	if (access(addr.sun_path, W_OK) < 0) {
 		if (errno != ENOENT)
-			flog_err_sys(LIB_ERR_SYSTEM_CALL,
+			flog_err_sys(EC_LIB_SYSTEM_CALL,
 				     "%s: access to socket %s denied: %s",
 				     dmn->name, addr.sun_path,
 				     safe_strerror(errno));
@@ -752,13 +764,13 @@ static int try_connect(struct daemon *dmn)
 	}
 
 	if ((sock = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
-		flog_err_sys(LIB_ERR_SOCKET, "%s(%s): cannot make socket: %s",
+		flog_err_sys(EC_LIB_SOCKET, "%s(%s): cannot make socket: %s",
 			     __func__, addr.sun_path, safe_strerror(errno));
 		return -1;
 	}
 
 	if (set_nonblocking(sock) < 0 || set_cloexec(sock) < 0) {
-		flog_err_sys(LIB_ERR_SYSTEM_CALL,
+		flog_err_sys(EC_LIB_SYSTEM_CALL,
 			     "%s(%s): set_nonblocking/cloexec(%d) failed",
 			     __func__, addr.sun_path, sock);
 		close(sock);
@@ -797,9 +809,9 @@ static int try_connect(struct daemon *dmn)
 static int phase_hanging(struct thread *t_hanging)
 {
 	gs.t_phase_hanging = NULL;
-	flog_err(WATCHFRR_ERR_CONNECTION,
-		  "Phase [%s] hanging for %ld seconds, aborting phased restart",
-		  phase_str[gs.phase], PHASE_TIMEOUT);
+	flog_err(EC_WATCHFRR_CONNECTION,
+		 "Phase [%s] hanging for %ld seconds, aborting phased restart",
+		 phase_str[gs.phase], PHASE_TIMEOUT);
 	gs.phase = PHASE_NONE;
 	return 0;
 }
@@ -929,10 +941,10 @@ static int wakeup_unresponsive(struct thread *t_wakeup)
 
 	dmn->t_wakeup = NULL;
 	if (dmn->state != DAEMON_UNRESPONSIVE)
-		flog_err(WATCHFRR_ERR_CONNECTION,
-			  "%s: no longer unresponsive (now %s), "
-			  "wakeup should have been cancelled!",
-			  dmn->name, state_str[dmn->state]);
+		flog_err(EC_WATCHFRR_CONNECTION,
+			 "%s: no longer unresponsive (now %s), "
+			 "wakeup should have been cancelled!",
+			 dmn->name, state_str[dmn->state]);
 	else {
 		SET_WAKEUP_UNRESPONSIVE(dmn);
 		try_restart(dmn);
@@ -946,10 +958,10 @@ static int wakeup_no_answer(struct thread *t_wakeup)
 
 	dmn->t_wakeup = NULL;
 	dmn->state = DAEMON_UNRESPONSIVE;
-	flog_err(WATCHFRR_ERR_CONNECTION,
-		  "%s state -> unresponsive : no response yet to ping "
-		  "sent %ld seconds ago",
-		  dmn->name, gs.timeout);
+	flog_err(EC_WATCHFRR_CONNECTION,
+		 "%s state -> unresponsive : no response yet to ping "
+		 "sent %ld seconds ago",
+		 dmn->name, gs.timeout);
 	SET_WAKEUP_UNRESPONSIVE(dmn);
 	try_restart(dmn);
 	return 0;

@@ -21,6 +21,9 @@
 /* Consumed Time Check */
 #undef CONSUMED_TIME_CHECK
 
+/* daemon database directory */
+#undef DAEMON_DB_DIR
+
 /* daemon vty directory */
 #undef DAEMON_VTY_DIR
 
@@ -86,6 +89,12 @@
 
 /* Have monotonic clock */
 #undef HAVE_CLOCK_MONOTONIC
+
+/* Enable confd integration */
+#undef HAVE_CONFD
+
+/* Enable configuration rollbacks */
+#undef HAVE_CONFIG_ROLLBACKS
 
 /* Compile Special Cumulus Code in */
 #undef HAVE_CUMULUS
@@ -177,6 +186,9 @@
 /* Define to 1 if you have the `umem' library (-lumem). */
 #undef HAVE_LIBUMEM
 
+/* libunwind */
+#undef HAVE_LIBUNWIND
+
 /* Define to 1 if you have the <link.h> header file. */
 #undef HAVE_LINK_H
 
@@ -186,6 +198,9 @@
 /* Define to 1 if you have the <linux/version.h> header file. */
 #undef HAVE_LINUX_VERSION_H
 
+/* Lua enabled for development */
+#undef HAVE_LUA
+
 /* mallinfo */
 #undef HAVE_MALLINFO
 
@@ -194,6 +209,9 @@
 
 /* Define to 1 if you have the <malloc/malloc.h> header file. */
 #undef HAVE_MALLOC_MALLOC_H
+
+/* Define to 1 if you have the <malloc_np.h> header file. */
+#undef HAVE_MALLOC_NP_H
 
 /* malloc_size */
 #undef HAVE_MALLOC_SIZE
@@ -270,8 +288,20 @@
 /* prctl */
 #undef HAVE_PR_SET_KEEPCAPS
 
+/* Have pthread.h pthread_condattr_setclock */
+#undef HAVE_PTHREAD_CONDATTR_SETCLOCK
+
+/* Define to 1 if you have the <pthread_np.h> header file. */
+#undef HAVE_PTHREAD_NP_H
+
 /* Have PTHREAD_PRIO_INHERIT. */
 #undef HAVE_PTHREAD_PRIO_INHERIT
+
+/* Define to 1 if you have the `pthread_setname_np' function. */
+#undef HAVE_PTHREAD_SETNAME_NP
+
+/* Define to 1 if you have the `pthread_set_name_np' function. */
+#undef HAVE_PTHREAD_SET_NAME_NP
 
 /* Have RFC3678 protocol-independed API */
 #undef HAVE_RFC3678
@@ -291,8 +321,8 @@
 /* Have SO_BINDANY */
 #undef HAVE_SO_BINDANY
 
-/* Stack symbol decoding */
-#undef HAVE_STACK_TRACE
+/* Enable sqlite3 database */
+#undef HAVE_SQLITE3
 
 /* Define to 1 if `stat' has the bug that it succeeds when given the
    zero-length file name argument. */
@@ -395,6 +425,9 @@
 /* Define to 1 if the system has the type `struct vifctl'. */
 #undef HAVE_STRUCT_VIFCTL
 
+/* Enable sysrepo integration */
+#undef HAVE_SYSREPO
+
 /* Compile systemd support in */
 #undef HAVE_SYSTEMD
 
@@ -473,6 +506,9 @@
 /* found __sync_swap builtin */
 #undef HAVE___SYNC_SWAP
 
+/* .interp value */
+#undef INTERP
+
 /* Linux ipv6 Min Hop Count */
 #undef IPV6_MINHOPCOUNT
 
@@ -496,6 +532,12 @@
 
 /* ldpd control socket */
 #undef LDPD_SOCKET
+
+/* have ly_register_types() */
+#undef LIBYANG_EXT_BUILTIN
+
+/* path to libyang plugins */
+#undef LIBYANG_PLUGINS_PATH
 
 /* Linux IPv6 stack */
 #undef LINUX_IPV6
@@ -611,6 +653,9 @@
 /* VTY Sockets Group */
 #undef VTY_GROUP
 
+/* path to watchfrr.sh */
+#undef WATCHFRR_SH_PATH
+
 /* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
    significant byte first (like Motorola and SPARC, unlike Intel). */
 #if defined AC_APPLE_UNIVERSAL_BUILD
@@ -622,6 +667,9 @@
 #  undef WORDS_BIGENDIAN
 # endif
 #endif
+
+/* path to YANG data models */
+#undef YANG_MODELS_PATH
 
 /* Define to 1 if `lex' declares `yytext' as a `char *' by default, not a
    `char[]'. */
@@ -647,6 +695,9 @@
 /* Define to 2 if the system does not provide POSIX.1 features except with
    this defined. */
 #undef _POSIX_1_SOURCE
+
+/* enable POSIX.1-2008 and XPG7/SUSv4 */
+#undef _POSIX_C_SOURCE
 
 /* Define to 1 if you need to in order for `stat' and other things to work. */
 #undef _POSIX_SOURCE

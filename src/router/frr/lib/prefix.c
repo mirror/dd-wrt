@@ -657,9 +657,9 @@ void prefix_copy(struct prefix *dest, const struct prefix *src)
 		memcpy((void *)dest->u.prefix_flowspec.ptr,
 		       (void *)src->u.prefix_flowspec.ptr, len);
 	} else {
-		flog_err(LIB_ERR_DEVELOPMENT,
-			  "prefix_copy(): Unknown address family %d",
-			  src->family);
+		flog_err(EC_LIB_DEVELOPMENT,
+			 "prefix_copy(): Unknown address family %d",
+			 src->family);
 		assert(0);
 	}
 }
@@ -853,7 +853,7 @@ int str2prefix_ipv4(const char *str, struct prefix_ipv4 *p)
 	/* String doesn't contail slash. */
 	if (pnt == NULL) {
 		/* Convert string to prefix. */
-		ret = inet_aton(str, &p->prefix);
+		ret = inet_pton(AF_INET, str, &p->prefix);
 		if (ret == 0)
 			return 0;
 

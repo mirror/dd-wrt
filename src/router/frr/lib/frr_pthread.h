@@ -28,11 +28,12 @@
 DECLARE_MTYPE(FRR_PTHREAD);
 DECLARE_MTYPE(PTHREAD_PRIM);
 
+#define OS_THREAD_NAMELEN 16
+
 struct frr_pthread;
 struct frr_pthread_attr;
 
 struct frr_pthread_attr {
-	_Atomic uint32_t id;
 	void *(*start)(void *);
 	int (*stop)(struct frr_pthread *, void **);
 };
@@ -89,6 +90,9 @@ struct frr_pthread {
 	 * Requires: mtx
 	 */
 	char *name;
+
+	/* Used in pthread_set_name max 16 characters */
+	char os_name[OS_THREAD_NAMELEN];
 };
 
 extern struct frr_pthread_attr frr_pthread_attr_default;
@@ -122,18 +126,20 @@ void frr_pthread_finish(void);
  *
  * @param attr - the thread attributes
  * @param name - Human-readable name
+ * @param os_name - 16 characters (including '\0') thread name to set in os,
  * @return the created frr_pthread upon success, or NULL upon failure
  */
 struct frr_pthread *frr_pthread_new(struct frr_pthread_attr *attr,
-				    const char *name);
+				    const char *name, const char *os_name);
 
 /*
- * Changes the name of the frr_pthread.
+ * Changes the name of the frr_pthread as reported by the operating
+ * system.
  *
  * @param fpt - the frr_pthread to operate on
- * @param name - Human-readable name
+ * @return -  on success returns 0 otherwise nonzero error number.
  */
-void frr_pthread_set_name(struct frr_pthread *fpt, const char *name);
+int frr_pthread_set_name(struct frr_pthread *fpt);
 
 /*
  * Destroys an frr_pthread.
@@ -143,13 +149,6 @@ void frr_pthread_set_name(struct frr_pthread *fpt, const char *name);
  * @param fpt - the frr_pthread to destroy
  */
 void frr_pthread_destroy(struct frr_pthread *fpt);
-
-/*
- * Gets an existing frr_pthread by its id.
- *
- * @return frr_thread associated with the provided id, or NULL on error
- */
-struct frr_pthread *frr_pthread_get(uint32_t id);
 
 /*
  * Creates a new pthread and binds it to a frr_pthread.
@@ -208,20 +207,8 @@ int frr_pthread_stop(struct frr_pthread *fpt, void **result);
 /* Stops all frr_pthread's. */
 void frr_pthread_stop_all(void);
 
-/* Yields the current thread of execution */
-void frr_pthread_yield(void);
-
-/*
- * Returns a unique identifier for use with frr_pthread_new().
- *
- * Internally, this is an integer that increments after each call to this
- * function. Because the number of pthreads created should never exceed INT_MAX
- * during the life of the program, there is no overflow protection. If by
- * chance this function returns an ID which is already in use,
- * frr_pthread_new() will fail when it is provided.
- *
- * @return unique identifier
- */
-uint32_t frr_pthread_get_id(void);
+#ifndef HAVE_PTHREAD_CONDATTR_SETCLOCK
+#define pthread_condattr_setclock(A, B)
+#endif
 
 #endif /* _FRR_PTHREAD_H */

@@ -50,6 +50,8 @@ static void vty_do_exit(int isexit)
 	printf("\nend.\n");
 	cmd_terminate();
 	vty_terminate();
+	nb_terminate();
+	yang_terminate();
 	thread_master_free(master);
 	closezlog();
 
@@ -82,6 +84,8 @@ int main(int argc, char **argv)
 
 	vty_init(master);
 	memory_init();
+	yang_init();
+	nb_init(master, NULL, 0);
 
 	test_init(argc, argv);
 

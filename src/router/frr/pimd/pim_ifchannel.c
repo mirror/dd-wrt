@@ -162,7 +162,7 @@ void pim_ifchannel_delete(struct pim_ifchannel *ch)
 	pim_ifchannel_remove_children(ch);
 
 	if (ch->sources)
-		list_delete_and_null(&ch->sources);
+		list_delete(&ch->sources);
 
 	listnode_delete(ch->upstream->ifchannels, ch);
 
@@ -1012,10 +1012,21 @@ int pim_ifchannel_local_membership_add(struct interface *ifp,
 
 	/* PIM enabled on interface? */
 	pim_ifp = ifp->info;
-	if (!pim_ifp)
+	if (!pim_ifp) {
+		if (PIM_DEBUG_EVENTS)
+			zlog_debug("%s:%s Expected pim interface setup for %s",
+				   __PRETTY_FUNCTION__,
+				   pim_str_sg_dump(sg), ifp->name);
 		return 0;
-	if (!PIM_IF_TEST_PIM(pim_ifp->options))
+	}
+
+	if (!PIM_IF_TEST_PIM(pim_ifp->options)) {
+		if (PIM_DEBUG_EVENTS)
+			zlog_debug("%s:%s PIM is not configured on this interface %s",
+				   __PRETTY_FUNCTION__,
+				   pim_str_sg_dump(sg), ifp->name);
 		return 0;
+	}
 
 	pim = pim_ifp->pim;
 
@@ -1033,6 +1044,10 @@ int pim_ifchannel_local_membership_add(struct interface *ifp,
 
 	ch = pim_ifchannel_add(ifp, sg, 0, PIM_UPSTREAM_FLAG_MASK_SRC_IGMP);
 	if (!ch) {
+		if (PIM_DEBUG_EVENTS)
+			zlog_debug("%s:%s Unable to add ifchannel",
+				   __PRETTY_FUNCTION__,
+				   pim_str_sg_dump(sg));
 		return 0;
 	}
 
@@ -1115,7 +1130,8 @@ void pim_ifchannel_local_membership_del(struct interface *ifp,
 			struct channel_oil *c_oil = child->channel_oil;
 			struct pim_ifchannel *chchannel =
 				pim_ifchannel_find(ifp, &child->sg);
-			struct pim_interface *pim_ifp = ifp->info;
+
+			pim_ifp = ifp->info;
 
 			if (PIM_DEBUG_EVENTS)
 				zlog_debug("%s %s: Prune(S,G)=%s(%s) from %s",

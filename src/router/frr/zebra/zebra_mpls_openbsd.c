@@ -26,6 +26,7 @@
 #include "zebra/rt.h"
 #include "zebra/zebra_mpls.h"
 #include "zebra/debug.h"
+#include "zebra/zebra_errors.h"
 
 #include "privs.h"
 #include "prefix.h"
@@ -122,7 +123,7 @@ static int kernel_send_rtmsg_v4(int action, mpls_label_t in_label,
 	}
 
 	if (ret == -1)
-		flog_err_sys(LIB_ERR_SOCKET, "%s: %s", __func__,
+		flog_err_sys(EC_LIB_SOCKET, "%s: %s", __func__,
 			     safe_strerror(errno));
 
 	return ret;
@@ -229,7 +230,7 @@ static int kernel_send_rtmsg_v6(int action, mpls_label_t in_label,
 	}
 
 	if (ret == -1)
-		flog_err_sys(LIB_ERR_SOCKET, "%s: %s", __func__,
+		flog_err_sys(EC_LIB_SOCKET, "%s: %s", __func__,
 			     safe_strerror(errno));
 
 	return ret;
@@ -256,11 +257,11 @@ static int kernel_lsp_cmd(int action, zebra_lsp_t *lsp)
 			&& (CHECK_FLAG(nhlfe->flags, NHLFE_FLAG_INSTALLED)
 			    && CHECK_FLAG(nexthop->flags, NEXTHOP_FLAG_FIB)))) {
 			if (nhlfe->nexthop->nh_label->num_labels > 1) {
-				zlog_warn(
-					"%s: can't push %u labels at once "
-					"(maximum is 1)",
-					__func__,
-					nhlfe->nexthop->nh_label->num_labels);
+				flog_warn(EC_ZEBRA_MAX_LABELS_PUSH,
+					  "%s: can't push %u labels at once "
+					  "(maximum is 1)",
+					  __func__,
+					  nhlfe->nexthop->nh_label->num_labels);
 				continue;
 			}
 
@@ -284,62 +285,62 @@ static int kernel_lsp_cmd(int action, zebra_lsp_t *lsp)
 	return (0);
 }
 
-enum dp_req_result kernel_add_lsp(zebra_lsp_t *lsp)
+enum zebra_dplane_result kernel_add_lsp(zebra_lsp_t *lsp)
 {
 	int ret;
 
 	if (!lsp || !lsp->best_nhlfe) { // unexpected
-		kernel_lsp_pass_fail(lsp, DP_INSTALL_FAILURE);
-		return DP_REQUEST_FAILURE;
+		kernel_lsp_pass_fail(lsp, ZEBRA_DPLANE_INSTALL_FAILURE);
+		return ZEBRA_DPLANE_REQUEST_FAILURE;
 	}
 
 	ret = kernel_lsp_cmd(RTM_ADD, lsp);
 
 	kernel_lsp_pass_fail(lsp,
-			     (!ret) ? DP_INSTALL_SUCCESS
-				    : DP_INSTALL_FAILURE);
+			     (!ret) ? ZEBRA_DPLANE_INSTALL_SUCCESS
+				    : ZEBRA_DPLANE_INSTALL_FAILURE);
 
-	return DP_REQUEST_SUCCESS;
+	return ZEBRA_DPLANE_REQUEST_SUCCESS;
 }
 
-enum dp_req_result kernel_upd_lsp(zebra_lsp_t *lsp)
+enum zebra_dplane_result kernel_upd_lsp(zebra_lsp_t *lsp)
 {
 	int ret;
 
 	if (!lsp || !lsp->best_nhlfe) { // unexpected
-		kernel_lsp_pass_fail(lsp, DP_INSTALL_FAILURE);
-		return DP_REQUEST_FAILURE;
+		kernel_lsp_pass_fail(lsp, ZEBRA_DPLANE_INSTALL_FAILURE);
+		return ZEBRA_DPLANE_REQUEST_FAILURE;
 	}
 
 	ret = kernel_lsp_cmd(RTM_CHANGE, lsp);
 
 	kernel_lsp_pass_fail(lsp,
-			     (!ret) ? DP_INSTALL_SUCCESS
-				    : DP_INSTALL_FAILURE);
-	return DP_REQUEST_SUCCESS;
+			     (!ret) ? ZEBRA_DPLANE_INSTALL_SUCCESS
+				    : ZEBRA_DPLANE_INSTALL_FAILURE);
+	return ZEBRA_DPLANE_REQUEST_SUCCESS;
 }
 
-enum dp_req_result kernel_del_lsp(zebra_lsp_t *lsp)
+enum zebra_dplane_result kernel_del_lsp(zebra_lsp_t *lsp)
 {
 	int ret;
 
 	if (!lsp) { // unexpected
-		kernel_lsp_pass_fail(lsp, DP_DELETE_FAILURE);
-		return DP_REQUEST_FAILURE;
+		kernel_lsp_pass_fail(lsp, ZEBRA_DPLANE_DELETE_FAILURE);
+		return ZEBRA_DPLANE_REQUEST_FAILURE;
 	}
 
 	if (!CHECK_FLAG(lsp->flags, LSP_FLAG_INSTALLED)) {
-		kernel_lsp_pass_fail(lsp, DP_DELETE_FAILURE);
-		return DP_REQUEST_FAILURE;
+		kernel_lsp_pass_fail(lsp, ZEBRA_DPLANE_DELETE_FAILURE);
+		return ZEBRA_DPLANE_REQUEST_FAILURE;
 	}
 
 	ret = kernel_lsp_cmd(RTM_DELETE, lsp);
 
 	kernel_lsp_pass_fail(lsp,
-			     (!ret) ? DP_DELETE_SUCCESS
-				    : DP_DELETE_FAILURE);
+			     (!ret) ? ZEBRA_DPLANE_DELETE_SUCCESS
+				    : ZEBRA_DPLANE_DELETE_FAILURE);
 
-	return DP_REQUEST_SUCCESS;
+	return ZEBRA_DPLANE_REQUEST_SUCCESS;
 }
 
 static int kmpw_install(struct zebra_pw *pw)
@@ -359,8 +360,8 @@ static int kmpw_install(struct zebra_pw *pw)
 		imr.imr_type = IMR_TYPE_ETHERNET_TAGGED;
 		break;
 	default:
-		zlog_warn("%s: unhandled pseudowire type (%#X)", __func__,
-			  pw->type);
+		zlog_debug("%s: unhandled pseudowire type (%#X)", __func__,
+			   pw->type);
 		return -1;
 	}
 
@@ -381,8 +382,8 @@ static int kmpw_install(struct zebra_pw *pw)
 		sa_in6->sin6_addr = pw->nexthop.ipv6;
 		break;
 	default:
-		zlog_warn("%s: unhandled pseudowire address-family (%u)",
-			  __func__, pw->af);
+		zlog_debug("%s: unhandled pseudowire address-family (%u)",
+			   __func__, pw->af);
 		return -1;
 	}
 	memcpy(&imr.imr_nexthop, (struct sockaddr *)&ss,
@@ -397,7 +398,7 @@ static int kmpw_install(struct zebra_pw *pw)
 	strlcpy(ifr.ifr_name, pw->ifname, sizeof(ifr.ifr_name));
 	ifr.ifr_data = (caddr_t)&imr;
 	if (ioctl(kr_state.ioctl_fd, SIOCSETMPWCFG, &ifr) == -1) {
-		flog_err_sys(LIB_ERR_SYSTEM_CALL, "ioctl SIOCSETMPWCFG: %s",
+		flog_err_sys(EC_LIB_SYSTEM_CALL, "ioctl SIOCSETMPWCFG: %s",
 			     safe_strerror(errno));
 		return -1;
 	}
@@ -415,7 +416,7 @@ static int kmpw_uninstall(struct zebra_pw *pw)
 	strlcpy(ifr.ifr_name, pw->ifname, sizeof(ifr.ifr_name));
 	ifr.ifr_data = (caddr_t)&imr;
 	if (ioctl(kr_state.ioctl_fd, SIOCSETMPWCFG, &ifr) == -1) {
-		flog_err_sys(LIB_ERR_SYSTEM_CALL, "ioctl SIOCSETMPWCFG: %s",
+		flog_err_sys(EC_LIB_SYSTEM_CALL, "ioctl SIOCSETMPWCFG: %s",
 			     safe_strerror(errno));
 		return -1;
 	}
@@ -430,13 +431,13 @@ int mpls_kernel_init(void)
 	socklen_t optlen;
 
 	if ((kr_state.fd = socket(AF_ROUTE, SOCK_RAW, 0)) == -1) {
-		zlog_warn("%s: socket", __func__);
+		flog_err_sys(EC_LIB_SOCKET, "%s: socket", __func__);
 		return -1;
 	}
 
 	if ((kr_state.ioctl_fd = socket(AF_INET, SOCK_DGRAM | SOCK_NONBLOCK, 0))
 	    == -1) {
-		zlog_warn("%s: ioctl socket", __func__);
+		flog_err_sys(EC_LIB_SOCKET, "%s: ioctl socket", __func__);
 		return -1;
 	}
 
@@ -445,7 +446,8 @@ int mpls_kernel_init(void)
 	if (getsockopt(kr_state.fd, SOL_SOCKET, SO_RCVBUF, &default_rcvbuf,
 		       &optlen)
 	    == -1)
-		zlog_warn("kr_init getsockopt SOL_SOCKET SO_RCVBUF");
+		flog_err_sys(EC_LIB_SOCKET,
+			     "kr_init getsockopt SOL_SOCKET SO_RCVBUF");
 	else
 		for (rcvbuf = MAX_RTSOCK_BUF;
 		     rcvbuf > default_rcvbuf
