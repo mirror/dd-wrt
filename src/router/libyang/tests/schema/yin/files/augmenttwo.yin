@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="augmenttwo"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:atwo="test:augmenttwo"
+        xmlns:abase="test:augmentbase">
+  <namespace uri="test:augmenttwo"/>
+  <prefix value="atwo"/>
+  <import module="augmentbase">
+    <prefix value="abase"/>
+  </import>
+  <typedef name="twotyperef">
+    <type name="leafref">
+      <path value="/abase:base-container/atwo:two-leaf"/>
+    </type>
+  </typedef>
+  <augment target-node="/abase:base-container">
+    <leaf name="two-leaf">
+      <type name="string"/>
+    </leaf>
+    <container name="random">
+      <description>
+        <text>This will cause it to fail</text>
+      </description>
+    </container>
+  </augment>
+</module>

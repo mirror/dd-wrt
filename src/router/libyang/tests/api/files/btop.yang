@@ -1,0 +1,9 @@
+submodule btop {
+  belongs-to b {
+    prefix b_pref2;
+  }
+
+  feature bar;
+
+  container top;
+}

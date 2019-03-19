@@ -1,0 +1,23 @@
+module case-act-notif {
+    yang-version 1.1;
+    namespace uri:test:case-act-notif;
+    prefix can;
+
+    choice c {
+        case a {
+            leaf aa {
+                type empty;
+            }
+            uses g1;
+            uses g2;
+        }
+    }
+
+    grouping g1 {
+        action act;
+    }
+
+    grouping g2 {
+        notification notif;
+    }
+}

@@ -1,0 +1,56 @@
+module tree-d {
+    namespace "urn:tree-d";
+    prefix td;
+
+    yang-version 1.1;
+
+    import tree-c {
+        prefix tc;
+    }
+
+    feature feat1;
+
+    augment /tc:cont {
+        anydata any;
+
+        leaf leaf1 {
+            if-feature feat1;
+            type string;
+            default "waw";
+        }
+
+        leaf leaf2 {
+            if-feature feat1;
+            type leafref {
+                path /tc:cont/td:leaf1;
+            }
+        }
+
+        leaf-list llist1 {
+            type string;
+        }
+
+        list list1 {
+            key "key1";
+            if-feature feat1;
+
+            leaf key1 {
+                type uint8;
+            }
+
+            list list2 {
+                key "key2";
+
+                leaf key2 {
+                    type uint16;
+                }
+            }
+        }
+    }
+
+    augment /tc:cont/tc:cont2/tc:list1/tc:cont3 {
+        leaf leaf3 {
+            type uint8;
+        }
+    }
+}

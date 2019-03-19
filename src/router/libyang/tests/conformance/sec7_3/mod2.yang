@@ -1,0 +1,9 @@
+module mod2 {
+
+    prefix abc;
+    namespace "urn:cesnet:mod2";
+
+    typedef bits {
+        type uint32;
+    }
+}

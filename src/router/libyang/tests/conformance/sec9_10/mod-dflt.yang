@@ -1,0 +1,12 @@
+module mod-dflt {
+  namespace "urn:cesnet:mod-dflt";
+  prefix md;
+
+  import mod-middle {
+    prefix mm;
+  }
+
+  leaf x {
+    type mm:j;
+  }
+}

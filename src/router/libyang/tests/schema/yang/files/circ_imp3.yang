@@ -1,0 +1,16 @@
+module circ_imp3 {
+  namespace "urn:cesnet:circimp3";
+  prefix ci3;
+
+  import circ_imp1 {
+    prefix ci1;
+  }
+
+  grouping grp {
+    leaf data {
+      type string;
+    }
+  }
+
+  uses ci1:grp;
+}

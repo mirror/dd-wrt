@@ -1,0 +1,56 @@
+module all-dev {
+  namespace "urn:all-dev";
+  prefix alldev_mod;
+
+  import all {
+    prefix all_mod;
+  }
+
+  deviation "/all_mod:notif1/all_mod:leaf22" {
+    deviate replace {
+      type string;
+    }
+    deviate add {
+      mandatory false;
+    }
+    deviate add {
+      config true;
+    }
+  }
+
+  deviation "/all_mod:cont1/all_mod:list1" {
+    deviate replace {
+      min-elements 2;
+      max-elements 15;
+    }
+    deviate delete {
+      unique "leaf19";
+    }
+  }
+
+  deviation "/all_mod:cont1/all_mod:leaf13" {
+    deviate add {
+      units "b/h";
+      must "../leaf3 < 0";
+      default "aGVsbG8h";
+    }
+  }
+
+  deviation "/all_mod:cont1/all_mod:leaf23" {
+    deviate not-supported;
+  }
+
+  deviation "/all_mod:cont1/all_mod:must-deviations-container" {
+    deviate add {
+      must "all_mod:leaf30 != 'foo'";
+    }
+  }
+
+  deviation "/all_mod:cont1/all_mod:must-deviations-container" {
+    deviate add {
+      must "all_mod:leaf30 != 'bar'";
+      must "all_mod:leaf30 != 'baz'";
+      must "all_mod:leaf30 != 'qux'";
+    }
+  }
+}

@@ -1,0 +1,14 @@
+submodule sub3 {
+	
+	belongs-to mod3 {
+		prefix abc;
+	}
+
+	import mod_1 {
+	  prefix sk;
+	}
+
+	import mod_2 {
+	  prefix abc;
+	}
+}

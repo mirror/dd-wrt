@@ -1,0 +1,8 @@
+module installme {
+    namespace "test:installme";
+    prefix im;
+
+    import aug {
+        prefix a;
+    }
+}

@@ -1,0 +1,37 @@
+<similar-annot-names xmlns="urn:annot" xmlns:p="urn:annot" p:aaaa1="string">
+  <l1leaf p:aaaa1="string">s1</l1leaf>
+  <l1leaf p:aaaa2="string">s2</l1leaf>
+  <l1leaf p:aaaa3="string">s3</l1leaf>
+  <l1leaf p:aaaa4="string">s4</l1leaf>
+  <l1leaf p:aaaa5="string">s5</l1leaf>
+  <l1leaf p:aaaa6="string">s6</l1leaf>
+
+  <l2a p:baaa1="string">
+    <l2aleaf p:baaa1="string">1</l2aleaf>
+    <l2aleaf p:baaa2="string">2</l2aleaf>
+    <l2aleaf p:baaa3="string">3</l2aleaf>
+
+      <l3aa p:caaa1="string">
+        <l3aaleaf p:caaa1="string">1</l3aaleaf>
+        <l3aaleaf p:caaa2="string">2</l3aaleaf>
+        <l3aaleaf p:caaa3="string">3</l3aaleaf>
+        <l3aaleaf p:caaa4="string">4</l3aaleaf>
+        <l3aaleaf p:caaa5="string">5</l3aaleaf>
+        <l3aaleaf p:caaa6="string">6</l3aaleaf>
+      </l3aa>
+
+    <l2aleaf p:baaa4="string">4</l2aleaf>
+    <l2aleaf p:baaa5="string">5</l2aleaf>
+    <l2aleaf p:baaa6="string">6</l2aleaf>
+  </l2a>
+
+  <l2b p:daaa1="string">
+    <l2bleaf p:daaa1="string">1.00</l2bleaf>
+    <l2bleaf p:daaa2="string">2.00</l2bleaf>
+    <l2bleaf p:daaa3="string">3.00</l2bleaf>
+    <l2bleaf p:daaa4="string">4.00</l2bleaf>
+    <l2bleaf p:daaa5="string">5.00</l2bleaf>
+    <l2bleaf p:daaa6="string">6.00</l2bleaf>
+  </l2b>
+
+</similar-annot-names>

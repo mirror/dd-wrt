@@ -1,0 +1,19 @@
+module augment1 {
+  yang-version 1.1;
+  namespace "urn:test-augment1";
+  prefix au1;
+
+  import augment-target {
+    prefix aug;
+  }
+
+  augment "/aug:cont" {
+    leaf another-augmented-leaf {
+      type string;
+    }
+
+    leaf a21 {
+      type string;
+    }
+  }
+}

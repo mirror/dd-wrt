@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<submodule name="grp_idref_def-sub"
+           xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+           xmlns:grp_idref_def="urn:grp_idref_def">
+  <belongs-to module="grp_idref_def-mod">
+    <prefix value="grp_idref_def"/>
+  </belongs-to>
+  <description>
+    <text>A submodule that has a grouping with an identityref that has a default value</text>
+  </description>
+  <identity name="ident-grp-base"/>
+  <identity name="ident-grp-zero">
+    <base name="ident-grp-base"/>
+  </identity>
+  <identity name="ident-grp-one">
+    <base name="ident-grp-base"/>
+  </identity>
+  <grouping name="grp">
+    <container name="grp-container">
+      <leaf name="grp-idref-leaf">
+        <type name="identityref">
+          <base name="ident-grp-base"/>
+        </type>
+        <default value="ident-grp-zero"/>
+      </leaf>
+    </container>
+  </grouping>
+</submodule>

@@ -1,0 +1,57 @@
+<union-test xmlns="urn:uni">
+    <uniception>
+        <union>CF</union>
+    </uniception>
+
+    <uniception>
+        <union>true</union>
+    </uniception>
+
+    <uniception>
+        <union/>
+    </uniception>
+
+    <uniception>
+        <union>zero</union>
+    </uniception>
+
+    <uniception>
+        <union>identity-for-ref</union>
+    </uniception>
+
+    <uniception>
+        <union>10</union>
+    </uniception>
+
+    <uniception>
+        <union>-10</union>
+    </uniception>
+
+    <uniception>
+        <union>1000</union>
+    </uniception>
+
+    <uniception>
+        <union>-1000</union>
+    </uniception>
+
+    <uniception>
+        <union>131070</union>
+    </uniception>
+
+    <uniception>
+        <union>-131070</union>
+    </uniception>
+
+    <uniception>
+        <union>8589934590</union>
+    </uniception>
+
+    <uniception>
+        <union>-8589934590</union>
+    </uniception>
+
+    <uniception>
+        <union>0.05</union>
+    </uniception>
+</union-test>

@@ -1,0 +1,31 @@
+module ident-aug-must-issue-aps {
+
+  namespace "urn:ident-aug-must-issue:aps";
+  prefix aps;
+
+  import ident-aug-must-issue-ape {
+    prefix ape;
+  }
+
+  identity alarm {
+  }
+
+  identity alarm-X {
+    base alarm;
+  }
+
+  augment "/ape:entities/ape:entity" {
+      container sensor {
+      }
+  }
+  
+  notification alarm-1 {
+    leaf alarm-id {
+      must ".= 'aps:alarm-X'";
+      type identityref {
+        base alarm;
+      }
+    }
+  }
+  
+}

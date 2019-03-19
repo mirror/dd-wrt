@@ -1,0 +1,24 @@
+<nacm xmlns="urn:ietf:params:xml:ns:yang:ietf-netconf-acm" xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0">
+  <rule-list>
+    <name>almighty</name>
+    <group>almighty</group>
+    <group nc:operation="create">test</group>
+    <rule>
+      <name>almighty</name>
+      <module-name>*</module-name>
+      <access-operations>*</access-operations>
+      <action>permit</action>
+    </rule>
+  </rule-list>
+  <groups>
+    <group>
+      <name>test</name>
+      <user-name>smith</user-name>
+    </group>
+    <group>
+      <name>almighty</name>
+      <user-name>smith</user-name>
+      <user-name>doe</user-name>
+    </group>
+  </groups>
+</nacm>

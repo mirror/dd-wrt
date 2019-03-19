@@ -1,0 +1,13 @@
+module mod2 {
+
+    prefix my;
+    namespace "http://www.example.com";
+
+    import mod {
+      prefix sk;
+    }
+
+    container c {
+    	uses sk:gg;
+    }
+}

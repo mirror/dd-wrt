@@ -1,0 +1,10 @@
+module mod1 {
+    namespace "uri://mod";
+    prefix m;
+
+    container A;
+    container a;
+    container _;
+    container A_1-..;
+    container "ninecharsninecharsninecharsninecharsninecharsninecharsninechars0";
+}

@@ -1,0 +1,10 @@
+module mod1 {
+    prefix abc;
+    namespace "urn:cesnet:mod1";
+
+    typedef my {
+        type leafref {
+            // missing path statement
+        }
+    }
+}

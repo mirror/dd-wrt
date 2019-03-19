@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="grp_idref_def-mod"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:grp_idref_def="urn:grp_idref_def">
+  <namespace uri="urn:grp_idref_def"/>
+  <prefix value="grp_idref_def"/>
+  <include module="grp_idref_def-sub"/>
+  <description>
+    <text>A module that just includes a submodule that has a grouping with
+an identityref that has a default value</text>
+  </description>
+</module>

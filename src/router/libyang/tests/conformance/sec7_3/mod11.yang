@@ -1,0 +1,9 @@
+module mod11 {
+
+    prefix abc;
+    namespace "urn:cesnet:mod11";
+
+    typedef int32 {
+        type uint32;
+    }
+}

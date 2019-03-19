@@ -1,0 +1,24 @@
+module when-value-prefix-aug {
+
+   namespace "urn:when:value:prefix:aug";
+   prefix wvpa;
+
+   import when-value-prefix {
+      prefix wvp;
+   }
+
+   identity inner-indicator {
+      base wvp:base-indicator;
+   }
+
+   augment "/wvp:outer" {
+      container inner {
+         when "../wvp:indicator='wvpa:inner-indicator'";
+         
+         leaf text {
+            type string;
+         }
+      }
+   }
+
+}

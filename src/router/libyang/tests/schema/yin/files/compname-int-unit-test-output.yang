@@ -1,0 +1,30 @@
+module compname-int-unit-test {
+  namespace "http://www.compname.com/ns/yang/compname-int-unit-test";
+  prefix compname-int-unit-test;
+
+  revision 2018-01-01 {
+    description
+      "Initial revision.";
+    reference
+      "None.";
+  }
+
+  rpc events {
+    input {
+    }
+
+    output {
+      leaf-list info {
+        type string;
+        ordered-by user;
+      }
+
+      list critical-events {
+        ordered-by user;
+        leaf category {
+          type string;
+        }
+      }
+    }
+  }
+}

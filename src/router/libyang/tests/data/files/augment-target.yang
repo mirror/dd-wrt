@@ -1,0 +1,11 @@
+module augment-target {
+  yang-version 1.1;
+  namespace "urn:augment";
+  prefix aug;
+
+  container cont {
+    leaf cont-leaf {
+      type string;
+    }
+  }
+}

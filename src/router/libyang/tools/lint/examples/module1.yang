@@ -1,0 +1,5 @@
+module module1 {
+  namespace "urn:yanglint:module";
+  prefix m;
+  leaf m { type string; }
+}

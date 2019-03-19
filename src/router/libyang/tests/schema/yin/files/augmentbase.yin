@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="augmentbase"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:abase="test:augmentbase">
+  <namespace uri="test:augmentbase"/>
+  <prefix value="abase"/>
+  <container name="base-container">
+    <leaf name="base-leaf">
+      <type name="string"/>
+    </leaf>
+  </container>
+</module>

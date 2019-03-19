@@ -1,0 +1,3 @@
+<setup xmlns="urn:cesnet:mod">
+    <hostname>switch</hostname>
+</setup>

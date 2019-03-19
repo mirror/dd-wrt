@@ -1,0 +1,8 @@
+module module3 {
+  namespace "urn:yanglint:module";
+  prefix m;
+  leaf m { type string; must "../c/a"; }
+  container c {
+    leaf b { type string; }
+  }
+}

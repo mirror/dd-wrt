@@ -1,0 +1,4 @@
+<login xmlns="urn:cesnet:mod10">
+    <user>admin</user>
+    <password>admin123</password>
+</login>

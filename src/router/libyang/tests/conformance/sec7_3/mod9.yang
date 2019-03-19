@@ -1,0 +1,9 @@
+module mod9 {
+
+    prefix abc;
+    namespace "urn:cesnet:mod9";
+
+    typedef int8 {
+        type uint32;
+    }
+}

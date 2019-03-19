@@ -1,0 +1,48 @@
+{
+  "all:cont1": {
+    "leaf2": 3000,
+    "leaf1": -25,
+    "leaf3": -100000,
+    "leaf4": "5000",
+    "leaf5": 200,
+    "leaf6": 60000,
+    "leaf7": 4000000000,
+    "leaf8": "5000000000",
+    "leaf9a": "25.012345678",
+    "leaf10": true,
+    "leaf11": "two",
+    "leaf12": "flag0 flag2",
+    "leaf13": "aGVsbG8h",
+    "leaf14": "all-imp:ident5",
+    "leaf15": [null],
+    "leaf16": "/all:cont1/leaf2",
+    "leaf17": "all-imp:ident5",
+    "list1": [
+      {
+        "leaf18": "key1",
+        "leaf19": 1,
+        "axml1":
+{
+  "some": "content"
+}
+
+      },
+      {
+        "leaf18": "key2",
+        "leaf19": 2
+      }
+    ],
+    "llist1": [
+      "aaa",
+      "aaaa",
+      "aaaaaaaaa"
+    ],
+    "list2": [
+      {
+        "leaf27": 3,
+        "leaf28": 4
+      }
+    ],
+    "leaf29": "/all:cont1/list2[leaf28='4'][leaf27='3']"
+  }
+}

@@ -1,0 +1,14 @@
+module e {
+  namespace "urn:e";
+  prefix e_mod;
+
+  import d {
+      prefix d_mod;
+  }
+
+  container top {
+    leaf leaf {
+      type d_mod:d_type;
+    }
+  }
+}

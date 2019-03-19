@@ -1,0 +1,9 @@
+module mod2 {
+
+    prefix abc;
+    namespace "urn:cesnet:mod2";
+
+    import mod3 {
+    	prefix abc;
+    }
+}

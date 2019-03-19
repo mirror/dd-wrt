@@ -1,0 +1,32 @@
+module leafrefs2 {
+    namespace "urn:module:test:leafrefs2";
+    prefix lr;
+
+    container cont {
+        leaf trg-dec64 {
+            type decimal64 {
+                fraction-digits 5;
+            }
+        }
+
+        leaf trg-bits {
+            type bits {
+                bit bit1;
+                bit bit2;
+                bit bit3;
+            }
+        }
+
+        leaf lref-dec64 {
+            type leafref {
+                path "../trg-dec64";
+            }
+        }
+
+        leaf lref-bits {
+            type leafref {
+                path "../trg-bits";
+            }
+        }
+    }
+}

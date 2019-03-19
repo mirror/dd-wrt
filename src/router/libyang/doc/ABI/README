@@ -1,0 +1,34 @@
+libyang ABI/API changes
+=======================
+
+Here is a script to build information about changes in libyang ABI/API
+between its versions. Such an overview can help developers migrating from
+one version to another. The script uses Andrey Ponomarenko's tools from ABI
+Laboratory [1], so it is necessary to install these tools first. To do so,
+you can use the automatic installer from [2]. Target must be 'abi-tracker'.
+
+Note: Some others tools are used by the LVC toolset and not all of them are
+      correctly checked, so be carefull and check warnings and error
+      messages (e.g. I have been missing correct version of ctags).
+
+Then here is the 'abi.sh' to build ABI/API timeline for libyang. By default
+it includes all the versions from the project start to the current devel
+branch.
+
+You can limit the number of included libyang versions via a number given
+as a parameter to the script. For example
+
+$ ./abi.sh 10
+
+builds overview for the last 10 libyang versions.
+
+Or you can compare only two specific libyang versions providing the version
+numbers as script parameters:
+
+$ ./abi.sh 0.4.0 0.5.20
+
+The result is in all cases stored as 'timeline/libyang/index.html' file.
+
+[1] - https://github.com/lvc
+[2] - https://github.com/lvc/installer/releases
+

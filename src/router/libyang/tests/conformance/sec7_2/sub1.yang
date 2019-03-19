@@ -1,0 +1,6 @@
+submodule sub1 {
+
+    belongs-to mod3 {
+        prefix aaa;
+    }
+}

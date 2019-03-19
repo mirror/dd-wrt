@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="mainmodule"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:main="test:mainmodule"
+        xmlns:aone="test:augmentone">
+  <namespace uri="test:mainmodule"/>
+  <prefix value="main"/>
+  <import module="augmentone">
+    <prefix value="aone"/>
+  </import>
+  <container name="main">
+    <leaf name="main-leaf">
+      <type name="string"/>
+    </leaf>
+    <leaf name="leaf-ref">
+      <type name="aone:onetyperef"/>
+    </leaf>
+  </container>
+</module>

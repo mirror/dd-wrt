@@ -1,0 +1,10 @@
+module grp_idref_def-mod {
+  namespace "urn:grp_idref_def";
+  prefix "grp_idref_def";
+
+  include "grp_idref_def-sub";
+
+  description
+    "A module that just includes a submodule that has a grouping with
+     an identityref that has a default value";
+}
