@@ -323,6 +323,7 @@ include rules/nfs-utils.mk
 include rules/rpcbind.mk
 include rules/krb5.mk
 include rules/rsync.mk
+include rules/libyang.mk
 
 #
 # Generic rules
