@@ -23,9 +23,10 @@ libyang:
 	-cp $(TOP)/libyang/src/user_types.h $(TOP)/libyang/src/libyang
 
 libyang-install:
+	rm -rf $(INSTALLDIR)/libyang/usr/lib
 	install -D libyang/libyang.so.0.16.105 $(INSTALLDIR)/libyang/usr/lib/libyang.so.0.16.105
-	-cd $(INSTALLDIR)/libyang/usr/lib ; ln -s libyang.0.16.105 libyang.so.0.16  ; true
-	-cd $(INSTALLDIR)/libyang/usr/lib ; ln -s libyang.0.16 libyang.so  ; true
+	-cd $(INSTALLDIR)/libyang/usr/lib ; ln -s libyang.so.0.16.105 libyang.so.0.16  ; true
+	-cd $(INSTALLDIR)/libyang/usr/lib ; ln -s libyang.so.0.16 libyang.so  ; true
 
 libyang-clean:
 	if [ -e "$(LIBYANG_PKG_BUILD_DIR)/Makefile" ]; then $(MAKE) -C libyang clean ; fi
