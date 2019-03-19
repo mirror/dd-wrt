@@ -500,6 +500,7 @@ ifeq ($(CONFIG_RAID),y)
 CFLAGS += -DHAVE_RAID
 WEBSLDFLAGS += -ldisc
 WEBSOBJS += websraid.o
+VISOBJS += raid.o
 endif
 ifeq ($(CONFIG_ZFS),y)
 CFLAGS += -DHAVE_ZFS
@@ -842,6 +843,7 @@ CFLAGS += -DHAVE_HEARTBEAT
 endif
 ifeq ($(CONFIG_EOP_TUNNEL),y)
 CFLAGS += -DHAVE_EOP_TUNNEL
+VISOBJS += eoptunnel.o
 endif
 ifeq ($(CONFIG_WIREGUARD),y)
 CFLAGS += -DHAVE_WIREGUARD
@@ -873,12 +875,14 @@ WEBSLDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
 WEBSLDFLAGS +=-L$(TOP)/jansson/src/.libs -ljansson -lsharetools
 CFLAGS += -DHAVE_NAS_SERVER
 CFLAGS += -DHAVE_SAMBA_SERVER
+VISOBJS += samba3.o
 endif
 
 ifeq ($(CONFIG_MINIDLNA),y)
 WEBSLDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
 WEBSLDFLAGS +=-L$(TOP)/jansson/src/.libs -ljansson -lsharetools
 CFLAGS += -DHAVE_MINIDLNA
+VISOBJS += minidlna.o
 endif
 
 ifeq ($(CONFIG_PRIVOXY),y)
@@ -887,10 +891,12 @@ endif
 
 ifeq ($(CONFIG_NFS),y)
 CFLAGS += -DHAVE_NFS
+VISOBJS += nfs.o
 endif
 
 ifeq ($(CONFIG_RSYNC),y)
 CFLAGS += -DHAVE_RSYNC
+VISOBJS += rsync.o
 endif
 
 ifeq ($(CONFIG_WEBSERVER),y)
@@ -1438,7 +1444,7 @@ validate.so: validators.o webs.o wepkey.o setupassist.o aoss_save.o wps.o $(WEBS
 	@echo "[LD] $@"
 	@$(CC) --shared -o $@ $^ $(CFLAGS) -DVALIDSOURCE -DGETREGCODE $(LDFLAGS) $(WEBSLDFLAGS)
 
-visuals.so: dd-wrt.o lib.o ejs.o wireless.o getservice.o ddns.o index.o status.o filters.o forward.o static_route.o dynamic_route.o log.o dhcp.o diag.o find_pattern.o setupassistant.o gps.o aoss.o ejwps.o fs_common.o minidlna.o nfs.o rsync.o samba3.o status_gpio.o eoptunnel.o raid.o $(VISOBJS) $(REGOBJS2)
+visuals.so: dd-wrt.o lib.o ejs.o wireless.o getservice.o ddns.o index.o status.o filters.o forward.o static_route.o dynamic_route.o log.o dhcp.o diag.o find_pattern.o setupassistant.o gps.o aoss.o ejwps.o fs_common.o status_gpio.o $(VISOBJS) $(REGOBJS2)
 	@echo "[LD] $@"
 ifeq ($(CONFIG_ATH9K),y)
 	@$(CC) --shared -c -o $(ATH9KVISOBJS) $(ATH9KVISFILES) $(CFLAGS) -DVISUALSOURCE $(LDFLAGS)
