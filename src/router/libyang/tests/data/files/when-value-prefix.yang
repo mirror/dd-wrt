@@ -1,0 +1,19 @@
+module when-value-prefix {
+
+   namespace "urn:when:value:prefix";
+   prefix wvp;
+
+   identity base-indicator;
+
+   identity outer-indicator {
+      base base-indicator;
+   }
+
+   container outer {
+      leaf indicator {
+         type identityref {
+            base base-indicator;
+         }
+      }
+   }
+}

@@ -1,0 +1,10 @@
+module c1 {
+  namespace "urn:c1";
+  prefix c1_mod;
+
+  container top {
+    leaf leaf {
+      type string;
+    }
+  }
+}

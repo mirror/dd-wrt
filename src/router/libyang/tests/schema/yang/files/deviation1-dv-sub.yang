@@ -1,0 +1,16 @@
+submodule deviation1-dv-sub {
+  belongs-to deviation1-dv {
+    prefix dev1-dv;
+  }
+
+  import deviation1 {
+    prefix dev1;
+  }
+
+  deviation "/dev1:deviation1/dev1:cont" {
+    description "An additional must deviation.";
+    deviate add {
+      must "dev1:cont-leaf-2 != 'quux'";
+    }
+  }
+}

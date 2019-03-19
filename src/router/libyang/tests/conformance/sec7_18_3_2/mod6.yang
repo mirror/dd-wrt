@@ -1,0 +1,24 @@
+module mod6 {
+    prefix abc;
+    namespace "urn:cesnet:mod6";
+
+    import mod {
+        prefix mod;
+    }
+
+    deviation "/mod:default" {
+        description "test";
+
+        deviate delete {
+            default "default";
+        }
+
+        deviate add {
+            mandatory true;
+        }
+
+        deviate add {
+            mandatory true;
+        }
+    }
+}

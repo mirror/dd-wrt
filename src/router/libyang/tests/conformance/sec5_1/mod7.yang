@@ -1,0 +1,7 @@
+module mod7 {
+    
+	prefix abc;
+    namespace "http://www.example.com";
+
+    description "This modul does not contain grouping a.";
+}

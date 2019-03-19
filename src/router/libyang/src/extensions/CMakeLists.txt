@@ -1,0 +1,10 @@
+macro(EXTENSION_PLUGIN PLUGIN_NAME SRCS)
+    add_library(${PLUGIN_NAME} SHARED ${SRCS})
+    set_target_properties(${PLUGIN_NAME} PROPERTIES PREFIX "")
+    target_link_libraries(${PLUGIN_NAME} yang)
+    install(TARGETS ${PLUGIN_NAME} DESTINATION ${EXTENSIONS_PLUGINS_DIR_MACRO})
+endmacro(EXTENSION_PLUGIN)
+
+foreach(EXTENSION ${EXTENSIONS_LIST})
+    EXTENSION_PLUGIN(${EXTENSION} "${EXTENSION}.c")
+endforeach()

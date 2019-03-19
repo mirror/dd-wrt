@@ -1,0 +1,55 @@
+Source: @PACKAGE_NAME@
+Maintainer: CESNET <rkrejci@cesnet.cz>
+Priority: extra
+Standards-Version: 3.8.2
+Build-Depends: debhelper (>= 9), gcc
+Homepage: https://github.com/CESNET/libyang
+
+Package: @PACKAGE_NAME@
+Depends: libpcre3, ${shlibs:Depends}
+Conflicts: @CONFLICT_PACKAGE_NAME@ (= @LIBYANG_MAJOR_VERSION@.@LIBYANG_MINOR_VERSION@)
+Section: libs
+Architecture: any
+Description: Libyang is YANG data modelling language parser and toolkit written (and providing API) in C.
+
+Package: @PACKAGE_NAME@-dev
+Depends: libpcre3-dev, @PACKAGE_NAME@ (=@LIBYANG_VERSION@)
+Section: libdevel
+Architecture: any
+Description: Headers of libyang library.
+
+Package: @PACKAGE_NAME@-dbg
+Depends: @PACKAGE_NAME@ (=@LIBYANG_VERSION@)
+Section: debug
+Architecture: any
+Description: Debug symbols of libyang library.
+
+Package: libyang-cpp@PACKAGE_PART_NAME@
+Depends: @PACKAGE_NAME@ (=@LIBYANG_VERSION@)
+Section: libs
+Architecture: any
+Description: Bindings of libyang library to C++ language.
+
+Package: libyang-cpp@PACKAGE_PART_NAME@-dev
+Depends: libpcre3-dev, libyang-cpp@PACKAGE_PART_NAME@ (=@LIBYANG_VERSION@)
+Section: libdevel
+Architecture: any
+Description: Headers of bindings to c++ language libyang library.
+
+Package: libyang-cpp@PACKAGE_PART_NAME@-dbg
+Depends: libyang-cpp@PACKAGE_PART_NAME@ (=@LIBYANG_VERSION@)
+Section: debug
+Architecture: any
+Description: Debug symbols of c++ bidings of libyang library.
+
+Package: python3-yang@PACKAGE_PART_NAME@
+Depends: @PACKAGE_NAME@ (=@LIBYANG_VERSION@), libyang-cpp@PACKAGE_PART_NAME@ (=@LIBYANG_VERSION@)
+Section: libs
+Architecture: any
+Description: Bindings of libyang library to python3 language.
+
+Package: python3-yang@PACKAGE_PART_NAME@-dbg
+Depends: python3-yang@PACKAGE_PART_NAME@ (=@LIBYANG_VERSION@)
+Section: debug
+Architecture: any
+Description: Debug symbols of python3 bidings of libyang library.

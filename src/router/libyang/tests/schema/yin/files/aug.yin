@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="aug"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:a="test:aug"
+        xmlns:ba="test:base">
+  <namespace uri="test:aug"/>
+  <prefix value="a"/>
+  <import module="base">
+    <prefix value="ba"/>
+  </import>
+  <grouping name="groupone">
+    <container name="grouponecont"/>
+  </grouping>
+  <augment target-node="/ba:main/ba:second/ba:third">
+    <description>
+      <text>First top-level augment in module</text>
+    </description>
+    <uses name="groupone">
+      <augment target-node="grouponecont">
+        <leaf name="groupleaf">
+          <type name="string"/>
+        </leaf>
+      </augment>
+    </uses>
+  </augment>
+  <augment target-node="/ba:main/ba:second/ba:third">
+    <description>
+      <text>Second top-level augment in module</text>
+    </description>
+    <leaf name="augleaftwo">
+      <type name="string"/>
+    </leaf>
+  </augment>
+</module>

@@ -1,0 +1,22 @@
+module mod7 {
+    prefix abc;
+    namespace "urn:cesnet:mod7";
+
+    container ccc {
+        list list {
+            key keys;
+
+            unique llist;
+
+            leaf keys {
+                type int64;
+            }
+
+            leaf llist {
+                type string;
+                status "deprecated";
+            }
+
+        }
+    }
+}

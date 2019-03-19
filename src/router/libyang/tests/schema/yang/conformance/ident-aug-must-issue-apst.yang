@@ -1,0 +1,19 @@
+module ident-aug-must-issue-apst {
+
+  namespace "urn:ident-aug-must-issue:apst";
+  prefix apst;
+
+  import ident-aug-must-issue-aps {
+    prefix aps;
+  }
+
+  import ident-aug-must-issue-ape {
+    prefix ape;
+  }
+
+  augment "/ape:entities/ape:entity/aps:sensor" {
+    container sensor1 {
+    }
+  }
+  
+}

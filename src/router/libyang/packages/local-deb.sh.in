@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+LOCAL_LC_TIME=$LC_TIME
+export LC_TIME="en_US.UTF-8"
+mkdir -p debian/source
+mkdir -p debs
+cp build-packages/debian.rules debian/rules
+cp build-packages/debian.control debian/control
+echo '9' >debian/compat
+echo '3.0 (quilt)' >debian/source/format
+cp "@PROJECT_SOURCE_DIR@/LICENSE" debian/copyright
+if [[ `lsb_release -rs` == "14.04" ]]
+then
+  cp "@PROJECT_SOURCE_DIR@/packages/debian.libyang.install.ubuntu-14.04" debian/@PACKAGE_NAME@.install
+else
+  cp "@PROJECT_SOURCE_DIR@/packages/debian.libyang.install" debian/@PACKAGE_NAME@.install
+fi
+cp "@PROJECT_SOURCE_DIR@/packages/debian.libyang-dev.install" debian/@PACKAGE_NAME@-dev.install
+cp "@PROJECT_SOURCE_DIR@/packages/debian.libyang-cpp.install" debian/libyang-cpp@PACKAGE_PART_NAME@.install
+cp "@PROJECT_SOURCE_DIR@/packages/debian.libyang-cpp-dev.install" debian/libyang-cpp@PACKAGE_PART_NAME@-dev.install
+cp "@PROJECT_SOURCE_DIR@/packages/debian.python3-yang.install" debian/python3-yang@PACKAGE_PART_NAME@.install
+echo -e "@PACKAGE_NAME@ (@LIBYANG_VERSION@) stable; urgency=low\n" >debian/changelog
+git log -10 --pretty=format:'  * %s (%aN)%n' 2>/dev/null >>debian/changelog || echo -e "  * unknown changes \n" >>debian/changelog
+git log -1 --pretty=format:'%n -- %aN <%aE>  %aD%n' >>debian/changelog 2>/dev/null || echo " -- ${USER} <${USER}@`hostname`>  `date -R`" >>debian/changelog
+debuild --no-lintian -i -b -us -uc
+mv ../*.deb debs
+export LC_TIME=$LOCAL_LC_TIME

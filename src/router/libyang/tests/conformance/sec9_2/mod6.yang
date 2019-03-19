@@ -1,0 +1,10 @@
+module mod6 {
+    prefix abc;
+    namespace "urn:cesnet:mod6";
+
+    typedef my {
+        type int8 {
+            range "20 .. 10"; // bad range
+        }
+    }
+}

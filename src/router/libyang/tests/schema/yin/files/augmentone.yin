@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="augmentone"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:aone="test:augmentone"
+        xmlns:abase="test:augmentbase"
+        xmlns:atwo="test:augmenttwo">
+  <namespace uri="test:augmentone"/>
+  <prefix value="aone"/>
+  <import module="augmentbase">
+    <prefix value="abase"/>
+  </import>
+  <import module="augmenttwo">
+    <prefix value="atwo"/>
+  </import>
+  <typedef name="onetyperef">
+    <type name="leafref">
+      <path value="/abase:base-container/aone:one-leaf"/>
+    </type>
+  </typedef>
+  <augment target-node="/abase:base-container">
+    <leaf name="one-leaf">
+      <type name="string"/>
+    </leaf>
+    <leaf name="one-leaf-ref">
+      <type name="atwo:twotyperef"/>
+    </leaf>
+  </augment>
+</module>

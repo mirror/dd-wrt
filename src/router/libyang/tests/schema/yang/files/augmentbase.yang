@@ -1,0 +1,10 @@
+module augmentbase {
+    namespace "test:augmentbase";
+    prefix abase;
+
+    container base-container {
+        leaf base-leaf {
+            type string;
+        }
+    }
+}

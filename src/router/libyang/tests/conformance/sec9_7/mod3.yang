@@ -1,0 +1,20 @@
+module mod3 {
+    prefix abc;
+    namespace "urn:cesnet:mod3";
+
+    typedef my {
+        type bits {
+            bit one {
+                description "test";
+            }
+
+            bit two {
+                description "test description";
+                status "current";
+                reference "test reference";
+
+                status obsolete; // duplicated
+            }
+        }
+    }
+}

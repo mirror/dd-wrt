@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="installme"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:im="test:installme"
+        xmlns:a="test:aug">
+  <namespace uri="test:installme"/>
+  <prefix value="im"/>
+  <import module="aug">
+    <prefix value="a"/>
+  </import>
+</module>

@@ -1,0 +1,40 @@
+<ice-cream-shop xmlns="urn:module">
+    <employees>
+
+    <employee>
+      <id>0</id>
+      <name>John Doe</name>
+      <age>28</age>
+    </employee>
+
+    <employee>
+      <id>1</id>
+      <name>Dohn Joe</name>
+      <age>20</age>
+    </employee>
+
+  </employees>
+</ice-cream-shop>
+
+<one-leaf xmlns="urn:module2">reference leaf</one-leaf>
+
+<random xmlns="urn:module">
+  <aleaf>string</aleaf>
+  <xml-data><anyxml>data</anyxml></xml-data>
+  <any-data>any data</any-data>
+
+  <leaflist>l0</leaflist>
+  <leaflist>l1</leaflist>
+  <leaflist>l2</leaflist>
+
+  <g1>40</g1>
+  <g2>string</g2>
+
+  <aug-leaf>string</aug-leaf>
+
+  <rg1>string</rg1>
+  <rg2>string</rg2>
+
+  <lref>reference leaf</lref>
+  <iref>random-identity</iref>
+</random>

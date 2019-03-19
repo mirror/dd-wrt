@@ -1,0 +1,28 @@
+module augmentone {
+    namespace "test:augmentone";
+    prefix aone;
+
+    import augmentbase {
+       prefix abase;
+    }
+
+    import augmenttwo {
+        prefix atwo;
+    }
+
+    typedef onetyperef {
+        type leafref {
+            path "/abase:base-container/aone:one-leaf";
+        }
+    }
+
+    augment "/abase:base-container" {
+        leaf one-leaf {
+            type string;
+        }
+
+        leaf one-leaf-ref {
+            type atwo:twotyperef;
+        }
+    }
+}

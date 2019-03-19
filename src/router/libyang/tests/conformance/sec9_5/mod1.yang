@@ -1,0 +1,13 @@
+module mod1 {
+    prefix abc;
+    namespace "urn:cesnet:mod1";
+
+    leaf leaf1 {
+        type boolean;
+        default TRUE;
+    }
+
+    leaf test {
+        type empty;
+    }
+}

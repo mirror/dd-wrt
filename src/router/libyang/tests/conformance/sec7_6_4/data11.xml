@@ -1,0 +1,7 @@
+<leaf21 xmlns="urn:cesnet:mod4">interface</leaf21>
+<ccc xmlns="urn:cesnet:mod4">
+    <leaf2>data</leaf2>
+</ccc>
+<cont xmlns="urn:cesnet:mod4">
+   <presence/>
+</cont>

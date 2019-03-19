@@ -1,0 +1,77 @@
+module yang {
+  namespace "urn:ietf:params:xml:ns:yang:1";
+  prefix yang;
+
+  import ietf-yang-metadata {
+    prefix md;
+    revision-date 2016-08-05;
+  }
+
+  organization
+    "libyang";
+
+  contact
+    "Web:    <https://github.com/CESNET/libyang/>
+     Author: Radek Krejci <rkrejci@cesnet.cz>";
+
+  description
+    "This is a kind of fake model with no data, typedefs or anything
+     else. libyang uses this module to implement various YANG attributes
+     defined in RFC 6020.";
+
+  revision 2017-02-20 {
+    description
+      "Added metadata for NETCONF's edit-config manipulation with ordered
+       lists and leaf-lists.";
+    reference
+      "RFC 7950: The YANG 1.1 Data Modeling Language";
+  }
+
+  revision 2016-02-11 {
+    description
+      "Initial revision";
+    reference
+      "RFC 6020: YANG - A Data Modeling Language for
+       the Network Configuration Protocol (NETCONF)";
+  }
+
+  md:annotation insert {
+    type enumeration {
+      enum first;
+      enum last;
+      enum before;
+      enum after;
+    }
+    reference "RFC7950 section 7.8.6. and section 7.7.9.";
+    description
+      "In user ordered leaf-list, the attribute can be used to control
+       where in the leaf-list the entry is inserted. It can be used during
+       the NETCONF <edit-config> \"create\" operations to insert a new list or
+       leaf-list entry, or during \"merge\" or \"replace\" operations to insert
+       a new list or leaf-list entry or move an existing one.
+
+       If the value is \"before\" or \"after\", the \"value\"/\"key\" attribute
+       MUST also be used to specify an existing entry in the list or leaf-list.
+
+       If no \"insert\" attribute is present in the \"create\" operation, it
+       defaults to \"last\".";
+  }
+
+  md:annotation value {
+    type string;
+    reference "RFC7950 section 7.7.9.";
+    description
+      "In user ordered leaf-list, the attribute must be used if the attribute
+       insert is used and specifies before/after which existing instance the
+       new instance should be inserted.";
+  }
+
+  md:annotation key {
+    type string;
+    reference "RFC7950 section 7.8.6.";
+    description
+      "In user ordered list, the attribute must be used if the attribute
+       insert is used and specifies before/after which existing instance the
+       new instance should be inserted.";
+  }
+}

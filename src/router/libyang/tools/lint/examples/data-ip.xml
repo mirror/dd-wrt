@@ -1,0 +1,12 @@
+<interfaces xmlns="urn:ietf:params:xml:ns:yang:ietf-interfaces">
+  <interface>
+    <name>eth0</name>
+    <description>Wire Connection</description>
+    <type xmlns:ift="urn:ietf:params:xml:ns:yang:iana-if-type">ift:ethernetCsmacd</type>
+    <enabled>true</enabled>
+    <ipv4 xmlns="urn:ietf:params:xml:ns:yang:ietf-ip">
+      <address><ip>192.168.1.15</ip><netmask>255.255.255.0</netmask></address>
+      <address><ip>192.168.1.10</ip><netmask>255.255.255.0</netmask></address>
+    </ipv4>
+  </interface>
+</interfaces>

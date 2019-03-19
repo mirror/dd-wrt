@@ -1,0 +1,11 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
+libdir=${prefix}/@CMAKE_INSTALL_LIBDIR@
+
+Name: @PROJECT_NAME@
+Description: @LIBYANG_DESCRIPTION@
+Version: @LIBYANG_VERSION@
+Requires.private: libyang
+Libs: -L${libdir} -lyang-cpp
+Libs.private: -lyang
+Cflags: -I${includedir}

@@ -1,0 +1,28 @@
+module tree-a {
+    namespace "urn:tree-a";
+    prefix ta;
+
+    grouping group1 {
+        leaf leaf1 {
+            type string;
+        }
+    }
+
+    grouping group2 {
+        leaf leaf2 {
+            type string;
+        }
+    }
+
+    container cont {
+        leaf leaf3 {
+            type uint8;
+        }
+    }
+
+    rpc rpc1;
+    rpc rpc2;
+
+    notification notif1;
+    notification notif2;
+}

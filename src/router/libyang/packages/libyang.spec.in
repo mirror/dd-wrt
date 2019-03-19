@@ -1,0 +1,118 @@
+Name: @PACKAGE_NAME@
+Version: @LIBYANG_VERSION@
+Release: 0
+Summary: Libyang library
+Url: https://github.com/CESNET/libyang
+Source: %{url}/archive/@BRANCH@.tar.gz
+Source1: libyang.rpmlintrc
+License: BSD-3-Clause
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}
+
+Requires:  pcre
+BuildRequires:  cmake
+BuildRequires:  doxygen
+BuildRequires:  pcre-devel
+BuildRequires:  valgrind
+BuildRequires:  libcmocka-devel
+BuildRequires:  gcc
+BuildRequires:  gcc-c++
+BuildRequires:  swig >= 3.0.12
+
+%if 0%{?suse_version} + 0%{?fedora} > 0
+BuildRequires:  python3-devel
+%else
+BuildRequires:  python34-devel
+%endif
+
+Conflicts: @CONFLICT_PACKAGE_NAME@ = @LIBYANG_MAJOR_VERSION@.@LIBYANG_MINOR_VERSION@
+
+%package devel
+Summary:    Headers of libyang library
+Requires:   %{name} = %{version}-%{release}
+Requires:   pcre-devel
+
+%package -n libyang-cpp@PACKAGE_PART_NAME@
+Summary:    Bindings to c++ language
+Requires:   %{name} = %{version}-%{release}
+
+%package -n libyang-cpp@PACKAGE_PART_NAME@-devel
+Summary:    Headers of bindings to c++ language
+Requires:   libyang-cpp@PACKAGE_PART_NAME@ = %{version}-%{release}
+Requires:   pcre-devel
+
+%package -n python3-yang@PACKAGE_PART_NAME@
+Summary:    Binding to python
+Requires:   libyang-cpp@PACKAGE_PART_NAME@ = %{version}-%{release}
+Requires:   %{name} = %{version}-%{release}
+
+%description -n libyang-cpp@PACKAGE_PART_NAME@
+Bindings of libyang library to C++ language.
+
+%description -n libyang-cpp@PACKAGE_PART_NAME@-devel
+Headers of bindings to c++ language.
+
+%description -n python3-yang@PACKAGE_PART_NAME@
+Bindings of libyang library to python language.
+
+%description devel
+Headers of libyang library.
+
+%description
+Libyang is YANG data modelling language parser and toolkit written (and providing API) in C.
+
+%prep
+%setup -n libyang-@BRANCH@
+mkdir build
+
+%build
+cd build
+cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr -D CMAKE_BUILD_TYPE:String="@BUILD_TYPE@" -DGEN_LANGUAGE_BINDINGS=ON ..
+make
+
+%check
+cd build
+ctest --output-on-failure
+
+%install
+cd build
+make DESTDIR=%{buildroot} install
+
+%post -p /sbin/ldconfig
+%post -n libyang-cpp@PACKAGE_PART_NAME@ -p /sbin/ldconfig
+
+%postun -p /sbin/ldconfig
+%postun -n libyang-cpp@PACKAGE_PART_NAME@ -p /sbin/ldconfig
+
+%files
+%defattr(-,root,root)
+%{_bindir}/yanglint
+%{_bindir}/yangre
+%{_datadir}/man/man1/yanglint.1.gz
+%{_datadir}/man/man1/yangre.1.gz
+%{_libdir}/libyang.so.*
+%{_libdir}/libyang/*
+%dir %{_libdir}/libyang/
+
+%files devel
+%defattr(-,root,root)
+%{_libdir}/libyang.so
+%{_libdir}/pkgconfig/libyang.pc
+%{_includedir}/libyang/*.h
+%dir %{_includedir}/libyang/
+
+%files -n libyang-cpp@PACKAGE_PART_NAME@
+%defattr(-,root,root)
+%{_libdir}/libyang-cpp.so.*
+
+%files -n libyang-cpp@PACKAGE_PART_NAME@-devel
+%defattr(-,root,root)
+%{_libdir}/libyang-cpp.so
+%{_includedir}/libyang/*.hpp
+%{_libdir}/pkgconfig/libyang-cpp.pc
+%dir %{_includedir}/libyang/
+
+%files -n python3-yang@PACKAGE_PART_NAME@
+%defattr(-,root,root)
+%{_libdir}/python*
+
+%changelog

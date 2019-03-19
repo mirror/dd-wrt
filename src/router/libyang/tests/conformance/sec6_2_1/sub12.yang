@@ -1,0 +1,24 @@
+submodule sub10 {
+    
+    belongs-to mod12 {
+        prefix de;
+    }
+
+    import mod {
+      prefix sk;
+    }
+
+    feature f2;
+
+    identity i2;
+    
+    grouping h {
+
+        leaf abc {
+            type sk:hostname;
+        }
+
+    }
+
+
+}

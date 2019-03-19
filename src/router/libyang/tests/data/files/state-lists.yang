@@ -1,0 +1,36 @@
+module state-lists {
+    yang-version 1.1;
+    namespace "urn:state-lists";
+    prefix sl;
+
+    container cont {
+        config false;
+
+        list l {
+            leaf leaf1 {
+                type string;
+            }
+            leaf leaf2 {
+                type uint16;
+            }
+
+            container lcont {
+                leaf leaf3 {
+                    type empty;
+                }
+                list l2 {
+                    leaf leaf4 {
+                        type string;
+                    }
+                    leaf leaf5 {
+                        type string;
+                    }
+                }
+            }
+        }
+
+        leaf-list ll {
+            type string;
+        }
+    }
+}

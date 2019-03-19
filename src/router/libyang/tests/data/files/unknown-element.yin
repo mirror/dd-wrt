@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="unknown-element"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:ue="urn:libyang:tests:unknown-element">
+  <yang-version value="1"/>
+  <namespace uri="urn:libyang:tests:unknown-element"/>
+  <prefix value="ue"/>
+  <revision date="2018-03-26">
+    <description>
+      <text>initial revision</text>
+    </description>
+  </revision>
+  <leaf name="known-leaf">
+    <type name="string"/>
+  </leaf>
+  <container name="known-container">
+  </container>
+</module>

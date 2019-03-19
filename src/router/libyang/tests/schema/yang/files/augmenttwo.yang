@@ -1,0 +1,24 @@
+module augmenttwo {
+    namespace "test:augmenttwo";
+    prefix atwo;
+
+    import augmentbase {
+        prefix abase;
+    }
+
+    typedef twotyperef {
+        type leafref {
+            path "/abase:base-container/atwo:two-leaf";
+        }
+    }
+
+    augment "/abase:base-container" {
+        leaf two-leaf {
+            type string;
+        }
+
+        container random {
+            description "This will cause it to fail";
+        }
+    }
+}

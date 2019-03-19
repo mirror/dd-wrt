@@ -1,0 +1,23 @@
+submodule feature-submodule-sub {
+    belongs-to feature-submodule-main {
+        prefix fsm;
+    }
+
+    import feature-submodule-mod {
+        prefix fsmod;
+    }
+
+    feature test-submodule-feature {
+      description
+        "Submodule feature used for tests.";
+    }
+
+    augment "/fsmod:mod-container" {
+      leaf augmented-data-val {
+        if-feature test-submodule-feature;
+        type string;
+        description
+          "Test data for feature dependent leaf.";
+      }
+    }
+}

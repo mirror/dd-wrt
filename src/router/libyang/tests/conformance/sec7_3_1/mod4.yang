@@ -1,0 +1,13 @@
+module mod4 {
+
+    prefix abc;
+    namespace "urn:cesnet:mod4";
+
+    typedef my_type {
+        type uint32;
+        status obsolete;
+        default "42";
+        reference "test reference";
+        status "current";
+    }
+}

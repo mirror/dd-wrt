@@ -1,0 +1,18 @@
+module mainmodule {
+    namespace "test:mainmodule";
+    prefix main;
+
+    import augmentone {
+        prefix aone;
+    }
+
+    container main {
+        leaf main-leaf {
+            type string;
+        }
+
+        leaf leaf-ref {
+            type aone:onetyperef;
+        }
+    }
+}

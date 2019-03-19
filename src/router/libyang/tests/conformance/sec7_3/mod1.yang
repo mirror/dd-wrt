@@ -1,0 +1,9 @@
+module mod1 {
+
+    prefix abc;
+    namespace "urn:cesnet:mod1";
+
+    typedef binary {
+        type uint32;
+    }
+}

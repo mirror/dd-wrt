@@ -1,0 +1,57 @@
+module deviation1-dv{
+
+  namespace "urn:fri:params:xml:ns:yang:deviation1-dv";
+  prefix dev1-dv;
+
+  include deviation1-dv-sub;
+
+  import deviation1 {
+    prefix dev1;
+  }
+
+  description
+    "This module contains a deviation which caused a double free crash...";
+
+  deviation "/dev1:deviation1/dev1:cont"
+          + "/dev1:cont-leaf-1" {
+    description
+      "Restrict the values for the c-tag cont to only allow 0x8100
+       (33024) and 0x88A8 (34984).";
+    deviate replace {
+      type uint16 {
+        range "33024 | 34984" {
+          description
+            "0x8100 | 0x88A8";
+        }
+      }
+    }
+  }
+
+  deviation "/dev1:deviation1/dev1:cont" {
+    description "An additional must deviation.";
+    deviate add {
+      must "dev1:cont-leaf-2 != 'foo'";
+    }
+  }
+
+  deviation "/dev1:deviation1/dev1:cont" {
+    description "An additional must deviation.";
+    deviate add {
+      must "dev1:cont-leaf-2 != 'bar'";
+    }
+  }
+
+  deviation "/dev1:deviation1/dev1:cont" {
+    description "An additional must deviation.";
+    deviate add {
+      must "dev1:cont-leaf-2 != 'baz'";
+    }
+  }
+
+  deviation "/dev1:deviation1/dev1:cont" {
+    description "An additional must deviation.";
+    deviate add {
+      must "dev1:cont-leaf-2 != 'qux'";
+    }
+  }
+}

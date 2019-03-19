@@ -1,0 +1,29 @@
+<nacm xmlns="urn:ietf:params:xml:ns:yang:ietf-netconf-acm">
+  <rule-list>
+    <name>almighty</name>
+    <group>almighty</group>
+    <rule>
+      <name>almighty</name>
+      <module-name>*</module-name>
+      <access-operations>*</access-operations>
+      <action>permit</action>
+    </rule>
+  </rule-list>
+  <groups>
+    <group>
+      <name>almighty</name>
+      <user-name>smith</user-name>
+    </group>
+  </groups>
+</nacm>
+<interfaces xmlns="urn:ietf:params:xml:ns:yang:ietf-interfaces">
+  <interface>
+    <name>eth0</name>
+    <description>Wire Connection</description>
+    <type xmlns:ift="urn:ietf:params:xml:ns:yang:iana-if-type">ift:ethernetCsmacd</type>
+    <enabled>true</enabled>
+    <ipv4 xmlns="urn:ietf:params:xml:ns:yang:ietf-ip">
+      <address><ip>192.168.1.15</ip><prefix-length>24</prefix-length></address>
+    </ipv4>
+  </interface>
+</interfaces>

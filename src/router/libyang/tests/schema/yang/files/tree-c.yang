@@ -1,0 +1,19 @@
+module tree-c {
+    namespace "urn:tree-c";
+    prefix tc;
+
+    yang-version 1.1;
+
+    container cont {
+        presence true;
+        container cont2 {
+            list list1 {
+                key "key1";
+                leaf key1 {
+                    type string;
+                }
+                container cont3;
+            }
+        }
+    }
+}

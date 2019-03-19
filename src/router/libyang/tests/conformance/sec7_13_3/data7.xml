@@ -1,0 +1,4 @@
+<cont xmlns="urn:cesnet:mod1">
+    <mandatory>true</mandatory>
+</cont>
+<llist xmlns="urn:cesnet:mod1">1</llist>

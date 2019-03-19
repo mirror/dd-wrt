@@ -1,0 +1,51 @@
+module mod3 {
+    prefix abc;
+    namespace "urn:cesnet:mod3";
+
+    import mod {
+        prefix mod;
+    }
+
+    include sub3;
+
+    typedef my {
+        type identityref {
+            base sub;
+        }
+    }
+
+    identity j4 {
+        base mod:j1;
+    }
+
+    leaf-list llist {
+        type my;
+    }
+
+    leaf test {
+        type identityref {
+            base mod:j1;
+        }
+        default abc:j4;
+    }
+
+    leaf test2 {
+        type identityref {
+            base sub2;
+        }
+
+        when "../test = 'abc:j4'";
+    }
+
+    identity i3 {
+        base i1;
+    }
+
+    identity i2 {
+        base sub;
+    }
+
+    identity i1 {
+        base sub;
+    }
+}

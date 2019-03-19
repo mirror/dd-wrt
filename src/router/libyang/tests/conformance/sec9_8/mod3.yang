@@ -1,0 +1,14 @@
+module mod3 {
+    prefix abc;
+    namespace "urn:cesnet:mod3";
+
+    typedef my {
+        type binary {
+            length '1..255';
+        }
+    }
+
+    leaf leaf {
+        type my;
+    }
+}

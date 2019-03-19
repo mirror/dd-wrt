@@ -1,0 +1,9 @@
+module mod8 {
+
+    prefix abc;
+    namespace "urn:cesnet:mod8";
+
+    typedef instance-identifier {
+        type uint32;
+    }
+}

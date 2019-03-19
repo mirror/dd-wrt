@@ -1,0 +1,13 @@
+{
+  "test-origin:cont": {
+    "leaf1": "value1",
+    "@leaf1": {
+        "ietf-origin:origin": "ietf-origin:default"
+    },
+    "leaf2": "value2",
+    "leaf3": 125,
+    "@leaf3": {
+        "ietf-origin:origin": "ietf-origin:system"
+    }
+  }
+}

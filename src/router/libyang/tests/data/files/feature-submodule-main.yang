@@ -1,0 +1,6 @@
+module feature-submodule-main {
+    namespace "test:feature-submodule-main";
+    prefix fsm;
+
+    include feature-submodule-sub;
+}

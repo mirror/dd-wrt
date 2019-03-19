@@ -1,0 +1,32 @@
+comment:
+  layout: header, changes, diff
+  
+coverage:
+  precision: 2
+  round: nearest
+  
+  ignore:
+  - tests/.*
+  - tests_internal/.*
+  - tools/.*
+
+  status:
+    project:
+      default:
+        target: auto
+        if_no_uploads: error
+
+    patch:
+      default:
+        if_no_uploads: error
+
+    changes: true
+
+  parsers:
+    gcov:
+      branch_detection:
+        macro: no
+        loop: no
+        conditional: no
+        method: no
+

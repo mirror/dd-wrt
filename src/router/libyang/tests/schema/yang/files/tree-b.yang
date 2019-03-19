@@ -1,0 +1,22 @@
+module tree-b {
+    namespace "urn:tree-b";
+    prefix tb;
+
+    import tree-a {
+        prefix ta;
+    }
+
+    augment /ta:cont {
+        list list1 {
+            key key1;
+
+            leaf key1 {
+                type leafref {
+                    path "/ta:cont/list1/leaf1";
+                }
+            }
+
+            uses ta:group1;
+        }
+    }
+}

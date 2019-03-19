@@ -1,0 +1,163 @@
+module mod1 {
+    prefix abc;
+    namespace "urn:cesnet:mod1";
+
+    grouping global {
+        container ssh {
+            presence "enable";
+        }
+    }
+
+    rpc test {
+        output {
+            uses global;
+
+            choice ch1 {
+                case ca {
+                    leaf ch_1 { type string; }
+                    leaf ch_3 { type string; }
+                }
+
+                leaf ch_2 { type uint32; }
+            }
+        }
+    }
+
+    rpc test2 {
+        output {
+            typedef my {
+                type int16 {
+                    range "-16 .. 5";
+                }
+            }
+
+            grouping gr {
+                leaf-list llist {
+                    type my;
+                    min-elements 1;
+                }
+            }
+
+            container cont {
+                leaf mandatory {
+                    type boolean;
+                    mandatory true;
+                }
+            }
+
+            uses gr;
+
+            anyxml any;
+        }
+        reference "test reference";
+    }
+
+    rpc test3 {
+        output {
+            container presence {
+                presence "enable";
+
+                leaf mandatory {
+                    type boolean;
+                    mandatory true;
+                }
+
+                container conf {
+                    config false;     // ignore statement
+                    leaf config {
+                        config true;  // ignore statement
+                        type string;
+                    }
+                }
+            }
+
+            container anyxml {
+                presence "enable";
+                anyxml anyxml {
+                    mandatory true;
+                }
+            }
+
+            container choice {
+                presence "enable";
+                choice ch1 {
+                    mandatory true;
+                    case ca {
+                        leaf test1 { type string; }
+                    }
+
+                    leaf test2 { type uint8; }
+                }
+            }
+
+            list list {
+                key name;
+                unique "port";
+
+                leaf name { type string; }
+                leaf port { type uint16; }
+                leaf error { type int8; }
+            }
+        }
+        description "test";
+    }
+
+    rpc test4 {
+        output {
+            container ccc {
+                container cc {
+                    leaf pattern {
+                        type string;
+                        default pattern;
+                    }
+                }
+            }
+            leaf test { type uint8; }
+        }
+    }
+
+    rpc test5 {
+        output {
+            container cont {
+                presence "enable";
+                leaf top {
+                    type boolean;
+                }
+            }
+
+            uses global {
+                when "cont/top = 'false'";
+            }
+
+            leaf leaf {
+                type string;
+                when '../cont';
+            }
+        }
+    }
+
+    rpc test6 {
+        output {
+            leaf test {
+                type uint8;
+            }
+
+            leaf mand {
+                type boolean;
+                mandatory true;
+            }
+
+            container cont {
+                leaf mandatory {
+                    type boolean;
+                    mandatory true;
+                }
+            }
+
+            leaf-list llist {
+                type string;
+                min-elements 2;
+            }
+        }
+    }
+}

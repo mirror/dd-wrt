@@ -1,0 +1,10 @@
+module mod6 {
+    prefix abc;
+    namespace "urn:cesnet:mod6";
+
+    leaf lef1 {
+        type string {
+            length "-1 .. 100";
+        }
+    }
+}
