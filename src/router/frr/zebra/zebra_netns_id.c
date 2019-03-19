@@ -24,13 +24,14 @@
 #include "log.h"
 #include "lib_errors.h"
 
+#include "zebra/rib.h"
+#include "zebra/zebra_dplane.h"
 #if defined(HAVE_NETLINK)
 
 #include <linux/net_namespace.h>
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
 
-#include "rib.h"
 #include "zebra_ns.h"
 #include "kernel_netlink.h"
 #endif /* defined(HAVE_NETLINK) */
@@ -88,7 +89,7 @@ static int send_receive(int sock, struct nlmsghdr *nlh, unsigned int seq,
 	ret = sendto(sock, (const void *)nlh, (size_t)nlh->nlmsg_len, 0,
 		     (struct sockaddr *)&snl, (socklen_t)sizeof(snl));
 	if (ret < 0) {
-		flog_err_sys(LIB_ERR_SOCKET, "netlink( %u) sendmsg() error: %s",
+		flog_err_sys(EC_LIB_SOCKET, "netlink( %u) sendmsg() error: %s",
 			     sock, safe_strerror(errno));
 		return -1;
 	}
@@ -109,20 +110,20 @@ static int send_receive(int sock, struct nlmsghdr *nlh, unsigned int seq,
 	};
 	ret = recvmsg(sock, &msg, 0);
 	if (ret < 0) {
-		flog_err_sys(LIB_ERR_SOCKET,
+		flog_err_sys(EC_LIB_SOCKET,
 			     "netlink recvmsg: error %d (errno %u)", ret,
 			     errno);
 		return -1;
 	}
 	if (msg.msg_flags & MSG_TRUNC) {
-		flog_err(ZEBRA_ERR_NETLINK_LENGTH_ERROR,
-			  "netlink recvmsg : error message truncated");
+		flog_err(EC_ZEBRA_NETLINK_LENGTH_ERROR,
+			 "netlink recvmsg : error message truncated");
 		return -1;
 	}
 	/* nlh already points to buf */
 	if (nlh->nlmsg_seq != seq) {
 		flog_err(
-			ZEBRA_ERR_NETLINK_BAD_SEQUENCE,
+			EC_ZEBRA_NETLINK_BAD_SEQUENCE,
 			"netlink recvmsg: bad sequence number %x (expected %x)",
 			seq, nlh->nlmsg_seq);
 		return -1;
@@ -176,7 +177,7 @@ ns_id_t zebra_ns_id_get(const char *netnspath)
 	/* netlink socket */
 	sock = socket(AF_NETLINK, SOCK_RAW, NETLINK_ROUTE);
 	if (sock < 0) {
-		flog_err_sys(LIB_ERR_SOCKET, "netlink( %u) socket() error: %s",
+		flog_err_sys(EC_LIB_SOCKET, "netlink( %u) socket() error: %s",
 			     sock, safe_strerror(errno));
 		close(fd);
 		return NS_UNKNOWN;
@@ -187,7 +188,7 @@ ns_id_t zebra_ns_id_get(const char *netnspath)
 	snl.nl_pid = 0; /* AUTO PID */
 	ret = bind(sock, (struct sockaddr *)&snl, sizeof(snl));
 	if (ret < 0) {
-		flog_err_sys(LIB_ERR_SOCKET,
+		flog_err_sys(EC_LIB_SOCKET,
 			     "netlink( %u) socket() bind error: %s", sock,
 			     safe_strerror(errno));
 		close(sock);
@@ -219,57 +220,47 @@ ns_id_t zebra_ns_id_get(const char *netnspath)
 	nlh = (struct nlmsghdr *)buf;
 
 	/* message to analyse : NEWNSID response */
-	len = ret;
 	ret = 0;
-	do {
-		if (nlh->nlmsg_type >= NLMSG_MIN_TYPE) {
-			return_nsid = extract_nsid(nlh, buf);
-			if (return_nsid != NS_UNKNOWN)
-				break;
-		} else {
-			if (nlh->nlmsg_type == NLMSG_ERROR) {
-				struct nlmsgerr *err =
-					(struct nlmsgerr
-						 *)((char *)nlh
-						    + NETLINK_ALIGN(sizeof(
-							      struct
-							      nlmsghdr)));
+	if (nlh->nlmsg_type >= NLMSG_MIN_TYPE) {
+		return_nsid = extract_nsid(nlh, buf);
+	} else {
+		if (nlh->nlmsg_type == NLMSG_ERROR) {
+			struct nlmsgerr *err =
+				(struct nlmsgerr
+					 *)((char *)nlh
+					    + NETLINK_ALIGN(
+						      sizeof(struct nlmsghdr)));
 
-				ret = -1;
-				if (err->error < 0)
-					errno = -err->error;
-				else
-					errno = err->error;
-				if (errno == 0) {
-					/* request NEWNSID was successfull
-					 * return EEXIST error to get GETNSID
-					 */
-					errno = EEXIST;
-				}
-			} else {
-				/* other errors ignored
-				 * attempt to get nsid
+			ret = -1;
+			if (err->error < 0)
+				errno = -err->error;
+			else
+				errno = err->error;
+			if (errno == 0) {
+				/* request NEWNSID was successfull
+				 * return EEXIST error to get GETNSID
 				 */
-				ret = -1;
 				errno = EEXIST;
-				break;
 			}
+		} else {
+			/* other errors ignored
+			 * attempt to get nsid
+			 */
+			ret = -1;
+			errno = EEXIST;
 		}
-		len = len - NETLINK_ALIGN(nlh->nlmsg_len);
-		nlh = (struct nlmsghdr *)((char *)nlh
-					  + NETLINK_ALIGN(nlh->nlmsg_len));
-	} while (len != 0 && return_nsid != NS_UNKNOWN && ret == 0);
+	}
 
 	if (ret <= 0) {
 		if (errno != EEXIST && ret != 0) {
 			flog_err(
-				LIB_ERR_SOCKET,
+				EC_LIB_SOCKET,
 				"netlink( %u) recvfrom() error 2 when reading: %s",
 				fd, safe_strerror(errno));
 			close(sock);
 			close(fd);
 			if (errno == ENOTSUP) {
-				zlog_warn("NEWNSID locally generated");
+				zlog_debug("NEWNSID locally generated");
 				return zebra_ns_id_get_fallback(netnspath);
 			}
 			return NS_UNKNOWN;
@@ -337,7 +328,8 @@ static void zebra_ns_create_netns_directory(void)
 	/* S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH */
 	if (mkdir(NS_RUN_DIR, 0755)) {
 		if (errno != EEXIST) {
-			zlog_warn("NS check: failed to access %s", NS_RUN_DIR);
+			flog_warn(EC_ZEBRA_NAMESPACE_DIR_INACCESSIBLE,
+				  "NS check: failed to access %s", NS_RUN_DIR);
 			return;
 		}
 	}

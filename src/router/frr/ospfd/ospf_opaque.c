@@ -54,6 +54,7 @@
 #include "ospfd/ospf_sr.h"
 #include "ospfd/ospf_ri.h"
 #include "ospfd/ospf_ext.h"
+#include "ospfd/ospf_errors.h"
 
 DEFINE_MTYPE_STATIC(OSPFD, OSPF_OPAQUE_FUNCTAB, "OSPF opaque function table")
 DEFINE_MTYPE_STATIC(OSPFD, OPAQUE_INFO_PER_TYPE, "OSPF opaque per-type info")
@@ -135,7 +136,7 @@ void ospf_opaque_finish(void)
 int ospf_opaque_type9_lsa_init(struct ospf_interface *oi)
 {
 	if (oi->opaque_lsa_self != NULL)
-		list_delete_and_null(&oi->opaque_lsa_self);
+		list_delete(&oi->opaque_lsa_self);
 
 	oi->opaque_lsa_self = list_new();
 	oi->opaque_lsa_self->del = free_opaque_info_per_type;
@@ -147,7 +148,7 @@ void ospf_opaque_type9_lsa_term(struct ospf_interface *oi)
 {
 	OSPF_TIMER_OFF(oi->t_opaque_lsa_self);
 	if (oi->opaque_lsa_self != NULL)
-		list_delete_and_null(&oi->opaque_lsa_self);
+		list_delete(&oi->opaque_lsa_self);
 	oi->opaque_lsa_self = NULL;
 	return;
 }
@@ -155,7 +156,7 @@ void ospf_opaque_type9_lsa_term(struct ospf_interface *oi)
 int ospf_opaque_type10_lsa_init(struct ospf_area *area)
 {
 	if (area->opaque_lsa_self != NULL)
-		list_delete_and_null(&area->opaque_lsa_self);
+		list_delete(&area->opaque_lsa_self);
 
 	area->opaque_lsa_self = list_new();
 	area->opaque_lsa_self->del = free_opaque_info_per_type;
@@ -176,14 +177,14 @@ void ospf_opaque_type10_lsa_term(struct ospf_area *area)
 
 	OSPF_TIMER_OFF(area->t_opaque_lsa_self);
 	if (area->opaque_lsa_self != NULL)
-		list_delete_and_null(&area->opaque_lsa_self);
+		list_delete(&area->opaque_lsa_self);
 	return;
 }
 
 int ospf_opaque_type11_lsa_init(struct ospf *top)
 {
 	if (top->opaque_lsa_self != NULL)
-		list_delete_and_null(&top->opaque_lsa_self);
+		list_delete(&top->opaque_lsa_self);
 
 	top->opaque_lsa_self = list_new();
 	top->opaque_lsa_self->del = free_opaque_info_per_type;
@@ -204,7 +205,7 @@ void ospf_opaque_type11_lsa_term(struct ospf *top)
 
 	OSPF_TIMER_OFF(top->t_opaque_lsa_self);
 	if (top->opaque_lsa_self != NULL)
-		list_delete_and_null(&top->opaque_lsa_self);
+		list_delete(&top->opaque_lsa_self);
 	return;
 }
 
@@ -313,16 +314,16 @@ static void ospf_opaque_funclist_term(void)
 	struct list *funclist;
 
 	funclist = ospf_opaque_wildcard_funclist;
-	list_delete_and_null(&funclist);
+	list_delete(&funclist);
 
 	funclist = ospf_opaque_type9_funclist;
-	list_delete_and_null(&funclist);
+	list_delete(&funclist);
 
 	funclist = ospf_opaque_type10_funclist;
-	list_delete_and_null(&funclist);
+	list_delete(&funclist);
 
 	funclist = ospf_opaque_type11_funclist;
-	list_delete_and_null(&funclist);
+	list_delete(&funclist);
 	return;
 }
 
@@ -352,7 +353,8 @@ static struct list *ospf_get_opaque_funclist(uint8_t lsa_type)
 		funclist = ospf_opaque_type11_funclist;
 		break;
 	default:
-		zlog_warn("ospf_get_opaque_funclist: Unexpected LSA-type(%u)",
+		flog_warn(EC_OSPF_LSA_UNEXPECTED,
+			  "ospf_get_opaque_funclist: Unexpected LSA-type(%u)",
 			  lsa_type);
 		break;
 	}
@@ -377,27 +379,21 @@ int ospf_register_opaque_functab(
 {
 	struct list *funclist;
 	struct ospf_opaque_functab *new;
-	int rc = -1;
 
-	if ((funclist = ospf_get_opaque_funclist(lsa_type)) == NULL) {
-		zlog_warn(
-			"ospf_register_opaque_functab: Cannot get funclist"
-			" for Type-%u LSAs?",
-			lsa_type);
-		goto out;
-	} else {
-		struct listnode *node, *nnode;
-		struct ospf_opaque_functab *functab;
+	if ((funclist = ospf_get_opaque_funclist(lsa_type)) == NULL)
+		return -1;
 
-		for (ALL_LIST_ELEMENTS(funclist, node, nnode, functab))
-			if (functab->opaque_type == opaque_type) {
-				zlog_warn(
-					"ospf_register_opaque_functab: Duplicated entry?:"
-					" lsa_type(%u), opaque_type(%u)",
-					lsa_type, opaque_type);
-				goto out;
-			}
-	}
+	struct listnode *node, *nnode;
+	struct ospf_opaque_functab *functab;
+
+	for (ALL_LIST_ELEMENTS(funclist, node, nnode, functab))
+		if (functab->opaque_type == opaque_type) {
+			flog_warn(
+				EC_OSPF_LSA,
+				"ospf_register_opaque_functab: Duplicated entry?: lsa_type(%u), opaque_type(%u)",
+				lsa_type, opaque_type);
+			return -1;
+		}
 
 	new = XCALLOC(MTYPE_OSPF_OPAQUE_FUNCTAB,
 		      sizeof(struct ospf_opaque_functab));
@@ -418,10 +414,8 @@ int ospf_register_opaque_functab(
 	new->del_lsa_hook = del_lsa_hook;
 
 	listnode_add(funclist, new);
-	rc = 0;
 
-out:
-	return rc;
+	return 0;
 }
 
 void ospf_delete_opaque_functab(uint8_t lsa_type, uint8_t opaque_type)
@@ -443,10 +437,6 @@ void ospf_delete_opaque_functab(uint8_t lsa_type, uint8_t opaque_type)
 
 				/* Dequeue listnode entry from the list. */
 				listnode_delete(funclist, functab);
-
-				/* Avoid misjudgement in the next lookup. */
-				if (listcount(funclist) == 0)
-					funclist->head = funclist->tail = NULL;
 
 				XFREE(MTYPE_OSPF_OPAQUE_FUNCTAB, functab);
 				break;
@@ -573,7 +563,8 @@ register_opaque_info_per_type(struct ospf_opaque_functab *functab,
 		listnode_add(top->opaque_lsa_self, oipt);
 		break;
 	default:
-		zlog_warn(
+		flog_warn(
+			EC_OSPF_LSA_UNEXPECTED,
 			"register_opaque_info_per_type: Unexpected LSA-type(%u)",
 			new->data->type);
 		free_opaque_info_per_type((void *)oipt);
@@ -618,7 +609,8 @@ static void free_opaque_info_owner(void *val)
 		break;
 	}
 	default:
-		zlog_warn("free_opaque_info_owner: Unexpected LSA-type(%u)",
+		flog_warn(EC_OSPF_LSA_UNEXPECTED,
+			  "free_opaque_info_owner: Unexpected LSA-type(%u)",
 			  oipt->lsa_type);
 		break; /* This case may not exist. */
 	}
@@ -641,7 +633,7 @@ static void free_opaque_info_per_type(void *val)
 	}
 
 	OSPF_TIMER_OFF(oipt->t_opaque_lsa_self);
-	list_delete_and_null(&oipt->id_list);
+	list_delete(&oipt->id_list);
 	XFREE(MTYPE_OPAQUE_INFO_PER_TYPE, oipt);
 	return;
 }
@@ -662,27 +654,31 @@ lookup_opaque_info_by_type(struct ospf_lsa *lsa)
 		if ((oi = lsa->oi) != NULL)
 			listtop = oi->opaque_lsa_self;
 		else
-			zlog_warn(
+			flog_warn(
+				EC_OSPF_LSA,
 				"Type-9 Opaque-LSA: Reference to OI is missing?");
 		break;
 	case OSPF_OPAQUE_AREA_LSA:
 		if ((area = lsa->area) != NULL)
 			listtop = area->opaque_lsa_self;
 		else
-			zlog_warn(
+			flog_warn(
+				EC_OSPF_LSA,
 				"Type-10 Opaque-LSA: Reference to AREA is missing?");
 		break;
 	case OSPF_OPAQUE_AS_LSA:
 		top = ospf_lookup_by_vrf_id(lsa->vrf_id);
 		if ((area = lsa->area) != NULL && (top = area->ospf) == NULL) {
-			zlog_warn(
+			flog_warn(
+				EC_OSPF_LSA,
 				"Type-11 Opaque-LSA: Reference to OSPF is missing?");
 			break; /* Unlikely to happen. */
 		}
 		listtop = top->opaque_lsa_self;
 		break;
 	default:
-		zlog_warn("lookup_opaque_info_by_type: Unexpected LSA-type(%u)",
+		flog_warn(EC_OSPF_LSA_UNEXPECTED,
+			  "lookup_opaque_info_by_type: Unexpected LSA-type(%u)",
 			  lsa->data->type);
 		break;
 	}
@@ -1286,9 +1282,10 @@ void ospf_opaque_lsa_originate_schedule(struct ospf_interface *oi, int *delay0)
 	int delay = 0;
 
 	if ((top = oi_to_top(oi)) == NULL || (area = oi->area) == NULL) {
-		zlog_warn(
-			"ospf_opaque_lsa_originate_schedule: Invalid argument?");
-		goto out;
+		if (IS_DEBUG_OSPF_EVENT)
+			zlog_debug(
+				"ospf_opaque_lsa_originate_schedule: Invalid argument?");
+		return;
 	}
 
 	/* It may not a right time to schedule origination now. */
@@ -1296,7 +1293,7 @@ void ospf_opaque_lsa_originate_schedule(struct ospf_interface *oi, int *delay0)
 		if (IS_DEBUG_OSPF_EVENT)
 			zlog_debug(
 				"ospf_opaque_lsa_originate_schedule: Not operational.");
-		goto out; /* This is not an error. */
+		return; /* This is not an error. */
 	}
 
 	if (delay0 != NULL)
@@ -1443,9 +1440,6 @@ void ospf_opaque_lsa_originate_schedule(struct ospf_interface *oi, int *delay0)
 
 	if (delay0 != NULL)
 		*delay0 = delay;
-
-out:
-	return;
 }
 
 static int ospf_opaque_type9_lsa_originate(struct thread *t)
@@ -1524,7 +1518,8 @@ static void ospf_opaque_lsa_reoriginate_resume(struct list *listtop, void *arg)
 			continue;
 
 		if ((*functab->lsa_originator)(arg) != 0) {
-			zlog_warn(
+			flog_warn(
+				EC_OSPF_LSA,
 				"ospf_opaque_lsa_reoriginate_resume: Failed (opaque-type=%u)",
 				oipt->opaque_type);
 			continue;
@@ -1564,7 +1559,8 @@ struct ospf_lsa *ospf_opaque_lsa_install(struct ospf_lsa *lsa, int rt_recalc)
 	}
 	/* Register the new lsa entry and get its control info. */
 	else if ((oipi = register_opaque_lsa(lsa)) == NULL) {
-		zlog_warn("ospf_opaque_lsa_install: register_opaque_lsa() ?");
+		flog_warn(EC_OSPF_LSA,
+			  "ospf_opaque_lsa_install: register_opaque_lsa() ?");
 		goto out;
 	}
 
@@ -1576,14 +1572,16 @@ struct ospf_lsa *ospf_opaque_lsa_install(struct ospf_lsa *lsa, int rt_recalc)
 	case OSPF_OPAQUE_LINK_LSA:
 		if ((top = oi_to_top(lsa->oi)) == NULL) {
 			/* Above conditions must have passed. */
-			zlog_warn("ospf_opaque_lsa_install: Sonmething wrong?");
+			flog_warn(EC_OSPF_LSA,
+				  "ospf_opaque_lsa_install: Something wrong?");
 			goto out;
 		}
 		break;
 	case OSPF_OPAQUE_AREA_LSA:
 		if (lsa->area == NULL || (top = lsa->area->ospf) == NULL) {
 			/* Above conditions must have passed. */
-			zlog_warn("ospf_opaque_lsa_install: Sonmething wrong?");
+			flog_warn(EC_OSPF_LSA,
+				  "ospf_opaque_lsa_install: Something wrong?");
 			goto out;
 		}
 		break;
@@ -1591,12 +1589,14 @@ struct ospf_lsa *ospf_opaque_lsa_install(struct ospf_lsa *lsa, int rt_recalc)
 		top = ospf_lookup_by_vrf_id(lsa->vrf_id);
 		if (lsa->area != NULL && (top = lsa->area->ospf) == NULL) {
 			/* Above conditions must have passed. */
-			zlog_warn("ospf_opaque_lsa_install: Sonmething wrong?");
+			flog_warn(EC_OSPF_LSA,
+				  "ospf_opaque_lsa_install: Something wrong?");
 			goto out;
 		}
 		break;
 	default:
-		zlog_warn("ospf_opaque_lsa_install: Unexpected LSA-type(%u)",
+		flog_warn(EC_OSPF_LSA_UNEXPECTED,
+			  "ospf_opaque_lsa_install: Unexpected LSA-type(%u)",
 			  lsa->data->type);
 		goto out;
 	}
@@ -1668,13 +1668,14 @@ void ospf_opaque_lsa_reoriginate_schedule(void *lsa_type_dependent,
 	case OSPF_OPAQUE_LINK_LSA:
 		if ((oi = (struct ospf_interface *)lsa_type_dependent)
 		    == NULL) {
-			zlog_warn(
-				"ospf_opaque_lsa_reoriginate_schedule:"
-				" Type-9 Opaque-LSA: Invalid parameter?");
+			flog_warn(
+				EC_OSPF_LSA,
+				"ospf_opaque_lsa_reoriginate_schedule: Type-9 Opaque-LSA: Invalid parameter?");
 			goto out;
 		}
 		if ((top = oi_to_top(oi)) == NULL) {
-			zlog_warn(
+			flog_warn(
+				EC_OSPF_LSA,
 				"ospf_opaque_lsa_reoriginate_schedule: OI(%s) -> TOP?",
 				IF_NAME(oi));
 			goto out;
@@ -1682,9 +1683,9 @@ void ospf_opaque_lsa_reoriginate_schedule(void *lsa_type_dependent,
 		if (!list_isempty(ospf_opaque_type9_funclist)
 		    && list_isempty(oi->opaque_lsa_self)
 		    && oi->t_opaque_lsa_self != NULL) {
-			zlog_warn(
-				"Type-9 Opaque-LSA (opaque_type=%u):"
-				" Common origination for OI(%s) has already started",
+			flog_warn(
+				EC_OSPF_LSA,
+				"Type-9 Opaque-LSA (opaque_type=%u): Common origination for OI(%s) has already started",
 				opaque_type, IF_NAME(oi));
 			goto out;
 		}
@@ -1692,24 +1693,24 @@ void ospf_opaque_lsa_reoriginate_schedule(void *lsa_type_dependent,
 		break;
 	case OSPF_OPAQUE_AREA_LSA:
 		if ((area = (struct ospf_area *)lsa_type_dependent) == NULL) {
-			zlog_warn(
-				"ospf_opaque_lsa_reoriginate_schedule:"
-				" Type-10 Opaque-LSA: Invalid parameter?");
+			flog_warn(
+				EC_OSPF_LSA,
+				"ospf_opaque_lsa_reoriginate_schedule: Type-10 Opaque-LSA: Invalid parameter?");
 			goto out;
 		}
 		if ((top = area->ospf) == NULL) {
-			zlog_warn(
-				"ospf_opaque_lsa_reoriginate_schedule:"
-				" AREA(%s) -> TOP?",
+			flog_warn(
+				EC_OSPF_LSA,
+				"ospf_opaque_lsa_reoriginate_schedule: AREA(%s) -> TOP?",
 				inet_ntoa(area->area_id));
 			goto out;
 		}
 		if (!list_isempty(ospf_opaque_type10_funclist)
 		    && list_isempty(area->opaque_lsa_self)
 		    && area->t_opaque_lsa_self != NULL) {
-			zlog_warn(
-				"Type-10 Opaque-LSA (opaque_type=%u):"
-				" Common origination for AREA(%s) has already started",
+			flog_warn(
+				EC_OSPF_LSA,
+				"Type-10 Opaque-LSA (opaque_type=%u): Common origination for AREA(%s) has already started",
 				opaque_type, inet_ntoa(area->area_id));
 			goto out;
 		}
@@ -1717,17 +1718,17 @@ void ospf_opaque_lsa_reoriginate_schedule(void *lsa_type_dependent,
 		break;
 	case OSPF_OPAQUE_AS_LSA:
 		if ((top = (struct ospf *)lsa_type_dependent) == NULL) {
-			zlog_warn(
-				"ospf_opaque_lsa_reoriginate_schedule:"
-				" Type-11 Opaque-LSA: Invalid parameter?");
+			flog_warn(
+				EC_OSPF_LSA,
+				"ospf_opaque_lsa_reoriginate_schedule: Type-11 Opaque-LSA: Invalid parameter?");
 			goto out;
 		}
 		if (!list_isempty(ospf_opaque_type11_funclist)
 		    && list_isempty(top->opaque_lsa_self)
 		    && top->t_opaque_lsa_self != NULL) {
-			zlog_warn(
-				"Type-11 Opaque-LSA (opaque_type=%u):"
-				" Common origination has already started",
+			flog_warn(
+				EC_OSPF_LSA,
+				"Type-11 Opaque-LSA (opaque_type=%u): Common origination has already started",
 				opaque_type);
 			goto out;
 		}
@@ -1739,9 +1740,9 @@ void ospf_opaque_lsa_reoriginate_schedule(void *lsa_type_dependent,
 		func = ospf_opaque_type11_lsa_reoriginate_timer;
 		break;
 	default:
-		zlog_warn(
-			"ospf_opaque_lsa_reoriginate_schedule:"
-			" Unexpected LSA-type(%u)",
+		flog_warn(
+			EC_OSPF_LSA_UNEXPECTED,
+			"ospf_opaque_lsa_reoriginate_schedule: Unexpected LSA-type(%u)",
 			lsa_type);
 		goto out;
 	}
@@ -1761,19 +1762,17 @@ void ospf_opaque_lsa_reoriginate_schedule(void *lsa_type_dependent,
 	if ((oipt = lookup_opaque_info_by_type(lsa)) == NULL) {
 		struct ospf_opaque_functab *functab;
 		if ((functab = ospf_opaque_functab_lookup(lsa)) == NULL) {
-			zlog_warn(
-				"ospf_opaque_lsa_reoriginate_schedule:"
-				" No associated function?: lsa_type(%u),"
-				" opaque_type(%u)",
+			flog_warn(
+				EC_OSPF_LSA,
+				"ospf_opaque_lsa_reoriginate_schedule: No associated function?: lsa_type(%u), opaque_type(%u)",
 				lsa_type, opaque_type);
 			goto out;
 		}
 		if ((oipt = register_opaque_info_per_type(functab, lsa))
 		    == NULL) {
-			zlog_warn(
-				"ospf_opaque_lsa_reoriginate_schedule:"
-				" Cannot get a control info?: lsa_type(%u),"
-				" opaque_type(%u)",
+			flog_warn(
+				EC_OSPF_LSA,
+				"ospf_opaque_lsa_reoriginate_schedule: Cannot get a control info?: lsa_type(%u), opaque_type(%u)",
 				lsa_type, opaque_type);
 			goto out;
 		}
@@ -1844,14 +1843,16 @@ static int ospf_opaque_type9_lsa_reoriginate_timer(struct thread *t)
 
 	if ((functab = oipt->functab) == NULL
 	    || functab->lsa_originator == NULL) {
-		zlog_warn(
+		flog_warn(
+			EC_OSPF_LSA,
 			"ospf_opaque_type9_lsa_reoriginate_timer: No associated function?");
 		goto out;
 	}
 
 	oi = (struct ospf_interface *)oipt->owner;
 	if ((top = oi_to_top(oi)) == NULL) {
-		zlog_warn(
+		flog_warn(
+			EC_OSPF_LSA,
 			"ospf_opaque_type9_lsa_reoriginate_timer: Something wrong?");
 		goto out;
 	}
@@ -1894,14 +1895,16 @@ static int ospf_opaque_type10_lsa_reoriginate_timer(struct thread *t)
 
 	if ((functab = oipt->functab) == NULL
 	    || functab->lsa_originator == NULL) {
-		zlog_warn(
+		flog_warn(
+			EC_OSPF_LSA,
 			"ospf_opaque_type10_lsa_reoriginate_timer: No associated function?");
 		goto out;
 	}
 
 	area = (struct ospf_area *)oipt->owner;
 	if (area == NULL || (top = area->ospf) == NULL) {
-		zlog_warn(
+		flog_warn(
+			EC_OSPF_LSA,
 			"ospf_opaque_type10_lsa_reoriginate_timer: Something wrong?");
 		goto out;
 	}
@@ -1948,14 +1951,15 @@ static int ospf_opaque_type11_lsa_reoriginate_timer(struct thread *t)
 
 	if ((functab = oipt->functab) == NULL
 	    || functab->lsa_originator == NULL) {
-		zlog_warn(
-			"ospf_opaque_type11_lsa_reoriginate_timer:"
-			" No associated function?");
+		flog_warn(
+			EC_OSPF_LSA,
+			"ospf_opaque_type11_lsa_reoriginate_timer: No associated function?");
 		goto out;
 	}
 
 	if ((top = (struct ospf *)oipt->owner) == NULL) {
-		zlog_warn(
+		flog_warn(
+			EC_OSPF_LSA,
 			"ospf_opaque_type11_lsa_reoriginate_timer: Something wrong?");
 		goto out;
 	}
@@ -1991,14 +1995,16 @@ void ospf_opaque_lsa_refresh_schedule(struct ospf_lsa *lsa0)
 
 	if ((oipt = lookup_opaque_info_by_type(lsa0)) == NULL
 	    || (oipi = lookup_opaque_info_by_id(oipt, lsa0)) == NULL) {
-		zlog_warn(
+		flog_warn(
+			EC_OSPF_LSA,
 			"ospf_opaque_lsa_refresh_schedule: Invalid parameter?");
 		goto out;
 	}
 
 	/* Given "lsa0" and current "oipi->lsa" may different, but harmless. */
 	if ((lsa = oipi->lsa) == NULL) {
-		zlog_warn("ospf_opaque_lsa_refresh_schedule: Something wrong?");
+		flog_warn(EC_OSPF_LSA,
+			  "ospf_opaque_lsa_refresh_schedule: Something wrong?");
 		goto out;
 	}
 
@@ -2025,7 +2031,8 @@ void ospf_opaque_lsa_refresh_schedule(struct ospf_lsa *lsa0)
 		ospf_ls_retransmit_delete_nbr_as(top, lsa);
 		break;
 	default:
-		zlog_warn(
+		flog_warn(
+			EC_OSPF_LSA_UNEXPECTED,
 			"ospf_opaque_lsa_refresh_schedule: Unexpected LSA-type(%u)",
 			lsa->data->type);
 		goto out;
@@ -2077,13 +2084,15 @@ void ospf_opaque_lsa_flush_schedule(struct ospf_lsa *lsa0)
 
 	if ((oipt = lookup_opaque_info_by_type(lsa0)) == NULL
 	    || (oipi = lookup_opaque_info_by_id(oipt, lsa0)) == NULL) {
-		zlog_warn("ospf_opaque_lsa_flush_schedule: Invalid parameter?");
+		flog_warn(EC_OSPF_LSA,
+			  "ospf_opaque_lsa_flush_schedule: Invalid parameter?");
 		goto out;
 	}
 
 	/* Given "lsa0" and current "oipi->lsa" may different, but harmless. */
 	if ((lsa = oipi->lsa) == NULL) {
-		zlog_warn("ospf_opaque_lsa_flush_schedule: Something wrong?");
+		flog_warn(EC_OSPF_LSA,
+			  "ospf_opaque_lsa_flush_schedule: Something wrong?");
 		goto out;
 	}
 
@@ -2099,7 +2108,8 @@ void ospf_opaque_lsa_flush_schedule(struct ospf_lsa *lsa0)
 		ospf_ls_retransmit_delete_nbr_as(top, lsa);
 		break;
 	default:
-		zlog_warn(
+		flog_warn(
+			EC_OSPF_LSA_UNEXPECTED,
 			"ospf_opaque_lsa_flush_schedule: Unexpected LSA-type(%u)",
 			lsa->data->type);
 		goto out;
@@ -2107,10 +2117,6 @@ void ospf_opaque_lsa_flush_schedule(struct ospf_lsa *lsa0)
 
 	/* Dequeue listnode entry from the list. */
 	listnode_delete(oipt->id_list, oipi);
-
-	/* Avoid misjudgement in the next lookup. */
-	if (listcount(oipt->id_list) == 0)
-		oipt->id_list->head = oipt->id_list->tail = NULL;
 
 	/* Disassociate internal control information with the given lsa. */
 	free_opaque_info_per_id((void *)oipi);
@@ -2156,7 +2162,8 @@ void ospf_opaque_self_originated_lsa_received(struct ospf_neighbor *nbr,
 		ospf_flood_through_as(top, NULL /*inbr*/, lsa);
 		break;
 	default:
-		zlog_warn(
+		flog_warn(
+			EC_OSPF_LSA_UNEXPECTED,
 			"ospf_opaque_self_originated_lsa_received: Unexpected LSA-type(%u)",
 			lsa->data->type);
 		return;
@@ -2175,7 +2182,8 @@ struct ospf *oi_to_top(struct ospf_interface *oi)
 
 	if (oi == NULL || (area = oi->area) == NULL
 	    || (top = area->ospf) == NULL)
-		zlog_warn("Broken relationship for \"OI -> AREA -> OSPF\"?");
+		flog_warn(EC_OSPF_LSA,
+			  "Broken relationship for \"OI -> AREA -> OSPF\"?");
 
 	return top;
 }

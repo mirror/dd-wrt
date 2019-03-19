@@ -217,12 +217,12 @@ static route_map_result_t route_match(void *rule, const struct prefix *prefix,
 				      route_map_object_t type, void *object)
 {
 	int *rpki_status = rule;
-	struct bgp_info *bgp_info;
+	struct bgp_path_info *path;
 
 	if (type == RMAP_BGP) {
-		bgp_info = object;
+		path = object;
 
-		if (rpki_validate_prefix(bgp_info->peer, bgp_info->attr, prefix)
+		if (rpki_validate_prefix(path->peer, path->attr, prefix)
 		    == *rpki_status) {
 			return RMAP_MATCH;
 		}
@@ -402,7 +402,7 @@ static int bgpd_sync_callback(struct thread *thread)
 					revalidate_bgp_node(bgp_node, afi,
 							    safi);
 
-				list_delete_and_null(&matches);
+				list_delete(&matches);
 			}
 		}
 	}
@@ -418,13 +418,14 @@ static void revalidate_bgp_node(struct bgp_node *bgp_node, afi_t afi,
 
 	for (ain = bgp_node->adj_in; ain; ain = ain->next) {
 		int ret;
-		struct bgp_info *bgp_info = bgp_node->info;
+		struct bgp_path_info *path =
+			bgp_node_get_bgp_path_info(bgp_node);
 		mpls_label_t *label = NULL;
 		uint32_t num_labels = 0;
 
-		if (bgp_info && bgp_info->extra) {
-			label = bgp_info->extra->label;
-			num_labels = bgp_info->extra->num_labels;
+		if (path && path->extra) {
+			label = path->extra->label;
+			num_labels = path->extra->num_labels;
 		}
 		ret = bgp_update(ain->peer, &bgp_node->p, ain->addpath_rx_id,
 				 ain->attr, afi, safi, ZEBRA_ROUTE_BGP,
@@ -539,7 +540,7 @@ static int bgp_rpki_init(struct thread_master *master)
 static int bgp_rpki_fini(void)
 {
 	stop();
-	list_delete_and_null(&cache_list);
+	list_delete(&cache_list);
 
 	close(rpki_sync_socket_rtr);
 	close(rpki_sync_socket_bgpd);
@@ -1133,7 +1134,7 @@ DEFPY (no_rpki_cache,
 {
 	struct cache *cache_p = find_cache(preference);
 
-	if (!cache) {
+	if (!cache_p) {
 		vty_out(vty, "Could not find cache %ld\n", preference);
 		return CMD_WARNING;
 	}
@@ -1189,9 +1190,23 @@ DEFUN (show_rpki_cache_server,
 	struct cache *cache;
 
 	for (ALL_LIST_ELEMENTS_RO(cache_list, cache_node, cache)) {
-		vty_out(vty, "host: %s port: %s\n",
-			cache->tr_config.tcp_config->host,
-			cache->tr_config.tcp_config->port);
+		if (cache->type == TCP) {
+			vty_out(vty, "host: %s port: %s\n",
+				cache->tr_config.tcp_config->host,
+				cache->tr_config.tcp_config->port);
+
+		} else if (cache->type == SSH) {
+			vty_out(vty,
+				"host: %s port: %d username: %s "
+				"server_hostkey_path: %s client_privkey_path: %s\n",
+				cache->tr_config.ssh_config->host,
+				cache->tr_config.ssh_config->port,
+				cache->tr_config.ssh_config->username,
+				cache->tr_config.ssh_config
+					->server_hostkey_path,
+				cache->tr_config.ssh_config
+					->client_privkey_path);
+		}
 	}
 
 	return CMD_SUCCESS;
@@ -1282,7 +1297,7 @@ DEFUN_NOSH (rpki_end,
 {
 	int ret = reset(false);
 
-	vty_config_unlock(vty);
+	vty_config_exit(vty);
 	vty->node = ENABLE_NODE;
 	return ret == SUCCESS ? CMD_SUCCESS : CMD_WARNING;
 }

@@ -253,8 +253,8 @@ void bgp_fs_nlri_get_string(unsigned char *nlri_content, size_t len,
 }
 
 void route_vty_out_flowspec(struct vty *vty, struct prefix *p,
-			    struct bgp_info *binfo,
-			    int display, json_object *json_paths)
+			    struct bgp_path_info *path, int display,
+			    json_object *json_paths)
 {
 	struct attr *attr;
 	char return_string[BGP_FLOWSPEC_STRING_DISPLAY_MAX];
@@ -274,9 +274,9 @@ void route_vty_out_flowspec(struct vty *vty, struct prefix *p,
 			else
 				json_nlri_path = json_paths;
 		}
-		if (display == NLRI_STRING_FORMAT_LARGE && binfo)
+		if (display == NLRI_STRING_FORMAT_LARGE && path)
 			vty_out(vty, "BGP flowspec entry: (flags 0x%x)\n",
-				binfo->flags);
+				path->flags);
 		bgp_fs_nlri_get_string((unsigned char *)
 				       p->u.prefix_flowspec.ptr,
 				       p->u.prefix_flowspec.prefixlen,
@@ -292,11 +292,11 @@ void route_vty_out_flowspec(struct vty *vty, struct prefix *p,
 		else if (json_paths && display == NLRI_STRING_FORMAT_JSON)
 			json_object_array_add(json_paths, json_nlri_path);
 	}
-	if (!binfo)
+	if (!path)
 		return;
-	if (binfo->attr && binfo->attr->ecommunity) {
+	if (path->attr && path->attr->ecommunity) {
 		/* Print attribute */
-		attr = binfo->attr;
+		attr = path->attr;
 		s = ecommunity_ecom2str(attr->ecommunity,
 					ECOMMUNITY_FORMAT_ROUTE_MAP, 0);
 		if (!s)
@@ -315,10 +315,11 @@ void route_vty_out_flowspec(struct vty *vty, struct prefix *p,
 		}
 		if (attr->nexthop.s_addr != 0 &&
 		    display == NLRI_STRING_FORMAT_LARGE)
-			vty_out(vty, "\tNH %-16s\n", inet_ntoa(attr->nexthop));
+			vty_out(vty, "\tNLRI NH %-16s\n",
+				inet_ntoa(attr->nexthop));
 		XFREE(MTYPE_ECOMMUNITY_STR, s);
 	}
-	peer_uptime(binfo->uptime, timebuf, BGP_UPTIME_LEN, 0, NULL);
+	peer_uptime(path->uptime, timebuf, BGP_UPTIME_LEN, 0, NULL);
 	if (display == NLRI_STRING_FORMAT_LARGE) {
 		vty_out(vty, "\treceived for %8s\n", timebuf);
 	} else if (json_paths) {
@@ -329,7 +330,8 @@ void route_vty_out_flowspec(struct vty *vty, struct prefix *p,
 			json_object_array_add(json_paths, json_time_path);
 	}
 	if (display == NLRI_STRING_FORMAT_LARGE) {
-		struct bgp_info_extra *extra = bgp_info_extra_get(binfo);
+		struct bgp_path_info_extra *extra =
+			bgp_path_info_extra_get(path);
 
 		if (extra->bgp_fs_pbr) {
 			struct listnode *node;
@@ -357,7 +359,7 @@ void route_vty_out_flowspec(struct vty *vty, struct prefix *p,
 			if (list_began)
 				vty_out(vty, ")");
 			vty_out(vty, "\n");
-			list_delete_and_null(&list_bpm);
+			list_delete(&list_bpm);
 		} else
 			vty_out(vty, "\tnot installed in PBR\n");
 	}
@@ -365,11 +367,10 @@ void route_vty_out_flowspec(struct vty *vty, struct prefix *p,
 
 int bgp_show_table_flowspec(struct vty *vty, struct bgp *bgp, afi_t afi,
 			    struct bgp_table *table, enum bgp_show_type type,
-			    void *output_arg, uint8_t use_json,
-			    int is_last, unsigned long *output_cum,
-			    unsigned long *total_cum)
+			    void *output_arg, bool use_json, int is_last,
+			    unsigned long *output_cum, unsigned long *total_cum)
 {
-	struct bgp_info *ri;
+	struct bgp_path_info *pi;
 	struct bgp_node *rn;
 	unsigned long total_count = 0;
 	json_object *json_paths = NULL;
@@ -379,18 +380,17 @@ int bgp_show_table_flowspec(struct vty *vty, struct bgp *bgp, afi_t afi,
 		return CMD_SUCCESS;
 
 	for (rn = bgp_table_top(table); rn; rn = bgp_route_next(rn)) {
-		if (rn->info == NULL)
+		pi = bgp_node_get_bgp_path_info(rn);
+		if (pi == NULL)
 			continue;
 		if (use_json) {
 			json_paths = json_object_new_array();
 			display = NLRI_STRING_FORMAT_JSON;
 		}
-		for (ri = rn->info; ri; ri = ri->next) {
+		for (; pi; pi = pi->next) {
 			total_count++;
-			route_vty_out_flowspec(vty, &rn->p,
-					       ri, display,
+			route_vty_out_flowspec(vty, &rn->p, pi, display,
 					       json_paths);
-
 		}
 		if (use_json) {
 			vty_out(vty, "%s\n",
@@ -520,20 +520,18 @@ DEFUN (bgp_fs_local_install_ifname,
 {
 	struct bgp *bgp = VTY_GET_CONTEXT(bgp);
 	int idx = 0;
-	const char *no = strmatch(argv[0]->text, (char *)"no") ? "no" : NULL;
+	const char *no = strmatch(argv[0]->text, "no") ? "no" : NULL;
 	char *ifname = argv_find(argv, argc, "INTERFACE", &idx) ?
 		argv[idx]->arg : NULL;
 
 	return bgp_fs_local_install_interface(bgp, no, ifname);
 }
 
-extern int bgp_flowspec_display_match_per_ip(afi_t afi,
-			struct bgp_table *rib,
-			struct prefix *match,
-			int prefix_check,
-			struct vty *vty,
-			uint8_t use_json,
-			json_object *json_paths)
+extern int bgp_flowspec_display_match_per_ip(afi_t afi, struct bgp_table *rib,
+					     struct prefix *match,
+					     int prefix_check, struct vty *vty,
+					     bool use_json,
+					     json_object *json_paths)
 {
 	struct bgp_node *rn;
 	struct prefix *prefix;
@@ -546,11 +544,11 @@ extern int bgp_flowspec_display_match_per_ip(afi_t afi,
 			continue;
 
 		if (bgp_flowspec_contains_prefix(prefix, match, prefix_check)) {
-			route_vty_out_flowspec(vty, &rn->p,
-					       rn->info, use_json ?
-					       NLRI_STRING_FORMAT_JSON :
-					       NLRI_STRING_FORMAT_LARGE,
-					       json_paths);
+			route_vty_out_flowspec(
+				vty, &rn->p, bgp_node_get_bgp_path_info(rn),
+				use_json ? NLRI_STRING_FORMAT_JSON
+					 : NLRI_STRING_FORMAT_LARGE,
+				json_paths);
 			display++;
 		}
 	}

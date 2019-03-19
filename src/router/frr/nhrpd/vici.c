@@ -7,6 +7,10 @@
  * (at your option) any later version.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -214,9 +218,10 @@ static void parse_sa_message(struct vici_message_ctx *ctx,
 					if (str2sockunion(buf,
 							  &sactx->local.host)
 					    < 0)
-						flog_err(NHRP_ERR_SWAN,
-							  "VICI: bad strongSwan local-host: %s",
-							  buf);
+						flog_err(
+							EC_NHRP_SWAN,
+							"VICI: bad strongSwan local-host: %s",
+							buf);
 			} else if (blob_equal(key, "local-id")
 				   && ctx->nsections == 1) {
 				sactx->local.id = *val;
@@ -232,9 +237,10 @@ static void parse_sa_message(struct vici_message_ctx *ctx,
 					if (str2sockunion(buf,
 							  &sactx->remote.host)
 					    < 0)
-						flog_err(NHRP_ERR_SWAN,
-							  "VICI: bad strongSwan remote-host: %s",
-							  buf);
+						flog_err(
+							EC_NHRP_SWAN,
+							"VICI: bad strongSwan remote-host: %s",
+							buf);
 			} else if (blob_equal(key, "remote-id")
 				   && ctx->nsections == 1) {
 				sactx->remote.id = *val;
@@ -277,7 +283,7 @@ static void parse_cmd_response(struct vici_message_ctx *ctx,
 	case VICI_KEY_VALUE:
 		if (blob_equal(key, "errmsg")
 		    && blob2buf(val, buf, sizeof(buf)))
-			flog_err(NHRP_ERR_SWAN, "VICI: strongSwan: %s", buf);
+			flog_err(EC_NHRP_SWAN, "VICI: strongSwan: %s", buf);
 		break;
 	default:
 		break;
@@ -336,7 +342,8 @@ static void vici_recv_message(struct vici_conn *vici, struct zbuf *msg)
 		break;
 	case VICI_EVENT_UNKNOWN:
 	case VICI_CMD_UNKNOWN:
-		flog_err(NHRP_ERR_SWAN,
+		flog_err(
+			EC_NHRP_SWAN,
 			"VICI: StrongSwan does not support mandatory events (unpatched?)");
 		break;
 	case VICI_EVENT_CONFIRM:

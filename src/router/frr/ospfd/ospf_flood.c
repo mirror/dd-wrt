@@ -96,8 +96,9 @@ struct external_info *ospf_external_info_check(struct ospf *ospf,
 
 		redist_on =
 			is_prefix_default(&p)
-				? vrf_bitmap_check(zclient->default_information,
-						   ospf->vrf_id)
+				? vrf_bitmap_check(
+					  zclient->default_information[AFI_IP],
+					  ospf->vrf_id)
 				: (zclient->mi_redist[AFI_IP][type].enabled
 				   || vrf_bitmap_check(
 					      zclient->redist[AFI_IP][type],
@@ -539,7 +540,6 @@ static int ospf_flood_through_interface(struct ospf_interface *oi,
 	    IP addresses for these packets are the neighbors' IP
 	    addresses.   */
 	if (oi->type == OSPF_IFTYPE_NBMA) {
-		struct route_node *rn;
 		struct ospf_neighbor *nbr;
 
 		for (rn = route_top(oi->nbrs); rn; rn = route_next(rn))

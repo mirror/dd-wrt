@@ -98,7 +98,7 @@ static int igmp_sock_open(struct in_addr ifaddr, struct interface *ifp,
 
 	if (!join) {
 		flog_err_sys(
-			LIB_ERR_SOCKET,
+			EC_LIB_SOCKET,
 			"IGMP socket fd=%d could not join any group on interface address %s",
 			fd, inet_ntoa(ifaddr));
 		close(fd);
@@ -700,7 +700,7 @@ static void sock_close(struct igmp_sock *igmp)
 
 	if (close(igmp->fd)) {
 		flog_err(
-			LIB_ERR_SOCKET,
+			EC_LIB_SOCKET,
 			"Failure closing IGMP socket %s fd=%d on interface %s: errno=%d: %s",
 			inet_ntoa(igmp->ifaddr), igmp->fd,
 			igmp->interface->name, errno, safe_strerror(errno));
@@ -736,7 +736,7 @@ void igmp_startup_mode_on(struct igmp_sock *igmp)
 
 static void igmp_group_free(struct igmp_group *group)
 {
-	list_delete_and_null(&group->group_source_list);
+	list_delete(&group->group_source_list);
 
 	XFREE(MTYPE_PIM_IGMP_GROUP, group);
 }
@@ -788,7 +788,7 @@ void igmp_sock_free(struct igmp_sock *igmp)
 	zassert(igmp->igmp_group_list);
 	zassert(!listcount(igmp->igmp_group_list));
 
-	list_delete_and_null(&igmp->igmp_group_list);
+	list_delete(&igmp->igmp_group_list);
 	hash_free(igmp->igmp_group_hash);
 
 	XFREE(MTYPE_PIM_IGMP_SOCKET, igmp);
@@ -836,15 +836,15 @@ static unsigned int igmp_group_hash_key(void *arg)
 	return jhash_1word(group->group_addr.s_addr, 0);
 }
 
-static int igmp_group_hash_equal(const void *arg1, const void *arg2)
+static bool igmp_group_hash_equal(const void *arg1, const void *arg2)
 {
 	const struct igmp_group *g1 = (const struct igmp_group *)arg1;
 	const struct igmp_group *g2 = (const struct igmp_group *)arg2;
 
 	if (g1->group_addr.s_addr == g2->group_addr.s_addr)
-		return 1;
+		return true;
 
-	return 0;
+	return false;
 }
 
 static struct igmp_sock *igmp_sock_new(int fd, struct in_addr ifaddr,

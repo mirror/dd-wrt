@@ -43,6 +43,7 @@
 #include "zebra/zapi_msg.h"
 #include "zebra/zebra_memory.h"
 #include "zebra/zebra_vxlan.h"
+#include "zebra/zebra_errors.h"
 
 #define ZEBRA_PTM_SUPPORT
 
@@ -166,7 +167,8 @@ void redistribute_update(const struct prefix *p, const struct prefix *src_p,
 
 	afi = family2afi(p->family);
 	if (!afi) {
-		zlog_warn("%s: Unknown AFI/SAFI prefix received\n",
+		flog_warn(EC_ZEBRA_REDISTRIBUTE_UNKNOWN_AF,
+			  "%s: Unknown AFI/SAFI prefix received\n",
 			  __FUNCTION__);
 		return;
 	}
@@ -175,7 +177,8 @@ void redistribute_update(const struct prefix *p, const struct prefix *src_p,
 		send_redistribute = 0;
 
 		if (is_default_prefix(p)
-		    && vrf_bitmap_check(client->redist_default, re->vrf_id))
+		    && vrf_bitmap_check(client->redist_default[afi],
+					re->vrf_id))
 			send_redistribute = 1;
 		else if (vrf_bitmap_check(client->redist[afi][ZEBRA_ROUTE_ALL],
 					  re->vrf_id))
@@ -236,14 +239,16 @@ void redistribute_delete(const struct prefix *p, const struct prefix *src_p,
 
 	afi = family2afi(p->family);
 	if (!afi) {
-		zlog_warn("%s: Unknown AFI/SAFI prefix received\n",
+		flog_warn(EC_ZEBRA_REDISTRIBUTE_UNKNOWN_AF,
+			  "%s: Unknown AFI/SAFI prefix received\n",
 			  __FUNCTION__);
 		return;
 	}
 
 	for (ALL_LIST_ELEMENTS(zebrad.client_list, node, nnode, client)) {
 		if ((is_default_prefix(p)
-		     && vrf_bitmap_check(client->redist_default, re->vrf_id))
+		     && vrf_bitmap_check(client->redist_default[afi],
+					 re->vrf_id))
 		    || vrf_bitmap_check(client->redist[afi][ZEBRA_ROUTE_ALL],
 					re->vrf_id)
 		    || (re->instance
@@ -275,14 +280,15 @@ void zebra_redistribute_add(ZAPI_HANDLER_ARGS)
 			zebra_route_string(type), zvrf_id(zvrf), instance);
 
 	if (afi == 0 || afi >= AFI_MAX) {
-		zlog_warn("%s: Specified afi %d does not exist",
+		flog_warn(EC_ZEBRA_REDISTRIBUTE_UNKNOWN_AF,
+			  "%s: Specified afi %d does not exist",
 			  __PRETTY_FUNCTION__, afi);
 		return;
 	}
 
 	if (type == 0 || type >= ZEBRA_ROUTE_MAX) {
-		zlog_warn("%s: Specified Route Type %d does not exist",
-			  __PRETTY_FUNCTION__, type);
+		zlog_debug("%s: Specified Route Type %d does not exist",
+			   __PRETTY_FUNCTION__, type);
 		return;
 	}
 
@@ -321,14 +327,15 @@ void zebra_redistribute_delete(ZAPI_HANDLER_ARGS)
 	STREAM_GETW(msg, instance);
 
 	if (afi == 0 || afi >= AFI_MAX) {
-		zlog_warn("%s: Specified afi %d does not exist",
+		flog_warn(EC_ZEBRA_REDISTRIBUTE_UNKNOWN_AF,
+			  "%s: Specified afi %d does not exist",
 			  __PRETTY_FUNCTION__, afi);
 		return;
 	}
 
 	if (type == 0 || type >= ZEBRA_ROUTE_MAX) {
-		zlog_warn("%s: Specified Route Type %d does not exist",
-			  __PRETTY_FUNCTION__, type);
+		zlog_debug("%s: Specified Route Type %d does not exist",
+			   __PRETTY_FUNCTION__, type);
 		return;
 	}
 
@@ -349,13 +356,41 @@ stream_failure:
 
 void zebra_redistribute_default_add(ZAPI_HANDLER_ARGS)
 {
-	vrf_bitmap_set(client->redist_default, zvrf_id(zvrf));
+	afi_t afi = 0;
+
+	STREAM_GETC(msg, afi);
+
+	if (afi == 0 || afi >= AFI_MAX) {
+		flog_warn(EC_ZEBRA_REDISTRIBUTE_UNKNOWN_AF,
+			  "%s: Specified afi %u does not exist",
+			  __PRETTY_FUNCTION__, afi);
+		return;
+	}
+
+	vrf_bitmap_set(client->redist_default[afi], zvrf_id(zvrf));
 	zebra_redistribute_default(client, zvrf_id(zvrf));
+
+stream_failure:
+	return;
 }
 
 void zebra_redistribute_default_delete(ZAPI_HANDLER_ARGS)
 {
-	vrf_bitmap_unset(client->redist_default, zvrf_id(zvrf));
+	afi_t afi = 0;
+
+	STREAM_GETC(msg, afi);
+
+	if (afi == 0 || afi >= AFI_MAX) {
+		flog_warn(EC_ZEBRA_REDISTRIBUTE_UNKNOWN_AF,
+			  "%s: Specified afi %u does not exist",
+			  __PRETTY_FUNCTION__, afi);
+		return;
+	}
+
+	vrf_bitmap_unset(client->redist_default[afi], zvrf_id(zvrf));
+
+stream_failure:
+	return;
 }
 
 /* Interface up information. */
@@ -444,7 +479,8 @@ void zebra_interface_address_add_update(struct interface *ifp,
 	}
 
 	if (!CHECK_FLAG(ifc->conf, ZEBRA_IFC_REAL))
-		zlog_warn(
+		flog_warn(
+			EC_ZEBRA_ADVERTISING_UNUSABLE_ADDR,
 			"WARNING: advertising address to clients that is not yet usable.");
 
 	zebra_vxlan_add_del_gw_macip(ifp, ifc->address, 1);

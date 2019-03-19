@@ -138,7 +138,7 @@ sighup(void)
 	 * and build a new configuartion from scratch.
 	 */
 	ldp_config_reset(vty_conf);
-	vty_read_config(ldpd_di.config_file, config_default);
+	vty_read_config(NULL, ldpd_di.config_file, config_default);
 	ldp_config_apply(NULL, vty_conf);
 }
 
@@ -177,6 +177,9 @@ static struct quagga_signal_t ldp_signals[] =
 	}
 };
 
+static const struct frr_yang_module_info *ldpd_yang_modules[] = {
+};
+
 FRR_DAEMON_INFO(ldpd, LDP,
 	.vty_port = LDP_VTY_PORT,
 
@@ -186,6 +189,9 @@ FRR_DAEMON_INFO(ldpd, LDP,
 	.n_signals = array_size(ldp_signals),
 
 	.privs = &ldpd_privs,
+
+	.yang_modules = ldpd_yang_modules,
+	.n_yang_modules = array_size(ldpd_yang_modules),
 )
 
 static int ldp_config_fork_apply(struct thread *t)
@@ -329,8 +335,7 @@ main(int argc, char *argv[])
 
 	master = frr_init();
 
-	vty_config_lockless();
-	vrf_init(NULL, NULL, NULL, NULL);
+	vrf_init(NULL, NULL, NULL, NULL, NULL);
 	access_list_init();
 	ldp_vty_init();
 	ldp_zebra_init(master);
@@ -484,7 +489,7 @@ start_child(enum ldpd_process p, char *argv0, int fd_async, int fd_sync)
 
 	nullfd = open("/dev/null", O_RDONLY | O_NOCTTY);
 	if (nullfd == -1) {
-		flog_err_sys(LIB_ERR_SYSTEM_CALL,
+		flog_err_sys(EC_LIB_SYSTEM_CALL,
 			     "%s: failed to open /dev/null: %s", __func__,
 			     safe_strerror(errno));
 	} else {

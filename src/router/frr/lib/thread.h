@@ -125,7 +125,7 @@ struct cpu_thread_history {
 		_Atomic unsigned long total, max;
 	} real;
 	struct time_stats cpu;
-	_Atomic uint8_t types;
+	_Atomic uint32_t types;
 	const char *funcname;
 };
 
@@ -170,6 +170,8 @@ struct cpu_thread_history {
 #define thread_add_timer_tv(m,f,a,v,t) funcname_thread_add_timer_tv(m,f,a,v,t,#f,__FILE__,__LINE__)
 #define thread_add_event(m,f,a,v,t) funcname_thread_add_event(m,f,a,v,t,#f,__FILE__,__LINE__)
 #define thread_execute(m,f,a,v) funcname_thread_execute(m,f,a,v,#f,__FILE__,__LINE__)
+#define thread_execute_name(m, f, a, v, n)				\
+	funcname_thread_execute(m, f, a, v, n, __FILE__, __LINE__)
 
 /* Prototypes. */
 extern struct thread_master *thread_master_create(const char *);
@@ -215,6 +217,7 @@ extern struct thread *thread_fetch(struct thread_master *, struct thread *);
 extern void thread_call(struct thread *);
 extern unsigned long thread_timer_remain_second(struct thread *);
 extern struct timeval thread_timer_remain(struct thread *);
+extern unsigned long thread_timer_remain_msec(struct thread *);
 extern int thread_should_yield(struct thread *);
 /* set yield time for thread */
 extern void thread_set_yield_time(struct thread *, unsigned long);

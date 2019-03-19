@@ -397,7 +397,7 @@ static void delete_prefix_list(struct pim_neighbor *neigh)
 		}
 #endif
 
-		list_delete_and_null(&neigh->prefix_list);
+		list_delete(&neigh->prefix_list);
 	}
 }
 
@@ -407,7 +407,7 @@ void pim_neighbor_free(struct pim_neighbor *neigh)
 
 	delete_prefix_list(neigh);
 
-	list_delete_and_null(&neigh->upstream_jp_agg);
+	list_delete(&neigh->upstream_jp_agg);
 	THREAD_OFF(neigh->jp_timer);
 
 	if (neigh->bfd_info)
@@ -801,7 +801,7 @@ void pim_neighbor_update(struct pim_neighbor *neigh,
 	if (neigh->prefix_list == addr_list) {
 		if (addr_list) {
 			flog_err(
-				LIB_ERR_DEVELOPMENT,
+				EC_LIB_DEVELOPMENT,
 				"%s: internal error: trying to replace same prefix list=%p",
 				__PRETTY_FUNCTION__, (void *)addr_list);
 		}

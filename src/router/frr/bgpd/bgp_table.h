@@ -25,6 +25,8 @@
 #include "table.h"
 #include "queue.h"
 #include "linklist.h"
+#include "bgpd.h"
+#include "bgp_advertise.h"
 
 struct bgp_table {
 	/* table belongs to this instance */
@@ -51,7 +53,7 @@ struct bgp_node {
 	 */
 	ROUTE_NODE_FIELDS
 
-	struct bgp_adj_out *adj_out;
+	struct bgp_adj_out_rb adj_out;
 
 	struct bgp_adj_in *adj_in;
 
@@ -59,14 +61,17 @@ struct bgp_node {
 
 	STAILQ_ENTRY(bgp_node) pq;
 
+	uint64_t version;
+
 	mpls_label_t local_label;
 
-	uint64_t version;
 	uint8_t flags;
 #define BGP_NODE_PROCESS_SCHEDULED	(1 << 0)
 #define BGP_NODE_USER_CLEAR             (1 << 1)
 #define BGP_NODE_LABEL_CHANGED          (1 << 2)
 #define BGP_NODE_REGISTERED_FOR_LABEL   (1 << 3)
+
+	struct bgp_addpath_node_data tx_addpath;
 };
 
 /*
@@ -112,7 +117,7 @@ static inline struct route_node *bgp_node_to_rnode(struct bgp_node *node)
  */
 static inline struct bgp_table *bgp_node_table(struct bgp_node *node)
 {
-	return bgp_node_to_rnode(node)->table->info;
+	return route_table_get_info(bgp_node_to_rnode(node)->table);
 }
 
 /*
@@ -312,5 +317,97 @@ static inline uint64_t bgp_table_version(struct bgp_table *table)
 
 void bgp_table_range_lookup(const struct bgp_table *table, struct prefix *p,
 			    uint8_t maxlen, struct list *matches);
+
+
+static inline struct bgp_aggregate *
+bgp_node_get_bgp_aggregate_info(struct bgp_node *node)
+{
+	return node->info;
+}
+
+static inline void
+bgp_node_set_bgp_aggregate_info(struct bgp_node *node,
+				struct bgp_aggregate *aggregate)
+{
+	node->info = aggregate;
+}
+
+static inline struct bgp_distance *
+bgp_node_get_bgp_distance_info(struct bgp_node *node)
+{
+	return node->info;
+}
+
+static inline void bgp_node_set_bgp_distance_info(struct bgp_node *node,
+						  struct bgp_distance *distance)
+{
+	node->info = distance;
+}
+
+static inline struct bgp_static *
+bgp_node_get_bgp_static_info(struct bgp_node *node)
+{
+	return node->info;
+}
+
+static inline void bgp_node_set_bgp_static_info(struct bgp_node *node,
+						struct bgp_static *bgp_static)
+{
+	node->info = bgp_static;
+}
+
+static inline struct bgp_connected_ref *
+bgp_node_get_bgp_connected_ref_info(struct bgp_node *node)
+{
+	return node->info;
+}
+
+static inline void
+bgp_node_set_bgp_connected_ref_info(struct bgp_node *node,
+				    struct bgp_connected_ref *bc)
+{
+	node->info = bc;
+}
+
+static inline struct bgp_nexthop_cache *
+bgp_node_get_bgp_nexthop_info(struct bgp_node *node)
+{
+	return node->info;
+}
+
+static inline void bgp_node_set_bgp_nexthop_info(struct bgp_node *node,
+					     struct bgp_nexthop_cache *bnc)
+{
+	node->info = bnc;
+}
+
+static inline struct bgp_path_info *
+bgp_node_get_bgp_path_info(struct bgp_node *node)
+{
+	return node->info;
+}
+
+static inline void bgp_node_set_bgp_path_info(struct bgp_node *node,
+					      struct bgp_path_info *bi)
+{
+	node->info = bi;
+}
+
+static inline struct bgp_table *
+bgp_node_get_bgp_table_info(struct bgp_node *node)
+{
+	return node->info;
+}
+
+static inline void bgp_node_set_bgp_table_info(struct bgp_node *node,
+					       struct bgp_table *table)
+{
+	node->info = table;
+}
+
+static inline bool bgp_node_has_bgp_path_info_data(struct bgp_node *node)
+{
+	return !!node->info;
+}
 
 #endif /* _QUAGGA_BGP_TABLE_H */

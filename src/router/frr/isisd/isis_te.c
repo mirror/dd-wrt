@@ -67,17 +67,6 @@ const char *mode2text[] = {"Disable", "Area", "AS", "Emulate"};
  * Followings are control functions for MPLS-TE parameters management.
  *------------------------------------------------------------------------*/
 
-/* Search MPLS TE Circuit context from Interface */
-static struct mpls_te_circuit *lookup_mpls_params_by_ifp(struct interface *ifp)
-{
-	struct isis_circuit *circuit;
-
-	if ((circuit = circuit_scan_by_ifp(ifp)) == NULL)
-		return NULL;
-
-	return circuit->mtc;
-}
-
 /* Create new MPLS TE Circuit context */
 struct mpls_te_circuit *mpls_te_circuit_new()
 {
@@ -1085,147 +1074,24 @@ void isis_mpls_te_config_write_router(struct vty *vty)
 /*------------------------------------------------------------------------*
  * Followings are vty command functions.
  *------------------------------------------------------------------------*/
+#ifndef FABRICD
 
-DEFUN (isis_mpls_te_on,
-       isis_mpls_te_on_cmd,
-       "mpls-te on",
-       MPLS_TE_STR
-       "Enable MPLS-TE functionality\n")
+/* Search MPLS TE Circuit context from Interface */
+static struct mpls_te_circuit *lookup_mpls_params_by_ifp(struct interface *ifp)
 {
-	struct listnode *node;
 	struct isis_circuit *circuit;
 
-	if (IS_MPLS_TE(isisMplsTE))
-		return CMD_SUCCESS;
+	if ((circuit = circuit_scan_by_ifp(ifp)) == NULL)
+		return NULL;
 
-	if (IS_DEBUG_ISIS(DEBUG_TE))
-		zlog_debug("ISIS MPLS-TE: OFF -> ON");
-
-	isisMplsTE.status = enable;
-
-	/*
-	 * Following code is intended to handle two cases;
-	 *
-	 * 1) MPLS-TE was disabled at startup time, but now become enabled.
-	 * In this case, we must enable MPLS-TE Circuit regarding interface
-	 * MPLS_TE flag
-	 * 2) MPLS-TE was once enabled then disabled, and now enabled again.
-	 */
-	for (ALL_LIST_ELEMENTS_RO(isisMplsTE.cir_list, node, circuit)) {
-		if (circuit->mtc == NULL || IS_FLOOD_AS(circuit->mtc->type))
-			continue;
-
-		if ((circuit->mtc->status == disable)
-		    && HAS_LINK_PARAMS(circuit->interface))
-			circuit->mtc->status = enable;
-		else
-			continue;
-
-		/* Reoriginate STD_TE & GMPLS circuits */
-		if (circuit->area)
-			lsp_regenerate_schedule(circuit->area, circuit->is_type,
-						0);
-	}
-
-	return CMD_SUCCESS;
-}
-
-DEFUN (no_isis_mpls_te_on,
-       no_isis_mpls_te_on_cmd,
-       "no mpls-te",
-       NO_STR
-       "Disable the MPLS-TE functionality\n")
-{
-	struct listnode *node;
-	struct isis_circuit *circuit;
-
-	if (isisMplsTE.status == disable)
-		return CMD_SUCCESS;
-
-	if (IS_DEBUG_ISIS(DEBUG_TE))
-		zlog_debug("ISIS MPLS-TE: ON -> OFF");
-
-	isisMplsTE.status = disable;
-
-	/* Flush LSP if circuit engage */
-	for (ALL_LIST_ELEMENTS_RO(isisMplsTE.cir_list, node, circuit)) {
-		if (circuit->mtc == NULL || (circuit->mtc->status == disable))
-			continue;
-
-		/* disable MPLS_TE Circuit */
-		circuit->mtc->status = disable;
-
-		/* Re-originate circuit without STD_TE & GMPLS parameters */
-		if (circuit->area)
-			lsp_regenerate_schedule(circuit->area, circuit->is_type,
-						0);
-	}
-
-	return CMD_SUCCESS;
-}
-
-DEFUN (isis_mpls_te_router_addr,
-       isis_mpls_te_router_addr_cmd,
-       "mpls-te router-address A.B.C.D",
-       MPLS_TE_STR
-       "Stable IP address of the advertising router\n"
-       "MPLS-TE router address in IPv4 address format\n")
-{
-	int idx_ipv4 = 2;
-	struct in_addr value;
-	struct listnode *node;
-	struct isis_area *area;
-
-	if (!inet_aton(argv[idx_ipv4]->arg, &value)) {
-		vty_out(vty, "Please specify Router-Addr by A.B.C.D\n");
-		return CMD_WARNING_CONFIG_FAILED;
-	}
-
-	isisMplsTE.router_id.s_addr = value.s_addr;
-
-	if (isisMplsTE.status == disable)
-		return CMD_SUCCESS;
-
-	/* Update main Router ID in isis global structure */
-	isis->router_id = value.s_addr;
-	/* And re-schedule LSP update */
-	for (ALL_LIST_ELEMENTS_RO(isis->area_list, node, area))
-		if (listcount(area->area_addrs) > 0)
-			lsp_regenerate_schedule(area, area->is_type, 0);
-
-	return CMD_SUCCESS;
-}
-
-DEFUN (isis_mpls_te_inter_as,
-       isis_mpls_te_inter_as_cmd,
-       "mpls-te inter-as <level-1|level-1-2|level-2-only>",
-       MPLS_TE_STR
-       "Configure MPLS-TE Inter-AS support\n"
-       "AREA native mode self originate INTER-AS LSP with L1 only flooding scope)\n"
-       "AREA native mode self originate INTER-AS LSP with L1 and L2 flooding scope)\n"
-       "AS native mode self originate INTER-AS LSP with L2 only flooding scope\n")
-{
-	vty_out(vty, "Not yet supported\n");
-	return CMD_SUCCESS;
-}
-
-DEFUN (no_isis_mpls_te_inter_as,
-       no_isis_mpls_te_inter_as_cmd,
-       "no mpls-te inter-as",
-       NO_STR
-       "Disable the MPLS-TE functionality\n"
-       "Disable MPLS-TE Inter-AS support\n")
-{
-
-	vty_out(vty, "Not yet supported\n");
-	return CMD_SUCCESS;
+	return circuit->mtc;
 }
 
 DEFUN (show_isis_mpls_te_router,
        show_isis_mpls_te_router_cmd,
-       "show isis mpls-te router",
+       "show " PROTO_NAME " mpls-te router",
        SHOW_STR
-       ISIS_STR
+       PROTO_HELP
        MPLS_TE_STR
        "Router information\n")
 {
@@ -1314,9 +1180,9 @@ static void show_mpls_te_sub(struct vty *vty, struct interface *ifp)
 
 DEFUN (show_isis_mpls_te_interface,
        show_isis_mpls_te_interface_cmd,
-       "show isis mpls-te interface [INTERFACE]",
+       "show " PROTO_NAME " mpls-te interface [INTERFACE]",
        SHOW_STR
-       ISIS_STR
+       PROTO_HELP
        MPLS_TE_STR
        "Interface information\n"
        "Interface name\n")
@@ -1342,6 +1208,7 @@ DEFUN (show_isis_mpls_te_interface,
 
 	return CMD_SUCCESS;
 }
+#endif
 
 /* Initialize MPLS_TE */
 void isis_mpls_te_init(void)
@@ -1357,15 +1224,11 @@ void isis_mpls_te_init(void)
 	isisMplsTE.cir_list = list_new();
 	isisMplsTE.router_id.s_addr = 0;
 
+#ifndef FABRICD
 	/* Register new VTY commands */
 	install_element(VIEW_NODE, &show_isis_mpls_te_router_cmd);
 	install_element(VIEW_NODE, &show_isis_mpls_te_interface_cmd);
-
-	install_element(ISIS_NODE, &isis_mpls_te_on_cmd);
-	install_element(ISIS_NODE, &no_isis_mpls_te_on_cmd);
-	install_element(ISIS_NODE, &isis_mpls_te_router_addr_cmd);
-	install_element(ISIS_NODE, &isis_mpls_te_inter_as_cmd);
-	install_element(ISIS_NODE, &no_isis_mpls_te_inter_as_cmd);
+#endif
 
 	return;
 }

@@ -65,6 +65,13 @@ struct isis_p2p_info {
 	struct thread *t_send_p2p_hello; /* send P2P IIHs in this thread  */
 };
 
+struct bfd_info;
+
+struct isis_circuit_arg {
+	int level;
+	struct isis_circuit *circuit;
+};
+
 struct isis_circuit {
 	int state;
 	uint8_t circuit_id;	  /* l1/l2 bcast CircuitID */
@@ -79,15 +86,9 @@ struct isis_circuit {
 	struct thread *t_read;
 	struct thread *t_send_csnp[2];
 	struct thread *t_send_psnp[2];
-	struct thread *t_send_lsp;
-	struct list *lsp_queue;	/* LSPs to be txed (both levels) */
-	struct isis_lsp_hash *lsp_hash; /* Hashtable synchronized with lsp_queue */
-	time_t lsp_queue_last_push[2]; /* timestamp used to enforce transmit
-					* interval;
-					* for scalability, use one timestamp per
-					* circuit, instead of one per lsp per
-					* circuit
-					*/
+	struct isis_tx_queue *tx_queue;
+	struct isis_circuit_arg level_arg[2]; /* used as argument for threads */
+
 	/* there is no real point in two streams, just for programming kicker */
 	int (*rx)(struct isis_circuit *circuit, uint8_t *ssnpa);
 	struct stream *rcv_stream; /* Stream for receiving */
@@ -114,10 +115,10 @@ struct isis_circuit {
 	struct isis_passwd passwd;     /* Circuit rx/tx password */
 	int is_type;		       /* circuit is type == level of circuit
 					* differentiated from circuit type (media) */
-	uint32_t hello_interval[2];    /* l1HelloInterval in msecs */
-	uint16_t hello_multiplier[2];  /* l1HelloMultiplier */
-	uint16_t csnp_interval[2];     /* level-1 csnp-interval in seconds */
-	uint16_t psnp_interval[2];     /* level-1 psnp-interval in seconds */
+	uint32_t hello_interval[2];   /* hello-interval in seconds */
+	uint16_t hello_multiplier[2]; /* hello-multiplier */
+	uint16_t csnp_interval[2];    /* csnp-interval in seconds */
+	uint16_t psnp_interval[2];    /* psnp-interval in seconds */
 	uint8_t metric[2];
 	uint32_t te_metric[2];
 	struct mpls_te_circuit
@@ -133,6 +134,7 @@ struct isis_circuit {
 #define ISIS_CIRCUIT_FLAPPED_AFTER_SPF 0x01
 	uint8_t flags;
 	bool disable_threeway_adj;
+	struct bfd_info *bfd_info;
 	/*
 	 * Counters as in 10589--11.2.5.9
 	 */
@@ -182,7 +184,7 @@ void isis_circuit_af_set(struct isis_circuit *circuit, bool ip_router,
 			 bool ipv6_router);
 ferr_r isis_circuit_passive_set(struct isis_circuit *circuit, bool passive);
 void isis_circuit_is_type_set(struct isis_circuit *circuit, int is_type);
-ferr_r isis_circuit_circ_type_set(struct isis_circuit *circuit, int circ_type);
+void isis_circuit_circ_type_set(struct isis_circuit *circuit, int circ_type);
 
 ferr_r isis_circuit_metric_set(struct isis_circuit *circuit, int level,
 			       int metric);
@@ -196,10 +198,8 @@ ferr_r isis_circuit_passwd_hmac_md5_set(struct isis_circuit *circuit,
 int isis_circuit_mt_enabled_set(struct isis_circuit *circuit, uint16_t mtid,
 				bool enabled);
 
-void isis_circuit_schedule_lsp_send(struct isis_circuit *circuit);
-void isis_circuit_queue_lsp(struct isis_circuit *circuit, struct isis_lsp *lsp);
-void isis_circuit_lsp_queue_clean(struct isis_circuit *circuit);
-void isis_circuit_cancel_queued_lsp(struct isis_circuit *circuit,
-				    struct isis_lsp *lsp);
-struct isis_lsp *isis_circuit_lsp_queue_pop(struct isis_circuit *circuit);
+DECLARE_HOOK(isis_circuit_config_write,
+	    (struct isis_circuit *circuit, struct vty *vty),
+	    (circuit, vty))
+
 #endif /* _ZEBRA_ISIS_CIRCUIT_H */

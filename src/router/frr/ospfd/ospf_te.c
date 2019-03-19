@@ -61,6 +61,7 @@
 #include "ospfd/ospf_zebra.h"
 #include "ospfd/ospf_te.h"
 #include "ospfd/ospf_vty.h"
+#include "ospfd/ospf_errors.h"
 
 /*
  * Global variable to manage Opaque-LSA/MPLS-TE on this node.
@@ -102,7 +103,8 @@ int ospf_mpls_te_init(void)
 		ospf_mpls_te_lsa_refresh, NULL, /* ospf_mpls_te_new_lsa_hook */
 		NULL /* ospf_mpls_te_del_lsa_hook */);
 	if (rc != 0) {
-		zlog_warn(
+		flog_warn(
+			EC_OSPF_OPAQUE_REGISTRATION,
 			"ospf_mpls_te_init: Failed to register Traffic Engineering functions");
 		return rc;
 	}
@@ -139,7 +141,8 @@ static int ospf_mpls_te_register(enum inter_as_mode mode)
 					  ospf_mpls_te_lsa_refresh, NULL, NULL);
 
 	if (rc != 0) {
-		zlog_warn(
+		flog_warn(
+			EC_OSPF_OPAQUE_REGISTRATION,
 			"ospf_router_info_init: Failed to register Inter-AS functions");
 		return rc;
 	}
@@ -166,7 +169,7 @@ static int ospf_mpls_te_unregister()
 
 void ospf_mpls_te_term(void)
 {
-	list_delete_and_null(&OspfMplsTE.iflist);
+	list_delete(&OspfMplsTE.iflist);
 
 	ospf_delete_opaque_functab(OSPF_OPAQUE_AREA_LSA,
 				   OPAQUE_TYPE_TRAFFIC_ENGINEERING_LSA);
@@ -231,7 +234,7 @@ static struct mpls_te_link *lookup_linkparams_by_instance(struct ospf_lsa *lsa)
 		if (lp->instance == key)
 			return lp;
 
-	zlog_warn("lookup_linkparams_by_instance: Entry not found: key(%x)",
+	zlog_info("lookup_linkparams_by_instance: Entry not found: key(%x)",
 		  key);
 	return NULL;
 }
@@ -783,7 +786,7 @@ static void initialize_linkparams(struct mpls_te_link *lp)
 
 	if ((oi == NULL) || (oi->ifp != ifp)) {
 		if (IS_DEBUG_OSPF_TE)
-			zlog_warn(
+			zlog_debug(
 				"MPLS-TE(initialize_linkparams) Could not find corresponding OSPF Interface for %s",
 				ifp->name);
 		return;
@@ -816,18 +819,21 @@ static int is_mandated_params_set(struct mpls_te_link *lp)
 	int rc = 0;
 
 	if (ntohs(OspfMplsTE.router_addr.header.type) == 0) {
-		zlog_warn(
+		flog_warn(
+			EC_OSPF_TE_UNEXPECTED,
 			"MPLS-TE(is_mandated_params_set) Missing Router Address");
 		return rc;
 	}
 
 	if (ntohs(lp->link_type.header.type) == 0) {
-		zlog_warn("MPLS-TE(is_mandated_params_set) Missing Link Type");
+		flog_warn(EC_OSPF_TE_UNEXPECTED,
+			  "MPLS-TE(is_mandated_params_set) Missing Link Type");
 		return rc;
 	}
 
 	if (!IS_INTER_AS(lp->type) && (ntohs(lp->link_id.header.type) == 0)) {
-		zlog_warn("MPLS-TE(is_mandated_params_set) Missing Link ID");
+		flog_warn(EC_OSPF_TE_UNEXPECTED,
+			  "MPLS-TE(is_mandated_params_set) Missing Link ID");
 		return rc;
 	}
 
@@ -842,19 +848,14 @@ static int is_mandated_params_set(struct mpls_te_link *lp)
 static int ospf_mpls_te_new_if(struct interface *ifp)
 {
 	struct mpls_te_link *new;
-	int rc = -1;
 
 	if (IS_DEBUG_OSPF_TE)
 		zlog_debug(
 			"MPLS-TE(ospf_mpls_te_new_if) Add new %s interface %s to MPLS-TE list",
 			ifp->link_params ? "Active" : "Inactive", ifp->name);
 
-	if (lookup_linkparams_by_ifp(ifp) != NULL) {
-		zlog_warn("ospf_mpls_te_new_if: ifp(%p) already in use?",
-			  (void *)ifp);
-		rc = 0; /* Do nothing here. */
-		return rc;
-	}
+	if (lookup_linkparams_by_ifp(ifp) != NULL)
+		return 0;
 
 	new = XCALLOC(MTYPE_OSPF_MPLS_TE, sizeof(struct mpls_te_link));
 
@@ -882,9 +883,7 @@ static int ospf_mpls_te_new_if(struct interface *ifp)
 			ifp->name, new->flags, new->type);
 
 	/* Schedule Opaque-LSA refresh. */ /* XXX */
-
-	rc = 0;
-	return rc;
+	return 0;
 }
 
 static int ospf_mpls_te_del_if(struct interface *ifp)
@@ -897,10 +896,6 @@ static int ospf_mpls_te_del_if(struct interface *ifp)
 
 		/* Dequeue listnode entry from the list. */
 		listnode_delete(iflist, lp);
-
-		/* Avoid misjudgement in the next lookup. */
-		if (listcount(iflist) == 0)
-			iflist->head = iflist->tail = NULL;
 
 		XFREE(MTYPE_OSPF_MPLS_TE, lp);
 	}
@@ -925,7 +920,8 @@ void ospf_mpls_te_update_if(struct interface *ifp)
 
 	/* Get Link context from interface */
 	if ((lp = lookup_linkparams_by_ifp(ifp)) == NULL) {
-		zlog_warn(
+		flog_warn(
+			EC_OSPF_TE_UNEXPECTED,
 			"OSPF MPLS-TE Update: Did not find Link Parameters context for interface %s",
 			ifp->name);
 		return;
@@ -969,14 +965,16 @@ static void ospf_mpls_te_ism_change(struct ospf_interface *oi, int old_state)
 	struct mpls_te_link *lp;
 
 	if ((lp = lookup_linkparams_by_ifp(oi->ifp)) == NULL) {
-		zlog_warn(
+		flog_warn(
+			EC_OSPF_TE_UNEXPECTED,
 			"ospf_mpls_te_ism_change: Cannot get linkparams from OI(%s)?",
 			IF_NAME(oi));
 		return;
 	}
 
 	if (oi->area == NULL || oi->area->ospf == NULL) {
-		zlog_warn(
+		flog_warn(
+			EC_OSPF_TE_UNEXPECTED,
 			"ospf_mpls_te_ism_change: Cannot refer to OSPF from OI(%s)?",
 			IF_NAME(oi));
 		return;
@@ -986,7 +984,8 @@ static void ospf_mpls_te_ism_change(struct ospf_interface *oi, int old_state)
 	     && !IPV4_ADDR_SAME(&lp->area->area_id, &oi->area->area_id))
 	    || (lp->area != NULL && oi->area == NULL)) {
 		/* How should we consider this case? */
-		zlog_warn(
+		flog_warn(
+			EC_OSPF_TE_UNEXPECTED,
 			"MPLS-TE: Area for OI(%s) has changed to [%s], flush previous LSAs",
 			IF_NAME(oi),
 			oi->area ? inet_ntoa(oi->area->area_id) : "N/A");
@@ -1146,10 +1145,7 @@ static struct ospf_lsa *ospf_mpls_te_lsa_new(struct ospf *ospf,
 	uint16_t length;
 
 	/* Create a stream for LSA. */
-	if ((s = stream_new(OSPF_MAX_LSA_SIZE)) == NULL) {
-		zlog_warn("ospf_mpls_te_lsa_new: stream_new() ?");
-		return NULL;
-	}
+	s = stream_new(OSPF_MAX_LSA_SIZE);
 	lsah = (struct lsa_header *)STREAM_DATA(s);
 
 	options = OSPF_OPTION_O; /* Don't forget this :-) */
@@ -1223,14 +1219,16 @@ static int ospf_mpls_te_lsa_originate1(struct ospf_area *area,
 	/* Create new Opaque-LSA/MPLS-TE instance. */
 	new = ospf_mpls_te_lsa_new(area->ospf, area, lp);
 	if (new == NULL) {
-		zlog_warn(
+		flog_warn(
+			EC_OSPF_TE_UNEXPECTED,
 			"ospf_mpls_te_lsa_originate1: ospf_mpls_te_lsa_new() ?");
 		return rc;
 	}
 
 	/* Install this LSA into LSDB. */
 	if (ospf_lsa_install(area->ospf, NULL /*oi*/, new) == NULL) {
-		zlog_warn("ospf_mpls_te_lsa_originate1: ospf_lsa_install() ?");
+		flog_warn(EC_OSPF_LSA_INSTALL_FAILURE,
+			  "ospf_mpls_te_lsa_originate1: ospf_lsa_install() ?");
 		ospf_lsa_unlock(&new);
 		return rc;
 	}
@@ -1286,7 +1284,7 @@ static int ospf_mpls_te_lsa_originate_area(void *arg)
 		if (CHECK_FLAG(lp->flags, LPFLG_LSA_ENGAGED)) {
 			if (CHECK_FLAG(lp->flags, LPFLG_LSA_FORCED_REFRESH)) {
 				UNSET_FLAG(lp->flags, LPFLG_LSA_FORCED_REFRESH);
-				zlog_warn(
+				zlog_info(
 					"OSPF MPLS-TE (ospf_mpls_te_lsa_originate_area): Refresh instead of Originate");
 				ospf_mpls_te_lsa_schedule(lp, REFRESH_THIS_LSA);
 			}
@@ -1294,7 +1292,7 @@ static int ospf_mpls_te_lsa_originate_area(void *arg)
 		}
 
 		if (!is_mandated_params_set(lp)) {
-			zlog_warn(
+			zlog_info(
 				"ospf_mpls_te_lsa_originate_area: Link(%s) lacks some mandated MPLS-TE parameters.",
 				lp->ifp ? lp->ifp->name : "?");
 			continue;
@@ -1323,7 +1321,8 @@ static int ospf_mpls_te_lsa_originate2(struct ospf *top,
 	/* Create new Opaque-LSA/Inter-AS instance. */
 	new = ospf_mpls_te_lsa_new(top, NULL, lp);
 	if (new == NULL) {
-		zlog_warn(
+		flog_warn(
+			EC_OSPF_LSA_UNEXPECTED,
 			"ospf_mpls_te_lsa_originate2: ospf_router_info_lsa_new() ?");
 		return rc;
 	}
@@ -1331,7 +1330,8 @@ static int ospf_mpls_te_lsa_originate2(struct ospf *top,
 
 	/* Install this LSA into LSDB. */
 	if (ospf_lsa_install(top, NULL /*oi */, new) == NULL) {
-		zlog_warn("ospf_mpls_te_lsa_originate2: ospf_lsa_install() ?");
+		flog_warn(EC_OSPF_LSA_INSTALL_FAILURE,
+			  "ospf_mpls_te_lsa_originate2: ospf_lsa_install() ?");
 		ospf_lsa_unlock(&new);
 		return rc;
 	}
@@ -1385,7 +1385,8 @@ static int ospf_mpls_te_lsa_originate_as(void *arg)
 		}
 
 		if (!is_mandated_params_set(lp)) {
-			zlog_warn(
+			flog_warn(
+				EC_OSPF_TE_UNEXPECTED,
 				"ospf_mpls_te_lsa_originate_as: Link(%s) lacks some mandated MPLS-TE parameters.",
 				lp->ifp ? lp->ifp->name : "?");
 			continue;
@@ -1432,7 +1433,8 @@ static struct ospf_lsa *ospf_mpls_te_lsa_refresh(struct ospf_lsa *lsa)
 
 	/* At first, resolve lsa/lp relationship. */
 	if ((lp = lookup_linkparams_by_instance(lsa)) == NULL) {
-		zlog_warn("ospf_mpls_te_lsa_refresh: Invalid parameter?");
+		flog_warn(EC_OSPF_TE_UNEXPECTED,
+			  "ospf_mpls_te_lsa_refresh: Invalid parameter?");
 		lsa->data->ls_age =
 			htons(OSPF_LSA_MAXAGE); /* Flush it anyway. */
 		ospf_opaque_lsa_flush_schedule(lsa);
@@ -1441,7 +1443,8 @@ static struct ospf_lsa *ospf_mpls_te_lsa_refresh(struct ospf_lsa *lsa)
 
 	/* Check if lp was not disable in the interval */
 	if (!CHECK_FLAG(lp->flags, LPFLG_LSA_ACTIVE)) {
-		zlog_warn(
+		flog_warn(
+			EC_OSPF_TE_UNEXPECTED,
 			"ospf_mpls_te_lsa_refresh: lp was disabled: Flush it!");
 		lsa->data->ls_age =
 			htons(OSPF_LSA_MAXAGE); /* Flush it anyway. */
@@ -1457,7 +1460,8 @@ static struct ospf_lsa *ospf_mpls_te_lsa_refresh(struct ospf_lsa *lsa)
 	/* Create new Opaque-LSA/MPLS-TE instance. */
 	new = ospf_mpls_te_lsa_new(top, area, lp);
 	if (new == NULL) {
-		zlog_warn("ospf_mpls_te_lsa_refresh: ospf_mpls_te_lsa_new() ?");
+		flog_warn(EC_OSPF_TE_UNEXPECTED,
+			  "ospf_mpls_te_lsa_refresh: ospf_mpls_te_lsa_new() ?");
 		return NULL;
 	}
 	new->data->ls_seqnum = lsa_seqnum_increment(lsa);
@@ -1470,7 +1474,8 @@ static struct ospf_lsa *ospf_mpls_te_lsa_refresh(struct ospf_lsa *lsa)
 		top = area->ospf;
 
 	if (ospf_lsa_install(top, NULL /*oi */, new) == NULL) {
-		zlog_warn("ospf_mpls_te_lsa_refresh: ospf_lsa_install() ?");
+		flog_warn(EC_OSPF_LSA_INSTALL_FAILURE,
+			  "ospf_mpls_te_lsa_refresh: ospf_lsa_install() ?");
 		ospf_lsa_unlock(&new);
 		return NULL;
 	}
@@ -1524,7 +1529,8 @@ void ospf_mpls_te_lsa_schedule(struct mpls_te_link *lp, enum lsa_opcode opcode)
 					top, OspfMplsTE.interas_areaid);
 			/* Unable to set the area context. Abort! */
 			if (lp->area == NULL) {
-				zlog_warn(
+				flog_warn(
+					EC_OSPF_TE_UNEXPECTED,
 					"MPLS-TE(ospf_mpls_te_lsa_schedule) Area context is null. Abort !");
 				return;
 			}
@@ -1567,7 +1573,8 @@ void ospf_mpls_te_lsa_schedule(struct mpls_te_link *lp, enum lsa_opcode opcode)
 		ospf_opaque_lsa_flush_schedule(&lsa);
 		break;
 	default:
-		zlog_warn("ospf_mpls_te_lsa_schedule: Unknown opcode (%u)",
+		flog_warn(EC_OSPF_TE_UNEXPECTED,
+			  "ospf_mpls_te_lsa_schedule: Unknown opcode (%u)",
 			  opcode);
 		break;
 	}
@@ -2391,16 +2398,16 @@ DEFUN (no_ospf_mpls_te_inter_as,
 		zlog_debug("MPLS-TE: Inter-AS support OFF");
 
 	if ((OspfMplsTE.enabled) && (OspfMplsTE.inter_as != Off)) {
-		OspfMplsTE.inter_as = Off;
 		/* Flush all Inter-AS LSA */
 		for (ALL_LIST_ELEMENTS(OspfMplsTE.iflist, node, nnode, lp))
 			if (IS_INTER_AS(lp->type)
 			    && CHECK_FLAG(lp->flags, LPFLG_LSA_ENGAGED))
 				ospf_mpls_te_lsa_schedule(lp, FLUSH_THIS_LSA);
-	}
 
-	/* Deregister the Callbacks for Inter-AS support */
-	ospf_mpls_te_unregister();
+		/* Deregister the Callbacks for Inter-AS support */
+		ospf_mpls_te_unregister();
+		OspfMplsTE.inter_as = Off;
+	}
 
 	return CMD_SUCCESS;
 }
@@ -2523,8 +2530,8 @@ DEFUN (show_ip_ospf_mpls_te_link,
        "Interface name\n")
 {
 	struct vrf *vrf;
-	int idx_interface = 5;
-	struct interface *ifp;
+	int idx_interface = 0;
+	struct interface *ifp = NULL;
 	struct listnode *node;
 	char *vrf_name = NULL;
 	bool all_vrf;
@@ -2536,7 +2543,7 @@ DEFUN (show_ip_ospf_mpls_te_link,
 		vrf_name = argv[idx_vrf + 1]->arg;
 		all_vrf = strmatch(vrf_name, "all");
 	}
-
+	argv_find(argv, argc, "INTERFACE", &idx_interface);
 	/* vrf input is provided could be all or specific vrf*/
 	if (vrf_name) {
 		if (all_vrf) {
@@ -2550,32 +2557,31 @@ DEFUN (show_ip_ospf_mpls_te_link,
 			return CMD_SUCCESS;
 		}
 		ospf = ospf_lookup_by_inst_name(inst, vrf_name);
-		if (ospf == NULL || !ospf->oi_running)
+	} else
+		ospf = ospf_lookup_by_vrf_id(VRF_DEFAULT);
+	if (ospf == NULL || !ospf->oi_running)
+		return CMD_SUCCESS;
+
+	vrf = vrf_lookup_by_id(ospf->vrf_id);
+	if (!vrf)
+		return CMD_SUCCESS;
+	if (idx_interface) {
+		ifp = if_lookup_by_name(
+					argv[idx_interface]->arg,
+					ospf->vrf_id);
+		if (ifp == NULL) {
+			vty_out(vty, "No such interface name in vrf %s\n",
+				vrf->name);
 			return CMD_SUCCESS;
-		vrf = vrf_lookup_by_id(ospf->vrf_id);
+		}
+	}
+	if (!ifp) {
 		FOR_ALL_INTERFACES (vrf, ifp)
 			show_mpls_te_link_sub(vty, ifp);
 		return CMD_SUCCESS;
 	}
-	/* Show All Interfaces. */
-	if (argc == 5) {
-		for (ALL_LIST_ELEMENTS_RO(om->ospf, node, ospf)) {
-			if (!ospf->oi_running)
-				continue;
-			vrf = vrf_lookup_by_id(ospf->vrf_id);
-			FOR_ALL_INTERFACES (vrf, ifp)
-				show_mpls_te_link_sub(vty, ifp);
-		}
-	}
-	/* Interface name is specified. */
-	else {
-		ifp = if_lookup_by_name_all_vrf(argv[idx_interface]->arg);
-		if (ifp == NULL)
-			vty_out(vty, "No such interface name\n");
-		else
-			show_mpls_te_link_sub(vty, ifp);
-	}
 
+	show_mpls_te_link_sub(vty, ifp);
 	return CMD_SUCCESS;
 }
 

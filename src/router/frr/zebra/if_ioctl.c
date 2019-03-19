@@ -38,6 +38,7 @@
 #include "zebra/interface.h"
 #include "zebra/rib.h"
 #include "zebra/rt.h"
+#include "zebra/zebra_errors.h"
 
 #include <ifaddrs.h>
 
@@ -57,8 +58,9 @@ static int interface_list_ioctl(void)
 	/* Normally SIOCGIFCONF works with AF_INET socket. */
 	sock = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sock < 0) {
-		zlog_warn("Can't make AF_INET socket stream: %s",
-			  safe_strerror(errno));
+		flog_err_sys(EC_LIB_SOCKET,
+			     "Can't make AF_INET socket stream: %s",
+			     safe_strerror(errno));
 		return -1;
 	}
 
@@ -86,7 +88,8 @@ static int interface_list_ioctl(void)
 		ret = ioctl(sock, SIOCGIFCONF, &ifconf);
 
 		if (ret < 0) {
-			zlog_warn("SIOCGIFCONF: %s", safe_strerror(errno));
+			flog_err_sys(EC_LIB_SYSTEM_CALL, "SIOCGIFCONF: %s",
+				     safe_strerror(errno));
 			goto end;
 		}
 		/* Repeatedly get info til buffer fails to grow. */
@@ -107,7 +110,7 @@ static int interface_list_ioctl(void)
 		unsigned int size;
 
 		ifreq = (struct ifreq *)((caddr_t)ifconf.ifc_req + n);
-		ifp = if_get_by_name(ifreq->ifr_name, VRF_DEFAULT, 0);
+		ifp = if_get_by_name(ifreq->ifr_name, VRF_DEFAULT);
 		if_add_update(ifp);
 		size = ifreq->ifr_addr.sa_len;
 		if (size < sizeof(ifreq->ifr_addr))
@@ -117,7 +120,7 @@ static int interface_list_ioctl(void)
 	}
 #else
 	for (n = 0; n < ifconf.ifc_len; n += sizeof(struct ifreq)) {
-		ifp = if_get_by_name(ifreq->ifr_name, VRF_DEFAULT, 0);
+		ifp = if_get_by_name(ifreq->ifr_name, VRF_DEFAULT);
 		if_add_update(ifp);
 		ifreq++;
 	}
@@ -177,7 +180,7 @@ static int if_getaddrs(void)
 
 	ret = getifaddrs(&ifap);
 	if (ret != 0) {
-		flog_err_sys(LIB_ERR_SYSTEM_CALL, "getifaddrs(): %s",
+		flog_err_sys(EC_LIB_SYSTEM_CALL, "getifaddrs(): %s",
 			     safe_strerror(errno));
 		return -1;
 	}
@@ -185,7 +188,7 @@ static int if_getaddrs(void)
 	for (ifapfree = ifap; ifap; ifap = ifap->ifa_next) {
 		if (ifap->ifa_addr == NULL) {
 			flog_err(
-				LIB_ERR_INTERFACE,
+				EC_LIB_INTERFACE,
 				"%s: nonsensical ifaddr with NULL ifa_addr, ifname %s",
 				__func__,
 				(ifap->ifa_name ? ifap->ifa_name : "(null)"));
@@ -194,9 +197,9 @@ static int if_getaddrs(void)
 
 		ifp = if_lookup_by_name(ifap->ifa_name, VRF_DEFAULT);
 		if (ifp == NULL) {
-			flog_err(LIB_ERR_INTERFACE,
-				  "if_getaddrs(): Can't lookup interface %s\n",
-				  ifap->ifa_name);
+			flog_err(EC_LIB_INTERFACE,
+				 "if_getaddrs(): Can't lookup interface %s\n",
+				 ifap->ifa_name);
 			continue;
 		}
 

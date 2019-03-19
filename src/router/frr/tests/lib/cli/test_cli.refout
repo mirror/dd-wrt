@@ -307,11 +307,12 @@ test# show run
 
 Current configuration:
 !
-frr version 6.0.2
+frr version 7.0
 frr defaults traditional
 !
 hostname test
 domainname test.domain
+!
 !
 !
 line vty
@@ -323,11 +324,12 @@ foohost(config)# do show run
 
 Current configuration:
 !
-frr version 6.0.2
+frr version 7.0
 frr defaults traditional
 !
 hostname foohost
 domainname test.domain
+!
 !
 !
 line vty

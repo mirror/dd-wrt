@@ -78,7 +78,7 @@ struct bfd_session *bs_peer_find(struct bfd_peer_cfg *bpc)
 	} else {
 		memset(&shop, 0, sizeof(shop));
 		shop.peer = bpc->bpc_peer;
-		if (!bpc->bpc_has_vxlan && bpc->bpc_has_localif)
+		if (bpc->bpc_has_localif)
 			strlcpy(shop.port_name, bpc->bpc_localif,
 				sizeof(shop.port_name));
 
@@ -157,7 +157,8 @@ void ptm_bfd_echo_stop(struct bfd_session *bfd, int polling)
 void ptm_bfd_echo_start(struct bfd_session *bfd)
 {
 	bfd->echo_detect_TO = (bfd->remote_detect_mult * bfd->echo_xmt_TO);
-	ptm_bfd_echo_xmt_TO(bfd);
+	if (bfd->echo_detect_TO > 0)
+		ptm_bfd_echo_xmt_TO(bfd);
 
 	bfd->polling = 1;
 	bfd->new_timers.desired_min_tx = bfd->up_min_tx;
@@ -311,33 +312,6 @@ struct bfd_session *ptm_bfd_sess_find(struct bfd_pkt *cp, char *port_name,
 	return l_bfd;
 }
 
-#if 0  /* TODO VxLAN Support */
-static void
-_update_vxlan_sess_parms(struct bfd_session *bfd, bfd_sess_parms *sess_parms)
-{
-	struct bfd_session_vxlan_info *vxlan_info = &bfd->vxlan_info;
-	bfd_parms_list *parms = &sess_parms->parms;
-
-	vxlan_info->vnid = parms->vnid;
-	vxlan_info->check_tnl_key = parms->check_tnl_key;
-	vxlan_info->forwarding_if_rx = parms->forwarding_if_rx;
-	vxlan_info->cpath_down = parms->cpath_down;
-	vxlan_info->decay_min_rx = parms->decay_min_rx;
-
-	inet_aton(parms->local_dst_ip, &vxlan_info->local_dst_ip);
-	inet_aton(parms->remote_dst_ip, &vxlan_info->peer_dst_ip);
-
-	memcpy(vxlan_info->local_dst_mac, parms->local_dst_mac, ETH_ALEN);
-	memcpy(vxlan_info->peer_dst_mac, parms->remote_dst_mac, ETH_ALEN);
-
-	/* The interface may change for Vxlan BFD sessions, so update
-	 * the local mac and ifindex
-	 */
-	bfd->ifindex = sess_parms->ifindex;
-	memcpy(bfd->local_mac, sess_parms->local_mac, sizeof(bfd->local_mac));
-}
-#endif /* VxLAN support */
-
 int bfd_xmt_cb(struct thread *t)
 {
 	struct bfd_session *bs = THREAD_ARG(t);
@@ -351,7 +325,8 @@ int bfd_echo_xmt_cb(struct thread *t)
 {
 	struct bfd_session *bs = THREAD_ARG(t);
 
-	ptm_bfd_echo_xmt_TO(bs);
+	if (bs->echo_xmt_TO > 0)
+		ptm_bfd_echo_xmt_TO(bs);
 
 	return 0;
 }
@@ -364,7 +339,7 @@ int bfd_recvtimer_cb(struct thread *t)
 	switch (bs->ses_state) {
 	case PTM_BFD_INIT:
 	case PTM_BFD_UP:
-		ptm_bfd_ses_dn(bs, BFD_DIAGDETECTTIME);
+		ptm_bfd_ses_dn(bs, BD_CONTROL_EXPIRED);
 		bfd_recvtimer_update(bs);
 		break;
 
@@ -387,7 +362,7 @@ int bfd_echo_recvtimer_cb(struct thread *t)
 	switch (bs->ses_state) {
 	case PTM_BFD_INIT:
 	case PTM_BFD_UP:
-		ptm_bfd_ses_dn(bs, BFD_DIAGDETECTTIME);
+		ptm_bfd_ses_dn(bs, BD_ECHO_FAILED);
 		break;
 	}
 
@@ -535,8 +510,6 @@ static int bfd_session_update(struct bfd_session *bs, struct bfd_peer_cfg *bpc)
 
 	_bfd_session_update(bs, bpc);
 
-	/* TODO add VxLAN support. */
-
 	control_notify_config(BCM_NOTIFY_CONFIG_UPDATE, bs);
 
 	return 0;
@@ -606,9 +579,6 @@ struct bfd_session *ptm_bfd_sess_new(struct bfd_peer_cfg *bpc)
 		ptm_bfd_fetch_local_mac(bpc->bpc_localif, bfd->local_mac);
 	}
 
-	if (bpc->bpc_has_vxlan)
-		BFD_SET_FLAG(bfd->flags, BFD_SESS_FLAG_VXLAN);
-
 	if (bpc->bpc_ipv4 == false) {
 		BFD_SET_FLAG(bfd->flags, BFD_SESS_FLAG_IPV6);
 
@@ -644,29 +614,12 @@ struct bfd_session *ptm_bfd_sess_new(struct bfd_peer_cfg *bpc)
 		bfd_mhop_insert(bfd);
 	} else {
 		bfd->shop.peer = bpc->bpc_peer;
-		if (!bpc->bpc_has_vxlan && bpc->bpc_has_localif)
+		if (bpc->bpc_has_localif)
 			strlcpy(bfd->shop.port_name, bpc->bpc_localif,
 				sizeof(bfd->shop.port_name));
 
 		bfd_shop_insert(bfd);
 	}
-
-	if (BFD_CHECK_FLAG(bfd->flags, BFD_SESS_FLAG_VXLAN)) {
-		static uint8_t bfd_def_vxlan_dmac[] = {0x00, 0x23, 0x20,
-						       0x00, 0x00, 0x01};
-		memcpy(bfd->peer_mac, bfd_def_vxlan_dmac,
-		       sizeof(bfd_def_vxlan_dmac));
-	}
-#if 0 /* TODO */
-	else if (event->rmac) {
-		if (sscanf(event->rmac, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
-		    &bfd->peer_mac[0], &bfd->peer_mac[1], &bfd->peer_mac[2],
-		    &bfd->peer_mac[3], &bfd->peer_mac[4], &bfd->peer_mac[5])
-		    != 6)
-			DLOG("%s: Assigning remote mac = %s", __func__,
-			     event->rmac);
-	}
-#endif
 
 	/*
 	 * XXX: session update triggers echo start, so we must have our
@@ -817,10 +770,10 @@ void integer2timestr(uint64_t time, char *buf, size_t buflen)
 	int rv;
 
 #define MINUTES (60)
-#define HOURS (24 * MINUTES)
-#define DAYS (30 * HOURS)
-#define MONTHS (12 * DAYS)
-#define YEARS (MONTHS)
+#define HOURS (60 * MINUTES)
+#define DAYS (24 * HOURS)
+#define MONTHS (30 * DAYS)
+#define YEARS (12 * MONTHS)
 	if (time >= YEARS) {
 		year = time / YEARS;
 		time -= year * YEARS;
@@ -908,15 +861,10 @@ static struct hash *bfd_vrf_hash;
 static struct hash *bfd_iface_hash;
 
 static unsigned int bfd_id_hash_do(void *p);
-static int bfd_id_hash_cmp(const void *n1, const void *n2);
 static unsigned int bfd_shop_hash_do(void *p);
-static int bfd_shop_hash_cmp(const void *n1, const void *n2);
 static unsigned int bfd_mhop_hash_do(void *p);
-static int bfd_mhop_hash_cmp(const void *n1, const void *n2);
 static unsigned int bfd_vrf_hash_do(void *p);
-static int bfd_vrf_hash_cmp(const void *n1, const void *n2);
 static unsigned int bfd_iface_hash_do(void *p);
-static int bfd_iface_hash_cmp(const void *n1, const void *n2);
 
 static void _shop_key(struct bfd_session *bs, const struct bfd_shop_key *shop);
 static void _shop_key2(struct bfd_session *bs, const struct bfd_shop_key *shop);
@@ -936,7 +884,7 @@ static unsigned int bfd_id_hash_do(void *p)
 	return jhash_1word(bs->discrs.my_discr, 0);
 }
 
-static int bfd_id_hash_cmp(const void *n1, const void *n2)
+static bool bfd_id_hash_cmp(const void *n1, const void *n2)
 {
 	const struct bfd_session *bs1 = n1, *bs2 = n2;
 
@@ -951,7 +899,7 @@ static unsigned int bfd_shop_hash_do(void *p)
 	return jhash(&bs->shop, sizeof(bs->shop), 0);
 }
 
-static int bfd_shop_hash_cmp(const void *n1, const void *n2)
+static bool bfd_shop_hash_cmp(const void *n1, const void *n2)
 {
 	const struct bfd_session *bs1 = n1, *bs2 = n2;
 
@@ -966,7 +914,7 @@ static unsigned int bfd_mhop_hash_do(void *p)
 	return jhash(&bs->mhop, sizeof(bs->mhop), 0);
 }
 
-static int bfd_mhop_hash_cmp(const void *n1, const void *n2)
+static bool bfd_mhop_hash_cmp(const void *n1, const void *n2)
 {
 	const struct bfd_session *bs1 = n1, *bs2 = n2;
 
@@ -981,7 +929,7 @@ static unsigned int bfd_vrf_hash_do(void *p)
 	return jhash_1word(vrf->vrf_id, 0);
 }
 
-static int bfd_vrf_hash_cmp(const void *n1, const void *n2)
+static bool bfd_vrf_hash_cmp(const void *n1, const void *n2)
 {
 	const struct bfd_vrf *v1 = n1, *v2 = n2;
 
@@ -996,7 +944,7 @@ static unsigned int bfd_iface_hash_do(void *p)
 	return string_hash_make(iface->ifname);
 }
 
-static int bfd_iface_hash_cmp(const void *n1, const void *n2)
+static bool bfd_iface_hash_cmp(const void *n1, const void *n2)
 {
 	const struct bfd_iface *i1 = n1, *i2 = n2;
 

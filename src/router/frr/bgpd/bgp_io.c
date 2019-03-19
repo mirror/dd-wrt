@@ -23,7 +23,7 @@
 #include <zebra.h>
 #include <pthread.h>		// for pthread_mutex_unlock, pthread_mutex_lock
 
-#include "frr_pthread.h"	// for frr_pthread_get, frr_pthread
+#include "frr_pthread.h"
 #include "linklist.h"		// for list_delete, list_delete_all_node, lis...
 #include "log.h"		// for zlog_debug, safe_strerror, zlog_err
 #include "memory.h"		// for MTYPE_TMP, XCALLOC, XFREE
@@ -56,7 +56,7 @@ static bool validate_header(struct peer *);
 
 void bgp_writes_on(struct peer *peer)
 {
-	struct frr_pthread *fpt = frr_pthread_get(PTHREAD_IO);
+	struct frr_pthread *fpt = bgp_pth_io;
 	assert(fpt->running);
 
 	assert(peer->status != Deleted);
@@ -74,7 +74,7 @@ void bgp_writes_on(struct peer *peer)
 
 void bgp_writes_off(struct peer *peer)
 {
-	struct frr_pthread *fpt = frr_pthread_get(PTHREAD_IO);
+	struct frr_pthread *fpt = bgp_pth_io;
 	assert(fpt->running);
 
 	thread_cancel_async(fpt->master, &peer->t_write, NULL);
@@ -85,7 +85,7 @@ void bgp_writes_off(struct peer *peer)
 
 void bgp_reads_on(struct peer *peer)
 {
-	struct frr_pthread *fpt = frr_pthread_get(PTHREAD_IO);
+	struct frr_pthread *fpt = bgp_pth_io;
 	assert(fpt->running);
 
 	assert(peer->status != Deleted);
@@ -105,7 +105,7 @@ void bgp_reads_on(struct peer *peer)
 
 void bgp_reads_off(struct peer *peer)
 {
-	struct frr_pthread *fpt = frr_pthread_get(PTHREAD_IO);
+	struct frr_pthread *fpt = bgp_pth_io;
 	assert(fpt->running);
 
 	thread_cancel_async(fpt->master, &peer->t_read, NULL);
@@ -130,7 +130,7 @@ static int bgp_process_writes(struct thread *thread)
 	if (peer->fd < 0)
 		return -1;
 
-	struct frr_pthread *fpt = frr_pthread_get(PTHREAD_IO);
+	struct frr_pthread *fpt = bgp_pth_io;
 
 	pthread_mutex_lock(&peer->io_mtx);
 	{
@@ -182,7 +182,7 @@ static int bgp_process_reads(struct thread *thread)
 	if (peer->fd < 0 || bm->terminating)
 		return -1;
 
-	struct frr_pthread *fpt = frr_pthread_get(PTHREAD_IO);
+	struct frr_pthread *fpt = bgp_pth_io;
 
 	pthread_mutex_lock(&peer->io_mtx);
 	{
@@ -295,7 +295,7 @@ static uint16_t bgp_write(struct peer *peer)
 		int writenum;
 		do {
 			writenum = stream_get_endp(s) - stream_get_getp(s);
-			num = write(peer->fd, STREAM_PNT(s), writenum);
+			num = write(peer->fd, stream_pnt(s), writenum);
 
 			if (num < 0) {
 				if (!ERRNO_IO_RETRY(errno)) {
@@ -402,9 +402,9 @@ static uint16_t bgp_read(struct peer *peer)
 		SET_FLAG(status, BGP_IO_TRANS_ERR);
 		/* Fatal error; tear down session */
 	} else if (nbytes < 0) {
-		flog_err(BGP_ERR_UPDATE_RCV,
-			  "%s [Error] bgp_read_packet error: %s", peer->host,
-			  safe_strerror(errno));
+		flog_err(EC_BGP_UPDATE_RCV,
+			 "%s [Error] bgp_read_packet error: %s", peer->host,
+			 safe_strerror(errno));
 
 		if (peer->status == Established) {
 			if (CHECK_FLAG(peer->sflags, PEER_STATUS_NSF_MODE)) {

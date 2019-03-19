@@ -19,8 +19,6 @@
 
 #include <zebra.h>
 
-#include "zebra/rib.h"
-
 #include "if.h"
 #include "log.h"
 #include "prefix.h"
@@ -112,7 +110,7 @@ static int pim_zebra_if_add(int command, struct zclient *zclient,
 		struct pim_interface *pim_ifp;
 
 		if (!ifp->info) {
-			pim_ifp = pim_if_new(ifp, 0, 0, false);
+			pim_ifp = pim_if_new(ifp, false, false, false);
 			ifp->info = pim_ifp;
 		}
 
@@ -748,7 +746,7 @@ static void pim_zebra_connected(struct zclient *zclient)
 void pim_zebra_init(void)
 {
 	/* Socket for receiving updates from Zebra daemon */
-	zclient = zclient_new_notify(master, &zclient_options_default);
+	zclient = zclient_new(master, &zclient_options_default);
 
 	zclient->zebra_connected = pim_zebra_connected;
 	zclient->router_id_update = pim_router_id_update_zebra;
@@ -1044,9 +1042,18 @@ void igmp_source_forward_start(struct pim_instance *pim,
 		return;
 	}
 
-	if (!(PIM_I_am_DR(pim_oif)))
-		return;
+	if (!(PIM_I_am_DR(pim_oif))) {
+		if (PIM_DEBUG_IGMP_TRACE)
+			zlog_debug("%s: %s was received on %s interface but we are not DR for that interface",
+				   __PRETTY_FUNCTION__,
+				   pim_str_sg_dump(&sg),
+				   group->group_igmp_sock->interface->name);
 
+		pim_channel_del_oif(source->source_channel_oil,
+				    group->group_igmp_sock->interface,
+				    PIM_OIF_FLAG_PROTO_IGMP);
+		return;
+	}
 	/*
 	  Feed IGMPv3-gathered local membership information into PIM
 	  per-interface (S,G) state.
@@ -1056,6 +1063,10 @@ void igmp_source_forward_start(struct pim_instance *pim,
 		if (PIM_DEBUG_MROUTE)
 			zlog_warn("%s: Failure to add local membership for %s",
 				  __PRETTY_FUNCTION__, pim_str_sg_dump(&sg));
+
+		pim_channel_del_oif(source->source_channel_oil,
+				    group->group_igmp_sock->interface,
+				    PIM_OIF_FLAG_PROTO_IGMP);
 		return;
 	}
 

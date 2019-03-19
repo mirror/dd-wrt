@@ -56,6 +56,7 @@
 #include "bgpd/bgp_nht.h"
 #include "bgpd/bgp_mplsvpn.h"
 #include "bgpd/bgp_label.h"
+#include "bgpd/bgp_addpath.h"
 
 /********************
  * PRIVATE FUNCTIONS
@@ -427,7 +428,8 @@ struct stream *bpacket_reformat_for_peer(struct bpacket *pkt,
 				break;
 			default:
 				/* TODO: handle IPv6 nexthops */
-				zlog_warn(
+				flog_warn(
+					EC_BGP_INVALID_NEXTHOP_LENGTH,
 					"%s: %s: invalid MP nexthop length (AFI IP): %u",
 					__func__, peer->host, nhlen);
 				stream_free(s);
@@ -532,7 +534,8 @@ struct stream *bpacket_reformat_for_peer(struct bpacket *pkt,
 				break;
 			default:
 				/* TODO: handle IPv4 nexthops */
-				zlog_warn(
+				flog_warn(
+					EC_BGP_INVALID_NEXTHOP_LENGTH,
 					"%s: %s: invalid MP nexthop length (AFI IP6): %u",
 					__func__, peer->host, nhlen);
 				stream_free(s);
@@ -685,7 +688,7 @@ struct bpacket *subgroup_update_packet(struct update_subgroup *subgrp)
 	struct bgp_adj_out *adj;
 	struct bgp_advertise *adv;
 	struct bgp_node *rn = NULL;
-	struct bgp_info *binfo = NULL;
+	struct bgp_path_info *path = NULL;
 	bgp_size_t total_attr_len = 0;
 	unsigned long attrlen_pos = 0;
 	size_t mpattrlen_pos = 0;
@@ -729,7 +732,7 @@ struct bpacket *subgroup_update_packet(struct update_subgroup *subgrp)
 		rn = adv->rn;
 		adj = adv->adj;
 		addpath_tx_id = adj->addpath_tx_id;
-		binfo = adv->binfo;
+		path = adv->pathi;
 
 		space_remaining = STREAM_CONCAT_REMAIN(s, snlri, STREAM_SIZE(s))
 				  - BGP_MAX_PACKET_SIZE_OVERFLOW;
@@ -745,8 +748,8 @@ struct bpacket *subgroup_update_packet(struct update_subgroup *subgrp)
 		if (stream_empty(s)) {
 			struct peer *from = NULL;
 
-			if (binfo)
-				from = binfo->peer;
+			if (path)
+				from = path->peer;
 
 			/* 1: Write the BGP message header - 16 bytes marker, 2
 			 * bytes length,
@@ -788,7 +791,7 @@ struct bpacket *subgroup_update_packet(struct update_subgroup *subgrp)
 			 * return */
 			if (space_remaining < space_needed) {
 				flog_err(
-					BGP_ERR_UPDGRP_ATTR_LEN,
+					EC_BGP_UPDGRP_ATTR_LEN,
 					"u%" PRIu64 ":s%" PRIu64
 					" attributes too long, cannot send UPDATE",
 					subgrp->update_group->id, subgrp->id);
@@ -819,13 +822,13 @@ struct bpacket *subgroup_update_packet(struct update_subgroup *subgrp)
 				prd = (struct prefix_rd *)&rn->prn->p;
 
 			if (safi == SAFI_LABELED_UNICAST) {
-				label = bgp_adv_label(rn, binfo, peer, afi,
+				label = bgp_adv_label(rn, path, peer, afi,
 						      safi);
 				label_pnt = &label;
 				num_labels = 1;
-			} else if (binfo && binfo->extra) {
-				label_pnt = &binfo->extra->label[0];
-				num_labels = binfo->extra->num_labels;
+			} else if (path && path->extra) {
+				label_pnt = &path->extra->label[0];
+				num_labels = path->extra->num_labels;
 			}
 
 			if (stream_empty(snlri))
@@ -1121,6 +1124,8 @@ void subgroup_default_update_packet(struct update_subgroup *subgrp,
 			snprintf(tx_id_buf, sizeof(tx_id_buf),
 				 " with addpath ID %u",
 				 BGP_ADDPATH_TX_ID_FOR_DEFAULT_ORIGINATE);
+		else
+			tx_id_buf[0] = '\0';
 
 		zlog_debug("u%" PRIu64 ":s%" PRIu64 " send UPDATE %s%s %s",
 			   (SUBGRP_UPDGRP(subgrp))->id, subgrp->id,

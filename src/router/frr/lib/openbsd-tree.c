@@ -41,6 +41,10 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdlib.h>
 
 #include <lib/openbsd-tree.h>
@@ -341,7 +345,7 @@ rbe_remove(const struct rb_type *t, struct rbt_tree *rbt, struct rb_entry *rbe)
 			else
 				RBE_RIGHT(tmp) = rbe;
 
-			rbe_if_augment(t, parent);
+			rbe_if_augment(t, tmp);
 		} else
 			RBH_ROOT(rbt) = rbe;
 

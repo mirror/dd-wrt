@@ -23,7 +23,7 @@
 #include "lib/prefix.h"
 #include "lib/memory.h"
 #include "lib/linklist.h"
-#include "lib/table.h"
+#include "lib/agg_table.h"
 #include "lib/plist.h"
 #include "lib/routemap.h"
 
@@ -126,10 +126,10 @@ struct rfapi_nve_group_cfg *bgp_rfapi_cfg_match_group(struct rfapi_cfg *hc,
 	struct rfapi_nve_group_cfg *rfg_vn = NULL;
 	struct rfapi_nve_group_cfg *rfg_un = NULL;
 
-	struct route_table *rt_vn;
-	struct route_table *rt_un;
-	struct route_node *rn_vn;
-	struct route_node *rn_un;
+	struct agg_table *rt_vn;
+	struct agg_table *rt_un;
+	struct agg_node *rn_vn;
+	struct agg_node *rn_un;
 
 	struct rfapi_nve_group_cfg *rfg;
 	struct listnode *node, *nnode;
@@ -156,16 +156,16 @@ struct rfapi_nve_group_cfg *bgp_rfapi_cfg_match_group(struct rfapi_cfg *hc,
 		return NULL;
 	}
 
-	rn_vn = route_node_match(rt_vn, vn); /* NB locks node */
+	rn_vn = agg_node_match(rt_vn, vn); /* NB locks node */
 	if (rn_vn) {
 		rfg_vn = rn_vn->info;
-		route_unlock_node(rn_vn);
+		agg_unlock_node(rn_vn);
 	}
 
-	rn_un = route_node_match(rt_un, un); /* NB locks node */
+	rn_un = agg_node_match(rt_un, un); /* NB locks node */
 	if (rn_un) {
 		rfg_un = rn_un->info;
-		route_unlock_node(rn_un);
+		agg_unlock_node(rn_un);
 	}
 
 #if BGP_VNC_DEBUG_MATCH_GROUP
@@ -2297,7 +2297,7 @@ static void bgp_rfapi_delete_nve_group(struct vty *vty, /* NULL = no output */
 			listnode_delete(rfg->nves, rfd);
 			listnode_add(orphaned_nves, rfd);
 		}
-		list_delete_and_null(&rfg->nves);
+		list_delete(&rfg->nves);
 	}
 
 	/* delete it */
@@ -2311,11 +2311,11 @@ static void bgp_rfapi_delete_nve_group(struct vty *vty, /* NULL = no output */
 
 	if (rfg->vn_node) {
 		rfg->vn_node->info = NULL;
-		route_unlock_node(rfg->vn_node); /* frees */
+		agg_unlock_node(rfg->vn_node); /* frees */
 	}
 	if (rfg->un_node) {
 		rfg->un_node->info = NULL;
-		route_unlock_node(rfg->un_node); /* frees */
+		agg_unlock_node(rfg->un_node); /* frees */
 	}
 	if (rfg->rfp_cfg)
 		XFREE(MTYPE_RFAPI_RFP_GROUP_CFG, rfg->rfp_cfg);
@@ -2374,7 +2374,7 @@ static void bgp_rfapi_delete_nve_group(struct vty *vty, /* NULL = no output */
 			if (vty)
 				vty_out(vty, "\n");
 		}
-		list_delete_and_null(&orphaned_nves);
+		list_delete(&orphaned_nves);
 	}
 }
 
@@ -2475,8 +2475,8 @@ DEFUN (vnc_nve_group_prefix,
 	VTY_DECLVAR_CONTEXT_SUB(rfapi_nve_group_cfg, rfg);
 	struct prefix p;
 	afi_t afi;
-	struct route_table *rt;
-	struct route_node *rn;
+	struct agg_table *rt;
+	struct agg_node *rn;
 	int is_un_prefix = 0;
 
 	/* make sure it's still in list */
@@ -2504,12 +2504,12 @@ DEFUN (vnc_nve_group_prefix,
 		rt = bgp->rfapi_cfg->nve_groups_vn[afi];
 	}
 
-	rn = route_node_get(rt, &p); /* NB locks node */
+	rn = agg_node_get(rt, &p); /* NB locks node */
 	if (rn->info) {
 		/*
 		 * There is already a group with this prefix
 		 */
-		route_unlock_node(rn);
+		agg_unlock_node(rn);
 		if (rn->info != rfg) {
 			/*
 			 * different group name: fail
@@ -2542,7 +2542,7 @@ DEFUN (vnc_nve_group_prefix,
 		/* detach rfg from previous route table location */
 		if (rfg->un_node) {
 			rfg->un_node->info = NULL;
-			route_unlock_node(rfg->un_node); /* frees */
+			agg_unlock_node(rfg->un_node); /* frees */
 		}
 		rfg->un_node = rn; /* back ref */
 		rfg->un_prefix = p;
@@ -2552,7 +2552,7 @@ DEFUN (vnc_nve_group_prefix,
 		/* detach rfg from previous route table location */
 		if (rfg->vn_node) {
 			rfg->vn_node->info = NULL;
-			route_unlock_node(rfg->vn_node); /* frees */
+			agg_unlock_node(rfg->vn_node); /* frees */
 		}
 		rfg->vn_node = rn; /* back ref */
 		rfg->vn_prefix = p;
@@ -3402,7 +3402,7 @@ static void bgp_rfapi_delete_l2_group(struct vty *vty, /* NULL = no output */
 	if (rfg->rt_export_list)
 		ecommunity_free(&rfg->rt_export_list);
 	if (rfg->labels)
-		list_delete_and_null(&rfg->labels);
+		list_delete(&rfg->labels);
 	if (rfg->rfp_cfg)
 		XFREE(MTYPE_RFAPI_RFP_GROUP_CFG, rfg->rfp_cfg);
 	listnode_delete(bgp->rfapi_cfg->l2_groups, rfg);
@@ -3768,8 +3768,8 @@ struct rfapi_cfg *bgp_rfapi_cfg_new(struct rfapi_rfp_cfg *cfg)
 	h->nve_groups_sequential = list_new();
 	assert(h->nve_groups_sequential);
 	for (afi = AFI_IP; afi < AFI_MAX; afi++) {
-		h->nve_groups_vn[afi] = route_table_init();
-		h->nve_groups_un[afi] = route_table_init();
+		h->nve_groups_vn[afi] = agg_table_init();
+		h->nve_groups_un[afi] = agg_table_init();
 	}
 	h->default_response_lifetime =
 		BGP_VNC_DEFAULT_RESPONSE_LIFETIME_DEFAULT;
@@ -3816,10 +3816,10 @@ void bgp_rfapi_cfg_destroy(struct bgp *bgp, struct rfapi_cfg *h)
 	bgp_rfapi_delete_named_nve_group(NULL, bgp, NULL, RFAPI_GROUP_CFG_MAX);
 	bgp_rfapi_delete_named_l2_group(NULL, bgp, NULL);
 	if (h->l2_groups != NULL)
-		list_delete_and_null(&h->l2_groups);
-	list_delete_and_null(&h->nve_groups_sequential);
-	list_delete_and_null(&h->rfg_export_direct_bgp_l);
-	list_delete_and_null(&h->rfg_export_zebra_l);
+		list_delete(&h->l2_groups);
+	list_delete(&h->nve_groups_sequential);
+	list_delete(&h->rfg_export_direct_bgp_l);
+	list_delete(&h->rfg_export_zebra_l);
 	if (h->default_rt_export_list)
 		ecommunity_free(&h->default_rt_export_list);
 	if (h->default_rt_import_list)
@@ -3827,8 +3827,8 @@ void bgp_rfapi_cfg_destroy(struct bgp *bgp, struct rfapi_cfg *h)
 	if (h->default_rfp_cfg)
 		XFREE(MTYPE_RFAPI_RFP_GROUP_CFG, h->default_rfp_cfg);
 	for (afi = AFI_IP; afi < AFI_MAX; afi++) {
-		route_table_finish(h->nve_groups_vn[afi]);
-		route_table_finish(h->nve_groups_un[afi]);
+		agg_table_finish(h->nve_groups_vn[afi]);
+		agg_table_finish(h->nve_groups_un[afi]);
 	}
 	XFREE(MTYPE_RFAPI_CFG, h);
 }
@@ -4022,21 +4022,21 @@ int bgp_rfapi_cfg_write(struct vty *vty, struct bgp *bgp)
 			vty_out(vty, "!\n");
 
 		if (hc->l2_groups) {
-			struct rfapi_l2_group_cfg *rfg = NULL;
+			struct rfapi_l2_group_cfg *rfgc = NULL;
 			struct listnode *gnode;
-			for (ALL_LIST_ELEMENTS_RO(hc->l2_groups, gnode, rfg)) {
+			for (ALL_LIST_ELEMENTS_RO(hc->l2_groups, gnode, rfgc)) {
 				struct listnode *lnode;
 				void *data;
 				++write;
-				vty_out(vty, " vnc l2-group %s\n", rfg->name);
-				if (rfg->logical_net_id != 0)
+				vty_out(vty, " vnc l2-group %s\n", rfgc->name);
+				if (rfgc->logical_net_id != 0)
 					vty_out(vty,
 						"   logical-network-id %u\n",
-						rfg->logical_net_id);
-				if (rfg->labels != NULL
-				    && listhead(rfg->labels) != NULL) {
+						rfgc->logical_net_id);
+				if (rfgc->labels != NULL
+				    && listhead(rfgc->labels) != NULL) {
 					vty_out(vty, "   labels ");
-					for (ALL_LIST_ELEMENTS_RO(rfg->labels,
+					for (ALL_LIST_ELEMENTS_RO(rfgc->labels,
 								  lnode,
 								  data)) {
 						vty_out(vty, "%hu ",
@@ -4047,28 +4047,28 @@ int bgp_rfapi_cfg_write(struct vty *vty, struct bgp *bgp)
 					vty_out(vty, "\n");
 				}
 
-				if (rfg->rt_import_list && rfg->rt_export_list
-				    && ecommunity_cmp(rfg->rt_import_list,
-						      rfg->rt_export_list)) {
+				if (rfgc->rt_import_list && rfgc->rt_export_list
+				    && ecommunity_cmp(rfgc->rt_import_list,
+						      rfgc->rt_export_list)) {
 					char *b = ecommunity_ecom2str(
-						rfg->rt_import_list,
+						rfgc->rt_import_list,
 						ECOMMUNITY_FORMAT_ROUTE_MAP,
 						ECOMMUNITY_ROUTE_TARGET);
 					vty_out(vty, "   rt both %s\n", b);
 					XFREE(MTYPE_ECOMMUNITY_STR, b);
 				} else {
-					if (rfg->rt_import_list) {
+					if (rfgc->rt_import_list) {
 						char *b = ecommunity_ecom2str(
-							rfg->rt_import_list,
+							rfgc->rt_import_list,
 							ECOMMUNITY_FORMAT_ROUTE_MAP,
 							ECOMMUNITY_ROUTE_TARGET);
 						vty_out(vty, "  rt import %s\n",
 							b);
 						XFREE(MTYPE_ECOMMUNITY_STR, b);
 					}
-					if (rfg->rt_export_list) {
+					if (rfgc->rt_export_list) {
 						char *b = ecommunity_ecom2str(
-							rfg->rt_export_list,
+							rfgc->rt_export_list,
 							ECOMMUNITY_FORMAT_ROUTE_MAP,
 							ECOMMUNITY_ROUTE_TARGET);
 						vty_out(vty, "  rt export %s\n",
@@ -4081,7 +4081,7 @@ int bgp_rfapi_cfg_write(struct vty *vty, struct bgp *bgp)
 							  .cfg_group_cb)(
 						vty, bgp->rfapi->rfp,
 						RFAPI_RFP_CFG_GROUP_L2,
-						rfg->name, rfg->rfp_cfg);
+						rfgc->name, rfgc->rfp_cfg);
 				vty_out(vty, "   exit-vnc\n");
 				vty_out(vty, "!\n");
 			}

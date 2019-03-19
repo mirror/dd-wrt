@@ -240,17 +240,12 @@ void list_delete_all_node(struct list *list)
 	list->count = 0;
 }
 
-void list_delete_and_null(struct list **list)
+void list_delete(struct list **list)
 {
 	assert(*list);
 	list_delete_all_node(*list);
 	list_free_internal(*list);
 	*list = NULL;
-}
-
-void list_delete_original(struct list *list)
-{
-	list_delete_and_null(&list);
 }
 
 struct listnode *listnode_lookup(struct list *list, void *data)
@@ -318,8 +313,8 @@ void list_sort(struct list *list, int (*cmp)(const void **, const void **))
 
 	qsort(items, n, sizeof(void *), realcmp);
 
-	for (unsigned int i = 0; i < n; ++i)
-		listnode_add(list, items[i]);
+	for (unsigned int j = 0; j < n; ++j)
+		listnode_add(list, items[j]);
 
 	XFREE(MTYPE_TMP, items);
 }

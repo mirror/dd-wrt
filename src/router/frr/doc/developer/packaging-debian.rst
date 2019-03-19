@@ -1,5 +1,5 @@
-Debian
-======
+Packaging Debian
+================
 
 (Tested on Ubuntu 14.04, 16.04, 17.10, 18.04, Debian jessie, stretch and
 buster.)

@@ -396,7 +396,7 @@ static int64_t prefix_new_seq_get(struct prefix_list *plist)
 
 	newseq = ((maxseq / 5) * 5) + 5;
 
-	return newseq;
+	return (newseq > UINT_MAX) ? UINT_MAX : newseq;
 }
 
 /* Return prefix list entry which has same seq number. */
@@ -930,7 +930,10 @@ static int vty_prefix_list_install(struct vty *vty, afi_t afi, const char *name,
 		char buf_tmp[PREFIX2STR_BUFFER];
 		prefix2str(&p, buf, sizeof(buf));
 		prefix2str(&p_tmp, buf_tmp, sizeof(buf_tmp));
-		zlog_warn(
+		vty_out(vty,
+			"%% Prefix-list %s prefix changed from %s to %s to match length\n",
+			name, buf, buf_tmp);
+		zlog_info(
 			"Prefix-list %s prefix changed from %s to %s to match length",
 			name, buf, buf_tmp);
 		p = p_tmp;
@@ -1249,13 +1252,13 @@ static int vty_show_prefix_list_prefix(struct vty *vty, afi_t afi,
 			if (pentry->any)
 				vty_out(vty, "any");
 			else {
-				struct prefix *p = &pentry->prefix;
+				struct prefix *pf = &pentry->prefix;
 				char buf[BUFSIZ];
 
 				vty_out(vty, "%s/%d",
-					inet_ntop(p->family, p->u.val, buf,
+					inet_ntop(pf->family, pf->u.val, buf,
 						  BUFSIZ),
-					p->prefixlen);
+					pf->prefixlen);
 
 				if (pentry->ge)
 					vty_out(vty, " ge %d", pentry->ge);
@@ -1900,7 +1903,7 @@ void prefix_bgp_orf_remove_all(afi_t afi, char *name)
 
 /* return prefix count */
 int prefix_bgp_show_prefix_list(struct vty *vty, afi_t afi, char *name,
-				uint8_t use_json)
+				bool use_json)
 {
 	struct prefix_list *plist;
 	struct prefix_list_entry *pentry;

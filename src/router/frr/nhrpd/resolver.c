@@ -7,6 +7,10 @@
  * (at your option) any later version.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <ares.h>
 #include <ares_version.h>
 
@@ -194,9 +198,10 @@ void resolver_resolve(struct resolver_query *query, int af,
 				       union sockunion *))
 {
 	if (query->callback != NULL) {
-		flog_err(NHRP_ERR_RESOLVER,
-			  "Trying to resolve '%s', but previous query was not finished yet",
-			  hostname);
+		flog_err(
+			EC_NHRP_RESOLVER,
+			"Trying to resolve '%s', but previous query was not finished yet",
+			hostname);
 		return;
 	}
 

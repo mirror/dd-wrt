@@ -39,6 +39,8 @@
 #include "zebra/interface.h"
 #include "zebra/ioctl_solaris.h"
 #include "zebra/rib.h"
+#include "zebra/rt.h"
+#include "zebra/zebra_errors.h"
 
 static int if_get_addr(struct interface *, struct sockaddr *, const char *);
 static void interface_info_ioctl(struct interface *);
@@ -55,7 +57,6 @@ static int interface_list_ioctl(int af)
 	struct lifconf lifconf;
 	struct interface *ifp;
 	int n;
-	int save_errno;
 	size_t needed, lastneeded = 0;
 	char *buf = NULL;
 
@@ -64,9 +65,9 @@ static int interface_list_ioctl(int af)
 	}
 
 	if (sock < 0) {
-		zlog_warn("Can't make %s socket stream: %s",
-			  (af == AF_INET ? "AF_INET" : "AF_INET6"),
-			  safe_strerror(errno));
+		flog_err_sys(EC_LIB_SOCKET, "Can't make %s socket stream: %s",
+			     (af == AF_INET ? "AF_INET" : "AF_INET6"),
+			     safe_strerror(errno));
 		return -1;
 	}
 
@@ -76,13 +77,12 @@ calculate_lifc_len:
 		lifn.lifn_flags = LIFC_NOXMIT;
 		/* we want NOXMIT interfaces too */
 		ret = ioctl(sock, SIOCGLIFNUM, &lifn);
-		save_errno = errno;
-
 	}
 
 	if (ret < 0) {
-		zlog_warn("interface_list_ioctl: SIOCGLIFNUM failed %s",
-			  safe_strerror(save_errno));
+		flog_err_sys(EC_LIB_SYSTEM_CALL,
+			     "interface_list_ioctl: SIOCGLIFNUM failed %s",
+			     safe_strerror(errno));
 		close(sock);
 		return -1;
 	}
@@ -115,7 +115,8 @@ calculate_lifc_len:
 		if (errno == EINVAL)
 			goto calculate_lifc_len;
 
-		zlog_warn("SIOCGLIFCONF: %s", safe_strerror(errno));
+		flog_err_sys(EC_LIB_SYSTEM_CALL, "SIOCGLIFCONF: %s",
+			     safe_strerror(errno));
 		goto end;
 	}
 
@@ -155,7 +156,7 @@ calculate_lifc_len:
 		       && (*(lifreq->lifr_name + normallen) != ':'))
 			normallen++;
 
-		ifp = if_get_by_name(lifreq->lifr_name, VRF_DEFAULT, 0);
+		ifp = if_get_by_name(lifreq->lifr_name, VRF_DEFAULT);
 
 		if (lifreq->lifr_addr.ss_family == AF_INET)
 			ifp->flags |= IFF_IPV4;
@@ -206,7 +207,8 @@ static int if_get_index(struct interface *ifp)
 		ret = -1;
 
 	if (ret < 0) {
-		zlog_warn("SIOCGLIFINDEX(%s) failed", ifp->name);
+		flog_err_sys(EC_LIB_SYSTEM_CALL, "SIOCGLIFINDEX(%s) failed",
+			     ifp->name);
 		return ret;
 	}
 
@@ -268,8 +270,9 @@ static int if_get_addr(struct interface *ifp, struct sockaddr *addr,
 
 		if (ret < 0) {
 			if (errno != EADDRNOTAVAIL) {
-				zlog_warn("SIOCGLIFNETMASK (%s) fail: %s",
-					  ifp->name, safe_strerror(errno));
+				flog_err_sys(EC_LIB_SYSTEM_CALL,
+					     "SIOCGLIFNETMASK (%s) fail: %s",
+					     ifp->name, safe_strerror(errno));
 				return ret;
 			}
 			return 0;
@@ -288,8 +291,9 @@ static int if_get_addr(struct interface *ifp, struct sockaddr *addr,
 			if (ifp->flags & IFF_POINTOPOINT)
 				prefixlen = IPV6_MAX_BITLEN;
 			else
-				zlog_warn("SIOCGLIFSUBNET (%s) fail: %s",
-					  ifp->name, safe_strerror(errno));
+				flog_err_sys(EC_LIB_SYSTEM_CALL,
+					     "SIOCGLIFSUBNET (%s) fail: %s",
+					     ifp->name, safe_strerror(errno));
 		} else {
 			prefixlen = lifreq.lifr_addrlen;
 		}
@@ -319,7 +323,7 @@ static void interface_info_ioctl(struct interface *ifp)
 void interface_list(struct zebra_ns *zns)
 {
 	if (zns->ns_id != NS_DEFAULT) {
-		zlog_warn("interface_list: ignore NS %u", zns->ns_id);
+		zlog_debug("interface_list: ignore NS %u", zns->ns_id);
 		return;
 	}
 	interface_list_ioctl(AF_INET);

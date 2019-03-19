@@ -47,6 +47,7 @@
 #include "bgpd/bgp_aspath.h"
 #include "bgpd/bgp_zebra.h"
 #include "bgpd/bgp_nexthop.h"
+#include "bgpd/bgp_addpath.h"
 
 /*
  * Definitions and external declarations.
@@ -60,10 +61,9 @@ DEFINE_QOBJ_TYPE(evpnes)
 /*
  * Static function declarations
  */
-static void delete_evpn_route_entry(struct bgp *bgp,
-				    afi_t afi, safi_t safi,
+static void delete_evpn_route_entry(struct bgp *bgp, afi_t afi, safi_t safi,
 				    struct bgp_node *rn,
-				    struct bgp_info **ri);
+				    struct bgp_path_info **pi);
 static int delete_all_vni_routes(struct bgp *bgp, struct bgpevpn *vpn);
 
 /*
@@ -71,16 +71,12 @@ static int delete_all_vni_routes(struct bgp *bgp, struct bgpevpn *vpn);
  */
 
 /* compare two IPV4 VTEP IPs */
-static int evpn_vtep_ip_cmp(const void *p1, const void *p2)
+static int evpn_vtep_ip_cmp(void *p1, void *p2)
 {
 	const struct in_addr *ip1 = p1;
 	const struct in_addr *ip2 = p2;
 
-	if (!ip1 && !ip2)
-		return 1;
-	if (!ip1 || !ip2)
-		return 0;
-	return (ip1->s_addr == ip2->s_addr);
+	return ip1->s_addr - ip2->s_addr;
 }
 
 /*
@@ -97,16 +93,16 @@ static unsigned int esi_hash_keymake(void *p)
 /*
  * Compare two ESIs.
  */
-static int esi_cmp(const void *p1, const void *p2)
+static bool esi_cmp(const void *p1, const void *p2)
 {
 	const struct evpnes *pes1 = p1;
 	const struct evpnes *pes2 = p2;
 
 	if (pes1 == NULL && pes2 == NULL)
-		return 1;
+		return true;
 
 	if (pes1 == NULL || pes2 == NULL)
-		return 0;
+		return false;
 
 	return (memcmp(pes1->esi.val, pes2->esi.val, ESI_BYTES) == 0);
 }
@@ -123,16 +119,24 @@ static unsigned int vni_hash_key_make(void *p)
 /*
  * Comparison function for vni hash
  */
-static int vni_hash_cmp(const void *p1, const void *p2)
+static bool vni_hash_cmp(const void *p1, const void *p2)
 {
 	const struct bgpevpn *vpn1 = p1;
 	const struct bgpevpn *vpn2 = p2;
 
 	if (!vpn1 && !vpn2)
-		return 1;
+		return true;
 	if (!vpn1 || !vpn2)
-		return 0;
+		return false;
 	return (vpn1->vni == vpn2->vni);
+}
+
+static int vni_list_cmp(void *p1, void *p2)
+{
+	const struct bgpevpn *vpn1 = p1;
+	const struct bgpevpn *vpn2 = p2;
+
+	return vpn1->vni - vpn2->vni;
 }
 
 /*
@@ -149,16 +153,16 @@ static unsigned int vrf_import_rt_hash_key_make(void *p)
 /*
  * Comparison function for vrf import rt hash
  */
-static int vrf_import_rt_hash_cmp(const void *p1, const void *p2)
+static bool vrf_import_rt_hash_cmp(const void *p1, const void *p2)
 {
 	const struct vrf_irt_node *irt1 = p1;
 	const struct vrf_irt_node *irt2 = p2;
 
 	if (irt1 == NULL && irt2 == NULL)
-		return 1;
+		return true;
 
 	if (irt1 == NULL || irt2 == NULL)
-		return 0;
+		return false;
 
 	return (memcmp(irt1->rt.val, irt2->rt.val, ECOMMUNITY_SIZE) == 0);
 }
@@ -173,8 +177,8 @@ static struct vrf_irt_node *vrf_import_rt_new(struct ecommunity_val *rt)
 
 	bgp_def = bgp_get_default();
 	if (!bgp_def) {
-		flog_err(BGP_ERR_NO_DFLT,
-			  "vrf import rt new - def instance not created yet");
+		flog_err(EC_BGP_NO_DFLT,
+			 "vrf import rt new - def instance not created yet");
 		return NULL;
 	}
 
@@ -204,13 +208,13 @@ static void vrf_import_rt_free(struct vrf_irt_node *irt)
 
 	bgp_def = bgp_get_default();
 	if (!bgp_def) {
-		flog_err(BGP_ERR_NO_DFLT,
-			  "vrf import rt free - def instance not created yet");
+		flog_err(EC_BGP_NO_DFLT,
+			 "vrf import rt free - def instance not created yet");
 		return;
 	}
 
 	hash_release(bgp_def->vrf_import_rt_hash, irt);
-	list_delete_and_null(&irt->vrfs);
+	list_delete(&irt->vrfs);
 	XFREE(MTYPE_BGP_EVPN_VRF_IMPORT_RT, irt);
 }
 
@@ -226,9 +230,8 @@ static struct vrf_irt_node *lookup_vrf_import_rt(struct ecommunity_val *rt)
 
 	bgp_def = bgp_get_default();
 	if (!bgp_def) {
-		flog_err(
-			BGP_ERR_NO_DFLT,
-			"vrf import rt lookup - def instance not created yet");
+		flog_err(EC_BGP_NO_DFLT,
+			 "vrf import rt lookup - def instance not created yet");
 		return NULL;
 	}
 
@@ -267,16 +270,16 @@ static unsigned int import_rt_hash_key_make(void *p)
 /*
  * Comparison function for import rt hash
  */
-static int import_rt_hash_cmp(const void *p1, const void *p2)
+static bool import_rt_hash_cmp(const void *p1, const void *p2)
 {
 	const struct irt_node *irt1 = p1;
 	const struct irt_node *irt2 = p2;
 
 	if (irt1 == NULL && irt2 == NULL)
-		return 1;
+		return true;
 
 	if (irt1 == NULL || irt2 == NULL)
-		return 0;
+		return false;
 
 	return (memcmp(irt1->rt.val, irt2->rt.val, ECOMMUNITY_SIZE) == 0);
 }
@@ -314,7 +317,7 @@ static struct irt_node *import_rt_new(struct bgp *bgp,
 static void import_rt_free(struct bgp *bgp, struct irt_node *irt)
 {
 	hash_release(bgp->import_rt_hash, irt);
-	list_delete_and_null(&irt->vnis);
+	list_delete(&irt->vnis);
 	XFREE(MTYPE_BGP_EVPN_IMPORT_RT, irt);
 }
 
@@ -543,7 +546,7 @@ static void evpn_convert_nexthop_to_ipv6(struct attr *attr)
 static int bgp_zebra_send_remote_macip(struct bgp *bgp, struct bgpevpn *vpn,
 				       struct prefix_evpn *p,
 				       struct in_addr remote_vtep_ip, int add,
-				       uint8_t flags)
+				       uint8_t flags, uint32_t seq)
 {
 	struct stream *s;
 	int ipa_len;
@@ -556,9 +559,12 @@ static int bgp_zebra_send_remote_macip(struct bgp *bgp, struct bgpevpn *vpn,
 		return 0;
 
 	/* Don't try to register if Zebra doesn't know of this instance. */
-	if (!IS_BGP_INST_KNOWN_TO_ZEBRA(bgp))
+	if (!IS_BGP_INST_KNOWN_TO_ZEBRA(bgp)) {
+		if (BGP_DEBUG(zebra, ZEBRA))
+			zlog_debug("%s: No zebra instance to talk to, not installing remote macip",
+				   __PRETTY_FUNCTION__);
 		return 0;
-
+	}
 	s = zclient->obuf;
 	stream_reset(s);
 
@@ -579,19 +585,22 @@ static int bgp_zebra_send_remote_macip(struct bgp *bgp, struct bgpevpn *vpn,
 	stream_put_in_addr(s, &remote_vtep_ip);
 
 	/* TX flags - MAC sticky status and/or gateway mac */
-	if (add)
+	/* Also TX the sequence number of the best route. */
+	if (add) {
 		stream_putc(s, flags);
+		stream_putl(s, seq);
+	}
 
 	stream_putw_at(s, 0, stream_get_endp(s));
 
 	if (bgp_debug_zebra(NULL))
 		zlog_debug(
-			"Tx %s MACIP, VNI %u MAC %s IP %s (flags: 0x%x) remote VTEP %s",
+			"Tx %s MACIP, VNI %u MAC %s IP %s flags 0x%x seq %u remote VTEP %s",
 			add ? "ADD" : "DEL", vpn->vni,
 			prefix_mac2str(&p->prefix.macip_addr.mac,
 				       buf1, sizeof(buf1)),
 			ipaddr2str(&p->prefix.macip_addr.ip,
-				   buf3, sizeof(buf3)), flags,
+				   buf3, sizeof(buf3)), flags, seq,
 			inet_ntop(AF_INET, &remote_vtep_ip, buf2,
 				  sizeof(buf2)));
 
@@ -611,8 +620,12 @@ static int bgp_zebra_send_remote_vtep(struct bgp *bgp, struct bgpevpn *vpn,
 		return 0;
 
 	/* Don't try to register if Zebra doesn't know of this instance. */
-	if (!IS_BGP_INST_KNOWN_TO_ZEBRA(bgp))
+	if (!IS_BGP_INST_KNOWN_TO_ZEBRA(bgp)) {
+		if (BGP_DEBUG(zebra, ZEBRA))
+			zlog_debug("%s: No zebra instance to talk to, not installing remote vtep",
+				   __PRETTY_FUNCTION__);
 		return 0;
+	}
 
 	s = zclient->obuf;
 	stream_reset(s);
@@ -625,7 +638,7 @@ static int bgp_zebra_send_remote_vtep(struct bgp *bgp, struct bgpevpn *vpn,
 		stream_put_in_addr(s, &p->prefix.imet_addr.ip.ipaddr_v4);
 	else if (is_evpn_prefix_ipaddr_v6(p)) {
 		flog_err(
-			BGP_ERR_VTEP_INVALID,
+			EC_BGP_VTEP_INVALID,
 			"Bad remote IP when trying to %s remote VTEP for VNI %u",
 			add ? "ADD" : "DEL", vpn->vni);
 		return -1;
@@ -875,13 +888,14 @@ static void add_mac_mobility_to_attr(uint32_t seq_num, struct attr *attr)
 /* Install EVPN route into zebra. */
 static int evpn_zebra_install(struct bgp *bgp, struct bgpevpn *vpn,
 			      struct prefix_evpn *p,
-			      struct in_addr remote_vtep_ip, uint8_t flags)
+			      struct in_addr remote_vtep_ip, uint8_t flags,
+			      uint32_t seq)
 {
 	int ret;
 
 	if (p->prefix.route_type == BGP_EVPN_MAC_IP_ROUTE)
 		ret = bgp_zebra_send_remote_macip(bgp, vpn, p, remote_vtep_ip,
-						  1, flags);
+						  1, flags, seq);
 	else
 		ret = bgp_zebra_send_remote_vtep(bgp, vpn, p, 1);
 
@@ -897,7 +911,7 @@ static int evpn_zebra_uninstall(struct bgp *bgp, struct bgpevpn *vpn,
 
 	if (p->prefix.route_type == BGP_EVPN_MAC_IP_ROUTE)
 		ret = bgp_zebra_send_remote_macip(bgp, vpn, p, remote_vtep_ip,
-						  0, 0);
+						  0, 0, 0);
 	else
 		ret = bgp_zebra_send_remote_vtep(bgp, vpn, p, 0);
 
@@ -911,10 +925,10 @@ static int evpn_zebra_uninstall(struct bgp *bgp, struct bgpevpn *vpn,
  */
 static void evpn_delete_old_local_route(struct bgp *bgp, struct bgpevpn *vpn,
 					struct bgp_node *rn,
-					struct bgp_info *old_local)
+					struct bgp_path_info *old_local)
 {
 	struct bgp_node *global_rn;
-	struct bgp_info *ri;
+	struct bgp_path_info *pi;
 	afi_t afi = AFI_L2VPN;
 	safi_t safi = SAFI_EVPN;
 
@@ -926,18 +940,18 @@ static void evpn_delete_old_local_route(struct bgp *bgp, struct bgpevpn *vpn,
 					(struct prefix *)&rn->p, &vpn->prd);
 	if (global_rn) {
 		/* Delete route entry in the global EVPN table. */
-		delete_evpn_route_entry(bgp, afi, safi, global_rn, &ri);
+		delete_evpn_route_entry(bgp, afi, safi, global_rn, &pi);
 
 		/* Schedule for processing - withdraws to peers happen from
 		 * this table.
 		 */
-		if (ri)
+		if (pi)
 			bgp_process(bgp, global_rn, afi, safi);
 		bgp_unlock_node(global_rn);
 	}
 
 	/* Delete route entry in the VNI route table, caller to remove. */
-	bgp_info_delete(rn, old_local);
+	bgp_path_info_delete(rn, old_local);
 }
 
 static struct in_addr *es_vtep_new(struct in_addr vtep)
@@ -1027,9 +1041,9 @@ static int evpn_es_route_select_install(struct bgp *bgp,
 	int ret = 0;
 	afi_t afi = AFI_L2VPN;
 	safi_t safi = SAFI_EVPN;
-	struct bgp_info *old_select; /* old best */
-	struct bgp_info *new_select; /* new best */
-	struct bgp_info_pair old_and_new;
+	struct bgp_path_info *old_select; /* old best */
+	struct bgp_path_info *new_select; /* new best */
+	struct bgp_path_info_pair old_and_new;
 
 	/* Compute the best path. */
 	bgp_best_selection(bgp, rn, &bgp->maxpaths[afi][safi],
@@ -1045,14 +1059,14 @@ static int evpn_es_route_select_install(struct bgp *bgp,
 	    && old_select->type == ZEBRA_ROUTE_BGP
 	    && old_select->sub_type == BGP_ROUTE_IMPORTED
 	    && !CHECK_FLAG(rn->flags, BGP_NODE_USER_CLEAR)
-	    && !CHECK_FLAG(old_select->flags, BGP_INFO_ATTR_CHANGED)
-	    && !bgp->addpath_tx_used[afi][safi]) {
+	    && !CHECK_FLAG(old_select->flags, BGP_PATH_ATTR_CHANGED)
+	    && !bgp_addpath_is_addpath_used(&bgp->tx_addpath, afi, safi)) {
 		if (bgp_zebra_has_route_changed(rn, old_select)) {
 			ret = evpn_es_install_vtep(bgp, es,
 						   (struct prefix_evpn *)&rn->p,
 						   old_select->attr->nexthop);
 		}
-		UNSET_FLAG(old_select->flags, BGP_INFO_MULTIPATH_CHG);
+		UNSET_FLAG(old_select->flags, BGP_PATH_MULTIPATH_CHG);
 		bgp_zebra_clear_route_change_flags(rn);
 		return ret;
 	}
@@ -1068,11 +1082,11 @@ static int evpn_es_route_select_install(struct bgp *bgp,
 		bgp_bump_version(rn);
 
 	if (old_select)
-		bgp_info_unset_flag(rn, old_select, BGP_INFO_SELECTED);
+		bgp_path_info_unset_flag(rn, old_select, BGP_PATH_SELECTED);
 	if (new_select) {
-		bgp_info_set_flag(rn, new_select, BGP_INFO_SELECTED);
-		bgp_info_unset_flag(rn, new_select, BGP_INFO_ATTR_CHANGED);
-		UNSET_FLAG(new_select->flags, BGP_INFO_MULTIPATH_CHG);
+		bgp_path_info_set_flag(rn, new_select, BGP_PATH_SELECTED);
+		bgp_path_info_unset_flag(rn, new_select, BGP_PATH_ATTR_CHANGED);
+		UNSET_FLAG(new_select->flags, BGP_PATH_MULTIPATH_CHG);
 	}
 
 	if (new_select && new_select->type == ZEBRA_ROUTE_BGP
@@ -1091,9 +1105,9 @@ static int evpn_es_route_select_install(struct bgp *bgp,
 	/* Clear any route change flags. */
 	bgp_zebra_clear_route_change_flags(rn);
 
-	/* Reap old select bgp_info, if it has been removed */
-	if (old_select && CHECK_FLAG(old_select->flags, BGP_INFO_REMOVED))
-		bgp_info_reap(rn, old_select);
+	/* Reap old select bgp_path_info, if it has been removed */
+	if (old_select && CHECK_FLAG(old_select->flags, BGP_PATH_REMOVED))
+		bgp_path_info_reap(rn, old_select);
 
 	return ret;
 }
@@ -1105,8 +1119,8 @@ static int evpn_es_route_select_install(struct bgp *bgp,
 static int evpn_route_select_install(struct bgp *bgp, struct bgpevpn *vpn,
 				     struct bgp_node *rn)
 {
-	struct bgp_info *old_select, *new_select;
-	struct bgp_info_pair old_and_new;
+	struct bgp_path_info *old_select, *new_select;
+	struct bgp_path_info_pair old_and_new;
 	struct prefix_evpn *evp;
 	afi_t afi = AFI_L2VPN;
 	safi_t safi = SAFI_EVPN;
@@ -1128,8 +1142,8 @@ static int evpn_route_select_install(struct bgp *bgp, struct bgpevpn *vpn,
 	    && old_select->type == ZEBRA_ROUTE_BGP
 	    && old_select->sub_type == BGP_ROUTE_IMPORTED
 	    && !CHECK_FLAG(rn->flags, BGP_NODE_USER_CLEAR)
-	    && !CHECK_FLAG(old_select->flags, BGP_INFO_ATTR_CHANGED)
-	    && !bgp->addpath_tx_used[afi][safi]) {
+	    && !CHECK_FLAG(old_select->flags, BGP_PATH_ATTR_CHANGED)
+	    && !bgp_addpath_is_addpath_used(&bgp->tx_addpath, afi, safi)) {
 		if (bgp_zebra_has_route_changed(rn, old_select)) {
 			if (old_select->attr->sticky)
 				SET_FLAG(flags, ZEBRA_MACIP_TYPE_STICKY);
@@ -1141,9 +1155,10 @@ static int evpn_route_select_install(struct bgp *bgp, struct bgpevpn *vpn,
 
 			ret = evpn_zebra_install(
 				bgp, vpn, (struct prefix_evpn *)&rn->p,
-				old_select->attr->nexthop, flags);
+				old_select->attr->nexthop, flags,
+				mac_mobility_seqnum(old_select->attr));
 		}
-		UNSET_FLAG(old_select->flags, BGP_INFO_MULTIPATH_CHG);
+		UNSET_FLAG(old_select->flags, BGP_PATH_MULTIPATH_CHG);
 		bgp_zebra_clear_route_change_flags(rn);
 		return ret;
 	}
@@ -1158,11 +1173,11 @@ static int evpn_route_select_install(struct bgp *bgp, struct bgpevpn *vpn,
 		bgp_bump_version(rn);
 
 	if (old_select)
-		bgp_info_unset_flag(rn, old_select, BGP_INFO_SELECTED);
+		bgp_path_info_unset_flag(rn, old_select, BGP_PATH_SELECTED);
 	if (new_select) {
-		bgp_info_set_flag(rn, new_select, BGP_INFO_SELECTED);
-		bgp_info_unset_flag(rn, new_select, BGP_INFO_ATTR_CHANGED);
-		UNSET_FLAG(new_select->flags, BGP_INFO_MULTIPATH_CHG);
+		bgp_path_info_set_flag(rn, new_select, BGP_PATH_SELECTED);
+		bgp_path_info_unset_flag(rn, new_select, BGP_PATH_ATTR_CHANGED);
+		UNSET_FLAG(new_select->flags, BGP_PATH_MULTIPATH_CHG);
 	}
 
 	if (new_select && new_select->type == ZEBRA_ROUTE_BGP
@@ -1177,7 +1192,8 @@ static int evpn_route_select_install(struct bgp *bgp, struct bgpevpn *vpn,
 			SET_FLAG(flags, ZEBRA_MACIP_TYPE_ROUTER_FLAG);
 
 		ret = evpn_zebra_install(bgp, vpn, (struct prefix_evpn *)&rn->p,
-					 new_select->attr->nexthop, flags);
+					 new_select->attr->nexthop, flags,
+					 mac_mobility_seqnum(new_select->attr));
 		/* If an old best existed and it was a "local" route, the only
 		 * reason
 		 * it would be supplanted is due to MAC mobility procedures. So,
@@ -1200,9 +1216,9 @@ static int evpn_route_select_install(struct bgp *bgp, struct bgpevpn *vpn,
 	/* Clear any route change flags. */
 	bgp_zebra_clear_route_change_flags(rn);
 
-	/* Reap old select bgp_info, if it has been removed */
-	if (old_select && CHECK_FLAG(old_select->flags, BGP_INFO_REMOVED))
-		bgp_info_reap(rn, old_select);
+	/* Reap old select bgp_path_info, if it has been removed */
+	if (old_select && CHECK_FLAG(old_select->flags, BGP_PATH_REMOVED))
+		bgp_path_info_reap(rn, old_select);
 
 	return ret;
 }
@@ -1212,21 +1228,22 @@ static int evpn_route_select_install(struct bgp *bgp, struct bgpevpn *vpn,
  */
 static int evpn_route_is_def_gw(struct bgp *bgp, struct bgp_node *rn)
 {
-	struct bgp_info *tmp_ri = NULL;
-	struct bgp_info *local_ri = NULL;
+	struct bgp_path_info *tmp_pi = NULL;
+	struct bgp_path_info *local_pi = NULL;
 
-	local_ri = NULL;
-	for (tmp_ri = rn->info; tmp_ri; tmp_ri = tmp_ri->next) {
-		if (tmp_ri->peer == bgp->peer_self
-		    && tmp_ri->type == ZEBRA_ROUTE_BGP
-		    && tmp_ri->sub_type == BGP_ROUTE_STATIC)
-			local_ri = tmp_ri;
+	local_pi = NULL;
+	for (tmp_pi = bgp_node_get_bgp_path_info(rn); tmp_pi;
+	     tmp_pi = tmp_pi->next) {
+		if (tmp_pi->peer == bgp->peer_self
+		    && tmp_pi->type == ZEBRA_ROUTE_BGP
+		    && tmp_pi->sub_type == BGP_ROUTE_STATIC)
+			local_pi = tmp_pi;
 	}
 
-	if (!local_ri)
+	if (!local_pi)
 		return 0;
 
-	return local_ri->attr->default_gw;
+	return local_pi->attr->default_gw;
 }
 
 
@@ -1235,21 +1252,22 @@ static int evpn_route_is_def_gw(struct bgp *bgp, struct bgp_node *rn)
  */
 static int evpn_route_is_sticky(struct bgp *bgp, struct bgp_node *rn)
 {
-	struct bgp_info *tmp_ri;
-	struct bgp_info *local_ri;
+	struct bgp_path_info *tmp_pi;
+	struct bgp_path_info *local_pi;
 
-	local_ri = NULL;
-	for (tmp_ri = rn->info; tmp_ri; tmp_ri = tmp_ri->next) {
-		if (tmp_ri->peer == bgp->peer_self
-		    && tmp_ri->type == ZEBRA_ROUTE_BGP
-		    && tmp_ri->sub_type == BGP_ROUTE_STATIC)
-			local_ri = tmp_ri;
+	local_pi = NULL;
+	for (tmp_pi = bgp_node_get_bgp_path_info(rn); tmp_pi;
+	     tmp_pi = tmp_pi->next) {
+		if (tmp_pi->peer == bgp->peer_self
+		    && tmp_pi->type == ZEBRA_ROUTE_BGP
+		    && tmp_pi->sub_type == BGP_ROUTE_STATIC)
+			local_pi = tmp_pi;
 	}
 
-	if (!local_ri)
+	if (!local_pi)
 		return 0;
 
-	return local_ri->attr->sticky;
+	return local_pi->attr->sticky;
 }
 
 /*
@@ -1257,20 +1275,17 @@ static int evpn_route_is_sticky(struct bgp *bgp, struct bgp_node *rn)
  * This could be in the ES table or the global table.
  * TODO: handle remote ES (type4) routes as well
  */
-static int update_evpn_type4_route_entry(struct bgp *bgp,
-					 struct evpnes *es,
+static int update_evpn_type4_route_entry(struct bgp *bgp, struct evpnes *es,
 					 afi_t afi, safi_t safi,
-					 struct bgp_node *rn,
-					 struct attr *attr,
-					 int add,
-					 struct bgp_info **ri,
+					 struct bgp_node *rn, struct attr *attr,
+					 int add, struct bgp_path_info **ri,
 					 int *route_changed)
 {
 	char buf[ESI_STR_LEN];
 	char buf1[INET6_ADDRSTRLEN];
-	struct bgp_info *tmp_ri = NULL;
-	struct bgp_info *local_ri = NULL; /* local route entry if any */
-	struct bgp_info *remote_ri = NULL; /* remote route entry if any */
+	struct bgp_path_info *tmp_pi = NULL;
+	struct bgp_path_info *local_pi = NULL;  /* local route entry if any */
+	struct bgp_path_info *remote_pi = NULL; /* remote route entry if any */
 	struct attr *attr_new = NULL;
 	struct prefix_evpn *evp = NULL;
 
@@ -1279,24 +1294,25 @@ static int update_evpn_type4_route_entry(struct bgp *bgp,
 	evp = (struct prefix_evpn *)&rn->p;
 
 	/* locate the local and remote entries if any */
-	for (tmp_ri = rn->info; tmp_ri; tmp_ri = tmp_ri->next) {
-		if (tmp_ri->peer == bgp->peer_self &&
-		    tmp_ri->type == ZEBRA_ROUTE_BGP &&
-		    tmp_ri->sub_type == BGP_ROUTE_STATIC)
-			local_ri = tmp_ri;
-		if (tmp_ri->type == ZEBRA_ROUTE_BGP &&
-		    tmp_ri->sub_type == BGP_ROUTE_IMPORTED &&
-		    CHECK_FLAG(tmp_ri->flags, BGP_INFO_VALID))
-			remote_ri = tmp_ri;
+	for (tmp_pi = bgp_node_get_bgp_path_info(rn); tmp_pi;
+	     tmp_pi = tmp_pi->next) {
+		if (tmp_pi->peer == bgp->peer_self
+		    && tmp_pi->type == ZEBRA_ROUTE_BGP
+		    && tmp_pi->sub_type == BGP_ROUTE_STATIC)
+			local_pi = tmp_pi;
+		if (tmp_pi->type == ZEBRA_ROUTE_BGP
+		    && tmp_pi->sub_type == BGP_ROUTE_IMPORTED
+		    && CHECK_FLAG(tmp_pi->flags, BGP_PATH_VALID))
+			remote_pi = tmp_pi;
 	}
 
 	/* we don't expect to see a remote_ri at this point.
 	 * An ES route has esi + vtep_ip as the key,
 	 * We shouldn't see the same route from any other vtep.
 	 */
-	if (remote_ri) {
+	if (remote_pi) {
 		flog_err(
-			BGP_ERR_ES_INVALID,
+			EC_BGP_ES_INVALID,
 			"%u ERROR: local es route for ESI: %s Vtep %s also learnt from remote",
 			bgp->vrf_id,
 			esi_to_str(&evp->prefix.es_addr.esi, buf, sizeof(buf)),
@@ -1304,46 +1320,47 @@ static int update_evpn_type4_route_entry(struct bgp *bgp,
 		return -1;
 	}
 
-	if (!local_ri && !add)
+	if (!local_pi && !add)
 		return 0;
 
 	/* create or update the entry */
-	if (!local_ri) {
+	if (!local_pi) {
 
 		/* Add or update attribute to hash */
 		attr_new = bgp_attr_intern(attr);
 
 		/* Create new route with its attribute. */
-		tmp_ri = info_make(ZEBRA_ROUTE_BGP, BGP_ROUTE_STATIC,
-				   0, bgp->peer_self, attr_new, rn);
-		SET_FLAG(tmp_ri->flags, BGP_INFO_VALID);
+		tmp_pi = info_make(ZEBRA_ROUTE_BGP, BGP_ROUTE_STATIC, 0,
+				   bgp->peer_self, attr_new, rn);
+		SET_FLAG(tmp_pi->flags, BGP_PATH_VALID);
 
 		/* add the newly created path to the route-node */
-		bgp_info_add(rn, tmp_ri);
+		bgp_path_info_add(rn, tmp_pi);
 	} else {
-		tmp_ri = local_ri;
-		if (attrhash_cmp(tmp_ri->attr, attr)
-		    && !CHECK_FLAG(tmp_ri->flags, BGP_INFO_REMOVED))
+		tmp_pi = local_pi;
+		if (attrhash_cmp(tmp_pi->attr, attr)
+		    && !CHECK_FLAG(tmp_pi->flags, BGP_PATH_REMOVED))
 			*route_changed = 0;
 		else {
 			/* The attribute has changed.
 			 * Add (or update) attribute to hash. */
 			attr_new = bgp_attr_intern(attr);
-			bgp_info_set_flag(rn, tmp_ri, BGP_INFO_ATTR_CHANGED);
+			bgp_path_info_set_flag(rn, tmp_pi,
+					       BGP_PATH_ATTR_CHANGED);
 
 			/* Restore route, if needed. */
-			if (CHECK_FLAG(tmp_ri->flags, BGP_INFO_REMOVED))
-				bgp_info_restore(rn, tmp_ri);
+			if (CHECK_FLAG(tmp_pi->flags, BGP_PATH_REMOVED))
+				bgp_path_info_restore(rn, tmp_pi);
 
 			/* Unintern existing, set to new. */
-			bgp_attr_unintern(&tmp_ri->attr);
-			tmp_ri->attr = attr_new;
-			tmp_ri->uptime = bgp_clock();
+			bgp_attr_unintern(&tmp_pi->attr);
+			tmp_pi->attr = attr_new;
+			tmp_pi->uptime = bgp_clock();
 		}
 	}
 
 	/* Return back the route entry. */
-	*ri = tmp_ri;
+	*ri = tmp_pi;
 	return 0;
 }
 
@@ -1361,7 +1378,7 @@ static int update_evpn_type4_route(struct bgp *bgp,
 	struct attr attr;
 	struct attr *attr_new = NULL;
 	struct bgp_node *rn = NULL;
-	struct bgp_info *ri = NULL;
+	struct bgp_path_info *pi = NULL;
 
 	memset(&attr, 0, sizeof(struct attr));
 
@@ -1379,20 +1396,18 @@ static int update_evpn_type4_route(struct bgp *bgp,
 	rn = bgp_node_get(es->route_table, (struct prefix *)p);
 
 	/* Create or update route entry. */
-	ret = update_evpn_type4_route_entry(bgp, es, afi, safi, rn,
-					    &attr, 1, &ri,
-					    &route_changed);
+	ret = update_evpn_type4_route_entry(bgp, es, afi, safi, rn, &attr, 1,
+					    &pi, &route_changed);
 	if (ret != 0) {
-		flog_err(
-			BGP_ERR_ES_INVALID,
-			"%u ERROR: Failed to updated ES route ESI: %s VTEP %s",
-			bgp->vrf_id,
-			esi_to_str(&p->prefix.es_addr.esi, buf, sizeof(buf)),
-			ipaddr2str(&es->originator_ip, buf1, sizeof(buf1)));
+		flog_err(EC_BGP_ES_INVALID,
+			 "%u ERROR: Failed to updated ES route ESI: %s VTEP %s",
+			 bgp->vrf_id,
+			 esi_to_str(&p->prefix.es_addr.esi, buf, sizeof(buf)),
+			 ipaddr2str(&es->originator_ip, buf1, sizeof(buf1)));
 	}
 
-	assert(ri);
-	attr_new = ri->attr;
+	assert(pi);
+	attr_new = pi->attr;
 
 	/* Perform route selection;
 	 * this is just to set the flags correctly
@@ -1407,14 +1422,12 @@ static int update_evpn_type4_route(struct bgp *bgp,
 	 * Prefix-level) similar to L3VPN routes.
 	 */
 	if (route_changed) {
-		struct bgp_info *global_ri;
+		struct bgp_path_info *global_pi;
 
 		rn = bgp_afi_node_get(bgp->rib[afi][safi], afi, safi,
 				      (struct prefix *)p, &es->prd);
-		update_evpn_type4_route_entry(bgp, es, afi, safi,
-					      rn, attr_new,
-					      1, &global_ri,
-					      &route_changed);
+		update_evpn_type4_route_entry(bgp, es, afi, safi, rn, attr_new,
+					      1, &global_pi, &route_changed);
 
 		/* Schedule for processing and unlock node. */
 		bgp_process(bgp, rn, afi, safi);
@@ -1432,25 +1445,26 @@ static int update_evpn_type5_route_entry(struct bgp *bgp_def,
 					 struct attr *attr, int *route_changed)
 {
 	struct attr *attr_new = NULL;
-	struct bgp_info *ri = NULL;
+	struct bgp_path_info *pi = NULL;
 	mpls_label_t label = MPLS_INVALID_LABEL;
-	struct bgp_info *local_ri = NULL;
-	struct bgp_info *tmp_ri = NULL;
+	struct bgp_path_info *local_pi = NULL;
+	struct bgp_path_info *tmp_pi = NULL;
 
 	*route_changed = 0;
 	/* locate the local route entry if any */
-	for (tmp_ri = rn->info; tmp_ri; tmp_ri = tmp_ri->next) {
-		if (tmp_ri->peer == bgp_def->peer_self
-		    && tmp_ri->type == ZEBRA_ROUTE_BGP
-		    && tmp_ri->sub_type == BGP_ROUTE_STATIC)
-			local_ri = tmp_ri;
+	for (tmp_pi = bgp_node_get_bgp_path_info(rn); tmp_pi;
+	     tmp_pi = tmp_pi->next) {
+		if (tmp_pi->peer == bgp_def->peer_self
+		    && tmp_pi->type == ZEBRA_ROUTE_BGP
+		    && tmp_pi->sub_type == BGP_ROUTE_STATIC)
+			local_pi = tmp_pi;
 	}
 
 	/*
 	 * create a new route entry if one doesn't exist.
 	 * Otherwise see if route attr has changed
 	 */
-	if (!local_ri) {
+	if (!local_pi) {
 
 		/* route has changed as this is the first entry */
 		*route_changed = 1;
@@ -1459,22 +1473,22 @@ static int update_evpn_type5_route_entry(struct bgp *bgp_def,
 		attr_new = bgp_attr_intern(attr);
 
 		/* create the route info from attribute */
-		ri = info_make(ZEBRA_ROUTE_BGP, BGP_ROUTE_STATIC, 0,
+		pi = info_make(ZEBRA_ROUTE_BGP, BGP_ROUTE_STATIC, 0,
 			       bgp_def->peer_self, attr_new, rn);
-		SET_FLAG(ri->flags, BGP_INFO_VALID);
+		SET_FLAG(pi->flags, BGP_PATH_VALID);
 
 		/* Type-5 routes advertise the L3-VNI */
-		bgp_info_extra_get(ri);
+		bgp_path_info_extra_get(pi);
 		vni2label(bgp_vrf->l3vni, &label);
-		memcpy(&ri->extra->label, &label, sizeof(label));
-		ri->extra->num_labels = 1;
+		memcpy(&pi->extra->label, &label, sizeof(label));
+		pi->extra->num_labels = 1;
 
 		/* add the route entry to route node*/
-		bgp_info_add(rn, ri);
+		bgp_path_info_add(rn, pi);
 	} else {
 
-		tmp_ri = local_ri;
-		if (!attrhash_cmp(tmp_ri->attr, attr)) {
+		tmp_pi = local_pi;
+		if (!attrhash_cmp(tmp_pi->attr, attr)) {
 
 			/* attribute changed */
 			*route_changed = 1;
@@ -1482,16 +1496,17 @@ static int update_evpn_type5_route_entry(struct bgp *bgp_def,
 			/* The attribute has changed. */
 			/* Add (or update) attribute to hash. */
 			attr_new = bgp_attr_intern(attr);
-			bgp_info_set_flag(rn, tmp_ri, BGP_INFO_ATTR_CHANGED);
+			bgp_path_info_set_flag(rn, tmp_pi,
+					       BGP_PATH_ATTR_CHANGED);
 
 			/* Restore route, if needed. */
-			if (CHECK_FLAG(tmp_ri->flags, BGP_INFO_REMOVED))
-				bgp_info_restore(rn, tmp_ri);
+			if (CHECK_FLAG(tmp_pi->flags, BGP_PATH_REMOVED))
+				bgp_path_info_restore(rn, tmp_pi);
 
 			/* Unintern existing, set to new. */
-			bgp_attr_unintern(&tmp_ri->attr);
-			tmp_ri->attr = attr_new;
-			tmp_ri->uptime = bgp_clock();
+			bgp_attr_unintern(&tmp_pi->attr);
+			tmp_pi->attr = attr_new;
+			tmp_pi->uptime = bgp_clock();
 		}
 	}
 	return 0;
@@ -1557,11 +1572,12 @@ static int update_evpn_type5_route(struct bgp *bgp_vrf, struct prefix_evpn *evp,
  */
 static int update_evpn_route_entry(struct bgp *bgp, struct bgpevpn *vpn,
 				   afi_t afi, safi_t safi, struct bgp_node *rn,
-				   struct attr *attr, int add, int vni_table,
-				   struct bgp_info **ri, uint8_t flags)
+				   struct attr *attr, int add,
+				   struct bgp_path_info **pi, uint8_t flags,
+				   uint32_t seq)
 {
-	struct bgp_info *tmp_ri;
-	struct bgp_info *local_ri, *remote_ri;
+	struct bgp_path_info *tmp_pi;
+	struct bgp_path_info *local_pi;
 	struct attr *attr_new;
 	mpls_label_t label[BGP_MAX_LABELS];
 	uint32_t num_labels = 1;
@@ -1569,57 +1585,32 @@ static int update_evpn_route_entry(struct bgp *bgp, struct bgpevpn *vpn,
 	uint8_t sticky = 0;
 	struct prefix_evpn *evp;
 
-	*ri = NULL;
+	*pi = NULL;
 	evp = (struct prefix_evpn *)&rn->p;
 	memset(&label, 0, sizeof(label));
 
-	/* See if this is an update of an existing route, or a new add. Also,
-	 * identify if already known from remote, and if so, the one with the
-	 * highest sequence number; this is only when adding to the VNI routing
-	 * table.
-	 */
-	local_ri = remote_ri = NULL;
-	for (tmp_ri = rn->info; tmp_ri; tmp_ri = tmp_ri->next) {
-		if (tmp_ri->peer == bgp->peer_self
-		    && tmp_ri->type == ZEBRA_ROUTE_BGP
-		    && tmp_ri->sub_type == BGP_ROUTE_STATIC)
-			local_ri = tmp_ri;
-		if (vni_table) {
-			if (tmp_ri->type == ZEBRA_ROUTE_BGP
-			    && tmp_ri->sub_type == BGP_ROUTE_IMPORTED
-			    && CHECK_FLAG(tmp_ri->flags, BGP_INFO_VALID)) {
-				if (!remote_ri)
-					remote_ri = tmp_ri;
-				else if (mac_mobility_seqnum(tmp_ri->attr)
-					 > mac_mobility_seqnum(remote_ri->attr))
-					remote_ri = tmp_ri;
-			}
-		}
+	/* See if this is an update of an existing route, or a new add. */
+	local_pi = NULL;
+	for (tmp_pi = bgp_node_get_bgp_path_info(rn); tmp_pi;
+	     tmp_pi = tmp_pi->next) {
+		if (tmp_pi->peer == bgp->peer_self
+		    && tmp_pi->type == ZEBRA_ROUTE_BGP
+		    && tmp_pi->sub_type == BGP_ROUTE_STATIC)
+			local_pi = tmp_pi;
 	}
 
 	/* If route doesn't exist already, create a new one, if told to.
 	 * Otherwise act based on whether the attributes of the route have
 	 * changed or not.
 	 */
-	if (!local_ri && !add)
+	if (!local_pi && !add)
 		return 0;
 
-	if (!local_ri) {
-		/* When learnt locally for the first time but already known from
-		 * remote, we have to initiate appropriate MAC mobility steps.
-		 * This is applicable when updating the VNI routing table.
-		 * We need to skip mobility steps for g/w macs (local mac on g/w
-		 * SVI) advertised in EVPN.
-		 * This will ensure that local routes are preferred for g/w macs
-		 */
-		if (remote_ri && !CHECK_FLAG(flags, ZEBRA_MACIP_TYPE_GW)) {
-			uint32_t cur_seqnum;
+	/* For non-GW MACs, update MAC mobility seq number, if needed. */
+	if (seq && !CHECK_FLAG(flags, ZEBRA_MACIP_TYPE_GW))
+		add_mac_mobility_to_attr(seq, attr);
 
-			/* Add MM extended community to route. */
-			cur_seqnum = mac_mobility_seqnum(remote_ri->attr);
-			add_mac_mobility_to_attr(cur_seqnum + 1, attr);
-		}
-
+	if (!local_pi) {
 		/* Add (or update) attribute to hash. */
 		attr_new = bgp_attr_intern(attr);
 
@@ -1629,10 +1620,10 @@ static int update_evpn_route_entry(struct bgp *bgp, struct bgpevpn *vpn,
 		attr_new->sticky = sticky;
 
 		/* Create new route with its attribute. */
-		tmp_ri = info_make(ZEBRA_ROUTE_BGP, BGP_ROUTE_STATIC, 0,
+		tmp_pi = info_make(ZEBRA_ROUTE_BGP, BGP_ROUTE_STATIC, 0,
 				   bgp->peer_self, attr_new, rn);
-		SET_FLAG(tmp_ri->flags, BGP_INFO_VALID);
-		bgp_info_extra_get(tmp_ri);
+		SET_FLAG(tmp_pi->flags, BGP_PATH_VALID);
+		bgp_path_info_extra_get(tmp_pi);
 
 		/* The VNI goes into the 'label' field of the route */
 		vni2label(vpn->vni, &label[0]);
@@ -1652,13 +1643,13 @@ static int update_evpn_route_entry(struct bgp *bgp, struct bgpevpn *vpn,
 			}
 		}
 
-		memcpy(&tmp_ri->extra->label, label, sizeof(label));
-		tmp_ri->extra->num_labels = num_labels;
-		bgp_info_add(rn, tmp_ri);
+		memcpy(&tmp_pi->extra->label, label, sizeof(label));
+		tmp_pi->extra->num_labels = num_labels;
+		bgp_path_info_add(rn, tmp_pi);
 	} else {
-		tmp_ri = local_ri;
-		if (attrhash_cmp(tmp_ri->attr, attr)
-		    && !CHECK_FLAG(tmp_ri->flags, BGP_INFO_REMOVED))
+		tmp_pi = local_pi;
+		if (attrhash_cmp(tmp_pi->attr, attr)
+		    && !CHECK_FLAG(tmp_pi->flags, BGP_PATH_REMOVED))
 			route_change = 0;
 		else {
 			/*
@@ -1677,28 +1668,87 @@ static int update_evpn_route_entry(struct bgp *bgp, struct bgpevpn *vpn,
 					num_labels++;
 				}
 			}
-			memcpy(&tmp_ri->extra->label, label, sizeof(label));
-			tmp_ri->extra->num_labels = num_labels;
+			memcpy(&tmp_pi->extra->label, label, sizeof(label));
+			tmp_pi->extra->num_labels = num_labels;
 
 			/* The attribute has changed. */
 			/* Add (or update) attribute to hash. */
 			attr_new = bgp_attr_intern(attr);
-			bgp_info_set_flag(rn, tmp_ri, BGP_INFO_ATTR_CHANGED);
+			bgp_path_info_set_flag(rn, tmp_pi,
+					       BGP_PATH_ATTR_CHANGED);
+
+			/* Extract MAC mobility sequence number, if any. */
+			attr_new->mm_seqnum =
+				bgp_attr_mac_mobility_seqnum(attr_new, &sticky);
+			attr_new->sticky = sticky;
 
 			/* Restore route, if needed. */
-			if (CHECK_FLAG(tmp_ri->flags, BGP_INFO_REMOVED))
-				bgp_info_restore(rn, tmp_ri);
+			if (CHECK_FLAG(tmp_pi->flags, BGP_PATH_REMOVED))
+				bgp_path_info_restore(rn, tmp_pi);
 
 			/* Unintern existing, set to new. */
-			bgp_attr_unintern(&tmp_ri->attr);
-			tmp_ri->attr = attr_new;
-			tmp_ri->uptime = bgp_clock();
+			bgp_attr_unintern(&tmp_pi->attr);
+			tmp_pi->attr = attr_new;
+			tmp_pi->uptime = bgp_clock();
 		}
 	}
 
 	/* Return back the route entry. */
-	*ri = tmp_ri;
+	*pi = tmp_pi;
 	return route_change;
+}
+
+/*
+ * If the local route was not selected evict it and tell zebra to re-add
+ * the best remote dest.
+ *
+ * Typically a local path added by zebra is expected to be selected as
+ * best. In which case when a remote path wins as best (later)
+ * evpn_route_select_install itself evicts the older-local-best path.
+ *
+ * However if bgp's add and zebra's add cross paths (race condition) it
+ * is possible that the local path is no longer the "older" best path.
+ * It is a path that was never designated as best and hence requires
+ * additional handling to prevent bgp from injecting and holding on to a
+ * non-best local path.
+ */
+static void evpn_cleanup_local_non_best_route(struct bgp *bgp,
+					      struct bgpevpn *vpn,
+					      struct bgp_node *rn,
+					      struct bgp_path_info *local_pi)
+{
+	struct bgp_path_info *tmp_pi;
+	struct bgp_path_info *curr_select = NULL;
+	uint8_t flags = 0;
+	char buf[PREFIX_STRLEN];
+
+	/* local path was not picked as the winner; kick it out */
+	if (bgp_debug_zebra(NULL)) {
+		zlog_debug("evicting local evpn prefix %s as remote won",
+					prefix2str(&rn->p, buf, sizeof(buf)));
+	}
+	evpn_delete_old_local_route(bgp, vpn, rn, local_pi);
+	bgp_path_info_reap(rn, local_pi);
+
+	/* tell zebra to re-add the best remote path */
+	for (tmp_pi = bgp_node_get_bgp_path_info(rn);
+	     tmp_pi; tmp_pi = tmp_pi->next) {
+		if (CHECK_FLAG(tmp_pi->flags, BGP_PATH_SELECTED)) {
+			curr_select = tmp_pi;
+			break;
+		}
+	}
+	if (curr_select &&
+	    curr_select->type == ZEBRA_ROUTE_BGP
+	    && curr_select->sub_type == BGP_ROUTE_IMPORTED) {
+		if (curr_select->attr->sticky)
+			SET_FLAG(flags, ZEBRA_MACIP_TYPE_STICKY);
+		if (curr_select->attr->default_gw)
+			SET_FLAG(flags, ZEBRA_MACIP_TYPE_GW);
+		evpn_zebra_install(bgp, vpn, (struct prefix_evpn *)&rn->p,
+				   curr_select->attr->nexthop, flags,
+				   mac_mobility_seqnum(curr_select->attr));
+	}
 }
 
 /*
@@ -1706,13 +1756,14 @@ static int update_evpn_route_entry(struct bgp *bgp, struct bgpevpn *vpn,
  * and schedule for processing.
  */
 static int update_evpn_route(struct bgp *bgp, struct bgpevpn *vpn,
-			     struct prefix_evpn *p, uint8_t flags)
+			     struct prefix_evpn *p, uint8_t flags,
+			     uint32_t seq)
 {
 	struct bgp_node *rn;
 	struct attr attr;
 	struct attr *attr_new;
 	int add_l3_ecomm = 0;
-	struct bgp_info *ri;
+	struct bgp_path_info *pi;
 	afi_t afi = AFI_L2VPN;
 	safi_t safi = SAFI_EVPN;
 	int route_change;
@@ -1758,14 +1809,27 @@ static int update_evpn_route(struct bgp *bgp, struct bgpevpn *vpn,
 
 	/* Create or update route entry. */
 	route_change = update_evpn_route_entry(bgp, vpn, afi, safi, rn, &attr,
-					       1, 1, &ri, flags);
-	assert(ri);
-	attr_new = ri->attr;
+					       1, &pi, flags, seq);
+	assert(pi);
+	attr_new = pi->attr;
 
+	/* lock ri to prevent freeing in evpn_route_select_install */
+	bgp_path_info_lock(pi);
 	/* Perform route selection; this is just to set the flags correctly
 	 * as local route in the VNI always wins.
 	 */
 	evpn_route_select_install(bgp, vpn, rn);
+	/*
+	 * If the new local route was not selected evict it and tell zebra
+	 * to re-add the best remote dest. BGP doesn't retain non-best local
+	 * routes.
+	 */
+	if (!CHECK_FLAG(pi->flags, BGP_PATH_SELECTED)) {
+		route_change = 0;
+		evpn_cleanup_local_non_best_route(bgp, vpn, rn, pi);
+	}
+	bgp_path_info_unlock(pi);
+
 	bgp_unlock_node(rn);
 
 	/* If this is a new route or some attribute has changed, export the
@@ -1774,12 +1838,12 @@ static int update_evpn_route(struct bgp *bgp, struct bgpevpn *vpn,
 	 * Prefix-level) similar to L3VPN routes.
 	 */
 	if (route_change) {
-		struct bgp_info *global_ri;
+		struct bgp_path_info *global_pi;
 
 		rn = bgp_afi_node_get(bgp->rib[afi][safi], afi, safi,
 				      (struct prefix *)p, &vpn->prd);
-		update_evpn_route_entry(bgp, vpn, afi, safi, rn, attr_new, 1, 0,
-					&global_ri, flags);
+		update_evpn_route_entry(bgp, vpn, afi, safi, rn, attr_new, 1,
+					&global_pi, flags, seq);
 
 		/* Schedule for processing and unlock node. */
 		bgp_process(bgp, rn, afi, safi);
@@ -1796,27 +1860,27 @@ static int update_evpn_route(struct bgp *bgp, struct bgpevpn *vpn,
  * Delete EVPN route entry.
  * The entry can be in ESI/VNI table or the global table.
  */
-static void delete_evpn_route_entry(struct bgp *bgp,
-				    afi_t afi, safi_t safi,
+static void delete_evpn_route_entry(struct bgp *bgp, afi_t afi, safi_t safi,
 				    struct bgp_node *rn,
-				    struct bgp_info **ri)
+				    struct bgp_path_info **pi)
 {
-	struct bgp_info *tmp_ri;
+	struct bgp_path_info *tmp_pi;
 
-	*ri = NULL;
+	*pi = NULL;
 
 	/* Now, find matching route. */
-	for (tmp_ri = rn->info; tmp_ri; tmp_ri = tmp_ri->next)
-		if (tmp_ri->peer == bgp->peer_self
-		    && tmp_ri->type == ZEBRA_ROUTE_BGP
-		    && tmp_ri->sub_type == BGP_ROUTE_STATIC)
+	for (tmp_pi = bgp_node_get_bgp_path_info(rn); tmp_pi;
+	     tmp_pi = tmp_pi->next)
+		if (tmp_pi->peer == bgp->peer_self
+		    && tmp_pi->type == ZEBRA_ROUTE_BGP
+		    && tmp_pi->sub_type == BGP_ROUTE_STATIC)
 			break;
 
-	*ri = tmp_ri;
+	*pi = tmp_pi;
 
 	/* Mark route for delete. */
-	if (tmp_ri)
-		bgp_info_delete(rn, tmp_ri);
+	if (tmp_pi)
+		bgp_path_info_delete(rn, tmp_pi);
 }
 
 
@@ -1828,7 +1892,7 @@ static int delete_evpn_type4_route(struct bgp *bgp,
 {
 	afi_t afi = AFI_L2VPN;
 	safi_t safi = SAFI_EVPN;
-	struct bgp_info *ri;
+	struct bgp_path_info *pi;
 	struct bgp_node *rn = NULL; /* rn in esi table */
 	struct bgp_node *global_rn = NULL; /* rn in global table */
 
@@ -1848,13 +1912,12 @@ static int delete_evpn_type4_route(struct bgp *bgp,
 	if (global_rn) {
 
 		/* Delete route entry in the global EVPN table. */
-		delete_evpn_route_entry(bgp, afi, safi,
-					global_rn, &ri);
+		delete_evpn_route_entry(bgp, afi, safi, global_rn, &pi);
 
 		/* Schedule for processing - withdraws to peers happen from
 		 * this table.
 		 */
-		if (ri)
+		if (pi)
 			bgp_process(bgp, global_rn, afi, safi);
 		bgp_unlock_node(global_rn);
 	}
@@ -1863,9 +1926,9 @@ static int delete_evpn_type4_route(struct bgp *bgp,
 	 * Delete route entry in the ESI route table.
 	 * This can just be removed.
 	 */
-	delete_evpn_route_entry(bgp, afi, safi, rn, &ri);
-	if (ri)
-		bgp_info_reap(rn, ri);
+	delete_evpn_route_entry(bgp, afi, safi, rn, &pi);
+	if (pi)
+		bgp_path_info_reap(rn, pi);
 	bgp_unlock_node(rn);
 	return 0;
 }
@@ -1876,7 +1939,7 @@ static int delete_evpn_type5_route(struct bgp *bgp_vrf, struct prefix_evpn *evp)
 	afi_t afi = AFI_L2VPN;
 	safi_t safi = SAFI_EVPN;
 	struct bgp_node *rn = NULL;
-	struct bgp_info *ri = NULL;
+	struct bgp_path_info *pi = NULL;
 	struct bgp *bgp_def = NULL; /* default bgp instance */
 
 	bgp_def = bgp_get_default();
@@ -1889,8 +1952,8 @@ static int delete_evpn_type5_route(struct bgp *bgp_vrf, struct prefix_evpn *evp)
 	if (!rn)
 		return 0;
 
-	delete_evpn_route_entry(bgp_def, afi, safi, rn, &ri);
-	if (ri)
+	delete_evpn_route_entry(bgp_def, afi, safi, rn, &pi);
+	if (pi)
 		bgp_process(bgp_def, rn, afi, safi);
 	bgp_unlock_node(rn);
 	return 0;
@@ -1904,7 +1967,7 @@ static int delete_evpn_route(struct bgp *bgp, struct bgpevpn *vpn,
 			     struct prefix_evpn *p)
 {
 	struct bgp_node *rn, *global_rn;
-	struct bgp_info *ri;
+	struct bgp_path_info *pi;
 	afi_t afi = AFI_L2VPN;
 	safi_t safi = SAFI_EVPN;
 
@@ -1925,21 +1988,23 @@ static int delete_evpn_route(struct bgp *bgp, struct bgpevpn *vpn,
 					(struct prefix *)p, &vpn->prd);
 	if (global_rn) {
 		/* Delete route entry in the global EVPN table. */
-		delete_evpn_route_entry(bgp, afi, safi, global_rn, &ri);
+		delete_evpn_route_entry(bgp, afi, safi, global_rn, &pi);
 
 		/* Schedule for processing - withdraws to peers happen from
 		 * this table.
 		 */
-		if (ri)
+		if (pi)
 			bgp_process(bgp, global_rn, afi, safi);
 		bgp_unlock_node(global_rn);
 	}
 
 	/* Delete route entry in the VNI route table. This can just be removed.
 	 */
-	delete_evpn_route_entry(bgp, afi, safi, rn, &ri);
-	if (ri)
-		bgp_info_reap(rn, ri);
+	delete_evpn_route_entry(bgp, afi, safi, rn, &pi);
+	if (pi) {
+		bgp_path_info_reap(rn, pi);
+		evpn_route_select_install(bgp, vpn, rn);
+	}
 	bgp_unlock_node(rn);
 
 	return 0;
@@ -1954,58 +2019,14 @@ static int update_all_type2_routes(struct bgp *bgp, struct bgpevpn *vpn)
 	afi_t afi;
 	safi_t safi;
 	struct bgp_node *rn;
-	struct bgp_info *ri;
+	struct bgp_path_info *pi, *tmp_pi;
 	struct attr attr;
-	struct attr attr_sticky;
-	struct attr attr_def_gw;
-	struct attr attr_ip6_ll;
 	struct attr *attr_new;
+	uint32_t seq;
 	int add_l3_ecomm = 0;
 
 	afi = AFI_L2VPN;
 	safi = SAFI_EVPN;
-	memset(&attr, 0, sizeof(struct attr));
-	memset(&attr_sticky, 0, sizeof(struct attr));
-	memset(&attr_def_gw, 0, sizeof(struct attr));
-	memset(&attr_ip6_ll, 0, sizeof(struct attr));
-
-	/* Build path-attribute - multiple type-2 routes for this VNI will share
-	 * the same path attribute, but we need separate structures for sticky
-	 * MACs, default gateway and IPv6 link-local addresses (no L3 RT/RMAC).
-	 */
-	bgp_attr_default_set(&attr, BGP_ORIGIN_IGP);
-	bgp_attr_default_set(&attr_sticky, BGP_ORIGIN_IGP);
-	bgp_attr_default_set(&attr_def_gw, BGP_ORIGIN_IGP);
-	attr.nexthop = vpn->originator_ip;
-	attr.mp_nexthop_global_in = vpn->originator_ip;
-	attr.mp_nexthop_len = BGP_ATTR_NHLEN_IPV4;
-	bgpevpn_get_rmac(vpn, &attr.rmac);
-	attr_sticky.nexthop = vpn->originator_ip;
-	attr_sticky.mp_nexthop_global_in = vpn->originator_ip;
-	attr_sticky.mp_nexthop_len = BGP_ATTR_NHLEN_IPV4;
-	attr_sticky.sticky = 1;
-	bgpevpn_get_rmac(vpn, &attr_sticky.rmac);
-	attr_def_gw.nexthop = vpn->originator_ip;
-	attr_def_gw.mp_nexthop_global_in = vpn->originator_ip;
-	attr_def_gw.mp_nexthop_len = BGP_ATTR_NHLEN_IPV4;
-	attr_def_gw.default_gw = 1;
-	bgpevpn_get_rmac(vpn, &attr_def_gw.rmac);
-	bgp_attr_default_set(&attr_ip6_ll, BGP_ORIGIN_IGP);
-	attr_ip6_ll.nexthop = vpn->originator_ip;
-	attr_ip6_ll.mp_nexthop_global_in = vpn->originator_ip;
-	attr_ip6_ll.mp_nexthop_len = BGP_ATTR_NHLEN_IPV4;
-
-	/* Add L3 VNI RTs and RMAC for non IPv6 link-local attributes if
-	 * using L3 VNI for type-2 routes also.
-	 */
-	if (CHECK_FLAG(vpn->flags, VNI_FLAG_USE_TWO_LABELS) &&
-	    bgpevpn_get_l3vni(vpn))
-		add_l3_ecomm = 1;
-
-	build_evpn_route_extcomm(vpn, &attr, add_l3_ecomm);
-	build_evpn_route_extcomm(vpn, &attr_sticky, add_l3_ecomm);
-	build_evpn_route_extcomm(vpn, &attr_def_gw, add_l3_ecomm);
-	build_evpn_route_extcomm(vpn, &attr_ip6_ll, 0);
 
 	/* Walk this VNI's route table and update local type-2 routes. For any
 	 * routes updated, update corresponding entry in the global table too.
@@ -2014,62 +2035,84 @@ static int update_all_type2_routes(struct bgp *bgp, struct bgpevpn *vpn)
 	     rn = bgp_route_next(rn)) {
 		struct prefix_evpn *evp = (struct prefix_evpn *)&rn->p;
 		struct bgp_node *rd_rn;
-		struct bgp_info *global_ri;
+		struct bgp_path_info *global_pi;
 
 		if (evp->prefix.route_type != BGP_EVPN_MAC_IP_ROUTE)
 			continue;
 
-		if (is_evpn_prefix_ipaddr_v6(evp) &&
-		    IN6_IS_ADDR_LINKLOCAL(&evp->prefix.macip_addr.ip.ipaddr_v6))
-			update_evpn_route_entry(bgp, vpn, afi, safi, rn,
-						&attr_ip6_ll, 0, 1, &ri, 0);
-		else {
-			if (evpn_route_is_sticky(bgp, rn))
-				update_evpn_route_entry(bgp, vpn, afi, safi, rn,
-							&attr_sticky, 0, 1, &ri,
-							0);
-			else if (evpn_route_is_def_gw(bgp, rn)) {
-				if (is_evpn_prefix_ipaddr_v6(evp))
-					attr_def_gw.router_flag = 1;
-				update_evpn_route_entry(bgp, vpn, afi, safi, rn,
-							&attr_def_gw, 0, 1, &ri,
-							0);
-			} else
-				update_evpn_route_entry(bgp, vpn, afi, safi, rn,
-							&attr, 0, 1, &ri, 0);
+		/* Identify local route. */
+		for (tmp_pi = bgp_node_get_bgp_path_info(rn); tmp_pi;
+		     tmp_pi = tmp_pi->next) {
+			if (tmp_pi->peer == bgp->peer_self
+			    && tmp_pi->type == ZEBRA_ROUTE_BGP
+			    && tmp_pi->sub_type == BGP_ROUTE_STATIC)
+				break;
 		}
 
-		/* If a local route exists for this prefix, we need to update
-		 * the global routing table too.
-		 */
-		if (!ri)
+		if (!tmp_pi)
 			continue;
 
+		/*
+		 * Build attribute per local route as the MAC mobility and
+		 * some other values could differ for different routes. The
+		 * attributes will be shared in the hash table.
+		 */
+		bgp_attr_default_set(&attr, BGP_ORIGIN_IGP);
+		attr.nexthop = vpn->originator_ip;
+		attr.mp_nexthop_global_in = vpn->originator_ip;
+		attr.mp_nexthop_len = BGP_ATTR_NHLEN_IPV4;
+		bgpevpn_get_rmac(vpn, &attr.rmac);
+
+		if (evpn_route_is_sticky(bgp, rn))
+			attr.sticky = 1;
+		else if (evpn_route_is_def_gw(bgp, rn)) {
+			attr.default_gw = 1;
+			if (is_evpn_prefix_ipaddr_v6(evp))
+				attr.router_flag = 1;
+		}
+
+		/* Add L3 VNI RTs and RMAC for non IPv6 link-local if
+		 * using L3 VNI for type-2 routes also.
+		 */
+		if ((is_evpn_prefix_ipaddr_v4(evp) ||
+		     !IN6_IS_ADDR_LINKLOCAL(
+			&evp->prefix.macip_addr.ip.ipaddr_v6)) &&
+		    CHECK_FLAG(vpn->flags, VNI_FLAG_USE_TWO_LABELS) &&
+		    bgpevpn_get_l3vni(vpn))
+			add_l3_ecomm = 1;
+
+		/* Set up extended community. */
+		build_evpn_route_extcomm(vpn, &attr, add_l3_ecomm);
+
+		seq = mac_mobility_seqnum(tmp_pi->attr);
+
+		/* Update the route entry. */
+		update_evpn_route_entry(bgp, vpn, afi, safi, rn, &attr, 0, &pi,
+					0, seq);
+
 		/* Perform route selection; this is just to set the flags
-		 * correctly
-		 * as local route in the VNI always wins.
+		 * correctly as local route in the VNI always wins.
 		 */
 		evpn_route_select_install(bgp, vpn, rn);
 
-		attr_new = ri->attr;
+		attr_new = pi->attr;
 
 		/* Update route in global routing table. */
 		rd_rn = bgp_afi_node_get(bgp->rib[afi][safi], afi, safi,
 					 (struct prefix *)evp, &vpn->prd);
 		assert(rd_rn);
 		update_evpn_route_entry(bgp, vpn, afi, safi, rd_rn, attr_new, 0,
-					0, &global_ri, 0);
+					&global_pi, 0,
+					mac_mobility_seqnum(attr_new));
 
 		/* Schedule for processing and unlock node. */
 		bgp_process(bgp, rd_rn, afi, safi);
 		bgp_unlock_node(rd_rn);
-	}
 
-	/* Unintern temporary. */
-	aspath_unintern(&attr.aspath);
-	aspath_unintern(&attr_sticky.aspath);
-	aspath_unintern(&attr_def_gw.aspath);
-	aspath_unintern(&attr_ip6_ll.aspath);
+		/* Unintern temporary. */
+		aspath_unintern(&attr.aspath);
+
+	}
 
 	return 0;
 }
@@ -2084,22 +2127,22 @@ static int delete_global_type2_routes(struct bgp *bgp, struct bgpevpn *vpn)
 	safi_t safi;
 	struct bgp_node *rdrn, *rn;
 	struct bgp_table *table;
-	struct bgp_info *ri;
+	struct bgp_path_info *pi;
 
 	afi = AFI_L2VPN;
 	safi = SAFI_EVPN;
 
 	rdrn = bgp_node_lookup(bgp->rib[afi][safi], (struct prefix *)&vpn->prd);
-	if (rdrn && rdrn->info) {
-		table = (struct bgp_table *)rdrn->info;
+	if (rdrn && bgp_node_has_bgp_path_info_data(rdrn)) {
+		table = bgp_node_get_bgp_table_info(rdrn);
 		for (rn = bgp_table_top(table); rn; rn = bgp_route_next(rn)) {
 			struct prefix_evpn *evp = (struct prefix_evpn *)&rn->p;
 
 			if (evp->prefix.route_type != BGP_EVPN_MAC_IP_ROUTE)
 				continue;
 
-			delete_evpn_route_entry(bgp, afi, safi, rn, &ri);
-			if (ri)
+			delete_evpn_route_entry(bgp, afi, safi, rn, &pi);
+			if (pi)
 				bgp_process(bgp, rn, afi, safi);
 		}
 	}
@@ -2120,7 +2163,7 @@ static int delete_all_type2_routes(struct bgp *bgp, struct bgpevpn *vpn)
 	afi_t afi;
 	safi_t safi;
 	struct bgp_node *rn;
-	struct bgp_info *ri;
+	struct bgp_path_info *pi;
 
 	afi = AFI_L2VPN;
 	safi = SAFI_EVPN;
@@ -2139,11 +2182,11 @@ static int delete_all_type2_routes(struct bgp *bgp, struct bgpevpn *vpn)
 		if (evp->prefix.route_type != BGP_EVPN_MAC_IP_ROUTE)
 			continue;
 
-		delete_evpn_route_entry(bgp, afi, safi, rn, &ri);
+		delete_evpn_route_entry(bgp, afi, safi, rn, &pi);
 
 		/* Route entry in local table gets deleted immediately. */
-		if (ri)
-			bgp_info_reap(rn, ri);
+		if (pi)
+			bgp_path_info_reap(rn, pi);
 	}
 
 	return 0;
@@ -2155,15 +2198,15 @@ static int delete_all_type2_routes(struct bgp *bgp, struct bgpevpn *vpn)
 static int delete_all_es_routes(struct bgp *bgp, struct evpnes *es)
 {
 	struct bgp_node *rn;
-	struct bgp_info *ri, *nextri;
+	struct bgp_path_info *pi, *nextpi;
 
 	/* Walk this ES's route table and delete all routes. */
 	for (rn = bgp_table_top(es->route_table); rn;
 	     rn = bgp_route_next(rn)) {
-		for (ri = rn->info; (ri != NULL) && (nextri = ri->next, 1);
-		     ri = nextri) {
-			bgp_info_delete(rn, ri);
-			bgp_info_reap(rn, ri);
+		for (pi = bgp_node_get_bgp_path_info(rn);
+		     (pi != NULL) && (nextpi = pi->next, 1); pi = nextpi) {
+			bgp_path_info_delete(rn, pi);
+			bgp_path_info_reap(rn, pi);
 		}
 	}
 
@@ -2176,15 +2219,15 @@ static int delete_all_es_routes(struct bgp *bgp, struct evpnes *es)
 static int delete_all_vni_routes(struct bgp *bgp, struct bgpevpn *vpn)
 {
 	struct bgp_node *rn;
-	struct bgp_info *ri, *nextri;
+	struct bgp_path_info *pi, *nextpi;
 
 	/* Walk this VNI's route table and delete all routes. */
 	for (rn = bgp_table_top(vpn->route_table); rn;
 	     rn = bgp_route_next(rn)) {
-		for (ri = rn->info; (ri != NULL) && (nextri = ri->next, 1);
-		     ri = nextri) {
-			bgp_info_delete(rn, ri);
-			bgp_info_reap(rn, ri);
+		for (pi = bgp_node_get_bgp_path_info(rn);
+		     (pi != NULL) && (nextpi = pi->next, 1); pi = nextpi) {
+			bgp_path_info_delete(rn, pi);
+			bgp_path_info_reap(rn, pi);
 		}
 	}
 
@@ -2204,11 +2247,15 @@ static int update_routes_for_vni(struct bgp *bgp, struct bgpevpn *vpn)
 
 	/* Update and advertise the type-3 route (only one) followed by the
 	 * locally learnt type-2 routes (MACIP) - for this VNI.
+	 *
+	 * RT-3 only if doing head-end replication
 	 */
-	build_evpn_type3_prefix(&p, vpn->originator_ip);
-	ret = update_evpn_route(bgp, vpn, &p, 0);
-	if (ret)
-		return ret;
+	if (bgp->vxlan_flood_ctrl == VXLAN_FLOOD_HEAD_END_REPL) {
+		build_evpn_type3_prefix(&p, vpn->originator_ip);
+		ret = update_evpn_route(bgp, vpn, &p, 0, 0);
+		if (ret)
+			return ret;
+	}
 
 	return update_all_type2_routes(bgp, vpn);
 }
@@ -2227,9 +2274,9 @@ static int delete_routes_for_es(struct bgp *bgp, struct evpnes *es)
 	build_evpn_type4_prefix(&p, &es->esi, es->originator_ip.ipaddr_v4);
 	ret = delete_evpn_type4_route(bgp, es, &p);
 	if (ret) {
-		flog_err(BGP_ERR_EVPN_ROUTE_DELETE,
-			  "%u failed to delete type-4 route for ESI %s",
-			  bgp->vrf_id, esi_to_str(&es->esi, buf, sizeof(buf)));
+		flog_err(EC_BGP_EVPN_ROUTE_DELETE,
+			 "%u failed to delete type-4 route for ESI %s",
+			 bgp->vrf_id, esi_to_str(&es->esi, buf, sizeof(buf)));
 	}
 
 	/* Delete all routes from per ES table */
@@ -2299,14 +2346,13 @@ static int handle_tunnel_ip_change(struct bgp *bgp, struct bgpevpn *vpn,
 }
 
 /* Install EVPN route entry in ES */
-static int install_evpn_route_entry_in_es(struct bgp *bgp,
-					  struct evpnes *es,
+static int install_evpn_route_entry_in_es(struct bgp *bgp, struct evpnes *es,
 					  struct prefix_evpn *p,
-					  struct bgp_info *parent_ri)
+					  struct bgp_path_info *parent_pi)
 {
 	int ret = 0;
 	struct bgp_node *rn = NULL;
-	struct bgp_info *ri = NULL;
+	struct bgp_path_info *pi = NULL;
 	struct attr *attr_new = NULL;
 
 	/* Create (or fetch) route within the VNI.
@@ -2315,44 +2361,44 @@ static int install_evpn_route_entry_in_es(struct bgp *bgp,
 	rn = bgp_node_get(es->route_table, (struct prefix *)p);
 
 	/* Check if route entry is already present. */
-	for (ri = rn->info; ri; ri = ri->next)
-		if (ri->extra &&
-		    (struct bgp_info *)ri->extra->parent == parent_ri)
+	for (pi = bgp_node_get_bgp_path_info(rn); pi; pi = pi->next)
+		if (pi->extra
+		    && (struct bgp_path_info *)pi->extra->parent == parent_pi)
 			break;
 
-	if (!ri) {
+	if (!pi) {
 		/* Add (or update) attribute to hash. */
-		attr_new = bgp_attr_intern(parent_ri->attr);
+		attr_new = bgp_attr_intern(parent_pi->attr);
 
 		/* Create new route with its attribute. */
-		ri = info_make(parent_ri->type, BGP_ROUTE_IMPORTED, 0,
-			       parent_ri->peer, attr_new, rn);
-		SET_FLAG(ri->flags, BGP_INFO_VALID);
-		bgp_info_extra_get(ri);
-		ri->extra->parent = parent_ri;
-		bgp_info_add(rn, ri);
+		pi = info_make(parent_pi->type, BGP_ROUTE_IMPORTED, 0,
+			       parent_pi->peer, attr_new, rn);
+		SET_FLAG(pi->flags, BGP_PATH_VALID);
+		bgp_path_info_extra_get(pi);
+		pi->extra->parent = parent_pi;
+		bgp_path_info_add(rn, pi);
 	} else {
-		if (attrhash_cmp(ri->attr, parent_ri->attr)
-		    && !CHECK_FLAG(ri->flags, BGP_INFO_REMOVED)) {
+		if (attrhash_cmp(pi->attr, parent_pi->attr)
+		    && !CHECK_FLAG(pi->flags, BGP_PATH_REMOVED)) {
 			bgp_unlock_node(rn);
 			return 0;
 		}
 		/* The attribute has changed. */
 		/* Add (or update) attribute to hash. */
-		attr_new = bgp_attr_intern(parent_ri->attr);
+		attr_new = bgp_attr_intern(parent_pi->attr);
 
 		/* Restore route, if needed. */
-		if (CHECK_FLAG(ri->flags, BGP_INFO_REMOVED))
-			bgp_info_restore(rn, ri);
+		if (CHECK_FLAG(pi->flags, BGP_PATH_REMOVED))
+			bgp_path_info_restore(rn, pi);
 
 		/* Mark if nexthop has changed. */
-		if (!IPV4_ADDR_SAME(&ri->attr->nexthop, &attr_new->nexthop))
-			SET_FLAG(ri->flags, BGP_INFO_IGP_CHANGED);
+		if (!IPV4_ADDR_SAME(&pi->attr->nexthop, &attr_new->nexthop))
+			SET_FLAG(pi->flags, BGP_PATH_IGP_CHANGED);
 
 		/* Unintern existing, set to new. */
-		bgp_attr_unintern(&ri->attr);
-		ri->attr = attr_new;
-		ri->uptime = bgp_clock();
+		bgp_attr_unintern(&pi->attr);
+		pi->attr = attr_new;
+		pi->uptime = bgp_clock();
 	}
 
 	/* Perform route selection and update zebra, if required. */
@@ -2365,10 +2411,10 @@ static int install_evpn_route_entry_in_es(struct bgp *bgp,
  */
 static int install_evpn_route_entry_in_vrf(struct bgp *bgp_vrf,
 					   struct prefix_evpn *evp,
-					   struct bgp_info *parent_ri)
+					   struct bgp_path_info *parent_pi)
 {
 	struct bgp_node *rn;
-	struct bgp_info *ri;
+	struct bgp_path_info *pi;
 	struct attr attr;
 	struct attr *attr_new;
 	int ret = 0;
@@ -2409,38 +2455,38 @@ static int install_evpn_route_entry_in_vrf(struct bgp *bgp_vrf,
 	 * address for the rest of the code to flow through. In the case of IPv4,
 	 * make sure to set the flag for next hop attribute.
 	 */
-	bgp_attr_dup(&attr, parent_ri->attr);
+	bgp_attr_dup(&attr, parent_pi->attr);
 	if (afi == AFI_IP6)
 		evpn_convert_nexthop_to_ipv6(&attr);
 	else
 		attr.flag |= ATTR_FLAG_BIT(BGP_ATTR_NEXT_HOP);
 
 	/* Check if route entry is already present. */
-	for (ri = rn->info; ri; ri = ri->next)
-		if (ri->extra
-		    && (struct bgp_info *)ri->extra->parent == parent_ri)
+	for (pi = bgp_node_get_bgp_path_info(rn); pi; pi = pi->next)
+		if (pi->extra
+		    && (struct bgp_path_info *)pi->extra->parent == parent_pi)
 			break;
 
-	if (!ri) {
+	if (!pi) {
 		/* Add (or update) attribute to hash. */
 		attr_new = bgp_attr_intern(&attr);
 
 		/* Create new route with its attribute. */
-		ri = info_make(parent_ri->type, BGP_ROUTE_IMPORTED, 0,
-			       parent_ri->peer, attr_new, rn);
-		SET_FLAG(ri->flags, BGP_INFO_VALID);
-		bgp_info_extra_get(ri);
-		ri->extra->parent = bgp_info_lock(parent_ri);
-		bgp_lock_node((struct bgp_node *)parent_ri->net);
-		if (parent_ri->extra) {
-			memcpy(&ri->extra->label, &parent_ri->extra->label,
-			       sizeof(ri->extra->label));
-			ri->extra->num_labels = parent_ri->extra->num_labels;
+		pi = info_make(parent_pi->type, BGP_ROUTE_IMPORTED, 0,
+			       parent_pi->peer, attr_new, rn);
+		SET_FLAG(pi->flags, BGP_PATH_VALID);
+		bgp_path_info_extra_get(pi);
+		pi->extra->parent = bgp_path_info_lock(parent_pi);
+		bgp_lock_node((struct bgp_node *)parent_pi->net);
+		if (parent_pi->extra) {
+			memcpy(&pi->extra->label, &parent_pi->extra->label,
+			       sizeof(pi->extra->label));
+			pi->extra->num_labels = parent_pi->extra->num_labels;
 		}
-		bgp_info_add(rn, ri);
+		bgp_path_info_add(rn, pi);
 	} else {
-		if (attrhash_cmp(ri->attr, &attr)
-		    && !CHECK_FLAG(ri->flags, BGP_INFO_REMOVED)) {
+		if (attrhash_cmp(pi->attr, &attr)
+		    && !CHECK_FLAG(pi->flags, BGP_PATH_REMOVED)) {
 			bgp_unlock_node(rn);
 			return 0;
 		}
@@ -2449,22 +2495,25 @@ static int install_evpn_route_entry_in_vrf(struct bgp *bgp_vrf,
 		attr_new = bgp_attr_intern(&attr);
 
 		/* Restore route, if needed. */
-		if (CHECK_FLAG(ri->flags, BGP_INFO_REMOVED))
-			bgp_info_restore(rn, ri);
+		if (CHECK_FLAG(pi->flags, BGP_PATH_REMOVED))
+			bgp_path_info_restore(rn, pi);
 
 		/* Mark if nexthop has changed. */
-		if ((afi == AFI_IP &&
-		    !IPV4_ADDR_SAME(&ri->attr->nexthop, &attr_new->nexthop)) ||
-		    (afi == AFI_IP6 &&
-		    !IPV6_ADDR_SAME(&ri->attr->mp_nexthop_global,
-				    &attr_new->mp_nexthop_global)))
-			SET_FLAG(ri->flags, BGP_INFO_IGP_CHANGED);
+		if ((afi == AFI_IP
+		     && !IPV4_ADDR_SAME(&pi->attr->nexthop, &attr_new->nexthop))
+		    || (afi == AFI_IP6
+			&& !IPV6_ADDR_SAME(&pi->attr->mp_nexthop_global,
+					   &attr_new->mp_nexthop_global)))
+			SET_FLAG(pi->flags, BGP_PATH_IGP_CHANGED);
 
+		bgp_path_info_set_flag(rn, pi, BGP_PATH_ATTR_CHANGED);
 		/* Unintern existing, set to new. */
-		bgp_attr_unintern(&ri->attr);
-		ri->attr = attr_new;
-		ri->uptime = bgp_clock();
+		bgp_attr_unintern(&pi->attr);
+		pi->attr = attr_new;
+		pi->uptime = bgp_clock();
 	}
+
+	bgp_aggregate_increment(bgp_vrf, &rn->p, pi, afi, safi);
 
 	/* Perform route selection and update zebra, if required. */
 	bgp_process(bgp_vrf, rn, afi, safi);
@@ -2477,10 +2526,10 @@ static int install_evpn_route_entry_in_vrf(struct bgp *bgp_vrf,
  */
 static int install_evpn_route_entry(struct bgp *bgp, struct bgpevpn *vpn,
 				    struct prefix_evpn *p,
-				    struct bgp_info *parent_ri)
+				    struct bgp_path_info *parent_pi)
 {
 	struct bgp_node *rn;
-	struct bgp_info *ri;
+	struct bgp_path_info *pi;
 	struct attr *attr_new;
 	int ret;
 
@@ -2489,50 +2538,50 @@ static int install_evpn_route_entry(struct bgp *bgp, struct bgpevpn *vpn,
 	rn = bgp_node_get(vpn->route_table, (struct prefix *)p);
 
 	/* Check if route entry is already present. */
-	for (ri = rn->info; ri; ri = ri->next)
-		if (ri->extra
-		    && (struct bgp_info *)ri->extra->parent == parent_ri)
+	for (pi = bgp_node_get_bgp_path_info(rn); pi; pi = pi->next)
+		if (pi->extra
+		    && (struct bgp_path_info *)pi->extra->parent == parent_pi)
 			break;
 
-	if (!ri) {
+	if (!pi) {
 		/* Add (or update) attribute to hash. */
-		attr_new = bgp_attr_intern(parent_ri->attr);
+		attr_new = bgp_attr_intern(parent_pi->attr);
 
 		/* Create new route with its attribute. */
-		ri = info_make(parent_ri->type, BGP_ROUTE_IMPORTED, 0,
-			       parent_ri->peer, attr_new, rn);
-		SET_FLAG(ri->flags, BGP_INFO_VALID);
-		bgp_info_extra_get(ri);
-		ri->extra->parent = bgp_info_lock(parent_ri);
-		bgp_lock_node((struct bgp_node *)parent_ri->net);
-		if (parent_ri->extra) {
-			memcpy(&ri->extra->label, &parent_ri->extra->label,
-			       sizeof(ri->extra->label));
-			ri->extra->num_labels = parent_ri->extra->num_labels;
+		pi = info_make(parent_pi->type, BGP_ROUTE_IMPORTED, 0,
+			       parent_pi->peer, attr_new, rn);
+		SET_FLAG(pi->flags, BGP_PATH_VALID);
+		bgp_path_info_extra_get(pi);
+		pi->extra->parent = bgp_path_info_lock(parent_pi);
+		bgp_lock_node((struct bgp_node *)parent_pi->net);
+		if (parent_pi->extra) {
+			memcpy(&pi->extra->label, &parent_pi->extra->label,
+			       sizeof(pi->extra->label));
+			pi->extra->num_labels = parent_pi->extra->num_labels;
 		}
-		bgp_info_add(rn, ri);
+		bgp_path_info_add(rn, pi);
 	} else {
-		if (attrhash_cmp(ri->attr, parent_ri->attr)
-		    && !CHECK_FLAG(ri->flags, BGP_INFO_REMOVED)) {
+		if (attrhash_cmp(pi->attr, parent_pi->attr)
+		    && !CHECK_FLAG(pi->flags, BGP_PATH_REMOVED)) {
 			bgp_unlock_node(rn);
 			return 0;
 		}
 		/* The attribute has changed. */
 		/* Add (or update) attribute to hash. */
-		attr_new = bgp_attr_intern(parent_ri->attr);
+		attr_new = bgp_attr_intern(parent_pi->attr);
 
 		/* Restore route, if needed. */
-		if (CHECK_FLAG(ri->flags, BGP_INFO_REMOVED))
-			bgp_info_restore(rn, ri);
+		if (CHECK_FLAG(pi->flags, BGP_PATH_REMOVED))
+			bgp_path_info_restore(rn, pi);
 
 		/* Mark if nexthop has changed. */
-		if (!IPV4_ADDR_SAME(&ri->attr->nexthop, &attr_new->nexthop))
-			SET_FLAG(ri->flags, BGP_INFO_IGP_CHANGED);
+		if (!IPV4_ADDR_SAME(&pi->attr->nexthop, &attr_new->nexthop))
+			SET_FLAG(pi->flags, BGP_PATH_IGP_CHANGED);
 
 		/* Unintern existing, set to new. */
-		bgp_attr_unintern(&ri->attr);
-		ri->attr = attr_new;
-		ri->uptime = bgp_clock();
+		bgp_attr_unintern(&pi->attr);
+		pi->attr = attr_new;
+		pi->uptime = bgp_clock();
 	}
 
 	/* Perform route selection and update zebra, if required. */
@@ -2542,14 +2591,13 @@ static int install_evpn_route_entry(struct bgp *bgp, struct bgpevpn *vpn,
 }
 
 /* Uninstall EVPN route entry from ES route table */
-static int uninstall_evpn_route_entry_in_es(struct bgp *bgp,
-					    struct evpnes *es,
+static int uninstall_evpn_route_entry_in_es(struct bgp *bgp, struct evpnes *es,
 					    struct prefix_evpn *p,
-					    struct bgp_info *parent_ri)
+					    struct bgp_path_info *parent_pi)
 {
 	int ret;
 	struct bgp_node *rn;
-	struct bgp_info *ri;
+	struct bgp_path_info *pi;
 
 	if (!es->route_table)
 		return 0;
@@ -2562,16 +2610,16 @@ static int uninstall_evpn_route_entry_in_es(struct bgp *bgp,
 		return 0;
 
 	/* Find matching route entry. */
-	for (ri = rn->info; ri; ri = ri->next)
-		if (ri->extra &&
-		    (struct bgp_info *)ri->extra->parent == parent_ri)
+	for (pi = bgp_node_get_bgp_path_info(rn); pi; pi = pi->next)
+		if (pi->extra
+		    && (struct bgp_path_info *)pi->extra->parent == parent_pi)
 			break;
 
-	if (!ri)
+	if (!pi)
 		return 0;
 
 	/* Mark entry for deletion */
-	bgp_info_delete(rn, ri);
+	bgp_path_info_delete(rn, pi);
 
 	/* Perform route selection and update zebra, if required. */
 	ret = evpn_es_route_select_install(bgp, es, rn);
@@ -2588,10 +2636,10 @@ static int uninstall_evpn_route_entry_in_es(struct bgp *bgp,
  */
 static int uninstall_evpn_route_entry_in_vrf(struct bgp *bgp_vrf,
 					     struct prefix_evpn *evp,
-					     struct bgp_info *parent_ri)
+					     struct bgp_path_info *parent_pi)
 {
 	struct bgp_node *rn;
-	struct bgp_info *ri;
+	struct bgp_path_info *pi;
 	int ret = 0;
 	struct prefix p;
 	struct prefix *pp = &p;
@@ -2627,16 +2675,18 @@ static int uninstall_evpn_route_entry_in_vrf(struct bgp *bgp_vrf,
 		return 0;
 
 	/* Find matching route entry. */
-	for (ri = rn->info; ri; ri = ri->next)
-		if (ri->extra
-		    && (struct bgp_info *)ri->extra->parent == parent_ri)
+	for (pi = bgp_node_get_bgp_path_info(rn); pi; pi = pi->next)
+		if (pi->extra
+		    && (struct bgp_path_info *)pi->extra->parent == parent_pi)
 			break;
 
-	if (!ri)
+	if (!pi)
 		return 0;
 
+	bgp_aggregate_decrement(bgp_vrf, &rn->p, pi, afi, safi);
+
 	/* Mark entry for deletion */
-	bgp_info_delete(rn, ri);
+	bgp_path_info_delete(rn, pi);
 
 	/* Perform route selection and update zebra, if required. */
 	bgp_process(bgp_vrf, rn, afi, safi);
@@ -2653,10 +2703,10 @@ static int uninstall_evpn_route_entry_in_vrf(struct bgp *bgp_vrf,
  */
 static int uninstall_evpn_route_entry(struct bgp *bgp, struct bgpevpn *vpn,
 				      struct prefix_evpn *p,
-				      struct bgp_info *parent_ri)
+				      struct bgp_path_info *parent_pi)
 {
 	struct bgp_node *rn;
-	struct bgp_info *ri;
+	struct bgp_path_info *pi;
 	int ret;
 
 	/* Locate route within the VNI. */
@@ -2666,16 +2716,16 @@ static int uninstall_evpn_route_entry(struct bgp *bgp, struct bgpevpn *vpn,
 		return 0;
 
 	/* Find matching route entry. */
-	for (ri = rn->info; ri; ri = ri->next)
-		if (ri->extra
-		    && (struct bgp_info *)ri->extra->parent == parent_ri)
+	for (pi = bgp_node_get_bgp_path_info(rn); pi; pi = pi->next)
+		if (pi->extra
+		    && (struct bgp_path_info *)pi->extra->parent == parent_pi)
 			break;
 
-	if (!ri)
+	if (!pi)
 		return 0;
 
 	/* Mark entry for deletion */
-	bgp_info_delete(rn, ri);
+	bgp_path_info_delete(rn, pi);
 
 	/* Perform route selection and update zebra, if required. */
 	ret = evpn_route_select_install(bgp, vpn, rn);
@@ -2706,9 +2756,10 @@ static int is_prefix_matching_for_es(struct prefix_evpn *p,
  * Given a route entry and a VRF, see if this route entry should be
  * imported into the VRF i.e., RTs match.
  */
-static int is_route_matching_for_vrf(struct bgp *bgp_vrf, struct bgp_info *ri)
+static int is_route_matching_for_vrf(struct bgp *bgp_vrf,
+				     struct bgp_path_info *pi)
 {
-	struct attr *attr = ri->attr;
+	struct attr *attr = pi->attr;
 	struct ecommunity *ecom;
 	int i;
 
@@ -2773,9 +2824,9 @@ static int is_route_matching_for_vrf(struct bgp *bgp_vrf, struct bgp_info *ri)
  * imported into the VNI i.e., RTs match.
  */
 static int is_route_matching_for_vni(struct bgp *bgp, struct bgpevpn *vpn,
-				     struct bgp_info *ri)
+				     struct bgp_path_info *pi)
 {
-	struct attr *attr = ri->attr;
+	struct attr *attr = pi->attr;
 	struct ecommunity *ecom;
 	int i;
 
@@ -2846,7 +2897,7 @@ static int install_uninstall_routes_for_es(struct bgp *bgp,
 	char buf1[ESI_STR_LEN];
 	struct bgp_node *rd_rn, *rn;
 	struct bgp_table *table;
-	struct bgp_info *ri;
+	struct bgp_path_info *pi;
 
 	afi = AFI_L2VPN;
 	safi = SAFI_EVPN;
@@ -2858,21 +2909,22 @@ static int install_uninstall_routes_for_es(struct bgp *bgp,
 	 */
 	for (rd_rn = bgp_table_top(bgp->rib[afi][safi]); rd_rn;
 	     rd_rn = bgp_route_next(rd_rn)) {
-		table = (struct bgp_table *)(rd_rn->info);
+		table = bgp_node_get_bgp_table_info(rd_rn);
 		if (!table)
 			continue;
 
 		for (rn = bgp_table_top(table); rn; rn = bgp_route_next(rn)) {
 			struct prefix_evpn *evp = (struct prefix_evpn *)&rn->p;
 
-			for (ri = rn->info; ri; ri = ri->next) {
+			for (pi = bgp_node_get_bgp_path_info(rn); pi;
+			     pi = pi->next) {
 				/*
 				 * Consider "valid" remote routes applicable for
 				 * this ES.
 				 */
-				if (!(CHECK_FLAG(ri->flags, BGP_INFO_VALID)
-				      && ri->type == ZEBRA_ROUTE_BGP
-				      && ri->sub_type == BGP_ROUTE_NORMAL))
+				if (!(CHECK_FLAG(pi->flags, BGP_PATH_VALID)
+				      && pi->type == ZEBRA_ROUTE_BGP
+				      && pi->sub_type == BGP_ROUTE_NORMAL))
 					continue;
 
 				if (!is_prefix_matching_for_es(evp, es))
@@ -2880,14 +2932,14 @@ static int install_uninstall_routes_for_es(struct bgp *bgp,
 
 				if (install)
 					ret = install_evpn_route_entry_in_es(
-						bgp, es, evp, ri);
+						bgp, es, evp, pi);
 				else
 					ret = uninstall_evpn_route_entry_in_es(
-						bgp, es, evp, ri);
+						bgp, es, evp, pi);
 
 				if (ret) {
 					flog_err(
-						BGP_ERR_EVPN_FAIL,
+						EC_BGP_EVPN_FAIL,
 						"Failed to %s EVPN %s route in ESI %s",
 						install ? "install"
 							: "uninstall",
@@ -2913,7 +2965,7 @@ static int install_uninstall_routes_for_vrf(struct bgp *bgp_vrf, int install)
 	safi_t safi;
 	struct bgp_node *rd_rn, *rn;
 	struct bgp_table *table;
-	struct bgp_info *ri;
+	struct bgp_path_info *pi;
 	int ret;
 	char buf[PREFIX_STRLEN];
 	struct bgp *bgp_def = NULL;
@@ -2930,7 +2982,7 @@ static int install_uninstall_routes_for_vrf(struct bgp *bgp_vrf, int install)
 	 */
 	for (rd_rn = bgp_table_top(bgp_def->rib[afi][safi]); rd_rn;
 	     rd_rn = bgp_route_next(rd_rn)) {
-		table = (struct bgp_table *)(rd_rn->info);
+		table = bgp_node_get_bgp_table_info(rd_rn);
 		if (!table)
 			continue;
 
@@ -2948,26 +3000,27 @@ static int install_uninstall_routes_for_vrf(struct bgp *bgp_vrf, int install)
 			      || is_evpn_prefix_ipaddr_v6(evp)))
 				continue;
 
-			for (ri = rn->info; ri; ri = ri->next) {
+			for (pi = bgp_node_get_bgp_path_info(rn); pi;
+			     pi = pi->next) {
 				/* Consider "valid" remote routes applicable for
 				 * this VRF.
 				 */
-				if (!(CHECK_FLAG(ri->flags, BGP_INFO_VALID)
-				      && ri->type == ZEBRA_ROUTE_BGP
-				      && ri->sub_type == BGP_ROUTE_NORMAL))
+				if (!(CHECK_FLAG(pi->flags, BGP_PATH_VALID)
+				      && pi->type == ZEBRA_ROUTE_BGP
+				      && pi->sub_type == BGP_ROUTE_NORMAL))
 					continue;
 
-				if (is_route_matching_for_vrf(bgp_vrf, ri)) {
+				if (is_route_matching_for_vrf(bgp_vrf, pi)) {
 					if (install)
 						ret = install_evpn_route_entry_in_vrf(
-							bgp_vrf, evp, ri);
+							bgp_vrf, evp, pi);
 					else
 						ret = uninstall_evpn_route_entry_in_vrf(
-							bgp_vrf, evp, ri);
+							bgp_vrf, evp, pi);
 
 					if (ret) {
 						flog_err(
-							BGP_ERR_EVPN_FAIL,
+							EC_BGP_EVPN_FAIL,
 							"Failed to %s EVPN %s route in VRF %s",
 							install ? "install"
 								: "uninstall",
@@ -2998,7 +3051,7 @@ static int install_uninstall_routes_for_vni(struct bgp *bgp,
 	safi_t safi;
 	struct bgp_node *rd_rn, *rn;
 	struct bgp_table *table;
-	struct bgp_info *ri;
+	struct bgp_path_info *pi;
 	int ret;
 
 	afi = AFI_L2VPN;
@@ -3013,7 +3066,7 @@ static int install_uninstall_routes_for_vni(struct bgp *bgp,
 	/* EVPN routes are a 2-level table. */
 	for (rd_rn = bgp_table_top(bgp->rib[afi][safi]); rd_rn;
 	     rd_rn = bgp_route_next(rd_rn)) {
-		table = (struct bgp_table *)(rd_rn->info);
+		table = bgp_node_get_bgp_table_info(rd_rn);
 		if (!table)
 			continue;
 
@@ -3023,25 +3076,26 @@ static int install_uninstall_routes_for_vni(struct bgp *bgp,
 			if (evp->prefix.route_type != rtype)
 				continue;
 
-			for (ri = rn->info; ri; ri = ri->next) {
+			for (pi = bgp_node_get_bgp_path_info(rn); pi;
+			     pi = pi->next) {
 				/* Consider "valid" remote routes applicable for
 				 * this VNI. */
-				if (!(CHECK_FLAG(ri->flags, BGP_INFO_VALID)
-				      && ri->type == ZEBRA_ROUTE_BGP
-				      && ri->sub_type == BGP_ROUTE_NORMAL))
+				if (!(CHECK_FLAG(pi->flags, BGP_PATH_VALID)
+				      && pi->type == ZEBRA_ROUTE_BGP
+				      && pi->sub_type == BGP_ROUTE_NORMAL))
 					continue;
 
-				if (is_route_matching_for_vni(bgp, vpn, ri)) {
+				if (is_route_matching_for_vni(bgp, vpn, pi)) {
 					if (install)
 						ret = install_evpn_route_entry(
-							bgp, vpn, evp, ri);
+							bgp, vpn, evp, pi);
 					else
 						ret = uninstall_evpn_route_entry(
-							bgp, vpn, evp, ri);
+							bgp, vpn, evp, pi);
 
 					if (ret) {
 						flog_err(
-							BGP_ERR_EVPN_FAIL,
+							EC_BGP_EVPN_FAIL,
 							"%u: Failed to %s EVPN %s route in VNI %u",
 							bgp->vrf_id,
 							install ? "install"
@@ -3131,20 +3185,19 @@ static int uninstall_routes_for_vni(struct bgp *bgp, struct bgpevpn *vpn)
 static int install_uninstall_route_in_es(struct bgp *bgp, struct evpnes *es,
 					 afi_t afi, safi_t safi,
 					 struct prefix_evpn *evp,
-					 struct bgp_info *ri,
-					 int install)
+					 struct bgp_path_info *pi, int install)
 {
 	int ret = 0;
 	char buf[ESI_STR_LEN];
 
 	if (install)
-		ret = install_evpn_route_entry_in_es(bgp, es, evp, ri);
+		ret = install_evpn_route_entry_in_es(bgp, es, evp, pi);
 	else
-		ret = uninstall_evpn_route_entry_in_es(bgp, es, evp, ri);
+		ret = uninstall_evpn_route_entry_in_es(bgp, es, evp, pi);
 
 	if (ret) {
 		flog_err(
-			BGP_ERR_EVPN_FAIL,
+			EC_BGP_EVPN_FAIL,
 			"%u: Failed to %s EVPN %s route in ESI %s", bgp->vrf_id,
 			install ? "install" : "uninstall", "ES",
 			esi_to_str(&evp->prefix.es_addr.esi, buf, sizeof(buf)));
@@ -3158,7 +3211,7 @@ static int install_uninstall_route_in_es(struct bgp *bgp, struct evpnes *es,
  */
 static int install_uninstall_route_in_vrfs(struct bgp *bgp_def, afi_t afi,
 					   safi_t safi, struct prefix_evpn *evp,
-					   struct bgp_info *ri,
+					   struct bgp_path_info *pi,
 					   struct list *vrfs, int install)
 {
 	char buf[PREFIX2STR_BUFFER];
@@ -3180,18 +3233,18 @@ static int install_uninstall_route_in_vrfs(struct bgp *bgp_def, afi_t afi,
 		int ret;
 
 		if (install)
-			ret = install_evpn_route_entry_in_vrf(bgp_vrf, evp, ri);
+			ret = install_evpn_route_entry_in_vrf(bgp_vrf, evp, pi);
 		else
 			ret = uninstall_evpn_route_entry_in_vrf(bgp_vrf, evp,
-								ri);
+								pi);
 
 		if (ret) {
-			flog_err(BGP_ERR_EVPN_FAIL,
-				  "%u: Failed to %s prefix %s in VRF %s",
-				  bgp_def->vrf_id,
-				  install ? "install" : "uninstall",
-				  prefix2str(evp, buf, sizeof(buf)),
-				  vrf_id_to_name(bgp_vrf->vrf_id));
+			flog_err(EC_BGP_EVPN_FAIL,
+				 "%u: Failed to %s prefix %s in VRF %s",
+				 bgp_def->vrf_id,
+				 install ? "install" : "uninstall",
+				 prefix2str(evp, buf, sizeof(buf)),
+				 vrf_id_to_name(bgp_vrf->vrf_id));
 			return ret;
 		}
 	}
@@ -3204,7 +3257,7 @@ static int install_uninstall_route_in_vrfs(struct bgp *bgp_def, afi_t afi,
  */
 static int install_uninstall_route_in_vnis(struct bgp *bgp, afi_t afi,
 					   safi_t safi, struct prefix_evpn *evp,
-					   struct bgp_info *ri,
+					   struct bgp_path_info *pi,
 					   struct list *vnis, int install)
 {
 	struct bgpevpn *vpn;
@@ -3217,19 +3270,18 @@ static int install_uninstall_route_in_vnis(struct bgp *bgp, afi_t afi,
 			continue;
 
 		if (install)
-			ret = install_evpn_route_entry(bgp, vpn, evp, ri);
+			ret = install_evpn_route_entry(bgp, vpn, evp, pi);
 		else
-			ret = uninstall_evpn_route_entry(bgp, vpn, evp, ri);
+			ret = uninstall_evpn_route_entry(bgp, vpn, evp, pi);
 
 		if (ret) {
-			flog_err(
-				BGP_ERR_EVPN_FAIL,
-				"%u: Failed to %s EVPN %s route in VNI %u",
-				bgp->vrf_id, install ? "install" : "uninstall",
-				evp->prefix.route_type == BGP_EVPN_MAC_IP_ROUTE
-					? "MACIP"
-					: "IMET",
-				vpn->vni);
+			flog_err(EC_BGP_EVPN_FAIL,
+				 "%u: Failed to %s EVPN %s route in VNI %u",
+				 bgp->vrf_id, install ? "install" : "uninstall",
+				 evp->prefix.route_type == BGP_EVPN_MAC_IP_ROUTE
+					 ? "MACIP"
+					 : "IMET",
+				 vpn->vni);
 			return ret;
 		}
 	}
@@ -3241,11 +3293,11 @@ static int install_uninstall_route_in_vnis(struct bgp *bgp, afi_t afi,
  * Install or uninstall route for appropriate VNIs/ESIs.
  */
 static int install_uninstall_evpn_route(struct bgp *bgp, afi_t afi, safi_t safi,
-					struct prefix *p, struct bgp_info *ri,
-					int import)
+					struct prefix *p,
+					struct bgp_path_info *pi, int import)
 {
 	struct prefix_evpn *evp = (struct prefix_evpn *)p;
-	struct attr *attr = ri->attr;
+	struct attr *attr = pi->attr;
 	struct ecommunity *ecom;
 	int i;
 
@@ -3297,17 +3349,15 @@ static int install_uninstall_evpn_route(struct bgp *bgp, afi_t afi, safi_t safi,
 
 			irt = lookup_import_rt(bgp, eval);
 			if (irt)
-				install_uninstall_route_in_vnis(bgp, afi, safi,
-								evp, ri,
-								irt->vnis,
-								import);
+				install_uninstall_route_in_vnis(
+					bgp, afi, safi, evp, pi, irt->vnis,
+					import);
 
 			vrf_irt = lookup_vrf_import_rt(eval);
 			if (vrf_irt)
-				install_uninstall_route_in_vrfs(bgp, afi, safi,
-								evp, ri,
-								vrf_irt->vrfs,
-								import);
+				install_uninstall_route_in_vrfs(
+					bgp, afi, safi, evp, pi, vrf_irt->vrfs,
+					import);
 
 			/* Also check for non-exact match.
 			 * In this, we mask out the AS and
@@ -3327,15 +3377,13 @@ static int install_uninstall_evpn_route(struct bgp *bgp, afi_t afi, safi_t safi,
 			}
 
 			if (irt)
-				install_uninstall_route_in_vnis(bgp, afi, safi,
-								evp, ri,
-								irt->vnis,
-								import);
+				install_uninstall_route_in_vnis(
+					bgp, afi, safi, evp, pi, irt->vnis,
+					import);
 			if (vrf_irt)
-				install_uninstall_route_in_vrfs(bgp, afi, safi,
-								evp, ri,
-								vrf_irt->vrfs,
-								import);
+				install_uninstall_route_in_vrfs(
+					bgp, afi, safi, evp, pi, vrf_irt->vrfs,
+					import);
 		}
 
 		/* es route is imported into the es table */
@@ -3346,9 +3394,8 @@ static int install_uninstall_evpn_route(struct bgp *bgp, afi_t afi, safi_t safi,
 			 */
 			es = bgp_evpn_lookup_es(bgp, &evp->prefix.es_addr.esi);
 			if (es && is_es_local(es))
-				install_uninstall_route_in_es(bgp, es,
-							      afi, safi,
-							      evp, ri, import);
+				install_uninstall_route_in_es(
+					bgp, es, afi, safi, evp, pi, import);
 		}
 	}
 
@@ -3361,9 +3408,19 @@ static int install_uninstall_evpn_route(struct bgp *bgp, afi_t afi, safi_t safi,
  */
 static void delete_withdraw_vrf_routes(struct bgp *bgp_vrf)
 {
+	/* Delete ipv4 default route and withdraw from peers */
+	if (evpn_default_originate_set(bgp_vrf, AFI_IP, SAFI_UNICAST))
+		bgp_evpn_install_uninstall_default_route(bgp_vrf, AFI_IP,
+							 SAFI_UNICAST, false);
+
 	/* delete all ipv4 routes and withdraw from peers */
 	if (advertise_type5_routes(bgp_vrf, AFI_IP))
 		bgp_evpn_withdraw_type5_routes(bgp_vrf, AFI_IP, SAFI_UNICAST);
+
+	/* Delete ipv6 default route and withdraw from peers */
+	if (evpn_default_originate_set(bgp_vrf, AFI_IP6, SAFI_UNICAST))
+		bgp_evpn_install_uninstall_default_route(bgp_vrf, AFI_IP6,
+							 SAFI_UNICAST, false);
 
 	/* delete all ipv6 routes and withdraw from peers */
 	if (advertise_type5_routes(bgp_vrf, AFI_IP6))
@@ -3380,9 +3437,20 @@ static void update_advertise_vrf_routes(struct bgp *bgp_vrf)
 	if (advertise_type5_routes(bgp_vrf, AFI_IP))
 		bgp_evpn_advertise_type5_routes(bgp_vrf, AFI_IP, SAFI_UNICAST);
 
+	/* update ipv4 default route and withdraw from peers */
+	if (evpn_default_originate_set(bgp_vrf, AFI_IP, SAFI_UNICAST))
+		bgp_evpn_install_uninstall_default_route(bgp_vrf, AFI_IP,
+							 SAFI_UNICAST, true);
+
 	/* update all ipv6 routes */
 	if (advertise_type5_routes(bgp_vrf, AFI_IP6))
 		bgp_evpn_advertise_type5_routes(bgp_vrf, AFI_IP6, SAFI_UNICAST);
+
+	/* update ipv6 default route and withdraw from peers */
+	if (evpn_default_originate_set(bgp_vrf, AFI_IP6, SAFI_UNICAST))
+		bgp_evpn_install_uninstall_default_route(bgp_vrf, AFI_IP6,
+							 SAFI_UNICAST, true);
+
 }
 
 /*
@@ -3428,7 +3496,7 @@ static int update_advertise_vni_routes(struct bgp *bgp, struct bgpevpn *vpn)
 {
 	struct prefix_evpn p;
 	struct bgp_node *rn, *global_rn;
-	struct bgp_info *ri, *global_ri;
+	struct bgp_path_info *pi, *global_pi;
 	struct attr *attr;
 	afi_t afi = AFI_L2VPN;
 	safi_t safi = SAFI_EVPN;
@@ -3436,27 +3504,32 @@ static int update_advertise_vni_routes(struct bgp *bgp, struct bgpevpn *vpn)
 	/* Locate type-3 route for VNI in the per-VNI table and use its
 	 * attributes to create and advertise the type-3 route for this VNI
 	 * in the global table.
+	 *
+	 * RT-3 only if doing head-end replication
 	 */
-	build_evpn_type3_prefix(&p, vpn->originator_ip);
-	rn = bgp_node_lookup(vpn->route_table, (struct prefix *)&p);
-	if (!rn) /* unexpected */
-		return 0;
-	for (ri = rn->info; ri; ri = ri->next)
-		if (ri->peer == bgp->peer_self && ri->type == ZEBRA_ROUTE_BGP
-		    && ri->sub_type == BGP_ROUTE_STATIC)
-			break;
-	if (!ri) /* unexpected */
-		return 0;
-	attr = ri->attr;
+	if (bgp->vxlan_flood_ctrl == VXLAN_FLOOD_HEAD_END_REPL) {
+		build_evpn_type3_prefix(&p, vpn->originator_ip);
+		rn = bgp_node_lookup(vpn->route_table, (struct prefix *)&p);
+		if (!rn) /* unexpected */
+			return 0;
+		for (pi = bgp_node_get_bgp_path_info(rn); pi; pi = pi->next)
+			if (pi->peer == bgp->peer_self &&
+			    pi->type == ZEBRA_ROUTE_BGP
+			    && pi->sub_type == BGP_ROUTE_STATIC)
+				break;
+		if (!pi) /* unexpected */
+			return 0;
+		attr = pi->attr;
 
-	global_rn = bgp_afi_node_get(bgp->rib[afi][safi], afi, safi,
-				     (struct prefix *)&p, &vpn->prd);
-	update_evpn_route_entry(bgp, vpn, afi, safi, global_rn, attr, 1, 0, &ri,
-				0);
+		global_rn = bgp_afi_node_get(bgp->rib[afi][safi], afi, safi,
+					     (struct prefix *)&p, &vpn->prd);
+		update_evpn_route_entry(bgp, vpn, afi, safi, global_rn, attr,
+					1, &pi, 0, mac_mobility_seqnum(attr));
 
-	/* Schedule for processing and unlock node. */
-	bgp_process(bgp, global_rn, afi, safi);
-	bgp_unlock_node(global_rn);
+		/* Schedule for processing and unlock node. */
+		bgp_process(bgp, global_rn, afi, safi);
+		bgp_unlock_node(global_rn);
+	}
 
 	/* Now, walk this VNI's route table and use the route and its attribute
 	 * to create and schedule route in global table.
@@ -3469,23 +3542,24 @@ static int update_advertise_vni_routes(struct bgp *bgp, struct bgpevpn *vpn)
 		if (evp->prefix.route_type != BGP_EVPN_MAC_IP_ROUTE)
 			continue;
 
-		for (ri = rn->info; ri; ri = ri->next)
-			if (ri->peer == bgp->peer_self
-			    && ri->type == ZEBRA_ROUTE_BGP
-			    && ri->sub_type == BGP_ROUTE_STATIC)
+		for (pi = bgp_node_get_bgp_path_info(rn); pi; pi = pi->next)
+			if (pi->peer == bgp->peer_self
+			    && pi->type == ZEBRA_ROUTE_BGP
+			    && pi->sub_type == BGP_ROUTE_STATIC)
 				break;
-		if (!ri)
+		if (!pi)
 			continue;
 
 		/* Create route in global routing table using this route entry's
 		 * attribute.
 		 */
-		attr = ri->attr;
+		attr = pi->attr;
 		global_rn = bgp_afi_node_get(bgp->rib[afi][safi], afi, safi,
 					     (struct prefix *)evp, &vpn->prd);
 		assert(global_rn);
 		update_evpn_route_entry(bgp, vpn, afi, safi, global_rn, attr, 1,
-					0, &global_ri, 0);
+					&global_pi, 0,
+					mac_mobility_seqnum(attr));
 
 		/* Schedule for processing and unlock node. */
 		bgp_process(bgp, global_rn, afi, safi);
@@ -3504,7 +3578,7 @@ static int delete_withdraw_vni_routes(struct bgp *bgp, struct bgpevpn *vpn)
 	int ret;
 	struct prefix_evpn p;
 	struct bgp_node *global_rn;
-	struct bgp_info *ri;
+	struct bgp_path_info *pi;
 	afi_t afi = AFI_L2VPN;
 	safi_t safi = SAFI_EVPN;
 
@@ -3521,12 +3595,12 @@ static int delete_withdraw_vni_routes(struct bgp *bgp, struct bgpevpn *vpn)
 					(struct prefix *)&p, &vpn->prd);
 	if (global_rn) {
 		/* Delete route entry in the global EVPN table. */
-		delete_evpn_route_entry(bgp, afi, safi, global_rn, &ri);
+		delete_evpn_route_entry(bgp, afi, safi, global_rn, &pi);
 
 		/* Schedule for processing - withdraws to peers happen from
 		 * this table.
 		 */
-		if (ri)
+		if (pi)
 			bgp_process(bgp, global_rn, afi, safi);
 		bgp_unlock_node(global_rn);
 	}
@@ -3570,6 +3644,42 @@ static void withdraw_router_id_vni(struct hash_backet *backet, struct bgp *bgp)
 }
 
 /*
+ * Create RT-3 for a VNI and schedule for processing and advertisement.
+ * This is invoked upon flooding mode changing to head-end replication.
+ */
+static void create_advertise_type3(struct hash_backet *backet, void *data)
+{
+	struct bgpevpn *vpn = backet->data;
+	struct bgp *bgp = data;
+	struct prefix_evpn p;
+
+	if (!vpn || !is_vni_live(vpn))
+		return;
+
+	build_evpn_type3_prefix(&p, vpn->originator_ip);
+	if (update_evpn_route(bgp, vpn, &p, 0, 0))
+		flog_err(EC_BGP_EVPN_ROUTE_CREATE,
+			 "Type3 route creation failure for VNI %u", vpn->vni);
+}
+
+/*
+ * Delete RT-3 for a VNI and schedule for processing and withdrawal.
+ * This is invoked upon flooding mode changing to drop BUM packets.
+ */
+static void delete_withdraw_type3(struct hash_backet *backet, void *data)
+{
+	struct bgpevpn *vpn = backet->data;
+	struct bgp *bgp = data;
+	struct prefix_evpn p;
+
+	if (!vpn || !is_vni_live(vpn))
+		return;
+
+	build_evpn_type3_prefix(&p, vpn->originator_ip);
+	delete_evpn_route(bgp, vpn, &p);
+}
+
+/*
  * Process received EVPN type-2 route (advertise or withdraw).
  */
 static int process_type2_route(struct peer *peer, afi_t afi, safi_t safi,
@@ -3594,9 +3704,9 @@ static int process_type2_route(struct peer *peer, afi_t afi, safi_t safi,
 	 */
 	if (psize != 33 && psize != 37 && psize != 49 && psize != 36
 	    && psize != 40 && psize != 52) {
-		flog_err(BGP_ERR_EVPN_ROUTE_INVALID,
-			  "%u:%s - Rx EVPN Type-2 NLRI with invalid length %d",
-			  peer->bgp->vrf_id, peer->host, psize);
+		flog_err(EC_BGP_EVPN_ROUTE_INVALID,
+			 "%u:%s - Rx EVPN Type-2 NLRI with invalid length %d",
+			 peer->bgp->vrf_id, peer->host, psize);
 		return -1;
 	}
 
@@ -3632,7 +3742,7 @@ static int process_type2_route(struct peer *peer, afi_t afi, safi_t safi,
 		pfx += ETH_ALEN;
 	} else {
 		flog_err(
-			BGP_ERR_EVPN_ROUTE_INVALID,
+			EC_BGP_EVPN_ROUTE_INVALID,
 			"%u:%s - Rx EVPN Type-2 NLRI with unsupported MAC address length %d",
 			peer->bgp->vrf_id, peer->host, macaddr_len);
 		return -1;
@@ -3644,7 +3754,7 @@ static int process_type2_route(struct peer *peer, afi_t afi, safi_t safi,
 	if (ipaddr_len != 0 && ipaddr_len != IPV4_MAX_BITLEN
 	    && ipaddr_len != IPV6_MAX_BITLEN) {
 		flog_err(
-			BGP_ERR_EVPN_ROUTE_INVALID,
+			EC_BGP_EVPN_ROUTE_INVALID,
 			"%u:%s - Rx EVPN Type-2 NLRI with unsupported IP address length %d",
 			peer->bgp->vrf_id, peer->host, ipaddr_len);
 		return -1;
@@ -3705,9 +3815,9 @@ static int process_type3_route(struct peer *peer, afi_t afi, safi_t safi,
 	 * IP len (1) and IP (4 or 16).
 	 */
 	if (psize != 17 && psize != 29) {
-		flog_err(BGP_ERR_EVPN_ROUTE_INVALID,
-			  "%u:%s - Rx EVPN Type-3 NLRI with invalid length %d",
-			  peer->bgp->vrf_id, peer->host, psize);
+		flog_err(EC_BGP_EVPN_ROUTE_INVALID,
+			 "%u:%s - Rx EVPN Type-3 NLRI with invalid length %d",
+			 peer->bgp->vrf_id, peer->host, psize);
 		return -1;
 	}
 
@@ -3718,9 +3828,11 @@ static int process_type3_route(struct peer *peer, afi_t afi, safi_t safi,
 	if (attr &&
 	    (attr->flag & ATTR_FLAG_BIT(BGP_ATTR_PMSI_TUNNEL))) {
 		if (attr->pmsi_tnl_type != PMSI_TNLTYPE_INGR_REPL) {
-			zlog_warn("%u:%s - Rx EVPN Type-3 NLRI with unsupported PTA %d",
-				  peer->bgp->vrf_id, peer->host,
-				  attr->pmsi_tnl_type);
+			flog_warn(
+				EC_BGP_EVPN_PMSI_PRESENT,
+				"%u:%s - Rx EVPN Type-3 NLRI with unsupported PTA %d",
+				peer->bgp->vrf_id, peer->host,
+				attr->pmsi_tnl_type);
 		}
 	}
 
@@ -3748,7 +3860,7 @@ static int process_type3_route(struct peer *peer, afi_t afi, safi_t safi,
 		memcpy(&p.prefix.imet_addr.ip.ip.addr, pfx, IPV4_MAX_BYTELEN);
 	} else {
 		flog_err(
-			BGP_ERR_EVPN_ROUTE_INVALID,
+			EC_BGP_EVPN_ROUTE_INVALID,
 			"%u:%s - Rx EVPN Type-3 NLRI with unsupported IP address length %d",
 			peer->bgp->vrf_id, peer->host, ipaddr_len);
 		return -1;
@@ -3784,9 +3896,9 @@ static int process_type4_route(struct peer *peer, afi_t afi, safi_t safi,
 	 *  RD (8), ESI (10), ip-len (1), ip (4 or 16)
 	 */
 	if (psize != 23 && psize != 35) {
-		flog_err(BGP_ERR_EVPN_ROUTE_INVALID,
-			  "%u:%s - Rx EVPN Type-4 NLRI with invalid length %d",
-			  peer->bgp->vrf_id, peer->host, psize);
+		flog_err(EC_BGP_EVPN_ROUTE_INVALID,
+			 "%u:%s - Rx EVPN Type-4 NLRI with invalid length %d",
+			 peer->bgp->vrf_id, peer->host, psize);
 		return -1;
 	}
 
@@ -3807,7 +3919,7 @@ static int process_type4_route(struct peer *peer, afi_t afi, safi_t safi,
 		memcpy(&vtep_ip, pfx, IPV4_MAX_BYTELEN);
 	} else {
 		flog_err(
-			BGP_ERR_EVPN_ROUTE_INVALID,
+			EC_BGP_EVPN_ROUTE_INVALID,
 			"%u:%s - Rx EVPN Type-4 NLRI with unsupported IP address length %d",
 			peer->bgp->vrf_id, peer->host, ipaddr_len);
 		return -1;
@@ -3849,9 +3961,9 @@ static int process_type5_route(struct peer *peer, afi_t afi, safi_t safi,
 	 * Note that the IP and GW should both be IPv4 or both IPv6.
 	 */
 	if (psize != 34 && psize != 58) {
-		flog_err(BGP_ERR_EVPN_ROUTE_INVALID,
-			  "%u:%s - Rx EVPN Type-5 NLRI with invalid length %d",
-			  peer->bgp->vrf_id, peer->host, psize);
+		flog_err(EC_BGP_EVPN_ROUTE_INVALID,
+			 "%u:%s - Rx EVPN Type-5 NLRI with invalid length %d",
+			 peer->bgp->vrf_id, peer->host, psize);
 		return -1;
 	}
 
@@ -3883,7 +3995,7 @@ static int process_type5_route(struct peer *peer, afi_t afi, safi_t safi,
 	ippfx_len = *pfx++;
 	if (ippfx_len > IPV6_MAX_BITLEN) {
 		flog_err(
-			BGP_ERR_EVPN_ROUTE_INVALID,
+			EC_BGP_EVPN_ROUTE_INVALID,
 			"%u:%s - Rx EVPN Type-5 NLRI with invalid IP Prefix length %d",
 			peer->bgp->vrf_id, peer->host, ippfx_len);
 		return -1;
@@ -4110,7 +4222,7 @@ void bgp_evpn_withdraw_type5_route(struct bgp *bgp_vrf, struct prefix *p,
 	ret = delete_evpn_type5_route(bgp_vrf, &evp);
 	if (ret) {
 		flog_err(
-			BGP_ERR_EVPN_ROUTE_DELETE,
+			EC_BGP_EVPN_ROUTE_DELETE,
 			"%u failed to delete type-5 route for prefix %s in vrf %s",
 			bgp_vrf->vrf_id, prefix2str(p, buf, sizeof(buf)),
 			vrf_id_to_name(bgp_vrf->vrf_id));
@@ -4122,15 +4234,15 @@ void bgp_evpn_withdraw_type5_routes(struct bgp *bgp_vrf, afi_t afi, safi_t safi)
 {
 	struct bgp_table *table = NULL;
 	struct bgp_node *rn = NULL;
-	struct bgp_info *ri;
+	struct bgp_path_info *pi;
 
 	table = bgp_vrf->rib[afi][safi];
 	for (rn = bgp_table_top(table); rn; rn = bgp_route_next(rn)) {
 		/* Only care about "selected" routes - non-imported. */
 		/* TODO: Support for AddPath for EVPN. */
-		for (ri = rn->info; ri; ri = ri->next) {
-			if (CHECK_FLAG(ri->flags, BGP_INFO_SELECTED)
-			    && (!ri->extra || !ri->extra->parent)) {
+		for (pi = bgp_node_get_bgp_path_info(rn); pi; pi = pi->next) {
+			if (CHECK_FLAG(pi->flags, BGP_PATH_SELECTED)
+			    && (!pi->extra || !pi->extra->parent)) {
 				bgp_evpn_withdraw_type5_route(bgp_vrf, &rn->p,
 							      afi, safi);
 				break;
@@ -4138,6 +4250,28 @@ void bgp_evpn_withdraw_type5_routes(struct bgp *bgp_vrf, afi_t afi, safi_t safi)
 		}
 	}
 }
+
+/*
+ * evpn - enable advertisement of default g/w
+ */
+void bgp_evpn_install_uninstall_default_route(struct bgp *bgp_vrf, afi_t afi,
+					      safi_t safi, bool add)
+{
+	struct prefix ip_prefix;
+
+	/* form the default prefix 0.0.0.0/0 */
+	memset(&ip_prefix, 0, sizeof(struct prefix));
+	ip_prefix.family = afi2family(afi);
+
+	if (add) {
+		bgp_evpn_advertise_type5_route(bgp_vrf, &ip_prefix,
+					       NULL, afi, safi);
+	} else {
+		bgp_evpn_withdraw_type5_route(bgp_vrf, &ip_prefix,
+					      afi, safi);
+	}
+}
+
 
 /*
  * Advertise IP prefix as type-5 route. The afi/safi and src_attr passed
@@ -4156,9 +4290,9 @@ void bgp_evpn_advertise_type5_route(struct bgp *bgp_vrf, struct prefix *p,
 	build_type5_prefix_from_ip_prefix(&evp, p);
 	ret = update_evpn_type5_route(bgp_vrf, &evp, src_attr);
 	if (ret)
-		flog_err(BGP_ERR_EVPN_ROUTE_CREATE,
-			  "%u: Failed to create type-5 route for prefix %s",
-			  bgp_vrf->vrf_id, prefix2str(p, buf, sizeof(buf)));
+		flog_err(EC_BGP_EVPN_ROUTE_CREATE,
+			 "%u: Failed to create type-5 route for prefix %s",
+			 bgp_vrf->vrf_id, prefix2str(p, buf, sizeof(buf)));
 }
 
 /* Inject all prefixes of a particular address-family (currently, IPv4 or
@@ -4170,7 +4304,7 @@ void bgp_evpn_advertise_type5_routes(struct bgp *bgp_vrf, afi_t afi,
 {
 	struct bgp_table *table = NULL;
 	struct bgp_node *rn = NULL;
-	struct bgp_info *ri;
+	struct bgp_path_info *pi;
 
 	table = bgp_vrf->rib[afi][safi];
 	for (rn = bgp_table_top(table); rn; rn = bgp_route_next(rn)) {
@@ -4178,9 +4312,9 @@ void bgp_evpn_advertise_type5_routes(struct bgp *bgp_vrf, afi_t afi,
 		 * attribute. Also, we only consider "non-imported" routes.
 		 * TODO: Support for AddPath for EVPN.
 		 */
-		for (ri = rn->info; ri; ri = ri->next) {
-			if (CHECK_FLAG(ri->flags, BGP_INFO_SELECTED)
-			    && (!ri->extra || !ri->extra->parent)) {
+		for (pi = bgp_node_get_bgp_path_info(rn); pi; pi = pi->next) {
+			if (CHECK_FLAG(pi->flags, BGP_PATH_SELECTED)
+			    && (!pi->extra || !pi->extra->parent)) {
 
 				/* apply the route-map */
 				if (bgp_vrf->adv_cmd_rmap[afi][safi].map) {
@@ -4189,12 +4323,12 @@ void bgp_evpn_advertise_type5_routes(struct bgp *bgp_vrf, afi_t afi,
 					ret = route_map_apply(
 						bgp_vrf->adv_cmd_rmap[afi][safi]
 							.map,
-						&rn->p, RMAP_BGP, ri);
+						&rn->p, RMAP_BGP, pi);
 					if (ret == RMAP_DENYMATCH)
 						continue;
 				}
 				bgp_evpn_advertise_type5_route(
-					bgp_vrf, &rn->p, ri->attr, afi, safi);
+					bgp_vrf, &rn->p, pi->attr, afi, safi);
 				break;
 			}
 		}
@@ -4717,7 +4851,7 @@ int bgp_nlri_parse_evpn(struct peer *peer, struct attr *attr,
 						withdraw ? NULL : attr, pnt,
 						psize, addpath_id)) {
 				flog_err(
-					BGP_ERR_EVPN_FAIL,
+					EC_BGP_EVPN_FAIL,
 					"%u:%s - Error in processing EVPN type-2 NLRI size %d",
 					peer->bgp->vrf_id, peer->host, psize);
 				return -1;
@@ -4729,7 +4863,7 @@ int bgp_nlri_parse_evpn(struct peer *peer, struct attr *attr,
 						withdraw ? NULL : attr, pnt,
 						psize, addpath_id)) {
 				flog_err(
-					BGP_ERR_PKT_PROCESS,
+					EC_BGP_PKT_PROCESS,
 					"%u:%s - Error in processing EVPN type-3 NLRI size %d",
 					peer->bgp->vrf_id, peer->host, psize);
 				return -1;
@@ -4741,7 +4875,7 @@ int bgp_nlri_parse_evpn(struct peer *peer, struct attr *attr,
 						withdraw ? NULL : attr, pnt,
 						psize, addpath_id)) {
 				flog_err(
-					BGP_ERR_PKT_PROCESS,
+					EC_BGP_PKT_PROCESS,
 					"%u:%s - Error in processing EVPN type-4 NLRI size %d",
 					peer->bgp->vrf_id, peer->host, psize);
 				return -1;
@@ -4752,7 +4886,7 @@ int bgp_nlri_parse_evpn(struct peer *peer, struct attr *attr,
 			if (process_type5_route(peer, afi, safi, attr, pnt,
 						psize, addpath_id, withdraw)) {
 				flog_err(
-					BGP_ERR_PKT_PROCESS,
+					EC_BGP_PKT_PROCESS,
 					"%u:%s - Error in processing EVPN type-5 NLRI size %d",
 					peer->bgp->vrf_id, peer->host, psize);
 				return -1;
@@ -5020,8 +5154,8 @@ void bgp_evpn_free(struct bgp *bgp, struct bgpevpn *vpn)
 	bgpevpn_unlink_from_l3vni(vpn);
 	bgp_table_unlock(vpn->route_table);
 	bgp_evpn_unmap_vni_from_its_rts(bgp, vpn);
-	list_delete_and_null(&vpn->import_rtl);
-	list_delete_and_null(&vpn->export_rtl);
+	list_delete(&vpn->import_rtl);
+	list_delete(&vpn->export_rtl);
 	bf_release_index(bm->rd_idspace, vpn->rd_id);
 	hash_release(bgp->vnihash, vpn);
 	QOBJ_UNREG(vpn);
@@ -5065,7 +5199,7 @@ struct evpnes *bgp_evpn_es_new(struct bgp *bgp,
 
 	/* Initialise the VTEP list */
 	es->vtep_list = list_new();
-	es->vtep_list->cmp = (int (*)(void *, void *))evpn_vtep_ip_cmp;
+	es->vtep_list->cmp = evpn_vtep_ip_cmp;
 
 	/* auto derive RD for this es */
 	bf_assign_index(bm->rd_idspace, es->rd_id);
@@ -5094,7 +5228,7 @@ struct evpnes *bgp_evpn_es_new(struct bgp *bgp,
  */
 void bgp_evpn_es_free(struct bgp *bgp, struct evpnes *es)
 {
-	list_delete_and_null(&es->vtep_list);
+	list_delete(&es->vtep_list);
 	bgp_table_unlock(es->route_table);
 	bf_release_index(bm->rd_idspace, es->rd_id);
 	hash_release(bgp->esihash, es);
@@ -5106,18 +5240,18 @@ void bgp_evpn_es_free(struct bgp *bgp, struct evpnes *es)
  * Import evpn route from global table to VNI/VRF/ESI.
  */
 int bgp_evpn_import_route(struct bgp *bgp, afi_t afi, safi_t safi,
-			  struct prefix *p, struct bgp_info *ri)
+			  struct prefix *p, struct bgp_path_info *pi)
 {
-	return install_uninstall_evpn_route(bgp, afi, safi, p, ri, 1);
+	return install_uninstall_evpn_route(bgp, afi, safi, p, pi, 1);
 }
 
 /*
  * Unimport evpn route from VNI/VRF/ESI.
  */
 int bgp_evpn_unimport_route(struct bgp *bgp, afi_t afi, safi_t safi,
-			    struct prefix *p, struct bgp_info *ri)
+			    struct prefix *p, struct bgp_path_info *pi)
 {
-	return install_uninstall_evpn_route(bgp, afi, safi, p, ri, 0);
+	return install_uninstall_evpn_route(bgp, afi, safi, p, pi, 0);
 }
 
 /* filter routes which have martian next hops */
@@ -5127,7 +5261,7 @@ int bgp_filter_evpn_routes_upon_martian_nh_change(struct bgp *bgp)
 	safi_t safi;
 	struct bgp_node *rd_rn, *rn;
 	struct bgp_table *table;
-	struct bgp_info *ri;
+	struct bgp_path_info *pi;
 
 	afi = AFI_L2VPN;
 	safi = SAFI_EVPN;
@@ -5140,29 +5274,30 @@ int bgp_filter_evpn_routes_upon_martian_nh_change(struct bgp *bgp)
 	/* EVPN routes are a 2-level table. */
 	for (rd_rn = bgp_table_top(bgp->rib[afi][safi]); rd_rn;
 	     rd_rn = bgp_route_next(rd_rn)) {
-		table = (struct bgp_table *)(rd_rn->info);
+		table = bgp_node_get_bgp_table_info(rd_rn);
 		if (!table)
 			continue;
 
 		for (rn = bgp_table_top(table); rn; rn = bgp_route_next(rn)) {
 
-			for (ri = rn->info; ri; ri = ri->next) {
+			for (pi = bgp_node_get_bgp_path_info(rn); pi;
+			     pi = pi->next) {
 
 				/* Consider "valid" remote routes applicable for
 				 * this VNI. */
-				if (!(ri->type == ZEBRA_ROUTE_BGP
-				      && ri->sub_type == BGP_ROUTE_NORMAL))
+				if (!(pi->type == ZEBRA_ROUTE_BGP
+				      && pi->sub_type == BGP_ROUTE_NORMAL))
 					continue;
 
-				if (bgp_nexthop_self(bgp, ri->attr->nexthop)) {
+				if (bgp_nexthop_self(bgp, pi->attr->nexthop)) {
 
 					char attr_str[BUFSIZ];
 					char pbuf[PREFIX_STRLEN];
 
-					bgp_dump_attr(ri->attr, attr_str,
+					bgp_dump_attr(pi->attr, attr_str,
 						      BUFSIZ);
 
-					if (bgp_debug_update(ri->peer, &rn->p,
+					if (bgp_debug_update(pi->peer, &rn->p,
 							     NULL, 1))
 						zlog_debug(
 							"%u: prefix %s with attr %s - DENIED due to martian or self nexthop",
@@ -5173,9 +5308,9 @@ int bgp_filter_evpn_routes_upon_martian_nh_change(struct bgp *bgp)
 							attr_str);
 
 					bgp_evpn_unimport_route(bgp, afi, safi,
-								&rn->p, ri);
+								&rn->p, pi);
 
-					bgp_rib_remove(rn, ri, ri->peer, afi,
+					bgp_rib_remove(rn, pi, pi->peer, afi,
 						       safi);
 				}
 			}
@@ -5197,7 +5332,8 @@ int bgp_evpn_local_macip_del(struct bgp *bgp, vni_t vni, struct ethaddr *mac,
 	/* Lookup VNI hash - should exist. */
 	vpn = bgp_evpn_lookup_vni(bgp, vni);
 	if (!vpn || !is_vni_live(vpn)) {
-		zlog_warn("%u: VNI hash entry for VNI %u %s at MACIP DEL",
+		flog_warn(EC_BGP_EVPN_VPN_VNI,
+			  "%u: VNI hash entry for VNI %u %s at MACIP DEL",
 			  bgp->vrf_id, vni, vpn ? "not live" : "not found");
 		return -1;
 	}
@@ -5213,7 +5349,7 @@ int bgp_evpn_local_macip_del(struct bgp *bgp, vni_t vni, struct ethaddr *mac,
  * Handle add of a local MACIP.
  */
 int bgp_evpn_local_macip_add(struct bgp *bgp, vni_t vni, struct ethaddr *mac,
-			     struct ipaddr *ip, uint8_t flags)
+			     struct ipaddr *ip, uint8_t flags, uint32_t seq)
 {
 	struct bgpevpn *vpn;
 	struct prefix_evpn p;
@@ -5221,19 +5357,20 @@ int bgp_evpn_local_macip_add(struct bgp *bgp, vni_t vni, struct ethaddr *mac,
 	/* Lookup VNI hash - should exist. */
 	vpn = bgp_evpn_lookup_vni(bgp, vni);
 	if (!vpn || !is_vni_live(vpn)) {
-		zlog_warn("%u: VNI hash entry for VNI %u %s at MACIP ADD",
+		flog_warn(EC_BGP_EVPN_VPN_VNI,
+			  "%u: VNI hash entry for VNI %u %s at MACIP ADD",
 			  bgp->vrf_id, vni, vpn ? "not live" : "not found");
 		return -1;
 	}
 
 	/* Create EVPN type-2 route and schedule for processing. */
 	build_evpn_type2_prefix(&p, mac, ip);
-	if (update_evpn_route(bgp, vpn, &p, flags)) {
+	if (update_evpn_route(bgp, vpn, &p, flags, seq)) {
 		char buf[ETHER_ADDR_STRLEN];
 		char buf2[INET6_ADDRSTRLEN];
 
 		flog_err(
-			BGP_ERR_EVPN_ROUTE_CREATE,
+			EC_BGP_EVPN_ROUTE_CREATE,
 			"%u:Failed to create Type-2 route, VNI %u %s MAC %s IP %s (flags: 0x%x)",
 			bgp->vrf_id, vpn->vni,
 			CHECK_FLAG(flags, ZEBRA_MACIP_TYPE_STICKY)
@@ -5275,7 +5412,7 @@ int bgp_evpn_local_l3vni_add(vni_t l3vni, vrf_id_t vrf_id, struct ethaddr *rmac,
 	bgp_def = bgp_get_default();
 	if (!bgp_def) {
 		flog_err(
-			BGP_ERR_NO_DFLT,
+			EC_BGP_NO_DFLT,
 			"Cannot process L3VNI  %u ADD - default BGP instance not yet created",
 			l3vni);
 		return -1;
@@ -5292,16 +5429,16 @@ int bgp_evpn_local_l3vni_add(vni_t l3vni, vrf_id_t vrf_id, struct ethaddr *rmac,
 			      BGP_INSTANCE_TYPE_VRF);
 		switch (ret) {
 		case BGP_ERR_MULTIPLE_INSTANCE_NOT_SET:
-			flog_err(BGP_ERR_MULTI_INSTANCE,
-				  "'bgp multiple-instance' not present\n");
+			flog_err(EC_BGP_MULTI_INSTANCE,
+				 "'bgp multiple-instance' not present\n");
 			return -1;
 		case BGP_ERR_AS_MISMATCH:
-			flog_err(BGP_ERR_EVPN_AS_MISMATCH,
-				  "BGP is already running; AS is %u\n", as);
+			flog_err(EC_BGP_EVPN_AS_MISMATCH,
+				 "BGP is already running; AS is %u\n", as);
 			return -1;
 		case BGP_ERR_INSTANCE_MISMATCH:
-			flog_err(BGP_ERR_EVPN_INSTANCE_MISMATCH,
-				  "BGP instance name and AS number mismatch\n");
+			flog_err(EC_BGP_EVPN_INSTANCE_MISMATCH,
+				 "BGP instance name and AS number mismatch\n");
 			return -1;
 		}
 
@@ -5322,11 +5459,16 @@ int bgp_evpn_local_l3vni_add(vni_t l3vni, vrf_id_t vrf_id, struct ethaddr *rmac,
 	if (filter)
 		SET_FLAG(bgp_vrf->vrf_flags, BGP_VRF_L3VNI_PREFIX_ROUTES_ONLY);
 
-	/* auto derive RD/RT */
+	/* Map auto derive or configured RTs */
 	if (!CHECK_FLAG(bgp_vrf->vrf_flags, BGP_VRF_IMPORT_RT_CFGD))
 		evpn_auto_rt_import_add_for_vrf(bgp_vrf);
+	else
+		bgp_evpn_map_vrf_to_its_rts(bgp_vrf);
+
 	if (!CHECK_FLAG(bgp_vrf->vrf_flags, BGP_VRF_EXPORT_RT_CFGD))
 		evpn_auto_rt_export_add_for_vrf(bgp_vrf);
+
+	/* auto derive RD */
 	bgp_evpn_derive_auto_rd_for_vrf(bgp_vrf);
 
 	/* link all corresponding l2vnis */
@@ -5363,7 +5505,7 @@ int bgp_evpn_local_l3vni_del(vni_t l3vni, vrf_id_t vrf_id)
 	bgp_vrf = bgp_lookup_by_vrf_id(vrf_id);
 	if (!bgp_vrf) {
 		flog_err(
-			BGP_ERR_NO_DFLT,
+			EC_BGP_NO_DFLT,
 			"Cannot process L3VNI %u Del - Could not find BGP instance",
 			l3vni);
 		return -1;
@@ -5372,14 +5514,14 @@ int bgp_evpn_local_l3vni_del(vni_t l3vni, vrf_id_t vrf_id)
 	bgp_def = bgp_get_default();
 	if (!bgp_def) {
 		flog_err(
-			BGP_ERR_NO_DFLT,
+			EC_BGP_NO_DFLT,
 			"Cannot process L3VNI %u Del - Could not find default BGP instance",
 			l3vni);
 		return -1;
 	}
 
 	/* Remove remote routes from BGT VRF even if BGP_VRF_AUTO is configured,
-	 * bgp_delete would not remove/decrement bgp_info of the ip_prefix
+	 * bgp_delete would not remove/decrement bgp_path_info of the ip_prefix
 	 * routes. This will uninstalling the routes from zebra and decremnt the
 	 * bgp info count.
 	 */
@@ -5394,12 +5536,16 @@ int bgp_evpn_local_l3vni_del(vni_t l3vni, vrf_id_t vrf_id)
 	/* remove the Rmac from the BGP vrf */
 	memset(&bgp_vrf->rmac, 0, sizeof(struct ethaddr));
 
-	/* delete RD/RT */
+	/* remove default import RT or Unmap non-default import RT */
 	if (!list_isempty(bgp_vrf->vrf_import_rtl)) {
 		bgp_evpn_unmap_vrf_from_its_rts(bgp_vrf);
-		list_delete_all_node(bgp_vrf->vrf_import_rtl);
+		if (!CHECK_FLAG(bgp_vrf->vrf_flags, BGP_VRF_IMPORT_RT_CFGD))
+			list_delete_all_node(bgp_vrf->vrf_import_rtl);
 	}
-	if (!list_isempty(bgp_vrf->vrf_export_rtl)) {
+
+	/* remove default export RT */
+	if (!list_isempty(bgp_vrf->vrf_export_rtl) &&
+	    !CHECK_FLAG(bgp_vrf->vrf_flags, BGP_VRF_EXPORT_RT_CFGD)) {
 		list_delete_all_node(bgp_vrf->vrf_export_rtl);
 	}
 
@@ -5433,7 +5579,8 @@ int bgp_evpn_local_vni_del(struct bgp *bgp, vni_t vni)
 	vpn = bgp_evpn_lookup_vni(bgp, vni);
 	if (!vpn) {
 		if (bgp_debug_zebra(NULL))
-			zlog_warn(
+			flog_warn(
+				EC_BGP_EVPN_VPN_VNI,
 				"%u: VNI hash entry for VNI %u not found at DEL",
 				bgp->vrf_id, vni);
 		return 0;
@@ -5503,7 +5650,7 @@ int bgp_evpn_local_vni_add(struct bgp *bgp, vni_t vni,
 		vpn = bgp_evpn_new(bgp, vni, originator_ip, tenant_vrf_id);
 		if (!vpn) {
 			flog_err(
-				BGP_ERR_VNI,
+				EC_BGP_VNI,
 				"%u: Failed to allocate VNI entry for VNI %u - at Add",
 				bgp->vrf_id, vni);
 			return -1;
@@ -5523,13 +5670,19 @@ int bgp_evpn_local_vni_add(struct bgp *bgp, vni_t vni,
 	/* filter routes as nexthop database has changed */
 	bgp_filter_evpn_routes_upon_martian_nh_change(bgp);
 
-	/* Create EVPN type-3 route and schedule for processing. */
-	build_evpn_type3_prefix(&p, vpn->originator_ip);
-	if (update_evpn_route(bgp, vpn, &p, 0)) {
-		flog_err(BGP_ERR_EVPN_ROUTE_CREATE,
-			  "%u: Type3 route creation failure for VNI %u",
-			  bgp->vrf_id, vni);
-		return -1;
+	/*
+	 * Create EVPN type-3 route and schedule for processing.
+	 *
+	 * RT-3 only if doing head-end replication
+	 */
+	if (bgp->vxlan_flood_ctrl == VXLAN_FLOOD_HEAD_END_REPL) {
+		build_evpn_type3_prefix(&p, vpn->originator_ip);
+		if (update_evpn_route(bgp, vpn, &p, 0, 0)) {
+			flog_err(EC_BGP_EVPN_ROUTE_CREATE,
+				 "%u: Type3 route creation failure for VNI %u",
+				 bgp->vrf_id, vni);
+			return -1;
+		}
 	}
 
 	/* If we have learnt and retained remote routes (VTEPs, MACs) for this
@@ -5556,17 +5709,17 @@ int bgp_evpn_local_es_del(struct bgp *bgp,
 	struct evpnes *es = NULL;
 
 	if (!bgp->esihash) {
-		flog_err(BGP_ERR_ES_CREATE, "%u: ESI hash not yet created",
-			  bgp->vrf_id);
+		flog_err(EC_BGP_ES_CREATE, "%u: ESI hash not yet created",
+			 bgp->vrf_id);
 		return -1;
 	}
 
 	/* Lookup ESI hash - should exist. */
 	es = bgp_evpn_lookup_es(bgp, esi);
 	if (!es) {
-		zlog_warn("%u: ESI hash entry for ESI %s at Local ES DEL",
-			  bgp->vrf_id,
-			  esi_to_str(esi, buf, sizeof(buf)));
+		flog_warn(EC_BGP_EVPN_ESI,
+			  "%u: ESI hash entry for ESI %s at Local ES DEL",
+			  bgp->vrf_id, esi_to_str(esi, buf, sizeof(buf)));
 		return -1;
 	}
 
@@ -5593,8 +5746,8 @@ int bgp_evpn_local_es_add(struct bgp *bgp,
 	struct prefix_evpn p;
 
 	if (!bgp->esihash) {
-		flog_err(BGP_ERR_ES_CREATE, "%u: ESI hash not yet created",
-			  bgp->vrf_id);
+		flog_err(EC_BGP_ES_CREATE, "%u: ESI hash not yet created",
+			 bgp->vrf_id);
 		return -1;
 	}
 
@@ -5604,7 +5757,7 @@ int bgp_evpn_local_es_add(struct bgp *bgp,
 		es = bgp_evpn_es_new(bgp, esi, originator_ip);
 		if (!es) {
 			flog_err(
-				BGP_ERR_ES_CREATE,
+				EC_BGP_ES_CREATE,
 				"%u: Failed to allocate ES entry for ESI %s - at Local ES Add",
 				bgp->vrf_id, esi_to_str(esi, buf, sizeof(buf)));
 			return -1;
@@ -5615,9 +5768,9 @@ int bgp_evpn_local_es_add(struct bgp *bgp,
 
 	build_evpn_type4_prefix(&p, esi, originator_ip->ipaddr_v4);
 	if (update_evpn_type4_route(bgp, es, &p)) {
-		flog_err(BGP_ERR_EVPN_ROUTE_CREATE,
-			  "%u: Type4 route creation failure for ESI %s",
-			  bgp->vrf_id, esi_to_str(esi, buf, sizeof(buf)));
+		flog_err(EC_BGP_EVPN_ROUTE_CREATE,
+			 "%u: Type4 route creation failure for ESI %s",
+			 bgp->vrf_id, esi_to_str(esi, buf, sizeof(buf)));
 		return -1;
 	}
 
@@ -5625,6 +5778,26 @@ int bgp_evpn_local_es_add(struct bgp *bgp,
 	install_routes_for_es(bgp, es);
 
 	return 0;
+}
+
+/*
+ * Handle change in setting for BUM handling. The supported values
+ * are head-end replication and dropping all BUM packets. Any change
+ * should be registered with zebra. Also, if doing head-end replication,
+ * need to advertise local VNIs as EVPN RT-3 wheras, if BUM packets are
+ * to be dropped, the RT-3s must be withdrawn.
+ */
+void bgp_evpn_flood_control_change(struct bgp *bgp)
+{
+	zlog_info("L2VPN EVPN BUM handling is %s",
+		  bgp->vxlan_flood_ctrl == VXLAN_FLOOD_HEAD_END_REPL ?
+		  "Flooding" : "Flooding Disabled");
+
+	bgp_zebra_vxlan_flood_control(bgp, bgp->vxlan_flood_ctrl);
+	if (bgp->vxlan_flood_ctrl == VXLAN_FLOOD_HEAD_END_REPL)
+		hash_iterate(bgp->vnihash, create_advertise_type3, bgp);
+	else if (bgp->vxlan_flood_ctrl == VXLAN_FLOOD_DISABLED)
+		hash_iterate(bgp->vnihash, delete_withdraw_type3, bgp);
 }
 
 /*
@@ -5660,9 +5833,9 @@ void bgp_evpn_cleanup(struct bgp *bgp)
 		hash_free(bgp->esihash);
 	bgp->esihash = NULL;
 
-	list_delete_and_null(&bgp->vrf_import_rtl);
-	list_delete_and_null(&bgp->vrf_export_rtl);
-	list_delete_and_null(&bgp->l2vnis);
+	list_delete(&bgp->vrf_import_rtl);
+	list_delete(&bgp->vrf_export_rtl);
+	list_delete(&bgp->l2vnis);
 }
 
 /*
@@ -5693,7 +5866,25 @@ void bgp_evpn_init(struct bgp *bgp)
 		(int (*)(void *, void *))evpn_route_target_cmp;
 	bgp->vrf_export_rtl->del = evpn_xxport_delete_ecomm;
 	bgp->l2vnis = list_new();
-	bgp->l2vnis->cmp = (int (*)(void *, void *))vni_hash_cmp;
+	bgp->l2vnis->cmp = vni_list_cmp;
+	/* By default Duplicate Address Dection is enabled.
+	 * Max-moves (N) 5, detection time (M) 180
+	 * default action is warning-only
+	 * freeze action permanently freezes address,
+	 * and freeze time (auto-recovery) is disabled.
+	 */
+	if (bgp->evpn_info) {
+		bgp->evpn_info->dup_addr_detect = true;
+		bgp->evpn_info->dad_time = EVPN_DAD_DEFAULT_TIME;
+		bgp->evpn_info->dad_max_moves = EVPN_DAD_DEFAULT_MAX_MOVES;
+		bgp->evpn_info->dad_freeze = false;
+		bgp->evpn_info->dad_freeze_time = 0;
+		/* Initialize zebra vxlan */
+		bgp_zebra_dup_addr_detection(bgp);
+	}
+
+	/* Default BUM handling is to do head-end replication. */
+	bgp->vxlan_flood_ctrl = VXLAN_FLOOD_HEAD_END_REPL;
 }
 
 void bgp_evpn_vrf_delete(struct bgp *bgp_vrf)

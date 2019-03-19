@@ -86,7 +86,7 @@
 %{!?frr_gid:            %global  frr_gid            92 }
 %{!?vty_gid:            %global  vty_gid            85 }
 
-%define daemon_list zebra ripd ospfd bgpd isisd ripngd ospf6d pbrd staticd bfdd
+%define daemon_list zebra ripd ospfd bgpd isisd ripngd ospf6d pbrd staticd bfdd fabricd
 
 %if %{with_ldpd}
     %define daemon_ldpd ldpd
@@ -162,6 +162,7 @@ BuildRequires:  make
 BuildRequires:  ncurses-devel
 BuildRequires:  readline-devel
 BuildRequires:  texinfo
+BuildRequires:  libyang-devel >= 0.16.74
 %if 0%{?rhel} && 0%{?rhel} < 7
 #python27-devel is available from ius community repo for RedHat/CentOS 6
 BuildRequires:  python27-devel
@@ -170,6 +171,7 @@ BuildRequires:  python27-sphinx
 BuildRequires:  python-devel >= 2.7
 BuildRequires:  python-sphinx
 %endif
+Requires:       initscripts
 %if %{with_pam}
 BuildRequires:  pam-devel
 %endif
@@ -187,7 +189,6 @@ Requires(post):     chkconfig
 Requires(preun):    chkconfig
 # Initscripts > 5.60 is required for IPv6 support
 Requires(pre):      initscripts >= 5.60
-Requires:           initscripts
 %endif
 Provides:           routingdaemon = %{version}-%{release}
 Obsoletes:          gated mrt zebra frr-sysvinit
@@ -370,6 +371,7 @@ rm -f %{buildroot}%{_sbindir}/frr
 # kill bogus libtool files
 rm -vf %{buildroot}%{_libdir}/frr/modules/*.la
 rm -vf %{buildroot}%{_libdir}/*.la
+rm -vf %{buildroot}%{_libdir}/frr/libyang_plugins/*.la
 
 # install /etc sources
 %if "%{initsystem}" == "systemd"
@@ -460,6 +462,7 @@ zebra_spec_add_service isisd    2608/tcp "ISISd vty"
 %if %{with_bfdd}
     zebra_spec_add_service bfdd     2617/tcp "BFDd vty"
 %endif
+zebra_spec_add_service fabricd	2618/tcp "Fabricd vty"
 
 %if "%{initsystem}" == "systemd"
     for daemon in %all_daemons ; do
@@ -563,6 +566,7 @@ fi
 %doc */*.sample* COPYING
 %doc doc/mpls
 %doc README.md
+/usr/share/yang/*.yang
 %if 0%{?frr_user:1}
     %dir %attr(751,%{frr_user},%{frr_user}) %{configdir}
     %dir %attr(750,%{frr_user},%{frr_user}) %{_localstatedir}/log/frr
@@ -595,6 +599,7 @@ fi
     %{_sbindir}/pbrd
 %endif
 %{_sbindir}/isisd
+%{_sbindir}/fabricd
 %if %{with_ldpd}
     %{_sbindir}/ldpd
 %endif
@@ -663,14 +668,10 @@ fi
 
 
 %changelog
-* Tue Jan  8 2019 Martin Winter <mwinter@opensourcerouting.org> - %{version}
-- Security Issue (Denial of Service): Fix BGP Attribute 255 (experimental VNC)
-  handling
-
-* Sat Dec 29 2018 Martin Winter <mwinter@opensourcerouting.org> - 6.0.1
-- Various fixes for label manager
-- Fix BGP unnumbered peer setup
-- Various other fixes
+* Thu Feb 28 2019 Martin Winter <mwinter@opensourcerouting.org> - %{version}
+- Added libyang dependency: New work for northbound interface based on libyang
+- Fabricd: New Daemon based on https://datatracker.ietf.org/doc/draft-white-openfabric/
+- various bug fixes and other enhancements
 
 * Sun Oct  7 2018 Martin Winter <mwinter@opensourcerouting.org> - 6.0
 - Staticd: New daemon responsible for management of static routes
@@ -703,21 +704,8 @@ fi
 * Sun May 28 2018 Rafael Zalamena <rzalamena@opensourcerouting.org> - %{version}
 - Add BFDd support
 
-* Sun May 20 2018 Martin Winter <mwinter@opensourcerouting.org> - 4.0.1
+* Sun May 20 2018 Martin Winter <mwinter@opensourcerouting.org>
 - Fixed RPKI RPM build
-
-* Sun Mar 11 2018 Martin Winter <mwinter@opensourcerouting.org> - 4.0
-- ISIS-MT - https://tools.ietf.org/html/rfc5120
-- BGP - RPKI (RFC 6810)
-- BGP - v4 labeled unicast as per RFC 3107
-- BGP/Zebra - Type 2 and 3 EVPN with symmetric and asymmetric routing
-- EIGRP - https://tools.ietf.org/html/rfc7868
-- FRR - Tab completion for iface names, prefix-lists, route-maps, BGP peers
-- BABEL - https://tools.ietf.org/html/rfc6126
-- PIM VRF - Added the ability to work with VRF’s to PIM
-- OSPFv2 VRF - Added the ability to work with VRF’s to OSPFv2
-- OSPFv2 Experimental SR - draft-ietf-ospf-segment-routing-extensions-24
-- ZEBRA - Add ability to create a static route that leaks across VRF’s.
 
 * Sun Mar  4 2018 Martin Winter <mwinter@opensourcerouting.org>
 - Add option to build with RPKI (default: disabled)

@@ -20,6 +20,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -90,7 +94,7 @@ find_neighbour(const unsigned char *address, struct interface *ifp)
 
     neigh = malloc(sizeof(struct neighbour));
     if(neigh == NULL) {
-        flog_err(BABEL_ERR_MEMORY, "malloc(neighbour): %s",
+        flog_err(EC_BABEL_MEMORY, "malloc(neighbour): %s",
 		  safe_strerror(errno));
         return NULL;
     }

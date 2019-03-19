@@ -48,6 +48,13 @@ Besides the common invocation options (:ref:`common-invocation-options`), the
 
    .. seealso:: :ref:`zebra-vrf`
 
+.. option:: -o, --vrfdefaultname
+
+   When *Zebra* starts with this option, the default VRF name is changed to the
+   parameter.
+
+   .. seealso:: :ref:`zebra-vrf`
+
 .. option:: --v6-rr-semantics
 
    The linux kernel is receiving the ability to use the same route
@@ -133,16 +140,6 @@ Standard Commands
    behind the other end of the link (or even on the link in Point-to-Multipoint
    setups), though generally /32s are used.
 
-.. index:: ip address ADDRESS/PREFIX secondary
-
-.. clicmd:: ip address ADDRESS/PREFIX secondary
-.. index:: no ip address ADDRESS/PREFIX secondary
-
-.. clicmd:: no ip address ADDRESS/PREFIX secondary
-
-   Set the secondary flag for this address. This causes ospfd to not treat the
-   address as a distinct subnet.
-
 .. index:: description DESCRIPTION ...
 
 .. clicmd:: description DESCRIPTION ...
@@ -179,6 +176,8 @@ Standard Commands
    Enable/disable link-detect on platforms which support this. Currently only
    Linux and Solaris, and only where network interface drivers support
    reporting link-state via the ``IFF_RUNNING`` flag.
+
+   In FRR, link-detect is on by default.
 
 .. _link-parameters-commands:
 
@@ -277,6 +276,12 @@ Link Parameters Commands
    After setting TABLENO with this command, static routes defined after this
    are added to the specified table.
 
+.. index:: ip nht resolve-via-default
+.. clicmd:: ip nht resolve-via-default
+
+   Allows nexthop tracking to resolve via the default route. This is useful
+   when e.g. you want to allow BGP to peer across the default route.
+
 .. _zebra-vrf:
 
 Virtual Routing and Forwarding
@@ -355,6 +360,38 @@ commands in relationship to VRF. Here is an extract of some of those commands:
    will dump the routing table ``TABLENO`` of the *Linux network namespace*
    ``VRF``.
 
+By using the :option:`-n` option, the *Linux network namespace* will be mapped
+over the *Zebra* VRF. One nice feature that is possible by handling *Linux
+network namespace* is the ability to name default VRF. At startup, *Zebra*
+discovers the available *Linux network namespace* by parsing folder
+`/var/run/netns`. Each file stands for a *Linux network namespace*, but not all
+*Linux network namespaces* are available under that folder. This is the case for
+default VRF. It is possible to name the default VRF, by creating a file, by
+executing following commands.
+
+.. code-block:: shell
+
+   touch /var/run/netns/vrf0
+   mount --bind /proc/self/ns/net /var/run/netns/vrf0
+
+Above command illustrates what happens when the default VRF is visible under
+`var/run/netns/`. Here, the default VRF file is `vrf0`.
+At startup, FRR detects the presence of that file. It detects that the file
+statistics information matches the same file statistics information as
+`/proc/self/ns/net` ( through stat() function). As statistics information
+matches, then `vrf0` stands for the new default namespace name.
+Consequently, the VRF naming `Default` will be overriden by the new discovered
+namespace name `vrf0`.
+
+For those who don't use VRF backend with *Linux network namespace*, it is
+possible to statically configure and recompile FRR. It is possible to choose an
+alternate name for default VRF. Then, the default VRF naming will automatically
+be updated with the new name. To illustrate, if you want to recompile with
+`global` value, use the following command:
+
+.. code-block:: shell
+
+   ./configure --with-defaultvrfname=global
 
 .. _zebra-mpls:
 
