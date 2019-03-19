@@ -21,7 +21,7 @@
  */
 #include <zebra.h>
 #ifdef GNU_LINUX
-#include <net/ethernet.h>
+#include <linux/if_ether.h>
 #else
 #include <netinet/if_ether.h>
 #endif

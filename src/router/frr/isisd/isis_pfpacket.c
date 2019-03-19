@@ -22,7 +22,7 @@
 
 #include <zebra.h>
 #if ISIS_METHOD == ISIS_METHOD_PFPACKET
-#include <net/ethernet.h> /* the L2 protocols */
+#include <linux/if_ether.h> /* the L2 protocols */
 #include <netpacket/packet.h>
 
 #include <linux/filter.h>
