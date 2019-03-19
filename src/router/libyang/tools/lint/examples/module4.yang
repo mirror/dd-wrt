@@ -1,0 +1,52 @@
+module module4 {
+  yang-version 1.1;
+  namespace "urn:module4";
+  prefix m4;
+
+  container cont1 {
+    list list {
+      key "leaf1";
+      leaf leaf1 {
+        type string;
+      }
+      action act {
+        input {
+          leaf leaf2 {
+            type string;
+          }
+        }
+        output {
+          leaf leaf3 {
+            type string;
+          }
+        }
+      }
+      notification notif1 {
+        leaf leaf4 {
+          type string;
+        }
+      }
+    }
+  }
+
+  rpc rpc {
+    input {
+      leaf leaf5 {
+        type string;
+      }
+    }
+    output {
+      container cont2 {
+        leaf leaf6 {
+          type empty;
+        }
+      }
+    }
+  }
+
+  notification notif2 {
+    leaf leaf7 {
+      type empty;
+    }
+  }
+}

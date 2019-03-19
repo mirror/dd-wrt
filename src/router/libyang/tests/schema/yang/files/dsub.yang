@@ -1,0 +1,9 @@
+submodule dsub {
+  belongs-to d {
+    prefix d_mod;
+  }
+
+  typedef d_type {
+      type string;
+  }
+}

@@ -1,0 +1,10 @@
+Format: 3.0 (quilt)
+Source: @PACKAGE_NAME@
+Binary: @PACKAGE_NAME@, @PACKAGE_NAME@-dbg, @PACKAGE_NAME@-dev, libyang-cpp@PACKAGE_PART_NAME@, libyang-cpp@PACKAGE_PART_NAME@-dev, libyang-cpp@PACKAGE_PART_NAME@-dbg, python3-yang@PACKAGE_PART_NAME@, python3-yang@PACKAGE_PART_NAME@-dbg
+Maintainer: CESNET <rkrejci@cesnet.cz>
+Version: @LIBYANG_VERSION@
+Architecture: any
+Standards-Version: 3.8.2
+Homepage: https://github.com/CESNET/libyang
+Vcs-Git: https://github.com/CESNET/libyang
+Build-Depends: debhelper (>= 9), make, gcc, doxygen, cmake, pkg-config, libpcre3-dev, libcmocka-dev, python3-dev, g++, swig (>= 3.0.12)

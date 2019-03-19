@@ -1,0 +1,9 @@
+module mod14 {
+
+    prefix abc;
+    namespace "urn:cesnet:mod14";
+
+    typedef string {
+        type uint32;
+    }
+}

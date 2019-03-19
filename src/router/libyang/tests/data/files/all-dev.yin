@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="all-dev"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:alldev_mod="urn:all-dev"
+        xmlns:all_mod="urn:all">
+  <namespace uri="urn:all-dev"/>
+  <prefix value="alldev_mod"/>
+  <import module="all">
+    <prefix value="all_mod"/>
+  </import>
+  <deviation target-node="/all_mod:notif1/all_mod:leaf22">
+    <deviate value="replace">
+      <type name="string"/>
+    </deviate>
+    <deviate value="add">
+      <mandatory value="false"/>
+    </deviate>
+    <deviate value="add">
+      <config value="true"/>
+    </deviate>
+  </deviation>
+  <deviation target-node="/all_mod:cont1/all_mod:list1">
+    <deviate value="replace">
+      <min-elements value="2"/>
+      <max-elements value="15"/>
+    </deviate>
+    <deviate value="delete">
+      <unique tag="leaf19"/>
+    </deviate>
+  </deviation>
+  <deviation target-node="/all_mod:cont1/all_mod:leaf13">
+    <deviate value="add">
+      <units name="b/h"/>
+      <must condition="../leaf3 &lt; 0"/>
+      <default value="aGVsbG8h"/>
+    </deviate>
+  </deviation>
+  <deviation target-node="/all_mod:cont1/all_mod:leaf23">
+    <deviate value="not-supported"/>
+  </deviation>
+  <deviation target-node="/all_mod:cont1/all_mod:must-deviations-container">
+    <deviate value="add">
+      <must condition="all_mod:leaf30 != 'foo'"/>
+    </deviate>
+  </deviation>
+  <deviation target-node="/all_mod:cont1/all_mod:must-deviations-container">
+    <deviate value="add">
+      <must condition="all_mod:leaf30 != 'bar'"/>
+      <must condition="all_mod:leaf30 != 'baz'"/>
+      <must condition="all_mod:leaf30 != 'qux'"/>
+    </deviate>
+  </deviation>
+</module>

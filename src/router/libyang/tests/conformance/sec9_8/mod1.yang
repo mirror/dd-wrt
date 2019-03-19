@@ -1,0 +1,11 @@
+module mod1 {
+    prefix abc;
+    namespace "urn:cesnet:mod1";
+
+    typedef my {
+        type binary {
+            pattern '[a-z]+';
+            length "1..255";
+        }
+    }
+}

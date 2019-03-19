@@ -1,0 +1,5 @@
+<mandatory xmlns="urn:cesnet:mod5">
+    <mand>42</mand>
+    <default>string</default>
+    <normal>true</normal>
+</mandatory>

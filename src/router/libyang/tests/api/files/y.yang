@@ -1,0 +1,12 @@
+module y {
+  namespace "urn:libyang:tests:y";
+  prefix y;
+
+  import x {
+    prefix x;
+  }
+
+  leaf y {
+    type x:xtype;
+  }
+}

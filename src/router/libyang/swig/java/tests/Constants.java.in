@@ -1,0 +1,4 @@
+public interface Constants {
+    String TESTS_DIR = "@TESTS_DIR@";
+    String BUILD_DIR = "@PROJECT_BINARY_DIR@";
+}

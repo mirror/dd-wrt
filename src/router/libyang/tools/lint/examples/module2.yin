@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="module2"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:m="urn:yanglint:module">
+  <namespace uri="urn:yanglint:module"/>
+  <prefix value="m"/>
+  <leaf name="m">
+    <type value="string"/>
+  </leaf>
+</module>

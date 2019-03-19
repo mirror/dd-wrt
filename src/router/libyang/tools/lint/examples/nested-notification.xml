@@ -1,0 +1,8 @@
+<cont1 xmlns="urn:module4">
+  <list>
+    <leaf1>key_val</leaf1>
+    <notif1>
+      <leaf4>some_value</leaf4>
+    </notif1>
+  </list>
+</cont1>

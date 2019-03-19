@@ -1,0 +1,188 @@
+module statements {
+  namespace "urn:module";
+  prefix mod;
+  yang-version 1.1;
+
+  import links {
+    prefix mod2;
+  }
+
+  identity random-identity {
+    base "mod2:just-another-identity";
+    base "another-identity";
+  }
+
+  identity another-identity {
+    base "mod2:just-another-identity";
+  }
+
+  typedef percent {
+    type uint8 {
+      range "0 .. 100";
+    }
+    units percent;
+  }
+
+  container ice-cream-shop {
+    container employees {
+      list employee {
+        config true;
+        key id;
+        unique name;
+        min-elements 0;
+        max-elements 100;
+
+        leaf id {
+          type uint64;
+          mandatory true;
+        }
+
+        leaf name {
+          type string;
+        }
+
+        leaf age {
+          type uint32;
+        }
+
+        leaf uniception {
+          type union {
+            type int8;
+            type decimal64 {
+              fraction-digits 10;
+            }
+            type boolean;
+            type union {
+              type union {
+                type identityref {
+                  base "mod2:just-another-identity";
+                }
+
+                type leafref {
+                  path "/mod2:one-leaf";
+                }
+
+                type empty;
+                type bits {
+                  bit cf {
+                    position 0;
+                  }
+
+                  bit of {
+                    position 1;
+                  }
+
+                  bit sf {
+                    position 2;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  container random {
+    action action-test {
+      input {
+        leaf in {
+          type string;
+        }
+      }
+
+      output {
+        leaf out {
+          type string;
+        }
+      }
+    }
+
+    choice switch {
+      case a {
+        leaf aleaf {
+          type string;
+          default aaa;
+        }
+      }
+
+      case c {
+        leaf cleaf {
+          type string;
+        }
+      }
+    }
+
+    anyxml xml-data;
+    anydata any-data;
+    leaf-list leaflist {
+      type string;
+      min-elements 0;
+      max-elements 20;
+      ordered-by system;
+    }
+
+    grouping group {
+      leaf g1 {
+        mandatory false;
+        type percent;
+      }
+
+      leaf g2 {
+        type string;
+      }
+    }
+
+    uses group;
+    uses mod2:rgroup;
+
+    leaf lref {
+      type leafref {
+        path "/mod2:one-leaf";
+      }
+    }
+
+    leaf iref {
+      type identityref {
+        base "mod2:just-another-identity";
+      }
+    }
+  }
+
+  notification notif-test {
+    leaf event-class {
+      type string;
+    }
+
+    leaf detail {
+      type string;
+    }
+  }
+
+  rpc rpc-test {
+    input {
+      leaf in {
+        type string;
+      }
+    }
+
+    output {
+      leaf out {
+        type string;
+      }
+    }
+  }
+
+  augment "/random" {
+    leaf aug-leaf {
+      type string;
+    }
+  }
+
+  augment "/mod2:list-for-augment" {
+    leaf augmented-leaf {
+      type string;
+    }
+  }
+}

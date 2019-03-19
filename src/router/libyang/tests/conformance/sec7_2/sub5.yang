@@ -1,0 +1,10 @@
+submodule sub5 {
+
+    belongs-to mod5 {
+        prefix sub;
+    }
+
+    belongs-to mod5 {
+        prefix sub1;
+    }
+}

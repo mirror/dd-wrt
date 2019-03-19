@@ -1,0 +1,34 @@
+module aug {
+    namespace "test:aug";
+    prefix a;
+
+    import base {
+        prefix ba;
+    }
+
+    grouping groupone {
+        container grouponecont {
+
+        }
+    }
+
+    augment "/ba:main/ba:second/ba:third" {
+        description "First top-level augment in module";
+
+        uses groupone {
+            augment "grouponecont" {
+                leaf groupleaf {
+                    type string;
+                }
+            }
+        }
+    }
+
+    augment "/ba:main/ba:second/ba:third" {
+        description "Second top-level augment in module";
+
+        leaf augleaftwo {
+            type string;
+        }
+    }
+}

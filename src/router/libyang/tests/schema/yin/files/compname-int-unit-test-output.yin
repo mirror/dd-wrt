@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="compname-int-unit-test"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:compname-int-unit-test="http://www.compname.com/ns/yang/compname-int-unit-test">
+  <namespace uri="http://www.compname.com/ns/yang/compname-int-unit-test"/>
+  <prefix value="compname-int-unit-test"/>
+  <revision date="2018-01-01">
+    <description>
+      <text>Initial revision.</text>
+    </description>
+    <reference>
+      <text>None.</text>
+    </reference>
+  </revision>
+  <rpc name="events">
+    <input>
+    </input>
+    <output>
+      <leaf-list name="info">
+        <type name="string"/>
+        <ordered-by value="user"/>
+      </leaf-list>
+      <list name="critical-events">
+        <ordered-by value="user"/>
+        <leaf name="category">
+          <type name="string"/>
+        </leaf>
+      </list>
+    </output>
+  </rpc>
+</module>

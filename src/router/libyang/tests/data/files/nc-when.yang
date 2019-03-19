@@ -1,0 +1,16 @@
+module nc-when {
+  yang-version 1.1;
+  namespace "urn:test:nc-when";
+  prefix nw;
+
+  container test-when {
+    leaf when-check {
+      type boolean;
+    }
+
+    leaf gated-data {
+      when "../when-check = 'true'";
+      type uint16;
+    }
+  }
+}

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="unique"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:un="urn:libyang:tests:unique">
+    <namespace uri="urn:libyang:tests:unique"/>
+    <prefix value="un"/>
+    <container name="un">
+        <list name="list">
+            <key value="name"/>
+            <unique tag="un:value select/a/a"/>
+            <unique tag="input/un:x input/select/y/y"/>
+            <leaf name="name">
+                <type name="string"/>
+            </leaf>
+            <leaf name="value">
+                <type name="int32"/>
+                <default value="42"/>
+            </leaf>
+            <choice name="select">
+                <default value="a"/>
+                <leaf name="a">
+                    <type name="int32"/>
+                    <default value="42"/>
+                </leaf>
+                <leaf name="b">
+                    <type name="int32"/>
+                </leaf>
+            </choice>
+            <container name="input">
+                <leaf name="x">
+                    <type name="int32"/>
+                    <default value="42"/>
+                </leaf>
+                <choice name="select">
+                    <leaf name="y">
+                        <type name="int32"/>
+                    </leaf>
+                    <leaf name="z">
+                        <type name="int32"/>
+                    </leaf>
+                </choice>
+            </container>
+            <list name="list2">
+                <key value="name"/>
+                <unique tag="cont/a cont/b"/>
+                <leaf name="name">
+                    <type name="string"/>
+                </leaf>
+                <container name="cont">
+                    <leaf name="a">
+                        <type name="int32"/>
+                    </leaf>
+                    <leaf name="b">
+                        <type name="int32"/>
+                    </leaf>
+                </container>
+            </list>
+        </list>
+    </container>
+</module>

@@ -1,0 +1,15 @@
+module mod1 {
+    prefix abc;
+    namespace "urn:cesnet:mod1";
+
+    import mod {
+        prefix mod;
+    }
+
+    deviation "/mod:cont/mod:user" {
+        description "deviation description";
+
+        deviate not-supported;
+        description "test"; // duplicated
+    }
+}

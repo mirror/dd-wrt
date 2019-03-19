@@ -1,0 +1,10 @@
+module impl_b {
+  namespace urn:b;
+  prefix b;
+
+  container b {
+    leaf b {
+      type string;
+    }
+  }
+}

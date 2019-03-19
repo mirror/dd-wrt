@@ -1,0 +1,10 @@
+module mod2 {
+    prefix abc;
+    namespace "urn:cesnet:mod2";
+
+    typedef my {
+        type binary {
+            length 'min .. 255 | 23 .. 240';
+        }
+    }
+}

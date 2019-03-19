@@ -1,0 +1,16 @@
+module impl_c {
+  namespace urn:c;
+  prefix c;
+
+  import impl_b {
+    prefix b;
+  }
+
+  augment /b:b {
+    container c {
+      leaf leafc {
+        type string;
+      }
+    }
+  }
+}

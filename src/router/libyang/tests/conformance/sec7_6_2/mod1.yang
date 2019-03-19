@@ -1,0 +1,15 @@
+module mod1 {
+
+    prefix abc;
+    namespace "urn:cesnet:mod1";
+
+    leaf aa {
+        description "test description";
+
+        reference " test reference";
+
+        type string;
+
+        reference "dup. reference"; // duplicated
+    }
+}

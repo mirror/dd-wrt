@@ -1,0 +1,16 @@
+{
+  "ietf-netconf-notifications:netconf-config-change": {
+    "changed-by": {
+      "username": "nobody",
+      "session-id": 25,
+      "source-host": "127.0.0.1"
+    },
+    "datastore": "running",
+    "edit": [
+      {
+        "target": "/ietf-interfaces:interfaces/interface[name='eth0']/description",
+        "operation": "create"
+      }
+    ]
+  }
+}

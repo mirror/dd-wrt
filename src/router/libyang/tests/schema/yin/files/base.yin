@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="base"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:ba="test:base">
+  <namespace uri="test:base"/>
+  <prefix value="ba"/>
+  <container name="main">
+    <config value="false"/>
+  </container>
+  <augment target-node="/ba:main">
+    <container name="second">
+      <list name="third">
+        <key value="name"/>
+        <leaf name="name">
+          <type name="string"/>
+        </leaf>
+      </list>
+    </container>
+  </augment>
+</module>

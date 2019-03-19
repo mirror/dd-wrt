@@ -1,0 +1,7 @@
+module mod1 {
+	
+	prefix my;
+	namespace "www.example.com";
+
+	include sub1;
+}

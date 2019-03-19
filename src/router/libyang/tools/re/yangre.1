@@ -1,0 +1,118 @@
+.\" Manpage for yanglint.
+.\" Process this file with
+.\" groff -man -Tascii yangre.1
+.\"
+
+.TH YANGRE 1 "2018-11-09" "libyang"
+.SH NAME
+yangre \- YANG regular expression processor
+.
+.SH SYNOPSIS
+.B yangre
+[\-V] \-p \fIREGEXP\fP [\-i] [\-p \fIREGEXP\fP [\-i]...] \fISTRING\fP
+.br
+.B yangre
+[\-V] \-f \fIFILE\fP
+.
+.SH DESCRIPTION
+\fByangre\fP is a command-line tool to test and evaluate regular expressions
+for use in YANG schemas.  Supported regular expressions are defined by the
+W3C's XML-Schema standard.
+
+\fByangre\fP can be used either with regular expressions and a target string
+on the command line or with input from a file.  The latter is particularly
+useful to avoid dealing with proper shell escaping of regular expression
+patterns, which can be somewhat tricky.
+.
+.SH GENERAL OPTIONS
+.TP
+.BR "\-h\fR,\fP \-\^\-help"
+.br
+Outputs usage help and exits.
+.TP
+.BR "\-v\fR,\fP \-\^\-version"
+.br
+Outputs the version number and exits.
+.TP
+.BR "\-V\fR,\fP \-\^\-verbose"
+Increases the verbosity level. If not specified, only errors are printed, with
+each appearance it adds: warnings, verbose messages, debug messages (if compiled
+with debug information).
+.SH COMMAND LINE INPUT
+.TP
+.BR "\-p \fIREGEXP\fP\fR,\fP \-\^\-pattern=\fIREGEXP\fP"
+.br
+One or more regular expression patterns to be tested against the input
+string.  Supplied expressions are tested in the order they appear on the
+command line.  Testing is aborted when an expression does not match (or
+does match, if the \fB-i\fP option is used.)
+.TP
+.BR "\-i\fR,\fP \-\^\-invert-match"
+.br
+Reverse match condition for the previous pattern.  If the pattern matches,
+an error is printed and evaluation is aborted.
+.TP
+.BR "\fISTRING\fP"
+.br
+Target text input to match the regular expression(s) against.  The same
+text is used for all regular expressions.  Note that only the first
+argument is used by \fByangre\fP, if it contains spaces or other shell
+metacharacters they must be properly escaped.  Additional arguments are
+silently ignored.
+.SH FILE INPUT
+.TP
+.BR "\-f \fIFILE\fP\fR,\fP \-\^\-file=\fIFILE\fP"
+Read both patterns and target text from the specified input file.
+
+\fIFILE\fP must consist of one or more YANG regular expressions, each on
+their own line, followed by a blank line and one line of target text.  No
+preprocessing is done on file input, there are no comment lines and
+whitespace is not stripped.  A single space character at the beginning of
+a pattern line inverts the match condition for the pattern on that line.
+Patterns must still be properly quoted as mandated by the YANG standard.
+.SH RETURN VALUES
+.TP
+0
+.I Successful match
+.br
+The target text matched for all patterns.
+.TP
+1
+.I Pattern mismatch
+.br
+One or more patterns did not match the target text.  An error message is
+printed to stderr describing which pattern was the first not to match.
+.TP
+255
+.I Other error
+.br
+One or more patterns could not be processed or some other error occurred that
+precluded processing.
+.SH EXAMPLES
+.IP \[bu] 2
+Test a single pattern:
+    yangre -p 'te.*xt' text_text
+.IP \[bu]
+Test multiple patterns:
+    yangre -p '.*pat1' -p 'pat2.*' -p 'notpat' -i pat2testpat1
+.IP \[bu]
+Input from a file:
+    cat > /tmp/patterns <<EOF
+    .*pat1
+    pat2.*
+     notpat
+
+    pat2testpat1
+    EOF
+    yangre -f /tmp/patterns
+
+.SH SEE ALSO
+https://github.com/CESNET/libyang (libyang homepage and Git repository)
+.
+.SH AUTHORS
+Radek Krejci <rkrejci@cesnet.cz>, Michal Vasko <mvasko@cesnet.cz>
+.br
+This man page was written by David Lamparter <equinox@diac24.net>
+.
+.SH COPYRIGHT
+Copyright \(co 2015-2018 CESNET, a.l.e.

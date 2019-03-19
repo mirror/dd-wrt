@@ -1,0 +1,10 @@
+module b1 {
+  namespace "urn:b1";
+  prefix b1;
+
+  container top {
+    leaf leaf {
+      type string;
+    }
+  }
+}

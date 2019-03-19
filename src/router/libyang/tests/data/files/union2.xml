@@ -1,0 +1,44 @@
+<one-leaf xmlns="urn:module2">reference leaf</one-leaf>
+<ice-cream-shop xmlns="urn:module">
+  <employees>
+    <employee>
+      <id>0</id>
+      <uniception>1.0123456789</uniception>
+    </employee>
+
+    <employee>
+      <id>1</id>
+      <uniception>true</uniception>
+    </employee>
+
+    <employee>
+      <id>2</id>
+      <uniception>-10</uniception>
+    </employee>
+
+    <employee>
+      <id>3</id>
+      <uniception>99</uniception>
+    </employee>
+
+    <employee>
+      <id>4</id>
+      <uniception>reference leaf</uniception>
+    </employee>
+
+    <employee>
+      <id>5</id>
+      <uniception/>
+    </employee>
+
+    <employee>
+      <id>6</id>
+      <uniception>random-identity</uniception>
+    </employee>
+
+    <employee>
+      <id>7</id>
+      <uniception>cf sf</uniception>
+    </employee>
+  </employees>
+</ice-cream-shop>

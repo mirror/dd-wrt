@@ -1,0 +1,29 @@
+submodule grp_idref_def-sub {
+  belongs-to "grp_idref_def-mod" {
+    prefix "grp_idref_def";
+  }
+
+  description
+    "A submodule that has a grouping with an identityref that has a default value";
+
+  identity ident-grp-base;
+
+  identity ident-grp-zero {
+    base ident-grp-base;
+  }
+
+  identity ident-grp-one {
+    base ident-grp-base;
+  }
+
+  grouping grp {
+    container grp-container {
+      leaf grp-idref-leaf {
+        type identityref {
+          base ident-grp-base;
+        }
+        default ident-grp-zero;
+      }
+    }
+  }
+}

@@ -1,0 +1,19 @@
+module base {
+    namespace "test:base";
+    prefix ba;
+
+    container main {
+        config false;
+    }
+
+    augment "/ba:main" {
+        container second {
+            list third {
+                key name;
+                leaf name {
+                    type string;
+                }
+            }
+        }
+    }
+}

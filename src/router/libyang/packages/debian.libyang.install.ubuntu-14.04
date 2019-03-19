@@ -1,0 +1,5 @@
+usr/bin/yanglint
+usr/bin/yangre
+usr/share/man/man1
+usr/lib/*/libyang.so.*
+usr/lib/*/libyang/*

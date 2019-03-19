@@ -1,0 +1,16 @@
+module mod1 {
+    prefix abc;
+
+    namespace "urn:cesnet:mod1";
+
+    container ccc {
+
+        leaf-list ll1 {
+            description "test description";
+
+            type string;
+
+            description "test"; //duplicated
+        }
+    }
+}

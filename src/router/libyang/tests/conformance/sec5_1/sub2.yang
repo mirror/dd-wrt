@@ -1,0 +1,13 @@
+submodule sub2 {
+	
+	belongs-to mod2
+    {
+	  prefix abc;
+	}
+
+	include sub3;
+
+	leaf sub2 {
+	  type hostname;
+	}
+}

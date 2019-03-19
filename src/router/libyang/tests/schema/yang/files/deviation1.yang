@@ -1,0 +1,34 @@
+module deviation1 {
+
+  namespace "urn:fri:params:xml:ns:yang:deviation1";
+  prefix dev1;
+
+  description 
+    "This module contains YANG definitions to be deviated.";
+
+  feature a-feature {
+    description
+      "Just a feature.";
+  }
+  
+  container deviation1 {
+
+    container cont {
+      description "Just a container.";
+
+      leaf cont-leaf-1 {
+        if-feature a-feature;
+        type uint16;
+        default 0x8100;
+        description
+          "A container leaf.";
+      }
+
+      leaf cont-leaf-2 {
+        type string;
+        description
+          "A second container leaf.";
+      }
+    }
+  }
+}

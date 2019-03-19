@@ -1,0 +1,14 @@
+module feature-submodule-mod {
+    namespace "test:feature-submodule-mod";
+    prefix fsmod;
+
+    container mod-container {
+        description "Top-level container defined in a module";
+
+        leaf leaf1 {
+            description "Leaf of external module";
+            type string;
+        }
+    }
+    
+}

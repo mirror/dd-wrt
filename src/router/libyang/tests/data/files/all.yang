@@ -1,0 +1,267 @@
+module all {
+  yang-version 1.1;
+  namespace "urn:all";
+  prefix all_mod;
+
+  import all-imp {
+    prefix all_imp;
+  }
+
+  revision 2016-05-23;
+  revision 2016-05-22;
+
+  feature feat1 {
+    if-feature "feat2";
+    status obsolete;
+  }
+
+  feature feat2;
+
+  feature feat3;
+
+  identity ident2 {
+    base ident1;
+  }
+
+  identity ident1;
+
+  typedef tdef1 {
+    type tdef2 {
+      length "3..9 | 30..40";
+      pattern "[ac]*";
+    }
+    units "none";
+    default "aaa";
+  }
+
+  typedef tdef2 {
+    type string {
+      length "2..10 | 20..50";
+      pattern "[ab]*";
+    }
+  }
+
+  grouping group1 {
+    leaf leaf1 {
+      type int8;
+    }
+  }
+
+  container cont1 {
+    leaf leaf2 {
+      if-feature "feat1";
+      type int16;
+      status obsolete;
+    }
+
+    uses group1 {
+      if-feature "feat2";
+      refine "leaf1" {
+        if-feature "feat3";
+        must "24 - 4 = number('20')";
+        default "25";
+        config true;
+        mandatory false;
+        description
+          "dsc";
+        reference
+          "none";
+      }
+    }
+
+    leaf leaf3 {
+      type int32;
+    }
+
+    leaf leaf4 {
+      type int64 {
+        range "1000 .. 50000" {
+          error-message
+            "Special error message.";
+          error-app-tag "special-tag";
+        }
+      }
+    }
+
+    leaf leaf5 {
+      type uint8;
+    }
+
+    leaf leaf6 {
+      type uint16;
+    }
+
+    leaf leaf7 {
+      type uint32;
+    }
+
+    leaf leaf8 {
+      type uint64;
+    }
+
+    choice choic1 {
+      default "leaf9b";
+      leaf leaf9a {
+        type decimal64 {
+          fraction-digits 9;
+        }
+      }
+
+      leaf leaf9b {
+        type boolean;
+        default "false";
+      }
+    }
+
+    leaf leaf10 {
+      type boolean;
+    }
+
+    leaf leaf11 {
+      type enumeration {
+        enum "one";
+        enum "two";
+        enum "five" {
+          value 5;
+        }
+      }
+    }
+
+    leaf leaf12 {
+      type bits {
+        bit flag0 {
+          position 0;
+        }
+        bit flag1;
+        bit flag2 {
+          position 2;
+        }
+        bit flag3 {
+          position 3;
+        }
+      }
+      default "flag0 flag3";
+    }
+
+    leaf leaf13 {
+      type binary;
+    }
+
+    leaf leaf14 {
+      type leafref {
+        path "/cont1/leaf17";
+      }
+    }
+
+    leaf leaf15 {
+      type empty;
+    }
+
+    leaf leaf16 {
+      type union {
+        type instance-identifier {
+          require-instance true;
+        }
+        type int8;
+      }
+    }
+
+    list list1 {
+      key "leaf18";
+      unique "leaf19";
+      min-elements 1;
+      max-elements 20;
+      leaf leaf18 {
+        type string;
+      }
+
+      leaf leaf19 {
+        type uint32;
+      }
+
+      anyxml axml1;
+
+      action act1 {
+        input {
+          leaf leaf24 {
+            type string;
+          }
+        }
+
+        output {
+          leaf leaf25 {
+            type string;
+          }
+        }
+      }
+
+      notification notif1 {
+        leaf leaf26 {
+          type string;
+        }
+      }
+    }
+
+    leaf-list llist1 {
+      type tdef1;
+      ordered-by user;
+    }
+
+    list list2 {
+      key "leaf27 leaf28";
+      leaf leaf27 {
+        type uint8;
+      }
+
+      leaf leaf28 {
+        type uint8;
+      }
+    }
+
+    leaf leaf29 {
+      type instance-identifier;
+    }
+
+    container must-deviations-container {
+      presence "Allows deviations on the leaf";
+      leaf leaf30 {
+        type string;
+      }
+    }
+
+    leaf leaf23 {
+      type empty;
+    }
+  }
+
+  augment "/cont1" {
+    leaf leaf17 {
+      type identityref {
+        base all_imp:ident4;
+      }
+      must "../leaf17 = 'all_imp:ident5'";
+    }
+  }
+
+  rpc rpc1 {
+    input {
+      leaf leaf20 {
+        type tdef1;
+      }
+    }
+
+    output {
+      container cont2 {
+        leaf leaf21 {
+          type empty;
+        }
+      }
+    }
+  }
+
+  notification notif1 {
+    leaf leaf22 {
+      type empty;
+    }
+  }
+}

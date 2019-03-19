@@ -1,0 +1,15 @@
+module ident-aug-must-issue-ape {
+
+  namespace "urn:ident-aug-must-issue:ape";
+  prefix ape;
+
+  container entities {
+    list entity {
+    key name;
+      leaf name {
+        type string;
+      }
+    }
+  }
+  
+}

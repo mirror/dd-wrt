@@ -1,0 +1,18 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+# Uncomment this to turn on verbose mode.
+export DH_VERBOSE=1
+
+%:
+	dh $@
+
+override_dh_strip:
+	dh_strip -plibyang@PACKAGE_PART_NAME@  --dbg-package=libyang@PACKAGE_PART_NAME@-dbg
+	dh_strip -plibyang-cpp@PACKAGE_PART_NAME@ --dbg-package=libyang-cpp@PACKAGE_PART_NAME@-dbg
+	dh_strip -ppython3-yang@PACKAGE_PART_NAME@ --dbg-package=python3-yang@PACKAGE_PART_NAME@-dbg
+
+override_dh_auto_configure:
+	cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr -DCMAKE_BUILD_TYPE:String="@BUILD_TYPE@" -DGEN_LANGUAGE_BINDINGS=ON .
+
+override_dh_auto_test:
+	ctest --output-on-failure

@@ -1,0 +1,17 @@
+<annotations xmlns="urn:annot" xmlns:p="urn:annot">
+  <annot><annoted-leaf p:abin="AxSd">string0</annoted-leaf></annot>
+  <annot><annoted-leaf p:abits="CF OF">string1</annoted-leaf></annot>
+  <annot><annoted-leaf p:abool="true">string2</annoted-leaf></annot>
+  <annot><annoted-leaf p:adec="2.031">string3</annoted-leaf></annot>
+  <annot><annoted-leaf p:aempty="">string4</annoted-leaf></annot>
+  <annot><annoted-leaf p:aenum="zero">string5</annoted-leaf></annot>
+  <annot><annoted-leaf p:aint8="-50">string6</annoted-leaf></annot>
+  <annot><annoted-leaf p:aint16="-300">string7</annoted-leaf></annot>
+  <annot><annoted-leaf p:aint32="-70000">string8</annoted-leaf></annot>
+  <annot><annoted-leaf p:aint64="-5000000000">string9</annoted-leaf></annot>
+  <annot><annoted-leaf p:auint8="50">string10</annoted-leaf></annot>
+  <annot><annoted-leaf p:auint16="300">string11</annoted-leaf></annot>
+  <annot><annoted-leaf p:auint32="70000">string12</annoted-leaf></annot>
+  <annot><annoted-leaf p:auint64="5000000000">string13</annoted-leaf></annot>
+  <annot><annoted-leaf p:astring="string">string14</annoted-leaf></annot>
+</annotations>

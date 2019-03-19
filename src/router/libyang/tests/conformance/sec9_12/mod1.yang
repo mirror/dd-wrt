@@ -1,0 +1,8 @@
+module mod1 {
+    prefix abc;
+    namespace "urn:cesnet:mod1";
+
+    typedef my {
+        type union;  // the type statement MUST be present
+    }
+}

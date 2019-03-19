@@ -1,0 +1,46 @@
+module links {
+  yang-version 1.1;
+  namespace "urn:module2";
+  prefix mod2;
+
+  identity just-another-identity {
+
+  }
+
+  leaf one-leaf {
+    type string;
+  }
+
+  list list-for-augment {
+    key keyleaf;
+
+    leaf keyleaf {
+      type string;
+    }
+
+    leaf just-leaf {
+      type int32;
+    }
+  }
+
+  leaf rleaf {
+    type string;
+  }
+
+  leaf-list llist {
+    type string;
+    min-elements 0;
+    max-elements 100;
+    ordered-by user;
+  }
+
+  grouping rgroup {
+    leaf rg1 {
+      type string;
+    }
+
+    leaf rg2 {
+      type string;
+    }
+  }
+}

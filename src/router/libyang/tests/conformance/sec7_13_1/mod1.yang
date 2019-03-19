@@ -1,0 +1,10 @@
+module mod1 {
+    prefix abc;
+    namespace "urn:cesnet:mod1";
+
+    rpc test {
+        description "test description";
+
+        description "test"; // duplicated
+    }
+}

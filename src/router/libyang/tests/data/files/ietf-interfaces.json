@@ -1,0 +1,44 @@
+{
+  "ietf-interfaces:interfaces": {
+    "interface": [
+      {
+        "name": "eth0",
+        "description": "Ethernet 0",
+        "type": "iana-if-type:ethernetCsmacd",
+        "enabled": true,
+        "ietf-ip:ipv4": {
+          "enabled": true,
+          "mtu": 1500,
+          "address": [
+            {
+              "ip": "192.168.2.100",
+              "prefix-length": 24
+            }
+          ]
+        }
+      },
+      {
+        "name": "eth1",
+        "description": "Ethernet 1",
+        "type": "iana-if-type:ethernetCsmacd",
+        "enabled": true,
+        "ietf-ip:ipv4": {
+          "enabled": true,
+          "mtu": 1500,
+          "address": [
+            {
+              "ip": "10.10.1.5",
+              "prefix-length": 16
+            }
+          ]
+        }
+      },
+      {
+        "name": "gigaeth0",
+        "description": "GigabitEthernet 0",
+        "type": "iana-if-type:ethernetCsmacd",
+        "enabled": false
+      }
+    ]
+  }
+}

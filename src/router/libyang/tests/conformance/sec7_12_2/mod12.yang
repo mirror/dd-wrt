@@ -1,0 +1,113 @@
+module mod12 {
+    prefix abc;
+    namespace "urn:cesnet:mod12";
+
+    grouping ssh {
+        container ssh {
+            config false;
+            leaf key { type string; }
+            leaf user {
+                type string {
+                    pattern '[a-z0-9]+';
+                }
+            }
+            leaf is_valid {
+                type boolean;
+                default "false";
+                when "../abc";
+            }
+
+            container abc;
+
+            leaf-list test {
+                type string;
+            }
+        }
+
+        choice ch1 {
+            case ca {
+                leaf ca {
+                    type int32;
+                    default -100;
+                }
+
+                container presence {
+                    presence "enable";
+                }
+            }
+
+            leaf str { type string; }
+        }
+
+        choice ch2 {
+            case ca {
+                container presence2 {
+                    presence "enable";
+                }
+            }
+
+            leaf str2 {
+                type string;
+                default string42;
+            }
+        }
+
+        anyxml any;
+    }
+
+    container server {
+        uses ssh {
+            refine ch1 {
+                description "test";
+                default ca;
+            }
+
+            refine ch2 {
+                reference "test";
+                default str3;
+            }
+
+            refine ssh/abc {
+                presence "enable";
+            }
+
+            refine "ssh/is_valid" {
+                default true;
+            }
+
+            refine ssh/user {
+                reference "test";
+                config true;
+            }
+
+            refine ssh {
+                config "true";
+            }
+
+            refine any {
+                mandatory true;
+                reference "reference test";
+                description "test description";
+            }
+
+            refine ssh/test {
+                min-elements 3;
+                max-elements 5;
+                reference "list reference";
+                must "/top = 42";
+                must "../user = 'admin'";
+            }
+
+            augment ch2 {
+                leaf str3 {
+                    type uint8;
+                }
+            }
+        }
+    }
+
+    leaf top {
+        type int32;
+        default 42;
+    }
+}

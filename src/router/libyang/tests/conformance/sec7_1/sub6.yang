@@ -1,0 +1,18 @@
+submodule sub6 {
+	belongs-to mod6 {
+		prefix sub;
+	}
+	
+	yang-version 1;
+	container login {
+		leaf name {
+			type string;
+			default "admin";
+		}
+
+		leaf password {
+			type string;
+			default admin;
+		}
+	}
+}

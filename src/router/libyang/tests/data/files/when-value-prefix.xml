@@ -1,0 +1,6 @@
+<outer xmlns="urn:when:value:prefix">
+   <indicator xmlns:wvpa="urn:when:value:prefix:aug">wvpa:inner-indicator</indicator>
+   <inner xmlns="urn:when:value:prefix:aug">
+      <text>any-text</text>
+   </inner>
+</outer>
