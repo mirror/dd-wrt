@@ -25,7 +25,7 @@ frr-configure: ncurses json-c readline libyang
 		--disable-staticd --disable-bfdd --disable-babeld --enable-pie=no --with-libreadline=$(TOP)/readline \
 		CFLAGS="-fno-strict-aliasing -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) -I$(TOP)/ -Drpl_malloc=malloc -Drpl_realloc=realloc -I$(TOP)/_staging/usr/include -I$(TOP)/frr/build -I$(TOP)/libyang/src" \
 		CPPFLAGS="-fno-strict-aliasing -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) -I$(TOP)/ -Drpl_malloc=malloc -Drpl_realloc=realloc -I$(TOP)/_staging/usr/include -I$(TOP)/frr/build -I$(TOP)/libyang/src" \
-		LDFLAGS="-L$(TOP)/readline/shlib -L$(TOP)/ncurses/lib -lncurses -L$(TOP)/json-c/.libs -ljson-c" \
+		LDFLAGS="-L$(TOP)/readline/shlib -L$(TOP)/ncurses/lib -lncurses -L$(TOP)/json-c/.libs -ljson-c -L$(TOP)/libyang -lyang -L$(TOP)/pcre/.libs -lpcre" \
 		LIBYANG_CFLAGS="-I$(TOP)/libyang/src" \
 		LIBYANG_LIBS="-L$(TOP)/libyang -lyang -L$(TOP)/pcre/.libs -lpcre"
 
