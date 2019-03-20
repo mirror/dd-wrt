@@ -23,8 +23,8 @@ frr-configure: ncurses json-c readline libyang
 		--enable-ospf-te --disable-ospfclient --enable-multipath=32  --enable-ipv6 --prefix=/usr --sysconfdir=/tmp --disable-ospf6d \
 		--enable-vtysh --enable-user=root --enable-group=root --disable-ospfapi --disable-isisd --disable-pimd --disable-nhrpd \
 		--disable-staticd --disable-bfdd --disable-babeld --enable-pie=no --with-libreadline=$(TOP)/readline \
-		CFLAGS="-fno-strict-aliasing -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) -I$(TOP)/ -Drpl_malloc=malloc -Drpl_realloc=realloc -I$(TOP)/_staging/usr/include -I$(TOP)/frr/build" \
-		CPPFLAGS="-fno-strict-aliasing -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) -I$(TOP)/ -Drpl_malloc=malloc -Drpl_realloc=realloc -I$(TOP)/_staging/usr/include -I$(TOP)/frr/build" \
+		CFLAGS="-fno-strict-aliasing -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) -I$(TOP)/ -Drpl_malloc=malloc -Drpl_realloc=realloc -I$(TOP)/_staging/usr/include -I$(TOP)/frr/build -I$(TOP)/libyang/src" \
+		CPPFLAGS="-fno-strict-aliasing -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) -I$(TOP)/ -Drpl_malloc=malloc -Drpl_realloc=realloc -I$(TOP)/_staging/usr/include -I$(TOP)/frr/build -I$(TOP)/libyang/src" \
 		LDFLAGS="-L$(TOP)/readline/shlib -L$(TOP)/ncurses/lib -lncurses -L$(TOP)/json-c/.libs -ljson-c" \
 		LIBYANG_CFLAGS="-I$(TOP)/libyang/src" \
 		LIBYANG_LIBS="-L$(TOP)/libyang -lyang -L$(TOP)/pcre/.libs -lpcre"
