@@ -176,6 +176,7 @@ void start_dhcp6c(void)
 		}
 	}
 	char *wan_ifname = get_wan_face();
+#ifndef HAVE_MICRO
 	if (nvram_match("wan_priority", "1") && isvlan(wan_ifname)) {
 		eval("vconfig", "set_egress_map", wan_ifname, "0", "6");
 		eval("vconfig", "set_egress_map", wan_ifname, "1", "0");
@@ -201,7 +202,7 @@ void start_dhcp6c(void)
 		eval("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-o", wan_ifname, "-p", "udp", "--dport", "547", "-j", "CLASSIFY", "--set-class", "0:0");
 
 	}
-
+#endif
 	eval("dhcp6c", "-c", "/tmp/dhcp6c.conf", "-T", "LL", wan_ifname);
 }
 
