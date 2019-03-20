@@ -2455,6 +2455,7 @@ static void mangle_table(char *wanface, char *wanaddr, char *vifs)
 
 	}
 	if (nvram_matchi("filter_tos", 1)) {
+		insmod("xt_DSCP");
 		if (!nvram_matchi("wan_priority", 1) || !isvlan(wanface)) {
 			save2file_A_prerouting("-i %s -j MARK --set-mark 0x100000", wanface);
 			save2file_A_postrouting("-o %s -j MARK --set-mark 0x100000", wanface);
