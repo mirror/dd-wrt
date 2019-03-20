@@ -2434,7 +2434,7 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 static void mangle_table(char *wanface, char *wanaddr, char *vifs)
 {
 	save2file("*mangle\n:PREROUTING ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]");
-
+#ifndef HAVE_MICRO
 	if (nvram_matchi("wan_priority", 1) && isvlan(wanface)) {
 		eval("vconfig", "set_egress_map", wanface, "0", "6");
 		eval("vconfig", "set_egress_map", wanface, "1", "0");
@@ -2464,6 +2464,7 @@ static void mangle_table(char *wanface, char *wanaddr, char *vifs)
 		eval("ip6tables", "-t", "mangle", "-D", "POSTROUTING", "-m", "mark", "--mark", "0x100000", "-j", "TOS", "--set-tos", "0x00");
 		eval("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-m", "mark", "--mark", "0x100000", "-j", "TOS", "--set-tos", "0x00");
 	}
+#endif
 	if (strcmp(wanface, "wwan0")) {
 
 		if (wanactive(wanaddr) && (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off"))) {
