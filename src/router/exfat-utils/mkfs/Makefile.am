@@ -39,7 +39,7 @@ mkexfatfs_SOURCES = \
 	vbr.c \
 	vbr.h
 mkexfatfs_CPPFLAGS = -I$(top_srcdir)/libexfat
-mkexfatfs_LDADD = ../libexfat/libexfat.a
+mkexfatfs_LDADD = ../libexfat/libexfat.la
 
 install-exec-hook:
 	ln -sf $(sbin_PROGRAMS) $(DESTDIR)$(sbindir)/mkfs.exfat
