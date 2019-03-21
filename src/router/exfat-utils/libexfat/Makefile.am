@@ -20,8 +20,9 @@
 #	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-noinst_LIBRARIES = libexfat.a
-libexfat_a_SOURCES = \
+lib_LTLIBRARIES = libexfat.la
+
+libexfat_la_SOURCES = \
 	byteorder.h \
 	cluster.c \
 	compiler.h \
