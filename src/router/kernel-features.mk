@@ -309,6 +309,8 @@ define kernelfeatures
 		echo "# CONFIG_XFS_RT is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_XFS_WARN is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_XFS_DEBUG is not set" >> $(LINUXDIR)/.config; \
+	else \
+		sed -i 's/\CONFIG_XFS_FS=m/# CONFIG_XFS_FS is not set/g' $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_RAID)" = "y" ]; then \
 		sed -i 's/\# CONFIG_MD is not set/CONFIG_MD=y/g' $(LINUXDIR)/.config; \
