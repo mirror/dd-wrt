@@ -504,6 +504,7 @@ endif
 	echo "CONFIG_REBOOT=y" >> busybox/.config
 ifeq ($(CONFIG_X86),y)
 	echo "CONFIG_POWEROFF=y" >> busybox/.config
+	sed -i 's/\# CONFIG_LSOF is not set/CONFIG_LSOF=y/g' busybox/.config
 else
 	echo "# CONFIG_POWEROFF is not set" >> busybox/.config
 endif
