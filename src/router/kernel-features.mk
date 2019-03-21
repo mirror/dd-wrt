@@ -298,7 +298,10 @@ define kernelfeatures
 		echo "# CONFIG_BTRFS_FS_RUN_SANITY_TESTS is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_BTRFS_DEBUG is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_BTRFS_ASSERT is not set" >> $(LINUXDIR)/.config; \
+	else \
+		sed -i 's/\CONFIG_BTRFS_FS=m/# CONFIG_BTRFS_FS is not set/g' $(LINUXDIR)/.config; \
 	fi
+	
 	if [ "$(CONFIG_XFSPROGS)" = "y" ]; then \
 		sed -i 's/\# CONFIG_XFS_FS is not set/CONFIG_XFS_FS=m/g' $(LINUXDIR)/.config; \
 		echo "# CONFIG_XFS_QUOTA is not set" >> $(LINUXDIR)/.config; \
