@@ -26,6 +26,8 @@ AC_INIT([Free exFAT implementation],
 	[exfat-utils],
 	[https://github.com/relan/exfat])
 AM_INIT_AUTOMAKE([1.11.2 -Wall -Werror foreign subdir-objects])
+LT_INIT
+LT_LIB_M
 AC_PROG_CC
 AC_PROG_CC_C99
 AC_PROG_RANLIB
