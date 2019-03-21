@@ -24,4 +24,4 @@ sbin_PROGRAMS = exfatlabel
 dist_man8_MANS = exfatlabel.8
 exfatlabel_SOURCES = main.c
 exfatlabel_CPPFLAGS = -I$(top_srcdir)/libexfat
-exfatlabel_LDADD = ../libexfat/libexfat.a
+exfatlabel_LDADD = ../libexfat/libexfat.la
