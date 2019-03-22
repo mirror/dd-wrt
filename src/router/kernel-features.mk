@@ -301,7 +301,6 @@ define kernelfeatures
 	else \
 		sed -i 's/\CONFIG_BTRFS_FS=m/# CONFIG_BTRFS_FS is not set/g' $(LINUXDIR)/.config; \
 	fi
-	
 	if [ "$(CONFIG_XFSPROGS)" = "y" ]; then \
 		sed -i 's/\# CONFIG_XFS_FS is not set/CONFIG_XFS_FS=m/g' $(LINUXDIR)/.config; \
 		echo "# CONFIG_XFS_QUOTA is not set" >> $(LINUXDIR)/.config; \
@@ -311,6 +310,8 @@ define kernelfeatures
 		echo "# CONFIG_XFS_DEBUG is not set" >> $(LINUXDIR)/.config; \
 	else \
 		sed -i 's/\CONFIG_XFS_FS=m/# CONFIG_XFS_FS is not set/g' $(LINUXDIR)/.config; \
+		echo "# CONFIG_USER_NS is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_UIDGID_STRICT_TYPE_CHECKS is not set" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_RAID)" = "y" ]; then \
 		sed -i 's/\# CONFIG_MD is not set/CONFIG_MD=y/g' $(LINUXDIR)/.config; \
