@@ -13,10 +13,18 @@
 #include "tomcrypt_dropbear.h"
 
 #include "dbmalloc.h"
+#ifndef XMALLOC
 #define XMALLOC m_malloc
+#endif
+#ifndef XFREE
 #define XFREE m_free_direct
+#endif
+#ifndef XREALLOC
 #define XREALLOC m_realloc
+#endif
+#ifndef XCALLOC
 #define XCALLOC m_calloc
+#endif
 
 /* macros for various libc functions you can change for embedded targets */
 #ifndef XMALLOC
