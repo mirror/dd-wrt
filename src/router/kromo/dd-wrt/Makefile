@@ -340,7 +340,7 @@ ifeq ($(CONFIG_GREEN),y)
 	cp common_style/common.css $(INSTALLDIR)/www/style
 	cp green/logo.png $(INSTALLDIR)/www/style
 endif
-
+	cp common_style/gradient.jpg $(INSTALLDIR)/www/style
 ifeq ($(CONFIG_ORANGE),y)
 	mkdir $(INSTALLDIR)/www/style/orange
 #	cp orange/style.css $(INSTALLDIR)/www/style/orange
