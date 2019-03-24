@@ -1131,7 +1131,7 @@ removeobsolete:
 	cd $(INSTALLDIR)/www  &&  find . -iname ".svn" | xargs rm -rf
 
 makewww:
-	cd $(INSTALLDIR)/www && $(SRCBASE)/../tools/webcomp . $(SRCBASE)/../tools/filelist *.asp *.svg *.htm *.html  help/*.asp *.js js/* lang_pack/* *.css help/*.css style/*.css style/*/* style/*/*/* style/*/*/*/* style/*/*/*/*/* intatstart/js/* intatstart/css/* intatstart/css/images/* intatstart/lang_pack/* intatstart/config/* help/*.png  images/*.png images/*/*.png style/*.png images/*.gif  images/*/*.gif images/*.jpg images/*.ico $(SRCBASE)/router/httpd/html.c $(SRCBASE)/router/httpd/www 
+	cd $(INSTALLDIR)/www && $(SRCBASE)/../tools/webcomp . $(SRCBASE)/../tools/filelist *.asp *.svg *.htm *.html  help/*.asp *.js js/* lang_pack/* *.css help/*.css style/*.css style/*/* style/*/*/* style/*/*/*/* style/*/*/*/*/* intatstart/js/* intatstart/css/* intatstart/css/images/* intatstart/lang_pack/* intatstart/config/* help/*.png  images/*.png images/*/*.png style/*.png style/*.jpg images/*.gif  images/*/*.gif images/*.jpg images/*.ico $(SRCBASE)/router/httpd/html.c $(SRCBASE)/router/httpd/www 
 
 
 removepwc:
