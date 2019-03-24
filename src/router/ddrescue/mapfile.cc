@@ -1,5 +1,5 @@
 /*  GNU ddrescue - Data recovery tool
-    Copyright (C) 2004-2018 Antonio Diaz Diaz.
+    Copyright (C) 2004-2019 Antonio Diaz Diaz.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -80,9 +80,12 @@ void show_mapfile_error( const char * const mapname, const int linenum )
 
 void Mapfile::compact_sblock_vector()
   {
+  unsigned long l;
+  for( l = 1; l < sblock_vector.size(); ++l )
+    if( sblock_vector[l-1].status() == sblock_vector[l].status() ) break;
+  if( l >= sblock_vector.size() ) return;	// already compacted
   std::vector< Sblock > new_vector;
-  unsigned long l = 0;
-  while( l < sblock_vector.size() )
+  for( l = 0; l < sblock_vector.size(); )
     {
     Sblock run = sblock_vector[l];
     unsigned long r = l + 1;
@@ -96,11 +99,11 @@ void Mapfile::compact_sblock_vector()
   }
 
 
-void Mapfile::extend_sblock_vector( const long long isize )
+void Mapfile::extend_sblock_vector( const long long insize )
   {
   if( sblock_vector.empty() )
     {
-    const Sblock sb( 0, ( isize > 0 ) ? isize : -1, Sblock::non_tried );
+    const Sblock sb( 0, ( insize > 0 ) ? insize : -1, Sblock::non_tried );
     sblock_vector.push_back( sb );
     return;
     }
@@ -109,28 +112,28 @@ void Mapfile::extend_sblock_vector( const long long isize )
     sblock_vector.insert( sblock_vector.begin(), Sblock( 0, front.pos(), Sblock::non_tried ) );
   Sblock & back = sblock_vector.back();
   const long long end = back.end();
-  if( isize > 0 )
+  if( insize > 0 )
     {
-    if( back.pos() >= isize )
+    if( back.pos() >= insize )
       {
-      if( back.pos() == isize && back.status() != Sblock::finished )
+      if( back.pos() == insize && back.status() != Sblock::finished )
         { sblock_vector.pop_back(); return; }
       show_error( "Last block in mapfile begins past end of input file.\n"
                   "          Use '-C' if you are reading from a partial copy.",
                   0, true );
       std::exit( 1 );
       }
-    if( end > isize )
+    if( end > insize )
       {
       if( back.status() != Sblock::finished )
-        { back.size( isize - back.pos() ); return; }
+        { back.size( insize - back.pos() ); return; }
       show_error( "Rescued data in mapfile goes past end of input file.\n"
                   "          Use '-C' if you are reading from a partial copy.",
                   0, true );
       std::exit( 1 );
       }
-    else if( end < isize )
-      sblock_vector.push_back( Sblock( end, isize - end, Sblock::non_tried ) );
+    else if( end < insize )
+      sblock_vector.push_back( Sblock( end, insize - end, Sblock::non_tried ) );
     }
   else if( end >= 0 )
     {
@@ -239,8 +242,7 @@ bool Mapfile::read_mapfile( const int default_sblock_status, const bool ro )
       if( n == 3 && pos >= 0 && Sblock::isstatus( ch ) &&
           ( size > 0 || ( size == 0 && pos == 0 ) ) )
         {
-        const Sblock::Status st = Sblock::Status( ch );
-        const Sblock sb( pos, size, st );
+        const Sblock sb( pos, size, Sblock::Status( ch ) );
         const long long end = sblock_vector.size() ?
                               sblock_vector.back().end() : 0;
         if( sb.pos() != end )
@@ -378,13 +380,15 @@ long Mapfile::find_index( const long long pos ) const
 
 
 // Find chunk from b.pos forwards of size <= b.size and status st.
+// if unfinished is true, find also any chunk not marked as finished.
 // If not found, or if after_finished is true and none of the blocks
 // found follows a finished block, put b.size to 0.
 // If at least one block of status st is found, return true.
 //
 bool Mapfile::find_chunk( Block & b, const Sblock::Status st,
                           const Domain & domain, const int alignment,
-                          const bool after_finished ) const
+                          const bool after_finished,
+                          const bool unfinished ) const
   {
   if( b.size() <= 0 ) return false;
   if( b.pos() < sblock_vector.front().pos() )
@@ -393,13 +397,17 @@ bool Mapfile::find_chunk( Block & b, const Sblock::Status st,
   long i;
   bool block_found = false;
   for( i = index_; i < sblocks(); ++i )
-    if( sblock_vector[i].status() == st && domain.includes( sblock_vector[i] ) )
+    {
+    const Sblock::Status ist = sblock_vector[i].status();
+    if( ( ist == st || ( unfinished && ist != Sblock::finished ) ) &&
+        domain.includes( sblock_vector[i] ) )
       {
       block_found = true;
       if( !after_finished || i <= 0 ||
           sblock_vector[i-1].status() == Sblock::finished )
         { index_ = i; break; }
       }
+    }
   if( i >= sblocks() ) { b.size( 0 ); return block_found; }
   if( b.pos() < sblock_vector[index_].pos() )
     b.pos( sblock_vector[index_].pos() );

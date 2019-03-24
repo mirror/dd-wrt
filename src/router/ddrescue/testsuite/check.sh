@@ -1,6 +1,6 @@
 #! /bin/sh
 # check script for GNU ddrescue - Data recovery tool
-# Copyright (C) 2009-2018 Antonio Diaz Diaz.
+# Copyright (C) 2009-2019 Antonio Diaz Diaz.
 #
 # This script is free software: you have unlimited permission
 # to copy, distribute and modify it.
@@ -39,6 +39,17 @@ map5="${testdir}"/mapfile5
 fail=0
 test_failed() { fail=1 ; printf " $1" ; [ -z "$2" ] || printf "($2)" ; }
 
+# Description of test files for ddrescue:
+# fox          : "The quick brown fox jumps over the lazy dog.\n"
+# test.txt     : 4 copies of the GPLv2, alternating LF and CRLF line ends
+# test[1-5].txt: partial copies of test.txt as recorded in mapfile[1-5]
+# mapfile1     : Alternating finished/non-tried blocks of 0x800 bytes each
+# mapfile2     : mapfile1 inverted (non-tried/finished)
+# mapfile2i    : mapfile2 without the non-tried blocks
+# mapfile3     : Alternating finished/non-tried blocks of 0x800/0x1000 bytes
+# mapfile[45]  : Triphasic complement to mapfile3
+# mapfile_blank: non-tried mapfile cut to the lenght of test.txt (72776)
+
 printf "testing ddrescue-%s..." "$2"
 
 "${DDRESCUE}" -q ${in}
@@ -49,7 +60,11 @@ printf "testing ddrescue-%s..." "$2"
 [ $? = 1 ] || test_failed $LINENO
 "${DDRESCUE}" -q ${in} out ${in}
 [ $? = 1 ] || test_failed $LINENO
+"${DDRESCUE}" -q ${in}.bak out ${in}
+[ $? = 1 ] || test_failed $LINENO
 "${DDRESCUE}" -q ${in} out out
+[ $? = 1 ] || test_failed $LINENO
+"${DDRESCUE}" -q ${in} out.bak out
 [ $? = 1 ] || test_failed $LINENO
 "${DDRESCUE}" -q -a 1ki ${in} out
 [ $? = 1 ] || test_failed $LINENO
@@ -94,6 +109,8 @@ printf "testing ddrescue-%s..." "$2"
 "${DDRESCUE}" -q -G ${in} out
 [ $? = 1 ] || test_failed $LINENO
 "${DDRESCUE}" -q -F- -G ${in} out mapfile
+[ $? = 1 ] || test_failed $LINENO
+"${DDRESCUE}" -q -G --command-mode ${in} out mapfile
 [ $? = 1 ] || test_failed $LINENO
 "${DDRESCUE}" -q -H ${map2i} ${in} out mapfile
 [ $? = 2 ] || test_failed $LINENO
@@ -140,18 +157,18 @@ printf "testing ddrescue-%s..." "$2"
 "${DDRESCUE}" -q --same-file -t ${in} out
 [ $? = 1 ] || test_failed $LINENO
 
-rm -f mapfile
+rm -f mapfile || framework_failure
 "${DDRESCUE}" -q -t -p -J -b1024 -i15kB ${in} out mapfile || test_failed $LINENO
 "${DDRESCUE}" -q -A -y -e0 -f -n -s15k ${in} out mapfile || test_failed $LINENO
 cmp ${in} out || test_failed $LINENO
 
-rm -f out mapfile
+rm -f out mapfile || framework_failure
 "${DDRESCUE}" -q -R -i15000 -a 1ks -E 1Kis ${in} out mapfile ||
 	test_failed $LINENO
 "${DDRESCUE}" -q -R -s15000 --cpass=5 ${in} out mapfile || test_failed $LINENO
 cmp ${in} out || test_failed $LINENO
 
-rm -f out
+rm -f out || framework_failure
 "${DDRESCUE}" -q -F+ -o15000 -c143 ${in} out2 mapfile || test_failed $LINENO
 "${DDRESCUE}" -q -R -S -i15000 -o0 -u -Z1Mis out2 out || test_failed $LINENO
 cmp ${in} out || test_failed $LINENO
@@ -161,7 +178,7 @@ printf "garbage" >> out || framework_failure
 	test_failed $LINENO
 cmp ${in} out || test_failed $LINENO
 
-rm -f out
+rm -f out || framework_failure
 "${DDRESCUE}" -q -O -r1 -H - --pause-on-error=s0 ${in} out < ${map1} ||
 	test_failed $LINENO
 cmp ${in1} out || test_failed $LINENO
@@ -169,7 +186,7 @@ cmp ${in1} out || test_failed $LINENO
 	test_failed $LINENO
 cmp ${in} out || test_failed $LINENO
 
-rm -f out mapfile
+rm -f out mapfile || framework_failure
 "${DDRESCUE}" -q -c1 -H ${map3} --delay-slow=0 ${in3} out mapfile ||
 	test_failed $LINENO
 "${DDRESCUE}" -q -c1 -M -H ${map4} ${in4} out mapfile || test_failed $LINENO
@@ -179,19 +196,19 @@ cmp -s ${in} out && test_failed $LINENO
 "${DDRESCUE}" -q -c1 -n -N -H ${map5} ${in5} out mapfile || test_failed $LINENO
 cmp ${in} out || test_failed $LINENO
 
-rm -f out
+rm -f out || framework_failure
 "${DDRESCUE}" -q -X0 -m - ${in} out < ${map1} || test_failed $LINENO
 cmp ${in1} out || test_failed $LINENO
 "${DDRESCUE}" -q -X0 -L -K0,64Ki -m ${map2i} ${in2} out || test_failed $LINENO
 cmp ${in} out || test_failed $LINENO
 
-rm -f out
+rm -f out || framework_failure
 "${DDRESCUE}" -q -R -B -K,64KiB -m ${map2} ${in} out || test_failed $LINENO
 cmp ${in2} out || test_failed $LINENO
 "${DDRESCUE}" -q -R -K65536,65536 -m ${map1} ${in1} out || test_failed $LINENO
 cmp ${in} out || test_failed $LINENO
 
-rm -f out
+rm -f out || framework_failure
 "${DDRESCUE}" -q --mapfile-interval=5m -m ${map5} ${in5} out ||
 	test_failed $LINENO
 "${DDRESCUE}" -q --mapfile-interval=5,5 -m ${map4} ${in4} out ||
@@ -200,21 +217,21 @@ rm -f out
 	test_failed $LINENO
 cmp ${in} out || test_failed $LINENO
 
-rm -f out
+rm -f out || framework_failure
 cat ${map1} > mapfile || framework_failure
 "${DDRESCUE}" -q -I ${in2} out mapfile || test_failed $LINENO
 cat ${map2} > mapfile || framework_failure
 "${DDRESCUE}" -q -I ${in} out mapfile || test_failed $LINENO
 cmp ${in} out || test_failed $LINENO
 
-rm -f out
+rm -f out || framework_failure
 cat ${map1} > mapfile || framework_failure
 "${DDRESCUE}" -q -R ${in2} out mapfile || test_failed $LINENO
 cat ${map2} > mapfile || framework_failure
 "${DDRESCUE}" -q -R -C ${in1} out mapfile || test_failed $LINENO
 cmp ${in} out || test_failed $LINENO
 
-rm -f out
+rm -f out || framework_failure
 for i in 0 8000 16000 24000 32000 40000 48000 56000 64000 72000 ; do
 	"${DDRESCUE}" -q -i$i -s4000 -m ${map1} ${in} out ||
 	test_failed $LINENO $i
@@ -236,13 +253,13 @@ for i in 4000 12000 20000 28000 36000 44000 52000 60000 68000 ; do
 done
 cmp ${in} out || test_failed $LINENO
 
-rm -f mapfile
+rm -f mapfile || framework_failure
 cat ${in1} > out || framework_failure
 "${DDRESCUE}" -q -G ${in} out mapfile || test_failed $LINENO
 "${DDRESCUE}" -q ${in2} out mapfile || test_failed $LINENO
 cmp ${in} out || test_failed $LINENO
 
-rm -f mapfile
+rm -f mapfile || framework_failure
 cat ${in} > copy || framework_failure
 printf "garbage" >> copy || framework_failure
 cat ${in2} > out || framework_failure
@@ -258,11 +275,47 @@ cmp ${in} out || test_failed $LINENO
 "${DDRESCUE}" -q --same-file -o 72776 out out || test_failed $LINENO
 cat ${in} ${in} | cmp out - || test_failed $LINENO
 
-rm -f out
+rm -f out || framework_failure
 "${DDRESCUE}" -q ${in} out || test_failed $LINENO
 "${DDRESCUE}" -q --same-file -o 145552 -S out out || test_failed $LINENO
 "${DDRESCUE}" -q --same-file -i 145552 -o 72776 out out || test_failed $LINENO
 cat ${in} ${in} ${in} | cmp out - || test_failed $LINENO
+
+rm -f out || framework_failure
+printf "c 0 72776\nq\n" | "${DDRESCUE}" -m ${map1} --command-mode ${in} out \
+	> /dev/null || test_failed $LINENO
+cmp ${in1} out || test_failed $LINENO
+printf "c 0 72776\nu\n" | "${DDRESCUE}" -m ${map2} --command-mode ${in2} out \
+	> /dev/null || test_failed $LINENO
+cmp ${in} out || test_failed $LINENO
+
+rm -f out || framework_failure
+cat ${map1} > mapfile || framework_failure
+printf "c 0 72776\ns0 1\n" | "${DDRESCUE}" --command-mode ${in} out mapfile \
+	> /dev/null || test_failed $LINENO
+cmp ${in2} out || test_failed $LINENO
+cat ${map2} > mapfile || framework_failure
+printf "c 0 72776\n" | "${DDRESCUE}" -C --command-mode ${in1} out mapfile \
+	> /dev/null || test_failed $LINENO
+cmp ${in} out || test_failed $LINENO
+"${DDRESCUELOG}" -d mapfile || test_failed $LINENO
+
+rm -f out mapfile || framework_failure
+printf "c 0x1000 0x800\nc 0x2800 0x800\nc 0x4000 0x800\nc 0x5800 0x800\n\
+	c 0x7000 0x800\nc 0x8800 0x800\nc 0xA000 0x800\nc 0xB800 0x800\n\
+	c 0xD000 0x800\nc 0xE800 0x800\nc 0x10000 0x800\nc 0x11800 0x448\n" | \
+"${DDRESCUE}" --command-mode ${in} out mapfile > /dev/null ||
+	test_failed $LINENO
+cmp ${in5} out || test_failed $LINENO
+printf "c 0 0x800\nc 0x1800 0x800\nc 0x3000 0x800\nc 0x4800 0x800\n\
+	c 0x6000 0x800\nc 0x7800 0x800\nc 0x9000 0x800\nc 0xA800 0x800\n\
+	c 0xC000 0x800\nc 0xD800 0x800\nc 0xF000 0x800\nc 0x10800 0x800\n" | \
+"${DDRESCUE}" -C --command-mode ${in3} out mapfile > /dev/null ||
+	test_failed $LINENO
+printf "c 0 72776\nf\n" | "${DDRESCUE}" --command-mode ${in4} out mapfile \
+	> /dev/null || test_failed $LINENO
+cmp ${in} out || test_failed $LINENO
+"${DDRESCUELOG}" -d mapfile || test_failed $LINENO
 
 printf "\ntesting ddrescuelog-%s..." "$2"
 
@@ -569,7 +622,7 @@ done
 
 printf "\ntesting combined rescue..."
 
-rm -f mapfile
+rm -f mapfile || framework_failure
 "${DDRESCUE}" -q ${in} out mapfile		# rescue partition
 "${DDRESCUELOG}" --shift -o45 mapfile > shifted_mapfile
 "${DDRESCUE}" -q --same-file -o45 -s72776 --reverse out out

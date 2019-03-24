@@ -1,5 +1,5 @@
 /*  GNU ddrescue - Data recovery tool
-    Copyright (C) 2004-2018 Antonio Diaz Diaz.
+    Copyright (C) 2004-2019 Antonio Diaz Diaz.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@
 #define ULLONG_MAX 0xFFFFFFFFFFFFFFFFULL
 #endif
 
+// requires '#include <cstdio>' for 'FILE *'
 
 class Block
   {
@@ -221,7 +222,7 @@ public:
       current_pass_( 1 ), index_( 0 ), read_only_( false ) {}
 
   void compact_sblock_vector();
-  void extend_sblock_vector( const long long isize );
+  void extend_sblock_vector( const long long insize );
   void shift_blocks( const long long offset );
   bool truncate_vector( const long long end, const bool force = false );
   void set_to_status( const Sblock::Status st )
@@ -265,7 +266,8 @@ public:
   long find_index( const long long pos ) const;
   bool find_chunk( Block & b, const Sblock::Status st,
                    const Domain & domain, const int alignment,
-                   const bool after_finished = false ) const;
+                   const bool after_finished = false,
+                   const bool unfinished = false ) const;
   bool rfind_chunk( Block & b, const Sblock::Status st,
                     const Domain & domain, const int alignment,
                     const bool before_finished = false ) const;

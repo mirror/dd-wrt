@@ -1,23 +1,16 @@
-Changes in version 1.23:
+Changes in version 1.24:
 
-A bug has been fixed that sometimes marked the wrong block as
-non-scraped when running in reverse direction. (Bug introduced in 1.22).
-Thanks to Arthur Lesuisse for reporting this.
+The new option '--command-mode' has been added. It activates a scripting
+interface similar to the one of ed which reads commands from the standard
+input and executes them, copying parts of the input file on demand.
 
-The new option '--same-file' has been added. It allows infile and
-outfile to be the same file or device.
+Ddrescue now tries to create a backup copy of the mapfile, with the name
+<mapfile>.bak, every time it is going to overwrite a fsynced mapfile. On
+startup, ddrescue verifies that the backup mapfile (if it exists) is not a
+non-regular file, and that its name is not the same as infile or outfile.
 
-The new option '--shift' has been added to ddrescuelog. It shifts the
-positions of all the blocks in 'mapfile' by the offset
-('--output-position' - '--input-position'), and writes the resulting
-mapfile to standard output.
+It has been documented that when ddrescue finishes, the contents of any
+areas marked as bad-sector remain untouched in the output file.
 
-In fill mode, the location data is now written as one line without
-final newline to ease finding it with simple text search tools.
-
-Fill mode no longer requires a seekable infile. Commands like
-  ddrescue -F- <(printf "BAD-SECTOR ") outfile mapfile
-are now possible.
-
-The new chapter "Meaning of ddrescue's screen output" has been added to
-the manual.
+The configure script now accepts appending options to CXXFLAGS using the
+syntax 'CXXFLAGS+=OPTIONS'.

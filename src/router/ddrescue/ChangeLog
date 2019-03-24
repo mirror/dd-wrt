@@ -1,3 +1,11 @@
+2019-02-24  Antonio Diaz Diaz  <antonio@gnu.org>
+
+	* Version 1.24 released.
+	* Added new option '--command-mode'.
+	* Implemented mapfile backup.
+	* ddrescue.texi: Documented final contents of bad areas in outfile.
+	* configure: Accept appending to CXXFLAGS, 'CXXFLAGS+=OPTIONS'.
+
 2018-02-13  Antonio Diaz Diaz  <antonio@gnu.org>
 
 	* Version 1.23 released.
@@ -131,7 +139,7 @@
 	* io.cc (show_status): Show the current total run time.
 	* rescuebook.cc: Show pass number and direction during copying.
 	* rescuebook.cc (show_status): Show block pos instead of current_pos.
-	* main.cc: Show "an unknown number of bytes" for unknown isize.
+	* main.cc: Show "an unknown number of bytes" for unknown insize.
 	* Added option '-B, --binary-prefixes' to ddrescuelog.
 	* Added new option '-C, --complete-logfile' to ddrescuelog.
 	* Added new option '-P, --compare-as-domain' to ddrescuelog.
@@ -164,7 +172,7 @@
 	  if truncation would discard finished blocks.
 	* rescuebook.cc: Mark failed blocks with 1 sector as bad-sector.
 	* logbook.cc (extend_sblock_vector): Remove last block of
-	  logfile if it starts at isize and is not marked as finished.
+	  logfile if it starts at insize and is not marked as finished.
 	* io.cc (show_status, update_rates): Detect a jump back in time
 	  and adjust status.
 	* ddrescue.h (slow_read): Return false for the first 10 seconds.
@@ -420,7 +428,7 @@
 	* Version 0.1 released.
 
 
-Copyright (C) 2004-2018 Antonio Diaz Diaz.
+Copyright (C) 2004-2019 Antonio Diaz Diaz.
 
 This file is a collection of facts, and thus it is not copyrightable,
 but just in case, you have unlimited permission to copy, distribute and
