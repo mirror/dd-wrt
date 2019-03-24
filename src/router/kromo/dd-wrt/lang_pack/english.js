@@ -1379,6 +1379,13 @@ management.SIPatH_srv="SIPatH";
 management.SIPatH_port="SIP Port";
 management.SIPatH_domain="SIP Domain";
 management.gui_style="Router GUI Style";
+management.too_short="Too Short";
+management.very_weak="Very Weak";
+management.weak="Weak";
+management.good="Good";
+management.strong="Strong";
+management.very_strong="Very Strong";
+
 
 //help container
 var hmanagement=new Object();
