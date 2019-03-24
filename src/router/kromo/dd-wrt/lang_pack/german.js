@@ -1189,6 +1189,12 @@ management.SIPatH_srv="SIPatH";
 management.SIPatH_port="SIP-Port";
 management.SIPatH_domain="SIP-Domain";
 management.gui_style="Stil des Router-GUI";
+management.too_short="Zu Kurz";
+management.very_weak="Sehr Schlecht";
+management.weak="Schlecht";
+management.good="Gut";
+management.strong="Sicher";
+management.very_strong="Sehr Sicher";
 
 //help container
 

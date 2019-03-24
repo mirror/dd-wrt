@@ -54,7 +54,6 @@ function chkPass(pwd) {
 	var nMultLength=4, nMultNumber=4;
 	var nMultSymbol=6;
 	var nTmpAlphaUC="", nTmpAlphaLC="", nTmpNumber="", nTmpSymbol="";
-	var sAlphaUC="0", sAlphaLC="0", sNumber="0", sSymbol="0", sMidChar="0", sRequirements="0", sAlphasOnly="0", sNumbersOnly="0", sRepChar="0", sConsecAlphaUC="0", sConsecAlphaLC="0", sConsecNumber="0", sSeqAlpha="0", sSeqNumber="0", sSeqSymbol="0";
 	var sAlphas = "abcdefghijklmnopqrstuvwxyz";
 	var sNumerics = "01234567890";
 	var sSymbols = ")!@#$%^&*()";
@@ -137,71 +136,51 @@ function chkPass(pwd) {
 	/* Modify overall score value based on usage vs requirements */
 
 		/* General point assignment */
-		$("nLengthBonus").innerHTML = "+ " + nScore; 
 		if (nAlphaUC > 0 && nAlphaUC < nLength) {	
 			nScore = parseInt(nScore + ((nLength - nAlphaUC) * 2));
-			sAlphaUC = "+ " + parseInt((nLength - nAlphaUC) * 2); 
 		}
 		if (nAlphaLC > 0 && nAlphaLC < nLength) {	
 			nScore = parseInt(nScore + ((nLength - nAlphaLC) * 2)); 
-			sAlphaLC = "+ " + parseInt((nLength - nAlphaLC) * 2);
 		}
 		if (nNumber > 0 && nNumber < nLength) {	
 			nScore = parseInt(nScore + (nNumber * nMultNumber));
-			sNumber = "+ " + parseInt(nNumber * nMultNumber);
 		}
 		if (nSymbol > 0) {	
 			nScore = parseInt(nScore + (nSymbol * nMultSymbol));
-			sSymbol = "+ " + parseInt(nSymbol * nMultSymbol);
 		}
 		if (nMidChar > 0) {	
 			nScore = parseInt(nScore + (nMidChar * nMultMidChar));
-			sMidChar = "+ " + parseInt(nMidChar * nMultMidChar);
 		}
-		$("nAlphaUCBonus").innerHTML = sAlphaUC; 
-		$("nAlphaLCBonus").innerHTML = sAlphaLC;
-		$("nNumberBonus").innerHTML = sNumber;
-		$("nSymbolBonus").innerHTML = sSymbol;
-		$("nMidCharBonus").innerHTML = sMidChar;
 		
 		/* Point deductions for poor practices */
 		if ((nAlphaLC > 0 || nAlphaUC > 0) && nSymbol === 0 && nNumber === 0) {  // Only Letters
 			nScore = parseInt(nScore - nLength);
 			nAlphasOnly = nLength;
-			sAlphasOnly = "- " + nLength;
 		}
 		if (nAlphaLC === 0 && nAlphaUC === 0 && nSymbol === 0 && nNumber > 0) {  // Only Numbers
 			nScore = parseInt(nScore - nLength); 
 			nNumbersOnly = nLength;
-			sNumbersOnly = "- " + nLength;
 		}
 		if (nRepChar > 0) {  // Same character exists more than once
 			nScore = parseInt(nScore - nRepInc);
-			sRepChar = "- " + nRepInc;
 		}
 		if (nConsecAlphaUC > 0) {  // Consecutive Uppercase Letters exist
 			nScore = parseInt(nScore - (nConsecAlphaUC * nMultConsecAlphaUC)); 
-			sConsecAlphaUC = "- " + parseInt(nConsecAlphaUC * nMultConsecAlphaUC);
 		}
 		if (nConsecAlphaLC > 0) {  // Consecutive Lowercase Letters exist
 			nScore = parseInt(nScore - (nConsecAlphaLC * nMultConsecAlphaLC)); 
-			sConsecAlphaLC = "- " + parseInt(nConsecAlphaLC * nMultConsecAlphaLC);
 		}
 		if (nConsecNumber > 0) {  // Consecutive Numbers exist
 			nScore = parseInt(nScore - (nConsecNumber * nMultConsecNumber));  
-			sConsecNumber = "- " + parseInt(nConsecNumber * nMultConsecNumber);
 		}
 		if (nSeqAlpha > 0) {  // Sequential alpha strings exist (3 characters or more)
 			nScore = parseInt(nScore - (nSeqAlpha * nMultSeqAlpha)); 
-			sSeqAlpha = "- " + parseInt(nSeqAlpha * nMultSeqAlpha);
 		}
 		if (nSeqNumber > 0) {  // Sequential numeric strings exist (3 characters or more)
 			nScore = parseInt(nScore - (nSeqNumber * nMultSeqNumber)); 
-			sSeqNumber = "- " + parseInt(nSeqNumber * nMultSeqNumber);
 		}
 		if (nSeqSymbol > 0) {  // Sequential symbol strings exist (3 characters or more)
 			nScore = parseInt(nScore - (nSeqSymbol * nMultSeqSymbol)); 
-			sSeqSymbol = "- " + parseInt(nSeqSymbol * nMultSeqSymbol);
 		}
 		/* Determine complexity based on overall score */
 		if (nScore > 100) { nScore = 100; } else if (nScore < 0) { nScore = 0; }
