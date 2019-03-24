@@ -217,6 +217,11 @@ If you test it please contact the Dropbear author */
  * PAM challenge/response.
  * You can't enable both PASSWORD and PAM. */
 
+/* Set this to 0 if your system does not have multiple user support.
+   (Linux kernel CONFIG_MULTIUSER option)
+   The resulting binary will not run on a normal system. */
+#define DROPBEAR_SVR_MULTIUSER 1
+
 /* This requires crypt() */
 #define DROPBEAR_SVR_PASSWORD_AUTH 1
 /* PAM requires ./configure --enable-pam */

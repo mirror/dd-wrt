@@ -1,6 +1,6 @@
 repo: d7da3b1e15401eb234ec866d5eac992fc4cd5878
-node: 1c66ca4f3791c82501c88e7637312182c7294978
+node: 6d1bbe7d5fa5827c7eae28bca044d691f7efa785
 branch: default
 latesttag: github/master
-latesttagdistance: 14
-changessincelatesttag: 14
+latesttagdistance: 6
+changessincelatesttag: 6
