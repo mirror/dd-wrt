@@ -58,7 +58,7 @@ function chkPass(pwd) {
 	var sAlphas = "abcdefghijklmnopqrstuvwxyz";
 	var sNumerics = "01234567890";
 	var sSymbols = ")!@#$%^&*()";
-	var sComplexity = "Too Short";
+	var sComplexity = management.too_short;
 	var sStandards = "Below";
 	var nMinPwdLen = 8;
 	if (document.all) { var nd = 0; } else { var nd = 1; }
@@ -205,11 +205,11 @@ function chkPass(pwd) {
 		}
 		/* Determine complexity based on overall score */
 		if (nScore > 100) { nScore = 100; } else if (nScore < 0) { nScore = 0; }
-		if (nScore >= 0 && nScore < 20) { sComplexity = "Very Weak"; }
-		else if (nScore >= 20 && nScore < 40) { sComplexity = "Weak"; }
-		else if (nScore >= 40 && nScore < 60) { sComplexity = "Good"; }
-		else if (nScore >= 60 && nScore < 80) { sComplexity = "Strong"; }
-		else if (nScore >= 80 && nScore <= 100) { sComplexity = "Very Strong"; }
+		if (nScore >= 0 && nScore < 20) { sComplexity = management.very_weak; }
+		else if (nScore >= 20 && nScore < 40) { sComplexity = management.weak; }
+		else if (nScore >= 40 && nScore < 60) { sComplexity = management.good; }
+		else if (nScore >= 60 && nScore < 80) { sComplexity = management.strong; }
+		else if (nScore >= 80 && nScore <= 100) { sComplexity = management.very_strong; }
 		
 		/* Display updated score criteria to client */
 		oScorebar.style.backgroundPosition = "-" + parseInt(nScore * 4) + "px";
@@ -314,13 +314,18 @@ if (valid_password(F))
 		<legend><% tran("management.psswd_legend"); %></legend>
         	<table id="tablePwdCheck" cellpadding="5" cellspacing="1" border="0">
                <tr>
+                <tr>
                     <th><% tran("management.psswd_user"); %></th>
                     <td><input type="password" maxlength="63" size="20" value="d6nw5v1x2pc7st9m" name="http_username" onclick="this.select();" onblur="valid_name(this,management.psswd_user,SPACE_NO)" /></td>
-
+                </tr>
+                <tr>
                     <th><% tran("management.psswd_pass"); %></th>
-		    <td><input type="password" maxlength="63" size="20" value="d6nw5v1x2pc7st9m" name="http_passwd" onclick="this.select();" onblur="valid_name(this,management.psswd_pass,SPACE_NO)" /></td>
-                    <th><% tran("management.psswd_conf"); %></th>
+		    <td><input type="password" maxlength="63" size="20" value="d6nw5v1x2pc7st9m" name="http_passwd" onclick="this.select();" onblur="valid_name(this,management.psswd_pass,SPACE_NO)" onkeyup="chkPass(this.value)" /></td>
+                </tr>
+                <tr>
+                    <th><% tran("management.pass_conf"); %></th>
 		    <td><input type="password" maxlength="63" size="20" value="d6nw5v1x2pc7st9m" name="http_passwdConfirm" onclick="this.select();" onblur="valid_name(this,management.pass_conf,SPACE_NO)" /></td>
+                </tr>
             	    <tr>
                     <th>Score:</th>
                     <td>
