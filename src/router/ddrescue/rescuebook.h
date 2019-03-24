@@ -1,5 +1,5 @@
 /*  GNU ddrescue - Data recovery tool
-    Copyright (C) 2004-2018 Antonio Diaz Diaz.
+    Copyright (C) 2004-2019 Antonio Diaz Diaz.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -184,13 +184,16 @@ class Rescuebook : public Mapbook, public Rb_options
   bool update_rates( const bool force = false );
   void show_status( const long long ipos, const char * const msg = 0,
                     const bool force = false );
+  int copy_command( const char * const command );
+  int status_command( const char * const command ) const;
 public:
-  Rescuebook( const long long offset, const long long isize,
+  Rescuebook( const long long offset, const long long insize,
               Domain & dom, const Domain * const test_dom,
               const Mb_options & mb_opts, const Rb_options & rb_opts,
               const char * const iname, const char * const mapname,
               const int cluster, const int hardbs, const bool synchronous );
   ~Rescuebook() { delete[] voe_buf; }
 
+  int do_commands( const int ides, const int odes );
   int do_rescue( const int ides, const int odes );
   };
