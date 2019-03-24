@@ -281,3 +281,29 @@ text-decoration:blink;
 input.spaceradio {
 margin-right:.4em;
 }
+#score {
+	color: #000;
+	font-size: 85%;
+	position:absolute;
+	text-align: center;
+	width: 100px;
+	z-index: 10;
+}
+#score,#rating,#standards {
+	font-weight: bold;
+}
+#scorebar {
+	background-image: url(/style/gradient.jpg);
+	background-repeat: no-repeat;
+	background-position: 0 0;
+	position:absolute;
+	width: 100px;
+	z-index: 0;
+}
+#scorebarBorder {
+	background: #333;
+	border: 1px #000 solid;
+	height: 16px;
+	margin-bottom: 2px;
+	width: 100px;
+}
