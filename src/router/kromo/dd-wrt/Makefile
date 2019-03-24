@@ -340,7 +340,6 @@ ifeq ($(CONFIG_GREEN),y)
 	cp common_style/common.css $(INSTALLDIR)/www/style
 	cp green/logo.png $(INSTALLDIR)/www/style
 endif
-	cp common_style/gradient.jpg $(INSTALLDIR)/www/style
 ifeq ($(CONFIG_ORANGE),y)
 	mkdir $(INSTALLDIR)/www/style/orange
 #	cp orange/style.css $(INSTALLDIR)/www/style/orange
@@ -849,9 +848,9 @@ endif
 ifeq ($(CONFIG_SPEEDCHECKER),y)
 	-install $(TOP)/private/shownf/icons/shownf-sc.png $(INSTALLDIR)/www/images/shownf-sc.png
 endif
-
+	cp common_style/gradient.jpg $(INSTALLDIR)/www/style
 ifeq ($(CONFIG_DNSCRYPT),y)
-	-install $(TOP)/private/shownf/icons/shownf-dnscrypt.png $(INSTALLDIR)/www/images/sc_icon_32x32.png
+#	-install $(TOP)/private/shownf/icons/shownf-dnscrypt.png $(INSTALLDIR)/www/images/sc_icon_32x32.png
 endif
 
 ifneq ($(CONFIG_WEBSERVER),y)
