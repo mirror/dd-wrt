@@ -1,5 +1,5 @@
 /*  GNU ddrescuelog - Tool for ddrescue mapfiles
-    Copyright (C) 2011-2018 Antonio Diaz Diaz.
+    Copyright (C) 2011-2019 Antonio Diaz Diaz.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -49,9 +49,11 @@ enum Mode { m_none, m_and, m_annotate, m_change, m_compare, m_complete,
 
 void show_help( const int hardbs )
   {
-  std::printf( "%s - Tool for ddrescue mapfiles.\n", Program_name );
-  std::printf( "Manipulates ddrescue mapfiles, shows their contents, converts them to/from\n"
-               "other formats, compares them, and tests rescue status.\n"
+  std::printf( "GNU ddrescuelog is a tool that manipulates ddrescue mapfiles, shows mapfile\n"
+               "contents, converts mapfiles to/from other formats, compares mapfiles, tests\n"
+               "rescue status, and can delete a mapfile if the rescue is done. Ddrescuelog\n"
+               "operations can be restricted to one or several parts of the mapfile if the\n"
+               "domain setting options are used.\n"
                "\nNOTE: In versions of ddrescue prior to 1.20 the mapfile was called\n"
                "'logfile'. The format is the same; only the name has changed.\n"
                "\nUsage: %s [options] mapfile\n", invocation_name );

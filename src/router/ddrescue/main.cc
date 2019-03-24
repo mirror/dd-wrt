@@ -1,5 +1,5 @@
 /*  GNU ddrescue - Data recovery tool
-    Copyright (C) 2004-2018 Antonio Diaz Diaz.
+    Copyright (C) 2004-2019 Antonio Diaz Diaz.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -61,23 +61,23 @@ const char * const Program_name = "GNU ddrescue";
 const char * const program_name = "ddrescue";
 const char * invocation_name = 0;
 
-enum Mode { m_none, m_fill, m_generate };
+enum Mode { m_none, m_command, m_fill, m_generate };
 const mode_t outmode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
 
 
 void show_help( const int cluster, const int hardbs )
   {
-  std::printf( "%s - Data recovery tool.\n", Program_name );
-  std::printf( "Copies data from one file or block device to another,\n"
-               "trying to rescue the good parts first in case of read errors.\n"
-               "\nUsage: %s [options] infile outfile [mapfile]\n", invocation_name );
-  std::printf( "\nAlways use a mapfile unless you know you won't need it. Without a\n"
+  std::printf( "GNU ddrescue is a data recovery tool. It copies data from one file or block\n"
+               "device (hard disc, cdrom, etc) to another, trying to rescue the good parts\n"
+               "first in case of read errors.\n"
+               "\nAlways use a mapfile unless you know you won't need it. Without a\n"
                "mapfile, ddrescue can't resume a rescue, only reinitiate it.\n"
                "NOTE: In versions of ddrescue prior to 1.20 the mapfile was called\n"
                "'logfile'. The format is the same; only the name has changed.\n"
                "\nIf you reboot, check the device names before restarting ddrescue.\n"
                "Don't use options '-F' or '-G' without reading the manual first.\n"
-               "\nOptions:\n"
+               "\nUsage: %s [options] infile outfile [mapfile]\n", invocation_name );
+  std::printf( "\nOptions:\n"
                "  -h, --help                     display this help and exit\n"
                "  -V, --version                  output version information and exit\n"
                "  -a, --min-read-rate=<bytes>    minimum read rate of good areas in bytes/s\n"
@@ -122,6 +122,7 @@ void show_help( const int cluster, const int hardbs )
                "  -y, --synchronous              use synchronous writes for output file\n"
                "  -Z, --max-read-rate=<bytes>    maximum read rate in bytes/s\n"
                "      --ask                      ask for confirmation before starting the copy\n"
+               "      --command-mode             execute commands from standard input\n"
                "      --cpass=<n>[,<n>]          select what copying pass(es) to run\n"
                "      --delay-slow=<interval>    initial delay before checking slow reads [30]\n"
                "      --log-events=<file>        log significant events in <file>\n"
@@ -182,7 +183,8 @@ int parse_time_interval( const char * const ptr, const bool comma = false )
 
 
 bool check_identical( const char * const iname, const char * const oname,
-                      const char * const mapname, const bool same_file )
+                      const char * const mapname,
+                      const std::string & mapname_bak, const bool same_file )
   {
   struct stat istat, ostat, mapstat;
   bool iexists = false, oexists = false, mapexists = false;
@@ -211,6 +213,11 @@ bool check_identical( const char * const iname, const char * const oname,
         ( oexists && mapexists && ostat.st_ino == mapstat.st_ino &&
           ostat.st_dev == mapstat.st_dev ) )
       { show_error( "Outfile and mapfile are the same." ); return true; }
+    // just compare names because std::remove will break existing links
+    if( mapname_bak == iname )
+      { show_error( "Infile and <mapfile>.bak are the same." ); return true; }
+    if( mapname_bak == oname )
+      { show_error( "Outfile and <mapfile>.bak are the same." ); return true; }
     }
   return false;
   }
@@ -226,16 +233,19 @@ bool check_files( const char * const iname, const char * const oname,
     show_error( "Both input and output files must be specified.", 0, true );
     return false;
     }
-  if( check_identical( iname, oname, mapname, rb_opts.same_file ) )
+  std::string mapname_bak;
+  if( mapname ) { mapname_bak = mapname; mapname_bak += ".bak"; }
+  if( check_identical( iname, oname, mapname, mapname_bak, rb_opts.same_file ) )
     return false;
   if( mapname )
     {
     struct stat st;
     if( stat( mapname, &st ) == 0 && !S_ISREG( st.st_mode ) )
-      {
-      show_error( "Mapfile exists and is not a regular file." );
-      return false;
-      }
+      { show_error( "Mapfile exists and is not a regular file." );
+        return false; }
+    if( stat( mapname_bak.c_str(), &st ) == 0 && !S_ISREG( st.st_mode ) )
+      { show_error( "<mapfile>.bak exists and is not a regular file." );
+        return false; }
     }
   if( !generate && ( rb_opts.min_outfile_size > 0 || !force ||
       preallocate || rb_opts.sparse ) )
@@ -325,11 +335,11 @@ int do_generate( const long long offset, Domain & domain,
   const int ides = open( iname, O_RDONLY | O_BINARY );
   if( ides < 0 )
     { show_error( "Can't open input file", errno ); return 1; }
-  const long long isize = lseek( ides, 0, SEEK_END );
-  if( isize < 0 )
+  const long long insize = lseek( ides, 0, SEEK_END );
+  if( insize < 0 )
     { show_error( "Input file is not seekable." ); return 1; }
 
-  Genbook genbook( offset, isize, domain, mb_opts, mapname, cluster, hardbs );
+  Genbook genbook( offset, insize, domain, mb_opts, mapname, cluster, hardbs );
   if( genbook.domain().empty() ) return empty_domain();
   if( !genbook.blank() && genbook.current_status() != Mapfile::generating )
     {
@@ -376,7 +386,7 @@ void device_id_and_size( const long long size, const int fd,
 
 
 void about_to_copy( const Rescuebook & rescuebook, const char * const iname,
-                    const char * const oname, const long long isize,
+                    const char * const oname, const long long insize,
                     const int ides, const bool ask )
   {
   if( ask || verbosity >= 0 )
@@ -387,7 +397,7 @@ void about_to_copy( const Rescuebook & rescuebook, const char * const iname,
     char c = ' '; const char * p = " ";		// show on one line
     if( ask || verbosity >= 2 )
       {
-      device_id_and_size( isize, ides, iid );
+      device_id_and_size( insize, ides, iid );
       const int odes = open( oname, O_RDONLY );
       if( odes >= 0 )
         {
@@ -405,25 +415,25 @@ void about_to_copy( const Rescuebook & rescuebook, const char * const iname,
 
 
 bool user_agrees_ids( const Rescuebook & rescuebook, const char * const iname,
-                      const char * const oname, const long long isize,
+                      const char * const oname, const long long insize,
                       const int ides )
   {
-  about_to_copy( rescuebook, iname, oname, isize, ides, true );
+  about_to_copy( rescuebook, iname, oname, insize, ides, true );
   std::fputs( "Proceed (y/N)? ", stdout );
   std::fflush( stdout );
   return ( std::tolower( std::fgetc( stdin ) ) == 'y' );
   }
 
 
-long long adjusted_isize( const int ides, const Domain * const test_domain )
+long long adjusted_insize( const int ides, const Domain * const test_domain )
   {
-  long long isize = lseek( ides, 0, SEEK_END );
-  if( isize >= 0 && test_domain )
+  long long insize = lseek( ides, 0, SEEK_END );
+  if( insize >= 0 && test_domain )
     {
     const long long size = test_domain->end();
-    if( isize <= 0 || isize > size ) isize = size;
+    if( insize <= 0 || insize > size ) insize = size;
     }
-  return isize;
+  return insize;
   }
 
 
@@ -432,8 +442,9 @@ int do_rescue( const long long offset, Domain & domain,
                const Rb_options & rb_opts, const char * const iname,
                const char * const oname, const char * const mapname,
                const int cluster, const int hardbs, const int o_direct_out,
-               const int o_trunc, const bool ask, const bool preallocate,
-               const bool synchronous, const bool verify_input_size )
+               const int o_trunc, const bool ask, const bool command_mode,
+               const bool preallocate, const bool synchronous,
+               const bool verify_input_size )
   {
   if( rb_opts.same_file && o_trunc )
     {
@@ -445,24 +456,24 @@ int do_rescue( const long long offset, Domain & domain,
   const int ides = open( iname, O_RDONLY | rb_opts.o_direct_in | O_BINARY );
   if( ides < 0 )
     { show_error( "Can't open input file", errno ); return 1; }
-  const long long isize = adjusted_isize( ides, test_domain );
-  if( isize < 0 )
+  const long long insize = adjusted_insize( ides, test_domain );
+  if( insize < 0 )
     { show_error( "Input file is not seekable." ); return 1; }
 
-  Rescuebook rescuebook( offset, isize, domain, test_domain, mb_opts, rb_opts,
+  Rescuebook rescuebook( offset, insize, domain, test_domain, mb_opts, rb_opts,
                          iname, mapname, cluster, hardbs, synchronous );
 
   if( verify_input_size )
     {
-    if( !rescuebook.mapfile_exists() || isize <= 0 ||
-        rescuebook.mapfile_isize() <= 0 ||
-        rescuebook.mapfile_isize() >= LLONG_MAX )
+    if( !rescuebook.mapfile_exists() || insize <= 0 ||
+        rescuebook.mapfile_insize() <= 0 ||
+        rescuebook.mapfile_insize() >= LLONG_MAX )
       {
       show_error( "Can't verify input file size.\n"
                   "          Mapfile is unfinished or missing or size is invalid." );
       return 1;
       }
-    if( rescuebook.mapfile_isize() != isize )
+    if( rescuebook.mapfile_insize() != insize )
       {
       show_error( "Input file size differs from size calculated from mapfile." );
       return 1;
@@ -482,7 +493,7 @@ int do_rescue( const long long offset, Domain & domain,
     }
   if( rescuebook.read_only() ) return not_writable( mapname );
 
-  if( ask && !user_agrees_ids( rescuebook, iname, oname, isize, ides ) )
+  if( ask && !user_agrees_ids( rescuebook, iname, oname, insize, ides ) )
     return 1;
 
   const int odes = open( oname, O_CREAT | O_WRONLY | o_direct_out |
@@ -507,6 +518,8 @@ int do_rescue( const long long offset, Domain & domain,
       !rescuebook.write_mapfile( 0, true ) )
     { show_error( "Can't create mapfile", errno ); return 1; }
 
+  if( command_mode ) return rescuebook.do_commands( ides, odes );
+
   if( !event_logger.open_file() )
     { show_error( "Can't open file for logging events", errno ); return 1; }
   if( !rate_logger.open_file() )
@@ -514,7 +527,7 @@ int do_rescue( const long long offset, Domain & domain,
   if( !read_logger.open_file() )
     { show_error( "Can't open file for logging reads", errno ); return 1; }
 
-  if( !ask ) about_to_copy( rescuebook, iname, oname, isize, ides, false );
+  if( !ask ) about_to_copy( rescuebook, iname, oname, insize, ides, false );
   if( verbosity >= 1 )
     {
     std::printf( "    Starting positions: infile = %sB,  outfile = %sB\n",
@@ -695,8 +708,8 @@ bool Rescuebook::reopen_infile()
   ides_ = open( iname_, O_RDONLY | o_direct_in | O_BINARY );
   if( ides_ < 0 )
     { final_msg( "Can't reopen input file", errno ); return false; }
-  const long long isize = lseek( ides_, 0, SEEK_END );
-  if( isize < 0 )
+  const long long insize = lseek( ides_, 0, SEEK_END );
+  if( insize < 0 )
     { final_msg( "Input file has become not seekable", errno ); return false; }
   return true;
   }
@@ -731,7 +744,7 @@ int main( const int argc, const char * const argv[] )
   for( int i = 1; i < argc; ++i )
     { command_line += ' '; command_line += argv[i]; }
 
-  enum { opt_ask = 256, opt_cpa, opt_ds, opt_eoe, opt_eve, opt_mi,
+  enum { opt_ask = 256, opt_cm, opt_cpa, opt_ds, opt_eoe, opt_eve, opt_mi,
          opt_msr, opt_poe, opt_pop, opt_rat, opt_rea, opt_rs, opt_sf };
   const Arg_parser::Option options[] =
     {
@@ -782,6 +795,7 @@ int main( const int argc, const char * const argv[] )
     { 'y', "synchronous",          Arg_parser::no  },
     { 'Z', "max-read-rate",        Arg_parser::yes },
     { opt_ask, "ask",              Arg_parser::no  },
+    { opt_cm,  "command-mode",     Arg_parser::no  },
     { opt_cpa, "cpass",            Arg_parser::yes },
     { opt_ds,  "delay-slow",       Arg_parser::yes },
     { opt_eoe, "exit-on-error",    Arg_parser::no  },
@@ -859,6 +873,7 @@ int main( const int argc, const char * const argv[] )
       case 'y': synchronous = true; break;
       case 'Z': rb_opts.max_read_rate = getnum( arg, hardbs, 1 ); break;
       case opt_ask: ask = true; break;
+      case opt_cm:  set_mode( program_mode, m_command ); break;
       case opt_cpa: parse_cpass( arg, rb_opts ); break;
       case opt_ds:  rb_opts.delay_slow = parse_time_interval( arg ); break;
       case opt_eoe: rb_opts.max_read_errors = 0; break;
@@ -927,6 +942,7 @@ int main( const int argc, const char * const argv[] )
         show_error( "warning: Options -aACdDeEHIJKlMnOpPrRStTuwxXy are ignored in generate mode." );
       return do_generate( opos - ipos, domain, mb_opts, iname, oname, mapname,
                           cluster, hardbs );
+    case m_command:
     case m_none:
       {
       if( fb_opts != Fb_options() )
@@ -936,8 +952,8 @@ int main( const int argc, const char * const argv[] )
       return do_rescue( opos - ipos, domain,
                         test_mode_mapfile_name ? &test_domain : 0, mb_opts,
                         rb_opts, iname, oname, mapname, cluster, hardbs,
-                        o_direct_out, o_trunc, ask, preallocate, synchronous,
-                        verify_input_size );
+                        o_direct_out, o_trunc, ask, program_mode == m_command,
+                        preallocate, synchronous, verify_input_size );
       }
     }
   }

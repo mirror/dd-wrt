@@ -7,7 +7,7 @@ INSTALL_DIR = $(INSTALL) -d -m 755
 SHELL = /bin/sh
 CAN_RUN_INSTALLINFO = $(SHELL) -c "install-info --version" > /dev/null 2>&1
 
-ddobjs = mapbook.o fillbook.o genbook.o io.o rescuebook.o main.o
+ddobjs = mapbook.o fillbook.o genbook.o io.o rescuebook.o command_mode.o main.o
 objs = arg_parser.o rational.o non_posix.o loggers.o block.o mapfile.o $(ddobjs)
 logobjs = arg_parser.o block.o mapfile.o ddrescuelog.o
 
@@ -41,17 +41,18 @@ ddrescuelog.o : ddrescuelog.cc
 %.o : %.cc
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
 
-$(objs)       : Makefile
-$(ddobjs)     : block.h mapbook.h
-arg_parser.o  : arg_parser.h
-block.o       : block.h
-loggers.o     : block.h loggers.h
-mapfile.o     : block.h
-non_posix.o   : non_posix.h
-rational.o    : rational.h
-rescuebook.o  : rational.h loggers.h rescuebook.h
-main.o        : arg_parser.h rational.h loggers.h non_posix.h main_common.cc rescuebook.h
-ddrescuelog.o : Makefile arg_parser.h block.h main_common.cc
+$(objs)        : Makefile
+$(ddobjs)      : block.h mapbook.h
+arg_parser.o   : arg_parser.h
+block.o        : block.h
+command_mode.o : rational.h rescuebook.h
+loggers.o      : block.h loggers.h
+mapfile.o      : block.h
+non_posix.o    : non_posix.h
+rational.o     : rational.h
+rescuebook.o   : rational.h loggers.h rescuebook.h
+main.o         : arg_parser.h rational.h loggers.h non_posix.h main_common.cc rescuebook.h
+ddrescuelog.o  : Makefile arg_parser.h block.h main_common.cc
 
 
 doc : info man

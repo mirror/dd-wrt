@@ -1,5 +1,5 @@
 /*  GNU ddrescue - Data recovery tool
-    Copyright (C) 2004-2018 Antonio Diaz Diaz.
+    Copyright (C) 2004-2019 Antonio Diaz Diaz.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@ int verbosity = 0;
 
 namespace {
 
-const char * const program_year = "2018";
+const char * const program_year = "2019";
 std::string command_line;
 
 
@@ -166,11 +166,9 @@ void show_error( const char * const msg, const int errcode, const bool help )
   {
   if( verbosity < 0 ) return;
   if( msg && msg[0] )
-    {
-    std::fprintf( stderr, "%s: %s", program_name, msg );
-    if( errcode > 0 ) std::fprintf( stderr, ": %s", std::strerror( errcode ) );
-    std::fputc( '\n', stderr );
-    }
+    std::fprintf( stderr, "%s: %s%s%s\n", program_name, msg,
+                  ( errcode > 0 ) ? ": " : "",
+                  ( errcode > 0 ) ? std::strerror( errcode ) : "" );
   if( help )
     std::fprintf( stderr, "Try '%s --help' for more information.\n",
                   invocation_name );

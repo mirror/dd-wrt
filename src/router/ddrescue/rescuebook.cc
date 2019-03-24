@@ -1,5 +1,5 @@
 /*  GNU ddrescue - Data recovery tool
-    Copyright (C) 2004-2018 Antonio Diaz Diaz.
+    Copyright (C) 2004-2019 Antonio Diaz Diaz.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -786,13 +786,13 @@ void Rescuebook::show_status( const long long ipos, const char * const msg,
   }
 
 
-Rescuebook::Rescuebook( const long long offset, const long long isize,
+Rescuebook::Rescuebook( const long long offset, const long long insize,
                         Domain & dom, const Domain * const test_dom,
                         const Mb_options & mb_opts, const Rb_options & rb_opts,
                         const char * const iname, const char * const mapname,
                         const int cluster, const int hardbs,
                         const bool synchronous )
-  : Mapbook( offset, isize, dom, mb_opts, mapname, cluster, hardbs,
+  : Mapbook( offset, insize, dom, mb_opts, mapname, cluster, hardbs,
              rb_opts.complete_only ),
     Rb_options( rb_opts ),
     error_rate( 0 ),
@@ -818,10 +818,10 @@ Rescuebook::Rescuebook( const long long offset, const long long isize,
   {
   if( preview_lines > softbs() / 16 ) preview_lines = softbs() / 16;
   if( skipbs < 0 )
-    skipbs = round_up( std::max( isize / 100000, (long long)min_skipbs ),
+    skipbs = round_up( std::max( insize / 100000, (long long)min_skipbs ),
                        min_skipbs );
-  const long long csize = isize / 100;
-  if( isize > 0 && skipbs > 0 && max_skipbs == max_max_skipbs &&
+  const long long csize = insize / 100;
+  if( insize > 0 && skipbs > 0 && max_skipbs == max_max_skipbs &&
       csize < max_skipbs )
     max_skipbs = std::max( skipbs, csize );
   skipbs = round_up( skipbs, hardbs );		// make multiple of hardbs
@@ -877,9 +877,9 @@ int Rescuebook::do_rescue( const int ides, const int odes )
           std::printf( " last block size: %9sB\n",
                        format_num( sblock( sblocks() - 1 ).size() ) );
         }
-      if( domain().pos() > 0 || domain().end() < mapfile_isize() )
+      if( domain().pos() > 0 || domain().end() < mapfile_insize() )
         std::printf( "(sizes limited to domain %lld B to %lld B of %lld B)\n",
-                     domain().pos(), domain().end(), mapfile_isize() );
+                     domain().pos(), domain().end(), mapfile_insize() );
       std::printf( "rescued: %sB, tried: %sB, bad-sector: %sB, bad areas: %lu\n\n",
                    format_num( finished_size ),
                    format_num( non_trimmed_size + non_scraped_size + bad_size ),
@@ -937,9 +937,7 @@ int Rescuebook::do_rescue( const int ides, const int odes )
     compact_sblock_vector();
     if( !update_mapfile( odes_, true ) && retval == 0 ) retval = 1;
     }
-  if( final_msg().size() )
-    { if( final_errno() ) show_error( final_msg().c_str(), final_errno() );
-      else { std::fputs( final_msg().c_str(), stdout ); std::fputc( '\n', stdout ); } }
+  if( final_msg().size() ) show_error( final_msg().c_str(), final_errno() );
   if( close( odes_ ) != 0 )
     { show_error( "Error closing outfile", errno );
       if( retval == 0 ) retval = 1; }
