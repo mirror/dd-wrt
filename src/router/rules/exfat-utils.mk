@@ -1,6 +1,6 @@
 exfat-utils-configure:
 	cd exfat-utils && autoreconf -fi
-	cd exfat-utils && ./configure --host=$(ARCH)-linux --prefix=/usr \
+	cd exfat-utils && ./configure --host=$(ARCH)-linux --prefix=/usr --libdir=/usr/lib \
 	    CC="$(CC) $(COPTS) $(MIPS16_OPT) -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -D_GNU_SOURCE  -DNEED_PRINTF -std=gnu89" \
 	    LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections"
 
