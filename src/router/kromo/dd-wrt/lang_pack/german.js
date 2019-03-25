@@ -1195,6 +1195,8 @@ management.weak="Schlecht";
 management.good="Gut";
 management.strong="Sicher";
 management.very_strong="Sehr Sicher";
+management.score="Punkte:";
+management.complexity="Sicherheit:";
 
 //help container
 

@@ -309,7 +309,7 @@ if (valid_password(F))
 		    <td><input type="password" maxlength="63" size="20" value="d6nw5v1x2pc7st9m" name="http_passwdConfirm" onclick="this.select();" onblur="valid_name(this,management.pass_conf,SPACE_NO)" /></td>
                 </tr>
             	    <tr>
-                    <th>Score:</th>
+                    <th><% tran("management.score"); %></th>
                     <td>
                         <div id="scorebarBorder">
                         <div id="score">0%</div>
@@ -318,7 +318,7 @@ if (valid_password(F))
                     </td>
                 </tr>
                 <tr>
-                    <th>Complexity:</th>
+                    <th><% tran("management.complexity"); %></th>
                     <td><div id="complexity">Too Short</div></td>
                 </tr>
                 </table>

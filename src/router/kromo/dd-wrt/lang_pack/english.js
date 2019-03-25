@@ -1385,7 +1385,8 @@ management.weak="Weak";
 management.good="Good";
 management.strong="Strong";
 management.very_strong="Very Strong";
-
+management.score="Score:";
+management.complexity="Complexity:";
 
 //help container
 var hmanagement=new Object();
