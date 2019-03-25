@@ -1,7 +1,7 @@
 /*
  * transmission.c
  *
- * Copyright (C) 2013 Sebastian Gottschall <gottschall@dd-wrt.com>
+ * Copyright (C) 2013 - 2019 Sebastian Gottschall <gottschall@dd-wrt.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -121,6 +121,8 @@ static int isnum(char *str)
 {
 	int len = strlen(str);
 	int i;
+	if (!len)
+		return 0;
 	for (i = 0; i < len; i++) {
 		if (!isdigit(str[i]))
 			return 0;
@@ -200,11 +202,7 @@ static void writeconfig(FILE * fp)
 			fprintf(fp, "\t\"%s\": \"\"", name);
 		else if (config[i].type)
 			fprintf(fp, "\t\"%s\": \"%s\"", name, config[i].val);
-		else if (!strcmp(config[i].val, "false"))
-			fprintf(fp, "\t\"%s\": false", name);
-		else if (!strcmp(config[i].val, "true"))
-			fprintf(fp, "\t\"%s\": true", name);
-		else if (isnum(config[i].val))
+		else if (!strcmp(config[i].val, "false") || !strcmp(config[i].val, "true") || isnum(config[i].val))
 			fprintf(fp, "\t\"%s\": %s", name, config[i].val);
 		else
 			fprintf(fp, "\t\"%s\": \"%s\"", name, config[i].val);
