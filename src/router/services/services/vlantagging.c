@@ -128,7 +128,6 @@ void stop_vlantagging(void)
 static void set_stp_state(char *bridge, char *stp)
 {
 	br_set_stp_state(bridge, strcmp(stp, "Off") ? 1 : 0);
-
 #ifdef HAVE_MSTP
 	if (strcmp(stp, "Off"))
 		eval("mstpctl", "addbridge", bridge);
@@ -149,6 +148,9 @@ void apply_bridgeif(char *ifname, char *realport)
 {
 	char word[256];
 	char *next, *wordlist;
+#ifdef HAVE_MICRO
+	br_init();
+#endif
 	wordlist = nvram_safe_get("bridgesif");
 	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(tag, word, 0);
@@ -169,15 +171,20 @@ void apply_bridgeif(char *ifname, char *realport)
 				br_set_path_cost(tag, realport, atoi(pathcost));
 		}
 	}
-
+#ifdef HAVE_MICRO
+	br_shutdown();
+#endif
 }
 
 void start_bridgesif(void)
 {
 	char stp[256];
-	set_stp_state("br0", getBridgeSTPType("br0", stp));
 	char word[256];
 	char *next, *wordlist;
+#ifdef HAVE_MICRO
+	br_init();
+#endif
+	set_stp_state("br0", getBridgeSTPType("br0", stp));
 
 	wordlist = nvram_safe_get("bridgesif");
 	foreach(word, wordlist, next) {
@@ -200,6 +207,9 @@ void start_bridgesif(void)
 				br_set_path_cost(tag, port, atoi(pathcost));
 		}
 	}
+#ifdef HAVE_MICRO
+	br_shutdown();
+#endif
 }
 
 void start_bridging(void)
@@ -207,7 +217,6 @@ void start_bridging(void)
 	char word[256];
 	char *next, *wordlist;
 	char hwaddr[32];
-
 #ifdef HAVE_MICRO
 	br_init();
 #endif
@@ -344,6 +353,9 @@ int setportprio_main(int argc, char *argv[])
 		fprintf(stderr, "syntax: setportprio [bridge] [ifname]\n");
 		return -1;
 	}
+#ifdef HAVE_MICRO
+	br_init();
+#endif
 	wordlist = nvram_safe_get("bridgesif");
 	foreach(word, wordlist, next) {
 		char *tag = argv[1];
@@ -365,5 +377,8 @@ int setportprio_main(int argc, char *argv[])
 				br_set_path_cost(tag, port, atoi(pathcost));
 		}
 	}
+#ifdef HAVE_MICRO
+	br_shutdown();
+#endif
 	return 0;
 }
