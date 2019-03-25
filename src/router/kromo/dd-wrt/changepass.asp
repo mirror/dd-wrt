@@ -4,7 +4,10 @@
 
 document.title = "<% nvg("router_name"); %> - User Password Change";
 
-
+/*
+ * based on passwordmeter by Jeff Todnem
+ * see http://www.passwordmeter.com/js/pwdmeter.js for full license information
+ */
 function addLoadEvent(func) {
 	var oldonload = window.onload;
 	if (typeof window.onload != "function") {
