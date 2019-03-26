@@ -761,6 +761,13 @@ config SPI_TLE62X0
 	  sysfs interface, with each line presented as a kind of GPIO
 	  exposing both switch control and diagnostic feedback.
 
+config SPI_BCM5301X
+	tristate "Broadcom 5301X SPI master controller"
+	depends on SPI_MASTER && PLAT_BCM5301X
+	help
+	  Broadcom 5301X SoC SPI master controller support
+
+
 #
 # Add new SPI protocol masters in alphabetical order above this line
 #
