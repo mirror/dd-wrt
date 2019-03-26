@@ -296,6 +296,7 @@ static char *filter[] = {
 	"board_id", //netgear specific
 	"hwrev",
 	"hwver",
+	"winbond_flash",
 	NULL
 };
 
