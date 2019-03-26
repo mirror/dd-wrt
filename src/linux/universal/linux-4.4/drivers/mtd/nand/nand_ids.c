@@ -96,6 +96,12 @@ struct nand_flash_dev nand_flash_ids[] = {
 
 	LEGACY_ID_NAND("NAND 256MiB 3,3V 8-bit", 0x71, 256, SZ_16K, SP_OPTIONS),
 
+#ifdef CONFIG_BCM47XX
+	/* MLC nand flash; sub-page write is not supported */
+	LEGACY_ID_NAND("NAND 8GiB 1,8V 8-bit",	0xde, 8192, 0x100000, NAND_NO_SUBPAGE_WRITE),
+	LEGACY_ID_NAND("NAND 8GiB 1,8V 8-bit",	0x64, 8192, 0x200000, NAND_NO_SUBPAGE_WRITE),
+#endif /* CONFIG_BCM47XX */
+
 	/*
 	 * These are the new chips with large page size. Their page size and
 	 * eraseblock size are determined from the extended ID bytes.

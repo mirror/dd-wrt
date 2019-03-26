@@ -1,3 +1,10 @@
+ifeq ($(CONFIG_MIPS),y)
+EXTRA_CFLAGS+=-I$(srctree)/brcm/mipsel/include -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+EXTRA_AFLAGS+=-I$(srctree)/brcm/mipsel/include -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+else
+EXTRA_CFLAGS+=-I$(srctree)/brcm/arm/include -I$(srctree)/brcm/arm/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+EXTRA_AFLAGS+=-I$(srctree)/brcm/arm/include -I$(srctree)/brcm/arm/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+endif
 #
 # Makefile for kernel SPI drivers.
 #
@@ -101,3 +108,4 @@ obj-$(CONFIG_SPI_IXP4XX)		+= spi-ixp4xx.o
 obj-$(CONFIG_SPI_IXP4XX)		+= spi-ixp4xx-gw2355.o
 obj-$(CONFIG_SPI_XWAY)			+= spi-xway.o
 obj-$(CONFIG_SPI_FALCON)		+= spi-falcon.o
+obj-$(CONFIG_SPI_BCM5301X)		+= bcm5301x_spi.o

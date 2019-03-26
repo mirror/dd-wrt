@@ -39,7 +39,22 @@ typedef volatile struct {
 	uint32	PAD[1024];
 	uint32	PAD[1024];	/* 0x7000 */
 	uint32	PAD[1024];	/* 0x8000 */
-	uint32	PAD[1024];
+	uint32	smbus_config;
+	uint32	smbus_timing_config;
+	uint32	smbus_addr;
+	uint32	smbus_master_fifo_control;
+	uint32	smbus_slave_fifo_control;
+	uint32	smbus_bit_bang_control;
+	uint32	PAD[6];
+	uint32	smbus_master_command;
+	uint32	smbus_slave_command;
+	uint32	smbus_event_enable;
+	uint32	smbus_event_status;
+	uint32	smbus_master_data_write;
+	uint32	smbus_master_data_read;
+	uint32	smbus_slave_data_write;
+	uint32	smbus_slave_data_read;
+	uint32	PAD[1004];
 	uint32	PAD[1024];
 	uint32	cru_control;	/* 0xb000 */
 	uint32	PAD[1023];

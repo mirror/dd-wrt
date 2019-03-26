@@ -356,6 +356,13 @@ config I2C_AU1550
 	  This driver can also be built as a module.  If so, the module
 	  will be called i2c-au1550.
 
+config I2C_BCM5301X
+	tristate "Broadcom 5301X I2C master controller"
+	select I2C_ALGOBIT
+	depends on PLAT_BCM5301X
+	help
+	  Broadcom 5301X SoC I2C master controller support
+
 config I2C_AXXIA
 	tristate "Axxia I2C controller"
 	depends on ARCH_AXXIA || COMPILE_TEST

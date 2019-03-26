@@ -76,7 +76,7 @@ arch-$(CONFIG_CPU_32v7M)	=-D__LINUX_ARM_ARCH__=7 -march=armv7-m -Wa,-march=armv7
 
 
 ifeq ($(CONFIG_ARCH_BRCM),y)
-arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7 -march=armv7-a -mcpu=cortex-a9 -mtune=cortex-a9
+arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7 -mcpu=cortex-a9 -mtune=cortex-a9
 else
 ifeq ($(CONFIG_ARCH_QCOM),y)
 arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7 -mcpu=cortex-a15 -mfpu=neon-vfpv4
