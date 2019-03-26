@@ -3888,6 +3888,15 @@ static struct nand_flash_dev *nand_get_flash_type(struct mtd_info *mtd,
 		chip->options &= ~NAND_SAMSUNG_LP_OPTIONS;
 ident_done:
 
+#ifdef CONFIG_BCM47XX
+	/* Override for specific Samsung K9LCG08U0B, Micron MT29F64G08CBABA */
+	if ((id_data[0] == 0xec && id_data[1] == 0xde && id_data[2] == 0xd5 &&
+	     id_data[3] == 0x7e && id_data[4] == 0x68 && id_data[5] == 0x44) ||
+	     (id_data[0] == 0x2c && id_data[1] == 0x64 && id_data[2] == 0x44 &&
+	    id_data[3] == 0x4b && id_data[4] == 0xa9))
+		mtd->oobsize = 720;
+#endif /* CONFIG_BCM47XX */
+
 	/* Try to identify manufacturer */
 	for (maf_idx = 0; nand_manuf_ids[maf_idx].id != 0x0; maf_idx++) {
 		if (nand_manuf_ids[maf_idx].id == *maf_id)
