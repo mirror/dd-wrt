@@ -492,6 +492,10 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 		char var[128];
 		char *next;
 		int midx = 0;
+#ifdef HAVE_X86
+		char check[64];
+		sprintf(check, "/dev/%s", getdisc());
+#endif
 		foreach(var, raid, next) {
 			websWrite(wp, "<tr>\n");
 			websWrite(wp, "<td>\n");
@@ -500,6 +504,10 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, "<option value=\"none\">None</option>\n");
 			if (drives) {
 				foreach(drive, drives, dnext) {
+#ifdef HAVE_X86
+					if (!strcmp(drive, check))
+						continue;
+#endif
 					websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", drive, !strcmp(drive, var) ? "selected=\"selected\"" : "", drive);
 				}
 			}
