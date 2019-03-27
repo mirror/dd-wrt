@@ -19,7 +19,6 @@
 
 #define MAX_NVPARSE 256
 
-
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 #define sin_addr(s) (((struct sockaddr_in *)(s))->sin_addr)
 
@@ -117,7 +116,6 @@ extern int f_exists(const char *path);	// note: anything but a directory
 
 extern int get_ifname_unit(const char *ifname, int *unit, int *subunit);
 
-
 extern int strhas(char *list, char *key);
 
 /*
@@ -140,13 +138,13 @@ extern int dd_snprintf(char *str, int len, const char *fmt, ...);
 
 #ifdef MEMDEBUG
 
-void *mymalloc(int size, char *func);
-void myfree(void *mem);
+void *mymalloc(int size, char *func, int line);
+void myfree(void *mem, char *func, int line);
 void showmemdebugstat();
 
-#define safe_malloc(size) mymalloc(size,__func__)
-#define safe_free myfree(mem)
-#define free myfree
+#define safe_malloc(size) mymalloc(size,__func__,__LINE__)
+#define safe_free(mem) myfree(mem,__func__,__LINE__)
+#define free(mem) myfree(mem,__func__,__LINE__)
 
 #define memdebug_enter()  \
 	struct sysinfo memdebuginfo; \
@@ -218,11 +216,9 @@ char *foreach_last(char *next, char *word, char *delim);
 
 char *getentrybyidx(char *buf, char *list, int idx);
 
-
 #define GETENTRYBYIDX(name, list, idx) \
 	char name## _priv[128]; \
 	char *name = getentrybyidx(name## _priv, list, idx);
-
 
 /*
  * Copy each token in wordlist delimited by space into word 
@@ -232,7 +228,6 @@ char *getentrybyidx(char *buf, char *list, int idx);
 	for (next = foreach_first(foreachwordlist, word, delim); \
 	     word[0]; \
 	     next = foreach_last(next, word, delim))
-
 
 #define foreach(word, foreachwordlist, next) \
 	foreach_delim(word, foreachwordlist, next, " ")
