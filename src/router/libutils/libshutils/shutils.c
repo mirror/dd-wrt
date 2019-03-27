@@ -1201,53 +1201,72 @@ int writevaproc(char *value, char *fmt, ...)
 }
 
 #ifdef MEMDEBUG
-#define MEMDEBUGSIZE 1024
+/* some special code for memory leak tracking */
+
 typedef struct MEMENTRY {
 	void *reference;
 	int size;
-	char func[32];
-	int dirty;
+	char *func;
+	int line;
+	struct MEMENTRY *next;
+	struct MEMENTRY *last;
 };
 
-static unsigned int memdebugpnt = 0;
-static struct MEMENTRY mementry[MEMDEBUGSIZE];
-void *mymalloc(int size, char *func)
+static struct MEMENTRY root;
+static struct MEMENTRY *current = NULL;
+void *mymalloc(int size, char *func, int line)
 {
-	if (memdebugpnt >= MEMDEBUGSIZE)
-		return safe_malloc(size);
-	mementry[memdebugpnt].size = size;
-	mementry[memdebugpnt].dirty = 1;
+	if (!current) {
+		current = &root;
+		current->last = NULL;
+	}
+	current->size = size;
 	void *ref = malloc(size);
-	mementry[memdebugpnt].reference = ref;
-	strncpy(mementry[memdebugpnt].func, func, 32);
-	memdebugpnt++;
-	if (memdebugpnt == MEMDEBUGSIZE)
-		memdebugpnt = 0;
+	current->reference = ref;
+	current->func = strdup(func);
+	current->line = line;
+	current->next = malloc(sizeof(struct MEMENTRY));
+	memset(current->next, 0, sizeof(struct MEMENTRY));
+	current->next->last = current;
+	current = current->next;
 	return ref;
 }
 
 #undef free
-void myfree(void *ref)
+void myfree(void *ref, char *func, int line)
 {
 	int i;
-	for (i = 0; i < MEMDEBUGSIZE; i++) {
-		if (mementry[i].reference == ref && mementry[i].dirty) {
-//      fprintf(stderr,"free from %s\n",mementry[i].func);
-			mementry[i].dirty = 0;
+	struct MEMENTRY *c_current = &root;
+	while (c_current) {
+		if (c_current->reference == ref)
 			break;
-		}
+		c_current = c_current->next;
 	}
 	free(ref);
+	// remove list entry if not root
+	if (c_current && c_current->last) {
+		c_current->last->next = c_current->next;
+		free(c_current->func);
+		free(c_current);
+		c_current = NULL;
+	} else {
+		if (!c_current) {
+			fprintf(stderr, "function %s line %d does free a untracked pointer", func, line);
+		}
+	}
+	if (c_current) {
+		c_current->ref = NULL;
+	}
 }
 
 void showmemdebugstat(void)
 {
 	int i;
-	for (i = 0; i < MEMDEBUGSIZE; i++) {
-		if (mementry[i].dirty) {
-			fprintf(stderr, "%s leaks %d bytes\n", mementry[i].func, mementry[i].size);
-			mementry[i].dirty = 0;
-		}
+	struct MEMENTRY *c_current = &root;
+	while (c_current) {
+		if (c_current->ref && c_current->func)
+			fprintf(stderr, "%s line %d leaks %d bytes\n", currrent->func, c_current->line, c_current->size);
+		c_current = c_current->next;
 	}
 }
 
