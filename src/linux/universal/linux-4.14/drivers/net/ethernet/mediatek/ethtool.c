@@ -20,48 +20,45 @@ FE_STAT_REG_DECLARE
 #undef _FE
 };
 
-static int fe_get_settings(struct net_device *dev,
-			   struct ethtool_cmd *cmd)
+static int fe_get_link_ksettings(struct net_device *ndev,
+			   struct ethtool_link_ksettings *cmd)
 {
-	struct fe_priv *priv = netdev_priv(dev);
-	int err;
+	struct fe_priv *priv = netdev_priv(ndev);
 
 	if (!priv->phy_dev)
-		goto out_gset;
+		return -ENODEV;
 
 	if (priv->phy_flags == FE_PHY_FLAG_ATTACH) {
-		err = phy_read_status(priv->phy_dev);
-		if (err)
-			goto out_gset;
+		if (phy_read_status(priv->phy_dev))
+			return -ENODEV;
 	}
 
-	return phy_ethtool_gset(priv->phy_dev, cmd);
+	phy_ethtool_ksettings_get(ndev->phydev, cmd);
 
-out_gset:
-	return -ENODEV;
+	return 0;
 }
 
-static int fe_set_settings(struct net_device *dev,
-			   struct ethtool_cmd *cmd)
+static int fe_set_link_ksettings(struct net_device *ndev,
+			   const struct ethtool_link_ksettings *cmd)
 {
-	struct fe_priv *priv = netdev_priv(dev);
+	struct fe_priv *priv = netdev_priv(ndev);
 
 	if (!priv->phy_dev)
 		goto out_sset;
 
-	if (cmd->phy_address != priv->phy_dev->mdio.addr) {
-		if (priv->phy->phy_node[cmd->phy_address]) {
-			priv->phy_dev = priv->phy->phy[cmd->phy_address];
+	if (cmd->base.phy_address != priv->phy_dev->mdio.addr) {
+		if (priv->phy->phy_node[cmd->base.phy_address]) {
+			priv->phy_dev = priv->phy->phy[cmd->base.phy_address];
 			priv->phy_flags = FE_PHY_FLAG_PORT;
-		} else if (priv->mii_bus && mdiobus_get_phy(priv->mii_bus, cmd->phy_address)) {
-			priv->phy_dev = mdiobus_get_phy(priv->mii_bus, cmd->phy_address);
+		} else if (priv->mii_bus && mdiobus_get_phy(priv->mii_bus, cmd->base.phy_address)) {
+			priv->phy_dev = mdiobus_get_phy(priv->mii_bus, cmd->base.phy_address);
 			priv->phy_flags = FE_PHY_FLAG_ATTACH;
 		} else {
 			goto out_sset;
 		}
 	}
 
-	return phy_ethtool_sset(priv->phy_dev, cmd);
+	return phy_ethtool_ksettings_set(ndev->phydev, cmd);
 
 out_sset:
 	return -ENODEV;
@@ -73,9 +70,9 @@ static void fe_get_drvinfo(struct net_device *dev,
 	struct fe_priv *priv = netdev_priv(dev);
 	struct fe_soc_data *soc = priv->soc;
 
-	strlcpy(info->driver, priv->device->driver->name, sizeof(info->driver));
+	strlcpy(info->driver, priv->dev->driver->name, sizeof(info->driver));
 	strlcpy(info->version, MTK_FE_DRV_VERSION, sizeof(info->version));
-	strlcpy(info->bus_info, dev_name(priv->device), sizeof(info->bus_info));
+	strlcpy(info->bus_info, dev_name(priv->dev), sizeof(info->bus_info));
 
 	if (soc->reg_table[FE_REG_FE_COUNTER_BASE])
 		info->n_stats = ARRAY_SIZE(fe_gdma_str);
@@ -207,8 +204,8 @@ static void fe_get_ethtool_stats(struct net_device *dev,
 }
 
 static struct ethtool_ops fe_ethtool_ops = {
-	.get_settings		= fe_get_settings,
-	.set_settings		= fe_set_settings,
+	.get_link_ksettings	= fe_get_link_ksettings,
+	.set_link_ksettings	= fe_set_link_ksettings,
 	.get_drvinfo		= fe_get_drvinfo,
 	.get_msglevel		= fe_get_msglevel,
 	.set_msglevel		= fe_set_msglevel,
