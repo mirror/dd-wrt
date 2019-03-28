@@ -164,34 +164,48 @@ static int systick_set_oneshot(struct clock_event_device *evt)
 	return 0;
 }
 
+static const struct of_device_id systick_match[] = {
+	{ .compatible = "ralink,mt7620a-systick", .data = mt7620_freq_scaling},
+	{},
+};
+
 static int __init ralink_systick_init(struct device_node *np)
 {
+	const struct of_device_id *match;
+	int rating = 200;
 	int ret;
 
 	systick.membase = of_iomap(np, 0);
 	if (!systick.membase)
 		return -ENXIO;
 
-	systick_irqaction.name = np->name;
-	systick.dev.name = np->name;
-	clockevents_calc_mult_shift(&systick.dev, SYSTICK_FREQ, 60);
-	systick.dev.max_delta_ns = clockevent_delta2ns(0x7fff, &systick.dev);
-	systick.dev.max_delta_ticks = 0x7fff;
-	systick.dev.min_delta_ns = clockevent_delta2ns(0x3, &systick.dev);
-	systick.dev.min_delta_ticks = 0x3;
+	match = of_match_node(systick_match, np);
+	if (match) {
+		systick_freq_scaling = match->data;
+		/*
+		 * cevt-r4k uses 300, make sure systick
+		 * gets used if available
+		 */
+		rating = 310;
+	}
+
+	/* enable counter than register clock source */
+	iowrite32(CFG_CNT_EN, systick.membase + SYSTICK_CONFIG);
+	clocksource_mmio_init(systick.membase + SYSTICK_COUNT, np->name,
+			SYSTICK_FREQ, rating, 16, clocksource_mmio_readl_up);
+
+	/* register clock event */
 	systick.dev.irq = irq_of_parse_and_map(np, 0);
 	if (!systick.dev.irq) {
 		pr_err("%s: request_irq failed", np->name);
 		return -EINVAL;
 	}
 
-	ret = clocksource_mmio_init(systick.membase + SYSTICK_COUNT, np->name,
-				    SYSTICK_FREQ, 301, 16,
-				    clocksource_mmio_readl_up);
-	if (ret)
-		return ret;
-
-	clockevents_register_device(&systick.dev);
+	systick_irqaction.name = np->name;
+	systick.dev.name = np->name;
+	systick.dev.rating = rating;
+	systick.dev.cpumask = cpumask_of(0);
+	clockevents_config_and_register(&systick.dev, SYSTICK_FREQ, 0x3, 0x7fff);
 
 	pr_info("%s: running - mult: %d, shift: %d\n",
 			np->name, systick.dev.mult, systick.dev.shift);
