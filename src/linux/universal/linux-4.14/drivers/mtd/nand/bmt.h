@@ -15,7 +15,7 @@
 #elif defined(__KERNEL_NAND__)
 
 #include <linux/mtd/mtd.h>
-#include <linux/mtd/nand.h>
+#include <linux/mtd/rawnand.h>
 #include <linux/module.h>
 #include "mtk_nand2.h"
 
