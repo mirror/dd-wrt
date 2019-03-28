@@ -1,17 +1,22 @@
 # SPDX-License-Identifier: GPL-2.0
 if RALINK
 
+config CEVT_SYSTICK_QUIRK
+	bool
+	default n
+
 config CLKEVT_RT3352
 	bool
 	depends on SOC_RT305X || SOC_MT7620
 	default y
 	select TIMER_OF
 	select CLKSRC_MMIO
+	select CEVT_SYSTICK_QUIRK
 
 config RALINK_ILL_ACC
-	bool
+	bool "illegal access irq"
 	depends on SOC_RT305X
-	default y
+	default n
 
 config IRQ_INTC
 	bool
@@ -53,6 +58,8 @@ choice
 		select COMMON_CLK
 		select CLKSRC_MIPS_GIC
 		select HW_HAS_PCI
+		select WEAK_REORDERING_BEYOND_LLSC
+		select GENERIC_CLOCKEVENTS_BROADCAST
 endchoice
 
 choice
