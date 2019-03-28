@@ -1109,8 +1109,8 @@ int __init ar7240_platform_init(void)
 	ee = (u8 *)KSEG1ADDR(0x1f011000);
 #endif
 #ifdef CONFIG_XD9531
-	mac = (u8 *)KSEG1ADDR(0x1f7f1002);
-	ee = (u8 *)KSEG1ADDR(0x1f7f1000);
+	mac = (u8 *)KSEG1ADDR(0x1fff0000);
+	ee = (u8 *)KSEG1ADDR(0x1fff1000);
 #endif
 #ifdef CONFIG_E355AC
 	mac = (u8 *)KSEG1ADDR(0x1f010000);
@@ -1171,7 +1171,7 @@ int __init ar7240_platform_init(void)
 	ath79_init_mac(mac0, mac, -1);
 	ath79_init_mac(mac1, mac, 0);	
     #elif CONFIG_XD9531
-	mac = (u8 *)KSEG1ADDR(0x1f011002);
+	mac = (u8 *)KSEG1ADDR(0x1fff0000);
 	ath79_init_mac(mac0, mac, -1);
 	ath79_init_mac(mac1, mac, 0);	
     #elif CONFIG_WR615N
@@ -2052,6 +2052,8 @@ int __init ar7240_platform_init(void)
 	    ee = (u8 *)KSEG1ADDR(0x1fff1000);
 #if defined(CONFIG_DIR862)
 	ar9xxx_add_device_wmac(ee, mac0);
+#elif defined(CONFIG_XD9531)
+	ar9xxx_add_device_wmac(ee, ee + 2);
 #elif defined(CONFIG_MMS344)
 	ar9xxx_add_device_wmac(ee, art + 2);
 #elif defined(CONFIG_DIR825C1)
