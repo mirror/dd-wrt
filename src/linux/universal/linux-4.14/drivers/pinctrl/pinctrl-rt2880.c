@@ -141,7 +141,7 @@ static int rt2880_pinctrl_dt_node_to_map(struct pinctrl_dev *pctrldev,
 	}
 
 	if (!max_maps)
-		return max_maps;
+		return -EINVAL;
 
 	*map = kzalloc(max_maps * sizeof(struct pinctrl_map), GFP_KERNEL);
 	if (!*map)
@@ -430,7 +430,7 @@ static int rt2880_pinmux_probe(struct platform_device *pdev)
 		if (!of_device_is_available(np))
 			continue;
 
-		ngpio = of_get_property(np, "ralink,num-gpios", NULL);
+		ngpio = of_get_property(np, "ralink,nr-gpio", NULL);
 		gpiobase = of_get_property(np, "ralink,gpio-base", NULL);
 		if (!ngpio || !gpiobase) {
 			dev_err(&pdev->dev, "failed to load chip info\n");
