@@ -95,7 +95,13 @@ void __init plat_mem_setup(void)
 	else if (__dtb_start != __dtb_end)
 		dtb = (void *)__dtb_start;
 
-	__dt_setup_arch(dtb);
+	__dt_setup_arch(&__image_dtb);
+
+	of_scan_flat_dt(early_init_dt_find_chosen, NULL);
+	if (chosen_dtb)
+		strlcpy(arcs_cmdline, boot_command_line, COMMAND_LINE_SIZE);
+
+	strlcpy(arcs_cmdline, boot_command_line, COMMAND_LINE_SIZE);
 
 	of_scan_flat_dt(early_init_dt_find_memory, NULL);
 	if (memory_dtb)

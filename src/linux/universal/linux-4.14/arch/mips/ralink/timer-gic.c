@@ -13,13 +13,14 @@
 #include <linux/clk-provider.h>
 #include <linux/clocksource.h>
 #include <linux/clk.h>
+#include <asm/time.h>
 
 #include "common.h"
 
 void __init plat_time_init(void)
 {
 	ralink_of_remap();
-
+	ralink_clk_init();
 	of_clk_init(NULL);
 	timer_probe();
 }
@@ -38,4 +39,3 @@ u32 get_surfboard_sysclk(void)
     return clk_get_rate(clk);
 }
 EXPORT_SYMBOL(get_surfboard_sysclk);
-
