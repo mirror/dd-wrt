@@ -481,11 +481,7 @@ static int nand_default_block_markbad(struct mtd_info *mtd, loff_t ofs)
 	} else {
 		ops.len = ops.ooblen = 1;
 	}
-
-	if (unlikely(chip->bbt_options & NAND_BBT_ACCESS_BBM_RAW))
-		ops.mode = MTD_OPS_RAW;
-	else
-		ops.mode = MTD_OPS_PLACE_OOB;
+	ops.mode = MTD_OPS_PLACE_OOB;
 
 	/* Write to first/last page(s) if necessary */
 	if (chip->bbt_options & NAND_BBT_SCANLASTPAGE)
@@ -2585,7 +2581,7 @@ static int nand_write_page_syndrome(struct mtd_info *mtd,
 }
 
 /**
- * nand_write_page - write one page
+ * nand_write_page - [REPLACEABLE] write one page
  * @mtd: MTD device structure
  * @chip: NAND chip descriptor
  * @offset: address offset within the page
@@ -2769,9 +2765,9 @@ static int nand_do_write_ops(struct mtd_info *mtd, loff_t to,
 			memset(chip->oob_poi, 0xff, mtd->oobsize);
 		}
 
-		ret = nand_write_page(mtd, chip, column, bytes, wbuf,
-				      oob_required, page,
-				      (ops->mode == MTD_OPS_RAW));
+		ret = chip->write_page(mtd, chip, column, bytes, wbuf,
+					oob_required, page,
+					(ops->mode == MTD_OPS_RAW));
 		if (ret)
 			break;
 
@@ -3759,20 +3755,6 @@ void nand_decode_ext_id(struct nand_chip *chip)
 	/* Get buswidth information */
 	if (extid & 0x1)
 		chip->options |= NAND_BUSWIDTH_16;
-		
-		/*
-		 * Spansion S34ML0[24]G2 have oobsize twice as large
-		 * as S34ML01G2 encoded in the same bit. We
-		 * differinciate them by their ID length
-		 */
-		if (id_data[0] == NAND_MFR_AMD
-		    		&& (id_data[1] == 0xda
-				 || id_data[1] == 0xdc
-				 || id_data[1] == 0xca
-				 || id_data[1] == 0xcc)) {
-			mtd->oobsize *= 2;
-		}
-
 }
 EXPORT_SYMBOL_GPL(nand_decode_ext_id);
 
@@ -4202,32 +4184,6 @@ static int nand_dt_init(struct nand_chip *chip)
 	return 0;
 }
 
-int nand_lock_and_callback(struct mtd_info *mtd,
-			   int (*callback)(struct mtd_info *, void *),
-			   void *priv)
-{
-	int ret;
-	struct nand_chip *chip = mtd->priv;
-	if (chip == NULL) {
-		/* this is partition - get a master */
-		mtd = *(struct mtd_info **)(mtd + 1);
-		chip = mtd->priv;
-	}
-
-	/* Grab the lock and see if the device is available */
-	nand_get_device(mtd , FL_READING);
-
-	chip->select_chip(mtd, 0);
-
-	ret = (*callback)(mtd, priv);
-
-	chip->select_chip(mtd, -1);
-
-	/* Deselect and wake up anyone waiting on the device */
-	nand_release_device(mtd);
-	return ret;
-}
-
 /**
  * nand_scan_ident - [NAND Interface] Scan for the NAND device
  * @mtd: MTD device structure
@@ -4252,9 +4208,6 @@ int nand_scan_ident(struct mtd_info *mtd, int maxchips,
 	if (!mtd->name && mtd->dev.parent)
 		mtd->name = dev_name(mtd->dev.parent);
 
-	/* Set the default functions */
-	nand_set_defaults(chip);
-
 	if ((!chip->cmdfunc || !chip->select_chip) && !chip->cmd_ctrl) {
 		/*
 		 * Default functions assigned for chip_select() and
@@ -4264,6 +4217,8 @@ int nand_scan_ident(struct mtd_info *mtd, int maxchips,
 		pr_err("chip.cmd_ctrl() callback is not provided");
 		return -EINVAL;
 	}
+	/* Set the default functions */
+	nand_set_defaults(chip);
 
 	/* Read the flash type */
 	ret = nand_detect(chip, table);
@@ -4690,6 +4645,7 @@ int nand_scan_tail(struct mtd_info *mtd)
 	struct nand_ecc_ctrl *ecc = &chip->ecc;
 	struct nand_buffers *nbuf = NULL;
 	int ret, i;
+
 	/* New bad blocks should be marked in OOB, flash-based BBT, or both */
 	if (WARN_ON((chip->bbt_options & NAND_BBT_NO_OOB_BBM) &&
 		   !(chip->bbt_options & NAND_BBT_USE_FLASH))) {
@@ -4766,6 +4722,9 @@ int nand_scan_tail(struct mtd_info *mtd)
 			goto err_nand_manuf_cleanup;
 		}
 	}
+
+	if (!chip->write_page)
+		chip->write_page = nand_write_page;
 
 	/*
 	 * Check ECC mode, default to software if 3byte/512byte hardware ECC is
@@ -4899,11 +4858,11 @@ int nand_scan_tail(struct mtd_info *mtd)
 		goto err_nand_manuf_cleanup;
 	}
 	ecc->total = ecc->steps * ecc->bytes;
-/*	if (ecc->total > mtd->oobsize) {
+	if (ecc->total > mtd->oobsize) {
 		WARN(1, "Total number of ECC bytes exceeded oobsize\n");
 		ret = -EINVAL;
 		goto err_nand_manuf_cleanup;
-	}*/
+	}
 
 	/*
 	 * The number of bytes available for a client to place data into
