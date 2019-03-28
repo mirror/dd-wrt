@@ -65,7 +65,6 @@ struct mt7621_spi {
 	unsigned int		sys_freq;
 	unsigned int		speed;
 	struct clk		*clk;
-	spinlock_t		lock;
 
 	struct mt7621_spi_ops	*ops;
 };
@@ -91,9 +90,11 @@ static void mt7621_spi_reset(struct mt7621_spi *rs, int duplex)
 
 	master |= 7 << 29;
 	master |= 1 << 2;
+#ifdef CONFIG_SOC_MT7620
 	if (duplex)
 		master |= 1 << 10;
 	else
+#endif
 		master &= ~(1 << 10);
 
 	mt7621_spi_write(rs, MT7621_SPI_MASTER, master);
@@ -202,10 +203,12 @@ static int mt7621_spi_transfer_half_duplex(struct spi_master *master,
 		if (t->speed_hz < speed)
 			speed = t->speed_hz;
 
-		if (WARN_ON(len + t->len > 36)) {
-			status = -EIO;
-			goto msg_done;
-		}
+		/*
+		 * m25p80 might attempt to write more data than we can handle.
+		 * truncate the message to what we can fit into the registers
+		 */
+		if (len + t->len > 36)
+			t->len = 36 - len;
 
 		for (i = 0; i < t->len; i++, len++)
 			data[len / 4] |= buf[i] << (8 * (len & 3));
@@ -266,6 +269,7 @@ msg_done:
 	return 0;
 }
 
+#ifdef CONFIG_SOC_MT7620
 static int mt7621_spi_transfer_full_duplex(struct spi_master *master,
 					   struct spi_message *m)
 {
@@ -350,15 +354,18 @@ msg_done:
 
 	return 0;
 }
+#endif
 
 static int mt7621_spi_transfer_one_message(struct spi_master *master,
 					   struct spi_message *m)
 {
 	struct spi_device *spi = m->spi;
+#ifdef CONFIG_SOC_MT7620
 	int cs = spi->chip_select;
 
 	if (cs)
 		return mt7621_spi_transfer_full_duplex(master, m);
+#endif
 	return mt7621_spi_transfer_half_duplex(master, m);
 }
 
@@ -385,12 +392,16 @@ static const struct of_device_id mt7621_spi_match[] = {
 };
 MODULE_DEVICE_TABLE(of, mt7621_spi_match);
 
+static size_t mt7621_max_transfer_size(struct spi_device *spi)
+{
+	return 32;
+}
+
 static int mt7621_spi_probe(struct platform_device *pdev)
 {
 	const struct of_device_id *match;
 	struct spi_master *master;
 	struct mt7621_spi *rs;
-	unsigned long flags;
 	void __iomem *base;
 	struct resource *r;
 	int status = 0;
@@ -431,6 +442,7 @@ static int mt7621_spi_probe(struct platform_device *pdev)
 	master->bits_per_word_mask = SPI_BPW_MASK(8);
 	master->dev.of_node = pdev->dev.of_node;
 	master->num_chipselect = 2;
+	master->max_transfer_size = mt7621_max_transfer_size;
 
 	dev_set_drvdata(&pdev->dev, master);
 
@@ -441,7 +453,6 @@ static int mt7621_spi_probe(struct platform_device *pdev)
 	rs->sys_freq = clk_get_rate(rs->clk);
 	rs->ops = ops;
 	dev_info(&pdev->dev, "sys_freq: %u\n", rs->sys_freq);
-	spin_lock_irqsave(&rs->lock, flags);
 
 	device_reset(&pdev->dev);
 
