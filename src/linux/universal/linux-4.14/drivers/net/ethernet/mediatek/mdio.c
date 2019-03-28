@@ -57,6 +57,7 @@ static void fe_phy_link_adjust(struct net_device *dev)
 			}
 		}
 	}
+	spin_unlock_irqrestore(&priv->phy->lock, flags);
 }
 
 int fe_connect_phy_node(struct fe_priv *priv, struct device_node *phy_node)
@@ -74,24 +75,24 @@ int fe_connect_phy_node(struct fe_priv *priv, struct device_node *phy_node)
 	port = be32_to_cpu(*_port);
 	phy_mode = of_get_phy_mode(phy_node);
 	if (phy_mode < 0) {
-		dev_err(priv->device, "incorrect phy-mode %d\n", phy_mode);
+		dev_err(priv->dev, "incorrect phy-mode %d\n", phy_mode);
 		priv->phy->phy_node[port] = NULL;
 		return -EINVAL;
 	}
 
 	phydev = of_phy_connect(priv->netdev, phy_node, fe_phy_link_adjust,
 				0, phy_mode);
-	if (IS_ERR(phydev)) {
-		dev_err(priv->device, "could not connect to PHY\n");
+	if (!phydev) {
+		dev_err(priv->dev, "could not connect to PHY\n");
 		priv->phy->phy_node[port] = NULL;
-		return PTR_ERR(phydev);
+		return -ENODEV;
 	}
 
 	phydev->supported &= PHY_GBIT_FEATURES;
 	phydev->advertising = phydev->supported;
 	phydev->no_auto_carrier_off = 1;
 
-	dev_info(priv->device,
+	dev_info(priv->dev,
 		 "connected port %d to PHY at %s [uid=%08x, driver=%s]\n",
 		 port, dev_name(&phydev->mdio.dev), phydev->phy_id,
 		 phydev->drv->name);
@@ -109,7 +110,8 @@ static void phy_init(struct fe_priv *priv, struct phy_device *phy)
 	phy->autoneg = AUTONEG_ENABLE;
 	phy->speed = 0;
 	phy->duplex = 0;
-	phy->supported &= PHY_BASIC_FEATURES;
+	phy->supported &= IS_ENABLED(CONFIG_NET_MEDIATEK_MDIO_MT7620) ?
+			PHY_GBIT_FEATURES : PHY_BASIC_FEATURES;
 	phy->advertising = phy->supported | ADVERTISED_Autoneg;
 
 	phy_start_aneg(phy);
@@ -209,9 +211,9 @@ int fe_mdio_init(struct fe_priv *priv)
 	spin_lock_init(&phy_ralink.lock);
 	priv->phy = &phy_ralink;
 
-	mii_np = of_get_child_by_name(priv->device->of_node, "mdio-bus");
+	mii_np = of_get_child_by_name(priv->dev->of_node, "mdio-bus");
 	if (!mii_np) {
-		dev_err(priv->device, "no %s child node found", "mdio-bus");
+		dev_err(priv->dev, "no %s child node found", "mdio-bus");
 		return -ENODEV;
 	}
 
@@ -231,7 +233,7 @@ int fe_mdio_init(struct fe_priv *priv)
 	priv->mii_bus->write = priv->soc->mdio_write;
 	priv->mii_bus->reset = fe_mdio_reset;
 	priv->mii_bus->priv = priv;
-	priv->mii_bus->parent = priv->device;
+	priv->mii_bus->parent = priv->dev;
 
 	snprintf(priv->mii_bus->id, MII_BUS_ID_SIZE, "%s", mii_np->name);
 	err = of_mdiobus_register(priv->mii_bus, mii_np);
