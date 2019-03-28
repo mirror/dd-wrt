@@ -862,6 +862,7 @@ struct nand_manufacturer_ops {
  *			structure which is shared among multiple independent
  *			devices.
  * @priv:		[OPTIONAL] pointer to private chip data
+ * @write_page:		[REPLACEABLE] High-level page write function
  * @manufacturer:	[INTERN] Contains manufacturer information
  */
 
@@ -885,6 +886,9 @@ struct nand_chip {
 	int(*waitfunc)(struct mtd_info *mtd, struct nand_chip *this);
 	int (*erase)(struct mtd_info *mtd, int page);
 	int (*scan_bbt)(struct mtd_info *mtd);
+	int (*write_page)(struct mtd_info *mtd, struct nand_chip *chip,
+			uint32_t offset, int data_len, const uint8_t *buf,
+			int oob_required, int page, int raw);
 	int (*onfi_set_features)(struct mtd_info *mtd, struct nand_chip *chip,
 			int feature_addr, uint8_t *subfeature_para);
 	int (*onfi_get_features)(struct mtd_info *mtd, struct nand_chip *chip,
@@ -893,6 +897,9 @@ struct nand_chip {
 	int (*setup_data_interface)(struct mtd_info *mtd, int chipnr,
 				    const struct nand_data_interface *conf);
 
+#ifdef CONFIG_MTK_MTD_NAND
+	int (*read_page)(struct mtd_info *mtd, struct nand_chip *chip, u8 *buf, int page);
+#endif /* CONFIG_MTK_MTD_NAND */
 
 	int chip_delay;
 	unsigned int options;
