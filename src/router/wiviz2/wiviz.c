@@ -111,10 +111,10 @@ int main(int argc, char **argv)
 	int defaultHopSeq[] = { 1, 3, 6, 8, 11 };
 	int s, one;
 	memset(&cfg, 0, sizeof(cfg));
-#ifdef HAVE_RT2880
-	wl_dev = getRADev(nvram_safe_get("wifi_display"));
-#elif HAVE_MADWIFI
+#ifdef HAVE_MADWIFI
 	wl_dev = nvram_safe_get("wifi_display");
+#elif HAVE_RT2880
+	wl_dev = getRADev(nvram_safe_get("wifi_display"));
 #else
 	char tmp[32];
 	sprintf(tmp, "%s_ifname", nvram_safe_get("wifi_display"));
