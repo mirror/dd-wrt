@@ -1185,6 +1185,14 @@ static inline int is_brcmfmac(const char *prefix)
 	return 0;
 }
 #endif
+#ifdef HAVE_MT76
+extern int is_mt76(const char *prefix);
+#else
+static inline int is_mt76(const char *prefix)
+{
+	return 0;
+}
+#endif
 #ifdef HAVE_ATH9K
 extern int is_ath9k(const char *prefix);
 #else

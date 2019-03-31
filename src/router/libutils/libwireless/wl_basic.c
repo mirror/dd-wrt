@@ -7,8 +7,7 @@
 #include <utils.h>
 #include <bcmnvram.h>
 //#include <math.h>
-
-#if defined(HAVE_RT2880) || defined(HAVE_RT61)
+#if (defined(HAVE_RT2880) || defined(HAVE_RT61)) && !defined(HAVE_MT76)
 char *get_wl_instance_name(int instance)
 {
 	if (instance == 0)

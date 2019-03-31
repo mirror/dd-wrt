@@ -138,7 +138,7 @@ int has_5ghz(const char *prefix)
 
 #endif
 
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI)
 int has_vht160(const char *prefix)
 {
 #ifdef HAVE_RT2880
@@ -2246,7 +2246,7 @@ int getrxantenna(char *ifname)
 
 #endif
 
-#if defined(HAVE_RT2880) || defined(HAVE_RT61)
+#if (defined(HAVE_RT2880) || defined(HAVE_RT61)) && !defined(HAVE_MT76)
 
 int has_mimo(const char *prefix)
 {
@@ -2312,7 +2312,7 @@ int has_mimo(const char *prefix)
 		return 0;
 }
 
-#if !defined(HAVE_ATH10K) && !defined(HAVE_BRCMFMAC)
+#if !defined(HAVE_ATH10K) && !defined(HAVE_BRCMFMAC) && !defined(HAVE_MT76)
 int has_ac(const char *prefix)
 {
 #ifdef HAVE_ATH9K
@@ -2725,6 +2725,16 @@ int is_brcmfmac(const char *prefix)
 {
 	INITVALUECACHE();
 	RETURNVALUE(devicecountbydriver(prefix, "brcmfmac"));
+	EXITVALUECACHE();
+	return ret;
+}
+
+#endif
+#ifdef HAVE_MT76
+int is_mt76(const char *prefix)
+{
+	INITVALUECACHE();
+	RETURNVALUE(devicecountbydriver(prefix, "dummyplaceholder"));
 	EXITVALUECACHE();
 	return ret;
 }
