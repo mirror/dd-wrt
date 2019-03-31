@@ -56,6 +56,11 @@
 #include <net/net_namespace.h>
 #include <net/netns/generic.h>
 
+#if IS_ENABLED(CONFIG_NF_FLOW_TABLE)
+#include <linux/netfilter.h>
+#include <net/netfilter/nf_flow_table.h>
+#endif
+
 #define PPP_VERSION	"2.4.2"
 
 /*
@@ -1382,12 +1387,37 @@ static void ppp_dev_priv_destructor(struct net_device *dev)
 		ppp_destroy_interface(ppp);
 }
 
+#if IS_ENABLED(CONFIG_NF_FLOW_TABLE)
+static int ppp_flow_offload_check(struct flow_offload_hw_path *path)
+{
+	struct ppp *ppp = netdev_priv(path->dev);
+	struct ppp_channel *chan;
+	struct channel *pch;
+
+	if (ppp->flags & SC_MULTILINK)
+		return -EOPNOTSUPP;
+
+	if (list_empty(&ppp->channels))
+		return -ENODEV;
+
+	pch = list_first_entry(&ppp->channels, struct channel, clist);
+	chan = pch->chan;
+	if (!chan->ops->flow_offload_check)
+		return -EOPNOTSUPP;
+
+	return chan->ops->flow_offload_check(chan, path);
+}
+#endif /* CONFIG_NF_FLOW_TABLE */
+
 static const struct net_device_ops ppp_netdev_ops = {
 	.ndo_init	 = ppp_dev_init,
 	.ndo_uninit      = ppp_dev_uninit,
 	.ndo_start_xmit  = ppp_start_xmit,
 	.ndo_do_ioctl    = ppp_net_ioctl,
 	.ndo_get_stats64 = ppp_get_stats64,
+#if IS_ENABLED(CONFIG_NF_FLOW_TABLE)
+	.ndo_flow_offload_check = ppp_flow_offload_check,
+#endif
 };
 
 static struct device_type ppp_type = {
