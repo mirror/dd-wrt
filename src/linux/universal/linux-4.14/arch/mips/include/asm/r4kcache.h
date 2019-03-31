@@ -47,10 +47,8 @@ static inline void bcm4710_protected_fill_tlb(void *addr)
       unsigned long x;
       get_dbe(x, (unsigned long *)addr);;
 }
-
 #else
 #define BCM4710_DUMMY_RREG()
-
 #define BCM4710_FILL_TLB(addr)
 #define BCM4710_PROTECTED_FILL_TLB(addr)
 #endif
@@ -775,7 +773,6 @@ static inline void prot##extra##blast_##pfx##cache##_range(unsigned long start, 
 	unsigned long aend = (end + lsize - 1) & ~(lsize - 1);		\
 	int lines = (aend - addr) / lsize;				\
 									\
-	war								\
 	__##pfx##flush_prologue						\
 									\
 	while (lines >= 8) {						\

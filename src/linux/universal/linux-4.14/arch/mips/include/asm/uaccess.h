@@ -85,10 +85,13 @@ extern u64 __ua_limit;
  */
 static inline bool eva_kernel_access(void)
 {
+#ifdef CONFIG_EVA
 	if (!IS_ENABLED(CONFIG_EVA))
 		return false;
-
 	return uaccess_kernel();
+#else
+		return false;
+#endif
 }
 
 /*
