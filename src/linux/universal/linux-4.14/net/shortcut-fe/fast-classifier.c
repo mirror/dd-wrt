@@ -1735,6 +1735,7 @@ static int fast_classifier_init(void)
 {
 	struct fast_classifier *sc = &__fsc;
 	int result = -1;
+	struct net *net;
 
 	printk(KERN_ALERT "fast-classifier: starting up\n");
 	DEBUG_INFO("SFE CM init\n");
@@ -1798,10 +1799,12 @@ static int fast_classifier_init(void)
 	/*
 	 * Register our netfilter hooks.
 	 */
-	result = nf_register_hooks(fast_classifier_ops_post_routing, ARRAY_SIZE(fast_classifier_ops_post_routing));
+	for_each_net(net) {
+	result = nf_register_net_hooks(net, fast_classifier_ops_post_routing, ARRAY_SIZE(fast_classifier_ops_post_routing));
 	if (result < 0) {
 		DEBUG_ERROR("can't register nf post routing hook: %d\n", result);
 		goto exit3;
+	}
 	}
 
 #ifdef CONFIG_NF_CONNTRACK_EVENTS
@@ -1851,8 +1854,9 @@ exit5:
 
 exit4:
 #endif
-	nf_unregister_hooks(fast_classifier_ops_post_routing, ARRAY_SIZE(fast_classifier_ops_post_routing));
-
+	for_each_net(net) {
+	nf_unregister_net_hooks(net, fast_classifier_ops_post_routing, ARRAY_SIZE(fast_classifier_ops_post_routing));
+	}
 exit3:
 	unregister_inetaddr_notifier(&sc->inet_notifier);
 #ifdef SFE_SUPPORT_IPV6
@@ -1880,6 +1884,7 @@ static void fast_classifier_exit(void)
 {
 	struct fast_classifier *sc = &__fsc;
 	int result = -1;
+	struct net *net;
 
 	DEBUG_INFO("SFE CM exit\n");
 	printk(KERN_ALERT "fast-classifier: shutting down\n");
@@ -1926,8 +1931,9 @@ static void fast_classifier_exit(void)
 	nf_conntrack_unregister_notifier(&init_net, &fast_classifier_conntrack_notifier);
 
 #endif
-	nf_unregister_hooks(fast_classifier_ops_post_routing, ARRAY_SIZE(fast_classifier_ops_post_routing));
-
+	for_each_net(net) {
+	nf_unregister_net_hooks(net, fast_classifier_ops_post_routing, ARRAY_SIZE(fast_classifier_ops_post_routing));
+	}
 #ifdef SFE_SUPPORT_IPV6
 	if (unregister_inet6addr_notifier)
 		unregister_inet6addr_notifier(&sc->inet6_notifier);

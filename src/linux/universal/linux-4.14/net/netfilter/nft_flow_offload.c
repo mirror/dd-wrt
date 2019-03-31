@@ -17,27 +17,38 @@ struct nft_flow_offload {
 	struct nft_flowtable	*flowtable;
 };
 
-static int nft_flow_route(const struct nft_pktinfo *pkt,
-			  const struct nf_conn *ct,
-			  struct nf_flow_route *route,
-			  enum ip_conntrack_dir dir)
+static struct dst_entry *
+nft_flow_dst(const struct nf_conn *ct, enum ip_conntrack_dir dir,
+	     const struct nft_pktinfo *pkt)
 {
-	struct dst_entry *this_dst = skb_dst(pkt->skb);
-	struct dst_entry *other_dst = NULL;
+	struct dst_entry *dst;
 	struct flowi fl;
 
 	memset(&fl, 0, sizeof(fl));
 	switch (nft_pf(pkt)) {
 	case NFPROTO_IPV4:
-		fl.u.ip4.daddr = ct->tuplehash[!dir].tuple.dst.u3.ip;
+		fl.u.ip4.daddr = ct->tuplehash[dir].tuple.src.u3.ip;
 		break;
 	case NFPROTO_IPV6:
-		fl.u.ip6.daddr = ct->tuplehash[!dir].tuple.dst.u3.in6;
+		fl.u.ip6.daddr = ct->tuplehash[dir].tuple.src.u3.in6;
 		break;
 	}
 
-	nf_route(nft_net(pkt), &other_dst, &fl, false, nft_pf(pkt));
-	if (!other_dst)
+	nf_route(nft_net(pkt), &dst, &fl, false, nft_pf(pkt));
+
+	return dst;
+}
+
+static int nft_flow_route(const struct nft_pktinfo *pkt,
+			  const struct nf_conn *ct,
+			  struct nf_flow_route *route,
+			  enum ip_conntrack_dir dir)
+{
+	struct dst_entry *this_dst, *other_dst;
+
+	this_dst = nft_flow_dst(ct, dir, pkt);
+	other_dst = nft_flow_dst(ct, !dir, pkt);
+	if (!this_dst || !other_dst)
 		return -ENOENT;
 
 	route->tuple[dir].dst		= this_dst;
@@ -109,6 +120,9 @@ static void nft_flow_offload_eval(const struct nft_expr *expr,
 	ret = flow_offload_add(flowtable, flow);
 	if (ret < 0)
 		goto err_flow_add;
+
+	if (flowtable->flags & NF_FLOWTABLE_F_HW)
+		nf_flow_offload_hw_add(nft_net(pkt), flow, ct);
 
 	return;
 

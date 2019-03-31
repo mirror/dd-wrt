@@ -195,6 +195,7 @@ config NETFILTER_ADVANCED
 
 config BRIDGE_NETFILTER
 	tristate "Bridged IP/ARP packets filtering"
+	select NETFILTER_FAMILY_BRIDGE
 	depends on BRIDGE
 	depends on NETFILTER && INET
 	depends on NETFILTER_ADVANCED
