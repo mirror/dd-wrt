@@ -69,7 +69,7 @@ static unsigned int ns_type7_clocks[4] = { 600, 800, 1000, 0 };
 #endif
 #endif
 
-#ifdef HAVE_RT2880
+#if defined(HAVE_RT2880) && !defined(HAVE_MT76)
 #define IFMAP(a) getRADev(a)
 #else
 #define IFMAP(a) (a)
@@ -2560,7 +2560,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		}
 #endif
 
-#ifdef HAVE_RT2880
+#if defined(HAVE_RT2880) && !defined(HAVE_MT76)
 		showbridgesettings(wp, getRADev(var), 1, 0);
 #else
 		showbridgesettings(wp, var, 1, 0);
