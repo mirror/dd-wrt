@@ -362,7 +362,7 @@ write_config(unsigned long bus, unsigned long dev, unsigned long func, unsigned 
 }
 
 
-int __init
+int
 pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 {
 	u16 cmd;
@@ -557,7 +557,7 @@ set_phy_for_ssc(void)
 void setup_cm_memory_region(struct resource *mem_resource)
 {
 	resource_size_t mask;
-	if (mips_cm_numiocu()) {
+	if (mips_cps_numiocu(0)) {
 		/* FIXME: hardware doesn't accept mask values with 1s after
 		   0s (e.g. 0xffef), so it would be great to warn if that's
 		   about to happen */
