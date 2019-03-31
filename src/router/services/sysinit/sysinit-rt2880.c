@@ -129,14 +129,18 @@ void start_sysinit(void)
 		set_smp_affinity(12, 4);	//wifi1
 		set_smp_affinity(32, 8);	// wifi2
 	} else if (brand == ROUTER_DIR882) {
+		insmod("compat");
+		insmod("mac80211");
+		insmod("mt76");
+		insmod("mt7615e");
 		eval("swconfig", "dev", "eth0", "set", "reset", "1");
 		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 6t");
 		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "4 6t");
 		eval("swconfig", "dev", "eth0", "set", "apply");
-		set_smp_affinity(11, 2);	// eth
-		set_smp_affinity(12, 4);	//wifi1
-		set_smp_affinity(32, 8);	// wifi2
+		set_smp_affinity(20, 2);	// eth
+		set_smp_affinity(22, 4);	//wifi1
+		set_smp_affinity(23, 8);	// wifi2
 	} else if (brand == ROUTER_BOARD_E1700 || brand == ROUTER_DIR810L) {
 
 	} else {
