@@ -92,17 +92,13 @@ all-$(CONFIG_SYS_SUPPORTS_ZBOOT)+= vmlinuz
 #
 cflags-y			+= -G 0 -mno-abicalls -fno-pic -pipe -mno-branch-likely
 cflags-y			+= -msoft-float -mno-branch-likely
-LDFLAGS_vmlinux			+= -G 0 -static -n -nostdlib --gc-sections
+LDFLAGS_vmlinux			+= -G 0 -static -n -nostdlib
 ifdef CONFIG_64BIT
 KBUILD_AFLAGS_MODULE		+= -mlong-calls
 KBUILD_CFLAGS_MODULE		+= -mlong-calls
 else
 KBUILD_AFLAGS_MODULE		+= -mno-long-calls
 KBUILD_CFLAGS_MODULE		+= -mno-long-calls
-endif
-
-ifndef CONFIG_FUNCTION_TRACER
-KBUILD_CFLAGS_KERNEL		+= -ffunction-sections -fdata-sections
 endif
 
 ifeq ($(CONFIG_RELOCATABLE),y)
