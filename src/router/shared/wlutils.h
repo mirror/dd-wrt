@@ -332,7 +332,7 @@ extern int has_shortgi(const char *interface);
 #define has_airtime_fairness(prefix) 0
 #define has_shortgi(prefix) 0
 #endif
-#if defined(HAVE_ATH10K) || defined(HAVE_BRCMFMAC)
+#if defined(HAVE_ATH10K) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76)
 extern int has_vht160(const char *interface);
 extern int has_vht80(const char *interface);
 extern int has_vht80plus80(const char *interface);
