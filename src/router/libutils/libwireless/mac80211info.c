@@ -867,7 +867,7 @@ nla_put_failure:
 	return capstring;
 }
 
-#if defined(HAVE_ATH10K) || defined(HAVE_MVEBU) || defined(HAVE_BRCMFMAC)
+#if defined(HAVE_ATH10K) || defined(HAVE_MVEBU) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76)
 int has_vht160(const char *interface)
 {
 	INITVALUECACHEi(interface);
@@ -903,7 +903,7 @@ int has_greenfield(const char *interface)
 
 }
 
-#if defined(HAVE_ATH10K) || defined(HAVE_MVEBU) || defined(HAVE_BRCMFMAC)
+#if defined(HAVE_ATH10K) || defined(HAVE_MVEBU) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76)
 int has_vht80(const char *interface)
 {
 	INITVALUECACHEi(interface);
@@ -919,7 +919,7 @@ int has_vht80(const char *interface)
 }
 #endif
 
-#if defined(HAVE_ATH10K) || defined(HAVE_BRCMFMAC)
+#if defined(HAVE_ATH10K) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76)
 int has_ac(const char *prefix)
 {
 	INITVALUECACHE();
@@ -940,7 +940,7 @@ int has_ad(const char *prefix)
 	return (is_wil6210(prefix));
 }
 #endif
-#if defined(HAVE_ATH10K) || defined(HAVE_MVEBU) || defined(HAVE_BRCMFMAC)
+#if defined(HAVE_ATH10K) || defined(HAVE_MVEBU) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76)
 int has_vht80plus80(const char *interface)
 {
 	INITVALUECACHEi(interface);
@@ -956,7 +956,7 @@ int has_vht80plus80(const char *interface)
 }
 #endif
 
-#if defined(HAVE_ATH10K) || defined(HAVE_MVEBU) || defined(HAVE_BRCMFMAC)
+#if defined(HAVE_ATH10K) || defined(HAVE_MVEBU) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76)
 int has_subeamforming(const char *interface)
 {
 	INITVALUECACHEi(interface);
@@ -972,7 +972,7 @@ int has_subeamforming(const char *interface)
 }
 #endif
 
-#if defined(HAVE_ATH10K) || defined(HAVE_MVEBU) || defined(HAVE_BRCMFMAC)
+#if defined(HAVE_ATH10K) || defined(HAVE_MVEBU) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76)
 int has_mubeamforming(const char *interface)
 {
 	INITVALUECACHEi(interface);

@@ -183,6 +183,9 @@ endif
 ifeq ($(CONFIG_BRCMFMAC),y)
 CFLAGS += -DHAVE_BRCMFMAC
 endif
+ifeq ($(CONFIG_MT76),y)
+CFLAGS += -DHAVE_MT76
+endif
 ifeq ($(CONFIG_ATH9K),y)
 ATH9KCFLAGS+= $(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE -DHAVE_ATH9K -I. -I$(TOP)/shared -I../httpd -I$(SRCBASE)/include.v24 -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/libnl-tiny/include -I$(SRCBASE)/
 ATH9KCFLAGS	+= -fPIC $(call cc-option,-Werror=return-local-addr)
@@ -197,6 +200,9 @@ ATH9KCFLAGS += -DHAVE_ATH5K
 endif
 ifeq ($(CONFIG_BRCMFMAC),y)
 ATH9KCFLAGS += -DHAVE_BRCMFMAC
+endif
+ifeq ($(CONFIG_MT76),y)
+ATH9KCFLAGS += -DHAVE_MT76
 endif
 ifeq ($(CONFIG_DIST),"micro")
 ATH9KCFLAGS +=  -DHAVE_MICRO
