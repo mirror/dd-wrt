@@ -222,6 +222,7 @@ struct mtd_debug_info {
 struct mtd_info {
 	u_char type;
 	uint32_t flags;
+	uint32_t orig_flags; /* Flags as before running mtd checks */
 	uint64_t size;	 // Total size of the MTD
 
 	/* "Major" erase size for the device. Naïve users may take this
@@ -360,11 +361,6 @@ struct mtd_info {
 	struct device dev;
 	int usecount;
 	struct mtd_debug_info dbg;
-	int (*refresh_device)(struct mtd_info *mtd);
-	struct mtd_info *split;
-#ifdef CONFIG_BCM47XX
-	spinlock_t *mlock;
-#endif
 };
 
 int mtd_ooblayout_ecc(struct mtd_info *mtd, int section,
@@ -584,6 +580,8 @@ extern struct mtd_info *get_mtd_device(struct mtd_info *mtd, int num);
 extern int __get_mtd_device(struct mtd_info *mtd);
 extern void __put_mtd_device(struct mtd_info *mtd);
 extern struct mtd_info *get_mtd_device_nm(const char *name);
+extern struct mtd_info *get_mtd_device_by_node(
+		const struct device_node *of_node);
 extern void put_mtd_device(struct mtd_info *mtd);
 
 
