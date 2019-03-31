@@ -25,6 +25,7 @@ void __init plat_time_init(void)
 	timer_probe();
 }
 
+#ifndef CONFIG_MIPS_GIC
 int getCPUClock(void)
 {
     struct clk *clk;
@@ -39,3 +40,4 @@ u32 get_surfboard_sysclk(void)
     return clk_get_rate(clk);
 }
 EXPORT_SYMBOL(get_surfboard_sysclk);
+#endif

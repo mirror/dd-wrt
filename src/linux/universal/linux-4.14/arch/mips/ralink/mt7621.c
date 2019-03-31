@@ -189,6 +189,17 @@ void __init ralink_clk_init(void)
 	mips_hpt_frequency = cpu_clk / 2;
 }
 
+int getCPUClock(void)
+{
+    return clk_get_rate(clks[MT7621_CLK_CPU]) / 1000000;
+}
+
+u32 get_surfboard_sysclk(void) 
+{
+    return clk_get_rate(clks[MT7621_CLK_BUS]);
+}
+EXPORT_SYMBOL(get_surfboard_sysclk);
+
 static void __init mt7621_clocks_init_dt(struct device_node *np)
 {
 	of_clk_add_provider(np, of_clk_src_onecell_get, &clk_data);
