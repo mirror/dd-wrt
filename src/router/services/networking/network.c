@@ -590,7 +590,7 @@ void start_wlconf(void)
 }
 
 // #ifdef HAVE_PORTSETUP
-#if defined(HAVE_RT2880) || defined(HAVE_RT61)
+#if (defined(HAVE_RT2880) || defined(HAVE_RT61)) && !defined(HAVE_MT76)
 #define IFMAP(a) getRADev(a)
 #else
 #define IFMAP(a) (a)

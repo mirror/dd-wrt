@@ -278,6 +278,9 @@ CFLAGS_EXTRA += -DARCH_$(ARCHITECTURE)
 ifeq ($(CONFIG_BRCMFMAC),y)
 CFLAGS_EXTRA += -DHAVE_BRCMFMAC
 endif
+ifeq ($(CONFIG_MT76),y)
+CFLAGS_EXTRA += -DHAVE_MT76
+endif
 
 ifeq ($(CONFIG_RUT500),y)
 CFLAGS_EXTRA += -DHAVE_RUT500
@@ -1011,7 +1014,9 @@ ifeq ($(CONFIG_TECHNAXX3G),y)
 endif
 
 ifeq ($(CONFIG_RT2880),y)
+ifneq ($(CONFIG_MT76),y)
 OBJS += rt2880.o
+endif
 endif
 ifeq ($(CONFIG_RT61),y)
 OBJS += rt2880.o
