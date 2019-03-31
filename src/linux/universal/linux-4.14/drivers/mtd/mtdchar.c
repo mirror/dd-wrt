@@ -39,11 +39,6 @@
 
 #include <linux/uaccess.h>
 
-#ifdef CONFIG_RT2880_FLASH_8M
-        /* marklin 20080605 : return read mode for ST */
-extern void Flash_SetModeRead(void);
-#endif
-
 #include "mtdcore.h"
 
 static DEFINE_MUTEX(mtd_mutex);
@@ -164,11 +159,6 @@ static ssize_t mtdchar_read(struct file *file, char __user *buf, size_t count,
 	char *kbuf;
 
 	pr_debug("MTD_read\n");
-
-#ifdef CONFIG_RT2880_FLASH_8M
-        /* marklin 20080605 : return read mode for ST */
-        Flash_SetModeRead();
-#endif
 
 	if (*ppos + count > mtd->size) {
 		if (*ppos < mtd->size)
@@ -947,13 +937,6 @@ static int mtdchar_ioctl(struct file *file, u_int cmd, u_long arg)
 		file->f_pos = 0;
 		break;
 	}
-#ifdef CONFIG_MTD_PARTITIONS
-	case MTDREFRESH:
-	{
-		ret = refresh_mtd_partitions(mtd);
-		break;
-	}
-#endif
 
 	case OTPGETREGIONCOUNT:
 	case OTPGETREGIONINFO:

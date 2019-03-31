@@ -113,7 +113,6 @@ int mtd_find_rootfs_from(struct mtd_info *mtd,
 {
 	size_t offset;
 	int err;
-
 	for (offset = from; offset < limit;
 	     offset = mtd_next_eb(mtd, offset)) {
 		err = mtd_check_rootfs_magic(mtd, offset, type);

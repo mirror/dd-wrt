@@ -142,18 +142,27 @@ static int read_fsr(struct spi_nor *nor)
  * location. Return the configuration register value.
  * Returns negative if error occurred.
  */
-static int read_cr(struct spi_nor *nor)
+static int _read_cr(struct spi_nor *nor, u8 reg)
 {
 	int ret;
 	u8 val;
 
-	ret = nor->read_reg(nor, SPINOR_OP_RDCR, &val, 1);
+	ret = nor->read_reg(nor, reg, &val, 1);
 	if (ret < 0) {
-		dev_err(nor->dev, "error %d reading CR\n", ret);
+		dev_err(nor->dev, "error %d reading %s\n", ret,
+			(reg==SPINOR_OP_RDCR)?"CR":"XCR");
 		return ret;
 	}
 
 	return val;
+}
+
+static inline int read_cr(struct spi_nor *nor) {
+	return _read_cr(nor, SPINOR_OP_RDCR);
+}
+
+static inline int read_xcr(struct spi_nor *nor) {
+	return _read_cr(nor, SPINOR_OP_RDXCR);
 }
 
 /*
@@ -461,9 +470,6 @@ static int spi_nor_erase_sector(struct spi_nor *nor, u32 addr)
 {
 	u8 buf[SPI_NOR_MAX_ADDR_WIDTH];
 	int i;
-
-	if (nor->flags & SNOR_F_S3AN_ADDR_DEFAULT)
-		addr = spi_nor_s3an_addr_convert(nor, addr);
 
 	if (nor->flags & SNOR_F_S3AN_ADDR_DEFAULT)
 		addr = spi_nor_s3an_addr_convert(nor, addr);
@@ -975,19 +981,6 @@ static int spi_nor_is_locked(struct mtd_info *mtd, loff_t ofs, uint64_t len)
 		.addr_width = 3,					\
 		.flags = SPI_NOR_NO_FR | SPI_S3AN,
 
-#define S3AN_INFO(_jedec_id, _n_sectors, _page_size)			\
-		.id = {							\
-			((_jedec_id) >> 16) & 0xff,			\
-			((_jedec_id) >> 8) & 0xff,			\
-			(_jedec_id) & 0xff				\
-			},						\
-		.id_len = 3,						\
-		.sector_size = (8*_page_size),				\
-		.n_sectors = (_n_sectors),				\
-		.page_size = _page_size,				\
-		.addr_width = 3,					\
-		.flags = SPI_NOR_NO_FR | SPI_S3AN,
-
 /* NOTE: double check command sets and memory organization when you add
  * more nor chips.  This current list focusses on newer chips, which
  * have been converging on command sets which including JEDEC ID.
@@ -1023,6 +1016,8 @@ static const struct flash_info spi_nor_ids[] = {
 	{ "en25p64",    INFO(0x1c2017, 0, 64 * 1024,  128, 0) },
 	{ "en25q64",    INFO(0x1c3017, 0, 64 * 1024,  128, SECT_4K) },
 	{ "en25q128",   INFO(0x1c3018, 0, 64 * 1024,  256, SECT_4K) },
+	{ "en25qh32",   INFO(0x1c7016, 0, 64 * 1024,   64, 0) },
+	{ "en25qh64",   INFO(0x1c7017, 0, 64 * 1024,   128, 0) },
 	{ "en25qh128",  INFO(0x1c7018, 0, 64 * 1024,  256, 0) },
 	{ "en25qh256",  INFO(0x1c7019, 0, 64 * 1024,  512, 0) },
 	{ "en25s64",	INFO(0x1c3817, 0, 64 * 1024,  128, SECT_4K) },
@@ -1066,6 +1061,11 @@ static const struct flash_info spi_nor_ids[] = {
 			SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ |
 			SPI_NOR_HAS_LOCK | SPI_NOR_HAS_TB)
 	},
+	{
+		"gd25q512", INFO(0xc84020, 0, 64 * 1024, 1024,
+			SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ |
+			SPI_NOR_HAS_LOCK | SPI_NOR_HAS_TB | SPI_NOR_4B_OPCODES)
+	},
 
 	/* Intel/Numonyx -- xxxs33b */
 	{ "160s33b",  INFO(0x898911, 0, 64 * 1024,  32, 0) },
@@ -1098,9 +1098,10 @@ static const struct flash_info spi_nor_ids[] = {
 	{ "mx25l12805d", INFO(0xc22018, 0, 64 * 1024, 256, 0) },
 	{ "mx25l12855e", INFO(0xc22618, 0, 64 * 1024, 256, 0) },
 	{ "mx25l25635e", INFO(0xc22019, 0, 64 * 1024, 512, SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
+	{ "mx25l25635f", INFO(0xc22019, 0, 64 * 1024, 512, SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ | SPI_NOR_4B_OPCODES) },
 	{ "mx25u25635f", INFO(0xc22539, 0, 64 * 1024, 512, SECT_4K | SPI_NOR_4B_OPCODES) },
 	{ "mx25l25655e", INFO(0xc22619, 0, 64 * 1024, 512, 0) },
-	{ "mx66l51235l", INFO(0xc2201a, 0, 64 * 1024, 1024, SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
+	{ "mx66l51235l", INFO(0xc2201a, 0, 64 * 1024, 1024, SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ | SPI_NOR_4B_OPCODES) },
 	{ "mx66u51235f", INFO(0xc2253a, 0, 64 * 1024, 1024, SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ | SPI_NOR_4B_OPCODES) },
 	{ "mx66l1g45g",  INFO(0xc2201b, 0, 64 * 1024, 2048, SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
 	{ "mx66l1g55g",  INFO(0xc2261b, 0, 64 * 1024, 2048, SPI_NOR_QUAD_READ) },
@@ -1236,10 +1237,15 @@ static const struct flash_info spi_nor_ids[] = {
 			SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ |
 			SPI_NOR_HAS_LOCK | SPI_NOR_HAS_TB)
 	},
+	{
+		"w25q128jv", INFO(0xef7018, 0, 64 * 1024, 256,
+			SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ |
+			SPI_NOR_HAS_LOCK | SPI_NOR_HAS_TB)
+	},
 	{ "w25q80", INFO(0xef5014, 0, 64 * 1024,  16, SECT_4K) },
 	{ "w25q80bl", INFO(0xef4014, 0, 64 * 1024,  16, SECT_4K) },
 	{ "w25q128", INFO(0xef4018, 0, 64 * 1024, 256, SECT_4K) },
-	{ "w25q256", INFO(0xef4019, 0, 64 * 1024, 512, SECT_4K | SPI_NOR_4B_READ_OP) },
+	{ "w25q256", INFO(0xef4019, 0, 64 * 1024, 512, SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ | SPI_NOR_4B_READ_OP) },
 	{ "w25m512jv", INFO(0xef7119, 0, 64 * 1024, 1024,
 			SECT_4K | SPI_NOR_QUAD_READ | SPI_NOR_DUAL_READ) },
 
@@ -1256,14 +1262,19 @@ static const struct flash_info spi_nor_ids[] = {
 	{ "3S400AN", S3AN_INFO(0x1f2400, 256, 264) },
 	{ "3S700AN", S3AN_INFO(0x1f2500, 512, 264) },
 	{ "3S1400AN", S3AN_INFO(0x1f2600, 512, 528) },
+
+	/* XMC (Wuhan Xinxin Semiconductor Manufacturing Corp.) */
+	{ "XM25QH64A", INFO(0x207017, 0, 64 * 1024, 128, SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
+	{ "XM25QH128A", INFO(0x207018, 0, 64 * 1024, 256, SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
 	{ },
 };
 
-static const struct flash_info *spi_nor_read_id(struct spi_nor *nor)
+static const struct flash_info *spi_nor_read_id(struct spi_nor *nor,
+						const char *name)
 {
 	int			tmp;
 	u8			id[SPI_NOR_MAX_ID_LEN];
-	const struct flash_info	*info;
+	const struct flash_info	*info, *first_match = NULL;
 
 	tmp = nor->read_reg(nor, SPINOR_OP_RDID, id, SPI_NOR_MAX_ID_LEN);
 	if (tmp < 0) {
@@ -1274,10 +1285,16 @@ static const struct flash_info *spi_nor_read_id(struct spi_nor *nor)
 	for (tmp = 0; tmp < ARRAY_SIZE(spi_nor_ids) - 1; tmp++) {
 		info = &spi_nor_ids[tmp];
 		if (info->id_len) {
-			if (!memcmp(info->id, id, info->id_len))
-				return &spi_nor_ids[tmp];
+			if (!memcmp(info->id, id, info->id_len)) {
+				if (!name || !strcmp(name, info->name))
+					return info;
+				if (!first_match)
+					first_match = info;
+			}
 		}
 	}
+	if (first_match)
+		return first_match;
 	dev_err(nor->dev, "unrecognized JEDEC id bytes: %02x, %02x, %02x\n",
 		id[0], id[1], id[2]);
 	return ERR_PTR(-ENODEV);
@@ -1467,7 +1484,7 @@ static int spi_nor_write(struct mtd_info *mtd, loff_t to, size_t len,
 
 		write_enable(nor);
 		ret = nor->write(nor, addr, page_remain, buf + i);
-		if (ret < 0)
+		if (ret <= 0)
 			goto write_err;
 		written = ret;
 
@@ -1476,13 +1493,6 @@ static int spi_nor_write(struct mtd_info *mtd, loff_t to, size_t len,
 			goto write_err;
 		*retlen += written;
 		i += written;
-		if (written != page_remain) {
-			dev_err(nor->dev,
-				"While writing %zu bytes written %zd bytes\n",
-				page_remain, written);
-			ret = -EIO;
-			goto write_err;
-		}
 	}
 
 write_err:
@@ -1490,68 +1500,6 @@ write_err:
 	spi_nor_unlock_and_unprep(nor, SPI_NOR_OPS_WRITE);
 	return ret;
 }
-
-static int spi_nor_chunked_write(struct mtd_info *mtd, loff_t _to, size_t _len,
-				 size_t *_retlen, const u_char *_buf)
-{
-	struct spi_nor *nor = mtd_to_spi_nor(mtd);
-	u32 addr_width = nor->addr_width + !!(nor->flags & SNOR_F_4B_EXT_ADDR);
-	int chunk_size;
-	size_t retlen = 0;
-	int ret;
-
-	chunk_size = nor->chunk_size;
-	if (!chunk_size)
-		chunk_size = _len;
-
-	if (addr_width > 3)
-		chunk_size -= addr_width - 3;
-
-	while (retlen < _len) {
-		size_t len = min_t(int, chunk_size, _len - retlen);
-		const u_char *buf = _buf + retlen;
-		loff_t to = _to + retlen;
-
-		if (nor->flags & SNOR_F_SST)
-			ret = sst_write(mtd, to, len, &retlen, buf);
-		else
-			ret = spi_nor_write(mtd, to, len, &retlen, buf);
-		if (ret)
-			return ret;
-	}
-
-	*_retlen += retlen;
-	return 0;
-}
-
-static int spi_nor_chunked_read(struct mtd_info *mtd, loff_t _from, size_t _len,
-				size_t *_retlen, u_char *_buf)
-{
-	struct spi_nor *nor = mtd_to_spi_nor(mtd);
-	int chunk_size;
-	int ret;
-
-	chunk_size = nor->chunk_size;
-	if (!chunk_size)
-		chunk_size = _len;
-
-	*_retlen = 0;
-	while (*_retlen < _len) {
-		size_t len = min_t(int, chunk_size, _len - *_retlen);
-		u_char *buf = _buf + *_retlen;
-		loff_t from = _from + *_retlen;
-		size_t retlen = 0;
-
-		ret = spi_nor_read(mtd, from, len, &retlen, buf);
-		if (ret)
-			return ret;
-
-		*_retlen += retlen;
-	}
-
-	return 0;
-}
-
 
 /**
  * macronix_quad_enable() - set QE bit in Status Register.
@@ -2826,7 +2774,7 @@ int spi_nor_scan(struct spi_nor *nor, const char *name,
 		info = spi_nor_match_id(name);
 	/* Try to auto-detect if chip name wasn't specified or not found */
 	if (!info)
-		info = spi_nor_read_id(nor);
+		info = spi_nor_read_id(nor, NULL);
 	if (IS_ERR_OR_NULL(info))
 		return -ENOENT;
 
@@ -2837,7 +2785,7 @@ int spi_nor_scan(struct spi_nor *nor, const char *name,
 	if (name && info->id_len) {
 		const struct flash_info *jinfo;
 
-		jinfo = spi_nor_read_id(nor);
+		jinfo = spi_nor_read_id(nor, name);
 		if (IS_ERR(jinfo)) {
 			return PTR_ERR(jinfo);
 		} else if (jinfo != info) {
@@ -2870,14 +2818,6 @@ int spi_nor_scan(struct spi_nor *nor, const char *name,
 		return ret;
 
 	/*
-	 * Make sure the XSR_RDY flag is set before calling
-	 * spi_nor_wait_till_ready(). Xilinx S3AN share MFR
-	 * with Atmel spi-nor
-	 */
-	if (info->flags & SPI_S3AN)
-		nor->flags |=  SNOR_F_READY_XSR_RDY;
-
-	/*
 	 * Atmel, SST, Intel/Numonyx, and others serial NOR tend to power up
 	 * with the software protection bits set
 	 */
@@ -2886,6 +2826,7 @@ int spi_nor_scan(struct spi_nor *nor, const char *name,
 	    JEDEC_MFR(info) == SNOR_MFR_INTEL ||
 	    JEDEC_MFR(info) == SNOR_MFR_MACRONIX ||
 	    JEDEC_MFR(info) == SNOR_MFR_SST ||
+	    JEDEC_MFR(info) == SNOR_MFR_WINBOND ||
 	    info->flags & SPI_NOR_HAS_LOCK) {
 		write_enable(nor);
 		write_sr(nor, 0);
@@ -2904,7 +2845,8 @@ int spi_nor_scan(struct spi_nor *nor, const char *name,
 
 	/* NOR protection support for STmicro/Micron chips and similar */
 	if (JEDEC_MFR(info) == SNOR_MFR_MICRON ||
-			info->flags & SPI_NOR_HAS_LOCK) {
+	    JEDEC_MFR(info) == SNOR_MFR_WINBOND ||
+	    info->flags & SPI_NOR_HAS_LOCK) {
 		nor->flash_lock = stm_lock;
 		nor->flash_unlock = stm_unlock;
 		nor->flash_is_locked = stm_is_locked;
@@ -2917,12 +2859,10 @@ int spi_nor_scan(struct spi_nor *nor, const char *name,
 	}
 
 	/* sst nor chips use AAI word program */
-	if (info->flags & SST_WRITE) {
+	if (info->flags & SST_WRITE)
 		mtd->_write = sst_write;
-		nor->flags |= SNOR_F_SST;
-	} else {
+	else
 		mtd->_write = spi_nor_write;
-	}
 
 	if (info->flags & USE_FSR)
 		nor->flags |= SNOR_F_USE_FSR;
@@ -2941,21 +2881,11 @@ int spi_nor_scan(struct spi_nor *nor, const char *name,
 	mtd->writebufsize = nor->page_size;
 
 	if (np) {
-		u32 val;
-
 		/* If we were instantiated by DT, use it */
 		if (of_property_read_bool(np, "m25p,fast-read"))
 			params.hwcaps.mask |= SNOR_HWCAPS_READ_FAST;
 		else
 			params.hwcaps.mask &= ~SNOR_HWCAPS_READ_FAST;
-
-		if (!of_property_read_u32(np, "m25p,chunked-io", &val)) {
-			dev_info(dev, "using chunked io (size=%d)\n", val);
-			mtd->_read = spi_nor_chunked_read;
-			mtd->_write = spi_nor_chunked_write;
-			nor->chunk_size = val;
-		}
-
 	} else {
 		/* If we weren't instantiated by DT, default to fast-read */
 		params.hwcaps.mask |= SNOR_HWCAPS_READ_FAST;
@@ -2983,9 +2913,16 @@ int spi_nor_scan(struct spi_nor *nor, const char *name,
 	} else if (mtd->size > 0x1000000) {
 		/* enable 4-byte addressing if the device exceeds 16MiB */
 		nor->addr_width = 4;
-		if (info->flags & SPI_NOR_4B_READ_OP)
-			spi_nor_set_4byte_read(nor, info);
-		else if (JEDEC_MFR(info) == SNOR_MFR_SPANSION ||
+		if (info->flags & SPI_NOR_4B_READ_OP) {
+			if (JEDEC_MFR(info) == SNOR_MFR_WINBOND) {
+				ret = read_xcr(nor);
+				if (!(ret > 0 && (ret & XCR_DEF_4B_ADDR_MODE)))
+					spi_nor_set_4byte_read(nor, info);
+				else
+					set_4byte(nor, info, 1);
+			} else
+				spi_nor_set_4byte_read(nor, info);
+		} else if (JEDEC_MFR(info) == SNOR_MFR_SPANSION ||
 			 info->flags & SPI_NOR_4B_OPCODES)
 			spi_nor_set_4byte_opcodes(nor, info);
 		else
@@ -2998,12 +2935,6 @@ int spi_nor_scan(struct spi_nor *nor, const char *name,
 		dev_err(dev, "address width is too large: %u\n",
 			nor->addr_width);
 		return -EINVAL;
-	}
-
-	if (info->flags & SPI_S3AN) {
-		ret = s3an_nor_scan(info, nor);
-		if (ret)
-			return ret;
 	}
 
 	if (info->flags & SPI_S3AN) {
