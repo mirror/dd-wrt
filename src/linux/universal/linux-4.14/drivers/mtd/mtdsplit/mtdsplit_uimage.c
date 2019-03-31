@@ -16,6 +16,7 @@
 #include <linux/vmalloc.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
+#include <linux/version.h>
 #include <linux/byteorder/generic.h>
 
 #include "mtdsplit.h"
@@ -51,6 +52,11 @@ struct uimage_header {
 	uint8_t		ih_type;	/* Image Type			*/
 	uint8_t		ih_comp;	/* Compression Type		*/
 	uint8_t		ih_name[IH_NMLEN];	/* Image Name		*/
+
+	uint32_t	ih_ksz; // kernel size
+	uint8_t		devicename[64];
+	uint8_t		version[16];
+	uint8_t		rev[16];
 };
 
 static int
@@ -62,12 +68,12 @@ read_uimage_header(struct mtd_info *mtd, size_t offset, u_char *buf,
 
 	ret = mtd_read(mtd, offset, header_len, &retlen, buf);
 	if (ret) {
-		pr_debug("read error in \"%s\"\n", mtd->name);
+		printk(KERN_INFO "read error in \"%s\"\n", mtd->name);
 		return ret;
 	}
 
 	if (retlen != header_len) {
-		pr_debug("short read in \"%s\"\n", mtd->name);
+		printk(KERN_INFO "short read in \"%s\"\n", mtd->name);
 		return -EIO;
 	}
 
@@ -120,7 +126,7 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 
 		ret = find_header(buf, MAX_HEADER_LEN);
 		if (ret < 0) {
-			pr_debug("no valid uImage found in \"%s\" at offset %llx\n",
+			printk(KERN_INFO "no valid uImage found in \"%s\" at offset %llx\n",
 				 master->name, (unsigned long long) offset);
 			continue;
 		}
@@ -128,7 +134,7 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 
 		uimage_size = sizeof(*header) + be32_to_cpu(header->ih_size) + ret;
 		if ((offset + uimage_size) > master->size) {
-			pr_debug("uImage exceeds MTD device \"%s\"\n",
+			printk(KERN_INFO "uImage exceeds MTD device \"%s\"\n",
 				 master->name);
 			continue;
 		}
@@ -136,7 +142,7 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 	}
 
 	if (uimage_size == 0) {
-		pr_debug("no uImage found in \"%s\"\n", master->name);
+		printk(KERN_INFO "no uImage found in \"%s\"\n", master->name);
 		ret = -ENODEV;
 		goto err_free_buf;
 	}
@@ -151,8 +157,8 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 		ret = mtd_find_rootfs_from(master, uimage_offset + uimage_size,
 					   master->size, &rootfs_offset, &type);
 		if (ret) {
-			pr_debug("no rootfs after uImage in \"%s\"\n",
-				 master->name);
+			printk(KERN_INFO "no rootfs after uImage in \"%s\" offset %08X\n",
+				 master->name,uimage_offset + uimage_size);
 			goto err_free_buf;
 		}
 
@@ -165,7 +171,7 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 		/* check rootfs presence at offset 0 */
 		ret = mtd_check_rootfs_magic(master, 0, &type);
 		if (ret) {
-			pr_debug("no rootfs before uImage in \"%s\"\n",
+			printk(KERN_INFO "no rootfs before uImage in \"%s\"\n",
 				 master->name);
 			goto err_free_buf;
 		}
@@ -175,7 +181,7 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 	}
 
 	if (rootfs_size == 0) {
-		pr_debug("no rootfs found in \"%s\"\n", master->name);
+		printk(KERN_INFO "no rootfs found in \"%s\"\n", master->name);
 		ret = -ENODEV;
 		goto err_free_buf;
 	}
@@ -210,19 +216,19 @@ static ssize_t uimage_verify_default(u_char *buf, size_t len)
 
 	/* default sanity checks */
 	if (be32_to_cpu(header->ih_magic) != IH_MAGIC) {
-		pr_debug("invalid uImage magic: %08x\n",
+		printk(KERN_INFO "invalid uImage magic: %08x\n",
 			 be32_to_cpu(header->ih_magic));
 		return -EINVAL;
 	}
 
 	if (header->ih_os != IH_OS_LINUX) {
-		pr_debug("invalid uImage OS: %08x\n",
+		printk(KERN_INFO "invalid uImage OS: %08x\n",
 			 be32_to_cpu(header->ih_os));
 		return -EINVAL;
 	}
 
 	if (header->ih_type != IH_TYPE_KERNEL) {
-		pr_debug("invalid uImage type: %08x\n",
+		printk(KERN_INFO "invalid uImage type: %08x\n",
 			 be32_to_cpu(header->ih_type));
 		return -EINVAL;
 	}
@@ -239,9 +245,19 @@ mtdsplit_uimage_parse_generic(struct mtd_info *master,
 				      uimage_verify_default);
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
+static const struct of_device_id mtdsplit_uimage_of_match_table[] = {
+	{ .compatible = "denx,uimage" },
+	{},
+};
+#endif
+
 static struct mtd_part_parser uimage_generic_parser = {
 	.owner = THIS_MODULE,
 	.name = "uimage-fw",
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
+	.of_match_table = mtdsplit_uimage_of_match_table,
+#endif
 	.parse_fn = mtdsplit_uimage_parse_generic,
 	.type = MTD_PARSER_TYPE_FIRMWARE,
 };
@@ -296,9 +312,19 @@ mtdsplit_uimage_parse_netgear(struct mtd_info *master,
 				      uimage_verify_wndr3700);
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
+static const struct of_device_id mtdsplit_uimage_netgear_of_match_table[] = {
+	{ .compatible = "netgear,uimage" },
+	{},
+};
+#endif
+
 static struct mtd_part_parser uimage_netgear_parser = {
 	.owner = THIS_MODULE,
 	.name = "netgear-fw",
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
+	.of_match_table = mtdsplit_uimage_netgear_of_match_table,
+#endif
 	.parse_fn = mtdsplit_uimage_parse_netgear,
 	.type = MTD_PARSER_TYPE_FIRMWARE,
 };
@@ -338,9 +364,19 @@ mtdsplit_uimage_parse_edimax(struct mtd_info *master,
 				       uimage_find_edimax);
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
+static const struct of_device_id mtdsplit_uimage_edimax_of_match_table[] = {
+	{ .compatible = "edimax,uimage" },
+	{},
+};
+#endif
+
 static struct mtd_part_parser uimage_edimax_parser = {
 	.owner = THIS_MODULE,
 	.name = "edimax-fw",
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
+	.of_match_table = mtdsplit_uimage_edimax_of_match_table,
+#endif
 	.parse_fn = mtdsplit_uimage_parse_edimax,
 	.type = MTD_PARSER_TYPE_FIRMWARE,
 };
