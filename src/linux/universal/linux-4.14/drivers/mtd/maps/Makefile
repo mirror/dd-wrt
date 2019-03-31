@@ -84,12 +84,7 @@ else
 obj-$(CONFIG_PPC)		+= nvram_kernel_x86.o
 endif
 endif
-obj-$(CONFIG_RALINK_RT3052)	+= nvram_kernel.o
-obj-$(CONFIG_RALINK_RT3352)	+= nvram_kernel.o
-obj-$(CONFIG_RALINK_RT5350)	+= nvram_kernel.o
-obj-$(CONFIG_RALINK_RT3883)	+= nvram_kernel.o
-obj-$(CONFIG_RALINK_RT2880)	+= nvram_kernel.o
-obj-$(CONFIG_RALINK_RT2883)	+= nvram_kernel.o
+obj-$(CONFIG_RALINK)	+= nvram_kernel.o
 obj-$(CONFIG_ADM5120)	+= nvram_kernel.o
 obj-$(CONFIG_ATHEROS)		+= nvram_kernel.o
 obj-$(CONFIG_ARCH_ALPINE)		+= nvram_kernel.o

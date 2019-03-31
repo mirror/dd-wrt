@@ -170,9 +170,11 @@ static ssize_t m25p80_read(struct spi_nor *nor, loff_t from, size_t len,
 		msg.data_nbits = data_nbits;
 
 		ret = spi_flash_read(spi, &msg);
-		if (ret < 0)
-			return ret;
-		return msg.retlen;
+		if (ret != -EOPNOTSUPP) {
+			if (ret < 0)
+				return ret;
+			return msg.retlen;
+		}
 	}
 
 	spi_message_init(&m);

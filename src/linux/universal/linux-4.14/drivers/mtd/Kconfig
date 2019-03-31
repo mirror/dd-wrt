@@ -42,30 +42,6 @@ config MTD_TESTS
 	  WARNING: some of the tests will ERASE entire MTD device which they
 	  test. Do not use these tests unless you really know what you do.
 
-config MTD_ROOTFS_ROOT_DEV
-	bool "Automatically set 'rootfs' partition to be root filesystem"
-	depends on MTD = "y"
-	default y
-
-config MTD_ROOTFS_SPLIT
-	bool "Automatically split 'rootfs' partition for squashfs"
-	depends on MTD = "y"
-	default y
-
-config MTD_ROOTFS_GEN
-	bool "Automatically generate 'rootfs' partition for squashfs"
-	depends on MTD = "y" && (RALINK_OPENWRT || PPC32)
-	default y
-
-config MTD_TRXSPLIT
-	bool "Automatically find and split TRX partitions"
-	default n
-
-config MTD_TRXSPLIT
-	bool "Automatically find and split TRX partitions"
-	depends on ADM5120
-	default n
-
 config MTD_REDBOOT_PARTS
 	tristate "RedBoot partition table parsing"
 	---help---
@@ -181,8 +157,7 @@ config MTD_AFS_PARTS
 
 	  You will still need the parsing functions to be called by the driver
 	  for your particular device. It won't happen automatically. The
-	  'armflash' map driver (CONFIG_MTD_ARM_INTEGRATOR) does this, for
-	  example.
+	  'physmap' map driver (CONFIG_MTD_PHYSMAP) does this, for example.
 
 config MTD_OF_PARTS
 	tristate "OpenFirmware partitioning information support"
@@ -198,23 +173,6 @@ config MTD_AR7_PARTS
 	---help---
 	  TI AR7 partitioning support
 
-
-config MTD_MYLOADER_PARTS
-	tristate "MyLoader partition parsing"
-	depends on MTD_PARTITIONS && (ADM5120 || ATHEROS_AR231X || ATHEROS_AR71XX)
-	---help---
-	  MyLoader is a bootloader which allows the user to define partitions
-	  in flash devices, by putting a table in the second erase block
-	  on the device, similar to a partition table. This table gives the 
-	  offsets and lengths of the user defined partitions.
-
-	  If you need code which can detect and parse these tables, and
-	  register MTD 'partitions' corresponding to each image detected,
-	  enable this option.
-
-	  You will still need the parsing functions to be called by the driver
-	  for your particular device. It won't happen automatically.
-
 config MTD_BCM63XX_PARTS
 	tristate "BCM63XX CFE partitioning support"
 	depends on BCM63XX || BMIPS_GENERIC || COMPILE_TEST
@@ -229,17 +187,6 @@ config MTD_BCM47XX_PARTS
 	help
 	  This provides partitions parser for devices based on BCM47xx
 	  boards.
-	  
-config MTD_QCOM_SMEM_PARTS
-	tristate "QCOM SMEM partitioning support"
-	depends on QCOM_SMEM
-	help
-	  This provides partitions parser for QCOM devices using SMEM
-	  such as IPQ806x.
-
-menu "Partition parsers"
-source "drivers/mtd/parsers/Kconfig"
-endmenu
 
 menu "Partition parsers"
 source "drivers/mtd/parsers/Kconfig"
@@ -444,8 +391,6 @@ source "drivers/mtd/spi-nor/Kconfig"
 
 source "drivers/mtd/ubi/Kconfig"
 
-source "drivers/mtd/ralink/Kconfig"
-
-source "drivers/mtd/bcm947xx/Kconfig"
+source "drivers/mtd/composite/Kconfig"
 
 endif # MTD
