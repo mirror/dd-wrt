@@ -530,7 +530,6 @@ void usb_amd_dev_put(void)
 }
 EXPORT_SYMBOL_GPL(usb_amd_dev_put);
 
-#endif /* CONFIG_PCI_DISABLE_COMMON_QUIRKS */
 
 
 /*
@@ -624,6 +623,7 @@ bool usb_amd_pt_check_port(struct device *device, int port)
 	return !(value & BIT(port_shift));
 }
 EXPORT_SYMBOL_GPL(usb_amd_pt_check_port);
+#endif /* CONFIG_PCI_DISABLE_COMMON_QUIRKS */
 
 #if IS_ENABLED(CONFIG_USB_UHCI_HCD)
 /*
