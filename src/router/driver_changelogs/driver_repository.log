@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r4495 | brainslayer | 2019-03-31 19:56:45 +0200 (Sun, 31 Mar 2019) | 5 lines
+
+When using iTXQ, the network stack does not need the real queue number, since
+mac80211 is using its internal queues anyway. In that case we can defer
+selecting the queue and remove a redundant station lookup in the tx path to save
+some CPU cycles.
+
+------------------------------------------------------------------------
 r4494 | brainslayer | 2019-03-31 18:35:53 +0200 (Sun, 31 Mar 2019) | 5 lines
 
 mt7615: use sw assign sequence number
