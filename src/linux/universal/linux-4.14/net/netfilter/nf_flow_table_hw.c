@@ -19,48 +19,75 @@ struct flow_offload_hw {
 	enum flow_offload_type	type;
 	struct flow_offload	*flow;
 	struct nf_conn		*ct;
-	possible_net_t		flow_hw_net;
+
+	struct flow_offload_hw_path src;
+	struct flow_offload_hw_path dest;
 };
 
-static int do_flow_offload_hw(struct net *net, struct flow_offload *flow,
-			      int type)
+static void flow_offload_check_ethernet(struct flow_offload_tuple *tuple,
+					struct flow_offload_hw_path *path)
 {
-	struct net_device *indev;
-	int ret, ifindex;
+	struct net_device *dev = path->dev;
+	struct neighbour *n;
 
-	ifindex = flow->tuplehash[FLOW_OFFLOAD_DIR_ORIGINAL].tuple.iifidx;
-	indev = dev_get_by_index(net, ifindex);
-	if (WARN_ON(!indev))
-		return 0;
+	if (dev->type != ARPHRD_ETHER)
+		return;
 
-	mutex_lock(&nf_flow_offload_hw_mutex);
-	ret = indev->netdev_ops->ndo_flow_offload(type, flow);
-	mutex_unlock(&nf_flow_offload_hw_mutex);
+	memcpy(path->eth_src, path->dev->dev_addr, ETH_ALEN);
+	n = dst_neigh_lookup(tuple->dst_cache, &tuple->src_v4);
+	if (!n)
+		return;
 
-	dev_put(indev);
+	memcpy(path->eth_dest, n->ha, ETH_ALEN);
+	path->flags |= FLOW_OFFLOAD_PATH_ETHERNET;
+	neigh_release(n);
+}
+
+static int flow_offload_check_path(struct net *net,
+				   struct flow_offload_tuple *tuple,
+				   struct flow_offload_hw_path *path)
+{
+	struct net_device *dev;
+
+	dev = dev_get_by_index_rcu(net, tuple->iifidx);
+	if (!dev)
+		return -ENOENT;
+
+	path->dev = dev;
+	flow_offload_check_ethernet(tuple, path);
+
+	if (dev->netdev_ops->ndo_flow_offload_check)
+		return dev->netdev_ops->ndo_flow_offload_check(path);
+
+	return 0;
+}
+
+static int do_flow_offload_hw(struct flow_offload_hw *offload)
+{
+	struct net_device *src_dev = offload->src.dev;
+	struct net_device *dest_dev = offload->dest.dev;
+	int ret;
+
+	ret = src_dev->netdev_ops->ndo_flow_offload(offload->type,
+						    offload->flow,
+						    &offload->src,
+						    &offload->dest);
+
+	/* restore devices in case the driver mangled them */
+	offload->src.dev = src_dev;
+	offload->dest.dev = dest_dev;
 
 	return ret;
 }
 
-static void flow_offload_hw_work_add(struct flow_offload_hw *offload)
+static void flow_offload_hw_free(struct flow_offload_hw *offload)
 {
-	struct net *net;
-	int ret;
-
-	if (nf_ct_is_dying(offload->ct))
-		return;
-
-	net = read_pnet(&offload->flow_hw_net);
-	ret = do_flow_offload_hw(net, offload->flow, FLOW_OFFLOAD_ADD);
-	if (ret >= 0)
-		offload->flow->flags |= FLOW_OFFLOAD_HW;
-}
-
-static void flow_offload_hw_work_del(struct flow_offload_hw *offload)
-{
-	struct net *net = read_pnet(&offload->flow_hw_net);
-
-	do_flow_offload_hw(net, offload->flow, FLOW_OFFLOAD_DEL);
+	dev_put(offload->src.dev);
+	dev_put(offload->dest.dev);
+	if (offload->ct)
+		nf_conntrack_put(&offload->ct->ct_general);
+	list_del(&offload->list);
+	kfree(offload);
 }
 
 static void flow_offload_hw_work(struct work_struct *work)
@@ -73,18 +100,22 @@ static void flow_offload_hw_work(struct work_struct *work)
 	spin_unlock_bh(&flow_offload_hw_pending_list_lock);
 
 	list_for_each_entry_safe(offload, next, &hw_offload_pending, list) {
+		mutex_lock(&nf_flow_offload_hw_mutex);
 		switch (offload->type) {
 		case FLOW_OFFLOAD_ADD:
-			flow_offload_hw_work_add(offload);
+			if (nf_ct_is_dying(offload->ct))
+				break;
+
+			if (do_flow_offload_hw(offload) >= 0)
+				offload->flow->flags |= FLOW_OFFLOAD_HW;
 			break;
 		case FLOW_OFFLOAD_DEL:
-			flow_offload_hw_work_del(offload);
+			do_flow_offload_hw(offload);
 			break;
 		}
-		if (offload->ct)
-			nf_conntrack_put(&offload->ct->ct_general);
-		list_del(&offload->list);
-		kfree(offload);
+		mutex_unlock(&nf_flow_offload_hw_mutex);
+
+		flow_offload_hw_free(offload);
 	}
 }
 
@@ -97,20 +128,55 @@ static void flow_offload_queue_work(struct flow_offload_hw *offload)
 	schedule_work(&nf_flow_offload_hw_work);
 }
 
+static struct flow_offload_hw *
+flow_offload_hw_prepare(struct net *net, struct flow_offload *flow)
+{
+	struct flow_offload_hw_path src = {};
+	struct flow_offload_hw_path dest = {};
+	struct flow_offload_tuple *tuple;
+	struct flow_offload_hw *offload = NULL;
+
+	rcu_read_lock_bh();
+
+	tuple = &flow->tuplehash[FLOW_OFFLOAD_DIR_ORIGINAL].tuple;
+	if (flow_offload_check_path(net, tuple, &src))
+		goto out;
+
+	tuple = &flow->tuplehash[FLOW_OFFLOAD_DIR_REPLY].tuple;
+	if (flow_offload_check_path(net, tuple, &dest))
+		goto out;
+
+	if (!src.dev->netdev_ops->ndo_flow_offload)
+		goto out;
+
+	offload = kzalloc(sizeof(struct flow_offload_hw), GFP_ATOMIC);
+	if (!offload)
+		goto out;
+
+	dev_hold(src.dev);
+	dev_hold(dest.dev);
+	offload->src = src;
+	offload->dest = dest;
+	offload->flow = flow;
+
+out:
+	rcu_read_unlock_bh();
+
+	return offload;
+}
+
 static void flow_offload_hw_add(struct net *net, struct flow_offload *flow,
 				struct nf_conn *ct)
 {
 	struct flow_offload_hw *offload;
 
-	offload = kmalloc(sizeof(struct flow_offload_hw), GFP_ATOMIC);
+	offload = flow_offload_hw_prepare(net, flow);
 	if (!offload)
 		return;
 
 	nf_conntrack_get(&ct->ct_general);
 	offload->type = FLOW_OFFLOAD_ADD;
 	offload->ct = ct;
-	offload->flow = flow;
-	write_pnet(&offload->flow_hw_net, net);
 
 	flow_offload_queue_work(offload);
 }
@@ -119,14 +185,11 @@ static void flow_offload_hw_del(struct net *net, struct flow_offload *flow)
 {
 	struct flow_offload_hw *offload;
 
-	offload = kmalloc(sizeof(struct flow_offload_hw), GFP_ATOMIC);
+	offload = flow_offload_hw_prepare(net, flow);
 	if (!offload)
 		return;
 
 	offload->type = FLOW_OFFLOAD_DEL;
-	offload->ct = NULL;
-	offload->flow = flow;
-	write_pnet(&offload->flow_hw_net, net);
 
 	flow_offload_queue_work(offload);
 }
@@ -153,12 +216,8 @@ static void __exit nf_flow_table_hw_module_exit(void)
 	nf_flow_table_hw_unregister(&flow_offload_hw);
 	cancel_work_sync(&nf_flow_offload_hw_work);
 
-	list_for_each_entry_safe(offload, next, &hw_offload_pending, list) {
-		if (offload->ct)
-			nf_conntrack_put(&offload->ct->ct_general);
-		list_del(&offload->list);
-		kfree(offload);
-	}
+	list_for_each_entry_safe(offload, next, &hw_offload_pending, list)
+		flow_offload_hw_free(offload);
 }
 
 module_init(nf_flow_table_hw_module_init);

@@ -4933,6 +4933,14 @@ static int nf_tables_flowtable_parse_hook(const struct nft_ctx *ctx,
 	if (err < 0)
 		goto err1;
 
+	for (i = 0; i < n; i++) {
+		if (flowtable->data.flags & NF_FLOWTABLE_F_HW &&
+		    !dev_array[i]->netdev_ops->ndo_flow_offload) {
+			err = -EOPNOTSUPP;
+			goto err1;
+		}
+	}
+
 	ops = kzalloc(sizeof(struct nf_hook_ops) * n, GFP_KERNEL);
 	if (!ops) {
 		err = -ENOMEM;
@@ -5063,9 +5071,18 @@ static int nf_tables_newflowtable(struct net *net, struct sock *nlsk,
 	}
 
 	flowtable->data.type = type;
+	write_pnet(&flowtable->data.ft_net, net);
+
 	err = type->init(&flowtable->data);
 	if (err < 0)
 		goto err3;
+
+	if (nla[NFTA_FLOWTABLE_FLAGS]) {
+		flowtable->data.flags =
+			ntohl(nla_get_be32(nla[NFTA_FLOWTABLE_FLAGS]));
+		if (flowtable->data.flags & ~NF_FLOWTABLE_F_HW)
+			goto err4;
+	}
 
 	err = nf_tables_flowtable_parse_hook(&ctx, nla[NFTA_FLOWTABLE_HOOK],
 					     flowtable);
@@ -5164,7 +5181,8 @@ static int nf_tables_fill_flowtable_info(struct sk_buff *skb, struct net *net,
 	    nla_put_string(skb, NFTA_FLOWTABLE_NAME, flowtable->name) ||
 	    nla_put_be32(skb, NFTA_FLOWTABLE_USE, htonl(flowtable->use)) ||
 	    nla_put_be64(skb, NFTA_FLOWTABLE_HANDLE, cpu_to_be64(flowtable->handle),
-			 NFTA_FLOWTABLE_PAD))
+			 NFTA_FLOWTABLE_PAD) ||
+	    nla_put_be32(skb, NFTA_FLOWTABLE_FLAGS, htonl(flowtable->data.flags)))
 		goto nla_put_failure;
 
 	nest = nla_nest_start(skb, NFTA_FLOWTABLE_HOOK);
@@ -5223,7 +5241,7 @@ static int nf_tables_dump_flowtable(struct sk_buff *skb,
 			if (idx > s_idx)
 				memset(&cb->args[1], 0,
 				       sizeof(cb->args) - sizeof(cb->args[0]));
-			if (filter && filter->table[0] &&
+			if (filter && filter->table &&
 			    strcmp(filter->table, table->name))
 				goto cont;
 
