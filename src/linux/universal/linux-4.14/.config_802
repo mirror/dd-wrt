@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 4.14.100-rc1 Kernel Configuration
+# Linux/mips 4.14.109 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -641,6 +641,7 @@ CONFIG_BRIDGE_NETFILTER=y
 #
 CONFIG_NETFILTER_INGRESS=y
 CONFIG_NETFILTER_NETLINK=y
+CONFIG_NETFILTER_FAMILY_BRIDGE=y
 # CONFIG_NETFILTER_NETLINK_ACCT is not set
 # CONFIG_NETFILTER_NETLINK_QUEUE is not set
 CONFIG_NETFILTER_NETLINK_LOG=y
@@ -684,6 +685,7 @@ CONFIG_NF_NAT_TFTP=y
 CONFIG_NF_NAT_REDIRECT=y
 # CONFIG_NF_TABLES is not set
 CONFIG_NF_FLOW_TABLE=y
+# CONFIG_NF_FLOW_TABLE_HW is not set
 CONFIG_NETFILTER_XTABLES=y
 
 #
@@ -1063,17 +1065,12 @@ CONFIG_MTD_SPLIT_SUPPORT=y
 # CONFIG_MTD_SPLIT_BRNIMAGE_FW is not set
 # CONFIG_MTD_SPLIT_EVA_FW is not set
 # CONFIG_MTD_SPLIT_MINOR_FW is not set
+# CONFIG_MTD_SPLIT_JIMAGE_FW is not set
 # CONFIG_MTD_TESTS is not set
-# CONFIG_MTD_ROOTFS_SPLIT is not set
-# CONFIG_MTD_TRXSPLIT is not set
 # CONFIG_MTD_REDBOOT_PARTS is not set
 # CONFIG_MTD_CMDLINE_PARTS is not set
 # CONFIG_MTD_OF_PARTS is not set
 # CONFIG_MTD_AR7_PARTS is not set
-
-#
-# Partition parsers
-#
 
 #
 # Partition parsers
@@ -1162,12 +1159,9 @@ CONFIG_MTD_LANTIQ=y
 # CONFIG_MTD_UBI is not set
 
 #
-# Ralink Non-volatile Device Drivers
+# Composite MTD device drivers
 #
-
-#
-# Broadcom Flash Devices Support
-#
+# CONFIG_MTD_VIRT_CONCAT is not set
 CONFIG_DTC=y
 CONFIG_OF=y
 # CONFIG_OF_UNITTEST is not set
