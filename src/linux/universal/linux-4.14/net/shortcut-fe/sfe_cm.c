@@ -1100,6 +1100,7 @@ static int __init sfe_cm_init(void)
 	struct sfe_cm *sc = &__sc;
 	int result = -1;
 	size_t i, j;
+	struct net *net;
 
 #ifdef SFE_SUPPORT_IPV6
 	sfe_ipv6_init();
@@ -1143,10 +1144,12 @@ static int __init sfe_cm_init(void)
 	/*
 	 * Register our netfilter hooks.
 	 */
-	result = nf_register_hooks(sfe_cm_ops_post_routing, ARRAY_SIZE(sfe_cm_ops_post_routing));
+	for_each_net(net) {
+	result = nf_register_net_hooks(net,sfe_cm_ops_post_routing, ARRAY_SIZE(sfe_cm_ops_post_routing));
 	if (result < 0) {
 		DEBUG_ERROR("can't register nf post routing hook: %d\n", result);
 		goto exit3;
+	}
 	}
 
 #ifdef CONFIG_NF_CONNTRACK_EVENTS
@@ -1175,7 +1178,9 @@ static int __init sfe_cm_init(void)
 
 #ifdef CONFIG_NF_CONNTRACK_EVENTS
 exit4:
-	nf_unregister_hooks(sfe_cm_ops_post_routing, ARRAY_SIZE(sfe_cm_ops_post_routing));
+	for_each_net(net) {
+	nf_unregister_net_hooks(net, sfe_cm_ops_post_routing, ARRAY_SIZE(sfe_cm_ops_post_routing));
+	}
 #endif
 exit3:
 #ifdef SFE_SUPPORT_IPV6
@@ -1206,7 +1211,7 @@ exit1:
 static void __exit sfe_cm_exit(void)
 {
 	struct sfe_cm *sc = &__sc;
-
+	struct net *net;
 	DEBUG_INFO("SFE CM exit\n");
 	fast_classifier_exit();
 
@@ -1238,8 +1243,9 @@ static void __exit sfe_cm_exit(void)
 	nf_conntrack_unregister_notifier(&init_net, &sfe_cm_conntrack_notifier);
 
 #endif
-	nf_unregister_hooks(sfe_cm_ops_post_routing, ARRAY_SIZE(sfe_cm_ops_post_routing));
-
+	for_each_net(net) {
+	nf_unregister_net_hooks(net, sfe_cm_ops_post_routing, ARRAY_SIZE(sfe_cm_ops_post_routing));
+	}
 #ifdef SFE_SUPPORT_IPV6
 	if (unregister_inet6addr_notifier) {
 		unregister_inet6addr_notifier(&sc->inet6_notifier);

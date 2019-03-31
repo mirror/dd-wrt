@@ -12,6 +12,13 @@ config NETFILTER_INGRESS
 config NETFILTER_NETLINK
 	tristate "Netfilter NFNETLINK interface"
 
+config NETFILTER_FAMILY_BRIDGE
+	bool
+
+config NETFILTER_FAMILY_ARP
+	bool
+
+
 config NETFILTER_NETLINK_ACCT
 tristate "Netfilter NFACCT over NFNETLINK interface"
 	depends on NETFILTER_ADVANCED
@@ -708,6 +715,15 @@ config NF_FLOW_TABLE
 	depends on NF_CONNTRACK
 	help
 	  This option adds the flow table core infrastructure.
+
+	  To compile it as a module, choose M here.
+
+config NF_FLOW_TABLE_HW
+	tristate "Netfilter flow table hardware offload module"
+	depends on NF_FLOW_TABLE
+	help
+	  This option adds hardware offload support for the flow table core
+	  infrastructure.
 
 	  To compile it as a module, choose M here.
 
