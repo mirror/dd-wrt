@@ -424,7 +424,7 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 	int cpeonly = 0;
 #endif
 
-#ifdef HAVE_RT2880
+#if defined(HAVE_RT2880) && !defined(HAVE_MT76)
 #define IFMAP(a) getRADev(a)
 #else
 #define IFMAP(a) (a)

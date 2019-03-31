@@ -1166,6 +1166,9 @@ endif
 ifeq ($(CONFIG_MT7620),y)
 CFLAGS += -DHAVE_MT7620
 endif
+ifeq ($(CONFIG_MT76),y)
+CFLAGS += -DHAVE_MT76
+endif
 ifeq ($(CONFIG_HORNET),y)
 CFLAGS += -DHAVE_HORNET
 endif
@@ -1268,8 +1271,10 @@ VISOBJS += milkfish.o
 endif
 
 ifeq ($(CONFIG_RT2880),y)
+ifneq ($(CONFIG_MT76),y)
   CFLAGS += -DHAVE_RT2880
   VISOBJS += wireless_ralink.o
+endif
 endif
 ifeq ($(CONFIG_RT61),y)
   CFLAGS += -DHAVE_RT2880
