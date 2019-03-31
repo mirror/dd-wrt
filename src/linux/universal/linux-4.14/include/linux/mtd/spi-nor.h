@@ -103,6 +103,7 @@
 #define SPINOR_OP_EN4B		0xb7	/* Enter 4-byte mode */
 #define SPINOR_OP_EX4B		0xe9	/* Exit 4-byte mode */
 #define SPINOR_OP_WREAR		0xc5	/* Write extended address register */
+#define SPINOR_OP_RDXCR		0x15	/* Read extended configuration register */
 
 /* Used for Spansion flashes only. */
 #define SPINOR_OP_BRWR		0x17	/* Bank register write */
@@ -135,6 +136,7 @@
 
 /* Configuration Register bits. */
 #define CR_QUAD_EN_SPAN		BIT(1)	/* Spansion Quad I/O */
+#define XCR_DEF_4B_ADDR_MODE	BIT(1)	/* Winbond 4B mode default */
 
 /* Status Register 2 bits. */
 #define SR2_QUAD_EN_BIT7	BIT(7)

@@ -42,6 +42,21 @@
  * erasesize aligned (e.g. use MTDPART_OFS_NEXTBLK).
  */
 
+struct mtd_partition {
+	const char *name;		/* identifier string */
+	const char *const *types;	/* names of parsers to use if any */
+	uint64_t size;			/* partition size */
+	uint64_t offset;		/* offset within the master MTD space */
+	uint32_t mask_flags;		/* master MTD flags to mask out for this partition */
+	struct device_node *of_node;
+};
+
+#define MTDPART_OFS_RETAIN	(-3)
+#define MTDPART_OFS_NXTBLK	(-2)
+#define MTDPART_OFS_APPEND	(-1)
+#define MTDPART_SIZ_FULL	(0)
+
+
 struct mtd_info;
 struct device_node;
 
@@ -53,22 +68,6 @@ struct mtd_part_parser_data {
 	unsigned long origin;
 };
 
-struct mtd_partition {
-	const char *name;		/* identifier string */
-	const char *const *types;	/* names of parsers to use if any */
-	uint64_t size;			/* partition size */
-	uint64_t offset;		/* offset within the master MTD space */
-	uint32_t mask_flags;		/* master MTD flags to mask out for this partition */
-	int (*refresh_partition)(struct mtd_info *);
-	struct device_node *of_node;
-};
-
-#define MTDPART_OFS_RETAIN	(-3)
-#define MTDPART_OFS_NXTBLK	(-2)
-#define MTDPART_OFS_APPEND	(-1)
-#define MTDPART_SIZ_FULL	(0)
-
-int refresh_mtd_partitions(struct mtd_info *);
 
 /*
  * Functions dealing with the various ways of partitioning the space
@@ -84,6 +83,7 @@ struct mtd_part_parser {
 	struct list_head list;
 	struct module *owner;
 	const char *name;
+	const struct of_device_id *of_match_table;
 	int (*parse_fn)(struct mtd_info *, const struct mtd_partition **,
 			struct mtd_part_parser_data *);
 	void (*cleanup)(const struct mtd_partition *pparts, int nr_parts);
@@ -119,12 +119,5 @@ int mtd_del_partition(struct mtd_info *master, int partno);
 struct mtd_info *mtdpart_get_master(const struct mtd_info *mtd);
 uint64_t mtdpart_get_offset(const struct mtd_info *mtd);
 uint64_t mtd_get_device_size(const struct mtd_info *mtd);
-extern void __weak arch_split_mtd_part(struct mtd_info *master,
-				       const char *name, int offset, int size);
-
-int parse_mtd_partitions_by_type(struct mtd_info *master,
-				 enum mtd_parser_type type,
-				 const struct mtd_partition **pparts,
-				 struct mtd_part_parser_data *data);
 
 #endif
