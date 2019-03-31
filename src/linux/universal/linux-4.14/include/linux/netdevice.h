@@ -713,16 +713,6 @@ struct xps_map {
 #define XPS_MIN_MAP_ALLOC ((L1_CACHE_ALIGN(offsetof(struct xps_map, queues[1])) \
        - sizeof(struct xps_map)) / sizeof(u16))
 
-#ifdef CONFIG_RFS_ACCEL
-typedef int (*set_rfs_filter_callback_t)(struct net_device *dev,
-                                     __be32 src,
-                                     __be32 dst,
-                                     __be16 sport,
-                                     __be16 dport,
-                                     u8 proto,
-                                     u16 rxq_index,
-                                     u32 action);
-#endif
 /*
  * This structure holds all XPS maps for device.  Maps are indexed by CPU.
  */
@@ -835,6 +825,14 @@ struct xfrmdev_ops {
 				       struct xfrm_state *x);
 };
 #endif
+
+struct flow_offload;
+struct flow_offload_hw_path;
+
+enum flow_offload_type {
+	FLOW_OFFLOAD_ADD	= 0,
+	FLOW_OFFLOAD_DEL,
+};
 
 /*
  * This structure defines the management hooks for network devices.
@@ -1067,6 +1065,17 @@ struct xfrmdev_ops {
  * int (*ndo_bridge_dellink)(struct net_device *dev, struct nlmsghdr *nlh,
  *			     u16 flags);
  *
+ * int (*ndo_flow_offload_check)(struct flow_offload_hw_path *path);
+ *	For virtual devices like bridges, vlan, and pppoe, fill in the
+ *	underlying network device that can be used for offloading connections.
+ *	Return an error if offloading is not supported.
+ *
+ * int (*ndo_flow_offload)(enum flow_offload_type type,
+ *			   struct flow_offload *flow,
+ *			   struct flow_offload_hw_path *src,
+ *			   struct flow_offload_hw_path *dest);
+ *	Adds/deletes flow entry to/from net device flowtable.
+ *
  * int (*ndo_change_carrier)(struct net_device *dev, bool new_carrier);
  *	Called to change device carrier. Soft-devices (like dummy, team, etc)
  *	which do not represent real hardware may define this to allow their
@@ -1249,9 +1258,6 @@ struct net_device_ops {
 						     const struct sk_buff *skb,
 						     u16 rxq_index,
 						     u32 flow_id);
-        int                     (*ndo_register_rfs_filter)(struct net_device *dev,
-                                                              set_rfs_filter_callback_t set_filter);
-        int                     (*ndo_get_default_vlan_tag)(struct net_device *net);
 #endif
 	int			(*ndo_add_slave)(struct net_device *dev,
 						 struct net_device *slave_dev);
@@ -1294,6 +1300,11 @@ struct net_device_ops {
 	int			(*ndo_bridge_dellink)(struct net_device *dev,
 						      struct nlmsghdr *nlh,
 						      u16 flags);
+	int			(*ndo_flow_offload_check)(struct flow_offload_hw_path *path);
+	int			(*ndo_flow_offload)(enum flow_offload_type type,
+						    struct flow_offload *flow,
+						    struct flow_offload_hw_path *src,
+						    struct flow_offload_hw_path *dest);
 	int			(*ndo_change_carrier)(struct net_device *dev,
 						      bool new_carrier);
 	int			(*ndo_get_phys_port_id)(struct net_device *dev,
@@ -1800,10 +1811,10 @@ struct net_device {
 /*
  * Cache lines mostly used on receive path (including eth_type_trans())
  */
+
 #if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
 	unsigned long		last_rx;
 #endif
-
 	/* Interface address info used in eth_type_trans() */
 	unsigned char		*dev_addr;
 
@@ -3689,18 +3700,6 @@ static inline void netif_tx_unlock_bh(struct net_device *dev)
 	} else {					\
 		__netif_tx_release(txq);		\
 	}						\
-}
-
-#define HARD_TX_LOCK_BH(dev, txq) {           \
-    if ((dev->features & NETIF_F_LLTX) == 0) {  \
-        __netif_tx_lock_bh(txq);      \
-    }                       \
-}
-
-#define HARD_TX_UNLOCK_BH(dev, txq) {          \
-    if ((dev->features & NETIF_F_LLTX) == 0) {  \
-        __netif_tx_unlock_bh(txq);         \
-    }                       \
 }
 
 static inline void netif_tx_disable(struct net_device *dev)
