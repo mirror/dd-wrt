@@ -2761,7 +2761,7 @@ int is_mt76x2(const char *prefix)
 }
 int is_mt76(const char *prefix)
 {
-	return (is_mt7615(prefix) || is_mt7603(prefix) || is_mt76x0(prefix) || is_mt76x02(prefix));
+	return (is_mt7615(prefix) || is_mt7603(prefix) || is_mt76x0(prefix) || is_mt76x2(prefix));
 }
 #endif
 #ifdef HAVE_WIL6210
