@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r4496 | brainslayer | 2019-04-01 09:20:20 +0200 (Mon, 01 Apr 2019) | 1 line
+
+sync mt7615 driver
+------------------------------------------------------------------------
 r4495 | brainslayer | 2019-03-31 19:56:45 +0200 (Sun, 31 Mar 2019) | 5 lines
 
 When using iTXQ, the network stack does not need the real queue number, since
