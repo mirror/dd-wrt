@@ -2731,14 +2731,38 @@ int is_brcmfmac(const char *prefix)
 
 #endif
 #ifdef HAVE_MT76
-int is_mt76(const char *prefix)
+int is_mt7615(const char *prefix)
 {
 	INITVALUECACHE();
-	RETURNVALUE(devicecountbydriver(prefix, "dummyplaceholder"));
+	RETURNVALUE(devicecountbydriver(prefix, "mt7615e"));
 	EXITVALUECACHE();
 	return ret;
 }
-
+int is_mt7603(const char *prefix)
+{
+	INITVALUECACHE();
+	RETURNVALUE(devicecountbydriver(prefix, "mt7603e"));
+	EXITVALUECACHE();
+	return ret;
+}
+int is_mt76x0(const char *prefix)
+{
+	INITVALUECACHE();
+	RETURNVALUE(devicecountbydriver(prefix, "mt76x0e"));
+	EXITVALUECACHE();
+	return ret;
+}
+int is_mt76x2(const char *prefix)
+{
+	INITVALUECACHE();
+	RETURNVALUE(devicecountbydriver(prefix, "mt76x2e"));
+	EXITVALUECACHE();
+	return ret;
+}
+int is_mt76(const char *prefix)
+{
+	return (is_mt7615(prefix) || is_mt7603(prefix) || is_mt76x0(prefix) || is_mt76x02(prefix));
+}
 #endif
 #ifdef HAVE_WIL6210
 int is_wil6210(const char *prefix)
