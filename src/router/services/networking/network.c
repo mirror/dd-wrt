@@ -2362,7 +2362,7 @@ void start_lan(void)
 
 #if defined(HAVE_MADWIFI) || defined(HAVE_RT2880) || defined(HAVE_RT61)
 
-#if defined(HAVE_RT2880) || defined(HAVE_RT61)
+#if (defined(HAVE_RT2880) || defined(HAVE_RT61)) && !defined(HAVE_MT76)
 #define getWifi(a) a
 #define getWDSSTA() NULL
 #endif
