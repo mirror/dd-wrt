@@ -939,7 +939,7 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 	}
 #ifdef HAVE_WPA_SUPPLICANT
 #ifndef HAVE_MICRO
-#ifndef HAVE_RT2880
+#if !defined(HAVE_RT2880) || defined(HAVE_MT76)
 	if (nvram_match(sta, "sta") || nvram_match(sta, "wdssta")
 	    || nvram_match(sta, "apsta") || nvram_match(sta, "wet")) {
 #ifdef HAVE_MADWIFI
@@ -2047,7 +2047,7 @@ static void show_netmode(webs_t wp, char *prefix)
 	websWrite(wp, "</select>\n");
 	websWrite(wp, "</div>\n");
 
-#ifdef HAVE_RT2880
+#if defined(HAVE_RT2880) && !defined(HAVE_MT76)
 	if (nvram_nmatch("n-only", "%s_net_mode", prefix)) {
 		char wl_greenfield[32];
 
@@ -2929,12 +2929,10 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			if (!cpeonly) {
 				websWrite(wp, "document.write(\"<option value=\\\"ap\\\" %s >\" + wl_basic.ap + \"</option>\");\n", nvram_match(wl_mode, "ap") ? "selected=\\\"selected\\\"" : "");
 			}
-#ifndef HAVE_RT61
-#ifndef HAVE_DIR860
+#if (!defined(HAVE_RT61) && !defined(HAVE_DIR860)) || defined(HAVE_MT76)
 			websWrite(wp, "document.write(\"<option value=\\\"sta\\\" %s >\" + wl_basic.client + \"</option>\");\n", nvram_match(wl_mode, "sta") ? "selected=\\\"selected\\\"" : "");
 #endif
-#endif
-#ifndef HAVE_RT2880
+#if !defined(HAVE_RT2880) || defined(HAVE_MT76)
 #ifdef HAVE_RELAYD
 			websWrite(wp, "document.write(\"<option value=\\\"wet\\\" %s >\" + wl_basic.clientRelayd + \"</option>\");\n",
 #else
@@ -3294,7 +3292,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	show_chanshift(wp, prefix);
 #endif
 #endif
-#ifdef HAVE_RT2880
+#if defined(HAVE_RT2880) && !defined(HAVE_MT76)
 #else
 	if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 	    || nvram_match(wl_mode, "infra"))
@@ -3576,12 +3574,10 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			if (!cpeonly) {
 				websWrite(wp, "document.write(\"<option value=\\\"ap\\\" %s >\" + wl_basic.ap + \"</option>\");\n", nvram_match(wl_mode, "ap") ? "selected=\\\"selected\\\"" : "");
 			}
-#ifndef HAVE_RT61
-#ifndef HAVE_DIR860
+#if (!defined(HAVE_RT61) && !defined(HAVE_DIR860)) || defined(HAVE_MT76)
 			websWrite(wp, "document.write(\"<option value=\\\"sta\\\" %s >\" + wl_basic.client + \"</option>\");\n", nvram_match(wl_mode, "sta") ? "selected=\\\"selected\\\"" : "");
 #endif
-#endif
-#ifndef HAVE_RT2880
+#if !defined(HAVE_RT2880) || defined(HAVE_MT76)
 #ifdef HAVE_RELAYD
 			websWrite(wp, "document.write(\"<option value=\\\"wet\\\" %s >\" + wl_basic.clientRelayd + \"</option>\");\n",
 #else
@@ -3724,7 +3720,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	websWrite(wp, "</select>\n");
 	websWrite(wp, "</div>\n");
 // test
-#ifdef HAVE_RT2880
+#if defined(HAVE_RT2880) && !defined(HAVE_MT76)
 #else
 	if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 	    || nvram_match(wl_mode, "infra"))
@@ -3858,7 +3854,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		  wl_ssid);
 	tf_webWriteESCNV(wp, wl_ssid);
 	websWrite(wp, "\" /></div>\n");
-#ifdef HAVE_RT2880
+#if defined(HAVE_RT2880) && !defined(HAVE_MT76)
 	if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 	    || nvram_match(wl_mode, "infra") || nvram_match(wl_mode, "apsta")
 	    || nvram_match(wl_mode, "apstawet"))

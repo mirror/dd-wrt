@@ -472,7 +472,7 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 	if (!cpeonly) {
 		websWrite(wp, "document.write(\"<option value=\\\"ap\\\" %s >\" + wl_basic.ap + \"</option>\");\n", nvram_selmatch(wp, wl_mode, "ap") ? "selected=\\\"selected\\\"" : "");
 	}
-#ifndef HAVE_RT61
+#if (!defined(HAVE_RT61) && !defined(HAVE_DIR860)) || defined(HAVE_MT76)
 	websWrite(wp, "document.write(\"<option value=\\\"sta\\\" %s >\" + wl_basic.client + \"</option>\");\n", nvram_selmatch(wp, wl_mode, "sta") ? "selected=\\\"selected\\\"" : "");
 #endif
 #ifndef HAVE_RT2880
@@ -1230,7 +1230,7 @@ void sas_show_security_prefix(webs_t wp, int argc, char_t ** argv, char *prefix,
 	}
 #ifdef HAVE_WPA_SUPPLICANT
 #ifndef HAVE_MICRO
-#ifndef HAVE_RT2880
+#if !defined(HAVE_RT2880) || defined(HAVE_MT76)
 	if (nvram_selmatch(wp, sta, "sta")
 	    || nvram_selmatch(wp, sta, "wdssta")
 	    || nvram_match(sta, "apsta") || nvram_match(sta, "wet")) {
