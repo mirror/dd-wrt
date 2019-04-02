@@ -222,6 +222,7 @@ static void cpu_idle_loop(void)
 #if defined CONFIG_BCM_KF_INTERACTIVE && defined CONFIG_CPU_FREQ_GOV_INTERACTIVE
 		idle_notifier_call_chain(IDLE_START);
 #endif
+		quiet_vmstat();
 		tick_nohz_idle_enter();
 
 		while (!need_resched()) {
