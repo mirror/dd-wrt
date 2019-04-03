@@ -153,7 +153,7 @@ void setRouter(char *name)
 	nvram_set(NVROUTER_ALT, "DBDC344");
 #endif
 #elif HAVE_XD3200
-	nvram_set(NVROUTER_ALT, "OTAi 9563-AC");
+	nvram_set(NVROUTER_ALT, "9563-AC");
 #endif
 #elif HAVE_RAYTRONIK
 #ifdef HAVE_AC722
