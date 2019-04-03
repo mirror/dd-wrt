@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.10.108-dd Kernel Configuration
+# Linux/mips 3.10.108-d8 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -658,6 +658,7 @@ CONFIG_NET_SCH_TBF=y
 # CONFIG_NET_SCH_QFQ is not set
 # CONFIG_NET_SCH_CODEL is not set
 # CONFIG_NET_SCH_FQ_CODEL is not set
+CONFIG_NET_SCH_PIE=m
 CONFIG_NET_SCH_INGRESS=y
 # CONFIG_NET_SCH_PLUG is not set
 
@@ -815,6 +816,7 @@ CONFIG_MTD_CFI_I2=y
 # CONFIG_MTD_FLASH_8MB is not set
  
 # CONFIG_DIR825C1 is not set
+ 
  
 # CONFIG_WZRG450NH is not set
 CONFIG_MTD_AR7240_SPI_FLASH=y
