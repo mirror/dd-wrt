@@ -1134,10 +1134,6 @@ void ej_show_dhcpd_settings(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<input type=\"hidden\" name=\"wan_wins\" value=\"4\" />\n");
 
 		show_ip(wp, NULL, "wan_wins", 1, "&#34;WINS&#34;");
-
-		websWrite(wp, "</div>\n<div class=\"setting\">\n");
-		show_caption(wp, "label", "idx.dhcp_dnsmasq", NULL);
-		websWrite(wp, "<input type=\"checkbox\" name=\"_dhcp_dnsmasq\" value=\"1\" onclick=\"setDNSMasq(this.form)\" %s />\n", nvram_matchi("dhcp_dnsmasq", 1) ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n<div class=\"setting\">\n");
 		show_caption(wp, "label", "idx.dns_dnsmasq", NULL);
 		websWrite(wp, "<input type=\"checkbox\" name=\"_dns_dnsmasq\" value=\"1\" %s />\n", nvram_matchi("dns_dnsmasq", 1) ? "checked=\"checked\"" : "");
