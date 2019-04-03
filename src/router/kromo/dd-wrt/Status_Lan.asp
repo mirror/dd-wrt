@@ -284,10 +284,6 @@ addEvent(window, "unload", function() {
 								</div>
 								<div id="dhcp_1" style="display:none">
 									<div class="setting">
-										<div class="label"><% tran("service.dhcp_srv"); %></div>
-										<span id="dhcp_daemon"><% nvem("dhcp_dnsmasq", "1", "DNSMasq", "uDHCPd"); %></span>&nbsp;
-									</div>
-									<div class="setting">
 										<div class="label"><% tran("idx.dhcp_start"); %></div>
 										<span id="dhcp_start_ip"><% prefix_ip_get("lan_ipaddr", "1"); %><% nvg("dhcp_start"); %></span>&nbsp;
 									</div>
@@ -310,7 +306,7 @@ addEvent(window, "unload", function() {
 											<th width="46%"><% tran("share.hostname"); %></th>
 											<th width="17%"><% tran("share.ip"); %></th>
 											<th width="17%"><% tran("share.mac"); %></th>
-											<th width="20%"><script type="text/javascript">Capture(<% nvem("dhcp_dnsmasq","1","idx.dhcp_lease","share.expires"); %>)</script></th>
+											<th width="20%"><% tran("idx.dhcp_lease); %></th>
 											<th><% tran("share.del"); %></th>
 										</tr>
 									</table>

@@ -541,7 +541,7 @@ function refresh(F)
 											<th width="25%"><% tran("share.hostname"); %></th>
 											<th width="25%"><% tran("share.ip"); %></th>
 											<th width="25%"><% tran("share.mac"); %></th>
-											<th width="25%"><script type="text/javascript">Capture(<% nvem("dhcp_dnsmasq","1","idx.dhcp_lease","share.expires"); %>)</script></th>
+											<th width="25%"><% tran("idx.dhcp_lease"); %></th>
 										</tr>
 									</table>
 							<script type="text/javascript">

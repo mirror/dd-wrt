@@ -215,20 +215,6 @@ function ppp_enable_disable(F,I) {
 	}
 }
 
-
-function setDNSMasq(F) {
-	if (document.setup._dhcp_dnsmasq) {
-		if(F._dhcp_dnsmasq.checked == true) {
-			setElementActive("_auth_dnsmasq", true);
-			setElementActive("_dns_redirect", true);
-		} else {
-			F._auth_dnsmasq.checked=false;		
-			setElementActive("_auth_dnsmasq", false);
-			setElementActive("_dns_redirect", false);
-		}
-	}
-}
-
 function SelWAN(num,F) {
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "wan_proto";
@@ -246,9 +232,6 @@ function SelDHCPFWD(num,F) {
 
 function submitcheck(F) {
 	if(valid_value(F)) {
-		if(F._dhcp_dnsmasq) {
-			F.dhcp_dnsmasq.value = F._dhcp_dnsmasq.checked ? 1 : 0;
-		}
 		if(F._dns_dnsmasq) {
 			F.dns_dnsmasq.value = F._dns_dnsmasq.checked ? 1 : 0;
 		}
@@ -313,7 +296,6 @@ addEvent(window, "load", function() {
 			ppp_enable_disable(document.setup,'<% nvg("ppp_demand"); %>');
     
 	dhcp_enable_disable(document.setup,'<% nvg("lan_proto"); %>');
-	setDNSMasq(document.setup);
 	
 	show_layer_ext(document.setup.ntp_enable, 'idntp', <% nvem("ntp_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.pptp_use_dhcp, 'idpptpdhcp', <% nvem("pptp_use_dhcp", "1", "1", "0"); %> == 0);
@@ -359,7 +341,6 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="submit_type" />
 							
 							<input type="hidden" name="now_proto" value="<% nvram_gozila_get("wan_proto"); %>" />
-							<input type="hidden" name="dhcp_dnsmasq" value="0" />
 							<input type="hidden" name="dns_dnsmasq" value="0" />
 							<input type="hidden" name="wan_priority" value="0" />
 							<input type="hidden" name="auth_dnsmasq" value="0" />

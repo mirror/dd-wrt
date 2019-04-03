@@ -171,18 +171,6 @@ function ppp_enable_disable(F,I) {
 	}
 }
 
-
-function setDNSMasq(F) {
-	if (document.setupassistant._dhcp_dnsmasq) {
-		if(F._dhcp_dnsmasq.checked == true) {
-			setElementActive("_auth_dnsmasq", true);
-		} else {
-			F._auth_dnsmasq.checked=false;		
-			setElementActive("_auth_dnsmasq", false);
-		}
-	}
-}
-
 function SelWAN(num,F) {
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "wan_proto";
@@ -406,9 +394,6 @@ function submitcheck(F) {
 		case '1':
 			// WAN connection
 			if(valid_value(F)) {
-				if(F._dhcp_dnsmasq) {
-					F.dhcp_dnsmasq.value = F._dhcp_dnsmasq.checked ? 1 : 0;
-				}
 				
 				if(F._dns_dnsmasq) {
 					F.dns_dnsmasq.value = F._dns_dnsmasq.checked ? 1 : 0;
@@ -576,7 +561,6 @@ addEvent(window, "load", function() {
 			ppp_enable_disable(document.setupassistant,'<% nvram_selget("ppp_demand"); %>');
 	
 	dhcp_enable_disable(document.setupassistant,'<% nvram_selget("lan_proto"); %>');
-	setDNSMasq(document.setupassistant);
 	
 	show_layer_ext(document.setupassistant.ntp_enable, 'idntp', <% nvem("ntp_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setupassistant.reconnect_enable, 'idreconnect', <% nvem("reconnect_enable", "1", "1", "0"); %> == 1);
