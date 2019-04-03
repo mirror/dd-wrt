@@ -1788,6 +1788,7 @@ struct nvram_param srouter_defaults[] = {
 	{"ath1_psk2", "1"},
 	{"ath1_wpa_psk", "12345678"},
 	{"resetbutton_enable", "0"},
+	{"status_auth", "0"},
 #elif  HAVE_BKM
 	{"router_name", "BKM-HSDL"},
 #elif  HAVE_ERC
