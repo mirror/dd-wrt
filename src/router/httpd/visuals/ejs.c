@@ -1455,7 +1455,14 @@ struct menucontext {
 	char menu[8][13][32];
 	char menuname[8][14][32];
 };
-
+#define MENU_INDEX 0
+#define MENU_WIRELESS 1
+#define MENU_SERVICES 2
+#define MENU_FIREWALL 3
+#define MENU_FILTERS 4
+#define MENU_QOS 5
+#define MENU_ADMIN 6
+#define MENU_STATUS 7
 static struct menucontext *init_menu(webs_t wp)
 {
 	static struct menucontext *m = NULL;
@@ -1548,24 +1555,67 @@ static struct menucontext *init_menu(webs_t wp)
 #endif
 #ifdef HAVE_IPR
 	if (!wp->userid) {
-		sprintf(&m->menu[0][2][0], "");	// setup - mac cloning
-		//sprintf(&menu[0][4][0], "");  // setup - routing / test!
-		sprintf(&m->menu[2][4][0], "");	// services - USB
-		sprintf(&m->menu[2][5][0], "");	// services - NAS
-		sprintf(&m->menu[2][6][0], "");	// services - Hotspot
-		sprintf(&m->menu[6][2][0], "");	// administration - commands
-		sprintf(&m->menu[6][5][0], "");	// administration - upgrade
+		m->menu[MENU_INDEX][2][0] = 0;	// setup - mac cloning
+		//menu[MENU_INDEX][4][0] = 0;  // setup - routing / test!
+		m->menu[MENU_SERVICES][4][0] = 0;	// services - USB
+		m->menu[MENU_SERVICES][5][0] = 0;	// services - NAS
+		m->menu[MENU_SERVICES][6][0] = 0;	// services - Hotspot
+		m->menu[MENU_ADMIN][2][0] = 0;	// administration - commands
+		m->menu[MENU_ADMIN][5][0] = 0;	// administration - upgrade
 	}
-	sprintf(&m->menu[2][9][0], "");	// services - anchorfree
+	m->menu[MENU_SERVICES][9][0] = 0;	// services - anchorfree
 #endif
+
+#ifdef HAVE_ANTAIRA
+	m->menu[MENU_INDEX][1][0] = 0;	// setup - ipv6
+	m->menu[MENU_INDEX][2][0] = 0;	// setup - ddns
+	m->menu[MENU_INDEX][3][0] = 0;	// setup - macclone
+	m->menu[MENU_INDEX][4][0] = 0;	// setup - routing
+	m->menu[MENU_INDEX][5][0] = 0;	// setup - vlan
+	m->menu[MENU_INDEX][6][0] = 0;	// setup - networking
+	m->menu[MENU_INDEX][7][0] = 0;	// setup - setupeop
+
+	m->menu[MENU_WIRELESS][1][0] = 0;	// wireless - superchannel
+	m->menu[MENU_WIRELESS][2][0] = 0;	// wireless - wimax
+	m->menu[MENU_WIRELESS][3][0] = 0;	// wireless - radius
+	m->menu[MENU_WIRELESS][4][0] = 0;	// wireless - seecurity
+	m->menu[MENU_WIRELESS][5][0] = 0;	// wireless - wps
+	m->menu[MENU_WIRELESS][6][0] = 0;	// wireless - wirelessmac
+	m->menu[MENU_WIRELESS][7][0] = 0;	// wireless - advanced
+	m->menu[MENU_WIRELESS][8][0] = 0;	// wireless - wds
+
+	m->menu[MENU_SERVICES][1][0] = 0;	// services - Radius
+	m->menu[MENU_SERVICES][2][0] = 0;	// services - PPPOED
+	m->menu[MENU_SERVICES][3][0] = 0;	// services - PPTPD
+	m->menu[MENU_SERVICES][4][0] = 0;	// services - USB
+	m->menu[MENU_SERVICES][5][0] = 0;	// services - NAS
+
+	m->menu[MENU_FIREWALL][0][0] = 0;	// security
+	m->menu[MENU_FILTERS][0][0] = 0;	// Access Restriction
+
+	m->menu[MENU_QOS][2][0] = 0;	// applications/NAT/QOS - porttrigger
+	m->menu[MENU_QOS][4][0] = 0;	// applications/NAT/QOS - dmz
+	m->menu[MENU_QOS][5][0] = 0;	// applications/NAT/QOS - qos
+	m->menu[MENU_QOS][6][0] = 0;	// applications/NAT/QOS - p2p
+
+	m->menu[MENU_ADMIN][1][0] = 0;	// admin - keepalive
+	m->menu[MENU_ADMIN][2][0] = 0;	// admin - diag
+	m->menu[MENU_ADMIN][3][0] = 0;	// admin - wol
+
+	m->menu[MENU_STATUS][4][0] = 0;	// status - sputnik
+	m->menu[MENU_STATUS][5][0] = 0;	// status - vpn
+	m->menu[MENU_STATUS][7][0] = 0;	// status - syslog
+	m->menu[MENU_STATUS][8][0] = 0;	// status - syslog
+#endif				/*HAVE_ANTAIRA */
+
 #ifdef HAVE_CORENET
-	sprintf(&m->menuname[0][0][0], "setupnetw");
-	sprintf(&m->menuname[6][0][0], "adminman");
+	sprintf(&m->menuname[MENU_INDEX][0][0], "setupnetw");
+	sprintf(&m->menuname[MENU_ADMIN][0][0], "adminman");
 #endif
 #ifdef HAVE_MADWIFI
 #if defined(HAVE_BUFFALO) && !defined(HAVE_ATH9K)
-	sprintf(&m->menu[1][8][0], "");
-	sprintf(&m->menuname[1][9][0], "");
+	m->menu[MENU_WIRELESS][8][0] = 0;
+	m->menuname[MENU_WIRELESS][9][0] = 0;
 #else
 	// fill up WDS
 	int ifcount = getdevicecount();
@@ -1578,11 +1628,11 @@ static struct menucontext *init_menu(webs_t wp)
 		sprintf(check, "ath%d", a);
 		if (has_ad(check))
 			continue;
-		sprintf(&m->menu[1][count + 8][0], "Wireless_WDS-ath%d.asp", a);
+		sprintf(&m->menu[MENU_WIRELESS][count + 8][0], "Wireless_WDS-ath%d.asp", a);
 		if (ifcount == 1)
-			sprintf(&m->menuname[1][count + 9][0], "wirelessWds");
+			sprintf(&m->menuname[MENU_WIRELESS][count + 9][0], "wirelessWds");
 		else
-			sprintf(&m->menuname[1][count + 9][0], "wirelessWds%d", a);
+			sprintf(&m->menuname[MENU_WIRELESS][count + 9][0], "wirelessWds%d", a);
 		count++;
 	}
 #endif
@@ -1595,14 +1645,14 @@ static struct menucontext *init_menu(webs_t wp)
 		int a;
 
 		for (a = 0; a < ifcount; a++) {
-			sprintf(&m->menu[1][a * 2 + 7][0], "Wireless_Advanced-wl%d.asp", a);
-			sprintf(&m->menu[1][a * 2 + 8][0], "Wireless_WDS-wl%d.asp", a);
+			sprintf(&m->menu[MENU_WIRELESS][a * 2 + 7][0], "Wireless_Advanced-wl%d.asp", a);
+			sprintf(&m->menu[MENU_WIRELESS][a * 2 + 8][0], "Wireless_WDS-wl%d.asp", a);
 			if (ifcount == 1) {
-				sprintf(&m->menuname[1][a * 2 + 8][0], "wirelessAdvanced");
-				sprintf(&m->menuname[1][a * 2 + 9][0], "wirelessWds");
+				sprintf(&m->menuname[MENU_WIRELESS][a * 2 + 8][0], "wirelessAdvanced");
+				sprintf(&m->menuname[MENU_WIRELESS][a * 2 + 9][0], "wirelessWds");
 			} else {
-				sprintf(&m->menuname[1][a * 2 + 8][0], "wirelessAdvancedwl%d", a);
-				sprintf(&m->menuname[1][a * 2 + 9][0], "wirelessWdswl%d", a);
+				sprintf(&m->menuname[MENU_WIRELESS][a * 2 + 8][0], "wirelessAdvancedwl%d", a);
+				sprintf(&m->menuname[MENU_WIRELESS][a * 2 + 9][0], "wirelessWdswl%d", a);
 			}
 		}
 #ifdef HAVE_ERC
