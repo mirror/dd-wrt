@@ -452,10 +452,6 @@ void start_modules_wait(void)
 void restart_dns_main(int argc, char argv[])
 {
 	stop_dnsmasq();
-#ifdef HAVE_UDHCPD
-	stop_udhcpd();
-	start_udhcpd();
-#endif
 	start_dnsmasq();
 }
 

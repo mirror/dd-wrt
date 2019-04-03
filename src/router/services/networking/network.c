@@ -4615,10 +4615,6 @@ void start_wan_done(char *wan_ifname)
 	/*
 	 * Restart DHCP server 
 	 */
-#ifdef HAVE_UDHCPD
-	stop_udhcpd();
-	start_udhcpd();
-#endif
 #ifdef HAVE_IPV6
 	start_wan6_done(wan_ifname);
 #endif

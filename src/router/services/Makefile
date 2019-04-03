@@ -293,10 +293,10 @@ ifeq ($(CONFIG_NSTX),y)
 CFLAGS_EXTRA += -DHAVE_NSTX
 OBJS += nstx.o
 endif
-ifeq ($(CONFIG_UDHCPD),y)
-CFLAGS_EXTRA += -DHAVE_UDHCPD
-OBJS += udhcpd.o
-endif
+#ifeq ($(CONFIG_UDHCPD),y)
+#CFLAGS_EXTRA += -DHAVE_UDHCPD
+#OBJS += udhcpd.o
+#endif
 #ifeq ($(CONFIG_BUSYBOX_UDHCPC),y)
 CFLAGS_EXTRA += -DHAVE_BUSYBOX_UDHCPC
 #endif
