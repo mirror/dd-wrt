@@ -496,8 +496,23 @@ static void send_headers(webs_t conn_fp, int status, char *title, char *extra_he
 	} else {
 		wfprintf(conn_fp, "Cache-Control: private, max-age=600\r\n");
 	}
-	if (attach_file)
-		wfprintf(conn_fp, "Content-Disposition: attachment; filename=%s\r\n", attach_file);
+	if (attach_file) {
+		int i, len = strlen(attach_file);
+		int cnt = 0;
+		char *newname = malloc((len * 3) + 1);
+		for (i = 0; i < len; i++) {
+			if (attach_file[i] == ' ') {
+				newname[cnt++] = '%';
+				newname[cnt++] = '2';
+				newname[cnt++] = '0';
+			} else {
+				newname[cnt++] = attach_file[i];
+			}
+		}
+		newname[cnt++] = 0;
+		wfprintf(conn_fp, "Content-Disposition: attachment; filename=%s\r\n", newname);
+		free(newname);
+	}
 	if (extra_header != NULL && *extra_header)
 		wfprintf(conn_fp, "%s\r\n", extra_header);
 	if (length != -1)
@@ -771,7 +786,7 @@ static void *handle_request(void *arg)
 	setnaggle(conn_fp, 1);
 
 #ifndef HAVE_MICRO
-//	pthread_mutex_lock(&input_mutex);
+//      pthread_mutex_lock(&input_mutex);
 #endif
 	line = malloc(LINE_LEN);
 	/* Initialize the request variables. */
@@ -783,14 +798,14 @@ static void *handle_request(void *arg)
 	for (;;) {
 		wfgets(line, LINE_LEN, conn_fp);
 		if (!*(line) && (errno == EINTR || errno == EAGAIN)) {
-		    usleep(1000);
-		    continue;
+			usleep(1000);
+			continue;
 		}
 		break;
-	}	
+	}
 
 #ifndef HAVE_MICRO
-//	pthread_mutex_unlock(&input_mutex);
+//      pthread_mutex_unlock(&input_mutex);
 #endif
 	if (!*(line)) {
 		send_error(conn_fp, 408, "Request Timeout", NULL, "No request appeared within a reasonable time period.");
