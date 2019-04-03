@@ -63,7 +63,7 @@
 	status = "okay";
 };
 
-&pcie0 {
+&pcie1 {
 	mt76@0,0 {
 		reg = <0x0000 0 0 0 0>;
 		mediatek,mtd-eeprom = <&factory 0x8000>;
@@ -71,7 +71,7 @@
 	};
 };
 
-&pcie1 {
+&pcie0 {
 	mt76@0,0 {
 		reg = <0x0000 0 0 0 0>;
 		mediatek,mtd-eeprom = <&factory 0>;
