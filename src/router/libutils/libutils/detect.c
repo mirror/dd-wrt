@@ -154,6 +154,8 @@ void setRouter(char *name)
 #endif
 #elif HAVE_XD3200
 	nvram_set(NVROUTER_ALT, "9563-AC");
+#elif HAVE_XD9531
+	nvram_set(NVROUTER_ALT, "9531");
 #endif
 #elif HAVE_RAYTRONIK
 #ifdef HAVE_AC722
