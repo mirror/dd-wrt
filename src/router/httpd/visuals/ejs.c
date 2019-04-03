@@ -1566,48 +1566,6 @@ static struct menucontext *init_menu(webs_t wp)
 	m->menu[MENU_SERVICES][9][0] = 0;	// services - anchorfree
 #endif
 
-#ifdef HAVE_ANTAIRA
-	m->menu[MENU_INDEX][1][0] = 0;	// setup - ipv6
-	m->menu[MENU_INDEX][2][0] = 0;	// setup - ddns
-	m->menu[MENU_INDEX][3][0] = 0;	// setup - macclone
-	m->menu[MENU_INDEX][4][0] = 0;	// setup - routing
-	m->menu[MENU_INDEX][5][0] = 0;	// setup - vlan
-	m->menu[MENU_INDEX][6][0] = 0;	// setup - networking
-	m->menu[MENU_INDEX][7][0] = 0;	// setup - setupeop
-
-	m->menu[MENU_WIRELESS][1][0] = 0;	// wireless - superchannel
-	m->menu[MENU_WIRELESS][2][0] = 0;	// wireless - wimax
-	m->menu[MENU_WIRELESS][3][0] = 0;	// wireless - radius
-	m->menu[MENU_WIRELESS][4][0] = 0;	// wireless - seecurity
-	m->menu[MENU_WIRELESS][5][0] = 0;	// wireless - wps
-	m->menu[MENU_WIRELESS][6][0] = 0;	// wireless - wirelessmac
-	m->menu[MENU_WIRELESS][7][0] = 0;	// wireless - advanced
-	m->menu[MENU_WIRELESS][8][0] = 0;	// wireless - wds
-
-	m->menu[MENU_SERVICES][1][0] = 0;	// services - Radius
-	m->menu[MENU_SERVICES][2][0] = 0;	// services - PPPOED
-	m->menu[MENU_SERVICES][3][0] = 0;	// services - PPTPD
-	m->menu[MENU_SERVICES][4][0] = 0;	// services - USB
-	m->menu[MENU_SERVICES][5][0] = 0;	// services - NAS
-
-	m->menu[MENU_FIREWALL][0][0] = 0;	// security
-	m->menu[MENU_FILTERS][0][0] = 0;	// Access Restriction
-
-	m->menu[MENU_QOS][2][0] = 0;	// applications/NAT/QOS - porttrigger
-	m->menu[MENU_QOS][4][0] = 0;	// applications/NAT/QOS - dmz
-	m->menu[MENU_QOS][5][0] = 0;	// applications/NAT/QOS - qos
-	m->menu[MENU_QOS][6][0] = 0;	// applications/NAT/QOS - p2p
-
-	m->menu[MENU_ADMIN][1][0] = 0;	// admin - keepalive
-	m->menu[MENU_ADMIN][2][0] = 0;	// admin - diag
-	m->menu[MENU_ADMIN][3][0] = 0;	// admin - wol
-
-	m->menu[MENU_STATUS][4][0] = 0;	// status - sputnik
-	m->menu[MENU_STATUS][5][0] = 0;	// status - vpn
-	m->menu[MENU_STATUS][7][0] = 0;	// status - syslog
-	m->menu[MENU_STATUS][8][0] = 0;	// status - syslog
-#endif				/*HAVE_ANTAIRA */
-
 #ifdef HAVE_CORENET
 	sprintf(&m->menuname[MENU_INDEX][0][0], "setupnetw");
 	sprintf(&m->menuname[MENU_ADMIN][0][0], "adminman");
@@ -1659,6 +1617,49 @@ static struct menucontext *init_menu(webs_t wp)
 	}
 #endif
 #endif
+
+#ifdef HAVE_ANTAIRA
+	m->menu[MENU_INDEX][1][0] = 0;	// setup - ipv6
+	//m->menu[MENU_INDEX][2][0] = 0;	// setup - ddns
+	//m->menu[MENU_INDEX][3][0] = 0;	// setup - macclone
+	m->menu[MENU_INDEX][4][0] = 0;	// setup - routing
+	m->menu[MENU_INDEX][5][0] = 0;	// setup - vlan
+	//m->menu[MENU_INDEX][6][0] = 0;	// setup - networking
+	m->menu[MENU_INDEX][7][0] = 0;	// setup - setupeop
+
+	m->menu[MENU_WIRELESS][1][0] = 0;	// wireless - superchannel
+	m->menu[MENU_WIRELESS][2][0] = 0;	// wireless - wimax
+	m->menu[MENU_WIRELESS][3][0] = 0;	// wireless - radius
+	//m->menu[MENU_WIRELESS][4][0] = 0;	// wireless - security
+	m->menu[MENU_WIRELESS][5][0] = 0;	// wireless - wps
+	//m->menu[MENU_WIRELESS][6][0] = 0;	// wireless - macfilter
+	m->menu[MENU_WIRELESS][7][0] = 0;	// wireless - advanced
+	m->menu[MENU_WIRELESS][8][0] = 0;	// wireless - wds
+
+	m->menu[MENU_SERVICES][1][0] = 0;	// services - Radius
+	m->menu[MENU_SERVICES][2][0] = 0;	// services - PPPOED
+	m->menu[MENU_SERVICES][3][0] = 0;	// services - PPTPD
+	m->menu[MENU_SERVICES][4][0] = 0;	// services - USB
+	m->menu[MENU_SERVICES][5][0] = 0;	// services - NAS
+	m->menu[MENU_SERVICES][6][0] = 0;	// services - hotspot
+
+	m->menu[MENU_FIREWALL][0][0] = 0;	// security
+	m->menu[MENU_FILTERS][0][0] = 0;	// Access Restriction
+
+	m->menu[MENU_QOS][2][0] = 0;	// applications/NAT/QOS - porttrigger
+	m->menu[MENU_QOS][4][0] = 0;	// applications/NAT/QOS - dmz
+	m->menu[MENU_QOS][5][0] = 0;	// applications/NAT/QOS - qos
+	m->menu[MENU_QOS][6][0] = 0;	// applications/NAT/QOS - p2p
+
+	m->menu[MENU_ADMIN][1][0] = 0;	// admin - keepalive
+	m->menu[MENU_ADMIN][2][0] = 0;	// admin - diag
+	//m->menu[MENU_ADMIN][3][0] = 0;	// admin - wol
+
+	m->menu[MENU_STATUS][4][0] = 0;	// status - sputnik
+	m->menu[MENU_STATUS][5][0] = 0;	// status - vpn
+	m->menu[MENU_STATUS][7][0] = 0;	// status - syslog
+	m->menu[MENU_STATUS][8][0] = 0;	// status - info
+#endif /*HAVE_ANTAIRA */
 	return m;
 }
 
