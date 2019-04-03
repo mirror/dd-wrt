@@ -208,8 +208,12 @@ function refresh(F)
 								<li><a href="Wireless_Basic.asp"><strong><% tran("bmenu.wireless"); %></strong></a></li>
 								<% ifndef("HASWIFI", "-->"); %>
 								<li><a href="Services.asp"><strong><% tran("bmenu.services"); %></strong></a></li>
+								<% nvm("menu_nosecurity","1","<!--"); %>
 								<li><a href="Firewall.asp"><strong><% tran("bmenu.security"); %></strong></a></li>
+								<% nvm("menu_nosecurity","1","-->"); %>
+								<% nvm("menu_noaccrestriction","1","<!--"); %>
 								<li><a href="Filters.asp"><strong><% tran("bmenu.accrestriction"); %></strong></a></li>
+								<% nvm("menu_noaccrestriction","1","-->"); %>
 								<li><a href="ForwardSpec.asp"><strong><% tran("bmenu.applications"); %></strong></a></li>
 								<li><a href="Management.asp"><strong><% tran("bmenu.admin"); %></strong></a></li>
 								<li><a href="Status_Router.asp"><strong><% tran("bmenu.statu"); %></strong></a></li>
