@@ -200,53 +200,27 @@ int dhcp_lease_table_init(void)
 	FILE *fp, *fp_w;
 	int count = 0;
 
-	if (nvram_matchi("dhcp_dnsmasq", 1)) {
-		unsigned long expires;
-		char mac[32];
-		char ip[32];
-		char hostname[256];
-		char buf[512];
-		char *p;
+	unsigned long expires;
+	char mac[32];
+	char ip[32];
+	char hostname[256];
+	char buf[512];
+	char *p;
 
-		killall("dnsmasq", SIGUSR2);
-		sleep(1);
+	killall("dnsmasq", SIGUSR2);
+	sleep(1);
 
-		if ((fp_w = fopen(LEASES_NAME_IP, "w")) != NULL) {
-			// Parse leases file
-			if ((fp = fopen("/tmp/dnsmasq.leases", "r")) != NULL) {
-				while (fgets(buf, sizeof(buf), fp)) {
-					if (sscanf(buf, "%lu %17s %15s %255s", &expires, mac, ip, hostname) != 4)
-						continue;
-					p = mac;
-					while ((*p = toupper(*p)) != 0)
-						++p;
-					fprintf(fp_w, "%s %s %s\n", mac, ip, hostname);
-					++count;
-				}
-				fclose(fp);
-			}
-			fclose(fp_w);
-		}
-	} else {
-		struct lease_t lease;
-		struct in_addr addr;
-		char mac[20] = "";
-
-		killall("udhcpd", SIGUSR1);
-		fp_w = fopen(LEASES_NAME_IP, "w");
-
-		// Parse leases file 
-		if ((fp = fopen("/tmp/udhcpd.leases", "r"))) {
-			while (fread(&lease, sizeof(lease), 1, fp)) {
-				snprintf(mac, sizeof(mac), "%02X:%02X:%02X:%02X:%02X:%02X", lease.chaddr[0], lease.chaddr[1], lease.chaddr[2], lease.chaddr[3], lease.chaddr[4], lease.chaddr[5]);
-				if (!strcmp("00:00:00:00:00:00", mac))
+	if ((fp_w = fopen(LEASES_NAME_IP, "w")) != NULL) {
+		// Parse leases file
+		if ((fp = fopen("/tmp/dnsmasq.leases", "r")) != NULL) {
+			while (fgets(buf, sizeof(buf), fp)) {
+				if (sscanf(buf, "%lu %17s %15s %255s", &expires, mac, ip, hostname) != 4)
 					continue;
-				addr.s_addr = lease.yiaddr;
-				char client[32];
-				char *peer = (char *)inet_ntop(AF_INET, &addr, client,
-							       16);
-				fprintf(fp_w, "%s %s %s\n", mac, peer, lease.hostname);
-				count++;
+				p = mac;
+				while ((*p = toupper(*p)) != 0)
+					++p;
+				fprintf(fp_w, "%s %s %s\n", mac, ip, hostname);
+				++count;
 			}
 			fclose(fp);
 		}
