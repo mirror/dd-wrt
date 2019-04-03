@@ -3028,23 +3028,9 @@ struct nvram_param srouter_defaults[] = {
 	{"shat_range", "192.168.1.79+20"},
 	{"shat_shield", ""},
 #endif
-#ifdef HAVE_SKYTRON
-	{"dhcp_dnsmasq", "1"},
-#elif HAVE_POWERNOC
-	{"dhcp_dnsmasq", "1"},
-#elif HAVE_FON
-	{"dhcp_dnsmasq", "0"},
-#elif HAVE_WTS
-	{"dhcp_dnsmasq", "1"},
-#elif HAVE_WRK54G
-	{"dhcp_dnsmasq", "0"},
-	// #elif HAVE_ADM5120
-	// {"dhcp_dnsmasq", "0"},
-#elif HAVE_IDEXX
-	{"dhcp_dnsmasq", "0"},
+#ifdef HAVE_IDEXX
 	{"dns_dnsmasq", "0"},
 #else
-	{"dhcp_dnsmasq", "1"},
 	{"dns_dnsmasq", "1"},
 #endif
 #ifdef HAVE_IDEXX
