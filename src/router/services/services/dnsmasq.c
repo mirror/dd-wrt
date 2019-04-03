@@ -89,8 +89,7 @@ static char *getmdhcp(int count, int index, char *word, char *buffer)
 static int landhcp(void)
 {
 	if (!getWET())
-		if (nvram_matchi("dhcp_dnsmasq", 1)
-		    && nvram_match("lan_proto", "dhcp")
+		if (nvram_match("lan_proto", "dhcp")
 		    && nvram_matchi("dhcpfwd_enable", 0))
 			return 1;
 	return 0;
@@ -139,8 +138,7 @@ void start_dnsmasq(void)
 	struct dns_lists *dns_list = NULL;
 	int i;
 
-	if (nvram_matchi("dhcp_dnsmasq", 1)
-	    && nvram_match("lan_proto", "dhcp")
+	if (nvram_match("lan_proto", "dhcp")
 	    && nvram_matchi("dnsmasq_enable", 0)) {
 		nvram_seti("dnsmasq_enable", 1);
 		nvram_commit();

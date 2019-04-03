@@ -146,10 +146,6 @@ static int update_value(void)
 
 	if (changed) {
 		set_host_domain_name();
-#ifdef HAVE_UDHCPD
-		stop_udhcpd();
-		start_udhcpd();
-#endif
 #ifdef HAVE_UNBOUND
 		stop_unbound();
 		start_unbound();
@@ -306,10 +302,6 @@ static int bound(void)
 		 * save dns to resolv.conf 
 		 */
 		dns_to_resolv();
-#ifdef HAVE_UDHCPD
-		stop_udhcpd();
-		start_udhcpd();
-#endif
 		start_firewall();
 		stop_wland();
 		start_wshaper();
