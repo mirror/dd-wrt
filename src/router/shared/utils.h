@@ -779,6 +779,8 @@
 
 #define ROUTER_BOARD_UNIFI_V2 0x10810c
 
+#define ROUTER_BOARD_XD9531 0x10810d
+
 #define NVROUTER "DD_BOARD"
 #define NVROUTER_ALT "alternate_name"
 
