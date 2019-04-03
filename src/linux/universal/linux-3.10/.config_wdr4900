@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/powerpc 3.10.108-dd Kernel Configuration
+# Linux/powerpc 3.10.108-d8 Kernel Configuration
 #
 # CONFIG_PPC64 is not set
 
@@ -128,8 +128,11 @@ CONFIG_LOG_BUF_SHIFT=17
 CONFIG_NAMESPACES=y
 CONFIG_UTS_NS=y
 # CONFIG_IPC_NS is not set
+# CONFIG_USER_NS is not set
 CONFIG_PID_NS=y
 # CONFIG_NET_NS is not set
+CONFIG_UIDGID_CONVERTED=y
+# CONFIG_UIDGID_STRICT_TYPE_CHECKS is not set
 # CONFIG_SCHED_AUTOGROUP is not set
 # CONFIG_SYSFS_DEPRECATED is not set
 # CONFIG_RELAY is not set
@@ -800,6 +803,7 @@ CONFIG_NET_SCH_CHOKE=y
 CONFIG_NET_SCH_QFQ=y
 CONFIG_NET_SCH_CODEL=m
 CONFIG_NET_SCH_FQ_CODEL=m
+CONFIG_NET_SCH_PIE=m
 CONFIG_NET_SCH_INGRESS=y
 # CONFIG_NET_SCH_PLUG is not set
 
@@ -1118,7 +1122,6 @@ CONFIG_MII=y
 # CONFIG_IFB is not set
 # CONFIG_NET_TEAM is not set
 # CONFIG_MACVLAN is not set
-# CONFIG_MACVTAP is not set
 # CONFIG_VXLAN is not set
 # CONFIG_NETCONSOLE is not set
 # CONFIG_NETPOLL is not set
@@ -1893,16 +1896,10 @@ CONFIG_FS_MBCACHE=m
 # CONFIG_REISERFS_FS is not set
 # CONFIG_JFS_FS is not set
 # CONFIG_XFS_FS is not set
-# CONFIG_XFS_QUOTA is not set
-# CONFIG_XFS_POSIX_ACL is not set
-# CONFIG_XFS_RT is not set
-# CONFIG_XFS_WARN is not set
-# CONFIG_XFS_DEBUG is not set
 # CONFIG_GFS2_FS is not set
 # CONFIG_BTRFS_FS is not set
 # CONFIG_NILFS2_FS is not set
 # CONFIG_FS_POSIX_ACL is not set
-CONFIG_EXPORTFS=m
 CONFIG_FILE_LOCKING=y
 CONFIG_DIRECT_IO=y
 CONFIG_FSNOTIFY=y
