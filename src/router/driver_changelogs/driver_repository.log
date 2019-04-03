@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r4507 | brainslayer | 2019-04-04 00:12:41 +0200 (Thu, 04 Apr 2019) | 1 line
+
+add rssi and channel busy/active time to mt7615 mac80211 driver and use fake noise for snr calculation since mt7615 doesnt return sane noise values
+------------------------------------------------------------------------
 r4506 | brainslayer | 2019-04-03 18:47:33 +0200 (Wed, 03 Apr 2019) | 1 line
 
 disable encap offloading if tkip is used
