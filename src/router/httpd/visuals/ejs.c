@@ -2730,7 +2730,6 @@ void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 			 */
 
 			if (!strcmp(hostname, "*")
-			    && nvram_matchi("dhcp_dnsmasq", 1)
 			    && nvram_matchi("dhcpd_usenvram", 0)) {
 				if (!(host = fopen("/tmp/dnsmasq.leases", "r")))
 					host = fopen("/jffs/dnsmasq.leases", "r");
@@ -2757,7 +2756,6 @@ void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 			 */
 
 			if (!strcmp(hostname, "*")
-			    && nvram_matchi("dhcp_dnsmasq", 1)
 			    && nvram_matchi("dhcpd_usenvram", 1)) {
 				sscanf(nvram_nget("dnsmasq_lease_%s", ip), "%*s %*s %*s %s", hostname);
 			}
