@@ -156,11 +156,23 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 4");
 #elif defined (HAVE_XD3200)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
-	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 #ifndef HAVE_SR3200
+#ifdef HAVE_ONNET
+	if (nvram_match("wan_proto", "disabled")) {
+		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
+		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 2 3");
+	} else {
+		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
+		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2");
+		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 3");
+	}
+#else
+	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 3");
+#endif
 #else
+	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 1 2 3 4");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 5");
 #endif
