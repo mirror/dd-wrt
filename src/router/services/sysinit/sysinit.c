@@ -3014,18 +3014,17 @@ void start_restore_defaults(void)
 		nvram_default_get("ath0_txantenna", "7");
 		char *ssid = nvram_safe_get("ath0_ssid");
 		if (!strcmp(ssid, "dd-wrt"))
-			nvram_set("ath0_ssid", "Antaira_AC");
+			nvram_set("ath0_ssid", "Antaira");
 	} else {
 		nvram_default_get("ath0_rxantenna", "3");
 		nvram_default_get("ath0_txantenna", "3");
 		nvram_default_get("ath1_rxantenna", "7");
 		nvram_default_get("ath1_txantenna", "7");
 		char *ssid = nvram_safe_get("ath0_ssid");
-		if (!strcmp(ssid, "dd-wrt"))
+		if (!strcmp(ssid, "dd-wrt")) {
 			nvram_set("ath0_ssid", "Antaira_N");
-		ssid = nvram_safe_get("ath1_ssid");
-		if (!strcmp(ssid, "dd-wrt"))
-			nvram_set("ath1_ssid", "Antaira_AC");
+			nvram_set("ath1_ssid", "Antaira");
+		}
 
 	}
 #endif
