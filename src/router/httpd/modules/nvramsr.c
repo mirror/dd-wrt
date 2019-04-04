@@ -124,8 +124,7 @@ static void nv_file_out(unsigned char method, struct mime_handler *handler, char
 #ifndef HAVE_ONNET
 	snprintf(fname, sizeof(fname), "nvrambak_r%s%s%s_%s.bin", SVN_REVISION, *name ? "_" : "", *name ? name : "", nvram_safe_get("DD_BOARD"));
 #else
-	name = nvram_safe_get(NVROUTER_ALT);
-	snprintf(fname, sizeof(fname), "nvrambak_r%s%s%s.bin", SVN_REVISION, *name ? "_" : "", *name ? name : "");
+	snprintf(fname, sizeof(fname), "nvrambak_r%s%s%s_%s.bin", SVN_REVISION, *name ? "_" : "", *name ? name : "", nvram_safe_get(NVROUTER_ALT));
 #endif
 	nvram_backup("/tmp/nvrambak.bin");
 	do_file_attach(handler, "/tmp/nvrambak.bin", wp, fname);
