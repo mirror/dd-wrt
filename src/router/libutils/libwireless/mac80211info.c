@@ -1873,7 +1873,9 @@ nla_put_failure:
 
 static int match_cipher(const char *prefix, __u32 cipher)
 {
-	int phy = get_ath9k_phy_ifname(prefix);
+	int phy = mac80211_get_phyidx_by_vifname(prefix);
+	if (phy == -1)
+		return 0;
 	__u32 num;
 	__u32 *ciphers = mac80211_get_ciphers(phy, &num);
 	if (!ciphers)
