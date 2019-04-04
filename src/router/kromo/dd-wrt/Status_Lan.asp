@@ -306,7 +306,7 @@ addEvent(window, "unload", function() {
 											<th width="46%"><% tran("share.hostname"); %></th>
 											<th width="17%"><% tran("share.ip"); %></th>
 											<th width="17%"><% tran("share.mac"); %></th>
-											<th width="20%"><% tran("idx.dhcp_lease); %></th>
+											<th width="20%"><% tran("idx.dhcp_lease"); %></th>
 											<th><% tran("share.del"); %></th>
 										</tr>
 									</table>
