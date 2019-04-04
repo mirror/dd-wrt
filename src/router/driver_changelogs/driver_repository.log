@@ -1,4 +1,16 @@
 ------------------------------------------------------------------------
+r4510 | brainslayer | 2019-04-04 12:14:54 +0200 (Thu, 04 Apr 2019) | 1 line
+
+revert
+------------------------------------------------------------------------
+r4509 | brainslayer | 2019-04-04 12:12:54 +0200 (Thu, 04 Apr 2019) | 1 line
+
+revert ethernet encap. it has too many issues
+------------------------------------------------------------------------
+r4508 | brainslayer | 2019-04-04 11:42:23 +0200 (Thu, 04 Apr 2019) | 1 line
+
+disable for now
+------------------------------------------------------------------------
 r4507 | brainslayer | 2019-04-04 00:12:41 +0200 (Thu, 04 Apr 2019) | 1 line
 
 add rssi and channel busy/active time to mt7615 mac80211 driver and use fake noise for snr calculation since mt7615 doesnt return sane noise values
