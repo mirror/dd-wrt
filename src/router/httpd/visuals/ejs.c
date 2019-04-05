@@ -648,6 +648,9 @@ static struct defrule s_conditions[] = {
 #ifdef HAVE_ANTAIRA
 	{"HAVE_ANTAIRA", NULL},
 #endif
+#ifdef HAVE_ANTAIRA_MINI
+	{"HAVE_ANTAIRA_MINI", NULL},
+#endif
 	{"MINI", rule_ismini},
 	{"VPN", rule_isvpn},
 	{"WET", rule_iswet},
