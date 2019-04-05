@@ -208,12 +208,12 @@ function refresh(F)
 								<li><a href="Wireless_Basic.asp"><strong><% tran("bmenu.wireless"); %></strong></a></li>
 								<% ifndef("HASWIFI", "-->"); %>
 								<li><a href="Services.asp"><strong><% tran("bmenu.services"); %></strong></a></li>
-								<% ifdef("HAVE_ANTAIRA","<!--"); %>
+								<% ifdef("HAVE_ANTAIRA_MINI","<!--"); %>
 								<li><a href="Firewall.asp"><strong><% tran("bmenu.security"); %></strong></a></li>
-								<% ifdef("HAVE_ANTAIRA","-->"); %>
-								<% ifdef("HAVE_ANTAIRA","<!--"); %>
+								<% ifdef("HAVE_ANTAIRA_MINI","-->"); %>
+								<% ifdef("HAVE_ANTAIRA_MINI","<!--"); %>
 								<li><a href="Filters.asp"><strong><% tran("bmenu.accrestriction"); %></strong></a></li>
-								<% ifdef("HAVE_ANTAIRA","-->"); %>
+								<% ifdef("HAVE_ANTAIRA_MINI","-->"); %>
 								<li><a href="ForwardSpec.asp"><strong><% tran("bmenu.applications"); %></strong></a></li>
 								<li><a href="Management.asp"><strong><% tran("bmenu.admin"); %></strong></a></li>
 								<li><a href="Status_Router.asp"><strong><% tran("bmenu.statu"); %></strong></a></li>
