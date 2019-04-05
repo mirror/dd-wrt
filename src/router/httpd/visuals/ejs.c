@@ -1621,7 +1621,7 @@ static struct menucontext *init_menu(webs_t wp)
 #endif
 #endif
 
-#ifdef HAVE_ANTAIRA
+#ifdef HAVE_ANTAIRA_MINI
 	m->menu[MENU_INDEX][1][0] = 0;	// setup - ipv6
 	//m->menu[MENU_INDEX][2][0] = 0;	// setup - ddns
 	//m->menu[MENU_INDEX][3][0] = 0;	// setup - macclone
