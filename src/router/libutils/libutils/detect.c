@@ -149,6 +149,8 @@ void setRouter(char *name)
 #ifdef HAVE_MMS344
 #ifdef HAVE_WILLY
 	nvram_set(NVROUTER_ALT, "9342-AN4g");
+#elif HAVE_CPE880
+	nvram_set(NVROUTER_ALT, "AP-9344");
 #else
 	nvram_set(NVROUTER_ALT, "DBDC344");
 #endif
@@ -156,8 +158,6 @@ void setRouter(char *name)
 	nvram_set(NVROUTER_ALT, "9563-AC");
 #elif HAVE_XD9531
 	nvram_set(NVROUTER_ALT, "9531");
-#elif HAVE_CPE880
-	nvram_set(NVROUTER_ALT, "AP-9344");
 #endif
 #elif HAVE_RAYTRONIK
 #ifdef HAVE_AC722
