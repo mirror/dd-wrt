@@ -32,12 +32,12 @@ function to_submit(F) {
 								<% nvim("sipgate","1","<!--"); %>
 								<li><span><strong><% tran("bmenu.sipath"); %></strong></span></li>
 								<% nvim("sipgate","1","-->"); %>
-								<% ifdef("HAVE_ANTAIRA","<!--"); %>
+								<% ifdef("HAVE_ANTAIRA_MINI","<!--"); %>
 								<li><span><strong><% tran("bmenu.security"); %></strong></span></li>
-								<% ifdef("HAVE_ANTAIRA","-->"); %>
-								<% ifdef("HAVE_ANTAIRA","<!--"); %>
+								<% ifdef("HAVE_ANTAIRA_MINI","-->"); %>
+								<% ifdef("HAVE_ANTAIRA_MINI","<!--"); %>
 								<li><span><strong><% tran("bmenu.accrestriction"); %></strong></span></li>
-								<% ifdef("HAVE_ANTAIRA","-->"); %>
+								<% ifdef("HAVE_ANTAIRA_MINI","-->"); %>
 								<li><span><strong><% tran("bmenu.applications"); %></strong></span></li>
 								<li><span><strong><% tran("bmenu.admin"); %></strong></span></li>
 								<li><span><strong><% tran("bmenu.statu"); %></strong></span></li>
