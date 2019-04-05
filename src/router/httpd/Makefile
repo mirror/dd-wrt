@@ -583,6 +583,9 @@ endif
 ifeq ($(CONFIG_ANTAIRA),y)
 CFLAGS += -DHAVE_ANTAIRA
 endif
+ifeq ($(CONFIG_ANTAIRA_MINI),y)
+CFLAGS += -DHAVE_ANTAIRA_MINI
+endif
 ifeq ($(CONFIG_TMK),y)
 CFLAGS += -DHAVE_TMK
 endif
