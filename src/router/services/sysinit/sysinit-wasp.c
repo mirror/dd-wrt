@@ -205,13 +205,20 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 4");
 #elif defined (HAVE_CPE880)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
-	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
+#ifdef HAVE_ONNET
 	if (nvram_match("wan_proto", "disabled")) {
-		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 4 5");
+		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
+		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0 4 5");
 	} else {
+		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 5");
 		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 4");
 	}
+#else
+	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
+	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 5");
+	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 4");
+#endif
 	eval("swconfig", "dev", "eth0", "set", "apply");
 #elif defined (HAVE_MMS344)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
