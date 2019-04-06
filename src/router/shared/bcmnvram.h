@@ -128,6 +128,9 @@ extern int nvram_geti(const char *name);
 
 extern void nvram_seti(const char *name, const int value);
 
+extern int nvram_states(char *list);
+extern int nvram_state(char *name);
+
 int nvram_ngeti(const char *fmt, ...);
 
 int nvhas(char *nvname, char *key);

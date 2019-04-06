@@ -317,6 +317,53 @@ void writenvram(const char *var, char *file)
 	     word[sizeof(word) - 1] = '\0', \
 	     next = strchr(next, ' '))
 
+/*
+ * returns 1 if nvram content has changed
+ */
+int nvram_state(char *nvram)
+{
+	char checkname[64];
+	char *nv = nvram_safe_get(nvram);
+	snprintf(checkname, sizeof(checkname), "/tmp/nvstate/%s.state");
+	FILE *fp = fopen(checkname, "rb");
+	if (!fp) {
+		mkdir("/tmp/nvstate", 0700);
+	      update_nv:;
+		fp = fopen(checkname, "wb");
+		fwrite(nv, strlen(nv), 1, fp);
+		fclose(fp);
+		return 1;
+	}
+	fseek(fp, 0, SEEK_END);
+	size_t len = ftell(fp);
+	if (!len) {
+		fclose(fp);
+		if (!*nv)
+			return 0;
+		goto update_nv;
+	}
+	rewind(fp);
+	char *checkbuf = malloc(len + 1);
+	fread(checkbuf, len, 1, fp);
+	fclose(fp);
+	checkbuf[len] = 0;
+	if (nvram_match(nv, checkbuf))
+		return 0;
+	goto update_nv;
+}
+
+int nvram_states(char *list)
+{
+	char *next;
+	char var[128];
+	foreach_int(var, list, next) {
+		if (nvram_state(var))
+			return 1;
+	}
+	return 0;
+
+}
+
 int nvhas(char *nvname, char *key)
 {
 	char *next;
