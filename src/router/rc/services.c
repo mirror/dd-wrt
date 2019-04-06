@@ -96,10 +96,10 @@ static int start_services_main(int argc, char **argv)
 	start_service_f("softether");
 #endif
 #ifdef HAVE_TELNET
-	start_service_f("telnetd");
+	start_service_force_f("telnetd");
 #endif
 #ifdef HAVE_MACTELNET
-	start_service_f("mactelnetd");
+	start_service_force_f("mactelnetd");
 #endif
 #ifdef HAVE_RAID
 	start_service_f("raid");
@@ -168,7 +168,7 @@ static int start_services_main(int argc, char **argv)
 #ifdef HAVE_REGISTER
 	if (isregistered_real())
 #endif
-		start_service_f("sshd");
+		start_service_force_f("sshd");
 #endif
 
 #ifdef HAVE_IPV6
@@ -178,7 +178,7 @@ static int start_services_main(int argc, char **argv)
 #endif
 
 #ifdef HAVE_SNMP
-	start_service_f("snmp");
+	start_service_force_f("snmp");
 #endif
 
 #ifdef HAVE_LLTD
@@ -299,14 +299,8 @@ static int stop_services_main(int argc, char **argv)
 	stop_service_f("zebra");
 #endif
 	stop_service_f("wland");
-#ifdef HAVE_TELNET
-	stop_service_f("telnetd");
-#endif
 #ifdef HAVE_SOFTETHER
 	stop_service_f("softether");
-#endif
-#ifdef HAVE_MACTELNET
-	stop_service_f("mactelnetd");
 #endif
 #ifdef HAVE_CPUTEMP
 	stop_service_f("hwmon");
@@ -341,12 +335,6 @@ static int stop_services_main(int argc, char **argv)
 #ifdef HAVE_PRIVOXY
 	stop_service_f("privoxy");
 #endif
-#ifdef HAVE_SSHD
-#ifdef HAVE_REGISTER
-	if (isregistered_real())
-#endif
-		stop_service_f("sshd");
-#endif
 
 #ifdef HAVE_IPV6
 #ifdef HAVE_RADVD
@@ -366,9 +354,6 @@ static int stop_services_main(int argc, char **argv)
 	stop_service_f("pppoeserver");
 #endif
 
-#ifdef HAVE_SNMP
-	stop_service_f("snmp");
-#endif
 
 #ifdef HAVE_LLTD
 	stop_service_f("lltd");
@@ -705,13 +690,13 @@ static void handle_services(void)
 	restart_f("softether");
 #endif
 #ifdef HAVE_TELNET
-	restart_f("telnetd");
+	start_service_force_f("telnetd");
 #endif
 #ifdef HAVE_MACTELNET
-	restart_f("mactelnetd");
+	start_service_force_f("mactelnetd");
 #endif
 #ifdef HAVE_SNMP
-	restart_f("snmp");
+	start_service_force_f("snmp");
 #endif
 #ifdef HAVE_LLTD
 	restart_f("lltd");
@@ -732,7 +717,7 @@ static void handle_services(void)
 #ifdef HAVE_REGISTER
 	if (isregistered_real())
 #endif
-		restart_f("sshd");
+		start_service_force_f("sshd");
 #endif
 	restart("firewall");
 	restart_f("wshaper");
