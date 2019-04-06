@@ -132,7 +132,7 @@ static int start_services_main(int argc, char **argv)
 	start_service_f("transmission");
 #endif
 #ifdef HAVE_SYSLOG
-	start_service_f("syslog");
+	start_service_force_f("syslog");
 #endif
 #ifdef HAVE_TFTP
 	start_service_f("tftpd");
@@ -288,9 +288,6 @@ static int stop_services_main(int argc, char **argv)
 #endif
 #ifdef HAVE_TFTP
 	stop_service_f("tftpd");
-#endif
-#ifdef HAVE_SYSLOG
-	stop_service_f("syslog");
 #endif
 #ifdef HAVE_OLSRD
 	stop_service_f("olsrd");
@@ -658,7 +655,7 @@ static void handle_services(void)
 	restart_f("udhcpd");
 #endif
 #ifdef HAVE_SYSLOG
-	restart_f("syslog");
+	start_service_force_f("syslog");
 #endif
 #ifdef HAVE_RSTATS
 	restart_f("rstats");
@@ -722,7 +719,7 @@ static void handle_services(void)
 	restart("firewall");
 	restart_f("wshaper");
 #ifdef HAVE_SYSLOG
-	restart_f("syslog");
+	start_service_force_f("syslog");
 #endif
 #ifdef HAVE_VNCREPEATER
 	restart_f("vncrepeater");
@@ -948,7 +945,7 @@ static void handle_filters(void)
 #endif
 	restart("firewall");
 #ifdef HAVE_SYSLOG
-	restart_f("syslog");
+	start_service_force_f("syslog");
 #endif
 	stop_service("wland");
 	restart_f("wshaper");
