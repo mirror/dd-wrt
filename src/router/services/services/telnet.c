@@ -31,7 +31,8 @@
 void start_telnetd(void)
 {
 	pid_t pid;
-
+	if (!nvram_states("telnetd_enable http_username http_passwd"))
+		return;
 	char *telnetd_argv[] = { "telnetd", NULL };
 #ifdef HAVE_REGISTER
 	char *telnetd_argv_reg[] = { "telnetd", "-l", "/sbin/regshell", NULL };
