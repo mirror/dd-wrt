@@ -330,8 +330,10 @@ int nvram_state(char *nvram)
 		mkdir("/tmp/nvstate", 0700);
 	      update_nv:;
 		fp = fopen(checkname, "wb");
-		fwrite(nv, strlen(nv), 1, fp);
-		fclose(fp);
+		if (fp) {
+			fwrite(nv, strlen(nv), 1, fp);
+			fclose(fp);
+		}
 		return 1;
 	}
 	fseek(fp, 0, SEEK_END);
