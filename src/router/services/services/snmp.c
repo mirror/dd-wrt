@@ -43,6 +43,8 @@ void start_snmp(void)
 	char *snmpd_argv[] = { "snmpd", "-c", SNMP_CONF_FILE, NULL };
 	FILE *fp = NULL;
 
+	if (!nvram_states("snmpd_enable snmpd_syslocation snmpd_syscontact snmpd_sysname snmpd_rocommunity snmpd_rwcommunity"))
+		return;
 	stop_snmp();
 
 	if (!nvram_invmatchi("snmpd_enable", 0))
