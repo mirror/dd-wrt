@@ -488,7 +488,6 @@ static void handle_index(void)
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	start_service("nas");
-	start_service("guest_nas");
 #endif
 #if defined(HAVE_TMK) || defined(HAVE_BKM)
 	start_service_f("nsmd");
@@ -606,7 +605,6 @@ static void handle_hotspot(void)
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	start_service("nas");
-	start_service("guest_nas");
 #endif
 	start_service_f("radio_timer");
 	//restart dhcp as well, to fix repeater bridge save issue (dhcp disables itself here)
@@ -881,7 +879,6 @@ static void handle_management(void)
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	start_service("nas");
-	start_service("guest_nas");
 #endif
 #ifdef HAVE_JFFS2
 	FORK(eval("/etc/config/jffs2.startup"));
@@ -947,7 +944,6 @@ static void handle_pppoe(void)
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	start_service("nas");
-	start_service("guest_nas");
 #endif
 	start_service_f("radio_timer");
 
@@ -1231,7 +1227,6 @@ static void handle_wireless(void)
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	start_service("nas");
-	start_service("guest_nas");
 #endif
 	start_service_f("radio_timer");
 	//restart dhcp as well, to fix repeater bridge save issue (dhcp disables itself here)
@@ -1347,7 +1342,6 @@ static void handle_wireless_2(void)
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	start_service("nas");
-	start_service("guest_nas");
 #endif
 	start_service_f("radio_timer");
 	if (getSTA() || getWET() || wanchanged
