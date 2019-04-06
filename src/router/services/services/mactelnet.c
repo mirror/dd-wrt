@@ -32,7 +32,8 @@ void start_mactelnetd(void)
 {
 	pid_t pid;
 	int ret = 0;
-
+	if (!nvram_states("mactelnetd_enable mactelnetd_passwd"))
+		return;
 	char *telnetd_argv[] = { "mactelnetd", NULL };
 	stop_mactelnetd();
 
