@@ -55,9 +55,9 @@ static int write_key_file(char *keyname, char *keyfile, int chmodval);
 static int generate_dropbear_rsa_host_key(void);
 void stop_sshd(void);
 
-void start_sshd(void)
+void start_sshd(int force)
 {
-	if (!nvram_states("sshd_enable http_username http_passwd " NVRAM_RSA_KEY_NAME " sshd_authorized_keys sshd_port sshd_passwd_auth sshd_forwarding "))
+	if (!force && !nvram_states("sshd_enable http_username http_passwd " NVRAM_RSA_KEY_NAME " sshd_authorized_keys sshd_port sshd_passwd_auth sshd_forwarding "))
 		return;
 	stop_sshd();
 	if (!nvram_invmatchi("sshd_enable", 0))
