@@ -317,12 +317,10 @@ void writenvram(const char *var, char *file)
 	     word[sizeof(word) - 1] = '\0', \
 	     next = strchr(next, ' '))
 
-static int update_state(char *nvram)
+static int update_state(char *file, char *nvram)
 {
-	char checkname[64];
 	char *nv = nvram_safe_get(nvram);
-	snprintf(checkname, sizeof(checkname), "/tmp/nvstate/%s.state");
-	FILE *fp = fopen(checkname, "wb");
+	FILE *fp = fopen(file, "wb");
 	if (fp) {
 		fwrite(nv, strlen(nv), 1, fp);
 		fclose(fp);
@@ -336,13 +334,13 @@ static int update_state(char *nvram)
  */
 int nvram_state(char *nvram)
 {
-	char checkname[64];
+	char file[64];
 	char *nv = nvram_safe_get(nvram);
-	snprintf(checkname, sizeof(checkname), "/tmp/nvstate/%s.state");
-	FILE *fp = fopen(checkname, "rb");
+	snprintf(file, sizeof(file), "/tmp/nvstate/%s.state", nvram);
+	FILE *fp = fopen(file, "rb");
 	if (!fp) {
 		mkdir("/tmp/nvstate", 0700);
-		return update_state(nvram);
+		return update_state(file, nvram);
 	}
 	fseek(fp, 0, SEEK_END);
 	size_t len = ftell(fp);
@@ -350,7 +348,7 @@ int nvram_state(char *nvram)
 		fclose(fp);
 		if (!*nv)
 			return 0;
-		return update_state(nvram);
+		return update_state(file, nvram);
 	}
 	rewind(fp);
 	char *checkbuf = malloc(len + 1);
@@ -362,7 +360,7 @@ int nvram_state(char *nvram)
 		return 0;
 	}
 	free(checkbuf);
-	return update_state(nvram);
+	return update_state(file, nvram);
 }
 
 int nvram_states(char *list)
