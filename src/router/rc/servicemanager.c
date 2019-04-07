@@ -107,7 +107,7 @@ static void _stopcondition(char *method, char *name)
 
 #define RELEASESTOPPED(a) _RELEASESTOPPED(a, name);
 
-static int handle_service(const char *method, const char *name)
+static int handle_service(const char *method, const char *name, int force)
 {
 	int ret = 0;
 	if (strcmp(name, "hotplug_block") && strcmp(method, "restart")) {
@@ -135,13 +135,18 @@ static int handle_service(const char *method, const char *name)
 	if (handle == NULL) {
 		return -1;
 	}
-	void (*fptr) (void);
+	void (*fptr_stop) (void);
+	void (*fptr_start) (int force);
 
 	sprintf(service, "%s_%s", method, name);
-	fptr = (void (*)(void))dlsym(handle, service);
-	if (fptr)
-		(*fptr) ();
-	else {
+	fptr_stop = (void (*)(void))dlsym(handle, service);
+	fptr_start = (void (*)(int))fptr_stop;
+	if (fptr_start) {
+		if (!strcmp(method, "start"))
+		    (*fptr_start) (force);
+		else
+		    (*fptr_stop) ();
+	} else {
 		dd_debug(DEBUG_SERVICE, "function %s not found \n", service);
 
 		ret = -1;
@@ -160,25 +165,46 @@ static int handle_service(const char *method, const char *name)
 	return ret;
 }
 
+static void start_service_arg(char *name, int force)
+{
+	handle_service("start", name, force);
+}
+
+
 static void start_service(char *name)
 {
-	handle_service("start", name);
+	start_service_arg(name, 0);
+}
+
+static void start_service_force_arg(char *name, int force)
+{
+	RELEASESTOPPED("start");
+	start_service_arg(name, force);
 }
 
 static void start_service_force(char *name)
 {
-	RELEASESTOPPED("start");
-	start_service(name);
+	start_service_force_arg(name, 0);
+}
+
+static void start_service_f_arg(char *name, int force)
+{
+	FORK(start_service_arg(name, force));
 }
 
 static void start_service_f(char *name)
 {
-	FORK(start_service(name));
+	start_service_f_arg(name, 0);
+}
+
+static void start_service_force_f_arg(char *name,int force)
+{
+	FORK(start_service_force_arg(name,force));
 }
 
 static void start_service_force_f(char *name)
 {
-	FORK(start_service_force(name));
+	start_service_force_f_arg(name, 0);
 }
 
 static void start_servicei(char *name, int param)
@@ -266,7 +292,7 @@ static void stop_service(char *name)
 	init_shared();
 	if (stops_running)
 		stops_running[0]++;
-	handle_service("stop", name);
+	handle_service("stop", name, 0);
 }
 
 static void stop_service_force(char *name)
@@ -280,7 +306,7 @@ static void stop_service_f(char *name)
 	init_shared();
 	if (stops_running)
 		stops_running[0]++;
-	FORK(handle_service("stop", name));
+	FORK(handle_service("stop", name, 0));
 }
 
 static void stop_service_force_f(char *name)
@@ -290,18 +316,18 @@ static void stop_service_force_f(char *name)
 	if (stops_running)
 		stops_running[0]++;
 	RELEASESTOPPED("stop");
-	FORK(handle_service("stop", name));
+	FORK(handle_service("stop", name, 0));
 }
 
 static void _restart_delay(char *name, int delay)
 {
 	if (delay)
 		sleep(delay);
-	if (handle_service("restart", name)) {
+	if (handle_service("restart", name, 0)) {
 		RELEASESTOPPED("stop");
 		RELEASESTOPPED("start");
-		handle_service("stop", name);
-		handle_service("start", name);
+		handle_service("stop", name, 0);
+		handle_service("start", name, 0);
 	} else {
 		if (stops_running)
 			stops_running[0]--;
