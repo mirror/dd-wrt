@@ -363,6 +363,7 @@ define kernelfeatures
 		echo "CONFIG_DM_INTEGRITY=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_DM_ZONED=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_DEV_DAX=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NR_DEV_DAX=32768" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_DM_CACHE_MQ=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_CRYPTO_CRCT10DIF_ARM64_CE=y" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_ASYNC_RAID6_TEST is not set" >> $(LINUXDIR)/.config; \
