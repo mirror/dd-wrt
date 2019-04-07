@@ -367,11 +367,12 @@ int nvram_states(char *list)
 {
 	char *next;
 	char var[128];
+	int retval = 0;
 	foreach_int(var, list, next) {
 		if (nvram_state(var))
-			return 1;
+			retval = 1;
 	}
-	return 0;
+	return retval;
 
 }
 
