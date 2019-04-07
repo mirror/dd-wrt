@@ -107,7 +107,7 @@ int zend_sprintf(char *buffer, const char *format, ...);
 
 PHP_MAJOR_VERSION=7
 PHP_MINOR_VERSION=3
-PHP_RELEASE_VERSION=2
+PHP_RELEASE_VERSION=4
 PHP_EXTRA_VERSION=""
 PHP_VERSION="$PHP_MAJOR_VERSION.$PHP_MINOR_VERSION.$PHP_RELEASE_VERSION$PHP_EXTRA_VERSION"
 PHP_VERSION_ID=`expr [$]PHP_MAJOR_VERSION \* 10000 + [$]PHP_MINOR_VERSION \* 100 + [$]PHP_RELEASE_VERSION`
@@ -564,6 +564,24 @@ PHP_CHECK_CPU_SUPPORTS([ssse3])
 PHP_CHECK_CPU_SUPPORTS([sse4.2])
 PHP_CHECK_CPU_SUPPORTS([avx])
 PHP_CHECK_CPU_SUPPORTS([avx2])
+
+dnl The ABI of php_addslashes in PHP 7.3 is dependent on __SSE4_2__,
+dnl which depends on target attributes. Use this check to make sure that
+dnl SSE 4.2 availability during the PHP compilation is used, independently
+dnl of whether extensions are compiled with SSE 4.2 support.
+AC_MSG_CHECKING([whether __SSE4_2__ is defined])
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
+int main() {
+#if defined(__SSE4_2__)
+  return 0;
+#else
+  return 1;
+#endif
+}
+]])], [
+  AC_MSG_RESULT([yes])
+  AC_DEFINE(HAVE_SSE4_2_DEF, 1, [Define if __SSE4_2__ has been defined])
+], [AC_MSG_RESULT([no])], [AC_MSG_RESULT([no])])
 
 dnl Check for members of the stat structure
 AC_CHECK_MEMBERS([struct stat.st_blksize, struct stat.st_rdev])

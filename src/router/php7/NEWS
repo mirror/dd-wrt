@@ -1,5 +1,136 @@
 PHP                                                                        NEWS
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+04 April 2019, PHP 7.3.4
+
+- Core:
+  . Fixed bug #77738 (Nullptr deref in zend_compile_expr). (Laruence)
+  . Fixed bug #77660 (Segmentation fault on break 2147483648). (Laruence)
+  . Fixed bug #77652 (Anonymous classes can lose their interface information).
+    (Nikita)
+  . Fixed bug #77345 (Stack Overflow caused by circular reference in garbage
+    collection). (Alexandru Patranescu, Nikita, Dmitry)
+  . Fixed bug #76956 (Wrong value for 'syslog.filter' documented in php.ini).
+    (cmb)
+
+- Apache2Handler:
+  . Fixed bug #77648 (BOM in sapi/apache2handler/php_functions.c). (cmb)
+
+- Bcmath:
+  . Fixed bug #77742 (bcpow() implementation related to gcc compiler
+    optimization). (Nikita)
+
+- CLI Server:
+  . Fixed bug #77722 (Incorrect IP set to $_SERVER['REMOTE_ADDR'] on the
+    localhost). (Nikita)
+
+- COM:
+  . Fixed bug #77578 (Crash when php unload). (cmb)
+
+- EXIF:
+  . Fixed bug #77753 (Heap-buffer-overflow in php_ifd_get32s). (Stas)
+  . Fixed bug #77831 (Heap-buffer-overflow in exif_iif_add_value). (Stas)
+
+- FPM:
+  . Fixed bug #77677 (FPM fails to build on AIX due to missing WCOREDUMP).
+    (Kevin Adler)
+
+- GD:
+  . Fixed bug #77700 (Writing truecolor images as GIF ignores interlace flag).
+    (cmb)
+
+- MySQLi:
+  . Fixed bug #77597 (mysqli_fetch_field hangs scripts). (Nikita)
+
+- Opcache:
+  . Fixed bug #77743 (Incorrect pi node insertion for jmpznz with identical
+    successors). (Nikita)
+
+- Phar:
+  . Fxied bug #77697 (Crash on Big_Endian platform). (Laruence)
+
+- phpdbg:
+  . Fixed bug #77767 (phpdbg break cmd aliases listed in help do not match
+    actual aliases). (Miriam Lauter)
+
+- sodium:
+  . Fixed bug #77646 (sign_detached() strings not terminated). (Frank)
+
+- SQLite3:
+  . Added sqlite3.defensive INI directive. (BohwaZ)
+
+- Standard:
+  . Fixed bug #77664 (Segmentation fault when using undefined constant in
+    custom wrapper). (Laruence)
+  . Fixed bug #77669 (Crash in extract() when overwriting extracted array).
+    (Nikita)
+  . Fixed bug #76717 (var_export() does not create a parsable value for
+    PHP_INT_MIN). (Nikita)
+  . Fixed bug #77765 (FTP stream wrapper should set the directory as
+    executable). (Vlad Temian)
+
+07 Mar 2019, PHP 7.3.3
+
+- Core:
+  . Fixed bug #77589 (Core dump using parse_ini_string with numeric sections).
+    (Laruence)
+  . Fixed bug #77329 (Buffer Overflow via overly long Error Messages).
+    (Dmitry)
+  . Fixed bug #77494 (Disabling class causes segfault on member access).
+    (Dmitry)
+  . Fixed bug #77498 (Custom extension Segmentation fault when declare static
+    property). (Nikita)
+  . Fixed bug #77530 (PHP crashes when parsing `(2)::class`). (Ekin)
+  . Fixed bug #77546 (iptcembed broken function). (gdegoulet)
+  . Fixed bug #77630 (rename() across the device may allow unwanted access
+    during processing). (Stas)
+
+- COM:
+  . Fixed bug #77621 (Already defined constants are not properly reported).
+    (cmb)
+  . Fixed bug #77626 (Persistence confusion in php_com_import_typelib()). (cmb)
+
+- EXIF:
+  . Fixed bug #77509 (Uninitialized read in exif_process_IFD_in_TIFF). (Stas)
+  . Fixed bug #77540 (Invalid Read on exif_process_SOFn). (Stas)
+  . Fixed bug #77563 (Uninitialized read in exif_process_IFD_in_MAKERNOTE). (Stas)
+  . Fixed bug #77659 (Uninitialized read in exif_process_IFD_in_MAKERNOTE). (Stas)
+
+- Mbstring:
+  . Fixed bug #77514 (mb_ereg_replace() with trailing backslash adds null byte).
+    (Nikita)
+
+- MySQL
+  . Disabled LOCAL INFILE by default, can be enabled using php.ini directive
+    mysqli.allow_local_infile for mysqli, or PDO::MYSQL_ATTR_LOCAL_INFILE
+    attribute for pdo_mysql. (Darek Slusarczyk)
+
+- OpenSSL:
+  . Fixed bug #77390 (feof might hang on TLS streams in case of fragmented TLS
+    records). (Abyl Valg, Jakub Zelenka)
+
+- PDO_OCI:
+  . Support Oracle Database tracing attributes ACTION, MODULE,
+    CLIENT_INFO, and CLIENT_IDENTIFIER. (Cameron Porter)
+
+- PHAR:
+  . Fixed bug #77396 (Null Pointer Dereference in phar_create_or_parse_filename).
+    (bishop)
+  . Fixed bug #77586 (phar_tar_writeheaders_int() buffer overflow). (bishop)
+
+- phpdbg:
+  . Fixed bug #76596 (phpdbg support for display_errors=stderr). (kabel)
+
+- SPL:
+  . Fixed bug #51068 (DirectoryIterator glob:// don't support current path
+    relative queries). (Ahmed Abdou)
+  . Fixed bug #77431 (openFile() silently truncates after a null byte). (cmb)
+
+- Standard:
+  . Fixed bug #77552 (Unintialized php_stream_statbuf in stat functions).
+    (John Stevenson)
+  . Fixed bug #77612 (setcookie() sets incorrect SameSite header if all of its
+    options filled). (Nikita)
+
 07 Feb 2019, PHP 7.3.2
 
 - Core:
@@ -190,6 +321,7 @@ PHP                                                                        NEWS
   . Removed support for BeOS. (Kalle)
   . Add PHP_VERSION to phpinfo() <title/>. (github/MattJeevas)
   . Add net_get_interfaces(). (Sara, Joe, Anatol)
+  . Added gc_status(). (Benjamin Eberlei)
   . Implemented flexible heredoc and nowdoc syntax, per
     RFC https://wiki.php.net/rfc/flexible_heredoc_nowdoc_syntaxes.
     (Thomas Punt)
