@@ -19,5 +19,5 @@
  *
  * $Id:
  */
-void start_snmp(void);
+void start_snmp(int force);
 void stop_snmp(void);

@@ -56,10 +56,11 @@
 
 #ifdef HAVE_SYSLOG
 void stop_syslog(void);
-void start_syslog(!force && )
+void start_syslog(int force)
 {
 	int ret1 = 0, ret2 = 0;
-	if (!force && !nvram_states("syslogd_enable syslogd_rem_ip klogd_enable"))
+	int state = nvram_states("syslogd_enable syslogd_rem_ip klogd_enable");
+	if (!force && !state)
 		return;
 	stop_syslog();
 	if (!nvram_invmatchi("syslogd_enable", 0))
