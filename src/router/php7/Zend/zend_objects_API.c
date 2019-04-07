@@ -41,6 +41,7 @@ ZEND_API void ZEND_FASTCALL zend_objects_store_destroy(zend_objects_store *objec
 
 ZEND_API void ZEND_FASTCALL zend_objects_store_call_destructors(zend_objects_store *objects)
 {
+	EG(flags) |= EG_FLAGS_OBJECT_STORE_NO_REUSE;
 	if (objects->top > 1) {
 		uint32_t i;
 		for (i = 1; i < objects->top; i++) {
@@ -131,10 +132,10 @@ ZEND_API void ZEND_FASTCALL zend_objects_store_put(zend_object *object)
 {
 	int handle;
 
-	/* When in shutdown sequesnce - do not reuse previously freed handles, to make sure
+	/* When in shutdown sequence - do not reuse previously freed handles, to make sure
 	 * the dtors for newly created objects are called in zend_objects_store_call_destructors() loop
 	 */
-	if (!(EG(flags) & EG_FLAGS_IN_SHUTDOWN) && EG(objects_store).free_list_head != -1) {
+	if (EG(objects_store).free_list_head != -1 && EXPECTED(!(EG(flags) & EG_FLAGS_OBJECT_STORE_NO_REUSE))) {
 		handle = EG(objects_store).free_list_head;
 		EG(objects_store).free_list_head = GET_OBJ_BUCKET_NUMBER(EG(objects_store).object_buckets[handle]);
 	} else {
@@ -152,14 +153,17 @@ ZEND_API void ZEND_FASTCALL zend_objects_store_put(zend_object *object)
 
 ZEND_API void ZEND_FASTCALL zend_objects_store_del(zend_object *object) /* {{{ */
 {
+	ZEND_ASSERT(GC_REFCOUNT(object) == 0);
+
+	/* GC might have released this object already. */
+	if (UNEXPECTED(GC_TYPE(object) == IS_NULL)) {
+		return;
+	}
+
 	/*	Make sure we hold a reference count during the destructor call
 		otherwise, when the destructor ends the storage might be freed
 		when the refcount reaches 0 a second time
 	 */
-	ZEND_ASSERT(EG(objects_store).object_buckets != NULL);
-	ZEND_ASSERT(IS_OBJ_VALID(EG(objects_store).object_buckets[object->handle]));
-	ZEND_ASSERT(GC_REFCOUNT(object) == 0);
-
 	if (!(OBJ_FLAGS(object) & IS_OBJ_DESTRUCTOR_CALLED)) {
 		GC_ADD_FLAGS(object, IS_OBJ_DESTRUCTOR_CALLED);
 
@@ -176,6 +180,8 @@ ZEND_API void ZEND_FASTCALL zend_objects_store_del(zend_object *object) /* {{{ *
 		uint32_t handle = object->handle;
 		void *ptr;
 
+		ZEND_ASSERT(EG(objects_store).object_buckets != NULL);
+		ZEND_ASSERT(IS_OBJ_VALID(EG(objects_store).object_buckets[object->handle]));
 		EG(objects_store).object_buckets[handle] = SET_OBJ_INVALID(object);
 		if (!(OBJ_FLAGS(object) & IS_OBJ_FREE_CALLED)) {
 			GC_ADD_FLAGS(object, IS_OBJ_FREE_CALLED);

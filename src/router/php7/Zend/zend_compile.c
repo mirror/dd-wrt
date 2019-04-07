@@ -1480,6 +1480,7 @@ static void zend_ensure_valid_class_fetch_type(uint32_t fetch_type) /* {{{ */
 static zend_bool zend_try_compile_const_expr_resolve_class_name(zval *zv, zend_ast *class_ast, zend_ast *name_ast, zend_bool constant) /* {{{ */
 {
 	uint32_t fetch_type;
+	zval *class_name;
 
 	if (name_ast->kind != ZEND_AST_ZVAL) {
 		return 0;
@@ -1494,7 +1495,13 @@ static zend_bool zend_try_compile_const_expr_resolve_class_name(zval *zv, zend_a
 			"Dynamic class names are not allowed in compile-time ::class fetch");
 	}
 
-	fetch_type = zend_get_class_fetch_type(zend_ast_get_str(class_ast));
+	class_name = zend_ast_get_zval(class_ast);
+
+	if (Z_TYPE_P(class_name) != IS_STRING) {
+		zend_error_noreturn(E_COMPILE_ERROR, "Illegal class name");
+	}
+
+	fetch_type = zend_get_class_fetch_type(Z_STR_P(class_name));
 	zend_ensure_valid_class_fetch_type(fetch_type);
 
 	switch (fetch_type) {
@@ -3651,7 +3658,7 @@ int zend_compile_func_cuf(znode *result, zend_ast_list *args, zend_string *lcnam
 }
 /* }}} */
 
-static int zend_compile_assert(znode *result, zend_ast_list *args, zend_string *name, zend_function *fbc) /* {{{ */
+static void zend_compile_assert(znode *result, zend_ast_list *args, zend_string *name, zend_function *fbc) /* {{{ */
 {
 	if (EG(assertions) >= 0) {
 		znode name_node;
@@ -3694,8 +3701,6 @@ static int zend_compile_assert(znode *result, zend_ast_list *args, zend_string *
 		result->op_type = IS_CONST;
 		ZVAL_TRUE(&result->u.constant);
 	}
-
-	return SUCCESS;
 }
 /* }}} */
 
@@ -3902,10 +3907,6 @@ int zend_try_compile_special_func(znode *result, zend_string *lcname, zend_ast_l
 		return FAILURE;
 	}
 
-	if (zend_string_equals_literal(lcname, "assert")) {
-		return zend_compile_assert(result, args, lcname, fbc);
-	}
-
 	if (CG(compiler_options) & ZEND_COMPILE_NO_BUILTINS) {
 		return FAILURE;
 	}
@@ -4008,8 +4009,16 @@ void zend_compile_call(znode *result, zend_ast *ast, uint32_t type) /* {{{ */
 		zend_op *opline;
 
 		lcname = zend_string_tolower(Z_STR_P(name));
-
 		fbc = zend_hash_find_ptr(CG(function_table), lcname);
+
+		/* Special assert() handling should apply independently of compiler flags. */
+		if (fbc && zend_string_equals_literal(lcname, "assert")) {
+			zend_compile_assert(result, zend_ast_get_list(args_ast), lcname, fbc);
+			zend_string_release(lcname);
+			zval_ptr_dtor(&name_node.u.constant);
+			return;
+		}
+
 		if (!fbc
 		 || (fbc->type == ZEND_INTERNAL_FUNCTION && (CG(compiler_options) & ZEND_COMPILE_IGNORE_INTERNAL_FUNCTIONS))
 		 || (fbc->type == ZEND_USER_FUNCTION && (CG(compiler_options) & ZEND_COMPILE_IGNORE_USER_FUNCTIONS))
@@ -4519,7 +4528,7 @@ void zend_compile_break_continue(zend_ast *ast) /* {{{ */
 	zend_ast *depth_ast = ast->child[0];
 
 	zend_op *opline;
-	int depth;
+	zend_long depth;
 
 	ZEND_ASSERT(ast->kind == ZEND_AST_BREAK || ast->kind == ZEND_AST_CONTINUE);
 
@@ -4546,7 +4555,7 @@ void zend_compile_break_continue(zend_ast *ast) /* {{{ */
 			ast->kind == ZEND_AST_BREAK ? "break" : "continue");
 	} else {
 		if (!zend_handle_loops_and_finally_ex(depth, NULL)) {
-			zend_error_noreturn(E_COMPILE_ERROR, "Cannot '%s' %d level%s",
+			zend_error_noreturn(E_COMPILE_ERROR, "Cannot '%s' " ZEND_LONG_FMT " level%s",
 				ast->kind == ZEND_AST_BREAK ? "break" : "continue",
 				depth, depth == 1 ? "" : "s");
 		}
@@ -4563,12 +4572,12 @@ void zend_compile_break_continue(zend_ast *ast) /* {{{ */
 			if (depth == 1) {
 				zend_error(E_WARNING,
 					"\"continue\" targeting switch is equivalent to \"break\". " \
-					"Did you mean to use \"continue %d\"?",
+					"Did you mean to use \"continue " ZEND_LONG_FMT "\"?",
 					depth + 1);
 			} else {
 				zend_error(E_WARNING,
-					"\"continue %d\" targeting switch is equivalent to \"break %d\". " \
-					"Did you mean to use \"continue %d\"?",
+					"\"continue " ZEND_LONG_FMT "\" targeting switch is equivalent to \"break " ZEND_LONG_FMT "\". " \
+					"Did you mean to use \"continue " ZEND_LONG_FMT "\"?",
 					depth, depth, depth + 1);
 			}
 		}
@@ -4956,6 +4965,10 @@ static zend_uchar determine_switch_jumptable_type(zend_ast_list *cases) {
 }
 
 static zend_bool should_use_jumptable(zend_ast_list *cases, zend_uchar jumptable_type) {
+	if (CG(compiler_options) & ZEND_COMPILE_NO_JUMPTABLES) {
+		return 0;
+	}
+
 	/* Thresholds are chosen based on when the average switch time for equidistributed
 	 * input becomes smaller when using the jumptable optimization. */
 	if (jumptable_type == IS_LONG) {
@@ -6427,10 +6440,32 @@ void zend_compile_class_decl(zend_ast *ast) /* {{{ */
 		if (!zend_hash_exists(CG(class_table), lcname)) {
 			zend_hash_add_ptr(CG(class_table), lcname, ce);
 		} else {
-			/* this anonymous class has been included */
+			/* This anonymous class has been included, reuse the existing definition.
+			 * NB: This behavior is buggy, and this should always result in a separate
+			 * class declaration. However, until the problem of RTD key collisions is
+			 * solved, this gives a behavior close to what is expected. */
 			zval zv;
 			ZVAL_PTR(&zv, ce);
 			destroy_zend_class(&zv);
+			ce = zend_hash_find_ptr(CG(class_table), lcname);
+
+			/* Manually replicate emission of necessary inheritance opcodes here. We cannot
+			 * reuse the general code, as we only want to emit the opcodes, without modifying
+			 * the reused class definition. */
+			if (ce->ce_flags & ZEND_ACC_IMPLEMENT_TRAITS) {
+				zend_emit_op(NULL, ZEND_BIND_TRAITS, &declare_node, NULL);
+			}
+			if (implements_ast) {
+				zend_ast_list *iface_list = zend_ast_get_list(implements_ast);
+				uint32_t i;
+				for (i = 0; i < iface_list->children; i++) {
+					opline = zend_emit_op(NULL, ZEND_ADD_INTERFACE, &declare_node, NULL);
+					opline->op2_type = IS_CONST;
+					opline->op2.constant = zend_add_class_name_literal(CG(active_op_array),
+						zend_resolve_class_name_ast(iface_list->child[i]));
+				}
+				zend_emit_op(NULL, ZEND_VERIFY_ABSTRACT_CLASS, &declare_node, NULL);
+			}
 			return;
 		}
 	} else {
@@ -7726,11 +7761,11 @@ void zend_compile_const(znode *result, zend_ast *ast) /* {{{ */
 	if (zend_string_equals_literal(resolved_name, "__COMPILER_HALT_OFFSET__") || (name_ast->attr != ZEND_NAME_RELATIVE && zend_string_equals_literal(orig_name, "__COMPILER_HALT_OFFSET__"))) {
 		zend_ast *last = CG(ast);
 
-		while (last->kind == ZEND_AST_STMT_LIST) {
+		while (last && last->kind == ZEND_AST_STMT_LIST) {
 			zend_ast_list *list = zend_ast_get_list(last);
 			last = list->child[list->children-1];
 		}
-		if (last->kind == ZEND_AST_HALT_COMPILER) {
+		if (last && last->kind == ZEND_AST_HALT_COMPILER) {
 			result->op_type = IS_CONST;
 			ZVAL_LONG(&result->u.constant, Z_LVAL_P(zend_ast_get_zval(last->child[0])));
 			zend_string_release_ex(resolved_name, 0);

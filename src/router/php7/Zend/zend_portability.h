@@ -440,12 +440,8 @@ char *alloca();
 #define MAX(a, b)  (((a)>(b))?(a):(b))
 #define MIN(a, b)  (((a)<(b))?(a):(b))
 
-/* x86 instructions BT, SHL, SHR don't require masking */
-#if defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__)) || defined(ZEND_WIN32)
-# define ZEND_BIT_TEST(bits, bit) (((bits)[(bit) / (sizeof((bits)[0])*8)] >> (bit)) & 1)
-#else
-# define ZEND_BIT_TEST(bits, bit) (((bits)[(bit) / (sizeof((bits)[0])*8)] >> ((bit) & (sizeof((bits)[0])*8-1))) & 1)
-#endif
+#define ZEND_BIT_TEST(bits, bit) \
+	(((bits)[(bit) / (sizeof((bits)[0])*8)] >> ((bit) & (sizeof((bits)[0])*8-1))) & 1)
 
 /* We always define a function, even if there's a macro or expression we could
  * alias, so that using it in contexts where we can't make function calls
@@ -577,7 +573,7 @@ static zend_always_inline double _zend_get_nan(void) /* {{{ */
 # define ZEND_INTRIN_SSSE3_FUNC_DECL(func)
 #endif
 
-#ifdef __SSE4_2__
+#if defined(HAVE_SSE4_2_DEF) || (defined(ZEND_WIN32) && defined(__SSE4_2__))
 /* Instructions compiled directly. */
 # define ZEND_INTRIN_SSE4_2_NATIVE 1
 #elif (defined(HAVE_FUNC_ATTRIBUTE_TARGET) && defined(PHP_HAVE_SSE4_2)) || defined(ZEND_WIN32)
