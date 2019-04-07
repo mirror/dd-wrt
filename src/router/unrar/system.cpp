@@ -102,7 +102,7 @@ void Wait()
 
 
 #if defined(_WIN_ALL) && !defined(SFX_MODULE)
-void Shutdown()
+void Shutdown(POWER_MODE Mode)
 {
   HANDLE hToken;
   TOKEN_PRIVILEGES tkp;
@@ -114,7 +114,36 @@ void Shutdown()
 
     AdjustTokenPrivileges(hToken,FALSE,&tkp,0,(PTOKEN_PRIVILEGES)NULL,0);
   }
-  ExitWindowsEx(EWX_SHUTDOWN|EWX_FORCE|EWX_POWEROFF,SHTDN_REASON_FLAG_PLANNED);
+  if (Mode==POWERMODE_OFF)
+    ExitWindowsEx(EWX_SHUTDOWN|EWX_FORCE,SHTDN_REASON_FLAG_PLANNED);
+  if (Mode==POWERMODE_SLEEP)
+    SetSuspendState(FALSE,FALSE,FALSE);
+  if (Mode==POWERMODE_HIBERNATE)
+    SetSuspendState(TRUE,FALSE,FALSE);
+  if (Mode==POWERMODE_RESTART)
+    ExitWindowsEx(EWX_REBOOT|EWX_FORCE,SHTDN_REASON_FLAG_PLANNED);
+}
+
+
+bool ShutdownCheckAnother(bool Open)
+{
+  const wchar *EventName=L"rar -ioff";
+  static HANDLE hEvent=NULL;
+  bool Result=false; // Return false if no other RAR -ioff are running.
+  if (Open) // Create or open the event.
+    hEvent=CreateEvent(NULL,FALSE,FALSE,EventName);
+  else
+  {
+    if (hEvent!=NULL)
+      CloseHandle(hEvent); // Close our event.
+    // Check if other copies still own the event. While race conditions
+    // are possible, they are improbable and their harm is minimal.
+    hEvent=CreateEvent(NULL,FALSE,FALSE,EventName);
+    Result=GetLastError()==ERROR_ALREADY_EXISTS;
+    if (hEvent!=NULL)
+      CloseHandle(hEvent);
+  }
+  return Result;
 }
 #endif
 
