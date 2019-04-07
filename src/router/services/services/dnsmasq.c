@@ -302,33 +302,34 @@ void start_dnsmasq(void)
 		    && nvram_invmatch("wan_wins", "0.0.0.0"))
 			fprintf(fp, "dhcp-option=44,%s\n", nvram_safe_get("wan_wins"));
 		free(word);
-		if (nvram_matchi("dns_dnsmasq", 0)) {
-			dns_list = get_dns_list();
-
-			if (dns_list && dns_list->num_servers > 0) {
-
-				fprintf(fp, "dhcp-option=6");
-				for (i = 0; i < dns_list->num_servers; i++)
-					fprintf(fp, ",%s", dns_list->dns_server[i]);
-				fprintf(fp, "\n");
-			}
-			free_dns_list(dns_list);
-		} else {
 #ifdef HAVE_UNBOUND
-			if (nvram_matchi("recursive_dns", 1)) {
-				char *word = calloc(128, 1);
-				fprintf(fp, "dhcp-option=%s,6,%s\n", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"));
-				for (i = 0; i < mdhcpcount; i++) {
-					char buffer[128];
-					char *ifname = getmdhcp(IDX_IFNAME, i, word, buffer);
-					if (!*(nvram_nget("%s_ipaddr", ifname)) || !*(nvram_nget("%s_netmask", ifname)))
-						continue;
-					fprintf(fp, "dhcp-option=%s,6,", ifname);
-					fprintf(fp, "%s\n", nvram_nget("%s_ipaddr", ifname));
-				}
-				free(word);
+		if (nvram_matchi("recursive_dns", 1)) {
+			char *word = calloc(128, 1);
+			fprintf(fp, "dhcp-option=%s,6,%s\n", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"));
+			for (i = 0; i < mdhcpcount; i++) {
+				char buffer[128];
+				char *ifname = getmdhcp(IDX_IFNAME, i, word, buffer);
+				if (!*(nvram_nget("%s_ipaddr", ifname)) || !*(nvram_nget("%s_netmask", ifname)))
+					continue;
+				fprintf(fp, "dhcp-option=%s,6,", ifname);
+				fprintf(fp, "%s\n", nvram_nget("%s_ipaddr", ifname));
 			}
+			free(word);
+		} else
 #endif
+		{
+			if (nvram_matchi("dns_dnsmasq", 0)) {
+				dns_list = get_dns_list();
+
+				if (dns_list && dns_list->num_servers > 0) {
+
+					fprintf(fp, "dhcp-option=6");
+					for (i = 0; i < dns_list->num_servers; i++)
+						fprintf(fp, ",%s", dns_list->dns_server[i]);
+					fprintf(fp, "\n");
+				}
+				free_dns_list(dns_list);
+			}
 		}
 
 		if (nvram_matchi("auth_dnsmasq", 1))
@@ -441,7 +442,6 @@ void start_dnsmasq(void)
 	dns_to_resolv();
 
 	chmod("/etc/lease_update.sh", 0700);
-
 
 	FILE *conf = NULL;
 	conf = fopen("/jffs/etc/dnsmasq.conf", "r");	//test if custom config is available
