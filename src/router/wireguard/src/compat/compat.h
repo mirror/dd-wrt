@@ -791,6 +791,46 @@ struct __kernel_timespec {
 #define skb_probe_transport_header(a) skb_probe_transport_header(a, 0)
 #endif
 
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 1, 0)
+/* Note that all intentional uses of the non-_bh variety need to explicitly
+ * undef these, conditionalized on COMPAT_CANNOT_DEPRECIATE_BH_RCU.
+ */
+#include <linux/rcupdate.h>
+static __always_inline void old_synchronize_rcu(void)
+{
+	synchronize_rcu();
+}
+static __always_inline void old_call_rcu(void *a, void *b)
+{
+	call_rcu(a, b);
+}
+static __always_inline void old_rcu_barrier(void)
+{
+	rcu_barrier();
+}
+#ifdef synchronize_rcu
+#undef synchronize_rcu
+#endif
+#ifdef call_rcu
+#undef call_rcu
+#endif
+#ifdef rcu_barrier
+#undef rcu_barrier
+#endif
+#define synchronize_rcu synchronize_rcu_bh
+#define call_rcu call_rcu_bh
+#define rcu_barrier rcu_barrier_bh
+#define COMPAT_CANNOT_DEPRECIATE_BH_RCU
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 10)
+static inline void skb_mark_not_on_list(struct sk_buff *skb)
+{
+	skb->next = NULL;
+}
+#endif
+
 /* https://github.com/ClangBuiltLinux/linux/issues/7 */
 #if defined( __clang__) && (!defined(CONFIG_CLANG_VERSION) || CONFIG_CLANG_VERSION < 80000)
 #include <linux/bug.h>
@@ -805,7 +845,9 @@ struct __kernel_timespec {
 #include <net/ipv6.h>
 #include <net/icmp.h>
 #include <net/netfilter/nf_conntrack.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 1, 0)
 #include <net/netfilter/nf_nat_core.h>
+#endif
 static inline void new_icmp_send(struct sk_buff *skb_in, int type, int code, __be32 info)
 {
 	enum ip_conntrack_info ctinfo;

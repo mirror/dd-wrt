@@ -8,7 +8,7 @@
 #include "peer.h"
 #include "messages.h"
 #include "queueing.h"
-#include "hashtables.h"
+#include "peerlookup.h"
 
 #include <linux/rcupdate.h>
 #include <linux/slab.h>
@@ -40,7 +40,7 @@ void __init wg_noise_init(void)
 	blake2s_init(&blake, NOISE_HASH_LEN);
 	blake2s_update(&blake, handshake_init_chaining_key, NOISE_HASH_LEN);
 	blake2s_update(&blake, identifier_name, sizeof(identifier_name));
-	blake2s_final(&blake, handshake_init_hash, NOISE_HASH_LEN);
+	blake2s_final(&blake, handshake_init_hash);
 }
 
 /* Must hold peer->handshake.static_identity->lock */
@@ -132,7 +132,7 @@ static void keypair_free_kref(struct kref *kref)
 			    keypair->entry.peer->internal_id);
 	wg_index_hashtable_remove(keypair->entry.peer->device->index_hashtable,
 				  &keypair->entry);
-	call_rcu_bh(&keypair->rcu, keypair_free_rcu);
+	call_rcu(&keypair->rcu, keypair_free_rcu);
 }
 
 void wg_noise_keypair_put(struct noise_keypair *keypair, bool unreference_now)
@@ -389,7 +389,7 @@ static void mix_hash(u8 hash[NOISE_HASH_LEN], const u8 *src, size_t src_len)
 	blake2s_init(&blake, NOISE_HASH_LEN);
 	blake2s_update(&blake, hash, NOISE_HASH_LEN);
 	blake2s_update(&blake, src, src_len);
-	blake2s_final(&blake, hash, NOISE_HASH_LEN);
+	blake2s_final(&blake, hash);
 }
 
 static void mix_psk(u8 chaining_key[NOISE_HASH_LEN], u8 hash[NOISE_HASH_LEN],
