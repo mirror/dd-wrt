@@ -1,6 +1,6 @@
 /*
  * IEEE 802.11 RSN / WPA Authenticator
- * Copyright (c) 2004-2018, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2004-2019, Jouni Malinen <j@w1.fi>
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -697,6 +697,9 @@ static void wpa_free_sta_sm(struct wpa_state_machine *sm)
 	os_free(sm->last_rx_eapol_key);
 	os_free(sm->wpa_ie);
 	wpa_group_put(sm->wpa_auth, sm->group);
+#ifdef CONFIG_DPP2
+	wpabuf_clear_free(sm->dpp_z);
+#endif /* CONFIG_DPP2 */
 	os_free(sm);
 }
 
@@ -890,8 +893,10 @@ static int wpa_try_alt_snonce(struct wpa_state_machine *sm, u8 *data,
 
 		if (wpa_verify_key_mic(sm->wpa_key_mgmt, pmk_len, &PTK,
 				       data, data_len) == 0) {
-			os_memcpy(sm->PMK, pmk, pmk_len);
-			sm->pmk_len = pmk_len;
+			if (sm->PMK != pmk) {
+				os_memcpy(sm->PMK, pmk, pmk_len);
+				sm->pmk_len = pmk_len;
+			}
 			ok = 1;
 			break;
 		}
@@ -2055,6 +2060,10 @@ SM_STATE(WPA_PTK, INITPSK)
 		wpa_printf(MSG_DEBUG, "SAE: PMK from PMKSA cache");
 		os_memcpy(sm->PMK, sm->pmksa->pmk, sm->pmksa->pmk_len);
 		sm->pmk_len = sm->pmksa->pmk_len;
+#ifdef CONFIG_IEEE80211R_AP
+		os_memcpy(sm->xxkey, sm->pmksa->pmk, sm->pmksa->pmk_len);
+		sm->xxkey_len = sm->pmksa->pmk_len;
+#endif /* CONFIG_IEEE80211R_AP */
 	}
 #endif /* CONFIG_SAE */
 	sm->req_replay_counter_used = 0;
@@ -2153,14 +2162,24 @@ static int wpa_derive_ptk(struct wpa_state_machine *sm, const u8 *snonce,
 			  const u8 *pmk, unsigned int pmk_len,
 			  struct wpa_ptk *ptk)
 {
+	const u8 *z = NULL;
+	size_t z_len = 0;
+
 #ifdef CONFIG_IEEE80211R_AP
 	if (wpa_key_mgmt_ft(sm->wpa_key_mgmt))
 		return wpa_auth_derive_ptk_ft(sm, pmk, ptk);
 #endif /* CONFIG_IEEE80211R_AP */
 
+#ifdef CONFIG_DPP2
+	if (sm->wpa_key_mgmt == WPA_KEY_MGMT_DPP && sm->dpp_z) {
+		z = wpabuf_head(sm->dpp_z);
+		z_len = wpabuf_len(sm->dpp_z);
+	}
+#endif /* CONFIG_DPP2 */
+
 	return wpa_pmk_to_ptk(pmk, pmk_len, "Pairwise key expansion",
 			      sm->wpa_auth->addr, sm->addr, sm->ANonce, snonce,
-			      ptk, sm->wpa_key_mgmt, sm->pairwise);
+			      ptk, sm->wpa_key_mgmt, sm->pairwise, z, z_len);
 }
 
 
@@ -2210,6 +2229,16 @@ int fils_auth_pmk_to_ptk(struct wpa_state_machine *sm, const u8 *pmk,
 			    pmk_r0_name, WPA_PMK_NAME_LEN);
 		wpa_ft_store_pmk_fils(sm, pmk_r0, pmk_r0_name);
 		os_memset(fils_ft, 0, sizeof(fils_ft));
+
+		res = wpa_derive_pmk_r1_name(pmk_r0_name, conf->r1_key_holder,
+					     sm->addr, sm->pmk_r1_name,
+					     use_sha384);
+		os_memset(pmk_r0, 0, PMK_LEN_MAX);
+		if (res < 0)
+			return -1;
+		wpa_hexdump(MSG_DEBUG, "FILS+FT: PMKR1Name", sm->pmk_r1_name,
+			    WPA_PMK_NAME_LEN);
+		sm->pmk_r1_name_valid = 1;
 	}
 #endif /* CONFIG_IEEE80211R_AP */
 
@@ -2729,7 +2758,7 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
 	struct ieee802_1x_hdr *hdr;
 	struct wpa_eapol_key *key;
 	struct wpa_eapol_ie_parse kde;
-	int vlan_id;
+	int vlan_id = 0;
 
 	SM_ENTRY_MA(WPA_PTK, PTKCALCNEGOTIATING, wpa_ptk);
 	sm->EAPOLKeyReceived = FALSE;
@@ -2768,8 +2797,10 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
 		    wpa_verify_key_mic(sm->wpa_key_mgmt, pmk_len, &PTK,
 				       sm->last_rx_eapol_key,
 				       sm->last_rx_eapol_key_len) == 0) {
-			os_memcpy(sm->PMK, pmk, pmk_len);
-			sm->pmk_len = pmk_len;
+			if (sm->PMK != pmk) {
+				os_memcpy(sm->PMK, pmk, pmk_len);
+				sm->pmk_len = pmk_len;
+			}
 			ok = 1;
 			break;
 		}
@@ -4813,6 +4844,24 @@ void wpa_auth_get_fils_aead_params(struct wpa_state_machine *sm,
 }
 
 #endif /* CONFIG_FILS */
+
+
+void wpa_auth_set_auth_alg(struct wpa_state_machine *sm, u16 auth_alg)
+{
+	if (sm)
+		sm->auth_alg = auth_alg;
+}
+
+
+#ifdef CONFIG_DPP2
+void wpa_auth_set_dpp_z(struct wpa_state_machine *sm, const struct wpabuf *z)
+{
+	if (sm) {
+		wpabuf_clear_free(sm->dpp_z);
+		sm->dpp_z = z ? wpabuf_dup(z) : NULL;
+	}
+}
+#endif /* CONFIG_DPP2 */
 
 
 #ifdef CONFIG_TESTING_OPTIONS

@@ -510,6 +510,20 @@ enum qca_radiotap_vendor_ids {
  * @QCA_NL80211_VENDOR_SUBCMD_GET_FW_STATE: This command is used to get firmware
  *	state from the driver. It returns the firmware state in the attribute
  *	QCA_WLAN_VENDOR_ATTR_FW_STATE.
+ * @QCA_NL80211_VENDOR_SUBCMD_PEER_STATS_CACHE_FLUSH: This vendor subcommand
+ *	is used by the driver to flush per-peer cached statistics to user space
+ *	application. This interface is used as an event from the driver to
+ *	user space application. Attributes for this event are specified in
+ *	enum qca_wlan_vendor_attr_peer_stats_cache_params.
+ *	QCA_WLAN_VENDOR_ATTR_PEER_STATS_CACHE_DATA attribute is expected to be
+ *	sent in the event.
+ * @QCA_NL80211_VENDOR_SUBCMD_MPTA_HELPER_CONFIG: This sub command is used to
+ *	improve the success rate of Zigbee joining network.
+ *	Due to PTA master limitation, Zigbee joining network success rate is
+ *	low while WLAN is working. The WLAN driver needs to configure some
+ *	parameters including Zigbee state and specific WLAN periods to enhance
+ *	PTA master. All these parameters are delivered by the attributes
+ *	defined in enum qca_mpta_helper_vendor_attr.
  */
 enum qca_nl80211_vendor_subcmds {
 	QCA_NL80211_VENDOR_SUBCMD_UNSPEC = 0,
@@ -676,6 +690,8 @@ enum qca_nl80211_vendor_subcmds {
 	QCA_NL80211_VENDOR_SUBCMD_COEX_CONFIG = 175,
 	QCA_NL80211_VENDOR_SUBCMD_GET_SUPPORTED_AKMS = 176,
 	QCA_NL80211_VENDOR_SUBCMD_GET_FW_STATE = 177,
+	QCA_NL80211_VENDOR_SUBCMD_PEER_STATS_CACHE_FLUSH = 178,
+	QCA_NL80211_VENDOR_SUBCMD_MPTA_HELPER_CONFIG = 179,
 };
 
 enum qca_wlan_vendor_attr {
@@ -879,6 +895,49 @@ enum qca_roaming_policy {
 	QCA_ROAMING_ALLOWED_WITHIN_ESS,
 };
 
+/**
+ * enum qca_roam_reason - Represents the reason codes for roaming. Used by
+ * QCA_WLAN_VENDOR_ATTR_ROAM_AUTH_REASON.
+ *
+ * @QCA_ROAM_REASON_UNKNOWN: Any reason that do not classify under the below
+ * reasons.
+ *
+ * @QCA_ROAM_REASON_PER: Roam triggered when packet error rates (PER) breached
+ * the configured threshold.
+ *
+ * @QCA_ROAM_REASON_BEACON_MISS: Roam triggered due to the continuous configured
+ * beacon misses from the then connected AP.
+ *
+ * @QCA_ROAM_REASON_POOR_RSSI: Roam triggered due to the poor RSSI reported
+ * by the connected AP.
+ *
+ * @QCA_ROAM_REASON_BETTER_RSSI: Roam triggered for finding a BSS with a better
+ * RSSI than the connected BSS. Here the RSSI of the current BSS is not poor.
+ *
+ * @QCA_ROAM_REASON_CONGESTION: Roam triggered considering the connected channel
+ * or environment being very noisy or congested.
+ *
+ * @QCA_ROAM_REASON_EXPLICIT_REQUEST: Roam triggered due to an explicit request
+ * from the user (user space).
+ *
+ * @QCA_ROAM_REASON_BTM: Roam triggered due to BTM Request frame received from
+ * the connected AP.
+ *
+ * @QCA_ROAM_REASON_BSS_LOAD: Roam triggered due to the channel utilization
+ * breaching out the configured threshold.
+ */
+enum qca_roam_reason {
+	QCA_ROAM_REASON_UNKNOWN,
+	QCA_ROAM_REASON_PER,
+	QCA_ROAM_REASON_BEACON_MISS,
+	QCA_ROAM_REASON_POOR_RSSI,
+	QCA_ROAM_REASON_BETTER_RSSI,
+	QCA_ROAM_REASON_CONGESTION,
+	QCA_ROAM_REASON_USER_TRIGGER,
+	QCA_ROAM_REASON_BTM,
+	QCA_ROAM_REASON_BSS_LOAD,
+};
+
 enum qca_wlan_vendor_attr_roam_auth {
 	QCA_WLAN_VENDOR_ATTR_ROAM_AUTH_INVALID = 0,
 	QCA_WLAN_VENDOR_ATTR_ROAM_AUTH_BSSID,
@@ -921,6 +980,11 @@ enum qca_wlan_vendor_attr_roam_auth {
 	 * doing subsequent ERP based connections in the same realm.
 	 */
 	QCA_WLAN_VENDOR_ATTR_ROAM_AUTH_FILS_ERP_NEXT_SEQ_NUM = 13,
+	/* A 16-bit unsigned value representing the reasons for the roaming.
+	 * Defined by enum qca_roam_reason.
+	 */
+	QCA_WLAN_VENDOR_ATTR_ROAM_AUTH_REASON = 14,
+
 	/* keep last */
 	QCA_WLAN_VENDOR_ATTR_ROAM_AUTH_AFTER_LAST,
 	QCA_WLAN_VENDOR_ATTR_ROAM_AUTH_MAX =
@@ -1019,6 +1083,7 @@ enum qca_wlan_vendor_acs_hw_mode {
  *	only OCE STA-CFON functionalities.
  * @QCA_WLAN_VENDOR_FEATURE_SELF_MANAGED_REGULATORY: Device supports self
  *	managed regulatory.
+ * @QCA_WLAN_VENDOR_FEATURE_TWT: Device supports TWT (Target Wake Time).
  * @NUM_QCA_WLAN_VENDOR_FEATURES: Number of assigned feature bits
  */
 enum qca_wlan_vendor_features {
@@ -1030,6 +1095,7 @@ enum qca_wlan_vendor_features {
 	QCA_WLAN_VENDOR_FEATURE_OCE_AP                  = 5,
 	QCA_WLAN_VENDOR_FEATURE_OCE_STA_CFON            = 6,
 	QCA_WLAN_VENDOR_FEATURE_SELF_MANAGED_REGULATORY = 7,
+	QCA_WLAN_VENDOR_FEATURE_TWT 			= 8,
 	NUM_QCA_WLAN_VENDOR_FEATURES /* keep last */
 };
 
@@ -3218,6 +3284,8 @@ enum qca_wlan_vendor_attr_roaming_config_params {
 	QCA_WLAN_VENDOR_ATTR_ROAMING_PARAM_SET_BSSID_PARAMS = 18,
 	QCA_WLAN_VENDOR_ATTR_ROAMING_PARAM_SET_BSSID_PARAMS_NUM_BSSID = 19,
 	QCA_WLAN_VENDOR_ATTR_ROAMING_PARAM_SET_BSSID_PARAMS_BSSID = 20,
+	/* Flag attribute indicates this BSSID blacklist as a hint */
+	QCA_WLAN_VENDOR_ATTR_ROAMING_PARAM_SET_BSSID_PARAMS_HINT = 21,
 
 	/* keep last */
 	QCA_WLAN_VENDOR_ATTR_ROAMING_PARAM_AFTER_LAST,
@@ -5556,6 +5624,16 @@ enum qca_wlan_he_om_ctrl_ch_bw {
  * @QCA_WLAN_VENDOR_ATTR_HE_OMI_TX_NSTS: Mandatory 8-bit unsigned value
  * indicates the maximum number of space-time streams, NSTS, that
  * the STA supports in transmission and is set to NSTS - 1.
+ *
+ * @QCA_WLAN_VENDOR_ATTR_HE_OMI_ULMU_DATA_DISABLE: 8-bit unsigned value
+ * combined with the UL MU Disable subfield and the recipient's setting
+ * of the OM Control UL MU Data Disable RX Support subfield in the HE MAC
+ * capabilities to determine which HE TB PPDUs are possible by the
+ * STA to transmit.
+ * 0 - UL MU data operations are enabled by the STA.
+ * 1 - Determine which HE TB PPDU types are allowed by the STA if UL MU disable
+ * bit is not set, else UL MU Tx is suspended.
+ *
  */
 enum qca_wlan_vendor_attr_he_omi_tx {
 	QCA_WLAN_VENDOR_ATTR_HE_OMI_INVALID = 0,
@@ -5563,6 +5641,7 @@ enum qca_wlan_vendor_attr_he_omi_tx {
 	QCA_WLAN_VENDOR_ATTR_HE_OMI_CH_BW = 2,
 	QCA_WLAN_VENDOR_ATTR_HE_OMI_ULMU_DISABLE = 3,
 	QCA_WLAN_VENDOR_ATTR_HE_OMI_TX_NSTS = 4,
+	QCA_WLAN_VENDOR_ATTR_HE_OMI_ULMU_DATA_DISABLE = 5,
 
 	/* keep last */
 	QCA_WLAN_VENDOR_ATTR_HE_OMI_AFTER_LAST,
@@ -5833,6 +5912,25 @@ enum qca_wlan_vendor_attr_wifi_test_config {
 	 * 1-enable, 0-disable
 	 */
 	QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_HE_HTC_HE_SUPP = 34,
+
+	/* 8-bit unsigned value to configure VHT support in 2.4G band.
+	 * This attribute is used to configure the testbed device.
+	 * 1-enable, 0-disable
+	 */
+	QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_ENABLE_2G_VHT = 35,
+
+	/* 8-bit unsigned value to configure HE testbed defaults.
+	 * This attribute is used to configure the testbed device.
+	 * 1-set the device HE capabilities to testbed defaults.
+	 * 0-reset the device HE capabilities to supported config.
+	 */
+	QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_SET_HE_TESTBED_DEFAULTS = 36,
+
+	/* 8-bit unsigned value to configure TWT request support.
+	 * This attribute is used to configure the testbed device.
+	 * 1-enable, 0-disable.
+	 */
+	QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_HE_TWT_REQ_SUPPORT = 37,
 
 	/* keep last */
 	QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_AFTER_LAST,
@@ -6469,6 +6567,146 @@ enum qca_wlan_vendor_attr_link_properties {
 	QCA_VENDOR_ATTR_LINK_PROPERTIES_AFTER_LAST,
 	QCA_VENDOR_ATTR_LINK_PROPERTIES_MAX =
 	QCA_VENDOR_ATTR_LINK_PROPERTIES_AFTER_LAST - 1,
+};
+
+/**
+ * enum qca_vendor_attr_peer_stats_cache_type - Represents peer stats cache type
+ * This enum defines the valid set of values of peer stats cache types. These
+ * values are used by attribute
+ * %QCA_WLAN_VENDOR_ATTR_PEER_STATS_CACHE_TYPE.
+ *
+ * @QCA_WLAN_VENDOR_ATTR_PEER_TX_RATE_STATS: Represents peer TX rate statistics
+ * @QCA_WLAN_VENDOR_ATTR_PEER_RX_RATE_STATS: Represents peer RX rate statistics
+ * @QCA_WLAN_VENDOR_ATTR_PEER_TX_SOJOURN_STATS: Represents peer TX sojourn
+ * statistics
+ */
+enum qca_vendor_attr_peer_stats_cache_type {
+	QCA_WLAN_VENDOR_ATTR_PEER_STATS_CACHE_TYPE_INVALID = 0,
+
+	QCA_WLAN_VENDOR_ATTR_PEER_TX_RATE_STATS,
+	QCA_WLAN_VENDOR_ATTR_PEER_RX_RATE_STATS,
+	QCA_WLAN_VENDOR_ATTR_PEER_TX_SOJOURN_STATS,
+};
+
+/**
+ * enum qca_wlan_vendor_attr_peer_stats_cache_params - This enum defines
+ * attributes required for QCA_NL80211_VENDOR_SUBCMD_PEER_STATS_CACHE_FLUSH
+ * Information in these attributes is used to flush peer rate statistics from
+ * the driver to user application.
+ *
+ * @QCA_WLAN_VENDOR_ATTR_PEER_STATS_CACHE_TYPE: Unsigned 32-bit attribute
+ * Indicate peer statistics cache type.
+ * The statistics types are 32-bit values from
+ * enum qca_vendor_attr_peer_stats_cache_type.
+ * @QCA_WLAN_VENDOR_ATTR_PEER_STATS_CACHE_PEER_MAC: Unsigned 8-bit array
+ * of size 6 octets, representing the peer MAC address.
+ * @QCA_WLAN_VENDOR_ATTR_PEER_STATS_CACHE_DATA: Opaque data attribute
+ * containing buffer of statistics to send to application layer entity.
+ * @QCA_WLAN_VENDOR_ATTR_PEER_STATS_CACHE_PEER_COOKIE: Unsigned 64-bit attribute
+ * representing a cookie for peer unique session.
+ */
+enum qca_wlan_vendor_attr_peer_stats_cache_params {
+	QCA_WLAN_VENDOR_ATTR_PEER_STATS_INVALID = 0,
+
+	QCA_WLAN_VENDOR_ATTR_PEER_STATS_CACHE_TYPE = 1,
+	QCA_WLAN_VENDOR_ATTR_PEER_STATS_CACHE_PEER_MAC = 2,
+	QCA_WLAN_VENDOR_ATTR_PEER_STATS_CACHE_DATA = 3,
+	QCA_WLAN_VENDOR_ATTR_PEER_STATS_CACHE_PEER_COOKIE = 4,
+
+	/* Keep last */
+	QCA_WLAN_VENDOR_ATTR_PEER_STATS_CACHE_LAST,
+	QCA_WLAN_VENDOR_ATTR_PEER_STATS_CACHE_MAX =
+		QCA_WLAN_VENDOR_ATTR_PEER_STATS_CACHE_LAST - 1
+};
+
+/**
+ * enum qca_mpta_helper_attr_zigbee_state - Current Zigbee state
+ * This enum defines all the possible states of Zigbee, which can be
+ * delivered in the QCA_MPTA_HELPER_VENDOR_ATTR_ZIGBEE_STATE attribute.
+ *
+ * @ZIGBEE_IDLE: Zigbee in idle state
+ * @ZIGBEE_FORM_NETWORK: Zigbee forming network
+ * @ZIGBEE_WAIT_JOIN: Zigbee waiting for joining network
+ * @ZIGBEE_JOIN: Zigbee joining network
+ * @ZIGBEE_NETWORK_UP: Zigbee network is up
+ * @ZIGBEE_HMI: Zigbee in HMI mode
+ */
+enum qca_mpta_helper_attr_zigbee_state {
+	ZIGBEE_IDLE = 0,
+	ZIGBEE_FORM_NETWORK = 1,
+	ZIGBEE_WAIT_JOIN = 2,
+	ZIGBEE_JOIN = 3,
+	ZIGBEE_NETWORK_UP = 4,
+	ZIGBEE_HMI = 5,
+};
+
+/*
+ * enum qca_mpta_helper_vendor_attr - Attributes used in vendor sub-command
+ * QCA_NL80211_VENDOR_SUBCMD_MPTA_HELPER_CONFIG.
+ */
+enum qca_mpta_helper_vendor_attr {
+	QCA_MPTA_HELPER_VENDOR_ATTR_INVALID = 0,
+	/* Optional attribute used to update Zigbee state.
+	 * enum qca_mpta_helper_attr_zigbee_state.
+	 * NLA_U32 attribute.
+	 */
+	QCA_MPTA_HELPER_VENDOR_ATTR_ZIGBEE_STATE = 1,
+	/* Optional attribute used to configure WLAN duration for Shape-OCS
+	 * during interrupt.
+	 * Set in pair with QCA_MPTA_HELPER_VENDOR_ATTR_INT_NON_WLAN_DURATION.
+	 * Value range 0 ~ 300 (ms).
+	 * NLA_U32 attribute.
+	 */
+	QCA_MPTA_HELPER_VENDOR_ATTR_INT_WLAN_DURATION = 2,
+	/* Optional attribute used to configure non-WLAN duration for Shape-OCS
+	 * during interrupt.
+	 * Set in pair with QCA_MPTA_HELPER_VENDOR_ATTR_INT_WLAN_DURATION.
+	 * Value range 0 ~ 300 (ms).
+	 * NLA_U32 attribute.
+	 */
+	QCA_MPTA_HELPER_VENDOR_ATTR_INT_NON_WLAN_DURATION  = 3,
+	/* Optional attribute used to configure WLAN duration for Shape-OCS
+	 * monitor period.
+	 * Set in pair with QCA_MPTA_HELPER_VENDOR_ATTR_MON_NON_WLAN_DURATION.
+	 * Value range 0 ~ 300 (ms)
+	 * NLA_U32 attribute
+	 */
+	QCA_MPTA_HELPER_VENDOR_ATTR_MON_WLAN_DURATION = 4,
+	/* Optional attribute used to configure non-WLAN duration for Shape-OCS
+	 * monitor period.
+	 * Set in pair with QCA_MPTA_HELPER_VENDOR_ATTR_MON_WLAN_DURATION.
+	 * Value range 0 ~ 300 (ms)
+	 * NLA_U32 attribute
+	 */
+	QCA_MPTA_HELPER_VENDOR_ATTR_MON_NON_WLAN_DURATION  = 5,
+	/* Optional attribute used to configure OCS interrupt duration.
+	 * Set in pair with QCA_MPTA_HELPER_VENDOR_ATTR_MON_OCS_DURATION.
+	 * Value range 1000 ~ 20000 (ms)
+	 * NLA_U32 attribute
+	 */
+	QCA_MPTA_HELPER_VENDOR_ATTR_INT_OCS_DURATION  = 6,
+	/* Optional attribute used to configure OCS monitor duration.
+	 * Set in pair with QCA_MPTA_HELPER_VENDOR_ATTR_INT_OCS_DURATION.
+	 * Value range 1000 ~ 20000 (ms)
+	 * NLA_U32 attribute
+	 */
+	QCA_MPTA_HELPER_VENDOR_ATTR_MON_OCS_DURATION  = 7,
+	/* Optional attribute used to notify WLAN firmware the current Zigbee
+	 * channel.
+	 * Value range 11 ~ 26
+	 * NLA_U32 attribute
+	 */
+	QCA_MPTA_HELPER_VENDOR_ATTR_ZIGBEE_CHAN = 8,
+	/* Optional attribute used to configure WLAN mute duration.
+	 * Value range 0 ~ 400 (ms)
+	 * NLA_U32 attribute
+	 */
+	QCA_MPTA_HELPER_VENDOR_ATTR_WLAN_MUTE_DURATION	= 9,
+
+	/* keep last */
+	QCA_MPTA_HELPER_VENDOR_ATTR_AFTER_LAST,
+	QCA_MPTA_HELPER_VENDOR_ATTR_MAX =
+		QCA_MPTA_HELPER_VENDOR_ATTR_AFTER_LAST - 1
 };
 
 #endif /* QCA_VENDOR_H */

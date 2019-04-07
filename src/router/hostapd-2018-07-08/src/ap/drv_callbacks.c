@@ -15,6 +15,7 @@
 #include "common/ieee802_11_defs.h"
 #include "common/ieee802_11_common.h"
 #include "common/wpa_ctrl.h"
+#include "common/dpp.h"
 #include "crypto/random.h"
 #include "p2p/p2p.h"
 #include "wps/wps.h"
@@ -196,7 +197,7 @@ int hostapd_notif_assoc(struct hostapd_data *hapd, const u8 *addr,
 		goto fail;
 	}
 
-	if (hostapd_signal_handle_event(hapd, NULL, ASSOC_REQ, addr)) {
+	if (hostapd_signal_handle_event(hapd, 0, ASSOC_REQ, addr)) {
 		wpa_printf(MSG_DEBUG, "Station " MACSTR " assoc rejected by signal handler.\n",
 			   MAC2STR(addr));
 		goto fail;
@@ -570,6 +571,38 @@ skip_wpa_check:
 			goto fail;
 	}
 #endif /* CONFIG_OWE */
+
+#ifdef CONFIG_DPP2
+		dpp_pfs_free(sta->dpp_pfs);
+		sta->dpp_pfs = NULL;
+
+		if ((hapd->conf->wpa_key_mgmt & WPA_KEY_MGMT_DPP) &&
+		    hapd->conf->dpp_netaccesskey && sta->wpa_sm &&
+		    wpa_auth_sta_key_mgmt(sta->wpa_sm) == WPA_KEY_MGMT_DPP &&
+		    elems.owe_dh) {
+			sta->dpp_pfs = dpp_pfs_init(
+				wpabuf_head(hapd->conf->dpp_netaccesskey),
+				wpabuf_len(hapd->conf->dpp_netaccesskey));
+			if (!sta->dpp_pfs) {
+				wpa_printf(MSG_DEBUG,
+					   "DPP: Could not initialize PFS");
+				/* Try to continue without PFS */
+				goto pfs_fail;
+			}
+
+			if (dpp_pfs_process(sta->dpp_pfs, elems.owe_dh,
+					    elems.owe_dh_len) < 0) {
+				dpp_pfs_free(sta->dpp_pfs);
+				sta->dpp_pfs = NULL;
+				reason = WLAN_REASON_UNSPECIFIED;
+				goto fail;
+			}
+		}
+
+		wpa_auth_set_dpp_z(sta->wpa_sm, sta->dpp_pfs ?
+				   sta->dpp_pfs->secret : NULL);
+	pfs_fail:
+#endif /* CONFIG_DPP2 */
 
 #if defined(CONFIG_IEEE80211R_AP) || defined(CONFIG_FILS) || defined(CONFIG_OWE)
 	hostapd_sta_assoc(hapd, addr, reassoc, status, buf, p - buf);
@@ -1079,6 +1112,7 @@ fail:
 }
 
 
+#ifndef NEED_AP_MLME
 static void hostapd_action_rx(struct hostapd_data *hapd,
 			      struct rx_mgmt *drv_mgmt)
 {
@@ -1091,7 +1125,7 @@ static void hostapd_action_rx(struct hostapd_data *hapd,
 	if (drv_mgmt->frame_len < IEEE80211_HDRLEN + 2 + 1)
 		return;
 
-	plen = drv_mgmt->frame_len - IEEE80211_HDRLEN - 1;
+	plen = drv_mgmt->frame_len - IEEE80211_HDRLEN;
 
 	mgmt = (struct ieee80211_mgmt *) drv_mgmt->frame;
 	fc = le_to_host16(mgmt->frame_control);
@@ -1111,19 +1145,20 @@ static void hostapd_action_rx(struct hostapd_data *hapd,
 	}
 #ifdef CONFIG_IEEE80211R_AP
 	if (mgmt->u.action.category == WLAN_ACTION_FT) {
-		const u8 *payload = drv_mgmt->frame + 24 + 1;
-
-		wpa_ft_action_rx(sta->wpa_sm, payload, plen);
+		wpa_ft_action_rx(sta->wpa_sm, (u8 *) &mgmt->u.action, plen);
+		return;
 	}
 #endif /* CONFIG_IEEE80211R_AP */
 #ifdef CONFIG_IEEE80211W
-	if (mgmt->u.action.category == WLAN_ACTION_SA_QUERY && plen >= 4) {
+	if (mgmt->u.action.category == WLAN_ACTION_SA_QUERY) {
 		ieee802_11_sa_query_action(hapd, mgmt, drv_mgmt->frame_len);
+		return;
 	}
 #endif /* CONFIG_IEEE80211W */
 #ifdef CONFIG_WNM_AP
 	if (mgmt->u.action.category == WLAN_ACTION_WNM) {
 		ieee802_11_rx_wnm_action_ap(hapd, mgmt, drv_mgmt->frame_len);
+		return;
 	}
 #endif /* CONFIG_WNM_AP */
 #ifdef CONFIG_FST
@@ -1133,7 +1168,7 @@ static void hostapd_action_rx(struct hostapd_data *hapd,
 	}
 #endif /* CONFIG_FST */
 #ifdef CONFIG_DPP
-	if (plen >= 1 + 4 &&
+	if (plen >= 2 + 4 &&
 	    mgmt->u.action.u.vs_public_action.action ==
 	    WLAN_PA_VENDOR_SPECIFIC &&
 	    WPA_GET_BE24(mgmt->u.action.u.vs_public_action.oui) ==
@@ -1150,6 +1185,7 @@ static void hostapd_action_rx(struct hostapd_data *hapd,
 	}
 #endif /* CONFIG_DPP */
 }
+#endif /* NEED_AP_MLME */
 
 
 #ifdef NEED_AP_MLME
@@ -1609,10 +1645,10 @@ void hostapd_wpa_event(void *ctx, enum wpa_event_type event,
 		if (!data->rx_mgmt.frame)
 			break;
 #ifdef NEED_AP_MLME
-		if (hostapd_mgmt_rx(hapd, &data->rx_mgmt) > 0)
-			break;
-#endif /* NEED_AP_MLME */
+		hostapd_mgmt_rx(hapd, &data->rx_mgmt);
+#else /* NEED_AP_MLME */
 		hostapd_action_rx(hapd, &data->rx_mgmt);
+#endif /* NEED_AP_MLME */
 		break;
 	case EVENT_RX_PROBE_REQ:
 		if (data->rx_probe_req.sa == NULL ||

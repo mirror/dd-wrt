@@ -25,9 +25,6 @@
 
 #define EAP_MAX_AUTH_ROUNDS 50
 
-static void eap_user_free(struct eap_user *user);
-
-
 /* EAP state machines are described in RFC 4137 */
 
 static int eap_sm_calculateTimeout(struct eap_sm *sm, int retransCount,
@@ -1815,7 +1812,7 @@ int eap_server_sm_step(struct eap_sm *sm)
 }
 
 
-static void eap_user_free(struct eap_user *user)
+void eap_user_free(struct eap_user *user)
 {
 	if (user == NULL)
 		return;

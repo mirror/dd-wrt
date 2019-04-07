@@ -534,15 +534,25 @@ int wpa_supplicant_send_2_of_4(struct wpa_sm *sm, const unsigned char *dst,
 static int wpa_derive_ptk(struct wpa_sm *sm, const unsigned char *src_addr,
 			  const struct wpa_eapol_key *key, struct wpa_ptk *ptk)
 {
+	const u8 *z = NULL;
+	size_t z_len = 0;
+
 #ifdef CONFIG_IEEE80211R
 	if (wpa_key_mgmt_ft(sm->key_mgmt))
 		return wpa_derive_ptk_ft(sm, src_addr, key, ptk);
 #endif /* CONFIG_IEEE80211R */
 
+#ifdef CONFIG_DPP2
+	if (sm->key_mgmt == WPA_KEY_MGMT_DPP && sm->dpp_z) {
+		z = wpabuf_head(sm->dpp_z);
+		z_len = wpabuf_len(sm->dpp_z);
+	}
+#endif /* CONFIG_DPP2 */
+
 	return wpa_pmk_to_ptk(sm->pmk, sm->pmk_len, "Pairwise key expansion",
 			      sm->own_addr, sm->bssid, sm->snonce,
 			      key->key_nonce, ptk, sm->key_mgmt,
-			      sm->pairwise_cipher);
+			      sm->pairwise_cipher, z, z_len);
 }
 
 
@@ -2637,6 +2647,9 @@ void wpa_sm_deinit(struct wpa_sm *sm)
 #ifdef CONFIG_OWE
 	crypto_ecdh_deinit(sm->owe_ecdh);
 #endif /* CONFIG_OWE */
+#ifdef CONFIG_DPP2
+	wpabuf_clear_free(sm->dpp_z);
+#endif /* CONFIG_DPP2 */
 	os_free(sm);
 }
 
@@ -3988,11 +4001,13 @@ static int fils_ft_build_assoc_req_rsne(struct wpa_sm *sm, struct wpabuf *buf)
 		   MAC2STR(sm->r1kh_id));
 	pos = wpabuf_put(buf, WPA_PMK_NAME_LEN);
 	if (wpa_derive_pmk_r1_name(sm->pmk_r0_name, sm->r1kh_id, sm->own_addr,
-				   pos, use_sha384) < 0) {
+				   sm->pmk_r1_name, use_sha384) < 0) {
 		wpa_printf(MSG_WARNING, "FILS+FT: Could not derive PMKR1Name");
 		return -1;
 	}
-	wpa_hexdump(MSG_DEBUG, "FILS+FT: PMKR1Name", pos, WPA_PMK_NAME_LEN);
+	wpa_hexdump(MSG_DEBUG, "FILS+FT: PMKR1Name", sm->pmk_r1_name,
+		    WPA_PMK_NAME_LEN);
+	os_memcpy(pos, sm->pmk_r1_name, WPA_PMK_NAME_LEN);
 
 #ifdef CONFIG_IEEE80211W
 	if (sm->mgmt_group_cipher == WPA_CIPHER_AES_128_CMAC) {
@@ -4294,6 +4309,24 @@ int fils_process_assoc_resp(struct wpa_sm *sm, const u8 *resp, size_t len)
 		}
 	}
 #endif /* CONFIG_OCV */
+
+#ifdef CONFIG_IEEE80211R
+	if (wpa_key_mgmt_ft(sm->key_mgmt) && sm->fils_ft_ies) {
+		struct wpa_ie_data rsn;
+
+		/* Check that PMKR1Name derived by the AP matches */
+		if (!elems.rsn_ie ||
+		    wpa_parse_wpa_ie_rsn(elems.rsn_ie - 2, elems.rsn_ie_len + 2,
+					 &rsn) < 0 ||
+		    !rsn.pmkid || rsn.num_pmkid != 1 ||
+		    os_memcmp(rsn.pmkid, sm->pmk_r1_name,
+			      WPA_PMK_NAME_LEN) != 0) {
+			wpa_printf(MSG_DEBUG,
+				   "FILS+FT: No RSNE[PMKR1Name] match in AssocResp");
+			goto fail;
+		}
+	}
+#endif /* CONFIG_IEEE80211R */
 
 	/* Key Delivery */
 	if (!elems.key_delivery) {
@@ -4616,3 +4649,14 @@ void wpa_sm_set_fils_cache_id(struct wpa_sm *sm, const u8 *fils_cache_id)
 	}
 #endif /* CONFIG_FILS */
 }
+
+
+#ifdef CONFIG_DPP2
+void wpa_sm_set_dpp_z(struct wpa_sm *sm, const struct wpabuf *z)
+{
+	if (sm) {
+		wpabuf_clear_free(sm->dpp_z);
+		sm->dpp_z = z ? wpabuf_dup(z) : NULL;
+	}
+}
+#endif /* CONFIG_DPP2 */

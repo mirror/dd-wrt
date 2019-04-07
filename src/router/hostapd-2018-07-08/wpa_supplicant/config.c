@@ -2414,6 +2414,7 @@ static const struct parse_data ssid_fields[] = {
 	{ STR_KEYe(private_key_passwd) },
 	{ STRe(dh_file) },
 	{ STRe(subject_match) },
+	{ STRe(check_cert_subject) },
 	{ STRe(altsubject_match) },
 	{ STRe(domain_suffix_match) },
 	{ STRe(domain_match) },
@@ -2424,6 +2425,7 @@ static const struct parse_data ssid_fields[] = {
 	{ STR_KEYe(private_key2_passwd) },
 	{ STRe(dh_file2) },
 	{ STRe(subject_match2) },
+	{ STRe(check_cert_subject2) },
 	{ STRe(altsubject_match2) },
 	{ STRe(domain_suffix_match2) },
 	{ STRe(domain_match2) },
@@ -2686,6 +2688,7 @@ static void eap_peer_config_free(struct eap_peer_config *eap)
 	str_clear_free(eap->private_key_passwd);
 	os_free(eap->dh_file);
 	os_free(eap->subject_match);
+	os_free(eap->check_cert_subject);
 	os_free(eap->altsubject_match);
 	os_free(eap->domain_suffix_match);
 	os_free(eap->domain_match);
@@ -2696,6 +2699,7 @@ static void eap_peer_config_free(struct eap_peer_config *eap)
 	str_clear_free(eap->private_key2_passwd);
 	os_free(eap->dh_file2);
 	os_free(eap->subject_match2);
+	os_free(eap->check_cert_subject2);
 	os_free(eap->altsubject_match2);
 	os_free(eap->domain_suffix_match2);
 	os_free(eap->domain_match2);
@@ -4914,6 +4918,7 @@ static const struct global_parse_data global_fields[] = {
 	{ FUNC(os_version), CFG_CHANGED_OS_VERSION },
 	{ STR(config_methods), CFG_CHANGED_CONFIG_METHODS },
 	{ INT_RANGE(wps_cred_processing, 0, 2), 0 },
+	{ INT_RANGE(wps_cred_add_sae, 0, 1), 0 },
 	{ FUNC(wps_vendor_ext_m1), CFG_CHANGED_VENDOR_EXTENSION },
 #endif /* CONFIG_WPS */
 #ifdef CONFIG_P2P

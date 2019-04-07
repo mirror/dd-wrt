@@ -1487,6 +1487,9 @@ int tls_global_set_params(void *tls_ctx,
 {
 	wpa_printf(MSG_DEBUG, "SSL: global set params");
 
+	if (params->check_cert_subject)
+		return -1; /* not yet supported */
+
 	if (tls_global_ca_cert(tls_ctx, params->ca_cert) < 0) {
 		wpa_printf(MSG_INFO, "SSL: Failed to load ca cert file '%s'",
 			   params->ca_cert);
@@ -1970,8 +1973,11 @@ int tls_connection_get_random(void *ssl_ctx, struct tls_connection *conn,
 
 
 int tls_connection_export_key(void *tls_ctx, struct tls_connection *conn,
-			      const char *label, u8 *out, size_t out_len)
+			      const char *label, const u8 *context,
+			      size_t context_len, u8 *out, size_t out_len)
 {
+	if (context)
+		return -1;
 	if (!conn || wolfSSL_make_eap_keys(conn->ssl, out, out_len, label) != 0)
 		return -1;
 	return 0;
