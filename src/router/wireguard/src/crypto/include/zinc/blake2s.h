@@ -21,15 +21,15 @@ struct blake2s_state {
 	u32 t[2];
 	u32 f[2];
 	u8 buf[BLAKE2S_BLOCK_SIZE];
-	size_t buflen;
-	u8 last_node;
+	unsigned int buflen;
+	unsigned int outlen;
 };
 
 static void blake2s_init(struct blake2s_state *state, const size_t outlen);
 static void blake2s_init_key(struct blake2s_state *state, const size_t outlen,
 		      const void *key, const size_t keylen);
 static void blake2s_update(struct blake2s_state *state, const u8 *in, size_t inlen);
-static void blake2s_final(struct blake2s_state *state, u8 *out, const size_t outlen);
+static void blake2s_final(struct blake2s_state *state, u8 *out);
 
 static inline void blake2s(u8 *out, const u8 *in, const u8 *key,
 			   const size_t outlen, const size_t inlen,
@@ -47,7 +47,7 @@ static inline void blake2s(u8 *out, const u8 *in, const u8 *key,
 		blake2s_init(&state, outlen);
 
 	blake2s_update(&state, in, inlen);
-	blake2s_final(&state, out, outlen);
+	blake2s_final(&state, out);
 }
 
 static void blake2s_hmac(u8 *out, const u8 *in, const u8 *key, const size_t outlen,

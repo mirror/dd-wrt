@@ -42,8 +42,9 @@ unset ORIGINAL_TMPDIR
 make_temp() {
 	local old_umask
 
-	[[ -v ORIGINAL_TMPDIR ]] && TMPDIR="$ORIGINAL_TMPDIR"
+	[[ -v ORIGINAL_TMPDIR ]] && export TMPDIR="$ORIGINAL_TMPDIR"
 	ORIGINAL_TMPDIR="$TMPDIR"
+	[[ -z $TMPDIR ]] && unset TMPDIR
 
 	old_umask="$(umask)"
 	umask 077
@@ -367,7 +368,7 @@ execute_hooks() {
 
 cmd_usage() {
 	cat >&2 <<-_EOF
-	Usage: $PROGRAM [ up | down | save ] [ CONFIG_FILE | INTERFACE ]
+	Usage: $PROGRAM [ up | down | save | strip ] [ CONFIG_FILE | INTERFACE ]
 
 	  CONFIG_FILE is a configuration file, whose filename is the interface name
 	  followed by \`.conf'. Otherwise, INTERFACE is an interface name, with
@@ -430,6 +431,10 @@ cmd_save() {
 	save_config
 }
 
+cmd_strip() {
+	echo "$WG_CONFIG"
+}
+
 # ~~ function override insertion point ~~
 
 make_temp
@@ -449,6 +454,10 @@ elif [[ $# -eq 2 && $1 == save ]]; then
 	auto_su
 	parse_options "$2"
 	cmd_save
+elif [[ $# -eq 2 && $1 == strip ]]; then
+	auto_su
+	parse_options "$2"
+	cmd_strip
 else
 	cmd_usage
 	exit 1

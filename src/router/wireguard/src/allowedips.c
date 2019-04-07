@@ -6,7 +6,7 @@
 #include "allowedips.h"
 #include "peer.h"
 
-static __always_inline void swap_endian(u8 *dst, const u8 *src, u8 bits)
+static void swap_endian(u8 *dst, const u8 *src, u8 bits)
 {
 	if (bits == 32) {
 		*(u32 *)dst = be32_to_cpu(*(const __be32 *)src);
@@ -108,11 +108,11 @@ static void walk_remove_by_peer(struct allowedips_node __rcu **top,
 			if (rcu_dereference_protected(node->peer,
 				lockdep_is_held(lock)) == peer) {
 				RCU_INIT_POINTER(node->peer, NULL);
-				list_del(&node->peer_list);
+				list_del_init(&node->peer_list);
 				if (!node->bit[0] || !node->bit[1]) {
 					rcu_assign_pointer(*nptr, DEREF(
 					       &node->bit[!REF(node->bit[0])]));
-					call_rcu_bh(&node->rcu, node_free_rcu);
+					call_rcu(&node->rcu, node_free_rcu);
 					node = DEREF(nptr);
 				}
 			}
@@ -130,8 +130,8 @@ static unsigned int fls128(u64 a, u64 b)
 	return a ? fls64(a) + 64U : fls64(b);
 }
 
-static __always_inline u8 common_bits(const struct allowedips_node *node,
-				      const u8 *key, u8 bits)
+static u8 common_bits(const struct allowedips_node *node, const u8 *key,
+		      u8 bits)
 {
 	if (bits == 32)
 		return 32U - fls(*(const u32 *)node->bits ^ *(const u32 *)key);
@@ -142,8 +142,8 @@ static __always_inline u8 common_bits(const struct allowedips_node *node,
 	return 0;
 }
 
-static __always_inline bool prefix_matches(const struct allowedips_node *node,
-					   const u8 *key, u8 bits)
+static bool prefix_matches(const struct allowedips_node *node, const u8 *key,
+			   u8 bits)
 {
 	/* This could be much faster if it actually just compared the common
 	 * bits properly, by precomputing a mask bswap(~0 << (32 - cidr)), and
@@ -154,8 +154,8 @@ static __always_inline bool prefix_matches(const struct allowedips_node *node,
 	return common_bits(node, key, bits) >= node->cidr;
 }
 
-static __always_inline struct allowedips_node *
-find_node(struct allowedips_node *trie, u8 bits, const u8 *key)
+static struct allowedips_node *find_node(struct allowedips_node *trie, u8 bits,
+					 const u8 *key)
 {
 	struct allowedips_node *node = trie, *found = NULL;
 
@@ -170,8 +170,8 @@ find_node(struct allowedips_node *trie, u8 bits, const u8 *key)
 }
 
 /* Returns a strong reference to a peer */
-static __always_inline struct wg_peer *
-lookup(struct allowedips_node __rcu *root, u8 bits, const void *be_ip)
+static struct wg_peer *lookup(struct allowedips_node __rcu *root, u8 bits,
+			      const void *be_ip)
 {
 	/* Aligned so it can be passed to fls/fls64 */
 	u8 ip[16] __aligned(__alignof(u64));
@@ -300,12 +300,12 @@ void wg_allowedips_free(struct allowedips *table, struct mutex *lock)
 	RCU_INIT_POINTER(table->root6, NULL);
 	if (rcu_access_pointer(old4)) {
 		root_remove_peer_lists(old4);
-		call_rcu_bh(&rcu_dereference_protected(old4,
+		call_rcu(&rcu_dereference_protected(old4,
 				lockdep_is_held(lock))->rcu, root_free_rcu);
 	}
 	if (rcu_access_pointer(old6)) {
 		root_remove_peer_lists(old6);
-		call_rcu_bh(&rcu_dereference_protected(old6,
+		call_rcu(&rcu_dereference_protected(old6,
 				lockdep_is_held(lock))->rcu, root_free_rcu);
 	}
 }
