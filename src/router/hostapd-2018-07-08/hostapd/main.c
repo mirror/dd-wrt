@@ -19,6 +19,7 @@
 #include "crypto/random.h"
 #include "crypto/tls.h"
 #include "common/version.h"
+#include "common/dpp.h"
 #include "drivers/driver.h"
 #include "eap_server/eap.h"
 #include "eap_server/tncs.h"
@@ -674,7 +675,9 @@ int main(int argc, char *argv[])
 	dl_list_init(&interfaces.eth_p_oui);
 #endif /* CONFIG_ETH_P_OUI */
 #ifdef CONFIG_DPP
-	hostapd_dpp_init_global(&interfaces);
+	interfaces.dpp = dpp_global_init();
+	if (!interfaces.dpp)
+		return -1;
 #endif /* CONFIG_DPP */
 
 	wpa_supplicant_event = hostapd_wpa_event;
@@ -908,7 +911,7 @@ int main(int argc, char *argv[])
 	os_free(interfaces.iface);
 
 #ifdef CONFIG_DPP
-	hostapd_dpp_deinit_global(&interfaces);
+	dpp_global_deinit(interfaces.dpp);
 #endif /* CONFIG_DPP */
 
 	if (interfaces.eloop_initialized)

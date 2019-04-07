@@ -835,6 +835,12 @@ int wpa_validate_wpa_ie(struct wpa_authenticator *wpa_auth,
 			   "OWE: No Diffie-Hellman Parameter element");
 		return WPA_INVALID_AKMP;
 	}
+#ifdef CONFIG_DPP
+	if (sm->wpa_key_mgmt == WPA_KEY_MGMT_DPP && owe_dh) {
+		/* Diffie-Hellman Parameter element can be used with DPP as
+		 * well, so allow this to proceed. */
+	} else
+#endif /* CONFIG_DPP */
 	if (sm->wpa_key_mgmt != WPA_KEY_MGMT_OWE && owe_dh) {
 		wpa_printf(MSG_DEBUG,
 			   "OWE: Unexpected Diffie-Hellman Parameter element with non-OWE AKM");
@@ -851,6 +857,21 @@ int wpa_validate_wpa_ie(struct wpa_authenticator *wpa_auth,
 		sm->wpa = WPA_VERSION_WPA2;
 	else
 		sm->wpa = WPA_VERSION_WPA;
+
+#if defined(CONFIG_IEEE80211R_AP) && defined(CONFIG_FILS)
+	if ((sm->wpa_key_mgmt == WPA_KEY_MGMT_FT_FILS_SHA256 ||
+	     sm->wpa_key_mgmt == WPA_KEY_MGMT_FT_FILS_SHA384) &&
+	    (sm->auth_alg == WLAN_AUTH_FILS_SK ||
+	     sm->auth_alg == WLAN_AUTH_FILS_SK_PFS ||
+	     sm->auth_alg == WLAN_AUTH_FILS_PK) &&
+	    (data.num_pmkid != 1 || !data.pmkid || !sm->pmk_r1_name_valid ||
+	     os_memcmp_const(data.pmkid, sm->pmk_r1_name,
+			     WPA_PMK_NAME_LEN) != 0)) {
+		wpa_auth_vlogger(wpa_auth, sm->addr, LOGGER_DEBUG,
+				 "No PMKR1Name match for FILS+FT");
+		return WPA_INVALID_PMKID;
+	}
+#endif /* CONFIG_IEEE80211R_AP && CONFIG_FILS */
 
 	sm->pmksa = NULL;
 	for (i = 0; i < data.num_pmkid; i++) {
