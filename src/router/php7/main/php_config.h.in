@@ -681,15 +681,6 @@
 /* Define to 1 if you have the `flock' function. */
 #undef HAVE_FLOCK
 
-/* Struct flock is 64-bit AIX-type */
-#undef HAVE_FLOCK_AIX64
-
-/* Struct flock is BSD-type */
-#undef HAVE_FLOCK_BSD
-
-/* Struct flock is Linux-type */
-#undef HAVE_FLOCK_LINUX
-
 /* Define to 1 if you have the `floorf' function. */
 #undef HAVE_FLOORF
 
@@ -1754,6 +1745,9 @@
 
 /* Define to 1 if you have the `srandom' function. */
 #undef HAVE_SRANDOM
+
+/* Define if __SSE4_2__ has been defined */
+#undef HAVE_SSE4_2_DEF
 
 /* Define to 1 if the system has the type `ssize_t'. */
 #undef HAVE_SSIZE_T

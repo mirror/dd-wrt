@@ -95,6 +95,7 @@ static void spl_filesystem_object_destroy_object(zend_object *object) /* {{{ */
 			} else {
 				php_stream_pclose(intern->u.file.stream);
 			}
+			intern->u.file.stream = NULL;
 		}
 		break;
 	default:
@@ -127,13 +128,11 @@ static void spl_filesystem_object_free_storage(zend_object *object) /* {{{ */
 		}
 		break;
 	case SPL_FS_FILE:
-		if (intern->u.file.stream) {
-			if (intern->u.file.open_mode) {
-				efree(intern->u.file.open_mode);
-			}
-			if (intern->orig_path) {
-				efree(intern->orig_path);
-			}
+		if (intern->u.file.open_mode) {
+			efree(intern->u.file.open_mode);
+		}
+		if (intern->orig_path) {
+			efree(intern->orig_path);
 		}
 		spl_filesystem_file_free_line(intern);
 		break;
@@ -212,12 +211,21 @@ static inline void spl_filesystem_object_get_file_name(spl_filesystem_object *in
 			}
 			break;
 		case SPL_FS_DIR:
-			if (intern->file_name) {
-				efree(intern->file_name);
+			{
+				size_t path_len = 0;
+				char *path = spl_filesystem_object_get_path(intern, &path_len);
+				if (intern->file_name) {
+					efree(intern->file_name);
+				}
+				/* if there is parent path, ammend it, otherwise just use the given path as is */
+				if (path_len == 0) {
+					intern->file_name_len = spprintf(
+						&intern->file_name, 0, "%s", intern->u.dir.entry.d_name);
+				} else {
+					intern->file_name_len = spprintf(
+						&intern->file_name, 0, "%s%c%s", path, slash, intern->u.dir.entry.d_name);
+				}
 			}
-			intern->file_name_len = spprintf(&intern->file_name, 0, "%s%c%s",
-			                                 spl_filesystem_object_get_path(intern, NULL),
-			                                 slash, intern->u.dir.entry.d_name);
 			break;
 	}
 } /* }}} */
@@ -1124,7 +1132,7 @@ SPL_METHOD(SplFileInfo, __construct)
 	char *path;
 	size_t len;
 
-	if (zend_parse_parameters_throw(ZEND_NUM_ARGS(), "s", &path, &len) == FAILURE) {
+	if (zend_parse_parameters_throw(ZEND_NUM_ARGS(), "p", &path, &len) == FAILURE) {
 		return;
 	}
 
