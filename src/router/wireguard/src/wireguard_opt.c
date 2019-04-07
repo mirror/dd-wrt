@@ -8,7 +8,7 @@
 #include "send.c" 
 #include "receive.c" 
 #include "socket.c" 
-#include "hashtables.c" 
+#include "peerlookup.c" 
 #include "allowedips.c" 
 #include "ratelimiter.c" 
 #include "cookie.c" 
