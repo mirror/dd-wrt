@@ -124,10 +124,10 @@ static void checknas(void)	// for broadcom v24 only
 	if (strlen(buf) != count_processes("nas"))	// restart all nas
 		// processes
 	{
-		eval("stopservice", "nas");
-		eval("startservice", "nas", "-f");
-		eval("stopservice", "wlconf", "-f");
-		eval("startservice", "wlconf", "-f");
+		stop_service("nas");
+		start_service_force_arg("nas", 1);
+		stop_service("wlconf");
+		start_service_force_arg("wlconf", 1);
 	}
 
 	return;
@@ -135,7 +135,7 @@ static void checknas(void)	// for broadcom v24 only
 #endif
 #ifndef HAVE_NOWIFI
 #ifdef HAVE_MADWIFI
-	eval("startservice_f", "checkhostapd", "-f");
+	start_service_force_f_arg("checkhostapd", 1);
 #endif
 #endif
 }
@@ -299,9 +299,9 @@ static int do_mon(void)
 			if (!search_process(v->name, count)) {
 
 				dd_loginfo(v->name, "maybe died, we need to re-exec it\n");
-				eval("stopservice", v->name);
+				stop_service(v->name);
 				killall(v->name, SIGKILL);
-				eval("startservice_f", v->name);
+				start_service_force_f_arg(v->name, 1);
 			}
 		}
 		printf("checking for %s done\n", v->name);

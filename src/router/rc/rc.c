@@ -106,14 +106,14 @@ static int service_main(int argc, char *argv[])
 	int force = (argc == 3 && !strcmp(argv[2], "-f"));
 	if (strstr(base, "startservice_f")) {
 		if (force)
-			start_service_force_f(argv[1]);
+			start_service_force_f_arg(argv[1], 1);
 		else
 			start_service_f(argv[1]);
 		goto out;
 	}
 	if (strstr(base, "startservice")) {
 		if (force)
-			start_service_force(argv[1]);
+			start_service_force_arg(argv[1], 1);
 		else
 			start_service(argv[1]);
 		goto out;
