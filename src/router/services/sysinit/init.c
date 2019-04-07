@@ -335,8 +335,7 @@ void start_init_start(void)
 #endif
 	start_lan();
 #ifdef HAVE_SYSLOG
-	stop_syslog();
-	start_syslog();
+	start_syslog(0);
 #endif
 #ifdef HAVE_IPVS
 	start_ipvs();

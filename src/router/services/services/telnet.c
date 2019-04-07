@@ -31,7 +31,8 @@
 void start_telnetd(int force)
 {
 	pid_t pid;
-	if (!force && !nvram_states("telnetd_enable http_username http_passwd"))
+	int state = nvram_states("telnetd_enable http_username http_passwd");
+	if (!force && !state)
 		return;
 	char *telnetd_argv[] = { "telnetd", NULL };
 #ifdef HAVE_REGISTER
