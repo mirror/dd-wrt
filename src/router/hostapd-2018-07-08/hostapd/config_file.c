@@ -2527,6 +2527,16 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 	} else if (os_strcmp(buf, "private_key_passwd") == 0) {
 		os_free(bss->private_key_passwd);
 		bss->private_key_passwd = os_strdup(pos);
+	} else if (os_strcmp(buf, "check_cert_subject") == 0) {
+		if (!pos[0]) {
+			wpa_printf(MSG_ERROR, "Line %d: unknown check_cert_subject '%s'",
+				   line, pos);
+			return 1;
+		}
+		os_free(bss->check_cert_subject);
+		bss->check_cert_subject = os_strdup(pos);
+		if (!bss->check_cert_subject)
+			return 1;
 	} else if (os_strcmp(buf, "check_crl") == 0) {
 		bss->check_crl = atoi(pos);
 	} else if (os_strcmp(buf, "check_crl_strict") == 0) {
@@ -3131,9 +3141,10 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 		 * cause problems with the current implementation.
 		 * Since it is unlikely that this small numbers are
 		 * useful in real life scenarios, do not allow beacon
-		 * period to be set below 15 TU. */
-		if (val < 15 || val > 65535) {
-			wpa_printf(MSG_ERROR, "Line %d: invalid beacon_int %d (expected 15..65535)",
+		 * period to be set below 10 TU. */
+		if (val < 10 || val > 65535) {
+			wpa_printf(MSG_ERROR,
+				   "Line %d: invalid beacon_int %d (expected 10..65535)",
 				   line, val);
 			return 1;
 		}
@@ -3641,6 +3652,8 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 		}
 	} else if (os_strcmp(buf, "wps_cred_processing") == 0) {
 		bss->wps_cred_processing = atoi(pos);
+	} else if (os_strcmp(buf, "wps_cred_add_sae") == 0) {
+		bss->wps_cred_add_sae = atoi(pos);
 	} else if (os_strcmp(buf, "ap_settings") == 0) {
 		os_free(bss->ap_settings);
 		bss->ap_settings =

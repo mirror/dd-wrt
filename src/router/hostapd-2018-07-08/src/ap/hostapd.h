@@ -66,9 +66,7 @@ struct hapd_interfaces {
 	int eloop_initialized;
 
 #ifdef CONFIG_DPP
-	int dpp_init_done;
-	struct dl_list dpp_bootstrap; /* struct dpp_bootstrap_info */
-	struct dl_list dpp_configurator; /* struct dpp_configurator */
+	struct dpp_global *dpp;
 #endif /* CONFIG_DPP */
 };
 
@@ -127,6 +125,13 @@ struct hostapd_neighbor_entry {
 	/* LCI update time */
 	struct os_time lci_date;
 	int stationary;
+};
+
+struct hostapd_sae_commit_queue {
+	struct dl_list list;
+	int rssi;
+	size_t len;
+	u8 msg[];
 };
 
 /**
@@ -307,7 +312,10 @@ struct hostapd_data {
 	/** Key used for generating SAE anti-clogging tokens */
 	u8 sae_token_key[8];
 	struct os_reltime last_sae_token_key_update;
+	u16 sae_token_idx;
+	u16 sae_pending_token_idx[256];
 	int dot11RSNASAERetransPeriod; /* msec */
+	struct dl_list sae_commit_queue; /* struct hostapd_sae_commit_queue */
 #endif /* CONFIG_SAE */
 
 #ifdef CONFIG_TESTING_OPTIONS
@@ -589,7 +597,7 @@ void hostapd_prune_associations(struct hostapd_data *hapd, const u8 *addr);
 #define PROBE_REQ 0
 #define AUTH_REQ 1
 #define ASSOC_REQ 2
-int hostapd_signal_handle_event(struct hostapd_data *hapd, struct hostapd_frame_info *fi, int type, const u8 *addr);
+int hostapd_signal_handle_event(struct hostapd_data *hapd, int rssi, int type, const u8 *addr);
 
 /* drv_callbacks.c (TODO: move to somewhere else?) */
 void hostapd_notify_assoc_fils_finish(struct hostapd_data *hapd,

@@ -2985,6 +2985,34 @@ static int hostapd_ctrl_iface_acl_add_mac(struct mac_acl_entry **acl, int *num,
 }
 
 
+static int hostapd_ctrl_iface_get_capability(struct hostapd_data *hapd,
+					     const char *field, char *buf,
+					     size_t buflen)
+{
+	wpa_printf(MSG_DEBUG, "CTRL_IFACE: GET_CAPABILITY '%s'", field);
+
+#ifdef CONFIG_DPP
+	if (os_strcmp(field, "dpp") == 0) {
+		int res;
+
+#ifdef CONFIG_DPP2
+		res = os_snprintf(buf, buflen, "DPP=2");
+#else /* CONFIG_DPP2 */
+		res = os_snprintf(buf, buflen, "DPP=1");
+#endif /* CONFIG_DPP2 */
+		if (os_snprintf_error(buflen, res))
+			return -1;
+		return res;
+	}
+#endif /* CONFIG_DPP */
+
+	wpa_printf(MSG_DEBUG, "CTRL_IFACE: Unknown GET_CAPABILITY field '%s'",
+		   field);
+
+	return -1;
+}
+
+
 static int hostapd_ctrl_iface_receive_process(struct hostapd_data *hapd,
 					      char *buf, char *reply,
 					      int reply_size,
@@ -3348,7 +3376,7 @@ static int hostapd_ctrl_iface_receive_process(struct hostapd_data *hapd,
 				reply_len = -1;
 		}
 	} else if (os_strncmp(buf, "DPP_BOOTSTRAP_GEN ", 18) == 0) {
-		res = hostapd_dpp_bootstrap_gen(hapd, buf + 18);
+		res = dpp_bootstrap_gen(hapd->iface->interfaces->dpp, buf + 18);
 		if (res < 0) {
 			reply_len = -1;
 		} else {
@@ -3357,12 +3385,14 @@ static int hostapd_ctrl_iface_receive_process(struct hostapd_data *hapd,
 				reply_len = -1;
 		}
 	} else if (os_strncmp(buf, "DPP_BOOTSTRAP_REMOVE ", 21) == 0) {
-		if (hostapd_dpp_bootstrap_remove(hapd, buf + 21) < 0)
+		if (dpp_bootstrap_remove(hapd->iface->interfaces->dpp,
+					 buf + 21) < 0)
 			reply_len = -1;
 	} else if (os_strncmp(buf, "DPP_BOOTSTRAP_GET_URI ", 22) == 0) {
 		const char *uri;
 
-		uri = hostapd_dpp_bootstrap_get_uri(hapd, atoi(buf + 22));
+		uri = dpp_bootstrap_get_uri(hapd->iface->interfaces->dpp,
+					    atoi(buf + 22));
 		if (!uri) {
 			reply_len = -1;
 		} else {
@@ -3371,8 +3401,9 @@ static int hostapd_ctrl_iface_receive_process(struct hostapd_data *hapd,
 				reply_len = -1;
 		}
 	} else if (os_strncmp(buf, "DPP_BOOTSTRAP_INFO ", 19) == 0) {
-		reply_len = hostapd_dpp_bootstrap_info(hapd, atoi(buf + 19),
-						       reply, reply_size);
+		reply_len = dpp_bootstrap_info(hapd->iface->interfaces->dpp,
+					       atoi(buf + 19),
+			reply, reply_size);
 	} else if (os_strncmp(buf, "DPP_AUTH_INIT ", 14) == 0) {
 		if (hostapd_dpp_auth_init(hapd, buf + 13) < 0)
 			reply_len = -1;
@@ -3383,7 +3414,8 @@ static int hostapd_ctrl_iface_receive_process(struct hostapd_data *hapd,
 		hostapd_dpp_stop(hapd);
 		hostapd_dpp_listen_stop(hapd);
 	} else if (os_strncmp(buf, "DPP_CONFIGURATOR_ADD", 20) == 0) {
-		res = hostapd_dpp_configurator_add(hapd, buf + 20);
+		res = dpp_configurator_add(hapd->iface->interfaces->dpp,
+					   buf + 20);
 		if (res < 0) {
 			reply_len = -1;
 		} else {
@@ -3392,15 +3424,17 @@ static int hostapd_ctrl_iface_receive_process(struct hostapd_data *hapd,
 				reply_len = -1;
 		}
 	} else if (os_strncmp(buf, "DPP_CONFIGURATOR_REMOVE ", 24) == 0) {
-		if (hostapd_dpp_configurator_remove(hapd, buf + 24) < 0)
+		if (dpp_configurator_remove(hapd->iface->interfaces->dpp,
+					    buf + 24) < 0)
 			reply_len = -1;
 	} else if (os_strncmp(buf, "DPP_CONFIGURATOR_SIGN ", 22) == 0) {
 		if (hostapd_dpp_configurator_sign(hapd, buf + 21) < 0)
 			reply_len = -1;
 	} else if (os_strncmp(buf, "DPP_CONFIGURATOR_GET_KEY ", 25) == 0) {
-		reply_len = hostapd_dpp_configurator_get_key(hapd,
-							     atoi(buf + 25),
-							     reply, reply_size);
+		reply_len = dpp_configurator_get_key_id(
+			hapd->iface->interfaces->dpp,
+			atoi(buf + 25),
+			reply, reply_size);
 	} else if (os_strncmp(buf, "DPP_PKEX_ADD ", 13) == 0) {
 		res = hostapd_dpp_pkex_add(hapd, buf + 12);
 		if (res < 0) {
@@ -3419,6 +3453,9 @@ static int hostapd_ctrl_iface_receive_process(struct hostapd_data *hapd,
 		if (radius_server_dac_request(hapd->radius_srv, buf + 12) < 0)
 			reply_len = -1;
 #endif /* RADIUS_SERVER */
+	} else if (os_strncmp(buf, "GET_CAPABILITY ", 15) == 0) {
+		reply_len = hostapd_ctrl_iface_get_capability(
+			hapd, buf + 15, reply, reply_size);
 	} else {
 		os_memcpy(reply, "UNKNOWN COMMAND\n", 16);
 		reply_len = 16;
@@ -3899,7 +3936,7 @@ static void hostapd_ctrl_iface_flush(struct hapd_interfaces *interfaces)
 #endif /* CONFIG_TESTING_OPTIONS */
 
 #ifdef CONFIG_DPP
-	hostapd_dpp_deinit_global(interfaces);
+	dpp_global_clear(interfaces->dpp);
 #endif /* CONFIG_DPP */
 }
 

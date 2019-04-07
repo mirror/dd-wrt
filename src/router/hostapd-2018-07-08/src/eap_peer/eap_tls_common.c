@@ -108,14 +108,15 @@ static void eap_tls_params_flags(struct tls_connection_params *params,
 static void eap_tls_params_from_conf1(struct tls_connection_params *params,
 				      struct eap_peer_config *config)
 {
-	params->ca_cert = (char *) config->ca_cert;
-	params->ca_path = (char *) config->ca_path;
-	params->client_cert = (char *) config->client_cert;
-	params->private_key = (char *) config->private_key;
-	params->private_key_passwd = (char *) config->private_key_passwd;
-	params->dh_file = (char *) config->dh_file;
-	params->subject_match = (char *) config->subject_match;
-	params->altsubject_match = (char *) config->altsubject_match;
+	params->ca_cert = config->ca_cert;
+	params->ca_path = config->ca_path;
+	params->client_cert = config->client_cert;
+	params->private_key = config->private_key;
+	params->private_key_passwd = config->private_key_passwd;
+	params->dh_file = config->dh_file;
+	params->subject_match = config->subject_match;
+	params->altsubject_match = config->altsubject_match;
+	params->check_cert_subject = config->check_cert_subject;
 	params->suffix_match = config->domain_suffix_match;
 	params->domain_match = config->domain_match;
 	params->engine = config->engine;
@@ -131,14 +132,15 @@ static void eap_tls_params_from_conf1(struct tls_connection_params *params,
 static void eap_tls_params_from_conf2(struct tls_connection_params *params,
 				      struct eap_peer_config *config)
 {
-	params->ca_cert = (char *) config->ca_cert2;
-	params->ca_path = (char *) config->ca_path2;
-	params->client_cert = (char *) config->client_cert2;
-	params->private_key = (char *) config->private_key2;
-	params->private_key_passwd = (char *) config->private_key2_passwd;
-	params->dh_file = (char *) config->dh_file2;
-	params->subject_match = (char *) config->subject_match2;
-	params->altsubject_match = (char *) config->altsubject_match2;
+	params->ca_cert = config->ca_cert2;
+	params->ca_path = config->ca_path2;
+	params->client_cert = config->client_cert2;
+	params->private_key = config->private_key2;
+	params->private_key_passwd = config->private_key2_passwd;
+	params->dh_file = config->dh_file2;
+	params->subject_match = config->subject_match2;
+	params->altsubject_match = config->altsubject_match2;
+	params->check_cert_subject = config->check_cert_subject2;
 	params->suffix_match = config->domain_suffix_match2;
 	params->domain_match = config->domain_match2;
 	params->engine = config->engine2;
@@ -347,6 +349,8 @@ void eap_peer_tls_ssl_deinit(struct eap_sm *sm, struct eap_ssl_data *data)
  * @sm: Pointer to EAP state machine allocated with eap_peer_sm_init()
  * @data: Data for TLS processing
  * @label: Label string for deriving the keys, e.g., "client EAP encryption"
+ * @context: Optional extra upper-layer context (max len 2^16)
+ * @context_len: The length of the context value
  * @len: Length of the key material to generate (usually 64 for MSK)
  * Returns: Pointer to allocated key on success or %NULL on failure
  *
@@ -355,9 +359,12 @@ void eap_peer_tls_ssl_deinit(struct eap_sm *sm, struct eap_ssl_data *data)
  * different label to bind the key usage into the generated material.
  *
  * The caller is responsible for freeing the returned buffer.
+ *
+ * Note: To provide the RFC 5705 context, the context variable must be non-NULL.
  */
 u8 * eap_peer_tls_derive_key(struct eap_sm *sm, struct eap_ssl_data *data,
-			     const char *label, size_t len)
+			     const char *label, const u8 *context,
+			     size_t context_len, size_t len)
 {
 	u8 *out;
 
@@ -365,8 +372,8 @@ u8 * eap_peer_tls_derive_key(struct eap_sm *sm, struct eap_ssl_data *data,
 	if (out == NULL)
 		return NULL;
 
-	if (tls_connection_export_key(data->ssl_ctx, data->conn, label, out,
-				      len)) {
+	if (tls_connection_export_key(data->ssl_ctx, data->conn, label,
+				      context, context_len, out, len)) {
 		os_free(out);
 		return NULL;
 	}
@@ -407,7 +414,7 @@ u8 * eap_peer_tls_derive_session_id(struct eap_sm *sm,
 		if (!id)
 			return NULL;
 		method_id = eap_peer_tls_derive_key(
-			sm, data, "EXPORTER_EAP_TLS_Method-Id", 64);
+			sm, data, "EXPORTER_EAP_TLS_Method-Id", NULL, 0, 64);
 		if (!method_id) {
 			os_free(id);
 			return NULL;

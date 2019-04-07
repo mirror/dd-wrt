@@ -782,6 +782,7 @@ static void wpa_config_write_network(FILE *f, struct wpa_ssid *ssid)
 	STR(private_key_passwd);
 	STR(dh_file);
 	STR(subject_match);
+	STR(check_cert_subject);
 	STR(altsubject_match);
 	STR(domain_suffix_match);
 	STR(domain_match);
@@ -792,6 +793,7 @@ static void wpa_config_write_network(FILE *f, struct wpa_ssid *ssid)
 	STR(private_key2_passwd);
 	STR(dh_file2);
 	STR(subject_match2);
+	STR(check_cert_subject2);
 	STR(altsubject_match2);
 	STR(domain_suffix_match2);
 	STR(domain_match2);
@@ -1187,6 +1189,9 @@ static void wpa_config_write_global(FILE *f, struct wpa_config *config)
 	if (config->wps_cred_processing)
 		fprintf(f, "wps_cred_processing=%d\n",
 			config->wps_cred_processing);
+	if (config->wps_cred_add_sae)
+		fprintf(f, "wps_cred_add_sae=%d\n",
+			config->wps_cred_add_sae);
 	if (config->wps_vendor_ext_m1) {
 		int i, len = wpabuf_len(config->wps_vendor_ext_m1);
 		const u8 *p = wpabuf_head_u8(config->wps_vendor_ext_m1);

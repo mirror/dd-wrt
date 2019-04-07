@@ -209,8 +209,8 @@ struct hostapd_config * hostapd_config_defaults(void)
 	conf->num_bss = 1;
 
 	conf->beacon_int = 100;
-	conf->rts_threshold = -1; /* use driver default: 2347 */
-	conf->fragm_threshold = -1; /* user driver default: 2346 */
+	conf->rts_threshold = -2; /* use driver default: 2347 */
+	conf->fragm_threshold = -2; /* user driver default: 2346 */
 	/* Set to invalid value means do not add Power Constraint IE */
 	conf->local_pwr_constraint = -1;
 
@@ -604,6 +604,7 @@ void hostapd_config_free_bss(struct hostapd_bss_config *conf)
 	os_free(conf->server_cert);
 	os_free(conf->private_key);
 	os_free(conf->private_key_passwd);
+	os_free(conf->check_cert_subject);
 	os_free(conf->ocsp_stapling_response);
 	os_free(conf->ocsp_stapling_response_multi);
 	os_free(conf->dh_file);

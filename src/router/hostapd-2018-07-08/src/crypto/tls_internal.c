@@ -1,6 +1,6 @@
 /*
  * TLS interface functions and an internal TLS implementation
- * Copyright (c) 2004-2011, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2004-2019, Jouni Malinen <j@w1.fi>
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -309,6 +309,9 @@ int tls_global_set_params(void *tls_ctx,
 	struct tls_global *global = tls_ctx;
 	struct tlsv1_credentials *cred;
 
+	if (params->check_cert_subject)
+		return -1; /* not yet supported */
+
 	/* Currently, global parameters are only set when running in server
 	 * mode. */
 	global->server = 1;
@@ -409,7 +412,8 @@ static int tls_get_keyblock_size(struct tls_connection *conn)
 
 
 static int tls_connection_prf(void *tls_ctx, struct tls_connection *conn,
-			      const char *label, int server_random_first,
+			      const char *label, const u8 *context,
+			      size_t context_len, int server_random_first,
 			      int skip_keyblock, u8 *out, size_t out_len)
 {
 	int ret = -1, skip = 0;
@@ -428,15 +432,15 @@ static int tls_connection_prf(void *tls_ctx, struct tls_connection *conn,
 
 #ifdef CONFIG_TLS_INTERNAL_CLIENT
 	if (conn->client) {
-		ret = tlsv1_client_prf(conn->client, label,
-				       server_random_first,
+		ret = tlsv1_client_prf(conn->client, label, context,
+				       context_len, server_random_first,
 				       _out, skip + out_len);
 	}
 #endif /* CONFIG_TLS_INTERNAL_CLIENT */
 #ifdef CONFIG_TLS_INTERNAL_SERVER
 	if (conn->server) {
-		ret = tlsv1_server_prf(conn->server, label,
-				       server_random_first,
+		ret = tlsv1_server_prf(conn->server, label, context,
+				       context_len, server_random_first,
 				       _out, skip + out_len);
 	}
 #endif /* CONFIG_TLS_INTERNAL_SERVER */
@@ -449,17 +453,19 @@ static int tls_connection_prf(void *tls_ctx, struct tls_connection *conn,
 
 
 int tls_connection_export_key(void *tls_ctx, struct tls_connection *conn,
-			      const char *label, u8 *out, size_t out_len)
+			      const char *label, const u8 *context,
+			      size_t context_len, u8 *out, size_t out_len)
 {
-	return tls_connection_prf(tls_ctx, conn, label, 0, 0, out, out_len);
+	return tls_connection_prf(tls_ctx, conn, label, context, context_len,
+				  0, 0, out, out_len);
 }
 
 
 int tls_connection_get_eap_fast_key(void *tls_ctx, struct tls_connection *conn,
 				    u8 *out, size_t out_len)
 {
-	return tls_connection_prf(tls_ctx, conn, "key expansion", 1, 1, out,
-				  out_len);
+	return tls_connection_prf(tls_ctx, conn, "key expansion", NULL, 0,
+				  1, 1, out, out_len);
 }
 
 

@@ -643,7 +643,7 @@ int mesh_rsn_process_ampe(struct wpa_supplicant *wpa_s, struct sta_info *sta,
 	size_t crypt_len;
 	const u8 *aad[] = { sta->addr, wpa_s->own_addr, cat };
 	const size_t aad_len[] = { ETH_ALEN, ETH_ALEN,
-				   (elems->mic - 2) - cat };
+				   elems->mic ? (elems->mic - 2) - cat : 0 };
 	size_t key_len;
 
 	if (!sta->sae) {
@@ -657,7 +657,9 @@ int mesh_rsn_process_ampe(struct wpa_supplicant *wpa_s, struct sta_info *sta,
 		mesh_rsn_auth_sae_sta(wpa_s, sta);
 	}
 
-	if (chosen_pmk && os_memcmp(chosen_pmk, sta->sae->pmkid, PMKID_LEN)) {
+	if (chosen_pmk &&
+	    (!sta->sae ||
+	     os_memcmp(chosen_pmk, sta->sae->pmkid, PMKID_LEN) != 0)) {
 		wpa_msg(wpa_s, MSG_DEBUG,
 			"Mesh RSN: Invalid PMKID (Chosen PMK did not match calculated PMKID)");
 		return -1;

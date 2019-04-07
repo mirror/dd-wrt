@@ -22,6 +22,7 @@ struct wpa_state_machine {
 
 	u8 addr[ETH_ALEN];
 	u8 p2p_dev_addr[ETH_ALEN];
+	u16 auth_alg;
 
 	enum {
 		WPA_PTK_INITIALIZE, WPA_PTK_DISCONNECT, WPA_PTK_DISCONNECTED,
@@ -149,6 +150,10 @@ struct wpa_state_machine {
 	size_t fils_key_auth_len;
 	unsigned int fils_completed:1;
 #endif /* CONFIG_FILS */
+
+#ifdef CONFIG_DPP2
+	struct wpabuf *dpp_z;
+#endif /* CONFIG_DPP2 */
 
 #ifdef CONFIG_TESTING_OPTIONS
 	void (*eapol_status_cb)(void *ctx1, void *ctx2);

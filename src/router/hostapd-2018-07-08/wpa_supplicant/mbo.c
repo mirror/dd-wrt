@@ -98,6 +98,13 @@ static void wpas_mbo_non_pref_chan_attr_body(struct wpa_supplicant *wpa_s,
 }
 
 
+static void wpas_mbo_non_pref_chan_attr_hdr(struct wpabuf *mbo, size_t size)
+{
+	wpabuf_put_u8(mbo, MBO_ATTR_ID_NON_PREF_CHAN_REPORT);
+	wpabuf_put_u8(mbo, size); /* Length */
+}
+
+
 static void wpas_mbo_non_pref_chan_attr(struct wpa_supplicant *wpa_s,
 					struct wpabuf *mbo, u8 start, u8 end)
 {
@@ -106,9 +113,7 @@ static void wpas_mbo_non_pref_chan_attr(struct wpa_supplicant *wpa_s,
 	if (size + 2 > wpabuf_tailroom(mbo))
 		return;
 
-	wpabuf_put_u8(mbo, MBO_ATTR_ID_NON_PREF_CHAN_REPORT);
-	wpabuf_put_u8(mbo, size); /* Length */
-
+	wpas_mbo_non_pref_chan_attr_hdr(mbo, size);
 	wpas_mbo_non_pref_chan_attr_body(wpa_s, mbo, start, end);
 }
 
@@ -145,6 +150,8 @@ static void wpas_mbo_non_pref_chan_attrs(struct wpa_supplicant *wpa_s,
 	if (!wpa_s->non_pref_chan || !wpa_s->non_pref_chan_num) {
 		if (subelement)
 			wpas_mbo_non_pref_chan_subelem_hdr(mbo, 4);
+		else
+			wpas_mbo_non_pref_chan_attr_hdr(mbo, 0);
 		return;
 	}
 	start_pref = &wpa_s->non_pref_chan[0];
@@ -268,6 +275,7 @@ static void wpas_mbo_non_pref_chan_changed(struct wpa_supplicant *wpa_s)
 	wpas_mbo_non_pref_chan_attrs(wpa_s, buf, 1);
 	wpas_mbo_send_wnm_notification(wpa_s, wpabuf_head_u8(buf),
 				       wpabuf_len(buf));
+	wpas_update_mbo_connect_params(wpa_s);
 	wpabuf_free(buf);
 }
 
@@ -293,10 +301,10 @@ static int wpa_non_pref_chan_cmp(const void *_a, const void *_b)
 	const struct wpa_mbo_non_pref_channel *a = _a, *b = _b;
 
 	if (a->oper_class != b->oper_class)
-		return a->oper_class - b->oper_class;
+		return (int) a->oper_class - (int) b->oper_class;
 	if (a->reason != b->reason)
-		return a->reason - b->reason;
-	return a->preference - b->preference;
+		return (int) a->reason - (int) b->reason;
+	return (int) a->preference - (int) b->preference;
 }
 
 
@@ -558,6 +566,7 @@ void wpas_mbo_update_cell_capa(struct wpa_supplicant *wpa_s, u8 mbo_cell_capa)
 
 	wpas_mbo_send_wnm_notification(wpa_s, cell_capa, 7);
 	wpa_supplicant_set_default_scan_ies(wpa_s);
+	wpas_update_mbo_connect_params(wpa_s);
 }
 
 

@@ -1,6 +1,6 @@
 /*
  * RADIUS authentication server
- * Copyright (c) 2005-2009, 2011-2014, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2005-2009, 2011-2019, Jouni Malinen <j@w1.fi>
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -688,7 +688,7 @@ radius_server_get_new_session(struct radius_server_data *data,
 	int res;
 	struct radius_session *sess;
 	struct eap_config eap_conf;
-	struct eap_user tmp;
+	struct eap_user *tmp;
 
 	RADIUS_DEBUG("Creating a new session");
 
@@ -699,12 +699,14 @@ radius_server_get_new_session(struct radius_server_data *data,
 	}
 	RADIUS_DUMP_ASCII("User-Name", user, user_len);
 
-	os_memset(&tmp, 0, sizeof(tmp));
-	res = data->get_eap_user(data->conf_ctx, user, user_len, 0, &tmp);
-	bin_clear_free(tmp.password, tmp.password_len);
+	tmp = os_zalloc(sizeof(*tmp));
+	if (!tmp)
+		return NULL;
 
+	res = data->get_eap_user(data->conf_ctx, user, user_len, 0, tmp);
 	if (res != 0) {
 		RADIUS_DEBUG("User-Name not found from user database");
+		eap_user_free(tmp);
 		return NULL;
 	}
 
@@ -712,10 +714,12 @@ radius_server_get_new_session(struct radius_server_data *data,
 	sess = radius_server_new_session(data, client);
 	if (sess == NULL) {
 		RADIUS_DEBUG("Failed to create a new session");
+		eap_user_free(tmp);
 		return NULL;
 	}
-	sess->accept_attr = tmp.accept_attr;
-	sess->macacl = tmp.macacl;
+	sess->accept_attr = tmp->accept_attr;
+	sess->macacl = tmp->macacl;
+	eap_user_free(tmp);
 
 	sess->username = os_malloc(user_len * 4 + 1);
 	if (sess->username == NULL) {
@@ -2253,7 +2257,7 @@ radius_server_read_clients(const char *client_file, int ipv6)
 			entry->addr.s_addr = addr.s_addr;
 			val = 0;
 			for (i = 0; i < mask; i++)
-				val |= 1 << (31 - i);
+				val |= 1U << (31 - i);
 			entry->mask.s_addr = htonl(val);
 		}
 #ifdef CONFIG_IPV6
