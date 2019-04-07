@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 4.9.159 Kernel Configuration
+# Linux/mips 4.9.167 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -530,7 +530,6 @@ CONFIG_DEFAULT_WESTWOOD=y
 CONFIG_DEFAULT_TCP_CONG="westwood"
 # CONFIG_TCP_MD5SIG is not set
 # CONFIG_IPV6 is not set
-# CONFIG_MPTCP is not set
 CONFIG_NETWORK_SECMARK=y
 # CONFIG_NET_PTP_CLASSIFY is not set
 # CONFIG_NETWORK_PHY_TIMESTAMPING is not set
