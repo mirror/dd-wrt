@@ -28,10 +28,10 @@
 #include <signal.h>
 #include <services.h>
 
-void start_telnetd(void)
+void start_telnetd(int force)
 {
 	pid_t pid;
-	if (!nvram_states("telnetd_enable http_username http_passwd"))
+	if (!force && !nvram_states("telnetd_enable http_username http_passwd"))
 		return;
 	char *telnetd_argv[] = { "telnetd", NULL };
 #ifdef HAVE_REGISTER
