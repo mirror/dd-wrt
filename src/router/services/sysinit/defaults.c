@@ -3480,6 +3480,7 @@ struct nvram_param srouter_defaults[] = {
 	{"dlna_thumb", "0"},
 	{"dlna_merge", "0"},
 	{"dlna_album_art", "0"},
+	{"dlna_no_art", "0"},
 	{"dlna_subtitles", "0"},
 	{"dlna_cleandb", "0"},
 	{"dlna_metadata", "0"},
