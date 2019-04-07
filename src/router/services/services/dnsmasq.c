@@ -419,6 +419,19 @@ void start_dnsmasq(void)
 	if (nvram_matchi("dnsmasq_add_mac", 1)) {
 		fprintf(fp, "add-mac\n");
 	}
+#ifdef HAVE_PRIVOXY
+	if (nvram_matchi("privoxy_enable", 1)) {
+		if (nvram_matchi("privoxy_transp_enable", 1)) {
+			sprintf(fp, "dhcp-option=252,http://config.privoxy.org/wpad.dat");
+		} else {
+			sprintf(fp, "dhcp-option=252,http://%s/wpad.dat", nvram_safe_get("lan_ipaddr"));
+		}
+	} else {
+		sprintf(fp, "dhcp-option=252,\"\\n\"");
+	}
+#else
+	sprintf(fp, "dhcp-option=252,\"\\n\"");
+#endif
 	/*
 	 * Additional options 
 	 */
@@ -429,29 +442,15 @@ void start_dnsmasq(void)
 
 	chmod("/etc/lease_update.sh", 0700);
 
-	char wpad[64];
-#ifdef HAVE_PRIVOXY
-	if (nvram_matchi("privoxy_enable", 1)) {
-		if (nvram_matchi("privoxy_transp_enable", 1)) {
-			sprintf(wpad, "--dhcp-option=252,http://config.privoxy.org/wpad.dat");
-		} else {
-			sprintf(wpad, "--dhcp-option=252,http://%s/wpad.dat", nvram_safe_get("lan_ipaddr"));
-		}
-	} else {
-		sprintf(wpad, "--dhcp-option=252,\"\\n\"");
-	}
-#else
-	sprintf(wpad, "--dhcp-option=252,\"\\n\"");
-#endif
 
 	FILE *conf = NULL;
 	conf = fopen("/jffs/etc/dnsmasq.conf", "r");	//test if custom config is available
 
 	if (conf != NULL) {
-		eval("dnsmasq", "-u", "root", "-g", "root", "--conf-file=/jffs/etc/dnsmasq.conf", "--cache-size=1500", wpad);
+		eval("dnsmasq", "-u", "root", "-g", "root", "--conf-file=/jffs/etc/dnsmasq.conf", "--cache-size=1500");
 		fclose(conf);
 	} else {
-		eval("dnsmasq", "-u", "root", "-g", "root", "--conf-file=/tmp/dnsmasq.conf", "--cache-size=1500", wpad);
+		eval("dnsmasq", "-u", "root", "-g", "root", "--conf-file=/tmp/dnsmasq.conf", "--cache-size=1500");
 	}
 
 	dd_loginfo("dnsmasq", "daemon successfully started\n");
