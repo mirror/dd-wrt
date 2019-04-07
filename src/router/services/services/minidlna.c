@@ -41,7 +41,8 @@ void stop_dlna(void);
 void start_dlna(int force)
 {
 	struct dlna_share *dlna_shares, *cs, *csnext;
-	if (!force && !nvram_states("dlna_enable jffs_mounted dlna_shares dlna_cleandb dlna_rescan dlna_album_art dlna_merge dlna_metadata dlna_subtitles dlna_tumb dlna_no_art"))
+	int state = nvram_states("dlna_enable jffs_mounted dlna_shares dlna_cleandb dlna_rescan dlna_album_art dlna_merge dlna_metadata dlna_subtitles dlna_tumb dlna_no_art");
+	if (!force && !state)
 		return;
 	stop_dlna();
 	if (!nvram_matchi("dlna_enable", 1))
