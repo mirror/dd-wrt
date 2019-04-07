@@ -58,7 +58,7 @@ void stop_sshd(void);
 void start_sshd(void)
 {
 	if (!nvram_states("sshd_enable http_username http_passwd " NVRAM_RSA_KEY_NAME " sshd_authorized_keys sshd_port sshd_passwd_auth sshd_forwarding "))
-		return 0;
+		return;
 	stop_sshd();
 	if (!nvram_invmatchi("sshd_enable", 0))
 		return;

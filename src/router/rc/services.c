@@ -117,7 +117,7 @@ static int start_services_main(int argc, char **argv)
 	start_service_f("rsync");
 #endif
 #ifdef HAVE_MINIDLNA
-	start_service_f("dlna");
+	start_service_force_f("dlna");
 #endif
 #ifdef HAVE_PRIVOXY
 	start_service_f("privoxy");
@@ -313,9 +313,6 @@ static int stop_services_main(int argc, char **argv)
 #endif
 #ifdef HAVE_RSYNC
 	stop_service_f("rsync");
-#endif
-#ifdef HAVE_MINIDLNA
-	stop_service_f("dlna");
 #endif
 #ifdef HAVE_RAID
 	stop_service_f("raid");
@@ -755,9 +752,6 @@ static void handle_nassrv(void)
 #ifdef HAVE_FTP
 	stop_service_f("ftpsrv");
 #endif
-#ifdef HAVE_MINIDLNA
-	stop_service_f("dlna");
-#endif
 #ifdef HAVE_RAID
 	stop_service_f("raid");
 #endif
@@ -783,7 +777,7 @@ static void handle_nassrv(void)
 	start_service_f("ftpsrv");
 #endif
 #ifdef HAVE_MINIDLNA
-	start_service_f("dlna");
+	start_service_force_f("dlna");
 #endif
 #ifdef HAVE_TRANSMISSION
 	start_service_f("transmission");
