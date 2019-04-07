@@ -271,7 +271,7 @@ bool File::Rename(const wchar *NewName)
     Success=RenameFile(FileName,NewName);
 
   if (Success)
-    wcscpy(FileName,NewName);
+    wcsncpyz(FileName,NewName,ASIZE(FileName));
 
   return Success;
 }
@@ -692,7 +692,7 @@ bool File::IsDevice()
 #ifndef SFX_MODULE
 int64 File::Copy(File &Dest,int64 Length)
 {
-  Array<char> Buffer(0x40000);
+  Array<byte> Buffer(File::CopyBufferSize());
   int64 CopySize=0;
   bool CopyAll=(Length==INT64NDF);
 
@@ -700,7 +700,7 @@ int64 File::Copy(File &Dest,int64 Length)
   {
     Wait();
     size_t SizeToRead=(!CopyAll && Length<(int64)Buffer.Size()) ? (size_t)Length:Buffer.Size();
-    char *Buf=&Buffer[0];
+    byte *Buf=&Buffer[0];
     int ReadSize=Read(Buf,SizeToRead);
     if (ReadSize==0)
       break;
