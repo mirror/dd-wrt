@@ -438,10 +438,10 @@ void start_dnsmasq(void)
 			sprintf(wpad, "--dhcp-option=252,http://%s/wpad.dat", nvram_safe_get("lan_ipaddr"));
 		}
 	} else {
-		sprintf(wpad, "--dhcp-option=252,\"\n\"");
+		sprintf(wpad, "--dhcp-option=252,\"\\n\"");
 	}
 #else
-	sprintf(wpad, "--dhcp-option=252,\"\n\"");
+	sprintf(wpad, "--dhcp-option=252,\"\\n\"");
 #endif
 
 	FILE *conf = NULL;
