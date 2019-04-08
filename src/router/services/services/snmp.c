@@ -35,16 +35,13 @@
 #include "snmp.h"
 
 #define SNMP_CONF_FILE	"/var/snmp/snmpd.conf"
-
-void start_snmp(int force)
+char *snmp_deps = "snmpd_enable snmpd_syslocation snmpd_syscontact snmpd_sysname snmpd_rocommunity snmpd_rwcommunity";
+void start_snmp(void)
 {
 	pid_t pid;
 
 	char *snmpd_argv[] = { "snmpd", "-c", SNMP_CONF_FILE, NULL };
 	FILE *fp = NULL;
-	int state = nvram_states("snmpd_enable snmpd_syslocation snmpd_syscontact snmpd_sysname snmpd_rocommunity snmpd_rwcommunity");
-	if (!force && !state)
-		return;
 	stop_snmp();
 
 	if (!nvram_invmatchi("snmpd_enable", 0))

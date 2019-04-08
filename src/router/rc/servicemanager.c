@@ -135,17 +135,24 @@ static int handle_service(const char *method, const char *name, int force)
 	if (handle == NULL) {
 		return -1;
 	}
-	void (*fptr_stop) (void);
-	void (*fptr_start) (int force);
+	void (*fptr) (void);
 
 	sprintf(service, "%s_%s", method, name);
-	fptr_stop = (void (*)(void))dlsym(handle, service);
-	fptr_start = (void (*)(int))fptr_stop;
-	if (fptr_start) {
-		if (!strcmp(method, "start"))
-		    (*fptr_start) (force);
-		else
-		    (*fptr_stop) ();
+	fptr = (void (*)(void))dlsym(handle, service);
+	if (fptr) {
+		if (!strcmp(method, "start")) {
+			char dep_name[64];
+			snprintf(dep_name, sizeof(dep_name), "%s_deps", name);
+			char *deps = (void (*)(void))dlsym(handle, name);
+			int state = 1;
+			if (deps) {
+				state = nvram_states(deps);
+			}
+			if (force || state)
+				(*fptr) ();
+
+		} else
+			(*fptr) ();
 	} else {
 		dd_debug(DEBUG_SERVICE, "function %s not found \n", service);
 
@@ -169,7 +176,6 @@ static void start_service_arg(char *name, int force)
 {
 	handle_service("start", name, force);
 }
-
 
 static void start_service(char *name)
 {
@@ -197,9 +203,9 @@ static void start_service_f(char *name)
 	start_service_f_arg(name, 0);
 }
 
-static void start_service_force_f_arg(char *name,int force)
+static void start_service_force_f_arg(char *name, int force)
 {
-	FORK(start_service_force_arg(name,force));
+	FORK(start_service_force_arg(name, force));
 }
 
 static void start_service_force_f(char *name)

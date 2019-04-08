@@ -348,7 +348,6 @@ static int stop_services_main(int argc, char **argv)
 	stop_service_f("pppoeserver");
 #endif
 
-
 #ifdef HAVE_LLTD
 	stop_service_f("lltd");
 #endif
