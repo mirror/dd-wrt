@@ -36,14 +36,12 @@
 #include <services.h>
 #include <dlna.h>
 
+char *dlna_deps = "dlna_enable jffs_mounted dlna_shares dlna_cleandb dlna_rescan dlna_album_art dlna_merge dlna_metadata dlna_subtitles dlna_tumb dlna_no_art";
 void stop_dlna(void);
 
-void start_dlna(int force)
+void start_dlna(void)
 {
 	struct dlna_share *dlna_shares, *cs, *csnext;
-	int state = nvram_states("dlna_enable jffs_mounted dlna_shares dlna_cleandb dlna_rescan dlna_album_art dlna_merge dlna_metadata dlna_subtitles dlna_tumb dlna_no_art");
-	if (!force && !state)
-		return;
 	stop_dlna();
 	if (!nvram_matchi("dlna_enable", 1))
 		return;

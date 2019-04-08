@@ -28,13 +28,12 @@
 #include <signal.h>
 #include <services.h>
 
-void start_mactelnetd(int force)
+char *mactelnetd_deps = "mactelnetd_enable mactelnetd_passwd";
+
+void start_mactelnetd(void)
 {
 	pid_t pid;
 	int ret = 0;
-	int state = nvram_states("mactelnetd_enable mactelnetd_passwd");
-	if (!force && !state)
-		return;
 	char *telnetd_argv[] = { "mactelnetd", NULL };
 	stop_mactelnetd();
 
