@@ -4,11 +4,11 @@ extern void start_httpd(void);
 extern void stop_httpd(void);
 
 #ifdef HAVE_TELNET
-extern void start_telnetd(int force);
+extern void start_telnetd(void);
 extern void stop_telnetd(void);
 #endif
 #ifdef HAVE_MACTELNET
-extern void start_mactelnetd(int force);
+extern void start_mactelnetd(void);
 extern void stop_mactelnetd(void);
 #endif
 
@@ -51,7 +51,7 @@ extern void stop_qtn(void);
 extern void start_pptp(int status);
 extern void stop_pptp(void);
 
-extern void start_syslog(int force);
+extern void start_syslog(void);
 extern void stop_syslog(void);
 
 #ifdef HAVE_TOR
@@ -71,7 +71,7 @@ void start_custom_script(void);
 extern void start_ipv6(void);
 
 #ifdef HAVE_SSHD
-extern void start_sshd(int force);
+extern void start_sshd(void);
 extern void stop_sshd(void);
 #endif
 
@@ -92,7 +92,7 @@ extern void start_mmc(void);
 #endif
 
 #ifdef HAVE_SNMP
-extern void start_snmp(int force);
+extern void start_snmp(void);
 extern void stop_snmp(void);
 #endif
 

@@ -55,13 +55,12 @@
 #include <services.h>
 
 #ifdef HAVE_SYSLOG
+char *syslog_deps = "syslogd_enable syslogd_rem_ip klogd_enable";
+
 void stop_syslog(void);
-void start_syslog(int force)
+void start_syslog(void)
 {
 	int ret1 = 0, ret2 = 0;
-	int state = nvram_states("syslogd_enable syslogd_rem_ip klogd_enable");
-	if (!force && !state)
-		return;
 	stop_syslog();
 	if (!nvram_invmatchi("syslogd_enable", 0))
 		return;
