@@ -1237,7 +1237,11 @@ void ej_get_sysmodel(webs_t wp, int argc, char_t ** argv)
 #elif HAVE_RAYTRONIK
 	websWrite(wp, "RN-150M %s", getRouterName());
 #elif HAVE_ANTAIRA
+#ifdef HAVE_ANTAIRA_MINI
+	websWrite(wp, "Industrial Access Point");
+#else
 	websWrite(wp, "Industrial Router");
+#endif /*HAVE_ANTAIRA_MINI*/
 #else
 	websWrite(wp, "%s", getRouterName());
 #endif
