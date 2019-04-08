@@ -169,7 +169,11 @@ am_powertop_OBJECTS = powertop-devlist.$(OBJEXT) \
 	tuning/powertop-tuningsysfs.$(OBJEXT) \
 	tuning/powertop-tuningusb.$(OBJEXT) \
 	tuning/powertop-tuningi2c.$(OBJEXT) \
-	tuning/powertop-wifi.$(OBJEXT)
+	tuning/powertop-wifi.$(OBJEXT) \
+	wakeup/powertop-wakeup.$(OBJEXT) \
+	wakeup/powertop-waketab.$(OBJEXT) \
+	wakeup/powertop-wakeup_ethernet.$(OBJEXT) \
+	wakeup/powertop-wakeup_usb.$(OBJEXT)
 nodist_powertop_OBJECTS =
 powertop_OBJECTS = $(am_powertop_OBJECTS) $(nodist_powertop_OBJECTS)
 powertop_DEPENDENCIES = ../traceevent/libtraceevnet.la
@@ -537,7 +541,14 @@ powertop_SOURCES = \
 	tuning/tuningi2c.cpp \
 	tuning/tuningi2c.h \
 	tuning/wifi.cpp \
-	tuning/wifi.h
+	tuning/wifi.h \
+	wakeup/wakeup.cpp \
+	wakeup/waketab.cpp \
+	wakeup/wakeup_ethernet.cpp \
+	wakeup/wakeup_usb.cpp \
+	wakeup/wakeup_usb.h \
+	wakeup/wakeup.h \
+	wakeup/wakeup_ethernet.h
 
 powertop_CXXFLAGS = \
 	-Wall \
@@ -836,6 +847,20 @@ tuning/powertop-tuningi2c.$(OBJEXT): tuning/$(am__dirstamp) \
 	tuning/$(DEPDIR)/$(am__dirstamp)
 tuning/powertop-wifi.$(OBJEXT): tuning/$(am__dirstamp) \
 	tuning/$(DEPDIR)/$(am__dirstamp)
+wakeup/$(am__dirstamp):
+	@$(MKDIR_P) wakeup
+	@: > wakeup/$(am__dirstamp)
+wakeup/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) wakeup/$(DEPDIR)
+	@: > wakeup/$(DEPDIR)/$(am__dirstamp)
+wakeup/powertop-wakeup.$(OBJEXT): wakeup/$(am__dirstamp) \
+	wakeup/$(DEPDIR)/$(am__dirstamp)
+wakeup/powertop-waketab.$(OBJEXT): wakeup/$(am__dirstamp) \
+	wakeup/$(DEPDIR)/$(am__dirstamp)
+wakeup/powertop-wakeup_ethernet.$(OBJEXT): wakeup/$(am__dirstamp) \
+	wakeup/$(DEPDIR)/$(am__dirstamp)
+wakeup/powertop-wakeup_usb.$(OBJEXT): wakeup/$(am__dirstamp) \
+	wakeup/$(DEPDIR)/$(am__dirstamp)
 
 powertop$(EXEEXT): $(powertop_OBJECTS) $(powertop_DEPENDENCIES) $(EXTRA_powertop_DEPENDENCIES) 
 	@rm -f powertop$(EXEEXT)
@@ -853,6 +878,7 @@ mostlyclean-compile:
 	-rm -f process/*.$(OBJEXT)
 	-rm -f report/*.$(OBJEXT)
 	-rm -f tuning/*.$(OBJEXT)
+	-rm -f wakeup/*.$(OBJEXT)
 
 distclean-compile:
 	-rm -f *.tab.c
@@ -919,6 +945,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@tuning/$(DEPDIR)/powertop-tuningsysfs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tuning/$(DEPDIR)/powertop-tuningusb.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tuning/$(DEPDIR)/powertop-wifi.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@wakeup/$(DEPDIR)/powertop-waketab.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@wakeup/$(DEPDIR)/powertop-wakeup.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@wakeup/$(DEPDIR)/powertop-wakeup_ethernet.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@wakeup/$(DEPDIR)/powertop-wakeup_usb.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
@@ -1836,6 +1866,62 @@ tuning/powertop-wifi.obj: tuning/wifi.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(powertop_CPPFLAGS) $(CPPFLAGS) $(powertop_CXXFLAGS) $(CXXFLAGS) -c -o tuning/powertop-wifi.obj `if test -f 'tuning/wifi.cpp'; then $(CYGPATH_W) 'tuning/wifi.cpp'; else $(CYGPATH_W) '$(srcdir)/tuning/wifi.cpp'; fi`
 
+wakeup/powertop-wakeup.o: wakeup/wakeup.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(powertop_CPPFLAGS) $(CPPFLAGS) $(powertop_CXXFLAGS) $(CXXFLAGS) -MT wakeup/powertop-wakeup.o -MD -MP -MF wakeup/$(DEPDIR)/powertop-wakeup.Tpo -c -o wakeup/powertop-wakeup.o `test -f 'wakeup/wakeup.cpp' || echo '$(srcdir)/'`wakeup/wakeup.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) wakeup/$(DEPDIR)/powertop-wakeup.Tpo wakeup/$(DEPDIR)/powertop-wakeup.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='wakeup/wakeup.cpp' object='wakeup/powertop-wakeup.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(powertop_CPPFLAGS) $(CPPFLAGS) $(powertop_CXXFLAGS) $(CXXFLAGS) -c -o wakeup/powertop-wakeup.o `test -f 'wakeup/wakeup.cpp' || echo '$(srcdir)/'`wakeup/wakeup.cpp
+
+wakeup/powertop-wakeup.obj: wakeup/wakeup.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(powertop_CPPFLAGS) $(CPPFLAGS) $(powertop_CXXFLAGS) $(CXXFLAGS) -MT wakeup/powertop-wakeup.obj -MD -MP -MF wakeup/$(DEPDIR)/powertop-wakeup.Tpo -c -o wakeup/powertop-wakeup.obj `if test -f 'wakeup/wakeup.cpp'; then $(CYGPATH_W) 'wakeup/wakeup.cpp'; else $(CYGPATH_W) '$(srcdir)/wakeup/wakeup.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) wakeup/$(DEPDIR)/powertop-wakeup.Tpo wakeup/$(DEPDIR)/powertop-wakeup.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='wakeup/wakeup.cpp' object='wakeup/powertop-wakeup.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(powertop_CPPFLAGS) $(CPPFLAGS) $(powertop_CXXFLAGS) $(CXXFLAGS) -c -o wakeup/powertop-wakeup.obj `if test -f 'wakeup/wakeup.cpp'; then $(CYGPATH_W) 'wakeup/wakeup.cpp'; else $(CYGPATH_W) '$(srcdir)/wakeup/wakeup.cpp'; fi`
+
+wakeup/powertop-waketab.o: wakeup/waketab.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(powertop_CPPFLAGS) $(CPPFLAGS) $(powertop_CXXFLAGS) $(CXXFLAGS) -MT wakeup/powertop-waketab.o -MD -MP -MF wakeup/$(DEPDIR)/powertop-waketab.Tpo -c -o wakeup/powertop-waketab.o `test -f 'wakeup/waketab.cpp' || echo '$(srcdir)/'`wakeup/waketab.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) wakeup/$(DEPDIR)/powertop-waketab.Tpo wakeup/$(DEPDIR)/powertop-waketab.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='wakeup/waketab.cpp' object='wakeup/powertop-waketab.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(powertop_CPPFLAGS) $(CPPFLAGS) $(powertop_CXXFLAGS) $(CXXFLAGS) -c -o wakeup/powertop-waketab.o `test -f 'wakeup/waketab.cpp' || echo '$(srcdir)/'`wakeup/waketab.cpp
+
+wakeup/powertop-waketab.obj: wakeup/waketab.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(powertop_CPPFLAGS) $(CPPFLAGS) $(powertop_CXXFLAGS) $(CXXFLAGS) -MT wakeup/powertop-waketab.obj -MD -MP -MF wakeup/$(DEPDIR)/powertop-waketab.Tpo -c -o wakeup/powertop-waketab.obj `if test -f 'wakeup/waketab.cpp'; then $(CYGPATH_W) 'wakeup/waketab.cpp'; else $(CYGPATH_W) '$(srcdir)/wakeup/waketab.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) wakeup/$(DEPDIR)/powertop-waketab.Tpo wakeup/$(DEPDIR)/powertop-waketab.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='wakeup/waketab.cpp' object='wakeup/powertop-waketab.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(powertop_CPPFLAGS) $(CPPFLAGS) $(powertop_CXXFLAGS) $(CXXFLAGS) -c -o wakeup/powertop-waketab.obj `if test -f 'wakeup/waketab.cpp'; then $(CYGPATH_W) 'wakeup/waketab.cpp'; else $(CYGPATH_W) '$(srcdir)/wakeup/waketab.cpp'; fi`
+
+wakeup/powertop-wakeup_ethernet.o: wakeup/wakeup_ethernet.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(powertop_CPPFLAGS) $(CPPFLAGS) $(powertop_CXXFLAGS) $(CXXFLAGS) -MT wakeup/powertop-wakeup_ethernet.o -MD -MP -MF wakeup/$(DEPDIR)/powertop-wakeup_ethernet.Tpo -c -o wakeup/powertop-wakeup_ethernet.o `test -f 'wakeup/wakeup_ethernet.cpp' || echo '$(srcdir)/'`wakeup/wakeup_ethernet.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) wakeup/$(DEPDIR)/powertop-wakeup_ethernet.Tpo wakeup/$(DEPDIR)/powertop-wakeup_ethernet.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='wakeup/wakeup_ethernet.cpp' object='wakeup/powertop-wakeup_ethernet.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(powertop_CPPFLAGS) $(CPPFLAGS) $(powertop_CXXFLAGS) $(CXXFLAGS) -c -o wakeup/powertop-wakeup_ethernet.o `test -f 'wakeup/wakeup_ethernet.cpp' || echo '$(srcdir)/'`wakeup/wakeup_ethernet.cpp
+
+wakeup/powertop-wakeup_ethernet.obj: wakeup/wakeup_ethernet.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(powertop_CPPFLAGS) $(CPPFLAGS) $(powertop_CXXFLAGS) $(CXXFLAGS) -MT wakeup/powertop-wakeup_ethernet.obj -MD -MP -MF wakeup/$(DEPDIR)/powertop-wakeup_ethernet.Tpo -c -o wakeup/powertop-wakeup_ethernet.obj `if test -f 'wakeup/wakeup_ethernet.cpp'; then $(CYGPATH_W) 'wakeup/wakeup_ethernet.cpp'; else $(CYGPATH_W) '$(srcdir)/wakeup/wakeup_ethernet.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) wakeup/$(DEPDIR)/powertop-wakeup_ethernet.Tpo wakeup/$(DEPDIR)/powertop-wakeup_ethernet.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='wakeup/wakeup_ethernet.cpp' object='wakeup/powertop-wakeup_ethernet.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(powertop_CPPFLAGS) $(CPPFLAGS) $(powertop_CXXFLAGS) $(CXXFLAGS) -c -o wakeup/powertop-wakeup_ethernet.obj `if test -f 'wakeup/wakeup_ethernet.cpp'; then $(CYGPATH_W) 'wakeup/wakeup_ethernet.cpp'; else $(CYGPATH_W) '$(srcdir)/wakeup/wakeup_ethernet.cpp'; fi`
+
+wakeup/powertop-wakeup_usb.o: wakeup/wakeup_usb.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(powertop_CPPFLAGS) $(CPPFLAGS) $(powertop_CXXFLAGS) $(CXXFLAGS) -MT wakeup/powertop-wakeup_usb.o -MD -MP -MF wakeup/$(DEPDIR)/powertop-wakeup_usb.Tpo -c -o wakeup/powertop-wakeup_usb.o `test -f 'wakeup/wakeup_usb.cpp' || echo '$(srcdir)/'`wakeup/wakeup_usb.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) wakeup/$(DEPDIR)/powertop-wakeup_usb.Tpo wakeup/$(DEPDIR)/powertop-wakeup_usb.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='wakeup/wakeup_usb.cpp' object='wakeup/powertop-wakeup_usb.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(powertop_CPPFLAGS) $(CPPFLAGS) $(powertop_CXXFLAGS) $(CXXFLAGS) -c -o wakeup/powertop-wakeup_usb.o `test -f 'wakeup/wakeup_usb.cpp' || echo '$(srcdir)/'`wakeup/wakeup_usb.cpp
+
+wakeup/powertop-wakeup_usb.obj: wakeup/wakeup_usb.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(powertop_CPPFLAGS) $(CPPFLAGS) $(powertop_CXXFLAGS) $(CXXFLAGS) -MT wakeup/powertop-wakeup_usb.obj -MD -MP -MF wakeup/$(DEPDIR)/powertop-wakeup_usb.Tpo -c -o wakeup/powertop-wakeup_usb.obj `if test -f 'wakeup/wakeup_usb.cpp'; then $(CYGPATH_W) 'wakeup/wakeup_usb.cpp'; else $(CYGPATH_W) '$(srcdir)/wakeup/wakeup_usb.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) wakeup/$(DEPDIR)/powertop-wakeup_usb.Tpo wakeup/$(DEPDIR)/powertop-wakeup_usb.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='wakeup/wakeup_usb.cpp' object='wakeup/powertop-wakeup_usb.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(powertop_CPPFLAGS) $(CPPFLAGS) $(powertop_CXXFLAGS) $(CXXFLAGS) -c -o wakeup/powertop-wakeup_usb.obj `if test -f 'wakeup/wakeup_usb.cpp'; then $(CYGPATH_W) 'wakeup/wakeup_usb.cpp'; else $(CYGPATH_W) '$(srcdir)/wakeup/wakeup_usb.cpp'; fi`
+
 mostlyclean-libtool:
 	-rm -f *.lo
 
@@ -1980,6 +2066,8 @@ distclean-generic:
 	-rm -f report/$(am__dirstamp)
 	-rm -f tuning/$(DEPDIR)/$(am__dirstamp)
 	-rm -f tuning/$(am__dirstamp)
+	-rm -f wakeup/$(DEPDIR)/$(am__dirstamp)
+	-rm -f wakeup/$(am__dirstamp)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
@@ -1991,7 +2079,7 @@ clean-am: clean-generic clean-libtool clean-sbinPROGRAMS \
 	mostlyclean-am
 
 distclean: distclean-am
-	-rm -rf ./$(DEPDIR) calibrate/$(DEPDIR) cpu/$(DEPDIR) cpu/rapl/$(DEPDIR) devices/$(DEPDIR) measurement/$(DEPDIR) parameters/$(DEPDIR) perf/$(DEPDIR) process/$(DEPDIR) report/$(DEPDIR) tuning/$(DEPDIR)
+	-rm -rf ./$(DEPDIR) calibrate/$(DEPDIR) cpu/$(DEPDIR) cpu/rapl/$(DEPDIR) devices/$(DEPDIR) measurement/$(DEPDIR) parameters/$(DEPDIR) perf/$(DEPDIR) process/$(DEPDIR) report/$(DEPDIR) tuning/$(DEPDIR) wakeup/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
@@ -2037,7 +2125,7 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
-	-rm -rf ./$(DEPDIR) calibrate/$(DEPDIR) cpu/$(DEPDIR) cpu/rapl/$(DEPDIR) devices/$(DEPDIR) measurement/$(DEPDIR) parameters/$(DEPDIR) perf/$(DEPDIR) process/$(DEPDIR) report/$(DEPDIR) tuning/$(DEPDIR)
+	-rm -rf ./$(DEPDIR) calibrate/$(DEPDIR) cpu/$(DEPDIR) cpu/rapl/$(DEPDIR) devices/$(DEPDIR) measurement/$(DEPDIR) parameters/$(DEPDIR) perf/$(DEPDIR) process/$(DEPDIR) report/$(DEPDIR) tuning/$(DEPDIR) wakeup/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

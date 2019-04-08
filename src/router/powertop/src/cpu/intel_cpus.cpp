@@ -68,6 +68,8 @@ static int intel_cpu_models[] = {
 	0x5E,	/* SKY */
 	0x56,	/* BDX-DE */
 	0x5c,   /* BXT-P */
+	0x66,   /* CNL-U/Y */
+	0x7A,   /* GLK */
 	0x8E,	/* KBL */
 	0x9E,	/* KBL */
 	0	/* last entry must be zero */
@@ -75,13 +77,15 @@ static int intel_cpu_models[] = {
 
 static int intel_pstate_driver_loaded = -1;
 
-int is_supported_intel_cpu(int model)
+int is_supported_intel_cpu(int model, int cpu)
 {
 	int i;
+	uint64_t msr;
 
 	for (i = 0; intel_cpu_models[i] != 0; i++)
 		if (model == intel_cpu_models[i])
-			return 1;
+			if (cpu < 0 || read_msr(cpu, MSR_APERF, &msr) >= 0)
+				return 1;
 
 	return 0;
 }
@@ -165,6 +169,8 @@ nhm_core::nhm_core(int model)
 		case 0x5E:	/* SKY */
 		case 0x3D:	/* BDW */
 		case 0x5c:      /* BXT-P */
+		case 0x66:	/* CNL-U/Y */
+		case 0x7A:	/* GLK */
 		case 0x8E:	/* KBL */
 		case 0x9E:	/* KBL */
 			has_c7_res = 1;
@@ -345,6 +351,8 @@ nhm_package::nhm_package(int model)
 		case 0x5E:	/* SKY */
 		case 0x3D:	/* BDW */
 		case 0x5c:      /* BXT-P */
+		case 0x66:	/* CNL-U/Y */
+		case 0x7A:	/* GLK */
 		case 0x8E:	/* KBL */
 		case 0x9E:	/* KBL */
 			has_c2c6_res=1;
@@ -377,6 +385,8 @@ nhm_package::nhm_package(int model)
 		case 0x4E:	/* SKY */
 		case 0x5E:	/* SKY */
 		case 0x5c:	/* BXT-P */ 
+		case 0x66:	/* CNL-U/Y */
+		case 0x7A:	/* GLK */
 		case 0x8E:	/* KBL */
 		case 0x9E:	/* KBL */
 			has_c8c9c10_res = 1;
