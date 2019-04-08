@@ -26,6 +26,7 @@
 #define _INCLUDE_GUARD_PERF_H_
 
 #include <iostream>
+#include <stdio.h>
 
 
 extern "C" {

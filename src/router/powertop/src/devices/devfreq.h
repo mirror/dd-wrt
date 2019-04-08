@@ -25,6 +25,7 @@
 #ifndef _INCLUDE_GUARD_DEVFREQ_H
 #define _INCLUDE_GUARD_DEVFREQ_H
 
+#include <sys/time.h>
 #include "device.h"
 #include "../parameters/parameters.h"
 #include <sys/time.h>
