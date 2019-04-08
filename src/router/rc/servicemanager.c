@@ -143,7 +143,7 @@ static int handle_service(const char *method, const char *name, int force)
 		if (!strcmp(method, "start")) {
 			char dep_name[64];
 			snprintf(dep_name, sizeof(dep_name), "%s_deps", name);
-			char *deps = (char *)dlsym(handle, name);
+			char *deps = (char *)dlsym(handle, dep_name);
 			int state = 1;
 			if (deps) {
 				state = nvram_states(deps);
