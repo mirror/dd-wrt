@@ -124,7 +124,14 @@ powertop_SOURCES = \
 	tuning/tuningi2c.cpp \
 	tuning/tuningi2c.h \
 	tuning/wifi.cpp \
-	tuning/wifi.h
+	tuning/wifi.h \
+	wakeup/wakeup.cpp \
+	wakeup/waketab.cpp \
+	wakeup/wakeup_ethernet.cpp \
+	wakeup/wakeup_usb.cpp \
+	wakeup/wakeup_usb.h \
+	wakeup/wakeup.h \
+	wakeup/wakeup_ethernet.h
 
 powertop_CXXFLAGS = \
 	-Wall \
