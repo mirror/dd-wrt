@@ -301,6 +301,9 @@ endif
 ifeq ($(CONFIG_PERU),y)
 	cp $(LINUXDIR)/.config_peru $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_FMS2111),y)
+	cp $(LINUXDIR)/.config_fms2111 $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_RAMBUTAN),y)
 	cp $(LINUXDIR)/.config_rambutan $(LINUXDIR)/.config
 endif
@@ -578,6 +581,11 @@ ifeq ($(CONFIG_PERU),y)
 	echo CONFIG_PERU=y >> $(LINUXDIR)/.config
 else
 	echo "# CONFIG_PERU is not set" >> $(LINUXDIR)/.config
+endif
+ifeq ($(CONFIG_FMS2111),y)
+	echo CONFIG_FMS2111=y >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_FMS2111 is not set" >> $(LINUXDIR)/.config
 endif
 ifeq ($(CONFIG_RAMBUTAN),y)
 	echo CONFIG_RAMBUTAN=y >> $(LINUXDIR)/.config
