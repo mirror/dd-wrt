@@ -40,6 +40,7 @@
 #include <sys/ioctl.h>
 
 #include <linux/ethtool.h>
+#include <limits.h>
 
 #include "../lib.h"
 #include "wakeup_usb.h"
