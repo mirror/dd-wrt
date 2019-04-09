@@ -97,4 +97,5 @@ DT_MACHINE_START(IMX6UL, "Freescale i.MX6 Ultralite (Device Tree)")
 	.init_machine	= imx6ul_init_machine,
 	.init_late	= imx6ul_init_late,
 	.dt_compat	= imx6ul_dt_compat,
+	.restart	= mxc_restart,
 MACHINE_END
