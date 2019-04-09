@@ -2067,10 +2067,10 @@ int __init ar7240_platform_init(void)
 	ar9xxx_add_device_wmac(ee, mac);
 #elif defined(CONFIG_WR810N)
 	ar9xxx_add_device_wmac(ee, mac);
-#elif defined(CONFIG_WR841V8)
-	ar9xxx_add_device_wmac(ee, mac);
 #elif defined(CONFIG_LIMA)
 	ar9xxx_add_device_wmac(ee, ee + 2);
+#elif defined(CONFIG_WR841V8)
+	ar9xxx_add_device_wmac(ee, mac);
 #else
 	ar9xxx_add_device_wmac(ee, NULL);
 #endif
