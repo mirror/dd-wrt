@@ -28,7 +28,10 @@
 #include <signal.h>
 #include <services.h>
 
-char *mactelnetd_deps = "mactelnetd_enable mactelnetd_passwd";
+char *mactelnetd_deps(void)
+{
+	return "mactelnetd_enable mactelnetd_passwd";
+}
 
 void start_mactelnetd(void)
 {
