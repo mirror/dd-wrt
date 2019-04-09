@@ -32,47 +32,6 @@
 
 extern void dd_timer_cancel(timer_t timerid);
 
-static void check_udhcpd(timer_t t, int arg)
-{
-	if (nvram_invmatchi("router_disable", 1)
-	    || nvram_match("lan_proto", "dhcp")) {
-		if (nvram_matchi("dhcp_dnsmasq", 1)) {
-			if (pidof("dnsmasq") == -1) {
-				// killps("dnsmasq","-9");
-				// killps("udhcpd","-9");
-				killall("dnsmasq", SIGKILL);
-				killall("udhcpd", SIGKILL);
-				killall("unbound", SIGKILL);
-#ifdef HAVE_UDHCPD
-				sleep(1);
-				eval("startservice", "udhcpd");
-#endif
-#ifdef HAVE_UNBOUND
-				sleep(1);
-				eval("startservice", "unbound");
-#endif
-				sleep(1);
-				eval("startservice", "dnsmasq");
-			}
-		} else {
-			if (pidof("udhcpd") == -1) {
-				killall("dnsmasq", SIGKILL);
-				killall("udhcpd", SIGKILL);
-#ifdef HAVE_UDHCPD
-				sleep(1);
-				eval("startservice", "udhcpd");
-#endif
-#ifdef HAVE_UNBOUND
-				sleep(1);
-				eval("startservice", "unbound");
-#endif
-				sleep(1);
-				eval("startservice", "dnsmasq");
-			}
-		}
-	}
-}
-
 struct syncservice {
 	char *nvram;
 	char *service;

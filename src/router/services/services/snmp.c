@@ -35,7 +35,11 @@
 #include "snmp.h"
 
 #define SNMP_CONF_FILE	"/var/snmp/snmpd.conf"
-char *snmp_deps = "snmpd_enable snmpd_syslocation snmpd_syscontact snmpd_sysname snmpd_rocommunity snmpd_rwcommunity";
+char *snmp_deps(void)
+{
+	return "snmpd_enable snmpd_syslocation snmpd_syscontact snmpd_sysname snmpd_rocommunity snmpd_rwcommunity";
+}
+
 void start_snmp(void)
 {
 	pid_t pid;

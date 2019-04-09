@@ -55,7 +55,10 @@
 #include <services.h>
 
 #ifdef HAVE_SYSLOG
-char *syslog_deps = "syslogd_enable syslogd_rem_ip klogd_enable";
+char *syslog_deps(void)
+{
+	return "syslogd_enable syslogd_rem_ip klogd_enable";
+}
 
 void stop_syslog(void);
 void start_syslog(void)

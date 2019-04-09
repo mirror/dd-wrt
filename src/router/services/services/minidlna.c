@@ -36,7 +36,11 @@
 #include <services.h>
 #include <dlna.h>
 
-char *dlna_deps = "dlna_enable jffs_mounted dlna_shares dlna_cleandb dlna_rescan dlna_album_art dlna_merge dlna_metadata dlna_subtitles dlna_tumb dlna_no_art";
+char *dlna_deps(void)
+{
+	return "dlna_enable jffs_mounted dlna_shares dlna_cleandb dlna_rescan dlna_album_art dlna_merge dlna_metadata dlna_subtitles dlna_tumb dlna_no_art";
+}
+
 void stop_dlna(void);
 
 void start_dlna(void)

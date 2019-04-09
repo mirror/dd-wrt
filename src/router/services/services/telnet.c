@@ -28,7 +28,11 @@
 #include <signal.h>
 #include <services.h>
 
-char *telnetd_deps = "telnetd_enable http_username http_passwd";
+char *telnetd_deps(void)
+{
+	return "telnetd_enable http_username http_passwd";
+}
+
 void start_telnetd(void)
 {
 	pid_t pid;
