@@ -1743,7 +1743,7 @@ int __init ar7240_platform_init(void)
     #elif CONFIG_LIMA
 #define LIMA_ETH_PHYS		(BIT(0) | BIT(1))
 	ar71xx_add_device_mdio(1, ~LIMA_ETH_PHYS);
-	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, -1);
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac + 0x0006, 0);
 	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, 0);
 
 	/* GMAC0 is connected to the PHY0 of the internal switch */
@@ -2069,6 +2069,8 @@ int __init ar7240_platform_init(void)
 	ar9xxx_add_device_wmac(ee, mac);
 #elif defined(CONFIG_WR841V8)
 	ar9xxx_add_device_wmac(ee, mac);
+#elif defined(CONFIG_LIMA)
+	ar9xxx_add_device_wmac(ee, ee + 2);
 #else
 	ar9xxx_add_device_wmac(ee, NULL);
 #endif
