@@ -338,12 +338,27 @@
 		VDDIO-supply = <&reg_3p3v>;
 	};
 
+	hdmiin: adv7611@4c {
+		compatible = "adi,adv7611";
+		reg = <0x4c>;
+	};
+
 	touchscreen: egalax_ts@04 {
 		compatible = "eeti,egalax_ts";
 		reg = <0x04>;
 		interrupt-parent = <&gpio7>;
 		interrupts = <12 2>;
 		wakeup-gpios = <&gpio7 12 GPIO_ACTIVE_LOW>;
+	};
+
+	videoout: adv7393@2a {
+		compatible = "adi,adv7393";
+		reg = <0x2a>;
+	};
+
+	videoin: adv7180@20 {
+		compatible = "adi,adv7180";
+		reg = <0x20>;
 	};
 };
 
