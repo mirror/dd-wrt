@@ -41,19 +41,6 @@ static int process_monitor_main(int argc, char **argv)
 	NTP_M_TIMER = nvram_default_geti("ntp_timer", 3600);
 	openlog("process_monitor", LOG_PID | LOG_NDELAY, LOG_DAEMON);
 
-	if (nvram_invmatchi("dhcp_dnsmasq", 1)) {
-		leasetime = atol(nvram_safe_get("dhcp_lease")) * 60;
-		if (leasetime <= 0)
-			leasetime = 86400;
-
-		memset(&t1, 0, sizeof(t1));
-		t1.it_interval.tv_sec = (int)leasetime;
-		t1.it_value.tv_sec = (int)leasetime;
-		dd_timer_create(CLOCK_REALTIME, NULL, (timer_t *) & udhcpd_id);
-		dd_timer_connect(udhcpd_id, check_udhcpd, FIRST);
-		dd_timer_settime(udhcpd_id, 0, &t1, NULL);
-	}
-
 	if (nvram_invmatchi("ntp_enable", 0)) {	// && check_wan_link(0) ) {
 
 		/* 
