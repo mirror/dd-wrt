@@ -61,6 +61,12 @@ ifeq ($(CONFIG_USB),y)
 else
 	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 endif
+ifeq ($(CONFIG_MT7621),y)	
+	cp busybox/.config_bcmmodern_std busybox/.config
+	sed -i 's/\# CONFIG_FEATURE_USE_TERMIOS is not set/CONFIG_FEATURE_USE_TERMIOS=y/g' busybox/.config
+	sed -i 's/\# CONFIG_FEATURE_TOP_SMP_CPU is not set/CONFIG_FEATURE_TOP_SMP_CPU=y/g' busybox/.config
+	sed -i 's/\# CONFIG_FEATURE_TOP_SMP_PROCESS is not set/CONFIG_FEATURE_TOP_SMP_PROCESS=y/g' busybox/.config
+endif
 endif
 endif
 
@@ -264,10 +270,10 @@ endif
 endif
 ifeq ($(ARCHITECTURE),mvebu)	
 	cp busybox/.config_bcmmodern_std busybox/.config
+	sed -i 's/\# CONFIG_FEATURE_USE_TERMIOS is not set/CONFIG_FEATURE_USE_TERMIOS=y/g' busybox/.config
 	sed -i 's/\# CONFIG_FEATURE_TOP_SMP_CPU is not set/CONFIG_FEATURE_TOP_SMP_CPU=y/g' busybox/.config
 	sed -i 's/\# CONFIG_FEATURE_TOP_SMP_PROCESS is not set/CONFIG_FEATURE_TOP_SMP_PROCESS=y/g' busybox/.config
 	echo "CONFIG_FEATURE_TOP_INTERACTIVE=y" >> busybox/.config
-	echo "CONFIG_FEATURE_POWERTOP_INTERACTIVE=y" >> busybox/.config
 endif
 ifeq ($(ARCHITECTURE),laguna)
 	cp busybox/.config_laguna busybox/.config
