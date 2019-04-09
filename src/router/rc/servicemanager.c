@@ -1,7 +1,7 @@
 /* 
  * DD-WRT servicemanager.c
  *
- * Copyright (C) 2005 - 2006 Sebastian Gottschall <sebastian.gottschall@newmedia-net.de>
+ * Copyright (C) 2005 - 2019 Sebastian Gottschall <sebastian.gottschall@newmedia-net.de>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -58,29 +58,33 @@ static void *load_service(const char *name)
 	return handle;
 }
 
-static void _RELEASESTOPPED(const char *method, const char *name)
+#define START 0x0
+#define STOP 0x1
+#define RESTART 0x2
+
+static void _RELEASESTOPPED(const int method, const char *name)
 {
 	char fname[64];
-	sprintf(fname, "/tmp/services/%s.%s", name, method);
+	sprintf(fname, "/tmp/services/%s.%d", name, method);
 	unlink(fname);
 }
 
-static int _STOPPED(const char *method, const char *name)
+static int _STOPPED(const int method, const char *name)
 {
 	char fname[64];
-	sprintf(fname, "/tmp/services/%s.%s", name, method);
+	sprintf(fname, "/tmp/services/%s.%d", name, method);
 	FILE *fp = fopen(fname, "rb");
 	if (fp) {
 		fclose(fp);
 #if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
-		if (!strcmp(method, "stop")) {
+		if (method == STOP) {
 			if (stops_running)
 				stops_running[0]--;
 		}
 #else
-		dd_debug(DEBUG_SERVICE, "calling %s_%s not required!\n", method, name);
+		dd_debug(DEBUG_SERVICE, "calling %s_%s not required!\n", method ? "stop" : "start", name);
 
-		if (!strcmp(method, "stop")) {
+		if (method == STOP) {
 			if (stops_running)
 				stops_running[0]--;
 		}
@@ -96,7 +100,7 @@ static int _STOPPED(const char *method, const char *name)
 	return 0;
 }
 
-static void _stopcondition(char *method, char *name)
+static void _stopcondition(const int method, char *name)
 {
 
 }
@@ -107,18 +111,24 @@ static void _stopcondition(char *method, char *name)
 
 #define RELEASESTOPPED(a) _RELEASESTOPPED(a, name);
 
-static int handle_service(const char *method, const char *name, int force)
+static int handle_service(const int method, const char *name, int force)
 {
 	int ret = 0;
-	if (strcmp(name, "hotplug_block") && strcmp(method, "restart")) {
-		if (!strcmp(method, "start"))
-			RELEASESTOPPED("stop");
-		if (!strcmp(method, "stop"))
-			RELEASESTOPPED("start");
+	char *method_name = "start";
+	if (method == STOP)
+		method_name = "stop";
+	if (method == RESTART)
+		method_name = "restart";
+
+	if (strcmp(name, "hotplug_block") && method != RESTART) {
+		if (method == START)
+			RELEASESTOPPED(STOP);
+		if (method == STOP)
+			RELEASESTOPPED(START);
 		STOPPED();
 	}
 #if (!defined(HAVE_X86) && !defined(HAVE_NEWPORT) && !defined(HAVE_RB600)) || defined(HAVE_WDR4900)
-	dd_debug(DEBUG_SERVICE, "%s:%s_%s", __func__, method, name);
+	dd_debug(DEBUG_SERVICE, "%s:%s_%s", __func__, method_name, name);
 #endif
 	// lcdmessaged("Starting Service",name);
 	char service[64];
@@ -128,7 +138,7 @@ static int handle_service(const char *method, const char *name, int force)
 
 	if (ck != NULL) {
 		fclose(ck);
-		return sysprintf("%s %s", service, method);
+		return sysprintf("%s %s", service, method_name);
 	}
 	void *handle = load_service(name);
 
@@ -137,22 +147,21 @@ static int handle_service(const char *method, const char *name, int force)
 	}
 	void (*fptr) (void);
 
-	sprintf(service, "%s_%s", method, name);
+	sprintf(service, "%s_%s", method_name, name);
 	fptr = (void (*)(void))dlsym(handle, service);
 	if (fptr) {
-		if (!strcmp(method, "start")) {
+		int state = 1;
+		if (method == START) {
 			char dep_name[64];
 			snprintf(dep_name, sizeof(dep_name), "%s_deps", name);
 			char *(*dep_func) (void) = (char *(*)(void))dlsym(handle, dep_name);
-			int state = 1;
 			if (dep_func) {
 				char *deps = dep_func();
 				state = nvram_states(deps);
 			}
-			if (force || state)
-				(*fptr) ();
 
-		} else
+		}
+		if (force || state)
 			(*fptr) ();
 	} else {
 		dd_debug(DEBUG_SERVICE, "function %s not found \n", service);
@@ -160,22 +169,22 @@ static int handle_service(const char *method, const char *name, int force)
 		ret = -1;
 	}
 	dlclose(handle);
-	if (!strcmp(method, "stop")) {
+	if (method == STOP) {
 		if (stops_running)
 			stops_running[0]--;
 	}
 #if (!defined(HAVE_X86) && !defined(HAVE_NEWPORT) && !defined(HAVE_RB600)) || defined(HAVE_WDR4900)
 	if (stops_running)
-		dd_debug(DEBUG_SERVICE, "calling done %s_%s (pending stops %d)\n", method, name, stops_running[0]);
+		dd_debug(DEBUG_SERVICE, "calling done %s_%s (pending stops %d)\n", method_name, name, stops_running[0]);
 	else
-		dd_debug(DEBUG_SERVICE, "calling done %s_%s\n", method, name);
+		dd_debug(DEBUG_SERVICE, "calling done %s_%s\n", method_name, name);
 #endif
 	return ret;
 }
 
 static void start_service_arg(char *name, int force)
 {
-	handle_service("start", name, force);
+	handle_service(START, name, force);
 }
 
 static void start_service(char *name)
@@ -185,7 +194,7 @@ static void start_service(char *name)
 
 static void start_service_force_arg(char *name, int force)
 {
-	RELEASESTOPPED("start");
+	RELEASESTOPPED(START);
 	start_service_arg(name, force);
 }
 
@@ -299,12 +308,12 @@ static void stop_service(char *name)
 	init_shared();
 	if (stops_running)
 		stops_running[0]++;
-	handle_service("stop", name, 0);
+	handle_service(STOP, name, 0);
 }
 
 static void stop_service_force(char *name)
 {
-	RELEASESTOPPED("stop");
+	RELEASESTOPPED(STOP);
 	stop_service(name);
 }
 
@@ -313,28 +322,28 @@ static void stop_service_f(char *name)
 	init_shared();
 	if (stops_running)
 		stops_running[0]++;
-	FORK(handle_service("stop", name, 0));
+	FORK(handle_service(STOP, name, 0));
 }
 
 static void stop_service_force_f(char *name)
 {
-	RELEASESTOPPED("stop");
+	RELEASESTOPPED(STOP);
 	init_shared();
 	if (stops_running)
 		stops_running[0]++;
-	RELEASESTOPPED("stop");
-	FORK(handle_service("stop", name, 0));
+	RELEASESTOPPED(STOP);
+	FORK(handle_service(STOP, name, 0));
 }
 
 static void _restart_delay(char *name, int delay)
 {
 	if (delay)
 		sleep(delay);
-	if (handle_service("restart", name, 0)) {
-		RELEASESTOPPED("stop");
-		RELEASESTOPPED("start");
-		handle_service("stop", name, 0);
-		handle_service("start", name, 0);
+	if (handle_service(RESTART, name, 0)) {
+		RELEASESTOPPED(STOP);
+		RELEASESTOPPED(START);
+		handle_service(STOP, name, 0);
+		handle_service(START, name, 0);
 	} else {
 		if (stops_running)
 			stops_running[0]--;
@@ -371,8 +380,8 @@ static int restart_main(int argc, char **argv)
 static int restart_main_f(int argc, char **argv)
 {
 	char *name = argv[1];
-	RELEASESTOPPED("stop");
-	RELEASESTOPPED("start");
+	RELEASESTOPPED(STOP);
+	RELEASESTOPPED(START);
 	init_shared();
 	if (stops_running)
 		stops_running[0]++;
