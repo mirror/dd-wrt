@@ -147,7 +147,6 @@ static int handle_service(const char *method, const char *name, int force)
 			int state = 1;
 			if (dep_func) {
 				char *deps = dep_func();
-				fprintf(stderr, "deps %s for %s\n", deps, dep_name);
 				state = nvram_states(deps);
 			}
 			if (force || state)
