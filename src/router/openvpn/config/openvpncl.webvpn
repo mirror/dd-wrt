@@ -54,7 +54,7 @@
 			<option value="md5" <% nvram_selected("openvpncl_auth","md5"); %>>MD5</option>
 			<option value="md4" <% nvram_selected("openvpncl_auth","md4"); %>>MD4</option>
 			<option value="none" <% nvram_selected("openvpncl_auth","none"); %>>None</option>
-		</select>
+			</select>
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.vpn_upauth"); %></div>
@@ -64,13 +64,11 @@
 		<div id="idupauth">
 			<div class="setting">
 				<div class="label"><% tran("share.usrname"); %></div>
-					  <input size="32" maxlength="32" class="text" name="openvpncl_user" value="<% nvram_get("openvpncl_user"); %>" />
-				</select>
+				 <input size="32" maxlength="32" class="text" name="openvpncl_user" value="<% nvram_get("openvpncl_user"); %>" />
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("share.passwd"); %></div>
-					  <input size="32" maxlength="32" class="text" name="openvpncl_pass" value="<% nvram_get("openvpncl_pass"); %>" />
-				</select>
+				<input size="32" maxlength="32" class="text" name="openvpncl_pass" value="<% nvram_get("openvpncl_pass"); %>" />
 			</div>
 		</div>
 		<div class="setting">
