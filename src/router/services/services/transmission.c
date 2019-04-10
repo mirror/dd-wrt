@@ -215,13 +215,18 @@ static void writeconfig(FILE * fp)
 
 }
 
+char *transmission_deps(void)
+{
+	return "transmission_enable transmission_dir lan_ipaddr transmission_download transmission_whitelist transmission_rpc transmission_username transmission_password";
+}
+
 void stop_transmission(void);
 
 void start_transmission(void)
 {
+	stop_transmission();	// write config if present
 	if (!nvram_matchi("transmission_enable", 1))
 		return;
-	stop_transmission();	// write config if present
 	parse_config();		// read it back and parse it
 
 	eval("mkdir", "-p", nvram_safe_get("transmission_dir"));

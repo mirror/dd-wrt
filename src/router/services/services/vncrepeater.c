@@ -35,13 +35,18 @@
 #include <shutils.h>
 #include <services.h>
 
+char *vncrepeater_deps(void)
+{
+	return "vncr_enable";
+}
+
+void stop_vncrepeater(void);
 void start_vncrepeater(void)
 {
+	stop_vncrepeater();
 	if (!nvram_matchi("vncr_enable", 1))
 		return;
-	eval("iptables", "-D", "INPUT", "-p", "tcp", "-i", get_wan_face(), "--dport", "5900", "-j", "ACCEPT");
 	eval("iptables", "-I", "INPUT", "-p", "tcp", "-i", get_wan_face(), "--dport", "5900", "-j", "ACCEPT");
-	eval("iptables", "-D", "INPUT", "-p", "tcp", "-i", get_wan_face(), "--dport", "5500", "-j", "ACCEPT");
 	eval("iptables", "-I", "INPUT", "-p", "tcp", "-i", get_wan_face(), "--dport", "5500", "-j", "ACCEPT");
 
 	FILE *fp = fopen("/tmp/vncrepeater.ini", "wb");
@@ -71,6 +76,8 @@ void start_vncrepeater(void)
 
 void stop_vncrepeater(void)
 {
+	eval("iptables", "-D", "INPUT", "-p", "tcp", "-i", get_wan_face(), "--dport", "5900", "-j", "ACCEPT");
+	eval("iptables", "-D", "INPUT", "-p", "tcp", "-i", get_wan_face(), "--dport", "5500", "-j", "ACCEPT");
 	stop_process("vncrepeater", "daemon");
 }
 #endif

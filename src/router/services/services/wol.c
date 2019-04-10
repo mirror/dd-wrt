@@ -36,6 +36,11 @@
 
 #define WOL_INTERVAL 15
 
+char *wol_deps(void)
+{
+	return "wol_enable";
+}
+
 void stop_wol(void)
 {
 	stop_process("wol", "Wake On LAN Daemon");

@@ -2316,7 +2316,6 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 #ifdef HAVE_VLANTAGGING
 	add_bridges(wanface, "FORWARD", 1);
 #endif
-	stop_vpn_modules();
 	// unload_vpn_modules ();
 	if (nvram_invmatch("filter", "off") && *wanface) {
 
@@ -2336,7 +2335,8 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 		if (nvram_matchi("ipsec_pass", 0))
 			save2file_A_forward("-o %s -p udp --dport %d -j %s", wanface, ISAKMP_PORT, log_drop);
 	}
-	start_vpn_modules();
+	if (nvram_states(vpn_modules_deps()))
+		start_vpn_modules();
 	// load_vpn_modules ();
 	if (nvram_invmatch("filter", "off")) {
 		if (nvram_matchi("pptp_pass", 1)) {
