@@ -15,30 +15,25 @@
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("management.ipv6_pf_len"); %></div>
-				 <input size="2" maxlength="2" class="text" name="ipv6_pf_len" value="<% nvram_get("ipv6_pf_len"); %>" />
-			</select>
+			<input size="2" maxlength="2" class="text" name="ipv6_pf_len" value="<% nvram_get("ipv6_pf_len"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("management.ipv6_dns"); %> 1</div>
-				 <input size="40" maxlength="40" class="text" name="ipv6_dns1" value="<% nvram_get("ipv6_dns1"); %>" />
-			</select>
+			<input size="40" maxlength="40" class="text" name="ipv6_dns1" value="<% nvram_get("ipv6_dns1"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("management.ipv6_dns"); %> 2</div>
-				 <input size="40" maxlength="40" class="text" name="ipv6_dns2" value="<% nvram_get("ipv6_dns2"); %>" />
-			</select>
+			<input size="40" maxlength="40" class="text" name="ipv6_dns2" value="<% nvram_get("ipv6_dns2"); %>" />
 		</div>
 		<!-- only if native is selected-->
 		<div id="idipv6_native">
 			<div class="setting">
 				<div class="label"><% tran("management.ipv6_prefix"); %></div>
-					<input size="40" maxlength="40" class="text" name="ipv6_prefix" value="<% nvram_get("ipv6_prefix"); %>" />
-				</select>
+				<input size="40" maxlength="40" class="text" name="ipv6_prefix" value="<% nvram_get("ipv6_prefix"); %>" />
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("management.ipv6_addr"); %></div>
-					<input size="40" maxlength="40" class="text" name="ipv6_addr" value="<% nvram_get("ipv6_addr"); %>" />
-				</select>
+				<input size="40" maxlength="40" class="text" name="ipv6_addr" value="<% nvram_get("ipv6_addr"); %>" />
 			</div>
 		</div>
 		<!-- end only native selected-->
@@ -46,26 +41,22 @@
 		<div id="idipv6_6in4">
 			<div class="setting">
 				<div class="label"><% tran("management.ipv6_tun_end_ipv4"); %></div>
-					<input size="20" maxlength="20" class="text" name="ipv6_tun_end_ipv4" value="<% nvram_get("ipv6_tun_end_ipv4"); %>" />
-				</select>
+				<input size="20" maxlength="20" class="text" name="ipv6_tun_end_ipv4" value="<% nvram_get("ipv6_tun_end_ipv4"); %>" />
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("management.ipv6_tun_client_addr"); %></div>
-					<input size="40" maxlength="40" class="text" name="ipv6_tun_client_addr" value="<% nvram_get("ipv6_tun_client_addr"); %>" />/
-					<input size="2" maxlength="2" class="text" name="ipv6_tun_client_addr_pref" value="<% nvram_get("ipv6_tun_client_addr_pref"); %>" />
-				</select>
+				<input size="40" maxlength="40" class="text" name="ipv6_tun_client_addr" value="<% nvram_get("ipv6_tun_client_addr"); %>" />/
+				<input size="2" maxlength="2" class="text" name="ipv6_tun_client_addr_pref" value="<% nvram_get("ipv6_tun_client_addr_pref"); %>" />
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("management.ipv6_tun_upd_url"); %></div>
-					<input size="46" maxlength="150" class="text" name="ipv6_tun_upd_url" value="<% nvram_get("ipv6_tun_upd_url"); %>" />
-				</select>
+				<input size="46" maxlength="150" class="text" name="ipv6_tun_upd_url" value="<% nvram_get("ipv6_tun_upd_url"); %>" />
 			</div>
 		</div>
 		<!-- end only 6in4 selected-->
 		<div class="setting">
 				<div class="label"><% tran("idx.mtu"); %></div>
-					<input size="4" maxlength="4" type="number" min="1280" max="1480" class="text" name="ipv6_mtu" value="<% nvram_get("ipv6_mtu"); %>" />
-				</select>
+				<input size="4" maxlength="4" type="number" min="1280" max="1480" class="text" name="ipv6_mtu" value="<% nvram_get("ipv6_mtu"); %>" />
 		</div>
 		<br><hr><br>
 		<div class="setting">
