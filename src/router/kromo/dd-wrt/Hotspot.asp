@@ -57,18 +57,21 @@ function setHotss(val) {
 	if (val == "1") {
 		//document.setup.chilli_enable[1].click();
 		setElementsActive("chilli_enable", "chilli_additional", false);
+		<% ifndef("HAVE_HOTSPOT","/*"); %>
 		show_layer_ext(this, 'idhotspotsys', true);
+		<% ifndef("HAVE_HOTSPOT","*/"); %>		
 		show_layer_ext(this, 'idchilli', false);
-		}
-	else {
+	} else {
 		setElementsActive("chilli_enable", "chilli_additional", true);
+		<% ifndef("HAVE_HOTSPOT","/*"); %>
 		show_layer_ext(this, 'idhotspotsys', false);
+		<% ifndef("HAVE_HOTSPOT","*/"); %>
 		show_layer_ext(this, 'idchilli', <% nvem("chilli_enable", "1", "1", "0"); %> == 1);
 		if (<% nvem("chilli_def_enable", "0", "1", "0"); %> == 1) {
 			show_layer_ext(this, 'idchilli', false);
 			setElementsActive("chilli_enable", "chilli_additional", false);
-			}
 		}
+	}
 }
 
 
@@ -91,8 +94,9 @@ addEvent(window, "load", function() {
 	show_layer_ext(document.setup.hotss_uamenable, 'idhotssuam', <% nvem("hotss_uamenable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.hotss_nowifibridge, 'idhotssdhcp', <% nvem("hotss_nowifibridge", "1", "1", "0"); %> == 1);
 	setHotss("<% nvem("hotss_enable", "1", "1", "0"); %>");
-	if (document.setup.hotss_loginonsplash)
+	if (document.setup.hotss_loginonsplash) {
 		handle_hotss(document.setup, <% nvem("hotss_loginonsplash", "1", "1", "0"); %> == 1);
+	}
 		
 	update = new StatusbarUpdate();
 	update.start();
