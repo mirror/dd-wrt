@@ -54,8 +54,16 @@
 #include <syslog.h>
 #include <services.h>
 
+char *vpn_modules_deps(void)
+{
+	return "pptp_pass";
+}
+
+void stop_vpn_modules(void);
+
 void start_vpn_modules(void)
 {
+	stop_vpn_modules();
 	if (nvram_matchi("pptp_pass", 1)) {
 		insmod("nf_conntrack_proto_gre ip_conntrack_proto_gre");
 		dd_loginfo("vpn modules", "nf_conntrack_proto_gre successfully loaded\n");
