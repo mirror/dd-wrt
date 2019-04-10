@@ -53,6 +53,14 @@ static void ftpsrv_umount()
 	}
 }
 
+char *ftpsrv_deps(void)
+{
+	return
+	    "proftpd_acctserverport proftpd_authserverip proftpd_enable proftpd_anon_subdir proftpd_authserverport proftpd_anon proftpd_port proftpd_anon_dir proftpd_rad proftpd_wan proftpd_sharedkey samba3_users samba3_shares";
+}
+
+void stop_ftpsrv(void);
+
 void start_ftpsrv(void)
 {
 	struct samba3_share *cs, *csnext;
@@ -60,6 +68,7 @@ void start_ftpsrv(void)
 	struct samba3_user *samba3users, *cu, *cunext;
 	struct samba3_share *samba3shares;
 
+	stop_ftpsrv();
 	if (!nvram_matchi("proftpd_enable", 1))
 		return;
 

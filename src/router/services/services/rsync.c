@@ -36,11 +36,17 @@
 #include <services.h>
 #include <rsync.h>
 
+char *rsync_deps(void)
+{
+	return "rsyncd_enable lan_ipaddr rsync_allowed rsync_shares";
+}
+
+void stop_rsync(void);
 void start_rsync(void)
 {
 	struct rsync_share *cs, *csnext;
 	struct rsync_share *rsyncshares;
-
+	stop_rsync();
 	if (!nvram_matchi("rsyncd_enable", 1))
 		return;
 	FILE *fp = fopen("/tmp/rsyncd.conf", "wb");

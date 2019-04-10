@@ -54,8 +54,15 @@
 #include <syslog.h>
 #include <services.h>
 
+char *ttraff_deps(void)
+{
+	return "ttraff_enable ttraff_iface wan_proto";
+}
+
+void stop_ttraff(void);
 void start_ttraff(void)
 {
+	stop_ttraff();
 	if (!nvram_matchi("ttraff_enable", 1))
 		return;
 

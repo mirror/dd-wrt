@@ -15,6 +15,10 @@ extern void stop_mactelnetd(void);
 extern void start_resetbutton(void);
 extern void stop_resetbutton(void);
 
+extern char *vpn_modules_deps(void);
+extern void start_vpn_modules(void);
+extern void stop_vpn_modules(void);
+
 extern void start_tftpd(void);
 extern void stop_tftpd(void);
 
