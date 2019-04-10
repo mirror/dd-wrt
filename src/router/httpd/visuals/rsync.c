@@ -130,7 +130,7 @@ void ej_rsync_sharepaths(webs_t wp, int argc, char_t ** argv)
 			  number, number, cs->label);
 		websWrite(wp, "				<td style=\"width: 50px; text-align: center;\">\n");
 		websWrite(wp,
-			  "					<script type=\"text/javascript\">document.write(\"<input type=\\\"button\\\" class=\\\"button\\\" name=\\\"rsyncshare_del%s\\\" value=\\\"\"+nas.sharedel+\"\\\"  style=\\\"width: 100%%;\\\" onclick=\\\"removersyncShare(this);\\\"i />\")</script>\n",
+			  "					<script type=\"text/javascript\">document.write(\"<input type=\\\"button\\\" class=\\\"button\\\" name=\\\"rsyncshare_del%s\\\" value=\\\"\"+nas.sharedel+\"\\\"  style=\\\"width: 100%%;\\\" onclick=\\\"removersyncShare(this);\\\" />\")</script>\n",
 			  number);
 		websWrite(wp, "				</td>\n");
 		websWrite(wp, "			</tr>\n");
