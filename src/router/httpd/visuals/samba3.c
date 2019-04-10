@@ -242,7 +242,7 @@ void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 		//fprintf( stderr, "[USERS] %s:%s\n", cu->username, cu->password );
 		if (rows == 0) {
 			websWrite(wp, "			<td id=\"n_smbuser_shareaccess\" valign=\"top\">\n");
-			websWrite(wp, "				<div id=\"n_smbuser_share\"><input type=\"checkbox\" value=\"1\">&nbsp;<span>&nbsp</span></div>\n");
+			websWrite(wp, "				<div id=\"n_smbuser_share\"><input type=\"checkbox\" value=\"1\">&nbsp;<span>&nbsp;</span></div>\n");
 			websWrite(wp, "			</td>\n");
 			websWrite(wp, "			<td style=\"width: 25px; text-align: center;\">\n");
 			websWrite(wp, "				        <input type=\"checkbox\" name=\"smbuser_samba%s\" value=\"1\">\n", number);
