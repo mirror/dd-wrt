@@ -2935,12 +2935,12 @@ void start_firewall(void)
 #endif
 #endif
 	{
+		runStartup(".firewall");
 		create_rc_file(RC_FIREWALL);
 		if (f_exists("/tmp/.rc_firewall")) {
 			setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1);
 			system("/tmp/.rc_firewall");
 		}
-		runStartup(".firewall");
 	}
 
 	cprintf("Ready\n");
