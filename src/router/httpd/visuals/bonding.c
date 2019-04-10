@@ -38,7 +38,7 @@ void ej_show_bondings(webs_t wp, int argc, char_t ** argv)
 	show_caption(wp, "label", "networking.bondtype", NULL);
 	showOptions(wp, "bonding_type", "balance-rr active-backup balance-xor broadcast 802.3ad balance-tlb balance-alb weighted-rr duplex", nvram_default_get("bonding_type", "balance-rr"));
 	show_caption_pp(wp, NULL, "networking.bondifaces", "&nbsp;", "&nbsp;");
-	websWrite(wp, "<input class=\"num\" name=\"bonding_number\"size=\"5\" value=\"%s\" />\n", nvram_default_get("bonding_number", "1"));
+	websWrite(wp, "<input class=\"num\" name=\"bonding_number\" size=\"5\" value=\"%s\" />\n", nvram_default_get("bonding_number", "1"));
 	websWrite(wp, "</div>\n");
 
 	getIfList(bufferif, "eth");

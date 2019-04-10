@@ -63,7 +63,7 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 	if (!br0found) {
 
 		sprintf(bridge_name, "bridgename%d", count);
-		websWrite(wp, "<tr><td><input class=\"num\" name=\"%s\"size=\"3\" value=\"br0\" /></td>\n", bridge_name);
+		websWrite(wp, "<tr><td><input class=\"num\" name=\"%s\" size=\"3\" value=\"br0\" /></td>\n", bridge_name);
 
 		sprintf(bridge_name, "bridgestp%d", count);
 		websWrite(wp, "<td>");
@@ -79,13 +79,13 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "</td>");
 
 		sprintf(bridge_name, "bridgeforward_delay%d", count);
-		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"2\" value=\"15\" /></td>\n", bridge_name);
+		websWrite(wp, "<td><input class=\"num\" name=\"%s\" size=\"2\" value=\"15\" /></td>\n", bridge_name);
 		sprintf(bridge_name, "bridgemax_age%d", count);
-		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"2\" value=\"20\" /></td>\n", bridge_name);
+		websWrite(wp, "<td><input class=\"num\" name=\"%s\" size=\"2\" value=\"20\" /></td>\n", bridge_name);
 
 		// Bridges are bridges, Ports are ports, show it again HERE          
 		sprintf(bridge_name, "bridgemtu%d", count);
-		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"3\" value=\"1500\" /></td>\n", bridge_name);
+		websWrite(wp, "<td><input class=\"num\" name=\"%s\" size=\"3\" value=\"1500\" /></td>\n", bridge_name);
 
 		sprintf(bridge_name, "lan_hwaddr");
 		websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"16\" value=\"%s\" /></td>\n", bridge_name, nvram_safe_get(bridge_name));
@@ -118,7 +118,7 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 			break;
 
 		sprintf(bridge_name, "bridgename%d", count);
-		websWrite(wp, "<tr><td><input class=\"num\" name=\"%s\"size=\"3\" value=\"%s\" /></td>\n", bridge_name, bridge);
+		websWrite(wp, "<tr><td><input class=\"num\" name=\"%s\" size=\"3\" value=\"%s\" /></td>\n", bridge_name, bridge);
 		sprintf(bridge_name, "bridgestp%d", count);
 		websWrite(wp, "<td>");
 		showOptions(wp, bridge_name, stpoptions, stp);
@@ -135,13 +135,13 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "</td>");
 
 		sprintf(bridge_name, "bridgeforward_delay%d", count);
-		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"2\" value=\"%s\" /></td>\n", bridge_name, forward_delay);
+		websWrite(wp, "<td><input class=\"num\" name=\"%s\" size=\"2\" value=\"%s\" /></td>\n", bridge_name, forward_delay);
 		sprintf(bridge_name, "bridgemax_age%d", count);
-		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"2\" value=\"%s\" /></td>\n", bridge_name, max_age);
+		websWrite(wp, "<td><input class=\"num\" name=\"%s\" size=\"2\" value=\"%s\" /></td>\n", bridge_name, max_age);
 
 		// Bridges are bridges, Ports are ports, show it again HERE          
 		sprintf(bridge_name, "bridgemtu%d", count);
-		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"3\" value=\"%s\" /></td>\n", bridge_name, mtu != NULL ? mtu : "1500");
+		websWrite(wp, "<td><input class=\"num\" name=\"%s\" size=\"3\" value=\"%s\" /></td>\n", bridge_name, mtu != NULL ? mtu : "1500");
 		if (!strcmp(bridge, "br0")) {
 			sprintf(bridge_name, "lan_hwaddr");
 			websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"16\" value=\"%s\" /></td>\n", bridge_name, nvram_safe_get(bridge_name));
@@ -179,7 +179,7 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 	for (i = count; i < realcount; i++) {
 
 		sprintf(bridge_name, "bridgename%d", i);
-		websWrite(wp, "<tr><td><input class=\"num\" name=\"%s\"size=\"3\" /></td>\n", bridge_name);
+		websWrite(wp, "<tr><td><input class=\"num\" name=\"%s\" size=\"3\" /></td>\n", bridge_name);
 		sprintf(bridge_name, "bridgestp%d", i);
 		websWrite(wp, "<td>");
 		showOptions(wp, bridge_name, stpoptions, "STP");
@@ -194,12 +194,12 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "</td>");
 
 		sprintf(bridge_name, "bridgeforward_delay%d", count);
-		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"2\" value=\"15\" /></td>\n", bridge_name);
+		websWrite(wp, "<td><input class=\"num\" name=\"%s\" size=\"2\" value=\"15\" /></td>\n", bridge_name);
 		sprintf(bridge_name, "bridgemax_age%d", count);
-		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"2\" value=\"20\" /></td>\n", bridge_name);
+		websWrite(wp, "<td><input class=\"num\" name=\"%s\" size=\"2\" value=\"20\" /></td>\n", bridge_name);
 
 		sprintf(bridge_name, "bridgemtu%d", count);
-		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"3\" value=\"%s\" /></td>\n", bridge_name, "1500");
+		websWrite(wp, "<td><input class=\"num\" name=\"%s\" size=\"3\" value=\"%s\" /></td>\n", bridge_name, "1500");
 		websWrite(wp, "<td></td><td>");
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridge_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script></td></tr>\n",
