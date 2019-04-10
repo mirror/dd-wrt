@@ -687,10 +687,10 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 			websWrite(wp,
 				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"0\\\" %s >\" + share.auto + \"</option>\");\n//]]>\n</script>\n",
 				  nvram_selnmatch(wp, "0", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "<option value=\"20\" %s>20 MHz</option>\n", nvram_selnmatch(wp, "20", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "<option value=\"40\" %s>40 MHz</option>\n", nvram_selnmatch(wp, "40", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "<option value=\"20\" %s>20 MHz</option>\n", nvram_selnmatch(wp, "20", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
+			websWrite(wp, "<option value=\"40\" %s>40 MHz</option>\n", nvram_selnmatch(wp, "40", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
 			if (has_ac(prefix) && has_5ghz(prefix)) {
-				websWrite(wp, "<option value=\"80\" %s>80 MHz</option>\n", nvram_nmatch("80", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
+				websWrite(wp, "<option value=\"80\" %s>80 MHz</option>\n", nvram_nmatch("80", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
 
 			}
 			websWrite(wp, "</select>\n");
@@ -700,8 +700,8 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 				websWrite(wp, "<div class=\"setting\">\n");
 				websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_wide)</script></div>\n");
 				websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
-				websWrite(wp, "<option value=\"upper\" %s>upper</option>\n", nvram_selnmatch(wp, "upper", "%s_nctrlsb", prefix) ? "selected=\\\"selected\\\"" : "");
-				websWrite(wp, "<option value=\"lower\" %s>lower</option>\n", nvram_selnmatch(wp, "lower", "%s_nctrlsb", prefix) ? "selected=\\\"selected\\\"" : "");
+				websWrite(wp, "<option value=\"upper\" %s>upper</option>\n", nvram_selnmatch(wp, "upper", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
+				websWrite(wp, "<option value=\"lower\" %s>lower</option>\n", nvram_selnmatch(wp, "lower", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
 				websWrite(wp, "</select>\n");
 
 				websWrite(wp, "</div>\n");
@@ -710,10 +710,10 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 				websWrite(wp, "<div class=\"setting\">\n");
 				websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_wide)</script></div>\n");
 				websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
-				websWrite(wp, "<option value=\"ll\" %s>lower lower</option>\n", nvram_nmatch("ll", "%s_nctrlsb", prefix) ? "selected=\\\"selected\\\"" : "");
-				websWrite(wp, "<option value=\"lu\" %s>lower upper</option>\n", nvram_nmatch("lu", "%s_nctrlsb", prefix) ? "selected=\\\"selected\\\"" : "");
-				websWrite(wp, "<option value=\"ul\" %s>upper lower</option>\n", nvram_nmatch("ul", "%s_nctrlsb", prefix) ? "selected=\\\"selected\\\"" : "");
-				websWrite(wp, "<option value=\"uu\" %s>upper upper</option>\n", nvram_nmatch("uu", "%s_nctrlsb", prefix) ? "selected=\\\"selected\\\"" : "");
+				websWrite(wp, "<option value=\"ll\" %s>lower lower</option>\n", nvram_nmatch("ll", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
+				websWrite(wp, "<option value=\"lu\" %s>lower upper</option>\n", nvram_nmatch("lu", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
+				websWrite(wp, "<option value=\"ul\" %s>upper lower</option>\n", nvram_nmatch("ul", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
+				websWrite(wp, "<option value=\"uu\" %s>upper upper</option>\n", nvram_nmatch("uu", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
 				websWrite(wp, "</select>\n");
 				websWrite(wp, "</div>\n");
 			}
@@ -726,8 +726,8 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 				websWrite(wp, "<div class=\"setting\">\n");
 				websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_wide)</script></div>\n");
 				websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
-				websWrite(wp, "<option value=\"upper\" %s>upper</option>\n", nvram_selnmatch(wp, "upper", "%s_nctrlsb", prefix) ? "selected=\\\"selected\\\"" : "");
-				websWrite(wp, "<option value=\"lower\" %s>lower</option>\n", nvram_selnmatch(wp, "lower", "%s_nctrlsb", prefix) ? "selected=\\\"selected\\\"" : "");
+				websWrite(wp, "<option value=\"upper\" %s>upper</option>\n", nvram_selnmatch(wp, "upper", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
+				websWrite(wp, "<option value=\"lower\" %s>lower</option>\n", nvram_selnmatch(wp, "lower", "%s_nctrlsb", prefix) ? "selected=\"selected\"" : "");
 				websWrite(wp, "</select>\n");
 
 				websWrite(wp, "</div>\n");
