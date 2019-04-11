@@ -1370,7 +1370,7 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 #endif
 	fprintf(fp, "\n");
 	if (ispsk3)
-		fprintf(fp, "\tsae_groups=19 20 21\n");
+		fprintf(fp, "sae_groups=19 20 21\n");
 #ifdef HAVE_80211R
 	if (nvram_matchi(ft, 1)
 	    && (ispsk3 || ispsk || ispsk2 || ispsk2sha256)) {
