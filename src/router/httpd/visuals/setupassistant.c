@@ -1937,7 +1937,7 @@ void ej_sas_show_dhcpd_settings(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<div class=\"setting\">\n");
 		// char *nv = nvram_safe_get ("wan_wins");
 		websWrite(wp,
-			  "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.dhcp_srv)</script></div><input class=\"spaceradio\" type=\"radio\" name=\"lan_proto\" value=\"dhcp\" onclick=SelDHCP('dhcp',this.form) %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
+			  "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.dhcp_srv)</script></div><input class=\"spaceradio\" type=\"radio\" name=\"lan_proto\" value=\"dhcp\" onclick=\"SelDHCP('dhcp',this.form)\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
 			  nvram_selmatch(wp, "lan_proto", "dhcp") ? "checked=\"checked\"" : "");
 		websWrite(wp,
 			  "<input class=\"spaceradio\" type=\"radio\" name=\"lan_proto\" value=\"static\" onclick=\"SelDHCP('static',this.form)\" %s /><script type=\"text/javascript\">Capture(share.disable)</script></div><input type=\"hidden\" name=\"dhcp_check\" /><div class=\"setting\">\n",
