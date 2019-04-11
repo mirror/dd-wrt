@@ -19,6 +19,8 @@ from wpasupplicant import WpaSupplicant
 from utils import HwsimSkip, alloc_fail, fail_test, wait_fail_trigger
 from tshark import run_tshark, run_tshark_json
 from test_ap_ht import set_world_reg
+from test_sae import radiotap_build, start_monitor, stop_monitor, \
+    build_sae_commit, sae_rx_commit_token_req
 from hwsim_utils import set_group_map
 
 def check_mesh_support(dev, secure=False):
@@ -271,8 +273,8 @@ def _test_mesh_open_rssi_threshold(dev, apdev, value, expected):
     dev[0].mesh_group_add(id)
     check_mesh_group_added(dev[0])
 
-    cmd = subprocess.Popen([ "iw", "dev", dev[0].ifname, "get", "mesh_param",
-                             "mesh_rssi_threshold" ], stdout=subprocess.PIPE)
+    cmd = subprocess.Popen(["iw", "dev", dev[0].ifname, "get", "mesh_param",
+                            "mesh_rssi_threshold"], stdout=subprocess.PIPE)
     mesh_rssi_threshold = int(cmd.stdout.read().decode().split(" ")[0])
 
     dev[0].mesh_group_remove()
@@ -835,10 +837,10 @@ def test_wpas_mesh_max_peering(dev, apdev, params):
 
     capfile = os.path.join(params['logdir'], "hwsim0.pcapng")
     filt = "wlan.fc.type_subtype == 8"
-    out = run_tshark(capfile, filt, [ "wlan.sa", "wlan.mesh.config.cap" ])
+    out = run_tshark(capfile, filt, ["wlan.sa", "wlan.mesh.config.cap"])
     pkts = out.splitlines()
-    one = [ 0, 0, 0 ]
-    zero = [ 0, 0, 0 ]
+    one = [0, 0, 0]
+    zero = [0, 0, 0]
     all_cap_one = True
     for pkt in pkts:
         addr, cap = pkt.split('\t')
@@ -867,9 +869,9 @@ def test_wpas_mesh_max_peering(dev, apdev, params):
         #
         # For now, assume the capability field ends up being the last octet of
         # the frame.
-        one = [ 0, 0, 0 ]
-        zero = [ 0, 0, 0 ]
-        addrs = [ addr0, addr1, addr2 ]
+        one = [0, 0, 0]
+        zero = [0, 0, 0]
+        addrs = [addr0, addr1, addr2]
         for idx in range(3):
             addr = addrs[idx]
             out = run_tshark_json(capfile, filt + " && wlan.sa == " + addr)
@@ -939,10 +941,10 @@ def _test_wpas_mesh_open_5ghz_coex(dev, apdev):
 
     # Start a 20 MHz BSS on channel 40 that would be the secondary channel of
     # HT40+ mesh on channel 36.
-    params = { "ssid": "test-ht40",
-               "hw_mode": "a",
-               "channel": "40",
-               "country_code": "US" }
+    params = {"ssid": "test-ht40",
+              "hw_mode": "a",
+              "channel": "40",
+              "country_code": "US"}
     hapd = hostapd.add_ap(apdev[0], params)
     bssid = hapd.own_addr()
 
@@ -1411,7 +1413,7 @@ def test_wpas_mesh_gate_forwarding(dev, apdev, p):
     filt = "wlan.sa==%s && wlan_mgt.fixed.mesh_addr5==%s" % (addr2,
                                                              external_sta)
     for i in range(15):
-        da = run_tshark(capfile, filt, [ "wlan.da" ])
+        da = run_tshark(capfile, filt, ["wlan.da"])
         if addr0 in da and addr1 in da:
             logger.debug("Frames seen in tshark iteration %d" % i)
             break
@@ -1677,13 +1679,13 @@ def test_wpas_mesh_pmksa_caching_ext(dev, apdev):
     if "FAIL" not in res:
         raise Exception("MESH_PMKSA_GET accepted when not in mesh")
 
-    tests = [ "foo",
-              "02:02:02:02:02:02",
-              "02:02:02:02:02:02 q",
-              "02:02:02:02:02:02 c3d51a7ccfca0c6d5287291a7169d79b",
-              "02:02:02:02:02:02 c3d51a7ccfca0c6d5287291a7169d79b q",
-              "02:02:02:02:02:02 c3d51a7ccfca0c6d5287291a7169d79b 1bed4fa22ece7997ca1bdc8b829019fe63acac91cba3405522c24c91f7cfb49f",
-              "02:02:02:02:02:02 c3d51a7ccfca0c6d5287291a7169d79b 1bed4fa22ece7997ca1bdc8b829019fe63acac91cba3405522c24c91f7cfb49f q" ]
+    tests = ["foo",
+             "02:02:02:02:02:02",
+             "02:02:02:02:02:02 q",
+             "02:02:02:02:02:02 c3d51a7ccfca0c6d5287291a7169d79b",
+             "02:02:02:02:02:02 c3d51a7ccfca0c6d5287291a7169d79b q",
+             "02:02:02:02:02:02 c3d51a7ccfca0c6d5287291a7169d79b 1bed4fa22ece7997ca1bdc8b829019fe63acac91cba3405522c24c91f7cfb49f",
+             "02:02:02:02:02:02 c3d51a7ccfca0c6d5287291a7169d79b 1bed4fa22ece7997ca1bdc8b829019fe63acac91cba3405522c24c91f7cfb49f q"]
     for t in tests:
         if "FAIL" not in dev[1].request("MESH_PMKSA_ADD " + t):
             raise Exception("Invalid MESH_PMKSA_ADD accepted")
@@ -1821,6 +1823,7 @@ def test_mesh_sae_groups_invalid(dev, apdev):
     # wpa_s->mesh_rsn->sae_group_index.
     dev[0].dump_monitor()
     dev[1].dump_monitor()
+    dev[2].request("SET sae_groups ")
     id = add_mesh_secure_net(dev[2])
     dev[2].mesh_group_add(id)
     check_mesh_group_added(dev[2])
@@ -1835,6 +1838,7 @@ def test_mesh_sae_groups_invalid(dev, apdev):
 
     dev[0].request("SET sae_groups ")
     dev[1].request("SET sae_groups ")
+    dev[2].request("SET sae_groups ")
 
 def test_mesh_sae_failure(dev, apdev):
     """Mesh and local SAE failures"""
@@ -1843,14 +1847,14 @@ def test_mesh_sae_failure(dev, apdev):
     dev[0].request("SET sae_groups ")
     dev[1].request("SET sae_groups ")
 
-    funcs = [ (1, "=mesh_rsn_auth_sae_sta", True),
-              (1, "mesh_rsn_build_sae_commit;mesh_rsn_auth_sae_sta", False),
-              (1, "auth_sae_init_committed;mesh_rsn_auth_sae_sta", True),
-              (1, "=mesh_rsn_protect_frame", True),
-              (2, "=mesh_rsn_protect_frame", True),
-              (1, "aes_siv_encrypt;mesh_rsn_protect_frame", True),
-              (1, "=mesh_rsn_process_ampe", True),
-              (1, "aes_siv_decrypt;mesh_rsn_process_ampe", True) ]
+    funcs = [(1, "=mesh_rsn_auth_sae_sta", True),
+             (1, "mesh_rsn_build_sae_commit;mesh_rsn_auth_sae_sta", False),
+             (1, "auth_sae_init_committed;mesh_rsn_auth_sae_sta", True),
+             (1, "=mesh_rsn_protect_frame", True),
+             (2, "=mesh_rsn_protect_frame", True),
+             (1, "aes_siv_encrypt;mesh_rsn_protect_frame", True),
+             (1, "=mesh_rsn_process_ampe", True),
+             (1, "aes_siv_decrypt;mesh_rsn_process_ampe", True)]
     for count, func, success in funcs:
         id = add_mesh_secure_net(dev[0])
         dev[0].mesh_group_add(id)
@@ -1873,8 +1877,8 @@ def test_mesh_failure(dev, apdev):
     """Mesh and local failures"""
     check_mesh_support(dev[0])
 
-    funcs = [ (1, "ap_sta_add;mesh_mpm_add_peer", True),
-              (1, "wpabuf_alloc;mesh_mpm_send_plink_action", True) ]
+    funcs = [(1, "ap_sta_add;mesh_mpm_add_peer", True),
+             (1, "wpabuf_alloc;mesh_mpm_send_plink_action", True)]
     for count, func, success in funcs:
         add_open_mesh_network(dev[0])
 
@@ -1891,7 +1895,7 @@ def test_mesh_failure(dev, apdev):
         check_mesh_group_removed(dev[0])
         check_mesh_group_removed(dev[1])
 
-    funcs = [ (1, "mesh_mpm_init_link", True) ]
+    funcs = [(1, "mesh_mpm_init_link", True)]
     for count, func, success in funcs:
         add_open_mesh_network(dev[0])
 
@@ -1937,8 +1941,8 @@ def test_mesh_default_beacon_int(dev, apdev):
 def test_mesh_scan_parse_error(dev, apdev):
     """Mesh scan element parse error"""
     check_mesh_support(dev[0])
-    params = { "ssid": "open",
-               "beacon_int": "2000" }
+    params = {"ssid": "open",
+              "beacon_int": "2000"}
     hapd = hostapd.add_ap(apdev[0], params)
     bssid = apdev[0]['bssid']
     hapd.set('vendor_elements', 'dd0201')
@@ -2414,3 +2418,60 @@ def test_mesh_forwarding_secure(dev):
         set_group_map(dev[0], 1)
         set_group_map(dev[1], 1)
         set_group_map(dev[2], 1)
+
+def test_mesh_sae_anti_clogging(dev, apdev):
+    """Mesh using SAE and anti-clogging"""
+    try:
+        run_mesh_sae_anti_clogging(dev, apdev)
+    finally:
+        stop_monitor(apdev[1]["ifname"])
+
+def run_mesh_sae_anti_clogging(dev, apdev):
+    check_mesh_support(dev[0], secure=True)
+    check_mesh_support(dev[1], secure=True)
+    check_mesh_support(dev[2], secure=True)
+
+    sock = start_monitor(apdev[1]["ifname"])
+    radiotap = radiotap_build()
+
+    dev[0].request("SET sae_groups 21")
+    id = add_mesh_secure_net(dev[0])
+    dev[0].mesh_group_add(id)
+    check_mesh_group_added(dev[0])
+
+    # This flood of SAE authentication frames is from not yet known mesh STAs,
+    # so the messages get dropped.
+    addr0 = binascii.unhexlify(dev[0].own_addr().replace(':', ''))
+    for i in range(16):
+        addr = binascii.unhexlify("f2%010x" % i)
+        frame = build_sae_commit(addr0, addr)
+        sock.send(radiotap + frame)
+
+    dev[1].request("SET sae_groups 21")
+    id = add_mesh_secure_net(dev[1])
+    dev[1].mesh_group_add(id)
+    check_mesh_group_added(dev[1])
+    check_mesh_connected2(dev)
+
+    # Inject Beacon frames to make the sources of the second flood known to the
+    # target.
+    bcn1 = binascii.unhexlify("80000000" + "ffffffffffff")
+    bcn2 = binascii.unhexlify("0000dd20c44015840500e80310000000010882848b968c1298240301010504000200003204b048606c30140100000fac040100000fac040100000fac0800002d1afe131bffff0000000000000000000001000000000000000000003d16010000000000ffff0000000000000000000000000000720d777061732d6d6573682d736563710701010001010009")
+    for i in range(16):
+        addr = binascii.unhexlify("f4%010x" % i)
+        frame = bcn1 + addr + addr + bcn2
+        sock.send(radiotap + frame)
+
+    # This flood of SAE authentication frames is from known mesh STAs, so the
+    # target will need to process these.
+    for i in range(16):
+        addr = binascii.unhexlify("f4%010x" % i)
+        frame = build_sae_commit(addr0, addr)
+        sock.send(radiotap + frame)
+
+    dev[2].request("SET sae_groups 21")
+    id = add_mesh_secure_net(dev[2])
+    dev[2].mesh_group_add(id)
+    check_mesh_group_added(dev[2])
+    check_mesh_peer_connected(dev[2])
+    check_mesh_peer_connected(dev[0])

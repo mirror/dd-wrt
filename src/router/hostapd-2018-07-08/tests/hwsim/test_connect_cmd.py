@@ -15,9 +15,9 @@ from p2p_utils import *
 
 def test_connect_cmd_open(dev, apdev):
     """Open connection using cfg80211 connect command"""
-    params = { "ssid": "sta-connect",
-               "manage_p2p": "1",
-               "allow_cross_connection": "1" }
+    params = {"ssid": "sta-connect",
+              "manage_p2p": "1",
+              "allow_cross_connection": "1"}
     hostapd.add_ap(apdev[0], params)
 
     wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
@@ -31,7 +31,7 @@ def test_connect_cmd_open(dev, apdev):
 
 def test_connect_cmd_wep(dev, apdev):
     """WEP Open System using cfg80211 connect command"""
-    params = { "ssid": "sta-connect-wep", "wep_key0": '"hello"' }
+    params = {"ssid": "sta-connect-wep", "wep_key0": '"hello"'}
     hapd = hostapd.add_ap(apdev[0], params)
 
     wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
@@ -46,8 +46,8 @@ def test_connect_cmd_wep(dev, apdev):
 
 def test_connect_cmd_wep_shared(dev, apdev):
     """WEP Shared key using cfg80211 connect command"""
-    params = { "ssid": "sta-connect-wep", "wep_key0": '"hello"',
-               "auth_algs": "2" }
+    params = {"ssid": "sta-connect-wep", "wep_key0": '"hello"',
+              "auth_algs": "2"}
     hapd = hostapd.add_ap(apdev[0], params)
 
     wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
@@ -68,9 +68,9 @@ def test_connect_cmd_wep_shared(dev, apdev):
 
 def test_connect_cmd_p2p_management(dev, apdev):
     """Open connection using cfg80211 connect command and AP using P2P management"""
-    params = { "ssid": "sta-connect",
-               "manage_p2p": "1",
-               "allow_cross_connection": "0" }
+    params = {"ssid": "sta-connect",
+              "manage_p2p": "1",
+              "allow_cross_connection": "0"}
     hostapd.add_ap(apdev[0], params)
 
     wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
@@ -97,7 +97,7 @@ def test_connect_cmd_wpa2_psk(dev, apdev):
 def test_connect_cmd_concurrent_grpform_while_connecting(dev, apdev):
     """Concurrent P2P group formation while connecting to an AP using cfg80211 connect command"""
     logger.info("Start connection to an infrastructure AP")
-    hapd = hostapd.add_ap(apdev[0], { "ssid": "test-open" })
+    hapd = hostapd.add_ap(apdev[0], {"ssid": "test-open"})
 
     wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
     wpas.interface_add("wlan5", drv_params="force_connect_cmd=1")
@@ -122,29 +122,26 @@ def test_connect_cmd_concurrent_grpform_while_connecting(dev, apdev):
 
 def test_connect_cmd_reject_assoc(dev, apdev):
     """Connection using cfg80211 connect command getting rejected"""
-    params = { "ssid": "sta-connect",
-               "require_ht": "1" }
+    params = {"ssid": "sta-connect",
+              "require_ht": "1"}
     hostapd.add_ap(apdev[0], params)
 
     wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
     wpas.interface_add("wlan5", drv_params="force_connect_cmd=1")
     wpas.connect("sta-connect", key_mgmt="NONE", scan_freq="2412",
                  disable_ht="1", wait_connect=False)
-    # Reject event gets reported twice since we force connect command to be used
-    # with a driver that supports auth+assoc for testing purposes.
-    for i in range(0, 2):
-        ev = wpas.wait_event(["CTRL-EVENT-ASSOC-REJECT"], timeout=15)
-        if ev is None:
-            raise Exception("Association rejection timed out")
-        if "status_code=27" not in ev:
-            raise Exception("Unexpected rejection status code")
+    ev = wpas.wait_event(["CTRL-EVENT-ASSOC-REJECT"], timeout=15)
+    if ev is None:
+        raise Exception("Association rejection timed out")
+    if "status_code=27" not in ev:
+        raise Exception("Unexpected rejection status code")
 
     wpas.request("DISCONNECT")
     wpas.dump_monitor()
 
 def test_connect_cmd_disconnect_event(dev, apdev):
     """Connection using cfg80211 connect command getting disconnected by the AP"""
-    params = { "ssid": "sta-connect" }
+    params = {"ssid": "sta-connect"}
     hapd = hostapd.add_ap(apdev[0], params)
 
     wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
@@ -173,7 +170,7 @@ def test_connect_cmd_disconnect_event(dev, apdev):
 
 def test_connect_cmd_roam(dev, apdev):
     """cfg80211 connect command to trigger roam"""
-    params = { "ssid": "sta-connect" }
+    params = {"ssid": "sta-connect"}
     hostapd.add_ap(apdev[0], params)
 
     wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
@@ -191,7 +188,7 @@ def test_connect_cmd_roam(dev, apdev):
 
 def test_connect_cmd_bssid_hint(dev, apdev):
     """cfg80211 connect command with bssid_hint"""
-    params = { "ssid": "sta-connect" }
+    params = {"ssid": "sta-connect"}
     hostapd.add_ap(apdev[0], params)
     hostapd.add_ap(apdev[1], params)
 
@@ -230,3 +227,4 @@ def test_connect_cmd_bssid_hint(dev, apdev):
         wpas.dump_monitor()
     finally:
         wpas.request("AP_SCAN 1")
+    wpas.flush_scan_cache()
