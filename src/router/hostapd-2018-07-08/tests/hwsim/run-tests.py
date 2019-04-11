@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #
 # Test case executor
-# Copyright (c) 2013-2015, Jouni Malinen <j@w1.fi>
+# Copyright (c) 2013-2019, Jouni Malinen <j@w1.fi>
 #
 # This software may be distributed under the terms of the BSD license.
 # See README for more details.
@@ -63,6 +63,7 @@ def reset_devs(dev, apdev):
         pass
     if wpas:
         wpas.close_ctrl()
+        del wpas
 
     try:
         hapd = HostapdGlobal()
@@ -117,8 +118,8 @@ def report(conn, prefill, build, commit, run, test, result, duration, logdir,
             print("sql: %r" % (params, ))
 
         if result == "FAIL":
-            for log in [ "log", "log0", "log1", "log2", "log3", "log5",
-                         "hostapd", "dmesg", "hwsim0", "hwsim0.pcapng" ]:
+            for log in ["log", "log0", "log1", "log2", "log3", "log5",
+                        "hostapd", "dmesg", "hwsim0", "hwsim0.pcapng"]:
                 add_log_file(conn, test, run, log,
                              logdir + "/" + test + "." + log)
 
@@ -138,7 +139,7 @@ class DataCollector(object):
                                                stderr=open('/dev/null', 'w'),
                                                cwd=self._logdir)
             l = self._trace_cmd.stdout.read(7)
-            while self._trace_cmd.poll() is None and not 'STARTED' in l:
+            while self._trace_cmd.poll() is None and 'STARTED' not in l:
                 l += self._trace_cmd.stdout.read(1)
             res = self._trace_cmd.returncode
             if res:
@@ -194,7 +195,7 @@ def main():
             logger.debug("Import test cases from " + t)
             mod = __import__(m.group(1))
             test_modules.append(mod.__name__.replace('test_', '', 1))
-            for key,val in mod.__dict__.items():
+            for key, val in mod.__dict__.items():
                 if key.startswith("test_"):
                     tests.append(val)
     test_names = list(set([t.__name__.replace('test_', '', 1) for t in tests]))
@@ -254,7 +255,7 @@ def main():
     if args.tests:
         fail = False
         for t in args.tests:
-            if not t in test_names:
+            if t not in test_names:
                 print('Invalid arguments - test "%s" not known' % t)
                 fail = True
         if fail:
@@ -282,7 +283,7 @@ def main():
                 line = line.strip()
                 if not line or line.startswith('#'):
                     continue
-                    args.testmodules.append(line)
+                args.testmodules.append(line)
 
     tests_to_run = []
     if args.tests:
@@ -295,7 +296,7 @@ def main():
         for t in tests:
             name = t.__name__.replace('test_', '', 1)
             if args.testmodules:
-                if not t.__module__.replace('test_', '', 1) in args.testmodules:
+                if t.__module__.replace('test_', '', 1) not in args.testmodules:
                     continue
             tests_to_run.append(t)
 
@@ -343,8 +344,8 @@ def main():
     dev0 = WpaSupplicant('wlan0', '/tmp/wpas-wlan0')
     dev1 = WpaSupplicant('wlan1', '/tmp/wpas-wlan1')
     dev2 = WpaSupplicant('wlan2', '/tmp/wpas-wlan2')
-    dev = [ dev0, dev1, dev2 ]
-    apdev = [ ]
+    dev = [dev0, dev1, dev2]
+    apdev = []
     apdev.append({"ifname": 'wlan3', "bssid": "02:00:00:00:03:00"})
     apdev.append({"ifname": 'wlan4', "bssid": "02:00:00:00:04:00"})
 
@@ -385,7 +386,7 @@ def main():
         logger.info("Parallel execution - %d/%d" % (split_server, split_total))
         split_server -= 1
         tests_to_run.sort(key=lambda t: t.__name__)
-        tests_to_run = [x for i,x in enumerate(tests_to_run) if i % split_total == split_server]
+        tests_to_run = [x for i, x in enumerate(tests_to_run) if i % split_total == split_server]
 
     if args.shuffle_tests:
         from random import shuffle
@@ -446,9 +447,7 @@ def main():
                 dev[0].connect("country98", key_mgmt="NONE", scan_freq="2412")
                 dev[1].request("DISCONNECT")
                 dev[0].wait_disconnected()
-                dev[0].request("DISCONNECT")
-                dev[0].request("ABORT_SCAN")
-                time.sleep(1)
+                dev[0].disconnect_and_stop_scan()
             dev[0].reset()
             dev[1].reset()
             dev[0].dump_monitor()
@@ -560,7 +559,8 @@ def main():
                 reset_ok = reset_devs(dev, apdev)
             wpas = None
             try:
-                wpas = WpaSupplicant(global_iface="/tmp/wpas-wlan5")
+                wpas = WpaSupplicant(global_iface="/tmp/wpas-wlan5",
+                                     monitor=False)
                 rename_log(args.logdir, 'log5', name, wpas)
                 if not args.no_reset:
                     wpas.remove_ifname()
@@ -568,6 +568,7 @@ def main():
                 pass
             if wpas:
                 wpas.close_ctrl()
+                del wpas
 
             for i in range(0, 3):
                 rename_log(args.logdir, 'log' + str(i), name, dev[i])

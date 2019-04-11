@@ -69,9 +69,9 @@ def build_eapol_key_2_2(kck, key_data, replay_counter=3, key_info=0x0302,
 @remote_compatible
 def test_wpa2_ocv(dev, apdev):
     """OCV on 2.4 GHz"""
-    params = { "channel": "1",
-               "ieee80211w": "2",
-               "ocv": "1" }
+    params = {"channel": "1",
+              "ieee80211w": "2",
+              "ocv": "1"}
     hapd, ssid, passphrase = ocv_setup_ap(apdev[0], params)
     for ocv in range(2):
         dev[0].connect(ssid, psk=passphrase, scan_freq="2412", ocv=str(ocv),
@@ -89,11 +89,11 @@ def test_wpa2_ocv_5ghz(dev, apdev):
         dev[0].flush_scan_cache()
 
 def run_wpa2_ocv_5ghz(dev, apdev):
-    params = { "hw_mode": "a",
-               "channel": "40",
-               "ieee80211w": "2",
-               "country_code": "US",
-               "ocv": "1" }
+    params = {"hw_mode": "a",
+              "channel": "40",
+              "ieee80211w": "2",
+              "country_code": "US",
+              "ocv": "1"}
     hapd, ssid, passphrase = ocv_setup_ap(apdev[0], params)
     for ocv in range(2):
         dev[0].connect(ssid, psk=passphrase, scan_freq="5200", ocv=str(ocv),
@@ -105,10 +105,10 @@ def run_wpa2_ocv_5ghz(dev, apdev):
 @remote_compatible
 def test_wpa2_ocv_ht20(dev, apdev):
     """OCV with HT20 channel"""
-    params = { "channel": "6",
-               "ieee80211n": "1",
-               "ieee80211w": "1",
-               "ocv": "1" }
+    params = {"channel": "6",
+              "ieee80211n": "1",
+              "ieee80211w": "1",
+              "ocv": "1"}
     hapd, ssid, passphrase = ocv_setup_ap(apdev[0], params)
     for ocv in range(2):
         dev[0].connect(ssid, psk=passphrase, scan_freq="2437", ocv=str(ocv),
@@ -131,17 +131,17 @@ def test_wpa2_ocv_ht40(dev, apdev):
         dev[1].flush_scan_cache()
 
 def run_wpa2_ocv_ht40(dev, apdev):
-    for channel, capab, freq, mode in [( "6", "[HT40-]", "2437", "g"),
-                                       ( "6", "[HT40+]", "2437", "g"),
+    for channel, capab, freq, mode in [("6", "[HT40-]", "2437", "g"),
+                                       ("6", "[HT40+]", "2437", "g"),
                                        ("40", "[HT40-]", "5200", "a"),
                                        ("36", "[HT40+]", "5180", "a")]:
-        params = { "hw_mode": mode,
-                   "channel": channel,
-                   "country_code": "US",
-                   "ieee80211n": "1",
-                   "ht_capab": capab,
-                   "ieee80211w": "1",
-                   "ocv": "1" }
+        params = {"hw_mode": mode,
+                  "channel": channel,
+                  "country_code": "US",
+                  "ieee80211n": "1",
+                  "ht_capab": capab,
+                  "ieee80211w": "1",
+                  "ocv": "1"}
         hapd, ssid, passphrase = ocv_setup_ap(apdev[0], params)
         dev[0].flush_scan_cache()
         dev[1].flush_scan_cache()
@@ -171,16 +171,16 @@ def test_wpa2_ocv_vht40(dev, apdev):
 def run_wpa2_ocv_vht40(dev, apdev):
     for channel, capab, freq in [("40", "[HT40-]", "5200"),
                                  ("36", "[HT40+]", "5180")]:
-        params = { "hw_mode": "a",
-                   "channel": channel,
-                   "country_code": "US",
-                   "ht_capab": capab,
-                   "ieee80211n": "1",
-                   "ieee80211ac": "1",
-                   "vht_oper_chwidth": "0",
-                   "vht_oper_centr_freq_seg0_idx": "38",
-                   "ieee80211w": "1",
-                   "ocv": "1" }
+        params = {"hw_mode": "a",
+                  "channel": channel,
+                  "country_code": "US",
+                  "ht_capab": capab,
+                  "ieee80211n": "1",
+                  "ieee80211ac": "1",
+                  "vht_oper_chwidth": "0",
+                  "vht_oper_centr_freq_seg0_idx": "38",
+                  "ieee80211w": "1",
+                  "ocv": "1"}
         hapd, ssid, passphrase = ocv_setup_ap(apdev[0], params)
         dev[0].flush_scan_cache()
         dev[1].flush_scan_cache()
@@ -215,16 +215,16 @@ def test_wpa2_ocv_vht80(dev, apdev):
 def run_wpa2_ocv_vht80(dev, apdev):
     for channel, capab, freq in [("40", "[HT40-]", "5200"),
                                  ("36", "[HT40+]", "5180")]:
-        params = { "hw_mode": "a",
-                   "channel": channel,
-                   "country_code": "US",
-                   "ht_capab": capab,
-                   "ieee80211n": "1",
-                   "ieee80211ac": "1",
-                   "vht_oper_chwidth": "1",
-                   "vht_oper_centr_freq_seg0_idx": "42",
-                   "ieee80211w": "1",
-                   "ocv": "1" }
+        params = {"hw_mode": "a",
+                  "channel": channel,
+                  "country_code": "US",
+                  "ht_capab": capab,
+                  "ieee80211n": "1",
+                  "ieee80211ac": "1",
+                  "vht_oper_chwidth": "1",
+                  "vht_oper_centr_freq_seg0_idx": "42",
+                  "ieee80211w": "1",
+                  "ocv": "1"}
         hapd, ssid, passphrase = ocv_setup_ap(apdev[0], params)
         for ocv in range(2):
             dev[0].connect(ssid, psk=passphrase, scan_freq=freq, ocv=str(ocv),
@@ -256,16 +256,16 @@ def test_wpa2_ocv_vht160(dev, apdev):
 def run_wpa2_ocv_vht160(dev, apdev):
     for channel, capab, freq in [("100", "[HT40+]", "5500"),
                                  ("104", "[HT40-]", "5520")]:
-        params = { "hw_mode": "a",
-                   "channel": channel,
-                   "country_code": "ZA",
-                   "ht_capab": capab,
-                   "ieee80211n": "1",
-                   "ieee80211ac": "1",
-                   "vht_oper_chwidth": "2",
-                   "vht_oper_centr_freq_seg0_idx": "114",
-                   "ieee80211w": "1",
-                   "ocv": "1" }
+        params = {"hw_mode": "a",
+                  "channel": channel,
+                  "country_code": "ZA",
+                  "ht_capab": capab,
+                  "ieee80211n": "1",
+                  "ieee80211ac": "1",
+                  "vht_oper_chwidth": "2",
+                  "vht_oper_centr_freq_seg0_idx": "114",
+                  "ieee80211w": "1",
+                  "ocv": "1"}
         hapd, ssid, passphrase = ocv_setup_ap(apdev[0], params)
         for ocv in range(2):
             dev[0].connect(ssid, psk=passphrase, scan_freq=freq, ocv=str(ocv),
@@ -298,19 +298,19 @@ def test_wpa2_ocv_vht80plus80(dev, apdev):
 def run_wpa2_ocv_vht80plus80(dev, apdev):
     for channel, capab, freq in [("36", "[HT40+]", "5180"),
                                  ("40", "[HT40-]", "5200")]:
-        params = { "hw_mode": "a",
-                   "channel": channel,
-                   "country_code": "US",
-                   "ht_capab": capab,
-                   "ieee80211n": "1",
-                   "ieee80211ac": "1",
-                   "vht_oper_chwidth": "3",
-                   "vht_oper_centr_freq_seg0_idx": "42",
-                   "vht_oper_centr_freq_seg1_idx": "155",
-                   "ieee80211w": "1",
-                   "ieee80211d": "1",
-                   "ieee80211h": "1",
-                   "ocv": "1" }
+        params = {"hw_mode": "a",
+                  "channel": channel,
+                  "country_code": "US",
+                  "ht_capab": capab,
+                  "ieee80211n": "1",
+                  "ieee80211ac": "1",
+                  "vht_oper_chwidth": "3",
+                  "vht_oper_centr_freq_seg0_idx": "42",
+                  "vht_oper_centr_freq_seg1_idx": "155",
+                  "ieee80211w": "1",
+                  "ieee80211d": "1",
+                  "ieee80211h": "1",
+                  "ocv": "1"}
         hapd, ssid, passphrase = ocv_setup_ap(apdev[0], params)
         for ocv in range(2):
             dev[0].connect(ssid, psk=passphrase, scan_freq=freq, ocv=str(ocv),
@@ -334,9 +334,8 @@ def run_wpa2_ocv_vht80plus80(dev, apdev):
         hapd.disable()
         for i in range(3):
             dev[i].request("DISCONNECT")
-            dev[i].request("ABORT_SCAN")
         for i in range(3):
-            dev[i].wait_event(["CTRL-EVENT-DISCONNECTED"], timeout=0.5)
+            dev[i].disconnect_and_stop_scan()
 
 class APConnection:
     def init_params(self):
@@ -349,10 +348,10 @@ class APConnection:
         self.hapd = None
         self.addr = None
         self.rsne = None
-        self.kck  = None
-        self.kek  = None
-        self.msg  = None
-        self.bssid  = None
+        self.kck = None
+        self.kek = None
+        self.msg = None
+        self.bssid = None
         self.anonce = None
         self.snonce = None
 
@@ -397,7 +396,7 @@ class APConnection:
         self.msg = recv_eapol(self.hapd)
         self.anonce = self.msg['rsn_key_nonce']
         (ptk, self.kck, self.kek) = pmk_to_ptk(pmk, self.addr, self.bssid,
-                                               self.snonce,self.anonce)
+                                               self.snonce, self.anonce)
 
     # hapd, addr, rsne, kck, msg, anonce, snonce
     def test_bad_oci(self, logmsg, op_class, channel, seg1_idx):
@@ -430,9 +429,9 @@ class APConnection:
 @remote_compatible
 def test_wpa2_ocv_ap_mismatch(dev, apdev):
     """OCV AP mismatch"""
-    params = { "channel": "1",
-               "ieee80211w": "1",
-               "freq": "2412" }
+    params = {"channel": "1",
+              "ieee80211w": "1",
+              "freq": "2412"}
     conn = APConnection(apdev[0], dev[0], params)
     conn.test_bad_oci("element missing", None, 0, 0)
     conn.test_bad_oci("wrong channel number", 81, 6, 0)
@@ -444,10 +443,10 @@ def test_wpa2_ocv_ap_mismatch(dev, apdev):
 @remote_compatible
 def test_wpa2_ocv_ap_ht_mismatch(dev, apdev):
     """OCV AP mismatch (HT)"""
-    params = { "channel": "6",
-               "ht_capab": "[HT40-]",
-               "ieee80211w": "1",
-               "freq": "2437" }
+    params = {"channel": "6",
+              "ht_capab": "[HT40-]",
+              "ieee80211w": "1",
+              "freq": "2437"}
     conn = APConnection(apdev[0], dev[0], params)
     conn.test_bad_oci("wrong primary channel", 84, 5, 0)
     conn.test_bad_oci("lower bandwidth than negotiated", 81, 6, 0)
@@ -464,16 +463,16 @@ def test_wpa2_ocv_ap_vht80_mismatch(dev, apdev):
         dev[0].flush_scan_cache()
 
 def run_wpa2_ocv_ap_vht80_mismatch(dev, apdev):
-    params = { "hw_mode": "a",
-               "channel": "36",
-               "country_code": "US",
-               "ht_capab": "[HT40+]",
-               "ieee80211w": "1",
-               "ieee80211n": "1",
-               "ieee80211ac": "1",
-               "vht_oper_chwidth": "1",
-               "freq": "5180",
-               "vht_oper_centr_freq_seg0_idx": "42" }
+    params = {"hw_mode": "a",
+              "channel": "36",
+              "country_code": "US",
+              "ht_capab": "[HT40+]",
+              "ieee80211w": "1",
+              "ieee80211n": "1",
+              "ieee80211ac": "1",
+              "vht_oper_chwidth": "1",
+              "freq": "5180",
+              "vht_oper_centr_freq_seg0_idx": "42"}
     conn = APConnection(apdev[0], dev[0], params)
     conn.test_bad_oci("wrong primary channel", 128, 38, 0)
     conn.test_bad_oci("wrong primary channel", 128, 32, 0)
@@ -496,18 +495,18 @@ def test_wpa2_ocv_ap_vht160_mismatch(dev, apdev):
         dev[0].flush_scan_cache()
 
 def run_wpa2_ocv_ap_vht160_mismatch(dev, apdev):
-    params = { "hw_mode": "a",
-               "channel": "100",
-               "country_code": "ZA",
-               "ht_capab": "[HT40+]",
-               "ieee80211w": "1",
-               "ieee80211n": "1",
-               "ieee80211ac": "1",
-               "vht_oper_chwidth": "2",
-               "freq": "5500",
-               "vht_oper_centr_freq_seg0_idx": "114",
-               "ieee80211d": "1",
-               "ieee80211h": "1" }
+    params = {"hw_mode": "a",
+              "channel": "100",
+              "country_code": "ZA",
+              "ht_capab": "[HT40+]",
+              "ieee80211w": "1",
+              "ieee80211n": "1",
+              "ieee80211ac": "1",
+              "vht_oper_chwidth": "2",
+              "freq": "5500",
+              "vht_oper_centr_freq_seg0_idx": "114",
+              "ieee80211d": "1",
+              "ieee80211h": "1"}
     conn = APConnection(apdev[0], dev[0], params)
     conn.test_bad_oci("wrong primary channel", 129, 36, 0)
     conn.test_bad_oci("wrong primary channel", 129, 114, 0)
@@ -520,9 +519,7 @@ def run_wpa2_ocv_ap_vht160_mismatch(dev, apdev):
     dev[0].dump_monitor()
     if conn.hapd:
         conn.hapd.request("DISABLE")
-    dev[0].request("DISCONNECT")
-    dev[0].request("ABORT_SCAN")
-    dev[0].wait_event(["CTRL-EVENT-DISCONNECTED"], timeout=0.5)
+    dev[0].disconnect_and_stop_scan()
 
 @remote_compatible
 def test_wpa2_ocv_ap_vht80plus80_mismatch(dev, apdev):
@@ -535,19 +532,19 @@ def test_wpa2_ocv_ap_vht80plus80_mismatch(dev, apdev):
         dev[0].flush_scan_cache()
 
 def run_wpa2_ocv_ap_vht80plus80_mismatch(dev, apdev):
-    params = { "hw_mode": "a",
-               "channel": "36",
-               "country_code": "US",
-               "ht_capab": "[HT40+]",
-               "ieee80211w": "1",
-               "ieee80211n": "1",
-               "ieee80211ac": "1",
-               "vht_oper_chwidth": "3",
-               "freq": "5180",
-               "vht_oper_centr_freq_seg0_idx": "42",
-               "ieee80211d": "1",
-               "vht_oper_centr_freq_seg1_idx": "155",
-               "ieee80211h": "1" }
+    params = {"hw_mode": "a",
+              "channel": "36",
+              "country_code": "US",
+              "ht_capab": "[HT40+]",
+              "ieee80211w": "1",
+              "ieee80211n": "1",
+              "ieee80211ac": "1",
+              "vht_oper_chwidth": "3",
+              "freq": "5180",
+              "vht_oper_centr_freq_seg0_idx": "42",
+              "ieee80211d": "1",
+              "vht_oper_centr_freq_seg1_idx": "155",
+              "ieee80211h": "1"}
     conn = APConnection(apdev[0], dev[0], params)
     conn.test_bad_oci("using 80 MHz operating class", 128, 36, 155)
     conn.test_bad_oci("wrong frequency segment 1", 130, 36, 138)
@@ -556,18 +553,16 @@ def run_wpa2_ocv_ap_vht80plus80_mismatch(dev, apdev):
     dev[0].dump_monitor()
     if conn.hapd:
         conn.hapd.request("DISABLE")
-    dev[0].request("DISCONNECT")
-    dev[0].request("ABORT_SCAN")
-    dev[0].wait_event(["CTRL-EVENT-DISCONNECTED"], timeout=0.5)
+    dev[0].disconnect_and_stop_scan()
 
 @remote_compatible
 def test_wpa2_ocv_ap_unexpected1(dev, apdev):
     """OCV and unexpected OCI KDE from station"""
-    params = { "channel": "1",
-               "ieee80211w": "1",
-               "ap_ocv": "0",
-               "sta_ocv": "1",
-               "freq": "2412" }
+    params = {"channel": "1",
+              "ieee80211w": "1",
+              "ap_ocv": "0",
+              "sta_ocv": "1",
+              "freq": "2412"}
     conn = APConnection(apdev[0], dev[0], params)
     logger.debug("Client will send OCI KDE even if it was not negotiated")
     conn.confirm_valid_oci(81, 1, 0)
@@ -575,11 +570,11 @@ def test_wpa2_ocv_ap_unexpected1(dev, apdev):
 @remote_compatible
 def test_wpa2_ocv_ap_unexpected2(dev, apdev):
     """OCV and unexpected OCI KDE from station"""
-    params = { "channel": "1",
-               "ieee80211w": "1",
-               "ap_ocv": "1",
-               "sta_ocv": "0",
-               "freq": "2412" }
+    params = {"channel": "1",
+              "ieee80211w": "1",
+              "ap_ocv": "1",
+              "sta_ocv": "0",
+              "freq": "2412"}
     conn = APConnection(apdev[0], dev[0], params)
     logger.debug("Client will send OCI KDE even if it was not negotiated")
     conn.confirm_valid_oci(81, 1, 0)
@@ -643,10 +638,10 @@ def test_wpa2_ocv_ap_retransmit_msg3(dev, apdev):
 
 def test_wpa2_ocv_ap_group_hs(dev, apdev):
     """OCV group handshake (AP)"""
-    params = { "channel": "1",
-               "ieee80211w": "1",
-               "freq": "2412",
-               "wpa_strict_rekey": "1" }
+    params = {"channel": "1",
+              "ieee80211w": "1",
+              "freq": "2412",
+              "wpa_strict_rekey": "1"}
     conn = APConnection(apdev[0], dev[0], params)
     conn.confirm_valid_oci(81, 1, 0)
 
@@ -720,9 +715,9 @@ class STAConnection:
         freq = params.pop("freq")
         if sta_params is None:
             sta_params = dict()
-        if not "ocv" in sta_params:
+        if "ocv" not in sta_params:
             sta_params["ocv"] = "1"
-        if not "ieee80211w" in sta_params:
+        if "ieee80211w" not in sta_params:
             sta_params["ieee80211w"] = "1"
 
         params.update(hostapd.wpa2_params(ssid=self.ssid,
@@ -760,7 +755,7 @@ class STAConnection:
         self.msg = recv_eapol(dev)
         self.snonce = self.msg['rsn_key_nonce']
         (ptk, self.kck, self.kek) = pmk_to_ptk(pmk, self.addr, self.bssid,
-                                               self.snonce,self.anonce)
+                                               self.snonce, self.anonce)
 
         self.counter = struct.unpack('>Q',
                                      self.msg['rsn_replay_counter'])[0] + 1
@@ -803,10 +798,10 @@ class STAConnection:
 @remote_compatible
 def test_wpa2_ocv_mismatch_client(dev, apdev):
     """OCV client mismatch"""
-    params = { "channel": "1",
-               "ieee80211w": "1",
-               "ocv": "1",
-               "freq": "2412" }
+    params = {"channel": "1",
+              "ieee80211w": "1",
+              "ocv": "1",
+              "freq": "2412"}
     conn = STAConnection(apdev[0], dev[0], params)
     conn.test_bad_oci("element missing", None, 0, 0,
                       "did not receive mandatory OCI")
@@ -831,20 +826,20 @@ def test_wpa2_ocv_vht160_mismatch_client(dev, apdev):
         dev[0].flush_scan_cache()
 
 def run_wpa2_ocv_vht160_mismatch_client(dev, apdev):
-    params = { "hw_mode": "a",
-               "channel": "100",
-               "country_code": "ZA",
-               "ht_capab": "[HT40+]",
-               "ieee80211w": "1",
-               "ieee80211n": "1",
-               "ieee80211ac": "1",
-               "vht_oper_chwidth": "2",
-               "ocv": "1",
-               "vht_oper_centr_freq_seg0_idx": "114",
-               "freq": "5500",
-               "ieee80211d": "1",
-               "ieee80211h": "1" }
-    sta_params = { "disable_vht": "1" }
+    params = {"hw_mode": "a",
+              "channel": "100",
+              "country_code": "ZA",
+              "ht_capab": "[HT40+]",
+              "ieee80211w": "1",
+              "ieee80211n": "1",
+              "ieee80211ac": "1",
+              "vht_oper_chwidth": "2",
+              "ocv": "1",
+              "vht_oper_centr_freq_seg0_idx": "114",
+              "freq": "5500",
+              "ieee80211d": "1",
+              "ieee80211h": "1"}
+    sta_params = {"disable_vht": "1"}
     conn = STAConnection(apdev[0], dev[0], params, sta_params)
     conn.test_bad_oci("smaller bandwidth (20 Mhz) than negotiated",
                       121, 100, 0, "channel bandwidth mismatch")
@@ -857,17 +852,15 @@ def run_wpa2_ocv_vht160_mismatch_client(dev, apdev):
     dev[0].dump_monitor()
     if conn.hapd:
         conn.hapd.request("DISABLE")
-    dev[0].request("DISCONNECT")
-    dev[0].request("ABORT_SCAN")
-    dev[0].wait_event(["CTRL-EVENT-DISCONNECTED"], timeout=0.5)
+    dev[0].disconnect_and_stop_scan()
 
 def test_wpa2_ocv_sta_group_hs(dev, apdev):
     """OCV group handshake (STA)"""
-    params = { "channel": "1",
-               "ieee80211w": "1",
-               "ocv": "1",
-               "freq": "2412",
-               "wpa_strict_rekey": "1" }
+    params = {"channel": "1",
+              "ieee80211w": "1",
+              "ocv": "1",
+              "freq": "2412",
+              "wpa_strict_rekey": "1"}
     conn = STAConnection(apdev[0], dev[0], params.copy())
     conn.confirm_valid_oci(81, 1, 0)
 
