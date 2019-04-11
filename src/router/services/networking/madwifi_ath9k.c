@@ -1581,6 +1581,8 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			else
 				fprintf(fp, "\tpsk=\"%s\"\n", wpa_psk);
 		}
+		if (ispsk3)
+			fprintf(fp, "\tsae_groups=19 20 21\n");
 		fprintf(fp, "}\n");
 		char extra[32];
 		sprintf(extra, "%s_supplicantext", prefix);

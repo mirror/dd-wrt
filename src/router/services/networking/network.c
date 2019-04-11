@@ -1267,8 +1267,8 @@ void start_lan(void)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	if (nvram_match("wan_proto", "disabled")) {
 		nvram_setz(lan_ifnames, "eth0 ath0 ath1");
-		 eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
-		 eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 2 3");
+		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
+		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 2 3");
 	} else {
 		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2");
@@ -1632,21 +1632,21 @@ void start_lan(void)
 #ifdef HAVE_TMK
 	if (brand == ROUTER_BOARD_NS5MXW) {
 		eval("swconfig", "dev", "eth0", "set", "reset", "1");
-		 if (nvram_match("wan_proto", "disabled")) {
+		if (nvram_match("wan_proto", "disabled")) {
 			nvram_setz(lan_ifnames, "eth0 ath0");
-                	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
-                	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0 1 5");
-        	} else {
+			eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
+			eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0 1 5");
+		} else {
 			nvram_setz(lan_ifnames, "vlan1 ath0");
 			eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
-                	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 5");
-                	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 1");
+			eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 5");
+			eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 1");
 			eval("ifconfig", "eth0", "up");
-        	        eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
-        	        eval("vconfig", "add", "eth0", "1");
-        	        eval("vconfig", "add", "eth0", "2");
+			eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+			eval("vconfig", "add", "eth0", "1");
+			eval("vconfig", "add", "eth0", "2");
 		}
-        	eval("swconfig", "dev", "eth0", "set", "apply");
+		eval("swconfig", "dev", "eth0", "set", "apply");
 	}
 #endif
 	if (nvram_match("et0macaddr", ""))
