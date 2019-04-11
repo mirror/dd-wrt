@@ -112,7 +112,7 @@ def parse_ie(buf):
     ret = {}
     data = binascii.unhexlify(buf)
     while len(data) >= 2:
-        ie,elen = struct.unpack('BB', data[0:2])
+        ie, elen = struct.unpack('BB', data[0:2])
         data = data[2:]
         if elen > len(data):
             break
@@ -152,8 +152,8 @@ def clear_regdom(hapd, dev, count=1):
         time.sleep(0.1)
     for i in range(count):
         dev[i].request("DISCONNECT")
-        dev[i].request("ABORT_SCAN")
-    dev[0].wait_event(["CTRL-EVENT-DISCONNECTED"], timeout=0.5)
+    for i in range(count):
+        dev[i].disconnect_and_stop_scan()
     subprocess.call(['iw', 'reg', 'set', '00'])
     wait_regdom_changes(dev[0])
     country = dev[0].get_driver_status_field("country")

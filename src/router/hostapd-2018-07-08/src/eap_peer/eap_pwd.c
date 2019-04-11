@@ -308,10 +308,10 @@ eap_pwd_perform_commit_exchange(struct eap_sm *sm, struct eap_pwd_data *data,
 				const struct wpabuf *reqData,
 				const u8 *payload, size_t payload_len)
 {
-	struct crypto_ec_point *K = NULL, *point = NULL;
+	struct crypto_ec_point *K = NULL;
 	struct crypto_bignum *mask = NULL, *cofactor = NULL;
 	const u8 *ptr = payload;
-	u8 *scalar = NULL, *element = NULL;
+	u8 *scalar, *element;
 	size_t prime_len, order_len;
 	const u8 *password;
 	size_t password_len;
@@ -542,19 +542,9 @@ eap_pwd_perform_commit_exchange(struct eap_sm *sm, struct eap_pwd_data *data,
 		goto fin;
 	}
 
-	if (crypto_bignum_rand(data->private_value,
-			       crypto_ec_get_order(data->grp->group)) < 0 ||
-	    crypto_bignum_rand(mask,
-			       crypto_ec_get_order(data->grp->group)) < 0 ||
-	    crypto_bignum_add(data->private_value, mask,
-			      data->my_scalar) < 0 ||
-	    crypto_bignum_mod(data->my_scalar,
-			      crypto_ec_get_order(data->grp->group),
-			      data->my_scalar) < 0) {
-		wpa_printf(MSG_INFO,
-			   "EAP-pwd (peer): unable to get randomness");
+	if (eap_pwd_get_rand_mask(data->grp, data->private_value, mask,
+				  data->my_scalar) < 0)
 		goto fin;
-	}
 
 	if (crypto_ec_point_mul(data->grp->group, data->grp->pwe, mask,
 				data->my_element) < 0) {
@@ -572,41 +562,25 @@ eap_pwd_perform_commit_exchange(struct eap_sm *sm, struct eap_pwd_data *data,
 	/* process the request */
 	data->k = crypto_bignum_init();
 	K = crypto_ec_point_init(data->grp->group);
-	point = crypto_ec_point_init(data->grp->group);
-	if (!data->k || !K || !point) {
+	if (!data->k || !K) {
 		wpa_printf(MSG_INFO, "EAP-PWD (peer): peer data allocation "
 			   "fail");
 		goto fin;
 	}
 
 	/* element, x then y, followed by scalar */
-	data->server_element = crypto_ec_point_from_bin(data->grp->group, ptr);
+	data->server_element = eap_pwd_get_element(data->grp, ptr);
 	if (!data->server_element) {
 		wpa_printf(MSG_INFO, "EAP-PWD (peer): setting peer element "
 			   "fail");
 		goto fin;
 	}
 	ptr += prime_len * 2;
-	data->server_scalar = crypto_bignum_init_set(ptr, order_len);
+	data->server_scalar = eap_pwd_get_scalar(data->grp, ptr);
 	if (!data->server_scalar) {
 		wpa_printf(MSG_INFO,
 			   "EAP-PWD (peer): setting peer scalar fail");
 		goto fin;
-	}
-
-	/* check to ensure server's element is not in a small sub-group */
-	if (!crypto_bignum_is_one(cofactor)) {
-		if (crypto_ec_point_mul(data->grp->group, data->server_element,
-					cofactor, point) < 0) {
-			wpa_printf(MSG_INFO, "EAP-PWD (peer): cannot multiply "
-				   "server element by order!\n");
-			goto fin;
-		}
-		if (crypto_ec_point_is_at_infinity(data->grp->group, point)) {
-			wpa_printf(MSG_INFO, "EAP-PWD (peer): server element "
-				   "is at infinity!\n");
-			goto fin;
-		}
 	}
 
 	/* compute the shared key, k */
@@ -649,12 +623,12 @@ eap_pwd_perform_commit_exchange(struct eap_sm *sm, struct eap_pwd_data *data,
 	}
 
 	/* now do the response */
-	scalar = os_zalloc(order_len);
-	element = os_zalloc(prime_len * 2);
-	if (!scalar || !element) {
-		wpa_printf(MSG_INFO, "EAP-PWD (peer): data allocation fail");
+	data->outbuf = wpabuf_alloc(2 * prime_len + order_len);
+	if (data->outbuf == NULL)
 		goto fin;
-	}
+	/* We send the element as (x,y) followed by the scalar */
+	element = wpabuf_put(data->outbuf, 2 * prime_len);
+	scalar = wpabuf_put(data->outbuf, order_len);
 
 	/*
 	 * bignums occupy as little memory as possible so one that is
@@ -668,21 +642,10 @@ eap_pwd_perform_commit_exchange(struct eap_sm *sm, struct eap_pwd_data *data,
 		goto fin;
 	}
 
-	data->outbuf = wpabuf_alloc(order_len + 2 * prime_len);
-	if (data->outbuf == NULL)
-		goto fin;
-
-	/* we send the element as (x,y) follwed by the scalar */
-	wpabuf_put_data(data->outbuf, element, 2 * prime_len);
-	wpabuf_put_data(data->outbuf, scalar, order_len);
-
 fin:
-	os_free(scalar);
-	os_free(element);
 	crypto_bignum_deinit(mask, 1);
 	crypto_bignum_deinit(cofactor, 1);
 	crypto_ec_point_deinit(K, 1);
-	crypto_ec_point_deinit(point, 1);
 	if (data->outbuf == NULL)
 		eap_pwd_state(data, FAILURE);
 	else

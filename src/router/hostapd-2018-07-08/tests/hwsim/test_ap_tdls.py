@@ -70,13 +70,13 @@ def wlantest_tdls_packet_counters(bssid, addr0, addr1):
     inv_dl = wt.get_tdls_counter("invalid_direct_link", bssid, addr0, addr1)
     ap = wt.get_tdls_counter("valid_ap_path", bssid, addr0, addr1)
     inv_ap = wt.get_tdls_counter("invalid_ap_path", bssid, addr0, addr1)
-    return [dl,inv_dl,ap,inv_ap]
+    return [dl, inv_dl, ap, inv_ap]
 
 def tdls_check_dl(sta0, sta1, bssid, addr0, addr1):
     wt = Wlantest()
     wt.tdls_clear(bssid, addr0, addr1)
     hwsim_utils.test_connectivity_sta(sta0, sta1)
-    [dl,inv_dl,ap,inv_ap] = wlantest_tdls_packet_counters(bssid, addr0, addr1)
+    [dl, inv_dl, ap, inv_ap] = wlantest_tdls_packet_counters(bssid, addr0, addr1)
     if dl == 0:
         raise Exception("No valid frames through direct link")
     if inv_dl > 0:
@@ -90,7 +90,7 @@ def tdls_check_ap(sta0, sta1, bssid, addr0, addr1):
     wt = Wlantest()
     wt.tdls_clear(bssid, addr0, addr1)
     hwsim_utils.test_connectivity_sta(sta0, sta1)
-    [dl,inv_dl,ap,inv_ap] = wlantest_tdls_packet_counters(bssid, addr0, addr1)
+    [dl, inv_dl, ap, inv_ap] = wlantest_tdls_packet_counters(bssid, addr0, addr1)
     if dl > 0:
         raise Exception("Unexpected frames through direct link")
     if inv_dl > 0:
@@ -306,7 +306,7 @@ def test_ap_wpa_mixed_tdls(dev, apdev):
 def test_ap_wep_tdls(dev, apdev):
     """WEP AP and two stations using TDLS"""
     hapd = hostapd.add_ap(apdev[0],
-                          { "ssid": "test-wep", "wep_key0": '"hello"' })
+                          {"ssid": "test-wep", "wep_key0": '"hello"'})
     wlantest_setup(hapd)
     connect_2sta_wep(dev, hapd)
     setup_tdls(dev[0], dev[1], hapd)
@@ -315,7 +315,7 @@ def test_ap_wep_tdls(dev, apdev):
 
 def test_ap_open_tdls(dev, apdev):
     """Open AP and two stations using TDLS"""
-    hapd = hostapd.add_ap(apdev[0], { "ssid": "test-open" })
+    hapd = hostapd.add_ap(apdev[0], {"ssid": "test-open"})
     wlantest_setup(hapd)
     connect_2sta_open(dev, hapd)
     setup_tdls(dev[0], dev[1], hapd)
@@ -362,14 +362,9 @@ def test_ap_wpa2_tdls_responder_teardown(dev, apdev):
 def tdls_clear_reg(hapd, dev):
     if hapd:
         hapd.request("DISABLE")
-    dev[0].request("DISCONNECT")
-    dev[0].request("ABORT_SCAN")
     dev[1].request("DISCONNECT")
-    dev[1].request("ABORT_SCAN")
-    dev[0].wait_event(["CTRL-EVENT-DISCONNECTED"], timeout=0.5)
-    dev[0].dump_monitor()
-    dev[1].wait_event(["CTRL-EVENT-DISCONNECTED"], timeout=0.5)
-    dev[1].dump_monitor()
+    dev[0].disconnect_and_stop_scan()
+    dev[1].disconnect_and_stop_scan()
     subprocess.call(['iw', 'reg', 'set', '00'])
     dev[0].wait_event(["CTRL-EVENT-REGDOM-CHANGE"], timeout=0.5)
     dev[0].flush_scan_cache()
@@ -377,16 +372,16 @@ def tdls_clear_reg(hapd, dev):
 
 def test_ap_open_tdls_vht(dev, apdev):
     """Open AP and two stations using TDLS"""
-    params = { "ssid": "test-open",
-               "country_code": "DE",
-               "hw_mode": "a",
-               "channel": "36",
-               "ieee80211n": "1",
-               "ieee80211ac": "1",
-               "ht_capab": "",
-               "vht_capab": "",
-               "vht_oper_chwidth": "0",
-               "vht_oper_centr_freq_seg0_idx": "0" }
+    params = {"ssid": "test-open",
+              "country_code": "DE",
+              "hw_mode": "a",
+              "channel": "36",
+              "ieee80211n": "1",
+              "ieee80211ac": "1",
+              "ht_capab": "",
+              "vht_capab": "",
+              "vht_oper_chwidth": "0",
+              "vht_oper_centr_freq_seg0_idx": "0"}
     hapd = None
     try:
         hapd = hostapd.add_ap(apdev[0], params)
@@ -401,16 +396,16 @@ def test_ap_open_tdls_vht(dev, apdev):
 
 def test_ap_open_tdls_vht80(dev, apdev):
     """Open AP and two stations using TDLS with VHT 80"""
-    params = { "ssid": "test-open",
-               "country_code": "US",
-               "hw_mode": "a",
-               "channel": "36",
-               "ht_capab": "[HT40+]",
-               "ieee80211n": "1",
-               "ieee80211ac": "1",
-               "vht_capab": "",
-               "vht_oper_chwidth": "1",
-               "vht_oper_centr_freq_seg0_idx": "42" }
+    params = {"ssid": "test-open",
+              "country_code": "US",
+              "hw_mode": "a",
+              "channel": "36",
+              "ht_capab": "[HT40+]",
+              "ieee80211n": "1",
+              "ieee80211ac": "1",
+              "vht_capab": "",
+              "vht_oper_chwidth": "1",
+              "vht_oper_centr_freq_seg0_idx": "42"}
     try:
         hapd = None
         hapd = hostapd.add_ap(apdev[0], params)
@@ -427,7 +422,7 @@ def test_ap_open_tdls_vht80(dev, apdev):
                                    stdout=subprocess.PIPE)
             res = cmd.stdout.read()
             cmd.stdout.close()
-            logger.info("Station dump on dev[%d]:\n%s" % (i, res))
+            logger.info("Station dump on dev[%d]:\n%s" % (i, res.decode()))
     except Exception as e:
         if isinstance(e, Exception) and str(e) == "AP startup failed":
             if not vht_supported():
@@ -438,17 +433,17 @@ def test_ap_open_tdls_vht80(dev, apdev):
 
 def test_ap_open_tdls_vht80plus80(dev, apdev):
     """Open AP and two stations using TDLS with VHT 80+80"""
-    params = { "ssid": "test-open",
-               "country_code": "US",
-               "hw_mode": "a",
-               "channel": "36",
-               "ht_capab": "[HT40+]",
-               "ieee80211n": "1",
-               "ieee80211ac": "1",
-               "vht_capab": "",
-               "vht_oper_chwidth": "3",
-               "vht_oper_centr_freq_seg0_idx": "42",
-               "vht_oper_centr_freq_seg1_idx": "155" }
+    params = {"ssid": "test-open",
+              "country_code": "US",
+              "hw_mode": "a",
+              "channel": "36",
+              "ht_capab": "[HT40+]",
+              "ieee80211n": "1",
+              "ieee80211ac": "1",
+              "vht_capab": "",
+              "vht_oper_chwidth": "3",
+              "vht_oper_centr_freq_seg0_idx": "42",
+              "vht_oper_centr_freq_seg1_idx": "155"}
     try:
         hapd = None
         hapd = hostapd.add_ap(apdev[0], params)
@@ -471,7 +466,7 @@ def test_ap_open_tdls_vht80plus80(dev, apdev):
                                    stdout=subprocess.PIPE)
             res = cmd.stdout.read()
             cmd.stdout.close()
-            logger.info("Station dump on dev[%d]:\n%s" % (i, res))
+            logger.info("Station dump on dev[%d]:\n%s" % (i, res.decode()))
     except Exception as e:
         if isinstance(e, Exception) and str(e) == "AP startup failed":
             if not vht_supported():
@@ -482,15 +477,15 @@ def test_ap_open_tdls_vht80plus80(dev, apdev):
 
 def test_ap_open_tdls_vht160(dev, apdev):
     """Open AP and two stations using TDLS with VHT 160"""
-    params = { "ssid": "test-open",
-               "country_code": "ZA",
-               "hw_mode": "a",
-               "channel": "104",
-               "ht_capab": "[HT40-]",
-               "ieee80211n": "1",
-               "ieee80211ac": "1",
-               "vht_oper_chwidth": "2",
-               "vht_oper_centr_freq_seg0_idx": "114" }
+    params = {"ssid": "test-open",
+              "country_code": "ZA",
+              "hw_mode": "a",
+              "channel": "104",
+              "ht_capab": "[HT40-]",
+              "ieee80211n": "1",
+              "ieee80211ac": "1",
+              "vht_oper_chwidth": "2",
+              "vht_oper_centr_freq_seg0_idx": "114"}
     try:
         hapd = None
         hapd = hostapd.add_ap(apdev[0], params, wait_enabled=False)
@@ -515,7 +510,7 @@ def test_ap_open_tdls_vht160(dev, apdev):
                                    stdout=subprocess.PIPE)
             res = cmd.stdout.read()
             cmd.stdout.close()
-            logger.info("Station dump on dev[%d]:\n%s" % (i, res))
+            logger.info("Station dump on dev[%d]:\n%s" % (i, res.decode()))
     except Exception as e:
         if isinstance(e, Exception) and str(e) == "AP startup failed":
             if not vht_supported():
@@ -530,7 +525,7 @@ def test_tdls_chan_switch(dev, apdev):
     if flags & 0x800000000 == 0:
         raise HwsimSkip("Driver does not support TDLS channel switching")
 
-    hapd = hostapd.add_ap(apdev[0], { "ssid": "test-open" })
+    hapd = hostapd.add_ap(apdev[0], {"ssid": "test-open"})
     wlantest_setup(hapd)
     connect_2sta_open(dev, hapd)
     setup_tdls(dev[0], dev[1], hapd)
@@ -558,16 +553,16 @@ def test_ap_tdls_link_status(dev, apdev):
 
 def test_ap_tdls_prohibit(dev, apdev):
     """Open AP and TDLS prohibited"""
-    hapd = hostapd.add_ap(apdev[0], { "ssid": "test-open",
-                                      "tdls_prohibit": "1" })
+    hapd = hostapd.add_ap(apdev[0], {"ssid": "test-open",
+                                     "tdls_prohibit": "1"})
     connect_2sta_open(dev, hapd)
     if "FAIL" not in dev[0].request("TDLS_SETUP " + dev[1].own_addr()):
         raise Exception("TDLS_SETUP accepted unexpectedly")
 
 def test_ap_tdls_chan_switch_prohibit(dev, apdev):
     """Open AP and TDLS channel switch prohibited"""
-    hapd = hostapd.add_ap(apdev[0], { "ssid": "test-open",
-                                      "tdls_prohibit_chan_switch": "1" })
+    hapd = hostapd.add_ap(apdev[0], {"ssid": "test-open",
+                                     "tdls_prohibit_chan_switch": "1"})
     wlantest_setup(hapd)
     connect_2sta_open(dev, hapd)
     setup_tdls(dev[0], dev[1], hapd)
@@ -580,7 +575,7 @@ def test_ap_open_tdls_external_control(dev, apdev):
         dev[0].set("tdls_external_control", "0")
 
 def _test_ap_open_tdls_external_control(dev, apdev):
-    hapd = hostapd.add_ap(apdev[0], { "ssid": "test-open" })
+    hapd = hostapd.add_ap(apdev[0], {"ssid": "test-open"})
     dev[0].connect("test-open", key_mgmt="NONE", scan_freq="2412")
     dev[1].connect("test-open", key_mgmt="NONE", scan_freq="2412")
     addr0 = dev[0].own_addr()

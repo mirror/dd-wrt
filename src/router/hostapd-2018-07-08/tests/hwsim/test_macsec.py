@@ -1,5 +1,5 @@
 # Test cases for MACsec/MKA
-# Copyright (c) 2018, Jouni Malinen <j@w1.fi>
+# Copyright (c) 2018-2019, Jouni Malinen <j@w1.fi>
 #
 # This software may be distributed under the terms of the BSD license.
 # See README for more details.
@@ -17,9 +17,10 @@ import hwsim_utils
 from utils import HwsimSkip, alloc_fail, fail_test, wait_fail_trigger
 
 def cleanup_macsec():
-    wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
+    wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5', monitor=False)
     wpas.interface_remove("veth0")
     wpas.interface_remove("veth1")
+    del wpas
     subprocess.call(["ip", "link", "del", "veth0"],
                     stderr=open('/dev/null', 'w'))
 
@@ -34,8 +35,9 @@ def test_macsec_psk_mka_life_time(dev, apdev, params):
     """MACsec PSK - MKA life time"""
     try:
         run_macsec_psk(dev, apdev, params, "macsec_psk_mka_life_time")
-        wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
+        wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5', monitor=False)
         wpas.interface_remove("veth1")
+        del wpas
         # Wait for live peer to be removed on veth0
         time.sleep(6.1)
     finally:
@@ -137,7 +139,7 @@ def set_mka_psk_config(dev, mka_priority=None, integ_only=False, port=None,
     dev.select_network(id)
 
 def log_ip_macsec():
-    cmd = subprocess.Popen([ "ip", "macsec", "show" ],
+    cmd = subprocess.Popen(["ip", "macsec", "show"],
                            stdout=subprocess.PIPE,
                            stderr=open('/dev/null', 'w'))
     res = cmd.stdout.read().decode()
@@ -145,7 +147,7 @@ def log_ip_macsec():
     logger.info("ip macsec:\n" + res)
 
 def log_ip_link():
-    cmd = subprocess.Popen([ "ip", "link", "show" ],
+    cmd = subprocess.Popen(["ip", "link", "show"],
                            stdout=subprocess.PIPE)
     res = cmd.stdout.read().decode()
     cmd.stdout.close()
@@ -153,8 +155,8 @@ def log_ip_link():
 
 def add_veth():
     try:
-        subprocess.check_call([ "ip", "link", "add", "veth0", "type", "veth",
-                                "peer", "name", "veth1" ])
+        subprocess.check_call(["ip", "link", "add", "veth0", "type", "veth",
+                               "peer", "name", "veth1"])
     except subprocess.CalledProcessError:
         raise HwsimSkip("veth not supported (kernel CONFIG_VETH)")
 
@@ -235,8 +237,7 @@ def run_macsec_psk(dev, apdev, params, prefix, integ_only=False, port0=None,
     cap_macsec1 = os.path.join(params['logdir'], prefix + ".macsec1.pcap")
 
     for i in range(2):
-        subprocess.check_call([ "ip", "link", "set", "dev", "veth%d" % i,
-                                "up" ])
+        subprocess.check_call(["ip", "link", "set", "dev", "veth%d" % i, "up"])
 
     cmd = {}
     cmd[0] = subprocess.Popen(['tcpdump', '-p', '-U', '-i', 'veth0',
@@ -320,11 +321,12 @@ def run_macsec_psk(dev, apdev, params, prefix, integ_only=False, port0=None,
         cmd[i].terminate()
 
 def cleanup_macsec_br(count):
-    wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
+    wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5', monitor=False)
     for i in range(count):
         wpas.interface_remove("veth%d" % i)
         subprocess.call(["ip", "link", "del", "veth%d" % i],
                         stderr=open('/dev/null', 'w'))
+    del wpas
     subprocess.call(["ip", "link", "set", "brveth", "down"])
     subprocess.call(["brctl", "delbr", "brveth"])
 
@@ -363,12 +365,12 @@ def run_macsec_psk_br(dev, apdev, count, mka_priority):
 
     try:
         for i in range(count):
-            subprocess.check_call([ "ip", "link", "add", "veth%d" % i,
-                                    "type", "veth",
-                                    "peer", "name", "vethbr%d" % i ])
+            subprocess.check_call(["ip", "link", "add", "veth%d" % i,
+                                   "type", "veth",
+                                   "peer", "name", "vethbr%d" % i])
             subprocess.check_call(["ip", "link", "set", "vethbr%d" % i, "up"])
-            subprocess.check_call([ "brctl", "addif", "brveth",
-                                    "vethbr%d" % i ])
+            subprocess.check_call(["brctl", "addif", "brveth",
+                                   "vethbr%d" % i])
     except subprocess.CalledProcessError:
         raise HwsimSkip("veth not supported (kernel CONFIG_VETH)")
 
@@ -427,6 +429,12 @@ def run_macsec_psk_br(dev, apdev, count, mka_priority):
         else:
             logger.info("Data traffic test failed - ignore for now for >= 3 device cases")
 
+    for i in range(count):
+        wpa[i].close_monitor()
+    for i in range(count):
+        wpa[0].close_control()
+        del wpa[0]
+
 def test_macsec_psk_ns(dev, apdev, params):
     """MACsec PSK (netns)"""
     try:
@@ -457,23 +465,23 @@ def test_macsec_psk_ns(dev, apdev, params):
                         stderr=open('/dev/null', 'w'))
 
 def log_ip_macsec_ns():
-    cmd = subprocess.Popen([ "ip", "macsec", "show" ],
+    cmd = subprocess.Popen(["ip", "macsec", "show"],
                            stdout=subprocess.PIPE,
                            stderr=open('/dev/null', 'w'))
     res = cmd.stdout.read().decode()
     cmd.stdout.close()
     logger.info("ip macsec show:\n" + res)
 
-    cmd = subprocess.Popen([ "ip", "netns", "exec", "ns0",
-                             "ip", "macsec", "show" ],
+    cmd = subprocess.Popen(["ip", "netns", "exec", "ns0",
+                            "ip", "macsec", "show"],
                            stdout=subprocess.PIPE,
                            stderr=open('/dev/null', 'w'))
     res = cmd.stdout.read().decode()
     cmd.stdout.close()
     logger.info("ip macsec show (ns0):\n" + res)
 
-    cmd = subprocess.Popen([ "ip", "netns", "exec", "ns1",
-                             "ip", "macsec", "show" ],
+    cmd = subprocess.Popen(["ip", "netns", "exec", "ns1",
+                            "ip", "macsec", "show"],
                            stdout=subprocess.PIPE,
                            stderr=open('/dev/null', 'w'))
     res = cmd.stdout.read().decode()
@@ -481,22 +489,22 @@ def log_ip_macsec_ns():
     logger.info("ip macsec show (ns1):\n" + res)
 
 def log_ip_link_ns():
-    cmd = subprocess.Popen([ "ip", "link", "show" ],
+    cmd = subprocess.Popen(["ip", "link", "show"],
                            stdout=subprocess.PIPE)
     res = cmd.stdout.read().decode()
     cmd.stdout.close()
     logger.info("ip link:\n" + res)
 
-    cmd = subprocess.Popen([ "ip", "netns", "exec", "ns0",
-                             "ip", "link", "show" ],
+    cmd = subprocess.Popen(["ip", "netns", "exec", "ns0",
+                            "ip", "link", "show"],
                            stdout=subprocess.PIPE,
                            stderr=open('/dev/null', 'w'))
     res = cmd.stdout.read().decode()
     cmd.stdout.close()
     logger.info("ip link show (ns0):\n" + res)
 
-    cmd = subprocess.Popen([ "ip", "netns", "exec", "ns1",
-                             "ip", "link", "show" ],
+    cmd = subprocess.Popen(["ip", "netns", "exec", "ns1",
+                            "ip", "link", "show"],
                            stdout=subprocess.PIPE,
                            stderr=open('/dev/null', 'w'))
     res = cmd.stdout.read().decode()
@@ -521,8 +529,8 @@ def write_conf(conffile, mka_priority=None):
 
 def run_macsec_psk_ns(dev, apdev, params):
     try:
-        subprocess.check_call([ "ip", "link", "add", "veth0", "type", "veth",
-                                "peer", "name", "veth1" ])
+        subprocess.check_call(["ip", "link", "add", "veth0", "type", "veth",
+                               "peer", "name", "veth1"])
     except subprocess.CalledProcessError:
         raise HwsimSkip("veth not supported (kernel CONFIG_VETH)")
 
@@ -538,14 +546,14 @@ def run_macsec_psk_ns(dev, apdev, params):
 
     for i in range(2):
         try:
-            subprocess.check_call([ "ip", "netns", "add", "ns%d" % i ])
+            subprocess.check_call(["ip", "netns", "add", "ns%d" % i])
         except subprocess.CalledProcessError:
             raise HwsimSkip("network namespace not supported (kernel CONFIG_NAMESPACES, CONFIG_NET_NS)")
-        subprocess.check_call([ "ip", "link", "set", "veth%d" % i,
-                                "netns", "ns%d" %i ])
-        subprocess.check_call([ "ip", "netns", "exec", "ns%d" % i,
-                                "ip", "link", "set", "dev", "veth%d" % i,
-                                "up" ])
+        subprocess.check_call(["ip", "link", "set", "veth%d" % i,
+                               "netns", "ns%d" %i])
+        subprocess.check_call(["ip", "netns", "exec", "ns%d" % i,
+                               "ip", "link", "set", "dev", "veth%d" % i,
+                               "up"])
 
     cmd = {}
     cmd[0] = subprocess.Popen(['ip', 'netns', 'exec', 'ns0',
@@ -567,10 +575,10 @@ def run_macsec_psk_ns(dev, apdev, params):
     if not os.path.exists(prg):
         prg = '../../wpa_supplicant/wpa_supplicant'
 
-    arg = [ "ip", "netns", "exec", "ns0",
-            prg, '-BdddtKW', '-P', pidfile + '0', '-f', logfile0,
-            '-g', '/tmp/wpas-veth0',
-            '-Dmacsec_linux', '-c', conffile + '0', '-i', "veth0" ]
+    arg = ["ip", "netns", "exec", "ns0",
+           prg, '-BdddtKW', '-P', pidfile + '0', '-f', logfile0,
+           '-g', '/tmp/wpas-veth0',
+           '-Dmacsec_linux', '-c', conffile + '0', '-i', "veth0"]
     logger.info("Start wpa_supplicant: " + str(arg))
     try:
         subprocess.check_call(arg)
@@ -581,10 +589,10 @@ def run_macsec_psk_ns(dev, apdev, params):
         logger.info("Use alternative wpa_supplicant binary for one of the macsec devices")
         prg = "wpa_supplicant-macsec2"
 
-    arg = [ "ip", "netns", "exec", "ns1",
-            prg, '-BdddtKW', '-P', pidfile + '1', '-f', logfile1,
-            '-g', '/tmp/wpas-veth1',
-            '-Dmacsec_linux', '-c', conffile + '1', '-i', "veth1" ]
+    arg = ["ip", "netns", "exec", "ns1",
+           prg, '-BdddtKW', '-P', pidfile + '1', '-f', logfile1,
+           '-g', '/tmp/wpas-veth1',
+           '-Dmacsec_linux', '-c', conffile + '1', '-i', "veth1"]
     logger.info("Start wpa_supplicant: " + str(arg))
     subprocess.check_call(arg)
 
@@ -646,9 +654,13 @@ def run_macsec_psk_ns(dev, apdev, params):
     if "2 packets transmitted, 2 received" not in res:
         raise Exception("ping did not work")
 
+    wpas0.close_monitor()
     wpas0.request("TERMINATE")
+    wpas0.close_control()
     del wpas0
+    wpas1.close_monitor()
     wpas1.request("TERMINATE")
+    wpas1.close_control()
     del wpas1
 
     time.sleep(1)

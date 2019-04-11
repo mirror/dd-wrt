@@ -107,22 +107,23 @@ def test_erp_server_no_match(dev, apdev):
         raise Exception("Unexpected use of ERP")
     dev[0].wait_connected(timeout=15, error="Reconnection timed out")
 
-def start_erp_as(apdev, erp_domain="example.com", msk_dump=None, tls13=False):
-    params = { "ssid": "as", "beacon_int": "2000",
-               "radius_server_clients": "auth_serv/radius_clients.conf",
-               "radius_server_auth_port": '18128',
-               "eap_server": "1",
-               "eap_user_file": "auth_serv/eap_user.conf",
-               "ca_cert": "auth_serv/ca.pem",
-               "server_cert": "auth_serv/server.pem",
-               "private_key": "auth_serv/server.key",
-               "eap_sim_db": "unix:/tmp/hlr_auc_gw.sock",
-               "dh_file": "auth_serv/dh.conf",
-               "pac_opaque_encr_key": "000102030405060708090a0b0c0d0e0f",
-               "eap_fast_a_id": "101112131415161718191a1b1c1d1e1f",
-               "eap_fast_a_id_info": "test server",
-               "eap_server_erp": "1",
-               "erp_domain": erp_domain }
+def start_erp_as(apdev, erp_domain="example.com", msk_dump=None, tls13=False,
+                 eap_user_file="auth_serv/eap_user.conf"):
+    params = {"ssid": "as", "beacon_int": "2000",
+              "radius_server_clients": "auth_serv/radius_clients.conf",
+              "radius_server_auth_port": '18128',
+              "eap_server": "1",
+              "eap_user_file": eap_user_file,
+              "ca_cert": "auth_serv/ca.pem",
+              "server_cert": "auth_serv/server.pem",
+              "private_key": "auth_serv/server.key",
+              "eap_sim_db": "unix:/tmp/hlr_auc_gw.sock",
+              "dh_file": "auth_serv/dh.conf",
+              "pac_opaque_encr_key": "000102030405060708090a0b0c0d0e0f",
+              "eap_fast_a_id": "101112131415161718191a1b1c1d1e1f",
+              "eap_fast_a_id_info": "test server",
+              "eap_server_erp": "1",
+              "erp_domain": erp_domain}
     if msk_dump:
         params["dump_msk_file"] = msk_dump
     if tls13:
@@ -156,6 +157,76 @@ def test_erp_radius(dev, apdev):
             raise Exception("Did not use ERP")
         dev[0].wait_connected(timeout=15, error="Reconnection timed out")
 
+def test_erp_radius_no_wildcard_user(dev, apdev, params):
+    """ERP enabled on RADIUS server and peer and no wildcard user"""
+    check_erp_capa(dev[0])
+    user_file = os.path.join(params['logdir'],
+                             'erp_radius_no_wildcard_user.eap_users')
+    with open(user_file, 'w') as f:
+        f.write('"user@example.com" PSK 0123456789abcdef0123456789abcdef\n')
+    start_erp_as(apdev[1], eap_user_file=user_file)
+    params = hostapd.wpa2_eap_params(ssid="test-wpa2-eap")
+    params['auth_server_port'] = "18128"
+    params['erp_send_reauth_start'] = '1'
+    params['erp_domain'] = 'example.com'
+    params['disable_pmksa_caching'] = '1'
+    hapd = hostapd.add_ap(apdev[0], params)
+
+    dev[0].request("ERP_FLUSH")
+    dev[0].connect("test-wpa2-eap", key_mgmt="WPA-EAP",
+                   eap="PSK", identity="user@example.com",
+                   password_hex="0123456789abcdef0123456789abcdef",
+                   erp="1", scan_freq="2412")
+    for i in range(3):
+        dev[0].request("DISCONNECT")
+        dev[0].wait_disconnected(timeout=15)
+        dev[0].request("RECONNECT")
+        ev = dev[0].wait_event(["CTRL-EVENT-EAP-SUCCESS"], timeout=15)
+        if ev is None:
+            raise Exception("EAP success timed out")
+        if "EAP re-authentication completed successfully" not in ev:
+            raise Exception("Did not use ERP")
+        dev[0].wait_connected(timeout=15, error="Reconnection timed out")
+
+def test_erp_radius_ext(dev, apdev):
+    """ERP enabled on a separate RADIUS server and peer"""
+    as_hapd = hostapd.Hostapd("as")
+    try:
+        as_hapd.disable()
+        as_hapd.set("eap_server_erp", "1")
+        as_hapd.set("erp_domain", "erp.example.com")
+        as_hapd.enable()
+        run_erp_radius_ext(dev, apdev)
+    finally:
+        as_hapd.disable()
+        as_hapd.set("eap_server_erp", "0")
+        as_hapd.set("erp_domain", "")
+        as_hapd.enable()
+
+def run_erp_radius_ext(dev, apdev):
+    check_erp_capa(dev[0])
+    params = hostapd.wpa2_eap_params(ssid="test-wpa2-eap")
+    params['erp_send_reauth_start'] = '1'
+    params['erp_domain'] = 'erp.example.com'
+    params['disable_pmksa_caching'] = '1'
+    hapd = hostapd.add_ap(apdev[0], params)
+
+    dev[0].request("ERP_FLUSH")
+    dev[0].connect("test-wpa2-eap", key_mgmt="WPA-EAP",
+                   eap="PSK", identity="psk@erp.example.com",
+                   password_hex="0123456789abcdef0123456789abcdef",
+                   erp="1", scan_freq="2412")
+    for i in range(3):
+        dev[0].request("DISCONNECT")
+        dev[0].wait_disconnected(timeout=15)
+        dev[0].request("RECONNECT")
+        ev = dev[0].wait_event(["CTRL-EVENT-EAP-SUCCESS"], timeout=15)
+        if ev is None:
+            raise Exception("EAP success timed out")
+        if "EAP re-authentication completed successfully" not in ev:
+            raise Exception("Did not use ERP")
+        dev[0].wait_connected(timeout=15, error="Reconnection timed out")
+
 def erp_test(dev, hapd, **kwargs):
     res = dev.get_capability("eap")
     if kwargs['eap'] not in res:
@@ -176,7 +247,7 @@ def erp_test(dev, hapd, **kwargs):
     if "EAP re-authentication completed successfully" not in ev:
         raise Exception("Did not use ERP")
     dev.wait_connected(timeout=15, error="Reconnection timed out")
-    ev = hapd.wait_event([ "AP-STA-CONNECTED" ], timeout=5)
+    ev = hapd.wait_event(["AP-STA-CONNECTED"], timeout=5)
     if ev is None:
         raise Exception("No connection event received from hostapd")
     dev.request("DISCONNECT")
