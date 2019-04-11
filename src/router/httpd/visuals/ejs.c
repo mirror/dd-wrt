@@ -1244,7 +1244,7 @@ void ej_get_sysmodel(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "Industrial Access Point");
 #else
 	websWrite(wp, "Industrial Router");
-#endif /*HAVE_ANTAIRA_MINI*/
+#endif				/*HAVE_ANTAIRA_MINI */
 #else
 	websWrite(wp, "%s", getRouterName());
 #endif
@@ -1358,10 +1358,12 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 	int cnt = get_wl_instances();
 #endif
 	foreach(var, eths, next) {
-		if (!strcmp(get_wan_face(), var))
-			continue;
-		if (!strcmp(nvram_safe_get("wan_ifname2"), var))
-			continue;
+		if (!nvram_match("wan_proto", "disabled")) {
+			if (!strcmp(get_wan_face(), var))
+				continue;
+			if (!strcmp(nvram_safe_get("wan_ifname2"), var))
+				continue;
+		}
 		if (!strcmp("etherip0", var))
 			continue;
 		if (!strncmp("ath", var, 3))
@@ -1633,19 +1635,19 @@ static struct menucontext *init_menu(webs_t wp)
 
 #ifdef HAVE_ANTAIRA_MINI
 	m->menu[MENU_INDEX][1][0] = 0;	// setup - ipv6
-	//m->menu[MENU_INDEX][2][0] = 0;	// setup - ddns
-	//m->menu[MENU_INDEX][3][0] = 0;	// setup - macclone
+	//m->menu[MENU_INDEX][2][0] = 0;        // setup - ddns
+	//m->menu[MENU_INDEX][3][0] = 0;        // setup - macclone
 	m->menu[MENU_INDEX][4][0] = 0;	// setup - routing
 	m->menu[MENU_INDEX][5][0] = 0;	// setup - vlan
-	//m->menu[MENU_INDEX][6][0] = 0;	// setup - networking
+	//m->menu[MENU_INDEX][6][0] = 0;        // setup - networking
 	m->menu[MENU_INDEX][7][0] = 0;	// setup - setupeop
 
 	m->menu[MENU_WIRELESS][1][0] = 0;	// wireless - superchannel
 	m->menu[MENU_WIRELESS][2][0] = 0;	// wireless - wimax
 	m->menu[MENU_WIRELESS][3][0] = 0;	// wireless - radius
-	//m->menu[MENU_WIRELESS][4][0] = 0;	// wireless - security
+	//m->menu[MENU_WIRELESS][4][0] = 0;     // wireless - security
 	m->menu[MENU_WIRELESS][5][0] = 0;	// wireless - wps
-	//m->menu[MENU_WIRELESS][6][0] = 0;	// wireless - macfilter
+	//m->menu[MENU_WIRELESS][6][0] = 0;     // wireless - macfilter
 	m->menu[MENU_WIRELESS][7][0] = 0;	// wireless - advanced
 	m->menu[MENU_WIRELESS][8][0] = 0;	// wireless - wds
 
@@ -1666,13 +1668,13 @@ static struct menucontext *init_menu(webs_t wp)
 
 	m->menu[MENU_ADMIN][1][0] = 0;	// admin - keepalive
 	m->menu[MENU_ADMIN][2][0] = 0;	// admin - diag
-	//m->menu[MENU_ADMIN][3][0] = 0;	// admin - wol
+	//m->menu[MENU_ADMIN][3][0] = 0;        // admin - wol
 
 	m->menu[MENU_STATUS][4][0] = 0;	// status - sputnik
 	m->menu[MENU_STATUS][5][0] = 0;	// status - vpn
 	m->menu[MENU_STATUS][7][0] = 0;	// status - syslog
 	m->menu[MENU_STATUS][8][0] = 0;	// status - info
-#endif /*HAVE_ANTAIRA */
+#endif				/*HAVE_ANTAIRA */
 	return m;
 }
 
