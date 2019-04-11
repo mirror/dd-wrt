@@ -186,7 +186,8 @@ void ej_nvram_status_get(webs_t wp, int argc, char_t ** argv)
 		}
 	} else {
 		status1 = "share.disable";	// only for nonbrand
-		status2 = "&nbsp;";
+		status2 = "\"&nbsp;\"";
+		button1 = "\"&nbsp;\"";
 		hidden1 = "<!--";
 		hidden2 = "-->";
 	}
