@@ -3315,8 +3315,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			websWrite(wp, "<option value=\"40\" %s><script type=\"text/javascript\">Capture(share.ht40);</script></option>\n", nvram_nmatch("40", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
 			if (has_ac(prefix) && has_5ghz(prefix)
 			    && (nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix))) {
-				websWrite(wp, "<option value=\"80\" %s><script type=\"text/javascript\">Capture(share.vht80);</script></option>\n",
-					  nvram_nmatch("80", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
+				websWrite(wp, "<option value=\"80\" %s><script type=\"text/javascript\">Capture(share.vht80);</script></option>\n", nvram_nmatch("80", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
 				if (has_vht160(prefix)) {
 					websWrite(wp, "<option value=\"160\" %s><script type=\"text/javascript\">Capture(share.vht160);</script></option>\n",
 						  nvram_nmatch("160", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
@@ -3743,8 +3742,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			websWrite(wp, "<option value=\"40\" %s>40 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n", nvram_nmatch("40", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
 			if (has_ac(prefix) && has_5ghz(prefix)
 			    && (nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix))) {
-				websWrite(wp, "<option value=\"80\" %s><script type=\"text/javascript\">Capture(share.vht80);</script></option>\n",
-					  nvram_nmatch("80", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
+				websWrite(wp, "<option value=\"80\" %s><script type=\"text/javascript\">Capture(share.vht80);</script></option>\n", nvram_nmatch("80", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
 				if (has_vht160(prefix)) {
 					websWrite(wp, "<option value=\"160\" %s><script type=\"text/javascript\">Capture(share.vht160);</script></option>\n",
 						  nvram_nmatch("160", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
@@ -4445,7 +4443,7 @@ void show_addconfig(webs_t wp, char *prefix)
 #endif
 }
 
-static void show_cryptovar(webs_t wp, char *prefix, char *name, char *var, int selmode)
+static void show_cryptovar(webs_t wp, char *prefix, char *name, char *var, int selmode, int force)
 {
 
 	char nvar[80];
@@ -4455,10 +4453,10 @@ static void show_cryptovar(webs_t wp, char *prefix, char *name, char *var, int s
 
 	sprintf(nvar, "%s_%s", prefix, var);
 	if (selmode)
-		websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" onclick=\"SelMode('%s', '%s_security_mode',this.form.%s_security_mode.selectedIndex,this.form)\" %s />%s", nvar, prefix, gvar, gvar,
-			  selmatch(nvar, "1", "checked=\"checked\""), name);
+		websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" onclick=\"SelMode('%s', '%s_security_mode',this.form.%s_security_mode.selectedIndex,this.form)\" %s %s />%s", nvar, prefix, gvar, gvar,,
+			  force ? "checked=\"checked\"" : selmatch(nvar, "1", "checked=\"checked\""), force ? "disabled=\"disabled\"" : "", name);
 	else
-		websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" %s />%s", nvar, selmatch(nvar, "1", "checked=\"checked\""), name);
+		websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" %s %s />%s", nvar, force ? "checked=\"checked\"" : selmatch(nvar, "1", "checked=\"checked\""), force ? "disabled=\"disabled\"" : "", name);
 
 }
 
@@ -4467,6 +4465,7 @@ typedef struct pair {
 	char *nvname;
 	int (*valid) (const char *prefix);
 	int (*valid2) (const char *prefix);
+	int (*forcecrypto) (const char *prefix);
 };
 
 static int alwaystrue(const char *prefix)
@@ -4513,7 +4512,22 @@ static int wpa3_gcmp128(const char *prefix)
 
 static int no_suiteb(const char *prefix)
 {
+	return !nvram_nmatch("1", "%s_wpa3", prefix);
+}
+
+static int suiteb(const char *prefix)
+{
+	return !no_suiteb(prefix);
+}
+
+static int no_suiteb192(const char *prefix)
+{
 	return !nvram_nmatch("1", "%s_wpa3-192", prefix);
+}
+
+static int suiteb192(const char *prefix)
+{
+	return !no_suiteb192(prefix);
 }
 
 static int no_suiteb_no_wpa3(const char *prefix)
@@ -4525,12 +4539,12 @@ static int no_suiteb_no_wpa3(const char *prefix)
 void show_authtable(webs_t wp, char *prefix, int show80211x)
 {
 	struct pair s_cryptopair[] = {
-		{"CCMP-128 (AES)", "ccmp", noad, no_suiteb},
-		{"CCMP-256", "ccmp-256", has_ccmp_256, no_suiteb},
-		{"TKIP", "tkip", noad, no_suiteb_no_wpa3},
-		{"GCMP-128", "gcmp", has_ad, no_suiteb},
-		{"GCMP-128", "gcmp", has_gcmp_128, no_suiteb},
-		{"GCMP-256", "gcmp-256", has_gcmp_256, alwaystrue},
+		{"CCMP-128 (AES)", "ccmp", noad, alwaystrue},
+		{"CCMP-256", "ccmp-256", has_ccmp_256, alwaystrue},
+		{"TKIP", "tkip", noad, alwaystrue},
+		{"GCMP-128", "gcmp", has_ad, alwaystrue},
+		{"GCMP-128", "gcmp", has_gcmp_128, alwaystrue, suiteb},
+		{"GCMP-256", "gcmp-256", has_gcmp_256, alwaystrue, suiteb192},
 	};
 
 	struct pair s_authpair_wpa[] = {
@@ -4636,7 +4650,7 @@ void show_authtable(webs_t wp, char *prefix, int show80211x)
 			if (show80211x) {
 				websWrite(wp, "<td>");
 				if (m) {
-					show_cryptovar(wp, prefix, authmethod[count].name, authmethod[count].nvname, 1);
+					show_cryptovar(wp, prefix, authmethod[count].name, authmethod[count].nvname, 1, 0);
 				} else {
 					websWrite(wp, "&nbsp;");
 				}
@@ -4644,14 +4658,14 @@ void show_authtable(webs_t wp, char *prefix, int show80211x)
 			}
 			websWrite(wp, "<td>");
 			if (s) {
-				show_cryptovar(wp, prefix, authpair_wpa[count].name, authpair_wpa[count].nvname, 1);
+				show_cryptovar(wp, prefix, authpair_wpa[count].name, authpair_wpa[count].nvname, 1, 0);
 			} else {
 				websWrite(wp, "&nbsp;");
 			}
 			websWrite(wp, "</td>\n");
 			websWrite(wp, "<td>");
 			if (c) {
-				show_cryptovar(wp, prefix, cryptopair[count].name, cryptopair[count].nvname, 0);
+				show_cryptovar(wp, prefix, cryptopair[count].name, cryptopair[count].nvname, 0, cryptopair[count].forcecrypto ? cryptopair[count].forcecrypto(prefix) : 0);
 			} else
 				websWrite(wp, "&nbsp;");
 			websWrite(wp, "</td>\n");
