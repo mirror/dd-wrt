@@ -286,7 +286,7 @@ void eap_sta_key_mgmt(FILE * fp, char *prefix)
 	if (iswpa2 || iswpa || iswpa3)
 		fprintf(fp, "WPA-EAP ");
 	if (has_wpa3(prefix) && iswpa2sha256)
-		fprintf(fp, "WPA-SHA256 ");
+		fprintf(fp, "WPA-EAP-SHA256 ");
 	if (has_wpa3(prefix) && iswpa3_128)
 		fprintf(fp, "WPA-EAP-SUITE-B ");
 	if (has_wpa3(prefix) && iswpa3_192)
@@ -1355,7 +1355,7 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 	if (iswpa2 || iswpa || iswpa3)
 		fprintf(fp, "WPA-EAP ");
 	if (has_wpa3(prefix) && iswpa2sha256)
-		fprintf(fp, "WPA-SHA256 ");
+		fprintf(fp, "WPA-EAP-SHA256 ");
 	if (has_wpa3(prefix) && iswpa3_128)
 		fprintf(fp, "WPA-EAP-SUITE-B ");
 	if (has_wpa3(prefix) && iswpa3_192)
