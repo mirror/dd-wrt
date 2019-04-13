@@ -1001,6 +1001,8 @@ _8021xprv
 			sprintf(akm, "%s %s", akm, "tls");
 		if (nvram_nmatch("1", "%s_ttls", prefix))
 			sprintf(akm, "%s %s", akm, "ttls");
+		if (nvram_nmatch("1", "%s_802.1x", prefix))
+			sprintf(akm, "%s %s", akm, "802.1x");
 		if (nvram_nmatch("1", "%s_wpa", prefix))
 			sprintf(akm, "%s %s", akm, "wpa");
 		if (nvram_nmatch("1", "%s_wpa2", prefix))
@@ -4466,6 +4468,8 @@ void set_security(webs_t wp)
 		_copytonv(wp, "%s_wpa3", ifname);
 		_copytonv(wp, "%s_wpa3-192", ifname);
 		_copytonv(wp, "%s_wpa3-128", ifname);
+		if (nvram_nmatch("1", "%s_802.1x", ifname))
+			sprintf(akm, "%s %s", akm, "802.1x");
 		if (nvram_nmatch("1", "%s_leap", ifname))
 			sprintf(akm, "%s %s", akm, "leap");
 		if (nvram_nmatch("1", "%s_peap", ifname))
