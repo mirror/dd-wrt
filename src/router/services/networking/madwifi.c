@@ -282,7 +282,7 @@ void eap_sta_key_mgmt(FILE * fp, char *prefix)
 		fprintf(fp, "\tgroup=%s\n", &grpstring[1]);
 	}
 
-	fprintf(fp, "wpa_key_mgmt=");
+	fprintf(fp, "\tkey_mgmt=");
 	if (iswpa2 || iswpa || iswpa3)
 		fprintf(fp, "WPA-EAP ");
 	if (has_wpa3(prefix) && iswpa2sha256)
