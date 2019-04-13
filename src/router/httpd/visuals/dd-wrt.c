@@ -4530,6 +4530,16 @@ static int suiteb192(const char *prefix)
 	return !no_suiteb192(prefix);
 }
 
+static int wpaauth(const char *prefix)
+{
+	return nvram_nmatch("1", "%s_psk", prefix) ||
+	    nvram_nmatch("1", "%s_psk2", prefix) ||
+	    nvram_nmatch("1", "%s_psk2-sha256", prefix) ||
+	    nvram_nmatch("1", "%s_psk3", prefix) ||
+	    nvram_nmatch("1", "%s_wpa", prefix) || nvram_nmatch("1", "%s_wpa2", prefix) || nvram_nmatch("1", "%s_wpa2-sha256", prefix) || nvram_nmatch("1", "%s_wpa3", prefix) || nvram_nmatch("1", "%s_wpa3-128", prefix)
+	    || nvram_nmatch("1", "%s_wpa3-192", prefix);
+}
+
 static int no_suiteb_no_wpa3(const char *prefix)
 {
 	return (!nvram_nmatch("1", "%s_wpa3-192", prefix) && !nvram_nmatch("1", "%s_wpa3-128", prefix) && !nvram_nmatch("1", "%s_wpa3", prefix) && !nvram_nmatch("1", "%s_psk3", prefix));
@@ -4539,12 +4549,12 @@ static int no_suiteb_no_wpa3(const char *prefix)
 void show_authtable(webs_t wp, char *prefix, int show80211x)
 {
 	struct pair s_cryptopair[] = {
-		{"CCMP-128 (AES)", "ccmp", noad, alwaystrue},
-		{"CCMP-256", "ccmp-256", has_ccmp_256, alwaystrue},
-		{"TKIP", "tkip", noad, alwaystrue},
-		{"GCMP-128", "gcmp", has_ad, alwaystrue},
-		{"GCMP-128", "gcmp", has_gcmp_128, alwaystrue, suiteb},
-		{"GCMP-256", "gcmp-256", has_gcmp_256, alwaystrue, suiteb192},
+		{"CCMP-128 (AES)", "ccmp", noad, wpaauth},
+		{"CCMP-256", "ccmp-256", has_ccmp_256, wpaauth},
+		{"TKIP", "tkip", noad, wpaauth},
+		{"GCMP-128", "gcmp", has_ad, wpaauth},
+		{"GCMP-128", "gcmp", has_gcmp_128, wpaauth, suiteb},
+		{"GCMP-256", "gcmp-256", has_gcmp_256, wpaauth, suiteb192},
 	};
 
 	struct pair s_authpair_wpa[] = {
