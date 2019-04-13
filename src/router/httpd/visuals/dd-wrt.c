@@ -4532,17 +4532,32 @@ static int suiteb192(const char *prefix)
 
 static int wpaauth(const char *prefix)
 {
-	return nvram_nmatch("1", "%s_psk", prefix) ||
-	    nvram_nmatch("1", "%s_psk2", prefix) ||
-	    nvram_nmatch("1", "%s_psk2-sha256", prefix) ||
-	    nvram_nmatch("1", "%s_psk3", prefix) ||
-	    nvram_nmatch("1", "%s_wpa", prefix) || nvram_nmatch("1", "%s_wpa2", prefix) || nvram_nmatch("1", "%s_wpa2-sha256", prefix) || nvram_nmatch("1", "%s_wpa3", prefix) || nvram_nmatch("1", "%s_wpa3-128", prefix)
-	    || nvram_nmatch("1", "%s_wpa3-192", prefix);
+	if (nvram_nmatch("8021X", "%s_security_mode", prefix)) {
+		return nvram_nmatch("1", "%s_wpa", prefix) ||	//
+		    nvram_nmatch("1", "%s_wpa2", prefix) ||	//
+		    nvram_nmatch("1", "%s_wpa2-sha256", prefix) ||	//
+		    nvram_nmatch("1", "%s_wpa3", prefix) ||	//
+		    nvram_nmatch("1", "%s_wpa3-128", prefix) ||	//
+		    nvram_nmatch("1", "%s_wpa3-192", prefix);
+	}
+	return nvram_nmatch("1", "%s_psk", prefix) ||	//
+	    nvram_nmatch("1", "%s_psk2", prefix) ||	//
+	    nvram_nmatch("1", "%s_psk2-sha256", prefix) ||	//
+	    nvram_nmatch("1", "%s_psk3", prefix) ||	//
+	    nvram_nmatch("1", "%s_wpa", prefix) ||	//
+	    nvram_nmatch("1", "%s_wpa2", prefix) ||	//
+	    nvram_nmatch("1", "%s_wpa2-sha256", prefix) ||	//
+	    nvram_nmatch("1", "%s_wpa3", prefix) ||	//
+	    nvram_nmatch("1", "%s_wpa3-128", prefix) ||	//
+	    nvram_nmatch("1", "%s_wpa3-192", prefix);
 }
 
 static int no_suiteb_no_wpa3(const char *prefix)
 {
-	return (!nvram_nmatch("1", "%s_wpa3-192", prefix) && !nvram_nmatch("1", "%s_wpa3-128", prefix) && !nvram_nmatch("1", "%s_wpa3", prefix) && !nvram_nmatch("1", "%s_psk3", prefix));
+	return (!nvram_nmatch("1", "%s_wpa3-192", prefix) &&	//
+		!nvram_nmatch("1", "%s_wpa3-128", prefix) &&	//
+		!nvram_nmatch("1", "%s_wpa3", prefix) &&	//
+		!nvram_nmatch("1", "%s_psk3", prefix));
 }
 
 #ifdef HAVE_MADWIFI
