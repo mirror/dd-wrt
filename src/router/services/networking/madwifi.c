@@ -278,8 +278,8 @@ void eap_sta_key_mgmt(FILE * fp, char *prefix)
 	};
 	get_pairwise(prefix, pwstring, grpstring, 0);
 	if (*pwstring) {
-		fprintf(fp, "\tpairwise=%s", &pwstring[1]);
-		fprintf(fp, "\tgroup=%s", &grpstring[1]);
+		fprintf(fp, "\tpairwise=%s\n", &pwstring[1]);
+		fprintf(fp, "\tgroup=%s\n", &grpstring[1]);
 	}
 
 	fprintf(fp, "wpa_key_mgmt=");
