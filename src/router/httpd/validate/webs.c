@@ -968,10 +968,14 @@ _8021xprv
 			sprintf(akm, "%s %s", akm, "wpa2-sha256");
 		if (nvram_nmatch("1", "%s_wpa3", prefix))
 			sprintf(akm, "%s %s", akm, "wpa3");
-		if (nvram_nmatch("1", "%s_wpa3-192", prefix))
+		if (nvram_nmatch("1", "%s_wpa3-192", prefix)) {
 			sprintf(akm, "%s %s", akm, "wpa3-192");
-		if (nvram_nmatch("1", "%s_wpa3-128", prefix))
+			nvram_nset("1", "%s_gcmp-256", prefix);
+		}
+		if (nvram_nmatch("1", "%s_wpa3-128", prefix)) {
 			sprintf(akm, "%s %s", akm, "wpa3-128");
+			nvram_nset("1", "%s_gcmp", prefix);
+		}
 
 		nvram_set(n2, &akm[1]);
 	}
@@ -1005,10 +1009,14 @@ _8021xprv
 			sprintf(akm, "%s %s", akm, "wpa2-sha256");
 		if (nvram_nmatch("1", "%s_wpa3", prefix))
 			sprintf(akm, "%s %s", akm, "wpa3");
-		if (nvram_nmatch("1", "%s_wpa3-192", prefix))
+		if (nvram_nmatch("1", "%s_wpa3-192", prefix)) {
 			sprintf(akm, "%s %s", akm, "wpa3-192");
-		if (nvram_nmatch("1", "%s_wpa3-128", prefix))
+			nvram_nset("1", "%s_gcmp-192", prefix);
+		}
+		if (nvram_nmatch("1", "%s_wpa3-128", prefix)) {
 			sprintf(akm, "%s %s", akm, "wpa3-128");
+			nvram_nset("1", "%s_gcmp", prefix);
+		}
 		nvram_set(n2, &akm[1]);
 	}
 #endif
@@ -4489,10 +4497,14 @@ void set_security(webs_t wp)
 			sprintf(akm, "%s %s", akm, "wpa2-sha256");
 		if (nvram_nmatch("1", "%s_wpa3", ifname))
 			sprintf(akm, "%s %s", akm, "wpa3");
-		if (nvram_nmatch("1", "%s_wpa3-192", ifname))
+		if (nvram_nmatch("1", "%s_wpa3-192", ifname)) {
 			sprintf(akm, "%s %s", akm, "wpa3-192");
-		if (nvram_nmatch("1", "%s_wpa3-128", ifname))
+			nvram_nset("1", "%s_gcmp-256", ifname);
+		}
+		if (nvram_nmatch("1", "%s_wpa3-128", ifname)) {
 			sprintf(akm, "%s %s", akm, "wpa3-128");
+			nvram_nset("1", "%s_gcmp", ifname);
+		}
 		nvram_set(n2, &akm[1]);
 	}
 #endif
