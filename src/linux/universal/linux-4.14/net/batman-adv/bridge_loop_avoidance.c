@@ -49,6 +49,7 @@
 #include <net/genetlink.h>
 #include <net/netlink.h>
 #include <net/sock.h>
+#include <uapi/linux/batadv_packet.h>
 #include <uapi/linux/batman_adv.h>
 
 #include "hard-interface.h"
@@ -56,7 +57,6 @@
 #include "log.h"
 #include "netlink.h"
 #include "originator.h"
-#include "packet.h"
 #include "soft-interface.h"
 #include "sysfs.h"
 #include "translation-table.h"
