@@ -51,6 +51,7 @@
 #include <linux/workqueue.h>
 #include <net/genetlink.h>
 #include <net/netlink.h>
+#include <uapi/linux/batadv_packet.h>
 #include <uapi/linux/batman_adv.h>
 
 #include "bat_algo.h"
@@ -62,7 +63,6 @@
 #include "netlink.h"
 #include "network-coding.h"
 #include "originator.h"
-#include "packet.h"
 #include "routing.h"
 #include "send.h"
 #include "translation-table.h"

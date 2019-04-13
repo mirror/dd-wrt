@@ -39,6 +39,7 @@
 #include <net/genetlink.h>
 #include <net/netlink.h>
 #include <net/sock.h>
+#include <uapi/linux/batadv_packet.h>
 #include <uapi/linux/batman_adv.h>
 
 #include "bat_algo.h"
@@ -46,7 +47,6 @@
 #include "gateway_client.h"
 #include "hard-interface.h"
 #include "originator.h"
-#include "packet.h"
 #include "soft-interface.h"
 #include "tp_meter.h"
 #include "translation-table.h"

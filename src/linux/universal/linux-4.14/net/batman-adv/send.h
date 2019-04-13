@@ -23,8 +23,7 @@
 #include <linux/compiler.h>
 #include <linux/spinlock.h>
 #include <linux/types.h>
-
-#include "packet.h"
+#include <uapi/linux/batadv_packet.h>
 
 struct sk_buff;
 

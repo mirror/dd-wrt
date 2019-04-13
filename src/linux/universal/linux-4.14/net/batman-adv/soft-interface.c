@@ -48,6 +48,7 @@
 #include <linux/stddef.h>
 #include <linux/string.h>
 #include <linux/types.h>
+#include <uapi/linux/batadv_packet.h>
 
 #include "bat_algo.h"
 #include "bridge_loop_avoidance.h"
@@ -59,7 +60,6 @@
 #include "multicast.h"
 #include "network-coding.h"
 #include "originator.h"
-#include "packet.h"
 #include "send.h"
 #include "sysfs.h"
 #include "translation-table.h"

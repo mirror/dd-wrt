@@ -37,6 +37,7 @@
 #include <linux/string.h>
 #include <linux/stringify.h>
 #include <linux/workqueue.h>
+#include <uapi/linux/batadv_packet.h>
 
 #include "bridge_loop_avoidance.h"
 #include "distributed-arp-table.h"
@@ -45,7 +46,6 @@
 #include "hard-interface.h"
 #include "log.h"
 #include "network-coding.h"
-#include "packet.h"
 #include "soft-interface.h"
 
 static struct net_device *batadv_kobj_to_netdev(struct kobject *obj)
