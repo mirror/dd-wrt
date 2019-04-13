@@ -277,7 +277,7 @@ void eap_sta_key_mgmt(FILE * fp, char *prefix)
 		0, 0
 	};
 	get_pairwise(prefix, pwstring, grpstring, 0);
-	if (*pwstring) {
+	if (*pwstring && (iswpa2 || iswpa || iswpa3 || iswpa3_128 || iswpa3_192 || iswpa2sha256)) {
 		fprintf(fp, "\tpairwise=%s\n", &pwstring[1]);
 		fprintf(fp, "\tgroup=%s\n", &grpstring[1]);
 	}
@@ -299,12 +299,14 @@ void eap_sta_key_mgmt(FILE * fp, char *prefix)
 		fprintf(fp, "IEEE8021X ");
 	fprintf(fp, "\n");
 #ifdef HAVE_80211W
-	if (nvram_default_matchi(mfp, 1, 0) || ((iswpa3_128 || iswpa3_192 || iswpa3 || iswpa2sha256) && (!iswpa && !iswpa2)))
-		fprintf(fp, "\tieee80211w=2\n");
-	else if (nvram_default_matchi(mfp, -1, 0) || iswpa3_192 || iswpa3_128 || iswpa3 || iswpa2sha256)
-		fprintf(fp, "\tieee80211w=1\n");
-	else if (nvram_default_matchi(mfp, 0, 0))
-		fprintf(fp, "\tieee80211w=0\n");
+	if ((iswpa2 || iswpa || iswpa3 || iswpa3_128 || iswpa3_192 || iswpa2sha256)) {
+		if (nvram_default_matchi(mfp, 1, 0) || ((iswpa3_128 || iswpa3_192 || iswpa3 || iswpa2sha256) && (!iswpa && !iswpa2)))
+			fprintf(fp, "\tieee80211w=2\n");
+		else if (nvram_default_matchi(mfp, -1, 0) || iswpa3_192 || iswpa3_128 || iswpa3 || iswpa2sha256)
+			fprintf(fp, "\tieee80211w=1\n");
+		else if (nvram_default_matchi(mfp, 0, 0))
+			fprintf(fp, "\tieee80211w=0\n");
+	}
 #endif
 
 }
