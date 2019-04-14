@@ -1,4 +1,4 @@
 #!/bin/sh
-for i in hack-4.19/*; do
+for i in patches/*; do
   patch -p1<$i
 done

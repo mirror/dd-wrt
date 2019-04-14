@@ -11,6 +11,13 @@
 
 #include "do_mounts.h"
 
+
+#ifdef CONFIG_X86
+#define BASE_ROOT ROOT_DEV[0]
+#else
+#define BASE_ROOT ROOT_DEV
+#endif
+
 unsigned long initrd_start, initrd_end;
 int initrd_below_start_ok;
 unsigned int real_root_dev;	/* do_proc_dointvec cannot handle kdev_t */
@@ -46,7 +53,7 @@ static void __init handle_initrd(void)
 	extern char *envp_init[];
 	int error;
 
-	real_root_dev = new_encode_dev(ROOT_DEV);
+	real_root_dev = new_encode_dev(BASE_ROOT);
 	create_dev("/dev/root.old", Root_RAM0);
 	/* mount initrd on rootfs' /root */
 	mount_block_root("/dev/root.old", root_mountflags & ~MS_RDONLY);
@@ -81,7 +88,7 @@ static void __init handle_initrd(void)
 	}
 
 	ksys_chdir("/");
-	ROOT_DEV = new_decode_dev(real_root_dev);
+	BASE_ROOT = new_decode_dev(real_root_dev);
 	mount_root();
 
 	printk(KERN_NOTICE "Trying to move old root to /initrd ... ");
@@ -117,7 +124,7 @@ bool __init initrd_load(void)
 		 * in that case the ram disk is just set up here, and gets
 		 * mounted in the normal path.
 		 */
-		if (rd_load_image("/initrd.image") && ROOT_DEV != Root_RAM0) {
+		if (rd_load_image("/initrd.image") && BASE_ROOT != Root_RAM0) {
 			ksys_unlink("/initrd.image");
 			handle_initrd();
 			return true;
