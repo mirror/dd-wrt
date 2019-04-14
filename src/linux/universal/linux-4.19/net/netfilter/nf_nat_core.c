@@ -110,6 +110,9 @@ int nf_xfrm_me_harder(struct net *net, struct sk_buff *skb, unsigned int family)
 	struct sock *sk = skb->sk;
 	int err;
 
+	if (skb->dev && !dev_net(skb->dev)->xfrm.policy_count[XFRM_POLICY_OUT])
+		return 0;
+
 	err = xfrm_decode_session(skb, &fl, family);
 	if (err < 0)
 		return err;

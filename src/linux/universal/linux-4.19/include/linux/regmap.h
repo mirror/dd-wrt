@@ -187,7 +187,7 @@ struct reg_sequence {
 	pollret ?: ((cond) ? 0 : -ETIMEDOUT); \
 })
 
-#ifdef CONFIG_REGMAP
+#if IS_REACHABLE(CONFIG_REGMAP)
 
 enum regmap_endian {
 	/* Unspecified -> 0 -> Backwards compatible default */

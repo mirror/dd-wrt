@@ -133,7 +133,10 @@ static const struct seq_operations tty_drivers_op = {
 void proc_tty_register_driver(struct tty_driver *driver)
 {
 	struct proc_dir_entry *ent;
-		
+
+	if (IS_ENABLED(CONFIG_PROC_STRIPPED))
+		return;
+
 	if (!driver->driver_name || driver->proc_entry ||
 	    !driver->ops->proc_show)
 		return;
@@ -150,6 +153,9 @@ void proc_tty_unregister_driver(struct tty_driver *driver)
 {
 	struct proc_dir_entry *ent;
 
+	if (IS_ENABLED(CONFIG_PROC_STRIPPED))
+		return;
+
 	ent = driver->proc_entry;
 	if (!ent)
 		return;
@@ -164,6 +170,9 @@ void proc_tty_unregister_driver(struct tty_driver *driver)
  */
 void __init proc_tty_init(void)
 {
+	if (IS_ENABLED(CONFIG_PROC_STRIPPED))
+		return;
+
 	if (!proc_mkdir("tty", NULL))
 		return;
 	proc_mkdir("tty/ldisc", NULL);	/* Preserved: it's userspace visible */

@@ -1,5 +1,5 @@
 config WIRELESS_EXT
-	bool
+	bool "Wireless extensions"
 
 config WEXT_CORE
 	def_bool y
@@ -11,10 +11,10 @@ config WEXT_PROC
 	depends on WEXT_CORE
 
 config WEXT_SPY
-	bool
+	bool "WEXT_SPY"
 
 config WEXT_PRIV
-	bool
+	bool "WEXT_PRIV"
 
 config CFG80211
 	tristate "cfg80211 - wireless configuration API"
@@ -202,7 +202,7 @@ config CFG80211_WEXT_EXPORT
 endif # CFG80211
 
 config LIB80211
-	tristate
+	tristate "LIB80211"
 	default n
 	help
 	  This options enables a library of common routines used
@@ -211,13 +211,16 @@ config LIB80211
 	  Drivers should select this themselves if needed.
 
 config LIB80211_CRYPT_WEP
-	tristate
+	tristate "LIB80211_CRYPT_WEP"
+	select LIB80211
 
 config LIB80211_CRYPT_CCMP
-	tristate
+	tristate "LIB80211_CRYPT_CCMP"
+	select LIB80211
 
 config LIB80211_CRYPT_TKIP
-	tristate
+	tristate "LIB80211_CRYPT_TKIP"
+	select LIB80211
 
 config LIB80211_DEBUG
 	bool "lib80211 debugging messages"

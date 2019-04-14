@@ -2786,6 +2786,8 @@ static const struct seq_operations locks_seq_operations = {
 
 static int __init proc_locks_init(void)
 {
+	if (IS_ENABLED(CONFIG_PROC_STRIPPED))
+		return 0;
 	proc_create_seq_private("locks", 0, NULL, &locks_seq_operations,
 			sizeof(struct locks_iterator), NULL);
 	return 0;

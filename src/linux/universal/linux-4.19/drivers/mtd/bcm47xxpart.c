@@ -39,6 +39,7 @@
 #define NVRAM_HEADER			0x48534C46	/* FLSH */
 #define POT_MAGIC1			0x54544f50	/* POTT */
 #define POT_MAGIC2			0x504f		/* OP */
+#define T_METER_MAGIC			0x4D540000	/* MT */
 #define ML_MAGIC1			0x39685a42
 #define ML_MAGIC2			0x26594131
 #define TRX_MAGIC			0x30524448
@@ -179,6 +180,15 @@ static int bcm47xxpart_parse(struct mtd_info *master,
 		if (buf[0x010 / 4] == ML_MAGIC1 &&
 		    buf[0x014 / 4] == ML_MAGIC2) {
 			bcm47xxpart_add_part(&parts[curr_part++], "ML", offset,
+					     MTD_WRITEABLE);
+			continue;
+		}
+
+		/* T_Meter */
+		if ((le32_to_cpu(buf[0x000 / 4]) & 0xFFFF0000) == T_METER_MAGIC &&
+		    (le32_to_cpu(buf[0x030 / 4]) & 0xFFFF0000) == T_METER_MAGIC &&
+		    (le32_to_cpu(buf[0x060 / 4]) & 0xFFFF0000) == T_METER_MAGIC) {
+			bcm47xxpart_add_part(&parts[curr_part++], "T_Meter", offset,
 					     MTD_WRITEABLE);
 			continue;
 		}

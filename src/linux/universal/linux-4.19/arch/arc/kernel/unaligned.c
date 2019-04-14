@@ -206,7 +206,7 @@ int misaligned_fixup(unsigned long address, struct pt_regs *regs,
 	char buf[TASK_COMM_LEN];
 
 	/* handle user mode only and only if enabled by sysadmin */
-	if (!user_mode(regs) || !unaligned_enabled)
+	if (!unaligned_enabled)
 		return 1;
 
 	if (no_unaligned_warning) {

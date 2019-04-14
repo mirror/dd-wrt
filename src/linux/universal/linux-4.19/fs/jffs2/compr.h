@@ -29,9 +29,9 @@
 #define JFFS2_DYNRUBIN_PRIORITY  20
 #define JFFS2_LZARI_PRIORITY     30
 #define JFFS2_RTIME_PRIORITY     50
-#define JFFS2_ZLIB_PRIORITY      60
-#define JFFS2_LZO_PRIORITY       80
-
+#define JFFS2_LZMA_PRIORITY      70
+#define JFFS2_ZLIB_PRIORITY      80
+#define JFFS2_LZO_PRIORITY       90
 
 #define JFFS2_RUBINMIPS_DISABLED /* RUBINs will be used only */
 #define JFFS2_DYNRUBIN_DISABLED  /*	   for decompression */
@@ -100,6 +100,10 @@ void jffs2_zlib_exit(void);
 #ifdef CONFIG_JFFS2_LZO
 int jffs2_lzo_init(void);
 void jffs2_lzo_exit(void);
+#endif
+#ifdef CONFIG_JFFS2_LZMA
+int jffs2_lzma_init(void);
+void jffs2_lzma_exit(void);
 #endif
 
 #endif /* __JFFS2_COMPR_H__ */

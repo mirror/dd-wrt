@@ -207,6 +207,7 @@ struct mtd_debug_info {
 struct mtd_info {
 	u_char type;
 	uint32_t flags;
+	uint32_t orig_flags; /* Flags as before running mtd checks */
 	uint64_t size;	 // Total size of the MTD
 
 	/* "Major" erase size for the device. Naïve users may take this
@@ -506,6 +507,24 @@ static inline void mtd_align_erase_req(struct mtd_info *mtd,
 		req->len += mtd->erasesize - mod;
 }
 
+static inline uint64_t mtd_roundup_to_eb(uint64_t sz, struct mtd_info *mtd)
+{
+	if (mtd_mod_by_eb(sz, mtd) == 0)
+		return sz;
+
+	/* Round up to next erase block */
+	return (mtd_div_by_eb(sz, mtd) + 1) * mtd->erasesize;
+}
+
+static inline uint64_t mtd_rounddown_to_eb(uint64_t sz, struct mtd_info *mtd)
+{
+	if (mtd_mod_by_eb(sz, mtd) == 0)
+		return sz;
+
+	/* Round down to the start of the current erase block */
+	return (mtd_div_by_eb(sz, mtd)) * mtd->erasesize;
+}
+
 static inline uint32_t mtd_div_by_ws(uint64_t sz, struct mtd_info *mtd)
 {
 	if (mtd->writesize_shift)
@@ -570,6 +589,8 @@ extern struct mtd_info *get_mtd_device(struct mtd_info *mtd, int num);
 extern int __get_mtd_device(struct mtd_info *mtd);
 extern void __put_mtd_device(struct mtd_info *mtd);
 extern struct mtd_info *get_mtd_device_nm(const char *name);
+extern struct mtd_info *get_mtd_device_by_node(
+		const struct device_node *of_node);
 extern void put_mtd_device(struct mtd_info *mtd);
 
 
