@@ -39,6 +39,17 @@ config SPI_ASPEED_SMC
 	  and support for the SPI flash memory controller (SPI) for
 	  the host firmware. The implementation only supports SPI NOR.
 
+config MTD_SPI_NOR_USE_4K_SECTORS_LIMIT
+	int "Maximum flash chip size to use 4K sectors on (in KiB)"
+	depends on MTD_SPI_NOR_USE_4K_SECTORS
+	default "4096"
+	help
+	  There are many flash chips that support 4K sectors, but are so large
+	  that using them significantly slows down writing large amounts of
+	  data or using a writable filesystem.
+	  Any flash chip larger than the size specified in this option will
+	  not use 4K sectors.
+
 config SPI_ATMEL_QUADSPI
 	tristate "Atmel Quad SPI Controller"
 	depends on ARCH_AT91 || (ARM && COMPILE_TEST && !ARCH_EBSA110)

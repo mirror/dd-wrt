@@ -39,20 +39,22 @@ ifneq ($(wildcard $(obj)/$(datafile_d_y)),)
 	include $(obj)/$(datafile_d_y)
 endif
 
+deps_initramfs_sane := $(foreach v,$(deps_initramfs),$(if $(findstring :,$(v)),,$(v)))
+
 quiet_cmd_initfs = GEN     $@
       cmd_initfs = $(initramfs) -o $@ $(ramfs-args) $(ramfs-input)
 
 targets := $(datafile_y)
 
 # do not try to update files included in initramfs
-$(deps_initramfs): ;
+$(deps_initramfs_sane): ;
 
-$(deps_initramfs): klibcdirs
+$(deps_initramfs_sane): klibcdirs
 # We rebuild initramfs_data.cpio if:
 # 1) Any included file is newer then initramfs_data.cpio
 # 2) There are changes in which files are included (added or deleted)
 # 3) If gen_init_cpio are newer than initramfs_data.cpio
 # 4) arguments to gen_initramfs.sh changes
-$(obj)/$(datafile_y): $(obj)/gen_init_cpio $(deps_initramfs) klibcdirs
+$(obj)/$(datafile_y): $(obj)/gen_init_cpio $(deps_initramfs_sane) klibcdirs
 	$(Q)$(initramfs) -l $(ramfs-input) > $(obj)/$(datafile_d_y)
 	$(call if_changed,initfs)

@@ -279,10 +279,12 @@ static int __net_init dev_proc_net_init(struct net *net)
 	if (!proc_create_net("dev", 0444, net->proc_net, &dev_seq_ops,
 			sizeof(struct seq_net_private)))
 		goto out;
-	if (!proc_create_seq("softnet_stat", 0444, net->proc_net,
+	if (!IS_ENABLED(CONFIG_PROC_STRIPPED) &&
+			!proc_create_seq("softnet_stat", 0444, net->proc_net,
 			 &softnet_seq_ops))
 		goto out_dev;
-	if (!proc_create_net("ptype", 0444, net->proc_net, &ptype_seq_ops,
+	if (!IS_ENABLED(CONFIG_PROC_STRIPPED) &&
+			!proc_create_net("ptype", 0444, net->proc_net, &ptype_seq_ops,
 			sizeof(struct seq_net_private)))
 		goto out_softnet;
 
@@ -292,9 +294,11 @@ static int __net_init dev_proc_net_init(struct net *net)
 out:
 	return rc;
 out_ptype:
-	remove_proc_entry("ptype", net->proc_net);
+	if (!IS_ENABLED(CONFIG_PROC_STRIPPED))
+		remove_proc_entry("ptype", net->proc_net);
 out_softnet:
-	remove_proc_entry("softnet_stat", net->proc_net);
+	if (!IS_ENABLED(CONFIG_PROC_STRIPPED))
+		remove_proc_entry("softnet_stat", net->proc_net);
 out_dev:
 	remove_proc_entry("dev", net->proc_net);
 	goto out;
@@ -304,8 +308,10 @@ static void __net_exit dev_proc_net_exit(struct net *net)
 {
 	wext_proc_exit(net);
 
-	remove_proc_entry("ptype", net->proc_net);
-	remove_proc_entry("softnet_stat", net->proc_net);
+	if (!IS_ENABLED(CONFIG_PROC_STRIPPED)) {
+		remove_proc_entry("ptype", net->proc_net);
+		remove_proc_entry("softnet_stat", net->proc_net);
+	}
 	remove_proc_entry("dev", net->proc_net);
 }
 

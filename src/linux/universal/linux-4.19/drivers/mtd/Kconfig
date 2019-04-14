@@ -11,6 +11,25 @@ menuconfig MTD
 
 if MTD
 
+menu "OpenWrt specific MTD options"
+
+config MTD_ROOTFS_ROOT_DEV
+	bool "Automatically set 'rootfs' partition to be root filesystem"
+	default y
+
+config MTD_SPLIT_FIRMWARE
+	bool "Automatically split firmware partition for kernel+rootfs"
+	default y
+
+config MTD_SPLIT_FIRMWARE_NAME
+	string "Firmware partition name"
+	depends on MTD_SPLIT_FIRMWARE
+	default "firmware"
+
+source "drivers/mtd/mtdsplit/Kconfig"
+
+endmenu
+
 config MTD_TESTS
 	tristate "MTD tests support (DANGEROUS)"
 	depends on m
@@ -157,6 +176,22 @@ config MTD_BCM47XX_PARTS
 menu "Partition parsers"
 source "drivers/mtd/parsers/Kconfig"
 endmenu
+
+config MTD_MYLOADER_PARTS
+	tristate "MyLoader partition parsing"
+	depends on ADM5120 || ATH25 || ATH79
+	---help---
+	  MyLoader is a bootloader which allows the user to define partitions
+	  in flash devices, by putting a table in the second erase block
+	  on the device, similar to a partition table. This table gives the 
+	  offsets and lengths of the user defined partitions.
+
+	  If you need code which can detect and parse these tables, and
+	  register MTD 'partitions' corresponding to each image detected,
+	  enable this option.
+
+	  You will still need the parsing functions to be called by the driver
+	  for your particular device. It won't happen automatically.
 
 comment "User Modules And Translation Layers"
 
@@ -338,5 +373,7 @@ source "drivers/mtd/lpddr/Kconfig"
 source "drivers/mtd/spi-nor/Kconfig"
 
 source "drivers/mtd/ubi/Kconfig"
+
+source "drivers/mtd/composite/Kconfig"
 
 endif # MTD

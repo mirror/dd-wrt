@@ -59,6 +59,18 @@ default_initramfs() {
 	EOF
 }
 
+list_openwrt_initramfs() {
+	:
+}
+
+openwrt_initramfs() {
+	# make sure that /dev/console exists
+	cat <<-EOF >> ${output}
+		dir /dev 0755 0 0
+		nod /dev/console 0600 0 0 c 5 1
+	EOF
+}
+
 filetype() {
 	local argv1="$1"
 
@@ -180,6 +192,8 @@ dir_filelist() {
 	if [  "$(echo "${dirlist}" | wc -l)" -gt 1 ]; then
 		${dep_list}print_mtime "$1"
 
+		${dep_list}openwrt_initramfs
+
 		echo "${dirlist}" | \
 		while read x; do
 			${dep_list}parse ${x}
@@ -229,7 +243,7 @@ cpio_list=
 output="/dev/stdout"
 output_file=""
 is_cpio_compressed=
-compr="gzip -n -9 -f"
+compr="gzip -n -9 -f -"
 
 arg="$1"
 case "$arg" in
@@ -245,13 +259,13 @@ case "$arg" in
 		output=${cpio_list}
 		echo "$output_file" | grep -q "\.gz$" \
                 && [ -x "`which gzip 2> /dev/null`" ] \
-                && compr="gzip -n -9 -f"
+                && compr="gzip -n -9 -f -"
 		echo "$output_file" | grep -q "\.bz2$" \
                 && [ -x "`which bzip2 2> /dev/null`" ] \
-                && compr="bzip2 -9 -f"
+                && compr="bzip2 -9 -f -"
 		echo "$output_file" | grep -q "\.lzma$" \
                 && [ -x "`which lzma 2> /dev/null`" ] \
-                && compr="lzma -9 -f"
+                && compr="lzma e -d20 -lc1 -lp2 -pb2 -eos -si -so"
 		echo "$output_file" | grep -q "\.xz$" \
                 && [ -x "`which xz 2> /dev/null`" ] \
                 && compr="xz --check=crc32 --lzma2=dict=1MiB"
@@ -320,7 +334,7 @@ if [ ! -z ${output_file} ]; then
 	if [ "${is_cpio_compressed}" = "compressed" ]; then
 		cat ${cpio_tfile} > ${output_file}
 	else
-		(cat ${cpio_tfile} | ${compr}  - > ${output_file}) \
+		(cat ${cpio_tfile} | ${compr} > ${output_file}) \
 		|| (rm -f ${output_file} ; false)
 	fi
 	[ -z ${cpio_file} ] && rm ${cpio_tfile}

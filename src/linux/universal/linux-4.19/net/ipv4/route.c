@@ -410,6 +410,9 @@ static struct pernet_operations ip_rt_proc_ops __net_initdata =  {
 
 static int __init ip_rt_proc_init(void)
 {
+	if (IS_ENABLED(CONFIG_PROC_STRIPPED))
+		return 0;
+
 	return register_pernet_subsys(&ip_rt_proc_ops);
 }
 

@@ -131,6 +131,7 @@ struct packet_sock {
 	struct net_device __rcu	*cached_dev;
 	int			(*xmit)(struct sk_buff *skb);
 	struct packet_type	prot_hook ____cacheline_aligned_in_smp;
+	unsigned int		pkt_type;
 };
 
 static struct packet_sock *pkt_sk(struct sock *sk)

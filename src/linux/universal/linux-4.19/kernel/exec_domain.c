@@ -29,6 +29,8 @@ static int execdomains_proc_show(struct seq_file *m, void *v)
 
 static int __init proc_execdomains_init(void)
 {
+	if (IS_ENABLED(CONFIG_PROC_STRIPPED))
+		return 0;
 	proc_create_single("execdomains", 0, NULL, execdomains_proc_show);
 	return 0;
 }

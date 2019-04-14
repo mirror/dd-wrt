@@ -43,6 +43,7 @@ config MIPS
 	select HAVE_ARCH_TRANSPARENT_HUGEPAGE if CPU_SUPPORTS_HUGEPAGES && 64BIT
 	select HAVE_CBPF_JIT if (!64BIT && !CPU_MICROMIPS)
 	select HAVE_EBPF_JIT if (64BIT && !CPU_MICROMIPS)
+	select HAVE_LD_DEAD_CODE_DATA_ELIMINATION
 	select HAVE_CONTEXT_TRACKING
 	select HAVE_COPY_THREAD_TLS
 	select HAVE_C_RECORDMCOUNT
@@ -1062,9 +1063,6 @@ config FW_ARC
 config ARCH_MAY_HAVE_PC_FDC
 	bool
 
-config BOOT_RAW
-	bool
-
 config CEVT_BCM1480
 	bool
 
@@ -1119,7 +1117,6 @@ config DMA_PERDEV_COHERENT
 config DMA_NONCOHERENT
 	bool
 	select ARCH_HAS_SYNC_DMA_FOR_DEVICE
-	select ARCH_HAS_SYNC_DMA_FOR_CPU
 	select NEED_DMA_MAP_STATE
 	select DMA_NONCOHERENT_MMAP
 	select DMA_NONCOHERENT_CACHE_SYNC
@@ -1145,6 +1142,10 @@ config SYNC_R4K
 
 config MIPS_MACHINE
 	def_bool n
+
+config IMAGE_CMDLINE_HACK
+	bool "OpenWrt specific image command line hack"
+	default n
 
 config NO_IOPORT_MAP
 	def_bool n
@@ -1900,9 +1901,11 @@ config SYS_HAS_CPU_MIPS32_R3_5
 
 config SYS_HAS_CPU_MIPS32_R5
 	bool
+	select ARCH_HAS_SYNC_DMA_FOR_CPU
 
 config SYS_HAS_CPU_MIPS32_R6
 	bool
+	select ARCH_HAS_SYNC_DMA_FOR_CPU
 
 config SYS_HAS_CPU_MIPS64_R1
 	bool
@@ -1912,6 +1915,7 @@ config SYS_HAS_CPU_MIPS64_R2
 
 config SYS_HAS_CPU_MIPS64_R6
 	bool
+	select ARCH_HAS_SYNC_DMA_FOR_CPU
 
 config SYS_HAS_CPU_R3000
 	bool
@@ -1948,6 +1952,7 @@ config SYS_HAS_CPU_R8000
 
 config SYS_HAS_CPU_R10000
 	bool
+	select ARCH_HAS_SYNC_DMA_FOR_CPU
 
 config SYS_HAS_CPU_RM7000
 	bool
@@ -1976,6 +1981,7 @@ config SYS_HAS_CPU_BMIPS4380
 config SYS_HAS_CPU_BMIPS5000
 	bool
 	select SYS_HAS_CPU_BMIPS
+	select ARCH_HAS_SYNC_DMA_FOR_CPU
 
 config SYS_HAS_CPU_XLR
 	bool
@@ -2895,6 +2901,20 @@ config MIPS_O32_FP64_SUPPORT
 
 	  If unsure, say N.
 
+config MIPS_FPU_EMULATOR
+	bool "MIPS FPU Emulator"
+	default y
+	help
+	  This option lets you disable the built-in MIPS FPU (Coprocessor 1)
+	  emulator, which handles floating-point instructions on processors
+	  without a hardware FPU.  It is generally a good idea to keep the
+	  emulator built-in, unless you are perfectly sure you have a
+	  complete soft-float environment.  With the emulator disabled, all
+	  users of float operations will be killed with an illegal instr-
+	  uction exception.
+
+	  Say Y, please.
+
 config USE_OF
 	bool
 	select OF
@@ -2967,6 +2987,18 @@ choice
 		depends on CMDLINE_BOOL
 		bool "Extend builtin kernel arguments with bootloader arguments"
 endchoice
+
+config BOOT_RAW
+	bool "Enable the kernel to be executed from the load address"
+	default n
+	help
+	 Allow the kernel to be executed from the load address for
+	 bootloaders which cannot read the ELF format. This places
+	 a jump to start_kernel at the load address.
+
+	 If unsure, say N.
+
+
 
 endmenu
 

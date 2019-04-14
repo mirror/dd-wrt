@@ -427,6 +427,7 @@
 #define BGMAC_FEAT_CC4_IF_SW_TYPE_RGMII	BIT(18)
 #define BGMAC_FEAT_CC7_IF_TYPE_RGMII	BIT(19)
 #define BGMAC_FEAT_IDM_MASK		BIT(20)
+#define BGMAC_FEAT_SRAB			BIT(21)
 
 struct bgmac_slot_info {
 	union {
@@ -532,6 +533,9 @@ struct bgmac {
 	void (*cmn_maskset32)(struct bgmac *bgmac, u16 offset, u32 mask,
 			      u32 set);
 	int (*phy_connect)(struct bgmac *bgmac);
+
+	/* platform device for associated switch */
+	struct platform_device *b53_device;
 };
 
 struct bgmac *bgmac_alloc(struct device *dev);

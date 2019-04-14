@@ -140,6 +140,9 @@ void __init ipc_init_proc_interface(const char *path, const char *header,
 	struct proc_dir_entry *pde;
 	struct ipc_proc_iface *iface;
 
+	if (IS_ENABLED(CONFIG_PROC_STRIPPED))
+		return;
+
 	iface = kmalloc(sizeof(*iface), GFP_KERNEL);
 	if (!iface)
 		return;
