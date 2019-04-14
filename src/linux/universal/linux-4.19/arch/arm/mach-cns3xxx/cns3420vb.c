@@ -31,8 +31,9 @@
 #include <asm/mach/arch.h>
 #include <asm/mach/map.h>
 #include <asm/mach/time.h>
-#include "cns3xxx.h"
-#include "pm.h"
+#include <mach/cns3xxx.h>
+#include <mach/irqs.h>
+#include <mach/pm.h>
 #include "core.h"
 #include "devices.h"
 
@@ -217,13 +218,11 @@ static struct platform_device *cns3420_pdevs[] __initdata = {
 
 static void __init cns3420_init(void)
 {
-	cns3xxx_l2x0_init();
-
 	platform_add_devices(cns3420_pdevs, ARRAY_SIZE(cns3420_pdevs));
 
 	cns3xxx_ahci_init();
 	cns3xxx_sdhci_init();
-
+	
 	pm_power_off = cns3xxx_power_off;
 }
 
@@ -238,7 +237,7 @@ static struct map_desc cns3420_io_desc[] __initdata = {
 
 static void __init cns3420_map_io(void)
 {
-	cns3xxx_map_io();
+	cns3xxx_common_init();
 	iotable_init(cns3420_io_desc, ARRAY_SIZE(cns3420_io_desc));
 
 	cns3420_early_serial_setup();

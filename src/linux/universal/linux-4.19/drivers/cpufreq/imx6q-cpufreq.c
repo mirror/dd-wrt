@@ -282,9 +282,9 @@ static void imx6q_opp_check_speed_grading(struct device *dev)
 		if (val != OCOTP_CFG3_SPEED_852MHZ)
 			if (dev_pm_opp_disable(dev, 852000000))
 				dev_warn(dev, "failed to disable 852MHz OPP\n");
-		if (val != OCOTP_CFG3_SPEED_1P2GHZ)
-			if (dev_pm_opp_disable(dev, 1200000000))
-				dev_warn(dev, "failed to disable 1.2GHz OPP\n");
+//		if (val != OCOTP_CFG3_SPEED_1P2GHZ)
+//			if (dev_pm_opp_disable(dev, 1200000000))
+//				dev_warn(dev, "failed to disable 1.2GHz OPP\n");
 	}
 	iounmap(base);
 put_node:

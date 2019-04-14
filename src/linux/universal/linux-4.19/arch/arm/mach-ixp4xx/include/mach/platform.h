@@ -78,6 +78,36 @@ extern unsigned long ixp4xx_exp_bus_size;
 #define IXP4XX_PERIPHERAL_BUS_CLOCK 	(66) /* 66MHzi APB BUS   */ 
 #define IXP4XX_UART_XTAL        	14745600
 
+
+/*
+ * The IXP4xx chips do not have an I2C unit, so GPIO lines are just
+ * used to 
+ * Used as platform_data to provide GPIO pin information to the ixp42x
+ * I2C driver.
+ */
+struct ixp4xx_i2c_pins {
+	unsigned long sda_pin;
+	unsigned long scl_pin;
+};
+
+#define IXDP425_KSSPI_SELECT	4
+#define IXDP425_KSSPI_TXD	3
+#define IXDP425_KSSPI_CLOCK	2
+#define IXDP425_KSSPI_RXD	0
+
+/*
+ * This structure provide a means for the board setup code
+ * to give information to th pata_ixp4xx driver. It is
+ * passed as platform_data.
+ */
+struct ixp4xx_spi_pins {
+  unsigned long spis_pin;
+  unsigned long spic_pin;
+  unsigned long spid_pin;
+  unsigned long spiq_pin;
+};
+
+
 /*
  * This structure provide a means for the board setup code
  * to give information to th pata_ixp4xx driver. It is
@@ -131,6 +161,51 @@ extern void ixp4xx_pci_preinit(void);
 struct pci_sys_data;
 extern int ixp4xx_setup(int nr, struct pci_sys_data *sys);
 extern struct pci_ops ixp4xx_ops;
+
+/*
+ * GPIO-functions
+ */
+/*
+ * The following converted to the real HW bits the gpio_line_config
+ */
+/* GPIO pin types */
+#define IXP4XX_GPIO_OUT 		0x1
+#define IXP4XX_GPIO_IN  		0x2
+
+/* GPIO signal types */
+#define IXP4XX_GPIO_LOW			0
+#define IXP4XX_GPIO_HIGH		1
+
+/* GPIO Clocks */
+#define IXP4XX_GPIO_CLK_0		14
+#define IXP4XX_GPIO_CLK_1		15
+
+static inline void gpio_line_config(u8 line, u32 direction)
+{
+	if (direction == IXP4XX_GPIO_IN)
+		*IXP4XX_GPIO_GPOER |= (1 << line);
+	else
+		*IXP4XX_GPIO_GPOER &= ~(1 << line);
+}
+
+static inline void gpio_line_get(u8 line, int *value)
+{
+	*value = (*IXP4XX_GPIO_GPINR >> line) & 0x1;
+}
+
+static inline void gpio_line_set(u8 line, int value)
+{
+	if (value == IXP4XX_GPIO_LOW)
+	    *IXP4XX_GPIO_GPOUTR &= ~(1 << line);
+	else
+	    *IXP4XX_GPIO_GPOUTR |= (1 << line);
+}
+
+static inline void gpio_line_isr_clear(u8 line)
+{
+	*IXP4XX_GPIO_GPISR = (1 << line);
+}
+
 
 #endif // __ASSEMBLY__
 

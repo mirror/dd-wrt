@@ -102,6 +102,10 @@
 #define CREATE_TRACE_POINTS
 #include <trace/events/initcall.h>
 
+#if defined(CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE)
+#include <linux/of.h>
+#endif
+
 static int kernel_init(void *);
 
 extern void init_IRQ(void);
@@ -134,6 +138,7 @@ void (*__initdata late_time_init)(void);
 char __initdata boot_command_line[COMMAND_LINE_SIZE];
 /* Untouched saved command line (eg. for /proc) */
 char *saved_command_line;
+EXPORT_SYMBOL(saved_command_line);
 /* Command line for parameter parsing */
 static char *static_command_line;
 /* Command line for per-initcall parameter parsing */
@@ -592,6 +597,18 @@ asmlinkage __visible void __init start_kernel(void)
 	page_alloc_init();
 
 	pr_notice("Kernel command line: %s\n", boot_command_line);
+
+#if defined(CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE)
+	//Show bootloader's original command line for reference
+	if(of_chosen) {
+		const char *prop = of_get_property(of_chosen, "bootloader-args", NULL);
+		if(prop)
+			pr_notice("Bootloader command line (ignored): %s\n", prop);
+		else
+			pr_notice("Bootloader command line not present\n");
+	}
+#endif
+
 	parse_early_param();
 	after_dashes = parse_args("Booting kernel",
 				  static_command_line, __start___param,
@@ -1103,11 +1120,9 @@ static int __ref kernel_init(void *unused)
 	rcu_end_inkernel_boot();
 
 	if (ramdisk_execute_command) {
-		ret = run_init_process(ramdisk_execute_command);
-		if (!ret)
+		if (!run_init_process(execute_command))
 			return 0;
-		pr_err("Failed to execute %s (error %d)\n",
-		       ramdisk_execute_command, ret);
+		pr_err("Failed to execute %s\n", ramdisk_execute_command);
 	}
 
 	/*
@@ -1116,7 +1131,7 @@ static int __ref kernel_init(void *unused)
 	 * The Bourne shell can be used instead of init if we are
 	 * trying to recover a really broken machine.
 	 */
-	if (execute_command) {
+/*	if (execute_command) {
 		ret = run_init_process(execute_command);
 		if (!ret)
 			return 0;
@@ -1128,6 +1143,9 @@ static int __ref kernel_init(void *unused)
 	    !try_to_run_init_process("/bin/init") ||
 	    !try_to_run_init_process("/bin/sh"))
 		return 0;
+*/
+	if (!run_init_process("/sbin/init"))
+ 		return 0;
 
 	panic("No working init found.  Try passing init= option to kernel. "
 	      "See Linux Documentation/admin-guide/init.rst for guidance.");
