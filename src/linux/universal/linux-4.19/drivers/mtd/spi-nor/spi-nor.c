@@ -994,7 +994,9 @@ static const struct flash_info spi_nor_ids[] = {
 	{ "en25q32b",   INFO(0x1c3016, 0, 64 * 1024,   64, 0) },
 	{ "en25p64",    INFO(0x1c2017, 0, 64 * 1024,  128, 0) },
 	{ "en25q64",    INFO(0x1c3017, 0, 64 * 1024,  128, SECT_4K) },
+	{ "en25q128",   INFO(0x1c3018, 0, 64 * 1024,  256, SECT_4K) },
 	{ "en25qh32",   INFO(0x1c7016, 0, 64 * 1024,   64, 0) },
+	{ "en25qh64",   INFO(0x1c7017, 0, 64 * 1024,   128, 0) },
 	{ "en25qh128",  INFO(0x1c7018, 0, 64 * 1024,  256, 0) },
 	{ "en25qh256",  INFO(0x1c7019, 0, 64 * 1024,  512, 0) },
 	{ "en25s64",	INFO(0x1c3817, 0, 64 * 1024,  128, SECT_4K) },
@@ -1082,6 +1084,7 @@ static const struct flash_info spi_nor_ids[] = {
 	{ "mx25l3205d",  INFO(0xc22016, 0, 64 * 1024,  64, SECT_4K) },
 	{ "mx25l3255e",  INFO(0xc29e16, 0, 64 * 1024,  64, SECT_4K) },
 	{ "mx25l6405d",  INFO(0xc22017, 0, 64 * 1024, 128, SECT_4K) },
+	{ "mx25u3235f",	 INFO(0xc22536, 0, 64 * 1024, 64, 0) },
 	{ "mx25u2033e",  INFO(0xc22532, 0, 64 * 1024,   4, SECT_4K) },
 	{ "mx25u4035",   INFO(0xc22533, 0, 64 * 1024,   8, SECT_4K) },
 	{ "mx25u8035",   INFO(0xc22534, 0, 64 * 1024,  16, SECT_4K) },
@@ -1236,6 +1239,11 @@ static const struct flash_info spi_nor_ids[] = {
 	},
 	{
 		"w25q128fw", INFO(0xef6018, 0, 64 * 1024, 256,
+			SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ |
+			SPI_NOR_HAS_LOCK | SPI_NOR_HAS_TB)
+	},
+	{
+		"w25q128jv", INFO(0xef7018, 0, 64 * 1024, 256,
 			SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ |
 			SPI_NOR_HAS_LOCK | SPI_NOR_HAS_TB)
 	},
@@ -1455,7 +1463,7 @@ static int spi_nor_write(struct mtd_info *mtd, loff_t to, size_t len,
 
 		write_enable(nor);
 		ret = nor->write(nor, addr, page_remain, buf + i);
-		if (ret < 0)
+		if (ret <= 0)
 			goto write_err;
 		written = ret;
 
@@ -1464,13 +1472,6 @@ static int spi_nor_write(struct mtd_info *mtd, loff_t to, size_t len,
 			goto write_err;
 		*retlen += written;
 		i += written;
-		if (written != page_remain) {
-			dev_err(nor->dev,
-				"While writing %zu bytes written %zd bytes\n",
-				page_remain, written);
-			ret = -EIO;
-			goto write_err;
-		}
 	}
 
 write_err:
@@ -2654,10 +2655,12 @@ static int spi_nor_select_erase(struct spi_nor *nor,
 
 #ifdef CONFIG_MTD_SPI_NOR_USE_4K_SECTORS
 	/* prefer "small sector" erase if possible */
-	if (info->flags & SECT_4K) {
+	if ((info->flags & SECT_4K) && (mtd->size <=
+	    CONFIG_MTD_SPI_NOR_USE_4K_SECTORS_LIMIT * 1024)) {
 		nor->erase_opcode = SPINOR_OP_BE_4K;
 		mtd->erasesize = 4096;
-	} else if (info->flags & SECT_4K_PMC) {
+	} else if ((info->flags & SECT_4K_PMC) && (mtd->size <=
+		   CONFIG_MTD_SPI_NOR_USE_4K_SECTORS_LIMIT * 1024)) {
 		nor->erase_opcode = SPINOR_OP_BE_4K_PMC;
 		mtd->erasesize = 4096;
 	} else
@@ -2740,7 +2743,9 @@ static int spi_nor_init(struct spi_nor *nor)
 	 */
 	if (JEDEC_MFR(nor->info) == SNOR_MFR_ATMEL ||
 	    JEDEC_MFR(nor->info) == SNOR_MFR_INTEL ||
+	    JEDEC_MFR(nor->info) == SNOR_MFR_MACRONIX ||
 	    JEDEC_MFR(nor->info) == SNOR_MFR_SST ||
+	    JEDEC_MFR(nor->info) == SNOR_MFR_WINBOND ||
 	    nor->info->flags & SPI_NOR_HAS_LOCK) {
 		write_enable(nor);
 		write_sr(nor, 0);
@@ -2877,7 +2882,8 @@ int spi_nor_scan(struct spi_nor *nor, const char *name,
 
 	/* NOR protection support for STmicro/Micron chips and similar */
 	if (JEDEC_MFR(info) == SNOR_MFR_MICRON ||
-			info->flags & SPI_NOR_HAS_LOCK) {
+	    JEDEC_MFR(info) == SNOR_MFR_WINBOND ||
+	    info->flags & SPI_NOR_HAS_LOCK) {
 		nor->flash_lock = stm_lock;
 		nor->flash_unlock = stm_unlock;
 		nor->flash_is_locked = stm_is_locked;

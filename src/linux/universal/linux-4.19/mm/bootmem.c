@@ -15,6 +15,7 @@
 #include <linux/export.h>
 #include <linux/kmemleak.h>
 #include <linux/range.h>
+#include <linux/crashlog.h>
 #include <linux/bug.h>
 #include <linux/io.h>
 #include <linux/bootmem.h>
@@ -215,6 +216,7 @@ static unsigned long __init free_all_bootmem_core(bootmem_data_t *bdata)
 	if (!bdata->node_bootmem_map)
 		return 0;
 
+	crashlog_init_bootmem(bdata);
 	map = bdata->node_bootmem_map;
 	start = bdata->node_min_pfn;
 	end = bdata->node_low_pfn;

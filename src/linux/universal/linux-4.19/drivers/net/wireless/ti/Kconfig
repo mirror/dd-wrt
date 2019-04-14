@@ -19,7 +19,7 @@ source "drivers/net/wireless/ti/wlcore/Kconfig"
 
 config WILINK_PLATFORM_DATA
 	bool "TI WiLink platform data"
-	depends on WLCORE_SDIO || WL1251_SDIO
+	depends on WLCORE_SDIO || WL1251_SDIO || ARCH_OMAP2PLUS
 	default y
 	---help---
 	Small platform data bit needed to pass data to the sdio modules.

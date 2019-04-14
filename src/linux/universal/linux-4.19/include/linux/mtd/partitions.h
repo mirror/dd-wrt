@@ -73,6 +73,12 @@ struct mtd_part_parser_data {
  * Functions dealing with the various ways of partitioning the space
  */
 
+enum mtd_parser_type {
+	MTD_PARSER_TYPE_DEVICE = 0,
+	MTD_PARSER_TYPE_ROOTFS,
+	MTD_PARSER_TYPE_FIRMWARE,
+};
+
 struct mtd_part_parser {
 	struct list_head list;
 	struct module *owner;
@@ -81,6 +87,7 @@ struct mtd_part_parser {
 	int (*parse_fn)(struct mtd_info *, const struct mtd_partition **,
 			struct mtd_part_parser_data *);
 	void (*cleanup)(const struct mtd_partition *pparts, int nr_parts);
+	enum mtd_parser_type type;
 };
 
 /* Container for passing around a set of parsed partitions */
@@ -109,6 +116,8 @@ int mtd_is_partition(const struct mtd_info *mtd);
 int mtd_add_partition(struct mtd_info *master, const char *name,
 		      long long offset, long long length);
 int mtd_del_partition(struct mtd_info *master, int partno);
+struct mtd_info *mtdpart_get_master(const struct mtd_info *mtd);
+uint64_t mtdpart_get_offset(const struct mtd_info *mtd);
 uint64_t mtd_get_device_size(const struct mtd_info *mtd);
 
 #endif

@@ -59,6 +59,16 @@
 #endif
 .endm
 
+	; Here "patch-dtb" will embed external .dtb
+	; Note "patch-dtb" searches for ASCII "OWRTDTB:" string
+	; and pastes .dtb right after it, hense the string precedes
+	; __image_dtb symbol.
+	.section .owrt, "aw",@progbits
+	.ascii  "OWRTDTB:"
+ENTRY(__image_dtb)
+	.fill   0x4000
+END(__image_dtb)
+
 	.section .init.text, "ax",@progbits
 
 ;----------------------------------------------------------------

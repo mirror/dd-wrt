@@ -41,6 +41,7 @@ struct task_struct;
 extern int mips_dsemul(struct pt_regs *regs, mips_instruction ir,
 		       unsigned long branch_pc, unsigned long cont_pc);
 
+#ifdef CONFIG_MIPS_FPU_EMULATOR
 /**
  * do_dsemulret() - Return from a delay slot 'emulation' frame
  * @xcp:	User thread register context.
@@ -88,5 +89,27 @@ extern bool dsemul_thread_rollback(struct pt_regs *regs);
  * before @mm is freed in order to avoid memory leaks.
  */
 extern void dsemul_mm_cleanup(struct mm_struct *mm);
+#else
+static inline bool do_dsemulret(struct pt_regs *xcp)
+{
+	return false;
+}
+
+static inline bool dsemul_thread_cleanup(struct task_struct *tsk)
+{
+	return false;
+}
+
+static inline bool dsemul_thread_rollback(struct pt_regs *regs)
+{
+	return false;
+}
+
+static inline void dsemul_mm_cleanup(struct mm_struct *mm)
+{
+
+}
+
+#endif
 
 #endif /* __MIPS_ASM_DSEMUL_H__ */

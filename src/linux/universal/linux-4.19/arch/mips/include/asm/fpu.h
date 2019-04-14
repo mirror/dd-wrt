@@ -230,8 +230,10 @@ static inline int init_fpu(void)
 		/* Restore FRE */
 		write_c0_config5(config5);
 		enable_fpu_hazard();
-	} else
+	} else if (IS_ENABLED(CONFIG_MIPS_FPU_EMULATOR))
 		fpu_emulator_init_fpu();
+	else
+		ret = SIGILL;
 
 	return ret;
 }

@@ -22,6 +22,21 @@ libphy-$(CONFIG_LED_TRIGGER_PHY)	+= phy_led_triggers.o
 obj-$(CONFIG_PHYLINK)		+= phylink.o
 obj-$(CONFIG_PHYLIB)		+= libphy.o
 
+obj-$(CONFIG_SWCONFIG)		+= swconfig.o
+obj-$(CONFIG_ADM6996_PHY)	+= adm6996.o
+obj-$(CONFIG_AR8216_PHY)	+= ar8216.o ar8327.o
+obj-$(CONFIG_SWCONFIG_B53)	+= b53/
+obj-$(CONFIG_IP17XX_PHY)	+= ip17xx.o
+obj-$(CONFIG_MVSWITCH_PHY)	+= mvswitch.o
+obj-$(CONFIG_MVSW61XX_PHY)	+= mvsw61xx.o
+obj-$(CONFIG_PSB6970_PHY)	+= psb6970.o
+obj-$(CONFIG_RTL8306_PHY)	+= rtl8306.o
+obj-$(CONFIG_RTL8366_SMI)	+= rtl8366_smi.o
+obj-$(CONFIG_RTL8366S_PHY)	+= rtl8366s.o
+obj-$(CONFIG_RTL8366RB_PHY)	+= rtl8366rb.o
+obj-$(CONFIG_RTL8367_PHY)	+= rtl8367.o
+obj-$(CONFIG_RTL8367B_PHY)	+= rtl8367b.o
+
 obj-$(CONFIG_MDIO_BCM_IPROC)	+= mdio-bcm-iproc.o
 obj-$(CONFIG_MDIO_BCM_UNIMAC)	+= mdio-bcm-unimac.o
 obj-$(CONFIG_MDIO_BITBANG)	+= mdio-bitbang.o

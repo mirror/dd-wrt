@@ -12,8 +12,9 @@
 #include <asm/mipsregs.h>
 #include <asm/stackframe.h>
 #include <asm/addrspace.h>
+#include "machine_kexec.h"
 
-LEAF(relocate_new_kernel)
+LEAF(kexec_relocate_new_kernel)
 	PTR_L a0,	arg0
 	PTR_L a1,	arg1
 	PTR_L a2,	arg2
@@ -98,7 +99,7 @@ done:
 #endif
 	/* jump to kexec_start_address */
 	j		s1
-	END(relocate_new_kernel)
+	END(kexec_relocate_new_kernel)
 
 #ifdef CONFIG_SMP
 /*
@@ -184,9 +185,15 @@ kexec_indirection_page:
 	PTR		0
 	.size		kexec_indirection_page, PTRSIZE
 
-relocate_new_kernel_end:
+kexec_argv_buf:
+	EXPORT(kexec_argv_buf)
+	.skip		KEXEC_COMMAND_LINE_SIZE
+	.size		kexec_argv_buf, KEXEC_COMMAND_LINE_SIZE
 
-relocate_new_kernel_size:
-	EXPORT(relocate_new_kernel_size)
-	PTR		relocate_new_kernel_end - relocate_new_kernel
-	.size		relocate_new_kernel_size, PTRSIZE
+kexec_argv:
+	EXPORT(kexec_argv)
+	.skip		KEXEC_ARGV_SIZE
+	.size		kexec_argv, KEXEC_ARGV_SIZE
+
+kexec_relocate_new_kernel_end:
+	EXPORT(kexec_relocate_new_kernel_end)

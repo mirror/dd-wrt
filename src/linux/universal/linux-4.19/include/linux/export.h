@@ -74,12 +74,19 @@ struct kernel_symbol {
 };
 #endif
 
+#ifdef MODULE
+#define __EXPORT_SUFFIX(sym)
+#else
+#define __EXPORT_SUFFIX(sym) "+" #sym
+#endif
+
 /* For every exported symbol, place a struct in the __ksymtab section */
 #define ___EXPORT_SYMBOL(sym, sec)					\
 	extern typeof(sym) sym;						\
 	__CRC_SYMBOL(sym, sec)						\
 	static const char __kstrtab_##sym[]				\
-	__attribute__((section("__ksymtab_strings"), used, aligned(1)))	\
+	__attribute__((section("__ksymtab_strings"			\
+	  __EXPORT_SUFFIX(sym)), used, aligned(1)))			\
 	= #sym;								\
 	__KSYMTAB_ENTRY(sym, sec)
 

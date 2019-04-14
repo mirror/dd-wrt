@@ -941,7 +941,7 @@ static int inet_abc_len(__be32 addr)
 {
 	int rc = -1;	/* Something else, probably a multicast. */
 
-	if (ipv4_is_zeronet(addr))
+	if (ipv4_is_zeronet(addr) || ipv4_is_lbcast(addr))
 		rc = 0;
 	else {
 		__u32 haddr = ntohl(addr);
@@ -952,6 +952,8 @@ static int inet_abc_len(__be32 addr)
 			rc = 16;
 		else if (IN_CLASSC(haddr))
 			rc = 24;
+		else if (IN_CLASSE(haddr))
+			rc = 32;
 	}
 
 	return rc;

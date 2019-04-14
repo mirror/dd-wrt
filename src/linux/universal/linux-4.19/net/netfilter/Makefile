@@ -25,6 +25,9 @@ obj-$(CONFIG_NETFILTER_NETLINK_OSF) += nfnetlink_osf.o
 # connection tracking
 obj-$(CONFIG_NF_CONNTRACK) += nf_conntrack.o
 
+# optional conntrack route cache extension
+obj-$(CONFIG_NF_CONNTRACK_RTCACHE) += nf_conntrack_rtcache.o
+
 obj-$(CONFIG_NF_CT_PROTO_GRE) += nf_conntrack_proto_gre.o
 
 # netlink interface for nf_conntrack
@@ -123,6 +126,7 @@ obj-$(CONFIG_NF_FLOW_TABLE)	+= nf_flow_table.o
 nf_flow_table-objs := nf_flow_table_core.o nf_flow_table_ip.o
 
 obj-$(CONFIG_NF_FLOW_TABLE_INET) += nf_flow_table_inet.o
+obj-$(CONFIG_NF_FLOW_TABLE_HW)	+= nf_flow_table_hw.o
 
 # generic X tables 
 obj-$(CONFIG_NETFILTER_XTABLES) += x_tables.o xt_tcpudp.o
@@ -140,6 +144,7 @@ obj-$(CONFIG_NETFILTER_XT_TARGET_CLASSIFY) += xt_CLASSIFY.o
 obj-$(CONFIG_NETFILTER_XT_TARGET_CONNSECMARK) += xt_CONNSECMARK.o
 obj-$(CONFIG_NETFILTER_XT_TARGET_CT) += xt_CT.o
 obj-$(CONFIG_NETFILTER_XT_TARGET_DSCP) += xt_DSCP.o
+obj-$(CONFIG_NETFILTER_XT_TARGET_FLOWOFFLOAD) += xt_FLOWOFFLOAD.o
 obj-$(CONFIG_NETFILTER_XT_TARGET_HL) += xt_HL.o
 obj-$(CONFIG_NETFILTER_XT_TARGET_HMARK) += xt_HMARK.o
 obj-$(CONFIG_NETFILTER_XT_TARGET_LED) += xt_LED.o

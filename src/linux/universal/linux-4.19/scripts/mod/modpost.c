@@ -1971,7 +1971,9 @@ static void read_symbols(const char *modname)
 		symname = remove_dot(info.strtab + sym->st_name);
 
 		handle_modversions(mod, &info, sym, symname);
+#ifndef CONFIG_MODULE_STRIPPED
 		handle_moddevtable(mod, &info, sym, symname);
+#endif
 	}
 	if (!is_vmlinux(modname) || vmlinux_section_warnings)
 		check_sec_ref(mod, modname, &info);
@@ -2134,8 +2136,10 @@ static void add_header(struct buffer *b, struct module *mod)
 	buf_printf(b, "\n");
 	buf_printf(b, "BUILD_SALT;\n");
 	buf_printf(b, "\n");
+#ifndef CONFIG_MODULE_STRIPPED
 	buf_printf(b, "MODULE_INFO(vermagic, VERMAGIC_STRING);\n");
 	buf_printf(b, "MODULE_INFO(name, KBUILD_MODNAME);\n");
+#endif
 	buf_printf(b, "\n");
 	buf_printf(b, "__visible struct module __this_module\n");
 	buf_printf(b, "__attribute__((section(\".gnu.linkonce.this_module\"))) = {\n");
@@ -2152,8 +2156,10 @@ static void add_header(struct buffer *b, struct module *mod)
 
 static void add_intree_flag(struct buffer *b, int is_intree)
 {
+#ifndef CONFIG_MODULE_STRIPPED
 	if (is_intree)
 		buf_printf(b, "\nMODULE_INFO(intree, \"Y\");\n");
+#endif
 }
 
 /* Cannot check for assembler */
@@ -2166,8 +2172,10 @@ static void add_retpoline(struct buffer *b)
 
 static void add_staging_flag(struct buffer *b, const char *name)
 {
+#ifndef CONFIG_MODULE_STRIPPED
 	if (strstarts(name, "drivers/staging"))
 		buf_printf(b, "\nMODULE_INFO(staging, \"Y\");\n");
+#endif
 }
 
 /**
@@ -2266,11 +2274,13 @@ static void add_depends(struct buffer *b, struct module *mod,
 
 static void add_srcversion(struct buffer *b, struct module *mod)
 {
+#ifndef CONFIG_MODULE_STRIPPED
 	if (mod->srcversion[0]) {
 		buf_printf(b, "\n");
 		buf_printf(b, "MODULE_INFO(srcversion, \"%s\");\n",
 			   mod->srcversion);
 	}
+#endif
 }
 
 static void write_if_changed(struct buffer *b, const char *fname)
@@ -2507,7 +2517,9 @@ int main(int argc, char **argv)
 		add_staging_flag(&buf, mod->name);
 		err |= add_versions(&buf, mod);
 		add_depends(&buf, mod, modules);
+#ifndef CONFIG_MODULE_STRIPPED
 		add_moddevtable(&buf, mod);
+#endif
 		add_srcversion(&buf, mod);
 
 		sprintf(fname, "%s.mod.c", mod->name);

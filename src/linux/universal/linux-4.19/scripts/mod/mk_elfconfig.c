@@ -2,7 +2,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef __APPLE__
 #include <elf.h>
+#else
+#include "elf.h"
+#endif
 
 int
 main(int argc, char **argv)

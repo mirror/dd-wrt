@@ -33,7 +33,7 @@ config CRYPTO_FIPS
 	  this is.
 
 config CRYPTO_ALGAPI
-	tristate
+	tristate "ALGAPI"
 	select CRYPTO_ALGAPI2
 	help
 	  This option provides the API for cryptographic algorithms.
@@ -42,7 +42,7 @@ config CRYPTO_ALGAPI2
 	tristate
 
 config CRYPTO_AEAD
-	tristate
+	tristate "AEAD"
 	select CRYPTO_AEAD2
 	select CRYPTO_ALGAPI
 
@@ -53,7 +53,7 @@ config CRYPTO_AEAD2
 	select CRYPTO_RNG2
 
 config CRYPTO_BLKCIPHER
-	tristate
+	tristate "BLKCIPHER"
 	select CRYPTO_BLKCIPHER2
 	select CRYPTO_ALGAPI
 
@@ -64,7 +64,7 @@ config CRYPTO_BLKCIPHER2
 	select CRYPTO_WORKQUEUE
 
 config CRYPTO_HASH
-	tristate
+	tristate "HASH"
 	select CRYPTO_HASH2
 	select CRYPTO_ALGAPI
 
@@ -73,7 +73,7 @@ config CRYPTO_HASH2
 	select CRYPTO_ALGAPI2
 
 config CRYPTO_RNG
-	tristate
+	tristate "RNG"
 	select CRYPTO_RNG2
 	select CRYPTO_ALGAPI
 
@@ -144,13 +144,13 @@ config CRYPTO_MANAGER
 	  cbc(aes).
 
 config CRYPTO_MANAGER2
-	def_tristate CRYPTO_MANAGER || (CRYPTO_MANAGER!=n && CRYPTO_ALGAPI=y)
-	select CRYPTO_AEAD2
-	select CRYPTO_HASH2
-	select CRYPTO_BLKCIPHER2
-	select CRYPTO_AKCIPHER2
-	select CRYPTO_KPP2
-	select CRYPTO_ACOMP2
+	def_tristate CRYPTO_MANAGER || (CRYPTO_MANAGER!=n && CRYPTO_ALGAPI=y && !CRYPTO_MANAGER_DISABLE_TESTS)
+	select CRYPTO_AEAD2 if !CRYPTO_MANAGER_DISABLE_TESTS
+	select CRYPTO_HASH2 if !CRYPTO_MANAGER_DISABLE_TESTS
+	select CRYPTO_BLKCIPHER2 if !CRYPTO_MANAGER_DISABLE_TESTS
+	select CRYPTO_AKCIPHER2 if !CRYPTO_MANAGER_DISABLE_TESTS
+	select CRYPTO_KPP2 if !CRYPTO_MANAGER_DISABLE_TESTS
+	select CRYPTO_ACOMP2 if !CRYPTO_MANAGER_DISABLE_TESTS
 
 config CRYPTO_USER
 	tristate "Userspace cryptographic algorithm configuration"
@@ -163,7 +163,6 @@ config CRYPTO_USER
 config CRYPTO_MANAGER_DISABLE_TESTS
 	bool "Disable run-time self tests"
 	default y
-	depends on CRYPTO_MANAGER2
 	help
 	  Disable run-time self tests that normally take place at
 	  algorithm registration.

@@ -25,6 +25,12 @@ menuconfig NET
 
 if NET
 
+config ETHERNET_PACKET_MANGLE
+	bool
+	help
+	  This option can be selected by phy drivers that need to mangle
+	  packets going in or out of an ethernet device.
+
 config WANT_COMPAT_NETLINK_MESSAGES
 	bool
 	help
@@ -91,6 +97,9 @@ source "net/ipv6/Kconfig"
 source "net/netlabel/Kconfig"
 
 endif # if INET
+
+config SOCK_DIAG
+	bool
 
 config NETWORK_SECMARK
 	bool "Security Marking"

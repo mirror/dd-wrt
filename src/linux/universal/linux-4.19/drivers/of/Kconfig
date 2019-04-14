@@ -71,6 +71,7 @@ config OF_IRQ
 
 config OF_NET
 	depends on NETDEVICES
+	select NVMEM
 	def_bool y
 
 config OF_MDIO

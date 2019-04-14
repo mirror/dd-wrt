@@ -85,3 +85,16 @@ config UBIFS_FS_SECURITY
 	  the extended attribute support in advance.
 
 	  If you are not using a security module, say N.
+
+config UBIFS_FS_FORMAT4
+	bool "Use file system format version 4 for new file systems"
+	depends on UBIFS_FS
+	help
+	  Instead of creating new file systems with the new ubifs file
+	  system version 5, use the old format version 4 for implicitly
+	  by the driver created file systems on an empty UBI volume. This
+	  makes it possible to  mount these file systems also with kernel
+	  versions before 4.10. The driver will still support file system
+	  format version 5 for ubifs file systems created with version 5.
+
+	  If you are unsure, say N.
