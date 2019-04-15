@@ -84,5 +84,6 @@ void start_rsync(void)
 void stop_rsync(void)
 {
 	stop_process("rsyncd", "rsync daemon");
+	nvram_delstates(rsync_deps());
 }
 #endif

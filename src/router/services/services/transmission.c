@@ -280,6 +280,7 @@ void start_transmission(void)
 void stop_transmission(void)
 {
 	stop_process("transmissiond", "daemon");
+	nvram_delstates(transmission_deps());
 }
 
 #endif

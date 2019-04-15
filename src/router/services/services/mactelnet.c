@@ -65,5 +65,6 @@ void start_mactelnetd(void)
 void stop_mactelnetd(void)
 {
 	stop_process("mactelnetd", "daemon");
+	nvram_delstates(mactelnetd_deps());
 }
 #endif
