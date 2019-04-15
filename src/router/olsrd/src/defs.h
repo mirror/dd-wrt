@@ -90,7 +90,7 @@ extern FILE *debug_handle;
 #define OLSR_PRINTF(lvl, format, args...) do { } while(0)
 #else /* NODEBUG */
 #define OLSR_PRINTF(lvl, format, args...) do {                    \
-    if((olsr_cnf->debug_level >= (lvl)) && debug_handle)          \
+    if((!olsr_cnf || olsr_cnf->debug_level >= (lvl)) && debug_handle)          \
       fprintf(debug_handle, (format), ##args);                    \
   } while (0)
 #endif /* NODEBUG */

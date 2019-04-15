@@ -57,8 +57,7 @@ void ListInterfaces(void);
 #endif /* _WIN32 */
 
 void print_version(void) {
-  printf("\n *** %s ***\n Build date: %s on %s\n http://www.olsr.org\n\n",
-      olsrd_version, build_date, build_host);
+  printf("\n *** %s ***\n http://www.olsr.org\n\n", olsrd_version);
 }
 
 /**

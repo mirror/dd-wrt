@@ -1,0 +1,426 @@
+{
+  "pid": 12345,
+  "systemTime": 1448289382,
+  "timeSinceStartup": 2025389,
+  "configurationChecksum": "2e2c14b6e3562ddfd73111847d7a9d8277993ff7",
+  "uuid": "d13d7ee3-fcca-4f81-9bf5-bb5848b5d96d",
+  "interfaces": [
+    {
+      "name": "wlan0",
+      "configured": true,
+      "hostEmulation": false,
+      "hostEmulationAddress": "0.0.0.0",
+      "olsrInterface": {
+        "up": true,
+        "ipv4Address": "10.31.175.220",
+        "ipv4Netmask": "255.255.0.0",
+        "ipv4Broadcast": "255.255.255.255",
+        "mode": "mesh",
+        "ipv6Address": "::",
+        "ipv6Multicast": "::",
+        "ipAddress": "10.31.175.220",
+        "emulatedInterface": false,
+        "olsrSocket": 7,
+        "sendSocket": 8,
+        "metric": 1,
+        "mtu": 1472,
+        "flags": 4163,
+        "index": 1192,
+        "wireless": true,
+        "name": "wlan0",
+        "seqNum": 42005,
+        "messageTimes": {
+          "hello": 667,
+          "tc": 703,
+          "mid": 3091,
+          "hna": 3140
+        },
+        "icmpRedirectBackup": true,
+        "spoofFilterBackup": true,
+        "helloEmissionInterval": 2000,
+        "validityTimes": {
+          "hello": 20000,
+          "tc": 30000,
+          "mid": 50000,
+          "hna": 15000
+        },
+        "forwardingTimeout": 228002,
+        "sgwZeroBwTimeout": 15000,
+        "ttlIndex": -32,
+        "immediateSendTc": false
+      },
+      "InterfaceConfiguration": {
+        "ipv4Broadcast": "0.0.0.0",
+        "ipv6Multicast": "255.2.0.0",
+        "ipv4Source": "0.0.0.0",
+        "ipv6Source": "0.0.0.0",
+        "ipv6SourcePrefixLength": 0,
+        "mode": "mesh",
+        "weightValue": 0,
+        "weightFixed": false,
+        "hello": {
+          "emissionInterval": 2.000000,
+          "validityTime": 20.000000
+        },
+        "tc": {
+          "emissionInterval": 5.000000,
+          "validityTime": 30.000000
+        },
+        "mid": {
+          "emissionInterval": 5.000000,
+          "validityTime": 50.000000
+        },
+        "hna": {
+          "emissionInterval": 5.000000,
+          "validityTime": 15.000000
+        },
+        "linkQualityMultipliers": [
+        ],
+        "linkQualityMultipliersCount": 0,
+        "autoDetectChanges": true
+      },
+      "InterfaceConfigurationDefaults": {
+        "ipv4Broadcast": "0.0.0.0",
+        "ipv6Multicast": "0.0.0.0",
+        "ipv4Source": "0.0.0.0",
+        "ipv6Source": "0.0.0.0",
+        "ipv6SourcePrefixLength": 0,
+        "mode": "mesh",
+        "weightValue": 0,
+        "weightFixed": false,
+        "hello": {
+          "emissionInterval": 0.000000,
+          "validityTime": 0.000000
+        },
+        "tc": {
+          "emissionInterval": 0.000000,
+          "validityTime": 0.000000
+        },
+        "mid": {
+          "emissionInterval": 0.000000,
+          "validityTime": 0.000000
+        },
+        "hna": {
+          "emissionInterval": 0.000000,
+          "validityTime": 0.000000
+        },
+        "linkQualityMultipliers": [
+        ],
+        "linkQualityMultipliersCount": -1,
+        "autoDetectChanges": false
+      }
+    },
+    {
+      "name": "eth0.2",
+      "configured": false,
+      "hostEmulation": false,
+      "hostEmulationAddress": "0.0.0.0",
+      "olsrInterface": {
+        "up": false
+      },
+      "InterfaceConfiguration": {
+        "ipv4Broadcast": "0.0.0.0",
+        "ipv6Multicast": "255.2.0.0",
+        "ipv4Source": "0.0.0.0",
+        "ipv6Source": "0.0.0.0",
+        "ipv6SourcePrefixLength": 0,
+        "mode": "ether",
+        "weightValue": 0,
+        "weightFixed": false,
+        "hello": {
+          "emissionInterval": 1.000000,
+          "validityTime": 3.000000
+        },
+        "tc": {
+          "emissionInterval": 5.000000,
+          "validityTime": 30.000000
+        },
+        "mid": {
+          "emissionInterval": 5.000000,
+          "validityTime": 50.000000
+        },
+        "hna": {
+          "emissionInterval": 5.000000,
+          "validityTime": 15.000000
+        },
+        "linkQualityMultipliers": [
+        ],
+        "linkQualityMultipliersCount": 0,
+        "autoDetectChanges": true
+      },
+      "InterfaceConfigurationDefaults": {
+        "ipv4Broadcast": "0.0.0.0",
+        "ipv6Multicast": "0.0.0.0",
+        "ipv4Source": "0.0.0.0",
+        "ipv6Source": "0.0.0.0",
+        "ipv6SourcePrefixLength": 0,
+        "mode": "",
+        "weightValue": 0,
+        "weightFixed": false,
+        "hello": {
+          "emissionInterval": 0.000000,
+          "validityTime": 0.000000
+        },
+        "tc": {
+          "emissionInterval": 0.000000,
+          "validityTime": 0.000000
+        },
+        "mid": {
+          "emissionInterval": 0.000000,
+          "validityTime": 0.000000
+        },
+        "hna": {
+          "emissionInterval": 0.000000,
+          "validityTime": 0.000000
+        },
+        "linkQualityMultipliers": [
+        ],
+        "linkQualityMultipliersCount": -1,
+        "autoDetectChanges": false
+      }
+    },
+    {
+      "name": "eth0.3",
+      "configured": false,
+      "hostEmulation": false,
+      "hostEmulationAddress": "0.0.0.0",
+      "olsrInterface": {
+        "up": false
+      },
+      "InterfaceConfiguration": {
+        "ipv4Broadcast": "0.0.0.0",
+        "ipv6Multicast": "255.2.0.0",
+        "ipv4Source": "0.0.0.0",
+        "ipv6Source": "0.0.0.0",
+        "ipv6SourcePrefixLength": 0,
+        "mode": "ether",
+        "weightValue": 0,
+        "weightFixed": false,
+        "hello": {
+          "emissionInterval": 1.000000,
+          "validityTime": 3.000000
+        },
+        "tc": {
+          "emissionInterval": 5.000000,
+          "validityTime": 30.000000
+        },
+        "mid": {
+          "emissionInterval": 5.000000,
+          "validityTime": 50.000000
+        },
+        "hna": {
+          "emissionInterval": 5.000000,
+          "validityTime": 15.000000
+        },
+        "linkQualityMultipliers": [
+        ],
+        "linkQualityMultipliersCount": 0,
+        "autoDetectChanges": true
+      },
+      "InterfaceConfigurationDefaults": {
+        "ipv4Broadcast": "0.0.0.0",
+        "ipv6Multicast": "0.0.0.0",
+        "ipv4Source": "0.0.0.0",
+        "ipv6Source": "0.0.0.0",
+        "ipv6SourcePrefixLength": 0,
+        "mode": "",
+        "weightValue": 0,
+        "weightFixed": false,
+        "hello": {
+          "emissionInterval": 0.000000,
+          "validityTime": 0.000000
+        },
+        "tc": {
+          "emissionInterval": 0.000000,
+          "validityTime": 0.000000
+        },
+        "mid": {
+          "emissionInterval": 0.000000,
+          "validityTime": 0.000000
+        },
+        "hna": {
+          "emissionInterval": 0.000000,
+          "validityTime": 0.000000
+        },
+        "linkQualityMultipliers": [
+        ],
+        "linkQualityMultipliersCount": -1,
+        "autoDetectChanges": false
+      }
+    },
+    {
+      "name": "eth1.2580",
+      "configured": true,
+      "hostEmulation": false,
+      "hostEmulationAddress": "0.0.0.0",
+      "olsrInterface": {
+        "up": true,
+        "ipv4Address": "10.29.175.220",
+        "ipv4Netmask": "255.254.0.0",
+        "ipv4Broadcast": "255.255.255.255",
+        "mode": "ether",
+        "ipv6Address": "::",
+        "ipv6Multicast": "::",
+        "ipAddress": "10.29.175.220",
+        "emulatedInterface": false,
+        "olsrSocket": 9,
+        "sendSocket": 10,
+        "metric": 0,
+        "mtu": 1472,
+        "flags": 4163,
+        "index": 9,
+        "wireless": false,
+        "name": "eth1.2580",
+        "seqNum": 29741,
+        "messageTimes": {
+          "hello": 570,
+          "tc": 2969,
+          "mid": 1496,
+          "hna": 2640
+        },
+        "icmpRedirectBackup": true,
+        "spoofFilterBackup": true,
+        "helloEmissionInterval": 1000,
+        "validityTimes": {
+          "hello": 3000,
+          "tc": 30000,
+          "mid": 50000,
+          "hna": 15000
+        },
+        "forwardingTimeout": 229952,
+        "sgwZeroBwTimeout": 15000,
+        "ttlIndex": -32,
+        "immediateSendTc": false
+      },
+      "InterfaceConfiguration": {
+        "ipv4Broadcast": "0.0.0.0",
+        "ipv6Multicast": "255.2.0.0",
+        "ipv4Source": "0.0.0.0",
+        "ipv6Source": "0.0.0.0",
+        "ipv6SourcePrefixLength": 0,
+        "mode": "ether",
+        "weightValue": 0,
+        "weightFixed": false,
+        "hello": {
+          "emissionInterval": 1.000000,
+          "validityTime": 3.000000
+        },
+        "tc": {
+          "emissionInterval": 5.000000,
+          "validityTime": 30.000000
+        },
+        "mid": {
+          "emissionInterval": 5.000000,
+          "validityTime": 50.000000
+        },
+        "hna": {
+          "emissionInterval": 5.000000,
+          "validityTime": 15.000000
+        },
+        "linkQualityMultipliers": [
+        ],
+        "linkQualityMultipliersCount": 0,
+        "autoDetectChanges": true
+      },
+      "InterfaceConfigurationDefaults": {
+        "ipv4Broadcast": "0.0.0.0",
+        "ipv6Multicast": "0.0.0.0",
+        "ipv4Source": "0.0.0.0",
+        "ipv6Source": "0.0.0.0",
+        "ipv6SourcePrefixLength": 0,
+        "mode": "",
+        "weightValue": 0,
+        "weightFixed": false,
+        "hello": {
+          "emissionInterval": 0.000000,
+          "validityTime": 0.000000
+        },
+        "tc": {
+          "emissionInterval": 0.000000,
+          "validityTime": 0.000000
+        },
+        "mid": {
+          "emissionInterval": 0.000000,
+          "validityTime": 0.000000
+        },
+        "hna": {
+          "emissionInterval": 0.000000,
+          "validityTime": 0.000000
+        },
+        "linkQualityMultipliers": [
+        ],
+        "linkQualityMultipliersCount": -1,
+        "autoDetectChanges": false
+      }
+    },
+    {
+      "name": "eth2.2580",
+      "configured": false,
+      "hostEmulation": false,
+      "hostEmulationAddress": "0.0.0.0",
+      "olsrInterface": {
+        "up": false
+      },
+      "InterfaceConfiguration": {
+        "ipv4Broadcast": "0.0.0.0",
+        "ipv6Multicast": "255.2.0.0",
+        "ipv4Source": "0.0.0.0",
+        "ipv6Source": "0.0.0.0",
+        "ipv6SourcePrefixLength": 0,
+        "mode": "ether",
+        "weightValue": 0,
+        "weightFixed": false,
+        "hello": {
+          "emissionInterval": 1.000000,
+          "validityTime": 3.000000
+        },
+        "tc": {
+          "emissionInterval": 5.000000,
+          "validityTime": 30.000000
+        },
+        "mid": {
+          "emissionInterval": 5.000000,
+          "validityTime": 50.000000
+        },
+        "hna": {
+          "emissionInterval": 5.000000,
+          "validityTime": 15.000000
+        },
+        "linkQualityMultipliers": [
+        ],
+        "linkQualityMultipliersCount": 0,
+        "autoDetectChanges": true
+      },
+      "InterfaceConfigurationDefaults": {
+        "ipv4Broadcast": "0.0.0.0",
+        "ipv6Multicast": "0.0.0.0",
+        "ipv4Source": "0.0.0.0",
+        "ipv6Source": "0.0.0.0",
+        "ipv6SourcePrefixLength": 0,
+        "mode": "",
+        "weightValue": 0,
+        "weightFixed": false,
+        "hello": {
+          "emissionInterval": 0.000000,
+          "validityTime": 0.000000
+        },
+        "tc": {
+          "emissionInterval": 0.000000,
+          "validityTime": 0.000000
+        },
+        "mid": {
+          "emissionInterval": 0.000000,
+          "validityTime": 0.000000
+        },
+        "hna": {
+          "emissionInterval": 0.000000,
+          "validityTime": 0.000000
+        },
+        "linkQualityMultipliers": [
+        ],
+        "linkQualityMultipliersCount": -1,
+        "autoDetectChanges": false
+      }
+    }
+  ]
+}

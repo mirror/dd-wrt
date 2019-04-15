@@ -1,0 +1,38 @@
+/*
+ * WARNING
+ *
+ * This file should not be edited.
+ *
+ * GNU LIBRARY GENERAL PUBLIC LICENSE
+ * Version 2, June 1991
+ *
+ * Add tasks that are relevant to Java projects.
+ */
+
+assert(project != rootProject   )
+assert(hasProperty('sourceSets'))
+
+
+apply plugin: 'jacoco'
+
+
+if (!hasProperty('jacocoToolVersion')) ext.jacocoToolVersion = '0.7.9'
+if (!hasProperty('jacocoXmlReport'  )) ext.jacocoXmlReport   = true
+if (!hasProperty('jacocoCsvReport'  )) ext.jacocoCsvReport   = false
+
+
+jacoco {
+  toolVersion = jacocoToolVersion
+}
+
+jacocoTestReport {
+  dependsOn test
+  reports {
+      xml.enabled      jacocoXmlReport
+      csv.enabled      jacocoCsvReport
+      html.destination file("${jacoco.reportsDir}/html")
+  }
+}
+
+test.finalizedBy  jacocoTestReport
+check.finalizedBy jacocoTestReport

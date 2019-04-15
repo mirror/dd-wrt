@@ -1,0 +1,12 @@
+-dsannotations: *
+-metatypeannotations: *
+-buildpath: \
+	osgi.core;version=${osgi.core.version},\
+	osgi.cmpn;version=${osgi.cmpn.version},\
+	org.olsr.v1.info.proxy.api;version=latest
+-testpath: \
+	${junit}
+Bundle-Name:OLSRd Info Proxy
+Bundle-Version:1.0.2.${tstamp}
+Private-Package: \
+	org.olsr.v1.info.proxy

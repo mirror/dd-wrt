@@ -1,0 +1,19 @@
+/*
+ * WARNING
+ *
+ * This file should not be edited.
+ *
+ * GNU LIBRARY GENERAL PUBLIC LICENSE
+ * Version 2, June 1991
+ */
+
+/* Setup the build dependencies */
+buildscript {
+  dependencies {
+    classpath files(bndURI) + bndBuildDependencies
+  }
+}
+
+
+apply from: new File(rootDir, "${bnd_cnf}/gradle/template/master.gradle")
+

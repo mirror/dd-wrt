@@ -47,8 +47,8 @@
 
 PREFIX ?= /usr/local
 
-SRCS +=		$(wildcard src/bsd/*.c) $(wildcard src/unix/*.c)
-HDRS +=		$(wildcard src/bsd/*.h) $(wildcard src/unix/*.h)
+SRCS +=		$(sort $(wildcard src/bsd/*.c) $(wildcard src/unix/*.c))
+HDRS +=		$(sort $(wildcard src/bsd/*.h) $(wildcard src/unix/*.h))
 
 LIBS =
 

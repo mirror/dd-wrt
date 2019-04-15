@@ -1,0 +1,12 @@
+/*
+ * Allow running some tests when "doUnresolved" is set
+ */
+
+ext.prop = 'doUnresolved'
+File f = file(prop);
+if (rootProject.hasProperty(prop)) {
+  f.createNewFile()
+  f.deleteOnExit()
+} else {
+  f.delete()
+}

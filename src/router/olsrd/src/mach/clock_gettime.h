@@ -50,11 +50,15 @@
 
 #include <time.h>
 
+#ifndef CLOCK_MONOTONIC /* available since OSX 10.12 */
+
 #define CLOCK_MONOTONIC 1	/* Per Linux's time.h */
 typedef int clockid_t; /* Per Linux's types.h, posix_types.h */
 
 /* Per the POSIX Realtime Extensions */
 int clock_gettime(clockid_t clock_id, struct timespec *tp);
+
+#endif /* CLOCK_MONOTONIC */
 
 #endif /* __MACH__ */
 

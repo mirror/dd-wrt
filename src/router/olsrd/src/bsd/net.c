@@ -55,6 +55,7 @@
 #include "ipcalc.h"
 #include "parser.h"          /* dnc: needed for call to packet_parser() */
 #include "olsr_protocol.h"
+#include "olsr_random.h"
 #include "olsr_cfg.h"
 #include "olsr.h"
 
@@ -64,6 +65,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <net/if.h>
+#include <net/if_media.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <syslog.h>
@@ -86,7 +88,6 @@
 #ifdef __NetBSD__
 #include <net/if_ether.h>
 #include <netinet6/in6_var.h>   /* For struct in6_ifreq */
-#include <net80211/ieee80211_ioctl.h>
 #include <ifaddrs.h>
 #endif /* __NetBSD__ */
 
@@ -100,8 +101,6 @@
 #include <netinet6/in6_var.h>   /* For struct in6_ifreq */
 #include <ifaddrs.h>
 #include <sys/uio.h>
-#include <net80211/ieee80211.h>
-#include <net80211/ieee80211_ioctl.h>
 #endif /* __OpenBSD__ */
 
 #if defined __FreeBSD__ || defined __FreeBSD_kernel__
@@ -109,10 +108,6 @@
 #include <net/ethernet.h>
 #include <netinet/in_var.h>
 #include <ifaddrs.h>
-#ifndef FBSD_NO_80211
-#include <net80211/ieee80211.h>
-#include <net80211/ieee80211_ioctl.h>
-#endif /* FBSD_NO_80211 */
 #endif /* defined __FreeBSD__ || defined __FreeBSD_kernel__ */
 
 #ifdef __APPLE__
@@ -192,8 +187,16 @@ net_os_set_global_ifoptions(void) {
 
   /* do not accept ICMP redirects */
 
-#if defined(__OpenBSD__) || defined(__NetBSD__)
-  if (olsr_cnf->ip_version == AF_INET)
+#if defined(__OpenBSD__)
+  if (olsr_cnf->ip_version == AF_INET) {
+    name = "net.inet.icmp.rediraccept";
+    ignore_redir = set_sysctl_int(name, 0);
+  } else {
+    /* OpenBSD enables icmp6 rediraccept only if IPv6 autoconf is used. */
+    ignore_redir = 1;
+  }
+#elif defined(__NetBSD__)
+  if (olsr_cnf->ip_version == AF_INET) {
     name = "net.inet.icmp.rediraccept";
   else
     name = "net.inet6.icmp6.rediraccept";
@@ -337,6 +340,12 @@ getsocket(int bufspace, struct interface_olsr *ifp __attribute__ ((unused)))
 
   if (setsockopt(sock, IPPROTO_IP, IP_RECVIF, (char *)&on, sizeof(on)) < 0) {
     perror("IP_RECVIF failed");
+    close(sock);
+    return -1;
+  }
+
+  if (setsockopt(sock, IPPROTO_IP, IP_MULTICAST_IF, &ifp->int_addr.sin_addr.s_addr, sizeof(struct in_addr)) < 0) {
+    perror("IP_MULTICAST_IF failed");
     close(sock);
     return -1;
   }
@@ -747,39 +756,12 @@ olsr_select(int nfds, fd_set * readfds, fd_set * writefds, fd_set * exceptfds, s
 int
 check_wireless_interface(char *ifname)
 {
-#if (defined __FreeBSD__ || defined __FreeBSD_kernel__ ) &&  !defined FBSD_NO_80211
-
-/* From FreeBSD ifconfig/ifieee80211.c ieee80211_status() */
-  struct ieee80211req ireq;
-  u_int8_t data[32];
-
-  memset(&ireq, 0, sizeof(ireq));
-  strscpy(ireq.i_name, ifname, sizeof(ireq.i_name));
-  ireq.i_data = &data;
-  ireq.i_type = IEEE80211_IOC_SSID;
-  ireq.i_val = -1;
-  return (ioctl(olsr_cnf->ioctl_s, SIOCG80211, &ireq) >= 0) ? 1 : 0;
-#elif defined __OpenBSD__
-  struct ieee80211_nodereq nr;
-  bzero(&nr, sizeof(nr));
-  strscpy(nr.nr_ifname, ifname, sizeof(nr.nr_ifname));
-  return (ioctl(olsr_cnf->ioctl_s, SIOCG80211FLAGS, &nr) >= 0) ? 1 : 0;
-#elif defined __NetBSD__
-  struct ifreq ireq;
-  struct ieee80211_nwid data;
+  struct ifmediareq ifmr;
   int ret;
-
-  memset(&ireq, 0, sizeof(ireq));
-  strscpy(ireq.ifr_name, ifname, sizeof(ireq.ifr_name));
-  ireq.ifr_data = &data;
-  ret = ioctl(olsr_cnf->ioctl_s, SIOCG80211NWID, &ireq);
-  if(ret == 0)
-	  return 1;
-  return 0;
-#else /* defined __NetBSD__ */
-  ifname = NULL;                /* squelsh compiler warning */
-  return 0;
-#endif /* defined __NetBSD__ */
+  bzero(&ifmr, sizeof(ifmr));
+  strscpy(ifmr.ifm_name, ifname, sizeof(ifmr.ifm_name));
+  ret = ioctl(olsr_cnf->ioctl_s, SIOCGIFMEDIA, (caddr_t)&ifmr);
+  return (ret == 0 && IFM_TYPE(ifmr.ifm_current) == IFM_IEEE80211);
 }
 
 #include <sys/sockio.h>

@@ -507,6 +507,8 @@ name_destructor(void)
 
   olsr_stop_timer(write_file_timer);
   olsr_stop_timer(msg_gen_timer);
+  write_file_timer = NULL;
+  msg_gen_timer = NULL;
 
   regfree(&regex_t_name);
   regfree(&regex_t_service);
@@ -579,6 +581,7 @@ olsr_namesvc_delete_db_entry(struct db_entry *db)
 
   olsr_start_write_file_timer();
   olsr_stop_timer(db->db_timer);        /* stop timer if running */
+  db->db_timer = NULL;
 
   /* Delete */
   free_name_entry_list(&db->names);
@@ -1121,36 +1124,37 @@ write_hosts_file(void)
     for (list_node = list_head->next; list_node != list_head; list_node = list_node->next) {
 
       entry = list2db(list_node);
+      if (entry) {
+        for (name = entry->names; name != NULL; name = name->next) {
+          struct ipaddr_str strbuf1, strbuf2;
+          OLSR_PRINTF(6, "%s\t%s%s\t#%s\n", olsr_ip_to_string(&strbuf1, &name->ip), name->name, my_suffix,
+                      olsr_ip_to_string(&strbuf2, &entry->originator));
 
-      for (name = entry->names; name != NULL; name = name->next) {
-        struct ipaddr_str strbuf1, strbuf2;
-        OLSR_PRINTF(6, "%s\t%s%s\t#%s\n", olsr_ip_to_string(&strbuf1, &name->ip), name->name, my_suffix,
-                    olsr_ip_to_string(&strbuf2, &entry->originator));
-
-        fprintf(hosts, "%s\t%s%s\t# %s\n", olsr_ip_to_string(&strbuf1, &name->ip), name->name, my_suffix,
-                olsr_ip_to_string(&strbuf2, &entry->originator));
+          fprintf(hosts, "%s\t%s%s\t# %s\n", olsr_ip_to_string(&strbuf1, &name->ip), name->name, my_suffix,
+                  olsr_ip_to_string(&strbuf2, &entry->originator));
 
 #ifdef MID_ENTRIES
-        // write mid entries
-        if ((alias = mid_lookup_aliases(&name->ip)) != NULL) {
-          unsigned short mid_num = 1;
-          char mid_prefix[MID_MAXLEN];
+          // write mid entries
+          if ((alias = mid_lookup_aliases(&name->ip)) != NULL) {
+            unsigned short mid_num = 1;
+            char mid_prefix[MID_MAXLEN];
 
-          while (alias != NULL) {
-            // generate mid prefix
-            sprintf(mid_prefix, MID_PREFIX, mid_num);
+            while (alias != NULL) {
+              // generate mid prefix
+              sprintf(mid_prefix, MID_PREFIX, mid_num);
 
-            OLSR_PRINTF(6, "%s\t%s%s%s\t# %s (mid #%i)\n", olsr_ip_to_string(&strbuf1, &alias->alias), mid_prefix, name->name,
-                        my_suffix, olsr_ip_to_string(&strbuf2, &entry->originator), mid_num);
+              OLSR_PRINTF(6, "%s\t%s%s%s\t# %s (mid #%i)\n", olsr_ip_to_string(&strbuf1, &alias->alias), mid_prefix, name->name,
+                          my_suffix, olsr_ip_to_string(&strbuf2, &entry->originator), mid_num);
 
-            fprintf(hosts, "%s\t%s%s%s\t# %s (mid #%i)\n", olsr_ip_to_string(&strbuf1, &alias->alias), mid_prefix, name->name,
-                    my_suffix, olsr_ip_to_string(&strbuf2, &entry->originator), mid_num);
+              fprintf(hosts, "%s\t%s%s%s\t# %s (mid #%i)\n", olsr_ip_to_string(&strbuf1, &alias->alias), mid_prefix, name->name,
+                      my_suffix, olsr_ip_to_string(&strbuf2, &entry->originator), mid_num);
 
-            alias = alias->next_alias;
-            mid_num++;
+              alias = alias->next_alias;
+              mid_num++;
+            }
           }
-        }
 #endif /* MID_ENTRIES */
+        }
       }
     }
   }
@@ -1222,14 +1226,15 @@ write_services_file(bool writemacs)
     for (list_node = list_head->next; list_node != list_head; list_node = list_node->next) {
 
       entry = list2db(list_node);
+      if (entry) {
+        for (name = entry->names; name != NULL; name = name->next) {
+          struct ipaddr_str strbuf;
+          OLSR_PRINTF(6, "%s\t", name->name);
+          OLSR_PRINTF(6, "\t#%s\n", olsr_ip_to_string(&strbuf, &entry->originator));
 
-      for (name = entry->names; name != NULL; name = name->next) {
-        struct ipaddr_str strbuf;
-        OLSR_PRINTF(6, "%s\t", name->name);
-        OLSR_PRINTF(6, "\t#%s\n", olsr_ip_to_string(&strbuf, &entry->originator));
-
-        fprintf(file, "%s\t", name->name);
-        fprintf(file, "\t#%s\n", olsr_ip_to_string(&strbuf, &entry->originator));
+          fprintf(file, "%s\t", name->name);
+          fprintf(file, "\t#%s\n", olsr_ip_to_string(&strbuf, &entry->originator));
+        }
       }
     }
   }
@@ -1329,27 +1334,28 @@ write_resolv_file(void)
     for (list_node = list_head->next; list_node != list_head; list_node = list_node->next) {
 
       entry = list2db(list_node);
-
-      for (name = entry->names; name != NULL; name = name->next) {
+      if (entry) {
+        for (name = entry->names; name != NULL; name = name->next) {
 #ifndef NODEBUG
-        struct ipaddr_str strbuf;
-        struct lqtextbuffer lqbuffer;
+          struct ipaddr_str strbuf;
+          struct lqtextbuffer lqbuffer;
 #endif /* NODEBUG */
-        route = olsr_lookup_routing_table(&name->ip);
+          route = olsr_lookup_routing_table(&name->ip);
 
-        OLSR_PRINTF(6, "NAME PLUGIN: check route for nameserver %s %s", olsr_ip_to_string(&strbuf, &name->ip),
-                    route ? "suceeded" : "failed");
+          OLSR_PRINTF(6, "NAME PLUGIN: check route for nameserver %s %s", olsr_ip_to_string(&strbuf, &name->ip),
+                      route ? "suceeded" : "failed");
 
-        if (route == NULL)      // it's possible that route is not present yet
-          continue;
+          if (route == NULL)      // it's possible that route is not present yet
+            continue;
 
-        /* enqueue it on the head of list */
-        *nameserver_routes = route;
-        OLSR_PRINTF(6, "NAME PLUGIN: found nameserver %s, cost %s", olsr_ip_to_string(&strbuf, &name->ip),
-                    get_linkcost_text(route->rt_best->rtp_metric.cost, true, &lqbuffer));
+          /* enqueue it on the head of list */
+          *nameserver_routes = route;
+          OLSR_PRINTF(6, "NAME PLUGIN: found nameserver %s, cost %s", olsr_ip_to_string(&strbuf, &name->ip),
+                      get_linkcost_text(route->rt_best->rtp_metric.cost, true, &lqbuffer));
 
-        /* find the closet one */
-        select_best_nameserver(nameserver_routes);
+          /* find the closet one */
+          select_best_nameserver(nameserver_routes);
+        }
       }
     }
   }
@@ -1643,10 +1649,11 @@ lookup_name_latlon(union olsr_ip_addr *ip)
     for (list_node = list_head->next; list_node != list_head; list_node = list_node->next) {
 
       entry = list2db(list_node);
-
-      for (name = entry->names; name != NULL; name = name->next) {
-        if (ipequal(&name->ip, ip))
-          return name->name;
+      if (entry) {
+        for (name = entry->names; name != NULL; name = name->next) {
+          if (ipequal(&name->ip, ip))
+            return name->name;
+        }
       }
     }
   }

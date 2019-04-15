@@ -1,0 +1,39 @@
+#!/bin/bash
+
+script="$0"
+scriptdir="$(dirname "$script")"
+pushd "$scriptdir" &> /dev/null
+scriptdir="$(pwd)"
+popd &> /dev/null
+repoconfigdir="$(dirname "$scriptdir")/ext"
+mavencentralconfigs=( $(ls -1 "$repoconfigdir/"*.mvn|sort) )
+mavensearchurl="http://search.maven.org/#search%7Cgav%7C1%7Cg%3A%22___GROUPID___%22%20AND%20a%3A%22___ARTIFACTID___%22"
+
+
+ifsold="$IFS"
+
+ffmode="-new-window"
+ffsleep=5
+for mavencentralconfig in "${mavencentralconfigs[@]}"; do
+  echo ""
+  echo "#"
+  echo "# $mavencentralconfig"
+  echo "#"
+  firefox $ffmode "$mavencentralconfig"
+  ffmode="-new-tab"
+  sleep $ffsleep
+  ffsleep=0.5
+
+  IFS=$'\n'
+  lines=( $(grep -Ev '^[[:space:]]*(#.*)?$' "$mavencentralconfig") )
+  IFS=':'
+  for line in "${lines[@]}"; do
+    echo "$line"
+    linefields=( $line )
+    url="${mavensearchurl/___GROUPID___/${linefields[0]}}"
+    url="${url/___ARTIFACTID___/${linefields[1]}}"
+    firefox $ffmode "$url"
+  done
+done
+
+IFS="$ifsold"

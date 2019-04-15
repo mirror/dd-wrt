@@ -1,0 +1,64 @@
+/*
+ * WARNING
+ *
+ * This file should not be edited.
+ *
+ * GNU LIBRARY GENERAL PUBLIC LICENSE
+ * Version 2, June 1991
+ *
+ * Add clean tasks to the project.
+ */
+
+task distclean {
+  description 'Thoroughly clean the project.'
+  group 'cleanup'
+}
+
+task distcleanNeeded {
+  description 'Thoroughly clean the project and all projects it depends on.'
+  group 'cleanup'
+  dependsOn distclean
+}
+
+
+gradle.projectsEvaluated {
+  def hasClean       = !getTasksByName('clean'      , false).empty
+  def hasCleanNeeded = !getTasksByName('cleanNeeded', false).empty
+
+  /* add a clean task when not present */
+  if (!hasClean) {
+    task clean {
+      description 'Clean the project.'
+      group 'build'
+    }
+  }
+
+  /* add a cleanNeeded task when not present */
+  if (!hasCleanNeeded) {
+    task cleanNeeded {
+      description 'Cleans the project and all projects it depends on.'
+      group 'build'
+    }
+  }
+
+  cleanNeeded.dependsOn(clean)
+  distclean.dependsOn(clean)
+  distcleanNeeded.dependsOn(cleanNeeded)
+
+  /* bnd project dependencies */
+  if (hasProperty('bndProject')) {
+    bndProject.getDependson().each {
+      distcleanNeeded.dependsOn(":${it.name}:distcleanNeeded")
+    }
+  }
+
+  /* make sure that the root project clean tasks are run last */
+  if (project == rootProject) {
+    rootProject.subprojects.each {
+      clean.dependsOn(":${it.name}:clean")
+      cleanNeeded.dependsOn(":${it.name}:cleanNeeded")
+      distclean.dependsOn(":${it.name}:distclean")
+      distcleanNeeded.dependsOn(":${it.name}:distcleanNeeded")
+    }
+  }
+}

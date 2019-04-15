@@ -196,6 +196,8 @@ olsr_delete_kernel_route(struct rt_entry *rt)
 static void
 olsr_add_kernel_route(struct rt_entry *rt)
 {
+  if (!rt) return;
+
   if (rt->rt_best->rtp_metric.hops > 1) {
     /* multihop route */
     if (ip_is_linklocal(&rt->rt_best->rtp_dst.prefix)) {
@@ -268,7 +270,7 @@ olsr_chg_kernel_routes(struct list_node *head_node)
     }
 #else /* __linux__ */
     /*no rtnetlink we have to delete routes*/
-    if (rt->rt_nexthop.iif_index > -1) olsr_delete_kernel_route(rt);
+    if (rt && (rt->rt_nexthop.iif_index > -1)) olsr_delete_kernel_route(rt);
 #endif /* __linux__ */
 
     olsr_add_kernel_route(rt);

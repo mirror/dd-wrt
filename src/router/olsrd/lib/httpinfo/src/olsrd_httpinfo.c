@@ -604,6 +604,7 @@ httpinfo_write_data(void *foo __attribute__ ((unused))) {
   }
   if (outbuffer_count == 0) {
     olsr_stop_timer(writetimer_entry);
+    writetimer_entry = NULL;
   }
 }
 
@@ -822,7 +823,7 @@ build_config_body(struct autobuf *abuf)
   const struct plugin_param *pparam;
   struct ipaddr_str mainaddrbuf;
 
-  abuf_appendf(abuf, "Version: %s (built on %s on %s)\n<br>", olsrd_version, build_date, build_host);
+  abuf_appendf(abuf, "Version: %s\n<br>", olsrd_version);
   abuf_appendf(abuf, "OS: %s\n<br>", OS);
 
   {
@@ -1554,11 +1555,10 @@ build_about_body(struct autobuf *abuf)
 {
   abuf_appendf(abuf,
                   "<strong>" PLUGIN_NAME "</strong><br/><br/>\n"
-                  "Compiled "
 #ifdef ADMIN_INTERFACE
-                  "<em>with experimental admin interface</em> "
+                  "<em>Compiled with experimental admin interface</em>\n"
 #endif /* ADMIN_INTERFACE */
-                  "%s at %s<hr/>\n" "This plugin implements a HTTP server that supplies\n"
+                  "This plugin implements a HTTP server that supplies\n"
                   "the client with various dynamic web pages representing\n"
                   "the current olsrd status.<br/>The different pages include:\n"
                   "<ul>\n<li><strong>Configuration</strong> - This page displays information\n"
@@ -1586,8 +1586,7 @@ build_about_body(struct autobuf *abuf)
                   "<li><strong>About</strong> - this help page.</li>\n</ul>" "<hr/>\n" "Send questions or comments to\n"
                   "<a href=\"mailto:olsr-users@olsr.org\">olsr-users@olsr.org</a> or\n"
                   "<a href=\"mailto:andreto-at-olsr.org\">andreto-at-olsr.org</a><br/>\n"
-                  "Official olsrd homepage: <a href=\"http://www.olsr.org/\">http://www.olsr.org</a><br/>\n", build_date,
-                  build_host);
+                  "Official olsrd homepage: <a href=\"http://www.olsr.org/\">http://www.olsr.org</a><br/>\n");
 }
 
 static void

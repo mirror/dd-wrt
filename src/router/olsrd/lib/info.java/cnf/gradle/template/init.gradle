@@ -1,0 +1,77 @@
+/*
+ * WARNING
+ *
+ * This file should not be edited.
+ *
+ * GNU LIBRARY GENERAL PUBLIC LICENSE
+ * Version 2, June 1991
+ *
+ * Master Gradle initialization script
+ *
+ * Called by settings.gradle to initialize the project set.
+ *
+ * Depends on bnd_* values from gradle.properties.
+ */
+
+import aQute.bnd.build.Workspace
+import aQute.bnd.osgi.Constants
+
+/* Add bnd as a script dependency */
+buildscript {
+  dependencies {
+    def bndURI = rootDir.toURI().resolve(bnd_jar)
+    if (bndURI.scheme != 'file') {
+      /* If not a local file, copy to a local file in cnf/cache */
+      def cnfCache = mkdir("${rootDir}/${bnd_cnf}/cache")
+      def bndJarFile = new File(cnfCache, 'biz.aQute.bnd.gradle.jar')
+      if (!bndJarFile.exists()) {
+        println "Downloading ${bndURI} to ${bndJarFile} ..."
+        bndURI.toURL().withInputStream { is ->
+          bndJarFile.withOutputStream { os ->
+            def bos = new BufferedOutputStream( os )
+            bos << is
+          }
+        }
+      }
+      bndURI = bndJarFile.toURI()
+    }
+    classpath files(bndURI)
+
+    /* After the rootProject is created, pass URI to projects */
+    gradle.rootProject { rootProject ->
+      rootProject.ext.bndURI = bndURI
+    }
+  }
+}
+
+
+/* Initialize the bnd workspace */
+Workspace.setDriver(Constants.BNDDRIVER_GRADLE)
+Workspace.addGestalt(Constants.GESTALT_BATCH, null)
+def workspace = new Workspace(rootDir, bnd_cnf)
+if (workspace == null) {
+  throw new GradleException("Unable to load workspace ${rootDir}/${bnd_cnf}")
+}
+
+
+/* Determine the build dependencies */
+apply from: new File(rootDir, "${bnd_cnf}/gradle/template/buildDependencies.gradle")
+
+
+/* include all bnd projects and all gradle projects */
+rootDir.eachFile {
+  if (it.isDirectory()
+      && (   new File(it, 'bnd.bnd'     ).isFile()
+          || new File(it, 'build.gradle').isFile()
+          || new File(it, 'build-settings.gradle').isFile())
+     ) {
+    include "${it.name}"
+  }
+}
+
+
+/* After the rootProject is created, set up some properties. */
+gradle.rootProject { rootProject ->
+  rootProject.ext.bndWorkspace = workspace
+  rootProject.ext.bnd_cnf = bnd_cnf
+}

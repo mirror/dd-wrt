@@ -1,0 +1,39 @@
+============
+INTRODUCTION
+============
+
+The poprouting plugin is not an info plugin, but it uses the info structure to allow communication.
+It is used to set the values of the Hello and the TC timers/multiplier in olsrd.
+It can be also used to get the current values from the daemon.
+
+Please first read what's written in the file lib/info/README_INFO.
+
+
+==================
+SUPPORTED COMMANDS
+==================
+The commands can be specified with or without a float number after the =.
+In the former case the timer or the multiplier will be set at that specific value.
+In the latter case the plugin will return the actual value for that timer or multiplier.
+
+* /helloTimer=%f
+* /TCTimer=%f
+* /helloTimerMult=%f
+* /TCTimerMult=%f
+* /helloTimer
+* /TCTimer
+* /helloTimerMult
+* /TCTimerMult
+
+====================
+PLUGIN CONFIGURATION
+====================
+
+The plugin is configured with the generic info plugin configuration parameters.
+
+The port in the generic info plugin configuration is set to 2008.
+
+LoadPlugin "olsrd_poprouting.so.1.0"
+{
+  # <generic info plugin configuration>
+}

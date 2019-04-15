@@ -48,8 +48,8 @@
 DESTDIR ?=
 EXENAME = olsrd.exe
 
-SRCS +=		$(wildcard src/win32/*.c)
-HDRS +=		$(wildcard src/win32/*.h)
+SRCS +=		$(sort $(wildcard src/win32/*.c))
+HDRS +=		$(sort $(wildcard src/win32/*.h))
 
 CPPFLAGS += 	-D_WIN32_WINNT=0x0600
 LIBS +=		-lws2_32 -liphlpapi

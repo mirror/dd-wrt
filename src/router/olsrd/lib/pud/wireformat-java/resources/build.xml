@@ -1,0 +1,149 @@
+<?xml version="1.0" standalone="yes" ?>
+
+<!--
+
+The olsr.org Optimized Link-State Routing daemon (olsrd)
+
+(c) by the OLSR project
+
+See our Git repository to find out who worked on this file
+and thus is a copyright holder on it.
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+* Redistributions of source code must retain the above copyright
+  notice, this list of conditions and the following disclaimer.
+* Redistributions in binary form must reproduce the above copyright
+  notice, this list of conditions and the following disclaimer in
+  the documentation and/or other materials provided with the
+  distribution.
+* Neither the name of olsr.org, olsrd nor the names of its
+  contributors may be used to endorse or promote products derived
+  from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+
+Visit http://www.olsr.org for more information.
+
+If you find this software useful feel free to make a donation
+to the project. For more information see the website or contact
+the copyright holders.
+
+-->
+
+<project name="PROJECT" basedir="." default="build">
+	<description>
+		Build file for distribution of Olsrd Pud Plugin Wireformat Library Java Bindings
+    </description>
+
+
+	<!-- Properties -->
+	<property name="fullname" value="Olsrd Pud Plugin Wireformat Library Java Bindings" />
+
+	<property name="name" value="PROJECT" />
+	<property name="version" value="PLUGIN_VER" />
+
+	<property name="debug" value="DEBUG" />
+	<property name="debug.flags" value="lines,vars,source" />
+	<property name="source.version" value="JAVAVERSIONSRC" />
+	<property name="target.version" value="JAVAVERSIONDST" />
+
+	<property name="build.dir" location="${basedir}/BUILD_DIR/classes" />
+	<property name="src.dir" location="${basedir}/JAVASRC" />
+	<property name="lib.dir" location="${basedir}/LIBDIR_BUILD" />
+
+	<property name="jar.file" value="${lib.dir}/${name}.jar" />
+
+	<property name="javadoc.dir" location="${basedir}/doc/javadoc" />
+	<property name="javac.bootclasspath" location="${basedir}/resources/ee.j2se/${source.version}/ee.j2se.jar" />
+
+	<!--
+
+	 Targets
+
+	-->
+
+	<target name="getgitcommit" description="Retrieve the Git Commit SHA1">
+		<exec dir="${basedir}" executable="git" outputproperty="git.commit.descriptor" failonerror="false" error="/dev/null">
+			<arg value="describe" />
+			<arg value="--dirty" />
+			<arg value="--always" />
+		</exec>
+		<exec dir="${basedir}" executable="git" outputproperty="git.commit.sha" failonerror="false" error="/dev/null">
+			<arg value="rev-parse" />
+			<arg value="HEAD" />
+		</exec>
+	</target>
+
+	<target name="init" description="initialisation build environment for ${name}">
+		<mkdir dir="${build.dir}" />
+	</target>
+
+	<target name="clean" description="clean build environment">
+		<delete dir="${build.dir}" />
+		<delete dir="${javadoc.dir}" />
+	</target>
+
+	<target name="build" description="Build plugin jar file" depends="clean,init,getgitcommit">
+		<echo message="Compiling Plugin classes. (debug: ${debug})" />
+		<javac bootclasspath="${javac.bootclasspath}" srcdir="${src.dir}" destdir="${build.dir}" source="${source.version}" target="${target.version}" debug="${debug}" debuglevel="${debug.flags}" includeantruntime="false" />
+
+		<delete file="${jar.file}" />
+		<jar destfile="${jar.file}">
+			<fileset dir="${build.dir}">
+				<include name="**/*.class" />
+			</fileset>
+			<manifest>
+				<attribute name="Class-Path" value="." />
+				<attribute name="Version" value="${version}" />
+				<attribute name="Git-Descriptor" value="${git.commit.descriptor}" />
+				<attribute name="Git-SHA" value="${git.commit.sha}" />
+			</manifest>
+		</jar>
+	</target>
+
+	<target name="src-zip" depends="init">
+		<!-- make the zip file -->
+		<zip zipfile="${lib.dir}/${name}-src.zip">
+			<zipfileset dir="${src.dir}" />
+		</zip>
+	</target>
+
+	<target name="release" description="Build plugin jar file" depends="clean, init, build, src-zip, javadoc-zip">
+	</target>
+
+	<!-- Generate JavaDoc -->
+	<target name="javadoc">
+		<delete dir="${javadoc.dir}" />
+		<mkdir dir="${javadoc.dir}" />
+		<javadoc bootclasspath="${javac.bootclasspath}" destdir="${javadoc.dir}" windowtitle="${fullname}" use="yes" linksource="yes" splitindex="yes" access="private" author="true" nodeprecated="false" nodeprecatedlist="false" noindex="false" nonavbar="false" notree="false" version="true" source="${source.version}" sourcepath="${src.dir}" maxmemory="256M">
+			<packageset dir="${src.dir}" defaultexcludes="yes">
+				<include name="org/olsr/**" />
+			</packageset>
+		</javadoc>
+	</target>
+
+	<!-- Create zip file containing the API HTML pages. -->
+	<target name="javadoc-zip" depends="init,javadoc">
+		<!-- make the zip file -->
+		<zip zipfile="${lib.dir}/${name}-doc.zip">
+			<zipfileset dir="${javadoc.dir}" />
+		</zip>
+	</target>
+
+</project>

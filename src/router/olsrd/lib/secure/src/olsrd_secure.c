@@ -169,6 +169,8 @@ static int read_key_from_file(const char *);
  *function in uolsrd_plugin.c
  */
 
+static char printfBuffer[PATH_MAX * 2];
+
 int
 secure_plugin_init(void)
 {
@@ -187,14 +189,12 @@ secure_plugin_init(void)
   i = read_key_from_file(keyfile);
 
   if (i < 0) {
-    char buf[1024];
-    snprintf(buf, sizeof(buf), "SECURE: Could not read key from file %s", keyfile);
-    olsr_exit(buf, EXIT_FAILURE);
+    snprintf(printfBuffer, sizeof(printfBuffer), "SECURE: Could not read key from file %s", keyfile);
+    olsr_exit(printfBuffer, EXIT_FAILURE);
   }
   if (i == 0) {
-    char buf[1024];
-    snprintf(buf, sizeof(buf), "SECURE: There was a problem reading key from file %s. Is the key long enough?", keyfile);
-    olsr_exit(buf, EXIT_FAILURE);
+    snprintf(printfBuffer, sizeof(printfBuffer), "SECURE: There was a problem reading key from file %s. Is the key long enough?", keyfile);
+    olsr_exit(printfBuffer, EXIT_FAILURE);
   }
 
   /* Register the packet transform function */
