@@ -431,7 +431,7 @@ void start_dnsmasq(void)
 		fprintf(fp, "dhcp-option=252,\"\\n\"\n");
 	}
 #else
-	fprintf(fp, "dhcp-option=252,\"\\n\"\n");
+	fprintf(fp, "dhcp-option=252,\"\n\"\n");
 #endif
 	fprintf(fp, "cache-size=1500\n");
 	/*
