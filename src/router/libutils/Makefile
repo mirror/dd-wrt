@@ -192,6 +192,10 @@ ATH9KCFLAGS	+= -fPIC $(call cc-option,-Werror=return-local-addr)
 ATH9KOBJS += wl_ath9k.o mac80211info.o mac80211regulatory.o mac80211autochannel.o
 ATH9KFILES += libwireless/wl_ath9k.c libwireless/mac80211info.c libwireless/mac80211regulatory.c libwireless/mac80211autochannel.c
 ATH9KLDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
+ATH9KCFLAGS += -DNDEBUG -I$(LINUXDIR)/brcm/$(ARCH)/include
+ATH9KCFLAGS += -DNDEBUG -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
+
+
 ifeq ($(CONFIG_SYSLOG),y)
 ATH9KCFLAGS += -DHAVE_SYSLOG
 endif
