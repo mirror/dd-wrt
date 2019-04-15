@@ -127,7 +127,7 @@ static struct hna_group * hna_groups = NULL;
 
 static struct hna_group *add_to_hna_group(struct hna_group *);
 
-static void looped_checks(void *) __attribute__ ((noreturn));
+static void *looped_checks(void *);
 
 static bool check_gw(union olsr_ip_addr *, uint8_t, struct ping_list *);
 
@@ -278,7 +278,7 @@ olsrd_plugin_init(void)
   update_routing();
   
   if (hna_ping_check) {
-    pthread_create(&ping_thread, NULL, (void *(*)(void *))looped_checks, NULL);
+    pthread_create(&ping_thread, NULL, looped_checks, NULL);
   } else {
     struct hna_group *grp;
     for (grp = hna_groups; grp; grp = grp->next) {
@@ -371,7 +371,7 @@ olsr_event_doing_hna(void *foo __attribute__ ((unused)))
  * the default value)
  */
 static void
-looped_checks(void *foo __attribute__ ((unused)))
+*looped_checks(void *foo __attribute__ ((unused)))
 {
   for (;;) {
     struct hna_group *grp;
@@ -397,7 +397,8 @@ looped_checks(void *foo __attribute__ ((unused)))
     while (nanosleep(&sleeptime_spec, &remainder_spec) < 0)
       sleeptime_spec = remainder_spec;
   }
-  // return NULL;
+
+  return NULL;
 }
 
 /* -------------------------------------------------------------------------

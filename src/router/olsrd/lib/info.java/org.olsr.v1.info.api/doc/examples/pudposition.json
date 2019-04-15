@@ -1,0 +1,162 @@
+{
+  "pid": 8679,
+  "systemTime": 1465892948,
+  "timeSinceStartup": 1789,
+  "pudPosition": {
+    "nodeId": "local.debug.oslrd.pelagic.nl",
+    "date": {
+      "year": 2016,
+      "month": 6,
+      "day": 14
+    },
+    "time": {
+      "hour": 8,
+      "minute": 29,
+      "second": 7,
+      "hsec": 3
+    },
+    "present": [
+      "SMASK",
+      "UTCDATE",
+      "UTCTIME",
+      "SIG",
+      "FIX",
+      "PDOP",
+      "HDOP",
+      "VDOP",
+      "LAT",
+      "LON",
+      "ELV",
+      "SPEED",
+      "TRACK",
+      "MTRACK",
+      "MAGVAR",
+      "SATINUSECOUNT",
+      "SATINUSE",
+      "SATINVIEWCOUNT",
+      "SATINVIEW",
+      "HEIGHT"
+    ],
+    "presentValue": 1032191,
+    "smask": [
+      "GPGGA",
+      "GPGSA",
+      "GPGSV",
+      "GPRMC",
+      "GPVTG"
+    ],
+    "smaskValue": 31,
+    "sig": "INVALID",
+    "sigValue": 0,
+    "fix": "BAD",
+    "fixValue": 1,
+    "pdop": 0.000000,
+    "hdop": 0.000000,
+    "vdop": 0.000000,
+    "latitude": 0.000000,
+    "longitude": 0.000000,
+    "elevation": 0.000000,
+    "speed": 0.000000,
+    "track": 0.000000,
+    "magneticTrack": 0.000000,
+    "magneticVariation": 0.000000,
+    "separation": 0.000000,
+    "dgpsage": 0.000000,
+    "dgpssid": 0,
+    "satellites": {
+      "inUseCount": 9,
+      "inUse": [
+        2,
+        6,
+        12,
+        14,
+        24,
+        25,
+        29,
+        31,
+        32
+      ],
+      "inViewCount": 13,
+      "inView": [
+        {
+          "id": 2,
+          "elevation": 35,
+          "azimuth": 76,
+          "signal": 41
+        },
+        {
+          "id": 3,
+          "elevation": 0,
+          "azimuth": 335,
+          "signal": 0
+        },
+        {
+          "id": 4,
+          "elevation": 13,
+          "azimuth": 275,
+          "signal": 34
+        },
+        {
+          "id": 6,
+          "elevation": 16,
+          "azimuth": 35,
+          "signal": 34
+        },
+        {
+          "id": 12,
+          "elevation": 46,
+          "azimuth": 84,
+          "signal": 41
+        },
+        {
+          "id": 14,
+          "elevation": 34,
+          "azimuth": 262,
+          "signal": 37
+        },
+        {
+          "id": 24,
+          "elevation": 8,
+          "azimuth": 146,
+          "signal": 35
+        },
+        {
+          "id": 25,
+          "elevation": 84,
+          "azimuth": 29,
+          "signal": 43
+        },
+        {
+          "id": 29,
+          "elevation": 59,
+          "azimuth": 200,
+          "signal": 42
+        },
+        {
+          "id": 31,
+          "elevation": 36,
+          "azimuth": 305,
+          "signal": 41
+        },
+        {
+          "id": 32,
+          "elevation": 25,
+          "azimuth": 241,
+          "signal": 41
+        },
+        {
+          "id": 120,
+          "elevation": 27,
+          "azimuth": 206,
+          "signal": 35
+        },
+        {
+          "id": 136,
+          "elevation": 30,
+          "azimuth": 180,
+          "signal": 37
+        }
+      ]
+    }
+  }
+}

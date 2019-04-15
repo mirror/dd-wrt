@@ -1,0 +1,12 @@
+HTTP/1.1 204 No Content
+Date: Sun, 21 Feb 2016 16:12:13 GMT
+Server: OLSRD TXTINFO
+Connection: close
+Content-Type: text/plain; charset=utf-8
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, POST, OPTIONS
+Access-Control-Allow-Headers: Accept, Origin, X-Requested-With
+Access-Control-Max-Age: 1728000
+Content-Length: 0           
+Cache-Control: no-cache
+

@@ -1,0 +1,14 @@
+-buildpath: \
+	osgi.annotation;version=${osgi.annotation.version},\
+	com.fasterxml.jackson.core.jackson-annotations
+-testpath: \
+	com.fasterxml.jackson.core.jackson-core,\
+	com.fasterxml.jackson.core.jackson-databind,\
+	${junit}
+Bundle-Name:OLSRd v1 Info - API
+Bundle-Version: 2.0.0.${tstamp}
+Export-Package: \
+	org.olsr.v1.info.api.commands,\
+	org.olsr.v1.info.api.contants,\
+	org.olsr.v1.info.api.dto
+Private-Package: org.olsr.v1.info.api.util

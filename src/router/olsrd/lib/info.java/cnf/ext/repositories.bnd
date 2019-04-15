@@ -1,0 +1,46 @@
+-plugin: \
+  aQute.bnd.deployer.repository.LocalIndexedRepo; \
+    name=Local; \
+    local=${workspace}/cnf/localrepo; \
+    pretty=true, \
+  \
+  aQute.bnd.deployer.repository.LocalIndexedRepo; \
+    name=Release; \
+    local=${workspace}/cnf/releaserepo; \
+    pretty=true, \
+  \
+  aQute.bnd.deployer.repository.LocalIndexedRepo; \
+    name=ReleaseCI; \
+    local=${workspace}/cnf/releaserepoCI; \
+    pretty=true, \
+  \
+  aQute.lib.deployer.FileRepo; \
+    name=Build; \
+    location=${workspace}/cnf/buildrepo; \
+    latest=false, \
+  \
+  aQute.bnd.repository.maven.provider.MavenBndRepository; \
+    releaseUrl="https://repo1.maven.org/maven2"; \
+    index=${.}/maven-local.mvn; \
+    name='Maven Central - Local'; \
+    readOnly=true, \
+  \
+  aQute.bnd.repository.maven.provider.MavenBndRepository; \
+    releaseUrl="https://repo1.maven.org/maven2"; \
+    index=${.}/maven-build.mvn; \
+    name='Maven Central - Build'; \
+    readOnly=true, \
+  \
+  aQute.lib.deployer.FileRepo; \
+    name=Build - Workspace; \
+    location=${workspace}/cnf/gradle/dependencies; \
+    latest=false, \
+  \
+  aQute.bnd.repository.maven.provider.MavenBndRepository; \
+    releaseUrl="https://repo1.maven.org/maven2"; \
+    index=${.}/maven-workspace.mvn; \
+    name='Maven Central - Workspace'; \
+    readOnly=true
+
+-releaserepo: \
+  ${if;${gestalt;batch};ReleaseCI;Release}

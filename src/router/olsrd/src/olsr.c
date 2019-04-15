@@ -200,7 +200,7 @@ olsr_process_changes(void)
 
   if (olsr_cnf->debug_level > 0 && olsr_cnf->clear_screen && isatty(1)) {
     clear_console();
-    printf("       *** %s (%s on %s) ***\n", olsrd_version, build_date, build_host);
+    printf("       *** %s ***\n", olsrd_version);
   }
 
   if (changes_neighborhood) {
@@ -380,6 +380,9 @@ olsr_forward_message(union olsr_message *m, struct interface_olsr *in_if, union 
 
   /* looping trough interfaces */
   for (ifn = ifnet; ifn; ifn = ifn->int_next) {
+    /* do not retransmit out through a interface if it has mode == silent */
+    if (ifn->mode == IF_MODE_SILENT) continue;
+
     /* do not retransmit out through the same interface if it has mode == ether */
     if (ifn == in_if && ifn->mode == IF_MODE_ETHER) continue;
 

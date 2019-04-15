@@ -1,0 +1,78 @@
+/*
+ * WARNING
+ *
+ * This file should not be edited.
+ *
+ * GNU LIBRARY GENERAL PUBLIC LICENSE
+ * Version 2, June 1991
+ *
+ * Add findbugs tasks to a (java) project.
+ *
+ * Note: the 'java' plugin must have been applied to the project before this
+ *       file can be applied.
+ *
+ * Note: Set the 'CI' property (-PCI on the command line) to generate XML
+ *       reports instead of html reports.
+ */
+
+assert(project != rootProject   )
+assert(hasProperty('sourceSets'))
+
+
+repositories {
+  mavenCentral()
+}
+
+
+apply plugin: 'findbugs'
+
+
+if (!hasProperty('findbugsReportXML'     )) ext.findbugsReportXML      = 'CI'
+
+if (!hasProperty('findbugsIgnoreFailures')) ext.findbugsIgnoreFailures = true
+if (!hasProperty('findbugsIncludesFile'  )) ext.findbugsIncludesFile   = "${rootProject.rootDir}/${rootProject.bnd_cnf}/findbugs/findbugs.include.xml"
+if (!hasProperty('findbugsExcludesFile'  )) ext.findbugsExcludesFile   = "${rootProject.rootDir}/${rootProject.bnd_cnf}/findbugs/findbugs.exclude.xml"
+
+
+findbugs {
+  ignoreFailures =          findbugsIgnoreFailures
+  includeFilter  =     file(findbugsIncludesFile             )
+  excludeFilter  =     file(findbugsExcludesFile             )
+}
+
+findbugsMain {
+  dependsOn assemble
+  reports {
+    xml.enabled  = rootProject.hasProperty(findbugsReportXML) ? true  : false
+    html.enabled = rootProject.hasProperty(findbugsReportXML) ? false : true
+  }
+}
+
+findbugsTest {
+  dependsOn test
+  reports {
+    xml.enabled  = rootProject.hasProperty(findbugsReportXML) ? true  : false
+    html.enabled = rootProject.hasProperty(findbugsReportXML) ? false : true
+  }
+}
+
+/* Placeholder task to facilitate enabling the findbugsMain task (disabled by default) */
+task findbugs {
+  description "Enables findbugs on the source code (disabled by default; use -P${findbugsReportXML} to generate xml reports)."
+  group 'verification'
+}
+
+/* Placeholder task to facilitate enabling the findbugsTest task (disabled by default) */
+task findbugstest {
+  description "Enables findbugs on the test code (disabled by default; use -P${findbugsReportXML} to generate xml reports)."
+  group 'verification'
+}
+
+gradle.taskGraph.whenReady { taskGraph ->
+  tasks.findbugsMain.onlyIf {
+    taskGraph.hasTask((tasks.findbugs))
+  }
+  tasks.findbugsTest.onlyIf {
+    taskGraph.hasTask((tasks.findbugstest))
+  }
+}

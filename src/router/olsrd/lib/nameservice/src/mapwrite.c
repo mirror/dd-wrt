@@ -83,7 +83,7 @@ lookup_position_latlon(union olsr_ip_addr *ip)
 
       entry = list2db(list_node);
 
-      if (entry->names && ipequal(&entry->originator, ip)) {
+      if (entry && entry->names && ipequal(&entry->originator, ip)) {
         return entry->names->name;
       }
     }
@@ -158,7 +158,7 @@ mapwrite_work(FILE * fmap)
 
       entry = list2db(list_node);
 
-      if (NULL != entry->names) {
+      if (entry && entry->names) {
         if (0 >
             fprintf(fmap, "Node('%s',%s,'%s','%s');\n", olsr_ip_to_string(&strbuf1, &entry->originator), entry->names->name,
                     olsr_ip_to_string(&strbuf2, &entry->names->ip), lookup_name_latlon(&entry->originator))) {

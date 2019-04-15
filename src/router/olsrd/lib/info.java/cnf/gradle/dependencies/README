@@ -1,0 +1,8 @@
+===========
+= WARNING =
+===========
+
+This directory contains JAR file dependencies that are intended
+ONLY FOR BUILT-TIME usage by the Gradle build.
+
+None are intended to be used as bundles in any project.

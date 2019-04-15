@@ -1,0 +1,26 @@
+/*
+ * WARNING
+ *
+ * This file should not be edited.
+ *
+ * GNU LIBRARY GENERAL PUBLIC LICENSE
+ * Version 2, June 1991
+ */
+
+def cnfs = new TreeSet<String>();
+rootDir.eachFile {
+  if (it.isDirectory() && new File(it, 'build.bnd').isFile()) {
+    def canonicalCnf = it.canonicalFile.name
+    cnfs.add(canonicalCnf)
+    ext.bnd_cnf = canonicalCnf
+  }
+}
+if (cnfs.empty) {
+  throw new GradleException('Could not locate the cnf project.')
+}
+if (cnfs.size() > 1) {
+  throw new GradleException("Multiple cnf projects found: ${cnfs}")
+}
+
+apply from: new File(rootDir, "${bnd_cnf}/gradle/template/init.gradle")
+

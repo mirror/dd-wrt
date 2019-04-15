@@ -1,0 +1,97 @@
+########################
+## BND BUILD SETTINGS ##
+########################
+
+## Global defaults are loaded from the bnd library (as shown below), place your
+## specific settings here. Additional settings are inherited from ext/*.bnd and
+## they will be overridden by anything you specify in this file.
+
+## General Options
+#project.dependson:      ${p-dependson;:}
+#project.bootclasspath:  ${p-bootclasspath;:}
+#project.buildpath:      ${p-buildpath;:}
+#project.sourcepath:     ${p-sourcepath;:}
+#project.allsourcepath:  ${p-allsourcepath;:}
+#project.output:         ${p-output}
+#project.testpath:       ${p-testpath;:}
+
+#-verbose:               false
+#project:                ${basedir}
+#src:                    src
+#bin:                    bin
+#testsrc:                test
+#testbin:                bin_test
+#test-reports:           test-reports
+#target-dir:             generated
+#target:                 ${project}/${target-dir}
+#build:                  ${workspace}/cnf
+#p:                      ${basename;${project}}
+#project.name:           ${p}
+#plugin-dir:             ${build}/plugins
+
+
+## Java Compiler Options
+#java:                   java
+#javac:                  javac
+#javac.source:           1.8
+#javac.target:           1.8
+#javac.ee:               '[1.8,1.9)'
+#javac.profile:
+#javac.debug:            on
+
+
+## Bnd Options
+#-sources:               true
+#-sourcepath:            ${project}/src
+
+
+## Properties from ext/*.bnd can be referenced in order to extend them. For
+## example, to add one additional plugin to the list defined in
+## ext/repositories.bnd:
+#-plugin:                ${ext.repositories.-plugin}, org.example.MyPlugin
+
+
+# To include source and debug information in the Eclipse build but NOT in the
+# gradle build, uncomment the following lines:
+-sources:                ${if;${gestalt;batch};false;true}
+javac.debug:             ${if;${gestalt;batch};off;on}
+
+
+# If you use git, you might want to uncomment the following lines:
+Git-Descriptor:          ${system-allow-fail;git describe --dirty --always}
+Git-SHA:                 ${system-allow-fail;git rev-list -1 HEAD}
+
+
+# To enable baselining, uncomment the following lines:
+-baseline:               *
+-diffignore:             Git-Descriptor,Git-SHA
+
+
+# Remove some manifest headers that aren't relevant
+-removeheaders: \
+  Bnd-LastModified, \
+  Conditional-Package, \
+  Created-By, \
+  Include-Resource, \
+  Private-Package, \
+  Tool
+
+
+# Some buildrepo versions
+osgi.core.version:       6.0.0
+osgi.cmpn.version:       6.0.0
+osgi.annotation.version: 6.0.1
+
+
+#
+# Customised Settings
+#
+
+javac.source:            1.8
+javac.target:            1.8
+javac.ee:                '[1.8,1.9)'
+
+product.name:           olsrdinfo
+Bundle-License:         http://www.gnu.org/licenses/gpl-2.0.txt
+Bundle-Category:        ${product.name}
+

@@ -1,0 +1,63 @@
+{
+  "pid": 12345,
+  "systemTime": 1448289272,
+  "timeSinceStartup": 1915187,
+  "configurationChecksum": "2e2c14b6e3562ddfd73111847d7a9d8277993ff7",
+  "uuid": "d13d7ee3-fcca-4f81-9bf5-bb5848b5d96d",
+  "routes": [
+    {
+      "destination": "10.175.221.0",
+      "genmask": 24,
+      "gateway": "10.31.175.221",
+      "metric": 1,
+      "etx": 1.000000,
+      "rtpMetricCost": 1.000000,
+      "networkInterface": "wlan0"
+    },
+    {
+      "destination": "10.175.222.0",
+      "genmask": 24,
+      "gateway": "10.31.175.222",
+      "metric": 1,
+      "etx": 1.000000,
+      "rtpMetricCost": 1.000000,
+      "networkInterface": "wlan0"
+    },
+    {
+      "destination": "10.29.175.221",
+      "genmask": 32,
+      "gateway": "10.31.175.221",
+      "metric": 1,
+      "etx": 1.000000,
+      "rtpMetricCost": 1.000000,
+      "networkInterface": "wlan0"
+    },
+    {
+      "destination": "10.29.175.222",
+      "genmask": 32,
+      "gateway": "10.31.175.222",
+      "metric": 1,
+      "etx": 1.000000,
+      "rtpMetricCost": 1.000000,
+      "networkInterface": "wlan0"
+    },
+    {
+      "destination": "10.31.175.221",
+      "genmask": 32,
+      "gateway": "10.31.175.221",
+      "metric": 1,
+      "etx": 1.000000,
+      "rtpMetricCost": 1.000000,
+      "networkInterface": "wlan0"
+    },
+    {
+      "destination": "10.31.175.222",
+      "genmask": 32,
+      "gateway": "10.31.175.222",
+      "metric": 1,
+      "etx": 1.000000,
+      "rtpMetricCost": 1.000000,
+      "networkInterface": "wlan0"
+    }
+  ]
+}

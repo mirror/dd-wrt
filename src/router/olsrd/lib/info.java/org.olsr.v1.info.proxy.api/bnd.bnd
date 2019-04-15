@@ -1,0 +1,8 @@
+-buildpath: \
+	osgi.annotation;version=${osgi.annotation.version}
+-testpath: \
+	${junit}
+Bundle-Name:OLSRd Info Proxy - API
+Bundle-Version:1.0.1.${tstamp}
+Export-Package: \
+	org.olsr.v1.info.proxy.api

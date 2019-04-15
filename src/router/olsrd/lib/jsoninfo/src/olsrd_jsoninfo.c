@@ -1089,8 +1089,6 @@ void ipc_print_version(struct autobuf *abuf) {
 
   abuf_json_string(&json_session, abuf, "version", olsrd_version);
 
-  abuf_json_string(&json_session, abuf, "date", build_date);
-  abuf_json_string(&json_session, abuf, "host", build_host);
   abuf_json_string(&json_session, abuf, "gitDescriptor", git_descriptor);
   abuf_json_string(&json_session, abuf, "gitSha", git_sha);
   abuf_json_string(&json_session, abuf, "releaseVersion", release_version);

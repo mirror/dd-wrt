@@ -854,23 +854,22 @@ olsr_wallclock_string(void)
 {
   static char buf[sizeof("00:00:00.000000")];
   struct timeval now;
-  int sec, usec;
+  unsigned long sec, usec;
 
   gettimeofday(&now, NULL);
 
   if (now.tv_sec>(60*60*24))
-  sec = (int)now.tv_sec + olsr_get_timezone();
+  sec = (unsigned long) (now.tv_sec + olsr_get_timezone());
   else
-  sec = (int)now.tv_sec;
-  
-  usec = now.tv_usec;
+  sec = (unsigned long)now.tv_sec;
+  usec = (unsigned long) (now.tv_usec % 1000000);
   
   if (sec<0)
     sec=0;
   if (usec<0)
     usec=0;
 
-  snprintf(buf, sizeof(buf), "%02d:%02d:%02d.%06d", (sec % 86400) / 3600, (sec % 3600) / 60, sec % 60, usec);
+  snprintf(buf, sizeof(buf), "%02lu:%02lu:%02lu.%06lu", (sec % 86400) / 3600, (sec % 3600) / 60, sec % 60, usec);
 
   return buf;
 }
@@ -886,7 +885,7 @@ olsr_wallclock_string(void)
 const char *
 olsr_clock_string(uint32_t clk)
 {
-  static char buf[sizeof("00:00:00.000")];
+  static char buf[sizeof("00:00:00.000  ")];
 
   /* On most systems a clocktick is a 10ms quantity. */
   unsigned int msec = clk % 1000;

@@ -1,0 +1,48 @@
+====================
+Project dependencies
+====================
+
+There are no dependencies to other projects.
+
+
+=============
+Build Tooling
+=============
+
+This project is built with Gradle.
+
+Gradle doesn't need to be installed on the system on which the project is built.
+In such cases the Gradle wrapper in the project should be employed.
+For Unices this is the 'gradlew' script, for Windows systems this is the
+'gradlew.bat' script.
+
+However, if Gradle is installed on the system, then it can obviously be used
+directly instead of invoking the wrapper scripts.
+
+
+==============================
+Building from the command-line
+==============================
+
+* Run Gradle:
+
+    ./gradlew
+
+
+This will build the default targets as defined by the root_defaultTask property
+in the gradle.properties file.
+
+The default target currently is 'build'.
+
+
+==========================
+Building on a build server
+==========================
+
+* Run Gradle:
+
+    ./gradlew \
+      -PCI -Djsse.enableSNIExtension=false \
+      build \
+      release \
+      findbugs

@@ -636,7 +636,9 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__ ((unused)))
     /* Find broadcast address */
     if (iface->cnf->ipv4_multicast.v4.s_addr) {
       /* Specified broadcast */
-      memcpy(&((struct sockaddr_in *)&ifs.int_broadaddr)->sin_addr.s_addr, &iface->cnf->ipv4_multicast.v4, sizeof(uint32_t));
+      struct sockaddr_in *sin = &ifs.int_broadaddr;
+      memcpy(&sin->sin_addr.s_addr, &iface->cnf->ipv4_multicast.v4, sizeof(uint32_t));
+      sin->sin_family = AF_INET;
     } else {
       /* Autodetect */
       struct sockaddr* ifrb;

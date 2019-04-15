@@ -48,7 +48,9 @@ PLUGIN_VER =	1.1
 TOPDIR =	../..
 include $(TOPDIR)/Makefile.inc
 
-COMMONINFO = $(wildcard ../info/*.c)
+LDFLAGS += -lm
+
+COMMONINFO = $(sort $(wildcard ../info/*.c))
 OBJS += $(COMMONINFO:%.c=%.o)
 
 default_target: $(PLUGIN_FULLNAME)

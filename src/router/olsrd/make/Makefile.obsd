@@ -55,8 +55,8 @@ RCDIR =         /etc/rc.d
 
 RCFILE =        openbsd/olsrd.rcd
 
-SRCS +=		$(wildcard src/bsd/*.c src/unix/*.c)
-HDRS +=		$(wildcard src/bsd/*.h src/unix/*.h)
+SRCS +=		$(sort $(wildcard src/bsd/*.c src/unix/*.c))
+HDRS +=		$(sort $(wildcard src/bsd/*.h src/unix/*.h))
 
 CPPFLAGS +=	-D__OpenBSD__
 LIBS +=		

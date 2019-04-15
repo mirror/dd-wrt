@@ -1,0 +1,43 @@
+/*
+ * WARNING
+ *
+ * This file should not be edited.
+ *
+ * GNU LIBRARY GENERAL PUBLIC LICENSE
+ * Version 2, June 1991
+ *
+ * Build template for the root project.
+ */
+
+assert(project == rootProject)
+assert(hasProperty('bnd_cnf'))
+
+
+/*
+ * Not setting rootGradleVersion will use the latest released version of Gradle.
+ * Should that version remove functionality that is used in the scripts, then
+ * set rootGradleVersion to the last version of Gradle that is compatible with
+ * the scripts.
+ * For example: ext.rootGradleVersion = '2.1'
+ */
+
+
+/* Setup the default tasks */
+if (hasProperty('root_defaultTask')) {
+  defaultTasks = root_defaultTask.trim().split(/\s*,\s*/)
+}
+
+
+/* Setup the gradle wrapper */
+wrapper {
+  if (hasProperty('rootGradleVersion')) {
+    gradleVersion = rootGradleVersion
+  }
+  jarFile         = file('.gradle-wrapper/gradle-wrapper.jar')
+}
+
+
+distclean.doLast {
+  delete("${bnd_cnf}/cache")
+  delete('.gradle'         )
+}

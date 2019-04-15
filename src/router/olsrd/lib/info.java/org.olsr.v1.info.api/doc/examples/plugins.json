@@ -1,0 +1,71 @@
+{
+  "pid": 12345,
+  "systemTime": 1448289559,
+  "timeSinceStartup": 2202279,
+  "configurationChecksum": "2e2c14b6e3562ddfd73111847d7a9d8277993ff7",
+  "uuid": "d13d7ee3-fcca-4f81-9bf5-bb5848b5d96d",
+  "plugins": [
+    {
+      "plugin": "olsrd_pud.so.3.0.0",
+      "parameters": {
+        "useloopback": "true",
+        "hysteresiscounttostationary": "300",
+        "uplinkupdateintervalmoving": "10",
+        "uplinkupdateintervalstationary": "45",
+        "updateintervalmoving": "5",
+        "updateintervalstationary": "15",
+        "movingspeedthreshold": "4",
+        "movingdistancethreshold": "30",
+        "dopmultiplier": "1.3",
+        "uplinkaddr": "10.20.0.1",
+        "txmcport": "2240",
+        "txnonolsrif": "br0",
+        "rxnonolsrif": "br0",
+        "nodeid": "3,AHR-175-220"
+      }
+    },
+    {
+      "plugin": "olsrd_dyn_gw.so.0.5",
+      "parameters": {
+        "hna": "0.0.0.0 0.0.0.0"
+      }
+    },
+    {
+      "plugin": "olsrd_watchdog.so.0.1",
+      "parameters": {
+        "interval": "5",
+        "file": "/var/run/olsrd.watchdog"
+      }
+    },
+    {
+      "plugin": "olsrd_p2pd.so.0.1.0",
+      "parameters": {
+        "udpdestport": "239.194.2.2 5000",
+        "udpdestport": "239.194.2.1 5000",
+        "usettldecrement": "1",
+        "p2pdttl": "5",
+        "nonolsrif": "br0"
+      }
+    },
+    {
+      "plugin": "olsrd_jsoninfo.so.1.1",
+      "parameters": {
+        "port": "2007"
+      }
+    },
+    {
+      "plugin": "olsrd_txtinfo.so.1.1",
+      "parameters": {
+        "httpheaders": "false",
+        "accept": "127.0.0.1"
+      }
+    },
+    {
+      "plugin": "olsrd_httpinfo.so.0.1",
+      "parameters": {
+        "net": "0.0.0.0 0.0.0.0",
+        "port": "8080"
+      }
+    }
+  ]
+}

@@ -562,7 +562,7 @@ void ipc_print_sgw(struct autobuf *abuf) {
 }
 
 void ipc_print_version(struct autobuf *abuf) {
-  abuf_appendf(abuf, "Version: %s (built on %s on %s)\n", olsrd_version, build_date, build_host);
+  abuf_appendf(abuf, "Version: %s\n", olsrd_version);
   abuf_puts(abuf, "\n");
 }
 

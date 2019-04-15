@@ -1,0 +1,45 @@
+{
+  "pid": 12345,
+  "systemTime": 1448289142,
+  "timeSinceStartup": 1785701,
+  "configurationChecksum": "2e2c14b6e3562ddfd73111847d7a9d8277993ff7",
+  "uuid": "d13d7ee3-fcca-4f81-9bf5-bb5848b5d96d",
+  "neighbors": [
+    {
+      "ipAddress": "10.31.175.221",
+      "symmetric": true,
+      "willingness": 3,
+      "isMultiPointRelay": false,
+      "wasMultiPointRelay": false,
+      "multiPointRelaySelector": false,
+      "skip": false,
+      "neighbor2nocov": 0,
+      "linkcount": 1,
+      "twoHopNeighborCount": 1
+    },
+    {
+      "ipAddress": "10.31.175.181",
+      "symmetric": false,
+      "willingness": 3,
+      "isMultiPointRelay": false,
+      "wasMultiPointRelay": false,
+      "multiPointRelaySelector": false,
+      "skip": false,
+      "neighbor2nocov": 0,
+      "linkcount": 1,
+      "twoHopNeighborCount": 25
+    },
+    {
+      "ipAddress": "10.31.175.222",
+      "symmetric": true,
+      "willingness": 3,
+      "isMultiPointRelay": false,
+      "wasMultiPointRelay": false,
+      "multiPointRelaySelector": false,
+      "skip": false,
+      "neighbor2nocov": 0,
+      "linkcount": 1,
+      "twoHopNeighborCount": 1
+    }
+  ]
+}
