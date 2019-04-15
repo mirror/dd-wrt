@@ -499,11 +499,11 @@ endif
 ifeq ($(CONFIG_ATH10K),y)
 CFLAGS += -DHAVE_ATH10K
 endif
+VISOBJS += raid.o
 ifeq ($(CONFIG_RAID),y)
 CFLAGS += -DHAVE_RAID
 WEBSLDFLAGS += -ldisc
 WEBSOBJS += websraid.o
-VISOBJS += raid.o
 endif
 ifeq ($(CONFIG_ZFS),y)
 CFLAGS += -DHAVE_ZFS
