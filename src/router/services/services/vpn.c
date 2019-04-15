@@ -80,4 +80,5 @@ void stop_vpn_modules(void)
 {
 	rmmod("nf_nat_pptp nf_conntrack_pptp nf_nat_proto_gre nf_conntrack_proto_gre ip_nat_pptp ip_nat_proto_gre ip_conntrack_pptp ip_conntrack_proto_gre");
 	dd_loginfo("vpn modules", "vpn modules successfully unloaded\n");
+	nvram_delstates(vpn_modules_deps());
 }

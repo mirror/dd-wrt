@@ -86,6 +86,7 @@ void start_ttraff(void)
 void stop_ttraff(void)
 {
 	stop_process("ttraff", "traffic counter daemon");
+	nvram_delstates(ttraff_deps());
 	cprintf("done\n");
 
 	return;

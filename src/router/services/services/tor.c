@@ -35,14 +35,15 @@
 #include <utils.h>
 #include <services.h>
 
-void stop_tor(void)
-{
-	stop_process("tor", "daemon");
-}
-
 char *tor_deps(void)
 {
 	return "tor_enable lan_ipaddr tor_address tor_id tor_bwrate tor_bwburst tor_relay tor_relayonly tor_dir tor_bridge enable_jffs2 jffs_mounted";
+}
+
+void stop_tor(void)
+{
+	stop_process("tor", "daemon");
+	nvram_delstates(tor_deps());
 }
 
 void start_tor(void)

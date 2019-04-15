@@ -64,6 +64,7 @@ void start_telnetd(void)
 void stop_telnetd(void)
 {
 	stop_process("telnetd", "daemon");
+	nvram_delstates(telnetd_deps());
 	cprintf("done\n");
 	return;
 }

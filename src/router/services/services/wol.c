@@ -44,6 +44,7 @@ char *wol_deps(void)
 void stop_wol(void)
 {
 	stop_process("wol", "Wake On LAN Daemon");
+	nvram_delstates(wol_deps());
 }
 
 void start_wol(void)

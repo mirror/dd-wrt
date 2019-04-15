@@ -143,5 +143,6 @@ void start_dlna_rescan(void)
 void stop_dlna(void)
 {
 	stop_process("minidlna", "DLNA Media Server");
+	nvram_delstates(dlna_deps());
 }
 #endif
