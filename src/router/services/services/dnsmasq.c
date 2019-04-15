@@ -303,33 +303,36 @@ void start_dnsmasq(void)
 			fprintf(fp, "dhcp-option=44,%s\n", nvram_safe_get("wan_wins"));
 		free(word);
 #ifdef HAVE_UNBOUND
-		if (nvram_matchi("recursive_dns", 1)) {
-			char *word = calloc(128, 1);
-			fprintf(fp, "dhcp-option=%s,6,%s\n", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"));
-			for (i = 0; i < mdhcpcount; i++) {
-				char buffer[128];
-				char *ifname = getmdhcp(IDX_IFNAME, i, word, buffer);
-				if (!*(nvram_nget("%s_ipaddr", ifname)) || !*(nvram_nget("%s_netmask", ifname)))
-					continue;
-				fprintf(fp, "dhcp-option=%s,6,", ifname);
-				fprintf(fp, "%s\n", nvram_nget("%s_ipaddr", ifname));
-			}
-			free(word);
-		} else
+		if (nvram_matchi("dns_dnsmasq", 0) && nvram_matchi("recursive_dns", 0)) {
+#else
+		if (nvram_matchi("dns_dnsmasq", 0)) {
 #endif
-		{
-			if (nvram_matchi("dns_dnsmasq", 0)) {
-				dns_list = get_dns_list();
+			dns_list = get_dns_list();
 
-				if (dns_list && dns_list->num_servers > 0) {
+			if (dns_list && dns_list->num_servers > 0) {
 
-					fprintf(fp, "dhcp-option=6");
-					for (i = 0; i < dns_list->num_servers; i++)
-						fprintf(fp, ",%s", dns_list->dns_server[i]);
-					fprintf(fp, "\n");
-				}
-				free_dns_list(dns_list);
+				fprintf(fp, "dhcp-option=6");
+				for (i = 0; i < dns_list->num_servers; i++)
+					fprintf(fp, ",%s", dns_list->dns_server[i]);
+				fprintf(fp, "\n");
 			}
+			free_dns_list(dns_list);
+		} else {
+#ifdef HAVE_UNBOUND
+			if (nvram_matchi("recursive_dns", 1)) {
+				char *word = calloc(128, 1);
+				fprintf(fp, "dhcp-option=%s,6,%s\n", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"));
+				for (i = 0; i < mdhcpcount; i++) {
+					char buffer[128];
+					char *ifname = getmdhcp(IDX_IFNAME, i, word, buffer);
+					if (!*(nvram_nget("%s_ipaddr", ifname)) || !*(nvram_nget("%s_netmask", ifname)))
+						continue;
+					fprintf(fp, "dhcp-option=%s,6,", ifname);
+					fprintf(fp, "%s\n", nvram_nget("%s_ipaddr", ifname));
+				}
+				free(word);
+			}
+#endif
 		}
 
 		if (nvram_matchi("auth_dnsmasq", 1))
@@ -420,20 +423,6 @@ void start_dnsmasq(void)
 	if (nvram_matchi("dnsmasq_add_mac", 1)) {
 		fprintf(fp, "add-mac\n");
 	}
-#ifdef HAVE_PRIVOXY
-	if (nvram_matchi("privoxy_enable", 1)) {
-		if (nvram_matchi("privoxy_transp_enable", 1)) {
-			fprintf(fp, "dhcp-option=252,http://config.privoxy.org/wpad.dat\n");
-		} else {
-			fprintf(fp, "dhcp-option=252,http://%s/wpad.dat\n", nvram_safe_get("lan_ipaddr"));
-		}
-	} else {
-		fprintf(fp, "dhcp-option=252,\"\\n\"\n");
-	}
-#else
-	fprintf(fp, "dhcp-option=252,\"\n\"\n");
-#endif
-	fprintf(fp, "cache-size=1500\n");
 	/*
 	 * Additional options 
 	 */
@@ -444,14 +433,29 @@ void start_dnsmasq(void)
 
 	chmod("/etc/lease_update.sh", 0700);
 
+	char wpad[64];
+#ifdef HAVE_PRIVOXY
+	if (nvram_matchi("privoxy_enable", 1)) {
+		if (nvram_matchi("privoxy_transp_enable", 1)) {
+			sprintf(wpad, "--dhcp-option=252,http://config.privoxy.org/wpad.dat");
+		} else {
+			sprintf(wpad, "--dhcp-option=252,http://%s/wpad.dat", nvram_safe_get("lan_ipaddr"));
+		}
+	} else {
+		sprintf(wpad, "--dhcp-option=252,\"\n\"");
+	}
+#else
+	sprintf(wpad, "--dhcp-option=252,\"\n\"");
+#endif
+
 	FILE *conf = NULL;
 	conf = fopen("/jffs/etc/dnsmasq.conf", "r");	//test if custom config is available
 
 	if (conf != NULL) {
-		eval("dnsmasq", "-u", "root", "-g", "root", "--conf-file=/jffs/etc/dnsmasq.conf");
+		eval("dnsmasq", "-u", "root", "-g", "root", "--conf-file=/jffs/etc/dnsmasq.conf", "--cache-size=1500", wpad);
 		fclose(conf);
 	} else {
-		eval("dnsmasq", "-u", "root", "-g", "root", "--conf-file=/tmp/dnsmasq.conf");
+		eval("dnsmasq", "-u", "root", "-g", "root", "--conf-file=/tmp/dnsmasq.conf", "--cache-size=1500", wpad);
 	}
 
 	dd_loginfo("dnsmasq", "daemon successfully started\n");
