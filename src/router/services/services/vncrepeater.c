@@ -79,5 +79,6 @@ void stop_vncrepeater(void)
 	eval("iptables", "-D", "INPUT", "-p", "tcp", "-i", get_wan_face(), "--dport", "5900", "-j", "ACCEPT");
 	eval("iptables", "-D", "INPUT", "-p", "tcp", "-i", get_wan_face(), "--dport", "5500", "-j", "ACCEPT");
 	stop_process("vncrepeater", "daemon");
+	nvram_delstates(vncrepeater_deps());
 }
 #endif

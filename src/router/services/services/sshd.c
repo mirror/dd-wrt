@@ -99,6 +99,7 @@ void start_sshd(void)
 void stop_sshd(void)
 {
 	stop_process("dropbear", "ssh daemon");
+	nvram_delstates(sshd_deps());
 	cprintf("done\n");
 
 	return;

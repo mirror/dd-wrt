@@ -98,6 +98,7 @@ void start_snmp(void)
 void stop_snmp(void)
 {
 	stop_process("snmpd", "daemon");
+	nvram_delstates(snmp_deps());
 	return;
 }
 #endif

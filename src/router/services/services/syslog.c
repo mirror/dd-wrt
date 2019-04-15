@@ -86,6 +86,7 @@ void stop_syslog(void)
 {
 	stop_process("klogd", "kernel log daemon");
 	stop_process("syslogd", "syslog daemon");
+	nvram_delstates(syslog_deps());
 	return;
 }
 #endif
