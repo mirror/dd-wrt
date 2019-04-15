@@ -376,6 +376,20 @@ int nvram_states(char *list)
 
 }
 
+int nvram_delstates(char *list)
+{
+	char *next;
+	char var[128];
+	int retval = 0;
+	foreach_int(var, list, next) {
+		char p[64];
+		snprintf(p, sizeof(p), "/tmp/nvstate/%s.state", var);
+		unlink(p);
+	}
+	return retval;
+
+}
+
 int nvhas(char *nvname, char *key)
 {
 	char *next;
