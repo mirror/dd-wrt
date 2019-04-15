@@ -302,9 +302,6 @@ static int stop_services_main(int argc, char **argv)
 #ifdef HAVE_CPUTEMP
 	stop_service_f("hwmon");
 #endif
-#ifdef HAVE_FTP
-	stop_service_f("ftpsrv");
-#endif
 #ifdef HAVE_SAMBA3
 	stop_service_f("samba3");
 #endif
@@ -747,9 +744,6 @@ static void handle_nassrv(void)
 #endif
 #ifdef HAVE_RSYNC
 	stop_service_f("rsync");
-#endif
-#ifdef HAVE_FTP
-	stop_service_f("ftpsrv");
 #endif
 #ifdef HAVE_RAID
 	stop_service_f("raid");
