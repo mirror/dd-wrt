@@ -95,8 +95,11 @@ void start_olsrd(void)
 			fprintf(fp, "LinkQualityLevel\t%s\n", nvram_safe_get("olsrd_lqlevel"));
 		else
 			fprintf(fp, "LinkQualityLevel\t0\n");
-		fprintf(fp, "LoadPlugin \"olsrd_dyn_gw_plain.so\"\n");
+		fprintf(fp, "LoadPlugin \"olsrd_dyn_gw.so\"\n");
 		fprintf(fp, "{\n");
+		fprintf(fp, "\tPlParam \"ping\"\t\"8.8.8.8\"");
+		fprintf(fp, "\tPlParam \"ping\"\t\"8.8.4.4\"");
+		fprintf(fp, "\tPlParam \"ping\"\t\"141.1.1.1\"");
 		fprintf(fp, "}\n");
 #ifndef HAVE_MICRO
 		fprintf(fp, "LoadPlugin \"olsrd_httpinfo.so\"\n");
