@@ -1425,6 +1425,7 @@ service.dnsmasq_no_dns_rebind="Kein DNS Rebind";
 service.dnsmasq_strict="DNS in fester Reihenfolge abfragen";
 service.dnsmasq_add_mac="DNS Abfrage mit Anfrage MAC";
 service.dnsmasq_opt="Zus&auml;tzliche DNSMasq-Optionen";
+service.dnsmasq_cachesize="Maximal gepufferte Eintr&auml;ge";
 
 //pptp.webservices
 service.pptp_legend="PPTP";

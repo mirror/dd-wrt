@@ -1666,6 +1666,7 @@ service.dnsmasq_strict="Query DNS in Strict Order";
 service.dnsmasq_add_mac="Add Requestor MAC to DNS Query";
 service.dnsmasq_opt="Additional Dnsmasq Options";
 service.dnsmasq_rc="RFC4039 Rapid Commit support";
+service.dnsmasq_cachesize="Maximum Cached Entries";
 service.tor_legend="The Onion Router Project";
 service.tor_srv="Tor";
 service.tor_address="DNS Name or External IP";
