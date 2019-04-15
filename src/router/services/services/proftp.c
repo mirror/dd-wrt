@@ -72,8 +72,6 @@ void start_ftpsrv(void)
 	if (!nvram_matchi("proftpd_enable", 1))
 		return;
 
-	ftpsrv_umount();
-
 	FILE *fp, *tmp;
 
 	mkdir("/tmp/proftpd", 0700);
