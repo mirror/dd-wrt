@@ -206,5 +206,6 @@ void stop_ftpsrv(void)
 
 	stop_process("proftpd", "FTP Server");
 	ftpsrv_umount();
+	nvram_delstates(ftpsrv_deps());
 }
 #endif
