@@ -1,0 +1,247 @@
+{
+  "pid": 12345,
+  "systemTime": 1448289142,
+  "timeSinceStartup": 1785701,
+  "configurationChecksum": "2e2c14b6e3562ddfd73111847d7a9d8277993ff7",
+  "uuid": "d13d7ee3-fcca-4f81-9bf5-bb5848b5d96d",
+  "version": {
+    "version": "olsr.org - pre-0.9.1-git_4e58755-hash_f013046cc98a88d68312f1e1566e865e",
+    "gitDescriptor": "v0.9.0.3-157-g4e58755",
+    "gitSha": "4e58755a1d3c75a656851873c7eab23c304049c6",
+    "releaseVersion": "pre-0.9.1",
+    "sourceHash": "f013046cc98a88d68312f1e1566e865e"
+  },
+  "plugins": [
+    {
+      "plugin": "olsrd_pud.so.3.0.0",
+      "parameters": {
+        "useloopback": "true",
+        "hysteresiscounttostationary": "300",
+        "uplinkupdateintervalmoving": "10",
+        "uplinkupdateintervalstationary": "45",
+        "updateintervalmoving": "5",
+        "updateintervalstationary": "15",
+        "movingspeedthreshold": "4",
+        "movingdistancethreshold": "30",
+        "dopmultiplier": "1.3",
+        "uplinkaddr": "10.20.0.1",
+        "txmcport": "2240",
+        "txnonolsrif": "br0",
+        "rxnonolsrif": "br0",
+        "nodeid": "3,AHR-175-220"
+      }
+    },
+    {
+      "plugin": "olsrd_dyn_gw.so.0.5",
+      "parameters": {
+        "hna": "0.0.0.0 0.0.0.0"
+      }
+    },
+    {
+      "plugin": "olsrd_watchdog.so.0.1",
+      "parameters": {
+        "interval": "5",
+        "file": "/var/run/olsrd.watchdog"
+      }
+    },
+    {
+      "plugin": "olsrd_p2pd.so.0.1.0",
+      "parameters": {
+        "udpdestport": "239.194.2.2 5000",
+        "udpdestport": "239.194.2.1 5000",
+        "usettldecrement": "1",
+        "p2pdttl": "5",
+        "nonolsrif": "br0"
+      }
+    },
+    {
+      "plugin": "olsrd_jsoninfo.so.1.1",
+      "parameters": {
+        "port": "2007"
+      }
+    },
+    {
+      "plugin": "olsrd_txtinfo.so.1.1",
+      "parameters": {
+        "httpheaders": "false",
+        "accept": "127.0.0.1"
+      }
+    },
+    {
+      "plugin": "olsrd_httpinfo.so.0.1",
+      "parameters": {
+        "net": "0.0.0.0 0.0.0.0",
+        "port": "8080"
+      }
+    }
+  ],
+  "config": {
+    "configurationChecksum": "2e2c14b6e3562ddfd73111847d7a9d8277993ff7",
+    "cli": [
+      "/usr/bin/olsrd",
+      "-f",
+      "/etc/olsrd/olsrd.conf"
+    ],
+    "configurationFile": "/etc/olsrd/olsrd.conf",
+    "olsrPort": 698,
+    "debugLevel": 0,
+    "noFork": false,
+    "pidFile": "",
+    "hostEmulation": false,
+    "ipVersion": 4,
+    "allowNoInt": true,
+    "tosValue": 192,
+    "rtProto": 3,
+    "rtTable": {
+      "main": 254,
+      "default": 223,
+      "tunnel": 224,
+      "priority": -1,
+      "tunnelPriority": 32786,
+      "defaultOlsrPriority": 32776,
+      "defaultPriority": 32796
+    },
+    "willingness": {
+      "willingness": 3,
+      "auto": false,
+      "updateInterval": 20.000000
+    },
+    "fib": {
+      "metric": "flat",
+      "metricDefault": "approx"
+    },
+    "hysteresis": {
+      "enabled": false,
+      "scaling": 0.500000,
+      "thresholdLow": 0.300000,
+      "thresholdHigh": 0.800000
+    },
+    "hna": [
+      {
+        "gateway": "10.31.175.220",
+        "destination": "0.0.0.0",
+        "genmask": 0,
+        "validityTime": 0
+      },
+      {
+        "gateway": "10.31.175.220",
+        "destination": "10.175.220.0",
+        "genmask": 24,
+        "validityTime": 0
+      }
+    ],
+    "pollrate": 0.050000,
+    "nicChgsPollInt": 2.500000,
+    "clearScreen": true,
+    "tcRedundancy": 2,
+    "mprCoverage": 1,
+    "linkQuality": {
+      "level": 2,
+      "fishEye": false,
+      "aging": 0.050000,
+      "algorithm": "etx_ffeth"
+    },
+    "minTCVTime": 0.000000,
+    "setIpForward": true,
+    "lockFile": "/var/run/olsrd.lock",
+    "useNiit": false,
+    "smartGateway": {
+      "enabled": true,
+      "alwaysRemoveServerTunnel": true,
+      "allowNAT": true,
+      "uplinkNAT": true,
+      "useCount": 8,
+      "takeDownPercentage": 1,
+      "instanceId": "ahr",
+      "policyRoutingScript": "/usr/sbin/sgw_policy_routing_setup.sh",
+      "egress": {
+        "interfaces": [
+          "eth1",
+          "eth2",
+          "usb0",
+          "wwan0",
+          "ppp0"
+        ],
+        "interfacesCount": 5,
+        "file": "/var/run/olsrd-sgw-egress.conf",
+        "filePeriod": 1000
+      },
+      "statusFile": "/var/run/olsrd-sgw-status",
+      "tablesOffset": 90,
+      "rulesOffset": 80,
+      "period": 1000,
+      "stableCount": 1,
+      "threshold": 90,
+      "costsCalculation": {
+        "exitLinkUp": 1,
+        "exitLinkDown": 1,
+        "etx": 1,
+        "dividerEtx": 1024
+      },
+      "maxCostMaxEtx": 2560,
+      "uplink": "both",
+      "bandwidth": {
+        "uplinkKbps": 100,
+        "downlinkKbps": 100
+      },
+      "prefix": {
+        "prefix": "0.0.0.0",
+        "length": 0
+      }
+    },
+    "mainIp": "10.31.175.220",
+    "unicastSourceIpAddress": "10.31.175.220",
+    "srcIpRoutes": false,
+    "maxPrefixLength": 32,
+    "ipSize": 4,
+    "delgw": false,
+    "maxSendMessageJitter": 2.000000,
+    "exitValue": 0,
+    "maxTcValidTime": 5.000000,
+    "niit4to6InterfaceIndex": 0,
+    "niit6to4InterfaceIndex": 0,
+    "hasIpv4Gateway": true,
+    "hasIpv6Gateway": false,
+    "ioctlSocket": 3,
+    "routeNetlinkSocket": 4,
+    "routeMonitorSocket": 5,
+    "linkQualityNatThreshold": 1.000000,
+    "brokenLinkCost": 4194304,
+    "brokenRouteCost": 4294967295,
+    "ipcConnectMaxConnections": 0,
+    "ipcConnectAllowed": [
+    ],
+    "interfaceDefaults": {
+      "ipv4Broadcast": "0.0.0.0",
+      "ipv6Multicast": "255.2.0.0",
+      "ipv4Source": "0.0.0.0",
+      "ipv6Source": "0.0.0.0",
+      "ipv6SourcePrefixLength": 0,
+      "mode": "mesh",
+      "weightValue": 0,
+      "weightFixed": false,
+      "hello": {
+        "emissionInterval": 2.000000,
+        "validityTime": 20.000000
+      },
+      "tc": {
+        "emissionInterval": 5.000000,
+        "validityTime": 30.000000
+      },
+      "mid": {
+        "emissionInterval": 5.000000,
+        "validityTime": 50.000000
+      },
+      "hna": {
+        "emissionInterval": 5.000000,
+        "validityTime": 15.000000
+      },
+      "linkQualityMultipliers": [
+      ],
+      "linkQualityMultipliersCount": 0,
+      "autoDetectChanges": true
+    },
+    "os": "GNU/Linux",
+    "startTime": 1458307640
+  }
+}

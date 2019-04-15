@@ -428,13 +428,16 @@ static bool multiGwRunScript(const char * mode, bool addMode, const char * ifNam
  */
 static void multiGwTunnelsCleanup(bool add) {
   bool ipv4 = (olsr_cnf->ip_version == AF_INET);
+  struct interfaceName * interfaceNames = ipv4 ? sgwTunnel4InterfaceNames : sgwTunnel6InterfaceNames;
 
   unsigned int i = 0;
   uint8_t count = olsr_cnf->smart_gw_use_count;
 
-  while (++i <= count) {
-    struct interfaceName * ifn = ipv4 ? &sgwTunnel4InterfaceNames[count - i] : &sgwTunnel6InterfaceNames[count - i];
+  if (!interfaceNames)
+    return;
 
+  while ((++i) <= count) {
+    struct interfaceName * ifn = &interfaceNames[count - i];
     unsigned int ifindex = if_nametoindex(ifn->name);
     if (!ifindex) {
       continue;

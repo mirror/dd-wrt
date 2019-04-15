@@ -1,0 +1,6 @@
+assert(project != rootProject)
+
+apply plugin: 'java'
+
+ext.javadocDocTitle    = 'olsrdinfo API Documentation'
+ext.javadocWindowTitle = 'olsrdinfo API Documentation'

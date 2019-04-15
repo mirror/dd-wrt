@@ -84,8 +84,8 @@ SHAREDIR = $(DESTDIR)$(datarootdir)
 
 # there probably should be an Android log.c and misc.c to support
 # Logcat, but this works for now
-SRCS += $(wildcard src/unix/*.c src/linux/*.c)
-HDRS += $(wildcard src/unix/*.h src/linux/*.h)
+SRCS += $(sort $(wildcard src/unix/*.c src/linux/*.c))
+HDRS += $(sort $(wildcard src/unix/*.h src/linux/*.h))
 
 CPPFLAGS +=	-DOLSRD_GLOBAL_CONF_FILE=\"$(CFGFILE)\"
 # bionic libc: missing declarations

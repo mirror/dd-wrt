@@ -60,8 +60,8 @@ MANDIR =	$(DESTDIR)$(mandir)
 SBINDIR =	$(DESTDIR)$(sbindir)
 SHAREDIR =	$(DESTDIR)$(datarootdir)
 
-SRCS += 	$(wildcard src/linux/*.c src/unix/*.c)
-HDRS +=		$(wildcard src/linux/*.h src/unix/*.h)
+SRCS +=		$(sort $(wildcard src/linux/*.c src/unix/*.c))
+HDRS +=		$(sort $(wildcard src/linux/*.h src/unix/*.h))
 
 CPPFLAGS +=
 LIBS += -lrt

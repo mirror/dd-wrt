@@ -1,0 +1,76 @@
+/*
+ * WARNING
+ *
+ * This file should not be edited.
+ *
+ * GNU LIBRARY GENERAL PUBLIC LICENSE
+ * Version 2, June 1991
+ *
+ * Setup the javadoc options.
+ *
+ * Note: the 'java' plugin must have been applied to the project before this
+ *       file can be applied.
+ */
+
+assert(project != rootProject   )
+assert(hasProperty('sourceSets'))
+
+
+if (!hasProperty('javadocDir'             )) ext.javadocDir              = 'javadoc' /* relative to build directory         */
+if (!hasProperty('javadocTitle'           )) ext.javadocTitle            = "${project.name}"
+if (!hasProperty('javadocFailOnError'     )) ext.javadocFailOnError      = true
+if (!hasProperty('javadocMaxMemory'       )) ext.javadocMaxMemory        = '256M'
+if (!hasProperty('javadocVerbose'         )) ext.javadocVerbose          = false
+
+if (!hasProperty('javadocDocTitle'        )) ext.javadocDocTitle         = "${project.name}"
+if (!hasProperty('javadocWindowTitle'     )) ext.javadocWindowTitle      = "${project.name}"
+if (!hasProperty('javadocClassPathBoot'   )) ext.javadocClassPathBoot    = new LinkedList<File>()
+if (!hasProperty('javadocMemberLevel'     )) ext.javadocMemberLevel      = 'PUBLIC'  /* PRIVATE, PROTECTED, PACKAGE, PUBLIC */
+if (!hasProperty('javadocEncoding'        )) ext.javadocEncoding         = 'UTF-8'
+if (!hasProperty('javadocAuthor'          )) ext.javadocAuthor           = true
+if (!hasProperty('javadocBreakIterator'   )) ext.javadocBreakIterator    = true
+if (!hasProperty('javadocDocFilesSubDirs' )) ext.javadocDocFilesSubDirs  = true
+if (!hasProperty('javadocNoComment'       )) ext.javadocNoComment        = false
+if (!hasProperty('javadocNoDeprecated'    )) ext.javadocNoDeprecated     = false
+if (!hasProperty('javadocNoDeprecatedList')) ext.javadocNoDeprecatedList = false
+if (!hasProperty('javadocNoHelp'          )) ext.javadocNoHelp           = false
+if (!hasProperty('javadocNoIndex'         )) ext.javadocNoIndex          = false
+if (!hasProperty('javadocNoNavBar'        )) ext.javadocNoNavBar         = false
+if (!hasProperty('javadocNoSince'         )) ext.javadocNoSince          = false
+if (!hasProperty('javadocNoTimestamp'     )) ext.javadocNoTimestamp      = false
+if (!hasProperty('javadocNoTree'          )) ext.javadocNoTree           = false
+if (!hasProperty('javadocSplitIndex'      )) ext.javadocSplitIndex       = true
+if (!hasProperty('javadocUse'             )) ext.javadocUse              = true
+if (!hasProperty('javadocVersion'         )) ext.javadocVersion          = true
+
+
+javadoc.destinationDir           = new File(buildDir, "${javadocDir}")
+javadoc.title                    = javadocTitle
+javadoc.source                   = sourceSets.main.allJava
+javadoc.failOnError              = javadocFailOnError
+javadoc.maxMemory                = javadocMaxMemory
+javadoc.verbose                  = javadocVerbose
+
+configure(javadoc.options) {
+  docTitle                       = javadocDocTitle
+  windowTitle                    = javadocWindowTitle
+
+  bootClasspath                  = javadocClassPathBoot
+  memberLevel                    = javadocMemberLevel
+  encoding                       = javadocEncoding
+  author                         = javadocAuthor
+  breakIterator                  = javadocBreakIterator
+  docFilesSubDirs                = javadocDocFilesSubDirs
+  noComment                      = javadocNoComment
+  noDeprecated                   = javadocNoDeprecated
+  noDeprecatedList               = javadocNoDeprecatedList
+  noHelp                         = javadocNoHelp
+  noIndex                        = javadocNoIndex
+  noNavBar                       = javadocNoNavBar
+  noSince                        = javadocNoSince
+  noTimestamp                    = javadocNoTimestamp
+  noTree                         = javadocNoTree
+  splitIndex                     = javadocSplitIndex
+  use                            = javadocUse
+  version                        = javadocVersion
+}

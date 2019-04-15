@@ -148,7 +148,12 @@ static unsigned long long SIW_ENTRIES_ALL[] = {
     SIW_NETJSON_NETWORK_GRAPH, //
     SIW_NETJSON_DEVICE_CONFIGURATION, //
     SIW_NETJSON_DEVICE_MONITORING, //
-    SIW_NETJSON_NETWORK_COLLECTION //
+    SIW_NETJSON_NETWORK_COLLECTION, //
+    //
+    SIW_POPROUTING_HELLO,
+    SIW_POPROUTING_TC, //
+    SIW_POPROUTING_HELLO_MULT,
+    SIW_POPROUTING_TC_MULT //
     };
 
 long cache_timeout_generic(info_plugin_config_t *plugin_config, unsigned long long siw) {
@@ -324,7 +329,13 @@ static void send_status_no_retries(const char * req, bool add_headers, int the_s
     }
   }
 
-  (void) send(the_socket, abuf.buf, abuf.len, 0);
+  (void) send(the_socket, abuf.buf, abuf.len,
+#ifdef _WIN32
+    0
+#else
+    MSG_DONTWAIT
+#endif
+  );
   close(the_socket);
   abuf_free(&abuf);
 }
@@ -368,7 +379,13 @@ static void write_data(void *unused __attribute__((unused))) {
       continue;
     }
 
-    result = send(outbuffer.socket[i], outbuffer.buffer[i] + outbuffer.written[i], outbuffer.size[i] - outbuffer.written[i], 0);
+    result = send(outbuffer.socket[i], outbuffer.buffer[i] + outbuffer.written[i], outbuffer.size[i] - outbuffer.written[i],
+#ifdef _WIN32
+    0
+#else
+    MSG_DONTWAIT
+#endif
+    );
     if (result > 0) {
       outbuffer.written[i] += result;
     }
@@ -396,6 +413,7 @@ static void write_data(void *unused __attribute__((unused))) {
 
   if (!outbuffer.count) {
     olsr_stop_timer(writetimer_entry);
+    writetimer_entry = NULL;
   }
 }
 
@@ -513,6 +531,15 @@ static void send_info(const char * req, bool add_headers, unsigned int send_what
         { SIW_NETJSON_NETWORK_COLLECTION  , functions->networkCollection  } //
       };
 
+      send_info_from_table(&abuf, send_what, funcs, ARRAY_SIZE(funcs), &outputLength);
+    } else if(send_what & SIW_POPROUTING){
+      SiwLookupTableEntry funcs[] = {
+        { SIW_POPROUTING_TC               , functions->tcTimer           }, //
+        { SIW_POPROUTING_HELLO            , functions->helloTimer        }, //
+        { SIW_POPROUTING_TC_MULT          , functions->tcTimerMult       }, //
+        { SIW_POPROUTING_HELLO_MULT       , functions->helloTimerMult    } //
+      };
+      
       send_info_from_table(&abuf, send_what, funcs, ARRAY_SIZE(funcs), &outputLength);
     } else if ((send_what & SIW_OLSRD_CONF) && functions->olsrd_conf) {
       /* this outputs the olsrd.conf text directly, not normal format */
@@ -760,6 +787,14 @@ static void ipc_action(int fd, void *data __attribute__ ((unused)), unsigned int
     /* the caller will retry later */
     return;
   }
+
+#ifdef _WIN32
+  /* set the connection socket to non-blocking */
+  {
+    u_long iMode = 1;
+    ioctlsocket(ipc_connection, FIONBIO, &iMode);
+  }
+#endif
 
   /* Wait at most this much time for the request to arrive on the connection */
   timeout.tv_sec = (outbuffer.count >= MAX_CLIENTS) ? 0 : config->request_timeout_sec;

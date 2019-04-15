@@ -1,0 +1,3 @@
+Keep all json files below this directory, that way
+it's easier to update them when something changes
+in the format of olsrd json output.

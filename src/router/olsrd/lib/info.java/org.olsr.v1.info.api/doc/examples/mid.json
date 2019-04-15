@@ -1,0 +1,189 @@
+{
+  "pid": 12345,
+  "systemTime": 1448289320,
+  "timeSinceStartup": 1963286,
+  "configurationChecksum": "2e2c14b6e3562ddfd73111847d7a9d8277993ff7",
+  "uuid": "d13d7ee3-fcca-4f81-9bf5-bb5848b5d96d",
+  "mid": [
+    {
+      "main": {
+        "ipAddress": "10.31.175.221",
+        "validityTime": 49294
+      },
+      "aliases": [
+        {
+          "ipAddress": "10.29.175.221",
+          "validityTime": 49294
+        }
+      ]
+    },
+    {
+      "main": {
+        "ipAddress": "10.31.175.101",
+        "validityTime": 33678
+      },
+      "aliases": [
+        {
+          "ipAddress": "10.29.175.101",
+          "validityTime": 33678
+        }
+      ]
+    },
+    {
+      "main": {
+        "ipAddress": "10.31.175.250",
+        "validityTime": 32816
+      },
+      "aliases": [
+        {
+          "ipAddress": "10.29.175.250",
+          "validityTime": 32816
+        }
+      ]
+    },
+    {
+      "main": {
+        "ipAddress": "10.31.175.28",
+        "validityTime": 38400
+      },
+      "aliases": [
+        {
+          "ipAddress": "10.29.175.28",
+          "validityTime": 38400
+        }
+      ]
+    },
+    {
+      "main": {
+        "ipAddress": "10.31.175.253",
+        "validityTime": 33678
+      },
+      "aliases": [
+        {
+          "ipAddress": "10.29.175.253",
+          "validityTime": 33678
+        }
+      ]
+    },
+    {
+      "main": {
+        "ipAddress": "10.31.175.102",
+        "validityTime": 33678
+      },
+      "aliases": [
+        {
+          "ipAddress": "10.29.175.102",
+          "validityTime": 33678
+        }
+      ]
+    },
+    {
+      "main": {
+        "ipAddress": "10.31.175.22",
+        "validityTime": 22881
+      },
+      "aliases": [
+        {
+          "ipAddress": "10.29.175.22",
+          "validityTime": 22881
+        }
+      ]
+    },
+    {
+      "main": {
+        "ipAddress": "10.31.175.181",
+        "validityTime": 32816
+      },
+      "aliases": [
+        {
+          "ipAddress": "10.29.175.181",
+          "validityTime": 32816
+        }
+      ]
+    },
+    {
+      "main": {
+        "ipAddress": "10.31.175.222",
+        "validityTime": 46983
+      },
+      "aliases": [
+        {
+          "ipAddress": "10.29.175.222",
+          "validityTime": 46983
+        }
+      ]
+    },
+    {
+      "main": {
+        "ipAddress": "10.31.175.165",
+        "validityTime": 38400
+      },
+      "aliases": [
+        {
+          "ipAddress": "10.29.175.165",
+          "validityTime": 38400
+        }
+      ]
+    },
+    {
+      "main": {
+        "ipAddress": "10.31.175.51",
+        "validityTime": 38400
+      },
+      "aliases": [
+        {
+          "ipAddress": "10.29.175.51",
+          "validityTime": 38400
+        }
+      ]
+    },
+    {
+      "main": {
+        "ipAddress": "10.31.175.25",
+        "validityTime": 38400
+      },
+      "aliases": [
+        {
+          "ipAddress": "10.29.175.25",
+          "validityTime": 38400
+        }
+      ]
+    },
+    {
+      "main": {
+        "ipAddress": "10.31.175.39",
+        "validityTime": 33678
+      },
+      "aliases": [
+        {
+          "ipAddress": "10.29.175.39",
+          "validityTime": 33678
+        }
+      ]
+    },
+    {
+      "main": {
+        "ipAddress": "10.31.175.251",
+        "validityTime": 33678
+      },
+      "aliases": [
+        {
+          "ipAddress": "10.29.175.251",
+          "validityTime": 33678
+        }
+      ]
+    },
+    {
+      "main": {
+        "ipAddress": "10.31.175.161",
+        "validityTime": 276400
+      },
+      "aliases": [
+        {
+          "ipAddress": "10.29.175.161",
+          "validityTime": 276400
+        }
+      ]
+    }
+  ]
+}

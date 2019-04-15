@@ -415,6 +415,10 @@ olsr_remove_interface(struct olsr_if * iface)
   olsr_stop_timer(ifp->tc_gen_timer);
   olsr_stop_timer(ifp->mid_gen_timer);
   olsr_stop_timer(ifp->hna_gen_timer);
+  ifp->hello_gen_timer = NULL;
+  ifp->tc_gen_timer = NULL;
+  ifp->mid_gen_timer = NULL;
+  ifp->hna_gen_timer = NULL;
 
   iface->configured = 0;
   iface->interf = NULL;

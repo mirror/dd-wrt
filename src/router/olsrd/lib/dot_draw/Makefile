@@ -48,6 +48,8 @@ PLUGIN_VER =	0.3
 TOPDIR =	../..
 include $(TOPDIR)/Makefile.inc
 
+LDFLAGS += -lm
+
 default_target: $(PLUGIN_FULLNAME)
 
 $(PLUGIN_FULLNAME): $(OBJS) version-script.txt

@@ -1,0 +1,7 @@
+assert(project != rootProject   )
+assert(hasProperty('sourceSets'))
+
+findbugs {
+  effort      = "max" /* min, default, max  */
+  reportLevel = "low" /* low, medium , high */
+}

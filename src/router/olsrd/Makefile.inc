@@ -315,8 +315,8 @@ endif
 CPPFLAGS +=     -DUSE_FPM
 
 # search sources and headers in current dir and in src/
-SRCS +=		$(wildcard src/common/*.c src/*.c *.c)
-HDRS +=		$(wildcard src/common/*.h src/*.h *.h)
+SRCS +=		$(sort $(wildcard src/common/*.c src/*.c *.c))
+HDRS +=		$(sort $(wildcard src/common/*.h src/*.h *.h))
 
 ifeq ($(OS),UNKNOWN)
 all: help

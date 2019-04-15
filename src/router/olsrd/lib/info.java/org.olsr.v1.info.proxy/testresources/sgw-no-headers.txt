@@ -1,0 +1,8 @@
+
+Table: Smart Gateway IPv4
+ Originator       Prefix                            Uplink   Downlink PathCost IPv4 IPv4-NAT IPv6 Tunnel-Name      Destination      Cost
+ 10.31.175.222    0.0.0.0/0.0.0.0                   50000    50000    1024     Y    Y        N    tnl_4095         10.31.175.222    4865392
+*10.31.175.221    0.0.0.0/0.0.0.0                   50000    50000    1024     Y    Y        N    tnl_4094         10.31.175.221    4865392
+ 10.31.165.60     0.0.0.0/0.0.0.0                   50000    50000    4739     Y    Y        N    tnl_4093         10.31.165.60     20946288
+
+

@@ -1,0 +1,46 @@
+HTTP/1.1 200 OK
+Date: Mon, 07 Dec 2015 07:33:54 GMT
+Server: OLSRD JSONINFO
+Connection: close
+Content-Type: application/vnd.api+json
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, POST, OPTIONS
+Access-Control-Allow-Headers: Accept, Origin, X-Requested-With
+Access-Control-Max-Age: 1728000
+Content-Length: 599         
+Cache-Control: no-cache
+
+{
+  "pid": 12345,
+  "systemTime": 1448287383,
+  "timeSinceStartup": 26205,
+  "uuid": "d13d7ee3-fcca-4f81-9bf5-bb5848b5d96d",
+  "sgw": {
+    "ipv4": [
+      {
+        "selected": true,
+        "selectable": true,
+        "originator": "10.31.175.221",
+        "prefix": "0.0.0.0",
+        "prefixLen": 0,
+        "uplink": 10000,
+        "downlink": 10000,
+        "cost": 73447832,
+        "IPv4": true,
+        "IPv4-NAT": true,
+        "IPv6": false,
+        "expireTime": 12041,
+        "cleanupTime": 0,
+        "pathcost": 7491,
+        "hops": 2,
+        "destination": "10.31.175.221",
+        "tunnel": "tnl_4097",
+        "tableNr": 97,
+        "ruleNr": 97,
+        "bypassRuleNr": 0
+      }
+    ],
+    "ipv6": [
+    ]
+  }
+}

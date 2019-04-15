@@ -1,0 +1,6 @@
+<FindBugsFilter>
+    <Match>
+        <Class name="org.olsr.v1.info.proxy.api.InfoResult" />
+        <Bug pattern="URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD" />
+    </Match>
+</FindBugsFilter>

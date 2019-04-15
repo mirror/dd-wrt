@@ -1,0 +1,20 @@
+assert(project != rootProject)
+
+defaultTasks = ['javadoc']
+
+jar.enabled = false
+
+def cp = files()
+rootProject.allprojects.each {
+  if (it.hasProperty('sourceSets') && "${it.name}".endsWith('.api')) {
+    it.sourceSets.main.java.srcDirs.each {
+      javadoc.source(fileTree(it).include("**/*.java"))
+    }
+
+    cp  += it.compileJava.classpath
+  }
+}
+
+javadoc {
+  classpath = cp
+}

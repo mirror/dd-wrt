@@ -1,0 +1,197 @@
+/*
+ * WARNING
+ *
+ * This file should not be edited.
+ *
+ * GNU Free Documentation License
+ * Version 1.3, 3 November 2008
+ *
+ * See the BUILDING-GRADLE.md document in the root project for more details.
+ *
+ * To create an SVG diagram from this file, install graphviz and run:
+ *   dot -Tsvg "$1.dot" -o "$1.svg"   (on a Linux   machine)
+ *   dot -Tsvg "%1.dot" -o "%1.svg"   (on a Windows machine)
+ */
+
+
+digraph GradleSetup {
+  label="Gradle Build Setup"
+  labelloc=t
+  labeljust=l
+
+  subgraph cluster1 {
+    label="Java Projects / Bnd Projects";
+    labelloc=b
+    labeljust=l
+    style=filled;
+    fillcolor=lightgrey;
+    color=black;
+
+    subgraph cluster101 {
+      label="";
+      style=invis;
+      compileJava          [shape=box, style=filled, fillcolor=lightcyan, label="compileJava"         ]
+      processResources     [shape=box, style=filled, fillcolor=lightcyan, label="processResources"    ]
+      classes              [shape=box, style=filled, fillcolor=lightcyan, label="classes"             ]
+    }
+
+    subgraph cluster102 {
+      label="";
+      style=invis;
+      jar                  [shape=box, style=filled, fillcolor=cyan     , label="jar"                 ]
+    }
+
+    subgraph cluster103 {
+      label="";
+      style=invis;
+      compileTestJava      [shape=box, style=filled, fillcolor=lightcyan, label="compileTestJava"     ]
+      processTestResources [shape=box, style=filled, fillcolor=lightcyan, label="processTestResources"]
+      testClasses          [shape=box, style=filled, fillcolor=lightcyan, label="testClasses"         ]
+    }
+
+    subgraph cluster104 {
+      label="";
+      style=invis;
+      test                 [shape=box, style=filled, fillcolor=lightcyan, label="test"                ]
+    }
+
+    subgraph cluster105 {
+      label="";
+      style=invis;
+      uploadArchives       [shape=box, style=filled, fillcolor=lightcyan, label="uploadArchives"      ]
+      assemble             [shape=box, style=filled, fillcolor=lightcyan, label="assemble"            ]
+    }
+
+    subgraph cluster106 {
+      label="";
+      style=invis;
+      check                [shape=box, style=filled, fillcolor=cyan     , label="check"               ]
+      checkNeeded          [shape=box, style=filled, fillcolor=cyan     , label="checkNeeded"         ]
+    }
+
+    subgraph cluster107 {
+      label="";
+      style=invis;
+      release              [shape=box, style=filled, fillcolor=cyan     , label="release"             ]
+      releaseNeeded        [shape=box, style=filled, fillcolor=cyan     , label="releaseNeeded"       ]
+    }
+
+    subgraph cluster108 {
+      label="";
+      style=invis;
+      exportX              [shape=box3d, style=filled, fillcolor=cyan   , label="export.<name>"       ]
+      export               [shape=box  , style=filled, fillcolor=cyan   , label="export"              ]
+      runbundlesX          [shape=box3d, style=filled, fillcolor=cyan   , label="runbundles.<name>"   ]
+      runbundles           [shape=box  , style=filled, fillcolor=cyan   , label="runbundles"          ]
+    }
+
+    subgraph cluster109 {
+      label="";
+      style=invis;
+      build                [shape=box, style=filled, fillcolor=lightcyan, label="build"               ]
+      buildDependents      [shape=box, style=filled, fillcolor=lightcyan, label="buildDependents"     ]
+      buildNeeded          [shape=box, style=filled, fillcolor=lightcyan, label="buildNeeded"         ]
+    }
+
+    subgraph cluster110 {
+      label="";
+      style=invis;
+      findbugsMain         [shape=box, style=filled, fillcolor=orange   , label="findbugsMain"        ]
+      findbugsTest         [shape=box, style=filled, fillcolor=orange   , label="findbugsTest"        ]
+    }
+
+    javadoc                [shape=box, style=filled, fillcolor=orange   , label="javadoc"             ]
+
+    clean                  [shape=box, style=filled, fillcolor=cyan     , label="clean"               ]
+    cleanNeeded            [shape=box, style=filled, fillcolor=cyan     , label="cleanNeeded"         ]
+    echo                   [shape=box, style=filled, fillcolor=cyan     , label="echo"                ]
+    bndproperties          [shape=box, style=filled, fillcolor=cyan     , label="bndproperties"       ]
+    jacocoTestReport       [shape=box, style=filled, fillcolor=orange   , label="jacocoTestReport"    ]
+
+    compileJava            -> classes
+    processResources       -> classes
+    classes                -> compileTestJava
+    classes                -> jar
+    classes                -> test
+    compileTestJava        -> testClasses
+    processTestResources   -> testClasses
+    jar                    -> uploadArchives
+    jar                    -> assemble
+    testClasses            -> test
+    assemble               -> build
+    assemble               -> check
+    test                   -> check
+    check                  -> checkNeeded
+    checkNeeded            -> checkNeeded        [color=red   ]
+    check                  -> build
+    build                  -> buildDependents
+    buildDependents        -> buildDependents    [color=yellow]
+    build                  -> buildNeeded
+    buildNeeded            -> buildNeeded        [color=red   ]
+
+    assemble               -> compileJava        [color=red   ]
+    assemble               -> release
+    assemble               -> exportX
+    exportX                -> export
+    assemble               -> runbundlesX
+    runbundlesX            -> runbundles
+    release                -> releaseNeeded
+    releaseNeeded          -> releaseNeeded      [color=red   ]
+    clean                  -> cleanNeeded
+    cleanNeeded            -> cleanNeeded        [color=red   ]
+
+    assemble               -> findbugsMain
+    test                   -> findbugsTest
+    findbugsMain           -> check              [color=green ]
+    findbugsTest           -> check              [color=green ]
+    test                   -> jacocoTestReport   [color=magenta]
+    check                  -> jacocoTestReport   [color=magenta]
+  }
+
+
+  subgraph cluster2 {
+    label="All Projects";
+    labelloc=b
+    labeljust=l
+    style=filled;
+    fillcolor=lightgrey;
+    color=black;
+
+    subgraph cluster201 {
+      label="";
+      style=invis;
+      index                [shape=box, style=filled, fillcolor=orange   , label="index"               ]
+    }
+
+    subgraph cluster202 {
+      label="";
+      style=invis;
+      cleanAll             [shape=box, style=filled, fillcolor=orange   , label="clean"               ]
+      cleanAllNeeded       [shape=box, style=filled, fillcolor=orange   , label="cleanNeeded"         ]
+      distclean            [shape=box, style=filled, fillcolor=orange   , label="distclean"           ]
+      distcleanNeeded      [shape=box, style=filled, fillcolor=orange   , label="distcleanNeeded"     ]
+    }
+
+    clean                  -> cleanAll           [color=blue  ]
+    cleanNeeded            -> cleanAllNeeded     [color=blue  ]
+    cleanAll               -> cleanAllNeeded
+    cleanAll               -> distclean
+    cleanAllNeeded         -> cleanAllNeeded     [color=red   ]
+    cleanAllNeeded         -> distcleanNeeded
+    distclean              -> distcleanNeeded
+    distcleanNeeded        -> distcleanNeeded    [color=red   ]
+  }
+
+
+  subgraph cluster3 {
+    label="Root Project";
+    labelloc=b
+    labeljust=l
+    style=filled;
+    fillcolor=lightgrey;
+    color=black;
+
+    init                   [shape=box, style=filled, fillcolor=lightcyan, label="init"                ]
+    wrapper                [shape=box, style=filled, fillcolor=orange   , label="wrapper"             ]
+  }
+}

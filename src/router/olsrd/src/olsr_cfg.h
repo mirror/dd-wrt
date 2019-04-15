@@ -199,6 +199,7 @@ typedef enum {
 enum olsr_if_mode {
   IF_MODE_MESH,
   IF_MODE_ETHER,
+  IF_MODE_SILENT,
   IF_MODE_CNT
 };
 

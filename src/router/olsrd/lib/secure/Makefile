@@ -48,6 +48,8 @@ PLUGIN_VER =	0.6
 TOPDIR = ../..
 include $(TOPDIR)/Makefile.inc
 
+LDFLAGS += -lm
+
 ifdef USE_OPENSSL
 CPPFLAGS +=	-DUSE_OPENSSL
 LIBS +=		-lssl -lcrypto

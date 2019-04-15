@@ -1,0 +1,14 @@
+{
+  "pid": 12345,
+  "systemTime": 1448289504,
+  "timeSinceStartup": 2147638,
+  "configurationChecksum": "2e2c14b6e3562ddfd73111847d7a9d8277993ff7",
+  "uuid": "d13d7ee3-fcca-4f81-9bf5-bb5848b5d96d",
+  "version": {
+    "version": "olsr.org - pre-0.9.1-git_4e58755-hash_f013046cc98a88d68312f1e1566e865e",
+    "gitDescriptor": "v0.9.0.3-157-g4e58755",
+    "gitSha": "4e58755a1d3c75a656851873c7eab23c304049c6",
+    "releaseVersion": "pre-0.9.1",
+    "sourceHash": "f013046cc98a88d68312f1e1566e865e"
+  }
+}

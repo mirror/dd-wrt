@@ -1,0 +1,75 @@
+/*
+ * WARNING
+ *
+ * This file should not be edited.
+ *
+ * GNU LIBRARY GENERAL PUBLIC LICENSE
+ * Version 2, June 1991
+ *
+ * Determine the build dependencies.
+ */
+
+assert(hasProperty('bnd_cnf'))
+
+
+void getBuildDependencies(Set<File> buildDependencies, Set<String> evaluatedDependencies) {
+  assert(buildDependencies     != null)
+  assert(evaluatedDependencies != null)
+
+  def propKeyExtRegex    = '\\.uri\$'
+  properties
+     .findAll({it -> it.key.trim().toLowerCase() ==~ ('.+' + propKeyExtRegex)})
+     .each {
+    def propValue        = it.value.trim()
+    if (!propValue.empty) {
+      def propKey        = it.key.trim()
+      def dependencyName = propKey.toLowerCase().replaceFirst(propKeyExtRegex, '')
+      if (evaluatedDependencies.contains(dependencyName)) {
+        println "Warning: Build dependency ${dependencyName} was already processed, skipping ${it}"
+      } else {
+        def uri          = rootDir.toURI().resolve(propValue)
+        def dependencyFile = null
+        if (uri.scheme == 'file') {
+          dependencyFile = new File(uri.path)
+        } else {
+          dependencyFile = new File(rootDir, "${bnd_cnf}/cache/${new File(uri.path).name}")
+
+          /* Download from the URI when needed */
+          if (!dependencyFile.exists()) {
+            println "Downloading ${uri} to ${dependencyFile} ..."
+            dependencyFile.parentFile.mkdirs()
+            try {
+              uri.toURL().withInputStream{ is ->
+                dependencyFile.withOutputStream{ os ->
+                  def bos = new BufferedOutputStream(os)
+                  bos << is
+                }
+              }
+            } catch (Exception e) {
+              throw new GradleException("Downloading build dependency ${dependencyName} from ${uri.toURL()} failed", e)
+            }
+          }
+        }
+
+        assert(dependencyFile != null)
+
+        if (!dependencyFile.exists()) {
+          throw new GradleException("Build dependency ${dependencyName} (${dependencyFile.absolutePath}) does not exist.")
+        }
+
+        buildDependencies.add(dependencyFile)
+        evaluatedDependencies.add(dependencyName)
+      }
+    }
+  }
+}
+
+/* Determine build dependencies */
+def buildDependencies     = new HashSet<File>();
+def evaluatedDependencies = new HashSet<String>()
+getBuildDependencies(buildDependencies, evaluatedDependencies)
+
+/* After the rootProject is created, set up some properties. */
+gradle.rootProject { rootProject ->
+ rootProject.ext.bndBuildDependencies = files(buildDependencies)
+}

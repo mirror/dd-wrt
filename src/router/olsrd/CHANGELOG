@@ -1,3 +1,96 @@
+0.9.7 -------------------------------------------------------------------
+
+Christoph Loesch (1):
+      interfaces: add 'silent' mode
+
+Ferry Huberts (52):
+      Update version after branch of v0.9.6
+      Merge branch 'release-0.9.6'
+      info: java: upgrade gradle wrapper
+      info: automatically detect whether the reply should have HTTP headers
+      Merge branch 'release-0.9.6'
+      Merge branch 'release-0.9.6'
+      info: java: gradle: upgrade wrapper
+      info: java: update workspace
+      info: java: update jackson bundles
+      info: java: gradle: upgrade wrapper
+      info: java: gradle: upgrade wrapper
+      pud: only check gpsd status; no clear of info on bad fix or invalid signal
+      link_set: fix typo in f8d4e24
+      Merge branch 'release-0.9.6'
+      Update version after release of v0.9.6.2
+      Merge branch 'release-0.9.6'
+      info: java: upgrade gradle wrapper
+      Merge pull request #28 from stspdotname/missing-olsr-random-include
+      Merge pull request #29 from stspdotname/detect-wifi-on-bsd
+      Merge pull request #30 from stspdotname/route-deletion-needs-netmask
+      Merge pull request #26 from neeels/segfault_cleanup
+      Merge pull request #25 from neeels/master
+      Merge pull request #34 from stspdotname/rtm-delete-flags
+      Merge pull request #36 from stspdotname/rtm-delete-flags-v6
+      Merge pull request #35 from stspdotname/icmp6-rediraccept
+      Merge pull request #31 from stspdotname/add-ipv6-routes-correctly
+      info: java: fix tests by letting mock bind to localhost
+      Merge pull request #37 from stspdotname/bcast-addr-len-and-type
+      Merge pull request #32 from stspdotname/fix-sendto-ipv4
+      info: java: upgrade workspace
+      info: java: upgrade gradle wrapper
+      info: java: upgrade gradle wrapper
+      info: java: use Java 1.8
+      hashing: fix implicit fall-through warning on gcc 7
+      all: link with -lm where <math.h> is included.
+      nameservice: fix potential null pointer dereference warnings on gcc 7
+      olsr_spf: fix potential null pointer dereference warnings on gcc 7
+      src: fix format truncation errors on gcc 7
+      process_routes: fix potential null pointer dereference warnings on gcc 7
+      info: java: upgrade gradle wrapper
+      info: fix the previous commit: windows doesn't support MSG_DONTWAIT
+      Merge pull request #49 from wiedi/osx-clock-10.12
+      info.java: remove date and hosts fields.
+      info: java: upgrade gradle wrapper
+      all: ensure timers are set to NULL after calling olsr_stop_timer
+      httpinfo: ensure timers are set to NULL after calling olsr_stop_timer
+      dyn_gw: fix GCC 8 compilation problems
+      secure: fix GCC 8 compilation problems
+      poprouting: format code
+      poprouting: fix memory leak in isCommand
+      Branch v0.9.7
+      Release v0.9.7
+
+Gabriel (1):
+      Poprouting plugin for OLSRd (#53)
+
+Henning Rogge (1):
+      info: do not block when sending data
+
+Neels Hofmeyr (2):
+      fix segfault when printing "You must be root"
+      fix: don't attempt to cleanup uninitialized multiGwTunnels
+
+Reiner Herrmann (2):
+      all: make sure all make filelists are sorted
+      all: remove build_host and build_date to enable reproducible building
+
+Sebastian Wiedenroth (1):
+      mach: clock_gettime and friends appeared in Mac OSX 10.12
+
+Stefan Sperling (9):
+      Add a missing include for olsr_random() on BSD.
+      Implement a simpler way of detecting wifi interfaces on BSD.
+      Fix route deletion on BSD.
+      Use correct RTM flags while deleting a route on BSD.
+      Do not toggle net.inet6.icmp6.rediraccept on OpenBSD.
+      Use correct RTM flags while deleting an IPv6 route on BSD.
+      Fix adding IPv6 routes on BSD.
+      Fix initialization of a struct sockaddr_in.
+      Fix olsr_sendto() for IPv4 on BSD.
+
+iwanovich (1):
+      routing: remove rt_entry.rt_best pointer when rt_path is deleted (#61)
+
+pocki80 (1):
+      correctly report silent mode on olsrd startup summary
+
 0.9.6.2 -------------------------------------------------------------------
 
 Ferry Huberts (2):

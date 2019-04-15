@@ -1,0 +1,38 @@
+/*
+ * WARNING
+ *
+ * This file should not be edited.
+ *
+ * GNU LIBRARY GENERAL PUBLIC LICENSE
+ * Version 2, June 1991
+ *
+ * Add tasks that are relevant to Java projects.
+ */
+
+assert(project != rootProject               )
+assert(rootProject.hasProperty('bnd_cnf'   ))
+assert(            hasProperty('sourceSets'))
+
+
+/* Setup javadoc options */
+apply from: rootProject.file("${rootProject.bnd_cnf}/gradle/template/javaDoc.gradle")
+
+/* Add findbugs to the project */
+apply from: rootProject.file("${rootProject.bnd_cnf}/gradle/template/findbugs.gradle")
+
+/* Add jacoco to the project */
+apply from: rootProject.file("${rootProject.bnd_cnf}/gradle/template/jacoco.gradle")
+
+clean.doLast {
+  sourceSets.each {
+    if (projectDir != it.output.classesDir) {
+      delete(it.output.classesDir)
+    }
+    if (projectDir != it.output.resourcesDir) {
+      delete(it.output.resourcesDir)
+    }
+    if (projectDir != buildDir) {
+      delete(buildDir)
+    }
+  }
+}
