@@ -2920,16 +2920,14 @@ void add_olsrd(webs_t wp)
 	if (ifname == NULL)
 		return;
 	char *wordlist = nvram_safe_get("olsrd_interfaces");
-	char *addition = ">5.0>90.0>2.0>270.0>15.0>90.0>15.0>90.0";
+	char *addition = ">2.0>20.0>5.0>300.0>5.0>300.0>5.0>300.0>1.0";
 	char *newadd = (char *)safe_malloc(strlen(wordlist) + strlen(addition) + strlen(ifname) + 2);
 	if (*(wordlist)) {
-		strcpy(newadd, wordlist);
-		strcat(newadd, " ");
-		strcat(newadd, ifname);
+		asprintf(&newadd, "%s %s%s", wordlist, ifname, addition);
 	} else {
+		asprintf(&newadd, "%s%s", ifname, addition);
 		strcpy(newadd, ifname);
 	}
-	strcat(newadd, addition);
 	nvram_set("olsrd_interfaces", newadd);
 	nvram_commit();
 	free(newadd);
@@ -2998,8 +2996,12 @@ void save_olsrd(webs_t wp)
 
 		sprintf(valuename, "%s_hnavaliditytime", interface);
 		char *hnavaliditytime = websGetVar(wp, valuename, "0");
+
+		sprintf(valuename, "%s_linkqualitymult", interface);
+		char *linkqualitymult = websGetVar(wp, valuename, "0");
 		char *tmp;
-		asprintf(&tmp, "%s %s>%s>%s>%s>%s>%s>%s>%s>%s", newlist, interface, hellointerval, hellovaliditytime, tcinterval, tcvaliditytime, midinterval, midvaliditytime, hnainterval, hnavaliditytime);
+		asprintf(&tmp, "%s %s>%s>%s>%s>%s>%s>%s>%s>%s>%s", newlist, interface, hellointerval, hellovaliditytime, tcinterval, tcvaliditytime, midinterval, midvaliditytime, hnainterval, hnavaliditytime,
+			 linkqualitymult);
 		strcpy(newlist, tmp);
 		free(tmp);
 	}

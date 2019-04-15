@@ -75,6 +75,8 @@ void ej_show_olsrd(webs_t wp, int argc, char_t ** argv)
 			GETENTRYBYIDX(midvaliditytime, word, 6);
 			GETENTRYBYIDX(hnainterval, word, 7);
 			GETENTRYBYIDX(hnavaliditytime, word, 8);
+			GETENTRYBYIDX(linkqualitymult, word, 9);
+
 			websWrite(wp, "<fieldset>\n");
 			show_legend(wp, interface, 0);
 			char valuename[32];
@@ -96,8 +98,12 @@ void ej_show_olsrd(webs_t wp, int argc, char_t ** argv)
 
 			sprintf(valuename, "%s_hnainterval", interface);
 			show_custominputlabel(wp, "HNA Interval", valuename, hnainterval, 5);
+
 			sprintf(valuename, "%s_hnavaliditytime", interface);
 			show_custominputlabel(wp, "HNA Validity Time", valuename, hnavaliditytime, 5);
+
+			sprintf(valuename, "%s_hnavaliditytime", interface);
+			show_custominputlabel(wp, "Link Quality Multiplier", valuename, linkqualitymult, 5);
 			websWrite(wp,
 				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"olsrd_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
 				  count);
