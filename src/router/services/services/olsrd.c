@@ -130,6 +130,7 @@ void start_olsrd(void)
 			GETENTRYBYIDX(midvaliditytime, word, 6);
 			GETENTRYBYIDX(hnainterval, word, 7);
 			GETENTRYBYIDX(hnavaliditytime, word, 8);
+			GETENTRYBYIDX(linkqualitymult, word, 9);
 			fprintf(fp, "Interface \"%s\"\n", interface);
 			fprintf(fp, "{\n");
 			fprintf(fp, "\tHelloInterval\t%s\n", hellointerval);
@@ -140,6 +141,7 @@ void start_olsrd(void)
 			fprintf(fp, "\tMidValidityTime\t%s\n", midvaliditytime);
 			fprintf(fp, "\tHnaInterval\t%s\n", hnainterval);
 			fprintf(fp, "\tHnaValidityTime\t%s\n", hnavaliditytime);
+			fprintf(fp, "\tLinkQualityMult\tdefault\t%s\n", linkqualitymult);
 			fprintf(fp, "}\n");
 		}
 		if (*(nvram_safe_get("olsrd_hna"))) {
