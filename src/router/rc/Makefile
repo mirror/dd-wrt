@@ -200,6 +200,9 @@ CFLAGS += -DHAVE_HORNET
 endif
 ifeq ($(CONFIG_CARAMBOLA),y)
 CFLAGS += -DHAVE_CARAMBOLA
+ifeq ($(CONFIG_FMS2111),y)
+CFLAGS += -DHAVE_FMS2111 -DHAVE_WLANLED -D_GNU_SOURCE  -I$(TOP)/libubox  -I$(TOP)/libnl-tiny/include
+endif
 endif
 ifeq ($(CONFIG_WASP),y)
 CFLAGS += -DHAVE_WASP
@@ -1136,6 +1139,11 @@ ifeq ($(CONFIG_ALFANX),y)
 endif
 ifeq ($(CONFIG_CPE880),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc wlanled
+endif
+ifeq ($(CONFIG_CARAMBOLA),y)
+ifeq ($(CONFIG_FMS2111),y)
+	cd $(INSTALLDIR)/sbin && ln -sf rc wlanled
+endif
 endif
 ifeq ($(CONFIG_CPE890),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc wlanled
