@@ -19,6 +19,7 @@ SOFTETHER_EXTRA_LDFLAGS=-L$(TOP)/openssl -lcrypto -lssl -L$(TOP)/readline/shlib 
 
 
 softether-configure: zlib readline ncurses
+	rm -f $(TOP)/softether/CMakeCache.txt
 	rm -rf $(TOP)/softether/host
 	mkdir $(TOP)/softether/host
 	-cp -urv $(TOP)/softether/* $(TOP)/softether/host
