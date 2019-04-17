@@ -1259,7 +1259,12 @@ receive_object(struct receive_writer_arg *rwa, struct drr_object *drro,
 		 * earlier in the stream.
 		 */
 		txg_wait_synced(dmu_objset_pool(rwa->os), 0);
-		object = drro->drr_object;
+
+		if (dmu_object_info(rwa->os, drro->drr_object, NULL) != ENOENT)
+			return (SET_ERROR(EINVAL));
+
+		/* object was freed and we are about to allocate a new one */
+		object = DMU_NEW_OBJECT;
 	} else {
 		/* object is free and we are about to allocate a new one */
 		object = DMU_NEW_OBJECT;
@@ -1286,7 +1291,6 @@ receive_object(struct receive_writer_arg *rwa, struct drr_object *drro,
 				return (err);
 
 			err = dmu_free_long_object(rwa->os, slot);
-
 			if (err != 0)
 				return (err);
 
@@ -1322,6 +1326,7 @@ receive_object(struct receive_writer_arg *rwa, struct drr_object *drro,
 		    drro->drr_bonustype, drro->drr_bonuslen,
 		    dn_slots << DNODE_SHIFT, tx);
 	}
+
 	if (err != 0) {
 		dmu_tx_commit(tx);
 		return (SET_ERROR(EINVAL));
