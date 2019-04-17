@@ -1,111 +1,5 @@
-// SoftEther VPN Source Code - Stable Edition Repository
+// SoftEther VPN Source Code - Developer Edition Master Branch
 // Cedar Communication Module
-// 
-// SoftEther VPN Server, Client and Bridge are free software under GPLv2.
-// 
-// Copyright (c) Daiyuu Nobori.
-// Copyright (c) SoftEther VPN Project, University of Tsukuba, Japan.
-// Copyright (c) SoftEther Corporation.
-// 
-// All Rights Reserved.
-// 
-// http://www.softether.org/
-// 
-// Author: Daiyuu Nobori, Ph.D.
-// Comments: Tetsuo Sugiyama, Ph.D.
-// 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// version 2 as published by the Free Software Foundation.
-// 
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU General Public License for more details.
-// 
-// You should have received a copy of the GNU General Public License version 2
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-// CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-// TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-// SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-// 
-// THE LICENSE AGREEMENT IS ATTACHED ON THE SOURCE-CODE PACKAGE
-// AS "LICENSE.TXT" FILE. READ THE TEXT FILE IN ADVANCE TO USE THE SOFTWARE.
-// 
-// 
-// THIS SOFTWARE IS DEVELOPED IN JAPAN, AND DISTRIBUTED FROM JAPAN,
-// UNDER JAPANESE LAWS. YOU MUST AGREE IN ADVANCE TO USE, COPY, MODIFY,
-// MERGE, PUBLISH, DISTRIBUTE, SUBLICENSE, AND/OR SELL COPIES OF THIS
-// SOFTWARE, THAT ANY JURIDICAL DISPUTES WHICH ARE CONCERNED TO THIS
-// SOFTWARE OR ITS CONTENTS, AGAINST US (SOFTETHER PROJECT, SOFTETHER
-// CORPORATION, DAIYUU NOBORI OR OTHER SUPPLIERS), OR ANY JURIDICAL
-// DISPUTES AGAINST US WHICH ARE CAUSED BY ANY KIND OF USING, COPYING,
-// MODIFYING, MERGING, PUBLISHING, DISTRIBUTING, SUBLICENSING, AND/OR
-// SELLING COPIES OF THIS SOFTWARE SHALL BE REGARDED AS BE CONSTRUED AND
-// CONTROLLED BY JAPANESE LAWS, AND YOU MUST FURTHER CONSENT TO
-// EXCLUSIVE JURISDICTION AND VENUE IN THE COURTS SITTING IN TOKYO,
-// JAPAN. YOU MUST WAIVE ALL DEFENSES OF LACK OF PERSONAL JURISDICTION
-// AND FORUM NON CONVENIENS. PROCESS MAY BE SERVED ON EITHER PARTY IN
-// THE MANNER AUTHORIZED BY APPLICABLE LAW OR COURT RULE.
-// 
-// USE ONLY IN JAPAN. DO NOT USE THIS SOFTWARE IN ANOTHER COUNTRY UNLESS
-// YOU HAVE A CONFIRMATION THAT THIS SOFTWARE DOES NOT VIOLATE ANY
-// CRIMINAL LAWS OR CIVIL RIGHTS IN THAT PARTICULAR COUNTRY. USING THIS
-// SOFTWARE IN OTHER COUNTRIES IS COMPLETELY AT YOUR OWN RISK. THE
-// SOFTETHER VPN PROJECT HAS DEVELOPED AND DISTRIBUTED THIS SOFTWARE TO
-// COMPLY ONLY WITH THE JAPANESE LAWS AND EXISTING CIVIL RIGHTS INCLUDING
-// PATENTS WHICH ARE SUBJECTS APPLY IN JAPAN. OTHER COUNTRIES' LAWS OR
-// CIVIL RIGHTS ARE NONE OF OUR CONCERNS NOR RESPONSIBILITIES. WE HAVE
-// NEVER INVESTIGATED ANY CRIMINAL REGULATIONS, CIVIL LAWS OR
-// INTELLECTUAL PROPERTY RIGHTS INCLUDING PATENTS IN ANY OF OTHER 200+
-// COUNTRIES AND TERRITORIES. BY NATURE, THERE ARE 200+ REGIONS IN THE
-// WORLD, WITH DIFFERENT LAWS. IT IS IMPOSSIBLE TO VERIFY EVERY
-// COUNTRIES' LAWS, REGULATIONS AND CIVIL RIGHTS TO MAKE THE SOFTWARE
-// COMPLY WITH ALL COUNTRIES' LAWS BY THE PROJECT. EVEN IF YOU WILL BE
-// SUED BY A PRIVATE ENTITY OR BE DAMAGED BY A PUBLIC SERVANT IN YOUR
-// COUNTRY, THE DEVELOPERS OF THIS SOFTWARE WILL NEVER BE LIABLE TO
-// RECOVER OR COMPENSATE SUCH DAMAGES, CRIMINAL OR CIVIL
-// RESPONSIBILITIES. NOTE THAT THIS LINE IS NOT LICENSE RESTRICTION BUT
-// JUST A STATEMENT FOR WARNING AND DISCLAIMER.
-// 
-// 
-// SOURCE CODE CONTRIBUTION
-// ------------------------
-// 
-// Your contribution to SoftEther VPN Project is much appreciated.
-// Please send patches to us through GitHub.
-// Read the SoftEther VPN Patch Acceptance Policy in advance:
-// http://www.softether.org/5-download/src/9.patch
-// 
-// 
-// DEAR SECURITY EXPERTS
-// ---------------------
-// 
-// If you find a bug or a security vulnerability please kindly inform us
-// about the problem immediately so that we can fix the security problem
-// to protect a lot of users around the world as soon as possible.
-// 
-// Our e-mail address for security reports is:
-// softether-vpn-security [at] softether.org
-// 
-// Please note that the above e-mail address is not a technical support
-// inquiry address. If you need technical assistance, please visit
-// http://www.softether.org/ and ask your question on the users forum.
-// 
-// Thank you for your cooperation.
-// 
-// 
-// NO MEMORY OR RESOURCE LEAKS
-// ---------------------------
-// 
-// The memory-leaks and resource-leaks verification under the stress
-// test has been passed before release this source code.
 
 
 // Protocol.c
@@ -161,10 +55,10 @@ bool TryGetRootCertChain(LIST *o, X *x, bool auto_save, X **found_root_x)
 		UINT i;
 		DIRLIST *dir;
 		wchar_t dirname[MAX_SIZE];
-//		wchar_t exedir[MAX_SIZE];
+		wchar_t exedir[MAX_SIZE];
 
-//		GetExeDirW(exedir, sizeof(exedir));
-		CombinePathW(dirname, sizeof(dirname), L"/var/lib", L"chain_certs");
+		GetExeDirW(exedir, sizeof(exedir));
+		CombinePathW(dirname, sizeof(dirname), exedir, L"chain_certs");
 		MakeDirExW(dirname);
 
 		if (auto_save)
@@ -461,7 +355,7 @@ void AddXToCertList(LIST *o, X *x)
 void AddAllChainCertsToCertList(LIST *o)
 {
 	wchar_t dirname[MAX_SIZE];
-//	wchar_t exedir[MAX_SIZE];
+	wchar_t exedir[MAX_SIZE];
 	DIRLIST *dir;
 	// Validate arguments
 	if (o == NULL)
@@ -469,9 +363,9 @@ void AddAllChainCertsToCertList(LIST *o)
 		return;
 	}
 
-//	GetExeDirW(exedir, sizeof(exedir));
+	GetExeDirW(exedir, sizeof(exedir));
 
-	CombinePathW(dirname, sizeof(dirname), L"/var/lib", L"chain_certs");
+	CombinePathW(dirname, sizeof(dirname), exedir, L"chain_certs");
 
 	MakeDirExW(dirname);
 
@@ -768,14 +662,11 @@ void UpdateClientThreadProc(THREAD *thread, void *param)
 // Update the configuration of the update client
 void SetUpdateClientSetting(UPDATE_CLIENT *c, UPDATE_CLIENT_SETTING *s)
 {
-	bool old_disable;
 	// Validate arguments
 	if (c == NULL || s == NULL)
 	{
 		return;
 	}
-
-	old_disable = c->Setting.DisableCheck;
 
 	Copy(&c->Setting, s, sizeof(UPDATE_CLIENT_SETTING));
 
@@ -873,7 +764,7 @@ void GenerateMachineUniqueHash(void *data)
 	WriteBuf(b, osinfo->OsVendorName, StrLen(osinfo->OsVendorName));
 	WriteBuf(b, osinfo->OsVersion, StrLen(osinfo->OsVersion));
 
-	Hash(data, b->Buf, b->Size, true);
+	Sha0(data, b->Buf, b->Size);
 
 	FreeBuf(b);
 }
@@ -903,95 +794,6 @@ void NodeInfoToStr(wchar_t *str, UINT size, NODE_INFO *info)
 		info->HubName, unique_id);
 }
 
-// Comparison of node information
-bool CompareNodeInfo(NODE_INFO *a, NODE_INFO *b)
-{
-	// Validate arguments
-	if (a == NULL || b == NULL)
-	{
-		return false;
-	}
-
-	if (StrCmp(a->ClientProductName, b->ClientProductName) != 0)
-	{
-		return false;
-	}
-	if (a->ClientProductVer != b->ClientProductVer)
-	{
-		return false;
-	}
-	if (a->ClientProductBuild != b->ClientProductBuild)
-	{
-		return false;
-	}
-	if (StrCmp(a->ServerProductName, b->ServerProductName) != 0)
-	{
-		return false;
-	}
-	if (a->ServerProductVer != b->ServerProductVer)
-	{
-		return false;
-	}
-	if (a->ServerProductBuild != b->ServerProductBuild)
-	{
-		return false;
-	}
-	if (StrCmp(a->ClientOsName, b->ClientOsName) != 0)
-	{
-		return false;
-	}
-	if (StrCmp(a->ClientOsVer, b->ClientOsVer) != 0)
-	{
-		return false;
-	}
-	if (StrCmp(a->ClientOsProductId, b->ClientOsProductId) != 0)
-	{
-		return false;
-	}
-	if (StrCmp(a->ClientHostname, b->ClientHostname) != 0)
-	{
-		return false;
-	}
-	if (a->ClientIpAddress != b->ClientIpAddress)
-	{
-		return false;
-	}
-	if (StrCmp(a->ServerHostname, b->ServerHostname) != 0)
-	{
-		return false;
-	}
-	if (a->ServerIpAddress != b->ServerIpAddress)
-	{
-		return false;
-	}
-	if (a->ServerPort != b->ServerPort)
-	{
-		return false;
-	}
-	if (StrCmp(a->ProxyHostname, b->ProxyHostname) != 0)
-	{
-		return false;
-	}
-	if (a->ProxyIpAddress != b->ProxyIpAddress)
-	{
-		return false;
-	}
-	if (a->ProxyPort != b->ProxyPort)
-	{
-		return false;
-	}
-	if (StrCmp(a->HubName, b->HubName) != 0)
-	{
-		return false;
-	}
-	if (Cmp(a->UniqueId, b->UniqueId, 16) != 0)
-	{
-		return false;
-	}
-
-	return true;
-}
-
 // Accept the password change
 UINT ChangePasswordAccept(CONNECTION *c, PACK *p)
 {
@@ -1005,7 +807,6 @@ UINT ChangePasswordAccept(CONNECTION *c, PACK *p)
 	UCHAR check_secure_old_password[SHA1_SIZE];
 	UINT ret = ERR_NO_ERROR;
 	HUB *hub;
-	bool save = false;
 	// Validate arguments
 	if (c == NULL || p == NULL)
 	{
@@ -1107,7 +908,6 @@ UINT ChangePasswordAccept(CONNECTION *c, PACK *p)
 									Copy(pw->NtLmSecureHash, new_password_ntlm, MD5_SIZE);
 								}
 								HLog(hub, "LH_CHANGE_PASSWORD_5", c->Name, username);
-								save = true;
 							}
 						}
 						else
@@ -1265,7 +1065,6 @@ bool ServerAccept(CONNECTION *c)
 	char groupname[MAX_SIZE];
 	UCHAR session_key[SHA1_SIZE];
 	UCHAR ticket[SHA1_SIZE];
-	RC4_KEY_PAIR key_pair;
 	UINT authtype;
 	POLICY *policy;
 	UINT assigned_vlan_id = 0;
@@ -1284,7 +1083,6 @@ bool ServerAccept(CONNECTION *c)
 	IP udp_acceleration_client_ip;
 	UCHAR udp_acceleration_client_key[UDP_ACCELERATION_COMMON_KEY_SIZE];
 	UINT udp_acceleration_client_port;
-	bool use_fast_rc4;
 	bool admin_mode = false;
 	UINT direction;
 	UINT max_connection;
@@ -1491,8 +1289,8 @@ bool ServerAccept(CONNECTION *c)
 		{
 			StrCpy(c->ClientStr, sizeof(c->ClientStr), "Unknown");
 		}
-		c->ServerVer = CEDAR_VER;
-		c->ServerBuild = CEDAR_BUILD;
+		c->ServerVer = GetCedarVersionNumber();
+		c->ServerBuild = CEDAR_VERSION_BUILD;
 
 		// Get the NODE_INFO
 		Zero(&node, sizeof(node));
@@ -1576,7 +1374,7 @@ bool ServerAccept(CONNECTION *c)
 
 		if (hub->ForceDisableComm)
 		{
-			// Commnunication function is disabled
+			// Communication function is disabled
 			FreePack(p);
 			c->Err = ERR_SERVER_CANT_ACCEPT;
 			error_detail = "ERR_COMM_DISABLED";
@@ -1584,8 +1382,8 @@ bool ServerAccept(CONNECTION *c)
 			goto CLEANUP;
 		}
 
-//		if (GetGlobalServerFlag(GSF_DISABLE_AC) == 0)
-//		{
+		if (GetGlobalServerFlag(GSF_DISABLE_AC) == 0)
+		{
 			if (hub->HubDb != NULL && c->FirstSock != NULL)
 			{
 				IP ip;
@@ -1605,7 +1403,7 @@ bool ServerAccept(CONNECTION *c)
 					goto CLEANUP;
 				}
 			}
-//		}
+		}
 
 		Lock(hub->lock);
 		{
@@ -1643,7 +1441,6 @@ bool ServerAccept(CONNECTION *c)
 			use_compress = PackGetInt(p, "use_compress") == 0 ? false : true;
 			max_connection = PackGetInt(p, "max_connection");
 			half_connection = PackGetInt(p, "half_connection") == 0 ? false : true;
-			use_fast_rc4 = PackGetInt(p, "use_fast_rc4") == 0 ? false : true;
 			qos = PackGetInt(p, "qos") ? true : false;
 			client_id = PackGetInt(p, "client_id");
 			adjust_mss = PackGetInt(p, "adjust_mss");
@@ -1795,6 +1592,9 @@ bool ServerAccept(CONNECTION *c)
 				case AUTHTYPE_TICKET:
 					authtype_str = _UU("LH_AUTH_TICKET");
 					break;
+				case AUTHTYPE_OPENVPN_CERT:
+					authtype_str = _UU("LH_AUTH_OPENVPN_CERT");
+					break;
 				}
 				IPToStr(ip1, sizeof(ip1), &c->FirstSock->RemoteIP);
 				IPToStr(ip2, sizeof(ip2), &c->FirstSock->LocalIP);
@@ -1848,7 +1648,7 @@ bool ServerAccept(CONNECTION *c)
 						Add(o, "p");
 						Add(o, "guest");
 						Add(o, "anony");
-						Add(o, "anonymouse");
+						Add(o, "anonymous");
 						Add(o, "password");
 						Add(o, "passwd");
 						Add(o, "pass");
@@ -2003,10 +1803,10 @@ bool ServerAccept(CONNECTION *c)
 						{
 							// Attempt external authentication registered users
 							bool fail_ext_user_auth = false;
-//							if (GetGlobalServerFlag(GSF_DISABLE_RADIUS_AUTH) != 0)
-//							{
-//								fail_ext_user_auth = true;
-//							}
+							if (GetGlobalServerFlag(GSF_DISABLE_RADIUS_AUTH) != 0)
+							{
+								fail_ext_user_auth = true;
+							}
 
 							if (fail_ext_user_auth == false)
 							{
@@ -2025,10 +1825,10 @@ bool ServerAccept(CONNECTION *c)
 							bool b = false;
 							bool fail_ext_user_auth = false;
 
-//							if (GetGlobalServerFlag(GSF_DISABLE_RADIUS_AUTH) != 0)
-//							{
-//								fail_ext_user_auth = true;
-//							}
+							if (GetGlobalServerFlag(GSF_DISABLE_RADIUS_AUTH) != 0)
+							{
+								fail_ext_user_auth = true;
+							}
 
 							if (fail_ext_user_auth == false)
 							{
@@ -2066,8 +1866,8 @@ bool ServerAccept(CONNECTION *c)
 					break;
 
 				case CLIENT_AUTHTYPE_CERT:
-//					if (GetGlobalServerFlag(GSF_DISABLE_CERT_AUTH) == 0)
-//					{
+					if (GetGlobalServerFlag(GSF_DISABLE_CERT_AUTH) == 0)
+					{
 						// Certificate authentication
 						cert_size = PackGetDataSize(p, "cert");
 						if (cert_size >= 1 && cert_size <= 100000)
@@ -2115,17 +1915,61 @@ bool ServerAccept(CONNECTION *c)
 							}
 							Free(cert_buf);
 						}
-//					}
-//					else
-//					{
-//						// Certificate authentication is not supported in the open source version
-//						HLog(hub, "LH_AUTH_CERT_NOT_SUPPORT_ON_OPEN_SOURCE", c->Name, username);
-//						Unlock(hub->lock);
-//						ReleaseHub(hub);
-//						FreePack(p);
-//						c->Err = ERR_AUTHTYPE_NOT_SUPPORTED;
-//						goto CLEANUP;
-//					}
+					}
+					else
+					{
+						// Certificate authentication is not supported in the open source version
+						HLog(hub, "LH_AUTH_CERT_NOT_SUPPORT_ON_OPEN_SOURCE", c->Name, username);
+						Unlock(hub->lock);
+						ReleaseHub(hub);
+						FreePack(p);
+						c->Err = ERR_AUTHTYPE_NOT_SUPPORTED;
+						goto CLEANUP;
+					}
+					break;
+
+				case AUTHTYPE_OPENVPN_CERT:
+					// For OpenVPN; mostly same as CLIENT_AUTHTYPE_CERT, but without
+					// signature verification, because it was already performed during TLS handshake.
+					if (c->IsInProc)
+					{
+						// Certificate authentication
+						cert_size = PackGetDataSize(p, "cert");
+						if (cert_size >= 1 && cert_size <= 100000)
+						{
+							cert_buf = ZeroMalloc(cert_size);
+							if (PackGetData(p, "cert", cert_buf))
+							{
+								BUF *b = NewBuf();
+								X *x;
+								WriteBuf(b, cert_buf, cert_size);
+								x = BufToX(b, false);
+								if (x != NULL && x->is_compatible_bit)
+								{
+									Debug("Got to SamAuthUserByCert %s\n", username); // XXX
+									// Check whether the certificate is valid.
+									auth_ret = SamAuthUserByCert(hub, username, x);
+									if (auth_ret)
+									{
+										// Copy the certificate
+										c->ClientX = CloneX(x);
+									}
+								}
+								FreeX(x);
+								FreeBuf(b);
+							}
+							Free(cert_buf);
+						}
+					}
+					else
+					{
+						// OpenVPN certificate authentication cannot be used directly by external clients
+						Unlock(hub->lock);
+						ReleaseHub(hub);
+						FreePack(p);
+						c->Err = ERR_AUTHTYPE_NOT_SUPPORTED;
+						goto CLEANUP;
+					}
 					break;
 
 				default:
@@ -2901,12 +2745,9 @@ bool ServerAccept(CONNECTION *c)
 			// VLAN ID
 			if (assigned_vlan_id != 0)
 			{
-				if (policy != NULL)
+				if (policy->VLanId == 0)
 				{
-					if (policy->VLanId == 0)
-					{
-						policy->VLanId = assigned_vlan_id;
-					}
+					policy->VLanId = assigned_vlan_id;
 				}
 			}
 
@@ -3090,21 +2931,12 @@ bool ServerAccept(CONNECTION *c)
 			// Set the parameters
 			s->MaxConnection = max_connection;
 			s->UseEncrypt = use_encrypt;
-			if (s->UseEncrypt && use_fast_rc4)
-			{
-				s->UseFastRC4 = use_fast_rc4;
-			}
 			s->UseCompress = use_compress;
 			s->HalfConnection = half_connection;
 			s->Timeout = timeout;
 			s->QoS = qos;
 			s->NoReconnectToSession = no_reconnect_to_session;
-
-
-			if (policy != NULL)
-			{
-				s->VLanId = policy->VLanId;
-			}
+			s->VLanId = policy->VLanId;
 
 			// User name
 			s->Username = CopyStr(username);
@@ -3130,7 +2962,7 @@ bool ServerAccept(CONNECTION *c)
 
 		PackAddBool(p, "suppress_client_update_notification", suppress_client_update_notification);
 
-		if (s->InProcMode)
+		if (s != NULL && s->InProcMode)
 		{
 			if (IsZero(mschap_v2_server_response_20, sizeof(mschap_v2_server_response_20)) == false)
 			{
@@ -3255,26 +3087,6 @@ bool ServerAccept(CONNECTION *c)
 
 		Free(msg);
 
-
-		if (s->UseFastRC4)
-		{
-			// Generate a RC4 key pair
-			GenerateRC4KeyPair(&key_pair);
-
-			// Add to Welcome packet
-			PackAddData(p, "rc4_key_client_to_server", key_pair.ClientToServerKey, sizeof(key_pair.ClientToServerKey));
-			PackAddData(p, "rc4_key_server_to_client", key_pair.ServerToClientKey, sizeof(key_pair.ServerToClientKey));
-			{
-				char key1[64], key2[64];
-				BinToStr(key1, sizeof(key1), key_pair.ClientToServerKey, 16);
-				BinToStr(key2, sizeof(key2), key_pair.ServerToClientKey, 16);
-				Debug(
-					"Client to Server Key: %s\n"
-					"Server to Client Key: %s\n",
-					key1, key2);
-			}
-		}
-
 		// Brand string for the connection limit
 		{
 			char *branded_cfroms = _SS("BRANDED_C_FROM_S");
@@ -3312,24 +3124,6 @@ bool ServerAccept(CONNECTION *c)
 			// The direction of the first socket is client to server
 			TCPSOCK *ts = (TCPSOCK *)LIST_DATA(c->Tcp->TcpSockList, 0);
 			ts->Direction = TCP_CLIENT_TO_SERVER;
-		}
-
-		if (s->UseFastRC4)
-		{
-			// Set the RC4 key information to the first TCP connection
-			TCPSOCK *ts = (TCPSOCK *)LIST_DATA(c->Tcp->TcpSockList, 0);
-			Copy(&ts->Rc4KeyPair, &key_pair, sizeof(RC4_KEY_PAIR));
-
-			InitTcpSockRc4Key(ts, true);
-		}
-
-		if (s->UseEncrypt && s->UseFastRC4 == false)
-		{
-			s->UseSSLDataEncryption = true;
-		}
-		else
-		{
-			s->UseSSLDataEncryption = false;
 		}
 
 		if (s->Hub->Type == HUB_TYPE_FARM_DYNAMIC && s->Cedar->Server != NULL && s->Cedar->Server->ServerType == SERVER_TYPE_FARM_CONTROLLER)
@@ -3497,12 +3291,6 @@ bool ServerAccept(CONNECTION *c)
 			goto CLEANUP;
 		}
 
-		// Generate a high-speed RC4 encryption key
-		if (s->UseFastRC4)
-		{
-			GenerateRC4KeyPair(&key_pair);
-		}
-
 		// Add the socket of this connection to the connection list of the session (TCP)
 		sock = c->FirstSock;
 		ts = NewTcpSock(sock);
@@ -3542,33 +3330,9 @@ bool ServerAccept(CONNECTION *c)
 		}
 		UnlockList(s->Connection->Tcp->TcpSockList);
 
-		if (s->UseFastRC4)
-		{
-			// Set the RC4 key information
-			Copy(&ts->Rc4KeyPair, &key_pair, sizeof(RC4_KEY_PAIR));
-
-			InitTcpSockRc4Key(ts, true);
-		}
-
 		// Return a success result
 		p = PackError(ERR_NO_ERROR);
 		PackAddInt(p, "direction", direction);
-
-		if (s->UseFastRC4)
-		{
-			// Add a RC4 key information
-			PackAddData(p, "rc4_key_client_to_server", key_pair.ClientToServerKey, sizeof(key_pair.ClientToServerKey));
-			PackAddData(p, "rc4_key_server_to_client", key_pair.ServerToClientKey, sizeof(key_pair.ServerToClientKey));
-			{
-				char key1[64], key2[64];
-				BinToStr(key1, sizeof(key1), key_pair.ClientToServerKey, 16);
-				BinToStr(key2, sizeof(key2), key_pair.ServerToClientKey, 16);
-				Debug(
-					"Client to Server Key: %s\n"
-					"Server to Client Key: %s\n",
-					key1, key2);
-			}
-		}
 
 		HttpServerSend(c->FirstSock, p);
 		FreePack(p);
@@ -3830,7 +3594,6 @@ void CreateNodeInfo(NODE_INFO *info, CONNECTION *c)
 	OS_INFO *os;
 	char *product_id;
 	IP ip;
-	bool is_vgc = false;
 	// Validate arguments
 	if (c == NULL)
 	{
@@ -3956,7 +3719,7 @@ SOCK *ClientAdditionalConnectToServer(CONNECTION *c)
 	}
 
 	// Socket connection
-	s = ClientConnectGetSocket(c, true, (c->DontUseTls1 ? false : true));
+	s = ClientConnectGetSocket(c, true);
 	if (s == NULL)
 	{
 		// Connection failure
@@ -3991,7 +3754,7 @@ SOCK *ClientAdditionalConnectToServer(CONNECTION *c)
 	SetTimeout(s, CONNECTING_TIMEOUT);
 
 	// Start the SSL communication
-	if (StartSSLEx(s, NULL, NULL, (c->DontUseTls1 ? false : true), 0, c->ServerName) == false)
+	if (StartSSLEx(s, NULL, NULL, 0, c->ServerName) == false)
 	{
 		// SSL communication failure
 		Disconnect(s);
@@ -4016,216 +3779,6 @@ SOCK *ClientAdditionalConnectToServer(CONNECTION *c)
 	}
 
 	return s;
-}
-
-// Remove the key and certificate in the secure device
-UINT SecureDelete(UINT device_id, char *pin, char *cert_name, char *key_name)
-{
-	SECURE *sec;
-	// Validate arguments
-	if (pin == NULL || device_id == 0)
-	{
-		return ERR_INTERNAL_ERROR;
-	}
-
-	// Open the device
-	sec = OpenSec(device_id);
-	if (sec == NULL)
-	{
-		return ERR_SECURE_DEVICE_OPEN_FAILED;
-	}
-
-	// Open the session
-	if (OpenSecSession(sec, 0) == false)
-	{
-		CloseSec(sec);
-		return ERR_SECURE_DEVICE_OPEN_FAILED;
-	}
-
-	// Login
-	if (LoginSec(sec, pin) == false)
-	{
-		CloseSecSession(sec);
-		CloseSec(sec);
-		return ERR_SECURE_PIN_LOGIN_FAILED;
-	}
-
-	// Delete the certificate
-	if (cert_name != NULL)
-	{
-		DeleteSecCert(sec, cert_name);
-	}
-
-	// Delete the Private key
-	if (key_name != NULL)
-	{
-		DeleteSecKey(sec, key_name);
-	}
-
-	// Log out
-	LogoutSec(sec);
-
-	// Close the session
-	CloseSecSession(sec);
-
-	// Close the device
-	CloseSec(sec);
-
-	return ERR_NO_ERROR;
-}
-
-// Enumerate certificates and keys in the secure device
-UINT SecureEnum(UINT device_id, char *pin, TOKEN_LIST **cert_list, TOKEN_LIST **key_list)
-{
-	SECURE *sec;
-	LIST *o;
-	LIST *cert_name_list, *key_name_list;
-	// Validate arguments
-	if (pin == NULL || device_id == 0 || cert_list == NULL || key_list == NULL)
-	{
-		return ERR_INTERNAL_ERROR;
-	}
-
-	// Open the device
-	sec = OpenSec(device_id);
-	if (sec == NULL)
-	{
-		return ERR_SECURE_DEVICE_OPEN_FAILED;
-	}
-
-	// Open the session
-	if (OpenSecSession(sec, 0) == false)
-	{
-		CloseSec(sec);
-		return ERR_SECURE_DEVICE_OPEN_FAILED;
-	}
-
-	// Login
-	if (LoginSec(sec, pin) == false)
-	{
-		CloseSecSession(sec);
-		CloseSec(sec);
-		return ERR_SECURE_PIN_LOGIN_FAILED;
-	}
-
-	// Enumerate objects
-	if ((o = EnumSecObject(sec)) != NULL)
-	{
-		UINT i;
-
-		cert_name_list = NewList(CompareStr);
-		key_name_list = NewList(CompareStr);
-
-		for (i = 0;i < LIST_NUM(o);i++)
-		{
-			SEC_OBJ *obj = LIST_DATA(o, i);
-
-			if (obj->Type == SEC_X)
-			{
-				Add(cert_name_list, CopyStr(obj->Name));
-			}
-			else if (obj->Type == SEC_K)
-			{
-				Add(key_name_list, CopyStr(obj->Name));
-			}
-		}
-
-		Sort(cert_name_list);
-		Sort(key_name_list);
-
-		*cert_list = ListToTokenList(cert_name_list);
-		*key_list = ListToTokenList(key_name_list);
-
-		// Release the memory
-		FreeStrList(cert_name_list);
-		FreeStrList(key_name_list);
-		FreeEnumSecObject(o);
-	}
-	else
-	{
-		*cert_list = NullToken();
-		*key_list = NullToken();
-	}
-
-	// Log out
-	LogoutSec(sec);
-
-	// Close the session
-	CloseSecSession(sec);
-
-	// Close the device
-	CloseSec(sec);
-
-	return ERR_NO_ERROR;
-}
-
-// Record the certificate and key to secure device
-UINT SecureWrite(UINT device_id, char *cert_name, X *x, char *key_name, K *k, char *pin)
-{
-	SECURE *sec;
-	bool failed;
-	// Validate arguments
-	if (pin == NULL || device_id == 0 || cert_name == NULL || x == NULL || key_name == NULL || k == NULL)
-	{
-		return ERR_INTERNAL_ERROR;
-	}
-
-	// Open the device
-	sec = OpenSec(device_id);
-	if (sec == NULL)
-	{
-		return ERR_SECURE_DEVICE_OPEN_FAILED;
-	}
-
-	// Open the session
-	if (OpenSecSession(sec, 0) == false)
-	{
-		CloseSec(sec);
-		return ERR_SECURE_DEVICE_OPEN_FAILED;
-	}
-
-	// Login
-	if (LoginSec(sec, pin) == false)
-	{
-		CloseSecSession(sec);
-		CloseSec(sec);
-		return ERR_SECURE_PIN_LOGIN_FAILED;
-	}
-
-	// Registration
-	failed = false;
-
-	// Register the certificate
-	if (WriteSecCert(sec, true, cert_name, x) == false)
-	{
-		failed = true;
-	}
-
-	// Register the private key
-	if (WriteSecKey(sec, true, key_name, k) == false)
-	{
-		failed = true;
-	}
-
-	// Log out
-	LogoutSec(sec);
-
-	// Close the session
-	CloseSecSession(sec);
-
-	// Close the device
-	CloseSec(sec);
-
-	if (failed == false)
-	{
-		// Success
-		return ERR_NO_ERROR;
-	}
-	else
-	{
-		// Failure
-		return ERR_SECURE_CANT_WRITE;
-	}
 }
 
 // Attempt to sign by the secure device
@@ -4306,7 +3859,7 @@ bool ClientAdditionalConnect(CONNECTION *c, THREAD *t)
 	TCPSOCK *ts;
 	UINT err;
 	UINT direction;
-	RC4_KEY_PAIR key_pair;
+
 	// Validate arguments
 	if (c == NULL)
 	{
@@ -4370,28 +3923,6 @@ bool ClientAdditionalConnect(CONNECTION *c, THREAD *t)
 	err = GetErrorFromPack(p);
 	direction = PackGetInt(p, "direction");
 
-	if (c->Session->UseFastRC4)
-	{
-		// Get the RC4 key information
-		if (PackGetDataSize(p, "rc4_key_client_to_server") == 16)
-		{
-			PackGetData(p, "rc4_key_client_to_server", key_pair.ClientToServerKey);
-		}
-		if (PackGetDataSize(p, "rc4_key_server_to_client") == 16)
-		{
-			PackGetData(p, "rc4_key_server_to_client", key_pair.ServerToClientKey);
-		}
-		{
-			char key1[64], key2[64];
-			BinToStr(key1, sizeof(key1), key_pair.ClientToServerKey, 16);
-			BinToStr(key2, sizeof(key2), key_pair.ServerToClientKey, 16);
-			Debug(
-				"Client to Server Key: %s\n"
-				"Server to Client Key: %s\n",
-				key1, key2);
-		}
-	}
-
 	FreePack(p);
 	p = NULL;
 
@@ -4434,14 +3965,6 @@ bool ClientAdditionalConnect(CONNECTION *c, THREAD *t)
 		Debug("New Half Connection: %s\n",
 			direction == TCP_SERVER_TO_CLIENT ? "TCP_SERVER_TO_CLIENT" : "TCP_CLIENT_TO_SERVER"
 			);
-	}
-
-	if (c->Session->UseFastRC4)
-	{
-		// Set the RC4 encryption key
-		Copy(&ts->Rc4KeyPair, &key_pair, sizeof(RC4_KEY_PAIR));
-
-		InitTcpSockRc4Key(ts, false);
 	}
 
 	// Issue the Cancel to the session
@@ -4579,7 +4102,7 @@ void ClientCheckServerCertThread(THREAD *thread, void *param)
 	NoticeThreadInit(thread);
 
 	// Query for the selection to the user
-	p->Ok = p->CheckCertProc(p->Connection->Session, p->Connection, p->ServerX, &p->Exipred);
+	p->Ok = p->CheckCertProc(p->Connection->Session, p->Connection, p->ServerX, &p->Expired);
 	p->UserSelected = true;
 }
 
@@ -4725,7 +4248,7 @@ bool ClientCheckServerCert(CONNECTION *c, bool *expired)
 
 	if (expired != NULL)
 	{
-		*expired = p->Exipred;
+		*expired = p->Expired;
 	}
 
 	ret = p->Ok;
@@ -4749,7 +4272,6 @@ bool ClientConnect(CONNECTION *c)
 	char session_name[MAX_SESSION_NAME_LEN + 1];
 	char connection_name[MAX_CONNECTION_NAME_LEN + 1];
 	UCHAR session_key[SHA1_SIZE];
-	RC4_KEY_PAIR key_pair;
 	POLICY *policy;
 	bool expired = false;
 	IP server_ip;
@@ -4877,7 +4399,8 @@ REDIRECTED:
 			c->Err = ERR_SERVER_CERT_EXPIRES;
 		}
 
-		if (c->Session->LinkModeClient == false && c->Err == ERR_CERT_NOT_TRUSTED)
+		if (c->Session->LinkModeClient == false && c->Err == ERR_CERT_NOT_TRUSTED
+			&& (c->Session->Account == NULL || ! c->Session->Account->RetryOnServerCert))
 		{
 			c->Session->ForceStopFlag = true;
 		}
@@ -5097,10 +4620,6 @@ REDIRECTED:
 		c->Session->UseCompress = PackGetInt(p, "use_compress") == 0 ? false : true;
 		c->Session->UseEncrypt = PackGetInt(p, "use_encrypt") == 0 ? false : true;
 		c->Session->NoSendSignature = PackGetBool(p, "no_send_signature");
-		if (c->Session->UseEncrypt)
-		{
-			c->Session->UseFastRC4 = PackGetInt(p, "use_fast_rc4") == 0 ? false : true;
-		}
 		c->Session->HalfConnection = PackGetInt(p, "half_connection") == 0 ? false : true;
 		c->Session->IsAzureSession = PackGetInt(p, "is_azure_session") == 0 ? false : true;
 		c->Session->Timeout = PackGetInt(p, "timeout");
@@ -5163,31 +4682,9 @@ REDIRECTED:
 			}
 		}
 
-		if (c->Session->UseFastRC4)
-		{
-			// Get the RC4 key information
-			if (PackGetDataSize(p, "rc4_key_client_to_server") == 16)
-			{
-				PackGetData(p, "rc4_key_client_to_server", key_pair.ClientToServerKey);
-			}
-			if (PackGetDataSize(p, "rc4_key_server_to_client") == 16)
-			{
-				PackGetData(p, "rc4_key_server_to_client", key_pair.ServerToClientKey);
-			}
-			{
-				char key1[64], key2[64];
-				BinToStr(key1, sizeof(key1), key_pair.ClientToServerKey, 16);
-				BinToStr(key2, sizeof(key2), key_pair.ServerToClientKey, 16);
-				Debug(
-					"Client to Server Key: %s\n"
-					"Server to Client Key: %s\n",
-					key1, key2);
-			}
-		}
-
 		sess->EnableBulkOnRUDP = false;
 		sess->EnableHMacOnBulkOfRUDP = false;
-		if (s != NULL && s->IsRUDPSocket && s->BulkRecvKey != NULL && s->BulkSendKey != NULL)
+		if (s->IsRUDPSocket && s->BulkRecvKey != NULL && s->BulkSendKey != NULL)
 		{
 			// Bulk transfer on R-UDP
 			if (PackGetBool(p, "enable_bulk_on_rudp"))
@@ -5346,6 +4843,14 @@ REDIRECTED:
 
 	PrintStatus(sess, _UU("STATUS_9"));
 
+#ifdef OS_UNIX
+	// Set TUN up if session has NicDownOnDisconnect set
+	if (c->Session->NicDownOnDisconnect != NULL)
+	{
+		UnixVLanSetState(c->Session->ClientOption->DeviceName, true);
+	}
+#endif
+
 	// Shift the connection to the tunneling mode
 	StartTunnelingMode(c);
 	s = NULL;
@@ -5355,25 +4860,6 @@ REDIRECTED:
 		// Processing in the case of half-connection
 		TCPSOCK *ts = (TCPSOCK *)LIST_DATA(c->Tcp->TcpSockList, 0);
 		ts->Direction = TCP_CLIENT_TO_SERVER;
-	}
-
-	if (c->Session->UseFastRC4)
-	{
-		// Set the high-speed RC4 encryption key
-		TCPSOCK *ts = (TCPSOCK *)LIST_DATA(c->Tcp->TcpSockList, 0);
-		Copy(&ts->Rc4KeyPair, &key_pair, sizeof(key_pair));
-
-		InitTcpSockRc4Key(ts, false);
-	}
-
-	// SSL encryption flag
-	if (c->Session->UseEncrypt && c->Session->UseFastRC4 == false)
-	{
-		c->Session->UseSSLDataEncryption = true;
-	}
-	else
-	{
-		c->Session->UseSSLDataEncryption = false;
 	}
 
 	PrintStatus(sess, L"free");
@@ -5477,7 +4963,6 @@ PACK *PackWelcome(SESSION *s)
 	// Parameters
 	PackAddInt(p, "max_connection", s->MaxConnection);
 	PackAddInt(p, "use_encrypt", s->UseEncrypt == false ? 0 : 1);
-	PackAddInt(p, "use_fast_rc4", s->UseFastRC4 == false ? 0 : 1);
 	PackAddInt(p, "use_compress", s->UseCompress == false ? 0 : 1);
 	PackAddInt(p, "half_connection", s->HalfConnection == false ? 0 : 1);
 	PackAddInt(p, "timeout", s->Timeout);
@@ -5749,7 +5234,7 @@ void ClientUploadNoop(CONNECTION *c)
 
 	p = PackError(0);
 	PackAddInt(p, "noop", 1);
-	HttpClientSend(c->FirstSock, p);
+	(void)HttpClientSend(c->FirstSock, p);
 	FreePack(p);
 
 	p = HttpClientRecv(c->FirstSock);
@@ -5882,8 +5367,6 @@ bool ClientUploadAuth(CONNECTION *c)
 	PackAddInt(p, "max_connection", o->MaxConnection);
 	// Flag to use of cryptography
 	PackAddInt(p, "use_encrypt", o->UseEncrypt == false ? 0 : 1);
-	// Fast encryption using flag
-	//	PackAddInt(p, "use_fast_rc4", o->UseFastRC4 == false ? 0 : 1);
 	// Data compression flag
 	PackAddInt(p, "use_compress", o->UseCompress == false ? 0 : 1);
 	// Half connection flag
@@ -6048,14 +5531,11 @@ bool ServerDownloadSignature(CONNECTION *c, char **error_detail_str)
 	UINT num = 0, max = 19;
 	SERVER *server;
 	char *vpn_http_target = HTTP_VPN_TARGET2;
-	bool check_hostname = false;
 	// Validate arguments
 	if (c == NULL)
 	{
 		return false;
 	}
-
-
 
 	server = c->Cedar->Server;
 
@@ -6082,33 +5562,6 @@ bool ServerDownloadSignature(CONNECTION *c, char **error_detail_str)
 			c->Err = ERR_CLIENT_IS_NOT_VPN;
 			return false;
 		}
-
-		if (check_hostname && (StrCmpi(h->Version, "HTTP/1.1") == 0 || StrCmpi(h->Version, "HTTP/1.2") == 0))
-		{
-			HTTP_VALUE *v;
-			char hostname[64];
-
-			Zero(hostname, sizeof(hostname));
-
-			v = GetHttpValue(h, "Host");
-			if (v != NULL)
-			{
-				StrCpy(hostname, sizeof(hostname), v->Data);
-			}
-
-			if (IsEmptyStr(hostname))
-			{
-				// Invalid hostname
-				HttpSendInvalidHostname(s, h->Target);
-				FreeHttpHeader(h);
-				c->Err = ERR_CLIENT_IS_NOT_VPN;
-				*error_detail_str = "Invalid_hostname";
-				return false;
-			}
-		}
-
-
-
 
 		// Interpret
 		if (StrCmpi(h->Method, "POST") == 0)
@@ -6147,7 +5600,7 @@ bool ServerDownloadSignature(CONNECTION *c, char **error_detail_str)
 			{
 				// Compare posted data with the WaterMark
 				if ((data_size == StrLen(HTTP_VPN_TARGET_POSTDATA) && (Cmp(data, HTTP_VPN_TARGET_POSTDATA, data_size) == 0))
-					|| (Cmp(data, WaterMark, SizeOfWaterMark()) == 0))
+					|| ((data_size >= SizeOfWaterMark()) && Cmp(data, WaterMark, SizeOfWaterMark()) == 0))
 				{
 					// Check the WaterMark
 					Free(data);
@@ -6217,74 +5670,33 @@ bool ServerDownloadSignature(CONNECTION *c, char **error_detail_str)
 				if (StrCmpi(h->Target, "/") == 0)
 				{
 					// Root directory
-					SERVER *s = c->Cedar->Server;
-					bool is_free = false;
-
 					*error_detail_str = "HTTP_ROOT";
 
 					{
-						if (is_free == false)
-						{
-							// Other than free version
-							HttpSendForbidden(c->FirstSock, h->Target, "");
-						}
-						else
-						{
-							// Free version
-							BUF *b = ReadDump("|free.htm");
-
-							if (b != NULL)
-							{
-								char *src = ZeroMalloc(b->Size + 1);
-								UINT dst_size = b->Size * 2 + 64;
-								char *dst = ZeroMalloc(dst_size);
-								char host[MAX_PATH];
-								char portstr[64];
-
-								GetMachineName(host, sizeof(host));
-								ToStr(portstr, c->FirstSock->LocalPort);
-
-								Copy(src, b->Buf, b->Size);
-								ReplaceStrEx(dst, dst_size, src,
-									"$HOST$", host, false);
-								ReplaceStrEx(dst, dst_size, dst,
-									"$PORT$", portstr, false);
-
-								FreeHttpHeader(h);
-								h = NewHttpHeader("HTTP/1.1", "202", "OK");
-								AddHttpValue(h, NewHttpValue("Content-Type", HTTP_CONTENT_TYPE4));
-								AddHttpValue(h, NewHttpValue("Connection", "Keep-Alive"));
-								AddHttpValue(h, NewHttpValue("Keep-Alive", HTTP_KEEP_ALIVE));
-								PostHttp(c->FirstSock, h, dst, StrLen(dst));
-
-								Free(src);
-								Free(dst);
-
-								FreeBuf(b);
-							}
-						}
+						// Other than free version
+						HttpSendForbidden(c->FirstSock, h->Target, "");
 					}
 				}
 				else
 				{
 					bool b = false;
 
-//					// Show the WebUI if the configuration allow to use the WebUI
-//					if (c->Cedar->Server != NULL && c->Cedar->Server->UseWebUI)
-//					{
-//						WU_WEBPAGE *page;
-//
-//						// Show the WebUI
-//						page = WuGetPage(h->Target, c->Cedar->WebUI);
-//
-//						if (page != NULL)
-//						{
-//							PostHttp(s, page->header, page->data, page->size);
-//							b = true;
-//							WuFreeWebPage(page);
-//						}
-//
-//					}
+					// Show the WebUI if the configuration allow to use the WebUI
+					if (c->Cedar->Server != NULL && c->Cedar->Server->UseWebUI)
+					{
+						WU_WEBPAGE *page;
+
+						// Show the WebUI
+						page = WuGetPage(h->Target, c->Cedar->WebUI);
+
+						if (page != NULL)
+						{
+							PostHttp(s, page->header, page->data, page->size);
+							b = true;
+							WuFreeWebPage(page);
+						}
+
+					}
 
 					if (c->FirstSock->RemoteIP.addr[0] == 127)
 					{
@@ -6397,7 +5809,7 @@ SOCK *ClientConnectToServer(CONNECTION *c)
 	}
 
 	// Get the socket by connecting
-	s = ClientConnectGetSocket(c, false, (c->DontUseTls1 ? false : true));
+	s = ClientConnectGetSocket(c, false);
 	if (s == NULL)
 	{
 		// Connection failure
@@ -6418,7 +5830,7 @@ SOCK *ClientConnectToServer(CONNECTION *c)
 	SetTimeout(s, CONNECTING_TIMEOUT);
 
 	// Start the SSL communication
-	if (StartSSLEx(s, x, k, (c->DontUseTls1 ? false : true), 0, c->ServerName) == false)
+	if (StartSSLEx(s, x, k, 0, c->ServerName) == false)
 	{
 		// SSL communication start failure
 		Disconnect(s);
@@ -6442,18 +5854,17 @@ SOCK *ClientConnectToServer(CONNECTION *c)
 }
 
 // Return a socket by connecting to the server
-SOCK *ClientConnectGetSocket(CONNECTION *c, bool additional_connect, bool no_tls)
+SOCK *ClientConnectGetSocket(CONNECTION *c, bool additional_connect)
 {
 	SOCK *s = NULL;
 	CLIENT_OPTION *o;
-	char *host_for_direct_connection;
-	UINT port_for_direct_connection;
+	WPC_CONNECT w;
 	wchar_t tmp[MAX_SIZE];
 	SESSION *sess;
 	volatile bool *cancel_flag = NULL;
 	void *hWnd;
 	UINT nat_t_err = 0;
-	bool is_additonal_rudp_session = false;
+	bool is_additional_rudp_session = false;
 	UCHAR uc = 0;
 	IP ret_ip;
 	// Validate arguments
@@ -6463,13 +5874,14 @@ SOCK *ClientConnectGetSocket(CONNECTION *c, bool additional_connect, bool no_tls
 	}
 
 	Zero(&ret_ip, sizeof(IP));
+	Zero(&w, sizeof(w));
 
 	sess = c->Session;
 
 	if (sess != NULL)
 	{
 		cancel_flag = &sess->CancelConnect;
-		is_additonal_rudp_session = sess->IsRUDPSession;
+		is_additional_rudp_session = sess->IsRUDPSession;
 	}
 
 	hWnd = c->hWndForUI;
@@ -6498,23 +5910,29 @@ SOCK *ClientConnectGetSocket(CONNECTION *c, bool additional_connect, bool no_tls
 		c->ServerPort = o->Port;
 	}
 
-	host_for_direct_connection = c->ServerName;
-	port_for_direct_connection = c->ServerPort;
+	StrCpy(w.HostName, sizeof(w.HostName), c->ServerName);
+	w.Port = c->ServerPort;
+	StrCpy(w.ProxyHostName, sizeof(w.ProxyHostName), o->ProxyName);
+	w.ProxyPort = o->ProxyPort;
+	StrCpy(w.ProxyUsername, sizeof(w.ProxyUsername), o->ProxyUsername);
+	StrCpy(w.ProxyPassword, sizeof(w.ProxyPassword), o->ProxyPassword);
+	StrCpy(w.CustomHttpHeader, sizeof(w.CustomHttpHeader), w.CustomHttpHeader);
 
 	switch (o->ProxyType)
 	{
 	case PROXY_DIRECT:	// TCP/IP
-		UniFormat(tmp, sizeof(tmp), _UU("STATUS_4"), c->ServerName);
+		UniFormat(tmp, sizeof(tmp), _UU("STATUS_4"), w.HostName);
 		PrintStatus(sess, tmp);
+
 		// Production job
 		if (o->PortUDP == 0)
 		{
 			{
 				// If additional_connect == false, enable trying to NAT-T connection
 				// If additional_connect == true, follow the IsRUDPSession setting in this session
-				s = TcpIpConnectEx(host_for_direct_connection, port_for_direct_connection,
-					(bool *)cancel_flag, hWnd, &nat_t_err, (additional_connect ? (!is_additonal_rudp_session) : false),
-					true, no_tls, &ret_ip);
+				s = TcpIpConnectEx(w.HostName, w.Port,
+					(bool *)cancel_flag, hWnd, &nat_t_err, (additional_connect ? (!is_additional_rudp_session) : false),
+					true, &ret_ip);
 			}
 		}
 		else
@@ -6551,17 +5969,11 @@ SOCK *ClientConnectGetSocket(CONNECTION *c, bool additional_connect, bool no_tls
 		break;
 
 	case PROXY_HTTP:	// HTTP Proxy
-		host_for_direct_connection = o->ProxyName;
-		port_for_direct_connection = o->ProxyPort;
-
-		UniFormat(tmp, sizeof(tmp), _UU("STATUS_2"), c->ServerName, o->ProxyName);
+		UniFormat(tmp, sizeof(tmp), _UU("STATUS_2"), w.HostName, w.ProxyHostName);
 		PrintStatus(sess, tmp);
 
-
 		// Proxy connection
-		s = ProxyConnectEx(c, host_for_direct_connection, port_for_direct_connection,
-			c->ServerName, c->ServerPort, o->ProxyUsername, o->ProxyPassword,
-			additional_connect, (bool *)cancel_flag, hWnd);
+		s = ProxyConnectEx3(c, &w, additional_connect, (bool *)cancel_flag, hWnd, 0);
 		if (s == NULL)
 		{
 			// Connection failure
@@ -6569,19 +5981,27 @@ SOCK *ClientConnectGetSocket(CONNECTION *c, bool additional_connect, bool no_tls
 		}
 		break;
 
-	case PROXY_SOCKS:	// SOCKS Proxy
-		host_for_direct_connection = o->ProxyName;
-
-		port_for_direct_connection = o->ProxyPort;
-
-		UniFormat(tmp, sizeof(tmp), _UU("STATUS_2"), c->ServerName, o->ProxyName);
+	case PROXY_SOCKS:	// SOCKS4 Proxy
+		UniFormat(tmp, sizeof(tmp), _UU("STATUS_2"), w.HostName, w.ProxyHostName);
 		PrintStatus(sess, tmp);
 
+		// SOCKS4 connection
+		s = SocksConnectEx2(c, w.ProxyHostName, w.ProxyPort,
+			w.HostName, w.Port, w.ProxyUsername, additional_connect, (bool *)cancel_flag,
+			hWnd, 0, &ret_ip);
+		if (s == NULL)
+		{
+			// Connection failure
+			return NULL;
+		}
+		break;
 
-		// SOCKS connection
-		s = SocksConnectEx2(c, host_for_direct_connection, port_for_direct_connection,
-			c->ServerName, c->ServerPort, o->ProxyUsername,
-			additional_connect, (bool *)cancel_flag, hWnd, 0, &ret_ip);
+	case PROXY_SOCKS5:	// SOCKS5 Proxy
+		UniFormat(tmp, sizeof(tmp), _UU("STATUS_2"), w.HostName, w.ProxyHostName);
+		PrintStatus(sess, tmp);
+
+		// SOCKS5 connection
+		s = Socks5Connect(c, &w, additional_connect, (bool *)cancel_flag, hWnd, 0, &ret_ip);
 		if (s == NULL)
 		{
 			// Connection failure
@@ -6601,7 +6021,8 @@ SOCK *ClientConnectGetSocket(CONNECTION *c, bool additional_connect, bool no_tls
 		// Keep a note of the IP address
 		if (additional_connect == false || IsZeroIP(&s->RemoteIP))
 		{
-			if (((s->IsRUDPSocket || s->IPv6) && IsZeroIP(&s->RemoteIP) == false && o->ProxyType == PROXY_DIRECT) || GetIP(&c->Session->ServerIP, host_for_direct_connection) == false)
+			char *hostname = o->ProxyType == PROXY_DIRECT ? w.HostName : w.ProxyHostName;
+			if (((s->IsRUDPSocket || s->IPv6) && IsZeroIP(&s->RemoteIP) == false && o->ProxyType == PROXY_DIRECT) || GetIP(&c->Session->ServerIP, hostname) == false)
 			{
 				Copy(&c->Session->ServerIP, &s->RemoteIP, sizeof(IP));
 			}
@@ -6624,23 +6045,7 @@ SOCK *ClientConnectGetSocket(CONNECTION *c, bool additional_connect, bool no_tls
 	return s;
 }
 
-// Connect via SOCKS
-SOCK *SocksConnect(CONNECTION *c, char *proxy_host_name, UINT proxy_port,
-				   char *server_host_name, UINT server_port,
-				   char *username, bool additional_connect)
-{
-	return SocksConnectEx(c, proxy_host_name, proxy_port,
-		server_host_name, server_port, username, additional_connect, NULL, NULL);
-}
-SOCK *SocksConnectEx(CONNECTION *c, char *proxy_host_name, UINT proxy_port,
-				   char *server_host_name, UINT server_port,
-				   char *username, bool additional_connect,
-				   bool *cancel_flag, void *hWnd)
-{
-	return SocksConnectEx2(c, proxy_host_name, proxy_port,
-		server_host_name, server_port, username, additional_connect, cancel_flag,
-		hWnd, 0, NULL);
-}
+// Connect via SOCKS4
 SOCK *SocksConnectEx2(CONNECTION *c, char *proxy_host_name, UINT proxy_port,
 				   char *server_host_name, UINT server_port,
 				   char *username, bool additional_connect,
@@ -6652,7 +6057,10 @@ SOCK *SocksConnectEx2(CONNECTION *c, char *proxy_host_name, UINT proxy_port,
 	if (c == NULL || proxy_host_name == NULL || proxy_port == 0 || server_host_name == NULL
 		|| server_port == 0)
 	{
-		c->Err = ERR_PROXY_CONNECT_FAILED;
+		if (c != NULL)
+		{
+			c->Err = ERR_PROXY_CONNECT_FAILED;
+		}
 		return NULL;
 	}
 
@@ -6672,7 +6080,7 @@ SOCK *SocksConnectEx2(CONNECTION *c, char *proxy_host_name, UINT proxy_port,
 	}
 
 	// Connection
-	s = TcpConnectEx3(proxy_host_name, proxy_port, timeout, cancel_flag, hWnd, true, NULL, false, false, ret_ip);
+	s = TcpConnectEx3(proxy_host_name, proxy_port, timeout, cancel_flag, hWnd, true, NULL, false, ret_ip);
 	if (s == NULL)
 	{
 		// Failure
@@ -6719,11 +6127,10 @@ SOCK *SocksConnectEx2(CONNECTION *c, char *proxy_host_name, UINT proxy_port,
 	return s;
 }
 
-// Receive a SOCKS response packet
+// Receive a SOCKS4 response packet
 bool SocksRecvResponsePacket(CONNECTION *c, SOCK *s)
 {
 	BUF *b;
-	UINT size = 8;
 	UCHAR tmp[8];
 	UCHAR vn, cd;
 	// Validate arguments
@@ -6771,7 +6178,7 @@ bool SocksRecvResponsePacket(CONNECTION *c, SOCK *s)
 	}
 }
 
-// Send a SOCKS request packet
+// Send a SOCKS4 request packet
 bool SocksSendRequestPacket(CONNECTION *c, SOCK *s, UINT dest_port, IP *dest_ip, char *userid)
 {
 	BUF *b;
@@ -6811,27 +6218,342 @@ bool SocksSendRequestPacket(CONNECTION *c, SOCK *s, UINT dest_port, IP *dest_ip,
 	return ret;
 }
 
+// Connect via SOCKS5 (RFC1928)
+SOCK *Socks5Connect(CONNECTION *c, WPC_CONNECT *w, bool additional_connect, bool *cancel_flag, void *hWnd, UINT timeout, IP *ret_ip)
+{
+	UCHAR tmp, recv_buf[2], *recv_buf_final;
+	USHORT port;
+	bool ret;
+	SOCK *s;
+	BUF *b;
+	IP ip;
+	// Validate arguments
+	if (c == NULL || w == NULL || w->Port == 0 || w->ProxyPort == 0 || IsEmptyStr(w->HostName) || IsEmptyStr(w->ProxyHostName))
+	{
+		if (c != NULL)
+		{
+			c->Err = ERR_PROXY_CONNECT_FAILED;
+		}
+		return NULL;
+	}
+
+	if (c->Halt)
+	{
+		// Stop
+		c->Err = ERR_USER_CANCEL;
+		return NULL;
+	}
+
+	// Open TCP connection to the proxy server
+	s = TcpConnectEx3(w->ProxyHostName, w->ProxyPort, timeout, cancel_flag, hWnd, true, NULL, false, ret_ip);
+	if (s == NULL)
+	{
+		// Failure
+		c->Err = ERR_PROXY_CONNECT_FAILED;
+		return NULL;
+	}
+
+	// Set the timeout setting
+	SetTimeout(s, MIN(CONNECTING_TIMEOUT_PROXY, (timeout == 0 ? INFINITE : timeout)));
+
+	if (additional_connect == false)
+	{
+		c->FirstSock = s;
+	}
+
+	// +----+----------+----------+
+	// |VER | NMETHODS | METHODS  |
+	// +----+----------+----------+
+	// | 1  |    1     | 1 to 255 |
+	// +----+----------+----------+
+	//
+	// X'00'			NO AUTHENTICATION REQUIRED
+	// X'01'			GSSAPI
+	// X'02'			USERNAME/PASSWORD
+	// X'03' to X'7F'	IANA ASSIGNED
+	// X'80' to X'FE'	RESERVED FOR PRIVATE METHODS
+	// X'FF'			NO ACCEPTABLE METHOD
+
+	b = NewBuf();
+	tmp = 5;
+	WriteBuf(b, &tmp, sizeof(tmp));	// SOCKS version
+	tmp = 2;
+	WriteBuf(b, &tmp, sizeof(tmp));	// Number of supported methods
+	tmp = 0;
+	WriteBuf(b, &tmp, sizeof(tmp));	// No authentication
+	tmp = 2;
+	WriteBuf(b, &tmp, sizeof(tmp));	// Username/password
+
+	ret = SendAll(s, b->Buf, b->Size, false);
+	FreeBuf(b);
+
+	if (ret == false)
+	{
+		Debug("Socks5Connect(): [Phase 1] Failed to send initial data to the server.\n");
+		c->Err = ERR_DISCONNECTED;
+		goto failure;
+	}
+
+	// +----+--------+
+	// |VER | METHOD |
+	// +----+--------+
+	// | 1  |   1    |
+	// +----+--------+
+
+	if (RecvAll(s, recv_buf, sizeof(recv_buf), false) == false)
+	{
+		Debug("Socks5Connect(): [Phase 1] Failed to receive initial data response from the server.\n");
+		c->Err = ERR_DISCONNECTED;
+		goto failure;
+	}
+
+	if (recv_buf[0] != 5)
+	{
+		Debug("Socks5Connect(): [Phase 1] Unmatching version: %u.\n", recv_buf[0]);
+		c->Err = ERR_PROXY_ERROR;
+		goto failure;
+	}
+
+	// Username/password authentication (RFC1929)
+	if (recv_buf[1] == 2)
+	{
+		// +----+------+----------+------+----------+
+		// |VER | ULEN |  UNAME   | PLEN |  PASSWD  |
+		// +----+------+----------+------+----------+
+		// | 1  |  1   | 1 to 255 |  1   | 1 to 255 |
+		// +----+------+----------+------+----------+
+
+		b = NewBuf();
+		tmp = 1;
+		WriteBuf(b, &tmp, sizeof(tmp));		// Authentication protocol version
+		tmp = StrLen(w->ProxyUsername);
+		WriteBuf(b, &tmp, sizeof(tmp));		// Username length
+		WriteBuf(b, w->ProxyUsername, tmp);	// Username
+		tmp = StrLen(w->ProxyPassword);
+		WriteBuf(b, &tmp, sizeof(tmp));		// Password length
+		WriteBuf(b, w->ProxyPassword, tmp);	// Password
+
+		ret = SendAll(s, b->Buf, b->Size, false);
+		FreeBuf(b);
+
+		if (ret == false)
+		{
+			Debug("Socks5Connect(): [Phase 1] Failed to send authentication data to the server.\n");
+			c->Err = ERR_DISCONNECTED;
+			goto failure;
+		}
+
+		// +----+--------+
+		// |VER | STATUS |
+		// +----+--------+
+		// | 1  |   1    |
+		// +----+--------+
+
+		if (RecvAll(s, recv_buf, sizeof(recv_buf), false) == false)
+		{
+			Debug("Socks5Connect(): [Phase 1] Failed to receive authentication data response from the server.\n");
+			c->Err = ERR_DISCONNECTED;
+			goto failure;
+		}
+
+		if (recv_buf[1] != 0)
+		{
+			Debug("Socks5Connect(): [Phase 1] Authentication failure error code sent by the server: %u.\n", recv_buf[1]);
+			c->Err = ERR_PROXY_AUTH_FAILED;
+			goto failure;
+		}
+	}
+
+	// +----+-----+-------+------+----------+----------+
+	// |VER | CMD |  RSV  | ATYP | DST.ADDR | DST.PORT |
+	// +----+-----+-------+------+----------+----------+
+	// | 1  |  1  | X'00' |  1   | Variable |    2     |
+	// +----+-----+-------+------+----------+----------+
+	//
+	// VER				protocol version: X'05'
+	// CMD
+	// CONNECT			X'01'
+	// BIND				X'02'
+	// UDP ASSOCIATE	X'03'
+	// RSV				RESERVED
+	// ATYP				address type of following address
+	// IP V4 address	X'01'
+	// DOMAINNAME		X'03'
+	// IP V6 address	X'04'
+	// DST.ADDR			desired destination address
+	// DST.PORT			desired destination port in network octet order
+
+	// Prepare data to send
+	b = NewBuf();
+	tmp = 5;
+	WriteBuf(b, &tmp, sizeof(tmp));	// SOCKS version
+	tmp = 1;
+	WriteBuf(b, &tmp, sizeof(tmp));	// Command
+	tmp = 0;
+	WriteBuf(b, &tmp, sizeof(tmp));	// Reserved byte
+
+	// Convert the hostname to an IP structure (if it's an IP address)
+	StrToIP(&ip, w->HostName);
+
+	// If the IP structure doesn't contain an IP address, it means that the string is an hostname
+	if (IsZeroIp(&ip))
+	{
+		UCHAR dest_length = StrLen(w->HostName);
+		tmp = 3;
+		WriteBuf(b, &tmp, sizeof(tmp));							// Destination type (hostname)
+		WriteBuf(b, &dest_length, sizeof(dest_length));			// Destination hostname length
+		WriteBuf(b, w->HostName, dest_length);					// Destination hostname
+	}
+	else
+	{
+		if (IsIP6(&ip))
+		{
+			tmp = 4;
+			WriteBuf(b, &tmp, sizeof(tmp));						// Destination type (IPv6)
+			WriteBuf(b, ip.ipv6_addr, sizeof(ip.ipv6_addr));	// Destination IPv6 address
+		}
+		else
+		{
+			tmp = 1;
+			WriteBuf(b, &tmp, sizeof(tmp));						// Destination type (IPv4)
+			WriteBuf(b, ip.addr, sizeof(ip.addr));				// Destination IPv4 address
+		}
+	}
+
+	// Convert the port in network octet order
+	port = Endian16((USHORT)w->Port);
+	WriteBuf(b, &port, sizeof(port));							// Destination port
+
+	// Send data
+	ret = SendAll(s, b->Buf, b->Size, false);
+	FreeBuf(b);
+
+	if (ret == false)
+	{
+		Debug("Socks5Connect(): [Phase 2] Failed to send data to the server.\n");
+		c->Err = ERR_DISCONNECTED;
+		goto failure;
+	}
+
+	// +----+-----+-------+------+----------+----------+
+	// |VER | REP |  RSV  | ATYP | BND.ADDR | BND.PORT |
+	// +----+-----+-------+------+----------+----------+
+	// | 1  |  1  | X’00’ |  1   | Variable |   2      |
+	// +----+-----+-------+------+----------+----------+
+	//
+	// VER protocol version: X’05’
+	// REP Reply field:
+	// X’00’	succeeded
+	// X’01’	general SOCKS server failure
+	// X’02’	connection not allowed by ruleset
+	// X’03’	Network unreachable
+	// X’04’	Host unreachable
+	// X’05’	Connection refused
+	// X’06’	TTL expired
+	// X’07’	Command not supported
+	// X’08’	Address type not supported
+	// X’09’	to X’FF’ unassigned
+
+	// The packet sent by the server should always have the same size as the one we sent to it.
+	// However, there are some implementations which send fixed values (aside from the first 2 bytes).
+	// In order to support such implementations, we read the first 4 bytes in order to know the address type before trying to read the rest of the packet.
+	recv_buf_final = Malloc(4);
+
+	if (RecvAll(s, recv_buf_final, 4, false) == false)
+	{
+		Free(recv_buf_final);
+		Debug("Socks5Connect(): [Phase 2] Failed to receive response from the server.\n");
+		c->Err = ERR_DISCONNECTED;
+		goto failure;
+	}
+
+	// We only need the first two bytes (version and response code), but we have to read the entire packet from the socket
+	recv_buf[0] = recv_buf_final[0];
+	recv_buf[1] = recv_buf_final[1];
+
+	// We receive the rest of the packet by knowing the size according to the address type
+	switch (recv_buf_final[3])
+	{
+	case 1:
+		// IPv4
+		recv_buf_final = ReAlloc(recv_buf_final, 6);			// 4 bytes (IPv4) + 2 bytes (port)
+		ret = RecvAll(s, recv_buf_final, 6, false);
+		break;
+	case 4:
+		// IPv6
+		recv_buf_final = ReAlloc(recv_buf_final, 18);			// 4 bytes (IPv4) + 2 bytes (port)
+		ret = RecvAll(s, recv_buf_final, 18, false);
+		break;
+	case 3:
+		// Hostname
+		ret = RecvAll(s, &tmp, 1, false);
+		if (ret == true)
+		{
+			recv_buf_final = ReAlloc(recv_buf_final, tmp + 2);	// Hostname length + 2 bytes (port)
+			ret = RecvAll(s, recv_buf_final, tmp + 2, false);
+		}
+	}
+
+	Free(recv_buf_final);
+
+	if (ret == false)
+	{
+		Debug("Socks5Connect(): [Phase 2] Malformed response received from the server.\n");
+		c->Err = ERR_DISCONNECTED;
+		goto failure;
+	}
+
+	if (recv_buf[0] != 5)
+	{
+		Debug("Socks5Connect(): [Phase 2] Unmatching version: %u.\n", recv_buf_final[0]);
+		c->Err = ERR_PROXY_ERROR;
+		goto failure;
+	}
+
+	if (recv_buf[1] == 0)
+	{
+		// Success
+		SetTimeout(s, INFINITE);
+		return s;
+	}
+	else
+	{
+		Debug("Socks5Connect(): [Phase 2] Connection failed with error: %u\n", recv_buf[1]);
+		c->Err = ERR_PROXY_ERROR;
+	}
+
+failure:
+	if (additional_connect == false)
+	{
+		c->FirstSock = NULL;
+	}
+
+	Disconnect(s);
+	ReleaseSock(s);
+	return NULL;
+}
+
 // Connect through a proxy
-SOCK *ProxyConnect(CONNECTION *c, char *proxy_host_name, UINT proxy_port,
-				   char *server_host_name, UINT server_port,
-				   char *username, char *password, bool additional_connect)
-{
-	return ProxyConnectEx(c, proxy_host_name, proxy_port,
-		server_host_name, server_port, username, password, additional_connect, NULL, NULL);
-}
-SOCK *ProxyConnectEx(CONNECTION *c, char *proxy_host_name, UINT proxy_port,
-				   char *server_host_name, UINT server_port,
-				   char *username, char *password, bool additional_connect,
-				   bool *cancel_flag, void *hWnd)
-{
-	return ProxyConnectEx2(c, proxy_host_name, proxy_port,
-		server_host_name, server_port, username, password, additional_connect,
-		cancel_flag, hWnd, 0);
-}
 SOCK *ProxyConnectEx2(CONNECTION *c, char *proxy_host_name, UINT proxy_port,
 				   char *server_host_name, UINT server_port,
 				   char *username, char *password, bool additional_connect,
 				   bool *cancel_flag, void *hWnd, UINT timeout)
+{
+	WPC_CONNECT wpc_connect;
+	Zero(&wpc_connect, sizeof(wpc_connect));
+
+	StrCpy(wpc_connect.ProxyHostName, sizeof(wpc_connect.ProxyHostName), proxy_host_name);
+	wpc_connect.ProxyPort = proxy_port;
+	StrCpy(wpc_connect.HostName, sizeof(wpc_connect.HostName), server_host_name);
+	wpc_connect.Port = server_port;
+	StrCpy(wpc_connect.ProxyUsername, sizeof(wpc_connect.ProxyUsername), username);
+	StrCpy(wpc_connect.ProxyPassword, sizeof(wpc_connect.ProxyPassword), password);
+
+	return ProxyConnectEx3(c, &wpc_connect, additional_connect, cancel_flag, hWnd, timeout);
+}
+SOCK *ProxyConnectEx3(CONNECTION *c, WPC_CONNECT *wpc_connect,
+					  bool additional_connect, bool *cancel_flag, void *hWnd,
+					  UINT timeout)
 {
 	SOCK *s = NULL;
 	bool use_auth = false;
@@ -6843,14 +6565,16 @@ SOCK *ProxyConnectEx2(CONNECTION *c, char *proxy_host_name, UINT proxy_port,
 	char server_host_name_tmp[256];
 	UINT i, len;
 	// Validate arguments
-	if (c == NULL || proxy_host_name == NULL || proxy_port == 0 || server_host_name == NULL ||
-		server_port == 0)
+	if (c == NULL || IsEmptyStr(wpc_connect->ProxyHostName) || wpc_connect->ProxyPort == 0 || IsEmptyStr(wpc_connect->HostName) || wpc_connect->Port == 0)
 	{
-		c->Err = ERR_PROXY_CONNECT_FAILED;
+		if (c != NULL)
+		{
+			c->Err = ERR_PROXY_CONNECT_FAILED;
+		}
 		return NULL;
 	}
-	if (username != NULL && password != NULL &&
-		(StrLen(username) != 0 || StrLen(password) != 0))
+
+	if ((IsEmptyStr(wpc_connect->ProxyUsername) || IsEmptyStr(wpc_connect->ProxyPassword)) == false)
 	{
 		use_auth = true;
 	}
@@ -6863,7 +6587,7 @@ SOCK *ProxyConnectEx2(CONNECTION *c, char *proxy_host_name, UINT proxy_port,
 	}
 
 	Zero(server_host_name_tmp, sizeof(server_host_name_tmp));
-	StrCpy(server_host_name_tmp, sizeof(server_host_name_tmp), server_host_name);
+	StrCpy(server_host_name_tmp, sizeof(server_host_name_tmp), wpc_connect->HostName);
 
 	len = StrLen(server_host_name_tmp);
 
@@ -6876,7 +6600,7 @@ SOCK *ProxyConnectEx2(CONNECTION *c, char *proxy_host_name, UINT proxy_port,
 	}
 
 	// Connection
-	s = TcpConnectEx3(proxy_host_name, proxy_port, timeout, cancel_flag, hWnd, true, NULL, false, false, NULL);
+	s = TcpConnectEx3(wpc_connect->ProxyHostName, wpc_connect->ProxyPort, timeout, cancel_flag, hWnd, true, NULL, false, NULL);
 	if (s == NULL)
 	{
 		// Failure
@@ -6901,27 +6625,61 @@ SOCK *ProxyConnectEx2(CONNECTION *c, char *proxy_host_name, UINT proxy_port,
 		StrToIP(&ip, server_host_name_tmp);
 		IPToStr(iptmp, sizeof(iptmp), &ip);
 
-		Format(tmp, sizeof(tmp), "[%s]:%u", iptmp, server_port);
+		Format(tmp, sizeof(tmp), "[%s]:%u", iptmp, wpc_connect->Port);
 	}
 	else
 	{
-		Format(tmp, sizeof(tmp), "%s:%u", server_host_name_tmp, server_port);
+		Format(tmp, sizeof(tmp), "%s:%u", server_host_name_tmp, wpc_connect->Port);
 	}
 
 	h = NewHttpHeader("CONNECT", tmp, "HTTP/1.0");
-	AddHttpValue(h, NewHttpValue("User-Agent", (c->Cedar == NULL ? DEFAULT_USER_AGENT : c->Cedar->HttpUserAgent)));
-	AddHttpValue(h, NewHttpValue("Host", server_host_name_tmp));
-	AddHttpValue(h, NewHttpValue("Content-Length", "0"));
-	AddHttpValue(h, NewHttpValue("Proxy-Connection", "Keep-Alive"));
-	AddHttpValue(h, NewHttpValue("Pragma", "no-cache"));
 
-	if (use_auth)
+	if (IsEmptyStr(wpc_connect->CustomHttpHeader) == false)
+	{
+		TOKEN_LIST *tokens = ParseToken(wpc_connect->CustomHttpHeader, "\r\n");
+		if (tokens != NULL)
+		{
+			for (i = 0; i < tokens->NumTokens; i++)
+			{
+				AddHttpValueStr(h, tokens->Token[i]);
+			}
+
+			FreeToken(tokens);
+		}
+	}
+
+	if (GetHttpValue(h, "User-Agent") == NULL)
+	{
+		AddHttpValue(h, NewHttpValue("User-Agent", (c->Cedar == NULL ? DEFAULT_USER_AGENT : c->Cedar->HttpUserAgent)));
+	}
+
+	if (GetHttpValue(h, "Host") == NULL)
+	{
+		AddHttpValue(h, NewHttpValue("Host", server_host_name_tmp));
+	}
+
+	if (GetHttpValue(h, "Content-Length") == NULL)
+	{
+		AddHttpValue(h, NewHttpValue("Content-Length", "0"));
+	}
+
+	if (GetHttpValue(h, "Proxy-Connection") == NULL)
+	{
+		AddHttpValue(h, NewHttpValue("Proxy-Connection", "Keep-Alive"));
+	}
+
+	if (GetHttpValue(h, "Pragma") == NULL)
+	{
+		AddHttpValue(h, NewHttpValue("Pragma", "no-cache"));
+	}
+
+	if (use_auth && GetHttpValue(h, "Proxy-Authorization") == NULL)
 	{
 		wchar_t tmp[MAX_SIZE];
 		UniFormat(tmp, sizeof(tmp), _UU("STATUS_3"), server_host_name_tmp);
 		// Generate the authentication string
 		Format(auth_tmp_str, sizeof(auth_tmp_str), "%s:%s",
-			username, password);
+			   wpc_connect->ProxyUsername, wpc_connect->ProxyPassword);
 
 		// Base64 encode
 		Zero(auth_b64_str, sizeof(auth_b64_str));
@@ -7026,32 +6784,24 @@ SOCK *ProxyConnectEx2(CONNECTION *c, char *proxy_host_name, UINT proxy_port,
 }
 
 // TCP connection function
-SOCK *TcpConnectEx2(char *hostname, UINT port, UINT timeout, bool *cancel_flag, void *hWnd, bool try_start_ssl, bool ssl_no_tls)
-{
-	return TcpConnectEx3(hostname, port, timeout, cancel_flag, hWnd, false, NULL, try_start_ssl, ssl_no_tls, NULL);
-}
-SOCK *TcpConnectEx3(char *hostname, UINT port, UINT timeout, bool *cancel_flag, void *hWnd, bool no_nat_t, UINT *nat_t_error_code, bool try_start_ssl, bool ssl_no_tls, IP *ret_ip)
+SOCK *TcpConnectEx3(char *hostname, UINT port, UINT timeout, bool *cancel_flag, void *hWnd, bool no_nat_t, UINT *nat_t_error_code, bool try_start_ssl, IP *ret_ip)
 {
 #ifdef	OS_WIN32
 	if (hWnd == NULL)
 	{
 #endif	// OS_WIN32
-		return ConnectEx4(hostname, port, timeout, cancel_flag, (no_nat_t ? NULL : VPN_RUDP_SVC_NAME), nat_t_error_code, try_start_ssl, ssl_no_tls, true, ret_ip);
+		return ConnectEx4(hostname, port, timeout, cancel_flag, (no_nat_t ? NULL : VPN_RUDP_SVC_NAME), nat_t_error_code, try_start_ssl, true, ret_ip);
 #ifdef	OS_WIN32
 	}
 	else
 	{
-		return WinConnectEx3((HWND)hWnd, hostname, port, timeout, 0, NULL, NULL, nat_t_error_code, (no_nat_t ? NULL : VPN_RUDP_SVC_NAME), try_start_ssl, ssl_no_tls);
+		return WinConnectEx3((HWND)hWnd, hostname, port, timeout, 0, NULL, NULL, nat_t_error_code, (no_nat_t ? NULL : VPN_RUDP_SVC_NAME), try_start_ssl);
 	}
 #endif	// OS_WIN32
 }
 
 // Connect with TCP/IP
-SOCK *TcpIpConnect(char *hostname, UINT port, bool try_start_ssl, bool ssl_no_tls)
-{
-	return TcpIpConnectEx(hostname, port, NULL, NULL, NULL, false, try_start_ssl, ssl_no_tls, NULL);
-}
-SOCK *TcpIpConnectEx(char *hostname, UINT port, bool *cancel_flag, void *hWnd, UINT *nat_t_error_code, bool no_nat_t, bool try_start_ssl, bool ssl_no_tls, IP *ret_ip)
+SOCK *TcpIpConnectEx(char *hostname, UINT port, bool *cancel_flag, void *hWnd, UINT *nat_t_error_code, bool no_nat_t, bool try_start_ssl, IP *ret_ip)
 {
 	SOCK *s = NULL;
 	UINT dummy_int = 0;
@@ -7066,7 +6816,7 @@ SOCK *TcpIpConnectEx(char *hostname, UINT port, bool *cancel_flag, void *hWnd, U
 		return NULL;
 	}
 
-	s = TcpConnectEx3(hostname, port, 0, cancel_flag, hWnd, no_nat_t, nat_t_error_code, try_start_ssl, ssl_no_tls, ret_ip);
+	s = TcpConnectEx3(hostname, port, 0, cancel_flag, hWnd, no_nat_t, nat_t_error_code, try_start_ssl, ret_ip);
 	if (s == NULL)
 	{
 		return NULL;
@@ -7241,6 +6991,46 @@ PACK *PackLoginWithPlainPassword(char *hubname, char *username, void *plain_pass
 	return p;
 }
 
+// Generate a packet of OpenVPN certificate login
+PACK *PackLoginWithOpenVPNCertificate(char *hubname, char *username, X *x)
+{
+	PACK *p;
+	char cn_username[128];
+	BUF *cert_buf = NULL;
+	// Validate arguments
+	if (hubname == NULL || username == NULL || x == NULL)
+	{
+		return NULL;
+	}
+
+	p = NewPack();
+	PackAddStr(p, "method", "login");
+	PackAddStr(p, "hubname", hubname);
+
+	if (IsEmptyStr(username))
+	{
+		if (x->subject_name == NULL)
+		{
+			FreePack(p);
+			return NULL;
+		}
+		UniToStr(cn_username, sizeof(cn_username), x->subject_name->CommonName);
+		PackAddStr(p, "username", cn_username);
+	}
+	else
+	{
+		PackAddStr(p, "username", username);
+	}
+
+	PackAddInt(p, "authtype", AUTHTYPE_OPENVPN_CERT);
+
+	cert_buf = XToBuf(x, false);
+	PackAddBuf(p, "cert", cert_buf);
+	FreeBuf(cert_buf);
+
+	return p;
+}
+
 // Create a packet of password authentication login
 PACK *PackLoginWithPassword(char *hubname, char *username, void *secure_password)
 {
@@ -7296,18 +7086,3 @@ PACK *PackAdditionalConnect(UCHAR *session_key)
 
 	return p;
 }
-
-
-// Generate a RC4 key pair
-void GenerateRC4KeyPair(RC4_KEY_PAIR *k)
-{
-	// Validate arguments
-	if (k == NULL)
-	{
-		return;
-	}
-
-	Rand(k->ClientToServerKey, sizeof(k->ClientToServerKey));
-	Rand(k->ServerToClientKey, sizeof(k->ServerToClientKey));
-}
-
