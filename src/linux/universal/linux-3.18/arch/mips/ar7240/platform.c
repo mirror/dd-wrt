@@ -2022,7 +2022,13 @@ int __init ar7240_platform_init(void)
 	#endif
     #endif
 #endif
+#if CONFIG_FMS2111
+	u32 *ar9_gpiof2;
+	ar9_gpiof2 = (u32 *) KSEG1ADDR(0x18040030);
+	*ar9_gpiof2 |= 0x70300; 
+#else
 	ret = platform_add_devices(ar724x_platform_devices, ARRAY_SIZE(ar724x_platform_devices));
+#endif
 
 	if (ret < 0)
 		return ret;
