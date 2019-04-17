@@ -1107,6 +1107,8 @@ static int __init sfe_cm_init(void)
 #endif
 	sfe_ipv4_init();
 
+// code block disabled by quarkysg, 14/10/17
+#if 0
 	DEBUG_INFO("SFE CM init\n");
 
 	/*
@@ -1172,10 +1174,15 @@ static int __init sfe_cm_init(void)
 #ifdef SFE_SUPPORT_IPV6
 	sfe_ipv6_register_sync_rule_callback(sfe_cm_sync_rule);
 #endif
+#endif
+// end code block disable by quarkysg, 14/10/17
+
 	fast_classifier_init();
 
 	return 0;
 
+// code block disabled by quarkysg, 14/10/17
+#if 0
 #ifdef CONFIG_NF_CONNTRACK_EVENTS
 exit4:
 	for_each_net(net) {
@@ -1203,6 +1210,8 @@ exit1:
 #endif
 
 	return result;
+#endif
+// end code block disable by quarkysg, 14/10/17
 }
 
 /*
@@ -1212,8 +1221,11 @@ static void __exit sfe_cm_exit(void)
 {
 	struct sfe_cm *sc = &__sc;
 	struct net *net;
-	DEBUG_INFO("SFE CM exit\n");
+//	DEBUG_INFO("SFE CM exit\n");
 	fast_classifier_exit();
+
+// code block disabled by quarkysg, 14/10/17
+#if 0
 
 	/*
 	 * Unregister our sync callback.
@@ -1239,6 +1251,7 @@ static void __exit sfe_cm_exit(void)
 #ifdef SFE_SUPPORT_IPV6
 	sfe_ipv6_destroy_all_rules_for_dev(NULL);
 #endif
+
 #ifdef CONFIG_NF_CONNTRACK_EVENTS
 	nf_conntrack_unregister_notifier(&init_net, &sfe_cm_conntrack_notifier);
 
@@ -1255,6 +1268,9 @@ static void __exit sfe_cm_exit(void)
 	unregister_netdevice_notifier(&sc->dev_notifier);
 
 	kobject_put(sc->sys_sfe_cm);
+#endif
+// end code block disable by quarkysg, 14/10/17
+
 	sfe_ipv4_exit();
 #ifdef SFE_SUPPORT_IPV6
 	sfe_ipv6_exit();
