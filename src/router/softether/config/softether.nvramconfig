@@ -1,4 +1,0 @@
- "setherserver_enable"  "Enable Server"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
- "setherbridge_enable"  "Enable Bridge"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
- "setherclient_enable"  "Enable Client"  "CHOICE"  "2" "0" "1"  "TRUE" "0" 
- "sether_config" "Config" "NULL" "FALSE" "0"
