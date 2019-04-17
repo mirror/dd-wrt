@@ -1,20 +1,36 @@
-softether-configure:
-	@true
+PKG_INSTALL:=1
 
-softether: zlib quagga ncurses
-	-rm -f softether/bin/vpnserver/hamcore.se2
-	-rm -f softether/bin/vpnclient/hamcore.se2
-	-rm -f softether/bin/vpnbridge/hamcore.se2
-	-rm -f softether/bin/vpncmd/hamcore.se2
-	-rm -f softether/tmp/hamcorebuilder
-	-rm -f softether/src/bin/BuiltHamcoreFiles/unix/hamcore.se2
-	$(MAKE) -C softether clean
-	$(MAKE) -C softether CC="ccache gcc" FLAGS="-O2 -DCPU_64" src/bin/BuiltHamcoreFiles/unix/hamcore.se2
-	$(MAKE) -C softether clean
-	$(MAKE) -C softether FLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/ -L$(TOP)/readline/shlib -I$(TOP)/openssl/include -L$(TOP)/openssl -I$(TOP)/zlib -L$(TOP)/zlib -I$(TOP)/ncurses/include -L$(TOP)/ncurses/lib  -ffunction-sections -fdata-sections -Wl,--gc-sections"
+MAKE_FLAGS+=VERBOSE=0
 
-softether-clean:
-	$(MAKE) -C softether clean
+SOFTETHER_PKG_BUILD_DIR=$(TOP)/softether
+SOFTETHER_CMAKE_OPTIONS=-DCURSES_LIBRARY=$(TOP)/ncurses/lib \
+		    -DCURSES_INCLUDE_PATH=$(TOP)/ncurses/include \
+		    -DOPENSSL_CRYPTO_LIBRARY=$(TOP)/openssl/libcrypto.so \
+		    -DOPENSSL_SSL_LIBRARY=$(TOP)/openssl/libssl.so \
+		    -DOPENSSL_INCLUDE_DIR=$(TOP)/openssl/include \
+		    -DZLIB_LIBRARY=$(TOP)/zlib/libz.so \
+		    -DZLIB_INCLUDE_DIR=$(TOP)/zlib/include \
+		    -DLIB_READLINE=$(TOP)/readline/shlib \
+		    -DCMAKE_BUILD_TYPE=release
+
+SOFTETHER_STAGING_DIR=$(TOP)/_staging/usr
+SOFTETHER_EXTRA_CFLAGS=$(COPTS) $(MIPS16_OPT) -I$(TOP)
+SOFTETHER_EXTRA_LDFLAGS=-L$(TOP)/openssl -lcrypto -lssl -L$(TOP)/readline/shlib
+
+
+softether-configure: zlib quagg ncurses
+	$(call CMakeClean,$(SOFTETHER_PKG_BUILD_DIR))
+	$(call CMakeConfigure,$(SOFTETHER_PKG_BUILD_DIR),$(SOFTETHER_STAGING_DIR),$(SOFTETHER_CMAKE_OPTIONS),$(SOFTETHER_EXTRA_CFLAGS),$(SOFTETHER_EXTRA_LDFLAGS)) 
+
+softether: zlib quagg ncurses
+	$(MAKE) -C softether
 
 softether-install:
-	$(MAKE) -C softether install
+	$(MAKE) -C softether install DESTDIR=$(INSTALLDIR)/softether
+#	rm -rf $(INSTALLDIR)/softether/usr/lib/pkgconfig
+#	rm -rf $(INSTALLDIR)/softether/usr/include
+#	rm -rf $(INSTALLDIR)/softether/usr/share
+#	rm -rf $(INSTALLDIR)/softether/usr/bin
+
+softether-clean:
+	if [ -e "$(SOFTETHER_PKG_BUILD_DIR)/Makefile" ]; then $(MAKE) -C softether clean ; fi
