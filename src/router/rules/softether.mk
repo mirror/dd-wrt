@@ -15,10 +15,19 @@ SOFTETHER_CMAKE_OPTIONS=-DCURSES_LIBRARY=$(TOP)/ncurses/lib \
 
 SOFTETHER_STAGING_DIR=$(TOP)/_staging/usr
 SOFTETHER_EXTRA_CFLAGS=$(COPTS) $(MIPS16_OPT) -I$(TOP)
-SOFTETHER_EXTRA_LDFLAGS=-L$(TOP)/openssl -lcrypto -lssl -L$(TOP)/readline/shlib
+SOFTETHER_EXTRA_LDFLAGS=-L$(TOP)/openssl -lcrypto -lssl -L$(TOP)/readline/shlib -L$(TOP)/ncurses/lib -L$(TOP)/zlib -lreadline -lhistory -lncurses -lz
 
 
-softether-configure: zlib quagg ncurses
+softether-configure: zlib readline ncurses
+	rm -rf $(TOP)/softether/host
+	mkdir $(TOP)/softether/host
+	-cp -urv $(TOP)/softether/* $(TOP)/softether/host
+	sed -i 's/\SHARED/STATIC/g' $(TOP)/softether/host/src/Mayaqua/CMakeLists.txt
+	sed -i 's/\SHARED/STATIC/g' $(TOP)/softether/host/src/Cedar/CMakeLists.txt
+	sed -i 's/\readline/libreadline.a/g' $(TOP)/softether/host/src/Cedar/CMakeLists.txt
+	cd $(TOP)/softether/host && export CC=gcc && export LD=ld && cmake -DCMAKE_BUILD_TYPE=release .
+	cd $(TOP)/softether/host && export CC=gcc && export LD=ld && make
+	cp $(TOP)/softether/host/tmp/hamcorebuilder /usr/local/bin
 	$(call CMakeClean,$(SOFTETHER_PKG_BUILD_DIR))
 	$(call CMakeConfigure,$(SOFTETHER_PKG_BUILD_DIR),$(SOFTETHER_STAGING_DIR),$(SOFTETHER_CMAKE_OPTIONS),$(SOFTETHER_EXTRA_CFLAGS),$(SOFTETHER_EXTRA_LDFLAGS)) 
 
@@ -26,11 +35,22 @@ softether: zlib quagg ncurses
 	$(MAKE) -C softether
 
 softether-install:
-	$(MAKE) -C softether install DESTDIR=$(INSTALLDIR)/softether
-#	rm -rf $(INSTALLDIR)/softether/usr/lib/pkgconfig
-#	rm -rf $(INSTALLDIR)/softether/usr/include
-#	rm -rf $(INSTALLDIR)/softether/usr/share
-#	rm -rf $(INSTALLDIR)/softether/usr/bin
+	rm -rf $(INSTALLDIR)/softether
+	mkdir -p $(INSTALLDIR)/softether/usr/lib
+	cp $(TOP)/softether/build/libcedar.so $(INSTALLDIR)/softether/usr/lib
+	cp $(TOP)/softether/build/libmayaqua.so $(INSTALLDIR)/softether/usr/lib
+	mkdir -p $(INSTALLDIR)/softether/usr/libexec/softethervpn
+	cp $(TOP)/softether/build/vpnserver $(INSTALLDIR)/softether/usr/libexec/softethervpn
+	cp $(TOP)/softether/build/vpnbridge $(INSTALLDIR)/softether/usr/libexec/softethervpn
+	cp $(TOP)/softether/build/vpnclient $(INSTALLDIR)/softether/usr/libexec/softethervpn
+	cp $(TOP)/softether/build/hamcore.se2 $(INSTALLDIR)/softether/usr/libexec/softethervpn
+	cp $(TOP)/softether/build/vpncmd $(INSTALLDIR)/softether/usr/libexec/softethervpn
+	cp $(TOP)/softether/files/launcher.sh $(INSTALLDIR)/softether/usr/libexec/softethervpn
+	chmod 777 $(INSTALLDIR)/softether/usr/libexec/softethervpn/launcher.sh
+	cp $(TOP)/softether/files/dummy $(INSTALLDIR)/softether/usr/libexec/softethervpn/lang.config
+	mkdir -p $(INSTALLDIR)/softether/usr/bin
+	cd $(INSTALLDIR)/softether/usr/bin && ln -s ../../usr/libexec/softethervpn/launcher.sh vpncmd
+	
 
 softether-clean:
 	if [ -e "$(SOFTETHER_PKG_BUILD_DIR)/Makefile" ]; then $(MAKE) -C softether clean ; fi
