@@ -48,7 +48,8 @@ CONFIG_DIR859=
 CONFIG_DIR869=
 CONFIG_GL150=
 CONFIG_ERC=
-
+CONFIG_CARAMBOLA=
+CONFIG_FMS2111=
 
 #
 # Linux router shared code Makefile
@@ -274,6 +275,9 @@ ifeq ($(CONFIG_NORTHSTAR),y)
 endif
 ifeq ($(CONFIG_CARAMBOLA),y)
   CFLAGS += -DHAVE_CARAMBOLA
+  ifeq ($(CONFIG_FMS2111),y)
+    CFLAGS += -DHAVE_FMS2111
+  endif
 endif
 ifeq ($(CONFIG_NEXTMEDIA),y)
   CFLAGS += -DHAVE_NEXTMEDIA

@@ -176,6 +176,8 @@ void setRouter(char *name)
 	nvram_set(NVROUTER_ALT, "LH-135/270 ST");
 #elif HAVE_IPR
 	nvram_set(NVROUTER_ALT, "IPR-DATKS-501");
+#elif defined(HAVE_ANTAIRA) && defined(HAVE_FMS2111)
+	nvram_set(NVROUTER_ALT, "FMS2111");
 #else
 #endif
 	cprintf("router is %s\n", getRouter());
