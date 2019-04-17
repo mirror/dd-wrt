@@ -583,6 +583,7 @@ else
 	echo "# CONFIG_PERU is not set" >> $(LINUXDIR)/.config
 endif
 ifeq ($(CONFIG_FMS2111),y)
+	sed -i 's/\# CONFIG_LEDS_TRIGGER_NETDEV is not set/CONFIG_LEDS_TRIGGER_NETDEV=y/g' $(LINUXDIR)/.config
 	echo CONFIG_FMS2111=y >> $(LINUXDIR)/.config
 else
 	echo "# CONFIG_FMS2111 is not set" >> $(LINUXDIR)/.config
