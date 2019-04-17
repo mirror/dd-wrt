@@ -1,111 +1,5 @@
-// SoftEther VPN Source Code - Stable Edition Repository
+// SoftEther VPN Source Code - Developer Edition Master Branch
 // Mayaqua Kernel
-// 
-// SoftEther VPN Server, Client and Bridge are free software under GPLv2.
-// 
-// Copyright (c) Daiyuu Nobori.
-// Copyright (c) SoftEther VPN Project, University of Tsukuba, Japan.
-// Copyright (c) SoftEther Corporation.
-// 
-// All Rights Reserved.
-// 
-// http://www.softether.org/
-// 
-// Author: Daiyuu Nobori, Ph.D.
-// Comments: Tetsuo Sugiyama, Ph.D.
-// 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// version 2 as published by the Free Software Foundation.
-// 
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU General Public License for more details.
-// 
-// You should have received a copy of the GNU General Public License version 2
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-// CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-// TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-// SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-// 
-// THE LICENSE AGREEMENT IS ATTACHED ON THE SOURCE-CODE PACKAGE
-// AS "LICENSE.TXT" FILE. READ THE TEXT FILE IN ADVANCE TO USE THE SOFTWARE.
-// 
-// 
-// THIS SOFTWARE IS DEVELOPED IN JAPAN, AND DISTRIBUTED FROM JAPAN,
-// UNDER JAPANESE LAWS. YOU MUST AGREE IN ADVANCE TO USE, COPY, MODIFY,
-// MERGE, PUBLISH, DISTRIBUTE, SUBLICENSE, AND/OR SELL COPIES OF THIS
-// SOFTWARE, THAT ANY JURIDICAL DISPUTES WHICH ARE CONCERNED TO THIS
-// SOFTWARE OR ITS CONTENTS, AGAINST US (SOFTETHER PROJECT, SOFTETHER
-// CORPORATION, DAIYUU NOBORI OR OTHER SUPPLIERS), OR ANY JURIDICAL
-// DISPUTES AGAINST US WHICH ARE CAUSED BY ANY KIND OF USING, COPYING,
-// MODIFYING, MERGING, PUBLISHING, DISTRIBUTING, SUBLICENSING, AND/OR
-// SELLING COPIES OF THIS SOFTWARE SHALL BE REGARDED AS BE CONSTRUED AND
-// CONTROLLED BY JAPANESE LAWS, AND YOU MUST FURTHER CONSENT TO
-// EXCLUSIVE JURISDICTION AND VENUE IN THE COURTS SITTING IN TOKYO,
-// JAPAN. YOU MUST WAIVE ALL DEFENSES OF LACK OF PERSONAL JURISDICTION
-// AND FORUM NON CONVENIENS. PROCESS MAY BE SERVED ON EITHER PARTY IN
-// THE MANNER AUTHORIZED BY APPLICABLE LAW OR COURT RULE.
-// 
-// USE ONLY IN JAPAN. DO NOT USE THIS SOFTWARE IN ANOTHER COUNTRY UNLESS
-// YOU HAVE A CONFIRMATION THAT THIS SOFTWARE DOES NOT VIOLATE ANY
-// CRIMINAL LAWS OR CIVIL RIGHTS IN THAT PARTICULAR COUNTRY. USING THIS
-// SOFTWARE IN OTHER COUNTRIES IS COMPLETELY AT YOUR OWN RISK. THE
-// SOFTETHER VPN PROJECT HAS DEVELOPED AND DISTRIBUTED THIS SOFTWARE TO
-// COMPLY ONLY WITH THE JAPANESE LAWS AND EXISTING CIVIL RIGHTS INCLUDING
-// PATENTS WHICH ARE SUBJECTS APPLY IN JAPAN. OTHER COUNTRIES' LAWS OR
-// CIVIL RIGHTS ARE NONE OF OUR CONCERNS NOR RESPONSIBILITIES. WE HAVE
-// NEVER INVESTIGATED ANY CRIMINAL REGULATIONS, CIVIL LAWS OR
-// INTELLECTUAL PROPERTY RIGHTS INCLUDING PATENTS IN ANY OF OTHER 200+
-// COUNTRIES AND TERRITORIES. BY NATURE, THERE ARE 200+ REGIONS IN THE
-// WORLD, WITH DIFFERENT LAWS. IT IS IMPOSSIBLE TO VERIFY EVERY
-// COUNTRIES' LAWS, REGULATIONS AND CIVIL RIGHTS TO MAKE THE SOFTWARE
-// COMPLY WITH ALL COUNTRIES' LAWS BY THE PROJECT. EVEN IF YOU WILL BE
-// SUED BY A PRIVATE ENTITY OR BE DAMAGED BY A PUBLIC SERVANT IN YOUR
-// COUNTRY, THE DEVELOPERS OF THIS SOFTWARE WILL NEVER BE LIABLE TO
-// RECOVER OR COMPENSATE SUCH DAMAGES, CRIMINAL OR CIVIL
-// RESPONSIBILITIES. NOTE THAT THIS LINE IS NOT LICENSE RESTRICTION BUT
-// JUST A STATEMENT FOR WARNING AND DISCLAIMER.
-// 
-// 
-// SOURCE CODE CONTRIBUTION
-// ------------------------
-// 
-// Your contribution to SoftEther VPN Project is much appreciated.
-// Please send patches to us through GitHub.
-// Read the SoftEther VPN Patch Acceptance Policy in advance:
-// http://www.softether.org/5-download/src/9.patch
-// 
-// 
-// DEAR SECURITY EXPERTS
-// ---------------------
-// 
-// If you find a bug or a security vulnerability please kindly inform us
-// about the problem immediately so that we can fix the security problem
-// to protect a lot of users around the world as soon as possible.
-// 
-// Our e-mail address for security reports is:
-// softether-vpn-security [at] softether.org
-// 
-// Please note that the above e-mail address is not a technical support
-// inquiry address. If you need technical assistance, please visit
-// http://www.softether.org/ and ask your question on the users forum.
-// 
-// Thank you for your cooperation.
-// 
-// 
-// NO MEMORY OR RESOURCE LEAKS
-// ---------------------------
-// 
-// The memory-leaks and resource-leaks verification under the stress
-// test has been passed before release this source code.
 
 
 // Str.c
@@ -276,40 +170,6 @@ UINT SearchAsciiInBinary(void *data, UINT size, char *str, bool case_sensitive)
 	return ret;
 }
 
-// Convert the HEX string to a 64 bit integer
-UINT64 HexToInt64(char *str)
-{
-	UINT len, i;
-	UINT64 ret = 0;
-	// Validate arguments
-	if (str == NULL)
-	{
-		return 0;
-	}
-
-	if (str[0] == '0' && (str[1] == 'x' || str[1] == 'X'))
-	{
-		str += 2;
-	}
-
-	len = StrLen(str);
-	for (i = 0;i < len;i++)
-	{
-		char c = str[i];
-
-		if ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))
-		{
-			ret = ret * 16ULL + (UINT64)HexTo4Bit(c);
-		}
-		else
-		{
-			break;
-		}
-	}
-
-	return ret;
-}
-
 // Convert the HEX string to a 32 bit integer
 UINT HexToInt(char *str)
 {
@@ -342,43 +202,6 @@ UINT HexToInt(char *str)
 	}
 
 	return ret;
-}
-
-// Convert a 64 bit integer to a HEX
-void ToHex64(char *str, UINT64 value)
-{
-	char tmp[MAX_SIZE];
-	UINT wp = 0;
-	UINT len, i;
-	// Validate arguments
-	if (str == NULL)
-	{
-		return;
-	}
-
-	// Set to empty character
-	StrCpy(tmp, 0, "");
-
-	// Append from the last digit
-	while (true)
-	{
-		UINT a = (UINT)(value % (UINT64)16);
-		value = value / (UINT)16;
-		tmp[wp++] = FourBitToHex(a);
-		if (value == 0)
-		{
-			tmp[wp++] = 0;
-			break;
-		}
-	}
-
-	// Reverse order
-	len = StrLen(tmp);
-	for (i = 0;i < len;i++)
-	{
-		str[len - i - 1] = tmp[i];
-	}
-	str[len] = 0;
 }
 
 // Convert a 32 bit integer into HEX
@@ -579,45 +402,6 @@ bool InStrList(char *target_str, char *tokens, char *splitter, bool case_sensiti
 	return ret;
 }
 
-// Confirm whether the specified string is in the token list
-bool IsStrInStrTokenList(char *str_list, char *str, char *split_chars, bool case_sensitive)
-{
-	TOKEN_LIST *t;
-	bool ret = false;
-	UINT i;
-	// Validate arguments
-	if (str_list == NULL || str == NULL)
-	{
-		return false;
-	}
-
-	t = ParseTokenWithoutNullStr(str_list, split_chars);
-
-	if (t != NULL)
-	{
-		for (i = 0;i < t->NumTokens;i++)
-		{
-			if ((case_sensitive == false) && (StrCmpi(t->Token[i], str) == 0))
-			{
-				ret = true;
-			}
-			if ((case_sensitive) && (StrCmp(t->Token[i], str) == 0))
-			{
-				ret = true;
-			}
-
-			if (ret)
-			{
-				break;
-			}
-		}
-
-		FreeToken(t);
-	}
-
-	return ret;
-}
-
 // Cut out the token from string (Ignore blanks between delimiters)
 TOKEN_LIST *ParseTokenWithoutNullStr(char *str, char *split_chars)
 {
@@ -728,23 +512,6 @@ UINT IniIntValue(LIST *o, char *key)
 
 	return ToInt(e->Value);
 }
-UINT64 IniInt64Value(LIST *o, char *key)
-{
-	INI_ENTRY *e;
-	// Validate arguments
-	if (o == NULL || key == NULL)
-	{
-		return 0;
-	}
-
-	e = GetIniEntry(o, key);
-	if (e == NULL)
-	{
-		return 0;
-	}
-
-	return ToInt64(e->Value);
-}
 char *IniStrValue(LIST *o, char *key)
 {
 	INI_ENTRY *e;
@@ -761,43 +528,6 @@ char *IniStrValue(LIST *o, char *key)
 	}
 
 	return e->Value;
-}
-wchar_t *IniUniStrValue(LIST *o, char *key)
-{
-	INI_ENTRY *e;
-	// Validate arguments
-	if (o == NULL || key == NULL)
-	{
-		return 0;
-	}
-
-	e = GetIniEntry(o, key);
-	if (e == NULL)
-	{
-		return L"";
-	}
-
-	return e->UnicodeValue;
-}
-
-// Check whether the specified value is in the INI
-bool IniHasValue(LIST *o, char *key)
-{
-	INI_ENTRY *e;
-	// Validate arguments
-	if (o == NULL || key == NULL)
-	{
-		return false;
-	}
-
-	e = GetIniEntry(o, key);
-
-	if (e == NULL)
-	{
-		return false;
-	}
-
-	return true;
 }
 
 // Release the INI
@@ -1080,54 +810,6 @@ bool IsAllUpperStr(char *str)
 	return true;
 }
 
-// Normalize the line breaks
-char *NormalizeCrlf(char *str)
-{
-	char *ret;
-	UINT ret_size, i, len, wp;
-	// Validate arguments
-	if (str == NULL)
-	{
-		return NULL;
-	}
-
-	len = StrLen(str);
-	ret_size = sizeof(char) * (len + 32) * 2;
-	ret = Malloc(ret_size);
-
-	wp = 0;
-
-	for (i = 0;i < len;i++)
-	{
-		char c = str[i];
-
-		switch (c)
-		{
-		case '\r':
-			if (str[i + 1] == '\n')
-			{
-				i++;
-			}
-			ret[wp++] = '\r';
-			ret[wp++] = '\n';
-			break;
-
-		case '\n':
-			ret[wp++] = '\r';
-			ret[wp++] = '\n';
-			break;
-
-		default:
-			ret[wp++] = c;
-			break;
-		}
-	}
-
-	ret[wp++] = 0;
-
-	return ret;
-}
-
 // Remove duplications from the token list
 TOKEN_LIST *UniqueToken(TOKEN_LIST *t)
 {
@@ -1360,26 +1042,6 @@ bool IsEmptyStr(char *str)
 	}
 }
 
-// Convert the token list to a string list
-LIST *TokenListToList(TOKEN_LIST *t)
-{
-	UINT i;
-	LIST *o;
-	// Validate arguments
-	if (t == NULL)
-	{
-		return NULL;
-	}
-
-	o = NewListFast(NULL);
-	for (i = 0;i < t->NumTokens;i++)
-	{
-		Insert(o, CopyStr(t->Token[i]));
-	}
-
-	return o;
-}
-
 // Convert a string list to a token list
 TOKEN_LIST *ListToTokenList(LIST *o)
 {
@@ -1419,33 +1081,6 @@ void FreeStrList(LIST *o)
 	}
 
 	ReleaseList(o);
-}
-
-// Convert the string list to a string
-BUF *StrListToStr(LIST *o)
-{
-	BUF *b;
-	UINT i;
-	char c;
-	// Validate arguments
-	if (o == NULL)
-	{
-		return NULL;
-	}
-	b = NewBuf();
-
-	for (i = 0;i < LIST_NUM(o);i++)
-	{
-		char *s = LIST_DATA(o, i);
-		WriteBuf(b, s, StrLen(s) + 1);
-	}
-
-	c = 0;
-	WriteBuf(b, &c, 1);
-
-	SeekBuf(b, 0, 0);
-
-	return b;
 }
 
 // Convert a (NULL delimited) string to a list
@@ -2109,21 +1744,6 @@ void Bit160ToStr(char *str, UCHAR *data)
 		data[10], data[11], data[12], data[13], data[14], data[15], data[16], data[17], data[18], data[19]);
 }
 
-// Make a string from a 128-bit sequence
-void Bit128ToStr(char *str, UCHAR *data)
-{
-	// Validate arguments
-	if (str == NULL || data == NULL)
-	{
-		return;
-	}
-
-	Format(str, 0,
-		"%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X",
-		data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], 
-		data[10], data[11], data[12], data[13], data[14], data[15]);
-}
-
 // Copy a string
 char *CopyStr(char *str)
 {
@@ -2185,30 +1805,6 @@ bool IsPrintableAsciiChar(char c)
 	{
 		return false;
 	}
-	return true;
-}
-
-// Check whether the string that can be displayed
-bool IsPrintableAsciiStr(char *str)
-{
-	UINT i, len;
-	// Validate arguments
-	if (str == NULL)
-	{
-		return false;
-	}
-
-	len = StrLen(str);
-	for (i = 0;i < len;i++)
-	{
-		char c = str[i];
-
-		if (IsPrintableAsciiChar(c) == false)
-		{
-			return false;
-		}
-	}
-
 	return true;
 }
 
@@ -2322,6 +1918,53 @@ void EnSafeStr(char *str, char replace)
 			*str = replace;
 		}
 		str++;
+	}
+}
+
+// Replace '\r' and '\n' with the specified character.
+// If the specified character is a space (unsafe), the original character is removed.
+void EnSafeHttpHeaderValueStr(char *str, char replace)
+{
+	UINT length = 0;
+	UINT index = 0;
+
+	// Validate arguments
+	if (str == NULL)
+	{
+		return;
+	}
+
+	length = StrLen(str);
+	while (index < length)
+	{
+		if (str[index] == '\r' || str[index] == '\n')
+		{
+			if (replace == ' ')
+			{
+				Move(&str[index], &str[index + 1], length - index);
+			}
+			else
+			{
+				str[index] = replace;
+			}
+		}
+		else if (str[index] == '\\')
+		{
+			if (str[index + 1] == 'r' || str[index + 1] == 'n')
+			{
+				if (replace == ' ')
+				{
+					Move(&str[index], &str[index + 2], length - index);
+					index--;
+				}
+				else
+				{
+					str[index] = str[index + 1] = replace;
+					index++;
+				}
+			}
+		}
+		index++;
 	}
 }
 
@@ -2490,35 +2133,6 @@ UINT CalcReplaceStrEx(char *string, char *old_keyword, char *new_keyword, bool c
 UINT SearchStr(char *string, char *keyword, UINT start)
 {
 	return SearchStrEx(string, keyword, start, true);
-}
-
-// Search for a string (Don't distinguish between upper / lower case)
-UINT SearchStri(char *string, char *keyword, UINT start)
-{
-	return SearchStrEx(string, keyword, start, false);
-}
-
-// Examine whether the string contains the specified character
-bool InChar(char *string, char c)
-{
-	UINT i, len;
-	// Validate arguments
-	if (string == NULL)
-	{
-		return false;
-	}
-
-	len = StrLen(string);
-
-	for (i = 0;i < len;i++)
-	{
-		if (string[i] == c)
-		{
-			return true;
-		}
-	}
-
-	return false;
 }
 
 // Return the position of the first found keyword in the string
@@ -2739,6 +2353,33 @@ void TrimCrlf(char *str)
 	}
 }
 
+// Remove quotes at the beginning and at the end of the string
+void TrimQuotes(char *str)
+{
+	UINT len = 0;
+	// Validate arguments
+	if (str == NULL)
+	{
+		return;
+	}
+
+	len = StrLen(str);
+	if (len == 0)
+	{
+		return;
+	}
+
+	if (str[len - 1] == '\"')
+	{
+		str[len - 1] = 0;
+	}
+
+	if (str[0] == '\"')
+	{
+		Move(str, str + 1, len);
+	}
+}
+
 // Remove white spaces of the both side of the string
 void Trim(char *str)
 {
@@ -2841,24 +2482,6 @@ void TrimLeft(char *str)
 	Free(buf);
 }
 
-// Convert an integer to a hexadecimal string (8-digit fixed)
-void ToStrx8(char *str, UINT i)
-{
-	sprintf(str, "0x%08x", i);
-}
-
-// Convert an integer to a hexadecimal string
-void ToStrx(char *str, UINT i)
-{
-	sprintf(str, "0x%02x", i);
-}
-
-// Convert a signed integer to a string
-void ToStri(char *str, int i)
-{
-	sprintf(str, "%i", i);
-}
-
 // Convert an integer to a string
 void ToStr(char *str, UINT i)
 {
@@ -2947,33 +2570,6 @@ UINT ToInt(char *str)
 	}
 
 	return (UINT)strtoul(str, NULL, 0);
-}
-
-// Replace a format string for 64-bit integer
-char *ReplaceFormatStringFor64(char *fmt)
-{
-	char *tmp;
-	char *ret;
-	UINT tmp_size;
-	// Validate arguments
-	if (fmt == NULL)
-	{
-		return NULL;
-	}
-
-	tmp_size = StrSize(fmt) * 2;
-	tmp = ZeroMalloc(tmp_size);
-
-#ifdef	OS_WIN32
-	ReplaceStrEx(tmp, tmp_size, fmt, "%ll", "%I64", false);
-#else	// OS_WIN32
-	ReplaceStrEx(tmp, tmp_size, fmt, "%I64", "%ll", false);
-#endif	// OS_WIN32
-
-	ret = CopyStr(tmp);
-	Free(tmp);
-
-	return ret;
 }
 
 // Display the string on the screen
@@ -3067,32 +2663,6 @@ void Debug(char *fmt, ...)
 	DebugArgs(fmt, args);
 
 	va_end(args);
-}
-
-// Format the string, and return the result
-char *CopyFormat(char *fmt, ...)
-{
-	char *buf;
-	char *ret;
-	UINT size;
-	va_list args;
-	// Validate arguments
-	if (fmt == NULL)
-	{
-		return NULL;
-	}
-
-	size = MAX(StrSize(fmt) * 10, MAX_SIZE * 10);
-	buf = Malloc(size);
-
-	va_start(args, fmt);
-	FormatArgs(buf, size, fmt, args);
-
-	ret = CopyStr(buf);
-	Free(buf);
-
-	va_end(args);
-	return ret;
 }
 
 // Format the string
@@ -3393,18 +2963,6 @@ UINT StrCpyAllowOverlap(char *dst, UINT size, char *src)
 	KS_INC(KS_STRCPY_COUNT);
 
 	return len;
-}
-
-// Check whether the string buffer is within the specified size
-bool StrCheckSize(char *str, UINT size)
-{
-	// Validate arguments
-	if (str == NULL || size == 0)
-	{
-		return false;
-	}
-
-	return StrCheckLen(str, size - 1);
 }
 
 // Make sure that the string is within the specified length

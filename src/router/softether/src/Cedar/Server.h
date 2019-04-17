@@ -1,111 +1,5 @@
-// SoftEther VPN Source Code - Stable Edition Repository
+// SoftEther VPN Source Code - Developer Edition Master Branch
 // Cedar Communication Module
-// 
-// SoftEther VPN Server, Client and Bridge are free software under GPLv2.
-// 
-// Copyright (c) Daiyuu Nobori.
-// Copyright (c) SoftEther VPN Project, University of Tsukuba, Japan.
-// Copyright (c) SoftEther Corporation.
-// 
-// All Rights Reserved.
-// 
-// http://www.softether.org/
-// 
-// Author: Daiyuu Nobori, Ph.D.
-// Comments: Tetsuo Sugiyama, Ph.D.
-// 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// version 2 as published by the Free Software Foundation.
-// 
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU General Public License for more details.
-// 
-// You should have received a copy of the GNU General Public License version 2
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-// CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-// TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-// SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-// 
-// THE LICENSE AGREEMENT IS ATTACHED ON THE SOURCE-CODE PACKAGE
-// AS "LICENSE.TXT" FILE. READ THE TEXT FILE IN ADVANCE TO USE THE SOFTWARE.
-// 
-// 
-// THIS SOFTWARE IS DEVELOPED IN JAPAN, AND DISTRIBUTED FROM JAPAN,
-// UNDER JAPANESE LAWS. YOU MUST AGREE IN ADVANCE TO USE, COPY, MODIFY,
-// MERGE, PUBLISH, DISTRIBUTE, SUBLICENSE, AND/OR SELL COPIES OF THIS
-// SOFTWARE, THAT ANY JURIDICAL DISPUTES WHICH ARE CONCERNED TO THIS
-// SOFTWARE OR ITS CONTENTS, AGAINST US (SOFTETHER PROJECT, SOFTETHER
-// CORPORATION, DAIYUU NOBORI OR OTHER SUPPLIERS), OR ANY JURIDICAL
-// DISPUTES AGAINST US WHICH ARE CAUSED BY ANY KIND OF USING, COPYING,
-// MODIFYING, MERGING, PUBLISHING, DISTRIBUTING, SUBLICENSING, AND/OR
-// SELLING COPIES OF THIS SOFTWARE SHALL BE REGARDED AS BE CONSTRUED AND
-// CONTROLLED BY JAPANESE LAWS, AND YOU MUST FURTHER CONSENT TO
-// EXCLUSIVE JURISDICTION AND VENUE IN THE COURTS SITTING IN TOKYO,
-// JAPAN. YOU MUST WAIVE ALL DEFENSES OF LACK OF PERSONAL JURISDICTION
-// AND FORUM NON CONVENIENS. PROCESS MAY BE SERVED ON EITHER PARTY IN
-// THE MANNER AUTHORIZED BY APPLICABLE LAW OR COURT RULE.
-// 
-// USE ONLY IN JAPAN. DO NOT USE THIS SOFTWARE IN ANOTHER COUNTRY UNLESS
-// YOU HAVE A CONFIRMATION THAT THIS SOFTWARE DOES NOT VIOLATE ANY
-// CRIMINAL LAWS OR CIVIL RIGHTS IN THAT PARTICULAR COUNTRY. USING THIS
-// SOFTWARE IN OTHER COUNTRIES IS COMPLETELY AT YOUR OWN RISK. THE
-// SOFTETHER VPN PROJECT HAS DEVELOPED AND DISTRIBUTED THIS SOFTWARE TO
-// COMPLY ONLY WITH THE JAPANESE LAWS AND EXISTING CIVIL RIGHTS INCLUDING
-// PATENTS WHICH ARE SUBJECTS APPLY IN JAPAN. OTHER COUNTRIES' LAWS OR
-// CIVIL RIGHTS ARE NONE OF OUR CONCERNS NOR RESPONSIBILITIES. WE HAVE
-// NEVER INVESTIGATED ANY CRIMINAL REGULATIONS, CIVIL LAWS OR
-// INTELLECTUAL PROPERTY RIGHTS INCLUDING PATENTS IN ANY OF OTHER 200+
-// COUNTRIES AND TERRITORIES. BY NATURE, THERE ARE 200+ REGIONS IN THE
-// WORLD, WITH DIFFERENT LAWS. IT IS IMPOSSIBLE TO VERIFY EVERY
-// COUNTRIES' LAWS, REGULATIONS AND CIVIL RIGHTS TO MAKE THE SOFTWARE
-// COMPLY WITH ALL COUNTRIES' LAWS BY THE PROJECT. EVEN IF YOU WILL BE
-// SUED BY A PRIVATE ENTITY OR BE DAMAGED BY A PUBLIC SERVANT IN YOUR
-// COUNTRY, THE DEVELOPERS OF THIS SOFTWARE WILL NEVER BE LIABLE TO
-// RECOVER OR COMPENSATE SUCH DAMAGES, CRIMINAL OR CIVIL
-// RESPONSIBILITIES. NOTE THAT THIS LINE IS NOT LICENSE RESTRICTION BUT
-// JUST A STATEMENT FOR WARNING AND DISCLAIMER.
-// 
-// 
-// SOURCE CODE CONTRIBUTION
-// ------------------------
-// 
-// Your contribution to SoftEther VPN Project is much appreciated.
-// Please send patches to us through GitHub.
-// Read the SoftEther VPN Patch Acceptance Policy in advance:
-// http://www.softether.org/5-download/src/9.patch
-// 
-// 
-// DEAR SECURITY EXPERTS
-// ---------------------
-// 
-// If you find a bug or a security vulnerability please kindly inform us
-// about the problem immediately so that we can fix the security problem
-// to protect a lot of users around the world as soon as possible.
-// 
-// Our e-mail address for security reports is:
-// softether-vpn-security [at] softether.org
-// 
-// Please note that the above e-mail address is not a technical support
-// inquiry address. If you need technical assistance, please visit
-// http://www.softether.org/ and ask your question on the users forum.
-// 
-// Thank you for your cooperation.
-// 
-// 
-// NO MEMORY OR RESOURCE LEAKS
-// ---------------------------
-// 
-// The memory-leaks and resource-leaks verification under the stress
-// test has been passed before release this source code.
 
 
 // Server.h
@@ -129,7 +23,9 @@
 #define	SERVER_DEF_PORTS_INCLIENT_DYN_MAX	1999
 
 extern char *SERVER_CONFIG_FILE_NAME;
-#define	SERVER_DEFAULT_CIPHER_NAME		"AES128-SHA"
+// This is set to an invalid OpenSSL cipher specification by default.
+// The server will default to a list of sane and secure modern ciphers.
+#define	SERVER_DEFAULT_CIPHER_NAME		"~DEFAULT~"
 #define	SERVER_DEFAULT_CERT_DAYS		(365 * 10)
 #define	SERVER_DEFAULT_HUB_NAME			"DEFAULT"
 #define	SERVER_DEFAULT_BRIDGE_NAME		"BRIDGE"
@@ -251,6 +147,8 @@ struct OPENVPN_SSTP_CONFIG
 {
 	bool EnableOpenVPN;						// OpenVPN is enabled
 	char OpenVPNPortList[MAX_SIZE];			// OpenVPN UDP port number list
+	bool OpenVPNObfuscation;				// OpenVPN: Obfuscation mode
+	char OpenVPNObfuscationMask[MAX_SIZE];	// OpenVPN: String (mask) for XOR obfuscation
 	bool EnableSSTP;						// SSTP is enabled
 };
 
@@ -275,14 +173,14 @@ struct SERVER
 	bool DontBackupConfig;				// Do not save a backup of the configuration automatically
 	bool BackupConfigOnlyWhenModified;	// Save a backup of the configuration only if there is a modification
 	UINT ConfigRevision;				// Configuration file revision
-	bool DisableDosProction;			// Disable the DoS attack protection
+	bool DisableDosProtection;			// Disable the DoS attack protection
 	UCHAR MyRandomKey[SHA1_SIZE];		// Their own random key
 	bool FarmControllerInited;			// Initialization of farm controller has been completed
 	bool DisableDeadLockCheck;			// Disable the deadlock check
-//	bool UseWebUI;						// Use the WebUI
+	bool UseWebUI;						// Use the WebUI
 	bool SaveDebugLog;					// Save the debug log
 	bool NoSendSignature;				// Let the client not to send a signature
-//	bool UseWebTimePage;				// Use WebTimePage
+	bool UseWebTimePage;				// Use WebTimePage
 	bool NoLinuxArpFilter;				// Not to set arp_filter in Linux
 	bool NoHighPriorityProcess;			// Not to raise the priority of the process
 	bool NoDebugDump;					// Not to output the debug dump
@@ -291,7 +189,6 @@ struct SERVER
 	bool DisableNatTraversal;			// Disable the NAT-traversal feature
 	bool EnableVpnOverIcmp;				// VPN over ICMP is enabled
 	bool EnableVpnOverDns;				// VPN over DNS is enabled
-	bool DisableIntelAesAcceleration;	// Disable the Intel AES acceleration
 	bool NoMoreSave;					// Do not save any more
 	bool EnableConditionalAccept;		// Apply the Conditional Accept the Listener
 	bool EnableLegacySSL;				// Enable Legacy SSL
@@ -368,6 +265,7 @@ struct SERVER
 
 	volatile UINT NatTGlobalUdpPort;	// NAT-T global UDP port
 
+	IP ListenIP;						// Listen IP
 	bool StrictSyslogDatetimeFormat;	// Make syslog datetime format strict RFC3164
 };
 
@@ -426,12 +324,12 @@ struct LOG_FILE
 
 // Global server flags
 #define	NUM_GLOBAL_SERVER_FLAGS			128
-//#define	GSF_DISABLE_PUSH_ROUTE			1
-//#define	GSF_DISABLE_RADIUS_AUTH			2
-//#define	GSF_DISABLE_CERT_AUTH			3
-//#define	GSF_DISABLE_DEEP_LOGGING		4
-//#define	GSF_DISABLE_AC					5
-//#define	GSF_DISABLE_SYSLOG				6
+#define	GSF_DISABLE_PUSH_ROUTE			1
+#define	GSF_DISABLE_RADIUS_AUTH			2
+#define	GSF_DISABLE_CERT_AUTH			3
+#define	GSF_DISABLE_DEEP_LOGGING		4
+#define	GSF_DISABLE_AC					5
+#define	GSF_DISABLE_SYSLOG				6
 #define	GSF_SHOW_OSS_MSG				7
 #define	GSF_LOCALBRIDGE_NO_DISABLE_OFFLOAD	8
 #define	GSF_DISABLE_SESSION_RECONNECT	9
@@ -502,8 +400,6 @@ int CompareServerListener(void *p1, void *p2);
 void SiStopAllListener(SERVER *s);
 void SiInitDefaultHubList(SERVER *s);
 void SiSetDefaultHubOption(HUB_OPTION *o);
-void SiInitBridge(SERVER *s);
-void SiTest(SERVER *s);
 FOLDER *SiWriteConfigurationToCfg(SERVER *s);
 bool SiLoadConfigurationCfg(SERVER *s, FOLDER *root);
 void SiWriteLocalBridges(FOLDER *f, SERVER *s);
@@ -576,7 +472,6 @@ void SiRebootServer(bool bridge);
 void SiRebootServerThread(THREAD *thread, void *param);
 void StInit();
 void StFree();
-SERVER *StGetServer();
 void SiSetServerType(SERVER *s, UINT type,
 					 UINT ip, UINT num_port, UINT *ports,
 					 char *controller_name, UINT controller_port, UCHAR *password, UINT weight, bool controller_only);
@@ -589,8 +484,6 @@ FARM_TASK *SiFarmServPostTask(FARM_MEMBER *f, PACK *request);
 PACK *SiFarmServWaitTask(FARM_TASK *t);
 PACK *SiExecTask(FARM_MEMBER *f, PACK *p);
 PACK *SiCallTask(FARM_MEMBER *f, PACK *p, char *taskname);
-FARM_TASK *SiCallTaskAsyncBegin(FARM_MEMBER *f, PACK *p, char *taskname);
-PACK *SiCallTaskAsyncEnd(CEDAR *c, FARM_TASK *t);
 void SiAcceptTasksFromController(FARM_CONTROLLER *f, SOCK *sock);
 void SiAcceptTasksFromControllerMain(FARM_CONTROLLER *f, SOCK *sock);
 PACK *SiCalledTask(FARM_CONTROLLER *f, PACK *p, char *taskname);
@@ -628,8 +521,6 @@ void SiCalledEnumHub(SERVER *s, PACK *p, PACK *req);
 void SiPackAddCreateHub(PACK *p, HUB *h);
 FARM_MEMBER *SiGetHubHostingMember(SERVER *s, HUB *h, bool admin_mode, CONNECTION *c);
 void SiCallEnumHub(SERVER *s, FARM_MEMBER *f);
-void SiCallEnumHubBegin(SERVER *s, FARM_MEMBER *f);
-void SiCallEnumHubEnd(SERVER *s, FARM_MEMBER *f);
 void SiStartFarmControl(SERVER *s);
 void SiStopFarmControl(SERVER *s);
 void SiFarmControlThread(THREAD *thread, void *param);
@@ -652,7 +543,6 @@ LIST *EnumLogFile(char *hubname);
 void EnumLogFileDir(LIST *o, char *dirname);
 void FreeEnumLogFile(LIST *o);
 bool CheckLogFileNameFromEnumList(LIST *o, char *name, char *server_name);
-void AdjoinEnumLogFile(LIST *o, LIST *src);
 void IncrementServerConfigRevision(SERVER *s);
 void GetServerProductName(SERVER *s, char *name, UINT size);
 void GetServerProductNameInternal(SERVER *s, char *name, UINT size);
@@ -713,7 +603,7 @@ void DestroyServerCapsCache(SERVER *s);
 
 void SetGlobalServerFlag(UINT index, UINT value);
 UINT GetGlobalServerFlag(UINT index);
-//void UpdateGlobalServerFlags(SERVER *s, CAPSLIST *t);
+void UpdateGlobalServerFlags(SERVER *s, CAPSLIST *t);
 
 
 bool IsAdminPackSupportedServerProduct(char *name);
@@ -725,7 +615,6 @@ void SiAddHubCreateHistory(SERVER *s, char *name);
 void SiDelHubCreateHistory(SERVER *s, char *name);
 bool SiIsHubRegistedOnCreateHistory(SERVER *s, char *name);
 
-UINT SiGetServerNumUserObjects(SERVER *s);
 bool SiTooManyUserObjectsInServer(SERVER *s, bool oneMore);
 
 void SiGetOpenVPNAndSSTPConfig(SERVER *s, OPENVPN_SSTP_CONFIG *c);
@@ -739,12 +628,10 @@ bool SiIsAzureEnabled(SERVER *s);
 bool SiIsAzureSupported(SERVER *s);
 void SiApplyAzureConfig(SERVER *s, DDNS_CLIENT_STATUS *ddns_status);
 void SiSetAzureEnable(SERVER *s, bool enabled);
-bool SiGetAzureEnable(SERVER *s);
 
-//void SiUpdateCurrentRegion(CEDAR *c, char *region, bool force_update);
-//void SiGetCurrentRegion(CEDAR *c, char *region, UINT region_size);
-//bool SiIsEnterpriseFunctionsRestrictedOnOpenSource(CEDAR *c);
-//bool SiCheckCurrentRegion(CEDAR *c, char *r);
+void SiUpdateCurrentRegion(CEDAR *c, char *region, bool force_update);
+void SiGetCurrentRegion(CEDAR *c, char *region, UINT region_size);
+bool SiIsEnterpriseFunctionsRestrictedOnOpenSource(CEDAR *c);
 
 #endif	// SERVER_H
 

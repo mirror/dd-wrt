@@ -1,111 +1,5 @@
-// SoftEther VPN Source Code - Stable Edition Repository
+// SoftEther VPN Source Code - Developer Edition Master Branch
 // Cedar Communication Module
-// 
-// SoftEther VPN Server, Client and Bridge are free software under GPLv2.
-// 
-// Copyright (c) Daiyuu Nobori.
-// Copyright (c) SoftEther VPN Project, University of Tsukuba, Japan.
-// Copyright (c) SoftEther Corporation.
-// 
-// All Rights Reserved.
-// 
-// http://www.softether.org/
-// 
-// Author: Daiyuu Nobori, Ph.D.
-// Comments: Tetsuo Sugiyama, Ph.D.
-// 
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// version 2 as published by the Free Software Foundation.
-// 
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU General Public License for more details.
-// 
-// You should have received a copy of the GNU General Public License version 2
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-// CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-// TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-// SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-// 
-// THE LICENSE AGREEMENT IS ATTACHED ON THE SOURCE-CODE PACKAGE
-// AS "LICENSE.TXT" FILE. READ THE TEXT FILE IN ADVANCE TO USE THE SOFTWARE.
-// 
-// 
-// THIS SOFTWARE IS DEVELOPED IN JAPAN, AND DISTRIBUTED FROM JAPAN,
-// UNDER JAPANESE LAWS. YOU MUST AGREE IN ADVANCE TO USE, COPY, MODIFY,
-// MERGE, PUBLISH, DISTRIBUTE, SUBLICENSE, AND/OR SELL COPIES OF THIS
-// SOFTWARE, THAT ANY JURIDICAL DISPUTES WHICH ARE CONCERNED TO THIS
-// SOFTWARE OR ITS CONTENTS, AGAINST US (SOFTETHER PROJECT, SOFTETHER
-// CORPORATION, DAIYUU NOBORI OR OTHER SUPPLIERS), OR ANY JURIDICAL
-// DISPUTES AGAINST US WHICH ARE CAUSED BY ANY KIND OF USING, COPYING,
-// MODIFYING, MERGING, PUBLISHING, DISTRIBUTING, SUBLICENSING, AND/OR
-// SELLING COPIES OF THIS SOFTWARE SHALL BE REGARDED AS BE CONSTRUED AND
-// CONTROLLED BY JAPANESE LAWS, AND YOU MUST FURTHER CONSENT TO
-// EXCLUSIVE JURISDICTION AND VENUE IN THE COURTS SITTING IN TOKYO,
-// JAPAN. YOU MUST WAIVE ALL DEFENSES OF LACK OF PERSONAL JURISDICTION
-// AND FORUM NON CONVENIENS. PROCESS MAY BE SERVED ON EITHER PARTY IN
-// THE MANNER AUTHORIZED BY APPLICABLE LAW OR COURT RULE.
-// 
-// USE ONLY IN JAPAN. DO NOT USE THIS SOFTWARE IN ANOTHER COUNTRY UNLESS
-// YOU HAVE A CONFIRMATION THAT THIS SOFTWARE DOES NOT VIOLATE ANY
-// CRIMINAL LAWS OR CIVIL RIGHTS IN THAT PARTICULAR COUNTRY. USING THIS
-// SOFTWARE IN OTHER COUNTRIES IS COMPLETELY AT YOUR OWN RISK. THE
-// SOFTETHER VPN PROJECT HAS DEVELOPED AND DISTRIBUTED THIS SOFTWARE TO
-// COMPLY ONLY WITH THE JAPANESE LAWS AND EXISTING CIVIL RIGHTS INCLUDING
-// PATENTS WHICH ARE SUBJECTS APPLY IN JAPAN. OTHER COUNTRIES' LAWS OR
-// CIVIL RIGHTS ARE NONE OF OUR CONCERNS NOR RESPONSIBILITIES. WE HAVE
-// NEVER INVESTIGATED ANY CRIMINAL REGULATIONS, CIVIL LAWS OR
-// INTELLECTUAL PROPERTY RIGHTS INCLUDING PATENTS IN ANY OF OTHER 200+
-// COUNTRIES AND TERRITORIES. BY NATURE, THERE ARE 200+ REGIONS IN THE
-// WORLD, WITH DIFFERENT LAWS. IT IS IMPOSSIBLE TO VERIFY EVERY
-// COUNTRIES' LAWS, REGULATIONS AND CIVIL RIGHTS TO MAKE THE SOFTWARE
-// COMPLY WITH ALL COUNTRIES' LAWS BY THE PROJECT. EVEN IF YOU WILL BE
-// SUED BY A PRIVATE ENTITY OR BE DAMAGED BY A PUBLIC SERVANT IN YOUR
-// COUNTRY, THE DEVELOPERS OF THIS SOFTWARE WILL NEVER BE LIABLE TO
-// RECOVER OR COMPENSATE SUCH DAMAGES, CRIMINAL OR CIVIL
-// RESPONSIBILITIES. NOTE THAT THIS LINE IS NOT LICENSE RESTRICTION BUT
-// JUST A STATEMENT FOR WARNING AND DISCLAIMER.
-// 
-// 
-// SOURCE CODE CONTRIBUTION
-// ------------------------
-// 
-// Your contribution to SoftEther VPN Project is much appreciated.
-// Please send patches to us through GitHub.
-// Read the SoftEther VPN Patch Acceptance Policy in advance:
-// http://www.softether.org/5-download/src/9.patch
-// 
-// 
-// DEAR SECURITY EXPERTS
-// ---------------------
-// 
-// If you find a bug or a security vulnerability please kindly inform us
-// about the problem immediately so that we can fix the security problem
-// to protect a lot of users around the world as soon as possible.
-// 
-// Our e-mail address for security reports is:
-// softether-vpn-security [at] softether.org
-// 
-// Please note that the above e-mail address is not a technical support
-// inquiry address. If you need technical assistance, please visit
-// http://www.softether.org/ and ask your question on the users forum.
-// 
-// Thank you for your cooperation.
-// 
-// 
-// NO MEMORY OR RESOURCE LEAKS
-// ---------------------------
-// 
-// The memory-leaks and resource-leaks verification under the stress
-// test has been passed before release this source code.
 
 
 // Cedar.h
@@ -135,10 +29,18 @@
 
 
 // Version number
-#define	CEDAR_VER					428
+#ifndef	CEDAR_VERSION_MAJOR
+#define	CEDAR_VERSION_MAJOR		0
+#endif	// CEDAR_VERSION_MAJOR
 
-// Build Number
-#define	CEDAR_BUILD					9669
+#ifndef	CEDAR_VERSION_MINOR
+#define	CEDAR_VERSION_MINOR		0
+#endif	// CEDAR_VER_MINOR
+
+// Build number
+#ifndef	CEDAR_VERSION_BUILD
+#define	CEDAR_VERSION_BUILD		0
+#endif	// CEDAR_VERSION_BUILD
 
 // Beta number
 //#define	BETA_NUMBER					3
@@ -148,21 +50,38 @@
 
 // Specify the name of the person in charge building
 #ifndef	BUILDER_NAME
-#define	BUILDER_NAME		"yagi"
+#define	BUILDER_NAME			"Unknown"
 #endif	// BUILDER_NAME
 
 // Specify the location to build
 #ifndef	BUILD_PLACE
-#define	BUILD_PLACE			"pc33"
+#define	BUILD_PLACE				"Unknown"
 #endif	// BUILD_PLACE
 
 // Specifies the build date
-#define	BUILD_DATE_Y		2018
-#define	BUILD_DATE_M		9
-#define	BUILD_DATE_D		11
-#define	BUILD_DATE_HO		11
-#define	BUILD_DATE_MI		48
-#define	BUILD_DATE_SE		34
+#ifndef	BUILD_DATE_Y
+#define	BUILD_DATE_Y			1970
+#endif	// BUILD_DATE_Y
+
+#ifndef	BUILD_DATE_M
+#define	BUILD_DATE_M			1
+#endif	// BUILD_DATE_M
+
+#ifndef	BUILD_DATE_D
+#define	BUILD_DATE_D			1
+#endif	// BUILD_DATE_D
+
+#ifndef	BUILD_DATE_HO
+#define	BUILD_DATE_HO			0
+#endif	// BUILD_DATE_HO
+
+#ifndef	BUILD_DATE_MI
+#define	BUILD_DATE_MI			0
+#endif	// BUILD_DATE_MI
+
+#ifndef	BUILD_DATE_SE
+#define	BUILD_DATE_SE			0
+#endif	// BUILD_DATE_SE
 
 // Tolerable time difference
 #define	ALLOW_TIMESTAMP_DIFF		(UINT64)(3 * 24 * 60 * 60 * 1000)
@@ -183,6 +102,9 @@
 
 // Hidden password string of 8 characters
 #define	HIDDEN_PASSWORD				"********"
+
+// Default separator character for the hub name in the username
+#define	DEFAULT_USERNAME_HUB_SEPARATOR	'@'
 
 
 //////////////////////////////////////////////////////////////////////
@@ -274,7 +196,7 @@
 #define	MAX_RETRY_INTERVAL			(300 * 1000)	// Maximum retry interval
 #define	RETRY_INTERVAL_SPECIAL		(60 * 1000)		// Reconnection interval of a special case
 
-#define	MAX_ADDITONAL_CONNECTION_FAILED_COUNTER	16	// Allowable number that can be serially failed to additional connection
+#define	MAX_ADDITIONAL_CONNECTION_FAILED_COUNTER	16	// Allowable number that can be serially failed to additional connection
 #define	ADDITIONAL_CONNECTION_COUNTER_RESET_INTERVAL	(30 * 60 * 1000)	// Reset period of additional connection failure counter
 
 #define	MAC_MIN_LIMIT_COUNT			3		// Minimum number of MAC addresses
@@ -308,6 +230,7 @@
 #define	FARM_BASE_POINT				100000		// Reference value of the cluster score
 #define	FARM_DEFAULT_WEIGHT			100			// Standard performance ratio
 
+#define DH_PARAM_BITS_DEFAULT		2048		// Bits of Diffie-Hellman Parameters
 
 
 #define	SE_UDP_SIGN			"SE2P"		// Not used (only old UDP mode)
@@ -365,7 +288,8 @@
 // Type of proxy
 #define	PROXY_DIRECT			0	// Direct TCP connection
 #define	PROXY_HTTP				1	// Connection via HTTP proxy server
-#define	PROXY_SOCKS				2	// Connection via SOCKS proxy server
+#define	PROXY_SOCKS				2	// Connection via SOCKS4 proxy server
+#define	PROXY_SOCKS5			3	// Connection via SOCKS5 proxy server
 
 // Direction of data flow
 #define	TCP_BOTH				0	// Bi-directional
@@ -447,6 +371,7 @@
 #define	AUTHTYPE_ROOTCERT				3			// Root certificate which is issued by trusted Certificate Authority
 #define	AUTHTYPE_RADIUS					4			// Radius authentication
 #define	AUTHTYPE_NT						5			// Windows NT authentication
+#define	AUTHTYPE_OPENVPN_CERT    		98			// TLS client certificate authentication
 #define	AUTHTYPE_TICKET					99			// Ticket authentication
 
 // Constant of the client side
@@ -742,20 +667,14 @@
 // 
 //////////////////////////////////////////////////////////////////////
 
+#ifndef	UNIX_BSD
 #define	TAP_FILENAME_1				"/dev/net/tun"
 #define	TAP_FILENAME_2				"/dev/tun"
-#ifdef	UNIX_MACOS
-#ifdef	NO_VLAN
-#define	TAP_MACOS_FILENAME			"/dev/tap0"
-#else	// NO_VLAN
-#define	TAP_MACOS_FILENAME			"tap"
-#endif	// NO_VLAN
-#define	TAP_MACOS_DIR				"/dev/"
-#define	TAP_MACOS_NUMBER			(16)
-#endif	// UNIX_MACOS
-
-
-
+#else	// UNIX_BSD
+#define	TAP_NAME					"tap"
+#define	TAP_DIR						"/dev/"
+#define	TAP_MAX						(512)
+#endif	// UNIX_BSD
 
 
 #define	LICENSE_EDITION_VPN3_NO_LICENSE					0		// Without license
@@ -1002,6 +921,7 @@ typedef struct CEDAR
 	COUNTER *ConnectionIncrement;	// Connection increment counter
 	X *ServerX;						// Server certificate
 	K *ServerK;						// Private key of the server certificate
+	char UsernameHubSeparator;		// Character which separates the username from the hub name
 	char *CipherList;				// List of encryption algorithms
 	UINT Version;					// Version information
 	UINT Build;						// Build Number
@@ -1033,7 +953,7 @@ typedef struct CEDAR
 	COUNTER *AssignedBridgeLicense;	// Number of assigned bridge licenses
 	UINT64 LicenseViolationTick;	// License violation occurs
 	LIST *NonSslList;				// Non-SSL connection list
-//	struct WEBUI *WebUI;			// Data for WebUI service
+	struct WEBUI *WebUI;			// Data for WebUI service
 	UINT Beta;						// Beta number
 	LOCK *CedarSuperLock;			// Cedar super lock!
 	bool DisableIPv6Listener;		// Disable IPv6 listener
@@ -1043,8 +963,8 @@ typedef struct CEDAR
 	char CurrentDDnsFqdn[MAX_SIZE];	// FQDN of the current DDNS
 	char OpenVPNPublicPorts[MAX_SIZE];	// OpenVPN public UDP port list
 	LOCK *OpenVPNPublicPortsLock;	// Lock of OpenVPN public UDP port list
-//	LOCK *CurrentRegionLock;		// Current region lock
-//	char CurrentRegion[128];		// Current region
+	LOCK *CurrentRegionLock;		// Current region lock
+	char CurrentRegion[128];		// Current region
 	LOCK *CurrentTcpQueueSizeLock;	// Current TCP send queue size lock
 	UINT CurrentTcpQueueSize;		// Current TCP send queue size
 	COUNTER *CurrentActiveLinks;	// Current active cascade connections
@@ -1053,7 +973,11 @@ typedef struct CEDAR
 	LOCK *FifoBudgetLock;			// Fifo budget lock
 	UINT FifoBudget;				// Fifo budget
 	SSL_ACCEPT_SETTINGS SslAcceptSettings;	// SSL Accept Settings
-	char OpenVPNDefaultClientOption[MAX_SIZE];	// OpenVPN Default Client Option String
+	UINT DhParamBits;  // Bits of Diffie-Hellman parameters
+	char OpenVPNDefaultClientOption[MAX_SIZE];	// OpenVPN: Default Client Option String
+	bool OpenVPNObfuscation;					// OpenVPN: Obfuscation mode
+	char OpenVPNObfuscationMask[MAX_SIZE];		// OpenVPN: String (mask) for XOR obfuscation
+	bool OpenVPNPushDummyIPv4AddressOnL2Mode;	// OpenVPN: Push a dummy IPv4 address on L2 mode
 } CEDAR;
 
 // Type of CEDAR
@@ -1086,7 +1010,7 @@ typedef struct CEDAR
 #include <Cedar/Sam.h>
 // Radius authentication module
 #include <Cedar/Radius.h>
-// Protocol
+// Native protocol
 #include <Cedar/Protocol.h>
 // Inter-HUB link
 #include <Cedar/Link.h>
@@ -1104,19 +1028,18 @@ typedef struct CEDAR
 #include <Cedar/Command.h>
 // RPC over HTTP
 #include <Cedar/Wpc.h>
-// IPsec
-#include <Cedar/IPsec.h>
-#include <Cedar/IPsec_L2TP.h>
-#include <Cedar/IPsec_PPP.h>
-#include <Cedar/IPsec_IPC.h>
-#include <Cedar/IPsec_IkePacket.h>
-#include <Cedar/IPsec_IKE.h>
-#include <Cedar/IPsec_Win7.h>
-#include <Cedar/IPsec_EtherIP.h>
-// SSTP
-#include <Cedar/Interop_SSTP.h>
-// OpenVPN
-#include <Cedar/Interop_OpenVPN.h>
+// Layer-2/Layer-3 converter
+#include <Cedar/IPC.h>
+// Third party protocols
+#include <Cedar/Proto_IPsec.h>
+#include <Cedar/Proto_EtherIP.h>
+#include <Cedar/Proto_IkePacket.h>
+#include <Cedar/Proto_IKE.h>
+#include <Cedar/Proto_L2TP.h>
+#include <Cedar/Proto_OpenVPN.h>
+#include <Cedar/Proto_PPP.h>
+#include <Cedar/Proto_SSTP.h>
+#include <Cedar/Proto_Win7.h>
 // UDP Acceleration
 #include <Cedar/UdpAccel.h>
 // DDNS Client
@@ -1156,11 +1079,8 @@ typedef struct CEDAR
 // User-mode Router
 #include <Cedar/Nat.h>
 
-//// Web UI
-//#include <Cedar/WebUI.h>
-
-// VPN Gate Plugin DLL
-#include <VGate/VGateCommon.h>
+// Web UI
+#include <Cedar/WebUI.h>
 
 // VPN Gate Main Implementation
 #include <Cedar/VG.h>
@@ -1211,7 +1131,6 @@ void DelHubEx(CEDAR *c, HUB *h, bool no_lock);
 void StopAllHub(CEDAR *c);
 void StopAllConnection(CEDAR *c);
 void AddConnection(CEDAR *cedar, CONNECTION *c);
-UINT GetUnestablishedConnections(CEDAR *cedar);
 void DelConnection(CEDAR *cedar, CONNECTION *c);
 void SetCedarCipherList(CEDAR *cedar, char *name);
 void InitCedar();
@@ -1225,14 +1144,10 @@ void InitNetSvcList(CEDAR *cedar);
 void FreeNetSvcList(CEDAR *cedar);
 int CompareNetSvc(void *p1, void *p2);
 char *GetSvcName(CEDAR *cedar, bool udp, UINT port);
-void InitHiddenPassword(char *str, UINT size);
-bool IsHiddenPasswordChanged(char *str);
 UINT64 GetTrafficPacketSize(TRAFFIC *t);
 UINT64 GetTrafficPacketNum(TRAFFIC *t);
-void EnableDebugLog(CEDAR *c);
 void StartCedarLog();
 void StopCedarLog();
-void CedarLog(char *str);
 int CompareNoSslList(void *p1, void *p2);
 void InitNoSslList(CEDAR *c);
 void FreeNoSslList(CEDAR *c);
@@ -1240,16 +1155,15 @@ bool AddNoSsl(CEDAR *c, IP *ip);
 void DecrementNoSsl(CEDAR *c, IP *ip, UINT num_dec);
 void DeleteOldNoSsl(CEDAR *c);
 NON_SSL *SearchNoSslList(CEDAR *c, IP *ip);
-bool IsInNoSsl(CEDAR *c, IP *ip);
 void FreeTinyLog(TINY_LOG *t);
 void WriteTinyLog(TINY_LOG *t, char *str);
 TINY_LOG *NewTinyLog();
 void GetWinVer(RPC_WINVER *v);
 bool IsSupportedWinVer(RPC_WINVER *v);
-bool IsLaterBuild(CEDAR *c, UINT64 t);
 SOCK *GetInProcListeningSock(CEDAR *c);
 SOCK *GetReverseListeningSock(CEDAR *c);
 void GetCedarVersion(char *tmp, UINT size);
+UINT GetCedarVersionNumber();
 UINT64 GetCurrentBuildDate();
 void CedarAddCurrentTcpQueueSize(CEDAR *c, int diff);
 UINT CedarGetCurrentTcpQueueSize(CEDAR *c);

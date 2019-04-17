@@ -69,8 +69,8 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="libeay32.lib ssleay32.lib zlib.lib libintelaes.lib"
-				AdditionalLibraryDirectories="$(SolutionDir)BuildFiles\Library\$(PlatformName)_$(ConfigurationName)"
+				AdditionalDependencies="libeay32.lib ssleay32.lib zlib.lib"
+				AdditionalLibraryDirectories="$(SolutionDir)BuildFiles\Library\vs2008\$(PlatformName)_$(ConfigurationName)"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -139,8 +139,8 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="libeay32.lib ssleay32.lib zlib.lib libintelaes.lib"
-				AdditionalLibraryDirectories="$(SolutionDir)BuildFiles\Library\$(PlatformName)_$(ConfigurationName)"
+				AdditionalDependencies="libeay32.lib ssleay32.lib zlib.lib"
+				AdditionalLibraryDirectories="$(SolutionDir)BuildFiles\Library\vs2008\$(PlatformName)_$(ConfigurationName)"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -212,8 +212,8 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="libeay32.lib ssleay32.lib zlib.lib libintelaes.lib"
-				AdditionalLibraryDirectories="$(SolutionDir)BuildFiles\Library\$(PlatformName)_$(ConfigurationName)"
+				AdditionalDependencies="libeay32.lib ssleay32.lib zlib.lib"
+				AdditionalLibraryDirectories="$(SolutionDir)BuildFiles\Library\vs2008\$(PlatformName)_$(ConfigurationName)"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -286,8 +286,8 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="libeay32.lib ssleay32.lib zlib.lib libintelaes.lib"
-				AdditionalLibraryDirectories="$(SolutionDir)BuildFiles\Library\$(PlatformName)_$(ConfigurationName)"
+				AdditionalDependencies="libeay32.lib ssleay32.lib zlib.lib"
+				AdditionalLibraryDirectories="$(SolutionDir)BuildFiles\Library\vs2008\$(PlatformName)_$(ConfigurationName)"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -824,14 +824,6 @@
 			</File>
 			<File
 				RelativePath=".\zlib\zlib.h"
-				>
-			</File>
-		</Filter>
-		<Filter
-			Name="intelaes"
-			>
-			<File
-				RelativePath=".\intelaes\iaesni.h"
 				>
 			</File>
 		</Filter>
