@@ -231,6 +231,9 @@ void start_sysinit(void)
 		set_gpio(1, 1);
 	}
 #endif
+#ifdef HAVE_FMS2111
+	eval("ledtool", "1", "4");      //buzzer
+#endif
 
 	return;
 	cprintf("done\n");
