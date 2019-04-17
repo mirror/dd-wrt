@@ -121,10 +121,10 @@ static void nv_file_out(unsigned char method, struct mime_handler *handler, char
 #endif
 	char *name = nvram_safe_get("router_name");
 	char fname[128];
-#ifndef HAVE_ONNET
-	snprintf(fname, sizeof(fname), "nvrambak_r%s%s%s_%s.bin", SVN_REVISION, *name ? "_" : "", *name ? name : "", nvram_safe_get("DD_BOARD"));
-#else
+#if defined(HAVE_ONNET) || defined(HAVE_ANTAIRA)
 	snprintf(fname, sizeof(fname), "nvrambak_r%s%s%s_%s.bin", SVN_REVISION, *name ? "_" : "", *name ? name : "", nvram_safe_get(NVROUTER_ALT));
+#else
+	snprintf(fname, sizeof(fname), "nvrambak_r%s%s%s_%s.bin", SVN_REVISION, *name ? "_" : "", *name ? name : "", nvram_safe_get("DD_BOARD"));
 #endif
 	nvram_backup("/tmp/nvrambak.bin");
 	do_file_attach(handler, "/tmp/nvrambak.bin", wp, fname);
