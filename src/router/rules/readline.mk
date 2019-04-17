@@ -21,7 +21,9 @@ readline-install:
 	rm -rf $(INSTALLDIR)/readline/usr/bin
 	rm -f $(INSTALLDIR)/readline/usr/lib/*.la
 	rm -f $(INSTALLDIR)/readline/usr/lib/*.a
+ifneq ($(CONFIG_SOFTETHER),y)
 	rm -f $(INSTALLDIR)/readline/usr/lib/libhistory*
+endif
 
 readline-clean:
 	-if test -e "readline/Makefile"; then $(MAKE) -C readline clean; fi
