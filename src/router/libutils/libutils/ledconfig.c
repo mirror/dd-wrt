@@ -614,6 +614,10 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->vpn_gpio = 0x11B;
 		cfg->wlan0_gpio = 0x000;
 		break;
+#elif HAVE_FMS2111
+	case ROUTER_BOARD_WHRHPGN:
+		cfg->beeper_gpio = 0x00c;
+		break;
 #else
 	case ROUTER_BOARD_WHRHPGN:
 //              cfg->usb_power = 0x01a;
@@ -1666,7 +1670,6 @@ static void getledconfig(struct ledconfig *cfg)
 		break;
 #endif
 	}
-
 }
 
 static struct ledconfig led_cfg;
