@@ -31,6 +31,8 @@
 static void stop_softetherclient(void);
 static void stop_softetherbridge(void);
 static void stop_softetherserver(void);
+#define VPNDIR "/var/softethervpn"
+#define EXECDIR "/usr/libexec/softethervpn"
 
 void start_softether(void)
 {
@@ -47,26 +49,31 @@ void start_softether(void)
 	}
 
 	if (nvram_matchi("setherclient_enable", 1)) {
-		write_nvram("/tmp/vpn_client.config", "sether_config");
-		eval("ln", "-s", "/usr/bin/hamcore.se2", "/tmp/");
-		eval("ln", "-s", "/usr/bin/vpnclient", "/tmp/");
-		eval("/tmp/vpnclient", "start");
+		mkdir(VPNDIR, 0700);
+		write_nvram(VPNDIR "vpn_client.config", "sether_config");
+		eval("ln", "-sf", EXECDIR "/hamcore.se", VPNDIR "/");
+		eval("ln", "-sf", EXECDIR "/vpnclient", VPNDIR "/");
+		eval("ln", "-sf", EXECDIR "/lang.config", VPNDIR "/");
+		eval(VPNDIR "/vpnclient", "start");
 		eval("sleep", "15");
 		eval("/usr/bin/vpncmd", "localhost", "/CLIENT", "/CMD", "ConfigSet", "//tmp//vpn_server.config", "quit");
 	}
 	if (nvram_matchi("setherserver_enable", 1)) {
-		write_nvram("/tmp/vpn_server.config", "sether_config");
-		eval("ln", "-s", "/usr/bin/hamcore.se2", "/tmp/");
-		eval("ln", "-s", "/usr/bin/vpnserver", "/tmp/");
-		eval("/tmp/vpnserver", "start");
+		write_nvram(VPNDIR "/vpn_server.config", "sether_config");
+
+		eval("ln", "-sf", EXECDIR "/hamcore.se", VPNDIR "/");
+		eval("ln", "-sf", EXECDIR "/vpnserver", VPNDIR "/");
+		eval("ln", "-sf", EXECDIR "/lang.config", VPNDIR "/");
+		eval(VPNDIR "/vpnserver", "start");
 		eval("sleep", "15");
 		eval("/usr/bin/vpncmd", "localhost", "/SERVER", "/CMD", "ConfigSet", "//tmp//vpn_server.config", "quit");
 	}
 	if (nvram_matchi("setherbridge_enable", 1)) {
-		write_nvram("/tmp/vpn_bridge.config", "sether_config");
-		eval("ln", "-s", "/usr/bin/hamcore.se2", "/tmp/");
-		eval("ln", "-s", "/usr/bin/vpnbridge", "/tmp/");
-		eval("/tmp/vpnbridge", "start");
+		write_nvram(VPNDIR "/vpn_bridge.config", "sether_config");
+		eval("ln", "-sf", EXECDIR "/hamcore.se", VPNDIR "/");
+		eval("ln", "-sf", EXECDIR "/vpnbridge", VPNDIR "/");
+		eval("ln", "-sf", EXECDIR "/lang.config", VPNDIR "/");
+		eval(VPNDIR "/vpnbridge", "start");
 	}
 	return;
 }
@@ -74,7 +81,7 @@ void start_softether(void)
 static void stop_softetherclient(void)
 {
 	if (pidof("vpnclient") > 0)
-		eval("vpnclient", "stop");
+		eval(VPNDIR "/vpnclient", "stop");
 	stop_process("vpnclient", "SoftEther Client");
 	return;
 }
@@ -82,7 +89,7 @@ static void stop_softetherclient(void)
 static void stop_softetherbridge(void)
 {
 	if (pidof("vpnbridge") > 0)
-		eval("vpnbridge", "stop");
+		eval(VPNDIR "/vpnbridge", "stop");
 	stop_process("vpnbridge", "SoftEther Bridge");
 	return;
 }
@@ -90,7 +97,7 @@ static void stop_softetherbridge(void)
 static void stop_softetherserver(void)
 {
 	if (pidof("vpnserver") > 0)
-		eval("vpnserver", "stop");
+		eval(VPNDIR "/vpnserver", "stop");
 	stop_process("vpnserver", "SoftEther Server");
 	return;
 }
