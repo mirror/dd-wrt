@@ -49,6 +49,9 @@ softether-install:
 	cp $(TOP)/softether/files/launcher.sh $(INSTALLDIR)/softether/usr/libexec/softethervpn
 	chmod 777 $(INSTALLDIR)/softether/usr/libexec/softethervpn/launcher.sh
 	cp $(TOP)/softether/files/dummy $(INSTALLDIR)/softether/usr/libexec/softethervpn/lang.config
+	cp $(TOP)/softether/files/dummy $(INSTALLDIR)/softether/usr/libexec/softethervpn/vpn_server.config
+	cp $(TOP)/softether/files/dummy $(INSTALLDIR)/softether/usr/libexec/softethervpn/vpn_bridge.config
+	cp $(TOP)/softether/files/dummy $(INSTALLDIR)/softether/usr/libexec/softethervpn/vpn_client.config
 	mkdir -p $(INSTALLDIR)/softether/usr/bin
 	cd $(INSTALLDIR)/softether/usr/bin && ln -s ../../usr/libexec/softethervpn/launcher.sh vpncmd
 	
