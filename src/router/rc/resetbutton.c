@@ -355,6 +355,11 @@ static int getbuttonstate()
 	return get_gpio(12);
 
 }
+#elif HAVE_FMS2111
+static int getbuttonstate()
+{
+	return 0;
+}
 #else
 static int getbuttonstate()
 {
