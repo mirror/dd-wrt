@@ -54,7 +54,9 @@ softether-install:
 	cp $(TOP)/softether/files/dummy $(INSTALLDIR)/softether/usr/libexec/softethervpn/vpn_client.config
 	mkdir -p $(INSTALLDIR)/softether/usr/bin
 	cd $(INSTALLDIR)/softether/usr/bin && ln -s ../../usr/libexec/softethervpn/launcher.sh vpncmd
-	
+	mkdir -p $(INSTALLDIR)/softether/etc/config
+	cp -f $(TOP)/softether/config/* $(INSTALLDIR)/softether/etc/config
+
 
 softether-clean:
 	if [ -e "$(SOFTETHER_PKG_BUILD_DIR)/Makefile" ]; then $(MAKE) -C softether clean ; fi
