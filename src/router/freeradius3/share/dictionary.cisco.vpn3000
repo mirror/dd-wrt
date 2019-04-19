@@ -9,7 +9,7 @@
 #
 # http://www.cisco.com/en/US/docs/security/asa/asa80/configuration/guide/extsvr.html#wp1661512
 #
-#	$Id: 676e785c9bbe6404d270ba4adcd4fce7cdf0cc4b $
+#	$Id: cc9d09f53e08ad60e40382e3bfe9b50d2d87a1d4 $
 #
 VENDOR		Cisco-VPN3000			3076
 
@@ -104,7 +104,7 @@ ATTRIBUTE	Cisco-VPN3000-WebVPN-File-Server-Entry-Enable 95	integer
 ATTRIBUTE	Cisco-VPN3000-WebVPN-File-Server-Browsing-Enable 96	integer
 ATTRIBUTE	Cisco-VPN3000-WebVPN-Port-Forwarding-Enable 97	integer
 ATTRIBUTE	Cisco-VPN3000-WebVPN-Outlook-Exchange-Proxy-Enable 98	integer
-ATTRIBUTE	Cisco-VPN3000-WebVPN-HTTP-Proxy-Enable 99	integer
+ATTRIBUTE	Cisco-VPN3000-WebVPN-HTTP-Proxy-Enable	99	integer
 ATTRIBUTE	Cisco-VPN3000-WebVPN-Auto-Applet-Download-Enable 100	integer
 ATTRIBUTE	Cisco-VPN3000-WebVPN-Citrix-MetaFrame-Enable 101	integer
 ATTRIBUTE	Cisco-VPN3000-WebVPN-Apply-ACL		102	integer

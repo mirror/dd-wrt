@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: aeafddb5a4e28993e0e802421a66edb0f3e29853 $
+ * $Id: 0725857441cc08766c9eb7b0a8be56a823fcfa52 $
  *
  * @file radius.c
  * @brief Functions to send/receive radius packets.
@@ -23,7 +23,7 @@
  * @copyright 2000-2003,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: aeafddb5a4e28993e0e802421a66edb0f3e29853 $")
+RCSID("$Id: 0725857441cc08766c9eb7b0a8be56a823fcfa52 $")
 
 #include	<freeradius-devel/libradius.h>
 
@@ -961,21 +961,20 @@ static ssize_t vp2data_any(RADIUS_PACKET const *packet,
 				return -1;
 			}
 
-			if (lvalue) ptr[0] = TAG_VALID(vp->tag) ? vp->tag : TAG_NONE;
 			make_tunnel_passwd(ptr + lvalue, &len, data, len,
 					   room - lvalue,
 					   secret, original->vector);
-			len += lvalue;
 			break;
 		case PW_CODE_ACCOUNTING_REQUEST:
 		case PW_CODE_DISCONNECT_REQUEST:
 		case PW_CODE_COA_REQUEST:
-			ptr[0] = TAG_VALID(vp->tag) ? vp->tag : TAG_NONE;
-			make_tunnel_passwd(ptr + 1, &len, data, len, room - 1,
+			make_tunnel_passwd(ptr + lvalue, &len, data, len,
+					   room - lvalue,
 					   secret, packet->vector);
-			len += lvalue;
 			break;
 		}
+		if (lvalue) ptr[0] = TAG_VALID(vp->tag) ? vp->tag : TAG_NONE;
+		len += lvalue;
 		break;
 
 		/*

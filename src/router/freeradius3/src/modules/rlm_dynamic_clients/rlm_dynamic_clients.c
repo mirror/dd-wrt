@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: 5f230aa9740bd00513387cd2ee081a22476b2471 $
+ * $Id: 299ac112c757feeb9d56c33fcf19cc15f2a55ca5 $
  * @file rlm_dynamic_clients.c
  * @brief Reads client definitions from flat files as required.
  *
  * @copyright 2008  The FreeRADIUS server project
  * @copyright 2008  Alan DeKok <aland@deployingradius.com>
  */
-RCSID("$Id: 5f230aa9740bd00513387cd2ee081a22476b2471 $")
+RCSID("$Id: 299ac112c757feeb9d56c33fcf19cc15f2a55ca5 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -44,9 +44,8 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authorize(UNUSED void *instance,
 	 *	Ensure we're only being called from the main thread,
 	 *	with fake packets.
 	 */
-	if ((request->packet->src_port != 0) || (request->packet->vps != NULL) ||
-	    (request->parent != NULL)) {
-		RDEBUG("Improper configuration");
+	if ((request->packet->vps != NULL) || (request->parent != NULL)) {
+		RDEBUG("Cannot use `dynamic_clients` for normal packets");
 		return RLM_MODULE_NOOP;
 	}
 
@@ -88,6 +87,7 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authorize(UNUSED void *instance,
 	 *	hack.
 	 */
 	request->client = c;
+	c->dynamic = true;
 
 	return RLM_MODULE_OK;
 }

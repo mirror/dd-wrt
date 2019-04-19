@@ -1,7 +1,7 @@
 /*
  * @name modcall.c
  *
- * Version:	$Id: 4723971d20f7fbb7a369c8c28c073d88df6a5983 $
+ * Version:	$Id: 0ad2c230a8dd7fd354c8432ce0569b0e54e1ed1d $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 4723971d20f7fbb7a369c8c28c073d88df6a5983 $")
+RCSID("$Id: 0ad2c230a8dd7fd354c8432ce0569b0e54e1ed1d $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modpriv.h>
@@ -276,6 +276,7 @@ static rlm_rcode_t CC_HINT(nonnull) call_modsingle(rlm_components_t component, m
 {
 	int blocked;
 	int indent = request->log.indent;
+	char const *old;
 
 	/*
 	 *	If the request should stop, refuse to do anything.
@@ -296,13 +297,14 @@ static rlm_rcode_t CC_HINT(nonnull) call_modsingle(rlm_components_t component, m
 	/*
 	 *	For logging unresponsive children.
 	 */
+	old = request->module;
 	request->module = sp->modinst->name;
 
 	safe_lock(sp->modinst);
 	request->rcode = sp->modinst->entry->module->methods[component](sp->modinst->insthandle, request);
 	safe_unlock(sp->modinst);
 
-	request->module = "";
+	request->module = old;
 
 	/*
 	 *	Wasn't blocked, and now is.  Complain!

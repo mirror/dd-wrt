@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 9c0af64623b753d2aeac7ebc2e30690913037781 $
+ * $Id: 10e3a7e18bcbbecc9930fd5bed722d82c42d92ac $
  *
  * @file process.c
  * @brief Defines the state machines that control how requests are processed.
@@ -24,7 +24,7 @@
  * @copyright 2012  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: 9c0af64623b753d2aeac7ebc2e30690913037781 $")
+RCSID("$Id: 10e3a7e18bcbbecc9930fd5bed722d82c42d92ac $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/process.h>
@@ -54,7 +54,6 @@ extern fr_cond_t *debug_condition;
 #ifdef HAVE_SYSTEMD_WATCHDOG
 struct timeval sd_watchdog_interval;
 static fr_event_t *sd_watchdog_ev;
-
 #endif
 
 static bool spawn_flag = false;
@@ -363,7 +362,7 @@ void radius_update_listener(rad_listen_t *this)
 #ifdef HAVE_SYSTEMD_WATCHDOG
 typedef struct {
 	fr_event_list_t *el;
-	struct timeval now;
+	struct timeval when;
 } sd_watchdog_data_t;
 
 static sd_watchdog_data_t sdwd;
@@ -371,13 +370,12 @@ static sd_watchdog_data_t sdwd;
 static void sd_watchdog_event(void *ctx)
 {
 	sd_watchdog_data_t *s = (sd_watchdog_data_t *)ctx;
-	struct timeval when;
 
 	DEBUG("Emitting systemd watchdog notification");
 	sd_notify(0, "WATCHDOG=1");
 
-	timeradd(&when, &sd_watchdog_interval, &s->now);
-	if (!fr_event_insert(s->el, sd_watchdog_event, ctx, &when, &sd_watchdog_ev)) {
+	timeradd(&s->when, &sd_watchdog_interval, &s->when);
+	if (!fr_event_insert(s->el, sd_watchdog_event, ctx, &s->when, &sd_watchdog_ev)) {
 		rad_panic("Failed to insert event");
 	}
 }
@@ -5509,7 +5507,7 @@ int radius_event_init(TALLOC_CTX *ctx) {
 
 		fr_event_now(el, &now);
 
-		sdwd.now = now;
+		sdwd.when = now;
 		sdwd.el = el;
 
 		sd_watchdog_event(&sdwd);

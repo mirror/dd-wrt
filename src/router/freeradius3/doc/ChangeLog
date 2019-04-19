@@ -1,3 +1,33 @@
+FreeRADIUS 3.0.19 Wed 10 Apr 2019 09:00:00 EDT urgency=high
+	Feature improvements
+	* Update dictionary.cisco
+	* Update sqlippool to allow for stored procedures with
+	  PostgreSQL.  This increases performance substantially.
+	  Patch from Nathan Ward.  Fixes #2540.
+	* Re-added "show client config" command to radmin.
+	* Cleaned up mods-available/sql example so that it is
+	  easier to understand.
+	* Added pfSense dictionary. Closes #2581
+	* Update dictionary.h3c Closes #2592
+	* Update elasticsearch/logstash config for v6.7.0.
+	* EAP-PWD security fixes from Mathy Vanhoef. See
+	  http://freeradius.org/security/
+
+	Bug fixes
+	* Update dynamic_client module and server core so that
+	  the functionality works.  This has been broken since
+	  at least v2.
+	* Fix crash in sqlippool due to escaping changes.
+	  Patch from Nathan Ward.  Fixes #2532, #2533.
+	* Fix systemd notify, watchdog and unit files.
+	  Fixes #2541, #2499.
+	* Fix erroneous length check in EAP-FAST.
+	* Update documentation to remove old "ignore_null"
+	  configuration. Fixes #2578.
+	* Fix default POD port. Should be 3799.  Fixes #2591
+	* Correctly encode vendor-specific "encrypted" attributes.
+	  Fixes #2600
+
 FreeRADIUS 3.0.18 Mon 25 Feb 2019 15:00:00 EST urgency=low
 	Feature improvements
 	* cleanup_delay can now be 30 seconds.  This helps

@@ -1,7 +1,7 @@
 /*
  * modules.c	Radius module support.
  *
- * Version:	$Id: 0938415537369081ef9bfa8de62341e49dec1f7a $
+ * Version:	$Id: 319879c870d7578f72e421d666510a05c2e1f541 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2000  Alan Curry <pacman@world.std.com>
  */
 
-RCSID("$Id: 0938415537369081ef9bfa8de62341e49dec1f7a $")
+RCSID("$Id: 319879c870d7578f72e421d666510a05c2e1f541 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modpriv.h>
@@ -1027,11 +1027,9 @@ rlm_rcode_t indexed_modcall(rlm_components_t comp, int idx, REQUEST *request)
 		}
 	}
 	request->component = section_type_value[comp].section;
-
 	rcode = modcall(comp, list, request);
-
-	request->module = "";
 	request->component = "<core>";
+
 	return rcode;
 }
 

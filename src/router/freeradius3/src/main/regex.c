@@ -15,7 +15,7 @@
  */
 
 /*
- * $Id: 19ddf02e83a86918df8b266da0c3c0adb349f8e8 $
+ * $Id: bc756f9722905fbdb3e5a0781de120bb4bd3b65e $
  *
  * @file main/regex.c
  * @brief Regular expression functions used by the server library.
@@ -23,7 +23,7 @@
  * @copyright 2014  The FreeRADIUS server project
  */
 
-RCSID("$Id: 19ddf02e83a86918df8b266da0c3c0adb349f8e8 $")
+RCSID("$Id: bc756f9722905fbdb3e5a0781de120bb4bd3b65e $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -63,10 +63,10 @@ void regex_sub_to_request(REQUEST *request, regex_t **preg, char const *value, s
 	 */
 	old_sc = request_data_get(request, request, REQUEST_DATA_REGEX);
 	if (old_sc) {
-		DEBUG4("Clearing %zu matches", old_sc->nmatch);
+		DEBUG4("Clearing %zu old matches", old_sc->nmatch);
 		talloc_free(old_sc);
 	} else {
-		DEBUG4("No matches");
+		DEBUG4("No old matches");
 	}
 
 	if (nmatch == 0) return;
