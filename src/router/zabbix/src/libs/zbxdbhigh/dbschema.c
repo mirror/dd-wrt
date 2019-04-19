@@ -279,6 +279,8 @@ const ZBX_TABLE	tables[] = {
 		{"snmpv3_authprotocol",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"snmpv3_privprotocol",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"snmpv3_contextname",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
+		{"host_source",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
+		{"name_source",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{0}
 		},
 		NULL
@@ -405,7 +407,7 @@ const ZBX_TABLE	tables[] = {
 		{"snmpv3_contextname",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"evaltype",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{"jmx_endpoint",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"master_itemid",	NULL,	"items",	"itemid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
+		{"master_itemid",	NULL,	"items",	"itemid",	0,	ZBX_TYPE_ID,	ZBX_PROXY,	ZBX_FK_CASCADE_DELETE},
 		{"timeout",	"3s",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"url",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"query_fields",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
@@ -470,6 +472,7 @@ const ZBX_TABLE	tables[] = {
 		{"maxsessions",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{"maxattempts",	"3",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{"attempt_interval",	"10s",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
+		{"content_type",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{0}
 		},
 		"description"
@@ -717,6 +720,7 @@ const ZBX_TABLE	tables[] = {
 		{"http_case_sensitive",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{"ldap_configured",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{"ldap_case_sensitive",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"db_extension",	"",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{0}
 		},
 		NULL
@@ -742,6 +746,7 @@ const ZBX_TABLE	tables[] = {
 		{"correlation_mode",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{"correlation_tag",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{"manual_close",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"details",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{0}
 		},
 		NULL
@@ -1829,10 +1834,12 @@ const ZBX_TABLE	tables[] = {
 	{"item_preproc",	"item_preprocid",	0,
 		{
 		{"item_preprocid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"itemid",	NULL,	"items",	"itemid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"step",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"params",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
+		{"itemid",	NULL,	"items",	"itemid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL | ZBX_PROXY,	ZBX_FK_CASCADE_DELETE},
+		{"step",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
+		{"type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
+		{"params",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL | ZBX_PROXY,	0},
+		{"error_handler",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
+		{"error_handler_params",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{0}
 		},
 		NULL
@@ -1968,7 +1975,7 @@ const ZBX_TABLE	tables[] = {
 		{"x",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{"y",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{"width",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"height",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"height",	"2",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{0}
 		},
 		NULL
@@ -2014,6 +2021,26 @@ const ZBX_TABLE	tables[] = {
 		{"maintenanceid",	NULL,	"maintenances",	"maintenanceid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
 		{"tag",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{"operator",	"2",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"value",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
+		{0}
+		},
+		NULL
+	},
+	{"lld_macro_path",	"lld_macro_pathid",	0,
+		{
+		{"lld_macro_pathid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
+		{"itemid",	NULL,	"items",	"itemid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
+		{"lld_macro",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
+		{"path",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
+		{0}
+		},
+		"itemid,lld_macro"
+	},
+	{"host_tag",	"hosttagid",	0,
+		{
+		{"hosttagid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
+		{"hostid",	NULL,	"hosts",	"hostid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
+		{"tag",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{"value",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{0}
 		},
@@ -2253,9 +2280,11 @@ uniq integer DEFAULT '0' NOT NULL,\n\
 snmpv3_authprotocol integer DEFAULT '0' NOT NULL,\n\
 snmpv3_privprotocol integer DEFAULT '0' NOT NULL,\n\
 snmpv3_contextname varchar(255) DEFAULT '' NOT NULL,\n\
+host_source integer DEFAULT '1' NOT NULL,\n\
+name_source integer DEFAULT '0' NOT NULL,\n\
 PRIMARY KEY (dcheckid)\n\
 );\n\
-CREATE INDEX dchecks_1 ON dchecks (druleid);\n\
+CREATE INDEX dchecks_1 ON dchecks (druleid,host_source,name_source);\n\
 CREATE TABLE applications (\n\
 applicationid bigint  NOT NULL,\n\
 hostid bigint  NOT NULL REFERENCES hosts (hostid) ON DELETE CASCADE,\n\
@@ -2437,6 +2466,7 @@ exec_params varchar(255) DEFAULT '' NOT NULL,\n\
 maxsessions integer DEFAULT '1' NOT NULL,\n\
 maxattempts integer DEFAULT '3' NOT NULL,\n\
 attempt_interval varchar(32) DEFAULT '10s' NOT NULL,\n\
+content_type integer DEFAULT '1' NOT NULL,\n\
 PRIMARY KEY (mediatypeid)\n\
 );\n\
 CREATE UNIQUE INDEX media_type_1 ON media_type (description);\n\
@@ -2662,6 +2692,7 @@ http_strip_domains varchar(2048) DEFAULT '' NOT NULL,\n\
 http_case_sensitive integer DEFAULT '1' NOT NULL,\n\
 ldap_configured integer DEFAULT '0' NOT NULL,\n\
 ldap_case_sensitive integer DEFAULT '1' NOT NULL,\n\
+db_extension varchar(32) DEFAULT '' NOT NULL,\n\
 PRIMARY KEY (configid)\n\
 );\n\
 CREATE INDEX config_1 ON config (alert_usrgrpid);\n\
@@ -2686,6 +2717,7 @@ recovery_expression varchar(2048) DEFAULT '' NOT NULL,\n\
 correlation_mode integer DEFAULT '0' NOT NULL,\n\
 correlation_tag varchar(255) DEFAULT '' NOT NULL,\n\
 manual_close integer DEFAULT '0' NOT NULL,\n\
+details varchar(255) DEFAULT '' NOT NULL,\n\
 PRIMARY KEY (triggerid)\n\
 );\n\
 CREATE INDEX triggers_1 ON triggers (status);\n\
@@ -3156,6 +3188,7 @@ dcheckid bigint  NULL,\n\
 dns varchar(255) DEFAULT '' NOT NULL\n\
 );\n\
 CREATE INDEX proxy_dhistory_1 ON proxy_dhistory (clock);\n\
+CREATE INDEX proxy_dhistory_2 ON proxy_dhistory (druleid);\n\
 CREATE TABLE events (\n\
 eventid bigint  NOT NULL,\n\
 source integer DEFAULT '0' NOT NULL,\n\
@@ -3634,7 +3667,9 @@ item_preprocid bigint  NOT NULL,\n\
 itemid bigint  NOT NULL REFERENCES items (itemid) ON DELETE CASCADE,\n\
 step integer DEFAULT '0' NOT NULL,\n\
 type integer DEFAULT '0' NOT NULL,\n\
-params varchar(255) DEFAULT '' NOT NULL,\n\
+params text DEFAULT '' NOT NULL,\n\
+error_handler integer DEFAULT '0' NOT NULL,\n\
+error_handler_params varchar(255) DEFAULT '' NOT NULL,\n\
 PRIMARY KEY (item_preprocid)\n\
 );\n\
 CREATE INDEX item_preproc_1 ON item_preproc (itemid,step);\n\
@@ -3744,7 +3779,7 @@ name varchar(255) DEFAULT '' NOT NULL,\n\
 x integer DEFAULT '0' NOT NULL,\n\
 y integer DEFAULT '0' NOT NULL,\n\
 width integer DEFAULT '1' NOT NULL,\n\
-height integer DEFAULT '1' NOT NULL,\n\
+height integer DEFAULT '2' NOT NULL,\n\
 PRIMARY KEY (widgetid)\n\
 );\n\
 CREATE INDEX widget_1 ON widget (dashboardid);\n\
@@ -3792,11 +3827,27 @@ value varchar(255) DEFAULT '' NOT NULL,\n\
 PRIMARY KEY (maintenancetagid)\n\
 );\n\
 CREATE INDEX maintenance_tag_1 ON maintenance_tag (maintenanceid);\n\
+CREATE TABLE lld_macro_path (\n\
+lld_macro_pathid bigint  NOT NULL,\n\
+itemid bigint  NOT NULL REFERENCES items (itemid) ON DELETE CASCADE,\n\
+lld_macro varchar(255) DEFAULT '' NOT NULL,\n\
+path varchar(255) DEFAULT '' NOT NULL,\n\
+PRIMARY KEY (lld_macro_pathid)\n\
+);\n\
+CREATE UNIQUE INDEX lld_macro_path_1 ON lld_macro_path (itemid,lld_macro);\n\
+CREATE TABLE host_tag (\n\
+hosttagid bigint  NOT NULL,\n\
+hostid bigint  NOT NULL REFERENCES hosts (hostid) ON DELETE CASCADE,\n\
+tag varchar(255) DEFAULT '' NOT NULL,\n\
+value varchar(255) DEFAULT '' NOT NULL,\n\
+PRIMARY KEY (hosttagid)\n\
+);\n\
+CREATE INDEX host_tag_1 ON host_tag (hostid);\n\
 CREATE TABLE dbversion (\n\
 mandatory integer DEFAULT '0' NOT NULL,\n\
 optional integer DEFAULT '0' NOT NULL\n\
 );\n\
-INSERT INTO dbversion VALUES ('4000000','4000003');\n\
+INSERT INTO dbversion VALUES ('4020000','4020000');\n\
 ";
 const char	*const db_schema_fkeys[] = {
 	NULL

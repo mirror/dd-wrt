@@ -811,7 +811,7 @@ function convert_units($options = []) {
  *
  * @param string $time
  *
- * @return int
+ * @return null|string
  */
 function timeUnitToSeconds($time) {
 	preg_match('/^(?<sign>[\-+])?(?<number>(\d)+)(?<suffix>['.ZBX_TIME_SUFFIXES.'])?$/', $time, $matches);
@@ -821,7 +821,8 @@ function timeUnitToSeconds($time) {
 	if (!array_key_exists('number', $matches)) {
 		return null;
 	}
-	elseif (array_key_exists('suffix', $matches)) {
+
+	if (array_key_exists('suffix', $matches)) {
 		$time = $matches['number'];
 
 		switch ($matches['suffix']) {
@@ -1075,42 +1076,6 @@ function zbx_nl2br($str) {
 
 function zbx_formatDomId($value) {
 	return str_replace(['[', ']'], ['_', ''], $value);
-}
-
-/**
- * Sort an array of objects so that the objects whose $column value matches $pattern are at the top.
- * Return the first $limit objects.
- *
- * @param array 	$table		array of objects to sort
- * @param string 	$column		name of the $column to search
- * @param string 	$pattern	string to match the value of $column against
- * @param int		$limit		number of objects to return
- *
- * @return array
- */
-function selectByPattern(array $table, $column, $pattern, $limit) {
-	$chunk_size = $limit;
-
-	$rsTable = [];
-	foreach ($table as $num => $row) {
-		if (mb_strtolower($row[$column]) === mb_strtolower($pattern)) {
-			$rsTable = [$num => $row] + $rsTable;
-		}
-		elseif ($limit > 0) {
-			$rsTable[$num] = $row;
-		}
-		else {
-			continue;
-		}
-		$limit--;
-	}
-
-	if (!empty($rsTable)) {
-		$rsTable = array_chunk($rsTable, $chunk_size, true);
-		$rsTable = $rsTable[0];
-	}
-
-	return $rsTable;
 }
 
 /************* SORT *************/
@@ -1966,19 +1931,20 @@ function filter_messages(array $messages = []) {
 /**
  * Returns the message box when messages are present; null otherwise
  *
- * @param  boolean	$good			Parameter passed to makeMessageBox to specify message box style.
- * @param  string	$title			Message box title.
- * @global array	$ZBX_MESSAGES
+ * @param  bool    $good            Parameter passed to makeMessageBox to specify message box style.
+ * @param  string  $title           Message box title.
+ * @param  bool    $show_close_box  Show or hide close button in error message box.
+ * @global array   $ZBX_MESSAGES
  *
  * @return CDiv|null
  */
-function getMessages($good = false, $title = null) {
+function getMessages($good = false, $title = null, $show_close_box = true) {
 	global $ZBX_MESSAGES;
 
 	$messages = (isset($ZBX_MESSAGES) && $ZBX_MESSAGES) ? filter_messages($ZBX_MESSAGES) : [];
 
 	$message_box = ($title || $messages)
-		? makeMessageBox($good, $messages, $title)
+		? makeMessageBox($good, $messages, $title, $show_close_box)
 		: null;
 
 	$ZBX_MESSAGES = [];
@@ -2330,12 +2296,21 @@ function get_status() {
 	return $status;
 }
 
-function set_image_header() {
+/**
+ * Set image header.
+ *
+ * @param integer $format    One of IMAGE_FORMAT_* constants. If not set global $IMAGE_FORMAT_DEFAULT will be used.
+ */
+function set_image_header($format = null) {
 	global $IMAGE_FORMAT_DEFAULT;
 
-	switch ($IMAGE_FORMAT_DEFAULT) {
+	switch ($format !== null ? $format : $IMAGE_FORMAT_DEFAULT) {
 		case IMAGE_FORMAT_JPEG:
 			header('Content-type: image/jpeg');
+			break;
+
+		case IMAGE_FORMAT_GIF:
+			header('Content-type: image/gif');
 			break;
 
 		case IMAGE_FORMAT_TEXT:

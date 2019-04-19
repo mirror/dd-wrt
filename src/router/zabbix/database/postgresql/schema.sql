@@ -216,9 +216,11 @@ CREATE TABLE dchecks (
 	snmpv3_authprotocol      integer         DEFAULT '0'               NOT NULL,
 	snmpv3_privprotocol      integer         DEFAULT '0'               NOT NULL,
 	snmpv3_contextname       varchar(255)    DEFAULT ''                NOT NULL,
+	host_source              integer         DEFAULT '1'               NOT NULL,
+	name_source              integer         DEFAULT '0'               NOT NULL,
 	PRIMARY KEY (dcheckid)
 );
-CREATE INDEX dchecks_1 ON dchecks (druleid);
+CREATE INDEX dchecks_1 ON dchecks (druleid,host_source,name_source);
 CREATE TABLE applications (
 	applicationid            bigint                                    NOT NULL,
 	hostid                   bigint                                    NOT NULL,
@@ -400,6 +402,7 @@ CREATE TABLE media_type (
 	maxsessions              integer         DEFAULT '1'               NOT NULL,
 	maxattempts              integer         DEFAULT '3'               NOT NULL,
 	attempt_interval         varchar(32)     DEFAULT '10s'             NOT NULL,
+	content_type             integer         DEFAULT '1'               NOT NULL,
 	PRIMARY KEY (mediatypeid)
 );
 CREATE UNIQUE INDEX media_type_1 ON media_type (description);
@@ -625,6 +628,7 @@ CREATE TABLE config (
 	http_case_sensitive      integer         DEFAULT '1'               NOT NULL,
 	ldap_configured          integer         DEFAULT '0'               NOT NULL,
 	ldap_case_sensitive      integer         DEFAULT '1'               NOT NULL,
+	db_extension             varchar(32)     DEFAULT ''                NOT NULL,
 	PRIMARY KEY (configid)
 );
 CREATE INDEX config_1 ON config (alert_usrgrpid);
@@ -649,6 +653,7 @@ CREATE TABLE triggers (
 	correlation_mode         integer         DEFAULT '0'               NOT NULL,
 	correlation_tag          varchar(255)    DEFAULT ''                NOT NULL,
 	manual_close             integer         DEFAULT '0'               NOT NULL,
+	details                  varchar(255)    DEFAULT ''                NOT NULL,
 	PRIMARY KEY (triggerid)
 );
 CREATE INDEX triggers_1 ON triggers (status);
@@ -1121,6 +1126,7 @@ CREATE TABLE proxy_dhistory (
 	PRIMARY KEY (id)
 );
 CREATE INDEX proxy_dhistory_1 ON proxy_dhistory (clock);
+CREATE INDEX proxy_dhistory_2 ON proxy_dhistory (druleid);
 CREATE TABLE events (
 	eventid                  bigint                                    NOT NULL,
 	source                   integer         DEFAULT '0'               NOT NULL,
@@ -1600,7 +1606,9 @@ CREATE TABLE item_preproc (
 	itemid                   bigint                                    NOT NULL,
 	step                     integer         DEFAULT '0'               NOT NULL,
 	type                     integer         DEFAULT '0'               NOT NULL,
-	params                   varchar(255)    DEFAULT ''                NOT NULL,
+	params                   text            DEFAULT ''                NOT NULL,
+	error_handler            integer         DEFAULT '0'               NOT NULL,
+	error_handler_params     varchar(255)    DEFAULT ''                NOT NULL,
 	PRIMARY KEY (item_preprocid)
 );
 CREATE INDEX item_preproc_1 ON item_preproc (itemid,step);
@@ -1710,7 +1718,7 @@ CREATE TABLE widget (
 	x                        integer         DEFAULT '0'               NOT NULL,
 	y                        integer         DEFAULT '0'               NOT NULL,
 	width                    integer         DEFAULT '1'               NOT NULL,
-	height                   integer         DEFAULT '1'               NOT NULL,
+	height                   integer         DEFAULT '2'               NOT NULL,
 	PRIMARY KEY (widgetid)
 );
 CREATE INDEX widget_1 ON widget (dashboardid);
@@ -1758,11 +1766,27 @@ CREATE TABLE maintenance_tag (
 	PRIMARY KEY (maintenancetagid)
 );
 CREATE INDEX maintenance_tag_1 ON maintenance_tag (maintenanceid);
+CREATE TABLE lld_macro_path (
+	lld_macro_pathid         bigint                                    NOT NULL,
+	itemid                   bigint                                    NOT NULL,
+	lld_macro                varchar(255)    DEFAULT ''                NOT NULL,
+	path                     varchar(255)    DEFAULT ''                NOT NULL,
+	PRIMARY KEY (lld_macro_pathid)
+);
+CREATE UNIQUE INDEX lld_macro_path_1 ON lld_macro_path (itemid,lld_macro);
+CREATE TABLE host_tag (
+	hosttagid                bigint                                    NOT NULL,
+	hostid                   bigint                                    NOT NULL,
+	tag                      varchar(255)    DEFAULT ''                NOT NULL,
+	value                    varchar(255)    DEFAULT ''                NOT NULL,
+	PRIMARY KEY (hosttagid)
+);
+CREATE INDEX host_tag_1 ON host_tag (hostid);
 CREATE TABLE dbversion (
 	mandatory                integer         DEFAULT '0'               NOT NULL,
 	optional                 integer         DEFAULT '0'               NOT NULL
 );
-INSERT INTO dbversion VALUES ('4000000','4000003');
+INSERT INTO dbversion VALUES ('4020000','4020000');
 ALTER TABLE ONLY hosts ADD CONSTRAINT c_hosts_1 FOREIGN KEY (proxy_hostid) REFERENCES hosts (hostid);
 ALTER TABLE ONLY hosts ADD CONSTRAINT c_hosts_2 FOREIGN KEY (maintenanceid) REFERENCES maintenances (maintenanceid);
 ALTER TABLE ONLY hosts ADD CONSTRAINT c_hosts_3 FOREIGN KEY (templateid) REFERENCES hosts (hostid) ON DELETE CASCADE;
@@ -1965,3 +1989,5 @@ ALTER TABLE ONLY task_check_now ADD CONSTRAINT c_task_check_now_1 FOREIGN KEY (t
 ALTER TABLE ONLY event_suppress ADD CONSTRAINT c_event_suppress_1 FOREIGN KEY (eventid) REFERENCES events (eventid) ON DELETE CASCADE;
 ALTER TABLE ONLY event_suppress ADD CONSTRAINT c_event_suppress_2 FOREIGN KEY (maintenanceid) REFERENCES maintenances (maintenanceid) ON DELETE CASCADE;
 ALTER TABLE ONLY maintenance_tag ADD CONSTRAINT c_maintenance_tag_1 FOREIGN KEY (maintenanceid) REFERENCES maintenances (maintenanceid) ON DELETE CASCADE;
+ALTER TABLE ONLY lld_macro_path ADD CONSTRAINT c_lld_macro_path_1 FOREIGN KEY (itemid) REFERENCES items (itemid) ON DELETE CASCADE;
+ALTER TABLE ONLY host_tag ADD CONSTRAINT c_host_tag_1 FOREIGN KEY (hostid) REFERENCES hosts (hostid) ON DELETE CASCADE;

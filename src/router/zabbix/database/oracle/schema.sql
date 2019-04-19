@@ -216,9 +216,11 @@ CREATE TABLE dchecks (
 	snmpv3_authprotocol      number(10)      DEFAULT '0'               NOT NULL,
 	snmpv3_privprotocol      number(10)      DEFAULT '0'               NOT NULL,
 	snmpv3_contextname       nvarchar2(255)  DEFAULT ''                ,
+	host_source              number(10)      DEFAULT '1'               NOT NULL,
+	name_source              number(10)      DEFAULT '0'               NOT NULL,
 	PRIMARY KEY (dcheckid)
 );
-CREATE INDEX dchecks_1 ON dchecks (druleid);
+CREATE INDEX dchecks_1 ON dchecks (druleid,host_source,name_source);
 CREATE TABLE applications (
 	applicationid            number(20)                                NOT NULL,
 	hostid                   number(20)                                NOT NULL,
@@ -400,6 +402,7 @@ CREATE TABLE media_type (
 	maxsessions              number(10)      DEFAULT '1'               NOT NULL,
 	maxattempts              number(10)      DEFAULT '3'               NOT NULL,
 	attempt_interval         nvarchar2(32)   DEFAULT '10s'             ,
+	content_type             number(10)      DEFAULT '1'               NOT NULL,
 	PRIMARY KEY (mediatypeid)
 );
 CREATE UNIQUE INDEX media_type_1 ON media_type (description);
@@ -625,6 +628,7 @@ CREATE TABLE config (
 	http_case_sensitive      number(10)      DEFAULT '1'               NOT NULL,
 	ldap_configured          number(10)      DEFAULT '0'               NOT NULL,
 	ldap_case_sensitive      number(10)      DEFAULT '1'               NOT NULL,
+	db_extension             nvarchar2(32)   DEFAULT ''                ,
 	PRIMARY KEY (configid)
 );
 CREATE INDEX config_1 ON config (alert_usrgrpid);
@@ -649,6 +653,7 @@ CREATE TABLE triggers (
 	correlation_mode         number(10)      DEFAULT '0'               NOT NULL,
 	correlation_tag          nvarchar2(255)  DEFAULT ''                ,
 	manual_close             number(10)      DEFAULT '0'               NOT NULL,
+	details                  nvarchar2(255)  DEFAULT ''                ,
 	PRIMARY KEY (triggerid)
 );
 CREATE INDEX triggers_1 ON triggers (status);
@@ -1121,6 +1126,7 @@ CREATE TABLE proxy_dhistory (
 	PRIMARY KEY (id)
 );
 CREATE INDEX proxy_dhistory_1 ON proxy_dhistory (clock);
+CREATE INDEX proxy_dhistory_2 ON proxy_dhistory (druleid);
 CREATE TABLE events (
 	eventid                  number(20)                                NOT NULL,
 	source                   number(10)      DEFAULT '0'               NOT NULL,
@@ -1600,7 +1606,9 @@ CREATE TABLE item_preproc (
 	itemid                   number(20)                                NOT NULL,
 	step                     number(10)      DEFAULT '0'               NOT NULL,
 	type                     number(10)      DEFAULT '0'               NOT NULL,
-	params                   nvarchar2(255)  DEFAULT ''                ,
+	params                   nvarchar2(2048) DEFAULT ''                ,
+	error_handler            number(10)      DEFAULT '0'               NOT NULL,
+	error_handler_params     nvarchar2(255)  DEFAULT ''                ,
 	PRIMARY KEY (item_preprocid)
 );
 CREATE INDEX item_preproc_1 ON item_preproc (itemid,step);
@@ -1710,7 +1718,7 @@ CREATE TABLE widget (
 	x                        number(10)      DEFAULT '0'               NOT NULL,
 	y                        number(10)      DEFAULT '0'               NOT NULL,
 	width                    number(10)      DEFAULT '1'               NOT NULL,
-	height                   number(10)      DEFAULT '1'               NOT NULL,
+	height                   number(10)      DEFAULT '2'               NOT NULL,
 	PRIMARY KEY (widgetid)
 );
 CREATE INDEX widget_1 ON widget (dashboardid);
@@ -1758,11 +1766,27 @@ CREATE TABLE maintenance_tag (
 	PRIMARY KEY (maintenancetagid)
 );
 CREATE INDEX maintenance_tag_1 ON maintenance_tag (maintenanceid);
+CREATE TABLE lld_macro_path (
+	lld_macro_pathid         number(20)                                NOT NULL,
+	itemid                   number(20)                                NOT NULL,
+	lld_macro                nvarchar2(255)  DEFAULT ''                ,
+	path                     nvarchar2(255)  DEFAULT ''                ,
+	PRIMARY KEY (lld_macro_pathid)
+);
+CREATE UNIQUE INDEX lld_macro_path_1 ON lld_macro_path (itemid,lld_macro);
+CREATE TABLE host_tag (
+	hosttagid                number(20)                                NOT NULL,
+	hostid                   number(20)                                NOT NULL,
+	tag                      nvarchar2(255)  DEFAULT ''                ,
+	value                    nvarchar2(255)  DEFAULT ''                ,
+	PRIMARY KEY (hosttagid)
+);
+CREATE INDEX host_tag_1 ON host_tag (hostid);
 CREATE TABLE dbversion (
 	mandatory                number(10)      DEFAULT '0'               NOT NULL,
 	optional                 number(10)      DEFAULT '0'               NOT NULL
 );
-INSERT INTO dbversion VALUES ('4000000','4000003');
+INSERT INTO dbversion VALUES ('4020000','4020000');
 CREATE SEQUENCE proxy_history_seq
 START WITH 1
 INCREMENT BY 1
@@ -2001,3 +2025,5 @@ ALTER TABLE task_check_now ADD CONSTRAINT c_task_check_now_1 FOREIGN KEY (taskid
 ALTER TABLE event_suppress ADD CONSTRAINT c_event_suppress_1 FOREIGN KEY (eventid) REFERENCES events (eventid) ON DELETE CASCADE;
 ALTER TABLE event_suppress ADD CONSTRAINT c_event_suppress_2 FOREIGN KEY (maintenanceid) REFERENCES maintenances (maintenanceid) ON DELETE CASCADE;
 ALTER TABLE maintenance_tag ADD CONSTRAINT c_maintenance_tag_1 FOREIGN KEY (maintenanceid) REFERENCES maintenances (maintenanceid) ON DELETE CASCADE;
+ALTER TABLE lld_macro_path ADD CONSTRAINT c_lld_macro_path_1 FOREIGN KEY (itemid) REFERENCES items (itemid) ON DELETE CASCADE;
+ALTER TABLE host_tag ADD CONSTRAINT c_host_tag_1 FOREIGN KEY (hostid) REFERENCES hosts (hostid) ON DELETE CASCADE;

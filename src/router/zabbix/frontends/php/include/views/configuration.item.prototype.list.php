@@ -31,12 +31,12 @@ $widget = (new CWidget())
 			))
 		))->setAttribute('aria-label', _('Content controls'))
 	)
-	->addItem(get_header_host_table('items', $this->data['hostid'], $this->data['parent_discoveryid']));
+	->addItem(get_header_host_table('items', $data['hostid'], $data['parent_discoveryid']));
 
 // create form
 $itemForm = (new CForm())
 	->setName('items')
-	->addVar('parent_discoveryid', $this->data['parent_discoveryid']);
+	->addVar('parent_discoveryid', $data['parent_discoveryid']);
 
 $url = (new CUrl('disc_prototypes.php'))
 	->setArgument('parent_discoveryid', $data['parent_discoveryid'])
@@ -72,7 +72,9 @@ foreach ($data['items'] as $item) {
 		else {
 			$link = ($item['master_item']['source'] === 'itemprototypes')
 				? (new CUrl('disc_prototypes.php'))->setArgument('parent_discoveryid', $data['parent_discoveryid'])
-				: (new CUrl('items.php'))->setArgument('hostid', $item['hostid']);
+				: (new CUrl('items.php'))
+					->setArgument('filter_set', '1')
+					->setArgument('filter_hostids', [$item['hostid']]);
 
 			$description[] = (new CLink(CHtml::encode($item['master_item']['name_expanded']),
 				$link
@@ -137,9 +139,7 @@ foreach ($data['items'] as $item) {
 		$item['delay'] = $update_interval_parser->getDelay();
 	}
 
-	$item_menu = CMenuPopupHelper::getDependentItemPrototype($item['itemid'], $data['parent_discoveryid'],
-		$item['name']
-	);
+	$item_menu = CMenuPopupHelper::getItemPrototype($item['itemid'], $data['parent_discoveryid']);
 
 	$wizard = (new CSpan(
 		(new CButton(null))->addClass(ZBX_STYLE_ICON_WZRD_ACTION)->setMenuPopup($item_menu)
@@ -159,12 +159,12 @@ foreach ($data['items'] as $item) {
 	]);
 }
 
-zbx_add_post_js('cookie.prefix = "'.$this->data['parent_discoveryid'].'";');
+zbx_add_post_js('cookie.prefix = "'.$data['parent_discoveryid'].'";');
 
 // append table to form
 $itemForm->addItem([
 	$itemTable,
-	$this->data['paging'],
+	$data['paging'],
 	new CActionButtonList('action', 'group_itemid',
 		[
 			'itemprototype.massenable' => ['name' => _('Create enabled'),
@@ -173,11 +173,12 @@ $itemForm->addItem([
 			'itemprototype.massdisable' => ['name' => _('Create disabled'),
 				'confirm' => _('Create items from selected prototypes as disabled?')
 			],
+			'itemprototype.massupdateform' => ['name' => _('Mass update')],
 			'itemprototype.massdelete' => ['name' => _('Delete'),
 				'confirm' => _('Delete selected item prototypes?')
 			]
 		],
-		$this->data['parent_discoveryid']
+		$data['parent_discoveryid']
 	)
 ]);
 

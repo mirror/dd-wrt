@@ -122,8 +122,7 @@ libzbxtrapper_a_AR = $(AR) $(ARFLAGS)
 libzbxtrapper_a_LIBADD =
 am_libzbxtrapper_a_OBJECTS = active.$(OBJEXT) trapper.$(OBJEXT) \
 	nodecommand.$(OBJEXT) proxyconfig.$(OBJEXT) \
-	proxydiscovery.$(OBJEXT) proxyautoreg.$(OBJEXT) \
-	proxyhosts.$(OBJEXT) proxydata.$(OBJEXT)
+	proxydata.$(OBJEXT) trapper_preproc.$(OBJEXT)
 libzbxtrapper_a_OBJECTS = $(am_libzbxtrapper_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -385,10 +384,8 @@ libzbxtrapper_a_SOURCES = \
 	trapper.c trapper.h \
 	nodecommand.c nodecommand.h \
 	proxyconfig.c proxyconfig.h \
-	proxydiscovery.c proxydiscovery.h \
-	proxyautoreg.c proxyautoreg.h \
-	proxyhosts.c proxyhosts.h \
-	proxydata.c proxydata.h
+	proxydata.c proxydata.h \
+	trapper_preproc.c trapper_preproc.h
 
 all: all-am
 
@@ -440,12 +437,10 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/active.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nodecommand.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/proxyautoreg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/proxyconfig.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/proxydata.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/proxydiscovery.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/proxyhosts.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/trapper.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/trapper_preproc.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\

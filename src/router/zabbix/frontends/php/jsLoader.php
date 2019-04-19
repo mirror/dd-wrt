@@ -58,6 +58,7 @@ $availableJScripts = [
 	'dom.js' => '',
 	'servercheck.js' => '',
 	'flickerfreescreen.js' => '',
+	'multilineinput.js' => '',
 	'multiselect.js' => '',
 	'colorpicker.js' => '',
 	'chkbxrange.js' => '',
@@ -114,6 +115,8 @@ $tranStrings = [
 		'Are you sure, you want to leave this page?' => _('Are you sure, you want to leave this page?'),
 		'Cannot add widgets in kiosk mode' => _('Cannot add widgets in kiosk mode'),
 		'Add a new widget' => _('Add a new widget'),
+		'Release to create a new widget.' => _('Release to create a new widget.'),
+		'Click and drag to desired size.' => _('Click and drag to desired size.'),
 		'Adjust widget refresh interval' => _('Adjust widget refresh interval')
 	],
 	'functions.js' => [
@@ -210,6 +213,12 @@ $tranStrings = [
 		'S_COLLAPSE' => _('Collapse'),
 		'S_CLOSE' => _('Close')
 	],
+	'multilineinput.js' => [
+		'S_N_SYMBOLS_REMAINING' => _('%1$s symbols remaining'),
+		'S_CLICK_TO_VIEW_OR_EDIT' => _('Click to view or edit'),
+		'S_APPLY' => _('Apply'),
+		'S_CANCEL' => _('Cancel')
+	],
 	'multiselect.js' => [
 		'No matches found' => _('No matches found'),
 		'More matches found...' => _('More matches found...'),
@@ -227,16 +236,23 @@ $tranStrings = [
 		'%1$s preselected, use down,up arrow keys and enter to select' => _x('%1$s preselected, use down,up arrow keys and enter to select', 'screen reader')
 	],
 	'menupopup.js' => [
+		'Actions' => _('Actions'),
 		'Acknowledge' => _('Acknowledge'),
 		'Configuration' => _('Configuration'),
+		'Clone' => _('Clone'),
+		'Create new' => _('Create new'),
 		'Create trigger' => _('Create trigger'),
+		'Create dependent item' => _('Create dependent item'),
+		'Create dependent discovery rule' => _('Create dependent discovery rule'),
+		'Delete' => _('Delete'),
+		'Delete dashboard?' => _('Delete dashboard?'),
 		'Description' => _('Description'),
 		'Do you wish to replace the conditional expression?' => _('Do you wish to replace the conditional expression?'),
 		'Edit trigger' => _('Edit trigger'),
 		'Insert expression' => _('Insert expression'),
+		'Sharing' => _('Sharing'),
 		'Trigger status "OK"' => _('Trigger status "OK"'),
 		'Trigger status "Problem"' => _('Trigger status "Problem"'),
-		'Item "%1$s"' => _('Item "%1$s"'),
 		'Go to' => _('Go to'),
 		'Graphs' => _('Graphs'),
 		'History' => _('History'),
@@ -288,7 +304,7 @@ $tranStrings = [
 	],
 	'common.js' => [
 		'Cancel' => _('Cancel')
-	]
+	],
 ];
 
 if (empty($_GET['files'])) {

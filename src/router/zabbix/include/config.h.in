@@ -238,6 +238,9 @@
    -libcrypto) */
 #undef HAVE_OPENSSL
 
+/* Define to 1 if you have OpenSSL with PSK support */
+#undef HAVE_OPENSSL_WITH_PSK
+
 /* Define to 1 if Oracle should be enabled. */
 #undef HAVE_ORACLE
 
@@ -296,6 +299,9 @@
 /* Define to 1 if you have the <resolv.h> header file. */
 #undef HAVE_RESOLV_H
 
+/* Define to 1 if '_res._ext.ext.nsaddrs[]' exists. /AIX/ */
+#undef HAVE_RES_EXT_EXT
+
 /* Define to 1 if 'res_ndestroy' exists. */
 #undef HAVE_RES_NDESTROY
 
@@ -304,6 +310,15 @@
 
 /* Define to 1 if you have the DNS functions */
 #undef HAVE_RES_QUERY
+
+/* Define to 1 if 'sockaddr_in6.sin6_len' exists. /BSD/ */
+#undef HAVE_RES_SIN6_LEN
+
+/* Define to 1 if '_res._u._ext.nsaddrs[]' exists. /Linux/ */
+#undef HAVE_RES_U_EXT
+
+/* Define to 1 if '_res._u._ext.ext' exists. /BSD/ */
+#undef HAVE_RES_U_EXT_EXT
 
 /* Define to 1 if union 'semun' exists. */
 #undef HAVE_SEMUN

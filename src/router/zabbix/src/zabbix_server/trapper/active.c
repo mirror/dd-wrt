@@ -166,6 +166,7 @@ static int	get_hostid_by_host(const zbx_socket_t *sock, const char *host, const 
 				goto done;
 			}
 		}
+#if defined(HAVE_POLARSSL) || defined(HAVE_GNUTLS) || (defined(HAVE_OPENSSL) && defined(HAVE_OPENSSL_WITH_PSK))
 		else if (ZBX_TCP_SEC_TLS_PSK == sock->connection_type)
 		{
 			zbx_tls_conn_attr_t	attr;
@@ -186,7 +187,7 @@ static int	get_hostid_by_host(const zbx_socket_t *sock, const char *host, const 
 				goto done;
 			}
 		}
-
+#endif
 		old_metadata = row[6];
 #else
 		old_metadata = row[3];
@@ -565,7 +566,7 @@ int	send_list_of_active_checks_json(zbx_socket_t *sock, struct zbx_json_parse *j
 				continue;
 
 			dc_items[i].key = zbx_strdup(dc_items[i].key, dc_items[i].key_orig);
-			substitute_key_macros(&dc_items[i].key, NULL, &dc_items[i], NULL, MACRO_TYPE_ITEM_KEY, NULL, 0);
+			substitute_key_macros(&dc_items[i].key, NULL, &dc_items[i], NULL, NULL, MACRO_TYPE_ITEM_KEY, NULL, 0);
 
 			zbx_json_addobject(&json, NULL);
 			zbx_json_addstring(&json, ZBX_PROTO_TAG_KEY, dc_items[i].key, ZBX_JSON_TYPE_STRING);
