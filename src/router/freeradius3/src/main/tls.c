@@ -1,7 +1,7 @@
 /*
  * tls.c
  *
- * Version:     $Id: 9726953234b42d6a68bb47efd57b405db7ba4dcd $
+ * Version:     $Id: 542efa491c4624adfc89c8668573e1e89ee32d09 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 9726953234b42d6a68bb47efd57b405db7ba4dcd $")
+RCSID("$Id: 542efa491c4624adfc89c8668573e1e89ee32d09 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <freeradius-devel/radiusd.h>
@@ -1405,7 +1405,7 @@ static void cbtls_remove_session(SSL_CTX *ctx, SSL_SESSION *sess)
 
 	{
 		int rv;
-		char filename[256];
+		char filename[3 * MAX_SESSION_SIZE + 1];
 
 		DEBUG2(LOG_PREFIX ": Removing session %s from the cache", buffer);
 
@@ -1444,7 +1444,7 @@ static int cbtls_new_session(SSL *ssl, SSL_SESSION *sess)
 
 	{
 		int fd, rv, todo, blob_len;
-		char filename[256];
+		char filename[3 * MAX_SESSION_SIZE + 1];
 		unsigned char *p;
 
 		RDEBUG2("Serialising session %s, and storing in cache", buffer);
@@ -1617,7 +1617,7 @@ static SSL_SESSION *cbtls_get_session(SSL *ssl, const unsigned char *data, int l
 
 	{
 		int		rv, fd, todo;
-		char		filename[256];
+		char		filename[3 * MAX_SESSION_SIZE + 1];
 
 		unsigned char const	**o;
 		unsigned char		**p;
@@ -2514,7 +2514,7 @@ int cbtls_verify(int ok, X509_STORE_CTX *ctx)
 		    && do_verify
 #endif
 			) while (conf->verify_client_cert_cmd) {
-			char filename[256];
+			char filename[3 * MAX_SESSION_SIZE + 1];
 			int fd;
 			FILE *fp;
 
@@ -3704,7 +3704,7 @@ int tls_success(tls_session_t *ssn, REQUEST *request)
 
 			if (conf->session_cache_path) {
 				/* write the VPs to the cache file */
-				char filename[256], buf[1024];
+				char filename[3 * MAX_SESSION_SIZE + 1], buf[1024];
 				FILE *vp_file;
 
 				RDEBUG2("Saving session %s in the disk cache", buffer);
@@ -3767,7 +3767,7 @@ int tls_success(tls_session_t *ssn, REQUEST *request)
 
 		if (conf->session_cache_path) {
 			/* "touch" the cached session/vp file */
-			char filename[256];
+			char filename[3 * MAX_SESSION_SIZE + 1];
 
 			snprintf(filename, sizeof(filename), "%s%c%s.asn1",
 				 conf->session_cache_path, FR_DIR_SEP, buffer);

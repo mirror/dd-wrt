@@ -1,7 +1,7 @@
 /*
  * radius.h  Constants of the radius protocol.
  *
- * Version:  $Id: 44a2c13d9c49454912993c34573a5851bfaf7c63 $
+ * Version:  $Id: 473528d65dbe552dee8f42315d30dc2c13e6ab14 $
  *
  */
 
@@ -68,7 +68,7 @@ typedef enum {
 #define PW_AUTH_UDP_PORT_ALT		1645
 #define PW_ACCT_UDP_PORT		1813
 #define PW_ACCT_UDP_PORT_ALT		1646
-#define PW_POD_UDP_PORT			1700
+#define PW_POD_UDP_PORT			3799
 #define PW_RADIUS_TLS_PORT	       	2083
 #define PW_COA_UDP_PORT			3799
 

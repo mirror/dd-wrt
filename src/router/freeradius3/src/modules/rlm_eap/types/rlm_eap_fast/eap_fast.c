@@ -1,7 +1,7 @@
 /*
  * eap_fast.c  contains the interfaces that are called from the main handler
  *
- * Version:     $Id: fa9c58f3c33517576bc8a648209c560e96ac5b3e $
+ * Version:     $Id: 74f67056f07c7d5e17aaa2fa15e810f89bcbd27a $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  *   Copyright 2016 The FreeRADIUS server project
  */
 
-RCSID("$Id: fa9c58f3c33517576bc8a648209c560e96ac5b3e $")
+RCSID("$Id: 74f67056f07c7d5e17aaa2fa15e810f89bcbd27a $")
 
 #include "eap_fast.h"
 #include "eap_fast_crypto.h"
@@ -770,20 +770,24 @@ static rlm_rcode_t CC_HINT(nonnull) process_reply( eap_handler_t *eap_session,
 		for (vp = fr_cursor_init(&cursor, &reply->vps); vp; vp = fr_cursor_next(&cursor)) {
 			if (vp->da->vendor != VENDORPEC_MICROSOFT) continue;
 
-			if (vp->vp_length != 16) {
-				REDEBUG("Found CHAP-Challenge with incorrect length.  Expected %u, got %zu",
-					16, vp->vp_length);
-				rcode = RLM_MODULE_INVALID;
-				break;
-			}
-
 			/* FIXME must be a better way to capture/re-derive this later for ISK */
 			switch (vp->da->attr) {
 			case PW_MSCHAP_MPPE_SEND_KEY:
+				if (vp->vp_length != CHAP_VALUE_LENGTH) {
+				wrong_length:
+					REDEBUG("Found %s with incorrect length.  Expected %u, got %zu",
+						vp->da->name, 16, vp->vp_length);
+					rcode = RLM_MODULE_INVALID;
+					break;
+				}
+
+
 				memcpy(t->isk.mppe_send, vp->vp_octets, CHAP_VALUE_LENGTH);
 				break;
 
 			case PW_MSCHAP_MPPE_RECV_KEY:
+				if (vp->length != CHAP_VALUE_LENGTH) goto wrong_length;
+
 				memcpy(t->isk.mppe_recv, vp->vp_octets, CHAP_VALUE_LENGTH);
 				break;
 

@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: a424942da46e0dfa923a035dc0029d30f2f41015 $
+ * $Id: 080a289f7e99799d172ae6f4cfb9747405a40e04 $
  * @file main/client.c
  * @brief Manage clients allowed to communicate with the server.
  *
@@ -24,7 +24,7 @@
  * @copyright 2000 Alan DeKok <aland@ox.org>
  * @copyright 2000 Miquel van Smoorenburg <miquels@cistron.nl>
  */
-RCSID("$Id: a424942da46e0dfa923a035dc0029d30f2f41015 $")
+RCSID("$Id: 080a289f7e99799d172ae6f4cfb9747405a40e04 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -1179,6 +1179,14 @@ RADCLIENT *client_afrom_request(RADCLIENT_LIST *clients, REQUEST *request)
 
 	if (!clients || !request) return NULL;
 
+	/*
+	 *	Hack for the "dynamic_clients" module.
+	 */
+	if (request->client->dynamic) {
+		c = request->client;
+		goto validate;
+	}
+
 	snprintf(buffer, sizeof(buffer), "dynamic%i", cnt++);
 
 	c = talloc_zero(clients, RADCLIENT);
@@ -1390,6 +1398,7 @@ RADCLIENT *client_afrom_request(RADCLIENT_LIST *clients, REQUEST *request)
 	}
 	REXDENT();
 
+validate:
 	if (c->ipaddr.af == AF_UNSPEC) {
 		RERROR("Cannot add client %s: No IP address was specified.",
 		       ip_ntoh(&request->packet->src_ipaddr, buffer, sizeof(buffer)));

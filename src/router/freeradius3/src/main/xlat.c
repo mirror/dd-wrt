@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 8c955b5b6f5d7f0913be7cedb72695001f9f8ca3 $
+ * $Id: 1438406dbd6fba65a789b0a0cdd1ab65cfac5fe3 $
  *
  * @file xlat.c
  * @brief String expansion ("translation"). Implements %Attribute -> value
@@ -24,7 +24,7 @@
  * @copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 8c955b5b6f5d7f0913be7cedb72695001f9f8ca3 $")
+RCSID("$Id: 1438406dbd6fba65a789b0a0cdd1ab65cfac5fe3 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/parser.h>
@@ -1468,7 +1468,7 @@ static ssize_t xlat_tokenize_literal(TALLOC_CTX *ctx, char *fmt, xlat_exp_t **he
 			ssize_t slen;
 			xlat_exp_t *next;
 
-			if (!p[1] || !strchr("%}dlmntDGHIMSTYv", p[1])) {
+			if (!p[1] || !strchr("%}delmntDGHIMSTYv", p[1])) {
 				talloc_free(node);
 				*error = "Invalid variable expansion";
 				p++;
@@ -2129,6 +2129,12 @@ static char *xlat_aprint(TALLOC_CTX *ctx, REQUEST *request, xlat_exp_t const * c
 		case 'd': /* request day */
 			if (!localtime_r(&when, &ts)) goto error;
 			strftime(str, freespace, "%d", &ts);
+			break;
+
+		case 'e': /* request second */
+			if (!localtime_r(&when, &ts)) goto error;
+
+			snprintf(str, freespace, "%d", ts.tm_sec);
 			break;
 
 		case 'l': /* request timestamp */
