@@ -174,15 +174,15 @@ abstract class CHostGeneral extends CHostBase {
 		foreach ($hostsLinkageInserts as $hostTplIds){
 			Manager::Application()->link($hostTplIds['templateid'], $hostTplIds['hostid']);
 
-			API::DiscoveryRule()->syncTemplates([
-				'hostids' => $hostTplIds['hostid'],
-				'templateids' => $hostTplIds['templateid']
-			]);
-
 			// Fist link web items, so that later regular items can use web item as their master item.
 			Manager::HttpTest()->link($hostTplIds['templateid'], $hostTplIds['hostid']);
 
 			API::Item()->syncTemplates([
+				'hostids' => $hostTplIds['hostid'],
+				'templateids' => $hostTplIds['templateid']
+			]);
+
+			API::DiscoveryRule()->syncTemplates([
 				'hostids' => $hostTplIds['hostid'],
 				'templateids' => $hostTplIds['templateid']
 			]);
@@ -331,6 +331,70 @@ abstract class CHostGeneral extends CHostBase {
 			}
 		}
 
+		/* GRAPHS {{{ */
+		$db_tpl_graphs = DBselect(
+			'SELECT DISTINCT g.graphid'.
+			' FROM graphs g,graphs_items gi,items i'.
+			' WHERE g.graphid=gi.graphid'.
+				' AND gi.itemid=i.itemid'.
+				' AND '.dbConditionInt('i.hostid', $templateids).
+				' AND '.dbConditionInt('g.flags', $flags)
+		);
+
+		$tpl_graphids = [];
+
+		while ($db_tpl_graph = DBfetch($db_tpl_graphs)) {
+			$tpl_graphids[] = $db_tpl_graph['graphid'];
+		}
+
+		if ($tpl_graphids) {
+			$sql = ($targetids !== null)
+				? 'SELECT DISTINCT g.graphid,g.flags'.
+					' FROM graphs g,graphs_items gi,items i'.
+					' WHERE g.graphid=gi.graphid'.
+						' AND gi.itemid=i.itemid'.
+						' AND '.dbConditionInt('g.templateid', $tpl_graphids).
+						' AND '.dbConditionInt('i.hostid', $targetids)
+				: 'SELECT g.graphid,g.flags'.
+					' FROM graphs g'.
+					' WHERE '.dbConditionInt('g.templateid', $tpl_graphids);
+
+			$db_graphs = DBSelect($sql);
+
+			$graphs = [
+				ZBX_FLAG_DISCOVERY_NORMAL => [],
+				ZBX_FLAG_DISCOVERY_PROTOTYPE => []
+			];
+			while ($db_graph = DBfetch($db_graphs)) {
+				$graphs[$db_graph['flags']][] = $db_graph['graphid'];
+			}
+
+			if ($graphs[ZBX_FLAG_DISCOVERY_PROTOTYPE]) {
+				if ($clear) {
+					CGraphPrototypeManager::delete($graphs[ZBX_FLAG_DISCOVERY_PROTOTYPE]);
+				}
+				else {
+					DB::update('graphs', [
+						'values' => ['templateid' => 0],
+						'where' => ['graphid' => $graphs[ZBX_FLAG_DISCOVERY_PROTOTYPE]]
+					]);
+				}
+			}
+
+			if ($graphs[ZBX_FLAG_DISCOVERY_NORMAL]) {
+				if ($clear) {
+					CGraphManager::delete($graphs[ZBX_FLAG_DISCOVERY_NORMAL]);
+				}
+				else {
+					DB::update('graphs', [
+						'values' => ['templateid' => 0],
+						'where' => ['graphid' => $graphs[ZBX_FLAG_DISCOVERY_NORMAL]]
+					]);
+				}
+			}
+		}
+		/* }}} GRAPHS */
+
 		/* ITEMS, DISCOVERY RULES {{{ */
 		$sqlFrom = ' items i1,items i2,hosts h';
 		$sqlWhere = ' i2.itemid=i1.templateid'.
@@ -463,74 +527,6 @@ abstract class CHostGeneral extends CHostBase {
 				}
 			}
 		}
-
-
-		/* GRAPHS {{{ */
-		$sqlFrom = ' graphs g,hosts h';
-		$sqlWhere = ' EXISTS ('.
-			'SELECT ggi.graphid'.
-			' FROM graphs_items ggi,items ii'.
-			' WHERE ggi.graphid=g.templateid'.
-			' AND ii.itemid=ggi.itemid'.
-			' AND '.dbConditionInt('ii.hostid', $templateids).')'.
-			' AND '.dbConditionInt('g.flags', $flags);
-
-
-		if (!is_null($targetids)) {
-			$sqlFrom = ' graphs g,graphs_items gi,items i,hosts h';
-			$sqlWhere .= ' AND '.dbConditionInt('i.hostid', $targetids).
-				' AND gi.itemid=i.itemid'.
-				' AND g.graphid=gi.graphid'.
-				' AND h.hostid=i.hostid';
-		}
-		$sql = 'SELECT DISTINCT g.graphid,g.name,g.flags,h.name as host'.
-			' FROM '.$sqlFrom.
-			' WHERE '.$sqlWhere;
-		$dbGraphs = DBSelect($sql);
-		$graphs = [
-			ZBX_FLAG_DISCOVERY_NORMAL => [],
-			ZBX_FLAG_DISCOVERY_PROTOTYPE => []
-		];
-		while ($graph = DBfetch($dbGraphs)) {
-			$graphs[$graph['flags']][$graph['graphid']] = [
-				'name' => $graph['name'],
-				'graphid' => $graph['graphid'],
-				'host' => $graph['host']
-			];
-		}
-
-		if (!empty($graphs[ZBX_FLAG_DISCOVERY_PROTOTYPE])) {
-			if ($clear) {
-				CGraphPrototypeManager::delete(array_keys($graphs[ZBX_FLAG_DISCOVERY_PROTOTYPE]));
-			}
-			else{
-				DB::update('graphs', [
-					'values' => ['templateid' => 0],
-					'where' => ['graphid' => array_keys($graphs[ZBX_FLAG_DISCOVERY_PROTOTYPE])]
-				]);
-
-				foreach ($graphs[ZBX_FLAG_DISCOVERY_PROTOTYPE] as $graph) {
-					info(_s('Unlinked: Graph prototype "%1$s" on "%2$s".', $graph['name'], $graph['host']));
-				}
-			}
-		}
-
-		if (!empty($graphs[ZBX_FLAG_DISCOVERY_NORMAL])) {
-			if ($clear) {
-				CGraphManager::delete(array_keys($graphs[ZBX_FLAG_DISCOVERY_NORMAL]));
-			}
-			else{
-				DB::update('graphs', [
-					'values' => ['templateid' => 0],
-					'where' => ['graphid' => array_keys($graphs[ZBX_FLAG_DISCOVERY_NORMAL])]
-				]);
-
-				foreach ($graphs[ZBX_FLAG_DISCOVERY_NORMAL] as $graph) {
-					info(_s('Unlinked: Graph "%1$s" on "%2$s".', $graph['name'], $graph['host']));
-				}
-			}
-		}
-		/* }}} GRAPHS */
 
 		// http tests
 		$sqlWhere = '';
@@ -917,7 +913,9 @@ abstract class CHostGeneral extends CHostBase {
 
 				$applications = zbx_toHash($applications, 'hostid');
 				foreach ($result as $hostid => $host) {
-					$result[$hostid]['applications'] = isset($applications[$hostid]) ? $applications[$hostid]['rowscount'] : 0;
+					$result[$hostid]['applications'] = array_key_exists($hostid, $applications)
+						? $applications[$hostid]['rowscount']
+						: 0;
 				}
 			}
 		}
@@ -936,6 +934,126 @@ abstract class CHostGeneral extends CHostBase {
 			$result = $relationMap->mapMany($result, $macros, 'macros', $options['limitSelects']);
 		}
 
+		// adding tags
+		if ($options['selectTags'] !== null && $options['selectTags'] != API_OUTPUT_COUNT) {
+			if ($options['selectTags'] === API_OUTPUT_EXTEND) {
+				$options['selectTags'] = ['tag', 'value'];
+			}
+
+			$tags_options = [
+				'output' => $this->outputExtend($options['selectTags'], ['hostid']),
+				'filter' => ['hostid' => $hostids]
+			];
+			$tags = DBselect(DB::makeSql('host_tag', $tags_options));
+
+			foreach ($result as &$host) {
+				$host['tags'] = [];
+			}
+			unset($host);
+
+			while ($tag = DBfetch($tags)) {
+				$result[$tag['hostid']]['tags'][] = [
+					'tag' => $tag['tag'],
+					'value' => $tag['value']
+				];
+			}
+		}
+
 		return $result;
+	}
+
+	/**
+	 * Compares input tags with tags stored in the database and performs tag deleting and inserting.
+	 *
+	 * @param array  $hosts
+	 * @param int    $hosts[]['hostid']
+	 * @param int    $hosts[]['templateid']
+	 * @param array  $hosts[]['tags']
+	 * @param string $hosts[]['tags'][]['tag']
+	 * @param string $hosts[]['tags'][]['value']
+	 * @param string $id_field
+	 */
+	protected function updateTags(array $hosts, $id_field) {
+		$hostids = [];
+		foreach ($hosts as $host) {
+			if (array_key_exists('tags', $host)) {
+				$hostids[] = $host[$id_field];
+			}
+		}
+
+		if (!$hostids) {
+			return;
+		}
+
+		$options = [
+			'output' => ['hosttagid', 'hostid', 'tag', 'value'],
+			'filter' => ['hostid' => $hostids]
+		];
+
+		$db_tags = DBselect(DB::makeSql('host_tag', $options));
+		$db_hosts = [];
+		$del_hosttagids = [];
+
+		while ($db_tag = DBfetch($db_tags)) {
+			$db_hosts[$db_tag['hostid']]['tags'][] = $db_tag;
+			$del_hosttagids[$db_tag['hosttagid']] = true;
+		}
+
+		$ins_tags = [];
+		foreach ($hosts as $host) {
+			foreach ($host['tags'] as $tag) {
+				$tag += ['value' => ''];
+
+				if (array_key_exists($host[$id_field], $db_hosts)) {
+					foreach ($db_hosts[$host[$id_field]]['tags'] as $db_tag) {
+						if ($tag['tag'] === $db_tag['tag'] && $tag['value'] === $db_tag['value']) {
+							unset($del_hosttagids[$db_tag['hosttagid']]);
+							$tag = null;
+							break;
+						}
+					}
+				}
+
+				if ($tag !== null) {
+					$ins_tags[] = ['hostid' => $host[$id_field]] + $tag;
+				}
+			}
+		}
+
+		if ($del_hosttagids) {
+			DB::delete('host_tag', ['hosttagid' => array_keys($del_hosttagids)]);
+		}
+
+		if ($ins_tags) {
+			DB::insert('host_tag', $ins_tags);
+		}
+	}
+
+	/**
+	 * Validates tags.
+	 *
+	 * @param array  $host
+	 * @param int    $host['evaltype']
+	 * @param array  $host['tags']
+	 * @param string $host['tags'][]['tag']
+	 * @param string $host['tags'][]['value']
+	 *
+	 * @throws APIException if the input is invalid.
+	 */
+	protected function validateTags(array $host) {
+		$api_input_rules = ['type' => API_OBJECT, 'fields' => [
+			'evaltype'	=> ['type' => API_INT32, 'in' => implode(',', [TAG_EVAL_TYPE_AND_OR, TAG_EVAL_TYPE_OR])],
+			'tags'		=> ['type' => API_OBJECTS, 'uniq' => [['tag', 'value']], 'fields' => [
+				'tag'		=> ['type' => API_STRING_UTF8, 'flags' => API_REQUIRED | API_NOT_EMPTY, 'length' => DB::getFieldLength('host_tag', 'tag')],
+				'value'		=> ['type' => API_STRING_UTF8, 'length' => DB::getFieldLength('host_tag', 'value'), 'default' => DB::getDefault('host_tag', 'value')]
+			]]
+		]];
+
+		// Keep values only for fields with defined validation rules.
+		$host = array_intersect_key($host, $api_input_rules['fields']);
+
+		if (!CApiInputValidator::validate($api_input_rules, $host, '/', $error)) {
+			self::exception(ZBX_API_ERROR_PARAMETERS, $error);
+		}
 	}
 }

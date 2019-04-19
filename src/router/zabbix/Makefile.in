@@ -977,7 +977,8 @@ dist-hook:
 @DBSCHEMA_TRUE@dbschema_postgresql:
 @DBSCHEMA_TRUE@	cd database/postgresql && \
 @DBSCHEMA_TRUE@	$(MAKE) $(AM_MAKEFLAGS) data.sql && \
-@DBSCHEMA_TRUE@	$(MAKE) $(AM_MAKEFLAGS) schema.sql
+@DBSCHEMA_TRUE@	$(MAKE) $(AM_MAKEFLAGS) schema.sql && \
+@DBSCHEMA_TRUE@	$(MAKE) $(AM_MAKEFLAGS) timescaledb.sql
 
 @DBSCHEMA_TRUE@dbschema_sqlite3:
 @DBSCHEMA_TRUE@	cd database/sqlite3 && \

@@ -135,6 +135,15 @@ am_libzbxpoller_a_OBJECTS = libzbxpoller_a-checks_agent.$(OBJEXT) \
 	libzbxpoller_a-checks_http.$(OBJEXT) \
 	libzbxpoller_a-poller.$(OBJEXT)
 libzbxpoller_a_OBJECTS = $(am_libzbxpoller_a_OBJECTS)
+libzbxpoller_proxy_a_AR = $(AR) $(ARFLAGS)
+libzbxpoller_proxy_a_LIBADD =
+am_libzbxpoller_proxy_a_OBJECTS = checks_internal_proxy.$(OBJEXT)
+libzbxpoller_proxy_a_OBJECTS = $(am_libzbxpoller_proxy_a_OBJECTS)
+libzbxpoller_server_a_AR = $(AR) $(ARFLAGS)
+libzbxpoller_server_a_LIBADD =
+am_libzbxpoller_server_a_OBJECTS =  \
+	libzbxpoller_server_a-checks_internal_server.$(OBJEXT)
+libzbxpoller_server_a_OBJECTS = $(am_libzbxpoller_server_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -167,8 +176,11 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(libzbxpoller_a_SOURCES)
-DIST_SOURCES = $(libzbxpoller_a_SOURCES)
+SOURCES = $(libzbxpoller_a_SOURCES) $(libzbxpoller_proxy_a_SOURCES) \
+	$(libzbxpoller_server_a_SOURCES)
+DIST_SOURCES = $(libzbxpoller_a_SOURCES) \
+	$(libzbxpoller_proxy_a_SOURCES) \
+	$(libzbxpoller_server_a_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -393,7 +405,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-noinst_LIBRARIES = libzbxpoller.a
+noinst_LIBRARIES = libzbxpoller.a libzbxpoller_server.a libzbxpoller_proxy.a
 libzbxpoller_a_SOURCES = \
 	checks_agent.c checks_agent.h \
 	checks_internal.c checks_internal.h \
@@ -410,7 +422,14 @@ libzbxpoller_a_SOURCES = \
 	checks_http.c checks_http.h \
 	poller.c poller.h
 
+libzbxpoller_server_a_SOURCES = \
+	checks_internal_server.c checks_internal.h
+
+libzbxpoller_proxy_a_SOURCES = \
+	checks_internal_proxy.c checks_internal.h
+
 libzbxpoller_a_CFLAGS = -I@top_srcdir@/src/libs/zbxsysinfo/simple -I@top_srcdir@/src/libs/zbxdbcache @SNMP_CFLAGS@ @SSH2_CFLAGS@
+libzbxpoller_server_a_CFLAGS = -I@top_srcdir@/src/libs/zbxdbcache
 all: all-am
 
 .SUFFIXES:
@@ -453,12 +472,23 @@ libzbxpoller.a: $(libzbxpoller_a_OBJECTS) $(libzbxpoller_a_DEPENDENCIES) $(EXTRA
 	$(AM_V_AR)$(libzbxpoller_a_AR) libzbxpoller.a $(libzbxpoller_a_OBJECTS) $(libzbxpoller_a_LIBADD)
 	$(AM_V_at)$(RANLIB) libzbxpoller.a
 
+libzbxpoller_proxy.a: $(libzbxpoller_proxy_a_OBJECTS) $(libzbxpoller_proxy_a_DEPENDENCIES) $(EXTRA_libzbxpoller_proxy_a_DEPENDENCIES) 
+	$(AM_V_at)-rm -f libzbxpoller_proxy.a
+	$(AM_V_AR)$(libzbxpoller_proxy_a_AR) libzbxpoller_proxy.a $(libzbxpoller_proxy_a_OBJECTS) $(libzbxpoller_proxy_a_LIBADD)
+	$(AM_V_at)$(RANLIB) libzbxpoller_proxy.a
+
+libzbxpoller_server.a: $(libzbxpoller_server_a_OBJECTS) $(libzbxpoller_server_a_DEPENDENCIES) $(EXTRA_libzbxpoller_server_a_DEPENDENCIES) 
+	$(AM_V_at)-rm -f libzbxpoller_server.a
+	$(AM_V_AR)$(libzbxpoller_server_a_AR) libzbxpoller_server.a $(libzbxpoller_server_a_OBJECTS) $(libzbxpoller_server_a_LIBADD)
+	$(AM_V_at)$(RANLIB) libzbxpoller_server.a
+
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/checks_internal_proxy.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxpoller_a-checks_agent.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxpoller_a-checks_aggregate.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxpoller_a-checks_calculated.Po@am__quote@
@@ -473,6 +503,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxpoller_a-checks_ssh.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxpoller_a-checks_telnet.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxpoller_a-poller.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxpoller_server_a-checks_internal_server.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
@@ -685,6 +716,20 @@ libzbxpoller_a-poller.obj: poller.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='poller.c' object='libzbxpoller_a-poller.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxpoller_a_CFLAGS) $(CFLAGS) -c -o libzbxpoller_a-poller.obj `if test -f 'poller.c'; then $(CYGPATH_W) 'poller.c'; else $(CYGPATH_W) '$(srcdir)/poller.c'; fi`
+
+libzbxpoller_server_a-checks_internal_server.o: checks_internal_server.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxpoller_server_a_CFLAGS) $(CFLAGS) -MT libzbxpoller_server_a-checks_internal_server.o -MD -MP -MF $(DEPDIR)/libzbxpoller_server_a-checks_internal_server.Tpo -c -o libzbxpoller_server_a-checks_internal_server.o `test -f 'checks_internal_server.c' || echo '$(srcdir)/'`checks_internal_server.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzbxpoller_server_a-checks_internal_server.Tpo $(DEPDIR)/libzbxpoller_server_a-checks_internal_server.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='checks_internal_server.c' object='libzbxpoller_server_a-checks_internal_server.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxpoller_server_a_CFLAGS) $(CFLAGS) -c -o libzbxpoller_server_a-checks_internal_server.o `test -f 'checks_internal_server.c' || echo '$(srcdir)/'`checks_internal_server.c
+
+libzbxpoller_server_a-checks_internal_server.obj: checks_internal_server.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxpoller_server_a_CFLAGS) $(CFLAGS) -MT libzbxpoller_server_a-checks_internal_server.obj -MD -MP -MF $(DEPDIR)/libzbxpoller_server_a-checks_internal_server.Tpo -c -o libzbxpoller_server_a-checks_internal_server.obj `if test -f 'checks_internal_server.c'; then $(CYGPATH_W) 'checks_internal_server.c'; else $(CYGPATH_W) '$(srcdir)/checks_internal_server.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzbxpoller_server_a-checks_internal_server.Tpo $(DEPDIR)/libzbxpoller_server_a-checks_internal_server.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='checks_internal_server.c' object='libzbxpoller_server_a-checks_internal_server.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxpoller_server_a_CFLAGS) $(CFLAGS) -c -o libzbxpoller_server_a-checks_internal_server.obj `if test -f 'checks_internal_server.c'; then $(CYGPATH_W) 'checks_internal_server.c'; else $(CYGPATH_W) '$(srcdir)/checks_internal_server.c'; fi`
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique

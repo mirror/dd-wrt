@@ -94,7 +94,7 @@ static void	alerter_send_result(zbx_ipc_socket_t *socket, int errcode, const cha
 	unsigned char	*data;
 	zbx_uint32_t	data_len;
 
-	data_len = zbx_alerter_serialize_result(&data,  errcode, errmsg);
+	data_len = zbx_alerter_serialize_result(&data, errcode, errmsg);
 	zbx_ipc_socket_write(socket, ZBX_IPC_ALERTER_RESULT, data, data_len);
 
 	zbx_free(data);
@@ -116,17 +116,17 @@ static void	alerter_process_email(zbx_ipc_socket_t *socket, zbx_ipc_message_t *i
 	zbx_uint64_t	alertid;
 	char		*sendto, *subject, *message, *smtp_server, *smtp_helo, *smtp_email, *username, *password;
 	unsigned short	smtp_port;
-	unsigned char	smtp_security, smtp_verify_peer, smtp_verify_host, smtp_authentication;
+	unsigned char	smtp_security, smtp_verify_peer, smtp_verify_host, smtp_authentication, content_type;
 	int		ret;
 	char		error[MAX_STRING_LEN];
 
 
 	zbx_alerter_deserialize_email(ipc_message->data, &alertid, &sendto, &subject, &message, &smtp_server,
 			&smtp_port, &smtp_helo, &smtp_email, &smtp_security, &smtp_verify_peer, &smtp_verify_host,
-			&smtp_authentication, &username, &password);
+			&smtp_authentication, &username, &password, &content_type);
 
 	ret = send_email(smtp_server, smtp_port, smtp_helo, smtp_email, sendto, subject, message, smtp_security,
-			smtp_verify_peer, smtp_verify_host, smtp_authentication, username, password,
+			smtp_verify_peer, smtp_verify_host, smtp_authentication, username, password, content_type,
 			ALARM_ACTION_TIMEOUT, error, sizeof(error));
 
 	alerter_send_result(socket, ret, (SUCCEED == ret ? NULL : error));

@@ -101,8 +101,26 @@ typedef struct
 	unsigned char		queue_priority;
 	unsigned char		schedulable;
 	unsigned char		update_triggers;
+	zbx_uint64_t		templateid;
+	zbx_uint64_t		parent_itemid; /* from joined item_discovery table */
 }
 ZBX_DC_ITEM;
+
+typedef struct
+{
+	zbx_uint64_t		itemid;
+	zbx_uint64_t		hostid;
+	zbx_uint64_t		templateid;
+}
+ZBX_DC_TEMPLATE_ITEM;
+
+typedef struct
+{
+	zbx_uint64_t		itemid;
+	zbx_uint64_t		hostid;
+	zbx_uint64_t		templateid;
+}
+ZBX_DC_PROTOTYPE_ITEM;
 
 typedef struct
 {
@@ -155,6 +173,7 @@ typedef struct
 	zbx_uint64_t	itemid;
 	zbx_uint64_t	master_itemid;
 	zbx_uint64_t	last_master_itemid;
+	unsigned char	flags;
 }
 ZBX_DC_DEPENDENTITEM;
 
@@ -221,14 +240,15 @@ ZBX_DC_CALCITEM;
 
 typedef struct
 {
-	zbx_uint64_t		itemid;
-	zbx_vector_uint64_t	dep_itemids;
+	zbx_uint64_t			itemid;
+	zbx_vector_uint64_pair_t	dep_itemids;
 }
 ZBX_DC_MASTERITEM;
 
 typedef struct
 {
 	zbx_uint64_t		itemid;
+	int			update_time;
 	zbx_vector_ptr_t	preproc_ops;
 }
 ZBX_DC_PREPROCITEM;
@@ -260,8 +280,6 @@ typedef struct
 	unsigned char	allow_traps;
 }
 ZBX_DC_HTTPITEM;
-
-typedef zbx_item_history_value_t	ZBX_DC_DELTAITEM;
 
 #if defined(HAVE_POLARSSL) || defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
 typedef struct
@@ -488,6 +506,7 @@ typedef struct
 	int		default_inventory_mode;
 	int		refresh_unsupported;
 	unsigned char	snmptrap_logging;
+	const char	*db_extension;
 	/* housekeeping related configuration data */
 	zbx_config_hk_t	hk;
 }
@@ -541,6 +560,23 @@ typedef struct
 	const char	*value;
 }
 zbx_dc_trigger_tag_t;
+
+typedef struct
+{
+	zbx_uint64_t	hosttagid;
+	zbx_uint64_t	hostid;
+	const char	*tag;
+	const char	*value;
+}
+zbx_dc_host_tag_t;
+
+typedef struct
+{
+	zbx_uint64_t		hostid;
+	zbx_vector_ptr_t	tags;
+		/* references to zbx_dc_host_tag_t records cached in config-> host_tags hashset */
+}
+zbx_dc_host_tag_index_t;
 
 typedef struct
 {
@@ -628,8 +664,10 @@ typedef struct
 	zbx_uint64_t	item_preprocid;
 	zbx_uint64_t	itemid;
 	int		step;
+	int		error_handler;
 	unsigned char	type;
 	const char	*params;
+	const char	*error_handler_params;
 }
 zbx_dc_preproc_op_t;
 
@@ -700,6 +738,8 @@ typedef struct
 
 	zbx_hashset_t		items;
 	zbx_hashset_t		items_hk;		/* hostid, key */
+	zbx_hashset_t		template_items;		/* template items selected from items table */
+	zbx_hashset_t		prototype_items;	/* item prototypes selected from items table */
 	zbx_hashset_t		numitems;
 	zbx_hashset_t		snmpitems;
 	zbx_hashset_t		ipmiitems;
@@ -723,7 +763,10 @@ typedef struct
 	zbx_hashset_t		hosts_p;		/* for searching proxies by 'host' name */
 	zbx_hashset_t		proxies;
 	zbx_hashset_t		host_inventories;
-	zbx_hashset_t		host_inventories_auto;	/* for caching of automatically populated host inventories */
+	zbx_hashset_t		host_inventories_auto;	/* For caching of automatically populated host inventories. */
+	 	 	 	 	 	 	/* Configuration syncer will read host_inventories without  */
+							/* locking cache and therefore it cannot be updated by      */
+							/* by history syncers when new data is received.	    */
 	zbx_hashset_t		ipmihosts;
 	zbx_hashset_t		htmpls;
 	zbx_hashset_t		gmacros;
@@ -739,6 +782,8 @@ typedef struct
 	zbx_hashset_t		actions;
 	zbx_hashset_t		action_conditions;
 	zbx_hashset_t		trigger_tags;
+	zbx_hashset_t		host_tags;
+	zbx_hashset_t		host_tags_index;		/* host tag index by hostid */
 	zbx_hashset_t		correlations;
 	zbx_hashset_t		corr_conditions;
 	zbx_hashset_t		corr_operations;
@@ -756,7 +801,6 @@ typedef struct
 	zbx_binary_heap_t	queues[ZBX_POLLER_TYPE_COUNT];
 	zbx_binary_heap_t	pqueue;
 	zbx_binary_heap_t	timer_queue;
-	zbx_vector_uint64_t	locked_lld_ruleids;	/* for keeping track of lld rules being processed */
 	ZBX_DC_CONFIG_TABLE	*config;
 	ZBX_DC_STATUS		*status;
 	zbx_hashset_t		strpool;

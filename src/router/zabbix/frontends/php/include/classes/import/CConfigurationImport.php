@@ -924,11 +924,25 @@ class CConfigurationImport {
 					$item['query_fields'] = $query_fields;
 				}
 
+				if ($item['type'] == ITEM_TYPE_DEPENDENT) {
+					$item['master_itemid'] = $this->referencer->resolveItem($hostId,  $item['master_item']['key']);
+				}
+
+				unset($item['master_item']);
+
 				if ($itemId) {
 					$item['itemid'] = $itemId;
 					$itemsToUpdate[] = $item;
 				}
 				else {
+					/*
+					 * The array key "lld_macro_paths" must exist at this point. It is processed by chain convertion.
+					 * Unlike discoveryrule.update method, discoveryrule.create does not allow "lld_macro_paths"
+					 * to be empty.
+					 */
+					if (!$item['lld_macro_paths']) {
+						unset($item['lld_macro_paths']);
+					}
 					$itemsToCreate[] = $item;
 				}
 			}

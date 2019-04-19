@@ -527,7 +527,7 @@ static int	get_values(unsigned char poller_type, int *nextcheck)
 		errcodes[i] = SUCCEED;
 
 		ZBX_STRDUP(items[i].key, items[i].key_orig);
-		if (SUCCEED != substitute_key_macros(&items[i].key, NULL, &items[i], NULL,
+		if (SUCCEED != substitute_key_macros(&items[i].key, NULL, &items[i], NULL, NULL,
 				MACRO_TYPE_ITEM_KEY, error, sizeof(error)))
 		{
 			SET_MSG_RESULT(&results[i], zbx_strdup(NULL, error));
@@ -575,7 +575,7 @@ static int	get_values(unsigned char poller_type, int *nextcheck)
 				substitute_simple_macros(NULL, NULL, NULL, NULL, &items[i].host.hostid, NULL,
 						NULL, NULL, NULL, &items[i].snmpv3_contextname,
 						MACRO_TYPE_COMMON, NULL, 0);
-				/* break; is not missing here */
+				ZBX_FALLTHROUGH;
 			case ITEM_TYPE_SNMPv1:
 			case ITEM_TYPE_SNMPv2c:
 				ZBX_STRDUP(items[i].snmp_community, items[i].snmp_community_orig);
@@ -584,7 +584,7 @@ static int	get_values(unsigned char poller_type, int *nextcheck)
 				substitute_simple_macros(NULL, NULL, NULL, NULL, &items[i].host.hostid, NULL,
 						NULL, NULL, NULL, &items[i].snmp_community, MACRO_TYPE_COMMON, NULL, 0);
 				if (SUCCEED != substitute_key_macros(&items[i].snmp_oid, &items[i].host.hostid, NULL,
-						NULL, MACRO_TYPE_SNMP_OID, error, sizeof(error)))
+						NULL, NULL, MACRO_TYPE_SNMP_OID, error, sizeof(error)))
 				{
 					SET_MSG_RESULT(&results[i], zbx_strdup(NULL, error));
 					errcodes[i] = CONFIG_ERROR;
@@ -599,12 +599,12 @@ static int	get_values(unsigned char poller_type, int *nextcheck)
 						NULL, NULL, NULL, &items[i].publickey, MACRO_TYPE_COMMON, NULL, 0);
 				substitute_simple_macros(NULL, NULL, NULL, NULL, &items[i].host.hostid, NULL,
 						NULL, NULL, NULL, &items[i].privatekey, MACRO_TYPE_COMMON, NULL, 0);
-				/* break; is not missing here */
+				ZBX_FALLTHROUGH;
 			case ITEM_TYPE_TELNET:
 			case ITEM_TYPE_DB_MONITOR:
 				substitute_simple_macros(NULL, NULL, NULL, NULL, NULL, NULL, &items[i],
 						NULL, NULL, &items[i].params, MACRO_TYPE_PARAMS_FIELD, NULL, 0);
-				/* break; is not missing here */
+				ZBX_FALLTHROUGH;
 			case ITEM_TYPE_SIMPLE:
 				items[i].username = zbx_strdup(items[i].username, items[i].username_orig);
 				items[i].password = zbx_strdup(items[i].password, items[i].password_orig);
@@ -660,7 +660,7 @@ static int	get_values(unsigned char poller_type, int *nextcheck)
 				{
 					case ZBX_POSTTYPE_XML:
 						if (SUCCEED != substitute_macros_xml(&items[i].posts, &items[i], NULL,
-								error, sizeof(error)))
+								NULL, error, sizeof(error)))
 						{
 							SET_MSG_RESULT(&results[i], zbx_dsprintf(NULL, "%s.", error));
 							errcodes[i] = CONFIG_ERROR;
@@ -829,7 +829,7 @@ static int	get_values(unsigned char poller_type, int *nextcheck)
 				zbx_free(items[i].snmpv3_authpassphrase);
 				zbx_free(items[i].snmpv3_privpassphrase);
 				zbx_free(items[i].snmpv3_contextname);
-				/* break; is not missing here */
+				ZBX_FALLTHROUGH;
 			case ITEM_TYPE_SNMPv1:
 			case ITEM_TYPE_SNMPv2c:
 				zbx_free(items[i].snmp_community);
@@ -850,7 +850,7 @@ static int	get_values(unsigned char poller_type, int *nextcheck)
 			case ITEM_TYPE_SSH:
 				zbx_free(items[i].publickey);
 				zbx_free(items[i].privatekey);
-				/* break; is not missing here */
+				ZBX_FALLTHROUGH;
 			case ITEM_TYPE_TELNET:
 			case ITEM_TYPE_DB_MONITOR:
 			case ITEM_TYPE_SIMPLE:

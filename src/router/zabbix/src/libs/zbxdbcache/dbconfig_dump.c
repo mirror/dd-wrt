@@ -40,6 +40,7 @@ static void	DCdump_config(void)
 	zabbix_log(LOG_LEVEL_TRACE, "discovery_groupid:" ZBX_FS_UI64, config->config->discovery_groupid);
 	zabbix_log(LOG_LEVEL_TRACE, "snmptrap_logging:%u", config->config->snmptrap_logging);
 	zabbix_log(LOG_LEVEL_TRACE, "default_inventory_mode:%d", config->config->default_inventory_mode);
+	zabbix_log(LOG_LEVEL_TRACE, "db_extension: %s", config->config->db_extension);
 
 	zabbix_log(LOG_LEVEL_TRACE, "severity names:");
 	for (i = 0; TRIGGER_SEVERITY_COUNT > i; i++)
@@ -138,6 +139,45 @@ static void	DCdump_hosts(void)
 			ZBX_DC_INTERFACE	*interface = (ZBX_DC_INTERFACE *)host->interfaces_v.values[j];
 
 			zabbix_log(LOG_LEVEL_TRACE, "  interfaceid:" ZBX_FS_UI64, interface->interfaceid);
+		}
+	}
+
+	zbx_vector_ptr_destroy(&index);
+
+	zabbix_log(LOG_LEVEL_TRACE, "End of %s()", __function_name);
+}
+
+static void	DCdump_host_tags(void)
+{
+	const char		*__function_name = "DCdump_host_tags";
+
+	zbx_dc_host_tag_t	*host_tag;
+	zbx_dc_host_tag_index_t	*host_tag_index;
+	zbx_hashset_iter_t	iter;
+	zbx_vector_ptr_t	index;
+	int			i;
+
+	zabbix_log(LOG_LEVEL_TRACE, "In %s()", __function_name);
+
+	zbx_vector_ptr_create(&index);
+	zbx_hashset_iter_reset(&config->host_tags_index, &iter);
+
+	while (NULL != (host_tag_index = (zbx_dc_host_tag_index_t *)zbx_hashset_iter_next(&iter)))
+		zbx_vector_ptr_append(&index, host_tag_index);
+
+	zbx_vector_ptr_sort(&index, ZBX_DEFAULT_UINT64_PTR_COMPARE_FUNC);
+
+	for (i = 0; i < index.values_num; i++)
+	{
+		int	j;
+
+		host_tag_index = (zbx_dc_host_tag_index_t *)index.values[i];
+		zabbix_log(LOG_LEVEL_TRACE, "hostid:" ZBX_FS_UI64,  host_tag_index->hostid);
+
+		for (j = 0; j < host_tag_index->tags.values_num; j++)
+		{
+			host_tag = (zbx_dc_host_tag_t *)host_tag_index->tags.values[j];
+			zabbix_log(LOG_LEVEL_TRACE, "  '%s':'%s'", host_tag->tag, host_tag->value);
 		}
 	}
 
@@ -477,7 +517,10 @@ static void	DCdump_masteritem(const ZBX_DC_MASTERITEM *masteritem)
 
 	zabbix_log(LOG_LEVEL_TRACE, "  dependent:");
 	for (i = 0; i < masteritem->dep_itemids.values_num; i++)
-		zabbix_log(LOG_LEVEL_TRACE, "    " ZBX_FS_UI64, masteritem->dep_itemids.values[i]);
+	{
+		zabbix_log(LOG_LEVEL_TRACE, "    itemid:" ZBX_FS_UI64 " flags:" ZBX_FS_UI64,
+				masteritem->dep_itemids.values[i].first, masteritem->dep_itemids.values[i].second);
+	}
 }
 
 static void	DCdump_preprocitem(const ZBX_DC_PREPROCITEM *preprocitem)
@@ -485,12 +528,14 @@ static void	DCdump_preprocitem(const ZBX_DC_PREPROCITEM *preprocitem)
 	int	i;
 
 	zabbix_log(LOG_LEVEL_TRACE, "  preprocessing:");
+	zabbix_log(LOG_LEVEL_TRACE, "  update_time:%d", preprocitem->update_time);
 
 	for (i = 0; i < preprocitem->preproc_ops.values_num; i++)
 	{
 		zbx_dc_preproc_op_t	*op = (zbx_dc_preproc_op_t *)preprocitem->preproc_ops.values[i];
-		zabbix_log(LOG_LEVEL_TRACE, "      opid:" ZBX_FS_UI64 " step:%d type:%u params:'%s'",
-				op->item_preprocid, op->step, op->type, op->params);
+		zabbix_log(LOG_LEVEL_TRACE, "      opid:" ZBX_FS_UI64 " step:%d type:%u params:'%s'"
+				" error_handler:%d error_handler_params:'%s'",
+				op->item_preprocid, op->step, op->type, op->params, op->error_handler, op->error_handler_params);
 	}
 }
 
@@ -609,6 +654,105 @@ static void	DCdump_interface_snmpitems(void)
 
 		for (j = 0; j < interface_snmpitem->itemids.values_num; j++)
 			zabbix_log(LOG_LEVEL_TRACE, "  itemid:" ZBX_FS_UI64, interface_snmpitem->itemids.values[j]);
+	}
+
+	zbx_vector_ptr_destroy(&index);
+
+	zabbix_log(LOG_LEVEL_TRACE, "End of %s()", __function_name);
+}
+
+static void	DCdump_template_items(void)
+{
+	const char		*__function_name = "DCdump_template_items";
+
+	ZBX_DC_TEMPLATE_ITEM	*template_item;
+	zbx_hashset_iter_t	iter;
+	int			i;
+	zbx_vector_ptr_t	index;
+
+	zabbix_log(LOG_LEVEL_TRACE, "In %s()", __function_name);
+
+	zbx_vector_ptr_create(&index);
+	zbx_hashset_iter_reset(&config->template_items, &iter);
+
+	while (NULL != (template_item = (ZBX_DC_TEMPLATE_ITEM *)zbx_hashset_iter_next(&iter)))
+		zbx_vector_ptr_append(&index, template_item);
+
+	zbx_vector_ptr_sort(&index, ZBX_DEFAULT_UINT64_PTR_COMPARE_FUNC);
+
+	for (i = 0; i < index.values_num; i++)
+	{
+		template_item = (ZBX_DC_TEMPLATE_ITEM *)index.values[i];
+		zabbix_log(LOG_LEVEL_TRACE, "itemid:" ZBX_FS_UI64 " hostid:" ZBX_FS_UI64 " templateid:" ZBX_FS_UI64,
+				template_item->itemid, template_item->hostid, template_item->templateid);
+	}
+
+	zbx_vector_ptr_destroy(&index);
+
+	zabbix_log(LOG_LEVEL_TRACE, "End of %s()", __function_name);
+}
+
+static void	DCdump_master_items(void)
+{
+	const char		*__function_name = "DCdump_master_items";
+
+	ZBX_DC_MASTERITEM	*master_item;
+	zbx_hashset_iter_t	iter;
+	int			i, j;
+	zbx_vector_ptr_t	index;
+
+	zabbix_log(LOG_LEVEL_TRACE, "In %s()", __function_name);
+
+	zbx_vector_ptr_create(&index);
+	zbx_hashset_iter_reset(&config->masteritems, &iter);
+
+	while (NULL != (master_item = (ZBX_DC_MASTERITEM *)zbx_hashset_iter_next(&iter)))
+		zbx_vector_ptr_append(&index, master_item);
+
+	zbx_vector_ptr_sort(&index, ZBX_DEFAULT_UINT64_PTR_COMPARE_FUNC);
+
+	for (i = 0; i < index.values_num; i++)
+	{
+		master_item = (ZBX_DC_MASTERITEM *)index.values[i];
+		zabbix_log(LOG_LEVEL_TRACE, "master itemid:" ZBX_FS_UI64, master_item->itemid);
+
+		for (j = 0; j < master_item->dep_itemids.values_num; j++)
+		{
+			zabbix_log(LOG_LEVEL_TRACE, "  itemid:" ZBX_FS_UI64 " flags:" ZBX_FS_UI64,
+					master_item->dep_itemids.values[j].first,
+					master_item->dep_itemids.values[j].second);
+		}
+	}
+
+	zbx_vector_ptr_destroy(&index);
+
+	zabbix_log(LOG_LEVEL_TRACE, "End of %s()", __function_name);
+}
+
+static void	DCdump_prototype_items(void)
+{
+	const char			*__function_name = "DCdump_prototype_items";
+
+	ZBX_DC_PROTOTYPE_ITEM		*proto_item;
+	zbx_hashset_iter_t		iter;
+	int				i;
+	zbx_vector_ptr_t		index;
+
+	zabbix_log(LOG_LEVEL_TRACE, "In %s()", __function_name);
+
+	zbx_vector_ptr_create(&index);
+	zbx_hashset_iter_reset(&config->template_items, &iter);
+
+	while (NULL != (proto_item = (ZBX_DC_PROTOTYPE_ITEM *)zbx_hashset_iter_next(&iter)))
+		zbx_vector_ptr_append(&index, proto_item);
+
+	zbx_vector_ptr_sort(&index, ZBX_DEFAULT_UINT64_PTR_COMPARE_FUNC);
+
+	for (i = 0; i < index.values_num; i++)
+	{
+		proto_item = (ZBX_DC_PROTOTYPE_ITEM *)index.values[i];
+		zabbix_log(LOG_LEVEL_TRACE, "itemid:" ZBX_FS_UI64 " hostid:" ZBX_FS_UI64 " templateid:" ZBX_FS_UI64,
+				proto_item->itemid, proto_item->hostid, proto_item->templateid);
 	}
 
 	zbx_vector_ptr_destroy(&index);
@@ -1155,6 +1299,7 @@ void	DCdump_configuration()
 {
 	DCdump_config();
 	DCdump_hosts();
+	DCdump_host_tags();
 	DCdump_proxies();
 	DCdump_ipmihosts();
 	DCdump_host_inventories();
@@ -1164,6 +1309,9 @@ void	DCdump_configuration()
 	DCdump_interfaces();
 	DCdump_items();
 	DCdump_interface_snmpitems();
+	DCdump_template_items();
+	DCdump_master_items();
+	DCdump_prototype_items();
 	DCdump_triggers();
 	DCdump_trigdeps();
 	DCdump_functions();

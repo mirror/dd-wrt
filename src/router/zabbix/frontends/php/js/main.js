@@ -506,7 +506,7 @@ var hintBox = {
 		}
 
 		if (!empty(className)) {
-			box.append(jQuery('<span></span>').addClass(className).html(hintText));
+			box.append(jQuery('<div></div>').addClass(className).html(hintText));
 		}
 		else {
 			box.html(hintText);
@@ -643,7 +643,7 @@ var hintBox = {
 		target.hintBoxItem.css({
 			top: top + 'px',
 			left: left + 'px',
-			zIndex: 100
+			zIndex: 1001
 		});
 	},
 
@@ -726,7 +726,7 @@ function updateUserProfile(idx, value_int, idx2) {
 	});
 }
 
-function changeWidgetState(obj, widgetId, url) {
+function changeWidgetState(obj, widgetId, idx) {
 	var widgetObj = jQuery('#' + widgetId + '_widget'),
 		css = switchElementClass(obj, 'btn-widget-collapse', 'btn-widget-expand'),
 		state = 0;
@@ -743,13 +743,9 @@ function changeWidgetState(obj, widgetId, url) {
 	}
 
 	obj.title = (state == 1) ? t('S_COLLAPSE') : t('S_EXPAND');
-
-	sendAjaxData(url, {
-		data: {
-			widget: widgetId,
-			state: state
-		}
-	});
+	if (idx !== '' && typeof idx !== 'undefined') {
+		updateUserProfile(idx, state, []);
+	}
 }
 
 /**
@@ -908,6 +904,7 @@ function getConditionFormula(conditions, evalType) {
 			row: '.form_row',
 			add: '.element-table-add',
 			remove: '.element-table-remove',
+			disable: '.element-table-disable',
 			counter: null,
 			beforeRow: null,
 			dataCallback: function(data) {
@@ -939,6 +936,12 @@ function getConditionFormula(conditions, evalType) {
 			table.on('click', options.remove, function() {
 				// remove the parent row
 				removeRow(table, $(this).closest(options.row), options);
+			});
+
+			// disable buttons
+			table.on('click', options.disable, function() {
+				// disable the parent row
+				disableRow($(this).closest(options.row));
 			});
 		});
 	};
@@ -975,6 +978,16 @@ function getConditionFormula(conditions, evalType) {
 
 		table.trigger('tableupdate.dynamicRows', options);
 		table.trigger('afterremove.dynamicRows', options);
+	}
+
+	/**
+	 * Disables the given row.
+	 *
+	 * @param {jQuery} row
+	 */
+	function disableRow(row) {
+		row.find('input').prop('readonly', true);
+		row.find('button').prop('disabled', true);
 	}
 }(jQuery));
 

@@ -58,38 +58,22 @@ abstract class CMapElement extends CApiService {
 			}
 
 			if (array_key_exists('urls', $selement)) {
+				$url_validate_options = ['allow_user_macro' => false];
+				if ($selement['elementtype'] == SYSMAP_ELEMENT_TYPE_HOST) {
+					$url_validate_options['allow_inventory_macro'] = INVENTORY_URL_MACRO_HOST;
+				}
+				elseif ($selement['elementtype'] == SYSMAP_ELEMENT_TYPE_TRIGGER) {
+					$url_validate_options['allow_inventory_macro'] = INVENTORY_URL_MACRO_TRIGGER;
+				}
+				else {
+					$url_validate_options['allow_inventory_macro'] = INVENTORY_URL_MACRO_NONE;
+				}
+
 				foreach ($selement['urls'] as $url_data) {
-					if (!CHtmlUrlValidator::validate($url_data['url'], false)) {
+					if (!CHtmlUrlValidator::validate($url_data['url'], $url_validate_options)) {
 						self::exception(ZBX_API_ERROR_PARAMETERS, _('Wrong value for url field.'));
 					}
 				}
-			}
-
-			/*
-			 * @deprecated  As of version 3.4, use elements data array.
-			 */
-			if (array_key_exists('elementid', $selement)) {
-				$this->deprecated('elementid is deprecated parameter.');
-
-				switch ($selement['elementtype']) {
-					case SYSMAP_ELEMENT_TYPE_HOST_GROUP:
-						$selement['elements'][0]['groupid'] = $selement['elementid'];
-						break;
-
-					case SYSMAP_ELEMENT_TYPE_HOST:
-						$selement['elements'][0]['hostid'] = $selement['elementid'];
-						break;
-
-					case SYSMAP_ELEMENT_TYPE_TRIGGER:
-						$selement['elements'][0]['triggerid'] = $selement['elementid'];
-						break;
-
-					case SYSMAP_ELEMENT_TYPE_MAP:
-						$selement['elements'][0]['sysmapid'] = $selement['elementid'];
-						break;
-				}
-
-				unset($selement['elementid']);
 			}
 
 			if ($update && array_key_exists('selementid', $selement)
@@ -121,12 +105,6 @@ abstract class CMapElement extends CApiService {
 					self::exception(ZBX_API_ERROR_PARAMETERS,
 						_s('Incorrect value for field "%1$s": %2$s.', 'elements', _('cannot be empty'))
 					);
-				}
-			}
-
-			if (array_key_exists('elements', $selement)) {
-				if (!is_array($selement['elements'])) {
-					self::exception(ZBX_API_ERROR_PARAMETERS, _('Incorrect arguments passed to function.'));
 				}
 			}
 

@@ -56,6 +56,9 @@
 #include "setproctitle.h"
 #include "../libs/zbxcrypto/tls.h"
 #include "zbxipcservice.h"
+#include "../zabbix_server/preprocessor/preproc_manager.h"
+#include "../zabbix_server/preprocessor/preproc_worker.h"
+
 
 #ifdef HAVE_OPENIPMI
 #include "../zabbix_server/ipmi/ipmi_manager.h"
@@ -167,8 +170,10 @@ int	CONFIG_ACTIVE_FORKS		= 0;
 int	CONFIG_TASKMANAGER_FORKS	= 1;
 int	CONFIG_IPMIMANAGER_FORKS	= 0;
 int	CONFIG_ALERTMANAGER_FORKS	= 0;
-int	CONFIG_PREPROCMAN_FORKS		= 0;
-int	CONFIG_PREPROCESSOR_FORKS	= 0;
+int	CONFIG_PREPROCMAN_FORKS		= 1;
+int	CONFIG_PREPROCESSOR_FORKS	= 3;
+int	CONFIG_LLDMANAGER_FORKS		= 0;
+int	CONFIG_LLDWORKER_FORKS		= 0;
 
 int	CONFIG_LISTEN_PORT		= ZBX_DEFAULT_SERVER_PORT;
 char	*CONFIG_LISTEN_IP		= NULL;
@@ -270,6 +275,8 @@ char	*CONFIG_HISTORY_STORAGE_URL		= NULL;
 char	*CONFIG_HISTORY_STORAGE_OPTS		= NULL;
 int	CONFIG_HISTORY_STORAGE_PIPELINES	= 0;
 
+char	*CONFIG_STATS_ALLOWED_IP	= NULL;
+
 int	get_process_info_by_thread(int local_server_num, unsigned char *local_process_type, int *local_process_num);
 
 int	get_process_info_by_thread(int local_server_num, unsigned char *local_process_type, int *local_process_num)
@@ -299,7 +306,7 @@ int	get_process_info_by_thread(int local_server_num, unsigned char *local_proces
 	else if (local_server_num <= (server_count += CONFIG_IPMIMANAGER_FORKS))
 	{
 		*local_process_type = ZBX_PROCESS_TYPE_IPMIMANAGER;
-		*local_process_num = local_server_num - server_count + CONFIG_TASKMANAGER_FORKS;
+		*local_process_num = local_server_num - server_count + CONFIG_IPMIMANAGER_FORKS;
 	}
 	else if (local_server_num <= (server_count += CONFIG_HOUSEKEEPER_FORKS))
 	{
@@ -370,6 +377,16 @@ int	get_process_info_by_thread(int local_server_num, unsigned char *local_proces
 	{
 		*local_process_type = ZBX_PROCESS_TYPE_PINGER;
 		*local_process_num = local_server_num - server_count + CONFIG_PINGER_FORKS;
+	}
+	else if (local_server_num <= (server_count += CONFIG_PREPROCMAN_FORKS))
+	{
+		*local_process_type = ZBX_PROCESS_TYPE_PREPROCMAN;
+		*local_process_num = local_server_num - server_count + CONFIG_PREPROCMAN_FORKS;
+	}
+	else if (local_server_num <= (server_count += CONFIG_PREPROCESSOR_FORKS))
+	{
+		*local_process_type = ZBX_PROCESS_TYPE_PREPROCESSOR;
+		*local_process_num = local_server_num - server_count + CONFIG_PREPROCESSOR_FORKS;
 	}
 	else
 		return FAIL;
@@ -528,6 +545,13 @@ static void	zbx_validate_config(ZBX_TASK_EX *task)
 	if (NULL != CONFIG_SOURCE_IP && SUCCEED != is_supported_ip(CONFIG_SOURCE_IP))
 	{
 		zabbix_log(LOG_LEVEL_CRIT, "invalid \"SourceIP\" configuration parameter: '%s'", CONFIG_SOURCE_IP);
+		err = 1;
+	}
+
+	if (NULL != CONFIG_STATS_ALLOWED_IP && FAIL == zbx_validate_peer_list(CONFIG_STATS_ALLOWED_IP, &ch_error))
+	{
+		zabbix_log(LOG_LEVEL_CRIT, "invalid entry in \"StatsAllowedIP\" configuration parameter: %s", ch_error);
+		zbx_free(ch_error);
 		err = 1;
 	}
 #if !defined(HAVE_IPV6)
@@ -742,6 +766,10 @@ static void	zbx_load_config(ZBX_TASK_EX *task)
 			PARM_OPT,	0,			1},
 		{"LogRemoteCommands",		&CONFIG_LOG_REMOTE_COMMANDS,		TYPE_INT,
 			PARM_OPT,	0,			1},
+		{"StatsAllowedIP",		&CONFIG_STATS_ALLOWED_IP,		TYPE_STRING_LIST,
+			PARM_OPT,	0,			0},
+		{"StartPreprocessors",		&CONFIG_PREPROCESSOR_FORKS,		TYPE_INT,
+			PARM_OPT,	1,			1000},
 		{NULL}
 	};
 
@@ -786,6 +814,7 @@ int	main(int argc, char **argv)
 	ZBX_TASK_EX	t = {ZBX_TASK_START};
 	char		ch;
 	int		opt_c = 0, opt_r = 0;
+	char		*error = NULL;
 
 #if defined(PS_OVERWRITE_ARGV) || defined(PS_PSTAT_ARGV)
 	argv = setproctitle_save_env(argc, argv);
@@ -861,18 +890,13 @@ int	main(int argc, char **argv)
 	if (ZBX_TASK_RUNTIME_CONTROL == t.task)
 		exit(SUCCEED == zbx_sigusr_send(t.data) ? EXIT_SUCCESS : EXIT_FAILURE);
 
-#ifdef HAVE_OPENIPMI
+	if (FAIL == zbx_ipc_service_init_env(CONFIG_SOCKET_PATH, &error))
 	{
-		char *error = NULL;
-
-		if (FAIL == zbx_ipc_service_init_env(CONFIG_SOCKET_PATH, &error))
-		{
-			zbx_error("Cannot initialize IPC services: %s", error);
-			zbx_free(error);
-			exit(EXIT_FAILURE);
-		}
+		zbx_error("Cannot initialize IPC services: %s", error);
+		zbx_free(error);
+		exit(EXIT_FAILURE);
 	}
-#endif
+
 	return daemon_start(CONFIG_ALLOW_ROOT, CONFIG_USER, t.flags);
 }
 
@@ -1043,7 +1067,8 @@ int	MAIN_ZABBIX_ENTRY(int flags)
 			+ CONFIG_PINGER_FORKS + CONFIG_HOUSEKEEPER_FORKS + CONFIG_HTTPPOLLER_FORKS
 			+ CONFIG_DISCOVERER_FORKS + CONFIG_HISTSYNCER_FORKS + CONFIG_IPMIPOLLER_FORKS
 			+ CONFIG_JAVAPOLLER_FORKS + CONFIG_SNMPTRAPPER_FORKS + CONFIG_SELFMON_FORKS
-			+ CONFIG_VMWARE_FORKS + CONFIG_IPMIMANAGER_FORKS + CONFIG_TASKMANAGER_FORKS;
+			+ CONFIG_VMWARE_FORKS + CONFIG_IPMIMANAGER_FORKS + CONFIG_TASKMANAGER_FORKS
+			+ CONFIG_PREPROCMAN_FORKS + CONFIG_PREPROCESSOR_FORKS;
 
 	threads = (pid_t *)zbx_calloc(threads, threads_num, sizeof(pid_t));
 
@@ -1140,6 +1165,12 @@ int	MAIN_ZABBIX_ENTRY(int flags)
 			case ZBX_PROCESS_TYPE_TASKMANAGER:
 				zbx_thread_start(taskmanager_thread, &thread_args, &threads[i]);
 				break;
+			case ZBX_PROCESS_TYPE_PREPROCMAN:
+				zbx_thread_start(preprocessing_manager_thread, &thread_args, &threads[i]);
+				break;
+			case ZBX_PROCESS_TYPE_PREPROCESSOR:
+				zbx_thread_start(preprocessing_worker_thread, &thread_args, &threads[i]);
+				break;
 		}
 	}
 
@@ -1173,9 +1204,7 @@ void	zbx_on_exit(void)
 	zbx_locks_disable();
 #endif
 	free_metrics();
-#ifdef HAVE_OPENIPMI
 	zbx_ipc_service_free_env();
-#endif
 
 	DBconnect(ZBX_DB_CONNECT_EXIT);
 	free_database_cache();

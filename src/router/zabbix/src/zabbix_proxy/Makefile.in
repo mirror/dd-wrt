@@ -125,7 +125,8 @@ libzbxproxy_a_AR = $(AR) $(ARFLAGS)
 libzbxproxy_a_LIBADD =
 am_libzbxproxy_a_OBJECTS = libzbxproxy_a-servercomms.$(OBJEXT) \
 	libzbxproxy_a-events.$(OBJEXT) \
-	libzbxproxy_a-preprocessing.$(OBJEXT)
+	libzbxproxy_a-proxy_lld.$(OBJEXT) \
+	libzbxproxy_a-proxy_alerter_protocol.$(OBJEXT)
 libzbxproxy_a_OBJECTS = $(am_libzbxproxy_a_OBJECTS)
 am__installdirs = "$(DESTDIR)$(sbindir)"
 PROGRAMS = $(sbin_PROGRAMS)
@@ -139,6 +140,7 @@ zabbix_proxy_DEPENDENCIES = heart/libzbxheart.a \
 	proxyconfig/libzbxproxyconfig.a \
 	$(top_srcdir)/src/zabbix_server/pinger/libzbxpinger.a \
 	$(top_srcdir)/src/zabbix_server/poller/libzbxpoller.a \
+	$(top_srcdir)/src/zabbix_server/poller/libzbxpoller_proxy.a \
 	$(top_srcdir)/src/zabbix_server/trapper/libzbxtrapper.a \
 	$(top_srcdir)/src/zabbix_server/snmptrapper/libzbxsnmptrapper.a \
 	$(top_srcdir)/src/zabbix_server/odbc/libzbxodbc.a \
@@ -146,18 +148,21 @@ zabbix_proxy_DEPENDENCIES = heart/libzbxheart.a \
 	$(top_srcdir)/src/zabbix_server/selfmon/libzbxselfmon.a \
 	$(top_srcdir)/src/zabbix_server/vmware/libzbxvmware.a \
 	$(top_srcdir)/src/zabbix_server/scripts/libzbxscripts.a \
+	$(top_srcdir)/src/zabbix_server/preprocessor/libpreprocessor.a \
 	$(top_srcdir)/src/libs/zbxsysinfo/libzbxproxysysinfo.a \
 	$(top_srcdir)/src/libs/zbxsysinfo/common/libcommonsysinfo.a \
 	$(top_srcdir)/src/libs/zbxsysinfo/simple/libsimplesysinfo.a \
 	$(top_srcdir)/src/libs/zbxsysinfo/$(ARCH)/libspechostnamesysinfo.a \
 	$(top_srcdir)/src/libs/zbxlog/libzbxlog.a \
 	$(top_srcdir)/src/libs/zbxserver/libzbxserver.a \
+	$(top_srcdir)/src/libs/zbxserver/libzbxserver_proxy.a \
 	$(top_srcdir)/src/libs/zbxdbcache/libzbxdbcache.a \
 	$(top_srcdir)/src/libs/zbxhistory/libzbxhistory.a \
 	$(top_srcdir)/src/libs/zbxmemory/libzbxmemory.a \
 	$(top_srcdir)/src/libs/zbxregexp/libzbxregexp.a \
 	$(top_srcdir)/src/libs/zbxself/libzbxself.a \
-	$(top_srcdir)/src/libs/zbxnix/libzbxnix.a $(LIBIPCSERVICE) \
+	$(top_srcdir)/src/libs/zbxnix/libzbxnix.a \
+	$(top_srcdir)/src/libs/zbxipcservice/libzbxipcservice.a \
 	$(top_srcdir)/src/libs/zbxsys/libzbxsys.a \
 	$(top_srcdir)/src/libs/zbxconf/libzbxconf.a \
 	$(top_srcdir)/src/libs/zbxcommon/libzbxcommon.a \
@@ -174,6 +179,8 @@ zabbix_proxy_DEPENDENCIES = heart/libzbxheart.a \
 	$(top_srcdir)/src/libs/zbxmodules/libzbxmodules.a \
 	$(top_srcdir)/src/libs/zbxtasks/libzbxtasks.a \
 	$(top_srcdir)/src/libs/zbxcompress/libzbxcompress.a \
+	$(top_srcdir)/src/libs/zbxembed/libzbxembed.a \
+	$(top_srcdir)/src/libs/zbxprometheus/libzbxprometheus.a \
 	libzbxproxy.a $(top_srcdir)/src/libs/zbxalgo/libzbxalgo.a \
 	$(am__append_1)
 zabbix_proxy_LINK = $(CCLD) $(zabbix_proxy_CFLAGS) $(CFLAGS) \
@@ -489,13 +496,13 @@ noinst_LIBRARIES = libzbxproxy.a
 libzbxproxy_a_SOURCES = \
 	servercomms.c servercomms.h \
 	events.c \
-	preprocessing.c
+	proxy_lld.c \
+	proxy_alerter_protocol.c
 
 libzbxproxy_a_CFLAGS = \
 	-DZABBIX_DAEMON
 
 zabbix_proxy_SOURCES = proxy.c
-@PROXY_IPCSERVICE_TRUE@LIBIPCSERVICE = $(top_srcdir)/src/libs/zbxipcservice/libzbxipcservice.a
 zabbix_proxy_LDADD = heart/libzbxheart.a \
 	$(top_srcdir)/src/zabbix_server/dbsyncer/libzbxdbsyncer.a \
 	$(top_srcdir)/src/zabbix_server/discoverer/libzbxdiscoverer.a \
@@ -504,6 +511,7 @@ zabbix_proxy_LDADD = heart/libzbxheart.a \
 	proxyconfig/libzbxproxyconfig.a \
 	$(top_srcdir)/src/zabbix_server/pinger/libzbxpinger.a \
 	$(top_srcdir)/src/zabbix_server/poller/libzbxpoller.a \
+	$(top_srcdir)/src/zabbix_server/poller/libzbxpoller_proxy.a \
 	$(top_srcdir)/src/zabbix_server/trapper/libzbxtrapper.a \
 	$(top_srcdir)/src/zabbix_server/snmptrapper/libzbxsnmptrapper.a \
 	$(top_srcdir)/src/zabbix_server/odbc/libzbxodbc.a \
@@ -511,18 +519,21 @@ zabbix_proxy_LDADD = heart/libzbxheart.a \
 	$(top_srcdir)/src/zabbix_server/selfmon/libzbxselfmon.a \
 	$(top_srcdir)/src/zabbix_server/vmware/libzbxvmware.a \
 	$(top_srcdir)/src/zabbix_server/scripts/libzbxscripts.a \
+	$(top_srcdir)/src/zabbix_server/preprocessor/libpreprocessor.a \
 	$(top_srcdir)/src/libs/zbxsysinfo/libzbxproxysysinfo.a \
 	$(top_srcdir)/src/libs/zbxsysinfo/common/libcommonsysinfo.a \
 	$(top_srcdir)/src/libs/zbxsysinfo/simple/libsimplesysinfo.a \
 	$(top_srcdir)/src/libs/zbxsysinfo/$(ARCH)/libspechostnamesysinfo.a \
 	$(top_srcdir)/src/libs/zbxlog/libzbxlog.a \
 	$(top_srcdir)/src/libs/zbxserver/libzbxserver.a \
+	$(top_srcdir)/src/libs/zbxserver/libzbxserver_proxy.a \
 	$(top_srcdir)/src/libs/zbxdbcache/libzbxdbcache.a \
 	$(top_srcdir)/src/libs/zbxhistory/libzbxhistory.a \
 	$(top_srcdir)/src/libs/zbxmemory/libzbxmemory.a \
 	$(top_srcdir)/src/libs/zbxregexp/libzbxregexp.a \
 	$(top_srcdir)/src/libs/zbxself/libzbxself.a \
-	$(top_srcdir)/src/libs/zbxnix/libzbxnix.a ${LIBIPCSERVICE} \
+	$(top_srcdir)/src/libs/zbxnix/libzbxnix.a \
+	$(top_srcdir)/src/libs/zbxipcservice/libzbxipcservice.a \
 	$(top_srcdir)/src/libs/zbxsys/libzbxsys.a \
 	$(top_srcdir)/src/libs/zbxconf/libzbxconf.a \
 	$(top_srcdir)/src/libs/zbxcommon/libzbxcommon.a \
@@ -539,6 +550,8 @@ zabbix_proxy_LDADD = heart/libzbxheart.a \
 	$(top_srcdir)/src/libs/zbxmodules/libzbxmodules.a \
 	$(top_srcdir)/src/libs/zbxtasks/libzbxtasks.a \
 	$(top_srcdir)/src/libs/zbxcompress/libzbxcompress.a \
+	$(top_srcdir)/src/libs/zbxembed/libzbxembed.a \
+	$(top_srcdir)/src/libs/zbxprometheus/libzbxprometheus.a \
 	libzbxproxy.a $(top_srcdir)/src/libs/zbxalgo/libzbxalgo.a \
 	$(am__append_1) @PROXY_LIBS@
 zabbix_proxy_LDFLAGS = @PROXY_LDFLAGS@
@@ -644,7 +657,8 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxproxy_a-events.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxproxy_a-preprocessing.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxproxy_a-proxy_alerter_protocol.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxproxy_a-proxy_lld.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxproxy_a-servercomms.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zabbix_proxy-proxy.Po@am__quote@
 
@@ -692,19 +706,33 @@ libzbxproxy_a-events.obj: events.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxproxy_a_CFLAGS) $(CFLAGS) -c -o libzbxproxy_a-events.obj `if test -f 'events.c'; then $(CYGPATH_W) 'events.c'; else $(CYGPATH_W) '$(srcdir)/events.c'; fi`
 
-libzbxproxy_a-preprocessing.o: preprocessing.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxproxy_a_CFLAGS) $(CFLAGS) -MT libzbxproxy_a-preprocessing.o -MD -MP -MF $(DEPDIR)/libzbxproxy_a-preprocessing.Tpo -c -o libzbxproxy_a-preprocessing.o `test -f 'preprocessing.c' || echo '$(srcdir)/'`preprocessing.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzbxproxy_a-preprocessing.Tpo $(DEPDIR)/libzbxproxy_a-preprocessing.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='preprocessing.c' object='libzbxproxy_a-preprocessing.o' libtool=no @AMDEPBACKSLASH@
+libzbxproxy_a-proxy_lld.o: proxy_lld.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxproxy_a_CFLAGS) $(CFLAGS) -MT libzbxproxy_a-proxy_lld.o -MD -MP -MF $(DEPDIR)/libzbxproxy_a-proxy_lld.Tpo -c -o libzbxproxy_a-proxy_lld.o `test -f 'proxy_lld.c' || echo '$(srcdir)/'`proxy_lld.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzbxproxy_a-proxy_lld.Tpo $(DEPDIR)/libzbxproxy_a-proxy_lld.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='proxy_lld.c' object='libzbxproxy_a-proxy_lld.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxproxy_a_CFLAGS) $(CFLAGS) -c -o libzbxproxy_a-preprocessing.o `test -f 'preprocessing.c' || echo '$(srcdir)/'`preprocessing.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxproxy_a_CFLAGS) $(CFLAGS) -c -o libzbxproxy_a-proxy_lld.o `test -f 'proxy_lld.c' || echo '$(srcdir)/'`proxy_lld.c
 
-libzbxproxy_a-preprocessing.obj: preprocessing.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxproxy_a_CFLAGS) $(CFLAGS) -MT libzbxproxy_a-preprocessing.obj -MD -MP -MF $(DEPDIR)/libzbxproxy_a-preprocessing.Tpo -c -o libzbxproxy_a-preprocessing.obj `if test -f 'preprocessing.c'; then $(CYGPATH_W) 'preprocessing.c'; else $(CYGPATH_W) '$(srcdir)/preprocessing.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzbxproxy_a-preprocessing.Tpo $(DEPDIR)/libzbxproxy_a-preprocessing.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='preprocessing.c' object='libzbxproxy_a-preprocessing.obj' libtool=no @AMDEPBACKSLASH@
+libzbxproxy_a-proxy_lld.obj: proxy_lld.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxproxy_a_CFLAGS) $(CFLAGS) -MT libzbxproxy_a-proxy_lld.obj -MD -MP -MF $(DEPDIR)/libzbxproxy_a-proxy_lld.Tpo -c -o libzbxproxy_a-proxy_lld.obj `if test -f 'proxy_lld.c'; then $(CYGPATH_W) 'proxy_lld.c'; else $(CYGPATH_W) '$(srcdir)/proxy_lld.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzbxproxy_a-proxy_lld.Tpo $(DEPDIR)/libzbxproxy_a-proxy_lld.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='proxy_lld.c' object='libzbxproxy_a-proxy_lld.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxproxy_a_CFLAGS) $(CFLAGS) -c -o libzbxproxy_a-preprocessing.obj `if test -f 'preprocessing.c'; then $(CYGPATH_W) 'preprocessing.c'; else $(CYGPATH_W) '$(srcdir)/preprocessing.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxproxy_a_CFLAGS) $(CFLAGS) -c -o libzbxproxy_a-proxy_lld.obj `if test -f 'proxy_lld.c'; then $(CYGPATH_W) 'proxy_lld.c'; else $(CYGPATH_W) '$(srcdir)/proxy_lld.c'; fi`
+
+libzbxproxy_a-proxy_alerter_protocol.o: proxy_alerter_protocol.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxproxy_a_CFLAGS) $(CFLAGS) -MT libzbxproxy_a-proxy_alerter_protocol.o -MD -MP -MF $(DEPDIR)/libzbxproxy_a-proxy_alerter_protocol.Tpo -c -o libzbxproxy_a-proxy_alerter_protocol.o `test -f 'proxy_alerter_protocol.c' || echo '$(srcdir)/'`proxy_alerter_protocol.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzbxproxy_a-proxy_alerter_protocol.Tpo $(DEPDIR)/libzbxproxy_a-proxy_alerter_protocol.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='proxy_alerter_protocol.c' object='libzbxproxy_a-proxy_alerter_protocol.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxproxy_a_CFLAGS) $(CFLAGS) -c -o libzbxproxy_a-proxy_alerter_protocol.o `test -f 'proxy_alerter_protocol.c' || echo '$(srcdir)/'`proxy_alerter_protocol.c
+
+libzbxproxy_a-proxy_alerter_protocol.obj: proxy_alerter_protocol.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxproxy_a_CFLAGS) $(CFLAGS) -MT libzbxproxy_a-proxy_alerter_protocol.obj -MD -MP -MF $(DEPDIR)/libzbxproxy_a-proxy_alerter_protocol.Tpo -c -o libzbxproxy_a-proxy_alerter_protocol.obj `if test -f 'proxy_alerter_protocol.c'; then $(CYGPATH_W) 'proxy_alerter_protocol.c'; else $(CYGPATH_W) '$(srcdir)/proxy_alerter_protocol.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzbxproxy_a-proxy_alerter_protocol.Tpo $(DEPDIR)/libzbxproxy_a-proxy_alerter_protocol.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='proxy_alerter_protocol.c' object='libzbxproxy_a-proxy_alerter_protocol.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxproxy_a_CFLAGS) $(CFLAGS) -c -o libzbxproxy_a-proxy_alerter_protocol.obj `if test -f 'proxy_alerter_protocol.c'; then $(CYGPATH_W) 'proxy_alerter_protocol.c'; else $(CYGPATH_W) '$(srcdir)/proxy_alerter_protocol.c'; fi`
 
 zabbix_proxy-proxy.o: proxy.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zabbix_proxy_CFLAGS) $(CFLAGS) -MT zabbix_proxy-proxy.o -MD -MP -MF $(DEPDIR)/zabbix_proxy-proxy.Tpo -c -o zabbix_proxy-proxy.o `test -f 'proxy.c' || echo '$(srcdir)/'`proxy.c

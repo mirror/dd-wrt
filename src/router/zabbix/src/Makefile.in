@@ -423,6 +423,7 @@ DIST_SUBDIRS = \
 @PROXY_TRUE@@SERVER_FALSE@	zabbix_server/ipmi \
 @PROXY_TRUE@@SERVER_FALSE@	zabbix_server/odbc \
 @PROXY_TRUE@@SERVER_FALSE@	zabbix_server/scripts \
+@PROXY_TRUE@@SERVER_FALSE@	zabbix_server/preprocessor \
 @PROXY_TRUE@@SERVER_FALSE@	zabbix_proxy
 
 @PROXY_TRUE@@SERVER_TRUE@PROXY_SUBDIRS = \
