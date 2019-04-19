@@ -126,7 +126,8 @@ am_libcommonsysinfo_a_OBJECTS = libcommonsysinfo_a-common.$(OBJEXT) \
 	libcommonsysinfo_a-cpu.$(OBJEXT) \
 	libcommonsysinfo_a-http.$(OBJEXT) \
 	libcommonsysinfo_a-net.$(OBJEXT) \
-	libcommonsysinfo_a-system.$(OBJEXT)
+	libcommonsysinfo_a-system.$(OBJEXT) \
+	libcommonsysinfo_a-zabbix_stats.$(OBJEXT)
 libcommonsysinfo_a_OBJECTS = $(am_libcommonsysinfo_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -395,7 +396,8 @@ libcommonsysinfo_a_SOURCES = \
 	cpu.c cpu.h \
 	http.c http.h \
 	net.c net.h \
-	system.c system.h
+	system.c system.h \
+	zabbix_stats.c zabbix_stats.h
 
 all: all-am
 
@@ -452,6 +454,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommonsysinfo_a-http.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommonsysinfo_a-net.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommonsysinfo_a-system.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommonsysinfo_a-zabbix_stats.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
@@ -566,6 +569,20 @@ libcommonsysinfo_a-system.obj: system.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='system.c' object='libcommonsysinfo_a-system.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommonsysinfo_a_CFLAGS) $(CFLAGS) -c -o libcommonsysinfo_a-system.obj `if test -f 'system.c'; then $(CYGPATH_W) 'system.c'; else $(CYGPATH_W) '$(srcdir)/system.c'; fi`
+
+libcommonsysinfo_a-zabbix_stats.o: zabbix_stats.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommonsysinfo_a_CFLAGS) $(CFLAGS) -MT libcommonsysinfo_a-zabbix_stats.o -MD -MP -MF $(DEPDIR)/libcommonsysinfo_a-zabbix_stats.Tpo -c -o libcommonsysinfo_a-zabbix_stats.o `test -f 'zabbix_stats.c' || echo '$(srcdir)/'`zabbix_stats.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libcommonsysinfo_a-zabbix_stats.Tpo $(DEPDIR)/libcommonsysinfo_a-zabbix_stats.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='zabbix_stats.c' object='libcommonsysinfo_a-zabbix_stats.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommonsysinfo_a_CFLAGS) $(CFLAGS) -c -o libcommonsysinfo_a-zabbix_stats.o `test -f 'zabbix_stats.c' || echo '$(srcdir)/'`zabbix_stats.c
+
+libcommonsysinfo_a-zabbix_stats.obj: zabbix_stats.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommonsysinfo_a_CFLAGS) $(CFLAGS) -MT libcommonsysinfo_a-zabbix_stats.obj -MD -MP -MF $(DEPDIR)/libcommonsysinfo_a-zabbix_stats.Tpo -c -o libcommonsysinfo_a-zabbix_stats.obj `if test -f 'zabbix_stats.c'; then $(CYGPATH_W) 'zabbix_stats.c'; else $(CYGPATH_W) '$(srcdir)/zabbix_stats.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libcommonsysinfo_a-zabbix_stats.Tpo $(DEPDIR)/libcommonsysinfo_a-zabbix_stats.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='zabbix_stats.c' object='libcommonsysinfo_a-zabbix_stats.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommonsysinfo_a_CFLAGS) $(CFLAGS) -c -o libcommonsysinfo_a-zabbix_stats.obj `if test -f 'zabbix_stats.c'; then $(CYGPATH_W) 'zabbix_stats.c'; else $(CYGPATH_W) '$(srcdir)/zabbix_stats.c'; fi`
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique

@@ -26,7 +26,7 @@ require_once dirname(__FILE__).'/include/forms.inc.php';
 
 $page['title'] = _('Configuration of discovery rules');
 $page['file'] = 'host_discovery.php';
-$page['scripts'] = ['class.cviewswitcher.js', 'items.js'];
+$page['scripts'] = ['class.cviewswitcher.js', 'multilineinput.js', 'multiselect.js', 'items.js'];
 
 require_once dirname(__FILE__).'/include/page_header.php';
 
@@ -48,9 +48,15 @@ $fields = [
 	'name' =>					[T_ZBX_STR, O_OPT, null,	NOT_EMPTY, 'isset({add}) || isset({update})', _('Name')],
 	'description' =>			[T_ZBX_STR, O_OPT, null,	null,		'isset({add}) || isset({update})'],
 	'key' =>					[T_ZBX_STR, O_OPT, null,	NOT_EMPTY,	'isset({add}) || isset({update})', _('Key')],
+	'master_itemid' =>			[T_ZBX_STR, O_OPT, null,	null,
+									'(isset({add}) || isset({update})) && isset({type})'.
+										' && {type} == '.ITEM_TYPE_DEPENDENT,
+									_('Master item')
+								],
 	'delay' =>					[T_ZBX_TU, O_OPT, P_ALLOW_USER_MACRO, null,
 									'(isset({add}) || isset({update})) && isset({type})'.
-										' && {type} != '.ITEM_TYPE_TRAPPER.' && {type} != '.ITEM_TYPE_SNMPTRAP,
+										' && {type} != '.ITEM_TYPE_TRAPPER.' && {type} != '.ITEM_TYPE_SNMPTRAP.
+										' && {type} != '.ITEM_TYPE_DEPENDENT,
 									_('Update interval')
 								],
 	'delay_flex' =>				[T_ZBX_STR, O_OPT, null,	null,			null],
@@ -60,7 +66,7 @@ $fields = [
 										ITEM_TYPE_SNMPV2C, ITEM_TYPE_INTERNAL, ITEM_TYPE_SNMPV3,
 										ITEM_TYPE_ZABBIX_ACTIVE, ITEM_TYPE_EXTERNAL, ITEM_TYPE_DB_MONITOR,
 										ITEM_TYPE_IPMI, ITEM_TYPE_SSH, ITEM_TYPE_TELNET, ITEM_TYPE_JMX,
-										ITEM_TYPE_HTTPAGENT
+										ITEM_TYPE_DEPENDENT, ITEM_TYPE_HTTPAGENT
 									]),
 									'isset({add}) || isset({update})'
 								],
@@ -142,6 +148,7 @@ $fields = [
 	'evaltype' =>				[T_ZBX_INT, O_OPT, null, 	IN($evalTypes), 'isset({add}) || isset({update})'],
 	'formula' =>				[T_ZBX_STR, O_OPT, null,	null,		'isset({add}) || isset({update})'],
 	'conditions' =>				[T_ZBX_STR, O_OPT, P_SYS,	null,		null],
+	'lld_macro_paths' =>		[T_ZBX_STR, O_OPT, P_SYS,	null,		null],
 	'jmx_endpoint' =>			[T_ZBX_STR, O_OPT, null,	NOT_EMPTY,
 		'(isset({add}) || isset({update})) && isset({type}) && {type} == '.ITEM_TYPE_JMX
 	],
@@ -206,6 +213,7 @@ $fields = [
 											' || {http_authtype} == '.HTTPTEST_AUTH_NTLM.')',
 									_('Password')
 								],
+	'preprocessing' =>			[T_ZBX_STR, O_OPT, P_NO_TRIM,	null,	null],
 	// actions
 	'action' =>					[T_ZBX_STR, O_OPT, P_SYS|P_ACT,
 									IN('"discoveryrule.massdelete","discoveryrule.massdisable",'.
@@ -230,16 +238,19 @@ check_fields($fields);
 
 $_REQUEST['params'] = getRequest($paramsFieldName, '');
 unset($_REQUEST[$paramsFieldName]);
+$item = [];
 
 /*
  * Permissions
  */
 if (getRequest('itemid', false)) {
 	$item = API::DiscoveryRule()->get([
-		'itemids' => $_REQUEST['itemid'],
+		'itemids' => getRequest('itemid'),
 		'output' => API_OUTPUT_EXTEND,
-		'selectHosts' => ['status', 'flags'],
+		'selectHosts' => ['hostid', 'name', 'status', 'flags'],
 		'selectFilter' => ['formula', 'evaltype', 'conditions'],
+		'selectLLDMacroPaths' => ['lld_macro', 'path'],
+		'selectPreprocessing' => ['type', 'params', 'error_handler', 'error_handler_params'],
 		'editable' => true
 	]);
 	$item = reset($item);
@@ -251,8 +262,8 @@ if (getRequest('itemid', false)) {
 }
 else {
 	$hosts = API::Host()->get([
-		'hostids' => $_REQUEST['hostid'],
-		'output' => ['status', 'flags'],
+		'output' => ['hostid', 'name', 'status', 'flags'],
+		'hostids' => getRequest('hostid'),
 		'templated_hosts' => true,
 		'editable' => true
 	]);
@@ -262,10 +273,20 @@ else {
 	}
 }
 
+// Convert CR+LF to LF in preprocessing script.
+if (hasRequest('preprocessing')) {
+	foreach ($_REQUEST['preprocessing'] as &$step) {
+		if ($step['type'] == ZBX_PREPROC_SCRIPT) {
+			$step['params'][0] = CRLFtoLF($step['params'][0]);
+		}
+	}
+	unset($step);
+}
+
 /*
  * Actions
  */
-if (isset($_REQUEST['delete']) && isset($_REQUEST['itemid'])) {
+if (hasRequest('delete') && hasRequest('itemid')) {
 	$result = API::DiscoveryRule()->delete([getRequest('itemid')]);
 
 	if ($result) {
@@ -293,7 +314,8 @@ elseif (hasRequest('add') || hasRequest('update')) {
 	 * "delay_flex" is a temporary field that collects flexible and scheduling intervals separated by a semicolon.
 	 * In the end, custom intervals together with "delay" are stored in the "delay" variable.
 	 */
-	if (!in_array($type, [ITEM_TYPE_ZABBIX_ACTIVE, ITEM_TYPE_TRAPPER, ITEM_TYPE_SNMPTRAP]) && hasRequest('delay_flex')) {
+	if (!in_array($type, [ITEM_TYPE_ZABBIX_ACTIVE, ITEM_TYPE_TRAPPER, ITEM_TYPE_SNMPTRAP])
+			&& hasRequest('delay_flex')) {
 		$intervals = [];
 		$simple_interval_parser = new CSimpleIntervalParser(['usermacros' => true]);
 		$time_period_parser = new CTimePeriodParser(['usermacros' => true]);
@@ -339,6 +361,37 @@ elseif (hasRequest('add') || hasRequest('update')) {
 	}
 
 	if ($result) {
+		$preprocessing = getRequest('preprocessing', []);
+
+		foreach ($preprocessing as &$step) {
+			switch ($step['type']) {
+				case ZBX_PREPROC_PROMETHEUS_TO_JSON:
+					$step['params'] = trim($step['params'][0]);
+					break;
+
+				case ZBX_PREPROC_JSONPATH:
+				case ZBX_PREPROC_VALIDATE_NOT_REGEX:
+				case ZBX_PREPROC_ERROR_FIELD_JSON:
+				case ZBX_PREPROC_THROTTLE_TIMED_VALUE:
+				case ZBX_PREPROC_SCRIPT:
+					$step['params'] = $step['params'][0];
+					break;
+
+				case ZBX_PREPROC_REGSUB:
+					$step['params'] = implode("\n", $step['params']);
+					break;
+
+				default:
+					$step['params'] = '';
+			}
+
+			$step += [
+				'error_handler' => ZBX_PREPROC_FAIL_DEFAULT,
+				'error_handler_params' => ''
+			];
+		}
+		unset($step);
+
 		$newItem = [
 			'itemid' => getRequest('itemid'),
 			'interfaceid' => getRequest('interfaceid'),
@@ -401,6 +454,10 @@ elseif (hasRequest('add') || hasRequest('update')) {
 			$newItem['jmx_endpoint'] = getRequest('jmx_endpoint', '');
 		}
 
+		if (getRequest('type') == ITEM_TYPE_DEPENDENT) {
+			$newItem['master_itemid'] = getRequest('master_itemid');
+		}
+
 		// add macros; ignore empty new macros
 		$filter = [
 			'evaltype' => getRequest('evaltype'),
@@ -427,6 +484,21 @@ elseif (hasRequest('add') || hasRequest('update')) {
 			}
 		}
 		$newItem['filter'] = $filter;
+
+		$lld_macro_paths = getRequest('lld_macro_paths', []);
+
+		foreach ($lld_macro_paths as &$lld_macro_path) {
+			$lld_macro_path['lld_macro'] = mb_strtoupper($lld_macro_path['lld_macro']);
+		}
+		unset($lld_macro_path);
+
+		$newItem['lld_macro_paths'] = $lld_macro_paths;
+
+		foreach ($newItem['lld_macro_paths'] as $i => $lld_macro_path) {
+			if ($lld_macro_path['lld_macro'] === '' && $lld_macro_path['path'] === '') {
+				unset($newItem['lld_macro_paths'][$i]);
+			}
+		}
 
 		if (hasRequest('update')) {
 			DBstart();
@@ -462,10 +534,43 @@ elseif (hasRequest('add') || hasRequest('update')) {
 				unset($newItem['filter']);
 			}
 
+			$lld_macro_paths_changed = false;
+
+			if (count($newItem['lld_macro_paths']) != count($item['lld_macro_paths'])) {
+				$lld_macro_paths_changed = true;
+			}
+			else {
+				$lld_macro_paths = array_values($item['lld_macro_paths']);
+				$newItem['lld_macro_paths'] = array_values($newItem['lld_macro_paths']);
+
+				foreach ($newItem['lld_macro_paths'] as $i => $lld_macro_path) {
+					if (CArrayHelper::unsetEqualValues($lld_macro_path, $lld_macro_paths[$i])) {
+						$lld_macro_paths_changed = true;
+						break;
+					}
+				}
+			}
+
+			if (!$lld_macro_paths_changed) {
+				unset($newItem['lld_macro_paths']);
+			}
+
+			if ($item['preprocessing'] !== $preprocessing) {
+				$newItem['preprocessing'] = $preprocessing;
+			}
+
 			$result = API::DiscoveryRule()->update($newItem);
 			$result = DBend($result);
 		}
 		else {
+			if (!$newItem['lld_macro_paths']) {
+				unset($newItem['lld_macro_paths']);
+			}
+
+			if ($preprocessing) {
+				$newItem['preprocessing'] = $preprocessing;
+			}
+
 			$result = API::DiscoveryRule()->create([$newItem]);
 		}
 	}
@@ -532,16 +637,52 @@ elseif (hasRequest('action') && getRequest('action') === 'discoveryrule.masschec
 /*
  * Display
  */
-if (isset($_REQUEST['form'])) {
-	$formItem = (hasRequest('itemid') && !hasRequest('clone')) ? $item : [];
-	$data = getItemFormData($formItem, [
+if (hasRequest('form')) {
+	$has_errors = false;
+	$form_item = (hasRequest('itemid') && !hasRequest('clone')) ? $item : [];
+	$master_itemid = $form_item && !hasRequest('form_refresh')
+		? $form_item['master_itemid']
+		: getRequest('master_itemid');
+
+	if (getRequest('type', $form_item ? $form_item['type'] : null) == ITEM_TYPE_DEPENDENT && $master_itemid != 0) {
+		$db_master_items = API::Item()->get([
+			'output' => ['itemid', 'type', 'hostid', 'name', 'key_'],
+			'itemids' => $master_itemid,
+			'webitems' => true
+		]);
+
+		if (!$db_master_items) {
+			show_messages(false, '', _('No permissions to referred object or it does not exist!'));
+			$has_errors = true;
+		}
+		else {
+			$form_item['master_item'] = $db_master_items[0];
+		}
+	}
+
+	$data = getItemFormData($form_item, [
 		'is_discovery_rule' => true
 	]);
 	$data['lifetime'] = getRequest('lifetime', DB::getDefault('items', 'lifetime'));
 	$data['evaltype'] = getRequest('evaltype');
 	$data['formula'] = getRequest('formula');
 	$data['conditions'] = getRequest('conditions', []);
+	$data['lld_macro_paths'] = getRequest('lld_macro_paths', []);
 	$data['host'] = $host;
+	$data['preprocessing_test_type'] = CControllerPopupPreprocTestEdit::ZBX_TEST_TYPE_LLD;
+	$data['preprocessing_types'] = CDiscoveryRule::$supported_preprocessing_types;
+
+	if (!hasRequest('form_refresh')) {
+		foreach ($data['preprocessing'] as &$step) {
+			if ($step['type'] == ZBX_PREPROC_SCRIPT) {
+				$step['params'] = [$step['params'], ''];
+			}
+			else {
+				$step['params'] = explode("\n", $step['params']);
+			}
+		}
+		unset($step);
+	}
 
 	// update form
 	if (hasRequest('itemid') && !getRequest('form_refresh')) {
@@ -549,6 +690,7 @@ if (isset($_REQUEST['form'])) {
 		$data['evaltype'] = $item['filter']['evaltype'];
 		$data['formula'] = $item['filter']['formula'];
 		$data['conditions'] = $item['filter']['conditions'];
+		$data['lld_macro_paths'] = $item['lld_macro_paths'];
 	}
 	// clone form
 	elseif (hasRequest('clone')) {
@@ -566,9 +708,11 @@ if (isset($_REQUEST['form'])) {
 	}
 
 	// render view
-	$itemView = new CView('configuration.host.discovery.edit', $data);
-	$itemView->render();
-	$itemView->show();
+	if (!$has_errors) {
+		$itemView = new CView('configuration.host.discovery.edit', $data);
+		$itemView->render();
+		$itemView->show();
+	}
 }
 else {
 	$sortField = getRequest('sort', CProfile::get('web.'.$page['file'].'.sort', 'name'));
@@ -616,9 +760,9 @@ else {
 	}
 
 	// paging
-	$url = (new CUrl('host_discovery.php'))
-		->setArgument('hostid', $data['hostid']);
+	$url = (new CUrl('host_discovery.php'))->setArgument('hostid', $data['hostid']);
 
+	$data['discoveries'] = expandItemNamesWithMasterItems($data['discoveries'], 'items');
 	$data['paging'] = getPagingLine($data['discoveries'], $sortOrder, $url);
 	$data['parent_templates'] = getItemParentTemplates($data['discoveries'], ZBX_FLAG_DISCOVERY_RULE);
 

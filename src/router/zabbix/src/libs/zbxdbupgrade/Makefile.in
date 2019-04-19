@@ -126,7 +126,8 @@ am_libzbxdbupgrade_a_OBJECTS = dbupgrade.$(OBJEXT) \
 	dbupgrade_2050.$(OBJEXT) dbupgrade_3000.$(OBJEXT) \
 	dbupgrade_3010.$(OBJEXT) dbupgrade_3020.$(OBJEXT) \
 	dbupgrade_3030.$(OBJEXT) dbupgrade_3040.$(OBJEXT) \
-	dbupgrade_3050.$(OBJEXT) dbupgrade_4000.$(OBJEXT)
+	dbupgrade_3050.$(OBJEXT) dbupgrade_4000.$(OBJEXT) \
+	dbupgrade_4010.$(OBJEXT) dbupgrade_4020.$(OBJEXT)
 libzbxdbupgrade_a_OBJECTS = $(am_libzbxdbupgrade_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -396,6 +397,8 @@ libzbxdbupgrade_a_SOURCES = dbupgrade.c \
 	dbupgrade_3040.c \
 	dbupgrade_3050.c \
 	dbupgrade_4000.c \
+	dbupgrade_4010.c \
+	dbupgrade_4020.c \
 	dbupgrade.h
 
 all: all-am
@@ -459,6 +462,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dbupgrade_3040.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dbupgrade_3050.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dbupgrade_4000.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dbupgrade_4010.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dbupgrade_4020.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\

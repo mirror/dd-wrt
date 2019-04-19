@@ -74,7 +74,8 @@ class CConfigurationExportBuilder {
 				'httptests' => $this->formatHttpTests($template['httptests']),
 				'macros' => $this->formatMacros($template['macros']),
 				'templates' => $this->formatTemplateLinkage($template['parentTemplates']),
-				'screens' => $this->formatScreens($template['screens'])
+				'screens' => $this->formatScreens($template['screens']),
+				'tags' => $this->formatTags($template['tags'])
 			];
 		}
 	}
@@ -116,7 +117,8 @@ class CConfigurationExportBuilder {
 				'discovery_rules' => $this->formatDiscoveryRules($host['discoveryRules']),
 				'httptests' => $this->formatHttpTests($host['httptests']),
 				'macros' => $this->formatMacros($host['macros']),
-				'inventory' => $this->formatHostInventory($host['inventory'])
+				'inventory' => $this->formatHostInventory($host['inventory']),
+				'tags' => $this->formatTags($host['tags'])
 			];
 		}
 	}
@@ -363,7 +365,9 @@ class CConfigurationExportBuilder {
 				'ssl_key_file' => $discoveryRule['ssl_key_file'],
 				'ssl_key_password' => $discoveryRule['ssl_key_password'],
 				'verify_peer' => $discoveryRule['verify_peer'],
-				'verify_host' => $discoveryRule['verify_host']
+				'verify_host' => $discoveryRule['verify_host'],
+				'lld_macro_paths' => $discoveryRule['lld_macro_paths'],
+				'preprocessing' => $discoveryRule['preprocessing']
 			];
 
 			if (isset($discoveryRule['interface_ref'])) {
@@ -392,6 +396,10 @@ class CConfigurationExportBuilder {
 
 				$data['headers'] = $headers;
 			}
+
+			$data['master_item'] = ($discoveryRule['type'] == ITEM_TYPE_DEPENDENT)
+				? ['key' => $discoveryRule['master_item']['key_']]
+				: [];
 
 			$result[] = $data;
 		}
@@ -890,7 +898,7 @@ class CConfigurationExportBuilder {
 	}
 
 	/**
-	 * Format trigger tags.
+	 * Format tags.
 	 *
 	 * @param array $tags
 	 *

@@ -7,6 +7,8 @@ if (hasRequest('conditions')) {
 }
 
 include dirname(__FILE__).'/common.item.edit.js.php';
+include dirname(__FILE__).'/item.preprocessing.js.php';
+include dirname(__FILE__).'/editabletable.js.php';
 ?>
 <script type="text/x-jquery-tmpl" id="condition-row">
 	<?=
@@ -32,6 +34,25 @@ include dirname(__FILE__).'/common.item.edit.js.php';
 					->addClass(ZBX_STYLE_BTN_LINK)
 					->addClass('element-table-remove')
 			))->addClass(ZBX_STYLE_NOWRAP)
+		]))
+			->addClass('form_row')
+			->toString()
+	?>
+</script>
+<script type="text/x-jquery-tmpl" id="lld_macro_path-row">
+	<?= (new CRow([
+			(new CTextBox('lld_macro_paths[#{rowNum}][lld_macro]', '', false,
+				DB::getFieldLength('lld_macro_path', 'lld_macro')
+			))
+				->setWidth(ZBX_TEXTAREA_MACRO_WIDTH)
+				->addClass(ZBX_STYLE_UPPERCASE)
+				->setAttribute('placeholder', '{#MACRO}'),
+			(new CTextBox('lld_macro_paths[#{rowNum}][path]', '', false, DB::getFieldLength('lld_macro_path', 'path')))
+				->setWidth(ZBX_TEXTAREA_MACRO_VALUE_WIDTH)
+				->setAttribute('placeholder', _('$.path.to.node')),
+			(new CButton('lld_macro_paths[#{rowNum}][remove]', _('Remove')))
+				->addClass(ZBX_STYLE_BTN_LINK)
+				->addClass('element-table-remove')
 		]))
 			->addClass('form_row')
 			->toString()
@@ -107,6 +128,10 @@ include dirname(__FILE__).'/common.item.edit.js.php';
 					$('input[name=username]').removeAttr('aria-required');
 				}
 			}).trigger('change');
+
+			$('#lld_macro_paths').dynamicRows({
+				template: '#lld_macro_path-row'
+			});
 		});
 	})(jQuery);
 </script>

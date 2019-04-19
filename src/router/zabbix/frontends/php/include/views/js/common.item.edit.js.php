@@ -23,39 +23,6 @@
 		</td>
 	</tr>
 </script>
-<?php if (!$data['is_discovery_rule']) : ?>
-	<script type="text/x-jquery-tmpl" id="preprocessing_steps_row">
-	<?php
-		$preproc_types_cbbox = new CComboBox('preprocessing[#{rowNum}][type]', '');
-
-		foreach (get_preprocessing_types() as $group) {
-			$cb_group = new COptGroup($group['label']);
-
-			foreach ($group['types'] as $type => $label) {
-				$cb_group->addItem(new CComboItem($type, $label));
-			}
-
-			$preproc_types_cbbox->addItem($cb_group);
-		}
-
-		echo (new CRow([
-			$readonly
-				? null
-				: (new CCol(
-					(new CDiv())->addClass(ZBX_STYLE_DRAG_ICON)
-				))->addClass(ZBX_STYLE_TD_DRAG_ICON),
-				$preproc_types_cbbox,
-				(new CTextBox('preprocessing[#{rowNum}][params][0]', ''))->setAttribute('placeholder', _('pattern')),
-				(new CTextBox('preprocessing[#{rowNum}][params][1]', ''))->setAttribute('placeholder', _('output')),
-				(new CButton('preprocessing[#{rowNum}][remove]', _('Remove')))
-					->addClass(ZBX_STYLE_BTN_LINK)
-					->addClass('element-table-remove')
-		]))
-			->addClass('sortable')
-			->toString()
-	?>
-	</script>
-<?php endif ?>
 <script type="text/javascript">
 	jQuery(function($) {
 		$('#delayFlexTable').on('click', 'input[type="radio"]', function() {
@@ -76,97 +43,6 @@
 		$('#delayFlexTable').dynamicRows({
 			template: '#delayFlexRow'
 		});
-
-		<?php if (!$data['is_discovery_rule']) : ?>
-			var preproc_row_tpl = new Template($('#preprocessing_steps_row').html()),
-				preprocessing = $('#preprocessing');
-
-			preprocessing.sortable({
-				disabled: (preprocessing.find('tr.sortable').length < 2),
-				items: 'tr.sortable',
-				axis: 'y',
-				cursor: 'move',
-				containment: 'parent',
-				handle: 'div.<?= ZBX_STYLE_DRAG_ICON ?>',
-				tolerance: 'pointer',
-				opacity: 0.6,
-				helper: function(e, ui) {
-					ui.children().each(function() {
-						var td = $(this);
-
-						td.width(td.width());
-					});
-
-					return ui;
-				},
-				start: function(e, ui) {
-					$(ui.placeholder).height($(ui.helper).height());
-				}
-			});
-
-			preprocessing
-				.on('click', '.element-table-add', function() {
-					var row = $(this).parent().parent();
-					row.before(preproc_row_tpl.evaluate({rowNum: preprocessing.find('tr.sortable').length}));
-
-					if (preprocessing.find('tr.sortable').length > 1) {
-						preprocessing.sortable('enable');
-					}
-				})
-				.on('click', '.element-table-remove', function() {
-					var row = $(this).parent().parent();
-					row.remove();
-
-					if (preprocessing.find('tr.sortable').length < 2) {
-						preprocessing.sortable('disable');
-					}
-				})
-				.on('change', 'select[name*="type"]', function() {
-					var inputs = $(this).parent().parent().find('[name*="params"]');
-
-					switch ($(this).val()) {
-						case '<?= ZBX_PREPROC_MULTIPLIER ?>':
-							$(inputs[0])
-								.show()
-								.attr('placeholder', <?= CJs::encodeJson(_('number')) ?>);
-							$(inputs[1]).hide();
-							break;
-
-						case '<?= ZBX_PREPROC_RTRIM ?>':
-						case '<?= ZBX_PREPROC_LTRIM ?>':
-						case '<?= ZBX_PREPROC_TRIM ?>':
-							$(inputs[0])
-								.show()
-								.attr('placeholder', <?= CJs::encodeJson(_('list of characters')) ?>);
-							$(inputs[1]).hide();
-							break;
-
-						case '<?= ZBX_PREPROC_XPATH ?>':
-						case '<?= ZBX_PREPROC_JSONPATH ?>':
-							$(inputs[0])
-								.show()
-								.attr('placeholder', <?= CJs::encodeJson(_('path')) ?>);
-							$(inputs[1]).hide();
-							break;
-
-						case '<?= ZBX_PREPROC_REGSUB ?>':
-							$(inputs[0])
-								.show()
-								.attr('placeholder', <?= CJs::encodeJson(_('pattern')) ?>);
-							$(inputs[1]).show();
-							break;
-
-						case '<?= ZBX_PREPROC_BOOL2DEC ?>':
-						case '<?= ZBX_PREPROC_OCT2DEC ?>':
-						case '<?= ZBX_PREPROC_HEX2DEC ?>':
-						case '<?= ZBX_PREPROC_DELTA_VALUE ?>':
-						case '<?= ZBX_PREPROC_DELTA_SPEED ?>':
-							$(inputs[0]).hide();
-							$(inputs[1]).hide();
-							break;
-					}
-				});
-		<?php endif ?>
 	});
 </script>
 <?php
@@ -376,7 +252,7 @@ zbx_subarray_push($this->data['authTypeVisibility'], ITEM_AUTHTYPE_PUBLICKEY, 'r
 		}
 	}
 
-	jQuery(document).ready(function() {
+	jQuery(document).ready(function($) {
 		<?php
 		if (!empty($this->data['authTypeVisibility'])) { ?>
 			var authTypeSwitcher = new CViewSwitcher('authtype', 'change',
@@ -387,7 +263,7 @@ zbx_subarray_push($this->data['authTypeVisibility'], ITEM_AUTHTYPE_PUBLICKEY, 'r
 				<?php echo zbx_jsvalue($this->data['typeVisibility'], true); ?>,
 				<?php echo zbx_jsvalue($this->data['typeDisable'], true); ?>);
 		<?php } ?>
-		if (jQuery('#http_authtype').length) {
+		if ($('#http_authtype').length) {
 			new CViewSwitcher('http_authtype', 'change', <?= zbx_jsvalue([
 				HTTPTEST_AUTH_BASIC => ['http_username_row', 'http_password_row'],
 				HTTPTEST_AUTH_NTLM => ['http_username_row', 'http_password_row']
@@ -399,163 +275,24 @@ zbx_subarray_push($this->data['authTypeVisibility'], ITEM_AUTHTYPE_PUBLICKEY, 'r
 				<?php echo zbx_jsvalue($this->data['securityLevelVisibility'], true); ?>);
 		<?php } ?>
 
-		if (jQuery('#allow_traps').length) {
+		if ($('#allow_traps').length) {
 			new CViewSwitcher('allow_traps', 'change', <?= zbx_jsvalue([
 				HTTPCHECK_ALLOW_TRAPS_ON => ['row_trapper_hosts']
 			], true) ?>);
 		}
 
-		jQuery('#type')
+		$('#type')
 			.change(function() {
 				// update the interface select with each item type change
 				var itemInterfaceTypes = <?php echo CJs::encodeJson(itemTypeInterface()); ?>;
-				organizeInterfaces(itemInterfaceTypes[parseInt(jQuery(this).val())]);
+				organizeInterfaces(itemInterfaceTypes[parseInt($(this).val())]);
 
 				setAuthTypeLabel();
 			})
 			.trigger('change');
 
-		jQuery('#authtype').bind('change', function() {
+		$('#authtype').bind('change', function() {
 			setAuthTypeLabel();
-		});
-
-		var $ = jQuery,
-			editableTable = function (elm, tmpl, tmpl_defaults) {
-			var table,
-				row_template,
-				row_default_values,
-				insert_point,
-				row_index = 0,
-				table_row_class = 'editable_table_row';
-
-			table = $(elm);
-			insert_point = table.find('tbody tr[data-insert-point]');
-			row_template = new Template($(tmpl).html());
-			row_default_values = tmpl_defaults;
-
-			table.sortable({
-				disabled: true,
-				items: 'tbody tr.sortable',
-				axis: 'y',
-				containment: 'parent',
-				cursor: 'move',
-				handle: 'div.<?= ZBX_STYLE_DRAG_ICON ?>',
-				tolerance: 'pointer',
-				opacity: 0.6,
-				helper: function(e, ui) {
-					ui.children('td').each(function() {
-						$(this).width($(this).width());
-					});
-
-					return ui;
-				},
-				start: function(e, ui) {
-					// Fix placeholder not to change height while object is being dragged.
-					$(ui.placeholder).height($(ui.helper).height());
-				}
-			});
-
-			table.on('click', '[data-row-action]', function (e) {
-				e.preventDefault();
-
-				switch ($(e.currentTarget).data('row-action')) {
-					case 'remove_row' :
-						removeRow($(e.currentTarget).closest('.' + table_row_class));
-						break;
-
-					case 'add_row' :
-						var row_data = $(e.currentTarget).data('values'),
-							new_row = addRow(row_data || {});
-
-						if (!row_data) {
-							new_row.find('[type="text"]').val('');
-						}
-						break;
-				}
-			});
-
-			/**
-			 * Enable or disable table rows sorting according to rows count. At least 2 rows should exists to be able
-			 * sort rows using drag and drop.
-			 */
-			function setSortableState() {
-				var allow_sort = table.find('.' + table_row_class).length < 2;
-				table.sortable('option', 'disabled', allow_sort);
-			}
-
-			/**
-			 * Add table row. Returns new added row DOM node.
-			 *
-			 * @param {object}  Object with data for added row.
-			 *
-			 * @return {object}
-			 */
-			function addRow(values) {
-				row_index += 1;
-				values.index = row_index;
-
-				var new_row = $(row_template.evaluate(values))
-					.addClass(table_row_class)
-					.addClass('sortable')
-					.data('values', values)
-					.insertBefore(insert_point);
-
-				setSortableState();
-				return new_row;
-			}
-
-			/**
-			 * Add multiple rows to table.
-			 *
-			 * @param {array} rows_values  Array of objects for every added row.
-			 */
-			function addRows(rows_values) {
-				$.each(rows_values, function(index, values) {
-					addRow(values);
-				});
-			}
-
-			/**
-			 * Remove table row.
-			 *
-			 * @param {object} row_node Table row DOM node to be removed.
-			 */
-			function removeRow(row_node) {
-				row_node.remove();
-				setSortableState();
-			}
-
-			return {
-				addRow: function(values) {
-					return addRow(values);
-				},
-				addRows: function(rows_values) {
-					addRows(rows_values);
-					return table;
-				},
-				removeRow: function(row_node) {
-					removeRow(row_node);
-				},
-				getTableRows: function() {
-					return table.find('.' + table_row_class);
-				}
-			};
-		};
-
-		$('[data-sortable-pairs-table]').each(function() {
-			var t = $(this),
-				table = t.find('table'),
-				data = JSON.parse(t.find('[type="text/json"]').text()),
-				template = t.find('[type="text/x-jquery-tmpl"]'),
-				container = new editableTable(table, template);
-
-			container.addRows(data);
-
-			if (t.data('sortable-pairs-table') != 1) {
-				table.sortable('option', 'disabled', true);
-			}
-
-			t.data('editableTable', container);
 		});
 
 		$('[data-action="parse_url"]').click(function() {

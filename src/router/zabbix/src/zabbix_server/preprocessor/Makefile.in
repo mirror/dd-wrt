@@ -125,7 +125,8 @@ am_libpreprocessor_a_OBJECTS =  \
 	libpreprocessor_a-preproc_worker.$(OBJEXT) \
 	libpreprocessor_a-preproc_manager.$(OBJEXT) \
 	libpreprocessor_a-item_preproc.$(OBJEXT) \
-	libpreprocessor_a-preprocessing.$(OBJEXT)
+	libpreprocessor_a-preprocessing.$(OBJEXT) \
+	libpreprocessor_a-preproc_history.$(OBJEXT)
 libpreprocessor_a_OBJECTS = $(am_libpreprocessor_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -392,7 +393,8 @@ libpreprocessor_a_SOURCES = \
 	preproc_manager.c preproc_manager.h \
 	item_preproc.c \
 	item_preproc.h \
-	preprocessing.c preprocessing.h
+	preprocessing.c preprocessing.h \
+	preproc_history.c preproc_history.h
 
 libpreprocessor_a_CFLAGS = \
 	 @LIBXML2_CFLAGS@
@@ -447,6 +449,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpreprocessor_a-item_preproc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpreprocessor_a-linked_list.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpreprocessor_a-preproc_history.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpreprocessor_a-preproc_manager.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpreprocessor_a-preproc_worker.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpreprocessor_a-preprocessing.Po@am__quote@
@@ -536,6 +539,20 @@ libpreprocessor_a-preprocessing.obj: preprocessing.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='preprocessing.c' object='libpreprocessor_a-preprocessing.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libpreprocessor_a_CFLAGS) $(CFLAGS) -c -o libpreprocessor_a-preprocessing.obj `if test -f 'preprocessing.c'; then $(CYGPATH_W) 'preprocessing.c'; else $(CYGPATH_W) '$(srcdir)/preprocessing.c'; fi`
+
+libpreprocessor_a-preproc_history.o: preproc_history.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libpreprocessor_a_CFLAGS) $(CFLAGS) -MT libpreprocessor_a-preproc_history.o -MD -MP -MF $(DEPDIR)/libpreprocessor_a-preproc_history.Tpo -c -o libpreprocessor_a-preproc_history.o `test -f 'preproc_history.c' || echo '$(srcdir)/'`preproc_history.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libpreprocessor_a-preproc_history.Tpo $(DEPDIR)/libpreprocessor_a-preproc_history.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='preproc_history.c' object='libpreprocessor_a-preproc_history.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libpreprocessor_a_CFLAGS) $(CFLAGS) -c -o libpreprocessor_a-preproc_history.o `test -f 'preproc_history.c' || echo '$(srcdir)/'`preproc_history.c
+
+libpreprocessor_a-preproc_history.obj: preproc_history.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libpreprocessor_a_CFLAGS) $(CFLAGS) -MT libpreprocessor_a-preproc_history.obj -MD -MP -MF $(DEPDIR)/libpreprocessor_a-preproc_history.Tpo -c -o libpreprocessor_a-preproc_history.obj `if test -f 'preproc_history.c'; then $(CYGPATH_W) 'preproc_history.c'; else $(CYGPATH_W) '$(srcdir)/preproc_history.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libpreprocessor_a-preproc_history.Tpo $(DEPDIR)/libpreprocessor_a-preproc_history.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='preproc_history.c' object='libpreprocessor_a-preproc_history.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libpreprocessor_a_CFLAGS) $(CFLAGS) -c -o libpreprocessor_a-preproc_history.obj `if test -f 'preproc_history.c'; then $(CYGPATH_W) 'preproc_history.c'; else $(CYGPATH_W) '$(srcdir)/preproc_history.c'; fi`
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique
