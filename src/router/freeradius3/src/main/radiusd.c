@@ -1,7 +1,7 @@
 /*
  * radiusd.c	Main loop of the radius server.
  *
- * Version:	$Id: 4f64184210ac0734e745840a10ee567ba778879c $
+ * Version:	$Id: 995a9d92df154064deb039149cf9c57af19a9704 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  * Copyright 2000  Chad Miller <cmiller@surfsouth.com>
  */
 
-RCSID("$Id: 4f64184210ac0734e745840a10ee567ba778879c $")
+RCSID("$Id: 995a9d92df154064deb039149cf9c57af19a9704 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -396,7 +396,7 @@ int main(int argc, char *argv[])
 			usec /= 2;
 			fr_timeval_from_usec(&sd_watchdog_interval, usec);
 
-			INFO("systemd watchdog interval is %pT secs", &sd_watchdog_interval);
+			INFO("systemd watchdog interval is %ld.%.2ld secs", sd_watchdog_interval.tv_sec, sd_watchdog_interval.tv_usec);
 		} else {
 			INFO("systemd watchdog is disabled");
 		}
@@ -467,6 +467,10 @@ int main(int argc, char *argv[])
 				waitpid(pid, &stat_loc, WNOHANG);
 				exit(EXIT_FAILURE);
 			}
+
+#  ifdef HAVE_SYSTEMD
+			sd_notify(0, "READY=1");
+#  endif
 
 			exit(EXIT_SUCCESS);
 		}

@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 7fc5c26769b935ad6e0c5482072bc207ccfa120c $
+ * $Id: 31bf5bd44f26933a2fa22e6a7baf701bc673dac8 $
  * @file rlm_redis.c
  * @brief Driver for the REDIS noSQL key value stores.
  *
@@ -23,7 +23,7 @@
  * @copyright 2011  TekSavvy Solutions <gabe@teksavvy.com>
  */
 
-RCSID("$Id: 7fc5c26769b935ad6e0c5482072bc207ccfa120c $")
+RCSID("$Id: 31bf5bd44f26933a2fa22e6a7baf701bc673dac8 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -72,6 +72,10 @@ static void *mod_conn_create(TALLOC_CTX *ctx, void *instance)
 		      inst->xlat_name, inst->hostname, inst->port, inst->query_timeout);
 		return NULL;
 	}
+
+#ifndef redisReplyReaderGetError
+#define redisReplyReaderGetError redisReaderGetError
+#endif
 
 	if (conn && conn->err) {
 		ERROR("rlm_redis (%s): Problems with redisConnectWithTimeout('%s', %d, %d), %s",

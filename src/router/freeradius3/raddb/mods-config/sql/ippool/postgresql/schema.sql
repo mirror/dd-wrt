@@ -1,6 +1,9 @@
 --
 -- Table structure for table 'radippool'
 --
+-- See also "procedure.sql" in this directory for additional
+-- indices and a stored procedure that is much faster.
+--
 
 CREATE TABLE radippool (
 	id			BIGSERIAL PRIMARY KEY,

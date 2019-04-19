@@ -4,8 +4,13 @@
 #		NOTE: This top-level Makefile must not
 #		use GNU-make extensions. The lower ones can.
 #
-# Version:	$Id: 2bda54af3597555a87a063e89e883b248107ab41 $
+# Version:	$Id: b033aa1a81b263797aea46d8348ca22d981a736c $
 #
+
+#
+#	we didn't called ./configure? just define the version.
+#
+RADIUSD_VERSION_STRING := $(shell cat VERSION)
 
 #
 #  The default rule is "all".
@@ -27,9 +32,11 @@ endif
 #  the debian packages.
 #
 ifneq "$(MAKECMDGOALS)" "deb"
+ifneq "$(MAKECMDGOALS)" "rpm"
 $(if $(wildcard Make.inc),,$(error Missing 'Make.inc' Run './configure [options]' and retry))
 
 include Make.inc
+endif
 endif
 
 MFLAGS += --no-print-directory
@@ -44,7 +51,9 @@ export DESTDIR := $(R)
 
 # And over-ride all of the other magic.
 ifneq "$(MAKECMDGOALS)" "deb"
+ifneq "$(MAKECMDGOALS)" "rpm"
 include scripts/boiler.mk
+endif
 endif
 
 #
@@ -306,7 +315,7 @@ dist-tag: freeradius-server-$(RADIUSD_VERSION_STRING).tar.gz freeradius-server-$
 #
 .PHONY: docker
 docker:
-	docker build scripts/docker/ubuntu16 --build-arg=release=release_`echo $(RADIUSD_VERSION_STRING) | tr .- __` -t freeradius/freeradius-server:$(RADIUSD_VERSION_STRING)
+	docker build scripts/docker/ubuntu18 --build-arg=release=release_`echo $(RADIUSD_VERSION_STRING) | tr .- __` -t freeradius/freeradius-server:$(RADIUSD_VERSION_STRING)
 	docker build scripts/docker/alpine --build-arg=release=release_`echo $(RADIUSD_VERSION_STRING) | tr .- __` -t freeradius/freeradius-server:$(RADIUSD_VERSION_STRING)-alpine
 
 .PHONY: docker-push
@@ -334,6 +343,22 @@ docker-publish: docker-push-latest
 deb:
 	fakeroot debian/rules debian/control #clean
 	fakeroot dpkg-buildpackage -b -uc
+
+#
+#	Build a rpm package
+#
+.PHONY: rpm
+rpmbuild/SOURCES/freeradius-server-$(RADIUSD_VERSION_STRING).tar.bz2: freeradius-server-$(RADIUSD_VERSION_STRING).tar.bz2
+	@mkdir -p $(addprefix rpmbuild/,SOURCES SPECS BUILD RPMS SRPMS BUILDROOT)
+	@for file in `awk '/^Source...:/ {print $$2}' redhat/freeradius.spec` ; do cp redhat/$$file rpmbuild/SOURCES/$$file ; done
+	@cp $< $@
+
+rpm: rpmbuild/SOURCES/freeradius-server-$(RADIUSD_VERSION_STRING).tar.bz2
+	@if ! yum-builddep -q -C --assumeno redhat/freeradius.spec 1> /dev/null 2>&1; then \
+		echo "ERROR: Required depdendencies not found, install them with: yum-builddep redhat/freeradius.spec"; \
+		exit 1; \
+	fi
+	@QA_RPATHS=0x0003 rpmbuild --define "_topdir `pwd`/rpmbuild" -bb redhat/freeradius.spec
 
 # Developer checks
 .PHONY: warnings

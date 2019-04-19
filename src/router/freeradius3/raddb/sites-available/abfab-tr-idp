@@ -7,7 +7,7 @@
 #	This file does not include a TLS listener; see abfab-tls for a simple
 #	example of a RADSEC listener for ABFAB.
 #
-#	$Id: ff5608e4901a3046e1cfe4fc3de6b167a82db5f6 $
+#	$Id: 0a3b8be6c89ad837208aa20ac582259976c7d2cf $
 #
 
 server abfab-idp {
@@ -46,7 +46,6 @@ authorize {
 		ok = return
 	}
 
-	#
 	expiration
 	logintime
 }
@@ -76,7 +75,7 @@ post-auth {
 
 	if (session-state:User-Name && reply:User-Name && request:User-Name && (reply:User-Name == request:User-Name)) {
 		update reply {
-			User-Name !* ANY
+			&User-Name !* ANY
 		}
 	}
 	update {

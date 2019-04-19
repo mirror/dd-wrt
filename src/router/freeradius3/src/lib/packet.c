@@ -1,7 +1,7 @@
 /*
  * packet.c	Generic packet manipulation functions.
  *
- * Version:	$Id: 6d5a0e5fbdf09916fd3b97ca392fcaafcd605f6f $
+ * Version:	$Id: cb3484c999e4a2be63a13b4a4a1d7ca200bccd8b $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,7 @@
  * Copyright 2000-2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 6d5a0e5fbdf09916fd3b97ca392fcaafcd605f6f $")
+RCSID("$Id: cb3484c999e4a2be63a13b4a4a1d7ca200bccd8b $")
 
 #include	<freeradius-devel/libradius.h>
 
@@ -785,7 +785,6 @@ bool fr_packet_list_id_alloc(fr_packet_list_t *pl, int proto,
 #undef ID_j
 #undef ID_k
 		if (fd >= 0) break;
-		break;
 	}
 
 	/*
