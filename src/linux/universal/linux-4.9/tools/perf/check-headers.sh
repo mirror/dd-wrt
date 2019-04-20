@@ -4,7 +4,6 @@ HEADERS='
 include/uapi/linux/fcntl.h
 include/uapi/linux/perf_event.h
 include/uapi/linux/stat.h
-include/linux/bits.h
 include/linux/hash.h
 include/uapi/linux/hw_breakpoint.h
 arch/x86/include/asm/disabled-features.h
