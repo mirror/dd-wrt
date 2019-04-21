@@ -1489,7 +1489,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 	int ispeap = nvhas(akm, "peap");
 	int istls = nvhas(akm, "tls");
 	int isttls = nvhas(akm, "ttls");
-	int ismesh = nvram_nmatch("%s_mode", "mesh", prefix);
+	int ismesh = nvram_nmatch("mesh", "%s_mode", "mesh");
 	if (ispsk)
 		nvram_nseti(1, "%s_psk", prefix);
 	if (ispsk2)
@@ -1729,9 +1729,8 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		}
 		sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
 		FILE *fp = fopen(fstr, "wb");
-		fprintf(fp, "ap_scan=1\n");
-		// fprintf (fp, "ctrl_interface_group=0\n");
-		// fprintf (fp, "ctrl_interface=/var/run/wpa_supplicant\n");
+		if (!ismesh)
+			fprintf(fp, "ap_scan=1\n");
 		fprintf(fp, "network={\n");
 		addvhtcaps(prefix, fp);
 		if (!ssidoverride)
@@ -1740,8 +1739,31 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 #ifdef HAVE_UNIWIP
 		fprintf(fp, "\tbgscan=\"simple:30:-45:300\"\n");
 #endif
-		// fprintf (fp, "\tmode=0\n");
-		fprintf(fp, "\tscan_ssid=1\n");
+		if (ismesh) {
+			char ht[5];
+			char sb[32];
+			char bw[32];
+			fprintf(fp, "\tmode=5\n");
+			sprintf(nfreq, "%s_channel", prefix);
+			freq = atoi(nvram_default_get(nfreq, "0"));
+			fprintf(fp, "\tfrequency=%d\n", freq);
+			sprintf(bw, "%s_channelbw", prefix);
+			sprintf(ht, "20");
+			if (nvram_default_matchi(bw, 20, 20)) {
+				sprintf(ht, "20");
+			} else if (nvram_match(bw, "40") || nvram_match(bw, "2040")) {
+				sprintf(sb, "%s_nctrlsb", prefix);
+				if (nvram_default_match(sb, "upper", "lower")) {
+					sprintf(ht, "40+");
+				} else {
+					sprintf(ht, "40-");
+				}
+			}
+			if (!is_ath5k(prefix))
+				// fprintf(fp, "ibss_ht_mode=HT%s\n",ht);
+				fprintf(fp, "htmode=HT%s\n", ht);
+		} else
+			fprintf(fp, "\tscan_ssid=1\n");
 		fprintf(fp, "\tkey_mgmt=NONE\n");
 		if (nvram_match(akm, "wep")) {
 			int cnt = 0;
