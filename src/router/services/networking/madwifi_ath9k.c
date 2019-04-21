@@ -1489,7 +1489,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 	int ispeap = nvhas(akm, "peap");
 	int istls = nvhas(akm, "tls");
 	int isttls = nvhas(akm, "ttls");
-	int ismesh = nvram_nmatch("mesh", "%s_mode", "mesh");
+	int ismesh = nvram_nmatch("mesh", "%s_mode", prefix);
 	if (ispsk)
 		nvram_nseti(1, "%s_psk", prefix);
 	if (ispsk2)
