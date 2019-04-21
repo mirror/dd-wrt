@@ -57,6 +57,105 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss);
 static void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc);
 void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss);
 
+static char *gethtmode(char *prefix)
+{
+	char *netmode = nvram_nget("%s_net_mode", prefix);
+	char *akm = nvram_nget("%s_akm", prefix);
+	char *ht = "HT20";
+	int iht;
+	int isath5k = is_ath5k(prefix);
+	char bw[32];
+	sprintf(bw, "%s_channelbw", prefix);
+	int usebw = 20;
+	if (nvram_matchi(bw, 40))
+		usebw = 40;
+	if (nvram_matchi(bw, 2040))
+		usebw = 40;
+	if (nvram_matchi(bw, 80))
+		usebw = 80;
+	if (nvram_matchi(bw, 160))
+		usebw = 160;
+	if (nvram_match(bw, "80+80"))
+		usebw = 8080;
+
+	if ((!strcmp(netmode, "ng-only") ||	//
+	     !strcmp(netmode, "na-only") ||	//
+	     !strcmp(netmode, "n2-only") ||	//
+	     !strcmp(netmode, "n5-only") ||	//
+	     !strcmp(netmode, "ac-only") ||	//
+	     !strcmp(netmode, "acn-mixed") ||	//
+	     !strcmp(netmode, "mixed"))
+	    && strcmp(akm, "wep")) {
+
+		char sb[32];
+		sprintf(sb, "%s_nctrlsb", prefix);
+		switch (usebw) {
+		case 40:
+			if (nvram_default_match(sb, "ull", "luu") || nvram_match(sb, "upper")) {
+				ht = "HT40+";
+			}
+			if (nvram_match(sb, "luu") || nvram_match(sb, "lower")) {
+				ht = "HT40-";
+			}
+			break;
+		case 80:
+		case 8080:
+			ht = "80Mhz";
+#if 0
+			if (nvram_default_match(sb, "ulu", "lul") || nvram_match(sb, "upper")) {
+				ht = "HT40+";
+			}
+			if (nvram_match(sb, "ull")) {
+				ht = "HT40+";
+			}
+			if (nvram_match(sb, "luu")) {
+				ht = "HT40-";
+			}
+			if (nvram_match(sb, "lul") || nvram_match(sb, "lower")) {
+				ht = "HT40-";
+			}
+#endif
+			break;
+		case 160:
+//                      ht = "160Mhz";
+#if 1
+			if (nvram_default_match(sb, "uuu", "lll") || nvram_match(sb, "upper")) {
+				ht = "HT40+";
+			}
+			if (nvram_match(sb, "uul")) {
+				ht = "HT40+";
+			}
+			if (nvram_match(sb, "ulu")) {
+				ht = "HT40+";
+			}
+			if (nvram_match(sb, "ull")) {
+				ht = "HT40+";
+			}
+			if (nvram_match(sb, "luu")) {
+				ht = "HT40-";
+			}
+			if (nvram_match(sb, "lul")) {
+				ht = "HT40-";
+			}
+			if (nvram_match(sb, "llu")) {
+				ht = "HT40-";
+			}
+			if (nvram_match(sb, "lll") || nvram_match(sb, "lower")) {
+				ht = "HT40-";
+			}
+#endif
+			break;
+		case 20:
+		default:
+			ht = "HT20";
+			break;
+		}
+	} else {
+		ht = "NOHT";
+	}
+	return ht;
+}
+
 static void load_compressor(void)
 {
 	insmod("xxhash");
@@ -286,6 +385,10 @@ void configure_single_ath9k(int count)
 		eval("iw", wif, "interface", "add", dev, "type", "managed", "4addr", "on");
 
 		strcpy(primary, dev);
+	} else if (!strcmp(apm, "mesh")) {
+		eval("iw", wif, "interface", "add", dev, "type", "mp");
+		eval("iw", "dev", dev, "set", "freq", nvram_nget("%s_channel", dev), gethtmode(dev));
+		strcpy(primary, dev);
 	} else {
 		char akm[16];
 		sprintf(akm, "%s_akm", dev);
@@ -333,7 +436,7 @@ void configure_single_ath9k(int count)
 	cprintf("setup encryption");
 	// setup encryption
 	int isfirst = 1;
-	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wet") && strcmp(apm, "infra")) {
+	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wet") && strcmp(apm, "infra") && strcmp(apm, "mesh") && strcmp(apm, "tdma")) {
 		setupHostAP_ath9k(dev, isfirst, 0, 0);
 		isfirst = 0;
 	} else {
@@ -1386,7 +1489,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 	int ispeap = nvhas(akm, "peap");
 	int istls = nvhas(akm, "tls");
 	int isttls = nvhas(akm, "ttls");
-
+	int ismesh = nvram_match("%s_mode", "mesh", prefix);
 	if (ispsk)
 		nvram_nseti(1, "%s_psk", prefix);
 	if (ispsk2)
@@ -1436,11 +1539,14 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		if (!ssidoverride)
 			ssidoverride = nvram_nget("%s_ssid", prefix);
 		fprintf(fp, "\tssid=\"%s\"\n", ssidoverride);
-		if (isadhoc) {
+		if (isadhoc || ismesh) {
 			char ht[5];
 			char sb[32];
 			char bw[32];
-			fprintf(fp, "\tmode=1\n");
+			if (ismesh)
+				fprintf(fp, "\tmode=5\n");
+			else
+				fprintf(fp, "\tmode=1\n");
 			// autochannel 
 			sprintf(nfreq, "%s_channel", prefix);
 			freq = atoi(nvram_default_get(nfreq, "0"));
@@ -1460,18 +1566,20 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			if (!is_ath5k(prefix))
 				// fprintf(fp, "ibss_ht_mode=HT%s\n",ht);
 				fprintf(fp, "htmode=HT%s\n", ht);
-			sprintf(cellidtemp, "%s_cellid", prefix);
-			cellid = nvram_safe_get(cellidtemp);
-			if (*cellid) {
-				fprintf(fp, "\tbssid=%s\n", cellid);
-			}
+			if (isadhoc) {
+				sprintf(cellidtemp, "%s_cellid", prefix);
+				cellid = nvram_safe_get(cellidtemp);
+				if (*cellid) {
+					fprintf(fp, "\tbssid=%s\n", cellid);
+				}
 #if defined(HAVE_MAKSAT) || defined(HAVE_TMK) || defined(HAVE_BKM)
-			else {
-				memset(cellidssid, 0, 5);
-				strncpy(cellidssid, ssidoverride, 5);
-				fprintf(fp, "\tbssid=02:%02x:%02x:%02x:%02x:%02x\n", cellidssid[0], cellidssid[1], cellidssid[2], cellidssid[3], cellidssid[4]);
-			}
+				else {
+					memset(cellidssid, 0, 5);
+					strncpy(cellidssid, ssidoverride, 5);
+					fprintf(fp, "\tbssid=02:%02x:%02x:%02x:%02x:%02x\n", cellidssid[0], cellidssid[1], cellidssid[2], cellidssid[3], cellidssid[4]);
+				}
 #endif
+			}
 		}
 
 		char scanlist[32];
@@ -1720,6 +1828,8 @@ void ath9k_start_supplicant(int count)
 #endif
 	if (strcmp(apm, "sta") && strcmp(apm, "wdssta")
 	    && strcmp(apm, "infra")
+	    && strcmp(apm, "mesh")
+	    && strcmp(apm, "tdma")
 	    && strcmp(apm, "wet")) {
 		sprintf(fstr, "/tmp/%s_hostap.conf", dev);
 		do_hostapd(fstr, dev);
