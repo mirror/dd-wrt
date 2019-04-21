@@ -1787,6 +1787,62 @@ void mac80211_set_antennas(int phy, uint32_t tx_ant, uint32_t rx_ant)
 	return;
 }
 
+static int mac80211_has_iftype(int phy, enum nl80211_iftype iftype)
+{
+	struct nlattr *tb[NL80211_ATTR_MAX + 1];
+	struct nl_msg *msg;
+	struct nlattr *nl_mode;
+	struct genlmsghdr *gnlh;
+	int rem_mode;
+	int ret = 0;
+	lock();
+	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
+	if (!msg) {
+		unlock();
+		return 0;
+	}
+	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
+	if (unl_genl_request_single(&unl, msg, &msg) < 0) {
+		unlock();
+		return 0;
+	}
+	gnlh = nlmsg_data(nlmsg_hdr(msg));
+	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
+
+	if (tb[NL80211_ATTR_SUPPORTED_IFTYPES]) {
+		nla_for_each_nested(nl_mode, tb[NL80211_ATTR_SUPPORTED_IFTYPES], rem_mode)
+		    if (nla_type(nl_mode) == iftype) {
+			ret = 1;
+			goto found;
+		}
+	}
+      found:;
+	nlmsg_free(msg);
+	unlock();
+	return ret;
+nla_put_failure:
+	nlmsg_free(msg);
+	unlock();
+	return 0;
+
+}
+
+int has_mesh(char *prefix)
+{
+	INITVALUECACHE();
+	ret = mac80211_has_iftype(get_ath9k_phy_ifname(prefix), NL80211_IFTYPE_MESH_POINT);
+	EXITVALUECACHE();
+	return ret;
+}
+
+int has_tdma(char *prefix)
+{
+	INITVALUECACHE();
+	ret = mac80211_has_iftype(get_ath9k_phy_ifname(prefix), NL80211_IFTYPE_TDMA);
+	EXITVALUECACHE();
+	return ret;
+}
+
 static int mac80211_get_antennas(int phy, int which, int direction)
 {
 	struct nlattr *tb[NL80211_ATTR_MAX + 1];
