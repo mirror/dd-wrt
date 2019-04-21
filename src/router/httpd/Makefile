@@ -280,6 +280,9 @@ endif
 ifeq ($(CONFIG_OLSRD),y)
 CFLAGS += -DHAVE_OLSRD
 endif
+ifeq ($(CONFIG_MAC80211_MESH),y)
+CFLAGS += -DHAVE_MAC80211_MESH
+endif
 ifeq ($(CONFIG_HOTSPOT),y)
 CFLAGS += -DHAVE_HOTSPOT
 endif
