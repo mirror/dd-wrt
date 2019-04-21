@@ -4080,7 +4080,7 @@ static void save_prefix(webs_t wp, char *prefix)
 
 		if (wl_newmode)
 			if ((!strcmp(wl_newmode, "ap") || !strcmp(wl_newmode, "wdsap")
-			     || !strcmp(wl_newmode, "infra") || !strcmp(wl_newmode, "wdssta"))
+			     || !strcmp(wl_newmode, "infra") || !strcmp(wl_newmode, "mesh") || !strcmp(wl_newmode, "wdssta"))
 			    && nvram_invmatch("wan_proto", "3g")) {
 				nvram_set("wan_proto", "disabled");
 			}
