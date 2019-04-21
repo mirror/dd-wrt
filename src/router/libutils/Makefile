@@ -195,6 +195,9 @@ ATH9KFILES += libwireless/wl_ath9k.c libwireless/mac80211info.c libwireless/mac8
 ATH9KLDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
 ATH9KCFLAGS += -DNDEBUG -I$(LINUXDIR)/brcm/$(ARCH)/include
 ATH9KCFLAGS += -DNDEBUG -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
+ifeq ($(CONFIG_MAC80211_MESH),y)
+ATH9KCFLAGS += -DHAVE_MAC80211_MESH
+endif
 
 
 ifeq ($(CONFIG_SYSLOG),y)
