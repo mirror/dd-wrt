@@ -1787,6 +1787,7 @@ void mac80211_set_antennas(int phy, uint32_t tx_ant, uint32_t rx_ant)
 	return;
 }
 
+#ifdef HAVE_MAC80211_MESH
 static int mac80211_has_iftype(int phy, enum nl80211_iftype iftype)
 {
 	struct nlattr *tb[NL80211_ATTR_MAX + 1];
@@ -1842,6 +1843,7 @@ int has_tdma(const char *prefix)
 	EXITVALUECACHE();
 	return ret;
 }
+#endif
 
 static int mac80211_get_antennas(int phy, int which, int direction)
 {
