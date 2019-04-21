@@ -197,10 +197,16 @@ void start_dnsmasq(void)
 		fprintf(fp, "listen-address=127.0.0.1");
 		if (canlan())
 			fprintf(fp, ",%s", nvram_safe_get("lan_ipaddr"));
+		if (nvram_exists("dnsmasq_addlisten")) {
+			fprintf(fp, ",%s", nvram_safe_get("dnsmasq_addlisten"));
+		}
 	} else {
 		fprintf(fp, "interface=");
 		if (canlan())
 			fprintf(fp, "%s", nvram_safe_get("lan_ifname"));
+		if (nvram_exists("dnsmasq_addif")) {
+			fprintf(fp, ",%s", nvram_safe_get("dnsmasq_addif"));
+		}
 	}
 	int mdhcpcount = 0;
 	if (nvram_exists("mdhcpd_count")) {
@@ -220,9 +226,6 @@ void start_dnsmasq(void)
 				fprintf(fp, "%s", ifname);
 		}
 		free(word);
-	}
-	if (nvram_exists("dnsmasq_addif")) {
-		fprintf(fp, ",%s", nvram_safe_get("dnsmasq_addif"));
 	}
 	fprintf(fp, "\n");
 	fprintf(fp, "resolv-file=/tmp/resolv.dnsmasq\n");
