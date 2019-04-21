@@ -935,7 +935,8 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 #endif
 			websWrite(wp, "<option value=\"radius\" %s>%s</option>\n", selmatch(var, "radius", "selected=\"selected\""), wpa_enc_label(buf, "radius"));
 		}
-		websWrite(wp, "<option value=\"wep\" %s>%s</option>\n", selmatch(var, "wep", "selected=\"selected\""), wpa_enc_label(buf, "wep"));
+		if (!nvram_match(sta, "mesh"))
+		    websWrite(wp, "<option value=\"wep\" %s>%s</option>\n", selmatch(var, "wep", "selected=\"selected\""), wpa_enc_label(buf, "wep"));
 	}
 #ifdef HAVE_WPA_SUPPLICANT
 #ifndef HAVE_MICRO
