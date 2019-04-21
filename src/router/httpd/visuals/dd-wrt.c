@@ -4597,9 +4597,9 @@ void show_authtable(webs_t wp, char *prefix, int show80211x)
 	};
 
 	struct pair s_authpair_wpa[] = {
-		{"WPA Personal", "psk", alwaystrue, alwaystrue, alwaystrue},
-		{"WPA2 Personal", "psk2", alwaystrue, alwaystrue, alwaystrue},
-		{"WPA2 Personal with SHA256", "psk2-sha256", has_wpa3, is_mac80211, alwaystrue},
+		{"WPA Personal", "psk", alwaystrue, alwaystrue, nomesh},
+		{"WPA2 Personal", "psk2", alwaystrue, alwaystrue, nomesh},
+		{"WPA2 Personal with SHA256", "psk2-sha256", has_wpa3, is_mac80211, nomesh},
 		{"WPA3 Personal / SAE", "psk3", has_wpa3, is_mac80211, alwaystrue},
 		{"WPA Enterprise", "wpa", aponly, alwaystrue, nomesh},
 		{"WPA2 Enterprise", "wpa2", aponly, alwaystrue, nomesh},
