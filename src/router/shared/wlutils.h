@@ -201,6 +201,8 @@ static inline int has_ad(const char *prefix)
 #endif
 
 #ifdef HAVE_ATH9K
+extern int has_mesh(const char *prefix);
+extern int has_tdma(const char *prefix);
 extern int has_gcmp(const char *prefix);
 extern int has_cmac(const char *prefix);
 extern int has_gcmp_128(const char *prefix);
@@ -210,6 +212,14 @@ extern int has_gmac_128(const char *prefix);
 extern int has_gmac_256(const char *prefix);
 extern int has_cmac_256(const char *prefix);
 #else
+static inline int has_mesh(const char *prefix)
+{
+	return 0;
+}
+static inline int has_tdma(const char *prefix)
+{
+	return 0;
+}
 static inline int has_gcmp(const char *prefix)
 {
 	return 0;
