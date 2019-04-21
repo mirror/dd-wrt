@@ -2511,6 +2511,10 @@ void ej_getwirelessmode(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "Capture(wl_basic.wdssta)");
 	if (nvram_match(mode, "wdsap"))
 		websWrite(wp, "Capture(wl_basic.wdsap)");
+	if (nvram_match(mode, "mesh"))
+		websWrite(wp, "Capture(wl_basic.mesh)");
+	if (nvram_match(mode, "tdma"))
+		websWrite(wp, "Capture(wl_basic.tdma)");
 	websWrite(wp, "</script>&nbsp;\n");
 }
 
