@@ -1512,7 +1512,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 	if (nvram_match(wl_net_mode, "disabled"))
 		return;
 	if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
-	    || nvram_match(wl_mode, "infra")) {
+	    || nvram_match(wl_mode, "infra") || nvram_match(wl_mode, "mesh")) {
 		char wl_channel[16];
 
 		sprintf(wl_channel, "%s_channel", prefix);
@@ -2508,6 +2508,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 
 		if (nvram_nmatch("ap", "%s_mode", var)
 		    || nvram_nmatch("wdsap", "%s_mode", var)
+		    || nvram_nmatch("mesh", "%s_mode", var)
 		    || nvram_nmatch("infra", "%s_mode", var)) {
 			sprintf(power, "%s_maxassoc", var);
 			websWrite(wp, "<div class=\"setting\">\n");
@@ -2636,6 +2637,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 #ifdef HAVE_MADWIFI
 			if (nvram_nmatch("ap", "%s_mode", var)
 			    || nvram_nmatch("wdsap", "%s_mode", var)
+			    || nvram_nmatch("mesh", "%s_mode", var)
 			    || nvram_nmatch("infra", "%s_mode", var)) {
 				sprintf(power, "%s_maxassoc", var);
 				websWrite(wp, "<div class=\"setting\">\n");
@@ -3294,7 +3296,9 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 #if defined(HAVE_RT2880) && !defined(HAVE_MT76)
 #else
 	if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
-	    || nvram_match(wl_mode, "infra"))
+	    || nvram_match(wl_mode, "infra")
+	    || nvram_match(wl_mode, "mesh")
+	    )
 #endif
 	{
 
@@ -3498,7 +3502,9 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 #ifdef HAVE_MADWIFI
 	if (nvram_nmatch("ap", "%s_mode", prefix)
 	    || nvram_nmatch("wdsap", "%s_mode", prefix)
-	    || nvram_nmatch("infra", "%s_mode", prefix)) {
+	    || nvram_nmatch("infra", "%s_mode", prefix)
+	    || nvram_nmatch("mesh", "%s_mode", prefix)
+	    ) {
 		sprintf(power, "%s_maxassoc", prefix);
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "wl_adv.label10", NULL);
@@ -3724,7 +3730,9 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 #if defined(HAVE_RT2880) && !defined(HAVE_MT76)
 #else
 	if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
-	    || nvram_match(wl_mode, "infra"))
+	    || nvram_match(wl_mode, "infra")
+	    || nvram_match(wl_mode, "mesh")
+	    )
 #endif
 	{
 
@@ -3860,7 +3868,9 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	    || nvram_match(wl_mode, "apstawet"))
 #else
 	if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
-	    || nvram_match(wl_mode, "infra"))
+	    || nvram_match(wl_mode, "infra")
+	    || nvram_match(wl_mode, "mesh")
+	    )
 #endif
 	{
 // ssid broadcast
@@ -4249,7 +4259,9 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 #ifdef HAVE_MADWIFI
 	if (nvram_nmatch("ap", "%s_mode", prefix)
 	    || nvram_nmatch("wdsap", "%s_mode", prefix)
-	    || nvram_nmatch("infra", "%s_mode", prefix)) {
+	    || nvram_nmatch("infra", "%s_mode", prefix)
+	    || nvram_nmatch("mesh", "%s_mode", prefix)
+	    ) {
 		sprintf(power, "%s_maxassoc", prefix);
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "wl_adv.label10", NULL);
