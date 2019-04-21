@@ -2738,6 +2738,7 @@ int is_mt7615(const char *prefix)
 	EXITVALUECACHE();
 	return ret;
 }
+
 int is_mt7603(const char *prefix)
 {
 	INITVALUECACHE();
@@ -2745,6 +2746,7 @@ int is_mt7603(const char *prefix)
 	EXITVALUECACHE();
 	return ret;
 }
+
 int is_mt76x0(const char *prefix)
 {
 	INITVALUECACHE();
@@ -2752,6 +2754,7 @@ int is_mt76x0(const char *prefix)
 	EXITVALUECACHE();
 	return ret;
 }
+
 int is_mt76x2(const char *prefix)
 {
 	INITVALUECACHE();
@@ -2759,6 +2762,7 @@ int is_mt76x2(const char *prefix)
 	EXITVALUECACHE();
 	return ret;
 }
+
 int is_mt76(const char *prefix)
 {
 	return (is_mt7615(prefix) || is_mt7603(prefix) || is_mt76x0(prefix) || is_mt76x2(prefix));
