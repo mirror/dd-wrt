@@ -35,7 +35,7 @@ ipeth-configure:
 
 	cd $(TOP)/ipeth/libxml2 && make
 	
-#	cd $(TOP)/ipeth/libplist && ./autogen.sh
+	cd $(TOP)/ipeth/libplist && ./autogen.sh
 	cd $(TOP)/ipeth/libplist && ./configure --host=$(ARCH)-linux --without-cython CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) $(MIPS16_OPT) -I$(TOP)/ipeth/libxml2/include -I$(TOP)/ipeth/libplist/include -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		CXXFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) $(MIPS16_OPT) -I$(TOP)/ipeth/libplist -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		LDFLAGS="-L$(TOP)/ipeth/libxml2/.libs -lm -ffunction-sections -fdata-sections -Wl,--gc-sections" \
