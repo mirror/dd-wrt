@@ -487,6 +487,9 @@
 /* Define to 1 if you have the `RSA_meth_set_pub_enc' function. */
 #undef HAVE_RSA_METH_SET_PUB_ENC
 
+/* Define to 1 if you have the `RSA_meth_set_sign' function. */
+#undef HAVE_RSA_METH_SET_SIGN
+
 /* Define to 1 if you have the `RSA_set0_key' function. */
 #undef HAVE_RSA_SET0_KEY
 
