@@ -30,6 +30,7 @@ glib20-configure: libffi zlib util-linux
 	cd glib20/libiconv && touch *
 	$(MAKE) -C glib20/libiconv clean all
 
+	cd glib20/gettext && autoreconf
 	cd glib20/gettext && ./configure --disable-libmount --enable-shared --disable-static --disable-openmp --host=$(ARCH)-linux  LDFLAGS="$(COPTS) -std=gnu89 $(MIPS16_OPT) -D_GNU_SOURCE -fPIC -Drpl_malloc=malloc " CFLAGS="$(COPTS)  $(MIPS16_OPT)  -D_GNU_SOURCE -fPIC -Drpl_malloc=malloc -I$(TOP)/glib20/libiconv/include -L$(TOP)/glib20/libiconv/lib/.libs" CXXFLAGS="$(COPTS)  $(MIPS16_OPT) -D_GNU_SOURCE -fPIC -Drpl_malloc=malloc -I$(TOP)/glib20/libiconv/include -L$(TOP)/glib20/libiconv/lib/.libs"
 	cd glib20/gettext && touch *
 	cd glib20/gettext/gettext-tools/examples && touch *
