@@ -4505,7 +4505,7 @@ static int aponly(const char *prefix)
 
 static int nomesh(const char *prefix)
 {
-	return (nvram_nmatch("mesh", "%s_mode", prefix));
+	return (!nvram_nmatch("mesh", "%s_mode", prefix));
 }
 
 static int aponly_wpa3(const char *prefix)
