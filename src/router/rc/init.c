@@ -183,14 +183,16 @@ pid_t ddrun_shell(int timeout, int nowait)
 #endif
 		{
 			execve(SHELL, (char *[]) {
-			       "/bin/login", NULL}
+			       "/bin/login", NULL
+			       }
 			       , envp);
 		}
 #ifdef HAVE_REGISTER
 		else {
 			envp[6] = "SHELL=/sbin/regshell";
 			execve("/sbin/regshell", (char *[]) {
-			       "/sbin/regshell", NULL}, envp);
+			       "/sbin/regshell", NULL
+			       }, envp);
 		}
 #endif
 

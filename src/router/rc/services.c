@@ -1070,7 +1070,7 @@ static void handle_spotpass(void)
 
 struct SERVICES {
 	char *servicename;
-	void (*service) (void);
+	void (*service)(void);
 };
 
 static void handle_ddns(void)
@@ -1378,78 +1378,78 @@ static void handle_eop(void)
 }
 #endif
 static struct SERVICES services_def[] = {
-	{"dhcp", handle_dhcpd},
-	{"index", handle_index},
-	{"router", handle_router},
-	{"hotspot", handle_hotspot},
+	{ "dhcp", handle_dhcpd },
+	{ "index", handle_index },
+	{ "router", handle_router },
+	{ "hotspot", handle_hotspot },
 //      {"anchorfree", handle_anchorfree},
-	{"services", handle_services},
+	{ "services", handle_services },
 #if defined(HAVE_FTP) || defined(HAVE_SAMBA3) || defined(HAVE_MINIDLNA)  || defined(HAVE_RAID)
-	{"nassrv", handle_nassrv},
+	{ "nassrv", handle_nassrv },
 #endif
-	{"management", handle_management},
+	{ "management", handle_management },
 #ifdef HAVE_3G
-	{"start_3g", handle_pppoe},
-	{"stop_3g", handle_spppoe},
+	{ "start_3g", handle_pppoe },
+	{ "stop_3g", handle_spppoe },
 #endif
 #ifdef HAVE_PPPOATM
-	{"start_pppoa", handle_pppoe},
-	{"stop_pppoa", handle_spppoe},
+	{ "start_pppoa", handle_pppoe },
+	{ "stop_pppoa", handle_spppoe },
 #endif
-	{"start_pppoe", handle_pppoe},
-	{"stop_pppoe", handle_spppoe},
-	{"start_pptp", handle_pppoe},
-	{"stop_pptp", handle_spppoe},
+	{ "start_pppoe", handle_pppoe },
+	{ "stop_pppoe", handle_spppoe },
+	{ "start_pptp", handle_pppoe },
+	{ "stop_pptp", handle_spppoe },
 #ifdef HAVE_L2TP
-	{"start_l2tp", handle_pppoe},
+	{ "start_l2tp", handle_pppoe },
 #endif
 #ifdef HAVE_FREERADIUS
-	{"freeradius", handle_freeradius},
+	{ "freeradius", handle_freeradius },
 #endif
 #ifdef HAVE_HEARTBEAT
-	{"start_heartbeat", handle_pppoe},
+	{ "start_heartbeat", handle_pppoe },
 #endif
-	{"stop_pppoe", handle_spppoe},
-	{"stop_pptp", handle_spppoe},
+	{ "stop_pppoe", handle_spppoe },
+	{ "stop_pptp", handle_spppoe },
 #ifdef HAVE_L2TP
-	{"stop_l2tp", handle_spppoe},
+	{ "stop_l2tp", handle_spppoe },
 #endif
 #ifdef HAVE_HEARTBEAT
-	{"stop_heartbeat", handle_spppoe},
+	{ "stop_heartbeat", handle_spppoe },
 #endif
-	{"filters", handle_filters},
-	{"routing", handle_routing},
-	{"alive", handle_alive},
-	{"forward", handle_forward},
-	{"qos", handle_qos},
-	{"forward_upnp", handle_forwardupnp},
-	{"static_route_del", handle_routedel},
-	{"ddns", handle_ddns},
+	{ "filters", handle_filters },
+	{ "routing", handle_routing },
+	{ "alive", handle_alive },
+	{ "forward", handle_forward },
+	{ "qos", handle_qos },
+	{ "forward_upnp", handle_forwardupnp },
+	{ "static_route_del", handle_routedel },
+	{ "ddns", handle_ddns },
 	// {"start_ping", handle_ping},
-	{"http_upgrade", handle_upgrade},
+	{ "http_upgrade", handle_upgrade },
 #ifdef HAVE_MILKFISH
-	{"milkfish", handle_milkfish},
+	{ "milkfish", handle_milkfish },
 #endif
-	{"wireless", handle_wireless},
-	{"wireless_2", handle_wireless_2},
-	{"dhcp_release", handle_dhcp_release},
+	{ "wireless", handle_wireless },
+	{ "wireless_2", handle_wireless_2 },
+	{ "dhcp_release", handle_dhcp_release },
 #ifdef HAVE_USB
-	{"usbdrivers", handle_usbdrivers},
+	{ "usbdrivers", handle_usbdrivers },
 #endif
 #ifdef HAVE_EOP_TUNNEL
-	{"eop", handle_eop},
+	{ "eop", handle_eop },
 #endif
 #ifdef HAVE_SPOTPASS
-	{"spotpass", handle_spotpass},
+	{ "spotpass", handle_spotpass },
 #endif
 #ifdef HAVE_IPV6
-	{"ipv6", handle_ipv6},
+	{ "ipv6", handle_ipv6 },
 #endif
-	{"pptp", handle_pptp},
+	{ "pptp", handle_pptp },
 #ifdef HAVE_SPEEDCHECKER
-	{"speedchecker", handle_speedchecker},
+	{ "speedchecker", handle_speedchecker },
 #endif
-	{NULL, NULL}
+	{ NULL, NULL }
 };
 
 static int start_single_service_main(int argc, char **argv)
