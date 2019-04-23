@@ -75,7 +75,7 @@ void start_softether(void)
 		eval(VPNDIR "/vpnbridge", "start");
 		reload |= 4;
 	}
-	if (reload) {
+	if (reload && *nvram_safe_get("sether_config")) {
 		eval("sleep", "3");
 		if (reload & 1)
 			eval("/usr/bin/vpncmd", "localhost", "/SERVER", "/CMD", "ConfigSet", "//tmp//vpn_client.config", "quit");
