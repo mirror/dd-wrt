@@ -36,6 +36,7 @@ static void stop_softetherserver(void);
 
 void start_softether(void)
 {
+	int reload = 0;
 	if (!nvram_matchi("setherclient_enable", 1)) {
 		stop_softetherclient();
 	}
@@ -47,7 +48,6 @@ void start_softether(void)
 	if (!nvram_matchi("setherbridge_enable", 1)) {
 		stop_softetherbridge();
 	}
-
 	if (nvram_matchi("setherclient_enable", 1)) {
 		mkdir(VPNDIR, 0700);
 		write_nvram(VPNDIR "vpn_client.config", "sether_config");
@@ -55,8 +55,7 @@ void start_softether(void)
 		eval("ln", "-sf", EXECDIR "/vpnclient", VPNDIR "/");
 		eval("ln", "-sf", EXECDIR "/lang.config", VPNDIR "/");
 		eval(VPNDIR "/vpnclient", "start");
-		eval("sleep", "15");
-		eval("/usr/bin/vpncmd", "localhost", "/CLIENT", "/CMD", "ConfigSet", "//tmp//vpn_server.config", "quit");
+		reload = 1;
 	}
 	if (nvram_matchi("setherserver_enable", 1)) {
 		mkdir(VPNDIR, 0700);
@@ -65,8 +64,7 @@ void start_softether(void)
 		eval("ln", "-sf", EXECDIR "/vpnserver", VPNDIR "/");
 		eval("ln", "-sf", EXECDIR "/lang.config", VPNDIR "/");
 		eval(VPNDIR "/vpnserver", "start");
-		eval("sleep", "15");
-		eval("/usr/bin/vpncmd", "localhost", "/SERVER", "/CMD", "ConfigSet", "//tmp//vpn_server.config", "quit");
+		reload = 1;
 	}
 	if (nvram_matchi("setherbridge_enable", 1)) {
 		mkdir(VPNDIR, 0700);
@@ -75,6 +73,11 @@ void start_softether(void)
 		eval("ln", "-sf", EXECDIR "/vpnbridge", VPNDIR "/");
 		eval("ln", "-sf", EXECDIR "/lang.config", VPNDIR "/");
 		eval(VPNDIR "/vpnbridge", "start");
+	}
+	if (reload) {
+		eval("sleep", "3");
+		eval("/usr/bin/vpncmd", "localhost", "/SERVER", "/CMD", "ConfigSet", "//tmp//vpn_server.config", "quit");
+
 	}
 	return;
 }
