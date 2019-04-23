@@ -55,7 +55,8 @@ struct vlan_board_s {
 	int lan_vlan;
 } vlan_boards[] = {
 	{
-"reference board", "Broadcom Sentry5", BCM_NUM_PORTS, BCM_WAN_PORT, BCM_LAN_MIN_PORT, BCM_LAN_MAX_PORT, 0, BCM_DEF_WAN_VLAN, BCM_DEF_LAN_VLAN},};
+	 "reference board", "Broadcom Sentry5", BCM_NUM_PORTS, BCM_WAN_PORT, BCM_LAN_MIN_PORT, BCM_LAN_MAX_PORT, 0, BCM_DEF_WAN_VLAN, BCM_DEF_LAN_VLAN },
+};
 
 int vlan_configured = 0;
 int brcm_tag_driver_enabled = 0;

@@ -38,25 +38,25 @@ struct syncservice {
 };
 
 static struct syncservice service[] = {
-	{"cron_enable", "cron"},
+	{ "cron_enable", "cron" },
 #ifdef HAVE_SNMP
-	{"snmpd_enable", "snmp"},
+	{ "snmpd_enable", "snmp" },
 #endif
 #ifdef HAVE_CHILLI
-	{"chilli_enable", "chilli"},
-	{"hotss_enable", "chilli"},
+	{ "chilli_enable", "chilli" },
+	{ "hotss_enable", "chilli" },
 #endif
 #ifdef HAVE_WIFIDOG
-	{"wd_enable", "wifidog"},
+	{ "wd_enable", "wifidog" },
 #endif
 #ifdef HAVE_UNBOUND
-	{"recursive_dns", "unbound"},
+	{ "recursive_dns", "unbound" },
 #endif
 #ifdef HAVE_DNSCRYPT
-	{"dns_crypt", "dnsmasq"},
+	{ "dns_crypt", "dnsmasq" },
 #endif
 #ifdef HAVE_TOR
-	{"tor_enable", "tor"},
+	{ "tor_enable", "tor" },
 #endif
 };
 
