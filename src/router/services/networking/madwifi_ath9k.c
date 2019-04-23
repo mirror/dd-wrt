@@ -1514,8 +1514,8 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			fprintf(fp, "ap_scan=1\n");
 		fprintf(fp, "fast_reauth=1\n");
 		fprintf(fp, "eapol_version=1\n");
-		// fprintf (fp, "ctrl_interface_group=0\n");
-		// fprintf (fp, "ctrl_interface=/var/run/wpa_supplicant\n");
+		if (ispsk3)
+			fprintf(fp, "\tsae_groups=19 20 21\n");
 		fprintf(fp, "network={\n");
 		char *netmode = nvram_nget("%s_net_mode", prefix);
 		char *channelbw = nvram_nget("%s_channelbw", prefix);
@@ -1690,8 +1690,6 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			else
 				fprintf(fp, "\tpsk=\"%s\"\n", wpa_psk);
 		}
-		if (ispsk3)
-			fprintf(fp, "\tsae_groups=19 20 21\n");
 		fprintf(fp, "}\n");
 		char extra[32];
 		sprintf(extra, "%s_supplicantext", prefix);
