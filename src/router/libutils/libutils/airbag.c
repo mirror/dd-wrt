@@ -401,7 +401,8 @@ static const struct {
 	short sun_family;
 	char sun_path[9];
 } log_addr = {
-AF_UNIX, "/dev/log"};
+	AF_UNIX, "/dev/log"
+};
 
 static int log_fd = -1;
 static int log_facility = LOG_USER;
@@ -512,7 +513,7 @@ static void _airbag_symbol(void *pc, const char *sname, void *saddr)
 			sname = "";
 			saddr = info.dli_fbase;
 		}
-		offset = (ptrdiff_t) pc - (ptrdiff_t) saddr;
+		offset = (ptrdiff_t)pc - (ptrdiff_t)saddr;
 		airbag_printf("%s[0x%" FMTBIT "lx](%s+0x%" FMTBIT "lx)[0x%" FMTBIT "lx]", info.dli_fname, (unsigned long)info.dli_fbase, demangle(sname), offset, (unsigned long)pc);
 		printed = 1;
 	}
@@ -903,14 +904,14 @@ struct faults {
 #define BUS_MCEERR_AO	5
 #endif
 static struct fault sigbus_fault[] = {
-	{BUS_ADRALN, "invalid address alignment"},
-	{BUS_ADRERR, "nonexistent physical address"},
-	{BUS_OBJERR, "object-specific hardware error"},
+	{ BUS_ADRALN, "invalid address alignment" },
+	{ BUS_ADRERR, "nonexistent physical address" },
+	{ BUS_OBJERR, "object-specific hardware error" },
 #ifdef  BUS_MCEERR_AR
-	{BUS_MCEERR_AR, "hardware memory error consumed on a machine check: action required"},
+	{ BUS_MCEERR_AR, "hardware memory error consumed on a machine check: action required" },
 #endif
 #ifdef  BUS_MCEERR_AO
-	{BUS_MCEERR_AO, "hardware memory error detected in process but not consumed: action optional"},
+	{ BUS_MCEERR_AO, "hardware memory error detected in process but not consumed: action optional" },
 #endif
 };
 
@@ -937,21 +938,21 @@ static struct fault sigbus_fault[] = {
 #endif
 
 static struct fault sigfpe_fault[] = {
-	{FPE_INTDIV, "integer divide by zero"},
-	{FPE_INTOVF, "integer overflow"},
-	{FPE_FLTDIV, "floating-point divide by zero"},
-	{FPE_FLTOVF, "floating-point overflow"},
-	{FPE_FLTUND, "floating-point underflow"},
-	{FPE_FLTRES, "floating-point inexact result"},
-	{FPE_FLTINV, "floating-point invalid operation"},
-	{FPE_FLTSUB, "subscript out of range"},
-	{__FPE_DECOVF, "decimal overflow"},
-	{__FPE_DECDIV, "decimal division by zero"},
-	{__FPE_DECERR, "packed decimal error"},
-	{__FPE_INVASC, "invalid ASCII digit"},
-	{__FPE_INVDEC, "invalid decimal digit"},
-	{FPE_FLTUNK, "undiagnosed floating-point exception"},
-	{FPE_CONDTRAP, "trap on condition"}
+	{ FPE_INTDIV, "integer divide by zero" },
+	{ FPE_INTOVF, "integer overflow" },
+	{ FPE_FLTDIV, "floating-point divide by zero" },
+	{ FPE_FLTOVF, "floating-point overflow" },
+	{ FPE_FLTUND, "floating-point underflow" },
+	{ FPE_FLTRES, "floating-point inexact result" },
+	{ FPE_FLTINV, "floating-point invalid operation" },
+	{ FPE_FLTSUB, "subscript out of range" },
+	{ __FPE_DECOVF, "decimal overflow" },
+	{ __FPE_DECDIV, "decimal division by zero" },
+	{ __FPE_DECERR, "packed decimal error" },
+	{ __FPE_INVASC, "invalid ASCII digit" },
+	{ __FPE_INVDEC, "invalid decimal digit" },
+	{ FPE_FLTUNK, "undiagnosed floating-point exception" },
+	{ FPE_CONDTRAP, "trap on condition" }
 };
 
 #ifndef ILL_BADIADDR
@@ -965,17 +966,17 @@ static struct fault sigfpe_fault[] = {
 #endif
 
 static struct fault sigill_fault[] = {
-	{ILL_ILLOPC, "illegal opcode"},
-	{ILL_ILLOPN, "illegal operand"},
-	{ILL_ILLADR, "illegal addressing mode"},
-	{ILL_ILLTRP, "illegal trap"},
-	{ILL_PRVOPC, "privileged opcode"},
-	{ILL_PRVREG, "privileged register"},
-	{ILL_COPROC, "coprocessor error"},
-	{ILL_BADSTK, "stack error"},
-	{ILL_BADIADDR, "unimplemented instruction address"},
-	{__ILL_BREAK, "illegal break"},
-	{__ILL_BNDMOD, "bundle-update (modification) in progress"},
+	{ ILL_ILLOPC, "illegal opcode" },
+	{ ILL_ILLOPN, "illegal operand" },
+	{ ILL_ILLADR, "illegal addressing mode" },
+	{ ILL_ILLTRP, "illegal trap" },
+	{ ILL_PRVOPC, "privileged opcode" },
+	{ ILL_PRVREG, "privileged register" },
+	{ ILL_COPROC, "coprocessor error" },
+	{ ILL_BADSTK, "stack error" },
+	{ ILL_BADIADDR, "unimplemented instruction address" },
+	{ __ILL_BREAK, "illegal break" },
+	{ __ILL_BNDMOD, "bundle-update (modification) in progress" },
 };
 
 #ifndef SEGV_BNDERR
@@ -994,13 +995,13 @@ static struct fault sigill_fault[] = {
 #define SEGV_ADIPERR	7	/* Precise MCD exception */
 #endif
 static struct fault sigsegv_fault[] = {
-	{SEGV_MAPERR, "address not mapped to object"},
-	{SEGV_ACCERR, "invalid permissions for mapped object"},
-	{SEGV_BNDERR, "failed address bound checks"},
-	{SEGV_PKUERR, "failed protection key checks"},
-	{SEGV_ACCADI, "ADI not enabled for mapped object"},
-	{SEGV_ADIDERR, "Disrupting MCD error"},
-	{SEGV_ADIPERR, "Precise MCD exception"},
+	{ SEGV_MAPERR, "address not mapped to object" },
+	{ SEGV_ACCERR, "invalid permissions for mapped object" },
+	{ SEGV_BNDERR, "failed address bound checks" },
+	{ SEGV_PKUERR, "failed protection key checks" },
+	{ SEGV_ACCADI, "ADI not enabled for mapped object" },
+	{ SEGV_ADIDERR, "Disrupting MCD error" },
+	{ SEGV_ADIPERR, "Precise MCD exception" },
 };
 
 #ifndef TRAP_BRKPT
@@ -1020,19 +1021,19 @@ static struct fault sigsegv_fault[] = {
 #endif
 
 static struct fault sigtrap_fault[] = {
-	{TRAP_BRKPT, "process breakpoint"},
-	{TRAP_TRACE, "process trace trap"},
-	{TRAP_BRANCH, "process taken branch trap"},
-	{TRAP_HWBKPT, "hardware breakpoint/watchpoint"},
-	{TRAP_UNK, "undiagnosed trap"},
+	{ TRAP_BRKPT, "process breakpoint" },
+	{ TRAP_TRACE, "process trace trap" },
+	{ TRAP_BRANCH, "process taken branch trap" },
+	{ TRAP_HWBKPT, "hardware breakpoint/watchpoint" },
+	{ TRAP_UNK, "undiagnosed trap" },
 };
 
 static struct faults signals[] = {
-	{SIGBUS, sizeof(sigbus_fault) / sizeof(struct fault), sigbus_fault},
-	{SIGFPE, sizeof(sigfpe_fault) / sizeof(struct fault), sigfpe_fault},
-	{SIGILL, sizeof(sigill_fault) / sizeof(struct fault), sigill_fault},
-	{SIGSEGV, sizeof(sigsegv_fault) / sizeof(struct fault), sigsegv_fault},
-	{SIGTRAP, sizeof(sigtrap_fault) / sizeof(struct fault), sigtrap_fault},
+	{ SIGBUS, sizeof(sigbus_fault) / sizeof(struct fault), sigbus_fault },
+	{ SIGFPE, sizeof(sigfpe_fault) / sizeof(struct fault), sigfpe_fault },
+	{ SIGILL, sizeof(sigill_fault) / sizeof(struct fault), sigill_fault },
+	{ SIGSEGV, sizeof(sigsegv_fault) / sizeof(struct fault), sigsegv_fault },
+	{ SIGTRAP, sizeof(sigtrap_fault) / sizeof(struct fault), sigtrap_fault },
 };
 
 static void sigHandler(int sigNum, siginfo_t * si, void *ucontext)

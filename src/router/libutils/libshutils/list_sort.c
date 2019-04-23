@@ -19,7 +19,7 @@
  * to chaining of merge() calls: null-terminated, no reserved or
  * sentinel head node, "prev" links not maintained.
  */
-static struct dd_list_head *merge(void *priv, int (*cmp) (void *priv, struct dd_list_head * a, struct dd_list_head * b), struct dd_list_head *a, struct dd_list_head *b)
+static struct dd_list_head *merge(void *priv, int (*cmp)(void *priv, struct dd_list_head * a, struct dd_list_head * b), struct dd_list_head *a, struct dd_list_head *b)
 {
 	struct dd_list_head head, *tail = &head;
 
@@ -45,7 +45,7 @@ static struct dd_list_head *merge(void *priv, int (*cmp) (void *priv, struct dd_
  * prev-link restoration pass, or maintaining the prev links
  * throughout.
  */
-static void merge_and_restore_back_links(void *priv, int (*cmp) (void *priv, struct dd_list_head * a, struct dd_list_head * b), struct dd_list_head *head, struct dd_list_head *a, struct dd_list_head *b)
+static void merge_and_restore_back_links(void *priv, int (*cmp)(void *priv, struct dd_list_head * a, struct dd_list_head * b), struct dd_list_head *head, struct dd_list_head *a, struct dd_list_head *b)
 {
 	struct dd_list_head *tail = head;
 
@@ -95,7 +95,7 @@ static void merge_and_restore_back_links(void *priv, int (*cmp) (void *priv, str
  * @b. If @a and @b are equivalent, and their original relative
  * ordering is to be preserved, @cmp must return 0.
  */
-void dd_list_sort(void *priv, struct dd_list_head *head, int (*cmp) (void *priv, struct dd_list_head * a, struct dd_list_head * b))
+void dd_list_sort(void *priv, struct dd_list_head *head, int (*cmp)(void *priv, struct dd_list_head * a, struct dd_list_head * b))
 {
 	struct dd_list_head *part[MAX_LIST_LENGTH_BITS + 1];	/* sorted partial lists
 								   -- last slot is a sentinel */
