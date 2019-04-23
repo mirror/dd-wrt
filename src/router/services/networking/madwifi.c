@@ -731,13 +731,13 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		fclose(fp);
 		sprintf(psk, "-i%s", prefix);
 #ifdef HAVE_RELAYD
-		if ((nvram_match(wmode, "wdssta"))
+		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh"))
 		    && nvram_matchi(bridged, 1))
 			eval("wpa_supplicant", "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
 		else
 			eval("wpa_supplicant", background, driver, psk, "-c", fstr);
 #else
-		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "wet"))
+		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "wet") || nvram_match(wmode, "mesh"))
 		    && nvram_matchi(bridged, 1))
 			eval("wpa_supplicant", "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
 		else
@@ -768,13 +768,13 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		eval("iwpriv", prefix, "hostroaming", "2");
 #ifdef HAVE_RELAYD
 		if (nvram_matchi(bridged, 1)
-		    && (nvram_match(wmode, "wdssta")))
+		    && (nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh")))
 			eval("wpa_supplicant", "-b", nvram_safe_get("lan_ifname"), background, driver, psk, "-c", fstr);
 		else
 			eval("wpa_supplicant", background, driver, psk, "-c", fstr);
 #else
 		if (nvram_matchi(bridged, 1)
-		    && (nvram_match(wmode, "wdssta")
+		    && (nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh")
 			|| nvram_match(wmode, "wet")))
 			eval("wpa_supplicant", "-b", nvram_safe_get("lan_ifname"), background, driver, psk, "-c", fstr);
 		else
@@ -832,13 +832,13 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		fclose(fp);
 		sprintf(psk, "-i%s", prefix);
 #ifdef HAVE_RELAYD
-		if ((nvram_match(wmode, "wdssta"))
+		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh"))
 		    && nvram_matchi(bridged, 1))
 			eval("wpa_supplicant", "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
 		else
 			eval("wpa_supplicant", background, driver, psk, "-c", fstr);
 #else
-		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "wet"))
+		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "wet") || nvram_match(wmode, "mesh"))
 		    && nvram_matchi(bridged, 1))
 			eval("wpa_supplicant", "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
 		else
