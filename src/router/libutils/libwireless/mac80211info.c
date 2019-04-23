@@ -141,10 +141,10 @@ int mac80211_get_phyidx_by_vifname(const char *vif)
 }
 
 static struct nla_policy survey_policy[NL80211_SURVEY_INFO_MAX + 1] = {
-	[NL80211_SURVEY_INFO_FREQUENCY] = {.type = NLA_U32},
-	[NL80211_SURVEY_INFO_NOISE] = {.type = NLA_U8},
-	[NL80211_SURVEY_INFO_CHANNEL_TIME] = {.type = NLA_U64},
-	[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY] = {.type = NLA_U64},
+	[NL80211_SURVEY_INFO_FREQUENCY] = {.type = NLA_U32 },
+	[NL80211_SURVEY_INFO_NOISE] = {.type = NLA_U8 },
+	[NL80211_SURVEY_INFO_CHANNEL_TIME] = {.type = NLA_U64 },
+	[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY] = {.type = NLA_U64 },
 };
 
 int mac80211_parse_survey(struct nl_msg *msg, struct nlattr **sinfo)
@@ -509,37 +509,37 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 	mac80211_info->wci = add_to_wifi_clients(mac80211_info->wci);
 	// struct nlattr *sinfo[NL80211_STA_INFO_MAX + 1];
 	static struct nla_policy stats_policy[NL80211_STA_INFO_MAX + 1] = {
-		[NL80211_STA_INFO_INACTIVE_TIME] = {.type = NLA_U32},
-		[NL80211_STA_INFO_RX_BYTES] = {.type = NLA_U32},
-		[NL80211_STA_INFO_TX_BYTES] = {.type = NLA_U32},
-		[NL80211_STA_INFO_RX_PACKETS] = {.type = NLA_U32},
-		[NL80211_STA_INFO_TX_PACKETS] = {.type = NLA_U32},
-		[NL80211_STA_INFO_RX_COMPRESSED] = {.type = NLA_U32},
-		[NL80211_STA_INFO_TX_COMPRESSED] = {.type = NLA_U32},
-		[NL80211_STA_INFO_SIGNAL] = {.type = NLA_U8},
-		[NL80211_STA_INFO_DATA_ACK_SIGNAL_AVG] = {.type = NLA_U8},
-		[NL80211_STA_INFO_TX_BITRATE] = {.type = NLA_NESTED},
-		[NL80211_STA_INFO_RX_BITRATE] = {.type = NLA_NESTED},
-		[NL80211_STA_INFO_LLID] = {.type = NLA_U16},
-		[NL80211_STA_INFO_PLID] = {.type = NLA_U16},
-		[NL80211_STA_INFO_PLINK_STATE] = {.type = NLA_U8},
-		[NL80211_STA_INFO_CONNECTED_TIME] = {.type = NLA_U32},
-		[NL80211_STA_INFO_RADIONAME] = {.type = NLA_STRING},
-		[NL80211_STA_INFO_STA_FLAGS] = {.minlen = sizeof(struct nl80211_sta_flag_update)},
-		[NL80211_STA_INFO_EXPECTED_THROUGHPUT] = {.type = NLA_U32},
+		[NL80211_STA_INFO_INACTIVE_TIME] = {.type = NLA_U32 },
+		[NL80211_STA_INFO_RX_BYTES] = {.type = NLA_U32 },
+		[NL80211_STA_INFO_TX_BYTES] = {.type = NLA_U32 },
+		[NL80211_STA_INFO_RX_PACKETS] = {.type = NLA_U32 },
+		[NL80211_STA_INFO_TX_PACKETS] = {.type = NLA_U32 },
+		[NL80211_STA_INFO_RX_COMPRESSED] = {.type = NLA_U32 },
+		[NL80211_STA_INFO_TX_COMPRESSED] = {.type = NLA_U32 },
+		[NL80211_STA_INFO_SIGNAL] = {.type = NLA_U8 },
+		[NL80211_STA_INFO_DATA_ACK_SIGNAL_AVG] = {.type = NLA_U8 },
+		[NL80211_STA_INFO_TX_BITRATE] = {.type = NLA_NESTED },
+		[NL80211_STA_INFO_RX_BITRATE] = {.type = NLA_NESTED },
+		[NL80211_STA_INFO_LLID] = {.type = NLA_U16 },
+		[NL80211_STA_INFO_PLID] = {.type = NLA_U16 },
+		[NL80211_STA_INFO_PLINK_STATE] = {.type = NLA_U8 },
+		[NL80211_STA_INFO_CONNECTED_TIME] = {.type = NLA_U32 },
+		[NL80211_STA_INFO_RADIONAME] = {.type = NLA_STRING },
+		[NL80211_STA_INFO_STA_FLAGS] = {.minlen = sizeof(struct nl80211_sta_flag_update) },
+		[NL80211_STA_INFO_EXPECTED_THROUGHPUT] = {.type = NLA_U32 },
 	};
 	static struct nla_policy rate_policy[NL80211_RATE_INFO_MAX + 1] = {
-		[NL80211_RATE_INFO_BITRATE] = {.type = NLA_U16},
-		[NL80211_RATE_INFO_MCS] = {.type = NLA_U8},
-		[NL80211_RATE_INFO_40_MHZ_WIDTH] = {.type = NLA_FLAG},
-		[NL80211_RATE_INFO_SHORT_GI] = {.type = NLA_FLAG},
+		[NL80211_RATE_INFO_BITRATE] = {.type = NLA_U16 },
+		[NL80211_RATE_INFO_MCS] = {.type = NLA_U8 },
+		[NL80211_RATE_INFO_40_MHZ_WIDTH] = {.type = NLA_FLAG },
+		[NL80211_RATE_INFO_SHORT_GI] = {.type = NLA_FLAG },
 #ifdef NL80211_VHT_CAPABILITY_LEN
-		[NL80211_RATE_INFO_BITRATE32] = {.type = NLA_U32},
-		[NL80211_RATE_INFO_80_MHZ_WIDTH] = {.type = NLA_FLAG},
-		[NL80211_RATE_INFO_80P80_MHZ_WIDTH] = {.type = NLA_FLAG},
-		[NL80211_RATE_INFO_160_MHZ_WIDTH] = {.type = NLA_FLAG},
-		[NL80211_RATE_INFO_VHT_MCS] = {.type = NLA_U8},
-		[NL80211_RATE_INFO_VHT_NSS] = {.type = NLA_U8},
+		[NL80211_RATE_INFO_BITRATE32] = {.type = NLA_U32 },
+		[NL80211_RATE_INFO_80_MHZ_WIDTH] = {.type = NLA_FLAG },
+		[NL80211_RATE_INFO_80P80_MHZ_WIDTH] = {.type = NLA_FLAG },
+		[NL80211_RATE_INFO_160_MHZ_WIDTH] = {.type = NLA_FLAG },
+		[NL80211_RATE_INFO_VHT_MCS] = {.type = NLA_U8 },
+		[NL80211_RATE_INFO_VHT_NSS] = {.type = NLA_U8 },
 //              [NL80211_RATE_INFO_10_MHZ_WIDTH] = {.type = NLA_FLAG},
 //              [NL80211_RATE_INFO_5_MHZ_WIDTH] = {.type = NLA_FLAG},
 #endif
@@ -855,7 +855,6 @@ char *mac80211_get_vhtcaps(const char *interface, int shortgi, int vht80, int vh
 			 , (((cap & VHT_CAP_SU_BEAMFORMER_CAPABLE) && su_bf) || ((cap & VHT_CAP_MU_BEAMFORMER_CAPABLE) && mu_bf) && (sodimension & 2) ? "[SOUNDING-DIMENSION-3]" : "")
 			 , (((cap & VHT_CAP_SU_BEAMFORMEE_CAPABLE) && su_bf) || ((cap & VHT_CAP_MU_BEAMFORMEE_CAPABLE) && mu_bf) && (bfantenna & 4) ? "[BF-ANTENNA-4]" : "")
 			 , (((cap & VHT_CAP_SU_BEAMFORMER_CAPABLE) && su_bf) || ((cap & VHT_CAP_MU_BEAMFORMER_CAPABLE) && mu_bf) && (sodimension & 4) ? "[SOUNDING-DIMENSION-4]" : "")
-
 		    );
 	}
 out:
@@ -1012,9 +1011,9 @@ int has_shortgi(const char *interface)
 
 static struct nla_policy freq_policy[NL80211_FREQUENCY_ATTR_MAX + 1] = {
 	[NL80211_FREQUENCY_ATTR_FREQ] = {
-					 .type = NLA_U32},[NL80211_FREQUENCY_ATTR_DISABLED] = {
-											       .type = NLA_FLAG},[NL80211_FREQUENCY_ATTR_MAX_TX_POWER] = {
-																			  .type = NLA_U32},
+					 .type = NLA_U32 },[NL80211_FREQUENCY_ATTR_DISABLED] = {
+												.type = NLA_FLAG },[NL80211_FREQUENCY_ATTR_MAX_TX_POWER] = {
+																			    .type = NLA_U32 },
 };
 
 int mac80211_check_band(const char *interface, int checkband)
@@ -1195,11 +1194,11 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 }
 
 static struct wifi_channels ghz60channels[] = {
-	{.channel = 1,.freq = 58320,.max_eirp = 40,.hw_eirp = 40},
-	{.channel = 2,.freq = 60480,.max_eirp = 40,.hw_eirp = 40},
-	{.channel = 3,.freq = 62640,.max_eirp = 40,.hw_eirp = 40},
+	{.channel = 1,.freq = 58320,.max_eirp = 40,.hw_eirp = 40 },
+	{.channel = 2,.freq = 60480,.max_eirp = 40,.hw_eirp = 40 },
+	{.channel = 3,.freq = 62640,.max_eirp = 40,.hw_eirp = 40 },
 //      {.channel = 4,.freq = 64800,.max_eirp = 40,.hw_eirp = 40},
-	{.channel = -1,.freq = -1,.max_eirp = -1,.hw_eirp = -1},
+	{.channel = -1,.freq = -1,.max_eirp = -1,.hw_eirp = -1 },
 };
 
 struct wifi_channels *mac80211_get_channels(struct unl *unl, const char *interface, const char *country, int max_bandwidth_khz, unsigned char checkband)
@@ -1576,7 +1575,7 @@ static int get_max_mcs_index(const __u8 *mcs)
 		unsigned int mcs_octet = mcs_bit / 8;
 		unsigned int MCS_RATE_BIT = 1 << mcs_bit % 8;
 		bool mcs_rate_idx_set;
-		mcs_rate_idx_set = ! !(mcs[mcs_octet] & MCS_RATE_BIT);
+		mcs_rate_idx_set = !!(mcs[mcs_octet] & MCS_RATE_BIT);
 		if (!mcs_rate_idx_set)
 			continue;
 		if (prev_bit != mcs_bit - 1) {
@@ -1599,10 +1598,10 @@ static int get_ht_mcs(const __u8 *mcs)
 	unsigned int tx_max_num_spatial_streams, max_rx_supp_data_rate;
 	bool tx_mcs_set_defined, tx_mcs_set_equal, tx_unequal_modulation;
 	max_rx_supp_data_rate = ((mcs[10] >> 8) & ((mcs[11] & 0x3) << 8));
-	tx_mcs_set_defined = ! !(mcs[12] & (1 << 0));
+	tx_mcs_set_defined = !!(mcs[12] & (1 << 0));
 	tx_mcs_set_equal = !(mcs[12] & (1 << 1));
 	tx_max_num_spatial_streams = ((mcs[12] >> 2) & 3) + 1;
-	tx_unequal_modulation = ! !(mcs[12] & (1 << 4));
+	tx_unequal_modulation = !!(mcs[12] & (1 << 4));
 	/* XXX: else see 9.6.0e.5.3 how to get this I think */
 	return get_max_mcs_index(mcs);
 }
@@ -1641,8 +1640,8 @@ int mac80211_get_maxrate(char *interface)
 	int maxrate = 0;
 	static struct nla_policy rate_policy[NL80211_BITRATE_ATTR_MAX + 1] = {
 		[NL80211_BITRATE_ATTR_RATE] = {
-					       .type = NLA_U32},[NL80211_BITRATE_ATTR_2GHZ_SHORTPREAMBLE] = {
-													     .type = NLA_FLAG},
+					       .type = NLA_U32 },[NL80211_BITRATE_ATTR_2GHZ_SHORTPREAMBLE] = {
+													      .type = NLA_FLAG },
 	};
 	lock();
 	phy = mac80211_get_phyidx_by_vifname(interface);

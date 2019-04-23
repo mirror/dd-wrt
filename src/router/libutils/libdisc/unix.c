@@ -261,11 +261,11 @@ int detect_bsd_disklabel(SECTION * section, int level)
 		return 0;
 
 	sectsize = get_le_long(buf + 40);
-//	nsectors = get_le_long(buf + 44);
-//	ntracks = get_le_long(buf + 48);
-//	ncylinders = get_le_long(buf + 52);
-//	secpercyl = get_le_long(buf + 56);
-//	secperunit = get_le_long(buf + 60);
+//      nsectors = get_le_long(buf + 44);
+//      ntracks = get_le_long(buf + 48);
+//      ncylinders = get_le_long(buf + 52);
+//      secpercyl = get_le_long(buf + 56);
+//      secperunit = get_le_long(buf + 60);
 
 	partcount = get_le_short(buf + 138);
 

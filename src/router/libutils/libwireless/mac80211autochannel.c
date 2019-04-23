@@ -37,10 +37,10 @@ static struct mac80211_ac *add_to_mac80211_ac(struct mac80211_ac *list_root);
 void free_mac80211_ac(struct mac80211_ac *acs);
 
 static struct nla_policy survey_policy[NL80211_SURVEY_INFO_MAX + 1] = {
-	[NL80211_SURVEY_INFO_FREQUENCY] = {.type = NLA_U32},
-	[NL80211_SURVEY_INFO_NOISE] = {.type = NLA_U8},
-	[NL80211_SURVEY_INFO_CHANNEL_TIME] = {.type = NLA_U64},
-	[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY] = {.type = NLA_U64},
+	[NL80211_SURVEY_INFO_FREQUENCY] = {.type = NLA_U32 },
+	[NL80211_SURVEY_INFO_NOISE] = {.type = NLA_U8 },
+	[NL80211_SURVEY_INFO_CHANNEL_TIME] = {.type = NLA_U64 },
+	[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY] = {.type = NLA_U64 },
 };
 
 #ifdef HAVE_BUFFALO
@@ -87,7 +87,7 @@ static bool in_range(unsigned long freq, const char *freq_range)
 }
 
 static struct nla_policy freq_policy[NL80211_FREQUENCY_ATTR_MAX + 1] = {
-	[NL80211_FREQUENCY_ATTR_FREQ] = {.type = NLA_U32},
+	[NL80211_FREQUENCY_ATTR_FREQ] = {.type = NLA_U32 },
 };
 
 static int freq_list(struct unl *unl, int phy, const char *freq_range, struct dd_list_head *frequencies)
