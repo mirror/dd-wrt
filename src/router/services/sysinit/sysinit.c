@@ -3009,24 +3009,26 @@ void start_restore_defaults(void)
 	}
 #ifdef HAVE_PERU
 	char *dis = getUEnv("rndis");
-	if (dis && !strcmp(dis, "1")) {
-		nvram_default_get("ath0_rxantenna", "7");
-		nvram_default_get("ath0_txantenna", "7");
-		char *ssid = nvram_safe_get("ath0_ssid");
-		if (!strcmp(ssid, "dd-wrt"))
-			nvram_set("ath0_ssid", "Antaira");
-	} else {
-		nvram_default_get("ath0_rxantenna", "3");
-		nvram_default_get("ath0_txantenna", "3");
-		nvram_default_get("ath1_rxantenna", "7");
-		nvram_default_get("ath1_txantenna", "7");
-		char *ssid = nvram_safe_get("ath0_ssid");
-		if (!strcmp(ssid, "dd-wrt")) {
-			nvram_set("ath0_ssid", "Antaira_N");
-			nvram_set("ath1_ssid", "Antaira");
+	if (dis) {
+		if (!strcmp(dis, "1")) {
+			nvram_default_get("ath0_rxantenna", "7");
+			nvram_default_get("ath0_txantenna", "7");
+			char *ssid = nvram_safe_get("ath0_ssid");
+			if (!strcmp(ssid, "dd-wrt"))
+				nvram_set("ath0_ssid", "Antaira");
+		} else {
+			nvram_default_get("ath0_rxantenna", "3");
+			nvram_default_get("ath0_txantenna", "3");
+			nvram_default_get("ath1_rxantenna", "7");
+			nvram_default_get("ath1_txantenna", "7");
+			char *ssid = nvram_safe_get("ath0_ssid");
+			if (!strcmp(ssid, "dd-wrt")) {
+				nvram_set("ath0_ssid", "Antaira_N");
+				nvram_set("ath1_ssid", "Antaira");
+			}
 		}
+	} else eval("ubootenv", "set", "rndis", "1");
 
-	}
 #endif
 }
 
