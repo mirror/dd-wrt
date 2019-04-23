@@ -176,7 +176,7 @@ static void start_gozila(char *name, webs_t wp)
 		return;
 	}
 
-	int (*fptr) (webs_t wp);
+	int (*fptr)(webs_t wp);
 
 	sprintf(service, "%s", name);
 	cprintf("resolving %s\n", service);
@@ -205,7 +205,7 @@ static int start_validator(char *name, webs_t wp, char *value, struct variable *
 	}
 	int ret = FALSE;
 
-	int (*fptr) (webs_t wp, char *value, struct variable * v);
+	int (*fptr)(webs_t wp, char *value, struct variable * v);
 
 	sprintf(service, "%s", name);
 	cprintf("resolving %s\n", service);
@@ -236,7 +236,7 @@ static void *start_validator_nofree(char *name, void *handle, webs_t wp, char *v
 	if (handle == NULL) {
 		return NULL;
 	}
-	void (*fptr) (webs_t wp, char *value, struct variable * v);
+	void (*fptr)(webs_t wp, char *value, struct variable * v);
 
 	sprintf(service, "%s", name);
 	cprintf("resolving %s\n", service);
@@ -277,7 +277,7 @@ static void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** ar
 		return NULL;
 	}
 	cprintf("pointer init\n");
-	void (*fptr) (webs_t wp, int argc, char_t ** argv);
+	void (*fptr)(webs_t wp, int argc, char_t ** argv);
 
 	sprintf(service, "ej_%s", name);
 	cprintf("resolving %s\n", service);
