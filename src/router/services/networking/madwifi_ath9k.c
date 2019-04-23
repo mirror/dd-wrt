@@ -1565,7 +1565,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			}
 			if (!is_ath5k(prefix))
 				// fprintf(fp, "ibss_ht_mode=HT%s\n",ht);
-				fprintf(fp, "htmode=HT%s\n", ht);
+				fprintf(fp, "\thtmode=HT%s\n", ht);
 			if (isadhoc) {
 				sprintf(cellidtemp, "%s_cellid", prefix);
 				cellid = nvram_safe_get(cellidtemp);
@@ -1761,7 +1761,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			}
 			if (!is_ath5k(prefix))
 				// fprintf(fp, "ibss_ht_mode=HT%s\n",ht);
-				fprintf(fp, "htmode=HT%s\n", ht);
+				fprintf(fp, "\thtmode=HT%s\n", ht);
 		} else
 			fprintf(fp, "\tscan_ssid=1\n");
 		fprintf(fp, "\tkey_mgmt=NONE\n");
