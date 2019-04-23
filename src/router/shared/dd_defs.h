@@ -4,7 +4,6 @@
 #include "code_pattern.h"
 #include "../../opt/build.h"
 
-
 #ifdef HAVE_POWERNOC
 #define CYBERTAN_VERSION	"POWERNOC v23"
 #elif HAVE_WTS
@@ -52,28 +51,28 @@
 
 struct code_header {
 	char magic[4];
-	char res1[4];	// for extra magic
+	char res1[4];		// for extra magic
 	char fwdate[3];
 	char fwvern[3];
-	char id[4];	// U2ND
-	char hw_ver;    // 0) for 4702, 1) for 4712, 2) for 4712L, 3) for 4704
+	char id[4];		// U2ND
+	char hw_ver;		// 0) for 4702, 1) for 4712, 2) for 4712L, 3) for 4704
 	char res2;
 	unsigned short flags;
 	unsigned char res3[10];
-} ;
+};
 
 //#ifdef MULTILANG_SUPPORT
 struct lang_header {
-        char magic[4];
-        char res1[4];   // for extra magic
-        char fwdate[3];
-        char fwvern[3];
-        char id[4];     // U2ND
-        char hw_ver;    // 0: for 4702, 1: for 4712
+	char magic[4];
+	char res1[4];		// for extra magic
+	char fwdate[3];
+	char fwvern[3];
+	char id[4];		// U2ND
+	char hw_ver;		// 0: for 4702, 1: for 4712
 	char res2;
-        unsigned long len;
-        unsigned char res3[8];
-} ;
+	unsigned long len;
+	unsigned char res3[8];
+};
 //#endif
 
 struct boot_header {
@@ -84,34 +83,34 @@ struct boot_header {
 /***************************************
  * define upnp misc                    *
  ***************************************/
-  #define URL			"http://www.dd-wrt.com/"
-  #define DEV_FRIENDLY_NAME	MODEL_NAME
-  #define DEV_MFR		"NewMedia-NET GmbH"
-  #define DEV_MFR_URL		URL
-  #define DEV_MODEL_DESCRIPTION	"Internet Gateway Device"
-  #define DEV_MODEL		MODEL_NAME
-  #define DEV_MODEL_NO		CYBERTAN_VERSION
-  #define DEV_MODEL_URL		URL
+#define URL			"http://www.dd-wrt.com/"
+#define DEV_FRIENDLY_NAME	MODEL_NAME
+#define DEV_MFR		"NewMedia-NET GmbH"
+#define DEV_MFR_URL		URL
+#define DEV_MODEL_DESCRIPTION	"Internet Gateway Device"
+#define DEV_MODEL		MODEL_NAME
+#define DEV_MODEL_NO		CYBERTAN_VERSION
+#define DEV_MODEL_URL		URL
 
 /***************************************
  * define Parental Control link        *
  ***************************************/
 #if LOCALE == EUROPE
-  #define	SIGN_UP_URL	"http://pcsvc.ourlinksys.com/eu/language.jsp"
-  #define	MORE_INFO_URL	"http://www.linksys.com/pcsvc/eu/info_eu.asp"
-  #define	ADMIN_URL	"http://pcsvc.ourlinksys.com/en"
+#define	SIGN_UP_URL	"http://pcsvc.ourlinksys.com/eu/language.jsp"
+#define	MORE_INFO_URL	"http://www.linksys.com/pcsvc/eu/info_eu.asp"
+#define	ADMIN_URL	"http://pcsvc.ourlinksys.com/en"
 #elif LOCALE == GERMANY
-  #define	SIGN_UP_URL	"http://pcsvc.ourlinksys.com/de/trial.asp"
-  #define	MORE_INFO_URL	"http://www.linksys.com/pcsvc/de/info_de.asp"
-  #define	ADMIN_URL	"http://pcsvc.ourlinksys.com/de/admin.asp"
+#define	SIGN_UP_URL	"http://pcsvc.ourlinksys.com/de/trial.asp"
+#define	MORE_INFO_URL	"http://www.linksys.com/pcsvc/de/info_de.asp"
+#define	ADMIN_URL	"http://pcsvc.ourlinksys.com/de/admin.asp"
 #elif LOCALE == FRANCE
-  #define	SIGN_UP_URL	"http://pcsvc.ourlinksys.com/fr/trial.asp"
-  #define	MORE_INFO_URL	"http://www.linksys.com/pcsvc/fr/info_fr.asp"
-  #define	ADMIN_URL	"http://pcsvc.ourlinksys.com/fr/admin.asp"
+#define	SIGN_UP_URL	"http://pcsvc.ourlinksys.com/fr/trial.asp"
+#define	MORE_INFO_URL	"http://www.linksys.com/pcsvc/fr/info_fr.asp"
+#define	ADMIN_URL	"http://pcsvc.ourlinksys.com/fr/admin.asp"
 #else
-  #define	SIGN_UP_URL	"http://pcsvc.ourlinksys.com/us/trial.asp"
-  #define	MORE_INFO_URL	"http://www.linksys.com/pcsvc/info.asp"
-  #define	ADMIN_URL	"http://pcsvc.ourlinksys.com/us/admin.asp"
+#define	SIGN_UP_URL	"http://pcsvc.ourlinksys.com/us/trial.asp"
+#define	MORE_INFO_URL	"http://www.linksys.com/pcsvc/info.asp"
+#define	ADMIN_URL	"http://pcsvc.ourlinksys.com/us/admin.asp"
 #endif
 
 /***************************************

@@ -1214,18 +1214,22 @@ static inline int is_mt7615(const char *prefix)
 {
 	return 0;
 }
+
 static inline int is_mt7603(const char *prefix)
 {
 	return 0;
 }
+
 static inline int is_mt76x0(const char *prefix)
 {
 	return 0;
 }
+
 static inline int is_mt76x2(const char *prefix)
 {
 	return 0;
 }
+
 static inline int is_mt76(const char *prefix)
 {
 	return 0;
@@ -1272,7 +1276,7 @@ struct wl_client_mac {
 
 extern int dd_timer_delete(timer_t timer);
 extern int dd_timer_create(clockid_t clock_id, struct sigevent *evp, timer_t * pTimer);
-extern int dd_timer_connect(timer_t timerid, void (*routine) (timer_t, int), int arg);
+extern int dd_timer_connect(timer_t timerid, void (*routine)(timer_t, int), int arg);
 extern int dd_timer_settime(timer_t timerid, int flags, const struct itimerspec *value, struct itimerspec *ovalue);
 
 int endswith(char *str, char *cmp);

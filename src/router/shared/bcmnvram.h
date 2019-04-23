@@ -164,7 +164,6 @@ extern int nvram_unset(const char *name);
  */
 extern int _nvram_commit(void);
 
-
 /*
  * Commit NVRAM variables to permanent storage. All pointers to values, but triggers diag led
  * may be invalid after a commit.

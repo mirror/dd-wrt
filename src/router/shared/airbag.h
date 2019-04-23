@@ -44,14 +44,12 @@ extern "C" {
 
 /** Optional user callback, to print additional state at time of crash (build #, uptime, etc).
  */
-	typedef void (*airbag_user_callback) (int fd);
+	typedef void (*airbag_user_callback)(int fd);
 
 /** Registers crash handlers to output to the file descriptor.
  * @return 0 iff registered; else errno is set.
  */
 	int airbag_init(void);
-
-
 
 /** Names the current thread.
  * @return 0 iff name is set; else errno is set.
