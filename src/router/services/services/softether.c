@@ -26,6 +26,7 @@
 #include <utils.h>
 #include <syslog.h>
 #include <signal.h>
+#include <sys/stat.h>
 #include <services.h>
 
 static void stop_softetherclient(void);
