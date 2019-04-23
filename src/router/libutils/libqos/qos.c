@@ -44,9 +44,9 @@ struct NF_MASKS {
 };
 
 static struct NF_MASKS service_masks[] = {
-	{"FORWARD", 1, 31},
-	{"HOTSPOT", 8, 23},
-	{"QOS", 13, 10},
+	{ "FORWARD", 1, 31 },
+	{ "HOTSPOT", 8, 23 },
+	{ "QOS", 13, 10 },
 };
 
 char *get_NFServiceMark(char *service, uint32 mark)
@@ -117,13 +117,13 @@ struct namemaps {
 	char *to;
 };
 static struct namemaps NM[] = {
-	{"applejuice", "apple"},
-	{"bearshare", "gnu"},
-	{"bittorrent", "bit"},
-	{"directconnect", "dc"},
-	{"edonkey", "edk"},
-	{"gnutella", "gnu"},
-	{"soulseek", "soul"}
+	{ "applejuice", "apple" },
+	{ "bearshare", "gnu" },
+	{ "bittorrent", "bit" },
+	{ "directconnect", "dc" },
+	{ "edonkey", "edk" },
+	{ "gnutella", "gnu" },
+	{ "soulseek", "soul" }
 };
 
 void add_client_dev_srvfilter(char *name, char *type, char *data, int level, int base, char *chain)

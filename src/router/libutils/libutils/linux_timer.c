@@ -68,7 +68,7 @@ nanosleep( ) - suspend the current task until the time interval elapses (POSIX)
 #define US_PER_MS  1000		/* 1000us per ms */
 #define UCLOCKS_PER_SEC 1000000	/* Clock ticks per second */
 
-typedef void (*event_callback_t) (timer_t, int);
+typedef void (*event_callback_t)(timer_t, int);
 
 #ifndef TIMESPEC_TO_TIMEVAL
 #define TIMESPEC_TO_TIMEVAL(tv, ts) {                                   \
@@ -243,11 +243,11 @@ int dd_timer_delete(timer_t timerid	/* timer ID */
 }
 
 int dd_timer_connect(timer_t timerid,	/* timer ID */
-		     void (*routine) (timer_t, int),	/* user routine */
+		     void (*routine)(timer_t, int),	/* user routine */
 		     int arg	/* user argument */
     )
 {
-	struct event *event = (struct event *)timerid;
+	struct event *event =(struct event *)timerid;
 
 	assert(routine != NULL);
 	event->func = routine;
@@ -374,7 +374,8 @@ int dd_timer_settime(timer_t timerid,	/* timer ID */
 		/* so if the next interval is zero, set it to some small value. */
 		if (!timerisset(&(itimer.it_value)))
 			itimer.it_value = (struct timeval) {
-			0, 1};
+			0, 1
+			};
 
 		assert(!timerisset(&itimer.it_interval));
 		assert(itimer.it_value.tv_sec > 0 || itimer.it_value.tv_usec >= g_granularity);
@@ -561,7 +562,8 @@ static void alarm_handler(int i)
 		/* so if the next interval is zero, set it to some small value. */
 		if (!timerisset(&(itimer.it_value)))
 			itimer.it_value = (struct timeval) {
-			0, 1};
+			0, 1
+			};
 
 		setitimer(ITIMER_REAL, &itimer, NULL);
 		check_timer();
@@ -598,7 +600,7 @@ void dd_unblock_timer()
 
 void dd_timer_cancel_all()
 {
-	struct itimerval timeroff = { {0, 0}, {0, 0} };
+	struct itimerval timeroff = { { 0, 0 }, { 0, 0 } };
 	struct event *event;
 	struct event **ppevent;
 
@@ -615,7 +617,7 @@ void dd_timer_cancel_all()
 void dd_timer_cancel(timer_t timerid)
 {
 	struct itimerval itimer;
-	struct itimerval timeroff = { {0, 0}, {0, 0} };
+	struct itimerval timeroff = { { 0, 0 }, { 0, 0 } };
 	struct event *event = (struct event *)timerid;
 	struct event **ppevent;
 
@@ -668,7 +670,8 @@ void dd_timer_cancel(timer_t timerid)
 
 				if (!timerisset(&(itimer.it_value)))
 					itimer.it_value = (struct timeval) {
-					0, 1};
+					0, 1
+					};
 
 				assert(itimer.it_value.tv_sec > 0 || itimer.it_value.tv_usec >= g_granularity);
 				assert(event_queue->it_value.tv_sec > 0 || event_queue->it_value.tv_usec >= g_granularity);

@@ -977,33 +977,33 @@ unsigned int get_register_value(unsigned short id, unsigned short num)
 struct mtu_lists mtu_list[] = {
 #ifdef BUFFALO_JP
 	{
-	 "pppoe", "576", "1454"},
+	 "pppoe", "576", "1454" },
 #else
 	{
-	 "pppoe", "576", "1492"},
+	 "pppoe", "576", "1492" },
 #endif
 	{
-	 "pppoe_dual", "576", "1492"},
+	 "pppoe_dual", "576", "1492" },
 	{
-	 "pppoa", "576", "10000"},
+	 "pppoa", "576", "10000" },
 	{
-	 "pptp", "576", "1460"},
+	 "pptp", "576", "1460" },
 	{
-	 "l2tp", "576", "1460"},
+	 "l2tp", "576", "1460" },
 	{
-	 "dhcp", "576", "10000"},
+	 "dhcp", "576", "10000" },
 	{
-	 "dhcp_auth", "576", "10000"},
+	 "dhcp_auth", "576", "10000" },
 	{
-	 "iphone", "576", "1500"},
+	 "iphone", "576", "1500" },
 	{
-	 "static", "576", "10000"},
+	 "static", "576", "10000" },
 	{
-	 "heartbeat", "576", "1500"},
+	 "heartbeat", "576", "1500" },
 	{
-	 "3g", "576", "1500"},
+	 "3g", "576", "1500" },
 	{
-	 "default", "576", "10000"},	// The value must be at last
+	 "default", "576", "10000" },	// The value must be at last
 };
 
 struct mtu_lists *get_mtu(char *proto)
@@ -1201,8 +1201,10 @@ int sv_valid_statics(char *value)
 	char ip[16] = {
 		0
 	}, mac[18] = {
-	0}, hostname[255] = {
-	0}, *p = value;
+		0
+	}, hostname[255] = {
+		0
+	}, *p = value;
 
 	if (NULL == value)
 		return FALSE;
@@ -1878,10 +1880,10 @@ int httpd_filter_name(char *old_name, char *new_name, size_t size, int type)
 	};
 
 	struct pattern patterns[] = {
-		{' ', "&nbsp;"},
-		{':', "&semi;"},
-		{'<', "&lt;"},
-		{'>', "&gt;"},
+		{ ' ', "&nbsp;" },
+		{ ':', "&semi;" },
+		{ '<', "&lt;" },
+		{ '>', "&gt;" },
 	};
 
 	struct pattern *v;

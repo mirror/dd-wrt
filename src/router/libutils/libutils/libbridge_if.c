@@ -54,7 +54,7 @@ static void __jiffies_to_tv(struct timeval *tv, unsigned long jiffies)
 /* 
  * Only used if sysfs is not available.
  */
-static int old_foreach_port(const char *brname, int (*iterator) (const char *br, const char *port, void *arg), void *arg)
+static int old_foreach_port(const char *brname, int (*iterator)(const char *br, const char *port, void *arg), void *arg)
 {
 	int i, err, count;
 	struct ifreq ifr;
@@ -95,7 +95,7 @@ static int old_foreach_port(const char *brname, int (*iterator) (const char *br,
 /*
  * Iterate over all ports in bridge (using sysfs).
  */
-static int br_foreach_port(const char *brname, int (*iterator) (const char *br, const char *port, void *arg), void *arg)
+static int br_foreach_port(const char *brname, int (*iterator)(const char *br, const char *port, void *arg), void *arg)
 {
 #ifdef HAVE_LIBSYSFS
 	struct sysfs_class_device *dev;
@@ -608,7 +608,7 @@ static int isbridge(const struct sysfs_class_device *dev)
 /*
  * New interface uses sysfs to find bridges
  */
-static int new_foreach_bridge(int (*iterator) (const char *name, void *), void *arg)
+static int new_foreach_bridge(int (*iterator)(const char *name, void *), void *arg)
 {
 	struct sysfs_class_device *dev;
 	struct dlist *devlist;
@@ -640,7 +640,7 @@ static int new_foreach_bridge(int (*iterator) (const char *name, void *), void *
 /*
  * Old interface uses ioctl
  */
-static int old_foreach_bridge(int (*iterator) (const char *, void *), void *iarg)
+static int old_foreach_bridge(int (*iterator)(const char *, void *), void *iarg)
 {
 	int i, ret = 0, num;
 	char ifname[IFNAMSIZ];
@@ -675,7 +675,7 @@ static int old_foreach_bridge(int (*iterator) (const char *, void *), void *iarg
  * Go over all bridges and call iterator function.
  * if iterator returns non-zero then stop.
  */
-static int br_foreach_bridge(int (*iterator) (const char *, void *), void *arg)
+static int br_foreach_bridge(int (*iterator)(const char *, void *), void *arg)
 {
 	int ret;
 #ifdef HAVE_LIBSYSFS
