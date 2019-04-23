@@ -50,33 +50,39 @@ void start_softether(void)
 	}
 	if (nvram_matchi("setherclient_enable", 1)) {
 		mkdir(VPNDIR, 0700);
-		write_nvram(VPNDIR "vpn_client.config", "sether_config");
+		write_nvram("/tmp/vpn_client.config", "sether_config");
 		eval("ln", "-sf", EXECDIR "/hamcore.se2", VPNDIR "/");
 		eval("ln", "-sf", EXECDIR "/vpnclient", VPNDIR "/");
 		eval("ln", "-sf", EXECDIR "/lang.config", VPNDIR "/");
 		eval(VPNDIR "/vpnclient", "start");
-		reload = 1;
+		reload |= 1;
 	}
 	if (nvram_matchi("setherserver_enable", 1)) {
 		mkdir(VPNDIR, 0700);
-		write_nvram(VPNDIR "/vpn_server.config", "sether_config");
+		write_nvram("/tmp/vpn_server.config", "sether_config");
 		eval("ln", "-sf", EXECDIR "/hamcore.se2", VPNDIR "/");
 		eval("ln", "-sf", EXECDIR "/vpnserver", VPNDIR "/");
 		eval("ln", "-sf", EXECDIR "/lang.config", VPNDIR "/");
 		eval(VPNDIR "/vpnserver", "start");
-		reload = 1;
+		reload |= 2;
 	}
 	if (nvram_matchi("setherbridge_enable", 1)) {
 		mkdir(VPNDIR, 0700);
-		write_nvram(VPNDIR "/vpn_bridge.config", "sether_config");
+		write_nvram("/tmp/vpn_bridge.config", "sether_config");
 		eval("ln", "-sf", EXECDIR "/hamcore.se2", VPNDIR "/");
 		eval("ln", "-sf", EXECDIR "/vpnbridge", VPNDIR "/");
 		eval("ln", "-sf", EXECDIR "/lang.config", VPNDIR "/");
 		eval(VPNDIR "/vpnbridge", "start");
+		reload |= 4;
 	}
 	if (reload) {
 		eval("sleep", "3");
-		eval("/usr/bin/vpncmd", "localhost", "/SERVER", "/CMD", "ConfigSet", "//tmp//vpn_server.config", "quit");
+		if (reload & 1)
+			eval("/usr/bin/vpncmd", "localhost", "/SERVER", "/CMD", "ConfigSet", "//tmp//vpn_client.config", "quit");
+		if (reload & 2)
+			eval("/usr/bin/vpncmd", "localhost", "/SERVER", "/CMD", "ConfigSet", "//tmp//vpn_server.config", "quit");
+		if (reload & 4)
+			eval("/usr/bin/vpncmd", "localhost", "/SERVER", "/CMD", "ConfigSet", "//tmp//vpn_bridge.config", "quit");
 
 	}
 	return;
