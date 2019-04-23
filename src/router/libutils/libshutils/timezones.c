@@ -53,7 +53,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{ "Africa/Cairo", "EET-2" }
 	,
-	{ "Africa/Casablanca", "<+01>-1" }
+	{ "Africa/Casablanca", "m5= " }
 	,
 	{ "Africa/Ceuta", "CET-1CEST,M3.5.0,M10.5.0/3" }
 	,
@@ -67,7 +67,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{ "Africa/Douala", "WAT-1" }
 	,
-	{ "Africa/El_Aaiun", "<+01>-1" }
+	{ "Africa/El_Aaiun", "m5= " }
 	,
 	{ "Africa/Freetown", "GMT0" }
 	,
@@ -123,7 +123,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{ "Africa/Porto-Novo", "WAT-1" }
 	,
-	{ "Africa/Sao_Tome", "WAT-1" }
+	{ "Africa/Sao_Tome", "GMT0" }
 	,
 	{ "Africa/Timbuktu", "GMT0" }
 	,
@@ -553,11 +553,11 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{ "Asia/Famagusta", "EET-2EEST,M3.5.0/3,M10.5.0/4" }
 	,
-	{ "Asia/Gaza", "EET-2EEST,M3.4.6/1,M10.5.6/1" }
+	{ "Asia/Gaza", "EET-2EEST,M3.4.4/49,M10.5.6/1" }
 	,
 	{ "Asia/Harbin", "CST-8" }
 	,
-	{ "Asia/Hebron", "EET-2EEST,M3.4.6/1,M10.5.6/1" }
+	{ "Asia/Hebron", "EET-2EEST,M3.4.4/49,M10.5.6/1" }
 	,
 	{ "Asia/Ho_Chi_Minh", "<+07>-7" }
 	,
@@ -629,7 +629,9 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{ "Asia/Qatar", "<+03>-3" }
 	,
-	{ "Asia/Qyzylorda", "<+06>-6" }
+	{ "Asia/Qostanay", "<+06>-6" }
+	,
+	{ "Asia/Qyzylorda", "<+05>-5" }
 	,
 	{ "Asia/Rangoon", "<+0630>-6:30" }
 	,
@@ -655,7 +657,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{ "Asia/Tbilisi", "<+04>-4" }
 	,
-	{ "Asia/Tehran", "<+0330>-3:30<+0430>,J80/0,J264/0" }
+	{ "Asia/Tehran", "<+0330>-3:30<+0430>,J79/24,J263/24" }
 	,
 	{ "Asia/Tel_Aviv", "IST-2IDT,M3.4.4/26,M10.5.0" }
 	,
@@ -1011,7 +1013,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{ "Indian/Reunion", "<+04>-4" }
 	,
-	{ "Iran", "<+0330>-3:30<+0430>,J80/0,J264/0" }
+	{ "Iran", "<+0330>-3:30<+0430>,J79/24,J263/24" }
 	,
 	{ "Israel", "IST-2IDT,M3.4.4/26,M10.5.0" }
 	,
