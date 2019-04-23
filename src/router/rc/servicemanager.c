@@ -145,7 +145,7 @@ static int handle_service(const int method, const char *name, int force)
 	if (handle == NULL) {
 		return -1;
 	}
-	void (*fptr) (void);
+	void (*fptr)(void);
 
 	sprintf(service, "%s_%s", method_name, name);
 	fptr = (void (*)(void))dlsym(handle, service);
@@ -154,7 +154,7 @@ static int handle_service(const int method, const char *name, int force)
 		if (method == START) {
 			char dep_name[64];
 			snprintf(dep_name, sizeof(dep_name), "%s_deps", name);
-			char *(*dep_func) (void) = (char *(*)(void))dlsym(handle, dep_name);
+			char *(*dep_func)(void) =(char * (*)(void))dlsym(handle, dep_name);
 			if (dep_func) {
 				char *deps = dep_func();
 				state = nvram_states(deps);
@@ -231,7 +231,7 @@ static void start_servicei(char *name, int param)
 	if (handle == NULL) {
 		return;
 	}
-	void (*fptr) (int);
+	void (*fptr)(int);
 	char service[64];
 
 	sprintf(service, "start_%s", name);
@@ -257,7 +257,7 @@ static int start_main(char *name, int argc, char **argv)
 	if (handle == NULL) {
 		return -1;
 	}
-	int (*fptr) (int, char **);
+	int (*fptr)(int, char **);
 	char service[64];
 
 	sprintf(service, "%s_main", name);

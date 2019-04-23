@@ -25,7 +25,7 @@ extern void do_redial(timer_t t, int arg);
 static int do_ntp(void);
 static void check_udhcpd(timer_t t, int arg);
 extern void init_event_queue(int n);
-extern int timer_connect(timer_t timerid, void (*routine) (timer_t, int), int arg);
+extern int timer_connect(timer_t timerid, void (*routine)(timer_t, int), int arg);
 
 static unsigned int NTP_M_TIMER = 3600;
 static unsigned int NTP_N_TIMER = 30;

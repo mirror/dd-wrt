@@ -85,7 +85,7 @@
 struct MAIN {
 	char *callname;
 	char *execname;
-	int (*exec) (int argc, char **argv);
+	int (*exec)(int argc, char **argv);
 };
 extern char *getSoftwareRevision(void);
 static int softwarerevision_main(int argc, char **argv)
@@ -184,120 +184,120 @@ static int erase_main(int argc, char *argv[])
 
 static struct MAIN maincalls[] = {
 	// {"init", NULL, &main_loop},
-	{"ip-up", "ipup", NULL},
-	{"ip-down", "ipdown", NULL},
-	{"ipdown", "disconnected_pppoe", NULL},
-	{"udhcpc_tv", "udhcpc_tv", NULL},
-	{"udhcpc", "udhcpc", NULL},
-	{"mtd", NULL, mtd_main},
-	{"hotplug", NULL, hotplug_main},
-	{"nvram", NULL, nvram_main},
-	{"ttraff", NULL, ttraff_main},
-	{"filtersync", "filtersync", NULL},
-	{"filter", "filter", NULL},
-	{"setpasswd", "setpasswd", NULL},
-	{"ipfmt", "ipfmt", NULL},
-	{"restart_dns", "restart_dns", NULL},
-	{"ledtool", NULL, ledtool_main},
-	{"check_ps", NULL, check_ps_main},
+	{ "ip-up", "ipup", NULL },
+	{ "ip-down", "ipdown", NULL },
+	{ "ipdown", "disconnected_pppoe", NULL },
+	{ "udhcpc_tv", "udhcpc_tv", NULL },
+	{ "udhcpc", "udhcpc", NULL },
+	{ "mtd", NULL, mtd_main },
+	{ "hotplug", NULL, hotplug_main },
+	{ "nvram", NULL, nvram_main },
+	{ "ttraff", NULL, ttraff_main },
+	{ "filtersync", "filtersync", NULL },
+	{ "filter", "filter", NULL },
+	{ "setpasswd", "setpasswd", NULL },
+	{ "ipfmt", "ipfmt", NULL },
+	{ "restart_dns", "restart_dns", NULL },
+	{ "ledtool", NULL, ledtool_main },
+	{ "check_ps", NULL, check_ps_main },
 //      {"resetbutton", NULL, resetbutton_main},
-	{"process_monitor", NULL, process_monitor_main},
-	{"listen", NULL, listen_main},
-	{"radio_timer", NULL, radio_timer_main},
+	{ "process_monitor", NULL, process_monitor_main },
+	{ "listen", NULL, listen_main },
+	{ "radio_timer", NULL, radio_timer_main },
 #ifdef HAVE_MADWIFI
-	{"roaming_daemon", NULL, roaming_daemon_main},
+	{ "roaming_daemon", NULL, roaming_daemon_main },
 #endif
 #ifdef HAVE_GPIOWATCHER
-	{"gpiowatcher", NULL, gpiowatcher_main},
+	{ "gpiowatcher", NULL, gpiowatcher_main },
 #endif
 #ifdef HAVE_WLANLED
-	{"wlanled", NULL, wlanled_main},
+	{ "wlanled", NULL, wlanled_main },
 #endif
 #ifdef HAVE_WPS
-	{"wpswatcher", NULL, wpswatcher_main},
+	{ "wpswatcher", NULL, wpswatcher_main },
 #endif
 #ifdef HAVE_PPTPD
-	{"poptop", "pptpd_main", NULL},
+	{ "poptop", "pptpd_main", NULL },
 #endif
-	{"redial", "redial", NULL},
+	{ "redial", "redial", NULL },
 #ifndef HAVE_RB500
 	// {"resetbutton", NULL, &resetbutton_main},
 #endif
 	// {"wland", NULL, &wland_main},
-	{"hb_connect", "hb_connect", NULL},
-	{"hb_disconnect", "hb_disconnect", NULL},
-	{"gpio", "gpio", NULL},
-	{"beep", "beep", NULL},
-	{"ledtracking", "ledtracking", NULL},
+	{ "hb_connect", "hb_connect", NULL },
+	{ "hb_disconnect", "hb_disconnect", NULL },
+	{ "gpio", "gpio", NULL },
+	{ "beep", "beep", NULL },
+	{ "ledtracking", "ledtracking", NULL },
 	// {"listen", NULL, &listen_main},
 	// {"check_ps", NULL, &check_ps_main},
-	{"ddns_success", "ddns_success", NULL},
+	{ "ddns_success", "ddns_success", NULL },
 	// {"process_monitor", NULL, &process_monitor_main},
 	// {"radio_timer", NULL, &radio_timer_main},
 	// {"ttraf", NULL, &ttraff_main},
 #ifdef HAVE_WIVIZ
-	{"run_wiviz", NULL, &run_wiviz_main},
-	{"autokill_wiviz", NULL, &autokill_wiviz_main},
+	{ "run_wiviz", NULL, &run_wiviz_main },
+	{ "autokill_wiviz", NULL, &autokill_wiviz_main },
 #endif
-	{"site_survey", "site_survey", NULL},
+	{ "site_survey", "site_survey", NULL },
 #ifdef HAVE_WOL
-	{"wol", NULL, &wol_main},
+	{ "wol", NULL, &wol_main },
 #endif
-	{"event", NULL, &event_main},
+	{ "event", NULL, &event_main },
 //    {"switch", "switch", NULL},
 #ifdef HAVE_MICRO
-	{"brctl", "brctl", NULL},
+	{ "brctl", "brctl", NULL },
 #endif
-	{"setportprio", "setportprio", NULL},
+	{ "setportprio", "setportprio", NULL },
 #ifdef HAVE_NORTHSTAR
-	{"rtkswitch", "rtkswitch", NULL},
+	{ "rtkswitch", "rtkswitch", NULL },
 #endif
-	{"setuserpasswd", "setuserpasswd", NULL},
-	{"getbridge", "getbridge", NULL},
-	{"getmask", "getmask", NULL},
-	{"stopservices", NULL, stop_services_main},
+	{ "setuserpasswd", "setuserpasswd", NULL },
+	{ "getbridge", "getbridge", NULL },
+	{ "getmask", "getmask", NULL },
+	{ "stopservices", NULL, stop_services_main },
 #ifdef HAVE_PPPOESERVER
-	{"addpppoeconnected", "addpppoeconnected", NULL},
-	{"delpppoeconnected", "delpppoeconnected", NULL},
-	{"addpppoetime", "addpppoetime", NULL},
+	{ "addpppoeconnected", "addpppoeconnected", NULL },
+	{ "delpppoeconnected", "delpppoeconnected", NULL },
+	{ "addpppoetime", "addpppoetime", NULL },
 #endif
-	{"startservices", NULL, start_services_main},
-	{"start_single_service", NULL, start_single_service_main},
-	{"restart_f", NULL, restart_main_f},
-	{"restart", NULL, restart_main},
-	{"stop_running", NULL, stop_running_main},
-	{"softwarerevision", NULL, softwarerevision_main},
+	{ "startservices", NULL, start_services_main },
+	{ "start_single_service", NULL, start_single_service_main },
+	{ "restart_f", NULL, restart_main_f },
+	{ "restart", NULL, restart_main },
+	{ "stop_running", NULL, stop_running_main },
+	{ "softwarerevision", NULL, softwarerevision_main },
 #if !defined(HAVE_MICRO) || defined(HAVE_ADM5120) || defined(HAVE_WRK54G)
-	{"watchdog", NULL, &watchdog_main},
+	{ "watchdog", NULL, &watchdog_main },
 #endif
 	// {"nvram", NULL, &nvram_main},
 #ifdef HAVE_ROAMING
 //      {"roaming_daemon", NULL, &roaming_daemon_main},
-	{"supplicant", "supplicant", NULL},
+	{ "supplicant", "supplicant", NULL },
 #endif
-	{"get_wanface", "get_wanface", NULL},
-	{"get_wanip", "get_wanip", NULL},
+	{ "get_wanface", "get_wanface", NULL },
+	{ "get_wanip", "get_wanip", NULL },
 #ifndef HAVE_XSCALE
 	// {"ledtool", NULL, &ledtool_main},
 #endif
 #ifdef HAVE_REGISTER
-	{"regshell", NULL, &reg_main},
+	{ "regshell", NULL, &reg_main },
 #endif
-	{"gratarp", NULL, &gratarp_main},
-	{"get_nfmark", "get_nfmark", NULL},
+	{ "gratarp", NULL, &gratarp_main },
+	{ "get_nfmark", "get_nfmark", NULL },
 #ifdef HAVE_IPV6
-	{"dhcp6c-state", "dhcp6c_state",},
+	{ "dhcp6c-state", "dhcp6c_state", },
 #endif
 #ifdef HAVE_QTN
-	{"qtn_monitor", NULL, &qtn_monitor_main},
+	{ "qtn_monitor", NULL, &qtn_monitor_main },
 #endif
-	{"write", NULL, &write_main},
-	{"startservice_f", NULL, &service_main},
-	{"startservice", NULL, &service_main},
-	{"stopservice_f", NULL, &service_main},
-	{"stopservice", NULL, &service_main},
-	{"rc", NULL, &rc_main},
-	{"erase", NULL, &erase_main},
+	{ "write", NULL, &write_main },
+	{ "startservice_f", NULL, &service_main },
+	{ "startservice", NULL, &service_main },
+	{ "stopservice_f", NULL, &service_main },
+	{ "stopservice", NULL, &service_main },
+	{ "rc", NULL, &rc_main },
+	{ "erase", NULL, &erase_main },
 };
 
 int main(int argc, char **argv)
