@@ -52,20 +52,20 @@
 extern bool bcmreclaimed;
 extern bool attach_part_reclaimed;
 
-#define BCMATTACHDATA(_data)	__attribute__ ((__section__ (".dataini2." #_data))) _data
-#define BCMATTACHFN(_fn)	__attribute__ ((__section__ (".textini2." #_fn), noinline)) _fn
+#define BCMATTACHDATA(_data)	__attribute__((__section__ (".dataini2." #_data))) _data
+#define BCMATTACHFN(_fn)	__attribute__((__section__ (".textini2." #_fn), noinline)) _fn
 
 #ifndef PREATTACH_NORECLAIM
-#define BCMPREATTACHDATA(_data)	__attribute__ ((__section__ (".dataini3." #_data))) _data
-#define BCMPREATTACHFN(_fn)	__attribute__ ((__section__ (".textini3." #_fn), noinline)) _fn
+#define BCMPREATTACHDATA(_data)	__attribute__((__section__ (".dataini3." #_data))) _data
+#define BCMPREATTACHFN(_fn)	__attribute__((__section__ (".textini3." #_fn), noinline)) _fn
 #else
-#define BCMPREATTACHDATA(_data)	__attribute__ ((__section__ (".dataini2." #_data))) _data
-#define BCMPREATTACHFN(_fn)	__attribute__ ((__section__ (".textini2." #_fn), noinline)) _fn
+#define BCMPREATTACHDATA(_data)	__attribute__((__section__ (".dataini2." #_data))) _data
+#define BCMPREATTACHFN(_fn)	__attribute__((__section__ (".textini2." #_fn), noinline)) _fn
 #endif
 
 #if defined(BCMRECLAIM)
-#define BCMINITDATA(_data)	__attribute__ ((__section__ (".dataini1." #_data))) _data
-#define BCMINITFN(_fn)		__attribute__ ((__section__ (".textini1." #_fn), noinline)) _fn
+#define BCMINITDATA(_data)	__attribute__((__section__ (".dataini1." #_data))) _data
+#define BCMINITFN(_fn)		__attribute__((__section__ (".textini1." #_fn), noinline)) _fn
 #define CONST
 #else
 #define BCMINITDATA(_data)	_data
@@ -80,12 +80,12 @@ extern bool attach_part_reclaimed;
 #else
 #define	BCMNMIATTACHFN(_fn)	_fn
 #define	BCMNMIATTACHDATA(_data)	_data
-#endif	
+#endif
 
 #define BCMUNINITFN(_fn)	_fn
 
 #define BCMFASTPATH
-#else /* DONGLEBUILD */
+#else				/* DONGLEBUILD */
 
 #define bcmreclaimed 		0
 #define BCMATTACHDATA(_data)	_data
@@ -100,15 +100,15 @@ extern bool attach_part_reclaimed;
 #define CONST	const
 #ifndef BCMFASTPATH
 #if defined(mips) || defined(__ARM_ARCH_7A__)
-#define BCMFASTPATH		__attribute__ ((__section__ (".text.fastpath")))
-#define BCMFASTPATH_HOST	__attribute__ ((__section__ (".text.fastpath_host")))
+#define BCMFASTPATH		__attribute__((__section__ (".text.fastpath")))
+#define BCMFASTPATH_HOST	__attribute__((__section__ (".text.fastpath_host")))
 #else
 #define BCMFASTPATH
 #define BCMFASTPATH_HOST
 #endif
-#endif /* BCMFASTPATH */
+#endif				/* BCMFASTPATH */
 
-#endif /* DONGLEBUILD */
+#endif				/* DONGLEBUILD */
 
 #if defined(BCMROMBUILD)
 typedef struct {
@@ -122,7 +122,7 @@ typedef struct {
 #if defined(BCMROMBUILD) && !defined(BCMROMSYMGEN_BUILD) && !defined(BCMJMPTBL_TCAM)
 #include <bcmjmptbl.h>
 #define STATIC	static
-#else /* !BCMROMBUILD */
+#else				/* !BCMROMBUILD */
 #define BCMROMDATA(_data)	_data
 #define BCMROMDAT_NAME(_data)	_data
 #define BCMROMFN(_fn)		_fn
@@ -132,7 +132,7 @@ typedef struct {
 #define BCMROMDAT_SIZEOF(data)	sizeof(data)
 #define BCMROMDAT_APATCH(data)
 #define BCMROMDAT_SPATCH(data)
-#endif /* !BCMROMBUILD */
+#endif				/* !BCMROMBUILD */
 
 /* Bus types */
 #define	SI_BUS			0	/* SOC Interconnect */
@@ -158,7 +158,6 @@ typedef struct {
 #define CHIPTYPE(bus) 	(bus)
 #endif
 
-
 /* Allows size optimization for SPROM support */
 #if defined(BCMSPROMBUS)
 #define SPROMBUS	(BCMSPROMBUS)
@@ -182,14 +181,14 @@ typedef struct {
 #endif
 
 /* Defines for DMA Address Width - Shared between OSL and HNDDMA */
-#define DMADDR_MASK_32 0x0		/* Address mask for 32-bits */
+#define DMADDR_MASK_32 0x0	/* Address mask for 32-bits */
 #define DMADDR_MASK_30 0xc0000000	/* Address mask for 30-bits */
 #define DMADDR_MASK_0  0xffffffff	/* Address mask for 0-bits (hi-part) */
 
-#define	DMADDRWIDTH_30  30 /* 30-bit addressing capability */
-#define	DMADDRWIDTH_32  32 /* 32-bit addressing capability */
-#define	DMADDRWIDTH_63  63 /* 64-bit addressing capability */
-#define	DMADDRWIDTH_64  64 /* 64-bit addressing capability */
+#define	DMADDRWIDTH_30  30	/* 30-bit addressing capability */
+#define	DMADDRWIDTH_32  32	/* 32-bit addressing capability */
+#define	DMADDRWIDTH_63  63	/* 64-bit addressing capability */
+#define	DMADDRWIDTH_64  64	/* 64-bit addressing capability */
 
 #ifdef BCMDMA64OSL
 typedef struct {
@@ -218,12 +217,12 @@ typedef unsigned long dmaaddr_t;
 	do { \
 		(_pa) = (_val);			\
 	} while (0)
-#endif /* BCMDMA64OSL */
+#endif				/* BCMDMA64OSL */
 
 /* One physical DMA segment */
-typedef struct  {
+typedef struct {
 	dmaaddr_t addr;
-	uint32	  length;
+	uint32 length;
 } hnddma_seg_t;
 
 #if defined(MACOSX)
@@ -240,14 +239,12 @@ typedef struct  {
 #define MAX_DMA_SEGS 4
 #endif
 
-
 typedef struct {
-	void *oshdmah; /* Opaque handle for OSL to store its information */
-	uint origsize; /* Size of the virtual packet */
+	void *oshdmah;		/* Opaque handle for OSL to store its information */
+	uint origsize;		/* Size of the virtual packet */
 	uint nsegs;
 	hnddma_seg_t segs[MAX_DMA_SEGS];
 } hnddma_seg_map_t;
-
 
 /* packet headroom necessary to accommodate the largest header in the system, (i.e TXOFF).
  * By doing, we avoid the need  to allocate an extra buffer for the header when bridging to WL.
@@ -258,13 +255,13 @@ typedef struct {
 #if defined(BCM_RPC_NOCOPY) || defined(BCM_RCP_TXNOCOPY)
 /* add 40 bytes to allow for extra RPC header and info  */
 #define BCMEXTRAHDROOM 220
-#else /* BCM_RPC_NOCOPY || BCM_RPC_TXNOCOPY */
+#else				/* BCM_RPC_NOCOPY || BCM_RPC_TXNOCOPY */
 #ifdef CTFMAP
 #define BCMEXTRAHDROOM 208
-#else /* CTFMAP */
+#else				/* CTFMAP */
 #define BCMEXTRAHDROOM 204
-#endif /* CTFMAP */
-#endif /* BCM_RPC_NOCOPY || BCM_RPC_TXNOCOPY */
+#endif				/* CTFMAP */
+#endif				/* BCM_RPC_NOCOPY || BCM_RPC_TXNOCOPY */
 
 /* Packet alignment for most efficient SDIO (can change based on platform) */
 #ifndef SDALIGN
@@ -287,12 +284,11 @@ typedef struct {
 
 #ifndef BCMDBG_ERR
 #define BCMDBG_ERR
-#endif /* BCMDBG_ERR */
+#endif				/* BCMDBG_ERR */
 
 #define BCMDBG_ASSERT
 
-#endif /* BCMDBG */
-
+#endif				/* BCMDBG */
 
 /* Macros for doing definition and get/set of bitfields
  * Usage example, e.g. a three-bit field (bits 4-6):
@@ -328,4 +324,4 @@ typedef struct {
 #define __attribute__(x)	/* CSTYLED */
 #endif
 
-#endif /* _bcmdefs_h_ */
+#endif				/* _bcmdefs_h_ */

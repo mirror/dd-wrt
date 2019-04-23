@@ -31,7 +31,7 @@ typedef unsigned long bcm_timer_id;
 /*
  * timer callback 
  */
-typedef void (*bcm_timer_cb) (bcm_timer_id id, int data);
+typedef void (*bcm_timer_cb)(bcm_timer_id id, int data);
 
 /*
  * OS-independant interfaces, applications should call these functions only 

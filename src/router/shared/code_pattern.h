@@ -31,10 +31,9 @@
 #define	DPN		4
 #define	RTA41		5
 
-
-//#define LINKSYS_MODEL	WRT54G
-//#define LINKSYS_MODEL	WRT54GV5
-//#define LINKSYS_MODEL	RTA41
+//#define LINKSYS_MODEL WRT54G
+//#define LINKSYS_MODEL WRT54GV5
+//#define LINKSYS_MODEL RTA41
 #define LINKSYS_MODEL	WRT54GS
 //#define LINKSYS_MODEL   DPN            //For DPN
 /***************************************
@@ -48,7 +47,7 @@
 #define CODE_PATTERN_WRT54G   "W54G"
 #define CODE_PATTERN_WRTSL54GS   "W54U"
 #define CODE_PATTERN_WRT150N   "N150"
-#define CODE_PATTERN_WRT160N   "N160"  
+#define CODE_PATTERN_WRT160N   "N160"
 #define CODE_PATTERN_WRT300N   "EWCB"
 #define CODE_PATTERN_WRT300NV11   "EWC2"
 #define CODE_PATTERN_WRT310N   "310N"
@@ -73,9 +72,8 @@
 #define CODE_PATTERN_E3000   "61XN"
 #define CODE_PATTERN_E3200   "3200"
 #define CODE_PATTERN_E4200   "4200"
-#define CODE_PATTERN_NV60K   "NV60"  //used for flashing nvram=60k routers
-#define CODE_PATTERN_NV64K   "NV64"  //used for flashing nvram=64k routers
-
+#define CODE_PATTERN_NV60K   "NV60"	//used for flashing nvram=60k routers
+#define CODE_PATTERN_NV64K   "NV64"	//used for flashing nvram=64k routers
 
 #ifdef HAVE_OMNI
 #define MODEL_NAME	"OMNI"
@@ -84,29 +82,27 @@
 #endif
 #define	VENDOR		"NewMedia-NET GmbH"
 
-
-
 #define COUNTRY		LOCALE
 #define LOCALE		USA
-//#define LOCALE		JAPAN
-//#define LOCALE		EUROPE
-//#define LOCALE		WW
-//#define LOCALE		GERMANY	
-//#define LOCALE		FRANCE
-//#define LOCALE		KOREA
+//#define LOCALE                JAPAN
+//#define LOCALE                EUROPE
+//#define LOCALE                WW
+//#define LOCALE                GERMANY 
+//#define LOCALE                FRANCE
+//#define LOCALE                KOREA
 
 /***************************************
  * define model name and code pattern  *
  * MODEL_NAME =                        *
  * CODE_PATTERN =                      *
  ***************************************/
-	#define UI_STYLE	CISCO
-		#define	CT_VENDOR		"LINKSYS"
-		/*Barry add for Control Intel Flash Downgrade code*/
-		#define INTEL_FLASH_SUPPORT_VERSION_FROM "v1.41.8"
-		#define BCM4712_CHIP_SUPPORT_VERSION_FROM "v1.50.0"
-		#define INTEL_FLASH_SUPPORT_BOOT_VERSION_FROM "v1.3"
-		#define BCM4712_CHIP_SUPPORT_BOOT_VERSION_FROM "v2.0"
+#define UI_STYLE	CISCO
+#define	CT_VENDOR		"LINKSYS"
+		/*Barry add for Control Intel Flash Downgrade code */
+#define INTEL_FLASH_SUPPORT_VERSION_FROM "v1.41.8"
+#define BCM4712_CHIP_SUPPORT_VERSION_FROM "v1.50.0"
+#define INTEL_FLASH_SUPPORT_BOOT_VERSION_FROM "v1.3"
+#define BCM4712_CHIP_SUPPORT_BOOT_VERSION_FROM "v2.0"
 
 /***************************************
  * define language                     *
@@ -115,20 +111,20 @@
  * HTTP_CHARSET =		       *
  ***************************************/
 #if LOCALE == JAPAN
-	#define	LANGUAGE	JAPANESE
-	#define	HTTP_CHARSET	"shift-jis"
+#define	LANGUAGE	JAPANESE
+#define	HTTP_CHARSET	"shift-jis"
 #elif LOCALE == GERMANY
-	#define LANGUAGE	GERMAN
-	#define	HTTP_CHARSET	"iso-8859-1"
+#define LANGUAGE	GERMAN
+#define	HTTP_CHARSET	"iso-8859-1"
 #elif LOCALE == FRANCE
-	#define LANGUAGE	FRENCH
-	#define	HTTP_CHARSET	"iso-8859-1"
+#define LANGUAGE	FRENCH
+#define	HTTP_CHARSET	"iso-8859-1"
 #elif LOCALE == KOREA
-	#define LANGUAGE 	KOREAN
-	#define	HTTP_CHARSET	"euc-kr"
+#define LANGUAGE 	KOREAN
+#define	HTTP_CHARSET	"euc-kr"
 #else
-	#define LANGUAGE 	ENGLISH
-	#define	HTTP_CHARSET	"iso-8859-1"
+#define LANGUAGE 	ENGLISH
+#define	HTTP_CHARSET	"iso-8859-1"
 #endif
 
 /***************************************
@@ -136,9 +132,9 @@
  * WL_MAX_CHANNEL =                    *
  ***************************************/
 #if LOCALE == JAPAN || LOCALE == EUROPE || LOCALE == GERMANY || LOCALE == FRANCE
-	#define	WL_MAX_CHANNEL	"13"
+#define	WL_MAX_CHANNEL	"13"
 #else
-	#define WL_MAX_CHANNEL	"11"
+#define WL_MAX_CHANNEL	"11"
 #endif
 
 /***************************************
@@ -146,33 +142,33 @@
  * WEB_PAGE =                          *
  ***************************************/
 #if UI_STYLE ==  CISCO
-	#if LOCALE == JAPAN
-		#define	WEB_PAGE	"cisco_wrt54g_jp"
-	#elif LOCALE == GERMANY
-		#define	WEB_PAGE	"cisco_wrt54g_de"
-	#elif LOCALE == FRANCE
-		#define	WEB_PAGE	"cisco_wrt54g_fr"
-	#else
-		#if LINKSYS_MODEL == WRT54GV5
-			#define WEB_PAGE	"verizon_wrt54g_en"
-		#elif LINKSYS_MODEL == RTA41
-			#define WEB_PAGE        "verizon_wrt54g_en"
-		#else
-//			#define WEB_PAGE	"cisco_wrt54g_en"
-			#define WEB_PAGE	"cisco_wrt54g_m"
-		#endif
-	#endif
+#if LOCALE == JAPAN
+#define	WEB_PAGE	"cisco_wrt54g_jp"
+#elif LOCALE == GERMANY
+#define	WEB_PAGE	"cisco_wrt54g_de"
+#elif LOCALE == FRANCE
+#define	WEB_PAGE	"cisco_wrt54g_fr"
 #else
-	#if LOCALE == JAPAN
-		#define	WEB_PAGE	"linksys_wrt54g_jp"
-	#else
-		#define WEB_PAGE	"linksys_wrt54g_en"
-	#endif
+#if LINKSYS_MODEL == WRT54GV5
+#define WEB_PAGE	"verizon_wrt54g_en"
+#elif LINKSYS_MODEL == RTA41
+#define WEB_PAGE        "verizon_wrt54g_en"
+#else
+//                      #define WEB_PAGE        "cisco_wrt54g_en"
+#define WEB_PAGE	"cisco_wrt54g_m"
+#endif
+#endif
+#else
+#if LOCALE == JAPAN
+#define	WEB_PAGE	"linksys_wrt54g_jp"
+#else
+#define WEB_PAGE	"linksys_wrt54g_en"
+#endif
 #endif
 
 /***************************************
  * check LOCALE
  ***************************************/
- #if LOCALE != JAPAN && LOCALE != USA && LOCALE != EUROPE && LOCALE != GERMANY && LOCALE != FRANCE
-	#error	"The LOCALE for LINKSYS is error, must be USA, EUROPE, JAPAN, GERMANY or FRANCE"
- #endif
+#if LOCALE != JAPAN && LOCALE != USA && LOCALE != EUROPE && LOCALE != GERMANY && LOCALE != FRANCE
+#error	"The LOCALE for LINKSYS is error, must be USA, EUROPE, JAPAN, GERMANY or FRANCE"
+#endif

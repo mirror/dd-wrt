@@ -85,7 +85,7 @@ extern void do_vsp_info_page(unsigned char method, struct mime_handler *handler,
 
 struct onload {
 	char *name;
-	void (*go) (webs_t wp, char *arg);
+	void (*go)(webs_t wp, char *arg);
 };
 
 struct lease_t {
