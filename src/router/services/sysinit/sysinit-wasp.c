@@ -60,27 +60,27 @@ struct regiondef {
 	char *region;
 };
 static struct regiondef regions[] = {
-	{"AU", "AUSTRALIA"},
-	{"NA", "UNITED_STATES"},
-	{"US", "UNITED_STATES"},
-	{"CA", "CANADA"},
-	{"LA", "BRAZIL"},
-	{"BR", "BRAZIL"},
-	{"EU", "GERMANY"},
-	{"GB", "UNITED_KINGDOM"},
-	{"CN", "CHINA"},
-	{"SG", "SINGAPORE"},
-	{"KR", "KOREA_REPUBLIC"},
-	{"FR", "FRANCE"},
-	{"JP", "JAPAN"},
-	{"IL", "ISRAEL"},
-	{"RU", "RUSSIA"},
-	{"TH", "THAILAND"},
-	{"MY", "MALASIA"},
-	{"IN", "INDIA"},
-	{"EG", "EGYPT"},
-	{"TW", "TAIWAN"},
-	{NULL, NULL}
+	{ "AU", "AUSTRALIA" },
+	{ "NA", "UNITED_STATES" },
+	{ "US", "UNITED_STATES" },
+	{ "CA", "CANADA" },
+	{ "LA", "BRAZIL" },
+	{ "BR", "BRAZIL" },
+	{ "EU", "GERMANY" },
+	{ "GB", "UNITED_KINGDOM" },
+	{ "CN", "CHINA" },
+	{ "SG", "SINGAPORE" },
+	{ "KR", "KOREA_REPUBLIC" },
+	{ "FR", "FRANCE" },
+	{ "JP", "JAPAN" },
+	{ "IL", "ISRAEL" },
+	{ "RU", "RUSSIA" },
+	{ "TH", "THAILAND" },
+	{ "MY", "MALASIA" },
+	{ "IN", "INDIA" },
+	{ "EG", "EGYPT" },
+	{ "TW", "TAIWAN" },
+	{ NULL, NULL }
 };
 
 static void setdlinkcountry(void)

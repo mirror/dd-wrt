@@ -252,95 +252,95 @@ typedef struct {
  */
 #if defined(HAVE_WGT624) || defined(HAVE_NP25G)
 admPhyInfo_t admPhyInfo[] = {
-	{TRUE,			/* phy port 0 -- LAN port */
+	{ TRUE,			/* phy port 0 -- LAN port */
 	 FALSE,
 	 ENET_UNIT_DEFAULT,
 	 ADM_PHY0_ADDR,
 	 ADM_SW_PHY_PORT0_REG,
 	 ADM_LAN_PORT_VLAN	/* LAN port */
-	 },
+	  },
 
-	{TRUE,			/* phy port 1 -- NC */
+	{ TRUE,			/* phy port 1 -- NC */
 	 FALSE,
 	 ENET_UNIT_DEFAULT,
 	 ADM_PHY1_ADDR,
 	 ADM_SW_PHY_PORT1_REG,
-	 ADM_LAN_PORT_VLAN},
+	 ADM_LAN_PORT_VLAN },
 
-	{TRUE,			/* phy port 2 -- NC */
+	{ TRUE,			/* phy port 2 -- NC */
 	 FALSE,
 	 ENET_UNIT_DEFAULT,
 	 ADM_PHY2_ADDR,
 	 ADM_SW_PHY_PORT2_REG,
-	 ADM_LAN_PORT_VLAN},
+	 ADM_LAN_PORT_VLAN },
 
-	{TRUE,			/* phy port 3 -- NC */
+	{ TRUE,			/* phy port 3 -- NC */
 	 FALSE,
 	 ENET_UNIT_DEFAULT,
 	 ADM_PHY3_ADDR,
 	 ADM_SW_PHY_PORT3_REG,
-	 ADM_LAN_PORT_VLAN},
+	 ADM_LAN_PORT_VLAN },
 
-	{TRUE,			/* phy port 4 -- WAN port */
+	{ TRUE,			/* phy port 4 -- WAN port */
 	 FALSE,
 	 ENET_UNIT_DEFAULT,
 	 ADM_PHY4_ADDR,
 	 ADM_SW_PHY_PORT4_REG,
-	 ADM_WAN_PORT_VLAN},
+	 ADM_WAN_PORT_VLAN },
 
-	{FALSE,			/* phy port 5 -- CPU port (no RJ45 connector) 
+	{ FALSE,		/* phy port 5 -- CPU port (no RJ45 connector) 
 				 */
 	 TRUE,
 	 ENET_UNIT_DEFAULT,
 	 0x00,
 	 ADM_SW_PHY_PORT5_REG,
-	 ADM_WAN_PORT_VLAN},
+	 ADM_WAN_PORT_VLAN },
 };
 #else
 admPhyInfo_t admPhyInfo[] = {
-	{TRUE,			/* phy port 0 -- WAN port */
+	{ TRUE,			/* phy port 0 -- WAN port */
 	 FALSE,
 	 ENET_UNIT_DEFAULT,
 	 ADM_PHY0_ADDR,
 	 ADM_SW_PHY_PORT0_REG,
 	 ADM_WAN_PORT_VLAN	/* WAN port */
-	 },
+	  },
 
-	{TRUE,			/* phy port 1 -- NC */
+	{ TRUE,			/* phy port 1 -- NC */
 	 FALSE,
 	 ENET_UNIT_DEFAULT,
 	 ADM_PHY1_ADDR,
 	 ADM_SW_PHY_PORT1_REG,
-	 ADM_LAN_PORT_VLAN},
+	 ADM_LAN_PORT_VLAN },
 
-	{TRUE,			/* phy port 2 -- NC */
+	{ TRUE,			/* phy port 2 -- NC */
 	 FALSE,
 	 ENET_UNIT_DEFAULT,
 	 ADM_PHY2_ADDR,
 	 ADM_SW_PHY_PORT2_REG,
-	 ADM_LAN_PORT_VLAN},
+	 ADM_LAN_PORT_VLAN },
 
-	{TRUE,			/* phy port 3 -- NC */
+	{ TRUE,			/* phy port 3 -- NC */
 	 FALSE,
 	 ENET_UNIT_DEFAULT,
 	 ADM_PHY3_ADDR,
 	 ADM_SW_PHY_PORT3_REG,
-	 ADM_LAN_PORT_VLAN},
+	 ADM_LAN_PORT_VLAN },
 
-	{TRUE,			/* phy port 4 -- LAN port */
+	{ TRUE,			/* phy port 4 -- LAN port */
 	 FALSE,
 	 ENET_UNIT_DEFAULT,
 	 ADM_PHY4_ADDR,
 	 ADM_SW_PHY_PORT4_REG,
-	 ADM_LAN_PORT_VLAN},
+	 ADM_LAN_PORT_VLAN },
 
-	{FALSE,			/* phy port 5 -- CPU port (no RJ45 connector) 
+	{ FALSE,		/* phy port 5 -- CPU port (no RJ45 connector) 
 				 */
 	 TRUE,
 	 ENET_UNIT_DEFAULT,
 	 0x00,
 	 ADM_SW_PHY_PORT5_REG,
-	 ADM_WAN_PORT_VLAN},
+	 ADM_WAN_PORT_VLAN },
 };
 
 #endif
