@@ -282,7 +282,9 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 		int netmodecap = site_survey_lists[i].capability;
 
 		netmodecap &= (DOT11_CAP_ESS | DOT11_CAP_IBSS);
-		if (netmodecap == DOT11_CAP_ESS)
+		if (site_survey_lists[i].extcap & 1)
+			netmode = "Mesh";
+		else if (netmodecap == DOT11_CAP_ESS)
 			netmode = "AP";
 		else if (netmodecap == DOT11_CAP_IBSS)
 			netmode = "AdHoc";
