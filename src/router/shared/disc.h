@@ -66,10 +66,10 @@ typedef struct source {
 	int blocksize;
 	struct source *foundation;
 
-	int (*analyze) (struct source * s, int level);
-	u8 (*read_bytes) (struct source * s, u8 pos, u8 len, void *buf);
-	int (*read_block) (struct source * s, u8 pos, void *buf);
-	void (*close) (struct source * s);
+	int (*analyze)(struct source * s, int level);
+	u8 (*read_bytes)(struct source * s, u8 pos, u8 len, void *buf);
+	int (*read_block)(struct source * s, u8 pos, void *buf);
+	void (*close)(struct source * s);
 
 	/* private data may follow */
 } SOURCE;
@@ -80,7 +80,7 @@ typedef struct section {
 	SOURCE *source;
 } SECTION;
 
-typedef int (*DETECTOR) (SECTION * section, int level);
+typedef int (*DETECTOR)(SECTION * section, int level);
 
 /* detection dispatching functions */
 

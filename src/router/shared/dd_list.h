@@ -65,7 +65,6 @@ void __dd_list_add(struct dd_list_head *new, struct dd_list_head *prev, struct d
  */
 #define dd_list_add_tail(new, head) __dd_list_add(new, head->prev, head)
 
-
 /*
  * Delete a list entry by making the prev/next entries
  * point to each other.
@@ -364,6 +363,5 @@ void dd_list_splice_init(struct dd_list_head *list, struct dd_list_head *head);
 		n = dd_list_entry(pos->member.prev, typeof(*pos), member);	\
 	     &pos->member != (head); 					\
 	     pos = n, n = dd_list_entry(n->member.prev, typeof(*n), member))
-
 
 #endif

@@ -209,6 +209,7 @@ static inline int has_mesh(const char *prefix)
 {
 	return 0;
 }
+
 static inline int has_tdma(const char *prefix)
 {
 	return 0;
@@ -227,10 +228,12 @@ static inline int has_mesh(const char *prefix)
 {
 	return 0;
 }
+
 static inline int has_tdma(const char *prefix)
 {
 	return 0;
 }
+
 static inline int has_gcmp(const char *prefix)
 {
 	return 0;
@@ -371,10 +374,12 @@ static inline int has_subeamforming(const char *prefix)
 {
 	return 0;
 }
+
 static inline int has_mubeamforming(const char *prefix)
 {
 	return 0;
 }
+
 #ifdef HAVE_MADWIFI
 static inline int has_vht160(const char *prefix)
 {
