@@ -279,44 +279,44 @@ ipPhyInfo_t ipPhyInfo[] = {
 	 *    Ports 0,1,2,3,4 are "LAN ports"
 	 *    Port 5 connects to the MAC0 in the AR5312
 	 */
-	{TRUE,			/* phy port 0 -- LAN port 0 */
+	{ TRUE,			/* phy port 0 -- LAN port 0 */
 	 FALSE,
 	 ENET_UNIT_DEFAULT,
 	 IP_PHY0_ADDR,
-	 IP_LAN_PORT_VLAN},
+	 IP_LAN_PORT_VLAN },
 
-	{TRUE,			/* phy port 1 -- LAN port 1 */
+	{ TRUE,			/* phy port 1 -- LAN port 1 */
 	 FALSE,
 	 ENET_UNIT_DEFAULT,
 	 IP_PHY1_ADDR,
-	 IP_LAN_PORT_VLAN},
+	 IP_LAN_PORT_VLAN },
 
-	{TRUE,			/* phy port 2 -- LAN port 2 */
+	{ TRUE,			/* phy port 2 -- LAN port 2 */
 	 FALSE,
 	 ENET_UNIT_DEFAULT,
 	 IP_PHY2_ADDR,
-	 IP_LAN_PORT_VLAN},
+	 IP_LAN_PORT_VLAN },
 
-	{TRUE,			/* phy port 3 -- LAN port 3 */
+	{ TRUE,			/* phy port 3 -- LAN port 3 */
 	 FALSE,
 	 ENET_UNIT_DEFAULT,
 	 IP_PHY3_ADDR,
-	 IP_LAN_PORT_VLAN},
+	 IP_LAN_PORT_VLAN },
 
-	{TRUE,			/* phy port 4 -- WAN port or LAN port 4 */
+	{ TRUE,			/* phy port 4 -- WAN port or LAN port 4 */
 	 FALSE,
 	 ENET_UNIT_DEFAULT,
 	 IP_PHY4_ADDR,
 	 IP_WAN_PORT_VLAN	/* Send to all ports */
-	 },
+	  },
 
-	{FALSE,			/* phy port 5 -- CPU port (no RJ45 connector) 
+	{ FALSE,		/* phy port 5 -- CPU port (no RJ45 connector) 
 				 */
 	 TRUE,
 	 ENET_UNIT_DEFAULT,
 	 0x00,
 	 IP_LAN_PORT_VLAN	/* Send to all ports */
-	 },
+	  },
 
 };
 

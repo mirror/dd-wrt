@@ -38,14 +38,14 @@ struct txpower_ac_qtn_s {
 
 static const struct txpower_ac_qtn_s txpower_list_qtn_rtac87u[] = {
 	/* 1 ~ 25% */
-	{1, 25, 14},
+	{ 1, 25, 14 },
 	/* 26 ~ 50% */
-	{26, 50, 17},
+	{ 26, 50, 17 },
 	/* 51 ~ 75% */
-	{51, 75, 20},
+	{ 51, 75, 20 },
 	/* 76 ~ 100% */
-	{76, 100, 23},
-	{0, 0, 0x0}
+	{ 76, 100, 23 },
+	{ 0, 0, 0x0 }
 };
 
 int get_tx_power_qtn(void)
