@@ -233,7 +233,7 @@ void start_sysinit(void)
 #endif
 #ifdef HAVE_FMS2111
 	eval("/sbin/wlanled", "-l", "generic_19:-99", "-l", "generic_15:-75", "-l", "generic_16:-50", "-l", "generic_18:-25");
-	eval("ledtool", "1", "4");      //buzzer
+	eval("ledtool", "1", "4");	//buzzer
 #endif
 
 	return;
