@@ -127,24 +127,24 @@ static inline int decompress(webs_t stream, char *pattern, int len, int last)
 	};
 
 	struct DECODE decode[] = {
-		{'i', "<input type="},	//
-		{'c', "<input class=\"spaceradio\""},	//
-		{'t', "<input class=\"text\""},	//
-		{'p', "<input class=\"num\""},	//
-		{'h', "<input class=\"button\""},	//
-		{'g', "<input class=\\\"button\\\""},	//
-		{'d', "<input id="},	//
-		{'f', "<div class=\"setting\""},	//
-		{'e', "<div class="},	//
-		{'n', "<div id="},	//
-		{'j', "<a href=\""},	//
-		{'o', "<option value="},	//
-		{'s', "<select name="},	//
-		{'u', "<span class="},	//
-		{'z', "<input name="},	//
-		{'x', "document.write(\""},	//
-		{'y', "<document."},	//
-		{'m', "<script type=\"text/javascript\">"},	//
+		{ 'i', "<input type=" },	//
+		{ 'c', "<input class=\"spaceradio\"" },	//
+		{ 't', "<input class=\"text\"" },	//
+		{ 'p', "<input class=\"num\"" },	//
+		{ 'h', "<input class=\"button\"" },	//
+		{ 'g', "<input class=\\\"button\\\"" },	//
+		{ 'd', "<input id=" },	//
+		{ 'f', "<div class=\"setting\"" },	//
+		{ 'e', "<div class=" },	//
+		{ 'n', "<div id=" },	//
+		{ 'j', "<a href=\"" },	//
+		{ 'o', "<option value=" },	//
+		{ 's', "<select name=" },	//
+		{ 'u', "<span class=" },	//
+		{ 'z', "<input name=" },	//
+		{ 'x', "document.write(\"" },	//
+		{ 'y', "<document." },	//
+		{ 'm', "<script type=\"text/javascript\">" },	//
 	};
 	int i;
 	int l = sizeof(decode) / sizeof(struct DECODE);
@@ -200,7 +200,7 @@ static int file_get(webs_t wp)
 static int wfputs(char *buf, webs_t fp);
 
 static void *global_handle = NULL;
-static void do_ej_s(int (*get) (webs_t wp), webs_t stream)	// jimmy, https, 8/4/2003
+static void do_ej_s(int (*get)(webs_t wp), webs_t stream)	// jimmy, https, 8/4/2003
 {
 	int c = 0, ret = 0;
 	char *pattern, *asp = NULL, *func = NULL, *end = NULL;

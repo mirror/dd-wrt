@@ -316,7 +316,7 @@ void validate_merge_netmask(webs_t wp, char *value, struct variable *v)
 // char webs_buf[5000];
 // int webs_buf_offset = 0;
 
-void validate_list(webs_t wp, char *value, struct variable *v, int (*valid) (webs_t, char *, struct variable *))
+void validate_list(webs_t wp, char *value, struct variable *v, int (*valid)(webs_t, char *, struct variable *))
 {
 	int n, i;
 	char name[100];
@@ -693,9 +693,9 @@ void validate_wan_ipaddr(webs_t wp, char *value, struct variable *v)
 	int pptp_skip_check = FALSE;
 
 	struct variable wan_variables[] = {
-		{NULL},
-		{NULL},
-	      {argv:ARGV("wan_ipaddr", "wan_netmask")},
+		{ NULL },
+		{ NULL },
+	      { argv:ARGV("wan_ipaddr", "wan_netmask") },
 	}, *which;
 
 	which = &wan_variables[0];
@@ -857,10 +857,10 @@ void validate_lan_ipaddr(webs_t wp, char *value, struct variable *v)
 		unlink("/jffs/dnsmasq.leases");
 	}
 
-/*	if (strcmp(lan_ipaddr, nvram_safe_get("lan_ipaddr")) || strcmp(lan_netmask, nvram_safe_get("lan_netmask")))
-		lan_ip_changed = 1;
-	else
-		lan_ip_changed = 0;*/
+	/*     if (strcmp(lan_ipaddr, nvram_safe_get("lan_ipaddr")) || strcmp(lan_netmask, nvram_safe_get("lan_netmask")))
+	   lan_ip_changed = 1;
+	   else
+	   lan_ip_changed = 0; */
 
 	nvram_set(v->name, lan_ipaddr);
 	nvram_set("lan_netmask", lan_netmask);
@@ -980,12 +980,13 @@ void validate_wl_wme_params(webs_t wp, char *value, struct variable *v)
 		char *arg2;
 	} field_attrib[] = {
 		{
-		"WME AC CWmin", 1, "0", "32767"}, {
-		"WME AC CWmax", 1, "0", "32767"}, {
-		"WME AC AIFSN", 1, "1", "15"}, {
-		"WME AC TXOP(b)", 1, "0", "65504"}, {
-		"WME AC TXOP(a/g)", 1, "0", "65504"}, {
-		"WME AC Admin Forced", 0, "on", "off"}
+		 "WME AC CWmin", 1, "0", "32767" }, {
+						     "WME AC CWmax", 1, "0", "32767" }, {
+											 "WME AC AIFSN", 1, "1", "15" }, {
+															  "WME AC TXOP(b)", 1, "0", "65504" }, {
+																				"WME AC TXOP(a/g)", 1, "0", "65504" }, {
+																									"WME AC Admin Forced",
+																									0, "on", "off" }
 	};
 
 	/*
@@ -1115,12 +1116,12 @@ void validate_wl_wep_key(webs_t wp, char *value, struct variable *v)
 	char buf[200] = "";
 	int error_value = 0;
 	struct variable wl_wep_variables[] = {
-	      {argv:ARGV("16")},
-	      {argv:ARGV("5", "10")},
+	      { argv:ARGV("16") },
+	      { argv:ARGV("5", "10") },
 		// for 64 bit
-	      {argv:ARGV("13", "26")},
+	      { argv:ARGV("13", "26") },
 		// for 128 bit
-	      {argv:ARGV("1", "4")},
+	      { argv:ARGV("1", "4") },
 	}, *which;
 
 	char *wep_bit = "", *wep_passphrase = "", *wep_key1 = "", *wep_key2 = "", *wep_key3 = "", *wep_key4 = "", *wep_tx = "";
@@ -1339,10 +1340,10 @@ void validate_forward_proto(webs_t wp, char *value, struct variable *v)
 	char *buf, *cur;
 	int count, sof;
 	struct variable forward_proto_variables[] = {
-	      {argv:ARGV("12")},
-	      {argv:ARGV("0", "65535")},
-	      {argv:ARGV("0", "65535")},
-		{NULL},
+	      { argv:ARGV("12") },
+	      { argv:ARGV("0", "65535") },
+	      { argv:ARGV("0", "65535") },
+		{ NULL },
 	}, *which;
 	buf = nvram_safe_get("forward_entries");
 	if (buf == NULL || *(buf) == 0)
@@ -1477,10 +1478,10 @@ void validate_forward_spec(webs_t wp, char *value, struct variable *v)
 	char *buf, *cur;
 	int count, sof;
 	struct variable forward_proto_variables[] = {
-	      {argv:ARGV("12")},
-	      {argv:ARGV("0", "65535")},
-	      {argv:ARGV("0", "65535")},
-		{NULL},
+	      { argv:ARGV("12") },
+	      { argv:ARGV("0", "65535") },
+	      { argv:ARGV("0", "65535") },
+		{ NULL },
 	}, *which;
 	buf = nvram_safe_get("forwardspec_entries");
 	if (buf == NULL || *(buf) == 0)
@@ -1603,7 +1604,7 @@ void validate_forward_spec(webs_t wp, char *value, struct variable *v)
 void validate_dynamic_route(webs_t wp, char *value, struct variable *v)
 {
 	struct variable dr_variables[] = {
-	      {argv:ARGV("0", "1", "2", "3")},
+	      { argv:ARGV("0", "1", "2", "3") },
 	}, *which;
 	char *dr_setting;
 
@@ -1875,9 +1876,9 @@ void validate_chaps(webs_t wp, char *value, struct variable *v)
 	char *buf, *cur;
 	int count, sof;
 	struct variable chaps_variables[] = {
-	      {argv:ARGV("30")},
-	      {argv:ARGV("30")},
-		{NULL},
+	      { argv:ARGV("30") },
+	      { argv:ARGV("30") },
+		{ NULL },
 	}, *which;
 	buf = nvram_safe_get("pppoeserver_chapsnum");
 	if (buf == NULL || *(buf) == 0)
@@ -1964,9 +1965,9 @@ void validate_aliases(webs_t wp, char *value, struct variable *v)
 	char *buf, *cur;
 	int count, sof;
 	struct variable alias_variables[] = {
-	      {argv:ARGV("30")},
-	      {argv:ARGV("30")},
-		{NULL},
+	      { argv:ARGV("30") },
+	      { argv:ARGV("30") },
+		{ NULL },
 	}, *which;
 	buf = nvram_safe_get("milkfish_ddaliasesnum");
 	if (buf == NULL || *(buf) == 0)
@@ -2021,9 +2022,9 @@ void validate_subscribers(webs_t wp, char *value, struct variable *v)
 	char *buf, *cur;
 	int count, sof;
 	struct variable subscriber_variables[] = {
-	      {argv:ARGV("30")},
-	      {argv:ARGV("30")},
-		{NULL},
+	      { argv:ARGV("30") },
+	      { argv:ARGV("30") },
+		{ NULL },
 	}, *which;
 	buf = nvram_safe_get("milkfish_ddsubscribersnum");
 	if (buf == NULL || *(buf) == 0)
@@ -2294,11 +2295,11 @@ void validate_wds(webs_t wp, char *value, struct variable *v)
 	int h, i, devcount = 1;	// changed from 2 to 3
 #endif
 	struct variable wds_variables[] = {
-	      {argv:NULL},
-	      {argv:NULL},
-	      {argv:NULL},
-	      {argv:NULL},
-	      {argv:NULL},
+	      { argv:NULL },
+	      { argv:NULL },
+	      { argv:NULL },
+	      { argv:NULL },
+	      { argv:NULL },
 	};
 
 	char *val = NULL;
@@ -2512,7 +2513,7 @@ void validate_filter_ip_grp(webs_t wp, char *value, struct variable *v)
 	    *ip_range0_2, *ip_range0_3, *ip_range0_4, *ip_range0_5, *ip_range0_6, *ip_range0_7, *ip_range1_0, *ip_range1_1, *ip_range1_2, *ip_range1_3, *ip_range1_4, *ip_range1_5, *ip_range1_6, *ip_range1_7;
 	unsigned char ip[10] = { 0, 0, 0, 0, 0, 0, 0 };
 	struct variable filter_ip_variables[] = {
-	      {argv:ARGV("0", "255")},
+	      { argv:ARGV("0", "255") },
 	}, *which;
 	char _filter_ip[] = "filter_ip_grpXXX";
 
@@ -2616,10 +2617,10 @@ void validate_filter_port(webs_t wp, char *value, struct variable *v)
 	int i;
 	char buf[1000] = "", *cur = buf;
 	struct variable filter_port_variables[] = {
-	      {argv:ARGV("0",
-		     "65535")},
-	      {argv:ARGV("0",
-		     "65535")},
+	      { argv:ARGV("0",
+		     "65535") },
+	      { argv:ARGV("0",
+		     "65535") },
 	}, *which;
 	D("validate_filter_port");
 	which = &filter_port_variables[0];
@@ -2673,10 +2674,10 @@ void validate_filter_dport_grp(webs_t wp, char *value, struct variable *v)
 	int i;
 	char buf[1000] = "", *cur = buf;
 	struct variable filter_port_variables[] = {
-	      {argv:ARGV("0",
-		     "65535")},
-	      {argv:ARGV("0",
-		     "65535")},
+	      { argv:ARGV("0",
+		     "65535") },
+	      { argv:ARGV("0",
+		     "65535") },
 	}, *which;
 	char _filter_port[] = "filter_dport_grpXXX";
 
@@ -2875,11 +2876,11 @@ void validate_port_trigger(webs_t wp, char *value, struct variable *v)
 	char *buf, *cur, *newbuf, *entry;
 	int count, sof;
 	struct variable trigger_variables[] = {
-	      {argv:ARGV("12")},
-	      {argv:ARGV("0", "65535")},
-	      {argv:ARGV("0", "65535")},
-	      {argv:ARGV("0", "65535")},
-	      {argv:ARGV("0", "65535")},
+	      { argv:ARGV("12") },
+	      { argv:ARGV("0", "65535") },
+	      { argv:ARGV("0", "65535") },
+	      { argv:ARGV("0", "65535") },
+	      { argv:ARGV("0", "65535") },
 	}, *which;
 
 	buf = nvram_safe_get("trigger_entries");
@@ -3047,10 +3048,10 @@ void validate_static_route(webs_t wp, char *value, struct variable *v)
 	char word[256], *next;
 	char backuproute[256];
 	struct variable static_route_variables[] = {
-	      {argv:NULL},
-	      {argv:NULL},
-	      {argv:NULL},
-	      {argv:ARGV("lan", "wan")},
+	      { argv:NULL },
+	      { argv:NULL },
+	      { argv:NULL },
+	      { argv:ARGV("lan", "wan") },
 	};
 	char *old;
 	char *old_name;
