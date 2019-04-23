@@ -112,9 +112,8 @@ static const struct ie_print ieprinters[] = {
 	[50] = { "Extended supported rates", print_supprates, 0, 255, BIT(PRINT_SCAN), },
 	[191] = { "VHT capabilities", print_vht_capa, 12, 255, BIT(PRINT_SCAN), },
 	[192] = { "VHT operation", print_vht_oper, 5, 255, BIT(PRINT_SCAN), },
-	[127] = { "Extended capabilities", print_capabilities, 0, 255,
-		 [114] = { "MESH ID", print_mesh_ssid, 0, 32, BIT(PRINT_SCAN) | BIT(PRINT_LINK),},
-		 BIT(PRINT_SCAN), },
+	[127] = { "Extended capabilities", print_capabilities, 0, 255, BIT(PRINT_SCAN), },
+	[114] = { "MESH ID", print_mesh_ssid, 0, 32, BIT(PRINT_SCAN) | BIT(PRINT_LINK), },
 };
 
 static void fillENC(const char *text)
