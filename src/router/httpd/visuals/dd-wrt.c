@@ -2322,7 +2322,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 	    && !nvram_nmatch("apstawet", "%s_mode", prefix))
 		return 0;
 #endif
-	if (!nvram_nmatch("mesh","%s_mode",prefix))
+	if (!nvram_nmatch("mesh", "%s_mode", prefix))
 		return 0;
 	int count = 1;
 
@@ -2577,7 +2577,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 #ifndef HAVE_GUESTPORT
 	websWrite(wp, "<div class=\"center\">\n");
 #ifdef HAVE_MADWIFI
-	if (((!has_ad(prefix) && count < 8) || (is_mac80211(prefix) && !has_ad(prefix) && count < 16))  && !nvram_nmatch("mesh","%s_mode",prefix))
+	if (((!has_ad(prefix) && count < 8) || (is_mac80211(prefix) && !has_ad(prefix) && count < 16)) && !nvram_nmatch("mesh", "%s_mode", prefix))
 #elif HAVE_RT2880
 	if (count < 7)
 #else
@@ -2589,7 +2589,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"vifs_add_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
 			  prefix);
-	if (!has_ad(prefix) && !nvram_nmatch("mesh","%s_mode",prefix) && count > 1)
+	if (!has_ad(prefix) && !nvram_nmatch("mesh", "%s_mode", prefix) && count > 1)
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.remove + \"\\\" onclick=\\\"vifs_remove_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
 			  prefix);
@@ -2654,7 +2654,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 
 	websWrite(wp, "<div class=\"center\">\n");
 #ifdef HAVE_ATH9K
-	if (count < 16 && gpfound == 0 && !nvram_nmatch("mesh","%s_mode",prefix))
+	if (count < 16 && gpfound == 0 && !nvram_nmatch("mesh", "%s_mode", prefix))
 #elif HAVE_MADWIFI
 	if (count < 8 && gpfound == 0 && !has_ad(prefix))
 #elif HAVE_RT2880
@@ -2668,7 +2668,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"$('gp_modify').value='add';vifs_add_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
 			  prefix);
-	if (gpfound == 1 && !nvram_nmatch("mesh","%s_mode",prefix) && !has_ad(prefix))
+	if (gpfound == 1 && !nvram_nmatch("mesh", "%s_mode", prefix) && !has_ad(prefix))
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.remove + \"\\\" onclick=\\\"$('gp_modify').value='remove';vifs_remove_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
 			  prefix);
