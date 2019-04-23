@@ -189,70 +189,70 @@ void Initnvramtab()
 	char *tmpstr;
 	struct variable *tmp;
 	static struct SIMPLEVAL simpleval[] = {
-		{"WMEPARAM", "validate_wl_wme_params", 0},
-		{"WMETXPARAM", "validate_wl_wme_tx_params", 0},
-		{"WANIPADDR", "validate_wan_ipaddr", 0},
-		{"MERGEREMOTEIP", "validate_remote_ip", 0},
-		{"MERGEIPADDRS", "validate_merge_ipaddrs", 0},
-		{"DNS", "validate_dns", 0},
-		{"SAVEWDS", "save_wds", 0},
-		{"DHCP", "dhcp_check", 0},
-		{"STATICS", "validate_statics", 0},
+		{ "WMEPARAM", "validate_wl_wme_params", 0 },
+		{ "WMETXPARAM", "validate_wl_wme_tx_params", 0 },
+		{ "WANIPADDR", "validate_wan_ipaddr", 0 },
+		{ "MERGEREMOTEIP", "validate_remote_ip", 0 },
+		{ "MERGEIPADDRS", "validate_merge_ipaddrs", 0 },
+		{ "DNS", "validate_dns", 0 },
+		{ "SAVEWDS", "save_wds", 0 },
+		{ "DHCP", "dhcp_check", 0 },
+		{ "STATICS", "validate_statics", 0 },
 #ifdef HAVE_PORTSETUP
-		{"PORTSETUP", "validate_portsetup", 0},
+		{ "PORTSETUP", "validate_portsetup", 0 },
 #endif
-		{"REBOOT", "validate_reboot", 0},
-		{"IPADDR", "validate_ipaddr", 0},
-		{"STATICLEASES", "validate_staticleases", 0},
+		{ "REBOOT", "validate_reboot", 0 },
+		{ "IPADDR", "validate_ipaddr", 0 },
+		{ "STATICLEASES", "validate_staticleases", 0 },
 #ifdef HAVE_CHILLILOCAL
-		{"USERLIST", "validate_userlist", 0},
+		{ "USERLIST", "validate_userlist", 0 },
 #endif
 #ifdef HAVE_RADLOCAL
-		{"IRADIUSUSERLIST", "validate_iradius", 0},
+		{ "IRADIUSUSERLIST", "validate_iradius", 0 },
 #endif
-		{"IPADDRS", "validate_ipaddrs", 0},
-		{"NETMASK", "validate_netmask", 0},
-		{"MERGENETMASK", "validate_merge_netmask", 0},
-		{"WDS", "validate_wds", 0},
-		{"STATICROUTE", "validate_static_route", 0},
-		{"MERGEMAC", "validate_merge_mac", 0},
-		{"FILTERPOLICY", "validate_filter_policy", 0},
-		{"FILTERIPGRP", "validate_filter_ip_grp", 0},
-		{"FILTERPORT", "validate_filter_port", 0},
-		{"FILTERDPORTGRP", "validate_filter_dport_grp", 0},
-		{"BLOCKEDSERVICE", "validate_blocked_service", 0},
-		{"FILTERP2P", "validate_catchall", 0},
-		{"FILTERMACGRP", "validate_filter_mac_grp", 0},
-		{"FILTERWEB", "validate_filter_web", 0},
-		{"WLHWADDRS", "validate_wl_hwaddrs", 0},
-		{"FORWARDPROTO", "validate_forward_proto", 0},
-		{"FORWARDSPEC", "validate_forward_spec", 0},
-		{"PORTTRIGGER", "validate_port_trigger", 0},
-		{"HWADDR", "validate_hwaddr", 0},
-		{"HWADDRS", "validate_hwaddrs", 0},
-		{"WLWEPKEY", "validate_wl_wep_key", 0},
+		{ "IPADDRS", "validate_ipaddrs", 0 },
+		{ "NETMASK", "validate_netmask", 0 },
+		{ "MERGENETMASK", "validate_merge_netmask", 0 },
+		{ "WDS", "validate_wds", 0 },
+		{ "STATICROUTE", "validate_static_route", 0 },
+		{ "MERGEMAC", "validate_merge_mac", 0 },
+		{ "FILTERPOLICY", "validate_filter_policy", 0 },
+		{ "FILTERIPGRP", "validate_filter_ip_grp", 0 },
+		{ "FILTERPORT", "validate_filter_port", 0 },
+		{ "FILTERDPORTGRP", "validate_filter_dport_grp", 0 },
+		{ "BLOCKEDSERVICE", "validate_blocked_service", 0 },
+		{ "FILTERP2P", "validate_catchall", 0 },
+		{ "FILTERMACGRP", "validate_filter_mac_grp", 0 },
+		{ "FILTERWEB", "validate_filter_web", 0 },
+		{ "WLHWADDRS", "validate_wl_hwaddrs", 0 },
+		{ "FORWARDPROTO", "validate_forward_proto", 0 },
+		{ "FORWARDSPEC", "validate_forward_spec", 0 },
+		{ "PORTTRIGGER", "validate_port_trigger", 0 },
+		{ "HWADDR", "validate_hwaddr", 0 },
+		{ "HWADDRS", "validate_hwaddrs", 0 },
+		{ "WLWEPKEY", "validate_wl_wep_key", 0 },
 #ifdef HAVE_PPPOESERVER
-		{"CHAPTABLE", "validate_chaps", 0},
+		{ "CHAPTABLE", "validate_chaps", 0 },
 #endif
 #ifdef HAVE_MILKFISH
-		{"MFSUBSCRIBERS", "validate_subscribers", 0},
-		{"MFALIASES", "validate_aliases", 0},
+		{ "MFSUBSCRIBERS", "validate_subscribers", 0 },
+		{ "MFALIASES", "validate_aliases", 0 },
 #endif
-		{"RANGE", "validate_range", 2},
-		{"CHOICE", "validate_choice", -1},
-		{"NOACK", "validate_noack", 2},
-		{"NAME", "validate_name", 1},
-		{"PASSWORD", "validate_password", 1},
-		{"PASSWORD2", "validate_password2", 1},
-		{"LANIPADDR", "validate_lan_ipaddr", 1},
-		{"WPAPSK", "validate_wpa_psk", 1},
-		{"WLAUTH", "validate_wl_auth", 2},
-		{"WLWEP", "validate_wl_wep", -1},
-		{"DYNAMICROUTE", "validate_dynamic_route", -1},
-		{"WLGMODE", "validate_wl_gmode", -1},
-		{"WLNETMODE", "validate_wl_net_mode", -1},
-		{"AUTHMODE", "validate_auth_mode", -1},
-		{NULL, NULL},
+		{ "RANGE", "validate_range", 2 },
+		{ "CHOICE", "validate_choice", -1 },
+		{ "NOACK", "validate_noack", 2 },
+		{ "NAME", "validate_name", 1 },
+		{ "PASSWORD", "validate_password", 1 },
+		{ "PASSWORD2", "validate_password2", 1 },
+		{ "LANIPADDR", "validate_lan_ipaddr", 1 },
+		{ "WPAPSK", "validate_wpa_psk", 1 },
+		{ "WLAUTH", "validate_wl_auth", 2 },
+		{ "WLWEP", "validate_wl_wep", -1 },
+		{ "DYNAMICROUTE", "validate_dynamic_route", -1 },
+		{ "WLGMODE", "validate_wl_gmode", -1 },
+		{ "WLNETMODE", "validate_wl_net_mode", -1 },
+		{ "AUTHMODE", "validate_auth_mode", -1 },
+		{ NULL, NULL },
 	};
 
 	variables = NULL;
@@ -951,44 +951,44 @@ static struct gozila_action gozila_actions[] = {
 	/*
 	 * SETUP 
 	 */
-	{"index", "wan_proto", "", 1, REFRESH, "wan_proto"},
-	{"index", "dhcpfwd", "", 1, REFRESH, "dhcpfwd"},
+	{ "index", "wan_proto", "", 1, REFRESH, "wan_proto" },
+	{ "index", "dhcpfwd", "", 1, REFRESH, "dhcpfwd" },
 #ifdef HAVE_IAS
-	{"index", "admin_card", "", 1, RESTART, "ias_save_admincard"},
+	{ "index", "admin_card", "", 1, RESTART, "ias_save_admincard" },
 #endif
 	// {"index", "clone_mac", "", 1, REFRESH, clone_mac}, //OBSOLETE
 #ifdef HAVE_CCONTROL
-	{"ccontrol", "execute", "", 1, REFRESH, "execute"},
+	{ "ccontrol", "execute", "", 1, REFRESH, "execute" },
 #endif
-	{"WanMAC", "clone_mac", "", 1, REFRESH, "clone_mac"},	// for cisco
+	{ "WanMAC", "clone_mac", "", 1, REFRESH, "clone_mac" },	// for cisco
 	// style
-	{"DHCPTable", "delete", "", 2, REFRESH, "delete_leases"},
+	{ "DHCPTable", "delete", "", 2, REFRESH, "delete_leases" },
 #ifdef HAVE_PPTPD
-	{"DHCPTable", "deletepptp", "", 2, REFRESH, "delete_pptp"},
+	{ "DHCPTable", "deletepptp", "", 2, REFRESH, "delete_pptp" },
 #endif
-	{"Info", "refresh", "", 0, REFRESH, "save_wifi"},
-	{"Status_Wireless", "refresh", "", 0, REFRESH, "save_wifi"},
+	{ "Info", "refresh", "", 0, REFRESH, "save_wifi" },
+	{ "Status_Wireless", "refresh", "", 0, REFRESH, "save_wifi" },
 	// {"Status", "release", "dhcp_release", 0, SYS_RESTART, "dhcp_release"},
 	// {"Status", "renew", "", 3, REFRESH, "dhcp_renew"},
 	// {"Status", "Connect", "start_pppoe", 1, RESTART, NULL},
-	{"Status_Internet", "release", "dhcp_release", 0, SERVICE_RESTART, "dhcp_release"},	// for 
-	{"Status_Internet", "renew", "", 3, REFRESH, "dhcp_renew"},	// for cisco
-	{"Status_Internet", "Disconnect", "stop_pppoe", 2, SERVICE_RESTART, "stop_ppp"},	// for 
+	{ "Status_Internet", "release", "dhcp_release", 0, SERVICE_RESTART, "dhcp_release" },	// for 
+	{ "Status_Internet", "renew", "", 3, REFRESH, "dhcp_renew" },	// for cisco
+	{ "Status_Internet", "Disconnect", "stop_pppoe", 2, SERVICE_RESTART, "stop_ppp" },	// for 
 #ifdef HAVE_3G
-	{"Status_Internet", "Connect_3g", "start_3g", 1, RESTART, NULL},	// for 
-	{"Status_Internet", "Disconnect_3g", "stop_3g", 2, SERVICE_RESTART, "stop_ppp"},	// for 
+	{ "Status_Internet", "Connect_3g", "start_3g", 1, RESTART, NULL },	// for 
+	{ "Status_Internet", "Disconnect_3g", "stop_3g", 2, SERVICE_RESTART, "stop_ppp" },	// for 
 #endif
 #ifdef HAVE_PPPOATM
-	{"Status_Internet", "Connect_pppoa", "start_pppoa", 1, RESTART, NULL},	// for 
-	{"Status_Internet", "Disconnect_pppoa", "stop_pppoa", 2, SERVICE_RESTART, "stop_ppp"},	// for 
+	{ "Status_Internet", "Connect_pppoa", "start_pppoa", 1, RESTART, NULL },	// for 
+	{ "Status_Internet", "Disconnect_pppoa", "stop_pppoa", 2, SERVICE_RESTART, "stop_ppp" },	// for 
 #endif
-	{"Status_Internet", "Connect_pppoe", "start_pppoe", 1, RESTART, NULL},	// for 
-	{"Status_Internet", "Disconnect_pppoe", "stop_pppoe", 2, SERVICE_RESTART, "stop_ppp"},	// for 
+	{ "Status_Internet", "Connect_pppoe", "start_pppoe", 1, RESTART, NULL },	// for 
+	{ "Status_Internet", "Disconnect_pppoe", "stop_pppoe", 2, SERVICE_RESTART, "stop_ppp" },	// for 
 
-	{"Status_Internet", "Connect_pptp", "start_pptp", 1, RESTART, NULL},	// for 
-	{"Status_Internet", "Disconnect_pptp", "stop_pptp", 2, SERVICE_RESTART, "stop_ppp"},	// for 
-	{"Status_Internet", "Connect_l2tp", "start_l2tp", 1, RESTART, NULL},	// for 
-	{"Status_Internet", "Disconnect_l2tp", "stop_l2tp", 2, SERVICE_RESTART, "stop_ppp"},	// for 
+	{ "Status_Internet", "Connect_pptp", "start_pptp", 1, RESTART, NULL },	// for 
+	{ "Status_Internet", "Disconnect_pptp", "stop_pptp", 2, SERVICE_RESTART, "stop_ppp" },	// for 
+	{ "Status_Internet", "Connect_l2tp", "start_l2tp", 1, RESTART, NULL },	// for 
+	{ "Status_Internet", "Disconnect_l2tp", "stop_l2tp", 2, SERVICE_RESTART, "stop_ppp" },	// for 
 	// cisco 
 	// style{ 
 	// "Status_Router", 
@@ -1001,229 +1001,229 @@ static struct gozila_action gozila_actions[] = {
 	// for 
 	// cisco 
 	// style
-	{"Status_Internet", "Disconnect_heartbeat", "stop_heartbeat", 2, SERVICE_RESTART, "stop_ppp"},	// for 
+	{ "Status_Internet", "Disconnect_heartbeat", "stop_heartbeat", 2, SERVICE_RESTART, "stop_ppp" },	// for 
 	// cisco 
 	// style
-	{"Status_Internet", "delete_ttraffdata", "", 0, REFRESH,
-	 "ttraff_erase"},
-	{"Filters", "save", "filters", 1, REFRESH, "save_policy"},
-	{"Filters", "delete", "filters", 1, REFRESH, "single_delete_policy"},
-	{"FilterSummary", "delete", "filters", 1, REFRESH,
-	 "summary_delete_policy"},
-	{"Routing", "del", "static_route_del", 1, REFRESH,
-	 "delete_static_route"},
-	{"RouteStatic", "del", "static_route_del", 1, REFRESH,
-	 "delete_static_route"},
-	{"WL_WPATable", "wep_key_generate", "", 1, REFRESH, "generate_wep_key"},
-	{"WL_WPATable", "security", "", 1, REFRESH, "set_security"},
-	{"WL_WPATable", "save", "wireless_2", 1, REFRESH, "security_save"},
-	{"WL_WPATable", "keysize", "wireless_2", 1, REFRESH, "security_save"},
-	{"WL_ActiveTable", "add_mac", "", 1, REFRESH, "add_active_mac"},
-	{"WL_ActiveTable-wl0", "add_mac", "", 1, REFRESH, "add_active_mac"},
-	{"WL_ActiveTable-wl1", "add_mac", "", 1, REFRESH, "add_active_mac"},
-	{"WL_ActiveTable-wl2", "add_mac", "", 1, REFRESH, "add_active_mac"},
+	{ "Status_Internet", "delete_ttraffdata", "", 0, REFRESH,
+	 "ttraff_erase" },
+	{ "Filters", "save", "filters", 1, REFRESH, "save_policy" },
+	{ "Filters", "delete", "filters", 1, REFRESH, "single_delete_policy" },
+	{ "FilterSummary", "delete", "filters", 1, REFRESH,
+	 "summary_delete_policy" },
+	{ "Routing", "del", "static_route_del", 1, REFRESH,
+	 "delete_static_route" },
+	{ "RouteStatic", "del", "static_route_del", 1, REFRESH,
+	 "delete_static_route" },
+	{ "WL_WPATable", "wep_key_generate", "", 1, REFRESH, "generate_wep_key" },
+	{ "WL_WPATable", "security", "", 1, REFRESH, "set_security" },
+	{ "WL_WPATable", "save", "wireless_2", 1, REFRESH, "security_save" },
+	{ "WL_WPATable", "keysize", "wireless_2", 1, REFRESH, "security_save" },
+	{ "WL_ActiveTable", "add_mac", "", 1, REFRESH, "add_active_mac" },
+	{ "WL_ActiveTable-wl0", "add_mac", "", 1, REFRESH, "add_active_mac" },
+	{ "WL_ActiveTable-wl1", "add_mac", "", 1, REFRESH, "add_active_mac" },
+	{ "WL_ActiveTable-wl2", "add_mac", "", 1, REFRESH, "add_active_mac" },
 	/*
 	 * Siafu addition 
 	 */
-	{"Ping", "wol", "", 1, REFRESH, "ping_wol"},
+	{ "Ping", "wol", "", 1, REFRESH, "ping_wol" },
 	/*
 	 * Sveasoft addition 
 	 */
 	// {"Wireless_WDS", "save", "", 0, REFRESH, save_wds},
 #ifndef HAVE_MADWIFI
-	{"Wireless_WDS-wl0", "save", "wireless_2", 0, REFRESH, "save_wds"},
-	{"Wireless_WDS-wl1", "save", "wireless_2", 0, REFRESH, "save_wds"},
-	{"Wireless_WDS-wl2", "save", "wireless_2", 0, REFRESH, "save_wds"},
-	{"Wireless_Advanced-wl0", "save", "wireless_2", 0, REFRESH,
-	 "save_wireless_advanced"},
-	{"Wireless_Advanced-wl1", "save", "wireless_2", 0, REFRESH,
-	 "save_wireless_advanced"},
-	{"Wireless_Advanced-wl2", "save", "wireless_2", 0, REFRESH,
-	 "save_wireless_advanced"},
+	{ "Wireless_WDS-wl0", "save", "wireless_2", 0, REFRESH, "save_wds" },
+	{ "Wireless_WDS-wl1", "save", "wireless_2", 0, REFRESH, "save_wds" },
+	{ "Wireless_WDS-wl2", "save", "wireless_2", 0, REFRESH, "save_wds" },
+	{ "Wireless_Advanced-wl0", "save", "wireless_2", 0, REFRESH,
+	 "save_wireless_advanced" },
+	{ "Wireless_Advanced-wl1", "save", "wireless_2", 0, REFRESH,
+	 "save_wireless_advanced" },
+	{ "Wireless_Advanced-wl2", "save", "wireless_2", 0, REFRESH,
+	 "save_wireless_advanced" },
 #else
-	{"Wireless_WDS-ath0", "save", "wireless_2", 0, REFRESH, "save_wds"},
-	{"Wireless_WDS-ath1", "save", "wireless_2", 0, REFRESH, "save_wds"},
-	{"Wireless_WDS-ath2", "save", "wireless_2", 0, REFRESH, "save_wds"},
-	{"Wireless_WDS-ath3", "save", "wireless_2", 0, REFRESH, "save_wds"},
+	{ "Wireless_WDS-ath0", "save", "wireless_2", 0, REFRESH, "save_wds" },
+	{ "Wireless_WDS-ath1", "save", "wireless_2", 0, REFRESH, "save_wds" },
+	{ "Wireless_WDS-ath2", "save", "wireless_2", 0, REFRESH, "save_wds" },
+	{ "Wireless_WDS-ath3", "save", "wireless_2", 0, REFRESH, "save_wds" },
 #endif
-	{"Ping", "startup", "", 1, REFRESH, "ping_startup"},
-	{"Ping", "shutdown", "", 1, REFRESH, "ping_shutdown"},
-	{"Ping", "firewall", "", 1, SYS_RESTART, "ping_firewall"},
-	{"Ping", "custom", "", 0, REFRESH, "ping_custom"},
-	{"QoS", "add_svc", "", 0, REFRESH, "qos_add_svc"},
-	{"QoS", "add_ip", "", 0, REFRESH, "qos_add_ip"},
-	{"QoS", "add_mac", "", 0, REFRESH, "qos_add_mac"},
-	{"QoS", "add_dev", "", 0, REFRESH, "qos_add_dev"},
-	{"QoS", "save", "filters", 1, REFRESH, "qos_save"},
+	{ "Ping", "startup", "", 1, REFRESH, "ping_startup" },
+	{ "Ping", "shutdown", "", 1, REFRESH, "ping_shutdown" },
+	{ "Ping", "firewall", "", 1, SYS_RESTART, "ping_firewall" },
+	{ "Ping", "custom", "", 0, REFRESH, "ping_custom" },
+	{ "QoS", "add_svc", "", 0, REFRESH, "qos_add_svc" },
+	{ "QoS", "add_ip", "", 0, REFRESH, "qos_add_ip" },
+	{ "QoS", "add_mac", "", 0, REFRESH, "qos_add_mac" },
+	{ "QoS", "add_dev", "", 0, REFRESH, "qos_add_dev" },
+	{ "QoS", "save", "filters", 1, REFRESH, "qos_save" },
 	/*
 	 * end Sveasoft addition 
 	 */
-	{"Forward", "add_forward", "", 0, REFRESH, "forward_add"},
-	{"Forward", "remove_forward", "", 0, REFRESH, "forward_remove"},
-	{"Filters", "add_filter", "", 0, REFRESH, "filter_add"},
-	{"Filters", "remove_filter", "", 0, REFRESH, "filter_remove"},
-	{"Wireless_Basic", "add_vifs", "", 0, REFRESH, "add_vifs"},
-	{"Wireless_Basic", "remove_vifs", "", 0, REFRESH, "remove_vifs"},
+	{ "Forward", "add_forward", "", 0, REFRESH, "forward_add" },
+	{ "Forward", "remove_forward", "", 0, REFRESH, "forward_remove" },
+	{ "Filters", "add_filter", "", 0, REFRESH, "filter_add" },
+	{ "Filters", "remove_filter", "", 0, REFRESH, "filter_remove" },
+	{ "Wireless_Basic", "add_vifs", "", 0, REFRESH, "add_vifs" },
+	{ "Wireless_Basic", "remove_vifs", "", 0, REFRESH, "remove_vifs" },
 #ifdef HAVE_FREERADIUS
-	{"FreeRadius", "generate_certificate", "", 0, REFRESH,
-	 "radius_generate_certificate"},
-	{"FreeRadius", "add_radius_user", "", 0, REFRESH, "add_radius_user"},
-	{"FreeRadius", "del_radius_user", "", 0, REFRESH, "del_radius_user"},
-	{"FreeRadius", "add_radius_client", "", 0, REFRESH,
-	 "add_radius_client"},
-	{"FreeRadius", "del_radius_client", "", 0, REFRESH,
-	 "del_radius_client"},
-	{"FreeRadius", "save_radius_user", "", 0, REFRESH, "save_radius_user"},
+	{ "FreeRadius", "generate_certificate", "", 0, REFRESH,
+	 "radius_generate_certificate" },
+	{ "FreeRadius", "add_radius_user", "", 0, REFRESH, "add_radius_user" },
+	{ "FreeRadius", "del_radius_user", "", 0, REFRESH, "del_radius_user" },
+	{ "FreeRadius", "add_radius_client", "", 0, REFRESH,
+	 "add_radius_client" },
+	{ "FreeRadius", "del_radius_client", "", 0, REFRESH,
+	 "del_radius_client" },
+	{ "FreeRadius", "save_radius_user", "", 0, REFRESH, "save_radius_user" },
 #endif
 #ifdef HAVE_POKER
-	{"Poker", "add_poker_user", "", 0, REFRESH, "add_poker_user"},
-	{"Poker", "del_poker_user", "", 0, REFRESH, "del_poker_user"},
-	{"Poker", "save_poker_user", "", 0, REFRESH, "save_poker_user"},
-	{"PokerEdit", "poker_loaduser", "", 0, REFRESH, "poker_loaduser"},
-	{"PokerEdit", "poker_checkout", "", 0, REFRESH, "poker_checkout"},
-	{"PokerEdit", "poker_buy", "", 0, REFRESH, "poker_buy"},
-	{"PokerEdit", "poker_credit", "", 0, REFRESH, "poker_credit"},
-	{"PokerEdit", "poker_back", "", 0, REFRESH, "poker_back"},
+	{ "Poker", "add_poker_user", "", 0, REFRESH, "add_poker_user" },
+	{ "Poker", "del_poker_user", "", 0, REFRESH, "del_poker_user" },
+	{ "Poker", "save_poker_user", "", 0, REFRESH, "save_poker_user" },
+	{ "PokerEdit", "poker_loaduser", "", 0, REFRESH, "poker_loaduser" },
+	{ "PokerEdit", "poker_checkout", "", 0, REFRESH, "poker_checkout" },
+	{ "PokerEdit", "poker_buy", "", 0, REFRESH, "poker_buy" },
+	{ "PokerEdit", "poker_credit", "", 0, REFRESH, "poker_credit" },
+	{ "PokerEdit", "poker_back", "", 0, REFRESH, "poker_back" },
 #endif
 #ifdef HAVE_BONDING
-	{"Networking", "add_bond", "", 0, REFRESH, "add_bond"},
-	{"Networking", "del_bond", "", 0, REFRESH, "del_bond"},
+	{ "Networking", "add_bond", "", 0, REFRESH, "add_bond" },
+	{ "Networking", "del_bond", "", 0, REFRESH, "del_bond" },
 #endif
 #ifdef HAVE_OLSRD
-	{"Routing", "add_olsrd", "", 0, REFRESH, "add_olsrd"},
-	{"Routing", "del_olsrd", "", 0, REFRESH, "del_olsrd"},
+	{ "Routing", "add_olsrd", "", 0, REFRESH, "add_olsrd" },
+	{ "Routing", "del_olsrd", "", 0, REFRESH, "del_olsrd" },
 #endif
 #ifdef HAVE_VLANTAGGING
-	{"Networking", "add_vlan", "", 0, REFRESH, "add_vlan"},
-	{"Networking", "add_bridge", "", 0, REFRESH, "add_bridge"},
-	{"Networking", "add_bridgeif", "", 0, REFRESH, "add_bridgeif"},
-	{"Networking", "del_vlan", "", 0, REFRESH, "del_vlan"},
-	{"Networking", "del_bridge", "", 0, REFRESH, "del_bridge"},
-	{"Networking", "del_bridgeif", "", 0, REFRESH, "del_bridgeif"},
-	{"Networking", "save_networking", "index", 0, REFRESH,
-	 "save_networking"},
-	{"Networking", "add_mdhcp", "", 0, REFRESH, "add_mdhcp"},
-	{"Networking", "del_mdhcp", "", 0, REFRESH, "del_mdhcp"},
+	{ "Networking", "add_vlan", "", 0, REFRESH, "add_vlan" },
+	{ "Networking", "add_bridge", "", 0, REFRESH, "add_bridge" },
+	{ "Networking", "add_bridgeif", "", 0, REFRESH, "add_bridgeif" },
+	{ "Networking", "del_vlan", "", 0, REFRESH, "del_vlan" },
+	{ "Networking", "del_bridge", "", 0, REFRESH, "del_bridge" },
+	{ "Networking", "del_bridgeif", "", 0, REFRESH, "del_bridgeif" },
+	{ "Networking", "save_networking", "index", 0, REFRESH,
+	 "save_networking" },
+	{ "Networking", "add_mdhcp", "", 0, REFRESH, "add_mdhcp" },
+	{ "Networking", "del_mdhcp", "", 0, REFRESH, "del_mdhcp" },
 #endif
 #ifdef HAVE_IPVS
-	{"Networking", "add_ipvs", "", 0, REFRESH, "add_ipvs"},
-	{"Networking", "del_ipvs", "", 0, REFRESH, "del_ipvs"},
-	{"Networking", "add_ipvstarget", "", 0, REFRESH, "add_ipvstarget"},
-	{"Networking", "del_ipvstarget", "", 0, REFRESH, "del_ipvstarget"},
+	{ "Networking", "add_ipvs", "", 0, REFRESH, "add_ipvs" },
+	{ "Networking", "del_ipvs", "", 0, REFRESH, "del_ipvs" },
+	{ "Networking", "add_ipvstarget", "", 0, REFRESH, "add_ipvstarget" },
+	{ "Networking", "del_ipvstarget", "", 0, REFRESH, "del_ipvstarget" },
 #endif
-	{"Wireless_Basic", "save", "wireless", 1, REFRESH, "wireless_save"},
+	{ "Wireless_Basic", "save", "wireless", 1, REFRESH, "wireless_save" },
 #ifdef HAVE_WIVIZ
-	{"Wiviz_Survey", "Set", "", 0, REFRESH, "set_wiviz"},
+	{ "Wiviz_Survey", "Set", "", 0, REFRESH, "set_wiviz" },
 #endif
 #ifdef HAVE_REGISTER
-	{"Register", "activate", "", 1, RESTART, "reg_validate"},
+	{ "Register", "activate", "", 1, RESTART, "reg_validate" },
 #endif
-	{"index", "changepass", "", 1, REFRESH, "changepass"},
+	{ "index", "changepass", "", 1, REFRESH, "changepass" },
 #ifdef HAVE_SUPERCHANNEL
-	{"SuperChannel", "activate", "", 1, REFRESH, "superchannel_validate"},
+	{ "SuperChannel", "activate", "", 1, REFRESH, "superchannel_validate" },
 #endif
-	{"Services", "add_lease", "", 0, REFRESH, "lease_add"},
-	{"Services", "remove_lease", "", 0, REFRESH, "lease_remove"},
+	{ "Services", "add_lease", "", 0, REFRESH, "lease_add" },
+	{ "Services", "remove_lease", "", 0, REFRESH, "lease_remove" },
 #ifdef HAVE_PPPOESERVER
-	{"PPPoE_Server", "add_chap_user", "", 0, REFRESH, "chap_user_add"},
-	{"PPPoE_Server", "remove_chap_user", "", 0, REFRESH,
-	 "chap_user_remove"},
+	{ "PPPoE_Server", "add_chap_user", "", 0, REFRESH, "chap_user_add" },
+	{ "PPPoE_Server", "remove_chap_user", "", 0, REFRESH,
+	 "chap_user_remove" },
 #endif
 #ifdef HAVE_CHILLILOCAL
-	{"Hotspot", "add_user", "", 0, REFRESH, "user_add"},
-	{"Hotspot", "remove_user", "", 0, REFRESH, "user_remove"},
+	{ "Hotspot", "add_user", "", 0, REFRESH, "user_add" },
+	{ "Hotspot", "remove_user", "", 0, REFRESH, "user_remove" },
 #endif
 #ifdef HAVE_RADLOCAL
-	{"Hotspot", "add_iradius", "", 0, REFRESH, "raduser_add"},
+	{ "Hotspot", "add_iradius", "", 0, REFRESH, "raduser_add" },
 #endif
 #ifdef HAVE_EOP_TUNNEL
 #ifdef HAVE_WIREGUARD
-	{"eop-tunnel", "gen_wg_key", "", 0, REFRESH, "gen_wg_key"},
-	{"eop-tunnel", "gen_wg_psk", "", 0, REFRESH, "gen_wg_psk"},
-	{"eop-tunnel", "gen_wg_client", "", 0, REFRESH, "gen_wg_client"},
-	{"eop-tunnel", "del_wg_client", "", 0, REFRESH, "del_wg_client"},
-	{"eop-tunnel", "add_peer", "", 0, REFRESH, "add_peer"},
-	{"eop-tunnel", "del_peer", "", 0, REFRESH, "del_peer"},
+	{ "eop-tunnel", "gen_wg_key", "", 0, REFRESH, "gen_wg_key" },
+	{ "eop-tunnel", "gen_wg_psk", "", 0, REFRESH, "gen_wg_psk" },
+	{ "eop-tunnel", "gen_wg_client", "", 0, REFRESH, "gen_wg_client" },
+	{ "eop-tunnel", "del_wg_client", "", 0, REFRESH, "del_wg_client" },
+	{ "eop-tunnel", "add_peer", "", 0, REFRESH, "add_peer" },
+	{ "eop-tunnel", "del_peer", "", 0, REFRESH, "del_peer" },
 #endif
-	{"eop-tunnel", "add_tunnel", "", 0, REFRESH, "add_tunnel"},
-	{"eop-tunnel", "del_tunnel", "", 0, REFRESH, "del_tunnel"},
-	{"eop-tunnel", "save", "eop", 1, REFRESH, "tunnel_save"},
+	{ "eop-tunnel", "add_tunnel", "", 0, REFRESH, "add_tunnel" },
+	{ "eop-tunnel", "del_tunnel", "", 0, REFRESH, "del_tunnel" },
+	{ "eop-tunnel", "save", "eop", 1, REFRESH, "tunnel_save" },
 #endif
-	{"ForwardSpec", "add_forward_spec", "", 0, REFRESH, "forwardspec_add"},
-	{"ForwardSpec", "remove_forward_spec", "", 0, REFRESH,
-	 "forwardspec_remove"},
-	{"Triggering", "add_trigger", "", 0, REFRESH, "trigger_add"},
-	{"Triggering", "remove_trigger", "", 0, REFRESH, "trigger_remove"},
-	{"Port_Services", "save_services", "filters", 2, REFRESH,
-	 "save_services_port"},
-	{"QOSPort_Services", "save_qosservices", "filters", 2, REFRESH,
-	 "save_services_port"},
-	{"Ping", "start", "", 1, SERVICE_RESTART, "diag_ping_start"},
-	{"Ping", "stop", "", 0, REFRESH, "diag_ping_stop"},
-	{"Ping", "clear", "", 0, REFRESH, "diag_ping_clear"},
+	{ "ForwardSpec", "add_forward_spec", "", 0, REFRESH, "forwardspec_add" },
+	{ "ForwardSpec", "remove_forward_spec", "", 0, REFRESH,
+	 "forwardspec_remove" },
+	{ "Triggering", "add_trigger", "", 0, REFRESH, "trigger_add" },
+	{ "Triggering", "remove_trigger", "", 0, REFRESH, "trigger_remove" },
+	{ "Port_Services", "save_services", "filters", 2, REFRESH,
+	 "save_services_port" },
+	{ "QOSPort_Services", "save_qosservices", "filters", 2, REFRESH,
+	 "save_services_port" },
+	{ "Ping", "start", "", 1, SERVICE_RESTART, "diag_ping_start" },
+	{ "Ping", "stop", "", 0, REFRESH, "diag_ping_stop" },
+	{ "Ping", "clear", "", 0, REFRESH, "diag_ping_clear" },
 #ifdef HAVE_MILKFISH
-	{"Milkfish_database", "add_milkfish_user", "", 0, REFRESH,
-	 "milkfish_user_add"},
-	{"Milkfish_database", "remove_milkfish_user", "", 0, REFRESH,
-	 "milkfish_user_remove"},
-	{"Milkfish_aliases", "add_milkfish_alias", "", 0, REFRESH,
-	 "milkfish_alias_add"},
-	{"Milkfish_aliases", "remove_milkfish_alias", "", 0, REFRESH,
-	 "milkfish_alias_remove"},
-	{"Milkfish_messaging", "send_message", "", 1, SERVICE_RESTART,
-	 "milkfish_sip_message"},
+	{ "Milkfish_database", "add_milkfish_user", "", 0, REFRESH,
+	 "milkfish_user_add" },
+	{ "Milkfish_database", "remove_milkfish_user", "", 0, REFRESH,
+	 "milkfish_user_remove" },
+	{ "Milkfish_aliases", "add_milkfish_alias", "", 0, REFRESH,
+	 "milkfish_alias_add" },
+	{ "Milkfish_aliases", "remove_milkfish_alias", "", 0, REFRESH,
+	 "milkfish_alias_remove" },
+	{ "Milkfish_messaging", "send_message", "", 1, SERVICE_RESTART,
+	 "milkfish_sip_message" },
 #endif
 #ifdef HAVE_STATUS_GPIO
-	{"Gpio", "gpios_save", "", 0, REFRESH, "gpios_save"},
+	{ "Gpio", "gpios_save", "", 0, REFRESH, "gpios_save" },
 #endif
 #ifdef HAVE_BUFFALO
-	{"SetupAssistant", "save", "setupassistant", 1, REFRESH,
-	 "setupassistant_save"},
-	{"SetupAssistant", "wep_key_generate", "setupassistant", 1, REFRESH,
-	 "generate_wep_key"},
-	{"SetupAssistant", "security", "setupassistant", 1, REFRESH,
-	 "set_security"},
-	{"SetupAssistant", "keysize", "setupassistant", 1, REFRESH,
-	 "security_save"},
-	{"Upgrade", "get_upgrades", "firmware", 1, REFRESH,
-	 "get_airstation_upgrades"},
+	{ "SetupAssistant", "save", "setupassistant", 1, REFRESH,
+	 "setupassistant_save" },
+	{ "SetupAssistant", "wep_key_generate", "setupassistant", 1, REFRESH,
+	 "generate_wep_key" },
+	{ "SetupAssistant", "security", "setupassistant", 1, REFRESH,
+	 "set_security" },
+	{ "SetupAssistant", "keysize", "setupassistant", 1, REFRESH,
+	 "security_save" },
+	{ "Upgrade", "get_upgrades", "firmware", 1, REFRESH,
+	 "get_airstation_upgrades" },
 #ifdef HAVE_IAS
-	{"InternetAtStart", "proceed", "internetatstart", 1, REFRESH,
-	 "internetatstart"},
-	{"InternetAtStart.ajax", "ajax", "intatstart_ajax", 1, REFRESH,
-	 "intatstart_ajax"},
+	{ "InternetAtStart", "proceed", "internetatstart", 1, REFRESH,
+	 "internetatstart" },
+	{ "InternetAtStart.ajax", "ajax", "intatstart_ajax", 1, REFRESH,
+	 "intatstart_ajax" },
 #endif
 #ifdef HAVE_SPOTPASS
-	{"Nintendo", "save", "spotpass", 1, REFRESH, "nintendo_save"},
+	{ "Nintendo", "save", "spotpass", 1, REFRESH, "nintendo_save" },
 #endif
 #endif
-	{"Join", "Join", "wireless", 1, REFRESH, "wireless_join"},
+	{ "Join", "Join", "wireless", 1, REFRESH, "wireless_join" },
 #ifdef HAVE_NAS_SERVER
-	{"NAS", "save", "nassrv", 1, REFRESH, "nassrv_save"},
+	{ "NAS", "save", "nassrv", 1, REFRESH, "nassrv_save" },
 #endif
 #ifdef HAVE_MINIDLNA
-	{"NAS", "save", "nassrv", 1, REFRESH, "dlna_save"},
+	{ "NAS", "save", "nassrv", 1, REFRESH, "dlna_save" },
 #endif
 #ifdef HAVE_RAID
-	{"NAS", "add_raid", "nassrv", 0, REFRESH, "add_raid"},
-	{"NAS", "del_raid", "nassrv", 0, REFRESH, "del_raid"},
-	{"NAS", "add_raid_member", "nassrv", 0, REFRESH, "add_raid_member"},
-	{"NAS", "del_raid_member", "nassrv", 0, REFRESH, "del_raid_member"},
-	{"NAS", "format_raid", "nassrv", 0, REFRESH, "format_raid"},
-	{"NAS", "format_drive", "nassrv", 0, REFRESH, "format_drive"},
-	{"NAS", "raid_save", "nassrv", 0, REFRESH, "raid_save"},
+	{ "NAS", "add_raid", "nassrv", 0, REFRESH, "add_raid" },
+	{ "NAS", "del_raid", "nassrv", 0, REFRESH, "del_raid" },
+	{ "NAS", "add_raid_member", "nassrv", 0, REFRESH, "add_raid_member" },
+	{ "NAS", "del_raid_member", "nassrv", 0, REFRESH, "del_raid_member" },
+	{ "NAS", "format_raid", "nassrv", 0, REFRESH, "format_raid" },
+	{ "NAS", "format_drive", "nassrv", 0, REFRESH, "format_drive" },
+	{ "NAS", "raid_save", "nassrv", 0, REFRESH, "raid_save" },
 #ifdef HAVE_ZFS
-	{"NAS", "zfs_scrub", "nassrv", 0, REFRESH, "zfs_scrub"},
+	{ "NAS", "zfs_scrub", "nassrv", 0, REFRESH, "zfs_scrub" },
 #endif
 #endif
 #if defined(HAVE_WPS) || defined(HAVE_AOSS)
-	{"AOSS", "save", "aoss", 1, REFRESH, "aoss_save"},
-	{"AOSS", "start", "aoss", 1, REFRESH, "aoss_start"},
+	{ "AOSS", "save", "aoss", 1, REFRESH, "aoss_save" },
+	{ "AOSS", "start", "aoss", 1, REFRESH, "aoss_start" },
 #ifdef HAVE_WPS
-	{"AOSS", "wps_register", "aoss", 1, REFRESH, "wps_register"},
-	{"AOSS", "wps_ap_register", "aoss", 1, REFRESH, "wps_ap_register"},
-	{"AOSS", "wps_forcerelease", "aoss", 1, REFRESH, "wps_forcerelease"},
-	{"AOSS", "wps_configure", "aoss", 1, REFRESH, "wps_configure"},
+	{ "AOSS", "wps_register", "aoss", 1, REFRESH, "wps_register" },
+	{ "AOSS", "wps_ap_register", "aoss", 1, REFRESH, "wps_ap_register" },
+	{ "AOSS", "wps_forcerelease", "aoss", 1, REFRESH, "wps_forcerelease" },
+	{ "AOSS", "wps_configure", "aoss", 1, REFRESH, "wps_configure" },
 #endif
 #endif
 
@@ -1345,72 +1345,72 @@ static struct apply_action apply_actions[] = {
 	/*
 	 * SETUP 
 	 */
-	{"index", "index", 0, SERVICE_RESTART, NULL},
-	{"DDNS", "ddns", 0, SERVICE_RESTART, "ddns_save_value"},
-	{"Routing", "routing", 0, SERVICE_RESTART, NULL},
-	{"Vlan", "", 0, SYS_RESTART, "port_vlan_table_save"},
-	{"eop-tunnel", "eop", 0, SERVICE_RESTART, NULL},
+	{ "index", "index", 0, SERVICE_RESTART, NULL },
+	{ "DDNS", "ddns", 0, SERVICE_RESTART, "ddns_save_value" },
+	{ "Routing", "routing", 0, SERVICE_RESTART, NULL },
+	{ "Vlan", "", 0, SYS_RESTART, "port_vlan_table_save" },
+	{ "eop-tunnel", "eop", 0, SERVICE_RESTART, NULL },
 
 	/*
 	 * WIRELESS 
 	 */
-	{"Wireless_Basic", "wireless", 0, SERVICE_RESTART, NULL},	// Only for
+	{ "Wireless_Basic", "wireless", 0, SERVICE_RESTART, NULL },	// Only for
 	// V23, since 
 	// V24 it's a 
 	// gozilla
 	// save
-	{"Wireless_Advanced-wl0", "wireless_2", 0, SERVICE_RESTART,
-	 "save_wireless_advanced"},
-	{"Wireless_Advanced-wl1", "wireless_2", 0, SERVICE_RESTART,
-	 "save_wireless_advanced"},
-	{"Wireless_Advanced-wl2", "wireless_2", 0, SERVICE_RESTART,
-	 "save_wireless_advanced"},
-	{"Wireless_MAC", "wireless_2", 0, SERVICE_RESTART, "save_macmode"},
-	{"WL_FilterTable", "macfilter", 0, SERVICE_RESTART, NULL},
-	{"Wireless_WDS", "wireless_2", 0, SERVICE_RESTART, NULL},
-	{"WL_WPATable", "wireless_2", 0, SERVICE_RESTART, NULL},
+	{ "Wireless_Advanced-wl0", "wireless_2", 0, SERVICE_RESTART,
+	 "save_wireless_advanced" },
+	{ "Wireless_Advanced-wl1", "wireless_2", 0, SERVICE_RESTART,
+	 "save_wireless_advanced" },
+	{ "Wireless_Advanced-wl2", "wireless_2", 0, SERVICE_RESTART,
+	 "save_wireless_advanced" },
+	{ "Wireless_MAC", "wireless_2", 0, SERVICE_RESTART, "save_macmode" },
+	{ "WL_FilterTable", "macfilter", 0, SERVICE_RESTART, NULL },
+	{ "Wireless_WDS", "wireless_2", 0, SERVICE_RESTART, NULL },
+	{ "WL_WPATable", "wireless_2", 0, SERVICE_RESTART, NULL },
 
 	/*
 	 * MANAGEMENT 
 	 */
-	{"Management", "management", 0, SYS_RESTART, NULL},
-	{"Services", "services", 0, SERVICE_RESTART, NULL},
-	{"Alive", "alive", 0, SERVICE_RESTART, NULL},
+	{ "Management", "management", 0, SYS_RESTART, NULL },
+	{ "Services", "services", 0, SERVICE_RESTART, NULL },
+	{ "Alive", "alive", 0, SERVICE_RESTART, NULL },
 
 	/*
 	 * SERVICES 
 	 */
-	{"PPPoE_Server", "services", 0, SERVICE_RESTART, NULL},
-	{"PPTP", "pptp", 0, SERVICE_RESTART, NULL},
-	{"USB", "usbdrivers", 0, SERVICE_RESTART, NULL},
-	{"NAS", "nassrv", 0, SERVICE_RESTART, NULL},
-	{"Hotspot", "hotspot", 0, SERVICE_RESTART, "hotspot_save"},
-	{"Hotspot", "hotspot", 0, SERVICE_RESTART, NULL},
+	{ "PPPoE_Server", "services", 0, SERVICE_RESTART, NULL },
+	{ "PPTP", "pptp", 0, SERVICE_RESTART, NULL },
+	{ "USB", "usbdrivers", 0, SERVICE_RESTART, NULL },
+	{ "NAS", "nassrv", 0, SERVICE_RESTART, NULL },
+	{ "Hotspot", "hotspot", 0, SERVICE_RESTART, "hotspot_save" },
+	{ "Hotspot", "hotspot", 0, SERVICE_RESTART, NULL },
 //      {"AnchorFree", "anchorfree", 0, SERVICE_RESTART, NULL},
-	{"Nintendo", "nintendo", 0, SERVICE_RESTART, NULL},
+	{ "Nintendo", "nintendo", 0, SERVICE_RESTART, NULL },
 
 	/*
 	 * APP & GAMING 
 	 */
-	{"Forward", "forward", 0, SERVICE_RESTART, NULL},
-	{"ForwardSpec", "forward", 0, SERVICE_RESTART, NULL},
-	{"Triggering", "filters", 0, SERVICE_RESTART, NULL},
-	{"DMZ", "filters", 0, SERVICE_RESTART, NULL},
-	{"Filters", "filters", 0, SERVICE_RESTART, NULL},
-	{"FilterIPMAC", "filters", 0, SERVICE_RESTART, NULL},
+	{ "Forward", "forward", 0, SERVICE_RESTART, NULL },
+	{ "ForwardSpec", "forward", 0, SERVICE_RESTART, NULL },
+	{ "Triggering", "filters", 0, SERVICE_RESTART, NULL },
+	{ "DMZ", "filters", 0, SERVICE_RESTART, NULL },
+	{ "Filters", "filters", 0, SERVICE_RESTART, NULL },
+	{ "FilterIPMAC", "filters", 0, SERVICE_RESTART, NULL },
 #ifdef HAVE_UPNP
-	{"UPnP", "forward_upnp", 0, SERVICE_RESTART, "tf_upnp"},
+	{ "UPnP", "forward_upnp", 0, SERVICE_RESTART, "tf_upnp" },
 #endif
 	/*
 	 * SECURITY 
 	 */
-	{"Firewall", "filters", 0, SERVICE_RESTART, NULL},
-	{"VPN", "filters", 0, SERVICE_RESTART, NULL},
+	{ "Firewall", "filters", 0, SERVICE_RESTART, NULL },
+	{ "VPN", "filters", 0, SERVICE_RESTART, NULL },
 #ifdef HAVE_MILKFISH
-	{"Milkfish", "milkfish", 0, SERVICE_RESTART, NULL},
+	{ "Milkfish", "milkfish", 0, SERVICE_RESTART, NULL },
 #endif
 #ifdef HAVE_IPV6
-	{"IPV6", "ipv6", 0, SERVICE_RESTART, NULL},
+	{ "IPV6", "ipv6", 0, SERVICE_RESTART, NULL },
 #endif
 	/*
 	 * Obsolete {"WL_WEPTable", "", 0, SERVICE_RESTART, NULL}, {"Security",
@@ -1422,9 +1422,9 @@ static struct apply_action apply_actions[] = {
 	 * 0, SERVICE_RESTART, NULL}, //moved to Firewall {"QoS", "qos", 0,
 	 * SERVICE_RESTART, NULL}, //gozilla does the save 
 	 */
-	{"InternetAtStart", "finish", 0, SYS_RESTART, NULL},
+	{ "InternetAtStart", "finish", 0, SYS_RESTART, NULL },
 #ifdef HAVE_SPEEDCHECKER
-	{"Speedchecker", "speedchecker", 0, SERVICE_RESTART, NULL},
+	{ "Speedchecker", "speedchecker", 0, SERVICE_RESTART, NULL },
 #endif
 
 };
@@ -1474,7 +1474,7 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 		return 1;
 	}
 
-  /***************************************************************************/
+				/***************************************************************************/
 	if (!query) {
 		goto footer;
 	}
@@ -1532,7 +1532,7 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 		_sys_commit();
 	}
 
-  /** Restore defaults **/
+				/** Restore defaults **/
 	else if (!strncmp(value, "Restore", 7)) {
 		ACTION("ACT_SW_RESTORE");
 		nvram_seti("sv_restore_defaults", 1);
@@ -1623,12 +1623,13 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 		action = REBOOT;
 	}
 
-  /** Reboot **/
+				/** Reboot **/
 	else if (!strncmp(value, "Reboot", 6)) {
 		action = REBOOT;
 	}
 
-	/** GUI Logout **/// Experimental, not work yet ... 
+				/** GUI Logout **/
+	// Experimental, not work yet ... 
 	else if (!strncmp(value, "Logout", 6)) {
 		do_ej(METHOD_GET, NULL, "Logout.asp", wp);
 		websDone(wp, 200);
@@ -1701,7 +1702,7 @@ footer:
 }
 
 //int auth_check( char *dirname, char *authorization )
-static int do_auth(webs_t wp, int (*auth_check) (webs_t conn_fp))
+static int do_auth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 {
 	strlcpy(wp->auth_userid, nvram_safe_get("http_username"), AUTH_MAX - 1);
 	strlcpy(wp->auth_passwd, nvram_safe_get("http_passwd"), AUTH_MAX - 1);
@@ -1727,17 +1728,17 @@ static int do_auth(webs_t wp, int (*auth_check) (webs_t conn_fp))
 	return 0;
 }
 
-static int do_cauth(webs_t wp, int (*auth_check) (webs_t conn_fp))
+static int do_cauth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 {
-	if (nvram_matchi("info_passwd", 0))
+	if(nvram_matchi("info_passwd", 0))
 		return 1;
 	return do_auth(wp, auth_check);
 }
 
 #ifdef HAVE_REGISTER
-static int do_auth_reg(webs_t wp, int (*auth_check) (webs_t conn_fp))
+static int do_auth_reg(webs_t wp, int (*auth_check)(webs_t conn_fp))
 {
-	if (!wp->isregistered)
+	if(!wp->isregistered)
 		return 1;
 	return do_auth(wp, auth_check);
 }
@@ -1746,7 +1747,7 @@ static int do_auth_reg(webs_t wp, int (*auth_check) (webs_t conn_fp))
 #undef HAVE_DDLAN
 
 #ifdef HAVE_DDLAN
-static int do_auth2(webs_t wp, int (*auth_check) (webs_t conn_fp))
+static int do_auth2(webs_t wp, int (*auth_check)(webs_t conn_fp))
 {
 	strlcpy(wp->auth_userid, nvram_safe_get("http2_username"), AUTH_MAX - 1);
 	strlcpy(wp->auth_passwd, nvram_safe_get("http2_passwd"), AUTH_MAX - 1);
@@ -2537,144 +2538,144 @@ static struct mime_handler mime_handlers[] = {
 	// { "ezconfig.asp", "text/html", ezc_version, do_apply_ezconfig_post,
 	// do_ezconfig_asp, do_auth ,0},
 #ifdef HAVE_SKYTRON
-	{"setupindex*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0},
+	{ "setupindex*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0 },
 #endif
 #ifdef HAVE_POKER
-	{"PokerEdit.asp", "text/html", no_cache, NULL, do_ej, NULL, 1, 0},
+	{ "PokerEdit.asp", "text/html", no_cache, NULL, do_ej, NULL, 1, 0 },
 #endif
 #ifdef HAVE_DDLAN
-	{"Upgrade*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0},
-	{"Management*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0},
-	{"Services*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0},
-	{"Hotspot*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0},
-	{"Wireless*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0},
-	{"WL_*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0},
-	{"WPA*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0},
-	{"Log*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0},
-	{"Alive*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0},
-	{"Diagnostics*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0},
-	{"Wol*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0},
-	{"Factory_Defaults*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0},
-	{"config*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0},
+	{ "Upgrade*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0 },
+	{ "Management*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0 },
+	{ "Services*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0 },
+	{ "Hotspot*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0 },
+	{ "Wireless*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0 },
+	{ "WL_*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0 },
+	{ "WPA*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0 },
+	{ "Log*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0 },
+	{ "Alive*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0 },
+	{ "Diagnostics*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0 },
+	{ "Wol*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0 },
+	{ "Factory_Defaults*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0 },
+	{ "config*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0 },
 #endif
 
-	{"changepass.asp", "text/html", no_cache, NULL, do_ej, NULL, 1, 0},
+	{ "changepass.asp", "text/html", no_cache, NULL, do_ej, NULL, 1, 0 },
 #ifdef HAVE_REGISTER
-	{"register.asp", "text/html", no_cache, NULL, do_ej, do_auth_reg, 1, 0},
+	{ "register.asp", "text/html", no_cache, NULL, do_ej, do_auth_reg, 1, 0 },
 #endif
-	{"WL_FilterTable*", "text/html", no_cache, NULL, do_filtertable,
-	 do_auth, 1, 0},
+	{ "WL_FilterTable*", "text/html", no_cache, NULL, do_filtertable,
+	 do_auth, 1, 0 },
 #ifdef HAVE_FREERADIUS
-	{"FreeRadiusCert*", "text/html", no_cache, NULL, do_radiuscert, do_auth,
-	 1, 0},
-	{"freeradius-certs/*", "application/octet-stream", no_cache, NULL,
-	 cert_file_out, do_auth, 0, 0},
+	{ "FreeRadiusCert*", "text/html", no_cache, NULL, do_radiuscert, do_auth,
+	 1, 0 },
+	{ "freeradius-certs/*", "application/octet-stream", no_cache, NULL,
+	 cert_file_out, do_auth, 0, 0 },
 #endif
 	// #endif
 	// #ifdef HAVE_MADWIFI
-	{"Wireless_WDS*", "text/html", no_cache, NULL, do_wds, do_auth, 1, 0},
-	{"WL_ActiveTable*", "text/html", no_cache, NULL, do_activetable, do_auth, 1, 0},
-	{"Wireless_Advanced*", "text/html", no_cache, NULL, do_wireless_adv, do_auth, 1, 0},
+	{ "Wireless_WDS*", "text/html", no_cache, NULL, do_wds, do_auth, 1, 0 },
+	{ "WL_ActiveTable*", "text/html", no_cache, NULL, do_activetable, do_auth, 1, 0 },
+	{ "Wireless_Advanced*", "text/html", no_cache, NULL, do_wireless_adv, do_auth, 1, 0 },
 	// #endif
-	{"MyPage.asp*", "text/html", no_cache, NULL, do_mypage, do_auth, 1, 0},
-	{"**.asp", "text/html", no_cache, NULL, do_ej, do_auth, 1, 0},
-	{"**.JPG", "image/jpeg", NULL, NULL, do_file, NULL, 0, 0},
+	{ "MyPage.asp*", "text/html", no_cache, NULL, do_mypage, do_auth, 1, 0 },
+	{ "**.asp", "text/html", no_cache, NULL, do_ej, do_auth, 1, 0 },
+	{ "**.JPG", "image/jpeg", NULL, NULL, do_file, NULL, 0, 0 },
 	// {"style.css", "text/css", NULL, NULL, do_style, NULL,0, 0,0},
-	{"common.js", "text/javascript", NULL, NULL, do_file, NULL, 0, 0},
+	{ "common.js", "text/javascript", NULL, NULL, do_file, NULL, 0, 0 },
 #ifdef HAVE_LANGUAGE
-	{"lang_pack/language.js", "text/javascript", NULL, NULL, do_language, NULL, 0, 0},
+	{ "lang_pack/language.js", "text/javascript", NULL, NULL, do_language, NULL, 0, 0 },
 #endif
 #ifdef HAVE_BUFFALO
-	{"intatstart/lang_pack/language.js", "text/javascript", NULL, NULL, do_language, NULL, 0, 0},
-	{"intatstart/js/intatstart.js", "text/javascript", NULL, NULL, do_ej, NULL, 1, 0},
-	{"intatstart/js/mdetect.js", "text/javascript", NULL, NULL, do_ej, NULL, 1, 0},
-	{"vsp.html", "text/plain", no_cache, NULL, do_vsp_page, NULL, 1, 0},
+	{ "intatstart/lang_pack/language.js", "text/javascript", NULL, NULL, do_language, NULL, 0, 0 },
+	{ "intatstart/js/intatstart.js", "text/javascript", NULL, NULL, do_ej, NULL, 1, 0 },
+	{ "intatstart/js/mdetect.js", "text/javascript", NULL, NULL, do_ej, NULL, 1, 0 },
+	{ "vsp.html", "text/plain", no_cache, NULL, do_vsp_page, NULL, 1, 0 },
 #endif
-	{"SysInfo.htm*", "text/plain", no_cache, NULL, do_ej, do_auth, 1, 0},
+	{ "SysInfo.htm*", "text/plain", no_cache, NULL, do_ej, do_auth, 1, 0 },
 #ifdef HAVE_SKYTRON
-	{"Info.htm*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0},
-	{"Info.live.htm", "text/html", no_cache, NULL, do_ej, do_auth, 1, 0},
-	{"**.htm", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0},
-	{"**.html", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0},
+	{ "Info.htm*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0 },
+	{ "Info.live.htm", "text/html", no_cache, NULL, do_ej, do_auth, 1, 0 },
+	{ "**.htm", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0 },
+	{ "**.html", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0 },
 #else
-	{"Info.htm*", "text/html", no_cache, NULL, do_ej, do_cauth, 1, 0},
-	{"Info.live.htm", "text/html", no_cache, NULL, do_ej, do_cauth, 1, 0},
-	{"**.htm", "text/html", no_cache, NULL, do_ej, NULL, 1, 0},
-	{"**.html", "text/html", no_cache, NULL, do_ej, NULL, 1, 0},
+	{ "Info.htm*", "text/html", no_cache, NULL, do_ej, do_cauth, 1, 0 },
+	{ "Info.live.htm", "text/html", no_cache, NULL, do_ej, do_cauth, 1, 0 },
+	{ "**.htm", "text/html", no_cache, NULL, do_ej, NULL, 1, 0 },
+	{ "**.html", "text/html", no_cache, NULL, do_ej, NULL, 1, 0 },
 
 #endif
 #ifdef HAVE_ROUTERSTYLE
-	{"style/blue/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, 1, 0},
-	{"style/cyan/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, 1, 0},
-	{"style/elegant/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, 1, 0},
-	{"style/elegant/fresh.css", "text/css", do_cache, NULL, do_ej, NULL, 1, 0},
-	{"style/elegant/fresh-dark.css", "text/css", do_cache, NULL, do_ej, NULL, 1, 0},
-	{"style/green/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, 1, 0},
-	{"style/orange/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, 1, 0},
-	{"style/red/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, 1, 0},
-	{"style/yellow/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, 1, 0},
-	{"style/blue/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, 1, 0},
-	{"style/cyan/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, 1, 0},
-	{"style/elegant/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, 1, 0},
-	{"style/green/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, 1, 0},
-	{"style/orange/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, 1, 0},
-	{"style/red/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, 1, 0},
-	{"style/yellow/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, 1, 0},
+	{ "style/blue/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, 1, 0 },
+	{ "style/cyan/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, 1, 0 },
+	{ "style/elegant/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, 1, 0 },
+	{ "style/elegant/fresh.css", "text/css", do_cache, NULL, do_ej, NULL, 1, 0 },
+	{ "style/elegant/fresh-dark.css", "text/css", do_cache, NULL, do_ej, NULL, 1, 0 },
+	{ "style/green/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, 1, 0 },
+	{ "style/orange/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, 1, 0 },
+	{ "style/red/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, 1, 0 },
+	{ "style/yellow/style.css", "text/css", do_cache, NULL, do_stylecss, NULL, 1, 0 },
+	{ "style/blue/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, 1, 0 },
+	{ "style/cyan/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, 1, 0 },
+	{ "style/elegant/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, 1, 0 },
+	{ "style/green/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, 1, 0 },
+	{ "style/orange/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, 1, 0 },
+	{ "style/red/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, 1, 0 },
+	{ "style/yellow/style_ie.css", "text/css", do_cache, NULL, do_stylecss_ie, NULL, 1, 0 },
 #endif
 #ifdef HAVE_REGISTER
-	{"style/logo.png", "image/png", NULL, NULL, do_trial_logo, NULL, 0, 0},
+	{ "style/logo.png", "image/png", NULL, NULL, do_trial_logo, NULL, 0, 0 },
 #endif
 //      {"graph_if.svg*", "image/svg+xml", NULL, NULL, do_file, do_auth, 0, 0, 1},
 //      {"graph_if.svg", "image/svg+xml", NULL, NULL, do_file, do_auth, 0, 0, 1},
-	{"**.css", "text/css", NULL, NULL, do_file, NULL, 0, 0},
-	{"**.svg", "image/svg+xml", NULL, NULL, do_file, do_auth, 0, 0},
-	{"**.gif", "image/gif", NULL, NULL, do_file, NULL, 0, 0},
-	{"**.png", "image/png", NULL, NULL, do_file, NULL, 0, 0},
-	{"**.jpg", "image/jpeg", NULL, NULL, do_file, NULL, 0, 0},
-	{"**.ico", "image/x-icon", NULL, NULL, do_file, NULL, 0, 0},
-	{"**.js", "text/javascript", NULL, NULL, do_file, NULL, 0, 0},
-	{"**.swf", "application/x-shockwave-flash", NULL, NULL, do_file, NULL, 0, 0},
-	{"**.pdf", "application/pdf", NULL, NULL, do_file, NULL, 0, 0},
-	{"**.mp4", "video/mp4", NULL, NULL, do_file, NULL, 0, 0},
-	{"**.mp3", "audio/mpeg3", NULL, NULL, do_file, NULL, 0, 0},
-	{"**.mpg", "video/mpeg", NULL, NULL, do_file, NULL, 0, 0},
-	{"**.avi", "video/x-msvideo", NULL, NULL, do_file, NULL, 0, 0},
-	{"**.wma", "audio/x-ms-wma", NULL, NULL, do_file, NULL, 0, 0},
-	{"**.wmv", "video/x-ms-wmv", NULL, NULL, do_file, NULL, 0, 0},
-	{"**.flv", "video/x-flv", NULL, NULL, do_file, NULL, 0, 0},
+	{ "**.css", "text/css", NULL, NULL, do_file, NULL, 0, 0 },
+	{ "**.svg", "image/svg+xml", NULL, NULL, do_file, do_auth, 0, 0 },
+	{ "**.gif", "image/gif", NULL, NULL, do_file, NULL, 0, 0 },
+	{ "**.png", "image/png", NULL, NULL, do_file, NULL, 0, 0 },
+	{ "**.jpg", "image/jpeg", NULL, NULL, do_file, NULL, 0, 0 },
+	{ "**.ico", "image/x-icon", NULL, NULL, do_file, NULL, 0, 0 },
+	{ "**.js", "text/javascript", NULL, NULL, do_file, NULL, 0, 0 },
+	{ "**.swf", "application/x-shockwave-flash", NULL, NULL, do_file, NULL, 0, 0 },
+	{ "**.pdf", "application/pdf", NULL, NULL, do_file, NULL, 0, 0 },
+	{ "**.mp4", "video/mp4", NULL, NULL, do_file, NULL, 0, 0 },
+	{ "**.mp3", "audio/mpeg3", NULL, NULL, do_file, NULL, 0, 0 },
+	{ "**.mpg", "video/mpeg", NULL, NULL, do_file, NULL, 0, 0 },
+	{ "**.avi", "video/x-msvideo", NULL, NULL, do_file, NULL, 0, 0 },
+	{ "**.wma", "audio/x-ms-wma", NULL, NULL, do_file, NULL, 0, 0 },
+	{ "**.wmv", "video/x-ms-wmv", NULL, NULL, do_file, NULL, 0, 0 },
+	{ "**.flv", "video/x-flv", NULL, NULL, do_file, NULL, 0, 0 },
 
 #ifdef HAVE_PRIVOXY
-	{"wpad.dat", "application/x-ns-proxy-autoconfig", no_cache, NULL, do_wpad, NULL, 0, 0},
+	{ "wpad.dat", "application/x-ns-proxy-autoconfig", no_cache, NULL, do_wpad, NULL, 0, 0 },
 #endif
 #ifdef HAVE_ATH9K
-	{"spectral_scan.json", "application/json", no_cache, NULL, do_spectral_scan, do_auth, 1, 0},
+	{ "spectral_scan.json", "application/json", no_cache, NULL, do_spectral_scan, do_auth, 1, 0 },
 #endif
 #ifdef HAVE_SKYTRON
-	{"applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi,
-	 do_auth2, 1, 0},
+	{ "applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi,
+	 do_auth2, 1, 0 },
 #elif HAVE_DDLAN
-	{"applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi,
-	 NULL, 1, 0},
+	{ "applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi,
+	 NULL, 1, 0 },
 #else
-	{"applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi,
-	 do_auth, 1, 0},
+	{ "applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi,
+	 do_auth, 1, 0 },
 #endif
-	{"fetchif.cgi*", "text/html", no_cache, NULL, do_fetchif, do_auth, 1, 0},
+	{ "fetchif.cgi*", "text/html", no_cache, NULL, do_fetchif, do_auth, 1, 0 },
 #ifdef HAVE_DDLAN
-	{"apply.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi, NULL,
-	 1, 0},
-	{"upgrade.cgi*", "text/html", no_cache, do_upgrade_post, do_upgrade_cgi,
-	 NULL, 1, 0},
+	{ "apply.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi, NULL,
+	 1, 0 },
+	{ "upgrade.cgi*", "text/html", no_cache, do_upgrade_post, do_upgrade_cgi,
+	 NULL, 1, 0 },
 #else
-	{"apply.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi,
-	 do_auth, 1, 0},
-	{"upgrade.cgi*", "text/html", no_cache, do_upgrade_post, do_upgrade_cgi,
-	 do_auth, 1, 0},
+	{ "apply.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi,
+	 do_auth, 1, 0 },
+	{ "upgrade.cgi*", "text/html", no_cache, do_upgrade_post, do_upgrade_cgi,
+	 do_auth, 1, 0 },
 #endif
 #ifdef HAVE_BUFFALO
-	{"olupgrade.cgi*", "text/html", no_cache, do_olupgrade_post,
+	{ "olupgrade.cgi*", "text/html", no_cache, do_olupgrade_post,
 	 do_upgrade_cgi,
-	 do_auth, 1, 0},
+	 do_auth, 1, 0 },
 #endif
 	// {"Gozila.cgi*", "text/html", no_cache, NULL, do_setup_wizard,
 	// do_auth,0,0}, // for setup wizard
@@ -2683,55 +2684,55 @@ static struct mime_handler mime_handlers[] = {
 	 * do_auth ,0,0}, 
 	 */
 #ifdef HAVE_DDLAN
-	{"restore.cgi**", "text/html", no_cache, do_upgrade_post,
+	{ "restore.cgi**", "text/html", no_cache, do_upgrade_post,
 	 do_upgrade_cgi,
-	 NULL, 1, 0},
+	 NULL, 1, 0 },
 #else
-	{"restore.cgi**", "text/html", no_cache, do_upgrade_post,
+	{ "restore.cgi**", "text/html", no_cache, do_upgrade_post,
 	 do_upgrade_cgi,
-	 do_auth, 1, 0},
+	 do_auth, 1, 0 },
 #endif
-	{"test.bin**", "application/octet-stream", no_cache, NULL, do_file,
-	 do_auth, 0, 0},
+	{ "test.bin**", "application/octet-stream", no_cache, NULL, do_file,
+	 do_auth, 0, 0 },
 
-	{"bigfile.bin*", "application/octet-stream", no_cache, NULL,
-	 do_bigfile, NULL, 0, 1},
+	{ "bigfile.bin*", "application/octet-stream", no_cache, NULL,
+	 do_bigfile, NULL, 0, 1 },
 
 #ifdef HAVE_DDLAN
-	{"nvrambak.bin*", "application/octet-stream", no_cache, NULL,
-	 nv_file_out, do_auth2, 0, 0},
+	{ "nvrambak.bin*", "application/octet-stream", no_cache, NULL,
+	 nv_file_out, do_auth2, 0, 0 },
 
-	{"nvrambak**.bin*", "application/octet-stream", no_cache, NULL,
+	{ "nvrambak**.bin*", "application/octet-stream", no_cache, NULL,
 	 nv_file_out,
-	 do_auth2, 0, 0},
-	{"nvram.cgi*", "text/html", no_cache, nv_file_in, sr_config_cgi, NULL,
-	 1, 0},
+	 do_auth2, 0, 0 },
+	{ "nvram.cgi*", "text/html", no_cache, nv_file_in, sr_config_cgi, NULL,
+	 1, 0 },
 #else
-	{"nvrambak.bin*", "application/octet-stream", no_cache, NULL,
-	 nv_file_out, do_auth, 0, 0},
-	{"nvrambak**.bin*", "application/octet-stream", no_cache, NULL,
+	{ "nvrambak.bin*", "application/octet-stream", no_cache, NULL,
+	 nv_file_out, do_auth, 0, 0 },
+	{ "nvrambak**.bin*", "application/octet-stream", no_cache, NULL,
 	 nv_file_out,
-	 do_auth, 0, 0},
-	{"nvram.cgi*", "text/html", no_cache, nv_file_in, sr_config_cgi,
+	 do_auth, 0, 0 },
+	{ "nvram.cgi*", "text/html", no_cache, nv_file_in, sr_config_cgi,
 	 do_auth,
-	 1, 0},
+	 1, 0 },
 #endif
 #if !defined(HAVE_X86) && !defined(HAVE_MAGICBOX)
-	{"backup/cfe.bin", "application/octet-stream", no_cache, NULL,
+	{ "backup/cfe.bin", "application/octet-stream", no_cache, NULL,
 	 do_cfebackup,
-	 do_auth, 0, 0},
+	 do_auth, 0, 0 },
 #endif
 #ifdef HAVE_STATUS_SYSLOG
-	{"syslog.cgi*", "text/html", no_cache, NULL, do_syslog, do_auth, 1, 0},
+	{ "syslog.cgi*", "text/html", no_cache, NULL, do_syslog, do_auth, 1, 0 },
 #endif
-	{"ttgraph.cgi*", "text/html", no_cache, NULL, do_ttgraph, do_auth, 1, 0},
-	{"traffdata.bak*", "text/html", no_cache, NULL, ttraff_backup,
-	 do_auth, 0, 0},
-	{"tadmin.cgi*", "text/html", no_cache, td_file_in, td_config_cgi,
-	 do_auth, 1, 0},
-	{"*", "application/octet-stream", no_cache, NULL, do_file, do_auth, 1, 0},
+	{ "ttgraph.cgi*", "text/html", no_cache, NULL, do_ttgraph, do_auth, 1, 0 },
+	{ "traffdata.bak*", "text/html", no_cache, NULL, ttraff_backup,
+	 do_auth, 0, 0 },
+	{ "tadmin.cgi*", "text/html", no_cache, td_file_in, td_config_cgi,
+	 do_auth, 1, 0 },
+	{ "*", "application/octet-stream", no_cache, NULL, do_file, do_auth, 1, 0 },
 	// for ddm
-	{NULL, NULL, NULL, NULL, NULL, NULL, 0, 0}
+	{ NULL, NULL, NULL, NULL, NULL, NULL, 0, 0 }
 };
 
 #ifdef HAVE_BUFFALO

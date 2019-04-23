@@ -104,12 +104,12 @@ char *GOZILA_GET(webs_t wp, char *name)
 
 struct onload onloads[] = {
 	// { "Filters", filter_onload },
-	{"WL_ActiveTable-wl0", wl_active_onload},
-	{"WL_ActiveTable-wl1", wl_active_onload},
-	{"WL_ActiveTable-wl2", wl_active_onload},
-	{"MACClone", macclone_onload},
-	{"FilterSummary", filtersummary_onload},
-	{"Ping", ping_onload},
+	{ "WL_ActiveTable-wl0", wl_active_onload },
+	{ "WL_ActiveTable-wl1", wl_active_onload },
+	{ "WL_ActiveTable-wl2", wl_active_onload },
+	{ "MACClone", macclone_onload },
+	{ "FilterSummary", filtersummary_onload },
+	{ "Ping", ping_onload },
 	// {"Traceroute", traceroute_onload},
 };
 
@@ -477,7 +477,7 @@ void ej_startswith(webs_t wp, int argc, char_t ** argv)
 
 typedef struct defrule {
 	char *name;
-	int (*rulefn) (char *name);
+	int (*rulefn)(char *name);
 };
 
 static int rule_ismini(char *name)
@@ -550,118 +550,118 @@ static int rule_afterburner(char *name)
 
 static struct defrule s_conditions[] = {
 #ifdef HAVE_MICRO
-	{"MICRO", NULL},
+	{ "MICRO", NULL },
 #endif
 #ifdef HAVE_EXTHELP
-	{"EXTHELP", NULL},
+	{ "EXTHELP", NULL },
 #endif
 #ifdef HAVE_MULTICAST
-	{"MULTICAST", NULL},
+	{ "MULTICAST", NULL },
 #endif
 #ifdef HAVE_SNMP
-	{"SNMP", NULL},
+	{ "SNMP", NULL },
 #endif
 #ifdef HAVE_WIVIZ
-	{"WIVIZ", NULL},
+	{ "WIVIZ", NULL },
 #endif
 #ifdef HAVE_RSTATS
-	{"RSTATS", NULL},
+	{ "RSTATS", NULL },
 #endif
 #ifdef HAVE_ACK
-	{"ACK", NULL},
+	{ "ACK", NULL },
 #endif
 #ifdef HAVE_SSHD
-	{"SSHD", NULL},
+	{ "SSHD", NULL },
 #endif
 #ifdef HAVE_PPTPD
-	{"PPTPD", NULL},
+	{ "PPTPD", NULL },
 #endif
 #ifdef HAVE_QUAGGA
-	{"QUAGGA", NULL},
+	{ "QUAGGA", NULL },
 #endif
 #ifdef HAVE_SAMBA
-	{"SAMBA", NULL},
+	{ "SAMBA", NULL },
 #endif
 #ifdef HAVE_SAMBA3
-	{"SAMBA3", NULL},
+	{ "SAMBA3", NULL },
 #endif
 #ifdef HAVE_JFFS2
-	{"JFFS2", NULL},
+	{ "JFFS2", NULL },
 #endif
 #ifdef HAVE_GPSI
-	{"GPSI", NULL},
+	{ "GPSI", NULL },
 #endif
 #ifdef HAVE_MMC
-	{"MMC", NULL},
+	{ "MMC", NULL },
 #endif
 #ifdef HAVE_SPUTNIK_APD
-	{"SPUTNIK_APD", NULL},
+	{ "SPUTNIK_APD", NULL },
 #endif
 #ifdef HAVE_RFLOW
-	{"RFLOW", NULL},
+	{ "RFLOW", NULL },
 #endif
 #ifdef HAVE_USB
-	{"USB", NULL},
+	{ "USB", NULL },
 #endif
 #ifdef HAVE_RADIUSPLUGIN
-	{"RADIUSPLUGIN", NULL},
+	{ "RADIUSPLUGIN", NULL },
 #endif
 #ifdef HAVE_PPPOESERVER
-	{"PPPOESERVER", NULL},
+	{ "PPPOESERVER", NULL },
 #endif
 #ifdef HAVE_MILKFISH
-	{"MILKFISH", NULL},
+	{ "MILKFISH", NULL },
 #endif
 #ifdef HAVE_LANGUAGE
-	{"LANGUAGE", NULL},
+	{ "LANGUAGE", NULL },
 #endif
 #ifdef HAVE_BUFFALO
-	{"HAVE_BUFFALO", NULL},
+	{ "HAVE_BUFFALO", NULL },
 #endif
 #ifdef HAVE_WPS
-	{"HAVE_WPS", NULL},
+	{ "HAVE_WPS", NULL },
 #endif
 #ifdef HAVE_IPV6
-	{"HAVE_IPV6", NULL},
+	{ "HAVE_IPV6", NULL },
 #endif
 #ifdef HAVE_ATH9K
-	{"HAVE_ATH9K", NULL},
+	{ "HAVE_ATH9K", NULL },
 #endif
 #ifdef HAVE_USBIP
-	{"USBIP", NULL},
+	{ "USBIP", NULL },
 #endif
 #ifdef HAVE_80211AC
-	{"80211AC", NULL},
+	{ "80211AC", NULL },
 #endif
 #ifdef HAVE_DNSSEC
-	{"DNSSEC", NULL},
+	{ "DNSSEC", NULL },
 #endif
 #ifdef HAVE_DNSCRYPT
-	{"DNSCRYPT", NULL},
+	{ "DNSCRYPT", NULL },
 #endif
 #if defined(HAVE_BKM) || defined(HAVE_TMK)
-	{"MULTISIM", NULL},
+	{ "MULTISIM", NULL },
 #endif
 #ifdef HAVE_ATH9K
-	{"MAC80211", NULL},
+	{ "MAC80211", NULL },
 #endif
 #ifdef HAVE_HOTSPOT
-	{"HAVE_HOTSPOT", NULL},
+	{ "HAVE_HOTSPOT", NULL },
 #endif
 #ifdef HAVE_ANTAIRA
-	{"HAVE_ANTAIRA", NULL},
+	{ "HAVE_ANTAIRA", NULL },
 #endif
 #ifdef HAVE_ANTAIRA_MINI
-	{"HAVE_ANTAIRA_MINI", NULL},
+	{ "HAVE_ANTAIRA_MINI", NULL },
 #endif
-	{"MINI", rule_ismini},
-	{"VPN", rule_isvpn},
-	{"WET", rule_iswet},
-	{"WET", rule_issta},
-	{"WANVLAN", rule_wanvlan},
-	{"HASWIFI", rule_haswifi},
-	{"AFTERBURNER", rule_afterburner},
-	{NULL, NULL}
+	{ "MINI", rule_ismini },
+	{ "VPN", rule_isvpn },
+	{ "WET", rule_iswet },
+	{ "WET", rule_issta },
+	{ "WANVLAN", rule_wanvlan },
+	{ "HASWIFI", rule_haswifi },
+	{ "AFTERBURNER", rule_afterburner },
+	{ NULL, NULL }
 };
 
 void ej_ifdef(webs_t wp, int argc, char_t ** argv)
@@ -1487,27 +1487,27 @@ static struct menucontext *init_menu(webs_t wp)
 	}
 #ifdef HAVE_ERC
 	static char *menu_s[8][13] = {
-		{"index.asp", "DDNS.asp", "", "", "", "", "", "", "", "", "", "", ""},	//
-		{"Wireless_Basic.asp", "WL_WPATable.asp", "", "", "", "", "", "", "", "", "", "", ""},	//
-		{"ForwardSpec.asp", "", "", "", "", "", "", "", "", "", "", "", ""},	//
-		{"Filters.asp", "", "", "", "", "", "", "", "", "", "", "", ""},	//
-		{"Management.asp", "", "", "", "", "", "", "", "", "", "", "", ""},	//
-		{"", "", "", "", "", "", "", "", "", "", "", "", ""},	//
-		{"", "", "", "", "", "", "", "", "", "", "", "", ""},	//
-		{"", "", "", "", "", "", "", "", "", "", "", "", ""}	//
+		{ "index.asp", "DDNS.asp", "", "", "", "", "", "", "", "", "", "", "" },	//
+		{ "Wireless_Basic.asp", "WL_WPATable.asp", "", "", "", "", "", "", "", "", "", "", "" },	//
+		{ "ForwardSpec.asp", "", "", "", "", "", "", "", "", "", "", "", "" },	//
+		{ "Filters.asp", "", "", "", "", "", "", "", "", "", "", "", "" },	//
+		{ "Management.asp", "", "", "", "", "", "", "", "", "", "", "", "" },	//
+		{ "", "", "", "", "", "", "", "", "", "", "", "", "" },	//
+		{ "", "", "", "", "", "", "", "", "", "", "", "", "" },	//
+		{ "", "", "", "", "", "", "", "", "", "", "", "", "" }	//
 	};
 	/*
 	 * real name is bmenu.menuname[i][j] 
 	 */
 	static char *menuname_s[8][14] = {
-		{"setup", "setupbasic", "setupddns", "", "", "", "", "", "", "", "", "", "", ""},	//
-		{"wireless", "wirelessBasic", "wirelessSecurity", "", "", "", "", "", "", "", "", "", "", ""},	//
-		{"applications", "applicationspforwarding", "", "", "", "", "", "", "", "", "", "", "", ""},	//
-		{"accrestriction", "webaccess", "", "", "", "", "", "", "", "", "", "", "", ""},	//
-		{"admin", "adminManagement", "", "", "", "", "", "", "", "", "", "", "", ""},	//
-		{"", "", "", "", "", "", "", "", "", "", "", "", "", ""},	//
-		{"", "", "", "", "", "", "", "", "", "", "", "", "", ""},	//
-		{"", "", "", "", "", "", "", "", "", "", "", "", "", ""},	//
+		{ "setup", "setupbasic", "setupddns", "", "", "", "", "", "", "", "", "", "", "" },	//
+		{ "wireless", "wirelessBasic", "wirelessSecurity", "", "", "", "", "", "", "", "", "", "", "" },	//
+		{ "applications", "applicationspforwarding", "", "", "", "", "", "", "", "", "", "", "", "" },	//
+		{ "accrestriction", "webaccess", "", "", "", "", "", "", "", "", "", "", "", "" },	//
+		{ "admin", "adminManagement", "", "", "", "", "", "", "", "", "", "", "", "" },	//
+		{ "", "", "", "", "", "", "", "", "", "", "", "", "", "" },	//
+		{ "", "", "", "", "", "", "", "", "", "", "", "", "", "" },	//
+		{ "", "", "", "", "", "", "", "", "", "", "", "", "", "" },	//
 	};
 
 #elif HAVE_IPR
@@ -1515,21 +1515,21 @@ static struct menucontext *init_menu(webs_t wp)
 #endif
 
 	static char *menu_t[8][13] = {
-		{"index.asp", "IPV6.asp", "DDNS.asp", "WanMAC.asp", "Routing.asp", "Vlan.asp", "Networking.asp", "eop-tunnel.asp", "", "", "", "", ""},	// 
-		{"Wireless_Basic.asp", "SuperChannel.asp", "WiMAX.asp", "Wireless_radauth.asp", "WL_WPATable.asp", "AOSS.asp", "Wireless_MAC.asp", "Wireless_Advanced.asp", "Wireless_WDS.asp", "", "", "", ""},	//
-		{"Services.asp", "FreeRadius.asp", "PPPoE_Server.asp", "PPTP.asp", "USB.asp", "NAS.asp", "Hotspot.asp", "Nintendo.asp", "Milkfish.asp", "Privoxy.asp", "Speedchecker.asp", "", ""},	//
-		{"Firewall.asp", "VPN.asp", "", "", "", "", "", "", "", "", "", "", ""},	//
-		{"Filters.asp", "", "", "", "", "", "", "", "", "", "", "", ""},	//
-		{"ForwardSpec.asp", "Forward.asp", "Triggering.asp", "UPnP.asp", "DMZ.asp", "QoS.asp", "P2P.asp", "", "", "", "", "", ""},	//
-		{"Management.asp", "Alive.asp", "Diagnostics.asp", "Wol.asp", "Factory_Defaults.asp", "Upgrade.asp", "config.asp", "", "", "", "", "", ""},	//
-		{"Status_Router.asp", "Status_Internet.asp", "Status_Lan.asp", "Status_Wireless.asp", "Status_SputnikAPD.asp", "Status_OpenVPN.asp", "Status_Bandwidth.asp", "Syslog.asp", "Info.htm", "register.asp", "MyPage.asp", "Gpio.asp", "Status_CWMP.asp"}	//
+		{ "index.asp", "IPV6.asp", "DDNS.asp", "WanMAC.asp", "Routing.asp", "Vlan.asp", "Networking.asp", "eop-tunnel.asp", "", "", "", "", "" },	// 
+		{ "Wireless_Basic.asp", "SuperChannel.asp", "WiMAX.asp", "Wireless_radauth.asp", "WL_WPATable.asp", "AOSS.asp", "Wireless_MAC.asp", "Wireless_Advanced.asp", "Wireless_WDS.asp", "", "", "", "" },	//
+		{ "Services.asp", "FreeRadius.asp", "PPPoE_Server.asp", "PPTP.asp", "USB.asp", "NAS.asp", "Hotspot.asp", "Nintendo.asp", "Milkfish.asp", "Privoxy.asp", "Speedchecker.asp", "", "" },	//
+		{ "Firewall.asp", "VPN.asp", "", "", "", "", "", "", "", "", "", "", "" },	//
+		{ "Filters.asp", "", "", "", "", "", "", "", "", "", "", "", "" },	//
+		{ "ForwardSpec.asp", "Forward.asp", "Triggering.asp", "UPnP.asp", "DMZ.asp", "QoS.asp", "P2P.asp", "", "", "", "", "", "" },	//
+		{ "Management.asp", "Alive.asp", "Diagnostics.asp", "Wol.asp", "Factory_Defaults.asp", "Upgrade.asp", "config.asp", "", "", "", "", "", "" },	//
+		{ "Status_Router.asp", "Status_Internet.asp", "Status_Lan.asp", "Status_Wireless.asp", "Status_SputnikAPD.asp", "Status_OpenVPN.asp", "Status_Bandwidth.asp", "Syslog.asp", "Info.htm", "register.asp", "MyPage.asp", "Gpio.asp", "Status_CWMP.asp" }	//
 	};
 	/*
 	 * real name is bmenu.menuname[i][j] 
 	 */
 	static char *menuname_t[8][14] = {
-		{"setup", "setupbasic", "setupipv6", "setupddns", "setupmacclone", "setuprouting", "setupvlan", "networking", "setupeop", "", "", "", "", ""},	//
-		{"wireless", "wirelessBasic", "wirelessSuperchannel", "wimax", "wirelessRadius", "wirelessSecurity",	//
+		{ "setup", "setupbasic", "setupipv6", "setupddns", "setupmacclone", "setuprouting", "setupvlan", "networking", "setupeop", "", "", "", "", "" },	//
+		{ "wireless", "wirelessBasic", "wirelessSuperchannel", "wimax", "wirelessRadius", "wirelessSecurity",	//
 #if defined(HAVE_AOSS) && defined(HAVE_WPS)
 		 "wirelessAossWPS",
 #elif defined(HAVE_AOSS) && !defined(HAVE_WPS)
@@ -1539,13 +1539,13 @@ static struct menucontext *init_menu(webs_t wp)
 #else
 		 "",		// place holder
 #endif
-		 "wirelessMac", "wirelessAdvanced", "wirelessWds", "", "", "", ""},	//
-		{"services", "servicesServices", "servicesRadius", "servicesPppoesrv", "servicesPptp", "servicesUSB", "servicesNAS", "servicesHotspot", "servicesNintendo", "servicesMilkfish", "servicesPrivoxy", "servicesSpeedchecker", "", ""},	//
-		{"security", "firwall", "vpn", "", "", "", "", "", "", "", "", "", "", ""},	// 
-		{"accrestriction", "webaccess", "", "", "", "", "", "", "", "", "", "", "", ""},	//
-		{"applications", "applicationspforwarding", "applicationsprforwarding", "applicationsptriggering", "applicationsUpnp", "applicationsDMZ", "applicationsQoS", "applicationsP2P", "", "", "", "", "", ""},	//
-		{"admin", "adminManagement", "adminAlive", "adminDiag", "adminWol", "adminFactory", "adminUpgrade", "adminBackup", "", "", "", "", "", ""},	//
-		{"statu", "statuRouter", "statuInet", "statuLAN", "statuWLAN", "statuSputnik", "statuVPN", "statuBand", "statuSyslog", "statuSysInfo", "statuActivate", "statuMyPage", "statuGpio", "statuCWMP"}	//
+		 "wirelessMac", "wirelessAdvanced", "wirelessWds", "", "", "", "" },	//
+		{ "services", "servicesServices", "servicesRadius", "servicesPppoesrv", "servicesPptp", "servicesUSB", "servicesNAS", "servicesHotspot", "servicesNintendo", "servicesMilkfish", "servicesPrivoxy", "servicesSpeedchecker", "", "" },	//
+		{ "security", "firwall", "vpn", "", "", "", "", "", "", "", "", "", "", "" },	// 
+		{ "accrestriction", "webaccess", "", "", "", "", "", "", "", "", "", "", "", "" },	//
+		{ "applications", "applicationspforwarding", "applicationsprforwarding", "applicationsptriggering", "applicationsUpnp", "applicationsDMZ", "applicationsQoS", "applicationsP2P", "", "", "", "", "", "" },	//
+		{ "admin", "adminManagement", "adminAlive", "adminDiag", "adminWol", "adminFactory", "adminUpgrade", "adminBackup", "", "", "", "", "", "" },	//
+		{ "statu", "statuRouter", "statuInet", "statuLAN", "statuWLAN", "statuSputnik", "statuVPN", "statuBand", "statuSyslog", "statuSysInfo", "statuActivate", "statuMyPage", "statuGpio", "statuCWMP" }	//
 	};
 	int x, y;
 	for (x = 0; x < 8; x++) {

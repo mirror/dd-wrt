@@ -199,8 +199,8 @@ static void validate_filter_tod(webs_t wp)
 	char buf[256] = "";
 	char tod_buf[20];
 	struct variable filter_tod_variables[] = {
-	      {argv:ARGV("20")},
-	      {argv:ARGV("0", "1", "2")},
+	      { argv:ARGV("20") },
+	      { argv:ARGV("0", "1", "2") },
 
 	}, *which;
 
@@ -303,9 +303,9 @@ void save_policy(webs_t wp)
 	char buf[256] = "";
 	char *value = websGetVar(wp, "action", "");
 	struct variable filter_variables[] = {
-	      {argv:ARGV("1", "20")},
-	      {argv:ARGV("0", "1", "2")},
-	      {argv:ARGV("deny", "allow")},
+	      { argv:ARGV("1", "20") },
+	      { argv:ARGV("0", "1", "2") },
+	      { argv:ARGV("deny", "allow") },
 
 	}, *which;
 	char filter_buf[] = "filter_ruleXXX";
@@ -1429,7 +1429,8 @@ void qos_add_svc(webs_t wp)
 		nvram_set("wshaper_enable", var);
 
 	char protocol[100] = { 0 }, ports[100] = {
-	0};
+		0
+	};
 	char *add_svc = websGetVar(wp, "add_svc", NULL);
 	char *svqos_svcs = nvram_safe_get("svqos_svcs");
 	char *new_svcs;
@@ -4258,8 +4259,8 @@ void wireless_save(webs_t wp)
 
 #ifdef HAVE_ERC
 	struct variable filter_variables[] = {
-	      {argv:ARGV("1", "0")},
-	      {argv:ARGV("1", "0")},
+	      { argv:ARGV("1", "0") },
+	      { argv:ARGV("1", "0") },
 	}, *which;
 
 	char *rd_off, *rd_boot_off;
