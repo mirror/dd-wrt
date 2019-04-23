@@ -386,7 +386,7 @@ void configure_single_ath9k(int count)
 
 		strcpy(primary, dev);
 	} else if (!strcmp(apm, "mesh")) {
-		eval("iw", wif, "interface", "add", dev, "type", "mp", "mesh_id", nvram_nget("%s_ssid", prefix));
+		eval("iw", wif, "interface", "add", dev, "type", "mp", "mesh_id", nvram_nget("%s_ssid", dev));
 		eval("iw", "dev", dev, "set", "freq", nvram_nget("%s_channel", dev), gethtmode(dev));
 		strcpy(primary, dev);
 	} else {
@@ -462,37 +462,43 @@ void configure_single_ath9k(int count)
 		vapcount = countvaps;
 	int counter = 1;
 	char compr[32];
-	if (*vifs)
+	if (*vifs) {
 		foreach(var, vifs, next) {
-		fprintf(stderr, "setup vifs %s %d\n", var, counter);
-		// create the first main hostapd interface when this is repeater mode
-		if (isfirst)
-			sysprintf("iw %s interface add %s.%d type managed", wif, dev, counter);
-		setupHostAP_ath9k(dev, isfirst, counter, 0);
-		sprintf(compr, "%s_fc_th", var);
-		char *threshold = nvram_default_get(compr, "512");	// minimum framesize frequired for compression
-		sprintf(compr, "%s_fc", var);
+			fprintf(stderr, "setup vifs %s %d\n", var, counter);
+			// create the first main hostapd interface when this is repeater mode
+			if (!nvram_nmatch("mesh", "%s_mode", var)) {
+				if (isfirst)
+					sysprintf("iw %s interface add %s.%d type managed", wif, dev, counter);
+				setupHostAP_ath9k(dev, isfirst, counter, 0);
+			} else {
+				sysprintf("iw %s interface add %s.%d type mp mesh_id %s", wif, dev, counter, nvram_nget("%s_ssid", var));
+				setupSupplicant_ath9k(var, NULL, 0);
+			}
+			sprintf(compr, "%s_fc_th", var);
+			char *threshold = nvram_default_get(compr, "512");	// minimum framesize frequired for compression
+			sprintf(compr, "%s_fc", var);
 
-		if (nvram_default_matchi(compr, 1, 0)) {
-			load_compressor();
-			eval("iw", "dev", var, "set", "compr", "lzo", threshold);
-		} else if (nvram_default_matchi(compr, 2, 0)) {
-			load_compressor();
-			eval("iw", "dev", var, "set", "compr", "lzma", threshold);
-		} else if (nvram_default_matchi(compr, 3, 0)) {
-			load_compressor();
-			eval("iw", "dev", var, "set", "compr", "lz4", threshold);
-		} else if (nvram_default_matchi(compr, 4, 0)) {
-			load_compressor();
-			eval("iw", "dev", var, "set", "compr", "zstd", threshold);
-		} else {
-			eval("iw", "dev", var, "set", "compr", "off");
-		}
-		setRTS(var);
+			if (nvram_default_matchi(compr, 1, 0)) {
+				load_compressor();
+				eval("iw", "dev", var, "set", "compr", "lzo", threshold);
+			} else if (nvram_default_matchi(compr, 2, 0)) {
+				load_compressor();
+				eval("iw", "dev", var, "set", "compr", "lzma", threshold);
+			} else if (nvram_default_matchi(compr, 3, 0)) {
+				load_compressor();
+				eval("iw", "dev", var, "set", "compr", "lz4", threshold);
+			} else if (nvram_default_matchi(compr, 4, 0)) {
+				load_compressor();
+				eval("iw", "dev", var, "set", "compr", "zstd", threshold);
+			} else {
+				eval("iw", "dev", var, "set", "compr", "off");
+			}
+			setRTS(var);
 
-		isfirst = 0;
-		counter++;
+			isfirst = 0;
+			counter++;
 		}
+	}
 	if (has_ad(dev)) {
 		sysprintf("echo 0 > /sys/kernel/debug/ieee80211/phy2/wil6210/led_polarity");
 		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/phy2/wil6210/led_cfg");
@@ -1931,9 +1937,18 @@ void ath9k_start_supplicant(int count)
 		foreach(var, vifs, next) {
 			sprintf(mode, "%s_mode", var);
 			char *m2 = nvram_safe_get(mode);
+			char bridged[32];
+			sprintf(bridged, "%s_bridged", var);
+			if (!strcmp(m2, "mesh")) {
+				sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
+				if (nvram_matchi(bridged, 1))
+					eval("wpa_supplicant", "-b", getBridge(var, tmp), background, "-Dnl80211", psk, "-c", fstr);
+				else
+					eval("wpa_supplicant", background, "-Dnl80211", psk, "-c", fstr);
+
+			}
+
 			if (strcmp(m2, "sta")) {
-				char bridged[32];
-				sprintf(bridged, "%s_bridged", var);
 				if (nvram_default_matchi(bridged, 1, 1)) {
 					eval("ifconfig", dev, "0.0.0.0", "up");
 					br_add_interface(getBridge(var, tmp), var);
