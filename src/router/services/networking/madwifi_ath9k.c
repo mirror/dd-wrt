@@ -1860,13 +1860,13 @@ void ath9k_start_supplicant(int count)
 			sprintf(ctrliface, "/var/run/hostapd/%s.1", dev);
 			sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
 #ifdef HAVE_RELAYD
-			if ((nvram_match(wmode, "wdssta"))
+			if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh"))
 			    && nvram_matchi(bridged, 1))
 				eval("wpa_supplicant", "-b", getBridge(dev, tmp), background, "-Dnl80211", psk, "-H", ctrliface, "-c", fstr);
 			else
 				eval("wpa_supplicant", background, "-Dnl80211", psk, "-H", ctrliface, "-c", fstr);
 #else
-			if ((nvram_match(wmode, "wdssta")
+			if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh")
 			     || nvram_match(wmode, "wet"))
 			    && nvram_matchi(bridged, 1))
 				eval("wpa_supplicant", "-b", getBridge(dev, tmp), background, "-Dnl80211", psk, "-H", ctrliface, "-c", fstr);
@@ -1876,13 +1876,13 @@ void ath9k_start_supplicant(int count)
 		} else {
 			sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
 #ifdef HAVE_RELAYD
-			if ((nvram_match(wmode, "wdssta"))
+			if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh"))
 			    && nvram_matchi(bridged, 1))
 				eval("wpa_supplicant", "-b", getBridge(dev, tmp), background, "-Dnl80211", psk, "-c", fstr);
 			else
 				eval("wpa_supplicant", background, "-Dnl80211", psk, "-c", fstr);
 #else
-			if ((nvram_match(wmode, "wdssta")
+			if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh")
 			     || nvram_match(wmode, "wet"))
 			    && nvram_matchi(bridged, 1))
 				eval("wpa_supplicant", "-b", getBridge(dev, tmp), background, "-Dnl80211", psk, "-c", fstr);

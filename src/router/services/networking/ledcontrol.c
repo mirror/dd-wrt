@@ -122,7 +122,6 @@ static int serrGPIOIssue( /*IP*/ int sintCommand, /*IP*/ int sintGPIONumber, /*I
 	 */
 	serrCode = ioctl(sintIOCTLDescriptor, sintCommand, &struIOCtl);
 	if (serrCode < 0)
-
    /***********************************************
    *  If no wireless name : no wireless extensions:
    ***********************************************/
