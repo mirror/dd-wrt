@@ -386,7 +386,7 @@ void configure_single_ath9k(int count)
 
 		strcpy(primary, dev);
 	} else if (!strcmp(apm, "mesh")) {
-		eval("iw", wif, "interface", "add", dev, "type", "mp");
+		eval("iw", wif, "interface", "add", dev, "type", "mp", "mesh_id", nvram_nget("%s_ssid",prefix));
 		eval("iw", "dev", dev, "set", "freq", nvram_nget("%s_channel", dev), gethtmode(dev));
 		strcpy(primary, dev);
 	} else {
