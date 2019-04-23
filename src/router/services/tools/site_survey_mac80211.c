@@ -74,11 +74,12 @@ static struct scan_params scan_params;
 
 struct ie_print {
 	const char *name;
-	void (*print) (const uint8_t type, uint8_t len, const uint8_t * data);
+	void (*print)(const uint8_t type, uint8_t len, const uint8_t * data);
 	uint8_t minlen, maxlen;
 	uint8_t flags;
 };
 static void print_ssid(const uint8_t type, uint8_t len, const uint8_t * data);
+static void print_mesh_ssid(const uint8_t type, uint8_t len, const uint8_t * data);
 static void print_supprates(const uint8_t type, uint8_t len, const uint8_t * data);
 static void print_ds(const uint8_t type, uint8_t len, const uint8_t * data);
 static void print_tim(const uint8_t type, uint8_t len, const uint8_t * data);
@@ -95,24 +96,25 @@ static int print_bss_handler(struct nl_msg *msg, void *arg);
 static void print_rsn_ie(const char *defcipher, const char *defauth, uint8_t len, const uint8_t * data, int type);
 static void print_ies(unsigned char *ie, int ielen, bool unknown, enum print_ie_type ptype);
 
-static void tab_on_first(bool * first);
+static void tab_on_first(bool *first);
 
 static const struct ie_print ieprinters[] = {
-	[0] = {"SSID", print_ssid, 0, 32, BIT(PRINT_SCAN) | BIT(PRINT_LINK),},
-	[1] = {"Supported rates", print_supprates, 0, 255, BIT(PRINT_SCAN),},
-	[3] = {"DS Parameter set", print_ds, 1, 1, BIT(PRINT_SCAN),},
-	[5] = {"TIM", print_tim, 4, 255, BIT(PRINT_SCAN),},
-	[7] = {"Country", print_country, 3, 255, BIT(PRINT_SCAN),},
-	[32] = {"Power constraint", print_powerconstraint, 1, 1, BIT(PRINT_SCAN),},
-	[42] = {"ERP", print_erp, 1, 255, BIT(PRINT_SCAN),},
-	[45] = {"HT capabilities", print_ht_capa, 26, 26, BIT(PRINT_SCAN),},
-	[61] = {"HT operation", print_ht_op, 22, 22, BIT(PRINT_SCAN),},
-	[48] = {"RSN", print_rsn, 2, 255, BIT(PRINT_SCAN),},
-	[50] = {"Extended supported rates", print_supprates, 0, 255, BIT(PRINT_SCAN),},
-	[191] = {"VHT capabilities", print_vht_capa, 12, 255, BIT(PRINT_SCAN),},
-	[192] = {"VHT operation", print_vht_oper, 5, 255, BIT(PRINT_SCAN),},
-	[127] = {"Extended capabilities", print_capabilities, 0, 255,
-		 BIT(PRINT_SCAN),},
+	[0] = { "SSID", print_ssid, 0, 32, BIT(PRINT_SCAN) | BIT(PRINT_LINK), },
+	[1] = { "Supported rates", print_supprates, 0, 255, BIT(PRINT_SCAN), },
+	[3] = { "DS Parameter set", print_ds, 1, 1, BIT(PRINT_SCAN), },
+	[5] = { "TIM", print_tim, 4, 255, BIT(PRINT_SCAN), },
+	[7] = { "Country", print_country, 3, 255, BIT(PRINT_SCAN), },
+	[32] = { "Power constraint", print_powerconstraint, 1, 1, BIT(PRINT_SCAN), },
+	[42] = { "ERP", print_erp, 1, 255, BIT(PRINT_SCAN), },
+	[45] = { "HT capabilities", print_ht_capa, 26, 26, BIT(PRINT_SCAN), },
+	[61] = { "HT operation", print_ht_op, 22, 22, BIT(PRINT_SCAN), },
+	[48] = { "RSN", print_rsn, 2, 255, BIT(PRINT_SCAN), },
+	[50] = { "Extended supported rates", print_supprates, 0, 255, BIT(PRINT_SCAN), },
+	[191] = { "VHT capabilities", print_vht_capa, 12, 255, BIT(PRINT_SCAN), },
+	[192] = { "VHT operation", print_vht_oper, 5, 255, BIT(PRINT_SCAN), },
+	[127] = { "Extended capabilities", print_capabilities, 0, 255,
+		 [114] = { "MESH ID", print_mesh_ssid, 0, 32, BIT(PRINT_SCAN) | BIT(PRINT_LINK),},
+		 BIT(PRINT_SCAN), },
 };
 
 static void fillENC(const char *text)
@@ -132,10 +134,10 @@ static void fillENC(const char *text)
 }
 
 static struct nla_policy survey_policy[NL80211_SURVEY_INFO_MAX + 1] = {
-	[NL80211_SURVEY_INFO_FREQUENCY] = {.type = NLA_U32},
-	[NL80211_SURVEY_INFO_NOISE] = {.type = NLA_U8},
-	[NL80211_SURVEY_INFO_CHANNEL_TIME] = {.type = NLA_U64},
-	[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY] = {.type = NLA_U64},
+	[NL80211_SURVEY_INFO_FREQUENCY] = {.type = NLA_U32 },
+	[NL80211_SURVEY_INFO_NOISE] = {.type = NLA_U8 },
+	[NL80211_SURVEY_INFO_CHANNEL_TIME] = {.type = NLA_U64 },
+	[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY] = {.type = NLA_U64 },
 };
 
 static int parse_survey(struct nl_msg *msg, struct nlattr **sinfo)
@@ -267,7 +269,7 @@ static void print_mcs_index(const __u8 *mcs)
 		unsigned int MCS_RATE_BIT = 1 << mcs_bit % 8;
 		bool mcs_rate_idx_set;
 
-		mcs_rate_idx_set = ! !(mcs[mcs_octet] & MCS_RATE_BIT);
+		mcs_rate_idx_set = !!(mcs[mcs_octet] & MCS_RATE_BIT);
 
 		if (!mcs_rate_idx_set)
 			continue;
@@ -299,10 +301,10 @@ static void print_ht_mcs(const __u8 *mcs)
 	bool tx_mcs_set_defined, tx_mcs_set_equal, tx_unequal_modulation;
 
 	max_rx_supp_data_rate = ((mcs[10] >> 8) & ((mcs[11] & 0x3) << 8));
-	tx_mcs_set_defined = ! !(mcs[12] & (1 << 0));
+	tx_mcs_set_defined = !!(mcs[12] & (1 << 0));
 	tx_mcs_set_equal = !(mcs[12] & (1 << 1));
 	tx_max_num_spatial_streams = ((mcs[12] >> 2) & 3) + 1;
-	tx_unequal_modulation = ! !(mcs[12] & (1 << 4));
+	tx_unequal_modulation = !!(mcs[12] & (1 << 4));
 
 	if (max_rx_supp_data_rate)
 		printf("\t\tHT Max RX data rate: %d Mbps\n", max_rx_supp_data_rate);
@@ -563,7 +565,7 @@ static void print_wifi_wps(const uint8_t type, uint8_t len, const uint8_t * data
 	}
 }
 
-static void tab_on_first(bool * first)
+static void tab_on_first(bool *first)
 {
 	if (!*first)
 		printf("\t");
@@ -573,6 +575,13 @@ static void tab_on_first(bool * first)
 
 static void print_ssid(const uint8_t type, uint8_t len, const uint8_t * data)
 {
+	if (!(site_survey_lists[sscount].extcap & 1))
+		memcpy(site_survey_lists[sscount].SSID, data, len);
+}
+
+static void print_mesh_ssid(const uint8_t type, uint8_t len, const uint8_t * data)
+{
+	site_survey_lists[sscount].extcap |= 1;
 	memcpy(site_survey_lists[sscount].SSID, data, len);
 }
 
@@ -583,17 +592,17 @@ static int print_bss_handler(struct nl_msg *msg, void *arg)
 	struct nlattr *bss[NL80211_BSS_MAX + 1];
 	char mac_addr[20], dev[20];
 	static struct nla_policy bss_policy[NL80211_BSS_MAX + 1] = {
-		[NL80211_BSS_TSF] = {.type = NLA_U64},
-		[NL80211_BSS_FREQUENCY] = {.type = NLA_U32},
-		[NL80211_BSS_BSSID] = {},
-		[NL80211_BSS_BEACON_INTERVAL] = {.type = NLA_U16},
-		[NL80211_BSS_CAPABILITY] = {.type = NLA_U16},
-		[NL80211_BSS_INFORMATION_ELEMENTS] = {},
-		[NL80211_BSS_SIGNAL_MBM] = {.type = NLA_U32},
-		[NL80211_BSS_SIGNAL_UNSPEC] = {.type = NLA_U8},
-		[NL80211_BSS_STATUS] = {.type = NLA_U32},
-		[NL80211_BSS_SEEN_MS_AGO] = {.type = NLA_U32},
-		[NL80211_BSS_BEACON_IES] = {},
+		[NL80211_BSS_TSF] = {.type = NLA_U64 },
+		[NL80211_BSS_FREQUENCY] = {.type = NLA_U32 },
+		[NL80211_BSS_BSSID] = { },
+		[NL80211_BSS_BEACON_INTERVAL] = {.type = NLA_U16 },
+		[NL80211_BSS_CAPABILITY] = {.type = NLA_U16 },
+		[NL80211_BSS_INFORMATION_ELEMENTS] = { },
+		[NL80211_BSS_SIGNAL_MBM] = {.type = NLA_U32 },
+		[NL80211_BSS_SIGNAL_UNSPEC] = {.type = NLA_U8 },
+		[NL80211_BSS_STATUS] = {.type = NLA_U32 },
+		[NL80211_BSS_SEEN_MS_AGO] = {.type = NLA_U32 },
+		[NL80211_BSS_BEACON_IES] = { },
 	};
 	struct scan_params *params = arg;
 	rate_count = 0;
@@ -752,9 +761,9 @@ static void print_ie(const struct ie_print *p, const uint8_t type, uint8_t len, 
 }
 
 static const struct ie_print wifiprinters[] = {
-	[1] = {"WPA", print_wifi_wpa, 2, 255, BIT(PRINT_SCAN),},
-	[2] = {"WMM", print_wifi_wmm, 1, 255, BIT(PRINT_SCAN),},
-	[4] = {"WPS", print_wifi_wps, 0, 255, BIT(PRINT_SCAN),},
+	[1] = { "WPA", print_wifi_wpa, 2, 255, BIT(PRINT_SCAN), },
+	[2] = { "WMM", print_wifi_wmm, 1, 255, BIT(PRINT_SCAN), },
+	[4] = { "WPS", print_wifi_wps, 0, 255, BIT(PRINT_SCAN), },
 };
 
 static void print_vendor(unsigned char len, unsigned char *data, bool unknown, enum print_ie_type ptype)
@@ -1389,7 +1398,6 @@ static void print_ht_capability(__u16 cap)
 			fillENC("HT40");
 		}
 	} else
-
 		PRINT_HT_CAP(!(cap & BIT(1)), "HT20");
 	if (!(cap & BIT(1))) {
 		if ((cap & BIT(5))) {
