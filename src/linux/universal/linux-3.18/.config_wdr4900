@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/powerpc 3.18.108 Kernel Configuration
+# Linux/powerpc 3.18.134 Kernel Configuration
 #
 # CONFIG_PPC64 is not set
 
@@ -1168,7 +1168,6 @@ CONFIG_MII=y
 # CONFIG_IFB is not set
 # CONFIG_NET_TEAM is not set
 # CONFIG_MACVLAN is not set
-# CONFIG_MACVTAP is not set
 # CONFIG_VXLAN is not set
 # CONFIG_NETCONSOLE is not set
 # CONFIG_NETPOLL is not set
@@ -2459,4 +2458,3 @@ CONFIG_OCF_CRYPTOSOFT=m
 CONFIG_OCF_BENCH=m
 CONFIG_PPC_LIB_RHEAP=y
 # CONFIG_VIRTUALIZATION is not set
-# CONFIG_CRYPTO_DRBG_CTR is not set

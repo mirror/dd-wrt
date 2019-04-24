@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.18.124 Kernel Configuration
+# Linux/mips 3.18.134 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -205,7 +205,7 @@ CONFIG_GENERIC_CMOS_UPDATE=y
 CONFIG_HZ_PERIODIC=y
 # CONFIG_NO_HZ_IDLE is not set
 # CONFIG_NO_HZ is not set
-# CONFIG_HIGH_RES_TIMERS is not set
+CONFIG_HIGH_RES_TIMERS=y
 
 #
 # CPU/Task time and stats accounting
@@ -938,6 +938,7 @@ CONFIG_MTD_CFI_I2=y
 # CONFIG_MTD_DOCG3 is not set
  
 # CONFIG_DIR825C1 is not set
+ 
  
  
  

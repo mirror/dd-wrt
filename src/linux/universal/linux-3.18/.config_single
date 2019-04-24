@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/i386 3.18.108 Kernel Configuration
+# Linux/i386 3.18.134 Kernel Configuration
 #
 # CONFIG_64BIT is not set
 CONFIG_X86_32=y
@@ -95,7 +95,7 @@ CONFIG_GENERIC_CMOS_UPDATE=y
 CONFIG_HZ_PERIODIC=y
 # CONFIG_NO_HZ_IDLE is not set
 # CONFIG_NO_HZ is not set
-# CONFIG_HIGH_RES_TIMERS is not set
+CONFIG_HIGH_RES_TIMERS=y
 
 #
 # CPU/Task time and stats accounting
@@ -1418,7 +1418,6 @@ CONFIG_MII=y
 CONFIG_IFB=y
 # CONFIG_NET_TEAM is not set
 # CONFIG_MACVLAN is not set
-CONFIG_MACVTAP=m
 CONFIG_VXLAN=m
 # CONFIG_NETCONSOLE is not set
 # CONFIG_NETPOLL is not set
@@ -3294,7 +3293,6 @@ CONFIG_CIFS=m
 CONFIG_CIFS_WEAK_PW_HASH=y
 # CONFIG_CIFS_UPCALL is not set
 CONFIG_CIFS_XATTR=y
-# CONFIG_CIFS_POSIX is not set
 # CONFIG_CIFS_ACL is not set
 # CONFIG_CIFS_DEBUG is not set
 # CONFIG_CIFS_DFS_UPCALL is not set
@@ -3682,4 +3680,3 @@ CONFIG_FONT_8x16=y
 # CONFIG_FONT_SUN12x22 is not set
 # CONFIG_FONT_10x18 is not set
 CONFIG_ARCH_HAS_SG_CHAIN=y
-# CONFIG_CRYPTO_DRBG_CTR is not set
