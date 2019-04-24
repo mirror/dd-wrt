@@ -83,6 +83,7 @@ do
 	    echo CONFIG_E355AC=y >> .config
 	    echo CONFIG_E325N=y >> .config
 	    echo CONFIG_WR615N=y >> .config
+	    echo CONFIG_XD9531=y >> .config
 	    echo CONFIG_E380AC=y >> .config
 	    echo CONFIG_XD3200=y >> .config
 	    echo CONFIG_AP120C=y >> .config
@@ -94,6 +95,7 @@ do
 	    echo CONFIG_UBNTFIX=y >> .config
 	    echo CONFIG_WR810N=y >> .config
 	    echo CONFIG_LIMA=y >> .config
+	    echo CONFIG_PERU=y >> .config
 	    echo CONFIG_RAMBUTAN=y >> .config
 	    echo CONFIG_WR1043V4=y >> .config
 	    echo CONFIG_WR1043V5=y >> .config
@@ -132,6 +134,7 @@ do
 	    sed -i 's/\CONFIG_E355AC=y/ /g' .config	    
 	    sed -i 's/\CONFIG_E325N=y/ /g' .config	    
 	    sed -i 's/\CONFIG_WR615N=y/ /g' .config	    
+	    sed -i 's/\CONFIG_XD9531=y/ /g' .config	    
 	    sed -i 's/\CONFIG_WR941V6=y/ /g' .config	    
 	    sed -i 's/\CONFIG_E380AC=y/ /g' .config	    
 	    sed -i 's/\CONFIG_XD3200=y/ /g' .config	    
@@ -144,6 +147,7 @@ do
 	    sed -i 's/\CONFIG_UBNTFIX=y/ /g' .config	    
 	    sed -i 's/\CONFIG_WR810N=y/ /g' .config	    
 	    sed -i 's/\CONFIG_LIMA=y/ /g' .config	    
+	    sed -i 's/\CONFIG_PERU=y/ /g' .config	    
 	    sed -i 's/\CONFIG_RAMBUTAN=y/ /g' .config	    
 	    sed -i 's/\CONFIG_WR1043V4=y/ /g' .config	    
 	    sed -i 's/\CONFIG_WR1043V5=y/ /g' .config	    
