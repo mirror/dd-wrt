@@ -1220,6 +1220,10 @@ static int __init ar71xx_eth_dev_register(void)
 
 	phy_dev_init();
 
+#ifdef CONFIG_FMS2111
+	ar71xx_add_device_eth(1);
+	ar71xx_add_device_eth(0);
+#else //CONFIG_FMS2111
 	ar71xx_add_device_eth(0);
 #ifdef CONFIG_AG7100_GE1_IS_CONNECTED
 	ar71xx_add_device_eth(1);
@@ -1227,6 +1231,7 @@ static int __init ar71xx_eth_dev_register(void)
 #ifdef CONFIG_AG7240_GE1_IS_CONNECTED
 	ar71xx_add_device_eth(1);
 #endif
+#endif //CONFIG_FMS2111
 
 	return 0;
 }
