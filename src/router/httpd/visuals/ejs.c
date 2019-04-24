@@ -1667,7 +1667,9 @@ static struct menucontext *init_menu(webs_t wp)
 	m->menu[MENU_QOS][6][0] = 0;	// applications/NAT/QOS - p2p
 
 	m->menu[MENU_ADMIN][1][0] = 0;	// admin - keepalive
+#if !defined(HAVE_PERU)
 	m->menu[MENU_ADMIN][2][0] = 0;	// admin - diag
+#endif
 	//m->menu[MENU_ADMIN][3][0] = 0;        // admin - wol
 
 	m->menu[MENU_STATUS][4][0] = 0;	// status - sputnik
