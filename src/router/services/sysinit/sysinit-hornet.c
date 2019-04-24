@@ -195,6 +195,11 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "switch0", "vlan", "0", "set", "ports", "0 1 2 3 4");
 	eval("swconfig", "dev", "switch0", "set", "apply");
 #ifdef HAVE_FMS2111
+	eval("insmod", "i2c-gpio-custom", "bus0=0,23,22");
+	eval("insmod", "rtc-pcf8523");
+	writestr("/sys/class/i2c-dev/i2c-0/device/new_device", "pcf8523 0x68");
+	eval("hwclock", "-s", "-u");
+
 	setEthLED(14, "eth0");
 	setEthLinkLED(21, "eth0");
 	setEthLED(13, "eth1");
