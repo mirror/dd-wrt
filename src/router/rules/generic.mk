@@ -37,6 +37,9 @@ endif
 ifeq ($(CONFIG_PERU),y)
 DD_CFLAGS += -DHAVE_PERU
 endif
+ifeq ($(CONFIG_FMS2111),y)
+DD_CFLAGS += -DHAVE_FMS2111
+endif
 ifeq ($(CONFIG_ANTAIRA_MINI),y)
 DD_CFLAGS += -DHAVE_ANTAIRA_MINI
 endif
