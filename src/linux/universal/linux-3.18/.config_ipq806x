@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.18.108 Kernel Configuration
+# Linux/arm 3.18.134 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_ARM_HAS_SG_CHAIN=y
@@ -3110,7 +3110,6 @@ CONFIG_CIFS=m
 # CONFIG_CIFS_WEAK_PW_HASH is not set
 # CONFIG_CIFS_UPCALL is not set
 CONFIG_CIFS_XATTR=y
-# CONFIG_CIFS_POSIX is not set
 CONFIG_CIFS_ACL=y
 CONFIG_CIFS_DEBUG=y
 # CONFIG_CIFS_DEBUG2 is not set
@@ -3462,4 +3461,3 @@ CONFIG_ARCH_HAS_ATOMIC64_DEC_IF_POSITIVE=y
 CONFIG_LIBFDT=y
 CONFIG_ARCH_HAS_SG_CHAIN=y
 # CONFIG_VIRTUALIZATION is not set
-# CONFIG_CRYPTO_DRBG_CTR is not set
