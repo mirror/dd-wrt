@@ -1,4 +1,10 @@
 ------------------------------------------------------------------------
+r4533 | brainslayer | 2019-04-24 10:33:54 +0200 (Wed, 24 Apr 2019) | 3 lines
+
+struct ieee80211_local needs to be passed in separately instead of
+dereferencing the (potentially NULL) sdata
+
+------------------------------------------------------------------------
 r4532 | brainslayer | 2019-04-23 22:09:38 +0200 (Tue, 23 Apr 2019) | 1 line
 
 show mesh id at manual survey
