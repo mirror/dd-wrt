@@ -501,6 +501,7 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 	 .active_low = 0,
 #endif
 	 },
+#ifndef CONFIG_FMS2111
 	{
 	 .name = "generic_22",
 	 .gpio = 22,
@@ -517,6 +518,7 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 	 .active_low = 0,
 	 },
 #endif
+#endif //CONFIG_FMS2111
 	{
 	 .name = "generic_24",
 	 .gpio = 24,
