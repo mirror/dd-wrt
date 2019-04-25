@@ -1235,6 +1235,15 @@ static inline int is_mt76(const char *prefix)
 	return 0;
 }
 #endif
+#ifdef HAVE_ATH9K
+int getmaxvaps(const char *prefix);
+#else
+static inline int getmaxvaps(const char *prefix)
+{
+	return 0;
+}
+#endif
+
 #if defined(HAVE_SUBQUARTER) && (defined(HAVE_REGISTER) || defined(HAVE_SUPERCHANNEL))
 int registered_has_subquarter(void)
 #else
