@@ -1815,7 +1815,7 @@ void ath9k_start_supplicant(int count)
 	char tmp[256];
 	char *background = "-B";
 	int debug;
-	char psk[16];
+	char subinterface[16];
 	char net[16];
 	char wmode[16];
 	int ctrlifneeded = 0;
@@ -1831,9 +1831,9 @@ void ath9k_start_supplicant(int count)
 	sprintf(wifivifs, "ath%d_vifs", count);
 	sprintf(power, "ath%d_txpwrdbm", count);
 	vifs = nvram_safe_get(wifivifs);
-	sprintf(psk, "-i%s", dev);
+	sprintf(subinterface, "-i%s", dev);
 	if (has_ad(dev))
-		sprintf(psk, "-igiwifi0");
+		sprintf(subinterface, "-igiwifi0");
 	sprintf(wmode, "%s_mode", dev);
 	sprintf(bridged, "%s_bridged", dev);
 	debug = nvram_ngeti("%s_wpa_debug", dev);
@@ -1861,39 +1861,45 @@ void ath9k_start_supplicant(int count)
 		do_hostapd(fstr, dev);
 	} else {
 		if (*vifs) {
+			int ctrl = 0;
+			foreach(var, vifs, next) {
+				ctrl++;
+				if (nvram_nmatch("ap", "%s_mode", var) || nvram_nmatch("wdsap", "%s_mode", var))
+					break;
+			}
 			sprintf(fstr, "/tmp/%s_hostap.conf", dev);
 			do_hostapd(fstr, dev);
-			sprintf(ctrliface, "/var/run/hostapd/%s.1", dev);
+			sprintf(ctrliface, "/var/run/hostapd/%s.%d", dev, ctrl);
 			sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
 #ifdef HAVE_RELAYD
 			if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh"))
 			    && nvram_matchi(bridged, 1))
-				eval("wpa_supplicant", "-b", getBridge(dev, tmp), background, "-Dnl80211", psk, "-H", ctrliface, "-c", fstr);
+				eval("wpa_supplicant", "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface, "-H", ctrliface, "-c", fstr);
 			else
-				eval("wpa_supplicant", background, "-Dnl80211", psk, "-H", ctrliface, "-c", fstr);
+				eval("wpa_supplicant", background, "-Dnl80211", subinterface, "-H", ctrliface, "-c", fstr);
 #else
 			if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh")
 			     || nvram_match(wmode, "wet"))
 			    && nvram_matchi(bridged, 1))
-				eval("wpa_supplicant", "-b", getBridge(dev, tmp), background, "-Dnl80211", psk, "-H", ctrliface, "-c", fstr);
+				eval("wpa_supplicant", "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface, "-H", ctrliface, "-c", fstr);
 			else
-				eval("wpa_supplicant", background, "-Dnl80211", psk, "-H", ctrliface, "-c", fstr);
+				eval("wpa_supplicant", background, "-Dnl80211", subinterface, "-H", ctrliface, "-c", fstr);
 #endif
 		} else {
 			sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
 #ifdef HAVE_RELAYD
 			if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh"))
 			    && nvram_matchi(bridged, 1))
-				eval("wpa_supplicant", "-b", getBridge(dev, tmp), background, "-Dnl80211", psk, "-c", fstr);
+				eval("wpa_supplicant", "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface, "-c", fstr);
 			else
-				eval("wpa_supplicant", background, "-Dnl80211", psk, "-c", fstr);
+				eval("wpa_supplicant", background, "-Dnl80211", subinterface, "-c", fstr);
 #else
 			if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh")
 			     || nvram_match(wmode, "wet"))
 			    && nvram_matchi(bridged, 1))
-				eval("wpa_supplicant", "-b", getBridge(dev, tmp), background, "-Dnl80211", psk, "-c", fstr);
+				eval("wpa_supplicant", "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface, "-c", fstr);
 			else
-				eval("wpa_supplicant", background, "-Dnl80211", psk, "-c", fstr);
+				eval("wpa_supplicant", background, "-Dnl80211", subinterface, "-c", fstr);
 #endif
 		}
 	}
@@ -1940,11 +1946,12 @@ void ath9k_start_supplicant(int count)
 			char bridged[32];
 			sprintf(bridged, "%s_bridged", var);
 			if (!strcmp(m2, "mesh")) {
-				sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
+				sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", var);
+				sprintf(subinterface, "-i%s", var);
 				if (nvram_matchi(bridged, 1))
-					eval("wpa_supplicant", "-b", getBridge(var, tmp), background, "-Dnl80211", psk, "-c", fstr);
+					eval("wpa_supplicant", "-b", getBridge(var, tmp), background, "-Dnl80211", subinterface, "-c", fstr);
 				else
-					eval("wpa_supplicant", background, "-Dnl80211", psk, "-c", fstr);
+					eval("wpa_supplicant", background, "-Dnl80211", subinterface, "-c", fstr);
 
 			}
 
