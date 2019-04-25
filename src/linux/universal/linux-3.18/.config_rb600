@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/powerpc 3.18.134 Kernel Configuration
+# Linux/powerpc 3.18.138 Kernel Configuration
 #
 # CONFIG_PPC64 is not set
 
@@ -101,6 +101,7 @@ CONFIG_GENERIC_CMOS_UPDATE=y
 #
 # Timers subsystem
 #
+CONFIG_TICK_ONESHOT=y
 CONFIG_HZ_PERIODIC=y
 # CONFIG_NO_HZ_IDLE is not set
 # CONFIG_NO_HZ is not set
@@ -356,7 +357,7 @@ CONFIG_HZ_100=y
 # CONFIG_HZ_300 is not set
 # CONFIG_HZ_1000 is not set
 CONFIG_HZ=100
-# CONFIG_SCHED_HRTICK is not set
+CONFIG_SCHED_HRTICK=y
 CONFIG_PREEMPT_NONE=y
 # CONFIG_PREEMPT_VOLUNTARY is not set
 # CONFIG_PREEMPT is not set
