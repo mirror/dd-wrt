@@ -269,7 +269,7 @@ config WZRAG300NH
 	depends on MACH_AR7100
 config UBNTFIX
 	bool "ubnt flash unblock support"
-	depends on MACH_AR7240 
+	depends on MACH_AR7240
 config DIR825C1
 	bool "support for DIR825C1"
 	depends on MACH_AR7240 
@@ -373,6 +373,7 @@ config RAMBUTAN
 	depends on WR841V8
 config FMS2111
 	bool "support for FMS2111"
+	depends on MACH_HORNET
 config WR810N
 	bool "support for TPLink WR810N"
 	depends on WASP_SUPPORT

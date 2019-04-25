@@ -913,7 +913,7 @@ CONFIG_MTD_CFI_I2=y
 # CONFIG_MTD_DOCG3 is not set
 # CONFIG_MTD_FLASH_16MB is not set
 # CONFIG_MTD_FLASH_8MB is not set
-# CONFIG_ERC is not set
+ 
 CONFIG_FMS2111=y
 CONFIG_MTD_AR7240_SPI_FLASH=y
 # CONFIG_MTD_NAND is not set
@@ -1737,7 +1737,7 @@ CONFIG_FSCACHE=m
 #
 # CONFIG_MSDOS_FS is not set
 # CONFIG_VFAT_FS is not set
-# CONFIG_EXFAT_FS is not set
+ 
 # CONFIG_NTFS_FS is not set
 
 #
