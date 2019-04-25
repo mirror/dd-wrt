@@ -2575,7 +2575,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 #ifndef HAVE_GUESTPORT
 	websWrite(wp, "<div class=\"center\">\n");
 #ifdef HAVE_MADWIFI
-	if (((!has_ad(prefix) && count < 8) || (is_mac80211(prefix) && !has_ad(prefix) && count < getmaxvaps(prefix))))
+	if ((is_mac80211(prefix) && count < getmaxvaps(prefix)) || (!is_mac80211(prefix) && count < 8))
 #elif HAVE_RT2880
 	if (count < 7)
 #else
@@ -2651,10 +2651,8 @@ static int show_virtualssid(webs_t wp, char *prefix)
 	}
 
 	websWrite(wp, "<div class=\"center\">\n");
-#ifdef HAVE_ATH9K
-	if (count < getmaxvaps(prefix) && gpfound == 0)
-#elif HAVE_MADWIFI
-	if (count < 8 && gpfound == 0 && !has_ad(prefix))
+#ifdef HAVE_MADWIFI
+	if (gpfound == 0 && ((is_mac80211(prefix) && count < getmaxvaps(prefix)) || (!is_mac80211(prefix) && count < 8)))
 #elif HAVE_RT2880
 	if (count < 7 && gpfound == 0)
 #else
