@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.18.134 Kernel Configuration
+# Linux/arm 3.18.138 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_MIGHT_HAVE_PCI=y
@@ -68,6 +68,7 @@ CONFIG_GENERIC_CLOCKEVENTS_BUILD=y
 #
 # Timers subsystem
 #
+CONFIG_TICK_ONESHOT=y
 CONFIG_HZ_PERIODIC=y
 # CONFIG_NO_HZ_IDLE is not set
 # CONFIG_NO_HZ is not set
@@ -390,7 +391,7 @@ CONFIG_HZ_100=y
 # CONFIG_HZ_300 is not set
 # CONFIG_HZ_500 is not set
 # CONFIG_HZ_1000 is not set
-# CONFIG_SCHED_HRTICK is not set
+CONFIG_SCHED_HRTICK=y
 CONFIG_AEABI=y
 # CONFIG_OABI_COMPAT is not set
 # CONFIG_ARCH_SPARSEMEM_DEFAULT is not set

@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.18.134 Kernel Configuration
+# Linux/mips 3.18.138 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -191,6 +191,7 @@ CONFIG_GENERIC_CMOS_UPDATE=y
 #
 # Timers subsystem
 #
+CONFIG_TICK_ONESHOT=y
 CONFIG_HZ_PERIODIC=y
 # CONFIG_NO_HZ_IDLE is not set
 # CONFIG_NO_HZ is not set
@@ -892,6 +893,7 @@ CONFIG_MTD_CFI_I2=y
 # CONFIG_MTD_FLASH_16MB is not set
 # CONFIG_MTD_FLASH_8MB is not set
  
+# CONFIG_FMS2111 is not set
 CONFIG_MTD_AR7240_SPI_FLASH=y
 # CONFIG_MTD_NAND is not set
 # CONFIG_MTD_ONENAND is not set
