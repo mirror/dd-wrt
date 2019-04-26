@@ -88,7 +88,7 @@ struct madwifi_driver_data {
 };
 
 static int madwifi_sta_deauth(void *priv, const u8 *own_addr, const u8 *addr,
-			      int reason_code);
+			      u16 reason_code);
 
 static int
 set80211priv(struct madwifi_driver_data *drv, int op, void *data, int len)
@@ -672,7 +672,7 @@ madwifi_set_opt_ie(void *priv, const u8 *ie, size_t ie_len)
 
 static int
 madwifi_sta_deauth(void *priv, const u8 *own_addr, const u8 *addr,
-		   int reason_code)
+		   u16 reason_code)
 {
 	struct madwifi_driver_data *drv = priv;
 	struct ieee80211req_mlme mlme;
@@ -696,7 +696,7 @@ madwifi_sta_deauth(void *priv, const u8 *own_addr, const u8 *addr,
 
 static int
 madwifi_sta_disassoc(void *priv, const u8 *own_addr, const u8 *addr,
-		     int reason_code)
+		     u16 reason_code)
 {
 	struct madwifi_driver_data *drv = priv;
 	struct ieee80211req_mlme mlme;
