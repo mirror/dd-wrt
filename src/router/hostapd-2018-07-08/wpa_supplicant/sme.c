@@ -965,10 +965,9 @@ static void sme_send_external_auth_status(struct wpa_supplicant *wpa_s,
 
 	os_memset(&params, 0, sizeof(params));
 	params.status = status;
-	os_memcpy(params.ssid, wpa_s->sme.ext_auth.ssid,
-		  wpa_s->sme.ext_auth.ssid_len);
+	params.ssid = wpa_s->sme.ext_auth.ssid;
 	params.ssid_len = wpa_s->sme.ext_auth.ssid_len;
-	os_memcpy(params.bssid, wpa_s->sme.ext_auth.bssid, ETH_ALEN);
+	params.bssid = wpa_s->sme.ext_auth.bssid;
 	wpa_drv_send_external_auth_status(wpa_s, &params);
 }
 
@@ -978,7 +977,7 @@ static void sme_handle_external_auth_start(struct wpa_supplicant *wpa_s,
 {
 	struct wpa_ssid *ssid;
 	size_t ssid_str_len = data->external_auth.ssid_len;
-	u8 *ssid_str = data->external_auth.ssid;
+	const u8 *ssid_str = data->external_auth.ssid;
 
 	/* Get the SSID conf from the ssid string obtained */
 	for (ssid = wpa_s->conf->ssid; ssid; ssid = ssid->next) {
@@ -1986,17 +1985,14 @@ void sme_clear_on_disassoc(struct wpa_supplicant *wpa_s)
 	if (wpa_s->sme.ft_ies || wpa_s->sme.ft_used)
 		sme_update_ft_ies(wpa_s, NULL, NULL, 0);
 #endif /* CONFIG_IEEE80211R */
+#ifdef CONFIG_IEEE80211W
+	sme_stop_sa_query(wpa_s);
+#endif /* CONFIG_IEEE80211W */
 }
 
 
 void sme_deinit(struct wpa_supplicant *wpa_s)
 {
-	os_free(wpa_s->sme.ft_ies);
-	wpa_s->sme.ft_ies = NULL;
-	wpa_s->sme.ft_ies_len = 0;
-#ifdef CONFIG_IEEE80211W
-	sme_stop_sa_query(wpa_s);
-#endif /* CONFIG_IEEE80211W */
 	sme_clear_on_disassoc(wpa_s);
 
 	eloop_cancel_timeout(sme_assoc_timer, wpa_s, NULL);
@@ -2401,6 +2397,8 @@ static void sme_start_sa_query(struct wpa_supplicant *wpa_s)
 
 static void sme_stop_sa_query(struct wpa_supplicant *wpa_s)
 {
+	if (wpa_s->sme.sa_query_trans_id)
+		wpa_dbg(wpa_s, MSG_DEBUG, "SME: Stop SA Query");
 	eloop_cancel_timeout(sme_sa_query_timer, wpa_s, NULL);
 	os_free(wpa_s->sme.sa_query_trans_id);
 	wpa_s->sme.sa_query_trans_id = NULL;

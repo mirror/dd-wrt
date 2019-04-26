@@ -4188,6 +4188,9 @@ static void wpas_p2ps_prov_complete(void *ctx, u8 status, const u8 *dev,
 		return;
 	}
 
+	wpa_s->global->pending_p2ps_group = 0;
+	wpa_s->global->pending_p2ps_group_freq = 0;
+
 	if (conncap == P2PS_SETUP_GROUP_OWNER) {
 		/*
 		 * We need to copy the interface name. Simply saving a
@@ -4198,8 +4201,10 @@ static void wpas_p2ps_prov_complete(void *ctx, u8 status, const u8 *dev,
 
 		go_ifname[0] = '\0';
 		if (!go_wpa_s) {
-			wpa_s->global->pending_p2ps_group = 1;
-			wpa_s->global->pending_p2ps_group_freq = freq;
+			if (!response_done) {
+				wpa_s->global->pending_p2ps_group = 1;
+				wpa_s->global->pending_p2ps_group_freq = freq;
+			}
 
 			if (!wpas_p2p_create_iface(wpa_s))
 				os_memcpy(go_ifname, wpa_s->ifname,
@@ -7215,7 +7220,7 @@ void wpas_p2p_completed(struct wpa_supplicant *wpa_s)
 	u8 go_dev_addr[ETH_ALEN];
 	int persistent;
 	int freq;
-	u8 ip[3 * 4];
+	u8 ip[3 * 4], *ip_ptr = NULL;
 	char ip_addr[100];
 
 	if (ssid == NULL || ssid->mode != WPAS_MODE_P2P_GROUP_FORMATION) {
@@ -7262,6 +7267,7 @@ void wpas_p2p_completed(struct wpa_supplicant *wpa_s)
 				  ip[8], ip[9], ip[10], ip[11]);
 		if (os_snprintf_error(sizeof(ip_addr), res))
 			ip_addr[0] = '\0';
+		ip_ptr = ip;
 	}
 
 	wpas_p2p_group_started(wpa_s, 0, ssid, freq,
@@ -7274,7 +7280,7 @@ void wpas_p2p_completed(struct wpa_supplicant *wpa_s)
 		wpas_p2p_store_persistent_group(wpa_s->p2pdev,
 						ssid, go_dev_addr);
 
-	wpas_notify_p2p_group_started(wpa_s, ssid, persistent, 1, ip);
+	wpas_notify_p2p_group_started(wpa_s, ssid, persistent, 1, ip_ptr);
 }
 
 

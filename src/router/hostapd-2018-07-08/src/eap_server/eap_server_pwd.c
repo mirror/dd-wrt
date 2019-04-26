@@ -311,7 +311,7 @@ fin:
 static void eap_pwd_build_confirm_req(struct eap_sm *sm,
 				      struct eap_pwd_data *data, u8 id)
 {
-	struct crypto_hash *hash;
+	struct crypto_hash *hash = NULL;
 	u8 conf[SHA256_MAC_LEN], *cruft = NULL, *ptr;
 	u16 grp;
 	size_t prime_len, order_len;
@@ -392,6 +392,7 @@ static void eap_pwd_build_confirm_req(struct eap_sm *sm,
 
 	/* all done with the random function */
 	eap_pwd_h_final(hash, conf);
+	hash = NULL;
 	os_memcpy(data->my_confirm, conf, SHA256_MAC_LEN);
 
 	data->outbuf = wpabuf_alloc(SHA256_MAC_LEN);
@@ -404,6 +405,7 @@ fin:
 	bin_clear_free(cruft, prime_len * 2);
 	if (data->outbuf == NULL)
 		eap_pwd_state(data, FAILURE);
+	eap_pwd_h_final(hash, NULL);
 }
 
 
@@ -648,7 +650,6 @@ eap_pwd_process_commit_resp(struct eap_sm *sm, struct eap_pwd_data *data,
 			    const u8 *payload, size_t payload_len)
 {
 	const u8 *ptr;
-	struct crypto_bignum *cofactor = NULL;
 	struct crypto_ec_point *K = NULL;
 	int res = 0;
 	size_t prime_len, order_len;
@@ -667,17 +668,10 @@ eap_pwd_process_commit_resp(struct eap_sm *sm, struct eap_pwd_data *data,
 	}
 
 	data->k = crypto_bignum_init();
-	cofactor = crypto_bignum_init();
 	K = crypto_ec_point_init(data->grp->group);
-	if (!data->k || !cofactor || !K) {
+	if (!data->k || !K) {
 		wpa_printf(MSG_INFO, "EAP-PWD (server): peer data allocation "
 			   "fail");
-		goto fin;
-	}
-
-	if (crypto_ec_cofactor(data->grp->group, cofactor) < 0) {
-		wpa_printf(MSG_INFO, "EAP-PWD (server): unable to get "
-			   "cofactor for curve");
 		goto fin;
 	}
 
@@ -718,18 +712,8 @@ eap_pwd_process_commit_resp(struct eap_sm *sm, struct eap_pwd_data *data,
 		goto fin;
 	}
 
-	/* ensure that the shared key isn't in a small sub-group */
-	if (!crypto_bignum_is_one(cofactor)) {
-		if (crypto_ec_point_mul(data->grp->group, K, cofactor,
-					K) != 0) {
-			wpa_printf(MSG_INFO, "EAP-PWD (server): cannot "
-				   "multiply shared key point by order!\n");
-			goto fin;
-		}
-	}
-
 	/*
-	 * This check is strictly speaking just for the case above where
+	 * This check is strictly speaking just for the case where
 	 * co-factor > 1 but it was suggested that even though this is probably
 	 * never going to happen it is a simple and safe check "just to be
 	 * sure" so let's be safe.
@@ -748,7 +732,6 @@ eap_pwd_process_commit_resp(struct eap_sm *sm, struct eap_pwd_data *data,
 
 fin:
 	crypto_ec_point_deinit(K, 1);
-	crypto_bignum_deinit(cofactor, 1);
 
 	if (res)
 		eap_pwd_state(data, PWD_Confirm_Req);
@@ -761,7 +744,7 @@ static void
 eap_pwd_process_confirm_resp(struct eap_sm *sm, struct eap_pwd_data *data,
 			     const u8 *payload, size_t payload_len)
 {
-	struct crypto_hash *hash;
+	struct crypto_hash *hash = NULL;
 	u32 cs;
 	u16 grp;
 	u8 conf[SHA256_MAC_LEN], *cruft = NULL, *ptr;
@@ -836,6 +819,7 @@ eap_pwd_process_confirm_resp(struct eap_sm *sm, struct eap_pwd_data *data,
 
 	/* all done */
 	eap_pwd_h_final(hash, conf);
+	hash = NULL;
 
 	ptr = (u8 *) payload;
 	if (os_memcmp_const(conf, ptr, SHA256_MAC_LEN)) {
@@ -855,6 +839,7 @@ eap_pwd_process_confirm_resp(struct eap_sm *sm, struct eap_pwd_data *data,
 
 fin:
 	bin_clear_free(cruft, prime_len * 2);
+	eap_pwd_h_final(hash, NULL);
 }
 
 
@@ -927,6 +912,12 @@ static void eap_pwd_process(struct eap_sm *sm, void *priv,
 	 * the first and all intermediate fragments have the M bit set
 	 */
 	if (EAP_PWD_GET_MORE_BIT(lm_exch) || data->in_frag_pos) {
+		if (!data->inbuf) {
+			wpa_printf(MSG_DEBUG,
+				   "EAP-pwd: No buffer for reassembly");
+			eap_pwd_state(data, FAILURE);
+			return;
+		}
 		if ((data->in_frag_pos + len) > wpabuf_size(data->inbuf)) {
 			wpa_printf(MSG_DEBUG, "EAP-pwd: Buffer overflow "
 				   "attack detected! (%d+%d > %d)",
@@ -947,7 +938,7 @@ static void eap_pwd_process(struct eap_sm *sm, void *priv,
 	 * last fragment won't have the M bit set (but we're obviously
 	 * buffering fragments so that's how we know it's the last)
 	 */
-	if (data->in_frag_pos) {
+	if (data->in_frag_pos && data->inbuf) {
 		pos = wpabuf_head_u8(data->inbuf);
 		len = data->in_frag_pos;
 		wpa_printf(MSG_DEBUG, "EAP-pwd: Last fragment, %d bytes",
@@ -1047,14 +1038,6 @@ static u8 * eap_pwd_get_session_id(struct eap_sm *sm, void *priv, size_t *len)
 int eap_server_pwd_register(void)
 {
 	struct eap_method *eap;
-	struct timeval tp;
-	struct timezone tz;
-	u32 sr;
-
-	sr = 0xdeaddada;
-	(void) gettimeofday(&tp, &tz);
-	sr ^= (tp.tv_sec ^ tp.tv_usec);
-	srandom(sr);
 
 	eap = eap_server_method_alloc(EAP_SERVER_METHOD_INTERFACE_VERSION,
 				      EAP_VENDOR_IETF, EAP_TYPE_PWD,

@@ -245,6 +245,11 @@ struct hostapd_config * hostapd_config_defaults(void)
 	conf->acs_num_scans = 5;
 #endif /* CONFIG_ACS */
 
+#ifdef CONFIG_IEEE80211AX
+	conf->he_op.he_rts_threshold = HE_OPERATION_RTS_THRESHOLD_MASK >>
+		HE_OPERATION_RTS_THRESHOLD_OFFSET;
+#endif /* CONFIG_IEEE80211AX */
+
 	/* The third octet of the country string uses an ASCII space character
 	 * by default to indicate that the regulations encompass all
 	 * environments for the current frequency band in the country. */
@@ -568,6 +573,20 @@ static void hostapd_config_free_sae_passwords(struct hostapd_bss_config *conf)
 }
 
 
+#ifdef CONFIG_DPP2
+static void hostapd_dpp_controller_conf_free(struct dpp_controller_conf *conf)
+{
+	struct dpp_controller_conf *prev;
+
+	while (conf) {
+		prev = conf;
+		conf = conf->next;
+		os_free(prev);
+	}
+}
+#endif /* CONFIG_DPP2 */
+
+
 void hostapd_config_free_bss(struct hostapd_bss_config *conf)
 {
 	if (conf == NULL)
@@ -749,6 +768,9 @@ void hostapd_config_free_bss(struct hostapd_bss_config *conf)
 	os_free(conf->dpp_connector);
 	wpabuf_free(conf->dpp_netaccesskey);
 	wpabuf_free(conf->dpp_csign);
+#ifdef CONFIG_DPP2
+	hostapd_dpp_controller_conf_free(conf->dpp_controller);
+#endif /* CONFIG_DPP2 */
 #endif /* CONFIG_DPP */
 
 	hostapd_config_free_sae_passwords(conf);

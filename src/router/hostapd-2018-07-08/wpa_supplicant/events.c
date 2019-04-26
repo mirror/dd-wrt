@@ -2859,8 +2859,17 @@ static void wpa_supplicant_event_assoc(struct wpa_supplicant *wpa_s,
 	}
 	wpa_supplicant_cancel_scan(wpa_s);
 
-	if ((wpa_s->drv_flags & WPA_DRIVER_FLAGS_4WAY_HANDSHAKE_PSK) &&
-	    wpa_key_mgmt_wpa_psk(wpa_s->key_mgmt)) {
+	if (ft_completed) {
+		/*
+		 * FT protocol completed - make sure EAPOL state machine ends
+		 * up in authenticated.
+		 */
+		wpa_supplicant_cancel_auth_timeout(wpa_s);
+		wpa_supplicant_set_state(wpa_s, WPA_COMPLETED);
+		eapol_sm_notify_portValid(wpa_s->eapol, TRUE);
+		eapol_sm_notify_eap_success(wpa_s->eapol, TRUE);
+	} else if ((wpa_s->drv_flags & WPA_DRIVER_FLAGS_4WAY_HANDSHAKE_PSK) &&
+		   wpa_key_mgmt_wpa_psk(wpa_s->key_mgmt)) {
 		/*
 		 * We are done; the driver will take care of RSN 4-way
 		 * handshake.
@@ -2877,15 +2886,6 @@ static void wpa_supplicant_event_assoc(struct wpa_supplicant *wpa_s,
 		 * waiting for WPA supplicant.
 		 */
 		eapol_sm_notify_portValid(wpa_s->eapol, TRUE);
-	} else if (ft_completed) {
-		/*
-		 * FT protocol completed - make sure EAPOL state machine ends
-		 * up in authenticated.
-		 */
-		wpa_supplicant_cancel_auth_timeout(wpa_s);
-		wpa_supplicant_set_state(wpa_s, WPA_COMPLETED);
-		eapol_sm_notify_portValid(wpa_s->eapol, TRUE);
-		eapol_sm_notify_eap_success(wpa_s->eapol, TRUE);
 	}
 
 	wpa_s->last_eapol_matches_bssid = 0;
@@ -3596,8 +3596,9 @@ static void wpas_event_disassoc(struct wpa_supplicant *wpa_s,
 		ie_len = info->ie_len;
 		reason_code = info->reason_code;
 		locally_generated = info->locally_generated;
-		wpa_dbg(wpa_s, MSG_DEBUG, " * reason %u%s", reason_code,
-			locally_generated ? " (locally generated)" : "");
+		wpa_dbg(wpa_s, MSG_DEBUG, " * reason %u (%s)%s", reason_code,
+			reason2str(reason_code),
+			locally_generated ? " locally_generated=1" : "");
 		if (addr)
 			wpa_dbg(wpa_s, MSG_DEBUG, " * address " MACSTR,
 				MAC2STR(addr));
@@ -3650,9 +3651,9 @@ static void wpas_event_deauth(struct wpa_supplicant *wpa_s,
 		ie_len = info->ie_len;
 		reason_code = info->reason_code;
 		locally_generated = info->locally_generated;
-		wpa_dbg(wpa_s, MSG_DEBUG, " * reason %u%s",
-			reason_code,
-			locally_generated ? " (locally generated)" : "");
+		wpa_dbg(wpa_s, MSG_DEBUG, " * reason %u (%s)%s",
+			reason_code, reason2str(reason_code),
+			locally_generated ? " locally_generated=1" : "");
 		if (addr) {
 			wpa_dbg(wpa_s, MSG_DEBUG, " * address " MACSTR,
 				MAC2STR(addr));
@@ -4460,18 +4461,24 @@ void supplicant_event(void *ctx, enum wpa_event_type event,
 				       data->rx_from_unknown.wds);
 		break;
 #endif /* CONFIG_AP */
+
+	case EVENT_CH_SWITCH_STARTED:
 	case EVENT_CH_SWITCH:
 		if (!data || !wpa_s->current_ssid)
 			break;
 
-		wpa_msg(wpa_s, MSG_INFO, WPA_EVENT_CHANNEL_SWITCH
-			"freq=%d ht_enabled=%d ch_offset=%d ch_width=%s cf1=%d cf2=%d",
+		wpa_msg(wpa_s, MSG_INFO,
+			"%sfreq=%d ht_enabled=%d ch_offset=%d ch_width=%s cf1=%d cf2=%d",
+			event == EVENT_CH_SWITCH ? WPA_EVENT_CHANNEL_SWITCH :
+			WPA_EVENT_CHANNEL_SWITCH_STARTED,
 			data->ch_switch.freq,
 			data->ch_switch.ht_enabled,
 			data->ch_switch.ch_offset,
 			channel_width_to_string(data->ch_switch.ch_width),
 			data->ch_switch.cf1,
 			data->ch_switch.cf2);
+		if (event == EVENT_CH_SWITCH_STARTED)
+			break;
 
 		wpa_s->assoc_freq = data->ch_switch.freq;
 		wpa_s->current_ssid->frequency = data->ch_switch.freq;
@@ -4487,7 +4494,8 @@ void supplicant_event(void *ctx, enum wpa_event_type event,
 					  data->ch_switch.ch_offset,
 					  data->ch_switch.ch_width,
 					  data->ch_switch.cf1,
-					  data->ch_switch.cf2);
+					  data->ch_switch.cf2,
+					  1);
 		}
 #endif /* CONFIG_AP */
 

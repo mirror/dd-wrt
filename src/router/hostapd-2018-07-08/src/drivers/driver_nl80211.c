@@ -236,7 +236,7 @@ static int nl80211_put_mesh_config(struct nl_msg *msg,
 				   struct wpa_driver_mesh_bss_params *params);
 #endif /* CONFIG_MESH */
 static int i802_sta_disassoc(void *priv, const u8 *own_addr, const u8 *addr,
-			     int reason);
+			     u16 reason);
 
 
 /* Converts nl80211_chan_width to a common format */
@@ -307,6 +307,7 @@ void nl80211_mark_disconnected(struct wpa_driver_nl80211_data *drv)
 		os_memcpy(drv->prev_bssid, drv->bssid, ETH_ALEN);
 	drv->associated = 0;
 	os_memset(drv->bssid, 0, ETH_ALEN);
+	drv->first_bss->freq = 0;
 }
 
 
@@ -2469,6 +2470,16 @@ static int nl80211_mgmt_subscribe_ap_dev_sme(struct i802_bss *bss)
 	if (nl80211_action_subscribe_ap(bss))
 		goto out_err;
 
+	if (bss->drv->device_ap_sme) {
+		u16 type = (WLAN_FC_TYPE_MGMT << 2) | (WLAN_FC_STYPE_AUTH << 4);
+
+		/* Register for all Authentication frames */
+		if (nl80211_register_frame(bss, bss->nl_mgmt, type, NULL, 0)
+		    < 0)
+			wpa_printf(MSG_DEBUG,
+				   "nl80211: Failed to subscribe to handle Authentication frames - SAE offload may not work");
+	}
+
 	nl80211_mgmt_handle_register_eloop(bss);
 	return 0;
 
@@ -3276,7 +3287,7 @@ int wpa_driver_nl80211_mlme(struct wpa_driver_nl80211_data *drv,
 
 
 static int wpa_driver_nl80211_disconnect(struct wpa_driver_nl80211_data *drv,
-					 int reason_code,
+					 u16 reason_code,
 					 struct nl_handle *nl_connect)
 {
 	int ret;
@@ -3298,7 +3309,7 @@ static int wpa_driver_nl80211_disconnect(struct wpa_driver_nl80211_data *drv,
 
 
 static int wpa_driver_nl80211_deauthenticate(struct i802_bss *bss,
-					     const u8 *addr, int reason_code)
+					     const u8 *addr, u16 reason_code)
 {
 	struct wpa_driver_nl80211_data *drv = bss->drv;
 	int ret;
@@ -4163,6 +4174,11 @@ static int wpa_driver_nl80211_set_ap(void *priv,
 	     params->pairwise_ciphers & (WPA_CIPHER_WEP104 | WPA_CIPHER_WEP40)) &&
 	    (nla_put_u16(msg, NL80211_ATTR_CONTROL_PORT_ETHERTYPE, ETH_P_PAE) ||
 	     nla_put_flag(msg, NL80211_ATTR_CONTROL_PORT_NO_ENCRYPT)))
+		goto fail;
+
+	if (drv->device_ap_sme &&
+	    (params->key_mgmt_suites & WPA_KEY_MGMT_SAE) &&
+	    nla_put_flag(msg, NL80211_ATTR_EXTERNAL_AUTH_SUPPORT))
 		goto fail;
 
 	wpa_printf(MSG_DEBUG, "nl80211: pairwise_ciphers=0x%x",
@@ -6586,7 +6602,7 @@ static int i802_sta_clear_stats(void *priv, const u8 *addr)
 
 
 static int i802_sta_deauth(void *priv, const u8 *own_addr, const u8 *addr,
-			   int reason)
+			   u16 reason)
 {
 	struct i802_bss *bss = priv;
 	struct wpa_driver_nl80211_data *drv = bss->drv;
@@ -6621,7 +6637,7 @@ static int i802_sta_deauth(void *priv, const u8 *own_addr, const u8 *addr,
 
 
 static int i802_sta_disassoc(void *priv, const u8 *own_addr, const u8 *addr,
-			     int reason)
+			     u16 reason)
 {
 	struct i802_bss *bss = priv;
 	struct wpa_driver_nl80211_data *drv = bss->drv;
@@ -8320,6 +8336,7 @@ static void nl80211_poll_client(void *priv, const u8 *own_addr, const u8 *addr,
 	struct i802_bss *bss = priv;
 	struct wpa_driver_nl80211_data *drv = bss->drv;
 	struct nl_msg *msg;
+	u64 cookie;
 	int ret;
 
 	if (!drv->poll_command_supported) {
@@ -8333,11 +8350,16 @@ static void nl80211_poll_client(void *priv, const u8 *own_addr, const u8 *addr,
 		return;
 	}
 
-	ret = send_and_recv_msgs(drv, msg, NULL, NULL);
+	ret = send_and_recv_msgs(drv, msg, cookie_handler, &cookie);
 	if (ret < 0) {
 		wpa_printf(MSG_DEBUG, "nl80211: Client probe request for "
 			   MACSTR " failed: ret=%d (%s)",
 			   MAC2STR(addr), ret, strerror(-ret));
+	} else {
+		wpa_printf(MSG_DEBUG,
+			   "nl80211: Client probe request addr=" MACSTR
+			   " cookie=%llu", MAC2STR(addr),
+			   (long long unsigned int) cookie);
 	}
 }
 
@@ -8611,7 +8633,7 @@ static int driver_nl80211_scan2(void *priv,
 
 
 static int driver_nl80211_deauthenticate(void *priv, const u8 *addr,
-					 int reason_code)
+					 u16 reason_code)
 {
 	struct i802_bss *bss = priv;
 	return wpa_driver_nl80211_deauthenticate(bss, addr, reason_code);
@@ -10840,15 +10862,27 @@ static int nl80211_send_external_auth_status(void *priv,
 	struct nl_msg *msg = NULL;
 	int ret = -1;
 
+	/* External auth command/status is intended for drivers that implement
+	 * intenral SME but want to offload authentication processing (e.g.,
+	 * SAE) to hostapd/wpa_supplicant. Do nott send the status to drivers
+	 * which do not support AP SME or use wpa_supplicant/hostapd SME.
+	 */
+	if (!bss->drv->device_ap_sme ||
+	    (drv->capa.flags & WPA_DRIVER_FLAGS_SME))
+		return -1;
+
 	wpa_dbg(drv->ctx, MSG_DEBUG,
 		"nl80211: External auth status: %u", params->status);
 
 	msg = nl80211_drv_msg(drv, 0, NL80211_CMD_EXTERNAL_AUTH);
 	if (!msg ||
 	    nla_put_u16(msg, NL80211_ATTR_STATUS_CODE, params->status) ||
-	    nla_put(msg, NL80211_ATTR_SSID, params->ssid_len,
-		    params->ssid) ||
-	    nla_put(msg, NL80211_ATTR_BSSID, ETH_ALEN, params->bssid))
+	    (params->ssid && params->ssid_len &&
+	     nla_put(msg, NL80211_ATTR_SSID, params->ssid_len, params->ssid)) ||
+	    (params->pmkid &&
+	     nla_put(msg, NL80211_ATTR_PMKID, PMKID_LEN, params->pmkid)) ||
+	    (params->bssid &&
+	     nla_put(msg, NL80211_ATTR_BSSID, ETH_ALEN, params->bssid)))
 		goto fail;
 	ret = send_and_recv_msgs(drv, msg, NULL, NULL);
 	msg = NULL;

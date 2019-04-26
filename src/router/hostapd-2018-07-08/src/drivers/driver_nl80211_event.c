@@ -267,8 +267,6 @@ static void mlme_event_assoc(struct wpa_driver_nl80211_data *drv,
 		event.assoc_info.req_ies_len = nla_len(req_ie);
 	}
 
-	event.assoc_info.freq = drv->assoc_freq;
-
 	/* When this association was initiated outside of wpa_supplicant,
 	 * drv->ssid needs to be set here to satisfy later checking. */
 	ssid_len = nl80211_get_assoc_ssid(drv, drv->ssid);
@@ -278,6 +276,9 @@ static void mlme_event_assoc(struct wpa_driver_nl80211_data *drv,
 			   "nl80211: Set drv->ssid based on scan res info to '%s'",
 			   wpa_ssid_txt(drv->ssid, drv->ssid_len));
 	}
+
+	event.assoc_info.freq = drv->assoc_freq;
+	drv->first_bss->freq = drv->assoc_freq;
 
 	nl80211_parse_wmm_params(wmm, &event.assoc_info.wmm_params);
 
@@ -408,6 +409,7 @@ static void mlme_event_connect(struct wpa_driver_nl80211_data *drv,
 	}
 
 	event.assoc_info.freq = nl80211_get_assoc_freq(drv);
+	drv->first_bss->freq = drv->assoc_freq;
 
 	if ((!ssid || ssid[1] == 0 || ssid[1] > 32) &&
 	    (ssid_len = nl80211_get_assoc_ssid(drv, drv->ssid)) > 0) {
@@ -532,7 +534,8 @@ static int calculate_chan_offset(int width, int freq, int cf1, int cf2)
 static void mlme_event_ch_switch(struct wpa_driver_nl80211_data *drv,
 				 struct nlattr *ifindex, struct nlattr *freq,
 				 struct nlattr *type, struct nlattr *bw,
-				 struct nlattr *cf1, struct nlattr *cf2)
+				 struct nlattr *cf1, struct nlattr *cf2,
+				 int finished)
 {
 	struct i802_bss *bss;
 	union wpa_event_data data;
@@ -540,7 +543,8 @@ static void mlme_event_ch_switch(struct wpa_driver_nl80211_data *drv,
 	int chan_offset = 0;
 	int ifidx;
 
-	wpa_printf(MSG_DEBUG, "nl80211: Channel switch event");
+	wpa_printf(MSG_DEBUG, "nl80211: Channel switch%s event",
+		   finished ? "" : " started");
 
 	if (!freq)
 		return;
@@ -594,7 +598,8 @@ static void mlme_event_ch_switch(struct wpa_driver_nl80211_data *drv,
 	bss->freq = data.ch_switch.freq;
 	drv->assoc_freq = data.ch_switch.freq;
 
-	wpa_supplicant_event(bss->ctx, EVENT_CH_SWITCH, &data);
+	wpa_supplicant_event(bss->ctx, finished ?
+			     EVENT_CH_SWITCH : EVENT_CH_SWITCH_STARTED, &data);
 }
 
 
@@ -1436,16 +1441,23 @@ static void nl80211_client_probe_event(struct wpa_driver_nl80211_data *drv,
 				       struct nlattr **tb)
 {
 	union wpa_event_data data;
+	const u8 *addr;
+	u64 cookie = 0;
 
-	wpa_printf(MSG_DEBUG, "nl80211: Probe client event");
-
-	if (!tb[NL80211_ATTR_MAC] || !tb[NL80211_ATTR_ACK])
+	addr = nla_data(tb[NL80211_ATTR_MAC]);
+	if (!addr)
+		return;
+	if (tb[NL80211_ATTR_COOKIE])
+		cookie = nla_get_u64(tb[NL80211_ATTR_COOKIE]);
+	wpa_printf(MSG_DEBUG, "nl80211: Probe client event (addr=" MACSTR
+		   " ack=%d cookie=%llu)", MAC2STR(addr),
+		   tb[NL80211_ATTR_ACK] != NULL,
+		   (long long unsigned int) cookie);
+	if (!tb[NL80211_ATTR_ACK])
 		return;
 
 	os_memset(&data, 0, sizeof(data));
-	os_memcpy(data.client_poll.addr,
-		  nla_data(tb[NL80211_ATTR_MAC]), ETH_ALEN);
-
+	os_memcpy(data.client_poll.addr, addr, ETH_ALEN);
 	wpa_supplicant_event(drv->ctx, EVENT_DRIVER_CLIENT_POLL_OK, &data);
 }
 
@@ -2269,11 +2281,9 @@ static void nl80211_external_auth(struct wpa_driver_nl80211_data *drv,
 	event.external_auth.ssid_len = nla_len(tb[NL80211_ATTR_SSID]);
 	if (event.external_auth.ssid_len > SSID_MAX_LEN)
 		return;
-	os_memcpy(event.external_auth.ssid, nla_data(tb[NL80211_ATTR_SSID]),
-		  event.external_auth.ssid_len);
+	event.external_auth.ssid = nla_data(tb[NL80211_ATTR_SSID]);
 
-	os_memcpy(event.external_auth.bssid, nla_data(tb[NL80211_ATTR_BSSID]),
-		  ETH_ALEN);
+	event.external_auth.bssid = nla_data(tb[NL80211_ATTR_BSSID]);
 
 	wpa_printf(MSG_DEBUG,
 		   "nl80211: External auth action: %u, AKM: 0x%x",
@@ -2501,6 +2511,16 @@ static void do_process_drv_event(struct i802_bss *bss, int cmd,
 				   tb[NL80211_ATTR_PMK],
 				   tb[NL80211_ATTR_PMKID]);
 		break;
+	case NL80211_CMD_CH_SWITCH_STARTED_NOTIFY:
+		mlme_event_ch_switch(drv,
+				     tb[NL80211_ATTR_IFINDEX],
+				     tb[NL80211_ATTR_WIPHY_FREQ],
+				     tb[NL80211_ATTR_WIPHY_CHANNEL_TYPE],
+				     tb[NL80211_ATTR_CHANNEL_WIDTH],
+				     tb[NL80211_ATTR_CENTER_FREQ1],
+				     tb[NL80211_ATTR_CENTER_FREQ2],
+				     0);
+		break;
 	case NL80211_CMD_CH_SWITCH_NOTIFY:
 		mlme_event_ch_switch(drv,
 				     tb[NL80211_ATTR_IFINDEX],
@@ -2508,7 +2528,8 @@ static void do_process_drv_event(struct i802_bss *bss, int cmd,
 				     tb[NL80211_ATTR_WIPHY_CHANNEL_TYPE],
 				     tb[NL80211_ATTR_CHANNEL_WIDTH],
 				     tb[NL80211_ATTR_CENTER_FREQ1],
-				     tb[NL80211_ATTR_CENTER_FREQ2]);
+				     tb[NL80211_ATTR_CENTER_FREQ2],
+				     1);
 		break;
 	case NL80211_CMD_DISCONNECT:
 		mlme_event_disconnect(drv, tb[NL80211_ATTR_REASON_CODE],
