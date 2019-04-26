@@ -15,6 +15,7 @@
 #include "common/wpa_common.h"
 #include "common/ieee802_11_defs.h"
 #include "common/ieee802_11_common.h"
+#include "crypto/sha256.h"
 #include "wps/wps.h"
 #include "fst/fst.h"
 #include "vlan.h"
@@ -251,6 +252,12 @@ struct sae_password_entry {
 	char *identifier;
 	u8 peer_addr[ETH_ALEN];
 	int vlan_id;
+};
+
+struct dpp_controller_conf {
+	struct dpp_controller_conf *next;
+	u8 pkhash[SHA256_MAC_LEN];
+	struct hostapd_ip_addr ipaddr;
 };
 
 /**
@@ -700,6 +707,9 @@ struct hostapd_bss_config {
 	struct wpabuf *dpp_netaccesskey;
 	unsigned int dpp_netaccesskey_expiry;
 	struct wpabuf *dpp_csign;
+#ifdef CONFIG_DPP2
+	struct dpp_controller_conf *dpp_controller;
+#endif /* CONFIG_DPP2 */
 #endif /* CONFIG_DPP */
 
 #ifdef CONFIG_OWE
@@ -735,7 +745,19 @@ struct he_operation {
 	u8 he_bss_color;
 	u8 he_default_pe_duration;
 	u8 he_twt_required;
-	u8 he_rts_threshold;
+	u16 he_rts_threshold;
+};
+
+/**
+ * struct spatial_reuse - Spatial reuse
+ */
+struct spatial_reuse {
+	u8 sr_control;
+	u8 non_srg_obss_pd_max_offset;
+	u8 srg_obss_pd_min_offset;
+	u8 srg_obss_pd_max_offset;
+	u8 srg_obss_color_bitmap;
+	u8 srg_obss_color_partial_bitmap;
 };
 
 /**
@@ -864,6 +886,7 @@ struct hostapd_config {
 	struct he_phy_capabilities_info he_phy_capab;
 	struct he_operation he_op;
 	struct ieee80211_he_mu_edca_parameter_set he_mu_edca;
+	struct spatial_reuse spr;
 #endif /* CONFIG_IEEE80211AX */
 
 	/* VHT enable/disable config from CHAN_SWITCH */

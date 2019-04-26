@@ -2074,8 +2074,7 @@ int wpa_ft_store_pmk_fils(struct wpa_state_machine *sm,
 }
 
 
-int wpa_auth_derive_ptk_ft(struct wpa_state_machine *sm, const u8 *pmk,
-			   struct wpa_ptk *ptk)
+int wpa_auth_derive_ptk_ft(struct wpa_state_machine *sm, struct wpa_ptk *ptk)
 {
 	u8 pmk_r0[PMK_LEN_MAX], pmk_r0_name[WPA_PMK_NAME_LEN];
 	size_t pmk_r0_len = wpa_key_mgmt_sha384(sm->wpa_key_mgmt) ?
@@ -2992,6 +2991,8 @@ pmk_r1_derived:
 	wpa_hexdump_key(MSG_DEBUG, "FT: Selected PMK-R1", pmk_r1, pmk_r1_len);
 	sm->pmk_r1_name_valid = 1;
 	os_memcpy(sm->pmk_r1_name, pmk_r1_name, WPA_PMK_NAME_LEN);
+	os_memcpy(sm->pmk_r1, pmk_r1, pmk_r1_len);
+	sm->pmk_r1_len = pmk_r1_len;
 
 	if (random_get_bytes(sm->ANonce, WPA_NONCE_LEN)) {
 		wpa_printf(MSG_DEBUG, "FT: Failed to get random data for "
@@ -3097,8 +3098,9 @@ void wpa_ft_process_auth(struct wpa_state_machine *sm, const u8 *bssid,
 	status = res;
 
 	wpa_printf(MSG_DEBUG, "FT: FT authentication response: dst=" MACSTR
-		   " auth_transaction=%d status=%d",
-		   MAC2STR(sm->addr), auth_transaction + 1, status);
+		   " auth_transaction=%d status=%u (%s)",
+		   MAC2STR(sm->addr), auth_transaction + 1, status,
+		   status2str(status));
 	wpa_hexdump(MSG_DEBUG, "FT: Response IEs", resp_ies, resp_ies_len);
 	cb(ctx, sm->addr, bssid, auth_transaction + 1, status,
 	   resp_ies, resp_ies_len);
@@ -3456,8 +3458,9 @@ static int wpa_ft_send_rrb_auth_resp(struct wpa_state_machine *sm,
 	u8 *pos;
 
 	wpa_printf(MSG_DEBUG, "FT: RRB authentication response: STA=" MACSTR
-		   " CurrentAP=" MACSTR " status=%d",
-		   MAC2STR(sm->addr), MAC2STR(current_ap), status);
+		   " CurrentAP=" MACSTR " status=%u (%s)",
+		   MAC2STR(sm->addr), MAC2STR(current_ap), status,
+		   status2str(status));
 	wpa_hexdump(MSG_DEBUG, "FT: Response IEs", resp_ies, resp_ies_len);
 
 	/* RRB - Forward action frame response to the Current AP */

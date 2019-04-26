@@ -1054,6 +1054,9 @@ int crypto_hash_finish(struct crypto_hash *ctx, u8 *mac, size_t *len)
 	HMAC_CTX_free(ctx->ctx);
 	bin_clear_free(ctx, sizeof(*ctx));
 
+	if (TEST_FAIL())
+		return -1;
+
 	if (res == 1) {
 		*len = mdlen;
 		return 0;
@@ -1292,7 +1295,13 @@ void crypto_bignum_deinit(struct crypto_bignum *n, int clear)
 int crypto_bignum_to_bin(const struct crypto_bignum *a,
 			 u8 *buf, size_t buflen, size_t padlen)
 {
+#ifdef OPENSSL_IS_BORINGSSL
+#else /* OPENSSL_IS_BORINGSSL */
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)
+#else
 	int num_bytes, offset;
+#endif
+#endif /* OPENSSL_IS_BORINGSSL */
 
 	if (TEST_FAIL())
 		return -1;
@@ -1300,6 +1309,14 @@ int crypto_bignum_to_bin(const struct crypto_bignum *a,
 	if (padlen > buflen)
 		return -1;
 
+#ifdef OPENSSL_IS_BORINGSSL
+	if (BN_bn2bin_padded(buf, padlen, (const BIGNUM *) a) == 0)
+		return -1;
+	return padlen;
+#else /* OPENSSL_IS_BORINGSSL */
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)
+	return BN_bn2binpad((const BIGNUM *) a, buf, padlen);
+#else
 	num_bytes = BN_num_bytes((const BIGNUM *) a);
 	if ((size_t) num_bytes > buflen)
 		return -1;
@@ -1312,11 +1329,15 @@ int crypto_bignum_to_bin(const struct crypto_bignum *a,
 	BN_bn2bin((const BIGNUM *) a, buf + offset);
 
 	return num_bytes + offset;
+#endif
+#endif /* OPENSSL_IS_BORINGSSL */
 }
 
 
 int crypto_bignum_rand(struct crypto_bignum *r, const struct crypto_bignum *m)
 {
+	if (TEST_FAIL())
+		return -1;
 	return BN_rand_range((BIGNUM *) r, (const BIGNUM *) m) == 1 ? 0 : -1;
 }
 
@@ -1628,13 +1649,6 @@ void crypto_ec_deinit(struct crypto_ec *e)
 	EC_GROUP_free(e->group);
 	BN_CTX_free(e->bnctx);
 	os_free(e);
-}
-
-
-int crypto_ec_cofactor(struct crypto_ec *e, struct crypto_bignum *cofactor)
-{
-	return EC_GROUP_get_cofactor(e->group, (BIGNUM *) cofactor,
-				     e->bnctx) == 0 ? -1 : 0;
 }
 
 

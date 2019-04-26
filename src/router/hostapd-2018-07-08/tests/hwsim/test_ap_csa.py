@@ -23,6 +23,19 @@ def connect(dev, apdev, **kwargs):
 
 def switch_channel(ap, count, freq):
     ap.request("CHAN_SWITCH " + str(count) + " " + str(freq))
+
+    ev = ap.wait_event(["CTRL-EVENT-STARTED-CHANNEL-SWITCH"], timeout=10)
+    if ev is None:
+        raise Exception("Channel switch start event not seen")
+    if "freq=" + str(freq) not in ev:
+        raise Exception("Unexpected channel in CS started event")
+
+    ev = ap.wait_event(["CTRL-EVENT-CHANNEL-SWITCH"], timeout=10)
+    if ev is None:
+        raise Exception("Channel switch completed event not seen")
+    if "freq=" + str(freq) not in ev:
+        raise Exception("Unexpected channel in CS completed event")
+
     ev = ap.wait_event(["AP-CSA-FINISHED"], timeout=10)
     if ev is None:
         raise Exception("CSA finished event timed out")
@@ -30,6 +43,12 @@ def switch_channel(ap, count, freq):
         raise Exception("Unexpected channel in CSA finished event")
 
 def wait_channel_switch(dev, freq):
+    ev = dev.wait_event(["CTRL-EVENT-STARTED-CHANNEL-SWITCH"], timeout=5)
+    if ev is None:
+        raise Exception("Channel switch start not reported")
+    if "freq=%d" % freq not in ev:
+        raise Exception("Unexpected frequency in channel switch started: " + ev)
+
     ev = dev.wait_event(["CTRL-EVENT-CHANNEL-SWITCH"], timeout=5)
     if ev is None:
         raise Exception("Channel switch not reported")
@@ -47,12 +66,26 @@ def csa_supported(dev):
 def test_ap_csa_1_switch(dev, apdev):
     """AP Channel Switch, one switch"""
     csa_supported(dev[0])
+    freq = int(dev[0].get_driver_status_field("freq"))
+    if freq != 0:
+        raise Exception("Unexpected driver freq=%d in beginning" % freq)
     ap = connect(dev[0], apdev)
+    freq = int(dev[0].get_driver_status_field("freq"))
+    if freq != 2412:
+        raise Exception("Unexpected driver freq=%d after association" % freq)
 
     hwsim_utils.test_connectivity(dev[0], ap)
     switch_channel(ap, 10, 2462)
     wait_channel_switch(dev[0], 2462)
     hwsim_utils.test_connectivity(dev[0], ap)
+    freq = int(dev[0].get_driver_status_field("freq"))
+    if freq != 2462:
+        raise Exception("Unexpected driver freq=%d after channel switch" % freq)
+    dev[0].request("DISCONNECT")
+    dev[0].wait_disconnected()
+    freq = int(dev[0].get_driver_status_field("freq"))
+    if freq != 0:
+        raise Exception("Unexpected driver freq=%d after disconnection" % freq)
 
 @remote_compatible
 def test_ap_csa_2_switches(dev, apdev):

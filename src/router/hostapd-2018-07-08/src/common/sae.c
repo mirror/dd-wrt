@@ -15,35 +15,22 @@
 #include "crypto/random.h"
 #include "crypto/dh_groups.h"
 #include "ieee802_11_defs.h"
+#include "dragonfly.h"
 #include "sae.h"
-
-
-static int sae_suitable_group(int group)
-{
-#ifdef CONFIG_TESTING_OPTIONS
-	/* Allow all groups for testing purposes in non-production builds. */
-	return 1;
-#else /* CONFIG_TESTING_OPTIONS */
-	/* Enforce REVmd rules on which SAE groups are suitable for production
-	 * purposes: FFC groups whose prime is >= 3072 bits and ECC groups
-	 * defined over a prime field whose prime is >= 256 bits. Furthermore,
-	 * ECC groups defined over a characteristic 2 finite field and ECC
-	 * groups with a co-factor greater than 1 are not suitable. */
-	return group == 19 || group == 20 || group == 21 ||
-		group == 28 || group == 29 || group == 30 ||
-		group == 15 || group == 16 || group == 17 || group == 18;
-#endif /* CONFIG_TESTING_OPTIONS */
-}
 
 
 int sae_set_group(struct sae_data *sae, int group)
 {
 	struct sae_temporary_data *tmp;
 
-	if (!sae_suitable_group(group)) {
+#ifdef CONFIG_TESTING_OPTIONS
+	/* Allow all groups for testing purposes in non-production builds. */
+#else /* CONFIG_TESTING_OPTIONS */
+	if (!dragonfly_suitable_group(group, 0)) {
 		wpa_printf(MSG_DEBUG, "SAE: Reject unsuitable group %d", group);
 		return -1;
 	}
+#endif /* CONFIG_TESTING_OPTIONS */
 
 	sae_clear_data(sae);
 	tmp = sae->tmp = os_zalloc(sizeof(*tmp));
@@ -134,15 +121,6 @@ void sae_clear_data(struct sae_data *sae)
 }
 
 
-static void buf_shift_right(u8 *buf, size_t len, size_t bits)
-{
-	size_t i;
-	for (i = len - 1; i > 0; i--)
-		buf[i] = (buf[i - 1] << (8 - bits)) | (buf[i] >> bits);
-	buf[0] >>= bits;
-}
-
-
 static struct crypto_bignum * sae_get_rand(struct sae_data *sae)
 {
 	u8 val[SAE_MAX_PRIME_LEN];
@@ -200,103 +178,6 @@ static void sae_pwd_seed_key(const u8 *addr1, const u8 *addr2, u8 *key)
 }
 
 
-static struct crypto_bignum *
-get_rand_1_to_p_1(const u8 *prime, size_t prime_len, size_t prime_bits,
-		  int *r_odd)
-{
-	for (;;) {
-		struct crypto_bignum *r;
-		u8 tmp[SAE_MAX_ECC_PRIME_LEN];
-
-		if (random_get_bytes(tmp, prime_len) < 0)
-			break;
-		if (prime_bits % 8)
-			buf_shift_right(tmp, prime_len, 8 - prime_bits % 8);
-		if (os_memcmp(tmp, prime, prime_len) >= 0)
-			continue;
-		r = crypto_bignum_init_set(tmp, prime_len);
-		if (!r)
-			break;
-		if (crypto_bignum_is_zero(r)) {
-			crypto_bignum_deinit(r, 0);
-			continue;
-		}
-
-		*r_odd = tmp[prime_len - 1] & 0x01;
-		return r;
-	}
-
-	return NULL;
-}
-
-
-static int is_quadratic_residue_blind(struct sae_data *sae,
-				      const u8 *prime, size_t bits,
-				      const u8 *qr, const u8 *qnr,
-				      const struct crypto_bignum *y_sqr)
-{
-	struct crypto_bignum *r, *num, *qr_or_qnr = NULL;
-	int r_odd, check, res = -1;
-	u8 qr_or_qnr_bin[SAE_MAX_ECC_PRIME_LEN];
-	size_t prime_len = sae->tmp->prime_len;
-	unsigned int mask;
-
-	/*
-	 * Use the blinding technique to mask y_sqr while determining
-	 * whether it is a quadratic residue modulo p to avoid leaking
-	 * timing information while determining the Legendre symbol.
-	 *
-	 * v = y_sqr
-	 * r = a random number between 1 and p-1, inclusive
-	 * num = (v * r * r) modulo p
-	 */
-	r = get_rand_1_to_p_1(prime, prime_len, bits, &r_odd);
-	if (!r)
-		return -1;
-
-	num = crypto_bignum_init();
-	if (!num ||
-	    crypto_bignum_mulmod(y_sqr, r, sae->tmp->prime, num) < 0 ||
-	    crypto_bignum_mulmod(num, r, sae->tmp->prime, num) < 0)
-		goto fail;
-
-	/*
-	 * Need to minimize differences in handling different cases, so try to
-	 * avoid branches and timing differences.
-	 *
-	 * If r_odd:
-	 * num = (num * qr) module p
-	 * LGR(num, p) = 1 ==> quadratic residue
-	 * else:
-	 * num = (num * qnr) module p
-	 * LGR(num, p) = -1 ==> quadratic residue
-	 */
-	mask = const_time_is_zero(r_odd);
-	const_time_select_bin(mask, qnr, qr, prime_len, qr_or_qnr_bin);
-	qr_or_qnr = crypto_bignum_init_set(qr_or_qnr_bin, prime_len);
-	if (!qr_or_qnr ||
-	    crypto_bignum_mulmod(num, qr_or_qnr, sae->tmp->prime, num) < 0)
-		goto fail;
-	/* r_odd is 0 or 1; branchless version of check = r_odd ? 1 : -1, */
-	check = const_time_select_int(mask, -1, 1);
-
-	res = crypto_bignum_legendre(num, sae->tmp->prime);
-	if (res == -2) {
-		res = -1;
-		goto fail;
-	}
-	/* branchless version of res = res == check
-	 * (res is -1, 0, or 1; check is -1 or 1) */
-	mask = const_time_eq(res, check);
-	res = const_time_select_int(mask, 1, 0);
-fail:
-	crypto_bignum_deinit(num, 1);
-	crypto_bignum_deinit(r, 1);
-	crypto_bignum_deinit(qr_or_qnr, 1);
-	return res;
-}
-
-
 static int sae_test_pwd_seed_ecc(struct sae_data *sae, const u8 *pwd_seed,
 				 const u8 *prime, const u8 *qr, const u8 *qnr,
 				 u8 *pwd_value)
@@ -317,7 +198,7 @@ static int sae_test_pwd_seed_ecc(struct sae_data *sae, const u8 *pwd_seed,
 	wpa_hexdump_key(MSG_DEBUG, "SAE: pwd-value",
 			pwd_value, sae->tmp->prime_len);
 
-	if (os_memcmp(pwd_value, prime, sae->tmp->prime_len) >= 0)
+	if (const_time_memcmp(pwd_value, prime, sae->tmp->prime_len) >= 0)
 		return 0;
 
 	x_cand = crypto_bignum_init_set(pwd_value, sae->tmp->prime_len);
@@ -328,7 +209,8 @@ static int sae_test_pwd_seed_ecc(struct sae_data *sae, const u8 *pwd_seed,
 	if (!y_sqr)
 		return -1;
 
-	res = is_quadratic_residue_blind(sae, prime, bits, qr, qnr, y_sqr);
+	res = dragonfly_is_quadratic_residue_blind(sae->tmp->ec, qr, qnr,
+						   y_sqr);
 	crypto_bignum_deinit(y_sqr, 1);
 	return res;
 }
@@ -423,42 +305,6 @@ fail:
 }
 
 
-static int get_random_qr_qnr(const u8 *prime, size_t prime_len,
-			     const struct crypto_bignum *prime_bn,
-			     size_t prime_bits, struct crypto_bignum **qr,
-			     struct crypto_bignum **qnr)
-{
-	*qr = NULL;
-	*qnr = NULL;
-
-	while (!(*qr) || !(*qnr)) {
-		u8 tmp[SAE_MAX_ECC_PRIME_LEN];
-		struct crypto_bignum *q;
-		int res;
-
-		if (random_get_bytes(tmp, prime_len) < 0)
-			break;
-		if (prime_bits % 8)
-			buf_shift_right(tmp, prime_len, 8 - prime_bits % 8);
-		if (os_memcmp(tmp, prime, prime_len) >= 0)
-			continue;
-		q = crypto_bignum_init_set(tmp, prime_len);
-		if (!q)
-			break;
-		res = crypto_bignum_legendre(q, prime_bn);
-
-		if (res == 1 && !(*qr))
-			*qr = q;
-		else if (res == -1 && !(*qnr))
-			*qnr = q;
-		else
-			crypto_bignum_deinit(q, 0);
-	}
-
-	return (*qr && *qnr) ? 0 : -1;
-}
-
-
 static int sae_derive_pwe_ecc(struct sae_data *sae, const u8 *addr1,
 			      const u8 *addr2, const u8 *password,
 			      size_t password_len, const char *identifier)
@@ -477,7 +323,6 @@ static int sae_derive_pwe_ecc(struct sae_data *sae, const u8 *addr1,
 	u8 x_cand_bin[SAE_MAX_ECC_PRIME_LEN];
 	u8 qr_bin[SAE_MAX_ECC_PRIME_LEN];
 	u8 qnr_bin[SAE_MAX_ECC_PRIME_LEN];
-	size_t bits;
 	int res = -1;
 	u8 found = 0; /* 0 (false) or 0xff (true) to be used as const_time_*
 		       * mask */
@@ -494,14 +339,12 @@ static int sae_derive_pwe_ecc(struct sae_data *sae, const u8 *addr1,
 	if (crypto_bignum_to_bin(sae->tmp->prime, prime, sizeof(prime),
 				 prime_len) < 0)
 		goto fail;
-	bits = crypto_ec_prime_len_bits(sae->tmp->ec);
 
 	/*
 	 * Create a random quadratic residue (qr) and quadratic non-residue
 	 * (qnr) modulo p for blinding purposes during the loop.
 	 */
-	if (get_random_qr_qnr(prime, prime_len, sae->tmp->prime, bits,
-			      &qr, &qnr) < 0 ||
+	if (dragonfly_get_random_qr_qnr(sae->tmp->prime, &qr, &qnr) < 0 ||
 	    crypto_bignum_to_bin(qr, qr_bin, sizeof(qr_bin), prime_len) < 0 ||
 	    crypto_bignum_to_bin(qnr, qnr_bin, sizeof(qnr_bin), prime_len) < 0)
 		goto fail;

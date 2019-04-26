@@ -160,7 +160,9 @@ struct hostapd_channel_data {
 };
 
 #define HE_MAX_NUM_SS 		8
-#define HE_MAX_PHY_CAPAB_SIZE	3
+#define HE_MAX_MAC_CAPAB_SIZE	6
+#define HE_MAX_PHY_CAPAB_SIZE	11
+#define HE_MAX_MCS_CAPAB_SIZE	12
 
 /**
  * struct he_ppe_threshold - IEEE 802.11ax HE PPE Threshold
@@ -176,9 +178,9 @@ struct he_ppe_threshold {
  */
 struct he_capabilities {
 	u8 he_supported;
-	u32 phy_cap[HE_MAX_PHY_CAPAB_SIZE];
-	u32 mac_cap;
-	u32 mcs;
+	u8 phy_cap[HE_MAX_PHY_CAPAB_SIZE];
+	u8 mac_cap[HE_MAX_MAC_CAPAB_SIZE];
+	u8 mcs[HE_MAX_MCS_CAPAB_SIZE];
 	struct he_ppe_threshold ppet;
 };
 
@@ -1126,6 +1128,11 @@ enum hide_ssid {
 	NO_SSID_HIDING,
 	HIDDEN_SSID_ZERO_LEN,
 	HIDDEN_SSID_ZERO_CONTENTS
+};
+
+enum ch_switch_state {
+	CH_SW_STARTED,
+	CH_SW_FINISHED
 };
 
 struct wowlan_triggers {
@@ -2162,17 +2169,19 @@ enum wpa_drv_update_connect_params_mask {
  *	use %WLAN_STATUS_UNSPECIFIED_FAILURE if wpa_supplicant cannot give
  *	the real status code for failures. Used only for the request interface
  *	from user space to the driver.
+ * @pmkid: Generated PMKID as part of external auth exchange (e.g., SAE).
  */
 struct external_auth {
 	enum {
 		EXT_AUTH_START,
 		EXT_AUTH_ABORT,
 	} action;
-	u8 bssid[ETH_ALEN];
-	u8 ssid[SSID_MAX_LEN];
+	const u8 *bssid;
+	const u8 *ssid;
 	size_t ssid_len;
 	unsigned int key_mgmt_suite;
 	u16 status;
+	const u8 *pmkid;
 };
 
 /**
@@ -2341,7 +2350,7 @@ struct wpa_driver_ops {
 	 *
 	 * Returns: 0 on success, -1 on failure
 	 */
-	int (*deauthenticate)(void *priv, const u8 *addr, int reason_code);
+	int (*deauthenticate)(void *priv, const u8 *addr, u16 reason_code);
 
 	/**
 	 * associate - Request driver to associate
@@ -2810,7 +2819,7 @@ struct wpa_driver_ops {
 	 * a Deauthentication frame to be sent to it.
 	 */
 	int (*sta_deauth)(void *priv, const u8 *own_addr, const u8 *addr,
-			  int reason);
+			  u16 reason);
 
 	/**
 	 * sta_disassoc - Disassociate a station (AP only)
@@ -2824,7 +2833,7 @@ struct wpa_driver_ops {
 	 * a Disassociation frame to be sent to it.
 	 */
 	int (*sta_disassoc)(void *priv, const u8 *own_addr, const u8 *addr,
-			    int reason);
+			    u16 reason);
 
 	/**
 	 * sta_remove - Remove a station entry (AP only)
@@ -4544,6 +4553,15 @@ enum wpa_event_type {
 	 * */
 	EVENT_CH_SWITCH,
 
+	/**
+	 * EVENT_CH_SWITCH_STARTED - AP or GO started to switch channels
+	 *
+	 * This is a pre-switch event indicating the shortly following switch
+	 * of operating channels.
+	 *
+	 * Described in wpa_event_data.ch_switch
+	 */
+	EVENT_CH_SWITCH_STARTED,
 	/**
 	 * EVENT_WNM - Request WNM operation
 	 *
