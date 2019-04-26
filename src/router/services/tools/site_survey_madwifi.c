@@ -117,12 +117,12 @@ static struct site_survey_list *site_survey_lists;
 
 static __inline int iswpaoui(const unsigned char *frm)
 {
-	return frm[1] > 3 && LE_READ_4(frm + 2) == ((WPA_OUI_TYPE << 24) | WPA_OUI);
+	return frm[1] > 3 && LE_READ_4(frm + 2) == ((MADWIFI_WPA_OUI_TYPE << 24) | WPA_OUI);
 }
 
 static __inline int isrsnoui(const unsigned char *frm)
 {
-	return frm[1] > 3 && LE_READ_4(frm + 2) == ((WPA_OUI_TYPE << 24) | RSN_OUI);
+	return frm[1] > 3 && LE_READ_4(frm + 2) == ((MADWIFI_WPA_OUI_TYPE << 24) | RSN_OUI);
 }
 
 static __inline int iswmeoui(const unsigned char *frm)
