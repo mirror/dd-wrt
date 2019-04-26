@@ -126,8 +126,9 @@ struct wpa_sm {
 	u8 r0kh_id[FT_R0KH_ID_MAX_LEN];
 	size_t r0kh_id_len;
 	u8 r1kh_id[FT_R1KH_ID_LEN];
-	int ft_completed;
-	int ft_reassoc_completed;
+	unsigned int ft_completed:1;
+	unsigned int ft_reassoc_completed:1;
+	unsigned int ft_protocol:1;
 	int over_the_ds_in_progress;
 	u8 target_ap[ETH_ALEN]; /* over-the-DS target AP */
 	int set_ptk_after_assoc;
@@ -187,7 +188,7 @@ static inline enum wpa_states wpa_sm_get_state(struct wpa_sm *sm)
 	return sm->ctx->get_state(sm->ctx->ctx);
 }
 
-static inline void wpa_sm_deauthenticate(struct wpa_sm *sm, int reason_code)
+static inline void wpa_sm_deauthenticate(struct wpa_sm *sm, u16 reason_code)
 {
 	WPA_ASSERT(sm->ctx->deauthenticate);
 	sm->ctx->deauthenticate(sm->ctx->ctx, reason_code);

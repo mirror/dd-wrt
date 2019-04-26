@@ -2736,32 +2736,23 @@ def test_ap_wpa2_eap_pwd_groups(dev, apdev):
     params = {"ssid": "test-wpa2-eap", "wpa": "2", "wpa_key_mgmt": "WPA-EAP",
               "rsn_pairwise": "CCMP", "ieee8021x": "1",
               "eap_server": "1", "eap_user_file": "auth_serv/eap_user.conf"}
-    groups = [19, 20, 21, 25, 26]
+    groups = [19, 20, 21]
     if tls.startswith("OpenSSL") and "build=OpenSSL 1.0.2" in tls and "run=OpenSSL 1.0.2" in tls:
         logger.info("Add Brainpool EC groups since OpenSSL is new enough")
-        groups += [27, 28, 29, 30]
+        groups += [28, 29, 30]
     if tls.startswith("OpenSSL") and "build=OpenSSL 1.1" in tls and "run=OpenSSL 1.1" in tls:
         logger.info("Add Brainpool EC groups since OpenSSL is new enough")
-        groups += [27, 28, 29, 30]
+        groups += [28, 29, 30]
     for i in groups:
         logger.info("Group %d" % i)
         params['pwd_group'] = str(i)
         hapd = hostapd.add_ap(apdev[0], params)
-        try:
-            eap_connect(dev[0], hapd, "PWD", "pwd user",
-                        password="secret password")
-            dev[0].request("REMOVE_NETWORK all")
-            dev[0].wait_disconnected()
-            dev[0].dump_monitor()
-        except:
-            if "BoringSSL" in tls and i in [25]:
-                logger.info("Ignore connection failure with group %d with BoringSSL" % i)
-                dev[0].request("DISCONNECT")
-                time.sleep(0.1)
-                dev[0].request("REMOVE_NETWORK all")
-                dev[0].dump_monitor()
-                continue
-            raise
+        eap_connect(dev[0], hapd, "PWD", "pwd user",
+                    password="secret password")
+        dev[0].request("REMOVE_NETWORK all")
+        dev[0].wait_disconnected()
+        dev[0].dump_monitor()
+        hapd.disable()
 
 def test_ap_wpa2_eap_pwd_invalid_group(dev, apdev):
     """WPA2-Enterprise connection using invalid EAP-pwd group"""
@@ -2769,14 +2760,20 @@ def test_ap_wpa2_eap_pwd_invalid_group(dev, apdev):
     params = {"ssid": "test-wpa2-eap", "wpa": "2", "wpa_key_mgmt": "WPA-EAP",
               "rsn_pairwise": "CCMP", "ieee8021x": "1",
               "eap_server": "1", "eap_user_file": "auth_serv/eap_user.conf"}
-    params['pwd_group'] = "0"
-    hostapd.add_ap(apdev[0], params)
-    dev[0].connect("test-wpa2-eap", key_mgmt="WPA-EAP", eap="PWD",
-                   identity="pwd user", password="secret password",
-                   scan_freq="2412", wait_connect=False)
-    ev = dev[0].wait_event(["CTRL-EVENT-EAP-FAILURE"])
-    if ev is None:
-        raise Exception("Timeout on EAP failure report")
+    for i in [0, 25, 26, 27]:
+        logger.info("Group %d" % i)
+        params['pwd_group'] = str(i)
+        hapd = hostapd.add_ap(apdev[0], params)
+        dev[0].connect("test-wpa2-eap", key_mgmt="WPA-EAP", eap="PWD",
+                       identity="pwd user", password="secret password",
+                       scan_freq="2412", wait_connect=False)
+        ev = dev[0].wait_event(["CTRL-EVENT-EAP-FAILURE"])
+        if ev is None:
+            raise Exception("Timeout on EAP failure report (group %d)" % i)
+        dev[0].request("REMOVE_NETWORK all")
+        dev[0].wait_disconnected()
+        dev[0].dump_monitor()
+        hapd.disable()
 
 def test_ap_wpa2_eap_pwd_as_frag(dev, apdev):
     """WPA2-Enterprise connection using EAP-pwd with server fragmentation"""
@@ -2848,12 +2845,24 @@ def test_ap_wpa2_eap_eke(dev, apdev):
         if ev is None:
             raise Exception("EAP success timed out")
         dev[0].wait_connected(timeout=10)
+    dev[0].dump_monitor()
 
     logger.info("Test failed algorithm negotiation")
     dev[0].set_network_quoted(id, "phase1", "dhgroup=9 encr=9 prf=9 mac=9")
     ev = dev[0].wait_event(["CTRL-EVENT-EAP-FAILURE"], timeout=10)
     if ev is None:
         raise Exception("EAP failure timed out")
+    dev[0].dump_monitor()
+
+    logger.info("Test unsupported algorithm proposals")
+    dev[0].request("REMOVE_NETWORK all")
+    dev[0].dump_monitor()
+    eap_connect(dev[0], hapd, "EKE", "eke user", password="hello",
+                phase1="dhgroup=2 encr=1 prf=1 mac=1", expect_failure=True)
+    dev[0].request("REMOVE_NETWORK all")
+    dev[0].dump_monitor()
+    eap_connect(dev[0], hapd, "EKE", "eke user", password="hello",
+                phase1="dhgroup=1 encr=1 prf=1 mac=1", expect_failure=True)
 
     logger.info("Negative test with incorrect password")
     dev[0].request("REMOVE_NETWORK all")

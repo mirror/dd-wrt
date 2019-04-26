@@ -139,7 +139,7 @@ class DataCollector(object):
                                                stderr=open('/dev/null', 'w'),
                                                cwd=self._logdir)
             l = self._trace_cmd.stdout.read(7)
-            while self._trace_cmd.poll() is None and 'STARTED' not in l:
+            while self._trace_cmd.poll() is None and b'STARTED' not in l:
                 l += self._trace_cmd.stdout.read(1)
             res = self._trace_cmd.returncode
             if res:
@@ -157,7 +157,8 @@ class DataCollector(object):
                 sys.exit(1)
     def __exit__(self, type, value, traceback):
         if self._tracing:
-            self._trace_cmd.stdin.write('DONE\n')
+            self._trace_cmd.stdin.write(b'DONE\n')
+            self._trace_cmd.stdin.flush()
             self._trace_cmd.wait()
         if self._dmesg:
             output = os.path.join(self._logdir, '%s.dmesg' % (self._testname, ))
@@ -510,8 +511,8 @@ def main():
                         country = d.get_driver_status_field("country")
                         if country != "00":
                             d.dump_monitor()
-                            logger.info("Country code not reset back to 00: is " + country)
-                            print("Country code not reset back to 00: is " + country)
+                            logger.info(d.ifname + ": Country code not reset back to 00: is " + country)
+                            print(d.ifname + ": Country code not reset back to 00: is " + country)
                             result = "FAIL"
 
                             # Try to wait for cfg80211 regulatory state to
@@ -523,8 +524,8 @@ def main():
                                 if country == "00":
                                     break
                             if country == "00":
-                                print("Country code cleared back to 00")
-                                logger.info("Country code cleared back to 00")
+                                print(d.ifname + ": Country code cleared back to 00")
+                                logger.info(d.ifname + ": Country code cleared back to 00")
                             else:
                                 print("Country code remains set - expect following test cases to fail")
                                 logger.info("Country code remains set - expect following test cases to fail")

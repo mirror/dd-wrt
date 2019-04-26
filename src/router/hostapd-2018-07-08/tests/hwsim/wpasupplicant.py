@@ -85,6 +85,11 @@ class WpaSupplicant:
             self.mon.detach()
         except ConnectionRefusedError:
             pass
+        except Exception as e:
+            if str(e) == "DETACH failed":
+                pass
+            else:
+                raise
         del self.mon
         self.mon = None
 
@@ -101,6 +106,11 @@ class WpaSupplicant:
             self.global_mon.detach()
         except ConnectionRefusedError:
             pass
+        except Exception as e:
+            if str(e) == "DETACH failed":
+                pass
+            else:
+                raise
         del self.global_mon
         self.global_mon = None
 
@@ -1439,7 +1449,8 @@ class WpaSupplicant:
 
     def dpp_auth_init(self, peer=None, uri=None, conf=None, configurator=None,
                       extra=None, own=None, role=None, neg_freq=None,
-                      ssid=None, passphrase=None, expect_fail=False):
+                      ssid=None, passphrase=None, expect_fail=False,
+                      tcp_addr=None, tcp_port=None):
         cmd = "DPP_AUTH_INIT"
         if peer is None:
             peer = self.dpp_qr_code(uri)
@@ -1460,6 +1471,10 @@ class WpaSupplicant:
             cmd += " ssid=" + binascii.hexlify(ssid.encode()).decode()
         if passphrase:
             cmd += " pass=" + binascii.hexlify(passphrase.encode()).decode()
+        if tcp_addr:
+            cmd += " tcp_addr=" + tcp_addr
+        if tcp_port:
+            cmd += " tcp_port=" + tcp_port
         res = self.request(cmd)
         if expect_fail:
             if "FAIL" not in res:
