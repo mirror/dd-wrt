@@ -60,11 +60,17 @@ struct inet_frag_queue {
 	u16			max_size;
 	struct netns_frags	*net;
 };
-
-#ifdef CONFIG_BASE_SMALL
+#if CONFIG_BASE_SMALL == 1
 #define INETFRAGS_HASHSZ	16
+
+/* averaged:
+ * max_depth = default ipfrag_high_thresh / INETFRAGS_HASHSZ /
+ *	       rounded up (SKB_TRUELEN(0) + sizeof(struct ipq or
+ *	       struct frag_queue))
+ */
 #define INETFRAGS_MAXDEPTH	32
 #else
+
 #define INETFRAGS_HASHSZ	1024
 
 /* averaged:
@@ -73,7 +79,6 @@ struct inet_frag_queue {
  *	       struct frag_queue))
  */
 #define INETFRAGS_MAXDEPTH	128
-
 #endif
 
 struct inet_frag_bucket {
