@@ -46,18 +46,19 @@
 #define	toupper(x) (isupper(x) ? (x) : (x) - 'a' + 'A')
 #define tolower(x) (isupper(x) ? ((x) - 'A' + 'a') : (x))
 
+#define BUFSIZE 	1024
+
 #define split(word, wordlist, next, delim) \
     for (next = wordlist, \
-	strncpy(word, next, sizeof(word)), \
-	word[(next=strstr(next, delim)) ? strstr(word, delim) - word : sizeof(word) - 1] = '\0', \
+	strncpy(word, next, BUFSIZE), \
+	word[(next=strstr(next, delim)) ? strstr(word, delim) - word : BUFSIZE - 1] = '\0', \
 	next = next ? next + sizeof(delim) - 1 : NULL ; \
 	strlen(word); \
 	next = next ? : "", \
-	strncpy(word, next, sizeof(word)), \
-	word[(next=strstr(next, delim)) ? strstr(word, delim) - word : sizeof(word) - 1] = '\0', \
+	strncpy(word, next, BUFSIZE), \
+	word[(next=strstr(next, delim)) ? strstr(word, delim) - word : BUFSIZE - 1] = '\0', \
 	next = next ? next + sizeof(delim) - 1 : NULL)
 
-#define BUFSIZE 	1024
 
 /* Flags for get_http_info() */
 #define HTTP_HOST	0x01
@@ -263,15 +264,17 @@ static bool match(const struct sk_buff *skb, struct xt_action_param *par)
 
 	char token[] = "<&nbsp;>";
 	char *wordlist = (char *)&info->string;
-	httpinfo_t htinfo;
+	httpinfo_t *htinfo;
 	int flags = 0;
 	int found = 0;
 	long int opt = 0;
-
-
-	if (!ip || info->len < 1)
+	
+	htinfo = kmalloc(sizeof(*htinfo), GFP_ATOMIC);
+	if (!htinfo)
 	    return 0;
-
+	if (!ip || info->len < 1) {
+	    goto match_fail;
+	}
 	SPARQ_LOG("\n************************************************\n"
 		"%s: type=%s\n", __FUNCTION__, (info->type == IPT_WEBSTR_URL) 
 		? "IPT_WEBSTR_URL"  : (info->type == IPT_WEBSTR_HOST) 
@@ -302,26 +305,30 @@ static bool match(const struct sk_buff *skb, struct xt_action_param *par)
 
 	    default:
 		printk("%s: Sorry! Cannot find this match option.\n", __FILE__);
-		return 0;
+		goto match_fail;
 	}
 
 	/* Get the http header info */
-	if (get_http_info(skb, flags, &htinfo) < 1)
-	    return 0;
+	if (get_http_info(skb, flags, htinfo) < 1) {
+		goto match_fail;
+	}
 
 	/* Check if the http header content contains the forbidden keyword */
 	if (info->type == IPT_WEBSTR_HOST || info->type == IPT_WEBSTR_URL) {
 	    int nlen = 0, hlen = 0;
-	    char needle[BUFSIZE], *haystack = NULL;
+	    char *needle, *haystack = NULL;
 	    char *next;
+	    needle = kmalloc(BUFSIZE, GFP_ATOMIC);
+	    if (!needle)
+		goto match_fail;
 
 	    if (info->type == IPT_WEBSTR_HOST) {
-		haystack = htinfo.host;
-		hlen = htinfo.hostlen;
+		haystack = htinfo->host;
+		hlen = htinfo->hostlen;
 	    }
 	    else {
-		haystack = htinfo.url;
-		hlen = htinfo.urllen;
+		haystack = htinfo->url;
+		hlen = htinfo->urllen;
 	    }
 	    split(needle, wordlist, next, token) {
 		nlen = strlen(needle);
@@ -332,19 +339,20 @@ static bool match(const struct sk_buff *skb, struct xt_action_param *par)
 		    break;
 		}
 	    }
+	    kfree(needle);
 	}
 	else {		/* IPT_WEBSTR_CONTENT */
 	    int vicelen;
 
 	    if (opt & BLK_JAVA) {
 		vicelen = sizeof(".js") - 1;
-		if (strnicmp(htinfo.url + htinfo.urllen - vicelen, ".js", vicelen) == 0) {
+		if (strnicmp(htinfo->url + htinfo->urllen - vicelen, ".js", vicelen) == 0) {
 		    SPARQ_LOG("%s: MATCH....java\n", __FUNCTION__);
 		    found = 1;
 		    goto match_ret;
 		}
 		vicelen = sizeof(".class") - 1;
-		if (strnicmp(htinfo.url + htinfo.urllen - vicelen, ".class", vicelen) == 0) {
+		if (strnicmp(htinfo->url + htinfo->urllen - vicelen, ".class", vicelen) == 0) {
 		    SPARQ_LOG("%s: MATCH....java\n", __FUNCTION__);
 		    found = 1;
 		    goto match_ret;
@@ -352,20 +360,20 @@ static bool match(const struct sk_buff *skb, struct xt_action_param *par)
 	    }
 	    if (opt & BLK_ACTIVE){
 		vicelen = sizeof(".ocx") - 1;
-		if (strnicmp(htinfo.url + htinfo.urllen - vicelen, ".ocx", vicelen) == 0) {
+		if (strnicmp(htinfo->url + htinfo->urllen - vicelen, ".ocx", vicelen) == 0) {
 		    SPARQ_LOG("%s: MATCH....activex\n", __FUNCTION__);
 		    found = 1;
 		    goto match_ret;
 		}
 		vicelen = sizeof(".cab") - 1;
-		if (strnicmp(htinfo.url + htinfo.urllen - vicelen, ".cab", vicelen) == 0) {
+		if (strnicmp(htinfo->url + htinfo->urllen - vicelen, ".cab", vicelen) == 0) {
 		    SPARQ_LOG("%s: MATCH....activex\n", __FUNCTION__);
 		    found = 1;
 		    goto match_ret;
 		}
 	    }
 	    if (opt & BLK_PROXY){
-		if (strnicmp(htinfo.url + htinfo.hostlen, "http://", sizeof("http://") - 1) == 0) {
+		if (strnicmp(htinfo->url + htinfo->hostlen, "http://", sizeof("http://") - 1) == 0) {
 		    SPARQ_LOG("%s: MATCH....proxy\n", __FUNCTION__);
 		    found = 1;
 		    goto match_ret;
@@ -374,10 +382,14 @@ static bool match(const struct sk_buff *skb, struct xt_action_param *par)
 	}
 
 match_ret:
+	kfree(htinfo);
 	SPARQ_LOG("%s: Verdict =======> %s \n",__FUNCTION__
 		, found ? "DROP" : "ACCEPT");
 
 	return (found ^ info->invert);
+match_fail:
+	kfree(htinfo);
+	return 0;
 }
 
 
