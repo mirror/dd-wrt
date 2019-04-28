@@ -51,11 +51,7 @@ static struct hlist_head *fib_info_laddrhash;
 static unsigned int fib_info_hash_size;
 static unsigned int fib_info_cnt;
 
-#ifdef CONFIG_BASE_SMALL
-#define DEVINDEX_HASHBITS 2
-#else
-#define DEVINDEX_HASHBITS 8
-#endif
+#define DEVINDEX_HASHBITS CONFIG_BASE_SMALL ? 2 : 8
 #define DEVINDEX_HASHSIZE (1U << DEVINDEX_HASHBITS)
 static struct hlist_head fib_info_devhash[DEVINDEX_HASHSIZE];
 

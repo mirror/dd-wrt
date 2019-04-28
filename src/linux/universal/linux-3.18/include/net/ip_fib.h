@@ -65,11 +65,7 @@ struct fnhe_hash_bucket {
 	struct fib_nh_exception __rcu	*chain;
 };
 
-#ifdef CONFIG_BASE_SMALL
-#define FNHE_HASH_SHIFT		4
-#else
-#define FNHE_HASH_SHIFT		11
-#endif
+#define FNHE_HASH_SHIFT		CONFIG_BASE_SMALL ? 4 : 11
 #define FNHE_HASH_SIZE		(1 << FNHE_HASH_SHIFT)
 #define FNHE_RECLAIM_DEPTH	5
 

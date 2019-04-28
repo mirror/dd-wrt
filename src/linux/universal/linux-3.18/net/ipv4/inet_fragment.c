@@ -25,7 +25,7 @@
 #include <net/inet_frag.h>
 #include <net/inet_ecn.h>
 
-#ifdef CONFIG_BASE_SMALL
+#if CONFIG_BASE_SMALL == 1
 #define INETFRAGS_EVICT_BUCKETS   15
 #else
 #define INETFRAGS_EVICT_BUCKETS   128
