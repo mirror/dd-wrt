@@ -23,7 +23,9 @@ struct fou {
 	struct socket *sock;
 	u8 protocol;
 	u16 port;
+#ifdef CONFIG_IP_OFFLOAD
 	struct udp_offload udp_offloads;
+#endif
 	struct list_head list;
 	struct rcu_head rcu;
 };
@@ -143,7 +145,7 @@ static int fou_gro_complete(struct sk_buff *skb, int nhoff)
 	const struct net_offload **offloads;
 
 	udp_tunnel_gro_complete(skb, nhoff);
-
+#ifdef CONFIG_IP_OFFLOAD
 	rcu_read_lock();
 	offloads = NAPI_GRO_CB(skb)->is_ipv6 ? inet6_offloads : inet_offloads;
 	ops = rcu_dereference(offloads[proto]);
@@ -154,7 +156,7 @@ static int fou_gro_complete(struct sk_buff *skb, int nhoff)
 
 out_unlock:
 	rcu_read_unlock();
-
+#endif
 	return err;
 }
 
@@ -241,6 +243,7 @@ static struct sk_buff **gue_gro_receive(struct sk_buff **head,
 out_unlock:
 	rcu_read_unlock();
 out:
+#endif
 	NAPI_GRO_CB(skb)->flush |= flush;
 
 	return pp;
@@ -254,6 +257,7 @@ static int gue_gro_complete(struct sk_buff *skb, int nhoff)
 	unsigned int guehlen;
 	u8 proto;
 	int err = -ENOENT;
+#ifdef CONFIG_IP_OFFLOAD
 
 	proto = guehdr->next_hdr;
 
@@ -269,6 +273,7 @@ static int gue_gro_complete(struct sk_buff *skb, int nhoff)
 
 out_unlock:
 	rcu_read_unlock();
+#endif
 	return err;
 }
 
@@ -295,7 +300,9 @@ static void fou_release(struct fou *fou)
 	struct socket *sock = fou->sock;
 	struct sock *sk = sock->sk;
 
+#ifdef CONFIG_IP_OFFLOAD
 	udp_del_offload(&fou->udp_offloads);
+#endif
 
 	list_del(&fou->list);
 
@@ -311,21 +318,23 @@ static int fou_encap_init(struct sock *sk, struct fou *fou, struct fou_cfg *cfg)
 {
 	udp_sk(sk)->encap_rcv = fou_udp_recv;
 	fou->protocol = cfg->protocol;
+#ifdef CONFIG_IP_OFFLOAD
 	fou->udp_offloads.callbacks.gro_receive = fou_gro_receive;
 	fou->udp_offloads.callbacks.gro_complete = fou_gro_complete;
 	fou->udp_offloads.port = cfg->udp_config.local_udp_port;
 	fou->udp_offloads.ipproto = cfg->protocol;
-
+#endif
 	return 0;
 }
 
 static int gue_encap_init(struct sock *sk, struct fou *fou, struct fou_cfg *cfg)
 {
 	udp_sk(sk)->encap_rcv = gue_udp_recv;
+#ifdef CONFIG_IP_OFFLOAD
 	fou->udp_offloads.callbacks.gro_receive = gue_gro_receive;
 	fou->udp_offloads.callbacks.gro_complete = gue_gro_complete;
 	fou->udp_offloads.port = cfg->udp_config.local_udp_port;
-
+#endif
 	return 0;
 }
 
@@ -381,7 +390,9 @@ static int fou_create(struct net *net, struct fou_cfg *cfg,
 	sk->sk_allocation = GFP_ATOMIC;
 
 	if (cfg->udp_config.family == AF_INET) {
+#ifdef CONFIG_IP_OFFLOAD
 		err = udp_add_offload(&fou->udp_offloads);
+#endif
 		if (err)
 			goto error;
 	}
@@ -412,7 +423,9 @@ static int fou_destroy(struct net *net, struct fou_cfg *cfg)
 	spin_lock(&fou_lock);
 	list_for_each_entry(fou, &fou_list, list) {
 		if (fou->port == port) {
+#ifdef CONFIG_IP_OFFLOAD
 			udp_del_offload(&fou->udp_offloads);
+#endif
 			fou_release(fou);
 			err = 0;
 			break;
