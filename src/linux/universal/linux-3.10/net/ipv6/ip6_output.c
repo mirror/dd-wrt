@@ -545,15 +545,18 @@ static void ip6_copy_metadata(struct sk_buff *to, struct sk_buff *from)
 static void ipv6_select_ident(struct frag_hdr *fhdr, struct rt6_info *rt)
 {
 	static u32 ip6_idents_hashrnd __read_mostly;
+	static u32 ip6_idents_hashrnd_extra __read_mostly;
 	static bool hashrnd_initialized = false;
 	u32 hash, id;
 
 	if (unlikely(!hashrnd_initialized)) {
 		hashrnd_initialized = true;
 		get_random_bytes(&ip6_idents_hashrnd, sizeof(ip6_idents_hashrnd));
+		get_random_bytes(&ip6_idents_hashrnd_extra, sizeof(ip6_idents_hashrnd_extra));
 	}
 	hash = __ipv6_addr_jhash(&rt->rt6i_dst.addr, ip6_idents_hashrnd);
 	hash = __ipv6_addr_jhash(&rt->rt6i_src.addr, hash);
+	hash = jhash_1word(hash, ip6_idents_hashrnd_extra);
 
 	id = ip_idents_reserve(hash, 1);
 	fhdr->identification = htonl(id);
