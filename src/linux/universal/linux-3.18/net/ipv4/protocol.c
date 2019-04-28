@@ -45,6 +45,7 @@ EXPORT_SYMBOL(inet_add_protocol);
 
 #ifdef CONFIG_IP_OFFLOAD
 const struct net_offload __rcu *inet_offloads[MAX_INET_PROTOS] __read_mostly;
+EXPORT_SYMBOL(inet_offloads);
 
 int inet_add_offload(const struct net_offload *prot, unsigned char protocol)
 {
