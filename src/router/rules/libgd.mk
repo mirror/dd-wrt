@@ -9,7 +9,7 @@ libgd-clean:
 	make -C libgd clean
 	
 libgd-configure: libpng
-	cd libgd && ./configure --host=$(ARCH)-linux-uclibc  \
+	cd libgd && autoreconf -fi && ./configure --host=$(ARCH)-linux-uclibc  \
 	--with-jpeg=$(TOP)/minidlna/jpeg-8 \
 	--without-xpm \
 	--without-x \
