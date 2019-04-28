@@ -237,6 +237,8 @@ static void __br_handle_local_finish(struct sk_buff *skb)
 /* note: already called with rcu_read_lock */
 static int br_handle_local_finish(struct net *net, struct sock *sk, struct sk_buff *skb)
 {
+	struct net_bridge_port *p = br_port_get_rcu(skb->dev);
+
 	if (p->state != BR_STATE_DISABLED)
 		__br_handle_local_finish(skb);
 
