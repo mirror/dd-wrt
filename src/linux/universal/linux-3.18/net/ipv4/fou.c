@@ -172,6 +172,7 @@ static struct sk_buff **gue_gro_receive(struct sk_buff **head,
 	unsigned int hlen, guehlen;
 	unsigned int off;
 	int flush = 1;
+#ifdef CONFIG_IP_OFFLOAD
 
 	off = skb_gro_offset(skb);
 	hlen = off + sizeof(*guehdr);
