@@ -880,7 +880,7 @@ static int emac_probe(struct platform_device *pdev)
 
 	ndev->netdev_ops = &emac_netdev_ops;
 	ndev->watchdog_timeo = msecs_to_jiffies(watchdog);
-	ndev->ethtool_ops = &emac_ethtool_ops;
+	SET_ETHTOOL_OPS(ndev, &emac_ethtool_ops);
 
 	platform_set_drvdata(pdev, ndev);
 

@@ -1812,7 +1812,7 @@ pasemi_mac_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	/* 1500 MTU + ETH_HLEN + VLAN_HLEN + 2 64B cachelines */
 	mac->bufsz = dev->mtu + ETH_HLEN + ETH_FCS_LEN + LOCAL_SKB_ALIGN + 128;
 
-	dev->ethtool_ops = &pasemi_mac_ethtool_ops;
+	SET_ETHTOOL_OPS(dev, &pasemi_mac_ethtool_ops);
 
 	if (err)
 		goto out;

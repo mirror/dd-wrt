@@ -480,7 +480,7 @@ static int epic_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 
 	/* The Epic-specific entries in the device structure. */
 	dev->netdev_ops = &epic_netdev_ops;
-	dev->ethtool_ops = &netdev_ethtool_ops;
+	SET_ETHTOOL_OPS(dev, &netdev_ethtool_ops);
 	dev->watchdog_timeo = TX_TIMEOUT;
 	netif_napi_add(dev, &ep->napi, epic_poll, 64);
 

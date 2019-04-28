@@ -501,6 +501,7 @@ config NET_CLS_CGROUP
 config NET_CLS_BPF
 	tristate "BPF-based classifier"
 	select NET_CLS
+	select LPF_FILTER
 	---help---
 	  If you say Y here, you will be able to classify packets based on
 	  programmable BPF (JIT'ed) filters as an alternative to ematches.

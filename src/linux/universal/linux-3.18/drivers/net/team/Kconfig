@@ -64,6 +64,7 @@ config NET_TEAM_MODE_ACTIVEBACKUP
 
 config NET_TEAM_MODE_LOADBALANCE
 	tristate "Load-balance mode support"
+	select LPF_FILTER
 	depends on NET_TEAM
 	---help---
 	  This mode provides load balancing functionality. Tx port selection

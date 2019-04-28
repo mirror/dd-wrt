@@ -102,8 +102,18 @@ extern const struct inet6_protocol __rcu *inet6_protos[MAX_INET_PROTOS];
 
 int inet_add_protocol(const struct net_protocol *prot, unsigned char num);
 int inet_del_protocol(const struct net_protocol *prot, unsigned char num);
+#ifdef CONFIG_IP_OFFLOAD
 int inet_add_offload(const struct net_offload *prot, unsigned char num);
 int inet_del_offload(const struct net_offload *prot, unsigned char num);
+#else
+static inline int
+inet_add_offload(const struct net_offload *prot, unsigned char num)
+{ return 0; }
+static inline int
+inet_del_offload(const struct net_offload *prot, unsigned char num)
+{ return 0; }
+#endif
+
 void inet_register_protosw(struct inet_protosw *p);
 void inet_unregister_protosw(struct inet_protosw *p);
 

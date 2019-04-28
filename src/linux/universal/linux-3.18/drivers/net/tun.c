@@ -1414,7 +1414,7 @@ static void tun_setup(struct net_device *dev)
 	tun->owner = INVALID_UID;
 	tun->group = INVALID_GID;
 
-	dev->ethtool_ops = &tun_ethtool_ops;
+	SET_ETHTOOL_OPS(dev, &tun_ethtool_ops);
 	dev->destructor = tun_free_netdev;
 }
 

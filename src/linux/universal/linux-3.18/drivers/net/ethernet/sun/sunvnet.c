@@ -1384,7 +1384,7 @@ static struct vnet *vnet_new(const u64 *local_mac)
 	vp->local_mac = *local_mac;
 
 	dev->netdev_ops = &vnet_ops;
-	dev->ethtool_ops = &vnet_ethtool_ops;
+	SET_ETHTOOL_OPS(dev, &vnet_ethtool_ops);
 	dev->watchdog_timeo = VNET_TX_TIMEOUT;
 
 	err = register_netdev(dev);

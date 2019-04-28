@@ -698,7 +698,7 @@ static int corkscrew_setup(struct net_device *dev, int ioaddr,
 	/* The 3c51x-specific entries in the device structure. */
 	dev->netdev_ops = &netdev_ops;
 	dev->watchdog_timeo = (400 * HZ) / 1000;
-	dev->ethtool_ops = &netdev_ethtool_ops;
+	SET_ETHTOOL_OPS(dev, &netdev_ethtool_ops);
 
 	return register_netdev(dev);
 }

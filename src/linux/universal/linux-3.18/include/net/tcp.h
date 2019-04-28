@@ -244,7 +244,11 @@ extern int sysctl_tcp_retries1;
 extern int sysctl_tcp_retries2;
 extern int sysctl_tcp_orphan_retries;
 extern int sysctl_tcp_syncookies;
+#ifdef CONFIG_TCP_FASTOPEN
 extern int sysctl_tcp_fastopen;
+#else
+#define sysctl_tcp_fastopen 0
+#endif
 extern int sysctl_tcp_retrans_collapse;
 extern int sysctl_tcp_stdurg;
 extern int sysctl_tcp_rfc1337;
@@ -411,6 +415,7 @@ int tcp_child_process(struct sock *parent, struct sock *child,
 		      struct sk_buff *skb);
 void tcp_enter_loss(struct sock *sk);
 void tcp_clear_retrans(struct tcp_sock *tp);
+#ifdef CONFIG_TCP_METRICS
 void tcp_update_metrics(struct sock *sk);
 void tcp_init_metrics(struct sock *sk);
 void tcp_metrics_init(void);
@@ -419,6 +424,19 @@ bool tcp_peer_is_proven(struct request_sock *req, struct dst_entry *dst,
 bool tcp_remember_stamp(struct sock *sk);
 bool tcp_tw_remember_stamp(struct inet_timewait_sock *tw);
 void tcp_fetch_timewait_stamp(struct sock *sk, struct dst_entry *dst);
+#else
+static inline void tcp_update_metrics(struct sock *sk) {}
+static inline void tcp_init_metrics(struct sock *sk) {}
+static inline void tcp_metrics_init(void) {}
+static inline bool tcp_peer_is_proven(struct request_sock *req,
+				      struct dst_entry *dst,
+				      bool paws_check, bool timestamps) { return false; }
+static inline bool tcp_remember_stamp(struct sock *sk) { return false; }
+static inline bool
+tcp_tw_remember_stamp(struct inet_timewait_sock *tw) { return false; }
+static inline void
+tcp_fetch_timewait_stamp(struct sock *sk, struct dst_entry *dst) {}
+#endif
 void tcp_disable_fack(struct tcp_sock *tp);
 void tcp_close(struct sock *sk, long timeout);
 void tcp_init_sock(struct sock *sk);
@@ -1340,11 +1358,21 @@ int tcp_md5_hash_key(struct tcp_md5sig_pool *hp,
 		     const struct tcp_md5sig_key *key);
 
 /* From tcp_fastopen.c */
+#ifdef CONFIG_TCP_METRICS
 void tcp_fastopen_cache_get(struct sock *sk, u16 *mss,
 			    struct tcp_fastopen_cookie *cookie, int *syn_loss,
 			    unsigned long *last_syn_loss);
 void tcp_fastopen_cache_set(struct sock *sk, u16 mss,
 			    struct tcp_fastopen_cookie *cookie, bool syn_lost);
+#else
+static inline void
+tcp_fastopen_cache_get(struct sock *sk, u16 *mss,
+		       struct tcp_fastopen_cookie *cookie, int *syn_loss,
+		       unsigned long *last_syn_loss) {}
+static inline void
+tcp_fastopen_cache_set(struct sock *sk, u16 mss,
+		       struct tcp_fastopen_cookie *cookie, bool syn_lost) {}
+#endif
 struct tcp_fastopen_request {
 	/* Fast Open cookie. Size 0 means a cookie request */
 	struct tcp_fastopen_cookie	cookie;
@@ -1352,7 +1380,12 @@ struct tcp_fastopen_request {
 	size_t				size;
 	int				copied;	/* queued in tcp_connect() */
 };
+
+#ifdef CONFIG_TCP_FASTOPEN
 void tcp_free_fastopen_req(struct tcp_sock *tp);
+#else
+static inline void tcp_free_fastopen_req(struct tcp_sock *tp) {}
+#endif
 
 extern struct tcp_fastopen_context __rcu *tcp_fastopen_ctx;
 int tcp_fastopen_reset_cipher(void *key, unsigned int len);
@@ -1591,7 +1624,12 @@ void tcp_v4_destroy_sock(struct sock *sk);
 struct sk_buff *tcp_gso_segment(struct sk_buff *skb,
 				netdev_features_t features);
 struct sk_buff **tcp_gro_receive(struct sk_buff **head, struct sk_buff *skb);
+#ifdef CONFIG_IP_OFFLOAD
 int tcp_gro_complete(struct sk_buff *skb);
+#else
+/* For the benefit of one driver who really shouldn't be using this. */
+static inline int tcp_gro_complete(struct sk_buff *skb) { return -EIO; }
+#endif
 
 void __tcp_v4_send_check(struct sk_buff *skb, __be32 saddr, __be32 daddr);
 

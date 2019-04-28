@@ -61,6 +61,10 @@ struct inet_frag_queue {
 	struct netns_frags	*net;
 };
 
+#ifdef CONFIG_BASE_SMALL
+#define INETFRAGS_HASHSZ	16
+#define INETFRAGS_MAXDEPTH	32
+#else
 #define INETFRAGS_HASHSZ	1024
 
 /* averaged:
@@ -69,6 +73,8 @@ struct inet_frag_queue {
  *	       struct frag_queue))
  */
 #define INETFRAGS_MAXDEPTH	128
+
+#endif
 
 struct inet_frag_bucket {
 	struct hlist_head	chain;

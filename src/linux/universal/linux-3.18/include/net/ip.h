@@ -203,6 +203,7 @@ void ip_send_unicast_reply(struct sock *sk, struct sk_buff *skb,
 #define NET_ADD_STATS_BH(net, field, adnd) SNMP_ADD_STATS_BH((net)->mib.net_statistics, field, adnd)
 #define NET_ADD_STATS_USER(net, field, adnd) SNMP_ADD_STATS_USER((net)->mib.net_statistics, field, adnd)
 
+#ifdef CONFIG_PROC_FS
 unsigned long snmp_fold_field(void __percpu *mib, int offt);
 #if BITS_PER_LONG==32
 u64 snmp_fold_field64(void __percpu *mib, int offt, size_t sync_off);
@@ -222,6 +223,12 @@ static inline int inet_is_local_reserved_port(struct net *net, int port)
 		return 0;
 	return test_bit(port, net->ipv4.sysctl_local_reserved_ports);
 }
+#else
+#define snmp_mib_init(a,b,c) ({ 0; })
+#define snmp_mib_free(x) do {} while (0)
+#define snmp_fold_field(a, b) ({ 0; })
+#define snmp_fold_field64(a, b, c) ({ 0; })
+#endif
 
 static inline bool sysctl_dev_name_is_allowed(const char *name)
 {
@@ -458,7 +465,12 @@ static __inline__ void inet_reset_saddr(struct sock *sk)
 
 #endif
 
+#ifdef CONFIG_INET_RAW
 bool ip_call_ra_chain(struct sk_buff *skb);
+#else
+static inline bool ip_call_ra_chain(struct sk_buff *skb)
+{ return false; }
+#endif
 
 /*
  *	Functions provided by ip_fragment.c
@@ -555,6 +567,8 @@ extern int sysctl_icmp_msgs_burst;
 
 #ifdef CONFIG_PROC_FS
 int ip_misc_proc_init(void);
+#else
+static inline int ip_misc_proc_init(void) { return 0; }
 #endif
 
 #endif	/* _IP_H */

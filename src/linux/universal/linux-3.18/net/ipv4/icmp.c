@@ -1040,6 +1040,7 @@ void icmp_err(struct sk_buff *skb, u32 info)
 		return;
 	}
 
+	/* RED-PEN dead code? the if above will eat all. */
 	if (type == ICMP_DEST_UNREACH && code == ICMP_FRAG_NEEDED)
 		ipv4_update_pmtu(skb, net, info, 0, 0, IPPROTO_ICMP, 0);
 	else if (type == ICMP_REDIRECT)
@@ -1142,8 +1143,15 @@ static int __net_init icmp_sk_init(struct net *net)
 	for_each_possible_cpu(i) {
 		struct sock *sk;
 
+		/*
+		 * Use UDP here. We only use rudimentary
+		 * functionality of the socket, and UDP
+		 * provides it for us.
+		 * This avoids a dependency on the optional
+		 * RAW sockets
+		 */
 		err = inet_ctl_sock_create(&sk, PF_INET,
-					   SOCK_RAW, IPPROTO_ICMP, net);
+					   SOCK_DGRAM, 0, net);
 		if (err < 0)
 			goto fail;
 

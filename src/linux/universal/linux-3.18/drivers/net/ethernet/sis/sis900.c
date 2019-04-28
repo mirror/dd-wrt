@@ -497,7 +497,7 @@ static int sis900_probe(struct pci_dev *pci_dev,
 	/* The SiS900-specific entries in the device structure. */
 	net_dev->netdev_ops = &sis900_netdev_ops;
 	net_dev->watchdog_timeo = TX_TIMEOUT;
-	net_dev->ethtool_ops = &sis900_ethtool_ops;
+	SET_ETHTOOL_OPS(net_dev, &sis900_ethtool_ops);
 
 	if (sis900_debug > 0)
 		sis_priv->msg_enable = sis900_debug;

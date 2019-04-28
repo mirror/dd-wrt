@@ -825,7 +825,7 @@ static int tc35815_init_one(struct pci_dev *pdev,
 
 	/* Initialize the device structure. */
 	dev->netdev_ops = &tc35815_netdev_ops;
-	dev->ethtool_ops = &tc35815_ethtool_ops;
+	SET_ETHTOOL_OPS(dev, &tc35815_ethtool_ops);
 	dev->watchdog_timeo = TC35815_TX_TIMEOUT;
 	netif_napi_add(dev, &lp->napi, tc35815_poll, NAPI_WEIGHT);
 

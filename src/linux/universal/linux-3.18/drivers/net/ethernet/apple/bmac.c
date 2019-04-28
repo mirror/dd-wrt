@@ -1301,7 +1301,7 @@ static int bmac_probe(struct macio_dev *mdev, const struct of_device_id *match)
 	bmwrite(dev, INTDISABLE, DisableAll);
 
 	dev->netdev_ops = &bmac_netdev_ops;
-	dev->ethtool_ops = &bmac_ethtool_ops;
+	SET_ETHTOOL_OPS(dev, &bmac_ethtool_ops);
 
 	bmac_get_station_address(dev, addr);
 	if (bmac_verify_checksum(dev) != 0)

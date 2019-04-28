@@ -2579,7 +2579,7 @@ static void gelic_wl_setup_netdev_ops(struct net_device *netdev)
 	BUG_ON(!wl);
 	netdev->watchdog_timeo = GELIC_NET_WATCHDOG_TIMEOUT;
 
-	netdev->ethtool_ops = &gelic_wl_ethtool_ops;
+	SET_ETHTOOL_OPS(netdev, &gelic_wl_ethtool_ops);
 	netdev->netdev_ops = &gelic_wl_netdevice_ops;
 	netdev->wireless_data = &wl->wireless_data;
 	netdev->wireless_handlers = &gelic_wl_wext_handler_def;

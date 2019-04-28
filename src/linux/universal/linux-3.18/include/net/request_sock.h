@@ -168,8 +168,13 @@ int reqsk_queue_alloc(struct request_sock_queue *queue,
 
 void __reqsk_queue_destroy(struct request_sock_queue *queue);
 void reqsk_queue_destroy(struct request_sock_queue *queue);
+#ifdef CONFIG_TCP_FASTOPEN
 void reqsk_fastopen_remove(struct sock *sk, struct request_sock *req,
 			   bool reset);
+#else
+static inline void reqsk_fastopen_remove(struct sock *sk, struct request_sock *req,
+			   bool reset) {}
+#endif
 
 static inline struct request_sock *
 	reqsk_queue_yank_acceptq(struct request_sock_queue *queue)

@@ -201,6 +201,7 @@ static int proc_allowed_congestion_control(struct ctl_table *ctl,
 	return ret;
 }
 
+#ifdef CONFIG_TCP_FASTOPEN
 static int proc_tcp_fastopen_key(struct ctl_table *ctl, int write,
 				 void __user *buffer, size_t *lenp,
 				 loff_t *ppos)
@@ -255,6 +256,7 @@ bad_key:
 	kfree(tbl.data);
 	return ret;
 }
+#endif
 
 static struct ctl_table ipv4_table[] = {
 	{
@@ -390,6 +392,7 @@ static struct ctl_table ipv4_table[] = {
 		.proc_handler	= proc_dointvec
 	},
 #endif
+#ifdef CONFIG_TCP_FASTOPEN
 	{
 		.procname	= "tcp_fastopen",
 		.data		= &sysctl_tcp_fastopen,
@@ -403,6 +406,7 @@ static struct ctl_table ipv4_table[] = {
 		.maxlen		= ((TCP_FASTOPEN_KEY_LENGTH * 2) + 10),
 		.proc_handler	= proc_tcp_fastopen_key,
 	},
+#endif
 	{
 		.procname	= "tcp_tw_recycle",
 		.data		= &tcp_death_row.sysctl_tw_recycle,
@@ -445,6 +449,7 @@ static struct ctl_table ipv4_table[] = {
 		.mode		= 0644,
 		.proc_handler	= proc_dointvec
 	},
+#ifdef CONFIG_IP_MULTICAST
 	{
 		.procname	= "igmp_max_msf",
 		.data		= &sysctl_igmp_max_msf,
@@ -469,6 +474,7 @@ static struct ctl_table ipv4_table[] = {
 		.mode		= 0644,
 		.proc_handler	= proc_dointvec
 	},
+#endif
 	{
 		.procname	= "inet_peer_minttl",
 		.data		= &inet_peer_minttl,
@@ -578,6 +584,7 @@ static struct ctl_table ipv4_table[] = {
 		.mode		= 0644,
 		.proc_handler	= proc_dointvec
 	},
+#ifdef CONFIG_TCP_METRICS
 	{
 		.procname	= "tcp_no_metrics_save",
 		.data		= &sysctl_tcp_nometrics_save,
@@ -585,6 +592,7 @@ static struct ctl_table ipv4_table[] = {
 		.mode		= 0644,
 		.proc_handler	= proc_dointvec,
 	},
+#endif
 	{
 		.procname	= "tcp_moderate_rcvbuf",
 		.data		= &sysctl_tcp_moderate_rcvbuf,

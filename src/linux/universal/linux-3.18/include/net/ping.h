@@ -71,7 +71,6 @@ void ping_unhash(struct sock *sk);
 int  ping_init_sock(struct sock *sk);
 void ping_close(struct sock *sk, long timeout);
 int  ping_bind(struct sock *sk, struct sockaddr *uaddr, int addr_len);
-void ping_err(struct sk_buff *skb, int offset, u32 info);
 int  ping_getfrag(void *from, char *to, int offset, int fraglen, int odd,
 		  struct sk_buff *);
 
@@ -82,7 +81,6 @@ int  ping_common_sendmsg(int family, struct msghdr *msg, size_t len,
 int  ping_v6_sendmsg(struct kiocb *iocb, struct sock *sk, struct msghdr *msg,
 		     size_t len);
 int  ping_queue_rcv_skb(struct sock *sk, struct sk_buff *skb);
-void ping_rcv(struct sk_buff *skb);
 
 #ifdef CONFIG_PROC_FS
 struct ping_seq_afinfo {
@@ -100,12 +98,21 @@ void ping_seq_stop(struct seq_file *seq, void *v);
 int ping_proc_register(struct net *net, struct ping_seq_afinfo *afinfo);
 void ping_proc_unregister(struct net *net, struct ping_seq_afinfo *afinfo);
 
-int __init ping_proc_init(void);
-void ping_proc_exit(void);
 #endif
 
+#ifdef CONFIG_IP_PING
+void ping_rcv(struct sk_buff *skb);
+void ping_err(struct sk_buff *skb, int offset, u32 info);
 void __init ping_init(void);
 int  __init pingv6_init(void);
 void pingv6_exit(void);
+#else
+static inline void ping_init(void) {}
+static inline int pingv6_init(void) { return 0; }
+static inline void pingv6_exit(void) { }
+static inline void ping_err(struct sk_buff *skb, int offset, u32 info) {}
+static inline void ping_rcv(struct sk_buff *skb) {}
+#endif
+
 
 #endif /* _PING_H */

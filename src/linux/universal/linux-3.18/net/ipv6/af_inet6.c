@@ -719,6 +719,7 @@ static void ipv6_packet_cleanup(void)
 	dev_remove_pack(&ipv6_packet_type);
 }
 
+#ifdef CONFIG_PROC_FS
 static int __net_init ipv6_init_mibs(struct net *net)
 {
 	int i;
@@ -768,6 +769,10 @@ static void ipv6_cleanup_mibs(struct net *net)
 	free_percpu(net->mib.icmpv6_statistics);
 	kfree(net->mib.icmpv6msg_statistics);
 }
+#else
+static inline int __net_init ipv6_init_mibs(struct net *net) { return 0; }
+static inline void ipv6_cleanup_mibs(struct net *net) {}
+#endif
 
 static int __net_init inet6_net_init(struct net *net)
 {
@@ -850,6 +855,9 @@ static int __init inet6_init(void)
 	if (err)
 		goto out;
 
+	/* We MUST register UDP sockets before we create the ICMP6,
+	 * IGMP6, or NDISC control sockets.
+	 */
 	err = proto_register(&udpv6_prot, 1);
 	if (err)
 		goto out_unregister_tcp_proto;
@@ -858,20 +866,24 @@ static int __init inet6_init(void)
 	if (err)
 		goto out_unregister_udp_proto;
 
+#ifdef CONFIG_INET_RAW
 	err = proto_register(&rawv6_prot, 1);
 	if (err)
 		goto out_unregister_udplite_proto;
+#endif
 
+#ifdef CONFIG_IP_PING
 	err = proto_register(&pingv6_prot, 1);
 	if (err)
-		goto out_unregister_ping_proto;
+		goto out_unregister_raw_proto;
+#endif
 
 	/* We MUST register RAW sockets before we create the ICMP6,
 	 * IGMP6, or NDISC control sockets.
 	 */
 	err = rawv6_init();
 	if (err)
-		goto out_unregister_raw_proto;
+		goto out_unregister_ping_proto;
 
 	/* Register the family here so that the init calls below will
 	 * be able to create sockets. (?? is this dangerous ??)
@@ -1023,10 +1035,14 @@ register_pernet_fail:
 out_sock_register_fail:
 	rawv6_exit();
 out_unregister_ping_proto:
+#ifdef CONFIG_IP_PING
 	proto_unregister(&pingv6_prot);
 out_unregister_raw_proto:
+#endif
+#ifdef CONFIG_INET_RAW
 	proto_unregister(&rawv6_prot);
 out_unregister_udplite_proto:
+#endif
 	proto_unregister(&udplitev6_prot);
 out_unregister_udp_proto:
 	proto_unregister(&udpv6_prot);
