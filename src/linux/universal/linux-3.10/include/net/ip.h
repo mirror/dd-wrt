@@ -427,7 +427,12 @@ extern int ip_forward(struct sk_buff *skb);
  
 extern void ip_options_build(struct sk_buff *skb, struct ip_options *opt,
 			     __be32 daddr, struct rtable *rt, int is_frag);
-extern int ip_options_echo(struct ip_options *dopt, struct sk_buff *skb);
+int __ip_options_echo(struct ip_options *dopt, struct sk_buff *skb,
+		      const struct ip_options *sopt);
+static inline int ip_options_echo(struct ip_options *dopt, struct sk_buff *skb)
+{
+	return __ip_options_echo(dopt, skb, &IPCB(skb)->opt);
+}
 extern void ip_options_fragment(struct sk_buff *skb);
 extern int ip_options_compile(struct net *net,
 			      struct ip_options *opt, struct sk_buff *skb);
