@@ -4587,7 +4587,7 @@ void show_authtable(webs_t wp, char *prefix, int show80211x)
 	struct pair s_cryptopair[] = {
 		{ "CCMP-128 (AES)", "ccmp", noad, wpaauth, alwaystrue },
 		{ "CCMP-256", "ccmp-256", has_ccmp_256, wpaauth, alwaystrue },
-		{ "TKIP", "tkip", noad, wpaauth, alwaystrue },
+		{ "TKIP", "tkip", noad, wpaauth, no_suiteb_no_wpa3 },
 		{ "GCMP-128", "gcmp", has_ad, wpaauth, alwaystrue },
 		{ "GCMP-128", "gcmp", has_gcmp_128, wpaauth, alwaystrue, suiteb },
 		{ "GCMP-256", "gcmp-256", has_gcmp_256, wpaauth, alwaystrue, suiteb192 },
