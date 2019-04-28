@@ -1581,7 +1581,7 @@ static int ks8851_probe(struct platform_device *pdev)
 	spin_lock_init(&ks->statelock);
 
 	netdev->netdev_ops = &ks_netdev_ops;
-	netdev->ethtool_ops = &ks_ethtool_ops;
+	SET_ETHTOOL_OPS(netdev, &ks_ethtool_ops);
 
 	/* setup mii state */
 	ks->mii.dev             = netdev;

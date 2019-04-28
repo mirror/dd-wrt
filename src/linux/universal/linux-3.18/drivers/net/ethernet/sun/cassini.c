@@ -5103,7 +5103,7 @@ static int cas_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 		skb_queue_head_init(&cp->rx_flows[i]);
 
 	dev->netdev_ops = &cas_netdev_ops;
-	dev->ethtool_ops = &cas_ethtool_ops;
+	SET_ETHTOOL_OPS(dev, &cas_ethtool_ops);
 	dev->watchdog_timeo = CAS_TX_TIMEOUT;
 
 #ifdef USE_NAPI

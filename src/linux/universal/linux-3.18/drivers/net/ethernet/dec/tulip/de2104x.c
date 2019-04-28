@@ -1985,7 +1985,7 @@ static int de_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 
 	dev->netdev_ops = &de_netdev_ops;
 	SET_NETDEV_DEV(dev, &pdev->dev);
-	dev->ethtool_ops = &de_ethtool_ops;
+	SET_ETHTOOL_OPS(dev, &de_ethtool_ops);
 	dev->watchdog_timeo = TX_TIMEOUT;
 
 	de = netdev_priv(dev);

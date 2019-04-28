@@ -88,6 +88,7 @@ config INET6_IPCOMP
 config IPV6_MIP6
 	tristate "IPv6: Mobility"
 	select XFRM
+	select INET_RAW
 	---help---
 	  Support for IPv6 Mobility described in RFC 3775.
 

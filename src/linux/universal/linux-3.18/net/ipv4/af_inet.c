@@ -232,7 +232,9 @@ int inet_listen(struct socket *sock, int backlog)
 			if (err)
 				goto out;
 
+#ifdef CONFIG_TCP_FASTOPEN
 			tcp_fastopen_init_key_once(true);
+#endif
 		}
 		err = inet_csk_listen_start(sk, backlog);
 		if (err)
@@ -957,6 +959,7 @@ const struct proto_ops inet_dgram_ops = {
 };
 EXPORT_SYMBOL(inet_dgram_ops);
 
+#ifdef CONFIG_INET_RAW
 /*
  * For SOCK_RAW sockets; should be the same as inet_dgram_ops but without
  * udp_poll
@@ -986,6 +989,7 @@ static const struct proto_ops inet_sockraw_ops = {
 	.compat_ioctl	   = inet_compat_ioctl,
 #endif
 };
+#endif
 
 static const struct net_proto_family inet_family_ops = {
 	.family = PF_INET,
@@ -1014,7 +1018,7 @@ static struct inet_protosw inetsw_array[] =
 		.ops =        &inet_dgram_ops,
 		.flags =      INET_PROTOSW_PERMANENT,
        },
-
+#ifdef CONFIG_IP_PING
        {
 		.type =       SOCK_DGRAM,
 		.protocol =   IPPROTO_ICMP,
@@ -1022,7 +1026,9 @@ static struct inet_protosw inetsw_array[] =
 		.ops =        &inet_sockraw_ops,
 		.flags =      INET_PROTOSW_REUSE,
        },
+#endif
 
+#ifdef CONFIG_INET_RAW
        {
 	       .type =       SOCK_RAW,
 	       .protocol =   IPPROTO_IP,	/* wild card */
@@ -1030,6 +1036,7 @@ static struct inet_protosw inetsw_array[] =
 	       .ops =        &inet_sockraw_ops,
 	       .flags =      INET_PROTOSW_REUSE,
        }
+#endif
 };
 
 #define INETSW_ARRAY_LEN ARRAY_SIZE(inetsw_array)
@@ -1204,6 +1211,37 @@ int inet_sk_rebuild_header(struct sock *sk)
 	return err;
 }
 EXPORT_SYMBOL(inet_sk_rebuild_header);
+
+#define SECONDS_PER_DAY	86400
+
+/* inet_current_timestamp - Return IP network timestamp
+ *
+ * Return milliseconds since midnight in network byte order.
+ */
+__be32 inet_current_timestamp(void)
+{
+	u32 secs;
+	u32 msecs;
+	struct timespec64 ts;
+
+	ktime_get_real_ts64(&ts);
+
+	/* Get secs since midnight. */
+	(void)div_u64_rem(ts.tv_sec, SECONDS_PER_DAY, &secs);
+	/* Convert to msecs. */
+	msecs = secs * MSEC_PER_SEC;
+	/* Convert nsec to msec. */
+	msecs += (u32)ts.tv_nsec / NSEC_PER_MSEC;
+
+	/* Convert to network byte order. */
+	return htons(msecs);
+}
+EXPORT_SYMBOL(inet_current_timestamp);
+
+
+#ifdef CONFIG_IP_OFFLOAD
+/* Should move to a new file */
+
 
 static struct sk_buff *inet_gso_segment(struct sk_buff *skb,
 					netdev_features_t features)
@@ -1408,42 +1446,18 @@ static struct sk_buff **ipip_gro_receive(struct sk_buff **head,
 	return inet_gro_receive(head, skb);
 }
 
-#define SECONDS_PER_DAY	86400
-
-/* inet_current_timestamp - Return IP network timestamp
- *
- * Return milliseconds since midnight in network byte order.
- */
-__be32 inet_current_timestamp(void)
-{
-	u32 secs;
-	u32 msecs;
-	struct timespec64 ts;
-
-	ktime_get_real_ts64(&ts);
-
-	/* Get secs since midnight. */
-	(void)div_u64_rem(ts.tv_sec, SECONDS_PER_DAY, &secs);
-	/* Convert to msecs. */
-	msecs = secs * MSEC_PER_SEC;
-	/* Convert nsec to msec. */
-	msecs += (u32)ts.tv_nsec / NSEC_PER_MSEC;
-
-	/* Convert to network byte order. */
-	return htons(msecs);
-}
-EXPORT_SYMBOL(inet_current_timestamp);
-
+#endif
 int inet_recv_error(struct sock *sk, struct msghdr *msg, int len, int *addr_len)
 {
 	if (sk->sk_family == AF_INET)
 		return ip_recv_error(sk, msg, len, addr_len);
-#if IS_ENABLED(CONFIG_IPV6)
+#if IS_ENABLED(CONFIG_IPV6) && IS_ENABLED(CONFIG_IP_PING)
 	if (sk->sk_family == AF_INET6)
 		return pingv6_ops.ipv6_recv_error(sk, msg, len, addr_len);
 #endif
 	return -EINVAL;
 }
+#ifdef CONFIG_IP_OFFLOAD
 
 static int inet_gro_complete(struct sk_buff *skb, int nhoff)
 {
@@ -1483,6 +1497,8 @@ static int ipip_gro_complete(struct sk_buff *skb, int nhoff)
 	return inet_gro_complete(skb, nhoff);
 }
 
+#endif
+
 int inet_ctl_sock_create(struct sock **sk, unsigned short family,
 			 unsigned short type, unsigned char protocol,
 			 struct net *net)
@@ -1505,6 +1521,7 @@ int inet_ctl_sock_create(struct sock **sk, unsigned short family,
 }
 EXPORT_SYMBOL_GPL(inet_ctl_sock_create);
 
+#ifdef CONFIG_PROC_FS
 unsigned long snmp_fold_field(void __percpu *mib, int offt)
 {
 	unsigned long res = 0;
@@ -1543,6 +1560,8 @@ u64 snmp_fold_field64(void __percpu *mib, int offt, size_t syncp_offset)
 EXPORT_SYMBOL_GPL(snmp_fold_field64);
 #endif
 
+#endif
+
 #ifdef CONFIG_IP_MULTICAST
 static const struct net_protocol igmp_protocol = {
 	.handler =	igmp_rcv,
@@ -1574,6 +1593,7 @@ static const struct net_protocol icmp_protocol = {
 	.netns_ok =	1,
 };
 
+#ifdef CONFIG_PROC_FS
 static __net_init int ipv4_mib_init_net(struct net *net)
 {
 	int i;
@@ -1681,7 +1701,17 @@ static int __init init_inet_pernet_ops(void)
 	return register_pernet_subsys(&af_inet_ops);
 }
 
+#else
+static int __init init_ipv4_mibs(void)
+{
+	return 0;
+}
+#endif
+
 static int ipv4_proc_init(void);
+
+#ifdef CONFIG_IP_OFFLOAD
+/* Move elsewhere? */
 
 /*
  *	IP protocol layer initialiser
@@ -1720,6 +1750,7 @@ static int __init ipv4_offload_init(void)
 }
 
 fs_initcall(ipv4_offload_init);
+#endif
 
 static struct packet_type ip_packet_type __read_mostly = {
 	.type = cpu_to_be16(ETH_P_IP),
@@ -1742,11 +1773,15 @@ static int __init inet_init(void)
 	if (rc)
 		goto out_unregister_tcp_proto;
 
+#ifdef CONFIG_INET_RAW
 	rc = proto_register(&raw_prot, 1);
 	if (rc)
 		goto out_unregister_udp_proto;
+#endif
 
+#ifdef CONFIG_IP_PING
 	rc = proto_register(&ping_prot, 1);
+#endif
 	if (rc)
 		goto out_unregister_raw_proto;
 
@@ -1841,8 +1876,10 @@ static int __init inet_init(void)
 out:
 	return rc;
 out_unregister_raw_proto:
+#ifdef CONFIG_INET_RAW
 	proto_unregister(&raw_prot);
 out_unregister_udp_proto:
+#endif
 	proto_unregister(&udp_prot);
 out_unregister_tcp_proto:
 	proto_unregister(&tcp_prot);
@@ -1864,15 +1901,11 @@ static int __init ipv4_proc_init(void)
 		goto out_tcp;
 	if (udp4_proc_init())
 		goto out_udp;
-	if (ping_proc_init())
-		goto out_ping;
 	if (ip_misc_proc_init())
 		goto out_misc;
 out:
 	return rc;
 out_misc:
-	ping_proc_exit();
-out_ping:
 	udp4_proc_exit();
 out_udp:
 	tcp4_proc_exit();

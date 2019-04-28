@@ -147,6 +147,7 @@
 #include <linux/mroute.h>
 #include <linux/netlink.h>
 
+#ifdef CONFIG_INET_RAW
 /*
  *	Process Router Attention IP option (RFC 2113)
  */
@@ -186,6 +187,7 @@ bool ip_call_ra_chain(struct sk_buff *skb)
 	}
 	return false;
 }
+#endif
 
 static int ip_local_deliver_finish(struct sk_buff *skb)
 {

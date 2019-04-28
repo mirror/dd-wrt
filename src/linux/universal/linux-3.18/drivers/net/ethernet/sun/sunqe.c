@@ -895,7 +895,7 @@ static int qec_ether_init(struct platform_device *op)
 	dev->watchdog_timeo = 5*HZ;
 	dev->irq = op->archdata.irqs[0];
 	dev->dma = 0;
-	dev->ethtool_ops = &qe_ethtool_ops;
+	SET_ETHTOOL_OPS(dev, &qe_ethtool_ops);
 	dev->netdev_ops = &qec_ops;
 
 	res = register_netdev(dev);

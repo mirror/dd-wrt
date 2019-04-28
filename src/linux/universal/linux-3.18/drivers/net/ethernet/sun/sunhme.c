@@ -2819,7 +2819,7 @@ static int happy_meal_sbus_probe_one(struct platform_device *op, int is_qfe)
 	hp->dev = dev;
 	dev->netdev_ops = &hme_netdev_ops;
 	dev->watchdog_timeo = 5*HZ;
-	dev->ethtool_ops = &hme_ethtool_ops;
+	SET_ETHTOOL_OPS(dev, &hme_ethtool_ops);
 
 	/* Happy Meal can do it all... */
 	dev->hw_features = NETIF_F_SG | NETIF_F_HW_CSUM;
@@ -3134,7 +3134,7 @@ static int happy_meal_pci_probe(struct pci_dev *pdev,
 	hp->dev = dev;
 	dev->netdev_ops = &hme_netdev_ops;
 	dev->watchdog_timeo = 5*HZ;
-	dev->ethtool_ops = &hme_ethtool_ops;
+	SET_ETHTOOL_OPS(dev, &hme_ethtool_ops);
 
 	/* Happy Meal can do it all... */
 	dev->hw_features = NETIF_F_SG | NETIF_F_HW_CSUM;

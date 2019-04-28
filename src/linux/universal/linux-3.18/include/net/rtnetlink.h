@@ -8,12 +8,23 @@ typedef int (*rtnl_doit_func)(struct sk_buff *, struct nlmsghdr *);
 typedef int (*rtnl_dumpit_func)(struct sk_buff *, struct netlink_callback *);
 typedef u16 (*rtnl_calcit_func)(struct sk_buff *, struct nlmsghdr *);
 
+#ifdef CONFIG_RTNETLINK
 int __rtnl_register(int protocol, int msgtype,
 		    rtnl_doit_func, rtnl_dumpit_func, rtnl_calcit_func);
 void rtnl_register(int protocol, int msgtype,
 		   rtnl_doit_func, rtnl_dumpit_func, rtnl_calcit_func);
 int rtnl_unregister(int protocol, int msgtype);
 void rtnl_unregister_all(int protocol);
+#else
+static inline int __rtnl_register(int protocol, int msgtype,
+		    rtnl_doit_func d, rtnl_dumpit_func du, rtnl_calcit_func c)
+{ return -EINVAL; }
+static inline void rtnl_register(int protocol, int msgtype,
+		   rtnl_doit_func d, rtnl_dumpit_func du, rtnl_calcit_func c)
+{ }
+static inline int rtnl_unregister(int protocol, int msgtype) { return 0; }
+static inline void rtnl_unregister_all(int protocol) {}
+#endif
 
 static inline int rtnl_msg_family(const struct nlmsghdr *nlh)
 {
@@ -95,11 +106,25 @@ struct rtnl_link_ops {
 						   const struct net_device *slave_dev);
 };
 
+#ifdef CONFIG_RTNETLINK
 int __rtnl_link_register(struct rtnl_link_ops *ops);
 void __rtnl_link_unregister(struct rtnl_link_ops *ops);
 
 int rtnl_link_register(struct rtnl_link_ops *ops);
 void rtnl_link_unregister(struct rtnl_link_ops *ops);
+#else
+/* Return 0 to make the respective init functions not error out.
+ * We assume the subsystems are still somewhat useful even without
+ * rtnetlink.
+ */
+static inline int __rtnl_link_register(struct rtnl_link_ops *ops)
+{ return 0; }
+static inline void __rtnl_link_unregister(struct rtnl_link_ops *ops) {}
+
+static inline int rtnl_link_register(struct rtnl_link_ops *ops)
+{ return 0; }
+static inline void rtnl_link_unregister(struct rtnl_link_ops *ops) {}
+#endif
 
 /**
  * 	struct rtnl_af_ops - rtnetlink address family operations
@@ -129,10 +154,20 @@ struct rtnl_af_ops {
 					       const struct nlattr *attr);
 };
 
+#ifdef CONFIG_RTNETLINK
+int __rtnl_af_register(struct rtnl_af_ops *ops);
 void __rtnl_af_unregister(struct rtnl_af_ops *ops);
 
 void rtnl_af_register(struct rtnl_af_ops *ops);
 void rtnl_af_unregister(struct rtnl_af_ops *ops);
+#else
+static inline int __rtnl_af_register(struct rtnl_af_ops *ops)
+{ return -EINVAL; }
+static inline void __rtnl_af_unregister(struct rtnl_af_ops *ops) {}
+
+static inline int rtnl_af_register(struct rtnl_af_ops *ops) { return -EINVAL; }
+static inline void rtnl_af_unregister(struct rtnl_af_ops *ops) {}
+#endif
 
 struct net *rtnl_link_get_net(struct net *src_net, struct nlattr *tb[]);
 struct net_device *rtnl_create_link(struct net *net, char *ifname,

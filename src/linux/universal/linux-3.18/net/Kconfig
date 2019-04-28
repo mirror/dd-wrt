@@ -31,6 +31,14 @@ config ETHERNET_PACKET_MANGLE
 	  This option can be selected by phy drivers that need to mangle
 	  packets going in or out of an ethernet device.
 
+config RTNETLINK
+       bool "rtnetlink"
+       default y
+       help
+         Enable rtnetlink to configure routing and related setups.
+	 This is needed for most modern configuration
+	 tools, but old ifconfig can do without it.
+
 config WANT_COMPAT_NETLINK_MESSAGES
 	bool
 	help
@@ -60,8 +68,8 @@ source "net/iucv/Kconfig"
 
 config INET
 	bool "TCP/IP networking"
-	select CRYPTO
-	select CRYPTO_AES
+	select CRYPTO if TCP_FASTOPEN
+	select CRYPTO_AES if TCP_FASTOPEN
 	---help---
 	  These are the protocols used on the Internet and on most local
 	  Ethernets. It is highly recommended to say Y here (this will enlarge
@@ -98,6 +106,19 @@ endif # if INET
 
 config SOCK_DIAG
 	bool
+
+config NET_ETHTOOL
+	bool "Ethtool support"
+	default y
+	help
+	  Support changing ethernet driver parameters from user tools.
+
+# XXX seccomp and other users should auto enable?
+config LPF_FILTER
+	bool "LPF filter"
+	default y
+	help
+	  Enable BPF/LPF (Linux Packet Filter) filtering on sockets.
 
 config NETWORK_SECMARK
 	bool "Security Marking"
@@ -246,7 +267,7 @@ source "net/mpls/Kconfig"
 source "net/hsr/Kconfig"
 
 config RPS
-	boolean
+	bool "Support multiqueue input queues (RPS)"
 	depends on SMP && SYSFS
 	default y
 
@@ -257,7 +278,7 @@ config RFS_ACCEL
 	default y
 
 config XPS
-	boolean
+	bool "Support multiqueue transmit queues (XPS)"
 	depends on SMP
 	default y
 
@@ -288,6 +309,7 @@ config BQL
 config BPF_JIT
 	bool "enable BPF Just In Time compiler"
 	depends on HAVE_BPF_JIT
+	depends on LPF_FILTER
 	depends on MODULES
 	---help---
 	  Berkeley Packet Filter filtering capabilities are normally handled

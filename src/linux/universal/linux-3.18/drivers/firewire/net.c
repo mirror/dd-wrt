@@ -1412,7 +1412,7 @@ static void fwnet_init_dev(struct net_device *net)
 	net->hard_header_len	= FWNET_HLEN;
 	net->type		= ARPHRD_IEEE1394;
 	net->tx_queue_len	= FWNET_TX_QUEUE_LEN;
-	net->ethtool_ops	= &fwnet_ethtool_ops;
+	SET_ETHTOOL_OPS(net, &fwnet_ethtool_ops);
 }
 
 /* caller must hold fwnet_device_mutex */

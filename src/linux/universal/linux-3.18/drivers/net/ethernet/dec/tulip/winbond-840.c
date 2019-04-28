@@ -431,7 +431,7 @@ static int w840_probe1(struct pci_dev *pdev, const struct pci_device_id *ent)
 
 	/* The chip-specific entries in the device structure. */
 	dev->netdev_ops = &netdev_ops;
-	dev->ethtool_ops = &netdev_ethtool_ops;
+	SET_ETHTOOL_OPS(dev, &netdev_ethtool_ops);
 	dev->watchdog_timeo = TX_TIMEOUT;
 
 	i = register_netdev(dev);

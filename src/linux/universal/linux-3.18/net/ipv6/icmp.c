@@ -836,7 +836,7 @@ static int __net_init icmpv6_sk_init(struct net *net)
 
 	for_each_possible_cpu(i) {
 		err = inet_ctl_sock_create(&sk, PF_INET6,
-					   SOCK_RAW, IPPROTO_ICMPV6, net);
+					   SOCK_DGRAM, 0, net);
 		if (err < 0) {
 			pr_err("Failed to initialize the ICMP6 control socket (err %d)\n",
 			       err);

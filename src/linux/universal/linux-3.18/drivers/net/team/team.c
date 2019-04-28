@@ -2053,7 +2053,7 @@ static void team_setup(struct net_device *dev)
 	ether_setup(dev);
 
 	dev->netdev_ops = &team_netdev_ops;
-	dev->ethtool_ops = &team_ethtool_ops;
+	SET_ETHTOOL_OPS(dev, &team_ethtool_ops);
 	dev->destructor	= team_destructor;
 	dev->tx_queue_len = 0;
 	dev->flags |= IFF_MULTICAST;

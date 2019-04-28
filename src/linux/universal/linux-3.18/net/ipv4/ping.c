@@ -1218,6 +1218,9 @@ void ping_proc_exit(void)
 	unregister_pernet_subsys(&ping_v4_net_ops);
 }
 
+module_init(ping_proc_init);
+module_exit(ping_proc_exit);
+
 #endif
 
 void __init ping_init(void)

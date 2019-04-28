@@ -327,7 +327,7 @@ static int sr9700_bind(struct usbnet *dev, struct usb_interface *intf)
 	netdev = dev->net;
 
 	netdev->netdev_ops = &sr9700_netdev_ops;
-	netdev->ethtool_ops = &sr9700_ethtool_ops;
+	SET_ETHTOOL_OPS(netdev, &sr9700_ethtool_ops);
 	netdev->hard_header_len += SR_TX_OVERHEAD;
 	dev->hard_mtu = netdev->mtu + netdev->hard_header_len;
 	/* bulkin buffer is preferably not less than 3K */

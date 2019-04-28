@@ -477,7 +477,7 @@ static int dmfe_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 
 	pci_set_drvdata(pdev, dev);
 	dev->netdev_ops = &netdev_ops;
-	dev->ethtool_ops = &netdev_ethtool_ops;
+	SET_ETHTOOL_OPS(dev, &netdev_ethtool_ops);
 	netif_carrier_off(dev);
 	spin_lock_init(&db->lock);
 

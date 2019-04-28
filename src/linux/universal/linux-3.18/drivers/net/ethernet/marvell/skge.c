@@ -3856,7 +3856,7 @@ static struct net_device *skge_devinit(struct skge_hw *hw, int port,
 
 	SET_NETDEV_DEV(dev, &hw->pdev->dev);
 	dev->netdev_ops = &skge_netdev_ops;
-	dev->ethtool_ops = &skge_ethtool_ops;
+	SET_ETHTOOL_OPS(dev, &skge_ethtool_ops);
 	dev->watchdog_timeo = TX_WATCHDOG;
 	dev->irq = hw->pdev->irq;
 

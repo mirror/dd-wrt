@@ -834,7 +834,7 @@ islpci_setup(struct pci_dev *pdev)
 	/* initialize the function pointers */
 	ndev->netdev_ops = &islpci_netdev_ops;
 	ndev->wireless_handlers = &prism54_handler_def;
-	ndev->ethtool_ops = &islpci_ethtool_ops;
+	SET_ETHTOOL_OPS(ndev, &islpci_ethtool_ops);
 
 	/* ndev->set_multicast_list = &islpci_set_multicast_list; */
 	ndev->addr_len = ETH_ALEN;

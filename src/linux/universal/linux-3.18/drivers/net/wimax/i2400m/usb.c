@@ -364,7 +364,7 @@ void i2400mu_netdev_setup(struct net_device *net_dev)
 	struct i2400mu *i2400mu = container_of(i2400m, struct i2400mu, i2400m);
 	i2400mu_init(i2400mu);
 	i2400m_netdev_setup(net_dev);
-	net_dev->ethtool_ops = &i2400mu_ethtool_ops;
+	SET_ETHTOOL_OPS(net_dev, &i2400mu_ethtool_ops);
 }
 
 

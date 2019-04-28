@@ -41,8 +41,10 @@ static int sockstat6_seq_show(struct seq_file *seq, void *v)
 		       sock_prot_inuse_get(net, &udpv6_prot));
 	seq_printf(seq, "UDPLITE6: inuse %d\n",
 			sock_prot_inuse_get(net, &udplitev6_prot));
+#ifdef CONFIG_INET_RAW
 	seq_printf(seq, "RAW6: inuse %d\n",
 		       sock_prot_inuse_get(net, &rawv6_prot));
+#endif
 	seq_printf(seq, "FRAG6: inuse %u memory %u\n", !!frag_mem, frag_mem);
 	return 0;
 }

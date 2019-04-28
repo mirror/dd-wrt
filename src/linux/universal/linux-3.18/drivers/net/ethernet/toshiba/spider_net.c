@@ -2254,7 +2254,7 @@ spider_net_setup_netdev_ops(struct net_device *netdev)
 	netdev->netdev_ops = &spider_net_ops;
 	netdev->watchdog_timeo = SPIDER_NET_WATCHDOG_TIMEOUT;
 	/* ethtool ops */
-	netdev->ethtool_ops = &spider_net_ethtool_ops;
+	SET_ETHTOOL_OPS(netdev, &spider_net_ethtool_ops);
 }
 
 /**

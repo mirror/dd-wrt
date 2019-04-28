@@ -995,7 +995,7 @@ struct lbs_private *lbs_add_card(void *card, struct device *dmdev)
 
  	dev->netdev_ops = &lbs_netdev_ops;
 	dev->watchdog_timeo = 5 * HZ;
-	dev->ethtool_ops = &lbs_ethtool_ops;
+	SET_ETHTOOL_OPS(dev, &lbs_ethtool_ops);
 	dev->flags |= IFF_BROADCAST | IFF_MULTICAST;
 
 	priv->card = card;

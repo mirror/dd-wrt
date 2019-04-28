@@ -194,7 +194,7 @@ int register_networkdev(struct bcm_mini_adapter *ad)
 	int result;
 
 	net->netdev_ops = &bcmNetDevOps;
-	net->ethtool_ops = &bcm_ethtool_ops;
+	SET_ETHTOOL_OPS(net, &bcm_ethtool_ops);
 	net->mtu = MTU_SIZE;	/* 1400 Bytes */
 	net->tx_queue_len = TX_QLEN;
 	net->flags |= IFF_NOARP;

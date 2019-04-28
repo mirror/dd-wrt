@@ -1160,7 +1160,7 @@ static int korina_probe(struct platform_device *pdev)
 	lp->dev = dev;
 
 	dev->netdev_ops = &korina_netdev_ops;
-	dev->ethtool_ops = &netdev_ethtool_ops;
+	SET_ETHTOOL_OPS(dev, &netdev_ethtool_ops);
 	dev->watchdog_timeo = TX_TIMEOUT;
 	netif_napi_add(dev, &lp->napi, korina_poll, 64);
 

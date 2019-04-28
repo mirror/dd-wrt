@@ -1180,7 +1180,7 @@ static int bigmac_ether_init(struct platform_device *op,
 	bp->dev = dev;
 
 	/* Set links to our BigMAC open and close routines. */
-	dev->ethtool_ops = &bigmac_ethtool_ops;
+	SET_ETHTOOL_OPS(dev, &bigmac_ethtool_ops);
 	dev->netdev_ops = &bigmac_ops;
 	dev->watchdog_timeo = 5*HZ;
 
