@@ -1379,7 +1379,7 @@ static int lpc_eth_drv_probe(struct platform_device *pdev)
 
 	/* Setup driver functions */
 	ndev->netdev_ops = &lpc_netdev_ops;
-	ndev->ethtool_ops = &lpc_eth_ethtool_ops;
+	SET_ETHTOOL_OPS(ndev, &lpc_eth_ethtool_ops);
 	ndev->watchdog_timeo = msecs_to_jiffies(2500);
 
 	/* Get size of DMA buffers/descriptors region */

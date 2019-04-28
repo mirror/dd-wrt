@@ -996,7 +996,7 @@ static int rtl8139_init_one(struct pci_dev *pdev,
 
 	/* The Rtl8139-specific entries in the device structure. */
 	dev->netdev_ops = &rtl8139_netdev_ops;
-	dev->ethtool_ops = &rtl8139_ethtool_ops;
+	SET_ETHTOOL_OPS(dev, &rtl8139_ethtool_ops);
 	dev->watchdog_timeo = TX_TIMEOUT;
 	netif_napi_add(dev, &tp->napi, rtl8139_poll, 64);
 

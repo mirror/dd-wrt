@@ -879,7 +879,7 @@ static int mpc52xx_fec_probe(struct platform_device *op)
 
 	/* Init ether ndev with what we have */
 	ndev->netdev_ops	= &mpc52xx_fec_netdev_ops;
-	ndev->ethtool_ops	= &mpc52xx_fec_ethtool_ops;
+	SET_ETHTOOL_OPS(ndev, &mpc52xx_fec_ethtool_ops);
 	ndev->watchdog_timeo	= FEC_WATCHDOG_TIMEOUT;
 	ndev->base_addr		= mem.start;
 	SET_NETDEV_DEV(ndev, &op->dev);

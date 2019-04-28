@@ -1678,7 +1678,7 @@ struct net_device *nes_netdev_init(struct nes_device *nesdev,
 	netdev->addr_len = ETH_ALEN;
 	netdev->type = ARPHRD_ETHER;
 	netdev->netdev_ops = &nes_netdev_ops;
-	netdev->ethtool_ops = &nes_ethtool_ops;
+	SET_ETHTOOL_OPS(netdev, &nes_ethtool_ops);
 	netif_napi_add(netdev, &nesvnic->napi, nes_netdev_poll, 128);
 	nes_debug(NES_DBG_INIT, "Enabling VLAN Insert/Delete.\n");
 

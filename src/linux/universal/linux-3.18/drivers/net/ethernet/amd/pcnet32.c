@@ -1918,7 +1918,7 @@ pcnet32_probe1(unsigned long ioaddr, int shared, struct pci_dev *pdev)
 
 	/* The PCNET32-specific entries in the device structure. */
 	dev->netdev_ops = &pcnet32_netdev_ops;
-	dev->ethtool_ops = &pcnet32_ethtool_ops;
+	SET_ETHTOOL_OPS(dev, &pcnet32_ethtool_ops);
 	dev->watchdog_timeo = (5 * HZ);
 
 	/* Fill in the generic fields of the device structure. */

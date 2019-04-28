@@ -29,8 +29,6 @@
 #include <net/protocol.h>
 
 const struct net_protocol __rcu *inet_protos[MAX_INET_PROTOS] __read_mostly;
-const struct net_offload __rcu *inet_offloads[MAX_INET_PROTOS] __read_mostly;
-EXPORT_SYMBOL(inet_offloads);
 
 int inet_add_protocol(const struct net_protocol *prot, unsigned char protocol)
 {
@@ -45,12 +43,17 @@ int inet_add_protocol(const struct net_protocol *prot, unsigned char protocol)
 }
 EXPORT_SYMBOL(inet_add_protocol);
 
+#ifdef CONFIG_IP_OFFLOAD
+const struct net_offload __rcu *inet_offloads[MAX_INET_PROTOS] __read_mostly;
+
 int inet_add_offload(const struct net_offload *prot, unsigned char protocol)
 {
 	return !cmpxchg((const struct net_offload **)&inet_offloads[protocol],
 			NULL, prot) ? 0 : -1;
 }
 EXPORT_SYMBOL(inet_add_offload);
+
+#endif
 
 int inet_del_protocol(const struct net_protocol *prot, unsigned char protocol)
 {
@@ -65,6 +68,7 @@ int inet_del_protocol(const struct net_protocol *prot, unsigned char protocol)
 }
 EXPORT_SYMBOL(inet_del_protocol);
 
+#ifdef CONFIG_IP_OFFLOAD
 int inet_del_offload(const struct net_offload *prot, unsigned char protocol)
 {
 	int ret;
@@ -77,3 +81,4 @@ int inet_del_offload(const struct net_offload *prot, unsigned char protocol)
 	return ret;
 }
 EXPORT_SYMBOL(inet_del_offload);
+#endif

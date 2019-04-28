@@ -285,9 +285,11 @@ struct bpf_prog_aux;
 	bpf_size;						\
 })
 
+#ifdef CONFIG_LPF_FILTER
 /* Macro to invoke filter function. */
 #define SK_RUN_FILTER(filter, ctx) \
 	(*filter->prog->bpf_func)(ctx, filter->prog->insnsi)
+#endif
 
 #ifdef CONFIG_COMPAT
 /* A struct sock_filter is architecture independent. */
@@ -357,7 +359,15 @@ static inline void bpf_prog_unlock_ro(struct bpf_prog *fp)
 {
 }
 #endif /* CONFIG_DEBUG_SET_MODULE_RONX */
+void __bpf_prog_free(struct bpf_prog *fp);
 
+static inline void bpf_prog_unlock_free(struct bpf_prog *fp)
+{
+	bpf_prog_unlock_ro(fp);
+	__bpf_prog_free(fp);
+}
+
+#ifdef CONFIG_LPF_FILTER
 int sk_filter(struct sock *sk, struct sk_buff *skb);
 
 void bpf_prog_select_runtime(struct bpf_prog *fp);
@@ -369,13 +379,7 @@ int bpf_convert_filter(struct sock_filter *prog, int len,
 struct bpf_prog *bpf_prog_alloc(unsigned int size, gfp_t gfp_extra_flags);
 struct bpf_prog *bpf_prog_realloc(struct bpf_prog *fp_old, unsigned int size,
 				  gfp_t gfp_extra_flags);
-void __bpf_prog_free(struct bpf_prog *fp);
 
-static inline void bpf_prog_unlock_free(struct bpf_prog *fp)
-{
-	bpf_prog_unlock_ro(fp);
-	__bpf_prog_free(fp);
-}
 
 int bpf_prog_create(struct bpf_prog **pfp, struct sock_fprog_kern *fprog);
 void bpf_prog_destroy(struct bpf_prog *fp);
@@ -389,6 +393,35 @@ int sk_get_filter(struct sock *sk, struct sock_filter __user *filter,
 
 bool sk_filter_charge(struct sock *sk, struct sk_filter *fp);
 void sk_filter_uncharge(struct sock *sk, struct sk_filter *fp);
+#else
+#define SK_RUN_FILTER(filter, ctx) 0
+static inline int bpf_prog_create(struct bpf_prog **pfp, struct sock_fprog_kern *fprog) 
+{
+    return -EINVAL;
+}
+static inline void bpf_prog_destroy(struct bpf_prog *fp)
+{
+    return;
+}
+
+static inline int
+sk_filter(struct sock *sk, struct sk_buff *skb) { return 0; }
+static inline int sk_unattached_filter_create(struct sk_filter **pfp,
+				       struct sock_fprog *fprog)
+{ return -EINVAL; }
+static inline void sk_unattached_filter_destroy(struct sk_filter *fp) {}
+static inline int sk_attach_filter(struct sock_fprog *fprog, struct sock *sk)
+{ return -EINVAL; }
+static inline int sk_detach_filter(struct sock *sk) { return -EINVAL; }
+static inline int sk_chk_filter(struct sock_filter *filter, unsigned int flen)
+{ return 0; }
+static inline int sk_get_filter(struct sock *sk, struct sock_filter __user *filter, unsigned len)
+{ return -EINVAL; }
+static inline void
+sk_decode_filter(struct sock_filter *filt, struct sock_filter *to) {}
+static inline bool sk_filter_charge(struct sock *sk, struct sk_filter *fp) {return false;}
+static inline void sk_filter_uncharge(struct sock *sk, struct sk_filter *fp) {}
+#endif
 
 u64 __bpf_call_base(u64 r1, u64 r2, u64 r3, u64 r4, u64 r5);
 void bpf_int_jit_compile(struct bpf_prog *fp);

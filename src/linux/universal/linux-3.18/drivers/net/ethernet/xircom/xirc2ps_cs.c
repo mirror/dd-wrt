@@ -493,7 +493,7 @@ xirc2ps_probe(struct pcmcia_device *link)
 
     /* Fill in card specific entries */
     dev->netdev_ops = &netdev_ops;
-    dev->ethtool_ops = &netdev_ethtool_ops;
+    SET_ETHTOOL_OPS(dev, &netdev_ethtool_ops);
     dev->watchdog_timeo = TX_TIMEOUT;
     INIT_WORK(&local->tx_timeout_task, xirc2ps_tx_timeout_task);
 

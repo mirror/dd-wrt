@@ -128,9 +128,11 @@ EXPORT_SYMBOL(in6addr_sitelocal_allrouters);
 
 static void snmp6_free_dev(struct inet6_dev *idev)
 {
+#ifdef CONFIG_PROC_FS
 	kfree(idev->stats.icmpv6msgdev);
 	kfree(idev->stats.icmpv6dev);
 	free_percpu(idev->stats.ipv6);
+#endif
 }
 
 /* Nobody refers to this device, we may destroy it. */

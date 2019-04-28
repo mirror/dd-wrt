@@ -503,7 +503,7 @@ static int mcs7830_bind(struct usbnet *dev, struct usb_interface *udev)
 	if (ret)
 		goto out;
 
-	net->ethtool_ops = &mcs7830_ethtool_ops;
+	SET_ETHTOOL_OPS(net, &mcs7830_ethtool_ops);
 	net->netdev_ops = &mcs7830_netdev_ops;
 
 	/* reserve space for the status byte on rx */

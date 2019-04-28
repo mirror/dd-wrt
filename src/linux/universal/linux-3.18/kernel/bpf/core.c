@@ -88,7 +88,6 @@ struct bpf_prog *bpf_prog_alloc(unsigned int size, gfp_t gfp_extra_flags)
 
 	fp->pages = size / PAGE_SIZE;
 	fp->aux = aux;
-
 	return fp;
 }
 EXPORT_SYMBOL_GPL(bpf_prog_alloc);

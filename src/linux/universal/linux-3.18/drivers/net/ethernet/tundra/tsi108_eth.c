@@ -1604,7 +1604,7 @@ tsi108_init_one(struct platform_device *pdev)
 	data->id = pdev->id;
 	netif_napi_add(dev, &data->napi, tsi108_poll, 64);
 	dev->netdev_ops = &tsi108_netdev_ops;
-	dev->ethtool_ops = &tsi108_ethtool_ops;
+	SET_ETHTOOL_OPS(dev, &tsi108_ethtool_ops);
 
 	/* Apparently, the Linux networking code won't use scatter-gather
 	 * if the hardware doesn't do checksums.  However, it's faster

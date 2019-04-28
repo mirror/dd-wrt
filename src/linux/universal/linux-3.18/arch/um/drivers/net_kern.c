@@ -477,7 +477,7 @@ static void eth_configure(int n, void *init, char *mac,
 
 	dev->mtu = transport->user->mtu;
 	dev->netdev_ops = &uml_netdev_ops;
-	dev->ethtool_ops = &uml_net_ethtool_ops;
+	SET_ETHTOOL_OPS(dev, &uml_net_ethtool_ops);
 	dev->watchdog_timeo = (HZ >> 1);
 	dev->irq = UM_ETH_IRQ;
 

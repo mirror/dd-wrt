@@ -373,7 +373,7 @@ static int ne2k_pci_init_one(struct pci_dev *pdev,
 	ei_status.get_8390_hdr = &ne2k_pci_get_8390_hdr;
 	ei_status.priv = (unsigned long) pdev;
 
-	dev->ethtool_ops = &ne2k_pci_ethtool_ops;
+	SET_ETHTOOL_OPS(dev, &ne2k_pci_ethtool_ops);
 	NS8390_init(dev, 0);
 
 	memcpy(dev->dev_addr, SA_prom, dev->addr_len);

@@ -314,7 +314,7 @@ etrax_ethernet_init(void)
 
 	/* fill in our handlers so the network layer can talk to us in the future */
 
-	dev->ethtool_ops	= &e100_ethtool_ops;
+	SET_ETHTOOL_OPS(dev, &e100_ethtool_ops);
 	dev->netdev_ops		= &e100_netdev_ops;
 
 	spin_lock_init(&np->lock);

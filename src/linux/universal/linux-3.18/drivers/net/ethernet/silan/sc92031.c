@@ -1442,7 +1442,7 @@ static int sc92031_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 
 	dev->netdev_ops		= &sc92031_netdev_ops;
 	dev->watchdog_timeo	= TX_TIMEOUT;
-	dev->ethtool_ops	= &sc92031_ethtool_ops;
+	SET_ETHTOOL_OPS(dev, &sc92031_ethtool_ops);
 
 	priv = netdev_priv(dev);
 	spin_lock_init(&priv->lock);

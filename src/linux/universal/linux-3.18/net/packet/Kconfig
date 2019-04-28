@@ -22,3 +22,11 @@ config PACKET_DIAG
 	---help---
 	  Support for PF_PACKET sockets monitoring interface used by the ss tool.
 	  If unsure, say Y.
+
+config PACKET_MMAP
+	bool "Enable packet mmap/ring support"
+	depends on PACKET
+	default y
+	---help---
+	  Enable support to mmap the packet data zero copy. This is useful for
+	  highspeed packet interceptors.

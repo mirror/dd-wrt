@@ -186,7 +186,14 @@ EXPORT_SYMBOL(dev_base_lock);
 static DEFINE_SPINLOCK(napi_hash_lock);
 
 static unsigned int napi_gen_id;
-static DEFINE_HASHTABLE(napi_hash, 8);
+
+#ifdef CONFIG_BASE_SMALL
+#define NAPI_HASH_BITS 3
+#else
+#define NAPI_HASH_BITS 8
+#endif
+
+static DEFINE_HASHTABLE(napi_hash, NAPI_HASH_BITS);
 
 static seqcount_t devnet_rename_seq;
 
@@ -6706,6 +6713,7 @@ struct netdev_queue *dev_ingress_queue_create(struct net_device *dev)
 
 static const struct ethtool_ops default_ethtool_ops;
 
+#ifdef CONFIG_NET_ETHTOOL
 void netdev_set_default_ethtool_ops(struct net_device *dev,
 				    const struct ethtool_ops *ops)
 {
@@ -6713,6 +6721,7 @@ void netdev_set_default_ethtool_ops(struct net_device *dev,
 		dev->ethtool_ops = ops;
 }
 EXPORT_SYMBOL_GPL(netdev_set_default_ethtool_ops);
+#endif
 
 void netdev_freemem(struct net_device *dev)
 {

@@ -2052,4 +2052,11 @@ config ASN1
 	  inform it as to what tags are to be expected in a stream and what
 	  functions to call on what tags.
 
+# Automatically enable LPF_FILTER when any architecture sets SECCOMP
+config SECCOMP_ENABLE_LPF
+	bool
+	depends on SECCOMP
+	default y
+	select LPF_FILTER
+
 source "kernel/Kconfig.locks"

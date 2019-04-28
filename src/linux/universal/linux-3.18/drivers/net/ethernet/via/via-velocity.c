@@ -2875,7 +2875,7 @@ static int velocity_probe(struct device *dev, int irq,
 	vptr->phy_id = MII_GET_PHY_ID(vptr->mac_regs);
 
 	netdev->netdev_ops = &velocity_netdev_ops;
-	netdev->ethtool_ops = &velocity_ethtool_ops;
+	SET_ETHTOOL_OPS(netdev, &velocity_ethtool_ops);
 	netif_napi_add(netdev, &vptr->napi, velocity_poll,
 							VELOCITY_NAPI_WEIGHT);
 

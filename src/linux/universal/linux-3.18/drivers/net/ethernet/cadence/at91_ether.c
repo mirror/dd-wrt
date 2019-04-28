@@ -352,7 +352,7 @@ static int __init at91ether_probe(struct platform_device *pdev)
 		goto err_disable_clock;
 
 	dev->netdev_ops = &at91ether_netdev_ops;
-	dev->ethtool_ops = &macb_ethtool_ops;
+	SET_ETHTOOL_OPS(dev, &macb_ethtool_ops);
 	platform_set_drvdata(pdev, dev);
 	SET_NETDEV_DEV(dev, &pdev->dev);
 

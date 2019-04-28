@@ -1467,7 +1467,7 @@ static int vortex_probe1(struct device *gendev, void __iomem *ioaddr, int irq,
 				(dev->features & NETIF_F_IP_CSUM) ? "en":"dis");
 	}
 
-	dev->ethtool_ops = &vortex_ethtool_ops;
+	SET_ETHTOOL_OPS(dev, &vortex_ethtool_ops);
 	dev->watchdog_timeo = (watchdog * HZ) / 1000;
 
 	if (pdev) {

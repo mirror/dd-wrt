@@ -688,7 +688,7 @@ etherh_probe(struct expansion_card *ec, const struct ecard_id *id)
 
 	dev->netdev_ops		= &etherh_netdev_ops;
 	dev->irq		= ec->irq;
-	dev->ethtool_ops	= &etherh_ethtool_ops;
+	SET_ETHTOOL_OPS(dev, &etherh_ethtool_ops);
 
 	if (data->supported & SUPPORTED_Autoneg)
 		dev->flags |= IFF_AUTOMEDIA;

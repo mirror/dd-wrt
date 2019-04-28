@@ -40,8 +40,14 @@ struct compat_ethtool_rxnfc {
 
 #include <linux/rculist.h>
 
+#ifdef CONFIG_NET_ETHTOOL
 extern int __ethtool_get_settings(struct net_device *dev,
 				  struct ethtool_cmd *cmd);
+#else
+static inline int __ethtool_get_settings(struct net_device *dev,
+					 struct ethtool_cmd *cmd)
+{ return -EINVAL; }
+#endif
 
 /**
  * enum ethtool_phys_id_state - indicator state for physical identification
@@ -61,9 +67,17 @@ enum ethtool_phys_id_state {
 
 struct net_device;
 
+#ifdef CONFIG_NET_ETHTOOL
 /* Some generic methods drivers may use in their ethtool_ops */
 u32 ethtool_op_get_link(struct net_device *dev);
 int ethtool_op_get_ts_info(struct net_device *dev, struct ethtool_ts_info *eti);
+#else
+/* Some generic methods drivers may use in their ethtool_ops */
+static inline u32 ethtool_op_get_link(struct net_device *dev) { return 0; }
+static inline int
+ethtool_op_get_ts_info(struct net_device *dev, struct ethtool_ts_info *eti)
+{ return -EINVAL; }
+#endif
 
 /**
  * ethtool_rxfh_indir_default - get default value for RX flow hash indirection

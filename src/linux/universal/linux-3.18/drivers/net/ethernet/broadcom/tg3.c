@@ -17691,7 +17691,7 @@ static int tg3_init_one(struct pci_dev *pdev,
 	tp->rx_pending = TG3_DEF_RX_RING_PENDING;
 	tp->rx_jumbo_pending = TG3_DEF_RX_JUMBO_RING_PENDING;
 
-	dev->ethtool_ops = &tg3_ethtool_ops;
+	SET_ETHTOOL_OPS(dev, &tg3_ethtool_ops);
 	dev->watchdog_timeo = TG3_TX_TIMEOUT;
 	dev->netdev_ops = &tg3_netdev_ops;
 	dev->irq = pdev->irq;

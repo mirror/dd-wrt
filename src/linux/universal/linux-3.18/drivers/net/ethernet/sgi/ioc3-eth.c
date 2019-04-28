@@ -1325,7 +1325,7 @@ static int ioc3_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	/* The IOC3-specific entries in the device structure. */
 	dev->watchdog_timeo	= 5 * HZ;
 	dev->netdev_ops		= &ioc3_netdev_ops;
-	dev->ethtool_ops	= &ioc3_ethtool_ops;
+	SET_ETHTOOL_OPS(dev, &ioc3_ethtool_ops);
 	dev->hw_features	= NETIF_F_IP_CSUM | NETIF_F_RXCSUM;
 	dev->features		= NETIF_F_IP_CSUM;
 
