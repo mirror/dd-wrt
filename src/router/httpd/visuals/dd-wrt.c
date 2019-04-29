@@ -2725,6 +2725,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	char wl_comp[32];
 	char wl_ff[16];
 	char wmm[32];
+	char wl_uapsd[16];
 	char wl_isolate[32];
 	char wl_intmit[32];
 	char wl_noise_immunity[32];
@@ -2981,6 +2982,8 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	sprintf(wl_intmit, "%s_intmit", prefix);
 	sprintf(wl_noise_immunity, "%s_noise_immunity", prefix);
 	sprintf(wl_ofdm_weak_det, "%s_ofdm_weak_det", prefix);
+	sprintf(wl_uapsd, "%s_uapsd", prefix);
+	showRadio(wp, "wl_basic.uapsd", wl_uapsd);
 	if (!is_mvebu(prefix)) {
 		if (is_mac80211(prefix)) {
 			showRadio(wp, "wl_basic.intmit", wl_intmit);
@@ -3663,6 +3666,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	sprintf(wl_intmit, "%s_intmit", prefix);
 	sprintf(wl_noise_immunity, "%s_noise_immunity", prefix);
 	sprintf(wl_ofdm_weak_det, "%s_ofdm_weak_det", prefix);
+	sprintf(wl_uapsd, "%s_uapsd", prefix);
 #if 0
 	showRadio(wp, "wl_basic.csma", wl_csma);
 #endif
@@ -4028,7 +4032,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	}
 #endif
 #endif
-
+	showRadio(wp, "wl_basic.uapsd", wl_uapsd);
 	if (!is_mvebu(prefix)) {
 		if (is_mac80211(prefix)) {
 			showRadio(wp, "wl_basic.intmit", wl_intmit);
