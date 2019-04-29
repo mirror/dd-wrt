@@ -2982,8 +2982,10 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	sprintf(wl_intmit, "%s_intmit", prefix);
 	sprintf(wl_noise_immunity, "%s_noise_immunity", prefix);
 	sprintf(wl_ofdm_weak_det, "%s_ofdm_weak_det", prefix);
-	sprintf(wl_uapsd, "%s_uapsd", prefix);
-	showRadio(wp, "wl_basic.uapsd", wl_uapsd);
+	if (has_uapsd(prefix)) {
+		sprintf(wl_uapsd, "%s_uapsd", prefix);
+		showRadio(wp, "wl_basic.uapsd", wl_uapsd);
+	}
 	if (!is_mvebu(prefix)) {
 		if (is_mac80211(prefix)) {
 			showRadio(wp, "wl_basic.intmit", wl_intmit);
@@ -4032,7 +4034,9 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	}
 #endif
 #endif
-	showRadio(wp, "wl_basic.uapsd", wl_uapsd);
+	if (has_uapsd(prefix)) {
+		showRadio(wp, "wl_basic.uapsd", wl_uapsd);
+	}
 	if (!is_mvebu(prefix)) {
 		if (is_mac80211(prefix)) {
 			showRadio(wp, "wl_basic.intmit", wl_intmit);
