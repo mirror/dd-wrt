@@ -353,9 +353,23 @@ extern int has_greenfield(const char *interface);
 #ifdef HAVE_ATH9K
 extern int has_airtime_fairness(const char *prefix);
 extern int has_shortgi(const char *interface);
+extern int has_uapsd(const char *interface);
 #else
-#define has_airtime_fairness(prefix) 0
-#define has_shortgi(prefix) 0
+static inline int has_airtime_fairness(const char *prefix)
+{
+	return 0;
+}
+
+static inline int has_shortgi(const char *prefix)
+{
+	return 0;
+}
+
+static inline int has_uapsd(const char *prefix)
+{
+	return 0;
+}
+
 #endif
 #if defined(HAVE_ATH10K) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76)
 extern int has_vht160(const char *interface);
