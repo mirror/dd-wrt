@@ -935,12 +935,13 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		sprintf(greenfield, "%s_gf", prefix);
 		caps = mac80211_get_caps(prefix, nvram_default_matchi(shortgi, 1, 1) ? 1 : 0, nvram_default_matchi(greenfield, 1, 0) ? 1 : 0);
 		if (ht) {
-			if(nvram_geti("ath0_uapsd") || nvram_geti("ath1_uapsd"))
+			if (nvram_nmatch("1", "%s_uapsd", prefix) && has_uapsd(prefix))
 				fprintf(fp, "ht_capab=[%s]%s[SMPS-STATIC]\n", ht, caps);
 			else
 				fprintf(fp, "ht_capab=[%s]%s\n", ht, caps);
 		} else {
-			fprintf(fp, "ht_capab=%s[SMPS-STATIC]\n", caps);
+			if (nvram_nmatch("1", "%s_uapsd", prefix) && has_uapsd(prefix))
+				fprintf(fp, "ht_capab=%s[SMPS-STATIC]\n", caps);
 		}
 		free(caps);
 	}
@@ -1189,7 +1190,9 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	char wmm[32];
 	sprintf(wmm, "%s_wmm", ifname);
 	fprintf(fp, "wmm_enabled=%s\n", nvram_default_get(wmm, "1"));
-	fprintf(fp, "uapsd_advertisement_enabled=%s\n", nvram_default_get(uapsd, "0"));
+	if (has_uapsd(ifname)) {
+		fprintf(fp, "uapsd_advertisement_enabled=%s\n", nvram_default_get(uapsd, "0"));
+	}
 	if (nvram_matchi("mac_clone_enable", 1)
 	    && nvram_invmatch("def_whwaddr", "00:00:00:00:00:00")
 	    && nvram_invmatch("def_whwaddr", "")
