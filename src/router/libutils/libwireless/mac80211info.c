@@ -902,6 +902,21 @@ int has_greenfield(const char *interface)
 
 }
 
+int has_uapsd(const char *interface)
+{
+	INITVALUECACHEi(interface);
+	char *htcaps = mac80211_get_caps(interface, 1, 1);
+	if (strstr(htcaps, "[SMPS-STATIC]")) {
+		ret = 1;
+	} else {
+		ret = 0;
+	}
+	free(htcaps);
+	EXITVALUECACHE();
+	return ret;
+
+}
+
 #if defined(HAVE_ATH10K) || defined(HAVE_MVEBU) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76)
 int has_vht80(const char *interface)
 {
