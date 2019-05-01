@@ -3956,8 +3956,9 @@ static void save_prefix(webs_t wp, char *prefix)
 	// enabled
 	copytonv(wp, "%s_diversity", prefix);
 	copytonv(wp, "%s_preamble", prefix);
-	copytonv(wp, "%s_uapsd", prefix);
 #ifdef HAVE_ATH9K
+	copytonv(wp, "%s_uapsd", prefix);
+	copytonv(wp, "%s_smps", prefix);
 	copytonv(wp, "%s_shortgi", prefix);
 	copytonv(wp, "%s_connect", prefix);
 	copytonv(wp, "%s_stay", prefix);
