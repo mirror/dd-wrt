@@ -159,7 +159,7 @@ share.minutes="min";
 share.oui="OUI Search";
 share.sttic="Static";
 share.off="Off";
-share.dynamic=="Dynamic";
+share.dynamic="Dynamic";
 share.connecting="Connecting";
 share.connect="Connect";
 share.connected="Connected";
@@ -556,7 +556,6 @@ ddns.legend="DDNS";
 ddns.srv="DDNS Service";
 ddns.emailaddr="E-mail Address";
 ddns.typ="Type";
-ddns.dynamic="Dynamic";
 ddns.custom="Custom";
 ddns.wildcard="Wildcard";
 ddns.statu="DDNS Status";
@@ -1814,7 +1813,6 @@ service.vpnd_server="Server";
 service.vpnd_deamon="Daemon";
 service.vpnd_lzoyes="Yes";
 service.vpnd_lzono="No";
-service.vpnd_lzooff="Off";
 service.vpnd_lzoadaptive="Adaptive";
 
 //help page
