@@ -182,7 +182,7 @@ get_speedtest_config(client_config_t *client)
 	char line[256];
 
 	SPEEDTEST_INFO(CONF_SERVER"\n");
-	eval("curl", "-L", "-s", "-o", "/tmp/speedtest-config.php", CONF_SERVER);
+	eval("curl", "-k", "-L", "-s", "-o", "/tmp/speedtest-config.php", CONF_SERVER);
 
 	if (!(fp1 = fopen("/tmp/speedtest-config.php", "r"))) {
 		perror("fopen /tmp/speedtest-config.php");
