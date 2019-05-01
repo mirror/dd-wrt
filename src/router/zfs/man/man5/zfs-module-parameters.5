@@ -110,11 +110,7 @@ Default value: \fB6\fR.
 \fBignore_hole_birth\fR (int)
 .ad
 .RS 12n
-When set, the hole_birth optimization will not be used, and all holes will
-always be sent on zfs send. Useful if you suspect your datasets are affected
-by a bug in hole_birth.
-.sp
-Use \fB1\fR for on (default) and \fB0\fR for off.
+This is an alias for \fBsend_holes_without_birth_time\fR.
 .RE
 
 .sp
@@ -372,6 +368,19 @@ greater bandwidth as is typically the case on a modern constant
 angular velocity disk drive.
 .sp
 Use \fB1\fR for yes (default) and \fB0\fR for no.
+.RE
+
+.sp
+.ne 2
+.na
+\fBsend_holes_without_birth_time\fR (int)
+.ad
+.RS 12n
+When set, the hole_birth optimization will not be used, and all holes will
+always be sent on zfs send.  This is useful if you suspect your datasets are
+affected by a bug in hole_birth.
+.sp
+Use \fB1\fR for on (default) and \fB0\fR for off.
 .RE
 
 .sp
@@ -2038,6 +2047,45 @@ This tunable disables predictive prefetch.  Note that it leaves "prescient"
 prefetch (e.g. prefetch for zfs send) intact.  Unlike predictive prefetch,
 prescient prefetch never issues i/os that end up not being needed, so it
 can't hurt performance.
+.sp
+Use \fB1\fR for yes and \fB0\fR for no (default).
+.RE
+
+.sp
+.ne 2
+.na
+\fBzfs_qat_checksum_disable\fR (int)
+.ad
+.RS 12n
+This tunable disables qat hardware acceleration for sha256 checksums. It
+may be set after the zfs modules have been loaded to initialize the qat
+hardware as long as support is compiled in and the qat driver is present.
+.sp
+Use \fB1\fR for yes and \fB0\fR for no (default).
+.RE
+
+.sp
+.ne 2
+.na
+\fBzfs_qat_compress_disable\fR (int)
+.ad
+.RS 12n
+This tunable disables qat hardware acceleration for gzip compression. It
+may be set after the zfs modules have been loaded to initialize the qat
+hardware as long as support is compiled in and the qat driver is present.
+.sp
+Use \fB1\fR for yes and \fB0\fR for no (default).
+.RE
+
+.sp
+.ne 2
+.na
+\fBzfs_qat_encrypt_disable\fR (int)
+.ad
+.RS 12n
+This tunable disables qat hardware acceleration for AES-GCM encryption. It
+may be set after the zfs modules have been loaded to initialize the qat
+hardware as long as support is compiled in and the qat driver is present.
 .sp
 Use \fB1\fR for yes and \fB0\fR for no (default).
 .RE
