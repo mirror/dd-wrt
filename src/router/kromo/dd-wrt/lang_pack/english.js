@@ -158,6 +158,8 @@ share.localdns="Local DNS";
 share.minutes="min";
 share.oui="OUI Search";
 share.sttic="Static";
+share.off="Off";
+share.dynamic=="Dynamic";
 share.connecting="Connecting";
 share.connect="Connect";
 share.connected="Connected";
@@ -2860,13 +2862,14 @@ wl_basic.ch_pos_ull="ULL (+2)";
 wl_basic.ch_pos_ulu="ULU (+6)";
 wl_basic.ch_pos_uul="UUL (+10)";
 wl_basic.ch_pos_uuu="UUU (+14)";
-
 wl_basic.ch_pos_lwr="Lower";
 wl_basic.ghz="GHz";
 wl_basic.mhz="MHz";
 wl_basic.tbqam="TurboQAM";
 wl_basic.upper="upper";
 wl_basic.lower="lower";
+wl_basic.uapsd="Unscheduled Power Save Delivery";
+wl_basic.smps="Spatial Multiplex Power Save";
 
 
 //help container
