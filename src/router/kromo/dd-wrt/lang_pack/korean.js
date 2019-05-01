@@ -153,7 +153,9 @@ share.srvipname="서버 IP/Name";
 share.localdns="로컬 DNS";
 share.minutes="분";
 share.oui="OUI 검색";
+share.off="끄기";
 share.sttic="고정";
+share.dynamic="다이나믹";
 share.connecting="연결 중";
 share.connect="연결";
 share.connected="연결됨";
@@ -535,7 +537,6 @@ ddns.legend="DDNS";
 ddns.srv="DDNS 서비스";
 ddns.emailaddr="이메일 주소";
 ddns.typ="타입";
-ddns.dynamic="다이나믹";
 ddns.custom="커스텀";
 ddns.wildcard="와일드카드";
 ddns.statu="DDNS 상태";
@@ -1667,7 +1668,6 @@ service.vpnd_server="서버";
 service.vpnd_deamon="데몬";
 service.vpnd_lzoyes="예";
 service.vpnd_lzono="아니오";
-service.vpnd_lzooff="끄기";
 service.vpnd_lzoadaptive="적응";
 
 //help page
