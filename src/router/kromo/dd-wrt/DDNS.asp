@@ -187,7 +187,7 @@ addEvent(window, "unload", function() {
 									<select name="ddns_dyndnstype">
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<option value=\"1\" <% nvsm("ddns_dyndnstype", "1", "selected"); %> >" + ddns.dynamic + "</option>");
+										document.write("<option value=\"1\" <% nvsm("ddns_dyndnstype", "1", "selected"); %> >" + share.dynamic + "</option>");
 										document.write("<option value=\"2\" <% nvsm("ddns_dyndnstype", "2", "selected"); %> >" + share.sttic + "</option>");
 										document.write("<option value=\"3\" <% nvsm("ddns_dyndnstype", "3", "selected"); %> >" + ddns.custom + "</option>");
 										//]]>
@@ -363,7 +363,7 @@ addEvent(window, "unload", function() {
 									<select name="ddns_dyndnstype_6">
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<option value=\"1\" <% nvsm("ddns_dyndnstype_6", "1", "selected"); %> >" + ddns.dynamic + "</option>");
+										document.write("<option value=\"1\" <% nvsm("ddns_dyndnstype_6", "1", "selected"); %> >" + share.dynamic + "</option>");
 										//]]>
 										</script>
 									</select>
