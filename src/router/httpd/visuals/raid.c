@@ -397,7 +397,7 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<td>\n");
 			websWrite(wp, "<select name=\"raidlz%d\" onchange=\"raid_save_submit(this.form)\">\n", i);
 			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + service.vpnd_lzooff + \"</option>\");\n", !strcmp(raidlz, "0") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + share.off + \"</option>\");\n", !strcmp(raidlz, "0") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"lzo\\\" %s >lzo</option>\");\n", !strcmp(raidlz, "lzo") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"gzip\\\" %s >gzip</option>\");\n", !strcmp(raidlz, "gzip") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"zstd\\\" %s >zstd</option>\");\n", !strcmp(raidlz, "zstd") ? "selected=\\\"selected\\\"" : "");
@@ -443,7 +443,7 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<td>\n");
 			websWrite(wp, "<select name=\"raidlz%d\" onchange=\"raid_save_submit(this.form)\">\n", i);
 			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + service.vpnd_lzooff + \"</option>\");\n", !strcmp(raidlz, "0") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + share.off + \"</option>\");\n", !strcmp(raidlz, "0") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"gzip\\\" %s >gzip</option>\");\n", !strcmp(raidlz, "gzip") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"lz4\\\" %s >lz4</option>\");\n", !strcmp(raidlz, "lz4") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"lzjb\\\" %s >lzjb</option>\");\n", !strcmp(raidlz, "lzjb") ? "selected=\\\"selected\\\"" : "");
