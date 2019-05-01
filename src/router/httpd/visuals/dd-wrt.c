@@ -2992,8 +2992,10 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(wp, "<select name=\"%s\">\n", wl_smps);
 		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 		websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + share.off + \"</option>\");\n", var, nvram_match(wl_smps, "0") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + share.sttic + \"</option>\");\n", var, nvram_match(wl_smps, "1") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + share.dynamic + \"</option>\");\n", var, nvram_match(wl_smps, "2") ? "selected=\\\"selected\\\"" : "");
+		if (has_static_smps(prefix))
+			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + share.sttic + \"</option>\");\n", var, nvram_match(wl_smps, "1") ? "selected=\\\"selected\\\"" : "");
+		if (has_dynamic_smps(prefix))
+			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + share.dynamic + \"</option>\");\n", var, nvram_match(wl_smps, "2") ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "//]]>\n</script>\n</select>\n");
 		websWrite(wp, "</div>\n");
 	}
@@ -4054,8 +4056,10 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(wp, "<select name=\"%s\">\n", wl_smps);
 		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 		websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + share.off + \"</option>\");\n", var, nvram_match(wl_smps, "0") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + share.sttic + \"</option>\");\n", var, nvram_match(wl_smps, "1") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + share.dynamic + \"</option>\");\n", var, nvram_match(wl_smps, "2") ? "selected=\\\"selected\\\"" : "");
+		if (has_static_smps(prefix))
+			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + share.sttic + \"</option>\");\n", var, nvram_match(wl_smps, "1") ? "selected=\\\"selected\\\"" : "");
+		if (has_dynamic_smps(prefix))
+			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + share.dynamic + \"</option>\");\n", var, nvram_match(wl_smps, "2") ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "//]]>\n</script>\n</select>\n");
 		websWrite(wp, "</div>\n");
 	}
