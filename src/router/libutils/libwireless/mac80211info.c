@@ -902,19 +902,68 @@ int has_greenfield(const char *interface)
 
 }
 
-int has_uapsd(const char *interface)
+static int mac80211_has_feature(int phy, unsigned int feature)
 {
-	INITVALUECACHEi(interface);
-	char *htcaps = mac80211_get_caps(interface, 1, 1);
-	if (strstr(htcaps, "[SMPS-STATIC]")) {
-		ret = 1;
-	} else {
-		ret = 0;
+	struct nlattr *tb[NL80211_ATTR_MAX + 1];
+	struct nl_msg *msg;
+	struct nlattr *nl_mode;
+	struct genlmsghdr *gnlh;
+	int rem_mode;
+	int ret = 0;
+	lock();
+	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
+	if (!msg) {
+		unlock();
+		return 0;
 	}
-	free(htcaps);
+	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
+	if (unl_genl_request_single(&unl, msg, &msg) < 0) {
+		goto nla_put_failure;
+	}
+	gnlh = nlmsg_data(nlmsg_hdr(msg));
+	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
+
+	if (tb[NL80211_ATTR_FEATURE_FLAGS]) {
+		unsigned int features = nla_get_u32(tb[NL80211_ATTR_FEATURE_FLAGS]);
+		if (features & features) {
+			ret = 1;
+			goto found;
+		}
+	}
+      found:;
+	nlmsg_free(msg);
+	unlock();
+	return ret;
+nla_put_failure:
+	nlmsg_free(msg);
+	unlock();
+	return 0;
+
+}
+
+int has_smps(const char *prefix)
+{
+	INITVALUECACHE();
+	ret = mac80211_has_feature(get_ath9k_phy_ifname(prefix), NL80211_FEATURE_STATIC_SMPS);
+	ret |= mac80211_has_feature(get_ath9k_phy_ifname(prefix), NL80211_FEATURE_DYNAMIC_SMPS);
 	EXITVALUECACHE();
 	return ret;
+}
 
+int has_dynamic_smps(const char *prefix)
+{
+	INITVALUECACHE();
+	ret = mac80211_has_feature(get_ath9k_phy_ifname(prefix), NL80211_FEATURE_DYNAMIC_SMPS);
+	EXITVALUECACHE();
+	return ret;
+}
+
+int has_static_smps(const char *prefix)
+{
+	INITVALUECACHE();
+	ret = mac80211_has_feature(get_ath9k_phy_ifname(prefix), NL80211_FEATURE_STATIC_SMPS);
+	EXITVALUECACHE();
+	return ret;
 }
 
 #if defined(HAVE_ATH10K) || defined(HAVE_MVEBU) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76)
@@ -1818,8 +1867,7 @@ static int mac80211_has_iftype(int phy, enum nl80211_iftype iftype)
 	}
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
 	if (unl_genl_request_single(&unl, msg, &msg) < 0) {
-		unlock();
-		return 0;
+		goto nla_put_failure;
 	}
 	gnlh = nlmsg_data(nlmsg_hdr(msg));
 	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);

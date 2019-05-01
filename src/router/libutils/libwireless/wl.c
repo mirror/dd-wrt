@@ -2769,7 +2769,6 @@ int is_mt76(const char *prefix)
 }
 #endif
 
-
 #ifdef HAVE_WIL6210
 int is_wil6210(const char *prefix)
 {
@@ -2786,24 +2785,24 @@ int is_wil6210(const char *prefix)
 #ifdef HAVE_ATH9K
 int getmaxvaps(const char *prefix)
 {
-    if (is_ath9k(prefix))
-	return 8;
-    if (is_ath10k(prefix))
-	return 16;
-    if (is_mt7615(prefix))
-	return 4;
-    if (is_mt7603(prefix))
-	return 4;
-    if (is_mt76x2(prefix))
-	return 8;
-    if (is_mt76x0(prefix))
-	return 8;
-    if (is_brcmfmac(prefix))
-	return 4;
-    if (is_mvebu(prefix))
-	return 16;
-    if (is_wil6210(prefix))
-	return 1;
+	if (is_ath9k(prefix))
+		return 8;
+	if (is_ath10k(prefix))
+		return 16;
+	if (is_mt7615(prefix))
+		return 4;
+	if (is_mt7603(prefix))
+		return 4;
+	if (is_mt76x2(prefix))
+		return 8;
+	if (is_mt76x0(prefix))
+		return 8;
+	if (is_brcmfmac(prefix))
+		return 4;
+	if (is_mvebu(prefix))
+		return 16;
+	if (is_wil6210(prefix))
+		return 1;
 }
 #endif
 static int HTtoVHTindex(int mcs)
