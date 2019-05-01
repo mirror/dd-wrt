@@ -513,7 +513,6 @@ ddns.legend="DDNS";
 ddns.srv="DDNS Service";
 ddns.emailaddr="E-mail Address";
 ddns.typ="Type";
-ddns.dynamic="Dynamic";
 ddns.custom="Custom";
 ddns.wildcard="Wildcard";
 ddns.statu="DDNS Status";

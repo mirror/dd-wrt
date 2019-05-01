@@ -157,7 +157,7 @@ share.minutes="Minuten";
 share.oui="OUI Suche";
 share.sttic="Statisch";
 share.off="Aus";
-share.dynamic=="Dynamisch";
+share.dynamic="Dynamisch";
 share.connecting="Verbinden";
 share.connect="Verbinden";
 share.connected="Verbunden";
@@ -534,7 +534,6 @@ ddns.legend="DDNS";
 ddns.srv="Provider";
 ddns.emailaddr="E-Mail-Adresse";
 ddns.typ="Typ";
-ddns.dynamic="Dynamisch";
 ddns.custom="Spezifisch";
 ddns.wildcard="Wildcard";
 ddns.statu="DDNS-Status";
@@ -1549,7 +1548,6 @@ service.vpn_tlscip="TLS Verschl&uuml;sselung";
 service.vpn_route="Richtlinienbasiertes Routen";
 service.vpnd_lzoyes="Ja";
 service.vpnd_lzono="Nein";
-service.vpnd_lzooff="Aus";
 service.vpnd_lzoadaptive="Adaptiv";
 
 //help container

@@ -154,7 +154,9 @@ share.srvipname="Server IP/Name";
 share.localdns="DNS Locale";
 share.minutes="minuti";
 share.oui="Ricerca OUI";
+share.off="OFF";
 share.sttic="Statico";
+share.dynamic="Dinamico";
 share.connecting="In Connessione";
 share.connect="Connetti";
 share.connected="Connesso";
@@ -539,7 +541,6 @@ ddns.legend="DDNS";
 ddns.srv="Servizio DDNS";
 ddns.emailaddr="Indirizzo E-mail";
 ddns.typ="Tipo";
-ddns.dynamic="Dinamico";
 ddns.custom="Personalizzato";
 ddns.wildcard="Wildcard";
 ddns.statu="Stato DDNS";
@@ -1677,7 +1678,6 @@ service.vpnd_server="Server";
 service.vpnd_deamon="Daemon";
 service.vpnd_lzoyes="Si";
 service.vpnd_lzono="No";
-service.vpnd_lzooff="OFF";
 service.vpnd_lzoadaptive="Adaptive";
 
 //vnc.repeater
