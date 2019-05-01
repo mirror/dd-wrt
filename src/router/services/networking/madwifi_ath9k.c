@@ -935,13 +935,17 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		sprintf(greenfield, "%s_gf", prefix);
 		caps = mac80211_get_caps(prefix, nvram_default_matchi(shortgi, 1, 1) ? 1 : 0, nvram_default_matchi(greenfield, 1, 0) ? 1 : 0);
 		if (ht) {
-			if (nvram_nmatch("1", "%s_uapsd", prefix) && has_uapsd(prefix))
+			if (nvram_nmatch("1", "%s_smps", prefix) && has_static_smps(prefix))
 				fprintf(fp, "ht_capab=[%s]%s[SMPS-STATIC]\n", ht, caps);
+			else if (nvram_nmatch("2", "%s_smps", prefix) && has_dynamic_smps(prefix))
+				fprintf(fp, "ht_capab=[%s]%s[SMPS-DYNAMIC]\n", ht, caps);
 			else
 				fprintf(fp, "ht_capab=[%s]%s\n", ht, caps);
 		} else {
-			if (nvram_nmatch("1", "%s_uapsd", prefix) && has_uapsd(prefix))
+			if (nvram_nmatch("1", "%s_smps", prefix) && has_static_smps(prefix))
 				fprintf(fp, "ht_capab=%s[SMPS-STATIC]\n", caps);
+			else if (nvram_nmatch("2", "%s_smps", prefix) && has_dynamic_smps(prefix))
+				fprintf(fp, "ht_capab=%s[SMPS-DYNAMIC]\n", caps);
 		}
 		free(caps);
 	}
