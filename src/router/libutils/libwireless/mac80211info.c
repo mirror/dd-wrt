@@ -966,6 +966,14 @@ int has_static_smps(const char *prefix)
 	return ret;
 }
 
+int has_uapsd(const char *prefix)
+{
+	INITVALUECACHE();
+	ret = mac80211_has_feature(get_ath9k_phy_ifname(prefix), NL80211_ATTR_SUPPORT_AP_UAPSD);
+	EXITVALUECACHE();
+	return ret;
+}
+
 #if defined(HAVE_ATH10K) || defined(HAVE_MVEBU) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76)
 int has_vht80(const char *interface)
 {

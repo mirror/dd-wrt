@@ -353,6 +353,7 @@ extern int has_greenfield(const char *interface);
 #ifdef HAVE_ATH9K
 extern int has_airtime_fairness(const char *prefix);
 extern int has_shortgi(const char *interface);
+extern int has_uapsd(const char *interface);
 extern int has_smps(const char *interface);
 extern int has_dynamic_smps(const char *interface);
 extern int has_static_smps(const char *interface);
@@ -366,7 +367,10 @@ static inline int has_shortgi(const char *prefix)
 {
 	return 0;
 }
-
+static inline int has_uapsd(const char *prefix)
+{
+	return 0;
+}
 static inline int has_smps(const char *prefix)
 {
 	return 0;
