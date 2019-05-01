@@ -2726,6 +2726,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	char wl_ff[16];
 	char wmm[32];
 	char wl_uapsd[16];
+	char wl_smps[16];
 	char wl_isolate[32];
 	char wl_intmit[32];
 	char wl_noise_immunity[32];
@@ -2982,9 +2983,19 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	sprintf(wl_intmit, "%s_intmit", prefix);
 	sprintf(wl_noise_immunity, "%s_noise_immunity", prefix);
 	sprintf(wl_ofdm_weak_det, "%s_ofdm_weak_det", prefix);
-	if (has_uapsd(prefix)) {
-		sprintf(wl_uapsd, "%s_uapsd", prefix);
-		showRadio(wp, "wl_basic.uapsd", wl_uapsd);
+	sprintf(wl_uapsd, "%s_uapsd", prefix);
+	showRadio(wp, "wl_basic.uapsd", wl_uapsd);
+	if (has_smps(prefix)) {
+		sprintf(wl_smps, "%s_smps", prefix);
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "wl_basic.smps", NULL);
+		websWrite(wp, "<select name=\"%s\">\n", wl_smps);
+		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+		websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + share.off + \"</option>\");\n", var, nvram_match(wl_smps, "0") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + share.sttic + \"</option>\");\n", var, nvram_match(wl_smps, "1") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + share.dynamic + \"</option>\");\n", var, nvram_match(wl_smps, "2") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "//]]>\n</script>\n</select>\n");
+		websWrite(wp, "</div>\n");
 	}
 	if (!is_mvebu(prefix)) {
 		if (is_mac80211(prefix)) {
@@ -3669,6 +3680,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	sprintf(wl_noise_immunity, "%s_noise_immunity", prefix);
 	sprintf(wl_ofdm_weak_det, "%s_ofdm_weak_det", prefix);
 	sprintf(wl_uapsd, "%s_uapsd", prefix);
+	sprintf(wl_smps, "%s_smps", prefix);
 #if 0
 	showRadio(wp, "wl_basic.csma", wl_csma);
 #endif
@@ -4034,8 +4046,18 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	}
 #endif
 #endif
-	if (has_uapsd(prefix)) {
-		showRadio(wp, "wl_basic.uapsd", wl_uapsd);
+	showRadio(wp, "wl_basic.uapsd", wl_uapsd);
+	if (has_smps(prefix)) {
+		sprintf(wl_smps, "%s_smps", prefix);
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "wl_basic.smps", NULL);
+		websWrite(wp, "<select name=\"%s\">\n", wl_smps);
+		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+		websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + share.off + \"</option>\");\n", var, nvram_match(wl_smps, "0") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + share.sttic + \"</option>\");\n", var, nvram_match(wl_smps, "1") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + share.dynamic + \"</option>\");\n", var, nvram_match(wl_smps, "2") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "//]]>\n</script>\n</select>\n");
+		websWrite(wp, "</div>\n");
 	}
 	if (!is_mvebu(prefix)) {
 		if (is_mac80211(prefix)) {
