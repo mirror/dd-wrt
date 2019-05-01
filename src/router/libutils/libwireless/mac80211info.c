@@ -925,7 +925,7 @@ static int mac80211_has_feature(int phy, unsigned int feature)
 
 	if (tb[NL80211_ATTR_FEATURE_FLAGS]) {
 		unsigned int features = nla_get_u32(tb[NL80211_ATTR_FEATURE_FLAGS]);
-		if (features & features) {
+		if ((features & feature) == feature) {
 			ret = 1;
 			goto found;
 		}
