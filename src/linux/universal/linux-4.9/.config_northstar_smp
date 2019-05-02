@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 4.9.167 Kernel Configuration
+# Linux/arm 4.9.172 Kernel Configuration
 #
 CONFIG_ARM=y
 # CONFIG_ARM_HWCC_FLAG is not set
@@ -1666,6 +1666,7 @@ CONFIG_UNIX98_PTYS=y
 # CONFIG_NOZOMI is not set
 # CONFIG_N_GSM is not set
 # CONFIG_TRACE_SINK is not set
+CONFIG_LDISC_AUTOLOAD=y
 CONFIG_DEVMEM=y
 CONFIG_DEVKMEM=y
 
@@ -1709,7 +1710,6 @@ CONFIG_SERIAL_CORE_CONSOLE=y
 # CONFIG_IPMI_HANDLER is not set
 CONFIG_HW_RANDOM=y
 # CONFIG_HW_RANDOM_TIMERIOMEM is not set
-# CONFIG_R3964 is not set
 # CONFIG_APPLICOM is not set
 # CONFIG_RAW_DRIVER is not set
 # CONFIG_TCG_TPM is not set
@@ -2732,4 +2732,3 @@ CONFIG_SG_POOL=y
 # CONFIG_ARCH_HAS_SG_CHAIN is not set
 CONFIG_SBITMAP=y
 # CONFIG_VIRTUALIZATION is not set
-CONFIG_LDISC_AUTOLOAD=y

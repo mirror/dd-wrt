@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 4.9.167 Kernel Configuration
+# Linux/mips 4.9.172 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -1441,6 +1441,7 @@ CONFIG_SERIAL_NONSTANDARD=y
 CONFIG_N_HDLC=m
 # CONFIG_N_GSM is not set
 # CONFIG_TRACE_SINK is not set
+CONFIG_LDISC_AUTOLOAD=y
 CONFIG_DEVMEM=y
 CONFIG_DEVKMEM=y
 
@@ -1479,7 +1480,6 @@ CONFIG_SERIAL_CORE_CONSOLE=y
 # CONFIG_TTY_PRINTK is not set
 # CONFIG_IPMI_HANDLER is not set
 # CONFIG_HW_RANDOM is not set
-# CONFIG_R3964 is not set
 # CONFIG_APPLICOM is not set
 CONFIG_GPIO_DEVICE=y
 # CONFIG_RAW_DRIVER is not set
@@ -2532,4 +2532,3 @@ CONFIG_SG_POOL=y
 CONFIG_SBITMAP=y
 CONFIG_HAVE_KVM=y
 # CONFIG_VIRTUALIZATION is not set
-CONFIG_LDISC_AUTOLOAD=y
