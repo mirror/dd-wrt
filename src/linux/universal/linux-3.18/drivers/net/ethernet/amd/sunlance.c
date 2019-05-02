@@ -1452,7 +1452,7 @@ no_link_test:
 	lp->dev = dev;
 	SET_NETDEV_DEV(dev, &op->dev);
 	dev->watchdog_timeo = 5*HZ;
-	SET_ETHTOOL_OPS(dev, &sparc_lance_ethtool_ops);
+	dev->ethtool_ops = &sparc_lance_ethtool_ops;
 	dev->netdev_ops = &sparc_lance_ops;
 
 	dev->irq = op->archdata.irqs[0];

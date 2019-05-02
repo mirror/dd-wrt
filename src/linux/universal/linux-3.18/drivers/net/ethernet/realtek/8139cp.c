@@ -1985,7 +1985,7 @@ static int cp_init_one (struct pci_dev *pdev, const struct pci_device_id *ent)
 
 	dev->netdev_ops = &cp_netdev_ops;
 	netif_napi_add(dev, &cp->napi, cp_rx_poll, 16);
-	SET_ETHTOOL_OPS(dev, &cp_ethtool_ops);
+	dev->ethtool_ops = &cp_ethtool_ops;
 	dev->watchdog_timeo = TX_TIMEOUT;
 
 	dev->features |= NETIF_F_HW_VLAN_CTAG_TX | NETIF_F_HW_VLAN_CTAG_RX;

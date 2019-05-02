@@ -112,7 +112,6 @@ void reqsk_queue_destroy(struct request_sock_queue *queue)
 	kvfree(lopt);
 }
 
-#ifdef CONFIG_TCP_FASTOPEN
 /*
  * This function is called to set a Fast Open socket's "fastopen_rsk" field
  * to NULL when a TFO socket no longer needs to access the request_sock.
@@ -204,4 +203,3 @@ out:
 	spin_unlock_bh(&fastopenq->lock);
 	sock_put(lsk);
 }
-#endif

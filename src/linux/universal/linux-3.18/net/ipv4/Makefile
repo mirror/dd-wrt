@@ -7,22 +7,18 @@ obj-y     := route.o inetpeer.o protocol.o \
 	     ip_output.o ip_sockglue.o inet_hashtables.o \
 	     inet_timewait_sock.o inet_connection_sock.o \
 	     tcp.o tcp_input.o tcp_output.o tcp_timer.o tcp_ipv4.o \
-	     tcp_minisocks.o tcp_cong.o \
-	     datagram.o udp.o udplite.o \
-	     arp.o icmp.o devinet.o af_inet.o \
-	     fib_frontend.o fib_semantics.o \
-	     inet_fragment.o ip_tunnel_core.o gre_offload.o
+	     tcp_minisocks.o tcp_cong.o tcp_metrics.o tcp_fastopen.o \
+	     tcp_offload.o datagram.o raw.o udp.o udplite.o \
+	     udp_offload.o arp.o icmp.o devinet.o af_inet.o igmp.o \
+	     fib_frontend.o fib_semantics.o fib_trie.o \
+	     inet_fragment.o ping.o ip_tunnel_core.o gre_offload.o
 
-obj-$(CONFIG_FIB_TRIE) += fib_trie.o
-#obj-$(CONFIG_FIB_LIST) += fib_list.o
 obj-$(CONFIG_NET_IP_TUNNEL) += ip_tunnel.o
-obj-$(CONFIG_IP_PING) += ping.o
 obj-$(CONFIG_SYSCTL) += sysctl_net_ipv4.o
 ifneq ($(CONFIG_IFX_UDP_REDIRECT),)
 obj-$(CONFIG_IFX_UDP_REDIRECT) += udp_redirect_symb.o
 endif
 obj-$(CONFIG_PROC_FS) += proc.o
-obj-$(CONFIG_TCP_METRICS) += tcp_metrics.o
 obj-$(CONFIG_IP_MULTIPLE_TABLES) += fib_rules.o
 obj-$(CONFIG_IP_MROUTE) += ipmr.o
 obj-$(CONFIG_NET_IPIP) += ipip.o
@@ -34,7 +30,6 @@ obj-$(CONFIG_NET_UDP_TUNNEL) += udp_tunnel.o
 obj-$(CONFIG_NET_IPVTI) += ip_vti.o
 obj-$(CONFIG_NET_EOIP) += eoip.o
 obj-$(CONFIG_SYN_COOKIES) += syncookies.o
-obj-$(CONFIG_IP_OFFLOAD) += tcp_offload.o udp_offload.o
 obj-$(CONFIG_INET_AH) += ah4.o
 obj-$(CONFIG_INET_ESP) += esp4.o
 obj-$(CONFIG_INET_IPCOMP) += ipcomp.o
@@ -45,7 +40,6 @@ obj-$(CONFIG_INET_TUNNEL) += tunnel4.o
 obj-$(CONFIG_INET_XFRM_MODE_TRANSPORT) += xfrm4_mode_transport.o
 obj-$(CONFIG_INET_XFRM_MODE_TUNNEL) += xfrm4_mode_tunnel.o
 obj-$(CONFIG_IP_PNP) += ipconfig.o
-obj-$(CONFIG_IP_MULTICAST) += igmp.o
 obj-$(CONFIG_NETFILTER)	+= netfilter.o netfilter/
 obj-$(CONFIG_INET_DIAG) += inet_diag.o 
 obj-$(CONFIG_INET_TCP_DIAG) += tcp_diag.o
@@ -64,12 +58,10 @@ obj-$(CONFIG_TCP_CONG_SCALABLE) += tcp_scalable.o
 obj-$(CONFIG_TCP_CONG_LP) += tcp_lp.o
 obj-$(CONFIG_TCP_CONG_YEAH) += tcp_yeah.o
 obj-$(CONFIG_TCP_CONG_ILLINOIS) += tcp_illinois.o
-obj-$(CONFIG_TCP_FASTOPEN) += tcp_fastopen.o
 obj-$(CONFIG_MEMCG_KMEM) += tcp_memcontrol.o
 obj-$(CONFIG_NETLABEL) += cipso_ipv4.o
 obj-$(CONFIG_GENEVE) += geneve.o
 obj-$(CONFIG_NET_ETHERIP) += etherip.o
-obj-$(CONFIG_INET_RAW) += raw.o
 
 obj-$(CONFIG_XFRM) += xfrm4_policy.o xfrm4_state.o xfrm4_input.o \
 		      xfrm4_output.o xfrm4_protocol.o

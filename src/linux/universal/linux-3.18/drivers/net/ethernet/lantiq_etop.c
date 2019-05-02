@@ -903,7 +903,7 @@ ltq_etop_probe(struct platform_device *pdev)
 	}
 	strcpy(dev->name, "eth%d");
 	dev->netdev_ops = &ltq_eth_netdev_ops;
-	SET_ETHTOOL_OPS(dev, &ltq_etop_ethtool_ops);
+	dev->ethtool_ops = &ltq_etop_ethtool_ops;
 	priv = netdev_priv(dev);
 	priv->res = res;
 	priv->pdev = pdev;

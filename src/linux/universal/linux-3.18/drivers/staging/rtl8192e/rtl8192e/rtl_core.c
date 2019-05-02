@@ -2934,7 +2934,7 @@ static int rtl8192_pci_probe(struct pci_dev *pdev,
 	dev->netdev_ops = &rtl8192_netdev_ops;
 
 	dev->wireless_handlers = &r8192_wx_handlers_def;
-	SET_ETHTOOL_OPS(dev, &rtl819x_ethtool_ops);
+	dev->ethtool_ops = &rtl819x_ethtool_ops;
 
 	dev->type = ARPHRD_ETHER;
 	dev->watchdog_timeo = HZ * 3;

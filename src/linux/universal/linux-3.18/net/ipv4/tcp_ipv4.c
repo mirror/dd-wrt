@@ -1427,24 +1427,6 @@ static struct sock *tcp_v4_hnd_req(struct sock *sk, struct sk_buff *skb)
 	return sk;
 }
 
-#ifdef CONFIG_TCP_FASTOPEN
-static bool tcp_fastopen_check(struct sock *sk, struct sk_buff *skb,
-			       struct request_sock *req,
-			       struct tcp_fastopen_cookie *foc,
-			       struct tcp_fastopen_cookie *valid_foc)
-{
-	return false;
-}
-
-static int tcp_v4_conn_req_fastopen(struct sock *sk,
-				    struct sk_buff *skb,
-				    struct sk_buff *skb_synack,
-				    struct request_sock *req)
-{
-	return 0;
-}
-#endif
-
 /* The socket must have it's spinlock held when we get
  * here.
  *

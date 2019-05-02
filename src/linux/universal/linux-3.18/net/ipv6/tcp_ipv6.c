@@ -1972,7 +1972,7 @@ static struct inet_protosw tcpv6_protosw = {
 static int __net_init tcpv6_net_init(struct net *net)
 {
 	return inet_ctl_sock_create(&net->ipv6.tcp_sk, PF_INET6,
-				    SOCK_DGRAM, 0, net);
+				    SOCK_RAW, IPPROTO_TCP, net);
 }
 
 static void __net_exit tcpv6_net_exit(struct net *net)

@@ -133,7 +133,7 @@ static void nlmon_setup(struct net_device *dev)
 	dev->tx_queue_len = 0;
 
 	dev->netdev_ops	= &nlmon_ops;
-	SET_ETHTOOL_OPS(dev, &nlmon_ethtool_ops);
+	dev->ethtool_ops = &nlmon_ethtool_ops;
 	dev->destructor	= free_netdev;
 
 	dev->features = NETIF_F_SG | NETIF_F_FRAGLIST |

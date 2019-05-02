@@ -274,7 +274,6 @@ static void addrconf_mod_dad_work(struct inet6_ifaddr *ifp,
 		in6_ifa_put(ifp);
 }
 
-#ifdef CONFIG_PROC_FS
 static int snmp6_alloc_dev(struct inet6_dev *idev)
 {
 	int i;
@@ -308,9 +307,6 @@ err_icmp:
 err_ip:
 	return -ENOMEM;
 }
-#else
-static int snmp6_alloc_dev(struct inet6_dev *idev) { return 0; }
-#endif
 
 static struct inet6_dev *ipv6_add_dev(struct net_device *dev)
 {
@@ -4375,7 +4371,6 @@ static inline size_t inet6_if_nlmsg_size(void)
 	       + nla_total_size(inet6_ifla6_size()); /* IFLA_PROTINFO */
 }
 
-#ifdef CONFIG_PROC_FS
 static inline void __snmp6_fill_statsdev(u64 *stats, atomic_long_t *mib,
 				      int items, int bytes)
 {
@@ -4419,10 +4414,6 @@ static void snmp6_fill_stats(u64 *stats, struct inet6_dev *idev, int attrtype,
 		break;
 	}
 }
-#else
-static void snmp6_fill_stats(u64 *stats, struct inet6_dev *idev, int attrtype,
-			     int bytes) {}
-#endif
 
 static int inet6_fill_ifla6_attrs(struct sk_buff *skb, struct inet6_dev *idev)
 {

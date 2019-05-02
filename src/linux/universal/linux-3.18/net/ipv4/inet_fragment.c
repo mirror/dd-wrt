@@ -25,11 +25,7 @@
 #include <net/inet_frag.h>
 #include <net/inet_ecn.h>
 
-#if CONFIG_BASE_SMALL == 1
-#define INETFRAGS_EVICT_BUCKETS   15
-#else
 #define INETFRAGS_EVICT_BUCKETS   128
-#endif
 #define INETFRAGS_EVICT_MAX	  512
 
 /* don't rebuild inetfrag table with new secret more often than this */

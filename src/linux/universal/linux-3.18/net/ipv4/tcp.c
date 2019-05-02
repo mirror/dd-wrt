@@ -1058,7 +1058,6 @@ static inline int select_size(const struct sock *sk, bool sg)
 	return tmp;
 }
 
-#ifdef CONFIG_TCP_FASTOPEN
 void tcp_free_fastopen_req(struct tcp_sock *tp)
 {
 	if (tp->fastopen_req != NULL) {
@@ -1095,7 +1094,6 @@ static int tcp_sendmsg_fastopen(struct sock *sk, struct msghdr *msg,
 	tcp_free_fastopen_req(tp);
 	return err;
 }
-#endif
 
 int tcp_sendmsg(struct kiocb *iocb, struct sock *sk, struct msghdr *msg,
 		size_t size)
@@ -1111,7 +1109,6 @@ int tcp_sendmsg(struct kiocb *iocb, struct sock *sk, struct msghdr *msg,
 	lock_sock(sk);
 
 	flags = msg->msg_flags;
-#ifdef CONFIG_TCP_FASTOPEN
 	if ((flags & MSG_FASTOPEN) && !tp->repair) {
 		err = tcp_sendmsg_fastopen(sk, msg, &copied_syn, size);
 		if (err == -EINPROGRESS && copied_syn > 0)
@@ -1120,7 +1117,6 @@ int tcp_sendmsg(struct kiocb *iocb, struct sock *sk, struct msghdr *msg,
 			goto out_err;
 		offset = copied_syn;
 	}
-#endif
 
 	timeo = sock_sndtimeo(sk, flags & MSG_DONTWAIT);
 
@@ -2616,7 +2612,6 @@ static int do_tcp_setsockopt(struct sock *sk, int level,
 			icsk->icsk_user_timeout = msecs_to_jiffies(val);
 		break;
 
-#ifdef CONFIG_TCP_FASTOPEN
 	case TCP_FASTOPEN:
 		if (val >= 0 && ((1 << sk->sk_state) & (TCPF_CLOSE |
 		    TCPF_LISTEN))) {
@@ -2627,7 +2622,6 @@ static int do_tcp_setsockopt(struct sock *sk, int level,
 			err = -EINVAL;
 		}
 		break;
-#endif
 	case TCP_TIMESTAMP:
 		if (!tp->repair)
 			err = -EPERM;
@@ -3058,7 +3052,7 @@ EXPORT_SYMBOL_GPL(tcp_done);
 
 extern struct tcp_congestion_ops tcp_reno;
 
-static __initdata unsigned long thash_entries = CONFIG_BASE_SMALL ? 16 : 0;
+static __initdata unsigned long thash_entries;
 static int __init set_thash_entries(char *str)
 {
 	ssize_t ret;

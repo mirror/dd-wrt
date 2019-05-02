@@ -2513,8 +2513,7 @@ void udp4_proc_exit(void)
 }
 #endif /* CONFIG_PROC_FS */
 
-static __initdata unsigned long uhash_entries = CONFIG_BASE_SMALL ? 16 : 0;
-
+static __initdata unsigned long uhash_entries;
 static int __init set_uhash_entries(char *str)
 {
 	ssize_t ret;

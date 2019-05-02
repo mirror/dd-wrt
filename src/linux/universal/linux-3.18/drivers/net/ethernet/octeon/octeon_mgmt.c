@@ -1520,7 +1520,7 @@ static int octeon_mgmt_probe(struct platform_device *pdev)
 	netdev->priv_flags |= IFF_UNICAST_FLT;
 
 	netdev->netdev_ops = &octeon_mgmt_ops;
-	SET_ETHTOOL_OPS(netdev, &octeon_mgmt_ethtool_ops);
+	netdev->ethtool_ops = &octeon_mgmt_ethtool_ops;
 
 	mac = of_get_mac_address(pdev->dev.of_node);
 

@@ -1617,7 +1617,7 @@ dm9000_probe(struct platform_device *pdev)
 
 	ndev->netdev_ops	= &dm9000_netdev_ops;
 	ndev->watchdog_timeo	= msecs_to_jiffies(watchdog);
-	SET_ETHTOOL_OPS(ndev, &dm9000_ethtool_ops);
+	ndev->ethtool_ops	= &dm9000_ethtool_ops;
 
 	db->msg_enable       = NETIF_MSG_LINK;
 	db->mii.phy_id_mask  = 0x1f;

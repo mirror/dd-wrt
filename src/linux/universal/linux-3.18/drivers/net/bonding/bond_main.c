@@ -4013,7 +4013,7 @@ void bond_setup(struct net_device *bond_dev)
 	/* Initialize the device entry points */
 	ether_setup(bond_dev);
 	bond_dev->netdev_ops = &bond_netdev_ops;
-	SET_ETHTOOL_OPS(bond_dev, &bond_ethtool_ops);
+	bond_dev->ethtool_ops = &bond_ethtool_ops;
 
 	bond_dev->destructor = bond_destructor;
 

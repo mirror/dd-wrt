@@ -1436,7 +1436,7 @@ static int eth_init_one(struct platform_device *pdev)
 	}
 
 	dev->netdev_ops = &ixp4xx_netdev_ops;
-	SET_ETHTOOL_OPS(dev, &ixp4xx_ethtool_ops);
+	dev->ethtool_ops = &ixp4xx_ethtool_ops;
 	dev->tx_queue_len = 100;
 
 	netif_napi_add(dev, &port->napi, eth_poll, NAPI_WEIGHT);

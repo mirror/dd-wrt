@@ -65,7 +65,7 @@ struct fnhe_hash_bucket {
 	struct fib_nh_exception __rcu	*chain;
 };
 
-#define FNHE_HASH_SHIFT		CONFIG_BASE_SMALL ? 4 : 11
+#define FNHE_HASH_SHIFT		11
 #define FNHE_HASH_SIZE		(1 << FNHE_HASH_SHIFT)
 #define FNHE_RECLAIM_DEPTH	5
 
@@ -163,7 +163,6 @@ struct fib_result_nl {
 #ifdef CONFIG_IP_MULTIPLE_TABLES
 #define FIB_TABLE_HASHSZ 256
 #else
-/* Can we use 1 for BASE_SMALL? */
 #define FIB_TABLE_HASHSZ 2
 #endif
 
