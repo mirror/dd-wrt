@@ -204,6 +204,7 @@ void start_sysinit(void)
 	setEthLinkLED(21, "eth0");
 	setEthLED(13, "eth1");
 	setEthLinkLED(20, "eth1");
+	eval("ledtool", "8", "0");      //diag ~5sec
 #endif //HAVE_FMS2111
 #endif
 
