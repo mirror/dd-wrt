@@ -1929,7 +1929,7 @@ static int smc911x_probe(struct net_device *dev)
 
 	dev->netdev_ops = &smc911x_netdev_ops;
 	dev->watchdog_timeo = msecs_to_jiffies(watchdog);
-	SET_ETHTOOL_OPS(dev, &smc911x_ethtool_ops);
+	dev->ethtool_ops = &smc911x_ethtool_ops;
 
 	INIT_WORK(&lp->phy_configure, smc911x_phy_configure);
 	lp->mii.phy_id_mask = 0x1f;

@@ -60,6 +60,46 @@ struct rtnl_link {
 	rtnl_calcit_func 	calcit;
 };
 
+static DEFINE_MUTEX(rtnl_mutex);
+
+void rtnl_lock(void)
+{
+	mutex_lock(&rtnl_mutex);
+}
+EXPORT_SYMBOL(rtnl_lock);
+
+void __rtnl_unlock(void)
+{
+	mutex_unlock(&rtnl_mutex);
+}
+
+void rtnl_unlock(void)
+{
+	/* This fellow will unlock it for us. */
+	netdev_run_todo();
+}
+EXPORT_SYMBOL(rtnl_unlock);
+
+int rtnl_trylock(void)
+{
+	return mutex_trylock(&rtnl_mutex);
+}
+EXPORT_SYMBOL(rtnl_trylock);
+
+int rtnl_is_locked(void)
+{
+	return mutex_is_locked(&rtnl_mutex);
+}
+EXPORT_SYMBOL(rtnl_is_locked);
+
+#ifdef CONFIG_PROVE_LOCKING
+int lockdep_rtnl_is_held(void)
+{
+	return lockdep_is_held(&rtnl_mutex);
+}
+EXPORT_SYMBOL(lockdep_rtnl_is_held);
+#endif /* #ifdef CONFIG_PROVE_LOCKING */
+
 static struct rtnl_link *rtnl_msg_handlers[RTNL_FAMILY_MAX + 1];
 
 static inline int rtm_msgindex(int msgtype)
@@ -3039,8 +3079,6 @@ static struct notifier_block rtnetlink_dev_notifier = {
 	.notifier_call	= rtnetlink_event,
 };
 
-/* Don't put this into the header, private backdoor. */
-extern struct mutex rtnl_mutex;
 
 static int __net_init rtnetlink_net_init(struct net *net)
 {

@@ -1171,7 +1171,7 @@ static int r6040_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 
 	/* The RDC-specific entries in the device structure. */
 	dev->netdev_ops = &r6040_netdev_ops;
-	SET_ETHTOOL_OPS(dev, &netdev_ethtool_ops);
+	dev->ethtool_ops = &netdev_ethtool_ops;
 	dev->watchdog_timeo = TX_TIMEOUT;
 
 	netif_napi_add(dev, &lp->napi, r6040_poll, 64);

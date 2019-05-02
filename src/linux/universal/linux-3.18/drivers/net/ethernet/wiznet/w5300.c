@@ -621,7 +621,7 @@ static int w5300_probe(struct platform_device *pdev)
 	priv->ndev = ndev;
 
 	ndev->netdev_ops = &w5300_netdev_ops;
-	SET_ETHTOOL_OPS(ndev, &w5300_ethtool_ops);
+	ndev->ethtool_ops = &w5300_ethtool_ops;
 	ndev->watchdog_timeo = HZ;
 	netif_napi_add(ndev, &priv->napi, w5300_napi_poll, 16);
 

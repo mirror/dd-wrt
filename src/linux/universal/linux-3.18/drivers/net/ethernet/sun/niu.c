@@ -9703,7 +9703,7 @@ static const struct net_device_ops niu_netdev_ops = {
 static void niu_assign_netdev_ops(struct net_device *dev)
 {
 	dev->netdev_ops = &niu_netdev_ops;
-	SET_ETHTOOL_OPS(dev, &niu_ethtool_ops);
+	dev->ethtool_ops = &niu_ethtool_ops;
 	dev->watchdog_timeo = NIU_TX_TIMEOUT;
 }
 

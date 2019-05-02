@@ -1970,7 +1970,7 @@ static int smc_probe(struct net_device *dev, void __iomem *ioaddr,
 
 	dev->watchdog_timeo = msecs_to_jiffies(watchdog);
 	dev->netdev_ops = &smc_netdev_ops;
-	SET_ETHTOOL_OPS(dev, &smc_ethtool_ops);
+	dev->ethtool_ops = &smc_ethtool_ops;
 
 	tasklet_init(&lp->tx_task, smc_hardware_send_pkt, (unsigned long)dev);
 	INIT_WORK(&lp->phy_configure, smc_phy_configure);

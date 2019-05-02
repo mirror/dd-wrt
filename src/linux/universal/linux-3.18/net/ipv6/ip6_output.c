@@ -238,7 +238,6 @@ int ip6_xmit(struct sock *sk, struct sk_buff *skb, struct flowi6 *fl6,
 }
 EXPORT_SYMBOL(ip6_xmit);
 
-#ifdef CONFIG_INET_RAW
 static int ip6_call_ra_chain(struct sk_buff *skb, int sel)
 {
 	struct ip6_ra_chain *ra;
@@ -267,7 +266,6 @@ static int ip6_call_ra_chain(struct sk_buff *skb, int sel)
 	read_unlock(&ip6_ra_lock);
 	return 0;
 }
-#endif
 
 static int ip6_forward_proxy_check(struct sk_buff *skb)
 {
@@ -406,12 +404,10 @@ int ip6_forward(struct sk_buff *skb)
 	 *	cannot be fragmented, because there is no warranty
 	 *	that different fragments will go along one path. --ANK
 	 */
-#ifdef CONFIG_INET_RAW
 	if (unlikely(opt->flags & IP6SKB_ROUTERALERT)) {
 		if (ip6_call_ra_chain(skb, ntohs(opt->ra)))
 			return 0;
 	}
-#endif
 
 	/*
 	 *	check and decrement ttl

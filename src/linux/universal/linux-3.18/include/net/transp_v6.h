@@ -19,13 +19,10 @@ int ipv6_frag_init(void);
 void ipv6_frag_exit(void);
 
 /* transport protocols */
-#ifdef CONFIG_INET_RAW
+int pingv6_init(void);
+void pingv6_exit(void);
 int rawv6_init(void);
 void rawv6_exit(void);
-#else
-static inline int rawv6_init(void) { return 0; }
-static inline void rawv6_exit(void) {}
-#endif
 int udpv6_init(void);
 void udpv6_exit(void);
 int udplitev6_init(void);

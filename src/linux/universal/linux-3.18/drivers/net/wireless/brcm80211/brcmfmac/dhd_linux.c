@@ -677,7 +677,7 @@ int brcmf_net_attach(struct brcmf_if *ifp, bool rtnl_locked)
 	ndev->netdev_ops = &brcmf_netdev_ops_pri;
 
 	ndev->hard_header_len += drvr->hdrlen;
-	SET_ETHTOOL_OPS(ndev, &brcmf_ethtool_ops);
+	ndev->ethtool_ops = &brcmf_ethtool_ops;
 
 	drvr->rxsz = ndev->mtu + ndev->hard_header_len +
 			      drvr->hdrlen;

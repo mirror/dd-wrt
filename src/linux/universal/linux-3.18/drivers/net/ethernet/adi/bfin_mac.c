@@ -1693,7 +1693,7 @@ static int bfin_mac_probe(struct platform_device *pdev)
 	lp->vlan2_mask = ETH_P_8021Q | mii_bus_data->vlan2_mask;
 
 	ndev->netdev_ops = &bfin_mac_netdev_ops;
-	SET_ETHTOOL_OPS(ndev, &bfin_mac_ethtool_ops);
+	ndev->ethtool_ops = &bfin_mac_ethtool_ops;
 
 	init_timer(&lp->tx_reclaim_timer);
 	lp->tx_reclaim_timer.data = (unsigned long)lp;
