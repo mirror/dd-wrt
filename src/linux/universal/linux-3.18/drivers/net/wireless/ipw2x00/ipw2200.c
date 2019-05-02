@@ -11728,7 +11728,7 @@ static int ipw_pci_probe(struct pci_dev *pdev,
 	priv->wireless_data.spy_data = &priv->ieee->spy_data;
 	net_dev->wireless_data = &priv->wireless_data;
 	net_dev->wireless_handlers = &ipw_wx_handler_def;
-	SET_ETHTOOL_OPS(net_dev, &ipw_ethtool_ops);
+	net_dev->ethtool_ops = &ipw_ethtool_ops;
 
 	err = sysfs_create_group(&pdev->dev.kobj, &ipw_attribute_group);
 	if (err) {

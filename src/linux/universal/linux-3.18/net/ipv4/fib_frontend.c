@@ -973,9 +973,6 @@ no_promotions:
 #undef BRD1_OK
 }
 
-#ifdef CONFIG_RTNETLINK
-/* Isn't really rtnetlink, but close enough for this CONFIG. */
-
 static void nl_fib_lookup(struct net *net, struct fib_result_nl *frn)
 {
 
@@ -1058,10 +1055,6 @@ static void nl_fib_lookup_exit(struct net *net)
 	netlink_kernel_release(net->ipv4.fibnl);
 	net->ipv4.fibnl = NULL;
 }
-#else
-static inline void nl_fib_lookup_exit(struct net *net) {}
-static inline int nl_fib_lookup_init(struct net *net) { return 0; }
-#endif
 
 static void fib_disable_ip(struct net_device *dev, int force)
 {

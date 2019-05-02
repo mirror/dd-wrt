@@ -1539,7 +1539,7 @@ static int greth_of_probe(struct platform_device *ofdev)
 	}
 
 	dev->netdev_ops = &greth_netdev_ops;
-	SET_ETHTOOL_OPS(dev, &greth_ethtool_ops);
+	dev->ethtool_ops = &greth_ethtool_ops;
 
 	err = register_netdev(dev);
 	if (err) {

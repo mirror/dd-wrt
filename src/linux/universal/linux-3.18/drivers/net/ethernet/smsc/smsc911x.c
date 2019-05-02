@@ -2297,7 +2297,7 @@ static int smsc911x_init(struct net_device *dev)
 	dev->flags |= IFF_MULTICAST;
 	netif_napi_add(dev, &pdata->napi, smsc911x_poll, SMSC_NAPI_WEIGHT);
 	dev->netdev_ops = &smsc911x_netdev_ops;
-	SET_ETHTOOL_OPS(dev, &smsc911x_ethtool_ops);
+	dev->ethtool_ops = &smsc911x_ethtool_ops;
 
 	return 0;
 }

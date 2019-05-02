@@ -631,7 +631,7 @@ void i2400m_netdev_setup(struct net_device *net_dev)
 		   & ~IFF_MULTICAST);
 	net_dev->watchdog_timeo = I2400M_TX_TIMEOUT;
 	net_dev->netdev_ops = &i2400m_netdev_ops;
-	SET_ETHTOOL_OPS(net_dev, &i2400m_ethtool_ops);
+	net_dev->ethtool_ops = &i2400m_ethtool_ops;
 	d_fnend(3, NULL, "(net_dev %p) = void\n", net_dev);
 }
 EXPORT_SYMBOL_GPL(i2400m_netdev_setup);

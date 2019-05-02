@@ -1734,7 +1734,7 @@ static int __net_init ndisc_net_init(struct net *net)
 	int err;
 
 	err = inet_ctl_sock_create(&sk, PF_INET6,
-				   SOCK_DGRAM, 0, net);
+				   SOCK_RAW, IPPROTO_ICMPV6, net);
 	if (err < 0) {
 		ND_PRINTK(0, err,
 			  "NDISC: Failed to initialize the control socket (err %d)\n",

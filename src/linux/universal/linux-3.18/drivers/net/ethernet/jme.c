@@ -3049,7 +3049,7 @@ jme_init_one(struct pci_dev *pdev,
 		goto err_out_release_regions;
 	}
 	netdev->netdev_ops = &jme_netdev_ops;
-	SET_ETHTOOL_OPS(netdev, &jme_ethtool_ops);
+	netdev->ethtool_ops		= &jme_ethtool_ops;
 	netdev->watchdog_timeo		= TX_TIMEOUT;
 	netdev->hw_features		=	NETIF_F_IP_CSUM |
 						NETIF_F_IPV6_CSUM |

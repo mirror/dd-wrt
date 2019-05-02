@@ -944,7 +944,7 @@ static int w90p910_ether_setup(struct net_device *dev)
 	struct w90p910_ether *ether = netdev_priv(dev);
 
 	dev->netdev_ops = &w90p910_ether_netdev_ops;
-	SET_ETHTOOL_OPS(dev, &w90p910_ether_ethtool_ops);
+	dev->ethtool_ops = &w90p910_ether_ethtool_ops;
 
 	dev->tx_queue_len = 16;
 	dev->dma = 0x0;

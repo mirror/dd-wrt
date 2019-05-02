@@ -1150,7 +1150,7 @@ static int cpmac_probe(struct platform_device *pdev)
 	dev->irq = platform_get_irq_byname(pdev, "irq");
 
 	dev->netdev_ops = &cpmac_netdev_ops;
-	SET_ETHTOOL_OPS(dev, &cpmac_ethtool_ops);
+	dev->ethtool_ops = &cpmac_ethtool_ops;
 
 	netif_napi_add(dev, &priv->napi, cpmac_poll, 64);
 

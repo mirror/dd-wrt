@@ -1190,7 +1190,7 @@ static int ks8842_probe(struct platform_device *pdev)
 	spin_lock_init(&adapter->lock);
 
 	netdev->netdev_ops = &ks8842_netdev_ops;
-	SET_ETHTOOL_OPS(netdev, &ks8842_ethtool_ops);
+	netdev->ethtool_ops = &ks8842_ethtool_ops;
 
 	/* Check if a mac address was given */
 	i = netdev->addr_len;

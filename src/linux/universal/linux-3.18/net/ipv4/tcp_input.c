@@ -5977,7 +5977,7 @@ int tcp_conn_request(struct request_sock_ops *rsk_ops,
 	struct tcp_sock *tp = tcp_sk(sk);
 	struct dst_entry *dst = NULL;
 	__u32 isn = TCP_SKB_CB(skb)->tcp_tw_isn;
-	bool want_cookie = false, fastopen = false;
+	bool want_cookie = false, fastopen;
 	struct flowi fl;
 	struct tcp_fastopen_cookie foc = { .len = -1 };
 	int err;
@@ -6083,10 +6083,8 @@ int tcp_conn_request(struct request_sock_ops *rsk_ops,
 
 	tcp_rsk(req)->snt_isn = isn;
 	tcp_openreq_init_rwin(req, sk, dst);
-#ifdef CONFIG_TCP_FASTOPEN
 	fastopen = !want_cookie &&
 		   tcp_try_fastopen(sk, skb, req, &foc, dst);
-#endif
 	err = af_ops->send_synack(sk, dst, &fl, req,
 				  skb_get_queue_mapping(skb), &foc);
 	if (!fastopen) {
