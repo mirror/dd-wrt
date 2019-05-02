@@ -616,6 +616,7 @@ static void getledconfig(struct ledconfig *cfg)
 		break;
 #elif HAVE_FMS2111
 	case ROUTER_BOARD_WHRHPGN:
+		cfg->diag_gpio = 0x013;
 		cfg->beeper_gpio = 0x00c;
 		break;
 #else
