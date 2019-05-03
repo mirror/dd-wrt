@@ -120,7 +120,7 @@
 					<div class="label"><% tran("hotspot.wifidog_username"); %></div>
 					<input name="wd_username" size="40" maxlength="63" onblur="valid_name(this,share.usrname)" value="<% nvram_get("wd_username"); %>" />
 					<div class="label"><% tran("hotspot.wifidog_password"); %></div>
-					<input name="wd_password" size="40" maxlength="63" onblur="valid_name(this,share.passwd)" type="password" value="<% nvram_get("wd_password"); %>" />
+					<input name="wd_password" size="40" maxlength="63" onblur="valid_name(this,share.passwd)" type="password" autocomplete="off" value="<% nvram_get("wd_password"); %>" />
 				</div>
 			</div>
 		</div>
