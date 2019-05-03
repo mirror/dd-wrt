@@ -1377,7 +1377,7 @@ void sas_show_80211X(webs_t wp, char *prefix)
 
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(share.passwd)</script></div>\n");
-	websWrite(wp, "<input name=\"%s_ttls8021xpasswd\" type=\"password\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, sas_nvram_prefix_get(wp, "ttls8021xpasswd", prefix));
+	websWrite(wp, "<input name=\"%s_ttls8021xpasswd\" type=\"password\" autocomplete=\"off\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, sas_nvram_prefix_get(wp, "ttls8021xpasswd", prefix));
 
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(sec80211x.phase2)</script></div>\n");
@@ -1420,7 +1420,7 @@ void sas_show_80211X(webs_t wp, char *prefix)
 
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(share.passwd)</script></div>\n");
-	websWrite(wp, "<input name=\"%s_peap8021xpasswd\" type=\"password\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, sas_nvram_prefix_get(wp, "peap8021xpasswd", prefix));
+	websWrite(wp, "<input name=\"%s_peap8021xpasswd\" type=\"password\" autocomplete=\"off\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, sas_nvram_prefix_get(wp, "peap8021xpasswd", prefix));
 
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(sec80211x.phase2)</script></div>\n");
@@ -1463,7 +1463,7 @@ void sas_show_80211X(webs_t wp, char *prefix)
 
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(share.passwd)</script></div>\n");
-	websWrite(wp, "<input name=\"%s_leap8021xpasswd\" type=\"password\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, sas_nvram_prefix_get(wp, "leap8021xpasswd", prefix));
+	websWrite(wp, "<input name=\"%s_leap8021xpasswd\" type=\"password\" autocomplete=\"off\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, sas_nvram_prefix_get(wp, "leap8021xpasswd", prefix));
 
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(sec80211x.phase2)</script></div>\n");
@@ -1494,7 +1494,7 @@ void sas_show_80211X(webs_t wp, char *prefix)
 
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(share.passwd)</script></div>\n");
-	websWrite(wp, "<input name=\"%s_tls8021xpasswd\" type=\"password\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, sas_nvram_prefix_get(wp, "tls8021xpasswd", prefix));
+	websWrite(wp, "<input name=\"%s_tls8021xpasswd\" type=\"password\" autocomplete=\"off\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, sas_nvram_prefix_get(wp, "tls8021xpasswd", prefix));
 
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(sec80211x.phase2)</script></div>\n");
@@ -1749,7 +1749,7 @@ void sas_show_preshared(webs_t wp, char *prefix)
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.shared_key)</script></div>\n");
 
 	sprintf(var, "%s_wpa_psk", prefix);
-	websWrite(wp, "<input type=\"password\" id=\"%s_wpa_psk\" name=\"%s_wpa_psk\" onblur=\"valid_psk_length(this)\" maxlength=\"64\" size=\"32\" value=\"", prefix, prefix);
+	websWrite(wp, "<input type=\"password\" autocomplete=\"off\" id=\"%s_wpa_psk\" name=\"%s_wpa_psk\" onblur=\"valid_psk_length(this)\" maxlength=\"64\" size=\"32\" value=\"", prefix, prefix);
 	//tf_webWriteESCNV(wp, var);
 	websWrite(wp, "%s", nvram_selget(wp, var));
 	websWrite(wp, "\" />&nbsp;&nbsp;&nbsp;\n");
@@ -1810,7 +1810,7 @@ void sas_show_radius(webs_t wp, char *prefix, int showmacformat, int backup)
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label7)</script></div>\n");
 	sprintf(var, "%s_radius_key", prefix);
-	websWrite(wp, "<input type=\"password\" id=\"%s_radius_key\" name=\"%s_radius_key\" maxlength=\"79\" size=\"32\" value=\"", prefix, prefix);
+	websWrite(wp, "<input type=\"password\" autocomplete=\"off\" id=\"%s_radius_key\" name=\"%s_radius_key\" maxlength=\"79\" size=\"32\" value=\"", prefix, prefix);
 
 	//tf_webWriteESCNV(wp, var);
 	websWrite(wp, "%s", nvram_selget(wp, var));
@@ -1839,7 +1839,7 @@ void sas_show_radius(webs_t wp, char *prefix, int showmacformat, int backup)
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label27)</script></div>\n");
 		sprintf(var, "%s_radius2_key", prefix);
-		websWrite(wp, "<input type=\"password\" id=\"%s_radius2_key\" name=\"%s_radius2_key\" maxlength=\"79\" size=\"32\" value=\"", prefix, prefix);
+		websWrite(wp, "<input type=\"password\" autocomplete=\"off\" id=\"%s_radius2_key\" name=\"%s_radius2_key\" maxlength=\"79\" size=\"32\" value=\"", prefix, prefix);
 
 		//tf_webWriteESCNV(wp, var);
 		websWrite(wp, "%s", nvram_selget(wp, var));
@@ -1885,7 +1885,7 @@ void sas_show_radius(webs_t wp, char *prefix, int showmacformat, int backup)
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label17)</script></div>\n");
 		sprintf(var, "%s_acct_key", prefix);
-		websWrite(wp, "<input type=\"password\" id=\"%s_acct_key\" name=\"%s_acct_key\" maxlength=\"79\" size=\"32\" value=\"", prefix, prefix);
+		websWrite(wp, "<input type=\"password\" autocomplete=\"off\" id=\"%s_acct_key\" name=\"%s_acct_key\" maxlength=\"79\" size=\"32\" value=\"", prefix, prefix);
 		//tf_webWriteESCNV(wp, var);
 		websWrite(wp, "%s", nvram_selget(wp, var));
 		websWrite(wp, "\" />&nbsp;&nbsp;&nbsp;\n");
