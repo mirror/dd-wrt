@@ -3,8 +3,10 @@
  * @brief Manage device preferences, start services, pairing and activation.
  * \internal
  *
+ * Copyright (c) 2009-2014 Martin S. All Rights Reserved.
+ * Copyright (c) 2014 Koby Boyango All Rights Reserved.
+ * Copyright (c) 2010 Bryan Forbes All Rights Reserved.
  * Copyright (c) 2008 Zach C. All Rights Reserved.
- * Copyright (c) 2009 Martin S. All Rights Reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -33,28 +35,45 @@ extern "C" {
 
 /** Error Codes */
 typedef enum {
-	LOCKDOWN_E_SUCCESS                   =   0,
-	LOCKDOWN_E_INVALID_ARG               =  -1,
-	LOCKDOWN_E_INVALID_CONF              =  -2,
-	LOCKDOWN_E_PLIST_ERROR               =  -3,
-	LOCKDOWN_E_PAIRING_FAILED            =  -4,
-	LOCKDOWN_E_SSL_ERROR                 =  -5,
-	LOCKDOWN_E_DICT_ERROR                =  -6,
-	LOCKDOWN_E_START_SERVICE_FAILED      =  -7,
-	LOCKDOWN_E_NOT_ENOUGH_DATA           =  -8,
-	LOCKDOWN_E_SET_VALUE_PROHIBITED      =  -9,
-	LOCKDOWN_E_GET_VALUE_PROHIBITED      = -10,
-	LOCKDOWN_E_REMOVE_VALUE_PROHIBITED   = -11,
-	LOCKDOWN_E_MUX_ERROR                 = -12,
-	LOCKDOWN_E_ACTIVATION_FAILED         = -13,
-	LOCKDOWN_E_PASSWORD_PROTECTED        = -14,
-	LOCKDOWN_E_NO_RUNNING_SESSION        = -15,
-	LOCKDOWN_E_INVALID_HOST_ID           = -16,
-	LOCKDOWN_E_INVALID_SERVICE           = -17,
-	LOCKDOWN_E_INVALID_ACTIVATION_RECORD = -18,
-	LOCKDOWN_E_PAIRING_DIALOG_PENDING    = -20,
-	LOCKDOWN_E_USER_DENIED_PAIRING       = -21,
-	LOCKDOWN_E_UNKNOWN_ERROR             = -256
+	/* custom */
+	LOCKDOWN_E_SUCCESS                                 =   0,
+	LOCKDOWN_E_INVALID_ARG                             =  -1,
+	LOCKDOWN_E_INVALID_CONF                            =  -2,
+	LOCKDOWN_E_PLIST_ERROR                             =  -3,
+	LOCKDOWN_E_PAIRING_FAILED                          =  -4,
+	LOCKDOWN_E_SSL_ERROR                               =  -5,
+	LOCKDOWN_E_DICT_ERROR                              =  -6,
+	LOCKDOWN_E_NOT_ENOUGH_DATA                         =  -7,
+	LOCKDOWN_E_MUX_ERROR                               =  -8,
+	LOCKDOWN_E_NO_RUNNING_SESSION                      =  -9,
+	/* native */
+	LOCKDOWN_E_INVALID_RESPONSE                        = -10,
+	LOCKDOWN_E_MISSING_KEY                             = -11,
+	LOCKDOWN_E_MISSING_VALUE                           = -12,
+	LOCKDOWN_E_GET_PROHIBITED                          = -13,
+	LOCKDOWN_E_SET_PROHIBITED                          = -14,
+	LOCKDOWN_E_REMOVE_PROHIBITED                       = -15,
+	LOCKDOWN_E_IMMUTABLE_VALUE                         = -16,
+	LOCKDOWN_E_PASSWORD_PROTECTED                      = -17,
+	LOCKDOWN_E_USER_DENIED_PAIRING                     = -18,
+	LOCKDOWN_E_PAIRING_DIALOG_RESPONSE_PENDING         = -19,
+	LOCKDOWN_E_MISSING_HOST_ID                         = -20,
+	LOCKDOWN_E_INVALID_HOST_ID                         = -21,
+	LOCKDOWN_E_SESSION_ACTIVE                          = -22,
+	LOCKDOWN_E_SESSION_INACTIVE                        = -23,
+	LOCKDOWN_E_MISSING_SESSION_ID                      = -24,
+	LOCKDOWN_E_INVALID_SESSION_ID                      = -25,
+	LOCKDOWN_E_MISSING_SERVICE                         = -26,
+	LOCKDOWN_E_INVALID_SERVICE                         = -27,
+	LOCKDOWN_E_SERVICE_LIMIT                           = -28,
+	LOCKDOWN_E_MISSING_PAIR_RECORD                     = -29,
+	LOCKDOWN_E_SAVE_PAIR_RECORD_FAILED                 = -30,
+	LOCKDOWN_E_INVALID_PAIR_RECORD                     = -31,
+	LOCKDOWN_E_INVALID_ACTIVATION_RECORD               = -32,
+	LOCKDOWN_E_MISSING_ACTIVATION_RECORD               = -33,
+	LOCKDOWN_E_SERVICE_PROHIBITED                      = -34,
+	LOCKDOWN_E_ESCROW_LOCKED                           = -35,
+	LOCKDOWN_E_UNKNOWN_ERROR                           = -256
 } lockdownd_error_t;
 
 typedef struct lockdownd_client_private lockdownd_client_private;
@@ -259,7 +278,7 @@ lockdownd_error_t lockdownd_receive(lockdownd_client_t client, plist_t *plist);
 /**
  * Pairs the device using the supplied pair record.
  *
- * @param client The lockdown client to pair with.
+ * @param client The lockdown client
  * @param pair_record The pair record to use for pairing. If NULL is passed, then
  *    the pair records from the current machine are used. New records will be
  *    generated automatically when pairing is done for the first time.
@@ -278,7 +297,7 @@ lockdownd_error_t lockdownd_pair(lockdownd_client_t client, lockdownd_pair_recor
  * lockdownd preference named TrustedHostAttached. Otherwise the host must be
  * paired using lockdownd_pair() first.
  *
- * @param client The lockdown client to pair with.
+ * @param client The lockdown client
  * @param pair_record The pair record to validate pairing with. If NULL is
  *    passed, then the pair record is read from the internal pairing record
  *    management.
@@ -295,7 +314,7 @@ lockdownd_error_t lockdownd_validate_pair(lockdownd_client_t client, lockdownd_p
  * Unpairs the device with the given HostID and removes the pairing records
  * from the device and host if the internal pairing record management is used.
  *
- * @param client The lockdown client to pair with.
+ * @param client The lockdown client
  * @param pair_record The pair record to use for unpair. If NULL is passed, then
  *    the pair records from the current machine are used.
  *
@@ -311,8 +330,6 @@ lockdownd_error_t lockdownd_unpair(lockdownd_client_t client, lockdownd_pair_rec
  * Activates the device. Only works within an open session.
  * The ActivationRecord plist dictionary must be obtained using the
  * activation protocol requesting from Apple's https webservice.
- *
- * @see http://iphone-docs.org/doku.php?id=docs:protocols:activation
  *
  * @param client The lockdown client
  * @param activation_record The activation record plist dictionary
