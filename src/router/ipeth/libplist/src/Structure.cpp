@@ -1,4 +1,3 @@
-#define NEED_PRINTF
 /*
  * Structure.cpp
  *
