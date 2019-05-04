@@ -1,52 +1,16 @@
 LIBPLIST_PKG_BUILD_DIR=$(TOP)/ipeth/libplist
 
 ipeth-configure: 
-	cd $(TOP)/ipeth/libxml2 && ./configure  --host=$(ARCH)-linux CFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" --without-python \
-	--disable-shared \
-	--enable-static \
-	--with-c14n \
-	--without-catalog \
-	--with-debug \
-	--without-docbook \
-	--with-html \
-	--without-ftp \
-	--with-minimum \
-	--without-http \
-	--without-iconv \
-	--without-iso8859x \
-	--without-legacy \
-	--with-output \
-	--without-pattern \
-	--without-push \
-	--without-python \
-	--with-reader \
-	--without-readline \
-	--without-regexps \
-	--with-sax1 \
-	--with-schemas \
-	--with-threads \
-	--with-tree \
-	--with-valid \
-	--with-writer \
-	--with-xinclude \
-	--with-xpath \
-	--with-xptr \
-	--with-zlib 
-
-	cd $(TOP)/ipeth/libxml2 && make
-	
 	cd $(TOP)/ipeth/libplist && ./autogen.sh
-	cd $(TOP)/ipeth/libplist && ./configure --host=$(ARCH)-linux --without-cython CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) $(MIPS16_OPT) -I$(TOP)/ipeth/libxml2/include -I$(TOP)/ipeth/libplist/include -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	cd $(TOP)/ipeth/libplist && ./configure --host=$(ARCH)-linux --without-cython CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) $(MIPS16_OPT) -I$(TOP)/ipeth/libplist/include -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		CXXFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) $(MIPS16_OPT) -I$(TOP)/ipeth/libplist -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-		LDFLAGS="-L$(TOP)/ipeth/libxml2/.libs -lm -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-		libxml2_CFLAGS="-I$(TOP)/ipeth/libxml2/include" \
-		libxml2_LIBS="-L$(TOP)/ipeth/libxml2/.libs -lxml2"
+		LDFLAGS="-lm -ffunction-sections -fdata-sections -Wl,--gc-sections"
 
 	cd $(TOP)/ipeth/libplist && make
 
 
 	cd $(TOP)/ipeth/libusbmuxd && ./autogen.sh
-	cd $(TOP)/ipeth/libusbmuxd && ./configure --host=$(ARCH)-linux --without-cython CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) $(MIPS16_OPT) -I$(TOP)/ipeth/libxml2/include -I$(TOP)/ipeth/libplist/include -I$(TOP)/usb_modeswitch/libusb/libusb -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	cd $(TOP)/ipeth/libusbmuxd && ./configure --host=$(ARCH)-linux --without-cython CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) $(MIPS16_OPT) -I$(TOP)/ipeth/libplist/include -I$(TOP)/usb_modeswitch/libusb/libusb -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		CXXFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) $(MIPS16_OPT) -I$(TOP)/ipeth/libplist -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		LDFLAGS="-L$(TOP)/ipeth/libplist/src/.libs -lplist -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		libplist_CFLAGS="-I$(TOP)/ipeth/libplist/include" \
@@ -73,7 +37,7 @@ ipeth-configure:
 	cd $(TOP)/ipeth/libimobiledevice && make
 
 	cd $(TOP)/ipeth/usbmuxd && ./autogen.sh
-	cd $(TOP)/ipeth/usbmuxd && ./configure --host=$(ARCH)-linux --without-cython CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) $(MIPS16_OPT) -I$(TOP)/ipeth/libxml2/include -I$(TOP)/ipeth/libplist/include -I$(TOP)/usb_modeswitch/libusb/libusb -I$(TOP)/ipeth/libimobiledevice/include -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	cd $(TOP)/ipeth/usbmuxd && ./configure --host=$(ARCH)-linux --without-cython CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) $(MIPS16_OPT) -I$(TOP)/ipeth/libplist/include -I$(TOP)/usb_modeswitch/libusb/libusb -I$(TOP)/ipeth/libimobiledevice/include -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		CXXFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) $(MIPS16_OPT) -I$(TOP)/ipeth/libplist -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		LDFLAGS="-L$(TOP)/openssl -lssl -lcrypto -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		libusbmuxd_CFLAGS="-I$(TOP)/ipeth/libusbmuxd/include" \
@@ -100,7 +64,6 @@ endif
 endif
 endif
 endif
-	$(MAKE) -C $(TOP)/ipeth/libxml2
 	$(MAKE) -C $(TOP)/ipeth/libplist
 	$(MAKE) -C $(TOP)/ipeth/libusbmuxd 
 	$(MAKE) -C $(TOP)/ipeth/libimobiledevice
@@ -109,7 +72,6 @@ endif
 	$(MAKE) -C $(TOP)/ipeth/ipheth-pair
 	
 ipeth-clean:
-	$(MAKE) -C $(TOP)/ipeth/libxml2 clean
 	$(MAKE) -C $(TOP)/ipeth/libplist clean
 	$(MAKE) -C $(TOP)/ipeth/libusbmuxd clean
 	$(MAKE) -C $(TOP)/ipeth/libimobiledevice clean
