@@ -111,14 +111,13 @@ void ej_list_mac_layers(webs_t wp, int argc, char_t ** argv)
 		char var[80], *next;
 		char *vifs = nvram_safe_get(vif);
 
-		if (vifs != NULL)
-			foreach(var, vifs, next) {
+		foreach(var, vifs, next) {
 			sprintf(macmode, "%s_macmode1", var);
 			sprintf(id, "idmac%s", var);
 			rep(id, '.', 'X');
 			rep(macmode, '.', 'X');
 			websWrite(wp, "show_layer_ext(document.wireless.%s, '%s', \"%s\" == \"other\");\n", macmode, id, nvram_match(macmode, "other") ? "other" : "disabled");
-			}
+		}
 	}
 
 #endif
@@ -149,10 +148,9 @@ void ej_show_macfilter(webs_t wp, int argc, char_t ** argv)
 		char var[80], *next;
 		char *vifs = nvram_safe_get(vif);
 
-		if (vifs != NULL)
-			foreach(var, vifs, next) {
+		foreach(var, vifs, next) {
 			show_macfilter_if(wp, var);
-			}
+		}
 	}
 
 #endif
