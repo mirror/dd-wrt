@@ -100,7 +100,7 @@ size_t ZSTD_compressBlock_fast_generic(
         if (offset_1 > maxRep) offsetSaved = offset_1, offset_1 = 0;
     }
     if (dictMode == ZSTD_dictMatchState) {
-        /* dictMatchState repCode checks don't c_currently handle repCode == 0
+        /* dictMatchState repCode checks don't currently handle repCode == 0
          * disabling. */
         assert(offset_1 <= dictAndPrefixLength);
         assert(offset_2 <= dictAndPrefixLength);
@@ -188,8 +188,8 @@ size_t ZSTD_compressBlock_fast_generic(
             /* check immediate repcode */
             if (dictMode == ZSTD_dictMatchState) {
                 while (ip <= ilimit) {
-                    U32 const c_current2 = (U32)(ip-base);
-                    U32 const repIndex2 = c_current2 - offset_2;
+                    U32 const current2 = (U32)(ip-base);
+                    U32 const repIndex2 = current2 - offset_2;
                     const BYTE* repMatch2 = repIndex2 < prefixStartIndex ?
                             dictBase - dictIndexDelta + repIndex2 :
                             base + repIndex2;
@@ -199,7 +199,7 @@ size_t ZSTD_compressBlock_fast_generic(
                         size_t const repLength2 = ZSTD_count_2segments(ip+4, repMatch2+4, iend, repEnd2, prefixStart) + 4;
                         U32 tmpOffset = offset_2; offset_2 = offset_1; offset_1 = tmpOffset;   /* swap offset_2 <=> offset_1 */
                         ZSTD_storeSeq(seqStore, 0, anchor, 0, repLength2-MINMATCH);
-                        hashTable[ZSTD_hashPtr(ip, hlog, mls)] = c_current2;
+                        hashTable[ZSTD_hashPtr(ip, hlog, mls)] = current2;
                         ip += repLength2;
                         anchor = ip;
                         continue;
@@ -229,6 +229,7 @@ size_t ZSTD_compressBlock_fast_generic(
     /* Return the last literals size */
     return iend - anchor;
 }
+
 
 
 size_t ZSTD_compressBlock_fast(

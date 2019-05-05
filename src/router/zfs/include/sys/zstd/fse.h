@@ -363,7 +363,7 @@ static size_t FSE_decompress_wksp(void* dst, size_t dstCapacity, const void* cSr
 typedef enum {
    FSE_repeat_none,  /**< Cannot use the previous table */
    FSE_repeat_check, /**< Can use the previous table but it must be checked */
-   FSE_repeat_valid  /**< Can use the previous table and it is asumed to be valid */
+   FSE_repeat_valid  /**< Can use the previous table and it is assumed to be valid */
  } FSE_repeat;
 
 /* *****************************************

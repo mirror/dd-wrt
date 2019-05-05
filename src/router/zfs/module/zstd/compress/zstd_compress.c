@@ -75,12 +75,24 @@ ZSTD_CCtx* ZSTD_createCCtx_advanced(ZSTD_customMem customMem)
     }
 }
 
+/**
+ * Clears and frees all of the dictionaries in the CCtx.
+ */
+static void ZSTD_clearAllDicts(ZSTD_CCtx* cctx)
+{
+    ZSTD_free(cctx->localDict.dictBuffer, cctx->customMem);
+    ZSTD_freeCDict(cctx->localDict.cdict);
+    memset(&cctx->localDict, 0, sizeof(cctx->localDict));
+    memset(&cctx->prefixDict, 0, sizeof(cctx->prefixDict));
+    cctx->cdict = NULL;
+}
+
 static void ZSTD_freeCCtxContent(ZSTD_CCtx* cctx)
 {
     assert(cctx != NULL);
     assert(cctx->staticSize == 0);
     ZSTD_free(cctx->workSpace, cctx->customMem); cctx->workSpace = NULL;
-    ZSTD_freeCDict(cctx->cdictLocal); cctx->cdictLocal = NULL;
+    ZSTD_clearAllDicts(cctx);
 #ifdef ZSTD_MULTITHREAD
     ZSTDMT_freeCCtx(cctx->mtctx); cctx->mtctx = NULL;
 #endif
@@ -89,7 +101,8 @@ static void ZSTD_freeCCtxContent(ZSTD_CCtx* cctx)
 size_t ZSTD_freeCCtx(ZSTD_CCtx* cctx)
 {
     if (cctx==NULL) return 0;   /* support free on NULL */
-    if (cctx->staticSize) return ERROR(memory_allocation);   /* not compatible with static CCtx */
+    RETURN_ERROR_IF(cctx->staticSize, memory_allocation,
+                    "not compatible with static CCtx");
     ZSTD_freeCCtxContent(cctx);
     ZSTD_free(cctx, cctx->customMem);
     return 0;
@@ -113,7 +126,7 @@ size_t ZSTD_CCtxParams_reset(ZSTD_CCtx_params* params)
 }
 
 size_t ZSTD_CCtxParams_init(ZSTD_CCtx_params* cctxParams, int compressionLevel) {
-    if (!cctxParams) { return ERROR(GENERIC); }
+    RETURN_ERROR_IF(!cctxParams, GENERIC);
     memset(cctxParams, 0, sizeof(*cctxParams));
     cctxParams->compressionLevel = compressionLevel;
     cctxParams->fParams.contentSizeFlag = 1;
@@ -1167,7 +1180,7 @@ static size_t ZSTD_NCountCost(unsigned const* count, unsigned const max,
     BYTE wksp[FSE_NCOUNTBOUND];
     S16 norm[MaxSeq + 1];
     const U32 tableLog = FSE_optimalTableLog(FSELog, nbSeq, max);
-    CHECK_F(FSE_normalizeCount(norm, tableLog, count, nbSeq, max));
+    FORWARD_IF_ERROR(FSE_normalizeCount(norm, tableLog, count, nbSeq, max));
     return FSE_writeNCount(wksp, sizeof(wksp), norm, max, tableLog);
 }
 
@@ -1273,15 +1286,15 @@ ZSTD_buildCTable(void* dst, size_t dstCapacity,
 
     switch (type) {
     case set_rle:
-        CHECK_F(FSE_buildCTable_rle(nextCTable, (BYTE)max));
-        if (dstCapacity==0) return ERROR(dstSize_tooSmall);
+        FORWARD_IF_ERROR(FSE_buildCTable_rle(nextCTable, (BYTE)max));
+        RETURN_ERROR_IF(dstCapacity==0, dstSize_tooSmall);
         *op = codeTable[0];
         return 1;
     case set_repeat:
         memcpy(nextCTable, prevCTable, prevCTableSize);
         return 0;
     case set_basic:
-        CHECK_F(FSE_buildCTable_wksp(nextCTable, defaultNorm, defaultMax, defaultNormLog, workspace, workspaceSize));  /* note : could be pre-calculated */
+        FORWARD_IF_ERROR(FSE_buildCTable_wksp(nextCTable, defaultNorm, defaultMax, defaultNormLog, workspace, workspaceSize));  /* note : could be pre-calculated */
         return 0;
     case set_compressed: {
         S16 norm[MaxSeq + 1];
@@ -1292,14 +1305,14 @@ ZSTD_buildCTable(void* dst, size_t dstCapacity,
             nbSeq_1--;
         }
         assert(nbSeq_1 > 1);
-        CHECK_F(FSE_normalizeCount(norm, tableLog, count, nbSeq_1, max));
+        FORWARD_IF_ERROR(FSE_normalizeCount(norm, tableLog, count, nbSeq_1, max));
         {   size_t const NCountSize = FSE_writeNCount(op, oend - op, norm, max, tableLog);   /* overflow protected */
-            if (FSE_isError(NCountSize)) return NCountSize;
-            CHECK_F(FSE_buildCTable_wksp(nextCTable, norm, max, tableLog, workspace, workspaceSize));
+            FORWARD_IF_ERROR(NCountSize);
+            FORWARD_IF_ERROR(FSE_buildCTable_wksp(nextCTable, norm, max, tableLog, workspace, workspaceSize));
             return NCountSize;
         }
     }
-    default: return assert(0), ERROR(GENERIC);
+    default: assert(0); RETURN_ERROR(GENERIC);
     }
 }
 
@@ -1316,7 +1329,9 @@ ZSTD_encodeSequences_body(
     FSE_CState_t  stateOffsetBits;
     FSE_CState_t  stateLitLength;
 
-    CHECK_E(BIT_initCStream(&blockStream, dst, dstCapacity), dstSize_tooSmall); /* not enough space remaining */
+    RETURN_ERROR_IF(
+        ERR_isError(BIT_initCStream(&blockStream, dst, dstCapacity)),
+        dstSize_tooSmall, "not enough space remaining");
     DEBUGLOG(6, "available space for bitstream : %i  (dstCapacity=%u)",
                 (int)(blockStream.endPtr - blockStream.startPtr),
                 (unsigned)dstCapacity);
@@ -1390,7 +1405,7 @@ ZSTD_encodeSequences_body(
     FSE_flushCState(&blockStream, &stateLitLength);
 
     {   size_t const streamSize = BIT_closeCStream(&blockStream);
-        if (streamSize==0) return ERROR(dstSize_tooSmall);   /* not enough space */
+        RETURN_ERROR_IF(streamSize==0, dstSize_tooSmall, "not enough space");
         return streamSize;
     }
 }
@@ -1728,11 +1743,14 @@ static size_t ZSTD_compressBlock_internal(ZSTD_CCtx* zc,
         goto out;  /* don't even attempt compression below a certain srcSize */
     }
     ZSTD_resetSeqStore(&(zc->seqStore));
-    ms->opt.symbolCosts = &zc->blockState.prevCBlock->entropy;   /* required for optimal parser to read stats from dictionary */
+    /* required for optimal parser to read stats from dictionary */
+    ms->opt.symbolCosts = &zc->blockState.prevCBlock->entropy;
+    /* tell the optimal parser how we expect to compress literals */
+    ms->opt.literalCompressionMode = zc->appliedParams.literalCompressionMode;
 
-    /* a gap between an attached dict and the c_current window is not safe,
-     * they must remain adjacent, and when that stops being the case, the dict
-     * must be unset */
+    /* a gap between an attached dict and the current window is not safe,
+     * they must remain adjacent,
+     * and when that stops being the case, the dict must be unset */
     assert(ms->dictMatchState == NULL || ms->loadedDictEnd == ms->window.dictLimit);
 
     /* limited update after a very long match */
@@ -1766,7 +1784,7 @@ static size_t ZSTD_compressBlock_internal(ZSTD_CCtx* zc,
             ldmSeqStore.seq = zc->ldmSequences;
             ldmSeqStore.capacity = zc->maxNbLdmSequences;
             /* Updates ldmSeqStore.size */
-            CHECK_F(ZSTD_ldm_generateSequences(&zc->ldmState, &ldmSeqStore,
+            FORWARD_IF_ERROR(ZSTD_ldm_generateSequences(&zc->ldmState, &ldmSeqStore,
                                                &zc->appliedParams.ldmParams,
                                                src, srcSize));
             /* Updates ldmSeqStore.pos */
@@ -2069,9 +2087,9 @@ static size_t ZSTD_loadDictionaryContent(ZSTD_matchState_t* ms,
    NOTE: This behavior is not standard and could be improved in the future. */
 static size_t ZSTD_checkDictNCount(short* normalizedCounter, unsigned dictMaxSymbolValue, unsigned maxSymbolValue) {
     U32 s;
-    if (dictMaxSymbolValue < maxSymbolValue) return ERROR(dictionary_corrupted);
+    RETURN_ERROR_IF(dictMaxSymbolValue < maxSymbolValue, dictionary_corrupted);
     for (s = 0; s <= maxSymbolValue; ++s) {
-        if (normalizedCounter[s] == 0) return ERROR(dictionary_corrupted);
+        RETURN_ERROR_IF(normalizedCounter[s] == 0, dictionary_corrupted);
     }
     return 0;
 }
@@ -2109,53 +2127,56 @@ static size_t ZSTD_loadZstdDictionary(ZSTD_compressedBlockState_t* bs,
 
     {   unsigned maxSymbolValue = 255;
         size_t const hufHeaderSize = HUF_readCTable((HUF_CElt*)bs->entropy.huf.CTable, &maxSymbolValue, dictPtr, dictEnd-dictPtr);
-        if (HUF_isError(hufHeaderSize)) return ERROR(dictionary_corrupted);
-        if (maxSymbolValue < 255) return ERROR(dictionary_corrupted);
+        RETURN_ERROR_IF(HUF_isError(hufHeaderSize), dictionary_corrupted);
+        RETURN_ERROR_IF(maxSymbolValue < 255, dictionary_corrupted);
         dictPtr += hufHeaderSize;
     }
 
     {   unsigned offcodeLog;
         size_t const offcodeHeaderSize = FSE_readNCount(offcodeNCount, &offcodeMaxValue, &offcodeLog, dictPtr, dictEnd-dictPtr);
-        if (FSE_isError(offcodeHeaderSize)) return ERROR(dictionary_corrupted);
-        if (offcodeLog > OffFSELog) return ERROR(dictionary_corrupted);
+        RETURN_ERROR_IF(FSE_isError(offcodeHeaderSize), dictionary_corrupted);
+        RETURN_ERROR_IF(offcodeLog > OffFSELog, dictionary_corrupted);
         /* Defer checking offcodeMaxValue because we need to know the size of the dictionary content */
         /* fill all offset symbols to avoid garbage at end of table */
-        CHECK_E( FSE_buildCTable_wksp(bs->entropy.fse.offcodeCTable,
-                                    offcodeNCount, MaxOff, offcodeLog,
-                                    workspace, HUF_WORKSPACE_SIZE),
-                 dictionary_corrupted);
+        RETURN_ERROR_IF(FSE_isError(FSE_buildCTable_wksp(
+                bs->entropy.fse.offcodeCTable,
+                offcodeNCount, MaxOff, offcodeLog,
+                workspace, HUF_WORKSPACE_SIZE)),
+            dictionary_corrupted);
         dictPtr += offcodeHeaderSize;
     }
 
     {   short matchlengthNCount[MaxML+1];
         unsigned matchlengthMaxValue = MaxML, matchlengthLog;
         size_t const matchlengthHeaderSize = FSE_readNCount(matchlengthNCount, &matchlengthMaxValue, &matchlengthLog, dictPtr, dictEnd-dictPtr);
-        if (FSE_isError(matchlengthHeaderSize)) return ERROR(dictionary_corrupted);
-        if (matchlengthLog > MLFSELog) return ERROR(dictionary_corrupted);
+        RETURN_ERROR_IF(FSE_isError(matchlengthHeaderSize), dictionary_corrupted);
+        RETURN_ERROR_IF(matchlengthLog > MLFSELog, dictionary_corrupted);
         /* Every match length code must have non-zero probability */
-        CHECK_F( ZSTD_checkDictNCount(matchlengthNCount, matchlengthMaxValue, MaxML));
-        CHECK_E( FSE_buildCTable_wksp(bs->entropy.fse.matchlengthCTable,
-                                    matchlengthNCount, matchlengthMaxValue, matchlengthLog,
-                                    workspace, HUF_WORKSPACE_SIZE),
-                 dictionary_corrupted);
+        FORWARD_IF_ERROR( ZSTD_checkDictNCount(matchlengthNCount, matchlengthMaxValue, MaxML));
+        RETURN_ERROR_IF(FSE_isError(FSE_buildCTable_wksp(
+                bs->entropy.fse.matchlengthCTable,
+                matchlengthNCount, matchlengthMaxValue, matchlengthLog,
+                workspace, HUF_WORKSPACE_SIZE)),
+            dictionary_corrupted);
         dictPtr += matchlengthHeaderSize;
     }
 
     {   short litlengthNCount[MaxLL+1];
         unsigned litlengthMaxValue = MaxLL, litlengthLog;
         size_t const litlengthHeaderSize = FSE_readNCount(litlengthNCount, &litlengthMaxValue, &litlengthLog, dictPtr, dictEnd-dictPtr);
-        if (FSE_isError(litlengthHeaderSize)) return ERROR(dictionary_corrupted);
-        if (litlengthLog > LLFSELog) return ERROR(dictionary_corrupted);
+        RETURN_ERROR_IF(FSE_isError(litlengthHeaderSize), dictionary_corrupted);
+        RETURN_ERROR_IF(litlengthLog > LLFSELog, dictionary_corrupted);
         /* Every literal length code must have non-zero probability */
-        CHECK_F( ZSTD_checkDictNCount(litlengthNCount, litlengthMaxValue, MaxLL));
-        CHECK_E( FSE_buildCTable_wksp(bs->entropy.fse.litlengthCTable,
-                                    litlengthNCount, litlengthMaxValue, litlengthLog,
-                                    workspace, HUF_WORKSPACE_SIZE),
-                 dictionary_corrupted);
+        FORWARD_IF_ERROR( ZSTD_checkDictNCount(litlengthNCount, litlengthMaxValue, MaxLL));
+        RETURN_ERROR_IF(FSE_isError(FSE_buildCTable_wksp(
+                bs->entropy.fse.litlengthCTable,
+                litlengthNCount, litlengthMaxValue, litlengthLog,
+                workspace, HUF_WORKSPACE_SIZE)),
+            dictionary_corrupted);
         dictPtr += litlengthHeaderSize;
     }
 
-    if (dictPtr+12 > dictEnd) return ERROR(dictionary_corrupted);
+    RETURN_ERROR_IF(dictPtr+12 > dictEnd, dictionary_corrupted);
     bs->rep[0] = MEM_readLE32(dictPtr+0);
     bs->rep[1] = MEM_readLE32(dictPtr+4);
     bs->rep[2] = MEM_readLE32(dictPtr+8);
@@ -2168,19 +2189,19 @@ static size_t ZSTD_loadZstdDictionary(ZSTD_compressedBlockState_t* bs,
             offcodeMax = ZSTD_highbit32(maxOffset); /* Calculate minimum offset code required to represent maxOffset */
         }
         /* All offset values <= dictContentSize + 128 KB must be representable */
-        CHECK_F (ZSTD_checkDictNCount(offcodeNCount, offcodeMaxValue, MIN(offcodeMax, MaxOff)));
+        FORWARD_IF_ERROR(ZSTD_checkDictNCount(offcodeNCount, offcodeMaxValue, MIN(offcodeMax, MaxOff)));
         /* All repCodes must be <= dictContentSize and != 0*/
         {   U32 u;
             for (u=0; u<3; u++) {
-                if (bs->rep[u] == 0) return ERROR(dictionary_corrupted);
-                if (bs->rep[u] > dictContentSize) return ERROR(dictionary_corrupted);
+                RETURN_ERROR_IF(bs->rep[u] == 0, dictionary_corrupted);
+                RETURN_ERROR_IF(bs->rep[u] > dictContentSize, dictionary_corrupted);
         }   }
 
         bs->entropy.huf.repeatMode = HUF_repeat_valid;
         bs->entropy.fse.offcode_repeatMode = FSE_repeat_valid;
         bs->entropy.fse.matchlength_repeatMode = FSE_repeat_valid;
         bs->entropy.fse.litlength_repeatMode = FSE_repeat_valid;
-        CHECK_F(ZSTD_loadDictionaryContent(ms, params, dictPtr, dictContentSize, dtlm));
+        FORWARD_IF_ERROR(ZSTD_loadDictionaryContent(ms, params, dictPtr, dictContentSize, dtlm));
         return dictID;
     }
 }
@@ -2210,8 +2231,7 @@ ZSTD_compress_insertDictionary(ZSTD_compressedBlockState_t* bs,
             DEBUGLOG(4, "raw content dictionary detected");
             return ZSTD_loadDictionaryContent(ms, params, dict, dictSize, dtlm);
         }
-        if (dictContentType == ZSTD_dct_fullDict)
-            return ERROR(dictionary_wrong);
+        RETURN_ERROR_IF(dictContentType == ZSTD_dct_fullDict, dictionary_wrong);
         assert(0);   /* impossible */
     }
 
@@ -2238,13 +2258,13 @@ static size_t ZSTD_compressBegin_internal(ZSTD_CCtx* cctx,
         return ZSTD_resetCCtx_usingCDict(cctx, cdict, params, pledgedSrcSize, zbuff);
     }
 
-    CHECK_F( ZSTD_resetCCtx_internal(cctx, params, pledgedSrcSize,
+    FORWARD_IF_ERROR( ZSTD_resetCCtx_internal(cctx, params, pledgedSrcSize,
                                      ZSTDcrp_continue, zbuff) );
     {
         size_t const dictID = ZSTD_compress_insertDictionary(
                 cctx->blockState.prevCBlock, &cctx->blockState.matchState,
                 &params, dict, dictSize, dictContentType, dtlm, cctx->entropyWorkspace);
-        if (ZSTD_isError(dictID)) return dictID;
+        FORWARD_IF_ERROR(dictID);
         assert(dictID <= (size_t)(U32)-1);
         cctx->dictID = (U32)dictID;
     }
@@ -2261,12 +2281,12 @@ static size_t ZSTD_writeEpilogue(ZSTD_CCtx* cctx, void* dst, size_t dstCapacity)
     size_t fhSize = 0;
 
     DEBUGLOG(4, "ZSTD_writeEpilogue");
-    if (cctx->stage == ZSTDcs_created) return ERROR(stage_wrong);  /* init missing */
+    RETURN_ERROR_IF(cctx->stage == ZSTDcs_created, stage_wrong, "init missing");
 
     /* special case : empty frame */
     if (cctx->stage == ZSTDcs_init) {
         fhSize = ZSTD_writeFrameHeader(dst, dstCapacity, cctx->appliedParams, 0, 0);
-        if (ZSTD_isError(fhSize)) return fhSize;
+        FORWARD_IF_ERROR(fhSize);
         dstCapacity -= fhSize;
         op += fhSize;
         cctx->stage = ZSTDcs_ongoing;
@@ -2275,7 +2295,7 @@ static size_t ZSTD_writeEpilogue(ZSTD_CCtx* cctx, void* dst, size_t dstCapacity)
     if (cctx->stage != ZSTDcs_ending) {
         /* write one last empty block, make it the "last" block */
         U32 const cBlockHeader24 = 1 /* last block */ + (((U32)bt_raw)<<1) + 0;
-        if (dstCapacity<4) return ERROR(dstSize_tooSmall);
+        RETURN_ERROR_IF(dstCapacity<4, dstSize_tooSmall);
         MEM_writeLE32(op, cBlockHeader24);
         op += ZSTD_blockHeaderSize;
         dstCapacity -= ZSTD_blockHeaderSize;
@@ -2283,7 +2303,7 @@ static size_t ZSTD_writeEpilogue(ZSTD_CCtx* cctx, void* dst, size_t dstCapacity)
 
     if (cctx->appliedParams.fParams.checksumFlag) {
         U32 const checksum = (U32) XXH64_digest(&cctx->xxhState);
-        if (dstCapacity<4) return ERROR(dstSize_tooSmall);
+        RETURN_ERROR_IF(dstCapacity<4, dstSize_tooSmall);
         DEBUGLOG(4, "ZSTD_writeEpilogue: write checksum : %08X", (unsigned)checksum);
         MEM_writeLE32(op, checksum);
         op += 4;
@@ -2301,18 +2321,20 @@ size_t ZSTD_compressEnd (ZSTD_CCtx* cctx,
     size_t const cSize = ZSTD_compressContinue_internal(cctx,
                                 dst, dstCapacity, src, srcSize,
                                 1 /* frame mode */, 1 /* last chunk */);
-    if (ZSTD_isError(cSize)) return cSize;
+    FORWARD_IF_ERROR(cSize);
     endResult = ZSTD_writeEpilogue(cctx, (char*)dst + cSize, dstCapacity-cSize);
-    if (ZSTD_isError(endResult)) return endResult;
+    FORWARD_IF_ERROR(endResult);
     assert(!(cctx->appliedParams.fParams.contentSizeFlag && cctx->pledgedSrcSizePlusOne == 0));
     if (cctx->pledgedSrcSizePlusOne != 0) {  /* control src size */
         ZSTD_STATIC_ASSERT(ZSTD_CONTENTSIZE_UNKNOWN == (unsigned long long)-1);
         DEBUGLOG(4, "end of frame : controlling src size");
-        if (cctx->pledgedSrcSizePlusOne != cctx->consumedSrcSize+1) {
-            DEBUGLOG(4, "error : pledgedSrcSize = %u, while realSrcSize = %u",
-                (unsigned)cctx->pledgedSrcSizePlusOne-1, (unsigned)cctx->consumedSrcSize);
-            return ERROR(srcSize_wrong);
-    }   }
+        RETURN_ERROR_IF(
+            cctx->pledgedSrcSizePlusOne != cctx->consumedSrcSize+1,
+            srcSize_wrong,
+             "error : pledgedSrcSize = %u, while realSrcSize = %u",
+            (unsigned)cctx->pledgedSrcSizePlusOne-1,
+            (unsigned)cctx->consumedSrcSize);
+    }
     return cSize + endResult;
 }
 
@@ -2325,7 +2347,7 @@ size_t ZSTD_compress_advanced_internal(
         ZSTD_CCtx_params params)
 {
     DEBUGLOG(4, "ZSTD_compress_advanced_internal (srcSize:%u)", (unsigned)srcSize);
-    CHECK_F( ZSTD_compressBegin_internal(cctx,
+    FORWARD_IF_ERROR( ZSTD_compressBegin_internal(cctx,
                          dict, dictSize, ZSTD_dct_auto, ZSTD_dtlm_fast, NULL,
                          params, srcSize, ZSTDb_not_buffered) );
     return ZSTD_compressEnd(cctx, dst, dstCapacity, src, srcSize);
