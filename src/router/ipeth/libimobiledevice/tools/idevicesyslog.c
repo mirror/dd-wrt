@@ -19,6 +19,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -59,9 +63,40 @@ static int start_logging(void)
 		return -1;
 	}
 
-	/* start and connect to syslog_relay service */
+	lockdownd_client_t lockdown = NULL;
+	lockdownd_error_t lerr = lockdownd_client_new_with_handshake(device, &lockdown, "idevicesyslog");
+	if (lerr != LOCKDOWN_E_SUCCESS) {
+		fprintf(stderr, "ERROR: Could not connect to lockdownd: %d\n", lerr);
+		idevice_free(device);
+		device = NULL;
+		return -1;
+	}
+
+	/* start syslog_relay service */
+	lockdownd_service_descriptor_t svc = NULL;
+	lerr = lockdownd_start_service(lockdown, SYSLOG_RELAY_SERVICE_NAME, &svc);
+	if (lerr == LOCKDOWN_E_PASSWORD_PROTECTED) {
+		fprintf(stderr, "*** Device is passcode protected, enter passcode on the device to continue ***\n");
+		while (1) {
+			lerr = lockdownd_start_service(lockdown, SYSLOG_RELAY_SERVICE_NAME, &svc);
+			if (lerr != LOCKDOWN_E_PASSWORD_PROTECTED) {
+				break;
+			}
+			sleep(1);
+		}
+	}
+	if (lerr != LOCKDOWN_E_SUCCESS) {
+		fprintf(stderr, "ERROR: Could not connect to lockdownd: %d\n", lerr);
+		idevice_free(device);
+		device = NULL;
+		return -1;
+	}
+	lockdownd_client_free(lockdown);
+
+	/* connect to syslog_relay service */
 	syslog_relay_error_t serr = SYSLOG_RELAY_E_UNKNOWN_ERROR;
-	serr = syslog_relay_client_start_service(device, &syslog, "idevicesyslog");
+	serr = syslog_relay_client_new(device, svc, &syslog);
+	lockdownd_service_descriptor_free(svc);
 	if (serr != SYSLOG_RELAY_E_SUCCESS) {
 		fprintf(stderr, "ERROR: Could not start service com.apple.syslog_relay.\n");
 		idevice_free(device);
@@ -150,7 +185,7 @@ int main(int argc, char *argv[])
 		}
 		else if (!strcmp(argv[i], "-u") || !strcmp(argv[i], "--udid")) {
 			i++;
-			if (!argv[i] || (strlen(argv[i]) != 40)) {
+			if (!argv[i] || !*argv[i]) {
 				print_usage(argc, argv);
 				return 0;
 			}
@@ -203,9 +238,9 @@ void print_usage(int argc, char **argv)
 	printf("Usage: %s [OPTIONS]\n", (name ? name + 1: argv[0]));
 	printf("Relay syslog of a connected device.\n\n");
 	printf("  -d, --debug\t\tenable communication debugging\n");
-	printf("  -u, --udid UDID\ttarget specific device by its 40-digit device UDID\n");
+	printf("  -u, --udid UDID\ttarget specific device by UDID\n");
 	printf("  -h, --help\t\tprints usage information\n");
 	printf("\n");
-	printf("Homepage: <http://libimobiledevice.org>\n");
+	printf("Homepage: <" PACKAGE_URL ">\n");
 }
 
