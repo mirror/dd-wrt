@@ -43,15 +43,88 @@ typedef pthread_once_t thread_once_t;
 
 typedef void* (*thread_func_t)(void* data);
 
-int thread_new(thread_t* thread, thread_func_t thread_func, void* data);
-void thread_free(thread_t thread);
-void thread_join(thread_t thread);
+static inline int thread_new(thread_t *thread, thread_func_t thread_func, void* data)
+{
+#ifdef WIN32
+	HANDLE th = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)thread_func, data, 0, NULL);
+	if (th == NULL) {
+		return -1;
+	}
+	*thread = th;
+	return 0;
+#else
+	int res = pthread_create(thread, NULL, thread_func, data);
+	return res;
+#endif
+}
 
-void mutex_init(mutex_t* mutex);
-void mutex_destroy(mutex_t* mutex);
-void mutex_lock(mutex_t* mutex);
-void mutex_unlock(mutex_t* mutex);
+static inline void thread_free(thread_t thread)
+{
+#ifdef WIN32
+	CloseHandle(thread);
+#endif
+}
 
-void thread_once(thread_once_t *once_control, void (*init_routine)(void));
+static inline void thread_join(thread_t thread)
+{
+	/* wait for thread to complete */
+#ifdef WIN32
+	WaitForSingleObject(thread, INFINITE);
+#else
+	pthread_join(thread, NULL);
+#endif
+}
+
+static inline void mutex_init(mutex_t* mutex)
+{
+#ifdef WIN32
+	InitializeCriticalSection(mutex);
+#else
+	pthread_mutex_init(mutex, NULL);
+#endif
+}
+
+static inline void mutex_destroy(mutex_t* mutex)
+{
+#ifdef WIN32
+	DeleteCriticalSection(mutex);
+#else
+	pthread_mutex_destroy(mutex);
+#endif
+}
+
+static inline void mutex_lock(mutex_t* mutex)
+{
+#ifdef WIN32
+	EnterCriticalSection(mutex);
+#else
+	pthread_mutex_lock(mutex);
+#endif
+}
+
+static inline void mutex_unlock(mutex_t* mutex)
+{
+#ifdef WIN32
+	LeaveCriticalSection(mutex);
+#else
+	pthread_mutex_unlock(mutex);
+#endif
+}
+
+static inline void thread_once(thread_once_t *once_control, void (*init_routine)(void))
+{
+#ifdef WIN32
+	while (InterlockedExchange(&(once_control->lock), 1) != 0) {
+		Sleep(1);
+	}
+	if (!once_control->state) {
+		once_control->state = 1;
+		init_routine();
+	}
+	InterlockedExchange(&(once_control->lock), 0);
+#else
+	pthread_once(once_control, init_routine);
+#endif
+}
 
 #endif
