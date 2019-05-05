@@ -19,6 +19,12 @@ LIBPLIST_SO_VERSION=4:0:1
 
 AC_SUBST(LIBPLIST_SO_VERSION)
 
+# prefer clang if it is available and CC is not set
+if test -z "$CC" && test -z "$CXX" && test -x "`which clang`"; then
+    CC=clang
+    CXX=clang++
+fi
+
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_CXX
@@ -156,6 +162,104 @@ case "$GLOBAL_CFLAGS" in
         AC_DEFINE([HAVE_FVISIBILITY], [1], [Define if compiled with -fvisibility=hidden])
 esac
 
+AC_ARG_WITH([sanitizers],
+            [AS_HELP_STRING([--with-sanitizers],
+            [build libplist with sanitizers (default is no)])],
+            [build_sanitizers=${withval}],
+            [])
+
+AC_ARG_WITH([fuzzers],
+            [AS_HELP_STRING([--with-fuzzers],
+            [build fuzzers (implies --with-sanitizers, default is no)])],
+            [build_fuzzers=${withval}],
+            [build_fuzzers=no])
+
+if test "x$build_fuzzers" = "xyes"; then
+    if test "x$build_sanitizers" = "xno"; then
+        AC_MSG_ERROR([--with-fuzzers implies --with-sanitizers, but --without-sanitizers was given. This does not work.])
+    fi
+    build_sanitizers=yes
+fi
+
+if test "x$build_sanitizers" = "xyes"; then
+    AS_COMPILER_FLAG([-fsanitize=address], [
+        SANITIZER_FLAGS+=" -fsanitize=address"
+        ASAN_AVAILABLE=yes
+    ], [])
+    if test "$ASAN_AVAILABLE" = "yes"; then
+        AS_COMPILER_FLAG([-fsanitize=address -fsanitize-address-use-after-scope], [
+            SANITIZER_FLAGS+=" -fsanitize-address-use-after-scope"
+        ], [])
+        SANITIZERS+="ASAN "
+    fi
+
+    AS_COMPILER_FLAG([-fsanitize=undefined], [
+        SANITIZER_FLAGS+=" -fsanitize=undefined"
+        UBSAN_AVAILABLE=yes
+    ], [])
+
+    if test "$UBSAN_AVAILABLE" = "yes"; then
+        SANITIZERS+="UBSAN "
+    fi
+
+    if test -z "$SANITIZER_FLAGS"; then
+        AC_MSG_ERROR([compiler doesn't support -fsanitize=address nor -fsanitize=undefined])
+    fi
+
+    COVERAGE_CHECKS="trace-pc-guard trace-cmp edge"
+    for COV_CHECK in $COVERAGE_CHECKS; do
+        AS_COMPILER_FLAG([-fsanitize-coverage=$COV_CHECK], [
+            if test -z "$SAN_COV_FLAGS"; then
+                SAN_COV_FLAGS="$COV_CHECK"
+            else
+                SAN_COV_FLAGS+=",$COV_CHECK"
+            fi
+        ], [])
+    done
+    if test -n "$SAN_COV_FLAGS"; then
+        SANITIZER_FLAGS+=" -fsanitize-coverage=$SAN_COV_FLAGS"
+        SANITIZERS+="+coverage "
+    else
+        AC_MSG_WARN([No sanitizer coverage supported by compiler])
+    fi
+
+    CFLAGS="-O1"
+
+    AS_COMPILER_FLAG([-fno-omit-frame-pointer], [
+        CFLAGS+=" -fno-omit-frame-pointer"
+    ], [])
+
+    AS_COMPILER_FLAG([-gline-tables-only], [
+        CFLAGS+=" -gline-tables-only"
+    ],
+    [
+        CFLAGS+=" -g"
+    ])
+
+    EXTRA_CONF+="  Enabled sanitizers ......: $SANITIZERS
+"
+
+    CFLAGS+=" $SANITIZER_FLAGS"
+    CXXFLAGS="$CFLAGS -std=c++11"
+fi
+
+if test "x$build_fuzzers" = "xyes"; then
+    if test "$CXX" != "clang++"; then
+        AC_MSG_WARN([building fuzzers requires clang/clang++ (continuing anyway)])
+    fi
+
+    CFLAGS+=" -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION"
+
+    EXTRA_CONF+="  Build fuzzers ...........: yes
+"
+fi
+
+AM_CONDITIONAL([BUILD_FUZZERS],[test "x$build_fuzzers" = "xyes"])
+
+if test "x$build_fuzzers" = "xyes" || test "x$build_sanitizers" = "xyes"; then
+    AS_COMPILER_FLAGS(TEST_CFLAGS, [$CFLAGS])
+fi
+
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
 
 AC_OUTPUT([
@@ -168,6 +272,7 @@ include/Makefile
 tools/Makefile
 cython/Makefile
 test/Makefile
+fuzz/Makefile
 doxygen.cfg
 ])
 
@@ -178,7 +283,7 @@ Configuration for $PACKAGE $VERSION:
   Install prefix ..........: $prefix
   Debug code ..............: $debug
   Python bindings .........: $cython_python_bindings
-
+$EXTRA_CONF
   Now type 'make' to build $PACKAGE $VERSION,
   and then 'make install' for installation.
 "
