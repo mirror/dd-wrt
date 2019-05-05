@@ -26,6 +26,10 @@ int g_debuglog_enable = 1;
 #endif
 
 
+/*! ZSTD_getError() :
+ *  convert a `size_t` function result into a proper ZSTD_errorCode enum */
+ZSTD_ErrorCode ZSTD_getErrorCode(size_t code) { return ERR_getErrorCode(code); }
+
 /*=**************************************************************
 *  Custom allocator
 ****************************************************************/
