@@ -32,6 +32,7 @@
 #include <stdint.h>
 #include <inttypes.h>
 #include <pthread.h>
+#include <unistd.h>
 #include "device.h"
 #include "client.h"
 #include "preflight.h"
@@ -129,7 +130,7 @@ pthread_mutex_t device_list_mutex;
 
 static struct mux_device* get_mux_device_for_id(int device_id)
 {
-  struct mux_device *dev = NULL;
+	struct mux_device *dev = NULL;
 	pthread_mutex_lock(&device_list_mutex);
 	FOREACH(struct mux_device *cdev, &device_list) {
 		if(cdev->id == device_id) {
@@ -314,10 +315,21 @@ static void connection_teardown(struct mux_connection *conn)
 		} else {
 			conn->state = CONN_DEAD;
 			if((conn->events & POLLOUT) && conn->ib_size > 0){
+				usbmuxd_log(LL_DEBUG, "%s: flushing buffer to client (%u bytes)", __func__, conn->ib_size);
+				uint64_t tm_last = mstime64();
 				while(1){
 					size = client_write(conn->client, conn->ib_buf, conn->ib_size);
-					if(size <= 0) {
+					if(size < 0) {
+						usbmuxd_log(LL_ERROR, "%s: aborting buffer flush to client after error.", __func__);
 						break;
+					} else if (size == 0) {
+						uint64_t tm_now = mstime64();
+						if (tm_now - tm_last > 1000) {
+							usbmuxd_log(LL_ERROR, "%s: aborting buffer flush to client after unsuccessfully attempting for %dms.", __func__, (int)(tm_now - tm_last));
+							break;
+						}
+						usleep(10000);
+						continue;
 					}
 					if(size == (int)conn->ib_size) {
 						conn->ib_size = 0;
@@ -326,6 +338,7 @@ static void connection_teardown(struct mux_connection *conn)
 						conn->ib_size -= size;
 						memmove(conn->ib_buf, conn->ib_buf + size, conn->ib_size);
 					}
+					tm_last = mstime64();
 				}
 			}
 			client_close(conn->client);
@@ -433,12 +446,12 @@ static int send_tcp_ack(struct mux_connection *conn)
 	if(send_tcp(conn, TH_ACK, NULL, 0) < 0) {
 		usbmuxd_log(LL_ERROR, "Error sending TCP ACK (%d->%d)", conn->sport, conn->dport);
 		connection_teardown(conn);
-    return -1;
+		return -1;
 	}
 
-  update_connection(conn);
+	update_connection(conn);
 
-  return 0;
+	return 0;
 }
 
 /**
@@ -534,7 +547,7 @@ static void connection_device_input(struct mux_connection *conn, unsigned char *
 
 void device_abort_connect(int device_id, struct mux_client *client)
 {
-  struct mux_connection *conn = get_mux_connection(device_id, client);
+	struct mux_connection *conn = get_mux_connection(device_id, client);
 	if (conn) {
 		connection_teardown(conn);
 	} else {
@@ -588,7 +601,7 @@ static void device_control_input(struct mux_device *dev, unsigned char *payload,
 				usbmuxd_log(LL_ERROR, "%s: ERROR: %s", __func__, buf);
 				free(buf);
 			} else {
-				usbmuxd_log(LL_ERROR, "%s: Error occured, but empty error message", __func__);
+				usbmuxd_log(LL_ERROR, "%s: Error occurred, but empty error message", __func__);
 			}
 			break;
 		case 7:
@@ -740,7 +753,7 @@ void device_data_input(struct usb_device *usbdev, unsigned char *buffer, uint32_
 			dev->pktlen = 0;
 			return;
 		}
-        memcpy(dev->pktbuf + dev->pktlen, buffer, length);
+		memcpy(dev->pktbuf + dev->pktlen, buffer, length);
 		struct mux_header *mhdr = (struct mux_header *)dev->pktbuf;
 		if((length < USB_MRU) || (ntohl(mhdr->length) == (length + dev->pktlen))) {
 			buffer = dev->pktbuf;
@@ -829,6 +842,7 @@ int device_add(struct usb_device *usbdev)
 	vh.padding = 0;
 	if((res = send_packet(dev, MUX_PROTO_VERSION, &vh, NULL, 0)) < 0) {
 		usbmuxd_log(LL_ERROR, "Error sending version request packet to device %d", id);
+		free(dev->pktbuf);
 		free(dev);
 		return res;
 	}
