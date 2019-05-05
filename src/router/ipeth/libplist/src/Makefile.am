@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir) -I$(top_srcdir)/libcnary/include
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir) -I$(top_srcdir)/libcnary/include -DNEED_PRINTF
 
 AM_CFLAGS = $(GLOBAL_CFLAGS)
 AM_LDFLAGS = $(GLOBAL_LDFLAGS)
