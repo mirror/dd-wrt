@@ -19,6 +19,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -34,10 +38,10 @@ static void print_usage(void)
 	printf("Display the device name or set it to NAME if specified.\n");
 	printf("\n");
 	printf("  -d, --debug\t\tenable communication debugging\n");
-	printf("  -u, --udid UDID\tuse UDID to target a specific device\n");
+	printf("  -u, --udid UDID\ttarget specific device by UDID\n");
 	printf("  -h, --help\t\tprint usage information\n");
 	printf("\n");
-	printf("Homepage: <http://libimobiledevice.org>\n");
+	printf("Homepage: <" PACKAGE_URL ">\n");
 }
 
 int main(int argc, char** argv)
@@ -56,6 +60,12 @@ int main(int argc, char** argv)
 	while ((c = getopt_long(argc, argv, "du:h", longopts, &optidx)) != -1) {
 		switch (c) {
 		case 'u':
+			if (!*optarg) {
+				fprintf(stderr, "ERROR: UDID must not be empty!\n");
+				print_usage();
+				exit(2);
+			}
+			free(udid);
 			udid = strdup(optarg);
 			break;
 		case 'h':

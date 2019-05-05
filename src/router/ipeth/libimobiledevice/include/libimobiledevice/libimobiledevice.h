@@ -55,7 +55,8 @@ typedef idevice_connection_private *idevice_connection_t; /**< The connection ha
 /** The event type for device add or removal */
 enum idevice_event_type {
 	IDEVICE_DEVICE_ADD = 1,
-	IDEVICE_DEVICE_REMOVE
+	IDEVICE_DEVICE_REMOVE,
+	IDEVICE_DEVICE_PAIRED
 };
 
 /* event data structure */
@@ -239,10 +240,20 @@ idevice_error_t idevice_connection_enable_ssl(idevice_connection_t connection);
  */
 idevice_error_t idevice_connection_disable_ssl(idevice_connection_t connection);
 
+/**
+ * Get the underlying file descriptor for a connection
+ *
+ * @param connection The connection to get fd of
+ * @param fd Pointer to an int where the fd is stored
+ *
+ * @return IDEVICE_E_SUCCESS if ok, otherwise an error code.
+ */
+idevice_error_t idevice_connection_get_fd(idevice_connection_t connection, int *fd);
+
 /* misc */
 
 /**
- * Gets the handle of the device. Depends on the connection type.
+ * Gets the handle or (usbmux device id) of the device.
  */
 idevice_error_t idevice_get_handle(idevice_t device, uint32_t *handle);
 
