@@ -18,7 +18,7 @@ AC_PROG_LIBTOOL
 # Checks for libraries.
 PKG_CHECK_MODULES(libusb, libusb-1.0 >= 1.0.9)
 PKG_CHECK_MODULES(libplist, libplist >= 1.11)
-PKG_CHECK_MODULES(libimobiledevice, libimobiledevice-1.0 >= 1.1.6, have_limd=yes, have_limd=no)
+PKG_CHECK_MODULES(libimobiledevice, libimobiledevice-1.0 >= 1.2.1, have_limd=yes, have_limd=no)
 AC_CHECK_LIB(pthread, [pthread_create, pthread_mutex_lock], [AC_SUBST(libpthread_LIBS,[-lpthread])], [AC_MSG_ERROR([libpthread is required to build usbmuxd])])
 
 AC_ARG_WITH([preflight],
@@ -59,7 +59,7 @@ fi
 AC_ARG_WITH([systemd],
             [AS_HELP_STRING([--without-systemd],
             [do not build with systemd support @<:@default=yes@:>@])],
-            [with_systemd=no],
+            [],
             [with_systemd=yes])
 
 AC_ARG_WITH([systemdsystemunitdir],
@@ -74,7 +74,7 @@ fi
 AM_CONDITIONAL(WANT_SYSTEMD, [test -n "$with_systemdsystemunitdir" -a "x$with_systemdsystemunitdir" != xno -a "x$with_systemd" = "xyes" ])
 
 if test "x$with_systemd" = xyes; then
-  udev_activation_rule="TAG+=\"systemd\", ENV{SYSTEMD_WANTS}=\"usbmuxd.service\""
+  udev_activation_rule="ENV{SYSTEMD_WANTS}=\"usbmuxd.service\""
 else
   udev_activation_rule="RUN+=\"@sbindir@/usbmuxd --user usbmux --udev\""
 fi
@@ -92,10 +92,14 @@ AC_TYPE_UINT16_T
 AC_TYPE_UINT32_T
 AC_TYPE_UINT8_T
 
+# Check if clock_gettime requires -lrt (old GNU systems)
+AC_SEARCH_LIBS([clock_gettime],[rt posix4])
+
 # Checks for library functions.
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([strcasecmp strdup strerror strndup stpcpy])
+AC_CHECK_FUNCS([ppoll clock_gettime localtime_r])
 
 # Check for operating system
 AC_MSG_CHECKING([whether to enable WIN32 build settings])
