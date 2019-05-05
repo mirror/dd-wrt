@@ -19,6 +19,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -66,10 +70,10 @@ static void print_usage(int argc, char **argv)
 	printf("\n");
 	printf(" The following OPTIONS are accepted:\n");
 	printf("  -d, --debug\t\tenable communication debugging\n");
-	printf("  -u, --udid UDID\ttarget specific device by its 40-digit device UDID\n");
+	printf("  -u, --udid UDID\ttarget specific device by UDID\n");
 	printf("  -h, --help\t\tprints usage information\n");
 	printf("\n");
-	printf("Homepage: <http://libimobiledevice.org>\n");
+	printf("Homepage: <" PACKAGE_URL ">\n");
 }
 
 static void notify_cb(const char *notification, void *user_data)
@@ -110,7 +114,7 @@ int main(int argc, char *argv[])
 		}
 		else if (!strcmp(argv[i], "-u") || !strcmp(argv[i], "--udid")) {
 			i++;
-			if (!argv[i] || (strlen(argv[i]) != 40)) {
+			if (!argv[i] || !*argv[i]) {
 				print_usage(argc, argv);
 				result = 0;
 				goto cleanup;

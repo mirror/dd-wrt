@@ -1,9 +1,8 @@
 /*
- * lockdown.h
- * Defines lockdown stuff, like the client struct.
+ * mobileactivation.h
+ * com.apple.mobileactivationd service header file.
  *
- * Copyright (c) 2014 Martin Szulecki All Rights Reserved.
- * Copyright (c) 2008 Zach C. All Rights Reserved.
+ * Copyright (c) 2016 Nikias Bassen, All Rights Reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,21 +19,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef __LOCKDOWND_H
-#define __LOCKDOWND_H
+#ifndef __MOBILEACTIVATION_H
+#define __MOBILEACTIVATION_H
 
-#include "libimobiledevice/lockdown.h"
+#include "libimobiledevice/mobileactivation.h"
 #include "property_list_service.h"
 
-#define LOCKDOWN_PROTOCOL_VERSION "2"
-
-struct lockdownd_client_private {
+struct mobileactivation_client_private {
 	property_list_service_client_t parent;
-	int ssl_enabled;
-	char *session_id;
-	char *udid;
-	char *label;
-	uint32_t mux_id;
 };
 
 #endif

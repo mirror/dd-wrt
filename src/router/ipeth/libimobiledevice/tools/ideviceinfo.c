@@ -19,6 +19,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -87,7 +91,7 @@ static void print_usage(int argc, char **argv)
 	printf("Show information about a connected device.\n\n");
 	printf("  -d, --debug\t\tenable communication debugging\n");
 	printf("  -s, --simple\t\tuse a simple connection to avoid auto-pairing with the device\n");
-	printf("  -u, --udid UDID\ttarget specific device by its 40-digit device UDID\n");
+	printf("  -u, --udid UDID\ttarget specific device by UDID\n");
 	printf("  -q, --domain NAME\tset domain of query to NAME. Default: None\n");
 	printf("  -k, --key NAME\tonly query key specified by NAME. Default: All keys.\n");
 	printf("  -x, --xml\t\toutput information as xml plist instead of key/value pairs\n");
@@ -98,7 +102,7 @@ static void print_usage(int argc, char **argv)
 		printf("  %s\n", domains[i++]);
 	}
 	printf("\n");
-	printf("Homepage: <http://libimobiledevice.org>\n");
+	printf("Homepage: <" PACKAGE_URL ">\n");
 }
 
 int main(int argc, char *argv[])
@@ -125,7 +129,7 @@ int main(int argc, char *argv[])
 		}
 		else if (!strcmp(argv[i], "-u") || !strcmp(argv[i], "--udid")) {
 			i++;
-			if (!argv[i] || (strlen(argv[i]) != 40)) {
+			if (!argv[i] || !*argv[i]) {
 				print_usage(argc, argv);
 				return 0;
 			}

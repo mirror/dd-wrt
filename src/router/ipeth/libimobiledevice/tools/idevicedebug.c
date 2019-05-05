@@ -19,6 +19,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -184,11 +188,11 @@ static void print_usage(int argc, char **argv)
 	printf("\n");
 	printf(" The following OPTIONS are accepted:\n");
 	printf("  -e, --env NAME=VALUE\tset environment variable NAME to VALUE\n");
-	printf("  -u, --udid UDID\ttarget specific device by its 40-digit device UDID\n");
+	printf("  -u, --udid UDID\ttarget specific device by UDID\n");
 	printf("  -d, --debug\t\tenable communication debugging\n");
 	printf("  -h, --help\t\tprints usage information\n");
 	printf("\n");
-	printf("Homepage: <http://libimobiledevice.org>\n");
+	printf("Homepage: <" PACKAGE_URL ">\n");
 }
 
 int main(int argc, char *argv[])
@@ -229,7 +233,7 @@ int main(int argc, char *argv[])
 			continue;
 		} else if (!strcmp(argv[i], "-u") || !strcmp(argv[i], "--udid")) {
 			i++;
-			if (!argv[i] || (strlen(argv[i]) != 40)) {
+			if (!argv[i] || !*argv[i]) {
 				print_usage(argc, argv);
 				res = 0;
 				goto cleanup;
@@ -313,16 +317,14 @@ int main(int argc, char *argv[])
 			instproxy_client_free(instproxy_client);
 			instproxy_client = NULL;
 
-			if (container) {
-				if (plist_get_node_type(container) == PLIST_STRING) {
-					plist_get_string_val(container, &working_directory);
-					debug_info("working_directory: %s\n", working_directory);
-					plist_free(container);
-				} else {
-						plist_free(container);
-					fprintf(stderr, "Could not determine container path for bundle identifier %s.\n", bundle_identifier);
-					goto cleanup;
-				}
+			if (container && (plist_get_node_type(container) == PLIST_STRING)) {
+				plist_get_string_val(container, &working_directory);
+				debug_info("working_directory: %s\n", working_directory);
+				plist_free(container);
+			} else {
+				plist_free(container);
+				fprintf(stderr, "Could not determine container path for bundle identifier %s.\n", bundle_identifier);
+				goto cleanup;
 			}
 
 			/* start and connect to debugserver */
