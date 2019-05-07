@@ -54,6 +54,7 @@
 #include "lib/meminfo/meminfo.h"
 #include "lib/net/gethostname.h"
 #include "lib/encoding/confline.h"
+#include "lib/encoding/kvline.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -5782,6 +5783,7 @@ test_config_extended_fmt(void *arg)
   tt_str_op(lp->value, OP_EQ, "is back here");
   tt_int_op(lp->command, OP_EQ, CONFIG_LINE_NORMAL);
   lp = lp->next;
+  tt_assert(!lp);
   config_free_lines(lines);
 
   /* Try with the "extended" flag enabled. */
@@ -5808,9 +5810,86 @@ test_config_extended_fmt(void *arg)
   tt_str_op(lp->value, OP_EQ, "");
   tt_int_op(lp->command, OP_EQ, CONFIG_LINE_CLEAR);
   lp = lp->next;
+  tt_assert(!lp);
 
  done:
   config_free_lines(lines);
+}
+
+static void
+test_config_kvline_parse(void *arg)
+{
+  (void)arg;
+
+  config_line_t *lines = NULL;
+  char *enc = NULL;
+
+  lines = kvline_parse("A=B CD=EF", 0);
+  tt_assert(lines);
+  tt_str_op(lines->key, OP_EQ, "A");
+  tt_str_op(lines->value, OP_EQ, "B");
+  tt_str_op(lines->next->key, OP_EQ, "CD");
+  tt_str_op(lines->next->value, OP_EQ, "EF");
+  enc = kvline_encode(lines, 0);
+  tt_str_op(enc, OP_EQ, "A=B CD=EF");
+  tor_free(enc);
+  enc = kvline_encode(lines, KV_QUOTED|KV_OMIT_KEYS);
+  tt_str_op(enc, OP_EQ, "A=B CD=EF");
+  tor_free(enc);
+  config_free_lines(lines);
+
+  lines = kvline_parse("AB CDE=F", 0);
+  tt_assert(! lines);
+
+  lines = kvline_parse("AB CDE=F", KV_OMIT_KEYS);
+  tt_assert(lines);
+  tt_str_op(lines->key, OP_EQ, "");
+  tt_str_op(lines->value, OP_EQ, "AB");
+  tt_str_op(lines->next->key, OP_EQ, "CDE");
+  tt_str_op(lines->next->value, OP_EQ, "F");
+  tt_assert(lines);
+  enc = kvline_encode(lines, 0);
+  tt_assert(!enc);
+  enc = kvline_encode(lines, KV_QUOTED|KV_OMIT_KEYS);
+  tt_str_op(enc, OP_EQ, "AB CDE=F");
+  tor_free(enc);
+  config_free_lines(lines);
+
+  lines = kvline_parse("AB=C CDE=\"F G\"", 0);
+  tt_assert(!lines);
+
+  lines = kvline_parse("AB=C CDE=\"F G\" \"GHI\" ", KV_QUOTED|KV_OMIT_KEYS);
+  tt_assert(lines);
+  tt_str_op(lines->key, OP_EQ, "AB");
+  tt_str_op(lines->value, OP_EQ, "C");
+  tt_str_op(lines->next->key, OP_EQ, "CDE");
+  tt_str_op(lines->next->value, OP_EQ, "F G");
+  tt_str_op(lines->next->next->key, OP_EQ, "");
+  tt_str_op(lines->next->next->value, OP_EQ, "GHI");
+  enc = kvline_encode(lines, 0);
+  tt_assert(!enc);
+  enc = kvline_encode(lines, KV_QUOTED|KV_OMIT_KEYS);
+  tt_str_op(enc, OP_EQ, "AB=C CDE=\"F G\" GHI");
+  tor_free(enc);
+  config_free_lines(lines);
+
+  lines = kvline_parse("A\"B=C CDE=\"F\" \"GHI\" ", KV_QUOTED|KV_OMIT_KEYS);
+  tt_assert(! lines);
+
+  lines = kvline_parse("AB=", KV_QUOTED);
+  tt_assert(lines);
+  tt_str_op(lines->key, OP_EQ, "AB");
+  tt_str_op(lines->value, OP_EQ, "");
+  config_free_lines(lines);
+
+  lines = kvline_parse("AB=", 0);
+  tt_assert(lines);
+  tt_str_op(lines->key, OP_EQ, "AB");
+  tt_str_op(lines->value, OP_EQ, "");
+
+ done:
+  config_free_lines(lines);
+  tor_free(enc);
 }
 
 #define CONFIG_TEST(name, flags)                          \
@@ -5864,5 +5943,6 @@ struct testcase_t config_tests[] = {
   CONFIG_TEST(include_opened_file_list, 0),
   CONFIG_TEST(compute_max_mem_in_queues, 0),
   CONFIG_TEST(extended_fmt, 0),
+  CONFIG_TEST(kvline_parse, 0),
   END_OF_TESTCASES
 };

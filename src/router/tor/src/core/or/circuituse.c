@@ -35,6 +35,7 @@
 #include "core/or/circuitlist.h"
 #include "core/or/circuitstats.h"
 #include "core/or/circuituse.h"
+#include "core/or/circuitpadding.h"
 #include "core/or/connection_edge.h"
 #include "core/or/policies.h"
 #include "feature/client/addressmap.h"
@@ -545,6 +546,8 @@ circuit_expire_building(void)
 
   SMARTLIST_FOREACH_BEGIN(circuit_get_global_list(), circuit_t *,victim) {
     struct timeval cutoff;
+    bool fixed_time = circuit_build_times_disabled(get_options());
+
     if (!CIRCUIT_IS_ORIGIN(victim) || /* didn't originate here */
         victim->marked_for_close)     /* don't mess with marked circs */
       continue;
@@ -599,17 +602,19 @@ circuit_expire_building(void)
         if (!TO_ORIGIN_CIRCUIT(victim)->relaxed_timeout) {
           int first_hop_succeeded = TO_ORIGIN_CIRCUIT(victim)->cpath->state
                                       == CPATH_STATE_OPEN;
-          log_info(LD_CIRC,
-                 "No circuits are opened. Relaxing timeout for circuit %d "
-                 "(a %s %d-hop circuit in state %s with channel state %s).",
-                 TO_ORIGIN_CIRCUIT(victim)->global_identifier,
-                 circuit_purpose_to_string(victim->purpose),
-                 TO_ORIGIN_CIRCUIT(victim)->build_state ?
-                   TO_ORIGIN_CIRCUIT(victim)->build_state->desired_path_len :
-                   -1,
-                 circuit_state_to_string(victim->state),
-                 victim->n_chan ?
-                    channel_state_to_string(victim->n_chan->state) : "none");
+          if (!fixed_time) {
+            log_info(LD_CIRC,
+                "No circuits are opened. Relaxing timeout for circuit %d "
+                "(a %s %d-hop circuit in state %s with channel state %s).",
+                TO_ORIGIN_CIRCUIT(victim)->global_identifier,
+                circuit_purpose_to_string(victim->purpose),
+                TO_ORIGIN_CIRCUIT(victim)->build_state ?
+                  TO_ORIGIN_CIRCUIT(victim)->build_state->desired_path_len :
+                  -1,
+                circuit_state_to_string(victim->state),
+                victim->n_chan ?
+                   channel_state_to_string(victim->n_chan->state) : "none");
+          }
 
           /* We count the timeout here for CBT, because technically this
            * was a timeout, and the timeout value needs to reset if we
@@ -623,7 +628,8 @@ circuit_expire_building(void)
       } else {
         static ratelim_t relax_timeout_limit = RATELIM_INIT(3600);
         const double build_close_ms = get_circuit_build_close_time_ms();
-        log_fn_ratelim(&relax_timeout_limit, LOG_NOTICE, LD_CIRC,
+        if (!fixed_time) {
+          log_fn_ratelim(&relax_timeout_limit, LOG_NOTICE, LD_CIRC,
                  "No circuits are opened. Relaxed timeout for circuit %d "
                  "(a %s %d-hop circuit in state %s with channel state %s) to "
                  "%ldms. However, it appears the circuit has timed out "
@@ -637,6 +643,7 @@ circuit_expire_building(void)
                  victim->n_chan ?
                     channel_state_to_string(victim->n_chan->state) : "none",
                  (long)build_close_ms);
+        }
       }
     }
 
@@ -1419,6 +1426,11 @@ circuit_detach_stream(circuit_t *circ, edge_connection_t *conn)
       if (circ->purpose == CIRCUIT_PURPOSE_S_REND_JOINED) {
         hs_dec_rdv_stream_counter(origin_circ);
       }
+
+      /* If there are no more streams on this circ, tell circpad */
+      if (!origin_circ->p_streams)
+        circpad_machine_event_circ_has_no_streams(origin_circ);
+
       return;
     }
   } else {
@@ -1564,10 +1576,14 @@ circuit_expire_old_circuits_serverside(time_t now)
     or_circ = TO_OR_CIRCUIT(circ);
     /* If the circuit has been idle for too long, and there are no streams
      * on it, and it ends here, and it used a create_fast, mark it for close.
+     *
+     * Also if there is a rend_splice on it, it's a single onion service
+     * circuit and we should not close it.
      */
     if (or_circ->p_chan && channel_is_client(or_circ->p_chan) &&
         !circ->n_chan &&
         !or_circ->n_streams && !or_circ->resolving_streams &&
+        !or_circ->rend_splice &&
         channel_when_last_xmit(or_circ->p_chan) <= cutoff) {
       log_info(LD_CIRC, "Closing circ_id %u (empty %d secs ago)",
                (unsigned)or_circ->p_circ_id,
@@ -1664,7 +1680,7 @@ circuit_testing_failed(origin_circuit_t *circ, int at_last_hop)
 void
 circuit_has_opened(origin_circuit_t *circ)
 {
-  control_event_circuit_status(circ, CIRC_EVENT_BUILT, 0);
+  circuit_event_status(circ, CIRC_EVENT_BUILT, 0);
 
   /* Remember that this circuit has finished building. Now if we start
    * it building again later (e.g. by extending it), we will know not
@@ -2586,6 +2602,12 @@ link_apconn_to_circ(entry_connection_t *apconn, origin_circuit_t *circ,
   /* add it into the linked list of streams on this circuit */
   log_debug(LD_APP|LD_CIRC, "attaching new conn to circ. n_circ_id %u.",
             (unsigned)circ->base_.n_circ_id);
+
+  /* If this is the first stream on this circuit, tell circpad
+   * that streams are attached */
+  if (!circ->p_streams)
+    circpad_machine_event_circ_has_streams(circ);
+
   /* reset it, so we can measure circ timeouts */
   ENTRY_TO_CONN(apconn)->timestamp_last_read_allowed = time(NULL);
   ENTRY_TO_EDGE_CONN(apconn)->next_stream = circ->p_streams;
@@ -3064,6 +3086,8 @@ circuit_change_purpose(circuit_t *circ, uint8_t new_purpose)
   if (CIRCUIT_IS_ORIGIN(circ)) {
     control_event_circuit_purpose_changed(TO_ORIGIN_CIRCUIT(circ),
                                           old_purpose);
+
+    circpad_machine_event_circ_purpose_changed(TO_ORIGIN_CIRCUIT(circ));
   }
 }
 

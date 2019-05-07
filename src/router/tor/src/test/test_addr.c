@@ -723,7 +723,7 @@ test_addr_ip6_helpers(void *arg)
   ;
 }
 
-/** Test tor_addr_port_parse(). */
+/** Test tor_addr_parse() and tor_addr_port_parse(). */
 static void
 test_addr_parse(void *arg)
 {
@@ -734,6 +734,60 @@ test_addr_parse(void *arg)
 
   /* Correct call. */
   (void)arg;
+  r= tor_addr_parse(&addr, "192.0.2.1");
+  tt_int_op(r,OP_EQ, AF_INET);
+  tor_addr_to_str(buf, &addr, sizeof(buf), 0);
+  tt_str_op(buf,OP_EQ, "192.0.2.1");
+
+  r= tor_addr_parse(&addr, "11:22::33:44");
+  tt_int_op(r,OP_EQ, AF_INET6);
+  tor_addr_to_str(buf, &addr, sizeof(buf), 0);
+  tt_str_op(buf,OP_EQ, "11:22::33:44");
+
+  r= tor_addr_parse(&addr, "[11:22::33:44]");
+  tt_int_op(r,OP_EQ, AF_INET6);
+  tor_addr_to_str(buf, &addr, sizeof(buf), 0);
+  tt_str_op(buf,OP_EQ, "11:22::33:44");
+
+  r= tor_addr_parse(&addr, "11:22:33:44:55:66:1.2.3.4");
+  tt_int_op(r,OP_EQ, AF_INET6);
+  tor_addr_to_str(buf, &addr, sizeof(buf), 0);
+  tt_str_op(buf,OP_EQ, "11:22:33:44:55:66:102:304");
+
+  r= tor_addr_parse(&addr, "11:22::33:44:1.2.3.4");
+  tt_int_op(r,OP_EQ, AF_INET6);
+  tor_addr_to_str(buf, &addr, sizeof(buf), 0);
+  tt_str_op(buf,OP_EQ, "11:22::33:44:102:304");
+
+  /* Empty string. */
+  r= tor_addr_parse(&addr, "");
+  tt_int_op(r,OP_EQ, -1);
+
+  /* Square brackets around IPv4 address. */
+  r= tor_addr_parse(&addr, "[192.0.2.1]");
+  tt_int_op(r,OP_EQ, -1);
+
+  /* Only left square bracket. */
+  r= tor_addr_parse(&addr, "[11:22::33:44");
+  tt_int_op(r,OP_EQ, -1);
+
+  /* Only right square bracket. */
+  r= tor_addr_parse(&addr, "11:22::33:44]");
+  tt_int_op(r,OP_EQ, -1);
+
+  /* Leading colon. */
+  r= tor_addr_parse(&addr, ":11:22::33:44");
+  tt_int_op(r,OP_EQ, -1);
+
+  /* Trailing colon. */
+  r= tor_addr_parse(&addr, "11:22::33:44:");
+  tt_int_op(r,OP_EQ, -1);
+
+  /* Too many hex words in IPv4-mapped IPv6 address. */
+  r= tor_addr_parse(&addr, "11:22:33:44:55:66:77:88:1.2.3.4");
+  tt_int_op(r,OP_EQ, -1);
+
+  /* Correct call. */
   r= tor_addr_port_parse(LOG_DEBUG,
                          "192.0.2.1:1234",
                          &addr, &port, -1);
@@ -1189,6 +1243,23 @@ test_addr_make_null(void *data)
   tor_free(zeros);
 }
 
+#define TEST_ADDR_INTERNAL(a, for_listening, rv) STMT_BEGIN \
+    tor_addr_t t; \
+    tt_int_op(tor_inet_pton(AF_INET, a, &t.addr.in_addr), OP_EQ, 1); \
+    t.family = AF_INET; \
+    tt_int_op(tor_addr_is_internal(&t, for_listening), OP_EQ, rv); \
+  STMT_END;
+
+static void
+test_addr_rfc6598(void *arg)
+{
+  (void)arg;
+  TEST_ADDR_INTERNAL("100.64.0.1", 0, 1);
+  TEST_ADDR_INTERNAL("100.64.0.1", 1, 0);
+ done:
+  ;
+}
+
 #define ADDR_LEGACY(name)                                               \
   { #name, test_addr_ ## name , 0, NULL, NULL }
 
@@ -1203,5 +1274,6 @@ struct testcase_t addr_tests[] = {
   { "sockaddr_to_str", test_addr_sockaddr_to_str, 0, NULL, NULL },
   { "is_loopback", test_addr_is_loopback, 0, NULL, NULL },
   { "make_null", test_addr_make_null, 0, NULL, NULL },
+  { "rfc6598", test_addr_rfc6598, 0, NULL, NULL },
   END_OF_TESTCASES
 };

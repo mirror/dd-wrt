@@ -65,10 +65,11 @@ noinst_PROGRAMS+= \
 	src/test/test \
 	src/test/test-slow \
 	src/test/test-memwipe \
-	src/test/test-child \
+	src/test/test-process \
 	src/test/test_workqueue \
 	src/test/test-switch-id \
-	src/test/test-timers
+	src/test/test-timers \
+	src/test/test-rng
 endif
 
 src_test_AM_CPPFLAGS = -DSHARE_DATADIR="\"$(datadir)\"" \
@@ -94,12 +95,14 @@ src_test_test_SOURCES += \
 	src/test/test_address.c \
 	src/test/test_address_set.c \
 	src/test/test_bridges.c \
+	src/test/test_btrack.c \
 	src/test/test_buffers.c \
 	src/test/test_bwmgt.c \
 	src/test/test_cell_formats.c \
 	src/test/test_cell_queue.c \
 	src/test/test_channel.c \
 	src/test/test_channelpadding.c \
+	src/test/test_circuitpadding.c \
 	src/test/test_channeltls.c \
 	src/test/test_checkdir.c \
 	src/test/test_circuitlist.c \
@@ -118,6 +121,7 @@ src_test_test_SOURCES += \
 	src/test/test_controller_events.c \
 	src/test/test_crypto.c \
 	src/test/test_crypto_ope.c \
+	src/test/test_crypto_rng.c \
 	src/test/test_data.c \
 	src/test/test_dir.c \
 	src/test/test_dir_common.c \
@@ -146,6 +150,7 @@ src_test_test_SOURCES += \
 	src/test/test_logging.c \
 	src/test/test_mainloop.c \
 	src/test/test_microdesc.c \
+	src/test/test_netinfo.c \
 	src/test/test_nodelist.c \
 	src/test/test_oom.c \
 	src/test/test_oos.c \
@@ -153,6 +158,8 @@ src_test_test_SOURCES += \
 	src/test/test_pem.c \
 	src/test/test_periodic_event.c \
 	src/test/test_policy.c \
+	src/test/test_process.c \
+	src/test/test_prob_distr.c \
 	src/test/test_procmon.c \
 	src/test/test_proto_http.c \
 	src/test/test_proto_misc.c \
@@ -177,10 +184,12 @@ src_test_test_SOURCES += \
 	src/test/test_util.c \
 	src/test/test_util_format.c \
 	src/test/test_util_process.c \
+	src/test/test_voting_flags.c \
 	src/test/test_voting_schedule.c \
 	src/test/test_x509.c \
 	src/test/test_helpers.c \
 	src/test/test_dns.c \
+	src/test/test_parsecommon.c \
 	src/test/testing_common.c \
 	src/test/testing_rsakeys.c \
 	src/ext/tinytest.c
@@ -200,7 +209,8 @@ if UNITTESTS_ENABLED
 src_test_test_slow_SOURCES += \
 	src/test/test_slow.c \
 	src/test/test_crypto_slow.c \
-	src/test/test_util_slow.c \
+	src/test/test_process_slow.c \
+	src/test/test_prob_distr.c \
 	src/test/testing_common.c \
 	src/test/testing_rsakeys.c \
 	src/ext/tinytest.c
@@ -250,6 +260,12 @@ src_test_test_slow_CPPFLAGS = $(src_test_test_CPPFLAGS)
 src_test_test_slow_CFLAGS = $(src_test_test_CFLAGS)
 src_test_test_slow_LDADD = $(src_test_test_LDADD)
 src_test_test_slow_LDFLAGS = $(src_test_test_LDFLAGS)
+
+src_test_test_rng_CPPFLAGS = $(src_test_test_CPPFLAGS)
+src_test_test_rng_CFLAGS = $(src_test_test_CFLAGS)
+src_test_test_rng_SOURCES = src/test/test_rng.c
+src_test_test_rng_LDFLAGS =  $(src_test_test_LDFLAGS)
+src_test_test_rng_LDADD = $(src_test_test_LDADD)
 
 src_test_test_memwipe_CPPFLAGS = $(src_test_test_CPPFLAGS)
 # Don't use bugtrap cflags here: memwipe tests require memory violations.
