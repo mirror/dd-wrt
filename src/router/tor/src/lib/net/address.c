@@ -40,6 +40,7 @@
 
 #include "lib/net/address.h"
 #include "lib/net/socket.h"
+#include "lib/cc/ctassert.h"
 #include "lib/container/smartlist.h"
 #include "lib/ctime/di_ops.h"
 #include "lib/log/log.h"
@@ -52,7 +53,7 @@
 #include "lib/string/printf.h"
 #include "lib/string/util_string.h"
 
-#include "siphash.h"
+#include "ext/siphash.h"
 
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
@@ -98,6 +99,7 @@
 #if AF_UNSPEC != 0
 #error We rely on AF_UNSPEC being 0. Let us know about your platform, please!
 #endif
+CTASSERT(AF_UNSPEC == 0);
 
 /** Convert the tor_addr_t in <b>a</b>, with port in <b>port</b>, into a
  * sockaddr object in *<b>sa_out</b> of object size <b>len</b>.  If not enough
@@ -236,9 +238,18 @@ tor_addr_make_null(tor_addr_t *a, sa_family_t family)
   a->family = family;
 }
 
-/** Return true iff <b>ip</b> is an IP reserved to localhost or local networks
- * in RFC1918 or RFC4193 or RFC4291. (fec0::/10, deprecated by RFC3879, is
- * also treated as internal for now.)
+/** Return true iff <b>ip</b> is an IP reserved to localhost or local networks.
+ *
+ * If <b>ip</b> is in RFC1918 or RFC4193 or RFC4291, we will return true.
+ * (fec0::/10, deprecated by RFC3879, is also treated as internal for now
+ * and will return true.)
+ *
+ * If <b>ip</b> is 0.0.0.0 or 100.64.0.0/10 (RFC6598), we will act as:
+ *  - Internal if <b>for_listening</b> is 0, as these addresses are not
+ *    routable on the internet and we won't be publicly accessible to clients.
+ *  - External if <b>for_listening</b> is 1, as clients could connect to us
+ *    from the internet (in the case of 0.0.0.0) or a service provider's
+ *    internal network (in the case of RFC6598).
  */
 int
 tor_addr_is_internal_(const tor_addr_t *addr, int for_listening,
@@ -286,11 +297,13 @@ tor_addr_is_internal_(const tor_addr_t *addr, int for_listening,
 
     return 0;
   } else if (v_family == AF_INET) {
-    if (for_listening && !iph4) /* special case for binding to 0.0.0.0 */
+    /* special case for binding to 0.0.0.0 or 100.64/10 (RFC6598) */
+    if (for_listening && (!iph4 || ((iph4 & 0xffc00000) == 0x64400000)))
       return 0;
     if (((iph4 & 0xff000000) == 0x0a000000) || /*       10/8 */
         ((iph4 & 0xff000000) == 0x00000000) || /*        0/8 */
         ((iph4 & 0xff000000) == 0x7f000000) || /*      127/8 */
+        ((iph4 & 0xffc00000) == 0x64400000) || /*  100.64/10 */
         ((iph4 & 0xffff0000) == 0xa9fe0000) || /* 169.254/16 */
         ((iph4 & 0xfff00000) == 0xac100000) || /*  172.16/12 */
         ((iph4 & 0xffff0000) == 0xc0a80000))   /* 192.168/16 */
@@ -1187,14 +1200,22 @@ tor_addr_parse(tor_addr_t *addr, const char *src)
   int result;
   struct in_addr in_tmp;
   struct in6_addr in6_tmp;
+  int brackets_detected = 0;
+
   tor_assert(addr && src);
-  if (src[0] == '[' && src[1])
+
+  size_t len = strlen(src);
+
+  if (len && src[0] == '[' && src[len - 1] == ']') {
+    brackets_detected = 1;
     src = tmp = tor_strndup(src+1, strlen(src)-2);
+  }
 
   if (tor_inet_pton(AF_INET6, src, &in6_tmp) > 0) {
     result = AF_INET6;
     tor_addr_from_in6(addr, &in6_tmp);
-  } else if (tor_inet_pton(AF_INET, src, &in_tmp) > 0) {
+  } else if (!brackets_detected &&
+             tor_inet_pton(AF_INET, src, &in_tmp) > 0) {
     result = AF_INET;
     tor_addr_from_in(addr, &in_tmp);
   } else {

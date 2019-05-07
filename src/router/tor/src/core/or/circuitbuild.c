@@ -26,6 +26,7 @@
  **/
 
 #define CIRCUITBUILD_PRIVATE
+#define OCIRC_EVENT_PRIVATE
 
 #include "core/or/or.h"
 #include "app/config/config.h"
@@ -42,10 +43,12 @@
 #include "core/or/circuitlist.h"
 #include "core/or/circuitstats.h"
 #include "core/or/circuituse.h"
+#include "core/or/circuitpadding.h"
 #include "core/or/command.h"
 #include "core/or/connection_edge.h"
 #include "core/or/connection_or.h"
 #include "core/or/onion.h"
+#include "core/or/ocirc_event.h"
 #include "core/or/policies.h"
 #include "core/or/relay.h"
 #include "feature/client/bridges.h"
@@ -492,7 +495,7 @@ circuit_establish_circuit(uint8_t purpose, extend_info_t *exit_ei, int flags)
     return NULL;
   }
 
-  control_event_circuit_status(circ, CIRC_EVENT_LAUNCHED, 0);
+  circuit_event_status(circ, CIRC_EVENT_LAUNCHED, 0);
 
   if ((err_reason = circuit_handle_first_hop(circ)) < 0) {
     circuit_mark_for_close(TO_CIRCUIT(circ), -err_reason);
@@ -506,6 +509,28 @@ circuit_guard_state_t *
 origin_circuit_get_guard_state(origin_circuit_t *circ)
 {
   return circ->guard_state;
+}
+
+/**
+ * Helper function to publish a channel association message
+ *
+ * circuit_handle_first_hop() calls this to notify subscribers about a
+ * channel launch event, which associates a circuit with a channel.
+ * This doesn't always correspond to an assignment of the circuit's
+ * n_chan field, because that seems to be only for fully-open
+ * channels.
+ **/
+static void
+circuit_chan_publish(const origin_circuit_t *circ, const channel_t *chan)
+{
+  ocirc_event_msg_t msg;
+
+  msg.type = OCIRC_MSGTYPE_CHAN;
+  msg.u.chan.gid = circ->global_identifier;
+  msg.u.chan.chan = chan->global_identifier;
+  msg.u.chan.onehop = circ->build_state->onehop_tunnel;
+
+  ocirc_event_publish(&msg);
 }
 
 /** Start establishing the first hop of our circuit. Figure out what
@@ -559,8 +584,6 @@ circuit_handle_first_hop(origin_circuit_t *circ)
     circ->base_.n_hop = extend_info_dup(firsthop->extend_info);
 
     if (should_launch) {
-      if (circ->build_state->onehop_tunnel)
-        control_event_bootstrap(BOOTSTRAP_STATUS_CONN_DIR, 0);
       n_chan = channel_connect_for_circuit(
           &firsthop->extend_info->addr,
           firsthop->extend_info->port,
@@ -570,6 +593,7 @@ circuit_handle_first_hop(origin_circuit_t *circ)
         log_info(LD_CIRC,"connect to firsthop failed. Closing.");
         return -END_CIRC_REASON_CONNECTFAILED;
       }
+      circuit_chan_publish(circ, n_chan);
     }
 
     log_debug(LD_CIRC,"connecting in progress (or finished). Good.");
@@ -581,6 +605,7 @@ circuit_handle_first_hop(origin_circuit_t *circ)
   } else { /* it's already open. use it. */
     tor_assert(!circ->base_.n_hop);
     circ->base_.n_chan = n_chan;
+    circuit_chan_publish(circ, n_chan);
     log_debug(LD_CIRC,"Conn open. Delivering first onion skin.");
     if ((err_reason = circuit_send_next_onion_skin(circ)) < 0) {
       log_info(LD_CIRC,"circuit_send_next_onion_skin failed.");
@@ -926,12 +951,15 @@ circuit_send_next_onion_skin(origin_circuit_t *circ)
   crypt_path_t *hop = onion_next_hop_in_cpath(circ->cpath);
   circuit_build_times_handle_completed_hop(circ);
 
+  circpad_machine_event_circ_added_hop(circ);
+
   if (hop) {
     /* Case two: we're on a hop after the first. */
     return circuit_send_intermediate_onion_skin(circ, hop);
   }
 
   /* Case three: the circuit is finished. Do housekeeping tasks on it. */
+  circpad_machine_event_circ_built(circ);
   return circuit_build_no_more_hops(circ);
 }
 
@@ -1416,7 +1444,7 @@ circuit_finish_handshake(origin_circuit_t *circ,
   hop->state = CPATH_STATE_OPEN;
   log_info(LD_CIRC,"Finished building circuit hop:");
   circuit_log_path(LOG_INFO,LD_CIRC,circ);
-  control_event_circuit_status(circ, CIRC_EVENT_EXTENDED, 0);
+  circuit_event_status(circ, CIRC_EVENT_EXTENDED, 0);
 
   return 0;
 }
@@ -1657,22 +1685,25 @@ route_len_for_purpose(uint8_t purpose, extend_info_t *exit_ei)
 STATIC int
 new_route_len(uint8_t purpose, extend_info_t *exit_ei, smartlist_t *nodes)
 {
-  int num_acceptable_routers;
   int routelen;
 
   tor_assert(nodes);
 
   routelen = route_len_for_purpose(purpose, exit_ei);
 
-  num_acceptable_routers = count_acceptable_nodes(nodes);
+  int num_acceptable_direct = count_acceptable_nodes(nodes, 1);
+  int num_acceptable_indirect = count_acceptable_nodes(nodes, 0);
 
-  log_debug(LD_CIRC,"Chosen route length %d (%d/%d routers suitable).",
-            routelen, num_acceptable_routers, smartlist_len(nodes));
+  log_debug(LD_CIRC,"Chosen route length %d (%d direct and %d indirect "
+             "routers suitable).", routelen, num_acceptable_direct,
+             num_acceptable_indirect);
 
-  if (num_acceptable_routers < routelen) {
+  if (num_acceptable_direct < 1 || num_acceptable_indirect < routelen - 1) {
     log_info(LD_CIRC,
-             "Not enough acceptable routers (%d/%d). Discarding this circuit.",
-             num_acceptable_routers, routelen);
+             "Not enough acceptable routers (%d/%d direct and %d/%d "
+             "indirect routers suitable). Discarding this circuit.",
+             num_acceptable_direct, routelen,
+             num_acceptable_indirect, routelen);
     return -1;
   }
 
@@ -2314,7 +2345,7 @@ circuit_extend_to_new_exit(origin_circuit_t *circ, extend_info_t *exit_ei)
  * particular router. See bug #25885.)
  */
 MOCK_IMPL(STATIC int,
-count_acceptable_nodes, (smartlist_t *nodes))
+count_acceptable_nodes, (smartlist_t *nodes, int direct))
 {
   int num=0;
 
@@ -2328,7 +2359,7 @@ count_acceptable_nodes, (smartlist_t *nodes))
     if (! node->is_valid)
 //      log_debug(LD_CIRC,"Nope, the directory says %d is not valid.",i);
       continue;
-    if (! node_has_any_descriptor(node))
+    if (! node_has_preferred_descriptor(node, direct))
       continue;
     /* The node has a descriptor, so we can just check the ntor key directly */
     if (!node_has_curve25519_onion_key(node))
@@ -2579,7 +2610,24 @@ choose_good_middle_server(uint8_t purpose,
     return choice;
   }
 
-  choice = router_choose_random_node(excluded, options->ExcludeNodes, flags);
+  if (options->MiddleNodes) {
+    smartlist_t *sl = smartlist_new();
+    routerset_get_all_nodes(sl, options->MiddleNodes,
+                            options->ExcludeNodes, 1);
+
+    smartlist_subtract(sl, excluded);
+
+    choice = node_sl_choose_by_bandwidth(sl, WEIGHT_FOR_MID);
+    smartlist_free(sl);
+    if (choice) {
+      log_fn(LOG_INFO, LD_CIRC, "Chose fixed middle node: %s",
+          hex_str(choice->identity, DIGEST_LEN));
+    } else {
+      log_fn(LOG_NOTICE, LD_CIRC, "Restricted middle not available");
+    }
+  } else {
+    choice = router_choose_random_node(excluded, options->ExcludeNodes, flags);
+  }
   smartlist_free(excluded);
   return choice;
 }

@@ -15,12 +15,14 @@
 #include "app/config/statefile.h"
 #include "app/main/main.h"
 #include "app/main/ntmain.h"
+#include "app/main/subsysmgr.h"
 #include "core/mainloop/connection.h"
 #include "core/mainloop/cpuworker.h"
 #include "core/mainloop/mainloop.h"
 #include "core/mainloop/netstatus.h"
 #include "core/or/channel.h"
 #include "core/or/channelpadding.h"
+#include "core/or/circuitpadding.h"
 #include "core/or/channeltls.h"
 #include "core/or/circuitlist.h"
 #include "core/or/circuitmux_ewma.h"
@@ -33,6 +35,7 @@
 #include "core/or/relay.h"
 #include "core/or/scheduler.h"
 #include "core/or/status.h"
+#include "core/or/versions.h"
 #include "feature/api/tor_api.h"
 #include "feature/api/tor_api_internal.h"
 #include "feature/client/addressmap.h"
@@ -65,11 +68,11 @@
 #include "feature/stats/predict_ports.h"
 #include "feature/stats/rephist.h"
 #include "lib/compress/compress.h"
-#include "lib/container/buffers.h"
+#include "lib/buf/buffers.h"
 #include "lib/crypt_ops/crypto_rand.h"
 #include "lib/crypt_ops/crypto_s2k.h"
-#include "lib/err/backtrace.h"
 #include "lib/geoip/geoip.h"
+#include "lib/net/resolve.h"
 
 #include "lib/process/waitpid.h"
 
@@ -83,6 +86,7 @@
 #include "lib/encoding/confline.h"
 #include "lib/evloop/timers.h"
 #include "lib/crypt_ops/crypto_init.h"
+#include "lib/version/torversion.h"
 
 #include <event2/event.h>
 
@@ -301,6 +305,19 @@ process_signal(int sig)
       log_heartbeat(time(NULL));
       control_event_signal(sig);
       break;
+    case SIGACTIVE:
+      /* "SIGACTIVE" counts as ersatz user activity. */
+      note_user_activity(approx_time());
+      control_event_signal(sig);
+      break;
+    case SIGDORMANT:
+      /* "SIGDORMANT" means to ignore past user activity */
+      log_notice(LD_GENERAL, "Going dormant because of controller request.");
+      reset_user_activity(0);
+      set_network_participation(false);
+      schedule_rescan_periodic_events();
+      control_event_signal(sig);
+      break;
   }
 }
 
@@ -426,18 +443,6 @@ dumpstats(int severity)
   rend_service_dump_stats(severity);
 }
 
-/** Called by exit() as we shut down the process.
- */
-static void
-exit_function(void)
-{
-  /* NOTE: If we ever daemonize, this gets called immediately.  That's
-   * okay for now, because we only use this on Windows.  */
-#ifdef _WIN32
-  WSACleanup();
-#endif
-}
-
 #ifdef _WIN32
 #define UNIX_ONLY 0
 #else
@@ -482,6 +487,8 @@ static struct {
   { SIGNEWNYM, 0, NULL },
   { SIGCLEARDNSCACHE, 0, NULL },
   { SIGHEARTBEAT, 0, NULL },
+  { SIGACTIVE, 0, NULL },
+  { SIGDORMANT, 0, NULL },
   { -1, -1, NULL }
 };
 
@@ -546,18 +553,13 @@ tor_init(int argc, char *argv[])
   tor_snprintf(progname, sizeof(progname), "Tor %s", get_version());
   log_set_application_name(progname);
 
-  /* Set up the crypto nice and early */
-  if (crypto_early_init() < 0) {
-    log_err(LD_GENERAL, "Unable to initialize the crypto subsystem!");
-    return -1;
-  }
-
   /* Initialize the history structures. */
   rep_hist_init();
   /* Initialize the service cache. */
   rend_cache_init();
   addressmap_init(); /* Init the client dns cache. Do it always, since it's
                       * cheap. */
+
   /* Initialize the HS subsystem. */
   hs_init();
 
@@ -631,12 +633,6 @@ tor_init(int argc, char *argv[])
   rust_log_welcome_string();
 #endif /* defined(HAVE_RUST) */
 
-  if (network_init()<0) {
-    log_err(LD_BUG,"Error initializing network; exiting.");
-    return -1;
-  }
-  atexit(exit_function);
-
   int init_rv = options_init_from_torrc(argc,argv);
   if (init_rv < 0) {
     log_err(LD_CONFIG,"Reading config failed--see warnings above.");
@@ -650,9 +646,13 @@ tor_init(int argc, char *argv[])
   /* The options are now initialised */
   const or_options_t *options = get_options();
 
-  /* Initialize channelpadding parameters to defaults until we get
-   * a consensus */
+  /* Initialize channelpadding and circpad parameters to defaults
+   * until we get a consensus */
   channelpadding_new_consensus_params(NULL);
+  circpad_new_consensus_params(NULL);
+
+  /* Initialize circuit padding to defaults+torrc until we get a consensus */
+  circpad_machines_init();
 
   /* Initialize predicted ports list after loading options */
   predicted_ports_init();
@@ -771,6 +771,7 @@ tor_free_all(int postfork)
   dns_free_all();
   clear_pending_onions();
   circuit_free_all();
+  circpad_machines_free();
   entry_guards_free_all();
   pt_free_all();
   channel_tls_free_all();
@@ -783,7 +784,6 @@ tor_free_all(int postfork)
   routerparse_free_all();
   ext_orport_free_all();
   control_free_all();
-  tor_free_getaddrinfo_cache();
   protover_free_all();
   bridges_free_all();
   consdiffmgr_free_all();
@@ -791,6 +791,7 @@ tor_free_all(int postfork)
   dos_free_all();
   circuitmux_ewma_free_all();
   accounting_free_all();
+  protover_summary_cache_free_all();
 
   if (!postfork) {
     config_free_all();
@@ -800,7 +801,6 @@ tor_free_all(int postfork)
     policies_free_all();
   }
   if (!postfork) {
-    tor_tls_free_all();
 #ifndef _WIN32
     tor_getpwnam(NULL);
 #endif
@@ -813,12 +813,12 @@ tor_free_all(int postfork)
     release_lockfile();
   }
   tor_libevent_free_all();
+
+  subsystems_shutdown();
+
   /* Stuff in util.c and address.c*/
   if (!postfork) {
-    escaped(NULL);
     esc_router_info(NULL);
-    clean_up_backtrace_handler();
-    logs_free_all(); /* free log strings. do this last so logs keep working. */
   }
 }
 
@@ -877,7 +877,6 @@ tor_cleanup(void)
                       later, if it makes shutdown unacceptably slow.  But for
                       now, leave it here: it's helped us catch bugs in the
                       past. */
-  crypto_global_cleanup();
 }
 
 /** Read/create keys as needed, and echo our fingerprint to stdout. */
@@ -1273,7 +1272,6 @@ int
 run_tor_main_loop(void)
 {
   handle_signals();
-  monotime_init();
   timers_initialize();
   initialize_mainloop_events();
 
@@ -1385,54 +1383,13 @@ tor_run_main(const tor_main_configuration_t *tor_cfg)
 {
   int result = 0;
 
-#ifdef _WIN32
-#ifndef HeapEnableTerminationOnCorruption
-#define HeapEnableTerminationOnCorruption 1
-#endif
-  /* On heap corruption, just give up; don't try to play along. */
-  HeapSetInformation(NULL, HeapEnableTerminationOnCorruption, NULL, 0);
-
-  /* SetProcessDEPPolicy is only supported on 32-bit Windows.
-   * (On 64-bit Windows it always fails, and some compilers don't like the
-   * PSETDEP cast.)
-   * 32-bit Windows defines _WIN32.
-   * 64-bit Windows defines _WIN32 and _WIN64. */
-#ifndef _WIN64
-  /* Call SetProcessDEPPolicy to permanently enable DEP.
-     The function will not resolve on earlier versions of Windows,
-     and failure is not dangerous. */
-  HMODULE hMod = GetModuleHandleA("Kernel32.dll");
-  if (hMod) {
-    typedef BOOL (WINAPI *PSETDEP)(DWORD);
-    PSETDEP setdeppolicy = (PSETDEP)GetProcAddress(hMod,
-                           "SetProcessDEPPolicy");
-    if (setdeppolicy) {
-      /* PROCESS_DEP_ENABLE | PROCESS_DEP_DISABLE_ATL_THUNK_EMULATION */
-      setdeppolicy(3);
-    }
-  }
-#endif /* !defined(_WIN64) */
-#endif /* defined(_WIN32) */
-
-  {
-    int bt_err = configure_backtrace_handler(get_version());
-    if (bt_err < 0) {
-      log_warn(LD_BUG, "Unable to install backtrace handler: %s",
-               strerror(-bt_err));
-    }
-  }
-
 #ifdef EVENT_SET_MEM_FUNCTIONS_IMPLEMENTED
   event_set_mem_functions(tor_malloc_, tor_realloc_, tor_free_);
 #endif
 
-  init_protocol_warning_severity_level();
+  subsystems_init();
 
-  update_approx_time(time(NULL));
-  tor_threads_init();
-  tor_compress_init();
-  init_logging(0);
-  monotime_init();
+  init_protocol_warning_severity_level();
 
   int argc = tor_cfg->argc + tor_cfg->argc_owned;
   char **argv = tor_calloc(argc, sizeof(char*));
@@ -1468,6 +1425,7 @@ tor_run_main(const tor_main_configuration_t *tor_cfg)
       tor_free_all(0);
       return -1;
     }
+    tor_make_getaddrinfo_cache_active();
 
     // registering libevent rng
 #ifdef HAVE_EVUTIL_SECURE_RNG_SET_URANDOM_DEVICE_FILE

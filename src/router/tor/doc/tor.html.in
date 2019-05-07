@@ -895,7 +895,9 @@ Project&#8217;s website.</p></div>
 </dt>
 <dd>
 <p>
-    Display Tor version and exit.
+    Display Tor version and exit. The output is a single line of the format
+    "Tor version [version number]."  (The version number format
+    is as specified in version-spec.txt.)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1267,7 +1269,7 @@ forward slash (/) in the configuration file and on the command line.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<a id="ControlPort"></a> <strong>ControlPort</strong> <em>PORT</em>|<strong>unix:</strong><em>path</em>|<strong>auto</strong> [<em>flags</em>]
+<a id="ControlPort"></a> <strong>ControlPort</strong> [<em>address</em>:]<em>port</em>|<strong>unix:</strong><em>path</em>|<strong>auto</strong> [<em>flags</em>]
 </dt>
 <dd>
 <p>
@@ -1281,7 +1283,8 @@ forward slash (/) in the configuration file and on the command line.</p></div>
     methods means either method is sufficient to authenticate to Tor.) This
     option is required for many Tor controllers; most use the value of 9051.
     If a unix domain socket is used, you may quote the path using standard
-    C escape sequences.
+    C escape sequences. You can specify this directive multiple times, to
+    bind to multiple address/port pairs.
     Set it to "auto" to have Tor pick a port for you. (Default: 0)<br />
 <br />
     Recognized flags are&#8230;
@@ -1686,20 +1689,26 @@ forward slash (/) in the configuration file and on the command line.</p></div>
     Otherwise the sandbox will be disabled. The option is currently an
     experimental feature. It only works on Linux-based operating systems,
     and only when Tor has been built with the libseccomp library. This option
-    can not be changed while tor is running.
+    can not be changed while tor is running.<br />
 <br />
-    When the Sandbox is 1, the following options can not be changed when tor
+    When the <strong>Sandbox</strong> is 1, the following options can not be changed when tor
     is running:
-    Address
-    ConnLimit
-    CookieAuthFile
-    DirPortFrontPage
-    ExtORPortCookieAuthFile
-    Logs
-    ServerDNSResolvConfFile
-    Tor must remain in client or server mode (some changes to ClientOnly and
-    ORPort are not allowed).
-    ClientOnionAuthDir and any files in it won&#8217;t reload on HUP signal.
+    <strong>Address</strong>,
+    <strong>ConnLimit</strong>,
+    <strong>CookieAuthFile</strong>,
+    <strong>DirPortFrontPage</strong>,
+    <strong>ExtORPortCookieAuthFile</strong>,
+    <strong>Logs</strong>,
+    <strong>ServerDNSResolvConfFile</strong>,
+    <strong>ClientOnionAuthDir</strong> (and any files in it won&#8217;t reload on HUP signal).
+<br />
+    Launching new Onion Services through the control port is not supported
+    with current syscall sandboxing implementation.
+<br />
+    Tor must remain in client or server mode (some changes to <strong>ClientOnly</strong>
+    and <strong>ORPort</strong> are not allowed). Currently, if <strong>Sandbox</strong> is 1,
+    <strong>ControlPort</strong> command "GETINFO address" will not work.
+<br />
     (Default: 0)
 </p>
 </dd>
@@ -1799,7 +1808,8 @@ forward slash (/) in the configuration file and on the command line.</p></div>
 <br />
     The currently recognized domains are: general, crypto, net, config, fs,
     protocol, mm, http, app, control, circ, rend, bug, dir, dirserv, or, edge,
-    acct, hist, handshake, heartbeat, channel, sched, guard, consdiff, and dos.
+    acct, hist, handshake, heartbeat, channel, sched, guard, consdiff, dos,
+    process, pt, and btrack.
     Domain names are case-insensitive.<br />
 <br />
     For example, "<code>Log [handshake]debug [~net,~mm]info notice stdout</code>" sends
@@ -2334,6 +2344,37 @@ forward slash (/) in the configuration file and on the command line.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
+<a id="MiddleNodes"></a> <strong>MiddleNodes</strong> <em>node</em>,<em>node</em>,<em>&#8230;</em>
+</dt>
+<dd>
+<p>
+    A list of identity fingerprints and country codes of nodes
+    to use for "middle" hops in your normal circuits.
+    Normal circuits include all circuits except for direct connections
+    to directory servers. Middle hops are all hops other than exit and entry.<br />
+</p>
+<div class="literalblock">
+<div class="content">
+<pre><code>This is an **experimental** feature that is meant to be used by researchers
+and developers to test new features in the Tor network safely. Using it
+without care will strongly influence your anonymity. This feature might get
+removed in the future.</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>The HSLayer2Node and HSLayer3Node options override this option for onion
+service circuits, if they are set. The vanguards addon will read this
+option, and if set, it will set HSLayer2Nodes and HSLayer3Nodes to nodes
+from this set.</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>The ExcludeNodes option overrides this option: any node listed in both
+MiddleNodes and ExcludeNodes is treated as excluded. See
+the **ExcludeNodes** option for more information on how to specify nodes.</code></pre>
+</div></div>
+</dd>
+<dt class="hdlist1">
 <a id="EntryNodes"></a> <strong>EntryNodes</strong> <em>node</em>,<em>node</em>,<em>&#8230;</em>
 </dt>
 <dd>
@@ -2358,13 +2399,14 @@ forward slash (/) in the configuration file and on the command line.</p></div>
     If StrictNodes is set to 1, Tor will treat solely the ExcludeNodes option
     as a requirement to follow for all the circuits you generate, even if
     doing so will break functionality for you (StrictNodes applies to neither
-    ExcludeExitNodes nor to ExitNodes).  If StrictNodes is set to 0, Tor will
-    still try to avoid nodes in the ExcludeNodes list, but it will err on the
-    side of avoiding unexpected errors.  Specifically, StrictNodes 0 tells Tor
-    that it is okay to use an excluded node when it is <strong>necessary</strong> to perform
-    relay reachability self-tests, connect to a hidden service, provide a
-    hidden service to a client, fulfill a .exit request, upload directory
-    information, or download directory information.  (Default: 0)
+    ExcludeExitNodes nor to ExitNodes, nor to MiddleNodes).  If StrictNodes
+    is set to 0, Tor will still try to avoid nodes in the ExcludeNodes list,
+    but it will err on the side of avoiding unexpected errors.
+    Specifically, StrictNodes 0 tells Tor that it is okay to use an excluded
+    node when it is <strong>necessary</strong> to perform relay reachability self-tests,
+    connect to a hidden service, provide a hidden service to a client,
+    fulfill a .exit request, upload directory information, or download
+    directory information.  (Default: 0)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -2507,24 +2549,25 @@ forward slash (/) in the configuration file and on the command line.</p></div>
 <p>
 When evaluating MapAddress expressions Tor stops when it hits the most
     recently added expression that matches the requested address. So if you
-    have the following in your torrc, www.torproject.org will map to 1.1.1.1:
+    have the following in your torrc, www.torproject.org will map to
+    198.51.100.1:
 </p>
 <div class="literalblock">
 <div class="content">
-<pre><code>MapAddress www.torproject.org 2.2.2.2
-MapAddress www.torproject.org 1.1.1.1</code></pre>
+<pre><code>MapAddress www.torproject.org 192.0.2.1
+MapAddress www.torproject.org 198.51.100.1</code></pre>
 </div></div>
 </li>
 <li>
 <p>
 Tor evaluates the MapAddress configuration until it finds no matches. So
     if you have the following in your torrc, www.torproject.org will map to
-    2.2.2.2:
+    203.0.113.1:
 </p>
 <div class="literalblock">
 <div class="content">
-<pre><code>MapAddress 1.1.1.1 2.2.2.2
-MapAddress www.torproject.org 1.1.1.1</code></pre>
+<pre><code>MapAddress 198.51.100.1 203.0.113.1
+MapAddress www.torproject.org 198.51.100.1</code></pre>
 </div></div>
 </li>
 <li>
@@ -2624,6 +2667,8 @@ Using a wildcard to match only part of a string (as in *ample.com) is
         information to anybody watching your network, and allow anybody
         to use your computer as an open proxy.<br />
 <br />
+    If multiple entries of this option are present in your configuration
+    file, Tor will perform stream isolation between listeners by default.
     The <em>isolation flags</em> arguments give Tor rules for which streams
     received on this SocksPort are allowed to share circuits with one
     another.  Recognized isolation flags are:
@@ -3122,7 +3167,9 @@ is preferable since it reduces the chances for an attacker to guess the
     protocol instead of SOCKS. Set this to
     0 if you don&#8217;t want to allow "HTTP CONNECT" connections. Set the port
     to "auto" to have Tor pick a port for you. This directive can be
-    specified multiple times to bind to multiple addresses/ports.  See
+    specified multiple times to bind to multiple addresses/ports. If multiple
+    entries of this option are present in your configuration file, Tor will
+    perform stream isolation between listeners by default. See
     SOCKSPort for an explanation of isolation flags. (Default: 0)
 </p>
 </dd>
@@ -3134,7 +3181,9 @@ is preferable since it reduces the chances for an attacker to guess the
     Open this port to listen for transparent proxy connections.  Set this to
     0 if you don&#8217;t want to allow transparent proxy connections.  Set the port
     to "auto" to have Tor pick a port for you. This directive can be
-    specified multiple times to bind to multiple addresses/ports.  See
+    specified multiple times to bind to multiple addresses/ports. If multiple
+    entries of this option are present in your configuration file, Tor will
+    perform stream isolation between listeners by default.  See
     SOCKSPort for an explanation of isolation flags.<br />
 <br />
     TransPort requires OS support for transparent proxies, such as BSDs' pf or
@@ -3181,7 +3230,9 @@ is preferable since it reduces the chances for an attacker to guess the
     included in old versions of FreeBSD, etc) using the NATD protocol.
     Use 0 if you don&#8217;t want to allow NATD connections.  Set the port
     to "auto" to have Tor pick a port for you. This directive can be
-    specified multiple times to bind to multiple addresses/ports.  See
+    specified multiple times to bind to multiple addresses/ports.  If multiple
+    entries of this option are present in your configuration file, Tor will
+    perform stream isolation between listeners by default. See
     SocksPort for an explanation of isolation flags.<br />
 <br />
     This option is only for people who cannot use TransPort. (Default: 0)
@@ -3534,6 +3585,17 @@ is preferable since it reduces the chances for an attacker to guess the
 </p>
 </dd>
 <dt class="hdlist1">
+<a id="ClientAutoIPv6ORPort"></a> <strong>ClientAutoIPv6ORPort</strong> <strong>0</strong>|<strong>1</strong>
+</dt>
+<dd>
+<p>
+    If this option is set to 1, Tor clients randomly prefer a node&#8217;s IPv4 or
+    IPv6 ORPort. The random preference is set every time a node is loaded
+    from a new consensus or bridge config. When this option is set to 1,
+    <strong>ClientPreferIPv6ORPort</strong> is ignored. (Default: 0)
+</p>
+</dd>
+<dt class="hdlist1">
 <a id="PathsNeededToBuildCircuits"></a> <strong>PathsNeededToBuildCircuits</strong> <em>NUM</em>
 </dt>
 <dd>
@@ -3597,6 +3659,63 @@ is preferable since it reduces the chances for an attacker to guess the
 <p>
     Try this many simultaneous connections to download a consensus before
     waiting for one to complete, timeout, or error out. (Default: 3)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="DormantClientTimeout"></a> <strong>DormantClientTimeout</strong>  <em>N</em> <strong>minutes</strong>|<strong>hours</strong>|<strong>days</strong>|<strong>weeks</strong>
+</dt>
+<dd>
+<p>
+    If Tor spends this much time without any client activity,
+    enter a dormant state where automatic circuits are not built, and
+    directory information is not fetched.
+    Does not affect servers or onion services. Must be at least 10 minutes.
+    (Default: 24 hours)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="DormantTimeoutDisabledByIdleStreams"></a> <strong>DormantTimeoutDisabledByIdleStreams</strong>  <strong>0</strong>|<strong>1</strong>
+</dt>
+<dd>
+<p>
+    If true, then any open client stream (even one not reading or writing)
+    counts as client activity for the purpose of DormantClientTimeout.
+    If false, then only network activity counts. (Default: 1)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="DormantOnFirstStartup"></a> <strong>DormantOnFirstStartup</strong> <strong>0</strong>|<strong>1</strong>
+</dt>
+<dd>
+<p>
+    If true, then the first time Tor starts up with a fresh DataDirectory,
+    it starts in dormant mode, and takes no actions until the user has made
+    a request.  (This mode is recommended if installing a Tor client for a
+    user who might not actually use it.)  If false, Tor bootstraps the first
+    time it is started, whether it sees a user request or not.
+<br />
+    After the first time Tor starts, it begins in dormant mode if it was
+    dormant before, and not otherwise. (Default: 0)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="DormantCanceledByStartup"></a> <strong>DormantCanceledByStartup</strong> <strong>0</strong>|<strong>1</strong>
+</dt>
+<dd>
+<p>
+    By default, Tor starts in active mode if it was active the last time
+    it was shut down, and in dormant mode if it was dormant.  But if
+    this option is true, Tor treats every startup event as user
+    activity, and Tor will never start in Dormant mode, even if it has
+    been unused for a long time on previous runs. (Default: 0)
+<br />
+    Note: Packagers and application developers should change the value of
+    this option only with great caution: it has the potential to
+    create spurious traffic on the network.  This option should only
+    be used if Tor is started by an affirmative user activity (like
+    clicking on an applcation or running a command), and not if Tor
+    is launched for some other reason (for example, by a startup
+    process, or by an application that launches itself on every login.)
 </p>
 </dd>
 </dl></div>
@@ -4196,7 +4315,8 @@ reject *:*</code></pre>
     <em>filename</em>. The file format is the same as the standard Unix
     "<strong>resolv.conf</strong>" file (7). This option, like all other ServerDNS options,
     only affects name lookups that your server does on behalf of clients.
-    (Defaults to use the system DNS configuration.)
+    (Defaults to use the system DNS configuration or a localhost DNS service
+    in case no nameservers are found in a given configuration.)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -4318,7 +4438,7 @@ reject *:*</code></pre>
 </dt>
 <dd>
 <p>
-    Relays only.
+    Relays and bridges only.
     When this option is enabled, Tor collects statistics for padding cells
     sent and received by this relay, in addition to total cell counts.
     These statistics are rounded, and omitted if traffic is low. This
@@ -5163,6 +5283,8 @@ AuthDirHasIPv6Connectivity 1.)</code></pre>
     Store data files for a hidden service in DIRECTORY. Every hidden service
     must have a separate directory. You may use this option  multiple times to
     specify multiple services. If DIRECTORY does not exist, Tor will create it.
+    Please note that you cannot add new Onion Service to already running Tor
+    instance if <strong>Sandbox</strong> is enabled.
     (Note: in current versions of Tor, if DIRECTORY is a relative path,
     it will be relative to the current
     working directory of Tor instance, not to its DataDirectory.  Do not
@@ -5919,15 +6041,6 @@ section 5.4. End-users should mostly ignore them.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<em>CacheDirectory</em><strong>/cached-routers</strong> and <strong>cached-routers.new</strong>
-</dt>
-<dd>
-<p>
-    Obsolete versions of cached-descriptors and cached-descriptors.new. When
-    Tor can&#8217;t find the newer files, it looks here instead.
-</p>
-</dd>
-<dt class="hdlist1">
 <em>DataDirectory</em><strong>/state</strong>
 </dt>
 <dd>
@@ -6378,7 +6491,7 @@ A short history of bandwidth usage, as produced in the server
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2019-01-22 13:04:55 UTC
+ 2019-04-09 13:06:32 UTC
 </div>
 </div>
 </body>

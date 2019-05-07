@@ -31,9 +31,7 @@ TESTING_TOR_BINARY=$(top_builddir)/src/app/tor$(EXEEXT)
 endif
 
 if USE_RUST
-## this MUST be $(), otherwise am__DEPENDENCIES will not track it
-rust_ldadd=$(top_builddir)/$(TOR_RUST_LIB_PATH) \
-	$(TOR_RUST_EXTRA_LIBS)
+rust_ldadd=$(top_builddir)/$(TOR_RUST_LIB_PATH)
 else
 rust_ldadd=
 endif
@@ -42,6 +40,7 @@ endif
 TOR_UTIL_LIBS = \
         src/lib/libtor-geoip.a \
 	src/lib/libtor-process.a \
+        src/lib/libtor-buf.a \
 	src/lib/libtor-time.a \
 	src/lib/libtor-fs.a \
 	src/lib/libtor-encoding.a \
@@ -62,6 +61,7 @@ TOR_UTIL_LIBS = \
 	src/lib/libtor-malloc.a \
 	src/lib/libtor-wallclock.a \
 	src/lib/libtor-err.a \
+	src/lib/libtor-version.a \
 	src/lib/libtor-intmath.a \
 	src/lib/libtor-ctime.a
 
@@ -71,6 +71,7 @@ if UNITTESTS_ENABLED
 TOR_UTIL_TESTING_LIBS = \
         src/lib/libtor-geoip-testing.a \
 	src/lib/libtor-process-testing.a \
+        src/lib/libtor-buf-testing.a \
 	src/lib/libtor-time-testing.a \
 	src/lib/libtor-fs-testing.a \
 	src/lib/libtor-encoding-testing.a \
@@ -91,6 +92,7 @@ TOR_UTIL_TESTING_LIBS = \
 	src/lib/libtor-malloc-testing.a \
 	src/lib/libtor-wallclock-testing.a \
 	src/lib/libtor-err-testing.a \
+	src/lib/libtor-version-testing.a \
 	src/lib/libtor-intmath.a \
 	src/lib/libtor-ctime-testing.a
 endif
@@ -213,7 +215,16 @@ doxygen:
 test: all
 	$(top_builddir)/src/test/test
 
-check-local: check-spaces check-changes check-includes
+shellcheck:
+        # Only use shellcheck if it is present
+	if command -v shellcheck; then \
+	        find $(top_srcdir)/scripts/ -name "*.sh" -exec shellcheck {} +; \
+	        if [ -d "$(top_srcdir)/scripts/test" ]; then \
+                        shellcheck $(top_srcdir)/scripts/test/cov-diff $(top_srcdir)/scripts/test/coverage; \
+                fi; \
+	fi
+
+check-local: check-spaces check-changes check-includes shellcheck
 
 need-chutney-path:
 	@if test ! -d "$$CHUTNEY_PATH"; then \
@@ -284,8 +295,10 @@ test-full: need-stem-path need-chutney-path check test-network test-stem
 
 test-full-online: need-stem-path need-chutney-path check test-network test-stem-full
 
+# We can't delete the gcno files, because they are created when tor is compiled
 reset-gcov:
-	rm -f $(top_builddir)/src/*/*.gcda $(top_builddir)/src/*/*/*.gcda
+	rm -f $(top_builddir)/src/*/*.gcda $(top_builddir)/src/*/*/*.gcda \
+	      $(top_builddir)/src/*/*.gcov $(top_builddir)/src/*/*/*.gcov
 
 HTML_COVER_DIR=$(top_builddir)/coverage_html
 coverage-html: all
@@ -410,13 +423,13 @@ endif
 check-changes:
 if USEPYTHON
 	@if test -d "$(top_srcdir)/changes"; then \
-		$(PYTHON) $(top_srcdir)/scripts/maint/lintChanges.py $(top_srcdir)/changes; \
+		PACKAGE_VERSION=$(PACKAGE_VERSION) $(PYTHON) $(top_srcdir)/scripts/maint/lintChanges.py $(top_srcdir)/changes; \
 		fi
 endif
 
 .PHONY: update-versions
 update-versions:
-	$(PERL) $(top_builddir)/scripts/maint/updateVersions.pl
+	abs_top_srcdir="$(abs_top_srcdir)" $(PYTHON) $(top_srcdir)/scripts/maint/update_versions.py
 
 .PHONY: callgraph
 callgraph:

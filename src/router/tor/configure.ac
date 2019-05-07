@@ -4,9 +4,18 @@ dnl Copyright (c) 2007-2019, The Tor Project, Inc.
 dnl See LICENSE for licensing information
 
 AC_PREREQ([2.63])
-AC_INIT([tor],[0.3.5.8])
+AC_INIT([tor],[0.4.0.5])
 AC_CONFIG_SRCDIR([src/app/main/tor_main.c])
 AC_CONFIG_MACRO_DIR([m4])
+
+# DO NOT EDIT THIS DEFINITION BY HAND UNLESS YOU KNOW WHAT YOU'RE DOING.
+#
+# The update_versions.py script updates this definition when the
+# version number changes.  Tor uses it to make sure that it
+# only shuts down for missing "required protocols" when those protocols
+# are listed as required by a consensus after this date.
+AC_DEFINE(APPROX_RELEASE_DATE, ["2019-04-30"], # for 0.4.0.5
+          [Approximate date when this software was released. (Updated when the version changes.)])
 
 # "foreign" means we don't follow GNU package layout standards
 # "1.11" means we require automake version 1.11 or newer
@@ -503,15 +512,6 @@ if test "x$enable_rust" = "xyes"; then
     fi
   fi
 
-  dnl This is a workaround for #46797
-  dnl (a.k.a https://github.com/rust-lang/rust/issues/46797 ).  Once the
-  dnl upstream bug is fixed, we can remove this workaround.
-  case "$host_os" in
-      darwin*)
-        TOR_RUST_EXTRA_LIBS="-lresolv"
-	;;
-  esac
-
   dnl For now both MSVC and MinGW rust libraries will output static libs with
   dnl the MSVC naming convention.
   if test "$bwin32" = "true"; then
@@ -555,8 +555,6 @@ if test "x$enable_rust" = "xyes"; then
   fi
   AC_MSG_RESULT([$RUSTC_VERSION])
 fi
-
-AC_SUBST(TOR_RUST_EXTRA_LIBS)
 
 AC_SEARCH_LIBS(socket, [socket network])
 AC_SEARCH_LIBS(gethostbyname, [nsl])
@@ -607,8 +605,10 @@ AC_CHECK_FUNCS(
 	llround \
 	localtime_r \
 	lround \
+	madvise \
 	memmem \
 	memset_s \
+	minherit \
 	mmap \
 	pipe \
 	pipe2 \
@@ -812,6 +812,8 @@ fi
 dnl Now check for particular libevent functions.
 AC_CHECK_FUNCS([evutil_secure_rng_set_urandom_device_file \
                 evutil_secure_rng_add_bytes \
+                evdns_base_get_nameserver_addr \
+
 ])
 
 LIBS="$save_LIBS"
@@ -1196,6 +1198,11 @@ if test "$fragile_hardening" = "yes"; then
       AC_MSG_ERROR([The compiler supports -fsanitize=undefined, but for some reason I was not able to link when using it. Are you missing run-time support? With GCC you need libasan.*, and with Clang you need libclang_rt.ubsan*])
     fi
 
+   TOR_TRY_COMPILE_WITH_CFLAGS([-fno-sanitize=float-divide-by-zero], also_link, CFLAGS_UBSAN="-fno-sanitize=float-divide-by-zero", true)
+    if test "$tor_cv_cflags__fno_sanitize_float_divide_by_zero" = "yes" && test "$tor_can_link__fno_sanitize_float_divide_by_zero" != "yes"; then
+      AC_MSG_ERROR([The compiler supports -fno-sanitize=float-divide-by-zero, but for some reason I was not able to link when using it. Are you missing run-time support? With GCC you need libasan.*, and with Clang you need libclang_rt.ubsan*])
+    fi
+
 TOR_CHECK_CFLAGS([-fno-omit-frame-pointer])
 fi
 
@@ -1450,6 +1457,7 @@ AC_CHECK_HEADERS([errno.h \
 		  inttypes.h \
 		  limits.h \
 		  linux/types.h \
+		  mach/vm_inherit.h \
 		  machine/limits.h \
 		  malloc.h \
 		  malloc/malloc.h \
@@ -2445,7 +2453,6 @@ AC_CONFIG_FILES([
 	src/config/torrc.minimal
 	src/rust/.cargo/config
 	scripts/maint/checkOptionDocs.pl
-	scripts/maint/updateVersions.pl
         warning_flags
 ])
 
