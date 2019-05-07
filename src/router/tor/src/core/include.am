@@ -11,6 +11,8 @@ LIBTOR_APP_A_SOURCES = 				\
 	src/app/config/confparse.c		\
 	src/app/config/statefile.c		\
 	src/app/main/main.c			\
+	src/app/main/subsystem_list.c		\
+	src/app/main/subsysmgr.c		\
 	src/core/crypto/hs_ntor.c		\
 	src/core/crypto/onion_crypto.c		\
 	src/core/crypto/onion_fast.c		\
@@ -30,6 +32,7 @@ LIBTOR_APP_A_SOURCES = 				\
 	src/core/or/circuitlist.c		\
 	src/core/or/circuitmux.c		\
 	src/core/or/circuitmux_ewma.c		\
+	src/core/or/circuitpadding.c		\
 	src/core/or/circuitstats.c		\
 	src/core/or/circuituse.c		\
 	src/core/or/command.c			\
@@ -37,6 +40,8 @@ LIBTOR_APP_A_SOURCES = 				\
 	src/core/or/connection_or.c		\
 	src/core/or/dos.c			\
 	src/core/or/onion.c			\
+	src/core/or/ocirc_event.c		\
+	src/core/or/orconn_event.c		\
 	src/core/or/policies.c			\
 	src/core/or/protover.c			\
 	src/core/or/protover_rust.c		\
@@ -59,7 +64,13 @@ LIBTOR_APP_A_SOURCES = 				\
 	src/feature/client/dnsserv.c		\
 	src/feature/client/entrynodes.c		\
 	src/feature/client/transports.c		\
+	src/feature/control/btrack.c		\
+	src/feature/control/btrack_circuit.c	\
+	src/feature/control/btrack_orconn.c	\
+	src/feature/control/btrack_orconn_cevent.c	\
+	src/feature/control/btrack_orconn_maps.c	\
 	src/feature/control/control.c		\
+	src/feature/control/control_bootstrap.c	\
 	src/feature/control/fmt_serverstatus.c  \
 	src/feature/control/getinfo_geoip.c	\
 	src/feature/dirauth/keypin.c		\
@@ -106,6 +117,7 @@ LIBTOR_APP_A_SOURCES = 				\
 	src/feature/nodelist/microdesc.c	\
 	src/feature/nodelist/networkstatus.c	\
 	src/feature/nodelist/nickname.c		\
+	src/feature/nodelist/nodefamily.c	\
 	src/feature/nodelist/nodelist.c		\
 	src/feature/nodelist/node_select.c	\
 	src/feature/nodelist/routerinfo.c	\
@@ -191,6 +203,7 @@ noinst_HEADERS +=					\
 	src/app/config/statefile.h			\
 	src/app/main/main.h				\
 	src/app/main/ntmain.h				\
+	src/app/main/subsysmgr.h			\
 	src/core/crypto/hs_ntor.h			\
 	src/core/crypto/onion_crypto.h	        	\
 	src/core/crypto/onion_fast.h			\
@@ -215,6 +228,7 @@ noinst_HEADERS +=					\
 	src/core/or/circuitmux.h			\
 	src/core/or/circuitmux_ewma.h			\
 	src/core/or/circuitstats.h			\
+	src/core/or/circuitpadding.h			\
 	src/core/or/circuituse.h			\
 	src/core/or/command.h				\
 	src/core/or/connection_edge.h			\
@@ -233,10 +247,14 @@ noinst_HEADERS +=					\
 	src/core/or/listener_connection_st.h		\
 	src/core/or/onion.h				\
 	src/core/or/or.h				\
+	src/core/or/orconn_event.h			\
+	src/core/or/orconn_event_sys.h			\
 	src/core/or/or_circuit_st.h			\
 	src/core/or/or_connection_st.h			\
 	src/core/or/or_handshake_certs_st.h		\
 	src/core/or/or_handshake_state_st.h		\
+	src/core/or/ocirc_event.h			\
+	src/core/or/ocirc_event_sys.h			\
 	src/core/or/origin_circuit_st.h			\
 	src/core/or/policies.h				\
 	src/core/or/port_cfg_st.h			\
@@ -263,6 +281,11 @@ noinst_HEADERS +=					\
 	src/feature/client/dnsserv.h			\
 	src/feature/client/entrynodes.h			\
 	src/feature/client/transports.h			\
+	src/feature/control/btrack_circuit.h		\
+	src/feature/control/btrack_orconn.h		\
+	src/feature/control/btrack_orconn_cevent.h	\
+	src/feature/control/btrack_orconn_maps.h	\
+	src/feature/control/btrack_sys.h		\
 	src/feature/control/control.h			\
 	src/feature/control/control_connection_st.h	\
 	src/feature/control/fmt_serverstatus.h		\
@@ -340,6 +363,8 @@ noinst_HEADERS +=					\
 	src/feature/nodelist/networkstatus_voter_info_st.h	\
 	src/feature/nodelist/nickname.h			\
 	src/feature/nodelist/node_st.h			\
+	src/feature/nodelist/nodefamily.h	        \
+	src/feature/nodelist/nodefamily_st.h    	\
 	src/feature/nodelist/nodelist.h			\
 	src/feature/nodelist/node_select.h		\
 	src/feature/nodelist/routerinfo.h		\

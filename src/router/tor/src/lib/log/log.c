@@ -32,7 +32,8 @@
 
 #define LOG_PRIVATE
 #include "lib/log/log.h"
-#include "lib/log/git_revision.h"
+#include "lib/log/log_sys.h"
+#include "lib/version/git_revision.h"
 #include "lib/log/ratelim.h"
 #include "lib/lock/compat_mutex.h"
 #include "lib/smartlist_core/smartlist_core.h"
@@ -1267,7 +1268,7 @@ static const char *domain_list[] = {
   "GENERAL", "CRYPTO", "NET", "CONFIG", "FS", "PROTOCOL", "MM",
   "HTTP", "APP", "CONTROL", "CIRC", "REND", "BUG", "DIR", "DIRSERV",
   "OR", "EDGE", "ACCT", "HIST", "HANDSHAKE", "HEARTBEAT", "CHANNEL",
-  "SCHED", "GUARD", "CONSDIFF", "DOS", NULL
+  "SCHED", "GUARD", "CONSDIFF", "DOS", "PROCESS", "PT", "BTRACK", NULL
 };
 
 /** Return a bitmask for the log domain for which <b>domain</b> is the name,

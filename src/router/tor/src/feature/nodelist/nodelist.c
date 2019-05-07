@@ -59,6 +59,7 @@
 #include "feature/nodelist/microdesc.h"
 #include "feature/nodelist/networkstatus.h"
 #include "feature/nodelist/node_select.h"
+#include "feature/nodelist/nodefamily.h"
 #include "feature/nodelist/nodelist.h"
 #include "feature/nodelist/routerlist.h"
 #include "feature/nodelist/routerset.h"
@@ -1105,7 +1106,7 @@ node_ed25519_id_matches(const node_t *node, const ed25519_public_key_t *id)
 /** Dummy object that should be unreturnable.  Used to ensure that
  * node_get_protover_summary_flags() always returns non-NULL. */
 static const protover_summary_flags_t zero_protover_flags = {
-  0,0,0,0,0,0,0
+  0,0,0,0,0,0,0,0
 };
 
 /** Return the protover_summary_flags for a given node. */
@@ -1503,19 +1504,6 @@ node_is_me(const node_t *node)
   return router_digest_is_me(node->identity);
 }
 
-/** Return <b>node</b> declared family (as a list of names), or NULL if
- * the node didn't declare a family. */
-const smartlist_t *
-node_get_declared_family(const node_t *node)
-{
-  if (node->ri && node->ri->declared_family)
-    return node->ri->declared_family;
-  else if (node->md && node->md->family)
-    return node->md->family;
-  else
-    return NULL;
-}
-
 /* Does this node have a valid IPv6 address?
  * Prefer node_has_ipv6_orport() or node_has_ipv6_dirport() for
  * checking specific ports. */
@@ -1866,6 +1854,9 @@ int
 addrs_in_same_network_family(const tor_addr_t *a1,
                              const tor_addr_t *a2)
 {
+  if (tor_addr_is_null(a1) || tor_addr_is_null(a2))
+    return 0;
+
   switch (tor_addr_family(a1)) {
     case AF_INET:
       return 0 == tor_addr_compare_masked(a1, a2, 16, CMP_SEMANTIC);
@@ -1881,7 +1872,7 @@ addrs_in_same_network_family(const tor_addr_t *a1,
  * (case-insensitive), or if <b>node's</b> identity key digest
  * matches a hexadecimal value stored in <b>nickname</b>.  Return
  * false otherwise. */
-static int
+STATIC int
 node_nickname_matches(const node_t *node, const char *nickname)
 {
   const char *n = node_get_nickname(node);
@@ -1893,7 +1884,7 @@ node_nickname_matches(const node_t *node, const char *nickname)
 }
 
 /** Return true iff <b>node</b> is named by some nickname in <b>lst</b>. */
-static inline int
+STATIC int
 node_in_nickname_smartlist(const smartlist_t *lst, const node_t *node)
 {
   if (!lst) return 0;
@@ -1902,6 +1893,61 @@ node_in_nickname_smartlist(const smartlist_t *lst, const node_t *node)
       return 1;
   });
   return 0;
+}
+
+/** Return true iff n1's declared family contains n2. */
+STATIC int
+node_family_contains(const node_t *n1, const node_t *n2)
+{
+  if (n1->ri && n1->ri->declared_family) {
+    return node_in_nickname_smartlist(n1->ri->declared_family, n2);
+  } else if (n1->md) {
+    return nodefamily_contains_node(n1->md->family, n2);
+  } else {
+    return 0;
+  }
+}
+
+/**
+ * Return true iff <b>node</b> has declared a nonempty family.
+ **/
+STATIC bool
+node_has_declared_family(const node_t *node)
+{
+  if (node->ri && node->ri->declared_family &&
+      smartlist_len(node->ri->declared_family)) {
+    return true;
+  }
+
+  if (node->md && node->md->family) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Add to <b>out</b> every node_t that is listed by <b>node</b> as being in
+ * its family.  (Note that these nodes are not in node's family unless they
+ * also agree that node is in their family.)
+ **/
+STATIC void
+node_lookup_declared_family(smartlist_t *out, const node_t *node)
+{
+  if (node->ri && node->ri->declared_family &&
+      smartlist_len(node->ri->declared_family)) {
+    SMARTLIST_FOREACH_BEGIN(node->ri->declared_family, const char *, name) {
+      const node_t *n2 = node_get_by_nickname(name, NNF_NO_WARN_UNNAMED);
+      if (n2) {
+        smartlist_add(out, (node_t *)n2);
+      }
+    } SMARTLIST_FOREACH_END(name);
+    return;
+  }
+
+  if (node->md && node->md->family) {
+    nodefamily_add_nodes_to_smartlist(node->md->family, out);
+  }
 }
 
 /** Return true iff r1 and r2 are in the same family, but not the same
@@ -1916,19 +1962,20 @@ nodes_in_same_family(const node_t *node1, const node_t *node2)
     tor_addr_t a1, a2;
     node_get_addr(node1, &a1);
     node_get_addr(node2, &a2);
-    if (addrs_in_same_network_family(&a1, &a2))
+
+    tor_addr_port_t ap6_1, ap6_2;
+    node_get_pref_ipv6_orport(node1, &ap6_1);
+    node_get_pref_ipv6_orport(node2, &ap6_2);
+
+    if (addrs_in_same_network_family(&a1, &a2) ||
+        addrs_in_same_network_family(&ap6_1.addr, &ap6_2.addr))
       return 1;
   }
 
   /* Are they in the same family because the agree they are? */
-  {
-    const smartlist_t *f1, *f2;
-    f1 = node_get_declared_family(node1);
-    f2 = node_get_declared_family(node2);
-    if (f1 && f2 &&
-        node_in_nickname_smartlist(f1, node2) &&
-        node_in_nickname_smartlist(f2, node1))
-      return 1;
+  if (node_family_contains(node1, node2) &&
+      node_family_contains(node2, node1)) {
+    return 1;
   }
 
   /* Are they in the same family because the user says they are? */
@@ -1956,12 +2003,9 @@ void
 nodelist_add_node_and_family(smartlist_t *sl, const node_t *node)
 {
   const smartlist_t *all_nodes = nodelist_get_list();
-  const smartlist_t *declared_family;
   const or_options_t *options = get_options();
 
   tor_assert(node);
-
-  declared_family = node_get_declared_family(node);
 
   /* Let's make sure that we have the node itself, if it's a real node. */
   {
@@ -1973,35 +2017,35 @@ nodelist_add_node_and_family(smartlist_t *sl, const node_t *node)
   /* First, add any nodes with similar network addresses. */
   if (options->EnforceDistinctSubnets) {
     tor_addr_t node_addr;
+    tor_addr_port_t node_ap6;
     node_get_addr(node, &node_addr);
+    node_get_pref_ipv6_orport(node, &node_ap6);
 
     SMARTLIST_FOREACH_BEGIN(all_nodes, const node_t *, node2) {
       tor_addr_t a;
+      tor_addr_port_t ap6;
       node_get_addr(node2, &a);
-      if (addrs_in_same_network_family(&a, &node_addr))
+      node_get_pref_ipv6_orport(node2, &ap6);
+      if (addrs_in_same_network_family(&a, &node_addr) ||
+          addrs_in_same_network_family(&ap6.addr, &node_ap6.addr))
         smartlist_add(sl, (void*)node2);
     } SMARTLIST_FOREACH_END(node2);
   }
 
-  /* Now, add all nodes in the declared_family of this node, if they
+  /* Now, add all nodes in the declared family of this node, if they
    * also declare this node to be in their family. */
-  if (declared_family) {
+  if (node_has_declared_family(node)) {
+    smartlist_t *declared_family = smartlist_new();
+    node_lookup_declared_family(declared_family, node);
+
     /* Add every r such that router declares familyness with node, and node
      * declares familyhood with router. */
-    SMARTLIST_FOREACH_BEGIN(declared_family, const char *, name) {
-      const node_t *node2;
-      const smartlist_t *family2;
-      if (!(node2 = node_get_by_nickname(name, NNF_NO_WARN_UNNAMED)))
-        continue;
-      if (!(family2 = node_get_declared_family(node2)))
-        continue;
-      SMARTLIST_FOREACH_BEGIN(family2, const char *, name2) {
-          if (node_nickname_matches(node, name2)) {
-            smartlist_add(sl, (void*)node2);
-            break;
-          }
-      } SMARTLIST_FOREACH_END(name2);
-    } SMARTLIST_FOREACH_END(name);
+    SMARTLIST_FOREACH_BEGIN(declared_family, const node_t *, node2) {
+      if (node_family_contains(node2, node)) {
+        smartlist_add(sl, (void*)node2);
+      }
+    } SMARTLIST_FOREACH_END(node2);
+    smartlist_free(declared_family);
   }
 
   /* If the user declared any families locally, honor those too. */
@@ -2306,7 +2350,7 @@ compute_frac_paths_available(const networkstatus_t *consensus,
   const int authdir = authdir_mode_v3(options);
 
   count_usable_descriptors(num_present_out, num_usable_out,
-                           mid, consensus, now, NULL,
+                           mid, consensus, now, options->MiddleNodes,
                            USABLE_DESCRIPTOR_ALL);
   log_debug(LD_NET,
             "%s: %d present, %d usable",
@@ -2449,12 +2493,18 @@ compute_frac_paths_available(const networkstatus_t *consensus,
       f_exit = f_myexit;
   }
 
-  /* if the consensus has no exits, we can only build onion service paths,
-   * which are G - M - M. So use the middle fraction for the exit fraction. */
+  /* If the consensus has no exits that pass flag, descriptor, and policy
+   * checks, we can only build onion service paths, which are G - M - M. */
   if (router_have_consensus_path() != CONSENSUS_PATH_EXIT) {
-    /* If there are no exits in the consensus, then f_exit is always 0, so
-     * it is safe to replace f_exit with f_mid. */
-    if (!BUG(f_exit > 0.0)) {
+    /* If the exit bandwidth weight fraction is not zero, we need to wait for
+     * descriptors for those exits. (The bandwidth weight fraction does not
+     * check for descriptors.)
+     * If the exit bandwidth fraction is zero, there are no exits in the
+     * consensus at all. So it is safe to replace f_exit with f_mid.
+     *
+     * f_exit is non-negative, but some compilers complain about float and ==
+     */
+    if (f_exit <= 0.0) {
       f_exit = f_mid;
     }
   }
@@ -2502,7 +2552,7 @@ count_loading_descriptors_progress(void)
   if (fraction > 1.0)
     return 0; /* it's not the number of descriptors holding us back */
   return BOOTSTRAP_STATUS_LOADING_DESCRIPTORS + (int)
-    (fraction*(BOOTSTRAP_STATUS_CONN_OR-1 -
+    (fraction*(BOOTSTRAP_STATUS_ENOUGH_DIRINFO-1 -
                BOOTSTRAP_STATUS_LOADING_DESCRIPTORS));
 }
 
@@ -2589,7 +2639,7 @@ update_router_have_minimum_dir_info(void)
   /* If paths have just become available in this update. */
   if (res && !have_min_dir_info) {
     control_event_client_status(LOG_NOTICE, "ENOUGH_DIR_INFO");
-    control_event_boot_dir(BOOTSTRAP_STATUS_CONN_OR, 0);
+    control_event_boot_dir(BOOTSTRAP_STATUS_ENOUGH_DIRINFO, 0);
     log_info(LD_DIR,
              "We now have enough directory information to build circuits.");
   }

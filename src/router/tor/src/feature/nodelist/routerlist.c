@@ -160,7 +160,7 @@ static time_t last_descriptor_download_attempted = 0;
  *
  * From time to time, we replace "cached-descriptors" with a new file
  * containing only the live, non-superseded descriptors, and clear
- * cached-routers.new.
+ * cached-descriptors.new.
  *
  * On startup, we read both files.
  */
@@ -3221,6 +3221,8 @@ refresh_all_country_info(void)
     routerset_refresh_countries(options->EntryNodes);
   if (options->ExitNodes)
     routerset_refresh_countries(options->ExitNodes);
+  if (options->MiddleNodes)
+    routerset_refresh_countries(options->MiddleNodes);
   if (options->ExcludeNodes)
     routerset_refresh_countries(options->ExcludeNodes);
   if (options->ExcludeExitNodes)

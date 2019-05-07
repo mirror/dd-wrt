@@ -95,7 +95,7 @@
 #include "feature/stats/geoip_stats.h"
 #include "feature/stats/predict_ports.h"
 #include "feature/stats/rephist.h"
-#include "lib/container/buffers.h"
+#include "lib/buf/buffers.h"
 #include "lib/crypt_ops/crypto_rand.h"
 #include "lib/err/backtrace.h"
 #include "lib/tls/buffers_tls.h"
@@ -200,12 +200,10 @@ static int can_complete_circuits = 0;
 #define LAZY_DESCRIPTOR_RETRY_INTERVAL (60)
 
 static int conn_close_if_marked(int i);
-static int run_main_loop_until_done(void);
 static void connection_start_reading_from_linked_conn(connection_t *conn);
 static int connection_should_read_from_linked_conn(connection_t *conn);
 static void conn_read_callback(evutil_socket_t fd, short event, void *_conn);
 static void conn_write_callback(evutil_socket_t fd, short event, void *_conn);
-static void second_elapsed_callback(periodic_timer_t *timer, void *args);
 static void shutdown_did_not_work_callback(evutil_socket_t fd, short event,
                                            void *arg) ATTR_NORETURN;
 
@@ -1365,6 +1363,7 @@ CALLBACK(heartbeat);
 CALLBACK(hs_service);
 CALLBACK(launch_descriptor_fetches);
 CALLBACK(launch_reachability_tests);
+CALLBACK(prune_old_routers);
 CALLBACK(reachability_warnings);
 CALLBACK(record_bridge_stats);
 CALLBACK(rend_cache_failure_clean);
@@ -1377,78 +1376,93 @@ CALLBACK(save_stability);
 CALLBACK(save_state);
 CALLBACK(write_bridge_ns);
 CALLBACK(write_stats_file);
+CALLBACK(control_per_second_events);
+CALLBACK(second_elapsed);
 
 #undef CALLBACK
 
 /* Now we declare an array of periodic_event_item_t for each periodic event */
-#define CALLBACK(name, r, f) PERIODIC_EVENT(name, r, f)
+#define CALLBACK(name, r, f) \
+  PERIODIC_EVENT(name, PERIODIC_EVENT_ROLE_ ## r, f)
+#define FL(name) (PERIODIC_EVENT_FLAG_ ## name)
 
 STATIC periodic_event_item_t periodic_events[] = {
-  /* Everyone needs to run those. */
-  CALLBACK(add_entropy, PERIODIC_EVENT_ROLE_ALL, 0),
-  CALLBACK(check_expired_networkstatus, PERIODIC_EVENT_ROLE_ALL, 0),
-  CALLBACK(clean_caches, PERIODIC_EVENT_ROLE_ALL, 0),
-  CALLBACK(fetch_networkstatus, PERIODIC_EVENT_ROLE_ALL,
-           PERIODIC_EVENT_FLAG_NEED_NET),
-  CALLBACK(heartbeat, PERIODIC_EVENT_ROLE_ALL, 0),
-  CALLBACK(launch_descriptor_fetches, PERIODIC_EVENT_ROLE_ALL,
-           PERIODIC_EVENT_FLAG_NEED_NET),
-  CALLBACK(reset_padding_counts, PERIODIC_EVENT_ROLE_ALL, 0),
-  CALLBACK(retry_listeners, PERIODIC_EVENT_ROLE_ALL,
-           PERIODIC_EVENT_FLAG_NEED_NET),
-  CALLBACK(save_state, PERIODIC_EVENT_ROLE_ALL, 0),
-  CALLBACK(rotate_x509_certificate, PERIODIC_EVENT_ROLE_ALL, 0),
-  CALLBACK(write_stats_file, PERIODIC_EVENT_ROLE_ALL, 0),
+
+  /* Everyone needs to run these. They need to have very long timeouts for
+   * that to be safe. */
+  CALLBACK(add_entropy, ALL, 0),
+  CALLBACK(heartbeat, ALL, 0),
+  CALLBACK(reset_padding_counts, ALL, 0),
+
+  /* This is a legacy catch-all callback that runs once per second if
+   * we are online and active. */
+  CALLBACK(second_elapsed, NET_PARTICIPANT,
+           FL(NEED_NET)|FL(RUN_ON_DISABLE)),
+
+  /* XXXX Do we have a reason to do this on a callback? Does it do any good at
+   * all?  For now, if we're dormant, we can let our listeners decay. */
+  CALLBACK(retry_listeners, NET_PARTICIPANT, FL(NEED_NET)),
+
+  /* We need to do these if we're participating in the Tor network. */
+  CALLBACK(check_expired_networkstatus, NET_PARTICIPANT, 0),
+  CALLBACK(fetch_networkstatus, NET_PARTICIPANT, 0),
+  CALLBACK(launch_descriptor_fetches, NET_PARTICIPANT, FL(NEED_NET)),
+  CALLBACK(rotate_x509_certificate, NET_PARTICIPANT, 0),
+  CALLBACK(check_network_participation, NET_PARTICIPANT, 0),
+
+  /* We need to do these if we're participating in the Tor network, and
+   * immediately before we stop. */
+  CALLBACK(clean_caches, NET_PARTICIPANT, FL(RUN_ON_DISABLE)),
+  CALLBACK(save_state, NET_PARTICIPANT, FL(RUN_ON_DISABLE)),
+  CALLBACK(write_stats_file, NET_PARTICIPANT, FL(RUN_ON_DISABLE)),
+  CALLBACK(prune_old_routers, NET_PARTICIPANT, FL(RUN_ON_DISABLE)),
 
   /* Routers (bridge and relay) only. */
-  CALLBACK(check_descriptor, PERIODIC_EVENT_ROLE_ROUTER,
-           PERIODIC_EVENT_FLAG_NEED_NET),
-  CALLBACK(check_ed_keys, PERIODIC_EVENT_ROLE_ROUTER, 0),
-  CALLBACK(check_for_reachability_bw, PERIODIC_EVENT_ROLE_ROUTER,
-           PERIODIC_EVENT_FLAG_NEED_NET),
-  CALLBACK(check_onion_keys_expiry_time, PERIODIC_EVENT_ROLE_ROUTER, 0),
-  CALLBACK(expire_old_ciruits_serverside, PERIODIC_EVENT_ROLE_ROUTER,
-           PERIODIC_EVENT_FLAG_NEED_NET),
-  CALLBACK(reachability_warnings, PERIODIC_EVENT_ROLE_ROUTER,
-           PERIODIC_EVENT_FLAG_NEED_NET),
-  CALLBACK(retry_dns, PERIODIC_EVENT_ROLE_ROUTER, 0),
-  CALLBACK(rotate_onion_key, PERIODIC_EVENT_ROLE_ROUTER, 0),
+  CALLBACK(check_descriptor, ROUTER, FL(NEED_NET)),
+  CALLBACK(check_ed_keys, ROUTER, 0),
+  CALLBACK(check_for_reachability_bw, ROUTER, FL(NEED_NET)),
+  CALLBACK(check_onion_keys_expiry_time, ROUTER, 0),
+  CALLBACK(expire_old_ciruits_serverside, ROUTER, FL(NEED_NET)),
+  CALLBACK(reachability_warnings, ROUTER, FL(NEED_NET)),
+  CALLBACK(retry_dns, ROUTER, 0),
+  CALLBACK(rotate_onion_key, ROUTER, 0),
 
   /* Authorities (bridge and directory) only. */
-  CALLBACK(downrate_stability, PERIODIC_EVENT_ROLE_AUTHORITIES, 0),
-  CALLBACK(launch_reachability_tests, PERIODIC_EVENT_ROLE_AUTHORITIES,
-           PERIODIC_EVENT_FLAG_NEED_NET),
-  CALLBACK(save_stability, PERIODIC_EVENT_ROLE_AUTHORITIES, 0),
+  CALLBACK(downrate_stability, AUTHORITIES, 0),
+  CALLBACK(launch_reachability_tests, AUTHORITIES, FL(NEED_NET)),
+  CALLBACK(save_stability, AUTHORITIES, 0),
 
   /* Directory authority only. */
-  CALLBACK(check_authority_cert, PERIODIC_EVENT_ROLE_DIRAUTH, 0),
-  CALLBACK(dirvote, PERIODIC_EVENT_ROLE_DIRAUTH, PERIODIC_EVENT_FLAG_NEED_NET),
+  CALLBACK(check_authority_cert, DIRAUTH, 0),
+  CALLBACK(dirvote, DIRAUTH, FL(NEED_NET)),
 
   /* Relay only. */
-  CALLBACK(check_canonical_channels, PERIODIC_EVENT_ROLE_RELAY,
-           PERIODIC_EVENT_FLAG_NEED_NET),
-  CALLBACK(check_dns_honesty, PERIODIC_EVENT_ROLE_RELAY,
-           PERIODIC_EVENT_FLAG_NEED_NET),
+  CALLBACK(check_canonical_channels, RELAY, FL(NEED_NET)),
+  CALLBACK(check_dns_honesty, RELAY, FL(NEED_NET)),
 
   /* Hidden Service service only. */
-  CALLBACK(hs_service, PERIODIC_EVENT_ROLE_HS_SERVICE,
-           PERIODIC_EVENT_FLAG_NEED_NET),
+  CALLBACK(hs_service, HS_SERVICE, FL(NEED_NET)), // XXXX break this down more
 
   /* Bridge only. */
-  CALLBACK(record_bridge_stats, PERIODIC_EVENT_ROLE_BRIDGE, 0),
+  CALLBACK(record_bridge_stats, BRIDGE, 0),
 
   /* Client only. */
-  CALLBACK(rend_cache_failure_clean, PERIODIC_EVENT_ROLE_CLIENT, 0),
+  /* XXXX this could be restricted to CLIENT+NET_PARTICIPANT */
+  CALLBACK(rend_cache_failure_clean, NET_PARTICIPANT, FL(RUN_ON_DISABLE)),
 
   /* Bridge Authority only. */
-  CALLBACK(write_bridge_ns, PERIODIC_EVENT_ROLE_BRIDGEAUTH, 0),
+  CALLBACK(write_bridge_ns, BRIDGEAUTH, 0),
 
   /* Directory server only. */
-  CALLBACK(clean_consdiffmgr, PERIODIC_EVENT_ROLE_DIRSERVER, 0),
+  CALLBACK(clean_consdiffmgr, DIRSERVER, 0),
+
+  /* Controller with per-second events only. */
+  CALLBACK(control_per_second_events, CONTROLEV, 0),
 
   END_OF_PERIODIC_EVENTS
 };
 #undef CALLBACK
+#undef FL
 
 /* These are pointers to members of periodic_events[] that are used to
  * implement particular callbacks.  We keep them separate here so that we
@@ -1460,6 +1474,7 @@ static periodic_event_item_t *fetch_networkstatus_event=NULL;
 static periodic_event_item_t *launch_descriptor_fetches_event=NULL;
 static periodic_event_item_t *check_dns_honesty_event=NULL;
 static periodic_event_item_t *save_state_event=NULL;
+static periodic_event_item_t *prune_old_routers_event=NULL;
 
 /** Reset all the periodic events so we'll do all our actions again as if we
  * just started up.
@@ -1496,7 +1511,7 @@ get_my_roles(const or_options_t *options)
 {
   tor_assert(options);
 
-  int roles = 0;
+  int roles = PERIODIC_EVENT_ROLE_ALL;
   int is_bridge = options->BridgeRelay;
   int is_relay = server_mode(options);
   int is_dirauth = authdir_mode_v3(options);
@@ -1504,12 +1519,17 @@ get_my_roles(const or_options_t *options)
   int is_hidden_service = !!hs_service_get_num_services() ||
                           !!rend_num_services();
   int is_dirserver = dir_server_mode(options);
+  int sending_control_events = control_any_per_second_event_enabled();
+
   /* We also consider tor to have the role of a client if the ControlPort is
    * set because a lot of things can be done over the control port which
    * requires tor to have basic functionnalities. */
   int is_client = options_any_client_port_set(options) ||
                   options->ControlPort_set ||
                   options->OwningControllerFD != UINT64_MAX;
+
+  int is_net_participant = is_participating_on_network() ||
+    is_relay || is_hidden_service;
 
   if (is_bridge) roles |= PERIODIC_EVENT_ROLE_BRIDGE;
   if (is_client) roles |= PERIODIC_EVENT_ROLE_CLIENT;
@@ -1518,6 +1538,8 @@ get_my_roles(const or_options_t *options)
   if (is_bridgeauth) roles |= PERIODIC_EVENT_ROLE_BRIDGEAUTH;
   if (is_hidden_service) roles |= PERIODIC_EVENT_ROLE_HS_SERVICE;
   if (is_dirserver) roles |= PERIODIC_EVENT_ROLE_DIRSERVER;
+  if (is_net_participant) roles |= PERIODIC_EVENT_ROLE_NET_PARTICIPANT;
+  if (sending_control_events) roles |= PERIODIC_EVENT_ROLE_CONTROLEV;
 
   return roles;
 }
@@ -1562,6 +1584,7 @@ initialize_periodic_events(void)
   STMT_BEGIN name ## _event = find_periodic_event( #name ); STMT_END
 
   NAMED_CALLBACK(check_descriptor);
+  NAMED_CALLBACK(prune_old_routers);
   NAMED_CALLBACK(dirvote);
   NAMED_CALLBACK(fetch_networkstatus);
   NAMED_CALLBACK(launch_descriptor_fetches);
@@ -1583,6 +1606,30 @@ teardown_periodic_events(void)
     periodic_event_destroy(&periodic_events[i]);
   }
   periodic_events_initialized = 0;
+}
+
+static mainloop_event_t *rescan_periodic_events_ev = NULL;
+
+/** Callback: rescan the periodic event list. */
+static void
+rescan_periodic_events_cb(mainloop_event_t *event, void *arg)
+{
+  (void)event;
+  (void)arg;
+  rescan_periodic_events(get_options());
+}
+
+/**
+ * Schedule an event that will rescan which periodic events should run.
+ **/
+MOCK_IMPL(void,
+schedule_rescan_periodic_events,(void))
+{
+  if (!rescan_periodic_events_ev) {
+    rescan_periodic_events_ev =
+      mainloop_event_new(rescan_periodic_events_cb, NULL);
+  }
+  mainloop_event_activate(rescan_periodic_events_ev);
 }
 
 /** Do a pass at all our periodic events, disable those we don't need anymore
@@ -1619,7 +1666,11 @@ rescan_periodic_events(const or_options_t *options)
       periodic_event_enable(item);
     } else {
       log_debug(LD_GENERAL, "Disabling periodic event %s", item->name);
-      periodic_event_disable(item);
+      if (item->flags & PERIODIC_EVENT_FLAG_RUN_ON_DISABLE) {
+        periodic_event_schedule_and_disable(item);
+      } else {
+        periodic_event_disable(item);
+      }
     }
   }
 }
@@ -1694,6 +1745,30 @@ mainloop_schedule_postloop_cleanup(void)
   mainloop_event_activate(postloop_cleanup_ev);
 }
 
+/** Event to run 'scheduled_shutdown_cb' */
+static mainloop_event_t *scheduled_shutdown_ev=NULL;
+
+/** Callback: run a scheduled shutdown */
+static void
+scheduled_shutdown_cb(mainloop_event_t *ev, void *arg)
+{
+  (void)ev;
+  (void)arg;
+  log_notice(LD_GENERAL, "Clean shutdown finished. Exiting.");
+  tor_shutdown_event_loop_and_exit(0);
+}
+
+/** Schedule the mainloop to exit after <b>delay_sec</b> seconds. */
+void
+mainloop_schedule_shutdown(int delay_sec)
+{
+  const struct timeval delay_tv = { delay_sec, 0 };
+  if (! scheduled_shutdown_ev) {
+    scheduled_shutdown_ev = mainloop_event_new(scheduled_shutdown_cb, NULL);
+  }
+  mainloop_event_schedule(scheduled_shutdown_ev, &delay_tv);
+}
+
 #define LONGEST_TIMER_PERIOD (30 * 86400)
 /** Helper: Return the number of seconds between <b>now</b> and <b>next</b>,
  * clipped to the range [1 second, LONGEST_TIMER_PERIOD]. */
@@ -1718,16 +1793,16 @@ safe_timer_diff(time_t now, time_t next)
 }
 
 /** Perform regular maintenance tasks.  This function gets run once per
- * second by second_elapsed_callback().
+ * second.
  */
-static void
-run_scheduled_events(time_t now)
+static int
+second_elapsed_callback(time_t now, const or_options_t *options)
 {
-  const or_options_t *options = get_options();
-
-  /* 0. See if we've been asked to shut down and our timeout has
-   * expired; or if our bandwidth limits are exhausted and we
-   * should hibernate; or if it's time to wake up from hibernation.
+  /* 0. See if our bandwidth limits are exhausted and we should hibernate
+   *
+   * Note: we have redundant mechanisms to handle the case where it's
+   * time to wake up from hibernation; or where we have a scheduled
+   * shutdown and it's time to run it, but this will also handle those.
    */
   consider_hibernation(now);
 
@@ -1737,10 +1812,13 @@ run_scheduled_events(time_t now)
   if (options->UseBridges && !net_is_disabled()) {
     /* Note: this check uses net_is_disabled(), not should_delay_dir_fetches()
      * -- the latter is only for fetching consensus-derived directory info. */
+    // TODO: client
+    //     Also, schedule this rather than probing 1x / sec
     fetch_bridge_descriptors(options, now);
   }
 
   if (accounting_is_enabled(options)) {
+    // TODO: refactor or rewrite?
     accounting_run_housekeeping(now);
   }
 
@@ -1751,6 +1829,7 @@ run_scheduled_events(time_t now)
    */
   /* (If our circuit build timeout can ever become lower than a second (which
    * it can't, currently), we should do this more often.) */
+  // TODO: All expire stuff can become NET_PARTICIPANT, RUN_ON_DISABLE
   circuit_expire_building();
   circuit_expire_waiting_for_better_guard();
 
@@ -1784,9 +1863,8 @@ run_scheduled_events(time_t now)
     run_connection_housekeeping(i, now);
   }
 
-  /* 11b. check pending unconfigured managed proxies */
-  if (!net_is_disabled() && pt_proxies_configuration_pending())
-    pt_configure_remaining_proxies();
+  /* Run again in a second. */
+  return 1;
 }
 
 /* Periodic callback: rotate the onion keys after the period defined by the
@@ -1933,6 +2011,55 @@ add_entropy_callback(time_t now, const or_options_t *options)
   return ENTROPY_INTERVAL;
 }
 
+/** Periodic callback: if there has been no network usage in a while,
+ * enter a dormant state. */
+STATIC int
+check_network_participation_callback(time_t now, const or_options_t *options)
+{
+  /* If we're a server, we can't become dormant. */
+  if (server_mode(options)) {
+    goto found_activity;
+  }
+
+  /* If we're running an onion service, we can't become dormant. */
+  /* XXXX this would be nice to change, so that we can be dormant with a
+   * service. */
+  if (hs_service_get_num_services() || rend_num_services()) {
+    goto found_activity;
+  }
+
+  /* If we have any currently open entry streams other than "linked"
+   * connections used for directory requests, those count as user activity.
+   */
+  if (options->DormantTimeoutDisabledByIdleStreams) {
+    if (connection_get_by_type_nonlinked(CONN_TYPE_AP) != NULL) {
+      goto found_activity;
+    }
+  }
+
+  /* XXXX Make this configurable? */
+/** How often do we check whether we have had network activity? */
+#define CHECK_PARTICIPATION_INTERVAL (5*60)
+
+  /* Become dormant if there has been no user activity in a long time.
+   * (The funny checks below are in order to prevent overflow.) */
+  time_t time_since_last_activity = 0;
+  if (get_last_user_activity_time() < now)
+    time_since_last_activity = now - get_last_user_activity_time();
+  if (time_since_last_activity >= options->DormantClientTimeout) {
+    log_notice(LD_GENERAL, "No user activity in a long time: becoming"
+               " dormant.");
+    set_network_participation(false);
+    rescan_periodic_events(options);
+  }
+
+  return CHECK_PARTICIPATION_INTERVAL;
+
+ found_activity:
+  note_user_activity(now);
+  return CHECK_PARTICIPATION_INTERVAL;
+}
+
 /**
  * Periodic callback: if we're an authority, make sure we test
  * the routers on the network for reachability.
@@ -2039,11 +2166,9 @@ check_expired_networkstatus_callback(time_t now, const or_options_t *options)
   (void)options;
   /* Check whether our networkstatus has expired. */
   networkstatus_t *ns = networkstatus_get_latest_consensus();
-  /*XXXX RD: This value needs to be the same as REASONABLY_LIVE_TIME in
-   * networkstatus_get_reasonably_live_consensus(), but that value is way
-   * way too high.  Arma: is the bridge issue there resolved yet? -NM */
-#define NS_EXPIRY_SLOP (24*60*60)
-  if (ns && ns->valid_until < (now - NS_EXPIRY_SLOP) &&
+  /* Use reasonably live consensuses until they are no longer reasonably live.
+   */
+  if (ns && !networkstatus_consensus_reasonably_live(ns, now) &&
       router_have_minimum_dir_info()) {
     router_dir_info_changed();
   }
@@ -2226,6 +2351,27 @@ retry_dns_callback(time_t now, const or_options_t *options)
   return RETRY_DNS_INTERVAL;
 }
 
+/**
+ * Periodic callback: prune routerlist of old information about Tor network.
+ */
+static int
+prune_old_routers_callback(time_t now, const or_options_t *options)
+{
+#define ROUTERLIST_PRUNING_INTERVAL (60*60) // 1 hour.
+  (void)now;
+  (void)options;
+
+  if (!net_is_disabled()) {
+    /* If any networkstatus documents are no longer recent, we need to
+     * update all the descriptors' running status. */
+    /* Remove dead routers. */
+    log_debug(LD_GENERAL, "Pruning routerlist...");
+    routerlist_remove_old_routers();
+  }
+
+  return ROUTERLIST_PRUNING_INTERVAL;
+}
+
 /** Periodic callback: consider rebuilding or and re-uploading our descriptor
  * (if we've passed our internal checks). */
 static int
@@ -2245,12 +2391,6 @@ check_descriptor_callback(time_t now, const or_options_t *options)
     check_descriptor_ipaddress_changed(now);
     mark_my_descriptor_dirty_if_too_old(now);
     consider_publishable_server(0);
-    /* If any networkstatus documents are no longer recent, we need to
-     * update all the descriptors' running status. */
-    /* Remove dead routers. */
-    /* XXXX This doesn't belong here, but it was here in the pre-
-     * XXXX refactoring code. */
-    routerlist_remove_old_routers();
   }
 
   return CHECK_DESCRIPTOR_INTERVAL;
@@ -2508,36 +2648,19 @@ hs_service_callback(time_t now, const or_options_t *options)
   return 1;
 }
 
-/** Timer: used to invoke second_elapsed_callback() once per second. */
-static periodic_timer_t *second_timer = NULL;
-
-/**
- * Enable or disable the per-second timer as appropriate, creating it if
- * necessary.
+/*
+ * Periodic callback: Send once-per-second events to the controller(s).
+ * This is called every second.
  */
-void
-reschedule_per_second_timer(void)
+static int
+control_per_second_events_callback(time_t now, const or_options_t *options)
 {
-  struct timeval one_second;
-  one_second.tv_sec = 1;
-  one_second.tv_usec = 0;
+  (void) options;
+  (void) now;
 
-  if (! second_timer) {
-    second_timer = periodic_timer_new(tor_libevent_get_base(),
-                                      &one_second,
-                                      second_elapsed_callback,
-                                      NULL);
-    tor_assert(second_timer);
-  }
+  control_per_second_events();
 
-  const bool run_per_second_events =
-    control_any_per_second_event_enabled() || ! net_is_completely_disabled();
-
-  if (run_per_second_events) {
-    periodic_timer_launch(second_timer, &one_second);
-  } else {
-    periodic_timer_disable(second_timer);
-  }
+  return 1;
 }
 
 /** Last time that update_current_time was called. */
@@ -2567,6 +2690,17 @@ update_current_time(time_t now)
   memcpy(&last_updated, &current_second_last_changed, sizeof(last_updated));
   monotime_coarse_get(&current_second_last_changed);
 
+  /** How much clock jumping means that we should adjust our idea of when
+   * to go dormant? */
+#define NUM_JUMPED_SECONDS_BEFORE_NETSTATUS_UPDATE 20
+
+  /* Don't go dormant early or late just because we jumped in time. */
+  if (ABS(seconds_elapsed) >= NUM_JUMPED_SECONDS_BEFORE_NETSTATUS_UPDATE) {
+    if (is_participating_on_network()) {
+      netstatus_note_clock_jumped(seconds_elapsed);
+    }
+  }
+
   /** How much clock jumping do we tolerate? */
 #define NUM_JUMPED_SECONDS_BEFORE_WARN 100
 
@@ -2576,6 +2710,7 @@ update_current_time(time_t now)
   if (seconds_elapsed < -NUM_JUMPED_SECONDS_BEFORE_WARN) {
     // moving back in time is always a bad sign.
     circuit_note_clock_jumped(seconds_elapsed, false);
+
   } else if (seconds_elapsed >= NUM_JUMPED_SECONDS_BEFORE_WARN) {
     /* Compare the monotonic clock to the result of time(). */
     const int32_t monotime_msec_passed =
@@ -2603,31 +2738,6 @@ update_current_time(time_t now)
 
   update_approx_time(now);
   current_second = now;
-}
-
-/** Libevent callback: invoked once every second. */
-static void
-second_elapsed_callback(periodic_timer_t *timer, void *arg)
-{
-  /* XXXX This could be sensibly refactored into multiple callbacks, and we
-   * could use Libevent's timers for this rather than checking the current
-   * time against a bunch of timeouts every second. */
-  time_t now;
-  (void)timer;
-  (void)arg;
-
-  now = time(NULL);
-
-  /* We don't need to do this once-per-second any more: time-updating is
-   * only in this callback _because it is a callback_. It should be fine
-   * to disable this callback, and the time will still get updated.
-   */
-  update_current_time(now);
-
-  /* Maybe some controller events are ready to fire */
-  control_per_second_events();
-
-  run_scheduled_events(now);
 }
 
 #ifdef HAVE_SYSTEMD_209
@@ -2720,9 +2830,6 @@ do_main_loop(void)
   initialize_periodic_events();
   initialize_mainloop_events();
 
-  /* set up once-a-second callback. */
-  reschedule_per_second_timer();
-
 #ifdef HAVE_SYSTEMD_209
   uint64_t watchdog_delay;
   /* set up systemd watchdog notification. */
@@ -2744,10 +2851,6 @@ do_main_loop(void)
     }
   }
 #endif /* defined(HAVE_SYSTEMD_209) */
-
-  main_loop_should_exit = 0;
-  main_loop_exit_value = 0;
-
 #ifdef ENABLE_RESTART_DEBUGGING
   {
     static int first_time = 1;
@@ -2873,10 +2976,14 @@ run_main_loop_once(void)
  *
  * Shadow won't invoke this function, so don't fill it up with things.
  */
-static int
+STATIC int
 run_main_loop_until_done(void)
 {
   int loop_result = 1;
+
+  main_loop_should_exit = 0;
+  main_loop_exit_value = 0;
+
   do {
     loop_result = run_main_loop_once();
   } while (loop_result == 1);
@@ -2907,7 +3014,6 @@ tor_mainloop_free_all(void)
   smartlist_free(connection_array);
   smartlist_free(closeable_connection_lst);
   smartlist_free(active_linked_connection_lst);
-  periodic_timer_free(second_timer);
   teardown_periodic_events();
   tor_event_free(shutdown_did_not_work_event);
   tor_event_free(initialize_periodic_events_event);
@@ -2915,6 +3021,8 @@ tor_mainloop_free_all(void)
   mainloop_event_free(schedule_active_linked_connections_event);
   mainloop_event_free(postloop_cleanup_ev);
   mainloop_event_free(handle_deferred_signewnym_ev);
+  mainloop_event_free(scheduled_shutdown_ev);
+  mainloop_event_free(rescan_periodic_events_ev);
 
 #ifdef HAVE_SYSTEMD_209
   periodic_timer_free(systemd_watchdog_timer);

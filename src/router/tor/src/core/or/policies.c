@@ -29,6 +29,7 @@
 #include "feature/relay/routermode.h"
 #include "lib/geoip/geoip.h"
 #include "ht.h"
+#include "lib/crypt_ops/crypto_rand.h"
 #include "lib/encoding/confline.h"
 
 #include "core/or/addr_policy_st.h"
@@ -461,7 +462,8 @@ fascist_firewall_use_ipv6(const or_options_t *options)
    * ClientPreferIPv6DirPort is deprecated, but check it anyway. */
   return (options->ClientUseIPv6 == 1 || options->ClientUseIPv4 == 0 ||
           options->ClientPreferIPv6ORPort == 1 ||
-          options->ClientPreferIPv6DirPort == 1 || options->UseBridges == 1);
+          options->ClientPreferIPv6DirPort == 1 || options->UseBridges == 1 ||
+          options->ClientAutoIPv6ORPort == 1);
 }
 
 /** Do we prefer to connect to IPv6, ignoring ClientPreferIPv6ORPort and
@@ -488,6 +490,15 @@ fascist_firewall_prefer_ipv6_impl(const or_options_t *options)
   return -1;
 }
 
+/* Choose whether we prefer IPv4 or IPv6 by randomly choosing an address
+ * family. Return 0 for IPv4, and 1 for IPv6. */
+MOCK_IMPL(int,
+fascist_firewall_rand_prefer_ipv6_addr, (void))
+{
+  /* TODO: Check for failures, and infer our preference based on this. */
+  return crypto_rand_int(2);
+}
+
 /** Do we prefer to connect to IPv6 ORPorts?
  * Use node_ipv6_or_preferred() whenever possible: it supports bridge client
  * per-node IPv6 preferences.
@@ -502,7 +513,10 @@ fascist_firewall_prefer_ipv6_orport(const or_options_t *options)
   }
 
   /* We can use both IPv4 and IPv6 - which do we prefer? */
-  if (options->ClientPreferIPv6ORPort == 1) {
+  if (options->ClientAutoIPv6ORPort == 1) {
+    /* If ClientAutoIPv6ORPort is 1, we prefer IPv4 or IPv6 at random. */
+    return fascist_firewall_rand_prefer_ipv6_addr();
+  } else if (options->ClientPreferIPv6ORPort == 1) {
     return 1;
   }
 
@@ -2706,7 +2720,7 @@ parse_short_policy(const char *summary)
   int is_accept;
   int n_entries;
   short_policy_entry_t entries[MAX_EXITPOLICY_SUMMARY_LEN]; /* overkill */
-  const char *next;
+  char *next;
 
   if (!strcmpstart(summary, "accept ")) {
     is_accept = 1;
@@ -2721,57 +2735,56 @@ parse_short_policy(const char *summary)
 
   n_entries = 0;
   for ( ; *summary; summary = next) {
-    const char *comma = strchr(summary, ',');
-    unsigned low, high;
-    char dummy;
-    char ent_buf[32];
-    size_t len;
-
-    next = comma ? comma+1 : strchr(summary, '\0');
-    len = comma ? (size_t)(comma - summary) : strlen(summary);
-
     if (n_entries == MAX_EXITPOLICY_SUMMARY_LEN) {
       log_fn(LOG_PROTOCOL_WARN, LD_DIR, "Impossibly long policy summary %s",
              escaped(orig_summary));
       return NULL;
     }
 
-    if (! TOR_ISDIGIT(*summary) || len > (sizeof(ent_buf)-1)) {
-      /* unrecognized entry format. skip it. */
-      continue;
-    }
-    if (len < 1) {
-      /* empty; skip it. */
-      /* XXX This happens to be unreachable, since if len==0, then *summary is
-       * ',' or '\0', and the TOR_ISDIGIT test above would have failed. */
-      continue;
+    unsigned low, high;
+    int ok;
+    low = (unsigned) tor_parse_ulong(summary, 10, 1, 65535, &ok, &next);
+    if (!ok) {
+      if (! TOR_ISDIGIT(*summary) || *summary == ',') {
+        /* Unrecognized format: skip it. */
+        goto skip_ent;
+      } else {
+        goto bad_ent;
+      }
     }
 
-    memcpy(ent_buf, summary, len);
-    ent_buf[len] = '\0';
+    switch (*next) {
+      case ',':
+        ++next;
+        /* fall through */
+      case '\0':
+        high = low;
+        break;
+      case '-':
+        high = (unsigned) tor_parse_ulong(next+1, 10, low, 65535, &ok, &next);
+        if (!ok)
+          goto bad_ent;
 
-    if (tor_sscanf(ent_buf, "%u-%u%c", &low, &high, &dummy) == 2) {
-      if (low<1 || low>65535 || high<1 || high>65535 || low>high) {
-        log_fn(LOG_PROTOCOL_WARN, LD_DIR,
-               "Found bad entry in policy summary %s", escaped(orig_summary));
-        return NULL;
-      }
-    } else if (tor_sscanf(ent_buf, "%u%c", &low, &dummy) == 1) {
-      if (low<1 || low>65535) {
-        log_fn(LOG_PROTOCOL_WARN, LD_DIR,
-               "Found bad entry in policy summary %s", escaped(orig_summary));
-        return NULL;
-      }
-      high = low;
-    } else {
-      log_fn(LOG_PROTOCOL_WARN, LD_DIR,"Found bad entry in policy summary %s",
-             escaped(orig_summary));
-      return NULL;
+        if (*next == ',')
+          ++next;
+        else if (*next != '\0')
+          goto bad_ent;
+
+        break;
+      default:
+        goto bad_ent;
     }
 
     entries[n_entries].min_port = low;
     entries[n_entries].max_port = high;
     n_entries++;
+
+    continue;
+  skip_ent:
+    next = strchr(next, ',');
+    if (!next)
+      break;
+    ++next;
   }
 
   if (n_entries == 0) {
@@ -2792,6 +2805,11 @@ parse_short_policy(const char *summary)
   result->n_entries = n_entries;
   memcpy(result->entries, entries, sizeof(short_policy_entry_t)*n_entries);
   return result;
+
+ bad_ent:
+  log_fn(LOG_PROTOCOL_WARN, LD_DIR,"Found bad entry in policy summary %s",
+         escaped(orig_summary));
+  return NULL;
 }
 
 /** Write <b>policy</b> back out into a string. */
