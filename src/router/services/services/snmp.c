@@ -40,6 +40,11 @@ char *snmp_deps(void)
 	return "snmpd_enable snmpd_syslocation snmpd_syscontact snmpd_sysname snmpd_rocommunity snmpd_rwcommunity";
 }
 
+char *snmp_proc(void)
+{
+	return "snmpd";
+}
+
 void start_snmp(void)
 {
 	pid_t pid;

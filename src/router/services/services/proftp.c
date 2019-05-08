@@ -59,6 +59,11 @@ char *ftpsrv_deps(void)
 	    "proftpd_acctserverport proftpd_authserverip proftpd_enable proftpd_anon_subdir proftpd_authserverport proftpd_anon proftpd_port proftpd_anon_dir proftpd_rad proftpd_wan proftpd_sharedkey samba3_users samba3_shares";
 }
 
+char *ftpsrv_proc(void)
+{
+	return "proftpd";
+}
+
 void stop_ftpsrv(void);
 
 void start_ftpsrv(void)

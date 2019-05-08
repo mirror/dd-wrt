@@ -33,6 +33,11 @@ char *mactelnetd_deps(void)
 	return "mactelnetd_enable mactelnetd_passwd";
 }
 
+char *mactelnetd_proc(void)
+{
+	return "mactelnetd";
+}
+
 void start_mactelnetd(void)
 {
 	pid_t pid;
