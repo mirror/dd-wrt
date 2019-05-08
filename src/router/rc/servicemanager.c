@@ -153,11 +153,20 @@ static int handle_service(const int method, const char *name, int force)
 		int state = 1;
 		if (method == START) {
 			char dep_name[64];
+			char proc_name[64];
 			snprintf(dep_name, sizeof(dep_name), "%s_deps", name);
 			char *(*dep_func)(void) =(char * (*)(void))dlsym(handle, dep_name);
 			if (dep_func) {
 				char *deps = dep_func();
 				state = nvram_states(deps);
+			}
+
+			snprintf(proc_name, sizeof(proc_name), "%s_proc", name);
+			char *(*proc_func)(void) =(char * (*)(void))dlsym(handle, proc_name);
+			if (proc_func) {
+				char *proc = proc_func();
+				if (pidof(proc) == -1)
+				    state = 1;
 			}
 
 		}
