@@ -220,6 +220,11 @@ char *transmission_deps(void)
 	return "transmission_enable transmission_dir lan_ipaddr transmission_download transmission_whitelist transmission_rpc transmission_username transmission_password";
 }
 
+char *transmission_proc(void)
+{
+	return "transmissiond";
+}
+
 void stop_transmission(void);
 
 void start_transmission(void)

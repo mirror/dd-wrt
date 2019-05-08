@@ -59,6 +59,11 @@ char *ttraff_deps(void)
 	return "ttraff_enable ttraff_iface wan_proto";
 }
 
+char *ttraff_proc(void)
+{
+	return "ttraff";
+}
+
 void stop_ttraff(void);
 void start_ttraff(void)
 {

@@ -41,6 +41,11 @@ char *rsync_deps(void)
 	return "rsyncd_enable lan_ipaddr rsync_allowed rsync_shares";
 }
 
+char *rsync_proc(void)
+{
+	return "rsyncd";
+}
+
 void stop_rsync(void);
 void start_rsync(void)
 {

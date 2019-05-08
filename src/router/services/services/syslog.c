@@ -60,6 +60,11 @@ char *syslog_deps(void)
 	return "syslogd_enable syslogd_rem_ip klogd_enable";
 }
 
+char *syslog_proc(void)
+{
+	return "syslogd";
+}
+
 void stop_syslog(void);
 void start_syslog(void)
 {

@@ -40,6 +40,11 @@ char *vncrepeater_deps(void)
 	return "vncr_enable";
 }
 
+char *vncrepeater_proc(void)
+{
+	return "repeater";
+}
+
 void stop_vncrepeater(void);
 void start_vncrepeater(void)
 {
