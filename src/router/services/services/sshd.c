@@ -61,6 +61,11 @@ char *sshd_deps(void)
 	return "sshd_enable http_username http_passwd " NVRAM_RSA_KEY_NAME " sshd_authorized_keys sshd_port sshd_passwd_auth sshd_forwarding";
 }
 
+char *sshd_proc(void)
+{
+	return "dropbear";
+}
+
 void start_sshd(void)
 {
 	stop_sshd();

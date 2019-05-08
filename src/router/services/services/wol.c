@@ -41,6 +41,11 @@ char *wol_deps(void)
 	return "wol_enable";
 }
 
+char *wol_proc(void)
+{
+	return "wol";
+}
+
 void stop_wol(void)
 {
 	stop_process("wol", "Wake On LAN Daemon");

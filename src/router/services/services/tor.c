@@ -40,6 +40,11 @@ char *tor_deps(void)
 	return "tor_enable lan_ipaddr tor_address tor_id tor_bwrate tor_bwburst tor_relay tor_relayonly tor_dir tor_bridge enable_jffs2 jffs_mounted";
 }
 
+char *tor_proc(void)
+{
+	return "tor";
+}
+
 void stop_tor(void)
 {
 	stop_process("tor", "daemon");
