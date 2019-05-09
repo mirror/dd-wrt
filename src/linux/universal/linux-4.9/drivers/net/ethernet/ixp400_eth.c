@@ -92,6 +92,8 @@
 #include <linux/unistd.h>
 #include <linux/platform_device.h>
 #include <linux/workqueue.h>
+#include <linux/spinlock_types.h>
+#include <linux/spinlock.h>
 
 #ifdef CONFIG_XFRM
 #include <net/xfrm.h>
@@ -453,7 +455,7 @@ ixEthTxFrameDoneQMCallback(IxQMgrQId qId, IxQMgrCallbackId callbackId);
 
 /* Private device data */
 typedef struct {
-    spinlock_t lock;  /* multicast management lock */
+//    spinlock_t lock;  /* multicast management lock */
     
     unsigned int msdu_size;
     unsigned int replenish_size;
@@ -4203,7 +4205,7 @@ static int dev_eth_probe(struct device *dev)
     {
 	goto error;
     }
-    priv->lock = __SPIN_LOCK_UNLOCKED(priv->lock);
+//    priv->lock = __SPIN_LOCK_UNLOCKED(priv->lock);
     sema_init(priv->maintenanceCheckThreadComplete,1);
     priv->maintenanceCheckStopped = TRUE;
 
