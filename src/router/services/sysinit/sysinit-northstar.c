@@ -6666,13 +6666,20 @@ void start_sysinit(void)
 			nvram_set("1:macaddr", ether_etoa(mac1, str));
 	}
 	if (ifnum > 2) {
-		unsigned char base = mac0[5] >> 4;
-		unsigned char target = mac1[5] >> 4;
+		unsigned char base0 = mac0[5] >> 4;
+		unsigned char base1 = mac1[5] >> 4;
+		unsigned char target = mac2[5] >> 4;
 		char str[20];
-		if (target == base) {
+		if (target == base0) {
 			target += 2;
 			mac2[5] = (target << 4) | (mac2[5] & 0xf);
+		} else {
+			if (target == base1) {
+				target++;
+				mac2[5] = (target << 4) | (mac2[5] & 0xf);
+			}
 		}
+
 		nvram_set("2:macaddr", ether_etoa(mac2, str));
 	}
 #ifdef HAVE_BRCMFMAC
