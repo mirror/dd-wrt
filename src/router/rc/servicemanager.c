@@ -149,6 +149,7 @@ static int handle_service(const int method, const char *name, int force)
 
 	sprintf(service, "%s_%s", method_name, name);
 	fptr = (void (*)(void))dlsym(handle, service);
+	char *deps = NULL;
 	if (fptr) {
 		int state = 1;
 		if (method == START) {
@@ -157,7 +158,7 @@ static int handle_service(const int method, const char *name, int force)
 			snprintf(dep_name, sizeof(dep_name), "%s_deps", name);
 			char *(*dep_func)(void) =(char * (*)(void))dlsym(handle, dep_name);
 			if (dep_func) {
-				char *deps = dep_func();
+				deps = dep_func();
 				dd_debug(DEBUG_SERVICE, "%s exists, check nvram params %s\n", dep_name, deps);
 				state = nvram_states(deps);
 			}
@@ -174,8 +175,11 @@ static int handle_service(const int method, const char *name, int force)
 			}
 
 		}
-		if (force || state)
+		if (force || state) {
 			(*fptr) ();
+			if (deps)
+				nvram_states(deps);
+		}
 	} else {
 		dd_debug(DEBUG_SERVICE, "function %s not found \n", service);
 
