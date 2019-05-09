@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/powerpc 4.9.172 Kernel Configuration
+# Linux/powerpc 4.9.174 Kernel Configuration
 #
 # CONFIG_PPC64 is not set
 
@@ -132,7 +132,6 @@ CONFIG_SRCU=y
 # CONFIG_RCU_STALL_COMMON is not set
 # CONFIG_TREE_RCU_TRACE is not set
 CONFIG_RCU_KTHREAD_PRIO=0
-# CONFIG_RCU_EXPEDITE_BOOT is not set
 # CONFIG_BUILD_BIN2C is not set
 # CONFIG_IKCONFIG is not set
 CONFIG_LOG_BUF_SHIFT=14
@@ -395,9 +394,12 @@ CONFIG_HZ_100=y
 # CONFIG_HZ_1000 is not set
 CONFIG_HZ=100
 # CONFIG_SCHED_HRTICK is not set
+CONFIG_HAVE_PREEMPT_LAZY=y
 CONFIG_PREEMPT_NONE=y
 # CONFIG_PREEMPT_VOLUNTARY is not set
-# CONFIG_PREEMPT is not set
+# CONFIG_PREEMPT__LL is not set
+# CONFIG_PREEMPT_RTB is not set
+# CONFIG_PREEMPT_RT_FULL is not set
 CONFIG_BINFMT_ELF=y
 CONFIG_ELFCORE=y
 CONFIG_BINFMT_SCRIPT=y

@@ -22,6 +22,8 @@
 #endif
 
 #ifndef __ASSEMBLY__
+#include <linux/cpumask.h>
+
 struct irqaction;
 struct pt_regs;
 
