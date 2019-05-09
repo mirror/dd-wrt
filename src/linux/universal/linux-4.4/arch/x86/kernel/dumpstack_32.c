@@ -42,7 +42,7 @@ void dump_trace(struct task_struct *task, struct pt_regs *regs,
 		unsigned long *stack, unsigned long bp,
 		const struct stacktrace_ops *ops, void *data)
 {
-	const unsigned cpu = get_cpu_light();
+	const unsigned cpu = get_cpu();
 	int graph = 0;
 	u32 *prev_esp;
 
@@ -86,7 +86,7 @@ void dump_trace(struct task_struct *task, struct pt_regs *regs,
 			break;
 		touch_nmi_watchdog();
 	}
-	put_cpu_light();
+	put_cpu();
 }
 EXPORT_SYMBOL(dump_trace);
 

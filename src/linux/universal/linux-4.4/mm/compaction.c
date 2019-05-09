@@ -1450,12 +1450,10 @@ check_drain:
 				cc->migrate_pfn & ~((1UL << cc->order) - 1);
 
 			if (cc->last_migrated_pfn < current_block_start) {
-				cpu = get_cpu_light();
-				local_lock_irq(swapvec_lock);
+				cpu = get_cpu();
 				lru_add_drain_cpu(cpu);
-				local_unlock_irq(swapvec_lock);
 				drain_local_pages(zone);
-				put_cpu_light();
+				put_cpu();
 				/* No more flushing until we migrate again */
 				cc->last_migrated_pfn = 0;
 			}
