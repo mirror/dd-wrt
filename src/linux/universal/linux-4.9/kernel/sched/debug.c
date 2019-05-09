@@ -558,9 +558,6 @@ void print_rt_rq(struct seq_file *m, int cpu, struct rt_rq *rt_rq)
 	P(rt_throttled);
 	PN(rt_time);
 	PN(rt_runtime);
-#ifdef CONFIG_SMP
-	P(rt_nr_migratory);
-#endif
 
 #undef PN
 #undef P
@@ -956,10 +953,6 @@ void proc_sched_show_task(struct task_struct *p, struct seq_file *m)
 #endif
 	P(policy);
 	P(prio);
-#ifdef CONFIG_PREEMPT_RT_FULL
-	P(migrate_disable);
-#endif
-	P(nr_cpus_allowed);
 #undef PN_SCHEDSTAT
 #undef PN
 #undef __PN

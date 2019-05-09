@@ -55,16 +55,13 @@ extern int kstack_depth_to_print;
 static inline unsigned long *
 get_frame_pointer(struct task_struct *task, struct pt_regs *regs)
 {
-	struct inactive_task_frame *frame;
-
 	if (regs)
 		return (unsigned long *)regs->bp;
 
 	if (task == current)
 		return __builtin_frame_address(0);
 
-	frame = (struct inactive_task_frame *)task->thread.sp;
-	return (unsigned long *)READ_ONCE_NOCHECK(frame->bp);
+	return (unsigned long *)((struct inactive_task_frame *)task->thread.sp)->bp;
 }
 #else
 static inline unsigned long *

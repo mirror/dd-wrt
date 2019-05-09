@@ -286,8 +286,6 @@ static int create_image(int platform_mode)
 
 	local_irq_disable();
 
-	system_state = SYSTEM_SUSPEND;
-
 	error = syscore_suspend();
 	if (error) {
 		printk(KERN_ERR "PM: Some system devices failed to power down, "
@@ -319,7 +317,6 @@ static int create_image(int platform_mode)
 	syscore_resume();
 
  Enable_irqs:
-	system_state = SYSTEM_RUNNING;
 	local_irq_enable();
 
  Enable_cpus:
@@ -449,7 +446,6 @@ static int resume_target_kernel(bool platform_mode)
 		goto Enable_cpus;
 
 	local_irq_disable();
-	system_state = SYSTEM_SUSPEND;
 
 	error = syscore_suspend();
 	if (error)
@@ -483,7 +479,6 @@ static int resume_target_kernel(bool platform_mode)
 	syscore_resume();
 
  Enable_irqs:
-	system_state = SYSTEM_RUNNING;
 	local_irq_enable();
 
  Enable_cpus:
@@ -569,7 +564,6 @@ int hibernation_platform_enter(void)
 		goto Enable_cpus;
 
 	local_irq_disable();
-	system_state = SYSTEM_SUSPEND;
 	syscore_suspend();
 	if (pm_wakeup_pending()) {
 		error = -EAGAIN;
@@ -582,7 +576,6 @@ int hibernation_platform_enter(void)
 
  Power_up:
 	syscore_resume();
-	system_state = SYSTEM_RUNNING;
 	local_irq_enable();
 
  Enable_cpus:
@@ -683,10 +676,6 @@ static int load_image_and_restore(void)
 	return error;
 }
 
-#ifndef CONFIG_SUSPEND
-bool pm_in_action;
-#endif
-
 /**
  * hibernate - Carry out system hibernation, including saving the image.
  */
@@ -699,8 +688,6 @@ int hibernate(void)
 		pr_debug("PM: Hibernation not available.\n");
 		return -EPERM;
 	}
-
-	pm_in_action = true;
 
 	lock_system_sleep();
 	/* The snapshot device should not be opened while we're running */
@@ -779,7 +766,6 @@ int hibernate(void)
 	atomic_inc(&snapshot_device_available);
  Unlock:
 	unlock_system_sleep();
-	pm_in_action = false;
 	return error;
 }
 

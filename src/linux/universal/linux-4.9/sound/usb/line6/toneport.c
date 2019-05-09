@@ -365,20 +365,15 @@ static bool toneport_has_source_select(struct usb_line6_toneport *toneport)
 /*
 	Setup Toneport device.
 */
-static int toneport_setup(struct usb_line6_toneport *toneport)
+static void toneport_setup(struct usb_line6_toneport *toneport)
 {
-	int *ticks;
+	int ticks;
 	struct usb_line6 *line6 = &toneport->line6;
 	struct usb_device *usbdev = line6->usbdev;
 
-	ticks = kmalloc(sizeof(*ticks), GFP_KERNEL);
-	if (!ticks)
-		return -ENOMEM;
-
 	/* sync time on device with host: */
-	*ticks = (int)get_seconds();
-	line6_write_data(line6, 0x80c6, ticks, 4);
-	kfree(ticks);
+	ticks = (int)get_seconds();
+	line6_write_data(line6, 0x80c6, &ticks, 4);
 
 	/* enable device: */
 	toneport_send_cmd(usbdev, 0x0301, 0x0000);
@@ -393,7 +388,6 @@ static int toneport_setup(struct usb_line6_toneport *toneport)
 		toneport_update_led(toneport);
 
 	mod_timer(&toneport->timer, jiffies + TONEPORT_PCM_DELAY * HZ);
-	return 0;
 }
 
 /*
@@ -457,9 +451,7 @@ static int toneport_init(struct usb_line6 *line6,
 			return err;
 	}
 
-	err = toneport_setup(toneport);
-	if (err)
-		return err;
+	toneport_setup(toneport);
 
 	/* register audio system: */
 	return snd_card_register(line6->card);
@@ -471,11 +463,7 @@ static int toneport_init(struct usb_line6 *line6,
 */
 static int toneport_reset_resume(struct usb_interface *interface)
 {
-	int err;
-
-	err = toneport_setup(usb_get_intfdata(interface));
-	if (err)
-		return err;
+	toneport_setup(usb_get_intfdata(interface));
 	return line6_resume(interface);
 }
 #endif
