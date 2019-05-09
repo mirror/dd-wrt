@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 4.9.174 Kernel Configuration
+# Linux/mips 4.9.172 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -152,9 +152,7 @@ CONFIG_HZ=100
 # CONFIG_SCHED_HRTICK is not set
 CONFIG_PREEMPT_NONE=y
 # CONFIG_PREEMPT_VOLUNTARY is not set
-# CONFIG_PREEMPT__LL is not set
-# CONFIG_PREEMPT_RTB is not set
-# CONFIG_PREEMPT_RT_FULL is not set
+# CONFIG_PREEMPT is not set
 # CONFIG_KEXEC is not set
 # CONFIG_CRASH_DUMP is not set
 # CONFIG_SECCOMP is not set
@@ -226,6 +224,7 @@ CONFIG_SRCU=y
 # CONFIG_RCU_STALL_COMMON is not set
 # CONFIG_TREE_RCU_TRACE is not set
 CONFIG_RCU_KTHREAD_PRIO=0
+# CONFIG_RCU_EXPEDITE_BOOT is not set
 # CONFIG_BUILD_BIN2C is not set
 # CONFIG_IKCONFIG is not set
 CONFIG_GENERIC_SCHED_CLOCK=y

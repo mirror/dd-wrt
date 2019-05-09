@@ -55,9 +55,7 @@ static SLAVE_ATTR_RO(link_failure_count);
 
 static ssize_t perm_hwaddr_show(struct slave *slave, char *buf)
 {
-	return sprintf(buf, "%*phC\n",
-		       slave->dev->addr_len,
-		       slave->perm_hwaddr);
+	return sprintf(buf, "%pM\n", slave->perm_hwaddr);
 }
 static SLAVE_ATTR_RO(perm_hwaddr);
 

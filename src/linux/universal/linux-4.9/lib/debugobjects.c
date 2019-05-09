@@ -311,10 +311,7 @@ __debug_object_init(void *addr, struct debug_obj_descr *descr, int onstack)
 	struct debug_obj *obj;
 	unsigned long flags;
 
-#ifdef CONFIG_PREEMPT_RT_FULL
-	if (preempt_count() == 0 && !irqs_disabled())
-#endif
-		fill_pool();
+	fill_pool();
 
 	db = get_bucket((unsigned long) addr);
 

@@ -746,17 +746,11 @@ static struct inode *hugetlbfs_get_inode(struct super_block *sb,
 					umode_t mode, dev_t dev)
 {
 	struct inode *inode;
-	struct resv_map *resv_map = NULL;
+	struct resv_map *resv_map;
 
-	/*
-	 * Reserve maps are only needed for inodes that can have associated
-	 * page allocations.
-	 */
-	if (S_ISREG(mode) || S_ISLNK(mode)) {
-		resv_map = resv_map_alloc();
-		if (!resv_map)
-			return NULL;
-	}
+	resv_map = resv_map_alloc();
+	if (!resv_map)
+		return NULL;
 
 	inode = new_inode(sb);
 	if (inode) {
@@ -788,10 +782,8 @@ static struct inode *hugetlbfs_get_inode(struct super_block *sb,
 			break;
 		}
 		lockdep_annotate_inode_mutex_key(inode);
-	} else {
-		if (resv_map)
-			kref_put(&resv_map->refs, resv_map_release);
-	}
+	} else
+		kref_put(&resv_map->refs, resv_map_release);
 
 	return inode;
 }
