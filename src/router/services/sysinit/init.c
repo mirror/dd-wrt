@@ -78,6 +78,8 @@ static void set_tcp_params(void)
 
 }
 
+#define getRouterName() nvram_exists(NVROUTER_ALT)?nvram_safe_get(NVROUTER_ALT):nvram_safe_get(NVROUTER)
+
 void start_post_sysinit(void)
 {
 	int brand = getRouterBrand();
@@ -158,38 +160,38 @@ void start_post_sysinit(void)
 #ifndef HAVE_ERC
 #ifndef HAVE_CORENET
 #ifdef HAVE_TMK
-	fprintf(fp, "KMT-WAS %s (c) 2019 KMT GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+	fprintf(fp, "KMT-WAS %s (c) 2019 KMT GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST, SVN_REVISION, getRouterName());
 #elif HAVE_SANSFIL
-	fprintf(fp, "SANSFIL %s (c) 2019 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+	fprintf(fp, "SANSFIL %s (c) 2019 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST, SVN_REVISION, getRouterName());
 #elif HAVE_KORENRON
-	fprintf(fp, "KORENRON %s (c) 2019 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+	fprintf(fp, "KORENRON %s (c) 2019 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST, SVN_REVISION, getRouterName());
 #elif HAVE_TESTEM
-	fprintf(fp, "TESTEM %s (c) 2019 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+	fprintf(fp, "TESTEM %s (c) 2019 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST, SVN_REVISION, getRouterName());
 #elif HAVE_HOBBIT
-	fprintf(fp, "HQ-NDS %s (c) 2019 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+	fprintf(fp, "HQ-NDS %s (c) 2019 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST, SVN_REVISION, getRouterName());
 #elif HAVE_ONNET
 #ifdef HAVE_ONNET_BLANK
-	fprintf(fp, "Enterprise AP %s (c) 2019 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+	fprintf(fp, "Enterprise AP %s (c) 2019 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION, getRouterName());
 #elif HAVE_UNFY
 	//fprintf(fp, "UNIFY %s (c) 2013 \nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
-	fprintf(fp, "Firmware %s (c) 2019 \nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+	fprintf(fp, "Firmware %s (c) 2019 \nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST, SVN_REVISION, getRouterName());
 #else
-	fprintf(fp, "OTAi %s (c) 2019 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+	fprintf(fp, "OTAi %s (c) 2019 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST, SVN_REVISION, getRouterName());
 #endif
 #elif HAVE_RAYTRONIK
-	fprintf(fp, "RAYTRONIK %s (c) 2019 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+	fprintf(fp, "RAYTRONIK %s (c) 2019 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST, SVN_REVISION, getRouterName());
 #elif HAVE_ANTAIRA
-	fprintf(fp, "Antaira %s\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+	fprintf(fp, "Antaira %s\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST, SVN_REVISION, getRouterName());
 #elif HAVE_HDWIFI
-	fprintf(fp, "HDWIFI %s (c) 2019 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+	fprintf(fp, "HDWIFI %s (c) 2019 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST, SVN_REVISION, getRouterName());
 #else
 #ifdef DIST
 	if (*(DIST))
-		fprintf(fp, "DD-WRT v3.0-r%s %s (c) 2019 NewMedia-NET GmbH\nRelease: " BUILD_DATE "\n", SVN_REVISION, DIST);
+		fprintf(fp, "DD-WRT v3.0-r%s %s (c) 2019 NewMedia-NET GmbH\nRelease: " BUILD_DATE "\nBoard: %s\n", SVN_REVISION, DIST, getRouterName());
 	else
-		fprintf(fp, "DD-WRT v3.0-r%s custom (c) 2019 NewMedia-NET GmbH\nRelease: " BUILD_DATE "\n", SVN_REVISION);
+		fprintf(fp, "DD-WRT v3.0-r%s custom (c) 2019 NewMedia-NET GmbH\nRelease: " BUILD_DATE "\nBoard: %s\n", SVN_REVISION, getRouterName());
 #else
-	fprintf(fp, "DD-WRT v3.0-r%s custom (c) 2019 NewMedia-NET GmbH\nRelease: " BUILD_DATE "\n", SVN_REVISION);
+	fprintf(fp, "DD-WRT v3.0-r%s custom (c) 2019 NewMedia-NET GmbH\nRelease: " BUILD_DATE "\nBoard: %s\n", SVN_REVISION, getRouterName());
 #endif
 #endif
 #endif
