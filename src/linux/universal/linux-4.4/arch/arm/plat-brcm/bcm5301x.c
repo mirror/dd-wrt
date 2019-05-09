@@ -764,15 +764,16 @@ static const struct file_operations chipinfo_fops = {
 	.llseek = default_llseek,
 };
 
-static void __init chipinfo_proc_init(void)
+static int __init chipinfo_proc_init(void)
 {
 	struct proc_dir_entry *chip_info;
 
 	chip_info = proc_create_data(BCM_CHIPINFO_PROC_NAME, 0, NULL, &chipinfo_fops, NULL);
 	if (!chip_info) {
 		printk(KERN_ERR "%s: Create proc entry failed.\n", __FUNCTION__);
-		return;
+		return -1;
 	}
+	return 0;
 }
 
 
