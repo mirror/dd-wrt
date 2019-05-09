@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/powerpc 4.4.113 Kernel Configuration
+# Linux/powerpc 4.4.179 Kernel Configuration
 #
 # CONFIG_PPC64 is not set
 
@@ -142,6 +142,7 @@ CONFIG_PID_NS=y
 # CONFIG_RELAY is not set
 # CONFIG_CRASHLOG is not set
 # CONFIG_BLK_DEV_INITRD is not set
+# CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE is not set
 CONFIG_CC_OPTIMIZE_FOR_SIZE=y
 CONFIG_OPTIMIZE_INLINING=y
 CONFIG_SYSCTL=y
@@ -918,6 +919,7 @@ CONFIG_MAC80211_STA_HASH_MAX_SIZE=0
 # CONFIG_CEPH_LIB is not set
 # CONFIG_NFC is not set
 CONFIG_LWTUNNEL=y
+CONFIG_DST_CACHE=y
 CONFIG_HAVE_BPF_JIT=y
 
 #
@@ -1234,7 +1236,6 @@ CONFIG_MII=y
 # CONFIG_IFB is not set
 # CONFIG_NET_TEAM is not set
 # CONFIG_MACVLAN is not set
-# CONFIG_MACVTAP is not set
 # CONFIG_IPVLAN is not set
 # CONFIG_VXLAN is not set
 # CONFIG_GENEVE is not set
@@ -1454,6 +1455,7 @@ CONFIG_N_HDLC=m
 # CONFIG_N_GSM is not set
 # CONFIG_TRACE_SINK is not set
 # CONFIG_PPC_EPAPR_HV_BYTECHAN is not set
+CONFIG_LDISC_AUTOLOAD=y
 CONFIG_DEVMEM=y
 CONFIG_DEVKMEM=y
 
@@ -1508,7 +1510,6 @@ CONFIG_HW_RANDOM_TIMERIOMEM=y
 # CONFIG_NVRAM is not set
 CONFIG_GEN_RTC=y
 # CONFIG_GEN_RTC_X is not set
-# CONFIG_R3964 is not set
 # CONFIG_APPLICOM is not set
 # CONFIG_RAW_DRIVER is not set
 # CONFIG_TCG_TPM is not set
@@ -2324,8 +2325,6 @@ CONFIG_RAS=y
 # CONFIG_ANDROID is not set
 # CONFIG_NVMEM is not set
 # CONFIG_STM is not set
-# CONFIG_STM_DUMMY is not set
-# CONFIG_STM_SOURCE_CONSOLE is not set
 # CONFIG_INTEL_TH is not set
 
 #
@@ -2827,6 +2826,3 @@ CONFIG_OCF_CRYPTOSOFT=m
 CONFIG_OCF_BENCH=m
 CONFIG_PPC_LIB_RHEAP=y
 # CONFIG_VIRTUALIZATION is not set
-# CONFIG_CRYPTO_DRBG_HASH is not set
-# CONFIG_CRYPTO_DRBG_CTR is not set
-CONFIG_LDISC_AUTOLOAD=y
