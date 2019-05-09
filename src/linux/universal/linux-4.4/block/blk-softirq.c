@@ -51,7 +51,6 @@ static void trigger_softirq(void *data)
 		raise_softirq_irqoff(BLOCK_SOFTIRQ);
 
 	local_irq_restore(flags);
-	preempt_check_resched_rt();
 }
 
 /*
@@ -94,7 +93,6 @@ static int blk_cpu_notify(struct notifier_block *self, unsigned long action,
 				 this_cpu_ptr(&blk_cpu_done));
 		raise_softirq_irqoff(BLOCK_SOFTIRQ);
 		local_irq_enable();
-		preempt_check_resched_rt();
 	}
 
 	return NOTIFY_OK;
@@ -152,7 +150,6 @@ do_local:
 		goto do_local;
 
 	local_irq_restore(flags);
-	preempt_check_resched_rt();
 }
 
 /**

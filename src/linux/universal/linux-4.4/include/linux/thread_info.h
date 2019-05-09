@@ -98,17 +98,7 @@ static inline int test_ti_thread_flag(struct thread_info *ti, int flag)
 #define test_thread_flag(flag) \
 	test_ti_thread_flag(current_thread_info(), flag)
 
-#ifdef CONFIG_PREEMPT_LAZY
-#define tif_need_resched()	(test_thread_flag(TIF_NEED_RESCHED) || \
-				 test_thread_flag(TIF_NEED_RESCHED_LAZY))
-#define tif_need_resched_now()	(test_thread_flag(TIF_NEED_RESCHED))
-#define tif_need_resched_lazy()	test_thread_flag(TIF_NEED_RESCHED_LAZY))
-
-#else
-#define tif_need_resched()	test_thread_flag(TIF_NEED_RESCHED)
-#define tif_need_resched_now()	test_thread_flag(TIF_NEED_RESCHED)
-#define tif_need_resched_lazy()	0
-#endif
+#define tif_need_resched() test_thread_flag(TIF_NEED_RESCHED)
 
 #if defined TIF_RESTORE_SIGMASK && !defined HAVE_SET_RESTORE_SIGMASK
 /*

@@ -1629,8 +1629,13 @@ static netdev_tx_t bdx_tx_transmit(struct sk_buff *skb,
 	unsigned long flags;
 
 	ENTER;
-
-	spin_lock_irqsave(&priv->tx_lock, flags);
+	local_irq_save(flags);
+	if (!spin_trylock(&priv->tx_lock)) {
+		local_irq_restore(flags);
+		DBG("%s[%s]: TX locked, returning NETDEV_TX_LOCKED\n",
+		    BDX_DRV_NAME, ndev->name);
+		return NETDEV_TX_LOCKED;
+	}
 
 	/* build tx descriptor */
 	BDX_ASSERT(f->m.wptr >= f->m.memsz);	/* started with valid wptr */

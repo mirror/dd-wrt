@@ -31,12 +31,9 @@
 #include <asm/mach/irq.h>
 #include <asm/fncpy.h>
 #include <asm/cacheflush.h>
-#include <asm/system_misc.h>
 
 #include "generic.h"
 #include "pm.h"
-
-static void __iomem *pmc;
 
 /*
  * FIXME: this is needed to communicate between the pinctrl driver and
@@ -90,7 +87,7 @@ static int at91_pm_verify_clocks(void)
 	unsigned long scsr;
 	int i;
 
-	scsr = readl(pmc + AT91_PMC_SCSR);
+	scsr = at91_pmc_read(AT91_PMC_SCSR);
 
 	/* USB must not be using PLLB */
 	if ((scsr & at91_pm_data.uhp_udp_mask) != 0) {
@@ -104,7 +101,8 @@ static int at91_pm_verify_clocks(void)
 
 		if ((scsr & (AT91_PMC_PCK0 << i)) == 0)
 			continue;
-		css = readl(pmc + AT91_PMC_PCKR(i)) & AT91_PMC_CSS;
+
+		css = at91_pmc_read(AT91_PMC_PCKR(i)) & AT91_PMC_CSS;
 		if (css != AT91_PMC_CSS_SLOW) {
 			pr_err("AT91: PM - Suspend-to-RAM with PCK%d src %d\n", i, css);
 			return 0;
@@ -147,8 +145,8 @@ static void at91_pm_suspend(suspend_state_t state)
 	flush_cache_all();
 	outer_disable();
 
-	at91_suspend_sram_fn(pmc, at91_ramc_base[0],
-			     at91_ramc_base[1], pm_data);
+	at91_suspend_sram_fn(at91_pmc_base, at91_ramc_base[0],
+				at91_ramc_base[1], pm_data);
 
 	outer_resume();
 }
@@ -371,21 +369,6 @@ static __init void at91_dt_ramc(void)
 	at91_pm_set_standby(standby);
 }
 
-void at91rm9200_idle(void)
-{
-	/*
-	 * Disable the processor clock.  The processor will be automatically
-	 * re-enabled by an interrupt or by a reset.
-	 */
-	writel(AT91_PMC_PCK, pmc + AT91_PMC_SCDR);
-}
-
-void at91sam9_idle(void)
-{
-	writel(AT91_PMC_PCK, pmc + AT91_PMC_SCDR);
-	cpu_do_idle();
-}
-
 static void __init at91_pm_sram_init(void)
 {
 	struct gen_pool *sram_pool;
@@ -432,35 +415,12 @@ static void __init at91_pm_sram_init(void)
 			&at91_pm_suspend_in_sram, at91_pm_suspend_in_sram_sz);
 }
 
-static const struct of_device_id atmel_pmc_ids[] __initconst = {
-	{ .compatible = "atmel,at91rm9200-pmc"  },
-	{ .compatible = "atmel,at91sam9260-pmc" },
-	{ .compatible = "atmel,at91sam9g45-pmc" },
-	{ .compatible = "atmel,at91sam9n12-pmc" },
-	{ .compatible = "atmel,at91sam9x5-pmc" },
-	{ .compatible = "atmel,sama5d3-pmc" },
-	{ .compatible = "atmel,sama5d2-pmc" },
-	{ /* sentinel */ },
-};
-
-static void __init at91_pm_init(void (*pm_idle)(void))
+static void __init at91_pm_init(void)
 {
-	struct device_node *pmc_np;
+	at91_pm_sram_init();
 
 	if (at91_cpuidle_device.dev.platform_data)
 		platform_device_register(&at91_cpuidle_device);
-
-	pmc_np = of_find_matching_node(NULL, atmel_pmc_ids);
-	pmc = of_iomap(pmc_np, 0);
-	if (!pmc) {
-		pr_err("AT91: PM not supported, PMC not found\n");
-		return;
-	}
-
-	if (pm_idle)
-		arm_pm_idle = pm_idle;
-
-	at91_pm_sram_init();
 
 	if (at91_suspend_sram_fn)
 		suspend_set_ops(&at91_pm_ops);
@@ -480,7 +440,7 @@ void __init at91rm9200_pm_init(void)
 	at91_pm_data.uhp_udp_mask = AT91RM9200_PMC_UHP | AT91RM9200_PMC_UDP;
 	at91_pm_data.memctrl = AT91_MEMCTRL_MC;
 
-	at91_pm_init(at91rm9200_idle);
+	at91_pm_init();
 }
 
 void __init at91sam9260_pm_init(void)
@@ -488,7 +448,7 @@ void __init at91sam9260_pm_init(void)
 	at91_dt_ramc();
 	at91_pm_data.memctrl = AT91_MEMCTRL_SDRAMC;
 	at91_pm_data.uhp_udp_mask = AT91SAM926x_PMC_UHP | AT91SAM926x_PMC_UDP;
-	at91_pm_init(at91sam9_idle);
+	return at91_pm_init();
 }
 
 void __init at91sam9g45_pm_init(void)
@@ -496,7 +456,7 @@ void __init at91sam9g45_pm_init(void)
 	at91_dt_ramc();
 	at91_pm_data.uhp_udp_mask = AT91SAM926x_PMC_UHP;
 	at91_pm_data.memctrl = AT91_MEMCTRL_DDRSDR;
-	at91_pm_init(at91sam9_idle);
+	return at91_pm_init();
 }
 
 void __init at91sam9x5_pm_init(void)
@@ -504,13 +464,5 @@ void __init at91sam9x5_pm_init(void)
 	at91_dt_ramc();
 	at91_pm_data.uhp_udp_mask = AT91SAM926x_PMC_UHP | AT91SAM926x_PMC_UDP;
 	at91_pm_data.memctrl = AT91_MEMCTRL_DDRSDR;
-	at91_pm_init(at91sam9_idle);
-}
-
-void __init sama5_pm_init(void)
-{
-	at91_dt_ramc();
-	at91_pm_data.uhp_udp_mask = AT91SAM926x_PMC_UHP | AT91SAM926x_PMC_UDP;
-	at91_pm_data.memctrl = AT91_MEMCTRL_DDRSDR;
-	at91_pm_init(NULL);
+	return at91_pm_init();
 }
