@@ -2064,11 +2064,7 @@ static int atl1c_xmit_frame(struct sk_buff *skb, struct net_device *netdev)
 	}
 
 	tpd_req = atl1c_cal_tpd_req(skb);
-	if (!spin_trylock_irqsave(&adapter->tx_lock, flags)) {
-		if (netif_msg_pktdata(adapter))
-			dev_info(&adapter->pdev->dev, "tx locked\n");
-		return NETDEV_TX_LOCKED;
-	}
+	spin_lock_irqsave(&adapter->tx_lock, flags);
 	if (skb->mark == 0x01)
 		type = atl1c_trans_high;
 	else
