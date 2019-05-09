@@ -43,7 +43,6 @@
 #include <linux/kdebug.h>
 #include <linux/efi.h>
 #include <linux/random.h>
-#include <asm/irq_regs.h>
 #include "hyperv_vmbus.h"
 
 static struct acpi_device  *hv_acpi_dev;
@@ -782,8 +781,6 @@ static void vmbus_isr(void)
 	void *page_addr;
 	struct hv_message *msg;
 	union hv_synic_event_flags *event;
-	struct pt_regs *regs = get_irq_regs();
-	u64 ip = regs ? instruction_pointer(regs) : 0;
 	bool handled = false;
 
 	page_addr = hv_context.synic_event_page[cpu];
@@ -831,7 +828,7 @@ static void vmbus_isr(void)
 			tasklet_schedule(hv_context.msg_dpc[cpu]);
 	}
 
-	add_interrupt_randomness(HYPERVISOR_CALLBACK_VECTOR, 0, ip);
+	add_interrupt_randomness(HYPERVISOR_CALLBACK_VECTOR, 0);
 }
 
 

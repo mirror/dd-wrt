@@ -11,7 +11,6 @@
 #include <linux/rcupdate.h>
 #include <linux/lockref.h>
 #include <linux/stringhash.h>
-#include <linux/wait.h>
 
 struct path;
 struct vfsmount;
@@ -101,7 +100,7 @@ struct dentry {
 
 	union {
 		struct list_head d_lru;		/* LRU list */
-		struct swait_queue_head *d_wait;	/* in-lookup ones only */
+		wait_queue_head_t *d_wait;	/* in-lookup ones only */
 	};
 	struct list_head d_child;	/* child of parent list */
 	struct list_head d_subdirs;	/* our children */
@@ -232,7 +231,7 @@ extern void d_set_d_op(struct dentry *dentry, const struct dentry_operations *op
 extern struct dentry * d_alloc(struct dentry *, const struct qstr *);
 extern struct dentry * d_alloc_pseudo(struct super_block *, const struct qstr *);
 extern struct dentry * d_alloc_parallel(struct dentry *, const struct qstr *,
-					struct swait_queue_head *);
+					wait_queue_head_t *);
 extern struct dentry * d_splice_alias(struct inode *, struct dentry *);
 extern struct dentry * d_add_ci(struct dentry *, struct inode *, struct qstr *);
 extern struct dentry * d_exact_alias(struct dentry *, struct inode *);

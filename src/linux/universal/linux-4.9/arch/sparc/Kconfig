@@ -194,10 +194,12 @@ config NR_CPUS
 source kernel/Kconfig.hz
 
 config RWSEM_GENERIC_SPINLOCK
-	def_bool PREEMPT_RT_FULL
+	bool
+	default y if SPARC32
 
 config RWSEM_XCHGADD_ALGORITHM
-	def_bool !RWSEM_GENERIC_SPINLOCK && !PREEMPT_RT_FULL
+	bool
+	default y if SPARC64
 
 config GENERIC_HWEIGHT
 	bool

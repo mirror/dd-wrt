@@ -31,7 +31,7 @@
 
 #include <linux/kernel.h>
 #include <linux/stddef.h>
-#include <linux/rcu_assign_pointer.h>
+#include <linux/rcupdate.h>
 
 struct rb_node {
 	unsigned long  __rb_parent_color;
