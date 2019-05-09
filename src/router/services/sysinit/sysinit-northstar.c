@@ -6623,6 +6623,58 @@ void start_sysinit(void)
 	}
 	if (getRouterBrand() == ROUTER_ASUS_AC88U)
 		eval("rtkswitch", "1");
+/* quirk for mac address conflicts which may lead the driver to crash */
+	unsigned char mac0[6];
+	unsigned char mac1[6];
+	unsigned char mac2[6];
+	int ifnum = 0;
+	int oldnv = 0;
+	if (nvram_exists("0:macaddr")) {
+		ether_atoe(nvram_safe_get("0:macaddr"), mac0);
+		ifnum++;
+		if (nvram_exists("1:macaddr")) {
+			ether_atoe(nvram_safe_get("1:macaddr"), mac1);
+			ifnum++;
+			if (nvram_exists("2:macaddr")) {
+				ether_atoe(nvram_safe_get("2:macaddr"), mac2);
+				ifnum++;
+			}
+		}
+	} else {
+		if (nvram_exists("pci/1/1/macaddr")) {
+			ether_atoe(nvram_safe_get("pci/1/1/macaddr"), mac0);
+			ifnum++;
+			oldnv = 1;
+		}
+		if (nvram_exists("pci/2/1/macaddr")) {
+			ether_atoe(nvram_safe_get("pci/2/1/macaddr"), mac1);
+			ifnum++;
+		}
+	}
+
+	if (ifnum > 1) {
+		unsigned char base = mac0[5] >> 4;
+		unsigned char target = mac1[5] >> 4;
+		char str[20];
+		if (target == base) {
+			target++;
+			mac1[5] = (target << 4) | (mac1[5] & 0xf);
+		}
+		if (oldnv)
+			nvram_set("pci/2/1/macaddr", ether_etoa(mac1, str));
+		else
+			nvram_set("1:macaddr", ether_etoa(mac1, str));
+	}
+	if (ifnum > 2) {
+		unsigned char base = mac0[5] >> 4;
+		unsigned char target = mac1[5] >> 4;
+		char str[20];
+		if (target == base) {
+			target += 2;
+			mac2[5] = (target << 4) | (mac2[5] & 0xf);
+		}
+		nvram_set("2:macaddr", ether_etoa(mac2, str));
+	}
 #ifdef HAVE_BRCMFMAC
 	system("nvram show > /tmp/b1.txt");
 	system("nvram show > /tmp/b2.txt");
@@ -6656,7 +6708,6 @@ void start_sysinit(void)
 	if (check_vlan_support()) {
 		start_config_vlan();
 	}
-
 	return;
 }
 
