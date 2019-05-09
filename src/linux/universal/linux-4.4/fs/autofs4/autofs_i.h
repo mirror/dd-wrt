@@ -35,7 +35,6 @@
 #include <linux/sched.h>
 #include <linux/mount.h>
 #include <linux/namei.h>
-#include <linux/delay.h>
 #include <asm/current.h>
 #include <asm/uaccess.h>
 

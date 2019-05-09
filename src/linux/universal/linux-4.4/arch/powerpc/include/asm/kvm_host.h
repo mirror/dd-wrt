@@ -286,7 +286,7 @@ struct kvmppc_vcore {
 	struct list_head runnable_threads;
 	struct list_head preempt_list;
 	spinlock_t lock;
-	struct swait_queue_head wq;
+	wait_queue_head_t wq;
 	spinlock_t stoltb_lock;	/* protects stolen_tb and preempt_tb */
 	u64 stolen_tb;
 	u64 preempt_tb;
@@ -627,7 +627,7 @@ struct kvm_vcpu_arch {
 	u8 prodded;
 	u32 last_inst;
 
-	struct swait_queue_head *wqp;
+	wait_queue_head_t *wqp;
 	struct kvmppc_vcore *vcore;
 	int ret;
 	int trap;

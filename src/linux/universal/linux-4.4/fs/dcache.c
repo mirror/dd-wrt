@@ -19,7 +19,6 @@
 #include <linux/mm.h>
 #include <linux/fs.h>
 #include <linux/fsnotify.h>
-#include <linux/delay.h>
 #include <linux/slab.h>
 #include <linux/init.h>
 #include <linux/hash.h>
@@ -781,8 +780,6 @@ static inline bool fast_dput(struct dentry *dentry)
  */
 void dput(struct dentry *dentry)
 {
-	struct dentry *parent;
-
 	if (unlikely(!dentry))
 		return;
 
@@ -819,18 +816,9 @@ repeat:
 	return;
 
 kill_it:
-	parent = dentry_kill(dentry);
-	if (parent) {
-		int r;
-
-		if (parent == dentry) {
-			/* the task with the highest priority won't schedule */
-			r = cond_resched();
-			if (!r)
-				cpu_chill();
-		} else {
-			dentry = parent;
-		}
+	dentry = dentry_kill(dentry);
+	if (dentry) {
+		cond_resched();
 		goto repeat;
 	}
 }
@@ -2461,7 +2449,7 @@ again:
 	if (dentry->d_lockref.count == 1) {
 		if (!spin_trylock(&inode->i_lock)) {
 			spin_unlock(&dentry->d_lock);
-			cpu_chill();
+			cpu_relax();
 			goto again;
 		}
 		dentry->d_flags &= ~DCACHE_CANT_MOUNT;

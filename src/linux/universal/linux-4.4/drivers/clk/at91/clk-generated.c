@@ -15,8 +15,8 @@
 #include <linux/clkdev.h>
 #include <linux/clk/at91_pmc.h>
 #include <linux/of.h>
-#include <linux/mfd/syscon.h>
-#include <linux/regmap.h>
+#include <linux/of_address.h>
+#include <linux/io.h>
 
 #include "pmc.h"
 
@@ -28,9 +28,8 @@
 
 struct clk_generated {
 	struct clk_hw hw;
-	struct regmap *regmap;
+	struct at91_pmc *pmc;
 	struct clk_range range;
-	spinlock_t *lock;
 	u32 id;
 	u32 gckdiv;
 	u8 parent_id;
@@ -42,52 +41,49 @@ struct clk_generated {
 static int clk_generated_enable(struct clk_hw *hw)
 {
 	struct clk_generated *gck = to_clk_generated(hw);
-	unsigned long flags;
+	struct at91_pmc *pmc = gck->pmc;
+	u32 tmp;
 
 	pr_debug("GCLK: %s, gckdiv = %d, parent id = %d\n",
 		 __func__, gck->gckdiv, gck->parent_id);
 
-	spin_lock_irqsave(gck->lock, flags);
-	regmap_write(gck->regmap, AT91_PMC_PCR,
-		     (gck->id & AT91_PMC_PCR_PID_MASK));
-	regmap_update_bits(gck->regmap, AT91_PMC_PCR,
-			   AT91_PMC_PCR_GCKDIV_MASK | AT91_PMC_PCR_GCKCSS_MASK |
-			   AT91_PMC_PCR_CMD | AT91_PMC_PCR_GCKEN,
-			   AT91_PMC_PCR_GCKCSS(gck->parent_id) |
-			   AT91_PMC_PCR_CMD |
-			   AT91_PMC_PCR_GCKDIV(gck->gckdiv) |
-			   AT91_PMC_PCR_GCKEN);
-	spin_unlock_irqrestore(gck->lock, flags);
+	pmc_lock(pmc);
+	pmc_write(pmc, AT91_PMC_PCR, (gck->id & AT91_PMC_PCR_PID_MASK));
+	tmp = pmc_read(pmc, AT91_PMC_PCR) &
+			~(AT91_PMC_PCR_GCKDIV_MASK | AT91_PMC_PCR_GCKCSS_MASK);
+	pmc_write(pmc, AT91_PMC_PCR, tmp | AT91_PMC_PCR_GCKCSS(gck->parent_id)
+					 | AT91_PMC_PCR_CMD
+					 | AT91_PMC_PCR_GCKDIV(gck->gckdiv)
+					 | AT91_PMC_PCR_GCKEN);
+	pmc_unlock(pmc);
 	return 0;
 }
 
 static void clk_generated_disable(struct clk_hw *hw)
 {
 	struct clk_generated *gck = to_clk_generated(hw);
-	unsigned long flags;
+	struct at91_pmc *pmc = gck->pmc;
+	u32 tmp;
 
-	spin_lock_irqsave(gck->lock, flags);
-	regmap_write(gck->regmap, AT91_PMC_PCR,
-		     (gck->id & AT91_PMC_PCR_PID_MASK));
-	regmap_update_bits(gck->regmap, AT91_PMC_PCR,
-			   AT91_PMC_PCR_CMD | AT91_PMC_PCR_GCKEN,
-			   AT91_PMC_PCR_CMD);
-	spin_unlock_irqrestore(gck->lock, flags);
+	pmc_lock(pmc);
+	pmc_write(pmc, AT91_PMC_PCR, (gck->id & AT91_PMC_PCR_PID_MASK));
+	tmp = pmc_read(pmc, AT91_PMC_PCR) & ~AT91_PMC_PCR_GCKEN;
+	pmc_write(pmc, AT91_PMC_PCR, tmp | AT91_PMC_PCR_CMD);
+	pmc_unlock(pmc);
 }
 
 static int clk_generated_is_enabled(struct clk_hw *hw)
 {
 	struct clk_generated *gck = to_clk_generated(hw);
-	unsigned long flags;
-	unsigned int status;
+	struct at91_pmc *pmc = gck->pmc;
+	int ret;
 
-	spin_lock_irqsave(gck->lock, flags);
-	regmap_write(gck->regmap, AT91_PMC_PCR,
-		     (gck->id & AT91_PMC_PCR_PID_MASK));
-	regmap_read(gck->regmap, AT91_PMC_PCR, &status);
-	spin_unlock_irqrestore(gck->lock, flags);
+	pmc_lock(pmc);
+	pmc_write(pmc, AT91_PMC_PCR, (gck->id & AT91_PMC_PCR_PID_MASK));
+	ret = !!(pmc_read(pmc, AT91_PMC_PCR) & AT91_PMC_PCR_GCKEN);
+	pmc_unlock(pmc);
 
-	return status & AT91_PMC_PCR_GCKEN ? 1 : 0;
+	return ret;
 }
 
 static unsigned long
@@ -218,14 +214,13 @@ static const struct clk_ops generated_ops = {
  */
 static void clk_generated_startup(struct clk_generated *gck)
 {
+	struct at91_pmc *pmc = gck->pmc;
 	u32 tmp;
-	unsigned long flags;
 
-	spin_lock_irqsave(gck->lock, flags);
-	regmap_write(gck->regmap, AT91_PMC_PCR,
-		     (gck->id & AT91_PMC_PCR_PID_MASK));
-	regmap_read(gck->regmap, AT91_PMC_PCR, &tmp);
-	spin_unlock_irqrestore(gck->lock, flags);
+	pmc_lock(pmc);
+	pmc_write(pmc, AT91_PMC_PCR, (gck->id & AT91_PMC_PCR_PID_MASK));
+	tmp = pmc_read(pmc, AT91_PMC_PCR);
+	pmc_unlock(pmc);
 
 	gck->parent_id = (tmp & AT91_PMC_PCR_GCKCSS_MASK)
 					>> AT91_PMC_PCR_GCKCSS_OFFSET;
@@ -234,8 +229,8 @@ static void clk_generated_startup(struct clk_generated *gck)
 }
 
 static struct clk * __init
-at91_clk_register_generated(struct regmap *regmap,  spinlock_t *lock, const char
-			    *name, const char **parent_names, u8 num_parents,
+at91_clk_register_generated(struct at91_pmc *pmc, const char *name,
+			    const char **parent_names, u8 num_parents,
 			    u8 id, const struct clk_range *range)
 {
 	struct clk_generated *gck;
@@ -254,8 +249,7 @@ at91_clk_register_generated(struct regmap *regmap,  spinlock_t *lock, const char
 
 	gck->id = id;
 	gck->hw.init = &init;
-	gck->regmap = regmap;
-	gck->lock = lock;
+	gck->pmc = pmc;
 	gck->range = *range;
 
 	clk = clk_register(NULL, &gck->hw);
@@ -267,7 +261,8 @@ at91_clk_register_generated(struct regmap *regmap,  spinlock_t *lock, const char
 	return clk;
 }
 
-void __init of_sama5d2_clk_generated_setup(struct device_node *np)
+void __init of_sama5d2_clk_generated_setup(struct device_node *np,
+					   struct at91_pmc *pmc)
 {
 	int num;
 	u32 id;
@@ -277,7 +272,6 @@ void __init of_sama5d2_clk_generated_setup(struct device_node *np)
 	const char *parent_names[GENERATED_SOURCE_MAX];
 	struct device_node *gcknp;
 	struct clk_range range = CLK_RANGE(0, 0);
-	struct regmap *regmap;
 
 	num_parents = of_clk_get_parent_count(np);
 	if (num_parents <= 0 || num_parents > GENERATED_SOURCE_MAX)
@@ -287,10 +281,6 @@ void __init of_sama5d2_clk_generated_setup(struct device_node *np)
 
 	num = of_get_child_count(np);
 	if (!num || num > PERIPHERAL_MAX)
-		return;
-
-	regmap = syscon_node_to_regmap(of_get_parent(np));
-	if (IS_ERR(regmap))
 		return;
 
 	for_each_child_of_node(np, gcknp) {
@@ -306,14 +296,11 @@ void __init of_sama5d2_clk_generated_setup(struct device_node *np)
 		of_at91_get_clk_range(gcknp, "atmel,clk-output-range",
 				      &range);
 
-		clk = at91_clk_register_generated(regmap, &pmc_pcr_lock, name,
-						  parent_names, num_parents,
-						  id, &range);
+		clk = at91_clk_register_generated(pmc, name, parent_names,
+						  num_parents, id, &range);
 		if (IS_ERR(clk))
 			continue;
 
 		of_clk_add_provider(gcknp, of_clk_src_simple_get, clk);
 	}
 }
-CLK_OF_DECLARE(of_sama5d2_clk_generated_setup, "atmel,sama5d2-clk-generated",
-	       of_sama5d2_clk_generated_setup);

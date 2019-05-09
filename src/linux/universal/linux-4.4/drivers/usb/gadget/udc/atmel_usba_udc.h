@@ -354,8 +354,6 @@ struct usba_udc {
 	struct dentry *debugfs_root;
 	struct dentry *debugfs_regs;
 #endif
-
-	struct regmap *pmc;
 };
 
 static inline struct usba_ep *to_usba_ep(struct usb_ep *ep)

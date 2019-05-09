@@ -56,11 +56,8 @@ static void clear_exceptional_entry(struct address_space *mapping,
 	 * protected by mapping->tree_lock.
 	 */
 	if (!workingset_node_shadows(node) &&
-	    !list_empty(&node->private_list)) {
-		local_lock(workingset_shadow_lock);
-		list_lru_del(&__workingset_shadow_nodes, &node->private_list);
-		local_unlock(workingset_shadow_lock);
-	}
+	    !list_empty(&node->private_list))
+		list_lru_del(&workingset_shadow_nodes, &node->private_list);
 	__radix_tree_delete_node(&mapping->page_tree, node);
 unlock:
 	spin_unlock_irq(&mapping->tree_lock);
