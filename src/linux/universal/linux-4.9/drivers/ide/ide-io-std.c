@@ -174,7 +174,7 @@ void ide_input_data(ide_drive_t *drive, struct ide_cmd *cmd, void *buf,
 		unsigned long uninitialized_var(flags);
 
 		if ((io_32bit & 2) && !mmio) {
-			local_irq_save(flags);
+			local_irq_save_nort(flags);
 			ata_vlb_sync(io_ports->nsect_addr);
 		}
 
@@ -185,7 +185,7 @@ void ide_input_data(ide_drive_t *drive, struct ide_cmd *cmd, void *buf,
 			insl(data_addr, buf, words);
 
 		if ((io_32bit & 2) && !mmio)
-			local_irq_restore(flags);
+			local_irq_restore_nort(flags);
 
 		if (((len + 1) & 3) < 2)
 			return;
@@ -218,7 +218,7 @@ void ide_output_data(ide_drive_t *drive, struct ide_cmd *cmd, void *buf,
 		unsigned long uninitialized_var(flags);
 
 		if ((io_32bit & 2) && !mmio) {
-			local_irq_save(flags);
+			local_irq_save_nort(flags);
 			ata_vlb_sync(io_ports->nsect_addr);
 		}
 
@@ -229,7 +229,7 @@ void ide_output_data(ide_drive_t *drive, struct ide_cmd *cmd, void *buf,
 			outsl(data_addr, buf, words);
 
 		if ((io_32bit & 2) && !mmio)
-			local_irq_restore(flags);
+			local_irq_restore_nort(flags);
 
 		if (((len + 1) & 3) < 2)
 			return;
