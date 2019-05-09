@@ -531,7 +531,7 @@ _brcmnand_write_page_do(struct mtd_info *mtd, struct nand_chip *chip, const uint
  */
 static int
 brcmnand_write_page_ecc(struct mtd_info *mtd, struct nand_chip *chip,
-                const uint8_t *buf, int oob_required)
+                const uint8_t *buf, int oob_required, int page)
 {
 	_brcmnand_write_page_do(mtd, chip, buf, TRUE);
 	return 0;
@@ -542,7 +542,7 @@ brcmnand_write_page_ecc(struct mtd_info *mtd, struct nand_chip *chip,
  */
 static int
 brcmnand_write_page_raw(struct mtd_info *mtd, struct nand_chip *chip,
-                const uint8_t *buf, int oob_required)
+                const uint8_t *buf, int oob_required, int page)
 {
 	printk(KERN_INFO "%s: Enter!\n", __FUNCTION__);
 

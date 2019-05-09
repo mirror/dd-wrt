@@ -164,7 +164,9 @@ CONFIG_HZ=100
 # CONFIG_SCHED_HRTICK is not set
 CONFIG_PREEMPT_NONE=y
 # CONFIG_PREEMPT_VOLUNTARY is not set
-# CONFIG_PREEMPT is not set
+# CONFIG_PREEMPT__LL is not set
+# CONFIG_PREEMPT_RTB is not set
+# CONFIG_PREEMPT_RT_FULL is not set
 # CONFIG_KEXEC is not set
 # CONFIG_CRASH_DUMP is not set
 # CONFIG_SECCOMP is not set
@@ -1071,6 +1073,7 @@ CONFIG_ARCH_MIGHT_HAVE_PC_PARPORT=y
 # Misc devices
 #
 # CONFIG_DUMMY_IRQ is not set
+# CONFIG_HWLAT_DETECTOR is not set
 # CONFIG_PHANTOM is not set
 # CONFIG_SGI_IOC4 is not set
 # CONFIG_TIFM_CORE is not set
