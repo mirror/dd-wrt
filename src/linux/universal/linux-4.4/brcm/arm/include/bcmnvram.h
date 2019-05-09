@@ -112,27 +112,37 @@ extern void nvram_safe_set(const char *name, char *value);
 
 extern char *nvram_prefix_get(const char *name, const char *prefix);
 
-extern int nvram_prefix_match(const char *name, const char *prefix,char *match);
+extern int nvram_prefix_match(const char *name, const char *prefix, const char *match);
 
-extern int nvram_default_match (char *var, char *match, char *def);
+extern int nvram_default_match(const char *var, const char *match, const char *def);
 
-extern char *nvram_default_get (char *var, char *def);
+extern int nvram_default_matchi(const char *var, const int match, const int def);
 
-extern char *nvram_nget(const char *fmt,...);
+extern char *nvram_default_get(const char *var, const char *def);
 
-extern int nvram_nset(char *value,const char *fmt,...);
+extern int nvram_default_geti(const char *var, const int def);
 
-extern int nvram_nmatch(char *match,const char *fmt,...);
+extern char *nvram_nget(const char *fmt, ...);
 
-int nvram_default_geti(char *var, int def);
+extern int nvram_nset(const char *value, const char *fmt, ...);
+
+extern int nvram_nseti(const int value, const char *fmt, ...);
+
+extern int nvram_nmatch(const char *match, const char *fmt, ...);
+
+extern int nvram_nmatchi(const int match, const char *fmt, ...);
 
 extern int nvram_geti(const char *name);
 
-extern void nvram_seti(const char *name, int value);
+extern void nvram_seti(const char *name, const int value);
 
-extern int nvram_matchi(char *name, int match);
+extern int nvram_states(char *list);
+extern int nvram_state(char *name);
+extern int nvram_delstates(char *list);
 
-extern int nvram_invmatchi(char *name, int match);
+int nvram_ngeti(const char *fmt, ...);
+
+int nvhas(char *nvname, char *key);
 
 /*
  * Set the value of an NVRAM variable. The name and value strings are
