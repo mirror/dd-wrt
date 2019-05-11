@@ -22,6 +22,7 @@ define kernelfeatures
 	if [ "$(CONFIG_WPA3)" = "y" ]; then \
 		sed -i 's/\# CONFIG_CRYPTO_GCM is not set/CONFIG_CRYPTO_GCM=m/g' $(LINUXDIR)/.config; \
 		echo "# CONFIG_CRYPTO_DRBG_CTR is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_CRYPTO_DRBG_HASH is not set" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_MPTCP)" = "y" ]; then \
 		sed -i 's/\# CONFIG_MPTCP is not set/CONFIG_MPTCP=y/g' $(LINUXDIR)/.config; \
@@ -181,6 +182,7 @@ define kernelfeatures
 		echo "# CONFIG_F2FS_FS_XATTR is not set" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_F2FS_CHECK_FS=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_F2FS_FAULT_INJECTION=y" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_CRYPTO_DRBG_HASH is not set" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_F2FS)" != "y" ]; then \
 		sed -i 's/\CONFIG_F2FS_FS=m/# CONFIG_F2FS_FS is not set/g' $(LINUXDIR)/.config; \
