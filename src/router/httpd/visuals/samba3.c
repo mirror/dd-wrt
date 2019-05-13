@@ -230,7 +230,8 @@ void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "			</td>\n");
 
 		websWrite(wp, "			<td id=\"n_smbuser_pass\" valign=\"top\" align=\"left\">\n");
-		websWrite(wp, "				<input type=\"password\" autocomplete=\"off\" name=\"smbuser_password%s\" id=\"smbuser_password%s\" value=\"%s\" size=\"12\">&nbsp;\n", number, number, cu->password);
+		websWrite(wp, "				<input type=\"password\" autocomplete=\"off\" name=\"smbuser_password%s\" id=\"smbuser_password%s\" value=\"%s\" size=\"12\">&nbsp;\n", number, number,
+			  cu->password);
 		//websWrite(wp, "                               <div style=\"float: left;padding-top: 2px;\">\n");
 		websWrite(wp,
 			  "					<input type=\"checkbox\" name=\"smbuser_password_unmask%s\" value=\"0\" onclick=\"setElementMask('smbuser_password' + this.name.substr(23, this.name.length - 23), this.checked);\" />",
