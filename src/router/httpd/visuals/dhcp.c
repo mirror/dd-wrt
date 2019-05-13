@@ -66,7 +66,7 @@ void ej_dhcpenabled(webs_t wp, int argc, char_t ** argv)
 static char *dhcp_reltime(char *buf, time_t t)
 {
 	time_t now = time(NULL);
-	t-=now;
+	t -= now;
 	if (t < 0)
 		t = 0;
 	int days = t / 86400;
