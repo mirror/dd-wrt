@@ -448,6 +448,7 @@ setupapfile(argv)
     if (ufile == NULL) {
 	free(fname);
 	option_error("unable to open user login data file %s", fname);
+        free(fname);
 	return 0;
     }
     check_access(ufile, fname);
@@ -459,6 +460,7 @@ setupapfile(argv)
 	fclose(ufile);
 	free(fname);
 	option_error("unable to read user login data file %s", fname);
+        free(fname);
 	return 0;
     }
     fclose(ufile);
@@ -480,6 +482,7 @@ setupapfile(argv)
 	explicit_passwd = 1;
     }
 
+    free(fname);
     return (1);
 }
 

@@ -121,7 +121,7 @@ VALUE_PAIR *rc_avpair_new (int attrid, void *pval, int len, int vendorcode)
 		if ((vp = (VALUE_PAIR *) malloc (sizeof (VALUE_PAIR)))
 							!= (VALUE_PAIR *) NULL)
 		{
-			strncpy (vp->name, pda->name, sizeof (vp->name));
+			strlcpy (vp->name, pda->name, NAME_LENGTH);
 			vp->attribute = attrid;
 			vp->vendorcode = vendorcode;
 			vp->next = (VALUE_PAIR *) NULL;

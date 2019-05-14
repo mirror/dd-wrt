@@ -22,6 +22,8 @@
 #include <stdio.h>		/* For FILE */
 #include <sys/types.h>		/* For pid_t */
 
+//#include "pppd/pppd.h"		/* For error */
+
 /* How do we access raw Ethernet devices? */
 #undef USE_LINUX_PACKET
 #undef USE_BPF
@@ -236,6 +238,7 @@ typedef struct PPPoEConnectionStruct {
     int error;			/* Error packet received */
     int debug;			/* Set to log packets sent and received */
     int discoveryTimeout;       /* Timeout for discovery packets */
+    int discoveryAttempts;      /* Number of discovery attempts */
     int seenMaxPayload;
     int mtu;			/* Stored MTU */
     int mru;			/* Stored MRU */
