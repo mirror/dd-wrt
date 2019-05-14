@@ -130,7 +130,7 @@ host_pton(const char *paddr)
 		if (!inet4 && ai->ai_addr->sa_family == AF_INET) {
 			xlog(D_GENERAL, "%s: failed to convert %s",
 					__func__, paddr);
-			freeaddrinfo(ai);
+			nfs_freeaddrinfo(ai);
 			break;
 		}
 		return ai;
@@ -264,9 +264,9 @@ host_canonname(const struct sockaddr *sap)
  * Reverse and forward lookups are performed to ensure the address has
  * matching forward and reverse mappings.
  *
- * Returns addrinfo structure with just the provided address with
- * ai_canonname filled in. If there is a problem with resolution or
- * the resolved records don't match up properly then it returns NULL
+ * Returns addrinfo structure with just the provided address. If there
+ * is a problem with resolution or the resolved records don't match up
+ * properly then returns NULL.
  *
  * Caller must free the returned structure with freeaddrinfo(3).
  */
@@ -277,36 +277,31 @@ host_reliable_addrinfo(const struct sockaddr *sap)
 	struct addrinfo *ai, *a;
 	char *hostname;
 
+	ai = NULL;
 	hostname = host_canonname(sap);
 	if (hostname == NULL)
-		return NULL;
+		goto out;
 
 	ai = host_addrinfo(hostname);
+	free(hostname);
 	if (!ai)
-		goto out_free_hostname;
+		goto out;
 
 	/* make sure there's a matching address in the list */
 	for (a = ai; a; a = a->ai_next)
 		if (nfs_compare_sockaddr(a->ai_addr, sap))
 			break;
 
-	freeaddrinfo(ai);
+	nfs_freeaddrinfo(ai);
+	ai = NULL;
 	if (!a)
-		goto out_free_hostname;
+		goto out;
 
 	/* get addrinfo with just the original address */
 	ai = host_numeric_addrinfo(sap);
-	if (!ai)
-		goto out_free_hostname;
 
-	/* and populate its ai_canonname field */
-	free(ai->ai_canonname);
-	ai->ai_canonname = hostname;
+out:
 	return ai;
-
-out_free_hostname:
-	free(hostname);
-	return NULL;
 }
 
 /**
@@ -323,7 +318,6 @@ host_numeric_addrinfo(const struct sockaddr *sap)
 {
 	socklen_t salen = nfs_sockaddr_length(sap);
 	char buf[INET6_ADDRSTRLEN];
-	struct addrinfo *ai;
 	int error;
 
 	if (salen == 0) {
@@ -348,21 +342,7 @@ host_numeric_addrinfo(const struct sockaddr *sap)
 		return NULL;
 	}
 
-	ai = host_pton(buf);
-
-	/*
-	 * getaddrinfo(AI_NUMERICHOST) never fills in ai_canonname
-	 */
-	if (ai != NULL) {
-		free(ai->ai_canonname);		/* just in case */
-		ai->ai_canonname = strdup(buf);
-		if (ai->ai_canonname == NULL) {
-			freeaddrinfo(ai);
-			ai = NULL;
-		}
-	}
-
-	return ai;
+	return host_pton(buf);
 }
 #else	/* !HAVE_GETNAMEINFO */
 __attribute__((__malloc__))
@@ -372,7 +352,6 @@ host_numeric_addrinfo(const struct sockaddr *sap)
 	const struct sockaddr_in *sin = (const struct sockaddr_in *)sap;
 	const struct in_addr *addr = &sin->sin_addr;
 	char buf[INET_ADDRSTRLEN];
-	struct addrinfo *ai;
 
 	if (sap->sa_family != AF_INET)
 		return NULL;
@@ -382,19 +361,6 @@ host_numeric_addrinfo(const struct sockaddr *sap)
 					(socklen_t)sizeof(buf)) == NULL)
 		return NULL;
 
-	ai = host_pton(buf);
-
-	/*
-	 * getaddrinfo(AI_NUMERICHOST) never fills in ai_canonname
-	 */
-	if (ai != NULL) {
-		ai->ai_canonname = strdup(buf);
-		if (ai->ai_canonname == NULL) {
-			freeaddrinfo(ai);
-			ai = NULL;
-		}
-	}
-
-	return ai;
+	return host_pton(buf);
 }
 #endif	/* !HAVE_GETNAMEINFO */

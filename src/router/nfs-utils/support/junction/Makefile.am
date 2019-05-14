@@ -30,5 +30,3 @@ libjunction_la_SOURCES	= display.c export-cache.c junction.c \
 			  locations.c nfs.c path.c xml.c
 
 MAINTAINERCLEANFILES	= Makefile.in
-
-AM_CPPFLAGS		= -I. -I../include -I/usr/include/libxml2

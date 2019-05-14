@@ -102,6 +102,7 @@ static struct servers *parse_list(char **list)
 		cp = strchr(list[i], '@');
 		if ((!cp) || list[i][0] != '/') {
 			xlog(L_WARNING, "invalid entry '%s'", list[i]);
+			free(mp);
 			continue; /* XXX Need better error handling */
 		}
 		res->h_mp[i] = mp;

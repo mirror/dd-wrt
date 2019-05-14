@@ -20,7 +20,12 @@ fi
 # First try systemd if it's installed.
 if [ -d /run/systemd/system ]; then
     # Quit only if the call worked.
-    systemctl start rpc-statd.service && exit
+    if systemctl start rpc-statd.service; then
+        # Ensure systemd knows not to stop rpc.statd or its dependencies
+        # on 'systemctl isolate ..'
+        systemctl add-wants --runtime remote-fs.target rpc-statd.service
+        exit 0
+    fi
 fi
 
 cd /

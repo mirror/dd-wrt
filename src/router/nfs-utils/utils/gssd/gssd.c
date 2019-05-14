@@ -89,6 +89,7 @@ char *preferred_realm = NULL;
 char *ccachedir = NULL;
 /* Avoid DNS reverse lookups on server names */
 static bool avoid_dns = true;
+static bool use_gssproxy = false;
 int thread_started = false;
 pthread_mutex_t pmutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t pcond = PTHREAD_COND_INITIALIZER;
@@ -171,14 +172,14 @@ gssd_addrstr_to_sockaddr(struct sockaddr *sa, const char *node, const char *port
 		if (sin6->sin6_scope_id) {
 			printerr(0, "ERROR: address %s has non-zero "
 				    "sin6_scope_id!\n", node);
-			freeaddrinfo(res);
+			nfs_freeaddrinfo(res);
 			return false;
 		}
 	}
 #endif /* IPV6_SUPPORTED */
 
 	memcpy(sa, res->ai_addr, res->ai_addrlen);
-	freeaddrinfo(res);
+	nfs_freeaddrinfo(res);
 	return true;
 }
 
@@ -872,6 +873,7 @@ read_gss_conf(void)
 	if (s)
 		preferred_realm = s;
 
+	use_gssproxy = conf_get_bool("gssd", "use-gss-proxy", use_gssproxy);
 }
 
 int
@@ -887,6 +889,9 @@ main(int argc, char *argv[])
 	struct event sighup_ev;
 
 	read_gss_conf();
+
+	verbosity = conf_get_num("gssd", "verbosity", verbosity);
+	rpc_verbosity = conf_get_num("gssd", "rpc-verbosity", rpc_verbosity);
 
 	while ((opt = getopt(argc, argv, "DfvrlmnMp:k:d:t:T:R:")) != -1) {
 		switch (opt) {
@@ -952,6 +957,14 @@ main(int argc, char *argv[])
 	if (setenv("HOME", "/", 1)) {
 		printerr(0, "gssd: Unable to set $HOME: %s\n", strerror(errno));
 		exit(1);
+	}
+
+	if (use_gssproxy) {
+		if (setenv("GSS_USE_PROXY", "yes", 1) < 0) {
+			printerr(0, "gssd: Unable to set $GSS_USE_PROXY: %s\n", 
+				strerror(errno));
+			exit(EXIT_FAILURE);
+		}
 	}
 
 	if (ccachedir) {

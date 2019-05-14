@@ -69,12 +69,16 @@ int generate_target(char *pipefs_path, const char *dirname)
 		return 1;
 
 	ret = generate_mount_unit(pipefs_path, pipefs_unit, dirname);
-	if (ret)
+	if (ret) {
+		free(pipefs_unit);
 		return ret;
+	}
 
 	path = malloc(strlen(dirname) + 1 + sizeof(filebase));
-	if (!path)
+	if (!path) {
+		free(pipefs_unit);
 		return 2;
+	}
 	sprintf(path, "%s", dirname);
 	mkdir(path, 0755);
 	strcat(path, filebase);
@@ -82,6 +86,7 @@ int generate_target(char *pipefs_path, const char *dirname)
 	if (!f)
 	{
 		free(path);
+		free(pipefs_unit);
 		return 1;
 	}
 
@@ -90,6 +95,7 @@ int generate_target(char *pipefs_path, const char *dirname)
 	fprintf(f, "After=%s\n", pipefs_unit);
 	fclose(f);
 	free(path);
+	free(pipefs_unit);
 
 	return 0;
 }

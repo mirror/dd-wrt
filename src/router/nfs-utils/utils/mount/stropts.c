@@ -35,6 +35,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include "nfslib.h"
 #include "sockaddr.h"
 #include "xcommon.h"
 #include "mount.h"
@@ -48,6 +49,7 @@
 #include "version.h"
 #include "parse_dev.h"
 #include "conffile.h"
+#include "misc.h"
 
 #ifndef NFS_PROGRAM
 #define NFS_PROGRAM	(100003)
@@ -981,8 +983,11 @@ static int nfs_try_mount(struct nfsmount_info *mi)
 		}
 
 		if (!nfs_append_addr_option(address->ai_addr,
-					    address->ai_addrlen, mi->options))
+					    address->ai_addrlen, mi->options)) {
+			nfs_freeaddrinfo(address);
+			errno = ENOMEM;
 			return 0;
+		}
 		mi->address = address;
 	}
 
@@ -1078,14 +1083,18 @@ static int nfsmount_fg(struct nfsmount_info *mi)
 		if (nfs_try_mount(mi))
 			return EX_SUCCESS;
 
-		if (errno == EBUSY)
-			/* The only cause of EBUSY is if exactly the desired
-			 * filesystem is already mounted.  That can arguably
-			 * be seen as success.  "mount -a" tries to optimise
-			 * out this case but sometimes fails.  Help it out
-			 * by pretending everything is rosy
+#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+		if (errno == EBUSY && is_mountpoint(mi->node)) {
+#pragma GCC diagnostic warning "-Wdiscarded-qualifiers"
+			/*
+			 * EBUSY can happen when mounting a filesystem that
+			 * is already mounted or when the context= are
+			 * different when using the -o sharecache
+			 *
+			 * Only error out in the latter case.
 			 */
 			return EX_SUCCESS;
+		}
 
 		if (nfs_is_permanent_error(errno))
 			break;
@@ -1263,7 +1272,7 @@ int nfsmount_string(const char *spec, const char *node, char *type,
 	} else
 		nfs_error(_("%s: internal option parsing error"), progname);
 
-	freeaddrinfo(mi.address);
+	nfs_freeaddrinfo(mi.address);
 	free(mi.hostname);
 	return retval;
 }

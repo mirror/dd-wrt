@@ -24,6 +24,7 @@ static void usage(const char *name)
 	fprintf(stderr, " -v			Increase Verbosity\n");
 	fprintf(stderr, " --file filename.conf	Load this config file\n");
 	fprintf(stderr, "     (Default config file: " NFS_CONFFILE "\n");
+	fprintf(stderr, " --modified \"info\"	Use \"info\" in file modified header\n");
 	fprintf(stderr, "Modes:\n");
 	fprintf(stderr, "  --dump [outputfile]\n");
 	fprintf(stderr, "      Outputs the configuration to the named file\n");
@@ -47,6 +48,8 @@ int main(int argc, char **argv)
 
 	confmode_t mode = MODE_NONE;
 
+	modified_by = "Modified by nfsconf";
+
 	while (1) {
 		int c;
 		int index = 0;
@@ -59,10 +62,11 @@ int main(int argc, char **argv)
 			{"dump",  optional_argument, 0, 'd' },
 			{"file",  required_argument, 0, 'f' },
 			{"verbose",	no_argument, 0, 'v' },
+			{"modified", required_argument, 0, 'm' },
 			{NULL,			  0, 0, 0 }
 		};
 
-		c = getopt_long(argc, argv, "gsua:id::f:v", long_options, &index);
+		c = getopt_long(argc, argv, "gsua:id::f:vm:", long_options, &index);
 		if (c == -1) break;
 
 		switch (c) {
@@ -98,6 +102,12 @@ int main(int argc, char **argv)
 					optarg = argv[optind++];
 				mode = MODE_DUMP;
 				dumpfile = optarg;
+				break;
+			case 'm':
+				if (optarg == NULL || *optarg == 0)
+					modified_by = NULL;
+				else
+					modified_by = optarg;
 				break;
 			default:
 				usage(argv[0]);

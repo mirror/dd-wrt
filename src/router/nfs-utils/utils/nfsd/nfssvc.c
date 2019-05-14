@@ -246,8 +246,7 @@ error:
 		close(fd);
 	if (sockfd >= 0)
 		close(sockfd);
-	if (addrhead)
-		freeaddrinfo(addrhead);
+	nfs_freeaddrinfo(addrhead);
 	return (bounded ? 0 : rc);
 }
 

@@ -406,8 +406,10 @@ int nfs4_init_name_mapping(char *conffile)
 	nfs4_methods = conf_get_list("Translation", "Method");
 	if (nfs4_methods) {
 		IDMAP_LOG(1, ("libnfsidmap: processing 'Method' list"));
-		if (load_plugins(nfs4_methods, &nfs4_plugins) == -1)
+		if (load_plugins(nfs4_methods, &nfs4_plugins) == -1) {
+			conf_free_list(nfs4_methods);
 			return -ENOENT;
+		}
 	} else {
 		struct conf_list list;
 		struct conf_list_node node;
@@ -475,10 +477,14 @@ out:
 	if (ret) {
 		if (nfs4_plugins)
 			unload_plugins(nfs4_plugins);
-		if (gss_plugins)
+		if (gss_plugins) {
 			unload_plugins(gss_plugins);
+		}
 		nfs4_plugins = gss_plugins = NULL;
 	}
+
+	if (gss_methods)
+		conf_free_list(gss_methods);
 
 	return ret ? -ENOENT: 0;
 }

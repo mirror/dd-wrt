@@ -9,7 +9,7 @@ PartOf=nfs-utils.service
 
 [Service]
 Type=forking
-PIDFile=/var/run/blkmapd.pid
+PIDFile=/run/blkmapd.pid
 ExecStart=/usr/sbin/blkmapd
 
 [Install]

@@ -493,20 +493,20 @@ def list_nfs_mounts(givenlist, mountstats):
        return a full list if the given list is empty -
        may return an empty list if none found
     """
-    list = []
+    devicelist = []
     if len(givenlist) > 0:
         for device in givenlist:
             stats = DeviceData()
             stats.parse_stats(mountstats[device])
             if stats.is_nfs_mountpoint():
-                list += [device]
+                devicelist += [device]
     else:
         for device, descr in mountstats.items():
             stats = DeviceData()
             stats.parse_stats(descr)
             if stats.is_nfs_mountpoint():
-                list += [device]
-    return list
+                devicelist += [device]
+    return devicelist
 
 def iostat_command(name):
     """iostat-like command for NFS mount points

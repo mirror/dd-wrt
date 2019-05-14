@@ -135,10 +135,14 @@ xlog_from_conffile(char *service)
 	struct conf_list_node *n;
 
 	kinds = conf_get_list(service, "debug");
-	if (!kinds || !kinds->cnt)
+	if (!kinds || !kinds->cnt) {
+		free(kinds);
 		return;
+	}
 	TAILQ_FOREACH(n, &(kinds->fields), link)
 		xlog_sconfig(n->field, 1);
+
+	conf_free_list(kinds);
 }
 
 int
