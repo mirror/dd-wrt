@@ -445,6 +445,7 @@ UINT4 rc_get_ipaddr __P((char *));
 int rc_good_ipaddr __P((char *));
 const char *rc_ip_hostname __P((UINT4));
 UINT4 rc_own_ipaddress __P((void));
+UINT4 rc_own_bind_ipaddress __P((void));
 
 
 /*	sendserver.c		*/
