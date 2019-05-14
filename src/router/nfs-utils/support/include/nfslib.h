@@ -16,6 +16,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netdb.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <paths.h>
@@ -156,4 +157,14 @@ void  libtirpc_set_debug(char *name, int level, int use_stderr);
 
 #define UNUSED(x) UNUSED_ ## x __attribute__((unused))
 
+/*
+ * Some versions of freeaddrinfo(3) do not tolerate being
+ * passed a NULL pointer.
+ */
+static inline void nfs_freeaddrinfo(struct addrinfo *ai)
+{
+	if (ai) {
+		freeaddrinfo(ai);
+	}
+}
 #endif /* NFSLIB_H */

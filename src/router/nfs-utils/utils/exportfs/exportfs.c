@@ -282,7 +282,7 @@ exportfs_parsed(char *hname, char *path, char *options, int verbose)
 	validate_export(exp);
 
 out:
-	freeaddrinfo(ai);
+	nfs_freeaddrinfo(ai);
 }
 
 static int exportfs_generic(char *arg, char *options, int verbose)
@@ -395,7 +395,7 @@ unexportfs_parsed(char *hname, char *path, int verbose)
 	if (!success)
 		xlog(L_ERROR, "Could not find '%s:%s' to unexport.", hname, path);
 
-	freeaddrinfo(ai);
+	nfs_freeaddrinfo(ai);
 }
 
 static int unexportfs_generic(char *arg, int verbose)
@@ -588,7 +588,7 @@ address_list(const char *hostname)
 	if (ai != NULL) {
 		/* @hostname was a presentation address */
 		cname = host_canonname(ai->ai_addr);
-		freeaddrinfo(ai);
+		nfs_freeaddrinfo(ai);
 		if (cname != NULL)
 			goto out;
 	}
@@ -639,8 +639,8 @@ matchhostname(const char *hostname1, const char *hostname2)
 			}
 
 out:
-	freeaddrinfo(results1);
-	freeaddrinfo(results2);
+	nfs_freeaddrinfo(results1);
+	nfs_freeaddrinfo(results2);
 	return result;
 }
 

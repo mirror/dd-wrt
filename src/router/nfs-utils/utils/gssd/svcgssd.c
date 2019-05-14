@@ -113,6 +113,10 @@ main(int argc, char *argv[])
 	else
 		principal = s;
 
+	verbosity = conf_get_num("svcgssd", "Verbosity", verbosity);
+	rpc_verbosity = conf_get_num("svcgssd", "RPC-Verbosity", rpc_verbosity);
+	idmap_verbosity = conf_get_num("svcgssd", "IDMAP-Verbosity", idmap_verbosity);
+
 	while ((opt = getopt(argc, argv, "fivrnp:")) != -1) {
 		switch (opt) {
 			case 'f':

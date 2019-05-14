@@ -35,6 +35,7 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 
+#include "nfslib.h"
 #include "sockaddr.h"
 #include "statd.h"
 #include "xlog.h"
@@ -203,7 +204,7 @@ statd_canonical_name(const char *hostname)
 		_Bool result;
 		result = get_nameinfo(ai->ai_addr, ai->ai_addrlen,
 					buf, (socklen_t)sizeof(buf));
-		freeaddrinfo(ai);
+		nfs_freeaddrinfo(ai);
 		if (!result || buf[0] == '\0')
 			/* OK to use presentation address,
 			 * if no reverse map exists */
@@ -217,7 +218,7 @@ statd_canonical_name(const char *hostname)
 	if (ai == NULL)
 		return NULL;
 	strcpy(buf, ai->ai_canonname);
-	freeaddrinfo(ai);
+	nfs_freeaddrinfo(ai);
 
 	return strdup(buf);
 }
@@ -253,7 +254,7 @@ statd_canonical_list(const char *hostname)
 		_Bool result;
 		result = get_nameinfo(ai->ai_addr, ai->ai_addrlen,
 					buf, (socklen_t)sizeof(buf));
-		freeaddrinfo(ai);
+		nfs_freeaddrinfo(ai);
 		if (result)
 			goto out;
 	}
@@ -308,8 +309,8 @@ statd_matchhostname(const char *hostname1, const char *hostname2)
 			}
 
 out:
-	freeaddrinfo(results2);
-	freeaddrinfo(results1);
+	nfs_freeaddrinfo(results2);
+	nfs_freeaddrinfo(results1);
 
 	xlog(D_CALL, "%s: hostnames %s and %s %s", __func__,
 			hostname1, hostname2,

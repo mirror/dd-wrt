@@ -347,6 +347,7 @@ static int static_init(void) {
 			warnx("static_init: calloc (1, %lu) failed",
 				(unsigned long)sizeof *unode);
 			free(pw);
+			conf_free_list(princ_list);
 			return -ENOMEM;
 		}
 		unode->uid = pw->pw_uid;
@@ -355,6 +356,9 @@ static int static_init(void) {
 		unode->localname = conf_get_str("Static", cln->field);
 		if (!unode->localname) {
 			free(pw);
+			free(unode->principal);
+			free(unode);
+			conf_free_list(princ_list);
 			return -ENOENT;
 		}
 
@@ -379,6 +383,7 @@ static int static_init(void) {
 			warnx("static_init: calloc (1, %lu) failed",
 				(unsigned long)sizeof *gnode);
 			free(gr);
+			conf_free_list(princ_list);
 			return -ENOMEM;
 		}
 		gnode->gid = gr->gr_gid;
@@ -387,6 +392,9 @@ static int static_init(void) {
 		gnode->localgroup = conf_get_str("Static", cln->field);
 		if (!gnode->localgroup) {
 			free(gr);
+			free(gnode->principal);
+			free(gnode);
+			conf_free_list(princ_list);
 			return -ENOENT;
 		}
 
@@ -394,6 +402,8 @@ static int static_init(void) {
 
 		LIST_INSERT_HEAD (&gid_mappings[gid_hash(gnode->gid)], gnode, link);
 	}
+	
+	conf_free_list(princ_list);
 	return 0;
 }
 

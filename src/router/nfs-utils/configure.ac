@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 dnl
-AC_INIT([linux nfs-utils],[2.3.3],[linux-nfs@vger.kernel.org],[nfs-utils])
+AC_INIT([linux nfs-utils],[2.3.4],[linux-nfs@vger.kernel.org],[nfs-utils])
 AC_CANONICAL_BUILD([])
 AC_CANONICAL_HOST([])
 AC_CONFIG_MACRO_DIR(aclocal)
@@ -149,12 +149,19 @@ AC_ARG_WITH(rpcgen,
 	[AC_HELP_STRING([--with-rpcgen=internal], [use internal rpcgen instead of system one])],
 	rpcgen_path=$withval,
 	rpcgen_path=yes )
+	rpcgen_cflags=-Werror=strict-prototypes
 	RPCGEN_PATH=
 	if test "$rpcgen_path" = "yes"; then
 	    for p in /usr/local/bin/rpcgen /usr/bin/rpcgen /bin/rpcgen
 	    do if test -f $p ; then RPCGEN_PATH=$p ; break; fi ; done
+		if test -z "$RPCGEN_PATH"; then
+			AC_MSG_ERROR([Please install rpcgen or use --with-rpcgen])
+		fi
 	elif test "$rpcgen_path" != "internal"; then
 	    RPCGEN_PATH=$rpcgen_path
+	else
+	    RPCGEN_PATH=internal
+	    rpcgen_cflags=-Wstrict-prototypes
 	fi
 	AC_SUBST(RPCGEN_PATH)
 	AM_CONDITIONAL(CONFIG_RPCGEN, [test "$RPCGEN_PATH" = "internal"])
@@ -165,7 +172,7 @@ AC_ARG_ENABLE(uuid,
 	choose_blkid=default)
 AC_ARG_ENABLE(mount,
 	[AC_HELP_STRING([--disable-mount],
-		[Don't build mount.nfs and do use the util-linux mount(8) functionality. @<:@default=no@:>@])],
+		[Do not build mount.nfs and do use the util-linux mount(8) functionality. @<:@default=no@:>@])],
 	enable_mount=$enableval,
 	enable_mount=yes)
 	AM_CONDITIONAL(CONFIG_MOUNT, [test "$enable_mount" = "yes"])
@@ -185,7 +192,13 @@ AC_ARG_ENABLE(junction,
 			[enable support for NFS junctions @<:@default=no@:>@])],
 	enable_junction=$enableval,
 	enable_junction=no)
-AM_CONDITIONAL(CONFIG_JUNCTION, [test "$enable_junction" = "yes" ])
+	if test "$enable_junction" = yes; then
+		AC_DEFINE(HAVE_JUNCTION_SUPPORT, 1,
+                          [Define this if you want junction support compiled in])
+	else
+		enable_junction=
+	fi
+	AM_CONDITIONAL(CONFIG_JUNCTION, [test "$enable_junction" = "yes" ])
 
 AC_ARG_ENABLE(tirpc,
 	[AC_HELP_STRING([--disable-tirpc],
@@ -232,18 +245,17 @@ else
 	AM_CONDITIONAL(MOUNT_CONFIG, [test "$enable_mount" = "yes"])
 fi
 
+AC_ARG_ENABLE(nfsdcld,
+	[AC_HELP_STRING([--disable-nfsdcld],
+			[disable NFSv4 clientid tracking daemon @<:@default=no@:>@])],
+	enable_nfsdcld=$enableval,
+	enable_nfsdcld="yes")
+
 AC_ARG_ENABLE(nfsdcltrack,
 	[AC_HELP_STRING([--disable-nfsdcltrack],
 			[disable NFSv4 clientid tracking programs @<:@default=no@:>@])],
 	enable_nfsdcltrack=$enableval,
 	enable_nfsdcltrack="yes")
-
-AC_ARG_ENABLE(osdlogin,
-	[AC_HELP_STRING([--enable-osdlogin],
-			[enable osd_login scripts @<:@default=no@:>@])],
-	enable_osdlogin=$enableval,
-	enable_osdlogin="no")
-	AM_CONDITIONAL(CONFIG_OSD_LOGIN, [test "$enable_osdlogin" = "yes" ])
 
 dnl Check for TI-RPC library and headers
 AC_LIBTIRPC
@@ -318,6 +330,20 @@ if test "$enable_nfsv4" = yes; then
   dnl Check for sqlite3
   AC_SQLITE3_VERS
 
+  if test "$enable_nfsdcld" = "yes"; then
+	AC_CHECK_HEADERS([libgen.h sys/inotify.h], ,
+		AC_MSG_ERROR([Cannot find header needed for nfsdcld]))
+
+    case $libsqlite3_cv_is_recent in
+    yes) ;;
+    unknown)
+      dnl do not fail when cross-compiling
+      AC_MSG_WARN([assuming sqlite is at least v3.3]) ;;
+    *)
+      AC_MSG_ERROR([nfsdcld requires sqlite-devel]) ;;
+    esac
+  fi
+
   if test "$enable_nfsdcltrack" = "yes"; then
 	AC_CHECK_HEADERS([libgen.h sys/inotify.h], ,
 		AC_MSG_ERROR([Cannot find header needed for nfsdcltrack]))
@@ -333,6 +359,7 @@ if test "$enable_nfsv4" = yes; then
   fi
 
 else
+  enable_nfsdcld="no"
   enable_nfsdcltrack="no"
 fi
 
@@ -343,6 +370,7 @@ if test "$enable_nfsv41" = yes; then
 fi
 
 dnl enable nfsidmap when its support by libnfsidmap
+AM_CONDITIONAL(CONFIG_NFSDCLD, [test "$enable_nfsdcld" = "yes" ])
 AM_CONDITIONAL(CONFIG_NFSDCLTRACK, [test "$enable_nfsdcltrack" = "yes" ])
 
 
@@ -408,7 +436,8 @@ if test "$enable_gss" = yes; then
 fi
 
 dnl libdnsidmap specific checks
-AC_CHECK_LIB([resolv], [res_querydomain], , AC_MSG_ERROR(res_querydomain needed))
+AC_CHECK_LIB([resolv], [__res_querydomain], ,
+	AC_CHECK_LIB([resolv], [res_querydomain], , AC_MSG_ERROR(res_querydomain needed)))
 
 AC_ARG_ENABLE([ldap],
 	[AS_HELP_STRING([--disable-ldap],[Disable support for LDAP @<:default=detect@:>@])])
@@ -447,6 +476,7 @@ if test -n "$path_plugins" ; then
                 [Define this to change the plugins path])
 fi
 AM_CONDITIONAL(PATH_PLUGINS, test -n "$path_plugins")
+AC_SUBST(PATH_PLUGINS, "$path_plugins")
 
 AC_SUBST(AM_CPPFLAGS, "$AM_CPPFLAGS")
 AC_DEFINE([HAVE_NFS4_SET_DEBUG], 1,
@@ -547,7 +577,7 @@ my_am_cflags="\
  -pipe \
  -Wall \
  -Wextra \
- -Werror=strict-prototypes \
+ $rpcgen_cflags \
  -Werror=missing-prototypes \
  -Werror=missing-declarations \
  -Werror=format=2 \
@@ -562,6 +592,7 @@ my_am_cflags="\
  -Werror=parentheses \
  -Werror=aggregate-return \
  -Werror=unused-result \
+ -Wno-cast-function-type \
  -fno-strict-aliasing \
 "
 
@@ -619,6 +650,7 @@ AC_CONFIG_FILES([
 	tools/nfsconf/Makefile
 	utils/Makefile
 	utils/blkmapd/Makefile
+	utils/nfsdcld/Makefile
 	utils/nfsdcltrack/Makefile
 	utils/exportfs/Makefile
 	utils/gssd/Makefile
@@ -631,7 +663,6 @@ AC_CONFIG_FILES([
 	utils/nfsidmap/Makefile
 	utils/showmount/Makefile
 	utils/statd/Makefile
-	utils/osd_login/Makefile
 	systemd/Makefile
 	tests/Makefile
 	tests/nsm_client/Makefile])

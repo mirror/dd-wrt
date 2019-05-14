@@ -69,6 +69,8 @@ extern int      conf_remove_section(int, const char *);
 extern void     conf_report(FILE *);
 extern int      conf_write(const char *, const char *, const char *, const char *, const char *);
 
+extern const char *modified_by;
+
 /*
  * Convert letter from upper case to lower case
  */

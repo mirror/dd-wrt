@@ -6,10 +6,12 @@ Requires= nfs-mountd.service
 Wants=rpcbind.socket network-online.target
 Wants=rpc-statd.service nfs-idmapd.service
 Wants=rpc-statd-notify.service
+Wants=nfsdcld.service
 
 After= network-online.target local-fs.target
 After= proc-fs-nfsd.mount rpcbind.socket nfs-mountd.service
 After= nfs-idmapd.service rpc-statd.service
+After= nfsdcld.service
 Before= rpc-statd-notify.service
 
 # GSS services dependencies and ordering

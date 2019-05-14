@@ -4,12 +4,14 @@ DefaultDependencies=no
 Conflicts=umount.target
 Requires=nss-lookup.target rpcbind.socket
 Wants=network-online.target
+Wants=rpc-statd-notify.service
 After=network-online.target nss-lookup.target rpcbind.socket
 
 PartOf=nfs-utils.service
+IgnoreOnIsolate=yes
 
 [Service]
 Environment=RPC_STATD_NO_NOTIFY=1
 Type=forking
-PIDFile=/var/run/rpc.statd.pid
+PIDFile=/run/rpc.statd.pid
 ExecStart=/usr/sbin/rpc.statd

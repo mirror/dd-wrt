@@ -31,6 +31,8 @@ nfsconf \- Query various NFS configuration settings
 .P
 .B nfsconf \-\-set
 .RB [ \-v | \-\-verbose ]
+.RB [ \-m | \-\-modified
+.IR "Modified by text" ]
 .RB [ \-f | \-\-file
 .IR infile.conf ]
 .RB [ \-a | \-\-arg
@@ -61,7 +63,7 @@ Test if a specific tag has a value set.
 .IP "\fB\-g, \-\-get\fP"
 Output the current value of the specified tag.
 .IP "\fB\-s, \-\-set\fP"
-Update or Add a tag and value to the config file, creating the file if necessary.
+Update or Add a tag and value to the config file in a specified section, creating the tag, section, and file if necessary. If the section is defined as '#' then a comment is appended to the file. If a comment is set with a tag name then any exiting tagged comment with a matching name is replaced.
 .IP "\fB\-u, \-\-unset\fP"
 Remove the specified tag and its value from the config file.
 .SH OPTIONS
@@ -77,6 +79,9 @@ Select a different config file to operate upon, default is
 .TP
 .B \-a, \-\-arg \fIsubsection\fR
 Select a specific sub-section
+.SS Options only valid in \fB\-\-set\fR mode.
+.B \-m, \-\-modified \fI"Modified by nfsconf"\fR
+Set the text on the Modified date comment in the file. Set to empty to remove.
 .SH EXIT STATUS
 .SS \fB\-\-isset\fR mode
 In this mode the command will return success (0) if the selected tag has a value, any other exit code indicates the value is not set, or some other error has occurred.

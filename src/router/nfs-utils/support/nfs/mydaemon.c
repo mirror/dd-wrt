@@ -123,6 +123,7 @@ daemon_init(bool fg)
 	dup2(tempfd, 0);
 	dup2(tempfd, 1);
 	dup2(tempfd, 2);
+	close(tempfd);
 	closelog();
 	dup2(pipefds[1], 3);
 	pipefds[1] = 3;

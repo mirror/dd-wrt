@@ -215,6 +215,8 @@ sqlite_maindb_init_v2(void)
 				&err);
 	if (ret != SQLITE_OK) {
 		xlog(L_ERROR, "Unable to begin transaction: %s", err);
+		if (err)
+			sqlite3_free(err);
 		return ret;
 	}
 

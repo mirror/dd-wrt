@@ -238,6 +238,39 @@ static void set_nlm_port(char *type, int port)
 		fprintf(stderr, "%s: failed to open %s: %s\n", 
 			name_p, pathbuf, strerror(errno));
 }
+int port = 0, out_port = 0;
+int nlm_udp = 0, nlm_tcp = 0;
+
+inline static void 
+read_nfsconf(char **argv)
+{
+	char *s;
+
+	conf_init_file(NFS_CONFFILE);
+	xlog_from_conffile("statd");
+
+	out_port = conf_get_num("statd", "outgoing-port", out_port);
+	port = conf_get_num("statd", "port", port);
+
+	MY_NAME = conf_get_str("statd", "name");
+	if (MY_NAME)
+		run_mode |= STATIC_HOSTNAME;
+
+	s = conf_get_str("statd", "state-directory-path");
+	if (s && !nsm_setup_pathnames(argv[0], s))
+		exit(1);
+
+	s = conf_get_str("statd", "ha-callout");
+	if (s)
+		ha_callout_prog = s;
+
+	nlm_tcp = conf_get_num("lockd", "port", nlm_tcp);
+	/* udp defaults to the same as tcp ! */
+	nlm_udp = conf_get_num("lockd", "udp-port", nlm_tcp);
+
+	if (conf_get_bool("statd", "no-notify", false))
+		run_mode |= MODE_NO_NOTIFY;
+}
 
 /*
  * Entry routine/main loop.
@@ -245,11 +278,8 @@ static void set_nlm_port(char *type, int port)
 int main (int argc, char **argv)
 {
 	extern char *optarg;
-	char *s;
 	int pid;
 	int arg;
-	int port = 0, out_port = 0;
-	int nlm_udp = 0, nlm_tcp = 0;
 	struct rlimit rlim;
 	int notify_sockfd;
 	char *env;
@@ -275,23 +305,8 @@ int main (int argc, char **argv)
 	/* Set hostname */
 	MY_NAME = NULL;
 
-	conf_init_file(NFS_CONFFILE);
-	xlog_from_conffile("statd");
-	out_port = conf_get_num("statd", "outgoing-port", out_port);
-	port = conf_get_num("statd", "port", port);
-	MY_NAME = conf_get_str("statd", "name");
-	if (MY_NAME)
-		run_mode |= STATIC_HOSTNAME;
-	s = conf_get_str("statd", "state-directory-path");
-	if (s && !nsm_setup_pathnames(argv[0], s))
-		exit(1);
-	s = conf_get_str("statd", "ha-callout");
-	if (s)
-		ha_callout_prog = s;
-
-	nlm_tcp = conf_get_num("lockd", "port", nlm_tcp);
-	/* udp defaults to the same as tcp ! */
-	nlm_udp = conf_get_num("lockd", "udp-port", nlm_tcp);
+	/* Read nfs.conf */
+	read_nfsconf(argv);
 
 	/* Process command line switches */
 	while ((arg = getopt_long(argc, argv, "h?vVFNH:dn:p:o:P:LT:U:", longopts, NULL)) != EOF) {

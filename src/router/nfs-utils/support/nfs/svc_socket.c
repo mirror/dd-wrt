@@ -135,6 +135,7 @@ svc_socket (u_long number, int type, int protocol, int reuse)
 	{
 	  xlog(L_ERROR, "svc_socket: socket reuse problem: %m");
 	  return ret;
+      (void) __close(sock);
 	}
     }
 

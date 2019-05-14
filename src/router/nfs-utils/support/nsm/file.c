@@ -533,6 +533,7 @@ nsm_update_kernel_state(const int state)
 	len = snprintf(buf, sizeof(buf), "%d", state);
 	if (error_check(len, sizeof(buf))) {
 		xlog_warn("Failed to form NSM state number string");
+		close(fd);
 		return;
 	}
 

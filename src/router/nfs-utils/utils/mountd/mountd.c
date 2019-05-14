@@ -578,10 +578,10 @@ static void prune_clients(nfs_export *exp, struct exportnode *e)
 				*cp = c->gr_next;
 				xfree(c->gr_name);
 				xfree(c);
-				freeaddrinfo(ai);
+				nfs_freeaddrinfo(ai);
 				continue;
 			}
-			freeaddrinfo(ai);
+			nfs_freeaddrinfo(ai);
 		}
 		cp = &(c->gr_next);
 	}

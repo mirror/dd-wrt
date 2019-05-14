@@ -46,6 +46,7 @@
 /* We are using deprecated functions, get the prototypes... */
 #define LDAP_DEPRECATED 1
 #include <ldap.h>
+#include "nfslib.h"
 #include "nfsidmap.h"
 #include "nfsidmap_plugin.h"
 #include "nfsidmap_private.h"
@@ -1089,7 +1090,7 @@ get_canonical_hostname(const char *inname)
 	return_name = strdup (tmphost);
 
 out_free:
-	freeaddrinfo(ap);
+	nfs_freeaddrinfo(ap);
 out_err:
 	return return_name;
 }

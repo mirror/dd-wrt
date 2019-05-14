@@ -452,6 +452,7 @@ parse_options(char *old_opts, struct nfs_mount_data *data,
 	nfs_error(_("%s: Bad nfs mount parameter: %s\n"), progname, opt);
  out_bad:
 	free(tmp_opts);
+	free(mounthost);
 	return 0;
 }
 
