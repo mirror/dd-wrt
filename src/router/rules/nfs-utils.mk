@@ -2,7 +2,7 @@ nfs-utils-configure: libtirpc lvm2 keyutils krb5
 	cd nfs-utils && ./autogen.sh
 	cd nfs-utils && ./configure --enable-fast-install --with-sysroot=yes --libdir=/usr/lib --with-tirpcinclude=$(TOP)/libtirpc/tirpc --host=$(ARCH)-linux \
 		--with-rpcgen=internal --disable-uuid --disable-gssapi --disable-static --prefix=/usr \
-		--enable-gss --disable-nfsdcltrack \
+		--enable-gss --disable-nfsdcltrack --disable-nfsdcld \
 		--with-krb5=yes \
 		KRBCFLAGS="-I$(TOP)/krb5/src/include" \
 		KRBLDFLAGS="-L$(TOP)/krb5/src/lib" \
