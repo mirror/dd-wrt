@@ -226,7 +226,7 @@ mountlist_list(void)
 				ai = host_pton(rep->r_client);
 				if (ai != NULL) {
 					m->ml_hostname = host_canonname(ai->ai_addr);
-					freeaddrinfo(ai);
+					nfs_freeaddrinfo(ai);
 				}
 			}
 			if (m->ml_hostname == NULL)

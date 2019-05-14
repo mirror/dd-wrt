@@ -163,8 +163,10 @@ nsdb_count_components(const char *pathname, size_t *len,
 			break;
 		next = strchrnul(component, '/');
 		tmp = (size_t)(next - component);
-		if (tmp > 255)
+		if (tmp > 255) {
+			free(start);
 			return false;
+		}
 		length += XDR_UINT_BYTES + (nsdb_quadlen(tmp) << 2);
 		count++;
 
@@ -328,11 +330,13 @@ nsdb_posix_to_path_array(const char *pathname, char ***path_array)
 		length = (size_t)(next - component);
 		if (length > 255) {
 			nsdb_free_string_array(result);
+			free(normalized);
 			return FEDFS_ERR_SVRFAULT;
 		}
 
 		result[i] = strndup(component, length);
 		if (result[i] == NULL) {
+			free(normalized);
 			nsdb_free_string_array(result);
 			return FEDFS_ERR_SVRFAULT;
 		}

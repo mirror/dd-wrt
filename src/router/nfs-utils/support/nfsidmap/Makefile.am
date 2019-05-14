@@ -1,4 +1,8 @@
+if PATH_PLUGINS
+pkgplugindir=$(PATH_PLUGINS)
+else
 pkgplugindir=$(libdir)/libnfsidmap
+endif
 
 if ENABLE_LDAP
 UMICH_LDAP_LIB = umich_ldap.la

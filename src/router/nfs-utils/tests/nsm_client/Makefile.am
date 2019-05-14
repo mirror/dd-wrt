@@ -13,7 +13,7 @@ check_PROGRAMS	= nsm_client
 nsm_client_SOURCES = $(GENFILES) nsm_client.c
 
 BUILT_SOURCES = $(GENFILES)
-nsm_client_LDADD = ../../support/nfs/libnfs.a \
+nsm_client_LDADD = ../../support/nfs/.libs/libnfs.a \
 		   ../../support/nsm/libnsm.a $(LIBCAP) $(LIBTIRPC)
 
 RPCGEN	= rpcgen

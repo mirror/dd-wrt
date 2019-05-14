@@ -404,7 +404,7 @@ char *conf_get_mntopts(char *spec, char *mount_point,
 
 	/* list_size + optlen + ',' + '\0' */
 	config_opts = calloc(1, (list_size+optlen+2));
-	if (server == NULL) {
+	if (config_opts == NULL) {
 		xlog_warn("conf_get_mountops: Unable calloc memory for config_opts"); 
 		free_all();
 		return mount_opts;

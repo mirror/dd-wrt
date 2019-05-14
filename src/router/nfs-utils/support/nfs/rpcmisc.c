@@ -102,6 +102,7 @@ makesock(int port, int proto)
 	if (bind(sock, (struct sockaddr *) &sin, sizeof(sin)) == -1) {
 		xlog(L_FATAL, "Could not bind name to socket: %s",
 					strerror(errno));
+		close(sock);
 		return -1;
 	}
 

@@ -186,8 +186,13 @@ static void bl_add_disk(char *filepath)
 		}
 	}
 
-	if (disk && diskpath)
+	if (disk && diskpath) {
+		if (serial) {
+			free(serial->data);
+			free(serial);
+		}
 		return;
+	}
 
 	/* add path */
 	path = malloc(sizeof(struct bl_disk_path));
@@ -223,6 +228,10 @@ static void bl_add_disk(char *filepath)
 			disk->size = size;
 			disk->valid_path = path;
 		}
+		if (serial) {
+			free(serial->data);
+			free(serial);
+		}
 	}
 	return;
 
@@ -232,6 +241,10 @@ static void bl_add_disk(char *filepath)
 			free(path->full_path);
 		free(path);
 	}
+	if (serial) {
+		free(serial->data);
+		free(serial);
+	}
 	return;
 }
 
@@ -239,7 +252,7 @@ int bl_discover_devices(void)
 {
 	FILE *f;
 	int n;
-	char buf[PATH_MAX], devname[PATH_MAX], fulldevname[PATH_MAX+NAME_MAX];
+	char buf[PATH_MAX], devname[NAME_MAX], fulldevname[PATH_MAX];
 
 	/* release previous list */
 	bl_release_disk();
@@ -375,7 +388,12 @@ static void bl_rpcpipe_cb(void)
 			if (event->mask & IN_CREATE) {
 				BL_LOG_WARNING("nfs pipe dir created\n");
 				bl_watch_dir(nfspipe_dir, &nfs_pipedir_wfd);
+				if (bl_pipe_fd >= 0)
+					close(bl_pipe_fd);
 				bl_pipe_fd = open(bl_pipe_file, O_RDWR);
+				if (bl_pipe_fd < 0)
+					BL_LOG_ERR("open %s failed: %s\n",
+						event->name, strerror(errno));
 			} else if (event->mask & IN_DELETE) {
 				BL_LOG_WARNING("nfs pipe dir deleted\n");
 				inotify_rm_watch(bl_watch_fd, nfs_pipedir_wfd);
@@ -388,6 +406,8 @@ static void bl_rpcpipe_cb(void)
 				continue;
 			if (event->mask & IN_CREATE) {
 				BL_LOG_WARNING("blocklayout pipe file created\n");
+				if (bl_pipe_fd >= 0)
+					close(bl_pipe_fd);
 				bl_pipe_fd = open(bl_pipe_file, O_RDWR);
 				if (bl_pipe_fd < 0)
 					BL_LOG_ERR("open %s failed: %s\n",

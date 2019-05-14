@@ -714,6 +714,7 @@ parsesquash(char *list, int **idp, int *lenp, char **ep)
 		}
 		if (id0 == -1 || id1 == -1) {
 			syntaxerr("uid/gid -1 not permitted");
+			xfree(id);
 			return -1;
 		}
 		if ((len % 8) == 0)
@@ -724,6 +725,7 @@ parsesquash(char *list, int **idp, int *lenp, char **ep)
 			break;
 		if (*cp != ',') {
 			syntaxerr("bad uid/gid list");
+			xfree(id);
 			return -1;
 		}
 		cp++;

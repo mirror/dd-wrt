@@ -27,13 +27,11 @@ noinst_HEADERS		= nfsref.h
 
 sbin_PROGRAMS		= nfsref
 nfsref_SOURCES		= add.c lookup.c nfsref.c remove.c
-LDADD			= $(LIBXML2) $(LIBCAP) \
-			  ../../support/nfs/libnfs.la \
-			  ../../support/junction/libjunction.la
+LDADD			= ../../support/nfs/libnfs.la \
+			  ../../support/junction/libjunction.la \
+			  $(LIBXML2) $(LIBCAP)
 
 man8_MANS		= nfsref.man
 
 MAINTAINERCLEANFILES	= Makefile.in
 
-AM_CPPFLAGS		= -I. -I../../support/include
-##AM_LDFLAGS		= -Wl,--as-needed

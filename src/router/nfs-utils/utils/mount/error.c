@@ -50,8 +50,8 @@
 
 extern char *progname;
 
-static char errbuf[BUFSIZ];
-static char *erreob = &errbuf[BUFSIZ];
+static char errbuf[PATH_MAX];
+static char *erreob = &errbuf[PATH_MAX];
 
 /* Convert RPC errors into strings */
 static int rpc_strerror(int spos)
@@ -223,7 +223,7 @@ void mount_error(const char *spec, const char *mount_point, int error)
 				  progname, mount_point);
 		break;
 	case EBUSY:
-		nfs_error(_("%s: %s is busy or already mounted"),
+		nfs_error(_("%s: %s is busy or already mounted or sharecache fail"),
 			progname, mount_point);
 		break;
 	case ENOENT:

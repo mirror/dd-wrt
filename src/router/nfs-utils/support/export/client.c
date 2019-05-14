@@ -210,7 +210,7 @@ init_subnetwork(nfs_client *clp)
 	set_addrlist(clp, 0, ai->ai_addr);
 	family = ai->ai_addr->sa_family;
 
-	freeaddrinfo(ai);
+	nfs_freeaddrinfo(ai);
 
 	switch (family) {
 	case AF_INET:
@@ -309,7 +309,7 @@ client_lookup(char *hname, int canonical)
 		init_addrlist(clp, ai);
 
 out:
-	freeaddrinfo(ai);
+	nfs_freeaddrinfo(ai);
 	return clp;
 }
 
@@ -674,7 +674,7 @@ check_netgroup(const nfs_client *clp, const struct addrinfo *ai)
 	tmp = host_pton(hname);
 	if (tmp != NULL) {
 		char *cname = host_canonname(tmp->ai_addr);
-		freeaddrinfo(tmp);
+		nfs_freeaddrinfo(tmp);
 
 		/* The resulting FQDN may be in our netgroup. */
 		if (cname != NULL) {

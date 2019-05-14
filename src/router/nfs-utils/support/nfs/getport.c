@@ -47,6 +47,7 @@
 
 #include "sockaddr.h"
 #include "nfsrpc.h"
+#include "nfslib.h"
 
 /*
  * Try a local socket first to access the local rpcbind daemon
@@ -109,7 +110,7 @@ static int nfs_gp_loopback_address(struct sockaddr *sap, socklen_t *salen)
 		ret = 1;
 	}
 
-	freeaddrinfo(gai_results);
+	nfs_freeaddrinfo(gai_results);
 	return ret;
 }
 
@@ -134,8 +135,8 @@ static in_port_t nfs_gp_getservbyname(const char *service,
 
 	sin = (const struct sockaddr_in *)gai_results->ai_addr;
 	port = sin->sin_port;
-	
-	freeaddrinfo(gai_results);
+
+	nfs_freeaddrinfo(gai_results);
 	return port;
 }
 

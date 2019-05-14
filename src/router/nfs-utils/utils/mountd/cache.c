@@ -113,7 +113,7 @@ static void auth_unix_ip(int f)
 		ai = client_resolve(tmp->ai_addr);
 		if (ai) {
 			client = client_compose(ai);
-			freeaddrinfo(ai);
+			nfs_freeaddrinfo(ai);
 		}
 	}
 	bp = buf; blen = sizeof(buf);
@@ -133,7 +133,7 @@ static void auth_unix_ip(int f)
 	xlog(D_CALL, "auth_unix_ip: client %p '%s'", client, client?client: "DEFAULT");
 
 	free(client);
-	freeaddrinfo(tmp);
+	nfs_freeaddrinfo(tmp);
 
 }
 
@@ -667,7 +667,7 @@ static struct addrinfo *lookup_client_addr(char *dom)
 	if (tmp == NULL)
 		return NULL;
 	ret = client_resolve(tmp->ai_addr);
-	freeaddrinfo(tmp);
+	nfs_freeaddrinfo(tmp);
 	return ret;
 }
 
@@ -834,7 +834,7 @@ static void nfsd_fh(int f)
 out:
 	if (found_path)
 		free(found_path);
-	freeaddrinfo(ai);
+	nfs_freeaddrinfo(ai);
 	free(dom);
 	xlog(D_CALL, "nfsd_fh: found %p path %s", found, found ? found->e_path : NULL);
 }
@@ -976,8 +976,9 @@ lookup_export(char *dom, char *path, struct addrinfo *ai)
 	return found;
 }
 
-#ifdef CONFIG_JUNCTION
+#ifdef HAVE_JUNCTION_SUPPORT
 
+#include <libxml/parser.h>
 #include "junction.h"
 
 struct nfs_fsloc_set {
@@ -1084,8 +1085,7 @@ static bool locations_to_fslocdata(struct nfs_fsloc_set *locations,
 	*ttl = 0;
 
 	for (;;) {
-		enum jp_status status;
-		int len;
+		int len, status;
 
 		status = get_next_location(locations, &server,
 							&rootpath, ttl);
@@ -1219,7 +1219,7 @@ nfs_get_basic_junction(const char *junct_path, struct nfs_fsloc_set **locset)
 		return EINVAL;
 	}
 
-	locset->ns_current = locset->ns_list;
+	new->ns_current = new->ns_list;
 	new->ns_ttl = 300;
 	*locset = new;
 	return 0;
@@ -1240,20 +1240,21 @@ static struct exportent *lookup_junction(char *dom, const char *pathname,
 		goto out;
 	}
 	status = nfs_get_basic_junction(pathname, &locations);
-	switch (status) {
+	if (status) {
 		xlog(L_WARNING, "Dangling junction %s: %s",
-			pathname, strerro(status));
+			pathname, strerror(status));
 		goto out;
 	}
 
 	parent = lookup_parent_export(dom, pathname, ai);
 	if (parent == NULL)
-		goto out;
+		goto free_locations;
 
 	exp = locations_to_export(locations, pathname, parent);
 
-	nfs_free_locations(locset->ns_list);
-	free(locset);
+free_locations:
+	nfs_free_locations(locations->ns_list);
+	free(locations);
 
 out:
 	xmlCleanupParser();
@@ -1273,7 +1274,7 @@ static void lookup_nonexport(int f, char *buf, int buflen, char *dom, char *path
 	free(eep);
 }
 
-#else	/* !CONFIG_JUNCTION */
+#else	/* !HAVE_JUNCTION_SUPPORT */
 
 static void lookup_nonexport(int f, char *buf, int buflen, char *dom, char *path,
 		struct addrinfo *UNUSED(ai))
@@ -1281,7 +1282,7 @@ static void lookup_nonexport(int f, char *buf, int buflen, char *dom, char *path
 	dump_to_cache(f, buf, buflen, dom, path, NULL, 0);
 }
 
-#endif	/* !CONFIG_JUNCTION */
+#endif	/* !HAVE_JUNCTION_SUPPORT */
 
 static void nfsd_export(int f)
 {
@@ -1355,7 +1356,7 @@ static void nfsd_export(int f)
 	xlog(D_CALL, "nfsd_export: found %p path %s", found, path ? path : NULL);
 	if (dom) free(dom);
 	if (path) free(path);
-	freeaddrinfo(ai);
+	nfs_freeaddrinfo(ai);
 }
 
 

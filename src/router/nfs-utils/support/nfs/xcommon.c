@@ -53,14 +53,17 @@ char *
 xstrconcat3 (const char *s, const char *t, const char *u) {
      char *res;
 
-     if (!s) s = "";
+     int dofree = 1;
+
+     if (!s) s = "", dofree=0;
      if (!t) t = "";
      if (!u) u = "";
      res = xmalloc(strlen(s) + strlen(t) + strlen(u) + 1);
      strcpy(res, s);
      strcat(res, t);
      strcat(res, u);
-     free((void *) s);
+     if (dofree)
+         free((void *) s);
      return res;
 }
 
@@ -69,7 +72,9 @@ char *
 xstrconcat4 (const char *s, const char *t, const char *u, const char *v) {
      char *res;
 
-     if (!s) s = "";
+     int dofree = 1;
+
+     if (!s) s = "", dofree=0;
      if (!t) t = "";
      if (!u) u = "";
      if (!v) v = "";
@@ -78,7 +83,8 @@ xstrconcat4 (const char *s, const char *t, const char *u, const char *v) {
      strcat(res, t);
      strcat(res, u);
      strcat(res, v);
-     free((void *) s);
+     if (dofree)
+         free((void *) s);
      return res;
 }
 

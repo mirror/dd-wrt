@@ -243,7 +243,7 @@ nsm_client_get_rpcclient(const char *node)
 		printf("RPC client creation failed\n");
 	}
 out:
-	freeaddrinfo(ai);
+	nfs_freeaddrinfo(ai);
 	return client;
 }
 
