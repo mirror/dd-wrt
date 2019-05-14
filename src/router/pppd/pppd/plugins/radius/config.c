@@ -153,6 +153,7 @@ static int set_option_auo(char *filename, int line, OPTION *option, char *p)
 			*iptr = AUTH_RADIUS_FST;
 	else {
 		error("%s: auth_order: unknown keyword: %s", filename, p);
+		free(iptr);
 		return (-1);
 	}
 
@@ -165,6 +166,7 @@ static int set_option_auo(char *filename, int line, OPTION *option, char *p)
 			*iptr = (*iptr) | AUTH_RADIUS_SND;
 		else {
 			error("%s: auth_order: unknown or unexpected keyword: %s", filename, p);
+			free(iptr);
 			return (-1);
 		}
 	}
@@ -272,7 +274,7 @@ char *rc_conf_str(char *optname)
 
 	if (option == NULL)
 		fatal("rc_conf_str: unkown config option requested: %s", optname);
-		return (char *)option->val;
+	return (char *)option->val;
 }
 
 int rc_conf_int(char *optname)

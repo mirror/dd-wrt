@@ -447,8 +447,12 @@ get_default_epdisc(ep)
 	if (p != 0 && get_if_hwaddr(ep->value, p) >= 0) {
 		ep->class = EPD_MAC;
 		ep->length = 6;
+		free(p);
 		return 1;
 	}
+
+	if (p)
+		free(p);
 
 	/* see if our hostname corresponds to a reasonable IP address */
 	hp = gethostbyname(hostname);

@@ -2222,7 +2222,6 @@ int ppp_available(void)
 		}
 	    }
 
-	    close (s);
 	    if (!ok) {
 #ifdef NEED_PRINTF
 		slprintf(route_buffer, sizeof(route_buffer),
@@ -2234,6 +2233,7 @@ int ppp_available(void)
 	    }
 	}
     }
+    close(s);
     return ok;
 }
 
@@ -2716,6 +2716,7 @@ get_pty(master_fdp, slave_fdp, slave_name, uid)
 	    if ((sfd = open(pty_name, O_RDWR | O_NOCTTY)) < 0)
 	    {
 		warn("Couldn't open pty slave %s: %m", pty_name);
+		close(mfd);
 	    }
 	}
     }

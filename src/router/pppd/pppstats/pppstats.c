@@ -149,7 +149,8 @@ get_ppp_stats(curp)
 #define ifr_name ifr__name
 #endif
 
-    strncpy(req.ifr_name, interface, sizeof(req.ifr_name));
+    strncpy(req.ifr_name, interface, IFNAMSIZ);
+    req.ifr_name[IFNAMSIZ - 1] = 0;
     if (ioctl(s, SIOCGPPPSTATS, &req) < 0) {
 	fprintf(stderr, "%s: ", progname);
 	if (errno == ENOTTY)
@@ -175,7 +176,8 @@ get_ppp_cstats(csp)
 #define ifr_name ifr__name
 #endif
 
-    strncpy(creq.ifr_name, interface, sizeof(creq.ifr_name));
+    strncpy(creq.ifr_name, interface, IFNAMSIZ);
+    creq.ifr_name[IFNAMSIZ - 1] = 0;
     if (ioctl(s, SIOCGPPPCSTATS, &creq) < 0) {
 	fprintf(stderr, "%s: ", progname);
 	if (errno == ENOTTY) {
@@ -521,7 +523,8 @@ main(argc, argv)
 #undef  ifr_name
 #define ifr_name ifr_ifrn.ifrn_name
 #endif
-	strncpy(ifr.ifr_name, interface, sizeof(ifr.ifr_name));
+	strncpy(ifr.ifr_name, interface, IFNAMSIZ);
+	ifr.ifr_name[IFNAMSIZ - 1] = 0;
 	if (ioctl(s, SIOCGIFFLAGS, (caddr_t)&ifr) < 0) {
 	    fprintf(stderr, "%s: nonexistent interface '%s' specified\n",
 		    progname, interface);
