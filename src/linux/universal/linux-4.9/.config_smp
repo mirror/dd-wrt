@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/i386 4.9.172 Kernel Configuration
+# Linux/i386 4.9.176 Kernel Configuration
 #
 # CONFIG_64BIT is not set
 CONFIG_X86_32=y
@@ -420,7 +420,7 @@ CONFIG_HPET_EMULATE_RTC=y
 CONFIG_APB_TIMER=y
 CONFIG_DMI=y
 CONFIG_NR_CPUS=32
-# CONFIG_SCHED_SMT is not set
+CONFIG_SCHED_SMT=y
 CONFIG_SCHED_MC=y
 CONFIG_PREEMPT_NONE=y
 # CONFIG_PREEMPT_VOLUNTARY is not set
