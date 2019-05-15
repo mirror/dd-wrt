@@ -388,6 +388,11 @@ ifeq ($(CONFIG_UAPACPRO),y)
 else
 	echo "# CONFIG_UAPACPRO is not set" >> $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_NANOAC),y)
+	echo CONFIG_NANOAC=y >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_NANOAC is not set" >> $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_DIR859),y)
 	echo CONFIG_DIR859=y >> $(LINUXDIR)/.config
 else
