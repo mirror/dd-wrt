@@ -1604,6 +1604,18 @@ int __init ar7240_platform_init(void)
 	ar71xx_eth1_data.duplex = DUPLEX_FULL;
 	ar71xx_eth1_pll_data.pll_1000 = 0x03000101;
 	ar71xx_add_device_eth(1);
+    #elif CONFIG_NANOAC
+	ar71xx_add_device_mdio(0, 0);	
+
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
+	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
+	ar71xx_eth0_data.phy_mask = BIT(0);
+	ar71xx_eth0_pll_data.pll_10 = 0x00001313;
+
+	mdiobus_register_board_info(wpj344_mdio0_info,
+	                            ARRAY_SIZE(wpj344_mdio0_info));
+
+	ar71xx_add_device_eth(0);
     #elif CONFIG_UAPACPRO
 	ar71xx_add_device_mdio(0, 0);	
 
