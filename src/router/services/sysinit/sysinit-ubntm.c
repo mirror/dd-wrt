@@ -174,7 +174,9 @@ void start_sysinit(void)
 		eval("vconfig", "add", "eth0", "1");
 		eval("vconfig", "add", "eth0", "2");
 	}
-
+#ifdef HAVE_NANOAC
+	nvram_set("no_ath9k","1");
+#endif
 	if (brand == ROUTER_BOARD_NS5MXW) {
 #ifdef HAVE_TMK
 		if (nvram_match("wan_proto", "disabled")) {
