@@ -191,6 +191,9 @@ endif
 ifeq ($(CONFIG_F5D8235),y)
 CFLAGS_EXTRA += -DHAVE_F5D8235
 endif
+ifeq ($(CONFIG_NANOAC),y)
+CFLAGS_EXTRA += -DHAVE_NANOAC
+endif
 ifeq ($(CONFIG_EAD),y)
 CFLAGS_EXTRA += -DHAVE_EAD
 endif
