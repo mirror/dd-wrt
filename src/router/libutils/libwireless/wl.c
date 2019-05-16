@@ -2803,6 +2803,7 @@ int getmaxvaps(const char *prefix)
 		return 16;
 	if (is_wil6210(prefix))
 		return 1;
+	return 8; // default
 }
 #endif
 static int HTtoVHTindex(int mcs)
