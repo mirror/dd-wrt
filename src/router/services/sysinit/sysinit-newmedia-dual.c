@@ -121,7 +121,7 @@ void start_sysinit(void)
 	eval("vconfig", "add", "ixp0", "1");
 	eval("vconfig", "add", "ixp0", "2");
 
-	detect_wireless_devices();
+	detect_wireless_devices(RADIO_ALL);
 
 	// load_drivers(); //load madwifi drivers
 	/*

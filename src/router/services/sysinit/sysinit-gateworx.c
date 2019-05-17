@@ -160,7 +160,7 @@ void start_sysinit(void)
 	if (detect_ethernet_devices())
 		nvram_seti("intel_eth", 1);
 
-	detect_wireless_devices();
+	detect_wireless_devices(RADIO_ALL);
 
 #if 1
 	fprintf(stderr, "load IXP helper\n");

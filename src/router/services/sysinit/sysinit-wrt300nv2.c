@@ -89,7 +89,7 @@ void start_sysinit(void)
 	system2("cat /usr/lib/firmware/NPE-C > /dev/misc/ixp4xx_ucode");
 #endif
 
-	detect_wireless_devices();
+	detect_wireless_devices(RADIO_ALL);
 	/*
 	 * Configure mac addresses by reading data from eeprom 
 	 */

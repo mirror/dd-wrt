@@ -91,7 +91,7 @@ void start_sysinit(void)
 #else
 	insmod("ar2313");
 #endif
-	detect_wireless_devices();
+	detect_wireless_devices(RADIO_ALL);
 	char macaddr[32];
 	if (getRouterBrand() == ROUTER_BOARD_RDAT81) {
 		writeprocsys("dev/wifi0/ledpin", "7");

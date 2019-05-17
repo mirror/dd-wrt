@@ -118,7 +118,7 @@ void start_sysinit(void)
 		nvram_set("et0macaddr", macaddr);
 		nvram_set("et0macaddr_safe", macaddr);
 	}
-	detect_wireless_devices();
+	detect_wireless_devices(RADIO_ALL);
 #ifdef HAVE_WRT400
 //      set_hwaddr("wifi0", mac1);
 //      set_hwaddr("wifi1", mac1);

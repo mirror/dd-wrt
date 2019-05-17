@@ -381,7 +381,7 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 		}
 
 	}
-	detect_wireless_devices();
+	detect_wireless_devices(RADIO_ALL);
 	return;
 }
 

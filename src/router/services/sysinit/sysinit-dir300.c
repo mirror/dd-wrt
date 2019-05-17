@@ -190,7 +190,7 @@ void start_sysinit(void)
 #else
 	insmod("ar2313");
 #endif
-	detect_wireless_devices();
+	detect_wireless_devices(RADIO_ALL);
 	// eval ("ifconfig", "wifi0", "up");
 	eval("ifconfig", "eth0", "up");	// wan
 	writeprocsys("dev/wifi0/ledpin", "2");

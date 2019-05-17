@@ -285,7 +285,7 @@ void start_sysinit(void)
 		nvram_set("et0macaddr", macaddr);
 		nvram_set("et0macaddr_safe", macaddr);
 	}
-	detect_wireless_devices();
+	detect_wireless_devices(RADIO_ALL);
 #ifdef HAVE_WRT160NL
 	MAC_ADD(buf2);
 	fprintf(stderr, "configure wifi0 to %s\n", buf2);

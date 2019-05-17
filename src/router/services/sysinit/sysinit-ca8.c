@@ -116,7 +116,7 @@ void start_sysinit(void)
 	vlan_init(0xff);	// 4 lan + 1 wan
 #endif
 
-	detect_wireless_devices();
+	detect_wireless_devices(RADIO_ALL);
 
 	/*
 	 * Set a sane date 
