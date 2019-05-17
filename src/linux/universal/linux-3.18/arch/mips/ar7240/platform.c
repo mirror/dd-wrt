@@ -775,6 +775,47 @@ static struct mdio_board_info wpj344_mdio0_info[] = {
 
 
 
+static struct ar8327_pad_cfg nanoac_ar8327_pad0_cfg = {
+	.mac06_exchange_dis = true,
+	.mode = AR8327_PAD_MAC_RGMII,
+	.txclk_delay_en = true,
+	.rxclk_delay_en = true,
+	.txclk_delay_sel = AR8327_CLK_DELAY_SEL1,
+	.rxclk_delay_sel = AR8327_CLK_DELAY_SEL2,
+};
+
+static struct ar8327_led_cfg nanoac_ar8327_led_cfg = {
+	.led_ctrl0 = 0x00000000,
+	.led_ctrl1 = 0x00000000,
+	.led_ctrl2 = 0xffb7ffb7,
+	.led_ctrl3 = 0x03ffff00,
+	.open_drain = true,
+};
+
+static struct ar8327_platform_data nanoac_ar8327_data = {
+	.pad0_cfg = &nanoac_ar8327_pad0_cfg,
+	.port0_cfg = {
+		.force_link = 1,
+		.speed = AR8327_PORT_SPEED_1000,
+		.duplex = 1,
+		.txpause = 1,
+		.rxpause = 1,
+	},
+	.led_cfg = &nanoac_ar8327_led_cfg,
+};
+
+static struct mdio_board_info nanoac_mdio0_info[] = {
+	{
+		.bus_id = "ag71xx-mdio.0",
+		.phy_addr = 0,
+		.platform_data = &nanoac_ar8327_data,
+	},
+};
+
+
+
+
+
 static struct ar8327_pad_cfg ap120c_ar8327_pad0_cfg = {
 	.mode = AR8327_PAD_MAC_RGMII,
 	.txclk_delay_en = true,
@@ -1355,6 +1396,7 @@ int __init ar7240_platform_init(void)
     #elif CONFIG_E355AC
     #elif CONFIG_WR650AC	
     	ap136_gmac_setup(QCA955X_ETH_CFG_RGMII_EN);
+    #elif CONFIG_NANOAC
     #elif CONFIG_UAPAC
     	ap136_gmac_setup(QCA955X_ETH_CFG_RGMII_EN | QCA955X_ETH_CFG_GE0_SGMII | (3 << QCA955X_ETH_CFG_RXD_DELAY_SHIFT) | (3 << QCA955X_ETH_CFG_RDV_DELAY_SHIFT));
     #elif CONFIG_XWM400
@@ -1605,17 +1647,46 @@ int __init ar7240_platform_init(void)
 	ar71xx_eth1_pll_data.pll_1000 = 0x03000101;
 	ar71xx_add_device_eth(1);
     #elif CONFIG_NANOAC
+/*	base = ioremap(AR934X_GMAC_BASE, AR934X_GMAC_SIZE);
+	t = __raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
+
+	t &= ~(AR934X_ETH_CFG_RGMII_GMAC0 |
+	       AR934X_ETH_CFG_MII_GMAC0 |
+	       AR934X_ETH_CFG_GMII_GMAC0 |
+	       AR934X_ETH_CFG_SW_ONLY_MODE |
+	       AR934X_ETH_CFG_SW_PHY_SWAP);
+	t |= AR934X_ETH_CFG_RGMII_GMAC0 | AR934X_ETH_CFG_SW_ONLY_MODE;
+
+	__raw_writel(t, base + AR934X_GMAC_REG_ETH_CFG);
+	__raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
+	iounmap(base);*/
+
+//	ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_RGMII_GMAC0);
+	ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_RGMII_GMAC0 | AR934X_ETH_CFG_SW_ONLY_MODE);
+//	ath79_setup_ar934x_eth_rx_delay(3, 3);
+
 	ar71xx_add_device_mdio(0, 0);	
 
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
 	ar71xx_eth0_data.phy_mask = BIT(0);
-	ar71xx_eth0_pll_data.pll_10 = 0x00001313;
+	ar71xx_eth0_pll_data.pll_1000 = 0x06000000;
+//	ar71xx_eth0_pll_data.pll_100 = 0x00000101;
+//	ar71xx_eth0_pll_data.pll_10 = 0x00001313;
 
-	mdiobus_register_board_info(wpj344_mdio0_info,
-	                            ARRAY_SIZE(wpj344_mdio0_info));
+//	mdiobus_register_board_info(at803_mdio_info,
+//			ARRAY_SIZE(at803_mdio_info));
+	mdiobus_register_board_info(nanoac_mdio0_info,
+	                            ARRAY_SIZE(nanoac_mdio0_info));
 
 	ar71xx_add_device_eth(0);
+/*	ar71xx_add_device_mdio(1, 0x0);
+	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
+	ar71xx_eth1_data.mii_bus_dev = &ar71xx_mdio1_device.dev;
+	ar71xx_eth1_data.speed = SPEED_1000;
+	ar71xx_eth1_data.phy_mask = BIT(4);
+	ar71xx_eth1_data.duplex = DUPLEX_FULL;
+	ar71xx_add_device_eth(1);*/
     #elif CONFIG_UAPACPRO
 	ar71xx_add_device_mdio(0, 0);	
 
