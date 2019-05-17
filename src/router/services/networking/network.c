@@ -1599,6 +1599,7 @@ void start_lan(void)
 		devnum = 2;
 		break;
 	case ROUTER_BOARD_NS5MXW:
+	case ROUTER_UBNT_NANOAC:
 		devnum = 2;
 		vlan = 1;
 		break;
