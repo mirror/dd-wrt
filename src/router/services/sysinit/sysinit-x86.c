@@ -220,7 +220,7 @@ void start_sysinit(void)
 
 	}
 
-	detect_wireless_devices();
+	detect_wireless_devices(RADIO_ALL);
 
 	mknod("/dev/rtc", S_IFCHR | 0644, makedev(253, 0));
 #ifdef HAVE_CPUTEMP

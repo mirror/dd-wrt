@@ -215,7 +215,7 @@ void start_sysinit(void)
 	insmod("ar2313");
 #endif
 
-	detect_wireless_devices();
+	detect_wireless_devices(RADIO_ALL);
 
 	writeprocsys("dev/wifi0/ledpin", "2");
 	writeprocsys("dev/wifi0/softled", "1");

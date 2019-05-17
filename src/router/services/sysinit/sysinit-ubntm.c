@@ -72,7 +72,7 @@ void start_sysinit(void)
 	 */
 	fprintf(stderr, "load ATH Ethernet Driver\n");
 	system("insmod ag71xx || insmod ag7240_mod");
-
+	nvram_set("console_debug", "1");
 #ifdef HAVE_WPE72
 	FILE *fp = fopen("/dev/mtdblock/6", "rb");
 #else
@@ -142,14 +142,17 @@ void start_sysinit(void)
 	eval("vconfig", "add", "eth0", "1");
 	eval("vconfig", "add", "eth0", "2");
 #else
-	eval("swconfig", "dev", "eth1", "set", "reset", "1");
-	eval("swconfig", "dev", "eth1", "set", "enable_vlan", "0");
-	eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports", "0 1 2 3 4");
-	eval("swconfig", "dev", "eth1", "set", "apply");
+//      eval("swconfig", "dev", "eth1", "set", "reset", "1");
+//      eval("swconfig", "dev", "eth1", "set", "enable_vlan", "0");
+//      eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports", "0 1 2 3 4");
+//      eval("swconfig", "dev", "eth1", "set", "apply");
 #endif
 #endif
 	int brand = getRouterBrand();
-	if (brand == ROUTER_UBNT_UAPAC || brand == ROUTER_UBNT_UAPACPRO) {
+	switch (brand) {
+	case ROUTER_UBNT_UAPAC:
+	case ROUTER_UBNT_UAPACPRO:
+	case ROUTER_UBNT_NANOAC:
 		fp = fopen("/dev/mtdblock/5", "rb");
 		FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
 		if (fp) {
@@ -162,8 +165,11 @@ void start_sysinit(void)
 			eval("rm", "-f", "/tmp/ath10k-board.bin");
 			eval("ln", "-s", "/tmp/archerc7-board.bin", "/tmp/ath10k-board.bin");
 		}
+		break;
 	}
-	if (brand == ROUTER_UBNT_UAPACPRO) {
+	switch (brand) {
+	case ROUTER_UBNT_UAPACPRO:
+//      case ROUTER_NANOAC:
 		eval("swconfig", "dev", "eth0", "set", "reset", "1");
 		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2");
@@ -173,11 +179,8 @@ void start_sysinit(void)
 		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("vconfig", "add", "eth0", "1");
 		eval("vconfig", "add", "eth0", "2");
-	}
-#ifdef HAVE_NANOAC
-	nvram_set("no_ath9k","1");
-#endif
-	if (brand == ROUTER_BOARD_NS5MXW) {
+		break;
+	case ROUTER_BOARD_NS5MXW:
 #ifdef HAVE_TMK
 		if (nvram_match("wan_proto", "disabled")) {
 			eval("swconfig", "dev", "eth0", "set", "reset", "1");
@@ -213,9 +216,16 @@ void start_sysinit(void)
 			MAC_ADD(macaddr);
 			set_hwaddr("vlan2", macaddr);
 		}
+		break;
 	}
 
-	detect_wireless_devices();
+	switch (brand) {
+	case ROUTER_UBNT_NANOAC:
+		detect_wireless_devices(RADIO_ATH10K); // do not load ath9k. the device has a wmac radio which is not connected to any antenna
+		break;
+	default:
+		detect_wireless_devices(RADIO_ALL);
+	}
 
 #ifdef HAVE_WPE72
 	if (!nvram_matchi("wlanled", 0))
@@ -235,12 +245,16 @@ void start_sysinit(void)
 	if (!nvram_matchi("wlanled", 0))
 		eval("/sbin/wlanled", "-L", "generic_14:-94", "-L", "generic_15:-76", "-L", "generic_16:-65");
 #elif HAVE_UBNTXW
-	if (brand == ROUTER_UBNT_UAPAC || brand == ROUTER_UBNT_UAPACPRO) {
+	switch (brand) {
+	case ROUTER_UBNT_UAPAC:
+	case ROUTER_UBNT_UAPACPRO:
 		setWirelessLed(0, 7);
 		setWirelessLed(1, 8);
-	} else if (brand == ROUTER_BOARD_UNIFI_V2) {
+		break;
+	case ROUTER_BOARD_UNIFI_V2:
 		setWirelessLed(0, 14);
-	} else {
+		break;
+	default:
 		writeprocsys("dev/wifi0/softled", "0");
 		if (!nvram_matchi("wlanled", 0))
 			eval("/sbin/wlanled", "-L", "generic_11:-94", "-L", "generic_16:-80", "-l", "generic_13:-73", "-L", "generic_14:-65");

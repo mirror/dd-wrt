@@ -113,7 +113,7 @@ void start_sysinit(void)
 		nvram_set("et0macaddr_safe", macaddr);
 	}
 
-	detect_wireless_devices();
+	detect_wireless_devices(RADIO_ALL);
 #ifndef HAVE_ALFAAP94
 	setWirelessLed(0, 5);
 	setWirelessLed(1, 4);

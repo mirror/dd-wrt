@@ -304,7 +304,7 @@ void start_sysinit(void)
 	/*
 	 * network drivers 
 	 */
-	detect_wireless_devices();
+	detect_wireless_devices(RADIO_ALL);
 
 	if (!nvram_matchi("disable_watchdog", 1))
 		eval("watchdog");

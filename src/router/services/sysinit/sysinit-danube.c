@@ -205,7 +205,7 @@ void start_sysinit(void)
 	sysprintf("/usr/sbin/dsl_cpe_control -i%s -f %s -n /usr/sbin/dsl_notification.sh &", initcode, annexfw);
 
 	eval("ifconfig", "eth0", "up");
-	detect_wireless_devices();
+	detect_wireless_devices(RADIO_ALL);
 
 	char macaddr[32];
 	if (get_hwaddr("eth0", macaddr)) {
