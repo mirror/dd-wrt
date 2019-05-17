@@ -72,7 +72,6 @@ void start_sysinit(void)
 	 */
 	fprintf(stderr, "load ATH Ethernet Driver\n");
 	system("insmod ag71xx || insmod ag7240_mod");
-	nvram_set("console_debug", "1");
 #ifdef HAVE_WPE72
 	FILE *fp = fopen("/dev/mtdblock/6", "rb");
 #else
@@ -169,7 +168,7 @@ void start_sysinit(void)
 	}
 	switch (brand) {
 	case ROUTER_UBNT_UAPACPRO:
-//      case ROUTER_NANOAC:
+        case ROUTER_NANOAC:
 		eval("swconfig", "dev", "eth0", "set", "reset", "1");
 		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2");
