@@ -781,6 +781,8 @@
 
 #define ROUTER_BOARD_XD9531 0x10810d
 
+#define ROUTER_UBNT_NANOAC 0x109102
+
 #define NVROUTER "DD_BOARD"
 #define NVROUTER_ALT "alternate_name"
 
