@@ -168,7 +168,7 @@ void start_sysinit(void)
 	}
 	switch (brand) {
 	case ROUTER_UBNT_UAPACPRO:
-        case ROUTER_NANOAC:
+        case ROUTER_UBNT_NANOAC:
 		eval("swconfig", "dev", "eth0", "set", "reset", "1");
 		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2");
