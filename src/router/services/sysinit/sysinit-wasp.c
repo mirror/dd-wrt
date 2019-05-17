@@ -537,7 +537,7 @@ void start_sysinit(void)
 		eval("ln", "-s", "/tmp/archerc7-board.bin", "/tmp/ath10k-board.bin");
 	}
 #endif
-	detect_wireless_devices();
+	detect_wireless_devices(RADIO_ALL);
 #ifdef HAVE_RAMBUTAN
 	mount("/dev/ubi0_2", "/jffs", "ubifs", MS_MGC_VAL, NULL);
 #endif

@@ -247,7 +247,7 @@ void start_sysinit(void)
 		nvram_set("et0macaddr", macaddr);
 		nvram_set("et0macaddr_safe", macaddr);
 	}
-	detect_wireless_devices();
+	detect_wireless_devices(RADIO_ALL);
 #ifdef HAVE_WZRHPAG300NH
 //      set_hwaddr("wifi1", wmac);
 	setWirelessLedPhy0(1);

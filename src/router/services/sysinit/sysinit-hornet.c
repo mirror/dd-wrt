@@ -222,7 +222,7 @@ void start_sysinit(void)
 #endif
 #endif
 
-	detect_wireless_devices();
+	detect_wireless_devices(RADIO_ALL);
 #ifndef HAVE_ERC
 	setWirelessLed(0, 0);
 #endif

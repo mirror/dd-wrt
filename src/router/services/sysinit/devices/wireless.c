@@ -86,7 +86,14 @@ static void load_mac80211(void)
 
 }
 
-static void detect_wireless_devices(void)
+#define RADIO_ALL 0xff
+#define RADIO_ATH9K 0x1
+#define RADIO_ATH10K 0x2
+#define RADIO_LEGACY 0x4
+#define RADIO_BRCMFMAC 0x8
+#define RADIO_WIL6210 0x10
+
+static void detect_wireless_devices(int mask)
 {
 	int loadath9k = 1;
 	int loadlegacy = 1;
@@ -196,7 +203,7 @@ static void detect_wireless_devices(void)
 #ifndef HAVE_NOWIFI
 	nvram_default_get("rate_control", "minstrel");
 #ifdef HAVE_MADWIFI
-	if (loadlegacy) {
+	if (loadlegacy && (mask & RADIO_LEGACY)) {
 		fprintf(stderr, "load ATH 802.11 a/b/g Driver\n");
 		insmod("ath_hal");
 		if (nvram_exists("rate_control")) {
@@ -218,15 +225,16 @@ static void detect_wireless_devices(void)
 			// some are just for future use and not (yet) there
 			insmod("ath");
 #ifdef HAVE_ATH5K
-			if (loadath5k) {
+			if (loadath5k && (mask & RADIO_LEGACY)) {
 				fprintf(stderr, "load ATH5K 802.11 Driver\n");
 				insmod("ath5k");
 			}
 #endif
-			if (!nvram_match("no_ath9k", "1")) {
+			if (!nvram_match("no_ath9k", "1") && (mask & RADIO_ATH9K)) {
 				int od = nvram_default_geti("power_overdrive", 0);
 				char overdrive[32];
 				sprintf(overdrive, "overdrive=%d", od);
+
 #ifdef HAVE_WZRG450
 				eval("insmod", "ath9k", overdrive, "blink=1");
 #elif HAVE_PERU
@@ -247,17 +255,23 @@ static void detect_wireless_devices(void)
 
 #ifdef HAVE_ATH10K
 	fprintf(stderr, "load ATH/QCA 802.11ac Driver\n");
-	insmod("hwmon");
-	insmod("thermal_sys");
-	insmod("ath10k");
+	if ((mask & RADIO_ATH10K)) {
+		insmod("hwmon");
+		insmod("thermal_sys");
+		insmod("ath10k");
+	}
 #endif
 #ifdef HAVE_WIL6210
-	eval("insmod", "wil6210", "led_id=2");
+	if ((mask & RADIO_WIL6210)) {
+		eval("insmod", "wil6210", "led_id=2");
+	}
 #endif
 #ifdef HAVE_BRCMFMAC
-	fprintf(stderr, "load Broadcom FMAC Driver\n");
-	insmod("brcmutil");
-	insmod("brcmfmac");
+	if ((mask & RADIO_BRCMFMAC)) {
+		fprintf(stderr, "load Broadcom FMAC Driver\n");
+		insmod("brcmutil");
+		insmod("brcmfmac");
+	}
 #endif
 
 #endif

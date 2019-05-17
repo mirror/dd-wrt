@@ -94,7 +94,7 @@ void start_sysinit(void)
 		nvram_set("lan_hwaddr", macaddr);
 	}
 
-	detect_wireless_devices();
+	detect_wireless_devices(RADIO_ALL);
 
 	/*
 	 * Set a sane date 

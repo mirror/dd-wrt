@@ -115,7 +115,7 @@ void start_sysinit(void)
 	 * insmod("des"); insmod("michael_mic"); insmod("cast5");
 	 * insmod("crypto_null"); 
 	 */
-	detect_wireless_devices();
+	detect_wireless_devices(RADIO_ALL);
 
 	/*
 	 * Set a sane date 

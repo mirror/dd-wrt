@@ -506,7 +506,7 @@ void start_sysinit(void)
 		break;
 	}
 
-	detect_wireless_devices();
+	detect_wireless_devices(RADIO_ALL);
 
 	switch (board) {
 	case ROUTER_NETGEAR_R7800:	// why is this extra? looks like the default one

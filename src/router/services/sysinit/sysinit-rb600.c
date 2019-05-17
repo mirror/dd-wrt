@@ -199,7 +199,7 @@ void start_sysinit(void)
 	/*
 	 * network drivers 
 	 */
-	detect_wireless_devices();
+	detect_wireless_devices(RADIO_ALL);
 
 	char macaddr[32];
 	if (get_hwaddr("eth0", macaddr)) {

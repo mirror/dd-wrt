@@ -160,7 +160,7 @@ void start_sysinit(void)
 		nvram_set("et0macaddr_safe", macaddr);
 	}
 
-	detect_wireless_devices();
+	detect_wireless_devices(RADIO_ALL);
 
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 

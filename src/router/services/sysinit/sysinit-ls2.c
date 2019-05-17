@@ -100,7 +100,7 @@ void start_sysinit(void)
 #else
 	insmod("ar2313");
 #endif
-	detect_wireless_devices();
+	detect_wireless_devices(RADIO_ALL);
 
 #ifdef HAVE_BWRG1000
 	eval("ifconfig", "eth0", "up");	// wan
