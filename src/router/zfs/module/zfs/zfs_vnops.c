@@ -822,6 +822,7 @@ zfs_write(struct inode *ip, uio_t *uio, int ioflag, cred_t *cr)
 			uio->uio_fault_disable = B_TRUE;
 			error = dmu_write_uio_dbuf(sa_get_db(zp->z_sa_hdl),
 			    uio, nbytes, tx);
+			uio->uio_fault_disable = B_FALSE;
 			if (error == EFAULT) {
 				dmu_tx_commit(tx);
 				if (uio_prefaultpages(MIN(n, max_blksz), uio)) {
@@ -2656,6 +2657,12 @@ zfs_getattr_fast(struct inode *ip, struct kstat *sp)
 	mutex_enter(&zp->z_lock);
 
 	generic_fillattr(ip, sp);
+	/*
+	 * +1 link count for root inode with visible '.zfs' directory.
+	 */
+	if ((zp->z_id == zfsvfs->z_root) && zfs_show_ctldir(zp))
+		if (sp->nlink < ZFS_LINK_MAX)
+			sp->nlink++;
 
 	sa_object_size(zp->z_sa_hdl, &blksize, &nblocks);
 	sp->blksize = blksize;
