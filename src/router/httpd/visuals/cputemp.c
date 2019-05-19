@@ -114,6 +114,7 @@ int getCoreTemp(char *p, int *ridx)
 void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 {
 	int i, cpufound = 0;
+	int disable_wifitemp = 0;
 	FILE *fp = NULL;
 	FILE *fpsys = NULL;
 #ifdef HAVE_MVEBU
@@ -141,6 +142,11 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	show_temp(wp, 1, 1, "CPU %d.%d &#176;C");
 	cpufound = 1;
 #elif defined(HAVE_IPQ806X)
+	char *wifiname0 = getWifiDeviceName("ath0");
+	char *wifiname1 = getWifiDeviceName("ath1");
+	if ((wifiname0 && !strcmp(wifiname0, "QCA99X0 802.11ac")) || (wifiname1 && !strcmp(wifiname1, "QCA99X0 802.11ac"))) {
+		disable_wifitemp = 1;
+	}
 	show_temp(wp, "CPU %d.%d &#176;C");
 	cpufound = 1;
 #endif
@@ -334,33 +340,35 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 #endif
 	FILE *fp2 = NULL;
 #ifdef HAVE_ATH10K
-	int c = getdevicecount();
-	for (i = 0; i < c; i++) {
-		if (nvram_nmatch("disabled", "ath%d_net_mode", i)) {
-			continue;
-		}
-		char path[64];
-		int scan = 0;
-		for (scan = 0; scan < 20; scan++) {
-			sprintf(path, "/sys/class/ieee80211/phy%d/device/hwmon/hwmon%d/temp1_input", i, scan);
-			fp2 = fopen(path, "rb");
-			if (fp2)
-				break;
-		}
-
-		if (fp2 != NULL) {
-			int temp;
-			fscanf(fp2, "%d", &temp);
-			fclose(fp2);
-			if (cpufound) {
-				websWrite(wp, " / ");
+	if (!disable_wifitemp) {
+		int c = getdevicecount();
+		for (i = 0; i < c; i++) {
+			if (nvram_nmatch("disabled", "ath%d_net_mode", i)) {
+				continue;
 			}
-			int temperature = temp / 1000;
-			if (temperature < 0 || temperature > 200)
-				websWrite(wp, "ath%d %s", i, live_translate(wp, "status_router.notavail"));
-			else
-				websWrite(wp, "ath%d %d &#176;C", i, temp / 1000);
-			cpufound = 1;
+			char path[64];
+			int scan = 0;
+			for (scan = 0; scan < 20; scan++) {
+				sprintf(path, "/sys/class/ieee80211/phy%d/device/hwmon/hwmon%d/temp1_input", i, scan);
+				fp2 = fopen(path, "rb");
+				if (fp2)
+					break;
+			}
+
+			if (fp2 != NULL) {
+				int temp;
+				fscanf(fp2, "%d", &temp);
+				fclose(fp2);
+				if (cpufound) {
+					websWrite(wp, " / ");
+				}
+				int temperature = temp / 1000;
+				if (temperature < 0 || temperature > 200)
+					websWrite(wp, "ath%d %s", i, live_translate(wp, "status_router.notavail"));
+				else
+					websWrite(wp, "ath%d %d &#176;C", i, temp / 1000);
+				cpufound = 1;
+			}
 		}
 	}
 #endif
