@@ -4191,10 +4191,15 @@ ZEND_METHOD(reflection_class, getMethods)
 {
 	reflection_object *intern;
 	zend_class_entry *ce;
-	zend_long filter = ZEND_ACC_PPP_MASK | ZEND_ACC_ABSTRACT | ZEND_ACC_FINAL | ZEND_ACC_STATIC;
+	zend_long filter = 0;
+	zend_bool filter_is_null = 1;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|l", &filter) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|l!", &filter, &filter_is_null) == FAILURE) {
 		return;
+	}
+
+	if (filter_is_null) {
+		filter = ZEND_ACC_PPP_MASK | ZEND_ACC_ABSTRACT | ZEND_ACC_FINAL | ZEND_ACC_STATIC;
 	}
 
 	GET_REFLECTION_OBJECT_PTR(ce);
@@ -4377,10 +4382,15 @@ ZEND_METHOD(reflection_class, getProperties)
 {
 	reflection_object *intern;
 	zend_class_entry *ce;
-	zend_long filter = ZEND_ACC_PPP_MASK | ZEND_ACC_STATIC;
+	zend_long filter = 0;
+	zend_bool filter_is_null = 1;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|l", &filter) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|l!", &filter, &filter_is_null) == FAILURE) {
 		return;
+	}
+	
+	if (filter_is_null) {
+		filter = ZEND_ACC_PPP_MASK | ZEND_ACC_STATIC;
 	}
 
 	GET_REFLECTION_OBJECT_PTR(ce);
@@ -4710,6 +4720,10 @@ ZEND_METHOD(reflection_class, newInstance)
 		for (i = 0; i < num_args; i++) {
 			zval_ptr_dtor(&params[i]);
 		}
+
+		if (EG(exception)) {
+			zend_object_store_ctor_failed(Z_OBJ_P(return_value));
+		}
 		if (ret == FAILURE) {
 			php_error_docref(NULL, E_WARNING, "Invocation of %s's constructor failed", ZSTR_VAL(ce->name));
 			zval_ptr_dtor(return_value);
@@ -4809,6 +4823,10 @@ ZEND_METHOD(reflection_class, newInstanceArgs)
 				zval_ptr_dtor(&params[i]);
 			}
 			efree(params);
+		}
+
+		if (EG(exception)) {
+			zend_object_store_ctor_failed(Z_OBJ_P(return_value));
 		}
 		if (ret == FAILURE) {
 			zval_ptr_dtor(&retval);
