@@ -1023,7 +1023,7 @@ cli_server.color = On
 ; the sqlite_dbpage virtual table.
 ; https://www.sqlite.org/c3ref/c_dbconfig_defensive.html
 ; (for older SQLite versions, this flag has no use)
-sqlite3.defensive = 1
+;sqlite3.defensive = 1
 
 [Pcre]
 ; PCRE library backtracking limit.
@@ -1718,6 +1718,11 @@ zend.assertions = -1
 ; is activated.
 ; Default: mbstring.http_output_conv_mimetype=^(text/|application/xhtml\+xml)
 ;mbstring.http_output_conv_mimetype=
+
+; This directive specifies maximum stack depth for mbstring regular expressions. It is similar
+; to the pcre.recursion_limit for PCRE. 
+; Default: 100000
+;mbstring.regex_stack_limit=100000
 
 [gd]
 ; Tell the jpeg decode to ignore warnings and try to create
