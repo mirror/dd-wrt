@@ -1,6 +1,72 @@
 PHP                                                                        NEWS
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-04 April 2019, PHP 7.3.4
+02 May 2019, PHP 7.3.5
+
+- Core:
+  . Fixed bug #77903 (ArrayIterator stops iterating after offsetSet call).
+    (Nikita)
+
+- CLI:
+  . Fixed bug #77794 (Incorrect Date header format in built-in server).
+    (kelunik)
+
+- EXIF
+  . Fixed bug #77950 (Heap-buffer-overflow in _estrndup via exif_process_IFD_TAG). 
+    (CVE-2019-11036) (Stas)
+
+- Interbase:
+  . Fixed bug #72175 (Impossibility of creating multiple connections to
+    Interbase with php 7.x). (Nikita)
+
+- Intl:
+  . Fixed bug #77895 (IntlDateFormatter::create fails in strict mode if $locale
+    = null). (Nikita)
+
+- litespeed:
+  . LiteSpeed SAPI 7.3.1, better process management, new API function
+    litespeed_finish_request(). (George Wang)
+
+- LDAP:
+  . Fixed bug #77869 (Core dump when using server controls) (mcmic)
+
+- Mail
+  . Fixed bug #77821 (Potential heap corruption in TSendMail()). (cmb)
+
+- mbstring:
+  . Implemented FR #72777 (Implement regex stack limits for mbregex functions).
+    (Yasuo Ohgaki, Stas)
+
+- MySQLi:
+  . Fixed bug #77773 (Unbuffered queries leak memory - MySQLi / mysqlnd).
+    (Nikita)
+
+- PCRE:
+  . Fixed bug #77827 (preg_match does not ignore \r in regex flags). (requinix,
+    cmb)
+
+- PDO:
+  . Fixed bug #77849 (Disable cloning of PDO handle/connection objects).
+    (camporter)
+
+- phpdbg:
+  . Fixed bug #76801 (too many open files). (alekitto)
+  . Fixed bug #77800 (phpdbg segfaults on listing some conditional breakpoints).
+    (krakjoe)
+  . Fixed bug #77805 (phpdbg build fails when readline is shared). (krakjoe)
+
+- Reflection:
+  . Fixed bug #77772 (ReflectionClass::getMethods(null) doesn't work). (Nikita)
+  . Fixed bug #77882 (Different behavior: always calls destructor). (Nikita)
+
+- Standard:
+  . Fixed bug #77793 (Segmentation fault in extract() when overwriting
+    reference with itself). (Nikita)
+  . Fixed bug #77844 (Crash due to null pointer in parse_ini_string with
+    INI_SCANNER_TYPED). (Nikita)
+  . Fixed bug #77853 (Inconsistent substr_compare behaviour with empty
+    haystack). (Nikita)
+
+04 Apr 2019, PHP 7.3.4
 
 - Core:
   . Fixed bug #77738 (Nullptr deref in zend_compile_expr). (Laruence)
@@ -27,8 +93,10 @@ PHP                                                                        NEWS
   . Fixed bug #77578 (Crash when php unload). (cmb)
 
 - EXIF:
-  . Fixed bug #77753 (Heap-buffer-overflow in php_ifd_get32s). (Stas)
-  . Fixed bug #77831 (Heap-buffer-overflow in exif_iif_add_value). (Stas)
+  . Fixed bug #77753 (Heap-buffer-overflow in php_ifd_get32s). (CVE-2019-11034)
+    (Stas)
+  . Fixed bug #77831 (Heap-buffer-overflow in exif_iif_add_value). 
+    (CVE-2019-11035) (Stas)
 
 - FPM:
   . Fixed bug #77677 (FPM fails to build on AIX due to missing WCOREDUMP).
@@ -45,8 +113,12 @@ PHP                                                                        NEWS
   . Fixed bug #77743 (Incorrect pi node insertion for jmpznz with identical
     successors). (Nikita)
 
+- PCRE:
+  . Fixed bug #76127 (preg_split does not raise an error on invalid UTF-8).
+    (Nikita)
+
 - Phar:
-  . Fxied bug #77697 (Crash on Big_Endian platform). (Laruence)
+  . Fixed bug #77697 (Crash on Big_Endian platform). (Laruence)
 
 - phpdbg:
   . Fixed bug #77767 (phpdbg break cmd aliases listed in help do not match
@@ -577,7 +649,7 @@ PHP                                                                        NEWS
 - pgsql:
   . Added new error constants for pg_result_error(): PGSQL_DIAG_SCHEMA_NAME,
     PGSQL_DIAG_TABLE_NAME, PGSQL_DIAG_COLUMN_NAME, PGSQL_DIAG_DATATYPE_NAME,
-    PGSQL_DIAG_CONSTRAINT_NAME and PGSQL_DIAG_SEVERITY_NONLOCALIZED. (Kalle) 
+    PGSQL_DIAG_CONSTRAINT_NAME and PGSQL_DIAG_SEVERITY_NONLOCALIZED. (Kalle)
   . Fixed bug #77047 (pg_convert has a broken regex for the 'TIME WITHOUT
     TIMEZONE' data type). (Andy Gajetzki)
 

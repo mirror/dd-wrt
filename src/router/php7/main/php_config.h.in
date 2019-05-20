@@ -1402,6 +1402,9 @@
 #undef HAVE_PHPDBG
 
 /* */
+#undef HAVE_PHPDBG_READLINE
+
+/* */
 #undef HAVE_PHP_SESSION
 
 /* Define to 1 if you have the `poll' function. */
