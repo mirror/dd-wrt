@@ -645,6 +645,9 @@ endif
 ifeq ($(CONFIG_X86),y)
   CFLAGS += -DHAVE_X86
 endif
+ifeq ($(CONFIG_X64),y)
+  CFLAGS += -DHAVE_X64
+endif
 ifeq ($(CONFIG_3G),y)
   CFLAGS += -DHAVE_3G
   OBJS += libutils/lib3g.o
