@@ -1080,8 +1080,13 @@ int internal_getRouterBrand()
 	}
 	fclose(fp);
 	name[len] = 0;
-	if (!strncmp(name, "To be filled", 12))
+	if (!strncmp(name, "To be filled", 12)) {
+#ifdef HAVE_X64
+		setRouter("Generic X86_64");
+#else
 		setRouter("Generic X86");
+#endif
+	}
 	else
 		setRouter(name);
 	return ROUTER_BOARD_X86;
