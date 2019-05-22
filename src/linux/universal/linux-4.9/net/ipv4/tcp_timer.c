@@ -245,10 +245,10 @@ static int tcp_write_timeout(struct sock *sk)
 			if (tcp_out_of_resources(sk, do_reset))
 				return 1;
 		}
+	    expired = retransmits_timed_out(sk, retry_until, syn_set ? 0 : icsk->icsk_user_timeout, syn_set);
 	}
 
-	if (retransmits_timed_out(sk, retry_until,
-				  syn_set ? 0 : icsk->icsk_user_timeout, syn_set)) {
+	if (expired) {
 		/* Has it gone just too far? */
 		tcp_write_err(sk);
 		return 1;
@@ -296,6 +296,7 @@ void tcp_delack_timer_handler(struct sock *sk)
 			icsk->icsk_ack.pingpong = 0;
 			icsk->icsk_ack.ato      = TCP_ATO_MIN;
 		}
+		tcp_mstamp_refresh(tcp_sk(sk));
 		tcp_send_ack(sk);
 		__NET_INC_STATS(sock_net(sk), LINUX_MIB_DELAYEDACKS);
 	}
@@ -357,7 +358,8 @@ static void tcp_probe_timer(struct sock *sk)
 	if (!start_ts)
 		tcp_send_head(sk)->skb_mstamp = tp->tcp_mstamp;
 	else if (icsk->icsk_user_timeout &&
-		 (s32)(tcp_time_stamp(tp) - start_ts) > icsk->icsk_user_timeout)
+		 (s32)(tcp_time_stamp(tp) - start_ts) >
+		 jiffies_to_msecs(icsk->icsk_user_timeout))
 		goto abort;
 
 	max_probes = sock_net(sk)->ipv4.sysctl_tcp_retries2;
@@ -657,6 +659,7 @@ static void tcp_keepalive_timer (unsigned long data)
 		goto out;
 	}
 
+	tcp_mstamp_refresh(tp);
 	if (sk->sk_state == TCP_FIN_WAIT2 && sock_flag(sk, SOCK_DEAD)) {
 		if (tp->linger2 >= 0) {
 			const int tmo = tcp_fin_time(sk) - TCP_TIMEWAIT_LEN;
