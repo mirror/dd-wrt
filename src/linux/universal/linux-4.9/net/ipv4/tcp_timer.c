@@ -197,7 +197,7 @@ static int tcp_write_timeout(struct sock *sk)
 	struct tcp_sock *tp = tcp_sk(sk);
 	struct net *net = sock_net(sk);
 	int retry_until;
-	bool do_reset, syn_set = false;
+	bool expired, do_reset, syn_set = false;
 
 	if ((1 << sk->sk_state) & (TCPF_SYN_SENT | TCPF_SYN_RECV)) {
 		if (icsk->icsk_retransmits) {
