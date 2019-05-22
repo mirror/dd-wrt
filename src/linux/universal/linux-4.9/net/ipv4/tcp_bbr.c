@@ -875,7 +875,8 @@ static void bbr_update_min_rtt(struct sock *sk, const struct rate_sample *rs)
 	filter_expired = after(tcp_jiffies32,
 			       bbr->min_rtt_stamp + bbr_min_rtt_win_sec * HZ);
 	if (rs->rtt_us >= 0 &&
-	    (rs->rtt_us <= bbr->min_rtt_us || filter_expired)) {
+	    (rs->rtt_us <= bbr->min_rtt_us ||
+	     (filter_expired && !rs->is_ack_delayed))) {
 		bbr->min_rtt_us = rs->rtt_us;
 		bbr->min_rtt_stamp = tcp_jiffies32;
 	}
@@ -893,6 +894,7 @@ static void bbr_update_min_rtt(struct sock *sk, const struct rate_sample *rs)
 			(tp->delivered + tcp_packets_in_flight(tp)) ? : 1;
 		/* Maintain min packets in flight for max(200 ms, 1 round). */
 		if (!bbr->probe_rtt_done_stamp &&
+	
 		    tcp_packets_in_flight(tp) <= bbr_cwnd_min_target) {
 			bbr->probe_rtt_done_stamp = tcp_jiffies32 +
 				msecs_to_jiffies(bbr_probe_rtt_mode_ms);
