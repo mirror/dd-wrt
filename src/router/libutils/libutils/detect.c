@@ -1058,6 +1058,10 @@ int internal_getRouterBrand()
 	char name[64];
 	FILE *fp = fopen("/sys/devices/virtual/dmi/id/board_vendor", "rb");
 	if (!fp)
+		fp = fopen("/sys/devices/virtual/dmi/id/sys_vendor", "rb");
+	if (!fp)
+		fp = fopen("/sys/devices/virtual/dmi/id/chassis_vendor", "rb");
+	if (!fp)
 		goto generic;
 	int len = 0;
 	int b;
@@ -1070,6 +1074,8 @@ int internal_getRouterBrand()
 	if (len < 1)
 		goto generic;
 	fp = fopen("/sys/devices/virtual/dmi/id/board_name", "rb");
+	if (!fp)
+		fp = fopen("/sys/devices/virtual/dmi/id/product_name", "rb");
 	if (!fp)
 		goto generic;
 	name[len++] = 0x20;
@@ -1086,12 +1092,15 @@ int internal_getRouterBrand()
 #else
 		setRouter("Generic X86");
 #endif
-	}
-	else
+	} else
 		setRouter(name);
 	return ROUTER_BOARD_X86;
       generic:;
+#ifdef HAVE_X64
+	setRouter("Generic X86_64");
+#else
 	setRouter("Generic X86");
+#endif
 	return ROUTER_BOARD_X86;
 #endif
 #elif HAVE_XSCALE
