@@ -547,7 +547,7 @@ static void ap_sm_wait(enum ap_wait wait)
 	case AP_WAIT_TIMEOUT:
 		spin_lock_bh(&ap_poll_timer_lock);
 		if (!hrtimer_is_queued(&ap_poll_timer)) {
-			hr_time = ktime_set(0, poll_timeout);
+			hr_time = poll_timeout;
 			hrtimer_forward_now(&ap_poll_timer, hr_time);
 			hrtimer_restart(&ap_poll_timer);
 		}
@@ -1574,7 +1574,7 @@ static ssize_t poll_timeout_store(struct bus_type *bus, const char *buf,
 	    time > 120000000000ULL)
 		return -EINVAL;
 	poll_timeout = time;
-	hr_time = ktime_set(0, poll_timeout);
+	hr_time = poll_timeout;
 
 	spin_lock_bh(&ap_poll_timer_lock);
 	hrtimer_cancel(&ap_poll_timer);

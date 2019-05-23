@@ -1116,7 +1116,7 @@ static u32 apic_get_tmcct(struct kvm_lapic *apic)
 
 	remaining = hrtimer_get_remaining(&apic->lapic_timer.timer);
 	if (ktime_to_ns(remaining) < 0)
-		remaining = ktime_set(0, 0);
+		remaining = 0;
 
 	ns = mod_64(ktime_to_ns(remaining), apic->lapic_timer.period);
 	tmcct = div64_u64(ns,
