@@ -265,7 +265,6 @@
 			ddwrt@3480000 {
 				label = "ddwrt";
 				reg = <0x3480000 0x4880000>;
-				read-only;
 			};
 
 			dnidata@7d00000 {
