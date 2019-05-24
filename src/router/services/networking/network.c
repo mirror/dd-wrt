@@ -3834,6 +3834,9 @@ void start_wan(int status)
 		// Lets open option file and enter all the parameters.
 		fp = fopen("/tmp/ppp/options.pppoe", "w");
 		// rp-pppoe kernelmode plugin
+		if (nvram_matchi("ppp_demand", 1))
+			fprintf(fp, "connect true\n");
+
 #if defined(HAVE_ADM5120) && !defined(HAVE_WP54G) && !defined(HAVE_NP28G)
 		fprintf(fp, "plugin /lib/rp-pppoe.so\n");
 #else
@@ -4167,6 +4170,9 @@ void start_wan(int status)
 
 		// Lets open option file and enter all the parameters.
 		fp = fopen("/tmp/ppp/options.pppoa", "w");
+
+		if (nvram_matchi("ppp_demand", 1))
+			fprintf(fp, "connect true\n");
 
 		fprintf(fp, "plugin /usr/lib/pppoatm.so %s.%s %s", nvram_safe_get("vpi"), nvram_safe_get("vci"), nvram_matchi("atm_encaps", 0) ? "llc-encaps" : "vc-encaps");
 		fprintf(fp, "\n");
