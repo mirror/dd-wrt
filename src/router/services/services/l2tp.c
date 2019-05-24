@@ -170,6 +170,7 @@ void start_l2tp(int status)
 				"ipcp-accept-remote\n"	//
 				"ipcp-accept-local\n"	//
 				"noipdefault\n"	//
+				"connect true\n"	//
 				"ktune\n", nvram_matchi("ppp_demand", 1) ? nvram_geti("ppp_idletime") * 60 : 0);
 			// to 1 in demand mode if the local
 			// address changes

@@ -105,6 +105,7 @@ static void create_pptp_config(char *servername, char *username)
 		// IP>
 		fprintf(fp, "ipcp-accept-remote\n");
 		fprintf(fp, "ipcp-accept-local\n");
+		fprintf(fp, "connect true\n");
 		fprintf(fp, "noipdefault\n");	// Disables the default
 		// behaviour when no local IP 
 		// address is specified
