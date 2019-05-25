@@ -30,35 +30,46 @@
 #
 
 . $STF_SUITE/include/libtest.shlib
-. $STF_SUITE/tests/functional/cli_user/misc/misc.cfg
+. $STF_SUITE/tests/functional/reservation/reservation.shlib
 
 #
 # DESCRIPTION:
 #
-# zpool shows a usage message when run as a user
+# ZFS has two mechanisms dealing with space for datasets, namely
+# reservations and quotas. Setting one should not affect the other,
+# provided the values are legal (i.e. enough space in pool etc).
 #
 # STRATEGY:
-# 1. Run the zpool command
-# 2. Verify that a usage message is produced
+# 1) Create one filesystem
+# 2) Get the current quota setting
+# 3) Set a reservation
+# 4) Verify that the quota value remains unchanged
 #
-#
+
+verify_runnable "both"
+
+log_assert "Verify reservation settings do not affect quota settings"
 
 function cleanup
 {
-	if [ -e "$TEMPFILE" ]
-	then
-		rm -f "$TEMPFILE"
-	fi
+	log_must zero_reservation $TESTPOOL/$TESTFS
 }
 
-TEMPFILE="$TEST_BASE_DIR/zpool_001_neg.$$.txt"
-
 log_onexit cleanup
-log_assert "zpool shows a usage message when run as a user"
 
-eval "zpool > $TEMPFILE 2>&1"
-log_must grep "usage: zpool command args" "$TEMPFILE"
+space_avail=`get_prop available $TESTPOOL`
 
-log_must eval "awk '{if (length(\$0) > 80) exit 1}' < $TEMPFILE"
+((resv_size_set = (space_avail - RESV_DELTA) / 2))
 
-log_pass "zpool shows a usage message when run as a user"
+fs_quota=`zfs get quota $TESTPOOL/$TESTFS`
+
+log_must zfs set reservation=$resv_size_set $TESTPOOL/$TESTFS
+
+new_fs_quota=`zfs get quota $TESTPOOL/$TESTFS`
+
+if [[ $fs_quota != $new_fs_quota ]]; then
+	log_fail "Quota value on $TESTFS has changed " \
+	    "($fs_quota != $new_fs_quota)"
+fi
+
+log_pass "Quota settings unaffected by reservation settings"
