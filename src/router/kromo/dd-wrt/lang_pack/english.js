@@ -1809,6 +1809,7 @@ service.vpn_tlscip="TLS Cipher";
 service.vpn_route="Policy based Routing";
 service.vpn_scramble="XOR scrambling method";
 service.vpn_upauth="User Pass Authentication";
+service.vpn_fw="Inbound Firewall on TUN";
 service.vpnd_server="Server";
 service.vpnd_deamon="Daemon";
 service.vpnd_lzoyes="Yes";
