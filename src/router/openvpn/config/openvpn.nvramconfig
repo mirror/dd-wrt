@@ -1,4 +1,5 @@
  "openvpn_enable"   "OpenVPN Enable"   "CHOICE" "2" "0" "1"  "FALSE" "0"
+ "openvpn_fw"   "OpenVPN Firewall"   "CHOICE" "2" "0" "1"  "FALSE" "0"
  "openvpn_remoteip"  "OpenVPN IP"  "NULL"   "FALSE" "0"
  "openvpn_remoteport"  "OpenVPN PORT"  "NULL"   "FALSE" "0"
  "openvpn_lzo"  "lzo compression enabled" "CHOICE" "2" "0" "1" "FALSE" "0"
