@@ -122,6 +122,7 @@
 //usage:       "(this version of syslogd ignores /etc/syslog.conf)\n"
 //usage:	)
 //usage:     "\n	-n		Run in foreground"
+//usage:     "\n	-Z		Adjust incoming UTC times to local time"
 //usage:	IF_FEATURE_REMOTE_LOG(
 //usage:     "\n	-R HOST[:PORT]	Log to HOST:PORT (default PORT:514)"
 //usage:     "\n	-L		Log locally and via network (default is network only if -R)"
@@ -234,6 +235,8 @@ typedef struct logRule_t {
 	/*int markInterval;*/                   \
 	/* level of messages to be logged */    \
 	int logLevel;                           \
+	/* whether to adjust message timezone */\
+	int adjustTimezone;                     \
 IF_FEATURE_ROTATE_LOGFILE( \
 	/* max size of file before rotation */  \
 	unsigned logFileSize;                   \
@@ -317,6 +320,7 @@ enum {
 	OPTBIT_outfile, // -O
 	OPTBIT_loglevel, // -l
 	OPTBIT_small, // -S
+	OPTBIT_adjusttz, // -Z
 	OPTBIT_timestamp, // -t
 	IF_FEATURE_ROTATE_LOGFILE(OPTBIT_filesize   ,)	// -s
 	IF_FEATURE_ROTATE_LOGFILE(OPTBIT_rotatecnt  ,)	// -b
@@ -332,6 +336,7 @@ enum {
 	OPT_outfile     = 1 << OPTBIT_outfile ,
 	OPT_loglevel    = 1 << OPTBIT_loglevel,
 	OPT_small       = 1 << OPTBIT_small   ,
+	OPT_adjusttz    = 1 << OPTBIT_adjusttz,
 	OPT_timestamp   = 1 << OPTBIT_timestamp,
 	OPT_filesize    = IF_FEATURE_ROTATE_LOGFILE((1 << OPTBIT_filesize   )) + 0,
 	OPT_rotatecnt   = IF_FEATURE_ROTATE_LOGFILE((1 << OPTBIT_rotatecnt  )) + 0,
@@ -342,7 +347,7 @@ enum {
 	OPT_cfg         = IF_FEATURE_SYSLOGD_CFG(   (1 << OPTBIT_cfg        )) + 0,
 	OPT_kmsg        = IF_FEATURE_KMSG_SYSLOG(   (1 << OPTBIT_kmsg       )) + 0,
 };
-#define OPTION_STR "m:nO:l:St" \
+#define OPTION_STR "m:nO:l:SZt" \
 	IF_FEATURE_ROTATE_LOGFILE("s:" ) \
 	IF_FEATURE_ROTATE_LOGFILE("b:" ) \
 	IF_FEATURE_REMOTE_LOG(    "R:*") \
@@ -818,6 +823,7 @@ static void timestamp_and_log(int pri, char *msg, int len)
 {
 	char *timestamp = NULL;
 	time_t now;
+	struct tm nowtm = { .tm_isdst = 0 };
 
 	/* Jan 18 00:11:22 msg... */
 	/* 01234567890123456 */
@@ -826,8 +832,13 @@ static void timestamp_and_log(int pri, char *msg, int len)
 	) {
 		if (!(option_mask32 & OPT_timestamp)) {
 			/* use message timestamp */
-			timestamp = msg;
-			now = 0;
+			if (G.adjustTimezone && strptime(msg, "%b %e %T", &nowtm)) {
+				now = mktime(&nowtm) - timezone;
+				timestamp = ctime(&now) + 4; /* skip day of week */
+			} else {
+				now = 0;
+				timestamp = msg;
+			}
 		}
 		msg += 16;
 	}
@@ -1138,6 +1149,10 @@ int syslogd_main(int argc UNUSED_PARAM, char **argv)
 	if (opts & OPT_loglevel) // -l
 		G.logLevel = xatou_range(opt_l, 1, 8);
 	//if (opts & OPT_small) // -S
+	if (opts & OPT_adjusttz) { // -Z
+		G.adjustTimezone = 1;
+		tzset();
+	}
 #if ENABLE_FEATURE_ROTATE_LOGFILE
 	if (opts & OPT_filesize) // -s
 		G.logFileSize = xatou_range(opt_s, 0, INT_MAX/1024) * 1024;
