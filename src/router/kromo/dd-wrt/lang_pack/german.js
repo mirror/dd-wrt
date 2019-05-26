@@ -1546,6 +1546,7 @@ service.vpn_bridge="&Uuml;berbr&uuml;cke TAP und br0";
 service.vpn_adv="Erweiterte Einstellungen";
 service.vpn_tlscip="TLS Verschl&uuml;sselung";
 service.vpn_route="Richtlinienbasiertes Routen";
+service.vpn_fw="Eingehende Firewall f&uuml;r TUN";
 service.vpnd_lzoyes="Ja";
 service.vpnd_lzono="Nein";
 service.vpnd_lzoadaptive="Adaptiv";
