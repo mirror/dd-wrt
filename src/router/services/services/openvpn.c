@@ -251,6 +251,12 @@ void start_openvpnserver(void)
 			"ebtables -t nat -D POSTROUTING -o tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
 			"ebtables -t nat -I PREROUTING -i tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
 			"ebtables -t nat -I POSTROUTING -o tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n");
+
+	if (nvram_default_matchi("openvpn_fw", 1, 0)) {
+		fprintf(fp, "iptables -I INPUT -i %s -m state --state NEW -j DROP\n", ovpniface);
+		fprintf(fp, "iptables -I FORWARD -i %s -m state --state NEW -j DROP\n", ovpniface);
+	}
+
 	fprintf(fp, "startservice set_routes -f\n");
 	/* "stopservice wshaper\n" disable wshaper, causes fw race condition
 	 * "startservice wshaper\n");*/
@@ -281,6 +287,12 @@ void start_openvpnserver(void)
 		fprintf(fp,
 			"ebtables -t nat -D PREROUTING -i tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
 			"ebtables -t nat -D POSTROUTING -o tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n");
+
+	if (nvram_default_matchi("openvpn_fw", 1, 0)) {
+		fprintf(fp, "iptables -D INPUT -i %s -m state --state NEW -j DROP\n", ovpniface);
+		fprintf(fp, "iptables -D FORWARD -i %s -m state --state NEW -j DROP\n", ovpniface);
+	}
+
 /*	if ((nvram_matchi("openvpn_dhcpbl",1)
 			&& nvram_match("openvpn_tuntap", "tap")
 			&& nvram_matchi("openvpn_proxy",0))
@@ -523,6 +535,11 @@ void start_openvpn(void)
 				"iptables -D FORWARD -o %s -j ACCEPT\n"
 				"iptables -I INPUT -i %s -j ACCEPT\n" "iptables -I FORWARD -i %s -j ACCEPT\n" "iptables -I FORWARD -o %s -j ACCEPT\n", ovpniface, ovpniface, ovpniface, ovpniface, ovpniface, ovpniface);
 	}
+	if (nvram_default_matchi("openvpncl_fw", 1, 0)) {
+		fprintf(fp, "iptables -I INPUT -i %s -m state --state NEW -j DROP\n", ovpniface);
+		fprintf(fp, "iptables -I FORWARD -i %s -m state --state NEW -j DROP\n", ovpniface);
+	}
+
 	if (*(nvram_safe_get("openvpncl_route"))) {	//policy based routing
 		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
 //              fprintf(fp, "ip route flush table 10\n");
@@ -571,6 +588,10 @@ void start_openvpn(void)
 		fprintf(fp, "iptables -D INPUT -i %s -j ACCEPT\n" "iptables -D POSTROUTING -t nat -o %s -j MASQUERADE\n", ovpniface, ovpniface);
 	else {
 		fprintf(fp, "iptables -D INPUT -i %s -j ACCEPT\n" "iptables -D FORWARD -i %s -j ACCEPT\n" "iptables -D FORWARD -o %s -j ACCEPT\n", ovpniface, ovpniface, ovpniface);
+	}
+	if (nvram_default_matchi("openvpncl_fw", 1, 0)) {
+		fprintf(fp, "iptables -D INPUT -i %s -m state --state NEW -j DROP\n", ovpniface);
+		fprintf(fp, "iptables -D FORWARD -i %s -m state --state NEW -j DROP\n", ovpniface);
 	}
 	if (*(nvram_safe_get("openvpncl_route"))) {	//policy based routing
 		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
