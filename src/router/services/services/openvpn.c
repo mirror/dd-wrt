@@ -253,8 +253,8 @@ void start_openvpnserver(void)
 			"ebtables -t nat -I POSTROUTING -o tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n");
 
 	if (nvram_default_matchi("openvpn_fw", 1, 0)) {
-		fprintf(fp, "iptables -I INPUT -i %s -m state --state NEW -j DROP\n", ovpniface);
-		fprintf(fp, "iptables -I FORWARD -i %s -m state --state NEW -j DROP\n", ovpniface);
+		fprintf(fp, "iptables -I INPUT -i tap2 -m state --state NEW -j DROP\n");
+		fprintf(fp, "iptables -I FORWARD -i tap2 -m state --state NEW -j DROP\n");
 	}
 
 	fprintf(fp, "startservice set_routes -f\n");
@@ -289,8 +289,8 @@ void start_openvpnserver(void)
 			"ebtables -t nat -D POSTROUTING -o tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n");
 
 	if (nvram_default_matchi("openvpn_fw", 1, 0)) {
-		fprintf(fp, "iptables -D INPUT -i %s -m state --state NEW -j DROP\n", ovpniface);
-		fprintf(fp, "iptables -D FORWARD -i %s -m state --state NEW -j DROP\n", ovpniface);
+		fprintf(fp, "iptables -D INPUT -i tap2 -m state --state NEW -j DROP\n");
+		fprintf(fp, "iptables -D FORWARD -i tap2 -m state --state NEW -j DROP\n");
 	}
 
 /*	if ((nvram_matchi("openvpn_dhcpbl",1)
