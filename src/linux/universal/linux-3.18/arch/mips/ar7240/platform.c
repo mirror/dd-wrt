@@ -785,10 +785,21 @@ static struct ar8327_pad_cfg nanoac_ar8327_pad0_cfg = {
 };
 
 static struct ar8327_led_cfg nanoac_ar8327_led_cfg = {
-	.led_ctrl0 = 0x00000000,
-	.led_ctrl1 = 0x00000000,
+
+	.led_ctrl0 = 0xffb7ffb7,
+	.led_ctrl1 = 0xffb7ffb7,
 	.led_ctrl2 = 0xffb7ffb7,
 	.led_ctrl3 = 0x03ffff00,
+
+//	.led_ctrl0 = 0x00000000,
+//	.led_ctrl1 = 0xc737c737,
+//	.led_ctrl2 = 0x00000000,
+//	.led_ctrl3 = 0x00c30c00,
+
+//	.led_ctrl0 = 0x00000000,
+//	.led_ctrl1 = 0x00000000,
+//	.led_ctrl2 = 0xffb7ffb7,
+//	.led_ctrl3 = 0x03ffff00,
 	.open_drain = true,
 };
 
