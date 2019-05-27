@@ -14,7 +14,7 @@ fi
         /bin/echo "status 2" | /usr/bin/nc 127.0.0.1 ${PORT} | \
         awk '/HEADER,CLIENT_LIST/{printline = 1; next} /HEADER,ROUTING_TABLE/ {printline = 0} printline' | \
         awk -F "," 'BEGIN{print "<tr><th>Client</th><th>Remote IP:Port</th><th>Bytes Received</th><th>Bytes Sent</th><th>Connected Since</th></tr>\n"}{
-                printf "<tr><td>%s</td><td>%s</td><td>%d</td><td>%d</td><td>%s</td></tr>\n", $2, $3, $5, $6, $7;
+                printf "<tr><td>%s</td><td>%s</td><td>%d</td><td>%d</td><td>%s</td></tr>\n", $2, $3, $6, $7, $8;
         }
         END{print "\n<tr><td colspan=5><br></td></tr>\n<tr><td colspan=5>VPN Server Routing Table<hr/></td></tr>\n"}'
         # ROUTING TABLE
