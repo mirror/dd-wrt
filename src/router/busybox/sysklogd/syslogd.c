@@ -823,7 +823,7 @@ static void timestamp_and_log(int pri, char *msg, int len)
 {
 	char *timestamp = NULL;
 	time_t now;
-	struct tm nowtm = { .tm_isdst = 0 };
+	struct tm *nowtm;
 
 	/* Jan 18 00:11:22 msg... */
 	/* 01234567890123456 */
@@ -832,9 +832,10 @@ static void timestamp_and_log(int pri, char *msg, int len)
 	) {
 		if (!(option_mask32 & OPT_timestamp)) {
 			/* use message timestamp */
-			if (G.adjustTimezone && strptime(msg, "%b %e %T", &nowtm)) {
-				now = mktime(&nowtm) - timezone;
-				timestamp = ctime(&now) + 4; /* skip day of week */
+			if (G.adjustTimezone) {
+				time(&now);
+				nowtm = localtime(&now);
+				timestamp = asctime(nowtm) + 4;
 			} else {
 				now = 0;
 				timestamp = msg;
@@ -844,8 +845,14 @@ static void timestamp_and_log(int pri, char *msg, int len)
 	}
 
 	if (!timestamp) {
-		time(&now);
-		timestamp = ctime(&now) + 4; /* skip day of week */
+		if (G.adjustTimezone) {
+			time(&now);
+			nowtm = localtime(&now);
+			timestamp = asctime(nowtm) + 4;
+		} else {
+			time(&now);
+			timestamp = ctime(&now) + 4; /* skip day of week */
+		}
 	}
 
 	timestamp[15] = '\0';
