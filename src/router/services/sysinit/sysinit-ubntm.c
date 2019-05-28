@@ -137,6 +137,26 @@ void start_sysinit(void)
 	switch (brand) {
 	case ROUTER_UBNT_UAPACPRO:
 	case ROUTER_UBNT_NANOAC:
+#ifdef HAVE_TMK
+		if (nvram_match("wan_proto", "disabled")) {
+			eval("swconfig", "dev", "eth0", "set", "reset", "1");
+			eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
+			eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 2 3");
+			eval("swconfig", "dev", "eth0", "set", "apply");
+			eval("ifconfig", "eth0", "up");
+			eval("vconfig", "add", "eth0", "1");
+		} else {
+			eval("swconfig", "dev", "eth0", "set", "reset", "1");
+			eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
+			eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2");
+			eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 3");
+			eval("swconfig", "dev", "eth0", "set", "apply");
+			eval("ifconfig", "eth0", "up");
+			eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+			eval("vconfig", "add", "eth0", "1");
+			eval("vconfig", "add", "eth0", "2");
+		}
+#else
 		eval("swconfig", "dev", "eth0", "set", "reset", "1");
 		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2");
@@ -146,6 +166,7 @@ void start_sysinit(void)
 		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("vconfig", "add", "eth0", "1");
 		eval("vconfig", "add", "eth0", "2");
+#endif
 		break;
 	case ROUTER_BOARD_NS5MXW:
 #ifdef HAVE_TMK
