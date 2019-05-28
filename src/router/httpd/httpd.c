@@ -1747,7 +1747,7 @@ int main(int argc, char **argv)
 				//berr_exit("SSL accept error");
 //                              ERR_print_errors_fp(stderr);
 //                              fprintf(stderr,"ssl accept return %d, ssl error %d %d\n",r,SSL_get_error(ssl,r),RAND_status());
-				dd_syslog(LOG_ERR, "SSL accept error");
+//				dd_syslog(LOG_ERR, "SSL accept error");
 				close(conn_fp->conn_fd);
 
 				SSL_free(conn_fp->ssl);
