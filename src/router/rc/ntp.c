@@ -39,6 +39,8 @@ struct syncservice {
 
 static struct syncservice service[] = {
 	{ "cron_enable", "cron" },
+	{ "syslogd_enable", "syslog" },
+	{ "klogd_enable", "syslog" },
 #ifdef HAVE_SNMP
 	{ "snmpd_enable", "snmp" },
 #endif
