@@ -943,6 +943,8 @@ nla_put_failure:
 
 int has_smps(const char *prefix)
 {
+	if (!is_mac80211(prefix))
+		return 0;
 	INITVALUECACHE();
 	ret = mac80211_has_feature(get_ath9k_phy_ifname(prefix), NL80211_FEATURE_STATIC_SMPS);
 	ret |= mac80211_has_feature(get_ath9k_phy_ifname(prefix), NL80211_FEATURE_DYNAMIC_SMPS);
@@ -952,6 +954,8 @@ int has_smps(const char *prefix)
 
 int has_dynamic_smps(const char *prefix)
 {
+	if (!is_mac80211(prefix))
+		return 0;
 	INITVALUECACHE();
 	ret = mac80211_has_feature(get_ath9k_phy_ifname(prefix), NL80211_FEATURE_DYNAMIC_SMPS);
 	EXITVALUECACHE();
@@ -960,6 +964,8 @@ int has_dynamic_smps(const char *prefix)
 
 int has_static_smps(const char *prefix)
 {
+	if (!is_mac80211(prefix))
+		return 0;
 	INITVALUECACHE();
 	ret = mac80211_has_feature(get_ath9k_phy_ifname(prefix), NL80211_FEATURE_STATIC_SMPS);
 	EXITVALUECACHE();
@@ -968,6 +974,8 @@ int has_static_smps(const char *prefix)
 
 int has_uapsd(const char *prefix)
 {
+	if (!is_mac80211(prefix))
+		return 0;
 	INITVALUECACHE();
 	ret = mac80211_has_feature(get_ath9k_phy_ifname(prefix), NL80211_ATTR_SUPPORT_AP_UAPSD);
 	EXITVALUECACHE();
