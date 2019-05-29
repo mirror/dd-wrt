@@ -160,7 +160,7 @@ void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp,
 						  "%c'%s','%s','%s','%s','%s'", (count ? ',' : ' '), (hostname[0] ? hostname : live_translate(wp, "share.unknown")), ip, mac,
 						  ((expires == 0) ? live_translate(wp, "share.sttic")
-						   : dhcp_reltime(buf, expires)), p + 1, 1);
+						   : dhcp_reltime(buf, expires, 1)), p + 1, 1);
 					cprintf("entry dumpleases:%d\n", __LINE__);
 					++count;
 				}
