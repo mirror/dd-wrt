@@ -1649,7 +1649,7 @@ static struct menucontext *init_menu(webs_t wp)
 	m->menu[MENU_WIRELESS][5][0] = 0;	// wireless - wps
 	//m->menu[MENU_WIRELESS][6][0] = 0;     // wireless - macfilter
 	m->menu[MENU_WIRELESS][7][0] = 0;	// wireless - advanced
-	//m->menu[MENU_WIRELESS][8][0] = 0;	// wireless - wds
+	//m->menu[MENU_WIRELESS][8][0] = 0;     // wireless - wds
 
 	m->menu[MENU_SERVICES][1][0] = 0;	// services - Radius
 	m->menu[MENU_SERVICES][2][0] = 0;	// services - PPPOED
