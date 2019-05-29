@@ -1900,6 +1900,8 @@ nla_put_failure:
 
 int has_mesh(const char *prefix)
 {
+	if (!is_mac80211(prefix))
+		return 0;
 	INITVALUECACHE();
 	ret = mac80211_has_iftype(get_ath9k_phy_ifname(prefix), NL80211_IFTYPE_MESH_POINT);
 	EXITVALUECACHE();
@@ -1908,6 +1910,8 @@ int has_mesh(const char *prefix)
 
 int has_tdma(const char *prefix)
 {
+	if (!is_mac80211(prefix))
+		return 0;
 	INITVALUECACHE();
 	ret = mac80211_has_iftype(get_ath9k_phy_ifname(prefix), NL80211_IFTYPE_TDMA);
 	EXITVALUECACHE();
