@@ -1177,7 +1177,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			sprintf(mubf, "%s_mubf", maininterface);
 			char subf[32];
 			sprintf(subf, "%s_subf", maininterface);
-			caps = mac80211_get_vhtcaps(ifname, 0, 0, 0, 0, nvram_default_matchi(subf, 1, 0), nvram_default_matchi(mubf, 1, 0));
+			caps = mac80211_get_vhtcaps(maininterface, 0, 0, 0, 0, nvram_default_matchi(subf, 1, 0), nvram_default_matchi(mubf, 1, 0));
 			fprintf(fp, "vht_capab=%s\n", caps);
 			//fprintf(fp, "ieee80211ac=1\n");
 			//fprintf(fp, "require_vht=1\n");
