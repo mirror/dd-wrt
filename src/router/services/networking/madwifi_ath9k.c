@@ -53,9 +53,9 @@
 
 void check_cryptomod(char *prefix);
 
-void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss, int turboqam);
+void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss);
 static void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc);
-void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss, int turboqam);
+void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss);
 
 static char *gethtmode(char *prefix)
 {
@@ -436,9 +436,8 @@ void configure_single_ath9k(int count)
 	cprintf("setup encryption");
 	// setup encryption
 	int isfirst = 1;
-	int turboqam = nvram_nmatch("1", "%s_turbo_qam", dev);
 	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wet") && strcmp(apm, "infra") && strcmp(apm, "mesh") && strcmp(apm, "tdma")) {
-		setupHostAP_ath9k(dev, isfirst, 0, 0, turboqam);
+		setupHostAP_ath9k(dev, isfirst, 0, 0);
 		isfirst = 0;
 	} else {
 		char *clonename = "def_whwaddr";
@@ -470,7 +469,7 @@ void configure_single_ath9k(int count)
 			if (!nvram_nmatch("mesh", "%s_mode", var)) {
 				if (isfirst)
 					sysprintf("iw %s interface add %s.%d type managed", wif, dev, counter);
-				setupHostAP_ath9k(dev, isfirst, counter, 0, turboqam);
+				setupHostAP_ath9k(dev, isfirst, counter, 0);
 			} else {
 				sysprintf("iw %s interface add %s.%d type mp mesh_id %s", wif, dev, counter, nvram_nget("%s_ssid", var));
 				setupSupplicant_ath9k(var, NULL, 0);
@@ -530,7 +529,7 @@ void configure_single_ath9k(int count)
 
 void get_pairwise(char *prefix, char *pwstring, char *grpstring, int isadhoc);
 
-void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss, int turboqam)
+void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss)
 {
 	int channel = 0;
 	int freq = 0;
@@ -951,7 +950,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		free(caps);
 	}
 	if (has_ac(prefix) && has_2ghz(prefix) && usebw < 80) {
-		if (turboqam) {
+		if (nvram_nmatch("1", "%s_turbo_qam", prefix)) {
 			char mubf[32];
 			sprintf(mubf, "%s_mubf", prefix);
 			char subf[32];
@@ -1125,7 +1124,7 @@ extern char *hostapd_eap_get_types(void);
 extern void addWPS(FILE * fp, char *prefix, int configured);
 extern void setupHS20(FILE * fp, char *prefix);
 void setupHostAPPSK(FILE * fp, char *prefix, int isfirst);
-void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss, int turboqam)
+void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 {
 #ifdef HAVE_REGISTER
 	if (!isregistered())
@@ -1177,7 +1176,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss, in
 	sprintf(fstr, "/tmp/%s_hostap.conf", maininterface);
 	if (isfirst) {
 		fp = fopen(fstr, "wb");
-		setupHostAP_generic_ath9k(maininterface, fp, isrepeater, aoss, turboqam);
+		setupHostAP_generic_ath9k(maininterface, fp, isrepeater, aoss);
 		if (has_ad(ifname))
 			fprintf(fp, "interface=giwifi0\n");
 		else
