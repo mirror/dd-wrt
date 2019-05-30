@@ -1173,6 +1173,19 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	}
 	if (has_ac(ifname) && has_2ghz(ifname) && usebw < 80) {
 		if (nvram_nmatch("1", "%s_turbo_qam", ifname)) {
+			char bw[32];
+			sprintf(bw, "%s_channelbw", maininterface);
+			int usebw = 20;
+			if (nvram_matchi(bw, 40))
+				usebw = 40;
+			if (nvram_matchi(bw, 2040))
+				usebw = 40;
+			if (nvram_matchi(bw, 80))
+				usebw = 80;
+			if (nvram_matchi(bw, 160))
+				usebw = 160;
+			if (nvram_match(bw, "80+80"))
+				usebw = 8080;
 			char mubf[32];
 			sprintf(mubf, "%s_mubf", maininterface);
 			char subf[32];
