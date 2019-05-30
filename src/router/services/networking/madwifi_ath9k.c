@@ -949,21 +949,6 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		}
 		free(caps);
 	}
-	if (has_ac(prefix) && has_2ghz(prefix) && usebw < 80) {
-		if (nvram_nmatch("1", "%s_turbo_qam", prefix)) {
-			char mubf[32];
-			sprintf(mubf, "%s_mubf", prefix);
-			char subf[32];
-			sprintf(subf, "%s_subf", prefix);
-			caps = mac80211_get_vhtcaps(prefix, 0, 0, 0, 0, nvram_default_matchi(subf, 1, 0), nvram_default_matchi(mubf, 1, 0));
-			fprintf(fp, "vht_capab=%s\n", caps);
-			//fprintf(fp, "ieee80211ac=1\n");
-			//fprintf(fp, "require_vht=1\n");
-			fprintf(fp, "vendor_vht=1\n");
-			free(caps);
-		}
-
-	}
 	if (has_ac(prefix) && has_5ghz(prefix)) {
 		if ((!strcmp(netmode, "mixed") ||	//
 		     !strcmp(netmode, "ac-only") || !strcmp(netmode, "acn-mixed"))) {
@@ -1185,6 +1170,21 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		fp = fopen(fstr, "ab");
 		fprintf(stderr, "setup vap %d bss %s\n", vapid, ifname);
 		fprintf(fp, "bss=%s\n", ifname);
+	}
+	if (has_ac(ifname) && has_2ghz(ifname) && usebw < 80) {
+		if (nvram_nmatch("1", "%s_turbo_qam", ifname)) {
+			char mubf[32];
+			sprintf(mubf, "%s_mubf", maininterface);
+			char subf[32];
+			sprintf(subf, "%s_subf", maininterface);
+			caps = mac80211_get_vhtcaps(ifname, 0, 0, 0, 0, nvram_default_matchi(subf, 1, 0), nvram_default_matchi(mubf, 1, 0));
+			fprintf(fp, "vht_capab=%s\n", caps);
+			//fprintf(fp, "ieee80211ac=1\n");
+			//fprintf(fp, "require_vht=1\n");
+			fprintf(fp, "vendor_vht=1\n");
+			free(caps);
+		}
+
 	}
 	fprintf(fp, "preamble=%s\n", nvram_default_get(preamble, "0"));
 	fprintf(fp, "disassoc_low_ack=1\n");
