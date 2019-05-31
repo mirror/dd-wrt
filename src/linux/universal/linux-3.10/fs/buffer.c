@@ -2946,13 +2946,6 @@ static void guard_bh_eod(int rw, struct bio *bio, struct buffer_head *bh)
 	/* Uhhuh. We've got a bh that straddles the device size! */
 	bytes = maxsector << 9;
 
-	/*
-	 * The bio contains more than one segment which spans EOD, just return
-	 * and let IO layer turn it into an EIO
-	 */
-	if (truncated_bytes > bvec->bv_len)
-		return;
-
 	/* Truncate the bio.. */
 	bio->bi_size = bytes;
 	bio->bi_io_vec[0].bv_len = bytes;
