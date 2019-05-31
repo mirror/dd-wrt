@@ -7,10 +7,11 @@
 #include <tlhelp32.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <fcntl.h>
 
-static HANDLE open_wireguard_pipe(const char *name)
+static FILE *userspace_interface_file(const char *interface)
 {
-	char fname[0x1000];
+	char fname[MAX_PATH];
 	HANDLE thread_token, process_snapshot, winlogon_process, winlogon_token, duplicated_token, pipe_handle;
 	PROCESSENTRY32 entry = { .dwSize = sizeof(PROCESSENTRY32) };
 	BOOL ret;
@@ -19,25 +20,26 @@ static HANDLE open_wireguard_pipe(const char *name)
 		.PrivilegeCount = 1,
 		.Privileges = {{ .Attributes = SE_PRIVILEGE_ENABLED }}
 	};
+	int fd;
 
 	if (!LookupPrivilegeValue(NULL, SE_DEBUG_NAME, &privileges.Privileges[0].Luid)) {
 		fprintf(stderr, "Error: LookupPrivilegeValue: 0x%lx\n", GetLastError());
-		return INVALID_HANDLE_VALUE;
+		return NULL;
 	}
 	if (!ImpersonateSelf(SecurityImpersonation)) {
 		fprintf(stderr, "Error: ImpersonateSelf: 0x%lx\n", GetLastError());
-		return INVALID_HANDLE_VALUE;
+		return NULL;
 	}
 	if (!OpenThreadToken(GetCurrentThread(), TOKEN_ADJUST_PRIVILEGES, FALSE, &thread_token)) {
 		fprintf(stderr, "Error: OpenThreadToken: 0x%lx\n", GetLastError());
 		RevertToSelf();
-		return INVALID_HANDLE_VALUE;
+		return NULL;
 	}
 	if (!AdjustTokenPrivileges(thread_token, FALSE, &privileges, sizeof(privileges), NULL, NULL)) {
 		fprintf(stderr, "Error: AdjustTokenPrivileges: 0x%lx\n", GetLastError());
 		CloseHandle(thread_token);
 		RevertToSelf();
-		return INVALID_HANDLE_VALUE;
+		return NULL;
 	}
 	CloseHandle(thread_token);
 
@@ -45,9 +47,11 @@ static HANDLE open_wireguard_pipe(const char *name)
 	if (process_snapshot == INVALID_HANDLE_VALUE) {
 		fprintf(stderr, "Error: CreateToolhelp32Snapshot: 0x%lx\n", GetLastError());
 		RevertToSelf();
-		return INVALID_HANDLE_VALUE;
+		return NULL;
 	}
 	for (ret = Process32First(process_snapshot, &entry); ret; ret = Process32Next(process_snapshot, &entry)) {
+		//TODO: This isn't very smart matching. An attacker can DoS us by just opening processes
+		// with the same name. Instead we should be looking for tokens that we can actually use.
 		if (!strcasecmp(entry.szExeFile, "winlogon.exe")) {
 			pid = entry.th32ProcessID;
 			break;
@@ -57,21 +61,21 @@ static HANDLE open_wireguard_pipe(const char *name)
 	if (!pid) {
 		fprintf(stderr, "Error: unable to find winlogon.exe\n");
 		RevertToSelf();
-		return INVALID_HANDLE_VALUE;
+		return NULL;
 	}
 
 	winlogon_process = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pid);
 	if (!winlogon_process) {
 		fprintf(stderr, "Error: OpenProcess: 0x%lx\n", GetLastError());
 		RevertToSelf();
-		return INVALID_HANDLE_VALUE;
+		return NULL;
 	}
 
 	if (!OpenProcessToken(winlogon_process, TOKEN_IMPERSONATE | TOKEN_DUPLICATE, &winlogon_token)) {
 		fprintf(stderr, "Error: OpenProcessToken: 0x%lx\n", GetLastError());
 		CloseHandle(winlogon_process);
 		RevertToSelf();
-		return INVALID_HANDLE_VALUE;
+		return NULL;
 	}
 	CloseHandle(winlogon_process);
 
@@ -79,7 +83,7 @@ static HANDLE open_wireguard_pipe(const char *name)
 		fprintf(stderr, "Error: DuplicateToken: 0x%lx\n", GetLastError());
 		CloseHandle(winlogon_token);
 		RevertToSelf();
-		return INVALID_HANDLE_VALUE;
+		return NULL;
 	}
 	CloseHandle(winlogon_token);
 
@@ -87,44 +91,47 @@ static HANDLE open_wireguard_pipe(const char *name)
 		fprintf(stderr, "Error: SetThreadToken: 0x%lx\n", GetLastError());
 		CloseHandle(duplicated_token);
 		RevertToSelf();
-		return INVALID_HANDLE_VALUE;
+		return NULL;
 	}
 	CloseHandle(duplicated_token);
 
-	snprintf(fname, sizeof(fname), "\\\\.\\pipe\\WireGuard\\%s", name);
+	snprintf(fname, sizeof(fname), "\\\\.\\pipe\\WireGuard\\%s", interface);
 	pipe_handle = CreateFile(fname, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
 	last_error = GetLastError();
 	RevertToSelf();
-	if (pipe_handle == INVALID_HANDLE_VALUE)
+	if (pipe_handle == INVALID_HANDLE_VALUE) {
 		fprintf(stderr, "Error: CreateFile: 0x%lx\n", last_error);
-	return pipe_handle;
+		return NULL;
+	}
+	fd = _open_osfhandle((intptr_t)pipe_handle, _O_RDWR);
+	if (fd == -1) {
+		fprintf(stderr, "Error: _open_osfhandle: 0x%lx\n", GetLastError());
+		CloseHandle(pipe_handle);
+		return NULL;
+	}
+	return _fdopen(fd, "r+");
 }
 
-int main(int argc, char *argv[])
+static int userspace_get_wireguard_interfaces(struct inflatable_buffer *buffer)
 {
 	WIN32_FIND_DATA find_data;
-	HANDLE find_handle, pipe_handle;
-	char tunnel_info[0x10000];
-	DWORD written;
+	HANDLE find_handle;
+	int ret = 0;
 
 	find_handle = FindFirstFile("\\\\.\\pipe\\*", &find_data);
 	if (find_handle == INVALID_HANDLE_VALUE)
-		fprintf(stderr, "Error: FindFirstFile: 0x%lx\n", GetLastError());
+		return -GetLastError();
 	do {
-		if (!strncmp("WireGuard\\", find_data.cFileName, 10)) {
-			printf("name=%s\n", find_data.cFileName + 10);
-			pipe_handle = open_wireguard_pipe(find_data.cFileName + 10);
-			if (pipe_handle == INVALID_HANDLE_VALUE)
-				continue;
-			if (!WriteFile(pipe_handle, "get=1\n\n", 7, &written, NULL))
-				continue;
-			if (!ReadFile(pipe_handle, tunnel_info, sizeof(tunnel_info) - 1, &written, NULL))
-				continue;
-			CloseHandle(pipe_handle);
-			tunnel_info[written] = '\0';
-			fputs(tunnel_info, stdout);
-		}
+		if (strncmp("WireGuard\\", find_data.cFileName, 10))
+			continue;
+		buffer->next = strdup(find_data.cFileName + 10);
+		buffer->good = true;
+		ret = add_next_to_inflatable_buffer(buffer);
+		if (ret < 0)
+			goto out;
 	} while (FindNextFile(find_handle, &find_data));
 
-	return 0;
+out:
+	FindClose(find_handle);
+	return ret;
 }
