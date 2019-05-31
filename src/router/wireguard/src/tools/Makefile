@@ -59,6 +59,12 @@ endif
 ifeq ($(PLATFORM),haiku)
 LDLIBS += -lnetwork -lbsd
 endif
+ifeq ($(PLATFORM),windows)
+CC := x86_64-w64-mingw32-gcc
+CFLAGS += -Iwincompat/include -include wincompat/compat.h
+LDLIBS += -lws2_32
+wg: wincompat/libc.o wincompat/init.o
+endif
 
 wg: $(patsubst %.c,%.o,$(wildcard *.c))
 
