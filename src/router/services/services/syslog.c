@@ -74,7 +74,7 @@ void start_syslog(void)
 		return;
 	update_timezone();
 	if (*(nvram_safe_get("syslogd_rem_ip")))
-		ret1 = eval("syslogd", "-Z", "-R", nvram_safe_get("syslogd_rem_ip"));
+		ret1 = eval("syslogd", "-Z", "-L", "-R", nvram_safe_get("syslogd_rem_ip"));
 	else
 		ret1 = eval("syslogd", "-Z", "-L");
 
