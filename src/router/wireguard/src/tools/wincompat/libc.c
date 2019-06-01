@@ -28,9 +28,9 @@ ssize_t getdelim(char **buf, size_t *bufsiz, int delimiter, FILE *fp)
 {
 	char *ptr, *eptr;
 
-	if (*buf == NULL || *bufsiz == 0) {
+	if (!*buf || !*bufsiz) {
 		*bufsiz = BUFSIZ;
-		if ((*buf = malloc(*bufsiz)) == NULL)
+		if (!(*buf = malloc(*bufsiz)))
 			return -1;
 	}
 
