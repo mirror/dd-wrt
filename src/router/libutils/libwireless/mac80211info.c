@@ -1916,6 +1916,16 @@ int has_mesh(const char *prefix)
 	return ret;
 }
 
+int has_ibss(const char *prefix)
+{
+	if (!is_mac80211(prefix))
+		return 0;
+	INITVALUECACHE();
+	ret = mac80211_has_iftype(get_ath9k_phy_ifname(prefix), NL80211_IFTYPE_ADHOC);
+	EXITVALUECACHE();
+	return ret;
+}
+
 int has_tdma(const char *prefix)
 {
 	if (!is_mac80211(prefix))
