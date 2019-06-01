@@ -2944,7 +2944,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 				  nvram_match(wl_mode, "wet") ? "selected=\\\"selected\\\"" : "");
 #endif
-			if (!cpeonly)
+			if (!cpeonly && has_ibss(prefix))
 				websWrite(wp, "document.write(\"<option value=\\\"infra\\\" %s >\" + wl_basic.adhoc + \"</option>\");\n", nvram_match(wl_mode, "infra") ? "selected=\\\"selected\\\"" : "");
 #ifndef HAVE_MADWIFI
 			if (!cpeonly) {
@@ -3614,9 +3614,9 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 				  nvram_match(wl_mode, "wet") ? "selected=\\\"selected\\\"" : "");
 #endif
 #ifndef HAVE_BUFFALO
-			if (!cpeonly)
+			if (!cpeonly && has_ibss(prefix))
 #else
-			if (!cpeonly && !has_5ghz(prefix))
+			if (!cpeonly && !has_5ghz(prefix) && has_ibss(prefix))
 #endif
 				websWrite(wp, "document.write(\"<option value=\\\"infra\\\" %s >\" + wl_basic.adhoc + \"</option>\");\n", nvram_match(wl_mode, "infra") ? "selected=\\\"selected\\\"" : "");
 #ifndef HAVE_MADWIFI
