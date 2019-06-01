@@ -11,105 +11,88 @@
 
 static FILE *userspace_interface_file(const char *interface)
 {
-	char fname[MAX_PATH];
-	HANDLE thread_token, process_snapshot, winlogon_process, winlogon_token, duplicated_token, pipe_handle;
+	char fname[MAX_PATH], error_message[1024 * 128] = { 0 };
+	HANDLE thread_token, process_snapshot, winlogon_process, winlogon_token, duplicated_token, pipe_handle = INVALID_HANDLE_VALUE;
 	PROCESSENTRY32 entry = { .dwSize = sizeof(PROCESSENTRY32) };
 	BOOL ret;
-	DWORD pid = 0, last_error;
+	int fd;
+	DWORD last_error = ERROR_SUCCESS;
 	TOKEN_PRIVILEGES privileges = {
 		.PrivilegeCount = 1,
 		.Privileges = {{ .Attributes = SE_PRIVILEGE_ENABLED }}
 	};
-	int fd;
 
-	if (!LookupPrivilegeValue(NULL, SE_DEBUG_NAME, &privileges.Privileges[0].Luid)) {
-		fprintf(stderr, "Error: LookupPrivilegeValue: 0x%lx\n", GetLastError());
-		return NULL;
-	}
-	if (!ImpersonateSelf(SecurityImpersonation)) {
-		fprintf(stderr, "Error: ImpersonateSelf: 0x%lx\n", GetLastError());
-		return NULL;
-	}
-	if (!OpenThreadToken(GetCurrentThread(), TOKEN_ADJUST_PRIVILEGES, FALSE, &thread_token)) {
-		fprintf(stderr, "Error: OpenThreadToken: 0x%lx\n", GetLastError());
-		RevertToSelf();
-		return NULL;
-	}
-	if (!AdjustTokenPrivileges(thread_token, FALSE, &privileges, sizeof(privileges), NULL, NULL)) {
-		fprintf(stderr, "Error: AdjustTokenPrivileges: 0x%lx\n", GetLastError());
-		CloseHandle(thread_token);
-		RevertToSelf();
-		return NULL;
-	}
-	CloseHandle(thread_token);
+	if (!LookupPrivilegeValue(NULL, SE_DEBUG_NAME, &privileges.Privileges[0].Luid))
+		goto err;
 
 	process_snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-	if (process_snapshot == INVALID_HANDLE_VALUE) {
-		fprintf(stderr, "Error: CreateToolhelp32Snapshot: 0x%lx\n", GetLastError());
+	if (process_snapshot == INVALID_HANDLE_VALUE)
+		goto err;
+	for (ret = Process32First(process_snapshot, &entry); ret; last_error = GetLastError(), ret = Process32Next(process_snapshot, &entry)) {
+		if (strcasecmp(entry.szExeFile, "winlogon.exe"))
+			continue;
+
 		RevertToSelf();
-		return NULL;
-	}
-	for (ret = Process32First(process_snapshot, &entry); ret; ret = Process32Next(process_snapshot, &entry)) {
-		//TODO: This isn't very smart matching. An attacker can DoS us by just opening processes
-		// with the same name. Instead we should be looking for tokens that we can actually use.
-		if (!strcasecmp(entry.szExeFile, "winlogon.exe")) {
-			pid = entry.th32ProcessID;
+		if (!ImpersonateSelf(SecurityImpersonation))
+			continue;
+		if (!OpenThreadToken(GetCurrentThread(), TOKEN_ADJUST_PRIVILEGES, FALSE, &thread_token))
+			continue;
+		if (!AdjustTokenPrivileges(thread_token, FALSE, &privileges, sizeof(privileges), NULL, NULL)) {
+			last_error = GetLastError();
+			CloseHandle(thread_token);
+			continue;
+		}
+		CloseHandle(thread_token);
+
+		winlogon_process = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, entry.th32ProcessID);
+		if (!winlogon_process)
+			continue;
+		if (!OpenProcessToken(winlogon_process, TOKEN_IMPERSONATE | TOKEN_DUPLICATE, &winlogon_token))
+			continue;
+		CloseHandle(winlogon_process);
+		if (!DuplicateToken(winlogon_token, SecurityImpersonation, &duplicated_token)) {
+			last_error = GetLastError();
+			RevertToSelf();
+			continue;
+		}
+		CloseHandle(winlogon_token);
+		if (!SetThreadToken(NULL, duplicated_token)) {
+			last_error = GetLastError();
+			CloseHandle(duplicated_token);
+			continue;
+		}
+		CloseHandle(duplicated_token);
+
+		snprintf(fname, sizeof(fname), "\\\\.\\pipe\\WireGuard\\%s", interface);
+		pipe_handle = CreateFile(fname, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
+		last_error = GetLastError();
+		if (pipe_handle != INVALID_HANDLE_VALUE) {
+			last_error = ERROR_SUCCESS;
 			break;
 		}
 	}
-	CloseHandle(process_snapshot);
-	if (!pid) {
-		fprintf(stderr, "Error: unable to find winlogon.exe\n");
-		RevertToSelf();
-		return NULL;
-	}
-
-	winlogon_process = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pid);
-	if (!winlogon_process) {
-		fprintf(stderr, "Error: OpenProcess: 0x%lx\n", GetLastError());
-		RevertToSelf();
-		return NULL;
-	}
-
-	if (!OpenProcessToken(winlogon_process, TOKEN_IMPERSONATE | TOKEN_DUPLICATE, &winlogon_token)) {
-		fprintf(stderr, "Error: OpenProcessToken: 0x%lx\n", GetLastError());
-		CloseHandle(winlogon_process);
-		RevertToSelf();
-		return NULL;
-	}
-	CloseHandle(winlogon_process);
-
-	if (!DuplicateToken(winlogon_token, SecurityImpersonation, &duplicated_token)) {
-		fprintf(stderr, "Error: DuplicateToken: 0x%lx\n", GetLastError());
-		CloseHandle(winlogon_token);
-		RevertToSelf();
-		return NULL;
-	}
-	CloseHandle(winlogon_token);
-
-	if (!SetThreadToken(NULL, duplicated_token)) {
-		fprintf(stderr, "Error: SetThreadToken: 0x%lx\n", GetLastError());
-		CloseHandle(duplicated_token);
-		RevertToSelf();
-		return NULL;
-	}
-	CloseHandle(duplicated_token);
-
-	snprintf(fname, sizeof(fname), "\\\\.\\pipe\\WireGuard\\%s", interface);
-	pipe_handle = CreateFile(fname, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
-	last_error = GetLastError();
 	RevertToSelf();
-	if (pipe_handle == INVALID_HANDLE_VALUE) {
-		fprintf(stderr, "Error: CreateFile: 0x%lx\n", last_error);
-		return NULL;
-	}
+	CloseHandle(process_snapshot);
+
+	if (last_error != ERROR_SUCCESS || pipe_handle == INVALID_HANDLE_VALUE)
+		goto err;
 	fd = _open_osfhandle((intptr_t)pipe_handle, _O_RDWR);
 	if (fd == -1) {
-		fprintf(stderr, "Error: _open_osfhandle: 0x%lx\n", GetLastError());
+		last_error = GetLastError();
 		CloseHandle(pipe_handle);
-		return NULL;
+		goto err;
 	}
 	return _fdopen(fd, "r+");
+
+err:
+	if (last_error == ERROR_SUCCESS)
+		last_error = GetLastError();
+	if (last_error == ERROR_SUCCESS)
+		last_error = ERROR_ACCESS_DENIED;
+	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, last_error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), error_message, sizeof(error_message) - 1, NULL);
+	fprintf(stderr, "Error: Unable to open IPC handle via SYSTEM impersonation: %ld: %s\n", last_error, error_message);
+	errno = EACCES;
+	return NULL;
 }
 
 static int userspace_get_wireguard_interfaces(struct inflatable_buffer *buffer)
