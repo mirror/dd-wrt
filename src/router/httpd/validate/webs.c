@@ -2743,7 +2743,7 @@ void move_vif(char *prefix, char *svif, char *tvif)
 	}
 }
 #endif
-void remove_vifs_single(char *prefix)
+void remove_vifs_single(char *prefix, int vap)
 {
 	char wif[16];
 
@@ -2817,19 +2817,19 @@ void remove_vifs_single(char *prefix)
 	}
 	gp_action = 0;
 #endif
-	o = -1;
-	for (i = 0; i < slen; i++) {
-		if (copy[i] == 0x20)
-			o = i;
+	char word[32];
+	char *next;
+	memset(copy, 0, slen);
+	int gp = 0;
+	foreach(word, vifs, next) {
+		if (gp != vap)
+			if (strlen(copy))
+				sprintf(copy, "%s %s", copy, word);
+			else
+				strcpy(copy, word);
 	}
+	nvram_set(wif, copy);
 
-	if (o == -1) {
-		nvram_set(wif, "");
-	} else {
-		copy[o] = 0;
-		nvram_set(wif, copy);
-	}
-	// nvram_commit ();
 #ifdef HAVE_AOSS
 // must remove all aoss vap's if one of them is touched
 	if (*(nvram_safe_get("aoss_vifs"))) {
@@ -2849,12 +2849,13 @@ void remove_vifs_single(char *prefix)
 void remove_vifs(webs_t wp)
 {
 	char *prefix = websGetVar(wp, "iface", NULL);
+	int vap = websGetVari(wp, "vap", 0);
 #ifdef HAVE_GUESTPORT
 	if (!strcmp(websGetVar(wp, "gp_modify", ""), "remove")) {
 		gp_action = 2;
 	}
 #endif
-	remove_vifs_single(prefix);
+	remove_vifs_single(prefix, vap);
 }
 
 #ifdef HAVE_BONDING
