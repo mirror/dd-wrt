@@ -85,7 +85,7 @@
 #define TWSI_INT_SDA		BIT_ULL(10)
 #define TWSI_INT_SCL		BIT_ULL(11)
 
-#define I2C_OCTEON_EVENT_WAIT 80 /* microseconds */
+#define I2C_OCTEON_EVENT_WAIT 150 /* microseconds */
 
 /* Register offsets */
 struct octeon_i2c_reg_offset {
