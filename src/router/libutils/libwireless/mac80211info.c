@@ -1866,7 +1866,6 @@ void mac80211_set_antennas(int phy, uint32_t tx_ant, uint32_t rx_ant)
 	return;
 }
 
-#ifdef HAVE_MAC80211_MESH
 static int mac80211_has_iftype(int phy, enum nl80211_iftype iftype)
 {
 	struct nlattr *tb[NL80211_ATTR_MAX + 1];
@@ -1905,7 +1904,17 @@ nla_put_failure:
 	return 0;
 
 }
+int has_ibss(const char *prefix)
+{
+	if (!is_mac80211(prefix))
+		return 0;
+	INITVALUECACHE();
+	ret = mac80211_has_iftype(get_ath9k_phy_ifname(prefix), NL80211_IFTYPE_ADHOC);
+	EXITVALUECACHE();
+	return ret;
+}
 
+#ifdef HAVE_MAC80211_MESH
 int has_mesh(const char *prefix)
 {
 	if (!is_mac80211(prefix))
@@ -1916,15 +1925,6 @@ int has_mesh(const char *prefix)
 	return ret;
 }
 
-int has_ibss(const char *prefix)
-{
-	if (!is_mac80211(prefix))
-		return 0;
-	INITVALUECACHE();
-	ret = mac80211_has_iftype(get_ath9k_phy_ifname(prefix), NL80211_IFTYPE_ADHOC);
-	EXITVALUECACHE();
-	return ret;
-}
 
 int has_tdma(const char *prefix)
 {
