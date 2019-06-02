@@ -166,8 +166,6 @@ modprobe ppp_synctty > /dev/null 2>&1
 modprobe pppoe > /dev/null 2>&1
 fi
 AC_TRY_RUN([#include <sys/socket.h>
-#include <net/ethernet.h>
-#include <linux/if.h>
 #include <netinet/in.h>
 #include <linux/if_pppox.h>
 int main()

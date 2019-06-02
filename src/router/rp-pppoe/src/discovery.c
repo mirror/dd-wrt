@@ -10,8 +10,6 @@
 *
 ***********************************************************************/
 
-static char const RCSID[] =
-"$Id$";
 #define _GNU_SOURCE 1
 
 #include "pppoe.h"
@@ -472,8 +470,8 @@ waitForPADO(PPPoEConnection *conn, int timeout)
 	if (!packetIsForMe(conn, &packet)) continue;
 
 	if (packet.code == CODE_PADO) {
-	    if (NOT_UNICAST(packet.ethHdr.h_source)) {
-		printErr("Ignoring PADO packet from non-unicast MAC address");
+	    if (BROADCAST(packet.ethHdr.h_source)) {
+		printErr("Ignoring PADO packet from broadcast MAC address");
 		continue;
 	    }
 #ifdef PLUGIN

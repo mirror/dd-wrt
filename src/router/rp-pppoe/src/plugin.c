@@ -24,9 +24,6 @@
 *
 ***********************************************************************/
 
-static char const RCSID[] =
-"$Id$";
-
 #define _GNU_SOURCE 1
 #include "pppoe.h"
 
@@ -42,6 +39,11 @@ static char const RCSID[] =
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#if defined(HAVE_LINUX_IF_H)
+#include <linux/if.h>
+#elif defined(HAVE_NET_IF_H)
+#include <net/if.h>
+#endif
 #include <sys/stat.h>
 #include <string.h>
 #include <stdlib.h>
@@ -53,6 +55,8 @@ static char const RCSID[] =
 #include <net/if_arp.h>
 #include <linux/ppp_defs.h>
 #include <linux/if_pppox.h>
+#if 0
+#endif
 
 #ifndef _ROOT_PATH
 #define _ROOT_PATH ""
@@ -322,10 +326,8 @@ PPPOEDisconnectDevice(void)
     }
     close(conn->sessionSocket);
     close(conn->discoverySocket);
-    if (conn->ifName) {
-	free(conn->ifName);
-    }
-    free(conn);
+
+    /* Do NOT free conn; if pppd persist is on, we'll need it again */
 }
 
 static void

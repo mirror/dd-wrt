@@ -11,9 +11,6 @@
 *
 ***********************************************************************/
 
-static char const RCSID[] =
-"$Id$";
-
 #include "event_tcp.h"
 #include <unistd.h>
 #include <fcntl.h>
