@@ -51,13 +51,6 @@ extern int IsSetID;
 #include <sys/socket.h>
 #endif
 
-/* Ugly header files on some Linux boxes... */
-#if defined(HAVE_LINUX_IF_H)
-#include <linux/if.h>
-#elif defined(HAVE_NET_IF_H)
-#include <net/if.h>
-#endif
-
 #ifdef HAVE_NET_IF_TYPES_H
 #include <net/if_types.h>
 #endif

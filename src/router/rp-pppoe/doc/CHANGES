@@ -1,4 +1,14 @@
 # LIC: GPL
+
+Changes from version 3.12 to 3.13:
+
+- Release 3.13 (2018-11-25)
+
+- Fix potential use-after-free bug
+
+- Properly detecte kernel-mode PPPoE; fix compilation problems on
+  Debian Jessie and Debian Stretch.
+
 Changes from version 3.11 to 3.12:
 
 - Update author's name to "Dianne Skoll"

@@ -17,16 +17,18 @@
 *
 ***********************************************************************/
 
-static char const RCSID[] =
-"$Id$";
-
 #include "config.h"
+
+#include <sys/socket.h>
+#if defined(HAVE_LINUX_IF_H)
+#include <linux/if.h>
+#elif defined(HAVE_NET_IF_H)
+#include <net/if.h>
+#endif
 
 #if defined(HAVE_NETPACKET_PACKET_H) || defined(HAVE_LINUX_IF_PACKET_H)
 #define _POSIX_SOURCE 1 /* For sigaction defines */
 #endif
-
-#define _BSD_SOURCE 1 /* for gethostname */
 
 #include "pppoe-server.h"
 #include "md5.h"
