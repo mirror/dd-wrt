@@ -14,9 +14,6 @@
 *
 ***********************************************************************/
 
-static char const RCSID[] =
-"$Id$";
-
 #include "hash.h"
 
 #include <limits.h>

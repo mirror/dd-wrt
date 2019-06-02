@@ -15,9 +15,6 @@
 *
 ***********************************************************************/
 
-static char const RCSID[] =
-"$Id$";
-
 #include "pppoe.h"
 
 #ifdef HAVE_SYSLOG_H

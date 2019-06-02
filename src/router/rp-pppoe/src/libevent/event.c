@@ -14,9 +14,6 @@
 *
 ***********************************************************************/
 
-static char const RCSID[] =
-"$Id$";
-
 #include "event.h"
 #include <stdlib.h>
 #include <errno.h>

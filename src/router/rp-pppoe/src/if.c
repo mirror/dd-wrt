@@ -15,10 +15,12 @@
 *
 ***********************************************************************/
 
-static char const RCSID[] =
-"$Id$";
-
 #include "pppoe.h"
+#if defined(HAVE_LINUX_IF_H)
+#include <linux/if.h>
+#elif defined(HAVE_NET_IF_H)
+#include <net/if.h>
+#endif
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>

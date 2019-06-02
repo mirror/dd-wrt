@@ -15,13 +15,9 @@
 *
 ***********************************************************************/
 
-static char const RCSID[] =
-"$Id$";
 /* For vsnprintf prototype */
 #define _ISOC99_SOURCE 1
-
-/* For seteuid prototype */
-#define _BSD_SOURCE 1
+#define _GNU_SOURCE 1
 
 #include "pppoe.h"
 
