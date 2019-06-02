@@ -2571,7 +2571,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		websWrite(wp, "</div>\n");
 #endif
 		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.remove + \"\\\" onclick=\\\"$('gp_modify').value='remove';vifs_remove_submit(this.form,'%s','%d')\\\" />\");\n//]]>\n</script>\n",
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.remove + \"\\\" onclick=\\\"vifs_remove_submit(this.form,'%s','%d')\\\" />\");\n//]]>\n</script>\n",
 			  prefix, count);
 		websWrite(wp, "</fieldset><br />\n");
 		count++;
