@@ -464,6 +464,8 @@ void configure_single_ath9k(int count)
 	char compr[32];
 	if (*vifs) {
 		foreach(var, vifs, next) {
+			if (nvram_nmatch("disabled", "%s_mode"))
+				continue;
 			fprintf(stderr, "setup vifs %s %d\n", var, counter);
 			// create the first main hostapd interface when this is repeater mode
 			if (!nvram_nmatch("mesh", "%s_mode", var)) {
