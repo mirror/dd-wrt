@@ -2888,12 +2888,44 @@ static void movevap(char *prefix, int source, int target)
 	moveval(sname, tname, "wep_bit");
 	moveval(sname, tname, "crypto");
 
-	char *wordlist = nvram_safe_get("bridgesif");
+	char word[128];
+	char *next;
+	char *wordlist = nvram_safe_get("vlan_tags");
+	char *copy;
+	if (*wordlist) {
+		copy = malloc(strlen(wordlist));
+		*copy = 0;
+		foreach(word, wordlist, next) {
+			GETENTRYBYIDX(tag, word, 0);
+			GETENTRYBYIDX(port, word, 1);
+			GETENTRYBYIDX(prio, word, 2);
+			if (!tag || !port) {
+				break;
+			}
+			if (!prio)
+				prio = "0";
+
+			if (!strcmp(tag, tname)) {
+				continue;
+			}
+			if (!strcmp(tag, sname)) {
+				strcpy(tag, tname);
+			}
+			if (*copy)
+				strcat(copy, " ");
+			strcat(copy, tag);
+			strcat(copy, ">");
+			strcat(copy, port);
+			strcat(copy, ">");
+			strcat(copy, prio);
+		}
+		nvram_set("vlan_tags", copy);
+		free(copy);
+	}
+	wordlist = nvram_safe_get("bridgesif");
 	int count = nvram_geti("bridgesif_count");
-	if (strlen(wordlist)) {
-		char word[128];
-		char *next;
-		char *copy = malloc(strlen(wordlist));
+	if (*wordlist) {
+		copy = malloc(strlen(wordlist));
 		*copy = 0;
 		foreach(word, wordlist, next) {
 			GETENTRYBYIDX(tag, word, 0);
@@ -2924,9 +2956,9 @@ static void movevap(char *prefix, int source, int target)
 			strcat(copy, pathcost);
 
 		}
-	nvram_set("bridgesif", copy);
-	nvram_seti("bridgesif_count", count);
-	free(copy);
+		nvram_set("bridgesif", copy);
+		nvram_seti("bridgesif_count", count);
+		free(copy);
 	}
 
 }
@@ -3020,11 +3052,12 @@ void remove_vifs_single(char *prefix, int vap)
 				movevap(prefix, i + 1, i);
 		}
 		foreach(word, vifs, next) {
-			if (gp != vap)
+			if (gp != vap) {
 				if (strlen(copy))
 					sprintf(copy, "%s %s", copy, word);
 				else
 					strcpy(copy, word);
+			}
 			gp++;
 		}
 		nvram_set(wif, copy);
