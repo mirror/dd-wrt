@@ -2757,12 +2757,12 @@ static void moveval(int bonly, char *src, char *tgt, char *val)
 
 static char *vapsettings[] = {
 	"802.1x", "8021xtype", "acct", "acct_ipaddr", "acct_key", "acct_port", "active_mac", "akm", "ap_isolate", "auth_mode", "authmode", "bias", "bridge", "bridged", "ccmp", "ccmp-256", "closed", "connect", "crypto",
-	    "disable_eapol_key_retries", "dns_ipaddr", "dns_redirect", "domain", "dtim", "fc", "fc_th", "ft", "gcmp", "gcmp-256", "gtk_rekey", "hwaddr", "ipaddr", "isolation", "key", "key1", "key2", "key3", "key4",
-	    "label", "leap", "leap8021xaddopt", "leap8021xanon", "leap8021xpasswd", "leap8021xphase2", "leap8021xuser", "local_ip", "maclist", "macmode", "maxassoc", "mfp", "mode", "mtu", "multicast",
-	    "multicast_to_unicast", "nas", "nat", "netmask", "passphrase", "peap", "peap8021xaddopt", "peap8021xanon", "peap8021xca", "peap8021xpasswd", "peap8021xphase2", "peap8021xuser", "poll_time", "preamble",
-	    "protmode", "psk2", "radius2_ipaddr", "radius2_key", "radius2_port", "radius_ipaddr", "radius_key", "radius_port", "radmactype", "rts", "rtsvalue", "sae_key", "ssid", "stay", "strikes", "tkip", "tls",
-	    "tls8021xaddopt", "tls8021xanon", "tls8021xca", "tls8021xkeyxchng", "tls8021xpasswd", "tls8021xpem", "tls8021xphase2", "tls8021xprv", "tls8021xuser", "ttls", "ttls8021xaddopt", "ttls8021xanon", "ttls8021xca",
-	    "ttls8021xpasswd", "ttls8021xphase2", "ttls8021xuser", "turbo_qam", "txq", "uapsd", "wep", "wep_bit", "wep_buf", "wmm", "wpa", "wpa2", "wpa2-sha256", "wpa3", "wpa3-128", "wpa3-192", "wpa_gtk_rekey", "wpa_psk"
+	"disable_eapol_key_retries", "dns_ipaddr", "dns_redirect", "domain", "dtim", "fc", "fc_th", "ft", "gcmp", "gcmp-256", "gtk_rekey", "hwaddr", "ipaddr", "isolation", "key", "key1", "key2", "key3", "key4",
+	"label", "leap", "leap8021xaddopt", "leap8021xanon", "leap8021xpasswd", "leap8021xphase2", "leap8021xuser", "local_ip", "maclist", "macmode", "maxassoc", "mfp", "mode", "mtu", "multicast",
+	"multicast_to_unicast", "nas", "nat", "netmask", "passphrase", "peap", "peap8021xaddopt", "peap8021xanon", "peap8021xca", "peap8021xpasswd", "peap8021xphase2", "peap8021xuser", "poll_time", "preamble",
+	"protmode", "psk2", "radius2_ipaddr", "radius2_key", "radius2_port", "radius_ipaddr", "radius_key", "radius_port", "radmactype", "rts", "rtsvalue", "sae_key", "ssid", "stay", "strikes", "tkip", "tls",
+	"tls8021xaddopt", "tls8021xanon", "tls8021xca", "tls8021xkeyxchng", "tls8021xpasswd", "tls8021xpem", "tls8021xphase2", "tls8021xprv", "tls8021xuser", "ttls", "ttls8021xaddopt", "ttls8021xanon", "ttls8021xca",
+	"ttls8021xpasswd", "ttls8021xphase2", "ttls8021xuser", "turbo_qam", "txq", "uapsd", "wep", "wep_bit", "wep_buf", "wmm", "wpa", "wpa2", "wpa2-sha256", "wpa3", "wpa3-128", "wpa3-192", "wpa_gtk_rekey", "wpa_psk"
 };
 
 static void movevap(char *prefix, int source, int target, int bonly)
@@ -2830,12 +2830,20 @@ static void movevap(char *prefix, int source, int target, int bonly)
 			GETENTRYBYIDX(hairpin, word, 3);
 			GETENTRYBYIDX(stp, word, 4);
 			GETENTRYBYIDX(pathcost, word, 5);
+			if (!prio)
+				prio = "128";
+			if (!hairpin)
+				hairpin = "0";
+			if (!pathcost)
+				pathcost = "100";
+			if (!stp)
+				stp = "0";
 			if (!strcmp(port, tname)) {
 				count--;
 				continue;
 			}
 			if (!bonly && !strcmp(port, sname)) {
-				strcpy(port, tname);
+				port = tname;
 			}
 			if (*copy)
 				strcat(copy, " ");
