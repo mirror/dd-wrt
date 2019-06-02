@@ -2827,6 +2827,7 @@ void remove_vifs_single(char *prefix, int vap)
 				sprintf(copy, "%s %s", copy, word);
 			else
 				strcpy(copy, word);
+		gp++;
 	}
 	nvram_set(wif, copy);
 
