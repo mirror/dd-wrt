@@ -2755,6 +2755,16 @@ static void moveval(int bonly, char *src, char *tgt, char *val)
 	nvram_unset(s);
 }
 
+static char *vapsettings[] = {
+	"802.1x", "8021xtype", "acct", "acct_ipaddr", "acct_key", "acct_port", "active_mac", "akm", "ap_isolate", "auth_mode", "authmode", "bias", "bridge", "bridged", "ccmp", "ccmp-256", "closed", "connect", "crypto",
+	    "disable_eapol_key_retries", "dns_ipaddr", "dns_redirect", "domain", "dtim", "fc", "fc_th", "ft", "gcmp", "gcmp-256", "gtk_rekey", "hwaddr", "ipaddr", "isolation", "key", "key1", "key2", "key3", "key4",
+	    "label", "leap", "leap8021xaddopt", "leap8021xanon", "leap8021xpasswd", "leap8021xphase2", "leap8021xuser", "local_ip", "maclist", "macmode", "maxassoc", "mfp", "mode", "mtu", "multicast",
+	    "multicast_to_unicast", "nas", "nat", "netmask", "passphrase", "peap", "peap8021xaddopt", "peap8021xanon", "peap8021xca", "peap8021xpasswd", "peap8021xphase2", "peap8021xuser", "poll_time", "preamble",
+	    "protmode", "psk2", "radius2_ipaddr", "radius2_key", "radius2_port", "radius_ipaddr", "radius_key", "radius_port", "radmactype", "rts", "rtsvalue", "sae_key", "ssid", "stay", "strikes", "tkip", "tls",
+	    "tls8021xaddopt", "tls8021xanon", "tls8021xca", "tls8021xkeyxchng", "tls8021xpasswd", "tls8021xpem", "tls8021xphase2", "tls8021xprv", "tls8021xuser", "ttls", "ttls8021xaddopt", "ttls8021xanon", "ttls8021xca",
+	    "ttls8021xpasswd", "ttls8021xphase2", "ttls8021xuser", "turbo_qam", "txq", "uapsd", "wep", "wep_bit", "wep_buf", "wmm", "wpa", "wpa2", "wpa2-sha256", "wpa3", "wpa3-128", "wpa3-192", "wpa_gtk_rekey", "wpa_psk"
+};
+
 static void movevap(char *prefix, int source, int target, int bonly)
 {
 	char sname[32];
@@ -2765,121 +2775,11 @@ static void movevap(char *prefix, int source, int target, int bonly)
 	sprintf(tname, "%s.%d", prefix, target);
 	char stname[32];
 	sprintf(stname, "%sX%d", prefix, target);
-	moveval(bonly, sname, tname, "802.1x");
-	moveval(bonly, sname, tname, "8021xtype");
-	moveval(bonly, sname, tname, "acct");
-	moveval(bonly, sname, tname, "acct_ipaddr");
-	moveval(bonly, sname, tname, "acct_key");
-	moveval(bonly, sname, tname, "acct_port");
-	moveval(bonly, sname, tname, "active_mac");
-	moveval(bonly, sname, tname, "akm");
-	moveval(bonly, sname, tname, "ap_isolate");
-	moveval(bonly, sname, tname, "auth_mode");
-	moveval(bonly, sname, tname, "authmode");
-	moveval(bonly, sname, tname, "bias");
-	moveval(bonly, sname, tname, "bridge");
-	moveval(bonly, sname, tname, "bridged");
-	moveval(bonly, sname, tname, "ccmp");
-	moveval(bonly, sname, tname, "ccmp-256");
-	moveval(bonly, sname, tname, "closed");
-	moveval(bonly, sname, tname, "connect");
-	moveval(bonly, sname, tname, "crypto");
-	moveval(bonly, sname, tname, "disable_eapol_key_retries");
-	moveval(bonly, sname, tname, "dns_ipaddr");
-	moveval(bonly, sname, tname, "dns_redirect");
-	moveval(bonly, sname, tname, "domain");
-	moveval(bonly, sname, tname, "dtim");
-	moveval(bonly, sname, tname, "fc");
-	moveval(bonly, sname, tname, "fc_th");
-	moveval(bonly, sname, tname, "ft");
-	moveval(bonly, sname, tname, "gcmp");
-	moveval(bonly, sname, tname, "gcmp-256");
-	moveval(bonly, sname, tname, "gtk_rekey");
-	moveval(bonly, sname, tname, "hwaddr");
-	moveval(bonly, sname, tname, "ipaddr");
-	moveval(bonly, sname, tname, "isolation");
-	moveval(bonly, sname, tname, "key");
-	moveval(bonly, sname, tname, "key1");
-	moveval(bonly, sname, tname, "key2");
-	moveval(bonly, sname, tname, "key3");
-	moveval(bonly, sname, tname, "key4");
-	moveval(bonly, sname, tname, "label");
-	moveval(bonly, sname, tname, "leap");
-	moveval(bonly, sname, tname, "leap8021xaddopt");
-	moveval(bonly, sname, tname, "leap8021xanon");
-	moveval(bonly, sname, tname, "leap8021xpasswd");
-	moveval(bonly, sname, tname, "leap8021xphase2");
-	moveval(bonly, sname, tname, "leap8021xuser");
-	moveval(bonly, sname, tname, "local_ip");
-	moveval(bonly, sname, tname, "maclist");
-	moveval(bonly, sname, tname, "macmode");
-	moveval(bonly, sname, tname, "maxassoc");
-	moveval(bonly, sname, tname, "mfp");
-	moveval(bonly, sname, tname, "mode");
-	moveval(bonly, sname, tname, "mtu");
-	moveval(bonly, sname, tname, "multicast");
-	moveval(bonly, sname, tname, "multicast_to_unicast");
-	moveval(bonly, sname, tname, "nas");
-	moveval(bonly, sname, tname, "nat");
-	moveval(bonly, sname, tname, "netmask");
-	moveval(bonly, sname, tname, "passphrase");
-	moveval(bonly, sname, tname, "peap");
-	moveval(bonly, sname, tname, "peap8021xaddopt");
-	moveval(bonly, sname, tname, "peap8021xanon");
-	moveval(bonly, sname, tname, "peap8021xca");
-	moveval(bonly, sname, tname, "peap8021xpasswd");
-	moveval(bonly, sname, tname, "peap8021xphase2");
-	moveval(bonly, sname, tname, "peap8021xuser");
-	moveval(bonly, sname, tname, "poll_time");
-	moveval(bonly, sname, tname, "preamble");
-	moveval(bonly, sname, tname, "protmode");
-	moveval(bonly, sname, tname, "psk2");
-	moveval(bonly, sname, tname, "radius2_ipaddr");
-	moveval(bonly, sname, tname, "radius2_key");
-	moveval(bonly, sname, tname, "radius2_port");
-	moveval(bonly, sname, tname, "radius_ipaddr");
-	moveval(bonly, sname, tname, "radius_key");
-	moveval(bonly, sname, tname, "radius_port");
-	moveval(bonly, sname, tname, "radmactype");
-	moveval(bonly, sname, tname, "rts");
-	moveval(bonly, sname, tname, "rtsvalue");
-	moveval(bonly, sname, tname, "sae_key");
-	moveval(bonly, sname, tname, "ssid");
-	moveval(bonly, sname, tname, "stay");
-	moveval(bonly, sname, tname, "strikes");
-	moveval(bonly, sname, tname, "tkip");
-	moveval(bonly, sname, tname, "tls");
-	moveval(bonly, sname, tname, "tls8021xaddopt");
-	moveval(bonly, sname, tname, "tls8021xanon");
-	moveval(bonly, sname, tname, "tls8021xca");
-	moveval(bonly, sname, tname, "tls8021xkeyxchng");
-	moveval(bonly, sname, tname, "tls8021xpasswd");
-	moveval(bonly, sname, tname, "tls8021xpem");
-	moveval(bonly, sname, tname, "tls8021xphase2");
-	moveval(bonly, sname, tname, "tls8021xprv");
-	moveval(bonly, sname, tname, "tls8021xuser");
-	moveval(bonly, sname, tname, "ttls");
-	moveval(bonly, sname, tname, "ttls8021xaddopt");
-	moveval(bonly, sname, tname, "ttls8021xanon");
-	moveval(bonly, sname, tname, "ttls8021xca");
-	moveval(bonly, sname, tname, "ttls8021xpasswd");
-	moveval(bonly, sname, tname, "ttls8021xphase2");
-	moveval(bonly, sname, tname, "ttls8021xuser");
-	moveval(bonly, sname, tname, "turbo_qam");
-	moveval(bonly, sname, tname, "txq");
-	moveval(bonly, sname, tname, "uapsd");
-	moveval(bonly, sname, tname, "wep");
-	moveval(bonly, sname, tname, "wep_bit");
-	moveval(bonly, sname, tname, "wep_buf");
-	moveval(bonly, sname, tname, "wmm");
-	moveval(bonly, sname, tname, "wpa");
-	moveval(bonly, sname, tname, "wpa2");
-	moveval(bonly, sname, tname, "wpa2-sha256");
-	moveval(bonly, sname, tname, "wpa3");
-	moveval(bonly, sname, tname, "wpa3-128");
-	moveval(bonly, sname, tname, "wpa3-192");
-	moveval(bonly, sname, tname, "wpa_gtk_rekey");
-	moveval(bonly, sname, tname, "wpa_psk");
+
+	int i;
+	for (i = 0; i < sizeof(vapsettings) / sizeof(char *); i++)
+		moveval(bonly, sname, tname, vapsettings[i]);
+
 	moveval(bonly, ssname, stname, "akm");
 	moveval(bonly, ssname, stname, "macmode1");
 	moveval(bonly, ssname, stname, "security_mode");
