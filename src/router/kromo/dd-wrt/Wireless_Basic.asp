@@ -235,8 +235,9 @@ function vifs_add_submit(F,I) {
 	F.submit();
 }
 
-function vifs_remove_submit(F,I) {
+function vifs_remove_submit(F,I,VAP) {
 	F.iface.value = I;
+	F.vap.value = VAP;
 	F.submit_type.value = "remove_vifs";
 	F.submit();
 }
@@ -672,6 +673,7 @@ function initChannelProperties() {
 				  	<input type="hidden" name="wl1_nctrlsb" /> 
 				  	<input type="hidden" name="wl2_nctrlsb" /> 
 				  	<input type="hidden" name="iface" />
+				  	<input type="hidden" name="vap" />
 				  	
 				  	<% show_wireless(); %>
 					<% show_wireless_advanced(); %>
