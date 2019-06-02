@@ -115,7 +115,7 @@ share.frequency="Frequenz";
 share.rssi="Signal";
 share.signal="Signal";
 share.noise="Rauschen";
-share.quality="Qualität";
+share.quality="Qualit&auml;t";
 share.beacon="Beacon";
 share.openn="Offen";
 share.dtim="DTIM";
@@ -790,7 +790,7 @@ hprivoxy.right2="Schaltet Privoxy ein und konfiguriert ihn f&uuml;r ihre Clients
 //help page
 hprivoxy.page1="<dd>Privoxy erm&ouml;glicht das Entfernen von Werbung. <br/><ul><br/></ul></dd>";
 hprivoxy.page2="<dd><br/><ul><br/><li>Publiziert ein wpad/pac File das dazu dient den Proxy auf Clientcomputern automatisch zu konfigurieren</li><li>Bei manchen Clients ist es n&ouml;tig die Automatische Proxykonfiguratio zu aktivieren</li><li>Falls ihr Klient Mitglied einer Dom&auml;ne ist, m&uuml;ssen sie das Senden der lokalen Dom&auml;ne aktivieren</li></ul></dd>";
-hprivoxy.page3="<dd><br/><ul><li>Verbindungen ins Internet zu Port 80 werden über den Werbefilter geleitet</li><li>Dadurch kann das Filtern für jeden Klient erzwungen werden</li><li>Im Transparenten Modus können keine https Verbindungen gefiltert werden, es sei denn der Klient nutzt die Proxy Autokonfig aum die Verbindungen über den Werbefilter zu leiten</li></ul></dd>";
+hprivoxy.page3="<dd><br/><ul><li>Verbindungen ins Internet zu Port 80 werden &uuml;ber den Werbefilter geleitet</li><li>Dadurch kann das Filtern f&uuml;r jeden Klient erzwungen werden</li><li>Im Transparenten Modus k&öuml;nnen keine https Verbindungen gefiltert werden, es sei denn der Klient nutzt die Proxy Autokonfig aum die Verbindungen &uuml;ber den Werbefilter zu leiten</li></ul></dd>";
 hprivoxy.page4="<dd><br/><ul><li>Erlaubt das Vorgeben eigener Einstellungen</li></ul></dd>";
 
 
@@ -1380,7 +1380,7 @@ hroute.right10="Setzt den angewandten Netzwerk-Bereich.";
 survey.titl="Netzsuche";
 survey.titl2="Kanalsuche";
 survey.h2="Benachbarte WLAN-Netzwerke";
-survey.h3="Kanäle und Qualitäten";
+survey.h3="Kan&auml;le und Qualit&auml;ten";
 survey.thjoin="Netz beitreten";
 
 
@@ -1413,11 +1413,11 @@ service.dhcp_nvramlease="Nutze NVRAM f&uuml;r Clientzuweisungs-DB";
 service.dhcp_domain="Genutzte Domain";
 service.dhcp_landomain="LAN-Domain";
 service.dhcp_option="Zus&auml;tzliche DHCPD-Optionen";
-service.dns_crypt="Verschlüssele DNS (DNSCrypt)";
+service.dns_crypt="Verschl&uuml;ssele DNS (DNSCrypt)";
 service.dns_crypt_resolv="DNS Crypt Server";
-service.dnsmasq_dnssec="Prüfe DNS Antworten (DNSSEC)";
+service.dnsmasq_dnssec="Pr&uuml;fe DNS Antworten (DNSSEC)";
 service.dnsmasq_dnssec_proxy="DNSSEC Daten Cachen";
-service.dnsmasq_dnssec_cu="Prüfe unsignierte DNS Antworten";
+service.dnsmasq_dnssec_cu="Pr&uuml;fe unsignierte DNS Antworten";
 
 service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
@@ -1891,7 +1891,7 @@ status_wireless.signal_qual="Signalqualit&auml;t";
 status_wireless.wds="WDS-Knotenpunkte";
 status_wireless.busy="Belegte Zeit";
 status_wireless.active="Aktive Zeit";
-status_wireless.quality="Kanal Qualität";
+status_wireless.quality="Kanal Qualit&auml;t";
 status_wireless.rx_time="Empfangszeit";
 status_wireless.tx_time="Sendezeit";
 status_wireless.assoc_count="Verbundene Stationen";
@@ -2060,8 +2060,8 @@ wpa.radius_key="RADIUS-Key";
 wpa.algorithms="WPA-Algorithmus";
 wpa.shared_key="gemeinsamer WPA Schl&uuml;ssel";
 wpa.sae_key="SAE Passwort";
-wpa.eapol_key_retries="EAPOL Schlüssel Wiederholung abschalten";
-wpa.ft="802.11r / Fast BSS Transission Unterstützung";
+wpa.eapol_key_retries="EAPOL Schl&uuml;ssel Wiederholung abschalten";
+wpa.ft="802.11r / Fast BSS Transission Unterst&uuml;tzung";
 
 
 
@@ -2426,9 +2426,10 @@ wl_basic.ap83_vap_note="Die Verwendung von mehr als drei virtuellen Schnittstell
 wl_basic.fc="Frame Kompression";
 wl_basic.isolation="Netz Isolierung";
 wl_basic.tor_anon="TOR Anonymisierung";
-wl_basic.country_settings="Ländereinstellungen";
+wl_basic.country_settings="L&auml;ndereinstellungen";
 wl_basic.uapsd="U-APSD (Automatisches Stromsparen)";
 wl_basic.smps="Spatial Multiplex Power Save";
+wl_basic.add="Virtuellen AP Hinzuf&uuml;gen";
 
 
 //help container
