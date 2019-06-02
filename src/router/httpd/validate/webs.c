@@ -2743,6 +2743,194 @@ void move_vif(char *prefix, char *svif, char *tvif)
 	}
 }
 #endif
+static void moveval(char *src, char *tgt, char *val)
+{
+	char s[128];
+	char t[128];
+	sprintf(s, "%s_%s", src, val);
+	sprintf(t, "%s_%s", tgt, val);
+	nvram_set(t, nvram_get(s));
+	nvram_unset(s);
+}
+
+static void movevap(char *prefix, int source, int target)
+{
+	char sname[32];
+	char ssname[32];
+	sprintf(sname, "%s.%d", source);
+	sprintf(ssname, "%sX%d", source);
+	char tname[32];
+	sprintf(tname, "%s.%d", target);
+	char stname[32];
+	sprintf(stname, "%sX%d", target);
+
+	moveval(sname, tname, "rtsvalue");
+	moveval(sname, tname, "ipaddr");
+	moveval(sname, tname, "radius_port");
+	moveval(sname, tname, "akm");
+	moveval(sname, tname, "mtu");
+	moveval(sname, tname, "radius2_port");
+	moveval(sname, tname, "fc");
+	moveval(sname, tname, "ft");
+	moveval(sname, tname, "wep_buf");
+	moveval(sname, tname, "radius_ipaddr");
+	moveval(sname, tname, "dtim");
+	moveval(sname, tname, "turbo_qam");
+	moveval(sname, tname, "stay");
+	moveval(sname, tname, "rts");
+	moveval(sname, tname, "macmode");
+	moveval(sname, tname, "poll_time");
+	moveval(sname, tname, "label");
+	moveval(sname, tname, "maxassoc");
+	moveval(sname, tname, "multicast_to_unicast");
+	moveval(sname, tname, "gtk_rekey");
+	moveval(sname, tname, "ap_isolate");
+	moveval(sname, tname, "wpa_gtk_rekey");
+	moveval(sname, tname, "ssid");
+	moveval(sname, tname, "protmode");
+	moveval(sname, tname, "maclist");
+	moveval(sname, tname, "txq");
+	moveval(sname, tname, "isolation");
+	moveval(sname, tname, "radius2_ipaddr");
+	moveval(sname, tname, "domain");
+	moveval(sname, tname, "fc_th");
+	moveval(ssname, stname, "akm");
+	moveval(sname, tname, "hwaddr");
+	moveval(sname, tname, "multicast");
+	moveval(sname, tname, "auth_mode");
+	moveval(sname, tname, "mode");
+	moveval(sname, tname, "closed");
+	moveval(sname, tname, "mfp");
+	moveval(sname, tname, "wpa_psk");
+	moveval(sname, tname, "local_ip");
+	moveval(sname, tname, "psk2");
+	moveval(sname, tname, "dns_redirect");
+	moveval(sname, tname, "bridge");
+	moveval(sname, tname, "dns_ipaddr");
+	moveval(sname, tname, "wmm");
+	moveval(sname, tname, "connect");
+	moveval(sname, tname, "wep");
+	moveval(sname, tname, "preamble");
+	moveval(ssname, stname, "macmode1");
+	moveval(sname, tname, "strikes");
+	moveval(sname, tname, "uapsd");
+	moveval(sname, tname, "key");
+	moveval(sname, tname, "nas");
+	moveval(sname, tname, "nat");
+	moveval(sname, tname, "active_mac");
+	moveval(sname, tname, "disable_eapol_key_retries");
+	moveval(sname, tname, "bias");
+	moveval(sname, tname, "authmode");
+	moveval(sname, tname, "netmask");
+	moveval(ssname, stname, "security_mode");
+	moveval(sname, tname, "bridged");
+	moveval(sname, tname, "radius_key");
+	moveval(sname, tname, "radius_port");
+	moveval(sname, tname, "radius_ipaddr");
+	moveval(sname, tname, "radius2_key");
+	moveval(sname, tname, "radius2_port");
+	moveval(sname, tname, "radius2_ipaddr");
+	moveval(sname, tname, "acct_ipaddr");
+	moveval(sname, tname, "acct_port");
+	moveval(sname, tname, "acct_key");
+	moveval(sname, tname, "acct");
+	moveval(sname, tname, "ccmp");
+	moveval(sname, tname, "tkip");
+	moveval(sname, tname, "ccmp-256");
+	moveval(sname, tname, "gcmp-256");
+	moveval(sname, tname, "gcmp");
+	moveval(sname, tname, "wpa");
+	moveval(sname, tname, "wpa2");
+	moveval(sname, tname, "wpa2-sha256");
+	moveval(sname, tname, "wpa3");
+	moveval(sname, tname, "wpa3-192");
+	moveval(sname, tname, "wpa3-128");
+	moveval(sname, tname, "802.1x");
+	moveval(sname, tname, "leap");
+	moveval(sname, tname, "peap");
+	moveval(sname, tname, "tls");
+	moveval(sname, tname, "ttls");
+	moveval(sname, tname, "8021xtype");
+	moveval(sname, tname, "tls8021xuser");
+	moveval(sname, tname, "tls8021xanon");
+	moveval(sname, tname, "tls8021xpasswd");
+	moveval(sname, tname, "tls8021xphase2");
+	moveval(sname, tname, "tls8021xca");
+	moveval(sname, tname, "tls8021xpem");
+	moveval(sname, tname, "tls8021xprv");
+	moveval(sname, tname, "tls8021xaddopt");
+	moveval(sname, tname, "peap8021xuser");
+	moveval(sname, tname, "peap8021xanon");
+	moveval(sname, tname, "peap8021xpasswd");
+	moveval(sname, tname, "tls8021xkeyxchng");
+	moveval(sname, tname, "peap8021xphase2");
+	moveval(sname, tname, "peap8021xca");
+	moveval(sname, tname, "peap8021xaddopt");
+	moveval(sname, tname, "ttls8021xuser");
+	moveval(sname, tname, "ttls8021xanon");
+	moveval(sname, tname, "ttls8021xpasswd");
+	moveval(sname, tname, "ttls8021xphase2");
+	moveval(sname, tname, "ttls8021xca");
+	moveval(sname, tname, "ttls8021xaddopt");
+	moveval(sname, tname, "leap8021xuser");
+	moveval(sname, tname, "leap8021xanon");
+	moveval(sname, tname, "leap8021xpasswd");
+	moveval(sname, tname, "leap8021xphase2");
+	moveval(sname, tname, "leap8021xaddopt");
+	moveval(sname, tname, "sae_key");
+	moveval(sname, tname, "radmactype");
+	moveval(sname, tname, "authmode");
+	moveval(sname, tname, "key1");
+	moveval(sname, tname, "key2");
+	moveval(sname, tname, "key3");
+	moveval(sname, tname, "key4");
+	moveval(sname, tname, "passphrase");
+	moveval(sname, tname, "wep_bit");
+	moveval(sname, tname, "crypto");
+
+	char *wordlist = nvram_safe_get("bridgesif");
+	int count = nvram_geti("bridgesif_count");
+	if (strlen(wordlist)) {
+		char word[128];
+		char *next;
+		char *copy = malloc(strlen(wordlist));
+		*copy = 0;
+		foreach(word, wordlist, next) {
+			GETENTRYBYIDX(tag, word, 0);
+			GETENTRYBYIDX(port, word, 1);
+			GETENTRYBYIDX(prio, word, 2);
+			GETENTRYBYIDX(hairpin, word, 3);
+			GETENTRYBYIDX(stp, word, 4);
+			GETENTRYBYIDX(pathcost, word, 5);
+			if (!strcmp(port, tname)) {
+				count--;
+				continue;
+			}
+			if (!strcmp(port, sname)) {
+				strcpy(port, tname);
+			}
+			if (*copy)
+				strcat(copy, " ");
+			strcat(copy, tag);
+			strcat(copy, ">");
+			strcat(copy, port);
+			strcat(copy, ">");
+			strcat(copy, prio);
+			strcat(copy, ">");
+			strcat(copy, hairpin);
+			strcat(copy, ">");
+			strcat(copy, stp);
+			strcat(copy, ">");
+			strcat(copy, pathcost);
+
+		}
+	nvram_set("bridgesif", copy);
+	nvram_seti("bridgesif_count", count);
+	free(copy);
+	}
+
+}
+
 void remove_vifs_single(char *prefix, int vap)
 {
 	char wif[16];
@@ -2821,16 +3009,26 @@ void remove_vifs_single(char *prefix, int vap)
 	char *next;
 	memset(copy, 0, slen);
 	int gp = 0;
-	foreach(word, vifs, next) {
-		if (gp != vap)
-			if (strlen(copy))
-				sprintf(copy, "%s %s", copy, word);
-			else
-				strcpy(copy, word);
-		gp++;
-	}
-	nvram_set(wif, copy);
 
+	int elements = 0;
+	foreach(word, vifs, next) {
+		elements++;
+	}
+	if (elements) {
+		if (vap < elements - 1) {
+			for (i = vap; i < elements - 1; i++)
+				movevap(prefix, i + 1, i);
+		}
+		foreach(word, vifs, next) {
+			if (gp != vap)
+				if (strlen(copy))
+					sprintf(copy, "%s %s", copy, word);
+				else
+					strcpy(copy, word);
+			gp++;
+		}
+		nvram_set(wif, copy);
+	}
 #ifdef HAVE_AOSS
 // must remove all aoss vap's if one of them is touched
 	if (*(nvram_safe_get("aoss_vifs"))) {
