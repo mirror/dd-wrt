@@ -2306,14 +2306,12 @@ static int show_virtualssid(webs_t wp, char *prefix)
 	char guestport[16];
 	sprintf(guestport, "guestport_%s", prefix);
 #endif
-
 #ifdef HAVE_MADWIFI
 	char wmm[32];
 	char wl_protmode[32];
 #endif
 	sprintf(vif, "%s_vifs", prefix);
 	char *vifs = nvram_safe_get(vif);
-
 	if (vifs == NULL)
 		return 0;
 #ifndef HAVE_MADWIFI
@@ -2572,6 +2570,9 @@ static int show_virtualssid(webs_t wp, char *prefix)
 #if (defined(HAVE_EASY_WIRELESS_CONFIG) && !defined(HAVE_BCMMODERN)) && !defined(HAVE_BRCMFMAC)
 		websWrite(wp, "</div>\n");
 #endif
+		websWrite(wp,
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.remove + \"\\\" onclick=\\\"$('gp_modify').value='remove';vifs_remove_submit(this.form,'%s','%d')\\\" />\");\n//]]>\n</script>\n",
+			  prefix, count);
 		websWrite(wp, "</fieldset><br />\n");
 		count++;
 		if (is_ap8x() && count == 4) {
@@ -2593,11 +2594,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 	if (count < max)
 #endif
 		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"vifs_add_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
-			  prefix);
-	if (!has_ad(prefix) && count > 1)
-		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.remove + \"\\\" onclick=\\\"vifs_remove_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + wl_basic.add + \"\\\" onclick=\\\"vifs_add_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
 			  prefix);
 	websWrite(wp, "</div><br />\n");
 #endif
@@ -2670,11 +2667,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 	if (count < max && gpfound == 0)
 #endif
 		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"$('gp_modify').value='add';vifs_add_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
-			  prefix);
-	if (gpfound == 1 && !has_ad(prefix))
-		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.remove + \"\\\" onclick=\\\"$('gp_modify').value='remove';vifs_remove_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + wl_basic.add + \"\\\" onclick=\\\"$('gp_modify').value='add';vifs_add_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
 			  prefix);
 	websWrite(wp, "</div><br />\n");
 #endif
