@@ -2750,139 +2750,140 @@ static void moveval(char *src, char *tgt, char *val)
 	sprintf(s, "%s_%s", src, val);
 	sprintf(t, "%s_%s", tgt, val);
 	nvram_set(t, nvram_get(s));
+
 	nvram_unset(s);
 }
 
-static void movevap(char *prefix, int source, int target)
+static void movevap(char *prefix, int source, int target, int bonly)
 {
 	char sname[32];
 	char ssname[32];
-	sprintf(sname, "%s.%d", source);
-	sprintf(ssname, "%sX%d", source);
+	sprintf(sname, "%s.%d", prefix, source);
+	sprintf(ssname, "%sX%d", prefix, source);
 	char tname[32];
-	sprintf(tname, "%s.%d", target);
+	sprintf(tname, "%s.%d", prefix, target);
 	char stname[32];
-	sprintf(stname, "%sX%d", target);
-
-	moveval(sname, tname, "802.1x");
-	moveval(sname, tname, "8021xtype");
-	moveval(sname, tname, "acct");
-	moveval(sname, tname, "acct_ipaddr");
-	moveval(sname, tname, "acct_key");
-	moveval(sname, tname, "acct_port");
-	moveval(sname, tname, "active_mac");
-	moveval(sname, tname, "akm");
-	moveval(sname, tname, "ap_isolate");
-	moveval(sname, tname, "auth_mode");
-	moveval(sname, tname, "authmode");
-	moveval(sname, tname, "bias");
-	moveval(sname, tname, "bridge");
-	moveval(sname, tname, "bridged");
-	moveval(sname, tname, "ccmp");
-	moveval(sname, tname, "ccmp-256");
-	moveval(sname, tname, "closed");
-	moveval(sname, tname, "connect");
-	moveval(sname, tname, "crypto");
-	moveval(sname, tname, "disable_eapol_key_retries");
-	moveval(sname, tname, "dns_ipaddr");
-	moveval(sname, tname, "dns_redirect");
-	moveval(sname, tname, "domain");
-	moveval(sname, tname, "dtim");
-	moveval(sname, tname, "fc");
-	moveval(sname, tname, "fc_th");
-	moveval(sname, tname, "ft");
-	moveval(sname, tname, "gcmp");
-	moveval(sname, tname, "gcmp-256");
-	moveval(sname, tname, "gtk_rekey");
-	moveval(sname, tname, "hwaddr");
-	moveval(sname, tname, "ipaddr");
-	moveval(sname, tname, "isolation");
-	moveval(sname, tname, "key");
-	moveval(sname, tname, "key1");
-	moveval(sname, tname, "key2");
-	moveval(sname, tname, "key3");
-	moveval(sname, tname, "key4");
-	moveval(sname, tname, "label");
-	moveval(sname, tname, "leap");
-	moveval(sname, tname, "leap8021xaddopt");
-	moveval(sname, tname, "leap8021xanon");
-	moveval(sname, tname, "leap8021xpasswd");
-	moveval(sname, tname, "leap8021xphase2");
-	moveval(sname, tname, "leap8021xuser");
-	moveval(sname, tname, "local_ip");
-	moveval(sname, tname, "maclist");
-	moveval(sname, tname, "macmode");
-	moveval(sname, tname, "maxassoc");
-	moveval(sname, tname, "mfp");
-	moveval(sname, tname, "mode");
-	moveval(sname, tname, "mtu");
-	moveval(sname, tname, "multicast");
-	moveval(sname, tname, "multicast_to_unicast");
-	moveval(sname, tname, "nas");
-	moveval(sname, tname, "nat");
-	moveval(sname, tname, "netmask");
-	moveval(sname, tname, "passphrase");
-	moveval(sname, tname, "peap");
-	moveval(sname, tname, "peap8021xaddopt");
-	moveval(sname, tname, "peap8021xanon");
-	moveval(sname, tname, "peap8021xca");
-	moveval(sname, tname, "peap8021xpasswd");
-	moveval(sname, tname, "peap8021xphase2");
-	moveval(sname, tname, "peap8021xuser");
-	moveval(sname, tname, "poll_time");
-	moveval(sname, tname, "preamble");
-	moveval(sname, tname, "protmode");
-	moveval(sname, tname, "psk2");
-	moveval(sname, tname, "radius2_ipaddr");
-	moveval(sname, tname, "radius2_key");
-	moveval(sname, tname, "radius2_port");
-	moveval(sname, tname, "radius_ipaddr");
-	moveval(sname, tname, "radius_key");
-	moveval(sname, tname, "radius_port");
-	moveval(sname, tname, "radmactype");
-	moveval(sname, tname, "rts");
-	moveval(sname, tname, "rtsvalue");
-	moveval(sname, tname, "sae_key");
-	moveval(sname, tname, "ssid");
-	moveval(sname, tname, "stay");
-	moveval(sname, tname, "strikes");
-	moveval(sname, tname, "tkip");
-	moveval(sname, tname, "tls");
-	moveval(sname, tname, "tls8021xaddopt");
-	moveval(sname, tname, "tls8021xanon");
-	moveval(sname, tname, "tls8021xca");
-	moveval(sname, tname, "tls8021xkeyxchng");
-	moveval(sname, tname, "tls8021xpasswd");
-	moveval(sname, tname, "tls8021xpem");
-	moveval(sname, tname, "tls8021xphase2");
-	moveval(sname, tname, "tls8021xprv");
-	moveval(sname, tname, "tls8021xuser");
-	moveval(sname, tname, "ttls");
-	moveval(sname, tname, "ttls8021xaddopt");
-	moveval(sname, tname, "ttls8021xanon");
-	moveval(sname, tname, "ttls8021xca");
-	moveval(sname, tname, "ttls8021xpasswd");
-	moveval(sname, tname, "ttls8021xphase2");
-	moveval(sname, tname, "ttls8021xuser");
-	moveval(sname, tname, "turbo_qam");
-	moveval(sname, tname, "txq");
-	moveval(sname, tname, "uapsd");
-	moveval(sname, tname, "wep");
-	moveval(sname, tname, "wep_bit");
-	moveval(sname, tname, "wep_buf");
-	moveval(sname, tname, "wmm");
-	moveval(sname, tname, "wpa");
-	moveval(sname, tname, "wpa2");
-	moveval(sname, tname, "wpa2-sha256");
-	moveval(sname, tname, "wpa3");
-	moveval(sname, tname, "wpa3-128");
-	moveval(sname, tname, "wpa3-192");
-	moveval(sname, tname, "wpa_gtk_rekey");
-	moveval(sname, tname, "wpa_psk");
-	moveval(ssname, stname, "akm");
-	moveval(ssname, stname, "macmode1");
-	moveval(ssname, stname, "security_mode");
-
+	sprintf(stname, "%sX%d", prefix, target);
+	if (!bonly) {
+		moveval(sname, tname, "802.1x");
+		moveval(sname, tname, "8021xtype");
+		moveval(sname, tname, "acct");
+		moveval(sname, tname, "acct_ipaddr");
+		moveval(sname, tname, "acct_key");
+		moveval(sname, tname, "acct_port");
+		moveval(sname, tname, "active_mac");
+		moveval(sname, tname, "akm");
+		moveval(sname, tname, "ap_isolate");
+		moveval(sname, tname, "auth_mode");
+		moveval(sname, tname, "authmode");
+		moveval(sname, tname, "bias");
+		moveval(sname, tname, "bridge");
+		moveval(sname, tname, "bridged");
+		moveval(sname, tname, "ccmp");
+		moveval(sname, tname, "ccmp-256");
+		moveval(sname, tname, "closed");
+		moveval(sname, tname, "connect");
+		moveval(sname, tname, "crypto");
+		moveval(sname, tname, "disable_eapol_key_retries");
+		moveval(sname, tname, "dns_ipaddr");
+		moveval(sname, tname, "dns_redirect");
+		moveval(sname, tname, "domain");
+		moveval(sname, tname, "dtim");
+		moveval(sname, tname, "fc");
+		moveval(sname, tname, "fc_th");
+		moveval(sname, tname, "ft");
+		moveval(sname, tname, "gcmp");
+		moveval(sname, tname, "gcmp-256");
+		moveval(sname, tname, "gtk_rekey");
+		moveval(sname, tname, "hwaddr");
+		moveval(sname, tname, "ipaddr");
+		moveval(sname, tname, "isolation");
+		moveval(sname, tname, "key");
+		moveval(sname, tname, "key1");
+		moveval(sname, tname, "key2");
+		moveval(sname, tname, "key3");
+		moveval(sname, tname, "key4");
+		moveval(sname, tname, "label");
+		moveval(sname, tname, "leap");
+		moveval(sname, tname, "leap8021xaddopt");
+		moveval(sname, tname, "leap8021xanon");
+		moveval(sname, tname, "leap8021xpasswd");
+		moveval(sname, tname, "leap8021xphase2");
+		moveval(sname, tname, "leap8021xuser");
+		moveval(sname, tname, "local_ip");
+		moveval(sname, tname, "maclist");
+		moveval(sname, tname, "macmode");
+		moveval(sname, tname, "maxassoc");
+		moveval(sname, tname, "mfp");
+		moveval(sname, tname, "mode");
+		moveval(sname, tname, "mtu");
+		moveval(sname, tname, "multicast");
+		moveval(sname, tname, "multicast_to_unicast");
+		moveval(sname, tname, "nas");
+		moveval(sname, tname, "nat");
+		moveval(sname, tname, "netmask");
+		moveval(sname, tname, "passphrase");
+		moveval(sname, tname, "peap");
+		moveval(sname, tname, "peap8021xaddopt");
+		moveval(sname, tname, "peap8021xanon");
+		moveval(sname, tname, "peap8021xca");
+		moveval(sname, tname, "peap8021xpasswd");
+		moveval(sname, tname, "peap8021xphase2");
+		moveval(sname, tname, "peap8021xuser");
+		moveval(sname, tname, "poll_time");
+		moveval(sname, tname, "preamble");
+		moveval(sname, tname, "protmode");
+		moveval(sname, tname, "psk2");
+		moveval(sname, tname, "radius2_ipaddr");
+		moveval(sname, tname, "radius2_key");
+		moveval(sname, tname, "radius2_port");
+		moveval(sname, tname, "radius_ipaddr");
+		moveval(sname, tname, "radius_key");
+		moveval(sname, tname, "radius_port");
+		moveval(sname, tname, "radmactype");
+		moveval(sname, tname, "rts");
+		moveval(sname, tname, "rtsvalue");
+		moveval(sname, tname, "sae_key");
+		moveval(sname, tname, "ssid");
+		moveval(sname, tname, "stay");
+		moveval(sname, tname, "strikes");
+		moveval(sname, tname, "tkip");
+		moveval(sname, tname, "tls");
+		moveval(sname, tname, "tls8021xaddopt");
+		moveval(sname, tname, "tls8021xanon");
+		moveval(sname, tname, "tls8021xca");
+		moveval(sname, tname, "tls8021xkeyxchng");
+		moveval(sname, tname, "tls8021xpasswd");
+		moveval(sname, tname, "tls8021xpem");
+		moveval(sname, tname, "tls8021xphase2");
+		moveval(sname, tname, "tls8021xprv");
+		moveval(sname, tname, "tls8021xuser");
+		moveval(sname, tname, "ttls");
+		moveval(sname, tname, "ttls8021xaddopt");
+		moveval(sname, tname, "ttls8021xanon");
+		moveval(sname, tname, "ttls8021xca");
+		moveval(sname, tname, "ttls8021xpasswd");
+		moveval(sname, tname, "ttls8021xphase2");
+		moveval(sname, tname, "ttls8021xuser");
+		moveval(sname, tname, "turbo_qam");
+		moveval(sname, tname, "txq");
+		moveval(sname, tname, "uapsd");
+		moveval(sname, tname, "wep");
+		moveval(sname, tname, "wep_bit");
+		moveval(sname, tname, "wep_buf");
+		moveval(sname, tname, "wmm");
+		moveval(sname, tname, "wpa");
+		moveval(sname, tname, "wpa2");
+		moveval(sname, tname, "wpa2-sha256");
+		moveval(sname, tname, "wpa3");
+		moveval(sname, tname, "wpa3-128");
+		moveval(sname, tname, "wpa3-192");
+		moveval(sname, tname, "wpa_gtk_rekey");
+		moveval(sname, tname, "wpa_psk");
+		moveval(ssname, stname, "akm");
+		moveval(ssname, stname, "macmode1");
+		moveval(ssname, stname, "security_mode");
+	}
 	char word[128];
 	char *next;
 	char *wordlist = nvram_safe_get("vlan_tags");
@@ -2903,7 +2904,7 @@ static void movevap(char *prefix, int source, int target)
 			if (!strcmp(tag, tname)) {
 				continue;
 			}
-			if (!strcmp(tag, sname)) {
+			if (!bonly && !strcmp(tag, sname)) {
 				strcpy(tag, tname);
 			}
 			if (*copy)
@@ -2933,7 +2934,7 @@ static void movevap(char *prefix, int source, int target)
 				count--;
 				continue;
 			}
-			if (!strcmp(port, sname)) {
+			if (!bonly && !strcmp(port, sname)) {
 				strcpy(port, tname);
 			}
 			if (*copy)
@@ -3042,17 +3043,20 @@ void remove_vifs_single(char *prefix, int vap)
 		elements++;
 	}
 	if (elements) {
-		if (vap < elements - 1) {
-			for (i = vap; i < elements - 1; i++)
-				movevap(prefix, i + 1, i);
+		if (vap < elements) {
+			for (i = vap + 1; i < elements; i++) {
+				movevap(prefix, i + 1, i, 0);
+			}
+			if (vap == elements - 1)
+				movevap(prefix, i + 1, i, 1);
 		}
 		foreach(word, vifs, next) {
-			if (gp != vap) {
-				if (strlen(copy))
-					sprintf(copy, "%s %s", copy, word);
-				else
-					strcpy(copy, word);
-			}
+			if (gp == elements - 1)
+				break;
+			if (strlen(copy))
+				sprintf(copy, "%s %s", copy, word);
+			else
+				strcpy(copy, word);
 			gp++;
 		}
 		nvram_set(wif, copy);
