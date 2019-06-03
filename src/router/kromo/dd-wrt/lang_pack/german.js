@@ -222,6 +222,8 @@ share.acktiming="ACK Zeitplan";
 share.broadcast="Broadcast Unterst&uuml;tzung";
 share.secondcharacter="s";
 share.change="Benutzer Kennwort &auml;ndern";
+share.copy="Kopieren";
+share.paste="Einf&uuml;gen";
 
 
 sbutton.save="Speichern";
