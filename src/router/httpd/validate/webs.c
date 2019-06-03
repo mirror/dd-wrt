@@ -3037,7 +3037,7 @@ static void copyval(char *prefix, char *val)
 	char name[128];
 	char nv[128];
 	sprintf(nv, "%s_%s", prefix, val);
-	sprintf(name, "/tmp/copy/%s", nv);
+	sprintf(name, "/tmp/copy/%s", val);
 	FILE *fp = fopen(name, "wb");
 	if (fp) {
 		char *v = nvram_safe_get(nv);
@@ -3052,7 +3052,7 @@ static void pasteval(char *prefix, char *val)
 	char name[128];
 	char nv[128];
 	sprintf(nv, "%s_%s", prefix, val);
-	sprintf(name, "/tmp/copy/%s", nv);
+	sprintf(name, "/tmp/copy/%s", val);
 	FILE *fp = fopen(name, "rb");
 	if (fp) {
 		fseek(fp, 0, SEEK_END);
