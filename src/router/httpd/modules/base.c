@@ -1064,6 +1064,8 @@ static struct gozila_action gozila_actions[] = {
 	{ "Filters", "remove_filter", "", 0, REFRESH, "filter_remove" },
 	{ "Wireless_Basic", "add_vifs", "", 0, REFRESH, "add_vifs" },
 	{ "Wireless_Basic", "remove_vifs", "", 0, REFRESH, "remove_vifs" },
+	{ "Wireless_Basic", "copy_if", "", 0, REFRESH, "copy_if" },
+	{ "Wireless_Basic", "paste_if", "", 0, REFRESH, "paste_if" },
 #ifdef HAVE_FREERADIUS
 	{ "FreeRadius", "generate_certificate", "", 0, REFRESH,
 	 "radius_generate_certificate" },

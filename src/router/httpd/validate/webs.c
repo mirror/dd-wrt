@@ -3032,6 +3032,79 @@ void remove_vifs(webs_t wp)
 	remove_vifs_single(prefix, vap);
 }
 
+static void copyval(char *prefix, char *val)
+{
+	char name[128];
+	char nv[128];
+	sprintf(nv, "%s_%s", prefix, val);
+	sprintf(name, "/tmp/copy/%s", nv);
+	FILE *fp = fopen(name, "wb");
+	if (fp) {
+		char *v = nvram_safe_get(nv);
+		if (*v)
+			fwrite(v, strlen(v), 1, fp);
+		fclose(fp);
+	}
+}
+
+static void pasteval(char *prefix, char *val)
+{
+	char name[128];
+	char nv[128];
+	sprintf(nv, "%s_%s", prefix, val);
+	sprintf(name, "/tmp/copy/%s", nv);
+	FILE *fp = fopen(name, "rb");
+	if (fp) {
+		fseek(fp, 0, SEEK_END);
+		size_t len = ftell(fp);
+		rewind(fp);
+		if (len) {
+			char *v = malloc(len + 1);
+			v[len] = 0;
+			fread(v, len, 1, fp);
+			nvram_set(nv, v);
+			free(v);
+		} else {
+			nvram_unset(nv);
+		}
+		fclose(fp);
+	}
+}
+
+void copy_if(webs_t wp)
+{
+	char *prefix = websGetVar(wp, "iface", NULL);
+	mkdir("/tmp/copy", 0700);
+	char ssname[32];
+	sprintf(ssname, "%s");
+	if (strchr(ssname, '.'))
+		rep(ssname, '.', 'X');	// replace invalid characters for sub ifs
+
+	int i;
+	for (i = 0; i < sizeof(vapsettings) / sizeof(char *); i++)
+		copyval(prefix, vapsettings[i]);
+	copyval(ssname, "akm");
+	copyval(ssname, "macmode1");
+	copyval(ssname, "security_mode");
+}
+
+void paste_if(webs_t wp)
+{
+	char *prefix = websGetVar(wp, "iface", NULL);
+	char ssname[32];
+	sprintf(ssname, "%s");
+	if (strchr(ssname, '.'))
+		rep(ssname, '.', 'X');	// replace invalid characters for sub ifs
+
+	int i;
+	for (i = 0; i < sizeof(vapsettings) / sizeof(char *); i++)
+		pasteval(prefix, vapsettings[i]);
+	pasteval(ssname, "akm");
+	pasteval(ssname, "macmode1");
+	pasteval(ssname, "security_mode");
+
+}
+
 #ifdef HAVE_BONDING
 void add_bond(webs_t wp)
 {
