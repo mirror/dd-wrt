@@ -2342,7 +2342,6 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		websWrite(wp, "<div class=\"setting\">\n");
 #if (!defined(HAVE_EASY_WIRELESS_CONFIG) || defined(HAVE_BCMMODERN)) && !defined(HAVE_BRCMFMAC)
 		show_caption(wp, "label", "wl_basic.label3", NULL);
-
 		websWrite(wp, "<input name=\"%s_ssid\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.label3)\" value=\"", var);
 		tf_webWriteESCNV(wp, ssid);
 		websWrite(wp, "\" /></div>\n");
@@ -2372,7 +2371,6 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		sprintf(wl_mode, "%s_mode", var);
 		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label)</script></div><select name=\"%s\" >\n", wl_mode);
 		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-		websWrite(wp, "document.write(\"<option value=\\\"disabled\\\" %s >\" + share.disabled + \"</option>\");\n", nvram_match(wl_mode, "disabled") ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "document.write(\"<option value=\\\"ap\\\" %s >\" + wl_basic.ap + \"</option>\");\n", nvram_match(wl_mode, "ap") ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "document.write(\"<option value=\\\"wdsap\\\" %s >\" + wl_basic.wdsap + \"</option>\");\n", nvram_match(wl_mode, "wdsap") ? "selected=\\\"selected\\\"" : "");
 #if 0
@@ -2395,6 +2393,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		sprintf(wl_mode, "%s_mode", var);
 		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label)</script></div><select name=\"%s\" >\n", wl_mode);
 		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+		websWrite(wp, "document.write(\"<option value=\\\"disabled\\\" %s >\" + share.disabled + \"</option>\");\n", nvram_match(wl_mode, "disabled") ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "document.write(\"<option value=\\\"ap\\\" %s >\" + wl_basic.ap + \"</option>\");\n", nvram_match(wl_mode, "ap") ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "document.write(\"<option value=\\\"wdsap\\\" %s >\" + wl_basic.wdsap + \"</option>\");\n", nvram_match(wl_mode, "wdsap") ? "selected=\\\"selected\\\"" : "");
 #if 0
