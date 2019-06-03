@@ -2756,19 +2756,27 @@ static void moveval(int bonly, char *src, char *tgt, char *val)
 }
 
 static char *vapsettings[] = {
-	"802.1x", "8021xtype", "acct", "acct_ipaddr", "acct_key", "acct_port", "active_mac", "afterburner", "ak", "akm", "antgain", "ap_isolate", "atf", "auth_mode", "authmode", "bat_bridge", "bcn", "bias", "br1_enable",
-	"br1_ipaddr", "br1_netmask", "bridge", "bridged", "bss_opmode_cap_reqd", "ccmp", "ccmp-256", "channel", "channelbw", "closed", "cmac", "cmac-256", "connect", "crypto", "disable_eapol_key_retries", "distance",
-	"dns_ipaddr", "dns_redirect", "domain", "doth", "dtim", "fc", "fc_th", "frameburst", "ft", "gcmp", "gcmp-256", "gf", "gmac-128", "gmac-256", "gmode", "gtk_rekey", "hwaddr", "intmit", "ipaddr", "isolation",
-	"key", "key1", "key2", "key3", "key4", "label", "lazywds", "leap", "leap8021xaddopt", "leap8021xanon", "leap8021xpasswd", "leap8021xphase2", "leap8021xuser", "local_ip", "maclist", "macmode", "macmode1",
-	"maxassoc", "mfp", "mode", "mtu", "mubf", "multicast", "multicast_to_unicast", "nas", "nat", "nband", "nctrlsb", "net_mode", "netmask", "nmode", "nreqd", "passphrase", "peap", "peap8021xaddopt",
-	"peap8021xanon", "peap8021xca", "peap8021xpasswd", "peap8021xphase2", "peap8021xuser", "phytype", "poll_time", "preamble", "protmode", "psk2", "psk3", "radio", "radius2_ipaddr", "radius2_key", "radius2_port",
-	"radius_ipaddr", "radius_key", "radius_port", "radius_retry", "radmactype", "rateset", "regdomain", "regulatory", "rts", "rts rtsvalue", "rtsvalue", "rxantenna", "sae_key", "scanlist", "security_mode",
-	"security_mode_akm", "shortgi", "smps", "ssid", "stay", "strikes", "subf", "tkip", "tls", "tls8021xaddopt", "tls8021xanon", "tls8021xca", "tls8021xkeyxchng", "tls8021xpasswd", "tls8021xpem", "tls8021xphase2",
-	"tls8021xprv", "tls8021xuser", "ttls", "ttls8021xaddopt", "ttls8021xanon", "ttls8021xca", "ttls8021xpasswd", "ttls8021xphase2", "ttls8021xuser", "turbo_qam", "txantenna", "txpwrdbm", "txq", "uapsd",
-	"wchannel", "wds", "wds10_desc", "wds10_enable", "wds10_hwaddr", "wds10_ospf", "wds1_desc", "wds1_enable", "wds1_hwaddr", "wds1_if", "wds1_ipaddr", "wds1_netmask", "wds1_ospf", "wds2_desc", "wds2_enable",
-	"wds2_hwaddr", "wds2_ospf", "wds3_desc", "wds3_enable", "wds3_hwaddr", "wds3_ospf", "wds4_desc", "wds4_enable", "wds4_hwaddr", "wds4_ospf", "wds5_desc", "wds5_enable", "wds5_hwaddr", "wds5_ospf", "wds6_desc",
-	"wds6_enable", "wds6_hwaddr", "wds6_ospf", "wds7_desc", "wds7_enable", "wds7_hwaddr", "wds7_ospf", "wds8_desc", "wds8_enable", "wds8_hwaddr", "wds8_ospf", "wds9_desc", "wds9_enable", "wds9_hwaddr",
-	"wds9_ospf", "wep", "wep_bit", "wep_buf", "wmm", "wpa", "wpa2", "wpa2-sha256", "wpa3", "wpa3-128", "wpa3-192", "wpa_gtk_rekey", "wpa_psk", "xr"
+	"802.1x", "8021xtype", "abenable", "acct", "acct_ipaddr", "acct_key", "acct_port", "active_mac", "afterburner", "akm", "ampdu", "ampdu_mpdu", "ampdu_rr_rtylimit_tid", "ampdu_rts", "ampdu_rtylimit_tid", "amsdu",
+	"antdiv", "antgain", "ap_isolate", "atf", "auth", "auth_mode", "authmode", "bat_bridge", "bcn", "bcn_rotate", "bias", "br1_enable", "br1_ipaddr", "br1_nat", "br1_netmask", "bridge", "bridged", "bss_maxassoc",
+	"bss_opmode_cap_reqd", "btc_mode", "bw_cap", "cal_period", "ccmp", "ccmp-256", "channel", "channelbw", "closed", "cmac", "cmac-256", "connect", "country_code", "country_rev", "crypto", "dfs_postism",
+	"dfs_preism", "disable_eapol_key_retries", "distance", "dns_ipaddr", "dns_redirect", "domain", "doth", "dtim", "fc", "fc_th", "frag", "frameburst", "ft", "gcmp", "gcmp-256", "gf", "gmac-128", "gmac-256",
+	"gmode", "gmode_protection", "gtk_rekey", "hwaddr", "infra", "intmit", "ipaddr", "isolation", "itxbf", "key", "key1", "key2", "key3", "key4", "label", "lazy_wds", "lazywds", "lbr_aggr_en_mask",
+	"lbr_aggr_len", "lbr_aggr_release_timeout", "leap", "leap8021xaddopt", "leap8021xanon", "leap8021xpasswd", "leap8021xphase2", "leap8021xuser", "leddc", "local_ip", "maclist", "macmode", "macmode1",
+	"max_unauth_users", "maxassoc", "mbss", "mfp", "mode", "mrate", "mtu", "mubf", "multicast", "multicast_to_unicast", "nas", "nat", "nband", "nbw", "nbw_cap", "nctrlsb", "net_mode", "netmask", "nmcsidx",
+	"nmode", "nmode_protection", "nreqd", "obss_coex", "passphrase", "peap", "peap8021xaddopt", "peap8021xanon", "peap8021xca", "peap8021xpasswd", "peap8021xphase2", "peap8021xuser", "phytype", "phytypes",
+	"plcphdr", "poll_time", "preamble", "protmode", "psk2", "psk3", "radauth", "radio", "radius2_ipaddr", "radius2_key", "radius2_port", "radius_ipaddr", "radius_key", "radius_override", "radius_port",
+	"radius_retry", "radmacpassword", "radmactype", "rate", "rateset", "reg_mode", "regdomain", "regulatory", "rifs_advert", "rts", "rts rtsvalue", "rtsvalue", "rx_amsdu_in_ampdu", "rxantenna", "rxchain",
+	"rxchain_pwrsave_enable", "sae_key", "scanlist", "security_mode", "security_mode_akm", "shortgi", "shortslot", "smps", "ssid", "sta_retry_time", "stay", "stbc_rx", "stbc_tx", "strikes", "subf", "tkip", "tls",
+	"tls8021xaddopt", "tls8021xanon", "tls8021xca", "tls8021xkeyxchng", "tls8021xpasswd", "tls8021xpem", "tls8021xphase2", "tls8021xprv", "tls8021xuser", "tpc_db", "ttls", "ttls8021xaddopt", "ttls8021xanon",
+	"ttls8021xca", "ttls8021xpasswd", "ttls8021xphase2", "ttls8021xuser", "turbo_qam", "txant", "txantenna", "txbf", "txbf_bfe_cap", "txbf_bfr_cap", "txbf_imp", "txchain", "txchain_pwrsave_enable", "txpwr",
+	"txpwrdbm", "txpwrusr", "txq", "uapsd", "unit", "vifs", "vlan_prio_mode", "wchannel", "wds", "wds0", "wds0_if", "wds1", "wds10_desc", "wds10_enable", "wds10_hwaddr", "wds10_if", "wds10_ipaddr",
+	"wds10_netmask", "wds10_ospf", "wds1_desc", "wds1_enable", "wds1_hwaddr", "wds1_if", "wds1_ipaddr", "wds1_netmask", "wds1_ospf", "wds2", "wds2_desc", "wds2_enable", "wds2_hwaddr", "wds2_if", "wds2_ipaddr",
+	"wds2_netmask", "wds2_ospf", "wds3", "wds3_desc", "wds3_enable", "wds3_hwaddr", "wds3_if", "wds3_ipaddr", "wds3_netmask", "wds3_ospf", "wds4", "wds4_desc", "wds4_enable", "wds4_hwaddr", "wds4_if",
+	"wds4_ipaddr", "wds4_netmask", "wds4_ospf", "wds5", "wds5_desc", "wds5_enable", "wds5_hwaddr", "wds5_if", "wds5_ipaddr", "wds5_netmask", "wds5_ospf", "wds6", "wds6_desc", "wds6_enable", "wds6_hwaddr",
+	"wds6_if", "wds6_ipaddr", "wds6_netmask", "wds6_ospf", "wds7", "wds7_desc", "wds7_enable", "wds7_hwaddr", "wds7_if", "wds7_ipaddr", "wds7_netmask", "wds7_ospf", "wds8", "wds8_desc", "wds8_enable",
+	"wds8_hwaddr", "wds8_if", "wds8_ipaddr", "wds8_netmask", "wds8_ospf", "wds9", "wds9_desc", "wds9_enable", "wds9_hwaddr", "wds9_if", "wds9_ipaddr", "wds9_netmask", "wds9_ospf", "web_filter", "wep", "wep_bit",
+	"wep_buf", "wme", "wme_ap_be", "wme_ap_bk", "wme_ap_vi", "wme_ap_vo", "wme_apsd", "wme_no_ack", "wme_sta_be", "wme_sta_bk", "wme_sta_vi", "wme_sta_vo", "wme_txp_be", "wme_txp_bk", "wme_txp_vi", "wme_txp_vo",
+	"wmf_bss_enable", "wmf_igmpq_filter", "wmf_mdata_sendup", "wmf_ucast_upnp", "wmf_ucigmp_query", "wmm", "wpa", "wpa2", "wpa2-sha256", "wpa3", "wpa3-128", "wpa3-192", "wpa_gtk_rekey", "wpa_psk", "xr"
 };
 
 static void movevap(char *prefix, int source, int target, int bonly)
