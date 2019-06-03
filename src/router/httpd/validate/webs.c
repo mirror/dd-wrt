@@ -2864,6 +2864,41 @@ static void movevap(char *prefix, int source, int target, int bonly)
 		nvram_seti("bridgesif_count", count);
 		free(copy);
 	}
+	wordlist = nvram_safe_get("mdhcpd");
+	if (*wordlist) {
+		copy = malloc(strlen(wordlist));
+		*copy = 0;
+		foreach(word, wordlist, next) {
+			GETENTRYBYIDX(interface, word, 0);
+			GETENTRYBYIDX(dhcpon, word, 1);
+			GETENTRYBYIDX(start, word, 2);
+			GETENTRYBYIDX(max, word, 3);
+			GETENTRYBYIDX(leasetime, word, 4);
+			if (leasetime == NULL) {
+				leasetime = "3660";
+			}
+			if (!strcmp(interface, tname)) {
+				continue;
+			}
+			if (!bonly && !strcmp(interface, sname)) {
+				interface = tname;
+			}
+			if (*copy)
+				strcat(copy, " ");
+			strcat(copy, interface);
+			strcat(copy, ">");
+			strcat(copy, dhcpon);
+			strcat(copy, ">");
+			strcat(copy, start);
+			strcat(copy, ">");
+			strcat(copy, max);
+			strcat(copy, ">");
+			strcat(copy, leasetime);
+		}
+		nvram_set("mdhcp", copy);
+		free(copy);
+
+	}
 
 }
 
