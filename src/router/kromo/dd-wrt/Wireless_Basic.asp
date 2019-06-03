@@ -242,6 +242,18 @@ function vifs_remove_submit(F,I,VAP) {
 	F.submit();
 }
 
+function copy_submit(F,I) {
+	F.iface.value = I;
+	F.submit_type.value = "copy_if";
+	F.submit();
+}
+
+function paste_submit(F,I) {
+	F.iface.value = I;
+	F.submit_type.value = "paste_if";
+	F.submit();
+}
+
 function toggle_layer(checkbox, label) {
 	if(checkbox.checked) {
 		show_layer_ext(this,label,true);
