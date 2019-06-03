@@ -2749,8 +2749,12 @@ static void moveval(int bonly, char *src, char *tgt, char *val)
 	char t[128];
 	sprintf(s, "%s_%s", src, val);
 	sprintf(t, "%s_%s", tgt, val);
-	if (!bonly)
-		nvram_set(t, nvram_get(s));
+	if (!bonly) {
+		if (nvram_exists(s))
+			nvram_set(t, nvram_safe_get(s));
+		else
+			nvram_unset(s);
+	}
 
 	nvram_unset(s);
 }
