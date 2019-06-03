@@ -2572,6 +2572,12 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.remove + \"\\\" onclick=\\\"vifs_remove_submit(this.form,'%s','%d')\\\" />\");\n//]]>\n</script>\n",
 			  prefix, count - 1);
+		websWrite(wp,
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + share.copy + \"\\\" onclick=\\\"copy_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
+			  var);
+		websWrite(wp,
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + share.paste + \"\\\" onclick=\\\"copy_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
+			  var);
 		websWrite(wp, "</fieldset><br />\n");
 		count++;
 		if (is_ap8x() && count == 4) {
