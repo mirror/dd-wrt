@@ -2576,7 +2576,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + share.copy + \"\\\" onclick=\\\"copy_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
 			  var);
 		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + share.paste + \"\\\" onclick=\\\"copy_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + share.paste + \"\\\" onclick=\\\"paste_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
 			  var);
 		websWrite(wp, "</fieldset><br />\n");
 		count++;
@@ -4385,7 +4385,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + share.copy + \"\\\" onclick=\\\"copy_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
 		  prefix);
 	websWrite(wp,
-		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + share.paste + \"\\\" onclick=\\\"copy_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
+		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + share.paste + \"\\\" onclick=\\\"paste_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
 		  prefix);
 #ifdef HAVE_REGISTER
 	if (!iscpe())
