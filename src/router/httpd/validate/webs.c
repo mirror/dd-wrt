@@ -3056,7 +3056,7 @@ static void copyval(char *prefix, char *val)
 	char nv[128];
 	sprintf(nv, "%s_%s", prefix, val);
 	sprintf(name, "/tmp/copy/%s", val);
-	if (!nvram_exist(nv)) {
+	if (!nvram_exists(nv)) {
 		unlink(name);
 		return;
 	}
@@ -3096,7 +3096,7 @@ void copy_if(webs_t wp)
 	char *prefix = websGetVar(wp, "iface", NULL);
 	mkdir("/tmp/copy", 0700);
 	char ssname[32];
-	sprintf(ssname, "%s");
+	sprintf(ssname, "%s", prefix);
 	if (strchr(ssname, '.'))
 		rep(ssname, '.', 'X');	// replace invalid characters for sub ifs
 
@@ -3112,7 +3112,7 @@ void paste_if(webs_t wp)
 {
 	char *prefix = websGetVar(wp, "iface", NULL);
 	char ssname[32];
-	sprintf(ssname, "%s");
+	sprintf(ssname, "%s", prefix);
 	if (strchr(ssname, '.'))
 		rep(ssname, '.', 'X');	// replace invalid characters for sub ifs
 
