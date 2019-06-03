@@ -3044,6 +3044,10 @@ static void copyval(char *prefix, char *val)
 	char nv[128];
 	sprintf(nv, "%s_%s", prefix, val);
 	sprintf(name, "/tmp/copy/%s", val);
+	if (!nvram_exist(nv)) {
+		unlink(name);
+		return;
+	}
 	FILE *fp = fopen(name, "wb");
 	if (fp) {
 		char *v = nvram_safe_get(nv);
