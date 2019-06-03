@@ -2756,13 +2756,19 @@ static void moveval(int bonly, char *src, char *tgt, char *val)
 }
 
 static char *vapsettings[] = {
-	"802.1x", "8021xtype", "acct", "acct_ipaddr", "acct_key", "acct_port", "active_mac", "akm", "ap_isolate", "auth_mode", "authmode", "bias", "bridge", "bridged", "ccmp", "ccmp-256", "closed", "connect", "crypto",
-	"disable_eapol_key_retries", "dns_ipaddr", "dns_redirect", "domain", "dtim", "fc", "fc_th", "ft", "gcmp", "gcmp-256", "gtk_rekey", "hwaddr", "ipaddr", "isolation", "key", "key1", "key2", "key3", "key4",
-	"label", "leap", "leap8021xaddopt", "leap8021xanon", "leap8021xpasswd", "leap8021xphase2", "leap8021xuser", "local_ip", "maclist", "macmode", "maxassoc", "mfp", "mode", "mtu", "multicast",
-	"multicast_to_unicast", "nas", "nat", "netmask", "passphrase", "peap", "peap8021xaddopt", "peap8021xanon", "peap8021xca", "peap8021xpasswd", "peap8021xphase2", "peap8021xuser", "poll_time", "preamble",
-	"protmode", "psk2", "radius2_ipaddr", "radius2_key", "radius2_port", "radius_ipaddr", "radius_key", "radius_port", "radmactype", "rts", "rtsvalue", "sae_key", "ssid", "stay", "strikes", "tkip", "tls",
-	"tls8021xaddopt", "tls8021xanon", "tls8021xca", "tls8021xkeyxchng", "tls8021xpasswd", "tls8021xpem", "tls8021xphase2", "tls8021xprv", "tls8021xuser", "ttls", "ttls8021xaddopt", "ttls8021xanon", "ttls8021xca",
-	"ttls8021xpasswd", "ttls8021xphase2", "ttls8021xuser", "turbo_qam", "txq", "uapsd", "wep", "wep_bit", "wep_buf", "wmm", "wpa", "wpa2", "wpa2-sha256", "wpa3", "wpa3-128", "wpa3-192", "wpa_gtk_rekey", "wpa_psk"
+	"802.1x", "8021xtype", "acct", "acct_ipaddr", "acct_key", "acct_port", "active_mac", "afterburner", "ak", "akm", "antgain", "ap_isolate", "atf", "auth_mode", "authmode", "bat_bridge", "bcn", "bias", "br1_enable",
+	"br1_ipaddr", "br1_netmask", "bridge", "bridged", "bss_opmode_cap_reqd", "ccmp", "ccmp-256", "channel", "channelbw", "closed", "cmac", "cmac-256", "connect", "crypto", "disable_eapol_key_retries", "distance",
+	"dns_ipaddr", "dns_redirect", "domain", "doth", "dtim", "fc", "fc_th", "frameburst", "ft", "gcmp", "gcmp-256", "gf", "gmac-128", "gmac-256", "gmode", "gtk_rekey", "hwaddr", "intmit", "ipaddr", "isolation",
+	"key", "key1", "key2", "key3", "key4", "label", "lazywds", "leap", "leap8021xaddopt", "leap8021xanon", "leap8021xpasswd", "leap8021xphase2", "leap8021xuser", "local_ip", "maclist", "macmode", "macmode1",
+	"maxassoc", "mfp", "mode", "mtu", "mubf", "multicast", "multicast_to_unicast", "nas", "nat", "nband", "nctrlsb", "net_mode", "netmask", "nmode", "nreqd", "passphrase", "peap", "peap8021xaddopt",
+	"peap8021xanon", "peap8021xca", "peap8021xpasswd", "peap8021xphase2", "peap8021xuser", "phytype", "poll_time", "preamble", "protmode", "psk2", "psk3", "radio", "radius2_ipaddr", "radius2_key", "radius2_port",
+	"radius_ipaddr", "radius_key", "radius_port", "radius_retry", "radmactype", "rateset", "regdomain", "regulatory", "rts", "rts rtsvalue", "rtsvalue", "rxantenna", "sae_key", "scanlist", "security_mode",
+	"security_mode_akm", "shortgi", "smps", "ssid", "stay", "strikes", "subf", "tkip", "tls", "tls8021xaddopt", "tls8021xanon", "tls8021xca", "tls8021xkeyxchng", "tls8021xpasswd", "tls8021xpem", "tls8021xphase2",
+	"tls8021xprv", "tls8021xuser", "ttls", "ttls8021xaddopt", "ttls8021xanon", "ttls8021xca", "ttls8021xpasswd", "ttls8021xphase2", "ttls8021xuser", "turbo_qam", "txantenna", "txpwrdbm", "txq", "uapsd",
+	"wchannel", "wds", "wds10_desc", "wds10_enable", "wds10_hwaddr", "wds10_ospf", "wds1_desc", "wds1_enable", "wds1_hwaddr", "wds1_if", "wds1_ipaddr", "wds1_netmask", "wds1_ospf", "wds2_desc", "wds2_enable",
+	"wds2_hwaddr", "wds2_ospf", "wds3_desc", "wds3_enable", "wds3_hwaddr", "wds3_ospf", "wds4_desc", "wds4_enable", "wds4_hwaddr", "wds4_ospf", "wds5_desc", "wds5_enable", "wds5_hwaddr", "wds5_ospf", "wds6_desc",
+	"wds6_enable", "wds6_hwaddr", "wds6_ospf", "wds7_desc", "wds7_enable", "wds7_hwaddr", "wds7_ospf", "wds8_desc", "wds8_enable", "wds8_hwaddr", "wds8_ospf", "wds9_desc", "wds9_enable", "wds9_hwaddr",
+	"wds9_ospf", "wep", "wep_bit", "wep_buf", "wmm", "wpa", "wpa2", "wpa2-sha256", "wpa3", "wpa3-128", "wpa3-192", "wpa_gtk_rekey", "wpa_psk", "xr"
 };
 
 static void movevap(char *prefix, int source, int target, int bonly)
@@ -3064,8 +3070,6 @@ static void pasteval(char *prefix, char *val)
 			fread(v, len, 1, fp);
 			nvram_set(nv, v);
 			free(v);
-		} else {
-			nvram_unset(nv);
 		}
 		fclose(fp);
 	}
