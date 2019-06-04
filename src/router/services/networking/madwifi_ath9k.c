@@ -386,8 +386,15 @@ void configure_single_ath9k(int count)
 
 		strcpy(primary, dev);
 	} else if (!strcmp(apm, "mesh")) {
-		eval("iw", wif, "interface", "add", dev, "type", "mp", "mesh_id", nvram_nget("%s_ssid", dev));
-		eval("iw", "dev", dev, "set", "freq", nvram_nget("%s_channel", dev), gethtmode(dev));
+		char akm[16];
+		sprintf(akm, "%s_akm", dev);
+		if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3")) {
+			eval("iw", wif, "interface", "add", dev, "type", "mp");
+		} else {
+			eval("iw", wif, "interface", "add", dev, "type", "mp", "mesh_id", nvram_nget("%s_ssid", dev));
+			eval("iw", "dev", dev, "set", "freq", nvram_nget("%s_channel", dev), gethtmode(dev));
+		}
+
 		strcpy(primary, dev);
 	} else {
 		char akm[16];
@@ -473,7 +480,12 @@ void configure_single_ath9k(int count)
 					sysprintf("iw %s interface add %s.%d type managed", wif, dev, counter);
 				setupHostAP_ath9k(dev, isfirst, counter, 0);
 			} else {
-				sysprintf("iw %s interface add %s.%d type mp mesh_id %s", wif, dev, counter, nvram_nget("%s_ssid", var));
+				char akm[16];
+				sprintf(akm, "%s.%d_akm", dev, counter);
+				if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3"))
+					sysprintf("iw %s interface add %s type mp", wif, var);
+				else
+					sysprintf("iw %s interface add %s type mp mesh_id %s", wif, var, nvram_nget("%s_ssid", var));
 				setupSupplicant_ath9k(var, NULL, 0);
 			}
 			sprintf(compr, "%s_fc_th", var);
@@ -529,7 +541,7 @@ void configure_single_ath9k(int count)
 
 }
 
-void get_pairwise(char *prefix, char *pwstring, char *grpstring, int isadhoc);
+void get_pairwise(char *prefix, char *pwstring, char *grpstring, int isadhoc, int ismesh);
 
 void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss)
 {
@@ -1544,26 +1556,26 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		FILE *fp = fopen(fstr, "wb");
 		if (isadhoc)
 			fprintf(fp, "ap_scan=2\n");
-		else
+		else if (!ismesh)
 			fprintf(fp, "ap_scan=1\n");
 		fprintf(fp, "fast_reauth=1\n");
 		fprintf(fp, "eapol_version=1\n");
 		if (ispsk3)
-			fprintf(fp, "\tsae_groups=19 20 21\n");
+			fprintf(fp, "sae_groups=19 20 21\n");
 		fprintf(fp, "network={\n");
 		char *netmode = nvram_nget("%s_net_mode", prefix);
 		char *channelbw = nvram_nget("%s_channelbw", prefix);
 		if (strcmp(netmode, "ac-only") && strcmp(netmode, "acn-mixed")
 		    && strcmp(netmode, "mixed")) {
 
-			fprintf(fp, "disable_vht=1\n");
+			fprintf(fp, "\tdisable_vht=1\n");
 			if (strcmp(netmode, "n-only") && strcmp(netmode, "n2-only")
 			    && strcmp(netmode, "n5-only") && strcmp(netmode, "na-only")
 			    && strcmp(netmode, "ng-only") && strcmp(netmode, "mixed")) {
-				fprintf(fp, "disable_ht=1\n");
+				fprintf(fp, "\tdisable_ht=1\n");
 			} else {
 				if (atoi(channelbw) < 40) {
-					fprintf(fp, "disable_ht40=1\n");
+					fprintf(fp, "\tdisable_ht40=1\n");
 				}
 			}
 
@@ -1649,15 +1661,18 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		char grpstring[128] = {
 			0, 0
 		};
-		get_pairwise(prefix, pwstring, grpstring, isadhoc);
+		get_pairwise(prefix, pwstring, grpstring, isadhoc, ismesh);
 #ifdef HAVE_80211W
-		if (nvram_default_matchi(mfp, 1, 0) || ((ispsk2sha256 || ispsk3) && (!ispsk2 && !ispsk && !ismesh)))
+		if (nvram_default_matchi(mfp, 1, 0) || ((ispsk2sha256 || ispsk3) && (!ispsk2 && !ispsk)))
 			fprintf(fp, "\tieee80211w=2\n");
-		else if (nvram_default_matchi(mfp, -1, 0) || ispsk3 || ismesh) {
+		else if (nvram_default_matchi(mfp, -1, 0) || ispsk3) {
 			fprintf(fp, "\tieee80211w=1\n");
 		} else if (nvram_default_matchi(mfp, 0, 0))
 			fprintf(fp, "\tieee80211w=0\n");
 #endif
+		if (ismesh)
+			fprintf(fp, "\tnoscan=1\n");
+
 		if (!*pwstring) {
 			sprintf(psk, "%s_crypto", prefix);
 			if (nvram_match(psk, "aes")) {
