@@ -2223,11 +2223,13 @@ void ibss_mesh_setup_freq(struct wpa_supplicant *wpa_s,
 	for (j = 0; j < wpa_s->last_scan_res_used; j++) {
 		struct wpa_bss *bss = wpa_s->last_scan_res[j];
 
-		if (ssid->mode != WPAS_MODE_IBSS)
-			break;
-
 		/* Don't adjust control freq in case of fixed_freq */
-		if (ssid->fixed_freq)
+		if (ssid->fixed_freq) {
+			obss_scan = 0;
+			break;
+		}
+
+		if (ssid->mode != WPAS_MODE_IBSS)
 			break;
 
 		if (!bss_is_ibss(bss))
