@@ -200,7 +200,7 @@ void setupKey(char *prefix)
 
 }
 
-void get_pairwise(char *prefix, char *pwstring, char *grpstring, int isadhoc)
+void get_pairwise(char *prefix, char *pwstring, char *grpstring, int isadhoc, int ismesh)
 {
 	char temp_grpstring[256] = { 0, 0 };
 	char akm[16];
@@ -216,6 +216,9 @@ void get_pairwise(char *prefix, char *pwstring, char *grpstring, int isadhoc)
 				sprintf(temp_grpstring, "%s %s", temp_grpstring, "CCMP");
 			else
 #endif
+			if (ismesh)
+				sprintf(temp_grpstring, "%s %s", temp_grpstring, "CCMP");
+			else
 				sprintf(temp_grpstring, "%s %s", temp_grpstring, "CCMP TKIP");
 		}
 	}
@@ -276,7 +279,7 @@ void eap_sta_key_mgmt(FILE * fp, char *prefix)
 	char grpstring[128] = {
 		0, 0
 	};
-	get_pairwise(prefix, pwstring, grpstring, 0);
+	get_pairwise(prefix, pwstring, grpstring, 0, 0);
 	if (*pwstring && (iswpa2 || iswpa || iswpa3 || iswpa3_128 || iswpa3_192 || iswpa2sha256)) {
 		fprintf(fp, "\tpairwise=%s\n", &pwstring[1]);
 		fprintf(fp, "\tgroup=%s\n", &grpstring[1]);
@@ -650,7 +653,7 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		char grpstring[128] = {
 			0, 0
 		};
-		get_pairwise(prefix, pwstring, grpstring, 0);
+		get_pairwise(prefix, pwstring, grpstring, 0, 0);
 #ifdef HAVE_80211W
 		if (nvram_default_matchi(mfp, -1, 0))
 			fprintf(fp, "\tieee80211w=1\n");
@@ -1435,7 +1438,7 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 		0, 0
 	};
 
-	get_pairwise(prefix, pwstring, NULL, 0);
+	get_pairwise(prefix, pwstring, NULL, 0, 0);
 
 	if (!*pwstring) {
 		char psk[32];
