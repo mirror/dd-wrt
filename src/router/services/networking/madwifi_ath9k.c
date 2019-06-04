@@ -1651,9 +1651,9 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		};
 		get_pairwise(prefix, pwstring, grpstring, isadhoc);
 #ifdef HAVE_80211W
-		if (nvram_default_matchi(mfp, 1, 0) || ((ispsk2sha256 || ispsk3) && (!ispsk2 && !ispsk)))
+		if (nvram_default_matchi(mfp, 1, 0) || ((ispsk2sha256 || ispsk3) && (!ispsk2 && !ispsk && !ismesh)))
 			fprintf(fp, "\tieee80211w=2\n");
-		else if (nvram_default_matchi(mfp, -1, 0) || ispsk3) {
+		else if (nvram_default_matchi(mfp, -1, 0) || ispsk3 || ismesh) {
 			fprintf(fp, "\tieee80211w=1\n");
 		} else if (nvram_default_matchi(mfp, 0, 0))
 			fprintf(fp, "\tieee80211w=0\n");
@@ -1668,6 +1668,9 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 					fprintf(fp, "\tgroup=CCMP\n");
 				else
 #endif
+				if (ismesh)
+					fprintf(fp, "\tgroup=CCMP\n");
+				else
 					fprintf(fp, "\tgroup=CCMP TKIP\n");
 			}
 			if (nvram_match(psk, "tkip")) {
