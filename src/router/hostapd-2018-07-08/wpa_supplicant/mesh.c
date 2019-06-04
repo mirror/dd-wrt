@@ -327,6 +327,8 @@ static int wpa_supplicant_mesh_init(struct wpa_supplicant *wpa_s,
 			   frequency);
 		goto out_free;
 	}
+	if (ssid->noscan)
+		conf->noscan = 1;
 	if (ssid->ht40)
 		conf->secondary_channel = ssid->ht40;
 	if (conf->hw_mode == HOSTAPD_MODE_IEEE80211A && ssid->vht) {
