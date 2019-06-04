@@ -2468,6 +2468,7 @@ static const struct parse_data ssid_fields[] = {
 #else /* CONFIG_MESH */
 	{ INT_RANGE(mode, 0, 4) },
 #endif /* CONFIG_MESH */
+	{ INT_RANGE(noscan, 0, 1) },
 	{ INT_RANGE(proactive_key_caching, 0, 1) },
 	{ INT_RANGE(disabled, 0, 2) },
 	{ STR(id_str) },

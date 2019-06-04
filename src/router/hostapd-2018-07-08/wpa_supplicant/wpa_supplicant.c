@@ -2207,12 +2207,12 @@ void ibss_mesh_setup_freq(struct wpa_supplicant *wpa_s,
 {
 	enum hostapd_hw_mode hw_mode;
 	struct hostapd_hw_modes *mode = NULL;
-	int ht40plus[] = { 36, 44, 52, 60, 100, 108, 116, 124, 132, 149, 157,
+	int ht40plus[] = { 1, 2, 3, 4, 5, 6, 36, 44, 52, 60, 100, 108, 116, 124, 132, 149, 157,
 			   184, 192 };
 	int vht80[] = { 36, 52, 100, 116, 132, 149 };
 	struct hostapd_channel_data *pri_chan = NULL, *sec_chan = NULL;
 	u8 channel;
-	int i, chan_idx, ht40 = -1, res, obss_scan = 1;
+	int i, chan_idx, ht40 = -1, res, obss_scan = !(ssid->noscan);
 	unsigned int j, k;
 	struct hostapd_freq_params vht_freq;
 	int chwidth, seg0, seg1;
@@ -2280,7 +2280,7 @@ void ibss_mesh_setup_freq(struct wpa_supplicant *wpa_s,
 		return;
 
 	/* Setup higher BW only for 5 GHz */
-	if (mode->mode != HOSTAPD_MODE_IEEE80211A)
+	if (mode->mode != HOSTAPD_MODE_IEEE80211A && !(ssid->noscan))
 		return;
 
 	for (chan_idx = 0; chan_idx < mode->num_channels; chan_idx++) {
