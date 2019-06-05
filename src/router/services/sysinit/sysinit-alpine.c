@@ -249,6 +249,8 @@ void start_sysinit(void)
 	eval("/sbin/vconfig", "add", "eth2", "2");
 	set_smp_affinity(258, 2);
 	set_smp_affinity(259, 4);
+	set_smp_affinity(241, 8);
+	set_smp_affinity(242, 4);
 	writeprocsysnet("core/message_cost", "0");
 	switch (board) {
 	case ROUTER_NETGEAR_R9000:

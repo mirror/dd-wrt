@@ -557,6 +557,7 @@ void start_sysinit(void)
 	eval("ifconfig", "eth0", "up");
 
 	writeproc("/proc/irq/101/smp_affinity", "2");
+	writeproc("/proc/irq/136/smp_affinity", "2"); // move second wifi interface to core 2
 	writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq", "800000");
 	writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq", "800000");
 	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold", "20");
