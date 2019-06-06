@@ -247,10 +247,13 @@ void start_sysinit(void)
 	eval("/sbin/vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 	eval("/sbin/vconfig", "add", "eth1", "1");
 	eval("/sbin/vconfig", "add", "eth2", "2");
-	set_smp_affinity(258, 2);
-	set_smp_affinity(259, 4);
+	set_smp_affinity(240, 4);
 	set_smp_affinity(241, 8);
-	set_smp_affinity(242, 4);
+	int i;
+	for (i = 252; i < 261; i++)
+		set_smp_affinity(i, 1);
+	for (i = 243; i < 252; i++)
+		set_smp_affinity(i, 2);
 	writeprocsysnet("core/message_cost", "0");
 	switch (board) {
 	case ROUTER_NETGEAR_R9000:
