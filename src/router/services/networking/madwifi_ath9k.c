@@ -1554,10 +1554,12 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			led_control(LED_SEC1, LED_ON);
 		sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
 		FILE *fp = fopen(fstr, "wb");
-		if (isadhoc)
-			fprintf(fp, "ap_scan=2\n");
-		else if (!ismesh)
-			fprintf(fp, "ap_scan=1\n");
+		if (!ismesh) {
+			if (isadhoc)
+				fprintf(fp, "ap_scan=2\n");
+			else if (!ismesh)
+				fprintf(fp, "ap_scan=1\n");
+		}
 		fprintf(fp, "fast_reauth=1\n");
 		fprintf(fp, "eapol_version=1\n");
 		if (ispsk3)
@@ -1932,20 +1934,26 @@ void ath9k_start_supplicant(int count)
 #endif
 		} else {
 			sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
+			if (nvram_match(wmode, "sta") ||
+			    nvram_match(wmode, "wdssta") || (nvram_match(wmode, "mesh") && !nvram_nmatch("disabled", "%s_akm", dev)) || nvram_match(wmode, "wet") || nvram_match(wmode, "infra")) {
 #ifdef HAVE_RELAYD
-			if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh"))
-			    && nvram_matchi(bridged, 1))
-				eval("wpa_supplicant", "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface, "-c", fstr);
-			else
-				eval("wpa_supplicant", background, "-Dnl80211", subinterface, "-c", fstr);
+				if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh"))
+				    && nvram_matchi(bridged, 1)) {
+					eval("wpa_supplicant", "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface, "-c", fstr);
+				} else {
+					eval("wpa_supplicant", background, "-Dnl80211", subinterface, "-c", fstr);
+				}
 #else
-			if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh")
-			     || nvram_match(wmode, "wet"))
-			    && nvram_matchi(bridged, 1))
-				eval("wpa_supplicant", "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface, "-c", fstr);
-			else
-				eval("wpa_supplicant", background, "-Dnl80211", subinterface, "-c", fstr);
+				if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh")
+				     || nvram_match(wmode, "wet"))
+				    && nvram_matchi(bridged, 1)) {
+					eval("wpa_supplicant", "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface, "-c", fstr);
+				} else {
+					eval("wpa_supplicant", background, "-Dnl80211", subinterface, "-c", fstr);
+				}
 #endif
+
+			}
 		}
 	}
 	if (has_ad(dev))
