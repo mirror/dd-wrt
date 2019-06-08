@@ -1619,7 +1619,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 				// fprintf(fp, "ibss_ht_mode=HT%s\n",ht);
 				fprintf(fp, "\thtmode=HT%s\n", ht);
 
-			if (nvram_match(bw, "80") || nvram_match(bw, "8080") nvram_match(bw, "160")) {
+			if (nvram_match(bw, "80") || nvram_match(bw, "8080") || nvram_match(bw, "160")) {
 				fprintf(fp, "\tht40=1\n");
 				fprintf(fp, "\tvht=1\n");
 			}
