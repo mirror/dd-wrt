@@ -964,6 +964,8 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 		dscp = ipv4_get_dsfield(ip_hdr(skb)) >> XT_DSCP_SHIFT;
 #ifndef SFE_TOS
 		if (dscp)
+#else
+		if (dscp || sic.protocol != IPPROTO_UDP)
 #endif
 		{
 			sic.dest_dscp = dscp;
@@ -997,6 +999,8 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 		dscp = ipv6_get_dsfield(ipv6_hdr(skb)) >> XT_DSCP_SHIFT;
 #ifndef SFE_TOS
 		if (dscp)
+#else
+		if (dscp || sic.protocol != IPPROTO_UDP)
 #endif
 		{
 			sic.dest_dscp = dscp;
