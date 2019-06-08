@@ -147,6 +147,59 @@ int cavium_mdiobus_write(struct mii_bus *bus, int phy_id, int regnum, u16 val)
 	return 0;
 }
 EXPORT_SYMBOL(cavium_mdiobus_write);
+#if 0
+static void _set_led(int l)
+{
+	int mbus = 0;
+	int maddr = 7;
+	uint16_t val = 0;
+	if (gd->ogd.board_desc.board_type == CVMX_BOARD_TYPE_UBNT_E200
+	    && (gd->ogd.board_desc.rev_major == BOARD_E200_MAJOR
+		|| gd->ogd.board_desc.rev_major == BOARD_E202_MAJOR)) {
+		mbus = 1;
+		maddr = 1;
+	}
+	switch (l) {
+	case 0:
+		val = 0x10;
+		break;
+	case 1:
+		val = 0x8;
+		break;
+	default:
+		break;
+	}
+	cvmx_mdio_write(mbus, maddr, 0x10, val);
+}
+
+static inline int cvmx_mdio_write(int bus_id, int phy_id, int location, int val)
+{
+#if defined(CVMX_BUILD_FOR_LINUX_KERNEL) && defined(CONFIG_PHYLIB)
+	return -1;
+#else
+	cvmx_smix_cmd_t smi_cmd;
+	cvmx_smix_wr_dat_t smi_wr;
+
+	if (octeon_has_feature(OCTEON_FEATURE_MDIO_CLAUSE_45))
+		__cvmx_mdio_set_clause22_mode(bus_id);
+
+	smi_wr.u64 = 0;
+	smi_wr.s.dat = val;
+	cvmx_write_csr(CVMX_SMIX_WR_DAT(bus_id), smi_wr.u64);
+
+	smi_cmd.u64 = 0;
+	smi_cmd.s.phy_op = MDIO_CLAUSE_22_WRITE;
+	smi_cmd.s.phy_adr = phy_id;
+	smi_cmd.s.reg_adr = location;
+	cvmx_write_csr(CVMX_SMIX_CMD(bus_id), smi_cmd.u64);
+
+	if (CVMX_WAIT_FOR_FIELD64(CVMX_SMIX_WR_DAT(bus_id), cvmx_smix_wr_dat_t, pending, ==, 0, CVMX_MDIO_TIMEOUT))
+		return -1;
+
+	return 0;
+#endif
+}
+#endif
 
 MODULE_DESCRIPTION("Common code for OCTEON and Thunder MDIO bus drivers");
 MODULE_AUTHOR("David Daney");
