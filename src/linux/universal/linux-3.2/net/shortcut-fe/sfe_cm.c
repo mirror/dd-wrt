@@ -472,6 +472,8 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 		dscp = ipv4_get_dsfield(ip_hdr(skb)) >> XT_DSCP_SHIFT;
 #ifndef SFE_TOS
 		if (dscp)
+#else
+		if (dscp || sic.protocol != IPPROTO_UDP)
 #endif
 		 {
 			sic.dest_dscp = dscp;
@@ -505,6 +507,8 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 		dscp = ipv6_get_dsfield(ipv6_hdr(skb)) >> XT_DSCP_SHIFT;
 #ifndef SFE_TOS
 		if (dscp)
+#else
+		if (dscp || sic.protocol != IPPROTO_UDP)
 #endif
 		{
 			sic.dest_dscp = dscp;
