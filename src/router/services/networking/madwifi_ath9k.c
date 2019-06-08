@@ -99,7 +99,6 @@ static char *gethtmode(char *prefix)
 			}
 			break;
 		case 80:
-		case 8080:
 			ht = "80Mhz";
 #if 0
 			if (nvram_default_match(sb, "ulu", "lul") || nvram_match(sb, "upper")) {
@@ -116,9 +115,12 @@ static char *gethtmode(char *prefix)
 			}
 #endif
 			break;
+		case 8080:
+			ht = "80+80Mhz";
+			break;
 		case 160:
-//                      ht = "160Mhz";
-#if 1
+			ht = "160Mhz";
+#if 0
 			if (nvram_default_match(sb, "uuu", "lll") || nvram_match(sb, "upper")) {
 				ht = "HT40+";
 			}
@@ -390,6 +392,7 @@ void configure_single_ath9k(int count)
 		sprintf(akm, "%s_akm", dev);
 		if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3")) {
 			eval("iw", wif, "interface", "add", dev, "type", "mp");
+			eval("iw", "dev", dev, "set", "freq", nvram_nget("%s_channel", dev), gethtmode(dev));
 		} else {
 			eval("iw", wif, "interface", "add", dev, "type", "mp", "mesh_id", nvram_nget("%s_ssid", dev));
 			eval("iw", "dev", dev, "set", "freq", nvram_nget("%s_channel", dev), gethtmode(dev));
@@ -1597,6 +1600,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			// autochannel 
 			sprintf(nfreq, "%s_channel", prefix);
 			freq = atoi(nvram_default_get(nfreq, "0"));
+			fprintf(fp, "\tfixed_freq=1\n");
 			fprintf(fp, "\tfrequency=%d\n", freq);
 			sprintf(bw, "%s_channelbw", prefix);
 			sprintf(ht, "20");
@@ -1604,6 +1608,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 				sprintf(ht, "20");
 			} else if (nvram_match(bw, "40") || nvram_match(bw, "2040")) {
 				sprintf(sb, "%s_nctrlsb", prefix);
+				fprintf(fp, "\tht40=1\n");
 				if (nvram_default_match(sb, "upper", "lower")) {
 					sprintf(ht, "40+");
 				} else {
@@ -1613,6 +1618,18 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			if (!is_ath5k(prefix))
 				// fprintf(fp, "ibss_ht_mode=HT%s\n",ht);
 				fprintf(fp, "\thtmode=HT%s\n", ht);
+
+			if (nvram_match(bw, "80") || nvram_match(bw, "8080") nvram_match(bw, "160")) {
+				fprintf(fp, "\tht40=1\n");
+				fprintf(fp, "\tvht=1\n");
+			}
+			if (nvram_match(bw, "80") || nvram_match(bw, "8080")) {
+				fprintf(fp, "\tmax_oper_chwidth=1\n");
+			}
+			if (nvram_match(bw, "160")) {
+				fprintf(fp, "\tmax_oper_chwidth=2\n");
+			}
+
 			if (isadhoc) {
 				sprintf(cellidtemp, "%s_cellid", prefix);
 				cellid = nvram_safe_get(cellidtemp);
