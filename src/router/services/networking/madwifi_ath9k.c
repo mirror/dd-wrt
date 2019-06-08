@@ -1606,11 +1606,35 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			sprintf(ht, "20");
 			if (nvram_default_matchi(bw, 20, 20)) {
 				sprintf(ht, "20");
-			} else if (nvram_match(bw, "40") || nvram_match(bw, "2040")) {
+			} else if (nvram_match(bw, "40") || nvram_match(bw, "2040") || nvram_match(bw, "80") || nvram_match(bw, "8080") || nvram_match(bw, "160")) {
 				sprintf(sb, "%s_nctrlsb", prefix);
 				fprintf(fp, "\tht40=1\n");
 				if (nvram_default_match(sb, "upper", "lower")) {
 					sprintf(ht, "40+");
+				} else if (nvram_default_match(sb, "uuu", "lll") || nvram_match(sb, "upper")) {
+					sprintf(ht, "40+");
+				} else if (nvram_match(sb, "uul")) {
+					sprintf(ht, "40+");
+				} else if (nvram_match(sb, "ulu")) {
+					sprintf(ht, "40+");
+				} else if (nvram_match(sb, "ull")) {
+					sprintf(ht, "40+");
+				} else if (nvram_match(sb, "luu")) {
+					sprintf(ht, "40-");
+				} else if (nvram_match(sb, "lul")) {
+					sprintf(ht, "40-");
+				} else if (nvram_match(sb, "llu")) {
+					sprintf(ht, "40-");
+				} else if (nvram_match(sb, "lll") || nvram_match(sb, "lower")) {
+					sprintf(ht, "40-");
+				} else if (nvram_default_match(sb, "ulu", "lul") || nvram_match(sb, "upper")) {
+					sprintf(ht, "40+");
+				} else if (nvram_match(sb, "ull")) {
+					sprintf(ht, "40+");
+				} else if (nvram_match(sb, "luu")) {
+					sprintf(ht, "40-");
+				} else if (nvram_match(sb, "lul") || nvram_match(sb, "lower")) {
+					sprintf(ht, "40-");
 				} else {
 					sprintf(ht, "40-");
 				}
@@ -1820,11 +1844,38 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			sprintf(ht, "20");
 			if (nvram_default_matchi(bw, 20, 20)) {
 				sprintf(ht, "20");
-			} else if (nvram_match(bw, "40") || nvram_match(bw, "2040")) {
+			} else if (nvram_match(bw, "40") || nvram_match(bw, "2040") || nvram_match(bw, "80") || nvram_match(bw, "8080") || nvram_match(bw, "160")) {
 				fprintf(fp, "\tht40=1\n");
 				sprintf(sb, "%s_nctrlsb", prefix);
+			} else if (nvram_match(bw, "40") || nvram_match(bw, "2040") || nvram_match(bw, "80") || nvram_match(bw, "8080") || nvram_match(bw, "160")) {
+				sprintf(sb, "%s_nctrlsb", prefix);
+				fprintf(fp, "\tht40=1\n");
 				if (nvram_default_match(sb, "upper", "lower")) {
 					sprintf(ht, "40+");
+				} else if (nvram_default_match(sb, "uuu", "lll") || nvram_match(sb, "upper")) {
+					sprintf(ht, "40+");
+				} else if (nvram_match(sb, "uul")) {
+					sprintf(ht, "40+");
+				} else if (nvram_match(sb, "ulu")) {
+					sprintf(ht, "40+");
+				} else if (nvram_match(sb, "ull")) {
+					sprintf(ht, "40+");
+				} else if (nvram_match(sb, "luu")) {
+					sprintf(ht, "40-");
+				} else if (nvram_match(sb, "lul")) {
+					sprintf(ht, "40-");
+				} else if (nvram_match(sb, "llu")) {
+					sprintf(ht, "40-");
+				} else if (nvram_match(sb, "lll") || nvram_match(sb, "lower")) {
+					sprintf(ht, "40-");
+				} else if (nvram_default_match(sb, "ulu", "lul") || nvram_match(sb, "upper")) {
+					sprintf(ht, "40+");
+				} else if (nvram_match(sb, "ull")) {
+					sprintf(ht, "40+");
+				} else if (nvram_match(sb, "luu")) {
+					sprintf(ht, "40-");
+				} else if (nvram_match(sb, "lul") || nvram_match(sb, "lower")) {
+					sprintf(ht, "40-");
 				} else {
 					sprintf(ht, "40-");
 				}
