@@ -1845,9 +1845,6 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			if (nvram_default_matchi(bw, 20, 20)) {
 				sprintf(ht, "20");
 			} else if (nvram_match(bw, "40") || nvram_match(bw, "2040") || nvram_match(bw, "80") || nvram_match(bw, "8080") || nvram_match(bw, "160")) {
-				fprintf(fp, "\tht40=1\n");
-				sprintf(sb, "%s_nctrlsb", prefix);
-			} else if (nvram_match(bw, "40") || nvram_match(bw, "2040") || nvram_match(bw, "80") || nvram_match(bw, "8080") || nvram_match(bw, "160")) {
 				sprintf(sb, "%s_nctrlsb", prefix);
 				fprintf(fp, "\tht40=1\n");
 				if (nvram_default_match(sb, "upper", "lower")) {
