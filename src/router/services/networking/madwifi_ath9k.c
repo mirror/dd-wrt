@@ -1814,12 +1814,14 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			fprintf(fp, "\tmode=5\n");
 			sprintf(nfreq, "%s_channel", prefix);
 			freq = atoi(nvram_default_get(nfreq, "0"));
+			fprintf(fp, "\tfixed_freq=1\n");
 			fprintf(fp, "\tfrequency=%d\n", freq);
 			sprintf(bw, "%s_channelbw", prefix);
 			sprintf(ht, "20");
 			if (nvram_default_matchi(bw, 20, 20)) {
 				sprintf(ht, "20");
 			} else if (nvram_match(bw, "40") || nvram_match(bw, "2040")) {
+				fprintf(fp, "\tht40=1\n");
 				sprintf(sb, "%s_nctrlsb", prefix);
 				if (nvram_default_match(sb, "upper", "lower")) {
 					sprintf(ht, "40+");
@@ -1830,6 +1832,17 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			if (!is_ath5k(prefix))
 				// fprintf(fp, "ibss_ht_mode=HT%s\n",ht);
 				fprintf(fp, "\thtmode=HT%s\n", ht);
+
+			if (nvram_match(bw, "80") || nvram_match(bw, "8080") || nvram_match(bw, "160")) {
+				fprintf(fp, "\tht40=1\n");
+				fprintf(fp, "\tvht=1\n");
+			}
+			if (nvram_match(bw, "80") || nvram_match(bw, "8080")) {
+				fprintf(fp, "\tmax_oper_chwidth=1\n");
+			}
+			if (nvram_match(bw, "160")) {
+				fprintf(fp, "\tmax_oper_chwidth=2\n");
+			}
 		} else
 			fprintf(fp, "\tscan_ssid=1\n");
 		fprintf(fp, "\tkey_mgmt=NONE\n");
