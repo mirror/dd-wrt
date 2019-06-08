@@ -2460,11 +2460,12 @@ skip_ht40:
 			chwidth = VHT_CHANWIDTH_160MHZ;
 			vht_caps |= VHT_CAP_SUPP_CHAN_WIDTH_160MHZ;
 			seg0 = 50;
-		} else if (freq->freq == 5520) {
+		} else {
+			
 			chwidth = VHT_CHANWIDTH_160MHZ;
 			vht_caps |= VHT_CAP_SUPP_CHAN_WIDTH_160MHZ;
-			seg0 = 114;
-		}
+			seg0 = ((freq->freq / 5) - 1000) + 14;
+		} 
 	} else if (ssid->max_oper_chwidth == VHT_CHANWIDTH_USE_HT) {
 		chwidth = VHT_CHANWIDTH_USE_HT;
 		seg0 = vht80[j] + 2;
