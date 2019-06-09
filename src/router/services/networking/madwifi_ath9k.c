@@ -56,6 +56,7 @@ void check_cryptomod(char *prefix);
 void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss);
 static void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc);
 void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss);
+static const char *get_channeloffset(char *prefix, int *iht, int *channeloffset);
 
 static const char *gethtmode(char *prefix)
 {
@@ -519,105 +520,6 @@ void configure_single_ath9k(int count)
 	} else {
 		eval("iw", "dev", dev, "set", "compr", "off");
 	}
-
-}
-
-static const char *get_channeloffset(char *prefix, int *iht, int *channeloffset)
-{
-	char *ht;
-	char bw[32];
-	sprintf(bw, "%s_channelbw", prefix);
-	int usebw = 20;
-	if (nvram_matchi(bw, 40))
-		usebw = 40;
-	if (nvram_matchi(bw, 2040))
-		usebw = 40;
-	if (nvram_matchi(bw, 80))
-		usebw = 80;
-	if (nvram_matchi(bw, 160))
-		usebw = 160;
-	if (nvram_match(bw, "80+80"))
-		usebw = 8080;
-	char sb[32];
-	sprintf(sb, "%s_nctrlsb", prefix);
-	switch (usebw) {
-	case 40:
-		if (nvram_default_match(sb, "ull", "luu") || nvram_match(sb, "upper")) {
-			ht = "HT40+";
-			*iht = 1;
-		}
-		if (nvram_match(sb, "luu") || nvram_match(sb, "lower")) {
-			ht = "HT40-";
-			*iht = -1;
-		}
-		break;
-	case 80:
-	case 8080:
-		if (nvram_default_match(sb, "ulu", "lul") || nvram_match(sb, "upper")) {
-			ht = "HT40+";
-			*iht = 1;
-			*channeloffset = 6;
-		}
-		if (nvram_match(sb, "ull")) {
-			ht = "HT40+";
-			*iht = 1;
-			*channeloffset = 2;
-		}
-		if (nvram_match(sb, "luu")) {
-			ht = "HT40-";
-			*iht = -1;
-			*channeloffset = 2;
-		}
-		if (nvram_match(sb, "lul") || nvram_match(sb, "lower")) {
-			ht = "HT40-";
-			*iht = -1;
-			*channeloffset = 6;
-		}
-		break;
-	case 160:
-		if (nvram_default_match(sb, "uuu", "lll") || nvram_match(sb, "upper")) {
-			ht = "HT40+";
-			*iht = 1;
-			*channeloffset = 14;
-		}
-		if (nvram_match(sb, "uul")) {
-			ht = "HT40+";
-			*iht = 1;
-			*channeloffset = 10;
-		}
-		if (nvram_match(sb, "ulu")) {
-			ht = "HT40+";
-			*iht = 1;
-			*channeloffset = 6;
-		}
-		if (nvram_match(sb, "ull")) {
-			ht = "HT40+";
-			*iht = 1;
-			*channeloffset = 2;
-		}
-		if (nvram_match(sb, "luu")) {
-			ht = "HT40-";
-			*iht = -1;
-			*channeloffset = 2;
-		}
-		if (nvram_match(sb, "lul")) {
-			ht = "HT40-";
-			*iht = -1;
-			*channeloffset = 6;
-		}
-		if (nvram_match(sb, "llu")) {
-			ht = "HT40-";
-			*iht = -1;
-			*channeloffset = 10;
-		}
-		if (nvram_match(sb, "lll") || nvram_match(sb, "lower")) {
-			ht = "HT40-";
-			*iht = -1;
-			*channeloffset = 14;
-		}
-		break;
-	}
-	return ht;
 
 }
 

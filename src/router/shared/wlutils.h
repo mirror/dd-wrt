@@ -347,7 +347,7 @@ int wlconf_down(char *name);
 int wlconf_up(char *name);
 
 #if defined(HAVE_MADWIFI) || defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
-
+const char *get_channeloffset(char *prefix, int *iht, int *channeloffset);
 extern struct wifi_channels *list_channels_11n(char *devnr);
 extern struct wifi_channels *list_channels_ath9k(char *devnr, char *country, int max_bandwidth_khz, unsigned char band);
 extern int getdevicecount(void);
