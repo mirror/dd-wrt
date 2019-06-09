@@ -349,7 +349,7 @@ void configure_single_ath9k(int count)
 		char akm[16];
 		sprintf(akm, "%s_akm", dev);
 		int iht, channeloffset;
-		getchanneloffset(dev, &iht, &channeloffset);
+		get_channeloffset(dev, &iht, &channeloffset);
 		char farg[32];
 		char *farg2 = "5775";
 		char *freq = nvram_nget("%s_channel", dev);
