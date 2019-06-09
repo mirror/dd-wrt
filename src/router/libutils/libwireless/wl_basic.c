@@ -7,6 +7,8 @@
 #include <utils.h>
 #include <bcmnvram.h>
 //#include <math.h>
+
+
 #if (defined(HAVE_RT2880) || defined(HAVE_RT61)) && !defined(HAVE_MT76)
 char *get_wl_instance_name(int instance)
 {
@@ -31,6 +33,104 @@ int get_wl_instance(char *name)
 }
 
 #elif HAVE_MADWIFI
+const char *get_channeloffset(char *prefix, int *iht, int *channeloffset)
+{
+	char *ht;
+	char bw[32];
+	sprintf(bw, "%s_channelbw", prefix);
+	int usebw = 20;
+	if (nvram_matchi(bw, 40))
+		usebw = 40;
+	if (nvram_matchi(bw, 2040))
+		usebw = 40;
+	if (nvram_matchi(bw, 80))
+		usebw = 80;
+	if (nvram_matchi(bw, 160))
+		usebw = 160;
+	if (nvram_match(bw, "80+80"))
+		usebw = 8080;
+	char sb[32];
+	sprintf(sb, "%s_nctrlsb", prefix);
+	switch (usebw) {
+	case 40:
+		if (nvram_default_match(sb, "ull", "luu") || nvram_match(sb, "upper")) {
+			ht = "HT40+";
+			*iht = 1;
+		}
+		if (nvram_match(sb, "luu") || nvram_match(sb, "lower")) {
+			ht = "HT40-";
+			*iht = -1;
+		}
+		break;
+	case 80:
+	case 8080:
+		if (nvram_default_match(sb, "ulu", "lul") || nvram_match(sb, "upper")) {
+			ht = "HT40+";
+			*iht = 1;
+			*channeloffset = 6;
+		}
+		if (nvram_match(sb, "ull")) {
+			ht = "HT40+";
+			*iht = 1;
+			*channeloffset = 2;
+		}
+		if (nvram_match(sb, "luu")) {
+			ht = "HT40-";
+			*iht = -1;
+			*channeloffset = 2;
+		}
+		if (nvram_match(sb, "lul") || nvram_match(sb, "lower")) {
+			ht = "HT40-";
+			*iht = -1;
+			*channeloffset = 6;
+		}
+		break;
+	case 160:
+		if (nvram_default_match(sb, "uuu", "lll") || nvram_match(sb, "upper")) {
+			ht = "HT40+";
+			*iht = 1;
+			*channeloffset = 14;
+		}
+		if (nvram_match(sb, "uul")) {
+			ht = "HT40+";
+			*iht = 1;
+			*channeloffset = 10;
+		}
+		if (nvram_match(sb, "ulu")) {
+			ht = "HT40+";
+			*iht = 1;
+			*channeloffset = 6;
+		}
+		if (nvram_match(sb, "ull")) {
+			ht = "HT40+";
+			*iht = 1;
+			*channeloffset = 2;
+		}
+		if (nvram_match(sb, "luu")) {
+			ht = "HT40-";
+			*iht = -1;
+			*channeloffset = 2;
+		}
+		if (nvram_match(sb, "lul")) {
+			ht = "HT40-";
+			*iht = -1;
+			*channeloffset = 6;
+		}
+		if (nvram_match(sb, "llu")) {
+			ht = "HT40-";
+			*iht = -1;
+			*channeloffset = 10;
+		}
+		if (nvram_match(sb, "lll") || nvram_match(sb, "lower")) {
+			ht = "HT40-";
+			*iht = -1;
+			*channeloffset = 14;
+		}
+		break;
+	}
+	return ht;
+
+}
 
 static char *stalist[] = {
 	"ath0", "ath1", "ath2", "ath3", "ath4", "ath5", "ath6", "ath8", "ath9"
