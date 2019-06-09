@@ -351,22 +351,27 @@ void configure_single_ath9k(int count)
 		int iht, channeloffset;
 		getchanneloffset(dev, &iht, &channeloffset);
 		char farg[32];
+		char *farg2 = "5775";
 		char *freq = nvram_nget("%s_channel", dev);
 		sprintf(farg, "%d", atoi(freq) + (channeloffset * 5));
+
 		const char *htmode = gethtmode(dev);
 		//todo 80+80 center2_freq
 
 		if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3")) {
 			eval("iw", wif, "interface", "add", dev, "type", "mp");
-			if (strcmp(htmode, "NOHT") || strncmp(htmode, "HT", 2))
+			if (!strcmp(htmode, "NOHT") || !strncmp(htmode, "HT", 2))
 				eval("iw", "dev", dev, "set", "freq", freq, htmode);
+			else if (!strcmp(htmode, "80+80"))
+				eval("iw", "dev", dev, "set", "freq", freq, htmode, farg, farg2);
 			else
 				eval("iw", "dev", dev, "set", "freq", freq, htmode, farg);
 		} else {
 			eval("iw", wif, "interface", "add", dev, "type", "mp", "mesh_id", nvram_nget("%s_ssid", dev));
-
-			if (strcmp(htmode, "NOHT") || strncmp(htmode, "HT", 2))
+			if (!strcmp(htmode, "NOHT") || !strncmp(htmode, "HT", 2))
 				eval("iw", "dev", dev, "set", "freq", freq, htmode);
+			else if (!strcmp(htmode, "80+80"))
+				eval("iw", "dev", dev, "set", "freq", freq, htmode, farg, farg2);
 			else
 				eval("iw", "dev", dev, "set", "freq", freq, htmode, farg);
 		}
@@ -1609,11 +1614,11 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			fprintf(fp, "\tfrequency=%d\n", freq);
 			sprintf(bw, "%s_channelbw", prefix);
 			sprintf(ht, "20");
+			int iht, channeloffset;
 			if (nvram_default_matchi(bw, 20, 20)) {
 				sprintf(ht, "20");
 			} else if (nvram_match(bw, "40") || nvram_match(bw, "2040") || nvram_match(bw, "80") || nvram_match(bw, "8080") || nvram_match(bw, "160")) {
-				int iht, offset;
-				const char *cht = get_channeloffset(prefix, &iht, &offset);
+				const char *cht = get_channeloffset(prefix, &iht, &channeloffset);
 				sprintf(ht, cht + 2);
 				fprintf(fp, "\tht40=1\n");
 			}
@@ -1625,11 +1630,18 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 				fprintf(fp, "\tht40=1\n");
 				fprintf(fp, "\tvht=1\n");
 			}
-			if (nvram_match(bw, "80") || nvram_match(bw, "8080")) {
+			if (nvram_match(bw, "80")) {
 				fprintf(fp, "\tmax_oper_chwidth=1\n");
+				fprintf(fp, "\tvht_center_freq1=%d\n", freq + (channeloffset * 5));
+			}
+			if (nvram_match(bw, "8080")) {
+				fprintf(fp, "\tmax_oper_chwidth=3\n");
+				fprintf(fp, "\tvht_center_freq1=%d\n", freq + (channeloffset * 5));
+				fprintf(fp, "\tvht_center_freq2=%d\n", 5775);	// todo
 			}
 			if (nvram_match(bw, "160")) {
 				fprintf(fp, "\tmax_oper_chwidth=2\n");
+				fprintf(fp, "\tvht_center_freq1=%d\n", freq + (channeloffset * 5));
 			}
 
 			if (isadhoc) {
@@ -1820,11 +1832,11 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			fprintf(fp, "\tfrequency=%d\n", freq);
 			sprintf(bw, "%s_channelbw", prefix);
 			sprintf(ht, "20");
+			int iht, channeloffset;
 			if (nvram_default_matchi(bw, 20, 20)) {
 				sprintf(ht, "20");
 			} else if (nvram_match(bw, "40") || nvram_match(bw, "2040") || nvram_match(bw, "80") || nvram_match(bw, "8080") || nvram_match(bw, "160")) {
-				int iht, offset;
-				const char *cht = get_channeloffset(prefix, &iht, &offset);
+				const char *cht = get_channeloffset(prefix, &iht, &channeloffset);
 				sprintf(ht, cht + 2);
 				fprintf(fp, "\tht40=1\n");
 			}
@@ -1836,11 +1848,18 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 				fprintf(fp, "\tht40=1\n");
 				fprintf(fp, "\tvht=1\n");
 			}
-			if (nvram_match(bw, "80") || nvram_match(bw, "8080")) {
+			if (nvram_match(bw, "80")) {
 				fprintf(fp, "\tmax_oper_chwidth=1\n");
+				fprintf(fp, "\tvht_center_freq1=%d\n", freq + (channeloffset * 5));
+			}
+			if (nvram_match(bw, "8080")) {
+				fprintf(fp, "\tmax_oper_chwidth=3\n");
+				fprintf(fp, "\tvht_center_freq1=%d\n", freq + (channeloffset * 5));
+				fprintf(fp, "\tvht_center_freq2=%d\n", 5775);	// todo
 			}
 			if (nvram_match(bw, "160")) {
 				fprintf(fp, "\tmax_oper_chwidth=2\n");
+				fprintf(fp, "\tvht_center_freq1=%d\n", freq + (channeloffset * 5));
 			}
 		} else
 			fprintf(fp, "\tscan_ssid=1\n");
