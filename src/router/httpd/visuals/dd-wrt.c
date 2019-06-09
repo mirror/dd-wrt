@@ -1565,7 +1565,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 			}
 			if (nvram_nmatch("80", "%s_channelbw", prefix))
 				channelbw = 80;
-			if (nvram_nmatch("8080", "%s_channelbw", prefix))
+			if (nvram_nmatch("80+80", "%s_channelbw", prefix))
 				channelbw = 80;
 			if (nvram_nmatch("160", "%s_channelbw", prefix))
 				channelbw = 160;
@@ -1603,7 +1603,6 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 #endif
 
 				if (is_mvebu(prefix) && ((chan[i].channel == 161 || chan[i].channel == 153 || chan[i].channel == 64) && channelbw == 80)) {
-					fprintf(stderr, "Skip unsupported channel: %d\n", chan[i].channel);
 					i++;
 					continue;
 				}
@@ -1641,7 +1640,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 			}
 		}
 		websWrite(wp, "//]]>\n</script></select></div>\n");
-		if (has_vht80plus80(prefix) && nvram_nmatch("8080", "%s_channelbw", prefix) && chan) {
+		if (has_vht80plus80(prefix) && nvram_nmatch("80+80", "%s_channelbw", prefix) && chan) {
 			show_caption(wp, "label", "wl_basic.vht80p80chan", NULL);
 			char *wlc = nvram_safe_get(wl_channel2);
 			int base = nvram_geti(wl_channel);
@@ -1657,13 +1656,12 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 			get_channeloffset(prefix, &iht, &channeloffset);
 			while (chan[i].freq != -1) {
 				if (is_mvebu(prefix) && ((chan[i].channel == 161 || chan[i].channel == 153 || chan[i].channel == 64) && channelbw == 80)) {
-					fprintf(stderr, "Skip unsupported channel: %d\n", chan[i].channel);
 					i++;
 					continue;
 				}
 				sprintf(cn, "%d", chan[i].channel);
 				sprintf(fr, "%d", chan[i].freq);
-				int freq = chan[i].freq;
+				int freq = chan[i++].freq;
 				if (base + (channeloffset * iht) + 80 == freq)
 					continue;
 				if (base + (channeloffset * iht) - 80 == freq)
@@ -1672,7 +1670,6 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 					websWrite(wp,
 						  "document.write(\"<option value=\\\"%s\\\" %s>%s - %d \"+wl_basic.mhz+\"</option>\");\n", fr, !strcmp(wlc, fr) ? " selected=\\\"selected\\\"" : "", cn, (freq + offset));
 				}
-				i++;
 			}
 			websWrite(wp, "//]]>\n</script></select></div>\n");
 		}

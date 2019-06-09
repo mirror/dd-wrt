@@ -1529,7 +1529,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			int iht, channeloffset;
 			if (nvram_default_matchi(bw, 20, 20)) {
 				sprintf(ht, "20");
-			} else if (nvram_match(bw, "40") || nvram_match(bw, "2040") || nvram_match(bw, "80") || nvram_match(bw, "8080") || nvram_match(bw, "160")) {
+			} else if (nvram_match(bw, "40") || nvram_match(bw, "2040") || nvram_match(bw, "80") || nvram_match(bw, "80+80") || nvram_match(bw, "160")) {
 				const char *cht = get_channeloffset(prefix, &iht, &channeloffset);
 				sprintf(ht, cht + 2);
 				fprintf(fp, "\tht40=1\n");
@@ -1538,7 +1538,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 				// fprintf(fp, "ibss_ht_mode=HT%s\n",ht);
 				fprintf(fp, "\thtmode=HT%s\n", ht);
 
-			if (nvram_match(bw, "80") || nvram_match(bw, "8080") || nvram_match(bw, "160")) {
+			if (nvram_match(bw, "80") || nvram_match(bw, "80+80") || nvram_match(bw, "160")) {
 				fprintf(fp, "\tht40=1\n");
 				fprintf(fp, "\tvht=1\n");
 			}
@@ -1546,7 +1546,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 				fprintf(fp, "\tmax_oper_chwidth=1\n");
 				fprintf(fp, "\tvht_center_freq1=%d\n", freq + (channeloffset * 5));
 			}
-			if (nvram_match(bw, "8080")) {
+			if (nvram_match(bw, "80+80")) {
 				fprintf(fp, "\tmax_oper_chwidth=3\n");
 				fprintf(fp, "\tvht_center_freq1=%d\n", freq + (channeloffset * 5));
 				fprintf(fp, "\tvht_center_freq2=%d\n", nvram_geti(nfreq2));	// todo
@@ -1748,7 +1748,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			int iht, channeloffset;
 			if (nvram_default_matchi(bw, 20, 20)) {
 				sprintf(ht, "20");
-			} else if (nvram_match(bw, "40") || nvram_match(bw, "2040") || nvram_match(bw, "80") || nvram_match(bw, "8080") || nvram_match(bw, "160")) {
+			} else if (nvram_match(bw, "40") || nvram_match(bw, "2040") || nvram_match(bw, "80") || nvram_match(bw, "80+80") || nvram_match(bw, "160")) {
 				const char *cht = get_channeloffset(prefix, &iht, &channeloffset);
 				sprintf(ht, cht + 2);
 				fprintf(fp, "\tht40=1\n");
@@ -1757,7 +1757,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 				// fprintf(fp, "ibss_ht_mode=HT%s\n",ht);
 				fprintf(fp, "\thtmode=HT%s\n", ht);
 
-			if (nvram_match(bw, "80") || nvram_match(bw, "8080") || nvram_match(bw, "160")) {
+			if (nvram_match(bw, "80") || nvram_match(bw, "80+80") || nvram_match(bw, "160")) {
 				fprintf(fp, "\tht40=1\n");
 				fprintf(fp, "\tvht=1\n");
 			}
@@ -1765,7 +1765,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 				fprintf(fp, "\tmax_oper_chwidth=1\n");
 				fprintf(fp, "\tvht_center_freq1=%d\n", freq + (channeloffset * 5));
 			}
-			if (nvram_match(bw, "8080")) {
+			if (nvram_match(bw, "80+80")) {
 				fprintf(fp, "\tmax_oper_chwidth=3\n");
 				fprintf(fp, "\tvht_center_freq1=%d\n", freq + (channeloffset * 5));
 				fprintf(fp, "\tvht_center_freq2=%d\n", nvram_geti(nfreq2));	// todo
