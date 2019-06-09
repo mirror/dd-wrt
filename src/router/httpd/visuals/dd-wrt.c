@@ -1644,10 +1644,17 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 		if (has_vht80plus80(prefix) && nvram_nmatch("8080", "%s_channelbw", prefix) && chan) {
 			show_caption(wp, "label", "wl_basic.vht80p80chan", NULL);
 			char *wlc = nvram_safe_get(wl_channel2);
+			int base = nvram_geti(wl_channel);
 			int offset = get_freqoffset(prefix);
 			websWrite(wp, "<select name=\"%s\" onfocus=\"check_action(this,0)\" ><script type=\"text/javascript\">\n//<![CDATA[\n", wl_channel2);
-			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s>\" + share.auto + \"</option>\");\n", !strcmp(wlc, "0") ? "selected=\\\"selected\\\"" : "");
+/*
+			todo, develop algorithm for best quality 80+80 secondary channel
+*/
+//                      websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s>\" + share.auto + \"</option>\");\n", !strcmp(wlc, "0") ? "selected=\\\"selected\\\"" : "");
 			int i = 0;
+			int iht;
+			int channeloffset;
+			get_channeloffset(prefix, &iht, &channeloffset);
 			while (chan[i].freq != -1) {
 				if (is_mvebu(prefix) && ((chan[i].channel == 161 || chan[i].channel == 153 || chan[i].channel == 64) && channelbw == 80)) {
 					fprintf(stderr, "Skip unsupported channel: %d\n", chan[i].channel);
@@ -1657,6 +1664,10 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				sprintf(cn, "%d", chan[i].channel);
 				sprintf(fr, "%d", chan[i].freq);
 				int freq = chan[i].freq;
+				if (base + (channeloffset * iht) + 80 == freq)
+					continue;
+				if (base + (channeloffset * iht) - 80 == freq)
+					continue;
 				if (freq != -1) {
 					websWrite(wp,
 						  "document.write(\"<option value=\\\"%s\\\" %s>%s - %d \"+wl_basic.mhz+\"</option>\");\n", fr, !strcmp(wlc, fr) ? " selected=\\\"selected\\\"" : "", cn, (freq + offset));
