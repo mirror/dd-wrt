@@ -873,8 +873,8 @@ ifeq ($(CONFIG_ATH9K),y)
 ifneq ($(CONFIG_NOWIFI),y)
 
 ATH9KCFLAGS+= $(COPTS) -fPIC -DHAVE_ATH9K -I. -I$(TOP)/services/include -I$(TOP)/shared -I../httpd -I$(SRCBASE)/include.v24 -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/libnl-tiny/include -I$(SRCBASE)/
-ATH9KOBJS += madwifi_ath9k.o site_survey_mac80211.o
-ATH9KFILES += networking/madwifi_ath9k.c tools/site_survey_mac80211.c
+ATH9KOBJS += mac80211.o site_survey_mac80211.o
+ATH9KFILES += networking/mac80211.c tools/site_survey_mac80211.c
 ATH9KLDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
 ifeq ($(CONFIG_UNIWIP),y)
 ATH9KCFLAGS += -DHAVE_UNIWIP
