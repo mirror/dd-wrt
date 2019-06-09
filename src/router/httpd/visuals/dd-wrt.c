@@ -1662,15 +1662,21 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				}
 				sprintf(cn, "%d", chan[i].channel);
 				sprintf(fr, "%d", chan[i].freq);
-				int freq = chan[i++].freq;
+				int freq = chan[i++].freq + 10;
 				if (base + (channeloffset * iht) + 80 == freq)
 					continue;
 				if (base + (channeloffset * iht) - 80 == freq)
 					continue;
-				if (freq != -1) {
-					websWrite(wp,
-						  "document.write(\"<option value=\\\"%s\\\" %s>%s - %d \"+wl_basic.mhz+\"</option>\");\n", fr, !strcmp(wlc, fr) ? " selected=\\\"selected\\\"" : "", cn, (freq + offset));
+				int look = freq - 30;
+				int i2 = 0;
+				while (chan[i2].freq != -1) {
+					if (look == chan[i2].freq)
+						goto found;
+					i2++;
 				}
+				continue;
+			      found:;
+				websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s>%s - %d \"+wl_basic.mhz+\"</option>\");\n", fr, !strcmp(wlc, fr) ? " selected=\\\"selected\\\"" : "", cn, (freq + offset));
 			}
 			websWrite(wp, "//]]>\n</script></select></div>\n");
 		}
