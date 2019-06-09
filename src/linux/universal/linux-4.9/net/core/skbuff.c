@@ -457,6 +457,9 @@ static void *__netdev_alloc_frag(unsigned int fragsz, gfp_t gfp_mask)
 	struct page_frag_cache *nc;
 	unsigned long flags;
 	void *data;
+#ifdef CONFIG_ARCH_IXP4XX 
+	gfp_mask |= GFP_DMA;
+#endif
 	local_irq_save(flags);
 	nc = this_cpu_ptr(&netdev_alloc_cache);
 	data = __alloc_page_frag(nc, fragsz, gfp_mask);
@@ -482,6 +485,9 @@ EXPORT_SYMBOL(netdev_alloc_frag);
 static void *__napi_alloc_frag(unsigned int fragsz, gfp_t gfp_mask)
 {
 	struct napi_alloc_cache *nc = this_cpu_ptr(&napi_alloc_cache);
+#ifdef CONFIG_ARCH_IXP4XX 
+	gfp_mask |= GFP_DMA;
+#endif
 	return __alloc_page_frag(&nc->page, fragsz, gfp_mask);
 }
 
@@ -514,6 +520,9 @@ struct sk_buff *__netdev_alloc_skb(struct net_device *dev, unsigned int len,
 	struct sk_buff *skb;
 	bool pfmemalloc;
 	void *data;
+#ifdef CONFIG_ARCH_IXP4XX 
+	gfp_mask |= GFP_DMA;
+#endif
 
 	len += NET_SKB_PAD;
 
@@ -583,6 +592,9 @@ struct sk_buff *__napi_alloc_skb(struct napi_struct *napi, unsigned int len,
 	struct sk_buff *skb;
 	void *data;
 
+#ifdef CONFIG_ARCH_IXP4XX 
+	gfp_mask |= GFP_DMA;
+#endif
 
 	len += NET_SKB_PAD + NET_IP_ALIGN;
 
