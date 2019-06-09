@@ -13,7 +13,7 @@ exec_prefix 	= @exec_prefix@
 datarootdir	= @datarootdir@
 INST_LIB_DIR	= @libdir@
 SLANG_INST_INC	= -I@includedir@
-SLANG_INST_LIB	= -L$(INST_LIB_DIR)
+SLANG_INST_LIB	= -L$(DESTDIR)$(INST_LIB_DIR)
 #---------------------------------------------------------------------------
 SLANG_SRCINC	= -I@SRCDIR@
 SLANG_SRCLIB	= -L@ELFDIR@
