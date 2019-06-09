@@ -829,7 +829,8 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 						case 8080:
 						case 80:
 							channel = 100;
-							channel2 = 155 ht = "HT40+";
+							channel2 = 155;
+							ht = "HT40+";
 							iht = 1;
 							channeloffset = 6;
 							freq = 5500;
