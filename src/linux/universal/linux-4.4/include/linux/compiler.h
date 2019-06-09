@@ -408,6 +408,10 @@ static __always_inline void __write_once_size(volatile void *p, void *res, int s
 #define __cold
 #endif
 
+#ifndef __copy
+# define __copy(symbol)
+#endif
+
 /* Simple shorthand for a section definition */
 #ifndef __section
 # define __section(S) __attribute__ ((__section__(#S)))

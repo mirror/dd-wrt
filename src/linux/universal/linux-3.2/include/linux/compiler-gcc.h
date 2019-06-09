@@ -107,6 +107,10 @@
 #define __noclone	/* not needed */
 #endif
 
+#if GCC_VERSION >= 90100
+#define __copy(symbol)                 __attribute__((__copy__(symbol)))
+#endif
+
 /*
  * A trick to suppress uninitialized variable warning without generating any
  * code
