@@ -527,8 +527,11 @@ void get_pairwise(char *prefix, char *pwstring, char *grpstring, int isadhoc, in
 void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss)
 {
 	int channel = 0;
+	int channel2 = 0;
 	int freq = 0;
 	char nfreq[16];
+	int freq2 = 0;
+	char nfreq2[16];
 	int i = 0;
 	char *caps;
 	int isath5k = is_ath5k(prefix);
@@ -675,6 +678,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		case 80:
 		case 8080:
 			channel = 100;
+			channel2 = 155;
 			ht = "HT40+";
 			channeloffset = 6;
 			iht = 1;
@@ -708,6 +712,8 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		// also we still should take care on the selected mode
 		sprintf(nfreq, "%s_channel", prefix);
 		freq = nvram_default_geti(nfreq, 0);
+		sprintf(nfreq2, "%s_channel2", prefix);
+		freq2 = nvram_default_geti(nfreq2, 0);
 
 		if (freq == 0) {
 			if (has_ad(prefix)) {
@@ -823,7 +829,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 						case 8080:
 						case 80:
 							channel = 100;
-							ht = "HT40+";
+							channel2 = 155 ht = "HT40+";
 							iht = 1;
 							channeloffset = 6;
 							freq = 5500;
@@ -854,6 +860,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 			}
 		} else {
 			channel = ieee80211_mhz2ieee(freq);
+			channel2 = ieee80211_mhz2ieee(freq2);
 		}
 	}
 	if (!isath5k && !has_ad(prefix)) {
@@ -930,7 +937,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 				case 8080:
 					fprintf(fp, "vht_oper_chwidth=3\n");
 					fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", channel + (channeloffset * iht));
-					fprintf(fp, "vht_oper_centr_freq_seg1_idx=155\n");
+					fprintf(fp, "vht_oper_centr_freq_seg1_idx=%d\n", channel2);
 					break;
 				default:
 					fprintf(fp, "vht_oper_chwidth=0\n");
@@ -1430,7 +1437,9 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 	char akm[16];
 	int i;
 	int freq = 0;
-	static char nfreq[16];
+	int freq2 = 0;
+	char nfreq[16];
+	char nfreq2[16];
 	char *cellid;
 	char cellidtemp[32];
 	char cellidssid[5];
@@ -1510,6 +1519,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 				fprintf(fp, "\tmode=1\n");
 			// autochannel 
 			sprintf(nfreq, "%s_channel", prefix);
+			sprintf(nfreq2, "%s_channel2", prefix);
 			freq = atoi(nvram_default_get(nfreq, "0"));
 			fprintf(fp, "\tfixed_freq=1\n");
 			fprintf(fp, "\tfrequency=%d\n", freq);
@@ -1538,7 +1548,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			if (nvram_match(bw, "8080")) {
 				fprintf(fp, "\tmax_oper_chwidth=3\n");
 				fprintf(fp, "\tvht_center_freq1=%d\n", freq + (channeloffset * 5));
-				fprintf(fp, "\tvht_center_freq2=%d\n", 5775);	// todo
+				fprintf(fp, "\tvht_center_freq2=%d\n", nvram_geti(nfreq2));	// todo
 			}
 			if (nvram_match(bw, "160")) {
 				fprintf(fp, "\tmax_oper_chwidth=2\n");
@@ -1728,6 +1738,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			char bw[32];
 			fprintf(fp, "\tmode=5\n");
 			sprintf(nfreq, "%s_channel", prefix);
+			sprintf(nfreq2, "%s_channel2", prefix);
 			freq = atoi(nvram_default_get(nfreq, "0"));
 			fprintf(fp, "\tfixed_freq=1\n");
 			fprintf(fp, "\tfrequency=%d\n", freq);
@@ -1756,7 +1767,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			if (nvram_match(bw, "8080")) {
 				fprintf(fp, "\tmax_oper_chwidth=3\n");
 				fprintf(fp, "\tvht_center_freq1=%d\n", freq + (channeloffset * 5));
-				fprintf(fp, "\tvht_center_freq2=%d\n", 5775);	// todo
+				fprintf(fp, "\tvht_center_freq2=%d\n", nvram_geti(nfreq2));	// todo
 			}
 			if (nvram_match(bw, "160")) {
 				fprintf(fp, "\tmax_oper_chwidth=2\n");
