@@ -57,7 +57,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss);
 static void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc);
 void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss);
 
-static char *gethtmode(char *prefix)
+static const char *gethtmode(char *prefix)
 {
 	char *netmode = nvram_nget("%s_net_mode", prefix);
 	char *akm = nvram_nget("%s_akm", prefix);
@@ -91,61 +91,19 @@ static char *gethtmode(char *prefix)
 		sprintf(sb, "%s_nctrlsb", prefix);
 		switch (usebw) {
 		case 40:
-			if (nvram_default_match(sb, "ull", "luu") || nvram_match(sb, "upper")) {
+			if (nvram_default_match(sb, "ull", "luu") || nvram_match(sb, "upper"))
 				ht = "HT40+";
-			}
-			if (nvram_match(sb, "luu") || nvram_match(sb, "lower")) {
+			else
 				ht = "HT40-";
-			}
 			break;
 		case 80:
-			ht = "80Mhz";
-#if 0
-			if (nvram_default_match(sb, "ulu", "lul") || nvram_match(sb, "upper")) {
-				ht = "HT40+";
-			}
-			if (nvram_match(sb, "ull")) {
-				ht = "HT40+";
-			}
-			if (nvram_match(sb, "luu")) {
-				ht = "HT40-";
-			}
-			if (nvram_match(sb, "lul") || nvram_match(sb, "lower")) {
-				ht = "HT40-";
-			}
-#endif
+			ht = "80";
 			break;
 		case 8080:
-			ht = "80+80Mhz";
+			ht = "80+80";
 			break;
 		case 160:
-			ht = "160Mhz";
-#if 0
-			if (nvram_default_match(sb, "uuu", "lll") || nvram_match(sb, "upper")) {
-				ht = "HT40+";
-			}
-			if (nvram_match(sb, "uul")) {
-				ht = "HT40+";
-			}
-			if (nvram_match(sb, "ulu")) {
-				ht = "HT40+";
-			}
-			if (nvram_match(sb, "ull")) {
-				ht = "HT40+";
-			}
-			if (nvram_match(sb, "luu")) {
-				ht = "HT40-";
-			}
-			if (nvram_match(sb, "lul")) {
-				ht = "HT40-";
-			}
-			if (nvram_match(sb, "llu")) {
-				ht = "HT40-";
-			}
-			if (nvram_match(sb, "lll") || nvram_match(sb, "lower")) {
-				ht = "HT40-";
-			}
-#endif
+			ht = "160";
 			break;
 		case 20:
 		default:
@@ -390,12 +348,27 @@ void configure_single_ath9k(int count)
 	} else if (!strcmp(apm, "mesh")) {
 		char akm[16];
 		sprintf(akm, "%s_akm", dev);
+		int iht, channeloffset;
+		getchanneloffset(dev, &iht, &channeloffset);
+		char farg[32];
+		char *freq = nvram_nget("%s_channel", dev);
+		sprintf(farg, "%d", atoi(freq) + (channeloffset * 5));
+		const char *htmode = gethtmode(dev);
+		//todo 80+80 center2_freq
+
 		if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3")) {
 			eval("iw", wif, "interface", "add", dev, "type", "mp");
-			eval("iw", "dev", dev, "set", "freq", nvram_nget("%s_channel", dev), gethtmode(dev));
+			if (strcmp(htmode, "NOHT") || strncmp(htmode, "HT", 2))
+				eval("iw", "dev", dev, "set", "freq", freq, htmode);
+			else
+				eval("iw", "dev", dev, "set", "freq", freq, htmode, farg);
 		} else {
 			eval("iw", wif, "interface", "add", dev, "type", "mp", "mesh_id", nvram_nget("%s_ssid", dev));
-			eval("iw", "dev", dev, "set", "freq", nvram_nget("%s_channel", dev), gethtmode(dev));
+
+			if (strcmp(htmode, "NOHT") || strncmp(htmode, "HT", 2))
+				eval("iw", "dev", dev, "set", "freq", freq, htmode);
+			else
+				eval("iw", "dev", dev, "set", "freq", freq, htmode, farg);
 		}
 
 		strcpy(primary, dev);
@@ -544,6 +517,105 @@ void configure_single_ath9k(int count)
 
 }
 
+static const char *get_channeloffset(char *prefix, int *iht, int *channeloffset)
+{
+	char *ht;
+	char bw[32];
+	sprintf(bw, "%s_channelbw", prefix);
+	int usebw = 20;
+	if (nvram_matchi(bw, 40))
+		usebw = 40;
+	if (nvram_matchi(bw, 2040))
+		usebw = 40;
+	if (nvram_matchi(bw, 80))
+		usebw = 80;
+	if (nvram_matchi(bw, 160))
+		usebw = 160;
+	if (nvram_match(bw, "80+80"))
+		usebw = 8080;
+	char sb[32];
+	sprintf(sb, "%s_nctrlsb", prefix);
+	switch (usebw) {
+	case 40:
+		if (nvram_default_match(sb, "ull", "luu") || nvram_match(sb, "upper")) {
+			ht = "HT40+";
+			*iht = 1;
+		}
+		if (nvram_match(sb, "luu") || nvram_match(sb, "lower")) {
+			ht = "HT40-";
+			*iht = -1;
+		}
+		break;
+	case 80:
+	case 8080:
+		if (nvram_default_match(sb, "ulu", "lul") || nvram_match(sb, "upper")) {
+			ht = "HT40+";
+			*iht = 1;
+			*channeloffset = 6;
+		}
+		if (nvram_match(sb, "ull")) {
+			ht = "HT40+";
+			*iht = 1;
+			*channeloffset = 2;
+		}
+		if (nvram_match(sb, "luu")) {
+			ht = "HT40-";
+			*iht = -1;
+			*channeloffset = 2;
+		}
+		if (nvram_match(sb, "lul") || nvram_match(sb, "lower")) {
+			ht = "HT40-";
+			*iht = -1;
+			*channeloffset = 6;
+		}
+		break;
+	case 160:
+		if (nvram_default_match(sb, "uuu", "lll") || nvram_match(sb, "upper")) {
+			ht = "HT40+";
+			*iht = 1;
+			*channeloffset = 14;
+		}
+		if (nvram_match(sb, "uul")) {
+			ht = "HT40+";
+			*iht = 1;
+			*channeloffset = 10;
+		}
+		if (nvram_match(sb, "ulu")) {
+			ht = "HT40+";
+			*iht = 1;
+			*channeloffset = 6;
+		}
+		if (nvram_match(sb, "ull")) {
+			ht = "HT40+";
+			*iht = 1;
+			*channeloffset = 2;
+		}
+		if (nvram_match(sb, "luu")) {
+			ht = "HT40-";
+			*iht = -1;
+			*channeloffset = 2;
+		}
+		if (nvram_match(sb, "lul")) {
+			ht = "HT40-";
+			*iht = -1;
+			*channeloffset = 6;
+		}
+		if (nvram_match(sb, "llu")) {
+			ht = "HT40-";
+			*iht = -1;
+			*channeloffset = 10;
+		}
+		if (nvram_match(sb, "lll") || nvram_match(sb, "lower")) {
+			ht = "HT40-";
+			*iht = -1;
+			*channeloffset = 14;
+		}
+		break;
+	}
+	return ht;
+
+}
+
 void get_pairwise(char *prefix, char *pwstring, char *grpstring, int isadhoc, int ismesh);
 
 void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss)
@@ -590,7 +662,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	fprintf(fp, "tx_queue_data0_cwmin=3\n");
 	fprintf(fp, "tx_queue_data0_cwmax=7\n");
 	fprintf(fp, "tx_queue_data0_burst=1.5\n");
-	char *country = getIsoName(nvram_default_get("ath0_regdomain", "UNITED_STATES"));
+	const char *country = getIsoName(nvram_default_get("ath0_regdomain", "UNITED_STATES"));
 	if (!country)
 		country = "DE";
 	fprintf(fp, "country_code=%s\n", country);
@@ -605,7 +677,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 
 	char *akm = nvram_nget("%s_akm", prefix);
 	char *crypto = nvram_nget("%s_crypto", prefix);
-	char *ht = NULL;
+	const char *ht = NULL;
 	int iht = 0;
 	int channeloffset = 6;
 	char bw[32];
@@ -656,79 +728,12 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		sprintf(sb, "%s_nctrlsb", prefix);
 		switch (usebw) {
 		case 40:
-			if (nvram_default_match(sb, "ull", "luu") || nvram_match(sb, "upper")) {
-				ht = "HT40+";
-				iht = 1;
-			}
-			if (nvram_match(sb, "luu") || nvram_match(sb, "lower")) {
-				ht = "HT40-";
-				iht = -1;
-			}
+			ht = get_channeloffset(prefix, &iht, NULL);
 			break;
 		case 80:
 		case 8080:
-			if (nvram_default_match(sb, "ulu", "lul") || nvram_match(sb, "upper")) {
-				ht = "HT40+";
-				iht = 1;
-				channeloffset = 6;
-			}
-			if (nvram_match(sb, "ull")) {
-				ht = "HT40+";
-				iht = 1;
-				channeloffset = 2;
-			}
-			if (nvram_match(sb, "luu")) {
-				ht = "HT40-";
-				iht = -1;
-				channeloffset = 2;
-			}
-			if (nvram_match(sb, "lul") || nvram_match(sb, "lower")) {
-				ht = "HT40-";
-				iht = -1;
-				channeloffset = 6;
-			}
-			break;
 		case 160:
-			if (nvram_default_match(sb, "uuu", "lll") || nvram_match(sb, "upper")) {
-				ht = "HT40+";
-				iht = 1;
-				channeloffset = 14;
-			}
-			if (nvram_match(sb, "uul")) {
-				ht = "HT40+";
-				iht = 1;
-				channeloffset = 10;
-			}
-			if (nvram_match(sb, "ulu")) {
-				ht = "HT40+";
-				iht = 1;
-				channeloffset = 6;
-			}
-			if (nvram_match(sb, "ull")) {
-				ht = "HT40+";
-				iht = 1;
-				channeloffset = 2;
-			}
-			if (nvram_match(sb, "luu")) {
-				ht = "HT40-";
-				iht = -1;
-				channeloffset = 2;
-			}
-			if (nvram_match(sb, "lul")) {
-				ht = "HT40-";
-				iht = -1;
-				channeloffset = 6;
-			}
-			if (nvram_match(sb, "llu")) {
-				ht = "HT40-";
-				iht = -1;
-				channeloffset = 10;
-			}
-			if (nvram_match(sb, "lll") || nvram_match(sb, "lower")) {
-				ht = "HT40-";
-				iht = -1;
-				channeloffset = 14;
-			}
+			ht = get_channeloffset(prefix, &iht, &channeloffset);
 			break;
 		case 20:
 		default:
@@ -1607,37 +1612,10 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			if (nvram_default_matchi(bw, 20, 20)) {
 				sprintf(ht, "20");
 			} else if (nvram_match(bw, "40") || nvram_match(bw, "2040") || nvram_match(bw, "80") || nvram_match(bw, "8080") || nvram_match(bw, "160")) {
-				sprintf(sb, "%s_nctrlsb", prefix);
+				int iht, offset;
+				const char *cht = get_channeloffset(prefix, &iht, &offset);
+				sprintf(ht, cht + 2);
 				fprintf(fp, "\tht40=1\n");
-				if (nvram_default_match(sb, "upper", "lower")) {
-					sprintf(ht, "40+");
-				} else if (nvram_default_match(sb, "uuu", "lll") || nvram_match(sb, "upper")) {
-					sprintf(ht, "40+");
-				} else if (nvram_match(sb, "uul")) {
-					sprintf(ht, "40+");
-				} else if (nvram_match(sb, "ulu")) {
-					sprintf(ht, "40+");
-				} else if (nvram_match(sb, "ull")) {
-					sprintf(ht, "40+");
-				} else if (nvram_match(sb, "luu")) {
-					sprintf(ht, "40-");
-				} else if (nvram_match(sb, "lul")) {
-					sprintf(ht, "40-");
-				} else if (nvram_match(sb, "llu")) {
-					sprintf(ht, "40-");
-				} else if (nvram_match(sb, "lll") || nvram_match(sb, "lower")) {
-					sprintf(ht, "40-");
-				} else if (nvram_default_match(sb, "ulu", "lul") || nvram_match(sb, "upper")) {
-					sprintf(ht, "40+");
-				} else if (nvram_match(sb, "ull")) {
-					sprintf(ht, "40+");
-				} else if (nvram_match(sb, "luu")) {
-					sprintf(ht, "40-");
-				} else if (nvram_match(sb, "lul") || nvram_match(sb, "lower")) {
-					sprintf(ht, "40-");
-				} else {
-					sprintf(ht, "40-");
-				}
 			}
 			if (!is_ath5k(prefix))
 				// fprintf(fp, "ibss_ht_mode=HT%s\n",ht);
@@ -1845,37 +1823,10 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			if (nvram_default_matchi(bw, 20, 20)) {
 				sprintf(ht, "20");
 			} else if (nvram_match(bw, "40") || nvram_match(bw, "2040") || nvram_match(bw, "80") || nvram_match(bw, "8080") || nvram_match(bw, "160")) {
-				sprintf(sb, "%s_nctrlsb", prefix);
+				int iht, offset;
+				const char *cht = get_channeloffset(prefix, &iht, &offset);
+				sprintf(ht, cht + 2);
 				fprintf(fp, "\tht40=1\n");
-				if (nvram_default_match(sb, "upper", "lower")) {
-					sprintf(ht, "40+");
-				} else if (nvram_default_match(sb, "uuu", "lll") || nvram_match(sb, "upper")) {
-					sprintf(ht, "40+");
-				} else if (nvram_match(sb, "uul")) {
-					sprintf(ht, "40+");
-				} else if (nvram_match(sb, "ulu")) {
-					sprintf(ht, "40+");
-				} else if (nvram_match(sb, "ull")) {
-					sprintf(ht, "40+");
-				} else if (nvram_match(sb, "luu")) {
-					sprintf(ht, "40-");
-				} else if (nvram_match(sb, "lul")) {
-					sprintf(ht, "40-");
-				} else if (nvram_match(sb, "llu")) {
-					sprintf(ht, "40-");
-				} else if (nvram_match(sb, "lll") || nvram_match(sb, "lower")) {
-					sprintf(ht, "40-");
-				} else if (nvram_default_match(sb, "ulu", "lul") || nvram_match(sb, "upper")) {
-					sprintf(ht, "40+");
-				} else if (nvram_match(sb, "ull")) {
-					sprintf(ht, "40+");
-				} else if (nvram_match(sb, "luu")) {
-					sprintf(ht, "40-");
-				} else if (nvram_match(sb, "lul") || nvram_match(sb, "lower")) {
-					sprintf(ht, "40-");
-				} else {
-					sprintf(ht, "40-");
-				}
 			}
 			if (!is_ath5k(prefix))
 				// fprintf(fp, "ibss_ht_mode=HT%s\n",ht);
