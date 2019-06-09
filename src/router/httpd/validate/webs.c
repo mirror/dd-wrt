@@ -4448,7 +4448,7 @@ static void save_prefix(webs_t wp, char *prefix)
 			nvram_set("wl2_wchannel", wl);
 
 	}
-
+	copytonv(wp, "%s_channel2", prefix);
 	copytonv(wp, n);
 	copytonv(wp, "wl_reg_mode");
 	copytonv(wp, "wl_tpc_db");
