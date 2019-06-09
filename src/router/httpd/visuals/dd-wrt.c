@@ -1660,9 +1660,9 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 					i++;
 					continue;
 				}
-				sprintf(cn, "%d", chan[i].channel);
-				sprintf(fr, "%d", chan[i].freq);
-				int freq = chan[i++].freq + 10;
+				int freq = chan[i].freq + 10;
+				sprintf(cn, "%d", chan[i++].channel + 2);
+				sprintf(fr, "%d", freq);
 				if (base + (channeloffset * iht) + 80 == freq)
 					continue;
 				if (base + (channeloffset * iht) - 80 == freq)
