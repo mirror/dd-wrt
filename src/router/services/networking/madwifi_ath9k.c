@@ -56,7 +56,6 @@ void check_cryptomod(char *prefix);
 void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss);
 static void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc);
 void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss);
-static const char *get_channeloffset(char *prefix, int *iht, int *channeloffset);
 
 static const char *gethtmode(char *prefix)
 {
