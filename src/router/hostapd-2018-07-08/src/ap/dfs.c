@@ -324,7 +324,7 @@ static int dfs_get_start_chan_idx(struct hostapd_iface *iface, int *seg1_start)
 			break;
 		}
 	}
-
+	fprintf(stderr, "searching channel no %d, result\n", channel_no, res);
 	if (res != -1 && chan_seg1 > -1) {
 		int found = 0;
 
@@ -341,6 +341,7 @@ static int dfs_get_start_chan_idx(struct hostapd_iface *iface, int *seg1_start)
 		if (!found)
 			res = -1;
 	}
+	fprintf(stderr, "searching chan_seg1 no %d, result\n", chan_seg1, res);
 
 	if (res == -1) {
 		wpa_printf(MSG_DEBUG,
