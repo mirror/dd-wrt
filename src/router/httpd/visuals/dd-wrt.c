@@ -1641,6 +1641,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 		}
 		websWrite(wp, "//]]>\n</script></select></div>\n");
 		if (has_vht80plus80(prefix) && nvram_nmatch("80+80", "%s_channelbw", prefix) && chan) {
+			websWrite(wp, "<div class=\"setting\">\n");
 			show_caption(wp, "label", "wl_basic.vht80p80chan", NULL);
 			char *wlc = nvram_safe_get(wl_channel2);
 			int base = nvram_geti(wl_channel);
