@@ -1515,10 +1515,11 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 	if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 	    || nvram_match(wl_mode, "infra") || nvram_match(wl_mode, "mesh")) {
 		char wl_channel[16];
-
-		sprintf(wl_channel, "%s_channel", prefix);
+		char wl_channel2[16];
 		char wl_wchannel[16];
 
+		sprintf(wl_channel, "%s_channel", prefix);
+		sprintf(wl_channel2, "%s_channel2", prefix);
 		sprintf(wl_wchannel, "%s_wchannel", prefix);
 		char wl_nbw[16];
 
@@ -1526,6 +1527,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 		sprintf(wl_nbw, "%s_nbw", prefix);
 
 		websWrite(wp, "<div class=\"setting\">\n");
+//wl_basic.vht80p80chan="Wireless Channel 2 (80+80)";
 		show_caption(wp, "label", "wl_basic.label4", NULL);
 		if (is_mac80211(prefix))
 			websWrite(wp, "<select name=\"%s\" rel=\"ath9k\" onfocus=\"check_action(this,0)\" onchange=\"setChannelProperties(this);\"><script type=\"text/javascript\">\n//<![CDATA[\n", wl_channel);
@@ -1562,6 +1564,8 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				checkband = 5;
 			}
 			if (nvram_nmatch("80", "%s_channelbw", prefix))
+				channelbw = 80;
+			if (nvram_nmatch("8080", "%s_channelbw", prefix))
 				channelbw = 80;
 			if (nvram_nmatch("160", "%s_channelbw", prefix))
 				channelbw = 160;
@@ -1635,6 +1639,31 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				}
 				i++;
 			}
+		}
+		websWrite(wp, "//]]>\n</script></select></div>\n");
+		if (has_vht80plus80(prefix) && nvram_nmatch("8080", "%s_channelbw", prefix) && chan) {
+			show_caption(wp, "label", "wl_basic.vht80p80chan", NULL);
+			char *wlc = nvram_safe_get(wl_channel2);
+			int offset = get_freqoffset(prefix);
+			websWrite(wp, "<select name=\"%s\" onfocus=\"check_action(this,0)\" ><script type=\"text/javascript\">\n//<![CDATA[\n", wl_channel2);
+			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s>\" + share.auto + \"</option>\");\n", !strcmp(wlc, "0") ? "selected=\\\"selected\\\"" : "");
+			int i = 0;
+			while (chan[i].freq != -1) {
+				if (is_mvebu(prefix) && ((chan[i].channel == 161 || chan[i].channel == 153 || chan[i].channel == 64) && channelbw == 80)) {
+					fprintf(stderr, "Skip unsupported channel: %d\n", chan[i].channel);
+					i++;
+					continue;
+				}
+				sprintf(cn, "%d", chan[i].channel);
+				sprintf(fr, "%d", chan[i].freq);
+				int freq = chan[i].freq;
+				if (freq != -1) {
+					websWrite(wp,
+						  "document.write(\"<option value=\\\"%s\\\" %s>%s - %d \"+wl_basic.mhz+\"</option>\");\n", fr, !strcmp(wlc, fr) ? " selected=\\\"selected\\\"" : "", cn, (freq + offset));
+				}
+				i++;
+			}
+			websWrite(wp, "//]]>\n</script></select></div>\n");
 		}
 #else
 		int instance = 0;
@@ -1741,21 +1770,9 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 						  chanlist[i], nvram_nmatch(channelstring, "%s_channel", prefix) ? "selected=\\\"selected\\\"" : "", chanlist[i], ofs / 1000, ofs % 1000);
 				}
 			}
-//          websWrite( wp, ");\n" );
-//          websWrite( wp, "for(i=0; i<=max_channel ; i++) {\n" );
-//          websWrite( wp, "    if(i == wl%d_channel) buf = \"selected\";\n",
-//                     instance );
-//          websWrite( wp, "    else buf = \"\";\n" );
-//          websWrite( wp, "    if (i==0)\n" );
-//          websWrite( wp,
-//                     "                document.write(\"<option value=\"+i+\" \"+buf+\">\" + share.auto + \"</option>\");\n" );
-//          websWrite( wp, "    else\n" );
-//          websWrite( wp,
-//                     "                document.write(\"<option value=\"+i+\" \"+buf+\">\"+(i+offset-1)+\" - \"+freq[i]+\" GHz</option>\");\n" );
-//          websWrite( wp, "}\n" );
 		}
-#endif
 		websWrite(wp, "//]]>\n</script></select></div>\n");
+#endif
 	}
 }
 
