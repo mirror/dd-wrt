@@ -2336,6 +2336,7 @@ wl_basic.label="WLAN-Modus";
 wl_basic.label2="WLAN-Netzwerk-Modus";
 wl_basic.label3="WLAN-Netzwerk-Name (SSID)";
 wl_basic.label4="WLAN-Kanal";
+wl_basic.vht80p80chan="Wireless Kanal 2 (80+80)";
 wl_basic.label5="WLAN-SSID-Broadcast";
 wl_basic.label6="Empfindlichkeitsbereich (ACK Timing)";
 wl_basic.label7="802.11n &Uuml;bertragungs Modus";

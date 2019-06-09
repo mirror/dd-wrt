@@ -2746,6 +2746,7 @@ wl_basic.label="Wireless Mode";
 wl_basic.label2="Wireless Network Mode";
 wl_basic.label3="Wireless Network Name (SSID)";
 wl_basic.label4="Wireless Channel";
+wl_basic.vht80p80chan="Wireless Channel 2 (80+80)";
 wl_basic.label5="Wireless SSID Broadcast";
 wl_basic.label6="Sensitivity Range (ACK Timing)";
 wl_basic.label7="802.11n Transmission Mode";
