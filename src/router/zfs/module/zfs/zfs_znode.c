@@ -515,7 +515,7 @@ zfs_inode_update(znode_t *zp)
  */
 static znode_t *
 zfs_znode_alloc(zfsvfs_t *zfsvfs, dmu_buf_t *db, int blksz,
-    dmu_object_type_t obj_type, uint64_t obj, sa_handle_t *hdl)
+    dmu_object_type_t obj_type, sa_handle_t *hdl)
 {
 	znode_t	*zp;
 	struct inode *ip;
@@ -596,7 +596,7 @@ zfs_znode_alloc(zfsvfs_t *zfsvfs, dmu_buf_t *db, int blksz,
 	ZFS_TIME_DECODE(&ip->i_mtime, mtime);
 	ZFS_TIME_DECODE(&ip->i_ctime, ctime);
 
-	ip->i_ino = obj;
+	ip->i_ino = zp->z_id;
 	zfs_inode_update(zp);
 	zfs_inode_set_ops(zfsvfs, ip);
 
@@ -910,8 +910,7 @@ zfs_mknode(znode_t *dzp, vattr_t *vap, dmu_tx_t *tx, cred_t *cr,
 		 * not fail retry until sufficient memory has been reclaimed.
 		 */
 		do {
-			*zpp = zfs_znode_alloc(zfsvfs, db, 0, obj_type, obj,
-			    sa_hdl);
+			*zpp = zfs_znode_alloc(zfsvfs, db, 0, obj_type, sa_hdl);
 		} while (*zpp == NULL);
 
 		VERIFY(*zpp != NULL);
@@ -1134,7 +1133,7 @@ again:
 	 * bonus buffer.
 	 */
 	zp = zfs_znode_alloc(zfsvfs, db, doi.doi_data_block_size,
-	    doi.doi_bonus_type, obj_num, NULL);
+	    doi.doi_bonus_type, NULL);
 	if (zp == NULL) {
 		err = SET_ERROR(ENOENT);
 	} else {
@@ -1254,7 +1253,7 @@ zfs_rezget(znode_t *zp)
 	ZFS_TIME_DECODE(&ZTOI(zp)->i_mtime, mtime);
 	ZFS_TIME_DECODE(&ZTOI(zp)->i_ctime, ctime);
 
-	if (gen != ZTOI(zp)->i_generation) {
+	if ((uint32_t)gen != ZTOI(zp)->i_generation) {
 		zfs_znode_dmu_fini(zp);
 		zfs_znode_hold_exit(zfsvfs, zh);
 		return (SET_ERROR(EIO));
