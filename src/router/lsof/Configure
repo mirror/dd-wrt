@@ -2925,8 +2925,8 @@ return(0); }
     fi	# }
     if test $LSOF_TMP1 -eq 1	# {
     then
-      LSOF_CFGF="$LSOF_CFGF -DHASSELINUX"
-      LSOF_CFGL="$LSOF_CFGL -lselinux"
+      LSOF_CFGF="$LSOF_CFGF"
+      LSOF_CFGL="$LSOF_CFGL"
     fi	# }
 
   # Test for UNIX socket endpoint support.
