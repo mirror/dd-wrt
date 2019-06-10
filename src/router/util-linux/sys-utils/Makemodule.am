@@ -56,7 +56,7 @@ if BUILD_FSTRIM
 sbin_PROGRAMS += fstrim
 dist_man_MANS += sys-utils/fstrim.8
 fstrim_SOURCES = sys-utils/fstrim.c
-fstrim_LDADD = $(LDADD) libcommon.la libmount.la
+fstrim_LDADD = $(LDADD) libcommon.la libmount.la  libblkid.la libuuid.la
 fstrim_CFLAGS = $(AM_CFLAGS) -I$(ul_libmount_incdir)
 if HAVE_SYSTEMD
 systemdsystemunit_DATA += \
@@ -167,7 +167,7 @@ endif # BUILD_SETARCH
 if BUILD_EJECT
 usrbin_exec_PROGRAMS += eject
 eject_SOURCES =  sys-utils/eject.c lib/monotonic.c
-eject_LDADD = $(LDADD) libmount.la libcommon.la $(CLOCKGETTIME_LIBS)
+eject_LDADD = $(LDADD) libmount.la libcommon.la $(CLOCKGETTIME_LIBS)  libblkid.la libuuid.la
 eject_CFLAGS = $(AM_CFLAGS) -I$(ul_libmount_incdir)
 dist_man_MANS += sys-utils/eject.1
 endif
@@ -219,12 +219,12 @@ dist_man_MANS += \
 	sys-utils/fstab.5 \
 	sys-utils/umount.8
 mount_SOURCES = sys-utils/mount.c
-mount_LDADD = $(LDADD) libcommon.la libmount.la $(SELINUX_LIBS)
+mount_LDADD = $(LDADD) libcommon.la libmount.la libblkid.la libuuid.la $(SELINUX_LIBS)
 mount_CFLAGS = $(SUID_CFLAGS) $(AM_CFLAGS) -I$(ul_libmount_incdir)
 mount_LDFLAGS = $(SUID_LDFLAGS) $(AM_LDFLAGS)
 
 umount_SOURCES = sys-utils/umount.c
-umount_LDADD = $(LDADD) libcommon.la libmount.la
+umount_LDADD = $(LDADD) libcommon.la libmount.la libblkid.la libuuid.la
 umount_CFLAGS = $(AM_CFLAGS) $(SUID_CFLAGS) -I$(ul_libmount_incdir)
 umount_LDFLAGS = $(SUID_LDFLAGS) $(AM_LDFLAGS)
 
@@ -272,6 +272,7 @@ swapon_CFLAGS = $(AM_CFLAGS) \
 	-I$(ul_libsmartcols_incdir)
 swapon_LDADD = $(LDADD) \
 	libblkid.la \
+	libuuid.la \
 	libcommon.la \
 	libmount.la \
 	libsmartcols.la
@@ -288,6 +289,7 @@ swapoff_CFLAGS = $(AM_CFLAGS) \
 swapoff_LDADD = $(LDADD) \
 	libmount.la \
 	libblkid.la \
+	libuuid.la \
 	libcommon.la
 endif
 
@@ -319,7 +321,7 @@ endif
 
 if BUILD_MOUNTPOINT
 bin_PROGRAMS += mountpoint
-mountpoint_LDADD = $(LDADD) libmount.la
+mountpoint_LDADD = $(LDADD) libmount.la  libblkid.la libuuid.la
 mountpoint_CFLAGS = $(AM_CFLAGS) -I$(ul_libmount_incdir)
 dist_man_MANS += sys-utils/mountpoint.1
 mountpoint_SOURCES = sys-utils/mountpoint.c
