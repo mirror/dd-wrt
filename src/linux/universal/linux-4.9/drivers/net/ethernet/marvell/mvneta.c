@@ -4326,7 +4326,7 @@ static int mvneta_probe(struct platform_device *pdev)
 	phylink = phylink_create(dev, dn, phy_mode, &mvneta_phylink_ops);
 	if (IS_ERR(phylink)) {
 		err = PTR_ERR(phylink);
-		goto err_free_stats;
+		goto err_netdev;
 	}
 
 	pp->phylink = phylink;
