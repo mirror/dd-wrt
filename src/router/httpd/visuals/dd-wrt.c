@@ -1592,7 +1592,8 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 			char *wlc = nvram_safe_get(wl_channel);
 			int offset = get_freqoffset(prefix);
 			// int cnt = getchannelcount ();
-			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s>\" + share.auto + \"</option>\");\n", !strcmp(wlc, "0") ? "selected=\\\"selected\\\"" : "");
+			if (!nvram_nmatch("mesh", "%s_mode", prefix) && !nvram_nmatch("infra", "%s_mode", prefix))
+				websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s>\" + share.auto + \"</option>\");\n", !strcmp(wlc, "0") ? "selected=\\\"selected\\\"" : "");
 			int i = 0;
 			while (chan[i].freq != -1) {
 #ifdef HAVE_BUFFALO
