@@ -1875,8 +1875,6 @@ void ath9k_start_supplicant(int count)
 				if (nvram_nmatch("ap", "%s_mode", var) || nvram_nmatch("wdsap", "%s_mode", var))
 					break;
 			}
-			sprintf(fstr, "/tmp/%s_hostap.conf", dev);
-			do_hostapd(fstr, dev);
 			sprintf(ctrliface, "/var/run/hostapd/%s.%d", dev, ctrl);
 			sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
 #ifdef HAVE_RELAYD
@@ -1893,6 +1891,8 @@ void ath9k_start_supplicant(int count)
 			else
 				eval("wpa_supplicant", background, "-Dnl80211", subinterface, "-H", ctrliface, "-c", fstr);
 #endif
+			sprintf(fstr, "/tmp/%s_hostap.conf", dev);
+			do_hostapd(fstr, dev);
 		} else {
 			sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
 			if (nvram_match(wmode, "sta") ||
