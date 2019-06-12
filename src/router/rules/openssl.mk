@@ -121,6 +121,7 @@ OPENSSL_OPTIONS += -DOPENSSL_SMALL_FOOTPRINT
 openssl-configure:
 	cd openssl && CROSS_COMPILE= && ./Configure $(OPENSSL_TARGET) \
 			--prefix=/usr \
+			--libdir=/usr/lib \
 			--openssldir=/etc/ssl \
 			$(COPTS) $(MIPS16_OPT) $(OPENSSL_CMAKEFLAGS) -DNDEBUG -D_GNU_SOURCE \
 			$(TARGET_LDFLAGS) -ldl -lrt \
