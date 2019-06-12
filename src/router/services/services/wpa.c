@@ -497,7 +497,7 @@ void start_nas_single(char *type, char *prefix)
 	sprintf(radius, "%s_radius_ipaddr", prefix);
 	sprintf(port, "%s_radius_port", prefix);
 	sprintf(index, "%s_key", prefix);
-	nvram_default_get(rekey, "3600")
+	nvram_default_get(rekey, "3600");
 	key = getKey(prefix);
 	char tmp[256];
 
