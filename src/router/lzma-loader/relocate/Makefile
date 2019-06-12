@@ -34,7 +34,7 @@ BIN_FLAGS	:= -O binary -R .reginfo -R .note -R .comment -R .mdebug -S
 CFLAGS		= -D__KERNEL__ -Wall -Wstrict-prototypes -Wno-trigraphs -Os \
 		  -fno-strict-aliasing -fno-common -fomit-frame-pointer -G 0 \
 		  -mno-abicalls -fno-pic -ffunction-sections -pipe -mlong-calls \
-		  -fno-common -ffreestanding -fhonour-copts \
+		  -fno-common -ffreestanding \
 		  -mabi=32 -march=mips32r2 \
 		  -Wa,-32 -Wa,-march=mips32r2 -Wa,-mips32r2 -Wa,--trap \
 		  -DCONFIG_CACHELINE_SIZE=32 -DKERNEL_ADDR=$(KERNEL_ADDR)
