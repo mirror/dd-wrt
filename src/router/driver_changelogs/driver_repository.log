@@ -1,4 +1,17 @@
 ------------------------------------------------------------------------
+r4590 | brainslayer | 2019-06-12 18:15:11 +0200 (Wed, 12 Jun 2019) | 1 line
+
+disable specific error for 9.1.0
+------------------------------------------------------------------------
+r4589 | brainslayer | 2019-06-12 08:22:56 +0200 (Wed, 12 Jun 2019) | 1 line
+
+fix short radar pulse detection
+------------------------------------------------------------------------
+r4588 | brainslayer | 2019-06-12 08:18:15 +0200 (Wed, 12 Jun 2019) | 2 lines
+
+Driver should update peer's bssid and bss information when
+state transition changes.
+------------------------------------------------------------------------
 r4587 | brainslayer | 2019-06-11 11:17:18 +0200 (Tue, 11 Jun 2019) | 1 line
 
 merge latest mt7615 code
