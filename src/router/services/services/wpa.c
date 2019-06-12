@@ -497,7 +497,7 @@ void start_nas_single(char *type, char *prefix)
 	sprintf(radius, "%s_radius_ipaddr", prefix);
 	sprintf(port, "%s_radius_port", prefix);
 	sprintf(index, "%s_key", prefix);
-
+	nvram_default_get(rekey, "3600")
 	key = getKey(prefix);
 	char tmp[256];
 
@@ -510,13 +510,12 @@ void start_nas_single(char *type, char *prefix)
 		if (nvram_nmatch("wet", "%s_mode", prefix)
 		    || nvram_nmatch("apstawet", "%s_mode", prefix)) {
 			argv = (char *[]) {
-				"nas", "-P", pidfile, "-H", "34954", "-l", getBridge(iface, tmp), "-i", iface, mode, "-m", auth_mode, "-k", key, "-s", nvram_safe_get(ssid), "-w", sec_mode, "-g", nvram_default_get(rekey,
-																										     "3600"),
+				"nas", "-P", pidfile, "-H", "34954", "-l", getBridge(iface, tmp), "-i", iface, mode, "-m", auth_mode, "-k", key, "-s", nvram_safe_get(ssid), "-w", sec_mode, "-g", nvram_safe_get(rekey),
 				NULL
 			};
 		} else {
 			argv = (char *[]) {
-				"nas", "-P", pidfile, "-H", "34954", "-i", iface, mode, "-m", auth_mode, "-k", key, "-s", nvram_safe_get(ssid), "-w", sec_mode, "-g", nvram_default_get(rekey, "3600"), NULL
+				"nas", "-P", pidfile, "-H", "34954", "-i", iface, mode, "-m", auth_mode, "-k", key, "-s", nvram_safe_get(ssid), "-w", sec_mode, "-g", nvram_safe_get(rekey), NULL
 			};
 
 		}
@@ -531,7 +530,7 @@ void start_nas_single(char *type, char *prefix)
 				"-H", "34954", "-l",
 				nvram_nmatch("0", "%s_bridged", iface) ? iface : getBridge(iface, tmp), "-i",
 				iface, mode, "-m",
-				auth_mode, "-r", key, "-s", nvram_safe_get(ssid), "-w", sec_mode, "-g", nvram_default_get(rekey, "3600"), "-h", nvram_safe_get(radius), "-p", nvram_safe_get(port), NULL
+				auth_mode, "-r", key, "-s", nvram_safe_get(ssid), "-w", sec_mode, "-g", nvram_safe_get(rekey), "-h", nvram_safe_get(radius), "-p", nvram_safe_get(port), NULL
 			};
 
 		} else if (!strcmp(auth_mode, "32")) {
@@ -554,7 +553,7 @@ void start_nas_single(char *type, char *prefix)
 				"nas", "-P", pidfile,
 				"-H", "34954", "-l",
 				nvram_nmatch("0", "%s_bridged", iface) ? iface : getBridge(iface, tmp), "-i",
-				iface, mode, "-m", auth_mode, "-k", key, "-s", nvram_safe_get(ssid), "-w", sec_mode, "-g", nvram_default_get(rekey, "3600"), NULL
+				iface, mode, "-m", auth_mode, "-k", key, "-s", nvram_safe_get(ssid), "-w", sec_mode, "-g", nvram_safe_get(rekey), NULL
 			};
 
 		}
