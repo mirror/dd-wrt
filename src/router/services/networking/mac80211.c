@@ -1868,13 +1868,15 @@ void ath9k_start_supplicant(int count)
 		sprintf(fstr, "/tmp/%s_hostap.conf", dev);
 		do_hostapd(fstr, dev);
 	} else {
-		if (*vifs) {
+		if (*vifs && !nvram_nmatch("mesh", "%s_mode", dev)) {
 			int ctrl = 0;
 			foreach(var, vifs, next) {
 				ctrl++;
 				if (nvram_nmatch("ap", "%s_mode", var) || nvram_nmatch("wdsap", "%s_mode", var))
 					break;
 			}
+			sprintf(fstr, "/tmp/%s_hostap.conf", dev);
+			do_hostapd(fstr, dev);
 			sprintf(ctrliface, "/var/run/hostapd/%s.%d", dev, ctrl);
 			sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
 #ifdef HAVE_RELAYD
@@ -1891,8 +1893,6 @@ void ath9k_start_supplicant(int count)
 			else
 				eval("wpa_supplicant", background, "-Dnl80211", subinterface, "-H", ctrliface, "-c", fstr);
 #endif
-			sprintf(fstr, "/tmp/%s_hostap.conf", dev);
-			do_hostapd(fstr, dev);
 		} else {
 			sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
 			if (nvram_match(wmode, "sta") ||
@@ -1913,7 +1913,10 @@ void ath9k_start_supplicant(int count)
 					eval("wpa_supplicant", background, "-Dnl80211", subinterface, "-c", fstr);
 				}
 #endif
-
+				if (nvram_nmatch("mesh", "%s_mode", dev) && *vifs) {
+					sprintf(fstr, "/tmp/%s_hostap.conf", dev);
+					do_hostapd(fstr, dev);
+				}
 			}
 		}
 	}
