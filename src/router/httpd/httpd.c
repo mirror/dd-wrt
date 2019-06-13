@@ -1810,7 +1810,7 @@ int main(int argc, char **argv)
 		pthread_mutex_lock(&httpd_mutex);
 		numthreads++;
 		pthread_mutex_unlock(&httpd_mutex);
-		while (numthreads > 15) {
+		while (numthreads > 4) {
 			fprintf(stderr, "thread limit of %d reached, waiting for release\n", numthreads);
 			sleep(1);
 		}
