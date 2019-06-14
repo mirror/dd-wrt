@@ -1860,6 +1860,10 @@ void ath9k_start_supplicant(int count)
 	else if (debug == 3)
 		background = "-Bddd";
 #endif
+	int wet = 0;
+#ifndef HAVE_RELAYD
+	wet = nvram_match(wmode, "wet");
+#endif
 	if (strcmp(apm, "sta") && strcmp(apm, "wdssta")
 	    && strcmp(apm, "infra")
 	    && strcmp(apm, "mesh")
@@ -1876,59 +1880,40 @@ void ath9k_start_supplicant(int count)
 					break;
 			}
 			if (!nvram_match(wmode, "mesh")) {
+				/* do not start hostapd before wpa_supplicant in mesh mode, it will fail to initialize the ap interface once mesh is running */
 				sprintf(fstr, "/tmp/%s_hostap.conf", dev);
 				do_hostapd(fstr, dev);
 			}
 			sprintf(ctrliface, "/var/run/hostapd/%s.%d", dev, ctrl);
 			sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
-
 			if (!nvram_match(wmode, "mesh") && !nvram_match(wmode, "infra")) {
-#ifdef HAVE_RELAYD
-				if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh"))
-				    && nvram_matchi(bridged, 1))
-					eval("wpa_supplicant", "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface, "-H", ctrliface, "-c", fstr);
-				else
-					eval("wpa_supplicant", background, "-Dnl80211", subinterface, "-H", ctrliface, "-c", fstr);
-#else
 				if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh")
-				     || nvram_match(wmode, "wet"))
+				     || wet)
 				    && nvram_matchi(bridged, 1))
 					eval("wpa_supplicant", "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface, "-H", ctrliface, "-c", fstr);
 				else
 					eval("wpa_supplicant", background, "-Dnl80211", subinterface, "-H", ctrliface, "-c", fstr);
-#endif
 			} else {
+				/* for mesh mode we dont need ctrl interface since it has a static channel configuration */
 				if (nvram_matchi(bridged, 1))
 					eval("wpa_supplicant", "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface, "-c", fstr);
 				else
 					eval("wpa_supplicant", background, "-Dnl80211", subinterface, "-c", fstr);
 			}
 			if (nvram_match(wmode, "mesh") || nvram_match(wmode, "infra")) {
+				/* now start hostapd once wpa_supplicant has been started */
 				sprintf(fstr, "/tmp/%s_hostap.conf", dev);
 				do_hostapd(fstr, dev);
 			}
 		} else {
 			sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
 			if (nvram_match(wmode, "sta") || nvram_match(wmode, "wdssta") || nvram_match(wmode, "wet") || nvram_match(wmode, "infra")) {
-#ifdef HAVE_RELAYD
-				if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh"))
-				    && nvram_matchi(bridged, 1)) {
-					eval("wpa_supplicant", "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface, "-c", fstr);
-				} else {
-					eval("wpa_supplicant", background, "-Dnl80211", subinterface, "-c", fstr);
-				}
-#else
 				if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh")
-				     || nvram_match(wmode, "wet"))
+				     || wet)
 				    && nvram_matchi(bridged, 1)) {
 					eval("wpa_supplicant", "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface, "-c", fstr);
 				} else {
 					eval("wpa_supplicant", background, "-Dnl80211", subinterface, "-c", fstr);
-				}
-#endif
-				if (nvram_nmatch("mesh", "%s_mode", dev) && *vifs) {
-					sprintf(fstr, "/tmp/%s_hostap.conf", dev);
-					do_hostapd(fstr, dev);
 				}
 			}
 		}
