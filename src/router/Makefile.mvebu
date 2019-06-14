@@ -66,7 +66,7 @@ export BASEOPT:=-Os
 
 #ifeq ($(ARCH),arm)
 #export COPTS:=$(BASEOPT) -pipe -march=armv7-a -mtune=cortex-a9  -mfloat-abi=soft -fpic
-export COPTS:=$(BASEOPT) -pipe -march=armv7-a -mcpu=cortex-a9 -mtune=cortex-a9 -mfpu=vfpv3-d16 -fno-caller-saves -fno-plt
+export COPTS:=$(BASEOPT) -pipe -march=armv7-a -mtune=cortex-a9 -mfpu=vfpv3-d16 -fno-caller-saves -fno-plt
 #endif
 
 
@@ -362,12 +362,12 @@ endif
 	( dd if=$(ARCH)-uclibc/uImage-armada-385-linksys-rango bs=6144k conv=sync; dd if=$(ARCH)-uclibc/root.squashfs.ubi bs=2048 conv=sync; ) > $(ARCH)-uclibc/ddwrt-mvebu-armada-385-rango-squashfs-factory.img
 	( dd if=$(ARCH)-uclibc/zImage-armada-385-linksys-venom bs=3072k conv=sync; dd if=$(ARCH)-uclibc/root.squashfs.ubi bs=2048 conv=sync; ) > $(ARCH)-uclibc/ddwrt-mvebu-armada-385-venom-squashfs-factory.img
 
-	./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ddwrt-linksys-wrt1900ac.bin $(ARCH)-uclibc/ddwrt-mvebu-armada-xp-mamba-squashfs-factory.img
-	./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ddwrt-linksys-wrt1900acv2.bin $(ARCH)-uclibc/ddwrt-mvebu-armada-385-cobra-squashfs-factory.img
-	./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ddwrt-linksys-wrt1200ac.bin $(ARCH)-uclibc/ddwrt-mvebu-armada-385-caiman-squashfs-factory.img
-	./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ddwrt-linksys-wrt1900acs.bin $(ARCH)-uclibc/ddwrt-mvebu-armada-385-shelby-squashfs-factory.img
-	./tools/trx_n -m 64000000 -o $(ARCH)-uclibc/ddwrt-linksys-wrt3200acm.bin $(ARCH)-uclibc/ddwrt-mvebu-armada-385-rango-squashfs-factory.img
-	./tools/trx_n -m 64000000 -o $(ARCH)-uclibc/ddwrt-linksys-wrt32X.bin $(ARCH)-uclibc/ddwrt-mvebu-armada-385-venom-squashfs-factory.img
+	-./tools/trx_n -m 45000000 -o $(ARCH)-uclibc/ddwrt-linksys-wrt1900ac.bin $(ARCH)-uclibc/ddwrt-mvebu-armada-xp-mamba-squashfs-factory.img
+	-./tools/trx_n -m 45000000 -o $(ARCH)-uclibc/ddwrt-linksys-wrt1900acv2.bin $(ARCH)-uclibc/ddwrt-mvebu-armada-385-cobra-squashfs-factory.img
+	-./tools/trx_n -m 45000000 -o $(ARCH)-uclibc/ddwrt-linksys-wrt1200ac.bin $(ARCH)-uclibc/ddwrt-mvebu-armada-385-caiman-squashfs-factory.img
+	-./tools/trx_n -m 45000000 -o $(ARCH)-uclibc/ddwrt-linksys-wrt1900acs.bin $(ARCH)-uclibc/ddwrt-mvebu-armada-385-shelby-squashfs-factory.img
+	-./tools/trx_n -m 64000000 -o $(ARCH)-uclibc/ddwrt-linksys-wrt3200acm.bin $(ARCH)-uclibc/ddwrt-mvebu-armada-385-rango-squashfs-factory.img
+	-./tools/trx_n -m 64000000 -o $(ARCH)-uclibc/ddwrt-linksys-wrt32X.bin $(ARCH)-uclibc/ddwrt-mvebu-armada-385-venom-squashfs-factory.img
 	
 #	rm -rf $(ARCH)-uclibc/venom/sysupgrade-armada-385-linksys-venom
 #	mkdir -p $(ARCH)-uclibc/venom/sysupgrade-armada-385-linksys-venom
