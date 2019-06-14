@@ -166,8 +166,7 @@ extern size_t lz4_compress_zfs(void *src, void *dst, size_t s_len, size_t d_len,
     int level);
 extern int lz4_decompress_zfs(void *src, void *dst, size_t s_len, size_t d_len,
     int level);
-extern int lz4_decompress_abd(abd_t *src, void *dst, size_t s_len, size_t d_len,
-    int level);
+
 #ifdef _KERNEL
 static int zstd_init(void);
 static void zstd_fini(void);
