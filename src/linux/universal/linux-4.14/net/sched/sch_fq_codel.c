@@ -471,9 +471,11 @@ static int fq_codel_init(struct Qdisc *sch, struct nlattr *opt)
 
 	sch->limit = 10*1024;
 	q->flows_cnt = 1024;
-#ifdef CONFIG_X86_64
+#if defined(CONFIG_X86)
 	q->memory_limit = 32 << 20; /* 32 MBytes */
-#else
+#elif defined(CONFIG_MIPS) && !defined(CONFIG_64BIT)
+	q->memory_limit = 1 << 18; /* 256kb */
+#elif
 	q->memory_limit = 4 << 20; /* 4 MBytes */
 #endif
 	q->drop_batch_size = 64;
