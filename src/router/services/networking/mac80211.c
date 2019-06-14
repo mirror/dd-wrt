@@ -1868,35 +1868,48 @@ void ath9k_start_supplicant(int count)
 		sprintf(fstr, "/tmp/%s_hostap.conf", dev);
 		do_hostapd(fstr, dev);
 	} else {
-		if (*vifs && !nvram_nmatch("mesh", "%s_mode", dev)) {
+		if (*vifs) {
 			int ctrl = 0;
 			foreach(var, vifs, next) {
 				ctrl++;
 				if (nvram_nmatch("ap", "%s_mode", var) || nvram_nmatch("wdsap", "%s_mode", var))
 					break;
 			}
-			sprintf(fstr, "/tmp/%s_hostap.conf", dev);
-			do_hostapd(fstr, dev);
+			if (!nvram_match(wmode, "mesh")) {
+				sprintf(fstr, "/tmp/%s_hostap.conf", dev);
+				do_hostapd(fstr, dev);
+			}
 			sprintf(ctrliface, "/var/run/hostapd/%s.%d", dev, ctrl);
 			sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
+
+			if (!nvram_match(wmode, "mesh") && !nvram_match(wmode, "infra")) {
 #ifdef HAVE_RELAYD
-			if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh"))
-			    && nvram_matchi(bridged, 1))
-				eval("wpa_supplicant", "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface, "-H", ctrliface, "-c", fstr);
-			else
-				eval("wpa_supplicant", background, "-Dnl80211", subinterface, "-H", ctrliface, "-c", fstr);
+				if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh"))
+				    && nvram_matchi(bridged, 1))
+					eval("wpa_supplicant", "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface, "-H", ctrliface, "-c", fstr);
+				else
+					eval("wpa_supplicant", background, "-Dnl80211", subinterface, "-H", ctrliface, "-c", fstr);
 #else
-			if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh")
-			     || nvram_match(wmode, "wet"))
-			    && nvram_matchi(bridged, 1))
-				eval("wpa_supplicant", "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface, "-H", ctrliface, "-c", fstr);
-			else
-				eval("wpa_supplicant", background, "-Dnl80211", subinterface, "-H", ctrliface, "-c", fstr);
+				if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh")
+				     || nvram_match(wmode, "wet"))
+				    && nvram_matchi(bridged, 1))
+					eval("wpa_supplicant", "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface, "-H", ctrliface, "-c", fstr);
+				else
+					eval("wpa_supplicant", background, "-Dnl80211", subinterface, "-H", ctrliface, "-c", fstr);
 #endif
+			} else {
+				if (nvram_matchi(bridged, 1))
+					eval("wpa_supplicant", "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface, "-c", fstr);
+				else
+					eval("wpa_supplicant", background, "-Dnl80211", subinterface, "-c", fstr);
+			}
+			if (nvram_match(wmode, "mesh") || nvram_match(wmode, "infra")) {
+				sprintf(fstr, "/tmp/%s_hostap.conf", dev);
+				do_hostapd(fstr, dev);
+			}
 		} else {
 			sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
-			if (nvram_match(wmode, "sta") ||
-			    nvram_match(wmode, "wdssta") || (nvram_match(wmode, "mesh") && !nvram_nmatch("disabled", "%s_akm", dev)) || nvram_match(wmode, "wet") || nvram_match(wmode, "infra")) {
+			if (nvram_match(wmode, "sta") || nvram_match(wmode, "wdssta") || nvram_match(wmode, "wet") || nvram_match(wmode, "infra")) {
 #ifdef HAVE_RELAYD
 				if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh"))
 				    && nvram_matchi(bridged, 1)) {
