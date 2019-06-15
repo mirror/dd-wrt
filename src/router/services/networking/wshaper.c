@@ -1012,6 +1012,8 @@ void start_wshaper(void)
 	wan_dev = get_wanface();
 	if (!wan_dev)
 		wan_dev = "xx";
+	if (!nvram_match("tcp_congestion_control", "bbr")) {
+		writeprocsysnet("core/default_qdisc", "sfq");
 
 	wshaper_dev = nvram_safe_get("wshaper_dev");
 
@@ -1054,17 +1056,23 @@ void start_wshaper(void)
 	insmod("sch_cbq");
 
 #ifdef HAVE_CODEL
-	if (!strcmp(aqd, "codel"))
+	if (!strcmp(aqd, "codel")) {
 		insmod("sch_codel");
+		writeprocsysnet("core/default_qdisc", "codel");
+	}
 #endif
 
 #ifdef HAVE_FQ_CODEL
-	if (!strcmp(aqd, "fq_codel"))
+	if (!strcmp(aqd, "fq_codel")) {
 		insmod("sch_fq_codel");
+		writeprocsysnet("core/default_qdisc", "fq_codel");
+	}
 #endif
 #ifdef HAVE_PIE
-	if (!strcmp(aqd, "pie"))
+	if (!strcmp(aqd, "pie")) {
 		insmod("sch_pie");
+		writeprocsysnet("core/default_qdisc", "pie");
+	}
 #endif
 
 	//under K3 interface defaults are way to high, set some sane values

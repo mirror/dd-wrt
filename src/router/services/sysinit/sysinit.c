@@ -3528,21 +3528,25 @@ void start_nvram(void)
 #ifdef HAVE_SVQOS
 	char *aqd = nvram_safe_get("svqos_aqd");
 #ifndef HAVE_CODEL
-	if (!strcmp(aqd, "codel"))
+	if (!strcmp(aqd, "codel")) {
 		nvram_set("svqos_aqd", "sfq");
+	}
 #endif
 #ifndef HAVE_FQ_CODEL
-	if (!strcmp(aqd, "fq_codel"))
+	if (!strcmp(aqd, "fq_codel")) {
 		nvram_set("svqos_aqd", "sfq");
+	}
 #endif
 #ifndef HAVE_PIE
-	if (!strcmp(aqd, "pie"))
+	if (!strcmp(aqd, "pie")) {
 		nvram_set("svqos_aqd", "sfq");
+	}
 #endif
 	if (strcmp(aqd, "codel")
 	    && strcmp(aqd, "fq_codel")
-	    && strcmp(aqd, "pie"))
+	    && strcmp(aqd, "pie")) {
 		nvram_set("svqos_aqd", "sfq");
+	}
 #endif
 
 #ifdef HAVE_AQOS
