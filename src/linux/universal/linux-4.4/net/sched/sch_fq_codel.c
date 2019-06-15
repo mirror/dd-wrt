@@ -481,7 +481,7 @@ static int fq_codel_init(struct Qdisc *sch, struct nlattr *opt)
 	q->memory_limit = 32 << 20; /* 32 MBytes */
 #elif defined(CONFIG_MIPS) && !defined(CONFIG_64BIT)
 	q->memory_limit = 1 << 18; /* 256kb */
-#elif
+#else
 	q->memory_limit = 4 << 20; /* 4 MBytes */
 #endif
 	q->drop_batch_size = 64;
