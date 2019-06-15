@@ -6,7 +6,7 @@
  *
  *  Implemented on linux by :
  *  Copyright (C) 2012 Michael D. Taht <dave.taht@bufferbloat.net>
- *  Copyright (C) 2012 Eric Dumazet <edumazet@google.com>
+ *  Copyright (C) 2012,2015 Eric Dumazet <edumazet@google.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -116,6 +116,7 @@ static const struct nla_policy codel_policy[TCA_CODEL_MAX + 1] = {
 	[TCA_CODEL_LIMIT]	= { .type = NLA_U32 },
 	[TCA_CODEL_INTERVAL]	= { .type = NLA_U32 },
 	[TCA_CODEL_ECN]		= { .type = NLA_U32 },
+	[TCA_CODEL_CE_THRESHOLD]= { .type = NLA_U32 },
 };
 
 static int codel_change(struct Qdisc *sch, struct nlattr *opt)
@@ -138,6 +139,12 @@ static int codel_change(struct Qdisc *sch, struct nlattr *opt)
 		u32 target = nla_get_u32(tb[TCA_CODEL_TARGET]);
 
 		q->params.target = ((u64)target * NSEC_PER_USEC) >> CODEL_SHIFT;
+	}
+
+	if (tb[TCA_CODEL_CE_THRESHOLD]) {
+		u64 val = nla_get_u32(tb[TCA_CODEL_CE_THRESHOLD]);
+
+		q->params.ce_threshold = (val * NSEC_PER_USEC) >> CODEL_SHIFT;
 	}
 
 	if (tb[TCA_CODEL_INTERVAL]) {
@@ -172,7 +179,7 @@ static int codel_init(struct Qdisc *sch, struct nlattr *opt)
 
 	sch->limit = DEFAULT_CODEL_LIMIT;
 
-	codel_params_init(&q->params);
+	codel_params_init(&q->params, sch);
 	codel_vars_init(&q->vars);
 	codel_stats_init(&q->stats);
 
@@ -209,7 +216,10 @@ static int codel_dump(struct Qdisc *sch, struct sk_buff *skb)
 	    nla_put_u32(skb, TCA_CODEL_ECN,
 			q->params.ecn))
 		goto nla_put_failure;
-
+	if (q->params.ce_threshold != CODEL_DISABLED_THRESHOLD &&
+	    nla_put_u32(skb, TCA_CODEL_CE_THRESHOLD,
+			codel_time_to_us(q->params.ce_threshold)))
+		goto nla_put_failure;
 	return nla_nest_end(skb, opts);
 
 nla_put_failure:
@@ -228,6 +238,7 @@ static int codel_dump_stats(struct Qdisc *sch, struct gnet_dump *d)
 		.ldelay		= codel_time_to_us(q->vars.ldelay),
 		.dropping	= q->vars.dropping,
 		.ecn_mark	= q->stats.ecn_mark,
+		.ce_mark	= q->stats.ce_mark,
 	};
 
 	if (q->vars.dropping) {
