@@ -1012,7 +1012,7 @@ void start_wshaper(void)
 	wan_dev = get_wanface();
 	if (!wan_dev)
 		wan_dev = "xx";
-	if (!nvram_match("tcp_congestion_control", "bbr")) {
+	if (!nvram_match("tcp_congestion_control", "bbr"))
 		writeprocsysnet("core/default_qdisc", "sfq");
 
 	wshaper_dev = nvram_safe_get("wshaper_dev");
