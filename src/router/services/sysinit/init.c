@@ -75,9 +75,11 @@ static void set_tcp_params(void)
 		fclose(fp);
 		writeprocsysnet("ipv4/tcp_congestion_control", nvram_default_get("tcp_congestion_control", "westwood"));
 	}
-//	if (nvram_match("tcp_congestion_control", "bbr")) {
-//		writeprocsysnet("core/default_qdisc", "fq");
-//	}
+	if (nvram_match("tcp_congestion_control", "bbr")) {
+		writeprocsysnet("core/default_qdisc", "fq_codel");
+	} else {
+		writeprocsysnet("core/default_qdisc", "sfq");
+	}
 
 }
 
