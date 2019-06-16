@@ -1,4 +1,28 @@
 ------------------------------------------------------------------------
+r4607 | brainslayer | 2019-06-16 14:01:11 +0200 (Sun, 16 Jun 2019) | 1 line
+
+prepare new custom ie, (unused yet) and fix small length bug
+------------------------------------------------------------------------
+r4606 | brainslayer | 2019-06-16 13:10:03 +0200 (Sun, 16 Jun 2019) | 1 line
+
+fix also old legacy code
+------------------------------------------------------------------------
+r4605 | brainslayer | 2019-06-16 13:07:46 +0200 (Sun, 16 Jun 2019) | 1 line
+
+use current utsname instead of init for radioname
+------------------------------------------------------------------------
+r4604 | brainslayer | 2019-06-16 12:56:25 +0200 (Sun, 16 Jun 2019) | 1 line
+
+fix small bug in radioname code which may lead to empty radionames
+------------------------------------------------------------------------
+r4603 | brainslayer | 2019-06-16 12:51:15 +0200 (Sun, 16 Jun 2019) | 1 line
+
+consider also management beacon and not just assoc 
+------------------------------------------------------------------------
+r4602 | brainslayer | 2019-06-16 12:39:54 +0200 (Sun, 16 Jun 2019) | 1 line
+
+the mac80211 rx rate info will never be 80+80 flagged since mac80211 is capable of doing this, so we use the vht operation element to detect if a sta operating in 80+80 mode. in this way the gui can show it
+------------------------------------------------------------------------
 r4601 | brainslayer | 2019-06-15 10:14:40 +0200 (Sat, 15 Jun 2019) | 1 line
 
 more architecure depending tunings
