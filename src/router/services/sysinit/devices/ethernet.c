@@ -214,7 +214,21 @@ static int detect_drivers(char *buspath, char *enabled, char *list, char **drive
 	char *next, *wordlist;
 	int rcc = 0;
 	char s_hash[40] = { 0 };
-	char *hash = hash_file_string(buspath, s_hash);
+	char *hash;
+	if (!strcmp(buspath, "/proc/bus/pci/devices")) {
+		FILE *fp = fopen(buspath, "rb");
+		char buf[512];
+		char final[512] = { 0 };
+		while (fgets(buf, sizeof(buf) - 1, fp)) {
+			unsigned int dfnr, vendor;
+			sscanf(buf, "%x %x", &defnr, &vendor);
+			snprintf(final, sizeof(final) - 1, "%s %x ", final, vendor);
+		}
+		fclose(fp);
+		hash = hash_string(final, s_hash);
+	} else {
+		hash = hash_file_string(buspath, s_hash);
+	}
 	if (!hash)
 		return 0;	// bus not present. ignore
 	if (!nvram_match(enabled, hash)) {	// hash does not match, bus has been changed. so redetect drivers
