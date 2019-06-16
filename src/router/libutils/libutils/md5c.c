@@ -479,3 +479,12 @@ char *hash_file_string(char *filename, char *hashbuf)
 	}
 	return hashbuf;
 }
+
+char *hash_string(char *string, char *hashbuf)
+{
+	md5_ctx_t MD;
+	md5_begin(&MD);
+	md5_hash(string, strlen(string), &MD);
+	md5_end((unsigned char *)hashbuf, &MD);
+	return hashbuf;
+}
