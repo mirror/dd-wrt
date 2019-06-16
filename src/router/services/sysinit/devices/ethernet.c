@@ -215,6 +215,7 @@ static int detect_drivers(char *buspath, char *enabled, char *list, char **drive
 	int rcc = 0;
 	char s_hash[40] = { 0 };
 	char *hash;
+	/* some address properties change constantly, so we need a proper method just to detect the things we need */
 	if (!strcmp(buspath, "/proc/bus/pci/devices")) {
 		FILE *fp = fopen(buspath, "rb");
 		char buf[512];
