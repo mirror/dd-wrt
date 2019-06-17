@@ -221,7 +221,7 @@ static int detect_drivers(char *buspath, char *enabled, char *list, char **drive
 		char buf[512];
 		char final[512] = { 0 };
 		while (fgets(buf, sizeof(buf) - 1, fp)) {
-			unsigned int dfnr, vendor;
+			unsigned int defnr, vendor;
 			sscanf(buf, "%x %x", &defnr, &vendor);
 			snprintf(final, sizeof(final) - 1, "%s %x ", final, vendor);
 		}
