@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r4612 | brainslayer | 2019-06-18 10:19:10 +0200 (Tue, 18 Jun 2019) | 1 line
+
+disable 802.11 encap support if monitor mode is enabled
+------------------------------------------------------------------------
 r4611 | brainslayer | 2019-06-18 07:48:19 +0200 (Tue, 18 Jun 2019) | 1 line
 
 ath10k: switch to ieee80211_tx_dequeue_ni
