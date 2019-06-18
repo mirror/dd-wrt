@@ -64,6 +64,7 @@ struct netns_ipv4 {
 	int sysctl_icmp_errors_use_inbound_ifaddr;
 
 	int sysctl_tcp_ecn;
++	int sysctl_tcp_min_snd_mss;
 
 	kgid_t sysctl_ping_group_range[2];
 	long sysctl_tcp_mem[3];

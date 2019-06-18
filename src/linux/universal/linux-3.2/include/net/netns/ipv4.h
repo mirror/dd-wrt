@@ -53,6 +53,7 @@ struct netns_ipv4 {
 	int sysctl_icmp_errors_use_inbound_ifaddr;
 	int sysctl_rt_cache_rebuild_count;
 	int current_rt_cache_rebuild_count;
+	int sysctl_tcp_min_snd_mss;
 
 	unsigned int sysctl_ping_group_range[2];
 
