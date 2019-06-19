@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r4613 | brainslayer | 2019-06-19 13:23:28 +0200 (Wed, 19 Jun 2019) | 1 line
+
+update regulatory database for Korea and Japan
+------------------------------------------------------------------------
 r4612 | brainslayer | 2019-06-18 10:19:10 +0200 (Tue, 18 Jun 2019) | 1 line
 
 disable 802.11 encap support if monitor mode is enabled
