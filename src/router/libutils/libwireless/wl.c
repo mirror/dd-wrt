@@ -3741,6 +3741,7 @@ char *getSTA()
 
 	for (i = 0; i < c; i++) {
 		if (nvram_nmatch("sta", "wl%d_mode", i)
+		    || nvram_nmatch("mesh", "wl%d_mode", i)
 		    || nvram_nmatch("apsta", "wl%d_mode", i)) {
 			if (!nvram_nmatch("disabled", "wl%d_net_mode", i))
 				return get_wl_instance_name(i);
