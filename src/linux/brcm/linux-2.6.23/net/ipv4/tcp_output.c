@@ -614,6 +614,11 @@ int tcp_fragment(struct sock *sk, struct sk_buff *skb, u32 len, unsigned int mss
 	if (nsize < 0)
 		nsize = 0;
 
+	if (unlikely((sk->sk_wmem_queued >> 1) > sk->sk_sndbuf)) {
+		NET_INC_STATS(LINUX_MIB_TCPWQUEUETOOBIG);
+		return -ENOMEM;
+	}
+
 	if (skb_cloned(skb) &&
 	    skb_is_nonlinear(skb) &&
 	    pskb_expand_head(skb, 0, 0, GFP_ATOMIC))
