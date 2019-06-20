@@ -877,11 +877,11 @@ spl_magazine_destroy(spl_kmem_cache_t *skc)
  *	KMC_KVMEM       Force kvmem backed cache
  *	KMC_SLAB        Force Linux slab backed cache
  *	KMC_OFFSLAB	Locate objects off the slab
- *	KMC_NOTOUCH	Disable cache object aging (unsupported)
- *	KMC_NODEBUG	Disable debugging (unsupported)
- *	KMC_NOHASH      Disable hashing (unsupported)
- *	KMC_QCACHE	Disable qcache (unsupported)
- *	KMC_NOMAGAZINE	Enabled for kmem/vmem, Disabled for Linux slab
+ *	KMC_NOTOUCH	unsupported
+ *	KMC_NODEBUG	unsupported
+ *	KMC_NOHASH      unsupported
+ *	KMC_QCACHE	unsupported
+ *	KMC_NOMAGAZINE	unsupported
  */
 spl_kmem_cache_t *
 spl_kmem_cache_create(char *name, size_t size, size_t align,
@@ -981,7 +981,7 @@ spl_kmem_cache_create(char *name, size_t size, size_t align,
 		} else {
 			/*
 			 * All other objects are considered large and are
-			 * placed on vmem backed slabs.
+			 * placed on vmem or kvmem backed slabs.
 			 */
 			skc->skc_flags |= KMC_VMEM;
 		}
