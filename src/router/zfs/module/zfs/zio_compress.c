@@ -100,8 +100,6 @@ zio_compress_select(spa_t *spa, enum zio_compress child,
 	if (result == ZIO_COMPRESS_ON) {
 		if (spa_feature_is_active(spa, SPA_FEATURE_LZ4_COMPRESS))
 			result = ZIO_COMPRESS_LZ4_ON_VALUE;
-		else if (spa_feature_is_active(spa, SPA_FEATURE_ZSTD_COMPRESS))
-			result = ZIO_COMPRESS_ZSTD_ON_VALUE;
 		else
 			result = ZIO_COMPRESS_LEGACY_ON_VALUE;
 	}

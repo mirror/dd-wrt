@@ -3593,36 +3593,12 @@ metaslab_group_alloc_normal(metaslab_group_t *mg, zio_alloc_list_t *zal,
 			continue;
 		}
 
-		msp->ms_selected_txg = txg;
-
-		boolean_t activated;
-		int activation_error =
-		    metaslab_activate(msp, allocator, activation_weight);
-		if (activation_error == 0) {
-			activated = B_TRUE;
-		} else if (activation_error == EBUSY ||
-		    activation_error == EEXIST) {
-			/*
-			 * The activation failed because this metaslab was
-			 * concurrently activated by another thread (EBUSY)
-			 * or this allocator concurrently had another
-			 * metaslab activated as primary (EEXIST).  However,
-			 * the metaslab was loaded, so we should continue
-			 * trying to allocate from this metaslab, rather than
-			 * going on to a worse metaslab.
-			 *
-			 * In this case, when we're done with this metaslab,
-			 * we can not passivate it, because it was not
-			 * activated (i.e. is not the active metaslab in the
-			 * mg_primaries array).
-			 */
-			activated = B_FALSE;
-		} else {
-			/* i/o error while loading */
+		if (metaslab_activate(msp, allocator, activation_weight) != 0) {
 			mutex_exit(&msp->ms_lock);
 			continue;
 		}
-		ASSERT(msp->ms_loaded);
+
+		msp->ms_selected_txg = txg;
 
 		/*
 		 * Now that we have the lock, recheck to see if we should
@@ -3649,19 +3625,15 @@ metaslab_group_alloc_normal(metaslab_group_t *mg, zio_alloc_list_t *zal,
 		if (msp->ms_condensing) {
 			metaslab_trace_add(zal, mg, msp, asize, d,
 			    TRACE_CONDENSING, allocator);
-			if (activated) {
-				metaslab_passivate(msp, msp->ms_weight &
-				    ~METASLAB_ACTIVE_MASK);
-			}
+			metaslab_passivate(msp, msp->ms_weight &
+			    ~METASLAB_ACTIVE_MASK);
 			mutex_exit(&msp->ms_lock);
 			continue;
 		} else if (msp->ms_disabled > 0) {
 			metaslab_trace_add(zal, mg, msp, asize, d,
 			    TRACE_DISABLED, allocator);
-			if (activated) {
-				metaslab_passivate(msp, msp->ms_weight &
-				    ~METASLAB_ACTIVE_MASK);
-			}
+			metaslab_passivate(msp, msp->ms_weight &
+			    ~METASLAB_ACTIVE_MASK);
 			mutex_exit(&msp->ms_lock);
 			continue;
 		}
@@ -3671,8 +3643,7 @@ metaslab_group_alloc_normal(metaslab_group_t *mg, zio_alloc_list_t *zal,
 
 		if (offset != -1ULL) {
 			/* Proactively passivate the metaslab, if needed */
-			if (activated)
-				metaslab_segment_may_passivate(msp);
+			metaslab_segment_may_passivate(msp);
 			break;
 		}
 next:
@@ -3699,17 +3670,14 @@ next:
 		 * currently available for allocation and is accurate
 		 * even within a sync pass.
 		 */
-		uint64_t weight;
 		if (WEIGHT_IS_SPACEBASED(msp->ms_weight)) {
-			weight = metaslab_block_maxsize(msp);
+			uint64_t weight = metaslab_block_maxsize(msp);
 			WEIGHT_SET_SPACEBASED(weight);
-		} else {
-			weight = metaslab_weight_from_range_tree(msp);
-		}
-		if (activated)
 			metaslab_passivate(msp, weight);
-		else
-			metaslab_group_sort(mg, msp, weight);
+		} else {
+			metaslab_passivate(msp,
+			    metaslab_weight_from_range_tree(msp));
+		}
 
 		/*
 		 * We have just failed an allocation attempt, check
