@@ -2415,7 +2415,6 @@ void add_mdhcpd(char *iface, int start, int max, int leasetime)
 	char mdhcpd[32];
 	char *mdhcpds;
 	int var[8];
-	save_networking();
 
 	// add mdhcpd
 	if (nvram_geti("mdhcpd_count") > 0)
@@ -3133,7 +3132,7 @@ void add_bond(webs_t wp)
 	char word[256];
 	char *next, *wordlist;
 	int count = 0;
-	save_networking();
+	save_networking(wp);
 	int realcount = nvram_geti("bonding_count");
 
 	if (realcount == 0) {
@@ -3157,7 +3156,7 @@ void del_bond(webs_t wp)
 	char word[256];
 	int realcount = 0;
 	char *next, *wordlist, *newwordlist;
-	save_networking();
+	save_networking(wp);
 	int todel = websGetVari(wp, "del_value", -1);
 
 	wordlist = nvram_safe_get("bondings");
@@ -3749,7 +3748,7 @@ void add_vlan(webs_t wp)
 	char word[256];
 	char *next, *wordlist;
 	int count = 0;
-	save_networking();
+	save_networking(wp);
 	int realcount = nvram_geti("vlan_tagcount");
 
 	if (realcount == 0) {
@@ -3773,7 +3772,7 @@ void del_vlan(webs_t wp)
 	char word[256];
 	int realcount = 0;
 	char *next, *wordlist, *newwordlist;
-	save_networking();
+	save_networking(wp);
 	int todel = websGetVari(wp, "del_value", -1);
 
 	wordlist = nvram_safe_get("vlan_tags");
@@ -3816,7 +3815,7 @@ void add_mdhcp(webs_t wp)
 	char word[256];
 	char *next, *wordlist;
 	int count = 0;
-	save_networking();
+	save_networking(wp);
 	int realcount = nvram_geti("mdhcpd_count");
 
 	if (realcount == 0) {
@@ -3840,7 +3839,7 @@ void del_mdhcp(webs_t wp)
 	char word[256];
 	int realcount = 0;
 	char *next, *wordlist, *newwordlist;
-	save_networking();
+	save_networking(wp);
 	int todel = websGetVari(wp, "del_value", -1);
 
 	wordlist = nvram_safe_get("mdhcpd");
@@ -3913,7 +3912,7 @@ void add_bridge(webs_t wp)
 	char word[256];
 	char *next, *wordlist;
 	int count = 0;
-	save_networking();
+	save_networking(wp);
 	int realcount = nvram_geti("bridges_count");
 
 	if (realcount == 0) {
@@ -3937,7 +3936,7 @@ void del_bridgeif(webs_t wp)
 	char word[256];
 	int realcount = 0;
 	char *next, *wordlist, *newwordlist;
-	save_networking();
+	save_networking(wp);
 	int todel = websGetVari(wp, "del_value", -1);
 
 	wordlist = nvram_safe_get("bridgesif");
@@ -3970,7 +3969,7 @@ void add_bridgeif(webs_t wp)
 	char word[256];
 	char *next, *wordlist;
 	int count = 0;
-	save_networking();
+	save_networking(wp);
 	int realcount = nvram_geti("bridgesif_count");
 
 	if (realcount == 0) {
@@ -3996,7 +3995,7 @@ void add_ipvs(webs_t wp)
 	char word[256];
 	char *next, *wordlist;
 	int count = 0;
-	save_networking();
+	save_networking(wp);
 	int realcount = nvram_geti("ipvs_count");
 
 	if (realcount == 0) {
@@ -4020,7 +4019,7 @@ void del_ipvs(webs_t wp)
 	char word[256];
 	int realcount = 0;
 	char *next, *wordlist, *newwordlist;
-	save_networking();
+	save_networking(wp);
 	int todel = websGetVari(wp, "del_value", -1);
 
 	wordlist = nvram_safe_get("ipvs");
@@ -4055,7 +4054,7 @@ void add_ipvstarget(webs_t wp)
 	char word[256];
 	char *next, *wordlist;
 	int count = 0;
-	save_networking();
+	save_networking(wp);
 	int realcount = nvram_geti("ipvstarget_count");
 
 	if (realcount == 0) {
@@ -4079,7 +4078,7 @@ void del_ipvstarget(webs_t wp)
 	char word[256];
 	int realcount = 0;
 	char *next, *wordlist, *newwordlist;
-	save_networking();
+	save_networking(wp);
 	int todel = websGetVari(wp, "del_value", -1);
 
 	wordlist = nvram_safe_get("ipvstarget");
