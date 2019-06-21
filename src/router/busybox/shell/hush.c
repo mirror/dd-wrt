@@ -363,9 +363,6 @@
 #ifndef F_DUPFD_CLOEXEC
 # define F_DUPFD_CLOEXEC F_DUPFD
 #endif
-#ifndef PIPE_BUF
-# define PIPE_BUF 4096  /* amount of buffering in a pipe */
-#endif
 
 #if ENABLE_FEATURE_SH_EMBEDDED_SCRIPTS && !(ENABLE_ASH || ENABLE_SH_IS_ASH || ENABLE_BASH_IS_ASH)
 # include "embedded_scripts.h"
@@ -379,6 +376,7 @@
 #define BASH_SUBSTR        ENABLE_HUSH_BASH_COMPAT
 #define BASH_SOURCE        ENABLE_HUSH_BASH_COMPAT
 #define BASH_HOSTNAME_VAR  ENABLE_HUSH_BASH_COMPAT
+#define BASH_EPOCH_VARS    ENABLE_HUSH_BASH_COMPAT
 #define BASH_TEST2         (ENABLE_HUSH_BASH_COMPAT && ENABLE_HUSH_TEST)
 #define BASH_READ_D        ENABLE_HUSH_BASH_COMPAT
 
@@ -468,9 +466,9 @@
 
 #define JOB_STATUS_FORMAT    "[%u] %-22s %.40s\n"
 
-#define _SPECIAL_VARS_STR     "_*@$!?#"
-#define SPECIAL_VARS_STR     ("_*@$!?#" + 1)
-#define NUMERIC_SPECVARS_STR ("_*@$!?#" + 3)
+#define _SPECIAL_VARS_STR     "_*@$!?#-"
+#define SPECIAL_VARS_STR     ("_*@$!?#-" + 1)
+#define NUMERIC_SPECVARS_STR ("_*@$!?#-" + 3)
 #if BASH_PATTERN_SUBST
 /* Support / and // replace ops */
 /* Note that // is stored as \ in "encoded" string representation */
@@ -856,8 +854,7 @@ struct globals {
 	/* 'interactive_fd' is a fd# open to ctty, if we have one
 	 * _AND_ if we decided to act interactively */
 	int interactive_fd;
-	const char *PS1;
-	IF_FEATURE_EDITING_FANCY_PROMPT(const char *PS2;)
+	IF_NOT_FEATURE_EDITING_FANCY_PROMPT(char *PS1;)
 # define G_interactive_fd (G.interactive_fd)
 #else
 # define G_interactive_fd 0
@@ -905,6 +902,8 @@ struct globals {
 #else
 # define G_x_mode 0
 #endif
+	char opt_s;
+	char opt_c;
 #if ENABLE_HUSH_INTERACTIVE
 	smallint promptmode; /* 0: PS1, 1: PS2 */
 #endif
@@ -923,7 +922,7 @@ struct globals {
 # define G_flag_return_in_progress 0
 #endif
 	smallint exiting; /* used to prevent EXIT trap recursion */
-	/* These support $?, $#, and $1 */
+	/* These support $? */
 	smalluint last_exitcode;
 	smalluint expand_exitcode;
 	smalluint last_bg_pid_exitcode;
@@ -933,6 +932,9 @@ struct globals {
 # define G_global_args_malloced (G.global_args_malloced)
 #else
 # define G_global_args_malloced 0
+#endif
+#if ENABLE_HUSH_BASH_COMPAT
+	int dead_job_exitcode; /* for "wait -n" */
 #endif
 	/* how many non-NULL argv's we have. NB: $# + 1 */
 	int global_argc;
@@ -967,8 +969,8 @@ struct globals {
 	smallint we_have_children;
 #endif
 #if ENABLE_HUSH_LINENO_VAR
-	unsigned lineno;
-	char *lineno_var;
+	unsigned parse_lineno;
+	unsigned execute_lineno;
 #endif
 	HFILE *HFILE_list;
 	/* Which signals have non-DFL handler (even with no traps set)?
@@ -1008,6 +1010,10 @@ struct globals {
 	int debug_indent;
 #endif
 	struct sigaction sa;
+	char optstring_buf[sizeof("eixcs")];
+#if BASH_EPOCH_VARS
+	char epoch_buf[sizeof("%lu.nnnnnn") + sizeof(long)*3];
+#endif
 #if ENABLE_FEATURE_EDITING
 	char user_input_buf[CONFIG_FEATURE_EDITING_MAX_LEN];
 #endif
@@ -1441,13 +1447,6 @@ static void syntax_error_unexpected_ch(unsigned lineno UNUSED_PARAM, int ch)
 # define syntax_error_unterm_ch(ch)     syntax_error_unterm_ch(__LINE__, ch)
 # define syntax_error_unterm_str(s)     syntax_error_unterm_str(__LINE__, s)
 # define syntax_error_unexpected_ch(ch) syntax_error_unexpected_ch(__LINE__, ch)
-#endif
-
-
-#if ENABLE_HUSH_INTERACTIVE && ENABLE_FEATURE_EDITING_FANCY_PROMPT
-static void cmdedit_update_prompt(void);
-#else
-# define cmdedit_update_prompt() ((void)0)
 #endif
 
 
@@ -2035,7 +2034,8 @@ static sighandler_t pick_sighandler(unsigned sig)
 static void hush_exit(int exitcode)
 {
 #if ENABLE_FEATURE_EDITING_SAVE_ON_EXIT
-	save_history(G.line_input_state);
+	if (G.line_input_state)
+		save_history(G.line_input_state);
 #endif
 
 	fflush_all();
@@ -2225,35 +2225,43 @@ static const char* FAST_FUNC get_local_var_value(const char *name)
 	if (strcmp(name, "RANDOM") == 0)
 		return utoa(next_random(&G.random_gen));
 #endif
+#if ENABLE_HUSH_LINENO_VAR
+	if (strcmp(name, "LINENO") == 0)
+		return utoa(G.execute_lineno);
+#endif
+#if BASH_EPOCH_VARS
+	{
+		const char *fmt = NULL;
+		if (strcmp(name, "EPOCHSECONDS") == 0)
+			fmt = "%lu";
+		else if (strcmp(name, "EPOCHREALTIME") == 0)
+			fmt = "%lu.%06u";
+		if (fmt) {
+			struct timeval tv;
+			gettimeofday(&tv, NULL);
+			sprintf(G.epoch_buf, fmt, (unsigned long)tv.tv_sec,
+					(unsigned)tv.tv_usec);
+			return G.epoch_buf;
+		}
+	}
+#endif
 	return NULL;
 }
 
+#if ENABLE_HUSH_GETOPTS
 static void handle_changed_special_names(const char *name, unsigned name_len)
 {
-	if (ENABLE_HUSH_INTERACTIVE && ENABLE_FEATURE_EDITING_FANCY_PROMPT
-	 && name_len == 3 && name[0] == 'P' && name[1] == 'S'
-	) {
-		cmdedit_update_prompt();
-		return;
-	}
-
-	if ((ENABLE_HUSH_LINENO_VAR || ENABLE_HUSH_GETOPTS)
-	 && name_len == 6
-	) {
-#if ENABLE_HUSH_LINENO_VAR
-		if (strncmp(name, "LINENO", 6) == 0) {
-			G.lineno_var = NULL;
-			return;
-		}
-#endif
-#if ENABLE_HUSH_GETOPTS
+	if (name_len == 6) {
 		if (strncmp(name, "OPTIND", 6) == 0) {
 			G.getopt_count = 0;
 			return;
 		}
-#endif
 	}
 }
+#else
+/* Do not even bother evaluating arguments */
+# define handle_changed_special_names(...) ((void)0)
+#endif
 
 /* str holds "NAME=VAL" and is expected to be malloced.
  * We take ownership of it.
@@ -2269,6 +2277,7 @@ static int set_local_var(char *str, unsigned flags)
 	char *free_me = NULL;
 	char *eq_sign;
 	int name_len;
+	int retval;
 	unsigned local_lvl = (flags >> SETFLAG_VARLVL_SHIFT);
 
 	eq_sign = strchr(str, '=');
@@ -2382,24 +2391,24 @@ static int set_local_var(char *str, unsigned flags)
 #endif
 	if (flags & SETFLAG_EXPORT)
 		cur->flg_export = 1;
+	retval = 0;
 	if (cur->flg_export) {
 		if (flags & SETFLAG_UNEXPORT) {
 			cur->flg_export = 0;
 			/* unsetenv was already done */
 		} else {
-			int i;
 			debug_printf_env("%s: putenv '%s'/%u\n", __func__, cur->varstr, cur->var_nest_level);
-			i = putenv(cur->varstr);
-			/* only now we can free old exported malloced string */
-			free(free_me);
-			return i;
+			retval = putenv(cur->varstr);
+			/* fall through to "free(free_me)" -
+			 * only now we can free old exported malloced string
+			 */
 		}
 	}
 	free(free_me);
 
 	handle_changed_special_names(cur->varstr, name_len - 1);
 
-	return 0;
+	return retval;
 }
 
 static void FAST_FUNC set_local_var_from_halves(const char *name, const char *val)
@@ -2442,7 +2451,7 @@ static int unset_local_var_len(const char *name, int name_len)
 		cur_pp = &cur->next;
 	}
 
-	/* Handle "unset PS1" et al even if did not find the variable to unset */
+	/* Handle "unset LINENO" et al even if did not find the variable to unset */
 	handle_changed_special_names(name, name_len);
 
 	return EXIT_SUCCESS;
@@ -2561,36 +2570,27 @@ static void reinit_unicode_for_hush(void)
  *	\
  * It exercises a lot of corner cases.
  */
-# if ENABLE_FEATURE_EDITING_FANCY_PROMPT
-static void cmdedit_update_prompt(void)
-{
-	G.PS1 = get_local_var_value("PS1");
-	if (G.PS1 == NULL)
-		G.PS1 = "";
-	G.PS2 = get_local_var_value("PS2");
-	if (G.PS2 == NULL)
-		G.PS2 = "";
-}
-# endif
 static const char *setup_prompt_string(void)
 {
 	const char *prompt_str;
 
 	debug_printf_prompt("%s promptmode:%d\n", __func__, G.promptmode);
 
-	IF_FEATURE_EDITING_FANCY_PROMPT(    prompt_str = G.PS2;)
-	IF_NOT_FEATURE_EDITING_FANCY_PROMPT(prompt_str = "> ";)
+# if ENABLE_FEATURE_EDITING_FANCY_PROMPT
+	prompt_str = get_local_var_value(G.promptmode == 0 ? "PS1" : "PS2");
+	if (!prompt_str)
+		prompt_str = "";
+# else
+	prompt_str = "> "; /* if PS2, else... */
 	if (G.promptmode == 0) { /* PS1 */
-		if (!ENABLE_FEATURE_EDITING_FANCY_PROMPT) {
-			/* No fancy prompts supported, (re)generate "CURDIR $ " by hand */
-			free((char*)G.PS1);
-			/* bash uses $PWD value, even if it is set by user.
-			 * It uses current dir only if PWD is unset.
-			 * We always use current dir. */
-			G.PS1 = xasprintf("%s %c ", get_cwd(0), (geteuid() != 0) ? '$' : '#');
-		}
-		prompt_str = G.PS1;
+		/* No fancy prompts supported, (re)generate "CURDIR $ " by hand */
+		free(G.PS1);
+		/* bash uses $PWD value, even if it is set by user.
+		 * It uses current dir only if PWD is unset.
+		 * We always use current dir. */
+		G.PS1 = xasprintf("%s %c ", get_cwd(0), (geteuid() != 0) ? '$' : '#');
 	}
+# endif
 	debug_printf("prompt_str '%s'\n", prompt_str);
 	return prompt_str;
 }
@@ -2727,8 +2727,8 @@ static int i_getch(struct in_str *i)
 	i->last_char = ch;
 #if ENABLE_HUSH_LINENO_VAR
 	if (ch == '\n') {
-		G.lineno++;
-		debug_printf_parse("G.lineno++ = %u\n", G.lineno);
+		G.parse_lineno++;
+		debug_printf_parse("G.parse_lineno++ = %u\n", G.parse_lineno);
 	}
 #endif
 	return ch;
@@ -3730,8 +3730,8 @@ static int done_command(struct parse_context *ctx)
  clear_and_ret:
 	memset(command, 0, sizeof(*command));
 #if ENABLE_HUSH_LINENO_VAR
-	command->lineno = G.lineno;
-	debug_printf_parse("command->lineno = G.lineno (%u)\n", G.lineno);
+	command->lineno = G.parse_lineno;
+	debug_printf_parse("command->lineno = G.parse_lineno (%u)\n", G.parse_lineno);
 #endif
 	return pi->num_cmds; /* used only for 0/nonzero check */
 }
@@ -4178,7 +4178,7 @@ static int done_word(struct parse_context *ctx)
 #if ENABLE_HUSH_LOOPS
 	if (ctx->ctx_res_w == RES_FOR) {
 		if (ctx->word.has_quoted_part
-		 || !is_well_formed_var_name(command->argv[0], '\0')
+		 || endofname(command->argv[0])[0] != '\0'
 		) {
 			/* bash says just "not a valid identifier" */
 			syntax_error("not a valid identifier in for");
@@ -4892,6 +4892,7 @@ static int parse_dollar(o_string *as_string,
 	case '#': /* number of args */
 	case '*': /* args */
 	case '@': /* args */
+	case '-': /* $- option flags set by set builtin or shell options (-i etc) */
 		goto make_one_char_var;
 	case '{': {
 		char len_single_ch;
@@ -5066,11 +5067,10 @@ static int parse_dollar(o_string *as_string,
 	case '_':
 		goto make_var;
 #if 0
-	/* TODO: $_ and $-: */
+	/* TODO: $_: */
 	/* $_ Shell or shell script name; or last argument of last command
 	 * (if last command wasn't a pipe; if it was, bash sets $_ to "");
 	 * but in command's env, set to full pathname used to invoke it */
-	/* $- Option flags set by set builtin or shell options (-i etc) */
 		ch = i_getch(input);
 		nommu_addchr(as_string, ch);
 		ch = i_peek_and_eat_bkslash_nl(input);
@@ -5352,7 +5352,7 @@ static struct pipe *parse_stream(char **pstring,
 			if ((ctx.is_assignment == MAYBE_ASSIGNMENT
 			    || ctx.is_assignment == WORD_IS_KEYWORD)
 			 && ch == '='
-			 && is_well_formed_var_name(ctx.word.data, '=')
+			 && endofname(ctx.word.data)[0] == '='
 			) {
 				ctx.is_assignment = DEFINITELY_ASSIGNMENT;
 				debug_printf_parse("ctx.is_assignment='%s'\n", assignment_flag[ctx.is_assignment]);
@@ -6099,6 +6099,12 @@ static int encode_then_append_var_plusminus(o_string *output, int n,
 		/* string has no special chars
 		 * && string has no $IFS chars
 		 */
+		if (dquoted) {
+			/* Prints 1 (quoted expansion is a "" word, not nothing):
+			 * set -- "${notexist-}"; echo $#
+			 */
+			output->has_quoted_part = 1;
+		}
 		return expand_vars_to_list(output, n, str);
 	}
 
@@ -6395,6 +6401,27 @@ static NOINLINE int expand_one_var(o_string *output, int n,
 		case '#': /* argc */
 			val = utoa(G.global_argc ? G.global_argc-1 : 0);
 			break;
+		case '-': { /* active options */
+			/* Check set_mode() to see what option chars we support */
+			char *cp;
+			val = cp = G.optstring_buf;
+			if (G.o_opt[OPT_O_ERREXIT])
+				*cp++ = 'e';
+			if (G_interactive_fd)
+				*cp++ = 'i';
+			if (G_x_mode)
+				*cp++ = 'x';
+			/* If G.o_opt[OPT_O_NOEXEC] is true,
+			 * commands read but are not executed,
+			 * so $- can not execute too, 'n' is never seen in $-.
+			 */
+			if (G.opt_c)
+				*cp++ = 'c';
+			if (G.opt_s)
+				*cp++ = 's';
+			*cp = '\0';
+			break;
+		}
 		default:
 			val = get_local_var_value(var);
 		}
@@ -7255,22 +7282,22 @@ static void parse_and_run_stream(struct in_str *inp, int end_trigger)
 static void parse_and_run_string(const char *s)
 {
 	struct in_str input;
-	//IF_HUSH_LINENO_VAR(unsigned sv = G.lineno;)
+	//IF_HUSH_LINENO_VAR(unsigned sv = G.parse_lineno;)
 
 	setup_string_in_str(&input, s);
 	parse_and_run_stream(&input, '\0');
-	//IF_HUSH_LINENO_VAR(G.lineno = sv;)
+	//IF_HUSH_LINENO_VAR(G.parse_lineno = sv;)
 }
 
 static void parse_and_run_file(HFILE *fp)
 {
 	struct in_str input;
-	IF_HUSH_LINENO_VAR(unsigned sv = G.lineno;)
+	IF_HUSH_LINENO_VAR(unsigned sv = G.parse_lineno;)
 
-	IF_HUSH_LINENO_VAR(G.lineno = 1;)
+	IF_HUSH_LINENO_VAR(G.parse_lineno = 1;)
 	setup_file_in_str(&input, fp);
 	parse_and_run_stream(&input, ';');
-	IF_HUSH_LINENO_VAR(G.lineno = sv;)
+	IF_HUSH_LINENO_VAR(G.parse_lineno = sv;)
 }
 
 #if ENABLE_HUSH_TICK
@@ -7578,10 +7605,10 @@ static int save_fd_on_redirect(int fd, int avoid_fd, struct squirrel **sqp)
 		avoid_fd = 9;
 
 #if ENABLE_HUSH_INTERACTIVE
-	if (fd == G.interactive_fd) {
+	if (fd == G_interactive_fd) {
 		/* Testcase: "ls -l /proc/$$/fd 255>&-" should work */
-		G.interactive_fd = xdup_CLOEXEC_and_close(G.interactive_fd, avoid_fd);
-		debug_printf_redir("redirect_fd %d: matches interactive_fd, moving it to %d\n", fd, G.interactive_fd);
+		G_interactive_fd = xdup_CLOEXEC_and_close(G_interactive_fd, avoid_fd);
+		debug_printf_redir("redirect_fd %d: matches interactive_fd, moving it to %d\n", fd, G_interactive_fd);
 		return 1; /* "we closed fd" */
 	}
 #endif
@@ -7657,7 +7684,7 @@ static void restore_redirects(struct squirrel *sq)
 		free(sq);
 	}
 
-	/* If moved, G.interactive_fd stays on new fd, not restoring it */
+	/* If moved, G_interactive_fd stays on new fd, not restoring it */
 }
 
 #if ENABLE_FEATURE_SH_STANDALONE && BB_MMU
@@ -7674,7 +7701,7 @@ static int internally_opened_fd(int fd, struct squirrel *sq)
 	int i;
 
 #if ENABLE_HUSH_INTERACTIVE
-	if (fd == G.interactive_fd)
+	if (fd == G_interactive_fd)
 		return 1;
 #endif
 	/* If this one of script's fds? */
@@ -8657,6 +8684,9 @@ static int process_wait_result(struct pipe *fg_pipe, pid_t childpid, int status)
 		pi->cmds[i].pid = 0;
 		pi->alive_cmds--;
 		if (!pi->alive_cmds) {
+#if ENABLE_HUSH_BASH_COMPAT
+			G.dead_job_exitcode = job_exited_or_stopped(pi);
+#endif
 			if (G_interactive_fd) {
 				printf(JOB_STATUS_FORMAT, pi->jobid,
 						"Done", pi->cmdtext);
@@ -8763,7 +8793,7 @@ static int checkjobs(struct pipe *fg_pipe, pid_t waitfor_pid)
 			/* fg_pipe exited or stopped */
 			break;
 		}
-		if (childpid == waitfor_pid) {
+		if (childpid == waitfor_pid) { /* "wait PID" */
 			debug_printf_exec("childpid==waitfor_pid:%d status:0x%08x\n", childpid, status);
 			rcode = WEXITSTATUS(status);
 			if (WIFSIGNALED(status))
@@ -8774,6 +8804,15 @@ static int checkjobs(struct pipe *fg_pipe, pid_t waitfor_pid)
 			rcode++;
 			break; /* "wait PID" called us, give it exitcode+1 */
 		}
+#if ENABLE_HUSH_BASH_COMPAT
+		if (-1 == waitfor_pid /* "wait -n" (wait for any one job) */
+		 && G.dead_job_exitcode >= 0 /* some job did finish */
+		) {
+			debug_printf_exec("waitfor_pid:-1\n");
+			rcode = G.dead_job_exitcode + 1;
+			break;
+		}
+#endif
 		/* This wasn't one of our processes, or */
 		/* fg_pipe still has running processes, do waitpid again */
 	} /* while (waitpid succeeds)... */
@@ -8957,8 +8996,7 @@ static NOINLINE int run_pipe(struct pipe *pi)
 		struct variable *old_vars;
 
 #if ENABLE_HUSH_LINENO_VAR
-		if (G.lineno_var)
-			strcpy(G.lineno_var + sizeof("LINENO=")-1, utoa(command->lineno));
+		G.execute_lineno = command->lineno;
 #endif
 
 		if (argv[command->assignment_cnt] == NULL) {
@@ -9191,8 +9229,7 @@ static NOINLINE int run_pipe(struct pipe *pi)
 			xpiped_pair(pipefds);
 
 #if ENABLE_HUSH_LINENO_VAR
-		if (G.lineno_var)
-			strcpy(G.lineno_var + sizeof("LINENO=")-1, utoa(command->lineno));
+		G.execute_lineno = command->lineno;
 #endif
 
 		command->pid = BB_MMU ? fork() : vfork();
@@ -9824,7 +9861,6 @@ int hush_main(int argc, char **argv)
 {
 	enum {
 		OPT_login = (1 << 0),
-		OPT_s     = (1 << 1),
 	};
 	unsigned flags;
 	unsigned builtin_argc;
@@ -9876,14 +9912,6 @@ int hush_main(int argc, char **argv)
 	/* Export PWD */
 	set_pwd_var(SETFLAG_EXPORT);
 
-#if ENABLE_HUSH_INTERACTIVE && ENABLE_FEATURE_EDITING_FANCY_PROMPT
-	/* Set (but not export) PS1/2 unless already set */
-	if (!get_local_var_value("PS1"))
-		set_local_var_from_halves("PS1", "\\w \\$ ");
-	if (!get_local_var_value("PS2"))
-		set_local_var_from_halves("PS2", "> ");
-#endif
-
 #if BASH_HOSTNAME_VAR
 	/* Set (but not export) HOSTNAME unless already set */
 	if (!get_local_var_value("HOSTNAME")) {
@@ -9894,6 +9922,11 @@ int hush_main(int argc, char **argv)
 #endif
 	/* IFS is not inherited from the parent environment */
 	set_local_var_from_halves("IFS", defifs);
+
+	if (!get_local_var_value("PATH"))
+		set_local_var_from_halves("PATH", bb_default_root_path);
+
+	/* PS1/PS2 are set later, if we determine that we are interactive */
 
 	/* bash also exports SHLVL and _,
 	 * and sets (but doesn't export) the following variables:
@@ -9928,21 +9961,7 @@ int hush_main(int argc, char **argv)
 	 * PS4='+ '
 	 */
 
-#if ENABLE_HUSH_LINENO_VAR
-	if (ENABLE_HUSH_LINENO_VAR) {
-		char *p = xasprintf("LINENO=%*s", (int)(sizeof(int)*3), "");
-		set_local_var(p, /*flags*/ 0);
-		G.lineno_var = p; /* can't assign before set_local_var("LINENO=...") */
-	}
-#endif
-
-#if ENABLE_FEATURE_EDITING
-	G.line_input_state = new_line_input_t(FOR_SHELL);
-#endif
-
 	/* Initialize some more globals to non-zero values */
-	cmdedit_update_prompt();
-
 	die_func = restore_ttypgrp_and__exit;
 
 	/* Shell is non-interactive at first. We need to call
@@ -10011,6 +10030,7 @@ int hush_main(int argc, char **argv)
 				}
 				goto final_return;
 			}
+			G.opt_c = 1;
 			if (!G.global_argv[0]) {
 				/* -c 'script' (no params): prevent empty $0 */
 				G.global_argv--; /* points to argv[i] of 'script' */
@@ -10026,7 +10046,7 @@ int hush_main(int argc, char **argv)
 			/* G_interactive_fd++; */
 			break;
 		case 's':
-			flags |= OPT_s;
+			G.opt_s = 1;
 			break;
 		case 'l':
 			flags |= OPT_login;
@@ -10136,7 +10156,7 @@ int hush_main(int argc, char **argv)
 	}
 
 	/* -s is: hush -s ARGV1 ARGV2 (no SCRIPT) */
-	if (!(flags & OPT_s) && G.global_argv[1]) {
+	if (!G.opt_s && G.global_argv[1]) {
 		HFILE *input;
 		/*
 		 * "bash <script>" (which is never interactive (unless -i?))
@@ -10160,6 +10180,8 @@ int hush_main(int argc, char **argv)
 #endif
 		goto final_return;
 	}
+	/* "implicit" -s: bare interactive hush shows 's' in $- */
+	G.opt_s = 1;
 
 	/* Up to here, shell was non-interactive. Now it may become one.
 	 * NB: don't forget to (re)run install_special_sighandlers() as needed.
@@ -10228,6 +10250,9 @@ int hush_main(int argc, char **argv)
 		}
 		enable_restore_tty_pgrp_on_exit();
 
+# if ENABLE_FEATURE_EDITING
+		G.line_input_state = new_line_input_t(FOR_SHELL);
+# endif
 # if ENABLE_HUSH_SAVEHISTORY && MAX_HISTORY > 0
 		{
 			const char *hp = get_local_var_value("HISTFILE");
@@ -10276,14 +10301,23 @@ int hush_main(int argc, char **argv)
 	 * (--norc turns this off, --rcfile <file> overrides)
 	 */
 
-	if (!ENABLE_FEATURE_SH_EXTRA_QUIET && G_interactive_fd) {
-		/* note: ash and hush share this string */
-		printf("\n\n%s %s\n"
-			IF_HUSH_HELP("Enter 'help' for a list of built-in commands.\n")
-			"\n",
-			bb_banner,
-			"hush - the humble shell"
-		);
+	if (G_interactive_fd) {
+#if ENABLE_HUSH_INTERACTIVE && ENABLE_FEATURE_EDITING_FANCY_PROMPT
+		/* Set (but not export) PS1/2 unless already set */
+		if (!get_local_var_value("PS1"))
+			set_local_var_from_halves("PS1", "\\w \\$ ");
+		if (!get_local_var_value("PS2"))
+			set_local_var_from_halves("PS2", "> ");
+#endif
+		if (!ENABLE_FEATURE_SH_EXTRA_QUIET) {
+			/* note: ash and hush share this string */
+			printf("\n\n%s %s\n"
+				IF_HUSH_HELP("Enter 'help' for a list of built-in commands.\n")
+				"\n",
+				bb_banner,
+				"hush - the humble shell"
+			);
+		}
 	}
 
 	parse_and_run_file(hfopen(NULL)); /* stdin */
@@ -10346,7 +10380,8 @@ static int FAST_FUNC builtin_help(char **argv UNUSED_PARAM)
 #if MAX_HISTORY && ENABLE_FEATURE_EDITING
 static int FAST_FUNC builtin_history(char **argv UNUSED_PARAM)
 {
-	show_history(G.line_input_state);
+	if (G.line_input_state)
+		show_history(G.line_input_state);
 	return EXIT_SUCCESS;
 }
 #endif
@@ -10655,9 +10690,7 @@ static int helper_export_local(char **argv, unsigned flags)
 {
 	do {
 		char *name = *argv;
-		char *name_end = strchrnul(name, '=');
-
-		/* So far we do not check that name is valid (TODO?) */
+		const char *name_end = endofname(name);
 
 		if (*name_end == '\0') {
 			struct variable *var, **vpp;
@@ -10715,8 +10748,15 @@ static int helper_export_local(char **argv, unsigned flags)
 			 */
 			name = xasprintf("%s=", name);
 		} else {
+			if (*name_end != '=') {
+				bb_error_msg("'%s': bad variable name", name);
+				/* do not parse following argv[]s: */
+				return 1;
+			}
 			/* (Un)exporting/making local NAME=VALUE */
 			name = xstrdup(name);
+			/* Testcase: export PS1='\w \$ ' */
+			unbackslash(name);
 		}
 		debug_printf_env("%s: set_local_var('%s')\n", __func__, name);
 		if (set_local_var(name, flags))
@@ -11471,6 +11511,12 @@ static int wait_for_child_or_signal(struct pipe *waitfor_pipe, pid_t waitfor_pid
 			ret--;
 			if (ret < 0) /* if ECHILD, may need to fix "ret" */
 				ret = 0;
+#if ENABLE_HUSH_BASH_COMPAT
+			if (waitfor_pid == -1 && errno == ECHILD) {
+				/* exitcode of "wait -n" with no children is 127, not 0 */
+				ret = 127;
+			}
+#endif
 			sigprocmask(SIG_SETMASK, &oldset, NULL);
 			break;
 		}
@@ -11499,6 +11545,14 @@ static int FAST_FUNC builtin_wait(char **argv)
 	int status;
 
 	argv = skip_dash_dash(argv);
+#if ENABLE_HUSH_BASH_COMPAT
+	if (argv[0] && strcmp(argv[0], "-n") == 0) {
+		/* wait -n */
+		/* (bash accepts "wait -n PID" too and ignores PID) */
+		G.dead_job_exitcode = -1;
+		return wait_for_child_or_signal(NULL, -1 /*no job, wait for one job*/);
+	}
+#endif
 	if (argv[0] == NULL) {
 		/* Don't care about wait results */
 		/* Note 1: must wait until there are no more children */
@@ -11516,7 +11570,7 @@ static int FAST_FUNC builtin_wait(char **argv)
 		 * ^C <-- after ~4 sec from keyboard
 		 * $
 		 */
-		return wait_for_child_or_signal(NULL, 0 /*(no job and no pid to wait for)*/);
+		return wait_for_child_or_signal(NULL, 0 /*no job and no pid to wait for*/);
 	}
 
 	do {

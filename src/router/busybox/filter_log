@@ -1,0 +1,5 @@
+#!/bin/sh
+
+git log --pretty=short 1_30_0..HEAD >z1
+
+git shortlog <z1 | sed 's/</\&lt;/g' | sed 's/>/\&gt;/g' | sed 's/ (1):$/:/' >z2.htm
