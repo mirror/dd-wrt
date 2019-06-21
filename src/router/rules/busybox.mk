@@ -587,6 +587,7 @@ ifeq ($(CONFIG_RAID),y)
 endif
 	echo "# CONFIG_FEATURE_SYSLOG_INFO is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_SH_MATH_BASE is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_TFTP_HPA_COMPAT is not set" >> busybox/.config
 	echo "# CONFIG_TS is not set" >> busybox/.config
 	cd busybox && make oldconfig
 	
