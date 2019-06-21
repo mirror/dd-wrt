@@ -40,7 +40,7 @@ struct dhcp_packet {
 	uint32_t yiaddr; /* 'your' (client) IP address */
 	/* IP address of next server to use in bootstrap, returned in DHCPOFFER, DHCPACK by server */
 	uint32_t siaddr_nip;
-	uint32_t gateway_nip; /* relay agent IP address */
+	uint32_t gateway_nip; /* aka 'giaddr': relay agent IP address */
 	uint8_t chaddr[16];   /* link-layer client hardware address (MAC) */
 	uint8_t sname[64];    /* server host name (ASCIZ) */
 	uint8_t file[128];    /* boot file name (ASCIZ) */
@@ -119,7 +119,7 @@ enum {
 //#define DHCP_TIME_SERVER      0x04 /* RFC 868 time server (32-bit, 0 = 1.1.1900) */
 //#define DHCP_NAME_SERVER      0x05 /* IEN 116 _really_ ancient kind of NS */
 //#define DHCP_DNS_SERVER       0x06
-//#define DHCP_LOG_SERVER       0x07 /* port 704 UDP log (not syslog)
+//#define DHCP_LOG_SERVER       0x07 /* port 704 UDP log (not syslog) */
 //#define DHCP_COOKIE_SERVER    0x08 /* "quote of the day" server */
 //#define DHCP_LPR_SERVER       0x09
 #define DHCP_HOST_NAME          0x0c /* 12: either client informs server or server gives name to client */
@@ -149,13 +149,15 @@ enum {
 //#define DHCP_BOOT_FILE        0x43 /* 67: same as 'file' field */
 //#define DHCP_USER_CLASS       0x4d /* 77: RFC 3004. set of LASCII strings. "I am a printer" etc */
 #define DHCP_FQDN               0x51 /* 81: client asks to update DNS to map its FQDN to its new IP */
+//#define DHCP_PCODE            0x64 /* 100: RFC 4833. IEEE 1003.1 TZ string */
+//#define DHCP_TCODE            0x65 /* 101: RFC 4833. Reference to the TZ database string */
 //#define DHCP_DOMAIN_SEARCH    0x77 /* 119: RFC 3397. set of ASCIZ string, DNS-style compressed */
 //#define DHCP_SIP_SERVERS      0x78 /* 120: RFC 3361. flag byte, then: 0: domain names, 1: IP addrs */
 //#define DHCP_STATIC_ROUTES    0x79 /* 121: RFC 3442. (mask,ip,router) tuples */
 //#define DHCP_VLAN_ID          0x84 /* 132: 802.1P VLAN ID */
 //#define DHCP_VLAN_PRIORITY    0x85 /* 133: 802.1Q VLAN priority */
-//#define DHCP_PXE_CONF_FILE    0xd1 /* 209: RFC 5071 Configuration File */
-//#define DHCP_PXE_PATH_PREFIX  0xd2 /* 210: RFC 5071 Configuration File */
+//#define DHCP_PXE_CONF_FILE    0xd1 /* 209: RFC 5071 Configuration file */
+//#define DHCP_PXE_PATH_PREFIX  0xd2 /* 210: RFC 5071 Path prefix */
 //#define DHCP_REBOOT_TIME      0xd3 /* 211: RFC 5071 Reboot time */
 //#define DHCP_MS_STATIC_ROUTES 0xf9 /* 249: Microsoft's pre-RFC 3442 code for 0x79? */
 //#define DHCP_WPAD             0xfc /* 252: MSIE's Web Proxy Autodiscovery Protocol */
@@ -220,10 +222,9 @@ uint8_t *dname_enc(const uint8_t *cstr, int clen, const char *src, int *retlen) 
 #endif
 struct option_set *udhcp_find_option(struct option_set *opt_list, uint8_t code) FAST_FUNC;
 
-
 // RFC 2131  Table 5: Fields and options used by DHCP clients
 //
-// Fields 'hops', 'yiaddr', 'siaddr', 'giaddr' are always zero
+// Fields 'hops', 'yiaddr', 'siaddr', 'giaddr' are always zero, 'chaddr' is always client's MAC
 //
 // Field      DHCPDISCOVER          DHCPINFORM            DHCPREQUEST           DHCPDECLINE         DHCPRELEASE
 // -----      ------------          ------------          -----------           -----------         -----------
@@ -232,56 +233,49 @@ struct option_set *udhcp_find_option(struct option_set *opt_list, uint8_t code) 
 // 'secs'     0 or seconds since    0 or seconds since    0 or seconds since    0                   0
 //            DHCP process started  DHCP process started  DHCP process started
 // 'flags'    Set 'BROADCAST'       Set 'BROADCAST'       Set 'BROADCAST'       0                   0
-//            flag if client        flag if client        flag if client
-//            requires broadcast    requires broadcast    requires broadcast
-//            reply                 reply                 reply
+//            flag if client needs  flag if client needs  flag if client needs
+//            broadcast reply       broadcast reply       broadcast reply
 // 'ciaddr'   0                     client's IP           0 or client's IP      0                   client's IP
 //                                                        (BOUND/RENEW/REBIND)
-// 'chaddr'   client's MAC          client's MAC          client's MAC          client's MAC        client's MAC
 // 'sname'    options or sname      options or sname      options or sname      (unused)            (unused)
 // 'file'     options or file       options or file       options or file       (unused)            (unused)
 // 'options'  options               options               options               message type opt    message type opt
 //
-// Option                     DHCPDISCOVER  DHCPINFORM  DHCPREQUEST      DHCPDECLINE  DHCPRELEASE
-// ------                     ------------  ----------  -----------      -----------  -----------
-// Requested IP address       MAY           MUST NOT    MUST (in         MUST         MUST NOT
-//                                                      SELECTING or
-//                                                      INIT-REBOOT)
-//                                                      MUST NOT (in
-//                                                      BOUND or
-//                                                      RENEWING)
-// IP address lease time      MAY           MUST NOT    MAY              MUST NOT     MUST NOT
-// Use 'file'/'sname' fields  MAY           MAY         MAY              MAY          MAY
-// Client identifier          MAY           MAY         MAY              MAY          MAY
-// Vendor class identifier    MAY           MAY         MAY              MUST NOT     MUST NOT
-// Server identifier          MUST NOT      MUST NOT    MUST (after      MUST         MUST
-//                                                      SELECTING)
+// Option                     DHCPDISCOVER  DHCPINFORM  DHCPREQUEST             DHCPDECLINE  DHCPRELEASE
+// ------                     ------------  ----------  -----------             -----------  -----------
+// Requested IP address       MAY           MUST NOT    MUST (in SELECTING      MUST         MUST NOT
+//                                                      or INIT-REBOOT)
+//                                                      MUST NOT (in BOUND
+//                                                      or RENEWING)
+// IP address lease time      MAY           MUST NOT    MAY                     MUST NOT     MUST NOT
+// Use 'file'/'sname' fields  MAY           MAY         MAY                     MAY          MAY
+// Client identifier          MAY           MAY         MAY                     MAY          MAY
+// Vendor class identifier    MAY           MAY         MAY                     MUST NOT     MUST NOT
+// Server identifier          MUST NOT      MUST NOT    MUST (after SELECTING)  MUST         MUST
 //                                                      MUST NOT (after
-//                                                      INIT-REBOOT,
-//                                                      BOUND, RENEWING
-//                                                      or REBINDING)
-// Parameter request list     MAY           MAY         MAY              MUST NOT     MUST NOT
-// Maximum message size       MAY           MAY         MAY              MUST NOT     MUST NOT
-// Message                    SHOULD NOT    SHOULD NOT  SHOULD NOT       SHOULD       SHOULD
-// Site-specific              MAY           MAY         MAY              MUST NOT     MUST NOT
-// All others                 MAY           MAY         MAY              MUST NOT     MUST NOT
-
+//                                                      INIT-REBOOT, BOUND,
+//                                                      RENEWING or REBINDING)
+// Parameter request list     MAY           MAY         MAY                     MUST NOT     MUST NOT
+// Maximum message size       MAY           MAY         MAY                     MUST NOT     MUST NOT
+// Message                    SHOULD NOT    SHOULD NOT  SHOULD NOT              SHOULD       SHOULD
+// Site-specific              MAY           MAY         MAY                     MUST NOT     MUST NOT
+// All others                 MAY           MAY         MAY                     MUST NOT     MUST NOT
 
 /*** Logging ***/
 
 #if defined CONFIG_UDHCP_DEBUG && CONFIG_UDHCP_DEBUG >= 1
 # define IF_UDHCP_VERBOSE(...) __VA_ARGS__
 extern unsigned dhcp_verbose;
-# define log1(...) do { if (dhcp_verbose >= 1) bb_error_msg(__VA_ARGS__); } while (0)
+# define log1(...) do { if (dhcp_verbose >= 1) bb_info_msg(__VA_ARGS__); } while (0)
 # if CONFIG_UDHCP_DEBUG >= 2
 void udhcp_dump_packet(struct dhcp_packet *packet) FAST_FUNC;
-#  define log2(...) do { if (dhcp_verbose >= 2) bb_error_msg(__VA_ARGS__); } while (0)
+#  define log2(...) do { if (dhcp_verbose >= 2) bb_info_msg(__VA_ARGS__); } while (0)
 # else
 #  define udhcp_dump_packet(...) ((void)0)
 #  define log2(...) ((void)0)
 # endif
 # if CONFIG_UDHCP_DEBUG >= 3
-#  define log3(...) do { if (dhcp_verbose >= 3) bb_error_msg(__VA_ARGS__); } while (0)
+#  define log3(...) do { if (dhcp_verbose >= 3) bb_info_msg(__VA_ARGS__); } while (0)
 # else
 #  define log3(...) ((void)0)
 # endif

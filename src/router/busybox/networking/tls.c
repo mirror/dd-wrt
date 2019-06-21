@@ -1387,12 +1387,12 @@ static void find_key_in_der_cert(tls_state_t *tls, uint8_t *der, int len)
 	/* enter subjectPublicKeyInfo */
 	der = enter_der_item(der, &end);
 	{ /* check subjectPublicKeyInfo.algorithm */
-		static const uint8_t OID_RSA_KEY_ALG[] = {
+		static const uint8_t OID_RSA_KEY_ALG[] ALIGN1 = {
 			0x30,0x0d, // SEQ 13 bytes
 			0x06,0x09, 0x2a,0x86,0x48,0x86,0xf7,0x0d,0x01,0x01,0x01, //OID_RSA_KEY_ALG 42.134.72.134.247.13.1.1.1
 			//0x05,0x00, // NULL
 		};
-		static const uint8_t OID_ECDSA_KEY_ALG[] = {
+		static const uint8_t OID_ECDSA_KEY_ALG[] ALIGN1 = {
 			0x30,0x13, // SEQ 0x13 bytes
 			0x06,0x07, 0x2a,0x86,0x48,0xce,0x3d,0x02,0x01,      //OID_ECDSA_KEY_ALG 42.134.72.206.61.2.1
 		//allow any curve code for now...
@@ -1531,9 +1531,17 @@ static void send_client_hello_and_alloc_hsd(tls_state_t *tls, const char *sni)
 		0x00,0x04, //ext len
 		0x00,0x02, //list len
 		0x00,0x1d, //curve_x25519 (RFC 7748)
+		//0x00,0x1e, //curve_x448 (RFC 7748)
 		//0x00,0x17, //curve_secp256r1
 		//0x00,0x18, //curve_secp384r1
 		//0x00,0x19, //curve_secp521r1
+//TODO: implement secp256r1 (at least): dl.fedoraproject.org immediately aborts
+//if only x25519/x448 are advertised, seems to support only secpNNNr1 curves:
+// openssl s_client -connect dl.fedoraproject.org:443 -debug -tls1_2 -cipher ECDHE-RSA-AES128-GCM-SHA256
+//Peer signing digest: SHA512
+//Peer signature type: RSA
+//Server Temp Key: ECDH, P-256, 256 bits
+//TLSv1.2, Cipher is ECDHE-RSA-AES128-GCM-SHA256
 	};
 	//static const uint8_t signature_algorithms[] = {
 	//	000d
@@ -2075,7 +2083,7 @@ static void send_client_key_exchange(tls_state_t *tls)
 	}
 }
 
-static const uint8_t rec_CHANGE_CIPHER_SPEC[] = {
+static const uint8_t rec_CHANGE_CIPHER_SPEC[] ALIGN1 = {
 	RECORD_TYPE_CHANGE_CIPHER_SPEC, TLS_MAJ, TLS_MIN, 00, 01,
 	01
 };

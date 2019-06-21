@@ -220,10 +220,12 @@
 #define    BASH_SOURCE          ENABLE_ASH_BASH_COMPAT
 #define    BASH_PIPEFAIL        ENABLE_ASH_BASH_COMPAT
 #define    BASH_HOSTNAME_VAR    ENABLE_ASH_BASH_COMPAT
+#define    BASH_EPOCH_VARS      ENABLE_ASH_BASH_COMPAT
 #define    BASH_SHLVL_VAR       ENABLE_ASH_BASH_COMPAT
 #define    BASH_XTRACEFD        ENABLE_ASH_BASH_COMPAT
 #define    BASH_READ_D          ENABLE_ASH_BASH_COMPAT
 #define IF_BASH_READ_D              IF_ASH_BASH_COMPAT
+#define    BASH_WAIT_N          ENABLE_ASH_BASH_COMPAT
 
 #if defined(__ANDROID_API__) && __ANDROID_API__ <= 24
 /* Bionic at least up to version 24 has no glob() */
@@ -313,10 +315,18 @@ static const char *const optletters_optnames[] = {
 	"e"   "errexit",
 	"f"   "noglob",
 	"I"   "ignoreeof",
-	"i"   "interactive",
+/* The below allowed this invocation:
+ * ash -c 'set -i; echo $-; sleep 5; echo $-'
+ * to be ^C-ed and get to interactive ash prompt.
+ * bash does not support such "set -i".
+ * In our code, this is denoted by empty long name:
+ */
+	"i"   "",
 	"m"   "monitor",
 	"n"   "noexec",
-	"s"   "stdin",
+/* Ditto: bash has no "set -s" */
+	"s"   "",
+	"c"   "",
 	"x"   "xtrace",
 	"v"   "verbose",
 	"C"   "noclobber",
@@ -332,6 +342,20 @@ static const char *const optletters_optnames[] = {
 	,"\0"  "debug"
 #endif
 };
+//bash 4.4.23 also has these opts (with these defaults):
+//braceexpand           on
+//emacs                 on
+//errtrace              off
+//functrace             off
+//hashall               on
+//histexpand            off
+//history               on
+//interactive-comments  on
+//keyword               off
+//onecmd                off
+//physical              off
+//posix                 off
+//privileged            off
 
 #define optletters(n)  optletters_optnames[n][0]
 #define optnames(n)   (optletters_optnames[n] + 1)
@@ -395,21 +419,22 @@ struct globals_misc {
 #define mflag optlist[4]
 #define nflag optlist[5]
 #define sflag optlist[6]
-#define xflag optlist[7]
-#define vflag optlist[8]
-#define Cflag optlist[9]
-#define aflag optlist[10]
-#define bflag optlist[11]
-#define uflag optlist[12]
-#define viflag optlist[13]
+#define cflag optlist[7]
+#define xflag optlist[8]
+#define vflag optlist[9]
+#define Cflag optlist[10]
+#define aflag optlist[11]
+#define bflag optlist[12]
+#define uflag optlist[13]
+#define viflag optlist[14]
 #if BASH_PIPEFAIL
-# define pipefail optlist[14]
+# define pipefail optlist[15]
 #else
 # define pipefail 0
 #endif
 #if DEBUG
-# define nolog optlist[14 + BASH_PIPEFAIL]
-# define debug optlist[15 + BASH_PIPEFAIL]
+# define nolog optlist[15 + BASH_PIPEFAIL]
+# define debug optlist[16 + BASH_PIPEFAIL]
 #endif
 
 	/* trap handler commands */
@@ -2052,6 +2077,10 @@ static void changepath(const char *) FAST_FUNC;
 #if ENABLE_ASH_RANDOM_SUPPORT
 static void change_random(const char *) FAST_FUNC;
 #endif
+#if BASH_EPOCH_VARS
+static void change_seconds(const char *) FAST_FUNC;
+static void change_realtime(const char *) FAST_FUNC;
+#endif
 
 static const struct {
 	int flags;
@@ -2077,6 +2106,10 @@ static const struct {
 	{ VSTRFIXED|VTEXTFIXED       , NULL /* inited to linenovar */, NULL },
 #if ENABLE_ASH_RANDOM_SUPPORT
 	{ VSTRFIXED|VTEXTFIXED|VUNSET|VDYNAMIC, "RANDOM", change_random },
+#endif
+#if BASH_EPOCH_VARS
+	{ VSTRFIXED|VTEXTFIXED|VUNSET|VDYNAMIC, "EPOCHSECONDS", change_seconds },
+	{ VSTRFIXED|VTEXTFIXED|VUNSET|VDYNAMIC, "EPOCHREALTIME", change_realtime },
 #endif
 #if ENABLE_LOCALE_SUPPORT
 	{ VSTRFIXED|VTEXTFIXED|VUNSET, "LC_ALL"    , change_lc_all   },
@@ -2109,26 +2142,26 @@ extern struct globals_var *BB_GLOBAL_CONST ash_ptr_to_globals_var;
 #define linenovar     (G_var.linenovar    )
 #define vifs      varinit[0]
 #if ENABLE_ASH_MAIL
-# define vmail    (&vifs)[1]
-# define vmpath   (&vmail)[1]
-# define vpath    (&vmpath)[1]
-#else
-# define vpath    (&vifs)[1]
+# define vmail    varinit[1]
+# define vmpath   varinit[2]
 #endif
-#define vps1      (&vpath)[1]
-#define vps2      (&vps1)[1]
-#define vps4      (&vps2)[1]
+#define VAR_OFFSET1 (ENABLE_ASH_MAIL*2)
+#define vpath     varinit[VAR_OFFSET1 + 1]
+#define vps1      varinit[VAR_OFFSET1 + 2]
+#define vps2      varinit[VAR_OFFSET1 + 3]
+#define vps4      varinit[VAR_OFFSET1 + 4]
 #if ENABLE_ASH_GETOPTS
-# define voptind  (&vps4)[1]
-# define vlineno  (&voptind)[1]
-# if ENABLE_ASH_RANDOM_SUPPORT
-#  define vrandom (&vlineno)[1]
-# endif
-#else
-# define vlineno  (&vps4)[1]
-# if ENABLE_ASH_RANDOM_SUPPORT
-#  define vrandom (&vlineno)[1]
-# endif
+# define voptind  varinit[VAR_OFFSET1 + 5]
+#endif
+#define VAR_OFFSET2 (VAR_OFFSET1 + ENABLE_ASH_GETOPTS)
+#define vlineno   varinit[VAR_OFFSET2 + 5]
+#if ENABLE_ASH_RANDOM_SUPPORT
+# define vrandom  varinit[VAR_OFFSET2 + 6]
+#endif
+#define VAR_OFFSET3 (VAR_OFFSET2 + ENABLE_ASH_RANDOM_SUPPORT)
+#if BASH_EPOCH_VARS
+# define vepochs  varinit[VAR_OFFSET3 + 6]
+# define vepochr  varinit[VAR_OFFSET3 + 7]
 #endif
 #define INIT_G_var() do { \
 	unsigned i; \
@@ -2267,7 +2300,7 @@ lookupvar(const char *name)
 
 	v = *findvar(hashvar(name), name);
 	if (v) {
-#if ENABLE_ASH_RANDOM_SUPPORT
+#if ENABLE_ASH_RANDOM_SUPPORT || BASH_EPOCH_VARS
 	/*
 	 * Dynamic variables are implemented roughly the same way they are
 	 * in bash. Namely, they're "special" so long as they aren't unset.
@@ -2363,6 +2396,10 @@ setvareq(char *s, int flags)
 		}
 
 		flags |= vp->flags & ~(VTEXTFIXED|VSTACK|VNOSAVE|VUNSET);
+#if ENABLE_ASH_RANDOM_SUPPORT || BASH_EPOCH_VARS
+		if (flags & VUNSET)
+			flags &= ~VDYNAMIC;
+#endif
 	} else {
 		/* variable s is not found */
 		if (flags & VNOSET)
@@ -3522,7 +3559,7 @@ struct procstat {
 
 struct job {
 	struct procstat ps0;    /* status of process */
-	struct procstat *ps;    /* status or processes when more than one */
+	struct procstat *ps;    /* status of processes when more than one */
 #if JOBS
 	int stopstatus;         /* status of a stopped job */
 #endif
@@ -4235,6 +4272,9 @@ wait_block_or_sig(int *status)
 #define DOWAIT_NONBLOCK 0
 #define DOWAIT_BLOCK    1
 #define DOWAIT_BLOCK_OR_SIG 2
+#if BASH_WAIT_N
+# define DOWAIT_JOBSTATUS 0x10   /* OR this to get job's exitstatus instead of pid */
+#endif
 
 static int
 dowait(int block, struct job *job)
@@ -4242,7 +4282,11 @@ dowait(int block, struct job *job)
 	int pid;
 	int status;
 	struct job *jp;
-	struct job *thisjob = NULL;
+	struct job *thisjob;
+#if BASH_WAIT_N
+	bool want_jobexitstatus = (block & DOWAIT_JOBSTATUS);
+	block = (block & ~DOWAIT_JOBSTATUS);
+#endif
 
 	TRACE(("dowait(0x%x) called\n", block));
 
@@ -4279,10 +4323,10 @@ dowait(int block, struct job *job)
 	}
 	TRACE(("wait returns pid=%d, status=0x%x, errno=%d(%s)\n",
 				pid, status, errno, strerror(errno)));
+	thisjob = NULL;
 	if (pid <= 0)
 		goto out;
 
-	thisjob = NULL;
 	for (jp = curjob; jp; jp = jp->prev_job) {
 		int jobstate;
 		struct procstat *ps;
@@ -4341,6 +4385,13 @@ dowait(int block, struct job *job)
  out:
 	INT_ON;
 
+#if BASH_WAIT_N
+	if (want_jobexitstatus) {
+		pid = -1;
+		if (thisjob && thisjob->state == JOBDONE)
+			pid = thisjob->ps[thisjob->nprocs - 1].ps_status;
+	}
+#endif
 	if (thisjob && thisjob == job) {
 		char s[48 + 1];
 		int len;
@@ -4523,15 +4574,24 @@ waitcmd(int argc UNUSED_PARAM, char **argv)
 	struct job *job;
 	int retval;
 	struct job *jp;
-
+#if BASH_WAIT_N
+	int status;
+	char one = nextopt("n");
+#else
 	nextopt(nullstr);
+#endif
 	retval = 0;
 
 	argv = argptr;
-	if (!*argv) {
-		/* wait for all jobs */
+	if (!argv[0]) {
+		/* wait for all jobs / one job if -n */
 		for (;;) {
 			jp = curjob;
+#if BASH_WAIT_N
+			if (one && !jp)
+				/* exitcode of "wait -n" with nothing to wait for is 127, not 0 */
+				retval = 127;
+#endif
 			while (1) {
 				if (!jp) /* no running procs */
 					goto ret;
@@ -4547,13 +4607,31 @@ waitcmd(int argc UNUSED_PARAM, char **argv)
 	 * with an exit status greater than 128, immediately after which
 	 * the trap is executed."
 	 */
+#if BASH_WAIT_N
+			status = dowait(DOWAIT_BLOCK_OR_SIG | DOWAIT_JOBSTATUS, NULL);
+#else
 			dowait(DOWAIT_BLOCK_OR_SIG, NULL);
+#endif
 	/* if child sends us a signal *and immediately exits*,
 	 * dowait() returns pid > 0. Check this case,
 	 * not "if (dowait() < 0)"!
 	 */
 			if (pending_sig)
 				goto sigout;
+#if BASH_WAIT_N
+			if (one) {
+				/* wait -n waits for one _job_, not one _process_.
+				 *  date; sleep 3 & sleep 2 | sleep 1 & wait -n; date
+				 * should wait for 2 seconds. Not 1 or 3.
+				 */
+				if (status != -1 && !WIFSTOPPED(status)) {
+					retval = WEXITSTATUS(status);
+					if (WIFSIGNALED(status))
+						retval = WTERMSIG(status) + 128;
+					goto ret;
+				}
+			}
+#endif
 		}
 	}
 
@@ -9034,7 +9112,10 @@ evaltree(union node *n, int flags)
 {
 	int checkexit = 0;
 	int (*evalfn)(union node *, int);
+	struct stackmark smark;
 	int status = 0;
+
+	setstackmark(&smark);
 
 	if (n == NULL) {
 		TRACE(("evaltree(NULL) called\n"));
@@ -9149,6 +9230,7 @@ evaltree(union node *n, int flags)
 	if (flags & EV_EXIT)
 		raise_exception(EXEXIT);
 
+	popstackmark(&smark);
 	TRACE(("leaving evaltree (no interrupts)\n"));
 	return exitstatus;
 }
@@ -9209,14 +9291,12 @@ evalfor(union node *n, int flags)
 	struct arglist arglist;
 	union node *argp;
 	struct strlist *sp;
-	struct stackmark smark;
 	int status = 0;
 
 	errlinno = lineno = n->ncase.linno;
 	if (funcline)
 		lineno -= funcline - 1;
 
-	setstackmark(&smark);
 	arglist.list = NULL;
 	arglist.lastp = &arglist.list;
 	for (argp = n->nfor.args; argp; argp = argp->narg.next) {
@@ -9233,7 +9313,6 @@ evalfor(union node *n, int flags)
 			break;
 	}
 	loopnest--;
-	popstackmark(&smark);
 
 	return status;
 }
@@ -9244,14 +9323,12 @@ evalcase(union node *n, int flags)
 	union node *cp;
 	union node *patp;
 	struct arglist arglist;
-	struct stackmark smark;
 	int status = 0;
 
 	errlinno = lineno = n->ncase.linno;
 	if (funcline)
 		lineno -= funcline - 1;
 
-	setstackmark(&smark);
 	arglist.list = NULL;
 	arglist.lastp = &arglist.list;
 	expandarg(n->ncase.expr, &arglist, EXP_TILDE);
@@ -9270,8 +9347,6 @@ evalcase(union node *n, int flags)
 		}
 	}
  out:
-	popstackmark(&smark);
-
 	return status;
 }
 
@@ -9462,8 +9537,8 @@ setinteractive(int on)
 	setsignal(SIGINT);
 	setsignal(SIGQUIT);
 	setsignal(SIGTERM);
-#if !ENABLE_FEATURE_SH_EXTRA_QUIET
 	if (is_interactive > 1) {
+#if !ENABLE_FEATURE_SH_EXTRA_QUIET
 		/* Looks like they want an interactive shell */
 		static smallint did_banner;
 
@@ -9477,8 +9552,12 @@ setinteractive(int on)
 			);
 			did_banner = 1;
 		}
-	}
 #endif
+#if ENABLE_FEATURE_EDITING
+		if (!line_input_state)
+			line_input_state = new_line_input_t(FOR_SHELL | WITH_PATH_LOOKUP);
+#endif
+	}
 }
 
 static void
@@ -9490,10 +9569,12 @@ optschanged(void)
 	setinteractive(iflag);
 	setjobctl(mflag);
 #if ENABLE_FEATURE_EDITING_VI
-	if (viflag)
-		line_input_state->flags |= VI_MODE;
-	else
-		line_input_state->flags &= ~VI_MODE;
+	if (line_input_state) {
+		if (viflag)
+			line_input_state->flags |= VI_MODE;
+		else
+			line_input_state->flags &= ~VI_MODE;
+	}
 #else
 	viflag = 0; /* forcibly keep the option off */
 #endif
@@ -9970,7 +10051,6 @@ evalcommand(union node *cmd, int flags)
 	struct localvar_list *localvar_stop;
 	struct parsefile *file_stop;
 	struct redirtab *redir_stop;
-	struct stackmark smark;
 	union node *argp;
 	struct arglist arglist;
 	struct arglist varlist;
@@ -9992,7 +10072,6 @@ evalcommand(union node *cmd, int flags)
 
 	/* First expand the arguments. */
 	TRACE(("evalcommand(0x%lx, %d) called\n", (long)cmd, flags));
-	setstackmark(&smark);
 	localvar_stop = pushlocalvars();
 	file_stop = g_parsefile;
 	back_exitstatus = 0;
@@ -10275,7 +10354,6 @@ evalcommand(union node *cmd, int flags)
 		 */
 		setvar0("_", lastarg);
 	}
-	popstackmark(&smark);
 
 	return status;
 }
@@ -10470,13 +10548,11 @@ preadfd(void)
 	else {
 # if ENABLE_ASH_IDLE_TIMEOUT
 		int timeout = -1;
-		if (iflag) {
-			const char *tmout_var = lookupvar("TMOUT");
-			if (tmout_var) {
-				timeout = atoi(tmout_var) * 1000;
-				if (timeout <= 0)
-					timeout = -1;
-			}
+		const char *tmout_var = lookupvar("TMOUT");
+		if (tmout_var) {
+			timeout = atoi(tmout_var) * 1000;
+			if (timeout <= 0)
+				timeout = -1;
 		}
 		line_input_state->timeout = timeout;
 # endif
@@ -11029,7 +11105,7 @@ setoption(int flag, int val)
 	int i;
 
 	for (i = 0; i < NOPTS; i++) {
-		if (optletters(i) == flag) {
+		if (optletters(i) == flag && optnames(i)[0] != '\0') {
 			optlist[i] = val;
 			return;
 		}
@@ -11037,14 +11113,17 @@ setoption(int flag, int val)
 	ash_msg_and_raise_error("illegal option %c%c", val ? '-' : '+', flag);
 	/* NOTREACHED */
 }
+/* If login_sh is not NULL, we are called to parse command line opts,
+ * not "set -opts"
+ */
 static int
-options(int cmdline, int *login_sh)
+options(int *login_sh)
 {
 	char *p;
 	int val;
 	int c;
 
-	if (cmdline)
+	if (login_sh)
 		minusc = NULL;
 	while ((p = *argptr) != NULL) {
 		c = *p++;
@@ -11055,7 +11134,7 @@ options(int cmdline, int *login_sh)
 		if (c == '-') {
 			val = 1;
 			if (p[0] == '\0' || LONE_DASH(p)) {
-				if (!cmdline) {
+				if (!login_sh) {
 					/* "-" means turn off -x and -v */
 					if (p[0] == '\0')
 						xflag = vflag = 0;
@@ -11068,26 +11147,40 @@ options(int cmdline, int *login_sh)
 		}
 		/* first char was + or - */
 		while ((c = *p++) != '\0') {
-			/* bash 3.2 indeed handles -c CMD and +c CMD the same */
-			if (c == 'c' && cmdline) {
-				minusc = p;     /* command is after shell args */
-			} else if (c == 'o') {
+			if (login_sh) {
+				/* bash 3.2 indeed handles -c CMD and +c CMD the same */
+				if (c == 'c') {
+					minusc = p; /* command is after shell args */
+					cflag = 1;
+					continue;
+				}
+				if (c == 's') { /* -s, +s */
+					sflag = 1;
+					continue;
+				}
+				if (c == 'i') { /* -i, +i */
+					iflag = 1;
+					continue;
+				}
+				if (c == 'l') {
+					*login_sh = 1; /* -l or +l == --login */
+					continue;
+				}
+				/* bash does not accept +-login, we also won't */
+				if (val && (c == '-')) { /* long options */
+					if (strcmp(p, "login") == 0) {
+						*login_sh = 1;
+					}
+					break;
+				}
+			}
+			if (c == 'o') {
 				if (plus_minus_o(*argptr, val)) {
 					/* it already printed err message */
 					return 1; /* error */
 				}
 				if (*argptr)
 					argptr++;
-			} else if (cmdline && (c == 'l')) { /* -l or +l == --login */
-				if (login_sh)
-					*login_sh = 1;
-			/* bash does not accept +-login, we also won't */
-			} else if (cmdline && val && (c == '-')) { /* long options */
-				if (strcmp(p, "login") == 0) {
-					if (login_sh)
-						*login_sh = 1;
-				}
-				break;
 			} else {
 				setoption(c, val);
 			}
@@ -11178,7 +11271,7 @@ setcmd(int argc UNUSED_PARAM, char **argv UNUSED_PARAM)
 		return showvars(nullstr, 0, VUNSET);
 
 	INT_OFF;
-	retval = options(/*cmdline:*/ 0, NULL);
+	retval = options(/*login_sh:*/ NULL);
 	if (retval == 0) { /* if no parse error... */
 		optschanged();
 		if (*argptr != NULL) {
@@ -11206,6 +11299,32 @@ change_random(const char *value)
 		t = strtoul(value, NULL, 10);
 		INIT_RANDOM_T(&random_gen, (t ? t : 1), t);
 	}
+}
+#endif
+
+#if BASH_EPOCH_VARS
+static void FAST_FUNC
+change_epoch(struct var *vepoch, const char *fmt)
+{
+	struct timeval tv;
+	char buffer[sizeof("%lu.nnnnnn") + sizeof(long)*3];
+
+	gettimeofday(&tv, NULL);
+	sprintf(buffer, fmt, (unsigned long)tv.tv_sec, (unsigned)tv.tv_usec);
+	setvar(vepoch->var_text, buffer, VNOFUNC);
+	vepoch->flags &= ~VNOFUNC;
+}
+
+static void FAST_FUNC
+change_seconds(const char *value UNUSED_PARAM)
+{
+	change_epoch(&vepochs, "%lu");
+}
+
+static void FAST_FUNC
+change_realtime(const char *value UNUSED_PARAM)
+{
+	change_epoch(&vepochr, "%lu.%06u");
 }
 #endif
 
@@ -12967,6 +13086,10 @@ expandstr(const char *ps, int syntax_type)
 {
 	union node n;
 	int saveprompt;
+	struct parsefile *file_stop = g_parsefile;
+	volatile int saveint;
+	struct jmploc *volatile savehandler = exception_handler;
+	struct jmploc jmploc;
 
 	/* XXX Fix (char *) cast. */
 	setinputstring((char *)ps);
@@ -12978,29 +13101,35 @@ expandstr(const char *ps, int syntax_type)
 	 * Try a prompt with syntactically wrong command:
 	 * PS1='$(date "+%H:%M:%S) > '
 	 */
-	{
-		volatile int saveint;
-		struct jmploc *volatile savehandler = exception_handler;
-		struct jmploc jmploc;
-		SAVE_INT(saveint);
-		if (setjmp(jmploc.loc) == 0) {
-			exception_handler = &jmploc;
-			readtoken1(pgetc(), syntax_type, FAKEEOFMARK, 0);
-		}
-		exception_handler = savehandler;
-		RESTORE_INT(saveint);
+	SAVE_INT(saveint);
+	if (setjmp(jmploc.loc) == 0) {
+		exception_handler = &jmploc;
+		readtoken1(pgetc(), syntax_type, FAKEEOFMARK, 0);
 	}
+	exception_handler = savehandler;
+	RESTORE_INT(saveint);
 
 	doprompt = saveprompt;
 
-	popfile();
+	/* Try: PS1='`xxx(`' */
+	unwindfiles(file_stop);
 
 	n.narg.type = NARG;
 	n.narg.next = NULL;
 	n.narg.text = wordtext;
 	n.narg.backquote = backquotelist;
 
-	expandarg(&n, NULL, EXP_QUOTED);
+	/* expandarg() might fail too:
+	 * PS1='$((123+))'
+	 */
+	SAVE_INT(saveint);
+	if (setjmp(jmploc.loc) == 0) {
+		exception_handler = &jmploc;
+		expandarg(&n, NULL, EXP_QUOTED);
+	}
+	exception_handler = savehandler;
+	RESTORE_INT(saveint);
+
 	return stackblock();
 }
 
@@ -13600,7 +13729,8 @@ helpcmd(int argc UNUSED_PARAM, char **argv UNUSED_PARAM)
 static int FAST_FUNC
 historycmd(int argc UNUSED_PARAM, char **argv UNUSED_PARAM)
 {
-	show_history(line_input_state);
+	if (line_input_state)
+		show_history(line_input_state);
 	return EXIT_SUCCESS;
 }
 #endif
@@ -13916,7 +14046,8 @@ exitshell(void)
 	int status;
 
 #if ENABLE_FEATURE_EDITING_SAVE_ON_EXIT
-	save_history(line_input_state);
+	if (line_input_state)
+		save_history(line_input_state);
 #endif
 	status = exitstatus;
 	TRACE(("pid %d, exitshell(%d)\n", getpid(), status));
@@ -14038,7 +14169,7 @@ procargs(char **argv)
 	argptr = xargv;
 	for (i = 0; i < NOPTS; i++)
 		optlist[i] = 2;
-	if (options(/*cmdline:*/ 1, &login_sh)) {
+	if (options(&login_sh)) {
 		/* it already printed err message */
 		raise_exception(EXERROR);
 	}
@@ -14049,8 +14180,13 @@ procargs(char **argv)
 			ash_msg_and_raise_error(bb_msg_requires_arg, "-c");
 		sflag = 1;
 	}
-	if (iflag == 2 && sflag == 1 && isatty(0) && isatty(1))
+	if (iflag == 2 /* no explicit -i given */
+	 && sflag == 1 /* -s given (or implied) */
+	 && !minusc /* bash compat: ash -sc 'echo $-' is not interactive (dash is) */
+	 && isatty(0) && isatty(1) /* we are on tty */
+	) {
 		iflag = 1;
+	}
 	if (mflag == 2)
 		mflag = iflag;
 	for (i = 0; i < NOPTS; i++)
@@ -14164,9 +14300,6 @@ int ash_main(int argc UNUSED_PARAM, char **argv)
 	monitor(4, etext, profile_buf, sizeof(profile_buf), 50);
 #endif
 
-#if ENABLE_FEATURE_EDITING
-	line_input_state = new_line_input_t(FOR_SHELL | WITH_PATH_LOOKUP);
-#endif
 	state = 0;
 	if (setjmp(jmploc.loc)) {
 		smallint e;
@@ -14241,10 +14374,17 @@ int ash_main(int argc UNUSED_PARAM, char **argv)
 		 * Ensure we don't falsely claim that 0 (stdin)
 		 * is one of stacked source fds.
 		 * Testcase: ash -c 'exec 1>&0' must not complain. */
+
 		// if (!sflag) g_parsefile->pf_fd = -1;
 		// ^^ not necessary since now we special-case fd 0
 		// in save_fd_on_redirect()
-		evalstring(minusc, sflag ? 0 : EV_EXIT);
+
+		// dash: evalstring(minusc, sflag ? 0 : EV_EXIT);
+		// The above makes
+		//  ash -sc 'echo $-'
+		// continue reading input from stdin after running 'echo'.
+		// bash does not do this: it prints "hBcs" and exits.
+		evalstring(minusc, EV_EXIT);
 	}
 
 	if (sflag || minusc == NULL) {

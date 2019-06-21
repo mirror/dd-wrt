@@ -696,6 +696,7 @@ int xsocket_stream(len_and_sockaddr **lsap) FAST_FUNC;
 /* NB: these set SO_REUSEADDR before bind */
 int create_and_bind_stream_or_die(const char *bindaddr, int port) FAST_FUNC;
 int create_and_bind_dgram_or_die(const char *bindaddr, int port) FAST_FUNC;
+int create_and_bind_to_netlink(int proto, int grp, unsigned rcvbuf) FAST_FUNC;
 /* Create client TCP socket connected to peer:port. Peer cannot be NULL.
  * Peer can be numeric IP ("N.N.N.N"), numeric IPv6 address or hostname,
  * and can have ":PORT" suffix (for IPv6 use "[X:X:...:X]:PORT").
@@ -889,6 +890,7 @@ extern ssize_t open_read_close(const char *filename, void *buf, size_t maxsz) FA
 extern char *xmalloc_reads(int fd, size_t *maxsz_p) FAST_FUNC;
 /* Reads block up to *maxsz_p (default: INT_MAX - 4095) */
 extern void *xmalloc_read(int fd, size_t *maxsz_p) FAST_FUNC RETURNS_MALLOC;
+extern void *xmalloc_read_with_initial_buf(int fd, size_t *maxsz_p, char *buf, size_t total) FAST_FUNC;
 /* Returns NULL if file can't be opened (default max size: INT_MAX - 4095) */
 extern void *xmalloc_open_read_close(const char *filename, size_t *maxsz_p) FAST_FUNC RETURNS_MALLOC;
 /* Never returns NULL */
@@ -1048,9 +1050,11 @@ uint16_t xatou16(const char *numstr) FAST_FUNC;
 #if ENABLE_FLOAT_DURATION
 typedef double duration_t;
 void sleep_for_duration(duration_t duration) FAST_FUNC;
+#define DURATION_FMT "f"
 #else
 typedef unsigned duration_t;
 #define sleep_for_duration(duration) sleep(duration)
+#define DURATION_FMT "u"
 #endif
 duration_t parse_duration_str(char *str) FAST_FUNC;
 
@@ -1209,11 +1213,11 @@ void set_task_comm(const char *comm) FAST_FUNC;
  * to /dev/null if they are not.
  */
 enum {
-	DAEMON_CHDIR_ROOT = 1,
-	DAEMON_DEVNULL_STDIO = 2,
-	DAEMON_CLOSE_EXTRA_FDS = 4,
-	DAEMON_ONLY_SANITIZE = 8, /* internal use */
-	DAEMON_DOUBLE_FORK = 16, /* double fork to avoid controlling tty */
+	DAEMON_CHDIR_ROOT      = 1 << 0,
+	DAEMON_DEVNULL_STDIO   = 1 << 1,
+	DAEMON_CLOSE_EXTRA_FDS = 1 << 2,
+	DAEMON_ONLY_SANITIZE   = 1 << 3, /* internal use */
+	//DAEMON_DOUBLE_FORK     = 1 << 4, /* double fork to avoid controlling tty */
 };
 #if BB_MMU
   enum { re_execed = 0 };
@@ -1304,9 +1308,13 @@ llist_t *llist_find_str(llist_t *first, const char *str) FAST_FUNC;
 /* True only if we created pidfile which is *file*, not /dev/null etc */
 extern smallint wrote_pidfile;
 void write_pidfile(const char *path) FAST_FUNC;
+void write_pidfile_std_path_and_ext(const char *path) FAST_FUNC;
+void remove_pidfile_std_path_and_ext(const char *path) FAST_FUNC;
 #define remove_pidfile(path) do { if (wrote_pidfile) unlink(path); } while (0)
 #else
 enum { wrote_pidfile = 0 };
+#define write_pidfile_std_path_and_ext(path)  ((void)0)
+#define remove_pidfile_std_path_and_ext(path) ((void)0)
 #define write_pidfile(path)  ((void)0)
 #define remove_pidfile(path) ((void)0)
 #endif
@@ -1318,7 +1326,6 @@ enum {
 	LOGMODE_BOTH = LOGMODE_SYSLOG + LOGMODE_STDIO,
 };
 extern const char *msg_eol;
-extern smallint syslog_level;
 extern smallint logmode;
 extern uint8_t xfunc_error_retval;
 extern void (*die_func)(void);
@@ -1357,6 +1364,14 @@ void bb_verror_msg(const char *s, va_list p, const char *strerr) FAST_FUNC;
 #endif
 void bb_logenv_override(void) FAST_FUNC;
 
+#if ENABLE_FEATURE_SYSLOG_INFO
+void bb_info_msg(const char *s, ...) __attribute__ ((format (printf, 1, 2))) FAST_FUNC;
+void bb_vinfo_msg(const char *s, va_list p) FAST_FUNC;
+#else
+#define bb_info_msg bb_error_msg
+#define bb_vinfo_msg(s,p) bb_verror_msg(s,p,NULL)
+#endif
+
 /* We need to export XXX_main from libbusybox
  * only if we build "individual" binaries
  */
@@ -1368,7 +1383,7 @@ void bb_logenv_override(void) FAST_FUNC;
 
 /* Embedded script support */
 char *get_script_content(unsigned n) FAST_FUNC;
-int scripted_main(int argc, char** argv);
+int scripted_main(int argc, char** argv) MAIN_EXTERNALLY_VISIBLE;
 
 /* Applets which are useful from another applets */
 int bb_cat(char** argv) FAST_FUNC;
@@ -1473,17 +1488,19 @@ extern void bb_warn_ignoring_args(char *arg) FAST_FUNC;
 
 extern int get_linux_version_code(void) FAST_FUNC;
 
-extern char *query_loop(const char *device) FAST_FUNC;
-extern int del_loop(const char *device) FAST_FUNC;
+char *query_loop(const char *device) FAST_FUNC;
+int get_free_loop(void) FAST_FUNC;
+int del_loop(const char *device) FAST_FUNC;
 /*
  * If *devname is not NULL, use that name, otherwise try to find free one,
  * malloc and return it in *devname.
  * return value is the opened fd to the loop device, or < on error
  */
-extern int set_loop(char **devname, const char *file, unsigned long long offset, unsigned flags) FAST_FUNC;
+int set_loop(char **devname, const char *file, unsigned long long offset, unsigned flags) FAST_FUNC;
 /* These constants match linux/loop.h (without BB_ prefix): */
 #define BB_LO_FLAGS_READ_ONLY 1
 #define BB_LO_FLAGS_AUTOCLEAR 4
+#define BB_LO_FLAGS_PARTSCAN  8
 
 /* Returns malloced str */
 char *bb_ask_noecho(int fd, int timeout, const char *prompt) FAST_FUNC;
@@ -1855,7 +1872,12 @@ struct smaprec {
 	unsigned long stack;
 	unsigned long smap_pss, smap_swap;
 	unsigned long smap_size;
-	unsigned long smap_start;
+	// For mixed 32/64 userspace, 32-bit pmap still needs
+	// 64-bit field here to correctly show 64-bit processes:
+	unsigned long long smap_start;
+	// (strictly speaking, other fields need to be wider too,
+	// but they are in kbytes, not bytes, and they hold sizes,
+	// not start addresses, sizes tend to be less than 4 terabytes)
 	char smap_mode[5];
 	char *smap_name;
 };
