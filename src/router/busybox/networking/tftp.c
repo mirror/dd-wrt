@@ -31,6 +31,11 @@
 //config:	default y
 //config:	depends on TFTP
 //config:
+//config:config FEATURE_TFTP_HPA_COMPAT
+//config:	bool "tftp-hpa compat (support -c get/put FILE)"
+//config:	default y
+//config:	depends on TFTP
+//config:
 //config:config TFTPD
 //config:	bool "tftpd (10 kb)"
 //config:	default y
@@ -101,9 +106,10 @@
 //usage:	IF_FEATURE_TFTP_BLOCKSIZE(
 //usage:     "\n	-b SIZE	Transfer blocks of SIZE octets"
 //usage:	)
+///////:     "\n	-m STR	Accepted and ignored ('-m binary' compat with tftp-hpa 5.2)"
 //usage:
 //usage:#define tftpd_trivial_usage
-//usage:       "[-cr] [-u USER] [DIR]"
+//usage:       "[-crl] [-u USER] [DIR]"
 //usage:#define tftpd_full_usage "\n\n"
 //usage:       "Transfer a file on tftp client's request\n"
 //usage:       "\n"
@@ -245,7 +251,7 @@ static int tftp_blksize_check(const char *blksize_str, int maxsize)
 		return -1;
 	}
 # if ENABLE_TFTP_DEBUG
-	bb_error_msg("using blksize %u", blksize);
+	bb_info_msg("using blksize %u", blksize);
 # endif
 	return blksize;
 }
@@ -759,15 +765,54 @@ int tftp_main(int argc UNUSED_PARAM, char **argv)
 
 	INIT_G();
 
+	if (ENABLE_FEATURE_TFTP_HPA_COMPAT) {
+		/* As of 2019, common tftp client in Linux distros
+		 * is one maintained by H. Peter Anvin:
+		 * I've seen "tftp-hpa 5.2" version.
+		 * Make the following command work:
+		 *  "tftp HOST [PORT] -m binary -c get/put FILE"
+		 * by mangling it into "....... -g/-p -r FILE"
+		 * and accepting and ignoring -m STR option.
+		 */
+		unsigned i = 1;
+		while (argv[i]) {
+			/* Accept not only -c, but also
+			 * -lc, -cl, -llcclcllcc etc:
+			 * "-l Literal mode (do not recognize HOST:FILE)"
+			 * since we do not recognize that syntax anyway,
+			 * might as well allow the option.
+			 */
+			if (argv[i][0] == '-' && strchr(argv[i], 'c')
+			 /*&& argv[i][1+strspn(argv[i]+1, "lc")] == '\0'*/
+			) {
+				if (!argv[++i])
+					break;
+				if (strcmp(argv[i], "get") == 0) {
+					argv[i-1] = (char*)"-g";
+					argv[i] = (char*)"-r";
+					break;
+				}
+				if (strcmp(argv[i], "put") == 0) {
+					argv[i-1] = (char*)"-p";
+					argv[i] = (char*)"-r";
+					break;
+				}
+			}
+			i++;
+		}
+	}
+
 	IF_GETPUT(opt =) getopt32(argv, "^"
 			IF_FEATURE_TFTP_GET("g") IF_FEATURE_TFTP_PUT("p")
 			"l:r:" IF_FEATURE_TFTP_BLOCKSIZE("b:")
+			IF_FEATURE_TFTP_HPA_COMPAT("m:")
 			"\0"
 			/* -p or -g is mandatory, and they are mutually exclusive */
 			IF_FEATURE_TFTP_GET("g:") IF_FEATURE_TFTP_PUT("p:")
 			IF_GETPUT("g--p:p--g:"),
 			&local_file, &remote_file
 			IF_FEATURE_TFTP_BLOCKSIZE(, &blksize_str)
+			IF_FEATURE_TFTP_HPA_COMPAT(, NULL)
 	);
 	argv += optind;
 
@@ -897,6 +942,7 @@ int tftpd_main(int argc UNUSED_PARAM, char **argv)
 	mode = local_file + strlen(local_file) + 1;
 	/* RFC 1350 says mode string is case independent */
 	if (mode >= G.block_buf + result || strcasecmp(mode, "octet") != 0) {
+		error_msg = "mode is not 'octet'";
 		goto err;
 	}
 # if ENABLE_FEATURE_TFTP_BLOCKSIZE
@@ -944,7 +990,8 @@ int tftpd_main(int argc UNUSED_PARAM, char **argv)
 	/* tftp_protocol() will create new one, bound to particular local IP */
 	result = tftp_protocol(
 		our_lsa, peer_lsa,
-		local_file IF_TFTP(, NULL /*remote_file*/)
+		local_file
+		IF_TFTP(, NULL /*remote_file*/)
 		IF_FEATURE_TFTP_BLOCKSIZE(, want_transfer_size)
 		IF_FEATURE_TFTP_BLOCKSIZE(, blksize)
 	);

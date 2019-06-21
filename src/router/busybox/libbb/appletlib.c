@@ -124,16 +124,16 @@ void FAST_FUNC bb_show_usage(void)
 {
 	if (ENABLE_SHOW_USAGE) {
 #ifdef SINGLE_APPLET_STR
-		/* Imagine that this applet is "true". Dont suck in printf! */
+		/* Imagine that this applet is "true". Dont link in printf! */
 		const char *usage_string = unpack_usage_messages();
 
 		if (usage_string) {
 			if (*usage_string == '\b') {
-				full_write2_str("No help available.\n\n");
+				full_write2_str("No help available\n");
 			} else {
 				full_write2_str("Usage: "SINGLE_APPLET_STR" ");
 				full_write2_str(usage_string);
-				full_write2_str("\n\n");
+				full_write2_str("\n");
 			}
 			if (ENABLE_FEATURE_CLEAN_UP)
 				dealloc_usage_messages((char*)usage_string);
@@ -150,9 +150,9 @@ void FAST_FUNC bb_show_usage(void)
 			ap--;
 		}
 		full_write2_str(bb_banner);
-		full_write2_str(" multi-call binary.\n");
+		full_write2_str(" multi-call binary.\n"); /* common string */
 		if (*p == '\b')
-			full_write2_str("\nNo help available.\n\n");
+			full_write2_str("\nNo help available\n");
 		else {
 			full_write2_str("\nUsage: ");
 			full_write2_str(applet_name);
@@ -772,6 +772,7 @@ static int find_script_by_name(const char *name)
 	return -1;
 }
 
+int scripted_main(int argc UNUSED_PARAM, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int scripted_main(int argc UNUSED_PARAM, char **argv)
 {
 	int script = find_script_by_name(applet_name);

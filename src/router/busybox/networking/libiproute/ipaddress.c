@@ -23,6 +23,7 @@
 
 struct filter_t {
 	char *label;
+	/* Flush cmd buf. If !NULL, print_addrinfo() constructs flush commands in it */
 	char *flushb;
 	struct rtnl_handle *rth;
 	int scope, scopemask;
@@ -34,6 +35,8 @@ struct filter_t {
 	smallint showqueue;
 	smallint oneline;
 	smallint up;
+	/* Misnomer. Does not mean "flushed something" */
+	/* More like "flush commands were constructed by print_addrinfo()" */
 	smallint flushed;
 	inet_prefix pfx;
 } FIX_ALIASING;
@@ -201,7 +204,7 @@ static NOINLINE int print_linkinfo(const struct nlmsghdr *n)
 
 static int flush_update(void)
 {
-	if (rtnl_send(G_filter.rth, G_filter.flushb, G_filter.flushp) < 0) {
+	if (rtnl_send_check(G_filter.rth, G_filter.flushb, G_filter.flushp) < 0) {
 		bb_perror_msg("can't send flush request");
 		return -1;
 	}
@@ -327,6 +330,10 @@ static int FAST_FUNC print_addrinfo(const struct sockaddr_nl *who UNUSED_PARAM,
 		ifa->ifa_flags &= ~IFA_F_TENTATIVE;
 		printf("tentative ");
 	}
+	if (ifa->ifa_flags & IFA_F_DADFAILED) {
+		ifa->ifa_flags &= ~IFA_F_DADFAILED;
+		printf("dadfailed ");
+	}
 	if (ifa->ifa_flags & IFA_F_DEPRECATED) {
 		ifa->ifa_flags &= ~IFA_F_DEPRECATED;
 		printf("deprecated ");
@@ -420,7 +427,6 @@ int FAST_FUNC ipaddr_list_or_flush(char **argv, int flush)
 	struct nlmsg_list *l;
 	struct rtnl_handle rth;
 	char *filter_dev = NULL;
-	int no_link = 0;
 
 	ipaddr_reset_filter(oneline);
 	G_filter.showqueue = 1;
@@ -507,13 +513,9 @@ int FAST_FUNC ipaddr_list_or_flush(char **argv, int flush)
 		xrtnl_dump_filter(&rth, store_nlmsg, &ainfo);
 	}
 
-
 	if (G_filter.family && G_filter.family != AF_PACKET) {
 		struct nlmsg_list **lp;
 		lp = &linfo;
-
-		if (G_filter.oneline)
-			no_link = 1;
 
 		while ((l = *lp) != NULL) {
 			int ok = 0;
@@ -570,9 +572,9 @@ int FAST_FUNC ipaddr_list_or_flush(char **argv, int flush)
 	}
 
 	for (l = linfo; l; l = l->next) {
-		if (no_link
-		 || (oneline || print_linkinfo(&l->h) == 0)
+		if ((oneline && G_filter.family != AF_PACKET)
 		/* ^^^^^^^^^ "ip -oneline a" does not print link info */
+		 || (print_linkinfo(&l->h) == 0)
 		) {
 			struct ifinfomsg *ifi = NLMSG_DATA(&l->h);
 			if (G_filter.family != AF_PACKET)
