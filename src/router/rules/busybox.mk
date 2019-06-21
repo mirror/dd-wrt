@@ -437,6 +437,7 @@ endif
 	echo "# CONFIG_I2CSET is not set" >> busybox/.config
 	echo "# CONFIG_I2CDUMP is not set" >> busybox/.config
 	echo "# CONFIG_I2CDETECT is not set" >> busybox/.config
+	echo "# CONFIG_I2CTRANSFER is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_LESS_TRUNCATE is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_WGET_OPENSSL is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_WGET_SSL_HELPER is not set" >> busybox/.config
@@ -584,6 +585,9 @@ ifeq ($(CONFIG_RAID),y)
 	sed -i 's/\# CONFIG_READLINK is not set/CONFIG_READLINK=y/g' busybox/.config
 	sed -i 's/\# CONFIG_FEATURE_READLINK_FOLLOW is not set/CONFIG_FEATURE_READLINK_FOLLOW=y/g' busybox/.config
 endif
+	echo "# CONFIG_FEATURE_SYSLOG_INFO is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_SH_MATH_BASE is not set" >> busybox/.config
+	echo "# CONFIG_TS is not set" >> busybox/.config
 	cd busybox && make oldconfig
 	
 	-$(MAKE) -j 4 -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox
