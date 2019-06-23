@@ -1423,4 +1423,10 @@ char *strstrtok(char *str, char del);
 
 #define NR_RULES		20
 
+#ifdef HAVE_SWCONFIG
+
+int getPortStatus(int port);
+
+#endif
+
 #endif
