@@ -220,6 +220,13 @@ void start_sysinit(void)
 		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("vconfig", "add", "eth0", "1");
 		eval("vconfig", "add", "eth0", "2");
+
+		nvram_set("sw_cpuport", "5");
+		nvram_set("sw_wan", "4");
+		nvram_set("sw_lan1", "0");
+		nvram_set("sw_lan2", "1");
+		nvram_set("sw_lan3", "2");
+		nvram_set("sw_lan4", "3");
 //      set network.eth0_1.ports="0 1 2 3 5t"
 #else
 		vlan_init(0xff);	// 4 lan + 1 wan
