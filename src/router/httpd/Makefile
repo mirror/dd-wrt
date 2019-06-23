@@ -174,6 +174,7 @@ CFLAGS += -DHAVE_WIVIZ
 endif
 ifeq ($(CONFIG_SWCONFIG),y)
 CFLAGS += -DHAVE_SWCONFIG
+LDFLAGS += -L$(TOP)/swconfig -lswitch 
 endif
 ifeq ($(CONFIG_WAVESAT),y)
 CFLAGS += -DHAVE_WAVESAT
