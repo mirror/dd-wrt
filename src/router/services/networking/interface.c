@@ -198,10 +198,20 @@ void start_setup_vlans(void)
 				char buff[32];
 				snprintf(buff, 9, "%d", tmp);
 				eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+				char *lanphy = "eth0";
+				char *wanphy = "eth0";
+				if (nvram_exists("sw_wancpuport") && nvram_match("wan_default", "eth0")) {
+					lanphy = "eth1";
+					wanphy = "eth0";
+				}
+				if (nvram_exists("sw_wancpuport") && nvram_match("wan_default", "eth1")) {
+					lanphy = "eth0";
+					wanphy = "eth1";
+				}
 				if (i == 0 && nvram_exists("sw_wancpuport"))
-					eval("vconfig", "add", "eth1", vlan);
+					eval("vconfig", "add", wanphy, vlan);
 				else
-					eval("vconfig", "add", "eth0", vlan);
+					eval("vconfig", "add", lanphy, vlan);
 				snprintf(buff, 9, "vlan%d", tmp);
 				if (strcmp(nvram_safe_get("wan_ifname"), buff)) {
 					if (*(nvram_nget("vlan%d_ipaddr", vlan_number)))
