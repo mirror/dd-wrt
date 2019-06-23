@@ -85,6 +85,32 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 		}
 	}
 
+#ifdef HAVE_SWCONFIG
+		websWrite(wp, "              <tr>\n");
+		websWrite(wp, "<td><script type=\"text/javascript\">Capture(vlan.linkstatus)</script></td>\n");
+		for (a = 0; a < 5; a++) {
+		int status = 0;
+		if (a == 0)
+			status = getPortStatus(nvram_geti("sw_wan"));
+		else
+			status = getPortStatus(nvram_ngeti("sw_lan%d",a));
+
+			char cstatus[32];
+			if (!status < 100)
+				sprintf(cstatus, "status_red");
+
+			if (status == 100)
+				sprintf(cstatus, "status_yellow");
+
+			if (status == 1000)
+				sprintf(cstatus, "status_green");
+			websWrite(wp, "<td class=\"%s\">&nbsp;</td>\n", status);
+		}
+
+		websWrite(wp, "<td></td>\n");
+		websWrite(wp, "              </tr>\n");
+#else
+
 	// Status header
 	char status[32];
 
@@ -130,6 +156,7 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<td></td>\n");
 		websWrite(wp, "              </tr>\n");
 	}
+#endif
 	int hasgiga = 1;
 
 	int len = 21;
