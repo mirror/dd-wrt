@@ -165,7 +165,7 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	len = 17;
 #endif
 
-	for (a = 0; a < 21 + hasgiga; a++) {
+	for (a = 0; a < len + hasgiga; a++) {
 		i = a;
 		if (hasgiga) {
 			if (a == 18)
