@@ -195,6 +195,21 @@ void start_setup_vlans(void)
 						snprintf(ports, 31, "%s", nvram_nget("sw_lan%d", i));
 
 				}
+				char buff[32];
+				snprintf(buff, 9, "%d", tmp);
+				eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+				if (i == 0 && nvram_exists("sw_wancpuport"))
+					eval("vconfig", "add", "eth1", vlan);
+				else
+					eval("vconfig", "add", "eth0", vlan);
+				snprintf(buff, 9, "vlan%d", tmp);
+				if (strcmp(nvram_safe_get("wan_ifname"), buff)) {
+					if (*(nvram_nget("vlan%d_ipaddr", vlan_number)))
+						eval("ifconfig", buff, nvram_nget("%s_ipaddr", buff), "netmask", nvram_nget("%s_netmask", buff), "up");
+					else
+						eval("ifconfig", buff, "0.0.0.0", "up");
+				}
+
 			}
 		}
 	}
