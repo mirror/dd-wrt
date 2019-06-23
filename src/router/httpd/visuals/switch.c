@@ -85,10 +85,26 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 		}
 	}
 
+	int nowan = 0;
 #ifdef HAVE_SWCONFIG
+	nowan = nvram_match("sw_wan", "-1");
+	websWrite(wp, "<tr>\n");
+	websWrite(wp, "<th rowspan=\"2\"><script type=\"text/javascript\">Capture(vlan.legend)</script></th>\n");
+	websWrite(wp, "<th rowspan=\"5\"><script type=\"text/javascript\">Capture(share.port)</script></th>\n");
+	websWrite(wp, "<th rowspan=\"2\"><script type=\"text/javascript\">Capture(vlan.bridge)</script></th>\n");
+	websWrite(wp, "</tr>\n");
+	websWrite(wp, "<tr>\n");
+	if (!nowan)
+		websWrite(wp, "<th>W</th>\n");
+	websWrite(wp, "<th>1</th>\n");
+	websWrite(wp, "<th>2</th>\n");
+	websWrite(wp, "<th>3</th>\n");
+	websWrite(wp, "<th>4</th>\n");
+	websWrite(wp, "</tr>\n");
+
 	websWrite(wp, "              <tr>\n");
 	websWrite(wp, "<td><script type=\"text/javascript\">Capture(vlan.linkstatus)</script></td>\n");
-	for (a = 0; a < 5; a++) {
+	for (a = nowan; a < 5; a++) {
 		int status = 0;
 		if (a == 0)
 			status = getPortStatus(nvram_geti("sw_wan"));
@@ -110,6 +126,19 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<td></td>\n");
 	websWrite(wp, "              </tr>\n");
 #else
+
+	websWrite(wp, "<tr>\n");
+	websWrite(wp, "<th rowspan=\"2\"><script type=\"text/javascript\">Capture(vlan.legend)</script></th>\n");
+	websWrite(wp, "<th rowspan=\"5\"><script type=\"text/javascript\">Capture(share.port)</script></th>\n");
+	websWrite(wp, "<th rowspan=\"2\"><script type=\"text/javascript\">Capture(vlan.bridge)</script></th>\n");
+	websWrite(wp, "</tr>\n");
+	websWrite(wp, "<tr>\n");
+	websWrite(wp, "<th>W</th>\n");
+	websWrite(wp, "<th>1</th>\n");
+	websWrite(wp, "<th>2</th>\n");
+	websWrite(wp, "<th>3</th>\n");
+	websWrite(wp, "<th>4</th>\n");
+	websWrite(wp, "</tr>\n");
 
 	// Status header
 	char status[32];
@@ -204,7 +233,7 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 
 		websWrite(wp, "</td>\n");
 
-		for (j = 0; j < 5; j++) {
+		for (j = nowan; j < 5; j++) {
 			snprintf(buff, 31, "\"port%dvlan%d\"", j, i);
 			websWrite(wp, "<td");
 
