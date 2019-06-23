@@ -132,6 +132,12 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	}
 	int hasgiga = 1;
 
+	int len = 21;
+#ifdef HAVE_SWCONFIG
+	hasgiga = 0;
+	len = 17;
+#endif
+
 	for (a = 0; a < 21 + hasgiga; a++) {
 		i = a;
 		if (hasgiga) {
@@ -224,6 +230,7 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 		}
 	}
 
+#ifndef HAVE_SWCONFIG
 	websWrite(wp, "<tr>\n");
 	websWrite(wp, "<td><script type=\"text/javascript\">Capture(share.wireless)</script></td>\n");
 
@@ -253,6 +260,6 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 
 	websWrite(wp, ">\" + vlan.trunk + \"</option>\");\n//]]>\n</script></select></td>\n");
 	websWrite(wp, "              </tr>");
-
+#endif
 	return;
 }
