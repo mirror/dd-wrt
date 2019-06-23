@@ -156,7 +156,7 @@ void start_setup_vlans(void)
 	eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
 	char buildports[16][32];
 	char tagged[16];
-	memset(&tagged[16], 0, sizeof(tagged));
+	memset(&tagged[0], 0, sizeof(tagged));
 	memset(&buildports[0][0], 0, 16 * 32);
 	int vlan_number;
 	int i;
