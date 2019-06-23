@@ -920,3 +920,45 @@ swlib_free_all(struct switch_dev *dev)
 		dev = p;
 	}
 }
+
+int getPortStatus(int port)
+{
+
+	struct switch_dev *dev;
+	struct switch_attr *attr;
+	struct switch_val val;
+                   dev = swlib_connect("switch0");
+                   if (!dev)
+                   dev = swlib_connect("rtl8366s");
+                   if (!dev)
+                   dev = swlib_connect("rtl8366rb");
+	if (!dev)
+	    return -1;
+	swlib_scan(dev);
+	val.port_vlan = port;
+
+	attr = dev->port_ops;
+	while (attr) {
+		if (attr->type != SWITCH_TYPE_NOVAL) {
+			if (swlib_get_attr(dev, attr, &val) < 0)
+				return -1;
+			else {
+			
+				if (attr->type == SWITCH_TYPE_LINK) {
+				
+				if (val.value.link) {
+				
+				return val.value.link->speed;
+				
+				}else
+				return 0;
+				
+				}
+			}
+		}
+		attr = attr->next;
+	}
+
+	swlib_free_all(dev);
+
+}
