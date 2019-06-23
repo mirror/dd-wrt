@@ -403,7 +403,7 @@ bmenu.setupbasic="Basis-Setup";
 bmenu.setupddns="DDNS";
 bmenu.setupmacclone="MAC-Adresse klonen";
 bmenu.setuprouting="Erweitertes Routing";
-bmenu.setupvlan="VLANs";
+bmenu.setupvlan="Switch Konfiguration";
 bmenu.setupeop="EoIP Tunnel";
 bmenu.networking="Netzwerke";
 
