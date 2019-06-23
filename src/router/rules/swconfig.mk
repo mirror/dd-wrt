@@ -10,4 +10,4 @@ swconfig-clean:
 
 swconfig-install:
 	install -D swconfig/swconfig $(INSTALLDIR)/swconfig/usr/sbin/swconfig
-	install -D swconfig/libswitch.so $(INSTALLDIR)/swconfig/usr/lib
+	install -D swconfig/libswitch.so $(INSTALLDIR)/swconfig/usr/lib/libswitch.so
