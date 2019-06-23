@@ -150,6 +150,13 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2 3 4 5");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 1");
+
+	nvram_set("sw_cpuport", "0");
+	nvram_set("sw_wan", "1");
+	nvram_set("sw_lan1", "2");
+	nvram_set("sw_lan2", "3");
+	nvram_set("sw_lan3", "4");
+	nvram_set("sw_lan4", "5");
 #elif defined (HAVE_E325N)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
@@ -175,6 +182,12 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 1 2 3 4");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 5");
+	nvram_set("sw_cpuport", "0");
+	nvram_set("sw_wan", "5");
+	nvram_set("sw_lan1", "1");
+	nvram_set("sw_lan2", "2");
+	nvram_set("sw_lan3", "3");
+	nvram_set("sw_lan4", "4");
 #endif
 #elif defined (HAVE_E355AC)
 #elif defined (HAVE_WR810N)
@@ -187,6 +200,13 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 2 3 4 5");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "1 6");
+	nvram_set("sw_lancpuport", "0");
+	nvram_set("sw_wancpuport", "6");
+	nvram_set("sw_wan", "1");
+	nvram_set("sw_lan1", "2");
+	nvram_set("sw_lan2", "3");
+	nvram_set("sw_lan3", "4");
+	nvram_set("sw_lan4", "5");
 #elif defined (HAVE_JWAP606)
 	// nothing
 #elif defined (HAVE_DAP3662)
@@ -194,11 +214,25 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 2 3 4 5");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "1 6");
+	nvram_set("sw_lancpuport", "0");
+	nvram_set("sw_wancpuport", "6");
+	nvram_set("sw_wan", "1");
+	nvram_set("sw_lan1", "2");
+	nvram_set("sw_lan2", "3");
+	nvram_set("sw_lan3", "4");
+	nvram_set("sw_lan4", "5");
 #elif defined (HAVE_DIR862)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 4");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "5 6");
+	nvram_set("sw_lancpuport", "0");
+	nvram_set("sw_wancpuport", "6");
+	nvram_set("sw_wan", "5");
+	nvram_set("sw_lan1", "1");
+	nvram_set("sw_lan2", "2");
+	nvram_set("sw_lan3", "3");
+	nvram_set("sw_lan4", "4");
 #elif defined (HAVE_XD9531)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
@@ -246,6 +280,12 @@ void start_sysinit(void)
 	setSwitchLED(14, 0x08);	// lan2
 	setSwitchLED(21, 0x04);	// lan3
 	setSwitchLED(20, 0x02);	// lan4
+	nvram_set("sw_cpuport", "0");
+	nvram_set("sw_wan", "5");
+	nvram_set("sw_lan1", "1");
+	nvram_set("sw_lan2", "2");
+	nvram_set("sw_lan3", "3");
+	nvram_set("sw_lan4", "4");
 #elif defined (HAVE_ARCHERC7V5)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
@@ -256,11 +296,23 @@ void start_sysinit(void)
 	setSwitchLED(17, 0x08);	// lan2
 	setSwitchLED(16, 0x10);	// lan3
 	setSwitchLED(15, 0x20);	// lan4
+	nvram_set("sw_cpuport", "0");
+	nvram_set("sw_wan", "1");
+	nvram_set("sw_lan1", "2");
+	nvram_set("sw_lan2", "3");
+	nvram_set("sw_lan3", "4");
+	nvram_set("sw_lan4", "5");
 #elif defined (HAVE_ARCHERC7V4)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2 3 4 5");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 1");
+	nvram_set("sw_cpuport", "0");
+	nvram_set("sw_wan", "1");
+	nvram_set("sw_lan1", "2");
+	nvram_set("sw_lan2", "3");
+	nvram_set("sw_lan3", "4");
+	nvram_set("sw_lan4", "5");
 #elif defined (HAVE_LIMA)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
@@ -269,16 +321,37 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 2 3 4 5");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "1 6");
+	nvram_set("sw_lancpuport", "0");
+	nvram_set("sw_wancpuport", "6");
+	nvram_set("sw_wan", "1");
+	nvram_set("sw_lan1", "2");
+	nvram_set("sw_lan2", "3");
+	nvram_set("sw_lan3", "4");
+	nvram_set("sw_lan4", "5");
 #elif defined (HAVE_WZR450HP2) || defined(HAVE_WR1043V2)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 4");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "5 6");
+	nvram_set("sw_lancpuport", "0");
+	nvram_set("sw_wancpuport", "6");
+	nvram_set("sw_wan", "5");
+	nvram_set("sw_lan1", "1");
+	nvram_set("sw_lan2", "2");
+	nvram_set("sw_lan3", "3");
+	nvram_set("sw_lan4", "4");
 #else
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 1 2 3 4");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 5");
+
+	nvram_set("sw_cpuport", "0");
+	nvram_set("sw_wan", "5");
+	nvram_set("sw_lan1", "1");
+	nvram_set("sw_lan2", "2");
+	nvram_set("sw_lan3", "3");
+	nvram_set("sw_lan4", "4");
 #endif
 #endif
 #endif

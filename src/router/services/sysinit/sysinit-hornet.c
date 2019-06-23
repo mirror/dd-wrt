@@ -154,6 +154,13 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth1", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports", "0 1 2 3 4");
 	eval("swconfig", "dev", "eth1", "set", "apply");
+
+	nvram_set("sw_cpuport", "0");
+	nvram_set("sw_wan", "-1");
+	nvram_set("sw_lan1", "1");
+	nvram_set("sw_lan2", "2");
+	nvram_set("sw_lan3", "3");
+	nvram_set("sw_lan4", "4");
 #endif
 #endif
 #ifndef HAVE_WR703
@@ -175,6 +182,13 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth1", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports", "0 1 2 3 4");
 	eval("swconfig", "dev", "eth1", "set", "apply");
+
+	nvram_set("sw_cpuport", "0");
+	nvram_set("sw_wan", "-1");
+	nvram_set("sw_lan1", "1");
+	nvram_set("sw_lan2", "2");
+	nvram_set("sw_lan3", "3");
+	nvram_set("sw_lan4", "4");
 
 	setSwitchLED(13, 0x02);
 	setSwitchLED(14, 0x04);
