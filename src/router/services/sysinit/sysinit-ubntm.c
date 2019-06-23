@@ -205,6 +205,19 @@ void start_sysinit(void)
 			set_hwaddr("vlan2", macaddr);
 		}
 		break;
+		case ROUTER_BOARD_AIRROUTER eval("swconfig", "dev", "eth1", "set", "reset", "1");
+		eval("swconfig", "dev", "eth1", "set", "enable_vlan", "0");
+		eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports", "0 1 2 3 4");
+		eval("swconfig", "dev", "eth1", "set", "apply");
+
+		nvram_set("sw_cpuport", "0");
+		nvram_set("sw_wan", "-1");
+		nvram_set("sw_lan1", "1");
+		nvram_set("sw_lan2", "2");
+		nvram_set("sw_lan3", "3");
+		nvram_set("sw_lan4", "4");
+
+		break;
 	default:
 #ifdef HAVE_SWCONFIG
 #ifdef HAVE_DAP3310

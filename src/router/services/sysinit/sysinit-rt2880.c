@@ -128,6 +128,12 @@ void start_sysinit(void)
 		set_smp_affinity(11, 2);	// eth
 		set_smp_affinity(12, 4);	//wifi1
 		set_smp_affinity(32, 8);	// wifi2
+		nvram_set("sw_cpuport", "6");
+		nvram_set("sw_wan", "0");
+		nvram_set("sw_lan1", "1");
+		nvram_set("sw_lan2", "2");
+		nvram_set("sw_lan3", "3");
+		nvram_set("sw_lan4", "4");
 	} else if (brand == ROUTER_DIR882) {
 		insmod("compat");
 		insmod("mac80211");
@@ -141,6 +147,12 @@ void start_sysinit(void)
 		set_smp_affinity(20, 2);	// eth
 		set_smp_affinity(22, 4);	//wifi1
 		set_smp_affinity(23, 8);	// wifi2
+		nvram_set("sw_cpuport", "6");
+		nvram_set("sw_wan", "4");
+		nvram_set("sw_lan1", "0");
+		nvram_set("sw_lan2", "1");
+		nvram_set("sw_lan3", "2");
+		nvram_set("sw_lan4", "3");
 	} else if (brand == ROUTER_BOARD_E1700 || brand == ROUTER_DIR810L) {
 
 	} else {
@@ -150,6 +162,12 @@ void start_sysinit(void)
 		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 6t");
 		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "5 6t");
 		eval("swconfig", "dev", "eth0", "set", "apply");
+		nvram_set("sw_cpuport", "6");
+		nvram_set("sw_wan", "5");
+		nvram_set("sw_lan1", "0");
+		nvram_set("sw_lan2", "1");
+		nvram_set("sw_lan3", "2");
+		nvram_set("sw_lan4", "3");
 #if 0
 		eval("switch", "reg", "w", "2004", "ff0003");
 		eval("switch", "reg", "w", "2104", "ff0003");
@@ -188,6 +206,12 @@ void start_sysinit(void)
 		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 6t");
 		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "4 6t");
 		eval("swconfig", "dev", "eth0", "set", "apply");
+		nvram_set("sw_cpuport", "6");
+		nvram_set("sw_wan", "4");
+		nvram_set("sw_lan1", "0");
+		nvram_set("sw_lan2", "1");
+		nvram_set("sw_lan3", "2");
+		nvram_set("sw_lan4", "3");
 #endif
 	}
 	eval("ifconfig", "eth0", "up");
