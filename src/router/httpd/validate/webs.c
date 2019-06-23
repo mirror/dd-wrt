@@ -5041,7 +5041,7 @@ void port_vlan_table_save(webs_t wp)
 			snprintf(portid, sizeof(portid), "port%dvlan%d", port, vlan);
 			char *s_portval = websGetVar(wp, portid, "");
 			if (!*s_portval)
-			    continue;
+				continue;
 			if (vlan < 17 || vlan > 21)
 				i = (strcmp(s_portval, "on") == 0);
 			else
