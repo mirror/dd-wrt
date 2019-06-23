@@ -205,7 +205,8 @@ void start_sysinit(void)
 			set_hwaddr("vlan2", macaddr);
 		}
 		break;
-		case ROUTER_BOARD_AIRROUTER eval("swconfig", "dev", "eth1", "set", "reset", "1");
+	case ROUTER_BOARD_AIRROUTER:
+		eval("swconfig", "dev", "eth1", "set", "reset", "1");
 		eval("swconfig", "dev", "eth1", "set", "enable_vlan", "0");
 		eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports", "0 1 2 3 4");
 		eval("swconfig", "dev", "eth1", "set", "apply");
