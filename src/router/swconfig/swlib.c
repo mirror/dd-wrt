@@ -927,13 +927,13 @@ int getPortStatus(int port)
 	struct switch_dev *dev;
 	struct switch_attr *attr;
 	struct switch_val val;
-                   dev = swlib_connect("switch0");
-                   if (!dev)
-                   dev = swlib_connect("rtl8366s");
-                   if (!dev)
-                   dev = swlib_connect("rtl8366rb");
+	dev = swlib_connect("switch0");
 	if (!dev)
-	    return -1;
+		dev = swlib_connect("rtl8366s");
+	if (!dev)
+		dev = swlib_connect("rtl8366rb");
+	if (!dev)
+		return -1;
 	swlib_scan(dev);
 	val.port_vlan = port;
 
@@ -943,16 +943,11 @@ int getPortStatus(int port)
 			if (swlib_get_attr(dev, attr, &val) < 0)
 				return -1;
 			else {
-			
 				if (attr->type == SWITCH_TYPE_LINK) {
-				
-				if (val.value.link) {
-				
-				return val.value.link->speed;
-				
-				}else
-				return 0;
-				
+					if (val.value.link) {
+						return val.value.link->speed;
+					} else
+						return 0;
 				}
 			}
 		}
