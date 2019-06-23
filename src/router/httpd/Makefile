@@ -172,6 +172,9 @@ endif
 ifeq ($(CONFIG_WIVIZ),y)
 CFLAGS += -DHAVE_WIVIZ
 endif
+ifeq ($(CONFIG_SWCONFIG),y)
+CFLAGS += -DHAVE_SWCONFIG
+endif
 ifeq ($(CONFIG_WAVESAT),y)
 CFLAGS += -DHAVE_WAVESAT
 endif
