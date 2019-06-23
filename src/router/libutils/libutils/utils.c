@@ -351,9 +351,9 @@ char *getTXQ(char *ifname)
 int check_vlan_support(void)
 {
 #ifdef HAVE_SWCONFIG
-	if (nvram_exist("sw_cpuport"))
+	if (nvram_exists("sw_cpuport"))
 	    return 1;
-	if (nvram_exist("sw_wancpuport"))
+	if (nvram_exists("sw_wancpuport"))
 	    return 1;
 	return 0;
 #endif
