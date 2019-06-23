@@ -1102,6 +1102,20 @@ void start_wshaper(void)
 	down_clearIF();
 	nvram_seti("qos_done", 1);
 
+#ifdef HAVE_REGISTER
+#ifndef HAVE_ERC
+	if (isregistered_real())
+#endif
+#endif
+	{
+		runStartup(".firewall");
+		create_rc_file(RC_FIREWALL);
+		if (f_exists("/tmp/.rc_firewall")) {
+			setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1);
+			system("/tmp/.rc_firewall");
+		}
+	}
+
 	return;
 }
 
