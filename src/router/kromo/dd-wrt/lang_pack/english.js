@@ -412,7 +412,7 @@ bmenu.setupipv6="IPV6";
 bmenu.setupddns="DDNS";
 bmenu.setupmacclone="MAC Address Clone";
 bmenu.setuprouting="Advanced Routing";
-bmenu.setupvlan="VLANs";
+bmenu.setupvlan="Switch Config";
 bmenu.setupeop="Tunnels";
 bmenu.networking="Networking";
 
