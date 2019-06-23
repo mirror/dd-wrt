@@ -160,7 +160,7 @@ void start_setup_vlans(void)
 	memset(&buildports[0][0], 0, 16 * 32);
 	int vlan_number;
 	int i;
-	for (i = 0; i < 6; i++) {
+	for (i = 0; i < 5; i++) {
 		char *vlans = nvram_nget("port%dvlans", i);
 		char *next;
 		char vlan[4];
@@ -168,14 +168,14 @@ void start_setup_vlans(void)
 		foreach(vlan, vlans, next) {
 			int tmp = atoi(vlan);
 			if (tmp >= 16) {
-				if (vlan_number == 16) ;
-				tagged[vlan_number] = 1;
+				if (vlan_number == 16)
+					tagged[vlan_number] = 1;
 				if (i == 0) {
 					if (!nvram_match("sw_wan", "-1")) {
 						if (nvram_exists("sw_wancpuport"))
-							sysprintf("swconfig dev switch0 set vlan %d set ports \"%st %st\"", vlan_number, nvram_safe_get("sw_wancpuport"), nvram_safe_get("sw_wan"));
+							sysprintf("swconfig dev switch0 vlan %d set ports \"%st %st\"", vlan_number, nvram_safe_get("sw_wancpuport"), nvram_safe_get("sw_wan"));
 						else
-							sysprintf("swconfig dev switch0 set vlan %d set ports \"%st %st\"", vlan_number, nvram_safe_get("sw_cpuport"), nvram_safe_get("sw_wan"));
+							sysprintf("swconfig dev switch0 vlan %d set ports \"%st %st\"", vlan_number, nvram_safe_get("sw_cpuport"), nvram_safe_get("sw_wan"));
 					}
 				}
 			} else {
@@ -184,9 +184,9 @@ void start_setup_vlans(void)
 				if (i == 0) {	// wan port
 					if (!nvram_match("sw_wan", "-1")) {
 						if (nvram_exists("sw_wancpuport"))
-							sysprintf("swconfig dev switch0 set vlan %d set ports \"%st %s\"", vlan_number, nvram_safe_get("sw_wancpuport"), nvram_safe_get("sw_wan"));
+							sysprintf("swconfig dev switch0 vlan %d set ports \"%st %s\"", vlan_number, nvram_safe_get("sw_wancpuport"), nvram_safe_get("sw_wan"));
 						else
-							sysprintf("swconfig dev switch0 set vlan %d set ports \"%st %s\"", vlan_number, nvram_safe_get("sw_cpuport"), nvram_safe_get("sw_wan"));
+							sysprintf("swconfig dev switch0 vlan %d set ports \"%st %s\"", vlan_number, nvram_safe_get("sw_cpuport"), nvram_safe_get("sw_wan"));
 					}
 				} else {
 					if (strlen(ports))
@@ -202,9 +202,9 @@ void start_setup_vlans(void)
 		char *ports = &buildports[vlan_number][0];
 		if (strlen(ports)) {
 			if (nvram_exists("sw_wancpuport"))
-				sysprintf("swconfig dev switch0 set vlan %d set ports \"%st %s%s\"", vlan_number, nvram_safe_get("sw_lancpuport"), ports, tagged[vlan_number] ? "t" : "");
+				sysprintf("swconfig dev switch0 vlan %d set ports \"%st %s%s\"", vlan_number, nvram_safe_get("sw_lancpuport"), ports, tagged[vlan_number] ? "t" : "");
 			else
-				sysprintf("swconfig dev switch0 set vlan %d set ports \"%st %s%s\"", vlan_number, nvram_safe_get("sw_cpuport"), ports, tagged[vlan_number] ? "t" : "");
+				sysprintf("swconfig dev switch0 vlan %d set ports \"%st %s%s\"", vlan_number, nvram_safe_get("sw_cpuport"), ports, tagged[vlan_number] ? "t" : "");
 		}
 	}
 
