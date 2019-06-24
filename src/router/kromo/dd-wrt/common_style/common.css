@@ -446,6 +446,9 @@ td.bulle {
 .status_yellow {
 	background: #ff0;
 }
+.status_orange {
+	background: #f80;
+}
  
 .off {
 	background: #e0e0e0;
