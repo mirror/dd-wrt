@@ -115,8 +115,10 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 			status = getPortStatus(nvram_ngeti("sw_lan%d", a));
 
 		char cstatus[32];
-		if (status < 100)
+		if (status < 10)
 			sprintf(cstatus, "status_red");
+		else if (status == 10)
+			sprintf(cstatus, "status_orange");
 		else if (status == 100)
 			sprintf(cstatus, "status_yellow");
 		else if (status == 1000)
