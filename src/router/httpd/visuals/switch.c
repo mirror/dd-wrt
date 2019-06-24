@@ -90,7 +90,10 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	nowan = nvram_match("sw_wan", "-1");
 	websWrite(wp, "<tr>\n");
 	websWrite(wp, "<th rowspan=\"2\"><script type=\"text/javascript\">Capture(vlan.legend)</script></th>\n");
-	websWrite(wp, "<th colspan=\"5\"><script type=\"text/javascript\">Capture(share.port)</script></th>\n");
+	if (nowan)
+		websWrite(wp, "<th colspan=\"4\"><script type=\"text/javascript\">Capture(share.port)</script></th>\n");
+	else
+		websWrite(wp, "<th colspan=\"5\"><script type=\"text/javascript\">Capture(share.port)</script></th>\n");
 	websWrite(wp, "<th rowspan=\"2\"><script type=\"text/javascript\">Capture(vlan.bridge)</script></th>\n");
 	websWrite(wp, "</tr>\n");
 	websWrite(wp, "<tr>\n");
