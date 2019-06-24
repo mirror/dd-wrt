@@ -212,7 +212,6 @@ void start_setup_vlans(void)
 					eval("vconfig", "add", wanphy, vlan);
 				else
 					eval("vconfig", "add", lanphy, vlan);
-				snprintf(buff, 9, "vlan%d", tmp);
 				if (strcmp(nvram_safe_get("wan_ifname"), buff)) {
 					if (*(nvram_nget("vlan%d_ipaddr", vlan_number)))
 						eval("ifconfig", buff, nvram_nget("%s_ipaddr", buff), "netmask", nvram_nget("%s_netmask", buff), "up");
