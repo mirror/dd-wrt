@@ -174,7 +174,7 @@ CFLAGS += -DHAVE_WIVIZ
 endif
 ifeq ($(CONFIG_SWCONFIG),y)
 CFLAGS += -DHAVE_SWCONFIG
-LDFLAGS += -L$(TOP)/swconfig -lswitch 
+LDFLAGS += -L$(TOP)/swconfig -lswitch -L$(TOP)/libnl-tiny -lnl-tiny
 endif
 ifeq ($(CONFIG_WAVESAT),y)
 CFLAGS += -DHAVE_WAVESAT
