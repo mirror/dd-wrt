@@ -5073,6 +5073,7 @@ void port_vlan_table_save(webs_t wp)
 						eval("vconfig", "add", wanphy, buff);
 					else
 						eval("vconfig", "add", lanphy, buff);
+					snprintf(buff, 9, "vlan%d", vlan);
 					if (strcmp(nvram_safe_get("wan_ifname"), buff)) {
 						if (*(nvram_nget("vlan%d_ipaddr", vlan)))
 							eval("ifconfig", buff, nvram_nget("%s_ipaddr", buff), "netmask", nvram_nget("%s_netmask", buff), "up");
