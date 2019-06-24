@@ -5054,6 +5054,34 @@ void port_vlan_table_save(webs_t wp)
 				snprintf(buff, 4, "%d", vlan);
 				strcat(portvlan, buff);
 				vlans[vlan] = 1;
+#ifdef HAVE_SWCONFIG
+				if (vlan < 16) {
+					char buff[32];
+					snprintf(buff, 9, "%d", vlan);
+					eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+					char *lanphy = "eth0";
+					char *wanphy = "eth0";
+					if (nvram_exists("sw_wancpuport") && nvram_match("wan_default", "eth0")) {
+						lanphy = "eth1";
+						wanphy = "eth0";
+					}
+					if (nvram_exists("sw_wancpuport") && nvram_match("wan_default", "eth1")) {
+						lanphy = "eth0";
+						wanphy = "eth1";
+					}
+					if (i == 0 && nvram_exists("sw_wancpuport"))
+						eval("vconfig", "add", wanphy, buff);
+					else
+						eval("vconfig", "add", lanphy, buff);
+					if (strcmp(nvram_safe_get("wan_ifname"), buff)) {
+						if (*(nvram_nget("vlan%d_ipaddr", vlan)))
+							eval("ifconfig", buff, nvram_nget("%s_ipaddr", buff), "netmask", nvram_nget("%s_netmask", buff), "up");
+						else
+							eval("ifconfig", buff, "0.0.0.0", "up");
+					}
+
+				}
+#endif
 			}
 		}
 
