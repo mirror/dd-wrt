@@ -12,41 +12,49 @@ function to_apply(F) {
 }
 
 function SelSpeed(F,I) {
-	if(eval("F."+I+"vlan20").checked==false) {
+	if(eval("F."+I+"vlan20") && eval("F."+I+"vlan20").checked==false) {
 		for(i=0;i<20;i++) {
-			choose_disable(eval("F."+I+"vlan"+i));
+			if (eval("F."+I+"vlan"+i)) {
+				choose_disable(eval("F."+I+"vlan"+i));
+			}
 		}
 		choose_disable(eval("F."+I+"vlan21"));
 	} else {
 		for(i=0;i<20;i++) {
-			choose_enable(eval("F."+I+"vlan"+i));
+			if (eval("F."+I+"vlan"+i)) {
+				choose_enable(eval("F."+I+"vlan"+i));
+			}
 		}
-		choose_enable(eval("F."+I+"vlan21"));
+		if (eval("F."+I+"vlan21")) {
+			choose_enable(eval("F."+I+"vlan21"));
+		}
 	    SelVLAN(F,I);
-	    if(eval("F."+I+"vlan17").checked) {
-	    	    eval("F."+I+"vlan18").checked=true;
-		    eval("F."+I+"vlan19").checked=true;
-		    eval("F."+I+"vlan21").checked=true;
-		    choose_disable(eval("F."+I+"vlan18"));
-		    choose_disable(eval("F."+I+"vlan19"));
-		    choose_disable(eval("F."+I+"vlan21"));
-	    } else {
-		    choose_enable(eval("F."+I+"vlan18"));
-		    choose_enable(eval("F."+I+"vlan19"));
-		    choose_enable(eval("F."+I+"vlan21"));
-	    }
-	    if(eval("F."+I+"vlan21").checked) {
-	    	    eval("F."+I+"vlan18").checked=true;
-		    choose_disable(eval("F."+I+"vlan18"));
-	    } else {
-		    choose_enable(eval("F."+I+"vlan18"));
+	    if (eval("F."+I+"vlan17")) {
+		    if(eval("F."+I+"vlan17").checked) {
+		    	    eval("F."+I+"vlan18").checked=true;
+			    eval("F."+I+"vlan19").checked=true;
+			    eval("F."+I+"vlan21").checked=true;
+			    choose_disable(eval("F."+I+"vlan18"));
+			    choose_disable(eval("F."+I+"vlan19"));
+			    choose_disable(eval("F."+I+"vlan21"));
+		    } else {
+			    choose_enable(eval("F."+I+"vlan18"));
+			    choose_enable(eval("F."+I+"vlan19"));
+			    choose_enable(eval("F."+I+"vlan21"));
+		    }
+		    if(eval("F."+I+"vlan21").checked) {
+	    		    eval("F."+I+"vlan18").checked=true;
+			    choose_disable(eval("F."+I+"vlan18"));
+		    } else {
+			    choose_enable(eval("F."+I+"vlan18"));
+		    }
 	    }
 	}
 }
 
 function SelVLAN(F,I) {
 	var i,j=0;
-	if(eval("F."+I+"vlan20").checked == true) {
+	if(!eval("F."+I+"vlan20") || eval("F."+I+"vlan20").checked == true) {
 	if(eval("F."+I+"vlan16").checked == true) {
 		for(i=0;i<16;i++)
 			choose_enable(eval("F."+I+"vlan"+i));
@@ -122,18 +130,6 @@ addEvent(window, "unload", function() {
 							   <legend><% tran("vlan.legend"); %></legend>
 							   <table class="table center vlan" summary="virtual lan table">
 								<tbody>
-									<tr>
-										<th rowspan="2"><% tran("vlan.legend"); %></th>
-										<th colspan="5"><% tran("share.port"); %></th>
-										<th rowspan="2"><% tran("vlan.bridge"); %></th>
-									</tr>
-									<tr>
-										<th>W</th>
-										<th>1</th>
-										<th>2</th>
-										<th>3</th>
-										<th>4</th>
-									</tr>
 									<% port_vlan_table(); %>
 								</tbody>
 							 </table>
