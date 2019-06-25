@@ -327,6 +327,9 @@ void start_init_start(void)
 	lcdmessage("START SERVICES");
 	nvram_set("wl0_lazy_wds", nvram_safe_get("wl_lazy_wds"));
 
+#ifdef HAVE_SYSLOG
+	start_syslog();
+#endif
 #ifdef HAVE_IPV6
 	start_ipv6();
 #endif
@@ -341,9 +344,6 @@ void start_init_start(void)
 	start_bridging();
 #endif
 	start_lan();
-#ifdef HAVE_SYSLOG
-	start_syslog();
-#endif
 #ifdef HAVE_IPVS
 	start_ipvs();
 #endif
