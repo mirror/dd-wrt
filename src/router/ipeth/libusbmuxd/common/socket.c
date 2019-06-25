@@ -49,6 +49,10 @@ static int wsa_init = 0;
 #define RECV_TIMEOUT 20000
 #define CONNECT_TIMEOUT 5000
 
+#ifndef ECONNRESET
+#define ECONNRESET 108
+#endif
+
 static int verbose = 0;
 
 void socket_set_verbose(int level)
@@ -365,17 +369,16 @@ int socket_check_fd(int fd, fd_mode fdm, unsigned int timeout)
 	FD_ZERO(&fds);
 	FD_SET(fd, &fds);
 
-	if (timeout > 0) {
-		to.tv_sec = (time_t) (timeout / 1000);
-		to.tv_usec = (time_t) ((timeout - (to.tv_sec * 1000)) * 1000);
-		pto = &to;
-	} else {
-		pto = NULL;
-	}
-
 	sret = -1;
 
 	do {
+		if (timeout > 0) {
+			to.tv_sec = (time_t) (timeout / 1000);
+			to.tv_usec = (time_t) ((timeout - (to.tv_sec * 1000)) * 1000);
+			pto = &to;
+		} else {
+			pto = NULL;
+		}
 		eagain = 0;
 		switch (fdm) {
 		case FDM_READ:
@@ -409,6 +412,10 @@ int socket_check_fd(int fd, fd_mode fdm, unsigned int timeout)
 							strerror(errno));
 				return -1;
 			}
+		} else if (sret == 0) {
+			if (verbose >= 2)
+				fprintf(stderr, "%s: timeout\n", __func__);
+			return -ETIMEDOUT;
 		}
 	} while (eagain);
 
@@ -476,7 +483,7 @@ int socket_receive_timeout(int fd, void *data, size_t length, int flags,
 		// but this is an error condition
 		if (verbose >= 3)
 			fprintf(stderr, "%s: fd=%d recv returned 0\n", __func__, fd);
-		return -EAGAIN;
+		return -ECONNRESET;
 	}
 	if (result < 0) {
 		return -errno;
