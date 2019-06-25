@@ -81,8 +81,10 @@ static void del_routes(char *route)
 static int start_services_main(int argc, char **argv)
 {
 	update_timezone();
-
 	nvram_seti("qos_done", 0);
+#ifdef HAVE_SYSLOG
+	start_service_force_f("syslog");
+#endif
 #ifdef HAVE_GPSI
 	start_service_f("gps");
 #endif
@@ -130,9 +132,6 @@ static int start_services_main(int argc, char **argv)
 #endif
 #ifdef HAVE_TRANSMISSION
 	start_service_f("transmission");
-#endif
-#ifdef HAVE_SYSLOG
-	start_service_force_f("syslog");
 #endif
 #ifdef HAVE_TFTP
 	start_service_f("tftpd");
@@ -638,6 +637,9 @@ static void handle_speedchecker(void)
 #endif
 static void handle_services(void)
 {
+#ifdef HAVE_SYSLOG
+	start_service_force_f("syslog");
+#endif
 #ifdef HAVE_GPSI
 	restart_f("gps");
 #endif
@@ -652,9 +654,6 @@ static void handle_services(void)
 #endif
 #ifdef HAVE_UDHCPD
 	restart_f("udhcpd");
-#endif
-#ifdef HAVE_SYSLOG
-	start_service_force_f("syslog");
 #endif
 #ifdef HAVE_RSTATS
 	restart_f("rstats");
@@ -717,9 +716,6 @@ static void handle_services(void)
 #endif
 	restart("firewall");
 	restart_f("wshaper");
-#ifdef HAVE_SYSLOG
-	start_service_force_f("syslog");
-#endif
 #ifdef HAVE_VNCREPEATER
 	restart_f("vncrepeater");
 #endif
@@ -933,13 +929,13 @@ static void handle_spppoe(void)
 static void handle_filters(void)
 {
 
+#ifdef HAVE_SYSLOG
+	start_service_force_f("syslog");
+#endif
 #ifndef HAVE_MICRO
 	stop_service("cron");
 #endif
 	restart("firewall");
-#ifdef HAVE_SYSLOG
-	start_service_force_f("syslog");
-#endif
 	stop_service("wland");
 	restart_f("wshaper");
 	start_service_f("wland");
