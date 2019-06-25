@@ -135,7 +135,7 @@ static int afc_client_copy_and_remove_crash_reports(afc_client_t afc, const char
 
 		char **fileinfo = NULL;
 		struct stat stbuf;
-		stbuf.st_size = 0;
+		memset(&stbuf, '\0', sizeof(struct stat));
 
 		/* assemble absolute source filename */
 		strcpy(((char*)source_filename) + device_directory_length, list[k]);
@@ -411,7 +411,7 @@ int main(int argc, char* argv[]) {
 	while ((strncmp(ping, "ping", 4) != 0) && (attempts < 10)) {
 		uint32_t bytes = 0;
 		device_error = idevice_connection_receive_timeout(connection, ping, 4, &bytes, 2000);
-		if ((bytes == 0) && (device_error == IDEVICE_E_SUCCESS)) {
+		if (device_error != IDEVICE_E_SUCCESS) {
 			attempts++;
 			continue;
 		} else if (device_error < 0) {
