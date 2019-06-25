@@ -1,8 +1,8 @@
 /*
  * thread.h
  *
- * Copyright (c) 2012 Martin Szulecki All Rights Reserved.
- * Copyright (c) 2012 Nikias Bassen All Rights Reserved.
+ * Copyright (c) 2012-2019 Nikias Bassen, All Rights Reserved.
+ * Copyright (c) 2012 Martin Szulecki, All Rights Reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -22,9 +22,11 @@
 #ifndef __THREAD_H
 #define __THREAD_H
 
+#include <stddef.h>
+
 #ifdef WIN32
 #include <windows.h>
-typedef HANDLE thread_t;
+typedef HANDLE THREAD_T;
 typedef CRITICAL_SECTION mutex_t;
 typedef volatile struct {
 	LONG lock;
@@ -32,99 +34,43 @@ typedef volatile struct {
 } thread_once_t;
 #define THREAD_ONCE_INIT {0, 0}
 #define THREAD_ID GetCurrentThreadId()
+#define THREAD_T_NULL (THREAD_T)NULL
 #else
 #include <pthread.h>
-typedef pthread_t thread_t;
+#include <signal.h>
+typedef pthread_t THREAD_T;
 typedef pthread_mutex_t mutex_t;
 typedef pthread_once_t thread_once_t;
 #define THREAD_ONCE_INIT PTHREAD_ONCE_INIT
 #define THREAD_ID pthread_self()
+#define THREAD_T_NULL (THREAD_T)NULL
 #endif
 
 typedef void* (*thread_func_t)(void* data);
 
-static inline int thread_new(thread_t *thread, thread_func_t thread_func, void* data)
-{
-#ifdef WIN32
-	HANDLE th = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)thread_func, data, 0, NULL);
-	if (th == NULL) {
-		return -1;
-	}
-	*thread = th;
-	return 0;
-#else
-	int res = pthread_create(thread, NULL, thread_func, data);
-	return res;
-#endif
-}
+int thread_new(THREAD_T* thread, thread_func_t thread_func, void* data);
+void thread_detach(THREAD_T thread);
+void thread_free(THREAD_T thread);
+int thread_join(THREAD_T thread);
+int thread_alive(THREAD_T thread);
 
-static inline void thread_free(thread_t thread)
-{
-#ifdef WIN32
-	CloseHandle(thread);
-#endif
-}
+int thread_cancel(THREAD_T thread);
 
-static inline void thread_join(thread_t thread)
-{
-	/* wait for thread to complete */
 #ifdef WIN32
-	WaitForSingleObject(thread, INFINITE);
+#undef HAVE_THREAD_CLEANUP
 #else
-	pthread_join(thread, NULL);
+#ifdef HAVE_PTHREAD_CANCEL
+#define HAVE_THREAD_CLEANUP 1
+#define thread_cleanup_push(routine, arg) pthread_cleanup_push(routine, arg)
+#define thread_cleanup_pop(execute) pthread_cleanup_pop(execute)
 #endif
-}
+#endif
 
-static inline void mutex_init(mutex_t* mutex)
-{
-#ifdef WIN32
-	InitializeCriticalSection(mutex);
-#else
-	pthread_mutex_init(mutex, NULL);
-#endif
-}
+void mutex_init(mutex_t* mutex);
+void mutex_destroy(mutex_t* mutex);
+void mutex_lock(mutex_t* mutex);
+void mutex_unlock(mutex_t* mutex);
 
-static inline void mutex_destroy(mutex_t* mutex)
-{
-#ifdef WIN32
-	DeleteCriticalSection(mutex);
-#else
-	pthread_mutex_destroy(mutex);
-#endif
-}
-
-static inline void mutex_lock(mutex_t* mutex)
-{
-#ifdef WIN32
-	EnterCriticalSection(mutex);
-#else
-	pthread_mutex_lock(mutex);
-#endif
-}
-
-static inline void mutex_unlock(mutex_t* mutex)
-{
-#ifdef WIN32
-	LeaveCriticalSection(mutex);
-#else
-	pthread_mutex_unlock(mutex);
-#endif
-}
-
-static inline void thread_once(thread_once_t *once_control, void (*init_routine)(void))
-{
-#ifdef WIN32
-	while (InterlockedExchange(&(once_control->lock), 1) != 0) {
-		Sleep(1);
-	}
-	if (!once_control->state) {
-		once_control->state = 1;
-		init_routine();
-	}
-	InterlockedExchange(&(once_control->lock), 0);
-#else
-	pthread_once(once_control, init_routine);
-#endif
-}
+void thread_once(thread_once_t *once_control, void (*init_routine)(void));
 
 #endif

@@ -1004,6 +1004,8 @@ static int mb2_handle_receive_files(mobilebackup2_client_t mobilebackup2, plist_
 	plist_t node = NULL;
 	FILE *f = NULL;
 	unsigned int file_count = 0;
+	int errcode = 0;
+	char *errdesc = NULL;
 
 	if (!message || (plist_get_node_type(message) != PLIST_ARRAY) || plist_array_get_size(message) < 4 || !backup_dir) return 0;
 
@@ -1105,7 +1107,10 @@ static int mb2_handle_receive_files(mobilebackup2_client_t mobilebackup2, plist_
 			fclose(f);
 			file_count++;
 		} else {
-			printf("Error opening '%s' for writing: %s\n", bname, strerror(errno));
+			errcode = errno_to_device_error(errno);
+			errdesc = strerror(errno);
+			printf("Error opening '%s' for writing: %s\n", bname, errdesc);
+			break;
 		}
 		if (nlen == 0) {
 			break;
@@ -1144,9 +1149,8 @@ static int mb2_handle_receive_files(mobilebackup2_client_t mobilebackup2, plist_
 	if (dname != NULL)
 		free(dname);
 
-	// TODO error handling?!
 	plist_t empty_plist = plist_new_dict();
-	mobilebackup2_send_status_response(mobilebackup2, 0, NULL, empty_plist);
+	mobilebackup2_send_status_response(mobilebackup2, errcode, errdesc, empty_plist);
 	plist_free(empty_plist);
 
 	return file_count;
@@ -1950,7 +1954,7 @@ checkpoint:
 				} else if (err == MOBILEBACKUP2_E_REPLY_NOT_OK) {
 					printf("ERROR: Could not start backup process: device refused to start the backup process.\n");
 				} else {
-					printf("ERROR: Could not start backup process: unspecified error occured\n");
+					printf("ERROR: Could not start backup process: unspecified error occurred\n");
 				}
 				cmd = CMD_LEAVE;
 			}
@@ -2008,7 +2012,7 @@ checkpoint:
 				} else if (err == MOBILEBACKUP2_E_REPLY_NOT_OK) {
 					printf("ERROR: Could not start restore process: device refused to start the restore process.\n");
 				} else {
-					printf("ERROR: Could not start restore process: unspecified error occured\n");
+					printf("ERROR: Could not start restore process: unspecified error occurred\n");
 				}
 				cmd = CMD_LEAVE;
 			}
