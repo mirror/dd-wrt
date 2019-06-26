@@ -226,6 +226,8 @@ void start_force_to_dial(void);
 
 int stop_process(char *name, char *desc);
 
+void network_delay(char *service);
+
 char *getMacAddr(char *ifname, char *mac);
 
 #ifdef HAVE_ATH9K
