@@ -81,10 +81,15 @@ void start_rsync(void)
 		}
 		fclose(fp);
 	}
-	network_delay("rsyncd");
 	eval("rsyncd", "--daemon", "--config=/tmp/rsyncd.conf");
 	dd_loginfo("rsyncd", "daemon successfully started\n");
 	return;
+}
+
+void start_rsync_hotplug(void)
+{
+	network_delay("rsyncd");
+	start_rsync();
 }
 
 void stop_rsync(void)

@@ -276,11 +276,16 @@ void start_transmission(void)
 	sysprintf("echo 16777216 > /proc/sys/net/core/rmem_max");
 	sysprintf("echo 4194304 > /proc/sys/net/core/wmem_max");
 	char *web = nvram_default_get("transmission_style", "default");
-	network_delay("transmission");
 	sysprintf("export TRANSMISSION_WEB_HOME=\"/usr/share/transmission/%s\" && transmissiond --config-dir \"%s\"", web, nvram_safe_get("transmission_dir"));
 	dd_loginfo("transmission", "daemon successfully started\n");
 
 	return;
+}
+
+void start_transmission_hotplug(void)
+{
+	network_delay("transmission");
+	start_transmission();
 }
 
 void stop_transmission(void)
