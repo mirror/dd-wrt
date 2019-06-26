@@ -73,7 +73,6 @@ void start_nfs(void)
 	insmod("lockd");
 	insmod("exportfs");
 	insmod("nfsd");
-	network_delay("nfsd");
 	eval("rpcbind");
 	dd_loginfo("nfsd", "rpcbind successfully started\n");
 	eval("rpc.mountd");
@@ -86,6 +85,12 @@ void start_nfs(void)
 	dd_loginfo("nfsd", "NSM Service Daemon successfully started\n");
 	eval("exportfs", "-a", "-r");
 	return;
+}
+
+void start_nfs_hotplug(void)
+{
+	network_delay("nfsd");
+	start_nfs();
 }
 
 void stop_nfs(void)

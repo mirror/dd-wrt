@@ -192,7 +192,6 @@ void start_ftpsrv(void)
 	}
 	fclose(fp);
 	chmod("/tmp/proftpd/etc/passwd", S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
-	network_delay("proftpd");
 #ifdef HAVE_SMP
 	if (eval("/usr/bin/taskset", "0x2", "proftpd"))
 #endif
@@ -200,6 +199,12 @@ void start_ftpsrv(void)
 	dd_loginfo("proftpd", "server successfully started\n");
 
 	return;
+}
+
+void start_ftpsrv_hotplug(void)
+{
+	network_delay("proftpd");
+	start_ftpsrv();
 }
 
 void stop_ftpsrv(void)
