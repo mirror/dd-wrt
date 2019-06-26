@@ -73,16 +73,17 @@ void start_nfs(void)
 	insmod("lockd");
 	insmod("exportfs");
 	insmod("nfsd");
+	network_delay("nfsd");
 	eval("rpcbind");
-	dd_loginfo("NFSD", "rpcbind successfully started\n");
+	dd_loginfo("nfsd", "rpcbind successfully started\n");
 	eval("rpc.mountd");
-	dd_loginfo("NFSD", "NFS Mount Daemon successfully started\n");
+	dd_loginfo("nfsd", "NFS Mount Daemon successfully started\n");
 	char threads[32];
 	sprintf(threads, "%d", cpucount);
 	eval("rpc.nfsd", threads);
-	dd_loginfo("NFSD", "rpc.nfsd successfully started\n");
+	dd_loginfo("nfsd", "rpc.nfsd successfully started\n");
 	eval("rpc.statd");
-	dd_loginfo("NFSD", "NSM Service Daemon successfully started\n");
+	dd_loginfo("nfsd", "NSM Service Daemon successfully started\n");
 	eval("exportfs", "-a", "-r");
 	return;
 }
