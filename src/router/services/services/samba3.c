@@ -205,6 +205,15 @@ void start_samba3(void)
 	} else {
 		strcpy(conffile, "--configfile=/tmp/smb.conf");
 	}
+	FILE *first = fopen("/tmp/firstrun", "rb");
+	if (!first) {
+		dd_loginfo("smbd", "wait for network init");
+		sleep(10);	// first run. wait for network init (need a better solution for this)
+		first = fopen("/tmp/firstrun", "wb");
+		putc('r', first);
+		fclose(first);
+	} else
+		fclose(first);
 
 #ifdef HAVE_SMP
 	if (eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd", "-D", conffile))
