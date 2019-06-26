@@ -131,6 +131,7 @@ void start_lighttpd(void)
 		fclose(fp);
 	}
 
+	network_delay("lighttpd");
 	fp = fopen("/jffs/etc/lighttpd.conf", "r");	//test if custom config is available
 	if (fp != NULL) {
 		eval("lighttpd", "-f", "/jffs/etc/lighttpd.conf");
