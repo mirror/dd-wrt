@@ -1,0 +1,200 @@
+/* config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Define if building universal (internal helper macro) */
+#undef AC_APPLE_UNIVERSAL_BUILD
+
+/* freebsd ciss header location */
+#undef CISS_LOCATION
+
+/* smartmontools CVS Tag */
+#undef CONFIG_H_CVSID
+
+/* Define to 1 if C++ compiler supports __attribute__((packed)) */
+#undef HAVE_ATTR_PACKED
+
+/* Define to 1 if you have the <byteswap.h> header file. */
+#undef HAVE_BYTESWAP_H
+
+/* Define to 1 if you have the <cap-ng.h> header file. */
+#undef HAVE_CAP_NG_H
+
+/* Define to 1 if you have the `clock_gettime' function. */
+#undef HAVE_CLOCK_GETTIME
+
+/* Define to 1 if you have the <ddk/ntdddisk.h> header file. */
+#undef HAVE_DDK_NTDDDISK_H
+
+/* Define to 1 if you have the <dev/ata/atavar.h> header file. */
+#undef HAVE_DEV_ATA_ATAVAR_H
+
+/* Define to 1 if you have the <dev/ciss/cissio.h> header file. */
+#undef HAVE_DEV_CISS_CISSIO_H
+
+/* Define to 1 if you have the `ftime' function. */
+#undef HAVE_FTIME
+
+/* Define to 1 if you have the `getopt_long' function. */
+#undef HAVE_GETOPT_LONG
+
+/* Define to 1 if you have the `gettimeofday' function. */
+#undef HAVE_GETTIMEOFDAY
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the `cap-ng' library (-lcap-ng). */
+#undef HAVE_LIBCAP_NG
+
+/* Define to 1 if you have the `selinux' library (-lselinux). */
+#undef HAVE_LIBSELINUX
+
+/* Define to 1 if you have the `systemd' library (-lsystemd). */
+#undef HAVE_LIBSYSTEMD
+
+/* Define to 1 if you have the `usb' library (-lusb). */
+#undef HAVE_LIBUSB
+
+/* Define to 1 if you have the <linux/cciss_ioctl.h> header file. */
+#undef HAVE_LINUX_CCISS_IOCTL_H
+
+/* Define to 1 if you have the <linux/compiler.h> header file. */
+#undef HAVE_LINUX_COMPILER_H
+
+/* Define to 1 if you have the <locale.h> header file. */
+#undef HAVE_LOCALE_H
+
+/* Define to 1 if the type `long double' works and has more range or precision
+   than `double'. */
+#undef HAVE_LONG_DOUBLE_WIDER
+
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
+
+/* Define to 1 if you have the <ntdddisk.h> header file. */
+#undef HAVE_NTDDDISK_H
+
+/* Define to 1 if you have the `regcomp' function. */
+#undef HAVE_REGCOMP
+
+/* Define to 1 if you have the <selinux/selinux.h> header file. */
+#undef HAVE_SELINUX_SELINUX_H
+
+/* Define to 1 if you have the `sigaction' function. */
+#undef HAVE_SIGACTION
+
+/* Define to 1 if you have the `sigset' function. */
+#undef HAVE_SIGSET
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define to 1 if you have the <systemd/sd-daemon.h> header file. */
+#undef HAVE_SYSTEMD_SD_DAEMON_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/sysmacros.h> header file. */
+#undef HAVE_SYS_SYSMACROS_H
+
+/* Define to 1 if you have the <sys/tweio.h> header file. */
+#undef HAVE_SYS_TWEIO_H
+
+/* Define to 1 if you have the <sys/twereg.h> header file. */
+#undef HAVE_SYS_TWEREG_H
+
+/* Define to 1 if you have the <sys/tw_osl_ioctl.h> header file. */
+#undef HAVE_SYS_TW_OSL_IOCTL_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Define to 1 if the `snprintf' function is sane. */
+#undef HAVE_WORKING_SNPRINTF
+
+/* Define to 1 if the system has the type `__int128'. */
+#undef HAVE___INT128
+
+/* Define to 1 to use generic LE/BE code instead */
+#undef IGNORE_FAST_LEBE
+
+/* Define to 1 if os_*.cpp still uses the old interface */
+#undef OLD_INTERFACE
+
+/* Name of package */
+#undef PACKAGE
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* smartmontools Home Page */
+#undef PACKAGE_HOMEPAGE
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* Define to 1 to enable check on each SCSI cdb */
+#undef SCSI_CDB_CHECK
+
+/* smartmontools Build Host */
+#undef SMARTMONTOOLS_BUILD_HOST
+
+/* smartmontools Configure Arguments */
+#undef SMARTMONTOOLS_CONFIGURE_ARGS
+
+/* smartmontools Release Date */
+#undef SMARTMONTOOLS_RELEASE_DATE
+
+/* smartmontools Release Time */
+#undef SMARTMONTOOLS_RELEASE_TIME
+
+/* Define to 1 if you have the ANSI C header files. */
+#undef STDC_HEADERS
+
+/* Version number of package */
+#undef VERSION
+
+/* Define to 1 to use C++11 std::regex instead of POSIX regex(3) */
+#undef WITH_CXX11_REGEX
+
+/* Define to 1 to include NVMe devices in smartd DEVICESCAN. */
+#undef WITH_NVME_DEVICESCAN
+
+/* Define to 1 to enable legacy ATA support on Solaris SPARC. */
+#undef WITH_SOLARIS_SPARC_ATA
+
+/* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
+   significant byte first (like Motorola and SPARC, unlike Intel). */
+#if defined AC_APPLE_UNIVERSAL_BUILD
+# if defined __BIG_ENDIAN__
+#  define WORDS_BIGENDIAN 1
+# endif
+#else
+# ifndef WORDS_BIGENDIAN
+#  undef WORDS_BIGENDIAN
+# endif
+#endif
