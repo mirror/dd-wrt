@@ -61,6 +61,8 @@ static void free_users(struct samba3_share *cs)
 
 }
 
+
+
 void start_samba3(void)
 {
 	struct samba3_share *cs, *csnext;
@@ -205,7 +207,6 @@ void start_samba3(void)
 	} else {
 		strcpy(conffile, "--configfile=/tmp/smb.conf");
 	}
-	network_delay("smbd");
 #ifdef HAVE_SMP
 	if (eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd", "-D", conffile))
 #endif
@@ -224,6 +225,12 @@ void start_samba3(void)
 	dd_loginfo("smbd", "samba started\n");
 
 	return;
+}
+
+void start_samba3_hotplug(void)
+{
+	network_delay("smbd");
+	start_samba3();
 }
 
 void stop_samba3(void)

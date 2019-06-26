@@ -125,7 +125,6 @@ void start_dlna(void)
 	fprintf(fp, "notify_interval=300\n");
 	fprintf(fp, "serial=12345678\nmodel_number=AllShare1.0\n");
 	fclose(fp);
-	network_delay("minidlna");
 	fp = fopen("/jffs/etc/minidlna.conf", "r");	//test if custom config is available
 	if (fp != NULL) {
 		eval("minidlna", "-f", "/jffs/etc/minidlna.conf");
@@ -136,6 +135,12 @@ void start_dlna(void)
 	dd_loginfo("minidlna", "DLNA Media Server successfully started\n");
 
 	return;
+}
+
+void start_dlna_hotplug(void)
+{
+	network_delay("minidlna");
+	start_dlna();
 }
 
 void start_dlna_rescan(void)
