@@ -6,16 +6,28 @@
 //kbuild:lib-$(CONFIG_FEATURE_SETPRIV_CAPABILITIES) += capability.o
 //kbuild:lib-$(CONFIG_RUN_INIT) += capability.o
 
-#include <linux/capability.h>
 // #include <sys/capability.h>
 // This header is in libcap, but the functions are in libc.
 // Comment in the header says this above capset/capget:
 /* system calls - look to libc for function to system call mapping */
-extern int capset(cap_user_header_t header, cap_user_data_t data);
-extern int capget(cap_user_header_t header, const cap_user_data_t data);
 // so for bbox, let's just repeat the declarations.
 // This way, libcap needs not be installed in build environment.
 #include "libbb.h"
+#include <linux/capability.h>
+extern int capset(cap_user_header_t header, cap_user_data_t data);
+extern int capget(cap_user_header_t header, const cap_user_data_t data);
+
+
+#ifndef _LINUX_CAPABILITY_VERSION_1
+#define _LINUX_CAPABILITY_VERSION_1  0x19980330
+#define _LINUX_CAPABILITY_U32S_1     1
+
+#define _LINUX_CAPABILITY_VERSION_2  0x20071026  /* deprecated - use v3 */
+#define _LINUX_CAPABILITY_U32S_2     2
+
+#define _LINUX_CAPABILITY_VERSION_3  0x20080522
+#define _LINUX_CAPABILITY_U32S_3     2
+#endif
 
 static const char *const capabilities[] = {
 	"chown",
