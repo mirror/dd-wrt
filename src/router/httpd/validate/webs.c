@@ -124,6 +124,7 @@ void delete_leases(webs_t wp)
 	char *iface;
 	char *ip;
 	char *mac;
+	char *next, *wordlist;
 
 	if (nvram_match("lan_proto", "static"))
 		return;
@@ -144,6 +145,13 @@ void delete_leases(webs_t wp)
 	mac = websGetVar(wp, "mac_del", NULL);
 
 	eval("dhcp_release", iface, ip, mac);
+	wordlist = nvram_safe_get("mdhcpd");
+	char word[32];
+	foreach(word, wordlist, next) {
+		GETENTRYBYIDX(interface, word, 0);
+		// send it to all known interfaces
+		eval("dhcp_release", interface, ip, mac);
+	}
 }
 
 #if defined(HAVE_PPTPD) || defined(HAVE_PPPOESERVER)
