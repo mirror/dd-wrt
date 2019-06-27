@@ -77,6 +77,9 @@ int FAST_FUNC del_loop(const char *device)
 
 	return rc;
 }
+#ifndef O_CLOEXEC
+# define O_CLOEXEC 0
+#endif
 
 /* Obtain an unused loop device number */
 int FAST_FUNC get_free_loop(void)

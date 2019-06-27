@@ -330,10 +330,12 @@ static int FAST_FUNC print_addrinfo(const struct sockaddr_nl *who UNUSED_PARAM,
 		ifa->ifa_flags &= ~IFA_F_TENTATIVE;
 		printf("tentative ");
 	}
+#ifdef IFA_F_DADFAILED
 	if (ifa->ifa_flags & IFA_F_DADFAILED) {
 		ifa->ifa_flags &= ~IFA_F_DADFAILED;
 		printf("dadfailed ");
 	}
+#endif
 	if (ifa->ifa_flags & IFA_F_DEPRECATED) {
 		ifa->ifa_flags &= ~IFA_F_DEPRECATED;
 		printf("deprecated ");
