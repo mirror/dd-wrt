@@ -5,7 +5,7 @@ smartmontools-configure:
 		CXXFLAGS="$(COPTS)  $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		CFLAGS="$(COPTS)  $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections" \
-		--prefix=/usr
+		--prefix=/usr --libdir=/usr/lib
 
 smartmontools:
 	$(MAKE) -C smartmontools
@@ -16,3 +16,6 @@ smartmontools-clean:
 smartmontools-install:
 	$(MAKE) -C smartmontools install DESTDIR=$(INSTALLDIR)/smartmontools
 	rm -rf $(INSTALLDIR)/smartmontools/usr/share
+	rm -f $(INSTALLDIR)/smartmontools/usr/lib/*.la
+	rm -f $(INSTALLDIR)/smartmontools/usr/lib/*.a
+	rm -f $(INSTALLDIR)/smartmontools/usr/sbin/update-smart-drivedb
