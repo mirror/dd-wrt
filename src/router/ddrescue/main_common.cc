@@ -1,5 +1,5 @@
 /*  GNU ddrescue - Data recovery tool
-    Copyright (C) 2004-2019 Antonio Diaz Diaz.
+    Copyright (C) 2004-2014 Antonio Diaz Diaz.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -15,11 +15,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-int verbosity = 0;
-
 namespace {
 
-const char * const program_year = "2019";
+const char * const program_year = "2014";
 std::string command_line;
 
 
@@ -33,15 +31,12 @@ void show_version()
   }
 
 
-// Recognized formats: <num>[YZEPTGM][i][Bs], <num>k[Bs], <num>Ki[Bs]
-//
 long long getnum( const char * const ptr, const int hardbs,
-                  const long long llimit = -LLONG_MAX,
-                  const long long ulimit = LLONG_MAX,
-                  const char ** const tailp = 0 )
+                  const long long min = LLONG_MIN + 1,
+                  const long long max = LLONG_MAX, const bool comma = false )
   {
-  char * tail;
   errno = 0;
+  char * tail;
   long long result = strtoll( ptr, &tail, 0 );
   if( tail == ptr )
     {
@@ -51,12 +46,17 @@ long long getnum( const char * const ptr, const int hardbs,
 
   if( !errno && tail[0] )
     {
-    char * const p = tail++;
-    int factor = 1000;				// default factor
-    int exponent = -1;				// -1 = bad multiplier
-    char usuf = 0;			// 'B' or 's' unit suffix is present
-    switch( *p )
+    int factor = ( tail[1] == 'i' ) ? 1024 : 1000;
+    int exponent = 0;
+    bool bad_multiplier = false;
+    switch( tail[0] )
       {
+      case ' ': break;
+      case ',': if( !comma ) { bad_multiplier = true; } break;
+      case 'b':
+      case 's': if( hardbs > 0 ) { factor = hardbs; exponent = 1; }
+                else bad_multiplier = true;
+                break;
       case 'Y': exponent = 8; break;
       case 'Z': exponent = 7; break;
       case 'E': exponent = 6; break;
@@ -64,17 +64,13 @@ long long getnum( const char * const ptr, const int hardbs,
       case 'T': exponent = 4; break;
       case 'G': exponent = 3; break;
       case 'M': exponent = 2; break;
-      case 'K': if( tail[0] == 'i' ) { ++tail; factor = 1024; exponent = 1; } break;
-      case 'k': if( tail[0] != 'i' ) exponent = 1; break;
-      case 'B':
-      case 's': usuf = *p; exponent = 0; break;
-      default : if( tailp ) { tail = p; exponent = 0; } break;
+      case 'K': if( factor == 1024 ) exponent = 1; else bad_multiplier = true;
+                break;
+      case 'k': if( factor == 1000 ) exponent = 1; else bad_multiplier = true;
+                break;
+      default: bad_multiplier = true;
       }
-    if( exponent > 1 && tail[0] == 'i' ) { ++tail; factor = 1024; }
-    if( exponent > 0 && usuf == 0 && ( tail[0] == 'B' || tail[0] == 's' ) )
-      { usuf = tail[0]; ++tail; }
-    if( exponent < 0 || ( usuf == 's' && hardbs <= 0 ) ||
-        ( !tailp && tail[0] != 0 ) )
+    if( bad_multiplier )
       {
       show_error( "Bad multiplier in numerical argument.", 0, true );
       std::exit( 1 );
@@ -84,36 +80,23 @@ long long getnum( const char * const ptr, const int hardbs,
       if( LLONG_MAX / factor >= llabs( result ) ) result *= factor;
       else { errno = ERANGE; break; }
       }
-    if( usuf == 's' )
-      {
-      if( LLONG_MAX / hardbs >= llabs( result ) ) result *= hardbs;
-      else errno = ERANGE;
-      }
     }
-  if( !errno && ( result < llimit || result > ulimit ) ) errno = ERANGE;
+  if( !errno && ( result < min || result > max ) ) errno = ERANGE;
   if( errno )
     {
     show_error( "Numerical argument out of limits." );
     std::exit( 1 );
     }
-  if( tailp ) *tailp = tail;
   return result;
   }
 
 
-bool check_types( std::string & types, const char * const opt_name,
-                  const bool allow_l = false )
+void check_types( const std::string & types, const char * const opt_name )
   {
   bool error = false;
-  bool write_location_data = false;
-  for( int i = types.size(); i > 0; )
-    {
-    if( types[--i] == 'l' )
-      { if( !allow_l ) { error = true; break; }
-        write_location_data = true; types.erase( i, 1 ); continue; }
+  for( unsigned i = 0; i < types.size(); ++i )
     if( !Sblock::isstatus( types[i] ) )
       { error = true; break; }
-    }
   if( !types.size() || error )
     {
     char buf[80];
@@ -121,7 +104,6 @@ bool check_types( std::string & types, const char * const opt_name,
     show_error( buf, 0, true );
     std::exit( 1 );
     }
-  return write_location_data;
   }
 
 
@@ -162,16 +144,34 @@ const char * get_timestamp( const long t = 0 )
 } // end namespace
 
 
+int verbosity = 0;
+bool sgpt = false;
+int ata = false;
+bool checked_ata = false;
+bool bad_ata_read = false;
+bool partial_read = false;
+bool mark_error = false;
+int passthrough_error = 0;
+int sector_size = 0;
+bool extended = false;
+
+
+
 void show_error( const char * const msg, const int errcode, const bool help )
   {
-  if( verbosity < 0 ) return;
-  if( msg && msg[0] )
-    std::fprintf( stderr, "%s: %s%s%s\n", program_name, msg,
-                  ( errcode > 0 ) ? ": " : "",
-                  ( errcode > 0 ) ? std::strerror( errcode ) : "" );
-  if( help )
-    std::fprintf( stderr, "Try '%s --help' for more information.\n",
-                  invocation_name );
+  if( verbosity >= 0 )
+    {
+    if( msg && msg[0] )
+      {
+      std::fprintf( stderr, "%s: %s", program_name, msg );
+      if( errcode > 0 )
+        std::fprintf( stderr, ": %s", std::strerror( errcode ) );
+      std::fprintf( stderr, "\n" );
+      }
+    if( help )
+      std::fprintf( stderr, "Try '%s --help' for more information.\n",
+                    invocation_name );
+    }
   }
 
 
@@ -183,24 +183,23 @@ void internal_error( const char * const msg )
   }
 
 
-int empty_domain()
-  { show_error( "Nothing to do; domain is empty." ); return 0; }
+int empty_domain() { show_error( "Empty domain." ); return 0; }
 
 
-int not_readable( const char * const mapname )
+int not_readable( const char * const logname )
   {
   char buf[80];
   snprintf( buf, sizeof buf,
-            "Mapfile '%s' does not exist or is not readable.", mapname );
+            "Logfile '%s' does not exist or is not readable.", logname );
   show_error( buf );
   return 1;
   }
 
 
-int not_writable( const char * const mapname )
+int not_writable( const char * const logname )
   {
   char buf[80];
-  snprintf( buf, sizeof buf, "Mapfile '%s' is not writable.", mapname );
+  snprintf( buf, sizeof buf, "Logfile '%s' is not writable.", logname );
   show_error( buf );
   return 1;
   }
@@ -215,15 +214,15 @@ long initial_time()
   }
 
 
-bool write_file_header( FILE * const f, const char * const filetype )
+bool write_logfile_header( FILE * const f, const char * const logtype )
   {
   static std::string timestamp;
 
   if( timestamp.empty() ) timestamp = get_timestamp( initial_time() );
-  return ( std::fprintf( f, "# %s. Created by %s version %s\n"
+  return ( std::fprintf( f, "# %s Logfile. Created by %s version %s\n"
                             "# Command line: %s\n"
                             "# Start time:   %s\n",
-           filetype, Program_name, PROGVERSION, command_line.c_str(),
+           logtype, Program_name, PROGVERSION, command_line.c_str(),
            timestamp.c_str() ) >= 0 );
   }
 
@@ -242,7 +241,7 @@ bool write_final_timestamp( FILE * const f )
   static std::string timestamp;
 
   if( timestamp.empty() ) timestamp = get_timestamp();
-  return ( std::fprintf( f, "# End time:     %s\n", timestamp.c_str() ) >= 0 );
+  return ( std::fprintf( f, "# End time: %s\n", timestamp.c_str() ) >= 0 );
   }
 
 
@@ -268,48 +267,5 @@ const char * format_num( long long num, long long limit,
   for( int i = 0; i < 8 && llabs( num ) > limit; ++i )
     { num /= factor; p = prefix[i]; }
   snprintf( buf, bufsize, "%lld %s", num, p );
-  return buf;
-  }
-
-
-// Shows the fraction "num/den" as a percentage with "prec" decimals.
-// If 'prec' is negative, only the needed decimals are shown.
-//
-const char * format_percentage( long long num, long long den,
-                                const int iwidth, int prec )
-  {
-  static char buf[80];
-
-  if( den < 0 ) { num = -num; den = -den; }
-  if( llabs( num ) <= LLONG_MAX / 100 && den <= LLONG_MAX / 10 ) num *= 100;
-  else if( llabs( num ) <= LLONG_MAX / 10 ) { num *= 10; den /= 10; }
-  else den /= 100;
-  if( den == 0 )
-    {
-    if( num > 0 ) return "+INF";
-    else if( num < 0 ) return "-INF";
-    else return "NAN";
-    }
-  const bool trunc = ( prec < 0 );
-  if( prec < 0 ) prec = -prec;
-
-  unsigned i;
-  if( num < 0 && num / den == 0 )
-    i = snprintf( buf, sizeof( buf ), "%*s", iwidth, "-0" );
-  else i = snprintf( buf, sizeof( buf ), "%*lld", iwidth, num / den );
-  if( i < sizeof( buf ) - 2 )
-    {
-    long long rest = llabs( num ) % den;
-    if( prec > 0 && ( rest > 0 || !trunc ) )
-      {
-      buf[i++] = '.';
-      while( prec > 0 && ( rest > 0 || !trunc ) && i < sizeof( buf ) - 2 )
-        { rest *= 10; buf[i++] = (char)( rest / den ) + '0';
-          rest %= den; --prec; }
-      }
-    }
-  else i = sizeof( buf ) - 2;
-  buf[i++] = '%';
-  buf[i] = 0;
   return buf;
   }

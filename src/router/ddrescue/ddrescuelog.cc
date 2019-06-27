@@ -1,5 +1,5 @@
-/*  GNU ddrescuelog - Tool for ddrescue mapfiles
-    Copyright (C) 2011-2019 Antonio Diaz Diaz.
+/*  GNU ddrescuelog - Tool for ddrescue logfiles
+    Copyright (C) 2011-2014 Antonio Diaz Diaz.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -34,6 +34,7 @@
 
 #include "arg_parser.h"
 #include "block.h"
+#include "ddrescue.h"
 
 
 namespace {
@@ -42,51 +43,42 @@ const char * const Program_name = "GNU ddrescuelog";
 const char * const program_name = "ddrescuelog";
 const char * invocation_name = 0;
 
-enum Mode { m_none, m_and, m_annotate, m_change, m_compare, m_complete,
-            m_create, m_delete, m_done_st, m_invert, m_list, m_or,
-            m_shift, m_status, m_xor };
+enum Mode { m_none, m_and, m_change, m_compare, m_complete, m_create,
+            m_delete, m_done_st, m_invert, m_list, m_or, m_status, m_xor };
 
 
 void show_help( const int hardbs )
   {
-  std::printf( "GNU ddrescuelog is a tool that manipulates ddrescue mapfiles, shows mapfile\n"
-               "contents, converts mapfiles to/from other formats, compares mapfiles, tests\n"
-               "rescue status, and can delete a mapfile if the rescue is done. Ddrescuelog\n"
-               "operations can be restricted to one or several parts of the mapfile if the\n"
-               "domain setting options are used.\n"
-               "\nNOTE: In versions of ddrescue prior to 1.20 the mapfile was called\n"
-               "'logfile'. The format is the same; only the name has changed.\n"
-               "\nUsage: %s [options] mapfile\n", invocation_name );
+  std::printf( "%s - Tool for ddrescue logfiles.\n", Program_name );
+  std::printf( "Manipulates ddrescue logfiles, shows their contents, converts them to/from\n"
+               "other formats, compares them, and tests rescue status.\n"
+               "\nUsage: %s [options] logfile\n", invocation_name );
   std::printf( "\nOptions:\n"
                "  -h, --help                      display this help and exit\n"
                "  -V, --version                   output version information and exit\n"
-               "  -a, --change-types=<ot>,<nt>    change the block types of mapfile\n"
-               "  -A, --annotate-mapfile          add comments with human-readable pos/sizes\n"
+               "  -a, --change-types=<ot>,<nt>    change the block types of logfile\n"
                "  -b, --block-size=<bytes>        block size in bytes [default %d]\n", hardbs );
   std::printf( "  -B, --binary-prefixes           show binary multipliers in numbers [SI]\n"
-               "  -c, --create-mapfile[=<tt>]     create mapfile from list of blocks [+-]\n"
-               "  -C, --complete-mapfile[=<t>]    complete mapfile adding blocks of type t [?]\n"
-               "  -d, --delete-if-done            delete the mapfile if rescue is finished\n"
+               "  -c, --create-logfile[=<tt>]     create logfile from list of blocks [+-]\n"
+               "  -C, --complete-logfile[=<t>]    complete logfile adding blocks of type t [?]\n"
+               "  -d, --delete-if-done            delete the logfile if rescue is finished\n"
                "  -D, --done-status               return 0 if rescue is finished\n"
                "  -f, --force                     overwrite existing output files\n"
                "  -i, --input-position=<bytes>    starting position of rescue domain [0]\n"
                "  -l, --list-blocks=<types>       print block numbers of given types (?*/-+)\n"
-               "  -L, --loose-domain              accept an incomplete domain mapfile\n"
-               "  -m, --domain-mapfile=<file>     restrict domain to finished blocks in file\n"
-               "  -n, --invert-mapfile            invert block types (finished <--> others)\n"
+               "  -L, --loose-domain              accept an incomplete domain logfile\n"
+               "  -m, --domain-logfile=<file>     restrict domain to finished blocks in file\n"
+               "  -n, --invert-logfile            invert block types (finished <--> others)\n"
                "  -o, --output-position=<bytes>   starting position in output file [ipos]\n"
-               "  -p, --compare-mapfile=<file>    compare block types in domain of both files\n"
+               "  -p, --compare-logfile=<file>    compare block types in domain of both files\n"
                "  -P, --compare-as-domain=<file>  like -p but compare finished blocks only\n"
                "  -q, --quiet                     suppress all messages\n"
                "  -s, --size=<bytes>              maximum size of rescue domain to be processed\n"
-               "  -t, --show-status               show a summary of mapfile contents\n"
+               "  -t, --show-status               show a summary of logfile contents\n"
                "  -v, --verbose                   be verbose (a 2nd -v gives more)\n"
-               "  -x, --xor-mapfile=<file>        XOR the finished blocks in file with mapfile\n"
-               "  -y, --and-mapfile=<file>        AND the finished blocks in file with mapfile\n"
-               "  -z, --or-mapfile=<file>         OR the finished blocks in file with mapfile\n"
-               "      --shift                     shift all block positions by (opos - ipos)\n"
-               "Use '-' to read a mapfile from standard input or to write the mapfile\n"
-               "created by '--create-mapfile' to standard output.\n"
+               "  -x, --xor-logfile=<file>        XOR the finished blocks in file with logfile\n"
+               "  -y, --and-logfile=<file>        AND the finished blocks in file with logfile\n"
+               "  -z, --or-logfile=<file>         OR the finished blocks in file with logfile\n"
                "Numbers may be in decimal, hexadecimal or octal, and may be followed by a\n"
                "multiplier: s = sectors, k = 1000, Ki = 1024, M = 10^6, Mi = 2^20, etc...\n"
                "\nExit status: 0 for a normal exit, 1 for environmental problems (file\n"
@@ -136,7 +128,7 @@ void parse_2types( const std::string & arg,
   if( arg.size() != 2 || arg[0] == arg[1] ||
       !Sblock::isstatus( arg[0] ) || !Sblock::isstatus( arg[1] ) )
     {
-    show_error( "Invalid type for 'create-mapfile' option.", 0, true );
+    show_error( "Invalid type for 'create-logfile' option.", 0, true );
     std::exit( 1 );
     }
   type1 = Sblock::Status( arg[0] );
@@ -149,41 +141,41 @@ void parse_type( const std::string & arg, Sblock::Status & complete_type )
   if( arg.empty() ) return;
   if( arg.size() != 1 || !Sblock::isstatus( arg[0] ) )
     {
-    show_error( "Invalid type for 'complete-mapfile' option.", 0, true );
+    show_error( "Invalid type for 'complete-logfile' option.", 0, true );
     std::exit( 1 );
     }
   complete_type = Sblock::Status( arg[0] );
   }
 
 
-int do_logic_ops( Domain & domain, const char * const mapname,
-                  const char * const second_mapname, const Mode program_mode )
+int do_logic_ops( Domain & domain, const char * const logname,
+                  const char * const second_logname, const Mode program_mode )
   {
-  Mapfile mapfile( mapname );
-  if( !mapfile.read_mapfile() ) return not_readable( mapname );
-  mapfile.compact_sblock_vector();
+  Logfile logfile( logname );
+  if( !logfile.read_logfile() ) return not_readable( logname );
+  logfile.compact_sblock_vector();
 
-  Mapfile mapfile2( second_mapname );
-  if( !mapfile2.read_mapfile() ) return not_readable( second_mapname );
-  mapfile2.compact_sblock_vector();
+  Logfile logfile2( second_logname );
+  if( !logfile2.read_logfile() ) return not_readable( second_logname );
+  logfile2.compact_sblock_vector();
 
-  domain.crop( mapfile.extent() );
-  domain.crop( mapfile2.extent() );
+  domain.crop( logfile.extent() );
+  domain.crop( logfile2.extent() );
   if( domain.empty() ) return empty_domain();
-  mapfile.split_by_domain_borders( domain );
-  mapfile2.split_by_domain_borders( domain );
-  mapfile.split_by_mapfile_borders( mapfile2 );
-  mapfile2.split_by_mapfile_borders( mapfile );
+  logfile.split_by_domain_borders( domain );
+  logfile2.split_by_domain_borders( domain );
+  logfile.split_by_logfile_borders( logfile2 );
+  logfile2.split_by_logfile_borders( logfile );
 
-  for( long i = 0, j = 0; ; ++i, ++j )
+  for( int i = 0, j = 0; ; ++i, ++j )
     {
-    while( i < mapfile.sblocks() && !domain.includes( mapfile.sblock( i ) ) )
+    while( i < logfile.sblocks() && !domain.includes( logfile.sblock( i ) ) )
       ++i;
-    while( j < mapfile2.sblocks() && !domain.includes( mapfile2.sblock( j ) ) )
+    while( j < logfile2.sblocks() && !domain.includes( logfile2.sblock( j ) ) )
       ++j;
-    if( i >= mapfile.sblocks() || j >= mapfile2.sblocks() ) break;
-    const Sblock & sb1 = mapfile.sblock( i );
-    const Sblock & sb2 = mapfile2.sblock( j );
+    if( i >= logfile.sblocks() || j >= logfile2.sblocks() ) break;
+    const Sblock & sb1 = logfile.sblock( i );
+    const Sblock & sb2 = logfile2.sblock( j );
     if( sb1.pos() != sb2.pos() || sb1.size() != sb2.size() )
       internal_error( "blocks got out of sync." );
     const bool f1 = ( sb1.status() == Sblock::finished );
@@ -191,155 +183,142 @@ int do_logic_ops( Domain & domain, const char * const mapname,
     switch( program_mode )
       {
       case m_and:
-        if( f1 && !f2 ) mapfile.change_sblock_status( i, Sblock::bad_sector );
+        if( f1 && !f2 ) logfile.change_sblock_status( i, Sblock::bad_sector );
         break;
       case m_or:
-        if( !f1 && f2 ) mapfile.change_sblock_status( i, Sblock::finished );
+        if( !f1 && f2 ) logfile.change_sblock_status( i, Sblock::finished );
         break;
       case m_xor:
-        if( f2 )
-          mapfile.change_sblock_status( i, f1 ? Sblock::bad_sector : Sblock::finished );
+        if( f1 != ( ( f1 || f2 ) && !( f1 && f2 ) ) )
+          logfile.change_sblock_status( i, f1 ? Sblock::bad_sector : Sblock::finished );
         break;
       default: internal_error( "invalid program_mode." );
       }
     }
-  mapfile.compact_sblock_vector();
-  mapfile.write_mapfile( stdout );
+  logfile.compact_sblock_vector();
+  logfile.write_logfile( stdout );
   if( std::fclose( stdout ) != 0 )
-    { show_error( "Error closing stdout", errno ); return 1; }
+    { show_error( "Can't close stdout", errno ); return 1; }
   return 0;
   }
 
 
-int annotate_mapfile( Domain & domain, const char * const mapname )
-  {
-  Mapfile mapfile( mapname );
-  if( !mapfile.read_mapfile() ) return not_readable( mapname );
-  domain.crop( mapfile.extent() );
-  if( domain.empty() ) return empty_domain();
-  mapfile.split_by_domain_borders( domain );
-  mapfile.write_mapfile( stdout, false, false, &domain );
-  if( std::fclose( stdout ) != 0 )
-    { show_error( "Error closing stdout", errno ); return 1; }
-  return 0;
-  }
-
-
-int change_types( Domain & domain, const char * const mapname,
+int change_types( Domain & domain, const char * const logname,
                   const std::string & types1, const std::string & types2 )
   {
-  Mapfile mapfile( mapname );
-  if( !mapfile.read_mapfile() ) return not_readable( mapname );
-  domain.crop( mapfile.extent() );
+  Logfile logfile( logname );
+  if( !logfile.read_logfile() ) return not_readable( logname );
+  domain.crop( logfile.extent() );
   if( domain.empty() ) return empty_domain();
-  mapfile.split_by_domain_borders( domain );
+  logfile.split_by_domain_borders( domain );
 
-  for( long i = 0; i < mapfile.sblocks(); ++i )
+  for( int i = 0; i < logfile.sblocks(); ++i )
     {
-    const Sblock & sb = mapfile.sblock( i );
+    const Sblock & sb = logfile.sblock( i );
     if( !domain.includes( sb ) )
       { if( domain < sb ) break; else continue; }
     const unsigned j = types1.find( sb.status() );
     if( j < types1.size() )
-      mapfile.change_sblock_status( i, Sblock::Status( types2[j] ) );
+      logfile.change_sblock_status( i, Sblock::Status( types2[j] ) );
     }
-  mapfile.compact_sblock_vector();
-  mapfile.write_mapfile( stdout );
+  logfile.compact_sblock_vector();
+  logfile.write_logfile( stdout );
   if( std::fclose( stdout ) != 0 )
-    { show_error( "Error closing stdout", errno ); return 1; }
+    { show_error( "Can't close stdout", errno ); return 1; }
   return 0;
   }
 
 
-int set_for_compare( Domain & domain, Mapfile & mapfile,
+int set_for_compare( Domain & domain, Logfile & logfile,
                      const bool as_domain, const bool loose )
   {
-  if( !mapfile.read_mapfile( ( as_domain && loose ) ? '?' : 0 ) )
-    return not_readable( mapfile.filename() );
-  mapfile.compact_sblock_vector();
-  domain.crop( mapfile.extent() );
+  if( !logfile.read_logfile( ( as_domain && loose ) ? '?' : 0 ) )
+    return not_readable( logfile.filename() );
+  logfile.compact_sblock_vector();
+  domain.crop( logfile.extent() );
   if( domain.empty() ) return empty_domain();
-  mapfile.split_by_domain_borders( domain );
+  logfile.split_by_domain_borders( domain );
   return -1;
   }
 
-int compare_mapfiles( Domain & domain, const char * const mapname,
-                      const char * const second_mapname,
+int compare_logfiles( Domain & domain, const char * const logname,
+                      const char * const second_logname,
                       const bool as_domain, const bool loose )
   {
   Domain domain2( domain );
-  Mapfile mapfile( mapname );
-  int retval = set_for_compare( domain, mapfile, as_domain, loose );
+  Logfile logfile( logname );
+  int retval = set_for_compare( domain, logfile, as_domain, loose );
   if( retval >= 0 ) return retval;
 
-  Mapfile mapfile2( second_mapname );
-  retval = set_for_compare( domain2, mapfile2, as_domain, loose );
+  Logfile logfile2( second_logname );
+  retval = set_for_compare( domain2, logfile2, as_domain, loose );
   if( retval >= 0 ) return retval;
 
   retval = 0;
   if( !as_domain && domain != domain2 ) retval = 1;
   else
     {
-    long i = 0, j = 0;
+    int i = 0, j = 0;
     while( true )
       {
-      while( i < mapfile.sblocks() &&
-             ( !domain.includes( mapfile.sblock( i ) ) ||
-             ( as_domain && mapfile.sblock( i ).status() != Sblock::finished ) ) )
+      while( i < logfile.sblocks() &&
+             ( !domain.includes( logfile.sblock( i ) ) ||
+             ( as_domain && logfile.sblock( i ).status() != Sblock::finished ) ) )
         ++i;
-      while( j < mapfile2.sblocks() &&
-             ( !domain2.includes( mapfile2.sblock( j ) ) ||
-             ( as_domain && mapfile2.sblock( j ).status() != Sblock::finished ) ) )
+      while( j < logfile2.sblocks() &&
+             ( !domain2.includes( logfile2.sblock( j ) ) ||
+             ( as_domain && logfile2.sblock( j ).status() != Sblock::finished ) ) )
         ++j;
-      if( ( i < mapfile.sblocks() ) != ( j < mapfile2.sblocks() ) )
+      if( ( i < logfile.sblocks() ) != ( j < logfile2.sblocks() ) )
         { retval = 1; break; }			// one file has more blocks
-      if( i >= mapfile.sblocks() ) break;	// successful compare
-      if( mapfile.sblock( i++ ) != mapfile2.sblock( j++ ) )
+      if( i >= logfile.sblocks() ) break;	// successful compare
+      if( logfile.sblock( i++ ) != logfile2.sblock( j++ ) )
         { retval = 1; break; }
       }
     }
   if( retval )
     {
     char buf[80];
-    snprintf( buf, sizeof buf, "Mapfiles '%s' and '%s' differ.",
-              mapfile.filename(), mapfile2.filename() );
+    snprintf( buf, sizeof buf, "Logfiles '%s' and '%s' differ.",
+              logfile.filename(), logfile2.filename() );
     show_error( buf );
     }
   return retval;
   }
 
 
-int complete_mapfile( const char * const mapname,
+int complete_logfile( const char * const logname,
                       const Sblock::Status complete_type )
   {
-  Mapfile mapfile( mapname );
-  if( !mapfile.read_mapfile( complete_type ) )
-    return not_readable( mapname );
-  mapfile.compact_sblock_vector();
-  mapfile.write_mapfile( stdout );
+  Logfile logfile( logname );
+  if( !logfile.read_logfile( complete_type ) ) return not_readable( logname );
+  logfile.compact_sblock_vector();
+  logfile.write_logfile( stdout );
   if( std::fclose( stdout ) != 0 )
-    { show_error( "Error closing stdout", errno ); return 1; }
+    { show_error( "Can't close stdout", errno ); return 1; }
   return 0;
   }
 
 
-int create_mapfile( Domain & domain, const char * const mapname,
+int create_logfile( Domain & domain, const char * const logname,
                     const int hardbs, const Sblock::Status type1,
                     const Sblock::Status type2, const bool force )
   {
-  if( domain.empty() ) return empty_domain();
   char buf[80];
-  Mapfile mapfile( mapname );
-  const bool to_stdout = ( std::strcmp( mapname, "-" ) == 0 );
-  if( !to_stdout && !force && mapfile.read_mapfile( 0, false ) )
+  Logfile logfile( logname );
+  if( !force && logfile.read_logfile() )
     {
     snprintf( buf, sizeof buf,
-              "Mapfile '%s' exists. Use '--force' to overwrite it.", mapname );
+              "Logfile '%s' exists. Use '--force' to overwrite it.", logname );
     show_error( buf );
     return 1;
     }
-  mapfile.set_to_status( type2 );		// mark all mapfile as type2
-  mapfile.split_by_domain_borders( domain );
+  if( domain.empty() ) return empty_domain();
+  logfile.make_blank();
+  logfile.split_by_domain_borders( domain );
+
+  for( int i = 0; i < logfile.sblocks(); ++i )	// mark all logfile as type2
+    logfile.change_sblock_status( i, type2 );
 
   // mark every block read from stdin and in domain as type1
   for( int linenum = 1; ; ++linenum )
@@ -356,90 +335,68 @@ int create_mapfile( Domain & domain, const char * const mapname,
       }
     const Block b( block * hardbs, hardbs );
     if( domain.includes( b ) )
-      mapfile.change_chunk_status( b, type1, domain );
+      logfile.change_chunk_status( b, type1, domain );
     }
-  mapfile.truncate_vector( domain.end(), true );
-  if( !mapfile.write_mapfile( to_stdout ? stdout : 0 ) ) return 1;
-  if( to_stdout && std::fclose( stdout ) != 0 )
-    { show_error( "Error closing stdout", errno ); return 1; }
+  logfile.truncate_vector( domain.end(), true );
+  if( !logfile.write_logfile() ) return 1;
   return 0;
   }
 
 
-int test_if_done( Domain & domain, const char * const mapname, const bool del )
+int test_if_done( Domain & domain, const char * const logname, const bool del )
   {
   char buf[80];
-  Mapfile mapfile( mapname );
-  if( !mapfile.read_mapfile( 0, !del ) ) return not_readable( mapname );
-  domain.crop( mapfile.extent() );
+  Logfile logfile( logname );
+  if( !logfile.read_logfile() ) return not_readable( logname );
+  domain.crop( logfile.extent() );
   if( domain.empty() ) return empty_domain();
-  mapfile.split_by_domain_borders( domain );
+  logfile.split_by_domain_borders( domain );
 
-  for( long i = 0; i < mapfile.sblocks(); ++i )
+  for( int i = 0; i < logfile.sblocks(); ++i )
     {
-    const Sblock & sb = mapfile.sblock( i );
+    const Sblock & sb = logfile.sblock( i );
     if( !domain.includes( sb ) )
       { if( domain < sb ) break; else continue; }
     if( sb.status() != Sblock::finished )
       {
       if( verbosity >= 1 )
         {
-        snprintf( buf, sizeof buf, "Mapfile '%s' not done.", mapname );
+        snprintf( buf, sizeof buf, "Logfile '%s' not done.", logname );
         show_error( buf );
         }
       return 1;
       }
     }
   if( !del ) return 0;
-  if( std::remove( mapname ) != 0 )
+  if( std::remove( logname ) != 0 )
     {
-    snprintf( buf, sizeof buf, "Error deleting mapfile '%s'", mapname );
+    snprintf( buf, sizeof buf, "Error deleting logfile '%s'", logname );
     show_error( buf, errno );
     return 1;
     }
   if( verbosity >= 1 )
     {
-    snprintf( buf, sizeof buf, "Mapfile '%s' successfully deleted.", mapname );
+    snprintf( buf, sizeof buf, "Logfile '%s' successfully deleted.", logname );
     show_error( buf );
     }
   return 0;
   }
 
 
-int shift_blocks( const long long ipos, const long long opos,
-                  Domain & domain, const char * const mapname )
-  {
-  if( ipos != 0 && opos != 0 )
-    { show_error( "Either '-i' or '-o' must be 0" ); return 1; }
-  const long long offset = opos - ipos;
-  Mapfile mapfile( mapname );
-  if( !mapfile.read_mapfile() ) return not_readable( mapname );
-  domain.crop( mapfile.extent() );
-  if( domain.empty() ) return empty_domain();
-  mapfile.truncate_vector( domain.end(), true );
-  mapfile.shift_blocks( offset );
-  mapfile.compact_sblock_vector();
-  mapfile.write_mapfile( stdout );
-  if( std::fclose( stdout ) != 0 )
-    { show_error( "Error closing stdout", errno ); return 1; }
-  return 0;
-  }
-
-
 int to_badblocks( const long long offset, Domain & domain,
-                  const char * const mapname, const int hardbs,
+                  const char * const logname, const int hardbs,
                   const std::string & blocktypes )
   {
   long long last_block = -1;
-  Mapfile mapfile( mapname );
-  if( !mapfile.read_mapfile() ) return not_readable( mapname );
-  domain.crop( mapfile.extent() );
+  Logfile logfile( logname );
+  if( !logfile.read_logfile() ) return not_readable( logname );
+  domain.crop( logfile.extent() );
   if( domain.empty() ) return empty_domain();
-  mapfile.split_by_domain_borders( domain );
+  logfile.split_by_domain_borders( domain );
 
-  for( long i = 0; i < mapfile.sblocks(); ++i )
+  for( int i = 0; i < logfile.sblocks(); ++i )
     {
-    const Sblock & sb = mapfile.sblock( i );
+    const Sblock & sb = logfile.sblock( i );
     if( !domain.includes( sb ) )
       { if( domain < sb ) break; else continue; }
     if( blocktypes.find( sb.status() ) >= blocktypes.size() ) continue;
@@ -458,71 +415,127 @@ int to_badblocks( const long long offset, Domain & domain,
   }
 
 
-int do_show_status( Domain & domain, const char * const mapname,
-                    const bool loose )
+// Shows the fraction "num/den" as a percentage with "prec" decimals.
+// If 'prec' is negative, only the needed decimals are shown.
+//
+const char * format_percentage( long long num, long long den,
+                                const int iwidth = 3, int prec = -2 )
   {
-  long long non_tried_size = 0, non_trimmed_size = 0;
-  long long non_scraped_size = 0, bad_size = 0, finished_size = 0;
-  unsigned long non_tried_areas = 0, non_trimmed_areas = 0;
-  unsigned long non_scraped_areas = 0, bad_areas = 0, finished_areas = 0;
-  Mapfile mapfile( mapname );
-  if( !mapfile.read_mapfile( loose ? '?' : 0 ) ) return not_readable( mapname );
-  mapfile.compact_sblock_vector();
-  const Block extent = mapfile.extent();
+  static char buf[80];
+
+  if( den < 0 ) { num = -num; den = -den; }
+  if( llabs( num ) <= LLONG_MAX / 100 && den <= LLONG_MAX / 10 ) num *= 100;
+  else if( llabs( num ) <= LLONG_MAX / 10 ) { num *= 10; den /= 10; }
+  else den /= 100;
+  if( den == 0 )
+    {
+    if( num > 0 ) return "+INF";
+    else if( num < 0 ) return "-INF";
+    else return "NAN";
+    }
+  const bool trunc = ( prec < 0 );
+  if( prec < 0 ) prec = -prec;
+
+  unsigned i;
+  if( num < 0 && num / den == 0 )
+    i = snprintf( buf, sizeof( buf ), "%*s", iwidth, "-0" );
+  else i = snprintf( buf, sizeof( buf ), "%*lld", iwidth, num / den );
+  if( i < sizeof( buf ) - 2 )
+    {
+    long long rest = llabs( num ) % den;
+    if( prec > 0 && ( rest > 0 || !trunc ) )
+      {
+      buf[i++] = '.';
+      while( prec > 0 && ( rest > 0 || !trunc ) && i < sizeof( buf ) - 2 )
+        { rest *= 10; buf[i++] = (char)( rest / den ) + '0';
+          rest %= den; --prec; }
+      }
+    }
+  else i = sizeof( buf ) - 2;
+  buf[i++] = '%';
+  buf[i] = 0;
+  return buf;
+  }
+
+
+int do_show_status( Domain & domain, const char * const logname )
+  {
+  long long size_non_tried = 0, size_non_trimmed = 0, size_non_scraped = 0;
+  long long size_bad_sector = 0, size_finished = 0;
+  int areas_non_tried = 0, areas_non_trimmed = 0, areas_non_scraped = 0;
+  int areas_bad_sector = 0, areas_finished = 0;
+  int errors = 0;
+  Sblock::Status old_status = Sblock::non_tried;
+  bool first_block = true, good = true;
+  Logfile logfile( logname );
+  if( !logfile.read_logfile() ) return not_readable( logname );
+  const Block extent = logfile.extent();
   domain.crop( extent );
   if( domain.empty() ) return empty_domain();
-  const long true_sblocks = mapfile.sblocks();
-  mapfile.split_by_domain_borders( domain );
+  const int true_sblocks = logfile.sblocks();
+  logfile.split_by_domain_borders( domain );
 
-  for( long i = 0; i < mapfile.sblocks(); ++i )
+  for( int i = 0; i < logfile.sblocks(); ++i )
     {
-    const Sblock & sb = mapfile.sblock( i );
+    const Sblock & sb = logfile.sblock( i );
     if( !domain.includes( sb ) )
-      { if( domain < sb ) break; else continue; }
+      {
+      if( domain < sb ) break;
+      else { first_block = true; good = true; continue; }
+      }
+    const bool sc = ( first_block || sb.status() != old_status );
+    first_block = false;
     switch( sb.status() )
       {
-      case Sblock::non_tried:   non_tried_size += sb.size();
-                                ++non_tried_areas; break;
-      case Sblock::non_trimmed: non_trimmed_size += sb.size();
-                                ++non_trimmed_areas; break;
-      case Sblock::non_scraped: non_scraped_size += sb.size();
-                                ++non_scraped_areas; break;
-      case Sblock::bad_sector:  bad_size += sb.size();
-                                ++bad_areas; break;
-      case Sblock::finished:    finished_size += sb.size();
-                                ++finished_areas; break;
+      case Sblock::non_tried:   size_non_tried += sb.size(); good = true;
+                                if( sc ) ++areas_non_tried; break;
+      case Sblock::finished:    size_finished += sb.size(); good = true;
+                                if( sc ) ++areas_finished; break;
+      case Sblock::non_trimmed: size_non_trimmed += sb.size();
+                                if( good ) { good = false; ++errors; }
+                                if( sc ) ++areas_non_trimmed; break;
+      case Sblock::non_scraped: size_non_scraped += sb.size();
+                                if( good ) { good = false; ++errors; }
+                                if( sc ) ++areas_non_scraped; break;
+      case Sblock::bad_sector:  size_bad_sector += sb.size();
+                                if( good ) { good = false; ++errors; }
+                                if( sc ) ++areas_bad_sector; break;
       }
+    old_status = sb.status();
     }
 
   const long long domain_size = domain.in_size();
-  if( verbosity >= 1 ) std::printf( "\n%s", mapname );
-  std::printf( "\n   current pos: %9sB,  current status: %s\n",
-               format_num( mapfile.current_pos() ),
-               mapfile.status_name( mapfile.current_status() ) );
-  std::printf( "mapfile extent: %9sB,  in %6ld area(s)\n",
+  const long long errsize = size_non_trimmed + size_non_scraped + size_bad_sector;
+  std::printf( "\n   current pos: %10sB,  current status: %s\n",
+               format_num( logfile.current_pos() ),
+               logfile.status_name( logfile.current_status() ) );
+  std::printf( "logfile extent: %10sB,  in %5d area(s)\n",
                format_num( extent.size() ), true_sblocks );
-  if( domain.pos() > 0 || domain.end() < extent.end() || domain.blocks() > 1 )
+  if( domain.pos() > 0 || domain.end() < extent.end() )
     {
-    std::printf( "  domain begin: %9sB,  domain end: %9sB\n",
+    std::printf( "  domain begin: %10sB,  domain end: %10sB\n",
                  format_num( domain.pos() ), format_num( domain.end() ) );
-    std::printf( "   domain size: %9sB,  in %6ld area(s)\n",
+    std::printf( "   domain size: %10sB,  in %5d area(s)\n",
                  format_num( domain_size ), domain.blocks() );
     }
-  std::printf( "\n     non-tried: %9sB,  in %6lu area(s)  (%s)\n",
-               format_num( non_tried_size ), non_tried_areas,
-               format_percentage( non_tried_size, domain_size ) );
-  std::printf( "       rescued: %9sB,  in %6lu area(s)  (%s)\n",
-               format_num( finished_size ), finished_areas,
-               format_percentage( finished_size, domain_size ) );
-  std::printf( "   non-trimmed: %9sB,  in %6lu area(s)  (%s)\n",
-               format_num( non_trimmed_size ), non_trimmed_areas,
-               format_percentage( non_trimmed_size, domain_size ) );
-  std::printf( "   non-scraped: %9sB,  in %6lu area(s)  (%s)\n",
-               format_num( non_scraped_size ), non_scraped_areas,
-               format_percentage( non_scraped_size, domain_size ) );
-  std::printf( "    bad-sector: %9sB,  in %6lu area(s)  (%s)\n",
-               format_num( bad_size ), bad_areas,
-               format_percentage( bad_size, domain_size ) );
+  std::printf( "       rescued: %10sB,  in %5d area(s)  (%s)\n",
+               format_num( size_finished ), areas_finished,
+               format_percentage( size_finished, domain_size ) );
+  std::printf( "     non-tried: %10sB,  in %5d area(s)  (%s)\n",
+               format_num( size_non_tried ), areas_non_tried,
+               format_percentage( size_non_tried, domain_size ) );
+  std::printf( "\n       errsize: %10sB,  errors: %8u  (%s)\n",
+               format_num( errsize ), errors,
+               format_percentage( errsize, domain_size ) );
+  std::printf( "   non-trimmed: %10sB,  in %5d area(s)  (%s)\n",
+               format_num( size_non_trimmed ), areas_non_trimmed,
+               format_percentage( size_non_trimmed, domain_size ) );
+  std::printf( "   non-scraped: %10sB,  in %5d area(s)  (%s)\n",
+               format_num( size_non_scraped ), areas_non_scraped,
+               format_percentage( size_non_scraped, domain_size ) );
+  std::printf( "    bad-sector: %10sB,  in %5d area(s)  (%s)\n",
+               format_num( size_bad_sector ), areas_bad_sector,
+               format_percentage( size_bad_sector, domain_size ) );
   return 0;
   }
 
@@ -537,8 +550,8 @@ int main( const int argc, const char * const argv[] )
   long long ipos = 0;
   long long opos = -1;
   long long max_size = -1;
-  const char * domain_mapfile_name = 0;
-  const char * second_mapname = 0;
+  const char * domain_logfile_name = 0;
+  const char * second_logname = 0;
   const int default_hardbs = 512;
   int hardbs = default_hardbs;
   Mode program_mode = m_none;
@@ -553,17 +566,13 @@ int main( const int argc, const char * const argv[] )
   for( int i = 1; i < argc; ++i )
     { command_line += ' '; command_line += argv[i]; }
 
-  enum Optcode { opt_shi = 256 };
   const Arg_parser::Option options[] =
     {
     { 'a', "change-types",        Arg_parser::yes },
-    { 'A', "annotate-mapfile",    Arg_parser::no  },
     { 'b', "block-size",          Arg_parser::yes },
     { 'b', "sector-size",         Arg_parser::yes },
     { 'B', "binary-prefixes",     Arg_parser::no  },
-    { 'c', "create-mapfile",      Arg_parser::maybe },
     { 'c', "create-logfile",      Arg_parser::maybe },
-    { 'C', "complete-mapfile",    Arg_parser::maybe },
     { 'C', "complete-logfile",    Arg_parser::maybe },
     { 'd', "delete-if-done",      Arg_parser::no  },
     { 'D', "done-status",         Arg_parser::no  },
@@ -572,12 +581,9 @@ int main( const int argc, const char * const argv[] )
     { 'i', "input-position",      Arg_parser::yes },
     { 'l', "list-blocks",         Arg_parser::yes },
     { 'L', "loose-domain",        Arg_parser::no  },
-    { 'm', "domain-mapfile",      Arg_parser::yes },
     { 'm', "domain-logfile",      Arg_parser::yes },
-    { 'n', "invert-mapfile",      Arg_parser::no  },
     { 'n', "invert-logfile",      Arg_parser::no  },
     { 'o', "output-position",     Arg_parser::yes },
-    { 'p', "compare-mapfile",     Arg_parser::yes },
     { 'p', "compare-logfile",     Arg_parser::yes },
     { 'P', "compare-as-domain",   Arg_parser::yes },
     { 'q', "quiet",               Arg_parser::no  },
@@ -586,13 +592,9 @@ int main( const int argc, const char * const argv[] )
     { 't', "show-status",         Arg_parser::no  },
     { 'v', "verbose",             Arg_parser::no  },
     { 'V', "version",             Arg_parser::no  },
-    { 'x', "xor-mapfile",         Arg_parser::yes },
     { 'x', "xor-logfile",         Arg_parser::yes },
-    { 'y', "and-mapfile",         Arg_parser::yes },
     { 'y', "and-logfile",         Arg_parser::yes },
-    { 'z', "or-mapfile",          Arg_parser::yes },
     { 'z', "or-logfile",          Arg_parser::yes },
-    { opt_shi, "shift",           Arg_parser::no  },
     {  0 , 0,                     Arg_parser::no  } };
 
   const Arg_parser parser( argc, argv, options );
@@ -604,14 +606,12 @@ int main( const int argc, const char * const argv[] )
     {
     const int code = parser.code( argind );
     if( !code ) break;					// no more options
-    const std::string & arg = parser.argument( argind );
-    const char * const ptr = arg.c_str();
+    const char * const arg = parser.argument( argind ).c_str();
     switch( code )
       {
       case 'a': set_mode( program_mode, m_change );
                 parse_types( arg, types1, types2 ); break;
-      case 'A': set_mode( program_mode, m_annotate ); break;
-      case 'b': hardbs = getnum( ptr, 0, 1, INT_MAX ); break;
+      case 'b': hardbs = getnum( arg, 0, 1, INT_MAX ); break;
       case 'B': format_num( 0, 0, -1 ); break;		// set binary prefixes
       case 'c': set_mode( program_mode, m_create );
                 parse_2types( arg, type1, type2 ); break;
@@ -621,28 +621,27 @@ int main( const int argc, const char * const argv[] )
       case 'D': set_mode( program_mode, m_done_st ); break;
       case 'f': force = true; break;
       case 'h': show_help( default_hardbs ); return 0;
-      case 'i': ipos = getnum( ptr, hardbs, 0 ); break;
+      case 'i': ipos = getnum( arg, hardbs, 0 ); break;
       case 'l': set_mode( program_mode, m_list ); types1 = arg;
                 check_types( types1, "list-blocks" ); break;
       case 'L': loose = true; break;
-      case 'm': set_name( &domain_mapfile_name, ptr, code ); break;
+      case 'm': set_name( &domain_logfile_name, arg, code ); break;
       case 'n': set_mode( program_mode, m_invert ); break;
-      case 'o': opos = getnum( ptr, hardbs, 0 ); break;
+      case 'o': opos = getnum( arg, hardbs, 0 ); break;
       case 'p':
       case 'P': set_mode( program_mode, m_compare );
-                second_mapname = ptr; as_domain = ( code == 'P' ); break;
+                second_logname = arg; as_domain = ( code == 'P' ); break;
       case 'q': verbosity = -1; break;
-      case 's': max_size = getnum( ptr, hardbs, -1 ); break;
+      case 's': max_size = getnum( arg, hardbs, -1 ); break;
       case 't': set_mode( program_mode, m_status ); break;
       case 'v': if( verbosity < 4 ) ++verbosity; break;
       case 'V': show_version(); return 0;
       case 'x': set_mode( program_mode, m_xor );
-                second_mapname = ptr; break;
+                second_logname = arg; break;
       case 'y': set_mode( program_mode, m_and );
-                second_mapname = ptr; break;
+                second_logname = arg; break;
       case 'z': set_mode( program_mode, m_or );
-                second_mapname = ptr; break;
-      case opt_shi: set_mode( program_mode, m_shift ); break;
+                second_logname = arg; break;
       default : internal_error( "uncaught option." );
       }
     } // end process options
@@ -655,51 +654,39 @@ int main( const int argc, const char * const argv[] )
 
   if( opos < 0 ) opos = ipos;
 
-  if( program_mode == m_status )
-    {
-    if( argind >= parser.arguments() )
-      { show_error( "At least one mapfile must be specified.", 0, true );
-        return 1; }
-    }
-  else if( argind + 1 != parser.arguments() )
+  if( argind + 1 != parser.arguments() )
     {
     if( argind < parser.arguments() )
       show_error( "Too many files.", 0, true );
     else
-      show_error( "A mapfile must be specified.", 0, true );
+      show_error( "A logfile must be specified.", 0, true );
     return 1;
     }
 
-  int retval = 0;
-  for( ; argind < parser.arguments(); ++argind )
-    {
-    const char * const mapname = parser.argument( argind ).c_str();
-    Domain domain( ipos, max_size, domain_mapfile_name, loose );
+  const char * const logname = parser.argument( argind++ ).c_str();
 
-    switch( program_mode )
-      {
-      case m_none: internal_error( "invalid operation." ); break;
-      case m_and:
-      case m_or:
-      case m_xor:
-        return do_logic_ops( domain, mapname, second_mapname, program_mode );
-      case m_annotate: return annotate_mapfile( domain, mapname );
-      case m_change: return change_types( domain, mapname, types1, types2 );
-      case m_compare: return compare_mapfiles( domain, mapname, second_mapname,
-                                               as_domain, loose );
-      case m_complete: return complete_mapfile( mapname, complete_type );
-      case m_create: return create_mapfile( domain, mapname, hardbs,
-                                            type1, type2, force );
-      case m_delete: return test_if_done( domain, mapname, true );
-      case m_done_st: return test_if_done( domain, mapname, false );
-      case m_invert: return change_types( domain, mapname, "?*/-+", "++++-" );
-      case m_list:
-        return to_badblocks( opos - ipos, domain, mapname, hardbs, types1 );
-      case m_shift:
-        return shift_blocks( ipos, opos, domain, mapname );
-      case m_status:
-        retval = std::max( retval, do_show_status( domain, mapname, loose ) );
-      }
+  // end scan arguments
+
+  Domain domain( ipos, max_size, domain_logfile_name, loose );
+
+  switch( program_mode )
+    {
+    case m_none: internal_error( "invalid operation." ); break;
+    case m_and:
+    case m_or:
+    case m_xor:
+      return do_logic_ops( domain, logname, second_logname, program_mode );
+    case m_change: return change_types( domain, logname, types1, types2 );
+    case m_compare:
+      return compare_logfiles( domain, logname, second_logname, as_domain, loose );
+    case m_complete: return complete_logfile( logname, complete_type );
+    case m_create: return create_logfile( domain, logname, hardbs,
+                                          type1, type2, force );
+    case m_delete: return test_if_done( domain, logname, true );
+    case m_done_st: return test_if_done( domain, logname, false );
+    case m_invert: return change_types( domain, logname, "?*/-+", "++++-" );
+    case m_list:
+      return to_badblocks( opos - ipos, domain, logname, hardbs, types1 );
+    case m_status: return do_show_status( domain, logname );
     }
-  return retval;
   }

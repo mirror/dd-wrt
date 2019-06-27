@@ -1,5 +1,5 @@
 /*  GNU ddrescue - Data recovery tool
-    Copyright (C) 2004-2019 Antonio Diaz Diaz.
+    Copyright (C) 2004-2014 Antonio Diaz Diaz.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -25,7 +25,6 @@
 #define ULLONG_MAX 0xFFFFFFFFFFFFFFFFULL
 #endif
 
-// requires '#include <cstdio>' for 'FILE *'
 
 class Block
   {
@@ -46,17 +45,7 @@ public:
   void pos( const long long p )
     { pos_ = std::max( p, 0LL );
       if( size_ > LLONG_MAX - pos_ ) size_ = LLONG_MAX - pos_; }
-  void shift( const long long offset )
-    { if( offset >= 0 )
-        { pos_ += std::min( offset, LLONG_MAX - pos_ );
-          if( size_ > LLONG_MAX - pos_ ) size_ = LLONG_MAX - pos_; }
-      else if( ( pos_ += offset ) < 0 )
-        { size_ = std::max( size_ + pos_, 0LL ); pos_ = 0; } }
   void size( const long long s ) { size_ = s; fix_size(); }
-  void enlarge( long long s )
-    { if( s < 0 ) s = LLONG_MAX;
-      if( s > LLONG_MAX - pos_ - size_ ) s = LLONG_MAX - pos_ - size_;
-      size_ += s; }
   void end( long long e )
     { if( e < 0 ) e = LLONG_MAX;
       if( size_ <= e ) pos_ = e - size_; else { pos_ = 0; size_ = e; } }
@@ -88,7 +77,7 @@ public:
 
   void crop( const Block & b );
   bool join( const Block & b );
-  void shift_boundary( Block & b, const long long pos );
+  void shift( Block & b, const long long pos );
   Block split( long long pos, const int hardbs = 1 );
   };
 
@@ -121,43 +110,39 @@ public:
   static bool isstatus( const int st )
     { return ( st == non_tried || st == non_trimmed || st == non_scraped ||
                st == bad_sector || st == finished ); }
-  static bool is_good_status( const Status st ) { return st != bad_sector; }
+  static bool is_good_status( const Status st )
+    { return ( st == non_tried || st == finished ); }
   };
 
 
 class Domain
   {
   std::vector< Block > block_vector;	// blocks are ordered and don't overlap
-  mutable long long cached_in_size;
-  void reset_cached_in_size() { cached_in_size = -1; }
 
 public:
   Domain( const long long p, const long long s,
-          const char * const mapname = 0, const bool loose = false );
+          const char * const logname = 0, const bool loose = false );
 
   long long pos() const { return block_vector.front().pos(); }
   long long end() const { return block_vector.back().end(); }
   long long size() const { return end() - pos(); }
-  const Block & block( const long i ) const { return block_vector[i]; }
-  long blocks() const { return block_vector.size(); }
+  const Block & block( const int i ) const { return block_vector[i]; }
+  int blocks() const { return (int)block_vector.size(); }
   bool empty() const { return ( end() <= pos() ); }
   bool full() const { return ( !empty() && end() >= LLONG_MAX ); }
 
   long long in_size() const
     {
-    if( cached_in_size < 0 )
-      {
-      cached_in_size = 0;
-      for( unsigned long i = 0; i < block_vector.size(); ++i )
-        cached_in_size += block_vector[i].size();
-      }
-    return cached_in_size;
+    long long s = 0;
+    for( unsigned i = 0; i < block_vector.size(); ++i )
+      s += block_vector[i].size();
+    return s;
     }
 
   bool operator!=( const Domain & d ) const
     {
     if( block_vector.size() != d.block_vector.size() ) return true;
-    for( unsigned long i = 0; i < block_vector.size(); ++i )
+    for( unsigned i = 0; i < block_vector.size(); ++i )
       if( block_vector[i] != d.block_vector[i] ) return true;
     return false;
     }
@@ -167,10 +152,10 @@ public:
 
   bool includes( const Block & b ) const
     {
-    unsigned long l = 0, r = block_vector.size();
+    unsigned l = 0, r = block_vector.size();
     while( l < r )
       {
-      const long m = ( l + r ) / 2;
+      const int m = ( l + r ) / 2;
       const Block & db = block_vector[m];
       if( db.includes( b ) ) return true;
       if( db < b ) l = m + 1; else if( b < db ) r = m; else break;
@@ -180,23 +165,19 @@ public:
 
   bool includes( const long long pos ) const
     {
-    for( unsigned long i = 0; i < block_vector.size(); ++i )
+    for( unsigned i = 0; i < block_vector.size(); ++i )
       if( block_vector[i].includes( pos ) ) return true;
     return false;
     }
 
   void clear()
-    {
-    block_vector.clear(); block_vector.push_back( Block( 0, 0 ) );
-    cached_in_size = 0;
-    }
-
+    { block_vector.clear(); block_vector.push_back( Block( 0, 0 ) ); }
   void crop( const Block & b );
   void crop_by_file_size( const long long size ) { crop( Block( 0, size ) ); }
   };
 
 
-class Mapfile
+class Logfile
   {
 public:
   enum Status
@@ -208,34 +189,32 @@ private:
   const char * const filename_;
   std::string current_msg;
   Status current_status_;
-  int current_pass_;
-  mutable long index_;			// cached index of last find or change
+  mutable int index_;			// cached index of last find or change
   bool read_only_;
   std::vector< Sblock > sblock_vector;	// note: blocks are consecutive
 
-  void insert_sblock( const long i, const Sblock & sb )
+  void erase_sblock( const int i )
+    { sblock_vector.erase( sblock_vector.begin() + i ); }
+  void insert_sblock( const int i, const Sblock & sb )
     { sblock_vector.insert( sblock_vector.begin() + i, sb ); }
 
 public:
-  explicit Mapfile( const char * const mapname )
-    : current_pos_( 0 ), filename_( mapname ), current_status_( copying ),
-      current_pass_( 1 ), index_( 0 ), read_only_( false ) {}
+  explicit Logfile( const char * const logname )
+    : current_pos_( 0 ), filename_( logname ), current_status_( copying ),
+      index_( 0 ), read_only_( false ) {}
 
   void compact_sblock_vector();
-  void extend_sblock_vector( const long long insize );
-  void shift_blocks( const long long offset );
+  void extend_sblock_vector( const long long isize );
   bool truncate_vector( const long long end, const bool force = false );
-  void set_to_status( const Sblock::Status st )
-    { sblock_vector.assign( 1, Sblock( 0, -1, st ) ); }
-  bool read_mapfile( const int default_sblock_status = 0, const bool ro = true );
-  int write_mapfile( FILE * f = 0, const bool timestamp = false,
-                     const bool mf_sync = false,
-                     const Domain * const annotate_domainp = 0 ) const;
+  void make_blank()
+    { sblock_vector.clear();
+      sblock_vector.push_back( Sblock( 0, -1, Sblock::non_tried ) ); }
+  bool read_logfile( const int default_sblock_status = 0 );
+  int write_logfile( FILE * f = 0, const bool timestamp = false ) const;
 
   bool blank() const;
   long long current_pos() const { return current_pos_; }
   Status current_status() const { return current_status_; }
-  int current_pass() const { return current_pass_; }
   const char * filename() const { return filename_; }
   bool read_only() const { return read_only_; }
 
@@ -243,37 +222,32 @@ public:
   void current_status( const Status st, const char * const msg = "" )
     { current_status_ = st;
       current_msg = ( st == finished ) ? "Finished" : msg; }
-  void current_pass( const int pass ) { current_pass_ = pass; }
 
   Block extent() const
     { if( sblock_vector.empty() ) return Block( 0, 0 );
       return Block( sblock_vector.front().pos(),
                     sblock_vector.back().end() - sblock_vector.front().pos() ); }
-  const Sblock & sblock( const long i ) const { return sblock_vector[i]; }
-  long sblocks() const { return sblock_vector.size(); }
-  void change_sblock_status( const long i, const Sblock::Status st )
+  const Sblock & sblock( const int i ) const { return sblock_vector[i]; }
+  int sblocks() const { return (int)sblock_vector.size(); }
+  void change_sblock_status( const int i, const Sblock::Status st )
     { sblock_vector[i].status( st ); }
 
   void split_by_domain_borders( const Domain & domain );
-  void split_by_mapfile_borders( const Mapfile & mapfile );
-  bool try_split_sblock_by( const long long pos, const long i )
+  void split_by_logfile_borders( const Logfile & logfile );
+  bool try_split_sblock_by( const long long pos, const int i )
     {
     if( sblock_vector[i].strictly_includes( pos ) )
       { insert_sblock( i, sblock_vector[i].split( pos ) ); return true; }
     return false;
     }
 
-  long find_index( const long long pos ) const;
-  bool find_chunk( Block & b, const Sblock::Status st,
-                   const Domain & domain, const int alignment,
-                   const bool after_finished = false,
-                   const bool unfinished = false ) const;
-  bool rfind_chunk( Block & b, const Sblock::Status st,
-                    const Domain & domain, const int alignment,
-                    const bool before_finished = false ) const;
+  int find_index( const long long pos ) const;
+  void find_chunk( Block & b, const Sblock::Status st,
+                   const Domain & domain, const int alignment = 1 ) const;
+  void rfind_chunk( Block & b, const Sblock::Status st,
+                    const Domain & domain, const int alignment = 1 ) const;
   int change_chunk_status( const Block & b, const Sblock::Status st,
-                           const Domain & domain,
-                           Sblock::Status * const old_stp = 0 );
+                           const Domain & domain );
 
   static bool isstatus( const int st )
     { return ( st == copying || st == trimming || st == scraping ||
@@ -290,13 +264,11 @@ void show_error( const char * const msg,
                  const int errcode = 0, const bool help = false );
 void internal_error( const char * const msg );
 int empty_domain();
-int not_readable( const char * const mapname );
-int not_writable( const char * const mapname );
+int not_readable( const char * const logname );
+int not_writable( const char * const logname );
 long initial_time();
-bool write_file_header( FILE * const f, const char * const filetype );
+bool write_logfile_header( FILE * const f, const char * const logtype );
 bool write_timestamp( FILE * const f );
 bool write_final_timestamp( FILE * const f );
 const char * format_num( long long num, long long limit = 999999,
                          const int set_prefix = 0 );
-const char * format_percentage( long long num, long long den,
-                                const int iwidth = 3, int prec = -2 );

@@ -1,16 +1,8 @@
 /*  Rational - Rational number class with overflow detection
-    Copyright (C) 2005-2019 Antonio Diaz Diaz.
+    Copyright (C) 2005-2014 Antonio Diaz Diaz.
 
-    This library is free software. Redistribution and use in source and
-    binary forms, with or without modification, are permitted provided
-    that the following conditions are met:
-
-    1. Redistributions of source code must retain the above copyright
-    notice, this list of conditions and the following disclaimer.
-
-    2. Redistributions in binary form must reproduce the above copyright
-    notice, this list of conditions and the following disclaimer in the
-    documentation and/or other materials provided with the distribution.
+    This library is free software: you have unlimited permission to
+    copy, distribute and modify it.
 
     This library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -111,14 +103,12 @@ public:
     { return ( den > 0 && r.den > 0 &&
                (long long)num * r.den < (long long)r.num * den ); }
   bool operator<=( const Rational & r ) const
-    { return ( den > 0 && r.den > 0 &&
-               (long long)num * r.den <= (long long)r.num * den ); }
+    { return ( *this < r || *this == r ); }
   bool operator> ( const Rational & r ) const
     { return ( den > 0 && r.den > 0 &&
                (long long)num * r.den > (long long)r.num * den ); }
   bool operator>=( const Rational & r ) const
-    { return ( den > 0 && r.den > 0 &&
-               (long long)num * r.den >= (long long)r.num * den ); }
+    { return ( *this > r || *this == r ); }
 
   bool operator< ( const int n ) const { return operator< ( Rational( n ) ); }
   bool operator<=( const int n ) const { return operator<=( Rational( n ) ); }
