@@ -2,9 +2,10 @@
 		<script type="text/javascript">
 		//<![CDATA[
 
-function deleteLease(val, val2) {
+function deleteLease(val, val2, val3) {
 	document.forms[0].ip_del.value = val;
 	document.forms[0].mac_del.value = val2;
+	document.forms[0].if_del.value = val3;
 	document.forms[0].submit_type.value = "delete";
 	document.forms[0].change_action.value="gozila_cgi";
 	document.forms[0].submit();
@@ -85,12 +86,12 @@ function setDHCPTable() {
 	cleanTable(table);
 	if(!val.length) {
 		var cell = table.insertRow(-1).insertCell(-1);
-		cell.colSpan = 5;
+		cell.colSpan = 6;
 		cell.align = "center";
 		cell.innerHTML = "- " + share.none + " -";
 		return;
 	}
-	for(var i = 0; i < val.length; i = i + 5) {
+	for(var i = 0; i < val.length; i = i + 6) {
 	
 		var row = table.insertRow(-1);
 		row.style.height = "15px";
@@ -98,21 +99,23 @@ function setDHCPTable() {
 		row.insertCell(-1).innerHTML = val[i];
 		
 		row.insertCell(-1).innerHTML = val[i+1];
+
+		row.insertCell(-1).innerHTML = val[i+2];
 		
 		var cellmac = row.insertCell(-1);
 		cellmac.title = share.oui;
 		cellmac.style.cursor = "pointer";
 		cellmac.style.textDecoration = "underline";
-		eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + val[i+2] + "') })");
-		cellmac.innerHTML = val[i+2];
+		eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + val[i+3] + "') })");
+		cellmac.innerHTML = val[i+3];
 
 		var cellbail = row.insertCell(-1);
-		cellbail.innerHTML = val[i+3];
+		cellbail.innerHTML = val[i+4];
 		
 		var cell = row.insertCell(-1);
 		cell.className = "bin";
 		cell.title = errmsg.err58;
-		eval("addEvent(cell, 'click', function() { deleteLease('" + val[i+1] + "','" + val[i+2] + "') })");
+		eval("addEvent(cell, 'click', function() { deleteLease('" + val[i+1] + "','" + val[i+2] + "', '" + val[i+3] + "') })");
 	}
 }
 
@@ -304,6 +307,7 @@ addEvent(window, "unload", function() {
 									<table class="table center" cellspacing="6" id="dhcp_leases_table" summary="dhcp leases table">
 										<tr>
 											<th width="46%"><% tran("share.hostname"); %></th>
+											<th width="17%"><% tran("share.intrface"); %></th>
 											<th width="17%"><% tran("share.ip"); %></th>
 											<th width="17%"><% tran("share.mac"); %></th>
 											<th width="20%"><% tran("idx.dhcp_lease"); %></th>
