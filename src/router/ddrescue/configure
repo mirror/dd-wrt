@@ -1,14 +1,14 @@
 #! /bin/sh
 # configure script for GNU ddrescue - Data recovery tool
-# Copyright (C) 2004-2019 Antonio Diaz Diaz.
+# Copyright (C) 2004-2014 Antonio Diaz Diaz.
 #
 # This configure script is free software: you have unlimited permission
 # to copy, distribute and modify it.
 
 pkgname=ddrescue
-pkgversion=1.24
+pkgversion=1.19
 progname=ddrescue
-use_non_posix=
+use_linux=
 srctrigger=doc/${pkgname}.texi
 
 # clear some things potentially inherited from environment.
@@ -27,11 +27,11 @@ CXXFLAGS='-Wall -W -O2'
 LDFLAGS=
 
 # checking whether we are using GNU C++.
-/bin/sh -c "${CXX} --version" > /dev/null 2>&1 ||
-	{
+${CXX} --version > /dev/null 2>&1
+if [ $? != 0 ] ; then
 	CXX=c++
-	CXXFLAGS=-O2
-	}
+	CXXFLAGS='-W -O2'
+fi
 
 # Loop over all args
 args=
@@ -53,12 +53,9 @@ while [ $# != 0 ] ; do
 	# Process the options
 	case ${option} in
 	--help | -h)
-		echo "Usage: $0 [OPTION]... [VAR=VALUE]..."
+		echo "Usage: configure [options]"
 		echo
-		echo "To assign makefile variables (e.g., CXX, CXXFLAGS...), specify them as"
-		echo "arguments to configure in the form VAR=VALUE."
-		echo
-		echo "Options and variables: [defaults in brackets]"
+		echo "Options: [defaults in brackets]"
 		echo "  -h, --help            display this help and exit"
 		echo "  -V, --version         output version information and exit"
 		echo "  --srcdir=DIR          find the sources in DIR [. or ..]"
@@ -68,11 +65,10 @@ while [ $# != 0 ] ; do
 		echo "  --datarootdir=DIR     base directory for doc and data [${datarootdir}]"
 		echo "  --infodir=DIR         info files directory [${infodir}]"
 		echo "  --mandir=DIR          man pages directory [${mandir}]"
-		echo "  --enable-non-posix    enable non-portable code and ioctl's [disable]"
+		echo "  --enable-linux        enable linux-specific code and ioctl's [disable]"
 		echo "  CXX=COMPILER          C++ compiler to use [${CXX}]"
 		echo "  CPPFLAGS=OPTIONS      command line options for the preprocessor [${CPPFLAGS}]"
 		echo "  CXXFLAGS=OPTIONS      command line options for the C++ compiler [${CXXFLAGS}]"
-		echo "  CXXFLAGS+=OPTIONS     append options to the current value of CXXFLAGS"
 		echo "  LDFLAGS=OPTIONS       command line options for the linker [${LDFLAGS}]"
 		echo
 		exit 0 ;;
@@ -95,13 +91,12 @@ while [ $# != 0 ] ; do
 	--infodir=*)          infodir=${optarg} ;;
 	--mandir=*)            mandir=${optarg} ;;
 	--no-create)              no_create=yes ;;
-	--enable-non-posix) use_non_posix="-DUSE_NON_POSIX" ;;
+	--enable-linux) use_linux="-DUSE_LINUX" ;;
 
-	CXX=*)            CXX=${optarg} ;;
-	CPPFLAGS=*)  CPPFLAGS=${optarg} ;;
-	CXXFLAGS=*)  CXXFLAGS=${optarg} ;;
-	CXXFLAGS+=*) CXXFLAGS="${CXXFLAGS} ${optarg}" ;;
-	LDFLAGS=*)    LDFLAGS=${optarg} ;;
+	CXX=*)           CXX=${optarg} ;;
+	CPPFLAGS=*) CPPFLAGS=${optarg} ;;
+	CXXFLAGS=*) CXXFLAGS=${optarg} ;;
+	LDFLAGS=*)   LDFLAGS=${optarg} ;;
 
 	--*)
 		echo "configure: WARNING: unrecognized option: '${option}'" 1>&2 ;;
@@ -147,7 +142,7 @@ if [ -z "${no_create}" ] ; then
 	rm -f config.status
 	cat > config.status << EOF
 #! /bin/sh
-# This file was generated automatically by configure. Don't edit.
+# This file was generated automatically by configure. Do not edit.
 # Run this file to recreate the current configuration.
 #
 # This script is free software: you have unlimited permission
@@ -159,7 +154,7 @@ EOF
 fi
 
 echo "creating Makefile"
-if [ -n "${use_non_posix}" ] ; then echo "USE_NON_POSIX = yes" ; fi
+if [ -n "${use_linux}" ] ; then echo "USE_LINUX = yes" ; fi
 echo "VPATH = ${srcdir}"
 echo "prefix = ${prefix}"
 echo "exec_prefix = ${exec_prefix}"
@@ -174,8 +169,8 @@ echo "LDFLAGS = ${LDFLAGS}"
 rm -f Makefile
 cat > Makefile << EOF
 # Makefile for GNU ddrescue - Data recovery tool
-# Copyright (C) 2004-2019 Antonio Diaz Diaz.
-# This file was generated automatically by configure. Don't edit.
+# Copyright (C) 2004-2014 Antonio Diaz Diaz.
+# This file was generated automatically by configure. Do not edit.
 #
 # This Makefile is free software: you have unlimited permission
 # to copy, distribute and modify it.
@@ -183,7 +178,7 @@ cat > Makefile << EOF
 pkgname = ${pkgname}
 pkgversion = ${pkgversion}
 progname = ${progname}
-use_non_posix = ${use_non_posix}
+use_linux = ${use_linux}
 VPATH = ${srcdir}
 prefix = ${prefix}
 exec_prefix = ${exec_prefix}

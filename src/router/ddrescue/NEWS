@@ -1,16 +1,45 @@
-Changes in version 1.24:
+Changes in version 1.19:
 
-The new option '--command-mode' has been added. It activates a scripting
-interface similar to the one of ed which reads commands from the standard
-input and executes them, copying parts of the input file on demand.
+A race condition at start of run with "--timeout=0" has been fixed.
 
-Ddrescue now tries to create a backup copy of the mapfile, with the name
-<mapfile>.bak, every time it is going to overwrite a fsynced mapfile. On
-startup, ddrescue verifies that the backup mapfile (if it exists) is not a
-non-regular file, and that its name is not the same as infile or outfile.
+The new option "-P, --data-preview", which makes ddrescue show a few
+lines of the latest data read, has been added.
 
-It has been documented that when ddrescue finishes, the contents of any
-areas marked as bad-sector remain untouched in the output file.
+The new option "-u, --unidirectional", which runs all passes in the same
+direction (forwards or backwards), has been added.
 
-The configure script now accepts appending options to CXXFLAGS using the
-syntax 'CXXFLAGS+=OPTIONS'.
+The new option "-X, --exit-on-error", which makes ddrescue exit after
+the first read error is encountered during the copying phase, has been
+added.
+
+The new option "--ask", which asks for confirmation before starting the
+copy, has been added.
+
+The new option "--cpass", which selects what passes to run during the
+copying phase, has been added.
+
+The new option "--pause", which inserts a pause between passes, has been
+added.
+
+The option "-l, --logfile-size" is no more needed and has been removed.
+
+Ddrescue now skips on the first error during the copying phase.
+
+Trimming is now done in one pass and may be run in reverse.
+
+The splitting phase has been replaced by a "scraping" phase that scrapes
+together the data not recovered by the copying or trimming phases.
+Scraping reads each non-scraped block forwards, one sector at a time.
+
+The long name of option "-n" has been changed to "--no-scrape".
+
+During the retrying phase the direction is now reversed after each pass.
+Use "--unidirectional" to override.
+
+Model and serial number of ATA devices are shown with "--ask" or "-vv"
+on Linux.
+
+The configure script now accepts the option "--enable-linux" to enable
+the compilation of linux-specific code.
+
+The license has been changed to GPL version 2 or later.

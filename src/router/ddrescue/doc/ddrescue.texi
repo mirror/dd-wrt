@@ -6,8 +6,8 @@
 @finalout
 @c %**end of header
 
-@set UPDATED 24 February 2019
-@set VERSION 1.24
+@set UPDATED 3 October 2014
+@set VERSION 1.19
 
 @dircategory GNU Packages
 @direntry
@@ -39,24 +39,20 @@ This manual is for GNU ddrescue (version @value{VERSION}, @value{UPDATED}).
 * Basic concepts::        Blocks, clusters, devices, files, sectors, etc
 * Important advice::      Read this or risk losing your data
 * Algorithm::             How ddrescue recovers the data
-* Output::                Meaning of ddrescue's screen output
 * Invoking ddrescue::     Command line interface
-* Mapfile structure::     Detailed format of the mapfile
-* Emergency save::        Saving the mapfile in case of trouble
-* Optical media::         Copying CD-ROMs and DVDs
+* Logfile structure::     Detailed format of the logfile
 * Examples::              A small tutorial with examples
 * Direct disc access::    Bypassing the kernel cache
-* Command mode::          Copying parts of the input file on demand
 * Fill mode::             Selectively overwriting the output file
-* Generate mode::         Generating an approximate mapfile
-* Ddrescuelog::           Tool for ddrescue mapfiles
+* Generate mode::         Generating an approximate logfile
+* Ddrescuelog::           Tool for ddrescue logfiles
 * Invoking ddrescuelog::  Command line interface
 * Problems::              Reporting bugs
 * Concept index::         Index of concepts
 @end menu
 
 @sp 1
-Copyright @copyright{} 2004-2019 Antonio Diaz Diaz.
+Copyright @copyright{} 2004-2014 Antonio Diaz Diaz.
 
 This manual is free documentation: you have unlimited permission
 to copy, distribute and modify it.
@@ -66,54 +62,61 @@ to copy, distribute and modify it.
 @chapter Introduction
 @cindex introduction
 
-@uref{http://www.gnu.org/software/ddrescue/ddrescue.html,,GNU ddrescue} is a
-data recovery tool. It copies data from one file or block device (hard disc,
-cdrom, etc) to another, trying to rescue the good parts first in case of
-read errors.
+GNU ddrescue is a data recovery tool. It copies data from one file or
+block device (hard disc, cdrom, etc) to another, trying to rescue the
+good parts first in case of read errors.
 
-The basic operation of ddrescue is fully automatic. That is, you don't have
-to wait for an error, stop the program, restart it from a new position, etc.
+The basic operation of ddrescue is fully automatic. That is, you don't
+have to wait for an error, stop the program, read the log, restart it
+from a new position, etc.
 
-If you use the mapfile feature of ddrescue, the data are rescued very
-efficiently, (only the needed blocks are read). Also you may interrupt the
-rescue at any time and resume it later at the same point. The mapfile is an
-essential part of ddrescue's effectiveness. Use it unless you know what you
-are doing.
+If you use the logfile feature of ddrescue, the data is rescued very
+efficiently, (only the needed blocks are read). Also you can interrupt
+the rescue at any time and resume it later at the same point.
 
-Ddrescue does not write zeros to the output when it finds bad sectors in the
-input, and does not truncate the output file if not asked to. So, every time
-you run it on the same output file, it tries to fill in the gaps without
-wiping out the data already rescued.
+Ddrescue does not write zeros to the output when it finds bad sectors in
+the input, and does not truncate the output file if not asked to. So,
+every time you run it on the same output file, it tries to fill in the
+gaps without wiping out the data already rescued.
 
-Automatic merging of backups: If you have two or more damaged copies of a
-file, cdrom, etc, and run ddrescue on all of them, one at a time, with the
-same output file, you will probably obtain a complete and error-free file.
-This is so because the probability of having the same area damaged in all
-copies is low (if the errors are randomly located). Using the mapfile, only
-the needed blocks are read from the second and successive copies.
+Automatic merging of backups: If you have two or more damaged copies of
+a file, cdrom, etc, and run ddrescue on all of them, one at a time, with
+the same output file, you will probably obtain a complete and error-free
+file. This is so because the probability of having the same area damaged
+in all copies is low (if the errors are randomly located). Using the
+logfile, only the needed blocks are read from the second and successive
+copies.
 
-Ddrescue recommends @uref{http://www.nongnu.org/lzip/lzip.html,,lzip} for
-compression of backups because the lzip format is designed for long-term
-archiving and provides data recovery capabilities which nicely complement
-those of ddrescue. (Ddrescue fills unreadable sectors with data from other
-copies, while lziprecover corrects corrupt sectors with data from other
-copies). If the cause of file corruption is damaged media, the combination
-@w{ddrescue + lziprecover} is the best option for recovering data from
-multiple damaged copies. @xref{lziprecover-example}.
+Ddrescue recommends lzip for compression of backups because the lzip
+format is designed for long-term data archiving and provides data
+recovery capabilities which nicely complement those of ddrescue.
+(Ddrescue fills unreadable sectors with data from other copies, while
+lziprecover corrects corrupt sectors with data from other copies). If
+the cause of file corruption is damaged media, the combination ddrescue
++ lziprecover is the best option for recovering data from multiple
+damaged copies. @xref{lziprecover-example}, for an example.
 
-Because ddrescue needs to read and write at random places, it only works on
-seekable (random access) input and output files.
+Recordable CD and DVD media keep their data only for a finite time
+(typically for many years). After that time, data loss develops slowly
+with read errors growing from the outer media region towards the inside.
+Just make two (or more) copies of every important CD/DVD you burn so
+that you can later recover them with ddrescue.
 
-If your system supports it, ddrescue can use direct disc access to read the
-input file, bypassing the kernel cache.
+Because ddrescue needs to read and write at random places, it only works
+on seekable (random access) input and output files.
 
-Ddrescue also features a 'fill mode' able to selectively overwrite parts of
-the output file, which has a number of interesting uses like wiping data,
-marking bad areas or even, in some cases, "repair" damaged sectors.
+If your system supports it, ddrescue can use direct disc access to read
+the input file, bypassing the kernel cache.
 
-One of the great strengths of ddrescue is that it is interface-agnostic, and
-so can be used for any kind of device supported by your kernel (ATA, SATA,
-SCSI, old MFM drives, floppy discs, or even flash media cards like SD).
+Ddrescue also features a "fill mode" able to selectively overwrite parts
+of the output file, which has a number of interesting uses like wiping
+data, marking bad areas or even, in some cases, "repair" damaged
+sectors.
+
+One of the great strengths of ddrescue is that it is interface-agnostic,
+and so can be used for any kind of device supported by your kernel (ATA,
+SATA, SCSI, old MFM drives, floppy discs, or even flash media cards like
+SD).
 
 
 @node Basic concepts
@@ -146,26 +149,20 @@ file system. /dev/hda1, /dev/sdb3, are partition names.
 @item Recoverable formats
 As ddrescue uses standard library functions to read data from the device
 being rescued, only mountable device formats can be rescued with
-ddrescue. CD-ROMs and DVDs can be rescued, "compact disc digital audio"
-CDs can't, "video CDs"[1] maybe.@* [1]
-http://en.wikipedia.org/wiki/Video_CD
+ddrescue. DVDs can be mounted and they can be rescued, "compact disc
+digital audio" CDs can't, "video CDs"[1] maybe.@*
+[1] http://en.wikipedia.org/wiki/Video_CD
 
 @item Rescue domain
-Block or set of blocks to be acted upon (rescued, listed, etc). You may
+Block or set of blocks to be acted upon (rescued, listed, etc). You can
 define it with the options @samp{--input-position}, @samp{--size} and
-@samp{--domain-mapfile}. The rescue domain defaults to the whole input
-file or mapfile. If ddrescue can't determine the size of the input file,
-the rescue domain defaults to the maximum size of a block (at least
-@w{2^63 - 1} bytes, or 8 EiB minus 1 byte).
+@samp{--domain-logfile}. The rescue domain defaults to the whole input
+file or logfile.
 
-Ddrescue will never try to read any data outside of the rescue domain
-except when unaligned direct disc access is requested (@pxref{Direct
-disc access}). If it does, please, report it as a bug.
-
-The amount of data rescued, number of bad areas, etc, shown by ddrescue
-may vary or even become zero if you limit the rescue domain. Don't
-worry, they have not disappeared; they are simply out of the specified
-rescue domain.
+The amount of data rescued, number of errors, etc, shown by ddrescue may
+vary or even become zero if you limit the rescue domain. Don't worry,
+they have not disappeared; they are simply out of the specified rescue
+domain.
 
 @item Sector
 Hardware block. Smallest accessible amount of data on a device.
@@ -181,9 +178,11 @@ Ddrescue is like any other power tool. You need to understand what it
 does, and you need to understand some things about the machines it does
 those things to, in order to use it safely.
 
+Always use a logfile unless you know you won't need it. Without a
+logfile, ddrescue can't resume a rescue, only reinitiate it.
+
 Never try to rescue a r/w mounted partition. The resulting copy may be
-useless. It is best that the device or partition to be rescued is not
-mounted at all, not even read-only.
+useless.
 
 Never try to repair a file system on a drive with I/O errors; you will
 probably lose even more data.
@@ -191,7 +190,7 @@ probably lose even more data.
 If you use a device or a partition as destination, any data stored there
 will be overwritten.
 
-Some systems may change device names on reboot (e.g. udev enabled
+Some systems may change device names on reboot (eg. udev enabled
 systems). If you reboot, check the device names before restarting
 ddrescue.
 
@@ -229,39 +228,28 @@ The algorithm of ddrescue is as follows (the user may interrupt the
 process at any point, but be aware that a bad drive can block ddrescue
 for a long time until the kernel gives up):
 
-1) Optionally read a mapfile describing the status of a multi-part or
-previously interrupted rescue. If no mapfile is specified or is empty or
+1) Optionally read a logfile describing the status of a multi-part or
+previously interrupted rescue. If no logfile is specified or is empty or
 does not exist, mark all the rescue domain as non-tried.
 
-2) (First phase; Copying) Copying is done in up to five passes. The
-first pass reads the non-tried parts of the input file, marking the
-failed blocks as non-trimmed and skipping beyond them. The second pass
-delimits the blocks skipped by the first pass. The first two passes also
-skip beyond slow areas. The skipped areas are tried later in one or
-three additional passes (before trimming). The copying direction is
-reversed after each pass until all the rescue domain is tried.
-
-The third and fourth passes read the blocks skipped due to slow areas
-(if any) by the first two passes, in the same direction that each block
-was skipped. For each block, passes 2 to 4 skip the rest of the block
-after finding the first error in the block. The last pass is a sweeping
-pass, with skipping disabled. The purpose of the multiple passes is to
-delimit large bad areas fast, recover the most promising areas first,
-keep the mapfile small, and produce good starting points for trimming.
-
-Only non-tried areas are read in large blocks. Trimming, scraping and
-retrying are done sector by sector. Each sector is tried at most two
-times; the first in this phase as part of a large block read, the second
-in one of the phases below as a single sector read.
+2) (First phase; Copying) Read the non-tried parts of the input file,
+marking the failed blocks as non-trimmed and skipping beyond them. Skip
+also beyond slow areas. The skipped areas are tried later in two
+additional passes (before trimming), reversing the direction after each
+pass until all the rescue domain is tried. The third pass is a sweeping
+pass, with skipping disabled. (The purpose is to delimit large errors
+fast, keep the logfile small, and produce good starting points for
+trimming). Only non-tried areas are read in large blocks. Trimming,
+scraping and retrying are done sector by sector. Each sector is tried at
+most two times; the first in this step as part of a large block read,
+the second in one of the steps below as a single sector read.
 
 3) (Second phase; Trimming) Trimming is done in one pass. For each
 non-trimmed block, read forwards one sector at a time from the leading
 edge of the block until a bad sector is found. Then read backwards one
 sector at a time from the trailing edge of the block until a bad sector
 is found. Then mark the bad sectors found (if any) as bad-sector, and
-mark the rest of the block as non-scraped without trying to read it. If
-any edge is already adjacent to a bad sector, it is considered as
-already trimmed and is not trimmed again.
+mark the rest of the block as non-scraped without trying to read it.
 
 4) (Third phase; Scraping) Scrape together the data not recovered by the
 copying or trimming phases. Scraping is done in one pass. Each
@@ -274,157 +262,46 @@ reversed after each pass. Every bad sector is tried only once in each
 pass. Ddrescue can't know if a bad sector is unrecoverable or if it will
 be eventually read after some retries.
 
-6) Optionally write a mapfile for later use.
+6) Optionally write a logfile for later use.
 
 @sp 1
-When ddrescue finishes the steps above, any areas marked as bad-sector will
-remain untouched in the output file. If the output file is a regular file
-created by ddrescue, the areas marked as bad-sector will contain zeros. If
-it is a device or a previously existing file, the areas marked as bad-sector
-will still contain the data previously present there.
+The total error size (@samp{errsize}) is sum of the sizes of all the
+non-trimmed, non-scraped and bad-sector blocks. It increases during the
+copying phase and may decrease during trimming, scraping and retrying.
+Note that as ddrescue scrapes or retries the failed blocks, the good
+data found may divide them into smaller blocks, decreasing the total
+error size but increasing the number of errors.
 
-The mapfile is periodically saved to disc, as well as when ddrescue finishes
-or is interrupted. A backup copy of the mapfile with the extension
-@samp{.bak} is also periodically created (if possible). So in case of a
-crash you can resume the rescue with little recopying. The default interval
-between saves varies from 30 seconds to 5 minutes depending on mapfile size
-(larger mapfiles are saved at longer intervals), but may be overriden.
-@xref{--mapfile-interval}.
+The logfile is periodically saved to disc, as well as when ddrescue
+finishes or is interrupted. So in case of a crash you can resume the
+rescue with little recopying. The interval between saves varies from 30
+seconds to 5 minutes depending on logfile size (larger logfiles are
+saved at longer intervals).
 
-The same mapfile can be used for multiple commands that copy different areas
-of the input file, and for multiple recovery attempts over different
-subsets. See this example:
+Also, the same logfile can be used for multiple commands that copy
+different areas of the input file, and for multiple recovery attempts
+over different subsets. See this example:
 
 @noindent
 Rescue the most important part of the disc first.
 @example
-ddrescue -i0 -s50MiB /dev/sdc hdimage mapfile
-ddrescue -i0 -s1MiB -d -r3 /dev/sdc hdimage mapfile
+ddrescue -i0 -s50MiB /dev/hdc hdimage logfile
+ddrescue -i0 -s1MiB -d -r3 /dev/hdc hdimage logfile
 @end example
 
 @noindent
 Then rescue some key disc areas.
 @example
-ddrescue -i30GiB -s10GiB /dev/sdc hdimage mapfile
-ddrescue -i230GiB -s5GiB /dev/sdc hdimage mapfile
+ddrescue -i30GiB -s10GiB /dev/hdc hdimage logfile
+ddrescue -i230GiB -s5GiB /dev/hdc hdimage logfile
 @end example
 
 @noindent
 Now rescue the rest (does not recopy what is already done).
 @example
-ddrescue /dev/sdc hdimage mapfile
-ddrescue -d -r3 /dev/sdc hdimage mapfile
+ddrescue /dev/hdc hdimage logfile
+ddrescue -d -r3 /dev/hdc hdimage logfile
 @end example
-
-
-@node Output
-@chapter Meaning of ddrescue's screen output
-@cindex output
-
-The output of ddrescue looks like this:
-
-@example
-GNU ddrescue @value{VERSION}
-Press Ctrl-C to interrupt
-Initial status (read from mapfile)
-rescued: 1665 MB, tried: 0 B, bad-sector: 0 B, bad areas: 0
-
-Current status
-     ipos:    2874 MB, non-trimmed:        0 B,  current rate:  21479 kB/s
-     opos:    2874 MB, non-scraped:        0 B,  average rate:  21023 kB/s
-non-tried:   13603 MB,  bad-sector:        0 B,    error rate:       0 B/s
-  rescued:    2401 MB,   bad areas:        0,        run time:         35s
-pct rescued:   15.00%, read errors:        0,  remaining time:         10m
- slow reads:        5,        time since last successful read:          0s
-Copying non-tried blocks... Pass 1 (forwards)
-@end example
-
-The meaning of each field is as follows:
-
-@table @code
-@item ipos
-Input position. The position in the input file where data are being
-currently read from.
-
-@item opos
-Output position. The position in the output file where data are being
-currently written to.
-
-@item non-tried
-Size of the part of the rescue domain pending to be tried. This is the
-sum of the sizes of all the non-tried blocks.
-
-@item rescued
-Size of the part of the rescue domain already successfully recovered.
-This is the sum of the sizes of all the finished blocks.
-
-@item pct rescued
-Percentage of the rescue domain that has been successfully recovered.
-
-@item slow reads
-Number of times that the read rate fell below @samp{--min-read-rate}
-during the first two passes of the copying phase. @xref{--min-read-rate}.
-
-@item tried
-Size of the part of the rescue domain already tried but not yet rescued.
-This is the sum of the sizes of all the non-trimmed, non-scraped and
-bad-sector blocks.
-
-@item non-trimmed
-Size of the part of the rescue domain pending to be trimmed. This is the
-sum of the sizes of all the non-trimmed blocks.
-
-@item non-scraped
-Size of the part of the rescue domain pending to be scraped. This is the
-sum of the sizes of all the non-scraped blocks.
-
-@item bad-sector
-Total error size. This is the size of the part of the rescue domain
-formed by known bad sectors. The total error size is the sum of the
-sizes of all the bad-sector blocks. It increases during the trimming and
-scraping phases, and may decrease during the retrying phase. A sector is
-not marked as bad-sector and considered part of a bad area until it has
-been tried individually instead of as part of a large block read. Note
-that as ddrescue retries the bad-sector blocks, the good data found may
-divide them into smaller blocks, decreasing the total error size but
-increasing the number of bad areas.
-
-@item bad areas
-Number of separate bad-sector blocks inside the rescue domain.
-Non-trimmed and non-scraped blocks are not considered bad areas.
-@xref{--max-bad-areas}.
-
-@item read errors
-Number of failed read attempts. @xref{--max-error-rate}.
-
-@item current rate
-The read rate measured during the last second.
-
-@item average rate
-The average read rate measured during the current run.
-
-@item error rate
-The read error rate measured during the last second.
-
-@item run time
-Time elapsed since the beginning of the current run.
-
-@item remaining time
-Estimated remaining time to rescue all the data in the rescue domain.
-The remaining time is calculated using the average rate of the last 30
-seconds and does not take into account that some parts of the rescue
-domain may be excluded from the rescue (for example with
-@samp{--no-trim}), or that some areas may be unrecoverable. Therefore it
-may be very imprecise, may vary widely during the rescue, and may show a
-non-zero value at the end of the rescue. In particular it may go down to
-a few seconds at the end of the first pass, just to grow to hours or
-days in the following passes. Such is the nature of ddrescue; the good
-parts are usually recovered fast, while the rest may take a long time.
-
-@item time since last successful read
-Time elapsed since the last successful read attempt.
-
-@end table
 
 
 @node Invoking ddrescue
@@ -437,23 +314,12 @@ Time elapsed since the last successful read attempt.
 The format for running ddrescue is:
 
 @example
-ddrescue [@var{options}] @var{infile} @var{outfile} [@var{mapfile}]
+ddrescue [@var{options}] @var{infile} @var{outfile} [@var{logfile}]
 @end example
-
-@var{infile} and @var{outfile} may be files, devices or partitions.
-@var{mapfile} is a regular file and must be placed in an existing directory.
-If @var{mapfile} does not exist, ddrescue will create it.
-
-Ddrescue tries to create a backup copy of the mapfile, with the name
-@var{mapfile}.bak, every time it is going to overwrite a fsynced
-@var{mapfile}. @xref{--mapfile-interval}.
-
-Always use a mapfile unless you know you won't need it. Without a mapfile,
-ddrescue can't resume a rescue, only reinitiate it.
 
 ddrescue supports the following options:
 
-@table @code
+@table @samp
 @item -h
 @itemx --help
 Print an informative help message describing the options and exit.
@@ -461,19 +327,19 @@ Print an informative help message describing the options and exit.
 @item -V
 @itemx --version
 Print the version number of ddrescue on the standard output and exit.
-This version number should be included in all bug reports.
 
-@anchor{--min-read-rate}
 @item -a @var{bytes}
 @itemx --min-read-rate=@var{bytes}
 Minimum read rate of good non-tried areas, in bytes per second. If the
-read rate falls below this value during the first two passes of the
-copying phase, ddrescue will skip ahead a variable amount depending on
-rate and error histories. The skipped blocks are tried in additional
-passes (before trimming).
+read rate falls below this value, ddrescue will skip ahead a variable
+amount depending on rate and error histories. The skipped blocks are
+tried in additional passes (before trimming) where the minimum read rate
+is divided by ten before each pass, until there are no more non-tried
+blocks left.
 
-If @var{bytes} is 0 (auto), the minimum read rate is recalculated every
-second as @w{(average_rate / 10)}.
+If @var{bytes} is 0 (auto), the minimum read rate is recalculated for
+each block as @w{(average_rate / 10)}. Values above device capabilities
+are ignored.
 
 @item -A
 @itemx --try-again
@@ -502,53 +368,44 @@ or 9) is a good value for floppies.
 
 @item -C
 @itemx --complete-only
-Limit rescue domain to the blocks listed in the @var{mapfile}. Don't
-read new data beyond @var{mapfile} limits. This is useful when reading
+Limit rescue domain to the blocks listed in the @var{logfile}. Do not
+read new data beyond @var{logfile} limits. This is useful when reading
 from devices of undefined size (like raw devices), when the drive
 returns an incorrect size, or when reading from a partial copy. It can
 only be used after a first rescue attempt, possibly limited with the
-@samp{--size} option, has produced a complete @var{mapfile}.
+@samp{--size} option, has produced a complete @var{logfile}.
 
 @item -d
-@itemx --idirect
-Use direct disc access (@pxref{Direct disc access}) to read from
-@var{infile}, bypassing the kernel cache. (Opens the file with the
-O_DIRECT flag). Sector size must be correctly set for this to work. Not
-all systems support this.
+@itemx --direct
+Use direct disc access to read from @var{infile}, bypassing the kernel
+cache. (Open the file with the O_DIRECT flag). Use it only on devices or
+partitions, not on regular files. Sector size must be correctly set for
+this to work. Not all systems support this.
 
 If your system does not support direct disc access, ddrescue will warn
-you. If the sector size is not correctly set, an unaligned read error
-will result and ddrescue will exit with status 1.
+you. If the sector size is not correctly set, all reads will result in
+errors, and no data will be rescued.
 
 @item -D
-@itemx --odirect
-Use direct disc access to write to @var{outfile}, bypassing the kernel
-cache. (Opens the file with the O_DIRECT flag). Sector size must be
-correctly set for this to work. Not all systems support this.
+@itemx --synchronous
+Use synchronous writes for @var{outfile}. (Issue a fsync call after
+every write). May be useful when forcing the drive to remap its bad
+sectors.
 
-If your system does not support direct disc access, ddrescue will warn
-you. If the sector size is not correctly set, a write error will result
-and no data will be rescued. Some OSs have a bug that prevents them from
-detecting write errors properly (or at all) on some devices if direct
-disc access is not used for @var{outfile}.
-
-@anchor{--max-bad-areas}
 @item -e [+]@var{n}
-@itemx --max-bad-areas=[+]@var{n}
-Maximum number of bad areas allowed before giving up. Defaults to
+@itemx --max-errors=[+]@var{n}
+Maximum number of error areas allowed before giving up. Defaults to
 infinity. If @var{n} is preceded by @samp{+} the number refers to new
-bad areas found in this run, not counting those already present in the
-@var{mapfile}.
+error areas found in this run, not counting those already annotated in
+the @var{logfile}.
 
-@anchor{--max-error-rate}
 @item -E @var{bytes}
 @itemx --max-error-rate=@var{bytes}
-Maximum rate of read errors allowed before giving up, in bytes per
-second. Defaults to infinity. The rate being measured is that of
-actually failed reads, so ddrescue may exit because of this rate being
-exceeded even if the total error size (size of bad-sector areas) does
-not change because the areas being tried are being marked as non-trimmed
-or non-scraped, or are already marked as bad-sector.
+Maximum rate of errors allowed before giving up, in bytes per second.
+Defaults to infinity. The rate being measured is that of actually failed
+reads, so the rescue may finish because of this rate being exceeded even
+if the total error size (errsize) does not change because the areas
+being tried are already marked as errors.
 
 @item -f
 @itemx --force
@@ -560,15 +417,14 @@ regular files.
 @item -F @var{types}
 @itemx --fill-mode=@var{types}
 Fill the blocks in @var{outfile} specified as any of @var{types} in
-@var{mapfile}, with data read from @var{infile}. @var{types} contains
-one or more of the status characters defined in the chapter Mapfile
-structure (@pxref{Mapfile structure}) and an optional @samp{l} for
-sector location data. See the chapter Fill mode (@pxref{Fill mode}) for
-a complete description of the fill mode.
+@var{logfile}, with data read from @var{infile}. @var{types} contains
+one or more of the status characters defined in the chapter Logfile
+structure (@pxref{Logfile structure}). See the chapter Fill mode
+(@pxref{Fill mode}) for a complete description of the fill mode.
 
 @item -G
 @itemx --generate-mode
-Generate an approximate @var{mapfile} from the @var{infile} and
+Generate an approximate @var{logfile} from the @var{infile} and
 @var{outfile} of the original rescue run. Note that you must keep the
 original offset between @samp{--input-position} and
 @samp{--output-position} of the original rescue run. See the chapter
@@ -577,15 +433,13 @@ generate mode.
 
 @item -H @var{file}
 @itemx --test-mode=@var{file}
-Builds a map of good/bad blocks using the mapfile @var{file} and uses it
+Builds a map of good/bad blocks using the logfile @var{file} and uses it
 to simulate read errors in @var{infile}. The blocks marked as finished
 in @var{file} will be read normally. All other block types will be
 considered read errors without even trying to read them from
-@var{infile}. The apparent size of @var{infile} is truncated to the
-extent of @var{file}. This mode is an aid in improving the algorithm of
-ddrescue and is also useful to verify that ddrescue produces accurate
-results in presence of read errors. Use @samp{-} as @var{file} to read
-from standard input.
+@var{infile}. This mode is an aid in improving the algorithm of ddrescue
+and is also useful to verify that ddrescue produces accurate results in
+presence of read errors.
 
 @item -i @var{bytes}
 @itemx --input-position=@var{bytes}
@@ -599,23 +453,11 @@ the chapter Fill mode (@pxref{Fill mode}) for details.
 @item -I
 @itemx --verify-input-size
 Compare the size of @var{infile} with the size calculated from the list
-of blocks contained in the @var{mapfile}, and exit with status 1 if they
+of blocks contained in the @var{logfile}, and exit with status 1 if they
 differ. This is not enabled by default because the size of some devices
 can't be known in advance and because the size derived from the
-@var{mapfile} may be incomplete, for example after doing a partial
+@var{logfile} may be incomplete, for example after doing a partial
 rescue.
-
-@item -J
-@itemx --verify-on-error
-After every read error, read again the last good sector found and verify
-that it returns the same data. Exit with status 2 if the read fails or
-returns inconsistent data. Exit with status 1 if a read error happens
-before a good sector is found.
-
-This option performs one extra read after each error, wearing the drive
-faster. Use it only on drives that stop responding or return garbage
-data after finding errors. You may need to power cycle the drive before
-restarting ddrescue.
 
 @item -K [@var{initial}][,@var{max}]
 @itemx --skip-size=[@var{initial}][,@var{max}]
@@ -625,18 +467,17 @@ to skip on the first read error or slow read, in bytes. @var{max} is the
 maximum size to skip. The values given will be rounded to the next
 multiple of sector size. The skip size will be doubled for each read
 error or slow read until it reaches @var{max} or, if @var{max} is
-omitted, 1% of the size of @var{infile}, and will be reset to
-@var{initial} when good data are found. Valid values range from @w{64 KiB}
-to @w{1 EiB}. @var{initial} defaults to @w{@var{infile_size} / 100_000}
-with a minimum value of @w{64 KiB}. An @var{initial} value of 0 disables
-skipping entirely.
+omitted, 1% of the size of @var{infile} or 1 GiB (whichever is smaller),
+and will be reset to @var{initial} when good data is found. Valid values
+range from 64 KiB to 1 GiB. @var{initial} defaults to 64 KiB. An
+@var{initial} value of 0 disables skipping entirely.
 
 If ddrescue is having difficulties skipping away from a large area with
-scattered errors, or if the device has large bad areas at regular
-intervals, you may increase the initial skip size with this option.
+scattered errors, or if the device has large error areas at regular
+intervals, you can increase the initial skip size with this option.
 Inversely, if ddrescue is skipping too much, leaving large non-tried
 areas behind each error (which will be read later in the usually slower
-backwards direction), you may reduce the maximum skip size, or disable
+backwards direction), you can reduce the maximum skip size, or disable
 skipping.
 
 @samp{--skip-size} is independent from @samp{--cluster-size}. The size
@@ -644,23 +485,18 @@ to skip is calculated from the end of the block that just failed.
 
 @item -L
 @itemx --loose-domain
-Accept an incomplete synthetic (user fabricated) domain mapfile or
-test-mode mapfile and fill the gaps in the list of data blocks with
-non-tried blocks. The blocks in the mapfile must be strictly ascending
-and non-overlapping, but they don't need to be contiguous. This option
-allows making quick edits to a mapfile without all the size calculations
+Accept an incomplete synthetic (user fabricated) domain logfile or
+test-mode logfile and fill the gaps in the list of data blocks with
+non-tried blocks. The blocks in the logfile must be strictly ascending
+and non-overlapping, but they do not need to be contiguous. This option
+allows making quick edits to a logfile without all the size calculations
 involved in making all data blocks contiguous again.
 
-@anchor{--domain-mapfile}
 @item -m @var{file}
-@itemx --domain-mapfile=@var{file}
+@itemx --domain-logfile=@var{file}
 Restrict the rescue domain to the blocks marked as finished in the
-mapfile @var{file}. This is useful for merging partially recovered
+logfile @var{file}. This is useful for merging partially recovered
 images of backups, or if the destination drive fails during the rescue.
-Use @samp{-} as @var{file} to read the domain mapfile from standard input.
-Specialized tools like ddrutility or partclone can produce a domain
-mapfile listing all the used blocks in a partition, making the rescue
-more efficient.
 
 @item -M
 @itemx --retrim
@@ -676,7 +512,7 @@ the most difficult parts of the file.
 
 @item -N
 @itemx --no-trim
-Skip the trimming phase. Especially useful in the first parts of a
+Skip the trimming phase. Specially useful in the first parts of a
 multi-part rescue.
 
 @item -o @var{bytes}
@@ -688,14 +524,13 @@ are set to 0.
 
 @item -O
 @itemx --reopen-on-error
-Close @var{infile} and then reopen it after every read error encountered
-during the copying phase. If @samp{--min-read-rate} is set, also close
-and reopen @var{infile} after every slow read encountered during the
-first two passes of the copying phase. Use this option if you notice a
-permanent drop in transfer rate after finding read errors or slow areas.
-But be warned that most probably the slowing-down is intentionally
-caused by the kernel in an attempt to increase the probability of
-reading data from the device.
+Close @var{infile} and then reopen it after every read error and, if
+@samp{--min-read-rate} is set, after every slow read encountered both
+during the copying phase. Use this option if you notice a permanent drop
+in transfer rate after finding read errors or slow areas. But be warned
+that most probably the slowing-down is intentionally caused by the
+kernel in an attempt to increase the probability of reading data from
+the device.
 
 @item -p
 @itemx --preallocate
@@ -704,7 +539,7 @@ files can be preallocated. If preallocation succeeds, rescue will not
 fail due to lack of free space on disc. If ddrescue can't determine the
 size to preallocate, you may need to specify it with some combination of
 the @samp{--input-position}, @samp{--output-position}, @samp{--size},
-and @samp{--domain-mapfile} options.
+and @samp{--domain-logfile} options.
 
 @item -P[@var{lines}]
 @itemx --data-preview[=@var{lines}]
@@ -718,7 +553,7 @@ Quiet operation. Suppress all messages.
 
 @item -r @var{n}
 @itemx --retry-passes=@var{n}
-Exit after the given number of retry passes. Defaults to 0. -1 means
+Exit after given number of retry passes. Defaults to 0. -1 means
 infinity. Every bad sector is tried only once in each pass. To retry bad
 sectors detected on a previous run, you must specify a non-zero number
 of retry passes.
@@ -733,15 +568,15 @@ tried.
 
 @item -s @var{bytes}
 @itemx --size=@var{bytes}
-Maximum size of the rescue domain in bytes. It limits the amount of
+Maximum size of the rescue domain, in bytes. It limits the amount of
 input data to be copied. If ddrescue can't determine the size of the
-input file, you may need to specify it with this option. Note that this
-option does not specify the size of the resulting @var{outfile}. For
-example, the following command creates an @var{outfile} 300 bytes long,
-but only writes data on the last 200 bytes:
+input device, you may need to specify it with this option. Note that
+this option does not specify the size of the resulting @var{outfile}.
+For example, the following command creates an @var{outfile} 300 bytes
+long, but only writes data on the last 200 bytes:
 
 @example
-ddrescue -i 100 -s 200 infile outfile mapfile
+ddrescue -i 100 -s 200 infile outfile logfile
 @end example
 
 @item -S
@@ -758,12 +593,10 @@ regular files, not for drives or partitions.
 @item -T @var{interval}
 @itemx --timeout=@var{interval}
 Maximum time since last successful read allowed before giving up.
-Defaults to infinity. @var{interval} is an integer or rational number
-(like 1.5 or 1/2) optionally followed by one of @samp{s}, @samp{m},
-@samp{h} or @samp{d}, meaning seconds, minutes, hours and days
-respectively. If no unit is specified, it defaults to seconds.
-@var{interval} has a resolution of one second; fractions of a second are
-not allowed.
+Defaults to infinity. @var{interval} is a rational number (like 1.5 or
+1/2) optionally followed by one of @samp{s}, @samp{m}, @samp{h} or
+@samp{d}, meaning seconds, minutes, hours and days respectively. If no
+unit is specified, it defaults to seconds.
 
 @item -u
 @itemx --unidirectional
@@ -777,14 +610,10 @@ Verbose mode. Further -v's (up to 4) increase the verbosity level.
 @item -w
 @itemx --ignore-write-errors
 Make fill mode ignore write errors. This is useful to avoid ddrescue
-exiting because of new bad sectors developing while wiping the good
-sectors of a failing drive. Fill mode normally writes to @var{outfile}
-one cluster at a time. With this option, after the first write error is
+exiting because of new errors developing while wiping the good sectors
+of a failing drive. Fill mode normally writes to @var{outfile} one
+cluster at a time. With this option, after the first write error is
 found in an area, the rest of that area is filled sector by sector.
-
-Note that in rescue mode a write error is fatal, which means that the
-rescue needs to be repeated or else @var{outfile} needs to be copied to
-a third drive using @var{mapfile} as domain (@pxref{--domain-mapfile}).
 
 @item -x @var{bytes}
 @itemx --extend-outfile=@var{bytes}
@@ -793,90 +622,31 @@ If the size of @var{outfile} is already equal or longer than @var{bytes}
 then this option does nothing. Use this option to guarantee a minimum
 size for @var{outfile}. Only regular files can be extended.
 
-@item -X @var{n}
-@itemx --max-read-errors=@var{n}
-Maximum number of read errors allowed before giving up. Defaults to
-infinity. Exit with status 1 if more than @var{n} read errors are
-encountered. @samp{--max-read-errors=0} is similar but different to
-@samp{--timeout=0}, which waits until the screen status is refreshed (at
-least 1 second). If there is at least one successful read per second,
-@samp{--timeout=0} does not make ddrescue to exit.
-
-@samp{--max-read-errors=0} is also similar but different to
-@samp{--max-bad-areas=+0}, which exits when a new bad area is found. If
-the read errors are adjacent to existing bad areas, no new bad areas are
-produced (just enlarged), and @samp{--max-bad-areas=+0} does not make
+@item -X
+@itemx --exit-on-error
+Exit after the first read error is encountered during the copying phase.
+This is similar but different to @samp{--timeout=0}, which waits until
+the screen status is refreshed (at least 1 second). If there is at least
+one successful read per second, @samp{--timeout=0} does not make
 ddrescue to exit.
 
-@item -y
-@itemx --synchronous
-Use synchronous writes for @var{outfile}. (Issue a fsync call after
-every write). May be useful when forcing the drive to remap its bad
-sectors.
+This is also similar but different to @samp{--max-errors=+0}, which
+exits when a new error area is found. If the read errors are adjacent to
+existing error areas, no new error areas are produced (just enlarged),
+and @samp{--max-errors=+0} does not make ddrescue to exit.
 
-@item -Z @var{bytes}
-@itemx --max-read-rate=@var{bytes}
-Maximum read rate, in bytes per second. If @var{bytes} is too small, the
-actual read rate is rounded up to the equivalent of a whole number of
-cluster reads per second. Use this option to limit the bandwidth used by
-ddrescue, for example when recovering over a network.
-
-@item --ask
-Ask for user confirmation before starting the copy. If the first letter
-of the answer is @samp{y}, ddrescue starts copying. Else it exits with
-status 1.@*
-If they can be obtained, ddrescue shows the model and serial number of
-the input and output devices. Ddrescue also shows the size in bytes of
-the corresponding file or device if it exists. The format used is
-@w{[@var{model}::@var{serial_number}] (@var{size})}
-
-@item --command-mode
-Read commands from the standard input and execute them, copying parts of the
-input file on demand. Command line arguments controling the display (like
-@samp{--data-preview}) or the automatic algorithm (like @samp{--max-errors}
-or @samp{--reverse}) have no effect in command mode. @xref{Command mode},
-for a complete description of the command mode.
-
-@item --cpass=@var{range}
-Select what pass(es) to run during the copying phase. Valid pass values
-range from 1 to 5. To run only the given pass(es), specify also
-@samp{--no-trim} and @samp{--no-scrape}. @samp{--cpass=0} skips the
-copying phase entirely.
-
-@multitable {Examples of @var{range}} {1, 2, 3 and 5}
-@item Examples of @var{range} @tab Passes run
-@item 1                       @tab 1
-@item 1,2,3                   @tab 1, 2 and 3
-@item 2-4                     @tab 2, 3 and 4
-@item 1,3-5                   @tab 1, 3, 4 and 5
-@item 1-3,5                   @tab 1, 2, 3 and 5
-@end multitable
-
-@item --delay-slow=@var{interval}
-Initial delay before ddrescue starts checking for slow reads. Defaults
-to 30 seconds. @var{interval} is formatted as in the option
-@samp{--timeout} above.
-
-@item --log-events=@var{file}
-Log all significant events (start of each pass and end of run) in
-@var{file}. If @var{file} already exists, the new events are appended at
-the end of @var{file}. For each event a line is printed containing a
-time stamp, the percentage rescued and a message describing the event.
-The @samp{end of run} line also contains the current position and
-status. If ddrescue exits because of an error or interruption, the cause
-is also logged in @var{file}.
-
-@item --log-rates=@var{file}
+@item -1 @var{file}
+@itemx --log-rates=@var{file}
 Log rates and error sizes every second in @var{file}. If @var{file}
 already exists, it will be overwritten. Every time the screen is updated
 with new details, some of those details (time, input position, current
-and average rates, number of bad areas and total error size) are written
-to @var{file} in a format usable by plotting utilities like gnuplot.
-This allows a posterior analysis of the drive to see if it has any weak
-zones (areas where the transfer rate drops well below the sustained
-average).
+and average rates, number of errors and error size) are written to
+@var{file} in a format usable by plotting utilities like gnuplot. This
+allows a posterior analysis of the drive to see if it has any weak zones
+(areas where the transfer rate drops well below the sustained average).
 
-@item --log-reads=@var{file}
+@item -2 @var{file}
+@itemx --log-reads=@var{file}
 Log all read operations in @var{file}. If @var{file} already exists, it
 will be overwritten. Every read attempt and its result (position, size,
 copied size and error size) is written to @var{file}. (The position
@@ -888,66 +658,36 @@ option with caution because @var{file} may become very large very
 quickly. Use lzip to compress @var{file} if you need to store or
 transmit it.
 
-@anchor{--mapfile-interval}
-@item --mapfile-interval=[@var{save_interval}][,@var{sync_interval}]
-Change the interval at which ddrescue saves and fsyncs the @var{mapfile}. At
-least one of @var{save_interval} or @var{sync_interval} must be specified. A
-@var{save_interval} of -1 chooses the default automatic interval (from 30
-seconds to 5 minutes depending on mapfile size). A @var{save_interval} of 0
-saves the @var{mapfile} after every read (use with caution).
-@var{sync_interval} is the interval between fsync calls. Default
-@var{sync_interval} is 5 minutes. Minimum @var{sync_interval} is 5 seconds.
-Intervals are formatted as in the option @samp{--timeout} above.
+@item --ask
+Ask for user confirmation before starting the copy. If the first letter
+of the answer is @samp{y}, ddrescue starts copying. Else it exits with
+status 1.@*
+If they can be obtained, ddrescue shows the model and serial number of
+the input and output devices. Else it shows the size in bytes of the
+corresponding file or device.
 
-@item --max-slow-reads=@var{n}
-Maximum number of slow reads allowed before giving up. Defaults to
-infinity. Exit with status 1 if more than @var{n} slow reads are
-encountered during the first two passes of the copying phase. Only works
-if a minimum read rate has been set with @samp{--min-read-rate}.
+@item --cpass=@var{n}[,@var{n}]
+Select what pass(es) to run during the copying phase. Valid values for
+@var{n} range from 0 to 3. @samp{--cpass=0} skips the copying phase
+entirely. To run only the given pass(es), specify also @samp{--no-trim}
+and @samp{--no-scrape}.
 
-@item --pause-on-error=@var{interval}
-Time to wait after each read error or slow read. Defaults to 0.
-@var{interval} is formatted as in the option @samp{--timeout} above. If
-@var{interval} begins with @samp{s}, the pause is simulated and
-@var{interval} can be smaller than one second; the time displayed is
-increased by @var{interval} but without performing any pause. Pause
-simulation can be useful in combination with @samp{--test-mode} for
-testing purposes.
-
-@item --pause-on-pass=@var{interval}
+@item --pause=@var{interval}
 Time to wait between passes. Defaults to 0. @var{interval} is formatted
 as in the option @samp{--timeout} above.
-
-@item --reset-slow
-Reset the slow reads counter every time the read rate reaches or
-surpasses @samp{--min-read-rate}. With this option, ddrescue only exits
-after the read rate has remained below @samp{--min-read-rate} for at
-least as many seconds as the argument given to @samp{--max-slow-reads}.
-
-@item --same-file
-Allow @var{infile} and @var{outfile} to be the same file or device. This
-may be used to test the writing ability of a drive. It may also be used
-to copy part of a file to another location inside or beyond the end of
-the same file by setting different values for @samp{--input-position}
-and @samp{--output-position}. If the data to be copied overlap with the
-destination, the right copying direction must be chosen to avoid
-overwriting the overlapping part before it is copied.
 
 @end table
 
 Numbers given as arguments to options (positions, sizes, rates, etc) may
 be expressed as decimal, hexadecimal or octal values (using the same
 syntax as integer constants in C++), and may be followed by a multiplier
-and an optional @samp{B} for "byte". The @samp{s} multiplier may be
-appended to any of the other multipliers. For example, @samp{ks} means
-kilosectors @w{(1000 * sector_size)}, and @samp{Kis} means kibisectors
-@w{(1024 * sector_size)}.
+and an optional @samp{B} for "byte".
 
 Table of SI and binary prefixes (unit multipliers):
 
 @multitable {Prefix} {kilobyte  (10^3 = 1000)} {|} {Prefix} {kibibyte (2^10 = 1024)}
 @item Prefix @tab Value               @tab | @tab Prefix @tab Value
-@item s @tab sectors                  @tab | @tab    @tab
+@item   @tab                          @tab | @tab s  @tab sectors
 @item k @tab kilobyte  (10^3 = 1000)  @tab | @tab Ki @tab kibibyte (2^10 = 1024)
 @item M @tab megabyte  (10^6)         @tab | @tab Mi @tab mebibyte (2^20)
 @item G @tab gigabyte  (10^9)         @tab | @tab Gi @tab gibibyte (2^30)
@@ -964,52 +704,42 @@ found, invalid flags, I/O errors, etc), 2 to indicate a corrupt or
 invalid input file, 3 for an internal consistency error (eg, bug) which
 caused ddrescue to panic.
 
-If ddrescue is interrupted by a signal, it updates @var{mapfile} and
-then terminates by raising the signal received.
+If ddrescue is interrupted by a signal, it updates the logfile and then
+terminates by raising the signal received.
 
 
-@node Mapfile structure
-@chapter Mapfile structure
-@cindex mapfile structure
+@node Logfile structure
+@chapter Logfile structure
+@cindex logfile structure
 
-NOTE: In versions of ddrescue prior to 1.20 the mapfile was called
-@samp{logfile}. The format is the same; only the name has changed.
-
-The mapfile is a text file easy to read and edit. It is formed by three
+The logfile is a text file easy to read and edit. It is formed by three
 parts, the heading comments, the status line, and the list of data
-blocks. The character @samp{#} at begin of line or after whitespace
-starts a comment that extends to the end of the line.
+blocks. Any line beginning with @samp{#} is a comment line.
 
 The heading comments contain the version of ddrescue or ddrescuelog that
-created the mapfile, the command line used, and the time when the
-program started. If the mapfile was created by ddrescue it will also
-contain the current time when the mapfile was saved and a copy of the
+created the logfile, the command line used, and the time when the
+program started. If the logfile was created by ddrescue it will also
+contain the current time when the logfile was saved and a copy of the
 status message from the screen describing the operation being performed
 (copying, trimming, finished, etc). They are intended as information for
 the user.
 
 The first non-comment line is the status line. It contains a
-non-negative integer, a status character, and a positive decimal
-integer. The first integer is the position being tried in the input
-file. (The beginning of the block being tried in a forward pass or the
-end of the block in a backward pass). The status character is one of
-these:
+non-negative integer and a status character. The integer is the position
+being tried in the input file. (The beginning of the block being tried
+in a forward pass or the end of the block in a backward pass). The
+status character is one of these:
 
-@multitable {Character} {generating approximate mapfile}
+@multitable {Character} {generating approximate logfile}
 @item Character @tab Meaning
 @item '?'       @tab copying non-tried blocks
 @item '*'       @tab trimming non-trimmed blocks
 @item '/'       @tab scraping non-scraped blocks
 @item '-'       @tab retrying bad sectors
 @item 'F'       @tab filling specified blocks
-@item 'G'       @tab generating approximate mapfile
+@item 'G'       @tab generating approximate logfile
 @item '+'       @tab finished
 @end multitable
-
-Finally, the last integer is the number of the current pass in the
-current phase. The status line allows ddrescue to resume the copying
-phase instead of restarting it from pass 1. It also allows the retrying
-phase to resume in the same direction it was interrupted.
 
 The blocks in the list of data blocks must be contiguous and
 non-overlapping.
@@ -1030,16 +760,16 @@ is one of these:
 @end multitable
 
 @noindent
-And here is an example mapfile:
+And here is an example logfile:
 
 @example
-# Mapfile. Created by GNU ddrescue version @value{VERSION}
-# Command line: ddrescue -d -c18 /dev/fd0 fdimage mapfile
-# Start time:   2015-07-21 09:37:44
-# Current time: 2015-07-21 09:38:19
+# Rescue Logfile. Created by GNU ddrescue version @value{VERSION}
+# Command line: ddrescue -d -c18 /dev/fd0 fdimage logfile
+# Start time:   2014-05-03 09:37:44
+# Current time: 2014-05-03 09:38:19
 # Copying non-tried blocks... Pass 1 (forwards)
-# current_pos  current_status  current_pass
-0x00120000     ?               1
+# current_pos  current_status
+0x00120000     ?
 #      pos        size  status
 0x00000000  0x00117000  +
 0x00117000  0x00000200  -
@@ -1049,155 +779,12 @@ And here is an example mapfile:
 @end example
 
 If you edit the file, you may use decimal, hexadecimal or octal values,
-using the same syntax as integer constants in C++, except for
-current_pass, which must be a decimal integer.
+using the same syntax as integer constants in C++.
 
-
-@node Emergency save
-@chapter Saving the mapfile in case of trouble
-@cindex emergency save
-
-The mapfile is an essential part of ddrescue's effectiveness. Without a
-mapfile, ddrescue can't resume a rescue, only reinitiate it. Given that
-a difficult rescue may take days to complete, it would be a serious
-drawback if the mapfile were lost because of a solvable problem like a
-lack of space on the device the mapfile is written to.
-
-In case of trouble writing the mapfile, ddrescue will print a message
-like this:
-
-@example
-Error writing mapfile '@var{mapfile}': No space left on device
-Fix the problem and press ENTER to retry,
-                     or E+ENTER for an emergency save and exit,
-                     or Q+ENTER to abort.
-@end example
-
-You may try to fix the problem, for example deleting some files to make
-room for the mapfile, and press @key{Return} to retry.
-
-If the problem can't be fixed, you may press @key{e} followed by
-@key{Return} to try an emergency save and exit. Ddrescue will try to
-write the mapfile to the file @file{ddrescue.map} in the current
-directory or, if this fails, to @file{$HOME/ddrescue.map}. If the
-mapfile is written succesfully, ddrescue will exit with status 1. Else
-it will print the above message again.
-
-Or you may press @key{q} followed by @key{Return} to quit and exit with
-status 1. In this case the contents of the mapfile will be lost.
-
-
-@node Optical media
-@chapter Copying CD-ROMs and DVDs
-@cindex optical media
-
-Ddrescue may be better than dd for copying recordable CD-ROMs because
-the two lead out sectors at the end of some of them may cause a read
-error that prevents the whole last record from being copied by dd,
-potentially losing data. Also dd may create an image larger than the
-original if the @samp{sync} conversion and a block size larger than the
-sector size are specified.
-
-In the special case of reading CD-ROMs (but not DVDs), the specialized
-tool dvdisaster may be a better option than ddrescue for recovering data
-because dvdisaster can read and analyze raw CD sectors, which ddrescue
-can't.
-
-Recordable CD and DVD media keep their data only for a finite time
-(typically for some years). After that time, data loss develops slowly with
-read errors growing from the outer media region towards the inside. It is a
-good idea to make two (or more) copies of every important CD-ROM/DVD you
-burn so that you can later recover them with ddrescue.
-
-If you have only one copy of a CD-ROM or DVD that fails when being
-copied, and if you have access to multiple optical media drives, you
-have a better chance of recovering the bad sectors since one drive may
-fail to read a particular sector, but another drive might be able to
-squeeze the data out of it, depending on the laser frequency and the
-sensitivity of the laser-sensor that reads the reflected laser light.
-
-@sp 1
-@noindent
-Example 1: Rescue a CD-ROM in /dev/cdrom.
-
-@example
-ddrescue -n -b2048 /dev/cdrom cdimage mapfile
-ddrescue -d -r1 -b2048 /dev/cdrom cdimage mapfile
-  (if bad-sector size is zero, cdimage now contains a complete image
-   of the CD-ROM and you can write it to a blank CD-ROM)
-@end example
-
-@sp 1
-@noindent
-Example 2: Rescue a CD-ROM in /dev/cdrom from two copies.
-
-@example
-ddrescue -n -b2048 /dev/cdrom cdimage mapfile
-ddrescue -d -b2048 /dev/cdrom cdimage mapfile
-  (insert second copy in the CD drive)
-ddrescue -d -r1 -b2048 /dev/cdrom cdimage mapfile
-  (if bad-sector size is zero, cdimage now contains a complete image
-   of the CD-ROM and you can write it to a blank CD-ROM)
-@end example
-
-@sp 1
-@noindent
-Example 3: Rescue a CD-ROM in /dev/cdrom using two CD drives from two
-different computers, writing the image into an USB drive mounted on
-/mnt/mem.
-
-@example
-ddrescue -n -b2048 /dev/cdrom /mnt/mem/cdimage /mnt/mem/mapfile
-ddrescue -d -r1 -b2048 /dev/cdrom /mnt/mem/cdimage /mnt/mem/mapfile
-  (umount the USB drive and move both USB drive and CD-ROM to second
-   computer)
-ddrescue -d -r1 -b2048 /dev/cdrom /mnt/mem/cdimage /mnt/mem/mapfile
-  (if bad-sector size is zero, /mnt/mem/cdimage now contains a complete
-   image of the CD-ROM and you can write it to a blank CD-ROM)
-@end example
-
-@sp 1
-@noindent
-Example 4: Merge the partially recovered images of 3 identical DVDs
-using their mapfiles as domain mapfiles.
-
-@example
-ddrescue -m mapfile1 dvdimage1 dvdimage mapfile
-ddrescue -m mapfile2 dvdimage2 dvdimage mapfile
-ddrescue -m mapfile3 dvdimage3 dvdimage mapfile
-  (if bad-sector size is zero, dvdimage now contains a complete image
-   of the DVD and you can write it to a blank DVD)
-@end example
-
-@sp 1
-@anchor{lziprecover-example}
-@noindent
-Example 5: Rescue a lzip compressed backup from two copies on CD-ROM
-with error-checked merging of copies.
-@ifnothtml
-@xref{Top,lziprecover manual,,lziprecover},
-@end ifnothtml
-@ifhtml
-See the
-@uref{http://www.nongnu.org/lzip/manual/lziprecover_manual.html,,lziprecover manual}
-@end ifhtml
-for details about lziprecover.
-
-@example
-ddrescue -d -r1 -b2048 /dev/cdrom cdimage1 mapfile1
-mount -t iso9660 -o loop,ro cdimage1 /mnt/cdimage
-cp /mnt/cdimage/backup.tar.lz rescued1.tar.lz
-umount /mnt/cdimage
-  (insert second copy in the CD drive)
-ddrescue -d -r1 -b2048 /dev/cdrom cdimage2 mapfile2
-mount -t iso9660 -o loop,ro cdimage2 /mnt/cdimage
-cp /mnt/cdimage/backup.tar.lz rescued2.tar.lz
-umount /mnt/cdimage
-lziprecover -m -v -o backup.tar.lz rescued1.tar.lz rescued2.tar.lz
-  Input files merged successfully.
-lziprecover -tv backup.tar.lz
-  backup.tar.lz: ok
-@end example
+NOTE: Logfiles generated by a version of ddrescue prior to 1.6 lack the
+status line. If you want to use an old logfile with ddrescue 1.6 or
+later, you will have to insert a line like @samp{0 +} at the beginning
+of the logfile.
 
 
 @node Examples
@@ -1215,7 +802,7 @@ damaged drive powers up and is able to output some data, it may be the
 very last time that it ever will.
 
 You should make a copy of the failing drive with ddrescue, and then try
-to repair the copy. If your data are really important, use the first copy
+to repair the copy. If your data is really important, use the first copy
 as a master for a second copy, and try to repair the second copy. If
 something goes wrong, you have the master intact to try again.
 
@@ -1235,121 +822,136 @@ then try to repair the partition table and the partitions on the copy.
 If the damaged drive is not listed in /dev, then you cannot rescue it.
 At least not with ddrescue.
 
-@xref{Optical media}, for rescue examples of CD-ROMs and DVDs.
-
 @sp 1
 @noindent
-Example 1: Fully automatic rescue of a whole disc with two ext2
-partitions in /dev/sda to /dev/sdb.@*
-Note: you don't need to partition /dev/sdb beforehand, but if the
-partition table on /dev/sda is damaged, you'll need to recreate it
-somehow on /dev/sdb.
+Example 1: Rescue a whole disc with two ext2 partitions in /dev/hda to
+/dev/hdb.@*
+Note: you do not need to partition /dev/hdb beforehand, but if the
+partition table on /dev/hda is damaged, you'll need to recreate it
+somehow on /dev/hdb.
 
 @example
-ddrescue -f -r3 /dev/sda /dev/sdb mapfile
-fdisk /dev/sdb
-e2fsck -v -f /dev/sdb1
-e2fsck -v -f /dev/sdb2
+ddrescue -f -n /dev/hda /dev/hdb logfile
+ddrescue -d -f -r3 /dev/hda /dev/hdb logfile
+fdisk /dev/hdb
+e2fsck -v -f /dev/hdb1
+e2fsck -v -f /dev/hdb2
 @end example
 
 @sp 1
 @noindent
-Example 2: Rescue an ext2 partition in /dev/sda2 to /dev/sdb2.@*
-Note: you need to create the sdb2 partition with fdisk first. sdb2
+Example 2: Rescue an ext2 partition in /dev/hda2 to /dev/hdb2.@*
+Note: you need to create the hdb2 partition with fdisk first. hdb2
 should be of appropriate type and size.
 
 @example
-ddrescue -f -n /dev/sda2 /dev/sdb2 mapfile
-ddrescue -d -f -r3 /dev/sda2 /dev/sdb2 mapfile
-e2fsck -v -f /dev/sdb2
-mount -t ext2 -o ro /dev/sdb2 /mnt
+ddrescue -f -n /dev/hda2 /dev/hdb2 logfile
+ddrescue -d -f -r3 /dev/hda2 /dev/hdb2 logfile
+e2fsck -v -f /dev/hdb2
+mount -t ext2 -o ro /dev/hdb2 /mnt
   (read rescued files from /mnt)
 @end example
 
 @sp 1
 @noindent
-Example 3: While rescuing the whole drive /dev/sda to /dev/sdb, /dev/sda
+Example 3: Rescue a CD-ROM in /dev/cdrom.
+
+@example
+ddrescue -n -b2048 /dev/cdrom cdimage logfile
+ddrescue -d -b2048 /dev/cdrom cdimage logfile
+  (if errsize is zero, cdimage now contains a complete image of the
+   CD-ROM and you can write it to a blank CD-ROM)
+@end example
+
+@sp 1
+@noindent
+Example 4: Rescue a CD-ROM in /dev/cdrom from two copies.
+
+@example
+ddrescue -n -b2048 /dev/cdrom cdimage logfile
+ddrescue -d -b2048 /dev/cdrom cdimage logfile
+  (insert second copy in the CD drive)
+ddrescue -d -r1 -b2048 /dev/cdrom cdimage logfile
+  (if errsize is zero, cdimage now contains a complete image of the
+   CD-ROM and you can write it to a blank CD-ROM)
+@end example
+
+@sp 1
+@noindent
+Example 5: Merge the partially recovered images of 3 identical DVDs
+using their logfiles as domain logfiles.
+
+@example
+ddrescue -m logfile1 dvdimage1 dvdimage logfile
+ddrescue -m logfile2 dvdimage2 dvdimage logfile
+ddrescue -m logfile3 dvdimage3 dvdimage logfile
+  (if errsize is zero, dvdimage now contains a complete image of the DVD
+   and you can write it to a blank DVD)
+@end example
+
+@sp 1
+@anchor{lziprecover-example}
+@noindent
+Example 6: Rescue a lzip compressed backup from two copies on CD-ROM
+with error-checked merging of copies
+@ifnothtml
+(@xref{Top,lziprecover manual,,lziprecover},
+@end ifnothtml
+@ifhtml
+(See the
+@uref{http://www.nongnu.org/lzip/manual/lziprecover_manual.html,,lziprecover manual}
+@end ifhtml
+for details about lziprecover).
+
+@example
+ddrescue -b2048 /dev/cdrom cdimage1 logfile1
+mount -t iso9660 -o loop,ro cdimage1 /mnt/cdimage
+cp /mnt/cdimage/backup.tar.lz rescued1.tar.lz
+umount /mnt/cdimage
+  (insert second copy in the CD drive)
+ddrescue -b2048 /dev/cdrom cdimage2 logfile2
+mount -t iso9660 -o loop,ro cdimage2 /mnt/cdimage
+cp /mnt/cdimage/backup.tar.lz rescued2.tar.lz
+umount /mnt/cdimage
+lziprecover -m -v -o backup.tar.lz rescued1.tar.lz rescued2.tar.lz
+@end example
+
+@sp 1
+@noindent
+Example 7: While rescuing the whole drive /dev/hda to /dev/hdb, /dev/hda
 freezes up at position 12345678.
 
 @example
-ddrescue -f /dev/sda /dev/sdb mapfile       <-- /dev/sda freezes here
-  (restart /dev/sda or reboot computer)
+ddrescue -f /dev/hda /dev/hdb logfile       <-- /dev/hda freezes here
+  (restart /dev/hda or reboot computer)
   (restart copy at a safe distance from the troubled sector)
-ddrescue -f -i 12350000 /dev/sda /dev/sdb mapfile
-  (then copy backwards down to the troubled sector)
-ddrescue -f -R /dev/sda /dev/sdb mapfile
+ddrescue -f -i 12350000 /dev/hda /dev/hdb logfile
+  (copy backwards down to the troubled sector)
+ddrescue -f -R /dev/hda /dev/hdb logfile
 @end example
 
 @sp 1
 @noindent
-Example 4: While rescuing the whole drive /dev/sda to /dev/sdb, /dev/sdb
-fails and you have to rescue data to a third drive, /dev/sdc.
+Example 8: While rescuing the whole drive /dev/hda to /dev/hdb, /dev/hdb
+fails and you have to rescue data to a third drive, /dev/hdc.
 
 @example
-ddrescue -f -n /dev/sda /dev/sdb mapfile1     <-- /dev/sdb fails here
-ddrescue -f -m mapfile1 /dev/sdb /dev/sdc mapfile2
-ddrescue -f -n /dev/sda /dev/sdc mapfile2
-ddrescue -d -f -r3 /dev/sda /dev/sdc mapfile2
+ddrescue -f -n /dev/hda /dev/hdb logfile1     <-- /dev/hdb fails here
+ddrescue -f -m logfile1 /dev/hdb /dev/hdc logfile2
+ddrescue -f -n /dev/hda /dev/hdc logfile2
+ddrescue -d -f -r3 /dev/hda /dev/hdc logfile2
 @end example
 
 @sp 1
 @noindent
-Example 5: While rescuing a partition in /dev/sda1 to the file hdimage,
-/dev/sda1 stops responding and begins returning read errors, causing
-ddrescue to mark the rest of the partition as non-scraped.
+Example 9: While rescuing the whole drive /dev/hda to /dev/hdb, /dev/hda
+stops responding and disappears from /dev.
 
 @example
-ddrescue -n /dev/sda1 hdimage mapfile        <-- /dev/sda1 fails here
-  (restart /dev/sda or reboot computer)
-ddrescue -n -A -i<pos> -O /dev/sda1 hdimage mapfile
-  (if /dev/sda1 fails again, restart /dev/sda or reboot computer and
-   then repeat the above command as many times as needed until it
-   succeeds. <pos> is the position where the drive stopped responding)
-ddrescue -d -r3 /dev/sda1 hdimage mapfile
-@end example
-
-@sp 1
-@noindent
-Example 6: While rescuing a partition in /dev/sda1 to the file hdimage,
-sda1 disappears from /dev.
-
-@example
-ddrescue -n /dev/sda1 hdimage mapfile        <-- /dev/sda1 fails here
-  (restart /dev/sda or reboot computer and then repeat the above
-   command as many times as needed until it succeeds)
-ddrescue -d -r3 /dev/sda1 hdimage mapfile
-@end example
-
-@sp 1
-@noindent
-Example 7: While rescuing a partition in /dev/sda1 to the file hdimage,
-the partition table of /dev/sda becomes unreadable and the OS no longer
-shows sda1 in /dev. The solution is to shift the mapfile and read the
-rest of the partition sda1 from /dev/sda.
-Note: you need to know the offset of the partition sda1 in the drive sda
-and the size of sda1.
-
-@example
-ddrescue /dev/sda1 hdimage mapfile     <-- partition table fails here
-ddrescuelog --shift -o<offset> mapfile > shifted_mapfile
-ddrescue -i<offset> -o0 -s<size> /dev/sda hdimage shifted_mapfile
-@end example
-
-@sp 1
-@noindent
-Example 8: After rescuing a partition in /dev/sda1 to the file hdimage,
-expand hdimage to copy the whole drive in /dev/sda without recopying the
-already copied partition /dev/sda1. The solution is to shift the
-mapfile, move the data of sda1 to its final position in hdimage, and
-then read the rest of the data from /dev/sda.
-Note: you need to know the offset of the partition sda1 in the drive sda
-and the size of sda1.
-
-@example
-ddrescue /dev/sda1 hdimage mapfile           <-- rescue partition
-ddrescuelog --shift -o<offset> mapfile > shifted_mapfile
-ddrescue --same-file -o<offset> -s<size> --reverse hdimage hdimage
-ddrescue /dev/sda hdimage shifted_mapfile    <-- rescue rest of drive
+ddrescue -f -n /dev/hda /dev/hdb logfile      <-- /dev/hda fails here
+  (restart /dev/hda or reboot computer as many times as needed)
+ddrescue -f -n -A /dev/hda /dev/hdb logfile
+ddrescue -d -f -r3 /dev/hda /dev/hdb logfile
 @end example
 
 
@@ -1358,30 +960,29 @@ ddrescue /dev/sda hdimage shifted_mapfile    <-- rescue rest of drive
 @cindex direct disc access
 @cindex raw devices
 
-If you notice that the positions and sizes in @var{mapfile} are always
+If you notice that the positions and sizes in the logfile are ALWAYS
 multiples of the sector size, maybe your kernel is caching the disc
 accesses and grouping them. In this case you may want to use direct disc
-access for @var{infile}, or read from a raw device, to bypass the kernel
-cache and rescue more of your data.
+access or a raw device to bypass the kernel cache and rescue more of
+your data.
 
 NOTE! Sector size must be correctly set with the @samp{--sector-size}
-option for direct disc access to work.
+option for this to work. Only whole sectors can be read; both
+@samp{--input-position} and @samp{--size} must be a multiple of sector
+size.
 
-NOTE: Direct disc access can copy arbitrary domains by reading whole
-sectors and then writing only the requested part. This is the only case
-where ddrescue will try to read data outside of the rescue domain.
-
-Try the @samp{--idirect} option first. If direct disc access is not
+Try the @samp{--direct} option first. If direct disc access is not
 available in your system, try raw devices. Read your system
 documentation to find how to bind a raw device to a regular block
-device. Some OSs provide raw access through especial device names, like
+device. Some OSs provide raw access through special device names, like
 /dev/rdisk.
 
-Ddrescue aligns its I/O buffer to the sector size so that it can be used for
-direct disc access or to read from raw devices. For efficiency reasons, also
-aligns it to the memory page size if page size is a multiple of sector size.
-On some systems, ddrescue can't determine the size of a raw device, so an
-explicit @samp{--size} or @samp{--complete-only} option may be needed.
+Ddrescue aligns its I/O buffer to the sector size so that it can be used
+for direct disc access or to read from raw devices. For efficiency
+reasons, also aligns it to the memory page size if page size is a
+multiple of sector size. On some systems, ddrescue can't determine the
+size of a raw device, so an explicit @samp{--size} or
+@samp{--complete-only} option may be needed.
 
 Using direct disc access, or reading from a raw device, may be slower or
 faster than normal cached reading depending on your OS and hardware. In
@@ -1394,10 +995,10 @@ good sectors inside the failed blocks.
 Example 1: using direct disc access.
 
 @example
-ddrescue -f -n /dev/sdb1 /dev/sdc1 mapfile
-ddrescue -d -f -r3 /dev/sdb1 /dev/sdc1 mapfile
-e2fsck -v -f /dev/sdc1
-mount -t ext2 -o ro /dev/sdc1 /mnt
+ddrescue -f -n /dev/hdb1 /dev/hdc1 logfile
+ddrescue -d -f -r3 /dev/hdb1 /dev/hdc1 logfile
+e2fsck -v -f /dev/hdc1
+mount -t ext2 -o ro /dev/hdc1 /mnt
 @end example
 
 @sp 1
@@ -1405,71 +1006,13 @@ mount -t ext2 -o ro /dev/sdc1 /mnt
 Example 2: using a raw device.
 
 @example
-raw /dev/raw/raw1 /dev/sdb1
-ddrescue -f -n /dev/sdb1 /dev/sdc1 mapfile
-ddrescue -C -f -r3 /dev/raw/raw1 /dev/sdc1 mapfile
+raw /dev/raw/raw1 /dev/hdb1
+ddrescue -f -n /dev/hdb1 /dev/hdc1 logfile
+ddrescue -C -f -r3 /dev/raw/raw1 /dev/hdc1 logfile
 raw /dev/raw/raw1 0 0
-e2fsck -v -f /dev/sdc1
-mount -t ext2 -o ro /dev/sdc1 /mnt
+e2fsck -v -f /dev/hdc1
+mount -t ext2 -o ro /dev/hdc1 /mnt
 @end example
-
-
-@node Command mode
-@chapter Copying parts of the input file on demand
-@cindex command mode
-
-The command mode of ddrescue implements a scripting interface similar to
-the one of @uref{http://www.gnu.org/software/ed/manual/ed_manual.html,,ed}.
-@ifnothtml
-@xref{Top,ed manual,,ed}.
-@end ifnothtml
-In this mode commands are read from the standard input and executed to copy
-parts of the input file to the output file, retrieve information from the
-mapfile or write the mapfile to disc. Ddrescue's responses are written to
-standard output. "done\n" for a successfully executed command, "error\n" for
-a failed command (for example because of wrong arguments), and
-@w{"error: @var{error message}\n"} for serious or fatal errors like write
-errors.
-
-If end-of-file is detected on standard input, ddrescue discards any partial
-command being read and executes a @code{f} command.
-
-All ddrescue commands are single characters, though some require additonal
-parameters separated by spaces. Only one command is allowed per line.
-Ddrescue recognizes the following commands:
-
-@table @code
-
-@item c @var{pos} @var{size}
-Copy command. Copies a block of data from @var{infile} to @var{outfile} and
-updates the internal copy of the mapfile. The areas already marked as
-finished in the mapfile are not copied again.
-
-@item f
-Finish command. Compacts the internal copy of the mapfile and writes it to
-@var{mapfile} (if it was specified in the command line). Then prints
-"done\n" to standard output and quits. On startup, the mapfile is first
-compacted and then split following the rescue domain borders. The finish
-command compacts the mapfile again before exiting. If writing @var{mapfile}
-to disc fails, a non-interactive emergency save is tried before exiting.
-@xref{Emergency save}.
-
-@item q
-Quit command. Exits ddrescue. Does not update the mapfile.
-
-@item s @var{pos} @var{size}
-Status command. Writes to standard output one or more lines in mapfile
-format (@pxref{Mapfile structure}), showing the status of the areas included
-in the block requested. A line consisting of the string "done" marks the end
-of the list.
-
-@item u
-Update mapfile command. Writes the internal copy of the mapfile to
-@var{mapfile} (if it was specified in the command line). If update mapfile
-fails, you may try to fix the problem, for example deleting some files to
-make room for @var{mapfile}, before trying to update it again.
-
-@end table
 
 
 @node Fill mode
@@ -1479,39 +1022,34 @@ make room for @var{mapfile}, before trying to update it again.
 When ddrescue is invoked with the @samp{--fill-mode} option it operates
 in "fill mode", which is different from the default "rescue mode". That
 is, if you use the @samp{--fill-mode} option, ddrescue does not rescue
-anything. It only fills with data read from @var{infile} the blocks of
-@var{outfile} whose status character from @var{mapfile} coincides with
+anything. It only fills with data read from the input file the blocks of
+the output file whose status character from the logfile coincides with
 one of the type characters specified as argument to the
 @samp{--fill-mode} option.
 
-If the argument of the @samp{--fill-mode} option contains an @samp{l},
-ddrescue will write location data (position, sector number and status)
-into each sector filled. With bad sectors filled in this way, it should
-be possible to retry the recovery of important files, as location of the
-error is known by looking into the unfinished copy of the file.
+In fill mode the input file may have any size. If it is too small, the
+data will be duplicated as many times as necessary to fill the input
+buffer. If it is too big, only the data needed to fill the input buffer
+will be read. Then the same data will be written to every cluster or
+sector to be filled.
 
-In fill mode @var{infile} does not need to be seekable and it may be of
-any size. If it is too small, the data will be duplicated as many times
-as necessary to fill the input buffer. If it is too big, only the data
-needed to fill the input buffer will be read. Then the same data will be
-written to every cluster or sector to be filled.
+Note that in fill mode the input file is always read from position 0. If
+you specify a @samp{--input-position}, it refers to the original input
+file from which the logfile was built, and is only used to calculate the
+offset between input and output positions.
 
-Note that in fill mode @var{infile} is always read from position 0. If
-you specify a @samp{--input-position}, it refers to the original
-@var{infile} from which @var{mapfile} was built, and is only used to
-calculate the offset between input and output positions.
-
-Note also that when filling the @var{infile} of the original rescue run
-you should not set @samp{--output-position}, whereas when filling the
-@var{outfile} of the original rescue run you should keep the original
-offset between @samp{--input-position} and @samp{--output-position}.
+Note also that when filling the input file of the original rescue run
+you should set @samp{--input-position} and @samp{--output-position} to
+identical values, whereas when filling the output file of the original
+rescue run you should keep the original offset between
+@samp{--input-position} and @samp{--output-position}.
 
 The @samp{--fill-mode} option implies the @samp{--complete-only} option.
 
-In fill mode @var{mapfile} is updated to allow resumability when
-interrupted or in case of a crash, but as nothing is being rescued
-@var{mapfile} is not destroyed. The status line is the only part of
-@var{mapfile} that is modified.
+In fill mode the logfile is updated to allow resumability when
+interrupted or in case of a crash, but as nothing is being rescued the
+logfile is not destroyed. The status line is the only part of the
+logfile that is modified.
 
 @sp 1
 @noindent
@@ -1521,21 +1059,22 @@ The fill mode has a number of uses. See the following examples:
 Example 1: Mark parts of the rescued copy to allow finding them when
 examined in an hex editor. For example, the following command line fills
 all blocks marked as @samp{-} (bad-sector) with copies of the string
-@w{@samp{BAD-SECTOR }}:
+@w{@samp{BAD SECTOR }}:
 
 @example
-ddrescue --fill-mode=- <(printf "BAD-SECTOR ") outfile mapfile
+printf "BAD SECTOR " > tmpfile
+ddrescue --fill-mode=- tmpfile outfile logfile
 @end example
 
 @noindent
 Example 2: Wipe only the good sectors, leaving the bad sectors alone.
 This way, the drive will still test bad (i.e., with unreadable sectors).
-This is the fastest way of wiping a failing drive, and is especially
+This is the fastest way of wiping a failing drive, and is specially
 useful when sending the drive back to the manufacturer for warranty
 replacement.
 
 @example
-ddrescue --fill-mode=+ --force /dev/zero bad_drive mapfile
+ddrescue --fill-mode=+ --force /dev/zero bad_drive logfile
 @end example
 
 @noindent
@@ -1546,7 +1085,7 @@ will reallocate them automatically to new "spare" sectors that it keeps
 for just this purpose. WARNING! This may not work on your drive.
 
 @example
-ddrescue --fill-mode=- -f --synchronous /dev/zero bad_drive mapfile
+ddrescue --fill-mode=- --force --synchronous /dev/zero bad_drive logfile
 @end example
 
 @sp 1
@@ -1555,49 +1094,37 @@ Fill mode can also help you to figure out, independently of the file
 system used, what files are partially or entirely in the bad areas of
 the disc. Just follow these steps:
 
-1) Copy the damaged drive with ddrescue until finished. Don't use sparse
-writes. This yields a mapfile containing only finished (@samp{+}) and
+1) Copy the damaged drive with ddrescue until finished. Do not use
+sparse writes. This yields a logfile with only finished (@samp{+}) and
 bad-sector (@samp{-}) blocks.
 
 2) Fill the bad-sector blocks of the copied drive or image file with a
-string not present in any file, for example "DEADBEEF". Use
-@samp{--fill-mode=l-} if you want location data.
+string not present in any file, for example "DEADBEEF".
 
-3) Mount the copied drive (or the image file, via loopback device)
-read-only.
+3) Mount the copied drive (or the image file, via loopback device).
 
 4) Grep for the fill string in all the files. Those files containing the
 string reside (at least partially) in damaged disc areas. Note that if
 all the damaged areas are in unused space, grep will not find the string
 in any file, which means that no files are damaged.
 
-5) Take note of the location data of any important files that you want
-to retry.
+5) Unmount the copied drive or image file.
 
-6) Unmount the copied drive or image file.
-
-7) Retry the sectors belonging to the important files until they are
-rescued or until it is clear that they can't be rescued.
-
-8) Optionally fill the bad-sector blocks of the copied drive or image
+6) Optionally fill the bad-sector blocks of the copied drive or image
 file with zeros to restore the disc image.
 
 @noindent
 Example 4: Figure out what files are in the bad areas of the disc.
 
 @example
-ddrescue -b2048 /dev/cdrom cdimage mapfile
+ddrescue -b2048 /dev/cdrom cdimage logfile
 printf "DEADBEEF" > tmpfile
-ddrescue --fill-mode=l- tmpfile cdimage mapfile
+ddrescue --fill-mode=- tmpfile cdimage logfile
 rm tmpfile
 mount -t iso9660 -o loop,ro cdimage /mnt/cdimage
 find /mnt/cdimage -type f -exec grep -l "DEADBEEF" '@{@}' ';'
-  (note that my_thesis.txt has a bad sector at pos 0x12345000)
 umount /mnt/cdimage
-ddrescue -b2048 -i0x12345000 -s2048 -dr9 /dev/cdrom cdimage mapfile
-ddrescue --fill-mode=- /dev/zero cdimage mapfile
-mount -t iso9660 -o loop,ro cdimage /mnt/cdimage
-cp -a /mnt/cdimage/my_thesis.txt /safe/place/my_thesis.txt
+ddrescue --fill-mode=- /dev/zero cdimage logfile
 @end example
 
 
@@ -1605,16 +1132,16 @@ cp -a /mnt/cdimage/my_thesis.txt /safe/place/my_thesis.txt
 @chapter Generate mode
 @cindex generate Mode
 
-When ddrescue is invoked with the @samp{--generate-mode} option it
+NOTE: When ddrescue is invoked with the @samp{--generate-mode} option it
 operates in "generate mode", which is different from the default "rescue
 mode". That is, if you use the @samp{--generate-mode} option, ddrescue
-does not rescue anything. It only tries to generate a @var{mapfile} for
-later use.
+does not rescue anything. It only tries to generate a logfile for later
+use.
 
-So you didn't read the manual and started ddrescue without a
-@var{mapfile}. Now, two days later, your computer crashed and you can't
-know how much data ddrescue managed to save. And even worse, you can't
-resume the rescue; you have to restart it from the very beginning.
+So you didn't read the tutorial and started ddrescue without a logfile.
+Now, two days later, your computer crashed and you can't know how much
+data ddrescue managed to save. And even worse, you can't resume the
+rescue; you have to restart it from the very beginning.
 
 Or maybe you started copying a drive with @w{@code{dd
 conv=noerror,sync}} and are now in the same situation described above.
@@ -1622,17 +1149,16 @@ In this case, note that you can't use a copy made by dd unless it was
 invoked with the @samp{sync} conversion argument.
 
 Don't despair (yet). Ddrescue can in some cases generate an approximate
-@var{mapfile}, from @var{infile} and the (partial) copy in
-@var{outfile}, that is almost as good as an exact @var{mapfile}. It
-makes this by simply assuming that sectors containing all zeros were not
-rescued.
+logfile, from the input file and the (partial) copy, that is almost as
+good as an exact logfile. It makes this by simply assuming that sectors
+containing all zeros were not rescued.
 
 However, if the destination of the copy was a drive or a partition, (or
 an existing regular file and truncation was not requested), most
 probably you will need to restart ddrescue from the very beginning.
-(This time with a @var{mapfile}, of course). The reason is that old data
-may be present in the drive that have not been overwritten yet, and may
-be thus non-tried but non-zero.
+(This time with a logfile, of course). The reason is that old data may
+be present in the drive that have not been overwritten yet, and may be
+thus non-tried but non-zero.
 
 For example, if you first tried one of these commands:
 @example
@@ -1641,9 +1167,9 @@ or
 dd if=infile of=outfile conv=noerror,sync
 @end example
 
-then you can generate an approximate mapfile with this command:
+then you can generate an approximate logfile with this command:
 @example
-ddrescue --generate-mode infile outfile mapfile
+ddrescue --generate-mode infile outfile logfile
 @end example
 
 @noindent
@@ -1656,63 +1182,63 @@ rescue run.
 @chapter Ddrescuelog
 @cindex ddrescuelog
 
-Ddrescuelog is a tool that manipulates ddrescue mapfiles, shows mapfile
-contents, converts mapfiles to/from other formats, compares mapfiles, tests
-rescue status, and can delete a mapfile if the rescue is done. Ddrescuelog
-operations can be restricted to one or several parts of the mapfile if the
-domain setting options are used.
+Ddrescuelog is a tool that manipulates ddrescue logfiles, shows logfile
+contents, converts logfiles to/from other formats, compares logfiles,
+tests rescue status, and can delete a logfile if the rescue is done.
+Ddrescuelog operations can be restricted to one or several parts of the
+logfile if the domain setting options are used.
 
-When performing logic operations (AND, OR, XOR) on mapfiles of different
+When performing logic operations (AND, OR, XOR) on logfiles of different
 extension, only the blocks present in both files are processed.
 
-Here are some examples of how to use ddrescuelog, alone or in combination
-with other tools.
+Here are some examples of how to use ddrescuelog, alone or in
+combination with other tools.
 
 @sp 1
 @noindent
-Example 1: Delete the mapfile if the rescue is finished (all data have
-been recovered without errors left).
+Example 1: Delete the logfile if the rescue is finished (all data is
+recovered without errors left).
 
 @example
-ddrescue -f /dev/sda /dev/sdb mapfile
-ddrescuelog -d mapfile
+ddrescue -f /dev/hda /dev/hdb logfile
+ddrescuelog -d logfile
 @end example
 
 @sp 1
 @noindent
-Example 2: Rescue two ext2 partitions in /dev/sda to
-/dev/sdb and repair the file systems using badblock lists generated with
+Example 2: Rescue two ext2 partitions in /dev/hda to
+/dev/hdb and repair the file systems using badblock lists generated with
 ddrescuelog. File system block size is 4096.@*
-Note: you do need to partition /dev/sdb beforehand.
+Note: you do need to partition /dev/hdb beforehand.
 
 @example
-fdisk /dev/sdb                                 <-- partition /dev/sdb
-ddrescue -f /dev/sda1 /dev/sdb1 mapfile1
-ddrescue -f /dev/sda2 /dev/sdb2 mapfile2
-ddrescuelog -l- -b4096 mapfile1 > badblocks1
-ddrescuelog -l- -b4096 mapfile2 > badblocks2
-e2fsck -v -f -L badblocks1 /dev/sdb1
-e2fsck -v -f -L badblocks2 /dev/sdb2
+fdisk /dev/hdb                                <-- partition /deb/hdb
+ddrescue -f /dev/hda1 /dev/hdb1 logfile1
+ddrescue -f /dev/hda2 /dev/hdb2 logfile2
+ddrescuelog -l- -b4096 logfile1 > badblocks1
+ddrescuelog -l- -b4096 logfile2 > badblocks2
+e2fsck -v -f -L badblocks1 /dev/hdb1
+e2fsck -v -f -L badblocks2 /dev/hdb2
 @end example
 
 @sp 1
 @noindent
-Example 3: Rescue a whole disc with two ext2 partitions in /dev/sda to
-/dev/sdb and repair the file systems using badblock lists generated with
+Example 3: Rescue a whole disc with two ext2 partitions in /dev/hda to
+/dev/hdb and repair the file systems using badblock lists generated with
 ddrescuelog. Disc sector size is 512, file system block size is 4096.
 Arguments to options @samp{-i} and @samp{-s} are the starting positions
 and sizes of the partitions being rescued.@*
-Note: you don't need to partition /dev/sdb beforehand, but if the
-partition table on /dev/sda is damaged, you'll need to recreate it
-somehow on /dev/sdb.
+Note: you do not need to partition /dev/hdb beforehand, but if the
+partition table on /dev/hda is damaged, you'll need to recreate it
+somehow on /dev/hdb.
 
 @example
-ddrescue -f /dev/sda /dev/sdb mapfile
-fdisk /dev/sdb                                <-- get partition sizes
-ddrescuelog -l- -b512 -i63s -o0 -s767457s -b4096 mapfile > badblocks1
-ddrescuelog -l- -b512 -i767520s -o0 -s96520s -b4096 mapfile > badblocks2
-e2fsck -v -f -L badblocks1 /dev/sdb1
-e2fsck -v -f -L badblocks2 /dev/sdb2
+ddrescue -f /dev/hda /dev/hdb logfile
+fdisk /dev/hdb                                <-- get partition sizes
+ddrescuelog -l- -b512 -i63b -o0 -s9767457b -b4096 logfile > badblocks1
+ddrescuelog -l- -b512 -i9767520b -o0 -s128520b -b4096 logfile > badblocks2
+e2fsck -v -f -L badblocks1 /dev/hdb1
+e2fsck -v -f -L badblocks2 /dev/hdb2
 @end example
 
 
@@ -1723,16 +1249,12 @@ e2fsck -v -f -L badblocks2 /dev/sdb2
 The format for running ddrescuelog is:
 
 @example
-ddrescuelog [@var{options}] @var{mapfile}
+ddrescuelog [@var{options}] @var{logfile}
 @end example
-
-Use @samp{-} as @var{mapfile} to read the mapfile from standard input
-(also in the options taking a mapfile argument) or to write the mapfile
-created by @samp{--create-mapfile} to standard output.
 
 Ddrescuelog supports the following options:
 
-@table @code
+@table @samp
 @item -h
 @itemx --help
 Print an informative help message describing the options and exit.
@@ -1740,24 +1262,17 @@ Print an informative help message describing the options and exit.
 @item -V
 @itemx --version
 Print the version number of ddrescuelog on the standard output and exit.
-This version number should be included in all bug reports.
 
 @item -a @var{old_types},@var{new_types}
 @itemx --change-types=@var{old_types},@var{new_types}
 Change the status of every block in the rescue domain from one type in
 @var{old_types} to the corresponding type in @var{new_types}, much like
-the @samp{tr} command does, and write the resulting mapfile to standard
+the @samp{tr} command does, and write the resulting logfile to standard
 output. @var{old_types} and @var{new_types} are strings of block status
-characters as defined in the chapter Mapfile structure (@pxref{Mapfile
+characters as defined in the chapter Logfile structure (@pxref{Logfile
 structure}). Blocks whose status is not in @var{old_types} are left
 unchanged. If @var{new_types} is shorter than @var{old_types} the last
 type of @var{new_types} is repeated as many times as necessary.
-
-@item -A
-@itemx --annotate-mapfile
-Add comments containing the human-readable positions and sizes of the
-blocks in @var{mapfile} which are included in the rescue domain, and
-write the resulting mapfile to standard output.
 
 @item -b @var{bytes}
 @itemx --block-size=@var{bytes}
@@ -1772,53 +1287,52 @@ SI prefixes (powers of 1000) are used by default. (See table above,
 @ref{Invoking ddrescue}).
 
 @item -c[@var{type1}@var{type2}]
-@itemx --create-mapfile[=@var{type1}@var{type2}]
-Create a @var{mapfile} from a list of block numbers read from standard
-input. Only blocks included in the rescue domain will be added to
-@var{mapfile}.
+@itemx --create-logfile[=@var{type1}@var{type2}]
+Create a logfile from a list of block numbers read from standard input.
+Only blocks included in the rescue domain will be added to @var{logfile}.
 
 @var{type1} and @var{type2} are block status characters as defined in
-the chapter Mapfile structure (@pxref{Mapfile structure}). @var{type1}
+the chapter Logfile structure (@pxref{Logfile structure}). @var{type1}
 sets the type for blocks included in the list, while @var{type2} sets
-the type for the rest of @var{mapfile}. If not specified, @var{type1}
+the type for the rest of the logfile. If not specified, @var{type1}
 defaults to @samp{+} and @var{type2} defaults to @samp{-}.
 
 @item -C[@var{type}]
-@itemx --complete-mapfile[=@var{type}]
-Complete a synthetic (user fabricated) @var{mapfile} by filling the gaps
-with blocks of type @var{type}, and write the completed mapfile to
+@itemx --complete-logfile[=@var{type}]
+Complete a synthetic (user fabricated) @var{logfile} by filling the gaps
+with blocks of type @var{type}, and write the completed logfile to
 standard output. @var{type} is one of the block status characters
-defined in the chapter Mapfile structure (@pxref{Mapfile structure}). If
+defined in the chapter Logfile structure (@pxref{Logfile structure}). If
 @var{type} is not specified, the gaps are filled with non-tried blocks.
-All gaps in @var{mapfile} are filled. Domain options are ignored.
+All gaps in the logfile are filled. Domain options are ignored.
 
 @item -d
 @itemx --delete-if-done
-Delete the given @var{mapfile} if all the blocks in the rescue domain
-have been successfully recovered. The exit status is 0 if @var{mapfile}
+Delete the given @var{logfile} if all the blocks in the rescue domain
+have been successfuly recovered. The exit status is 0 if @var{logfile}
 could be deleted, 1 otherwise.
 
 @item -D
 @itemx --done-status
-Test if all the blocks in the rescue domain have been successfully
+Test if all the blocks in the rescue domain have been successfuly
 recovered. The exit status is 0 if all tested blocks are finished, 1
 otherwise.
 
 @item -f
 @itemx --force
-Force overwrite of @var{mapfile}.
+Force overwrite of @var{logfile}.
 
 @item -i @var{bytes}
 @itemx --input-position=@var{bytes}
 Starting position of the rescue domain, in bytes. Defaults to 0. It
-refers to a position in the original @var{infile}.
+refers to a position in the original input file.
 
 @item -l @var{types}
 @itemx --list-blocks=@var{types}
 Print on standard output the block numbers of the blocks specified as
-any of @var{types} in @var{mapfile} and included in the rescue domain.
+any of @var{types} in @var{logfile} and included in the rescue domain.
 @var{types} contains one or more of the block status characters defined
-in the chapter Mapfile structure (@pxref{Mapfile structure}).
+in the chapter Logfile structure (@pxref{Logfile structure}).
 
 The list format is one block number per line in decimal, like the output
 of the badblocks program, so that it can be used as input for e2fsck or
@@ -1826,44 +1340,44 @@ other similar filesystem repairing tool.
 
 @item -L
 @itemx --loose-domain
-Accept an incomplete synthetic (user fabricated) domain mapfile or
-compare-as-domain mapfile and fill the gaps in the list of data blocks
-with non-tried blocks. The blocks in the mapfile must be strictly
-ascending and non-overlapping, but they don't need to be contiguous.
-This option allows making quick edits to a mapfile without all the size
+Accept an incomplete synthetic (user fabricated) domain logfile or
+compare-as-domain logfile and fill the gaps in the list of data blocks
+with non-tried blocks. The blocks in the logfile must be strictly
+ascending and non-overlapping, but they do not need to be contiguous.
+This option allows making quick edits to a logfile without all the size
 calculations involved in making all data blocks contiguous again.
 
 @item -m @var{file}
-@itemx --domain-mapfile=@var{file}
+@itemx --domain-logfile=@var{file}
 Restrict the rescue domain to the blocks marked as finished in the
-mapfile @var{file}.
+logfile @var{file}.
 
 @item -n
-@itemx --invert-mapfile
-Invert the types of the blocks in @var{mapfile} which are included in
-the rescue domain, and write the resulting mapfile to standard output.
+@itemx --invert-logfile
+Invert the types of the blocks in @var{logfile} which are included in
+the rescue domain, and write the resulting logfile to standard output.
 Finished blocks (@samp{+}) are changed to bad-sector (@samp{-}), all
-other types are changed to finished. @samp{--invert-mapfile} is
+other types are changed to finished. @samp{--invert-logfile} is
 equivalent to @samp{--change-types=?*/-+,++++-}
 
 @item -o @var{bytes}
 @itemx --output-position=@var{bytes}
-Starting position of the image of the rescue domain in the original
-@var{outfile}, in bytes. Is used by the @samp{--list-blocks} option.
-Defaults to @samp{--input-position}.
+Starting position of the image of the rescue domain in the output file,
+in bytes. Is used by the @samp{--list-blocks} option. Defaults to
+@samp{--input-position}.
 
 @item -p @var{file}
-@itemx --compare-mapfile=@var{file}
+@itemx --compare-logfile=@var{file}
 Compare the types of the blocks included in the rescue domain. The exit
-status is 0 if all the blocks tested are the same in both @var{file} and
-@var{mapfile}, 1 otherwise.
+status is 0 if all tested blocks are the same in both @var{file} and
+@var{logfile}, 1 otherwise.
 
 @item -P @var{file}
 @itemx --compare-as-domain=@var{file}
 Compare only the blocks marked as finished in the rescue domain. The
-exit status is 0 if all the blocks tested are the same in both
-@var{file} and @var{mapfile}, 1 otherwise. Two files comparing equal
-with this option are equivalent when used as domain mapfiles.
+exit status is 0 if all tested blocks are the same in both @var{file}
+and @var{logfile}, 1 otherwise. Two files comparing equal with this
+option are equivalent when used as domain logfiles.
 
 @item -q
 @itemx --quiet
@@ -1871,49 +1385,40 @@ Quiet operation. Suppress all messages.
 
 @item -s @var{bytes}
 @itemx --size=@var{bytes}
-Maximum size of the rescue domain in bytes. It refers to a size in the
-original @var{infile}.
+Maximum size of the rescue domain, in bytes. It refers to a size in the
+original input file.
 
 @item -t
 @itemx --show-status
-Print a summary of the contents of each @var{mapfile} to the standard
-output. This option allows more than one @var{mapfile}. If the domain
-setting options are used, the summary can be restricted to one or
-several parts of @var{mapfile}.
+Print a summary of @var{logfile} contents on the standard output. The
+summary can be restricted to one or several parts of @var{logfile} if
+the domain setting options are used.
 
 @item -v
 @itemx --verbose
 Verbose mode. Further -v's (up to 4) increase the verbosity level.
 
 @item -x @var{file}
-@itemx --xor-mapfile=@var{file}
+@itemx --xor-logfile=@var{file}
 Perform a logical XOR (exclusive OR) operation between the finished
-blocks in @var{file} and those in @var{mapfile}, and write the resulting
-mapfile to standard output. In other words, in the resulting mapfile a
+blocks in @var{file} and those in @var{logfile}, and write the resulting
+logfile to standard output. In other words, in the resulting logfile a
 block is only shown as finished if it was finished in either of the two
-input mapfiles but not in both.
+input logfiles but not in both.
 
 @item -y @var{file}
-@itemx --and-mapfile=@var{file}
+@itemx --and-logfile=@var{file}
 Perform a logical AND operation between the finished blocks in
-@var{file} and those in @var{mapfile}, and write the resulting mapfile
-to standard output. In other words, in the resulting mapfile a block is
-only shown as finished if it was finished in both input mapfiles.
+@var{file} and those in @var{logfile}, and write the resulting logfile
+to standard output. In other words, in the resulting logfile a block is
+only shown as finished if it was finished in both input logfiles.
 
 @item -z @var{file}
-@itemx --or-mapfile=@var{file}
+@itemx --or-logfile=@var{file}
 Perform a logical OR operation between the finished blocks in @var{file}
-and those in @var{mapfile}, and write the resulting mapfile to standard
-output. In other words, in the resulting mapfile a block is shown as
-finished if it was finished in either of the two input mapfiles.
-
-@item --shift
-Shift the positions of all the blocks in @var{mapfile} by the offset
-(@samp{--output-position} - @samp{--input-position}), and write the
-resulting mapfile to standard output. Either @samp{--input-position} or
-@samp{--output-position} must be 0. If the offset is positive, a
-non-tried block is inserted before the first block. Any blocks beyond
-the end of the rescue domain are removed before performing the shift.
+and those in @var{logfile}, and write the resulting logfile to standard
+output. In other words, in the resulting logfile a block is shown as
+finished if it was finished in either of the two input logfiles.
 
 @end table
 
@@ -1935,7 +1440,7 @@ for all eternity, if not longer.
 
 If you find a bug in GNU ddrescue, please send electronic mail to
 @email{bug-ddrescue@@gnu.org}. Include the version number, which you can
-find by running @w{@code{ddrescue --version}}.
+find by running @w{@samp{ddrescue --version}}.
 
 
 @node Concept index

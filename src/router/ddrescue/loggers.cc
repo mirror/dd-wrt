@@ -1,5 +1,5 @@
 /*  GNU ddrescue - Data recovery tool
-    Copyright (C) 2013-2019 Antonio Diaz Diaz.
+    Copyright (C) 2013, 2014 Antonio Diaz Diaz.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@
 #include <cstdio>
 #include <string>
 #include <vector>
-#include <sys/stat.h>
 
 #include "block.h"
 #include "loggers.h"
@@ -31,36 +30,23 @@ namespace {
 const char * format_time_dhms( const long t )
   {
   static char buf[32];
-  const int s = t % 60;
-  const int m = ( t / 60 ) % 60;
-  const int h = ( t / 3600 ) % 24;
+  const long s = t % 60;
+  const long m = ( t / 60 ) % 60;
+  const long h = ( t / 3600 ) % 24;
   const long d = t / 86400;
 
-  if( d ) snprintf( buf, sizeof buf, "%ldd:%02dh:%02dm:%02ds", d, h, m, s );
-  else if( h ) snprintf( buf, sizeof buf, "%dh:%02dm:%02ds", h, m, s );
-  else if( m ) snprintf( buf, sizeof buf, "%dm:%02ds", m, s );
-  else snprintf( buf, sizeof buf, "%ds", s );
+  if( d ) snprintf( buf, sizeof buf, "%lud:%02luh:%02lum:%02lus", d, h, m, s );
+  else if( h ) snprintf( buf, sizeof buf, "%luh:%02lum:%02lus", h, m, s );
+  else if( m ) snprintf( buf, sizeof buf, "%lum:%02lus", m, s );
+  else snprintf( buf, sizeof buf, "%lus", s );
   return buf;
   }
 
 } // end namespace
 
 
-Event_logger event_logger;
 Rate_logger rate_logger;
 Read_logger read_logger;
-
-
-bool Logger::set_filename( const char * const name )
-  {
-  if( name && name[0] )
-    {
-    struct stat st;
-    if( stat( name, &st ) == 0 && !S_ISREG( st.st_mode ) ) return false;
-    filename_ = name;
-    }
-  return true;
-  }
 
 
 bool Logger::close_file()
@@ -72,55 +58,6 @@ bool Logger::close_file()
   }
 
 
-bool Event_logger::open_file()
-  {
-  if( !filename_ ) return true;
-  if( !f )
-    {
-    struct stat st;
-    const bool file_exists = ( stat( filename_, &st ) == 0 );
-    f = std::fopen( filename_, "a" );
-    error = !f || ( file_exists && std::fputc( '\n', f ) == EOF ) ||
-            !write_file_header( f, "Events Logfile" ) ||
-            std::fputs( "#         Time  Rescued  Event\n", f ) == EOF;
-    }
-  return !error;
-  }
-
-
-bool Event_logger::echo_msg( const char * const msg )
-  {
-  if( verbosity >= 0 ) std::printf( "\n  %s", msg );
-  if( f && !error && std::fprintf( f, "                      %s\n", msg ) < 0 )
-    error = true;
-  return !error;
-  }
-
-
-bool Event_logger::print_msg( const long time, const char * const percent_rescued,
-                              const char * const msg )
-  {
-  if( f && !error &&
-      std::fprintf( f, "%14s  %s  %s\n", format_time_dhms( time ),
-                    percent_rescued, msg ) < 0 )
-    error = true;
-  return !error;
-  }
-
-
-bool Event_logger::print_eor( const long time, const char * const percent_rescued,
-                              const long long current_pos,
-                              const char * const current_status_name )
-  {
-  if( f && !error &&
-      std::fprintf( f, "%14s  %s  End of run (0x%08llX  %s)\n",
-                    format_time_dhms( time ), percent_rescued,
-                    current_pos, current_status_name ) < 0 )
-    error = true;
-  return !error;
-  }
-
-
 bool Rate_logger::open_file()
   {
   if( !filename_ ) return true;
@@ -128,8 +65,8 @@ bool Rate_logger::open_file()
     {
     last_time = -1;
     f = std::fopen( filename_, "w" );
-    error = !f || !write_file_header( f, "Rates Logfile" ) ||
-            std::fputs( "#Time  Ipos  Current_rate  Average_rate  Bad_areas  Bad_size\n", f ) == EOF;
+    error = !f || !write_logfile_header( f, "Rates" ) ||
+            std::fprintf( f, "#Time  Ipos  Current_rate  Average_rate  Errors  Errsize\n" ) < 0;
     }
   return !error;
   }
@@ -137,14 +74,13 @@ bool Rate_logger::open_file()
 
 bool Rate_logger::print_line( const long time, const long long ipos,
                               const long long a_rate, const long long c_rate,
-                              const unsigned long bad_areas,
-                              const long long bad_size )
+                              const int errors, const long long errsize )
   {
   if( f && !error && time > last_time )
     {
     last_time = time;
-    if( std::fprintf( f, "%2ld  0x%08llX  %8lld  %8lld  %7lu  %8lld\n",
-                      time, ipos, c_rate, a_rate, bad_areas, bad_size ) < 0 )
+    if( std::fprintf( f, "%2lu  0x%08llX  %8llu  %8llu  %7u  %8llu\n",
+                      time, ipos, c_rate, a_rate, errors, errsize ) < 0 )
       error = true;
     }
   return !error;
@@ -158,8 +94,8 @@ bool Read_logger::open_file()
     {
     prev_is_msg = true;
     f = std::fopen( filename_, "w" );
-    error = !f || !write_file_header( f, "Reads Logfile" ) ||
-            std::fputs( "#  Ipos       Size  Copied_size  Error_size\n", f ) == EOF;
+    error = !f || !write_logfile_header( f, "Reads" ) ||
+            std::fprintf( f, "#  Ipos       Size  Copied_size  Error_size\n" ) < 0;
     }
   return !error;
   }
@@ -169,7 +105,7 @@ bool Read_logger::print_line( const long long ipos, const long long size,
                               const int copied_size, const int error_size )
   {
   if( f && !error &&
-      std::fprintf( f, "0x%08llX	%lld	%d	%d\n",
+      std::fprintf( f, "0x%08llX	%llu	%u	%u\n",
                     ipos, size, copied_size, error_size ) < 0 )
     error = true;
   prev_is_msg = false;
@@ -180,7 +116,7 @@ bool Read_logger::print_line( const long long ipos, const long long size,
 bool Read_logger::print_msg( const long time, const char * const msg )
   {
   if( f && !error &&
-      std::fprintf( f, "%s# %s  %s\n", prev_is_msg ? "" : "\n",
+      std::fprintf( f, "%s# %s  %s\n", prev_is_msg ? "" : "\n\n",
                     format_time_dhms( time ), msg ) < 0 )
     error = true;
   prev_is_msg = true;
