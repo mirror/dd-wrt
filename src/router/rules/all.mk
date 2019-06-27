@@ -324,6 +324,7 @@ include rules/rpcbind.mk
 include rules/krb5.mk
 include rules/rsync.mk
 include rules/libyang.mk
+include rules/smartmontools.mk
 
 #
 # Generic rules
