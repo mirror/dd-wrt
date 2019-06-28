@@ -17,11 +17,11 @@ LIBZIP_EXTRA_CFLAGS=-I$(TOP)/_staging/usr/include $(COPTS) $(MIPS16_OPT) -I$(TOP
 LIBZIP_EXTRA_LDFLAGS=-L$(TOP)/_staging/usr/lib -L$(TOP)/zlib -L$(TOP)/openssl -lz -lssl -lcrypto
 
 
-libzip-configure: gzip openssl
+libzip-configure: zlib openssl
 	$(call CMakeClean,$(LIBZIP_PKG_BUILD_DIR))
 	$(call CMakeConfigure,$(LIBZIP_PKG_BUILD_DIR),$(LIBZIP_STAGING_DIR),$(LIBZIP_CMAKE_OPTIONS),$(LIBZIP_EXTRA_CFLAGS),$(LIBZIP_EXTRA_LDFLAGS)) 
 
-libzip: gzip openssl
+libzip: zlib openssl
 	$(MAKE) -C libzip
 
 libzip-install:

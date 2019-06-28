@@ -13,7 +13,8 @@ LIBYANG_EXTRA_CFLAGS=$(COPTS) $(MIPS16_OPT)
 LIBYANG_EXTRA_LDFLAGS=-L$(TOP)/pcre/.libs -lpcre
 
 
-libyang-configure: gzip openssl
+libyang-configure: zlib openssl
+	rm -f $(TOP)/libyang/CMakeCache.txt
 	$(call CMakeClean,$(LIBYANG_PKG_BUILD_DIR))
 	$(call CMakeConfigure,$(LIBYANG_PKG_BUILD_DIR),$(LIBYANG_STAGING_DIR),$(LIBYANG_CMAKE_OPTIONS),$(LIBYANG_EXTRA_CFLAGS),$(LIBYANG_EXTRA_LDFLAGS)) 
 
