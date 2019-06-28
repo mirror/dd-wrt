@@ -22,4 +22,3 @@ uqmi-install:
 
 uqmi-clean:
 	if [ -e "$(UQMI_PKG_BUILD_DIR)/Makefile" ]; then $(MAKE) -C uqmi clean ; fi
-	$(call CMakeClean,$(UQMI_PKG_BUILD_DIR))
