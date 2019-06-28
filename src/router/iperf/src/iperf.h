@@ -1,5 +1,5 @@
 /*
- * iperf, Copyright (c) 2014-2018, The Regents of the University of
+ * iperf, Copyright (c) 2014-2019, The Regents of the University of
  * California, through Lawrence Berkeley National Laboratory (subject
  * to receipt of any required approvals from the U.S. Dept. of
  * Energy).  All rights reserved.
@@ -61,6 +61,7 @@
 #include "timer.h"
 #include "queue.h"
 #include "cjson.h"
+#include "iperf_time.h"
 
 #if defined(HAVE_SSL)
 #include <openssl/bio.h>
@@ -72,8 +73,8 @@ typedef uint64_t iperf_size_t;
 struct iperf_interval_results
 {
     iperf_size_t bytes_transferred; /* bytes transfered in this interval */
-    struct timeval interval_start_time;
-    struct timeval interval_end_time;
+    struct iperf_time interval_start_time;
+    struct iperf_time interval_end_time;
     float     interval_duration;
 
     /* for UDP */
@@ -119,9 +120,9 @@ struct iperf_stream_result
     int stream_sum_rtt;
     int stream_count_rtt;
     int stream_max_snd_cwnd;
-    struct timeval start_time;
-    struct timeval end_time;
-    struct timeval start_time_fixed;
+    struct iperf_time start_time;
+    struct iperf_time end_time;
+    struct iperf_time start_time_fixed;
     double sender_time;
     double receiver_time;
     TAILQ_HEAD(irlisthead, iperf_interval_results) interval_results;
@@ -167,6 +168,7 @@ struct iperf_stream
     int       remote_port;
     int       socket;
     int       id;
+    int       sender;
 	/* XXX: is settings just a pointer to the same struct in iperf_test? if not, 
 		should it be? */
     struct iperf_settings *settings;	/* pointer to structure settings */
@@ -234,11 +236,18 @@ struct xbind_entry {
     TAILQ_ENTRY(xbind_entry) link;
 };
 
+enum iperf_mode {
+	SENDER = 1,
+	RECEIVER = 0,
+	BIDIRECTIONAL = -1
+};
+
 struct iperf_test
 {
     char      role;                             /* 'c' lient or 's' erver */
-    int       sender;                           /* client & !reverse or server & reverse */
+    enum iperf_mode mode;
     int       sender_has_retransmits;
+    int       other_side_has_retransmits;       /* used if mode == BIDIRECTIONAL */
     struct protocol *protocol;
     signed char state;
     char     *server_hostname;                  /* -c option */
@@ -280,6 +289,7 @@ struct iperf_test
     int       one_off;                          /* -1 option */
     int       no_delay;                         /* -N option */
     int       reverse;                          /* -R option */
+    int       bidirectional;                    /* --bidirectional */
     int	      verbose;                          /* -V option - verbose mode */
     int	      json_output;                      /* -J option - JSON output */
     int	      zerocopy;                         /* -Z option - use sendfile */
@@ -315,6 +325,10 @@ struct iperf_test
 
     iperf_size_t bytes_sent;
     iperf_size_t blocks_sent;
+
+    iperf_size_t bytes_received;
+    iperf_size_t blocks_received;
+
     char      cookie[COOKIE_SIZE];
 //    struct iperf_stream *streams;               /* pointer to list of struct stream */
     SLIST_HEAD(slisthead, iperf_stream) streams;
@@ -371,5 +385,7 @@ struct iperf_test
 #define MAX_BURST 1000
 #define MAX_MSS (9 * 1024)
 #define MAX_STREAMS 128
+
+extern int gerror; /* error value from getaddrinfo(3), for use in internal error handling */
 
 #endif /* !__IPERF_H */

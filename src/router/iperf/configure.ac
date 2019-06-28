@@ -24,7 +24,7 @@
 # file for complete information.
 
 # Initialize the autoconf system for the specified tool, version and mailing list
-AC_INIT(iperf, 3.6, https://github.com/esnet/iperf, iperf, https://software.es.net/iperf/)
+AC_INIT(iperf, 3.7, https://github.com/esnet/iperf, iperf, https://software.es.net/iperf/)
 m4_include([config/ax_check_openssl.m4])
 AC_LANG(C)
 
@@ -34,7 +34,7 @@ AC_CONFIG_AUX_DIR(config)
 
 
 # Initialize the automake system
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([foreign])
 AM_MAINTAINER_MODE
 AM_CONFIG_HEADER(src/iperf_config.h)
 
@@ -51,6 +51,13 @@ AC_PROG_LIBTOOL
 if test "x$GCC" = "xyes"; then
   CFLAGS="$CFLAGS -Wall"
 fi
+
+# Check if profiling must be disabled
+AC_ARG_ENABLE([profiling],
+    AS_HELP_STRING([--disable-profiling], [Disable iperf profiling binary]),
+    [:],
+    [enable_profiling=yes])
+AM_CONDITIONAL([ENABLE_PROFILING], [test x$enable_profiling = xyes])
 
 # Checks for header files.
 AC_HEADER_STDC
@@ -107,15 +114,19 @@ if test "x$with_openssl" = "xno"; then
     AC_MSG_WARN( [Building without OpenSSL; disabling iperf_auth functionality.] )
 else
     # Check for OPENSSL support
+    havs_ssl=false
     AX_CHECK_OPENSSL(
-        [ AC_DEFINE([HAVE_SSL], [1], [OpenSSL Is Available]) ],
+        [ AC_DEFINE([HAVE_SSL], [1], [OpenSSL Is Available])
+          have_ssl=true ],
 	[ if test "x$with_openssl" != "x"; then
 	  AC_MSG_FAILURE([--with-openssl was given, but test for OpenSSL failed])
 	  fi ]
     )
-    LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS"
-    LIBS="$OPENSSL_LIBS $LIBS"
-    CPPFLAGS="$OPENSSL_INCLUDES $CPPFLAGS"
+    if $have_ssl; then
+        LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS"
+        LIBS="$OPENSSL_LIBS $LIBS"
+        CPPFLAGS="$OPENSSL_INCLUDES $CPPFLAGS"
+    fi
 fi
 
 # Check for TCP_CONGESTION sockopt (believed to be Linux and FreeBSD only)
@@ -182,5 +193,9 @@ if test "x$iperf3_cv_header_so_max_pacing_rate" = "xyes"; then
     AC_DEFINE([HAVE_SO_MAX_PACING_RATE], [1], [Have SO_MAX_PACING_RATE sockopt.])
 fi
 
+# Check if we need -lrt for clock_gettime
+AC_SEARCH_LIBS(clock_gettime, [rt posix4])
+# Check for clock_gettime support
+AC_CHECK_FUNCS([clock_gettime])
 
 AC_OUTPUT([Makefile src/Makefile src/version.h examples/Makefile iperf3.spec])

@@ -139,8 +139,6 @@ CPUs).
 .TP
 .BR -B ", " --bind " \fIhost\fR"
 bind to the specific interface associated with address \fIhost\fR.
-If the host has multiple interfaces, it will use the first interface
-by default.
 .TP
 .BR -V ", " --verbose " "
 give more detailed output 
@@ -353,6 +351,13 @@ If the client is run with \fB--json\fR, the server output is included
 in a JSON object; otherwise it is appended at the bottom of the
 human-readable output.
 .TP
+.BR --udp-counters-64bit
+Use 64-bit counters in UDP test packets.
+The use of this option can help prevent counter overflows during long
+or high-bitrate UDP tests.  Both client and server need to be running
+at least version 3.1 for this option to work.  It may become the
+default behavior at some point in the future.
+.TP
 .BR --repeating-payload
 Use repeating pattern in payload, instead of random bytes.
 The same payload is used in iperf2 (ASCII '0..9' repeating).
@@ -363,7 +368,9 @@ perform differently, just based on payload entropy.
 .BR --username " \fIusername\fR" 
 username to use for authentication to the iperf server (if built with
 OpenSSL support).
-The password will be prompted for interactively when the test is run.
+The password will be prompted for interactively when the test is run.  Note,
+the password to use can also be specified via the IPERF3_PASSWORD environment
+variable. If this variable is present, the password prompt will be skipped.
 .TP
 .BR --rsa-public-key-path " \fIfile\fR" 
 path to the RSA public key used to encrypt authentication credentials
