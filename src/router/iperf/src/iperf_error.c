@@ -1,5 +1,5 @@
 /*
- * iperf, Copyright (c) 2014-2018, The Regents of the University of
+ * iperf, Copyright (c) 2014-2019, The Regents of the University of
  * California, through Lawrence Berkeley National Laboratory (subject
  * to receipt of any required approvals from the U.S. Dept. of
  * Energy).  All rights reserved.
@@ -32,6 +32,8 @@
 #include <stdarg.h>
 #include "iperf.h"
 #include "iperf_api.h"
+
+int gerror;
 
 /* Do a printf to stderr. */
 void
@@ -140,6 +142,9 @@ iperf_strerror(int int_errno)
 	case IEBADFORMAT:
 	    snprintf(errstr, len, "bad format specifier (valid formats are in the set [kmgtKMGT])");
 	    break;
+	case IEBADPORT:
+	    snprintf(errstr, len, "port number must be between 1 and 65535 inclusive");
+	    break;
         case IEMSS:
             snprintf(errstr, len, "TCP MSS too large (maximum = %d bytes)", MAX_MSS);
             break;
@@ -182,11 +187,13 @@ iperf_strerror(int int_errno)
             break;
         case IELISTEN:
             snprintf(errstr, len, "unable to start listener for connections");
+	    herr = 1;
             perr = 1;
             break;
         case IECONNECT:
             snprintf(errstr, len, "unable to connect to server");
             perr = 1;
+	    herr = 1;
             break;
         case IEACCEPT:
             snprintf(errstr, len, "unable to accept connection from client");
@@ -314,6 +321,7 @@ iperf_strerror(int int_errno)
             break;
         case IESTREAMLISTEN:
             snprintf(errstr, len, "unable to start stream listener");
+	    herr = 1;
             perr = 1;
             break;
         case IESTREAMCONNECT:
@@ -374,13 +382,21 @@ iperf_strerror(int int_errno)
 	case IESETBUF2:
 	    snprintf(errstr, len, "socket buffer size not set correctly");
 	    break;
+	case IEREVERSEBIDIR:
+	    snprintf(errstr, len, "cannot be both reverse and bidirectional");
+            break;
 	
     }
 
+    /* Append the result of strerror() or gai_strerror() if appropriate */
     if (herr || perr)
         strncat(errstr, ": ", len - strlen(errstr) - 1);
     if (errno && perr)
         strncat(errstr, strerror(errno), len - strlen(errstr) - 1);
+    else if (herr && gerror) {
+        strncat(errstr, gai_strerror(gerror), len - strlen(errstr) - 1);
+	gerror = 0;
+    }
 
     return errstr;
 }
