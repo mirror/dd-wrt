@@ -33,7 +33,7 @@ endif
 ifeq ($(CONFIG_ATH9K),y)
 SNMP_EXTRACFLAGS+=-DHAVE_ATH9K
 endif
-snmp-configure:
+snmp-configure: nvram libutils
 	cd snmp && rm -f config.cache
 	cd snmp && ./configure  --quiet \
 				--prefix=/tmp/snmp \
