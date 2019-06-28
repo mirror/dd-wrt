@@ -1,5 +1,5 @@
 /*
- * iperf, Copyright (c) 2014-2018, The Regents of the University of
+ * iperf, Copyright (c) 2014-2019, The Regents of the University of
  * California, through Lawrence Berkeley National Laboratory (subject
  * to receipt of any required approvals from the U.S. Dept. of
  * Energy).  All rights reserved.
@@ -37,6 +37,7 @@
 #include <netdb.h>
 #include <sys/time.h>
 #include <sys/select.h>
+#include <limits.h>
 
 #ifdef HAVE_NETINET_SCTP_H
 #include <netinet/sctp.h>
@@ -177,7 +178,7 @@ iperf_sctp_listen(struct iperf_test *test)
     }
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE;
-    if (getaddrinfo(test->bind_address, portstr, &hints, &res) != 0) {
+    if ((gerror = getaddrinfo(test->bind_address, portstr, &hints, &res)) != 0) {
         i_errno = IESTREAMLISTEN;
         return -1;
     }
@@ -234,7 +235,7 @@ iperf_sctp_listen(struct iperf_test *test)
 
     freeaddrinfo(res);
 
-    if (listen(s, 5) < 0) {
+    if (listen(s, INT_MAX) < 0) {
         i_errno = IESTREAMLISTEN;
         return -1;
     }
@@ -265,7 +266,7 @@ iperf_sctp_connect(struct iperf_test *test)
         memset(&hints, 0, sizeof(hints));
         hints.ai_family = test->settings->domain;
         hints.ai_socktype = SOCK_STREAM;
-        if (getaddrinfo(test->bind_address, NULL, &hints, &local_res) != 0) {
+        if ((gerror = getaddrinfo(test->bind_address, NULL, &hints, &local_res)) != 0) {
             i_errno = IESTREAMCONNECT;
             return -1;
         }
@@ -275,7 +276,7 @@ iperf_sctp_connect(struct iperf_test *test)
     hints.ai_family = test->settings->domain;
     hints.ai_socktype = SOCK_STREAM;
     snprintf(portstr, sizeof(portstr), "%d", test->server_port);
-    if (getaddrinfo(test->server_hostname, portstr, &hints, &server_res) != 0) {
+    if ((gerror = getaddrinfo(test->server_hostname, portstr, &hints, &server_res)) != 0) {
 	if (test->bind_address)
 	    freeaddrinfo(local_res);
         i_errno = IESTREAMCONNECT;
@@ -547,7 +548,7 @@ iperf_sctp_bindx(struct iperf_test *test, int s, int is_server)
         xbe0 = TAILQ_FIRST(&test->xbind_addrs);
         TAILQ_REMOVE(&test->xbind_addrs, xbe0, link);
 
-        if (getaddrinfo(xbe0->name, servname, &hints, &xbe0->ai) != 0) {
+        if ((gerror = getaddrinfo(xbe0->name, servname, &hints, &xbe0->ai)) != 0) {
             i_errno = IESETSCTPBINDX;
             retval = -1;
             goto out;
@@ -591,7 +592,7 @@ iperf_sctp_bindx(struct iperf_test *test, int s, int is_server)
     TAILQ_FOREACH(xbe, &test->xbind_addrs, link) {
         if (xbe->ai != NULL)
             freeaddrinfo(xbe->ai);
-        if (getaddrinfo(xbe->name, servname, &hints, &xbe->ai) != 0) {
+        if ((gerror = getaddrinfo(xbe->name, servname, &hints, &xbe->ai)) != 0) {
             i_errno = IESETSCTPBINDX;
             retval = -1;
             goto out;
