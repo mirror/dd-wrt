@@ -15,7 +15,7 @@ dhcpv6-install:
 dhcpv6-clean:
 	$(MAKE) -C dhcpv6 clean
 
-dhcpv6-configure:
+dhcpv6-configure: nvram
 	cd dhcpv6 && ./configure --prefix= --with-localdbdir=/var --with-sysconfdir=/etc \
 			--target=$(ARCH)-linux \
 			--host=$(ARCH) \
