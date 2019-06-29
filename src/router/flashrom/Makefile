@@ -30,7 +30,8 @@ INSTALL = install
 DIFF    = diff
 PREFIX  ?= /usr/local
 MANDIR  ?= $(PREFIX)/share/man
-CFLAGS  ?= -Os -Wall -Wshadow
+CFLAGS  += -Wall -Wshadow -I$(TOP)/pciutils -I$(TOP)/zlib/include
+LDFLAGS = -L$(TOP)/zlib -L$(TOP)/pciutils/lib
 EXPORTDIR ?= .
 RANLIB  ?= ranlib
 PKG_CONFIG ?= pkg-config
@@ -691,15 +692,15 @@ $(foreach var, $(filter CONFIG_%, $(.VARIABLES)),\
 endif
 
 # Disable feature groups
-ifeq ($(CONFIG_ENABLE_LIBUSB0_PROGRAMMERS), no)
+#ifeq ($(CONFIG_ENABLE_LIBUSB0_PROGRAMMERS), no)
 override CONFIG_PICKIT2_SPI = no
-endif
-ifeq ($(CONFIG_ENABLE_LIBUSB1_PROGRAMMERS), no)
+#endif
+#ifeq ($(CONFIG_ENABLE_LIBUSB1_PROGRAMMERS), no)
 override CONFIG_CH341A_SPI = no
 override CONFIG_DEDIPROG = no
 override CONFIG_DIGILENT_SPI = no
 override CONFIG_DEVELOPERBOX_SPI = no
-endif
+#endif
 ifeq ($(CONFIG_ENABLE_LIBPCI_PROGRAMMERS), no)
 override CONFIG_INTERNAL = no
 override CONFIG_NIC3COM = no
@@ -1154,7 +1155,7 @@ define LIBPCI_TEST
 /* Avoid a failing test due to libpci header symbol shadowing breakage */
 #define index shadow_workaround_index
 #if !defined __NetBSD__
-#include <pci/pci.h>
+#include <lib/pci.h>
 #else
 #include <pciutils/pci.h>
 #endif
@@ -1173,7 +1174,7 @@ define PCI_GET_DEV_TEST
 /* Avoid a failing test due to libpci header symbol shadowing breakage */
 #define index shadow_workaround_index
 #if !defined __NetBSD__
-#include <pci/pci.h>
+#include <lib/pci.h>
 #else
 #include <pciutils/pci.h>
 #endif
