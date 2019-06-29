@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stddef.h>
+#include <sys/io.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #if IS_WINDOWS
