@@ -303,6 +303,7 @@ obj-$(CONFIG_LIBMNL) += libmnl
 obj-$(CONFIG_WIREGUARD) += libmnl wireguard qrencode
 obj-$(CONFIG_EXFAT) += exfat-utils
 obj-$(CONFIG_DOSFSTOOLS) += dosfstools
+obj-$(CONFIG_FLASHROM) += flashrom
 obj-$(CONFIG_SMARTMONTOOLS) += smartmontools
 #obj-$(CONFIG_OPROFILE) += oprofile
 ifeq ($(CONFIG_BCMMODERN),y)
