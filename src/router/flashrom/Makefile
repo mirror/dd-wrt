@@ -26,6 +26,7 @@ PROGRAM = flashrom
 # Note for anyone editing this Makefile: gnumake will happily ignore any
 # changes in this Makefile to variables set on the command line.
 STRIP   ?= strip
+DESTDIR = $(INSTALLDIR)
 INSTALL = install
 DIFF    = diff
 PREFIX  ?= /usr/local
@@ -1508,9 +1509,7 @@ $(PROGRAM).8: $(PROGRAM).8.tmpl
 
 install: $(PROGRAM)$(EXEC_SUFFIX) $(PROGRAM).8
 	mkdir -p $(DESTDIR)$(PREFIX)/sbin
-	mkdir -p $(DESTDIR)$(MANDIR)/man8
 	$(INSTALL) -m 0755 $(PROGRAM)$(EXEC_SUFFIX) $(DESTDIR)$(PREFIX)/sbin
-	$(INSTALL) -m 0644 $(PROGRAM).8 $(DESTDIR)$(MANDIR)/man8
 
 libinstall: libflashrom.a libflashrom.h
 	mkdir -p $(DESTDIR)$(PREFIX)/lib
