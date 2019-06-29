@@ -148,7 +148,7 @@ void start_config_vlan(void)
 void start_setup_vlans(void)
 {
 #ifdef HAVE_SWCONFIG
-	if (!nvram_exists("sw_cpuport") || !nvram_exists("sw_wancpuport"))
+	if (!nvram_exists("sw_cpuport") && !nvram_exists("sw_wancpuport"))
 		return;
 	if (!nvram_exists("port5vlans") || nvram_matchi("vlans", 0))
 		return;		// for some reason VLANs are not set up, and
@@ -209,9 +209,9 @@ void start_setup_vlans(void)
 					wanphy = "eth1";
 				}
 				if (i == 0 && nvram_exists("sw_wancpuport"))
-					eval("vconfig", "add", wanphy, vlan);
+					eval("vconfig", "add", wanphy, buff);
 				else
-					eval("vconfig", "add", lanphy, vlan);
+					eval("vconfig", "add", lanphy, buff);
 				snprintf(buff, 9, "vlan%d", tmp);
 				if (strcmp(nvram_safe_get("wan_ifname"), buff)) {
 					if (*(nvram_nget("vlan%d_ipaddr", vlan_number)))
