@@ -1,8 +1,8 @@
 // Current system global object
 var system = {
-	version: "1.6.0 beta",
+	version: "1.6.0",
 	rootPath: "tr-web-control/",
-	codeupdate: "20180906",
+	codeupdate: "20190612",
 	configHead: "transmission-web-control",
 	// default config, can be customized in config.js
 	config: {
@@ -487,7 +487,7 @@ var system = {
 				options: {
 					title: system.lang.toolbar["add-torrent"],
 					width: 620,
-					height: 300,
+					height: system.config.nav.labels ? 500 : 300,
 					resizable: true
 				},
 				datas: {
@@ -988,7 +988,8 @@ var system = {
 		}
 		parent.menu("show", {
 			left: e.pageX,
-			top: e.pageY
+			top: e.pageY,
+			hideOnUnhover: false
 		});
 		parent = null;
 		menus = null;
@@ -1289,7 +1290,7 @@ var system = {
 					options: {
 						title: system.lang.toolbar["add-torrent"],
 						width: 620,
-						height: 400,
+						height: system.config.nav.labels ? 600 : 400,
 						resizable: true
 					}
 				});
@@ -1660,7 +1661,8 @@ var system = {
 		this.resetNavLabels();
 
 		// FF browser displays the total size, will be moved down a row, so a separate treatment
-		if (navigator.userAgent.indexOf("Firefox") > 0) {
+		// 新版本已无此问题
+		if ($.ua.browser.name == "Firefox" && $.ua.browser.major < 60) {
 			system.panel.left.find("span.nav-total-size").css({
 				"margin-top": "-19px"
 			});
@@ -2432,7 +2434,7 @@ var system = {
 		return '<div class="torrent-progress" title="' + progress + '"><div class="torrent-progress-text">' + progress + '</div><div class="torrent-progress-bar ' + className + '" style="width:' + progress + ';"></div></div>';
 	},
 	// Add torrent
-	addTorrentsToServer: function (urls, count, autostart, savepath) {
+	addTorrentsToServer: function (urls, count, autostart, savepath, labels) {
 		//this.config.autoReload = false;
 		var index = count - urls.length;
 		var url = urls.shift();
@@ -2440,11 +2442,15 @@ var system = {
 			this.showStatus(this.lang.system.status.queuefinish);
 			//this.config.autoReload = true;
 			this.getServerStatus();
+			if(labels != null)
+				system.saveConfig();
 			return;
 		}
 		this.showStatus(this.lang.system.status.queue + (index + 1) + "/" + (count) + "<br/>" + url, 0);
 		transmission.addTorrentFromUrl(url, savepath, autostart, function (data) {
-			system.addTorrentsToServer(urls, count, autostart, savepath);
+			system.addTorrentsToServer(urls, count, autostart, savepath, labels);
+			if(labels != null && data.hashString != null)
+				system.saveLabelsConfig(data.hashString, labels);
 		});
 	},
 	// Starts / pauses the selected torrent
@@ -2849,10 +2855,10 @@ var system = {
 				case "ratio":
 					field.formatter = function (value, row, index) {
 						var className = '';
-						if (parseFloat(value) < 1) {
+						if (parseFloat(value) < 1 && value!=-1) {
 							className = 'text-status-warning';
 						}
-						return '<span class="' + className + '">' + value + '</span>';
+						return '<span class="' + className + '">' + (value==-1?"∞":value) + '</span>';
 					};
 					break;
 
@@ -2915,7 +2921,8 @@ var system = {
 
 		timedChunk(transmission.downloadDirs, this.appendFolder, this, 10, function () {
 			// FF browser displays the total size, will be moved down a row, so a separate treatment
-			if (navigator.userAgent.indexOf("Firefox") > 0) {
+			// 新版本已无此问题
+			if ($.ua.browser.name == "Firefox" && $.ua.browser.major < 60) {
 				system.panel.left.find("span.nav-total-size").css({
 					"margin-top": "-19px"
 				});
@@ -3001,6 +3008,16 @@ var system = {
 			this.setStorageData(this.storageKeys.dictionary[key], this.dictionary[key]);
 		}
 		this.saveUserConfig();
+	},
+	// Save labels config for torrent if need
+	saveLabelsConfig: function(hash, labels){
+		if(system.config.nav.labels){
+			if (labels.length==0) {
+				delete system.config.labelMaps[hash];
+			} else {
+				system.config.labelMaps[hash] = labels;
+			}
+		}
 	},
 	readUserConfig: function () {
 		var local = window.localStorage[this.configHead];
