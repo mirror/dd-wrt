@@ -1135,7 +1135,7 @@ char *getdisc(void)		// works only for squashfs
 			if (detect < 0)
 				continue;
 			if (detect) {
-				sprintf(ret, "mmcblk%c", i);
+				sprintf(ret, "mmcblk%cp", i);
 				if (!nocache) {
 					nvram_set("root_disc", ret);
 					nvram_commit();
