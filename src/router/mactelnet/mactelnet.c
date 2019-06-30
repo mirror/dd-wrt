@@ -318,7 +318,7 @@ static int handle_packet(unsigned char *data, int data_len) {
 			if (cpkt.cptype == MT_CPTYPE_PASSSALT) {
 				/* check validity, server sends exactly 16 bytes */
 				if (cpkt.length != 16) {
-					fprintf(stderr, _("Invalid salt length: %d (instead of 16) received from server %s\n"), cpkt.length, ether_ntoa((struct ether_addr *)dstmac));
+					fprintf(stderr, _("Invalid salt length: %d (instead of 16) received from server %s\n"), cpkt.length, _ether_ntoa((struct ether_addr *)dstmac));
 				}
 				memcpy(pass_salt, cpkt.data, 16);
 				send_auth(username, password);
@@ -371,7 +371,7 @@ static int handle_packet(unsigned char *data, int data_len) {
 		/* exit */
 		running = 0;
 	} else {
-		fprintf(stderr, _("Unhandeled packet type: %d received from server %s\n"), pkthdr.ptype, ether_ntoa((struct ether_addr *)dstmac));
+		fprintf(stderr, _("Unhandeled packet type: %d received from server %s\n"), pkthdr.ptype, _ether_ntoa((struct ether_addr *)dstmac));
 		return -1;
 	}
 
@@ -687,7 +687,7 @@ int mactelnet_main (int argc, char **argv) {
 	setvbuf(stdout, (char*)NULL, _IONBF, 0);
 
 	if (!quiet_mode) {
-		printf(_("Connecting to %s..."), ether_ntoa((struct ether_addr *)dstmac));
+		printf(_("Connecting to %s..."), _ether_ntoa((struct ether_addr *)dstmac));
 	}
 
 	/* Initialize receiving socket on the device chosen */

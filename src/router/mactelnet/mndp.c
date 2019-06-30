@@ -133,7 +133,7 @@ int mndp(int timeout, int batch_mode)  {
 
 			/* Print it */
 			printf("%-15s ", inet_ntop(addr.sin_family, &addr.sin_addr, ipstr, sizeof ipstr));
-			printf("%-17s %s", ether_ntoa((struct ether_addr *)packet->address), packet->identity);
+			printf("%-17s %s", _ether_ntoa((struct ether_addr *)packet->address), packet->identity);
 			if (packet->platform[0] != 0) {
 				printf(" (%s %s %s)", packet->platform, packet->version, packet->hardware);
 			}
@@ -149,7 +149,7 @@ int mndp(int timeout, int batch_mode)  {
 			putchar('\n');
 		} else if (packet != NULL) {
 			/* Print it */
-			printf("'%s','%s',", ether_ntoa((struct ether_addr *)packet->address), packet->identity);
+			printf("'%s','%s',", _ether_ntoa((struct ether_addr *)packet->address), packet->identity);
 			printf("'%s','%s','%s',", packet->platform, packet->version, packet->hardware);
 			printf("'%d','%s','%s'", packet->uptime, packet->softid, packet->ifname);
 			printf(",'%s'", inet_ntop(addr.sin_family, &addr.sin_addr, ipstr, sizeof ipstr));

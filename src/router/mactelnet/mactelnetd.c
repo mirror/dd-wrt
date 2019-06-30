@@ -241,7 +241,7 @@ static void setup_sockets() {
 			}
 		}
 
-		syslog(LOG_NOTICE, _("Listening on %s for %s\n"), interface->name, ether_ntoa(mac));
+		syslog(LOG_NOTICE, _("Listening on %s for %s\n"), interface->name, _ether_ntoa(mac));
 
 	}
 }
@@ -325,7 +325,7 @@ static void uwtmp_login(struct mt_connection *conn) {
 	strncpy(utent.ut_line, line, sizeof(utent.ut_line));
 	strncpy(utent.ut_id, utent.ut_line + 3, sizeof(utent.ut_id));
 	strncpy(utent.ut_host,
-                ether_ntoa((const struct ether_addr *)conn->srcmac),
+                _ether_ntoa((const struct ether_addr *)conn->srcmac),
                 sizeof(utent.ut_host));
 #if defined(__FreeBSD__) || defined(__APPLE__)
 	gettimeofday(&utent.ut_tv, NULL);
@@ -719,7 +719,7 @@ static void handle_packet(unsigned char *data, int data_len, const struct sockad
 				/* Ignore multiple session starts from the same sender, this can be same mac but different interface */
 				break;
 			}
-			syslog(LOG_DEBUG, _("(%d) New connection from %s."), pkthdr.seskey, ether_ntoa((struct ether_addr*)&(pkthdr.srcaddr)));
+			syslog(LOG_DEBUG, _("(%d) New connection from %s."), pkthdr.seskey, _ether_ntoa((struct ether_addr*)&(pkthdr.srcaddr)));
 			curconn = calloc(1, sizeof(struct mt_connection));
 			curconn->seskey = pkthdr.seskey;
 			curconn->lastdata = time(NULL);

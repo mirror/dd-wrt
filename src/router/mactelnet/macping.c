@@ -282,7 +282,7 @@ int macping_main(int argc, char **argv)  {
 			reads = select(insockfd+1, &read_fds, NULL, NULL, &timeout);
 			if (reads <= 0) {
 				waitforpacket = 0;
-				fprintf(stderr, _("%s ping timeout\n"), ether_ntoa((struct ether_addr *)&dstmac));
+				fprintf(stderr, _("%s ping timeout\n"), _ether_ntoa((struct ether_addr *)&dstmac));
 				break;
 			}
 
@@ -324,9 +324,9 @@ int macping_main(int argc, char **argv)  {
 
 				avg_ms += diff;
 
-				printf(_("%s %d byte, ping time %.2f ms%s\n"), ether_ntoa((struct ether_addr *)&(pkthdr.srcaddr)), result, diff, (char *)(memcmp(&pongtimestamp,&lasttimestamp,sizeof(lasttimestamp)) == 0 ? " DUP" : ""));
+				printf(_("%s %d byte, ping time %.2f ms%s\n"), _ether_ntoa((struct ether_addr *)&(pkthdr.srcaddr)), result, diff, (char *)(memcmp(&pongtimestamp,&lasttimestamp,sizeof(lasttimestamp)) == 0 ? " DUP" : ""));
 			} else {
-				printf(_("%s Reply of %d bytes of unequal data\n"), ether_ntoa((struct ether_addr *)&(pkthdr.srcaddr)), result);
+				printf(_("%s Reply of %d bytes of unequal data\n"), _ether_ntoa((struct ether_addr *)&(pkthdr.srcaddr)), result);
 			}
 			pong_received++;
 			memcpy(&lasttimestamp, &pongtimestamp, sizeof(pongtimestamp));
