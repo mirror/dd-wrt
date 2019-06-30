@@ -258,6 +258,8 @@ void start_openvpnserver(void)
 	}
 
 	fprintf(fp, "startservice set_routes -f\n");
+	fprintf(fp, "startservice firewall -f\n");
+	fprintf(fp, "startservice wshaper -f\n");
 	/* "stopservice wshaper\n" disable wshaper, causes fw race condition
 	 * "startservice wshaper\n");*/
 	fclose(fp);
