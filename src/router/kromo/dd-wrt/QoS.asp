@@ -372,6 +372,7 @@ addEvent(window, "unload", function() {
 											</script>&nbsp;&nbsp;&nbsp;
 											<select name="svqos_dev">
 											<% show_iflist(); %>
+											<% show_iflist("tun"); %>
 											</select>
 										</td>
 									</tr>
