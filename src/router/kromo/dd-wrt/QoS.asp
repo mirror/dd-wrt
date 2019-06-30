@@ -360,7 +360,7 @@ addEvent(window, "unload", function() {
 							</fieldset><br />
 							<fieldset>
 								<legend><% tran("qos.legend8"); %></legend>
-								<table class="table" summary="IP addresses priority table">
+								<table class="table" summary="ifname priority table">
 									<% get_qosdevs(); %>
 									<tr>
 										<td>&nbsp;</td>
