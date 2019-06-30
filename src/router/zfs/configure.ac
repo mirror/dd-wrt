@@ -119,6 +119,7 @@ AC_CONFIG_FILES([
 	cmd/dbufstat/Makefile
 	cmd/arc_summary/Makefile
 	cmd/zed/Makefile
+	cmd/zed/zed.d/Makefile
 	cmd/raidz_test/Makefile
 	cmd/zgenhostid/Makefile
 	contrib/Makefile
@@ -226,7 +227,6 @@ AC_CONFIG_FILES([
 	tests/zfs-tests/tests/functional/cli_root/zfs_promote/Makefile
 	tests/zfs-tests/tests/functional/cli_root/zfs_property/Makefile
 	tests/zfs-tests/tests/functional/cli_root/zfs_receive/Makefile
-	tests/zfs-tests/tests/functional/cli_root/zfs_remap/Makefile
 	tests/zfs-tests/tests/functional/cli_root/zfs_rename/Makefile
 	tests/zfs-tests/tests/functional/cli_root/zfs_reservation/Makefile
 	tests/zfs-tests/tests/functional/cli_root/zfs_rollback/Makefile

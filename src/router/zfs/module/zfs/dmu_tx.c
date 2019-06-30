@@ -317,23 +317,6 @@ dmu_tx_hold_write(dmu_tx_t *tx, uint64_t object, uint64_t off, int len)
 }
 
 void
-dmu_tx_hold_remap_l1indirect(dmu_tx_t *tx, uint64_t object)
-{
-	dmu_tx_hold_t *txh;
-
-	ASSERT(tx->tx_txg == 0);
-	txh = dmu_tx_hold_object_impl(tx, tx->tx_objset,
-	    object, THT_WRITE, 0, 0);
-	if (txh == NULL)
-		return;
-
-	dnode_t *dn = txh->txh_dnode;
-	(void) zfs_refcount_add_many(&txh->txh_space_towrite,
-	    1ULL << dn->dn_indblkshift, FTAG);
-	dmu_tx_count_dnode(txh);
-}
-
-void
 dmu_tx_hold_write_by_dnode(dmu_tx_t *tx, dnode_t *dn, uint64_t off, int len)
 {
 	dmu_tx_hold_t *txh;
@@ -925,6 +908,25 @@ dmu_tx_try_assign(dmu_tx_t *tx, uint64_t txg_how)
 	    txh = list_next(&tx->tx_holds, txh)) {
 		dnode_t *dn = txh->txh_dnode;
 		if (dn != NULL) {
+			/*
+			 * This thread can't hold the dn_struct_rwlock
+			 * while assigning the tx, because this can lead to
+			 * deadlock. Specifically, if this dnode is already
+			 * assigned to an earlier txg, this thread may need
+			 * to wait for that txg to sync (the ERESTART case
+			 * below).  The other thread that has assigned this
+			 * dnode to an earlier txg prevents this txg from
+			 * syncing until its tx can complete (calling
+			 * dmu_tx_commit()), but it may need to acquire the
+			 * dn_struct_rwlock to do so (e.g. via
+			 * dmu_buf_hold*()).
+			 *
+			 * Note that this thread can't hold the lock for
+			 * read either, but the rwlock doesn't record
+			 * enough information to make that assertion.
+			 */
+			ASSERT(!RW_WRITE_HELD(&dn->dn_struct_rwlock));
+
 			mutex_enter(&dn->dn_mtx);
 			if (dn->dn_assigned_txg == tx->tx_txg - 1) {
 				mutex_exit(&dn->dn_mtx);
