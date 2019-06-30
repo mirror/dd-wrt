@@ -6235,7 +6235,10 @@ void ej_show_iflist(webs_t wp, int argc, char_t ** argv)
 	char var[80];
 	char buffer[256];
 	bzero(buffer, 256);
-	getIfList(buffer, NULL);
+	char *prefix = NULL;
+	if (argc > 0)
+	    prefix = argv[0];
+	getIfList(buffer, prefix);
 	foreach(var, buffer, next) {
 		char *wanface = get_wan_face();
 		if (strcmp(wanface, "br0") && nvram_match(wanface, var)) {
