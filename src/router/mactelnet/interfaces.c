@@ -58,6 +58,16 @@
 
 #define _(String) String
 
+char *_ether_ntoa(const struct ether_addr *addr)
+{
+	static char a[18];
+	int i;
+	unsigned char *mac = (unsigned char *)addr;
+
+	i = snprintf(a, sizeof(a), "%02X:%02X:%02X:%02X:%02X:%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+	return (i < 17 ? NULL : a);
+}
+
 struct net_interface *net_get_interface_ptr(struct net_interface **interfaces, char *name, int create) {
 	struct net_interface *interface;
 

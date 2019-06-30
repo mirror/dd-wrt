@@ -39,6 +39,7 @@ struct net_interface {
 };
 
 
+char *_ether_ntoa(const struct ether_addr *addr);
 extern int net_get_interfaces(struct net_interface **interfaces);
 extern struct net_interface *net_get_interface_ptr(struct net_interface **interfaces, char *name, int create);
 extern int net_init_raw_socket();
