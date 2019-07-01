@@ -1798,6 +1798,10 @@ ifeq ($(CONFIG_DEBUG_SYSLOG),y)
   ATH9KCFLAGS += -DHAVE_CONFIG_DEBUG_SYSLOG
 endif
 
+ifeq ($(CONFIG_ATH10K_CT),y)
+  CFLAGS_EXTRA += -DHAVE_ATH10K_CT 
+endif
+
 include $(TOP)/rules/generic.mk
 CFLAGS_EXTRA += $(DD_CFLAGS)
 

@@ -2837,6 +2837,12 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 			usleep(100 * 1000);	// wait 100 ms
 		}
 		unlink("/tmp/.crdalock");	// delete lock file, no matter if crda still running. 4 sec is enough
+#if defined(HAVE_ONNET) && defined(HAVE_ATH10K_CT)
+		if ( nvram_geti("ath10k-ct") != nvram_geti("ath10k-ct_bak") ) {
+			fprintf(stderr, "Switching ATH10K driver, rebooting now...\n");
+			eval("reboot");
+		}
+#endif
 	}
 #endif
 
