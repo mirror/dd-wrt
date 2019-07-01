@@ -440,6 +440,15 @@ void start_sysinit(void)
 	}
 #endif
 
+#ifdef HAVE_ONNET
+	if (nvram_matchi("ath10k-ct", 1)) {
+		fprintf(stderr, "Select QCA988x (CT) Firmware\n");
+		eval("mount", "--bind", "/lib/firmware/ath10k/QCA988X-CT/firmware-2-ct-full-community.bin", "/lib/firmware/ath10k/QCA988X/hw2.0/firmware-5.bin");
+		nvram_set("ath10k-ct_bak", "1");
+	} else
+		nvram_set("ath10k-ct_bak", "0");
+	nvram_commit();
+#endif
 #if defined(HAVE_ONNET) || defined(HAVE_RAYTRONIK)
 	runStartup(".onnet");
 #endif
