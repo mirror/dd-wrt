@@ -413,6 +413,7 @@ void start_nas_single(char *type, char *prefix)
 	}, *mode = {
 		0
 	};
+	network_delay("nas");
 
 	if (!strcmp(prefix, "wl0")) {
 		led_control(LED_SEC0, LED_OFF);
