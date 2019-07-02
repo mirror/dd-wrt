@@ -382,15 +382,15 @@ void start_setup_vlans(void)
 		foreach(vlan, port, next) {
 			int vlan_number = atoi(vlan);
 			if (vlan_number < 5 && vlan_number >= 0 && tagged[vlan_number]) {
-				sprintf("%s %st", &portsettings[i][0], vlan);
+				sprintf(&portsettings[i][0],"%s %st", &portsettings[i][0], vlan);
 			} else if ((vlan_number == 5 || vlan_number == 8 || vlan_number == 7)
 				   && tagged[vlan_number] && !ast) {
-				sprintf("%s %st", &portsettings[i][0], vlan);
+				sprintf(&portsettings[i][0],"%s %st", &portsettings[i][0], vlan);
 			} else if ((vlan_number == 5 || vlan_number == 8 || vlan_number == 7)
 				   && tagged[vlan_number] && ast) {
-				sprintf("%s %s*", &portsettings[i][0], vlan);
+				sprintf(&portsettings[i][0],"%s %s*", &portsettings[i][0], vlan);
 			} else {
-				sprintf("%s %s", &portsettings[i][0], vlan);
+				sprintf(&portsettings[i][0], "%s %s", &portsettings[i][0], vlan);
 			}
 		}
 	}

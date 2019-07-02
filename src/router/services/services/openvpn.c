@@ -257,9 +257,11 @@ void start_openvpnserver(void)
 		fprintf(fp, "iptables -I FORWARD -i tap2 -m state --state NEW -j DROP\n");
 	}
 
+	if (nvram_matchi("wshaper_enable",1)) {
 	fprintf(fp, "startservice set_routes -f\n");
 	fprintf(fp, "startservice firewall -f\n");
 	fprintf(fp, "startservice wshaper -f\n");
+	}
 	/* "stopservice wshaper\n" disable wshaper, causes fw race condition
 	 * "startservice wshaper\n");*/
 	fclose(fp);
@@ -561,9 +563,11 @@ void start_openvpn(void)
 //                      "ebtables -I OUTPUT -o tap1 --pkttype-type multicast -j DROP\n"
 			"ebtables -t nat -D POSTROUTING -o %s --pkttype-type multicast -j DROP\n" "ebtables -t nat -I POSTROUTING -o %s --pkttype-type multicast -j DROP\n", ovpniface, ovpniface);
 	}
-/*	if (nvram_matchi("wshaper_enable",1))
-		fprintf(fp, "stopservice wshaper\n" "startservice wshaper\n");*/
-
+	if (nvram_matchi("wshaper_enable",1)) {
+	fprintf(fp, "startservice set_routes -f\n");
+	fprintf(fp, "startservice firewall -f\n");
+	fprintf(fp, "startservice wshaper -f\n");
+	}
 	fclose(fp);
 
 	fp = fopen("/tmp/openvpncl/route-down.sh", "wb");
