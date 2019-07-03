@@ -308,7 +308,7 @@ int bgp_nlri_parse(struct peer *peer, struct attr *attr,
 	case SAFI_FLOWSPEC:
 		return bgp_nlri_parse_flowspec(peer, attr, packet, mp_withdraw);
 	}
-	return -1;
+	return BGP_NLRI_PARSE_ERROR;
 }
 
 /*
@@ -1568,10 +1568,11 @@ static int bgp_update_receive(struct peer *peer, bgp_size_t size)
 			nlri_ret = bgp_nlri_parse(peer, &attr, &nlris[i], 1);
 			break;
 		default:
-			nlri_ret = -1;
+			nlri_ret = BGP_NLRI_PARSE_ERROR;
 		}
 
-		if (nlri_ret < 0) {
+		if (nlri_ret < BGP_NLRI_PARSE_OK
+		    && nlri_ret != BGP_NLRI_PARSE_ERROR_PREFIX_OVERFLOW) {
 			flog_err(EC_BGP_UPDATE_RCV,
 				 "%s [Error] Error parsing NLRI", peer->host);
 			if (peer->status == Established)
@@ -1612,6 +1613,8 @@ static int bgp_update_receive(struct peer *peer, bgp_size_t size)
 		}
 
 		if (afi && peer->afc[afi][safi]) {
+			struct vrf *vrf = vrf_lookup_by_id(peer->bgp->vrf_id);
+
 			/* End-of-RIB received */
 			if (!CHECK_FLAG(peer->af_sflags[afi][safi],
 					PEER_STATUS_EOR_RECEIVED)) {
@@ -1624,11 +1627,9 @@ static int bgp_update_receive(struct peer *peer, bgp_size_t size)
 			if (peer->nsf[afi][safi])
 				bgp_clear_stale_route(peer, afi, safi);
 
-			if (bgp_debug_neighbor_events(peer)) {
-				zlog_debug("rcvd End-of-RIB for %s from %s",
-					   afi_safi_print(afi, safi),
-					   peer->host);
-			}
+			zlog_info("%%NOTIFICATION: rcvd End-of-RIB for %s from %s in vrf %s",
+				  afi_safi_print(afi, safi), peer->host,
+				  vrf ? vrf->name : VRF_DEFAULT_NAME);
 		}
 	}
 
