@@ -135,6 +135,9 @@
 /* Glibc backtrace */
 #undef HAVE_GLIBC_BACKTRACE
 
+/* Enable the gRPC northbound plugin */
+#undef HAVE_GRPC
+
 /* Define to 1 if you have the <inet/nd.h> header file. */
 #undef HAVE_INET_ND_H
 
@@ -312,7 +315,7 @@
 /* Define to 1 if you have the `setns' function. */
 #undef HAVE_SETNS
 
-/* Allow user to use ssh/telnet/bash */
+/* Allow user to use ssh/telnet/bash, be aware this is considered insecure */
 #undef HAVE_SHELL_ACCESS
 
 /* getpflags */
@@ -392,8 +395,14 @@
    nd_opt_adv_interval'. */
 #undef HAVE_STRUCT_ND_OPT_ADV_INTERVAL_ND_OPT_AI_TYPE
 
+/* Define to 1 if the system has the type `struct nd_opt_dnssl'. */
+#undef HAVE_STRUCT_ND_OPT_DNSSL
+
 /* Define to 1 if the system has the type `struct nd_opt_homeagent_info'. */
 #undef HAVE_STRUCT_ND_OPT_HOMEAGENT_INFO
+
+/* Define to 1 if the system has the type `struct nd_opt_rdnss'. */
+#undef HAVE_STRUCT_ND_OPT_RDNSS
 
 /* Define to 1 if the system has the type `struct rt_addrinfo'. */
 #undef HAVE_STRUCT_RT_ADDRINFO
@@ -424,6 +433,15 @@
 
 /* Define to 1 if the system has the type `struct vifctl'. */
 #undef HAVE_STRUCT_VIFCTL
+
+/* Have Linux futex support */
+#undef HAVE_SYNC_LINUX_FUTEX
+
+/* Have OpenBSD futex support */
+#undef HAVE_SYNC_OPENBSD_FUTEX
+
+/* Have FreeBSD _umtx_op() support */
+#undef HAVE_SYNC_UMTX_OP
 
 /* Enable sysrepo integration */
 #undef HAVE_SYSREPO
@@ -532,9 +550,6 @@
 
 /* ldpd control socket */
 #undef LDPD_SOCKET
-
-/* have ly_register_types() */
-#undef LIBYANG_EXT_BUILTIN
 
 /* path to libyang plugins */
 #undef LIBYANG_PLUGINS_PATH
