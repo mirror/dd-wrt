@@ -96,7 +96,6 @@ noinst_LIBRARIES =
 nodist_noinst_DATA =
 lib_LTLIBRARIES =
 module_LTLIBRARIES =
-libyang_plugins_LTLIBRARIES =
 pkginclude_HEADERS =
 nodist_pkginclude_HEADERS =
 dist_examples_DATA =
@@ -111,7 +110,6 @@ vtysh_scan =
 $(AUTOMAKE_DUMMY)install-moduleLTLIBRARIES: install-libLTLIBRARIES
 $(AUTOMAKE_DUMMY)install-binPROGRAMS: install-libLTLIBRARIES
 $(AUTOMAKE_DUMMY)install-sbinPROGRAMS: install-libLTLIBRARIES
-$(AUTOMAKE_DUMMY)install-libyang_pluginsLTLIBRARIES: install-libLTLIBRARIES
 
 include doc/subdir.am
 include doc/user/subdir.am
@@ -123,6 +121,7 @@ include zebra/subdir.am
 include watchfrr/subdir.am
 include qpb/subdir.am
 include fpm/subdir.am
+include grpc/subdir.am
 include tools/subdir.am
 include solaris/subdir.am
 
@@ -175,13 +174,9 @@ EXTRA_DIST += \
 	python/clidef.py \
 	python/clippy/__init__.py \
 	\
-	redhat/frr.init \
-	redhat/frr.service \
-	redhat/daemons \
 	redhat/frr.logrotate \
 	redhat/frr.pam \
 	redhat/frr.spec \
-	redhat/README.rpm_build.md \
 	\
 	snapcraft/snapcraft.yaml \
 	snapcraft/README.snap_build.md \
@@ -202,6 +197,7 @@ EXTRA_DIST += \
 	doc/user/Makefile \
 	eigrpd/Makefile \
 	fpm/Makefile \
+	grpc/Makefile \
 	isisd/Makefile \
 	ldpd/Makefile \
 	lib/Makefile \
@@ -211,7 +207,6 @@ EXTRA_DIST += \
 	ospfd/Makefile \
 	pbrd/Makefile \
 	pimd/Makefile \
-	ports/Makefile \
 	qpb/Makefile \
 	ripd/Makefile \
 	ripngd/Makefile \
@@ -228,8 +223,8 @@ noinst_HEADERS += defaults.h
 clean-local: clean-python
 .PHONY: clean-python
 clean-python:
-	find -name __pycache__ -o -name .pytest_cache | xargs rm -rf
-	find -name "*.pyc" -o -name "*_clippy.c" | xargs rm -f
+	find . -name __pycache__ -o -name .pytest_cache | xargs rm -rf
+	find . -name "*.pyc" -o -name "*_clippy.c" | xargs rm -f
 
 redistclean:
 	$(MAKE) distclean CONFIG_CLEAN_FILES="$(filter-out $(EXTRA_DIST), $(CONFIG_CLEAN_FILES))"
