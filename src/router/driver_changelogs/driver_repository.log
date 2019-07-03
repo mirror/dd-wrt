@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r4619 | brainslayer | 2019-07-03 15:56:45 +0200 (Wed, 03 Jul 2019) | 1 line
+
+small fix
+------------------------------------------------------------------------
 r4618 | brainslayer | 2019-07-03 12:29:03 +0200 (Wed, 03 Jul 2019) | 1 line
 
 fw 10.4 does support 101 channels in scanlist instead of 88. so we can handle it individual
