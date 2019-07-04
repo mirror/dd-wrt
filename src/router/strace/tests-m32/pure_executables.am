@@ -115,6 +115,9 @@ PURE_EXECUTABLES = \
   init_module \
   inotify \
   inotify_init1 \
+  io_uring_enter \
+  io_uring_register \
+  io_uring_setup \
   ioctl \
   ioctl_block \
   ioctl_dm \
@@ -139,6 +142,9 @@ PURE_EXECUTABLES = \
   ioperm \
   iopl \
   ioprio \
+  ioprio-Xabbrev \
+  ioprio-Xraw \
+  ioprio-Xverbose \
   ip_mreq \
   ipc \
   ipc_msg \
@@ -212,6 +218,9 @@ PURE_EXECUTABLES = \
   mount-Xraw \
   mount-Xverbose \
   move_pages \
+  move_pages-Xabbrev \
+  move_pages-Xraw \
+  move_pages-Xverbose \
   mq \
   mq_sendrecv \
   mq_sendrecv-read \
@@ -222,6 +231,9 @@ PURE_EXECUTABLES = \
   nanosleep \
   net-icmp_filter \
   net-packet_mreq \
+  net-packet_mreq-Xabbrev \
+  net-packet_mreq-Xraw \
+  net-packet_mreq-Xverbose \
   net-sockaddr \
   net-tpacket_req \
   net-tpacket_stats \
@@ -304,6 +316,7 @@ PURE_EXECUTABLES = \
   personality-Xabbrev \
   personality-Xraw \
   personality-Xverbose \
+  pidfd_send_signal \
   pipe \
   pipe2 \
   pkey_alloc \
@@ -415,6 +428,9 @@ PURE_EXECUTABLES = \
   setreuid \
   setreuid32 \
   setrlimit \
+  setrlimit-Xabbrev \
+  setrlimit-Xraw \
+  setrlimit-Xverbose \
   setuid \
   setuid32 \
   shmxt \
@@ -438,8 +454,12 @@ PURE_EXECUTABLES = \
   sock_filter-v-Xabbrev \
   sock_filter-v-Xraw \
   sock_filter-v-Xverbose \
+  sockaddr_xlat-Xabbrev \
+  sockaddr_xlat-Xraw \
+  sockaddr_xlat-Xverbose \
   socketcall \
   sockopt-sol_netlink \
+  sockopt-timestamp \
   splice \
   stat \
   stat64 \

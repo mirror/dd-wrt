@@ -1,7 +1,7 @@
 /*
  * Check decoding of RND* commands of ioctl syscall.
  *
- * Copyright (c) 2018 The strace developers.
+ * Copyright (c) 2018-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -16,7 +16,7 @@
 #include <linux/random.h>
 
 #define XLAT_MACROS_ONLY
-# include "xlat/random_ioctl_cmds.h"
+#include "xlat/random_ioctl_cmds.h"
 #undef XLAT_MACROS_ONLY
 
 #define RVAL_EBADF " = -1 EBADF (%m)\n"
@@ -46,7 +46,8 @@ main(void)
 	printf("ioctl(-1, RNDADDENTROPY, {entropy_count=3, buf_size=8, buf=\"12345678\"})" RVAL_EBADF);
 
 	ioctl(-1, RNDZAPENTCNT);
-	printf("ioctl(-1, RNDZAPENTCNT)" RVAL_EBADF);
+	printf("ioctl(-1, FASTRPC_IOCTL_INIT_ATTACH or RNDZAPENTCNT)"
+	       RVAL_EBADF);
 	ioctl(-1, RNDCLEARPOOL);
 	printf("ioctl(-1, RNDCLEARPOOL)" RVAL_EBADF);
 	ioctl(-1, RNDRESEEDCRNG);

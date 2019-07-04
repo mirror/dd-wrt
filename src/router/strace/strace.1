@@ -33,7 +33,7 @@
 .  el \
 .    BR "\\$1"
 ..
-.TH STRACE 1 "2018-12-24" "strace 4.26"
+.TH STRACE 1 "2019-03-17" "strace 5.1"
 .SH NAME
 strace \- trace system calls and signals
 .SH SYNOPSIS
@@ -844,7 +844,9 @@ fatal signals and
 are always blocked (useful to make
 .BI "strace -o " "FILE PROG"
 not stop on
-.BR CTRL\-Z ).
+.BR CTRL\-Z ,
+default if
+.BR \-D ).
 .RE
 .SS Startup
 .TP 12

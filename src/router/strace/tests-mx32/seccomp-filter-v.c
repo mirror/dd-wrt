@@ -2,7 +2,7 @@
  * Check verbose decoding of seccomp SECCOMP_SET_MODE_FILTER.
  *
  * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2018 The strace developers.
+ * Copyright (c) 2016-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -31,23 +31,23 @@
  && defined BPF_JUMP \
  && defined BPF_STMT
 
-#define SOCK_FILTER_ALLOW_SYSCALL(nr) \
+# define SOCK_FILTER_ALLOW_SYSCALL(nr) \
 		BPF_JUMP(BPF_JMP|BPF_K|BPF_JEQ, __NR_ ## nr, 0, 1), \
 		BPF_STMT(BPF_RET|BPF_K, SECCOMP_RET_ALLOW)
 
-#define SOCK_FILTER_DENY_SYSCALL(nr, err) \
+# define SOCK_FILTER_DENY_SYSCALL(nr, err) \
 		BPF_JUMP(BPF_JMP|BPF_K|BPF_JEQ, __NR_ ## nr, 0, 1), \
 		BPF_STMT(BPF_RET|BPF_K, SECCOMP_RET_ERRNO|(SECCOMP_RET_DATA & (err)))
 
-#define SOCK_FILTER_KILL_PROCESS \
+# define SOCK_FILTER_KILL_PROCESS \
 		BPF_STMT(BPF_RET|BPF_K, SECCOMP_RET_KILL)
 
-#define PRINT_ALLOW_SYSCALL(nr) \
+# define PRINT_ALLOW_SYSCALL(nr) \
 	tprintf("BPF_JUMP(BPF_JMP|BPF_K|BPF_JEQ, %#x, 0, 0x1), " \
 	       "BPF_STMT(BPF_RET|BPF_K, SECCOMP_RET_ALLOW), ", \
 	       __NR_ ## nr)
 
-#define PRINT_DENY_SYSCALL(nr, err) \
+# define PRINT_DENY_SYSCALL(nr, err) \
 	tprintf("BPF_JUMP(BPF_JMP|BPF_K|BPF_JEQ, %#x, 0, 0x1), " \
 	       "BPF_STMT(BPF_RET|BPF_K, SECCOMP_RET_ERRNO|%#x), ", \
 	       __NR_ ## nr, err)
@@ -117,7 +117,8 @@ main(void)
 	prog->len = BPF_MAXINSNS + 1;
 	tprintf("seccomp(SECCOMP_SET_MODE_FILTER, %s, {len=%u, filter=[",
 		"SECCOMP_FILTER_FLAG_TSYNC|SECCOMP_FILTER_FLAG_LOG|"
-		"SECCOMP_FILTER_FLAG_SPEC_ALLOW|0xfffffff8",
+		"SECCOMP_FILTER_FLAG_SPEC_ALLOW|"
+		"SECCOMP_FILTER_FLAG_NEW_LISTENER|0xfffffff0",
 		prog->len);
 	for (i = 0; i < BPF_MAXINSNS; ++i) {
 		if (i)

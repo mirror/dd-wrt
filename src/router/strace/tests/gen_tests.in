@@ -1,6 +1,6 @@
 # Input for gen_tests.sh
 #
-# Copyright (c) 2017-2018 The strace developers.
+# Copyright (c) 2017-2019 The strace developers.
 # All rights reserved.
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
@@ -17,11 +17,11 @@ aio	-a14 -e trace=io_setup,io_submit,io_getevents,io_cancel,io_destroy
 aio_pgetevents	-e trace=io_pgetevents
 alarm	-a10
 bpf	-a20
-bpf-v	-a20 -v -e trace=bpf
 bpf-obj_get_info_by_fd	-a20 -y -e trace=bpf
-bpf-obj_get_info_by_fd-v	-a20 -y -v -e trace=bpf
 bpf-obj_get_info_by_fd-prog	-a20 -y -e trace=bpf
 bpf-obj_get_info_by_fd-prog-v	-a20 -y -v -e trace=bpf
+bpf-obj_get_info_by_fd-v	-a20 -y -v -e trace=bpf
+bpf-v	-a20 -v -e trace=bpf
 btrfs	+ioctl.test
 chmod	-a28
 chown	-a28
@@ -118,6 +118,9 @@ inet-cmsg	-e trace=recvmsg
 init_module	-a27
 inotify	-a23 -e trace=inotify_add_watch,inotify_rm_watch
 inotify_init1	-a27
+io_uring_enter	-y
+io_uring_register	-y
+io_uring_setup	-a26 -y
 ioctl_block	+ioctl.test
 ioctl_dm	+ioctl.test -s9
 ioctl_dm-v	+ioctl.test -v -s9
@@ -134,7 +137,7 @@ ioctl_mtd	+ioctl.test
 ioctl_nbd	+ioctl.test -y
 ioctl_nsfs	+ioctl.test -esignal=none
 ioctl_perf	+ioctl.test
-ioctl_ptp 	+ioctl.test
+ioctl_ptp	+ioctl.test
 ioctl_random	+ioctl.test
 ioctl_rtc	+ioctl.test
 ioctl_rtc-v	+ioctl.test -v
@@ -147,6 +150,9 @@ ioctl_v4l2	+ioctl.test
 ioperm	-a27
 iopl	-a8
 ioprio	-a18 -e trace=ioprio_get,ioprio_set
+ioprio-Xabbrev	-a18 -e trace=ioprio_get,ioprio_set -Xabbrev
+ioprio-Xraw	-a18 -e trace=ioprio_get,ioprio_set -Xraw
+ioprio-Xverbose	-a18 -e trace=ioprio_get,ioprio_set -Xverbose
 ip_mreq	-e trace=setsockopt
 ipc	-a19
 ipc_msg	+ipc.sh -a26
@@ -166,11 +172,11 @@ ipc_shm-Xraw	+ipc.sh -Xraw -a19
 ipc_shm-Xverbose	+ipc.sh -Xverbose -a36
 kcmp	-a22
 kcmp-y	-a22 -y -e trace=kcmp
+kern_features -a16
 kernel_version	-a16 -v -e trace=bpf
 kernel_version-Xabbrev	-a16 -Xabbrev -v -e trace=bpf
 kernel_version-Xraw	-a16 -Xraw -v -e trace=bpf
 kernel_version-Xverbose	-a16 -Xverbose -v -e trace=bpf
-kern_features -a16
 kexec_file_load	-s9
 kexec_load	-s9
 keyctl	-a31 -s10
@@ -218,6 +224,9 @@ mount-Xabbrev	-a33 -e trace=mount -Xabbrev
 mount-Xraw	-a33 -e trace=mount -Xraw
 mount-Xverbose	-a33 -e trace=mount -Xverbose
 move_pages	-s3
+move_pages-Xabbrev	-s3 -e trace=move_pages -Xabbrev
+move_pages-Xraw	-s3 -a36 -e trace=move_pages -Xraw
+move_pages-Xverbose	-s3 -e trace=move_pages -Xverbose
 mq	-a32 -e trace=mq_getsetattr,mq_open,mq_unlink
 mq_sendrecv	-a14 -e trace=mq_open,mq_notify,mq_timedsend,mq_timedreceive,mq_unlink
 mq_sendrecv-read	-eread=0 -a14 -e trace=mq_open,mq_notify,mq_timedsend,mq_timedreceive,mq_unlink
@@ -229,6 +238,9 @@ munlockall	-a13
 nanosleep	-a20
 net-icmp_filter	-e trace=getsockopt,setsockopt
 net-packet_mreq -e trace=setsockopt
+net-packet_mreq-Xabbrev	-e trace=setsockopt -Xabbrev
+net-packet_mreq-Xraw	-e trace=setsockopt -Xraw
+net-packet_mreq-Xverbose	-e trace=setsockopt -Xverbose
 net-sockaddr	-a24 -e trace=connect
 net-tpacket_req -e trace=setsockopt
 net-tpacket_stats -e trace=getsockopt
@@ -243,7 +255,6 @@ netlink_route	+netlink_sock_diag.test
 netlink_selinux	+netlink_sock_diag.test
 netlink_xfrm	+netlink_sock_diag.test
 newfstatat	-a32 -v -P stat.sample -P /dev/full
-nlattr		+netlink_sock_diag.test
 nfnetlink_acct			+netlink_sock_diag.test
 nfnetlink_cthelper		+netlink_sock_diag.test
 nfnetlink_ctnetlink		+netlink_sock_diag.test
@@ -255,8 +266,9 @@ nfnetlink_nftables		+netlink_sock_diag.test
 nfnetlink_osf			+netlink_sock_diag.test
 nfnetlink_queue			+netlink_sock_diag.test
 nfnetlink_ulog			+netlink_sock_diag.test
-nlattr_crypto_user_alg		+netlink_sock_diag.test
+nlattr		+netlink_sock_diag.test
 nlattr_br_port_msg		+netlink_sock_diag.test
+nlattr_crypto_user_alg		+netlink_sock_diag.test
 nlattr_dcbmsg			+netlink_sock_diag.test
 nlattr_fib_rule_hdr		+netlink_sock_diag.test
 nlattr_ifaddrlblmsg		+netlink_sock_diag.test
@@ -288,10 +300,10 @@ nlattr_tcmsg			+netlink_sock_diag.test
 nlattr_unix_diag_msg		+netlink_sock_diag.test
 old_mmap	-a11 -e trace=mmap
 old_mmap-P	-e trace=mmap -P "/dev/full" 9>>/dev/full
-old_mmap-v-none	-a11 -e trace=mmap -e verbose=none
 old_mmap-Xabbrev	-a11 -e trace=mmap -Xabbrev
 old_mmap-Xraw	-a11 -e trace=mmap -Xraw
 old_mmap-Xverbose	-a11 -e trace=mmap -Xverbose
+old_mmap-v-none	-a11 -e trace=mmap -e verbose=none
 oldfstat	-a18 -v -P stat.sample
 oldlstat	-a32 -v -P stat.sample -P /dev/full
 oldselect	-a13 -e trace=select
@@ -301,6 +313,7 @@ oldselect-efault-P	-a13 -e trace=select -P /dev/full 9>>/dev/full
 oldstat	-a32 -v -P stat.sample -P /dev/full
 open	-a30 -P $NAME.sample
 openat	-a36 -P $NAME.sample
+orphaned_process_group	. "${srcdir=.}/PTRACE_SEIZE.sh"; run_strace_match_diff -f -e trace=none -e signal='!chld'
 osf_utimes	-a21
 pause	-a8 -esignal=none
 perf_event_open	-a1
@@ -309,6 +322,7 @@ perf_event_open_unabbrev	-a1 -v -e trace=perf_event_open
 personality-Xabbrev	+personality.test -Xabbrev
 personality-Xraw	+personality.test -a15 -Xraw
 personality-Xverbose	+personality.test -Xverbose
+pidfd_send_signal
 pipe2	-a15
 pkey_alloc	-a17
 pkey_free	-a13
@@ -320,13 +334,13 @@ pread64-pwrite64	-a21 -eread=0 -ewrite=1 -e trace=pread64,pwrite64 -P pread64-pw
 preadv	-a21
 preadv-pwritev	-a19 -eread=0 -ewrite=1 -e trace=preadv,pwritev
 preadv2-pwritev2	-a22 -eread=0 -ewrite=1 -e trace=preadv2,pwritev2
-printstr	-e trace=writev
 printpath-umovestr	-a11 -e signal=none -e trace=chdir
 printpath-umovestr-peekdata	-a11 -e signal=none -e trace=chdir
 printpath-umovestr-undumpable	-a11 -e signal=none -e trace=chdir
 printsignal-Xabbrev	-a11 -Xabbrev -e signal=none -e trace=kill
 printsignal-Xraw	-a11 -Xraw -e signal=none -e trace=kill
-printsignal-Xverbose 	-a11 -Xverbose -e signal=none -e trace=kill
+printsignal-Xverbose	-a11 -Xverbose -e signal=none -e trace=kill
+printstr	-e trace=writev
 printstrn-umoven	-s4096 -e signal=none -e trace=add_key
 printstrn-umoven-peekdata	-e signal=none -e trace=add_key
 printstrn-umoven-undumpable	-e signal=none -e trace=add_key
@@ -414,6 +428,9 @@ setresuid32	-a21
 setreuid	-a15
 setreuid32	-a17
 setrlimit	-a27
+setrlimit-Xabbrev	-a27 -e trace=setrlimit -Xabbrev
+setrlimit-Xraw	-a19 -e trace=setrlimit -Xraw
+setrlimit-Xverbose	-a36 -e trace=setrlimit -Xverbose
 setuid	-a10
 setuid32	-a12
 shmxt	-a11 -e trace='/(osf_)?shmat,shmdt'
@@ -437,8 +454,12 @@ sock_filter-v	-v -e trace=getsockopt,setsockopt
 sock_filter-v-Xabbrev	-v -e trace=getsockopt,setsockopt -X abbrev
 sock_filter-v-Xraw	-a 37 -v -e trace=getsockopt,setsockopt -X raw
 sock_filter-v-Xverbose	-v -e trace=getsockopt,setsockopt -X verbose
+sockaddr_xlat-Xabbrev	-Xabbrev -e trace=connect
+sockaddr_xlat-Xraw	-Xraw -e trace=connect
+sockaddr_xlat-Xverbose	-Xverbose -e trace=connect
 socketcall	-a20
 sockopt-sol_netlink	-e trace=getsockopt,setsockopt
+sockopt-timestamp	-e trace=recvmsg
 splice
 stat	-a32 -v -P stat.sample -P /dev/full
 stat64	-a32 -v -P stat.sample -P /dev/full
@@ -466,10 +487,10 @@ trace_fstatfs	test_trace_expr '' -e%fstatfs
 trace_lstat	test_trace_expr '' -e%lstat -v -P stat.sample -P /dev/full
 trace_personality_32	+qualify_personality.sh 32 'getcwd' 'fsync-y'
 trace_personality_64	+qualify_personality.sh 64 'getcwd' 'fsync-y'
-trace_personality_x32	+qualify_personality.sh x32 'getcwd' 'fsync-y'
 trace_personality_regex_32	+qualify_personality.sh 32 '/clock.*' 'times|fcntl.*'
 trace_personality_regex_64	+qualify_personality.sh 64 '/clock.*' 'times|fcntl.*'
 trace_personality_regex_x32	+qualify_personality.sh x32 '/clock.*' 'times|fcntl.*'
+trace_personality_x32	+qualify_personality.sh x32 'getcwd' 'fsync-y'
 trace_question	test_trace_expr '' -e?osf_utimes,?/^pkey_.*
 trace_stat	test_trace_expr '' -e%stat -v -P stat.sample -P /dev/full
 trace_stat_like	test_trace_expr '' -e%%stat -v -P stat.sample -P /dev/full

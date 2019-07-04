@@ -3,7 +3,7 @@
  * Copyright (c) 1996-2000 Wichert Akkerman <wichert@cistron.nl>
  * Copyright (c) 2005-2007 Roland McGrath <roland@redhat.com>
  * Copyright (c) 2008-2015 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2014-2018 The strace developers.
+ * Copyright (c) 2014-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -61,7 +61,7 @@ print_prctl_args(struct tcb *tcp, const unsigned int first)
 {
 	unsigned int i;
 
-	for (i = first; i < tcp->s_ent->nargs; ++i)
+	for (i = first; i < n_args(tcp); ++i)
 		tprintf(", %#" PRI_klx, tcp->u_arg[i]);
 }
 

@@ -5,7 +5,7 @@
 # Copyright (c) 2006-2016 Dmitry V. Levin <ldv@altlinux.org>
 # Copyright (c) 2008-2015 Mike Frysinger <vapier@gentoo.org>
 # Copyright (c) 2015 Elvira Khabirova <lineprinter0@gmail.com>
-# Copyright (c) 2002-2018 The strace developers.
+# Copyright (c) 2002-2019 The strace developers.
 # All rights reserved.
 #
 # SPDX-License-Identifier: LGPL-2.1-or-later
@@ -78,6 +78,10 @@ avr32*)
 bfin)
 	arch=bfin
 	AC_DEFINE([BFIN], 1, [Define for the Blackfin architecture.])
+	;;
+csky*)
+	arch=csky
+	AC_DEFINE([CSKY], 1, [Define for the C-SKY architecture])
 	;;
 hppa*|parisc*)
 	arch=hppa
@@ -279,6 +283,9 @@ AC_CHECK_TYPES([struct mmsghdr],,, [#include <sys/socket.h>])
 AC_CHECK_TYPES([__kernel_long_t, __kernel_ulong_t],,,
 [#include <asm/posix_types.h>])
 
+AC_CHECK_TYPES([struct __kernel_timespec, struct __kernel_sock_timeval],,,
+[#include <linux/time_types.h>])
+
 AC_CHECK_TYPES([struct stat64, struct __old_kernel_stat],,,
 [#include <sys/types.h>
 #include <asm/stat.h>])
@@ -380,6 +387,7 @@ AC_CHECK_HEADERS(m4_normalize([
 	linux/hiddev.h
 	linux/if_addr.h
 	linux/if_link.h
+	linux/io_uring.h
 	linux/ip_vs.h
 	linux/ipc.h
 	linux/kcmp.h
@@ -645,6 +653,8 @@ AC_CHECK_DECLS(m4_normalize([
 	KERN_MAX_LOCK_DEPTH,
 	KERN_NMI_WATCHDOG,
 	KERN_PANIC_ON_NMI,
+	KERN_PANIC_ON_WARN,
+	KERN_PANIC_PRINT,
 	NET_LLC,
 	NET_NETFILTER,
 	NET_DCCP,

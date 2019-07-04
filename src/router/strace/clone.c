@@ -4,7 +4,7 @@
  * Copyright (c) 2008 Jan Kratochvil <jan.kratochvil@redhat.com>
  * Copyright (c) 2009-2013 Denys Vlasenko <dvlasenk@redhat.com>
  * Copyright (c) 2006-2015 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2014-2018 The strace developers.
+ * Copyright (c) 2014-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -42,7 +42,7 @@
 # define ARG_PTID	2
 # define ARG_CTID	((current_personality != 1) ? 3 : 4)
 # define ARG_TLS	((current_personality != 1) ? 4 : 3)
-#elif defined ALPHA || defined TILE || defined OR1K || defined RISCV
+#elif defined ALPHA || defined TILE || defined OR1K || defined CSKY
 # define ARG_FLAGS	0
 # define ARG_STACK	1
 # define ARG_PTID	2

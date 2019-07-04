@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1993, 1994, 1995, 1996 Rick Sladkey <jrs@world.std.com>
  * Copyright (c) 1996-1999 Wichert Akkerman <wichert@cistron.nl>
- * Copyright (c) 1999-2018 The strace developers.
+ * Copyright (c) 1999-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -42,7 +42,8 @@ decode_poll_entering(struct tcb *tcp)
 }
 
 static int
-decode_poll_exiting(struct tcb *const tcp, const kernel_ulong_t pts)
+decode_poll_exiting(struct tcb *const tcp, const sprint_obj_by_addr_fn sprint_ts,
+		    const kernel_ulong_t pts)
 {
 	struct pollfd fds;
 	const unsigned int nfds = tcp->u_arg[1];
@@ -114,7 +115,7 @@ decode_poll_exiting(struct tcb *const tcp, const kernel_ulong_t pts)
 
 	*outptr = '\0';
 	if (pts) {
-		const char *str = sprint_timespec(tcp, pts);
+		const char *str = sprint_ts(tcp, pts);
 
 		if (outptr + sizeof(", left ") + strlen(str) < end_outstr) {
 			outptr = stpcpy(outptr, outptr == outstr ? "left " : ", left ");
@@ -132,7 +133,9 @@ decode_poll_exiting(struct tcb *const tcp, const kernel_ulong_t pts)
 #undef end_outstr
 }
 
-SYS_FUNC(poll)
+#if HAVE_ARCH_TIME32_SYSCALLS || HAVE_ARCH_OLD_TIME64_SYSCALLS
+static int
+do_poll(struct tcb *const tcp, const sprint_obj_by_addr_fn sprint_ts)
 {
 	if (entering(tcp)) {
 		decode_poll_entering(tcp);
@@ -140,16 +143,33 @@ SYS_FUNC(poll)
 
 		return 0;
 	} else {
-		return decode_poll_exiting(tcp, 0);
+		return decode_poll_exiting(tcp, sprint_ts, 0);
 	}
 }
+#endif /* HAVE_ARCH_TIME32_SYSCALLS || HAVE_ARCH_OLD_TIME64_SYSCALLS */
 
-SYS_FUNC(ppoll)
+#if HAVE_ARCH_TIME32_SYSCALLS
+SYS_FUNC(poll_time32)
+{
+	return do_poll(tcp, sprint_timespec32);
+}
+#endif
+
+#if HAVE_ARCH_OLD_TIME64_SYSCALLS
+SYS_FUNC(poll_time64)
+{
+	return do_poll(tcp, sprint_timespec64);
+}
+#endif
+
+static int
+do_ppoll(struct tcb *const tcp, const print_obj_by_addr_fn print_ts,
+	 const sprint_obj_by_addr_fn sprint_ts)
 {
 	if (entering(tcp)) {
 		decode_poll_entering(tcp);
 
-		print_timespec(tcp, tcp->u_arg[2]);
+		print_ts(tcp, tcp->u_arg[2]);
 		tprints(", ");
 		/* NB: kernel requires arg[4] == NSIG_BYTES */
 		print_sigset_addr_len(tcp, tcp->u_arg[3], tcp->u_arg[4]);
@@ -157,6 +177,18 @@ SYS_FUNC(ppoll)
 
 		return 0;
 	} else {
-		return decode_poll_exiting(tcp, tcp->u_arg[2]);
+		return decode_poll_exiting(tcp, sprint_ts, tcp->u_arg[2]);
 	}
+}
+
+#if HAVE_ARCH_TIME32_SYSCALLS
+SYS_FUNC(ppoll_time32)
+{
+	return do_ppoll(tcp, print_timespec32, sprint_timespec32);
+}
+#endif
+
+SYS_FUNC(ppoll_time64)
+{
+	return do_ppoll(tcp, print_timespec64, sprint_timespec64);
 }

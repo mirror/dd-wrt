@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 The strace developers.
+ * Copyright (c) 2016-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -9,7 +9,7 @@
 
 void
 fill_memory_ex(void *ptr, size_t size, unsigned char start,
-	       unsigned char period)
+	       unsigned int period)
 {
 	unsigned char *p = ptr;
 	size_t i;

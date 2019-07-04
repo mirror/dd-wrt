@@ -2,7 +2,7 @@
  * Check decoding of threads when a non-leader thread invokes execve.
  *
  * Copyright (c) 2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2018 The strace developers.
+ * Copyright (c) 2016-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -141,7 +141,7 @@ thread(void *arg)
 	}
 
 	printf("%-5d +++ superseded by execve in pid %u +++\n"
-	       "%-5d <... execve resumed> ) = 0\n",
+	       "%-5d <... execve resumed>) = 0\n",
 	       leader, tid,
 	       leader);
 

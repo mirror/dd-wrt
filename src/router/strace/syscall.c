@@ -6,7 +6,7 @@
  * Copyright (c) 1999 IBM Deutschland Entwicklung GmbH, IBM Corporation
  *                     Linux for s390 port by D.J. Barrow
  *                    <barrow_dj@mail.yahoo.com,djbarrow@de.ibm.com>
- * Copyright (c) 1999-2018 The strace developers.
+ * Copyright (c) 1999-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -162,27 +162,27 @@ const struct_sysent *const sysent_vec[SUPPORTED_PERSONALITIES] = {
 };
 
 const char *const personality_names[] =
-# if defined X86_64
+#if defined X86_64
 	{"64 bit", "32 bit", "x32"}
-# elif defined X32
+#elif defined X32
 	{"x32", "32 bit"}
-# elif SUPPORTED_PERSONALITIES == 2
+#elif SUPPORTED_PERSONALITIES == 2
 	{"64 bit", "32 bit"}
-# else
+#else
 	{STRINGIFY_VAL(__WORDSIZE) " bit"}
-# endif
+#endif
 	;
 
 const char *const personality_designators[] =
-# if defined X86_64
+#if defined X86_64
 	{ "64", "32", "x32" }
-# elif defined X32
+#elif defined X32
 	{ "x32", "32" }
-# elif SUPPORTED_PERSONALITIES == 2
+#elif SUPPORTED_PERSONALITIES == 2
 	{ "64", "32" }
-# else
+#else
 	{ STRINGIFY_VAL(__WORDSIZE) }
-# endif
+#endif
 	;
 
 #if SUPPORTED_PERSONALITIES > 1
@@ -194,9 +194,9 @@ unsigned current_wordsize = PERSONALITY0_WORDSIZE;
 static const int personality_wordsize[SUPPORTED_PERSONALITIES] = {
 	PERSONALITY0_WORDSIZE,
 	PERSONALITY1_WORDSIZE,
-# if SUPPORTED_PERSONALITIES > 2
+#  if SUPPORTED_PERSONALITIES > 2
 	PERSONALITY2_WORDSIZE,
-# endif
+#  endif
 };
 # endif
 
@@ -341,7 +341,7 @@ decode_ipc_subcall(struct tcb *tcp)
 	tcp->qual_flg = qual_flags(tcp->scno);
 	tcp->s_ent = &sysent[tcp->scno];
 
-	const unsigned int n = tcp->s_ent->nargs;
+	const unsigned int n = n_args(tcp);
 	unsigned int i;
 	for (i = 0; i < n; i++)
 		tcp->u_arg[i] = tcp->u_arg[i + 1];
@@ -349,31 +349,8 @@ decode_ipc_subcall(struct tcb *tcp)
 #endif /* SYS_ipc_subcall */
 
 #ifdef SYS_syscall_subcall
-static void
-decode_syscall_subcall(struct tcb *tcp)
-{
-	if (!scno_is_valid(tcp->u_arg[0]))
-		return;
-	tcp->scno = tcp->u_arg[0];
-	tcp->qual_flg = qual_flags(tcp->scno);
-	tcp->s_ent = &sysent[tcp->scno];
-	memmove(&tcp->u_arg[0], &tcp->u_arg[1],
-		sizeof(tcp->u_arg) - sizeof(tcp->u_arg[0]));
-# ifdef LINUX_MIPSO32
-	/*
-	 * Fetching the last arg of 7-arg syscalls (fadvise64_64
-	 * and sync_file_range) requires additional code,
-	 * see linux/mips/get_syscall_args.c
-	 */
-	if (tcp->s_ent->nargs == MAX_ARGS) {
-		if (umoven(tcp,
-			   mips_REG_SP + MAX_ARGS * sizeof(tcp->u_arg[0]),
-			   sizeof(tcp->u_arg[0]),
-			   &tcp->u_arg[MAX_ARGS - 1]) < 0)
-		tcp->u_arg[MAX_ARGS - 1] = 0;
-	}
-# endif /* LINUX_MIPSO32 */
-}
+/* The implementation is architecture specific.  */
+static void decode_syscall_subcall(struct tcb *);
 #endif /* SYS_syscall_subcall */
 
 static void
@@ -384,12 +361,13 @@ dumpio(struct tcb *tcp)
 		return;
 
 	if (is_number_in_set(fd, write_set)) {
-		switch (tcp->s_ent->sen) {
+		switch (tcp_sysent(tcp)->sen) {
 		case SEN_write:
 		case SEN_pwrite:
 		case SEN_send:
 		case SEN_sendto:
-		case SEN_mq_timedsend:
+		case SEN_mq_timedsend_time32:
+		case SEN_mq_timedsend_time64:
 			dumpstr(tcp, tcp->u_arg[1], tcp->u_arg[2]);
 			break;
 		case SEN_writev:
@@ -411,12 +389,13 @@ dumpio(struct tcb *tcp)
 		return;
 
 	if (is_number_in_set(fd, read_set)) {
-		switch (tcp->s_ent->sen) {
+		switch (tcp_sysent(tcp)->sen) {
 		case SEN_read:
 		case SEN_pread:
 		case SEN_recv:
 		case SEN_recvfrom:
-		case SEN_mq_timedreceive:
+		case SEN_mq_timedreceive_time32:
+		case SEN_mq_timedreceive_time64:
 			dumpstr(tcp, tcp->u_arg[1], tcp->u_rval);
 			return;
 		case SEN_readv:
@@ -429,6 +408,8 @@ dumpio(struct tcb *tcp)
 			dumpiov_in_msghdr(tcp, tcp->u_arg[1], tcp->u_rval);
 			return;
 		case SEN_recvmmsg:
+		case SEN_recvmmsg_time32:
+		case SEN_recvmmsg_time64:
 			dumpiov_in_mmsghdr(tcp, tcp->u_arg[1]);
 			return;
 		}
@@ -469,6 +450,9 @@ static int arch_get_syscall_args(struct tcb *);
 static void arch_get_error(struct tcb *, bool);
 static int arch_set_error(struct tcb *);
 static int arch_set_success(struct tcb *);
+#if MAX_ARGS > 6
+static void arch_get_syscall_args_extra(struct tcb *, unsigned int);
+#endif
 
 struct inject_opts *inject_vec[SUPPORTED_PERSONALITIES];
 
@@ -516,6 +500,20 @@ tamper_with_syscall_entering(struct tcb *tcp, unsigned int *signo)
 				tcp->flags |= TCB_TAMPERED;
 				if (scno != -1)
 					tcp->flags |= TCB_TAMPERED_NO_FAIL;
+#if ARCH_NEEDS_SET_ERROR_FOR_SCNO_TAMPERING
+				/*
+				 * So far it's just a workaround for hppa,
+				 * but let's pretend it could be used elsewhere.
+				 */
+				else {
+					kernel_long_t rval =
+						(opts->data.flags & INJECT_F_RETVAL) ?
+						ENOSYS : retval_get(opts->data.rval_idx);
+
+					tcp->u_error = 0; /* force reset */
+					set_error(tcp, rval);
+				}
+#endif
 			}
 		}
 		if (opts->data.flags & INJECT_F_DELAY_ENTER)
@@ -571,10 +569,9 @@ syscall_entering_decode(struct tcb *tcp)
 	int res = get_scno(tcp);
 	if (res == 0)
 		return res;
-	int scno_good = res;
 	if (res != 1 || (res = get_syscall_args(tcp)) != 1) {
 		printleader(tcp);
-		tprintf("%s(", scno_good == 1 ? tcp->s_ent->sys_name : "????");
+		tprintf("%s(", tcp_sysent(tcp)->sys_name);
 		/*
 		 * " <unavailable>" will be added later by the code which
 		 * detects ptrace errors.
@@ -586,7 +583,7 @@ syscall_entering_decode(struct tcb *tcp)
  || defined SYS_socket_subcall	\
  || defined SYS_syscall_subcall
 	for (;;) {
-		switch (tcp->s_ent->sen) {
+		switch (tcp_sysent(tcp)->sen) {
 # ifdef SYS_ipc_subcall
 		case SEN_ipc:
 			decode_ipc_subcall(tcp);
@@ -600,7 +597,7 @@ syscall_entering_decode(struct tcb *tcp)
 # ifdef SYS_syscall_subcall
 		case SEN_syscall:
 			decode_syscall_subcall(tcp);
-			if (tcp->s_ent->sen != SEN_syscall)
+			if (tcp_sysent(tcp)->sen != SEN_syscall)
 				continue;
 			break;
 # endif
@@ -622,12 +619,10 @@ syscall_entering_trace(struct tcb *tcp, unsigned int *sig)
 		 */
 		tcp->qual_flg &= ~QUAL_INJECT;
 
-		switch (tcp->s_ent->sen) {
+		switch (tcp_sysent(tcp)->sen) {
 			case SEN_execve:
 			case SEN_execveat:
-#if defined SPARC || defined SPARC64
 			case SEN_execv:
-#endif
 				/*
 				 * First exec* syscall makes the log visible.
 				 */
@@ -656,14 +651,14 @@ syscall_entering_trace(struct tcb *tcp, unsigned int *sig)
 
 #ifdef ENABLE_STACKTRACE
 	if (stack_trace_enabled) {
-		if (tcp->s_ent->sys_flags & STACKTRACE_CAPTURE_ON_ENTER)
+		if (tcp_sysent(tcp)->sys_flags & STACKTRACE_CAPTURE_ON_ENTER)
 			unwind_tcb_capture(tcp);
 	}
 #endif
 
 	printleader(tcp);
-	tprintf("%s(", tcp->s_ent->sys_name);
-	int res = raw(tcp) ? printargs(tcp) : tcp->s_ent->sys_func(tcp);
+	tprintf("%s(", tcp_sysent(tcp)->sys_name);
+	int res = raw(tcp) ? printargs(tcp) : tcp_sysent(tcp)->sys_func(tcp);
 	fflush(tcp->outf);
 	return res;
 }
@@ -693,7 +688,7 @@ syscall_exiting_decode(struct tcb *tcp, struct timespec *pts)
 	if ((Tflag || cflag) && !filtered(tcp))
 		clock_gettime(CLOCK_MONOTONIC, pts);
 
-	if (tcp->s_ent->sys_flags & MEMORY_MAPPING_CHANGE)
+	if (tcp_sysent(tcp)->sys_flags & MEMORY_MAPPING_CHANGE)
 		mmap_notify_report(tcp);
 
 	if (filtered(tcp))
@@ -711,6 +706,26 @@ syscall_exiting_decode(struct tcb *tcp, struct timespec *pts)
 	return get_syscall_result(tcp);
 }
 
+void
+print_syscall_resume(struct tcb *tcp)
+{
+	/* If not in -ff mode, and printing_tcp != tcp,
+	 * then the log currently does not end with output
+	 * of _our syscall entry_, but with something else.
+	 * We need to say which syscall's return is this.
+	 *
+	 * Forced reprinting via TCB_REPRINT is used only by
+	 * "strace -ff -oLOG test/threaded_execve" corner case.
+	 * It's the only case when -ff mode needs reprinting.
+	 */
+	if ((followfork < 2 && printing_tcp != tcp)
+	    || (tcp->flags & TCB_REPRINT)) {
+		tcp->flags &= ~TCB_REPRINT;
+		printleader(tcp);
+		tprintf("<... %s resumed>", tcp_sysent(tcp)->sys_name);
+	}
+}
+
 int
 syscall_exiting_trace(struct tcb *tcp, struct timespec *ts, int res)
 {
@@ -724,20 +739,7 @@ syscall_exiting_trace(struct tcb *tcp, struct timespec *ts, int res)
 		}
 	}
 
-	/* If not in -ff mode, and printing_tcp != tcp,
-	 * then the log currently does not end with output
-	 * of _our syscall entry_, but with something else.
-	 * We need to say which syscall's return is this.
-	 *
-	 * Forced reprinting via TCB_REPRINT is used only by
-	 * "strace -ff -oLOG test/threaded_execve" corner case.
-	 * It's the only case when -ff mode needs reprinting.
-	 */
-	if ((followfork < 2 && printing_tcp != tcp) || (tcp->flags & TCB_REPRINT)) {
-		tcp->flags &= ~TCB_REPRINT;
-		printleader(tcp);
-		tprintf("<... %s resumed> ", tcp->s_ent->sys_name);
-	}
+	print_syscall_resume(tcp);
 	printing_tcp = tcp;
 
 	tcp->s_prev_ent = NULL;
@@ -768,7 +770,7 @@ syscall_exiting_trace(struct tcb *tcp, struct timespec *ts, int res)
 		if (tcp->sys_func_rval & RVAL_DECODED)
 			sys_res = tcp->sys_func_rval;
 		else
-			sys_res = tcp->s_ent->sys_func(tcp);
+			sys_res = tcp_sysent(tcp)->sys_func(tcp);
 	}
 
 	tprints(") ");
@@ -956,7 +958,7 @@ ptrace_syscall_info_is_valid(void)
 }
 
 #define XLAT_MACROS_ONLY
-# include "xlat/nt_descriptor_types.h"
+#include "xlat/nt_descriptor_types.h"
 #undef XLAT_MACROS_ONLY
 
 #define ARCH_MIGHT_USE_SET_REGS 1
@@ -1255,6 +1257,14 @@ get_syscall_regs(struct tcb *tcp)
 	return get_regs(tcp);
 }
 
+const struct_sysent stub_sysent = {
+	.nargs = MAX_ARGS,
+	.sys_flags = MEMORY_MAPPING_CHANGE,
+	.sen = SEN_printargs,
+	.sys_func = printargs,
+	.sys_name = "????",
+};
+
 /*
  * Returns:
  * 0: "ignore this ptrace stop", syscall_entering_decode() should return a "bail
@@ -1266,6 +1276,10 @@ get_syscall_regs(struct tcb *tcp)
 int
 get_scno(struct tcb *tcp)
 {
+	tcp->scno = -1;
+	tcp->s_ent = NULL;
+	tcp->qual_flg = QUAL_RAW | DEFAULT_QUAL_FLAGS;
+
 	if (get_syscall_regs(tcp) < 0)
 		return -1;
 
@@ -1290,17 +1304,14 @@ get_scno(struct tcb *tcp)
 		tcp->s_ent = &sysent[tcp->scno];
 		tcp->qual_flg = qual_flags(tcp->scno);
 	} else {
-		struct sysent_buf *s = xcalloc(1, sizeof(*s));
+		struct sysent_buf *s = xzalloc(sizeof(*s));
 
 		s->tcp = tcp;
-		s->ent.nargs = MAX_ARGS;
-		s->ent.sen = SEN_printargs;
-		s->ent.sys_func = printargs;
+		s->ent = stub_sysent;
 		s->ent.sys_name = s->buf;
 		xsprintf(s->buf, "syscall_%#" PRI_klx, shuffle_scno(tcp->scno));
 
 		tcp->s_ent = &s->ent;
-		tcp->qual_flg = QUAL_RAW | DEFAULT_QUAL_FLAGS;
 
 		set_tcb_priv_data(tcp, s, free_sysent_buf);
 
@@ -1323,13 +1334,23 @@ static int
 get_syscall_args(struct tcb *tcp)
 {
 	if (ptrace_syscall_info_is_valid()) {
-		for (unsigned int i = 0; i < ARRAY_SIZE(tcp->u_arg); ++i)
+		const unsigned int n =
+			MIN(ARRAY_SIZE(tcp->u_arg),
+			    ARRAY_SIZE(ptrace_sci.entry.args));
+		for (unsigned int i = 0; i < n; ++i)
 			tcp->u_arg[i] = ptrace_sci.entry.args[i];
 #if SUPPORTED_PERSONALITIES > 1
-		if (tcp->s_ent->sys_flags & COMPAT_SYSCALL_TYPES) {
-			for (unsigned int i = 0; i < ARRAY_SIZE(tcp->u_arg); ++i)
+		if (tcp_sysent(tcp)->sys_flags & COMPAT_SYSCALL_TYPES) {
+			for (unsigned int i = 0; i < n; ++i)
 				tcp->u_arg[i] = (uint32_t) tcp->u_arg[i];
 		}
+#endif
+		/*
+		 * So far it's just a workaround for mips o32,
+		 * but let's pretend it could be used elsewhere.
+		 */
+#if MAX_ARGS > 6
+		arch_get_syscall_args_extra(tcp, n);
 #endif
 		return 1;
 	}
@@ -1353,7 +1374,7 @@ get_syscall_result(struct tcb *tcp)
 	if (get_syscall_result_regs(tcp) < 0)
 		return -1;
 	get_error(tcp,
-		  (!(tcp->s_ent->sys_flags & SYSCALL_NEVER_FAILS)
+		  (!(tcp_sysent(tcp)->sys_flags & SYSCALL_NEVER_FAILS)
 			|| syscall_tampered(tcp))
                   && !syscall_tampered_nofail(tcp));
 
@@ -1399,7 +1420,7 @@ set_error(struct tcb *tcp, unsigned long new_error)
 		if (ptrace_syscall_info_is_valid())
 			tcp->u_rval = -1;
 		else
-			get_error(tcp, !(tcp->s_ent->sys_flags &
+			get_error(tcp, !(tcp_sysent(tcp)->sys_flags &
 					 SYSCALL_NEVER_FAILS));
 	}
 }
@@ -1423,7 +1444,7 @@ set_success(struct tcb *tcp, kernel_long_t new_rval)
 		if (ptrace_syscall_info_is_valid())
 			tcp->u_error = 0;
 		else
-			get_error(tcp, !(tcp->s_ent->sys_flags &
+			get_error(tcp, !(tcp_sysent(tcp)->sys_flags &
 					 SYSCALL_NEVER_FAILS));
 	}
 }

@@ -99,13 +99,11 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # ifdef IN_MPERS
 
-extern const struct xlat adjtimex_modes[];
+#  error static const struct xlat adjtimex_modes in mpers mode
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
 static
-#  endif
 const struct xlat adjtimex_modes[] = {
  XLAT(ADJ_OFFSET_SS_READ),
  XLAT(ADJ_OFFSET_SINGLESHOT),

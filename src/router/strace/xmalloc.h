@@ -4,24 +4,43 @@
  * These functions can be used by various binaries included in the strace
  * package.
  *
- * Copyright (c) 2001-2018 The strace developers.
+ * Copyright (c) 2001-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
  */
 
 #ifndef STRACE_XMALLOC_H
-#define STRACE_XMALLOC_H
+# define STRACE_XMALLOC_H
 
-#include <stddef.h>
-#include "gcc_compat.h"
+# include <stddef.h>
+# include "gcc_compat.h"
 
-#define xcalloc strace_calloc
-#define xmalloc strace_malloc
+# define xcalloc strace_calloc
+# define xmalloc strace_malloc
 
+/** Allocate memory, die if the allocation has failed. */
+void *xmalloc(size_t size) ATTRIBUTE_MALLOC ATTRIBUTE_ALLOC_SIZE((1));
+
+/**
+ * Allocate an array and zero it out (similar to calloc), die if the allocation
+ * has failed or if the product of nmemb and size is too big.
+ */
 void *xcalloc(size_t nmemb, size_t size)
 	ATTRIBUTE_MALLOC ATTRIBUTE_ALLOC_SIZE((1, 2));
-void *xmalloc(size_t size) ATTRIBUTE_MALLOC ATTRIBUTE_ALLOC_SIZE((1));
+
+/** Wrapper for xcalloc(1, size) with xmalloc-like interface. */
+ATTRIBUTE_MALLOC ATTRIBUTE_ALLOC_SIZE((1))
+static inline void *
+xzalloc(size_t size)
+{
+	return xcalloc(1, size);
+}
+
+/**
+ * Reallocate memory for the array, die if the allocation has failed or
+ * if the product of nmemb and size is too big.
+ */
 void *xreallocarray(void *ptr, size_t nmemb, size_t size)
 	ATTRIBUTE_ALLOC_SIZE((2, 3));
 

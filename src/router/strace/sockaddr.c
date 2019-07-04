@@ -4,7 +4,7 @@
  * Copyright (c) 1993, 1994, 1995, 1996 Rick Sladkey <jrs@world.std.com>
  * Copyright (c) 1996-2000 Wichert Akkerman <wichert@cistron.nl>
  * Copyright (c) 2005-2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2018 The strace developers.
+ * Copyright (c) 2016-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -76,20 +76,51 @@ print_inet_addr(const int af,
 	case AF_INET:
 		if (inet_ntop(af, addr, buf, sizeof(buf))) {
 			if (var_name)
-				tprintf("%s=inet_addr(\"%s\")", var_name, buf);
-			else
-				tprintf("inet_addr(\"%s\")", buf);
+				tprintf("%s=", var_name);
+
+			if (xlat_verbose(xlat_verbosity) != XLAT_STYLE_ABBREV)
+				print_quoted_string((const char*) addr,
+						    len, QUOTE_FORCE_HEX);
+
+			if (xlat_verbose(xlat_verbosity) == XLAT_STYLE_RAW)
+				return true;
+
+			if (xlat_verbose(xlat_verbosity) == XLAT_STYLE_VERBOSE)
+				tprints(" /* ");
+
+			tprintf("inet_addr(\"%s\")", buf);
+
+			if (xlat_verbose(xlat_verbosity) == XLAT_STYLE_VERBOSE)
+				tprints(" */");
+
 			return true;
 		}
 		break;
 	case AF_INET6:
 		if (inet_ntop(af, addr, buf, sizeof(buf))) {
-			if (var_name)
+			if (xlat_verbose(xlat_verbosity) != XLAT_STYLE_ABBREV) {
+				if (var_name)
+					tprintf("%s=", var_name);
+				print_quoted_string(addr, len, QUOTE_FORCE_HEX);
+			}
+
+			if (xlat_verbose(xlat_verbosity) == XLAT_STYLE_RAW)
+				return true;
+
+			if (xlat_verbose(xlat_verbosity) == XLAT_STYLE_VERBOSE)
+				tprints(" /* ");
+
+			if (var_name &&
+			    (xlat_verbose(xlat_verbosity) == XLAT_STYLE_ABBREV))
 				tprintf("inet_pton(%s, \"%s\", &%s)",
 					"AF_INET6", buf, var_name);
 			else
 				tprintf("inet_pton(%s, \"%s\")",
 					"AF_INET6", buf);
+
+			if (xlat_verbose(xlat_verbosity) == XLAT_STYLE_VERBOSE)
+				tprints(" */");
+
 			return true;
 		}
 		break;
@@ -146,7 +177,7 @@ print_sockaddr_data_in(const void *const buf, const int addrlen)
 	const struct sockaddr_in *const sa_in = buf;
 
 	PRINT_FIELD_NET_PORT("", *sa_in, sin_port);
-	PRINT_FIELD_INET4_ADDR(", ", *sa_in, sin_addr);
+	PRINT_FIELD_INET_ADDR(", ", *sa_in, sin_addr, AF_INET);
 }
 
 #define SIN6_MIN_LEN offsetof(struct sockaddr_in6, sin6_scope_id)
@@ -157,9 +188,19 @@ print_sockaddr_data_in6(const void *const buf, const int addrlen)
 	const struct sockaddr_in6 *const sa_in6 = buf;
 
 	PRINT_FIELD_NET_PORT("", *sa_in6, sin6_port);
-	PRINT_FIELD_INET_ADDR(", ", *sa_in6, sin6_addr, AF_INET6);
-	tprintf(", sin6_flowinfo=htonl(%u)", ntohl(sa_in6->sin6_flowinfo));
+	tprints(", sin6_flowinfo=");
+	if (xlat_verbose(xlat_verbosity) != XLAT_STYLE_ABBREV)
+		print_quoted_string((const char*) &sa_in6->sin6_flowinfo,
+				    sizeof(sa_in6->sin6_flowinfo),
+				    QUOTE_FORCE_HEX);
 
+	if (xlat_verbose(xlat_verbosity) == XLAT_STYLE_VERBOSE)
+		tprintf(" /* htonl(%u) */", ntohl(sa_in6->sin6_flowinfo));
+
+	if (xlat_verbose(xlat_verbosity) == XLAT_STYLE_ABBREV)
+		tprintf("htonl(%u)", ntohl(sa_in6->sin6_flowinfo));
+
+	PRINT_FIELD_INET_ADDR(", ", *sa_in6, sin6_addr, AF_INET6);
 	if (addrlen <= (int) SIN6_MIN_LEN)
 		return;
 
@@ -375,14 +416,38 @@ print_sockaddr_data_nl(const void *const buf, const int addrlen)
 }
 
 static void
+print_sll_protocol(const struct sockaddr_ll *const sa_ll)
+{
+	int x_style = xlat_verbose(xlat_verbosity);
+
+	tprints("sll_protocol=");
+	if (x_style != XLAT_STYLE_ABBREV)
+		print_quoted_string((const char *) &sa_ll->sll_protocol,
+				    sizeof(sa_ll->sll_protocol),
+				    QUOTE_FORCE_HEX);
+
+	if (x_style == XLAT_STYLE_RAW)
+		return;
+
+	if (x_style == XLAT_STYLE_VERBOSE)
+		tprints(" /* ");
+
+	tprints("htons(");
+	printxval_search_ex(ethernet_protocols, ntohs(sa_ll->sll_protocol),
+			    "ETH_P_???", XLAT_STYLE_ABBREV);
+	tprints(")");
+
+	if (x_style == XLAT_STYLE_VERBOSE)
+		tprints(" */");
+}
+
+static void
 print_sockaddr_data_ll(const void *const buf, const int addrlen)
 {
 	const struct sockaddr_ll *const sa_ll = buf;
 
-	tprints("sll_protocol=htons(");
-	printxval_search(ethernet_protocols, ntohs(sa_ll->sll_protocol),
-			 "ETH_P_???");
-	PRINT_FIELD_IFINDEX("), ", *sa_ll, sll_ifindex);
+	print_sll_protocol(sa_ll);
+	PRINT_FIELD_IFINDEX(", ", *sa_ll, sll_ifindex);
 	tprints(", sll_hatype=");
 	printxval_search(arp_hardware_types, sa_ll->sll_hatype, "ARPHRD_???");
 	tprints(", sll_pkttype=");

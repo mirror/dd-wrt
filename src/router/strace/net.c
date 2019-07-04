@@ -3,7 +3,7 @@
  * Copyright (c) 1993 Branko Lankester <branko@hacktic.nl>
  * Copyright (c) 1993, 1994, 1995, 1996 Rick Sladkey <jrs@world.std.com>
  * Copyright (c) 1996-2000 Wichert Akkerman <wichert@cistron.nl>
- * Copyright (c) 1999-2018 The strace developers.
+ * Copyright (c) 1999-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -65,8 +65,8 @@
 #include "xlat/inet_protocols.h"
 
 #define XLAT_MACROS_ONLY
-# include "xlat/addrfams.h"
-# include "xlat/ethernet_protocols.h"
+#include "xlat/addrfams.h"
+#include "xlat/ethernet_protocols.h"
 #undef XLAT_MACROS_ONLY
 #include "xlat/ax25_protocols.h"
 #include "xlat/irda_protocols.h"
@@ -898,8 +898,8 @@ print_mreq(struct tcb *const tcp, const kernel_ulong_t addr,
 	if (len < (int) sizeof(mreq)) {
 		printaddr(addr);
 	} else if (!umove_or_printaddr(tcp, addr, &mreq)) {
-		PRINT_FIELD_INET4_ADDR("{", mreq, imr_multiaddr);
-		PRINT_FIELD_INET4_ADDR(", ", mreq, imr_interface);
+		PRINT_FIELD_INET_ADDR("{", mreq, imr_multiaddr, AF_INET);
+		PRINT_FIELD_INET_ADDR(", ", mreq, imr_interface, AF_INET);
 		tprints("}");
 	}
 }
@@ -953,17 +953,13 @@ print_packet_mreq(struct tcb *const tcp, const kernel_ulong_t addr, const int le
 	    umove(tcp, addr, &mreq) < 0) {
 		printaddr(addr);
 	} else {
-		unsigned int i;
-
 		PRINT_FIELD_IFINDEX("{", mreq, mr_ifindex);
 		PRINT_FIELD_XVAL(", ", mreq, mr_type, packet_mreq_type,
 				 "PACKET_MR_???");
 		PRINT_FIELD_U(", ", mreq, mr_alen);
-		tprints(", mr_address=");
-		if (mreq.mr_alen > ARRAY_SIZE(mreq.mr_address))
-			mreq.mr_alen = ARRAY_SIZE(mreq.mr_address);
-		for (i = 0; i < mreq.mr_alen; ++i)
-			tprintf("%02x", mreq.mr_address[i]);
+		PRINT_FIELD_MAC_SZ(", ", mreq, mr_address,
+				   (mreq.mr_alen > sizeof(mreq.mr_address)
+				    ? sizeof(mreq.mr_address) : mreq.mr_alen));
 		tprints("}");
 	}
 }

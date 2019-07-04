@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 The strace developers.
+ * Copyright (c) 2018-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -14,7 +14,8 @@
 #define TCP_STR "TCPv6"
 #define INPORT sin6_port
 #define INPORT_STR "sin6_port"
-#define INADDR_STR "inet_pton(AF_INET6, \"::1\", &sin6_addr)"
-#define SA_FIELDS ", sin6_flowinfo=htonl(0), sin6_scope_id=0"
+#define INADDR_STR "sin6_flowinfo=htonl(0)" \
+	", inet_pton(AF_INET6, \"::1\", &sin6_addr)"
+#define SA_FIELDS ", sin6_scope_id=0"
 
 #include "net-yy-inet.c"

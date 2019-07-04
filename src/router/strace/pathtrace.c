@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2011 Comtrol Corp.
- * Copyright (c) 2011-2018 The strace developers.
+ * Copyright (c) 2011-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -167,7 +167,7 @@ pathtrace_match_set(struct tcb *tcp, struct path_set *set)
 {
 	const struct_sysent *s;
 
-	s = tcp->s_ent;
+	s = tcp_sysent(tcp);
 
 	if (!(s->sys_flags & (TRACE_FILE | TRACE_DESC | TRACE_NETWORK)))
 		return false;
@@ -203,7 +203,8 @@ pathtrace_match_set(struct tcb *tcp, struct path_set *set)
 	case SEN_readlinkat:
 	case SEN_statx:
 	case SEN_unlinkat:
-	case SEN_utimensat:
+	case SEN_utimensat_time32:
+	case SEN_utimensat_time64:
 		/* fd, path */
 		return fdmatch(tcp, tcp->u_arg[0], set) ||
 			upathmatch(tcp, tcp->u_arg[1], set);
@@ -282,11 +283,14 @@ pathtrace_match_set(struct tcb *tcp, struct path_set *set)
 		return args && match_xselect_args(tcp, args, set);
 	}
 #endif
-	case SEN_pselect6:
+	case SEN_pselect6_time32:
+	case SEN_pselect6_time64:
 	case SEN_select:
 		return match_xselect_args(tcp, tcp->u_arg, set);
-	case SEN_poll:
-	case SEN_ppoll:
+	case SEN_poll_time32:
+	case SEN_poll_time64:
+	case SEN_ppoll_time32:
+	case SEN_ppoll_time64:
 	{
 		struct pollfd fds;
 		unsigned nfds;
@@ -322,12 +326,17 @@ pathtrace_match_set(struct tcb *tcp, struct path_set *set)
 	case SEN_fanotify_init:
 	case SEN_inotify_init:
 	case SEN_inotify_init1:
+	case SEN_io_uring_enter:
+	case SEN_io_uring_register:
+	case SEN_io_uring_setup:
 	case SEN_memfd_create:
 	case SEN_mq_getsetattr:
 	case SEN_mq_notify:
 	case SEN_mq_open:
-	case SEN_mq_timedreceive:
-	case SEN_mq_timedsend:
+	case SEN_mq_timedreceive_time32:
+	case SEN_mq_timedreceive_time64:
+	case SEN_mq_timedsend_time32:
+	case SEN_mq_timedsend_time64:
 	case SEN_perf_event_open:
 	case SEN_pipe:
 	case SEN_pipe2:
@@ -337,8 +346,10 @@ pathtrace_match_set(struct tcb *tcp, struct path_set *set)
 	case SEN_socket:
 	case SEN_socketpair:
 	case SEN_timerfd_create:
-	case SEN_timerfd_gettime:
-	case SEN_timerfd_settime:
+	case SEN_timerfd_gettime32:
+	case SEN_timerfd_gettime64:
+	case SEN_timerfd_settime32:
+	case SEN_timerfd_settime64:
 	case SEN_userfaultfd:
 		/*
 		 * These have TRACE_FILE or TRACE_DESCRIPTOR or TRACE_NETWORK set,

@@ -263,8 +263,8 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #endif
 #if defined O_NDELAY && O_NDELAY & O_NONBLOCK
 # ifndef STRACE_WORKAROUND_FOR_O_NDELAY
-# define STRACE_WORKAROUND_FOR_O_NDELAY
-# undef O_NDELAY
+#  define STRACE_WORKAROUND_FOR_O_NDELAY
+#  undef O_NDELAY
 # endif
 #endif
 #if defined __sparc__
@@ -685,11 +685,11 @@ const struct xlat open_mode_flags[] = {
 
 #if defined O_NDELAY && O_NDELAY & O_NONBLOCK
 # ifndef STRACE_WORKAROUND_FOR_O_NDELAY
-# define STRACE_WORKAROUND_FOR_O_NDELAY
+#  define STRACE_WORKAROUND_FOR_O_NDELAY
 
 
 
-# undef O_NDELAY
+#  undef O_NDELAY
 # endif
 #endif
 

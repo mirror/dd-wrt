@@ -3,7 +3,7 @@
  * Copyright (c) 2012-2013 Denys Vlasenko <vda.linux@googlemail.com>
  * Copyright (c) 2014 Masatake YAMATO <yamato@redhat.com>
  * Copyright (c) 2010-2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2018 The strace developers.
+ * Copyright (c) 2016-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -175,14 +175,16 @@ SYS_FUNC(sendmmsg)
 	return 0;
 }
 
-SYS_FUNC(recvmmsg)
+static int
+do_recvmmsg(struct tcb *const tcp, const print_obj_by_addr_fn print_ts,
+	    const sprint_obj_by_addr_fn sprint_ts)
 {
 	if (entering(tcp)) {
 		printfd(tcp, tcp->u_arg[0]);
 		tprints(", ");
 		if (verbose(tcp)) {
 			save_mmsgvec_namelen(tcp, tcp->u_arg[1], tcp->u_arg[2],
-					     sprint_timespec(tcp, tcp->u_arg[4]));
+					     sprint_ts(tcp, tcp->u_arg[4]));
 		} else {
 			/* msgvec */
 			printaddr(tcp->u_arg[1]);
@@ -191,7 +193,7 @@ SYS_FUNC(recvmmsg)
 			/* flags */
 			printflags(msg_flags, tcp->u_arg[3], "MSG_???");
 			tprints(", ");
-			print_timespec(tcp, tcp->u_arg[4]);
+			print_ts(tcp, tcp->u_arg[4]);
 		}
 		return 0;
 	} else {
@@ -217,8 +219,20 @@ SYS_FUNC(recvmmsg)
 			return 0;
 		/* timeout on exit */
 		static char str[sizeof("left") + TIMESPEC_TEXT_BUFSIZE];
-		xsprintf(str, "left %s", sprint_timespec(tcp, tcp->u_arg[4]));
+		xsprintf(str, "left %s", sprint_ts(tcp, tcp->u_arg[4]));
 		tcp->auxstr = str;
 		return RVAL_STR;
 	}
+}
+
+#if HAVE_ARCH_TIME32_SYSCALLS
+SYS_FUNC(recvmmsg_time32)
+{
+	return do_recvmmsg(tcp, print_timespec32, sprint_timespec32);
+}
+#endif
+
+SYS_FUNC(recvmmsg_time64)
+{
+	return do_recvmmsg(tcp, print_timespec64, sprint_timespec64);
 }

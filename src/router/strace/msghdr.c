@@ -4,7 +4,7 @@
  * Copyright (c) 1993, 1994, 1995, 1996 Rick Sladkey <jrs@world.std.com>
  * Copyright (c) 1996-2000 Wichert Akkerman <wichert@cistron.nl>
  * Copyright (c) 2005-2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2018 The strace developers.
+ * Copyright (c) 2016-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -17,6 +17,9 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
+#define XLAT_MACROS_ONLY
+#include "xlat/sock_options.h"
+#undef XLAT_MACROS_ONLY
 #include "xlat/msg_flags.h"
 #include "xlat/scmvals.h"
 #include "xlat/ip_cmsg_types.h"
@@ -80,24 +83,45 @@ print_scm_security(struct tcb *tcp, const void *cmsg_data,
 }
 
 static void
-print_scm_timestamp(struct tcb *tcp, const void *cmsg_data,
-		    const unsigned int data_len)
+print_scm_timestamp_old(struct tcb *tcp, const void *cmsg_data,
+			const unsigned int data_len)
 {
 	print_struct_timeval_data_size(cmsg_data, data_len);
 }
 
 static void
-print_scm_timestampns(struct tcb *tcp, const void *cmsg_data,
-		      const unsigned int data_len)
+print_scm_timestampns_old(struct tcb *tcp, const void *cmsg_data,
+			  const unsigned int data_len)
 {
 	print_struct_timespec_data_size(cmsg_data, data_len);
 }
 
 static void
-print_scm_timestamping(struct tcb *tcp, const void *cmsg_data,
-		       const unsigned int data_len)
+print_scm_timestamping_old(struct tcb *tcp, const void *cmsg_data,
+			   const unsigned int data_len)
 {
 	print_struct_timespec_array_data_size(cmsg_data, 3, data_len);
+}
+
+static void
+print_scm_timestamp_new(struct tcb *tcp, const void *cmsg_data,
+			const unsigned int data_len)
+{
+	print_timeval64_data_size(cmsg_data, data_len);
+}
+
+static void
+print_scm_timestampns_new(struct tcb *tcp, const void *cmsg_data,
+			const unsigned int data_len)
+{
+	print_timespec64_data_size(cmsg_data, data_len);
+}
+
+static void
+print_scm_timestamping_new(struct tcb *tcp, const void *cmsg_data,
+			   const unsigned int data_len)
+{
+	print_timespec64_array_data_size(cmsg_data, 3, data_len);
 }
 
 static void
@@ -107,8 +131,8 @@ print_cmsg_ip_pktinfo(struct tcb *tcp, const void *cmsg_data,
 	const struct in_pktinfo *info = cmsg_data;
 
 	PRINT_FIELD_IFINDEX("{", *info, ipi_ifindex);
-	PRINT_FIELD_INET4_ADDR(", ", *info, ipi_spec_dst);
-	PRINT_FIELD_INET4_ADDR(", ", *info, ipi_addr);
+	PRINT_FIELD_INET_ADDR(", ", *info, ipi_spec_dst, AF_INET);
+	PRINT_FIELD_INET_ADDR(", ", *info, ipi_addr, AF_INET);
 	tprints("}");
 }
 
@@ -197,9 +221,12 @@ static const struct {
 	[SCM_RIGHTS] = { print_scm_rights, sizeof(int) },
 	[SCM_CREDENTIALS] = { print_scm_creds, sizeof(struct ucred) },
 	[SCM_SECURITY] = { print_scm_security, 1 },
-	[SCM_TIMESTAMP] = { print_scm_timestamp, 1 },
-	[SCM_TIMESTAMPNS] = { print_scm_timestampns, 1 },
-	[SCM_TIMESTAMPING] = { print_scm_timestamping, 1 }
+	[SO_TIMESTAMP_OLD] = { print_scm_timestamp_old, 1 },
+	[SO_TIMESTAMPNS_OLD] = { print_scm_timestampns_old, 1 },
+	[SO_TIMESTAMPING_OLD] = { print_scm_timestamping_old, 1 },
+	[SO_TIMESTAMP_NEW] = { print_scm_timestamp_new, 1 },
+	[SO_TIMESTAMPNS_NEW] = { print_scm_timestampns_new, 1 },
+	[SO_TIMESTAMPING_NEW] = { print_scm_timestamping_new, 1 }
 }, cmsg_ip_printers[] = {
 	[IP_PKTINFO] = { print_cmsg_ip_pktinfo, sizeof(struct in_pktinfo) },
 	[IP_TTL] = { print_cmsg_uint, sizeof(unsigned int) },

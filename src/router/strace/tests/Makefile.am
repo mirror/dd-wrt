@@ -1,7 +1,7 @@
 # Automake input for strace tests.
 #
 # Copyright (c) 2011-2016 Dmitry V. Levin <ldv@altlinux.org>
-# Copyright (c) 2011-2018 The strace developers.
+# Copyright (c) 2011-2019 The strace developers.
 # All rights reserved.
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
@@ -97,18 +97,20 @@ check_PROGRAMS = $(PURE_EXECUTABLES) \
 	inject-nf \
 	int_0x80 \
 	ioctl_dm-v \
-	ioctl_evdev-v \
 	ioctl_evdev-success \
 	ioctl_evdev-success-v \
+	ioctl_evdev-v \
 	ioctl_loop-nv \
 	ioctl_loop-v \
 	ioctl_nsfs \
 	ioctl_perf-success \
 	ioctl_rtc-v \
 	is_linux_mips_n64 \
+	kill_child \
 	ksysent \
 	list_sigaction_signum \
 	localtime \
+	looping_threads \
 	mmsg-silent \
 	mmsg_name-v \
 	msg_control-v \
@@ -121,6 +123,7 @@ check_PROGRAMS = $(PURE_EXECUTABLES) \
 	nsyscalls-d \
 	oldselect-P \
 	oldselect-efault-P \
+	orphaned_process_group \
 	pc \
 	perf_event_open_nonverbose \
 	perf_event_open_unabbrev \
@@ -172,6 +175,7 @@ fstat64_CPPFLAGS = $(AM_CPPFLAGS) -D_FILE_OFFSET_BITS=64
 fstatat64_CPPFLAGS = $(AM_CPPFLAGS) -D_FILE_OFFSET_BITS=64
 ftruncate64_CPPFLAGS = $(AM_CPPFLAGS) -D_FILE_OFFSET_BITS=64
 localtime_LDADD = $(clock_LIBS) $(LDADD)
+looping_threads_LDADD = -lpthread $(LDADD)
 lstat64_CPPFLAGS = $(AM_CPPFLAGS) -D_FILE_OFFSET_BITS=64
 mmap64_CPPFLAGS = $(AM_CPPFLAGS) -D_FILE_OFFSET_BITS=64
 mmap64_Xabbrev_CPPFLAGS = $(AM_CPPFLAGS) -D_FILE_OFFSET_BITS=64
@@ -230,8 +234,8 @@ DECODER_TESTS = \
 	getuid.test \
 	int_0x80.test \
 	ioctl.test \
-	ioctl_evdev-success.test \
 	ioctl_evdev-success-v.test \
+	ioctl_evdev-success.test \
 	ioctl_perf-success.test \
 	ipc_msgbuf.test \
 	kern_features-fault.test \
@@ -305,8 +309,10 @@ MISC_TESTS = \
 	get_regs.test \
 	inject-nf.test \
 	interactive_block.test \
+	kill_child.test \
 	ksysent.test \
 	localtime.test \
+	looping_threads.test \
 	opipe.test \
 	options-syntax.test \
 	pc.test \
@@ -335,6 +341,8 @@ MISC_TESTS = \
 	strace-T.test \
 	strace-V.test \
 	strace-ff.test \
+	strace-log-merge-error.test \
+	strace-log-merge-suffix.test \
 	strace-r.test \
 	strace-t.test \
 	strace-tt.test \
@@ -363,6 +371,7 @@ VALGRIND_SUPPRESSIONS_FILES = $(abs_srcdir)/strace.supp
 EXTRA_DIST = \
 	COPYING \
 	GPL-2.0-or-later \
+	PTRACE_SEIZE.sh \
 	accept_compat.h \
 	attach-p-cmd.h \
 	caps-abbrev.awk \
@@ -381,8 +390,8 @@ EXTRA_DIST = \
 	getresugid.c \
 	init.sh \
 	init_delete_module.h \
-	ipc.sh \
 	ioctl_kvm_run_common.c \
+	ipc.sh \
 	ksysent.sed \
 	lstatx.c \
 	match.awk \
@@ -410,6 +419,7 @@ EXTRA_DIST = \
 	setreugid.c \
 	setugid.c \
 	sigaltstack.expected \
+	sockaddr_xlat.c \
 	sockname.c \
 	stack-fcall.h \
 	strace-C.expected \
@@ -429,10 +439,10 @@ EXTRA_DIST = \
 	trace_lstat.in \
 	trace_personality_32.in \
 	trace_personality_64.in \
-	trace_personality_x32.in \
 	trace_personality_regex_32.in \
 	trace_personality_regex_64.in \
 	trace_personality_regex_x32.in \
+	trace_personality_x32.in \
 	trace_question.in \
 	trace_stat.in \
 	trace_stat_like.in \

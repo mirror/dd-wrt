@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2017 Masatake YAMATO <yamato@redhat.com>
  * Copyright (c) 2017 Red Hat, Inc.
- * Copyright (c) 2017-2018 The strace developers.
+ * Copyright (c) 2017-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -44,7 +44,7 @@ vcpu_find(struct tcb *const tcp, int fd)
 static struct vcpu_info *
 vcpu_alloc(struct tcb *const tcp, int fd, int cpuid)
 {
-	struct vcpu_info *vcpu_info = xcalloc(1, sizeof(*vcpu_info));
+	struct vcpu_info *vcpu_info = xzalloc(sizeof(*vcpu_info));
 
 	vcpu_info->fd = fd;
 	vcpu_info->cpuid = cpuid;
@@ -91,7 +91,7 @@ is_map_for_file(struct mmap_cache_entry_t *map_info, void *data)
 	/* major version for anon inode may be given in get_anon_bdev()
 	 * in linux kernel.
 	 *
-	 * 	*p = MKDEV(0, dev & MINORMASK);
+	 *	*p = MKDEV(0, dev & MINORMASK);
 	 *-----------------^
 	 */
 	return map_info->binary_filename &&
@@ -107,7 +107,7 @@ map_len(struct mmap_cache_entry_t *map_info)
 		: 0;
 }
 
-#define VCPU_DENTRY_PREFIX "anon_inode:kvm-vcpu:"
+# define VCPU_DENTRY_PREFIX "anon_inode:kvm-vcpu:"
 
 static struct vcpu_info*
 vcpu_get_info(struct tcb *const tcp, int fd)

@@ -30,6 +30,9 @@
 /* Current copyright year. */
 #undef COPYRIGHT_YEAR
 
+/* Define for the C-SKY architecture */
+#undef CSKY
+
 /* Define to 1 if you want OABI support on ARM EABI. */
 #undef ENABLE_ARM_OABI
 
@@ -144,6 +147,14 @@
 /* Define to 1 if you have the declaration of `KERN_PANIC_ON_NMI', and to 0 if
    you don't. */
 #undef HAVE_DECL_KERN_PANIC_ON_NMI
+
+/* Define to 1 if you have the declaration of `KERN_PANIC_ON_WARN', and to 0
+   if you don't. */
+#undef HAVE_DECL_KERN_PANIC_ON_WARN
+
+/* Define to 1 if you have the declaration of `KERN_PANIC_PRINT', and to 0 if
+   you don't. */
+#undef HAVE_DECL_KERN_PANIC_PRINT
 
 /* Define to 1 if you have the declaration of `KERN_PRINTK_RATELIMIT', and to
    0 if you don't. */
@@ -767,6 +778,9 @@
 /* Define to 1 if you have the <linux/input.h> header file. */
 #undef HAVE_LINUX_INPUT_H
 
+/* Define to 1 if you have the <linux/io_uring.h> header file. */
+#undef HAVE_LINUX_IO_URING_H
+
 /* Define to 1 if you have the <linux/ipc.h> header file. */
 #undef HAVE_LINUX_IPC_H
 
@@ -1010,6 +1024,15 @@
 /* Define to 1 if the system has the type `struct bpf_map_info'. */
 #undef HAVE_STRUCT_BPF_MAP_INFO
 
+/* Define to 1 if `btf_id' is a member of `struct bpf_map_info'. */
+#undef HAVE_STRUCT_BPF_MAP_INFO_BTF_ID
+
+/* Define to 1 if `btf_key_type_id' is a member of `struct bpf_map_info'. */
+#undef HAVE_STRUCT_BPF_MAP_INFO_BTF_KEY_TYPE_ID
+
+/* Define to 1 if `btf_value_type_id' is a member of `struct bpf_map_info'. */
+#undef HAVE_STRUCT_BPF_MAP_INFO_BTF_VALUE_TYPE_ID
+
 /* Define to 1 if `id' is a member of `struct bpf_map_info'. */
 #undef HAVE_STRUCT_BPF_MAP_INFO_ID
 
@@ -1037,8 +1060,18 @@
 /* Define to 1 if the system has the type `struct bpf_prog_info'. */
 #undef HAVE_STRUCT_BPF_PROG_INFO
 
+/* Define to 1 if `btf_id' is a member of `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_BTF_ID
+
 /* Define to 1 if `created_by_uid' is a member of `struct bpf_prog_info'. */
 #undef HAVE_STRUCT_BPF_PROG_INFO_CREATED_BY_UID
+
+/* Define to 1 if `func_info' is a member of `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_FUNC_INFO
+
+/* Define to 1 if `func_info_rec_size' is a member of `struct bpf_prog_info'.
+   */
+#undef HAVE_STRUCT_BPF_PROG_INFO_FUNC_INFO_REC_SIZE
 
 /* Define to 1 if `id' is a member of `struct bpf_prog_info'. */
 #undef HAVE_STRUCT_BPF_PROG_INFO_ID
@@ -1046,11 +1079,31 @@
 /* Define to 1 if `ifindex' is a member of `struct bpf_prog_info'. */
 #undef HAVE_STRUCT_BPF_PROG_INFO_IFINDEX
 
+/* Define to 1 if `jited_func_lens' is a member of `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_JITED_FUNC_LENS
+
+/* Define to 1 if `jited_ksyms' is a member of `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_JITED_KSYMS
+
+/* Define to 1 if `jited_line_info' is a member of `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_JITED_LINE_INFO
+
+/* Define to 1 if `jited_line_info_rec_size' is a member of `struct
+   bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_JITED_LINE_INFO_REC_SIZE
+
 /* Define to 1 if `jited_prog_insns' is a member of `struct bpf_prog_info'. */
 #undef HAVE_STRUCT_BPF_PROG_INFO_JITED_PROG_INSNS
 
 /* Define to 1 if `jited_prog_len' is a member of `struct bpf_prog_info'. */
 #undef HAVE_STRUCT_BPF_PROG_INFO_JITED_PROG_LEN
+
+/* Define to 1 if `line_info' is a member of `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_LINE_INFO
+
+/* Define to 1 if `line_info_rec_size' is a member of `struct bpf_prog_info'.
+   */
+#undef HAVE_STRUCT_BPF_PROG_INFO_LINE_INFO_REC_SIZE
 
 /* Define to 1 if `load_time' is a member of `struct bpf_prog_info'. */
 #undef HAVE_STRUCT_BPF_PROG_INFO_LOAD_TIME
@@ -1061,8 +1114,37 @@
 /* Define to 1 if `name' is a member of `struct bpf_prog_info'. */
 #undef HAVE_STRUCT_BPF_PROG_INFO_NAME
 
+/* Define to 1 if `nr_func_info' is a member of `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_NR_FUNC_INFO
+
+/* Define to 1 if `nr_jited_func_lens' is a member of `struct bpf_prog_info'.
+   */
+#undef HAVE_STRUCT_BPF_PROG_INFO_NR_JITED_FUNC_LENS
+
+/* Define to 1 if `nr_jited_ksyms' is a member of `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_NR_JITED_KSYMS
+
+/* Define to 1 if `nr_jited_line_info' is a member of `struct bpf_prog_info'.
+   */
+#undef HAVE_STRUCT_BPF_PROG_INFO_NR_JITED_LINE_INFO
+
+/* Define to 1 if `nr_line_info' is a member of `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_NR_LINE_INFO
+
 /* Define to 1 if `nr_map_ids' is a member of `struct bpf_prog_info'. */
 #undef HAVE_STRUCT_BPF_PROG_INFO_NR_MAP_IDS
+
+/* Define to 1 if `nr_prog_tags' is a member of `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_NR_PROG_TAGS
+
+/* Define to 1 if `prog_tags' is a member of `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_PROG_TAGS
+
+/* Define to 1 if `run_cnt' is a member of `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_RUN_CNT
+
+/* Define to 1 if `run_time_ns' is a member of `struct bpf_prog_info'. */
+#undef HAVE_STRUCT_BPF_PROG_INFO_RUN_TIME_NS
 
 /* Define to 1 if `tag' is a member of `struct bpf_prog_info'. */
 #undef HAVE_STRUCT_BPF_PROG_INFO_TAG
@@ -1387,6 +1469,12 @@
 /* Define to 1 if the system has the type `struct __kernel_f_owner_ex'. */
 #undef HAVE_STRUCT___KERNEL_F_OWNER_EX
 
+/* Define to 1 if the system has the type `struct __kernel_sock_timeval'. */
+#undef HAVE_STRUCT___KERNEL_SOCK_TIMEVAL
+
+/* Define to 1 if the system has the type `struct __kernel_timespec'. */
+#undef HAVE_STRUCT___KERNEL_TIMESPEC
+
 /* Define to 1 if the system has the type `struct __old_kernel_stat'. */
 #undef HAVE_STRUCT___OLD_KERNEL_STAT
 
@@ -1444,6 +1532,33 @@
 /* Define to 1 if `bpf_fd' is a member of `union bpf_attr'. */
 #undef HAVE_UNION_BPF_ATTR_BPF_FD
 
+/* Define to 1 if `btf' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_BTF
+
+/* Define to 1 if `btf_fd' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_BTF_FD
+
+/* Define to 1 if `btf_id' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_BTF_ID
+
+/* Define to 1 if `btf_key_type_id' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_BTF_KEY_TYPE_ID
+
+/* Define to 1 if `btf_log_buf' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_BTF_LOG_BUF
+
+/* Define to 1 if `btf_log_level' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_BTF_LOG_LEVEL
+
+/* Define to 1 if `btf_log_size' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_BTF_LOG_SIZE
+
+/* Define to 1 if `btf_size' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_BTF_SIZE
+
+/* Define to 1 if `btf_value_type_id' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_BTF_VALUE_TYPE_ID
+
 /* Define to 1 if `dummy' is a member of `union bpf_attr'. */
 #undef HAVE_UNION_BPF_ATTR_DUMMY
 
@@ -1455,6 +1570,15 @@
 
 /* Define to 1 if `flags' is a member of `union bpf_attr'. */
 #undef HAVE_UNION_BPF_ATTR_FLAGS
+
+/* Define to 1 if `func_info' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_FUNC_INFO
+
+/* Define to 1 if `func_info_cnt' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_FUNC_INFO_CNT
+
+/* Define to 1 if `func_info_rec_size' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_FUNC_INFO_REC_SIZE
 
 /* Define to 1 if `info.bpf_fd' is a member of `union bpf_attr'. */
 #undef HAVE_UNION_BPF_ATTR_INFO_BPF_FD
@@ -1485,6 +1609,15 @@
 
 /* Define to 1 if `license' is a member of `union bpf_attr'. */
 #undef HAVE_UNION_BPF_ATTR_LICENSE
+
+/* Define to 1 if `line_info' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_LINE_INFO
+
+/* Define to 1 if `line_info_cnt' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_LINE_INFO_CNT
+
+/* Define to 1 if `line_info_rec_size' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_LINE_INFO_REC_SIZE
 
 /* Define to 1 if `log_buf' is a member of `union bpf_attr'. */
 #undef HAVE_UNION_BPF_ATTR_LOG_BUF
@@ -1531,6 +1664,9 @@
 /* Define to 1 if `pathname' is a member of `union bpf_attr'. */
 #undef HAVE_UNION_BPF_ATTR_PATHNAME
 
+/* Define to 1 if `prog_btf_fd' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_PROG_BTF_FD
+
 /* Define to 1 if `prog_flags' is a member of `union bpf_attr'. */
 #undef HAVE_UNION_BPF_ATTR_PROG_FLAGS
 
@@ -1575,6 +1711,35 @@
 
 /* Define to 1 if `target_fd' is a member of `union bpf_attr'. */
 #undef HAVE_UNION_BPF_ATTR_TARGET_FD
+
+/* Define to 1 if `task_fd_query.buf' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_TASK_FD_QUERY_BUF
+
+/* Define to 1 if `task_fd_query.buf_len' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_TASK_FD_QUERY_BUF_LEN
+
+/* Define to 1 if `task_fd_query.fd' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_TASK_FD_QUERY_FD
+
+/* Define to 1 if `task_fd_query.fd_type' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_TASK_FD_QUERY_FD_TYPE
+
+/* Define to 1 if `task_fd_query.flags' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_TASK_FD_QUERY_FLAGS
+
+/* Define to 1 if `task_fd_query.pid' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_TASK_FD_QUERY_PID
+
+/* Define to 1 if `task_fd_query.probe_addr' is a member of `union bpf_attr'.
+   */
+#undef HAVE_UNION_BPF_ATTR_TASK_FD_QUERY_PROBE_ADDR
+
+/* Define to 1 if `task_fd_query.probe_offset' is a member of `union
+   bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_TASK_FD_QUERY_PROBE_OFFSET
+
+/* Define to 1 if `task_fd_query.prog_id' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_TASK_FD_QUERY_PROG_ID
 
 /* Define to 1 if `test.data_in' is a member of `union bpf_attr'. */
 #undef HAVE_UNION_BPF_ATTR_TEST_DATA_IN

@@ -6,13 +6,8 @@
 
 #ifndef XLAT_MACROS_ONLY
 
-# ifdef IN_MPERS
+# ifndef IN_MPERS
 
-#  error static const struct xlat ptrace_cmds in mpers mode
-
-# else
-
-static
 const struct xlat ptrace_cmds[] = {
 #if defined(PTRACE_TRACEME) || (defined(HAVE_DECL_PTRACE_TRACEME) && HAVE_DECL_PTRACE_TRACEME)
   XLAT(PTRACE_TRACEME),
