@@ -1,7 +1,7 @@
 /*
  * Check decoding of seccomp SECCOMP_GET_ACTION_AVAIL.
  *
- * Copyright (c) 2017-2018 Dmitry V. Levin <ldv@altlinux.org>
+ * Copyright (c) 2017-2019 Dmitry V. Levin <ldv@altlinux.org>
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -57,6 +57,9 @@ main(void)
 # endif
 # ifdef SECCOMP_RET_ERRNO
 		{ ARG_STR(SECCOMP_RET_ERRNO) },
+# endif
+# ifdef SECCOMP_RET_USER_NOTIF
+		{ ARG_STR(SECCOMP_RET_USER_NOTIF) },
 # endif
 # ifdef SECCOMP_RET_TRACE
 		{ ARG_STR(SECCOMP_RET_TRACE) },

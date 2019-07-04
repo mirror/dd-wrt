@@ -3,7 +3,7 @@
  * Copyright (c) 1993 Branko Lankester <branko@hacktic.nl>
  * Copyright (c) 1993, 1994, 1995, 1996 Rick Sladkey <jrs@world.std.com>
  * Copyright (c) 1996-1999 Wichert Akkerman <wichert@cistron.nl>
- * Copyright (c) 1999-2018 The strace developers.
+ * Copyright (c) 1999-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -217,7 +217,8 @@ SYS_FUNC(io_cancel)
 }
 
 static int
-print_io_getevents(struct tcb *tcp, bool has_usig)
+print_io_getevents(struct tcb *const tcp, const print_obj_by_addr_fn print_ts,
+		   const bool has_usig)
 {
 	if (entering(tcp)) {
 		printaddr(tcp->u_arg[0]);
@@ -235,7 +236,7 @@ print_io_getevents(struct tcb *tcp, bool has_usig)
 		 * whether the syscall has failed or not.
 		 */
 		temporarily_clear_syserror(tcp);
-		print_timespec(tcp, tcp->u_arg[4]);
+		print_ts(tcp, tcp->u_arg[4]);
 		if (has_usig) {
 			tprints(", ");
 			print_aio_sigset(tcp, tcp->u_arg[5]);
@@ -245,12 +246,28 @@ print_io_getevents(struct tcb *tcp, bool has_usig)
 	return 0;
 }
 
-SYS_FUNC(io_getevents)
+#if HAVE_ARCH_TIME32_SYSCALLS
+SYS_FUNC(io_getevents_time32)
 {
-	return print_io_getevents(tcp, false);
+	return print_io_getevents(tcp, print_timespec32, false);
 }
+#endif
 
-SYS_FUNC(io_pgetevents)
+#if HAVE_ARCH_OLD_TIME64_SYSCALLS
+SYS_FUNC(io_getevents_time64)
 {
-	return print_io_getevents(tcp, true);
+	return print_io_getevents(tcp, print_timespec64, false);
+}
+#endif
+
+#if HAVE_ARCH_TIME32_SYSCALLS
+SYS_FUNC(io_pgetevents_time32)
+{
+	return print_io_getevents(tcp, print_timespec32, true);
+}
+#endif
+
+SYS_FUNC(io_pgetevents_time64)
+{
+	return print_io_getevents(tcp, print_timespec64, true);
 }

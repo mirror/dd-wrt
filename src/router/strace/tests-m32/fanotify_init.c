@@ -2,7 +2,7 @@
  * Check decoding of fanotify_init syscall.
  *
  * Copyright (c) 2016 Eugene Syromyatnikov <evgsyr@gmail.com>
- * Copyright (c) 2016-2018 The strace developers.
+ * Copyright (c) 2016-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -49,7 +49,8 @@ main(void)
 		{ (kernel_ulong_t) 0xffffffffffffffffULL,
 			"0xc /* FAN_CLASS_??? */|FAN_CLOEXEC|FAN_NONBLOCK|"
 			"FAN_UNLIMITED_QUEUE|FAN_UNLIMITED_MARKS|"
-			"FAN_ENABLE_AUDIT|FAN_REPORT_TID|0xfffffe80" },
+			"FAN_ENABLE_AUDIT|FAN_REPORT_TID|FAN_REPORT_FID|"
+			"0xfffffc80" },
 	};
 	static const struct strval event_f_flags[] = {
 		{ F8ILL_KULONG_MASK, "O_RDONLY" },

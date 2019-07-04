@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 The strace developers.
+ * Copyright (c) 2018-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -32,4 +32,17 @@ sprint_mac_addr(const uint8_t addr[], size_t size)
 		ptr = xappendstr(res, ptr, "%s%02x", i ? ":" : "", addr[i]);
 
 	return res;
+}
+
+void
+print_mac_addr(const char *prefix, const uint8_t addr[], size_t size)
+{
+	tprints(prefix);
+	if (xlat_verbose(xlat_verbosity) != XLAT_STYLE_ABBREV)
+		print_quoted_string((const char *) addr, size,
+				    QUOTE_FORCE_HEX);
+	if (xlat_verbose(xlat_verbosity) == XLAT_STYLE_RAW)
+		return;
+	(xlat_verbose(xlat_verbosity) == XLAT_STYLE_VERBOSE
+		? tprints_comment : tprints)(sprint_mac_addr(addr, size));
 }

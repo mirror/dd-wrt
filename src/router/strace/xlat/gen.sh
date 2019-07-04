@@ -1,11 +1,13 @@
-#!/bin/sh -eu
+#!/bin/sh -efu
 #
 # Copyright (c) 2014-2015 Mike Frysinger <vapier@gentoo.org>
 # Copyright (c) 2014-2015 Dmitry V. Levin <ldv@altlinux.org>
-# Copyright (c) 2014-2018 The strace developers.
+# Copyright (c) 2014-2019 The strace developers.
 # All rights reserved.
 #
 # SPDX-License-Identifier: LGPL-2.1-or-later
+
+export LC_ALL=C
 
 usage()
 {
@@ -24,23 +26,26 @@ cond_def()
 	line="$1"; shift
 
 	local val
-	val="$(printf %s "$line" |
-		LC_ALL=C sed -r -n 's/^([[:alpha:]_][[:alnum:]_]*).*$/\1/p')"
+	val="${line%%[!A-Za-z0-9_]*}"
 
-	local def
-	def="$(printf %s "${line}" |
-		sed -r -n 's/^[^[:space:]]+[[:space:]]+([^[:space:]].*)$/\1/p')"
+	local t def=
+	t="${line#*[	 ]}"
+	if [ "$line" != "$t" ]; then
+		while [ "$def" != "$t" ]; do
+			def="$t"
+			t="${t##[	 ]}"
+		done
+	fi
 
 	if [ -n "$def" ]; then
-		cat <<-EOF
-		#if defined($val) || (defined(HAVE_DECL_$val) && HAVE_DECL_$val)
-		DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
-		static_assert(($val) == ($def), "$val != $def");
-		DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
-		#else
-		# define $val $def
-		#endif
-		EOF
+		printf "%s\n" \
+			"#if defined($val) || (defined(HAVE_DECL_$val) && HAVE_DECL_$val)" \
+			"DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE" \
+			"static_assert(($val) == ($def), \"$val != $def\");" \
+			"DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE" \
+			"#else" \
+			"# define $val $def" \
+			"#endif"
 	fi
 }
 
@@ -73,30 +78,29 @@ print_xlat_pair()
 
 cond_xlat()
 {
-	local line val m def xlat
-	line="$1"; shift
+	echo "$1" | {
+		local val def m xlat
 
-	val="$(printf %s "${line}" | sed -r -n 's/^([^[:space:]]+).*$/\1/p')"
-	m="${val%%|*}"
-	def="$(printf %s "${line}" |
-	       sed -r -n 's/^[^[:space:]]+[[:space:]]+([^[:space:]].*)$/\1/p')"
+		read val def
 
-	if [ "${m}" = "${m#1<<}" ]; then
-		xlat="$(print_xlat "${val}")"
-	else
-		xlat="$(print_xlat_pair "1ULL<<${val#1<<}" "${val}")"
-		m="${m#1<<}"
-	fi
+		m="${val%%|*}"
 
-	if [ -z "${def}" ]; then
-		cat <<-EOF
-		#if defined(${m}) || (defined(HAVE_DECL_${m}) && HAVE_DECL_${m})
-		 ${xlat}
-		#endif
-		EOF
-	else
-		echo "$xlat"
-	fi
+		if [ "${m}" = "${m#1<<}" ]; then
+			xlat="$(print_xlat "${val}")"
+		else
+			xlat="$(print_xlat_pair "1ULL<<${val#1<<}" "${val}")"
+			m="${m#1<<}"
+		fi
+
+		if [ -z "${def}" ]; then
+			printf "%s\n" \
+				"#if defined(${m}) || (defined(HAVE_DECL_${m}) && HAVE_DECL_${m})" \
+				" ${xlat}" \
+				"#endif"
+		else
+			echo "$xlat"
+		fi
+	}
 }
 
 gen_header()
@@ -111,9 +115,9 @@ gen_header()
 
 	value_indexed=0
 
-	if grep -F -x "$decl" "$defs" > /dev/null; then
+	if grep -F -q -x "$decl" "$defs"; then
 		in_defs=1
-	elif grep -F -x "$decl" "$mpers" > /dev/null; then
+	elif grep -F -q -x "$decl" "$mpers"; then
 		in_mpers=1
 	fi
 
@@ -128,9 +132,12 @@ gen_header()
 	local unconditional= line
 	# 1st pass: output directives.
 	while read line; do
-		LC_COLLATE=C
-		line=$(printf "%s" "$line" | \
-			sed "s|[[:space:]]*/\*.*\*/[[:space:]]*||")
+		case "$line" in
+			*/\**)
+			line=$(printf "%s" "$line" |
+				sed "s|[[:space:]]*/\*.*\*/[[:space:]]*||")
+			;;
+		esac
 
 		case $line in
 		'#stop')
@@ -198,9 +205,12 @@ gen_header()
 	unconditional= val_type=
 	# 2nd pass: output everything.
 	while read line; do
-		LC_COLLATE=C
-		line=$(printf "%s" "$line" | \
-			sed "s|[[:space:]]*/\*.*\*/[[:space:]]*||")
+		case "$line" in
+			*/\**)
+			line=$(printf "%s" "$line" |
+				sed "s|[[:space:]]*/\*.*\*/[[:space:]]*||")
+			;;
+		esac
 
 		case ${line} in
 		'#conditional')
@@ -299,7 +309,10 @@ main()
 
 	if [ -d "${input}" ]; then
 		local f names=
-		for f in "${input}"/*.in; do
+		set +f
+		set -- "${input}"/*.in
+		set -f
+		for f; do
 			[ -f "${f}" ] || continue
 			name=${f##*/}
 			name=${name%.in}

@@ -41,8 +41,6 @@ extern const struct xlat perf_ioctl_cmds[];
 extern const struct xlat perf_ioctl_flags[];
 extern const struct xlat mq_attr_flags[];
 extern const struct xlat sigev_value[];
-extern const struct xlat adjtimex_modes[];
-extern const struct xlat adjtimex_status[];
 extern const struct xlat audit_arch[];
 extern const struct xlat sigbus_codes[];
 extern const struct xlat sigchld_codes[];

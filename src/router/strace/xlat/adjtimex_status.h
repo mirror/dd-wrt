@@ -120,13 +120,11 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # ifdef IN_MPERS
 
-extern const struct xlat adjtimex_status[];
+#  error static const struct xlat adjtimex_status in mpers mode
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
 static
-#  endif
 const struct xlat adjtimex_status[] = {
  XLAT(STA_PLL),
  XLAT(STA_PPSFREQ),

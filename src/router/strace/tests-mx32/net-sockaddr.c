@@ -2,7 +2,7 @@
  * Check decoding of sockaddr structures
  *
  * Copyright (c) 2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2018 The strace developers.
+ * Copyright (c) 2016-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -156,22 +156,22 @@ check_in6_linklocal(struct sockaddr_in6 *const in6, const char *const h_addr)
 	unsigned int len = sizeof(*in6);
 	int ret = connect(-1, (void *) in6, len);
 	printf("connect(-1, {sa_family=AF_INET6, sin6_port=htons(%hu)"
-	       ", inet_pton(AF_INET6, \"%s\", &sin6_addr)"
 	       ", sin6_flowinfo=htonl(%u)"
+	       ", inet_pton(AF_INET6, \"%s\", &sin6_addr)"
 	       ", sin6_scope_id=%u}, %u)"
 	       " = %d EBADF (%m)\n",
-	       ntohs(in6->sin6_port), h_addr,
-	       ntohl(in6->sin6_flowinfo), in6->sin6_scope_id, len, ret);
+	       ntohs(in6->sin6_port), ntohl(in6->sin6_flowinfo),
+	       h_addr, in6->sin6_scope_id, len, ret);
 
 	in6->sin6_scope_id = ifindex_lo();
 	if (in6->sin6_scope_id) {
 		ret = connect(-1, (void *) in6, len);
 		printf("connect(-1, {sa_family=AF_INET6, sin6_port=htons(%hu)"
-		       ", inet_pton(AF_INET6, \"%s\", &sin6_addr)"
 		       ", sin6_flowinfo=htonl(%u)"
+		       ", inet_pton(AF_INET6, \"%s\", &sin6_addr)"
 		       ", sin6_scope_id=%s}, %u)"
 		       " = %d EBADF (%m)\n",
-		       ntohs(in6->sin6_port), h_addr, ntohl(in6->sin6_flowinfo),
+		       ntohs(in6->sin6_port), ntohl(in6->sin6_flowinfo), h_addr,
 		       IFINDEX_LO_STR, len, ret);
 	}
 }
@@ -192,10 +192,11 @@ check_in6(void)
 	unsigned int len = sizeof(*in6);
 	int ret = connect(-1, (void *) in6, len);
 	printf("connect(-1, {sa_family=AF_INET6, sin6_port=htons(%hu)"
+	       ", sin6_flowinfo=htonl(%u)"
 	       ", inet_pton(AF_INET6, \"%s\", &sin6_addr)"
-	       ", sin6_flowinfo=htonl(%u), sin6_scope_id=%u}, %u)"
+	       ", sin6_scope_id=%u}, %u)"
 	       " = %d EBADF (%m)\n",
-	       h_port, h_addr, h_flowinfo, in6->sin6_scope_id, len, ret);
+	       h_port, h_flowinfo, h_addr, in6->sin6_scope_id, len, ret);
 
 	check_in6_linklocal(in6, "fe80::");
 	check_in6_linklocal(in6, "ff42::");
@@ -209,10 +210,11 @@ check_in6(void)
 	len = sizeof(*in6) + 4;
 	ret = connect(-1, (void *) in6, len);
 	printf("connect(-1, {sa_family=AF_INET6, sin6_port=htons(%hu)"
+	       ", sin6_flowinfo=htonl(%u)"
 	       ", inet_pton(AF_INET6, \"%s\", &sin6_addr)"
-	       ", sin6_flowinfo=htonl(%u), sin6_scope_id=%u}, %u)"
+	       ", sin6_scope_id=%u}, %u)"
 	       " = %d EBADF (%m)\n",
-	       h_port, h_addr, h_flowinfo, in6->sin6_scope_id, len, ret);
+	       h_port, h_flowinfo, h_addr, in6->sin6_scope_id, len, ret);
 
 	in6 = ((void *) in6) + 4 + sizeof(in6->sin6_scope_id);
 	in6->sin6_family = AF_INET6;
@@ -222,10 +224,10 @@ check_in6(void)
 	len = sizeof(*in6) - sizeof(in6->sin6_scope_id);
 	ret = connect(-1, (void *) in6, len);
 	printf("connect(-1, {sa_family=AF_INET6, sin6_port=htons(%hu)"
-	       ", inet_pton(AF_INET6, \"%s\", &sin6_addr)"
-	       ", sin6_flowinfo=htonl(%u)}, %u)"
+	       ", sin6_flowinfo=htonl(%u)"
+	       ", inet_pton(AF_INET6, \"%s\", &sin6_addr)}, %u)"
 	       " = %d EBADF (%m)\n",
-	       h_port, h_addr, h_flowinfo, len, ret);
+	       h_port, h_flowinfo, h_addr, len, ret);
 
 	in6 = ((void *) in6) + 4;
 	in6->sin6_family = AF_INET6;
@@ -598,9 +600,9 @@ check_l2(void)
 		.l2_psm = htobs(h_psm),
 		.l2_bdaddr.b = "abcdef",
 		.l2_cid = htobs(h_cid),
-#ifdef HAVE_STRUCT_SOCKADDR_L2_L2_BDADDR_TYPE
+# ifdef HAVE_STRUCT_SOCKADDR_L2_L2_BDADDR_TYPE
 		.l2_bdaddr_type = 0xce,
-#endif
+# endif
 	};
 	void *l2 = tail_memdup(&c_l2, sizeof(c_l2));
 	unsigned int len = sizeof(c_l2);
@@ -610,9 +612,9 @@ check_l2(void)
 	       ", l2_psm=htobs(L2CAP_PSM_DYN_START + %hu)"
 	       ", l2_bdaddr=%02x:%02x:%02x:%02x:%02x:%02x"
 	       ", l2_cid=htobs(L2CAP_CID_DYN_START + %hu)"
-#ifdef HAVE_STRUCT_SOCKADDR_L2_L2_BDADDR_TYPE
+# ifdef HAVE_STRUCT_SOCKADDR_L2_L2_BDADDR_TYPE
 	       ", l2_bdaddr_type=0xce /* BDADDR_??? */"
-#endif
+# endif
 	       "}, %u) = %d EBADF (%m)\n",
 	       (short) (h_psm - 0x1001),
 	       c_l2.l2_bdaddr.b[0], c_l2.l2_bdaddr.b[1],
@@ -622,18 +624,18 @@ check_l2(void)
 
 	c_l2.l2_psm = htobs(1);
 	c_l2.l2_cid = htobs(1);
-#ifdef HAVE_STRUCT_SOCKADDR_L2_L2_BDADDR_TYPE
+# ifdef HAVE_STRUCT_SOCKADDR_L2_L2_BDADDR_TYPE
 	c_l2.l2_bdaddr_type = BDADDR_LE_RANDOM;
-#endif
+# endif
 	memcpy(l2, &c_l2, sizeof(c_l2));
 	ret = connect(-1, l2, len);
 	printf("connect(-1, {sa_family=AF_BLUETOOTH"
 	       ", l2_psm=htobs(L2CAP_PSM_SDP)"
 	       ", l2_bdaddr=%02x:%02x:%02x:%02x:%02x:%02x"
 	       ", l2_cid=htobs(L2CAP_CID_SIGNALING)"
-#ifdef HAVE_STRUCT_SOCKADDR_L2_L2_BDADDR_TYPE
+# ifdef HAVE_STRUCT_SOCKADDR_L2_L2_BDADDR_TYPE
 	       ", l2_bdaddr_type=BDADDR_LE_RANDOM"
-#endif
+# endif
 	       "}, %u) = %d EBADF (%m)\n",
 	       c_l2.l2_bdaddr.b[0], c_l2.l2_bdaddr.b[1],
 	       c_l2.l2_bdaddr.b[2], c_l2.l2_bdaddr.b[3],
@@ -642,18 +644,18 @@ check_l2(void)
 
 	c_l2.l2_psm = htobs(0xbad);
 	c_l2.l2_cid = htobs(8);
-#ifdef HAVE_STRUCT_SOCKADDR_L2_L2_BDADDR_TYPE
+# ifdef HAVE_STRUCT_SOCKADDR_L2_L2_BDADDR_TYPE
 	c_l2.l2_bdaddr_type = 3;
-#endif
+# endif
 	memcpy(l2, &c_l2, sizeof(c_l2));
 	ret = connect(-1, l2, len);
 	printf("connect(-1, {sa_family=AF_BLUETOOTH"
 	       ", l2_psm=htobs(0xbad /* L2CAP_PSM_??? */)"
 	       ", l2_bdaddr=%02x:%02x:%02x:%02x:%02x:%02x"
 	       ", l2_cid=htobs(0x8 /* L2CAP_CID_??? */)"
-#ifdef HAVE_STRUCT_SOCKADDR_L2_L2_BDADDR_TYPE
+# ifdef HAVE_STRUCT_SOCKADDR_L2_L2_BDADDR_TYPE
 	       ", l2_bdaddr_type=0x3 /* BDADDR_??? */"
-#endif
+# endif
 	       "}, %u) = %d EBADF (%m)\n",
 	       c_l2.l2_bdaddr.b[0], c_l2.l2_bdaddr.b[1],
 	       c_l2.l2_bdaddr.b[2], c_l2.l2_bdaddr.b[3],

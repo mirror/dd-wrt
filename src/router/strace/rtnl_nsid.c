@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2016 Fabien Siron <fabien.siron@epita.fr>
  * Copyright (c) 2017 JingPiao Chen <chenjingpiao@gmail.com>
- * Copyright (c) 2016-2018 The strace developers.
+ * Copyright (c) 2016-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -18,9 +18,11 @@
 #include "xlat/rtnl_nsid_attrs.h"
 
 static const nla_decoder_t rtgenmsg_nla_decoders[] = {
-	[NETNSA_NSID]	= decode_nla_s32,
-	[NETNSA_PID]	= decode_nla_u32,
-	[NETNSA_FD]	= decode_nla_fd
+	[NETNSA_NSID]		= decode_nla_s32,
+	[NETNSA_PID]		= decode_nla_u32,
+	[NETNSA_FD]		= decode_nla_fd,
+	[NETNSA_TARGET_NSID]	= decode_nla_s32,
+	[NETNSA_CURRENT_NSID]	= decode_nla_s32
 };
 
 DECL_NETLINK_ROUTE_DECODER(decode_rtgenmsg)

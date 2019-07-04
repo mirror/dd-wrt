@@ -1,6 +1,6 @@
 # Executables without side effects.
 #
-# Copyright (c) 2017-2018 The strace developers.
+# Copyright (c) 2017-2019 The strace developers.
 # All rights reserved.
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
@@ -120,6 +120,9 @@ inet-cmsg
 init_module
 inotify
 inotify_init1
+io_uring_enter
+io_uring_register
+io_uring_setup
 ioctl
 ioctl_block
 ioctl_dm
@@ -144,6 +147,9 @@ ioctl_v4l2
 ioperm
 iopl
 ioprio
+ioprio-Xabbrev
+ioprio-Xraw
+ioprio-Xverbose
 ip_mreq
 ipc
 ipc_msg
@@ -217,6 +223,9 @@ mount-Xabbrev
 mount-Xraw
 mount-Xverbose
 move_pages
+move_pages-Xabbrev
+move_pages-Xraw
+move_pages-Xverbose
 mq
 mq_sendrecv
 mq_sendrecv-read
@@ -227,6 +236,9 @@ munlockall
 nanosleep
 net-icmp_filter
 net-packet_mreq
+net-packet_mreq-Xabbrev
+net-packet_mreq-Xraw
+net-packet_mreq-Xverbose
 net-sockaddr
 net-tpacket_req
 net-tpacket_stats
@@ -309,6 +321,7 @@ personality
 personality-Xabbrev
 personality-Xraw
 personality-Xverbose
+pidfd_send_signal
 pipe
 pipe2
 pkey_alloc
@@ -420,6 +433,9 @@ setresuid32
 setreuid
 setreuid32
 setrlimit
+setrlimit-Xabbrev
+setrlimit-Xraw
+setrlimit-Xverbose
 setuid
 setuid32
 shmxt
@@ -443,8 +459,12 @@ sock_filter-v
 sock_filter-v-Xabbrev
 sock_filter-v-Xraw
 sock_filter-v-Xverbose
+sockaddr_xlat-Xabbrev
+sockaddr_xlat-Xraw
+sockaddr_xlat-Xverbose
 socketcall
 sockopt-sol_netlink
+sockopt-timestamp
 splice
 stat
 stat64

@@ -1,10 +1,12 @@
 #!/bin/sh -e
 #
 # Copyright (c) 2015 Elvira Khabirova <lineprinter0@gmail.com>
-# Copyright (c) 2015-2018 The strace developers.
+# Copyright (c) 2015-2019 The strace developers.
 # All rights reserved.
 #
 # SPDX-License-Identifier: LGPL-2.1-or-later
+
+[ "x${D:-0}" != x1 ] || set -x
 
 export LC_ALL=C
 

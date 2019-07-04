@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@altlinux.org>
  * Copyright (c) 2016 Eugene Syromyatnikov <evgsyr@gmail.com>
- * Copyright (c) 2015-2018 The strace developers.
+ * Copyright (c) 2015-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -21,19 +21,19 @@
 # include <unistd.h>
 # include <sys/fanotify.h>
 
-#if XLAT_RAW
-# define str_fan_mark_add	"0x1"
-# define str_fan_modify_ondir	"0x40000002"
-# define str_at_fdcwd		"-100"
-#elif XLAT_VERBOSE
-# define str_fan_mark_add	"0x1 /* FAN_MARK_ADD */"
-# define str_fan_modify_ondir	"0x40000002 /* FAN_MODIFY|FAN_ONDIR */"
-# define str_at_fdcwd		"-100 /* AT_FDCWD */"
-#else
-# define str_fan_mark_add	"FAN_MARK_ADD"
-# define str_fan_modify_ondir	"FAN_MODIFY|FAN_ONDIR"
-# define str_at_fdcwd		"AT_FDCWD"
-#endif
+# if XLAT_RAW
+#  define str_fan_mark_add	"0x1"
+#  define str_fan_modify_ondir	"0x40000002"
+#  define str_at_fdcwd		"-100"
+# elif XLAT_VERBOSE
+#  define str_fan_mark_add	"0x1 /* FAN_MARK_ADD */"
+#  define str_fan_modify_ondir	"0x40000002 /* FAN_MODIFY|FAN_ONDIR */"
+#  define str_at_fdcwd		"-100 /* AT_FDCWD */"
+# else
+#  define str_fan_mark_add	"FAN_MARK_ADD"
+#  define str_fan_modify_ondir	"FAN_MODIFY|FAN_ONDIR"
+#  define str_at_fdcwd		"AT_FDCWD"
+# endif
 
 /* Performs fanotify_mark call via the syscall interface. */
 static void
@@ -73,8 +73,8 @@ struct strval64 {
 	const char *str;
 };
 
-#define STR16 "0123456789abcdef"
-#define STR64 STR16 STR16 STR16 STR16
+# define STR16 "0123456789abcdef"
+# define STR64 STR16 STR16 STR16 STR16
 
 int
 main(void)
@@ -90,72 +90,90 @@ main(void)
 	};
 	static const struct strval flags[] = {
 		{ F8ILL_KULONG_MASK, "0" },
-		{ (kernel_ulong_t) 0xdec0deddefaced00ULL,
-			"0xefaced00"
-#if !XLAT_RAW
+		{ (kernel_ulong_t) 0xdec0deddefacec00ULL,
+			"0xefacec00"
+# if !XLAT_RAW
 			" /* FAN_MARK_??? */"
-#endif
+# endif
 			},
 		{ (kernel_ulong_t) 0xda7a105700000040ULL,
-#if XLAT_RAW
+# if XLAT_RAW
 			"0x40"
-#elif XLAT_VERBOSE
+# elif XLAT_VERBOSE
 			"0x40 /* FAN_MARK_IGNORED_SURV_MODIFY */"
-#else
+# else
 			"FAN_MARK_IGNORED_SURV_MODIFY"
-#endif
+# endif
 			},
-		{ (kernel_ulong_t) 0xbadc0deddeadfeedULL,
-#if XLAT_RAW || XLAT_VERBOSE
-			"0xdeadfeed"
-#endif
-#if XLAT_VERBOSE
+		{ (kernel_ulong_t) 0xbadc0deddeadffffULL,
+# if XLAT_RAW || XLAT_VERBOSE
+			"0xdeadffff"
+# endif
+# if XLAT_VERBOSE
 			" /* "
-#endif
-#if !XLAT_RAW
-			"FAN_MARK_ADD|FAN_MARK_DONT_FOLLOW|FAN_MARK_ONLYDIR|"
-			"FAN_MARK_IGNORED_MASK|FAN_MARK_IGNORED_SURV_MODIFY|"
-			"FAN_MARK_FLUSH|0xdeadfe00"
-#endif
-#if XLAT_VERBOSE
+# endif
+# if !XLAT_RAW
+			"FAN_MARK_ADD|FAN_MARK_REMOVE|FAN_MARK_DONT_FOLLOW|"
+			"FAN_MARK_ONLYDIR|FAN_MARK_MOUNT|FAN_MARK_IGNORED_MASK|"
+			"FAN_MARK_IGNORED_SURV_MODIFY|FAN_MARK_FLUSH|"
+			"FAN_MARK_FILESYSTEM|0xdeadfe00"
+# endif
+# if XLAT_VERBOSE
 			" */"
-#endif
+# endif
 			},
 	};
 	static const struct strval64 masks[] = {
 		{ ARG_ULL_STR(0) },
-		{ 0xdeadfeedfacebeefULL,
-#if XLAT_RAW || XLAT_VERBOSE
-			"0xdeadfeedfacebeef"
-#endif
-#if XLAT_VERBOSE
+		{ 0xdeadfeedffffffffULL,
+# if XLAT_RAW || XLAT_VERBOSE
+			"0xdeadfeedffffffff"
+# endif
+# if XLAT_VERBOSE
 			" /* "
-#endif
-#if !XLAT_RAW
-			"FAN_ACCESS|FAN_MODIFY|FAN_CLOSE_WRITE|FAN_OPEN|"
-			"FAN_ACCESS_PERM|FAN_ONDIR|FAN_EVENT_ON_CHILD|"
-			"0xdeadfeedb2ccbec4"
-#endif
-#if XLAT_VERBOSE
+# endif
+# if !XLAT_RAW
+			"FAN_ACCESS|"
+			"FAN_MODIFY|"
+			"FAN_ATTRIB|"
+			"FAN_CLOSE_WRITE|"
+			"FAN_CLOSE_NOWRITE|"
+			"FAN_OPEN|"
+			"FAN_MOVED_FROM|"
+			"FAN_MOVED_TO|"
+			"FAN_CREATE|"
+			"FAN_DELETE|"
+			"FAN_DELETE_SELF|"
+			"FAN_MOVE_SELF|"
+			"FAN_OPEN_EXEC|"
+			"FAN_Q_OVERFLOW|"
+			"FAN_OPEN_PERM|"
+			"FAN_ACCESS_PERM|"
+			"FAN_OPEN_EXEC_PERM|"
+			"FAN_ONDIR|"
+			"FAN_EVENT_ON_CHILD|"
+			"0xdeadfeedb7f8a000"
+# endif
+# if XLAT_VERBOSE
 			" */"
-#endif
+# endif
 			},
-		{ ARG_ULL_STR(0xffffffffb7fcbfc4)
-#if !XLAT_RAW
+		{ ARG_ULL_STR(0xffffffffb7f8a000)
+# if !XLAT_RAW
 			" /* FAN_??? */"
-#endif
+# endif
 			},
 	};
 	static const struct strval dirfds[] = {
 		{ (kernel_ulong_t) 0xfacefeed00000001ULL, "1" },
 		{ (kernel_ulong_t) 0xdec0ded0ffffffffULL,
-#if XLAT_RAW
+# if XLAT_RAW
 			"-1"
-#elif XLAT_VERBOSE
+# elif XLAT_VERBOSE
 			"-1 /* FAN_NOFD */"
-#else
+# else
 			"FAN_NOFD"
-#endif
+# endif
 			},
 		{ (kernel_ulong_t) 0xbadfacedffffff9cULL, str_at_fdcwd },
 		{ (kernel_ulong_t) 0xdefaced1beeff00dULL, "-1091571699" },

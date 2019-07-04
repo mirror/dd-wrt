@@ -1,10 +1,16 @@
 Summary: Tracks and displays system calls associated with a running process
 Name: strace
-Version: 4.26
+Version: 5.1
 Release: 1%{?dist}
 # The test suite is GPLv2+, all the rest is LGPLv2.1+.
 License: LGPL-2.1-or-later and GPL-2.0-or-later
+# Some distros require Group tag to be present,
+# some require Group tag to be absent,
+# some do not care about Group tag at all,
+# and we have to cater for all of them.
+%if 0%{?fedora} < 28 && 0%{?centos} < 8 && 0%{?rhel} < 8 && 0%{?suse_version} < 1500
 Group: Development%{?suse_version:/Tools}/Debuggers
+%endif
 URL: https://strace.io
 Source: https://strace.io/files/%{version}/strace-%{version}.tar.xz
 BuildRequires: gcc gzip
@@ -41,8 +47,8 @@ received by a process.
 %prep
 %setup -q
 echo -n %version-%release > .tarball-version
-echo -n 2018 > .year
-echo -n 2018-12-24 > .strace.1.in.date
+echo -n 2019 > .year
+echo -n 2019-03-17 > .strace.1.in.date
 
 %build
 echo 'BEGIN OF BUILD ENVIRONMENT INFORMATION'
@@ -89,8 +95,15 @@ echo 'END OF TEST SUITE INFORMATION'
 %{_mandir}/man1/*
 
 %changelog
-* Thu Dec 27 2018 strace-devel@lists.strace.io - 4.26-1
-- strace 4.26 snapshot.
+* Wed May 22 2019 strace-devel@lists.strace.io - 5.1-1
+- strace 5.1 snapshot.
+
+* Tue Mar 19 2019 Dmitry V. Levin <ldv@altlinux.org> - 5.0-1
+- v4.26 -> v5.0 (resolves: #478419, #526740, #851457, #1609318,
+  #1610774, #1662936, #1676045).
+
+* Wed Dec 26 2018 Dmitry V. Levin <ldv@altlinux.org> - 4.26-1
+- v4.25 -> v4.26.
 
 * Tue Oct 30 2018 Dmitry V. Levin <ldv@altlinux.org> - 4.25-1
 - v4.24 -> v4.25.

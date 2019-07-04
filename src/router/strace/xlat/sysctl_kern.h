@@ -114,6 +114,12 @@ const struct xlat sysctl_kern[] = {
 #if defined(KERN_PANIC_ON_NMI) || (defined(HAVE_DECL_KERN_PANIC_ON_NMI) && HAVE_DECL_KERN_PANIC_ON_NMI)
   XLAT(KERN_PANIC_ON_NMI),
 #endif
+#if defined(KERN_PANIC_ON_WARN) || (defined(HAVE_DECL_KERN_PANIC_ON_WARN) && HAVE_DECL_KERN_PANIC_ON_WARN)
+  XLAT(KERN_PANIC_ON_WARN),
+#endif
+#if defined(KERN_PANIC_PRINT) || (defined(HAVE_DECL_KERN_PANIC_PRINT) && HAVE_DECL_KERN_PANIC_PRINT)
+  XLAT(KERN_PANIC_PRINT),
+#endif
  XLAT_END
 };
 

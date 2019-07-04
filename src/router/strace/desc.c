@@ -3,7 +3,7 @@
  * Copyright (c) 1993 Branko Lankester <branko@hacktic.nl>
  * Copyright (c) 1993, 1994, 1995, 1996 Rick Sladkey <jrs@world.std.com>
  * Copyright (c) 1996-1999 Wichert Akkerman <wichert@cistron.nl>
- * Copyright (c) 1999-2018 The strace developers.
+ * Copyright (c) 1999-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -52,8 +52,8 @@ SYS_FUNC(dup3)
 
 static int
 decode_select(struct tcb *const tcp, const kernel_ulong_t *const args,
-	      void (*const print_tv_ts) (struct tcb *, kernel_ulong_t),
-	      const char * (*const sprint_tv_ts) (struct tcb *, kernel_ulong_t))
+	      const print_obj_by_addr_fn print_tv_ts,
+	      const sprint_obj_by_addr_fn sprint_tv_ts)
 {
 	int i, j;
 	int nfds, fdsize;
@@ -224,9 +224,11 @@ umove_kulong_array_or_printaddr(struct tcb *const tcp, const kernel_ulong_t addr
 	return umoven_or_printaddr(tcp, addr, n * sizeof(*ptr), ptr);
 }
 
-SYS_FUNC(pselect6)
+static int
+do_pselect6(struct tcb *const tcp, const print_obj_by_addr_fn print_ts,
+	    const sprint_obj_by_addr_fn sprint_ts)
 {
-	int rc = decode_select(tcp, tcp->u_arg, print_timespec, sprint_timespec);
+	int rc = decode_select(tcp, tcp->u_arg, print_ts, sprint_ts);
 	if (entering(tcp)) {
 		kernel_ulong_t data[2];
 
@@ -241,4 +243,16 @@ SYS_FUNC(pselect6)
 	}
 
 	return rc;
+}
+
+#if HAVE_ARCH_TIME32_SYSCALLS
+SYS_FUNC(pselect6_time32)
+{
+	return do_pselect6(tcp, print_timespec32, sprint_timespec32);
+}
+#endif
+
+SYS_FUNC(pselect6_time64)
+{
+	return do_pselect6(tcp, print_timespec64, sprint_timespec64);
 }

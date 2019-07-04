@@ -4,7 +4,7 @@
 # Copyright (c) 2006-2016 Dmitry V. Levin <ldv@altlinux.org>
 # Copyright (c) 2008-2015 Mike Frysinger <vapier@gentoo.org>
 # Copyright (c) 2015 Elvira Khabirova <lineprinter0@gmail.com>
-# Copyright (c) 2002-2018 The strace developers.
+# Copyright (c) 2002-2019 The strace developers.
 # All rights reserved.
 #
 # SPDX-License-Identifier: LGPL-2.1-or-later
@@ -81,7 +81,7 @@ strace_SOURCES =	\
 	bpf_attr.h	\
 	bpf_filter.c	\
 	bpf_filter.h	\
-	bpf_fprog.h 	\
+	bpf_fprog.h	\
 	bpf_seccomp_filter.c \
 	bpf_sock_filter.c \
 	btrfs.c		\
@@ -127,8 +127,8 @@ strace_SOURCES =	\
 	fetch_struct_xfs_quotastat.c \
 	file_handle.c	\
 	file_ioctl.c	\
-	filter_qualify.c \
 	filter.h	\
+	filter_qualify.c \
 	flock.c		\
 	flock.h		\
 	fs_x_ioctl.c	\
@@ -145,6 +145,7 @@ strace_SOURCES =	\
 	inotify.c	\
 	inotify_ioctl.c	\
 	io.c		\
+	io_uring.c	\
 	ioctl.c		\
 	ioperm.c	\
 	iopl.c		\
@@ -156,6 +157,9 @@ strace_SOURCES =	\
 	ipc_shm.c	\
 	ipc_shmctl.c	\
 	kcmp.c		\
+	kernel_timespec.h \
+	kernel_timeval.h \
+	kernel_timex.h	\
 	kernel_types.h	\
 	kexec.c		\
 	keyctl.c	\
@@ -168,6 +172,7 @@ strace_SOURCES =	\
 	linux/asm_stat.h \
 	linux/x32/asm_stat.h \
 	linux/x86_64/asm_stat.h \
+	list.h		\
 	listen.c	\
 	lookup_dcookie.c \
 	loop.c		\
@@ -193,10 +198,9 @@ strace_SOURCES =	\
 	netlink.c       \
 	netlink.h	\
 	netlink_crypto.c \
+	netlink_inet_diag.c \
 	netlink_kobject_uevent.c \
 	netlink_kobject_uevent.h \
-	netlink_sock_diag.h \
-	netlink_inet_diag.c \
 	netlink_netfilter.c \
 	netlink_netlink_diag.c \
 	netlink_packet_diag.c \
@@ -205,6 +209,7 @@ strace_SOURCES =	\
 	netlink_selinux.c \
 	netlink_smc_diag.c \
 	netlink_sock_diag.c \
+	netlink_sock_diag.h \
 	netlink_unix_diag.c \
 	nlattr.c	\
 	nlattr.h	\
@@ -227,8 +232,8 @@ strace_SOURCES =	\
 	prctl.c		\
 	print_aio_sigset.c \
 	print_dev_t.c	\
-	print_group_req.c \
 	print_fields.h	\
+	print_group_req.c \
 	print_ifindex.c	\
 	print_instruction_pointer.c \
 	print_kernel_version.c \
@@ -241,8 +246,14 @@ strace_SOURCES =	\
 	print_struct_stat.c \
 	print_time.c	\
 	print_timespec.c \
+	print_timespec.h \
+	print_timespec32.c \
+	print_timespec64.c \
 	print_timeval.c	\
+	print_timeval64.c \
 	print_timex.c	\
+	print_timex.h	\
+	print_utils.h	\
 	printmode.c	\
 	printrusage.c	\
 	printsiginfo.c	\
@@ -307,8 +318,8 @@ strace_SOURCES =	\
 	statx.c		\
 	statx.h		\
 	strace.c	\
-	string_to_uint.h \
 	string_to_uint.c \
+	string_to_uint.h \
 	swapon.c	\
 	syscall.c	\
 	sysctl.c	\
@@ -508,6 +519,16 @@ EXTRA_DIST =				\
 	linux/bfin/set_error.c		\
 	linux/bfin/set_scno.c		\
 	linux/bfin/syscallent.h		\
+	linux/csky/arch_regs.c		\
+	linux/csky/get_error.c		\
+	linux/csky/get_scno.c		\
+	linux/csky/get_syscall_args.c	\
+	linux/csky/ioctls_arch0.h	\
+	linux/csky/ioctls_inc0.h	\
+	linux/csky/raw_syscall.h	\
+	linux/csky/set_error.c		\
+	linux/csky/set_scno.c		\
+	linux/csky/syscallent.h		\
 	linux/bfin/userent.h		\
 	linux/check_scno.c		\
 	linux/dummy.h			\
@@ -529,6 +550,7 @@ EXTRA_DIST =				\
 	linux/hppa/set_scno.c		\
 	linux/hppa/signalent.h		\
 	linux/hppa/syscallent.h		\
+	linux/hppa/userent.h		\
 	linux/i386/arch_defs_.h		\
 	linux/i386/arch_kvm.c		\
 	linux/i386/arch_regs.c		\
@@ -772,7 +794,7 @@ EXTRA_DIST =				\
 	linux/sh64/syscallent.h		\
 	linux/sh64/userent.h		\
 	linux/shuffle_scno.c		\
-	linux/signal.h.in 		\
+	linux/signal.h.in		\
 	linux/signalent.h		\
 	linux/smc_diag.h		\
 	linux/sock_diag.h		\
@@ -816,6 +838,8 @@ EXTRA_DIST =				\
 	linux/sparc64/syscallent1.h	\
 	linux/sparc64/userent.h		\
 	linux/subcall.h			\
+	linux/subcall32.h		\
+	linux/subcall64.h		\
 	linux/syscall.h			\
 	linux/tile/arch_defs_.h		\
 	linux/tile/arch_get_personality.c \
@@ -925,6 +949,7 @@ $(srcdir)/.version:
 	$(AM_V_GEN)echo $(VERSION) > $@-t && mv $@-t $@
 
 bpf_attr_check.c: $(srcdir)/bpf_attr.h $(srcdir)/gen_bpf_attr_check.sh
+	D="$(D)" \
 	$(srcdir)/gen_bpf_attr_check.sh $< > $@-t && mv $@-t $@
 
 strace_SOURCES_c = \
@@ -944,6 +969,7 @@ syscallent_files = $(filter $(syscallent_patterns),$(EXTRA_DIST))
 
 sen.h: $(patsubst %,$(srcdir)/%,$(syscallent_files))
 	for f in $^; do cat -- $$f; done | \
+		D="$(D)" \
 		$(srcdir)/generate_sen.sh > $@
 
 dist-hook:
@@ -1035,6 +1061,7 @@ libmpers_CFLAGS = $(strace_CFLAGS)
 
 mpers-m%.stamp: $(srcdir_mpers_source_files) | printers.h
 	for f in $^; do \
+		D="$(D)" \
 		READELF="$(READELF)" \
 		CC="$(CC)" \
 		CFLAGS="$(mpers_sh_opts) -DMPERS_IS_$(mpers_NAME)" \
@@ -1153,6 +1180,8 @@ $(srcdir)/CREDITS: $(srcdir)/CREDITS.in $(srcdir)/.mailmap \
 		   $(srcdir)/Makefile.in $(srcdir)/.version
 	$(AM_V_GEN)							\
 	(								\
+	  D="$(D)";							\
+	  export D;							\
 	  cd $(srcdir);							\
 	  sed '/^##/,$$d' CREDITS.in;					\
 	  sed -n '1,/^##>/d; s/   */\t/; s/^./&/p' CREDITS.in		\
