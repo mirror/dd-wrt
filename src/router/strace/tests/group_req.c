@@ -2,7 +2,7 @@
  * Check decoding of MCAST_JOIN_GROUP/MCAST_LEAVE_GROUP.
  *
  * Copyright (c) 2015-2017 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2017-2018 The strace developers.
+ * Copyright (c) 2017-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -20,8 +20,8 @@
 # include <sys/socket.h>
 # include <arpa/inet.h>
 
-#define	multi4addr	"224.0.0.3"
-#define	multi6addr	"ff01::c"
+# define multi4addr	"224.0.0.3"
+# define multi6addr	"ff01::c"
 
 static const char *errstr;
 
@@ -76,15 +76,15 @@ main(void)
 		{
 			ARG_STR(SOL_IPV6), ARG_STR(MCAST_JOIN_GROUP), greq6,
 			"gr_group={sa_family=AF_INET6, sin6_port=htons(65535)"
-			", inet_pton(AF_INET6, \"" multi6addr "\", &sin6_addr)"
 			", sin6_flowinfo=htonl(4294967295)"
+			", inet_pton(AF_INET6, \"" multi6addr "\", &sin6_addr)"
 			", sin6_scope_id=4294967295}"
 		},
 		{
 			ARG_STR(SOL_IPV6), ARG_STR(MCAST_LEAVE_GROUP), greq6,
 			"gr_group={sa_family=AF_INET6, sin6_port=htons(65535)"
-			", inet_pton(AF_INET6, \"" multi6addr "\", &sin6_addr)"
 			", sin6_flowinfo=htonl(4294967295)"
+			", inet_pton(AF_INET6, \"" multi6addr "\", &sin6_addr)"
 			", sin6_scope_id=4294967295}"
 		}
 	};

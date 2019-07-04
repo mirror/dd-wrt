@@ -24,6 +24,13 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
 # define BPF_EXIST 2
 #endif
+#if defined(BPF_F_LOCK) || (defined(HAVE_DECL_BPF_F_LOCK) && HAVE_DECL_BPF_F_LOCK)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((BPF_F_LOCK) == (4), "BPF_F_LOCK != 4");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define BPF_F_LOCK 4
+#endif
 
 #ifndef XLAT_MACROS_ONLY
 
@@ -38,6 +45,7 @@ const struct xlat bpf_map_update_elem_flags[] = {
  [BPF_ANY] = XLAT(BPF_ANY),
  [BPF_NOEXIST] = XLAT(BPF_NOEXIST),
  [BPF_EXIST] = XLAT(BPF_EXIST),
+ [BPF_F_LOCK] = XLAT(BPF_F_LOCK),
  XLAT_END
 };
 

@@ -1,8 +1,11 @@
 #!/bin/sh -efu
 # Copyright (c) 2018 Dmitry V. Levin <ldv@altlinux.org>
+# Copyright (c) 2018-2019 The strace developers.
 # All rights reserved.
 #
 # SPDX-License-Identifier: LGPL-2.1-or-later
+
+[ "x${D:-0}" != x1 ] || set -x
 
 input="$1"
 shift
@@ -30,7 +33,7 @@ for struct in $(sed -n 's/^struct \([^[:space:]]\+_struct\) .*/\1/p' < "$input")
 	enum="$enum${enum:+.}"
 	ENUM="$ENUM${ENUM:+_}"
 	sed -n '/^struct '"$struct"' [^{]*{/,/^};$/p' < "$input" |
-	sed -n 's/^[[:space:]]\+[^][;]*[[:space:]]\([^][[:space:];]\+\)\(\[[^;]*\]\)\?;$/\1/p' |
+	sed -n 's/^[[:space:]]\+[^][;:]*[[:space:]]\([^][[:space:];:]\+\)\(\[[^;:]*\]\)\?;$/\1/p' |
 	while read field; do
 		FIELD="$(printf %s "$field" |tr '[:lower:]' '[:upper:]')"
 		cat <<EOF

@@ -86,8 +86,8 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #endif
 #if defined MAP_RENAME && MAP_RENAME == MAP_ANONYMOUS
 # ifndef STRACE_WORKAROUND_FOR_MAP_RENAME
-# define STRACE_WORKAROUND_FOR_MAP_RENAME
-# undef MAP_RENAME
+#  define STRACE_WORKAROUND_FOR_MAP_RENAME
+#  undef MAP_RENAME
 # endif
 #endif
 #if defined __mips__ || defined __xtensa__
@@ -397,8 +397,8 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
 # define MAP_SYNC 0x80000
 #endif
-# if defined MAP_UNINITIALIZED && MAP_UNINITIALIZED > 0
-# endif
+#if defined MAP_UNINITIALIZED && MAP_UNINITIALIZED > 0
+#endif
 #if defined __alpha__
 #if defined(MAP_FIXED_NOREPLACE) || (defined(HAVE_DECL_MAP_FIXED_NOREPLACE) && HAVE_DECL_MAP_FIXED_NOREPLACE)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
@@ -501,10 +501,10 @@ const struct xlat mmap_flags[] = {
 
 #if defined MAP_RENAME && MAP_RENAME == MAP_ANONYMOUS
 # ifndef STRACE_WORKAROUND_FOR_MAP_RENAME
-# define STRACE_WORKAROUND_FOR_MAP_RENAME
+#  define STRACE_WORKAROUND_FOR_MAP_RENAME
 
 
-# undef MAP_RENAME
+#  undef MAP_RENAME
 # endif
 #endif
 
@@ -634,11 +634,11 @@ const struct xlat mmap_flags[] = {
 
  XLAT(MAP_SYNC),
 
-# if defined MAP_UNINITIALIZED && MAP_UNINITIALIZED > 0
+#if defined MAP_UNINITIALIZED && MAP_UNINITIALIZED > 0
 #if defined(MAP_UNINITIALIZED) || (defined(HAVE_DECL_MAP_UNINITIALIZED) && HAVE_DECL_MAP_UNINITIALIZED)
   XLAT(MAP_UNINITIALIZED),
 #endif
-# endif
+#endif
 
 #if defined __alpha__
  XLAT(MAP_FIXED_NOREPLACE),

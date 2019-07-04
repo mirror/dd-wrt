@@ -1,3 +1,78 @@
+Noteworthy changes in release 5.1 (2019-05-22)
+==============================================
+
+* Bug fixes
+  * Fixed decoding of last two arguments of clone syscall on riscv.
+
+* Improvements
+  * Added C-SKY architecture support.
+  * Implemented decoding of SO_TIMESTAMP*_NEW control messages.
+  * Implemented decoding of clock_gettime64, clock_settime64, clock_adjtime64,
+    clock_getres_time64, clock_nanosleep_time64, timer_gettime64,
+    timer_settime64, timerfd_gettime64, timerfd_settime64, utimensat_time64,
+    pselect6_time64, ppoll_time64, io_pgetevents_time64, recvmmsg_time64,
+    mq_timedsend_time64, mq_timedreceive_time64, semtimedop_time64,
+    rt_sigtimedwait_time64, futex_time64, sched_rr_get_interval_time64,
+    pidfd_send_signal, io_uring_setup, io_uring_enter, and io_uring_register
+    syscalls.
+  * Enhanced decoding of bpf syscall.
+  * Wired up getegid, geteuid, getppid, io_pgetevents, statfs64, and fstatfs64
+    syscalls on alpha.
+  * Wired up kexec_file_load and migrate_pages syscalls on arm.
+  * Wired up io_pgetevents, perf_event_open, seccomp, and statx syscalls
+    on ia64.
+  * Wired up seccomp syscall on m68k.
+  * Wired up statx syscall on sh.
+  * Wired up pkey_mprotect, pkey_alloc, and pkey_free syscalls on alpha, hppa,
+    ia64, m68k, s390, s390x, sh, sparc, and sparc64.
+  * Wired up rseq syscall on alpha, hppa, ia64, m68k, sh, sparc, sparc64,
+    and xtensa.
+  * Wired up direct ipc syscalls on m68k, mips o32, powerpc, powerpc64,
+    s390, s390x, sh, sparc, sparc64, and x86.
+  * Updated lists of BPF_*, FAN_*, F_SEAL_*, IPV6_*, NT_*, PR_SPEC_*, SO_*,
+    and V4L2_* constants.
+  * Updated lists of ioctl commands from Linux 5.1.
+
+Noteworthy changes in release 5.0 (2019-03-19)
+==============================================
+
+* Changes in behavior
+  * -D option now implies -I4: by default strace ignores SIGHUP, SIGINT,
+    SIGQUIT, SIGPIPE, SIGTERM, SIGTTIN, SIGTTOU, and SIGTSTP when -D option
+    is used.
+  * Diagnostic message is no longer printed if an attempt to restart a process
+    has failed with ESRCH.  (Addresses RHBZ bug #1662936.)
+  * ASCII dump no longer tries to read the whole buffer at once.  As result,
+    it can fail with a diagnostic message after dumping only a part.
+    Amount of preceding zeroes printed for offset is now chosen in a way
+    to accommodate all the digits of all the offsets being printed.
+
+* Improvements
+  * Changed the way tracees are handled: all pending tracees are now waited for
+    before further processing, this improves fairness of tracee processing.
+    (Addresses RHBZ bugs #478419, #526740, #851457, #1609318, #1610774,
+    and maybe some others.)
+  * Enhanced xlat styles support configured by -X option.
+  * Enhanced decoding of bpf syscall.
+  * Enhanced decoding of PTRACE_PEEKUSER and PTRACE_POKEUSER on hppa.
+  * Enhanced pid formatting in strace-log-merge output.
+  * Wired up kexec_file_load and rseq syscalls on aarch64, arc, metag, nios2,
+    or1k, riscv, and tile architectures.
+  * Updated lists of BPF_*, BTRFS_*, FAN_*, IFLA_*, KERN_*, KVM_CAP_*, NDA_*,
+    NETNSA_*, NT_*, PR_*, REL_*, SECCOMP_*, SCTP_*, UDP_*, V4L2_*, and *_MAGIC
+    constants.
+  * Updated lists of ioctl commands from Linux 5.0.
+
+* Bug fixes
+  * Fixed ordering of sockaddr_in6 fields.
+  * Fixed strace-k test on alpha.
+  * Fixed build on mips o32.
+  * Fixed build on NOMMU architectures.
+  * Fixed build in --with-libiberty=yes mode.
+  * Fixed potential NULL dereference during printing of line continuation
+    for syscalls that haven't been decoded.
+  * Fixed strace-log-merge error diagnostics.
+
 Noteworthy changes in release 4.26 (2018-12-26)
 ===============================================
 

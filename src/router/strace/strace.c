@@ -3,7 +3,7 @@
  * Copyright (c) 1993 Branko Lankester <branko@hacktic.nl>
  * Copyright (c) 1993, 1994, 1995, 1996 Rick Sladkey <jrs@world.std.com>
  * Copyright (c) 1996-1999 Wichert Akkerman <wichert@cistron.nl>
- * Copyright (c) 1999-2018 The strace developers.
+ * Copyright (c) 1999-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -85,7 +85,7 @@ enum {
 	INTR_ANYWHERE       = 1, /* don't block/ignore any signals */
 	INTR_WHILE_WAIT     = 2, /* block fatal signals while decoding syscall. default */
 	INTR_NEVER          = 3, /* block fatal signals. default if '-o FILE PROG' */
-	INTR_BLOCK_TSTP_TOO = 4, /* block fatal signals and SIGTSTP (^Z) */
+	INTR_BLOCK_TSTP_TOO = 4, /* block fatal signals and SIGTSTP (^Z); default if -D */
 	NUM_INTR_OPTS
 };
 static int opt_intr;
@@ -143,12 +143,17 @@ static struct tcb *current_tcp;
 struct tcb_wait_data {
 	enum trace_event te; /**< Event passed to dispatch_event() */
 	int status;          /**< status, returned by wait4() */
+	unsigned long msg;   /**< Value returned by PTRACE_GETEVENTMSG */
 	siginfo_t si;        /**< siginfo, returned by PTRACE_GETSIGINFO */
 };
 
 static struct tcb **tcbtab;
 static unsigned int nprocs;
 static size_t tcbtabsize;
+
+static struct tcb_wait_data *tcb_wait_tab;
+static size_t tcb_wait_tab_size;
+
 
 #ifndef HAVE_PROGRAM_INVOCATION_NAME
 char *program_invocation_name;
@@ -157,7 +162,7 @@ char *program_invocation_name;
 unsigned os_release; /* generated from uname()'s u.release */
 
 static void detach(struct tcb *tcp);
-static void cleanup(void);
+static void cleanup(int sig);
 static void interrupt(int sig);
 
 #ifdef HAVE_SIG_ATOMIC_T
@@ -171,10 +176,10 @@ static void timer_sighandler(int);
 
 #ifndef HAVE_STRERROR
 
-#if !HAVE_DECL_SYS_ERRLIST
+# if !HAVE_DECL_SYS_ERRLIST
 extern int sys_nerr;
 extern char *sys_errlist[];
-#endif
+# endif
 
 const char *
 strerror(int err_no)
@@ -267,8 +272,7 @@ Statistics:\n\
 \n\
 Filtering:\n\
   -e expr        a qualifying expression: option=[!]all or option=[!]val1[,val2]...\n\
-     options:    trace, abbrev, verbose, raw, signal, read, write, fault, inject, kvm"
-"\n\
+     options:    trace, abbrev, verbose, raw, signal, read, write, fault, inject, kvm\n\
   -P path        trace accesses to path\n\
 \n\
 Tracing:\n\
@@ -309,8 +313,7 @@ void ATTRIBUTE_NORETURN
 die(void)
 {
 	if (strace_tracer_pid == getpid()) {
-		cflag = 0;
-		cleanup();
+		cleanup(0);
 		exit(1);
 	}
 
@@ -339,6 +342,18 @@ ptrace_attach_or_seize(int pid)
 	return ptrace_attach_cmd = "PTRACE_INTERRUPT", r;
 }
 
+static const char *
+ptrace_op_str(unsigned int op)
+{
+	const char *str = xlookup(ptrace_cmds, op);
+	if (str)
+		return str;
+
+	static char buf[sizeof(op) * 3];
+	xsprintf(buf, "%u", op);
+	return buf;
+}
+
 /*
  * Used when we want to unblock stopped traced process.
  * Should be only used with PTRACE_CONT, PTRACE_DETACH and PTRACE_SYSCALL.
@@ -350,27 +365,12 @@ static int
 ptrace_restart(const unsigned int op, struct tcb *const tcp, unsigned int sig)
 {
 	int err;
-	const char *msg;
 
 	errno = 0;
 	ptrace(op, tcp->pid, 0L, (unsigned long) sig);
 	err = errno;
-	if (!err)
+	if (!err || err == ESRCH)
 		return 0;
-
-	switch (op) {
-		case PTRACE_CONT:
-			msg = "CONT";
-			break;
-		case PTRACE_DETACH:
-			msg = "DETACH";
-			break;
-		case PTRACE_LISTEN:
-			msg = "LISTEN";
-			break;
-		default:
-			msg = "SYSCALL";
-	}
 
 	/*
 	 * Why curcol != 0? Otherwise sometimes we get this:
@@ -382,13 +382,13 @@ ptrace_restart(const unsigned int op, struct tcb *const tcp, unsigned int sig)
 	 * but before we tried to restart it. Log looks ugly.
 	 */
 	if (current_tcp && current_tcp->curcol != 0) {
-		tprintf(" <ptrace(%s):%s>\n", msg, strerror(err));
+		tprintf(" <Cannot restart pid %d with ptrace(%s): %s>\n",
+			tcp->pid, ptrace_op_str(op), strerror(err));
 		line_ended();
 	}
-	if (err == ESRCH)
-		return 0;
 	errno = err;
-	perror_msg("ptrace(PTRACE_%s,pid:%d,sig:%u)", msg, tcp->pid, sig);
+	perror_msg("ptrace(%s,pid:%d,sig:%u)",
+		   ptrace_op_str(op), tcp->pid, sig);
 	return -1;
 }
 
@@ -739,6 +739,7 @@ alloctcb(int pid)
 		tcp = tcbtab[i];
 		if (!tcp->pid) {
 			memset(tcp, 0, sizeof(*tcp));
+			list_init(&tcp->wait_list);
 			tcp->pid = pid;
 #if SUPPORTED_PERSONALITIES > 1
 			tcp->currpers = current_personality;
@@ -826,6 +827,8 @@ droptcb(struct tcb *tcp)
 		set_current_tcp(NULL);
 	if (printing_tcp == tcp)
 		printing_tcp = NULL;
+
+	list_remove(&tcp->wait_list);
 
 	memset(tcp, 0, sizeof(*tcp));
 }
@@ -1273,7 +1276,7 @@ redirect_standard_fds(void)
 static void
 startup_child(char **argv)
 {
-	struct_stat statbuf;
+	strace_stat_t statbuf;
 	const char *filename;
 	size_t filename_len;
 	char pathname[PATH_MAX];
@@ -1751,10 +1754,8 @@ init(int argc, char *argv[])
 	if (cflag == CFLAG_ONLY_STATS) {
 		if (iflag)
 			error_msg("-%c has no effect with -c", 'i');
-#ifdef ENABLE_STACKTRACE
 		if (stack_trace_enabled)
 			error_msg("-%c has no effect with -c", 'k');
-#endif
 		if (rflag)
 			error_msg("-%c has no effect with -c", 'r');
 		if (tflag)
@@ -1800,13 +1801,7 @@ init(int argc, char *argv[])
 				     PTRACE_O_TRACEVFORK;
 	debug_msg("ptrace_setoptions = %#x", ptrace_setoptions);
 	test_ptrace_seize();
-
-	/*
-	 * NOMMU provides no forks necessary for PTRACE_GET_SYSCALL_INFO test,
-	 * leave the default unchanged.
-	 */
-	if (!NOMMU_SYSTEM)
-		test_ptrace_get_syscall_info();
+	test_ptrace_get_syscall_info();
 
 	/*
 	 * Is something weird with our stdin and/or stdout -
@@ -1857,6 +1852,8 @@ init(int argc, char *argv[])
 	 * no		1	1	INTR_WHILE_WAIT
 	 */
 
+	if (daemonized_tracer && !opt_intr)
+		opt_intr = INTR_BLOCK_TSTP_TOO;
 	if (outfname && argc) {
 		if (!opt_intr)
 			opt_intr = INTR_NEVER;
@@ -1936,14 +1933,11 @@ pid2tcb(const int pid)
 }
 
 static void
-cleanup(void)
+cleanup(int fatal_sig)
 {
 	unsigned int i;
 	struct tcb *tcp;
-	int fatal_sig;
 
-	/* 'interrupted' is a volatile object, fetch it only once */
-	fatal_sig = interrupted;
 	if (!fatal_sig)
 		fatal_sig = SIGTERM;
 
@@ -1958,8 +1952,6 @@ cleanup(void)
 		}
 		detach(tcp);
 	}
-	if (cflag)
-		call_summary(shared_log);
 }
 
 static void
@@ -2048,10 +2040,8 @@ maybe_switch_tcbs(struct tcb *tcp, const int pid)
 {
 	FILE *fp;
 	struct tcb *execve_thread;
-	long old_pid = 0;
+	long old_pid = tcb_wait_tab[tcp->wait_data_idx].msg;
 
-	if (ptrace(PTRACE_GETEVENTMSG, pid, NULL, &old_pid) < 0)
-		return tcp;
 	/* Avoid truncation in pid2tcb() param passing */
 	if (old_pid <= 0 || old_pid == pid)
 		return tcp;
@@ -2187,12 +2177,7 @@ print_event_exit(struct tcb *tcp)
 		set_current_tcp(tcp);
 	}
 
-	if ((followfork < 2 && printing_tcp != tcp)
-	    || (tcp->flags & TCB_REPRINT)) {
-		tcp->flags &= ~TCB_REPRINT;
-		printleader(tcp);
-		tprintf("<... %s resumed>", tcp->s_ent->sys_name);
-	}
+	print_syscall_resume(tcp);
 
 	if (!(tcp->sys_func_rval & RVAL_DECODED)) {
 		/*
@@ -2209,19 +2194,73 @@ print_event_exit(struct tcb *tcp)
 	line_ended();
 }
 
+static size_t
+trace_wait_data_size(struct tcb *tcp)
+{
+	return sizeof(struct tcb_wait_data);
+}
+
+static struct tcb_wait_data *
+init_trace_wait_data(void *p)
+{
+	struct tcb_wait_data *wd = p;
+
+	memset(wd, 0, sizeof(*wd));
+
+	return wd;
+}
+
+static struct tcb_wait_data *
+copy_trace_wait_data(const struct tcb_wait_data *wd)
+{
+	struct tcb_wait_data *new_wd = xmalloc(sizeof(*new_wd));
+
+	memcpy(new_wd, wd, sizeof(*wd));
+
+	return new_wd;
+}
+
+static void
+free_trace_wait_data(struct tcb_wait_data *wd)
+{
+	free(wd);
+}
+
+static void
+tcb_wait_tab_check_size(const size_t size)
+{
+	while (size >= tcb_wait_tab_size) {
+		tcb_wait_tab = xgrowarray(tcb_wait_tab,
+					  &tcb_wait_tab_size,
+					  sizeof(tcb_wait_tab[0]));
+	}
+}
+
 static const struct tcb_wait_data *
 next_event(void)
 {
-	static struct tcb_wait_data wait_data;
-
-	int pid;
-	int status;
-	struct tcb *tcp;
-	struct tcb_wait_data *wd = &wait_data;
-	struct rusage ru;
-
 	if (interrupted)
 		return NULL;
+
+	struct tcb *tcp = NULL;
+	struct list_item *elem;
+
+	static EMPTY_LIST(pending_tcps);
+	/* Handle the queued tcbs before waiting for new events.  */
+	if (!list_is_empty(&pending_tcps))
+		goto next_event_get_tcp;
+
+	static struct tcb *extra_tcp;
+	static size_t wait_extra_data_idx;
+	/* Handle the extra tcb event.  */
+	if (extra_tcp) {
+		tcp = extra_tcp;
+		extra_tcp = NULL;
+		tcp->wait_data_idx = wait_extra_data_idx;
+
+		debug_msg("dequeued extra event for pid %u", tcp->pid);
+		goto next_event_exit;
+	}
 
 	/*
 	 * Used to exit simply when nprocs hits zero, but in this testcase:
@@ -2264,8 +2303,10 @@ next_event(void)
 	 * then the system call will be interrupted and
 	 * the expiration will be handled by the signal handler.
 	 */
-	pid = wait4(-1, &status, __WALL, (cflag ? &ru : NULL));
-	const int wait_errno = errno;
+	int status;
+	struct rusage ru;
+	int pid = wait4(-1, &status, __WALL, (cflag ? &ru : NULL));
+	int wait_errno = errno;
 
 	/*
 	 * The window of opportunity to handle expirations
@@ -2281,135 +2322,202 @@ next_event(void)
 			return NULL;
 	}
 
-	if (pid < 0) {
-		if (wait_errno == EINTR) {
-			wd->te = TE_NEXT;
-			return wd;
+	size_t wait_tab_pos = 0;
+	bool wait_nohang = false;
+
+	/*
+	 * Wait for new events until wait4() returns 0 (meaning that there's
+	 * nothing more to wait for for now), or a second event for some tcb
+	 * appears (which may happen if a tracee was SIGKILL'ed, for example).
+	 */
+	for (;;) {
+		struct tcb_wait_data *wd;
+
+		if (pid < 0) {
+			if (wait_errno == EINTR)
+				break;
+			if (wait_nohang)
+				break;
+			if (nprocs == 0 && wait_errno == ECHILD)
+				return NULL;
+			/*
+			 * If nprocs > 0, ECHILD is not expected,
+			 * treat it as any other error here:
+			 */
+			errno = wait_errno;
+			perror_msg_and_die("wait4(__WALL)");
 		}
-		if (nprocs == 0 && wait_errno == ECHILD)
-			return NULL;
-		/*
-		 * If nprocs > 0, ECHILD is not expected,
-		 * treat it as any other error here:
-		 */
-		errno = wait_errno;
-		perror_msg_and_die("wait4(__WALL)");
-	}
 
-	wd->status = status;
+		if (!pid)
+			break;
 
-	if (pid == popen_pid) {
-		if (!WIFSTOPPED(status))
-			popen_pid = 0;
-		wd->te = TE_NEXT;
-		return wd;
-	}
+		if (pid == popen_pid) {
+			if (!WIFSTOPPED(status))
+				popen_pid = 0;
+			break;
+		}
 
-	if (debug_flag)
-		print_debug_info(pid, status);
+		if (debug_flag)
+			print_debug_info(pid, status);
 
-	/* Look up 'pid' in our table. */
-	tcp = pid2tcb(pid);
+		/* Look up 'pid' in our table. */
+		tcp = pid2tcb(pid);
 
-	if (!tcp) {
-		tcp = maybe_allocate_tcb(pid, status);
 		if (!tcp) {
-			wd->te = TE_NEXT;
-			return wd;
+			tcp = maybe_allocate_tcb(pid, status);
+			if (!tcp)
+				goto next_event_wait_next;
 		}
+
+		if (cflag) {
+			struct timespec stime = {
+				.tv_sec = ru.ru_stime.tv_sec,
+				.tv_nsec = ru.ru_stime.tv_usec * 1000
+			};
+			ts_sub(&tcp->dtime, &stime, &tcp->stime);
+			tcp->stime = stime;
+		}
+
+		tcb_wait_tab_check_size(wait_tab_pos);
+
+		/* Initialise a new wait data structure.  */
+		wd = tcb_wait_tab + wait_tab_pos;
+		init_trace_wait_data(wd);
+		wd->status = status;
+
+		if (WIFSIGNALED(status)) {
+			wd->te = TE_SIGNALLED;
+		} else if (WIFEXITED(status)) {
+			wd->te = TE_EXITED;
+		} else {
+			/*
+			 * As WCONTINUED flag has not been specified to wait4,
+			 * it cannot be WIFCONTINUED(status), so the only case
+			 * that remains is WIFSTOPPED(status).
+			 */
+
+			const unsigned int sig = WSTOPSIG(status);
+			const unsigned int event = (unsigned int) status >> 16;
+
+			switch (event) {
+			case 0:
+				/*
+				 * Is this post-attach SIGSTOP?
+				 * Interestingly, the process may stop
+				 * with STOPSIG equal to some other signal
+				 * than SIGSTOP if we happened to attach
+				 * just before the process takes a signal.
+				 */
+				if (sig == SIGSTOP &&
+				    (tcp->flags & TCB_IGNORE_ONE_SIGSTOP)) {
+					debug_func_msg("ignored SIGSTOP on "
+						       "pid %d", tcp->pid);
+					tcp->flags &= ~TCB_IGNORE_ONE_SIGSTOP;
+					wd->te = TE_RESTART;
+				} else if (sig == syscall_trap_sig) {
+					wd->te = TE_SYSCALL_STOP;
+				} else {
+					/*
+					 * True if tracee is stopped by signal
+					 * (as opposed to "tracee received
+					 * signal").
+					 * TODO: shouldn't we check for
+					 * errno == EINVAL too?
+					 * We can get ESRCH instead, you know...
+					 */
+					bool stopped = ptrace(PTRACE_GETSIGINFO,
+						pid, 0, &wd->si) < 0;
+
+					wd->te = stopped ? TE_GROUP_STOP
+							 : TE_SIGNAL_DELIVERY_STOP;
+				}
+				break;
+			case PTRACE_EVENT_STOP:
+				/*
+				 * PTRACE_INTERRUPT-stop or group-stop.
+				 * PTRACE_INTERRUPT-stop has sig == SIGTRAP here.
+				 */
+				switch (sig) {
+				case SIGSTOP:
+				case SIGTSTP:
+				case SIGTTIN:
+				case SIGTTOU:
+					wd->te = TE_GROUP_STOP;
+					break;
+				default:
+					wd->te = TE_RESTART;
+				}
+				break;
+			case PTRACE_EVENT_EXEC:
+					/*
+					 * TODO: shouldn't we check for
+					 * errno == EINVAL here, too?
+					 * We can get ESRCH instead, you know...
+					 */
+				if (ptrace(PTRACE_GETEVENTMSG, pid, NULL,
+				    &wd->msg) < 0)
+					wd->msg = 0;
+
+				wd->te = TE_STOP_BEFORE_EXECVE;
+				break;
+			case PTRACE_EVENT_EXIT:
+				wd->te = TE_STOP_BEFORE_EXIT;
+				break;
+			default:
+				wd->te = TE_RESTART;
+			}
+		}
+
+		if (!wd->te)
+			error_func_msg("Tracing event hasn't been determined "
+				       "for pid %d, status %0#x", pid, status);
+
+		if (!list_is_empty(&tcp->wait_list)) {
+			wait_extra_data_idx = wait_tab_pos;
+			extra_tcp = tcp;
+			debug_func_msg("queued extra pid %d", tcp->pid);
+		} else {
+			tcp->wait_data_idx = wait_tab_pos;
+			list_append(&pending_tcps, &tcp->wait_list);
+			debug_func_msg("queued pid %d", tcp->pid);
+		}
+
+		wait_tab_pos++;
+
+		if (extra_tcp)
+			break;
+
+next_event_wait_next:
+		pid = wait4(-1, &status, __WALL | WNOHANG, (cflag ? &ru : NULL));
+		wait_errno = errno;
+		wait_nohang = true;
 	}
+
+next_event_get_tcp:
+	elem = list_remove_head(&pending_tcps);
+
+	if (!elem) {
+		tcb_wait_tab_check_size(0);
+		memset(tcb_wait_tab, 0, sizeof(*tcb_wait_tab));
+		tcb_wait_tab->te = TE_NEXT;
+
+		return tcb_wait_tab;
+	} else {
+		tcp = list_elem(elem, struct tcb, wait_list);
+		debug_func_msg("dequeued pid %d", tcp->pid);
+	}
+
+next_event_exit:
+	/* Is this the very first time we see this tracee stopped? */
+	if (tcp->flags & TCB_STARTUP)
+		startup_tcb(tcp);
 
 	clear_regs(tcp);
 
 	/* Set current output file */
 	set_current_tcp(tcp);
 
-	if (cflag) {
-		struct timespec stime = {
-			.tv_sec = ru.ru_stime.tv_sec,
-			.tv_nsec = ru.ru_stime.tv_usec * 1000
-		};
-		ts_sub(&tcp->dtime, &stime, &tcp->stime);
-		tcp->stime = stime;
-	}
-
-	if (WIFSIGNALED(status)) {
-		wd->te = TE_SIGNALLED;
-		return wd;
-	}
-
-	if (WIFEXITED(status)) {
-		wd->te = TE_EXITED;
-		return wd;
-	}
-
-	/*
-	 * As WCONTINUED flag has not been specified to wait4,
-	 * it cannot be WIFCONTINUED(status), so the only case
-	 * that remains is WIFSTOPPED(status).
-	 */
-
-	/* Is this the very first time we see this tracee stopped? */
-	if (tcp->flags & TCB_STARTUP)
-		startup_tcb(tcp);
-
-	const unsigned int sig = WSTOPSIG(status);
-	const unsigned int event = (unsigned int) status >> 16;
-
-	switch (event) {
-	case 0:
-		/*
-		 * Is this post-attach SIGSTOP?
-		 * Interestingly, the process may stop
-		 * with STOPSIG equal to some other signal
-		 * than SIGSTOP if we happened to attach
-		 * just before the process takes a signal.
-		 */
-		if (sig == SIGSTOP && (tcp->flags & TCB_IGNORE_ONE_SIGSTOP)) {
-			debug_func_msg("ignored SIGSTOP on pid %d", tcp->pid);
-			tcp->flags &= ~TCB_IGNORE_ONE_SIGSTOP;
-			wd->te = TE_RESTART;
-		} else if (sig == syscall_trap_sig) {
-			wd->te = TE_SYSCALL_STOP;
-		} else {
-			memset(&wd->si, 0, sizeof(wd->si));
-			/*
-			 * True if tracee is stopped by signal
-			 * (as opposed to "tracee received signal").
-			 * TODO: shouldn't we check for errno == EINVAL too?
-			 * We can get ESRCH instead, you know...
-			 */
-			bool stopped = ptrace(PTRACE_GETSIGINFO, pid, 0, &wd->si) < 0;
-			wd->te = stopped ? TE_GROUP_STOP : TE_SIGNAL_DELIVERY_STOP;
-		}
-		break;
-	case PTRACE_EVENT_STOP:
-		/*
-		 * PTRACE_INTERRUPT-stop or group-stop.
-		 * PTRACE_INTERRUPT-stop has sig == SIGTRAP here.
-		 */
-		switch (sig) {
-		case SIGSTOP:
-		case SIGTSTP:
-		case SIGTTIN:
-		case SIGTTOU:
-			wd->te = TE_GROUP_STOP;
-			break;
-		default:
-			wd->te = TE_RESTART;
-		}
-		break;
-	case PTRACE_EVENT_EXEC:
-		wd->te = TE_STOP_BEFORE_EXECVE;
-		break;
-	case PTRACE_EVENT_EXIT:
-		wd->te = TE_STOP_BEFORE_EXIT;
-		break;
-	default:
-		wd->te = TE_RESTART;
-	}
-
-	return wd;
+	return tcb_wait_tab + tcp->wait_data_idx;
 }
 
 static int
@@ -2573,8 +2681,15 @@ dispatch_event(const struct tcb_wait_data *wd)
 		return false;
 
 	/* If the process is being delayed, do not ptrace_restart just yet */
-	if (syscall_delayed(current_tcp))
+	if (syscall_delayed(current_tcp)) {
+		if (current_tcp->delayed_wait_data)
+			error_func_msg("pid %d has delayed wait data set"
+				       " already", current_tcp->pid);
+
+		current_tcp->delayed_wait_data = copy_trace_wait_data(wd);
+
 		return true;
+	}
 
 	if (ptrace_restart(restart_op, current_tcp, restart_sig) < 0) {
 		/* Note: ptrace_restart emitted error message */
@@ -2587,7 +2702,15 @@ dispatch_event(const struct tcb_wait_data *wd)
 static bool
 restart_delayed_tcb(struct tcb *const tcp)
 {
-	const struct tcb_wait_data wd = { .te = TE_RESTART };
+	struct tcb_wait_data *wd = tcp->delayed_wait_data;
+
+	if (!wd) {
+		error_func_msg("No delayed wait data found for pid %d",
+			       tcp->pid);
+		wd = init_trace_wait_data(alloca(trace_wait_data_size(tcp)));
+	}
+
+	wd->te = TE_RESTART;
 
 	debug_func_msg("pid %d", tcp->pid);
 
@@ -2595,8 +2718,11 @@ restart_delayed_tcb(struct tcb *const tcp)
 
 	struct tcb *const prev_tcp = current_tcp;
 	current_tcp = tcp;
-	bool ret = dispatch_event(&wd);
+	bool ret = dispatch_event(wd);
 	current_tcp = prev_tcp;
+
+	free_trace_wait_data(tcp->delayed_wait_data);
+	tcp->delayed_wait_data = NULL;
 
 	return ret;
 }
@@ -2661,7 +2787,11 @@ extern void __gcov_flush(void);
 static void ATTRIBUTE_NORETURN
 terminate(void)
 {
-	cleanup();
+	int sig = interrupted;
+
+	cleanup(sig);
+	if (cflag)
+		call_summary(shared_log);
 	fflush(NULL);
 	if (shared_log != stderr)
 		fclose(shared_log);
@@ -2669,8 +2799,8 @@ terminate(void)
 		while (waitpid(popen_pid, NULL, 0) < 0 && errno == EINTR)
 			;
 	}
-	if (interrupted) {
-		exit_code = 0x100 | interrupted;
+	if (sig) {
+		exit_code = 0x100 | sig;
 	}
 	if (exit_code > 0xff) {
 		/* Avoid potential core file clobbering.  */

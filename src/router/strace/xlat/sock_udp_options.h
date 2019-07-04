@@ -38,6 +38,13 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
 # define UDP_SEGMENT 103
 #endif
+#if defined(UDP_GRO) || (defined(HAVE_DECL_UDP_GRO) && HAVE_DECL_UDP_GRO)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((UDP_GRO) == (104), "UDP_GRO != 104");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define UDP_GRO 104
+#endif
 
 #ifndef XLAT_MACROS_ONLY
 
@@ -54,6 +61,7 @@ const struct xlat sock_udp_options[] = {
  XLAT(UDP_NO_CHECK6_TX),
  XLAT(UDP_NO_CHECK6_RX),
  XLAT(UDP_SEGMENT),
+ XLAT(UDP_GRO),
  XLAT_END
 };
 

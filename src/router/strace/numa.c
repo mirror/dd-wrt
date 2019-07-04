@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2003-2007 Ulrich Drepper <drepper@redhat.com>
  * Copyright (c) 2005-2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2018 The strace developers.
+ * Copyright (c) 2016-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -121,11 +121,21 @@ static bool
 print_status(struct tcb *tcp, void *elem_buf, size_t elem_size, void *data)
 {
 	const int status = *(int *) elem_buf;
+	bool is_errno = (status < 0) && ((unsigned) -status < nerrnos);
 
-	if (status < 0 && (unsigned) -status < nerrnos)
-		tprintf("-%s", errnoent[-status]);
-	else
+	if (!is_errno || xlat_verbose(xlat_verbosity) != XLAT_STYLE_ABBREV)
 		tprintf("%d", status);
+
+	if (!is_errno || xlat_verbose(xlat_verbosity) == XLAT_STYLE_RAW)
+		return true;
+
+	if (xlat_verbose(xlat_verbosity) == XLAT_STYLE_VERBOSE)
+		tprints(" /* ");
+
+	tprintf("-%s", errnoent[-status]);
+
+	if (xlat_verbose(xlat_verbosity) == XLAT_STYLE_VERBOSE)
+		tprints(" */");
 
 	return true;
 }

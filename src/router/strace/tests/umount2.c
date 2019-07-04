@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 Dmitry V. Levin <ldv@altlinux.org>
+ * Copyright (c) 2015-2019 Dmitry V. Levin <ldv@altlinux.org>
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -12,7 +12,7 @@
 #include <sys/mount.h>
 #include <asm/unistd.h>
 
-#ifdef __NR_umount2
+#if defined __NR_umount2 && (!defined __NR_umount || __NR_umount2 != __NR_umount)
 # define TEST_SYSCALL_STR "umount2"
 #else
 # define __NR_umount2 __NR_umount

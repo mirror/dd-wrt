@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 1999-2018 The strace developers.
+ * Copyright (c) 1999-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -21,7 +21,7 @@ SYS_FUNC(ipc)
 	printxval_u(ipccalls, call, NULL);
 
 	unsigned int i;
-	for (i = 1; i < tcp->s_ent->nargs; ++i)
+	for (i = 1; i < n_args(tcp); ++i)
 		tprintf(", %#" PRI_klx, tcp->u_arg[i]);
 
 	return RVAL_DECODED;

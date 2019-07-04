@@ -2,7 +2,7 @@
  * Copyright (c) 2004 Ulrich Drepper <drepper@redhat.com>
  * Copyright (c) 2005 Roland McGrath <roland@redhat.com>
  * Copyright (c) 2012-2015 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2014-2018 The strace developers.
+ * Copyright (c) 2014-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -61,7 +61,9 @@ SYS_FUNC(sched_get_priority_min)
 	return RVAL_DECODED;
 }
 
-SYS_FUNC(sched_rr_get_interval)
+static int
+do_sched_rr_get_interval(struct tcb *const tcp,
+			 const print_obj_by_addr_fn print_ts)
 {
 	if (entering(tcp)) {
 		tprintf("%d, ", (int) tcp->u_arg[0]);
@@ -69,9 +71,21 @@ SYS_FUNC(sched_rr_get_interval)
 		if (syserror(tcp))
 			printaddr(tcp->u_arg[1]);
 		else
-			print_timespec(tcp, tcp->u_arg[1]);
+			print_ts(tcp, tcp->u_arg[1]);
 	}
 	return 0;
+}
+
+#if HAVE_ARCH_TIME32_SYSCALLS
+SYS_FUNC(sched_rr_get_interval_time32)
+{
+	return do_sched_rr_get_interval(tcp, print_timespec32);
+}
+#endif
+
+SYS_FUNC(sched_rr_get_interval_time64)
+{
+	return do_sched_rr_get_interval(tcp, print_timespec64);
 }
 
 static void

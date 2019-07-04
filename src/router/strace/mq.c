@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2004 Ulrich Drepper <drepper@redhat.com>
  * Copyright (c) 2005-2015 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2015-2018 The strace developers.
+ * Copyright (c) 2015-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -26,18 +26,32 @@ SYS_FUNC(mq_open)
 	return RVAL_DECODED | RVAL_FD;
 }
 
-SYS_FUNC(mq_timedsend)
+static int
+do_mq_timedsend(struct tcb *const tcp, const print_obj_by_addr_fn print_ts)
 {
 	printfd(tcp, tcp->u_arg[0]);
 	tprints(", ");
 	printstrn(tcp, tcp->u_arg[1], tcp->u_arg[2]);
 	tprintf(", %" PRI_klu ", %u, ", tcp->u_arg[2],
 		(unsigned int) tcp->u_arg[3]);
-	print_timespec(tcp, tcp->u_arg[4]);
+	print_ts(tcp, tcp->u_arg[4]);
 	return RVAL_DECODED;
 }
 
-SYS_FUNC(mq_timedreceive)
+#if HAVE_ARCH_TIME32_SYSCALLS
+SYS_FUNC(mq_timedsend_time32)
+{
+	return do_mq_timedsend(tcp, print_timespec32);
+}
+#endif
+
+SYS_FUNC(mq_timedsend_time64)
+{
+	return do_mq_timedsend(tcp, print_timespec64);
+}
+
+static int
+do_mq_timedreceive(struct tcb *const tcp, const print_obj_by_addr_fn print_ts)
 {
 	if (entering(tcp)) {
 		printfd(tcp, tcp->u_arg[0]);
@@ -56,10 +70,22 @@ SYS_FUNC(mq_timedreceive)
 		 * whether the syscall has failed or not.
 		 */
 		temporarily_clear_syserror(tcp);
-		print_timespec(tcp, tcp->u_arg[4]);
+		print_ts(tcp, tcp->u_arg[4]);
 		restore_cleared_syserror(tcp);
 	}
 	return 0;
+}
+
+#if HAVE_ARCH_TIME32_SYSCALLS
+SYS_FUNC(mq_timedreceive_time32)
+{
+	return do_mq_timedreceive(tcp, print_timespec32);
+}
+#endif
+
+SYS_FUNC(mq_timedreceive_time64)
+{
+	return do_mq_timedreceive(tcp, print_timespec64);
 }
 
 SYS_FUNC(mq_notify)

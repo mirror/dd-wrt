@@ -2,7 +2,7 @@
  * Check decoding of seccomp SECCOMP_SET_MODE_FILTER.
  *
  * Copyright (c) 2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2018 The strace developers.
+ * Copyright (c) 2016-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -37,12 +37,13 @@ main(void)
 	printf("seccomp(SECCOMP_SET_MODE_FILTER, %s, {len=%u, filter=%p})"
 	       " = %ld %s (%m)\n",
 	       "SECCOMP_FILTER_FLAG_TSYNC|SECCOMP_FILTER_FLAG_LOG|"
-	       "SECCOMP_FILTER_FLAG_SPEC_ALLOW|0xfffffff8",
+	       "SECCOMP_FILTER_FLAG_SPEC_ALLOW|"
+	       "SECCOMP_FILTER_FLAG_NEW_LISTENER|0xfffffff0",
 	       prog->len, prog->filter, rc, errno2name());
 
-	rc = syscall(__NR_seccomp, SECCOMP_SET_MODE_FILTER, -8L, efault);
+	rc = syscall(__NR_seccomp, SECCOMP_SET_MODE_FILTER, -16L, efault);
 	printf("seccomp(SECCOMP_SET_MODE_FILTER, %s, %p) = %ld %s (%m)\n",
-	       "0xfffffff8 /* SECCOMP_FILTER_FLAG_??? */",
+	       "0xfffffff0 /* SECCOMP_FILTER_FLAG_??? */",
 	       efault, rc, errno2name());
 
 	puts("+++ exited with 0 +++");
