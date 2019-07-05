@@ -183,6 +183,17 @@ void dd_loginfo(const char *servicename, const char *fmt, ...)
 	free(str);
 }
 
+void dd_logerror(const char *servicename, const char *fmt, ...)
+{
+	char *str;
+	va_list args;
+	va_start(args, (char *)fmt);
+	vasprintf(&str, fmt, args);
+	va_end(args);
+	dd_syslog(LOG_ERR, "%s : %s", servicename, str);
+	free(str);
+}
+
 void dd_logstart(const char *servicename, int retcode)
 {
 	if (retcode)
