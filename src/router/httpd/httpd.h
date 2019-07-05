@@ -60,6 +60,13 @@ typedef struct {
 	struct Webenvironment *env;
 } persistent_vars;
 
+typedef struct blocklist {
+	char ip[sizeof("000.000.000.000\0") + 1];
+	time_t end;
+	int count;
+	struct blocklist *next;
+};
+
 typedef struct {
 	FILE *fp;
 	int threadid;
