@@ -352,7 +352,7 @@ static int initialize_listen_socket(usockaddr * usaP)
 
 	i = 1;
 	if (setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, (void *)&i, sizeof(i)) < 0) {
-		syslog(LOG_CRIT, "setsockopt SO_REUSEADDR - %m");
+		dd_logerror("httpd", "setsockopt SO_REUSEADDR - %m");
 		perror("setsockopt SO_REUSEADDR");
 		return -1;
 	}
@@ -362,12 +362,63 @@ static int initialize_listen_socket(usockaddr * usaP)
 	}
 
 	if (listen(listen_fd, 1024) < 0) {
-		syslog(LOG_CRIT, "listen - %m");
+		dd_logerror("httpd", "listen - %m");
 		perror("listen");
 		return -1;
 	}
 
 	return listen_fd;
+}
+
+static struct blocklist blocklist_root;
+
+void add_blocklist(char *ip)
+{
+	struct blocklist *entry = blocklist_root.next;
+	struct blocklist *last = &blocklist_root;
+	while (entry) {
+		if (!strcmp(ip, entry->ip)) {
+			entry->count++;
+			if (entry->count == 5) {
+				entry->end = time(NULL) + 5 * 60;
+				dd_loginfo("httpd", "5 failed login attempts reached. block client %s for 5 minutes", ip);
+			}
+			return;
+		}
+		last = entry;
+		entry = entry->next;
+	}
+
+	last->next = malloc(sizeof(*last));
+	strcpy(last->next->ip, ip);
+	last->next->end = 0;
+	last->next->count = 0;
+	last->next->next = NULL;
+}
+
+int check_blocklist(char *ip)
+{
+	time_t cur = time(NULL);
+
+	struct blocklist *entry = blocklist_root.next;
+	struct blocklist *last = &blocklist_root;
+	while (entry) {
+		if (!strcmp(ip, entry->ip)) {
+			if (entry->end > cur) {
+				// each try from a block client extends by another 5 minutes;
+				entry->end = time(NULL) + 5 * 60;
+				return -1;
+			}
+			//time over, free entry
+			last->next = entry->next;
+			free(entry);
+			return 0;
+
+		}
+		last = entry;
+		entry = entry->next;
+	}
+	return 0;
 }
 
 static int auth_check(webs_t conn_fp)
@@ -426,7 +477,8 @@ static int auth_check(webs_t conn_fp)
 #endif
 
 	if (!enc2 || strcmp(enc2, conn_fp->auth_passwd)) {
-		syslog(LOG_INFO, "httpd login failure - bad passwd !\n");
+		dd_loginfo("httpd", "httpd login failure for %s - bad passwd!", conn_fp->http_client_ip);
+		add_blocklist(conn_fp->http_client_ip);
 		while (wfgets(dummy, 64, conn_fp) > 0) {
 			//fprintf(stderr, "flushing %s\n", dummy);
 		}
@@ -465,7 +517,7 @@ static void send_error(webs_t conn_fp, int status, char *title, char *extra_head
 	vasprintf(&text, fmt, args);
 	va_end(args);
 	if (status != 408)
-		dd_syslog(LOG_ERR, "Request Error Code %d: %s\n", status, text);
+		dd_logerror("httpd", "Request Error Code %d: %s\n", status, text);
 	// jimmy, https, 8/4/2003, fprintf -> wfprintf, fflush -> wfflush
 	send_headers(conn_fp, status, title, extra_header, "text/html", -1, NULL, 1);
 	(void)wfprintf(conn_fp, "<HTML><HEAD><TITLE>%d %s</TITLE></HEAD>\n<BODY BGCOLOR=\"#cc9999\"><H4>%d %s</H4>\n", status, title, status, title);
@@ -923,41 +975,41 @@ static void *handle_request(void *arg)
 
 		ISOMAP isomap[] = {
 			{
-			 "de", "german" },	//
+			 "de", "german"},	//
 			{
-			 "es", "spanish" },	//
+			 "es", "spanish"},	//
 			{
-			 "fr", "french" },	//
+			 "fr", "french"},	//
 			{
-			 "hr", "croatian" },	//
+			 "hr", "croatian"},	//
 			{
-			 "hu", "hungarian" },	//
+			 "hu", "hungarian"},	//
 			{
-			 "nl", "dutch" },	//
+			 "nl", "dutch"},	//
 			{
-			 "it", "italian" },	//
+			 "it", "italian"},	//
 			{
-			 "lv", "latvian" },	//
+			 "lv", "latvian"},	//
 			{
-			 "jp", "japanese" },	//
+			 "jp", "japanese"},	//
 			{
-			 "pl", "polish" },	//
+			 "pl", "polish"},	//
 			{
-			 "pt", "portuguese_braz" },	// 
+			 "pt", "portuguese_braz"},	// 
 			{
-			 "ro", "romanian" },	//
+			 "ro", "romanian"},	//
 			{
-			 "ru", "russian", "RU" },	// 
+			 "ru", "russian", "RU"},	// 
 			{
-			 "sl", "slovenian" },	//
+			 "sl", "slovenian"},	//
 			{
-			 "sr", "serbian" },	//
+			 "sr", "serbian"},	//
 			{
-			 "sv", "swedish" },	//
+			 "sv", "swedish"},	//
 			{
-			 "zh", "chinese_simplified" },	//
+			 "zh", "chinese_simplified"},	//
 			{
-			 "tr", "turkish" },	//
+			 "tr", "turkish"},	//
 			NULL
 		};
 		if (nvram_match("langprop", "") || nvram_get("langprop") == NULL) {
@@ -1637,7 +1689,7 @@ int main(int argc, char **argv)
 		listen4_fd = -1;
 	/* If we didn't get any valid sockets, fail. */
 	if (listen4_fd == -1 && listen6_fd == -1) {
-		syslog(LOG_CRIT, "can't bind to any address");
+		dd_logerror("httpd", "can't bind to any address");
 		exit(1);
 	}
 #if !defined(DEBUG)
@@ -1660,7 +1712,7 @@ int main(int argc, char **argv)
 	for (;;) {
 		webs_t conn_fp = safe_malloc(sizeof(webs));
 		if (!conn_fp) {
-			dd_syslog(LOG_ERR, "Out of memory while creating new connection");
+			dd_logerror("httpd", "Out of memory while creating new connection");
 			continue;
 		}
 		bzero(conn_fp, sizeof(webs));
@@ -1712,6 +1764,11 @@ int main(int argc, char **argv)
 			return -1;
 		}
 		get_client_ip_mac(conn_fp->conn_fd, conn_fp);
+		if (check_blocklist(conn_fp->http_client_ip)) {
+			dd_loginfo("httpd", "client %s is blocked, terminate connection", conn_fp->http_client_ip);
+			close(conn_fp->conn_fd);
+			continue;
+		}
 #ifdef HAVE_HTTPS
 		if (DO_SSL(conn_fp)) {
 			if (action == ACT_WEB_UPGRADE) {	// We don't want user to use web (https) during web (http) upgrade.
@@ -1744,10 +1801,6 @@ int main(int argc, char **argv)
 			SSL_set_fd(conn_fp->ssl, conn_fp->conn_fd);
 			r = SSL_accept(conn_fp->ssl);
 			if (r <= 0) {
-				//berr_exit("SSL accept error");
-//                              ERR_print_errors_fp(stderr);
-//                              fprintf(stderr,"ssl accept return %d, ssl error %d %d\n",r,SSL_get_error(ssl,r),RAND_status());
-//				dd_syslog(LOG_ERR, "SSL accept error");
 				close(conn_fp->conn_fd);
 
 				SSL_free(conn_fp->ssl);
