@@ -467,12 +467,14 @@ static int auth_check(webs_t conn_fp)
 	struct crypt_data data;
 	enc1 = crypt_r(authinfo, (const char *)conn_fp->auth_userid, &data);
 #endif
+	char dummy[128];
 	if (!enc1 || strcmp(enc1, conn_fp->auth_userid)) {
 		dd_loginfo("httpd", "httpd login failure for %s", conn_fp->http_client_ip);
 		add_blocklist(conn_fp->http_client_ip);
+		while (wfgets(dummy, 64, conn_fp) > 0) {
+		}
 		goto out;
 	}
-	char dummy[128];
 #ifdef __UCLIBC__
 	enc2 = crypt(authpass, (const char *)conn_fp->auth_passwd);
 #else
@@ -483,7 +485,6 @@ static int auth_check(webs_t conn_fp)
 		dd_loginfo("httpd", "httpd login failure for %s", conn_fp->http_client_ip);
 		add_blocklist(conn_fp->http_client_ip);
 		while (wfgets(dummy, 64, conn_fp) > 0) {
-			//fprintf(stderr, "flushing %s\n", dummy);
 		}
 		goto out;
 	}
