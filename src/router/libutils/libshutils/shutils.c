@@ -1230,15 +1230,14 @@ static void dump_blocklist(void)
 	struct blocklist *entry = blocklist_root.next;
 	struct blocklist *last = &blocklist_root;
 	FILE *fp = NULL;
-	if (entry) {
-		fp = fopen("/tmp/blocklist", "wb");
-	}
-	while (entry) {
-		fwrite(entry, sizeof(struct blocklist) - sizeof(void *), 1, fp);
-		entry = entry->next;
-	}
-	if (fp)
+	fp = fopen("/tmp/blocklist", "wb");
+	if (fp) {
+		while (entry) {
+			fwrite(entry, sizeof(struct blocklist) - sizeof(void *), 1, fp);
+			entry = entry->next;
+		}
 		fclose(fp);
+	}
 	pthread_mutex_unlock(&mutex_block);
 }
 
