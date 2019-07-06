@@ -297,10 +297,10 @@ typedef struct blocklist {
 	struct blocklist *next;
 };
 
-void add_blocklist(char *service, char *ip);
-int check_blocklist(char *service, char *ip);
-void add_blocklist_sock(char *service, int socket);
-int check_blocklist_sock(char *service, int socket);
+void add_blocklist(const char *service, char *ip);
+int check_blocklist(const char *service, char *ip);
+void add_blocklist_sock(const char *service, int socket);
+int check_blocklist_sock(const char *service, int socket);
 char *get_ipfromsock(int socket, char *ip);
 
 #endif				/* _shutils_h_ */
