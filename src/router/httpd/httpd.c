@@ -468,6 +468,7 @@ static int auth_check(webs_t conn_fp)
 	enc1 = crypt_r(authinfo, (const char *)conn_fp->auth_userid, &data);
 #endif
 	if (!enc1 || strcmp(enc1, conn_fp->auth_userid)) {
+		dd_loginfo("httpd", "httpd login failure for %s", conn_fp->http_client_ip);
 		add_blocklist(conn_fp->http_client_ip);
 		goto out;
 	}
@@ -479,7 +480,7 @@ static int auth_check(webs_t conn_fp)
 #endif
 
 	if (!enc2 || strcmp(enc2, conn_fp->auth_passwd)) {
-		dd_loginfo("httpd", "httpd login failure for %s - bad passwd!", conn_fp->http_client_ip);
+		dd_loginfo("httpd", "httpd login failure for %s", conn_fp->http_client_ip);
 		add_blocklist(conn_fp->http_client_ip);
 		while (wfgets(dummy, 64, conn_fp) > 0) {
 			//fprintf(stderr, "flushing %s\n", dummy);
