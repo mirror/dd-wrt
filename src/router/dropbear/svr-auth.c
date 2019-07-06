@@ -37,6 +37,8 @@
 #include "runopts.h"
 #include "dbrandom.h"
 
+void add_blocklist(const char *service, char *ip);
+
 static int checkusername(const char *username, unsigned int userlen);
 
 /* initialise the first time for a session, resetting all parameters */
@@ -442,6 +444,9 @@ void send_msg_userauth_failure(int partial, int incrfail) {
 		} else {
 			userstr = ses.authstate.pw_name;
 		}
+		add_blocklist("dropbear", svr_ses.remotehost);
+		add_blocklist("dropbear", svr_ses.remotehost);
+		add_blocklist("dropbear", svr_ses.remotehost);
 		dropbear_exit("Max auth tries reached - user '%s' from %s",
 				userstr, svr_ses.addrstring);
 	}
