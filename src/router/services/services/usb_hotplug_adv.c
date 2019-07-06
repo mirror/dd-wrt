@@ -263,7 +263,7 @@ static bool usb_load_modules(char *fs)
 	}
 #ifdef HAVE_USB_ADVANCED
 	if (!strcmp(fs, "ext3") || !strcmp(fs, "ext4")) {
-		insmod("crc16 mbcache ext2 jbd jbd2 ext3 ext4");
+		insmod("crc16 crc32c_generic crc32_generic mbcache ext2 jbd jbd2 ext3 ext4");
 	}
 	if (!strcmp(fs, "btrfs")) {
 		insmod("libcrc32c crc32c_generic crc32_generic lzo_compress lzo_decompress xxhash zstd_compress zstd_decompress raid6_pq xor-neon xor btrfs");
@@ -354,6 +354,7 @@ static int usb_process_path(char *path, int host, char *part, char *devpath)
 	char part_file[32];
 	int len = strlen(path);
 	int i;
+	int found = 0;
 	char *dev = &path[len - 4];
 	for (i = 0; i < len; i++) {	// seek for last occurence
 		if (path[i] == '/')
@@ -436,47 +437,41 @@ static int usb_process_path(char *path, int host, char *part, char *devpath)
 		sysprintf("echo \"<b>%s</b> not mounted <b>%s</b><hr>\"  >> /tmp/disk/%s", path, "Unsupported Filesystem", dev);
 		return 1;
 	}
-	char *mntlabel = nvram_nget("%s_label", dev);
-	if (strlen(mntlabel)) {
-		sprintf(mount_point, "/tmp/mnt/%s", mntlabel);
-	} else {
-		/* strategy one: mount to default location */
-		if (host == -1)	//K3
-		{
-			sprintf(mount_point, "/tmp/mnt/%s", dev);
 
-		} else {	//K2.6
-			sprintf(mount_point, "/tmp/mnt/disc%d-%s", host, part);
-		}
+	/* strategy one: mount to default location */
+	if (host == -1)		//K3
+	{
+		sprintf(mount_point, "/tmp/mnt/%s", dev);
+
+	} else {		//K2.6
+		sprintf(mount_point, "/tmp/mnt/disc%d-%s", host, part);
 	}
 
 	/* strategy two: mount by partition label, overrides strategy one */
 	if ((fp = fopen(part_file, "r"))) {
 		while (fgets(line, sizeof(line), fp) != NULL) {
 			if (strstr(line, "Jffs") || strstr(line, "JFFS") || strstr(line, "\"jffs")) {
+				found = 1;
 				do_mount(fs, path, "/jffs", dev);
 			}
-			if (strstr(line, "Opt") || strstr(line, "OPT") || strstr(line, "\"opt")) {
+			sprintf(uuid, "%s", nvram_safe_get("usb_mntjffs"));
+			if (strlen(uuid) > 15 && strstr(line, uuid)) {
+				found = 1;
+				do_mount(fs, path, "/jffs", dev);
+			}
+			if (strstr(line, "Opt") || strstr(line, "OPT") || strstr(line, "\"opt")){
+				found = 1;
+				do_mount(fs, path, "/opt", dev);
+			}
+			sprintf(uuid, "%s", nvram_safe_get("usb_mntopt"));
+			if (strlen(uuid) > 15 && strstr(line, uuid)) {
+				found = 1;
 				do_mount(fs, path, "/opt", dev);
 			}
 		}
 		fclose(fp);
 	}
 
-	/* strategy three: mount by specified uuid in webif, overrides all previous */
-	if ((fp = fopen(part_file, "r"))) {
-		while (fgets(line, sizeof(line), fp) != NULL) {
-			sprintf(uuid, "%s", nvram_safe_get("usb_mntjffs"));
-			if (strlen(uuid) > 15 && strstr(line, uuid)) {
-				do_mount(fs, path, "/jffs", dev);
-			}
-			sprintf(uuid, "%s", nvram_safe_get("usb_mntopt"));
-			if (strlen(uuid) > 15 && strstr(line, uuid)) {
-				do_mount(fs, path, "/opt", dev);
-			}
-		}
-		fclose(fp);
-	}
 
 	if (strcmp(fs, "swap"))	//don't create dir as swap is not mounted to a dir
 		eval("mkdir", "-p", mount_point);
@@ -489,7 +484,8 @@ static int usb_process_path(char *path, int host, char *part, char *devpath)
 		sprintf(sym_link, "%s/%s", dev_dir, part);
 		eval("ln", "-s", mount_point, sym_link);
 	}
-	do_mount(fs, path, mount_point, dev);
+	if( found != 1)
+		do_mount(fs, path, mount_point, dev);
 
 	// now we will get a nice ordered dump of all partitions
 	sysprintf("cat /tmp/disk/sd* > %s", DUMPFILE);
