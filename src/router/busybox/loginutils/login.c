@@ -65,7 +65,6 @@
 #include "common_bufsiz.h"
 #include <syslog.h>
 
-int loginfail=0;
 #if ENABLE_SELINUX
 # include <selinux/selinux.h>  /* for is_selinux_enabled()  */
 # include <selinux/get_context_list.h> /* for get_default_context() */
@@ -508,7 +507,11 @@ int login_main(int argc UNUSED_PARAM, char **argv)
 		bb_do_delay(LOGIN_FAIL_DELAY);
 		/* TODO: doesn't sound like correct English phrase to me */
 		puts("Login incorrect");
-		loginfail = 1;
+		FILE *fp = fopen("/tmp/loginfail","wb");
+		if (fp) {
+			putc(1,fp);
+			fclose(fp);
+		}
 		if (++count == 3) {
 			syslog(LOG_WARNING, "invalid password for '%s'%s",
 						username, fromhost);
