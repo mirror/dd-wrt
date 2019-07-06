@@ -1,6 +1,6 @@
 DROPBEAR_OPTS = $(MIPS16_OPT) -DDISABLE_X11FWD
 
-dropbear-configure:
+dropbear-configure: nvram libutils
 	cd dropbear && autoconf
 	cd dropbear && ./configure --host=$(ARCH)-linux --disable-pam --disable-harden --disable-lastlog --disable-utmp --disable-zlib --disable-utmpx --disable-wtmp --disable-wtmpx --enable-bundled-libtom --disable-pututxline CC="$(CC)" CPPFLAGS="-DNEED_PRINTF -I../zlib $(COPTS) $(MIPS16_OPT) $(DROPBEAR_OPTS) -DARGTYPE=3 -DXFREE=free -L../zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections  -L$(TOP)/libutils -L$(TOP)/nvram -lshutils -lnvram" host_alias=$(ARCH)-linux ac_cv_func_getpass=yes
 
