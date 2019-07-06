@@ -30,6 +30,9 @@
 #include <termios.h>
 #include <sys/ioctl.h>
 #include <sys/time.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
 #include <net/ethernet.h>
 #include <dirent.h>
 #include <bcmnvram.h>
@@ -1212,6 +1215,80 @@ int writevaproc(char *value, char *fmt, ...)
 	vsnprintf(varbuf, sizeof(varbuf), fmt, args);
 	va_end(args);
 	return writeproc(varbuf, value);
+}
+
+static struct blocklist blocklist_root;
+
+void add_blocklist(char *ip)
+{
+	struct blocklist *entry = blocklist_root.next;
+	struct blocklist *last = &blocklist_root;
+	while (entry) {
+		if (!strcmp(ip, entry->ip)) {
+			entry->count++;
+			if (entry->count == 5) {
+				entry->end = time(NULL) + 5 * 60;
+				dd_loginfo("httpd", "5 failed login attempts reached. block client %s for 5 minutes", ip);
+			}
+			return;
+		}
+		last = entry;
+		entry = entry->next;
+	}
+	last->next = malloc(sizeof(*last));
+	strcpy(last->next->ip, ip);
+	last->next->end = 0;
+	last->next->count = 0;
+	last->next->next = NULL;
+}
+
+void add_blocklist_sock(int conn_fd)
+{
+
+	char ip[sizeof("000.000.000.000\0") + 1];
+	struct sockaddr_in sa;
+	socklen_t len = sizeof(struct sockaddr_in);
+	getpeername(conn_fd, (struct sockaddr *)&sa, &len);
+	inet_ntop(AF_INET, &sa.sin_addr, ip, sizeof(ip));
+	add_blocklist(ip);
+}
+
+int check_blocklist(char *ip)
+{
+	time_t cur = time(NULL);
+
+	struct blocklist *entry = blocklist_root.next;
+	struct blocklist *last = &blocklist_root;
+	while (entry) {
+		if (!strcmp(ip, entry->ip)) {
+			if (entry->end > cur) {
+				// each try from a block client extends by another 5 minutes;
+				entry->end = time(NULL) + 5 * 60;
+				return -1;
+			}
+			//time over, free entry
+			if (entry->count == 5) {
+				last->next = entry->next;
+				free(entry);
+			}
+			return 0;
+
+		}
+		last = entry;
+		entry = entry->next;
+	}
+	return 0;
+}
+
+int check_blocklist_sock(int conn_fd)
+{
+
+	char ip[sizeof("000.000.000.000\0") + 1];
+	struct sockaddr_in sa;
+	socklen_t len = sizeof(struct sockaddr_in);
+	getpeername(conn_fd, (struct sockaddr *)&sa, &len);
+	inet_ntop(AF_INET, &sa.sin_addr, ip, sizeof(ip));
+	return check_blocklist(ip);
 }
 
 #ifdef MEMDEBUG
