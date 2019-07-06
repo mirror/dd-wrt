@@ -1357,9 +1357,11 @@ int check_blocklist(const char *service, char *ip)
 				dd_loginfo(service, "time is over for client %s, so free it\n", &entry->ip[0]);
 				last->next = entry->next;
 				free(entry);
+				change = 1;
 			}
 			pthread_mutex_unlock(&mutex_block);
-			dump_blocklist();
+			if (change)
+				dump_blocklist();
 			return 0;
 		}
 		//time over, free entry
