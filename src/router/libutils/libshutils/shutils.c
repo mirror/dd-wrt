@@ -1218,6 +1218,38 @@ int writevaproc(char *value, char *fmt, ...)
 	return writeproc(varbuf, value);
 }
 
+char *get_ipfromsock(int socket, char *ip)
+{
+
+	struct sockaddr_in sa;
+	socklen_t len = sizeof(struct sockaddr_in);
+	getpeername(socket, (struct sockaddr *)&sa, &len);
+	inet_ntop(AF_INET, &sa.sin_addr, ip, sizeof("000.000.000.000\0") + 1);
+	return ip;
+}
+
+#ifdef HAVE_MICRO
+void add_blocklist(const char *service, char *ip)
+{
+
+}
+
+void add_blocklist_sock(const char *service, int sock)
+{
+
+}
+
+int check_blocklist(const char *service, char *ip)
+{
+	return 0;
+}
+
+int check_blocklist_sock(const char *service, int sock)
+{
+	return 0;
+}
+
+#else
 #include <pthread.h>
 
 #define BLOCKTIME 5
@@ -1294,16 +1326,6 @@ void add_blocklist(const char *service, char *ip)
 	dump_blocklist();
 }
 
-char *get_ipfromsock(int socket, char *ip)
-{
-
-	struct sockaddr_in sa;
-	socklen_t len = sizeof(struct sockaddr_in);
-	getpeername(socket, (struct sockaddr *)&sa, &len);
-	inet_ntop(AF_INET, &sa.sin_addr, ip, sizeof("000.000.000.000\0") + 1);
-	return ip;
-}
-
 void add_blocklist_sock(const char *service, int conn_fd)
 {
 
@@ -1365,7 +1387,7 @@ int check_blocklist_sock(const char *service, int conn_fd)
 	get_ipfromsock(conn_fd, ip);
 	return check_blocklist(service, ip);
 }
-
+#endif
 #ifdef MEMDEBUG
 /* some special code for memory leak tracking */
 
