@@ -288,37 +288,18 @@ char *getentrybyidx(char *buf, char *list, int idx);
     } \
 }
 #endif
+#include <sys/time.h>
 
-#ifdef vxworks
+typedef struct blocklist {
+	char ip[sizeof("000.000.000.000\0") + 1];
+	time_t end;
+	int count;
+	struct blocklist *next;
+};
 
-#include <inetLib.h>
-#define inet_aton(a, n) ((inet_aton((a), (n)) == ERROR) ? 0 : 1)
-#define inet_ntoa(n) ({ char a[INET_ADDR_LEN]; inet_ntoa_b ((n), a); a; })
-
-#include <typedefs.h>
-#include <bcmutils.h>
-#define ether_atoe(a, e) bcm_ether_atoe((a), (e))
-#define ether_etoa(e, a) bcm_ether_ntoa((e), (a))
-
-/*
- * These declarations are not available where you would expect them 
- */
-extern int vsnprintf(char *, size_t, const char *, va_list);
-extern int snprintf(char *str, size_t count, const char *fmt, ...);
-extern char *strdup(const char *);
-extern char *strsep(char **stringp, char *delim);
-extern int strcasecmp(const char *s1, const char *s2);
-extern int strncasecmp(const char *s1, const char *s2, size_t n);
-
-/*
- * Neither are socket() and connect() 
- */
-#include <sockLib.h>
-
-#ifdef DEBUG
-#undef dprintf
-#define dprintf printf
-#endif
-#endif
+void add_blocklist(char *ip);
+int check_blocklist(char *ip);
+void add_blocklist_sock(int socket);
+int check_blocklist_sock(int socket);
 
 #endif				/* _shutils_h_ */

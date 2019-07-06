@@ -370,58 +370,6 @@ static int initialize_listen_socket(usockaddr * usaP)
 	return listen_fd;
 }
 
-static struct blocklist blocklist_root;
-
-void add_blocklist(char *ip)
-{
-	struct blocklist *entry = blocklist_root.next;
-	struct blocklist *last = &blocklist_root;
-	while (entry) {
-		if (!strcmp(ip, entry->ip)) {
-			entry->count++;
-			if (entry->count == 5) {
-				entry->end = time(NULL) + 5 * 60;
-				dd_loginfo("httpd", "5 failed login attempts reached. block client %s for 5 minutes", ip);
-			}
-			return;
-		}
-		last = entry;
-		entry = entry->next;
-	}
-	last->next = malloc(sizeof(*last));
-	strcpy(last->next->ip, ip);
-	last->next->end = 0;
-	last->next->count = 0;
-	last->next->next = NULL;
-}
-
-int check_blocklist(char *ip)
-{
-	time_t cur = time(NULL);
-
-	struct blocklist *entry = blocklist_root.next;
-	struct blocklist *last = &blocklist_root;
-	while (entry) {
-		if (!strcmp(ip, entry->ip)) {
-			if (entry->end > cur) {
-				// each try from a block client extends by another 5 minutes;
-				entry->end = time(NULL) + 5 * 60;
-				return -1;
-			}
-			//time over, free entry
-			if (entry->count == 5) {
-				last->next = entry->next;
-				free(entry);
-			}
-			return 0;
-
-		}
-		last = entry;
-		entry = entry->next;
-	}
-	return 0;
-}
-
 static int auth_check(webs_t conn_fp)
 {
 #ifndef HAVE_MICRO
