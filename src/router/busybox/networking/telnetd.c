@@ -119,7 +119,7 @@
 #include "common_bufsiz.h"
 #include <syslog.h>
 
-extern int loginfail;
+int loginfail;
 void add_blocklist_sock(const char *service, int socket);
 int check_blocklist_sock(const char *service, int socket);
 
@@ -762,6 +762,7 @@ int telnetd_main(int argc UNUSED_PARAM, char **argv)
 	 * before each select. Can be a problem with 500+ connections. */
 	ts = G.sessions;
 	while (ts) {
+
 		struct tsession *next = ts->next; /* in case we free ts */
 		if (ts->shell_pid == -1) {
 			/* Child died and we detected that */
@@ -775,6 +776,27 @@ int telnetd_main(int argc UNUSED_PARAM, char **argv)
 				FD_SET(ts->sockfd_write, &wrfdset);
 			if (ts->size2 < BUFSIZE) /* can read from pty */
 				FD_SET(ts->ptyfd, &rdfdset);
+			if (!loginfail) {
+				FILE *lfp = fopen("/tmp/loginfail","rb");
+				if (lfp) {
+					loginfail = getc(lfp);
+					fclose(lfp);
+				}
+			}
+			if (loginfail) {
+				FILE *fp = fopen("/tmp/loginfail","wb");
+				if (fp) {
+					putc(0,fp);
+					fclose(fp);
+				}
+				loginfail=0;
+			        // failed login mean we already tried 3 times
+				add_blocklist_sock("telnetd", ts->sockfd_read);
+			}
+			if (FD_ISSET(ts->sockfd_read, &rdfdset) && check_blocklist_sock("telnetd",ts->sockfd_read))
+			{
+				goto kill_session;
+			}
 		}
 		ts = next;
 	}
@@ -831,6 +853,11 @@ int telnetd_main(int argc UNUSED_PARAM, char **argv)
 	while (ts) { /* For all sessions... */
 		struct tsession *next = ts->next; /* in case we free ts */
 
+		if (FD_ISSET(ts->sockfd_read, &rdfdset) && check_blocklist_sock("telnetd",ts->sockfd_read))
+		{
+			goto kill_session;
+		}
+
 		if (/*ts->size1 &&*/ FD_ISSET(ts->ptyfd, &wrfdset)) {
 			/* Write to pty from buffer 1 */
 			count = safe_write_to_pty_decode_iac(ts);
@@ -839,10 +866,6 @@ int telnetd_main(int argc UNUSED_PARAM, char **argv)
 					goto skip1;
 				goto kill_session;
 			}
-		}
-		if (FD_ISSET(ts->sockfd_read, &rdfdset) && check_blocklist_sock("telnetd",ts->sockfd_read))
-		{
-			goto kill_session;
 		}
 
  skip1:
@@ -917,13 +940,6 @@ int telnetd_main(int argc UNUSED_PARAM, char **argv)
 		ts = next;
 		continue;
  kill_session:
-		if (loginfail) {
-		loginfail=0;
-		// failed login mean we already tried 3 times
-		add_blocklist_sock("telnetd", ts->sockfd_read);
-		add_blocklist_sock("telnetd", ts->sockfd_read);
-		add_blocklist_sock("telnetd", ts->sockfd_read);
-		}
 		if (ts->shell_pid > 0)
 			update_utmp_DEAD_PROCESS(ts->shell_pid);
 		free_session(ts);
