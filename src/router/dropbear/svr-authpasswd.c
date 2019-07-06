@@ -32,7 +32,6 @@
 #include "runopts.h"
 
 #if DROPBEAR_SVR_PASSWORD_AUTH
-void add_blocklist(const char *service, char *ip);
 
 /* not constant time when strings are differing lengths. 
  string content isn't leaked, and crypt hashes are predictable length. */
@@ -114,7 +113,6 @@ void svr_auth_password(int valid_user) {
 				svr_ses.addrstring);
 		send_msg_userauth_success();
 	} else {
-		add_blocklist("dropbear", svr_ses.remotehost);
 		dropbear_log(LOG_WARNING,
 				"Bad password attempt for '%s' from %s",
 				ses.authstate.pw_name,
