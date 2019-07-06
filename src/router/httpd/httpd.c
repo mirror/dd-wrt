@@ -388,7 +388,6 @@ void add_blocklist(char *ip)
 		last = entry;
 		entry = entry->next;
 	}
-
 	last->next = malloc(sizeof(*last));
 	strcpy(last->next->ip, ip);
 	last->next->end = 0;
@@ -410,8 +409,10 @@ int check_blocklist(char *ip)
 				return -1;
 			}
 			//time over, free entry
-			last->next = entry->next;
-			free(entry);
+			if (entry->count == 5) {
+				last->next = entry->next;
+				free(entry);
+			}
 			return 0;
 
 		}
@@ -467,6 +468,7 @@ static int auth_check(webs_t conn_fp)
 	enc1 = crypt_r(authinfo, (const char *)conn_fp->auth_userid, &data);
 #endif
 	if (!enc1 || strcmp(enc1, conn_fp->auth_userid)) {
+		add_blocklist(conn_fp->http_client_ip);
 		goto out;
 	}
 	char dummy[128];
