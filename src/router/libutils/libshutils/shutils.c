@@ -1219,7 +1219,7 @@ int writevaproc(char *value, char *fmt, ...)
 
 static struct blocklist blocklist_root;
 
-void add_blocklist(char *ip)
+void add_blocklist(char *service, char *ip)
 {
 	struct blocklist *entry = blocklist_root.next;
 	struct blocklist *last = &blocklist_root;
@@ -1228,7 +1228,7 @@ void add_blocklist(char *ip)
 			entry->count++;
 			if (entry->count == 5) {
 				entry->end = time(NULL) + 5 * 60;
-				dd_loginfo("httpd", "5 failed login attempts reached. block client %s for 5 minutes", ip);
+				dd_loginfo(service, "5 failed login attempts reached. block client %s for 5 minutes", ip);
 			}
 			return;
 		}
@@ -1242,18 +1242,25 @@ void add_blocklist(char *ip)
 	last->next->next = NULL;
 }
 
-void add_blocklist_sock(int conn_fd)
+char *get_ipfromsock(int socket, char *ip)
+{
+
+	struct sockaddr_in sa;
+	socklen_t len = sizeof(struct sockaddr_in);
+	getpeername(socket, (struct sockaddr *)&sa, &len);
+	inet_ntop(AF_INET, &sa.sin_addr, ip, sizeof("000.000.000.000\0") + 1);
+	return ip;
+}
+
+void add_blocklist_sock(char *service, int conn_fd)
 {
 
 	char ip[sizeof("000.000.000.000\0") + 1];
-	struct sockaddr_in sa;
-	socklen_t len = sizeof(struct sockaddr_in);
-	getpeername(conn_fd, (struct sockaddr *)&sa, &len);
-	inet_ntop(AF_INET, &sa.sin_addr, ip, sizeof(ip));
-	add_blocklist(ip);
+	get_ipfromsock(conn_fd, ip);
+	add_blocklist(service, ip);
 }
 
-int check_blocklist(char *ip)
+int check_blocklist(char *service, char *ip)
 {
 	time_t cur = time(NULL);
 
@@ -1264,6 +1271,7 @@ int check_blocklist(char *ip)
 			if (entry->end > cur) {
 				// each try from a block client extends by another 5 minutes;
 				entry->end = time(NULL) + 5 * 60;
+				dd_loginfo(service, "client %s is blocked, terminate connection", ip);
 				return -1;
 			}
 			//time over, free entry
@@ -1280,15 +1288,12 @@ int check_blocklist(char *ip)
 	return 0;
 }
 
-int check_blocklist_sock(int conn_fd)
+int check_blocklist_sock(char *service, int conn_fd)
 {
 
 	char ip[sizeof("000.000.000.000\0") + 1];
-	struct sockaddr_in sa;
-	socklen_t len = sizeof(struct sockaddr_in);
-	getpeername(conn_fd, (struct sockaddr *)&sa, &len);
-	inet_ntop(AF_INET, &sa.sin_addr, ip, sizeof(ip));
-	return check_blocklist(ip);
+	get_ipfromsock(conn_fd, ip);
+	return check_blocklist(service, ip);
 }
 
 #ifdef MEMDEBUG

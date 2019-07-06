@@ -418,7 +418,7 @@ static int auth_check(webs_t conn_fp)
 	char dummy[128];
 	if (!enc1 || strcmp(enc1, conn_fp->auth_userid)) {
 		dd_loginfo("httpd", "httpd login failure for %s", conn_fp->http_client_ip);
-		add_blocklist(conn_fp->http_client_ip);
+		add_blocklist("httpd", conn_fp->http_client_ip);
 		while (wfgets(dummy, 64, conn_fp) > 0) {
 		}
 		goto out;
@@ -431,7 +431,7 @@ static int auth_check(webs_t conn_fp)
 
 	if (!enc2 || strcmp(enc2, conn_fp->auth_passwd)) {
 		dd_loginfo("httpd", "httpd login failure for %s", conn_fp->http_client_ip);
-		add_blocklist(conn_fp->http_client_ip);
+		add_blocklist("httpd", conn_fp->http_client_ip);
 		while (wfgets(dummy, 64, conn_fp) > 0) {
 		}
 		goto out;
@@ -1308,10 +1308,7 @@ static void *handle_request(void *arg)
 static void			// add by honor 2003-04-16
 get_client_ip_mac(int conn_fd, webs_t conn_fp)
 {
-	struct sockaddr_in sa;
-	socklen_t len = sizeof(struct sockaddr_in);
-	getpeername(conn_fd, (struct sockaddr *)&sa, &len);
-	inet_ntop(AF_INET, &sa.sin_addr, conn_fp->http_client_ip, sizeof(conn_fp->http_client_ip));
+	get_ipfromsock(conn_fd, conn_fp->http_client_ip);
 	get_mac_from_ip(conn_fp->http_client_mac, conn_fp->http_client_ip);
 }
 
@@ -1716,8 +1713,7 @@ int main(int argc, char **argv)
 			return -1;
 		}
 		get_client_ip_mac(conn_fp->conn_fd, conn_fp);
-		if (check_blocklist(conn_fp->http_client_ip)) {
-			dd_loginfo("httpd", "client %s is blocked, terminate connection", conn_fp->http_client_ip);
+		if (check_blocklist("httpd", conn_fp->http_client_ip)) {
 			close(conn_fp->conn_fd);
 			continue;
 		}
