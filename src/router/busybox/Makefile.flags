@@ -140,6 +140,8 @@ else
 LDLIBS += m
 endif
 
+LDLIBS += shutils nvram
+
 # libpam may use libpthread, libdl and/or libaudit.
 # On some platforms that requires an explicit -lpthread, -ldl, -laudit.
 # However, on *other platforms* it fails when some of those flags
@@ -194,6 +196,9 @@ ifneq ($(CONFIG_EXTRA_LDFLAGS),)
 LDFLAGS += $(strip $(subst ",,$(CONFIG_EXTRA_LDFLAGS)))
 #"))
 endif
+
+LDFLAGS += -L$(TOP)/libutils -L$(TOP)/nvram
+
 
 ifneq ($(CONFIG_EXTRA_LDLIBS),)
 LDLIBS += $(strip $(subst ",,$(CONFIG_EXTRA_LDLIBS)))
