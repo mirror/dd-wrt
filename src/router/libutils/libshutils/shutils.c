@@ -1217,18 +1217,20 @@ int writevaproc(char *value, char *fmt, ...)
 	return writeproc(varbuf, value);
 }
 
+#define BLOCKTIME 5 
 static struct blocklist blocklist_root;
 
-void add_blocklist(char *service, char *ip)
+void add_blocklist(const char *service, char *ip)
 {
 	struct blocklist *entry = blocklist_root.next;
 	struct blocklist *last = &blocklist_root;
+	dd_loginfo(service, "blocklist check for %s\n",ip);
 	while (entry) {
 		if (!strcmp(ip, entry->ip)) {
 			entry->count++;
-			if (entry->count == 5) {
-				entry->end = time(NULL) + 5 * 60;
-				dd_loginfo(service, "5 failed login attempts reached. block client %s for 5 minutes", ip);
+			if (entry->count > 4) {
+				entry->end = time(NULL) + BLOCKTIME * 60;
+				dd_loginfo(service, "5 failed login attempts reached. block client %s for %d minutes", ip, BLOCKTIME);
 			}
 			return;
 		}
@@ -1252,7 +1254,7 @@ char *get_ipfromsock(int socket, char *ip)
 	return ip;
 }
 
-void add_blocklist_sock(char *service, int conn_fd)
+void add_blocklist_sock(const char *service, int conn_fd)
 {
 
 	char ip[sizeof("000.000.000.000\0") + 1];
@@ -1260,7 +1262,7 @@ void add_blocklist_sock(char *service, int conn_fd)
 	add_blocklist(service, ip);
 }
 
-int check_blocklist(char *service, char *ip)
+int check_blocklist(const char *service, char *ip)
 {
 	time_t cur = time(NULL);
 
@@ -1270,12 +1272,12 @@ int check_blocklist(char *service, char *ip)
 		if (!strcmp(ip, entry->ip)) {
 			if (entry->end > cur) {
 				// each try from a block client extends by another 5 minutes;
-				entry->end = time(NULL) + 5 * 60;
+				entry->end = time(NULL) + BLOCKTIME * 60;
 				dd_loginfo(service, "client %s is blocked, terminate connection", ip);
 				return -1;
 			}
 			//time over, free entry
-			if (entry->count == 5) {
+			if (entry->count > 4) {
 				last->next = entry->next;
 				free(entry);
 			}
@@ -1288,7 +1290,7 @@ int check_blocklist(char *service, char *ip)
 	return 0;
 }
 
-int check_blocklist_sock(char *service, int conn_fd)
+int check_blocklist_sock(const char *service, int conn_fd)
 {
 
 	char ip[sizeof("000.000.000.000\0") + 1];
