@@ -35,6 +35,7 @@
 #include <netinet/in.h>
 #include <net/ethernet.h>
 #include <dirent.h>
+#include <sys/mman.h>
 #include <bcmnvram.h>
 #include <shutils.h>
 #include <utils.h>
@@ -1217,31 +1218,81 @@ int writevaproc(char *value, char *fmt, ...)
 	return writeproc(varbuf, value);
 }
 
-#define BLOCKTIME 5 
-static struct blocklist blocklist_root;
+#include <pthread.h>
 
-void add_blocklist(const char *service, char *ip)
+#define BLOCKTIME 5
+static struct blocklist blocklist_root;
+static pthread_mutex_t mutex_block = PTHREAD_MUTEX_INITIALIZER;
+
+static void dump_blocklist(void)
+{
+	pthread_mutex_lock(&mutex_block);
+	struct blocklist *entry = blocklist_root.next;
+	struct blocklist *last = &blocklist_root;
+	FILE *fp = NULL;
+	if (entry) {
+		fp = fopen("/tmp/blocklist", "wb");
+	}
+	while (entry) {
+		fwrite(entry, sizeof(struct blocklist) - sizeof(void *), 1, fp);
+		entry = entry->next;
+	}
+	if (fp)
+		fclose(fp);
+	pthread_mutex_unlock(&mutex_block);
+}
+
+static void init_blocklist(void)
 {
 	struct blocklist *entry = blocklist_root.next;
 	struct blocklist *last = &blocklist_root;
-	dd_loginfo(service, "blocklist check for %s\n",ip);
+	if (entry)
+		return;
+	pthread_mutex_lock(&mutex_block);
+	FILE *fp = fopen("/tmp/blocklist", "rb");
+	if (fp) {
+		while (!feof(fp)) {
+			last->next = malloc(sizeof(*entry));
+			int elems = fread(last->next, sizeof(struct blocklist) - sizeof(void *), 1, fp);
+			if (elems < 1) {
+				free(last->next);
+				last->next = NULL;
+				break;
+			}
+			last = last->next;
+		}
+		fclose(fp);
+	}
+	pthread_mutex_unlock(&mutex_block);
+}
+
+void add_blocklist(const char *service, char *ip)
+{
+	init_blocklist();
+	pthread_mutex_lock(&mutex_block);
+	struct blocklist *entry = blocklist_root.next;
+	struct blocklist *last = &blocklist_root;
 	while (entry) {
-		if (!strcmp(ip, entry->ip)) {
+		if (!strcmp(ip, &entry->ip[0])) {
 			entry->count++;
 			if (entry->count > 4) {
 				entry->end = time(NULL) + BLOCKTIME * 60;
 				dd_loginfo(service, "5 failed login attempts reached. block client %s for %d minutes", ip, BLOCKTIME);
 			}
+			pthread_mutex_unlock(&mutex_block);
+			dump_blocklist();
 			return;
 		}
 		last = entry;
 		entry = entry->next;
 	}
 	last->next = malloc(sizeof(*last));
-	strcpy(last->next->ip, ip);
+	strcpy(&last->next->ip[0], ip);
 	last->next->end = 0;
 	last->next->count = 0;
 	last->next->next = NULL;
+	pthread_mutex_unlock(&mutex_block);
+	dump_blocklist();
 }
 
 char *get_ipfromsock(int socket, char *ip)
@@ -1264,29 +1315,47 @@ void add_blocklist_sock(const char *service, int conn_fd)
 
 int check_blocklist(const char *service, char *ip)
 {
+	init_blocklist();
+	pthread_mutex_lock(&mutex_block);
+	int change = 0;
 	time_t cur = time(NULL);
-
 	struct blocklist *entry = blocklist_root.next;
 	struct blocklist *last = &blocklist_root;
 	while (entry) {
-		if (!strcmp(ip, entry->ip)) {
+		if (!strcmp(ip, &entry->ip[0])) {
 			if (entry->end > cur) {
 				// each try from a block client extends by another 5 minutes;
 				entry->end = time(NULL) + BLOCKTIME * 60;
 				dd_loginfo(service, "client %s is blocked, terminate connection", ip);
+				pthread_mutex_unlock(&mutex_block);
+				dump_blocklist();
 				return -1;
 			}
 			//time over, free entry
 			if (entry->count > 4) {
+				dd_loginfo(service, "time is over for client %s, so free it\n", &entry->ip[0]);
 				last->next = entry->next;
 				free(entry);
 			}
+			pthread_mutex_unlock(&mutex_block);
+			dump_blocklist();
 			return 0;
-
+		}
+		//time over, free entry
+		if (entry->end && entry->end < cur) {
+			dd_loginfo(service, "time is over for client %s, so free it\n", &entry->ip[0]);
+			last->next = entry->next;
+			free(entry);
+			entry = last->next;
+			change = 1;
+			continue;
 		}
 		last = entry;
 		entry = entry->next;
 	}
+	pthread_mutex_unlock(&mutex_block);
+	if (change)
+		dump_blocklist();
 	return 0;
 }
 
