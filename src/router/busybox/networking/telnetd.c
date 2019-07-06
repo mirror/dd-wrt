@@ -119,6 +119,10 @@
 #include "common_bufsiz.h"
 #include <syslog.h>
 
+extern int loginfail;
+void add_blocklist_sock(const char *service, int socket);
+int check_blocklist_sock(const char *service, int socket);
+
 #if DEBUG
 # define TELCMDS
 # define TELOPTS
@@ -836,6 +840,11 @@ int telnetd_main(int argc UNUSED_PARAM, char **argv)
 				goto kill_session;
 			}
 		}
+		if (FD_ISSET(ts->sockfd_read, &rdfdset) && check_blocklist_sock("telnetd",ts->sockfd_read))
+		{
+			goto kill_session;
+		}
+
  skip1:
 		if (/*ts->size2 &&*/ FD_ISSET(ts->sockfd_write, &wrfdset)) {
 			/* Write to socket from buffer 2 */
@@ -908,6 +917,13 @@ int telnetd_main(int argc UNUSED_PARAM, char **argv)
 		ts = next;
 		continue;
  kill_session:
+		if (loginfail) {
+		loginfail=0;
+		// failed login mean we already tried 3 times
+		add_blocklist_sock("telnetd", ts->sockfd_read);
+		add_blocklist_sock("telnetd", ts->sockfd_read);
+		add_blocklist_sock("telnetd", ts->sockfd_read);
+		}
 		if (ts->shell_pid > 0)
 			update_utmp_DEAD_PROCESS(ts->shell_pid);
 		free_session(ts);
