@@ -5043,8 +5043,10 @@ void port_vlan_table_save(webs_t wp)
 		vlans[vlan] = 0;
 
 	vlans[16] = 1;
-
-	for (port = 0; port < 5; port++) {
+	int ports = 5;
+	if (nvram_exists("sw_lan6"))
+		ports = 7;
+	for (port = 0; port < ports; port++) {
 		for (vlan = 0; vlan < 22; vlan++) {
 			snprintf(portid, sizeof(portid), "port%dvlan%d", port, vlan);
 			char *s_portval = websGetVar(wp, portid, "");
@@ -5114,8 +5116,10 @@ void port_vlan_table_save(webs_t wp)
 			strcat(portvlan, buff);
 		}
 	}
-
-	nvram_set("port5vlans", portvlan);
+	if (ports == 5)
+		nvram_set("port5vlans", portvlan);
+	else
+		nvram_set("port7vlans", portvlan);
 
 	strcpy(br0vlans, "");
 	c = nvram_safe_get("lan_ifnames");
