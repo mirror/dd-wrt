@@ -198,9 +198,13 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	int len = 21;
 #ifdef HAVE_SWCONFIG
 	hasgiga = 0;
+#ifdef HAVE_R9000
+	len = 16; // no tag support for now
+#else
 	len = 17;
 	if (has_igmpsnooping())
 		len = 18;
+#endif
 #endif
 
 	for (a = 0; a < len + hasgiga; a++) {
