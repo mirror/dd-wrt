@@ -86,28 +86,30 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	}
 
 	int nowan = 0;
+	int lanports = 4;
 #ifdef HAVE_SWCONFIG
 	nowan = nvram_match("sw_wan", "-1");
+	if (nvram_exists("sw_lan6"))
+		lanports = 6;
 	websWrite(wp, "<tr>\n");
 	websWrite(wp, "<th rowspan=\"2\"><script type=\"text/javascript\">Capture(vlan.legend)</script></th>\n");
 	if (nowan)
-		websWrite(wp, "<th colspan=\"4\"><script type=\"text/javascript\">Capture(share.port)</script></th>\n");
+		websWrite(wp, "<th colspan=\"%d\"><script type=\"text/javascript\">Capture(share.port)</script></th>\n", lanports);
 	else
-		websWrite(wp, "<th colspan=\"5\"><script type=\"text/javascript\">Capture(share.port)</script></th>\n");
+		websWrite(wp, "<th colspan=\"%d\"><script type=\"text/javascript\">Capture(share.port)</script></th>\n", lanports + 1);
 	websWrite(wp, "<th rowspan=\"2\"><script type=\"text/javascript\">Capture(vlan.bridge)</script></th>\n");
 	websWrite(wp, "</tr>\n");
 	websWrite(wp, "<tr>\n");
 	if (!nowan)
 		websWrite(wp, "<th>W</th>\n");
-	websWrite(wp, "<th>1</th>\n");
-	websWrite(wp, "<th>2</th>\n");
-	websWrite(wp, "<th>3</th>\n");
-	websWrite(wp, "<th>4</th>\n");
+	for (a = 1; a < lanports + 1; i++) {
+		websWrite(wp, "<th>%d</th>\n", a);
+	}
 	websWrite(wp, "</tr>\n");
 
 	websWrite(wp, "              <tr>\n");
 	websWrite(wp, "<td><script type=\"text/javascript\">Capture(vlan.linkstatus)</script></td>\n");
-	for (a = nowan; a < 5; a++) {
+	for (a = nowan; a < lanports + 1; a++) {
 		int status = 0;
 		if (a == 0)
 			status = getPortStatus(nvram_geti("sw_wan"));
@@ -198,7 +200,7 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	hasgiga = 0;
 	len = 17;
 	if (has_igmpsnooping())
-	    len = 18;
+		len = 18;
 #endif
 
 	for (a = 0; a < len + hasgiga; a++) {
