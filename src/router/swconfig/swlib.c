@@ -921,9 +921,8 @@ swlib_free_all(struct switch_dev *dev)
 	}
 }
 
-int getPortStatus(int port)
+int has_igmpsnooping(void)
 {
-
 	struct switch_dev *dev;
 	struct switch_attr *attr;
 	struct switch_val val;
@@ -934,20 +933,50 @@ int getPortStatus(int port)
 		dev = swlib_connect("rtl8366rb");
 	if (!dev)
 		return -1;
+
+	swlib_scan(dev);
+	attr = dev->ops;
+	while (attr) {
+		if (!strcmp(attr->name, "igmp_snooping")) {
+			swlib_free_all(dev);
+			return 1;
+
+		}
+		attr = attr->next;
+	}
+	swlib_free_all(dev);
+	return 0;
+}
+
+int getPortStatus(int port)
+{
+	struct attrlist_arg arg;
+	struct switch_dev *dev;
+	struct switch_attr *attr;
+	struct switch_val val;
+	struct attrlist_arg arg;
+	dev = swlib_connect("switch0");
+	if (!dev)
+		dev = swlib_connect("rtl8366s");
+	if (!dev)
+		dev = swlib_connect("rtl8366rb");
+	if (!dev)
+		return -1;
+
 	swlib_scan(dev);
 	val.port_vlan = port;
-
 	attr = dev->port_ops;
 	while (attr) {
-		if (attr->type != SWITCH_TYPE_NOVAL) {
-			if (swlib_get_attr(dev, attr, &val) < 0)
+		if (attr->type == SWITCH_TYPE_LINK) {
+			if (swlib_get_attr(dev, attr, &val) < 0) {
+				swlib_free_all(dev);
 				return -1;
-			else {
-				if (attr->type == SWITCH_TYPE_LINK) {
-					if (val.value.link) {
-						return val.value.link->speed;
-					} else
-						return 0;
+			} else {
+				swlib_free_all(dev);
+				if (val.value.link) {
+					return val.value.link->speed;
+				} else {
+					return 0;
 				}
 			}
 		}
@@ -955,5 +984,5 @@ int getPortStatus(int port)
 	}
 
 	swlib_free_all(dev);
-
+	return 0;
 }
