@@ -512,6 +512,8 @@ void start_sysinit(void)
 	case ROUTER_NETGEAR_R7800:	// why is this extra? looks like the default one
 		eval("swconfig", "dev", "switch0", "set", "reset", "1");
 		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "0");
+		eval("swconfig", "dev", "switch0", "set", "igmp_snooping", "0");
+		eval("swconfig", "dev", "switch0", "set", "igmp_v3", "1");
 		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "6 1 2 3 4");
 		eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", "0 5");
 		eval("swconfig", "dev", "switch0", "set", "apply");
@@ -529,6 +531,8 @@ void start_sysinit(void)
 	case ROUTER_ASROCK_G10:
 		eval("swconfig", "dev", "switch0", "set", "reset", "1");
 		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
+		eval("swconfig", "dev", "switch0", "set", "igmp_snooping", "0");
+		eval("swconfig", "dev", "switch0", "set", "igmp_v3", "1");
 		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "2 3 4 5 6t");
 		eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", "1 6t");
 		eval("swconfig", "dev", "switch0", "set", "apply");
@@ -546,6 +550,8 @@ void start_sysinit(void)
 	case ROUTER_LINKSYS_EA8500:
 		eval("swconfig", "dev", "switch0", "set", "reset", "1");
 		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
+		eval("swconfig", "dev", "switch0", "set", "igmp_snooping", "0");
+		eval("swconfig", "dev", "switch0", "set", "igmp_v3", "1");
 		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "0t 1 2 3 4");
 		eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", "0t 5");
 		eval("swconfig", "dev", "switch0", "set", "apply");
@@ -563,6 +569,8 @@ void start_sysinit(void)
 	default:
 		eval("swconfig", "dev", "switch0", "set", "reset", "1");
 		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "0");
+		eval("swconfig", "dev", "switch0", "set", "igmp_snooping", "0");
+		eval("swconfig", "dev", "switch0", "set", "igmp_v3", "1");
 		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "6 1 2 3 4");
 		eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", "5 0");
 		eval("swconfig", "dev", "switch0", "set", "apply");
