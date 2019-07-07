@@ -22,15 +22,17 @@
 /* \summary: BSD loopback device printer */
 
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+#include <config.h>
 #endif
 
-#include <netdissect-stdinc.h>
+#include "netdissect-stdinc.h"
 
 #include <string.h>
 
 #include "netdissect.h"
+#include "extract.h"
 #include "af.h"
+
 
 /*
  * The DLT_NULL packet header is 4 bytes long. It contains a host-byte-order
@@ -52,18 +54,18 @@
 #define	SWAPLONG(y) \
 ((((y)&0xff)<<24) | (((y)&0xff00)<<8) | (((y)&0xff0000)>>8) | (((y)>>24)&0xff))
 
-static inline void
+static void
 null_hdr_print(netdissect_options *ndo, u_int family, u_int length)
 {
 	if (!ndo->ndo_qflag) {
-		ND_PRINT((ndo, "AF %s (%u)",
-			tok2str(bsd_af_values,"Unknown",family),family));
+		ND_PRINT("AF %s (%u)",
+			tok2str(bsd_af_values,"Unknown",family),family);
 	} else {
-		ND_PRINT((ndo, "%s",
-			tok2str(bsd_af_values,"Unknown AF %u",family)));
+		ND_PRINT("%s",
+			tok2str(bsd_af_values,"Unknown AF %u",family));
 	}
 
-	ND_PRINT((ndo, ", length %u: ", length));
+	ND_PRINT(", length %u: ", length);
 }
 
 /*
@@ -77,14 +79,14 @@ null_if_print(netdissect_options *ndo, const struct pcap_pkthdr *h, const u_char
 {
 	u_int length = h->len;
 	u_int caplen = h->caplen;
-	u_int family;
+	uint32_t family;
 
-	if (caplen < NULL_HDRLEN) {
-		ND_PRINT((ndo, "[|null]"));
-		return (NULL_HDRLEN);
-	}
+	ndo->ndo_protocol = "null_if";
+	if (caplen < NULL_HDRLEN)
+		goto trunc;
 
-	memcpy((char *)&family, (const char *)p, sizeof(family));
+	ND_TCHECK_4(p);
+	family = GET_HE_U_4(p);
 
 	/*
 	 * This isn't necessarily in our host byte order; if this is
@@ -116,7 +118,6 @@ null_if_print(netdissect_options *ndo, const struct pcap_pkthdr *h, const u_char
 		ip6_print(ndo, p, length);
 		break;
 
-#ifndef TCPDUMP_MINI
 	case BSD_AFNUM_ISO:
 		isoclns_print(ndo, p, length);
 		break;
@@ -128,7 +129,6 @@ null_if_print(netdissect_options *ndo, const struct pcap_pkthdr *h, const u_char
 	case BSD_AFNUM_IPX:
 		ipx_print(ndo, p, length);
 		break;
-#endif
 
 	default:
 		/* unknown AF_ value */
@@ -139,11 +139,7 @@ null_if_print(netdissect_options *ndo, const struct pcap_pkthdr *h, const u_char
 	}
 
 	return (NULL_HDRLEN);
+trunc:
+	nd_print_trunc(ndo);
+	return (NULL_HDRLEN);
 }
-
-/*
- * Local Variables:
- * c-style: whitesmith
- * c-basic-offset: 8
- * End:
- */
