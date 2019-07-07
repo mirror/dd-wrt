@@ -63,9 +63,9 @@ The Regents of the University of California.  All rights reserved.\n";
 
 #include <sys/stat.h>
 
-#ifdef HAVE_FCNTL_H
+//#ifdef HAVE_FCNTL_H
 #include <fcntl.h>
-#endif
+//#endif
 
 #ifdef HAVE_LIBCRYPTO
 #include <openssl/crypto.h>
