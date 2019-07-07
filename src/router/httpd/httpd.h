@@ -95,7 +95,7 @@ typedef struct {
 	int upgrade_ret;
 	int restore_ret;
 	int gozila_action;
-	char http_client_ip[sizeof("000.000.000.000\0") + 1];
+	char http_client_ip[46];
 	char http_client_mac[sizeof("00:00:00:00:00:00\0") + 1];
 	int browser_method;
 #ifdef HAVE_REGISTER
