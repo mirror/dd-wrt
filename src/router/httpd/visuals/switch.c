@@ -102,7 +102,7 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<tr>\n");
 	if (!nowan)
 		websWrite(wp, "<th>W</th>\n");
-	for (a = 1; a < lanports + 1; i++) {
+	for (a = 1; a < lanports + 1; a++) {
 		websWrite(wp, "<th>%d</th>\n", a);
 	}
 	websWrite(wp, "</tr>\n");
