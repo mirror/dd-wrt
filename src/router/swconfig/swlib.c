@@ -955,7 +955,12 @@ int getPortStatus(int port)
 	struct switch_attr *attr;
 	struct switch_val val;
 	struct attrlist_arg arg;
-	dev = swlib_connect("switch0");
+	if (port >= 10) {
+		dev = swlib_connect("switch1");
+		port -= 10;
+	} else {
+		dev = swlib_connect("switch0");
+	}
 	if (!dev)
 		dev = swlib_connect("rtl8366s");
 	if (!dev)
