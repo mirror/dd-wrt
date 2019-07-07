@@ -43,9 +43,9 @@
 
 #include <sys/stat.h>
 
-#ifdef HAVE_FCNTL_H
+//#ifdef HAVE_FCNTL_H
 #include <fcntl.h>
-#endif
+//#endif
 #include <ctype.h>
 #include <stdio.h>
 #include <stdarg.h>
