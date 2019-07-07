@@ -1312,6 +1312,8 @@ static void init_blocklist(void)
 
 void add_blocklist(const char *service, char *ip)
 {
+	if (ip == NULL)
+	    return;
 	init_blocklist();
 	pthread_mutex_lock(&mutex_block);
 	struct blocklist *entry = blocklist_root.next;
@@ -1349,6 +1351,8 @@ void add_blocklist_sock(const char *service, int conn_fd)
 
 int check_blocklist(const char *service, char *ip)
 {
+	if (ip == NULL)
+	    return 0;
 	init_blocklist();
 	pthread_mutex_lock(&mutex_block);
 	int change = 0;
