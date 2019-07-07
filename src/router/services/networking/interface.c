@@ -154,9 +154,12 @@ void start_setup_vlans(void)
 		return;		// for some reason VLANs are not set up, and
 	eval("swconfig", "dev", "switch0", "set", "reset", "1");
 	eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
+	eval("swconfig", "dev", "switch0", "set", "igmp_v3", "1");
 	char buildports[16][32];
 	char tagged[16];
+	char snoop[5];
 	memset(&tagged[0], 0, sizeof(tagged));
+	memset(&snoop[0], 0, sizeof(snoop));
 	memset(&buildports[0][0], 0, 16 * 32);
 	int vlan_number;
 	int i;
@@ -170,13 +173,26 @@ void start_setup_vlans(void)
 			if (tmp >= 16) {
 				if (vlan_number == 16)
 					tagged[vlan_number] = 1;
+
 				if (i == 0) {
 					if (!nvram_match("sw_wan", "-1")) {
-						if (nvram_exists("sw_wancpuport"))
-							sysprintf("swconfig dev switch0 vlan %d set ports \"%st %st\"", vlan_number, nvram_safe_get("sw_wancpuport"), nvram_safe_get("sw_wan"));
-						else
-							sysprintf("swconfig dev switch0 vlan %d set ports \"%st %st\"", vlan_number, nvram_safe_get("sw_cpuport"), nvram_safe_get("sw_wan"));
+						switch (vlan_number) {
+						case 17:
+							eval("swconfig", "dev", "switch0", "port", nvram_safe_get("sw_wan"), "set", "igmp_snooping", "1");
+							break;
+						case 16:
+							if (nvram_exists("sw_wancpuport"))
+								sysprintf("swconfig dev switch0 vlan %d set ports \"%st %st\"", vlan_number, nvram_safe_get("sw_wancpuport"), nvram_safe_get("sw_wan"));
+							else
+								sysprintf("swconfig dev switch0 vlan %d set ports \"%st %st\"", vlan_number, nvram_safe_get("sw_cpuport"), nvram_safe_get("sw_wan"));
+							break;
+						}
 					}
+				} else {
+					if (vlan_number == 17) {
+						eval("swconfig", "dev", "switch0", "port", nvram_nget("sw_lan%d", i), "set", "igmp_snooping", "1");
+					}
+
 				}
 			} else {
 				vlan_number = tmp;
@@ -382,13 +398,13 @@ void start_setup_vlans(void)
 		foreach(vlan, port, next) {
 			int vlan_number = atoi(vlan);
 			if (vlan_number < 5 && vlan_number >= 0 && tagged[vlan_number]) {
-				sprintf(&portsettings[i][0],"%s %st", &portsettings[i][0], vlan);
+				sprintf(&portsettings[i][0], "%s %st", &portsettings[i][0], vlan);
 			} else if ((vlan_number == 5 || vlan_number == 8 || vlan_number == 7)
 				   && tagged[vlan_number] && !ast) {
-				sprintf(&portsettings[i][0],"%s %st", &portsettings[i][0], vlan);
+				sprintf(&portsettings[i][0], "%s %st", &portsettings[i][0], vlan);
 			} else if ((vlan_number == 5 || vlan_number == 8 || vlan_number == 7)
 				   && tagged[vlan_number] && ast) {
-				sprintf(&portsettings[i][0],"%s %s*", &portsettings[i][0], vlan);
+				sprintf(&portsettings[i][0], "%s %s*", &portsettings[i][0], vlan);
 			} else {
 				sprintf(&portsettings[i][0], "%s %s", &portsettings[i][0], vlan);
 			}
