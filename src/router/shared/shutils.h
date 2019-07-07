@@ -289,14 +289,6 @@ char *getentrybyidx(char *buf, char *list, int idx);
 }
 #endif
 #include <sys/time.h>
-
-typedef struct blocklist {
-	char ip[sizeof("000.000.000.000\0") + 1];
-	time_t end;
-	int count;
-	struct blocklist *next;
-};
-
 void add_blocklist(const char *service, char *ip);
 int check_blocklist(const char *service, char *ip);
 void add_blocklist_sock(const char *service, int socket);
