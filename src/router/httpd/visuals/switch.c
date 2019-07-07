@@ -196,7 +196,7 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	int len = 21;
 #ifdef HAVE_SWCONFIG
 	hasgiga = 0;
-	len = 17;
+	len = 18;
 #endif
 
 	for (a = 0; a < len + hasgiga; a++) {
@@ -216,7 +216,11 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<script type=\"text/javascript\">Capture(vlan.tagged)</script>");
 			break;
 		case 17:
+#ifdef HAVE_SWCONFIG
+			websWrite(wp, "<script type=\"text/javascript\">Capture(networking.snooping)</script>");
+#else
 			websWrite(wp, "<script type=\"text/javascript\">Capture(vlan.negociate)</script>");
+#endif
 			break;
 		case 18:
 			websWrite(wp, "<script type=\"text/javascript\">Capture(vlan.fullspeed)</script>");
