@@ -198,7 +198,7 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	int len = 21;
 #ifdef HAVE_SWCONFIG
 	hasgiga = 0;
-#ifdef HAVE_R9000
+#ifdef HAVE_ALPINE
 	len = 16; // no tag support for now
 #else
 	len = 17;
