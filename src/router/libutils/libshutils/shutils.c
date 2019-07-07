@@ -1221,10 +1221,16 @@ int writevaproc(char *value, char *fmt, ...)
 char *get_ipfromsock(int socket, char *ip)
 {
 
-	struct sockaddr_in sa;
-	socklen_t len = sizeof(struct sockaddr_in);
-	getpeername(socket, (struct sockaddr *)&sa, &len);
-	inet_ntop(AF_INET, &sa.sin_addr, ip, sizeof("000.000.000.000\0") + 1);
+	struct sockaddr_storage addr;
+	socklen_t len = sizeof(addr);
+	getpeername(socket, (struct sockaddr *)&addr, &len);
+	if (addr.ss_family == AF_INET) {
+		struct sockaddr_in *sa = (struct sockaddr_in *)&addr;
+		inet_ntop(AF_INET, &sa->sin_addr, ip, INET_ADDRSTRLEN);
+	} else {
+		struct sockaddr_in6 *sa = (struct sockaddr_in *)&addr;
+		inet_ntop(AF_INET6, &sa->sin6_addr, ip, INET6_ADDRSTRLEN);
+	}
 	return ip;
 }
 
@@ -1251,6 +1257,13 @@ int check_blocklist_sock(const char *service, int sock)
 
 #else
 #include <pthread.h>
+
+struct blocklist {
+	char ip[INET6_ADDRSTRLEN];
+	time_t end;
+	int count;
+	struct blocklist *next;
+} __attribute__((packed));
 
 #define BLOCKTIME 5
 static struct blocklist blocklist_root;
@@ -1329,7 +1342,7 @@ void add_blocklist(const char *service, char *ip)
 void add_blocklist_sock(const char *service, int conn_fd)
 {
 
-	char ip[sizeof("000.000.000.000\0") + 1];
+	char ip[INET6_ADDRSTRLEN];
 	get_ipfromsock(conn_fd, ip);
 	add_blocklist(service, ip);
 }
@@ -1385,7 +1398,7 @@ int check_blocklist(const char *service, char *ip)
 int check_blocklist_sock(const char *service, int conn_fd)
 {
 
-	char ip[sizeof("000.000.000.000\0") + 1];
+	char ip[INET6_ADDRSTRLEN];
 	get_ipfromsock(conn_fd, ip);
 	return check_blocklist(service, ip);
 }

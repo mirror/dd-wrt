@@ -35,7 +35,7 @@ int get_wl_instance(char *name)
 #elif HAVE_MADWIFI
 const char *get_channeloffset(char *prefix, int *iht, int *channeloffset)
 {
-	char *ht;
+	char *ht = NULL;
 	char bw[32];
 	sprintf(bw, "%s_channelbw", prefix);
 	int usebw = 20;
@@ -208,7 +208,7 @@ char *getSTA(void)
 	int i;
 
 	for (i = 0; i < c; i++) {
-		if (nvram_nmatch("sta", "ath%d_mode", i) || nvram_nmatch("mesh", "ath%d_mode", i)
+		if ((nvram_nmatch("sta", "ath%d_mode", i) || nvram_nmatch("mesh", "ath%d_mode", i))
 		    && !nvram_nmatch("disabled", "ath%d_net_mode", i)) {
 			return stalist[i];
 		}
