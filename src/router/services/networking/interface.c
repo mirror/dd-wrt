@@ -174,17 +174,14 @@ void start_setup_vlans(void)
 				if (vlan_number == 16)
 					tagged[vlan_number] = 1;
 
-				if (i == 0) {
+				if (i == 0 && nvram_exists("sw_wancpuport")) {
 					if (!nvram_match("sw_wan", "-1")) {
 						switch (vlan_number) {
 						case 17:
 							eval("swconfig", "dev", "switch0", "port", nvram_safe_get("sw_wan"), "set", "igmp_snooping", "1");
 							break;
 						case 16:
-							if (nvram_exists("sw_wancpuport"))
-								sysprintf("swconfig dev switch0 vlan %d set ports \"%st %st\"", vlan_number, nvram_safe_get("sw_wancpuport"), nvram_safe_get("sw_wan"));
-							else
-								sysprintf("swconfig dev switch0 vlan %d set ports \"%st %st\"", vlan_number, nvram_safe_get("sw_cpuport"), nvram_safe_get("sw_wan"));
+							sysprintf("swconfig dev switch0 vlan %d set ports \"%st %st\"", vlan_number, nvram_safe_get("sw_wancpuport"), nvram_safe_get("sw_wan"));
 							break;
 						}
 					}
@@ -197,18 +194,23 @@ void start_setup_vlans(void)
 			} else {
 				vlan_number = tmp;
 				char *ports = &buildports[vlan_number][0];
-				if (i == 0) {	// wan port
+				if (i == 0 && nvram_exists("sw_wancpuport")) {	// wan port
 					if (!nvram_match("sw_wan", "-1")) {
-						if (nvram_exists("sw_wancpuport"))
-							sysprintf("swconfig dev switch0 vlan %d set ports \"%st %s\"", vlan_number, nvram_safe_get("sw_wancpuport"), nvram_safe_get("sw_wan"));
-						else
-							sysprintf("swconfig dev switch0 vlan %d set ports \"%st %s\"", vlan_number, nvram_safe_get("sw_cpuport"), nvram_safe_get("sw_wan"));
+						sysprintf("swconfig dev switch0 vlan %d set ports \"%st %s\"", vlan_number, nvram_safe_get("sw_wancpuport"), nvram_safe_get("sw_wan"));
 					}
 				} else {
-					if (strlen(ports))
-						snprintf(ports, 31, "%s %s", ports, nvram_nget("sw_lan%d", i));
-					else
-						snprintf(ports, 31, "%s", nvram_nget("sw_lan%d", i));
+					if (i == 0) {
+						if (strlen(ports))
+							snprintf(ports, 31, "%s %s", ports, nvram_nget("sw_wan", i));
+						else
+							snprintf(ports, 31, "%s", nvram_nget("sw_wan", i));
+					} else {
+
+						if (strlen(ports))
+							snprintf(ports, 31, "%s %s", ports, nvram_nget("sw_lan%d", i));
+						else
+							snprintf(ports, 31, "%s", nvram_nget("sw_lan%d", i));
+					}
 
 				}
 				char buff[32];
@@ -234,6 +236,10 @@ void start_setup_vlans(void)
 						eval("ifconfig", buff, nvram_nget("%s_ipaddr", buff), "netmask", nvram_nget("%s_netmask", buff), "up");
 					else
 						eval("ifconfig", buff, "0.0.0.0", "up");
+					char hwaddr[32];
+					sprintf(hwaddr, "%s_hwaddr", buff);
+					if (!nvram_match(hwaddr, ""))
+						set_hwaddr(buff, nvram_safe_get(hwaddr));
 				}
 
 			}
