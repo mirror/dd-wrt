@@ -950,11 +950,9 @@ int has_igmpsnooping(void)
 
 int getPortStatus(int port)
 {
-	struct attrlist_arg arg;
 	struct switch_dev *dev;
 	struct switch_attr *attr;
 	struct switch_val val;
-	struct attrlist_arg arg;
 	if (port >= 10) {
 		dev = swlib_connect("switch1");
 		port -= 10;
