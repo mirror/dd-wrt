@@ -155,11 +155,20 @@ void start_setup_vlans(void)
 
 	if (!nvram_exists("sw_cpuport") && !nvram_exists("sw_wancpuport"))
 		return;
+#ifdef HAVE_ALPINE
+	if (!nvram_exists("port7vlans") || nvram_matchi("vlans", 0))
+		return;		// for some reason VLANs are not set up, and
+#else
 	if (!nvram_exists("port5vlans") || nvram_matchi("vlans", 0))
 		return;		// for some reason VLANs are not set up, and
+#endif
+#ifdef HAVE_ALPINE
+	sysprintf(". /usr/sbin/resetswitch.sh");
+#else
 	eval("swconfig", "dev", "switch0", "set", "reset", "1");
 	eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "switch0", "set", "igmp_v3", "1");
+#endif
 	char buildports[16][32];
 	char tagged[16];
 	char snoop[5];
@@ -168,7 +177,11 @@ void start_setup_vlans(void)
 	memset(&buildports[0][0], 0, 16 * 32);
 	int vlan_number;
 	int i;
+#ifdef HAVE_ALPINE
+	for (i = 0; i < 7; i++) {
+#else
 	for (i = 0; i < 5; i++) {
+#endif
 		char *vlans = nvram_nget("port%dvlans", i);
 		char *next;
 		char vlan[4];
@@ -250,6 +263,18 @@ void start_setup_vlans(void)
 			}
 		}
 	}
+#ifdef HAVE_R9000
+	for (vlan_number = 0; vlan_number < 16; vlan_number++) {
+		char *ports = &buildports[vlan_number][0];
+		if (strlen(ports)) {
+//                          sw_user_lan_ports_vlan_config "7" "6" "0" "0" "0" "normal_lan"
+//                          sw_user_lan_ports_vlan_config "1" "" "0" "1" "0" "wan"
+			sysprintf(". /usr/sbin/config_vlan.sh \"%d\" \"%s\" \"0\" \"0\" \"0\" \"normal_lan\"");
+		}
+	}
+	sysprintf(". /usr/sbin/config_vlan.sh \"2\" \"\" \"0\" \"1\" \"0\"  \"wan\"");
+	sysprintf(". /tmp/ssdk_new.sh");
+#else
 	for (vlan_number = 0; vlan_number < 16; vlan_number++) {
 		char *ports = &buildports[vlan_number][0];
 		if (strlen(ports)) {
@@ -259,9 +284,8 @@ void start_setup_vlans(void)
 				sysprintf("swconfig dev switch0 vlan %d set ports \"%st %s%s\"", vlan_number, nvram_safe_get("sw_cpuport"), ports, tagged[vlan_number] ? "t" : "");
 		}
 	}
-
 	eval("swconfig", "dev", "switch0", "set", "apply");
-
+#endif
 #else
 	/*
 	 * VLAN #16 is just a convieniant way of storing tagging info.  There is
