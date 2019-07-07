@@ -1,9 +1,9 @@
 #!/bin/sh
 
+TZ=GMT0; export TZ
+
 mkdir -p NEW
 mkdir -p DIFF
-passed=0
-failed=0
 cat /dev/null > failure-outputs.txt
 
 runComplexTests()
@@ -13,12 +13,12 @@ runComplexTests()
     case $i in TEST*.sh) continue;; esac
     sh ./$i
   done
+  passed=`cat .passed`
+  failed=`cat .failed`
 }
 
 runSimpleTests()
 {
-  passed=`cat .passed`
-  failed=`cat .failed`
   only=$1
   cat TESTLIST | while read name input output options
   do
@@ -43,6 +43,8 @@ runSimpleTests()
   failed=`cat .failed`
 }
 
+passed=0
+failed=0
 echo $passed >.passed
 echo $failed >.failed
 if [ $# -eq 0 ]
@@ -61,7 +63,6 @@ fi
 echo '------------------------------------------------'
 printf "%4u tests failed\n" $failed
 printf "%4u tests passed\n" $passed
-echo
 echo
 cat failure-outputs.txt
 echo
