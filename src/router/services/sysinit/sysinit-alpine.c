@@ -246,7 +246,7 @@ void start_sysinit(void)
 
 
 	nvram_set("sw_cpuport", "6"); // this is a dummy. for the r9000 we need to write complete new code
-	nvram_set("sw_wan", "-1");
+	nvram_set("sw_wan", "3");  // switch 0
 	nvram_set("sw_lan1", "2"); // switch 0
 	nvram_set("sw_lan2", "1"); // switch 0
 	nvram_set("sw_lan3", "14"); // switch 1
