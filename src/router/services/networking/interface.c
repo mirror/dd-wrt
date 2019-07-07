@@ -147,7 +147,7 @@ void start_config_vlan(void)
 
 void start_setup_vlans(void)
 {
-#ifdef HAVE_ALPINE
+#ifdef HAVE_R9000
 // todo write config code
 	return;
 #endif
@@ -155,14 +155,14 @@ void start_setup_vlans(void)
 
 	if (!nvram_exists("sw_cpuport") && !nvram_exists("sw_wancpuport"))
 		return;
-#ifdef HAVE_ALPINE
+#ifdef HAVE_R9000
 	if (!nvram_exists("port7vlans") || nvram_matchi("vlans", 0))
 		return;		// for some reason VLANs are not set up, and
 #else
 	if (!nvram_exists("port5vlans") || nvram_matchi("vlans", 0))
 		return;		// for some reason VLANs are not set up, and
 #endif
-#ifdef HAVE_ALPINE
+#ifdef HAVE_R9000
 	sysprintf(". /usr/sbin/resetswitch.sh");
 #else
 	eval("swconfig", "dev", "switch0", "set", "reset", "1");
@@ -177,7 +177,7 @@ void start_setup_vlans(void)
 	memset(&buildports[0][0], 0, 16 * 32);
 	int vlan_number;
 	int i;
-#ifdef HAVE_ALPINE
+#ifdef HAVE_R9000
 	for (i = 0; i < 7; i++) {
 #else
 	for (i = 0; i < 5; i++) {
