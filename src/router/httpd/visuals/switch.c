@@ -196,7 +196,9 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	int len = 21;
 #ifdef HAVE_SWCONFIG
 	hasgiga = 0;
-	len = 18;
+	len = 17;
+	if (has_igmpsnooping())
+	    len = 18;
 #endif
 
 	for (a = 0; a < len + hasgiga; a++) {
