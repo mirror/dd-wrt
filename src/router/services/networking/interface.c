@@ -147,10 +147,6 @@ void start_config_vlan(void)
 
 void start_setup_vlans(void)
 {
-#ifdef HAVE_R9000
-// todo write config code
-	return;
-#endif
 #ifdef HAVE_SWCONFIG
 
 	if (!nvram_exists("sw_cpuport") && !nvram_exists("sw_wancpuport"))
