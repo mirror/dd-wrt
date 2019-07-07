@@ -59,4 +59,4 @@ install:
 	mkdir -p $(INSTALLDIR)/usr/sbin
 	cp build/bin/ssdk_sh $(INSTALLDIR)/usr/sbin
 	cp ./ssdk_sh_id $(INSTALLDIR)/usr/sbin
-	co tools/* $(INSTALLDIR)/usr/sbin
+	cp tools/* $(INSTALLDIR)/usr/sbin
