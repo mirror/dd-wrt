@@ -73,7 +73,7 @@ void start_igmprt(void)
 		if (strcmp(get_wan_face(), name)
 		    && strcmp(nvram_safe_get("lan_ifname"), name)
 		    && strcmp(nvram_safe_get("tvnicfrom"), name)) {
-			if (nvram_nmatch("0", "%s_bridged", name)
+			if ((nvram_nmatch("0", "%s_bridged", name) || isbridge(name))
 			    && nvram_nmatch("1", "%s_multicast", name)) {
 				fprintf(fp, "phyint %s downstream  ratelimit 0  threshold 1\n", name);
 				ifcount++;
