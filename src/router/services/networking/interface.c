@@ -147,7 +147,12 @@ void start_config_vlan(void)
 
 void start_setup_vlans(void)
 {
+#ifdef HAVE_ALPINE
+// todo write config code
+	return;
+#endif
 #ifdef HAVE_SWCONFIG
+
 	if (!nvram_exists("sw_cpuport") && !nvram_exists("sw_wancpuport"))
 		return;
 	if (!nvram_exists("port5vlans") || nvram_matchi("vlans", 0))
