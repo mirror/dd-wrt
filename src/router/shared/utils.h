@@ -1428,6 +1428,7 @@ char *strstrtok(char *str, char del);
 #ifdef HAVE_SWCONFIG
 
 int getPortStatus(int port);
+int has_igmpsnooping(void);
 
 #endif
 
