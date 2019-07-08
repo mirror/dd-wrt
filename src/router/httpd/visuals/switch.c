@@ -37,18 +37,21 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	 * (x 16 dosn't apply) 
 	 */
 
-	int i, j, vlans[22][6], tmp, wl_br;
+	int i, j, vlans[22][7], tmp, wl_br;
 	char *c, *next, buff[32], portvlan[32];
 	int a;
+	int lanports = 4;
+	if (nvram_exists("sw_lan6"))
+		lanports = 6;
 
 	for (i = 0; i < 22; i++)
-		for (j = 0; j < 6; j++)
+		for (j = 0; j < lanports + 2; j++)
 			vlans[i][j] = -1;
 
 	wl_br = -1;
 
-	for (i = 0; i < 8; i++) {
-		if (i < 5)
+	for (i = 0; i < lanports + 2; i++) {
+		if (i < (lanports + 1))
 			snprintf(buff, 31, "port%dvlans", i);
 		else if (i == 5)
 			snprintf(buff, 31, "%s", "lan_ifnames");
@@ -60,7 +63,7 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 		if (c) {
 			foreach(portvlan, c, next) {
 				if (portvlan[0] == 'e' && portvlan[1] == 't' && portvlan[2] == 'h' && portvlan[3] == '1')
-					wl_br = i - 5;
+					wl_br = i - (lanports + 1);
 				if (ISDIGIT(portvlan, 1)
 				    || (portvlan[0] == 'v' && portvlan[1] == 'l' && portvlan[2] == 'a' && portvlan[3] == 'n')) {
 					if (ISDIGIT(portvlan, 1))
@@ -75,10 +78,10 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 							continue;
 					}
 
-					if (i < 5) {
+					if (i < lanports + 1) {
 						vlans[tmp][i] = 1;
 					} else {
-						vlans[tmp][5] = i - 5;
+						vlans[tmp][lanports + 1] = i - (lanports + 1);
 					}
 				}
 			}
@@ -86,11 +89,8 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	}
 
 	int nowan = 0;
-	int lanports = 4;
 #ifdef HAVE_SWCONFIG
 	nowan = nvram_match("sw_wan", "-1");
-	if (nvram_exists("sw_lan6"))
-		lanports = 6;
 	websWrite(wp, "<tr>\n");
 	websWrite(wp, "<th rowspan=\"2\"><script type=\"text/javascript\">Capture(vlan.legend)</script></th>\n");
 	if (nowan)
@@ -250,7 +250,7 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 
 		websWrite(wp, "</td>\n");
 
-		for (j = nowan; j < 5; j++) {
+		for (j = nowan; j < lanports + 1; j++) {
 			snprintf(buff, 31, "\"port%dvlan%d\"", j, i);
 			websWrite(wp, "<td");
 
@@ -268,8 +268,11 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 				if (vlans[i][j] == -1)
 					websWrite(wp, " checked=\"checked\"");
 			}
-
+#ifdef HAVE_ALPINE
+			if (i < 18) {
+#else
 			if (i < 17) {
+#endif
 				websWrite(wp, " onclick=");
 				snprintf(buff, sizeof(buff), "\"SelVLAN(this.form,'port%d')\"", j);
 				websWrite(wp, buff);
@@ -286,10 +289,10 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 			snprintf(buff, 31, "\"vlan%d\"", i);
 			websWrite(wp, buff);
 			websWrite(wp, "><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"-1\\\"");
-			if (vlans[i][5] < 0)
+			if (vlans[i][lanports + 1] < 0)
 				websWrite(wp, " selected=\\\"selected\\\"");
 			websWrite(wp, ">\" + share.none + \"</option>\");\n//]]>\n</script><option value=\"0\"");
-			if (vlans[i][5] == 0)
+			if (vlans[i][lanports + 1] == 0)
 				websWrite(wp, " selected=\"selected\"");
 			websWrite(wp, ">LAN</option></select></td>\n");
 		} else {
