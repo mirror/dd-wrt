@@ -1290,9 +1290,18 @@ static void init_blocklist(void)
 {
 	struct blocklist *entry = blocklist_root.next;
 	struct blocklist *last = &blocklist_root;
-	if (entry)
-		return;
 	pthread_mutex_lock(&mutex_block);
+	if (entry) {
+		while (entry) {
+			last = entry;
+			entry = entry->next;
+			free(last);
+		}
+		blocklist_root.next = NULL;
+		entry = blocklist_root.next;
+		last = &blocklist_root;
+	}
+
 	FILE *fp = fopen("/tmp/blocklist", "rb");
 	if (fp) {
 		while (!feof(fp)) {
@@ -1313,7 +1322,7 @@ static void init_blocklist(void)
 void add_blocklist(const char *service, char *ip)
 {
 	if (ip == NULL)
-	    return;
+		return;
 	init_blocklist();
 	pthread_mutex_lock(&mutex_block);
 	struct blocklist *entry = blocklist_root.next;
@@ -1333,6 +1342,7 @@ void add_blocklist(const char *service, char *ip)
 		entry = entry->next;
 	}
 	last->next = malloc(sizeof(*last));
+	memset(last->next, 0, sizeof(*last));
 	strcpy(&last->next->ip[0], ip);
 	last->next->end = 0;
 	last->next->count = 0;
@@ -1352,7 +1362,7 @@ void add_blocklist_sock(const char *service, int conn_fd)
 int check_blocklist(const char *service, char *ip)
 {
 	if (ip == NULL)
-	    return 0;
+		return 0;
 	init_blocklist();
 	pthread_mutex_lock(&mutex_block);
 	int change = 0;
