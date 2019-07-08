@@ -763,6 +763,11 @@ void start_sysinit(void)
 	setWirelessLed(0, 0);
 #endif
 #endif
+	nvram_default_get("port0vlans", "2");
+	nvram_default_get("port1vlans", "1");
+	nvram_default_get("port2vlans", "1");
+	nvram_default_get("port3vlans", "1");
+	nvram_default_get("port4vlans", "1");
 	/*
 	 * Set a sane date 
 	 */

@@ -117,6 +117,11 @@ void start_sysinit(void)
 	nvram_set("sw_lan2", "1");
 	nvram_set("sw_lan3", "2");
 	nvram_set("sw_lan4", "3");
+	nvram_default_get("port0vlans", "2");
+	nvram_default_get("port1vlans", "1");
+	nvram_default_get("port2vlans", "1");
+	nvram_default_get("port3vlans", "1");
+	nvram_default_get("port4vlans", "1");
 #else
 	vlan_init(0xff);	// 4 lan + 1 wan
 #endif
