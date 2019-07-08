@@ -596,9 +596,11 @@ swlib_scan(struct switch_dev *dev)
 {
 	struct attrlist_arg arg;
 
+	fprintf(stderr, "try scan\n");
 	if (dev->ops || dev->port_ops || dev->vlan_ops)
 		return 0;
 
+	fprintf(stderr, "scan start\n");
 	arg.atype = SWLIB_ATTR_GROUP_GLOBAL;
 	arg.dev = dev;
 	arg.id = dev->id;
@@ -900,11 +902,15 @@ swlib_free(struct switch_dev *dev)
 	swlib_free_attributes(&dev->ops);
 	swlib_free_attributes(&dev->port_ops);
 	swlib_free_attributes(&dev->vlan_ops);
+	dev->ops = NULL;
+	dev->port_ops = NULL;
+	dev->vlan_ops = NULL;
 	swlib_free_port_map(dev);
 	free(dev->name);
+	dev->name = NULL;
 	free(dev->alias);
+	dev->alias = NULL;
 	free(dev);
-
 	if (--refcount == 0)
 		swlib_priv_free();
 }
@@ -916,6 +922,7 @@ swlib_free_all(struct switch_dev *dev)
 
 	while (dev) {
 		p = dev->next;
+		dev->next = NULL;
 		swlib_free(dev);
 		dev = p;
 	}
