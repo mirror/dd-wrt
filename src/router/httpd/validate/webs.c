@@ -5052,7 +5052,11 @@ void port_vlan_table_save(webs_t wp)
 			char *s_portval = websGetVar(wp, portid, "");
 			if (!*s_portval)
 				continue;
+#ifdef HAVE_SWCONFIG
+			if (vlan < 18 || vlan > 21)
+#else
 			if (vlan < 17 || vlan > 21)
+#endif
 				i = (strcmp(s_portval, "on") == 0);
 			else
 				i = (strcmp(s_portval, "on") != 0);
