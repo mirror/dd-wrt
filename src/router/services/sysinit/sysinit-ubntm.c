@@ -217,6 +217,11 @@ void start_sysinit(void)
 		nvram_set("sw_lan2", "2");
 		nvram_set("sw_lan3", "3");
 		nvram_set("sw_lan4", "4");
+		nvram_default_get("port0vlans", "2");
+		nvram_default_get("port1vlans", "1");
+		nvram_default_get("port2vlans", "1");
+		nvram_default_get("port3vlans", "1");
+		nvram_default_get("port4vlans", "1");
 
 		break;
 	default:

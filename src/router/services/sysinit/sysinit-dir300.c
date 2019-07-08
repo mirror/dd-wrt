@@ -231,6 +231,11 @@ void start_sysinit(void)
 #else
 		vlan_init(0xff);	// 4 lan + 1 wan
 #endif
+		nvram_default_get("port0vlans", "2");
+		nvram_default_get("port1vlans", "1");
+		nvram_default_get("port2vlans", "1");
+		nvram_default_get("port3vlans", "1");
+		nvram_default_get("port4vlans", "1");
 		struct ifreq ifr;
 		int s;
 

@@ -586,6 +586,11 @@ void start_sysinit(void)
 		nvram_set("sw_lan4", "4");
 		break;
 	}
+	nvram_default_get("port0vlans", "2");
+	nvram_default_get("port1vlans", "1");
+	nvram_default_get("port2vlans", "1");
+	nvram_default_get("port3vlans", "1");
+	nvram_default_get("port4vlans", "1");
 	writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
 	writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
 
