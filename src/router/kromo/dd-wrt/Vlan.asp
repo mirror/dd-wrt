@@ -28,8 +28,8 @@ function SelSpeed(F,I) {
 		if (eval("F."+I+"vlan21")) {
 			choose_enable(eval("F."+I+"vlan21"));
 		}
-	    SelVLAN(F,I);
-	    if (eval("F."+I+"vlan17")) {
+		SelVLAN(F,I);
+		if (eval("F."+I+"vlan17")) {
 		    if(eval("F."+I+"vlan17").checked) {
 		    	    eval("F."+I+"vlan18").checked=true;
 			    eval("F."+I+"vlan19").checked=true;
@@ -55,31 +55,38 @@ function SelSpeed(F,I) {
 function SelVLAN(F,I) {
 	var i,j=0;
 	if(!eval("F."+I+"vlan20") || eval("F."+I+"vlan20").checked == true) {
-	if(eval("F."+I+"vlan16") && eval("F."+I+"vlan16").checked == true) {
-		for(i=0;i<16;i++)
-			choose_enable(eval("F."+I+"vlan"+i));
-	} else {
-		for(i=0;i<16;i++) {
-			if(j==1) {
-				eval("F."+I+"vlan"+i).checked=false;
-				choose_disable(eval("F."+I+"vlan"+i));
-			} else {
-				choose_enable(eval("F."+I+"vlan"+i));
+		if(eval("F."+I+"vlan16") && eval("F."+I+"vlan16").checked == true) {
+			if(eval("F."+I+"vlan"+i)) {
+				for(i=0;i<16;i++) {
+					choose_enable(eval("F."+I+"vlan"+i));
+				}
 			}
-			if(eval("F."+I+"vlan"+i).checked == true) {
-				j=1;
-			}
-		}
-		if(j==1) {
+		} else {
 			for(i=0;i<16;i++) {
-				if(!(eval("F."+I+"vlan"+i).checked)) {
-					choose_disable(eval("F."+I+"vlan"+i));
-				} else {
-					break;
+				if(eval("F."+I+"vlan"+i)) {
+					if(j==1) {
+						eval("F."+I+"vlan"+i).checked=false;
+						choose_disable(eval("F."+I+"vlan"+i));
+					} else {
+						choose_enable(eval("F."+I+"vlan"+i));
+					}
+					if(eval("F."+I+"vlan"+i).checked == true) {
+						j=1;
+					}
+				}
+			}
+			if(j==1) {
+				for(i=0;i<16;i++) {
+					if(eval("F."+I+"vlan"+i)) {
+						if(!(eval("F."+I+"vlan"+i).checked)) {
+							choose_disable(eval("F."+I+"vlan"+i));
+						} else {
+							break;
+						}
+					}
 				}
 			}
 		}
-	}
 	}
 }
 
