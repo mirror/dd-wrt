@@ -205,7 +205,7 @@ void start_sysinit(void)
 	eval("ssdk_sh_id", "0", "vlan", "entry", "create", "1");
 	eval("ssdk_sh_id", "0", "vlan", "member", "add", "1", "0", "tagged");
 	eval("ssdk_sh_id", "0", "vlan", "member", "add", "1", "4", "tagged");
-	eval("ssdk_sh_id", "0", "vlan", "member", "add", "1", "6", "tagged"); // connected to switch1 port 0
+	eval("ssdk_sh_id", "0", "vlan", "member", "add", "1", "6", "tagged");	// connected to switch1 port 0
 	eval("ssdk_sh_id", "0", "vlan", "member", "add", "1", "2", "untagged");
 	eval("ssdk_sh_id", "0", "vlan", "member", "add", "1", "1", "untagged");
 	eval("ssdk_sh_id", "1", "portvlan", "defaultCVid", "set", "0", "1");
@@ -227,8 +227,8 @@ void start_sysinit(void)
 	eval("ssdk_sh_id", "1", "portvlan", "ingress", "set", "1", "check");
 	eval("ssdk_sh_id", "1", "portvlan", "egress", "set", "1", "untagged");
 	eval("ssdk_sh_id", "1", "vlan", "entry", "create", "1");
-	eval("ssdk_sh_id", "1", "vlan", "member", "add", "1", "0", "tagged"); // connected to port6 on switch 0
-	eval("ssdk_sh_id", "1", "vlan", "member", "add", "1", "5", "tagged"); 
+	eval("ssdk_sh_id", "1", "vlan", "member", "add", "1", "0", "tagged");	// connected to port6 on switch 0
+	eval("ssdk_sh_id", "1", "vlan", "member", "add", "1", "5", "tagged");
 	eval("ssdk_sh_id", "1", "vlan", "member", "add", "1", "4", "untagged");
 	eval("ssdk_sh_id", "1", "vlan", "member", "add", "1", "3", "untagged");
 	eval("ssdk_sh_id", "1", "vlan", "member", "add", "1", "2", "untagged");
@@ -240,19 +240,26 @@ void start_sysinit(void)
 	eval("ssdk_sh_id", "0", "portvlan", "ingress", "set", "3", "check");
 	eval("ssdk_sh_id", "0", "portvlan", "egress", "set", "3", "untagged");
 	eval("ssdk_sh_id", "0", "vlan", "entry", "create", "2");
-	eval("ssdk_sh_id", "0", "vlan", "member", "add", "2", "5", "tagged"); // wan cpu port
-	eval("ssdk_sh_id", "0", "vlan", "member", "add", "2", "3", "untagged"); // wan port
+	eval("ssdk_sh_id", "0", "vlan", "member", "add", "2", "5", "tagged");	// wan cpu port
+	eval("ssdk_sh_id", "0", "vlan", "member", "add", "2", "3", "untagged");	// wan port
 	eval("ssdk_sh_id", "1", "vlan", "entry", "create", "2");
 
+	nvram_set("sw_cpuport", "6");	// this is a dummy. for the r9000 we need to write complete new code
+	nvram_set("sw_wan", "-1");	// switch 0 (3) note: we cannot allow wan for now
+	nvram_set("sw_lan1", "2");	// switch 0
+	nvram_set("sw_lan2", "1");	// switch 0
+	nvram_set("sw_lan3", "14");	// switch 1
+	nvram_set("sw_lan4", "13");	// switch 1
+	nvram_set("sw_lan5", "12");	// switch 1
+	nvram_set("sw_lan6", "11");	// switch 1
 
-	nvram_set("sw_cpuport", "6"); // this is a dummy. for the r9000 we need to write complete new code
-	nvram_set("sw_wan", "-1");  // switch 0 (3) note: we cannot allow wan for now
-	nvram_set("sw_lan1", "2"); // switch 0
-	nvram_set("sw_lan2", "1"); // switch 0
-	nvram_set("sw_lan3", "14"); // switch 1
-	nvram_set("sw_lan4", "13"); // switch 1
-	nvram_set("sw_lan5", "12"); // switch 1
-	nvram_set("sw_lan6", "11"); // switch 1
+	nvram_default_get("port0vlans", "2");
+	nvram_default_get("port1vlans", "1");
+	nvram_default_get("port2vlans", "1");
+	nvram_default_get("port3vlans", "1");
+	nvram_default_get("port4vlans", "1");
+	nvram_default_get("port5vlans", "1");
+	nvram_default_get("port6vlans", "1");
 
 	eval("/sbin/vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 	eval("/sbin/vconfig", "add", "eth1", "1");

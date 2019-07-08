@@ -251,6 +251,11 @@ void start_sysinit(void)
 		sprintf(mac1, "00:11:22:33:44:55");
 		sprintf(mac2, "00:11:22:33:44:66");
 	}
+	nvram_default_get("port0vlans", "2");
+	nvram_default_get("port1vlans", "1");
+	nvram_default_get("port2vlans", "1");
+	nvram_default_get("port3vlans", "1");
+	nvram_default_get("port4vlans", "1");
 #ifndef HAVE_WZRG450
 	set_hwaddr("eth0", mac1);
 	eval("ifconfig", "eth0", "up");
