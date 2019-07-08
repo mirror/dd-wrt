@@ -268,7 +268,7 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 				if (vlans[i][j] == -1)
 					websWrite(wp, " checked=\"checked\"");
 			}
-#ifdef HAVE_ALPINE
+#ifdef HAVE_SWCONFIG
 			if (i < 18) {
 #else
 			if (i < 17) {
