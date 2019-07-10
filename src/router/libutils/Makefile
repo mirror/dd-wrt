@@ -190,7 +190,7 @@ endif
 ifeq ($(CONFIG_ATH9K),y)
 ATH9KCFLAGS+= $(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE -DHAVE_ATH9K -I. -I$(TOP)/shared -I../httpd -I$(SRCBASE)/include.v24 -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/libnl-tiny/include -I$(SRCBASE)/
 ATH9KCFLAGS	+= -fPIC $(call cc-option,-Werror=return-local-addr)
-ATH9KOBJS += wl_ath9k.o mac80211info.o mac80211regulatory.o mac80211autochannel.o
+ATH9KOBJS += libwireless/wl_ath9k.o libwireless/mac80211info.o libwireless/mac80211regulatory.o libwireless/mac80211autochannel.o
 ATH9KLDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
 ATH9KCFLAGS += -DNDEBUG -I$(LINUXDIR)/brcm/$(ARCH)/include
 ATH9KCFLAGS += -DNDEBUG -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
@@ -1585,17 +1585,21 @@ clean:
 	rm -f libqos/*.c~ libwireless/*.c~ libshutils/*.c~ libutils/*.c~ libsharetools/*.c~ libdisc/*.c~
 	rm -f $(TOP)/private/telkom/*.o
 
-wl_ath9k.o:
-	$(CC) -shared -c -Iinclude $(ATH9KCFLAGS) $(MIPS16_OPT) libwireless/wl_ath9k.c
+libwireless/wl_ath9k.o:
+	@echo "[CC] $@"
+	@$(CC) -shared -c -Iinclude $(ATH9KCFLAGS) $(MIPS16_OPT) -o libwireless/wl_ath9k.o libwireless/wl_ath9k.c
 
-mac80211info.o:
-	$(CC) -shared -c -Iinclude $(ATH9KCFLAGS) $(MIPS16_OPT) libwireless/mac80211info.c
+libwireless/mac80211info.o:
+	@echo "[CC] $@"
+	@$(CC) -shared -c -Iinclude $(ATH9KCFLAGS) $(MIPS16_OPT) -o libwireless/mac80211info.o libwireless/mac80211info.c
 
-mac80211regulatory.o:
-	$(CC) -shared -c -Iinclude $(ATH9KCFLAGS) $(MIPS16_OPT) libwireless/mac80211regulatory.c
+libwireless/mac80211regulatory.o:
+	@echo "[CC] $@"
+	@$(CC) -shared -c -Iinclude $(ATH9KCFLAGS) $(MIPS16_OPT) -o libwireless/mac80211regulatory.o libwireless/mac80211regulatory.c
 
-mac80211autochannel.o:
-	$(CC) -shared -c -Iinclude $(ATH9KCFLAGS) $(MIPS16_OPT) libwireless/mac80211autochannel.c
+libwireless/mac80211autochannel.o:
+	@echo "[CC] $@"
+	@$(CC) -shared -c -Iinclude $(ATH9KCFLAGS) $(MIPS16_OPT) -o libwireless/mac80211autochannel.o libwireless/mac80211autochannel.c
 
 %.o : %.c
 	@echo "[CC] $@"
