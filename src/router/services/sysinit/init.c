@@ -385,10 +385,13 @@ void start_init_start(void)
 	{
 		start_radio_on();
 	}
-	start_radio_timer();
 #ifdef HAVE_EMF
 	start_emf();
 #endif
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+	start_nas();
+#endif
+	start_radio_timer();
 #ifdef HAVE_CHILLI
 	start_chilli();
 #endif
