@@ -910,90 +910,35 @@ static void print_erp(const uint8_t type, uint8_t len, const uint8_t * data)
 	printf("\n");
 }
 
+static char *ciphers[] = {
+	"Use group cipher suite",
+	"WEP-40",
+	"TKIP",
+	"",
+	"CCMP",
+	"WEP-104",
+	"AES-128-CMAC",
+	"NO-GROUP",
+	"GCMP-128",
+	"GCMP-256",
+	"CCMP-256",
+	"AES-128-GMAC",
+	"AES-256-GMAC",
+	"AES-256-CMAC"
+};
+
 static void print_cipher(const uint8_t * data)
 {
 	if (memcmp(data, wifi_oui, 3) == 0) {
-		switch (data[3]) {
-		case 0:
-			printf("Use group cipher suite");
-			break;
-		case 1:
-			printf("WEP-40");
-			fillENC("WEP-40");
-			break;
-		case 2:
-			printf("TKIP");
-			fillENC("TKIP");
-			break;
-		case 4:
-			printf("CCMP");
-			fillENC("CCMP");
-			break;
-		case 5:
-			printf("WEP-104");
-			fillENC("WEP-104");
-			break;
-		default:
+		if (data[3] < 6)
+			fillENC(ciphers[data[3]]);
+		else
 			printf("%.02x-%.02x-%.02x:%d", data[0], data[1], data[2], data[3]);
-			break;
-		}
 	} else if (memcmp(data, ieee80211_oui, 3) == 0) {
-		switch (data[3]) {
-		case 0:
-			printf("Use group cipher suite");
-			break;
-		case 1:
-			printf("WEP-40");
-			fillENC("WEP-40");
-			break;
-		case 2:
-			printf("TKIP");
-			fillENC("TKIP");
-			break;
-		case 4:
-			printf("CCMP");
-			fillENC("CCMP");
-			break;
-		case 5:
-			printf("WEP-104");
-			fillENC("WEP-104");
-			break;
-		case 6:
-			printf("AES-128-CMAC");
-			fillENC("AES-128-CMAC");
-			break;
-		case 7:
-			printf("NO-GROUP");
-			fillENC("NO-GROUP");
-			break;
-		case 8:
-			printf("GCMP-128");
-			fillENC("GCMP-128");
-			break;
-		case 9:
-			printf("GCMP-256");
-			fillENC("GCMP-256");
-			break;
-		case 10:
-			printf("CCMP-256");
-			fillENC("CCMP-256");
-			break;
-		case 11:
-			printf("AES-128-GMAC");
-			fillENC("AES-128-GMAC");
-			break;
-		case 12:
-			printf("AES-256-GMAC");
-			fillENC("AES-256-GMAC");
-			break;
-		case 13:
-			printf("AES-256-CMAC");
-			fillENC("AES-256-CMAC");
-			break;
-		default:
+		if (data[3] < 14)
+			fillENC(ciphers[data[3]]);
+		else
 			printf("%.02x-%.02x-%.02x:%d", data[0], data[1], data[2], data[3]);
-			break;
-		}
 	} else
 		printf("%.02x-%.02x-%.02x:%d", data[0], data[1], data[2], data[3]);
 }
