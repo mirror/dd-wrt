@@ -1565,7 +1565,7 @@ C_LIBS :=libshutils.so libutils.so libwireless.so libqos.so $(ADDLIB)
 ifeq ($(CONFIG_USB),y)
 C_LIBS +=libdisc.so
 endif
-all: clean $(C_LIBS)
+all: $(C_LIBS)
 
 install: all
 ifeq ($(CONFIG_XSCALE),y)
