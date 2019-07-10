@@ -545,7 +545,7 @@ static int usb_add_ufd(char *devpath)
 						sprintf(path, "/dev/%s%s", entry->d_name, part);
 						if (stat(path, &tmp_stat))
 							continue;
-						sprintf(targetname, "%s_part%s", entry->d_name, part);
+						sprintf(targetname, "%s%s", entry->d_name, part);
 						if (usb_process_path(path, fs, targetname)
 						    == 0) {
 							is_mounted = 1;
