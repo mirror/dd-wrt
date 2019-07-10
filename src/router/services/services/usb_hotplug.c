@@ -530,7 +530,7 @@ static int usb_add_ufd(char *devpath)
 						sprintf(path, "/dev/discs/%s/%s", entry->d_name, part);
 						if (stat(path, &tmp_stat))
 							continue;
-						sprintf(targetname, "%s_%s", entry->d_name, part);
+						sprintf(targetname, "%s%s", entry->d_name, part + 4);
 
 						if (usb_process_path(path, fs, targetname)
 						    == 0) {
