@@ -51,7 +51,10 @@ do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url, we
 	 * Reboot if successful 
 	 */
 	if (upgrade_ret == 0) {
-		sleep(5);
+		struct timespec tim, tim2;
+		tim.tv_sec = 5;
+		tim.tv_nsec = 0;
+		nanosleep(&tim, &tim2);
 		sys_reboot();
 	}
 #else

@@ -1791,7 +1791,10 @@ int led_control(int type, int act)
 			break;
 		case LED_FLASH:	// will lit the led for 1 sec.
 			set_gpio(gpio_value, enable);
-			sleep(1);
+			struct timespec tim, tim2;
+			tim.tv_sec = 1;
+			tim.tv_nsec = 0;
+			nanosleep(&tim, &tim2);
 			set_gpio(gpio_value, disable);
 			break;
 		}

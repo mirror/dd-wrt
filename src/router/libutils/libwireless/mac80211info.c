@@ -1904,6 +1904,7 @@ nla_put_failure:
 	return 0;
 
 }
+
 int has_ibss(const char *prefix)
 {
 	if (!is_mac80211(prefix))
@@ -1924,7 +1925,6 @@ int has_mesh(const char *prefix)
 	EXITVALUECACHE();
 	return ret;
 }
-
 
 int has_tdma(const char *prefix)
 {

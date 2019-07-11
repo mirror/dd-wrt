@@ -104,7 +104,10 @@ static void sr_config_cgi(unsigned char method, struct mime_handler *handler, ch
 	 */
 	if (wp->restore_ret == 0) {
 		nvram_commit();
-		sleep(5);
+		struct timespec tim, tim2;
+		tim.tv_sec = 5;
+		tim.tv_nsec = 0;
+		nanosleep(&tim, &tim2);
 		sys_reboot();
 	}
 }

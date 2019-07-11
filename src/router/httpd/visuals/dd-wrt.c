@@ -6237,7 +6237,7 @@ void ej_show_iflist(webs_t wp, int argc, char_t ** argv)
 	bzero(buffer, 256);
 	char *prefix = NULL;
 	if (argc > 0)
-	    prefix = argv[0];
+		prefix = argv[0];
 	getIfList(buffer, prefix);
 	foreach(var, buffer, next) {
 		char *wanface = get_wan_face();
