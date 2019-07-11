@@ -199,7 +199,7 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_SWCONFIG
 	hasgiga = 0;
 #ifdef HAVE_ALPINE
-	len = 16; // no tag support for now
+	len = 16;		// no tag support for now
 #else
 	len = 17;
 	if (has_igmpsnooping())

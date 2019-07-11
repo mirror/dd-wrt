@@ -802,7 +802,10 @@ static void *handle_request(void *arg)
 	for (;;) {
 		wfgets(line, LINE_LEN, conn_fp);
 		if (!*(line) && (errno == EINTR || errno == EAGAIN)) {
-			usleep(1000);
+			struct timespec tim, tim2;
+			tim.tv_sec = 0;
+			tim.tv_nsec = 1000000L;
+			nanosleep(&tim, &tim2);
 			continue;
 		}
 		break;
@@ -927,41 +930,41 @@ static void *handle_request(void *arg)
 
 		ISOMAP isomap[] = {
 			{
-			 "de", "german"},	//
+			 "de", "german" },	//
 			{
-			 "es", "spanish"},	//
+			 "es", "spanish" },	//
 			{
-			 "fr", "french"},	//
+			 "fr", "french" },	//
 			{
-			 "hr", "croatian"},	//
+			 "hr", "croatian" },	//
 			{
-			 "hu", "hungarian"},	//
+			 "hu", "hungarian" },	//
 			{
-			 "nl", "dutch"},	//
+			 "nl", "dutch" },	//
 			{
-			 "it", "italian"},	//
+			 "it", "italian" },	//
 			{
-			 "lv", "latvian"},	//
+			 "lv", "latvian" },	//
 			{
-			 "jp", "japanese"},	//
+			 "jp", "japanese" },	//
 			{
-			 "pl", "polish"},	//
+			 "pl", "polish" },	//
 			{
-			 "pt", "portuguese_braz"},	// 
+			 "pt", "portuguese_braz" },	// 
 			{
-			 "ro", "romanian"},	//
+			 "ro", "romanian" },	//
 			{
-			 "ru", "russian", "RU"},	// 
+			 "ru", "russian", "RU" },	// 
 			{
-			 "sl", "slovenian"},	//
+			 "sl", "slovenian" },	//
 			{
-			 "sr", "serbian"},	//
+			 "sr", "serbian" },	//
 			{
-			 "sv", "swedish"},	//
+			 "sv", "swedish" },	//
 			{
-			 "zh", "chinese_simplified"},	//
+			 "zh", "chinese_simplified" },	//
 			{
-			 "tr", "turkish"},	//
+			 "tr", "turkish" },	//
 			NULL
 		};
 		if (nvram_match("langprop", "") || nvram_get("langprop") == NULL) {
@@ -1812,8 +1815,11 @@ int main(int argc, char **argv)
 		numthreads++;
 		pthread_mutex_unlock(&httpd_mutex);
 		while (numthreads > 4) {
-			fprintf(stderr, "thread limit of %d reached, waiting for release\n", numthreads);
-			sleep(1);
+//			fprintf(stderr, "thread limit of %d reached, waiting for release\n", numthreads);
+			struct timespec tim, tim2;
+			tim.tv_sec = 0;
+			tim.tv_nsec = 100000000L;
+			nanosleep(&tim, &tim2);
 		}
 		conn_fp->threadid = numthreads;
 

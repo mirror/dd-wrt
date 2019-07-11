@@ -208,7 +208,10 @@ int dhcp_lease_table_init(void)
 	char *p;
 
 	killall("dnsmasq", SIGUSR2);
-	sleep(1);
+	struct timespec tim, tim2;
+	tim.tv_sec = 0;
+	tim.tv_nsec = 1000000000L;
+	nanosleep(&tim, &tim2);
 
 	if ((fp_w = fopen(LEASES_NAME_IP, "w")) != NULL) {
 		// Parse leases file
