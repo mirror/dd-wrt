@@ -1548,7 +1548,10 @@ void getIPFromName(char *name, char *ip)
 		}
 		if (strcmp(ip, "0.0.0.0"))
 			break;
-		sleep(1);
+		struct timespec tim, tim2;
+		tim.tv_sec = 1;
+		tim.tv_nsec = 0;
+		nanosleep(&tim, &tim2);
 	}
 
 }

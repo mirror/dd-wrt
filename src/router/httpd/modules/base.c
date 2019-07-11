@@ -96,7 +96,10 @@ static int _sys_commit(void)
 {
 	if (nvram_matchi("dhcpnvram", 1)) {
 		killall("dnsmasq", SIGUSR2);	// update lease -- tofu
-		sleep(1);
+		struct timespec tim, tim2;
+		tim.tv_sec = 0;
+		tim.tv_nsec = 1000000000L;
+		nanosleep(&tim, &tim2);
 	}
 	return _nvram_commit();
 }
@@ -1283,11 +1286,19 @@ static int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 	}
 
 	if (action == REFRESH) {
-		sleep(sleep_time);
+		struct timespec tim, tim2;
+		tim.tv_sec = sleep_time;
+		tim.tv_nsec;
+		nanosleep(&tim, &tim2);
 	} else if (action == SERVICE_RESTART) {
 		_sys_commit();
 		service_restart();
-		sleep(sleep_time);
+
+		struct timespec tim, tim2;
+		tim.tv_sec = sleep_time;
+		tim.tv_nsec;
+		nanosleep(&tim, &tim2);
+
 	} else if (action == SYS_RESTART) {
 		_sys_commit();
 		sys_restart();
@@ -1596,7 +1607,10 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 		eval("cp", "-f", "/etc/defaults/nvram.bin", "/usr/local/nvram/nvram.bin");
 		eval("sync");
 		eval("sync");
-		sleep(5);
+		struct timespec tim, tim2;
+		tim.tv_sec = 5;
+		tim.tv_nsec = 0;
+		nanosleep(&tim, &tim2);
 		eval("event", "5", "1", "15");
 #endif
 		eval("mount", "/usr/local", "-o", "remount,rw");
@@ -1693,7 +1707,10 @@ footer:
 	}
 
 	nvram_set("upnp_wan_proto", "");
-	sleep(sleep_time);
+	struct timespec tim, tim2;
+	tim.tv_sec = sleep_time;
+	tim.tv_nsec = 0;
+	nanosleep(&tim, &tim2);
 	if ((action == RESTART) || (action == SYS_RESTART))
 		sys_restart();
 	else if (action == SERVICE_RESTART)
@@ -1732,7 +1749,7 @@ static int do_auth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 
 static int do_cauth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 {
-	if(nvram_matchi("info_passwd", 0))
+	if (nvram_matchi("info_passwd", 0))
 		return 1;
 	return do_auth(wp, auth_check);
 }
@@ -1740,7 +1757,7 @@ static int do_cauth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 #ifdef HAVE_REGISTER
 static int do_auth_reg(webs_t wp, int (*auth_check)(webs_t conn_fp))
 {
-	if(!wp->isregistered)
+	if (!wp->isregistered)
 		return 1;
 	return do_auth(wp, auth_check);
 }

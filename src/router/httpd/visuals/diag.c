@@ -72,7 +72,10 @@ void ej_dump_ping_log(webs_t wp, int argc, char_t ** argv)
 			}
 			fclose(fp);
 			timeout++;
-			sleep(1);
+			struct timespec tim, tim2;
+			tim.tv_sec = 0;
+			tim.tv_nsec = 1000000000L;
+			nanosleep(&tim, &tim2);
 		}
 	}
 	/*
