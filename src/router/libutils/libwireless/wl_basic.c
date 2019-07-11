@@ -208,7 +208,7 @@ char *getSTA(void)
 	int i;
 
 	for (i = 0; i < c; i++) {
-		if ((nvram_nmatch("sta", "ath%d_mode", i) || nvram_nmatch("mesh", "ath%d_mode", i))
+		if ((nvram_nmatch("sta", "ath%d_mode", i))
 		    && !nvram_nmatch("disabled", "ath%d_net_mode", i)) {
 			return stalist[i];
 		}
