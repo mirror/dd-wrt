@@ -1,5 +1,108 @@
 PHP                                                                        NEWS
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+04 Jul 2019, PHP 7.3.7
+
+- Core:
+  . Fixed bug #76980 (Interface gets skipped if autoloader throws an exception).
+    (Nikita)
+
+- DOM:
+  . Fixed bug #78025 (segfault when accessing properties of DOMDocumentType).
+    (cmb)
+
+- MySQLi:
+  . Fixed bug #77956 (When mysqli.allow_local_infile = Off, use a meaningful
+    error message). (Sjon Hortensius)
+  . Fixed bug #38546 (bindParam incorrect processing of bool types).
+    (camporter)
+
+- MySQLnd:
+  . Fixed bug #77955 (Random segmentation fault in mysqlnd from php-fpm).
+    (Nikita)
+
+- Opcache:
+  . Fixed bug #78015 (Incorrect evaluation of expressions involving partials
+    arrays in SCCP). (Nikita)
+  . Fixed bug #78106 (Path resolution fails if opcache disabled during request).
+    (Nikita)
+
+- OpenSSL:
+  . Fixed bug #78079 (openssl_encrypt_ccm.phpt fails with OpenSSL 1.1.1c).
+    (Jakub Zelenka)
+
+- phpdbg:
+  . Fixed bug #78050 (SegFault phpdbg + opcache on include file twice).
+    (Nikita)
+
+- Sockets:
+  . Fixed bug #78038 (Socket_select fails when resource array contains
+    references). (Nikita)
+
+- Sodium:
+  . Fixed bug #78114 (segfault when calling sodium_* functions from eval). (cmb)
+
+- Standard:
+  . Fixed bug #77135 (Extract with EXTR_SKIP should skip $this).
+    (Craig Duncan, Dmitry)
+  . Fixed bug ##77937	(preg_match failed). (cmb, Anatol)
+
+- Zip:
+  . Fixed bug #76345 (zip.h not found). (Michael Maroszek)
+
+30 May 2019, PHP 7.3.6
+
+- cURL:
+  . Implemented FR #72189 (Add missing CURL_VERSION_* constants). (Javier
+    Spagnoletti)
+
+- EXIF:
+  . Fixed bug #77988 (heap-buffer-overflow on php_jpg_get16).
+    (CVE-2019-11040) (Stas)
+
+- FPM:
+  . Fixed bug #77934 (php-fpm kill -USR2 not working). (Jakub Zelenka)
+  . Fixed bug #77921 (static.php.net doesn't work anymore). (Peter Kokot)
+
+- GD:
+  . Fixed bug #77943 (imageantialias($image, false); does not work). (cmb)
+  . Fixed bug #77973 (Uninitialized read in gdImageCreateFromXbm).
+    (CVE-2019-11038) (cmb)
+
+- Iconv:
+  . Fixed bug #78069 (Out-of-bounds read in iconv.c:_php_iconv_mime_decode()
+    due to integer overflow). (CVE-2019-11039). (maris dot adam)
+
+- JSON:
+  . Fixed bug #77843 (Use after free with json serializer). (Nikita)
+
+- Opcache:
+  . Fixed possible crashes, because of inconsistent PCRE cache and opcache
+    SHM reset. (Alexey Kalinin, Dmitry)
+
+- PDO_MySQL:
+  . Fixed bug #77944 (Wrong meta pdo_type for bigint on LLP64). (cmb)
+
+- Reflection:
+  . Fixed bug #75186 (Inconsistent reflection of Closure:::__invoke()). (Nikita)
+
+- Session:
+  . Fixed bug #77911 (Wrong warning for session.sid_bits_per_character). (cmb)
+
+- SOAP:
+  . Fixed bug #77945 (Segmentation fault when constructing SoapClient with
+    WSDL_CACHE_BOTH). (Nikita)
+
+- SPL:
+  . Fixed bug #77024 (SplFileObject::__toString() may return array). (Craig
+    Duncan)
+
+- SQLite:
+  . Fixed bug #77967 (Bypassing open_basedir restrictions via file uris). (Stas)
+
+- Standard:
+  . Fixed bug #77931 (Warning for array_map mentions wrong type). (Nikita)
+  . Fixed bug #78003 (strip_tags output change since PHP 7.3). (cmb)
+
 02 May 2019, PHP 7.3.5
 
 - Core:
@@ -11,7 +114,7 @@ PHP                                                                        NEWS
     (kelunik)
 
 - EXIF
-  . Fixed bug #77950 (Heap-buffer-overflow in _estrndup via exif_process_IFD_TAG). 
+  . Fixed bug #77950 (Heap-buffer-overflow in _estrndup via exif_process_IFD_TAG).
     (CVE-2019-11036) (Stas)
 
 - Interbase:
@@ -21,10 +124,6 @@ PHP                                                                        NEWS
 - Intl:
   . Fixed bug #77895 (IntlDateFormatter::create fails in strict mode if $locale
     = null). (Nikita)
-
-- litespeed:
-  . LiteSpeed SAPI 7.3.1, better process management, new API function
-    litespeed_finish_request(). (George Wang)
 
 - LDAP:
   . Fixed bug #77869 (Core dump when using server controls) (mcmic)
@@ -95,7 +194,7 @@ PHP                                                                        NEWS
 - EXIF:
   . Fixed bug #77753 (Heap-buffer-overflow in php_ifd_get32s). (CVE-2019-11034)
     (Stas)
-  . Fixed bug #77831 (Heap-buffer-overflow in exif_iif_add_value). 
+  . Fixed bug #77831 (Heap-buffer-overflow in exif_iif_add_value).
     (CVE-2019-11035) (Stas)
 
 - FPM:

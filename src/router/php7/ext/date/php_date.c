@@ -4656,6 +4656,10 @@ PHP_METHOD(DatePeriod, __construct)
 			dpobj->end = clone;
 		}
 	}
+ 
+	if (dpobj->end == NULL && recurrences < 1) {
+		php_error_docref(NULL, E_WARNING, "The recurrence count '%d' is invalid. Needs to be > 0", (int) recurrences);
+	}
 
 	/* options */
 	dpobj->include_start_date = !(options & PHP_DATE_PERIOD_EXCLUDE_START_DATE);
@@ -5320,12 +5324,35 @@ PHP_METHOD(DatePeriod, __wakeup)
 }
 /* }}} */
 
+/* {{{ date_period_is_magic_property
+ *  Common for date_period_read_property() and date_period_write_property() functions
+ */
+static int date_period_is_magic_property(zend_string *name)
+{
+	if (zend_string_equals_literal(name, "recurrences")
+		|| zend_string_equals_literal(name, "include_start_date")
+		|| zend_string_equals_literal(name, "start")
+		|| zend_string_equals_literal(name, "current")
+		|| zend_string_equals_literal(name, "end")
+		|| zend_string_equals_literal(name, "interval")
+	) {
+		return 1;
+	}
+	return 0;
+}
+/* }}} */
+
 /* {{{ date_period_read_property */
 static zval *date_period_read_property(zval *object, zval *member, int type, void **cache_slot, zval *rv)
 {
 	if (type != BP_VAR_IS && type != BP_VAR_R) {
-		zend_throw_error(NULL, "Retrieval of DatePeriod properties for modification is unsupported");
-		return &EG(uninitialized_zval);
+		zend_string *name = zval_get_string(member);
+		if (date_period_is_magic_property(name)) {
+			zend_throw_error(NULL, "Retrieval of DatePeriod->%s for modification is unsupported", ZSTR_VAL(name));
+			zend_string_release(name);
+			return &EG(uninitialized_zval);
+		}
+		zend_string_release(name);
 	}
 
 	Z_OBJPROP_P(object); /* build properties hash table */
@@ -5337,7 +5364,15 @@ static zval *date_period_read_property(zval *object, zval *member, int type, voi
 /* {{{ date_period_write_property */
 static void date_period_write_property(zval *object, zval *member, zval *value, void **cache_slot)
 {
-	zend_throw_error(NULL, "Writing to DatePeriod properties is unsupported");
+	zend_string *name = zval_get_string(member);
+	if (date_period_is_magic_property(name)) {
+		zend_throw_error(NULL, "Writing to DatePeriod->%s is unsupported", ZSTR_VAL(name));
+		zend_string_release(name);
+		return;
+	}
+	zend_string_release(name);
+
+	std_object_handlers.write_property(object, member, value, cache_slot);
 }
 /* }}} */
 
