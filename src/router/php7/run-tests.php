@@ -24,7 +24,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: c47770ca066ccc87787a0bdca52dc20de5b2fea9 $ */
+/* $Id: 7b20b0bde3a75c88065bc45b631831608bf6c930 $ */
 
 define('INIT_DIR', getcwd());
 
@@ -695,7 +695,7 @@ if (isset($argc) && $argc > 1) {
 					$html_output = is_resource($html_file);
 					break;
 				case '--version':
-					echo '$Id: c47770ca066ccc87787a0bdca52dc20de5b2fea9 $' . "\n";
+					echo '$Id: 7b20b0bde3a75c88065bc45b631831608bf6c930 $' . "\n";
 					exit(1);
 
 				default:
@@ -818,7 +818,7 @@ HELP;
 		if (substr(PHP_OS, 0, 3) == "WIN") {
 			$pass_options .= " -c " . escapeshellarg($conf_passed);
 		} else {
-			$pass_options .= " -c '$conf_passed'";
+			$pass_options .= " -c '" . realpath($conf_passed) . "'";
 		}
 	}
 
@@ -1593,13 +1593,14 @@ TEST $file
 	// Any special ini settings
 	// these may overwrite the test defaults...
 	if (array_key_exists('INI', $section_text)) {
-		if (strpos($section_text['INI'], '{PWD}') !== false) {
-			$section_text['INI'] = str_replace('{PWD}', dirname($file), $section_text['INI']);
-		}
+		$section_text['INI'] = str_replace('{PWD}', dirname($file), $section_text['INI']);
+		$section_text['INI'] = str_replace('{TMP}', sys_get_temp_dir(), $section_text['INI']);
 		settings2array(preg_split( "/[\n\r]+/", $section_text['INI']), $ini_settings);
 	}
 
 	settings2params($ini_settings);
+
+	$env['TEST_PHP_EXTRA_ARGS'] = $pass_options . ' ' . $ini_settings;
 
 	// Check if test should be skipped.
 	$info = '';
