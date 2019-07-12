@@ -4372,15 +4372,6 @@ static void save_prefix(webs_t wp, char *prefix)
 	if (wl_newmode && nvram_match(n, "ap") && (!strcmp(wl_newmode, "sta") || !strcmp(wl_newmode, "apsta")))
 		notifywanChange();
 
-	if (nvram_match(n, "sta")) {
-
-		if (wl_newmode)
-			if ((!strcmp(wl_newmode, "ap") || !strcmp(wl_newmode, "wdsap")
-			     || !strcmp(wl_newmode, "infra") || !strcmp(wl_newmode, "mesh") || !strcmp(wl_newmode, "wdssta"))
-			    && nvram_invmatch("wan_proto", "3g")) {
-				nvram_set("wan_proto", "disabled");
-			}
-	}
 	copytonv(wp, n);
 	if (!strcmp(prefix, "wl0") || !strcmp(prefix, "wl1") || !strcmp(prefix, "wl2")) {
 		char *wl = websGetVar(wp, n, NULL);
