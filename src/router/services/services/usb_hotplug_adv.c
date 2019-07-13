@@ -224,6 +224,8 @@ void start_hotplug_block(void)
 
 		sysprintf("/usr/sbin/disktype /dev/%s", part);
 		sprintf(devname, "/dev/%s", part);
+		eval("hdparm", "-S", "242", devname);
+		eval("blockdev", "--setra", nvram_safe_get("drive_ra"), devname);
 		if (!strcmp(action, "add"))
 			usb_add_ufd(NULL, 0, devname, 1);
 		if (!strcmp(action, "remove"))
@@ -446,7 +448,7 @@ static int usb_process_path(char *path, int host, char *part, char *devpath)
 		if (host == -1)	//K3
 		{
 			sprintf(mount_point, "/tmp/mnt/%s", dev);
- 
+
 		} else {	//K2.6
 			sprintf(mount_point, "/tmp/mnt/disc%d-%s", host, part);
 		}
@@ -464,7 +466,7 @@ static int usb_process_path(char *path, int host, char *part, char *devpath)
 				found = 1;
 				do_mount(fs, path, "/jffs", dev);
 			}
-			if (strstr(line, "Opt") || strstr(line, "OPT") || strstr(line, "\"opt")){
+			if (strstr(line, "Opt") || strstr(line, "OPT") || strstr(line, "\"opt")) {
 				found = 1;
 				do_mount(fs, path, "/opt", dev);
 			}
@@ -477,7 +479,6 @@ static int usb_process_path(char *path, int host, char *part, char *devpath)
 		fclose(fp);
 	}
 
-
 	if (strcmp(fs, "swap"))	//don't create dir as swap is not mounted to a dir
 		eval("mkdir", "-p", mount_point);
 
@@ -489,7 +490,7 @@ static int usb_process_path(char *path, int host, char *part, char *devpath)
 		sprintf(sym_link, "%s/%s", dev_dir, part);
 		eval("ln", "-s", mount_point, sym_link);
 	}
-	if( found != 1)
+	if (found != 1)
 		do_mount(fs, path, mount_point, dev);
 
 	// now we will get a nice ordered dump of all partitions

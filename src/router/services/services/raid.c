@@ -181,7 +181,8 @@ void start_raid(void)
 	char *next;
 	char drive[64];
 	foreach(drive, raid, next) {
-		sysprintf("hdparm -S 242 %s", drive);
+		eval("hdparm", "-S", "242", drive);
+		eval("blockdev", "--setra", nvram_safe_get("drive_ra"), drive);
 	}
 	while (1) {
 		char *raid = nvram_nget("raid%d", i);

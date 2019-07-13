@@ -61,8 +61,6 @@ static void free_users(struct samba3_share *cs)
 
 }
 
-
-
 void start_samba3(void)
 {
 	struct samba3_share *cs, *csnext;

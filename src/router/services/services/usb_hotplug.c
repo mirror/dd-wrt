@@ -468,7 +468,8 @@ static int usb_add_ufd(char *devpath)
 			}
 			sysprintf("/usr/sbin/disktype %s > %s", path, DUMPFILE);
 			//set spindown time
-			sysprintf("hdparm -S 242 %s", path);
+			eval("hdparm", "-S", "242", path);
+			eval("blockdev", "--setra", nvram_safe_get("drive_ra"), path);
 
 			/* 
 			 * Check if it has file system 
