@@ -63,8 +63,10 @@ static const char bdcmd_names[] ALIGN1 =
 	"getsize64" "\0"
 	"getra" "\0"
 	"setra" "\0"
+#define CMD_SETRA 10
 	"getfra" "\0"
 	"setfra" "\0"
+#define CMD_SETFRA 12
 	"flushbufs" "\0"
 	"rereadpt"  "\0"
 ;
@@ -110,9 +112,9 @@ static const uint8_t bdcmd_flags[] ALIGN1 = {
 	ARG_ULONG,                         //getsize
 	ARG_U64,                           //getsize64
 	ARG_LONG,			   //getra
-	ARG_INT + FL_NOPTR + FL_NORESULT,  //setra
+	ARG_INT + FL_NOPTR + FL_NORESULT + FL_USRARG,  //setra
 	ARG_LONG,			   //getfra
-	ARG_INT + FL_NOPTR + FL_NORESULT,  //setfra
+	ARG_INT + FL_NOPTR + FL_NORESULT + FL_USRARG,  //setfra
 	ARG_NONE + FL_NORESULT,            //flushbufs
 	ARG_NONE + FL_NORESULT,            //rereadpt
 };
@@ -148,7 +150,8 @@ int blockdev_main(int argc UNUSED_PARAM, char **argv)
 	/* setrw translates to BLKROSET(0), most other ioctls don't care... */
 	/* ...setro will do BLKROSET(1) */
 	u64 = (bdcmd == CMD_SETRO);
-	if (bdcmd == CMD_SETBSZ) {
+	flags = bdcmd_flags[bdcmd];
+	if (flags & FL_USRARG) {
 		/* ...setbsz is BLKBSZSET(bytes) */
 		u64 = xatoi_positive(*++argv);
 	}
@@ -159,7 +162,6 @@ int blockdev_main(int argc UNUSED_PARAM, char **argv)
 	fd = xopen(argv[0], O_RDONLY);
 
 	ioctl_val_on_stack.u64 = u64;
-	flags = bdcmd_flags[bdcmd];
 #if BB_BIG_ENDIAN
 	/* Store data properly wrt data size.
 	 * (1) It's no-op for little-endian.
