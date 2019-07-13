@@ -3,28 +3,28 @@
 <legend><% tran("lighttpd.server"); %></legend>
 <div class="setting">
            <div class="label"><% tran("lighttpd.server"); %></div>
-           <input class="spaceradio" type="radio" name="lighttpd_enable" value="1" <% nvram_checked("lighttpd_enable", "1"); %> onclick="show_layer_ext(this, 'lighttpdconfig', true)" /><% tran("share.enable"); %>&nbsp;
-           <input class="spaceradio" type="radio" name="lighttpd_enable" value="0" <% nvram_checked("lighttpd_enable", "0"); %> onclick="show_layer_ext(this, 'lighttpdconfig', false)"/><% tran("share.disable"); %>
+           <input class="spaceradio" type="radio" name="lighttpd_enable" value="1" <% nvc("lighttpd_enable", "1"); %> onclick="show_layer_ext(this, 'lighttpdconfig', true)" /><% tran("share.enable"); %>&nbsp;
+           <input class="spaceradio" type="radio" name="lighttpd_enable" value="0" <% nvc("lighttpd_enable", "0"); %> onclick="show_layer_ext(this, 'lighttpdconfig', false)"/><% tran("share.disable"); %>
 </div>
 <div id="lighttpdconfig">
   <div class="setting">
            <div class="label"><% tran("lighttpd.sslport"); %></div>
-           <input size="5" maxlength="5" class="text" name="lighttpd_sslport" value="<% nvram_get("lighttpd_sslport"); %>" />
+           <input size="5" maxlength="5" class="text" name="lighttpd_sslport" value="<% nvg("lighttpd_sslport"); %>" />
            
   </div>
   <div class="setting">
            <div class="label"><% tran("lighttpd.port"); %></div>
-           <input size="5" maxlength="5" class="text" name="lighttpd_port" value="<% nvram_get("lighttpd_port"); %>" />
+           <input size="5" maxlength="5" class="text" name="lighttpd_port" value="<% nvg("lighttpd_port"); %>" />
            
   </div>
   <div class="setting">
            <div class="label"><% tran("lighttpd.wan"); %></div>
-           <input class="spaceradio" type="radio" name="lighttpd_wan" value="1" <% nvram_checked("lighttpd_wan", "1"); %> /><% tran("share.enable"); %>&nbsp;
-           <input class="spaceradio" type="radio" name="lighttpd_wan" value="0" <% nvram_checked("lighttpd_wan", "0"); %> /><% tran("share.disable"); %>
+           <input class="spaceradio" type="radio" name="lighttpd_wan" value="1" <% nvc("lighttpd_wan", "1"); %> /><% tran("share.enable"); %>&nbsp;
+           <input class="spaceradio" type="radio" name="lighttpd_wan" value="0" <% nvc("lighttpd_wan", "0"); %> /><% tran("share.disable"); %>
   </div>
   <div class="setting">
            <div class="label"><% tran("lighttpd.url"); %></div>
-           <a href="https://<% nvram_get("lan_ipaddr"); %>:<% nvram_get("lighttpd_sslport"); %>">https://<% nvram_get("lan_ipaddr"); %>:<% nvram_get("lighttpd_sslport"); %></a>
+           <a href="https://<% nvg("lan_ipaddr"); %>:<% nvg("lighttpd_sslport"); %>">https://<% nvg("lan_ipaddr"); %>:<% nvg("lighttpd_sslport"); %></a>
   </div>
 </div>
 </fieldset><br />
