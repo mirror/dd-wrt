@@ -3,33 +3,33 @@
 	<legend><% tran("management.samba_legend"); %></legend>
 	<div class="setting">
 		<div class="label"><% tran("management.samba_srv"); %></div>
-		<input class="spaceradio" type="radio" value="1" name="samba_mount" <% nvram_checked("samba_mount","1"); %> onclick="show_layer_ext(this, 'idsamba', true)" /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" value="0" name="samba_mount" <% nvram_checked("samba_mount","0"); %> onclick="show_layer_ext(this, 'idsamba', false)" /><% tran("share.disable"); %>
+		<input class="spaceradio" type="radio" value="1" name="samba_mount" <% nvc("samba_mount","1"); %> onclick="show_layer_ext(this, 'idsamba', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" value="0" name="samba_mount" <% nvc("samba_mount","0"); %> onclick="show_layer_ext(this, 'idsamba', false)" /><% tran("share.disable"); %>
 	</div>
 	<div id="idsamba">
 		<div class="setting">
 			<div class="label"><% tran("management.samba_share"); %></div>
-			<input maxlength="100" size="25" name="samba_share" value="<% nvram_get("samba_share"); %>" onblur="valid_name(this,management.samba_share,SPACE_NO)" />
+			<input maxlength="100" size="25" name="samba_share" value="<% nvg("samba_share"); %>" onblur="valid_name(this,management.samba_share,SPACE_NO)" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("share.usrname"); %></div>
-			<input maxlength="100" size="25" name="samba_user" value="<% nvram_get("samba_user"); %>" />
+			<input maxlength="100" size="25" name="samba_user" value="<% nvg("samba_user"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("share.passwd"); %></div>
-			<input type="password" autocomplete="off" id="samba_password" maxlength="100" size="25" name="samba_password" value="<% nvram_get("samba_password"); %>" />&nbsp;&nbsp;&nbsp;
+			<input type="password" autocomplete="off" id="samba_password" maxlength="100" size="25" name="samba_password" value="<% nvg("samba_password"); %>" />&nbsp;&nbsp;&nbsp;
 			<input type="checkbox" name="_samba_password_unmask" value="0" onclick="setElementMask('samba_password', this.checked)" />&nbsp;<% tran("share.unmask"); %>
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("management.samba_stscript"); %></div>
-			<input maxlength="100" size="25" name="samba_script" value="<% nvram_get("samba_script"); %>" />
+			<input maxlength="100" size="25" name="samba_script" value="<% nvg("samba_script"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("share.fssize"); %></div>
 			<script type="text/javascript">
 			//<![CDATA[
 			<% statfs("/tmp/mnt/smbshare", "samba"); %>
-			document.write( ((<% nvram_get("samba_mount"); %>) && (samba.size)) ? (scaleSize(samba.size) + ' / ' + scaleSize(samba.free)) : '<span style="color:#999999;"><em>(' + share.nmounted + ')</em></span>' );
+			document.write( ((<% nvg("samba_mount"); %>) && (samba.size)) ? (scaleSize(samba.size) + ' / ' + scaleSize(samba.free)) : '<span style="color:#999999;"><em>(' + share.nmounted + ')</em></span>' );
 			//]]>
 			</script>
 		</div>
