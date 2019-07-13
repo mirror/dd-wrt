@@ -3,8 +3,8 @@
   <legend><% tran("service.nfs"); %></legend>
 	<div class="setting">
 		<div class="label"><% tran("service.nfs_srv"); %></div>
-		<input class="spaceradio" type="radio" name="nfs_enable" value="1" <% nvram_checked("nfs_enable", "1"); %> onclick="show_layer_ext(this, 'idnfs', true)" /> <% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" name="nfs_enable" value="0" <% nvram_checked("nfs_enable", "0"); %> onclick="show_layer_ext(this, 'idnfs', false)" /> <% tran("share.disable"); %>
+		<input class="spaceradio" type="radio" name="nfs_enable" value="1" <% nvc("nfs_enable", "1"); %> onclick="show_layer_ext(this, 'idnfs', true)" /> <% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="nfs_enable" value="0" <% nvc("nfs_enable", "0"); %> onclick="show_layer_ext(this, 'idnfs', false)" /> <% tran("share.disable"); %>
 	</div>
 	<div id="idnfs">
 	<% nfs_sharepaths(); %>
