@@ -27,6 +27,10 @@
 //usage:     "\n	--getsz		Get device size in 512-byte sectors"
 /*//usage:     "\n	--getsize	Get device size in sectors (deprecated)"*/
 //usage:     "\n	--getsize64	Get device size in bytes"
+//usage:     "\n        --setra         Set readahead"
+//usage:     "\n        --getra         Get readahead"
+//usage:     "\n        --setfra        Set filesystem readahead"
+//usage:     "\n        --getfra        Get filesystem readahead"
 //usage:     "\n	--flushbufs	Flush buffers"
 //usage:     "\n	--rereadpt	Reread partition table"
 // util-linux 2.31 also has:
