@@ -14,12 +14,15 @@
 #include <sys/types.h>
 #include <sys/param.h>
 #include <netinet/in.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <dirent.h>
 #include <errno.h>
 #include "xmalloc.h"
 #include "nfslib.h"
 #include "exportfs.h"
+#include "nfsd_path.h"
+#include "xlog.h"
 
 exp_hash_table exportlist[MCL_MAXTYPES] = {{NULL, {{NULL,NULL}, }}, }; 
 static int export_hash(char *);
@@ -30,6 +33,34 @@ static void	export_add(nfs_export *exp);
 static int	export_check(const nfs_export *exp, const struct addrinfo *ai,
 				const char *path);
 
+/* Return a real path for the export. */
+static void
+exportent_mkrealpath(struct exportent *eep)
+{
+	const char *chroot = nfsd_path_nfsd_rootdir();
+	char *ret = NULL;
+
+	if (chroot) {
+		char buffer[PATH_MAX];
+		if (realpath(chroot, buffer))
+			ret = nfsd_path_prepend_dir(buffer, eep->e_path);
+		else
+			xlog(D_GENERAL, "%s: failed to resolve path %s: %m",
+					__func__, chroot);
+	}
+	if (!ret)
+		ret = xstrdup(eep->e_path);
+	eep->e_realpath = ret;
+}
+
+char *
+exportent_realpath(struct exportent *eep)
+{
+	if (!eep->e_realpath)
+		exportent_mkrealpath(eep);
+	return eep->e_realpath;
+}
+
 void
 exportent_release(struct exportent *eep)
 {
@@ -39,6 +70,7 @@ exportent_release(struct exportent *eep)
 	free(eep->e_fslocdata);
 	free(eep->e_uuid);
 	xfree(eep->e_hostname);
+	xfree(eep->e_realpath);
 }
 
 static void

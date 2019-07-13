@@ -195,7 +195,16 @@ Set to "true" to enable SSL communication with the LDAP server.
 Location of a trusted CA certificate used when SSL is enabled
 (Required if
 .B LDAP_use_ssl
-is true)
+is true and
+.B LDAP_tls_reqcert
+is not set to never)
+.TP
+.B LDAP_tls_reqcert
+Controls the LDAP server certificate validation behavior.
+It can take the same values as ldap.conf(5)'s
+.B TLS_REQCERT
+tunable.
+(Default: "hard")
 .TP
 .B NFSv4_person_objectclass
 The object class name for people accounts in your local LDAP schema

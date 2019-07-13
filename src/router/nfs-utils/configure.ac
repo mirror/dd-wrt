@@ -320,6 +320,10 @@ AC_CHECK_FUNC([getservbyname], ,
 
 AC_CHECK_LIB([crypt], [crypt], [LIBCRYPT="-lcrypt"])
 
+AC_CHECK_HEADERS([sched.h], [], [])
+AC_CHECK_FUNCS([unshare fstatat statx], [] , [])
+AC_LIBPTHREAD([])
+
 if test "$enable_nfsv4" = yes; then
   dnl check for libevent libraries and headers
   AC_LIBEVENT
@@ -417,7 +421,7 @@ if test "$enable_gss" = yes; then
   AC_KERBEROS_V5
 
   dnl Check for pthreads
-  AC_LIBPTHREAD
+  AC_LIBPTHREAD([AC_MSG_ERROR([libpthread not found.])])
 
   dnl librpcsecgss already has a dependency on libgssapi,
   dnl but we need to make sure we get the right version

@@ -33,6 +33,7 @@
 
 #include "sockaddr.h"
 #include "misc.h"
+#include "nfsd_path.h"
 #include "nfslib.h"
 #include "exportfs.h"
 #include "xlog.h"
@@ -52,6 +53,11 @@ static const char *lockfile = EXP_LOCKFILE;
 static int _lockfd = -1;
 
 struct state_paths etab;
+
+static ssize_t exportfs_write(int fd, const char *buf, size_t len)
+{
+	return nfsd_path_write(fd, buf, len);
+}
 
 /*
  * If we aren't careful, changes made by exportfs can be lost
@@ -109,6 +115,7 @@ main(int argc, char **argv)
 
 	conf_init_file(NFS_CONFFILE);
 	xlog_from_conffile("exportfs");
+	nfsd_path_init();
 
 	/* NOTE: following uses "mountd" section of nfs.conf !!!! */
 	s = conf_get_str("mountd", "state-directory-path");
@@ -505,7 +512,7 @@ static int test_export(nfs_export *exp, int with_fsid)
 	fd = open("/proc/net/rpc/nfsd.export/channel", O_WRONLY);
 	if (fd < 0)
 		return 0;
-	n = write(fd, buf, strlen(buf));
+	n = exportfs_write(fd, buf, strlen(buf));
 	close(fd);
 	if (n < 0)
 		return 0;
@@ -521,7 +528,7 @@ validate_export(nfs_export *exp)
 	 * otherwise trial-export to '-test-client-' and check for failure.
 	 */
 	struct stat stb;
-	char *path = exp->m_export.e_path;
+	char *path = exportent_realpath(&exp->m_export);
 	struct statfs64 stf;
 	int fs_has_fsid = 0;
 
