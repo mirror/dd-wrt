@@ -232,14 +232,14 @@ addEvent(window, "unload", function() {
 									<select size="1" name="dr_setting">
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<option value=\"0\" <% nvram_selected_js("dr_setting", "0"); %> >" + share.disable + "</option>");
+										document.write("<option value=\"0\" <% nvsjs("dr_setting", "0"); %> >" + share.disable + "</option>");
 										//]]>
 										</script>
-										<option value="1" <% nvram_selected("dr_setting", "1"); %> >WAN</option>
-										<option value="2" <% nvram_selected("dr_setting", "2"); %> >LAN &amp; WLAN</option>
+										<option value="1" <% nvs("dr_setting", "1"); %> >WAN</option>
+										<option value="2" <% nvs("dr_setting", "2"); %> >LAN &amp; WLAN</option>
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<option value=\"3\" <% nvram_selected_js("dr_setting", "3"); %> >" + share.both + "</option>");
+										document.write("<option value=\"3\" <% nvsjs("dr_setting", "3"); %> >" + share.both + "</option>");
 										//]]>
 										</script>
 									</select>

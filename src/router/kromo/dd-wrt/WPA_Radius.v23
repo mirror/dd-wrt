@@ -1,9 +1,9 @@
 <div class="setting">
 	<div class="label"><% tran("wpa.algorithms"); %></div>
 	<select name="wl_crypto">
-		<option value="tkip" <% nvram_selected("wl_crypto","tkip"); %>>TKIP</option>
-		<option value="aes" <% nvram_selected("wl_crypto","aes"); %>>AES</option>
-		<option value="tkip+aes" <% nvram_selected("wl_crypto","tkip+aes"); %>>TKIP+AES</option>
+		<option value="tkip" <% nvs("wl_crypto","tkip"); %>>TKIP</option>
+		<option value="aes" <% nvs("wl_crypto","aes"); %>>AES</option>
+		<option value="tkip+aes" <% nvs("wl_crypto","tkip+aes"); %>>TKIP+AES</option>
 	</select>
 </div>
 <div class="setting">
