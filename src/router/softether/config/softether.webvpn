@@ -2,25 +2,25 @@
 	<legend><% tran("service.softether_legend"); %></legend>
 	<div class="setting">
 		<div class="label"><% tran("service.softether_server"); %></div>
-		<input class="spaceradio" type="radio" name="setherserver_enable" value="1" <% nvram_checked("setherserver_enable", "1"); %> /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" name="setherserver_enable" value="0" <% nvram_checked("setherserver_enable", "0"); %> /><% tran("share.disable"); %>
+		<input class="spaceradio" type="radio" name="setherserver_enable" value="1" <% nvc("setherserver_enable", "1"); %> /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="setherserver_enable" value="0" <% nvc("setherserver_enable", "0"); %> /><% tran("share.disable"); %>
 	</div>
 	<div class="setting">
 		<div class="label"><% tran("service.softether_bridge"); %></div>
-		<input class="spaceradio" type="radio" name="setherbridge_enable" value="1" <% nvram_checked("setherbridge_enable", "1"); %> /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" name="setherbridge_enable" value="0" <% nvram_checked("setherbridge_enable", "0"); %> /><% tran("share.disable"); %>
+		<input class="spaceradio" type="radio" name="setherbridge_enable" value="1" <% nvc("setherbridge_enable", "1"); %> /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="setherbridge_enable" value="0" <% nvc("setherbridge_enable", "0"); %> /><% tran("share.disable"); %>
 	</div>
 	<div class="setting">
 		<div class="label"><% tran("service.softether_client"); %></div>
-		<input class="spaceradio" type="radio" name="setherclient_enable" value="1" <% nvram_checked("setherclient_enable", "1"); %> /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" name="setherclient_enable" value="0" <% nvram_checked("setherclient_enable", "0"); %> /><% tran("share.disable"); %>
+		<input class="spaceradio" type="radio" name="setherclient_enable" value="1" <% nvc("setherclient_enable", "1"); %> /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="setherclient_enable" value="0" <% nvc("setherclient_enable", "0"); %> /><% tran("share.disable"); %>
 	</div>
 	<div class="setting">		
 		<div class="label"><% tran("service.softether_config"); %></div>
 		<textarea cols="80" rows="20" id="sether_config" name="sether_config"> </textarea>
 		<script type="text/javascript">
 		//<![CDATA[
-				var softether = fix_cr( '<% nvram_get("sether_config"); %>' );
+				var softether = fix_cr( '<% nvg("sether_config"); %>' );
 				document.getElementById("sether_config").value = softether;
 		//]]>
 		</script>
