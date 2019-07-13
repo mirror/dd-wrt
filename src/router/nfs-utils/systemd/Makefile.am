@@ -54,7 +54,8 @@ rpc_pipefs_generator_SOURCES = $(COMMON_SRCS) rpc-pipefs-generator.c
 
 nfs_server_generator_LDADD = ../support/export/libexport.a \
 			     ../support/nfs/libnfs.la \
-			     ../support/misc/libmisc.a
+			     ../support/misc/libmisc.a \
+			     $(LIBPTHREAD)
 
 rpc_pipefs_generator_LDADD = ../support/nfs/libnfs.la
 

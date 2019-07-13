@@ -100,6 +100,7 @@ struct umich_ldap_info {
 	char *passwd;		/* Password to use when binding to directory */
 	int use_ssl;		/* SSL flag */
 	char *ca_cert;		/* File location of the ca_cert */
+	int tls_reqcert;	/* req and validate server cert */
 	int memberof_for_groups;/* Use 'memberof' attribute when
 				   looking up user groups */
 	int ldap_timeout;	/* Timeout in seconds for searches
@@ -118,6 +119,7 @@ static struct umich_ldap_info ldap_info = {
 	.passwd = NULL,
 	.use_ssl = 0,
 	.ca_cert = NULL,
+	.tls_reqcert = LDAP_OPT_X_TLS_HARD,
 	.memberof_for_groups = 0,
 	.ldap_timeout = DEFAULT_UMICH_SEARCH_TIMEOUT,
 };
@@ -153,7 +155,7 @@ ldap_init_and_bind(LDAP **pld,
 	LDAPAPIInfo apiinfo = {.ldapai_info_version = LDAP_API_INFO_VERSION};
 
 	snprintf(server_url, sizeof(server_url), "%s://%s:%d",
-		 (linfo->use_ssl && linfo->ca_cert) ? "ldaps" : "ldap",
+		 (linfo->use_ssl) ? "ldaps" : "ldap",
 		 linfo->server, linfo->port);
 
 	/*
@@ -208,9 +210,8 @@ ldap_init_and_bind(LDAP **pld,
 	}
 
 	/* Set option to to use SSL/TLS if requested */
-	if (linfo->use_ssl && linfo->ca_cert) {
+	if (linfo->use_ssl) {
 		int tls_type = LDAP_OPT_X_TLS_HARD;
-
 		lerr = ldap_set_option(ld, LDAP_OPT_X_TLS, &tls_type);
 		if (lerr != LDAP_SUCCESS) {
 			IDMAP_LOG(2, ("ldap_init_and_bind: setting SSL "
@@ -218,11 +219,23 @@ ldap_init_and_bind(LDAP **pld,
 				  ldap_err2string(lerr), lerr));
 			goto out;
 		}
-		lerr = ldap_set_option(NULL, LDAP_OPT_X_TLS_CACERTFILE,
-				       linfo->ca_cert);
+
+		if (linfo->ca_cert != NULL) {
+			lerr = ldap_set_option(NULL, LDAP_OPT_X_TLS_CACERTFILE,
+					       linfo->ca_cert);
+			if (lerr != LDAP_SUCCESS) {
+				IDMAP_LOG(2, ("ldap_init_and_bind: setting CA "
+					  "certificate file failed : %s (%d)",
+					  ldap_err2string(lerr), lerr));
+				goto out;
+			}
+		}
+
+		lerr = ldap_set_option(NULL, LDAP_OPT_X_TLS_REQUIRE_CERT,
+				       &linfo->tls_reqcert);
 		if (lerr != LDAP_SUCCESS) {
-			IDMAP_LOG(2, ("ldap_init_and_bind: setting CA "
-				  "certificate file failed : %s (%d)",
+			IDMAP_LOG(2, ("ldap_init_and_bind: setting "
+				      "req CA cert failed : %s(%d)",
 				  ldap_err2string(lerr), lerr));
 			goto out;
 		}
@@ -1098,7 +1111,7 @@ out_err:
 static int
 umichldap_init(void)
 {
-	char *tssl, *canonicalize, *memberof;
+	char *tssl, *canonicalize, *memberof, *cert_req;
 	char missing_msg[128] = "";
 	char *server_in, *canon_name;
 
@@ -1119,6 +1132,24 @@ umichldap_init(void)
 	else
 		ldap_info.use_ssl = 0;
 	ldap_info.ca_cert = conf_get_str(LDAP_SECTION, "LDAP_CA_CERT");
+	cert_req = conf_get_str(LDAP_SECTION, "LDAP_tls_reqcert");
+	if (cert_req != NULL) {
+		if (strcasecmp(cert_req, "hard") == 0)
+			ldap_info.tls_reqcert = LDAP_OPT_X_TLS_HARD;
+		else if (strcasecmp(cert_req, "demand") == 0)
+			ldap_info.tls_reqcert = LDAP_OPT_X_TLS_DEMAND;
+		else if (strcasecmp(cert_req, "try") == 0)
+			ldap_info.tls_reqcert = LDAP_OPT_X_TLS_TRY;
+		else if (strcasecmp(cert_req, "allow") == 0)
+			ldap_info.tls_reqcert = LDAP_OPT_X_TLS_ALLOW;
+		else if (strcasecmp(cert_req, "never") == 0)
+			ldap_info.tls_reqcert = LDAP_OPT_X_TLS_NEVER;
+		else {
+			IDMAP_LOG(0, ("umichldap_init: Invalid value(%s) for "
+				      "LDAP_tls_reqcert."));
+			goto fail;
+		}
+	}
 	/* vary the default port depending on whether they use SSL or not */
 	ldap_info.port = conf_get_num(LDAP_SECTION, "LDAP_port",
 				      (ldap_info.use_ssl) ?
@@ -1230,9 +1261,12 @@ umichldap_init(void)
 	if (ldap_info.group_tree == NULL || strlen(ldap_info.group_tree) == 0)
 		ldap_info.group_tree = ldap_info.base;
 
-	if (ldap_info.use_ssl && ldap_info.ca_cert == NULL) {
+	if (ldap_info.use_ssl &&
+	    ldap_info.tls_reqcert != LDAP_OPT_X_TLS_NEVER &&
+	    ldap_info.ca_cert == NULL) {
 		IDMAP_LOG(0, ("umichldap_init: You must specify LDAP_ca_cert "
-			  "with LDAP_use_ssl=yes"));
+			  "with LDAP_use_ssl=yes and "
+			  "LDAP_tls_reqcert not set to \"never\""));
 		goto fail;
 	}
 
@@ -1257,6 +1291,9 @@ umichldap_init(void)
 		  ldap_info.use_ssl ? "yes" : "no"));
 	IDMAP_LOG(1, ("umichldap_init: ca_cert : %s",
 		  ldap_info.ca_cert ? ldap_info.ca_cert : "<not-supplied>"));
+	IDMAP_LOG(1, ("umichldap_init: tls_reqcert : %s(%d)",
+		  cert_req ? cert_req : "<not-supplied>",
+		  ldap_info.tls_reqcert));
 	IDMAP_LOG(1, ("umichldap_init: use_memberof_for_groups : %s",
 		  ldap_info.memberof_for_groups ? "yes" : "no"));
 

@@ -108,6 +108,24 @@ and
 for details.
 
 .TP
+.B exports
+Recognized values:
+.BR rootdir .
+
+Setting
+.B rootdir
+to a valid path causes the nfs server to act as if the
+supplied path is being prefixed to all the exported entries. For
+instance, if
+.BR rootdir=/my/root ,
+and there is an entry in /etc/exports for
+.BR /filesystem ,
+then the client will be able to mount the path as
+.BR /filesystem ,
+but on the server, this will resolve to the path
+.BR /my/root/filesystem .
+
+.TP
 .B nfsdcltrack
 Recognized values:
 .BR storagedir .
@@ -136,7 +154,7 @@ Recognized values:
 .BR vers4.0 ,
 .BR vers4.1 ,
 .BR vers4.2 ,
-.BR rdma .
+.BR rdma ,
 
 Version and protocol values are Boolean values as described above,
 and are also used by

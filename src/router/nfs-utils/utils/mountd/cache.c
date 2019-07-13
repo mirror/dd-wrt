@@ -27,6 +27,7 @@
 #include <grp.h>
 #include <mntent.h>
 #include "misc.h"
+#include "nfsd_path.h"
 #include "nfslib.h"
 #include "exportfs.h"
 #include "mountd.h"
@@ -54,6 +55,22 @@ enum nfsd_fsid {
 	FSID_UUID16,
 	FSID_UUID16_INUM,
 };
+
+#undef is_mountpoint
+static int is_mountpoint(char *path)
+{
+	return check_is_mountpoint(path, nfsd_path_lstat);
+}
+
+static ssize_t cache_read(int fd, char *buf, size_t len)
+{
+	return nfsd_path_read(fd, buf, len);
+}
+
+static ssize_t cache_write(int fd, const char *buf, size_t len)
+{
+	return nfsd_path_write(fd, buf, len);
+}
 
 /*
  * Support routines for text-based upcalls.
@@ -221,7 +238,7 @@ static const char *get_uuid_blkdev(char *path)
 	if (cache == NULL)
 		blkid_get_cache(&cache, NULL);
 
-	if (stat(path, &stb) != 0)
+	if (nfsd_path_stat(path, &stb) != 0)
 		return NULL;
 	devname = blkid_devno_to_devname(stb.st_dev);
 	if (!devname)
@@ -373,21 +390,24 @@ static char *next_mnt(void **v, char *p)
 	FILE *f;
 	struct mntent *me;
 	size_t l = strlen(p);
+
 	if (*v == NULL) {
 		f = setmntent("/etc/mtab", "r");
 		*v = f;
 	} else
 		f = *v;
-	while ((me = getmntent(f)) != NULL && l > 1 &&
-	       (strncmp(me->mnt_dir, p, l) != 0 ||
-		me->mnt_dir[l] != '/'))
-		;
-	if (me == NULL) {
-		endmntent(f);
-		*v = NULL;
-		return NULL;
+	while ((me = getmntent(f)) != NULL && l > 1) {
+		char *mnt_dir = nfsd_path_strip_root(me->mnt_dir);
+
+		if (!mnt_dir)
+			continue;
+
+		if (strncmp(mnt_dir, p, l) == 0 && mnt_dir[l] == '/')
+			return mnt_dir;
 	}
-	return me->mnt_dir;
+	endmntent(f);
+	*v = NULL;
+	return NULL;
 }
 
 /* same_path() check is two paths refer to the same directory.
@@ -458,9 +478,9 @@ fallback:
 	 * bind-mounted in two places and both are exported, it
 	 * could give a false positive
 	 */
-	if (lstat(p, &sc) != 0)
+	if (nfsd_path_lstat(p, &sc) != 0)
 		return 0;
-	if (lstat(parent, &sp) != 0)
+	if (nfsd_path_lstat(parent, &sp) != 0)
 		return 0;
 	if (sc.st_dev != sp.st_dev)
 		return 0;
@@ -610,7 +630,7 @@ static bool match_fsid(struct parsed_fsid *parsed, nfs_export *exp, char *path)
 	int type;
 	char u[16];
 
-	if (stat(path, &stb) != 0)
+	if (nfsd_path_stat(path, &stb) != 0)
 		return false;
 	if (!S_ISDIR(stb.st_mode) && !S_ISREG(stb.st_mode))
 		return false;
@@ -692,7 +712,7 @@ static void nfsd_fh(int f)
 	char buf[RPC_CHAN_BUF_SIZE], *bp;
 	int blen;
 
-	blen = read(f, buf, sizeof(buf));
+	blen = cache_read(f, buf, sizeof(buf));
 	if (blen <= 0 || buf[blen-1] != '\n') return;
 	buf[blen-1] = 0;
 
@@ -829,7 +849,7 @@ static void nfsd_fh(int f)
 	if (found)
 		qword_add(&bp, &blen, found_path);
 	qword_addeol(&bp, &blen);
-	if (blen <= 0 || write(f, buf, bp - buf) != bp - buf)
+	if (blen <= 0 || cache_write(f, buf, bp - buf) != bp - buf)
 		xlog(L_ERROR, "nfsd_fh: error writing reply");
 out:
 	if (found_path)
@@ -921,7 +941,7 @@ static int dump_to_cache(int f, char *buf, int buflen, char *domain,
 		qword_adduint(&bp, &blen, now + ttl);
 	qword_addeol(&bp, &blen);
 	if (blen <= 0) return -1;
-	if (write(f, buf, bp - buf) != bp - buf) return -1;
+	if (cache_write(f, buf, bp - buf) != bp - buf) return -1;
 	return 0;
 }
 
@@ -1298,7 +1318,7 @@ static void nfsd_export(int f)
 	char buf[RPC_CHAN_BUF_SIZE], *bp;
 	int blen;
 
-	blen = read(f, buf, sizeof(buf));
+	blen = cache_read(f, buf, sizeof(buf));
 	if (blen <= 0 || buf[blen-1] != '\n') return;
 	buf[blen-1] = 0;
 
@@ -1381,6 +1401,7 @@ extern int manage_gids;
 void cache_open(void) 
 {
 	int i;
+
 	for (i=0; cachelist[i].cache_name; i++ ) {
 		char path[100];
 		if (!manage_gids && cachelist[i].cache_handle == auth_unix_gid)
@@ -1456,7 +1477,7 @@ static int cache_export_ent(char *buf, int buflen, char *domain, struct exporten
 		if (strlen(path) <= l || path[l] != '/' ||
 		    strncmp(exp->e_path, path, l) != 0)
 			break;
-		if (stat(exp->e_path, &stb) != 0)
+		if (nfsd_path_stat(exp->e_path, &stb) != 0)
 			break;
 		dev = stb.st_dev;
 		while(path[l] == '/') {
@@ -1469,7 +1490,7 @@ static int cache_export_ent(char *buf, int buflen, char *domain, struct exporten
 				l++;
 			c = path[l];
 			path[l] = 0;
-			err2 = lstat(path, &stb);
+			err2 = nfsd_path_lstat(path, &stb);
 			path[l] = c;
 			if (err2 < 0)
 				break;
@@ -1508,7 +1529,7 @@ int cache_export(nfs_export *exp, char *path)
 	qword_adduint(&bp, &blen, time(0) + exp->m_export.e_ttl);
 	qword_add(&bp, &blen, exp->m_client->m_hostname);
 	qword_addeol(&bp, &blen);
-	if (blen <= 0 || write(f, buf, bp - buf) != bp - buf) blen = -1;
+	if (blen <= 0 || cache_write(f, buf, bp - buf) != bp - buf) blen = -1;
 	close(f);
 	if (blen < 0) return -1;
 
@@ -1546,12 +1567,12 @@ cache_get_filehandle(nfs_export *exp, int len, char *p)
 	qword_add(&bp, &blen, p);
 	qword_addint(&bp, &blen, len);
 	qword_addeol(&bp, &blen);
-	if (blen <= 0 || write(f, buf, bp - buf) != bp - buf) {
+	if (blen <= 0 || cache_write(f, buf, bp - buf) != bp - buf) {
 		close(f);
 		return NULL;
 	}
 	bp = buf;
-	blen = read(f, buf, sizeof(buf));
+	blen = cache_read(f, buf, sizeof(buf));
 	close(f);
 
 	if (blen <= 0 || buf[blen-1] != '\n')

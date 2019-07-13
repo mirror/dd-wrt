@@ -475,7 +475,9 @@ class DeviceData:
                 retrans = stats[2] - count
                 if retrans != 0:
                     print('\t%d retrans (%d%%)' % (retrans, ((retrans * 100) / count)), end=' ')
-                    print('\t%d major timeouts' % stats[3])
+                    print('\t%d major timeouts' % stats[3], end='')
+                if len(stats) >= 10 and stats[9] != 0:
+                    print('\t%d errors (%d%%)' % (stats[9], ((stats[9] * 100) / count)))
                 else:
                     print('')
                 print('\tavg bytes sent per op: %d\tavg bytes received per op: %d' % \

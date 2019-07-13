@@ -889,7 +889,7 @@ out:
  */
 static int nfs_autonegotiate(struct nfsmount_info *mi)
 {
-	int result;
+	int result, olderrno;
 
 	result = nfs_try_mount_v4(mi);
 check_result:
@@ -949,7 +949,18 @@ fall_back:
 	if (mi->version.v_mode == V_GENERAL)
 		/* v2,3 fallback not allowed */
 		return result;
-	return nfs_try_mount_v3v2(mi, FALSE);
+
+	/*
+	 * Save the original errno in case the v3 
+	 * mount fails from one of the fall_back cases. 
+	 * Report the first failure not the v3 mount failure
+	 */
+	olderrno = errno;
+	if ((result = nfs_try_mount_v3v2(mi, FALSE)))
+		return result;
+
+	errno = olderrno;
+	return result;
 }
 
 /*
