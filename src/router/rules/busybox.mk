@@ -1,7 +1,7 @@
 busybox-config: -
 	cd busybox && rm -f Config.h && ln -sf configs/$(CONFIG_BUSYBOX_CONFIG).h Config.h
 
-busybox: busybox-config net-tools bird dhcpforwarder
+busybox: busybox-config nvram
 ifeq ($(ARCH),mipsel)
 	cp busybox/.config_std busybox/.config
 ifeq ($(CONFIG_MMC),y)
@@ -585,6 +585,7 @@ ifeq ($(CONFIG_RAID),y)
 	sed -i 's/\# CONFIG_FEATURE_GETOPT_LONG is not set/CONFIG_FEATURE_GETOPT_LONG=y/g' busybox/.config
 	sed -i 's/\# CONFIG_READLINK is not set/CONFIG_READLINK=y/g' busybox/.config
 	sed -i 's/\# CONFIG_FEATURE_READLINK_FOLLOW is not set/CONFIG_FEATURE_READLINK_FOLLOW=y/g' busybox/.config
+	sed -i 's/\# CONFIG_BLOCKDEV is not set/CONFIG_BLOCKDEV=y/g' busybox/.config
 endif
 	echo "# CONFIG_FEATURE_SYSLOG_INFO is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_SH_MATH_BASE is not set" >> busybox/.config
