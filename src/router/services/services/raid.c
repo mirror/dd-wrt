@@ -294,6 +294,7 @@ void start_raid(void)
 		}
 		if (!strcmp(type, "md")) {
 			sysprintf("mdadm --assemble /dev/md%d %s", i, raid);
+			sysprintf("echo 32768 > /sys/block/md%d/md/stripe_cache_size");
 			sysprintf("mkdir -p \"/tmp/mnt/%s\"", poolname);
 			if (nvram_nmatch("ext4", "raidfs%d", i)) {
 				sysprintf("mount -t ext4 /dev/md%d -o init_itable=0,nobarrier,noatime,nobh,nodiratime,barrier=0 \"/tmp/mnt/%s\"", i, poolname);
