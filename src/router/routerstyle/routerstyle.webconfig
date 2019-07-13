@@ -61,7 +61,7 @@ function previewStyle(val) {
 					};
 					httpRequest2.open('GET', '/style/elegant/fresh.css');
 					httpRequest2.send(null);
-					if("<% nvram_get("router_style_dark"); %>"=="1"){
+					if("<% nvg("router_style_dark"); %>"=="1"){
 						var httpRequest3 = new XMLHttpRequest();
 						httpRequest3.onreadystatechange = function(){
 							if(httpRequest3.readyState==4){
@@ -105,7 +105,7 @@ function previewStyle(val) {
 	return true;
 };
 document.forms[0].onreset = function() { 
-	previewStyle("<% nvram_get("router_style"); %>"); 
+	previewStyle("<% nvg("router_style"); %>"); 
 };
 //]]>
 </script>
@@ -124,7 +124,7 @@ document.forms[0].onreset = function() {
 	</div>
 	<div class="setting">
 		<div class="label"><% tran("share.styl_dark"); %></div>
-		<input class="spaceradio" type="radio" name="router_style_dark" value="1" <% nvram_checked("router_style_dark", "1"); %> /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" name="router_style_dark" value="0" <% nvram_checked("router_style_dark", "0"); %> /><% tran("share.disable"); %>
+		<input class="spaceradio" type="radio" name="router_style_dark" value="1" <% nvc("router_style_dark", "1"); %> /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="router_style_dark" value="0" <% nvc("router_style_dark", "0"); %> /><% tran("share.disable"); %>
 	</div>
 </fieldset><br />
