@@ -3,18 +3,18 @@
   <legend><% tran("service.samba3_srv"); %></legend>
 	<div class="setting">
 		<div class="label"><% tran("service.samba3_srv"); %></div>
-		<input class="spaceradio" type="radio" name="samba3_enable" value="1" <% nvram_checked("samba3_enable", "1"); %> onclick="show_layer_ext(this, 'samba3config', true)" /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" name="samba3_enable" value="0" <% nvram_checked("samba3_enable", "0"); %> onclick="show_layer_ext(this, 'samba3config', false)"/><% tran("share.disable"); %>
+		<input class="spaceradio" type="radio" name="samba3_enable" value="1" <% nvc("samba3_enable", "1"); %> onclick="show_layer_ext(this, 'samba3config', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="samba3_enable" value="0" <% nvc("samba3_enable", "0"); %> onclick="show_layer_ext(this, 'samba3config', false)"/><% tran("share.disable"); %>
 	</div>
 						
 	<div id="samba3config">	
 		<div class="setting">
 			<div class="label"><% tran("service.samba3_srvstr"); %></div>
-			<input maxlength="32" size="16" name="samba3_srvstr" value="<% nvram_get("samba3_srvstr"); %>" />
+			<input maxlength="32" size="16" name="samba3_srvstr" value="<% nvg("samba3_srvstr"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.samba3_workgrp"); %></div>
-			<input maxlength="32" size="16" name="samba3_workgrp" value="<% nvram_get("samba3_workgrp"); %>" />
+			<input maxlength="32" size="16" name="samba3_workgrp" value="<% nvg("samba3_workgrp"); %>" />
 		</div>
 	</div>
 </fieldset><br />
