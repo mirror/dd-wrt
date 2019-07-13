@@ -630,6 +630,9 @@ static struct defrule s_conditions[] = {
 #ifdef HAVE_USBIP
 	{ "USBIP", NULL },
 #endif
+#ifdef HAVE_USB_ADV
+	{ "USBADV", NULL },
+#endif
 #ifdef HAVE_80211AC
 	{ "80211AC", NULL },
 #endif
