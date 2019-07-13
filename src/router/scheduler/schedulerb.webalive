@@ -22,14 +22,14 @@
 			</select>&nbsp;<select name="schedule_weekdays">
 				<script type="text/javascript">
 				//<![CDATA[
-				document.write("<option value=\"*\" <% nvram_selected_js("schedule_weekdays","*"); %> >" + share.everyday + "</option>");
-				document.write("<option value=\"00\" <% nvram_selected_js("schedule_weekdays","00"); %> >" + share.sun + "</option>");
-				document.write("<option value=\"01\" <% nvram_selected_js("schedule_weekdays","01"); %> >" + share.mon + "</option>");
-				document.write("<option value=\"02\" <% nvram_selected_js("schedule_weekdays","02"); %> >" + share.tue + "</option>");
-				document.write("<option value=\"03\" <% nvram_selected_js("schedule_weekdays","03"); %> >" + share.wed + "</option>");
-				document.write("<option value=\"04\" <% nvram_selected_js("schedule_weekdays","04"); %> >" + share.thu + "</option>");
-				document.write("<option value=\"05\" <% nvram_selected_js("schedule_weekdays","05"); %> >" + share.fri + "</option>");
-				document.write("<option value=\"06\" <% nvram_selected_js("schedule_weekdays","06"); %> >" + share.sat + "</option>");
+				document.write("<option value=\"*\" <% nvsjs("schedule_weekdays","*"); %> >" + share.everyday + "</option>");
+				document.write("<option value=\"00\" <% nvsjs("schedule_weekdays","00"); %> >" + share.sun + "</option>");
+				document.write("<option value=\"01\" <% nvsjs("schedule_weekdays","01"); %> >" + share.mon + "</option>");
+				document.write("<option value=\"02\" <% nvsjs("schedule_weekdays","02"); %> >" + share.tue + "</option>");
+				document.write("<option value=\"03\" <% nvsjs("schedule_weekdays","03"); %> >" + share.wed + "</option>");
+				document.write("<option value=\"04\" <% nvsjs("schedule_weekdays","04"); %> >" + share.thu + "</option>");
+				document.write("<option value=\"05\" <% nvsjs("schedule_weekdays","05"); %> >" + share.fri + "</option>");
+				document.write("<option value=\"06\" <% nvsjs("schedule_weekdays","06"); %> >" + share.sat + "</option>");
 				//]]>
 				</script>
 			</select>
