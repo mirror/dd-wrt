@@ -819,7 +819,7 @@ usb.usb_diskspace="Diskspace";
 usb.usb_mntjffs="Mount this Partition to /jffs";
 usb.usb_mntopt="Mount this Partition to /opt";
 usb.usb_ses_umount="Use SES Button to remove drives";
-
+usb.drive_ra="Drive Read-Ahead buffer in sectores";
 //help page
 var husb=new Object();
 husb.page1="<dd><ul><li>Enable USB Support</li></ul></dd>";
