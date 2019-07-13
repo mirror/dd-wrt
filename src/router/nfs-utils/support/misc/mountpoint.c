@@ -9,8 +9,10 @@
 #include "misc.h"
 
 int
-is_mountpoint(char *path)
+check_is_mountpoint(const char *path, int (mystat)(const char *, struct stat *))
 {
+	if (!mystat)
+		mystat = lstat;
 	/* Check if 'path' is a current mountpoint.
 	 * Possibly we should also check it is the mountpoint of the 
 	 * filesystem holding the target directory, but there doesn't
@@ -26,8 +28,8 @@ is_mountpoint(char *path)
 	dotdot = xmalloc(strlen(path)+4);
 
 	strcat(strcpy(dotdot, path), "/..");
-	if (lstat(path, &stb) != 0 ||
-	    lstat(dotdot, &pstb) != 0)
+	if (mystat(path, &stb) != 0 ||
+	    mystat(dotdot, &pstb) != 0)
 		rv = 0;
 	else
 		if (stb.st_dev != pstb.st_dev ||

@@ -4,7 +4,8 @@ check_PROGRAMS = statdb_dump
 statdb_dump_SOURCES = statdb_dump.c
 
 statdb_dump_LDADD = ../support/nfs/.libs/libnfs.a \
-		    ../support/nsm/libnsm.a $(LIBCAP)
+		    ../support/nsm/libnsm.a \
+		    ../support/misc/libmisc.a $(LIBCAP)
 
 SUBDIRS = nsm_client
 

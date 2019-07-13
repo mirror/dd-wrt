@@ -18,7 +18,12 @@ int	weakrandomkey(unsigned char *keyout, int len);
 char *generic_make_pathname(const char *, const char *);
 _Bool generic_setup_basedir(const char *, const char *, char *, const size_t);
 
-extern int is_mountpoint(char *path);
+struct stat;
+
+extern int check_is_mountpoint(const char *path,
+		int (mystat)(const char *, struct stat *));
+#define is_mountpoint(path) \
+	check_is_mountpoint(path, NULL)
 
 /* size of the file pointer buffers for rpc procfs files */
 #define RPC_CHAN_BUF_SIZE 32768

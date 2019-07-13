@@ -50,6 +50,14 @@ xtab_read(char *xtab, char *lockfn, int is_export)
 	while ((xp = getexportent(is_export==0, 0)) != NULL) {
 		if (!(exp = export_lookup(xp->e_hostname, xp->e_path, is_export != 1)) &&
 		    !(exp = export_create(xp, is_export!=1))) {
+                        if(xp->e_hostname) {
+                            free(xp->e_hostname);
+                            xp->e_hostname=NULL;
+                        }
+                        if(xp->e_uuid) {
+                            free(xp->e_uuid);
+                            xp->e_uuid=NULL;
+                        }
 			continue;
 		}
 		switch (is_export) {
@@ -62,7 +70,16 @@ xtab_read(char *xtab, char *lockfn, int is_export)
 			if ((xp->e_flags & NFSEXP_FSID) && xp->e_fsid == 0)
 				v4root_needed = 0;
 			break;
-		}
+		}  
+                if(xp->e_hostname) {
+                    free(xp->e_hostname);
+                    xp->e_hostname=NULL;
+                }
+                if(xp->e_uuid) {
+                    free(xp->e_uuid);
+                    xp->e_uuid=NULL;
+                }
+
 	}
 	endexportent();
 	xfunlock(lockid);

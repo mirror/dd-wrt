@@ -56,5 +56,10 @@ Because
 .B showmount
 sorts and uniqs the output, it is impossible to determine from
 the output whether a client is mounting the same directory more than once.
+.P
+.B showmount
+works by contacting the server's MNT service directly. NFSv4-only servers have
+no need to advertise their exported root filehandles via this method, and may
+not expose their MNT service to clients.
 .SH AUTHOR
 Rick Sladkey <jrs@world.std.com>
