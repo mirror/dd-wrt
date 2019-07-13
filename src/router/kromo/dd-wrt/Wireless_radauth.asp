@@ -81,10 +81,10 @@ addEvent(window, "unload", function() {
 					  <div class="setting">
 						<div class="label"><% tran("radius.label2"); %></div>
 						<select name="wl_radmactype">
-							<option value="0" <% nvram_selected("wl_radmactype","0"); %>>aabbcc-ddeeff</option>
-							<option value="1" <% nvram_selected("wl_radmactype","1"); %>>aabbccddeeff</option>
-							<option value="2" <% nvram_selected("wl_radmactype","2"); %>>aa:bb:cc:dd:ee:ff</option>
-							<option value="3" <% nvram_selected("wl_radmactype","3"); %>>aa-bb-cc-dd-ee-ff</option>
+							<option value="0" <% nvs("wl_radmactype","0"); %>>aabbcc-ddeeff</option>
+							<option value="1" <% nvs("wl_radmactype","1"); %>>aabbccddeeff</option>
+							<option value="2" <% nvs("wl_radmactype","2"); %>>aa:bb:cc:dd:ee:ff</option>
+							<option value="3" <% nvs("wl_radmactype","3"); %>>aa-bb-cc-dd-ee-ff</option>
 						</select>
 					</div>
 					<div class="setting">

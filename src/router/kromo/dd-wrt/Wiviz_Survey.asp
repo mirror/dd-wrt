@@ -38,36 +38,36 @@
 						<input type="hidden" name="submit_type" value="Set" />
 						<input type="hidden" name="commit" value="1" />
 			<select name='hopseq' onChange='this.form.submit()'>
-				<option value='0' <% nvram_selected("hopseq","0"); %> >All</option>
-				<option value='1' <% nvram_selected("hopseq","1"); %> >1</option>
-				<option value='2' <% nvram_selected("hopseq","2"); %> >2</option>
-				<option value='3' <% nvram_selected("hopseq","3"); %> >3</option>
-				<option value='4' <% nvram_selected("hopseq","4"); %> >4</option>
-				<option value='5' <% nvram_selected("hopseq","5"); %> >5</option>
-				<option value='6' <% nvram_selected("hopseq","6"); %> >6</option>
-				<option value='7' <% nvram_selected("hopseq","7"); %> >7</option>
-				<option value='8' <% nvram_selected("hopseq","8"); %> >8</option>
-				<option value='9' <% nvram_selected("hopseq","9"); %> >9</option>
-				<option value='10' <% nvram_selected("hopseq","10"); %> >10</option>
-				<option value='11' <% nvram_selected("hopseq","11"); %> >11</option>
-				<option value='12' <% nvram_selected("hopseq","12"); %> >12</option>
-				<option value='13' <% nvram_selected("hopseq","13"); %> >13</option>
-				<option value='14' <% nvram_selected("hopseq","14"); %> >14</option>
-				<option value='1,6,11' <% nvram_selected("hopseq","1,6,11"); %> >1,6,11</option>
-				<option value='1,3,6,8,11' <% nvram_selected("hopseq","1,3,6,8,11"); %> >1,3,6,8,11</option>
-				<option value='1,2,3,4,5,6,7,8,9,10,11' <% nvram_selected("hopseq","1,2,3,4,5,6,7,8,9,10,11"); %> >1 to 11</option>
-				<option value='1,2,3,4,5,6,7,8,9,10,11,12,13,14' <% nvram_selected("hopseq","1,2,3,4,5,6,7,8,9,10,11,12,13,14"); %> >1 to 14</option>
+				<option value='0' <% nvs("hopseq","0"); %> >All</option>
+				<option value='1' <% nvs("hopseq","1"); %> >1</option>
+				<option value='2' <% nvs("hopseq","2"); %> >2</option>
+				<option value='3' <% nvs("hopseq","3"); %> >3</option>
+				<option value='4' <% nvs("hopseq","4"); %> >4</option>
+				<option value='5' <% nvs("hopseq","5"); %> >5</option>
+				<option value='6' <% nvs("hopseq","6"); %> >6</option>
+				<option value='7' <% nvs("hopseq","7"); %> >7</option>
+				<option value='8' <% nvs("hopseq","8"); %> >8</option>
+				<option value='9' <% nvs("hopseq","9"); %> >9</option>
+				<option value='10' <% nvs("hopseq","10"); %> >10</option>
+				<option value='11' <% nvs("hopseq","11"); %> >11</option>
+				<option value='12' <% nvs("hopseq","12"); %> >12</option>
+				<option value='13' <% nvs("hopseq","13"); %> >13</option>
+				<option value='14' <% nvs("hopseq","14"); %> >14</option>
+				<option value='1,6,11' <% nvs("hopseq","1,6,11"); %> >1,6,11</option>
+				<option value='1,3,6,8,11' <% nvs("hopseq","1,3,6,8,11"); %> >1,3,6,8,11</option>
+				<option value='1,2,3,4,5,6,7,8,9,10,11' <% nvs("hopseq","1,2,3,4,5,6,7,8,9,10,11"); %> >1 to 11</option>
+				<option value='1,2,3,4,5,6,7,8,9,10,11,12,13,14' <% nvs("hopseq","1,2,3,4,5,6,7,8,9,10,11,12,13,14"); %> >1 to 14</option>
 			</select>
 			
 			<center>Hopdwell (ms)</center> 
 			<select name='hopdwell' onChange='this.form.submit()'>
-				<option value='250' <% nvram_selected("hopdwell","250"); %> >250</option>
-				<option value='500' <% nvram_selected("hopdwell","500"); %> >500</option>
-				<option value='1000' <% nvram_selected("hopdwell","1000"); %> >1000</option>
-				<option value='1500' <% nvram_selected("hopdwell","1500"); %> >1500</option>
-				<option value='2000' <% nvram_selected("hopdwell","2000"); %> >2000</option>
-				<option value='5000' <% nvram_selected("hopdwell","5000"); %> >5000</option>
-				<option value='10000' <% nvram_selected("hopdwell","10000"); %> >10000</option>
+				<option value='250' <% nvs("hopdwell","250"); %> >250</option>
+				<option value='500' <% nvs("hopdwell","500"); %> >500</option>
+				<option value='1000' <% nvs("hopdwell","1000"); %> >1000</option>
+				<option value='1500' <% nvs("hopdwell","1500"); %> >1500</option>
+				<option value='2000' <% nvs("hopdwell","2000"); %> >2000</option>
+				<option value='5000' <% nvs("hopdwell","5000"); %> >5000</option>
+				<option value='10000' <% nvs("hopdwell","10000"); %> >10000</option>
 			</select>
 
 
