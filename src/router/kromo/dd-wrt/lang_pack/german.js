@@ -744,6 +744,7 @@ usb.usb_diskinfo="Laufwerks Info";
 usb.usb_mntjffs="Diese Partition als /jffs einbinden";
 usb.usb_mntopt="Diese Partition als /opt einbinden";
 usb.usb_ses_umount="SES Button entfernt Laufwerke";
+usb.drive_ra="Laufwerk Vorlesepuffer in Sektoren";
 
 // ** NAS.asp **//
 
