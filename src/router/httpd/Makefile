@@ -924,6 +924,9 @@ endif
 ifeq ($(CONFIG_USB),y)
 CFLAGS += -DHAVE_USB
 endif
+ifeq ($(CONFIG_USB_ADVANCED),y)
+CFLAGS += -DHAVE_USB_ADV
+endif
 ifeq ($(CONFIG_DROPBEAR_SSHD),y)
 CFLAGS += -DHAVE_SSHD
 endif
