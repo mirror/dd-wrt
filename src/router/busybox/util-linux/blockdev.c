@@ -57,6 +57,10 @@ static const char bdcmd_names[] ALIGN1 =
 	"getsz"     "\0"
 	"getsize"   "\0"
 	"getsize64" "\0"
+	"getra" "\0"
+	"setra" "\0"
+	"getfra" "\0"
+	"setfra" "\0"
 	"flushbufs" "\0"
 	"rereadpt"  "\0"
 ;
@@ -70,6 +74,10 @@ static const uint32_t bdcmd_ioctl[] = {
 	BLKGETSIZE64,   //getsz
 	BLKGETSIZE,     //getsize
 	BLKGETSIZE64,   //getsize64
+	BLKRAGET,	//getra
+	BLKRASET,	//setra
+	BLKFRAGET,	//getfra
+	BLKFRASET,	//setfra
 	BLKFLSBUF,      //flushbufs
 	BLKRRPART,      //rereadpt
 };
@@ -77,13 +85,15 @@ enum {
 	ARG_NONE   = 0,
 	ARG_INT    = 1,
 	ARG_ULONG  = 2,
+	ARG_LONG  = 3,
 	/* Yes, BLKGETSIZE64 takes pointer to uint64_t, not ullong! */
-	ARG_U64    = 3,
-	ARG_MASK   = 3,
+	ARG_U64    = 4,
+	ARG_MASK   = 7,
 
-	FL_USRARG   = 4, /* argument is provided by user */
-	FL_NORESULT = 8,
-	FL_SCALE512 = 16,
+	FL_USRARG   = 8, /* argument is provided by user */
+	FL_NORESULT = 16,
+	FL_SCALE512 = 32,
+	FL_NOPTR    = 64,
 };
 static const uint8_t bdcmd_flags[] ALIGN1 = {
 	ARG_INT + FL_NORESULT,             //setro
@@ -95,6 +105,10 @@ static const uint8_t bdcmd_flags[] ALIGN1 = {
 	ARG_U64 + FL_SCALE512,             //getsz
 	ARG_ULONG,                         //getsize
 	ARG_U64,                           //getsize64
+	ARG_LONG,			   //getra
+	ARG_INT + FL_NOPTR + FL_NORESULT,  //setra
+	ARG_LONG,			   //getfra
+	ARG_INT + FL_NOPTR + FL_NORESULT,  //setfra
 	ARG_NONE + FL_NORESULT,            //flushbufs
 	ARG_NONE + FL_NORESULT,            //rereadpt
 };
@@ -160,10 +174,14 @@ int blockdev_main(int argc UNUSED_PARAM, char **argv)
 # endif
 	}
 #endif
-
-	if (ioctl(fd, bdcmd_ioctl[bdcmd], &ioctl_val_on_stack.u64) == -1)
-		bb_simple_perror_msg_and_die(*argv);
-
+	
+	if (flags & FL_NOPTR) {
+		if (ioctl(fd, bdcmd_ioctl[bdcmd], ioctl_val_on_stack.i) == -1)
+			bb_simple_perror_msg_and_die(*argv);
+	} else {
+		if (ioctl(fd, bdcmd_ioctl[bdcmd], &ioctl_val_on_stack.u64) == -1)
+			bb_simple_perror_msg_and_die(*argv);
+	}
 	/* Fetch it into register(s) */
 	u64 = ioctl_val_on_stack.u64;
 
@@ -173,6 +191,7 @@ int blockdev_main(int argc UNUSED_PARAM, char **argv)
 	/* Zero- or one-extend the value if needed, then print */
 	switch (flags & (ARG_MASK+FL_NORESULT)) {
 	case ARG_INT:
+	case ARG_LONG:
 		/* Smaller code when we use long long
 		 * (gcc tail-merges printf call)
 		 */
