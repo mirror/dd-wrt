@@ -333,7 +333,7 @@ void start_nas(void)
 	}
 	char *iface;
 	eval("touch", "/tmp/.startnas");
-        sleep(3);
+	sleep(3);
 	int cnt = get_wl_instances();
 	int c;
 	int deadcount;
