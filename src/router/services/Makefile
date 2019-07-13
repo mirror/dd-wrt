@@ -518,6 +518,7 @@ CFLAGS_EXTRA += -DHAVE_USB
 ifneq ($(CONFIG_3G_ONLY),y)
 ifeq ($(CONFIG_USB_ADVANCED),y)
 OBJS += usb_hotplug_adv.o
+CFLAGS_EXTRA += -DHAVE_USB_ADV
 else
 OBJS += usb_hotplug.o
 endif
