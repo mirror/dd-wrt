@@ -204,11 +204,11 @@ addEvent(window, "unload", function() {
 								<div class="setting">
 									<div class="label"><% tran("wl_adv.label2"); %></div>
 									<select name="wl_rateset">
-										<option value="12" <% nvram_selected("wl_rateset", "12"); %>>1-2 Mbps</option>
+										<option value="12" <% nvs("wl_rateset", "12"); %>>1-2 Mbps</option>
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<option value=\"default\" <% nvram_selected_js("wl_rateset", "default"); %>>" + share.deflt + "</option>");
-										document.write("<option value=\"all\" <% nvram_selected_js("wl_rateset", "all"); %>>" + share.all + "</option>");
+										document.write("<option value=\"default\" <% nvsjs("wl_rateset", "default"); %>>" + share.deflt + "</option>");
+										document.write("<option value=\"all\" <% nvsjs("wl_rateset", "all"); %>>" + share.all + "</option>");
 										//]]>
 										</script>
 									</select>
@@ -225,21 +225,21 @@ addEvent(window, "unload", function() {
 									<select name="wl_rate">
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<option value=\"0\" <% nvram_selected_js("wl_rate", "0"); %>>" + share.auto + "</option>");
+										document.write("<option value=\"0\" <% nvsjs("wl_rate", "0"); %>>" + share.auto + "</option>");
 										//]]>
 										</script>
-										<option value="1000000" <% nvram_selected("wl_rate", "1000000"); %>>1 Mbps</option>
-										<option value="2000000" <% nvram_selected("wl_rate", "2000000"); %>>2 Mbps</option>
-										<option value="5500000" <% nvram_selected("wl_rate", "5500000"); %>>5.5 Mbps</option>
-										<option value="6000000" <% nvram_selected("wl_rate", "6000000"); %>>6 Mbps</option>
-										<option value="9000000" <% nvram_selected("wl_rate", "9000000"); %>>9 Mbps</option>
-										<option value="11000000" <% nvram_selected("wl_rate", "11000000"); %>>11 Mbps</option>
-										<option value="12000000" <% nvram_selected("wl_rate", "12000000"); %>>12 Mbps</option>
-										<option value="18000000" <% nvram_selected("wl_rate", "18000000"); %>>18 Mbps</option>
-										<option value="24000000" <% nvram_selected("wl_rate", "24000000"); %>>24 Mbps</option>
-										<option value="36000000" <% nvram_selected("wl_rate", "36000000"); %>>36 Mbps</option>
-										<option value="48000000" <% nvram_selected("wl_rate", "48000000"); %>>48 Mbps</option>
-										<option value="54000000" <% nvram_selected("wl_rate", "54000000"); %>>54 Mbps</option>
+										<option value="1000000" <% nvs("wl_rate", "1000000"); %>>1 Mbps</option>
+										<option value="2000000" <% nvs("wl_rate", "2000000"); %>>2 Mbps</option>
+										<option value="5500000" <% nvs("wl_rate", "5500000"); %>>5.5 Mbps</option>
+										<option value="6000000" <% nvs("wl_rate", "6000000"); %>>6 Mbps</option>
+										<option value="9000000" <% nvs("wl_rate", "9000000"); %>>9 Mbps</option>
+										<option value="11000000" <% nvs("wl_rate", "11000000"); %>>11 Mbps</option>
+										<option value="12000000" <% nvs("wl_rate", "12000000"); %>>12 Mbps</option>
+										<option value="18000000" <% nvs("wl_rate", "18000000"); %>>18 Mbps</option>
+										<option value="24000000" <% nvs("wl_rate", "24000000"); %>>24 Mbps</option>
+										<option value="36000000" <% nvs("wl_rate", "36000000"); %>>36 Mbps</option>
+										<option value="48000000" <% nvs("wl_rate", "48000000"); %>>48 Mbps</option>
+										<option value="54000000" <% nvs("wl_rate", "54000000"); %>>54 Mbps</option>
 									</select>
 									<span class="default">
 										<script type="text/javascript">
@@ -351,9 +351,9 @@ addEvent(window, "unload", function() {
 									<select name="txant">
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<option value=\"0\" <% nvram_selected_js("txant", "0"); %>>" + share.right + "</option>");
-										document.write("<option value=\"1\" <% nvram_selected_js("txant", "1"); %>>" + share.left + "</option>");
-										document.write("<option value=\"3\" <% nvram_selected_js("txant", "3"); %>>" + share.auto + "</option>");
+										document.write("<option value=\"0\" <% nvsjs("txant", "0"); %>>" + share.right + "</option>");
+										document.write("<option value=\"1\" <% nvsjs("txant", "1"); %>>" + share.left + "</option>");
+										document.write("<option value=\"3\" <% nvsjs("txant", "3"); %>>" + share.auto + "</option>");
 										//]]>
 										</script>
 									</select>
@@ -370,9 +370,9 @@ addEvent(window, "unload", function() {
 									<select name="wl_antdiv">
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<option value=\"0\" <% nvram_selected_js("wl_antdiv", "0"); %>>" + share.right + "</option>");
-										document.write("<option value=\"1\" <% nvram_selected_js("wl_antdiv", "1"); %>>" + share.left + "</option>");
-										document.write("<option value=\"3\" <% nvram_selected_js("wl_antdiv", "3"); %>>" + share.auto + "</option>");
+										document.write("<option value=\"0\" <% nvsjs("wl_antdiv", "0"); %>>" + share.right + "</option>");
+										document.write("<option value=\"1\" <% nvsjs("wl_antdiv", "1"); %>>" + share.left + "</option>");
+										document.write("<option value=\"3\" <% nvsjs("wl_antdiv", "3"); %>>" + share.auto + "</option>");
 										//]]>
 										</script>
 									</select>
@@ -389,9 +389,9 @@ addEvent(window, "unload", function() {
 									<select name="wl_plcphdr">
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<option value=\"long\" <% nvram_selected_js("wl_plcphdr", "long"); %>>" + wl_adv.lng + "</option>");
-										document.write("<option value=\"short\" <% nvram_selected_js("wl_plcphdr", "short"); %>>" + wl_adv.shrt + "</option>");
-										document.write("<option value=\"auto\" <% nvram_selected_js("wl_plcphdr", "auto"); %>>" + share.auto + "</option>");
+										document.write("<option value=\"long\" <% nvsjs("wl_plcphdr", "long"); %>>" + wl_adv.lng + "</option>");
+										document.write("<option value=\"short\" <% nvsjs("wl_plcphdr", "short"); %>>" + wl_adv.shrt + "</option>");
+										document.write("<option value=\"auto\" <% nvsjs("wl_plcphdr", "auto"); %>>" + share.auto + "</option>");
 										//]]>
 										</script>
 									</select>
@@ -408,13 +408,13 @@ addEvent(window, "unload", function() {
 									<select name="wl_shortslot">
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<option value=\"long\" <% nvram_selected_js("wl_shortslot", "long"); %>>" + wl_adv.lng + "</option>");
-										document.write("<option value=\"short\" <% nvram_selected_js("wl_shortslot", "short"); %>>" + wl_adv.shrt + "</option>");
+										document.write("<option value=\"long\" <% nvsjs("wl_shortslot", "long"); %>>" + wl_adv.lng + "</option>");
+										document.write("<option value=\"short\" <% nvsjs("wl_shortslot", "short"); %>>" + wl_adv.shrt + "</option>");
 										//]]>
 										</script>
 										<script type="text/javascript">
 									//<![CDATA[
-									document.write("<option value=\"auto\" <% nvram_selected_js("wl_shortslot", "auto"); %>>" + share.auto + "</option>");
+									document.write("<option value=\"auto\" <% nvsjs("wl_shortslot", "auto"); %>>" + share.auto + "</option>");
 									//]]>
 									</script>
 									</select>
@@ -441,9 +441,9 @@ addEvent(window, "unload", function() {
 									<select name="wl_afterburner">
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<option value=\"off\" <% nvram_selected_js("wl_afterburner", "off"); %>>" + share.disable + "</option>");
-										document.write("<option value=\"on\" <% nvram_selected_js("wl_afterburner", "on"); %>>" + share.enable + "</option>");
-										document.write("<option value=\"auto\" <% nvram_selected_js("wl_afterburner", "auto"); %>>" + share.auto + "</option>");
+										document.write("<option value=\"off\" <% nvsjs("wl_afterburner", "off"); %>>" + share.disable + "</option>");
+										document.write("<option value=\"on\" <% nvsjs("wl_afterburner", "on"); %>>" + share.enable + "</option>");
+										document.write("<option value=\"auto\" <% nvsjs("wl_afterburner", "auto"); %>>" + share.auto + "</option>");
 										//]]>
 										</script>
 									</select>
