@@ -3,11 +3,11 @@
 	<legend><% tran("hotspot.shat_legend"); %></legend>
 		<div class="setting">
 			<div class="label"><% tran("hotspot.shat_srv2"); %></div>
-			<input class="spaceradio" type="radio" value="1" name="shat_enable" <% nvram_checked("shat_enable","1"); %> /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" value="0" name="shat_enable" <% nvram_checked("shat_enable","0"); %> /><% tran("share.disable"); %>
+			<input class="spaceradio" type="radio" value="1" name="shat_enable" <% nvc("shat_enable","1"); %> /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" value="0" name="shat_enable" <% nvc("shat_enable","0"); %> /><% tran("share.disable"); %>
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("share.range"); %></div>
-			<input class="text" maxLength="100" size="25" name="shat_range" value="<% nvram_get("shat_range"); %>" />
+			<input class="text" maxLength="100" size="25" name="shat_range" value="<% nvg("shat_range"); %>" />
 		</div>
 </fieldset><br />
