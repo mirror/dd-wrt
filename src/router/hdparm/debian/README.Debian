@@ -1,0 +1,92 @@
+hdparm for Debian
+  -----------------
+  
+General hard disk tuning:
+  
+  To get the best performance out of your hard drive turn on DMA support
+  in the kernel and enable 32bit IO (-c) and multiple sector I/O (-m)
+  with hdparm. You can find out the number to use for -m by using -i and
+  reading MaxMultSect.
+  
+  These settings can now be set in either /etc/hdparm.conf or in
+  /etc/apm/20hdparm.  I advise against setting the same features in both -
+  unpredictable things could happen.
+  
+Multiple disks with the same options:
+  
+  /etc/default/hdparm can take environment variables for simple options 
+  for a block of disks that are to be set up in the same way.  This would
+  be useful for a JBOD type array, or similar arrangement.  Setting up disks
+  in this way does not currently integrate with the more complicated checks
+  and arrangements that are done with the settings in hdparm.conf.  If you
+  need to load modules before tuning a hard disk, or need to allow udev to
+  run before hdparm, do not use this option.  This is intended only for 
+  disks with normal device nodes, accessible early in the boot process, and
+  with kernel support before module loading.  A complete rewrite is really 
+  needed to better integrate this option.  Hopefully I'll have the time soon 
+  (or somebody will send the patches :)
+  
+APM and ACPI:
+  APM and ACPI are handled somewhat differently in Debian.  If you have a
+  machine that uses APM, there is a script in /etc/apmd that you can use to
+  have APM events trigger hdparm commands.  For ACPI users, I recommend a
+  package like powersaved, that will call hdparm as appropriate for ACPI
+  events.
+
+Some problems with udev and module loading:
+  
+  hdparm's init script is set to run at /etc/rcS.d/S07 because there have
+  been reports of data corruption with mounted disks.  This particular
+  placement may not work for you if the ability to use things like DMA
+  relies on having modules for your motherboard or drive loaded, as it is 
+  run before the module loading init script.  If this is the case for you,
+  (and you don't use udev) do the following:
+  
+  In hdparm.conf, set ROOTFS to whatever drive / is mounted on, for example
+  ROOTFS = /dev/hda
+  
+  Set up a second link, /etc/rcS.d/S29hdparm.second, pointing to
+  /etc/init.d/hdparm.  ln -s /etc/init.d/hdparm /etc/rcS.d/S29hdparm.second
+  will do this for you.
+  
+  If you use an alternate init scheme, such as runit or minit or file-rc,
+  set this up appropriately for your setup.  The important thing is that
+  the link name does not _end_ in 'hdparm' (the script checks this with
+  case "$0" in *hdparm), so take care in your naming scheme.  Now the init
+  script will run once at 07 for your root drive, and then later for all
+  other defined devices.  This will give the other scripts a chance to
+  load modules and create devices.
+
+  hdparm now supports udev created device nodes, using the script 
+  /etc/udev/hdparm.rules.  This allows users to set up regular stanzas in
+  /etc/hdparm.conf, that will fail the first time (as the device nodes
+  don't yet exist) but will be properly set up when udev gets to them.
+  
+Known problems, limitations, and work-arounds:
+  
+  Additional information from David B Harris:
+  The init script is probably not safe to run with an MD array, as there
+  is a possibility of disk corruption during rebuild if the array was not
+  stopped cleanly.  As the rebuild process begins (at least on newer MD
+  arrays) before init is started, there is no way to run the init script
+  early enough for this to always be safe.  Please do not add anything to
+  hdparm.conf, and instead run hdparm by hand only after you are sure that
+  your array has finished rebuilding.
+
+  For this reason, the init script aborts if it detects that the raid array
+  is not rebuilt, or otherwise 'dirty'.  See below for ways to bypass these
+  checks.
+  
+  If the init script gives you problems, you can boot the kernel with the
+  command line option 'nohdparm' (without the single quotes), and the init
+  script will not run.
+  
+  If one of the built-in checks that aborts the hdparm init script is
+  triggered (RAID array is rebuilding, nohdparm was passed on the kernel
+  command line), the init script will not run at boot time.  If you want
+  to run the init script anyway, you can override the safety features by
+  passing the environment variable FORCE_RUN=yes to the init script.
+  i.e.:
+  FORCE_RUN=yes /etc/init.d/hdparm start
+
+ -- Stephen Gran <sgran@debian.org>  Wed, 10 Aug 2005 14:48:31 -0400

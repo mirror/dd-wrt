@@ -1,0 +1,4 @@
+#!/bin/bash
+export PATH="/usr/local/armtools-empeg/cbin:/usr/local/armtools-empeg/bin:$PATH"
+make clean
+make

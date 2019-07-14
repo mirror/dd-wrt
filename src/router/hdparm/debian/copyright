@@ -1,0 +1,17 @@
+This package was debianized by Christopher L Cheney <ccheney@debian.org> on
+Wed, 21 Nov 2001 15:51:14 -0600.
+
+It was downloaded from http://www.ibiblio.org/pub/Linux/system/hardware
+
+Upstream Author: Mark S. Lord <mlord@pobox.com>
+
+Copyright:
+
+/* hdparm.c - Command line interface to get/set hard disk parameters */
+/*          - by Mark Lord © 1994-2008 -- freely distributable */
+
+You are free to distribute this software under the terms of the BSD License.
+On Debian systems, the complete text of the BSD License can be found in
+/usr/share/common-licenses/BSD
+
+

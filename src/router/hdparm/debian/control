@@ -1,0 +1,32 @@
+Source: hdparm
+Section: admin
+Priority: optional
+Maintainer: Stephen Gran <sgran@debian.org>
+Build-Depends: cdbs (>> 0.4.37), debhelper (>= 5.0), dpatch, dpkg-dev (>= 1.13.19)
+Standards-Version: 3.8.0
+
+Package: hdparm
+Architecture: any
+Depends: ${shlibs:Depends}, lsb-base
+Suggests: apmd
+Replaces: apmd (<= 3.0.2-1.15)
+Description: tune hard disk parameters for high performance
+ Get/set device parameters for Linux SATA/IDE drives.
+ Primary use is for enabling irq-unmasking and IDE multiplemode.
+
+Package: hdparm-dbg
+Architecture: any
+Priority: extra
+Depends: hdparm (= ${binary:Version})
+Description: debug files for hdparm
+ This package contains the stripped debugging symbols for hdparm
+
+Package: hdparm-udeb
+XC-Package-Type: udeb
+Section: debian-installer
+Architecture: any
+Depends: ${shlibs:Depends}
+Description: tune hard disk parameters for high performance
+ Get/set device parameters for Linux SATA/IDE drives.
+ .
+ This is a minimal package for use in debian-installer.

@@ -1,0 +1,68 @@
+#!/bin/sh
+
+VERSION="0.1.000"
+
+TPCTL="/usr/bin/tpctl"
+IDECTL="/sbin/idectl"
+
+INTERVAL=5
+
+case "$1" in
+-V )
+	echo "$0: Version $VERSION"
+	exit 0
+;;
+
+-daemon )
+	o_d_type=""
+	o_d_id=""
+
+	while true; do
+		d_type=""
+		d_type_n=""
+		d_id=""
+		d_id_n=""
+
+		while read w1 w2 w3 wn; do
+			case "$w1" in
+			device )
+				case "$w2" in
+				type: )	d_type=$w3; d_type_n="$wn";;
+				ID: )	d_id=$w3; d_id_n="$wn";;
+				esac
+			;;
+			esac
+
+			if [ "$d_type" ] && [ "$d_id" ]; then
+				break;
+			fi
+		done <<- END
+			`eval $TPCTL -iU`
+		END
+
+		if [ "$d_type" != "$o_d_type" ] || [ "$d_id" != "$o_d_id" ]; then
+			echo -n "\07" > /dev/tty1
+
+			o_d_type="$d_type"
+			o_d_id="$d_id"
+
+			case "$d_type" in
+			0x10 )
+				eval "$IDECTL 1 rescan"
+			;;
+
+			* )
+				eval "$IDECTL 1 off"
+			;;
+			esac
+		fi
+
+		sleep $INTERVAL
+	done
+;;
+
+* )
+	exec nohup $0 -daemon 2>&1 > /dev/null &
+;;
+esac
+

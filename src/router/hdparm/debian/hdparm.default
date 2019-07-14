@@ -1,0 +1,19 @@
+# To set the same options for a block of harddisks, do so with something
+# like the following example options:
+# harddisks="/dev/hda /dev/hdb"
+# hdparm_opts="-d1 -X66"
+# This is run before the configuration in hdparm.conf.  Do not use 
+# this arrangement if you need modules loaded for your hard disks,
+# or need udev to create the nodes, or have some other local quirk
+# These are better addressed with the options in /etc/hdparm.conf
+#
+# harddisks=""
+# hdparm_opts=""
+
+# By default, hdparm will refuse to set harddisk options on any drive
+# if the system has software RAID running, and one or more disk arrays
+# are in the process of resynchronisation.
+# With this variable set to 'yes', /etc/init.d/hdparm will suspend the
+# RAID resynchronisation process before setting harddisk options, and
+# will resume it after setting is done.
+RAID_WORKAROUND=no
