@@ -77,7 +77,9 @@ static void send_authenticate(webs_t conn_fp);
 #include <sys/wait.h>
 #include <sys/sendfile.h>
 #include <wlutils.h>
-
+#ifndef HAVE_MICRO
+#include <semaphore.h>
+#endif
 #ifdef HAVE_OPENSSL
 #include <openssl/ssl.h>
 #endif
@@ -196,15 +198,42 @@ static int b64_decode(const char *str, unsigned char *space, int size);
 static int match(const char *pattern, const char *string);
 static int match_one(const char *pattern, int patternlen, const char *string);
 static void *handle_request(void *conn_fp);
-static int numthreads = 0;
 
 #ifndef HAVE_MICRO
 
+#define PTHREAD_MUTEX_INIT pthread_mutex_init
+#define PTHREAD_MUTEX_LOCK pthread_mutex_lock
+#define PTHREAD_MUTEX_UNLOCK pthread_mutex_unlock
+#define SEM_WAIT sem_wait
+#define SEM_POST sem_post
+#define SEM_INIT sem_init
+
+#define HTTP_MAXCONN 5
+static sem_t semaphore;
 #ifdef __UCLIBC__
 static pthread_mutex_t crypt_mutex;
 #endif
 static pthread_mutex_t httpd_mutex;
 static pthread_mutex_t input_mutex;
+
+#ifdef __UCLIBC__
+#define CRYPT_MUTEX_INIT pthread_mutex_init
+#define CRYPT_MUTEX_LOCK pthread_mutex_lock
+#define CRYPT_MUTEX_UNLOCK pthread_mutex_unlock
+#else
+#define CRYPT_MUTEX_INIT(m, v) do {} while(0)
+#define CRYPT_MUTEX_LOCK(m) do {} while(0)
+#define CRYPT_MUTEX_UNLOCK(m) do {} while(0)
+
+#endif
+
+#else
+#define PTHREAD_MUTEX_INIT(m, v) do {} while(0)
+#define PTHREAD_MUTEX_LOCK(m) do {} while(0)
+#define PTHREAD_MUTEX_UNLOCK(m) do {} while(0)
+#define SEM_WAIT(sem, a, b) do {} while(0)
+#define SEM_POST(sem) do {} while(0)
+#define SEM_INIT(sem) do {} while(0)
 #endif
 
 static void lookup_hostname(usockaddr * usa4P, size_t sa4_len, int *gotv4P, usockaddr * usa6P, size_t sa6_len, int *gotv6P)
@@ -372,11 +401,7 @@ static int initialize_listen_socket(usockaddr * usaP)
 
 static int auth_check(webs_t conn_fp)
 {
-#ifndef HAVE_MICRO
-#ifdef __UCLIBC__
-	pthread_mutex_lock(&crypt_mutex);
-#endif
-#endif
+	CRYPT_MUTEX_LOCK(&crypt_mutex);
 	char *authinfo;
 	char *authpass;
 	int l;
@@ -439,11 +464,7 @@ static int auth_check(webs_t conn_fp)
 	ret = 1;
       out:;
 	free(authinfo);
-#ifndef HAVE_MICRO
-#ifdef __UCLIBC__
-	pthread_mutex_unlock(&crypt_mutex);
-#endif
-#endif
+	CRYPT_MUTEX_UNLOCK(&crypt_mutex);
 
 	return ret;
 }
@@ -764,11 +785,10 @@ static void *handle_request(void *arg)
 	long method_type;
 	conn_fp->p = &global_vars;
 
-#ifndef HAVE_MICRO
-	pthread_mutex_lock(&input_mutex);	// barrier. block until input is done. otherwise global members get async
-	pthread_mutex_unlock(&input_mutex);
+	PTHREAD_MUTEX_LOCK(&input_mutex);	// barrier. block until input is done. otherwise global members get async
+	PTHREAD_MUTEX_UNLOCK(&input_mutex);
 
-	pthread_mutex_lock(&httpd_mutex);
+	PTHREAD_MUTEX_LOCK(&httpd_mutex);
 #ifdef HAVE_REGISTER
 	conn_fp->isregistered = registered;
 	conn_fp->isregistered_real = registered_real;
@@ -776,22 +796,10 @@ static void *handle_request(void *arg)
 #ifdef HAVE_SUPERCHANNEL
 	conn_fp->issuperchannel = superchannel;
 #endif
-	pthread_mutex_unlock(&httpd_mutex);
-#else
-#ifdef HAVE_REGISTER
-	conn_fp->isregistered = registered;
-	conn_fp->isregistered_real = registered_real;
-#endif
-#ifdef HAVE_SUPERCHANNEL
-	conn_fp->issuperchannel = superchannel;
-#endif
+	PTHREAD_MUTEX_UNLOCK(&httpd_mutex);
 
-#endif
 	setnaggle(conn_fp, 1);
 
-#ifndef HAVE_MICRO
-//      pthread_mutex_lock(&input_mutex);
-#endif
 	line = malloc(LINE_LEN);
 	/* Initialize the request variables. */
 	authorization = referer = boundary = host = NULL;
@@ -811,9 +819,6 @@ static void *handle_request(void *arg)
 		break;
 	}
 
-#ifndef HAVE_MICRO
-//      pthread_mutex_unlock(&input_mutex);
-#endif
 	if (!*(line)) {
 		send_error(conn_fp, 408, "Request Timeout", NULL, "No request appeared within a reasonable time period.");
 
@@ -1185,11 +1190,9 @@ static void *handle_request(void *arg)
 	for (handler = &mime_handlers[0]; handler->pattern; handler++) {
 		if (match(handler->pattern, file)) {
 
-#ifndef HAVE_MICRO
 			if (handler->input) {
-				pthread_mutex_lock(&input_mutex);
+				PTHREAD_MUTEX_LOCK(&input_mutex);
 			}
-#endif
 
 #ifdef HAVE_REGISTER
 			if (conn_fp->isregistered)
@@ -1276,9 +1279,7 @@ static void *handle_request(void *arg)
 		free(conn_fp->authorization);
 	if (conn_fp->post_buf)
 		free(conn_fp->post_buf);
-#ifndef HAVE_MICRO
-	pthread_mutex_lock(&httpd_mutex);
-	numthreads--;
+	PTHREAD_MUTEX_LOCK(&httpd_mutex);
 #ifdef HAVE_REGISTER
 	registered = conn_fp->isregistered;
 	registered_real = conn_fp->isregistered_real;
@@ -1286,25 +1287,15 @@ static void *handle_request(void *arg)
 #ifdef HAVE_ISSUPERCHANNEL
 	superchannel = conn_fp->issuperchannel;
 #endif
-	pthread_mutex_unlock(&httpd_mutex);
-#else
-#ifdef HAVE_REGISTER
-	registered = conn_fp->isregistered;
-	registered_real = conn_fp->isregistered_real;
-#endif
-#ifdef HAVE_ISSUPERCHANNEL
-	superchannel = conn_fp->issuperchannel;
-#endif
-#endif
+	PTHREAD_MUTEX_UNLOCK(&httpd_mutex);
 
-#ifndef HAVE_MICRO
 	if (handler && handler->input)
-		pthread_mutex_unlock(&input_mutex);	//releases barrier
-#endif
+		PTHREAD_MUTEX_UNLOCK(&input_mutex);	//releases barrier
 
 	bzero(conn_fp, sizeof(webs));	// erase to delete any traces of stored passwords or usernames
 
 	free(conn_fp);
+	SEM_POST(&semaphore);
 	return NULL;
 }
 
@@ -1453,13 +1444,10 @@ int main(int argc, char **argv)
 	webenv.GOZILA_GET = _GOZILA_GET;
 	webenv.validate_cgi = _validate_cgi;
 	global_vars.env = &webenv;
-#ifndef HAVE_MICRO
-#ifdef __UCLIBC__
-	pthread_mutex_init(&crypt_mutex, NULL);
-#endif
-	pthread_mutex_init(&httpd_mutex, NULL);
-	pthread_mutex_init(&input_mutex, NULL);
-#endif
+	CRYPT_MUTEX_INIT(&crypt_mutex, NULL);
+	SEM_INIT(&semaphore, 0, HTTP_MAXCONN);
+	PTHREAD_MUTEX_INIT(&httpd_mutex, NULL);
+	PTHREAD_MUTEX_INIT(&input_mutex, NULL);
 	strcpy(pid_file, "/var/run/httpd.pid");
 	server_port = DEFAULT_HTTP_PORT;
 
@@ -1662,6 +1650,8 @@ int main(int argc, char **argv)
 
 	/* Loop forever handling requests */
 	for (;;) {
+		SEM_WAIT(&semaphore);
+
 		webs_t conn_fp = safe_malloc(sizeof(webs));
 		if (!conn_fp) {
 			dd_logerror("httpd", "Out of memory while creating new connection");
@@ -1811,18 +1801,7 @@ int main(int argc, char **argv)
 		}
 
 #ifndef HAVE_MICRO
-		pthread_mutex_lock(&httpd_mutex);
-		numthreads++;
-		pthread_mutex_unlock(&httpd_mutex);
-		while (numthreads > 4) {
-//			fprintf(stderr, "thread limit of %d reached, waiting for release\n", numthreads);
-			struct timespec tim, tim2;
-			tim.tv_sec = 0;
-			tim.tv_nsec = 100000000L;
-			nanosleep(&tim, &tim2);
-		}
-		conn_fp->threadid = numthreads;
-
+		SEM_WAIT(&semaphore);
 		pthread_attr_t attr;
 		pthread_attr_init(&attr);
 		pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
