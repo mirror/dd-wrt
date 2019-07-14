@@ -262,6 +262,7 @@ AC_CHECK_FUNCS(m4_normalize([
 	iconv_open
 	if_indextoname
 	open64
+	open_memstream
 	prctl
 	preadv
 	process_vm_readv
@@ -394,6 +395,7 @@ AC_CHECK_HEADERS(m4_normalize([
 	linux/kvm.h
 	linux/memfd.h
 	linux/mmtimer.h
+	linux/mount.h
 	linux/msg.h
 	linux/neighbour.h
 	linux/netfilter/ipset/ip_set.h
@@ -897,7 +899,10 @@ st_STACKTRACE
 
 if test "$arch" = mips && test "$no_create" != yes; then
 	mkdir -p linux/mips
-	if $srcdir/linux/mips/genstub.sh linux/mips; then
+	if $srcdir/linux/mips/genstub.sh \
+	   $srcdir/linux/mips linux/mips n32 n64 o32 &&
+	   $srcdir/linux/mips/genstub.sh \
+	   $srcdir/linux linux/mips common common-32; then
 		AC_MSG_RESULT([Generated MIPS syscallent stubs])
 	else
 		AC_MSG_ERROR([Failed to generate syscallent stubs])

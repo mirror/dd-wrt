@@ -1,3 +1,928 @@
+2019-07-12  Dmitry V. Levin  <ldv@altlinux.org>
+
+	Prepare for 5.2 release.
+	* NEWS: Update for 5.2 release.
+
+	Update .mailmap.
+	* .mailmap: Add both email addresses of Zhibin Li to avoid duplication
+	in CREDITS file.
+
+2019-07-11  Dmitry V. Levin  <ldv@altlinux.org>
+
+	Update copyright headers.
+	Headers updated automatically using maint/update_copyright_years.sh
+	script.
+
+2019-07-11  Dmitry V. Levin  <ldv@altlinux.org>
+
+	maint/update_copyright_years.sh: take all commits into account.
+	This helps to avoid accidental shrinking of copyright years range.
+
+	* maint/update_copyright_years.sh: Take all commits into account
+	to find copyright years of the earliest and the latest commit.
+
+2019-07-11  Dmitry V. Levin  <ldv@altlinux.org>
+
+	Fix preprocessor indentation.
+	Indent the C preprocessor directives to reflect their nesting
+	using the following script:
+
+	$ cppi -l $(git grep -El '^[[:space:]]*#[[:space:]]*(if|ifdef|ifndef|elif|else|endif|define|pragma)[[:space:]]' |grep -v '\.sh$') |while read f; do
+		cppi < "$f" > "$f".cppi; mv "$f".cppi "$f"
+	done
+
+2019-07-10  Paul Chaignon  <paul.chaignon@gmail.com>
+
+	tests: check status qualifier.
+	This change adds 8 test cases for -e status with unfinished, failed,
+	none, successful, detached, and the whole set.  The test cases for
+	failed, successful, and the whole set use chdir(2).  Threaded test cases
+	for unfinished and none rely on a child thread execve'ing the lead
+	thread.  There are additional single-threaded tests for status=none and
+	status=unfinished.  The test case for detached interrupts strace while
+	attached to a sleeping process.
+
+	* tests/status.c: New file.
+	* tests/status-all.c: Likewise.
+	* tests/status-failed.c: Likewise.
+	* tests/status-detached.expected: Likewise.
+	* tests/status-none.c: Likewise.
+	* tests/status-none-threads.c: Likewise.
+	* tests/status-successful.c: Likewise.
+	* tests/status-unfinished-threads.c: Likewise.
+	* tests/status-unfinished.c: Likewise.
+	* tests/status-detached.test: New test.
+	* tests/status-none-threads.test: Likewise.
+	* tests/status-unfinished-threads.test: Likewise.
+	* tests/tests.h (test_status_chdir): New prototype.
+	* tests/.gitignore: Add status-all, status-failed, status-none,
+	status-none-threads, status-successful, status-unfinished,
+	and status-unfinished-threads.
+	* tests/gen_tests.in: Add status-all, status-failed, status-successful,
+	status-none, and status-unfinished.
+	* tests/pure_executables.list: Likewise.
+	* tests/Makefile.am (libtests_a_SOURCES): Add status.c.
+	(check_PROGRAMS): Add status-none-threads and status-unfinished-threads.
+	(status_none_threads_LDADD, status_unfinished_threads_LDADD): New
+	variables.
+	(MISC_TESTS): Add status-detached.test, status-none-threads.test, and
+	status-unfinished-threads.test.
+	(EXTRA_DIST): Add status-detached.expected.
+
+	Co-Authored-by: Burkhard Kohl <burkhard.kohl@intel.com>
+	Co-Authored-by: Dmitry V. Levin <ldv@altlinux.org>
+
+2019-07-10  Paul Chaignon  <paul.chaignon@gmail.com>
+
+	Implement -e status=set option.
+	The status qualifier enables filtering based on the return status of
+	syscalls.  -z and -Z become aliases for -e status=successful and -e
+	status=failed.  Staged output is only enabled when at least one status
+	is filtered, that is, when the set is incomplete.
+
+	* signal.c (popcount32): Move ...
+	* defs.h (popcount32): ... here.
+	(not_failing_only, failing_only): Remove.
+	* filter_qualify.c (status_set): New number_set variable.
+	(statuses): New variable for names of statuses.
+	(statusstr_to_uint, qualify_status): New functions.
+	(qual_options): Handle status qualifier.
+	* number_set.c (get_number_setbit, is_complete_set): New functions.
+	* number_set.h (is_complete_set): New prototype.
+	(status_t): New enumeration for statuses.
+	(status_set): New prototype.
+	* strace.1.in: Document new status qualifier.
+	* strace.c (not_failing_only, failing_only): Remove.
+	(droptcb): Handle status=detached option.
+	(init): Handle new status qualifier, set status_set variable on -z and -Z
+	options, warn on -zZ and -Zz, use is_complete_set.
+	(maybe_switch_tcbs): Reopen memstream after tcb switch.
+	(print_event_exit): Handle status=unfinished option.
+	* syscall.c (syscall_entering_trace): Use is_complete_set.
+	(syscall_exiting_trace): Use is_complete_set, handle status=unavailable
+	option.
+	* NEWS: Mention this change.
+
+2019-07-10  Paul Chaignon  <paul.chaignon@gmail.com>
+
+	Stage output for -z and -Z options.
+	-z and -Z options print only successful and failing syscalls respectively.
+	However, failure of syscall is only known after syscall return.  Thus, we
+	end up with something like this on, e.g., ENOENT:
+
+	  open("does_not_exist", O_RDONLY <unfinished ...>
+
+	whereas the intended result is that the open(...) line is not shown at all.
+
+	This change fixes this issue using open_memstream.  When either the -z or
+	the -Z option is used, the output is staged in memory (using
+	open_memstream) until we know the syscall return status.  If the
+	open_memstream function is not available, these new options error out.
+
+	Document -z and -Z options as new features since they have never worked
+	properly before and were undocumented since commit v4.4.95~21.
+
+	* stage_output.c: New file.
+	* Makefile.am (strace_SOURCES): Add it.
+	* configure.ac (AC_CHECK_FUNCS): Add open_memstream.
+	* defs.h (struct tcb): Add real_outf, memfptr, and memfloc fields for
+	memstream.
+	(strace_open_memstream, strace_close_memstream): New prototypes.
+	* strace.1.in: Document -z and -Z options.
+	* strace.c (usage): Mention -z and -Z options.
+	(init): Error on -z and -Z options if open_memstream if unavailable.
+	(maybe_switch_tcbs): Handle switch of memstream between tcbs.
+	(printleader): Avoid marking staged syscalls as unfinished.
+	* syscall.c (syscall_entering_trace): Open memstream.
+	(syscall_exiting_trace): Filter failed syscalls if failing_only is set,
+	handle raw(tcp) case.
+	(print_syscall_resume): Avoid marking staged syscalls as resumed.
+	* NEWS: Mention this change.
+
+	Resolves: https://github.com/strace/strace/issues/49
+	Resolves: https://github.com/strace/strace/issues/50
+	Co-Authored-by: Burkhard Kohl <burkhard.kohl@intel.com>
+
+2019-07-10  Paul Chaignon  <paul.chaignon@gmail.com>
+
+	Add -Z option to print only failing syscalls.
+	Existing -z option prints only successful syscalls.
+	This change adds a -Z option to print only failing syscalls.
+
+	Both options will start to behave properly with the subsequent commit.
+
+	* strace.c (init): Handle new -Z option.
+	* defs.h (failing_only): New prototype.
+	* syscall.c (failing_only): New variable.
+	(syscall_exiting_trace): Ignore failed syscalls if failing_only is set.
+
+	References: https://github.com/strace/strace/issues/50
+	Co-Authored-by: Burkhard Kohl <burkhard.kohl@intel.com>
+
+2019-07-10  Dmitry V. Levin  <ldv@altlinux.org>
+
+	syscall.c: rename ptrace_get_syscall_info to strace_get_syscall_info.
+	... to avoid potential conflict with future glibc versions.
+
+	* syscall.c (ptrace_get_syscall_info): Rename to
+	strace_get_syscall_info.  All callers updated.
+
+2019-07-10  Dmitry V. Levin  <ldv@altlinux.org>
+
+	tests: fix build with cutting-edge glibc.
+	Fix the following compilation error:
+
+	In file included from statx.c:44:
+	xstatx.c:47:16: error: ‘struct libc_statx’ declared inside parameter list will not be visible outside of this definition or declaration [-Werror]
+
+	* tests/xstatx.c (struct statx): New forward declaration.
+
+2019-07-10  Dmitry V. Levin  <ldv@altlinux.org>
+
+	Fix misleading stray PTRACE_EVENT_EXEC diagnostics.
+	If current_tcp is to be switched, entering(current_tcp) is irrelevant.
+
+	* strace.c (maybe_switch_tcbs): Update comment.
+	(dispatch_event) <case TE_STOP_BEFORE_EXECVE>: Invoke
+	maybe_switch_current_tcp early, skip the check for a stray
+	PTRACE_EVENT_EXEC if current_tcp was switched.
+	* tests/maybe_switch_current_tcp.c: New file.
+	* tests/pure_executables.list: Add maybe_switch_current_tcp.
+	* tests/.gitignore: Likewise.
+	* tests/gen_tests.in (maybe_switch_current_tcp): New entry.
+	* tests/Makefile.am (maybe_switch_current_tcp_LDADD): New variable.
+
+2019-07-10  Dmitry V. Levin  <ldv@altlinux.org>
+
+	Refactor maybe_switch_tcbs.
+	Change maybe_switch_tcbs to return NULL when no switching is necessary.
+	Introduce maybe_switch_current_tcp as a thing wrapper around
+	maybe_switch_tcbs.
+
+	* strace.c (maybe_switch_current_tcp): New function.
+	(dispatch_event): Use it instead of maybe_switch_tcbs, move comments
+	and the os_release check before maybe_switch_tcbs invocation ...
+	(maybe_switch_tcbs): ... here.  Change return value to NULL
+	if no switching was performed.
+
+2019-07-09  Dmitry V. Levin  <ldv@altlinux.org>
+
+	tests: robustify strace -k tests against link-time optimizer.
+	Some distributions enable by default a link-time optimizer that
+	mangles stack_fcall sample executables in a way that renders them
+	unusable for test purposes.
+
+	Robustify tests to defeat link-time optimizer.
+
+	* tests/stack-fcall.h (f0, f1, f2, f3): Add second parameter.
+	* tests/stack-fcall.c (main): Pass main as the second parameter to f0.
+	* tests/stack-fcall-0.c (f0): Add second parameter f, pass the xor of it
+	and f0 to f1.
+	* tests/stack-fcall-1.c (f1): Add second parameter f, pass the xor of it
+	and f1 to f2.
+	* tests/stack-fcall-2.c (f2): Add second parameter f, pass the xor of it
+	and f2 to f3.
+	* tests/stack-fcall-3.c: Include <asm/unistd.h>.
+	(f3): Add second parameter f, invoke __NR_gettid syscall with the xor
+	of f and f3 as its argument.
+
+2019-07-09  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	ia64: optimize syscallent table.
+	Use shuffle_scno since all valid syscall numbers start from 1024.
+
+	* linux/syscallent_base_nr.h: New file.
+	* linux/ia64/syscallent_base_nr.h: Likewise.
+	* linux/ia64/shuffle_scno.c: Likewise.
+	* Makefile.am (EXTRA_DIST): Add them.
+	* linux/ia64/syscallent.h [SYSCALLENT_BASE_NR] (BASE_NR): Define to 0.
+	* syscall.c: Include "syscallent_base_nr.h".
+	* clone.c [IA64] (ARG_STACKSIZE, ARG_PTID, ARG_CTID, ARG_TLS): Use
+	shuffle_scno.
+
+	Co-Authored-by: Dmitry V. Levin <ldv@altlinux.org>
+
+2019-07-09  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	inotify: decode file descriptor returned by inotify_init.
+	* inotify.c (SYS_FUNC(inotify_init)): New function.
+	* linux/dummy.h (sys_inotify_init): Remove macro definition.
+	* tests/inotify_init.c: New file.
+	* tests/inotify_init-y.c: Likewise.
+	* tests/inotify_init1-y.c: Likewise.
+	* tests/inotify_init1.c [PRINT_PATHS]: Print inotify fd path.
+	* tests/inotify_init-y.test: New test.
+	* tests/.gitignore: Add inotify_init, inotify_init-y, inotify_init1-y.
+	* tests/pure_executables.list: Likewise.
+	* tests/gen_tests.in (inotify_init, inotify_init1-y): New tests.
+	* tests/Makefile.am (DECODER_TESTS): Add inotify_init-y.test.
+
+2019-07-08  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	rtnl_addr: decode IFA_RT_PRIORITY and IFA_TARGET_NETNSID.
+	* rtnl_addr.c (ifaddrmsg_nla_decoders): Decode IFA_RT_PRIORITY as u32,
+	decode IFA_TARGET_NETNSID as s32.
+
+2019-07-08  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	mips o32: print an error message when fetching of syscall arguments fails
+	... instead of failing silently.
+
+	* linux/mips/get_syscall_args.c (get_syscall_args): Print an error message
+	when umoven fails.
+
+2019-07-08  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	linux/smc_diag.h: update struct smc_diag_req definition.
+	In accordance with Linux commit v4.19-rc8~22^2~17^2.
+
+	* linux/smc_diag.h (struct smc_diag_req): Use an anonymous union
+	for diag_fallback/diag_mode fields.
+
+2019-07-08  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	kvm: avoid bogus vcpu_info assignment in vcpu_register.
+	Also reformat code a bit to make nesting a bit clearer.
+
+	Reported by Clang.
+
+	* kvm.c (vcpu_register): Do not assign vcpu_alloc result to vcpu_info
+	as this value is not used afterwards in the function.
+
+2019-07-08  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	sync_file_range2: remove unneeded argn assignment.
+	clang complains about it:
+
+	         argn = printllval(tcp, "%lld", argn);
+	         ^      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	    sync_file_range2.c:43:2: note: Value stored to 'argn' is never read
+
+	* sync_file_range2.c (SYS_FUNC(sync_file_range2)): Do not assign
+	printllval result to argn for the second time.
+
+2019-07-08  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	syscall.c: avoid infinite loop in subcalls parsing.
+	clang complains about it, so it might be a good reason to refactor it
+	into something more linear.
+
+	* syscall.c (syscall_entering_decode): Put syscall subcall decoding
+	before ipc/socket subcall decoding, remove the loop.
+
+2019-07-05  Dmitry V. Levin  <ldv@altlinux.org>
+
+	tests: check decoding of mode argument of mbind and set_mempolicy syscalls
+	* tests/mbind.c: Include "scno.h".
+	(errstr): New variable.
+	(k_mbind): New function.
+	(out_str): New macro.
+	(mpol_modes): New array.
+	(main): Use it and k_mbind.
+	* tests/set_mempolicy.c: Include "scno.h", do not include <errno.h>,
+	"xlat.h" and "xlat/mpol_modes.h".
+	(errstr): New variable.
+	(k_set_mempolicy): New function.
+	(out_str): New macro.
+	(mpol_modes): New array.
+	(print_nodes): Use it and k_set_mempolicy.
+	(main): Likewise.
+	* tests/mbind-Xabbrev.c: New file.
+	* tests/mbind-Xraw.c: Likewise.
+	* tests/mbind-Xverbose.c: Likewise.
+	* tests/set_mempolicy-Xabbrev.c: Likewise.
+	* tests/set_mempolicy-Xraw.c: Likewise.
+	* tests/set_mempolicy-Xverbose.c: Likewise.
+	* tests/gen_tests.in (mbind-Xabbrev, mbind-Xraw, mbind-Xverbose,
+	set_mempolicy-Xabbrev, set_mempolicy-Xraw, set_mempolicy-Xverbose):
+	New entries.
+	* tests/pure_executables.list: Add mbind-Xabbrev, mbind-Xraw,
+	mbind-Xverbose, set_mempolicy-Xabbrev, set_mempolicy-Xraw,
+	and set_mempolicy-Xverbose.
+	* tests/.gitignore: Likewise.
+
+2019-07-05  Dmitry V. Levin  <ldv@altlinux.org>
+
+	numa: enhance decoding of mode argument of mbind and set_mempolicy syscalls
+	Implement decoding of memory policy mode flags introduced by Linux
+	kernel commits v2.6.26-rc1~990 and v2.6.26-rc1~988.
+
+	* xlat/mpol_mode_flags.in: New file.
+	* numa.c: Include "xlat/mpol_mode_flags.h".
+	(print_mode): Print MPOL_MODE_FLAGS part of mode argument as flags.
+	* NEWS: Mention this.
+
+2019-07-05  Dmitry V. Levin  <ldv@altlinux.org>
+
+	numa: factor out printing of mode argument of mbind and set_mempolicy syscalls
+	This printing is going to be extended by subsequent changes.
+
+	* numa.c (print_mode): New function.
+	(SYS_FUNC(mbind), SYS_FUNC(set_mempolicy)): Use it.
+
+2019-07-04  Gleb Fotengauer-Malinovskiy  <glebfm@altlinux.org>
+
+	Update ioctl entries from linux v5.2.
+	* linux/32/ioctls_inc_align16.h: Update from linux v5.2-rc7
+	using ioctls_gen.sh.
+	* linux/32/ioctls_inc_align32.h: Likewise.
+	* linux/32/ioctls_inc_align64.h: Likewise.
+	* linux/64/ioctls_inc.h: Likewise.
+	* linux/x32/ioctls_inc0.h: Likewise.
+	* linux/aarch64/ioctls_arch0.h: Likewise.
+	* linux/arm/ioctls_arch0.h: Likewise.
+	* linux/mips/ioctls_arch0.h: Likewise.
+	* NEWS: Mention this.
+
+2019-07-04  Dmitry V. Levin  <ldv@altlinux.org>
+
+	sparc, sparc64: refactor arch_set_error and arch_set_success.
+	* linux/sparc/set_error.c (sparc_set_o0_psr): New function.
+	(arch_set_error, arch_set_success): Use it.
+	* linux/sparc64/set_error.c (sparc64_set_o0_tstate): New function.
+	(arch_set_error, arch_set_success): Use it.
+
+2019-07-04  Dmitry V. Levin  <ldv@altlinux.org>
+
+	sparc, sparc64: fix syscall tampering when PTRACE_GET_SYSCALL_INFO is in use
+	When PTRACE_GET_SYSCALL_INFO is in use on sparc, psr is not loaded,
+	so it has to be loaded explicitly before tampering.
+	Likewise, when PTRACE_GET_SYSCALL_INFO is in use on sparc64, tstate
+	is not loaded, so it has to be loaded explicitly before tampering.
+
+	* linux/sparc/set_error.c (arch_set_error, arch_set_success): Explicitly
+	call get_regs before changing psr when PTRACE_GET_SYSCALL_INFO is in use.
+	* linux/sparc64/set_error.c (arch_set_error, arch_set_success):
+	Explicitly call get_regs before changing tstate when
+	PTRACE_GET_SYSCALL_INFO is in use.
+	* NEWS: Mention this fix.
+
+2019-07-04  Dmitry V. Levin  <ldv@altlinux.org>
+
+	powerpc: skip poking CCR if it is unchanged.
+	* linux/powerpc/set_error.c (arch_set_r3_ccr): New function.
+	(arch_set_error, arch_set_success): Use it.
+
+2019-07-04  Dmitry V. Levin  <ldv@altlinux.org>
+
+	powerpc: fix syscall tampering when PTRACE_GET_SYSCALL_INFO is in use.
+	When PTRACE_GET_SYSCALL_INFO is in use, CCR is not loaded, so it has
+	to be loaded explicitly before tampering.
+
+	* linux/powerpc/set_error.c (arch_set_error, arch_set_success):
+	Explicitly load CCR before changing it when PTRACE_GET_SYSCALL_INFO
+	is in use.
+	* NEWS: Mention this fix.
+
+2019-07-03  Dmitry V. Levin  <ldv@altlinux.org>
+
+	xlat: rename mbindflags to mbind_flags.
+	The former name was not consistent with others.
+
+	* xlat/mbindflags.in: Rename to xlat/mbind_flags.in; all users updated.
+
+2019-07-03  Dmitry V. Levin  <ldv@altlinux.org>
+
+	xlat: update MPOL_F_* get_mempolicy flags.
+	* xlat/get_mempolicy_flags.in (MPOL_F_MEMS_ALLOWED): New constant
+	introduced by Linux kernel v2.6.24-rc1~1212.
+	* NEWS: Mention this.
+	* tests/get_mempolicy.c (main): Update expected output.
+
+2019-07-03  Dmitry V. Levin  <ldv@altlinux.org>
+
+	xlat: rename mempolicyflags to get_mempolicy_flags.
+	The former name was ambiguous.
+
+	* xlat/mempolicyflags.in: Rename to xlat/get_mempolicy_flags.in;
+	all users updated.
+
+2019-07-03  Dmitry V. Levin  <ldv@altlinux.org>
+
+	xlat: rename policies to mpol_modes.
+	The former name was too vague.
+
+	* xlat/policies.in: Rename to xlat/mpol_modes.in; all users updated.
+
+2019-07-03  Michal Sekletar  <msekleta@redhat.com>
+
+	xlat: add MPOL_LOCAL constant.
+	* xlat/policies.in (MPOL_LOCAL): New constant introduced by Linux kernel
+	commit v3.8-rc1~92^2~33.
+
+	Resolves: https://github.com/strace/strace/pull/102
+
+2019-07-03  Zhibin Li  <haoyouab@gmail.com>
+
+	ioctl: remove redundant _IOC_NR.
+	* ioctl.c (evdev_decode_number): Replace _IOC_NR(nr) with nr
+	as the latter is defined to _IOC_NR(code).
+
+	Co-Authored-by: Dmitry V. Levin <ldv@altlinux.org>
+
+2019-07-02  Dmitry V. Levin  <ldv@altlinux.org>
+
+	bpf: add support for new fields in BPF_PROG_TEST_RUN.
+	* bpf_attr.h (struct BPF_PROG_TEST_RUN_struct): Add ctx_size_in,
+	ctx_size_out, ctx_in, and ctx_out fields.
+	* bpf.c (BEGIN_BPF_CMD_DECODER(BPF_PROG_TEST_RUN)): Decode these fields
+	introduced by Linux kernel commit v5.2-rc1~133^2~193^2~6.
+	* tests/bpf.c (BPF_PROG_TEST_RUN_checks): Check it.
+
+2019-07-02  Dmitry V. Levin  <ldv@altlinux.org>
+
+	bpf: implement decoding of BPF_MAP_FREEZE command.
+	BPF_MAP_FREEZE command was introduced by Linux commit
+	v5.2-rc1~133^2~193^2~12^2~12.
+
+	* bpf_attr.h (struct BPF_MAP_FREEZE_struct): New type.
+	(BPF_MAP_FREEZE_struct_size, expected_BPF_MAP_FREEZE_struct_size): New
+	macros.
+	* bpf.c (BEGIN_BPF_CMD_DECODER(BPF_MAP_FREEZE)): New bpf command
+	decoder.
+	(SYS_FUNC(bpf)) <bpf_cmd_decoders[]>: Add BPF_CMD_ENTRY(BPF_MAP_FREEZE).
+	* NEWS: Mention this.
+	* tests/bpf.c (union bpf_attr_data): Add
+	BPF_ATTR_DATA_FIELD(BPF_MAP_FREEZE).
+	(BPF_MAP_FREEZE_checks): New checks array.
+	(main) <checks>: Add CHK(BPF_MAP_FREEZE).
+
+2019-07-01  Dmitry V. Levin  <ldv@altlinux.org>
+
+	xlat: update BPF_* constants.
+	* xlat/bpf_attach_type.in (BPF_CGROUP_SYSCTL): New constant introduced
+	by Linux kernel commit v5.2-rc1~133^2~132^2~39^2~19.
+	(BPF_CGROUP_UDP4_RECVMSG, BPF_CGROUP_UDP6_RECVMSG): New constants
+	introduced by Linux kernel commit v5.2-rc6~33^2~44^2^2~5.
+	* xlat/bpf_commands.in (BPF_MAP_FREEZE): New constant introduced
+	by Linux kernel commit v5.2-rc1~133^2~193^2~12^2~12.
+	* xlat/bpf_map_flags.in (BPF_F_RDONLY_PROG, BPF_F_WRONLY_PROG): New
+	constants introduced by Linux kernel commit
+	v5.2-rc1~133^2~193^2~12^2~13.
+	* xlat/bpf_map_types.in (BPF_MAP_TYPE_SK_STORAGE): New constant
+	introduced by Linux kernel commit v5.2-rc1~133^2~80^2^2~6.
+	* xlat/bpf_prog_types.in (BPF_PROG_TYPE_CGROUP_SYSCTL): New constant
+	introduced by Linux kernel commit v5.2-rc1~133^2~132^2~39^2~19.
+	(BPF_PROG_TYPE_RAW_TRACEPOINT_WRITABLE): New constant introduced
+	by Linux kernel commit v5.2-rc1~133^2~80^2~1^2~4.
+	* NEWS: Mention this.
+	* tests/bpf.c (BPF_MAP_CREATE_checks, BPF_PROG_LOAD_checks,
+	BPF_PROG_QUERY_checks): Update.
+	* tests/kernel_version.c (print_bpf_attr): Update.
+
+2019-06-29  Dmitry V. Levin  <ldv@altlinux.org>
+
+	Implement decoding of fspick syscall.
+	... introduced by Linux kernel commits v5.2-rc1~141^2~1,
+	v5.2-rc1~20^2~1, and v5.2-rc1~20^2.
+
+	* fspick.c: New file.
+	* Makefile.am (strace_SOURCES): Add it.
+	* pathtrace.c (pathtrace_match_set): Add SEN_fspick.
+	* xlat/fspick_flags.in: New file.
+	* linux/syscallent-common.h [BASE_NR + 433]: Wire up fspick.
+	* NEWS: Mention this change.
+	* tests/fspick.c: New file.
+	* tests/fspick-P.c: Likewise.
+	* tests/gen_tests.in (fspick, fspick-P): New entries.
+	* tests/pure_executables.list: Add fspick and fspick-P.
+	* tests/.gitignore: Likewise.
+
+2019-06-29  Dmitry V. Levin  <ldv@altlinux.org>
+
+	Implement decoding of fsmount syscall.
+	... introduced by Linux kernel commits v5.2-rc1~141^2~2,
+	v5.2-rc1~20^2~1, and v5.2-rc1~20^2.
+
+	* fsmount.c: New file.
+	* Makefile.am (strace_SOURCES): Add it.
+	* pathtrace.c (pathtrace_match_set): Add SEN_fsmount.
+	* xlat/fsmount_cmds.in: New file.
+	* xlat/mount_attr_atime.in: Likewise.
+	* xlat/mount_attr_flags.in: Likewise.
+	* linux/syscallent-common.h [BASE_NR + 432]: Wire up fsmount.
+	* NEWS: Mention this change.
+	* tests/fsmount.c: New file.
+	* tests/gen_tests.in (fsmount): New entry.
+	* tests/pure_executables.list: Add fsmount.
+	* tests/.gitignore: Likewise.
+
+2019-06-29  Dmitry V. Levin  <ldv@altlinux.org>
+
+	Implement decoding of fsconfig syscall.
+	... introduced by Linux kernel commits v5.2-rc1~141^2~3,
+	v5.2-rc1~20^2~1, and v5.2-rc1~20^2.
+
+	* fsconfig.c: New file.
+	* Makefile.am (strace_SOURCES): Add it.
+	* pathtrace.c (pathtrace_match_set): Add SEN_fsconfig.
+	* xlat/fsconfig_cmds.in: New file.
+	* linux/syscallent-common.h [BASE_NR + 431]: Wire up fsconfig.
+	* NEWS: Mention this change.
+	* tests/fsconfig.c: New file.
+	* tests/fsconfig-P.c: Likewise.
+	* tests/gen_tests.in (fsconfig, fsconfig-P): New entries.
+	* tests/pure_executables.list: Add fsconfig and fsconfig-P.
+	* tests/.gitignore: Likewise.
+
+2019-06-29  Dmitry V. Levin  <ldv@altlinux.org>
+
+	print_dirfd: do not print trailing comma.
+	It was fine to print trailing comma in print_dirfd until introduction
+	of a syscall with the last argument being a dirfd.
+	Now it's time to change print_dirfd.
+
+	* open.c (print_dirfd): Do not print comma.
+	(SYS_FUNC(open)): Print comma after print_dirfd() invocation.
+	* access.c (SYS_FUNC(faccessat)): Likewise.
+	* chmod.c (SYS_FUNC(fchmodat)): Likewise.
+	* execve.c (SYS_FUNC(execveat)): Likewise.
+	* fanotify.c (SYS_FUNC(fanotify_mark)): Likewise.
+	* fchownat.c (SYS_FUNC(fchownat)): Likewise.
+	* file_handle.c (SYS_FUNC(name_to_handle_at)): Likewise.
+	* link.c (SYS_FUNC(linkat), SYS_FUNC(unlinkat), SYS_FUNC(symlinkat)):
+	Likewise.
+	* mknod.c (SYS_FUNC(mknodat)): Likewise.
+	* move_mount.c (SYS_FUNC(move_mount)): Likewise.
+	* open_tree.c (SYS_FUNC(open_tree)): Likewise.
+	* readlink.c (SYS_FUNC(readlinkat)): Likewise.
+	* renameat.c (decode_renameat): Likewise.
+	* stat.c (SYS_FUNC(newfstatat)): Likewise.
+	* stat64.c (SYS_FUNC(fstatat64)): Likewise.
+	* statx.c (SYS_FUNC(statx)): Likewise.
+	* utimes.c (SYS_FUNC(futimesat), do_utimensat): Likewise.
+
+2019-06-29  Dmitry V. Levin  <ldv@altlinux.org>
+
+	Implement decoding of fsopen syscall.
+	... introduced by Linux kernel commits v5.2-rc1~141^2~5,
+	v5.2-rc1~20^2~1, and v5.2-rc1~20^2.
+
+	* fsopen.c: New file.
+	* Makefile.am (strace_SOURCES): Add it.
+	* pathtrace.c (pathtrace_match_set): Add SEN_fsopen.
+	* xlat/fsopen_flags.in: New file.
+	* linux/syscallent-common.h [BASE_NR + 430]: Wire up fsopen.
+	* NEWS: Mention this change.
+	* tests/fsopen.c: New file.
+	* tests/gen_tests.in (fsopen): New entry.
+	* tests/pure_executables.list: Add fsopen.
+	* tests/.gitignore: Likewise.
+
+2019-06-29  Dmitry V. Levin  <ldv@altlinux.org>
+
+	Implement decoding of move_mount syscall.
+	... introduced by Linux kernel commits v5.2-rc1~141^2~8,
+	v5.2-rc1~20^2~1, and v5.2-rc1~20^2.
+
+	* move_mount.c: New file.
+	* Makefile.am (strace_SOURCES): Add it.
+	* pathtrace.c (pathtrace_match_set): Add SEN_move_mount.
+	* xlat/move_mount_flags.in: New file.
+	* linux/syscallent-common.h [BASE_NR + 429]: Wire up move_mount.
+	* NEWS: Mention this change.
+	* tests/move_mount.c: New file.
+	* tests/move_mount-P.c: Likewise.
+	* tests/gen_tests.in (move_mount, move_mount-P): New entries.
+	* tests/pure_executables.list: Add move_mount and move_mount-P.
+	* tests/.gitignore: Likewise.
+
+2019-06-29  Dmitry V. Levin  <ldv@altlinux.org>
+
+	Implement decoding of open_tree syscall.
+	... introduced by Linux kernel commits v5.2-rc1~141^2~9,
+	v5.2-rc1~20^2~1, and v5.2-rc1~20^2.
+
+	* configure.ac (AC_CHECK_HEADERS): Add linux/mount.h.
+	* open_tree.c: New file.
+	* Makefile.am (strace_SOURCES): Add it.
+	* pathtrace.c (pathtrace_match_set): Add SEN_open_tree.
+	* xlat/open_tree_flags.in: New file.
+	* linux/syscallent-common.h [BASE_NR + 428]: Wire up open_tree.
+	* NEWS: Mention this change.
+	* tests/open_tree.c: New file.
+	* tests/open_tree-P.c: Likewise.
+	* tests/gen_tests.in (open_tree, open_tree-P): New entries.
+	* tests/pure_executables.list: Add open_tree and open_tree-P.
+	* tests/.gitignore: Likewise.
+
+2019-06-29  Dmitry V. Levin  <ldv@altlinux.org>
+
+	Introduce linux/syscallent-common.h and linux/syscallent-common-32.h.
+	These files are going to be used to define syscall entries for common
+	syscalls added in Linux kernel 5.1+.
+
+	* linux/syscallent-common.h: New file.
+	* linux/syscallent-common-32.h: Likewise.
+	* Makefile.am (EXTRA_DIST): Add them.
+	(syscallent_names): Add syscallent-common.h and syscallent-common-32.h.
+	* linux/mips/.gitignore: Add syscallent-common-32-stub.h
+	and syscallent-common-stub.h.
+	* linux/mips/genstub.sh: Parametrize source directory.  Change syscall
+	name prefix to SYSCALL_NAME_PREFIX.
+	* configure.ac [MIPS]: Generate stubs for linux/syscallent-common.h
+	and linux/syscallent-common-32.h files.
+	* linux/mips/syscallent-n32.h [LINUX_MIPSN32]
+	[BASE_NR + 403..BASE_NR + 427]: Remove, include "syscallent-common-32.h"
+	and "syscallent-common.h" instead.
+	[!LINUX_MIPSN32] (SYSCALL_NAME_PREFIX): Define.
+	[!LINUX_MIPSN32]: Include "syscallent-common-32-sub.h"
+	and "syscallent-common-stub.h".
+	* linux/mips/syscallent-o32.h [LINUX_MIPSO32]
+	[BASE_NR + 403..BASE_NR + 427]: Remove, include "syscallent-common-32.h"
+	and "syscallent-common.h" instead.
+	[!LINUX_MIPSO32] (SYSCALL_NAME_PREFIX): Define.
+	[!LINUX_MIPSO32]: Include "syscallent-common-32-sub.h"
+	* linux/32/syscallent.h [403..427]: Remove, include
+	"syscallent-common-32.h" and "syscallent-common.h" instead.
+	* linux/arm/syscallent.h: Likewise.
+	* linux/hppa/syscallent.h: Likewise.
+	* linux/i386/syscallent.h: Likewise.
+	* linux/m68k/syscallent.h: Likewise.
+	* linux/microblaze/syscallent.h: Likewise.
+	* linux/powerpc/syscallent.h: Likewise.
+	* linux/s390/syscallent.h: Likewise.
+	* linux/sh/syscallent.h: Likewise.
+	* linux/sparc/syscallent.h: Likewise.
+	* linux/xtensa/syscallent.h: Likewise.
+	* linux/alpha/syscallent.h (BASE_NR): Define.
+	[534..537]: Remove, include "syscallent-common.h" instead.
+	* linux/ia64/syscallent.h [BASE_NR + 424..BASE_NR + 427]: Remove,
+	include "syscallent-common.h" instead.
+	* linux/mips/syscallent-n64.h [LINUX_MIPSN64]: Likewise.
+	[!LINUX_MIPSN64] (SYSCALL_NAME_PREFIX): Define.
+	[!LINUX_MIPSN64]: Include "syscallent-common-stub.h".
+	* linux/64/syscallent.h [424..427]: Remove, include
+	"syscallent-common.h" instead.
+	* linux/powerpc64/syscallent.h: Likewise.
+	* linux/s390x/syscallent.h: Likewise.
+	* linux/sh64/syscallent.h: Likewise.
+	* linux/sparc64/syscallent.h: Likewise.
+	* linux/x32/syscallent.h: Likewise.
+	* linux/x86_64/syscallent.h: Likewise.
+
+2019-06-29  Dmitry V. Levin  <ldv@altlinux.org>
+
+	ia64: introduce BASE_NR to syscallent initializers.
+	* linux/ia64/syscallent.h (BASE_NR): New macro.  Use it instead of 1024.
+
+2019-06-29  Dmitry V. Levin  <ldv@altlinux.org>
+
+	mips: refactor syscallent initializers.
+	Change format of designated initializers to BASE_NR + offset.
+
+	* linux/mips/syscallent-n32.h (BASE_NR): New macro.  Use it in designated
+	initializers.
+	* linux/mips/syscallent-n64.h: Likewise.
+	* linux/mips/syscallent-o32.h: Likewise.
+
+2019-06-29  Dmitry V. Levin  <ldv@altlinux.org>
+
+	xlat: update AT_* constants.
+	* xlat/at_flags.in (AT_RECURSIVE): New constant introduced
+	by Linux kernel commit v5.2-rc1~141^2~9.
+	* NEWS: Mention this.
+	* tests/linkat.c: Update expected output.
+	* tests/unlinkat.c: Update expected output.
+	* tests/utimensat.c: Update expected output.
+	* tests/xstatx.c: Update expected output.
+
+2019-06-28  Paul Chaignon  <paul.chaignon@gmail.com>
+
+	travis: Move fastest test configuration first.
+	I use Travis CI to check each patch before sending my patchsets.  Most
+	failures are simple and make all test configurations fail.  However, since
+	Travis CI runs test configurations in order and given that the first three
+	configurations are the slowest ones, it takes about twenty minutes to see
+	the failure.  Moving the fastest test configuration first would allow to
+	fail earlier.  It would become about 3x faster to fail in case of simple
+	mistakes.
+
+	* .travis.yml (CC=gcc, STACKTRACE=no): Move to first position.
+
+2019-06-22  Dmitry V. Levin  <ldv@altlinux.org>
+
+	get_os_release: tolerate malformed kernel release strings.
+	* strace.c (get_os_release): Handle malformed kernel release strings
+	gracefully.
+
+	Resolves: https://github.com/strace/strace/issues/101
+
+2019-06-20  Dmitry V. Levin  <ldv@altlinux.org>
+
+	Implement decoding of CLONE_PIDFD flag of clone syscall.
+	* clone.c (SYS_FUNC(clone)): Print pidfd returned by the kernel
+	when CLONE_PIDFD flag is set.
+	* tests/clone-flags.c (main): Check it.
+
+2019-06-20  Dmitry V. Levin  <ldv@altlinux.org>
+
+	Introduce printnum_fd.
+	This is going to be used to implement decoding of CLONE_PIDFD flag
+	of clone syscall.
+
+	* defs.h (printnum_fd): New prototype.
+	* util.c (printnum_fd): New function.
+
+2019-06-20  Dmitry V. Levin  <ldv@altlinux.org>
+
+	Enhance decoding of CLONE_PARENT_SETTID flag of clone syscall.
+	* clone.c (SYS_FUNC(clone)): Print the parent_tid returned by the kernel
+	instead of its address when CLONE_PARENT_SETTID flag is set.
+	* tests/clone-flags.c (main): Check it.
+
+	clone: fix printing of zero clone flags.
+	* clone.c (SYS_FUNC(clone)): Fix printing of zero clone flags.
+	* tests/clone-flags.c (main): Check it.
+
+	clone: print read-only arguments on entering syscall.
+	* clone.c (SYS_FUNC(clone)): Print child_stack, stack_size, and flags
+	arguments on entering syscall.
+	* NEWS: Mention this change.
+
+	tests: check decoding of clone flags.
+	* tests/clone-flags.c: New file.
+	* tests/pure_executables.list: Add clone-flags.
+	* tests/.gitignore: Likewise.
+	* tests/clone-flags.test: New test.
+	* tests/Makefile.am (DECODER_TESTS): Add clone-flags.test.
+
+2019-06-18  Dmitry V. Levin  <ldv@altlinux.org>
+
+	clone: cleanup.
+	* clone.c (print_tls_arg): Use addr argument.
+
+2019-06-18  Dmitry V. Levin  <ldv@altlinux.org>
+
+	xlat: update CLONE_* constants.
+	* xlat/clone_flags.in (CLONE_IDLETASK): Remove unused flag conflicting
+	with CLONE_PIDFD.
+
+	Fixes: v5.1-8-gb43f44bca "xlat: update CLONE_* constants"
+
+2019-06-14  Paul Chaignon  <paul.chaignon@gmail.com>
+
+	Use debug_msg macro where possible.
+	* linux/alpha/get_scno.c (arch_get_scno): Use debug_msg instead of
+	open-coding it.
+	* linux/mips/get_scno.c: Likewise.
+	* linux/sh/get_scno.c: Likewise.
+
+2019-05-27  Dmitry V. Levin  <ldv@altlinux.org>
+
+	xlat: update ETH_* constants.
+	* xlat/ethernet_protocols.in (ETH_P_DSA_8021Q): New constant introduced
+	by Linux kernel commit v5.2-rc1~133^2~58^2~7.
+	* NEWS: Mention this.
+
+	xlat: update KBD_* constants.
+	* xlat/evdev_keycode.in (KEY_KBD_LAYOUT_NEXT): New constant
+	introduced by Linux kernel commit v5.2-rc1~79^2^2~7.
+	* NEWS: Mention this.
+
+	xlat: update TIPC_* constants.
+	* xlat/sock_tipc_options.in (TIPC_SOCK_RECVQ_USED): New constant
+	introduced by Linux kernel commit v5.2-rc1~133^2~143.
+	* NEWS: Mention this.
+
+	xlat: update KVM_CAP_* constants.
+	* xlat/clone_flags.in (KVM_CAP_MANUAL_DIRTY_LOG_PROTECT2): New
+	constant introduced by Linux kernel commit v5.2-rc1~17^2~11.
+	(KVM_CAP_PPC_IRQ_XIVE): New constant introduced by Linux kernel commits
+	v5.2-rc1~17^2~2^2~19 and v5.2-rc1~17^2~2.
+	(KVM_CAP_ARM_SVE): New constant introduced by Linux kernel commit
+	v5.2-rc1~17^2~1^2~31.
+	(KVM_CAP_ARM_PTRAUTH_ADDRESS, KVM_CAP_ARM_PTRAUTH_GENERIC): New
+	constants introduced by Linux kernel commits v5.2-rc1~17^2~1^2~10
+	and v5.2-rc1~17^2~1.
+	* NEWS: Mention this.
+
+	xlat: update CLONE_* constants.
+	* xlat/clone_flags.in (CLONE_PIDFD): New constant introduced by Linux
+	kernel commit v5.2-rc1~158^2~2.
+	* NEWS: Mention this.
+
+2019-05-26  Dmitry V. Levin  <ldv@altlinux.org>
+
+	xlat: update V4L2_PIX_* constants.
+	* xlat/v4l2_pix_fmts.in (V4L2_PIX_FMT_FWHT_STATELESS): New constant
+	introduced by Linux kernel commit v5.2-rc1~33^2~132.
+	(V4L2_PIX_FMT_BGRA32, V4L2_PIX_FMT_BGRX32, V4L2_PIX_FMT_RGBA32,
+	V4L2_PIX_FMT_RGBX32): New constants introduced by Linux kernel commit
+	v5.2-rc1~33^2~25.
+	(V4L2_PIX_FMT_RGBA444, V4L2_PIX_FMT_RGBX444, V4L2_PIX_FMT_ABGR444,
+	V4L2_PIX_FMT_XBGR444, V4L2_PIX_FMT_XBGR444, V4L2_PIX_FMT_BGRX444): New
+	constants introduced by Linux kernel commit v5.2-rc1~33^2~24.
+	(V4L2_PIX_FMT_RGBA555, V4L2_PIX_FMT_RGBX555, V4L2_PIX_FMT_ABGR555,
+	V4L2_PIX_FMT_XBGR555, V4L2_PIX_FMT_BGRA555, V4L2_PIX_FMT_BGRX555): New
+	constants introduced by Linux kernel commit v5.2-rc1~33^2~23.
+
+	xlat: fix v4l2_pix_fmts sorting order.
+	* xlat/v4l2_pix_fmts.in: Fix sorting order.
+
+	xlat: update V4L2_CID_* constants.
+	* xlat/v4l2_control_ids.in (V4L2_CID_FWHT_I_FRAME_QP,
+	V4L2_CID_FWHT_P_FRAME_QP): New constants introduced by Linux kernel
+	commit v5.2-rc1~33^2~132.
+	(V4L2_CID_MPEG_VIDEO_H264_I_FRAME_MIN_QP,
+	V4L2_CID_MPEG_VIDEO_H264_I_FRAME_MAX_QP,
+	V4L2_CID_MPEG_VIDEO_H264_P_FRAME_MIN_QP,
+	V4L2_CID_MPEG_VIDEO_H264_P_FRAME_MAX_QP): New constants introduced by
+	Linux kernel commit v5.2-rc1~33^2~95.
+	* NEWS: Mention this.
+
+2019-05-25  Dmitry V. Levin  <ldv@altlinux.org>
+
+	xlat: update AUDIT_* constants.
+	* xlat/nl_audit_types.in (AUDIT_FANOTIFY): New constant introduced by
+	Linux kernel commit v4.15-rc1~130^2^2~11.
+	(AUDIT_TIME_INJOFFSET): New constant introduced by Linux kernel commit
+	v5.2-rc1~144^2~2.
+	(AUDIT_TIME_ADJNTPVAL): New constant introduced by Linux kernel commit
+	v5.2-rc1~144^2~1.
+
+2019-05-24  Dmitry V. Levin  <ldv@altlinux.org>
+
+	xlat: update AUDIT_ARCH_* constants.
+	* xlat/audit_arch.in (AUDIT_ARCH_ARCOMPACT, AUDIT_ARCH_ARCOMPACTBE,
+	AUDIT_ARCH_ARCV2, AUDIT_ARCH_ARCV2BE): New constants introduced by Linux
+	kernel commit v5.2-rc1~144^2~16.
+	(AUDIT_ARCH_C6X, AUDIT_ARCH_C6XBE): New constants introduced by Linux
+	kernel commit v5.2-rc1~144^2~15.
+	(AUDIT_ARCH_CSKY): New constant introduced by Linux kernel commit
+	v5.0-rc1~37^2~15.
+	(AUDIT_ARCH_H8300): New constant introduced by Linux kernel commit
+	v5.2-rc1~144^2~14.
+	(AUDIT_ARCH_HEXAGON): New constant introduced by Linux kernel commit
+	v5.2-rc1~144^2~12.
+	(AUDIT_ARCH_NDS32, AUDIT_ARCH_NDS32BE): New constants introduced by
+	Linux kernel commit v5.2-rc1~144^2~9.
+	(AUDIT_ARCH_NIOS2): New constant introduced by Linux kernel commit
+	v5.2-rc1~144^2~8.
+	(AUDIT_ARCH_RISCV32, AUDIT_ARCH_RISCV64): New constants introduced by
+	Linux kernel commit v5.0-rc2~23^2~1^2~5.
+	(AUDIT_ARCH_TILEGX, AUDIT_ARCH_TILEGX32, AUDIT_ARCH_TILEPRO): New
+	constants introduced by Linux kernel commit v4.3-rc1~83^2~3.
+	(AUDIT_ARCH_UNICORE): New constant introduced by Linux kernel commit
+	v5.2-rc1~144^2~6.
+	(AUDIT_ARCH_XTENSA): New constant introduced by Linux kernel commit
+	v5.0-rc1~92^2~8.
+	* NEWS: Mention this.
+
+2019-05-23  Masatake YAMATO  <yamato@redhat.com>
+
+	tests: print the reason of failure in ioctl_kvm_run tests.
+	* tests/ioctl_kvm_run_common.c (run_kvm): Print
+	hardware_entry_failure_reason field of kvm_run
+	when KVM_RUN is failed with KVM_EXIT_FAIL_ENTRY.
+
+2019-05-23  Dmitry V. Levin  <ldv@altlinux.org>
+
+	Post-release administrivia.
+	* NEWS: Add a header line for the next release.
+	* debian/changelog.in: Add a changelog entry for 5.1-1.
+	* strace.spec.in: Likewise.
+
 2019-05-22  Dmitry V. Levin  <ldv@altlinux.org>
 
 	Prepare for 5.1 release.

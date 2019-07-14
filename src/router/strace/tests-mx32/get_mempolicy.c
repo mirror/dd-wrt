@@ -1,7 +1,7 @@
 /*
  * Check decoding of get_mempolicy syscall.
  *
- * Copyright (c) 2016-2018 Dmitry V. Levin <ldv@altlinux.org>
+ * Copyright (c) 2016-2019 Dmitry V. Levin <ldv@altlinux.org>
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -16,7 +16,7 @@
 # include <unistd.h>
 
 # include "xlat.h"
-# include "xlat/policies.h"
+# include "xlat/mpol_modes.h"
 
 # define MAX_STRLEN 3
 # define NLONGS(n) ((n + 8 * sizeof(long) - 2) \
@@ -68,20 +68,20 @@ main(void)
 	rc = syscall(__NR_get_mempolicy, mode, nodemask, maxnode, addr, flags);
 	printf("get_mempolicy(%p, %p, %lu, %#lx, %s|%#lx) = %ld %s (%m)\n",
 	       mode, nodemask, maxnode, addr,
-	       "MPOL_F_NODE|MPOL_F_ADDR",
-	       flags & ~3, rc, errno2name());
+	       "MPOL_F_NODE|MPOL_F_ADDR|MPOL_F_MEMS_ALLOWED",
+	       flags & ~7, rc, errno2name());
 
 	mode = tail_alloc(sizeof(*mode));
 
 	rc = syscall(__NR_get_mempolicy, mode, 0, 0, 0, 0);
 	printf("get_mempolicy([");
-	printxval(policies, (unsigned) *mode, "MPOL_???");
+	printxval(mpol_modes, (unsigned) *mode, "MPOL_???");
 	printf("], NULL, 0, NULL, 0) = %ld\n", rc);
 
 	*mode = -1;
 	rc = syscall(__NR_get_mempolicy, mode, 0, 0, mode - 1, 2);
 	printf("get_mempolicy([");
-	printxval(policies, (unsigned) *mode, "MPOL_???");
+	printxval(mpol_modes, (unsigned) *mode, "MPOL_???");
 	printf("], NULL, 0, %p, MPOL_F_ADDR) = %ld\n", mode - 1, rc);
 
 	maxnode = get_page_size() * 8;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 The strace developers.
+ * Copyright (c) 2017-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -19,6 +19,7 @@ SYS_FUNC(statx)
 {
 	if (entering(tcp)) {
 		print_dirfd(tcp, tcp->u_arg[0]);
+		tprints(", ");
 		printpath(tcp, tcp->u_arg[1]);
 		tprints(", ");
 

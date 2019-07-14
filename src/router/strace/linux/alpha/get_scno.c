@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 The strace developers.
+ * Copyright (c) 2015-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -22,8 +22,7 @@ arch_get_scno(struct tcb *tcp)
 	 */
 	if (!scno_in_range(scno)) {
 		if (alpha_a3 == 0 || alpha_a3 == -1UL) {
-			if (debug_flag)
-				error_msg("stray syscall exit: r0 = %lu", scno);
+			debug_msg("stray syscall exit: r0 = %lu", scno);
 			return 0;
 		}
 	}

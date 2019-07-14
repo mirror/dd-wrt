@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2018 The strace developers.
+ * Copyright (c) 2014-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -7,7 +7,7 @@
 
 #include "stack-fcall.h"
 
-int f1(int i)
+int f1(int i, unsigned long f)
 {
-	return f2(i) + i;
+	return f2(i, f ^ (unsigned long) (void *) f1) + i;
 }

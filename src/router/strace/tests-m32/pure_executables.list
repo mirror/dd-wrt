@@ -31,6 +31,7 @@ chroot
 clock_adjtime
 clock_nanosleep
 clock_xettime
+clone-flags
 copy_file_range
 creat
 delete_module
@@ -70,6 +71,12 @@ file_handle
 file_ioctl
 finit_module
 flock
+fsconfig
+fsconfig-P
+fsmount
+fsopen
+fspick
+fspick-P
 fstat
 fstat-Xabbrev
 fstat-Xraw
@@ -119,7 +126,10 @@ group_req
 inet-cmsg
 init_module
 inotify
+inotify_init
+inotify_init-y
 inotify_init1
+inotify_init1-y
 io_uring_enter
 io_uring_register
 io_uring_setup
@@ -192,7 +202,11 @@ lseek
 lstat
 lstat64
 madvise
+maybe_switch_current_tcp
 mbind
+mbind-Xabbrev
+mbind-Xraw
+mbind-Xverbose
 membarrier
 memfd_create
 memfd_create-Xabbrev
@@ -222,6 +236,8 @@ mount
 mount-Xabbrev
 mount-Xraw
 mount-Xverbose
+move_mount
+move_mount-P
 move_pages
 move_pages-Xabbrev
 move_pages-Xraw
@@ -313,6 +329,8 @@ oldselect
 oldselect-efault
 oldstat
 open
+open_tree
+open_tree-P
 openat
 osf_utimes
 pause
@@ -413,6 +431,9 @@ semop
 sendfile
 sendfile64
 set_mempolicy
+set_mempolicy-Xabbrev
+set_mempolicy-Xraw
+set_mempolicy-Xverbose
 setdomainname
 setfsgid
 setfsgid32
@@ -470,6 +491,11 @@ stat
 stat64
 statfs
 statfs64
+status-all
+status-failed
+status-none
+status-successful
+status-unfinished
 statx
 swap
 sxetmask

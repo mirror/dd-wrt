@@ -52,25 +52,62 @@ SYS_FUNC(migrate_pages)
 	return RVAL_DECODED;
 }
 
-#include "xlat/policies.h"
-#include "xlat/mbindflags.h"
+#include "xlat/mpol_modes.h"
+#include "xlat/mpol_mode_flags.h"
+#include "xlat/mbind_flags.h"
+
+static void
+print_mode(struct tcb *const tcp, const kernel_ulong_t mode_arg)
+{
+	const kernel_ulong_t flags_mask =
+		MPOL_F_STATIC_NODES | MPOL_F_RELATIVE_NODES;
+	const kernel_ulong_t mode = mode_arg & ~flags_mask;
+	const unsigned int flags = mode_arg & flags_mask;
+
+	if (!flags) {
+		printxval64(mpol_modes, mode, "MPOL_???");
+		return;
+	}
+
+	const char *mode_str = xlookup(mpol_modes, mode);
+	if (!mode_str) {
+		printflags64(mpol_mode_flags, mode_arg, "MPOL_???");
+		return;
+	}
+
+	if (xlat_verbose(xlat_verbosity) != XLAT_STYLE_ABBREV)
+		tprintf("%#" PRI_klx, mode_arg);
+
+	if (xlat_verbose(xlat_verbosity) == XLAT_STYLE_RAW)
+		return;
+
+	if (xlat_verbose(xlat_verbosity) == XLAT_STYLE_VERBOSE)
+		tprints(" /* ");
+
+	tprints(mode_str);
+	tprints("|");
+	printflags_ex(flags, NULL, XLAT_STYLE_ABBREV, mpol_mode_flags, NULL);
+
+	if (xlat_verbose(xlat_verbosity) == XLAT_STYLE_VERBOSE)
+		tprints(" */");
+}
 
 SYS_FUNC(mbind)
 {
 	printaddr(tcp->u_arg[0]);
 	tprintf(", %" PRI_klu ", ", tcp->u_arg[1]);
-	printxval64(policies, tcp->u_arg[2], "MPOL_???");
+	print_mode(tcp, tcp->u_arg[2]);
 	tprints(", ");
 	print_nodemask(tcp, tcp->u_arg[3], tcp->u_arg[4]);
 	tprintf(", %" PRI_klu ", ", tcp->u_arg[4]);
-	printflags(mbindflags, tcp->u_arg[5], "MPOL_???");
+	printflags(mbind_flags, tcp->u_arg[5], "MPOL_???");
 
 	return RVAL_DECODED;
 }
 
 SYS_FUNC(set_mempolicy)
 {
-	printxval(policies, tcp->u_arg[0], "MPOL_???");
+	print_mode(tcp, (unsigned int) tcp->u_arg[0]);
 	tprints(", ");
 	print_nodemask(tcp, tcp->u_arg[1], tcp->u_arg[2]);
 	tprintf(", %" PRI_klu, tcp->u_arg[2]);
@@ -78,7 +115,7 @@ SYS_FUNC(set_mempolicy)
 	return RVAL_DECODED;
 }
 
-#include "xlat/mempolicyflags.h"
+#include "xlat/get_mempolicy_flags.h"
 
 SYS_FUNC(get_mempolicy)
 {
@@ -86,7 +123,7 @@ SYS_FUNC(get_mempolicy)
 		int pol;
 		if (!umove_or_printaddr(tcp, tcp->u_arg[0], &pol)) {
 			tprints("[");
-			printxval(policies, pol, "MPOL_???");
+			printxval(mpol_modes, pol, "MPOL_???");
 			tprints("]");
 		}
 		tprints(", ");
@@ -94,7 +131,7 @@ SYS_FUNC(get_mempolicy)
 		tprintf(", %" PRI_klu ", ", tcp->u_arg[2]);
 		printaddr(tcp->u_arg[3]);
 		tprints(", ");
-		printflags64(mempolicyflags, tcp->u_arg[4], "MPOL_???");
+		printflags64(get_mempolicy_flags, tcp->u_arg[4], "MPOL_???");
 	}
 	return 0;
 }

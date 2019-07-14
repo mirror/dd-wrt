@@ -190,6 +190,16 @@ static_assert(BPF_MAP_DELETE_ELEM_struct_size == expected_BPF_MAP_DELETE_ELEM_st
 static_assert(BPF_MAP_GET_NEXT_KEY_struct_size == expected_BPF_MAP_GET_NEXT_KEY_struct_size,
 	      "BPF_MAP_GET_NEXT_KEY_struct_size mismatch");
 
+# ifdef HAVE_UNION_BPF_ATTR_MAP_FD
+	static_assert(SoM(struct BPF_MAP_FREEZE_struct, map_fd) == SoM(union bpf_attr, map_fd),
+		      "BPF_MAP_FREEZE_struct.map_fd size mismatch");
+	static_assert(offsetof(struct BPF_MAP_FREEZE_struct, map_fd) == offsetof(union bpf_attr, map_fd),
+		      "BPF_MAP_FREEZE_struct.map_fd offset mismatch");
+# endif /* HAVE_UNION_BPF_ATTR_MAP_FD */
+
+static_assert(BPF_MAP_FREEZE_struct_size == expected_BPF_MAP_FREEZE_struct_size,
+	      "BPF_MAP_FREEZE_struct_size mismatch");
+
 # ifdef HAVE_UNION_BPF_ATTR_PROG_TYPE
 	static_assert(SoM(struct BPF_PROG_LOAD_struct, prog_type) == SoM(union bpf_attr, prog_type),
 		      "BPF_PROG_LOAD_struct.prog_type size mismatch");
@@ -460,6 +470,34 @@ static_assert(BPF_PROG_DETACH_struct_size == expected_BPF_PROG_DETACH_struct_siz
 	static_assert(offsetof(struct BPF_PROG_TEST_RUN_struct, duration) == offsetof(union bpf_attr, test.duration),
 		      "BPF_PROG_TEST_RUN_struct.duration offset mismatch");
 # endif /* HAVE_UNION_BPF_ATTR_TEST_DURATION */
+
+# ifdef HAVE_UNION_BPF_ATTR_TEST_CTX_SIZE_IN
+	static_assert(SoM(struct BPF_PROG_TEST_RUN_struct, ctx_size_in) == SoM(union bpf_attr, test.ctx_size_in),
+		      "BPF_PROG_TEST_RUN_struct.ctx_size_in size mismatch");
+	static_assert(offsetof(struct BPF_PROG_TEST_RUN_struct, ctx_size_in) == offsetof(union bpf_attr, test.ctx_size_in),
+		      "BPF_PROG_TEST_RUN_struct.ctx_size_in offset mismatch");
+# endif /* HAVE_UNION_BPF_ATTR_TEST_CTX_SIZE_IN */
+
+# ifdef HAVE_UNION_BPF_ATTR_TEST_CTX_SIZE_OUT
+	static_assert(SoM(struct BPF_PROG_TEST_RUN_struct, ctx_size_out) == SoM(union bpf_attr, test.ctx_size_out),
+		      "BPF_PROG_TEST_RUN_struct.ctx_size_out size mismatch");
+	static_assert(offsetof(struct BPF_PROG_TEST_RUN_struct, ctx_size_out) == offsetof(union bpf_attr, test.ctx_size_out),
+		      "BPF_PROG_TEST_RUN_struct.ctx_size_out offset mismatch");
+# endif /* HAVE_UNION_BPF_ATTR_TEST_CTX_SIZE_OUT */
+
+# ifdef HAVE_UNION_BPF_ATTR_TEST_CTX_IN
+	static_assert(SoM(struct BPF_PROG_TEST_RUN_struct, ctx_in) == SoM(union bpf_attr, test.ctx_in),
+		      "BPF_PROG_TEST_RUN_struct.ctx_in size mismatch");
+	static_assert(offsetof(struct BPF_PROG_TEST_RUN_struct, ctx_in) == offsetof(union bpf_attr, test.ctx_in),
+		      "BPF_PROG_TEST_RUN_struct.ctx_in offset mismatch");
+# endif /* HAVE_UNION_BPF_ATTR_TEST_CTX_IN */
+
+# ifdef HAVE_UNION_BPF_ATTR_TEST_CTX_OUT
+	static_assert(SoM(struct BPF_PROG_TEST_RUN_struct, ctx_out) == SoM(union bpf_attr, test.ctx_out),
+		      "BPF_PROG_TEST_RUN_struct.ctx_out size mismatch");
+	static_assert(offsetof(struct BPF_PROG_TEST_RUN_struct, ctx_out) == offsetof(union bpf_attr, test.ctx_out),
+		      "BPF_PROG_TEST_RUN_struct.ctx_out offset mismatch");
+# endif /* HAVE_UNION_BPF_ATTR_TEST_CTX_OUT */
 
 static_assert(BPF_PROG_TEST_RUN_struct_size == expected_BPF_PROG_TEST_RUN_struct_size,
 	      "BPF_PROG_TEST_RUN_struct_size mismatch");

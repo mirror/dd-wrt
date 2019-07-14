@@ -68,6 +68,12 @@ file_ioctl	+ioctl.test
 finit_module	-a25
 flock	-a19
 fork-f	-a26 -qq -f -e signal=none -e trace=chdir
+fsconfig	-s300 -y
+fsconfig-P	-s300 -y -P /dev/full -e trace=fsconfig
+fsmount	-a18 -y
+fsopen	-a35
+fspick	-a27 -y
+fspick-P	-a27 -y -P /dev/full -e trace=fspick
 fstat	-a15 -v -P stat.sample
 fstat-Xabbrev -a15 -v -Xabbrev -P stat.sample -e trace=fstat
 fstat-Xraw -a15 -v -Xraw -P stat.sample -e trace=fstat
@@ -117,7 +123,9 @@ group_req	-e trace=setsockopt
 inet-cmsg	-e trace=recvmsg
 init_module	-a27
 inotify	-a23 -e trace=inotify_add_watch,inotify_rm_watch
+inotify_init	-a15
 inotify_init1	-a27
+inotify_init1-y	-a27 -y -e trace=inotify_init1
 io_uring_enter	-y
 io_uring_register	-y
 io_uring_setup	-a26 -y
@@ -192,7 +200,11 @@ lookup_dcookie	-a27
 lstat	-a32 -v -P stat.sample -P /dev/full
 lstat64	-a32 -v -P stat.sample -P /dev/full
 madvise	-a33
+maybe_switch_current_tcp	-a30 -f -e trace=execveat
 mbind
+mbind-Xabbrev	-Xabbrev -e trace=mbind
+mbind-Xraw	-a33 -Xraw -e trace=mbind
+mbind-Xverbose	-Xverbose -e trace=mbind
 membarrier	-a36
 memfd_create
 memfd_create-Xabbrev	-Xabbrev -e trace=memfd_create
@@ -223,6 +235,8 @@ mount		-a33
 mount-Xabbrev	-a33 -e trace=mount -Xabbrev
 mount-Xraw	-a33 -e trace=mount -Xraw
 mount-Xverbose	-a33 -e trace=mount -Xverbose
+move_mount	-y
+move_mount-P	-y -P /dev/full -e trace=move_mount
 move_pages	-s3
 move_pages-Xabbrev	-s3 -e trace=move_pages -Xabbrev
 move_pages-Xraw	-s3 -a36 -e trace=move_pages -Xraw
@@ -312,6 +326,8 @@ oldselect-efault	-a13 -e trace=select
 oldselect-efault-P	-a13 -e trace=select -P /dev/full 9>>/dev/full
 oldstat	-a32 -v -P stat.sample -P /dev/full
 open	-a30 -P $NAME.sample
+open_tree -a30 -y
+open_tree-P -a30 -y -P /dev/full -e trace=open_tree
 openat	-a36 -P $NAME.sample
 orphaned_process_group	. "${srcdir=.}/PTRACE_SEIZE.sh"; run_strace_match_diff -f -e trace=none -e signal='!chld'
 osf_utimes	-a21
@@ -407,7 +423,10 @@ select-P	-a36 -e trace=select -P /dev/full 9>>/dev/full
 semop	-a32 -e trace=semop,semtimedop
 sendfile	-a27
 sendfile64	-a29
-set_mempolicy	-s3 -a35
+set_mempolicy	-a34 -s3
+set_mempolicy-Xabbrev	-a34 -s3 -Xabbrev -e trace=set_mempolicy
+set_mempolicy-Xraw	-a24 -s3 -Xraw -e trace=set_mempolicy
+set_mempolicy-Xverbose	-s3 -Xverbose -e trace=set_mempolicy
 setdomainname	-a24
 setfsgid	-a12
 setfsgid32	-a14
@@ -465,6 +484,11 @@ stat	-a32 -v -P stat.sample -P /dev/full
 stat64	-a32 -v -P stat.sample -P /dev/full
 statfs	-a17
 statfs64	-a23
+status-all	-a10 -e trace=chdir -e status=detached,failed,successful,unavailable,unfinished
+status-failed	-a10 -e trace=chdir -Z
+status-none	-e trace=all -e status=none
+status-successful	-a10 -e trace=chdir -z
+status-unfinished	-a10 -e trace=all -e status=unfinished
 statx	-a32 -v -P stat.sample -P /dev/full
 swap	-a23 -e trace=swapon,swapoff
 sxetmask	-a11 -e trace=sgetmask,ssetmask

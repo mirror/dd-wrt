@@ -799,6 +799,9 @@
 /* Define to 1 if you have the <linux/mmtimer.h> header file. */
 #undef HAVE_LINUX_MMTIMER_H
 
+/* Define to 1 if you have the <linux/mount.h> header file. */
+#undef HAVE_LINUX_MOUNT_H
+
 /* Define to 1 if you have the <linux/mqueue.h> header file. */
 #undef HAVE_LINUX_MQUEUE_H
 
@@ -942,6 +945,9 @@
 
 /* Define to 1 if you have the `open64' function. */
 #undef HAVE_OPEN64
+
+/* Define to 1 if you have the `open_memstream' function. */
+#undef HAVE_OPEN_MEMSTREAM
 
 /* Define to 1 if you have the <paths.h> header file. */
 #undef HAVE_PATHS_H
@@ -1740,6 +1746,18 @@
 
 /* Define to 1 if `task_fd_query.prog_id' is a member of `union bpf_attr'. */
 #undef HAVE_UNION_BPF_ATTR_TASK_FD_QUERY_PROG_ID
+
+/* Define to 1 if `test.ctx_in' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_TEST_CTX_IN
+
+/* Define to 1 if `test.ctx_out' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_TEST_CTX_OUT
+
+/* Define to 1 if `test.ctx_size_in' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_TEST_CTX_SIZE_IN
+
+/* Define to 1 if `test.ctx_size_out' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_TEST_CTX_SIZE_OUT
 
 /* Define to 1 if `test.data_in' is a member of `union bpf_attr'. */
 #undef HAVE_UNION_BPF_ATTR_TEST_DATA_IN
