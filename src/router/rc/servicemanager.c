@@ -79,14 +79,14 @@ static int _STOPPED(const int method, const char *name)
 #if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
 		if (method == STOP) {
 			if (stops_running)
-				stops_running[0]--;
+				*stops_running--;
 		}
 #else
 		dd_debug(DEBUG_SERVICE, "calling %s_%s not required!\n", method ? "stop" : "start", name);
 
 		if (method == STOP) {
 			if (stops_running)
-				stops_running[0]--;
+				*stops_running--;
 		}
 #endif
 
@@ -189,11 +189,11 @@ static int handle_service(const int method, const char *name, int force)
 	dlclose(handle);
 	if (method == STOP) {
 		if (stops_running)
-			stops_running[0]--;
+			*stops_running--;
 	}
 #if (!defined(HAVE_X86) && !defined(HAVE_NEWPORT) && !defined(HAVE_RB600)) || defined(HAVE_WDR4900)
 	if (stops_running)
-		dd_debug(DEBUG_SERVICE, "calling done %s_%s (pending stops %d)\n", method_name, name, stops_running[0]);
+		dd_debug(DEBUG_SERVICE, "calling done %s_%s (pending stops %d)\n", method_name, name, *stops_running);
 	else
 		dd_debug(DEBUG_SERVICE, "calling done %s_%s\n", method_name, name);
 #endif
@@ -295,7 +295,7 @@ static void start_main_f(char *name, int argc, char **argv)
 
 static int stop_running(void)
 {
-	return stops_running[0] > 0;
+	return *stops_running > 0;
 }
 
 static int stop_running_main(int argc, char **argv)
@@ -304,16 +304,16 @@ static int stop_running_main(int argc, char **argv)
 	while (stops_running != NULL && stop_running() && dead < 100) {
 #if (!defined(HAVE_X86) && !defined(HAVE_NEWPORT) && !defined(HAVE_RB600)) || defined(HAVE_WDR4900)
 		if (nvram_matchi("service_debugrunnings", 1))
-			fprintf(stderr, "%s: dead: %d running %d\n", __func__, dead, stops_running[0]);
+			fprintf(stderr, "%s: dead: %d running %d\n", __func__, dead, *stops_running);
 #endif
 		if (dead == 0)
-			fprintf(stderr, "waiting for services to finish (%d)...\n", stops_running[0]);
+			fprintf(stderr, "waiting for services to finish (%d)...\n", *stops_running);
 		usleep(100 * 1000);
 		dead++;
 	}
 	if (dead == 50) {
 		fprintf(stderr, "stopping processes taking too long!!!\n");
-	} else if (stops_running != NULL && stops_running[0] == 0) {
+	} else if (stops_running != NULL && *stops_running == 0) {
 		int *run = stops_running;
 		stops_running = NULL;
 		munmap(run, sizeof(int));
@@ -325,7 +325,7 @@ static void stop_service(char *name)
 {
 	init_shared();
 	if (stops_running)
-		stops_running[0]++;
+		*stops_running++;
 	handle_service(STOP, name, 0);
 }
 
@@ -339,7 +339,7 @@ static void stop_service_f(char *name)
 {
 	init_shared();
 	if (stops_running)
-		stops_running[0]++;
+		*stops_running++;
 	FORK(handle_service(STOP, name, 0));
 }
 
@@ -348,7 +348,7 @@ static void stop_service_force_f(char *name)
 	RELEASESTOPPED(STOP);
 	init_shared();
 	if (stops_running)
-		stops_running[0]++;
+		*stops_running++;
 	RELEASESTOPPED(STOP);
 	FORK(handle_service(STOP, name, 0));
 }
@@ -364,7 +364,7 @@ static void _restart_delay(char *name, int delay)
 		handle_service(START, name, 0);
 	} else {
 		if (stops_running)
-			stops_running[0]--;
+			*stops_running--;
 	}
 }
 
@@ -372,7 +372,7 @@ static void restart(char *name)
 {
 	init_shared();
 	if (stops_running)
-		stops_running[0]++;
+		*stops_running++;
 	_restart_delay(name, 0);
 }
 
@@ -380,7 +380,7 @@ static void restart_fdelay(char *name, int delay)
 {
 	init_shared();
 	if (stops_running)
-		stops_running[0]++;
+		*stops_running++;
 	FORK(_restart_delay(name, delay));
 }
 
@@ -402,7 +402,7 @@ static int restart_main_f(int argc, char **argv)
 	RELEASESTOPPED(START);
 	init_shared();
 	if (stops_running)
-		stops_running[0]++;
+		*stops_running++;
 	FORK(_restart_delay(name, 0));
 	return 0;
 }
