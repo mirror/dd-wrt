@@ -1,0 +1,9 @@
+#!/bin/sh
+
+case "$1" in
+  purge)
+  [ ! -L /etc/udev/rules.d/z60_hdparm.rules ] || rm /etc/udev/rules.d/z60_hdparm.rules
+  ;;
+esac
+
+#DEBHELPER#

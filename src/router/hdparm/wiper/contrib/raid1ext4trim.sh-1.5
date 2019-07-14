@@ -1,0 +1,407 @@
+#!/bin/bash
+#
+# SSD TRIM utility for live RAID1 mirrored ext4 drives.
+#
+# By Chris Caputo.  Adapted from wiper.sh (ver 2.6) by Mark Lord.
+
+VERSION=1.5
+
+# Copyright (C) 2010-2012 Chris Caputo.  All rights reserved.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License Version 2,
+# as published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it would be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software Foundation,
+# Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+function usage_error(){
+	echo "Usage:"
+	echo " ${0##*/} [--verbose] [--commit] [--reserve=#megs] [--max-ranges=#ranges] <raid_dev> <fsdir>"
+	echo "Examples:"
+	echo " ${0##*/} --verbose --commit --reserve=100 --max-ranges=512 md0 /"
+	echo " ${0##*/} --verbose --verbose md1 /boot"
+	echo 
+	echo "Note: For best results, this script should be run on each ext4-based filesystem present on a RAID1 array."
+	echo
+	exit 1
+}
+
+echo "${0##*/}: TRIM utility for live RAID1 ext4 SATA SSDs, version $VERSION, by Chris Caputo, based on Mark Lord's wiper.sh."
+echo
+
+## Parameter parsing for the main script.
+##
+
+export verbose=0
+commit=""
+reservemegs=0
+max_ranges=0
+argc=$#
+raiddev=""
+fsdir=""
+while [ $argc -gt 0 ]; do
+	if [ "$1" = "--commit" ]; then
+		commit=yes
+	elif [ "$1" = "--verbose" ]; then
+		verbose=$((verbose + 1))
+	elif [[ "$1" =~ --reserve= ]]; then
+		reservemegs=${1##--reserve=}
+	elif [[ "$1" =~ --max-ranges= ]]; then
+		max_ranges=${1##--max-ranges=}
+	elif [ "$1" = "" ]; then
+		usage_error
+	else
+		if [ "$raiddev" = "" ]; then
+			raiddev=${1##*/}
+		elif [ "$fsdir" = "" ]; then
+			fsdir=$1
+		else
+			echo "$1: too many arguments, aborting."
+			exit 1
+		fi
+	fi
+	argc=$((argc - 1))
+	shift
+done
+[ "$raiddev" = "" ] && usage_error
+[ "$fsdir" = "" ] && usage_error
+
+## Check --reserve number.
+##
+
+isdigit ()    # Tests whether *entire string* is numerical.
+{             # In other words, tests for integer variable.
+	[ $# -eq 1 ] || return 1
+
+	case $1 in
+		*[!0-9]*|"") return 1;;
+		*) return 0;;
+	esac
+}
+
+if ! isdigit "$reservemegs" ; then
+	echo "'$reservemegs' is not numerical"
+	exit 1
+fi
+if ! isdigit "$max_ranges" ; then
+	echo "'$max_ranges' is not numerical"
+	exit 1
+fi
+
+if [ $reservemegs -eq 0 ]; then
+	echo "Reserve defaulting to 10 megabytes."
+	reservemegs=10
+fi
+reservekilos=$((reservemegs * 1024))
+
+## Find a required program, or else give a nicer error message than we'd otherwise see:
+##
+function find_prog(){
+	prog="$1"
+	if [ ! -x "$prog" ]; then
+		prog="${prog##*/}"
+		p=`type -f -P "$prog" 2>/dev/null`
+		if [ "$p" = "" ]; then
+			echo "$1: needed but not found, aborting."
+			exit 1
+		fi
+		prog="$p"
+		[ $verbose -gt 0 ] && echo "  --> using $prog instead of $1"
+	fi
+	echo "$prog"
+}
+
+## Ensure we have most of the necessary utilities available before trying to proceed:
+##
+hash -r  ## Refresh bash's cached PATH entries
+HDPARM=`find_prog /sbin/hdparm` || exit 1
+GAWK=`find_prog /usr/bin/gawk`  || exit 1
+GREP=`find_prog /bin/grep`      || exit 1
+ID=`find_prog /usr/bin/id`      || exit 1
+LS=`find_prog /bin/ls`          || exit 1
+DF=`find_prog /bin/df`          || exit 1
+RM=`find_prog /bin/rm`          || exit 1
+
+[ $verbose -gt 1 ] && HDPARM="$HDPARM --verbose"
+
+## I suppose this will confuse the three SELinux users out there:
+##
+if [ `$ID -u` -ne 0 ]; then
+	echo "Only the super-user can use this (try \"sudo $0\" instead), aborting."
+	exit 1
+fi
+
+## We need a very modern hdparm, for its --fallocate and --trim-sector-ranges-stdin flags:
+## Version 9.25 added automatic determination of safe max-size of TRIM commands.
+##
+HDPVER=`$HDPARM -V | $GAWK '{gsub("[^0-9.]","",$2); if ($2 > 0) print ($2 * 100); else print 0; exit(0)}'`
+if [ $HDPVER -lt 925 ]; then
+	echo "$HDPARM: version >= 9.25 is required, aborting."
+	exit 1
+fi
+
+## Check that this is a RAID1 device.
+##
+if ! $GREP raid1 /sys/block/$raiddev/md/level 1>/dev/null ; then
+	echo "$raiddev is not a RAID1 array."
+	exit 1
+fi
+
+## Get list of slave devices in the RAID1 mirror.
+##
+slaves=(`$LS /sys/block/$raiddev/slaves`)
+#slaves=(sda sdb sdc)
+#slaves=(md0)
+
+## Check for DEVTYPE disk and TRIM support on each slave.
+##
+index=0
+for slave in "${slaves[@]}"
+do
+	# Check that slave is of DEVTYPE disk.
+	if ! $GREP "DEVTYPE=disk" /sys/block/$slave/uevent 1>/dev/null ; then
+		echo "$slave is not a whole disk. This program only works with full-disk RAID1, not RAID1 partitions."
+		exit 1
+	fi
+
+	# Check that slave has TRIM support.  Exclude if not.
+	if ! $HDPARM -I /dev/$slave | $GREP -i '[ 	][*][ 	]*Data Set Management TRIM supported' &>/dev/null ; then
+		echo "$slave doesn't appear to support TRIM, per $HDPARM. Excluding."
+		unset slaves[index]
+	fi
+		
+	let "index = $index + 1"
+done
+if [ "${slaves[0]}" = "" ]; then
+	echo "No constituent of $raiddev array supports TRIM.  Aborting."
+	exit 1
+fi
+
+## Check that fsdir is on an ext4 volume.
+##
+lines=`$DF --type=ext4 $fsdir 2>/dev/null | $GREP -v ^Filesystem | wc -l`
+if [ $lines -ne 1 ]; then
+	echo "'$fsdir' does not appear to be on an ext4 filesystem.  Aborting."
+	exit 1
+fi
+
+## Check that fsdir is a directory.
+##
+if [ ! -d $fsdir ]; then
+	echo "'$fsdir' is not a directory.  Aborting."
+	exit 1
+fi
+
+## Check free space & calculate tmpfile size.
+##
+freesize=`$DF -P -B 1024 $fsdir | $GAWK '{r=$4}END{print r}'`
+if [ "$freesize" = "" ]; then
+	echo "'$fsdir' is unknown to '$DF'.  Aborting."
+	exit 1
+fi
+if [ $freesize -lt $reservekilos ]; then
+	echo "'$fsdir' available space of $freesize KB is less than the $reservekilos KB to be reserved for the TRIM operation.  Aborting." >&2
+	exit 1
+fi
+tmpsize=$((freesize - reservekilos)) 
+tmpfile="$fsdir/${0##*/}_TMPFILE.$$"
+
+## Clean up tmpfile (if any) and exit:
+##
+function do_cleanup(){
+	if [ -e $tmpfile ]; then
+		echo "Removing temporary file '$tmpfile'..."
+		$RM -f $tmpfile
+		if [ -e $tmpfile ]; then
+			echo "Failed to remove '$tmpfile'!!!"
+		fi
+	fi
+	[ $1 -eq 0 ] && echo "Done."
+	[ $1 -eq 0 ] || echo "Aborted." >&2
+	exit $1
+}
+
+## Prepare signal handling, in case we get interrupted while $tmpfile exists:
+##
+function do_abort(){
+	echo
+	do_cleanup 1
+}
+trap do_abort SIGTERM
+trap do_abort SIGQUIT
+trap do_abort SIGINT
+trap do_abort SIGHUP
+trap do_abort SIGPIPE
+
+## Do the fallocate.
+## This is where we finally discover whether the filesystem actually
+## supports --fallocate or not.  Some folks will be disappointed here.
+##
+## Note that --fallocate does not actually write any file data to fsdev,
+## but rather simply allocates formerly-free space to the tmpfile.
+##
+echo -n "Creating temporary file (${tmpsize} KB '$tmpfile') ... "
+if ! $HDPARM --fallocate "${tmpsize}" $tmpfile ; then
+	echo "This kernel may not support 'fallocate'.  Aborting."
+	exit 1
+fi
+echo
+
+## Verify that slaves and RAID1 mirror have same base LBA.  First add a test
+## string to the tmpfile.  "date" is used since it is ever changing.
+##
+TESTSTR=`date`
+echo "$TESTSTR" >> $tmpfile
+sync    # this is critical
+SECTOR_BYTES=`$HDPARM --fibmap $tmpfile | \
+		$GREP "byte sectors"    | \
+		$GAWK '{print $9}'`
+LAST_EXTENT_SECTOR_COUNT=`$HDPARM --fibmap $tmpfile | \
+				tail -1              | \
+				$GAWK '{print $4}'`
+LAST_EXTENT_LBA=`$HDPARM --fibmap $tmpfile | tail -1 | $GAWK '{print $2}'`
+
+## Verify the test string is in the extent read.
+if ! dd iflag=direct status=noxfer bs=$SECTOR_BYTES count=$LAST_EXTENT_SECTOR_COUNT skip=$LAST_EXTENT_LBA if=/dev/$raiddev 2>/dev/null | $GREP "$TESTSTR" &>/dev/null ; then
+	echo "Test string was not found in last extent of tmpfile, as it should have been.  Aborting."
+	do_cleanup 1
+fi
+
+## Now compare the mirror and the slaves to make sure they have the same data at the same LBA.
+##
+refchksum=`dd iflag=direct status=noxfer bs=$SECTOR_BYTES count=$LAST_EXTENT_SECTOR_COUNT skip=$LAST_EXTENT_LBA if=/dev/$raiddev 2>/dev/null | sha1sum`
+index=0
+for slave in "${slaves[@]}"
+do
+	chksum=`dd iflag=direct status=noxfer bs=$SECTOR_BYTES count=$LAST_EXTENT_SECTOR_COUNT skip=$LAST_EXTENT_LBA if=/dev/$slave 2>/dev/null | sha1sum`
+
+	if [ "$chksum" != "$refchksum" ]; then
+		echo "Direct I/O of last extent of tmpfile on $slave doesn't match that of $raiddev.  Excluding."
+		unset slaves[index]
+	fi
+		
+	let "index = $index + 1"
+done
+if [ "${slaves[0]}" = "" ]; then
+	echo "No constituent of $raiddev array has a matching checksum.  Aborting."
+	do_cleanup 1
+fi
+
+echo "TRIMable constituents of $raiddev: ${slaves[@]}"
+
+## If they specified "--commit" on the command line, then prompt for confirmation first:
+##
+if [ "$commit" = "yes" ]; then
+	echo "Beginning TRIM operations..."
+else
+	echo "This will be a DRY-RUN only.  Use --commit to do it for real."
+	echo "Simulating TRIM operations..."
+fi
+get_trimlist="$HDPARM --fibmap $tmpfile"
+[ $verbose -gt 0 ] && echo "get_trimlist=$get_trimlist"
+
+
+## Begin gawk program
+GAWKPROG='
+	function append_range (lba,count  ,this_count){
+		nsectors += count;
+		while (count > 0) {
+			this_count  = (count > 65535) ? 65535 : count
+			printf "%u:%u \n", lba, this_count
+			if (verbose > 1)
+				printf "%u:%u ", lba, this_count > "/dev/stderr"
+			lba        += this_count
+			count      -= this_count
+			nranges++;
+		}
+	}
+	{  ## Output from "hdparm --fibmap", in absolute sectors:
+		if (NF == 4 && $2 ~ "^[1-9][0-9]*$")
+		append_range($2,$4)
+		next
+	}
+	END {
+		if (verbose > 1)
+			printf "\n" > "/dev/stderr"
+		if (err == 0 && commit != "yes")
+			printf "(dry-run) trimming %u sectors from %u ranges\n", nsectors, nranges > "/dev/stderr"
+		exit err
+	}'
+## End gawk program
+
+## Run TRIM on each slave.  Batch as requested.
+sync
+index=0
+for slave in "${slaves[@]}"
+do
+	echo "TRIM beginning on $slave..."
+
+	if [ "$commit" = "yes" ]; then
+		TRIM="$HDPARM --please-destroy-my-drive \
+				--trim-sector-ranges-stdin /dev/$slave"
+	else
+		TRIM="$GAWK {}"
+	fi
+
+	## Different SSD's have a different maximum number of ranges they'll
+	## accept in a single TRIM command.
+	if [ $max_ranges -eq 0 ] ; then
+		model=`$HDPARM -I /dev/$slave | $GAWK '/Model Number/ { print $NF }'`
+		case "$model" in
+			SSDSA[12]*)  slave_max_range=512 ;; # Intel X18-M/X25-M
+			OCZ-VERTEX2) slave_max_range=64 ;; # OCZ Vertex2
+			*)           slave_max_range=65535
+		esac
+	else
+		slave_max_range=$max_ranges
+	fi
+	[ $verbose -gt 0 ] && echo "$slave: max-ranges = $slave_max_range"
+
+	$get_trimlist 2>/dev/null | $GAWK \
+		-v commit="$commit"       \
+		-v verbose="$verbose"     \
+		"$GAWKPROG" |             \
+		if true; then
+			i=0
+			while read range; do
+				(( i++ ))
+				if (( i <= $slave_max_range )); then
+					ranges=$ranges" "$range
+				else
+					[ $verbose -gt 0 ] && echo -e "Trim ranges:" $ranges
+					echo $ranges | $TRIM
+					ret=$?
+					if [ $ret -ne 0 ] ; then
+						do_cleanup $ret
+					fi
+					ranges=$range
+					i=1
+				fi
+			done
+			[ $verbose -gt 0 ] && echo -e "Trim ranges:" $ranges
+			echo $ranges | $TRIM
+			ret=$?
+			if [ $ret -ne 0 ] ; then
+				do_cleanup $ret
+			fi
+			ranges=""
+		fi
+				
+	ret=$?
+	if [ $ret -ne 0 ] ; then
+		echo "TRIM failed on $slave.  Aborting."
+		do_cleanup $ret
+	else
+		echo "TRIM finished successfully on $slave."
+	fi
+done
+
+do_cleanup 0
+

@@ -1,0 +1,410 @@
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides:          hdparm
+# Required-Start:    mountdevsubfs
+# Required-Stop:
+# Should-Start:      udev
+# Default-Start:     S
+# Default-Stop:
+# Short-Description: Tune IDE hard disks
+### END INIT INFO
+
+set -e
+
+. /lib/lsb/init-functions
+
+# Defaults for configuration variables.
+RAID_WORKAROUND=no
+
+# Source the defaults file.
+[ -e /etc/default/hdparm ] && . /etc/default/hdparm
+
+raid_speed_limit_min=
+raid_speed_limit_max=
+
+case "$0" in
+  *hdparm)
+    FIRST=yes
+    ;;
+  *)
+    FIRST=no
+    ;;
+esac
+
+case "$1" in
+  start|restart|reload|force-reload)
+  UDEV=no
+  ;;
+  hotplug)
+  UDEV=yes
+  [ "$DEVNAME" ] || exit 1
+  ;;
+  stop)
+  exit 0
+  ;;
+  *)
+  log_failure_msg "Usage: $0 {stop|start|restart|reload|force-reload|hotplug}" >&2
+  exit 3
+  ;;
+esac
+
+if [ "$FORCE_RUN" != 'yes' ]; then
+  if [ -e /proc/cmdline ]; then #linux only - future proofing against BSD and Hurd :)
+    if grep -wq "nohdparm" /proc/cmdline ; then
+      log_warning_msg "Skipping setup of disc parameters."
+      exit 0
+    fi
+  fi
+
+  raidstat=OK
+  if [ -e /proc/mdstat ]; then
+    if egrep -iq "resync|repair|recover|check" /proc/mdstat; then
+      raidstat=RESYNC
+    fi
+  elif [ -e /proc/rd/status ]; then
+    raidstat=`cat /proc/rd/status`
+  fi
+
+  if ! [ "$raidstat" = 'OK' ] && [ "$RAID_WORKAROUND" != "yes" ]; then
+    log_failure_msg "RAID status not OK.  Exiting."
+    exit 0
+  fi
+fi
+
+slow_down_raid_sync()
+{
+  if [ -f /proc/sys/dev/raid/speed_limit_min ]; then
+    raid_speed_limit_min=`cat /proc/sys/dev/raid/speed_limit_min`
+    echo 0 >/proc/sys/dev/raid/speed_limit_min
+  fi
+  if [ -f /proc/sys/dev/raid/speed_limit_max ]; then
+    raid_speed_limit_max=`cat /proc/sys/dev/raid/speed_limit_max`
+    echo 0 >/proc/sys/dev/raid/speed_limit_max
+  fi
+  sleep 2
+}
+
+undo_slow_down_raid_sync()
+{
+  if [ -f /proc/sys/dev/raid/speed_limit_min ] && [ "x$raid_speed_limit_min" != "x" ]; then
+    echo $raid_speed_limit_min >/proc/sys/dev/raid/speed_limit_min
+  fi
+  if [ -f /proc/sys/dev/raid/speed_limit_max ] && [ "x$raid_speed_limit_max" != "x" ]; then
+    echo $raid_speed_limit_max >/proc/sys/dev/raid/speed_limit_max
+  fi
+}
+
+set_option()
+{
+  if test -n "$DISC"; then
+    NEW_OPT=
+    for i in $OPTIONS; do
+      if test x${i%${i#??}} != x${1%${1#??}}; then
+        NEW_OPT="$NEW_OPT $i"
+      else
+        NEW_OPT=${NEW_OPT%-q}
+      fi
+    done
+    OPTIONS="$NEW_OPT $OPT_QUIET $1"
+  else
+    NEW_DEF=
+    for i in $DEFAULT; do
+      if test x${i%${i#??}} != x${1%${1#??}}; then
+        NEW_DEF="$NEW_DEF $i"
+      else
+        NEW_DEF=${NEW_DEF%-q}
+      fi
+    done
+    DEFAULT="$NEW_DEF $DEF_QUIET $1"
+  fi
+}
+
+eval_value()
+{
+  case $1 in
+    off|0)
+      set_option "$2"0
+       ;;
+    on|1)
+      set_option "$2"1
+      ;;
+    *)
+      log_failure_msg "Unknown Value for $2: $1"
+      exit 1
+      ;;
+  esac
+}
+
+WAS_RUN=0
+
+# Turn off RAID synchronisation if needed and asked for.
+if [ "$raidstat" != 'OK' ] && [ "$RAID_WORKAROUND" = "yes" ]; then
+  slow_down_raid_sync
+fi
+
+# Get blocks as far as the drive's write cache.
+/bin/sync
+
+[ "$UDEV" = 'yes' ] || log_daemon_msg "Setting parameters of disc"
+
+DISC=
+DEFAULT=
+OPTIONS=
+DEF_QUIET=
+OPT_QUIET=
+
+egrep -v '^[[:space:]]*(#|$)' /etc/hdparm.conf | 
+{
+  while read KEY SEP VALUE; do
+    if [ "$NEXT_LINE" != 'go' ]; then
+      case $SEP in
+        '{')
+          case $KEY in
+            command_line)
+              NEXT_LINE=go
+              unset DISC
+              unset OPTIONS
+              unset OPT_QUIET
+              if [ "$UDEV" = 'yes' ]; then
+                IN_BLOCK=0
+              fi
+              ;;
+            *)
+              DISC=$KEY
+              OPTIONS=$DEFAULT
+              OPT_QUIET=$DEF_QUIET
+              WAS_RUN=0
+              if [ "$UDEV" = 'yes' ]; then
+                if [ "$DISC" = "$DEVNAME" ]; then
+                  IN_BLOCK=1
+                else
+                  IN_BLOCK=0
+                fi
+              fi
+              ;;
+          esac
+          ;;
+        =)
+          case $KEY in
+            read_ahead_sect) 
+              set_option -a$VALUE
+              ;;
+            lookahead) 
+              eval_value $VALUE -A
+              ;;
+            bus) 
+              eval_value $VALUE -b
+              ;;
+            apm) 
+              set_option -B$VALUE
+              ;;
+            io32_support) 
+              set_option -c$VALUE
+              ;;
+            dma) 
+              eval_value $VALUE -d
+              ;;
+            defect_mana) 
+              eval_value $VALUE -D
+              ;;
+            cd_speed) 
+              set_option -E$VALUE
+              ;;
+            mult_sect_io) 
+              set_option -m$VALUE
+              ;;
+            prefetch_sect) 
+              set_option -P$VALUE
+              ;;
+            read_only) 
+              eval_value $VALUE -r
+              ;;
+            spindown_time) 
+              case "$VALUE" in
+                *[hms])
+                  case "$VALUE" in
+                    *h)
+                    time=$((${VALUE%h} * 3600))
+                    ;;
+                    *m)
+                    time=$((${VALUE%m} * 60))
+                    ;;
+                    *s)
+                    time=${VALUE%s}
+                    ;;
+                  esac
+                  if [ $time -lt 1260 ]; then # up to 21 minutes
+                      new_VALUE=$(($time / 5))
+                      if [ $new_VALUE -gt 240 ]; then
+                          new_VALUE=240
+                      fi
+                      if [ $(($new_VALUE * 5)) -ne $time ]; then
+                          log_warning_msg "$VALUE not possible, using $(($new_VALUE * 5)) seconds"
+                      fi
+                      VALUE=$new_VALUE
+                  elif [ $time -lt 1800 ]; then
+                      if [ $time -ne 1260 ]; then
+                          log_warning_msg "$VALUE not possible, using 21 minutes"
+                      fi
+                      VALUE=252
+                  else
+                      new_time=$(($time / 1800))
+                      if [ $new_time -gt 11 ]; then
+                          new_time=11
+                      fi
+                      if [ $((new_time * 1800)) -ne $time ]; then
+                          log_warning_msg "$VALUE not possible, using $(($new_time * 30)) minutes"
+                      fi
+                      VALUE=$((new_time + 240))
+                  fi
+                  ;;
+              esac
+              set_option -S$VALUE
+              ;;
+            poweron_standby) 
+              eval_value $VALUE -s
+              ;;
+            interrupt_unmask) 
+              eval_value $VALUE -u
+              ;;
+            write_cache) 
+              eval_value $VALUE -W
+              ;;
+            transfer_mode) 
+              set_option -X$VALUE
+              ;;
+            acoustic_management)
+              set_option -M$VALUE
+              ;;
+            keep_settings_over_reset)
+              eval_value $VALUE -k
+             ;;
+            keep_features_over_reset)
+              eval_value $VALUE -K
+             ;;
+            chipset_pio_mode)
+              set_option -p$VALUE
+             ;;
+            security_unlock)
+              set_option --security-unlock $VALUE
+             ;;
+            security_pass)
+              set_option --security-set-pass $VALUE
+             ;;
+            security_disable)
+              set_option --security-disable $VALUE
+             ;;
+            user-master)
+              set_option --user-master $VALUE
+              ;;
+            security_mode)
+              set_option --security-mode $VALUE
+             ;;
+            ROOTFS)
+              ROOTFS=$VALUE
+             ;; 
+            *)
+              log_failure_msg "Unknown option $KEY"
+              undo_slow_down_raid_sync
+              exit 1
+              ;;
+          esac
+          ;;
+        "")
+          case $KEY in
+            '}')
+              if [ -z "$DISC" ] && [ "$WAS_RUN" != '1' ]; then
+                log_failure_msg "No disk enabled. Exiting"
+                undo_slow_down_raid_sync
+                exit 1
+              fi
+              if [ -n "$OPTIONS" ] && [ -b "$DISC" ]; then
+                if [ -n "$ROOTFS" ]; then
+                  if [ "$FIRST" = 'yes' ] && [ "$DISC" != "$ROOTFS" ]; then
+                    continue
+                  fi
+                  if [ "$FIRST" = 'no' ] && [ "$DISC" = "$ROOTFS" ]; then
+                    continue
+                  fi
+                fi
+                ret=0
+                if [ "$UDEV" = 'yes' ] && [ "$IN_BLOCK" = 1 ]; then
+                  # Flush the drive's internal write cache to the disk.
+                  /sbin/hdparm -q -f $DISC 2>/dev/null || ret=$?
+                  /sbin/hdparm $OPTIONS $DISC 2>/dev/null || ret=$?
+                  if [ "$VERBOSE" = 'yes' ]; then
+                    log_progress_msg " $DISC"
+                    log_end_msg $ret || true
+                  fi
+                elif [ "$UDEV" = 'no' ]; then
+                  /sbin/hdparm -q -f $DISC 2>/dev/null || ret=$?
+                  /sbin/hdparm $OPTIONS $DISC 2>/dev/null || ret=$?
+                  WAS_RUN=1
+                  log_progress_msg " $DISC"
+                  log_end_msg $ret || true
+                fi
+              fi       
+              ;;
+            quiet)
+              if [ -n "$DISC" ]; then
+                OPT_QUIET=-q
+              else
+                DEF_QUIET=-q
+              fi
+              ;;
+            standby) 
+              set_option -y
+              ;;
+            sleep) 
+              set_option -Y
+              ;;
+            disable_seagate) 
+              set_option -Z
+              ;;
+            security_freeze) 
+              set_option --security-freeze
+              ;;
+            *)
+              log_failure_msg "unknown option $KEY"
+              undo_slow_down_raid_sync
+              exit 1
+              ;;
+          esac
+          ;;
+       *)
+         log_failure_msg "unknown separator $SEP"
+         undo_slow_down_raid_sync
+         exit 1
+         ;;
+      esac
+    else
+      $KEY $SEP $VALUE
+      NEXT_LINE=no-go
+      WAS_RUN=1
+    fi
+  done
+
+  if [ -n "$harddisks" ] && [ -n "$hdparm_opts" ] && [ "$UDEV" = 'no' ]; then
+    ret=0
+    for drive in $harddisks; do
+      WAS_RUN=1
+      /sbin/hdparm -q -f $drive 2>/dev/null|| ret=$?
+      /sbin/hdparm -q $hdparm_opts -q $drive 2>/dev/null|| ret=$?
+      log_progress_msg "$drive "
+    done
+    log_end_msg $ret || true
+  fi
+  
+  if [ "$UDEV" = 'no' -a "$WAS_RUN" = 0 ]; then
+    log_progress_msg "(none)"
+    log_end_msg 0
+  fi
+}
+
+# Turn back on RAID synchronisation if we turned it off.
+if [ "$raidstat" != 'OK' ] && [ "$RAID_WORKAROUND" = "yes" ]; then
+  undo_slow_down_raid_sync
+fi
+
+exit 0

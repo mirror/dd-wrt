@@ -1,0 +1,34 @@
+#!/usr/bin/make -f
+# -*- mode: makefile; coding: utf-8 -*-
+# Copyright © 2003 Jeff Bailey <jbailey@debian.org>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+# 02111-1307 USA.
+
+DEB_DH_INSTALLINIT_ARGS := '--no-start'
+#DEB_DH_LINK_ARGS := ../init.d/hdparm /etc/rcS.d/S07hdparm.first
+DEB_UPDATE_RCD_PARAMS := 'start 07 S . '
+DEB_FIXPERMS_EXCLUDE:= 20hdparm
+
+include /usr/share/cdbs/1/rules/dpatch.mk
+include /usr/share/cdbs/1/rules/debhelper.mk
+include /usr/share/cdbs/1/class/makefile.mk
+
+DEB_MAKE_INSTALL_TARGET := install DESTDIR=$(CURDIR)/debian/tmp
+
+common-install-prehook-arch::
+	install -d $(CURDIR)/debian/tmp/sbin
+binary-predeb/hdparm::
+	chmod 755 $(CURDIR)/debian/hdparm/etc/apm/event.d/20hdparm

@@ -1,0 +1,82 @@
+#!/bin/sh
+
+# Copyright (c) 2000-2002 Massachusetts Institute of Technology
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+# 02111-1307, USA.
+
+set -e
+
+# The APMD_DRIVES setting specifies the drives to be changed.  Set
+# this to an empty string to disable any changes.
+#APMD_DRIVES=
+
+# The spindown timeout is set to the value of APMD_SPINDOWN when the
+# computer is running on battery power.  When the computer is on AC
+# power, the spindown timeout is disabled.  The number specified here
+# is encoded in a complicated way.  See the man page for hdparm(8) for
+# details.  For small timeouts, numbers between 1 and 240 specify
+# multiples of 5 seconds.  So the default value of 18 means 18*5=90
+# seconds, or 1.5 minutes.
+APMD_SPINDOWN=18
+
+HDPARM=/sbin/hdparm
+[ -x "${HDPARM}" ] || exit 0
+
+[ -n "${APMD_DRIVES}" ] || exit 0
+
+for DRIVE in $APMD_DRIVES; do
+  [ -b "${DRIVE}" ] || exit 0
+done
+
+[ "${APMD_SPINDOWN}" -gt 0 ] || exit 0
+
+power_conserve ()
+{
+    # Set IDE hard disk spindown time to a short time.
+    for DRIVE in $APMD_DRIVES; do
+      "${HDPARM}" -q -S "${APMD_SPINDOWN}" "${DRIVE}" || true
+    done
+}
+
+power_performance ()
+{
+    # Disable IDE hard disk spindown.
+    for DRIVE in $APMD_DRIVES; do
+      "${HDPARM}" -q -S 0 "${DRIVE}" || true
+    done
+}
+
+choose_power ()
+{
+    if on_ac_power > /dev/null
+    then
+	power_performance
+    else
+	power_conserve
+    fi
+}
+
+if [ "${1}" = "start" ]; then
+    choose_power
+elif [ "${1}" = "resume" ] && [ "${2}" != "standby" ]; then
+    choose_power
+elif [ "${1},${2}" = "change,power" ]; then
+    choose_power
+elif [ "${1}" = "stop" ]; then
+    power_performance
+fi
+
+exit 0
