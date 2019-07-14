@@ -62,7 +62,6 @@ typedef struct {
 
 typedef struct {
 	FILE *fp;
-	int threadid;
 	int userid;
 	int conn_fd;
 	int post;
