@@ -544,6 +544,12 @@ void start_openvpn(void)
 		fprintf(fp, "iptables -I FORWARD -i %s -m state --state NEW -j DROP\n", ovpniface);
 	}
 
+	if (nvram_matchi("wshaper_enable", 1)) {
+		fprintf(fp, "startservice set_routes -f\n");
+		fprintf(fp, "startservice firewall -f\n");
+		fprintf(fp, "startservice wshaper -f\n");
+	}
+
 	if (*(nvram_safe_get("openvpncl_route"))) {	//policy based routing
 		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
 //              fprintf(fp, "ip route flush table 10\n");
@@ -562,11 +568,6 @@ void start_openvpn(void)
 //                      "ebtables -I FORWARD -o tap1 --pkttype-type multicast -j DROP\n"
 //                      "ebtables -I OUTPUT -o tap1 --pkttype-type multicast -j DROP\n"
 			"ebtables -t nat -D POSTROUTING -o %s --pkttype-type multicast -j DROP\n" "ebtables -t nat -I POSTROUTING -o %s --pkttype-type multicast -j DROP\n", ovpniface, ovpniface);
-	}
-	if (nvram_matchi("wshaper_enable", 1)) {
-		fprintf(fp, "startservice set_routes -f\n");
-		fprintf(fp, "startservice firewall -f\n");
-		fprintf(fp, "startservice wshaper -f\n");
 	}
 	fclose(fp);
 
