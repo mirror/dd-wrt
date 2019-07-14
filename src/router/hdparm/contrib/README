@@ -1,0 +1,19 @@
+These files were contributed by various users.
+
+=====================================================================
+
+Dear Mark,
+
+attached I send you a small patch for hdparm-3.5 to make use of the 
+ioctls HDIO_UNREGISTER_HWIF and HDIO_SCAN_HWIF found in newer kernels.
+
+With this patched version I can make my IBM ThinkPad 600E recognize 
+'hot-swapped' ide-devices in its UltraBay II - slot. Together with 
+tpctl-0.7.0 and the two scripts 'idectl' and 'ultrabayd' it works 
+really nice.
+
+Christian Lademann <cal@zls.de> 
+
+Attached:  idectl, ultrabayd
+
+=====================================================================

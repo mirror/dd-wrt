@@ -1,0 +1,8 @@
+#!/bin/sh
+# $DEVNAME device name
+# $ACTION action add/remove
+
+[ -n "$DEVNAME" ] || exit 0
+[ "$DEVNAME" != "${DEVNAME#/}" ] || exit 0
+[ "$ACTION" = 'add' ] || exit 0
+[ -x /etc/init.d/hdparm ] && ACTION=$ACTION DEVNAME=$DEVNAME /etc/init.d/hdparm hotplug

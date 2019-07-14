@@ -1,0 +1,77 @@
+--- wiper.sh	2010-11-07 09:38:17.326668408 -0500
++++ wiper-31a.sh	2010-11-11 09:19:40.476974001 -0500
+@@ -6,7 +6,8 @@
+  
+ # Copyright (C) 2009-2010 Mark Lord.  All rights reserved.
+ #
+-# Contains hfsplus and ntfs code contributed by Heiko Wegeler <antiram@users.sourceforge.net>.
++# Contains hfsplus and ntfs code contributed by Heiko Wegeler <heiko.wegeler@googlemail.com>.
++# Package sleuthkit version >=3.1.1 is required for HFS+. Package ntfs-3g and ntfsprogs is required for NTFS.
+ #
+ # Requires gawk, a really-recent hdparm, and various other programs.
+ # This needs to be redone entirely in C, for 64-bit math, someday.
+@@ -502,17 +503,38 @@
+ 		fi
+ 		get_trimlist="$DEBUGREISERFS -m $fsdev"
+ 	elif [ "$fstype" = "hfsplus" ]; then
+-		FSSTAT=`find_prog /usr/local/bin/fsstat` || exit 1
+-		ICAT=`find_prog /usr/local/bin/icat` || exit 1
+ 		OD=`find_prog /usr/bin/od` || exit 1
+-		#get offset for hfsplus with wrapper/bootvolume
+-		hfsoffset=`$FSSTAT -f hfs $fsdev | $GREP "File system is embedded in an HFS wrapper at offset "|tr -d "\t"`
++		TR=`find_prog /usr/bin/tr` || exit 1
++		#check sleuthkit
++		FSSTAT=`find_prog /usr/local/bin/fsstat` 
++		if [ "$?" = "1" ]; then
++			echo "fsstat and icat from package sleuthkit >= 3.1.1 is required for hfsplus."
++			exit 1
++		fi
++		ICAT=`find_prog /usr/local/bin/icat` 
++		if [ "`$ICAT -f list 2>/dev/stdout|$GREP HFS+`" = "" ]; then
++                        echo "Wrong icat, version from package sleuthkit >= 3.1.1 is required for hfsplus."
++                        exit 1
++                fi
++		#check for unmounted properly
++		if [ "`$FSSTAT -f hfs $fsdev | $GREP "Volume Unmounted Properly"`" = ""  ]; then
++			echo "Hfsplus volume unmounted improperly!"
++			exit 1
++		fi
++		#check $AllocationFile inode
++		FFIND=`find_prog /usr/local/bin/ffind`
++		if [ "`$FFIND -f hfs $fsdev 6`" != "/\$AllocationFile" ]; then
++			echo "Hfsplus bitmap \$AllocationFile is not inode 6!"
++			exit 1
++		fi
++		#get offset for hfsplus with a wrapper
++		hfsoffset=`$FSSTAT -f hfs $fsdev | $GREP "File system is embedded in an HFS wrapper at offset "|$TR -d "\t"`
+ 		if [ -n "$hfsoffset" ]; then
+ 			hfsoffset=${hfsoffset:52}
+ 			((fsoffset=fsoffset+hfsoffset))
+ 			echo "File system is embedded in an HFS wrapper at offset $hfsoffset"
+ 		fi
+-		blksize=`$FSSTAT -f hfs $fsdev | $GREP "Allocation Block Size: "|tr -d "\t"`
++		blksize=`$FSSTAT -f hfs $fsdev | $GREP "Allocation Block Size: "|$TR -d "\t"`
+ 		blksize=${blksize:23}
+ 		blksects=$((blksize / 512))
+ 		method="bitmap_offline"
+@@ -520,8 +542,20 @@
+ 	elif [ "$fstype" = "ntfs" ]; then
+ 		NTFSINFO=`find_prog /usr/bin/ntfsinfo` || exit 1
+ 		NTFSCAT=`find_prog /usr/bin/ntfscat` || exit 1
++		NTFSPROBE=`find_prog /usr/bin/ntfs-3g.probe` || exit 1
+ 		OD=`find_prog /usr/bin/od` || exit 1
+ 		TR=`find_prog /usr/bin/tr` || exit 1
++		#check for unmounted properly
++		$NTFSPROBE -w $fsdev 2>/dev/null
++		if [ $? -ne 0 ]; then
++			echo "$fsdev contains an unclean file system!"
++			exit 1
++		fi
++		#check for volume version
++		if [ "`$NTFSINFO -m -f $fsdev | $GREP "Volume Version: 3.1"`" = "" ]; then
++			echo "NTFS volume version must be 3.1!"
++			exit 1
++		fi
+ 		blksize=`$NTFSINFO -m -f $fsdev | $GREP "Cluster Size: " | $TR -d "\t"`
+ 		blksize=${blksize:14}
+ 		blksects=$((blksize / 512))

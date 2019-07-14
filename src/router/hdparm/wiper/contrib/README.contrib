@@ -1,0 +1,8 @@
+Contributed scripts and notes from others (untested by me).
+===========================================================
+
+raid1ext4trim.sh-1.5
+	Similar to wiper.sh, but for ext4/RAID1 mirrors.
+	By Chris Caputo <ccaputo@alt.net>.
+	Adapted from wiper.sh (ver 2.6 by Mark Lord).
+

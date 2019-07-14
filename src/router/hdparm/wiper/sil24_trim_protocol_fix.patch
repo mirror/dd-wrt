@@ -1,0 +1,36 @@
+The sil24 hardware has a built-in list of commands and associated protocols
+that gets used by default to decide how to handle a given command. However,
+if the command is not known to the controller then it presumably assumes it to
+be a non-data command which then causes protocol mismatch errors if the device
+ends up requesting data transfer. The new DATA SET MANAGEMENT - Trim command
+causes this issue since it's a DMA data-out command.
+
+Since we should always know best what protocol the command should be using,
+let's just set the override flag to inform the controller what protocol to use
+for all non-ATAPI commands with data transfer.
+
+Signed-off-by: Robert Hancock <hancockrwd@gmail.com>
+Tested-by: Mark Lord <liml@rtr.ca>
+
+diff --git a/drivers/ata/sata_sil24.c b/drivers/ata/sata_sil24.c
+index 77aa8d7..e6946fc 100644
+--- a/drivers/ata/sata_sil24.c
++++ b/drivers/ata/sata_sil24.c
+@@ -846,6 +846,17 @@ static void sil24_qc_prep(struct ata_queued_cmd *qc)
+ 	if (!ata_is_atapi(qc->tf.protocol)) {
+ 		prb = &cb->ata.prb;
+ 		sge = cb->ata.sge;
++		if (ata_is_data(qc->tf.protocol)) {
++			u16 prot = 0;
++			ctrl = PRB_CTRL_PROTOCOL;
++			if (ata_is_ncq(qc->tf.protocol))
++				prot |= PRB_PROT_NCQ;
++			if (qc->tf.flags & ATA_TFLAG_WRITE)
++				prot |= PRB_PROT_WRITE;
++			else
++				prot |= PRB_PROT_READ;
++			prb->prot = cpu_to_le16(prot);
++		}
+ 	} else {
+ 		prb = &cb->atapi.prb;
+ 		sge = cb->atapi.sge;

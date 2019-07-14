@@ -1,0 +1,38 @@
+wiper.sh-3.5
+	- don't skip Group 0 on ext* filesystems
+wiper.sh-3.4
+	- updated to allow all SCSI_DISK_MAJOR numbers, not just "8"
+wiper.sh-3.3
+	- remove need for external "rdev" utility, to keep Suse/Redhat/Fedora users happy
+
+wiper.sh-3.2
+	-limits the trimmed blocks to the size of the hfsplus/ntfs filesystem
+	
+wiper.sh-3.1
+	- updated contrib/raid1ext4trim.sh script to v1.4, courtesy of Chris Caputo
+	- new flag to enable unattended operation, and handle SIGPIPE
+	- basic compatibility with latest Redhat/Fedora systems that lack the rdev command
+	- support hfsplus and ntfs filesystem types, courtesy of Heiko Wegeler
+	- hfsplus/ntfs notes from Heiko Wegeler:
+
+	Icat and fsstat from package sleuthkit version >=3.1.1 is required for hfsplus. A outdated icat is in Debian
+	package tct, the right icat is a link in package sleuthkit to ->/etc/alternatives/icat->/usr/bin/icat-sleuthkit.
+	Sleuthkit from Ubuntu 10.4 LTS is too old, you need a local build in /usr/local/bin. Fedora 14 works. 
+	Fedora13+updates should work.
+
+	Win-7 tests from a kvm installation: 
+	ok: "ntfs" compiletest and win-7 checkdsk after trim 
+	ok: "ntfs 8k cluster" same test 
+	ok: "ntfs with compressed files" same test 
+	ok: "ntfs with encrypted files" same test after decrypt
+	Win-XP:
+	ok: Systemdrive boots after trim and chkdsk.
+
+	MacOS 10.4.5 tests from the MacOS-installer: 
+	ok: "mac os extended (journaled)" compiletest and macos-verify after trim
+	ok: "mac os extended" same test 
+	ok: "mac os extended (case sensitive, journaled)"  same test 
+	ok: "mac os extended (case sensitive)" same test
+	ok: "mac os standard" wiper says:offline TRIM not supported for hfs filesystems, aborting.  
+	ok: "unix file system" wiper says: offline TRIM not supported for ufs filesystems, aborting.
+	not tested: "msdos filesystem" and raids

@@ -1,0 +1,45 @@
+#!/bin/sh
+
+HDPARM=/sbin/hdparm
+MAX_IDE_NR=1
+
+IDE_IO_0=0x1f0
+IDE_IO_1=0x170
+
+USE_IDE_DEV_0=/dev/hda
+USE_IDE_DEV_1=/dev/hdc
+
+usage () {
+	if [ $# -gt 0 ]; then
+		echo $* >&2
+		echo
+	fi
+
+	echo "usage: $0 ide-channel-nr [off|on|rescan]" 2>&1
+	exit 1
+}
+
+IDE_NR=$1
+MODE=$2
+
+do_register=0
+do_unregister=0
+
+
+if [ ! "$IDE_NR" ] || [ $IDE_NR -lt 0 ] || [ $IDE_NR -gt $MAX_IDE_NR ]; then
+	usage "Unrecognized IDE-channel number"
+fi
+
+case "$MODE" in
+on )		do_register=1 ;;
+off )		do_unregister=1 ;;
+rescan )	do_unregister=1; do_register=1 ;;
+* )			usage "Unrecognized command" ;;
+esac
+
+eval "IDE_IO=\$IDE_IO_$IDE_NR"
+eval "USE_IDE_DEV=\$USE_IDE_DEV_$IDE_NR"
+
+[ $do_unregister -eq 1 ] && eval "$HDPARM -U $IDE_NR $USE_IDE_DEV > /dev/null"
+[ $do_register -eq 1 ] && eval "$HDPARM -R $IDE_IO 0 0 $USE_IDE_DEV > /dev/null"
+
