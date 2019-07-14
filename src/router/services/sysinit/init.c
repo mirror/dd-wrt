@@ -330,6 +330,10 @@ void start_init_start(void)
 #ifdef HAVE_SYSLOG
 	start_syslog();
 #endif
+
+#ifdef HAVE_SMARTD
+	start_smartd();
+#endif
 #ifdef HAVE_IPV6
 	start_ipv6();
 #endif
