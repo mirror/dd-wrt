@@ -109,9 +109,6 @@ static bool daemonized_tracer;
 static int post_attach_sigstop = TCB_IGNORE_ONE_SIGSTOP;
 #define use_seize (post_attach_sigstop == 0)
 
-/* Sometimes we want to print only succeeding syscalls. */
-bool not_failing_only;
-
 /* Show path associated with fd arguments */
 unsigned int show_fd_path;
 
@@ -272,8 +269,10 @@ Statistics:\n\
 \n\
 Filtering:\n\
   -e expr        a qualifying expression: option=[!]all or option=[!]val1[,val2]...\n\
-     options:    trace, abbrev, verbose, raw, signal, read, write, fault, inject, kvm\n\
+     options:    trace, abbrev, verbose, raw, signal, read, write, fault, inject, status, kvm\n\
   -P path        trace accesses to path\n\
+  -z             print only syscalls that returned without an error code\n\
+  -Z             print only syscalls that returned with an error code\n\
 \n\
 Tracing:\n\
   -b execve      detach on execve syscall\n\
@@ -301,9 +300,6 @@ Miscellaneous:\n\
 "
 /* ancient, no one should use it
 -F -- attempt to follow vforks (deprecated, use -f)\n\
- */
-/* this is broken, so don't document it
--z -- print only succeeding syscalls\n\
  */
 , DEFAULT_ACOLUMN, DEFAULT_STRLEN, DEFAULT_SORTBY);
 	exit(0);
@@ -609,7 +605,8 @@ printleader(struct tcb *tcp)
 
 	if (printing_tcp) {
 		set_current_tcp(printing_tcp);
-		if (printing_tcp->curcol != 0 && (followfork < 2 || printing_tcp == tcp)) {
+		if (tcp->real_outf == NULL && printing_tcp->curcol != 0 &&
+		    (followfork < 2 || printing_tcp == tcp)) {
 			/*
 			 * case 1: we have a shared log (i.e. not -ff), and last line
 			 * wasn't finished (same or different tcb, doesn't matter).
@@ -812,12 +809,18 @@ droptcb(struct tcb *tcp)
 	debug_msg("dropped tcb for pid %d, %d remain", tcp->pid, nprocs);
 
 	if (tcp->outf) {
+		bool publish = true;
+		if (!is_complete_set(status_set, NUMBER_OF_STATUSES)) {
+			publish = is_number_in_set(STATUS_DETACHED, status_set);
+			strace_close_memstream(tcp, publish);
+		}
+
 		if (followfork >= 2) {
-			if (tcp->curcol != 0)
+			if (tcp->curcol != 0 && publish)
 				fprintf(tcp->outf, " <detached ...>\n");
 			fclose(tcp->outf);
 		} else {
-			if (printing_tcp == tcp && tcp->curcol != 0)
+			if (printing_tcp == tcp && tcp->curcol != 0 && publish)
 				fprintf(tcp->outf, " <detached ...>\n");
 			flush_tcp_output(tcp);
 		}
@@ -1507,35 +1510,29 @@ test_ptrace_seize(void)
 	}
 }
 
-static unsigned
+static unsigned int
 get_os_release(void)
 {
-	unsigned rel;
-	const char *p;
 	struct utsname u;
 	if (uname(&u) < 0)
 		perror_msg_and_die("uname");
-	/* u.release has this form: "3.2.9[-some-garbage]" */
-	rel = 0;
-	p = u.release;
-	for (;;) {
-		if (!(*p >= '0' && *p <= '9'))
-			error_msg_and_die("Bad OS release string: '%s'", u.release);
-		/* Note: this open-codes KERNEL_VERSION(): */
-		rel = (rel << 8) | atoi(p);
-		if (rel >= KERNEL_VERSION(1, 0, 0))
-			break;
-		while (*p >= '0' && *p <= '9')
-			p++;
-		if (*p != '.') {
-			if (rel >= KERNEL_VERSION(0, 1, 0)) {
-				/* "X.Y-something" means "X.Y.0" */
-				rel <<= 8;
-				break;
-			}
-			error_msg_and_die("Bad OS release string: '%s'", u.release);
+	/*
+	 * u.release string consists of at most three parts
+	 * and normally has this form: "3.2.9[-some-garbage]",
+	 * "X.Y-something" means "X.Y.0".
+	 */
+	const char *p = u.release;
+	unsigned int rel = 0;
+	for (unsigned int parts = 0; parts < 3; ++parts) {
+		unsigned int n = 0;
+		for (; (*p >= '0') && (*p <= '9'); ++p) {
+			n *= 10;
+			n += *p - '0';
 		}
-		p++;
+		rel <<= 8;
+		rel |= n;
+		if (*p == '.')
+			++p;
 	}
 	return rel;
 }
@@ -1559,7 +1556,7 @@ static void ATTRIBUTE_NOINLINE
 init(int argc, char *argv[])
 {
 	int c, i;
-	int optF = 0;
+	int optF = 0, zflags = 0;
 
 	if (!program_invocation_name || !*program_invocation_name) {
 		static char name[] = "strace";
@@ -1577,6 +1574,7 @@ init(int argc, char *argv[])
 	qualify("trace=all");
 	qualify("abbrev=all");
 	qualify("verbose=all");
+	qualify("status=all");
 #if DEFAULT_QUAL_FLAGS != (QUAL_TRACE | QUAL_ABBREV | QUAL_VERBOSE)
 # error Bug in DEFAULT_QUAL_FLAGS
 #endif
@@ -1585,7 +1583,7 @@ init(int argc, char *argv[])
 #ifdef ENABLE_STACKTRACE
 	    "k"
 #endif
-	    "a:Ab:cCdDe:E:fFhiI:o:O:p:P:qrs:S:tTu:vVwxX:yz")) != EOF) {
+	    "a:Ab:cCdDe:E:fFhiI:o:O:p:P:qrs:S:tTu:vVwxX:yzZ")) != EOF) {
 		switch (c) {
 		case 'a':
 			acolumn = string_to_uint(optarg);
@@ -1714,7 +1712,14 @@ init(int argc, char *argv[])
 			show_fd_path++;
 			break;
 		case 'z':
-			not_failing_only = 1;
+			clear_number_set_array(status_set, 1);
+			add_number_to_set(STATUS_SUCCESSFUL, status_set);
+			zflags++;
+			break;
+		case 'Z':
+			clear_number_set_array(status_set, 1);
+			add_number_to_set(STATUS_FAILED, status_set);
+			zflags++;
 			break;
 		default:
 			error_msg_and_help(NULL);
@@ -1765,6 +1770,15 @@ init(int argc, char *argv[])
 		if (show_fd_path)
 			error_msg("-%c has no effect with -c", 'y');
 	}
+
+#ifndef HAVE_OPEN_MEMSTREAM
+	if (!is_complete_set(status_set, NUMBER_OF_STATUSES))
+		error_msg_and_help("open_memstream is required to use -z, -Z, or -e status");
+#endif
+
+	if (zflags > 1)
+		error_msg("Only the last of -z/-Z options will take effect. "
+			  "See status qualifier for more complex filters.");
 
 	acolumn_spaces = xmalloc(acolumn + 1);
 	memset(acolumn_spaces, ' ', acolumn);
@@ -2035,35 +2049,67 @@ maybe_allocate_tcb(const int pid, int status)
 	}
 }
 
+/*
+ * Under Linux, execve changes pid to thread leader's pid, and we see this
+ * changed pid on EVENT_EXEC and later, execve sysexit.  Leader "disappears"
+ * without exit notification.  Let user know that, drop leader's tcb, and fix
+ * up pid in execve thread's tcb.  Effectively, execve thread's tcb replaces
+ * leader's tcb.
+ *
+ * BTW, leader is 'stuck undead' (doesn't report WIFEXITED on exit syscall)
+ * in multi-threaded programs exactly in order to handle this case.
+ */
 static struct tcb *
 maybe_switch_tcbs(struct tcb *tcp, const int pid)
 {
-	FILE *fp;
-	struct tcb *execve_thread;
-	long old_pid = tcb_wait_tab[tcp->wait_data_idx].msg;
+	/*
+	 * PTRACE_GETEVENTMSG returns old pid starting from Linux 3.0.
+	 * On 2.6 and earlier it can return garbage.
+	 */
+	if (os_release < KERNEL_VERSION(3, 0, 0))
+		return NULL;
+
+	const long old_pid = tcb_wait_tab[tcp->wait_data_idx].msg;
 
 	/* Avoid truncation in pid2tcb() param passing */
 	if (old_pid <= 0 || old_pid == pid)
-		return tcp;
+		return NULL;
 	if ((unsigned long) old_pid > UINT_MAX)
-		return tcp;
-	execve_thread = pid2tcb(old_pid);
+		return NULL;
+	struct tcb *execve_thread = pid2tcb(old_pid);
 	/* It should be !NULL, but I feel paranoid */
 	if (!execve_thread)
-		return tcp;
+		return NULL;
 
 	if (execve_thread->curcol != 0) {
 		/*
-		 * One case we are here is -ff:
-		 * try "strace -oLOG -ff test/threaded_execve"
+		 * One case we are here is -ff, try
+		 * "strace -oLOG -ff test/threaded_execve".
+		 * Another case is demonstrated by
+		 * tests/maybe_switch_current_tcp.c
 		 */
 		fprintf(execve_thread->outf, " <pid changed to %d ...>\n", pid);
 		/*execve_thread->curcol = 0; - no need, see code below */
 	}
-	/* Swap output FILEs (needed for -ff) */
-	fp = execve_thread->outf;
+	/* Swap output FILEs and memstream (needed for -ff) */
+	FILE *fp = execve_thread->outf;
 	execve_thread->outf = tcp->outf;
 	tcp->outf = fp;
+	if (execve_thread->real_outf || tcp->real_outf) {
+		char *memfptr;
+		size_t memfloc;
+
+		fp = execve_thread->real_outf;
+		execve_thread->real_outf = tcp->real_outf;
+		tcp->real_outf = fp;
+		memfptr = execve_thread->memfptr;
+		execve_thread->memfptr = tcp->memfptr;
+		tcp->memfptr = memfptr;
+		memfloc = execve_thread->memfloc;
+		execve_thread->memfloc = tcp->memfloc;
+		tcp->memfloc = memfloc;
+	}
+
 	/* And their column positions */
 	execve_thread->curcol = tcp->curcol;
 	tcp->curcol = 0;
@@ -2076,8 +2122,25 @@ maybe_switch_tcbs(struct tcb *tcp, const int pid)
 		printleader(tcp);
 		tprintf("+++ superseded by execve in pid %lu +++\n", old_pid);
 		line_ended();
+		/*
+		 * Need to reopen memstream for thread
+		 * as we closed it in droptcb.
+		 */
+		if (!is_complete_set(status_set, NUMBER_OF_STATUSES))
+			strace_open_memstream(tcp);
 		tcp->flags |= TCB_REPRINT;
 	}
+
+	return tcp;
+}
+
+static struct tcb *
+maybe_switch_current_tcp(void)
+{
+	struct tcb *tcp = maybe_switch_tcbs(current_tcp, current_tcp->pid);
+
+	if (tcp)
+		set_current_tcp(tcp);
 
 	return tcp;
 }
@@ -2191,6 +2254,10 @@ print_event_exit(struct tcb *tcp)
 	tprints(") ");
 	tabto();
 	tprints("= ?\n");
+	if (!is_complete_set(status_set, NUMBER_OF_STATUSES)) {
+		bool publish = is_number_in_set(STATUS_UNFINISHED, status_set);
+		strace_close_memstream(tcp, publish);
+	}
 	line_ended();
 }
 
@@ -2625,7 +2692,7 @@ dispatch_event(const struct tcb_wait_data *wd)
 		 * and all the following syscall state tracking is screwed up
 		 * otherwise.
 		 */
-		if (entering(current_tcp)) {
+		if (!maybe_switch_current_tcp() && entering(current_tcp)) {
 			int ret;
 
 			error_msg("Stray PTRACE_EVENT_EXEC from pid %d"
@@ -2641,25 +2708,6 @@ dispatch_event(const struct tcb_wait_data *wd)
 				return true;
 			}
 		}
-
-		/*
-		 * Under Linux, execve changes pid to thread leader's pid,
-		 * and we see this changed pid on EVENT_EXEC and later,
-		 * execve sysexit. Leader "disappears" without exit
-		 * notification. Let user know that, drop leader's tcb,
-		 * and fix up pid in execve thread's tcb.
-		 * Effectively, execve thread's tcb replaces leader's tcb.
-		 *
-		 * BTW, leader is 'stuck undead' (doesn't report WIFEXITED
-		 * on exit syscall) in multithreaded programs exactly
-		 * in order to handle this case.
-		 *
-		 * PTRACE_GETEVENTMSG returns old pid starting from Linux 3.0.
-		 * On 2.6 and earlier, it can return garbage.
-		 */
-		if (os_release >= KERNEL_VERSION(3, 0, 0))
-			set_current_tcp(maybe_switch_tcbs(current_tcp,
-							  current_tcp->pid));
 
 		if (detach_on_execve) {
 			if (current_tcp->flags & TCB_SKIP_DETACH_ON_FIRST_EXEC) {

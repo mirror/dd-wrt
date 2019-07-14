@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2005-2015 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2015-2018 The strace developers.
+ * Copyright (c) 2015-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -44,6 +44,7 @@ SYS_FUNC(newfstatat)
 {
 	if (entering(tcp)) {
 		print_dirfd(tcp, tcp->u_arg[0]);
+		tprints(", ");
 		printpath(tcp, tcp->u_arg[1]);
 		tprints(", ");
 	} else {

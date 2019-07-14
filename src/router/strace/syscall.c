@@ -41,6 +41,7 @@
 
 #include "syscall.h"
 #include "xstring.h"
+#include "syscallent_base_nr.h"
 
 /* Define these shorthand notations to simplify the syscallent files. */
 #include "sysent_shorthand_defs.h"
@@ -579,11 +580,13 @@ syscall_entering_decode(struct tcb *tcp)
 		return res;
 	}
 
+#ifdef SYS_syscall_subcall
+	if (tcp_sysent(tcp)->sen == SEN_syscall)
+		decode_syscall_subcall(tcp);
+#endif
 #if defined SYS_ipc_subcall	\
- || defined SYS_socket_subcall	\
- || defined SYS_syscall_subcall
-	for (;;) {
-		switch (tcp_sysent(tcp)->sen) {
+ || defined SYS_socket_subcall
+	switch (tcp_sysent(tcp)->sen) {
 # ifdef SYS_ipc_subcall
 		case SEN_ipc:
 			decode_ipc_subcall(tcp);
@@ -594,15 +597,6 @@ syscall_entering_decode(struct tcb *tcp)
 			decode_socket_subcall(tcp);
 			break;
 # endif
-# ifdef SYS_syscall_subcall
-		case SEN_syscall:
-			decode_syscall_subcall(tcp);
-			if (tcp_sysent(tcp)->sen != SEN_syscall)
-				continue;
-			break;
-# endif
-		}
-		break;
 	}
 #endif
 
@@ -655,6 +649,9 @@ syscall_entering_trace(struct tcb *tcp, unsigned int *sig)
 			unwind_tcb_capture(tcp);
 	}
 #endif
+
+	if (!is_complete_set(status_set, NUMBER_OF_STATUSES))
+		strace_open_memstream(tcp);
 
 	printleader(tcp);
 	tprintf("%s(", tcp_sysent(tcp)->sys_name);
@@ -718,7 +715,7 @@ print_syscall_resume(struct tcb *tcp)
 	 * "strace -ff -oLOG test/threaded_execve" corner case.
 	 * It's the only case when -ff mode needs reprinting.
 	 */
-	if ((followfork < 2 && printing_tcp != tcp)
+	if ((followfork < 2 && printing_tcp != tcp && tcp->real_outf == NULL)
 	    || (tcp->flags & TCB_REPRINT)) {
 		tcp->flags &= ~TCB_REPRINT;
 		printleader(tcp);
@@ -748,6 +745,11 @@ syscall_exiting_trace(struct tcb *tcp, struct timespec *ts, int res)
 		tprints(") ");
 		tabto();
 		tprints("= ? <unavailable>\n");
+		if (!is_complete_set(status_set, NUMBER_OF_STATUSES)) {
+			bool publish = is_number_in_set(STATUS_UNAVAILABLE,
+							status_set);
+			strace_close_memstream(tcp, publish);
+		}
 		line_ended();
 		return res;
 	}
@@ -757,20 +759,22 @@ syscall_exiting_trace(struct tcb *tcp, struct timespec *ts, int res)
 	if (raw(tcp)) {
 		/* sys_res = printargs(tcp); - but it's nop on sysexit */
 	} else {
-	/* FIXME: not_failing_only (IOW, option -z) is broken:
-	 * failure of syscall is known only after syscall return.
-	 * Thus we end up with something like this on, say, ENOENT:
-	 *     open("does_not_exist", O_RDONLY <unfinished ...>
-	 *     {next syscall decode}
-	 * whereas the intended result is that open(...) line
-	 * is not shown at all.
-	 */
-		if (not_failing_only && tcp->u_error)
-			return 0;	/* ignore failed syscalls */
 		if (tcp->sys_func_rval & RVAL_DECODED)
 			sys_res = tcp->sys_func_rval;
 		else
 			sys_res = tcp_sysent(tcp)->sys_func(tcp);
+	}
+
+	if (!is_complete_set(status_set, NUMBER_OF_STATUSES)) {
+		bool publish = syserror(tcp)
+			       && is_number_in_set(STATUS_FAILED, status_set);
+		publish |= !syserror(tcp)
+			   && is_number_in_set(STATUS_SUCCESSFUL, status_set);
+		strace_close_memstream(tcp, publish);
+		if (!publish) {
+			line_ended();
+			return 0;
+		}
 	}
 
 	tprints(") ");
@@ -1152,7 +1156,7 @@ free_sysent_buf(void *ptr)
 }
 
 static bool
-ptrace_get_syscall_info(struct tcb *tcp)
+strace_get_syscall_info(struct tcb *tcp)
 {
 	/*
 	 * ptrace_get_syscall_info_supported should have been checked
@@ -1198,7 +1202,7 @@ get_instruction_pointer(struct tcb *tcp, kernel_ulong_t *ip)
 		return false;
 
 	if (ptrace_get_syscall_info_supported) {
-		if (!ptrace_get_syscall_info(tcp))
+		if (!strace_get_syscall_info(tcp))
 			return false;
 		*ip = (kernel_ulong_t) ptrace_sci.instruction_pointer;
 		return true;
@@ -1225,7 +1229,7 @@ get_stack_pointer(struct tcb *tcp, kernel_ulong_t *sp)
 		return false;
 
 	if (ptrace_get_syscall_info_supported) {
-		if (!ptrace_get_syscall_info(tcp))
+		if (!strace_get_syscall_info(tcp))
 			return false;
 		*sp = (kernel_ulong_t) ptrace_sci.stack_pointer;
 		return true;
@@ -1252,7 +1256,7 @@ get_syscall_regs(struct tcb *tcp)
 		return get_regs_error;
 
 	if (ptrace_get_syscall_info_supported)
-		return ptrace_get_syscall_info(tcp) ? 0 : get_regs_error;
+		return strace_get_syscall_info(tcp) ? 0 : get_regs_error;
 
 	return get_regs(tcp);
 }

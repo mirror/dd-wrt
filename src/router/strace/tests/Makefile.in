@@ -145,8 +145,9 @@ check_PROGRAMS = $(am__EXEEXT_1) _newselect-P$(EXEEXT) answer$(EXEEXT) \
 	set_ptracer_any$(EXEEXT) set_sigblock$(EXEEXT) \
 	set_sigign$(EXEEXT) signal_receive$(EXEEXT) sleep$(EXEEXT) \
 	stack-fcall$(EXEEXT) stack-fcall-mangled$(EXEEXT) \
-	threads-execve$(EXEEXT) unblock_reset_raise$(EXEEXT) \
-	unix-pair-send-recv$(EXEEXT) \
+	status-none-threads$(EXEEXT) \
+	status-unfinished-threads$(EXEEXT) threads-execve$(EXEEXT) \
+	unblock_reset_raise$(EXEEXT) unix-pair-send-recv$(EXEEXT) \
 	unix-pair-sendto-recvfrom$(EXEEXT) vfork-f$(EXEEXT) \
 	wait4-v$(EXEEXT) waitid-v$(EXEEXT) zeroargc$(EXEEXT)
 @ENABLE_STACKTRACE_TRUE@@USE_DEMANGLE_TRUE@am__append_1 = strace-k-demangle.test
@@ -180,13 +181,13 @@ am__EXEEXT_1 = _newselect$(EXEEXT) accept$(EXEEXT) accept4$(EXEEXT) \
 	btrfs$(EXEEXT) caps$(EXEEXT) chmod$(EXEEXT) chown$(EXEEXT) \
 	chown32$(EXEEXT) chroot$(EXEEXT) clock_adjtime$(EXEEXT) \
 	clock_nanosleep$(EXEEXT) clock_xettime$(EXEEXT) \
-	copy_file_range$(EXEEXT) creat$(EXEEXT) delete_module$(EXEEXT) \
-	dev-yy$(EXEEXT) dup$(EXEEXT) dup2$(EXEEXT) dup3$(EXEEXT) \
-	epoll_create$(EXEEXT) epoll_create1$(EXEEXT) \
-	epoll_ctl$(EXEEXT) epoll_pwait$(EXEEXT) epoll_wait$(EXEEXT) \
-	erestartsys$(EXEEXT) eventfd$(EXEEXT) execve$(EXEEXT) \
-	execveat$(EXEEXT) faccessat$(EXEEXT) fadvise64$(EXEEXT) \
-	fadvise64_64$(EXEEXT) fallocate$(EXEEXT) \
+	clone-flags$(EXEEXT) copy_file_range$(EXEEXT) creat$(EXEEXT) \
+	delete_module$(EXEEXT) dev-yy$(EXEEXT) dup$(EXEEXT) \
+	dup2$(EXEEXT) dup3$(EXEEXT) epoll_create$(EXEEXT) \
+	epoll_create1$(EXEEXT) epoll_ctl$(EXEEXT) epoll_pwait$(EXEEXT) \
+	epoll_wait$(EXEEXT) erestartsys$(EXEEXT) eventfd$(EXEEXT) \
+	execve$(EXEEXT) execveat$(EXEEXT) faccessat$(EXEEXT) \
+	fadvise64$(EXEEXT) fadvise64_64$(EXEEXT) fallocate$(EXEEXT) \
 	fanotify_init$(EXEEXT) fanotify_mark$(EXEEXT) \
 	fanotify_mark-Xabbrev$(EXEEXT) fanotify_mark-Xraw$(EXEEXT) \
 	fanotify_mark-Xverbose$(EXEEXT) fchdir$(EXEEXT) \
@@ -194,7 +195,9 @@ am__EXEEXT_1 = _newselect$(EXEEXT) accept$(EXEEXT) accept4$(EXEEXT) \
 	fchown32$(EXEEXT) fchownat$(EXEEXT) fcntl$(EXEEXT) \
 	fcntl64$(EXEEXT) fdatasync$(EXEEXT) fflush$(EXEEXT) \
 	file_handle$(EXEEXT) file_ioctl$(EXEEXT) finit_module$(EXEEXT) \
-	flock$(EXEEXT) fstat$(EXEEXT) fstat-Xabbrev$(EXEEXT) \
+	flock$(EXEEXT) fsconfig$(EXEEXT) fsconfig-P$(EXEEXT) \
+	fsmount$(EXEEXT) fsopen$(EXEEXT) fspick$(EXEEXT) \
+	fspick-P$(EXEEXT) fstat$(EXEEXT) fstat-Xabbrev$(EXEEXT) \
 	fstat-Xraw$(EXEEXT) fstat-Xverbose$(EXEEXT) fstat64$(EXEEXT) \
 	fstat64-Xabbrev$(EXEEXT) fstat64-Xraw$(EXEEXT) \
 	fstat64-Xverbose$(EXEEXT) fstatat64$(EXEEXT) fstatfs$(EXEEXT) \
@@ -211,10 +214,11 @@ am__EXEEXT_1 = _newselect$(EXEEXT) accept$(EXEEXT) accept4$(EXEEXT) \
 	getsid$(EXEEXT) getsockname$(EXEEXT) getuid$(EXEEXT) \
 	getuid32$(EXEEXT) getxxid$(EXEEXT) group_req$(EXEEXT) \
 	inet-cmsg$(EXEEXT) init_module$(EXEEXT) inotify$(EXEEXT) \
-	inotify_init1$(EXEEXT) io_uring_enter$(EXEEXT) \
-	io_uring_register$(EXEEXT) io_uring_setup$(EXEEXT) \
-	ioctl$(EXEEXT) ioctl_block$(EXEEXT) ioctl_dm$(EXEEXT) \
-	ioctl_evdev$(EXEEXT) ioctl_inotify$(EXEEXT) \
+	inotify_init$(EXEEXT) inotify_init-y$(EXEEXT) \
+	inotify_init1$(EXEEXT) inotify_init1-y$(EXEEXT) \
+	io_uring_enter$(EXEEXT) io_uring_register$(EXEEXT) \
+	io_uring_setup$(EXEEXT) ioctl$(EXEEXT) ioctl_block$(EXEEXT) \
+	ioctl_dm$(EXEEXT) ioctl_evdev$(EXEEXT) ioctl_inotify$(EXEEXT) \
 	ioctl_kvm_run$(EXEEXT) ioctl_kvm_run-v$(EXEEXT) \
 	ioctl_kvm_run_auxstr_vcpu$(EXEEXT) ioctl_loop$(EXEEXT) \
 	ioctl_mtd$(EXEEXT) ioctl_nbd$(EXEEXT) ioctl_perf$(EXEEXT) \
@@ -240,7 +244,9 @@ am__EXEEXT_1 = _newselect$(EXEEXT) accept$(EXEEXT) accept4$(EXEEXT) \
 	lchown$(EXEEXT) lchown32$(EXEEXT) link$(EXEEXT) \
 	linkat$(EXEEXT) llseek$(EXEEXT) lookup_dcookie$(EXEEXT) \
 	lseek$(EXEEXT) lstat$(EXEEXT) lstat64$(EXEEXT) \
-	madvise$(EXEEXT) mbind$(EXEEXT) membarrier$(EXEEXT) \
+	madvise$(EXEEXT) maybe_switch_current_tcp$(EXEEXT) \
+	mbind$(EXEEXT) mbind-Xabbrev$(EXEEXT) mbind-Xraw$(EXEEXT) \
+	mbind-Xverbose$(EXEEXT) membarrier$(EXEEXT) \
 	memfd_create$(EXEEXT) memfd_create-Xabbrev$(EXEEXT) \
 	memfd_create-Xraw$(EXEEXT) memfd_create-Xverbose$(EXEEXT) \
 	migrate_pages$(EXEEXT) mincore$(EXEEXT) mkdir$(EXEEXT) \
@@ -251,7 +257,8 @@ am__EXEEXT_1 = _newselect$(EXEEXT) accept$(EXEEXT) accept4$(EXEEXT) \
 	mmap64-Xraw$(EXEEXT) mmap64-Xverbose$(EXEEXT) mmsg$(EXEEXT) \
 	mmsg_name$(EXEEXT) modify_ldt$(EXEEXT) mount$(EXEEXT) \
 	mount-Xabbrev$(EXEEXT) mount-Xraw$(EXEEXT) \
-	mount-Xverbose$(EXEEXT) move_pages$(EXEEXT) \
+	mount-Xverbose$(EXEEXT) move_mount$(EXEEXT) \
+	move_mount-P$(EXEEXT) move_pages$(EXEEXT) \
 	move_pages-Xabbrev$(EXEEXT) move_pages-Xraw$(EXEEXT) \
 	move_pages-Xverbose$(EXEEXT) mq$(EXEEXT) mq_sendrecv$(EXEEXT) \
 	mq_sendrecv-read$(EXEEXT) mq_sendrecv-write$(EXEEXT) \
@@ -296,8 +303,9 @@ am__EXEEXT_1 = _newselect$(EXEEXT) accept$(EXEEXT) accept4$(EXEEXT) \
 	old_mmap-Xraw$(EXEEXT) old_mmap-Xverbose$(EXEEXT) \
 	old_mmap-v-none$(EXEEXT) oldfstat$(EXEEXT) oldlstat$(EXEEXT) \
 	oldselect$(EXEEXT) oldselect-efault$(EXEEXT) oldstat$(EXEEXT) \
-	open$(EXEEXT) openat$(EXEEXT) osf_utimes$(EXEEXT) \
-	pause$(EXEEXT) perf_event_open$(EXEEXT) personality$(EXEEXT) \
+	open$(EXEEXT) open_tree$(EXEEXT) open_tree-P$(EXEEXT) \
+	openat$(EXEEXT) osf_utimes$(EXEEXT) pause$(EXEEXT) \
+	perf_event_open$(EXEEXT) personality$(EXEEXT) \
 	personality-Xabbrev$(EXEEXT) personality-Xraw$(EXEEXT) \
 	personality-Xverbose$(EXEEXT) pidfd_send_signal$(EXEEXT) \
 	pipe$(EXEEXT) pipe2$(EXEEXT) pkey_alloc$(EXEEXT) \
@@ -342,29 +350,33 @@ am__EXEEXT_1 = _newselect$(EXEEXT) accept$(EXEEXT) accept4$(EXEEXT) \
 	sched_yield$(EXEEXT) seccomp-filter$(EXEEXT) \
 	seccomp_get_action_avail$(EXEEXT) select$(EXEEXT) \
 	semop$(EXEEXT) sendfile$(EXEEXT) sendfile64$(EXEEXT) \
-	set_mempolicy$(EXEEXT) setdomainname$(EXEEXT) \
-	setfsgid$(EXEEXT) setfsgid32$(EXEEXT) setfsuid$(EXEEXT) \
-	setfsuid32$(EXEEXT) setgid$(EXEEXT) setgid32$(EXEEXT) \
-	setgroups$(EXEEXT) setgroups32$(EXEEXT) sethostname$(EXEEXT) \
-	setns$(EXEEXT) setregid$(EXEEXT) setregid32$(EXEEXT) \
-	setresgid$(EXEEXT) setresgid32$(EXEEXT) setresuid$(EXEEXT) \
-	setresuid32$(EXEEXT) setreuid$(EXEEXT) setreuid32$(EXEEXT) \
-	setrlimit$(EXEEXT) setrlimit-Xabbrev$(EXEEXT) \
-	setrlimit-Xraw$(EXEEXT) setrlimit-Xverbose$(EXEEXT) \
-	setuid$(EXEEXT) setuid32$(EXEEXT) shmxt$(EXEEXT) \
-	shutdown$(EXEEXT) sigaction$(EXEEXT) sigaltstack$(EXEEXT) \
-	siginfo$(EXEEXT) signal$(EXEEXT) signalfd4$(EXEEXT) \
-	sigpending$(EXEEXT) sigprocmask$(EXEEXT) sigreturn$(EXEEXT) \
-	sigsuspend$(EXEEXT) so_error$(EXEEXT) so_linger$(EXEEXT) \
-	so_peercred$(EXEEXT) so_peercred-Xabbrev$(EXEEXT) \
-	so_peercred-Xraw$(EXEEXT) so_peercred-Xverbose$(EXEEXT) \
-	sock_filter-v$(EXEEXT) sock_filter-v-Xabbrev$(EXEEXT) \
-	sock_filter-v-Xraw$(EXEEXT) sock_filter-v-Xverbose$(EXEEXT) \
-	sockaddr_xlat-Xabbrev$(EXEEXT) sockaddr_xlat-Xraw$(EXEEXT) \
-	sockaddr_xlat-Xverbose$(EXEEXT) socketcall$(EXEEXT) \
-	sockopt-sol_netlink$(EXEEXT) sockopt-timestamp$(EXEEXT) \
-	splice$(EXEEXT) stat$(EXEEXT) stat64$(EXEEXT) statfs$(EXEEXT) \
-	statfs64$(EXEEXT) statx$(EXEEXT) swap$(EXEEXT) \
+	set_mempolicy$(EXEEXT) set_mempolicy-Xabbrev$(EXEEXT) \
+	set_mempolicy-Xraw$(EXEEXT) set_mempolicy-Xverbose$(EXEEXT) \
+	setdomainname$(EXEEXT) setfsgid$(EXEEXT) setfsgid32$(EXEEXT) \
+	setfsuid$(EXEEXT) setfsuid32$(EXEEXT) setgid$(EXEEXT) \
+	setgid32$(EXEEXT) setgroups$(EXEEXT) setgroups32$(EXEEXT) \
+	sethostname$(EXEEXT) setns$(EXEEXT) setregid$(EXEEXT) \
+	setregid32$(EXEEXT) setresgid$(EXEEXT) setresgid32$(EXEEXT) \
+	setresuid$(EXEEXT) setresuid32$(EXEEXT) setreuid$(EXEEXT) \
+	setreuid32$(EXEEXT) setrlimit$(EXEEXT) \
+	setrlimit-Xabbrev$(EXEEXT) setrlimit-Xraw$(EXEEXT) \
+	setrlimit-Xverbose$(EXEEXT) setuid$(EXEEXT) setuid32$(EXEEXT) \
+	shmxt$(EXEEXT) shutdown$(EXEEXT) sigaction$(EXEEXT) \
+	sigaltstack$(EXEEXT) siginfo$(EXEEXT) signal$(EXEEXT) \
+	signalfd4$(EXEEXT) sigpending$(EXEEXT) sigprocmask$(EXEEXT) \
+	sigreturn$(EXEEXT) sigsuspend$(EXEEXT) so_error$(EXEEXT) \
+	so_linger$(EXEEXT) so_peercred$(EXEEXT) \
+	so_peercred-Xabbrev$(EXEEXT) so_peercred-Xraw$(EXEEXT) \
+	so_peercred-Xverbose$(EXEEXT) sock_filter-v$(EXEEXT) \
+	sock_filter-v-Xabbrev$(EXEEXT) sock_filter-v-Xraw$(EXEEXT) \
+	sock_filter-v-Xverbose$(EXEEXT) sockaddr_xlat-Xabbrev$(EXEEXT) \
+	sockaddr_xlat-Xraw$(EXEEXT) sockaddr_xlat-Xverbose$(EXEEXT) \
+	socketcall$(EXEEXT) sockopt-sol_netlink$(EXEEXT) \
+	sockopt-timestamp$(EXEEXT) splice$(EXEEXT) stat$(EXEEXT) \
+	stat64$(EXEEXT) statfs$(EXEEXT) statfs64$(EXEEXT) \
+	status-all$(EXEEXT) status-failed$(EXEEXT) \
+	status-none$(EXEEXT) status-successful$(EXEEXT) \
+	status-unfinished$(EXEEXT) statx$(EXEEXT) swap$(EXEEXT) \
 	sxetmask$(EXEEXT) symlink$(EXEEXT) symlinkat$(EXEEXT) \
 	sync$(EXEEXT) sync_file_range$(EXEEXT) \
 	sync_file_range2$(EXEEXT) sysinfo$(EXEEXT) syslog$(EXEEXT) \
@@ -410,7 +422,8 @@ am_libtests_a_OBJECTS = libtests_a-create_nl_socket.$(OBJEXT) \
 	libtests_a-printflags.$(OBJEXT) libtests_a-printxval.$(OBJEXT) \
 	libtests_a-signal2name.$(OBJEXT) \
 	libtests_a-skip_unavailable.$(OBJEXT) \
-	libtests_a-sprintrc.$(OBJEXT) libtests_a-tail_alloc.$(OBJEXT) \
+	libtests_a-sprintrc.$(OBJEXT) libtests_a-status.$(OBJEXT) \
+	libtests_a-tail_alloc.$(OBJEXT) \
 	libtests_a-test_printpath.$(OBJEXT) \
 	libtests_a-test_printstrn.$(OBJEXT) \
 	libtests_a-test_ucopy.$(OBJEXT) libtests_a-tprintf.$(OBJEXT)
@@ -569,6 +582,10 @@ clock_xettime_SOURCES = clock_xettime.c
 clock_xettime_OBJECTS = clock_xettime.$(OBJEXT)
 clock_xettime_LDADD = $(LDADD)
 clock_xettime_DEPENDENCIES = libtests.a
+clone_flags_SOURCES = clone-flags.c
+clone_flags_OBJECTS = clone-flags.$(OBJEXT)
+clone_flags_LDADD = $(LDADD)
+clone_flags_DEPENDENCIES = libtests.a
 clone_parent_SOURCES = clone_parent.c
 clone_parent_OBJECTS = clone_parent.$(OBJEXT)
 clone_parent_LDADD = $(LDADD)
@@ -755,6 +772,30 @@ fork_f_SOURCES = fork-f.c
 fork_f_OBJECTS = fork-f.$(OBJEXT)
 fork_f_LDADD = $(LDADD)
 fork_f_DEPENDENCIES = libtests.a
+fsconfig_SOURCES = fsconfig.c
+fsconfig_OBJECTS = fsconfig.$(OBJEXT)
+fsconfig_LDADD = $(LDADD)
+fsconfig_DEPENDENCIES = libtests.a
+fsconfig_P_SOURCES = fsconfig-P.c
+fsconfig_P_OBJECTS = fsconfig-P.$(OBJEXT)
+fsconfig_P_LDADD = $(LDADD)
+fsconfig_P_DEPENDENCIES = libtests.a
+fsmount_SOURCES = fsmount.c
+fsmount_OBJECTS = fsmount.$(OBJEXT)
+fsmount_LDADD = $(LDADD)
+fsmount_DEPENDENCIES = libtests.a
+fsopen_SOURCES = fsopen.c
+fsopen_OBJECTS = fsopen.$(OBJEXT)
+fsopen_LDADD = $(LDADD)
+fsopen_DEPENDENCIES = libtests.a
+fspick_SOURCES = fspick.c
+fspick_OBJECTS = fspick.$(OBJEXT)
+fspick_LDADD = $(LDADD)
+fspick_DEPENDENCIES = libtests.a
+fspick_P_SOURCES = fspick-P.c
+fspick_P_OBJECTS = fspick-P.$(OBJEXT)
+fspick_P_LDADD = $(LDADD)
+fspick_P_DEPENDENCIES = libtests.a
 fstat_SOURCES = fstat.c
 fstat_OBJECTS = fstat.$(OBJEXT)
 fstat_LDADD = $(LDADD)
@@ -963,10 +1004,22 @@ inotify_SOURCES = inotify.c
 inotify_OBJECTS = inotify.$(OBJEXT)
 inotify_LDADD = $(LDADD)
 inotify_DEPENDENCIES = libtests.a
+inotify_init_SOURCES = inotify_init.c
+inotify_init_OBJECTS = inotify_init.$(OBJEXT)
+inotify_init_LDADD = $(LDADD)
+inotify_init_DEPENDENCIES = libtests.a
+inotify_init_y_SOURCES = inotify_init-y.c
+inotify_init_y_OBJECTS = inotify_init-y.$(OBJEXT)
+inotify_init_y_LDADD = $(LDADD)
+inotify_init_y_DEPENDENCIES = libtests.a
 inotify_init1_SOURCES = inotify_init1.c
 inotify_init1_OBJECTS = inotify_init1.$(OBJEXT)
 inotify_init1_LDADD = $(LDADD)
 inotify_init1_DEPENDENCIES = libtests.a
+inotify_init1_y_SOURCES = inotify_init1-y.c
+inotify_init1_y_OBJECTS = inotify_init1-y.$(OBJEXT)
+inotify_init1_y_LDADD = $(LDADD)
+inotify_init1_y_DEPENDENCIES = libtests.a
 int_0x80_SOURCES = int_0x80.c
 int_0x80_OBJECTS = int_0x80.$(OBJEXT)
 int_0x80_LDADD = $(LDADD)
@@ -1318,10 +1371,25 @@ madvise_SOURCES = madvise.c
 madvise_OBJECTS = madvise.$(OBJEXT)
 madvise_LDADD = $(LDADD)
 madvise_DEPENDENCIES = libtests.a
+maybe_switch_current_tcp_SOURCES = maybe_switch_current_tcp.c
+maybe_switch_current_tcp_OBJECTS = maybe_switch_current_tcp.$(OBJEXT)
+maybe_switch_current_tcp_DEPENDENCIES = $(LDADD)
 mbind_SOURCES = mbind.c
 mbind_OBJECTS = mbind.$(OBJEXT)
 mbind_LDADD = $(LDADD)
 mbind_DEPENDENCIES = libtests.a
+mbind_Xabbrev_SOURCES = mbind-Xabbrev.c
+mbind_Xabbrev_OBJECTS = mbind-Xabbrev.$(OBJEXT)
+mbind_Xabbrev_LDADD = $(LDADD)
+mbind_Xabbrev_DEPENDENCIES = libtests.a
+mbind_Xraw_SOURCES = mbind-Xraw.c
+mbind_Xraw_OBJECTS = mbind-Xraw.$(OBJEXT)
+mbind_Xraw_LDADD = $(LDADD)
+mbind_Xraw_DEPENDENCIES = libtests.a
+mbind_Xverbose_SOURCES = mbind-Xverbose.c
+mbind_Xverbose_OBJECTS = mbind-Xverbose.$(OBJEXT)
+mbind_Xverbose_LDADD = $(LDADD)
+mbind_Xverbose_DEPENDENCIES = libtests.a
 membarrier_SOURCES = membarrier.c
 membarrier_OBJECTS = membarrier.$(OBJEXT)
 membarrier_LDADD = $(LDADD)
@@ -1446,6 +1514,14 @@ mount_Xverbose_SOURCES = mount-Xverbose.c
 mount_Xverbose_OBJECTS = mount-Xverbose.$(OBJEXT)
 mount_Xverbose_LDADD = $(LDADD)
 mount_Xverbose_DEPENDENCIES = libtests.a
+move_mount_SOURCES = move_mount.c
+move_mount_OBJECTS = move_mount.$(OBJEXT)
+move_mount_LDADD = $(LDADD)
+move_mount_DEPENDENCIES = libtests.a
+move_mount_P_SOURCES = move_mount-P.c
+move_mount_P_OBJECTS = move_mount-P.$(OBJEXT)
+move_mount_P_LDADD = $(LDADD)
+move_mount_P_DEPENDENCIES = libtests.a
 move_pages_SOURCES = move_pages.c
 move_pages_OBJECTS = move_pages.$(OBJEXT)
 move_pages_LDADD = $(LDADD)
@@ -1851,6 +1927,14 @@ open_SOURCES = open.c
 open_OBJECTS = open.$(OBJEXT)
 open_LDADD = $(LDADD)
 open_DEPENDENCIES = libtests.a
+open_tree_SOURCES = open_tree.c
+open_tree_OBJECTS = open_tree.$(OBJEXT)
+open_tree_LDADD = $(LDADD)
+open_tree_DEPENDENCIES = libtests.a
+open_tree_P_SOURCES = open_tree-P.c
+open_tree_P_OBJECTS = open_tree-P.$(OBJEXT)
+open_tree_P_LDADD = $(LDADD)
+open_tree_P_DEPENDENCIES = libtests.a
 openat_SOURCES = openat.c
 openat_OBJECTS = openat.$(OBJEXT)
 openat_LDADD = $(LDADD)
@@ -2366,6 +2450,18 @@ set_mempolicy_SOURCES = set_mempolicy.c
 set_mempolicy_OBJECTS = set_mempolicy.$(OBJEXT)
 set_mempolicy_LDADD = $(LDADD)
 set_mempolicy_DEPENDENCIES = libtests.a
+set_mempolicy_Xabbrev_SOURCES = set_mempolicy-Xabbrev.c
+set_mempolicy_Xabbrev_OBJECTS = set_mempolicy-Xabbrev.$(OBJEXT)
+set_mempolicy_Xabbrev_LDADD = $(LDADD)
+set_mempolicy_Xabbrev_DEPENDENCIES = libtests.a
+set_mempolicy_Xraw_SOURCES = set_mempolicy-Xraw.c
+set_mempolicy_Xraw_OBJECTS = set_mempolicy-Xraw.$(OBJEXT)
+set_mempolicy_Xraw_LDADD = $(LDADD)
+set_mempolicy_Xraw_DEPENDENCIES = libtests.a
+set_mempolicy_Xverbose_SOURCES = set_mempolicy-Xverbose.c
+set_mempolicy_Xverbose_OBJECTS = set_mempolicy-Xverbose.$(OBJEXT)
+set_mempolicy_Xverbose_LDADD = $(LDADD)
+set_mempolicy_Xverbose_DEPENDENCIES = libtests.a
 set_ptracer_any_SOURCES = set_ptracer_any.c
 set_ptracer_any_OBJECTS = set_ptracer_any.$(OBJEXT)
 set_ptracer_any_LDADD = $(LDADD)
@@ -2628,6 +2724,33 @@ statfs64_SOURCES = statfs64.c
 statfs64_OBJECTS = statfs64.$(OBJEXT)
 statfs64_LDADD = $(LDADD)
 statfs64_DEPENDENCIES = libtests.a
+status_all_SOURCES = status-all.c
+status_all_OBJECTS = status-all.$(OBJEXT)
+status_all_LDADD = $(LDADD)
+status_all_DEPENDENCIES = libtests.a
+status_failed_SOURCES = status-failed.c
+status_failed_OBJECTS = status-failed.$(OBJEXT)
+status_failed_LDADD = $(LDADD)
+status_failed_DEPENDENCIES = libtests.a
+status_none_SOURCES = status-none.c
+status_none_OBJECTS = status-none.$(OBJEXT)
+status_none_LDADD = $(LDADD)
+status_none_DEPENDENCIES = libtests.a
+status_none_threads_SOURCES = status-none-threads.c
+status_none_threads_OBJECTS = status-none-threads.$(OBJEXT)
+status_none_threads_DEPENDENCIES = $(LDADD)
+status_successful_SOURCES = status-successful.c
+status_successful_OBJECTS = status-successful.$(OBJEXT)
+status_successful_LDADD = $(LDADD)
+status_successful_DEPENDENCIES = libtests.a
+status_unfinished_SOURCES = status-unfinished.c
+status_unfinished_OBJECTS = status-unfinished.$(OBJEXT)
+status_unfinished_LDADD = $(LDADD)
+status_unfinished_DEPENDENCIES = libtests.a
+status_unfinished_threads_SOURCES = status-unfinished-threads.c
+status_unfinished_threads_OBJECTS =  \
+	status-unfinished-threads.$(OBJEXT)
+status_unfinished_threads_DEPENDENCIES = $(LDADD)
 statx_SOURCES = statx.c
 statx_OBJECTS = statx.$(OBJEXT)
 statx_LDADD = $(LDADD)
@@ -2912,19 +3035,20 @@ am__depfiles_remade = ./$(DEPDIR)/_newselect-P.Po \
 	./$(DEPDIR)/chown.Po ./$(DEPDIR)/chown32.Po \
 	./$(DEPDIR)/chroot.Po ./$(DEPDIR)/clock_adjtime.Po \
 	./$(DEPDIR)/clock_nanosleep.Po ./$(DEPDIR)/clock_xettime.Po \
-	./$(DEPDIR)/clone_parent.Po ./$(DEPDIR)/clone_ptrace.Po \
-	./$(DEPDIR)/copy_file_range.Po ./$(DEPDIR)/count-f.Po \
-	./$(DEPDIR)/creat.Po ./$(DEPDIR)/delay.Po \
-	./$(DEPDIR)/delete_module.Po ./$(DEPDIR)/dev-yy.Po \
-	./$(DEPDIR)/dup.Po ./$(DEPDIR)/dup2.Po ./$(DEPDIR)/dup3.Po \
-	./$(DEPDIR)/epoll_create.Po ./$(DEPDIR)/epoll_create1.Po \
-	./$(DEPDIR)/epoll_ctl.Po ./$(DEPDIR)/epoll_pwait.Po \
-	./$(DEPDIR)/epoll_wait.Po ./$(DEPDIR)/erestartsys.Po \
-	./$(DEPDIR)/eventfd.Po ./$(DEPDIR)/execve-v.Po \
-	./$(DEPDIR)/execve.Po ./$(DEPDIR)/execveat-v.Po \
-	./$(DEPDIR)/execveat.Po ./$(DEPDIR)/faccessat.Po \
-	./$(DEPDIR)/fadvise64.Po ./$(DEPDIR)/fadvise64_64.Po \
-	./$(DEPDIR)/fallocate.Po ./$(DEPDIR)/fanotify_init.Po \
+	./$(DEPDIR)/clone-flags.Po ./$(DEPDIR)/clone_parent.Po \
+	./$(DEPDIR)/clone_ptrace.Po ./$(DEPDIR)/copy_file_range.Po \
+	./$(DEPDIR)/count-f.Po ./$(DEPDIR)/creat.Po \
+	./$(DEPDIR)/delay.Po ./$(DEPDIR)/delete_module.Po \
+	./$(DEPDIR)/dev-yy.Po ./$(DEPDIR)/dup.Po ./$(DEPDIR)/dup2.Po \
+	./$(DEPDIR)/dup3.Po ./$(DEPDIR)/epoll_create.Po \
+	./$(DEPDIR)/epoll_create1.Po ./$(DEPDIR)/epoll_ctl.Po \
+	./$(DEPDIR)/epoll_pwait.Po ./$(DEPDIR)/epoll_wait.Po \
+	./$(DEPDIR)/erestartsys.Po ./$(DEPDIR)/eventfd.Po \
+	./$(DEPDIR)/execve-v.Po ./$(DEPDIR)/execve.Po \
+	./$(DEPDIR)/execveat-v.Po ./$(DEPDIR)/execveat.Po \
+	./$(DEPDIR)/faccessat.Po ./$(DEPDIR)/fadvise64.Po \
+	./$(DEPDIR)/fadvise64_64.Po ./$(DEPDIR)/fallocate.Po \
+	./$(DEPDIR)/fanotify_init.Po \
 	./$(DEPDIR)/fanotify_mark-Xabbrev.Po \
 	./$(DEPDIR)/fanotify_mark-Xraw.Po \
 	./$(DEPDIR)/fanotify_mark-Xverbose.Po \
@@ -2936,7 +3060,10 @@ am__depfiles_remade = ./$(DEPDIR)/_newselect-P.Po \
 	./$(DEPDIR)/fflush.Po ./$(DEPDIR)/file_handle.Po \
 	./$(DEPDIR)/file_ioctl.Po ./$(DEPDIR)/filter-unavailable.Po \
 	./$(DEPDIR)/finit_module.Po ./$(DEPDIR)/flock.Po \
-	./$(DEPDIR)/fork-f.Po ./$(DEPDIR)/fstat-Xabbrev.Po \
+	./$(DEPDIR)/fork-f.Po ./$(DEPDIR)/fsconfig-P.Po \
+	./$(DEPDIR)/fsconfig.Po ./$(DEPDIR)/fsmount.Po \
+	./$(DEPDIR)/fsopen.Po ./$(DEPDIR)/fspick-P.Po \
+	./$(DEPDIR)/fspick.Po ./$(DEPDIR)/fstat-Xabbrev.Po \
 	./$(DEPDIR)/fstat-Xraw.Po ./$(DEPDIR)/fstat-Xverbose.Po \
 	./$(DEPDIR)/fstat.Po ./$(DEPDIR)/fstat64-Xabbrev.Po \
 	./$(DEPDIR)/fstat64-Xraw.Po ./$(DEPDIR)/fstat64-Xverbose.Po \
@@ -2963,11 +3090,13 @@ am__depfiles_remade = ./$(DEPDIR)/_newselect-P.Po \
 	./$(DEPDIR)/getxxid.Po ./$(DEPDIR)/group_req.Po \
 	./$(DEPDIR)/inet-cmsg.Po ./$(DEPDIR)/init_module.Po \
 	./$(DEPDIR)/inject-nf.Po ./$(DEPDIR)/inotify.Po \
-	./$(DEPDIR)/inotify_init1.Po ./$(DEPDIR)/int_0x80.Po \
-	./$(DEPDIR)/io_uring_enter.Po ./$(DEPDIR)/io_uring_register.Po \
-	./$(DEPDIR)/io_uring_setup.Po ./$(DEPDIR)/ioctl.Po \
-	./$(DEPDIR)/ioctl_block.Po ./$(DEPDIR)/ioctl_dm-v.Po \
-	./$(DEPDIR)/ioctl_dm.Po ./$(DEPDIR)/ioctl_evdev-success-v.Po \
+	./$(DEPDIR)/inotify_init-y.Po ./$(DEPDIR)/inotify_init.Po \
+	./$(DEPDIR)/inotify_init1-y.Po ./$(DEPDIR)/inotify_init1.Po \
+	./$(DEPDIR)/int_0x80.Po ./$(DEPDIR)/io_uring_enter.Po \
+	./$(DEPDIR)/io_uring_register.Po ./$(DEPDIR)/io_uring_setup.Po \
+	./$(DEPDIR)/ioctl.Po ./$(DEPDIR)/ioctl_block.Po \
+	./$(DEPDIR)/ioctl_dm-v.Po ./$(DEPDIR)/ioctl_dm.Po \
+	./$(DEPDIR)/ioctl_evdev-success-v.Po \
 	./$(DEPDIR)/ioctl_evdev-success.Po \
 	./$(DEPDIR)/ioctl_evdev-v.Po ./$(DEPDIR)/ioctl_evdev.Po \
 	./$(DEPDIR)/ioctl_inotify.Po ./$(DEPDIR)/ioctl_kvm_run-v.Po \
@@ -3027,6 +3156,7 @@ am__depfiles_remade = ./$(DEPDIR)/_newselect-P.Po \
 	./$(DEPDIR)/libtests_a-signal2name.Po \
 	./$(DEPDIR)/libtests_a-skip_unavailable.Po \
 	./$(DEPDIR)/libtests_a-sprintrc.Po \
+	./$(DEPDIR)/libtests_a-status.Po \
 	./$(DEPDIR)/libtests_a-tail_alloc.Po \
 	./$(DEPDIR)/libtests_a-test_printpath.Po \
 	./$(DEPDIR)/libtests_a-test_printstrn.Po \
@@ -3037,8 +3167,10 @@ am__depfiles_remade = ./$(DEPDIR)/_newselect-P.Po \
 	./$(DEPDIR)/lookup_dcookie.Po ./$(DEPDIR)/looping_threads.Po \
 	./$(DEPDIR)/lseek.Po ./$(DEPDIR)/lstat.Po \
 	./$(DEPDIR)/lstat64-lstat64.Po ./$(DEPDIR)/madvise.Po \
-	./$(DEPDIR)/mbind.Po ./$(DEPDIR)/membarrier.Po \
-	./$(DEPDIR)/memfd_create-Xabbrev.Po \
+	./$(DEPDIR)/maybe_switch_current_tcp.Po \
+	./$(DEPDIR)/mbind-Xabbrev.Po ./$(DEPDIR)/mbind-Xraw.Po \
+	./$(DEPDIR)/mbind-Xverbose.Po ./$(DEPDIR)/mbind.Po \
+	./$(DEPDIR)/membarrier.Po ./$(DEPDIR)/memfd_create-Xabbrev.Po \
 	./$(DEPDIR)/memfd_create-Xraw.Po \
 	./$(DEPDIR)/memfd_create-Xverbose.Po \
 	./$(DEPDIR)/memfd_create.Po ./$(DEPDIR)/migrate_pages.Po \
@@ -3056,7 +3188,8 @@ am__depfiles_remade = ./$(DEPDIR)/_newselect-P.Po \
 	./$(DEPDIR)/mmsg_name-v.Po ./$(DEPDIR)/mmsg_name.Po \
 	./$(DEPDIR)/modify_ldt.Po ./$(DEPDIR)/mount-Xabbrev.Po \
 	./$(DEPDIR)/mount-Xraw.Po ./$(DEPDIR)/mount-Xverbose.Po \
-	./$(DEPDIR)/mount.Po ./$(DEPDIR)/move_pages-Xabbrev.Po \
+	./$(DEPDIR)/mount.Po ./$(DEPDIR)/move_mount-P.Po \
+	./$(DEPDIR)/move_mount.Po ./$(DEPDIR)/move_pages-Xabbrev.Po \
 	./$(DEPDIR)/move_pages-Xraw.Po \
 	./$(DEPDIR)/move_pages-Xverbose.Po ./$(DEPDIR)/move_pages.Po \
 	./$(DEPDIR)/mq.Po ./$(DEPDIR)/mq_sendrecv-read.Po \
@@ -3128,6 +3261,7 @@ am__depfiles_remade = ./$(DEPDIR)/_newselect-P.Po \
 	./$(DEPDIR)/oldselect-P.Po ./$(DEPDIR)/oldselect-efault-P.Po \
 	./$(DEPDIR)/oldselect-efault.Po ./$(DEPDIR)/oldselect.Po \
 	./$(DEPDIR)/oldstat.Po ./$(DEPDIR)/open.Po \
+	./$(DEPDIR)/open_tree-P.Po ./$(DEPDIR)/open_tree.Po \
 	./$(DEPDIR)/openat.Po ./$(DEPDIR)/orphaned_process_group.Po \
 	./$(DEPDIR)/osf_utimes.Po ./$(DEPDIR)/pause.Po \
 	./$(DEPDIR)/pc.Po ./$(DEPDIR)/perf_event_open.Po \
@@ -3210,19 +3344,22 @@ am__depfiles_remade = ./$(DEPDIR)/_newselect-P.Po \
 	./$(DEPDIR)/seccomp_get_action_avail.Po \
 	./$(DEPDIR)/select-P.Po ./$(DEPDIR)/select.Po \
 	./$(DEPDIR)/semop.Po ./$(DEPDIR)/sendfile.Po \
-	./$(DEPDIR)/sendfile64.Po ./$(DEPDIR)/set_mempolicy.Po \
-	./$(DEPDIR)/set_ptracer_any.Po ./$(DEPDIR)/set_sigblock.Po \
-	./$(DEPDIR)/set_sigign.Po ./$(DEPDIR)/setdomainname.Po \
-	./$(DEPDIR)/setfsgid.Po ./$(DEPDIR)/setfsgid32.Po \
-	./$(DEPDIR)/setfsuid.Po ./$(DEPDIR)/setfsuid32.Po \
-	./$(DEPDIR)/setgid.Po ./$(DEPDIR)/setgid32.Po \
-	./$(DEPDIR)/setgroups.Po ./$(DEPDIR)/setgroups32.Po \
-	./$(DEPDIR)/sethostname.Po ./$(DEPDIR)/setns.Po \
-	./$(DEPDIR)/setregid.Po ./$(DEPDIR)/setregid32.Po \
-	./$(DEPDIR)/setresgid.Po ./$(DEPDIR)/setresgid32.Po \
-	./$(DEPDIR)/setresuid.Po ./$(DEPDIR)/setresuid32.Po \
-	./$(DEPDIR)/setreuid.Po ./$(DEPDIR)/setreuid32.Po \
-	./$(DEPDIR)/setrlimit-Xabbrev.Po ./$(DEPDIR)/setrlimit-Xraw.Po \
+	./$(DEPDIR)/sendfile64.Po ./$(DEPDIR)/set_mempolicy-Xabbrev.Po \
+	./$(DEPDIR)/set_mempolicy-Xraw.Po \
+	./$(DEPDIR)/set_mempolicy-Xverbose.Po \
+	./$(DEPDIR)/set_mempolicy.Po ./$(DEPDIR)/set_ptracer_any.Po \
+	./$(DEPDIR)/set_sigblock.Po ./$(DEPDIR)/set_sigign.Po \
+	./$(DEPDIR)/setdomainname.Po ./$(DEPDIR)/setfsgid.Po \
+	./$(DEPDIR)/setfsgid32.Po ./$(DEPDIR)/setfsuid.Po \
+	./$(DEPDIR)/setfsuid32.Po ./$(DEPDIR)/setgid.Po \
+	./$(DEPDIR)/setgid32.Po ./$(DEPDIR)/setgroups.Po \
+	./$(DEPDIR)/setgroups32.Po ./$(DEPDIR)/sethostname.Po \
+	./$(DEPDIR)/setns.Po ./$(DEPDIR)/setregid.Po \
+	./$(DEPDIR)/setregid32.Po ./$(DEPDIR)/setresgid.Po \
+	./$(DEPDIR)/setresgid32.Po ./$(DEPDIR)/setresuid.Po \
+	./$(DEPDIR)/setresuid32.Po ./$(DEPDIR)/setreuid.Po \
+	./$(DEPDIR)/setreuid32.Po ./$(DEPDIR)/setrlimit-Xabbrev.Po \
+	./$(DEPDIR)/setrlimit-Xraw.Po \
 	./$(DEPDIR)/setrlimit-Xverbose.Po ./$(DEPDIR)/setrlimit.Po \
 	./$(DEPDIR)/setuid.Po ./$(DEPDIR)/setuid32.Po \
 	./$(DEPDIR)/shmxt.Po ./$(DEPDIR)/shutdown.Po \
@@ -3253,22 +3390,27 @@ am__depfiles_remade = ./$(DEPDIR)/_newselect-P.Po \
 	./$(DEPDIR)/stack-fcall-mangled.Po ./$(DEPDIR)/stack-fcall.Po \
 	./$(DEPDIR)/stat.Po ./$(DEPDIR)/stat64-stat64.Po \
 	./$(DEPDIR)/statfs-statfs.Po ./$(DEPDIR)/statfs64.Po \
-	./$(DEPDIR)/statx.Po ./$(DEPDIR)/swap.Po \
-	./$(DEPDIR)/sxetmask.Po ./$(DEPDIR)/symlink.Po \
-	./$(DEPDIR)/symlinkat.Po ./$(DEPDIR)/sync.Po \
-	./$(DEPDIR)/sync_file_range.Po ./$(DEPDIR)/sync_file_range2.Po \
-	./$(DEPDIR)/sysinfo.Po ./$(DEPDIR)/syslog.Po \
-	./$(DEPDIR)/tee.Po ./$(DEPDIR)/threads-execve.Po \
-	./$(DEPDIR)/time.Po ./$(DEPDIR)/timer_create.Po \
-	./$(DEPDIR)/timer_xettime.Po ./$(DEPDIR)/timerfd_xettime.Po \
-	./$(DEPDIR)/times-fail.Po ./$(DEPDIR)/times.Po \
-	./$(DEPDIR)/truncate.Po ./$(DEPDIR)/truncate64-truncate64.Po \
-	./$(DEPDIR)/ugetrlimit.Po ./$(DEPDIR)/uio-uio.Po \
-	./$(DEPDIR)/umask.Po ./$(DEPDIR)/umount.Po \
-	./$(DEPDIR)/umount2.Po ./$(DEPDIR)/umoven-illptr.Po \
-	./$(DEPDIR)/umovestr-illptr.Po ./$(DEPDIR)/umovestr.Po \
-	./$(DEPDIR)/umovestr2.Po ./$(DEPDIR)/umovestr3.Po \
-	./$(DEPDIR)/uname.Po ./$(DEPDIR)/unblock_reset_raise.Po \
+	./$(DEPDIR)/status-all.Po ./$(DEPDIR)/status-failed.Po \
+	./$(DEPDIR)/status-none-threads.Po ./$(DEPDIR)/status-none.Po \
+	./$(DEPDIR)/status-successful.Po \
+	./$(DEPDIR)/status-unfinished-threads.Po \
+	./$(DEPDIR)/status-unfinished.Po ./$(DEPDIR)/statx.Po \
+	./$(DEPDIR)/swap.Po ./$(DEPDIR)/sxetmask.Po \
+	./$(DEPDIR)/symlink.Po ./$(DEPDIR)/symlinkat.Po \
+	./$(DEPDIR)/sync.Po ./$(DEPDIR)/sync_file_range.Po \
+	./$(DEPDIR)/sync_file_range2.Po ./$(DEPDIR)/sysinfo.Po \
+	./$(DEPDIR)/syslog.Po ./$(DEPDIR)/tee.Po \
+	./$(DEPDIR)/threads-execve.Po ./$(DEPDIR)/time.Po \
+	./$(DEPDIR)/timer_create.Po ./$(DEPDIR)/timer_xettime.Po \
+	./$(DEPDIR)/timerfd_xettime.Po ./$(DEPDIR)/times-fail.Po \
+	./$(DEPDIR)/times.Po ./$(DEPDIR)/truncate.Po \
+	./$(DEPDIR)/truncate64-truncate64.Po ./$(DEPDIR)/ugetrlimit.Po \
+	./$(DEPDIR)/uio-uio.Po ./$(DEPDIR)/umask.Po \
+	./$(DEPDIR)/umount.Po ./$(DEPDIR)/umount2.Po \
+	./$(DEPDIR)/umoven-illptr.Po ./$(DEPDIR)/umovestr-illptr.Po \
+	./$(DEPDIR)/umovestr.Po ./$(DEPDIR)/umovestr2.Po \
+	./$(DEPDIR)/umovestr3.Po ./$(DEPDIR)/uname.Po \
+	./$(DEPDIR)/unblock_reset_raise.Po \
 	./$(DEPDIR)/unix-pair-send-recv.Po \
 	./$(DEPDIR)/unix-pair-sendto-recvfrom.Po ./$(DEPDIR)/unlink.Po \
 	./$(DEPDIR)/unlinkat.Po ./$(DEPDIR)/unshare.Po \
@@ -3312,17 +3454,18 @@ SOURCES = $(libtests_a_SOURCES) _newselect.c _newselect-P.c accept.c \
 	bpf-v.c brk.c btrfs.c caps.c caps-abbrev.c check_sigblock.c \
 	check_sigign.c chmod.c chown.c chown32.c chroot.c \
 	clock_adjtime.c clock_nanosleep.c clock_xettime.c \
-	clone_parent.c clone_ptrace.c copy_file_range.c count-f.c \
-	creat.c delay.c delete_module.c dev-yy.c dup.c dup2.c dup3.c \
-	epoll_create.c epoll_create1.c epoll_ctl.c epoll_pwait.c \
-	epoll_wait.c erestartsys.c eventfd.c execve.c execve-v.c \
-	execveat.c execveat-v.c faccessat.c fadvise64.c fadvise64_64.c \
-	fallocate.c fanotify_init.c fanotify_mark.c \
+	clone-flags.c clone_parent.c clone_ptrace.c copy_file_range.c \
+	count-f.c creat.c delay.c delete_module.c dev-yy.c dup.c \
+	dup2.c dup3.c epoll_create.c epoll_create1.c epoll_ctl.c \
+	epoll_pwait.c epoll_wait.c erestartsys.c eventfd.c execve.c \
+	execve-v.c execveat.c execveat-v.c faccessat.c fadvise64.c \
+	fadvise64_64.c fallocate.c fanotify_init.c fanotify_mark.c \
 	fanotify_mark-Xabbrev.c fanotify_mark-Xraw.c \
 	fanotify_mark-Xverbose.c fchdir.c fchmod.c fchmodat.c fchown.c \
 	fchown32.c fchownat.c fcntl.c fcntl64.c fdatasync.c fflush.c \
 	file_handle.c file_ioctl.c filter-unavailable.c finit_module.c \
-	flock.c fork-f.c fstat.c fstat-Xabbrev.c fstat-Xraw.c \
+	flock.c fork-f.c fsconfig.c fsconfig-P.c fsmount.c fsopen.c \
+	fspick.c fspick-P.c fstat.c fstat-Xabbrev.c fstat-Xraw.c \
 	fstat-Xverbose.c fstat64.c fstat64-Xabbrev.c fstat64-Xraw.c \
 	fstat64-Xverbose.c fstatat64.c fstatfs.c fstatfs64.c fsync.c \
 	fsync-y.c ftruncate.c ftruncate64.c futex.c futimesat.c \
@@ -3333,7 +3476,8 @@ SOURCES = $(libtests_a_SOURCES) _newselect.c _newselect-P.c accept.c \
 	getresuid.c getresuid32.c getrlimit.c getrusage.c getsid.c \
 	getsockname.c gettid.c getuid.c getuid32.c getxxid.c \
 	group_req.c inet-cmsg.c init_module.c inject-nf.c inotify.c \
-	inotify_init1.c int_0x80.c io_uring_enter.c \
+	inotify_init.c inotify_init-y.c inotify_init1.c \
+	inotify_init1-y.c int_0x80.c io_uring_enter.c \
 	io_uring_register.c io_uring_setup.c ioctl.c ioctl_block.c \
 	ioctl_dm.c ioctl_dm-v.c ioctl_evdev.c ioctl_evdev-success.c \
 	ioctl_evdev-success-v.c ioctl_evdev-v.c ioctl_inotify.c \
@@ -3356,29 +3500,30 @@ SOURCES = $(libtests_a_SOURCES) _newselect.c _newselect-P.c accept.c \
 	keyctl-Xraw.c keyctl-Xverbose.c kill.c kill_child.c ksysent.c \
 	lchown.c lchown32.c link.c linkat.c list_sigaction_signum.c \
 	llseek.c localtime.c lookup_dcookie.c looping_threads.c \
-	lseek.c lstat.c lstat64.c madvise.c mbind.c membarrier.c \
-	memfd_create.c memfd_create-Xabbrev.c memfd_create-Xraw.c \
-	memfd_create-Xverbose.c migrate_pages.c mincore.c mkdir.c \
-	mkdirat.c mknod.c mknodat.c mlock.c mlock2.c mlockall.c mmap.c \
-	mmap-Xabbrev.c mmap-Xraw.c mmap-Xverbose.c mmap64.c \
-	mmap64-Xabbrev.c mmap64-Xraw.c mmap64-Xverbose.c mmsg.c \
-	mmsg-silent.c mmsg_name.c mmsg_name-v.c modify_ldt.c mount.c \
-	mount-Xabbrev.c mount-Xraw.c mount-Xverbose.c move_pages.c \
-	move_pages-Xabbrev.c move_pages-Xraw.c move_pages-Xverbose.c \
-	mq.c mq_sendrecv.c mq_sendrecv-read.c mq_sendrecv-write.c \
-	msg_control.c msg_control-v.c msg_name.c munlockall.c \
-	nanosleep.c net-accept-connect.c net-icmp_filter.c \
-	net-packet_mreq.c net-packet_mreq-Xabbrev.c \
-	net-packet_mreq-Xraw.c net-packet_mreq-Xverbose.c \
-	net-sockaddr.c net-tpacket_req.c net-tpacket_stats.c \
-	net-tpacket_stats-success.c net-y-unix.c net-yy-inet.c \
-	net-yy-inet6.c net-yy-netlink.c net-yy-unix.c netlink_audit.c \
-	netlink_crypto.c netlink_generic.c netlink_inet_diag.c \
-	netlink_kobject_uevent.c netlink_netfilter.c \
-	netlink_netlink_diag.c netlink_protocol.c netlink_route.c \
-	netlink_selinux.c netlink_sock_diag.c netlink_unix_diag.c \
-	netlink_xfrm.c newfstatat.c nfnetlink_acct.c \
-	nfnetlink_cthelper.c nfnetlink_ctnetlink.c \
+	lseek.c lstat.c lstat64.c madvise.c maybe_switch_current_tcp.c \
+	mbind.c mbind-Xabbrev.c mbind-Xraw.c mbind-Xverbose.c \
+	membarrier.c memfd_create.c memfd_create-Xabbrev.c \
+	memfd_create-Xraw.c memfd_create-Xverbose.c migrate_pages.c \
+	mincore.c mkdir.c mkdirat.c mknod.c mknodat.c mlock.c mlock2.c \
+	mlockall.c mmap.c mmap-Xabbrev.c mmap-Xraw.c mmap-Xverbose.c \
+	mmap64.c mmap64-Xabbrev.c mmap64-Xraw.c mmap64-Xverbose.c \
+	mmsg.c mmsg-silent.c mmsg_name.c mmsg_name-v.c modify_ldt.c \
+	mount.c mount-Xabbrev.c mount-Xraw.c mount-Xverbose.c \
+	move_mount.c move_mount-P.c move_pages.c move_pages-Xabbrev.c \
+	move_pages-Xraw.c move_pages-Xverbose.c mq.c mq_sendrecv.c \
+	mq_sendrecv-read.c mq_sendrecv-write.c msg_control.c \
+	msg_control-v.c msg_name.c munlockall.c nanosleep.c \
+	net-accept-connect.c net-icmp_filter.c net-packet_mreq.c \
+	net-packet_mreq-Xabbrev.c net-packet_mreq-Xraw.c \
+	net-packet_mreq-Xverbose.c net-sockaddr.c net-tpacket_req.c \
+	net-tpacket_stats.c net-tpacket_stats-success.c net-y-unix.c \
+	net-yy-inet.c net-yy-inet6.c net-yy-netlink.c net-yy-unix.c \
+	netlink_audit.c netlink_crypto.c netlink_generic.c \
+	netlink_inet_diag.c netlink_kobject_uevent.c \
+	netlink_netfilter.c netlink_netlink_diag.c netlink_protocol.c \
+	netlink_route.c netlink_selinux.c netlink_sock_diag.c \
+	netlink_unix_diag.c netlink_xfrm.c newfstatat.c \
+	nfnetlink_acct.c nfnetlink_cthelper.c nfnetlink_ctnetlink.c \
 	nfnetlink_ctnetlink_exp.c nfnetlink_cttimeout.c \
 	nfnetlink_ipset.c nfnetlink_nft_compat.c nfnetlink_nftables.c \
 	nfnetlink_osf.c nfnetlink_queue.c nfnetlink_ulog.c nlattr.c \
@@ -3397,9 +3542,9 @@ SOURCES = $(libtests_a_SOURCES) _newselect.c _newselect-P.c accept.c \
 	old_mmap-P.c old_mmap-Xabbrev.c old_mmap-Xraw.c \
 	old_mmap-Xverbose.c old_mmap-v-none.c oldfstat.c oldlstat.c \
 	oldselect.c oldselect-P.c oldselect-efault.c \
-	oldselect-efault-P.c oldstat.c open.c openat.c \
-	orphaned_process_group.c osf_utimes.c pause.c pc.c \
-	perf_event_open.c perf_event_open_nonverbose.c \
+	oldselect-efault-P.c oldstat.c open.c open_tree.c \
+	open_tree-P.c openat.c orphaned_process_group.c osf_utimes.c \
+	pause.c pc.c perf_event_open.c perf_event_open_nonverbose.c \
 	perf_event_open_unabbrev.c personality.c personality-Xabbrev.c \
 	personality-Xraw.c personality-Xverbose.c pidfd_send_signal.c \
 	pipe.c pipe2.c pkey_alloc.c pkey_free.c pkey_mprotect.c poll.c \
@@ -3437,24 +3582,28 @@ SOURCES = $(libtests_a_SOURCES) _newselect.c _newselect-P.c accept.c \
 	sched_xetscheduler.c sched_yield.c scm_rights.c \
 	seccomp-filter.c seccomp-filter-v.c seccomp-strict.c \
 	seccomp_get_action_avail.c select.c select-P.c semop.c \
-	sendfile.c sendfile64.c set_mempolicy.c set_ptracer_any.c \
-	set_sigblock.c set_sigign.c setdomainname.c setfsgid.c \
-	setfsgid32.c setfsuid.c setfsuid32.c setgid.c setgid32.c \
-	setgroups.c setgroups32.c sethostname.c setns.c setregid.c \
-	setregid32.c setresgid.c setresgid32.c setresuid.c \
-	setresuid32.c setreuid.c setreuid32.c setrlimit.c \
-	setrlimit-Xabbrev.c setrlimit-Xraw.c setrlimit-Xverbose.c \
-	setuid.c setuid32.c shmxt.c shutdown.c sigaction.c \
-	sigaltstack.c siginfo.c signal.c signal_receive.c signalfd4.c \
-	sigpending.c sigprocmask.c sigreturn.c sigsuspend.c sleep.c \
-	so_error.c so_linger.c so_peercred.c so_peercred-Xabbrev.c \
-	so_peercred-Xraw.c so_peercred-Xverbose.c sock_filter-v.c \
-	sock_filter-v-Xabbrev.c sock_filter-v-Xraw.c \
-	sock_filter-v-Xverbose.c sockaddr_xlat-Xabbrev.c \
-	sockaddr_xlat-Xraw.c sockaddr_xlat-Xverbose.c socketcall.c \
-	sockopt-sol_netlink.c sockopt-timestamp.c splice.c \
-	$(stack_fcall_SOURCES) $(stack_fcall_mangled_SOURCES) stat.c \
-	stat64.c statfs.c statfs64.c statx.c swap.c sxetmask.c \
+	sendfile.c sendfile64.c set_mempolicy.c \
+	set_mempolicy-Xabbrev.c set_mempolicy-Xraw.c \
+	set_mempolicy-Xverbose.c set_ptracer_any.c set_sigblock.c \
+	set_sigign.c setdomainname.c setfsgid.c setfsgid32.c \
+	setfsuid.c setfsuid32.c setgid.c setgid32.c setgroups.c \
+	setgroups32.c sethostname.c setns.c setregid.c setregid32.c \
+	setresgid.c setresgid32.c setresuid.c setresuid32.c setreuid.c \
+	setreuid32.c setrlimit.c setrlimit-Xabbrev.c setrlimit-Xraw.c \
+	setrlimit-Xverbose.c setuid.c setuid32.c shmxt.c shutdown.c \
+	sigaction.c sigaltstack.c siginfo.c signal.c signal_receive.c \
+	signalfd4.c sigpending.c sigprocmask.c sigreturn.c \
+	sigsuspend.c sleep.c so_error.c so_linger.c so_peercred.c \
+	so_peercred-Xabbrev.c so_peercred-Xraw.c \
+	so_peercred-Xverbose.c sock_filter-v.c sock_filter-v-Xabbrev.c \
+	sock_filter-v-Xraw.c sock_filter-v-Xverbose.c \
+	sockaddr_xlat-Xabbrev.c sockaddr_xlat-Xraw.c \
+	sockaddr_xlat-Xverbose.c socketcall.c sockopt-sol_netlink.c \
+	sockopt-timestamp.c splice.c $(stack_fcall_SOURCES) \
+	$(stack_fcall_mangled_SOURCES) stat.c stat64.c statfs.c \
+	statfs64.c status-all.c status-failed.c status-none.c \
+	status-none-threads.c status-successful.c status-unfinished.c \
+	status-unfinished-threads.c statx.c swap.c sxetmask.c \
 	symlink.c symlinkat.c sync.c sync_file_range.c \
 	sync_file_range2.c sysinfo.c syslog.c tee.c threads-execve.c \
 	time.c timer_create.c timer_xettime.c timerfd_xettime.c \
@@ -3479,17 +3628,18 @@ DIST_SOURCES = $(libtests_a_SOURCES) _newselect.c _newselect-P.c \
 	bpf-v.c brk.c btrfs.c caps.c caps-abbrev.c check_sigblock.c \
 	check_sigign.c chmod.c chown.c chown32.c chroot.c \
 	clock_adjtime.c clock_nanosleep.c clock_xettime.c \
-	clone_parent.c clone_ptrace.c copy_file_range.c count-f.c \
-	creat.c delay.c delete_module.c dev-yy.c dup.c dup2.c dup3.c \
-	epoll_create.c epoll_create1.c epoll_ctl.c epoll_pwait.c \
-	epoll_wait.c erestartsys.c eventfd.c execve.c execve-v.c \
-	execveat.c execveat-v.c faccessat.c fadvise64.c fadvise64_64.c \
-	fallocate.c fanotify_init.c fanotify_mark.c \
+	clone-flags.c clone_parent.c clone_ptrace.c copy_file_range.c \
+	count-f.c creat.c delay.c delete_module.c dev-yy.c dup.c \
+	dup2.c dup3.c epoll_create.c epoll_create1.c epoll_ctl.c \
+	epoll_pwait.c epoll_wait.c erestartsys.c eventfd.c execve.c \
+	execve-v.c execveat.c execveat-v.c faccessat.c fadvise64.c \
+	fadvise64_64.c fallocate.c fanotify_init.c fanotify_mark.c \
 	fanotify_mark-Xabbrev.c fanotify_mark-Xraw.c \
 	fanotify_mark-Xverbose.c fchdir.c fchmod.c fchmodat.c fchown.c \
 	fchown32.c fchownat.c fcntl.c fcntl64.c fdatasync.c fflush.c \
 	file_handle.c file_ioctl.c filter-unavailable.c finit_module.c \
-	flock.c fork-f.c fstat.c fstat-Xabbrev.c fstat-Xraw.c \
+	flock.c fork-f.c fsconfig.c fsconfig-P.c fsmount.c fsopen.c \
+	fspick.c fspick-P.c fstat.c fstat-Xabbrev.c fstat-Xraw.c \
 	fstat-Xverbose.c fstat64.c fstat64-Xabbrev.c fstat64-Xraw.c \
 	fstat64-Xverbose.c fstatat64.c fstatfs.c fstatfs64.c fsync.c \
 	fsync-y.c ftruncate.c ftruncate64.c futex.c futimesat.c \
@@ -3500,7 +3650,8 @@ DIST_SOURCES = $(libtests_a_SOURCES) _newselect.c _newselect-P.c \
 	getresuid.c getresuid32.c getrlimit.c getrusage.c getsid.c \
 	getsockname.c gettid.c getuid.c getuid32.c getxxid.c \
 	group_req.c inet-cmsg.c init_module.c inject-nf.c inotify.c \
-	inotify_init1.c int_0x80.c io_uring_enter.c \
+	inotify_init.c inotify_init-y.c inotify_init1.c \
+	inotify_init1-y.c int_0x80.c io_uring_enter.c \
 	io_uring_register.c io_uring_setup.c ioctl.c ioctl_block.c \
 	ioctl_dm.c ioctl_dm-v.c ioctl_evdev.c ioctl_evdev-success.c \
 	ioctl_evdev-success-v.c ioctl_evdev-v.c ioctl_inotify.c \
@@ -3523,29 +3674,30 @@ DIST_SOURCES = $(libtests_a_SOURCES) _newselect.c _newselect-P.c \
 	keyctl-Xraw.c keyctl-Xverbose.c kill.c kill_child.c ksysent.c \
 	lchown.c lchown32.c link.c linkat.c list_sigaction_signum.c \
 	llseek.c localtime.c lookup_dcookie.c looping_threads.c \
-	lseek.c lstat.c lstat64.c madvise.c mbind.c membarrier.c \
-	memfd_create.c memfd_create-Xabbrev.c memfd_create-Xraw.c \
-	memfd_create-Xverbose.c migrate_pages.c mincore.c mkdir.c \
-	mkdirat.c mknod.c mknodat.c mlock.c mlock2.c mlockall.c mmap.c \
-	mmap-Xabbrev.c mmap-Xraw.c mmap-Xverbose.c mmap64.c \
-	mmap64-Xabbrev.c mmap64-Xraw.c mmap64-Xverbose.c mmsg.c \
-	mmsg-silent.c mmsg_name.c mmsg_name-v.c modify_ldt.c mount.c \
-	mount-Xabbrev.c mount-Xraw.c mount-Xverbose.c move_pages.c \
-	move_pages-Xabbrev.c move_pages-Xraw.c move_pages-Xverbose.c \
-	mq.c mq_sendrecv.c mq_sendrecv-read.c mq_sendrecv-write.c \
-	msg_control.c msg_control-v.c msg_name.c munlockall.c \
-	nanosleep.c net-accept-connect.c net-icmp_filter.c \
-	net-packet_mreq.c net-packet_mreq-Xabbrev.c \
-	net-packet_mreq-Xraw.c net-packet_mreq-Xverbose.c \
-	net-sockaddr.c net-tpacket_req.c net-tpacket_stats.c \
-	net-tpacket_stats-success.c net-y-unix.c net-yy-inet.c \
-	net-yy-inet6.c net-yy-netlink.c net-yy-unix.c netlink_audit.c \
-	netlink_crypto.c netlink_generic.c netlink_inet_diag.c \
-	netlink_kobject_uevent.c netlink_netfilter.c \
-	netlink_netlink_diag.c netlink_protocol.c netlink_route.c \
-	netlink_selinux.c netlink_sock_diag.c netlink_unix_diag.c \
-	netlink_xfrm.c newfstatat.c nfnetlink_acct.c \
-	nfnetlink_cthelper.c nfnetlink_ctnetlink.c \
+	lseek.c lstat.c lstat64.c madvise.c maybe_switch_current_tcp.c \
+	mbind.c mbind-Xabbrev.c mbind-Xraw.c mbind-Xverbose.c \
+	membarrier.c memfd_create.c memfd_create-Xabbrev.c \
+	memfd_create-Xraw.c memfd_create-Xverbose.c migrate_pages.c \
+	mincore.c mkdir.c mkdirat.c mknod.c mknodat.c mlock.c mlock2.c \
+	mlockall.c mmap.c mmap-Xabbrev.c mmap-Xraw.c mmap-Xverbose.c \
+	mmap64.c mmap64-Xabbrev.c mmap64-Xraw.c mmap64-Xverbose.c \
+	mmsg.c mmsg-silent.c mmsg_name.c mmsg_name-v.c modify_ldt.c \
+	mount.c mount-Xabbrev.c mount-Xraw.c mount-Xverbose.c \
+	move_mount.c move_mount-P.c move_pages.c move_pages-Xabbrev.c \
+	move_pages-Xraw.c move_pages-Xverbose.c mq.c mq_sendrecv.c \
+	mq_sendrecv-read.c mq_sendrecv-write.c msg_control.c \
+	msg_control-v.c msg_name.c munlockall.c nanosleep.c \
+	net-accept-connect.c net-icmp_filter.c net-packet_mreq.c \
+	net-packet_mreq-Xabbrev.c net-packet_mreq-Xraw.c \
+	net-packet_mreq-Xverbose.c net-sockaddr.c net-tpacket_req.c \
+	net-tpacket_stats.c net-tpacket_stats-success.c net-y-unix.c \
+	net-yy-inet.c net-yy-inet6.c net-yy-netlink.c net-yy-unix.c \
+	netlink_audit.c netlink_crypto.c netlink_generic.c \
+	netlink_inet_diag.c netlink_kobject_uevent.c \
+	netlink_netfilter.c netlink_netlink_diag.c netlink_protocol.c \
+	netlink_route.c netlink_selinux.c netlink_sock_diag.c \
+	netlink_unix_diag.c netlink_xfrm.c newfstatat.c \
+	nfnetlink_acct.c nfnetlink_cthelper.c nfnetlink_ctnetlink.c \
 	nfnetlink_ctnetlink_exp.c nfnetlink_cttimeout.c \
 	nfnetlink_ipset.c nfnetlink_nft_compat.c nfnetlink_nftables.c \
 	nfnetlink_osf.c nfnetlink_queue.c nfnetlink_ulog.c nlattr.c \
@@ -3564,9 +3716,9 @@ DIST_SOURCES = $(libtests_a_SOURCES) _newselect.c _newselect-P.c \
 	old_mmap-P.c old_mmap-Xabbrev.c old_mmap-Xraw.c \
 	old_mmap-Xverbose.c old_mmap-v-none.c oldfstat.c oldlstat.c \
 	oldselect.c oldselect-P.c oldselect-efault.c \
-	oldselect-efault-P.c oldstat.c open.c openat.c \
-	orphaned_process_group.c osf_utimes.c pause.c pc.c \
-	perf_event_open.c perf_event_open_nonverbose.c \
+	oldselect-efault-P.c oldstat.c open.c open_tree.c \
+	open_tree-P.c openat.c orphaned_process_group.c osf_utimes.c \
+	pause.c pc.c perf_event_open.c perf_event_open_nonverbose.c \
 	perf_event_open_unabbrev.c personality.c personality-Xabbrev.c \
 	personality-Xraw.c personality-Xverbose.c pidfd_send_signal.c \
 	pipe.c pipe2.c pkey_alloc.c pkey_free.c pkey_mprotect.c poll.c \
@@ -3604,24 +3756,28 @@ DIST_SOURCES = $(libtests_a_SOURCES) _newselect.c _newselect-P.c \
 	sched_xetscheduler.c sched_yield.c scm_rights.c \
 	seccomp-filter.c seccomp-filter-v.c seccomp-strict.c \
 	seccomp_get_action_avail.c select.c select-P.c semop.c \
-	sendfile.c sendfile64.c set_mempolicy.c set_ptracer_any.c \
-	set_sigblock.c set_sigign.c setdomainname.c setfsgid.c \
-	setfsgid32.c setfsuid.c setfsuid32.c setgid.c setgid32.c \
-	setgroups.c setgroups32.c sethostname.c setns.c setregid.c \
-	setregid32.c setresgid.c setresgid32.c setresuid.c \
-	setresuid32.c setreuid.c setreuid32.c setrlimit.c \
-	setrlimit-Xabbrev.c setrlimit-Xraw.c setrlimit-Xverbose.c \
-	setuid.c setuid32.c shmxt.c shutdown.c sigaction.c \
-	sigaltstack.c siginfo.c signal.c signal_receive.c signalfd4.c \
-	sigpending.c sigprocmask.c sigreturn.c sigsuspend.c sleep.c \
-	so_error.c so_linger.c so_peercred.c so_peercred-Xabbrev.c \
-	so_peercred-Xraw.c so_peercred-Xverbose.c sock_filter-v.c \
-	sock_filter-v-Xabbrev.c sock_filter-v-Xraw.c \
-	sock_filter-v-Xverbose.c sockaddr_xlat-Xabbrev.c \
-	sockaddr_xlat-Xraw.c sockaddr_xlat-Xverbose.c socketcall.c \
-	sockopt-sol_netlink.c sockopt-timestamp.c splice.c \
-	$(stack_fcall_SOURCES) $(stack_fcall_mangled_SOURCES) stat.c \
-	stat64.c statfs.c statfs64.c statx.c swap.c sxetmask.c \
+	sendfile.c sendfile64.c set_mempolicy.c \
+	set_mempolicy-Xabbrev.c set_mempolicy-Xraw.c \
+	set_mempolicy-Xverbose.c set_ptracer_any.c set_sigblock.c \
+	set_sigign.c setdomainname.c setfsgid.c setfsgid32.c \
+	setfsuid.c setfsuid32.c setgid.c setgid32.c setgroups.c \
+	setgroups32.c sethostname.c setns.c setregid.c setregid32.c \
+	setresgid.c setresgid32.c setresuid.c setresuid32.c setreuid.c \
+	setreuid32.c setrlimit.c setrlimit-Xabbrev.c setrlimit-Xraw.c \
+	setrlimit-Xverbose.c setuid.c setuid32.c shmxt.c shutdown.c \
+	sigaction.c sigaltstack.c siginfo.c signal.c signal_receive.c \
+	signalfd4.c sigpending.c sigprocmask.c sigreturn.c \
+	sigsuspend.c sleep.c so_error.c so_linger.c so_peercred.c \
+	so_peercred-Xabbrev.c so_peercred-Xraw.c \
+	so_peercred-Xverbose.c sock_filter-v.c sock_filter-v-Xabbrev.c \
+	sock_filter-v-Xraw.c sock_filter-v-Xverbose.c \
+	sockaddr_xlat-Xabbrev.c sockaddr_xlat-Xraw.c \
+	sockaddr_xlat-Xverbose.c socketcall.c sockopt-sol_netlink.c \
+	sockopt-timestamp.c splice.c $(stack_fcall_SOURCES) \
+	$(stack_fcall_mangled_SOURCES) stat.c stat64.c statfs.c \
+	statfs64.c status-all.c status-failed.c status-none.c \
+	status-none-threads.c status-successful.c status-unfinished.c \
+	status-unfinished-threads.c statx.c swap.c sxetmask.c \
 	symlink.c symlinkat.c sync.c sync_file_range.c \
 	sync_file_range2.c sysinfo.c syslog.c tee.c threads-execve.c \
 	time.c timer_create.c timer_xettime.c timerfd_xettime.c \
@@ -4066,6 +4222,7 @@ libtests_a_SOURCES = \
 	signal2name.c \
 	skip_unavailable.c \
 	sprintrc.c \
+	status.c \
 	tail_alloc.c \
 	test_netlink.h \
 	test_nlattr.h \
@@ -4109,6 +4266,7 @@ PURE_EXECUTABLES = \
   clock_adjtime \
   clock_nanosleep \
   clock_xettime \
+  clone-flags \
   copy_file_range \
   creat \
   delete_module \
@@ -4148,6 +4306,12 @@ PURE_EXECUTABLES = \
   file_ioctl \
   finit_module \
   flock \
+  fsconfig \
+  fsconfig-P \
+  fsmount \
+  fsopen \
+  fspick \
+  fspick-P \
   fstat \
   fstat-Xabbrev \
   fstat-Xraw \
@@ -4197,7 +4361,10 @@ PURE_EXECUTABLES = \
   inet-cmsg \
   init_module \
   inotify \
+  inotify_init \
+  inotify_init-y \
   inotify_init1 \
+  inotify_init1-y \
   io_uring_enter \
   io_uring_register \
   io_uring_setup \
@@ -4270,7 +4437,11 @@ PURE_EXECUTABLES = \
   lstat \
   lstat64 \
   madvise \
+  maybe_switch_current_tcp \
   mbind \
+  mbind-Xabbrev \
+  mbind-Xraw \
+  mbind-Xverbose \
   membarrier \
   memfd_create \
   memfd_create-Xabbrev \
@@ -4300,6 +4471,8 @@ PURE_EXECUTABLES = \
   mount-Xabbrev \
   mount-Xraw \
   mount-Xverbose \
+  move_mount \
+  move_mount-P \
   move_pages \
   move_pages-Xabbrev \
   move_pages-Xraw \
@@ -4391,6 +4564,8 @@ PURE_EXECUTABLES = \
   oldselect-efault \
   oldstat \
   open \
+  open_tree \
+  open_tree-P \
   openat \
   osf_utimes \
   pause \
@@ -4491,6 +4666,9 @@ PURE_EXECUTABLES = \
   sendfile \
   sendfile64 \
   set_mempolicy \
+  set_mempolicy-Xabbrev \
+  set_mempolicy-Xraw \
+  set_mempolicy-Xverbose \
   setdomainname \
   setfsgid \
   setfsgid32 \
@@ -4548,6 +4726,11 @@ PURE_EXECUTABLES = \
   stat64 \
   statfs \
   statfs64 \
+  status-all \
+  status-failed \
+  status-none \
+  status-successful \
+  status-unfinished \
   statx \
   swap \
   sxetmask \
@@ -4614,6 +4797,7 @@ ftruncate64_CPPFLAGS = $(AM_CPPFLAGS) -D_FILE_OFFSET_BITS=64
 localtime_LDADD = $(clock_LIBS) $(LDADD)
 looping_threads_LDADD = -lpthread $(LDADD)
 lstat64_CPPFLAGS = $(AM_CPPFLAGS) -D_FILE_OFFSET_BITS=64
+maybe_switch_current_tcp_LDADD = -lpthread $(LDADD)
 mmap64_CPPFLAGS = $(AM_CPPFLAGS) -D_FILE_OFFSET_BITS=64
 mmap64_Xabbrev_CPPFLAGS = $(AM_CPPFLAGS) -D_FILE_OFFSET_BITS=64
 mmap64_Xraw_CPPFLAGS = $(AM_CPPFLAGS) -D_FILE_OFFSET_BITS=64
@@ -4627,6 +4811,8 @@ preadv_pwritev_CPPFLAGS = $(AM_CPPFLAGS) -D_FILE_OFFSET_BITS=64
 pwritev_CPPFLAGS = $(AM_CPPFLAGS) -D_FILE_OFFSET_BITS=64
 stat64_CPPFLAGS = $(AM_CPPFLAGS) -D_FILE_OFFSET_BITS=64
 statfs_CPPFLAGS = $(AM_CPPFLAGS) -D_FILE_OFFSET_BITS=64
+status_none_threads_LDADD = -lpthread $(LDADD)
+status_unfinished_threads_LDADD = -lpthread $(LDADD)
 threads_execve_LDADD = -lpthread $(clock_LIBS) $(LDADD)
 times_LDADD = $(clock_LIBS) $(LDADD)
 truncate64_CPPFLAGS = $(AM_CPPFLAGS) -D_FILE_OFFSET_BITS=64
@@ -4664,7 +4850,9 @@ GEN_TESTS = _newselect.gen.test _newselect-P.gen.test accept.gen.test \
 	fchown32.gen.test fchownat.gen.test fcntl.gen.test \
 	fcntl64.gen.test fdatasync.gen.test file_handle.gen.test \
 	file_ioctl.gen.test finit_module.gen.test flock.gen.test \
-	fork-f.gen.test fstat.gen.test fstat-Xabbrev.gen.test \
+	fork-f.gen.test fsconfig.gen.test fsconfig-P.gen.test \
+	fsmount.gen.test fsopen.gen.test fspick.gen.test \
+	fspick-P.gen.test fstat.gen.test fstat-Xabbrev.gen.test \
 	fstat-Xraw.gen.test fstat-Xverbose.gen.test fstat64.gen.test \
 	fstat64-Xabbrev.gen.test fstat64-Xraw.gen.test \
 	fstat64-Xverbose.gen.test fstatat64.gen.test fstatfs.gen.test \
@@ -4681,7 +4869,8 @@ GEN_TESTS = _newselect.gen.test _newselect-P.gen.test accept.gen.test \
 	getsid.gen.test getsockname.gen.test gettid.gen.test \
 	getuid32.gen.test getxxid.gen.test group_req.gen.test \
 	inet-cmsg.gen.test init_module.gen.test inotify.gen.test \
-	inotify_init1.gen.test io_uring_enter.gen.test \
+	inotify_init.gen.test inotify_init1.gen.test \
+	inotify_init1-y.gen.test io_uring_enter.gen.test \
 	io_uring_register.gen.test io_uring_setup.gen.test \
 	ioctl_block.gen.test ioctl_dm.gen.test ioctl_dm-v.gen.test \
 	ioctl_evdev.gen.test ioctl_evdev-v.gen.test \
@@ -4711,26 +4900,29 @@ GEN_TESTS = _newselect.gen.test _newselect-P.gen.test accept.gen.test \
 	keyctl-Xraw.gen.test keyctl-Xverbose.gen.test kill.gen.test \
 	lchown.gen.test lchown32.gen.test link.gen.test \
 	linkat.gen.test lookup_dcookie.gen.test lstat.gen.test \
-	lstat64.gen.test madvise.gen.test mbind.gen.test \
-	membarrier.gen.test memfd_create.gen.test \
-	memfd_create-Xabbrev.gen.test memfd_create-Xraw.gen.test \
-	memfd_create-Xverbose.gen.test migrate_pages.gen.test \
-	mincore.gen.test mkdir.gen.test mkdirat.gen.test \
-	mknod.gen.test mknodat.gen.test mlock.gen.test mlock2.gen.test \
-	mlockall.gen.test mmap-Xabbrev.gen.test mmap-Xraw.gen.test \
+	lstat64.gen.test madvise.gen.test \
+	maybe_switch_current_tcp.gen.test mbind.gen.test \
+	mbind-Xabbrev.gen.test mbind-Xraw.gen.test \
+	mbind-Xverbose.gen.test membarrier.gen.test \
+	memfd_create.gen.test memfd_create-Xabbrev.gen.test \
+	memfd_create-Xraw.gen.test memfd_create-Xverbose.gen.test \
+	migrate_pages.gen.test mincore.gen.test mkdir.gen.test \
+	mkdirat.gen.test mknod.gen.test mknodat.gen.test \
+	mlock.gen.test mlock2.gen.test mlockall.gen.test \
+	mmap-Xabbrev.gen.test mmap-Xraw.gen.test \
 	mmap-Xverbose.gen.test mmap64.gen.test mmap64-Xabbrev.gen.test \
 	mmap64-Xraw.gen.test mmap64-Xverbose.gen.test mmsg.gen.test \
 	mmsg-silent.gen.test mmsg_name.gen.test mmsg_name-v.gen.test \
 	modify_ldt.gen.test mount.gen.test mount-Xabbrev.gen.test \
 	mount-Xraw.gen.test mount-Xverbose.gen.test \
-	move_pages.gen.test move_pages-Xabbrev.gen.test \
-	move_pages-Xraw.gen.test move_pages-Xverbose.gen.test \
-	mq.gen.test mq_sendrecv.gen.test mq_sendrecv-read.gen.test \
-	mq_sendrecv-write.gen.test msg_control.gen.test \
-	msg_control-v.gen.test msg_name.gen.test munlockall.gen.test \
-	nanosleep.gen.test net-icmp_filter.gen.test \
-	net-packet_mreq.gen.test net-packet_mreq-Xabbrev.gen.test \
-	net-packet_mreq-Xraw.gen.test \
+	move_mount.gen.test move_mount-P.gen.test move_pages.gen.test \
+	move_pages-Xabbrev.gen.test move_pages-Xraw.gen.test \
+	move_pages-Xverbose.gen.test mq.gen.test mq_sendrecv.gen.test \
+	mq_sendrecv-read.gen.test mq_sendrecv-write.gen.test \
+	msg_control.gen.test msg_control-v.gen.test msg_name.gen.test \
+	munlockall.gen.test nanosleep.gen.test \
+	net-icmp_filter.gen.test net-packet_mreq.gen.test \
+	net-packet_mreq-Xabbrev.gen.test net-packet_mreq-Xraw.gen.test \
 	net-packet_mreq-Xverbose.gen.test net-sockaddr.gen.test \
 	net-tpacket_req.gen.test net-tpacket_stats.gen.test \
 	net-yy-inet6.gen.test netlink_audit.gen.test \
@@ -4767,7 +4959,8 @@ GEN_TESTS = _newselect.gen.test _newselect-P.gen.test accept.gen.test \
 	old_mmap-v-none.gen.test oldfstat.gen.test oldlstat.gen.test \
 	oldselect.gen.test oldselect-P.gen.test \
 	oldselect-efault.gen.test oldselect-efault-P.gen.test \
-	oldstat.gen.test open.gen.test openat.gen.test \
+	oldstat.gen.test open.gen.test open_tree.gen.test \
+	open_tree-P.gen.test openat.gen.test \
 	orphaned_process_group.gen.test osf_utimes.gen.test \
 	pause.gen.test perf_event_open.gen.test \
 	perf_event_open_nonverbose.gen.test \
@@ -4812,37 +5005,40 @@ GEN_TESTS = _newselect.gen.test _newselect-P.gen.test accept.gen.test \
 	seccomp-filter-v.gen.test seccomp_get_action_avail.gen.test \
 	select.gen.test select-P.gen.test semop.gen.test \
 	sendfile.gen.test sendfile64.gen.test set_mempolicy.gen.test \
-	setdomainname.gen.test setfsgid.gen.test setfsgid32.gen.test \
-	setfsuid.gen.test setfsuid32.gen.test setgid.gen.test \
-	setgid32.gen.test setgroups.gen.test setgroups32.gen.test \
-	sethostname.gen.test setns.gen.test setregid.gen.test \
-	setregid32.gen.test setresgid.gen.test setresgid32.gen.test \
-	setresuid.gen.test setresuid32.gen.test setreuid.gen.test \
-	setreuid32.gen.test setrlimit.gen.test \
-	setrlimit-Xabbrev.gen.test setrlimit-Xraw.gen.test \
-	setrlimit-Xverbose.gen.test setuid.gen.test setuid32.gen.test \
-	shmxt.gen.test shutdown.gen.test sigaction.gen.test \
-	siginfo.gen.test signal.gen.test signal_receive.gen.test \
-	signalfd4.gen.test sigpending.gen.test sigprocmask.gen.test \
-	sigreturn.gen.test sigsuspend.gen.test so_error.gen.test \
-	so_linger.gen.test so_peercred.gen.test \
-	so_peercred-Xabbrev.gen.test so_peercred-Xraw.gen.test \
-	so_peercred-Xverbose.gen.test sock_filter-v.gen.test \
-	sock_filter-v-Xabbrev.gen.test sock_filter-v-Xraw.gen.test \
-	sock_filter-v-Xverbose.gen.test sockaddr_xlat-Xabbrev.gen.test \
-	sockaddr_xlat-Xraw.gen.test sockaddr_xlat-Xverbose.gen.test \
-	socketcall.gen.test sockopt-sol_netlink.gen.test \
-	sockopt-timestamp.gen.test splice.gen.test stat.gen.test \
-	stat64.gen.test statfs.gen.test statfs64.gen.test \
-	statx.gen.test swap.gen.test sxetmask.gen.test \
-	symlink.gen.test symlinkat.gen.test sync.gen.test \
-	sync_file_range.gen.test sync_file_range2.gen.test \
-	sysinfo.gen.test syslog.gen.test tee.gen.test time.gen.test \
-	timer_create.gen.test timer_xettime.gen.test \
-	timerfd_xettime.gen.test times.gen.test times-fail.gen.test \
-	trace_fstat.gen.test trace_fstatfs.gen.test \
-	trace_lstat.gen.test trace_personality_32.gen.test \
-	trace_personality_64.gen.test \
+	set_mempolicy-Xabbrev.gen.test set_mempolicy-Xraw.gen.test \
+	set_mempolicy-Xverbose.gen.test setdomainname.gen.test \
+	setfsgid.gen.test setfsgid32.gen.test setfsuid.gen.test \
+	setfsuid32.gen.test setgid.gen.test setgid32.gen.test \
+	setgroups.gen.test setgroups32.gen.test sethostname.gen.test \
+	setns.gen.test setregid.gen.test setregid32.gen.test \
+	setresgid.gen.test setresgid32.gen.test setresuid.gen.test \
+	setresuid32.gen.test setreuid.gen.test setreuid32.gen.test \
+	setrlimit.gen.test setrlimit-Xabbrev.gen.test \
+	setrlimit-Xraw.gen.test setrlimit-Xverbose.gen.test \
+	setuid.gen.test setuid32.gen.test shmxt.gen.test \
+	shutdown.gen.test sigaction.gen.test siginfo.gen.test \
+	signal.gen.test signal_receive.gen.test signalfd4.gen.test \
+	sigpending.gen.test sigprocmask.gen.test sigreturn.gen.test \
+	sigsuspend.gen.test so_error.gen.test so_linger.gen.test \
+	so_peercred.gen.test so_peercred-Xabbrev.gen.test \
+	so_peercred-Xraw.gen.test so_peercred-Xverbose.gen.test \
+	sock_filter-v.gen.test sock_filter-v-Xabbrev.gen.test \
+	sock_filter-v-Xraw.gen.test sock_filter-v-Xverbose.gen.test \
+	sockaddr_xlat-Xabbrev.gen.test sockaddr_xlat-Xraw.gen.test \
+	sockaddr_xlat-Xverbose.gen.test socketcall.gen.test \
+	sockopt-sol_netlink.gen.test sockopt-timestamp.gen.test \
+	splice.gen.test stat.gen.test stat64.gen.test statfs.gen.test \
+	statfs64.gen.test status-all.gen.test status-failed.gen.test \
+	status-none.gen.test status-successful.gen.test \
+	status-unfinished.gen.test statx.gen.test swap.gen.test \
+	sxetmask.gen.test symlink.gen.test symlinkat.gen.test \
+	sync.gen.test sync_file_range.gen.test \
+	sync_file_range2.gen.test sysinfo.gen.test syslog.gen.test \
+	tee.gen.test time.gen.test timer_create.gen.test \
+	timer_xettime.gen.test timerfd_xettime.gen.test times.gen.test \
+	times-fail.gen.test trace_fstat.gen.test \
+	trace_fstatfs.gen.test trace_lstat.gen.test \
+	trace_personality_32.gen.test trace_personality_64.gen.test \
 	trace_personality_regex_32.gen.test \
 	trace_personality_regex_64.gen.test \
 	trace_personality_regex_x32.gen.test \
@@ -4877,6 +5073,7 @@ DECODER_TESTS = \
 	btrfs-wX.test \
 	caps-abbrev.test \
 	caps.test \
+	clone-flags.test \
 	eventfd.test \
 	execve-v.test \
 	execve.test \
@@ -4884,6 +5081,7 @@ DECODER_TESTS = \
 	futex.test \
 	getuid.test \
 	int_0x80.test \
+	inotify_init-y.test \
 	ioctl.test \
 	ioctl_evdev-success-v.test \
 	ioctl_evdev-success.test \
@@ -4986,6 +5184,9 @@ MISC_TESTS = \
 	restart_syscall.test \
 	sigblock.test \
 	sigign.test \
+	status-detached.test \
+	status-none-threads.test \
+	status-unfinished-threads.test \
 	strace-C.test \
 	strace-E.test \
 	strace-S.test \
@@ -5068,6 +5269,7 @@ EXTRA_DIST = \
 	sockaddr_xlat.c \
 	sockname.c \
 	stack-fcall.h \
+	status-detached.expected \
 	strace-C.expected \
 	strace-E.expected \
 	strace-T.expected \
@@ -5317,6 +5519,10 @@ clock_xettime$(EXEEXT): $(clock_xettime_OBJECTS) $(clock_xettime_DEPENDENCIES) $
 	@rm -f clock_xettime$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(clock_xettime_OBJECTS) $(clock_xettime_LDADD) $(LIBS)
 
+clone-flags$(EXEEXT): $(clone_flags_OBJECTS) $(clone_flags_DEPENDENCIES) $(EXTRA_clone_flags_DEPENDENCIES) 
+	@rm -f clone-flags$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(clone_flags_OBJECTS) $(clone_flags_LDADD) $(LIBS)
+
 clone_parent$(EXEEXT): $(clone_parent_OBJECTS) $(clone_parent_DEPENDENCIES) $(EXTRA_clone_parent_DEPENDENCIES) 
 	@rm -f clone_parent$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(clone_parent_OBJECTS) $(clone_parent_LDADD) $(LIBS)
@@ -5504,6 +5710,30 @@ flock$(EXEEXT): $(flock_OBJECTS) $(flock_DEPENDENCIES) $(EXTRA_flock_DEPENDENCIE
 fork-f$(EXEEXT): $(fork_f_OBJECTS) $(fork_f_DEPENDENCIES) $(EXTRA_fork_f_DEPENDENCIES) 
 	@rm -f fork-f$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(fork_f_OBJECTS) $(fork_f_LDADD) $(LIBS)
+
+fsconfig$(EXEEXT): $(fsconfig_OBJECTS) $(fsconfig_DEPENDENCIES) $(EXTRA_fsconfig_DEPENDENCIES) 
+	@rm -f fsconfig$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(fsconfig_OBJECTS) $(fsconfig_LDADD) $(LIBS)
+
+fsconfig-P$(EXEEXT): $(fsconfig_P_OBJECTS) $(fsconfig_P_DEPENDENCIES) $(EXTRA_fsconfig_P_DEPENDENCIES) 
+	@rm -f fsconfig-P$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(fsconfig_P_OBJECTS) $(fsconfig_P_LDADD) $(LIBS)
+
+fsmount$(EXEEXT): $(fsmount_OBJECTS) $(fsmount_DEPENDENCIES) $(EXTRA_fsmount_DEPENDENCIES) 
+	@rm -f fsmount$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(fsmount_OBJECTS) $(fsmount_LDADD) $(LIBS)
+
+fsopen$(EXEEXT): $(fsopen_OBJECTS) $(fsopen_DEPENDENCIES) $(EXTRA_fsopen_DEPENDENCIES) 
+	@rm -f fsopen$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(fsopen_OBJECTS) $(fsopen_LDADD) $(LIBS)
+
+fspick$(EXEEXT): $(fspick_OBJECTS) $(fspick_DEPENDENCIES) $(EXTRA_fspick_DEPENDENCIES) 
+	@rm -f fspick$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(fspick_OBJECTS) $(fspick_LDADD) $(LIBS)
+
+fspick-P$(EXEEXT): $(fspick_P_OBJECTS) $(fspick_P_DEPENDENCIES) $(EXTRA_fspick_P_DEPENDENCIES) 
+	@rm -f fspick-P$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(fspick_P_OBJECTS) $(fspick_P_LDADD) $(LIBS)
 
 fstat$(EXEEXT): $(fstat_OBJECTS) $(fstat_DEPENDENCIES) $(EXTRA_fstat_DEPENDENCIES) 
 	@rm -f fstat$(EXEEXT)
@@ -5713,9 +5943,21 @@ inotify$(EXEEXT): $(inotify_OBJECTS) $(inotify_DEPENDENCIES) $(EXTRA_inotify_DEP
 	@rm -f inotify$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(inotify_OBJECTS) $(inotify_LDADD) $(LIBS)
 
+inotify_init$(EXEEXT): $(inotify_init_OBJECTS) $(inotify_init_DEPENDENCIES) $(EXTRA_inotify_init_DEPENDENCIES) 
+	@rm -f inotify_init$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(inotify_init_OBJECTS) $(inotify_init_LDADD) $(LIBS)
+
+inotify_init-y$(EXEEXT): $(inotify_init_y_OBJECTS) $(inotify_init_y_DEPENDENCIES) $(EXTRA_inotify_init_y_DEPENDENCIES) 
+	@rm -f inotify_init-y$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(inotify_init_y_OBJECTS) $(inotify_init_y_LDADD) $(LIBS)
+
 inotify_init1$(EXEEXT): $(inotify_init1_OBJECTS) $(inotify_init1_DEPENDENCIES) $(EXTRA_inotify_init1_DEPENDENCIES) 
 	@rm -f inotify_init1$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(inotify_init1_OBJECTS) $(inotify_init1_LDADD) $(LIBS)
+
+inotify_init1-y$(EXEEXT): $(inotify_init1_y_OBJECTS) $(inotify_init1_y_DEPENDENCIES) $(EXTRA_inotify_init1_y_DEPENDENCIES) 
+	@rm -f inotify_init1-y$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(inotify_init1_y_OBJECTS) $(inotify_init1_y_LDADD) $(LIBS)
 
 int_0x80$(EXEEXT): $(int_0x80_OBJECTS) $(int_0x80_DEPENDENCIES) $(EXTRA_int_0x80_DEPENDENCIES) 
 	@rm -f int_0x80$(EXEEXT)
@@ -6069,9 +6311,25 @@ madvise$(EXEEXT): $(madvise_OBJECTS) $(madvise_DEPENDENCIES) $(EXTRA_madvise_DEP
 	@rm -f madvise$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(madvise_OBJECTS) $(madvise_LDADD) $(LIBS)
 
+maybe_switch_current_tcp$(EXEEXT): $(maybe_switch_current_tcp_OBJECTS) $(maybe_switch_current_tcp_DEPENDENCIES) $(EXTRA_maybe_switch_current_tcp_DEPENDENCIES) 
+	@rm -f maybe_switch_current_tcp$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(maybe_switch_current_tcp_OBJECTS) $(maybe_switch_current_tcp_LDADD) $(LIBS)
+
 mbind$(EXEEXT): $(mbind_OBJECTS) $(mbind_DEPENDENCIES) $(EXTRA_mbind_DEPENDENCIES) 
 	@rm -f mbind$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(mbind_OBJECTS) $(mbind_LDADD) $(LIBS)
+
+mbind-Xabbrev$(EXEEXT): $(mbind_Xabbrev_OBJECTS) $(mbind_Xabbrev_DEPENDENCIES) $(EXTRA_mbind_Xabbrev_DEPENDENCIES) 
+	@rm -f mbind-Xabbrev$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(mbind_Xabbrev_OBJECTS) $(mbind_Xabbrev_LDADD) $(LIBS)
+
+mbind-Xraw$(EXEEXT): $(mbind_Xraw_OBJECTS) $(mbind_Xraw_DEPENDENCIES) $(EXTRA_mbind_Xraw_DEPENDENCIES) 
+	@rm -f mbind-Xraw$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(mbind_Xraw_OBJECTS) $(mbind_Xraw_LDADD) $(LIBS)
+
+mbind-Xverbose$(EXEEXT): $(mbind_Xverbose_OBJECTS) $(mbind_Xverbose_DEPENDENCIES) $(EXTRA_mbind_Xverbose_DEPENDENCIES) 
+	@rm -f mbind-Xverbose$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(mbind_Xverbose_OBJECTS) $(mbind_Xverbose_LDADD) $(LIBS)
 
 membarrier$(EXEEXT): $(membarrier_OBJECTS) $(membarrier_DEPENDENCIES) $(EXTRA_membarrier_DEPENDENCIES) 
 	@rm -f membarrier$(EXEEXT)
@@ -6196,6 +6454,14 @@ mount-Xraw$(EXEEXT): $(mount_Xraw_OBJECTS) $(mount_Xraw_DEPENDENCIES) $(EXTRA_mo
 mount-Xverbose$(EXEEXT): $(mount_Xverbose_OBJECTS) $(mount_Xverbose_DEPENDENCIES) $(EXTRA_mount_Xverbose_DEPENDENCIES) 
 	@rm -f mount-Xverbose$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(mount_Xverbose_OBJECTS) $(mount_Xverbose_LDADD) $(LIBS)
+
+move_mount$(EXEEXT): $(move_mount_OBJECTS) $(move_mount_DEPENDENCIES) $(EXTRA_move_mount_DEPENDENCIES) 
+	@rm -f move_mount$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(move_mount_OBJECTS) $(move_mount_LDADD) $(LIBS)
+
+move_mount-P$(EXEEXT): $(move_mount_P_OBJECTS) $(move_mount_P_DEPENDENCIES) $(EXTRA_move_mount_P_DEPENDENCIES) 
+	@rm -f move_mount-P$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(move_mount_P_OBJECTS) $(move_mount_P_LDADD) $(LIBS)
 
 move_pages$(EXEEXT): $(move_pages_OBJECTS) $(move_pages_DEPENDENCIES) $(EXTRA_move_pages_DEPENDENCIES) 
 	@rm -f move_pages$(EXEEXT)
@@ -6600,6 +6866,14 @@ oldstat$(EXEEXT): $(oldstat_OBJECTS) $(oldstat_DEPENDENCIES) $(EXTRA_oldstat_DEP
 open$(EXEEXT): $(open_OBJECTS) $(open_DEPENDENCIES) $(EXTRA_open_DEPENDENCIES) 
 	@rm -f open$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(open_OBJECTS) $(open_LDADD) $(LIBS)
+
+open_tree$(EXEEXT): $(open_tree_OBJECTS) $(open_tree_DEPENDENCIES) $(EXTRA_open_tree_DEPENDENCIES) 
+	@rm -f open_tree$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(open_tree_OBJECTS) $(open_tree_LDADD) $(LIBS)
+
+open_tree-P$(EXEEXT): $(open_tree_P_OBJECTS) $(open_tree_P_DEPENDENCIES) $(EXTRA_open_tree_P_DEPENDENCIES) 
+	@rm -f open_tree-P$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(open_tree_P_OBJECTS) $(open_tree_P_LDADD) $(LIBS)
 
 openat$(EXEEXT): $(openat_OBJECTS) $(openat_DEPENDENCIES) $(EXTRA_openat_DEPENDENCIES) 
 	@rm -f openat$(EXEEXT)
@@ -7109,6 +7383,18 @@ set_mempolicy$(EXEEXT): $(set_mempolicy_OBJECTS) $(set_mempolicy_DEPENDENCIES) $
 	@rm -f set_mempolicy$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(set_mempolicy_OBJECTS) $(set_mempolicy_LDADD) $(LIBS)
 
+set_mempolicy-Xabbrev$(EXEEXT): $(set_mempolicy_Xabbrev_OBJECTS) $(set_mempolicy_Xabbrev_DEPENDENCIES) $(EXTRA_set_mempolicy_Xabbrev_DEPENDENCIES) 
+	@rm -f set_mempolicy-Xabbrev$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(set_mempolicy_Xabbrev_OBJECTS) $(set_mempolicy_Xabbrev_LDADD) $(LIBS)
+
+set_mempolicy-Xraw$(EXEEXT): $(set_mempolicy_Xraw_OBJECTS) $(set_mempolicy_Xraw_DEPENDENCIES) $(EXTRA_set_mempolicy_Xraw_DEPENDENCIES) 
+	@rm -f set_mempolicy-Xraw$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(set_mempolicy_Xraw_OBJECTS) $(set_mempolicy_Xraw_LDADD) $(LIBS)
+
+set_mempolicy-Xverbose$(EXEEXT): $(set_mempolicy_Xverbose_OBJECTS) $(set_mempolicy_Xverbose_DEPENDENCIES) $(EXTRA_set_mempolicy_Xverbose_DEPENDENCIES) 
+	@rm -f set_mempolicy-Xverbose$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(set_mempolicy_Xverbose_OBJECTS) $(set_mempolicy_Xverbose_LDADD) $(LIBS)
+
 set_ptracer_any$(EXEEXT): $(set_ptracer_any_OBJECTS) $(set_ptracer_any_DEPENDENCIES) $(EXTRA_set_ptracer_any_DEPENDENCIES) 
 	@rm -f set_ptracer_any$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(set_ptracer_any_OBJECTS) $(set_ptracer_any_LDADD) $(LIBS)
@@ -7364,6 +7650,34 @@ statfs$(EXEEXT): $(statfs_OBJECTS) $(statfs_DEPENDENCIES) $(EXTRA_statfs_DEPENDE
 statfs64$(EXEEXT): $(statfs64_OBJECTS) $(statfs64_DEPENDENCIES) $(EXTRA_statfs64_DEPENDENCIES) 
 	@rm -f statfs64$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(statfs64_OBJECTS) $(statfs64_LDADD) $(LIBS)
+
+status-all$(EXEEXT): $(status_all_OBJECTS) $(status_all_DEPENDENCIES) $(EXTRA_status_all_DEPENDENCIES) 
+	@rm -f status-all$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(status_all_OBJECTS) $(status_all_LDADD) $(LIBS)
+
+status-failed$(EXEEXT): $(status_failed_OBJECTS) $(status_failed_DEPENDENCIES) $(EXTRA_status_failed_DEPENDENCIES) 
+	@rm -f status-failed$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(status_failed_OBJECTS) $(status_failed_LDADD) $(LIBS)
+
+status-none$(EXEEXT): $(status_none_OBJECTS) $(status_none_DEPENDENCIES) $(EXTRA_status_none_DEPENDENCIES) 
+	@rm -f status-none$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(status_none_OBJECTS) $(status_none_LDADD) $(LIBS)
+
+status-none-threads$(EXEEXT): $(status_none_threads_OBJECTS) $(status_none_threads_DEPENDENCIES) $(EXTRA_status_none_threads_DEPENDENCIES) 
+	@rm -f status-none-threads$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(status_none_threads_OBJECTS) $(status_none_threads_LDADD) $(LIBS)
+
+status-successful$(EXEEXT): $(status_successful_OBJECTS) $(status_successful_DEPENDENCIES) $(EXTRA_status_successful_DEPENDENCIES) 
+	@rm -f status-successful$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(status_successful_OBJECTS) $(status_successful_LDADD) $(LIBS)
+
+status-unfinished$(EXEEXT): $(status_unfinished_OBJECTS) $(status_unfinished_DEPENDENCIES) $(EXTRA_status_unfinished_DEPENDENCIES) 
+	@rm -f status-unfinished$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(status_unfinished_OBJECTS) $(status_unfinished_LDADD) $(LIBS)
+
+status-unfinished-threads$(EXEEXT): $(status_unfinished_threads_OBJECTS) $(status_unfinished_threads_DEPENDENCIES) $(EXTRA_status_unfinished_threads_DEPENDENCIES) 
+	@rm -f status-unfinished-threads$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(status_unfinished_threads_OBJECTS) $(status_unfinished_threads_LDADD) $(LIBS)
 
 statx$(EXEEXT): $(statx_OBJECTS) $(statx_DEPENDENCIES) $(EXTRA_statx_DEPENDENCIES) 
 	@rm -f statx$(EXEEXT)
@@ -7657,6 +7971,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/clock_adjtime.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/clock_nanosleep.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/clock_xettime.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/clone-flags.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/clone_parent.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/clone_ptrace.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/copy_file_range.Po@am__quote@ # am--include-marker
@@ -7704,6 +8019,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/finit_module.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/flock.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fork-f.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fsconfig-P.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fsconfig.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fsmount.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fsopen.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fspick-P.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fspick.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fstat-Xabbrev.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fstat-Xraw.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fstat-Xverbose.Po@am__quote@ # am--include-marker
@@ -7756,6 +8077,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/init_module.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/inject-nf.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/inotify.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/inotify_init-y.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/inotify_init.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/inotify_init1-y.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/inotify_init1.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/int_0x80.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/io_uring_enter.Po@am__quote@ # am--include-marker
@@ -7855,6 +8179,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libtests_a-signal2name.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libtests_a-skip_unavailable.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libtests_a-sprintrc.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libtests_a-status.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libtests_a-tail_alloc.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libtests_a-test_printpath.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libtests_a-test_printstrn.Po@am__quote@ # am--include-marker
@@ -7871,6 +8196,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lstat.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lstat64-lstat64.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/madvise.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/maybe_switch_current_tcp.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mbind-Xabbrev.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mbind-Xraw.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mbind-Xverbose.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mbind.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/membarrier.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/memfd_create-Xabbrev.Po@am__quote@ # am--include-marker
@@ -7903,6 +8232,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mount-Xraw.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mount-Xverbose.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mount.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/move_mount-P.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/move_mount.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/move_pages-Xabbrev.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/move_pages-Xraw.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/move_pages-Xverbose.Po@am__quote@ # am--include-marker
@@ -8004,6 +8335,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/oldselect.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/oldstat.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/open.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/open_tree-P.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/open_tree.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/openat.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/orphaned_process_group.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/osf_utimes.Po@am__quote@ # am--include-marker
@@ -8130,6 +8463,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/semop.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sendfile.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sendfile64.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/set_mempolicy-Xabbrev.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/set_mempolicy-Xraw.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/set_mempolicy-Xverbose.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/set_mempolicy.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/set_ptracer_any.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/set_sigblock.Po@am__quote@ # am--include-marker
@@ -8203,6 +8539,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stat64-stat64.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/statfs-statfs.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/statfs64.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/status-all.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/status-failed.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/status-none-threads.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/status-none.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/status-successful.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/status-unfinished-threads.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/status-unfinished.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/statx.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/swap.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sxetmask.Po@am__quote@ # am--include-marker
@@ -8579,6 +8922,20 @@ libtests_a-sprintrc.obj: sprintrc.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='sprintrc.c' object='libtests_a-sprintrc.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libtests_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libtests_a-sprintrc.obj `if test -f 'sprintrc.c'; then $(CYGPATH_W) 'sprintrc.c'; else $(CYGPATH_W) '$(srcdir)/sprintrc.c'; fi`
+
+libtests_a-status.o: status.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libtests_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libtests_a-status.o -MD -MP -MF $(DEPDIR)/libtests_a-status.Tpo -c -o libtests_a-status.o `test -f 'status.c' || echo '$(srcdir)/'`status.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libtests_a-status.Tpo $(DEPDIR)/libtests_a-status.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='status.c' object='libtests_a-status.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libtests_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libtests_a-status.o `test -f 'status.c' || echo '$(srcdir)/'`status.c
+
+libtests_a-status.obj: status.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libtests_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libtests_a-status.obj -MD -MP -MF $(DEPDIR)/libtests_a-status.Tpo -c -o libtests_a-status.obj `if test -f 'status.c'; then $(CYGPATH_W) 'status.c'; else $(CYGPATH_W) '$(srcdir)/status.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libtests_a-status.Tpo $(DEPDIR)/libtests_a-status.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='status.c' object='libtests_a-status.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libtests_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libtests_a-status.obj `if test -f 'status.c'; then $(CYGPATH_W) 'status.c'; else $(CYGPATH_W) '$(srcdir)/status.c'; fi`
 
 libtests_a-tail_alloc.o: tail_alloc.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libtests_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libtests_a-tail_alloc.o -MD -MP -MF $(DEPDIR)/libtests_a-tail_alloc.Tpo -c -o libtests_a-tail_alloc.o `test -f 'tail_alloc.c' || echo '$(srcdir)/'`tail_alloc.c
@@ -9241,6 +9598,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/clock_adjtime.Po
 	-rm -f ./$(DEPDIR)/clock_nanosleep.Po
 	-rm -f ./$(DEPDIR)/clock_xettime.Po
+	-rm -f ./$(DEPDIR)/clone-flags.Po
 	-rm -f ./$(DEPDIR)/clone_parent.Po
 	-rm -f ./$(DEPDIR)/clone_ptrace.Po
 	-rm -f ./$(DEPDIR)/copy_file_range.Po
@@ -9288,6 +9646,12 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/finit_module.Po
 	-rm -f ./$(DEPDIR)/flock.Po
 	-rm -f ./$(DEPDIR)/fork-f.Po
+	-rm -f ./$(DEPDIR)/fsconfig-P.Po
+	-rm -f ./$(DEPDIR)/fsconfig.Po
+	-rm -f ./$(DEPDIR)/fsmount.Po
+	-rm -f ./$(DEPDIR)/fsopen.Po
+	-rm -f ./$(DEPDIR)/fspick-P.Po
+	-rm -f ./$(DEPDIR)/fspick.Po
 	-rm -f ./$(DEPDIR)/fstat-Xabbrev.Po
 	-rm -f ./$(DEPDIR)/fstat-Xraw.Po
 	-rm -f ./$(DEPDIR)/fstat-Xverbose.Po
@@ -9340,6 +9704,9 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/init_module.Po
 	-rm -f ./$(DEPDIR)/inject-nf.Po
 	-rm -f ./$(DEPDIR)/inotify.Po
+	-rm -f ./$(DEPDIR)/inotify_init-y.Po
+	-rm -f ./$(DEPDIR)/inotify_init.Po
+	-rm -f ./$(DEPDIR)/inotify_init1-y.Po
 	-rm -f ./$(DEPDIR)/inotify_init1.Po
 	-rm -f ./$(DEPDIR)/int_0x80.Po
 	-rm -f ./$(DEPDIR)/io_uring_enter.Po
@@ -9439,6 +9806,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/libtests_a-signal2name.Po
 	-rm -f ./$(DEPDIR)/libtests_a-skip_unavailable.Po
 	-rm -f ./$(DEPDIR)/libtests_a-sprintrc.Po
+	-rm -f ./$(DEPDIR)/libtests_a-status.Po
 	-rm -f ./$(DEPDIR)/libtests_a-tail_alloc.Po
 	-rm -f ./$(DEPDIR)/libtests_a-test_printpath.Po
 	-rm -f ./$(DEPDIR)/libtests_a-test_printstrn.Po
@@ -9455,6 +9823,10 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/lstat.Po
 	-rm -f ./$(DEPDIR)/lstat64-lstat64.Po
 	-rm -f ./$(DEPDIR)/madvise.Po
+	-rm -f ./$(DEPDIR)/maybe_switch_current_tcp.Po
+	-rm -f ./$(DEPDIR)/mbind-Xabbrev.Po
+	-rm -f ./$(DEPDIR)/mbind-Xraw.Po
+	-rm -f ./$(DEPDIR)/mbind-Xverbose.Po
 	-rm -f ./$(DEPDIR)/mbind.Po
 	-rm -f ./$(DEPDIR)/membarrier.Po
 	-rm -f ./$(DEPDIR)/memfd_create-Xabbrev.Po
@@ -9487,6 +9859,8 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/mount-Xraw.Po
 	-rm -f ./$(DEPDIR)/mount-Xverbose.Po
 	-rm -f ./$(DEPDIR)/mount.Po
+	-rm -f ./$(DEPDIR)/move_mount-P.Po
+	-rm -f ./$(DEPDIR)/move_mount.Po
 	-rm -f ./$(DEPDIR)/move_pages-Xabbrev.Po
 	-rm -f ./$(DEPDIR)/move_pages-Xraw.Po
 	-rm -f ./$(DEPDIR)/move_pages-Xverbose.Po
@@ -9588,6 +9962,8 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/oldselect.Po
 	-rm -f ./$(DEPDIR)/oldstat.Po
 	-rm -f ./$(DEPDIR)/open.Po
+	-rm -f ./$(DEPDIR)/open_tree-P.Po
+	-rm -f ./$(DEPDIR)/open_tree.Po
 	-rm -f ./$(DEPDIR)/openat.Po
 	-rm -f ./$(DEPDIR)/orphaned_process_group.Po
 	-rm -f ./$(DEPDIR)/osf_utimes.Po
@@ -9714,6 +10090,9 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/semop.Po
 	-rm -f ./$(DEPDIR)/sendfile.Po
 	-rm -f ./$(DEPDIR)/sendfile64.Po
+	-rm -f ./$(DEPDIR)/set_mempolicy-Xabbrev.Po
+	-rm -f ./$(DEPDIR)/set_mempolicy-Xraw.Po
+	-rm -f ./$(DEPDIR)/set_mempolicy-Xverbose.Po
 	-rm -f ./$(DEPDIR)/set_mempolicy.Po
 	-rm -f ./$(DEPDIR)/set_ptracer_any.Po
 	-rm -f ./$(DEPDIR)/set_sigblock.Po
@@ -9787,6 +10166,13 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/stat64-stat64.Po
 	-rm -f ./$(DEPDIR)/statfs-statfs.Po
 	-rm -f ./$(DEPDIR)/statfs64.Po
+	-rm -f ./$(DEPDIR)/status-all.Po
+	-rm -f ./$(DEPDIR)/status-failed.Po
+	-rm -f ./$(DEPDIR)/status-none-threads.Po
+	-rm -f ./$(DEPDIR)/status-none.Po
+	-rm -f ./$(DEPDIR)/status-successful.Po
+	-rm -f ./$(DEPDIR)/status-unfinished-threads.Po
+	-rm -f ./$(DEPDIR)/status-unfinished.Po
 	-rm -f ./$(DEPDIR)/statx.Po
 	-rm -f ./$(DEPDIR)/swap.Po
 	-rm -f ./$(DEPDIR)/sxetmask.Po
@@ -9932,6 +10318,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/clock_adjtime.Po
 	-rm -f ./$(DEPDIR)/clock_nanosleep.Po
 	-rm -f ./$(DEPDIR)/clock_xettime.Po
+	-rm -f ./$(DEPDIR)/clone-flags.Po
 	-rm -f ./$(DEPDIR)/clone_parent.Po
 	-rm -f ./$(DEPDIR)/clone_ptrace.Po
 	-rm -f ./$(DEPDIR)/copy_file_range.Po
@@ -9979,6 +10366,12 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/finit_module.Po
 	-rm -f ./$(DEPDIR)/flock.Po
 	-rm -f ./$(DEPDIR)/fork-f.Po
+	-rm -f ./$(DEPDIR)/fsconfig-P.Po
+	-rm -f ./$(DEPDIR)/fsconfig.Po
+	-rm -f ./$(DEPDIR)/fsmount.Po
+	-rm -f ./$(DEPDIR)/fsopen.Po
+	-rm -f ./$(DEPDIR)/fspick-P.Po
+	-rm -f ./$(DEPDIR)/fspick.Po
 	-rm -f ./$(DEPDIR)/fstat-Xabbrev.Po
 	-rm -f ./$(DEPDIR)/fstat-Xraw.Po
 	-rm -f ./$(DEPDIR)/fstat-Xverbose.Po
@@ -10031,6 +10424,9 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/init_module.Po
 	-rm -f ./$(DEPDIR)/inject-nf.Po
 	-rm -f ./$(DEPDIR)/inotify.Po
+	-rm -f ./$(DEPDIR)/inotify_init-y.Po
+	-rm -f ./$(DEPDIR)/inotify_init.Po
+	-rm -f ./$(DEPDIR)/inotify_init1-y.Po
 	-rm -f ./$(DEPDIR)/inotify_init1.Po
 	-rm -f ./$(DEPDIR)/int_0x80.Po
 	-rm -f ./$(DEPDIR)/io_uring_enter.Po
@@ -10130,6 +10526,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/libtests_a-signal2name.Po
 	-rm -f ./$(DEPDIR)/libtests_a-skip_unavailable.Po
 	-rm -f ./$(DEPDIR)/libtests_a-sprintrc.Po
+	-rm -f ./$(DEPDIR)/libtests_a-status.Po
 	-rm -f ./$(DEPDIR)/libtests_a-tail_alloc.Po
 	-rm -f ./$(DEPDIR)/libtests_a-test_printpath.Po
 	-rm -f ./$(DEPDIR)/libtests_a-test_printstrn.Po
@@ -10146,6 +10543,10 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/lstat.Po
 	-rm -f ./$(DEPDIR)/lstat64-lstat64.Po
 	-rm -f ./$(DEPDIR)/madvise.Po
+	-rm -f ./$(DEPDIR)/maybe_switch_current_tcp.Po
+	-rm -f ./$(DEPDIR)/mbind-Xabbrev.Po
+	-rm -f ./$(DEPDIR)/mbind-Xraw.Po
+	-rm -f ./$(DEPDIR)/mbind-Xverbose.Po
 	-rm -f ./$(DEPDIR)/mbind.Po
 	-rm -f ./$(DEPDIR)/membarrier.Po
 	-rm -f ./$(DEPDIR)/memfd_create-Xabbrev.Po
@@ -10178,6 +10579,8 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/mount-Xraw.Po
 	-rm -f ./$(DEPDIR)/mount-Xverbose.Po
 	-rm -f ./$(DEPDIR)/mount.Po
+	-rm -f ./$(DEPDIR)/move_mount-P.Po
+	-rm -f ./$(DEPDIR)/move_mount.Po
 	-rm -f ./$(DEPDIR)/move_pages-Xabbrev.Po
 	-rm -f ./$(DEPDIR)/move_pages-Xraw.Po
 	-rm -f ./$(DEPDIR)/move_pages-Xverbose.Po
@@ -10279,6 +10682,8 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/oldselect.Po
 	-rm -f ./$(DEPDIR)/oldstat.Po
 	-rm -f ./$(DEPDIR)/open.Po
+	-rm -f ./$(DEPDIR)/open_tree-P.Po
+	-rm -f ./$(DEPDIR)/open_tree.Po
 	-rm -f ./$(DEPDIR)/openat.Po
 	-rm -f ./$(DEPDIR)/orphaned_process_group.Po
 	-rm -f ./$(DEPDIR)/osf_utimes.Po
@@ -10405,6 +10810,9 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/semop.Po
 	-rm -f ./$(DEPDIR)/sendfile.Po
 	-rm -f ./$(DEPDIR)/sendfile64.Po
+	-rm -f ./$(DEPDIR)/set_mempolicy-Xabbrev.Po
+	-rm -f ./$(DEPDIR)/set_mempolicy-Xraw.Po
+	-rm -f ./$(DEPDIR)/set_mempolicy-Xverbose.Po
 	-rm -f ./$(DEPDIR)/set_mempolicy.Po
 	-rm -f ./$(DEPDIR)/set_ptracer_any.Po
 	-rm -f ./$(DEPDIR)/set_sigblock.Po
@@ -10478,6 +10886,13 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/stat64-stat64.Po
 	-rm -f ./$(DEPDIR)/statfs-statfs.Po
 	-rm -f ./$(DEPDIR)/statfs64.Po
+	-rm -f ./$(DEPDIR)/status-all.Po
+	-rm -f ./$(DEPDIR)/status-failed.Po
+	-rm -f ./$(DEPDIR)/status-none-threads.Po
+	-rm -f ./$(DEPDIR)/status-none.Po
+	-rm -f ./$(DEPDIR)/status-successful.Po
+	-rm -f ./$(DEPDIR)/status-unfinished-threads.Po
+	-rm -f ./$(DEPDIR)/status-unfinished.Po
 	-rm -f ./$(DEPDIR)/statx.Po
 	-rm -f ./$(DEPDIR)/swap.Po
 	-rm -f ./$(DEPDIR)/sxetmask.Po
@@ -10770,6 +11185,24 @@ $(srcdir)/flock.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 $(srcdir)/fork-f.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 	$(AM_V_GEN) $^ $@
 
+$(srcdir)/fsconfig.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/fsconfig-P.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/fsmount.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/fsopen.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/fspick.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/fspick-P.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
 $(srcdir)/fstat.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 	$(AM_V_GEN) $^ $@
 
@@ -10917,7 +11350,13 @@ $(srcdir)/init_module.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.i
 $(srcdir)/inotify.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 	$(AM_V_GEN) $^ $@
 
+$(srcdir)/inotify_init.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
 $(srcdir)/inotify_init1.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/inotify_init1-y.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 	$(AM_V_GEN) $^ $@
 
 $(srcdir)/io_uring_enter.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
@@ -11142,7 +11581,19 @@ $(srcdir)/lstat64.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 $(srcdir)/madvise.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 	$(AM_V_GEN) $^ $@
 
+$(srcdir)/maybe_switch_current_tcp.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
 $(srcdir)/mbind.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/mbind-Xabbrev.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/mbind-Xraw.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/mbind-Xverbose.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 	$(AM_V_GEN) $^ $@
 
 $(srcdir)/membarrier.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
@@ -11233,6 +11684,12 @@ $(srcdir)/mount-Xraw.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 	$(AM_V_GEN) $^ $@
 
 $(srcdir)/mount-Xverbose.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/move_mount.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/move_mount-P.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 	$(AM_V_GEN) $^ $@
 
 $(srcdir)/move_pages.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
@@ -11500,6 +11957,12 @@ $(srcdir)/oldstat.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 	$(AM_V_GEN) $^ $@
 
 $(srcdir)/open.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/open_tree.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/open_tree-P.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 	$(AM_V_GEN) $^ $@
 
 $(srcdir)/openat.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
@@ -11790,6 +12253,15 @@ $(srcdir)/sendfile64.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 $(srcdir)/set_mempolicy.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 	$(AM_V_GEN) $^ $@
 
+$(srcdir)/set_mempolicy-Xabbrev.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/set_mempolicy-Xraw.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/set_mempolicy-Xverbose.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
 $(srcdir)/setdomainname.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 	$(AM_V_GEN) $^ $@
 
@@ -11959,6 +12431,21 @@ $(srcdir)/statfs.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 	$(AM_V_GEN) $^ $@
 
 $(srcdir)/statfs64.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/status-all.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/status-failed.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/status-none.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/status-successful.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/status-unfinished.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 	$(AM_V_GEN) $^ $@
 
 $(srcdir)/statx.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in

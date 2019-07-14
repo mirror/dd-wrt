@@ -4,7 +4,7 @@
  *
  * kvmtest.c author: Josh Triplett <josh@joshtriplett.org>
  * Copyright (c) 2015 Intel Corporation
- * Copyright (c) 2017-2018 The strace developers.
+ * Copyright (c) 2017-2019 The strace developers.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to
@@ -238,6 +238,10 @@ run_kvm(const int vcpu_fd, struct kvm_run *const run, const size_t mmap_size,
 					   run->mmio.data[4], run->mmio.data[5],
 					   run->mmio.data[6], run->mmio.data[7],
 					   run->mmio.len, run->mmio.is_write);
+		case KVM_EXIT_FAIL_ENTRY:
+			error_msg_and_fail("Got an unexpected FAIL_ENTRY exit:"
+					   " hardware_entry_failure_reason %" PRI__x64,
+					   run->fail_entry.hardware_entry_failure_reason);
 
 		default:
 			error_msg_and_fail("exit_reason = %#x",

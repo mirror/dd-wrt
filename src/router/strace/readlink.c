@@ -6,7 +6,7 @@
  * Copyright (c) 2006 Ulrich Drepper <drepper@redhat.com>
  * Copyright (c) 2006 Bernhard Kaindl <bk@suse.de>
  * Copyright (c) 2006-2015 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2014-2018 The strace developers.
+ * Copyright (c) 2014-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -44,7 +44,9 @@ SYS_FUNC(readlink)
 
 SYS_FUNC(readlinkat)
 {
-	if (entering(tcp))
+	if (entering(tcp)) {
 		print_dirfd(tcp, tcp->u_arg[0]);
+		tprints(", ");
+	}
 	return decode_readlink(tcp, 1);
 }

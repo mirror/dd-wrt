@@ -204,6 +204,10 @@ struct tcb {
 	int sys_func_rval;	/* Syscall entry parser's return value */
 	int curcol;		/* Output column for this process */
 	FILE *outf;		/* Output file for this process */
+	FILE *real_outf;	/* Backup for real outf while staging */
+	char *memfptr;
+	size_t memfloc;
+
 	const char *auxstr;	/* Auxiliary info from syscall (see RVAL_STR) */
 	void *_priv_data;	/* Private data for syscall decoding functions */
 	void (*_free_priv_data)(void *); /* Callback for freeing priv_data */
@@ -416,7 +420,6 @@ extern bool Tflag;
 extern bool iflag;
 extern bool count_wallclock;
 extern unsigned int qflag;
-extern bool not_failing_only;
 extern unsigned int show_fd_path;
 /* are we filtering traces based on paths? */
 extern struct path_set {
@@ -1195,6 +1198,12 @@ extern void tprints(const char *str);
 extern void tprintf_comment(const char *fmt, ...) ATTRIBUTE_FORMAT((printf, 1, 2));
 extern void tprints_comment(const char *str);
 
+/*
+ * Staging output for status qualifier.
+ */
+extern FILE *strace_open_memstream(struct tcb *tcp);
+extern void strace_close_memstream(struct tcb *tcp, bool publish);
+
 static inline void
 printaddr_comment(const kernel_ulong_t addr)
 {
@@ -1279,6 +1288,9 @@ printnum_addr_ ## name(struct tcb *, kernel_ulong_t addr)		\
 DECL_PRINTNUM_ADDR(int);
 DECL_PRINTNUM_ADDR(int64);
 # undef DECL_PRINTNUM_ADDR
+
+extern bool
+printnum_fd(struct tcb *, kernel_ulong_t addr);
 
 # ifndef current_wordsize
 extern bool
@@ -1436,6 +1448,28 @@ truncate_kulong_to_current_wordsize(const kernel_ulong_t v)
 	 sizeof(v) == sizeof(int) ? (long long) (int) (v) : \
 	 sizeof(v) == sizeof(long) ? (long long) (long) (v) : \
 	 (long long) (v))
+
+/*
+ * Computes the popcount of a vector of 32-bit values.
+ */
+static inline unsigned int
+popcount32(const uint32_t *a, unsigned int size)
+{
+	unsigned int count = 0;
+
+	for (; size; ++a, --size) {
+		uint32_t x = *a;
+
+# ifdef HAVE___BUILTIN_POPCOUNT
+		count += __builtin_popcount(x);
+# else
+		for (; x; ++count)
+			x &= x - 1;
+# endif
+	}
+
+	return count;
+}
 
 extern const char *const errnoent[];
 extern const char *const signalent[];

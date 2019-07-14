@@ -192,6 +192,7 @@ pathtrace_match_set(struct tcb *tcp, struct path_set *set)
 	case SEN_faccessat:
 	case SEN_fchmodat:
 	case SEN_fchownat:
+	case SEN_fspick:
 	case SEN_fstatat64:
 	case SEN_futimesat:
 	case SEN_inotify_add_watch:
@@ -199,6 +200,7 @@ pathtrace_match_set(struct tcb *tcp, struct path_set *set)
 	case SEN_mknodat:
 	case SEN_name_to_handle_at:
 	case SEN_newfstatat:
+	case SEN_open_tree:
 	case SEN_openat:
 	case SEN_readlinkat:
 	case SEN_statx:
@@ -222,6 +224,7 @@ pathtrace_match_set(struct tcb *tcp, struct path_set *set)
 		return upathmatch(tcp, tcp->u_arg[1], set);
 
 	case SEN_linkat:
+	case SEN_move_mount:
 	case SEN_renameat2:
 	case SEN_renameat:
 		/* fd, path, fd, path */
@@ -316,6 +319,21 @@ pathtrace_match_set(struct tcb *tcp, struct path_set *set)
 		return false;
 	}
 
+	case SEN_fsconfig: {
+		/* x, x, x, maybe path, maybe fd */
+		const unsigned int cmd = tcp->u_arg[1];
+		switch (cmd) {
+			case 3 /* FSCONFIG_SET_PATH */:
+			case 4 /* FSCONFIG_SET_PATH_EMPTY */:
+				return fdmatch(tcp, tcp->u_arg[4], set) ||
+					upathmatch(tcp, tcp->u_arg[3], set);
+			case 5 /* FSCONFIG_SET_FD */:
+				return fdmatch(tcp, tcp->u_arg[4], set);
+		}
+
+		return false;
+	}
+
 	case SEN_accept4:
 	case SEN_accept:
 	case SEN_bpf:
@@ -324,6 +342,8 @@ pathtrace_match_set(struct tcb *tcp, struct path_set *set)
 	case SEN_eventfd2:
 	case SEN_eventfd:
 	case SEN_fanotify_init:
+	case SEN_fsmount:
+	case SEN_fsopen:
 	case SEN_inotify_init:
 	case SEN_inotify_init1:
 	case SEN_io_uring_enter:
