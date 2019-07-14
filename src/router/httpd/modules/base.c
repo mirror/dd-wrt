@@ -1288,7 +1288,7 @@ static int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 	if (action == REFRESH) {
 		struct timespec tim, tim2;
 		tim.tv_sec = sleep_time;
-		tim.tv_nsec;
+		tim.tv_nsec = 0;
 		nanosleep(&tim, &tim2);
 	} else if (action == SERVICE_RESTART) {
 		_sys_commit();
@@ -1296,7 +1296,7 @@ static int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 
 		struct timespec tim, tim2;
 		tim.tv_sec = sleep_time;
-		tim.tv_nsec;
+		tim.tv_nsec = 0;
 		nanosleep(&tim, &tim2);
 
 	} else if (action == SYS_RESTART) {
