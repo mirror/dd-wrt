@@ -342,9 +342,9 @@ endif
 ifeq ($(CONFIG_SPEEDCHECKER),y)
 	sed -i 's/\# CONFIG_FEATURE_TRACEROUTE_USE_ICMP is not set/CONFIG_FEATURE_TRACEROUTE_USE_ICMP=y/g' busybox/.config
 endif
+	echo "# CONFIG_HDPARM is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_HDPARM_GET_IDENTITY is not set" >> busybox/.config
 ifeq ($(CONFIG_USB_ADVANCED),y)
-	echo "CONFIG_HDPARM=y" >> busybox/.config
-	echo "CONFIG_FEATURE_HDPARM_GET_IDENTITY=y" >> busybox/.config
 	echo "CONFIG_BLKID=y" >> busybox/.config
 	echo "CONFIG_FEATURE_BLKID_TYPE=n" >> busybox/.config
 	echo "CONFIG_VOLUMEID=y" >> busybox/.config
@@ -371,8 +371,6 @@ ifeq ($(CONFIG_USB_ADVANCED),y)
 	echo "CONFIG_FEATURE_MOUNT_LABEL=y" >> busybox/.config	
 	echo "CONFIG_FEATURE_MKSWAP_UUID=y" >> busybox/.config
 else
-	echo "# CONFIG_HDPARM is not set" >> busybox/.config
-	echo "# CONFIG_FEATURE_HDPARM_GET_IDENTITY is not set" >> busybox/.config
 	echo "# CONFIG_BLKID is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_BLKID_TYPE is not set" >> busybox/.config
 	echo "# CONFIG_VOLUMEID is not set" >> busybox/.config
