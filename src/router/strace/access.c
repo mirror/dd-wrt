@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2018 The strace developers.
+ * Copyright (c) 2014-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -29,5 +29,6 @@ SYS_FUNC(access)
 SYS_FUNC(faccessat)
 {
 	print_dirfd(tcp, tcp->u_arg[0]);
+	tprints(", ");
 	return decode_access(tcp, 1);
 }

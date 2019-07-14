@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2015-2018 The strace developers.
+ * Copyright (c) 2015-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -46,6 +46,7 @@ typedef off_t libc_off_t;
 # define stat64 libc_stat64
 # define statx libc_statx
 # define statx_timestamp libc_statx_timestamp
+struct statx;
 # include <fcntl.h>
 # include <sys/stat.h>
 # undef statx_timestamp
@@ -460,7 +461,7 @@ main(void)
 	SET_FLAGS_INVOKE(0xffffff,
 		"AT_STATX_FORCE_SYNC|AT_STATX_DONT_SYNC|AT_SYMLINK_NOFOLLOW|"
 		"AT_REMOVEDIR|AT_SYMLINK_FOLLOW|AT_NO_AUTOMOUNT|AT_EMPTY_PATH|"
-		"0xff80ff");
+		"AT_RECURSIVE|0xff00ff");
 
 	/* We're done playing with flags. */
 	TEST_SYSCALL_STATX_FLAGS = old_flags;

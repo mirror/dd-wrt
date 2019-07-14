@@ -261,6 +261,12 @@ BEGIN_BPF_CMD_DECODER(BPF_MAP_GET_NEXT_KEY)
 }
 END_BPF_CMD_DECODER(RVAL_DECODED)
 
+BEGIN_BPF_CMD_DECODER(BPF_MAP_FREEZE)
+{
+	PRINT_FIELD_FD("{", attr, map_fd, tcp);
+}
+END_BPF_CMD_DECODER(RVAL_DECODED)
+
 BEGIN_BPF_CMD_DECODER(BPF_PROG_LOAD)
 {
 	PRINT_FIELD_XVAL_INDEX("{", attr, prog_type, bpf_prog_types,
@@ -381,6 +387,16 @@ BEGIN_BPF_CMD_DECODER(BPF_PROG_TEST_RUN)
 	PRINT_FIELD_ADDR64(", ", attr, data_out);
 	PRINT_FIELD_U(", ", attr, repeat);
 	PRINT_FIELD_U(", ", attr, duration);
+	/*
+	 * The following four fields were introduced by Linux commit
+	 * v5.2-rc1~133^2~193^2~6.
+	 */
+	if (len > offsetof(struct BPF_PROG_TEST_RUN_struct, ctx_size_in)) {
+		PRINT_FIELD_U(", ", attr, ctx_size_in);
+		PRINT_FIELD_U(", ", attr, ctx_size_out);
+		PRINT_FIELD_ADDR64(", ", attr, ctx_in);
+		PRINT_FIELD_ADDR64(", ", attr, ctx_out);
+	}
 	tprints("}");
 }
 END_BPF_CMD_DECODER(RVAL_DECODED)
@@ -927,6 +943,7 @@ SYS_FUNC(bpf)
 		BPF_CMD_ENTRY(BPF_BTF_GET_FD_BY_ID),
 		BPF_CMD_ENTRY(BPF_TASK_FD_QUERY),
 		BPF_CMD_ENTRY(BPF_MAP_LOOKUP_AND_DELETE_ELEM),
+		BPF_CMD_ENTRY(BPF_MAP_FREEZE),
 	};
 
 	const unsigned int cmd = tcp->u_arg[0];

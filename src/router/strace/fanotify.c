@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2014-2015 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2014-2018 The strace developers.
+ * Copyright (c) 2014-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -55,12 +55,11 @@ SYS_FUNC(fanotify_mark)
 #endif
 	printflags64(fan_event_flags, mask, "FAN_???");
 	tprints(", ");
-	if ((int) tcp->u_arg[argn] == FAN_NOFD) {
+	if ((int) tcp->u_arg[argn] == FAN_NOFD)
 		print_xlat_d(FAN_NOFD);
-		tprints(", ");
-	} else {
+	else
 		print_dirfd(tcp, tcp->u_arg[argn]);
-	}
+	tprints(", ");
 	printpath(tcp, tcp->u_arg[argn + 1]);
 
 	return RVAL_DECODED;

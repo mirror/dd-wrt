@@ -37,6 +37,7 @@ strace-devel@lists.strace.io mailing list.
 	Bo Kullmar <bk@kullmar.se>
 	Bryan Matsuo <bryan.matsuo@gmail.com>
 	Bryce Gibson <bryce@gibson-consulting.com.au>
+	Burkhard Kohl <burkhard.kohl@intel.com>
 	Cai Fei <caifei@cn.fujitsu.com>
 	Carlos O'Donell <carlos@systemhalted.org>
 	Carmelo Amoroso <carmelo.amoroso@st.com>
@@ -159,6 +160,7 @@ strace-devel@lists.strace.io mailing list.
 	Michael Shigorin <mike@altlinux.org>
 	Michail Litvak <mci@owl.openwall.com>
 	Michal Ludvig <mludvig@suse.cz>
+	Michal Sekletar <msekleta@redhat.com>
 	Michal Simek <monstr@monstr.eu>
 	Mike Frysinger <vapier@gentoo.org>
 	Mike Stroyan <mike.stroyan@hp.com>
@@ -174,6 +176,7 @@ strace-devel@lists.strace.io mailing list.
 	Orion Poplawski <orion@cora.nwra.com>
 	Paolo Bonzini <pbonzini@redhat.com>
 	Patrik Jakobsson <patrik.r.jakobsson@gmail.com>
+	Paul Chaignon <paul.chaignon@gmail.com>
 	Paul Mundt <lethal@linux-sh.org>
 	Pavel Machek <pavel@ucw.cz>
 	Peter Jones <pjones@redhat.com>
@@ -243,6 +246,6 @@ strace-devel@lists.strace.io mailing list.
 	Zach Brown <zach.brown@oracle.com>
 	Zev Weiss <zev@bewilderbeest.net>
 	Zhang Le <robert.zhangle@gmail.com>
-	Zhibin Li <08826794brmt@gmail.com>
+	Zhibin Li <haoyouab@gmail.com>
 	Zubin Mithra <zubin.mithra@gmail.com>
 	Марк Коренберг <socketpair@gmail.com>

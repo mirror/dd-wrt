@@ -132,6 +132,10 @@ strace_SOURCES =	\
 	flock.c		\
 	flock.h		\
 	fs_x_ioctl.c	\
+	fsconfig.c	\
+	fsmount.c	\
+	fsopen.c	\
+	fspick.c	\
 	futex.c		\
 	gcc_compat.h	\
 	get_personality.c \
@@ -186,6 +190,7 @@ strace_SOURCES =	\
 	mmap_notify.h	\
 	mmsghdr.c	\
 	mount.c		\
+	move_mount.c	\
 	mpers_type.h	\
 	mq.c		\
 	msghdr.c	\
@@ -221,6 +226,7 @@ strace_SOURCES =	\
 	number_set.h	\
 	oldstat.c	\
 	open.c		\
+	open_tree.c	\
 	or1k_atomic.c	\
 	pathtrace.c	\
 	perf.c		\
@@ -309,6 +315,7 @@ strace_SOURCES =	\
 	socketutils.c	\
 	sparc.c		\
 	sram_alloc.c	\
+	stage_output.c	\
 	stat.c		\
 	stat.h		\
 	stat64.c	\
@@ -582,7 +589,9 @@ EXTRA_DIST =				\
 	linux/ia64/rt_sigframe.h	\
 	linux/ia64/set_error.c		\
 	linux/ia64/set_scno.c		\
+	linux/ia64/shuffle_scno.c	\
 	linux/ia64/syscallent.h		\
+	linux/ia64/syscallent_base_nr.h	\
 	linux/ia64/userent.h		\
 	linux/inet_diag.h		\
 	linux/m68k/arch_defs_.h		\
@@ -841,6 +850,9 @@ EXTRA_DIST =				\
 	linux/subcall32.h		\
 	linux/subcall64.h		\
 	linux/syscall.h			\
+	linux/syscallent-common-32.h	\
+	linux/syscallent-common.h	\
+	linux/syscallent_base_nr.h	\
 	linux/tile/arch_defs_.h		\
 	linux/tile/arch_get_personality.c \
 	linux/tile/arch_regs.c		\
@@ -963,6 +975,7 @@ sys_func.h: $(patsubst %,$(srcdir)/%,$(sys_func_h_sources))
 	done | sort -u > $@
 
 syscallent_names = subcall.h syscallent.h syscallent1.h \
+		   syscallent-common.h syscallent-common-32.h \
 		   syscallent-n32.h syscallent-n64.h syscallent-o32.h
 syscallent_patterns = $(patsubst %,\%/%,$(syscallent_names))
 syscallent_files = $(filter $(syscallent_patterns),$(EXTRA_DIST))
