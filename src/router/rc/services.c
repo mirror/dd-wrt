@@ -85,6 +85,9 @@ static int start_services_main(int argc, char **argv)
 #ifdef HAVE_SYSLOG
 	start_service_force_f("syslog");
 #endif
+#ifdef HAVE_SMARTD
+	start_service_force_f("smartd");
+#endif
 #ifdef HAVE_GPSI
 	start_service_f("gps");
 #endif
