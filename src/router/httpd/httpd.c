@@ -1650,7 +1650,6 @@ int main(int argc, char **argv)
 
 	/* Loop forever handling requests */
 	for (;;) {
-		SEM_WAIT(&semaphore);
 
 		webs_t conn_fp = safe_malloc(sizeof(webs));
 		if (!conn_fp) {
@@ -1658,6 +1657,7 @@ int main(int argc, char **argv)
 			continue;
 		}
 		bzero(conn_fp, sizeof(webs));
+		SEM_WAIT(&semaphore);
 #ifdef HAVE_HTTPS
 		conn_fp->do_ssl = do_ssl;
 #endif
@@ -1679,6 +1679,7 @@ int main(int argc, char **argv)
 			if (errno == EINTR || errno == EAGAIN)
 				continue;	/* try again */
 			perror("select");
+			SEM_POST(&semaphore);
 			return errno;
 		}
 #endif
@@ -1694,6 +1695,7 @@ int main(int argc, char **argv)
 #endif
 		if (conn_fp->conn_fd < 0) {
 			perror("accept");
+			SEM_POST(&semaphore);
 			return errno;
 		}
 
@@ -1703,17 +1705,20 @@ int main(int argc, char **argv)
 		int action = check_action();
 		if (action == ACT_SW_RESTORE || action == ACT_HW_RESTORE) {
 			fprintf(stderr, "http(s)d: nothing to do...\n");
+			SEM_POST(&semaphore);
 			return -1;
 		}
 		get_client_ip_mac(conn_fp->conn_fd, conn_fp);
 		if (check_blocklist("httpd", conn_fp->http_client_ip)) {
 			close(conn_fp->conn_fd);
+			SEM_POST(&semaphore);
 			continue;
 		}
 #ifdef HAVE_HTTPS
 		if (DO_SSL(conn_fp)) {
 			if (action == ACT_WEB_UPGRADE) {	// We don't want user to use web (https) during web (http) upgrade.
 				fprintf(stderr, "httpsd: nothing to do...\n");
+				SEM_POST(&semaphore);
 				return -1;
 			}
 #ifdef HAVE_OPENSSL
@@ -1745,6 +1750,7 @@ int main(int argc, char **argv)
 				close(conn_fp->conn_fd);
 
 				SSL_free(conn_fp->ssl);
+				SEM_POST(&semaphore);
 				continue;
 			}
 
@@ -1760,6 +1766,7 @@ int main(int argc, char **argv)
 			if ((ret = ssl_init(&conn_fp->ssl)) != 0) {
 				printf("ssl_init failed\n");
 				close(conn_fp->conn_fd);
+				SEM_POST(&semaphore);
 				continue;
 			}
 			ssl_set_endpoint(&conn_fp->ssl, SSL_IS_SERVER);
@@ -1778,6 +1785,7 @@ int main(int argc, char **argv)
 			if (ret != 0) {
 				printf("ssl_server_start failed\n");
 				close(conn_fp->conn_fd);
+				SEM_POST(&semaphore);
 				continue;
 			}
 
@@ -1790,18 +1798,19 @@ int main(int argc, char **argv)
 #ifdef HAVE_HTTPS
 			if (action == ACT_WEBS_UPGRADE) {	// We don't want user to use web (http) during web (https) upgrade.
 				fprintf(stderr, "httpd: nothing to do...\n");
+				SEM_POST(&semaphore);
 				return -1;
 			}
 #endif
 
 			if (!(conn_fp->fp = fdopen(conn_fp->conn_fd, "r+"))) {
 				perror("fdopen");
+				SEM_POST(&semaphore);
 				return errno;
 			}
 		}
 
 #ifndef HAVE_MICRO
-		SEM_WAIT(&semaphore);
 		pthread_attr_t attr;
 		pthread_attr_init(&attr);
 		pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
