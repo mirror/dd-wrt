@@ -233,7 +233,7 @@ char *getMacAddr(char *ifname, char *mac);
 #ifdef HAVE_ATH9K
 void deconfigure_single_ath9k(int count);
 void configure_single_ath9k(int count);
-void ath9k_start_supplicant(int count);
+void ath9k_start_supplicant(int count, char *prefix);
 #endif
 int ifconfig(char *name, int flags, char *addr, char *netmask);
 
