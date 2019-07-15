@@ -29,6 +29,7 @@
  * Copyright 2016 Nexenta Systems, Inc.
  * Copyright (c) 2019 Datto Inc.
  * Copyright (c) 2019, loli10K <ezomori.nozomu@gmail.com>
+ * Copyright 2019 Joyent, Inc.
  */
 
 #include <assert.h>
@@ -998,10 +999,11 @@ zfs_do_create(int argc, char **argv)
 			zpool_close(zpool_handle);
 			goto error;
 		}
-		zpool_close(zpool_handle);
 
-		volsize = zvol_volsize_to_reservation(volsize, real_props);
+		volsize = zvol_volsize_to_reservation(zpool_handle, volsize,
+		    real_props);
 		nvlist_free(real_props);
+		zpool_close(zpool_handle);
 
 		if (nvlist_lookup_string(props, zfs_prop_to_name(resv_prop),
 		    &strval) != 0) {
@@ -3618,7 +3620,7 @@ zfs_do_redact(int argc, char **argv)
 	argv++;
 	argc--;
 	if (argc < 3) {
-		(void) fprintf(stderr, gettext("too few arguments"));
+		(void) fprintf(stderr, gettext("too few arguments\n"));
 		usage(B_FALSE);
 	}
 
@@ -3641,34 +3643,34 @@ zfs_do_redact(int argc, char **argv)
 		break;
 	case ENOENT:
 		(void) fprintf(stderr,
-		    gettext("provided snapshot %s does not exist"), snap);
+		    gettext("provided snapshot %s does not exist\n"), snap);
 		break;
 	case EEXIST:
 		(void) fprintf(stderr, gettext("specified redaction bookmark "
-		    "(%s) provided already exists"), bookname);
+		    "(%s) provided already exists\n"), bookname);
 		break;
 	case ENAMETOOLONG:
 		(void) fprintf(stderr, gettext("provided bookmark name cannot "
-		    "be used, final name would be too long"));
+		    "be used, final name would be too long\n"));
 		break;
 	case E2BIG:
 		(void) fprintf(stderr, gettext("too many redaction snapshots "
-		    "specified"));
+		    "specified\n"));
 		break;
 	case EINVAL:
 		(void) fprintf(stderr, gettext("redaction snapshot must be "
-		    "descendent of snapshot being redacted"));
+		    "descendent of snapshot being redacted\n"));
 		break;
 	case EALREADY:
 		(void) fprintf(stderr, gettext("attempted to redact redacted "
-		    "dataset or with respect to redacted dataset"));
+		    "dataset or with respect to redacted dataset\n"));
 		break;
 	case ENOTSUP:
 		(void) fprintf(stderr, gettext("redaction bookmarks feature "
-		    "not enabled"));
+		    "not enabled\n"));
 		break;
 	default:
-		(void) fprintf(stderr, gettext("internal error: %s"),
+		(void) fprintf(stderr, gettext("internal error: %s\n"),
 		    strerror(errno));
 	}
 
@@ -4336,7 +4338,11 @@ zfs_do_send(int argc, char **argv)
 		return (1);
 	}
 
-	cp = strchr(argv[0], '@');
+	if ((cp = strchr(argv[0], '@')) == NULL) {
+		(void) fprintf(stderr, gettext("Error: "
+		    "Unsupported flag with filesystem or bookmark.\n"));
+		return (1);
+	}
 	*cp = '\0';
 	toname = cp + 1;
 	zhp = zfs_open(g_zfs, argv[0], ZFS_TYPE_FILESYSTEM | ZFS_TYPE_VOLUME);
