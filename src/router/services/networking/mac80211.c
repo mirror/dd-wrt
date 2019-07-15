@@ -1907,10 +1907,8 @@ void ath9k_start_supplicant(int count)
 			}
 		} else {
 			sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
-			if (nvram_match(wmode, "sta") || nvram_match(wmode, "wdssta") || nvram_match(wmode, "wet") || nvram_match(wmode, "infra")) {
-				if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh")
-				     || wet)
-				    && nvram_matchi(bridged, 1)) {
+			if (nvram_match(wmode, "sta") || nvram_match(wmode, "wdssta") || wet || nvram_match(wmode, "infra") || nvram_match(wmode, "mesh")) {
+				if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh") || wet) && nvram_matchi(bridged, 1)) {
 					eval("wpa_supplicant", "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface, "-c", fstr);
 				} else {
 					eval("wpa_supplicant", background, "-Dnl80211", subinterface, "-c", fstr);
