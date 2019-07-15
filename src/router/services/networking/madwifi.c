@@ -608,6 +608,8 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 	if (ispsk3)
 		nvram_nseti(1, "%s_psk3", prefix);
 	check_cryptomod(prefix);
+	char pid[64];
+	sprintf(pid, "/var/run/%s_wpa_supplicant.pid", prefix);
 
 	if (ispsk || ispsk2 || ispsk3 || ispsk2sha256) {
 		char fstr[32];
@@ -736,15 +738,15 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 #ifdef HAVE_RELAYD
 		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh"))
 		    && nvram_matchi(bridged, 1))
-			eval("wpa_supplicant", "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
+			eval("wpa_supplicant", "-P", pid, "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
 		else
-			eval("wpa_supplicant", background, driver, psk, "-c", fstr);
+			eval("wpa_supplicant", "-P", pid, background, driver, psk, "-c", fstr);
 #else
 		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "wet") || nvram_match(wmode, "mesh"))
 		    && nvram_matchi(bridged, 1))
-			eval("wpa_supplicant", "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
+			eval("wpa_supplicant", "-P", pid, "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
 		else
-			eval("wpa_supplicant", background, driver, psk, "-c", fstr);
+			eval("wpa_supplicant", "-P", pid, background, driver, psk, "-c", fstr);
 #endif
 	} else if (ispeap || isleap || istls || isttls) {
 		char fstr[32];
@@ -772,16 +774,16 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 #ifdef HAVE_RELAYD
 		if (nvram_matchi(bridged, 1)
 		    && (nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh")))
-			eval("wpa_supplicant", "-b", nvram_safe_get("lan_ifname"), background, driver, psk, "-c", fstr);
+			eval("wpa_supplicant", "-P", pid, "-b", nvram_safe_get("lan_ifname"), background, driver, psk, "-c", fstr);
 		else
-			eval("wpa_supplicant", background, driver, psk, "-c", fstr);
+			eval("wpa_supplicant", "-P", pid, background, driver, psk, "-c", fstr);
 #else
 		if (nvram_matchi(bridged, 1)
 		    && (nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh")
 			|| nvram_match(wmode, "wet")))
-			eval("wpa_supplicant", "-b", nvram_safe_get("lan_ifname"), background, driver, psk, "-c", fstr);
+			eval("wpa_supplicant", "-P", pid, "-b", nvram_safe_get("lan_ifname"), background, driver, psk, "-c", fstr);
 		else
-			eval("wpa_supplicant", background, driver, psk, "-c", fstr);
+			eval("wpa_supplicant", "-P", pid, background, driver, psk, "-c", fstr);
 
 #endif
 	} else if (nvram_match(akm, "disabled") || nvram_match(akm, "wep")) {
@@ -837,15 +839,15 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 #ifdef HAVE_RELAYD
 		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh"))
 		    && nvram_matchi(bridged, 1))
-			eval("wpa_supplicant", "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
+			eval("wpa_supplicant", "-P", pid, "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
 		else
-			eval("wpa_supplicant", background, driver, psk, "-c", fstr);
+			eval("wpa_supplicant", "-P", pid, background, driver, psk, "-c", fstr);
 #else
 		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "wet") || nvram_match(wmode, "mesh"))
 		    && nvram_matchi(bridged, 1))
-			eval("wpa_supplicant", "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
+			eval("wpa_supplicant", "-P", pid, "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
 		else
-			eval("wpa_supplicant", background, driver, psk, "-c", fstr);
+			eval("wpa_supplicant", "-P", pid, background, driver, psk, "-c", fstr);
 #endif
 	}
 
@@ -899,10 +901,19 @@ void do_hostapd(char *fstr, char *prefix)
 static void checkhostapd(char *ifname, int force)
 {
 	int pid;
+	int sup = 0;
 	char fname[32];
 	sprintf(fname, "/var/run/%s_hostapd.pid", ifname);
 	FILE *fp;
 	fp = fopen(fname, "rb");
+	if (!fp) {
+		sprintf(fname, "/var/run/%s_wpa_supplicant.pid", ifname);
+		if (fp)
+			sup = 1;
+	}
+	if (nvram_nmatch("mesh", "%s_mode", ifname) || nvram_nmatch("sta", "%s_mode", ifname) || nvram_nmatch("wdssta", "%s_mode", ifname) || nvram_nmatch("infra", "%s_mode", ifname)
+	    || nvram_nmatch("mesh", "%s_mode", ifname))
+		sup = 1;
 	if (fp || force) {
 		if (fp) {
 			fscanf(fp, "%d", &pid);
@@ -926,19 +937,25 @@ static void checkhostapd(char *ifname, int force)
 			} else {
 				char cmdline[128];
 				fscanf(fp, "%s", cmdline);
-				if (strncmp(cmdline, "hostapd", 7))
+				if (strncmp(cmdline, "hostapd", 7) && strncmp(cmdline, "wpa_supplicant", 14))
 					needrestart = 1;
 				fclose(fp);
 			}
 			if (needrestart) {
 				char fstr[32];
-				sprintf(fstr, "/tmp/%s_hostap.conf", ifname);
+				if (sup)
+					sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", ifname);
+				else
+					sprintf(fstr, "/tmp/%s_hostap.conf", ifname);
 				if (force) {
-					dd_loginfo("hostapd", "daemon on %s with pid %d is forced to be restarted....\n", ifname, pid);
+					dd_loginfo(sup ? "wpa_supplicant" : "hostapd", "daemon on %s with pid %d is forced to be restarted....\n", ifname, pid);
 				} else {
-					dd_loginfo("hostapd", "daemon on %s with pid %d died, restarting....\n", ifname, pid);
+					dd_loginfo(sup ? "wpa_supplicant" : "hostapd", "daemon on %s with pid %d died, restarting....\n", ifname, pid);
 				}
-				do_hostapd(fstr, ifname);
+				if (sup)
+					ath9k_start_supplicant(0, ifname);
+				else
+					do_hostapd(fstr, ifname);
 				char *next;
 				char var[80];
 				if (!nvram_nmatch("sta", "%s_mode", ifname)) {
@@ -975,9 +992,7 @@ static void s_checkhostapd(int force)
 	int i;
 	for (i = 0; i < c; i++) {
 		sprintf(athname, "ath%d", i);
-		if (!nvram_nmatch("disabled", "%s_net_mode", athname)
-		    && (nvram_nmatch("ap", "%s_mode", athname)
-			|| nvram_nmatch("wdsap", "%s_mode", athname))) {
+		if (!nvram_nmatch("disabled", "%s_net_mode", athname)) {
 			//okay, these modes might run hostapd and may cause troubles if the radius gets unavailable
 			checkhostapd(athname, force);
 			if (!is_mac80211(athname)) {
@@ -1917,7 +1932,7 @@ static void configure_single(int count)
 		led_control(LED_SEC1, LED_OFF);
 	if (is_mac80211(dev)) {
 		configure_single_ath9k(count);
-		ath9k_start_supplicant(count);
+		ath9k_start_supplicant(count, dev);
 		sysprintf("touch /tmp/ath%d_configured", count);
 		return;
 	}
@@ -2838,7 +2853,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		}
 		unlink("/tmp/.crdalock");	// delete lock file, no matter if crda still running. 4 sec is enough
 #if defined(HAVE_ONNET) && defined(HAVE_ATH10K_CT)
-		if ( nvram_geti("ath10k-ct") != nvram_geti("ath10k-ct_bak") ) {
+		if (nvram_geti("ath10k-ct") != nvram_geti("ath10k-ct_bak")) {
 			fprintf(stderr, "Switching ATH10K driver, rebooting now...\n");
 			eval("reboot");
 		}
