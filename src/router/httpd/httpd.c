@@ -231,9 +231,12 @@ static pthread_mutex_t input_mutex;
 #define PTHREAD_MUTEX_INIT(m, v) do {} while(0)
 #define PTHREAD_MUTEX_LOCK(m) do {} while(0)
 #define PTHREAD_MUTEX_UNLOCK(m) do {} while(0)
-#define SEM_WAIT(sem, a, b) do {} while(0)
+#define SEM_WAIT(sem) do {} while(0)
 #define SEM_POST(sem) do {} while(0)
-#define SEM_INIT(sem) do {} while(0)
+#define SEM_INIT(sem, p, v) do {} while(0)
+#define CRYPT_MUTEX_INIT(m, v) do {} while(0)
+#define CRYPT_MUTEX_LOCK(m) do {} while(0)
+#define CRYPT_MUTEX_UNLOCK(m) do {} while(0)
 #endif
 
 static void lookup_hostname(usockaddr * usa4P, size_t sa4_len, int *gotv4P, usockaddr * usa6P, size_t sa6_len, int *gotv6P)
