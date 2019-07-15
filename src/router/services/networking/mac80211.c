@@ -1804,7 +1804,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 }
 
 extern void do_hostapd(char *fstr, char *prefix);
-void ath9k_start_supplicant(int count)
+void ath9k_start_supplicant(int count, char *prefix)
 {
 // erst hostapd starten fuer repeater mode
 // dann wpa_supplicant mit link zu hostapd
@@ -1829,15 +1829,15 @@ void ath9k_start_supplicant(int count)
 	int ctrlifneeded = 0;
 	char wif[10];
 	sprintf(wif, "phy%d", get_ath9k_phy_idx(count));
-	sprintf(wl, "ath%d_mode", count);
-	sprintf(dev, "ath%d", count);
+	sprintf(wl, "%s_mode", prefix);
+	sprintf(dev, "%s", prefix);
 	sprintf(net, "%s_net_mode", dev);
 	char *netmode = nvram_default_get(net, "mixed");
 	if (!strcmp(netmode, "disabled"))
 		return;
 	apm = nvram_safe_get(wl);
-	sprintf(wifivifs, "ath%d_vifs", count);
-	sprintf(power, "ath%d_txpwrdbm", count);
+	sprintf(wifivifs, "%s_vifs", prefix);
+	sprintf(power, "%s_txpwrdbm", prefix);
 	vifs = nvram_safe_get(wifivifs);
 	sprintf(subinterface, "-i%s", dev);
 	if (has_ad(dev))
@@ -1864,6 +1864,9 @@ void ath9k_start_supplicant(int count)
 #ifndef HAVE_RELAYD
 	wet = nvram_match(wmode, "wet");
 #endif
+	char pid[64];
+	sprintf(pid, "/var/run/%s_wpa_supplicant.pid", dev);
+
 	if (strcmp(apm, "sta") && strcmp(apm, "wdssta")
 	    && strcmp(apm, "infra")
 	    && strcmp(apm, "mesh")
@@ -1890,15 +1893,15 @@ void ath9k_start_supplicant(int count)
 				if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh")
 				     || wet)
 				    && nvram_matchi(bridged, 1))
-					eval("wpa_supplicant", "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface, "-H", ctrliface, "-c", fstr);
+					eval("wpa_supplicant", "-P", pid, "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface, "-H", ctrliface, "-c", fstr);
 				else
-					eval("wpa_supplicant", background, "-Dnl80211", subinterface, "-H", ctrliface, "-c", fstr);
+					eval("wpa_supplicant", "-P", pid, background, "-Dnl80211", subinterface, "-H", ctrliface, "-c", fstr);
 			} else {
 				/* for mesh mode we dont need ctrl interface since it has a static channel configuration */
 				if (nvram_matchi(bridged, 1))
-					eval("wpa_supplicant", "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface, "-c", fstr);
+					eval("wpa_supplicant", "-P", pid, "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface, "-c", fstr);
 				else
-					eval("wpa_supplicant", background, "-Dnl80211", subinterface, "-c", fstr);
+					eval("wpa_supplicant", "-P", pid, background, "-Dnl80211", subinterface, "-c", fstr);
 			}
 			if (nvram_match(wmode, "mesh") || nvram_match(wmode, "infra")) {
 				/* now start hostapd once wpa_supplicant has been started */
@@ -1909,9 +1912,9 @@ void ath9k_start_supplicant(int count)
 			sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
 			if (nvram_match(wmode, "sta") || nvram_match(wmode, "wdssta") || wet || nvram_match(wmode, "infra") || nvram_match(wmode, "mesh")) {
 				if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh") || wet) && nvram_matchi(bridged, 1)) {
-					eval("wpa_supplicant", "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface, "-c", fstr);
+					eval("wpa_supplicant", "-P", pid, "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface, "-c", fstr);
 				} else {
-					eval("wpa_supplicant", background, "-Dnl80211", subinterface, "-c", fstr);
+					eval("wpa_supplicant", "-P", pid, background, "-Dnl80211", subinterface, "-c", fstr);
 				}
 			}
 		}
