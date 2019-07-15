@@ -18,43 +18,14 @@
  *
  * CDDL HEADER END
  */
-/*
- * Copyright (C) 2016 Romain Dolbeau <romain@dolbeau.org>.
- */
-
-/*
- * USER API:
- *
- * Kernel fpu methods:
- * 	kfpu_begin()
- * 	kfpu_end()
- */
-
-#ifndef _SIMD_AARCH64_H
-#define	_SIMD_AARCH64_H
-
-#include <sys/isa_defs.h>
-
-#if defined(__aarch64__)
-
-#include <sys/types.h>
 
 #if defined(_KERNEL)
-#include <asm/neon.h>
-#define	kfpu_allowed()		1
-#define	kfpu_initialize(tsk)	do {} while (0)
-#define	kfpu_begin()		kernel_neon_begin()
-#define	kfpu_end()		kernel_neon_end()
+#if defined(HAVE_DECLARE_EVENT_CLASS)
+
 #else
-/*
- * fpu dummy methods for userspace
- */
-#define	kfpu_allowed()		1
-#define	kfpu_initialize(tsk)	do {} while (0)
-#define	kfpu_begin()		do {} while (0)
-#define	kfpu_end()		do {} while (0)
-#endif /* defined(_KERNEL) */
 
-#endif /* __aarch64__ */
+DEFINE_DTRACE_PROBE(zfs__rrwfastpath__rdmiss);
+DEFINE_DTRACE_PROBE(zfs__rrwfastpath__exitmiss);
 
-#endif /* _SIMD_AARCH64_H */
+#endif /* HAVE_DECLARE_EVENT_CLASS */
+#endif /* _KERNEL */
