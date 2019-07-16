@@ -52,8 +52,6 @@ STRIP=
 RANLIB=ranlib
 LDCONFIG=ldconfig
 LDSHAREDLIBC=-lc
-TAR=tar
-SHELL=/bin/sh
 EXE=
 
 SRCDIR=.
@@ -73,11 +71,11 @@ mandir = ${prefix}/share/man
 man3dir = ${mandir}/man3
 pkgconfigdir = ${libdir}/pkgconfig
 
-OBJZ = adler32.o compress.o crc32.o deflate.o deflate_fast.o deflate_medium.o deflate_slow.o functable.o match.o infback.o inffast.o inflate.o inftrees.o trees.o uncompr.o zutil.o $(ARCH_STATIC_OBJS)
+OBJZ = adler32.o compress.o crc32.o deflate.o deflate_fast.o deflate_medium.o deflate_slow.o functable.o infback.o inffast.o inflate.o inftrees.o trees.o uncompr.o zutil.o $(ARCH_STATIC_OBJS)
 OBJG = gzclose.o gzlib.o gzread.o gzwrite.o
 OBJC = $(OBJZ) $(OBJG)
 
-PIC_OBJZ = adler32.lo compress.lo crc32.lo deflate.lo deflate_fast.lo deflate_medium.lo deflate_slow.lo functable.lo match.lo infback.lo inffast.lo inflate.lo inftrees.lo trees.lo uncompr.lo zutil.lo $(ARCH_SHARED_OBJS)
+PIC_OBJZ = adler32.lo compress.lo crc32.lo deflate.lo deflate_fast.lo deflate_medium.lo deflate_slow.lo functable.lo infback.lo inffast.lo inflate.lo inftrees.lo trees.lo uncompr.lo zutil.lo $(ARCH_SHARED_OBJS)
 PIC_OBJG = gzclose.lo gzlib.lo gzread.lo gzwrite.lo
 PIC_OBJC = $(PIC_OBJZ) $(PIC_OBJG)
 
@@ -87,7 +85,7 @@ PIC_OBJS = $(PIC_OBJC)
 
 all: static shared
 
-static: example$(EXE) minigzip$(EXE)
+static: example$(EXE) minigzip$(EXE) fuzzers
 
 shared: examplesh$(EXE) minigzipsh$(EXE)
 
@@ -112,6 +110,59 @@ $(ARCHDIR)/%.lo: $(SRCDIR)/$(ARCHDIR)/%.c
 test: all
 	$(MAKE) -C test
 
+# This variable is set by configure.
+WITH_FUZZERS=
+
+# By default, use our own standalone_fuzz_target_runner.
+# This runner does no fuzzing, but simply executes the inputs
+# provided via parameters.
+# Run e.g. "make all LIB_FUZZING_ENGINE=/path/to/libFuzzer.a"
+# to link the fuzzer(s) against a real fuzzing engine.
+ifeq (,$(LIB_FUZZING_ENGINE))
+  LIB_FUZZING_ENGINE = standalone_fuzz_target_runner.o
+else
+  # OSS-Fuzz will define its own value for LIB_FUZZING_ENGINE.
+  WITH_FUZZERS=1
+endif
+
+ifeq (1,$(WITH_FUZZERS))
+fuzzers: checksum_fuzzer$(EXE) compress_fuzzer$(EXE) example_small_fuzzer$(EXE) example_large_fuzzer$(EXE) example_flush_fuzzer$(EXE) example_dict_fuzzer$(EXE) minigzip_fuzzer$(EXE)
+else
+fuzzers:
+endif
+
+# The standalone fuzz target runner.
+standalone_fuzz_target_runner.o:
+	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $<
+checksum_fuzzer.o:
+	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $<
+compress_fuzzer.o:
+	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $<
+example_small_fuzzer.o:
+	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $<
+example_large_fuzzer.o:
+	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $<
+example_flush_fuzzer.o:
+	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $<
+example_dict_fuzzer.o:
+	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $<
+minigzip_fuzzer.o:
+	$(CC) $(CFLAGS) -DWITH_GZFILEOP $(INCLUDES) -c -o $@ $<
+checksum_fuzzer$(EXE): checksum_fuzzer.o standalone_fuzz_target_runner.o $(STATICLIB)
+	$(CC) $(LDFLAGS) -o $@ $(LIB_FUZZING_ENGINE) checksum_fuzzer.o $(STATICLIB) -lpthread
+compress_fuzzer$(EXE): compress_fuzzer.o standalone_fuzz_target_runner.o $(STATICLIB)
+	$(CC) $(LDFLAGS) -o $@ $(LIB_FUZZING_ENGINE) compress_fuzzer.o $(STATICLIB) -lpthread
+example_small_fuzzer$(EXE): example_small_fuzzer.o standalone_fuzz_target_runner.o $(STATICLIB)
+	$(CC) $(LDFLAGS) -o $@ $(LIB_FUZZING_ENGINE) example_small_fuzzer.o $(STATICLIB) -lpthread
+example_large_fuzzer$(EXE): example_large_fuzzer.o standalone_fuzz_target_runner.o $(STATICLIB)
+	$(CC) $(LDFLAGS) -o $@ $(LIB_FUZZING_ENGINE) example_large_fuzzer.o $(STATICLIB) -lpthread
+example_flush_fuzzer$(EXE): example_flush_fuzzer.o standalone_fuzz_target_runner.o $(STATICLIB)
+	$(CC) $(LDFLAGS) -o $@ $(LIB_FUZZING_ENGINE) example_flush_fuzzer.o $(STATICLIB) -lpthread
+example_dict_fuzzer$(EXE): example_dict_fuzzer.o standalone_fuzz_target_runner.o $(STATICLIB)
+	$(CC) $(LDFLAGS) -o $@ $(LIB_FUZZING_ENGINE) example_dict_fuzzer.o $(STATICLIB) -lpthread
+minigzip_fuzzer$(EXE): minigzip_fuzzer.o standalone_fuzz_target_runner.o $(OBJG) $(STATICLIB)
+	$(CC) $(LDFLAGS) -o $@ $(LIB_FUZZING_ENGINE) minigzip_fuzzer.o $(OBJG) $(STATICLIB) -lpthread
+
 infcover.o: $(SRCDIR)/test/infcover.c $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h
 	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $(SRCDIR)/test/infcover.c
 
@@ -130,17 +181,17 @@ $(STATICLIB): $(OBJS)
 	$(AR) $(ARFLAGS) $@ $(OBJS)
 	-@ ($(RANLIB) $@ || true) >/dev/null 2>&1
 
-example.o: $(SRCDIR)/test/example.c $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h
-	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $(SRCDIR)/test/example.c
+example.o:
+	$(CC) $(CFLAGS) -DWITH_GZFILEOP $(INCLUDES) -c -o $@ $(SRCDIR)/test/example.c
 
-minigzip.o: $(SRCDIR)/test/minigzip.c $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h
-	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $(SRCDIR)/test/minigzip.c
+minigzip.o:
+	$(CC) $(CFLAGS) -DWITH_GZFILEOP $(INCLUDES) -c -o $@ $(SRCDIR)/test/minigzip.c
 
-example64.o: $(SRCDIR)/test/example.c $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h
-	$(CC) $(CFLAGS) -D_FILE_OFFSET_BITS=64 $(INCLUDES) -c -o $@ $(SRCDIR)/test/example.c
+example64.o:
+	$(CC) $(CFLAGS) -DWITH_GZFILEOP -D_FILE_OFFSET_BITS=64 $(INCLUDES) -c -o $@ $(SRCDIR)/test/example.c
 
-minigzip64.o: $(SRCDIR)/test/minigzip.c $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h
-	$(CC) $(CFLAGS) -D_FILE_OFFSET_BITS=64 $(INCLUDES) -c -o $@ $(SRCDIR)/test/minigzip.c
+minigzip64.o:
+	$(CC) $(CFLAGS) -DWITH_GZFILEOP -D_FILE_OFFSET_BITS=64 $(INCLUDES) -c -o $@ $(SRCDIR)/test/minigzip.c
 
 zlibrc.o: win32/zlib$(SUFFIX)1.rc
 	$(RC) $(RCFLAGS) -o $@ win32/zlib$(SUFFIX)1.rc
@@ -152,6 +203,9 @@ zlibrc.o: win32/zlib$(SUFFIX)1.rc
 
 %.lo: $(SRCDIR)/%.c
 	$(CC) $(SFLAGS) -DPIC $(INCLUDES) -c -o $@ $<
+
+$(OBJG): %.o: $(SRCDIR)/%.c
+	$(CC) $(CFLAGS) -DWITH_GZFILEOP $(INCLUDES) -c -o $@ $<
 
 $(SHAREDTARGET): $(PIC_OBJS) $(DEFFILE) $(RCOBJS)
 ifneq ($(SHAREDTARGET),)
@@ -166,38 +220,38 @@ ifneq ($(SHAREDLIB),$(SHAREDTARGET))
 endif
 endif
 
-example$(EXE): example.o $(STATICLIB)
-	$(CC) $(LDFLAGS) -o $@ example.o $(TEST_LIBS) $(LDSHAREDLIBC)
+example$(EXE): example.o $(OBJG) $(STATICLIB)
+	$(CC) $(LDFLAGS) -o $@ example.o $(OBJG) $(TEST_LIBS) $(LDSHAREDLIBC)
 ifneq ($(STRIP),)
 	$(STRIP) $@
 endif
 
-minigzip$(EXE): minigzip.o $(STATICLIB)
-	$(CC) $(LDFLAGS) -o $@ minigzip.o $(TEST_LIBS) $(LDSHAREDLIBC)
+minigzip$(EXE): minigzip.o $(OBJG) $(STATICLIB)
+	$(CC) $(LDFLAGS) -o $@ minigzip.o $(OBJG) $(TEST_LIBS) $(LDSHAREDLIBC)
 ifneq ($(STRIP),)
 	$(STRIP) $@
 endif
 
-examplesh$(EXE): example.o $(SHAREDTARGET)
-	$(CC) $(LDFLAGS) -o $@ example.o $(SHAREDTARGET) $(LDSHAREDLIBC)
+examplesh$(EXE): example.o $(OBJG) $(SHAREDTARGET)
+	$(CC) $(LDFLAGS) -o $@ example.o $(OBJG) $(SHAREDTARGET) $(LDSHAREDLIBC)
 ifneq ($(STRIP),)
 	$(STRIP) $@
 endif
 
-minigzipsh$(EXE): minigzip.o $(SHAREDTARGET)
-	$(CC) $(LDFLAGS) -o $@ minigzip.o $(SHAREDTARGET) $(LDSHAREDLIBC)
+minigzipsh$(EXE): minigzip.o $(OBJG) $(SHAREDTARGET)
+	$(CC) $(LDFLAGS) -o $@ minigzip.o $(OBJG) $(SHAREDTARGET) $(LDSHAREDLIBC)
 ifneq ($(STRIP),)
 	$(STRIP) $@
 endif
 
-example64$(EXE): example64.o $(STATICLIB)
-	$(CC) $(LDFLAGS) -o $@ example64.o $(TEST_LIBS) $(LDSHAREDLIBC)
+example64$(EXE): example64.o $(OBJG) $(STATICLIB)
+	$(CC) $(LDFLAGS) -o $@ example64.o $(OBJG) $(TEST_LIBS) $(LDSHAREDLIBC)
 ifneq ($(STRIP),)
 	$(STRIP) $@
 endif
 
-minigzip64$(EXE): minigzip64.o $(STATICLIB)
-	$(CC) $(LDFLAGS) -o $@ minigzip64.o $(TEST_LIBS) $(LDSHAREDLIBC)
+minigzip64$(EXE): minigzip64.o $(OBJG) $(STATICLIB)
+	$(CC) $(LDFLAGS) -o $@ minigzip64.o $(OBJG) $(TEST_LIBS) $(LDSHAREDLIBC)
 ifneq ($(STRIP),)
 	$(STRIP) $@
 endif
@@ -274,6 +328,8 @@ clean:
 	rm -f *.o *.lo *~ \
 	   example$(EXE) minigzip$(EXE) examplesh$(EXE) minigzipsh$(EXE) \
 	   example64$(EXE) minigzip64$(EXE) \
+	   checksum_fuzzer$(EXE) compress_fuzzer$(EXE) example_small_fuzzer$(EXE) example_large_fuzzer$(EXE) \
+	   example_flush_fuzzer$(EXE) example_dict_fuzzer$(EXE) minigzip_fuzzer$(EXE) \
 	   infcover \
 	   $(STATICLIB) $(IMPORTLIB) $(SHAREDLIB) $(SHAREDLIBV) $(SHAREDLIBM) \
 	   foo.gz so_locations \
@@ -297,11 +353,8 @@ distclean: clean
 # Reset zconf.h and zconf.h.cmakein if building inside source tree
 	@if [ -f zconf.h.in ]; then \
 	cp -p $(SRCDIR)/zconf.h.in zconf.h ; \
-	TEMPFILE=zconfh_$$ ; \
-	echo "/#define ZCONF_H/ a\\\n#cmakedefine Z_HAVE_UNISTD_H\\n#cmakedefine Z_HAVE_STDARG_H\n" >> $$TEMPFILE &&\
-	sed -f $$TEMPFILE $(SRCDIR)/zconf.h.in > zconf.h.cmakein &&\
-	touch -r $(SRCDIR)/zconf.h.in zconf.h.cmakein &&\
-	rm $$TEMPFILE ; fi
+	grep -v '^#cmakedefine' $(SRCDIR)/zconf.h.in > zconf.h.cmakein &&\
+	touch -r $(SRCDIR)/zconf.h.in zconf.h.cmakein ; fi
 # Cleanup these files if building outside source tree
 	@if [ ! -f zlib.3 ]; then rm -f zlib.3.pdf Makefile; fi
 # Remove arch and test directory if building outside source tree
@@ -310,69 +363,3 @@ distclean: clean
 
 tags:
 	etags $(SRCDIR)/*.[ch]
-
-depend:
-	makedepend -Y -- $(CFLAGS) -- $(SRCDIR)/*.c $(SRCDIR)/$(ARCHDIR)/*.c
-	makedepend -Y -a -o.lo -- $(SFLAGS) -- $(SRCDIR)/*.c $(SRCDIR)/$(ARCHDIR)/*.c
-	@sed "s=^$(SRCDIR)/\($(ARCHDIR)/\)\?\([a-zA-Z0-9_]*\.\(lo\|o\):\)=\1\2=g" < Makefile > Makefile.tmp
-	@mv -f Makefile.tmp Makefile
-
-# DO NOT DELETE THIS LINE -- make depend depends on it.
-
-adler32.o: $(SRCDIR)/functable.h $(SRCDIR)/zutil.h $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h
-functable.o: $(SRCDIR)/deflate.h $(SRCDIR)/deflate_p.h $(SRCDIR)/functable.h
-gzclose.o gzlib.o gzread.o gzwrite.o: $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h $(SRCDIR)/gzguts.h
-compress.o example.o minigzip.o uncompr.o: $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h
-crc32.o: $(SRCDIR)/zutil.h $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h $(SRCDIR)/crc32.h
-deflate.o: $(SRCDIR)/deflate.h $(SRCDIR)/deflate_p.h $(SRCDIR)/functable.h $(SRCDIR)/match.h $(SRCDIR)/zutil.h $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h
-deflate_fast.o: $(SRCDIR)/deflate.h $(SRCDIR)/deflate_p.h $(SRCDIR)/functable.h $(SRCDIR)/match.h $(SRCDIR)/zutil.h $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h
-deflate_medium.o: $(SRCDIR)/deflate.h $(SRCDIR)/deflate_p.h $(SRCDIR)/functable.h $(SRCDIR)/match.h $(SRCDIR)/zutil.h $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h
-deflate_slow.o: $(SRCDIR)/deflate.h $(SRCDIR)/deflate_p.h $(SRCDIR)/functable.h $(SRCDIR)/match.h $(SRCDIR)/zutil.h $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h
-infback.o: $(SRCDIR)/zutil.h $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h $(SRCDIR)/inftrees.h $(SRCDIR)/inflate.h $(SRCDIR)/inffast.h $(SRCDIR)/inffixed.h
-inffast.o: $(SRCDIR)/zutil.h $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h $(SRCDIR)/inftrees.h $(SRCDIR)/inflate.h $(SRCDIR)/inffast.h $(SRCDIR)/memcopy.h
-inflate.o: $(SRCDIR)/functable.h $(SRCDIR)/zutil.h $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h $(SRCDIR)/inftrees.h $(SRCDIR)/inflate.h $(SRCDIR)/inffast.h $(SRCDIR)/inffixed.h $(SRCDIR)/memcopy.h
-inftrees.o: $(SRCDIR)/zutil.h $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h $(SRCDIR)/inftrees.h
-trees.o: $(SRCDIR)/deflate.h $(SRCDIR)/zutil.h $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h $(SRCDIR)/trees.h
-zutil.o: $(SRCDIR)/zutil.h $(SRCDIR)/gzguts.h $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h
-arch/aarch64/adler32_neon.o: $(SRCDIR)/arch/aarch64/adler32_neon.h
-arch/aarch64/crc32_acle.o: zconf$(SUFFIX).h
-arch/aarch64/fill_window_arm.o: $(SRCDIR)/deflate.h $(SRCDIR)/deflate_p.h $(SRCDIR)/functable.h $(SRCDIR)/zutil.h $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h
-arch/aarch64/insert_string_acle.o: $(SRCDIR)/deflate.h $(SRCDIR)/zutil.h $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h
-arch/arm/adler32_neon.o: $(SRCDIR)/arch/arm/adler32_neon.h
-arch/arm/crc32_acle.o: zconf$(SUFFIX).h
-arch/arm/fill_window_arm.o: $(SRCDIR)/deflate.h $(SRCDIR)/deflate_p.h $(SRCDIR)/functable.h $(SRCDIR)/zutil.h $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h
-arch/arm/insert_string_acle.o: $(SRCDIR)/deflate.h $(SRCDIR)/zutil.h $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h
-arch/x86/crc_folding.o: $(SRCDIR)/arch/x86/crc_folding.h $(SRCDIR)/deflate.h $(SRCDIR)/zutil.h $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h
-arch/x86/crc_pclmulqdq.o: $(SRCDIR)/arch/x86/x86.h $(SRCDIR)/arch/x86/crc_folding.h $(SRCDIR)/deflate.h $(SRCDIR)/zutil.h $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h
-arch/x86/deflate_quick.o: $(SRCDIR)/deflate.h $(SRCDIR)/zutil.h $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h
-arch/x86/fill_window_sse.o: $(SRCDIR)/deflate.h $(SRCDIR)/deflate_p.h $(SRCDIR)/functable.h $(SRCDIR)/zutil.h $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h
-arch/x86/x86.o: $(SRCDIR)/arch/x86/x86.h
-
-adler32.lo: $(SRCDIR)/functable.h $(SRCDIR)/zutil.h $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h
-functable.lo: $(SRCDIR)/deflate.h $(SRCDIR)/deflate_p.h $(SRCDIR)/functable.h
-gzclose.lo gzlib.lo gzread.lo gzwrite.lo: $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h $(SRCDIR)/gzguts.h
-compress.lo example.lo minigzip.lo uncompr.lo: $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h
-crc32.lo: $(SRCDIR)/zutil.h $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h $(SRCDIR)/crc32.h
-deflate.lo: $(SRCDIR)/deflate.h $(SRCDIR)/deflate_p.h $(SRCDIR)/functable.h $(SRCDIR)/match.h $(SRCDIR)/zutil.h $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h
-deflate_fast.lo: $(SRCDIR)/deflate.h $(SRCDIR)/deflate_p.h $(SRCDIR)/functable.h $(SRCDIR)/match.h $(SRCDIR)/zutil.h $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h
-deflate_medium.lo: $(SRCDIR)/deflate.h $(SRCDIR)/deflate_p.h $(SRCDIR)/functable.h $(SRCDIR)/match.h $(SRCDIR)/zutil.h $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h
-deflate_slow.lo: $(SRCDIR)/deflate.h $(SRCDIR)/deflate_p.h $(SRCDIR)/functable.h $(SRCDIR)/match.h $(SRCDIR)/zutil.h $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h
-infback.lo: $(SRCDIR)/zutil.h $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h $(SRCDIR)/inftrees.h $(SRCDIR)/inflate.h $(SRCDIR)/inffast.h $(SRCDIR)/inffixed.h
-inffast.lo: $(SRCDIR)/zutil.h $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h $(SRCDIR)/inftrees.h $(SRCDIR)/inflate.h $(SRCDIR)/inffast.h $(SRCDIR)/memcopy.h
-inflate.lo: $(SRCDIR)/functable.h $(SRCDIR)/zutil.h $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h $(SRCDIR)/inftrees.h $(SRCDIR)/inflate.h $(SRCDIR)/inffast.h $(SRCDIR)/inffixed.h $(SRCDIR)/memcopy.h
-inftrees.lo: $(SRCDIR)/zutil.h $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h $(SRCDIR)/inftrees.h
-trees.lo: $(SRCDIR)/deflate.h $(SRCDIR)/zutil.h $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h $(SRCDIR)/trees.h
-zutil.lo: $(SRCDIR)/zutil.h $(SRCDIR)/gzguts.h $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h
-arch/aarch64/adler32_neon.lo: $(SRCDIR)/arch/aarch64/adler32_neon.h
-arch/aarch64/crc32_acle.lo: zconf$(SUFFIX).h
-arch/aarch64/fill_window_arm.lo: $(SRCDIR)/deflate.h $(SRCDIR)/deflate_p.h $(SRCDIR)/functable.h $(SRCDIR)/zutil.h $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h
-arch/aarch64/insert_string_acle.lo: $(SRCDIR)/deflate.h $(SRCDIR)/zutil.h $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h
-arch/arm/adler32_neon.lo: $(SRCDIR)/arch/arm/adler32_neon.h
-arch/arm/crc32_acle.lo: zconf$(SUFFIX).h
-arch/arm/fill_window_arm.lo: $(SRCDIR)/deflate.h $(SRCDIR)/deflate_p.h $(SRCDIR)/functable.h $(SRCDIR)/zutil.h $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h
-arch/arm/insert_string_acle.lo: $(SRCDIR)/deflate.h $(SRCDIR)/zutil.h $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h
-arch/x86/crc_folding.lo: $(SRCDIR)/arch/x86/crc_folding.h $(SRCDIR)/deflate.h $(SRCDIR)/zutil.h $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h
-arch/x86/crc_pclmulqdq.lo: $(SRCDIR)/arch/x86/x86.h $(SRCDIR)/arch/x86/crc_folding.h $(SRCDIR)/deflate.h $(SRCDIR)/zutil.h $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h
-arch/x86/deflate_quick.lo: $(SRCDIR)/deflate.h $(SRCDIR)/zutil.h $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h
-arch/x86/fill_window_sse.lo: $(SRCDIR)/deflate.h $(SRCDIR)/deflate_p.h $(SRCDIR)/functable.h $(SRCDIR)/zutil.h $(SRCDIR)/zlib$(SUFFIX).h zconf$(SUFFIX).h
-arch/x86/x86.lo: $(SRCDIR)/arch/x86/x86.h

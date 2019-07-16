@@ -319,9 +319,8 @@ int ZEXPORT PREFIX(gzputc)(gzFile file, int c) {
 }
 
 /* -- see zlib.h -- */
-int ZEXPORT PREFIX(gzputs)(gzFile file, const char *str) {
-    int ret;
-    size_t len;
+int ZEXPORT PREFIX(gzputs)(gzFile file, const char *s) {
+    size_t len, put;
     gz_state *state;
 
     /* get internal structure */
@@ -334,9 +333,13 @@ int ZEXPORT PREFIX(gzputs)(gzFile file, const char *str) {
         return -1;
 
     /* write string */
-    len = strlen(str);
-    ret = (int)gz_write(state, str, len);
-    return ret == 0 && len != 0 ? -1 : ret;
+    len = strlen(s);
+    if ((int)len < 0 || (unsigned)len != len) {
+        gz_error(state, Z_STREAM_ERROR, "string length does not fit in int");
+        return -1;
+    }
+    put = gz_write(state, s, len);
+    return put < len ? -1 : (int)len;
 }
 
 /* -- see zlib.h -- */
@@ -389,7 +392,7 @@ int ZEXPORTVA PREFIX(gzvprintf)(gzFile file, const char *format, va_list va) {
         strm->avail_in = state->size;
         if (gz_comp(state, Z_NO_FLUSH) == -1)
             return state->err;
-        memcpy(state->in, state->in + state->size, left);
+        memmove(state->in, state->in + state->size, left);
         strm->next_in = state->in;
         strm->avail_in = left;
     }
