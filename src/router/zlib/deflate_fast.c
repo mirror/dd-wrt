@@ -7,7 +7,7 @@
 #include "zbuild.h"
 #include "deflate.h"
 #include "deflate_p.h"
-#include "match.h"
+#include "match_p.h"
 #include "functable.h"
 
 /* ===========================================================================
@@ -114,7 +114,7 @@ ZLIB_INTERNAL block_state deflate_fast(deflate_state *s, int flush) {
         FLUSH_BLOCK(s, 1);
         return finish_done;
     }
-    if (s->last_lit)
+    if (s->sym_next)
         FLUSH_BLOCK(s, 0);
     return block_done;
 }

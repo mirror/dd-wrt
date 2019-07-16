@@ -13,6 +13,7 @@
 /* @(#) $Id$ */
 
 #include "zutil.h"
+#include "gzendian.h"
 
 /* define NO_GZIP when compiling if you want to disable gzip header and
    trailer creation by deflate().  NO_GZIP would be used to avoid linking in
@@ -116,7 +117,7 @@ typedef struct internal_state {
     int                  last_flush;       /* value of flush param for previous deflate call */
 
 #ifdef X86_PCLMULQDQ_CRC
-    unsigned ALIGNED_(16) crc0[4 * 5];
+    unsigned crc0[4 * 5];
 #endif
 
                 /* used by deflate.c: */
@@ -153,7 +154,7 @@ typedef struct internal_state {
     unsigned int  hash_bits;         /* log2(hash_size) */
     unsigned int  hash_mask;         /* hash_size-1 */
 
-    #if !defined(__x86_64) && !defined(__i386_)
+    #if !defined(__x86_64__) && !defined(_M_X64) && !defined(__i386) && !defined(_M_IX86)
     unsigned int  hash_shift;
     #endif
     /* Number of bits by which ins_h must be shifted at each input
@@ -228,7 +229,7 @@ typedef struct internal_state {
     /* Depth of each subtree used as tie breaker for trees of equal frequency
      */
 
-    unsigned char *l_buf;       /* buffer for literals or lengths */
+    unsigned char *sym_buf;       /* buffer for distances and literals/lengths */
 
     unsigned int  lit_bufsize;
     /* Size of match buffer for literals/lengths.  There are 4 reasons for
@@ -250,13 +251,8 @@ typedef struct internal_state {
      *   - I can't count above 4
      */
 
-    unsigned int last_lit;        /* running index in l_buf */
-
-    uint16_t *d_buf;
-    /* Buffer for distances. To simplify the code, d_buf and l_buf have
-     * the same number of elements. To use different lengths, an extra flag
-     * array would be necessary.
-     */
+    unsigned int sym_next;      /* running index in sym_buf */
+    unsigned int sym_end;       /* symbol table full when sym_next reaches this */
 
     unsigned long opt_len;        /* bit length of current block with optimal trees */
     unsigned long static_len;     /* bit length of current block with static trees */
@@ -307,26 +303,13 @@ typedef enum {
  * Output a short LSB first on the stream.
  * IN assertion: there is enough room in pendingBuf.
  */
-#ifdef UNALIGNED_OK
-/* Compared to the else-clause's implementation, there are few advantages:
- *  - s->pending is loaded only once (else-clause's implementation needs to
- *    load s->pending twice due to the alias between s->pending and
- *    s->pending_buf[].
- *  - no instructions for extracting bytes from short.
- *  - needs less registers
- *  - stores to adjacent bytes are merged into a single store, albeit at the
- *    cost of penalty of potentially unaligned access. 
- */
-#define put_short(s, w) { \
-    *(uint16_t*)(&s->pending_buf[s->pending]) = (w) ; \
-    s->pending += 2; \
-}
-#else
-#define put_short(s, w) { \
-    put_byte(s, (unsigned char)((w) & 0xff)); \
-    put_byte(s, (unsigned char)((uint16_t)(w) >> 8)); \
-}
+static inline void put_short(deflate_state *s, uint16_t w) {
+#if BYTE_ORDER == BIG_ENDIAN
+  w = ZSWAP16(w);
 #endif
+  memcpy(&(s->pending_buf[s->pending]), &w, sizeof(uint16_t));
+  s->pending += 2;
+}
 
 #define MIN_LOOKAHEAD (MAX_MATCH+MIN_MATCH+1)
 /* Minimum amount of lookahead, except at the end of the input file.
@@ -353,6 +336,8 @@ void ZLIB_INTERNAL _tr_flush_bits(deflate_state *s);
 void ZLIB_INTERNAL _tr_align(deflate_state *s);
 void ZLIB_INTERNAL _tr_stored_block(deflate_state *s, char *buf, unsigned long stored_len, int last);
 void ZLIB_INTERNAL bi_windup(deflate_state *s);
+unsigned ZLIB_INTERNAL bi_reverse(unsigned code, int len);
+void ZLIB_INTERNAL flush_pending(PREFIX3(streamp) strm);
 
 #define d_code(dist) ((dist) < 256 ? _dist_code[dist] : _dist_code[256+((dist)>>7)])
 /* Mapping from a distance to a distance code. dist is the distance - 1 and
@@ -373,25 +358,27 @@ void ZLIB_INTERNAL bi_windup(deflate_state *s);
 
 # define _tr_tally_lit(s, c, flush) \
   { unsigned char cc = (c); \
-    s->d_buf[s->last_lit] = 0; \
-    s->l_buf[s->last_lit++] = cc; \
+    s->sym_buf[s->sym_next++] = 0; \
+    s->sym_buf[s->sym_next++] = 0; \
+    s->sym_buf[s->sym_next++] = cc; \
     s->dyn_ltree[cc].Freq++; \
-    flush = (s->last_lit == s->lit_bufsize-1); \
+    flush = (s->sym_next == s->sym_end); \
   }
 # define _tr_tally_dist(s, distance, length, flush) \
   { unsigned char len = (unsigned char)(length); \
     uint16_t dist = (uint16_t)(distance); \
-    s->d_buf[s->last_lit] = dist; \
-    s->l_buf[s->last_lit++] = len; \
+    s->sym_buf[s->sym_next++] = dist; \
+    s->sym_buf[s->sym_next++] = dist >> 8; \
+    s->sym_buf[s->sym_next++] = len; \
     dist--; \
     s->dyn_ltree[_length_code[len]+LITERALS+1].Freq++; \
     s->dyn_dtree[d_code(dist)].Freq++; \
-    flush = (s->last_lit == s->lit_bufsize-1); \
+    flush = (s->sym_next == s->sym_end); \
   }
 #else
 #   define _tr_tally_lit(s, c, flush) flush = _tr_tally(s, 0, c)
 #   define _tr_tally_dist(s, distance, length, flush) \
-              flush = _tr_tally(s, distance, length)
+              flush = _tr_tally(s, (unsigned)(distance), (unsigned)(length))
 #endif
 
 /* ===========================================================================
@@ -407,7 +394,7 @@ void ZLIB_INTERNAL bi_windup(deflate_state *s);
 #define TRIGGER_LEVEL 5
 #endif
 
-#if defined(__x86_64) || defined(__i386_)
+#if defined(__x86_64__) || defined(_M_X64) || defined(__i386) || defined(_M_IX86)
 #define UPDATE_HASH(s, h, i) \
     do {\
         if (s->level < TRIGGER_LEVEL) \

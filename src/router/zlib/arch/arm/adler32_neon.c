@@ -17,8 +17,9 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 #include "adler32_neon.h"
-#if (defined(__ARM_NEON__) || defined(__ARM_NEON))
+#if defined(__ARM_NEON__) || defined(__ARM_NEON)
 #include <arm_neon.h>
+#include "adler32_p.h"
 
 static void NEON_accum32(uint32_t *s, const unsigned char *buf, size_t len) {
     static const uint8_t taps[32] = {
@@ -71,7 +72,6 @@ static void NEON_accum32(uint32_t *s, const unsigned char *buf, size_t len) {
 }
 
 static void NEON_handle_tail(uint32_t *pair, const unsigned char *buf, size_t len) {
-    /* Oldie K&R code integration. */
     unsigned int i;
     for (i = 0; i < len; ++i) {
         pair[0] += buf[i];
@@ -80,26 +80,30 @@ static void NEON_handle_tail(uint32_t *pair, const unsigned char *buf, size_t le
 }
 
 uint32_t adler32_neon(uint32_t adler, const unsigned char *buf, size_t len) {
-    if (!buf)
+    /* split Adler-32 into component sums */
+    uint32_t sum2 = (adler >> 16) & 0xffff;
+    adler &= 0xffff;
+
+    /* in case user likes doing a byte at a time, keep it fast */
+    if (len == 1)
+        return adler32_len_1(adler, buf, sum2);
+
+    /* initial Adler-32 value (deferred check for len == 1 speed) */
+    if (buf == NULL)
         return 1L;
 
-    /* The largest prime smaller than 65536. */
-    const uint32_t M_BASE = 65521;
-    /* This is the threshold where doing accumulation may overflow. */
-    const int M_NMAX = 5552;
+    /* in case short lengths are provided, keep it somewhat fast */
+    if (len < 16)
+        return adler32_len_16(adler, buf, len, sum2);
 
-    uint32_t sum2;
     uint32_t pair[2];
-    int n = M_NMAX;
+    int n = NMAX;
     unsigned int done = 0;
-    /* Oldie K&R code integration. */
     unsigned int i;
 
     /* Split Adler-32 into component sums, it can be supplied by
      * the caller sites (e.g. in a PNG file).
      */
-    sum2 = (adler >> 16) & 0xffff;
-    adler &= 0xffff;
     pair[0] = adler;
     pair[1] = sum2;
 
@@ -111,8 +115,8 @@ uint32_t adler32_neon(uint32_t adler, const unsigned char *buf, size_t len) {
             break;
 
         NEON_accum32(pair, buf + i, n / 16);
-        pair[0] %= M_BASE;
-        pair[1] %= M_BASE;
+        pair[0] %= BASE;
+        pair[1] %= BASE;
 
         done += (n / 16) * 16;
     }
@@ -120,8 +124,8 @@ uint32_t adler32_neon(uint32_t adler, const unsigned char *buf, size_t len) {
     /* Handle the tail elements. */
     if (done < len) {
         NEON_handle_tail(pair, (buf + done), len - done);
-        pair[0] %= M_BASE;
-        pair[1] %= M_BASE;
+        pair[0] %= BASE;
+        pair[1] %= BASE;
     }
 
     /* D = B * 65536 + A, see: https://en.wikipedia.org/wiki/Adler-32. */
