@@ -12,7 +12,7 @@
 
 /* Return the low n bits of the bit accumulator (n < 16) */
 #define BITS(n) \
-    (hold & ((1U << (n)) - 1))
+    (hold & ((UINT64_C(1) << (n)) - 1))
 
 /* Remove n bits from the bit accumulator */
 #define DROPBITS(n) \
@@ -20,87 +20,6 @@
         hold >>= (n); \
         bits -= (unsigned)(n); \
     } while (0)
-
-#ifdef INFFAST_CHUNKSIZE
-/*
-   Ask the compiler to perform a wide, unaligned load with an machine
-   instruction appropriate for the inffast_chunk_t type.
- */
-static inline inffast_chunk_t loadchunk(unsigned char const* s) {
-    inffast_chunk_t c;
-    __builtin_memcpy(&c, s, sizeof(c));
-    return c;
-}
-
-/*
-   Ask the compiler to perform a wide, unaligned store with an machine
-   instruction appropriate for the inffast_chunk_t type.
- */
-static inline void storechunk(unsigned char* d, inffast_chunk_t c) {
-    __builtin_memcpy(d, &c, sizeof(c));
-}
-
-/*
-   Behave like memcpy, but assume that it's OK to overwrite at least
-   INFFAST_CHUNKSIZE bytes of output even if the length is shorter than this,
-   that the length is non-zero, and that `from` lags `out` by at least
-   INFFAST_CHUNKSIZE bytes (or that they don't overlap at all or simply that
-   the distance is less than the length of the copy).
-
-   Aside from better memory bus utilisation, this means that short copies
-   (INFFAST_CHUNKSIZE bytes or fewer) will fall straight through the loop
-   without iteration, which will hopefully make the branch prediction more
-   reliable.
- */
-static inline unsigned char* chunkcopy(unsigned char *out, unsigned char const *from, unsigned len) {
-    --len;
-    storechunk(out, loadchunk(from));
-    out += (len % INFFAST_CHUNKSIZE) + 1;
-    from += (len % INFFAST_CHUNKSIZE) + 1;
-    len /= INFFAST_CHUNKSIZE;
-    while (len-- > 0) {
-        storechunk(out, loadchunk(from));
-        out += INFFAST_CHUNKSIZE;
-        from += INFFAST_CHUNKSIZE;
-    }
-    return out;
-}
-
-/*
-   Behave like chunkcopy, but avoid writing beyond of legal output.
- */
-static inline unsigned char* chunkcopysafe(unsigned char *out, unsigned char const *from, unsigned len,
-                                           unsigned char *safe) {
-    if (out > safe) {
-        while (len-- > 0) {
-          *out++ = *from++;
-        }
-        return out;
-    }
-    return chunkcopy(out, from, len);
-}
-
-/*
-   Perform short copies until distance can be rewritten as being at least
-   INFFAST_CHUNKSIZE.
-
-   This assumes that it's OK to overwrite at least the first
-   2*INFFAST_CHUNKSIZE bytes of output even if the copy is shorter than this.
-   This assumption holds because inflate_fast() starts every iteration with at
-   least 258 bytes of output space available (258 being the maximum length
-   output from a single token; see inflate_fast()'s assumptions below).
- */
-static inline unsigned char* chunkunroll(unsigned char *out, unsigned *dist, unsigned *len) {
-    unsigned char const *from = out - *dist;
-    while (*dist < *len && *dist < INFFAST_CHUNKSIZE) {
-        storechunk(out, loadchunk(from));
-        out += *dist;
-        *len -= *dist;
-        *dist += *dist;
-    }
-    return out;
-}
-#endif
 
 /*
    Decode literal, length, and distance codes and write out the resulting
@@ -113,8 +32,8 @@ static inline unsigned char* chunkunroll(unsigned char *out, unsigned *dist, uns
    Entry assumptions:
 
         state->mode == LEN
-        strm->avail_in >= 6
-        strm->avail_out >= 258
+        strm->avail_in >= INFLATE_FAST_MIN_HAVE
+        strm->avail_out >= INFLATE_FAST_MIN_LEFT
         start >= strm->avail_out
         state->bits < 8
 
@@ -131,6 +50,10 @@ static inline unsigned char* chunkunroll(unsigned char *out, unsigned *dist, uns
       and 13 bits for the distance extra.  This totals 48 bits, or six bytes.
       Therefore if strm->avail_in >= 6, then there is enough input to avoid
       checking for available input while decoding.
+
+    - On some architectures, it can be significantly faster (e.g. up to 1.2x
+      faster on x86_64) to load from strm->next_in 64 bits, or 8 bytes, at a
+      time, so INFLATE_FAST_MIN_HAVE == 8.
 
     - The maximum bytes that a single length/distance pair can output is 258
       bytes, which is the maximum length that can be coded.  inflate_fast()
@@ -155,13 +78,51 @@ void ZLIB_INTERNAL inflate_fast(PREFIX3(stream) *strm, unsigned long start) {
     unsigned whave;             /* valid bytes in the window */
     unsigned wnext;             /* window write index */
     unsigned char *window;      /* allocated sliding window, if wsize != 0 */
-    uint32_t hold;              /* local strm->hold */
+
+    /* hold is a local copy of strm->hold. By default, hold satisfies the same
+       invariants that strm->hold does, namely that (hold >> bits) == 0. This
+       invariant is kept by loading bits into hold one byte at a time, like:
+
+       hold |= next_byte_of_input << bits; in++; bits += 8;
+
+       If we need to ensure that bits >= 15 then this code snippet is simply
+       repeated. Over one iteration of the outermost do/while loop, this
+       happens up to six times (48 bits of input), as described in the NOTES
+       above.
+
+       However, on some little endian architectures, it can be significantly
+       faster to load 64 bits once instead of 8 bits six times:
+
+       if (bits <= 16) {
+         hold |= next_8_bytes_of_input << bits; in += 6; bits += 48;
+       }
+
+       Unlike the simpler one byte load, shifting the next_8_bytes_of_input
+       by bits will overflow and lose those high bits, up to 2 bytes' worth.
+       The conservative estimate is therefore that we have read only 6 bytes
+       (48 bits). Again, as per the NOTES above, 48 bits is sufficient for the
+       rest of the iteration, and we will not need to load another 8 bytes.
+
+       Inside this function, we no longer satisfy (hold >> bits) == 0, but
+       this is not problematic, even if that overflow does not land on an 8 bit
+       byte boundary. Those excess bits will eventually shift down lower as the
+       Huffman decoder consumes input, and when new input bits need to be loaded
+       into the bits variable, the same input bits will be or'ed over those
+       existing bits. A bitwise or is idempotent: (a | b | b) equals (a | b).
+       Note that we therefore write that load operation as "hold |= etc" and not
+       "hold += etc".
+
+       Outside that loop, at the end of the function, hold is bitwise and'ed
+       with (1<<bits)-1 to drop those excess bits so that, on function exit, we
+       keep the invariant that (state->hold >> state->bits) == 0.
+    */
+    uint64_t hold;              /* local strm->hold */
     unsigned bits;              /* local strm->bits */
     code const *lcode;          /* local strm->lencode */
     code const *dcode;          /* local strm->distcode */
     unsigned lmask;             /* mask for first level of length codes */
     unsigned dmask;             /* mask for first level of distance codes */
-    code here;                  /* retrieved table entry */
+    const code *here;           /* retrieved table entry */
     unsigned op;                /* code bits, operation, extra bits, or */
                                 /*  window position, window bytes to copy */
     unsigned len;               /* match length, unused bytes */
@@ -171,13 +132,13 @@ void ZLIB_INTERNAL inflate_fast(PREFIX3(stream) *strm, unsigned long start) {
     /* copy state to local variables */
     state = (struct inflate_state *)strm->state;
     in = strm->next_in;
-    last = in + (strm->avail_in - 5);
+    last = in + (strm->avail_in - (INFLATE_FAST_MIN_HAVE - 1));
     out = strm->next_out;
     beg = out - (start - strm->avail_out);
-    end = out + (strm->avail_out - 257);
+    end = out + (strm->avail_out - (INFLATE_FAST_MIN_LEFT - 1));
 
 #ifdef INFFAST_CHUNKSIZE
-    safe = out + (strm->avail_out - INFFAST_CHUNKSIZE);
+    safe = out + strm->avail_out;
 #endif
 #ifdef INFLATE_STRICT
     dmax = state->dmax;
@@ -197,50 +158,48 @@ void ZLIB_INTERNAL inflate_fast(PREFIX3(stream) *strm, unsigned long start) {
        input data or output space */
     do {
         if (bits < 15) {
-            hold += load_short(in, bits);
-            in += 2;
-            bits += 16;
+            hold |= load_64_bits(in, bits);
+            in += 6;
+            bits += 48;
         }
-        here = lcode[hold & lmask];
+        here = lcode + (hold & lmask);
       dolen:
-        DROPBITS(here.bits);
-        op = here.op;
+        DROPBITS(here->bits);
+        op = here->op;
         if (op == 0) {                          /* literal */
-            Tracevv((stderr, here.val >= 0x20 && here.val < 0x7f ?
+            Tracevv((stderr, here->val >= 0x20 && here->val < 0x7f ?
                     "inflate:         literal '%c'\n" :
-                    "inflate:         literal 0x%02x\n", here.val));
-            *out++ = (unsigned char)(here.val);
+                    "inflate:         literal 0x%02x\n", here->val));
+            *out++ = (unsigned char)(here->val);
         } else if (op & 16) {                     /* length base */
-            len = here.val;
+            len = here->val;
             op &= 15;                           /* number of extra bits */
             if (op) {
                 if (bits < op) {
-                    hold += (uint32_t)(*in++) << bits;
-                    bits += 8;
+                    hold |= load_64_bits(in, bits);
+                    in += 6;
+                    bits += 48;
                 }
                 len += BITS(op);
                 DROPBITS(op);
             }
             Tracevv((stderr, "inflate:         length %u\n", len));
             if (bits < 15) {
-                hold += load_short(in, bits);
-                in += 2;
-                bits += 16;
+                hold |= load_64_bits(in, bits);
+                in += 6;
+                bits += 48;
             }
-            here = dcode[hold & dmask];
+            here = dcode + (hold & dmask);
           dodist:
-            DROPBITS(here.bits);
-            op = here.op;
+            DROPBITS(here->bits);
+            op = here->op;
             if (op & 16) {                      /* distance base */
-                dist = here.val;
+                dist = here->val;
                 op &= 15;                       /* number of extra bits */
                 if (bits < op) {
-                    hold += (uint32_t)(*in++) << bits;
-                    bits += 8;
-                    if (bits < op) {
-                        hold += (uint32_t)(*in++) << bits;
-                        bits += 8;
-                    }
+                    hold |= load_64_bits(in, bits);
+                    in += 6;
+                    bits += 48;
                 }
                 dist += BITS(op);
 #ifdef INFLATE_STRICT
@@ -303,18 +262,10 @@ void ZLIB_INTERNAL inflate_fast(PREFIX3(stream) *strm, unsigned long start) {
                     if (op < len) {             /* still need some from output */
                         len -= op;
                         out = chunkcopysafe(out, from, op, safe);
-                        if (dist == 1) {
-                            out = byte_memset(out, len);
-                        } else {
-                            out = chunkunroll(out, &dist, &len);
-                            out = chunkcopysafe(out, out - dist, len, safe);
-                        }
+                        out = chunkunroll(out, &dist, &len);
+                        out = chunkcopysafe(out, out - dist, len, safe);
                     } else {
-                        if (from - out == 1) {
-                            out = byte_memset(out, len);
-                        } else {
-                            out = chunkcopysafe(out, from, len, safe);
-                        }
+                        out = chunkcopysafe(out, from, len, safe);
                     }
 #else
                     from = window;
@@ -360,18 +311,16 @@ void ZLIB_INTERNAL inflate_fast(PREFIX3(stream) *strm, unsigned long start) {
 #endif
                 } else {
 #ifdef INFFAST_CHUNKSIZE
-                    if (dist == 1 && len >= sizeof(uint64_t)) {
-                        out = byte_memset(out, len);
-                    } else {
-                        /* Whole reference is in range of current output.  No
-                           range checks are necessary because we start with room
-                           for at least 258 bytes of output, so unroll and roundoff
-                           operations can write beyond `out+len` so long as they
-                           stay within 258 bytes of `out`.
-                         */
-                        out = chunkunroll(out, &dist, &len);
+                    /* Whole reference is in range of current output.  No
+                       range checks are necessary because we start with room
+                       for at least 258 bytes of output, so unroll and roundoff
+                       operations can write beyond `out+len` so long as they
+                       stay within 258 bytes of `out`.
+                    */
+                    if (dist >= len || dist >= INFFAST_CHUNKSIZE)
                         out = chunkcopy(out, out - dist, len);
-                    }
+                    else
+                        out = chunkmemset(out, dist, len);
 #else
                     if (len < sizeof(uint64_t))
                       out = set_bytes(out, out - dist, dist, len);
@@ -382,7 +331,7 @@ void ZLIB_INTERNAL inflate_fast(PREFIX3(stream) *strm, unsigned long start) {
 #endif
                 }
             } else if ((op & 64) == 0) {          /* 2nd level distance code */
-                here = dcode[here.val + BITS(op)];
+                here = dcode + here->val + BITS(op);
                 goto dodist;
             } else {
                 strm->msg = (char *)"invalid distance code";
@@ -390,7 +339,7 @@ void ZLIB_INTERNAL inflate_fast(PREFIX3(stream) *strm, unsigned long start) {
                 break;
             }
         } else if ((op & 64) == 0) {              /* 2nd level length code */
-            here = lcode[here.val + BITS(op)];
+            here = lcode + here->val + BITS(op);
             goto dolen;
         } else if (op & 32) {                     /* end-of-block */
             Tracevv((stderr, "inflate:         end of block\n"));
@@ -407,14 +356,20 @@ void ZLIB_INTERNAL inflate_fast(PREFIX3(stream) *strm, unsigned long start) {
     len = bits >> 3;
     in -= len;
     bits -= len << 3;
-    hold &= (1U << bits) - 1;
+    hold &= (UINT64_C(1) << bits) - 1;
 
     /* update state and return */
     strm->next_in = in;
     strm->next_out = out;
-    strm->avail_in = (unsigned)(in < last ? 5 + (last - in) : 5 - (in - last));
-    strm->avail_out = (unsigned)(out < end ? 257 + (end - out) : 257 - (out - end));
-    state->hold = hold;
+    strm->avail_in =
+        (unsigned)(in < last ? (INFLATE_FAST_MIN_HAVE - 1) + (last - in)
+                             : (INFLATE_FAST_MIN_HAVE - 1) - (in - last));
+    strm->avail_out =
+        (unsigned)(out < end ? (INFLATE_FAST_MIN_LEFT - 1) + (end - out)
+                             : (INFLATE_FAST_MIN_LEFT - 1) - (out - end));
+
+    Assert(bits <= 32, "Remaining bits greater than 32");
+    state->hold = (uint32_t)hold;
     state->bits = bits;
     return;
 }

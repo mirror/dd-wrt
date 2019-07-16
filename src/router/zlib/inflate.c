@@ -88,6 +88,31 @@
 #include "memcopy.h"
 #include "functable.h"
 
+/* Architecture-specific hooks. */
+#ifdef S390_DFLTCC_INFLATE
+#  include "arch/s390/dfltcc_inflate.h"
+#else
+/* Memory management for the inflate state. Useful for allocating arch-specific extension blocks. */
+#  define ZALLOC_STATE(strm, items, size) ZALLOC(strm, items, size)
+#  define ZFREE_STATE(strm, addr) ZFREE(strm, addr)
+#  define ZCOPY_STATE(dst, src, size) memcpy(dst, src, size)
+/* Memory management for the window. Useful for allocation the aligned window. */
+#  define ZALLOC_WINDOW(strm, items, size) ZALLOC(strm, items, size)
+#  define ZFREE_WINDOW(strm, addr) ZFREE(strm, addr)
+/* Invoked at the end of inflateResetKeep(). Useful for initializing arch-specific extension blocks. */
+#  define INFLATE_RESET_KEEP_HOOK(strm) do {} while (0)
+/* Invoked at the beginning of inflatePrime(). Useful for updating arch-specific buffers. */
+#  define INFLATE_PRIME_HOOK(strm, bits, value) do {} while (0)
+/* Invoked at the beginning of each block. Useful for plugging arch-specific inflation code. */
+#  define INFLATE_TYPEDO_HOOK(strm, flush) do {} while (0)
+/* Returns whether zlib-ng should compute a checksum. Set to 0 if arch-specific inflation code already does that. */
+#  define INFLATE_NEED_CHECKSUM(strm) 1
+/* Returns whether zlib-ng should update a window. Set to 0 if arch-specific inflation code already does that. */
+#  define INFLATE_NEED_UPDATEWINDOW(strm) 1
+/* Invoked at the beginning of inflateMark(). Useful for updating arch-specific pointers and offsets. */
+#  define INFLATE_MARK_HOOK(strm) do {} while (0)
+#endif
+
 #ifdef MAKEFIXED
 #  ifndef BUILDFIXED
 #    define BUILDFIXED
@@ -124,6 +149,7 @@ int ZEXPORT PREFIX(inflateResetKeep)(PREFIX3(stream) *strm) {
     if (state->wrap)        /* to support ill-conceived Java test suite */
         strm->adler = state->wrap & 1;
     state->mode = HEAD;
+    state->check = functable.adler32(0L, NULL, 0);
     state->last = 0;
     state->havedict = 0;
     state->dmax = 32768U;
@@ -133,6 +159,7 @@ int ZEXPORT PREFIX(inflateResetKeep)(PREFIX3(stream) *strm) {
     state->lencode = state->distcode = state->next = state->codes;
     state->sane = 1;
     state->back = -1;
+    INFLATE_RESET_KEEP_HOOK(strm);  /* hook for IBM Z DFLTCC */
     Tracev((stderr, "inflate: reset\n"));
     return Z_OK;
 }
@@ -174,7 +201,7 @@ int ZEXPORT PREFIX(inflateReset2)(PREFIX3(stream) *strm, int windowBits) {
     if (windowBits && (windowBits < 8 || windowBits > 15))
         return Z_STREAM_ERROR;
     if (state->window != NULL && state->wbits != (unsigned)windowBits) {
-        ZFREE(strm, state->window);
+        ZFREE_WINDOW(strm, state->window);
         state->window = NULL;
     }
 
@@ -188,6 +215,12 @@ int ZEXPORT PREFIX(inflateInit2_)(PREFIX3(stream) *strm, int windowBits, const c
     int ret;
     struct inflate_state *state;
 
+#ifdef X86_CPUID
+    x86_check_features();
+#elif defined(__arm__) || defined(__aarch64__) || defined(_M_ARM)
+    arm_check_features();
+#endif
+
     if (version == NULL || version[0] != PREFIX2(VERSION)[0] || stream_size != (int)(sizeof(PREFIX3(stream))))
         return Z_VERSION_ERROR;
     if (strm == NULL)
@@ -199,7 +232,7 @@ int ZEXPORT PREFIX(inflateInit2_)(PREFIX3(stream) *strm, int windowBits, const c
     }
     if (strm->zfree == NULL)
         strm->zfree = zcfree;
-    state = (struct inflate_state *) ZALLOC(strm, 1, sizeof(struct inflate_state));
+    state = (struct inflate_state *) ZALLOC_STATE(strm, 1, sizeof(struct inflate_state));
     if (state == NULL)
         return Z_MEM_ERROR;
     Tracev((stderr, "inflate: allocated\n"));
@@ -209,7 +242,7 @@ int ZEXPORT PREFIX(inflateInit2_)(PREFIX3(stream) *strm, int windowBits, const c
     state->mode = HEAD;     /* to pass state test in inflateReset2() */
     ret = PREFIX(inflateReset2)(strm, windowBits);
     if (ret != Z_OK) {
-        ZFREE(strm, state);
+        ZFREE_STATE(strm, state);
         strm->state = NULL;
     }
     return ret;
@@ -224,6 +257,7 @@ int ZEXPORT PREFIX(inflatePrime)(PREFIX3(stream) *strm, int bits, int value) {
 
     if (inflateStateCheck(strm))
         return Z_STREAM_ERROR;
+    INFLATE_PRIME_HOOK(strm, bits, value);  /* hook for IBM Z DFLTCC */
     state = (struct inflate_state *)strm->state;
     if (bits < 0) {
         state->hold = 0;
@@ -352,6 +386,33 @@ void makefixed(void) {
 }
 #endif /* MAKEFIXED */
 
+int ZLIB_INTERNAL inflate_ensure_window(struct inflate_state *state)
+{
+    /* if it hasn't been done already, allocate space for the window */
+    if (state->window == NULL) {
+#ifdef INFFAST_CHUNKSIZE
+        unsigned wsize = 1U << state->wbits;
+        state->window = (unsigned char *) ZALLOC_WINDOW(state->strm, wsize + INFFAST_CHUNKSIZE, sizeof(unsigned char));
+        if (state->window == Z_NULL)
+            return 1;
+        memset(state->window + wsize, 0, INFFAST_CHUNKSIZE);
+#else
+        state->window = (unsigned char *) ZALLOC_WINDOW(state->strm, 1U << state->wbits, sizeof(unsigned char));
+        if (state->window == NULL)
+            return 1;
+#endif
+    }
+
+    /* if window not in use yet, initialize */
+    if (state->wsize == 0) {
+        state->wsize = 1U << state->wbits;
+        state->wnext = 0;
+        state->whave = 0;
+    }
+
+    return 0;
+}
+
 /*
    Update the window with the last wsize (normally 32K) bytes written before
    returning.  If window does not exist yet, create it.  This is only called
@@ -372,27 +433,7 @@ static int updatewindow(PREFIX3(stream) *strm, const unsigned char *end, uint32_
 
     state = (struct inflate_state *)strm->state;
 
-    /* if it hasn't been done already, allocate space for the window */
-    if (state->window == NULL) {
-#ifdef INFFAST_CHUNKSIZE
-        unsigned wsize = 1U << state->wbits;
-        state->window = (unsigned char *) ZALLOC(strm, wsize + INFFAST_CHUNKSIZE, sizeof(unsigned char));
-        if (state->window == Z_NULL)
-            return 1;
-        memset(state->window + wsize, 0, INFFAST_CHUNKSIZE);
-#else
-        state->window = (unsigned char *) ZALLOC(strm, 1U << state->wbits, sizeof(unsigned char));
-        if (state->window == NULL)
-            return 1;
-#endif
-    }
-
-    /* if window not in use yet, initialize */
-    if (state->wsize == 0) {
-        state->wsize = 1U << state->wbits;
-        state->wnext = 0;
-        state->whave = 0;
-    }
+    if (inflate_ensure_window(state)) return 1;
 
     /* copy state->wsize or less output bytes into the circular window */
     if (copy >= state->wsize) {
@@ -826,6 +867,7 @@ int ZEXPORT PREFIX(inflate)(PREFIX3(stream) *strm, int flush) {
             if (flush == Z_BLOCK || flush == Z_TREES)
                 goto inf_leave;
         case TYPEDO:
+            INFLATE_TYPEDO_HOOK(strm, flush);  /* hook for IBM Z DFLTCC */
             if (state->last) {
                 BYTEBITS();
                 state->mode = CHECK;
@@ -1015,7 +1057,8 @@ int ZEXPORT PREFIX(inflate)(PREFIX3(stream) *strm, int flush) {
         case LEN_:
             state->mode = LEN;
         case LEN:
-            if (have >= 6 && left >= 258) {
+            if (have >= INFLATE_FAST_MIN_HAVE &&
+                left >= INFLATE_FAST_MIN_LEFT) {
                 RESTORE();
                 inflate_fast(strm, out);
                 LOAD();
@@ -1156,25 +1199,29 @@ int ZEXPORT PREFIX(inflate)(PREFIX3(stream) *strm, int flush) {
                     copy = state->length;
                 if (copy > left)
                     copy = left;
-                left -= copy;
-                state->length -= copy;
+#if defined(INFFAST_CHUNKSIZE)
+                put = chunkcopysafe(put, from, copy, put + left);
+#else
                 if (copy >= sizeof(uint64_t))
                     put = chunk_memcpy(put, from, copy);
                 else
                     put = copy_bytes(put, from, copy);
+#endif
             } else {                             /* copy from output */
-                unsigned offset = state->offset;
-                from = put - offset;
                 copy = state->length;
                 if (copy > left)
                     copy = left;
-                left -= copy;
-                state->length -= copy;
+#if defined(INFFAST_CHUNKSIZE)
+                put = chunkmemsetsafe(put, state->offset, copy, left);
+#else
                 if (copy >= sizeof(uint64_t))
-                    put = chunk_memset(put, from, offset, copy);
+                    put = chunk_memset(put, put - state->offset, state->offset, copy);
                 else
-                    put = set_bytes(put, from, offset, copy);
+                    put = set_bytes(put, put - state->offset, state->offset, copy);
+#endif
             }
+            left -= copy;
+            state->length -= copy;
             if (state->length == 0)
                 state->mode = LEN;
             break;
@@ -1191,7 +1238,7 @@ int ZEXPORT PREFIX(inflate)(PREFIX3(stream) *strm, int flush) {
                 out -= left;
                 strm->total_out += out;
                 state->total += out;
-                if ((state->wrap & 4) && out)
+                if (INFLATE_NEED_CHECKSUM(strm) && (state->wrap & 4) && out)
                     strm->adler = state->check = UPDATE(state->check, put - out, out);
                 out = left;
                 if ((state->wrap & 4) && (
@@ -1242,7 +1289,9 @@ int ZEXPORT PREFIX(inflate)(PREFIX3(stream) *strm, int flush) {
      */
   inf_leave:
     RESTORE();
-    if (state->wsize || (out != strm->avail_out && state->mode < BAD && (state->mode < CHECK || flush != Z_FINISH))) {
+    if (INFLATE_NEED_UPDATEWINDOW(strm) &&
+            (state->wsize || (out != strm->avail_out && state->mode < BAD &&
+                 (state->mode < CHECK || flush != Z_FINISH)))) {
         if (updatewindow(strm, strm->next_out, out - strm->avail_out)) {
             state->mode = MEM;
             return Z_MEM_ERROR;
@@ -1253,7 +1302,7 @@ int ZEXPORT PREFIX(inflate)(PREFIX3(stream) *strm, int flush) {
     strm->total_in += in;
     strm->total_out += out;
     state->total += out;
-    if ((state->wrap & 4) && out)
+    if (INFLATE_NEED_CHECKSUM(strm) && (state->wrap & 4) && out)
         strm->adler = state->check = UPDATE(state->check, strm->next_out - out, out);
     strm->data_type = (int)state->bits + (state->last ? 64 : 0) +
                       (state->mode == TYPE ? 128 : 0) + (state->mode == LEN_ || state->mode == COPY_ ? 256 : 0);
@@ -1268,8 +1317,8 @@ int ZEXPORT PREFIX(inflateEnd)(PREFIX3(stream) *strm) {
         return Z_STREAM_ERROR;
     state = (struct inflate_state *)strm->state;
     if (state->window != NULL)
-        ZFREE(strm, state->window);
-    ZFREE(strm, strm->state);
+        ZFREE_WINDOW(strm, state->window);
+    ZFREE_STATE(strm, strm->state);
     strm->state = NULL;
     Tracev((stderr, "inflate: end\n"));
     return Z_OK;
@@ -1408,6 +1457,8 @@ int ZEXPORT PREFIX(inflateSync)(PREFIX3(stream) *strm) {
     /* return no joy or set up to restart inflate() on a new block */
     if (state->have != 4)
         return Z_DATA_ERROR;
+    if (state->mode == HEAD)
+        state->wrap = 0;    /* never processed header, so assume raw */
     in = strm->total_in;
     out = strm->total_out;
     PREFIX(inflateReset)(strm);
@@ -1447,21 +1498,21 @@ int ZEXPORT PREFIX(inflateCopy)(PREFIX3(stream) *dest, PREFIX3(stream) *source) 
 
     /* allocate space */
     copy = (struct inflate_state *)
-           ZALLOC(source, 1, sizeof(struct inflate_state));
+           ZALLOC_STATE(source, 1, sizeof(struct inflate_state));
     if (copy == NULL)
         return Z_MEM_ERROR;
     window = NULL;
     if (state->window != NULL) {
-        window = (unsigned char *) ZALLOC(source, 1U << state->wbits, sizeof(unsigned char));
+        window = (unsigned char *) ZALLOC_WINDOW(source, 1U << state->wbits, sizeof(unsigned char));
         if (window == NULL) {
-            ZFREE(source, copy);
+            ZFREE_STATE(source, copy);
             return Z_MEM_ERROR;
         }
     }
 
     /* copy state */
     memcpy((void *)dest, (void *)source, sizeof(PREFIX3(stream)));
-    memcpy((void *)copy, (void *)state, sizeof(struct inflate_state));
+    ZCOPY_STATE((void *)copy, (void *)state, sizeof(struct inflate_state));
     copy->strm = dest;
     if (state->lencode >= state->codes && state->lencode <= state->codes + ENOUGH - 1) {
         copy->lencode = copy->codes + (state->lencode - state->codes);
@@ -1499,7 +1550,7 @@ int ZEXPORT PREFIX(inflateValidate)(PREFIX3(stream) *strm, int check) {
     if (inflateStateCheck(strm))
         return Z_STREAM_ERROR;
     state = (struct inflate_state *)strm->state;
-    if (check)
+    if (check && state->wrap)
         state->wrap |= 4;
     else
         state->wrap &= ~4;
@@ -1511,6 +1562,7 @@ long ZEXPORT PREFIX(inflateMark)(PREFIX3(stream) *strm) {
 
     if (inflateStateCheck(strm))
         return -65536;
+    INFLATE_MARK_HOOK(strm);  /* hook for IBM Z DFLTCC */
     state = (struct inflate_state *)strm->state;
     return ((long)(state->back) << 16) + (state->mode == COPY ? state->length :
             (state->mode == MATCH ? state->was - state->length : 0));
