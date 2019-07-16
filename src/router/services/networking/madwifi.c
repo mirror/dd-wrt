@@ -1350,7 +1350,8 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 		fprintf(fp, "ieee80211w=2\n");
 	else if (nvram_default_matchi(mfp, -1, 0) || ispsk3 || iswpa3 || iswpa3_192 || iswpa3_128 || ispsk2sha256 || iswpa2sha256) {
 		fprintf(fp, "ieee80211w=1\n");
-		fprintf(fp, "sae_require_mfp=1\n");
+		if (ispsk3 || iswpa3 || iswpa3_192 || iswpa3_128)
+			fprintf(fp, "sae_require_mfp=1\n");
 	} else if (nvram_default_matchi(mfp, 0, 0))
 		fprintf(fp, "ieee80211w=0\n");
 #endif
