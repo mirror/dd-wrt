@@ -49,7 +49,9 @@ function submitcheck(F) {
 		F.limit_ftp.value = F._limit_ftp.checked ? 1 : 0;
 	}
 	if (F.filter.value == "off"){
-		F.log_enable.value = 0;
+		if (F.log_enable) {
+			F.log_enable.value = 0;
+		}
 	}
 	F.save_button.value = sbutton.saving;
 	
