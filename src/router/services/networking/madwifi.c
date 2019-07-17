@@ -951,10 +951,12 @@ static void checkhostapd(char *ifname, int force)
 				} else {
 					dd_loginfo(sup ? "wpa_supplicant" : "hostapd", "daemon on %s with pid %d died, restarting....\n", ifname, pid);
 				}
-				if (sup)
-					ath9k_start_supplicant(0, ifname);
-				else
-					do_hostapd(fstr, ifname);
+				if (sup) {
+				    start_deconfigurewifi();
+				    start_configurewifi();
+				    return;
+				}
+				do_hostapd(fstr, ifname);
 				char *next;
 				char var[80];
 				if (!nvram_nmatch("sta", "%s_mode", ifname)) {
