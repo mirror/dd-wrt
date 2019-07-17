@@ -1726,7 +1726,6 @@ wpa.h2="Kablosuz Güvenlik";
 wpa.secmode="Güvenlik Modu";
 wpa.legend="Kablosuz Şifreleme";
 wpa.auth_mode="Ağ Kimlik Doğrulaması";
-wpa.wpa="WPA";
 wpa.radius="Radius";
 wpa.gtk_rekey="WPA Grup Yeniden Anahtarlama Aralığı";
 wpa.rekey="Anahtar Yenileme Aralığı (saniye cinsinden)";

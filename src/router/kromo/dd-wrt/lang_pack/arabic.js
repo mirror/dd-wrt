@@ -1606,7 +1606,6 @@ wpa.h2="Wireless Security";
 wpa.secmode="Security Mode";
 wpa.legend="Wireless Encryption";
 wpa.auth_mode="Network Authentication";
-wpa.wpa="WPA";
 wpa.radius="Radius";
 wpa.gtk_rekey="WPA Group Rekey Interval";
 wpa.rekey="Key Renewal Interval (in seconds)";

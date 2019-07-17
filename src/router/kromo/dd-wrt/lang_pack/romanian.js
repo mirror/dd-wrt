@@ -1819,7 +1819,6 @@ wpa.h2="Securitate rețea fără fir";
 wpa.secmode="Mod de securitate";
 wpa.legend="Criptare rețea fără fir";
 wpa.auth_mode="Autentificare rețea";
-wpa.wpa="WPA";
 wpa.radius="Radius";
 wpa.gtk_rekey="Interval refacere cheie grup WPA";
 wpa.rekey="Interval de reînoire cheie (în secunde)";

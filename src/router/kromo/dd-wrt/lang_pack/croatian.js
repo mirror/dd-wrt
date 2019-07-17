@@ -1853,7 +1853,6 @@ wpa.h2="Enkripcija";
 wpa.secmode="Način Enkripcije";
 wpa.legend="Enkripcija";
 wpa.auth_mode="Mrežna Autentifikacija";
-wpa.wpa="WPA";
 wpa.radius="RADIUS";
 wpa.gtk_rekey="Interval obnove Ključa WPA Grupe";
 wpa.rekey="Interval obnove Ključa (s)";

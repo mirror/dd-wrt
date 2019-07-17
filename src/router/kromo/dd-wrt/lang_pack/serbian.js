@@ -1870,7 +1870,6 @@ wpa.h2="Wi-Fi Безбедност";
 wpa.secmode="Безбедносни Режим";
 wpa.legend="Wi-Fi Шифровање";
 wpa.auth_mode="Мрежна Аутентификација";
-wpa.wpa="WPA";
 wpa.radius="Radius";
 wpa.gtk_rekey="Интервал WPA Group Rekey-а";
 wpa.rekey="Интервал Key Renewal-а (у секундама)";
