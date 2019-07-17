@@ -4695,7 +4695,7 @@ void show_authtable(webs_t wp, char *prefix, int show80211x)
 		{ "wpa.wpa3", "wpa3", has_wpa3, is_mac80211, alwaystrue },
 		{ "wpa.wpa3_128", "wpa3-128", wpa3_gcmp128, has_gmac_128, alwaystrue },
 		{ "wpa.wpa3_192", "wpa3-192", wpa3_gcmp256, has_gmac_256, alwaystrue },
-		{ "wpa.802_1x", "802.1x", has_wpa3, alwaystrue, alwaystrue }
+		{ "wpa.wep_8021x", "802.1x", has_wpa3, alwaystrue, alwaystrue }
 	};
 	struct pair s_authmethod[] = {
 		{ "wpa.peap", "peap", alwaystrue, alwaystrue, alwaystrue },
