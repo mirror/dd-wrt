@@ -1499,6 +1499,8 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 			fprintf(fp, "group_mgmt_cipher=AES-128-CMAC\n");
 #endif
 	}
+	fprintf(fp,"okc=0\n");
+	fprintf(fp,"disable_pmksa_caching=1\n");
 
 	fprintf(fp, "wpa_group_rekey=%s\n", nvram_nget("%s_wpa_gtk_rekey", prefix));
 	if (ispsk3 || ispsk || ispsk2 || ispsk2sha256)
