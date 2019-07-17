@@ -1713,7 +1713,6 @@ wpa.h2="セキュリティー設定";
 wpa.secmode="無線LAN認証";
 wpa.legend="無線LANの暗号化";
 wpa.auth_mode="Network Authentication";
-wpa.wpa="WPA";
 wpa.radius="RADIUS";
 wpa.gtk_rekey="GTK更新間隔(秒)";
 wpa.rekey="Key更新間隔(秒)";

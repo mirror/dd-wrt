@@ -1889,7 +1889,6 @@ wpa.h2="Brezžična zaščita";
 wpa.secmode="Način zaščite";
 wpa.legend="Brezžično šifriranje";
 wpa.auth_mode="Mrežno overjanje";
-wpa.wpa="WPA";
 wpa.radius="Radius";
 wpa.gtk_rekey="WPA interval izmenjave ključev";
 wpa.rekey="Interval izmenjave ključev (v sekundah)";

@@ -2144,7 +2144,6 @@ wpa.h2="Sicurezza Wireless";
 wpa.secmode="Modalit&agrave; Sicura";
 wpa.legend="Crittografia Wireless";
 wpa.auth_mode="Autenticazione Di Rete";
-wpa.wpa="WPA";
 wpa.radius="Radius";
 wpa.gtk_rekey="Intervallo Reinvio Gruppo Chiavi WPA";
 wpa.rekey="Intervallo Rinnovo Chiave (in secondi)";

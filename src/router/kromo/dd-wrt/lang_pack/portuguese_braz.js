@@ -1881,7 +1881,6 @@ wpa.h2="Segurança Wireless";
 wpa.secmode="Modo de Segurança";
 wpa.legend="Criptografia Wireless";
 wpa.auth_mode="Autenticação de Rede";
-wpa.wpa="WPA";
 wpa.radius="Radius";
 wpa.gtk_rekey="Intervalo de Renovação da Chave WPA do Grupo";
 wpa.rekey="Intervalo de Renovação da Chave (em segundos)";

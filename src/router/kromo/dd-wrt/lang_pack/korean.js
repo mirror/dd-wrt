@@ -2167,7 +2167,6 @@ wpa.h2="무선 보안";
 wpa.secmode="보안 모드";
 wpa.legend="무선랜 암호화";
 wpa.auth_mode="네트워크 인증";
-wpa.wpa="WPA";
 wpa.radius="Radius";
 wpa.gtk_rekey="WPA 그룹 키 갱신 간격(초)";
 wpa.rekey="키 갱신 간격(초)";

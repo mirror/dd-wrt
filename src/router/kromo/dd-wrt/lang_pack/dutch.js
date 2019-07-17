@@ -1723,7 +1723,6 @@ wpa.h2="Draadloze Beveiliging";
 wpa.secmode="Beveiligings Mode";
 wpa.legend="Draadloos Encryptie";
 wpa.auth_mode="Netwerk Authenticatie";
-wpa.wpa="WPA";
 wpa.radius="Radius";
 wpa.gtk_rekey="WPA Groep Hersleutel Interval";
 wpa.rekey="Sleutel Vernieuwings Interval(in seconden)";

@@ -1806,7 +1806,6 @@ wpa.h2="Безопасность беспроводной сети";
 wpa.secmode="Режим безопасности";
 wpa.legend="Шифрование";
 wpa.auth_mode="Сетевая аутентификация";
-wpa.wpa="WPA";
 wpa.radius="Radius";
 wpa.gtk_rekey="Интервал смены ключей WPA";
 wpa.rekey="Интервал обновления ключей (с)";

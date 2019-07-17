@@ -2052,7 +2052,6 @@ wpa.h2="WLAN-Sicherheit";
 wpa.secmode="Sicherheitsmodus";
 wpa.legend="WLAN-Verschl&uuml;sselung";
 wpa.auth_mode="Netzwerk-Authentifizierung";
-wpa.wpa="WPA";
 wpa.mfp="802.11w Management Frame Schutz";
 wpa.radius="RADIUS";
 wpa.gtk_rekey="WPA Group Rekey Interval";
@@ -2065,6 +2064,26 @@ wpa.shared_key="gemeinsamer WPA Schl&uuml;ssel";
 wpa.sae_key="SAE Passwort";
 wpa.eapol_key_retries="EAPOL Schl&uuml;ssel Wiederholung abschalten";
 wpa.ft="802.11r / Fast BSS Transission Unterst&uuml;tzung";
+wpa.ccmp="CCMP-128 (AES)";
+wpa.ccmp_256="CCMP-256";
+wpa.tkip="TKIP";
+wpa.gcmp_128="GCMP";
+wpa.gcmp_256="GCMP-256";
+wpa.psk="WPA Personal";
+wpa.psk2="WPA2 Personal";
+wpa.psk2_sha256="WPA2 Personal mit SHA256";
+wpa.psk3="WPA3 Personal / SAE";
+wpa.wpa="WPA Enterprise";
+wpa.wpa2="WPA2 Enterprise";
+wpa.wpa2_sha256="WPA2 Enterprise mit SHA256";
+wpa.wpa3="WPA3 Enterprise";
+wpa.wpa3_128="WPA3 Enterprise Suite-B 128-Bit";
+wpa.wpa3_192="WPA3 Enterprise CNSA Suite-B 192-Bit";
+wpa.802_1x="802.1x / WEP";
+wpa.peap="EAP-PEAP";
+wpa.leap="EAP-LEAP";
+wpa.tls="EAP-TLS";
+wpa.ttls="EAP-TTLS";
 
 
 
