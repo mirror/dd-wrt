@@ -1396,7 +1396,6 @@ wpa.h2="Vezetéknélküli biztonság";
 wpa.secmode="Biztonság";
 wpa.legend="Vezetéknélküli titkosítás";
 wpa.auth_mode="Hálózati hitelesítés";
-wpa.wpa="WPA";
 wpa.radius="RADIUS";
 wpa.gtk_rekey="WPA Group Rekey Interval";
 wpa.rekey="Key Renewal Interval (másodpercben)";

@@ -1688,7 +1688,6 @@ wpa.h2="Seguridad WIFI";
 wpa.secmode="Modo de Seguridad";
 wpa.legend="Encriptaci&oacute;n Inal&aacute;mbrica";
 wpa.auth_mode="Autenticaci&oacute;n de red";
-wpa.wpa="WPA";
 wpa.radius="Radius";
 wpa.gtk_rekey="Intervalo Rotaci&oacute;n Clave WPA";
 wpa.rekey="Intervalo Renovaci&oacute;n Clave (en Segs)";

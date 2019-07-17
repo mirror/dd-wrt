@@ -1469,7 +1469,6 @@ wpa.h2="S&eacute;curit&eacute; sans fil";
 wpa.secmode="Mode de S&eacute;curit&eacute;";
 wpa.legend="Cryptage sans fil";
 wpa.auth_mode="Authentification r&eacute;seau";
-wpa.wpa="WPA";
 wpa.radius="Radius";
 wpa.gtk_rekey="WPA Group Rekey Interval";
 wpa.rekey="D&eacute;lai de renouvellement des cl&eacute;s (en secondes)";

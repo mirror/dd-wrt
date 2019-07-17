@@ -1609,7 +1609,6 @@ wpa.h2="無線安全";
 wpa.secmode="加密模式";
 wpa.legend="無線加密";
 wpa.auth_mode="網路授權";
-wpa.wpa="WPA";
 wpa.radius="Radius";
 wpa.gtk_rekey="WPA 群組重新獲取金鑰間隔";
 wpa.rekey="金鑰更新間歇（秒）";

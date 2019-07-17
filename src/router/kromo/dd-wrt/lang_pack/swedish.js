@@ -1639,7 +1639,6 @@ wpa.h2="Tr&aring;dl&ouml;st S&auml;kerhet";
 wpa.secmode="Wifi Kryptering";
 wpa.legend="Tr&aring;dl&ouml;st Kryptering";
 wpa.auth_mode="N&auml;tverks Verifiering";
-wpa.wpa="WPA";
 wpa.radius="Radius";
 wpa.gtk_rekey="WPA Grupp f&ouml;rnyelse Intervall";
 wpa.rekey="Nyckelns f&ouml;rnyelse Intervall (in sekunder)";

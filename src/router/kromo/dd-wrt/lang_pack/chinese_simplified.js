@@ -1332,7 +1332,6 @@ wpa.h2="无线安全";
 wpa.secmode="安全模式";
 wpa.legend="无线加密";
 wpa.auth_mode="网络鉴权";
-wpa.wpa="WPA";
 wpa.radius="Radius";
 wpa.gtk_rekey="WPA组重新获取秘钥间隔";
 wpa.rekey="秘钥更新时间间隔（秒）";

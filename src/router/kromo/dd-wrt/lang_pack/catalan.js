@@ -1805,7 +1805,6 @@ wpa.h2="Seguretat Sense Fil";
 wpa.secmode="Mode de Seguretat";
 wpa.legend="Xifració Sense Fil";
 wpa.auth_mode="Autenticació de Xarxa";
-wpa.wpa="WPA";
 wpa.radius="Radius";
 wpa.gtk_rekey="Interval de Canviar de Clau del Grup WPA";
 wpa.rekey="Interval de Renovació de Clau (en segons)";
