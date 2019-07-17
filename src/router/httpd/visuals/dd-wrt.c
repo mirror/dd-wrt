@@ -4551,10 +4551,10 @@ static void show_cryptovar(webs_t wp, char *prefix, char *name, char *var, int s
 
 	sprintf(nvar, "%s_%s", prefix, var);
 	if (selmode)
-		websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" onclick=\"SelMode('%s', '%s_security_mode',this.form.%s_security_mode.selectedIndex,this.form)\" %s %s />%s", nvar, prefix, gvar, gvar,
+		websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" onclick=\"SelMode('%s', '%s_security_mode',this.form.%s_security_mode.selectedIndex,this.form)\" %s %s /><script type=\"text/javascript\">Capture(%s)</script>", nvar, prefix, gvar, gvar,
 			  force ? "checked=\"checked\"" : selmatch(nvar, "1", "checked=\"checked\""), force ? "disabled=\"disabled\"" : "", name);
 	else
-		websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" %s %s />%s", nvar, force ? "checked=\"checked\"" : selmatch(nvar, "1", "checked=\"checked\""), force ? "disabled=\"disabled\"" : "", name);
+		websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" %s %s /><script type=\"text/javascript\">Capture(%s)</script>", nvar, force ? "checked=\"checked\"" : selmatch(nvar, "1", "checked=\"checked\""), force ? "disabled=\"disabled\"" : "", name);
 
 }
 
@@ -4668,40 +4668,40 @@ static int no_suiteb_no_wpa3(const char *prefix)
 void show_authtable(webs_t wp, char *prefix, int show80211x)
 {
 	struct pair s_cryptopair[] = {
-		{ "CCMP-128 (AES)", "ccmp", noad, wpaauth, alwaystrue },
-		{ "CCMP-256", "ccmp-256", has_ccmp_256, wpaauth, alwaystrue },
-		{ "TKIP", "tkip", noad, wpaauth, no_suiteb_no_wpa3 },
-		{ "GCMP-128", "gcmp", has_ad, wpaauth, alwaystrue },
-		{ "GCMP-128", "gcmp", has_gcmp_128, wpaauth, alwaystrue, suiteb },
-		{ "GCMP-256", "gcmp-256", has_gcmp_256, wpaauth, alwaystrue, suiteb192 },
+		{ "wpa.ccmp_128", "ccmp", noad, wpaauth, alwaystrue },
+		{ "wpa.ccmp_256", "ccmp-256", has_ccmp_256, wpaauth, alwaystrue },
+		{ "wpa.tkip", "tkip", noad, wpaauth, no_suiteb_no_wpa3 },
+		{ "wpa.gcmp_128", "gcmp", has_ad, wpaauth, alwaystrue },
+		{ "wpa.gcmp_128", "gcmp", has_gcmp_128, wpaauth, alwaystrue, suiteb },
+		{ "wpa.gcmp_256", "gcmp-256", has_gcmp_256, wpaauth, alwaystrue, suiteb192 },
 	};
 
 	struct pair s_authpair_wpa[] = {
-		{ "WPA Personal", "psk", alwaystrue, alwaystrue, nomesh },
-		{ "WPA2 Personal", "psk2", alwaystrue, alwaystrue, nomesh },
-		{ "WPA2 Personal with SHA256", "psk2-sha256", has_wpa3, is_mac80211, nomesh },
-		{ "WPA3 Personal / SAE", "psk3", has_wpa3, is_mac80211, alwaystrue },
-		{ "WPA Enterprise", "wpa", aponly, alwaystrue, nomesh },
-		{ "WPA2 Enterprise", "wpa2", aponly, alwaystrue, nomesh },
-		{ "WPA2 Enterprise with SHA256", "wpa2-sha256", aponly_wpa3, is_mac80211, nomesh },
-		{ "WPA3 Enterprise", "wpa3", aponly_wpa3, is_mac80211, nomesh },
-		{ "WPA3 Enterprise Suite-B 128-Bit", "wpa3-128", aponly_wpa3_gcmp128, has_gmac_128, nomesh },
-		{ "WPA3 Enterprise CNSA Suite-B 192-Bit", "wpa3-192", aponly_wpa3_gcmp256, has_gmac_256, nomesh }
+		{ "wpa.psk", "psk", alwaystrue, alwaystrue, nomesh },
+		{ "wpa.psk2", "psk2", alwaystrue, alwaystrue, nomesh },
+		{ "wpa.psk2_sha256", "psk2-sha256", has_wpa3, is_mac80211, nomesh },
+		{ "wpa.psk3", "psk3", has_wpa3, is_mac80211, alwaystrue },
+		{ "wpa.wpa", "wpa", aponly, alwaystrue, nomesh },
+		{ "wpa.wpa2", "wpa2", aponly, alwaystrue, nomesh },
+		{ "wpa.wpa2_sha256", "wpa2-sha256", aponly_wpa3, is_mac80211, nomesh },
+		{ "wpa.wpa3", "wpa3", aponly_wpa3, is_mac80211, nomesh },
+		{ "wpa.wpa3_128", "wpa3-128", aponly_wpa3_gcmp128, has_gmac_128, nomesh },
+		{ "wpa.wpa3_192", "wpa3-192", aponly_wpa3_gcmp256, has_gmac_256, nomesh }
 	};
 	struct pair s_authpair_80211x[] = {
-		{ "WPA Enterprise", "wpa", alwaystrue, alwaystrue, alwaystrue },
-		{ "WPA2 Enterprise", "wpa2", alwaystrue, alwaystrue, alwaystrue },
-		{ "WPA2 Enterprise with SHA256", "wpa2-sha256", has_wpa3, alwaystrue, alwaystrue },
-		{ "WPA3 Enterprise", "wpa3", has_wpa3, is_mac80211, alwaystrue },
-		{ "WPA3 Enterprise Suite-B 128-Bit", "wpa3-128", wpa3_gcmp128, has_gmac_128, alwaystrue },
-		{ "WPA3 Enterprise CNSA Suite-B 192-Bit", "wpa3-192", wpa3_gcmp256, has_gmac_256, alwaystrue },
-		{ "802.1x / WEP", "802.1x", has_wpa3, alwaystrue, alwaystrue }
+		{ "wpa.wpa", "wpa", alwaystrue, alwaystrue, alwaystrue },
+		{ "wpa.wpa2", "wpa2", alwaystrue, alwaystrue, alwaystrue },
+		{ "wpa.wpa2_sha256", "wpa2-sha256", has_wpa3, alwaystrue, alwaystrue },
+		{ "wpa.wpa3", "wpa3", has_wpa3, is_mac80211, alwaystrue },
+		{ "wpa.wpa3_128", "wpa3-128", wpa3_gcmp128, has_gmac_128, alwaystrue },
+		{ "wpa.wpa3_192", "wpa3-192", wpa3_gcmp256, has_gmac_256, alwaystrue },
+		{ "wpa.802_1x", "802.1x", has_wpa3, alwaystrue, alwaystrue }
 	};
 	struct pair s_authmethod[] = {
-		{ "EAP-PEAP", "peap", alwaystrue, alwaystrue, alwaystrue },
-		{ "EAP-LEAP", "leap", alwaystrue, alwaystrue, alwaystrue },
-		{ "EAP-TLS", "tls", alwaystrue, alwaystrue, alwaystrue },
-		{ "EAP-TTLS", "ttls", alwaystrue, alwaystrue, alwaystrue },
+		{ "wpa.peap", "peap", alwaystrue, alwaystrue, alwaystrue },
+		{ "wpa.leap", "leap", alwaystrue, alwaystrue, alwaystrue },
+		{ "wpa.tls", "tls", alwaystrue, alwaystrue, alwaystrue },
+		{ "wpa.ttls", "ttls", alwaystrue, alwaystrue, alwaystrue },
 	};
 	struct pair *cryptopair;
 	struct pair *authpair_wpa;
@@ -4825,16 +4825,16 @@ void show_preshared(webs_t wp, char *prefix)
 	show_caption(wp, "label", "wpa.algorithms", NULL);
 	websWrite(wp, "<select name=\"%s_crypto\">\n", prefix);
 	if (has_ad(prefix)) {
-		websWrite(wp, "<option value=\"gcmp\" %s>GCMP</option>\n", selmatch(var, "gcmp", "selected=\"selected\""));
+		websWrite(wp, "<option value=\"gcmp\" %s><script type=\"text/javascript\">Capture(wpa.gcmp)</script></option>\n", selmatch(var, "gcmp", "selected=\"selected\""));
 	} else {
 
-		websWrite(wp, "<option value=\"aes\" %s>AES</option>\n", selmatch(var, "aes", "selected=\"selected\""));
-		websWrite(wp, "<option value=\"tkip+aes\" %s>TKIP+AES</option>\n", selmatch(var, "tkip+aes", "selected=\"selected\""));
-		websWrite(wp, "<option value=\"tkip\" %s>TKIP</option>\n", selmatch(var, "tkip", "selected=\"selected\""));
+		websWrite(wp, "<option value=\"aes\" %s><script type=\"text/javascript\">Capture(wpa.ccmp)</script></option>\n", selmatch(var, "aes", "selected=\"selected\""));
+		websWrite(wp, "<option value=\"tkip+aes\" %s><script type=\"text/javascript\">Capture(wpa.tkip_ccmp)</script></option>\n", selmatch(var, "tkip+aes", "selected=\"selected\""));
+		websWrite(wp, "<option value=\"tkip\" %s><script type=\"text/javascript\">Capture(wpa.tkip)</script></option>\n", selmatch(var, "tkip", "selected=\"selected\""));
 		if (has_gcmp(prefix)) {
-			websWrite(wp, "<option value=\"ccmp-256\" %s>CCMP-256</option>\n", selmatch(var, "ccmp-256", "selected=\"selected\""));
-			websWrite(wp, "<option value=\"gcmp\" %s>GCMP</option>\n", selmatch(var, "gcmp", "selected=\"selected\""));
-			websWrite(wp, "<option value=\"gcmp-256\" %s>GCMP-256</option>\n", selmatch(var, "gcmp-256", "selected=\"selected\""));
+			websWrite(wp, "<option value=\"ccmp-256\" %s><script type=\"text/javascript\">Capture(wpa.ccmp_256)</script></option>\n", selmatch(var, "ccmp-256", "selected=\"selected\""));
+			websWrite(wp, "<option value=\"gcmp\" %s><script type=\"text/javascript\">Capture(wpa.gcmp)</script></option>\n", selmatch(var, "gcmp", "selected=\"selected\""));
+			websWrite(wp, "<option value=\"gcmp-256\" %s><script type=\"text/javascript\">Capture(wpa.gcmp_256)</script></option>\n", selmatch(var, "gcmp-256", "selected=\"selected\""));
 		}
 
 	}
@@ -5434,9 +5434,9 @@ void show_wparadius(webs_t wp, char *prefix)
 	show_caption(wp, "label", "wpa.algorithms", NULL);
 	websWrite(wp, "<select name=\"%s_crypto\">\n", prefix);
 	sprintf(var, "%s_crypto", prefix);
-	websWrite(wp, "<option value=\"aes\" %s>AES</option>\n", selmatch(var, "aes", "selected=\"selected\""));
-	websWrite(wp, "<option value=\"tkip+aes\" %s>TKIP+AES</option>\n", selmatch(var, "tkip+aes", "selected=\"selected\""));
-	websWrite(wp, "<option value=\"tkip\" %s>TKIP</option>\n", selmatch(var, "tkip", "selected=\"selected\""));
+	websWrite(wp, "<option value=\"aes\" %s><script type=\"text/javascript\">Capture(wpa.ccmp)</script></option>\n", selmatch(var, "aes", "selected=\"selected\""));
+	websWrite(wp, "<option value=\"tkip+aes\" %s><script type=\"text/javascript\">Capture(wpa.tkip_ccmp)</script></option>\n", selmatch(var, "tkip+aes", "selected=\"selected\""));
+	websWrite(wp, "<option value=\"tkip\" %s><script type=\"text/javascript\">Capture(wpa.tkip)</script></option>\n", selmatch(var, "tkip", "selected=\"selected\""));
 	websWrite(wp, "</select></div>\n");
 #endif
 #ifdef HAVE_MADWIFI
