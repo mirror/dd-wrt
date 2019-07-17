@@ -2425,6 +2425,7 @@ wpa.ft="802.11r / Fast BSS Transission support";
 wpa.nas="NAS Identifier";
 wpa.domain="Mobility Domain";
 wpa.ccmp="CCMP-128 (AES)";
+wpa.tkip_ccmp="TKIP+CCMP (AES)";
 wpa.ccmp_256="CCMP-256";
 wpa.tkip="TKIP";
 wpa.gcmp_128="GCMP";
@@ -2439,13 +2440,11 @@ wpa.wpa2_sha256="WPA2 Enterprise with SHA256";
 wpa.wpa3="WPA3 Enterprise";
 wpa.wpa3_128="WPA3 Enterprise Suite-B 128-Bit";
 wpa.wpa3_192="WPA3 Enterprise CNSA Suite-B 192-Bit";
-wpa.802_1x="802.1x / WEP";
+wpa.wep_8021x="802.1x / WEP";
 wpa.peap="EAP-PEAP";
 wpa.leap="EAP-LEAP";
 wpa.tls="EAP-TLS";
 wpa.ttls="EAP-TTLS";
-
-
 
 
 var aoss=new Object();
