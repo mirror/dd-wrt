@@ -2819,7 +2819,7 @@ static void movevap(char *prefix, int source, int target, int bonly)
 	char *wordlist = nvram_safe_get("vlan_tags");
 	char *copy;
 	if (*wordlist) {
-		copy = malloc(strlen(wordlist));
+		copy = malloc(strlen(wordlist) + 1024);
 		*copy = 0;
 		foreach(word, wordlist, next) {
 			GETENTRYBYIDX(tag, word, 0);
@@ -2851,7 +2851,7 @@ static void movevap(char *prefix, int source, int target, int bonly)
 	wordlist = nvram_safe_get("bridgesif");
 	int count = nvram_geti("bridgesif_count");
 	if (*wordlist) {
-		copy = malloc(strlen(wordlist));
+		copy = malloc(strlen(wordlist) + 1024);
 		*copy = 0;
 		foreach(word, wordlist, next) {
 			GETENTRYBYIDX(tag, word, 0);
@@ -2896,7 +2896,7 @@ static void movevap(char *prefix, int source, int target, int bonly)
 	}
 	wordlist = nvram_safe_get("mdhcpd");
 	if (*wordlist) {
-		copy = malloc(strlen(wordlist));
+		copy = malloc(strlen(wordlist) + 1024);
 		*copy = 0;
 		foreach(word, wordlist, next) {
 			GETENTRYBYIDX(interface, word, 0);
