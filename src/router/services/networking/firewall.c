@@ -2777,6 +2777,8 @@ void start_firewall(void)
 	if (!nvram_matchi("wshaper_enable", 1)) {
 		if (nvram_matchi("sfe", 1))
 			insmod("shortcut-fe");
+		else 
+			rmmod("shortcut-fe");
 	} else
 		rmmod("shortcut-fe");
 	writeint("/sys/fast_classifier/skip_to_bridge_ingress", 1);

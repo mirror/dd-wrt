@@ -1022,6 +1022,8 @@ void start_wshaper(void)
 	if (!nvram_matchi("wshaper_enable", 1)) {
 		if (nvram_matchi("sfe", 1))
 			insmod("shortcut-fe");
+		else
+			rmmod("shortcut-fe");
 		return;
 	} else
 		rmmod("shortcut-fe");
