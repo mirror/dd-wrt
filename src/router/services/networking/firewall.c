@@ -2936,7 +2936,7 @@ void start_firewall(void)
 		runfw = 1;
 
 	if (!nvram_matchi("wshaper_enable", 1)) {
-		runfs = 1;
+		runfw = 1;
 	}
 
 	if (runfw) {
