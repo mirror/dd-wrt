@@ -739,9 +739,11 @@ void ddxrWlStatTable_filltable()
 
 	while (ddxrWlStatTable_head) {
 		entry = ddxrWlStatTable_head->next;
+		ddxrWlStatTable_head->next = NULL;
 		SNMP_FREE(ddxrWlStatTable_head);
 		ddxrWlStatTable_head = entry;
 	}
+	ddxrWlStatTable_head = NULL;
 
 	DEBUGMSGTL(("ddwrt:ddxrWlStatTable_filltable", "filltable %d\n", time(&t)));
 
@@ -763,10 +765,11 @@ void ddWlRtabTable_filltable()
 
 	while (ddWlRtabTable_head) {
 		entry = ddWlRtabTable_head->next;
+		ddWlRtabTable_head->next = NULL;
 		SNMP_FREE(ddWlRtabTable_head);
 		ddWlRtabTable_head = entry;
 	}
-
+	ddWlRtabTable_head = NULL;
 	DEBUGMSGTL(("ddwrt:ddWlRtabTable_filltable", "filltable %d\n", time(&t)));
 	ddWlRtabTable_madwifi();
 }
