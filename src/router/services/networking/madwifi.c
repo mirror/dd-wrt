@@ -952,9 +952,9 @@ static void checkhostapd(char *ifname, int force)
 					dd_loginfo(sup ? "wpa_supplicant" : "hostapd", "daemon on %s with pid %d died, restarting....\n", ifname, pid);
 				}
 				if (sup) {
-				    start_deconfigurewifi();
-				    start_configurewifi();
-				    return;
+					start_deconfigurewifi();
+					start_configurewifi();
+					return;
 				}
 				do_hostapd(fstr, ifname);
 				char *next;
@@ -1236,7 +1236,7 @@ void start_ses_led_control(void)
 			sprintf(akm, "%s_akm", ath);
 			if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3") || nvhas(akm, "psk2-sha256") || nvhas(akm, "wpa") || nvhas(akm, "wpa2") || nvhas(akm, "wpa3") || nvhas(akm, "wpa3-128")
 			    || nvhas(akm, "wpa3-192")
-			    || nvhas(akm, "wpa3-sha256")
+			    || nvhas(akm, "wpa2-sha256")
 			    || nvram_match(akm, "wep")) {
 				if (!strncmp(ath, "ath0", 4))
 					led_control(LED_SEC0, LED_ON);
@@ -1252,7 +1252,7 @@ void start_ses_led_control(void)
 			sprintf(akm, "%s_akm", var);
 			if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3") || nvhas(akm, "psk2-sha256") || nvhas(akm, "wpa") || nvhas(akm, "wpa2") || nvhas(akm, "wpa3") || nvhas(akm, "wpa3-128")
 			    || nvhas(akm, "wpa3-192")
-			    || nvhas(akm, "wpa3-sha256")
+			    || nvhas(akm, "wpa2-sha256")
 			    || nvram_match(akm, "wep")) {
 				if (!strncmp(var, "ath0", 4))
 					led_control(LED_SEC0, LED_ON);
@@ -1500,8 +1500,8 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 			fprintf(fp, "group_mgmt_cipher=AES-128-CMAC\n");
 #endif
 	}
-	fprintf(fp,"okc=0\n");
-	fprintf(fp,"disable_pmksa_caching=1\n");
+	fprintf(fp, "okc=0\n");
+	fprintf(fp, "disable_pmksa_caching=1\n");
 
 	fprintf(fp, "wpa_group_rekey=%s\n", nvram_nget("%s_wpa_gtk_rekey", prefix));
 	if (ispsk3 || ispsk || ispsk2 || ispsk2sha256)
