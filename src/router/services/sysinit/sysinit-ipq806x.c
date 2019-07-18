@@ -626,6 +626,14 @@ void start_sysinit(void)
 	nvram_set("wl1_ifname", "ath1");
 }
 
+void start_resetleds(void)
+{
+	writestr("/sys/class/leds/ath10k-phy0/trigger", "none");
+	writestr("/sys/class/leds/ath10k-phy1/trigger", "none");
+	writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
+	writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
+}
+
 void start_postnetwork(void)
 {
 	set_gpio(442 + 17, 1);	// reset wifi card gpio pin

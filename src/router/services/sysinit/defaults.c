@@ -3622,7 +3622,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "speedchecker_enable", "0" },
 #endif
 #ifdef HAVE_USB_ADV
-	{ "drive_ra", "256" }, // read ahead default per physical drive
+	{ "drive_ra", "256" },	// read ahead default per physical drive
 #endif
 	{ 0, 0 }
 };
