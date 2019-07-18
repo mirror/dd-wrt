@@ -3084,6 +3084,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 	nvram_set("wl0_hwaddr", get_hwaddr("ath0", eabuf));
 #endif
 	reset_hwaddr(nvram_safe_get("lan_ifname"));
+	eval("startservice", "resetleds", "-f");
 }
 
 void start_deconfigurewifi(void)
@@ -3094,5 +3095,4 @@ void start_deconfigurewifi(void)
 void start_configurewifi(void)
 {
 	configure_wifi();
-	eval("startservice", "resetleds", "-f");
 }
