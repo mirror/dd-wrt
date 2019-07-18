@@ -3094,4 +3094,5 @@ void start_deconfigurewifi(void)
 void start_configurewifi(void)
 {
 	configure_wifi();
+	eval("startservice", "resetleds", "-f");
 }
