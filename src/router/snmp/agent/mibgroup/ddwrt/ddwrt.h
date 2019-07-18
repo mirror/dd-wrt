@@ -69,6 +69,6 @@ Netsnmp_Next_Data_Point   ddWlRtabTable_get_next_data_point;
 	#define DDXRWLSTATTABLE_TIMEOUT 7
 	#define DDWLRTABTABLE_TIMEOUT  7
 	enum WLA_NETMODES { nm_unknown,nm_disabled,nm_mixed,nm_bonly,nm_gonly,nm_aonly,nm_bgmixed,nm_nonly,nm_ngonly,nm_naonly };
-	enum WLA_MODES { n_unknown,m_adhoc,m_ap,m_sta,m_wet,m_wdsap,m_wdssta,m_apsta,m_apstawet};
+	enum WLA_MODES { n_unknown,m_adhoc,m_ap,m_sta,m_wet,m_wdsap,m_wdssta,m_apsta,m_apstawet,m_mesh};
 
 #endif /* DDWRT_H */

@@ -135,40 +135,40 @@ void initialize_table_ddxrWlStatTable(void)
     /* Typical data structure for a row entry */
 struct ddxrWlStatTable_entry {
 	/* Index values */
-	long ddxrWlStatIndexMajor;
-	long ddxrWlStatIndexMinor;
+	int ddxrWlStatIndexMajor;
+	int ddxrWlStatIndexMinor;
 
 	/* Column values */
-	long ddxrWlStatMajorInterface;
-	long ddxrWlStatMinorInterface;
+	int ddxrWlStatMajorInterface;
+	int ddxrWlStatMinorInterface;
 	char ddxrWlStatIfaceName[32];
 	size_t ddxrWlStatIfaceName_len;
-	long ddxrWlStatTxPower;
-	long ddxrWlStatAntennaGain;
+	int ddxrWlStatTxPower;
+	int ddxrWlStatAntennaGain;
 	char ddxrWlStatBssid[6];
 	size_t ddxrWlStatBssid_len;
-	long ddxrWlStatFreq;
+	int ddxrWlStatFreq;
 	char ddxrWlStatSsid[64];
 	size_t ddxrWlStatSsid_len;
 	char ddxrWlStatScanlist[256];
 	size_t ddxrWlStatScanlist_len;
-	long ddxrWlStatnetmode;
-	long ddxrWlStatmode;
+	int ddxrWlStatnetmode;
+	int ddxrWlStatmode;
 	char ddxrWlStatcardtype[128];
 	size_t ddxrWlStatcardtype_len;
-	u_long ddxrWlStatminrate;
-	u_long ddxrWlStatmaxrate;
-	long ddxrWlStatfastframing;
-	u_long ddxrWlStatconfigack;
-	u_long ddxrWlStatack;
+	u_int ddxrWlStatminrate;
+	u_int ddxrWlStatmaxrate;
+	int ddxrWlStatfastframing;
+	u_int ddxrWlStatconfigack;
+	u_int ddxrWlStatack;
 	char ddxrWlStatTxAntenna[1];
 	size_t ddxrWlStatTxAntenna_len;
 	char ddxrWlStatRxAntenna[1];
 	size_t ddxrWlStatRxAntenna_len;
-	long ddxrWlStatOutdoorBand;
-	long ddxrWlStat80211nWideChannel;
-	long ddxrWlStatChannelBW;
-	long ddxrWlStatSSIDBroadcast;
+	int ddxrWlStatOutdoorBand;
+	int ddxrWlStat80211nWideChannel;
+	int ddxrWlStatChannelBW;
+	int ddxrWlStatSSIDBroadcast;
 	char ddxrWlStatRegulatory[64];
 	size_t ddxrWlStatRegulatory_len;
 	char ddxrWlStatAntennaname[64];
@@ -182,7 +182,7 @@ struct ddxrWlStatTable_entry {
 struct ddxrWlStatTable_entry *ddxrWlStatTable_head;
 
 /* create a new row in the (unsorted) table */
-struct ddxrWlStatTable_entry *ddxrWlStatTable_createEntry(long ddxrWlStatIndexMajor, long ddxrWlStatIndexMinor)
+struct ddxrWlStatTable_entry *ddxrWlStatTable_createEntry(int ddxrWlStatIndexMajor, int ddxrWlStatIndexMinor)
 {
 	struct ddxrWlStatTable_entry *entry;
 
@@ -491,24 +491,24 @@ struct ddWlRtabTable_entry {
 	/* Index values */
 	char ddxrWlRtabIndexAddr[6];
 	size_t ddxrWlRtabIndexAddr_len;
-	long ddxrWlRtabIndexMajor;
-	long ddxrWlRtabIndexMinor;
+	int ddxrWlRtabIndexMajor;
+	int ddxrWlRtabIndexMinor;
 
 	/* Column values */
 	char ddxrWlRtabMac[6];
 	size_t ddxrWlRtabMac_len;
-	long ddxrWlRtabMajorInterface;
-	long ddxrWlRtabMinorInterface;
+	int ddxrWlRtabMajorInterface;
+	int ddxrWlRtabMinorInterface;
 	char ddxrWlRtabBssid[6];
 	size_t ddxrWlRtabBssid_len;
-	long ddxrWlRtabSNR;
+	int ddxrWlRtabSNR;
 	char ddxrWlRtabIfaceName[32];
 	size_t ddxrWlRtabIfaceName_len;
-	long ddxrWlRtabnoise;
-	long ddxrWlRtabSignal;
-	u_long ddxrWlRtabtxrate;
-	u_long ddxrWlRtabrxrate;
-	long ddxrWlRtabType;
+	int ddxrWlRtabnoise;
+	int ddxrWlRtabSignal;
+	u_int ddxrWlRtabtxrate;
+	u_int ddxrWlRtabrxrate;
+	int ddxrWlRtabType;
 	char ddxrWlRtabSsid[64];
 	size_t ddxrWlRtabSsid_len;
 	char ddxrWlRtabAntennaname[64];
@@ -522,7 +522,7 @@ struct ddWlRtabTable_entry {
 struct ddWlRtabTable_entry *ddWlRtabTable_head;
 
 /* create a new row in the (unsorted) table */
-struct ddWlRtabTable_entry *ddWlRtabTable_createEntry(char *ddxrWlRtabIndexAddr, size_t ddxrWlRtabIndexAddr_len, long ddxrWlRtabIndexMajor, long ddxrWlRtabIndexMinor)
+struct ddWlRtabTable_entry *ddWlRtabTable_createEntry(char *ddxrWlRtabIndexAddr, size_t ddxrWlRtabIndexAddr_len, int ddxrWlRtabIndexMajor, int ddxrWlRtabIndexMinor)
 {
 	struct ddWlRtabTable_entry *entry;
 
@@ -780,12 +780,12 @@ static const char *ieee80211_ntoa(const unsigned char mac[IEEE80211_ADDR_LEN])
 	return (i < 17 ? NULL : a);
 }
 
-void set_ddxrWlStatMajorInterface(struct ddxrWlStatTable_entry *entry, long var)
+void set_ddxrWlStatMajorInterface(struct ddxrWlStatTable_entry *entry, int var)
 {
 	entry->ddxrWlStatMajorInterface = var;
 }
 
-void set_ddxrWlStatMinorInterface(struct ddxrWlStatTable_entry *entry, long var)
+void set_ddxrWlStatMinorInterface(struct ddxrWlStatTable_entry *entry, int var)
 {
 	entry->ddxrWlStatMinorInterface = var;
 }
@@ -795,12 +795,12 @@ void set_ddxrWlStatIfaceName(struct ddxrWlStatTable_entry *entry, char *var)
 	set_strbuf(entry->ddxrWlStatIfaceName, var);
 }
 
-void set_ddxrWlStatTxPower(struct ddxrWlStatTable_entry *entry, long var)
+void set_ddxrWlStatTxPower(struct ddxrWlStatTable_entry *entry, int var)
 {
 	entry->ddxrWlStatTxPower = var;
 }
 
-void set_ddxrWlStatAntennaGain(struct ddxrWlStatTable_entry *entry, long var)
+void set_ddxrWlStatAntennaGain(struct ddxrWlStatTable_entry *entry, int var)
 {
 	entry->ddxrWlStatAntennaGain = var;
 }
@@ -811,7 +811,7 @@ void set_ddxrWlStatBssid(struct ddxrWlStatTable_entry *entry, char *var)
 	entry->ddxrWlStatBssid_len = 6;
 }
 
-void set_ddxrWlStatFreq(struct ddxrWlStatTable_entry *entry, long var)
+void set_ddxrWlStatFreq(struct ddxrWlStatTable_entry *entry, int var)
 {
 	entry->ddxrWlStatFreq = var;
 }
@@ -826,12 +826,12 @@ void set_ddxrWlStatScanlist(struct ddxrWlStatTable_entry *entry, char *var)
 	set_strbuf(entry->ddxrWlStatScanlist, var);
 }
 
-void set_ddxrWlStatnetmode(struct ddxrWlStatTable_entry *entry, long var)
+void set_ddxrWlStatnetmode(struct ddxrWlStatTable_entry *entry, int var)
 {
 	entry->ddxrWlStatnetmode = var;
 }
 
-void set_ddxrWlStatmode(struct ddxrWlStatTable_entry *entry, long var)
+void set_ddxrWlStatmode(struct ddxrWlStatTable_entry *entry, int var)
 {
 	entry->ddxrWlStatmode = var;
 }
@@ -841,27 +841,27 @@ void set_ddxrWlStatcardtype(struct ddxrWlStatTable_entry *entry, char *var)
 	set_strbuf(entry->ddxrWlStatcardtype, var);
 }
 
-void set_ddxrWlStatminrate(struct ddxrWlStatTable_entry *entry, long var)
+void set_ddxrWlStatminrate(struct ddxrWlStatTable_entry *entry, int var)
 {
 	entry->ddxrWlStatminrate = var;
 }
 
-void set_ddxrWlStatmaxrate(struct ddxrWlStatTable_entry *entry, long var)
+void set_ddxrWlStatmaxrate(struct ddxrWlStatTable_entry *entry, int var)
 {
 	entry->ddxrWlStatmaxrate = var;
 }
 
-void set_ddxrWlStatfastframing(struct ddxrWlStatTable_entry *entry, long var)
+void set_ddxrWlStatfastframing(struct ddxrWlStatTable_entry *entry, int var)
 {
 	entry->ddxrWlStatfastframing = var;
 }
 
-void set_ddxrWlStatconfigack(struct ddxrWlStatTable_entry *entry, long var)
+void set_ddxrWlStatconfigack(struct ddxrWlStatTable_entry *entry, int var)
 {
 	entry->ddxrWlStatconfigack = var;
 }
 
-void set_ddxrWlStatack(struct ddxrWlStatTable_entry *entry, long var)
+void set_ddxrWlStatack(struct ddxrWlStatTable_entry *entry, int var)
 {
 	entry->ddxrWlStatack = var;
 }
@@ -879,22 +879,22 @@ void set_ddxrWlStatRxAntenna(struct ddxrWlStatTable_entry *entry, int var)
 	entry->ddxrWlStatRxAntenna_len = 1;
 }
 
-void set_ddxrWlStatOutdoorBand(struct ddxrWlStatTable_entry *entry, long var)
+void set_ddxrWlStatOutdoorBand(struct ddxrWlStatTable_entry *entry, int var)
 {
 	entry->ddxrWlStatOutdoorBand = var;
 }
 
-void set_ddxrWlStat80211nWideChannel(struct ddxrWlStatTable_entry *entry, long var)
+void set_ddxrWlStat80211nWideChannel(struct ddxrWlStatTable_entry *entry, int var)
 {
 	entry->ddxrWlStat80211nWideChannel = var;
 }
 
-void set_ddxrWlStatChannelBW(struct ddxrWlStatTable_entry *entry, long var)
+void set_ddxrWlStatChannelBW(struct ddxrWlStatTable_entry *entry, int var)
 {
 	entry->ddxrWlStatChannelBW = var;
 }
 
-void set_ddxrWlStatSSIDBroadcast(struct ddxrWlStatTable_entry *entry, long var)
+void set_ddxrWlStatSSIDBroadcast(struct ddxrWlStatTable_entry *entry, int var)
 {
 	entry->ddxrWlStatSSIDBroadcast = var;
 }
@@ -975,6 +975,8 @@ int madwifi_getwirelessmode(char *iface)
 		nm = m_wdssta;
 	if (nvram_match(mode, "wdsap"))
 		nm = m_wdsap;
+	if (nvram_match(mode, "mesh"))
+		nm = m_mesh;
 	DEBUGMSGTL(("ddwrt:madwifi", "mode %s %d found\n", mode, nm));
 	return nm;
 }
@@ -994,20 +996,12 @@ int madwifi_getapsta(char *iface)
 	nm = n_unknown;
 	if (nvram_match(mode, "wet"))
 		return 1;
-	if (nvram_match(mode, "ap"))
-		return 0;
 	if (nvram_match(mode, "sta"))
 		return 1;
 	if (nvram_match(mode, "infra"))
 		return 2;
-	if (nvram_match(mode, "apsta"))
-		return 0;
-	if (nvram_match(mode, "apstawet"))
-		return 0;
 	if (nvram_match(mode, "wdssta"))
 		return 1;
-	if (nvram_match(mode, "wdsap"))
-		return 0;
 	return 0;
 }
 
@@ -1036,7 +1030,7 @@ static float half_rates[] = { 3, 4.5, 6, 9, 12, 18, 24, 27 };
 static float quarter_rates[] = { 1.5, 2, 3, 4.5, 6, 9, 12, 13.5 };
 static float subquarter_rates[] = { 0.75, 1, 1.5, 2.25, 3, 4.5, 6, 6.75 };
 
-long get_minmaxrates_madwifi(char *ifname, int maxrate)
+int get_minmaxrates_madwifi(char *ifname, int maxrate)
 {
 	float *rate;
 	float *showrates = NULL;
@@ -1131,9 +1125,9 @@ long get_minmaxrates_madwifi(char *ifname, int maxrate)
 		if (maxrate >= len)
 			maxrate = len - 1;
 		if (showrates)
-			return (long)(showrates[maxrate] * 1000000.0);
+			return (int)(showrates[maxrate] * 1000000.0);
 		else
-			return (long)(rate[maxrate] * 1000000.0);
+			return (int)(rate[maxrate] * 1000000.0);
 	}
 	return (0);
 }
@@ -1150,8 +1144,8 @@ void ddxrWlStatTable_madwifi()
 	int vap;
 	char vapindex;
 	struct ddxrWlStatTable_entry *entry, *mainentry;
-	long txpower = 0;
-	long antgain = 0;
+	int txpower = 0;
+	int antgain = 0;
 
 	DEBUGMSGTL(("ddwrt:madwifi", "ddxrWlStatTable_madwifi\n"));
 
@@ -1194,8 +1188,8 @@ void ddxrWlStatTable_madwifi()
 		sprintf(temp, "%s_scanlist", var);
 		set_ddxrWlStatScanlist(entry, nvram_safe_get(temp));
 
-		set_ddxrWlStatnetmode(entry, (long)madwifi_getwirelessnetmode(var));
-		set_ddxrWlStatmode(entry, (long)madwifi_getwirelessmode(var));
+		set_ddxrWlStatnetmode(entry, (int)madwifi_getwirelessnetmode(var));
+		set_ddxrWlStatmode(entry, (int)madwifi_getwirelessmode(var));
 #ifdef HAVE_ATH9K
 		sprintf(temp, "A 2ghz:%d 5ghz:%d 802.11n:%d 80211ac:%d", has_2ghz(var), has_5ghz(var), is_ath9k(var) | has_ac(var), has_ac(var));
 #else
@@ -1215,39 +1209,39 @@ void ddxrWlStatTable_madwifi()
 			set_ddxrWlStatmaxrate(entry, get_minmaxrates_madwifi(var, atoi(nvram_safe_get(temp))));
 		}
 		sprintf(temp, "%s_ff", var);
-		set_ddxrWlStatfastframing(entry, (long)atoi(nvram_safe_get(temp)) + 1);
+		set_ddxrWlStatfastframing(entry, (int)atoi(nvram_safe_get(temp)) + 1);
 #ifdef HAVE_ATH9K
 		if (is_mac80211(var))
-			set_ddxrWlStatack(entry, (long)(mac80211_get_coverageclass(var) * 450));
+			set_ddxrWlStatack(entry, (int)(mac80211_get_coverageclass(var) * 450));
 		else
 #endif
-			set_ddxrWlStatack(entry, (long)get_distance_madwifi(var));
+			set_ddxrWlStatack(entry, (int)get_distance_madwifi(var));
 		sprintf(temp, "%s_txantenna", var);
 		set_ddxrWlStatTxAntenna(entry, atoi(nvram_safe_get(temp)));
 		sprintf(temp, "%s_rxantenna", var);
 		set_ddxrWlStatRxAntenna(entry, atoi(nvram_safe_get(temp)));
 
 		sprintf(temp, "%s_outdoor", var);
-		set_ddxrWlStatOutdoorBand(entry, (long)atoi(nvram_safe_get(temp)) + 1);
+		set_ddxrWlStatOutdoorBand(entry, (int)atoi(nvram_safe_get(temp)) + 1);
 
 		sprintf(temp, "%s_channelbw", var);
-		set_ddxrWlStatChannelBW(entry, (long)atoi(nvram_safe_get(temp)));
+		set_ddxrWlStatChannelBW(entry, (int)atoi(nvram_safe_get(temp)));
 
 #ifdef HAVE_ATH9K
 		if (is_mac80211(var) && (atoi(nvram_safe_get(temp)) == 40 || atoi(nvram_safe_get(temp)) == 2040)) {
 			sprintf(temp, "%s_nctrlsb", var);
 			if (!strcmp(nvram_safe_get(temp), "upper"))
-				set_ddxrWlStat80211nWideChannel(entry, (long)3);
+				set_ddxrWlStat80211nWideChannel(entry, (int)3);
 			else
-				set_ddxrWlStat80211nWideChannel(entry, (long)2);
+				set_ddxrWlStat80211nWideChannel(entry, (int)2);
 		} else
 #endif
-			set_ddxrWlStat80211nWideChannel(entry, (long)1);
+			set_ddxrWlStat80211nWideChannel(entry, (int)1);
 		sprintf(temp, "%s_closed", var);
-		set_ddxrWlStatSSIDBroadcast(entry, (long)atoi(nvram_safe_get(temp)) + 1);
+		set_ddxrWlStatSSIDBroadcast(entry, (int)atoi(nvram_safe_get(temp)) + 1);
 
 		sprintf(temp, "%s_distance", var);
-		set_ddxrWlStatconfigack(entry, (long)atoi(nvram_safe_get(temp)));
+		set_ddxrWlStatconfigack(entry, (int)atoi(nvram_safe_get(temp)));
 
 		if (nvram_match("ath_regulatory", "0")) {
 			set_ddxrWlStatRegulatory(entry, "SUPERCHANNEL");
@@ -1286,8 +1280,8 @@ void ddxrWlStatTable_madwifi()
 			sprintf(temp, "%s_ssid", var);
 			set_ddxrWlStatSsid(entry, nvram_safe_get(temp));
 			set_ddxrWlStatScanlist(entry, mainentry->ddxrWlStatScanlist);
-			set_ddxrWlStatnetmode(entry, (long)madwifi_getwirelessnetmode(var));
-			set_ddxrWlStatmode(entry, (long)madwifi_getwirelessmode(var));
+			set_ddxrWlStatnetmode(entry, (int)madwifi_getwirelessnetmode(var));
+			set_ddxrWlStatmode(entry, (int)madwifi_getwirelessmode(var));
 			set_ddxrWlStatcardtype(entry, mainentry->ddxrWlStatcardtype);
 
 			set_ddxrWlStatminrate(entry, mainentry->ddxrWlStatminrate);
@@ -1302,7 +1296,7 @@ void ddxrWlStatTable_madwifi()
 			set_ddxrWlStatOutdoorBand(entry, mainentry->ddxrWlStatOutdoorBand);
 			set_ddxrWlStatChannelBW(entry, mainentry->ddxrWlStatChannelBW);
 			sprintf(temp, "%s_closed", var);
-			set_ddxrWlStatSSIDBroadcast(entry, (long)atoi(nvram_safe_get(temp)) + 1);
+			set_ddxrWlStatSSIDBroadcast(entry, (int)atoi(nvram_safe_get(temp)) + 1);
 			set_ddxrWlStatRegulatory(entry, mainentry->ddxrWlStatRegulatory);
 		}
 	}
@@ -1314,12 +1308,12 @@ void set_ddxrWlRtabMac(struct ddWlRtabTable_entry *entry, char *var)
 	entry->ddxrWlRtabMac_len = 6;
 }
 
-void set_ddxrWlRtabMajorInterface(struct ddWlRtabTable_entry *entry, long var)
+void set_ddxrWlRtabMajorInterface(struct ddWlRtabTable_entry *entry, int var)
 {
 	entry->ddxrWlRtabMajorInterface = var;
 }
 
-void set_ddxrWlRtabMinorInterface(struct ddWlRtabTable_entry *entry, long var)
+void set_ddxrWlRtabMinorInterface(struct ddWlRtabTable_entry *entry, int var)
 {
 	entry->ddxrWlRtabMinorInterface = var;
 }
@@ -1330,7 +1324,7 @@ void set_ddxrWlRtabBssid(struct ddWlRtabTable_entry *entry, char *var)
 	entry->ddxrWlRtabBssid_len = 6;
 }
 
-void set_ddxrWlRtabSNR(struct ddWlRtabTable_entry *entry, long var)
+void set_ddxrWlRtabSNR(struct ddWlRtabTable_entry *entry, int var)
 {
 	entry->ddxrWlRtabSNR = var;
 }
@@ -1340,27 +1334,27 @@ void set_ddxrWlRtabIfaceName(struct ddWlRtabTable_entry *entry, char *var)
 	set_strbuf(entry->ddxrWlRtabIfaceName, var);
 }
 
-void set_ddxrWlRtabnoise(struct ddWlRtabTable_entry *entry, long var)
+void set_ddxrWlRtabnoise(struct ddWlRtabTable_entry *entry, int var)
 {
 	entry->ddxrWlRtabnoise = var;
 }
 
-void set_ddxrWlRtabSignal(struct ddWlRtabTable_entry *entry, long var)
+void set_ddxrWlRtabSignal(struct ddWlRtabTable_entry *entry, int var)
 {
 	entry->ddxrWlRtabSignal = var;
 }
 
-void set_ddxrWlRtabtxrate(struct ddWlRtabTable_entry *entry, long var)
+void set_ddxrWlRtabtxrate(struct ddWlRtabTable_entry *entry, int var)
 {
 	entry->ddxrWlRtabtxrate = var;
 }
 
-void set_ddxrWlRtabrxrate(struct ddWlRtabTable_entry *entry, long var)
+void set_ddxrWlRtabrxrate(struct ddWlRtabTable_entry *entry, int var)
 {
 	entry->ddxrWlRtabrxrate = var;
 }
 
-void set_ddxrWlRtabType(struct ddWlRtabTable_entry *entry, long var)
+void set_ddxrWlRtabType(struct ddWlRtabTable_entry *entry, int var)
 {
 	entry->ddxrWlRtabType = var;
 }
@@ -1536,8 +1530,8 @@ void ddWlRtabTable_madwifi_assoc(char *ifname, int cnt, int turbo, int ciface, i
 		DEBUGMSGTL(("ddwrt:madwifiassoc", "ASSOC %d %d %s\n", ciface, cvap, mac));
 		entry = ddWlRtabTable_createEntry((char *)si->isi_macaddr, 6, ciface, cvap);
 		set_ddxrWlRtabMac(entry, (char *)si->isi_macaddr);
-		set_ddxrWlRtabMajorInterface(entry, (long)ciface);
-		set_ddxrWlRtabMinorInterface(entry, (long)cvap);
+		set_ddxrWlRtabMajorInterface(entry, (int)ciface);
+		set_ddxrWlRtabMinorInterface(entry, (int)cvap);
 		if (is_wds) {
 			// take the hwaddr of the main interface
 			sprintf(temp, "ath%d_hwaddr", ciface);
@@ -1549,14 +1543,14 @@ void ddWlRtabTable_madwifi_assoc(char *ifname, int cnt, int turbo, int ciface, i
 			bssid = (char *)ether_aton(nvram_safe_get(temp));
 			set_ddxrWlRtabBssid(entry, bssid);
 		}
-		set_ddxrWlRtabSNR(entry, (long)si->isi_rssi);
+		set_ddxrWlRtabSNR(entry, (int)si->isi_rssi);
 		set_ddxrWlRtabIfaceName(entry, ifname);
-		set_ddxrWlRtabnoise(entry, (long)(si->isi_noise + bias));
-		set_ddxrWlRtabSignal(entry, (long)(si->isi_noise + si->isi_rssi + bias));
+		set_ddxrWlRtabnoise(entry, (int)(si->isi_noise + bias));
+		set_ddxrWlRtabSignal(entry, (int)(si->isi_noise + si->isi_rssi + bias));
 		if (si->isi_rates && ((si->isi_rates[si->isi_txrate] & IEEE80211_RATE_VAL) != 0))
-			set_ddxrWlRtabtxrate(entry, (long)(((si->isi_rates[si->isi_txrate] & IEEE80211_RATE_VAL) / 2) * turbo) * (long)1000000);
+			set_ddxrWlRtabtxrate(entry, (int)(((si->isi_rates[si->isi_txrate] & IEEE80211_RATE_VAL) / 2) * turbo) * (int)1000000);
 		if (((si->isi_rates[si->isi_rxrate] & IEEE80211_RATE_VAL) != 0))
-			set_ddxrWlRtabrxrate(entry, (long)(((si->isi_rates[si->isi_rxrate] & IEEE80211_RATE_VAL) / 2) * turbo) * (long)1000000);
+			set_ddxrWlRtabrxrate(entry, (int)(((si->isi_rates[si->isi_rxrate] & IEEE80211_RATE_VAL) / 2) * turbo) * (int)1000000);
 		if (is_wds) {
 			type = 3;	// other side is wdspeer
 		} else {
@@ -1668,8 +1662,8 @@ void ddWlRtabTable_mac80211_assoc(char *ifname, int cnt, int ciface, int cvap, i
 		DEBUGMSGTL(("ddwrt:madwifiassoc", "ASSOC %d %d %s\n", ciface, cvap, mac));
 		entry = ddWlRtabTable_createEntry((char *)wc->etheraddr, 6, ciface, cvap);
 		set_ddxrWlRtabMac(entry, (char *)wc->etheraddr);
-		set_ddxrWlRtabMajorInterface(entry, (long)ciface);
-		set_ddxrWlRtabMinorInterface(entry, (long)cvap);
+		set_ddxrWlRtabMajorInterface(entry, (int)ciface);
+		set_ddxrWlRtabMinorInterface(entry, (int)cvap);
 		if (is_wds) {
 			// take the hwaddr of the main interface
 			sprintf(temp, "ath%d_hwaddr", ciface);
@@ -1681,14 +1675,14 @@ void ddWlRtabTable_mac80211_assoc(char *ifname, int cnt, int ciface, int cvap, i
 			bssid = (char *)ether_aton(nvram_safe_get(temp));
 			set_ddxrWlRtabBssid(entry, bssid);
 		}
-		set_ddxrWlRtabSNR(entry, (long)(wc->signal - wc->noise));
+		set_ddxrWlRtabSNR(entry, (int)(wc->signal - wc->noise));
 		set_ddxrWlRtabIfaceName(entry, ifname);
-		set_ddxrWlRtabnoise(entry, (long)(wc->noise + bias));
-		set_ddxrWlRtabSignal(entry, (long)(wc->signal + bias));
+		set_ddxrWlRtabnoise(entry, (int)(wc->noise + bias));
+		set_ddxrWlRtabSignal(entry, (int)(wc->signal + bias));
 		if (wc->txrate)
-			set_ddxrWlRtabtxrate(entry, (long)wc->txrate * (long)100000);
+			set_ddxrWlRtabtxrate(entry, (int)wc->txrate * (int)100000);
 		if (wc->rxrate)
-			set_ddxrWlRtabrxrate(entry, (long)wc->rxrate * (long)100000);
+			set_ddxrWlRtabrxrate(entry, (int)wc->rxrate * (int)100000);
 		if (is_wds) {
 			type = 3;	// other side is wdspeer
 		} else {
