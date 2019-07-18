@@ -2930,7 +2930,7 @@ void start_firewall(void)
 	 */
 	cprintf("Exec RC Filewall\n");
 	int runfw = 0;
-	if (!strcmp(wshaper_dev, "WAN")
+	if (nvram_match("wshaper_dev", "WAN")
 	    && (nvram_match("wan_proto", "disabled")
 		|| client_bridged_enabled()))
 		runfw = 1;
