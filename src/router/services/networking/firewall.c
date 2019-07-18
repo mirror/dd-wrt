@@ -2929,20 +2929,31 @@ void start_firewall(void)
 	 * run rc_firewall script 
 	 */
 	cprintf("Exec RC Filewall\n");
-#ifdef HAVE_REGISTER
-#ifndef HAVE_ERC
-	if (isregistered_real())
-#endif
-#endif
-	{
-		runStartup(".firewall");
-		create_rc_file(RC_FIREWALL);
-		if (f_exists("/tmp/.rc_firewall")) {
-			setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1);
-			system("/tmp/.rc_firewall");
-		}
+	int runfw = 0;
+	if (!strcmp(wshaper_dev, "WAN")
+	    && (nvram_match("wan_proto", "disabled")
+		|| client_bridged_enabled()))
+		runfw = 1;
+
+	if (!nvram_matchi("wshaper_enable", 1)) {
+		runfs = 1;
 	}
 
+	if (runfw) {
+#ifdef HAVE_REGISTER
+#ifndef HAVE_ERC
+		if (isregistered_real())
+#endif
+#endif
+		{
+			runStartup(".firewall");
+			create_rc_file(RC_FIREWALL);
+			if (f_exists("/tmp/.rc_firewall")) {
+				setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1);
+				system("/tmp/.rc_firewall");
+			}
+		}
+	}
 	cprintf("Ready\n");
 	/*
 	 * end Sveasoft add 
