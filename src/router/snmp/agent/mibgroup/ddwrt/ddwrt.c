@@ -704,6 +704,7 @@ int ddWlRtabTable_handler(netsnmp_mib_handler * handler, netsnmp_handler_registr
 				break;
 			default:
 				netsnmp_set_request_error(reqinfo, request, SNMP_NOSUCHOBJECT);
+				snmp_set_var_typed_integer(request->requestvb, ASN_INTEGER, 0 );
 				break;
 			}
 		}
