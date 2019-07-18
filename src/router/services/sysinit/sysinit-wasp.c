@@ -778,6 +778,12 @@ void start_sysinit(void)
 	cprintf("done\n");
 }
 
+void start_resetleds(void)
+{
+	writestr("/sys/class/leds/ath10k-phy0/trigger", "none");
+	writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
+}
+
 int check_cfe_nv(void)
 {
 	nvram_seti("portprio_support", 0);
