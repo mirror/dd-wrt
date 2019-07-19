@@ -109,10 +109,8 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
 	$(top_srcdir)/m4/visibility.m4 $(top_srcdir)/m4/wchar_t.m4 \
 	$(top_srcdir)/m4/wint_t.m4 $(top_srcdir)/m4/xsize.m4 \
 	$(top_srcdir)/acinclude.m4 \
-	$(top_srcdir)/m4.include/ac_onceonly.m4 \
 	$(top_srcdir)/m4.include/gnulib/mode_t.m4 \
 	$(top_srcdir)/m4.include/gnulib/stat-size.m4 \
-	$(top_srcdir)/m4.include/gnulib/ls-mntd-fs.m4 \
 	$(top_srcdir)/m4.include/gnulib/fstypename.m4 \
 	$(top_srcdir)/m4.include/gnulib/fsusage.m4 \
 	$(top_srcdir)/m4.include/gnulib/mountlist.m4 \
@@ -159,9 +157,9 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libmcstrutil_la_LIBADD =
-am_libmcstrutil_la_OBJECTS = replace.lo strescape.lo strutil8bit.lo \
-	strutilascii.lo strutil.lo strutilutf8.lo strverscmp.lo \
-	xstrtol.lo
+am_libmcstrutil_la_OBJECTS = filevercmp.lo replace.lo strescape.lo \
+	strutil8bit.lo strutilascii.lo strutil.lo strutilutf8.lo \
+	strverscmp.lo xstrtol.lo
 libmcstrutil_la_OBJECTS = $(am_libmcstrutil_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -182,11 +180,11 @@ am__v_at_1 =
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__maybe_remake_depfiles = depfiles
-am__depfiles_remade = ./$(DEPDIR)/replace.Plo \
-	./$(DEPDIR)/strescape.Plo ./$(DEPDIR)/strutil.Plo \
-	./$(DEPDIR)/strutil8bit.Plo ./$(DEPDIR)/strutilascii.Plo \
-	./$(DEPDIR)/strutilutf8.Plo ./$(DEPDIR)/strverscmp.Plo \
-	./$(DEPDIR)/xstrtol.Plo
+am__depfiles_remade = ./$(DEPDIR)/filevercmp.Plo \
+	./$(DEPDIR)/replace.Plo ./$(DEPDIR)/strescape.Plo \
+	./$(DEPDIR)/strutil.Plo ./$(DEPDIR)/strutil8bit.Plo \
+	./$(DEPDIR)/strutilascii.Plo ./$(DEPDIR)/strutilutf8.Plo \
+	./$(DEPDIR)/strverscmp.Plo ./$(DEPDIR)/xstrtol.Plo
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -467,6 +465,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 noinst_LTLIBRARIES = libmcstrutil.la
 libmcstrutil_la_SOURCES = \
+	filevercmp.c \
 	replace.c \
 	strescape.c \
 	strutil8bit.c \
@@ -531,6 +530,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/filevercmp.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/replace.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strescape.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strutil.Plo@am__quote@ # am--include-marker
@@ -698,7 +698,8 @@ clean-am: clean-generic clean-libtool clean-noinstLTLIBRARIES \
 	mostlyclean-am
 
 distclean: distclean-am
-		-rm -f ./$(DEPDIR)/replace.Plo
+		-rm -f ./$(DEPDIR)/filevercmp.Plo
+	-rm -f ./$(DEPDIR)/replace.Plo
 	-rm -f ./$(DEPDIR)/strescape.Plo
 	-rm -f ./$(DEPDIR)/strutil.Plo
 	-rm -f ./$(DEPDIR)/strutil8bit.Plo
@@ -751,7 +752,8 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
-		-rm -f ./$(DEPDIR)/replace.Plo
+		-rm -f ./$(DEPDIR)/filevercmp.Plo
+	-rm -f ./$(DEPDIR)/replace.Plo
 	-rm -f ./$(DEPDIR)/strescape.Plo
 	-rm -f ./$(DEPDIR)/strutil.Plo
 	-rm -f ./$(DEPDIR)/strutil8bit.Plo

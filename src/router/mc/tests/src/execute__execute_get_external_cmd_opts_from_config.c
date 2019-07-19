@@ -1,7 +1,7 @@
 /*
    src - tests for execute_external_editor_or_viewer() function
 
-   Copyright (C) 2013-2018
+   Copyright (C) 2013-2019
    Free Software Foundation, Inc.
 
    Written by:
@@ -97,7 +97,7 @@ setup (void)
 {
     str_init_strings (NULL);
     vfs_init ();
-    init_localfs ();
+    vfs_init_localfs ();
     vfs_setup_work_dir ();
 
     mc_config_get_string__init ();

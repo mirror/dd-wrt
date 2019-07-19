@@ -1,7 +1,7 @@
 /*
    Virtual File System path handlers
 
-   Copyright (C) 2011-2018
+   Copyright (C) 2011-2019
    Free Software Foundation, Inc.
 
    Written by:
@@ -336,7 +336,7 @@ vfs_get_class_by_name (const char *class_name)
 
     for (i = 0; i < vfs__classes_list->len; i++)
     {
-        struct vfs_class *vfs = (struct vfs_class *) g_ptr_array_index (vfs__classes_list, i);
+        struct vfs_class *vfs = VFS_CLASS (g_ptr_array_index (vfs__classes_list, i));
         if ((vfs->name != NULL) && (strcmp (vfs->name, class_name) == 0))
             return vfs;
     }
@@ -445,7 +445,6 @@ vfs_path_from_str_uri_parser (char *path)
     {
         char *vfs_prefix_start;
         char *real_vfs_prefix_start = url_delimiter;
-        struct vfs_s_subclass *sub = NULL;
 
         while (real_vfs_prefix_start > path && !IS_PATH_SEP (*real_vfs_prefix_start))
             real_vfs_prefix_start--;
@@ -461,8 +460,8 @@ vfs_path_from_str_uri_parser (char *path)
         element->vfs_prefix = g_strdup (vfs_prefix_start);
 
         url_delimiter += strlen (VFS_PATH_URL_DELIMITER);
-        sub = VFSDATA (element);
-        if (sub != NULL && (sub->flags & VFS_S_REMOTE) != 0)
+
+        if (element->class != NULL && (element->class->flags & VFS_REMOTE) != 0)
         {
             char *slash_pointer;
 
@@ -531,7 +530,7 @@ static void
 vfs_path_tokens_add_class_info (const vfs_path_element_t * element, GString * ret_tokens,
                                 GString * element_tokens)
 {
-    if (((element->class->flags & VFSF_LOCAL) == 0 || ret_tokens->len > 0)
+    if (((element->class->flags & VFS_LOCAL) == 0 || ret_tokens->len > 0)
         && element_tokens->len > 0)
     {
         char *url_str;
@@ -596,7 +595,7 @@ vfs_path_strip_home (const char *dir)
 
 #define vfs_append_from_path(appendfrom, is_relative) \
 { \
-    if ((flags & VPF_STRIP_HOME) && element_index == 0 && (element->class->flags & VFSF_LOCAL) != 0) \
+    if ((flags & VPF_STRIP_HOME) && element_index == 0 && (element->class->flags & VFS_LOCAL) != 0) \
     { \
         char *stripped_home_str; \
         stripped_home_str = vfs_path_strip_home (appendfrom); \
@@ -1004,7 +1003,7 @@ vfs_prefix_to_class (const char *prefix)
     {
         struct vfs_class *vfs;
 
-        vfs = (struct vfs_class *) g_ptr_array_index (vfs__classes_list, i);
+        vfs = VFS_CLASS (g_ptr_array_index (vfs__classes_list, i));
         if (vfs->which != NULL)
         {
             if (vfs->which (vfs, prefix) == -1)

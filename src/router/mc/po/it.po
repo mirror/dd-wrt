@@ -1,9 +1,9 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR Free Software Foundation, Inc.
-# This file is distributed under the same license as the PACKAGE package.
+# The Midnight Commander Italian translation strings
+# Copyright (C) 1998-2019 Free Software Foundation, Inc.
+# This file is distributed under the same license as the Midnight Commander package.
 #
 # Translators:
-# Marco Ciampa <ciampix@libero.it>, 1999-2016
+# Marco Ciampa <ciampix@libero.it>, 1999-2019
 # Andreas Troschka <signupbox001@om.it.eu.org>, 2012.
 # Giuliano Natali <diaolin@diaolin.com>, 1998.
 # Slava Zanko <slavazanko@gmail.com>, 2011.
@@ -11,8 +11,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2019-01-01 17:19+0300\n"
-"PO-Revision-Date: 2018-09-10 08:38+0200\n"
+"POT-Creation-Date: 2019-06-22 13:45+0200\n"
+"PO-Revision-Date: 2019-05-14 08:45+0200\n"
 "Last-Translator: Marco Ciampa <ciampix@libero.it>\n"
 "Language-Team: Italian (http://www.transifex.com/projects/p/mc/language/"
 "it/)\n"
@@ -1653,8 +1653,8 @@ msgstr ""
 "Un semplice editor di testi\n"
 "scritto per il Midnight Commander."
 
-msgid "Copyright (C) 1996-2018 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2018 the Free Software Foundation"
+msgid "Copyright (C) 1996-2019 the Free Software Foundation"
+msgstr "Copyright (C) 1996-2019 the Free Software Foundation"
 
 msgid "About"
 msgstr "Informazioni"
@@ -2521,34 +2521,32 @@ msgstr "file/directory"
 msgid " with source mask:"
 msgstr " con maschera sorgente:"
 
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Cannot stat hardlink source file \"%s\"\n"
 "%s"
 msgstr ""
-"Impossibile ottenere info sul file sorgente \"%s\"\n"
+"Non posso fare stat su coll. fisico file sorg. \"%s\"\n"
 "%s"
 
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Cannot create target hardlink \"%s\"\n"
 "%s"
 msgstr ""
-"Impossibile creare collegamento simb. destinazione \"%s\"\n"
+"Non posso creare il coll. fisico di dest. \"%s\"\n"
 "%s"
 
-#, fuzzy, c-format
+#, c-format
 msgid "Cannot create target hardlink \"%s\""
-msgstr ""
-"Impossibile creare collegamento simb. destinazione \"%s\"\n"
-"%s"
+msgstr "Non posso creare il coll. fisico di dest. \"%s\""
 
 #, c-format
 msgid ""
 "Cannot read source link \"%s\"\n"
 "%s"
 msgstr ""
-"Non posso leggere il collegamento sorgente \"%s\"\n"
+"Non posso leggere il coll. sorg. \"%s\"\n"
 "%s"
 
 msgid ""
@@ -2556,7 +2554,7 @@ msgid ""
 "\n"
 "Option Stable Symlinks will be disabled"
 msgstr ""
-"Non posso creare coll. simbolici stabili con filesystem non locali:\n"
+"Non posso creare coll. simb. stabili con filesystem non locali:\n"
 "\n"
 "L'opzione coll. simbolici stabili sarà disabilitata"
 
@@ -2565,7 +2563,7 @@ msgid ""
 "Cannot create target symlink \"%s\"\n"
 "%s"
 msgstr ""
-"Impossibile creare collegamento simb. destinazione \"%s\"\n"
+"Non posso creare il coll. simb. di dest. \"%s\"\n"
 "%s"
 
 #, c-format
@@ -2876,19 +2874,14 @@ msgstr "%.2f KB/s"
 msgid "%ld B/s"
 msgstr "%ld B/s"
 
-msgid "Target file already exists!"
-msgstr " Il file obiettivo esiste già!"
+msgid "New     :"
+msgstr "Nuovo   :"
 
-#, c-format
-msgid "New     : %s, size %s"
-msgstr "Nuovo   : %s, dim. %s"
+msgid "Existing:"
+msgstr "Esistente:"
 
-#, c-format
-msgid "Existing: %s, size %s"
-msgstr "Esistente: %s, dim. %s"
-
-msgid "Overwrite this target?"
-msgstr "Sovrascrivo questo file?"
+msgid "Overwrite this file?"
+msgstr "Sovrascrivere questo file?"
 
 msgid "A&ppend"
 msgstr "Atta&cca"
@@ -2896,14 +2889,20 @@ msgstr "Atta&cca"
 msgid "&Reget"
 msgstr "&Riprendi"
 
-msgid "Overwrite all targets?"
-msgstr "Sovrascrivo tutto?"
+msgid "Overwrite all files?"
+msgstr "Sovrascrivere tutti i file?"
 
-msgid "&Update"
-msgstr "&Aggiorna"
+msgid "Don't overwrite with &zero length file"
+msgstr "Non sovrascrivere con file di lunghezza &zero"
 
-msgid "If &size differs"
-msgstr "Solo se la dimensione è &diversa"
+msgid "&Older"
+msgstr "Più vecchi&o"
+
+msgid "S&maller"
+msgstr "Più picco&lo"
+
+msgid "&Size differs"
+msgstr "Dimensione diver&sa"
 
 msgid "File exists"
 msgstr "Il file esiste"
@@ -3867,6 +3866,9 @@ msgstr "Uso della libreria ncurses\n"
 msgid "Using the ncursesw library\n"
 msgstr "Uso della libreria ncursesw\n"
 
+msgid "With builtin Editor and Aspell support\n"
+msgstr "Con editor integrato e supporto Aspell\n"
+
 msgid "With builtin Editor\n"
 msgstr "Con editor integrato\n"
 
@@ -4518,6 +4520,3 @@ msgstr "Continuare dall'inizio?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Impossibile ricevere copia locale di /ftp://un.host/modificami.txt"
-
-#~ msgid "Cannot make the hardlink"
-#~ msgstr "Impossibile creare il coll. fisico"

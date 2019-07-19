@@ -1,7 +1,7 @@
 /*
    Main dialog (file panels) of the Midnight Commander
 
-   Copyright (C) 1994-2018
+   Copyright (C) 1994-2019
    Free Software Foundation, Inc.
 
    Written by:
@@ -140,7 +140,7 @@ stop_dialogs (void)
 {
     dlg_stop (midnight_dlg);
 
-    if ((top_dlg != NULL) && (top_dlg->data != NULL))
+    if (top_dlg != NULL)
         dlg_stop (DIALOG (top_dlg->data));
 }
 
@@ -661,7 +661,7 @@ create_panels (void)
         mc_chdir (vpath);
         vfs_path_free (vpath);
     }
-    set_display_type (other_index, other_mode);
+    create_panel (other_index, other_mode);
 
     /* 3. Create active panel */
     if (current_dir == NULL)
@@ -677,7 +677,7 @@ create_panels (void)
         mc_chdir (vpath);
         vfs_path_free (vpath);
     }
-    set_display_type (current_index, current_mode);
+    create_panel (current_index, current_mode);
 
     if (startup_left_mode == view_listing)
         current_panel = left_panel;
@@ -864,7 +864,7 @@ setup_mc (void)
 
 #ifdef ENABLE_SUBSHELL
     if (mc_global.tty.use_subshell)
-        add_select_channel (mc_global.tty.subshell_pty, load_prompt, 0);
+        add_select_channel (mc_global.tty.subshell_pty, load_prompt, NULL);
 #endif /* !ENABLE_SUBSHELL */
 
     if ((tty_baudrate () < 9600) || mc_global.tty.slow_terminal)
@@ -899,18 +899,10 @@ done_mc (void)
      * We sync the profiles since the hotlist may have changed, while
      * we only change the setup data if we have the auto save feature set
      */
-    const char *curr_dir;
 
     save_setup (auto_save_setup, panels_options.auto_save_setup);
 
-    curr_dir = vfs_get_current_dir ();
-    vfs_stamp_path (curr_dir);
-
-    if ((current_panel != NULL) && (get_current_type () == view_listing))
-        vfs_stamp_path (vfs_path_as_str (current_panel->cwd_vpath));
-
-    if ((other_panel != NULL) && (get_other_type () == view_listing))
-        vfs_stamp_path (vfs_path_as_str (other_panel->cwd_vpath));
+    vfs_stamp_path (vfs_get_raw_current_dir ());
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1522,7 +1514,7 @@ midnight_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void
                     return send_message (current_panel, midnight_dlg, MSG_ACTION, CK_SelectInvert,
                                          NULL);
             }
-            else if (!command_prompt || cmdline->buffer[0] == '\0')
+            else if (!command_prompt || input_is_empty (cmdline))
             {
                 /* Special treatement '+', '-', '\', '*' only when this is
                  * first char on input line

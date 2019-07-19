@@ -110,10 +110,8 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
 	$(top_srcdir)/m4/visibility.m4 $(top_srcdir)/m4/wchar_t.m4 \
 	$(top_srcdir)/m4/wint_t.m4 $(top_srcdir)/m4/xsize.m4 \
 	$(top_srcdir)/acinclude.m4 \
-	$(top_srcdir)/m4.include/ac_onceonly.m4 \
 	$(top_srcdir)/m4.include/gnulib/mode_t.m4 \
 	$(top_srcdir)/m4.include/gnulib/stat-size.m4 \
-	$(top_srcdir)/m4.include/gnulib/ls-mntd-fs.m4 \
 	$(top_srcdir)/m4.include/gnulib/fstypename.m4 \
 	$(top_srcdir)/m4.include/gnulib/fsusage.m4 \
 	$(top_srcdir)/m4.include/gnulib/mountlist.m4 \
@@ -187,8 +185,7 @@ am__uninstall_files_from_dir = { \
     || { echo " ( cd '$$dir' && rm -f" $$files ")"; \
          $(am__cd) "$$dir" && rm -f $$files; }; \
   }
-am__installdirs = "$(DESTDIR)$(extfsdir)" "$(DESTDIR)$(extfsdir)" \
-	"$(DESTDIR)$(extfsconfdir)"
+am__installdirs = "$(DESTDIR)$(extfsdir)" "$(DESTDIR)$(extfsdir)"
 SCRIPTS = $(extfs_SCRIPTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -209,7 +206,7 @@ am__can_run_installinfo = \
     n|no|NO) false;; \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
-DATA = $(extfs_DATA) $(extfsconf_DATA)
+DATA = $(extfs_DATA)
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/a+.in \
 	$(srcdir)/apt+.in $(srcdir)/audio.in $(srcdir)/deb.in \
@@ -454,7 +451,6 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 extfsdir = $(libexecdir)/@PACKAGE@/extfs.d
-EXTFSCONFFILES = sfs.ini
 
 # Files to install and distribute other than extfs scripts
 EXTFS_MISC = README README.extfs
@@ -523,11 +519,9 @@ EXTFS_OUT = \
 	uzip			\
 	uzoo
 
-@ENABLE_VFS_TRUE@extfs_DATA = $(EXTFS_MISC)
-@ENABLE_VFS_TRUE@extfs_SCRIPTS = $(EXTFS_CONST) $(EXTFS_OUT)
-@ENABLE_VFS_TRUE@extfsconfdir = $(sysconfdir)/@PACKAGE@
-@ENABLE_VFS_TRUE@extfsconf_DATA = $(EXTFSCONFFILES)
-EXTRA_DIST = $(EXTFS_MISC) $(EXTFS_CONST) $(EXTFSCONFFILES)
+@ENABLE_VFS_EXTFS_TRUE@extfs_DATA = $(EXTFS_MISC)
+@ENABLE_VFS_EXTFS_TRUE@extfs_SCRIPTS = $(EXTFS_CONST) $(EXTFS_OUT)
+EXTRA_DIST = $(EXTFS_MISC) $(EXTFS_CONST)
 all: all-am
 
 .SUFFIXES:
@@ -676,27 +670,6 @@ uninstall-extfsDATA:
 	@list='$(extfs_DATA)'; test -n "$(extfsdir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(extfsdir)'; $(am__uninstall_files_from_dir)
-install-extfsconfDATA: $(extfsconf_DATA)
-	@$(NORMAL_INSTALL)
-	@list='$(extfsconf_DATA)'; test -n "$(extfsconfdir)" || list=; \
-	if test -n "$$list"; then \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(extfsconfdir)'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(extfsconfdir)" || exit 1; \
-	fi; \
-	for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  echo "$$d$$p"; \
-	done | $(am__base_list) | \
-	while read files; do \
-	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(extfsconfdir)'"; \
-	  $(INSTALL_DATA) $$files "$(DESTDIR)$(extfsconfdir)" || exit $$?; \
-	done
-
-uninstall-extfsconfDATA:
-	@$(NORMAL_UNINSTALL)
-	@list='$(extfsconf_DATA)'; test -n "$(extfsconfdir)" || list=; \
-	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
-	dir='$(DESTDIR)$(extfsconfdir)'; $(am__uninstall_files_from_dir)
 tags TAGS:
 
 ctags CTAGS:
@@ -741,7 +714,7 @@ check-am: all-am
 check: check-am
 all-am: Makefile $(SCRIPTS) $(DATA)
 installdirs:
-	for dir in "$(DESTDIR)$(extfsdir)" "$(DESTDIR)$(extfsdir)" "$(DESTDIR)$(extfsconfdir)"; do \
+	for dir in "$(DESTDIR)$(extfsdir)" "$(DESTDIR)$(extfsdir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -794,8 +767,7 @@ info: info-am
 
 info-am:
 
-install-data-am: install-extfsDATA install-extfsSCRIPTS \
-	install-extfsconfDATA
+install-data-am: install-extfsDATA install-extfsSCRIPTS
 
 install-dvi: install-dvi-am
 
@@ -839,8 +811,7 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-extfsDATA uninstall-extfsSCRIPTS \
-	uninstall-extfsconfDATA
+uninstall-am: uninstall-extfsDATA uninstall-extfsSCRIPTS
 
 .MAKE: install-am install-strip
 
@@ -849,14 +820,13 @@ uninstall-am: uninstall-extfsDATA uninstall-extfsSCRIPTS \
 	distclean-libtool distdir dvi dvi-am html html-am info info-am \
 	install install-am install-data install-data-am install-dvi \
 	install-dvi-am install-exec install-exec-am install-extfsDATA \
-	install-extfsSCRIPTS install-extfsconfDATA install-html \
-	install-html-am install-info install-info-am install-man \
-	install-pdf install-pdf-am install-ps install-ps-am \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	tags-am uninstall uninstall-am uninstall-extfsDATA \
-	uninstall-extfsSCRIPTS uninstall-extfsconfDATA
+	install-extfsSCRIPTS install-html install-html-am install-info \
+	install-info-am install-man install-pdf install-pdf-am \
+	install-ps install-ps-am install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-generic \
+	mostlyclean-libtool pdf pdf-am ps ps-am tags-am uninstall \
+	uninstall-am uninstall-extfsDATA uninstall-extfsSCRIPTS
 
 .PRECIOUS: Makefile
 

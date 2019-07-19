@@ -1,7 +1,7 @@
 /*
    Dialog box features module for the Midnight Commander
 
-   Copyright (C) 1994-2018
+   Copyright (C) 1994-2019
    Free Software Foundation, Inc.
 
    This file is part of the Midnight Commander.
@@ -94,7 +94,7 @@ dlg_get_next_or_prev_of (const GList * list, gboolean next)
 {
     GList *l = NULL;
 
-    if (list != NULL && list->data != NULL)
+    if (list != NULL)
     {
         const WDialog *owner = CONST_WIDGET (list->data)->owner;
 
@@ -230,6 +230,10 @@ static cb_ret_t
 dlg_execute_cmd (WDialog * h, long command)
 {
     cb_ret_t ret = MSG_HANDLED;
+
+    if (send_message (h, NULL, MSG_ACTION, command, NULL) == MSG_HANDLED)
+        return MSG_HANDLED;
+
     switch (command)
     {
     case CK_Ok:
@@ -299,13 +303,8 @@ dlg_handle_key (WDialog * h, int d_key)
     long command;
 
     command = keybind_lookup_keymap_command (dialog_map, d_key);
-
-    if (command == CK_IgnoreKey)
-        return MSG_NOT_HANDLED;
-
-    if (send_message (h, NULL, MSG_ACTION, command, NULL) == MSG_HANDLED
-        || dlg_execute_cmd (h, command) == MSG_HANDLED)
-        return MSG_HANDLED;
+    if (command != CK_IgnoreKey)
+        return dlg_execute_cmd (h, command);
 
     return MSG_NOT_HANDLED;
 }
@@ -352,6 +351,9 @@ dlg_mouse_event (WDialog * h, Gpm_Event * event)
         if (mou != MOU_UNHANDLED)
             return mou;
     }
+
+    if (h->widgets == NULL)
+        return MOU_UNHANDLED;
 
     /* send the event to widgets in reverse Z-order */
     p = g_list_last (h->widgets);
@@ -954,19 +956,18 @@ do_refresh (void)
 
     if (fast_refresh)
     {
-        if ((d != NULL) && (d->data != NULL))
+        if (d != NULL)
             dlg_redraw (DIALOG (d->data));
     }
     else
     {
         /* Search first fullscreen dialog */
         for (; d != NULL; d = g_list_next (d))
-            if (d->data != NULL && (WIDGET (d->data)->pos_flags & WPOS_FULLSCREEN) != 0)
+            if ((WIDGET (d->data)->pos_flags & WPOS_FULLSCREEN) != 0)
                 break;
         /* back to top dialog */
         for (; d != NULL; d = g_list_previous (d))
-            if (d->data != NULL)
-                dlg_redraw (DIALOG (d->data));
+            dlg_redraw (DIALOG (d->data));
     }
 }
 
@@ -1052,9 +1053,7 @@ update_cursor (WDialog * h)
 
     if (p != NULL && widget_get_state (WIDGET (h), WST_ACTIVE))
     {
-        Widget *w;
-
-        w = WIDGET (p->data);
+        Widget *w = WIDGET (p->data);
 
         if (!widget_get_state (w, WST_DISABLED) && widget_get_options (w, WOP_WANT_CURSOR))
             send_message (w, NULL, MSG_CURSOR, 0, NULL);
@@ -1150,16 +1149,21 @@ dlg_init (WDialog * h)
 void
 dlg_process_event (WDialog * h, int key, Gpm_Event * event)
 {
-    if (key == EV_NONE)
+    switch (key)
     {
+    case EV_NONE:
         if (tty_got_interrupt ())
-            if (send_message (h, NULL, MSG_ACTION, CK_Cancel, NULL) != MSG_HANDLED)
-                dlg_execute_cmd (h, CK_Cancel);
-    }
-    else if (key == EV_MOUSE)
+            dlg_execute_cmd (h, CK_Cancel);
+        break;
+
+    case EV_MOUSE:
         h->mouse_status = dlg_mouse_event (h, event);
-    else
+        break;
+
+    default:
         dlg_key_event (h, key);
+        break;
+    }
 }
 
 /* --------------------------------------------------------------------------------------------- */

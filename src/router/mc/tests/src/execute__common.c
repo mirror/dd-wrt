@@ -1,7 +1,7 @@
 /*
    Common code for testing functions in src/execute.c file.
 
-   Copyright (C) 2013-2018
+   Copyright (C) 2013-2019
 
    Free Software Foundation, Inc.
 
@@ -240,7 +240,7 @@ setup (void)
 {
     str_init_strings (NULL);
     vfs_init ();
-    init_localfs ();
+    vfs_init_localfs ();
     vfs_setup_work_dir ();
 
     vfs_file_is_local__init ();

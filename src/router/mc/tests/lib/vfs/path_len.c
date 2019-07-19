@@ -1,6 +1,6 @@
 /* lib/vfs - tests for vfspath_len() function.
 
-   Copyright (C) 2011-2018
+   Copyright (C) 2011-2019
    Free Software Foundation, Inc.
 
    Written by:
@@ -45,7 +45,7 @@ setup (void)
     str_init_strings (NULL);
 
     vfs_init ();
-    init_localfs ();
+    vfs_init_localfs ();
     vfs_setup_work_dir ();
 
     mc_global.sysconfig_dir = (char *) TEST_SHARE_DIR;

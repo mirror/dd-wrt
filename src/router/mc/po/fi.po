@@ -3,16 +3,16 @@
 # This file is distributed under the same license as the mc package.
 #
 # Translators:
-# Nikolay Korotkiy <sikmir@gmail.com>, 2017-2018
+# Nikolay Korotkiy <sikmir@gmail.com>, 2017-2019
 # Slava Zanko <slavazanko@gmail.com>, 2011
 # Kasvain <kasvain@gmail.com>, 2015
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2019-01-01 17:19+0300\n"
-"PO-Revision-Date: 2018-12-07 20:42+0000\n"
-"Last-Translator: Nikolay Korotkiy <sikmir@gmail.com>\n"
+"POT-Creation-Date: 2019-06-22 13:45+0200\n"
+"PO-Revision-Date: 2019-03-02 12:55+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Finnish (http://www.transifex.com/mc/mc/language/fi/)\n"
 "Language: fi\n"
 "MIME-Version: 1.0\n"
@@ -387,7 +387,7 @@ msgid "Question mark"
 msgstr "Kysymysmerkki"
 
 msgid "Ampersand"
-msgstr ""
+msgstr "Et-merkki"
 
 msgid "Dollar sign"
 msgstr "Dollarin merkki"
@@ -1574,7 +1574,7 @@ msgid ""
 "written for the Midnight Commander."
 msgstr ""
 
-msgid "Copyright (C) 1996-2018 the Free Software Foundation"
+msgid "Copyright (C) 1996-2019 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -1866,7 +1866,7 @@ msgid "Skin:"
 msgstr "Ulkoasuteema:"
 
 msgid "Appearance"
-msgstr ""
+msgstr "Ulkoasu"
 
 msgid "Case &insensitive"
 msgstr ""
@@ -2190,7 +2190,7 @@ msgid "Cannot change directory"
 msgstr "Ei voitu vaihtaa hakemistoa"
 
 msgid "Filter"
-msgstr ""
+msgstr "Suodata"
 
 msgid "Set expression for filtering filenames"
 msgstr ""
@@ -2689,18 +2689,13 @@ msgstr ""
 msgid "%ld B/s"
 msgstr ""
 
-msgid "Target file already exists!"
+msgid "New     :"
 msgstr ""
 
-#, c-format
-msgid "New     : %s, size %s"
+msgid "Existing:"
 msgstr ""
 
-#, c-format
-msgid "Existing: %s, size %s"
-msgstr ""
-
-msgid "Overwrite this target?"
+msgid "Overwrite this file?"
 msgstr ""
 
 msgid "A&ppend"
@@ -2709,13 +2704,19 @@ msgstr ""
 msgid "&Reget"
 msgstr ""
 
-msgid "Overwrite all targets?"
+msgid "Overwrite all files?"
 msgstr ""
 
-msgid "&Update"
+msgid "Don't overwrite with &zero length file"
 msgstr ""
 
-msgid "If &size differs"
+msgid "&Older"
+msgstr ""
+
+msgid "S&maller"
+msgstr ""
+
+msgid "&Size differs"
 msgstr ""
 
 msgid "File exists"
@@ -3099,7 +3100,7 @@ msgid "&Sort order..."
 msgstr ""
 
 msgid "&Filter..."
-msgstr ""
+msgstr "&Suodata..."
 
 msgid "&Encoding..."
 msgstr ""
@@ -3132,7 +3133,7 @@ msgid "&Filtered view"
 msgstr ""
 
 msgid "&Copy"
-msgstr ""
+msgstr "&Kopioi"
 
 msgid "C&hmod"
 msgstr ""
@@ -3246,7 +3247,7 @@ msgid "C&onfirmation..."
 msgstr ""
 
 msgid "&Appearance..."
-msgstr ""
+msgstr "&Ulkoasu..."
 
 msgid "&Display bits..."
 msgstr ""
@@ -3643,6 +3644,9 @@ msgid "Using the ncurses library\n"
 msgstr ""
 
 msgid "Using the ncursesw library\n"
+msgstr ""
+
+msgid "With builtin Editor and Aspell support\n"
 msgstr ""
 
 msgid "With builtin Editor\n"
