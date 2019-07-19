@@ -1,7 +1,7 @@
 /*
    lib/vfs - manipulations with temp files and  dirs
 
-   Copyright (C) 2012-2018
+   Copyright (C) 2012-2019
    Free Software Foundation, Inc.
 
    Written by:
@@ -39,10 +39,6 @@
 
 #include "src/vfs/local/local.c"
 
-
-struct vfs_s_subclass test_subclass1, test_subclass2, test_subclass3;
-struct vfs_class vfs_test_ops1, vfs_test_ops2, vfs_test_ops3;
-
 /* --------------------------------------------------------------------------------------------- */
 
 /* @Before */
@@ -52,7 +48,7 @@ setup (void)
     str_init_strings (NULL);
 
     vfs_init ();
-    init_localfs ();
+    vfs_init_localfs ();
     vfs_setup_work_dir ();
 }
 

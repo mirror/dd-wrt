@@ -6,14 +6,14 @@
 # Andrius Burokas, 2017-2018
 # Nerijus Baliūnas <nerijus@users.sourceforge.net>, 2011
 # Slava Zanko <slavazanko@gmail.com>, 2011
-# Zygi Mantus <zygimantus@gmail.com>, 2016
-# Zygi Mantus <zygimantus@gmail.com>, 2016-2017
+# Zygimantus <zygimantus@gmail.com>, 2016
+# Zygimantus <zygimantus@gmail.com>, 2016-2017
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2019-01-01 17:19+0300\n"
-"PO-Revision-Date: 2018-10-21 01:34+0000\n"
+"POT-Creation-Date: 2019-06-22 13:45+0200\n"
+"PO-Revision-Date: 2019-03-02 12:55+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Lithuanian (http://www.transifex.com/mc/mc/language/lt/)\n"
 "Language: lt\n"
@@ -1618,7 +1618,7 @@ msgstr ""
 "Lengvas vartoti teksto redaktorius\n"
 "sukurtas Midnight Commander aplinkai."
 
-msgid "Copyright (C) 1996-2018 the Free Software Foundation"
+msgid "Copyright (C) 1996-2019 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -2769,19 +2769,14 @@ msgstr "%.2f KB/s"
 msgid "%ld B/s"
 msgstr "%ld B/s"
 
-msgid "Target file already exists!"
-msgstr "Toks failas jau egzistuoja!"
+msgid "New     :"
+msgstr ""
 
-#, c-format
-msgid "New     : %s, size %s"
-msgstr "Naujas  : %s, dydis %s"
+msgid "Existing:"
+msgstr ""
 
-#, c-format
-msgid "Existing: %s, size %s"
-msgstr "Egzistuoja: %s, dydis %s"
-
-msgid "Overwrite this target?"
-msgstr "Perrašyti šią paskirtį?"
+msgid "Overwrite this file?"
+msgstr ""
 
 msgid "A&ppend"
 msgstr "&Papildyti"
@@ -2789,14 +2784,20 @@ msgstr "&Papildyti"
 msgid "&Reget"
 msgstr "P&ratęsti"
 
-msgid "Overwrite all targets?"
-msgstr "Perrašyti visas paskirtis?"
+msgid "Overwrite all files?"
+msgstr ""
 
-msgid "&Update"
-msgstr "Atna&ujinti"
+msgid "Don't overwrite with &zero length file"
+msgstr ""
 
-msgid "If &size differs"
-msgstr "Jei &skiriasi dydis"
+msgid "&Older"
+msgstr ""
+
+msgid "S&maller"
+msgstr ""
+
+msgid "&Size differs"
+msgstr ""
 
 msgid "File exists"
 msgstr "Failas egzistuoja"
@@ -3756,6 +3757,9 @@ msgid "Using the ncurses library\n"
 msgstr ""
 
 msgid "Using the ncursesw library\n"
+msgstr ""
+
+msgid "With builtin Editor and Aspell support\n"
 msgstr ""
 
 msgid "With builtin Editor\n"

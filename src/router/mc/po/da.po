@@ -7,15 +7,15 @@
 # Henry Madsen Jensen <henry@madsen-jensen.dk>, 2016
 # Joe Hansen <joedalton2@yahoo.dk>, 2014
 # Morten Bo Johansen <mortenbo@hotmail.com>, 2018
-# scootergrisen, 2018
+# scootergrisen, 2018-2019
 # Slava Zanko <slavazanko@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2019-01-01 17:19+0300\n"
-"PO-Revision-Date: 2018-10-26 11:43+0000\n"
-"Last-Translator: Morten Bo Johansen <mortenbo@hotmail.com>\n"
+"POT-Creation-Date: 2019-06-22 13:45+0200\n"
+"PO-Revision-Date: 2019-03-04 17:03+0000\n"
+"Last-Translator: scootergrisen\n"
 "Language-Team: Danish (http://www.transifex.com/mc/mc/language/da/)\n"
 "Language: da\n"
 "MIME-Version: 1.0\n"
@@ -1645,7 +1645,7 @@ msgid "Word wrap line length:"
 msgstr "Linjelængde for ordombrydning:"
 
 msgid "Editor options"
-msgstr "Indstillinger for redigeringsprogram"
+msgstr "Indstillinger for editor"
 
 msgid ""
 "A user friendly text editor\n"
@@ -1654,8 +1654,8 @@ msgstr ""
 "En brugervenlig teksteditor\n"
 "skrevet til Midnight Commander."
 
-msgid "Copyright (C) 1996-2018 the Free Software Foundation"
-msgstr "Ophavsret (C) 1996-2018 Free Software Foundation"
+msgid "Copyright (C) 1996-2019 the Free Software Foundation"
+msgstr "Ophavsret (C) 1996-2019 the Free Software Foundation"
 
 msgid "About"
 msgstr "Om"
@@ -2875,19 +2875,14 @@ msgstr "%.2f KB/s"
 msgid "%ld B/s"
 msgstr "%ld B/s"
 
-msgid "Target file already exists!"
-msgstr "Målfil findes allerede!"
+msgid "New     :"
+msgstr "Ny      :"
 
-#, c-format
-msgid "New     : %s, size %s"
-msgstr "Ny      : %s, størrelse %s"
+msgid "Existing:"
+msgstr "Eksisterende:"
 
-#, c-format
-msgid "Existing: %s, size %s"
-msgstr "Eksisterende: %s, størrelse %s"
-
-msgid "Overwrite this target?"
-msgstr "Overskriv dette mål?"
+msgid "Overwrite this file?"
+msgstr "Overskriv filen?"
 
 msgid "A&ppend"
 msgstr "&Tilføj"
@@ -2895,14 +2890,20 @@ msgstr "&Tilføj"
 msgid "&Reget"
 msgstr "Fo&rtryd"
 
-msgid "Overwrite all targets?"
-msgstr "Overskriv alle mål?"
+msgid "Overwrite all files?"
+msgstr "Overskriv alle filerne?"
 
-msgid "&Update"
-msgstr "&Opdater"
+msgid "Don't overwrite with &zero length file"
+msgstr "Overskriv ikke med fil på &nul længde"
 
-msgid "If &size differs"
-msgstr "Hvis &størrelsen er forskellig"
+msgid "&Older"
+msgstr "&Ældre"
+
+msgid "S&maller"
+msgstr "&Mindre"
+
+msgid "&Size differs"
+msgstr "Forskellig &størrelse"
 
 msgid "File exists"
 msgstr "Fil findes"
@@ -3866,6 +3867,9 @@ msgstr "Bruger ncurses-biblioteket\n"
 
 msgid "Using the ncursesw library\n"
 msgstr "Bruger ncursesw-biblioteket\n"
+
+msgid "With builtin Editor and Aspell support\n"
+msgstr "Med indbygget editor og understøttelse af Aspell\n"
 
 msgid "With builtin Editor\n"
 msgstr "Med indbygget teksteditor\n"

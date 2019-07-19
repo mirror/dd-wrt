@@ -630,6 +630,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
+ac_header_list=
 gt_needs=
 gl_use_threads_default=
 enable_option_checking=no
@@ -2219,6 +2220,60 @@ $as_echo "$ac_res" >&6; }
 
 } # ac_fn_c_check_func
 
+# ac_fn_c_check_type LINENO TYPE VAR INCLUDES
+# -------------------------------------------
+# Tests whether TYPE exists after having included INCLUDES, setting cache
+# variable VAR accordingly.
+ac_fn_c_check_type ()
+{
+  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $2" >&5
+$as_echo_n "checking for $2... " >&6; }
+if eval \${$3+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  eval "$3=no"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$4
+int
+main ()
+{
+if (sizeof ($2))
+	 return 0;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$4
+int
+main ()
+{
+if (sizeof (($2)))
+	    return 0;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+else
+  eval "$3=yes"
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+eval ac_res=\$$3
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+  eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
+
+} # ac_fn_c_check_type
+
 # ac_fn_c_compute_int LINENO EXPR VAR INCLUDES
 # --------------------------------------------
 # Tries to find the compile-time value of EXPR in a program that includes
@@ -2401,60 +2456,6 @@ rm -f conftest.val
   as_fn_set_status $ac_retval
 
 } # ac_fn_c_compute_int
-
-# ac_fn_c_check_type LINENO TYPE VAR INCLUDES
-# -------------------------------------------
-# Tests whether TYPE exists after having included INCLUDES, setting cache
-# variable VAR accordingly.
-ac_fn_c_check_type ()
-{
-  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $2" >&5
-$as_echo_n "checking for $2... " >&6; }
-if eval \${$3+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  eval "$3=no"
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-$4
-int
-main ()
-{
-if (sizeof ($2))
-	 return 0;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-$4
-int
-main ()
-{
-if (sizeof (($2)))
-	    return 0;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-
-else
-  eval "$3=yes"
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-eval ac_res=\$$3
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-  eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
-
-} # ac_fn_c_check_type
 
 # ac_fn_c_check_member LINENO AGGR MEMBER VAR INCLUDES
 # ----------------------------------------------------
@@ -2796,6 +2797,15 @@ $as_echo "$as_me: creating cache $cache_file" >&6;}
   >$cache_file
 fi
 
+as_fn_append ac_header_list " sys/types.h"
+as_fn_append ac_header_list " sys/param.h"
+as_fn_append ac_header_list " stdlib.h"
+as_fn_append ac_header_list " unistd.h"
+as_fn_append ac_header_list " sys/statvfs.h"
+as_fn_append ac_header_list " sys/vfs.h"
+as_fn_append ac_header_list " sys/fs_types.h"
+as_fn_append ac_header_list " OS.h"
+as_fn_append ac_header_list " netinet/in.h"
 gt_needs="$gt_needs need-ngettext"
 # Check that the precious variables saved in the cache have kept the same
 # value.
@@ -7583,6 +7593,8 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
 fi
 
+ax_gcc_func_attribute_save_flags=$CFLAGS
+CFLAGS=
 
 
 
@@ -7633,6 +7645,8 @@ fi
 
 
 
+CFLAGS=$ax_gcc_func_attribute_save_flags
+unset ax_gcc_func_attribute_save_flags
 
 case `pwd` in
   *\ * | *\	*)
@@ -15689,7 +15703,7 @@ fi
 
 
 
-    if test x$enable_tests == xno; then
+    if test x"$enable_tests" = "xno"; then
                 tests_msg="no"
     else
 
@@ -15756,7 +15770,7 @@ fi
 $as_echo "$as_me: WARNING: 'Check' testing framework not found. Check your environment" >&2;}
                 tests_msg="no ('Check' testing framework not found)"
 
-                                                if test x$enable_tests == xyes; then
+                                                if test x"$enable_tests" = "xyes"; then
                     as_fn_error $? "You explicitly specified '--enable-tests', but this requirement cannot be met." "$LINENO" 5
                 fi
 
@@ -15768,7 +15782,7 @@ $as_echo "no" >&6; }
 $as_echo "$as_me: WARNING: 'Check' testing framework not found. Check your environment" >&2;}
                 tests_msg="no ('Check' testing framework not found)"
 
-                                                if test x$enable_tests == xyes; then
+                                                if test x"$enable_tests" = "xyes"; then
                     as_fn_error $? "You explicitly specified '--enable-tests', but this requirement cannot be met." "$LINENO" 5
                 fi
 
@@ -15791,6 +15805,20 @@ fi
 else
   HAVE_TESTS_TRUE='#'
   HAVE_TESTS_FALSE=
+fi
+
+
+            ac_fn_c_check_type "$LINENO" "sighandler_t" "ac_cv_type_sighandler_t" "
+        #include <signal.h>
+
+"
+if test "x$ac_cv_type_sighandler_t" = xyes; then :
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_SIGHANDLER_T 1
+_ACEOF
+
+
 fi
 
 
@@ -18953,22 +18981,21 @@ fi
 done
 
 
-      for ac_header in sys/types.h
+
+
+  for ac_header in $ac_header_list
 do :
-  ac_fn_c_check_header_mongrel "$LINENO" "sys/types.h" "ac_cv_header_sys_types_h" "$ac_includes_default"
-if test "x$ac_cv_header_sys_types_h" = xyes; then :
+  as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
+ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default
+"
+if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
-#define HAVE_SYS_TYPES_H 1
+#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
 _ACEOF
 
 fi
 
 done
-
-
-
-  :
-
 
 
 
@@ -19516,28 +19543,10 @@ _ACEOF
 fi
 
 
-      for ac_header in sys/param.h
-do :
-  ac_fn_c_check_header_mongrel "$LINENO" "sys/param.h" "ac_cv_header_sys_param_h" "$ac_includes_default"
-if test "x$ac_cv_header_sys_param_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_SYS_PARAM_H 1
-_ACEOF
-
-fi
-
-done
-
 
 
   # Don't call AC_STRUCT_ST_BLOCKS because it causes bugs.  Details at
   # http://lists.gnu.org/archive/html/bug-gnulib/2011-06/msg00051.html
-
-  :
-
-
-
-
 
 
 
@@ -19726,42 +19735,6 @@ fi
 
 if test x$with_mmap != xno; then
     if test x$with_mmap = x; then
-
-      for ac_header in stdlib.h
-do :
-  ac_fn_c_check_header_mongrel "$LINENO" "stdlib.h" "ac_cv_header_stdlib_h" "$ac_includes_default"
-if test "x$ac_cv_header_stdlib_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_STDLIB_H 1
-_ACEOF
-
-fi
-
-done
-
-
-
-      for ac_header in unistd.h
-do :
-  ac_fn_c_check_header_mongrel "$LINENO" "unistd.h" "ac_cv_header_unistd_h" "$ac_includes_default"
-if test "x$ac_cv_header_unistd_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_UNISTD_H 1
-_ACEOF
-
-fi
-
-done
-
-
-
-  :
-
-
-
-
-
-
 
 
 
@@ -19996,736 +19969,15 @@ fi
 
 
 
-      for ac_header in sys/statvfs.h
-do :
-  ac_fn_c_check_header_mongrel "$LINENO" "sys/statvfs.h" "ac_cv_header_sys_statvfs_h" "$ac_includes_default"
-if test "x$ac_cv_header_sys_statvfs_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_SYS_STATVFS_H 1
-_ACEOF
 
-fi
 
-done
 
 
 
-      for ac_header in sys/vfs.h
-do :
-  ac_fn_c_check_header_mongrel "$LINENO" "sys/vfs.h" "ac_cv_header_sys_vfs_h" "$ac_includes_default"
-if test "x$ac_cv_header_sys_vfs_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_SYS_VFS_H 1
-_ACEOF
 
-fi
 
-done
 
 
-
-      for ac_header in sys/fs_types.h
-do :
-  ac_fn_c_check_header_mongrel "$LINENO" "sys/fs_types.h" "ac_cv_header_sys_fs_types_h" "$ac_includes_default"
-if test "x$ac_cv_header_sys_fs_types_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_SYS_FS_TYPES_H 1
-_ACEOF
-
-fi
-
-done
-
-
-
-      for ac_header in OS.h
-do :
-  ac_fn_c_check_header_mongrel "$LINENO" "OS.h" "ac_cv_header_OS_h" "$ac_includes_default"
-if test "x$ac_cv_header_OS_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_OS_H 1
-_ACEOF
-
-fi
-
-done
-
-
-
-      for ac_header in netinet/in.h
-do :
-  ac_fn_c_check_header_mongrel "$LINENO" "netinet/in.h" "ac_cv_header_netinet_in_h" "$ac_includes_default"
-if test "x$ac_cv_header_netinet_in_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_NETINET_IN_H 1
-_ACEOF
-
-fi
-
-done
-
-
-
-
-
-
-  for ac_func in listmntent
-do :
-  ac_fn_c_check_func "$LINENO" "listmntent" "ac_cv_func_listmntent"
-if test "x$ac_cv_func_listmntent" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LISTMNTENT 1
-_ACEOF
-
-fi
-done
-
-
-  :
-
-
-
-
-
-
-
-
-
-  # We must include grp.h before ucred.h on OSF V4.0, since ucred.h uses
-  # NGROUPS (as the array dimension for a struct member) without a definition.
-  for ac_header in sys/ucred.h
-do :
-  ac_fn_c_check_header_compile "$LINENO" "sys/ucred.h" "ac_cv_header_sys_ucred_h" "#include <grp.h>
-"
-if test "x$ac_cv_header_sys_ucred_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_SYS_UCRED_H 1
-_ACEOF
-
-fi
-
-done
-
-
-  for ac_header in sys/mount.h
-do :
-  ac_fn_c_check_header_compile "$LINENO" "sys/mount.h" "ac_cv_header_sys_mount_h" "$ac_includes_default
-     #if HAVE_SYS_PARAM_H
-       #include <sys/param.h>
-      #endif
-
-"
-if test "x$ac_cv_header_sys_mount_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_SYS_MOUNT_H 1
-_ACEOF
-
-fi
-
-done
-
-
-  for ac_header in mntent.h sys/fs_types.h
-do :
-  as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
-ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
-if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
-  cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
-_ACEOF
-
-fi
-
-done
-
-  getfsstat_includes="\
-$ac_includes_default
-#if HAVE_SYS_PARAM_H
-# include <sys/param.h> /* needed by powerpc-apple-darwin1.3.7 */
-#endif
-#if HAVE_SYS_UCRED_H
-# include <grp.h> /* needed for definition of NGROUPS */
-# include <sys/ucred.h> /* needed by powerpc-apple-darwin1.3.7 */
-#endif
-#if HAVE_SYS_MOUNT_H
-# include <sys/mount.h>
-#endif
-#if HAVE_SYS_FS_TYPES_H
-# include <sys/fs_types.h> /* needed by powerpc-apple-darwin1.3.7 */
-#endif
-"
-  ac_fn_c_check_member "$LINENO" "struct fsstat" "f_fstypename" "ac_cv_member_struct_fsstat_f_fstypename" "$getfsstat_includes
-"
-if test "x$ac_cv_member_struct_fsstat_f_fstypename" = xyes; then :
-
-cat >>confdefs.h <<_ACEOF
-#define HAVE_STRUCT_FSSTAT_F_FSTYPENAME 1
-_ACEOF
-
-
-fi
-
-
-  # Determine how to get the list of mounted file systems.
-  ac_list_mounted_fs=
-
-  # If the getmntent function is available but not in the standard library,
-  # make sure LIBS contains the appropriate -l option.
-
-  # getmntent is in the standard C library on UNICOS, in -lsun on Irix 4,
-  # -lgen on Unixware.
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing getmntent" >&5
-$as_echo_n "checking for library containing getmntent... " >&6; }
-if ${ac_cv_search_getmntent+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_func_search_save_LIBS=$LIBS
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char getmntent ();
-int
-main ()
-{
-return getmntent ();
-  ;
-  return 0;
-}
-_ACEOF
-for ac_lib in '' sun gen; do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_search_getmntent=$ac_res
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext
-  if ${ac_cv_search_getmntent+:} false; then :
-  break
-fi
-done
-if ${ac_cv_search_getmntent+:} false; then :
-
-else
-  ac_cv_search_getmntent=no
-fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_getmntent" >&5
-$as_echo "$ac_cv_search_getmntent" >&6; }
-ac_res=$ac_cv_search_getmntent
-if test "$ac_res" != no; then :
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
-
-fi
-
-  for ac_func in getmntent
-do :
-  ac_fn_c_check_func "$LINENO" "getmntent" "ac_cv_func_getmntent"
-if test "x$ac_cv_func_getmntent" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_GETMNTENT 1
-_ACEOF
-
-fi
-done
-
-
-
-  if test -z "$ac_list_mounted_fs"; then
-    # AIX.
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for mntctl function and struct vmount" >&5
-$as_echo_n "checking for mntctl function and struct vmount... " >&6; }
-if ${fu_cv_sys_mounted_vmount+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <fshelp.h>
-_ACEOF
-if ac_fn_c_try_cpp "$LINENO"; then :
-  fu_cv_sys_mounted_vmount=yes
-else
-  fu_cv_sys_mounted_vmount=no
-fi
-rm -f conftest.err conftest.i conftest.$ac_ext
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $fu_cv_sys_mounted_vmount" >&5
-$as_echo "$fu_cv_sys_mounted_vmount" >&6; }
-    if test $fu_cv_sys_mounted_vmount = yes; then
-      ac_list_mounted_fs=found
-
-$as_echo "#define MOUNTED_VMOUNT 1" >>confdefs.h
-
-    fi
-  fi
-
-  if test $ac_cv_func_getmntent = yes; then
-
-    # This system has the getmntent function.
-    # Determine whether it's the one-argument variant or the two-argument one.
-
-    if test -z "$ac_list_mounted_fs"; then
-      # glibc, HP-UX, IRIX, Cygwin, Android, also (obsolete) 4.3BSD, SunOS.
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for one-argument getmntent function" >&5
-$as_echo_n "checking for one-argument getmntent function... " >&6; }
-if ${fu_cv_sys_mounted_getmntent1+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* SunOS 4.1.x /usr/include/mntent.h needs this for FILE */
-#include <stdio.h>
-
-#include <mntent.h>
-#if !defined MOUNTED
-# if defined _PATH_MOUNTED      /* GNU libc  */
-#  define MOUNTED _PATH_MOUNTED
-# endif
-# if defined MNT_MNTTAB /* HP-UX.  */
-#  define MOUNTED MNT_MNTTAB
-# endif
-#endif
-
-int
-main ()
-{
-struct mntent *mnt = 0; char *table = MOUNTED;
-                if (sizeof mnt && sizeof table) return 0;
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  fu_cv_sys_mounted_getmntent1=yes
-else
-  fu_cv_sys_mounted_getmntent1=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $fu_cv_sys_mounted_getmntent1" >&5
-$as_echo "$fu_cv_sys_mounted_getmntent1" >&6; }
-      if test $fu_cv_sys_mounted_getmntent1 = yes; then
-        ac_list_mounted_fs=found
-
-$as_echo "#define MOUNTED_GETMNTENT1 1" >>confdefs.h
-
-        for ac_func in hasmntopt
-do :
-  ac_fn_c_check_func "$LINENO" "hasmntopt" "ac_cv_func_hasmntopt"
-if test "x$ac_cv_func_hasmntopt" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_HASMNTOPT 1
-_ACEOF
-
-fi
-done
-
-      fi
-    fi
-
-    if test -z "$ac_list_mounted_fs"; then
-      # Solaris >= 8.
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for getextmntent function" >&5
-$as_echo_n "checking for getextmntent function... " >&6; }
-if ${fu_cv_sys_mounted_getextmntent+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <sys/mnttab.h>
-
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "getextmntent" >/dev/null 2>&1; then :
-  fu_cv_sys_mounted_getextmntent=yes
-else
-  fu_cv_sys_mounted_getextmntent=no
-fi
-rm -f conftest*
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $fu_cv_sys_mounted_getextmntent" >&5
-$as_echo "$fu_cv_sys_mounted_getextmntent" >&6; }
-      if test $fu_cv_sys_mounted_getextmntent = yes; then
-        ac_list_mounted_fs=found
-
-$as_echo "#define MOUNTED_GETEXTMNTENT 1" >>confdefs.h
-
-      fi
-    fi
-
-    if test -z "$ac_list_mounted_fs"; then
-      # Solaris < 8, also (obsolete) SVR4.
-      # Solaris >= 8 has the two-argument getmntent but is already handled above.
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for two-argument getmntent function" >&5
-$as_echo_n "checking for two-argument getmntent function... " >&6; }
-if ${fu_cv_sys_mounted_getmntent2+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <sys/mnttab.h>
-
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "getmntent" >/dev/null 2>&1; then :
-  fu_cv_sys_mounted_getmntent2=yes
-else
-  fu_cv_sys_mounted_getmntent2=no
-fi
-rm -f conftest*
-
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $fu_cv_sys_mounted_getmntent2" >&5
-$as_echo "$fu_cv_sys_mounted_getmntent2" >&6; }
-      if test $fu_cv_sys_mounted_getmntent2 = yes; then
-        ac_list_mounted_fs=found
-
-$as_echo "#define MOUNTED_GETMNTENT2 1" >>confdefs.h
-
-        for ac_func in hasmntopt
-do :
-  ac_fn_c_check_func "$LINENO" "hasmntopt" "ac_cv_func_hasmntopt"
-if test "x$ac_cv_func_hasmntopt" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_HASMNTOPT 1
-_ACEOF
-
-fi
-done
-
-      fi
-    fi
-
-  fi
-
-  if test -z "$ac_list_mounted_fs"; then
-    # OSF/1, also (obsolete) Apple Darwin 1.3.
-    # powerpc-apple-darwin1.3.7 needs sys/param.h sys/ucred.h sys/fs_types.h
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for getfsstat function" >&5
-$as_echo_n "checking for getfsstat function... " >&6; }
-if ${fu_cv_sys_mounted_getfsstat+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#include <sys/types.h>
-#if HAVE_STRUCT_FSSTAT_F_FSTYPENAME
-# define FS_TYPE(Ent) ((Ent).f_fstypename)
-#else
-# define FS_TYPE(Ent) mnt_names[(Ent).f_type]
-#endif
-$getfsstat_includes
-
-int
-main ()
-{
-struct statfs *stats;
-              int numsys = getfsstat ((struct statfs *)0, 0L, MNT_WAIT);
-              char *t = FS_TYPE (*stats);
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  fu_cv_sys_mounted_getfsstat=yes
-else
-  fu_cv_sys_mounted_getfsstat=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $fu_cv_sys_mounted_getfsstat" >&5
-$as_echo "$fu_cv_sys_mounted_getfsstat" >&6; }
-    if test $fu_cv_sys_mounted_getfsstat = yes; then
-      ac_list_mounted_fs=found
-
-$as_echo "#define MOUNTED_GETFSSTAT 1" >>confdefs.h
-
-    fi
-  fi
-
-  if test -z "$ac_list_mounted_fs"; then
-    # (obsolete) SVR3
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for FIXME existence of three headers" >&5
-$as_echo_n "checking for FIXME existence of three headers... " >&6; }
-if ${fu_cv_sys_mounted_fread_fstyp+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#include <sys/statfs.h>
-#include <sys/fstyp.h>
-#include <mnttab.h>
-
-_ACEOF
-if ac_fn_c_try_cpp "$LINENO"; then :
-  fu_cv_sys_mounted_fread_fstyp=yes
-else
-  fu_cv_sys_mounted_fread_fstyp=no
-fi
-rm -f conftest.err conftest.i conftest.$ac_ext
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $fu_cv_sys_mounted_fread_fstyp" >&5
-$as_echo "$fu_cv_sys_mounted_fread_fstyp" >&6; }
-    if test $fu_cv_sys_mounted_fread_fstyp = yes; then
-      ac_list_mounted_fs=found
-
-$as_echo "#define MOUNTED_FREAD_FSTYP 1" >>confdefs.h
-
-    fi
-  fi
-
-  if test -z "$ac_list_mounted_fs"; then
-    # Mac OS X, FreeBSD, NetBSD, OpenBSD, Minix, also (obsolete) 4.4BSD.
-    # OSF/1 also has getmntinfo but is already handled above.
-    # We cannot use AC_CHECK_FUNCS([getmntinfo]) here, because at the linker
-    # level the function is sometimes called getmntinfo64 or getmntinfo$INODE64
-    # on Mac OS X, __getmntinfo13 on NetBSD and Minix, _F64_getmntinfo on OSF/1.
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for getmntinfo function" >&5
-$as_echo_n "checking for getmntinfo function... " >&6; }
-if ${fu_cv_sys_mounted_getmntinfo+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#if HAVE_SYS_PARAM_H
-# include <sys/param.h>
-#endif
-#include <sys/types.h>
-#if HAVE_SYS_MOUNT_H
-# include <sys/mount.h>
-#endif
-#if HAVE_SYS_STATVFS_H
-# include <sys/statvfs.h>
-#endif
-#include <stdlib.h>
-
-int
-main ()
-{
-int count = getmntinfo (NULL, MNT_WAIT);
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  fu_cv_sys_mounted_getmntinfo=yes
-else
-  fu_cv_sys_mounted_getmntinfo=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $fu_cv_sys_mounted_getmntinfo" >&5
-$as_echo "$fu_cv_sys_mounted_getmntinfo" >&6; }
-    if test $fu_cv_sys_mounted_getmntinfo = yes; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether getmntinfo returns statvfs structures" >&5
-$as_echo_n "checking whether getmntinfo returns statvfs structures... " >&6; }
-if ${fu_cv_sys_mounted_getmntinfo2+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#if HAVE_SYS_PARAM_H
-# include <sys/param.h>
-#endif
-#include <sys/types.h>
-#if HAVE_SYS_MOUNT_H
-# include <sys/mount.h>
-#endif
-#if HAVE_SYS_STATVFS_H
-# include <sys/statvfs.h>
-#endif
-extern
-#ifdef __cplusplus
-"C"
-#endif
-int getmntinfo (struct statfs **, int);
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  fu_cv_sys_mounted_getmntinfo2=no
-else
-  fu_cv_sys_mounted_getmntinfo2=yes
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $fu_cv_sys_mounted_getmntinfo2" >&5
-$as_echo "$fu_cv_sys_mounted_getmntinfo2" >&6; }
-      if test $fu_cv_sys_mounted_getmntinfo2 = no; then
-        # Mac OS X, FreeBSD, OpenBSD, also (obsolete) 4.4BSD.
-        ac_list_mounted_fs=found
-
-$as_echo "#define MOUNTED_GETMNTINFO 1" >>confdefs.h
-
-      else
-        # NetBSD, Minix.
-        ac_list_mounted_fs=found
-
-$as_echo "#define MOUNTED_GETMNTINFO2 1" >>confdefs.h
-
-      fi
-    fi
-  fi
-
-  if test -z "$ac_list_mounted_fs"; then
-    # Haiku, also (obsolete) BeOS.
-    for ac_func in next_dev fs_stat_dev
-do :
-  as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
-ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
-if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
-  cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
-_ACEOF
-
-fi
-done
-
-    for ac_header in fs_info.h
-do :
-  ac_fn_c_check_header_mongrel "$LINENO" "fs_info.h" "ac_cv_header_fs_info_h" "$ac_includes_default"
-if test "x$ac_cv_header_fs_info_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_FS_INFO_H 1
-_ACEOF
-
-fi
-
-done
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BEOS mounted file system support functions" >&5
-$as_echo_n "checking for BEOS mounted file system support functions... " >&6; }
-if ${fu_cv_sys_mounted_fs_stat_dev+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test $ac_cv_header_fs_info_h = yes \
-          && test $ac_cv_func_next_dev = yes \
-          && test $ac_cv_func_fs_stat_dev = yes; then
-         fu_cv_sys_mounted_fs_stat_dev=yes
-       else
-         fu_cv_sys_mounted_fs_stat_dev=no
-       fi
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $fu_cv_sys_mounted_fs_stat_dev" >&5
-$as_echo "$fu_cv_sys_mounted_fs_stat_dev" >&6; }
-    if test $fu_cv_sys_mounted_fs_stat_dev = yes; then
-      ac_list_mounted_fs=found
-
-$as_echo "#define MOUNTED_FS_STAT_DEV 1" >>confdefs.h
-
-    fi
-  fi
-
-  if test -z "$ac_list_mounted_fs"; then
-    # Interix / BSD alike statvfs
-    # the code is really interix specific, so make sure, we're on it.
-    case "$host" in
-      *-interix*)
-        for ac_func in statvfs
-do :
-  ac_fn_c_check_func "$LINENO" "statvfs" "ac_cv_func_statvfs"
-if test "x$ac_cv_func_statvfs" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_STATVFS 1
-_ACEOF
-
-fi
-done
-
-        if test $ac_cv_func_statvfs = yes; then
-          ac_list_mounted_fs=found
-
-$as_echo "#define MOUNTED_INTERIX_STATVFS 1" >>confdefs.h
-
-        fi
-        ;;
-    esac
-  fi
-
-  if test -z "$ac_list_mounted_fs"; then
-    as_fn_error $? "could not determine how to read list of mounted file systems" "$LINENO" 5
-    # FIXME -- no need to abort building the whole package
-    # Can't build mountlist.c or anything that needs its functions
-  fi
-
-  if test $ac_list_mounted_fs = found; then :
-  gl_cv_list_mounted_fs=yes
-else
-  gl_cv_list_mounted_fs=no
-fi
-
-
-
-    if test $gl_cv_list_mounted_fs = yes; then
-
-    for ac_header in sys/mntent.h
-do :
-  ac_fn_c_check_header_mongrel "$LINENO" "sys/mntent.h" "ac_cv_header_sys_mntent_h" "$ac_includes_default"
-if test "x$ac_cv_header_sys_mntent_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_SYS_MNTENT_H 1
-_ACEOF
-
-fi
-
-done
-
-
-  ac_fn_c_check_member "$LINENO" "struct statfs" "f_fstypename" "ac_cv_member_struct_statfs_f_fstypename" "
-      #include <sys/types.h>
-      #include <sys/param.h>
-      #include <sys/mount.h>
-
-"
-if test "x$ac_cv_member_struct_statfs_f_fstypename" = xyes; then :
-
-cat >>confdefs.h <<_ACEOF
-#define HAVE_STRUCT_STATFS_F_FSTYPENAME 1
-_ACEOF
-
-
-fi
-
-
-
-    fi
 
     for ac_header in fcntl.h utime.h
 do :
@@ -20755,15 +20007,6 @@ fi
 done
 
 
-  :
-
-
-
-
-
-
-
-
 
   # We must include grp.h before ucred.h on OSF V4.0, since ucred.h uses
   # NGROUPS (as the array dimension for a struct member) without a definition.
@@ -20964,11 +20207,14 @@ else
 #include <stdio.h>
 
 #include <mntent.h>
-#if !defined MOUNTED
-# if defined _PATH_MOUNTED      /* GNU libc  */
+#if defined __ANDROID__        /* Android */
+# undef MOUNTED
+# define MOUNTED "/proc/mounts"
+#elif !defined MOUNTED
+# if defined _PATH_MOUNTED     /* GNU libc  */
 #  define MOUNTED _PATH_MOUNTED
 # endif
-# if defined MNT_MNTTAB /* HP-UX.  */
+# if defined MNT_MNTTAB        /* HP-UX.  */
 #  define MOUNTED MNT_MNTTAB
 # endif
 #endif
@@ -20998,12 +20244,13 @@ $as_echo "$fu_cv_sys_mounted_getmntent1" >&6; }
 
 $as_echo "#define MOUNTED_GETMNTENT1 1" >>confdefs.h
 
-        for ac_func in hasmntopt
+        for ac_func in setmntent endmntent hasmntopt
 do :
-  ac_fn_c_check_func "$LINENO" "hasmntopt" "ac_cv_func_hasmntopt"
-if test "x$ac_cv_func_hasmntopt" = xyes; then :
+  as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
+ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
+if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
-#define HAVE_HASMNTOPT 1
+#define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
 _ACEOF
 
 fi
@@ -21359,32 +20606,70 @@ $as_echo "#define MOUNTED_INTERIX_STATVFS 1" >>confdefs.h
     # Can't build mountlist.c or anything that needs its functions
   fi
 
-  if test $ac_list_mounted_fs = found; then :
+  if test $ac_list_mounted_fs = found; then
+    gl_cv_list_mounted_fs=yes
+  else
+    gl_cv_list_mounted_fs=no
+  fi
+
+    if test $gl_cv_list_mounted_fs = yes; then
+
+    for ac_header in sys/mntent.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "sys/mntent.h" "ac_cv_header_sys_mntent_h" "$ac_includes_default"
+if test "x$ac_cv_header_sys_mntent_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_SYS_MNTENT_H 1
+_ACEOF
+
+fi
+
+done
 
 
-$as_echo "#define HAVE_INFOMOUNT_LIST 1" >>confdefs.h
+ac_fn_c_check_header_mongrel "$LINENO" "sys/mkdev.h" "ac_cv_header_sys_mkdev_h" "$ac_includes_default"
+if test "x$ac_cv_header_sys_mkdev_h" = xyes; then :
 
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: could not determine how to read list of mounted fs" >&5
-$as_echo "$as_me: WARNING: could not determine how to read list of mounted fs" >&2;}
+$as_echo "#define MAJOR_IN_MKDEV 1" >>confdefs.h
+
+fi
+
+
+if test $ac_cv_header_sys_mkdev_h = no; then
+  ac_fn_c_check_header_mongrel "$LINENO" "sys/sysmacros.h" "ac_cv_header_sys_sysmacros_h" "$ac_includes_default"
+if test "x$ac_cv_header_sys_sysmacros_h" = xyes; then :
+
+$as_echo "#define MAJOR_IN_SYSMACROS 1" >>confdefs.h
+
+fi
+
+
+fi
+
+  ac_fn_c_check_member "$LINENO" "struct statfs" "f_fstypename" "ac_cv_member_struct_statfs_f_fstypename" "
+      #include <sys/types.h>
+      #include <sys/param.h>
+      #include <sys/mount.h>
+
+"
+if test "x$ac_cv_member_struct_statfs_f_fstypename" = xyes; then :
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_STRUCT_STATFS_F_FSTYPENAME 1
+_ACEOF
+
+
 fi
 
 
 
 
+$as_echo "#define HAVE_INFOMOUNT_LIST 1" >>confdefs.h
 
-  :
-
-
-
-
-
-
-  :
-
-
-
-
+    else
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: could not determine how to read list of mounted fs" >&5
+$as_echo "$as_me: WARNING: could not determine how to read list of mounted fs" >&2;};
+    fi
 
 
 
@@ -21876,21 +21161,6 @@ $as_echo "#define HAVE_POSIX_FALLOCATE 1" >>confdefs.h
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-
-
-
-
-
-
-  :
-
-
-
-
-
-
-
-
 
 
 
@@ -27389,7 +26659,7 @@ rm -f conftest*
 
 
 case $host_os in
-*os400)
+*os400 | aix*)
     ;;
 *)
     for ac_func in utimensat

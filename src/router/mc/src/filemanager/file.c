@@ -1,7 +1,7 @@
 /*
    File management.
 
-   Copyright (C) 1994-2018
+   Copyright (C) 1994-2019
    Free Software Foundation, Inc.
 
    Written by:
@@ -353,7 +353,7 @@ check_hardlinks (const vfs_path_t * src_vpath, const struct stat *src_stat,
 
     if (src_stat->st_nlink < 2)
         return HARDLINK_NOTLINK;
-    if ((vfs_file_class_flags (src_vpath) & VFSF_NOLINKS) != 0)
+    if ((vfs_file_class_flags (src_vpath) & VFS_NOLINKS) != 0)
         return HARDLINK_UNSUPPORTED;
 
     lnk = (struct link *) is_in_linklist (linklist, src_vpath, src_stat);
@@ -383,7 +383,7 @@ check_hardlinks (const vfs_path_t * src_vpath, const struct stat *src_stat,
                 {
                     gboolean ok;
 
-                    while (!(ok = mc_stat (lnk->dst_vpath, &link_stat) == 0) && !*skip_all)
+                    while (!(ok = (mc_stat (lnk->dst_vpath, &link_stat) == 0)) && !*skip_all)
                     {
                         FileProgressStatus status;
 
@@ -403,7 +403,7 @@ check_hardlinks (const vfs_path_t * src_vpath, const struct stat *src_stat,
                     if (!ok)
                         return HARDLINK_ERROR;
 
-                    while (!(ok = mc_link (lnk->dst_vpath, dst_vpath) == 0) && !*skip_all)
+                    while (!(ok = (mc_link (lnk->dst_vpath, dst_vpath) == 0)) && !*skip_all)
                     {
                         FileProgressStatus status;
 
@@ -920,7 +920,7 @@ real_do_file_error (enum OperationMode mode, gboolean allow_retry, const char *e
             query_dialog (msg, error, D_ERROR, 4, _("&Skip"), _("Ski&p all"), _("&Retry"),
                           _("&Abort"));
     else
-        result = query_dialog (msg, error, D_ERROR, 4, _("&Skip"), _("Ski&p all"), _("&Abort"));
+        result = query_dialog (msg, error, D_ERROR, 3, _("&Skip"), _("Ski&p all"), _("&Abort"));
 
     switch (result)
     {
@@ -1035,25 +1035,25 @@ query_recursive (file_op_context_t * ctx, const char *s)
 /* --------------------------------------------------------------------------------------------- */
 
 static FileProgressStatus
-query_replace (file_op_context_t * ctx, const char *destname, struct stat *_s_stat,
-               struct stat *_d_stat)
+query_replace (file_op_context_t * ctx, const char *src, struct stat *src_stat, const char *dst,
+               struct stat *dst_stat)
 {
 /* *INDENT-OFF* */
     union
     {
         void *p;
         FileProgressStatus (*f) (file_op_context_t *, enum OperationMode, const char *,
-                                 struct stat *, struct stat *);
+                                 struct stat *, const char *, struct stat *);
     } pntr;
 /* *INDENT-ON* */
 
     pntr.f = file_progress_real_query_replace;
 
     if (mc_global.we_are_background)
-        return parent_call (pntr.p, ctx, 3, strlen (destname), destname,
-                            sizeof (struct stat), _s_stat, sizeof (struct stat), _d_stat);
+        return parent_call (pntr.p, ctx, 4, strlen (src), src, sizeof (struct stat), src_stat,
+                            strlen (dst), dst, sizeof (struct stat), dst_stat);
     else
-        return file_progress_real_query_replace (ctx, Foreground, destname, _s_stat, _d_stat);
+        return file_progress_real_query_replace (ctx, Foreground, src, src_stat, dst, dst_stat);
 }
 
 #else
@@ -1076,10 +1076,10 @@ query_recursive (file_op_context_t * ctx, const char *s)
 /* --------------------------------------------------------------------------------------------- */
 
 static FileProgressStatus
-query_replace (file_op_context_t * ctx, const char *destname, struct stat *_s_stat,
-               struct stat *_d_stat)
+query_replace (file_op_context_t * ctx, const char *src, struct stat *src_stat, const char *dst,
+               struct stat *dst_stat)
 {
-    return file_progress_real_query_replace (ctx, Foreground, destname, _s_stat, _d_stat);
+    return file_progress_real_query_replace (ctx, Foreground, src, src_stat, dst, dst_stat);
 }
 
 #endif /* !ENABLE_BACKGROUND */
@@ -1195,7 +1195,7 @@ static FileProgressStatus
 move_file_file (const WPanel * panel, file_op_total_context_t * tctx, file_op_context_t * ctx,
                 const char *s, const char *d)
 {
-    struct stat src_stats, dst_stats;
+    struct stat src_stat, dst_stat;
     FileProgressStatus return_status = FILE_CONT;
     gboolean copy_done = FALSE;
     gboolean old_ask_overwrite;
@@ -1216,7 +1216,7 @@ move_file_file (const WPanel * panel, file_op_total_context_t * tctx, file_op_co
 
     mc_refresh ();
 
-    while (mc_lstat (src_vpath, &src_stats) != 0)
+    while (mc_lstat (src_vpath, &src_stat) != 0)
     {
         /* Source doesn't exist */
         if (ctx->skip_all)
@@ -1232,12 +1232,12 @@ move_file_file (const WPanel * panel, file_op_total_context_t * tctx, file_op_co
             goto ret;
     }
 
-    if (mc_lstat (dst_vpath, &dst_stats) == 0)
+    if (mc_lstat (dst_vpath, &dst_stat) == 0)
     {
-        if (check_same_file (s, &src_stats, d, &dst_stats, &return_status))
+        if (check_same_file (s, &src_stat, d, &dst_stat, &return_status))
             goto ret;
 
-        if (S_ISDIR (dst_stats.st_mode))
+        if (S_ISDIR (dst_stat.st_mode))
         {
             message (D_ERROR, MSG_ERROR, _("Cannot overwrite directory \"%s\""), d);
             do_refresh ();
@@ -1247,7 +1247,7 @@ move_file_file (const WPanel * panel, file_op_total_context_t * tctx, file_op_co
 
         if (confirm_overwrite)
         {
-            return_status = query_replace (ctx, d, &src_stats, &dst_stats);
+            return_status = query_replace (ctx, s, &src_stat, d, &dst_stat);
             if (return_status != FILE_CONT)
                 goto ret;
         }
@@ -1256,7 +1256,7 @@ move_file_file (const WPanel * panel, file_op_total_context_t * tctx, file_op_co
 
     if (!ctx->do_append)
     {
-        if (S_ISLNK (src_stats.st_mode) && ctx->stable_symlinks)
+        if (S_ISLNK (src_stat.st_mode) && ctx->stable_symlinks)
         {
             return_status = make_symlink (ctx, s, d);
             if (return_status == FILE_CONT)
@@ -1267,7 +1267,7 @@ move_file_file (const WPanel * panel, file_op_total_context_t * tctx, file_op_co
         if (mc_rename (src_vpath, dst_vpath) == 0)
         {
             /* FIXME: do we really need to update progress in case of single file? */
-            return_status = progress_update_one (tctx, ctx, src_stats.st_size);
+            return_status = progress_update_one (tctx, ctx, src_stat.st_size);
             goto ret;
         }
     }
@@ -1302,7 +1302,7 @@ move_file_file (const WPanel * panel, file_op_total_context_t * tctx, file_op_co
         /* In case of single file, calculate totals. In case of many files,
            totals are calcuated already. */
         return_status =
-            panel_operate_init_totals (panel, src_vpath, &src_stats, ctx, TRUE,
+            panel_operate_init_totals (panel, src_vpath, &src_stat, ctx, TRUE,
                                        FILEGUI_DIALOG_ONE_ITEM);
         if (return_status != FILE_CONT)
             goto ret;
@@ -1336,7 +1336,7 @@ move_file_file (const WPanel * panel, file_op_total_context_t * tctx, file_op_co
         goto ret;
 
     if (!copy_done)
-        return_status = progress_update_one (tctx, ctx, src_stats.st_size);
+        return_status = progress_update_one (tctx, ctx, src_stat.st_size);
 
   ret:
     vfs_path_free (src_vpath);
@@ -1357,12 +1357,15 @@ erase_file (file_op_total_context_t * tctx, file_op_context_t * ctx, const vfs_p
     struct stat buf;
     FileProgressStatus return_status;
 
-    file_progress_show_deleting (ctx, vfs_path_as_str (vpath), &tctx->progress_count);
-    file_progress_show_count (ctx, tctx->progress_count, ctx->progress_count);
-    if (check_progress_buttons (ctx) == FILE_ABORT)
-        return FILE_ABORT;
+    /* check buttons if deleting info was changed */
+    if (file_progress_show_deleting (ctx, vfs_path_as_str (vpath), &tctx->progress_count))
+    {
+        file_progress_show_count (ctx, tctx->progress_count, ctx->progress_count);
+        if (check_progress_buttons (ctx) == FILE_ABORT)
+            return FILE_ABORT;
 
-    mc_refresh ();
+        mc_refresh ();
+    }
 
     if (tctx->progress_count != 0 && mc_lstat (vpath, &buf) != 0)
     {
@@ -2272,7 +2275,7 @@ copy_file_file (file_op_total_context_t * tctx, file_op_context_t * ctx,
         if (tctx->ask_overwrite)
         {
             ctx->do_reget = 0;
-            return_status = query_replace (ctx, dst_path, &src_stat, &dst_stat);
+            return_status = query_replace (ctx, src_path, &src_stat, dst_path, &dst_stat);
             if (return_status != FILE_CONT)
                 goto ret_fast;
         }
@@ -3047,9 +3050,9 @@ move_dir_dir (file_op_total_context_t * tctx, file_op_context_t * ctx, const cha
 /* {{{ Erase routines */
 
 FileProgressStatus
-erase_dir (file_op_total_context_t * tctx, file_op_context_t * ctx, const vfs_path_t * s_vpath)
+erase_dir (file_op_total_context_t * tctx, file_op_context_t * ctx, const vfs_path_t * vpath)
 {
-    file_progress_show_deleting (ctx, vfs_path_as_str (s_vpath), NULL);
+    file_progress_show_deleting (ctx, vfs_path_as_str (vpath), NULL);
     file_progress_show_count (ctx, tctx->progress_count, ctx->progress_count);
     if (check_progress_buttons (ctx) == FILE_ABORT)
         return FILE_ABORT;
@@ -3063,17 +3066,17 @@ erase_dir (file_op_total_context_t * tctx, file_op_context_t * ctx, const vfs_pa
        we would have to check also for EIO. I hope the new way is
        fool proof. (Norbert)
      */
-    if (check_dir_is_empty (s_vpath) == 0)
+    if (check_dir_is_empty (vpath) == 0)
     {                           /* not empty */
         FileProgressStatus error;
 
-        error = query_recursive (ctx, vfs_path_as_str (s_vpath));
+        error = query_recursive (ctx, vfs_path_as_str (vpath));
         if (error == FILE_CONT)
-            error = recursive_erase (tctx, ctx, s_vpath);
+            error = recursive_erase (tctx, ctx, vpath);
         return error;
     }
 
-    return try_erase_dir (ctx, vfs_path_as_str (s_vpath));
+    return try_erase_dir (ctx, vfs_path_as_str (vpath));
 }
 
 /* }}} */

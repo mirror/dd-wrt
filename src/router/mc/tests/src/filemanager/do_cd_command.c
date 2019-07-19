@@ -1,7 +1,7 @@
 /*
    src/filemanager - tests for do_cd_command() function
 
-   Copyright (C) 2011-2018
+   Copyright (C) 2011-2019
    Free Software Foundation, Inc.
 
    Written by:
@@ -83,7 +83,7 @@ setup (void)
     str_init_strings (NULL);
 
     vfs_init ();
-    init_localfs ();
+    vfs_init_localfs ();
     vfs_setup_work_dir ();
     do_cd__new_dir_vpath__captured = NULL;
 }

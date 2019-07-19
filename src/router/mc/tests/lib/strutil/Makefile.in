@@ -88,7 +88,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 @ENABLE_MCLIB_TRUE@am__append_1 = $(GLIB_LIBS)
-TESTS = replace__str_replace_all$(EXEEXT) parse_integer$(EXEEXT)
+TESTS = replace__str_replace_all$(EXEEXT) parse_integer$(EXEEXT) \
+	str_verscmp$(EXEEXT) filevercmp$(EXEEXT)
 check_PROGRAMS = $(am__EXEEXT_1)
 subdir = tests/lib/strutil
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -111,10 +112,8 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
 	$(top_srcdir)/m4/visibility.m4 $(top_srcdir)/m4/wchar_t.m4 \
 	$(top_srcdir)/m4/wint_t.m4 $(top_srcdir)/m4/xsize.m4 \
 	$(top_srcdir)/acinclude.m4 \
-	$(top_srcdir)/m4.include/ac_onceonly.m4 \
 	$(top_srcdir)/m4.include/gnulib/mode_t.m4 \
 	$(top_srcdir)/m4.include/gnulib/stat-size.m4 \
-	$(top_srcdir)/m4.include/gnulib/ls-mntd-fs.m4 \
 	$(top_srcdir)/m4.include/gnulib/fstypename.m4 \
 	$(top_srcdir)/m4.include/gnulib/fsusage.m4 \
 	$(top_srcdir)/m4.include/gnulib/mountlist.m4 \
@@ -160,19 +159,26 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__EXEEXT_1 = replace__str_replace_all$(EXEEXT) \
-	parse_integer$(EXEEXT)
-am_parse_integer_OBJECTS = parse_integer.$(OBJEXT)
-parse_integer_OBJECTS = $(am_parse_integer_OBJECTS)
-parse_integer_LDADD = $(LDADD)
+	parse_integer$(EXEEXT) str_verscmp$(EXEEXT) \
+	filevercmp$(EXEEXT)
+am_filevercmp_OBJECTS = filevercmp.$(OBJEXT)
+filevercmp_OBJECTS = $(am_filevercmp_OBJECTS)
+filevercmp_LDADD = $(LDADD)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
+am_parse_integer_OBJECTS = parse_integer.$(OBJEXT)
+parse_integer_OBJECTS = $(am_parse_integer_OBJECTS)
+parse_integer_LDADD = $(LDADD)
 am_replace__str_replace_all_OBJECTS =  \
 	replace__str_replace_all.$(OBJEXT)
 replace__str_replace_all_OBJECTS =  \
 	$(am_replace__str_replace_all_OBJECTS)
 replace__str_replace_all_LDADD = $(LDADD)
+am_str_verscmp_OBJECTS = str_verscmp.$(OBJEXT)
+str_verscmp_OBJECTS = $(am_str_verscmp_OBJECTS)
+str_verscmp_LDADD = $(LDADD)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -188,8 +194,10 @@ am__v_at_1 =
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__maybe_remake_depfiles = depfiles
-am__depfiles_remade = ./$(DEPDIR)/parse_integer.Po \
-	./$(DEPDIR)/replace__str_replace_all.Po
+am__depfiles_remade = ./$(DEPDIR)/filevercmp.Po \
+	./$(DEPDIR)/parse_integer.Po \
+	./$(DEPDIR)/replace__str_replace_all.Po \
+	./$(DEPDIR)/str_verscmp.Po
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -209,9 +217,10 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(parse_integer_SOURCES) $(replace__str_replace_all_SOURCES)
-DIST_SOURCES = $(parse_integer_SOURCES) \
-	$(replace__str_replace_all_SOURCES)
+SOURCES = $(filevercmp_SOURCES) $(parse_integer_SOURCES) \
+	$(replace__str_replace_all_SOURCES) $(str_verscmp_SOURCES)
+DIST_SOURCES = $(filevercmp_SOURCES) $(parse_integer_SOURCES) \
+	$(replace__str_replace_all_SOURCES) $(str_verscmp_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -686,6 +695,12 @@ replace__str_replace_all_SOURCES = \
 parse_integer_SOURCES = \
 	parse_integer.c
 
+str_verscmp_SOURCES = \
+	str_verscmp.c
+
+filevercmp_SOURCES = \
+	filevercmp.c
+
 all: all-am
 
 .SUFFIXES:
@@ -729,6 +744,10 @@ clean-checkPROGRAMS:
 	echo " rm -f" $$list; \
 	rm -f $$list
 
+filevercmp$(EXEEXT): $(filevercmp_OBJECTS) $(filevercmp_DEPENDENCIES) $(EXTRA_filevercmp_DEPENDENCIES) 
+	@rm -f filevercmp$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(filevercmp_OBJECTS) $(filevercmp_LDADD) $(LIBS)
+
 parse_integer$(EXEEXT): $(parse_integer_OBJECTS) $(parse_integer_DEPENDENCIES) $(EXTRA_parse_integer_DEPENDENCIES) 
 	@rm -f parse_integer$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(parse_integer_OBJECTS) $(parse_integer_LDADD) $(LIBS)
@@ -737,14 +756,20 @@ replace__str_replace_all$(EXEEXT): $(replace__str_replace_all_OBJECTS) $(replace
 	@rm -f replace__str_replace_all$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(replace__str_replace_all_OBJECTS) $(replace__str_replace_all_LDADD) $(LIBS)
 
+str_verscmp$(EXEEXT): $(str_verscmp_OBJECTS) $(str_verscmp_DEPENDENCIES) $(EXTRA_str_verscmp_DEPENDENCIES) 
+	@rm -f str_verscmp$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(str_verscmp_OBJECTS) $(str_verscmp_LDADD) $(LIBS)
+
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/filevercmp.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parse_integer.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/replace__str_replace_all.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/str_verscmp.Po@am__quote@ # am--include-marker
 
 $(am__depfiles_remade):
 	@$(MKDIR_P) $(@D)
@@ -986,6 +1011,20 @@ parse_integer.log: parse_integer$(EXEEXT)
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+str_verscmp.log: str_verscmp$(EXEEXT)
+	@p='str_verscmp$(EXEEXT)'; \
+	b='str_verscmp'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+filevercmp.log: filevercmp$(EXEEXT)
+	@p='filevercmp$(EXEEXT)'; \
+	b='filevercmp'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 .test.log:
 	@p='$<'; \
 	$(am__set_b); \
@@ -1079,8 +1118,10 @@ clean-am: clean-checkPROGRAMS clean-generic clean-libtool \
 	mostlyclean-am
 
 distclean: distclean-am
-		-rm -f ./$(DEPDIR)/parse_integer.Po
+		-rm -f ./$(DEPDIR)/filevercmp.Po
+	-rm -f ./$(DEPDIR)/parse_integer.Po
 	-rm -f ./$(DEPDIR)/replace__str_replace_all.Po
+	-rm -f ./$(DEPDIR)/str_verscmp.Po
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
@@ -1126,8 +1167,10 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
-		-rm -f ./$(DEPDIR)/parse_integer.Po
+		-rm -f ./$(DEPDIR)/filevercmp.Po
+	-rm -f ./$(DEPDIR)/parse_integer.Po
 	-rm -f ./$(DEPDIR)/replace__str_replace_all.Po
+	-rm -f ./$(DEPDIR)/str_verscmp.Po
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

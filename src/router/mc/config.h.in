@@ -129,6 +129,9 @@
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
+/* Define to 1 if you have the `endmntent' function. */
+#undef HAVE_ENDMNTENT
+
 /* Define if ncursesw has ESCDELAY variable */
 #undef HAVE_ESCDELAY
 
@@ -349,6 +352,12 @@
 
 /* Define to 1 if you have the `setlocale' function. */
 #undef HAVE_SETLOCALE
+
+/* Define to 1 if you have the `setmntent' function. */
+#undef HAVE_SETMNTENT
+
+/* Define to 1 if the system has the type `sighandler_t'. */
+#undef HAVE_SIGHANDLER_T
 
 /* Define to use S-Lang library for screen management */
 #undef HAVE_SLANG
