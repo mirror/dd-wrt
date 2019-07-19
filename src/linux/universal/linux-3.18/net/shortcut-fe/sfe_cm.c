@@ -2,7 +2,7 @@
  * sfe-cm.c
  *	Shortcut forwarding engine connection manager.
  *
- * Copyright (c) 2013-2018 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2016 The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -312,8 +312,6 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 	struct net_device *dev;
 	struct net_device *src_dev;
 	struct net_device *dest_dev;
-	struct net_device *src_dev_tmp;
-	struct net_device *dest_dev_tmp;
 	struct net_device *src_br_dev = NULL;
 	struct net_device *dest_br_dev = NULL;
 	struct nf_conntrack_tuple orig_tuple;
@@ -471,12 +469,7 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 		sic.dest_ip_xlate.ip = (__be32)reply_tuple.src.u3.ip;
 
 		dscp = ipv4_get_dsfield(ip_hdr(skb)) >> XT_DSCP_SHIFT;
-#ifndef SFE_TOS
-		if (dscp)
-#else
-		if (dscp || sic.protocol != IPPROTO_UDP)
-#endif
-		 {
+		if (dscp) {
 			sic.dest_dscp = dscp;
 			sic.src_dscp = sic.dest_dscp;
 			sic.flags |= SFE_CREATE_FLAG_REMARK_DSCP;
@@ -506,12 +499,7 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 		sic.dest_ip_xlate.ip6[0] = *((struct sfe_ipv6_addr *)&reply_tuple.src.u3.in6);
 
 		dscp = ipv6_get_dsfield(ipv6_hdr(skb)) >> XT_DSCP_SHIFT;
-#ifndef SFE_TOS
-		if (dscp)
-#else
-		if (dscp || sic.protocol != IPPROTO_UDP)
-#endif
-		{
+		if (dscp) {
 			sic.dest_dscp = dscp;
 			sic.src_dscp = sic.dest_dscp;
 			sic.flags |= SFE_CREATE_FLAG_REMARK_DSCP;
@@ -619,13 +607,12 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 	 * Get the net device and MAC addresses that correspond to the various source and
 	 * destination host addresses.
 	 */
-	if (!sfe_cm_find_dev_and_mac_addr(&sic.src_ip, &src_dev_tmp, sic.src_mac, is_v4)) {
+	if (!sfe_cm_find_dev_and_mac_addr(&sic.src_ip, &src_dev, sic.src_mac, is_v4)) {
 #ifdef SFE_DEBUG
 		sfe_cm_incr_exceptions(SFE_CM_EXCEPTION_NO_SRC_DEV);
 #endif
 		return NF_ACCEPT;
 	}
-	src_dev = src_dev_tmp;
 
 	if (!sfe_cm_find_dev_and_mac_addr(&sic.src_ip_xlate, &dev, sic.src_mac_xlate, is_v4)) {
 #ifdef SFE_DEBUG
@@ -645,13 +632,12 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 
 	dev_put(dev);
 
-	if (!sfe_cm_find_dev_and_mac_addr(&sic.dest_ip_xlate, &dest_dev_tmp, sic.dest_mac_xlate, is_v4)) {
+	if (!sfe_cm_find_dev_and_mac_addr(&sic.dest_ip_xlate, &dest_dev, sic.dest_mac_xlate, is_v4)) {
 #ifdef SFE_DEBUG
 		sfe_cm_incr_exceptions(SFE_CM_EXCEPTION_NO_DEST_XLATE_DEV);
 #endif
 		goto done1;
 	}
-	dest_dev = dest_dev_tmp;
 
 	/*
 	 * Our devices may actually be part of a bridge interface.  If that's
@@ -666,6 +652,7 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 			DEBUG_TRACE("no bridge found for: %s\n", src_dev->name);
 			goto done2;
 		}
+
 		src_dev = src_br_dev;
 	}
 
@@ -678,6 +665,7 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 			DEBUG_TRACE("no bridge found for: %s\n", dest_dev->name);
 			goto done3;
 		}
+
 		dest_dev = dest_br_dev;
 	}
 
@@ -701,14 +689,17 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 	if (dest_br_dev) {
 		dev_put(dest_br_dev);
 	}
+
 done3:
 	if (src_br_dev) {
 		dev_put(src_br_dev);
 	}
+
 done2:
-	dev_put(dest_dev_tmp);
+	dev_put(dest_dev);
+
 done1:
-	dev_put(src_dev_tmp);
+	dev_put(src_dev);
 
 	return NF_ACCEPT;
 }
@@ -1129,7 +1120,7 @@ static int __init sfe_cm_init(void)
 	sfe_ipv4_init();
 
 // code block disabled by quarkysg, 14/10/17
-#if 1
+#if 0
 	DEBUG_INFO("SFE CM init\n");
 
 	/*
@@ -1201,7 +1192,7 @@ static int __init sfe_cm_init(void)
 	return 0;
 
 // code block disabled by quarkysg, 14/10/17
-#if 1
+#if 0
 #ifdef CONFIG_NF_CONNTRACK_EVENTS
 exit4:
 	nf_unregister_hooks(sfe_cm_ops_post_routing, ARRAY_SIZE(sfe_cm_ops_post_routing));
@@ -1242,7 +1233,7 @@ static void __exit sfe_cm_exit(void)
 	fast_classifier_exit();
 
 // code block disabled by quarkysg, 14/10/17
-#if 1
+#if 0
 	/*
 	 * Unregister our sync callback.
 	 */
