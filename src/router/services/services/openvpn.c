@@ -252,7 +252,6 @@ void start_openvpnserver(void)
 			"ebtables -t nat -I PREROUTING -i tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
 			"ebtables -t nat -I POSTROUTING -o tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n");
 
-
 	if (nvram_matchi("wshaper_enable", 1)) {
 		fprintf(fp, "startservice set_routes -f\n");
 		fprintf(fp, "startservice firewall -f\n");
