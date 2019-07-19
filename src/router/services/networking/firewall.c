@@ -2738,6 +2738,8 @@ void start_loadfwmodules(void)
 	       " xt_string xt_LOG xt_iprange xt_tcpmss" " xt_NETMAP compat_xtables" " ipt_MASQUERADE iptable_filter nf_reject_ipv4" " ipt_REJECT nf_nat_h323" " ipt_TRIGGER nf_nat_masquerade_ipv4 ipt_ah");
 }
 
+int client_bridged_enabled(void);
+
 #ifdef DEVELOPE_ENV
 int main(void)
 #else
