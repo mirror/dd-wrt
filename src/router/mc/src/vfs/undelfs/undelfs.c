@@ -7,7 +7,7 @@
    Parts of this program were taken from the lsdel.c and dump.c files
    written by Ted Ts'o (tytso@mit.edu) for the ext2fs package.
 
-   Copyright (C) 1995-2018
+   Copyright (C) 1995-2019
    Free Software Foundation, Inc.
 
    Written by:
@@ -48,6 +48,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>             /* memset() */
 
 #ifdef HAVE_EXT2FS_EXT2_FS_H
 #include <ext2fs/ext2_fs.h>
@@ -64,6 +65,7 @@
 
 #include "lib/util.h"
 #include "lib/widget.h"         /* message() */
+#include "lib/vfs/xdirentry.h"
 #include "lib/vfs/utilvfs.h"
 #include "lib/vfs/vfs.h"
 
@@ -129,8 +131,11 @@ static char *block_buf;
 static const char *undelfserr = N_("undelfs: error");
 static int readdir_ptr;
 static int undelfs_usage;
-static struct vfs_class vfs_undelfs_ops;
 
+static struct vfs_s_subclass undelfs_subclass;
+static struct vfs_class *vfs_undelfs_ops = VFS_CLASS (&undelfs_subclass);
+
+/* --------------------------------------------------------------------------------------------- */
 /*** file scope functions ************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
@@ -760,12 +765,12 @@ undelfs_getid (const vfs_path_t * vpath)
 
 /* --------------------------------------------------------------------------------------------- */
 
-static int
+static gboolean
 undelfs_nothingisopen (vfsid id)
 {
     (void) id;
 
-    return !undelfs_usage;
+    return (undelfs_usage == 0);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -818,26 +823,28 @@ com_err (const char *whoami, long err_code, const char *fmt, ...)
 /* --------------------------------------------------------------------------------------------- */
 
 void
-init_undelfs (void)
+vfs_init_undelfs (void)
 {
-    vfs_undelfs_ops.name = "undelfs";
-    vfs_undelfs_ops.prefix = "undel";
-    vfs_undelfs_ops.init = undelfs_init;
-    vfs_undelfs_ops.open = undelfs_open;
-    vfs_undelfs_ops.close = undelfs_close;
-    vfs_undelfs_ops.read = undelfs_read;
-    vfs_undelfs_ops.opendir = undelfs_opendir;
-    vfs_undelfs_ops.readdir = undelfs_readdir;
-    vfs_undelfs_ops.closedir = undelfs_closedir;
-    vfs_undelfs_ops.stat = undelfs_stat;
-    vfs_undelfs_ops.lstat = undelfs_lstat;
-    vfs_undelfs_ops.fstat = undelfs_fstat;
-    vfs_undelfs_ops.chdir = undelfs_chdir;
-    vfs_undelfs_ops.lseek = undelfs_lseek;
-    vfs_undelfs_ops.getid = undelfs_getid;
-    vfs_undelfs_ops.nothingisopen = undelfs_nothingisopen;
-    vfs_undelfs_ops.free = undelfs_free;
-    vfs_register_class (&vfs_undelfs_ops);
+    /* NULLize vfs_s_subclass members */
+    memset (&undelfs_subclass, 0, sizeof (undelfs_subclass));
+
+    vfs_init_class (vfs_undelfs_ops, "undelfs", VFS_UNKNOWN, "undel");
+    vfs_undelfs_ops->init = undelfs_init;
+    vfs_undelfs_ops->open = undelfs_open;
+    vfs_undelfs_ops->close = undelfs_close;
+    vfs_undelfs_ops->read = undelfs_read;
+    vfs_undelfs_ops->opendir = undelfs_opendir;
+    vfs_undelfs_ops->readdir = undelfs_readdir;
+    vfs_undelfs_ops->closedir = undelfs_closedir;
+    vfs_undelfs_ops->stat = undelfs_stat;
+    vfs_undelfs_ops->lstat = undelfs_lstat;
+    vfs_undelfs_ops->fstat = undelfs_fstat;
+    vfs_undelfs_ops->chdir = undelfs_chdir;
+    vfs_undelfs_ops->lseek = undelfs_lseek;
+    vfs_undelfs_ops->getid = undelfs_getid;
+    vfs_undelfs_ops->nothingisopen = undelfs_nothingisopen;
+    vfs_undelfs_ops->free = undelfs_free;
+    vfs_register_class (vfs_undelfs_ops);
 }
 
 /* --------------------------------------------------------------------------------------------- */

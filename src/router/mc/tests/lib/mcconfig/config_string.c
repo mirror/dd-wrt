@@ -1,7 +1,7 @@
 /*
    libmc - check mcconfig submodule. read and write config files
 
-   Copyright (C) 2011-2018
+   Copyright (C) 2011-2019
    Free Software Foundation, Inc.
 
    Written by:
@@ -81,7 +81,7 @@ setup (void)
 {
     str_init_strings ("KOI8-R");
     vfs_init ();
-    init_localfs ();
+    vfs_init_localfs ();
 
     config_object__init ();
 }

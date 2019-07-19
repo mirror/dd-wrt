@@ -6,7 +6,7 @@
 # Jacques Yip <cong-ye@163.com>, 2017
 # Jake Li <gnozil@gmail.com>, 2012
 # Kenneth Cheung <zjhken01@163.com>, 2018
-# liushuyu011 <liushuyu011@gmail.com>, 2016
+# liushuyu011 <liushuyu011@gmail.com>, 2016,2019
 # Mingcong Bai <jeffbai@aosc.xyz>, 2016,2018
 # qingxianhao <qinghao1@foxmail.com>, 2012
 # qingxianhao <qinghao1@foxmail.com>, 2012
@@ -17,9 +17,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2019-01-01 17:19+0300\n"
-"PO-Revision-Date: 2018-10-21 01:34+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
+"POT-Creation-Date: 2019-06-22 13:45+0200\n"
+"PO-Revision-Date: 2019-03-09 03:13+0000\n"
+"Last-Translator: liushuyu011 <liushuyu011@gmail.com>\n"
 "Language-Team: Chinese (China) (http://www.transifex.com/mc/mc/language/"
 "zh_CN/)\n"
 "Language: zh_CN\n"
@@ -1655,8 +1655,8 @@ msgstr ""
 "为 Midnight Commander 编写的\n"
 "一个界面友好的文本编辑器。"
 
-msgid "Copyright (C) 1996-2018 the Free Software Foundation"
-msgstr "版权所有 (C) 1996-2018 自由软件基金会"
+msgid "Copyright (C) 1996-2019 the Free Software Foundation"
+msgstr "版权所有 (C) 1996-2019 自由软件基金会"
 
 msgid "About"
 msgstr "关于"
@@ -2530,10 +2530,12 @@ msgid ""
 "Cannot create target hardlink \"%s\"\n"
 "%s"
 msgstr ""
+"无法创建目标硬链接 “%s”\n"
+"%s"
 
 #, c-format
 msgid "Cannot create target hardlink \"%s\""
-msgstr ""
+msgstr "无法创建目标硬链接 “%s”"
 
 #, c-format
 msgid ""
@@ -2868,19 +2870,14 @@ msgstr "%.2f KB/s"
 msgid "%ld B/s"
 msgstr "%ld B/s"
 
-msgid "Target file already exists!"
-msgstr "目标文件已存在!"
+msgid "New     :"
+msgstr "新："
 
-#, c-format
-msgid "New     : %s, size %s"
-msgstr "新文件: %s，体积 %s"
+msgid "Existing:"
+msgstr "现有："
 
-#, c-format
-msgid "Existing: %s, size %s"
-msgstr "原文件: %s，体积%s"
-
-msgid "Overwrite this target?"
-msgstr "覆盖该目标?"
+msgid "Overwrite this file?"
+msgstr "覆盖该文件？"
 
 msgid "A&ppend"
 msgstr "追加(&P)"
@@ -2888,14 +2885,20 @@ msgstr "追加(&P)"
 msgid "&Reget"
 msgstr "重新获取(&R)"
 
-msgid "Overwrite all targets?"
-msgstr "覆盖所有目标?"
+msgid "Overwrite all files?"
+msgstr "覆盖所有文件？"
 
-msgid "&Update"
-msgstr "更新(&U)"
+msgid "Don't overwrite with &zero length file"
+msgstr ""
 
-msgid "If &size differs"
-msgstr "如果大小有差别(&S)"
+msgid "&Older"
+msgstr ""
+
+msgid "S&maller"
+msgstr ""
+
+msgid "&Size differs"
+msgstr ""
 
 msgid "File exists"
 msgstr "文件已存在"
@@ -3854,6 +3857,9 @@ msgstr "使用 ncurses 库\n"
 
 msgid "Using the ncursesw library\n"
 msgstr "使用 ncursesw 库\n"
+
+msgid "With builtin Editor and Aspell support\n"
+msgstr ""
 
 msgid "With builtin Editor\n"
 msgstr "使用内建编辑器\n"

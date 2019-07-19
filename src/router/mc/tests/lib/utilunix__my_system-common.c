@@ -1,7 +1,7 @@
 /*
    lib - common code for testing lib/utilinux:my_system() function
 
-   Copyright (C) 2013-2018
+   Copyright (C) 2013-2019
    Free Software Foundation, Inc.
 
    Written by:
@@ -27,6 +27,11 @@
 #include <unistd.h>
 
 #include "lib/vfs/vfs.h"
+
+/* sighandler_t is GNU extension */
+#ifndef HAVE_SIGHANDLER_T
+typedef void (*sighandler_t) (int);
+#endif
 
 /* --------------------------------------------------------------------------------------------- */
 

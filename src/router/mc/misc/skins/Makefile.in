@@ -109,10 +109,8 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
 	$(top_srcdir)/m4/visibility.m4 $(top_srcdir)/m4/wchar_t.m4 \
 	$(top_srcdir)/m4/wint_t.m4 $(top_srcdir)/m4/xsize.m4 \
 	$(top_srcdir)/acinclude.m4 \
-	$(top_srcdir)/m4.include/ac_onceonly.m4 \
 	$(top_srcdir)/m4.include/gnulib/mode_t.m4 \
 	$(top_srcdir)/m4.include/gnulib/stat-size.m4 \
-	$(top_srcdir)/m4.include/gnulib/ls-mntd-fs.m4 \
 	$(top_srcdir)/m4.include/gnulib/fstypename.m4 \
 	$(top_srcdir)/m4.include/gnulib/fsusage.m4 \
 	$(top_srcdir)/m4.include/gnulib/mountlist.m4 \
@@ -445,6 +443,7 @@ skin_DATA = \
 	darkfar.ini \
 	default.ini \
 	double-lines.ini \
+	featured-plus.ini \
 	featured.ini \
 	gotar.ini \
 	gray-green-purple256.ini \

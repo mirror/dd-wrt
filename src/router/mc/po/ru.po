@@ -4,7 +4,7 @@
 #
 # Translators:
 # aborodin <aborodin@vmail.ru>, 2011
-# AlexL <loginov.alex.valer@gmail.com>, 2015-2018
+# AlexL <loginov.alex.valer@gmail.com>, 2015-2019
 # Alex Tkachenko <alex@bcs.zp.ua>, 1998
 # and Alex Tkachenko <alex@bcs.zp.ua>, 1998
 # aborodin <aborodin@vmail.ru>, 2009-2012
@@ -26,9 +26,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2019-01-01 17:19+0300\n"
-"PO-Revision-Date: 2018-11-24 15:03+0000\n"
-"Last-Translator: aborodin <aborodin@vmail.ru>\n"
+"POT-Creation-Date: 2019-06-22 13:45+0200\n"
+"PO-Revision-Date: 2019-03-03 23:22+0000\n"
+"Last-Translator: AlexL <loginov.alex.valer@gmail.com>\n"
 "Language-Team: Russian (http://www.transifex.com/mc/mc/language/ru/)\n"
 "Language: ru\n"
 "MIME-Version: 1.0\n"
@@ -1677,8 +1677,8 @@ msgstr ""
 "Текстовый редактор с дружественным интерфейсом пользователя.\n"
 "Создан для Midnight Commander."
 
-msgid "Copyright (C) 1996-2018 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2018 the Free Software Foundation"
+msgid "Copyright (C) 1996-2019 the Free Software Foundation"
+msgstr "Copyright (C) 1996-2019 the Free Software Foundation"
 
 msgid "About"
 msgstr "О программе"
@@ -2897,18 +2897,13 @@ msgstr "%.2f кб/с"
 msgid "%ld B/s"
 msgstr "%ld б/с"
 
-msgid "Target file already exists!"
-msgstr "Целевой файл уже существует!"
+msgid "New     :"
+msgstr "Новый     :"
 
-#, c-format
-msgid "New     : %s, size %s"
-msgstr "Новый:        %s, размер: %s"
+msgid "Existing:"
+msgstr "Существующий:"
 
-#, c-format
-msgid "Existing: %s, size %s"
-msgstr "Существующий: %s, размер: %s"
-
-msgid "Overwrite this target?"
+msgid "Overwrite this file?"
 msgstr "Переписать этот файл?"
 
 msgid "A&ppend"
@@ -2917,13 +2912,19 @@ msgstr "Дописать в &конец"
 msgid "&Reget"
 msgstr "Дока&чать"
 
-msgid "Overwrite all targets?"
+msgid "Overwrite all files?"
 msgstr "Переписать все файлы?"
 
-msgid "&Update"
-msgstr "&Устаревшие"
+msgid "Don't overwrite with &zero length file"
+msgstr "Не перезаписывать файл &нулевой длины"
 
-msgid "If &size differs"
+msgid "&Older"
+msgstr ""
+
+msgid "S&maller"
+msgstr ""
+
+msgid "&Size differs"
 msgstr "&Различающиеся по длине"
 
 msgid "File exists"
@@ -3894,6 +3895,9 @@ msgstr "С библиотекой ncurses\n"
 
 msgid "Using the ncursesw library\n"
 msgstr "С библиотекой ncursesw\n"
+
+msgid "With builtin Editor and Aspell support\n"
+msgstr "Со встроенным редактором и поддержкой Aspell\n"
 
 msgid "With builtin Editor\n"
 msgstr "Со встроенным редактором\n"

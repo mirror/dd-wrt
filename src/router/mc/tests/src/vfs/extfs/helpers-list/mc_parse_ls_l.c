@@ -1,7 +1,7 @@
 /*
    A parser for file-listings formatted like 'ls -l'.
 
-   Copyright (C) 2016-2018
+   Copyright (C) 2016-2019
    Free Software Foundation, Inc.
 
    This file is part of the Midnight Commander.
@@ -128,6 +128,8 @@ parse_command_line (int *argc, char **argv[])
     if (!g_option_context_parse (context, argc, argv, &error))
     {
         g_print ("option parsing failed: %s\n", error->message);
+        g_error_free (error);
+
         return FALSE;
     }
 

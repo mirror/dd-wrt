@@ -3,14 +3,14 @@
 # This file is distributed under the same license as the mc package.
 #
 # Translators:
-# Piotr Drąg <piotrdrag@gmail.com>, 2011-2018
+# Piotr Drąg <piotrdrag@gmail.com>, 2011-2019
 # Slava Zanko <slavazanko@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2019-01-01 17:19+0300\n"
-"PO-Revision-Date: 2018-10-21 15:33+0000\n"
+"POT-Creation-Date: 2019-06-22 13:45+0200\n"
+"PO-Revision-Date: 2019-03-02 15:10+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Polish (http://www.transifex.com/mc/mc/language/pl/)\n"
 "Language: pl\n"
@@ -1661,8 +1661,8 @@ msgstr ""
 "Łatwy w obsłudze edytor tekstu,\n"
 "napisany dla programu Midnight Commander."
 
-msgid "Copyright (C) 1996-2018 the Free Software Foundation"
-msgstr "Copyright © 1996-2018 Free Software Foundation"
+msgid "Copyright (C) 1996-2019 the Free Software Foundation"
+msgstr "Copyright © 1996-2019 Free Software Foundation"
 
 msgid "About"
 msgstr "O programie"
@@ -2881,19 +2881,14 @@ msgstr "%.2f KB/s"
 msgid "%ld B/s"
 msgstr "%ld B/s"
 
-msgid "Target file already exists!"
-msgstr "Plik docelowy już istnieje."
+msgid "New     :"
+msgstr "Nowy      :"
 
-#, c-format
-msgid "New     : %s, size %s"
-msgstr "Nowy      : %s, rozmiar %s"
+msgid "Existing:"
+msgstr "Istniejący:"
 
-#, c-format
-msgid "Existing: %s, size %s"
-msgstr "Istniejący: %s, rozmiar %s"
-
-msgid "Overwrite this target?"
-msgstr "Zastąpić ten plik docelowy?"
+msgid "Overwrite this file?"
+msgstr "Zastąpić ten plik?"
 
 msgid "A&ppend"
 msgstr "&Dołącz"
@@ -2901,14 +2896,20 @@ msgstr "&Dołącz"
 msgid "&Reget"
 msgstr "&Wznów"
 
-msgid "Overwrite all targets?"
-msgstr "Zastąpić wszystkie pliki docelowe?"
+msgid "Overwrite all files?"
+msgstr "Zastąpić wszystkie pliki?"
 
-msgid "&Update"
-msgstr "Zakt&ualizuj"
+msgid "Don't overwrite with &zero length file"
+msgstr "&Bez zastępowania plikiem o zerowej długości"
 
-msgid "If &size differs"
-msgstr "Jeśli różni się &rozmiar"
+msgid "&Older"
+msgstr "&Starszy"
+
+msgid "S&maller"
+msgstr "&Mniejszy"
+
+msgid "&Size differs"
+msgstr "&Rozmiary się różnią"
 
 msgid "File exists"
 msgstr "Plik istnieje"
@@ -3881,6 +3882,9 @@ msgstr "Używanie biblioteki ncurses\n"
 
 msgid "Using the ncursesw library\n"
 msgstr "Używanie biblioteki ncursesw\n"
+
+msgid "With builtin Editor and Aspell support\n"
+msgstr "Z wbudowanym edytorem i obsługą Aspell\n"
 
 msgid "With builtin Editor\n"
 msgstr "Z wbudowanym edytorem\n"

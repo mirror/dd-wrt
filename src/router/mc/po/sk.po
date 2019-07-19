@@ -14,8 +14,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2019-01-01 17:19+0300\n"
-"PO-Revision-Date: 2018-10-21 01:34+0000\n"
+"POT-Creation-Date: 2019-06-22 13:45+0200\n"
+"PO-Revision-Date: 2019-03-02 12:55+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Slovak (http://www.transifex.com/mc/mc/language/sk/)\n"
 "Language: sk\n"
@@ -1652,7 +1652,7 @@ msgstr ""
 "Používateľsky prívetivý textový editor\n"
 "napísaný pre Midnight Commander."
 
-msgid "Copyright (C) 1996-2018 the Free Software Foundation"
+msgid "Copyright (C) 1996-2019 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -2863,19 +2863,14 @@ msgstr "%.2f KB/s"
 msgid "%ld B/s"
 msgstr "%ld B/s"
 
-msgid "Target file already exists!"
-msgstr "Cieľový súbor už existuje!"
+msgid "New     :"
+msgstr ""
 
-#, c-format
-msgid "New     : %s, size %s"
-msgstr "Nový      : %s, veľkosť %s"
+msgid "Existing:"
+msgstr ""
 
-#, c-format
-msgid "Existing: %s, size %s"
-msgstr "Existujúci: %s, veľkosť %s"
-
-msgid "Overwrite this target?"
-msgstr "Prepísať tento cieľ?"
+msgid "Overwrite this file?"
+msgstr ""
 
 msgid "A&ppend"
 msgstr "&Pridať"
@@ -2883,14 +2878,20 @@ msgstr "&Pridať"
 msgid "&Reget"
 msgstr "&Znovu získať"
 
-msgid "Overwrite all targets?"
-msgstr "Prepísať všetky ciele?"
+msgid "Overwrite all files?"
+msgstr ""
 
-msgid "&Update"
-msgstr "Akt&ualizovať"
+msgid "Don't overwrite with &zero length file"
+msgstr ""
 
-msgid "If &size differs"
-msgstr "Ak &sa líši veľkosť"
+msgid "&Older"
+msgstr ""
+
+msgid "S&maller"
+msgstr ""
+
+msgid "&Size differs"
+msgstr ""
 
 msgid "File exists"
 msgstr "Súbor existuje"
@@ -3863,6 +3864,9 @@ msgstr "Používa sa knižnica ncurses\n"
 
 msgid "Using the ncursesw library\n"
 msgstr "Používa sa knižnica ncursesw\n"
+
+msgid "With builtin Editor and Aspell support\n"
+msgstr ""
 
 msgid "With builtin Editor\n"
 msgstr "So zabudovaným editorom\n"

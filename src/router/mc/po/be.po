@@ -5,15 +5,16 @@
 # Translators:
 # Slava Zanko <slavazanko@gmail.com>, 2011
 # Viktar Palstsiuk <vipals@gmail.com>, 2015
-# Zmicer Turok <zmicerturok@gmail.com>, 2018
+# Yury V. Zaytsev <yury@shurup.com>, 2019
+# Zmicer Turok <nashtlumach@gmail.com>, 2018
 # Zmicer Turok <zmicerturok@gmail.com >, 2017-2018
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2019-01-01 17:19+0300\n"
-"PO-Revision-Date: 2018-10-21 01:34+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
+"POT-Creation-Date: 2019-06-22 13:45+0200\n"
+"PO-Revision-Date: 2019-06-16 17:59+0000\n"
+"Last-Translator: Yury V. Zaytsev <yury@shurup.com>\n"
 "Language-Team: Belarusian (http://www.transifex.com/mc/mc/language/be/)\n"
 "Language: be\n"
 "MIME-Version: 1.0\n"
@@ -94,7 +95,7 @@ msgstr ""
 "Старыя налады перанеслі з «%s»\n"
 " у каталогі, якія раіць «Freedesktop».\n"
 "Па падрабязнасці завітайце сюды:\n"
-"http: //standards.freedesktop.org/basedir-spec/basedir-spec-latest.html"
+"http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html"
 
 #, c-format
 msgid ""
@@ -1656,8 +1657,8 @@ msgstr ""
 "Зручны тэкставы рэдактар,\n"
 "напісаны для Midnight Commander."
 
-msgid "Copyright (C) 1996-2018 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2018 the Free Software Foundation"
+msgid "Copyright (C) 1996-2019 the Free Software Foundation"
+msgstr ""
 
 msgid "About"
 msgstr "Пра праграму"
@@ -2870,19 +2871,14 @@ msgstr "%.2f кБ/с"
 msgid "%ld B/s"
 msgstr "%ld Б/с"
 
-msgid "Target file already exists!"
-msgstr "Файл ужо сінуе!"
+msgid "New     :"
+msgstr ""
 
-#, c-format
-msgid "New     : %s, size %s"
-msgstr "Новы : %s, памер %s"
+msgid "Existing:"
+msgstr ""
 
-#, c-format
-msgid "Existing: %s, size %s"
-msgstr "Існуючы: %s, памер %s"
-
-msgid "Overwrite this target?"
-msgstr "Перазапісаць файл?"
+msgid "Overwrite this file?"
+msgstr ""
 
 msgid "A&ppend"
 msgstr "Дапісаць у канец(&P)"
@@ -2890,14 +2886,20 @@ msgstr "Дапісаць у канец(&P)"
 msgid "&Reget"
 msgstr "Дапампаваць(&R)"
 
-msgid "Overwrite all targets?"
-msgstr "Перазапісаць усё?"
+msgid "Overwrite all files?"
+msgstr ""
 
-msgid "&Update"
-msgstr "Састарэлыя(&U)"
+msgid "Don't overwrite with &zero length file"
+msgstr ""
 
-msgid "If &size differs"
-msgstr "Розныя памерам(&S)"
+msgid "&Older"
+msgstr ""
+
+msgid "S&maller"
+msgstr ""
+
+msgid "&Size differs"
+msgstr ""
 
 msgid "File exists"
 msgstr "Файл існуе"
@@ -3868,6 +3870,9 @@ msgstr "З бібліятэкай «ncurses»\n"
 
 msgid "Using the ncursesw library\n"
 msgstr "З бібліятэкай «ncursesw»\n"
+
+msgid "With builtin Editor and Aspell support\n"
+msgstr ""
 
 msgid "With builtin Editor\n"
 msgstr "З убудаваным рэдактарам\n"

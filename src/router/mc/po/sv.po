@@ -14,8 +14,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2019-01-01 17:19+0300\n"
-"PO-Revision-Date: 2018-10-21 01:34+0000\n"
+"POT-Creation-Date: 2019-06-22 13:45+0200\n"
+"PO-Revision-Date: 2019-03-02 12:55+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Swedish (http://www.transifex.com/mc/mc/language/sv/)\n"
 "Language: sv\n"
@@ -1657,7 +1657,7 @@ msgstr ""
 "En användarvänlig texteditor\n"
 "skriven för Midnight Commander."
 
-msgid "Copyright (C) 1996-2018 the Free Software Foundation"
+msgid "Copyright (C) 1996-2019 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -2873,19 +2873,14 @@ msgstr "%.2f kB/s"
 msgid "%ld B/s"
 msgstr "%ld B/s"
 
-msgid "Target file already exists!"
-msgstr "Målfilen finns redan!"
+msgid "New     :"
+msgstr ""
 
-#, c-format
-msgid "New     : %s, size %s"
-msgstr "Ny       : %s, size %s"
+msgid "Existing:"
+msgstr ""
 
-#, c-format
-msgid "Existing: %s, size %s"
-msgstr "Nuvarande: %s, size %s"
-
-msgid "Overwrite this target?"
-msgstr "Skriv över målfilen?"
+msgid "Overwrite this file?"
+msgstr ""
 
 msgid "A&ppend"
 msgstr "&Lägg till"
@@ -2893,14 +2888,20 @@ msgstr "&Lägg till"
 msgid "&Reget"
 msgstr "&Hämta om"
 
-msgid "Overwrite all targets?"
-msgstr "Skriv över alla målfiler?"
+msgid "Overwrite all files?"
+msgstr ""
 
-msgid "&Update"
-msgstr "&Uppdatera"
+msgid "Don't overwrite with &zero length file"
+msgstr ""
 
-msgid "If &size differs"
-msgstr "Om s&torleken skiljer"
+msgid "&Older"
+msgstr ""
+
+msgid "S&maller"
+msgstr ""
+
+msgid "&Size differs"
+msgstr ""
 
 msgid "File exists"
 msgstr "Filen finns"
@@ -3863,6 +3864,9 @@ msgstr "Använder ncurses-biblioteket\n"
 
 msgid "Using the ncursesw library\n"
 msgstr "Använder ncursesw-biblioteket\n"
+
+msgid "With builtin Editor and Aspell support\n"
+msgstr ""
 
 msgid "With builtin Editor\n"
 msgstr "Med inbyggd editor\n"

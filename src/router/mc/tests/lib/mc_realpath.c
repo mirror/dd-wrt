@@ -1,7 +1,7 @@
 /*
    lib - realpath
 
-   Copyright (C) 2017-2018
+   Copyright (C) 2017-2019
    Free Software Foundation, Inc.
 
    Written by:
@@ -45,7 +45,7 @@ setup (void)
 {
     str_init_strings (NULL);
     vfs_init ();
-    init_localfs ();
+    vfs_init_localfs ();
     vfs_setup_work_dir ();
 }
 
@@ -110,14 +110,15 @@ int
 main (void)
 {
     int number_failed;
-    char *cwd, *logname;
+    char *cwd;
 
     Suite *s = suite_create (TEST_SUITE_NAME);
     TCase *tc_core = tcase_create ("Core");
     SRunner *sr;
 
+    /* writable directory where check creates temporary files */
     cwd = g_get_current_dir ();
-    logname = g_strconcat (cwd, "realpath.log", (char *) NULL);
+    g_setenv ("TEMP", cwd, TRUE);
     g_free (cwd);
 
     tcase_add_checked_fixture (tc_core, setup, teardown);
@@ -128,11 +129,10 @@ main (void)
 
     suite_add_tcase (s, tc_core);
     sr = srunner_create (s);
-    srunner_set_log (sr, logname);
+    srunner_set_log (sr, "mc_realpath.log");
     srunner_run_all (sr, CK_ENV);
     number_failed = srunner_ntests_failed (sr);
     srunner_free (sr);
-    g_free (logname);
     return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 

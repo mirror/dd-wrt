@@ -13,8 +13,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2019-01-01 17:19+0300\n"
-"PO-Revision-Date: 2018-10-21 20:17+0000\n"
+"POT-Creation-Date: 2019-06-22 13:45+0200\n"
+"PO-Revision-Date: 2019-03-05 09:31+0000\n"
 "Last-Translator: David Martin <dhmartina@yahoo.es>\n"
 "Language-Team: Spanish (http://www.transifex.com/mc/mc/language/es/)\n"
 "Language: es\n"
@@ -1657,8 +1657,8 @@ msgstr ""
 "Un editor de texto amigable\n"
 "para Midnight Commander."
 
-msgid "Copyright (C) 1996-2018 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2018 the Free Software Foundation"
+msgid "Copyright (C) 1996-2019 the Free Software Foundation"
+msgstr "Copyright (C) 1996-2019 the Free Software Foundation"
 
 msgid "About"
 msgstr "Acerca de..."
@@ -2878,18 +2878,13 @@ msgstr "%.2f kB/s"
 msgid "%ld B/s"
 msgstr "%ld B/s"
 
-msgid "Target file already exists!"
-msgstr "¡El archivo destino ya existe!"
+msgid "New     :"
+msgstr "Nuevo :"
 
-#, c-format
-msgid "New     : %s, size %s"
-msgstr "Nuevo : %s, tamaño %s"
+msgid "Existing:"
+msgstr "Actual:"
 
-#, c-format
-msgid "Existing: %s, size %s"
-msgstr "Actual: %s, tamaño %s"
-
-msgid "Overwrite this target?"
+msgid "Overwrite this file?"
 msgstr "¿Sobrescribir este archivo?"
 
 msgid "A&ppend"
@@ -2898,14 +2893,20 @@ msgstr "aña&Dir"
 msgid "&Reget"
 msgstr "&Reintentar"
 
-msgid "Overwrite all targets?"
+msgid "Overwrite all files?"
 msgstr "¿Sobrescribir todos los archivos?"
 
-msgid "&Update"
-msgstr "actuali&Zar"
+msgid "Don't overwrite with &zero length file"
+msgstr "no sobrescribir con archivos de tamaño cer&O"
 
-msgid "If &size differs"
-msgstr "si el ta&Maño difiere"
+msgid "&Older"
+msgstr "antig&Uos"
+
+msgid "S&maller"
+msgstr "&Menores"
+
+msgid "&Size differs"
+msgstr "tamaño di&Ferente"
 
 msgid "File exists"
 msgstr "Archivo ya existe"
@@ -3868,6 +3869,9 @@ msgstr "Utilizando la biblioteca ncurses\n"
 
 msgid "Using the ncursesw library\n"
 msgstr "Utilizando la biblioteca ncursesw\n"
+
+msgid "With builtin Editor and Aspell support\n"
+msgstr "Editor de texto propio y ortografía incluidos\n"
 
 msgid "With builtin Editor\n"
 msgstr "Editor de texto propio incluido\n"

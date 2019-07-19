@@ -1,7 +1,7 @@
 /*
    lib/vfs - vfs_path_t charset recode functions
 
-   Copyright (C) 2011-2018
+   Copyright (C) 2011-2019
    Free Software Foundation, Inc.
 
    Written by:
@@ -68,7 +68,7 @@ test_init_vfs (const char *encoding)
     str_init_strings (encoding);
 
     vfs_init ();
-    init_localfs ();
+    vfs_init_localfs ();
     vfs_setup_work_dir ();
 
     mc_global.sysconfig_dir = (char *) TEST_SHARE_DIR;
@@ -164,9 +164,7 @@ END_PARAMETRIZED_TEST
 
 /* --------------------------------------------------------------------------------------------- */
 
-static struct vfs_s_subclass test_subclass1;
 static struct vfs_class vfs_test_ops1;
-
 
 /* @DataSource("test_path_to_str_flags_ds") */
 /* *INDENT-OFF* */
@@ -246,11 +244,7 @@ START_PARAMETRIZED_TEST (test_path_to_str_flags, test_path_to_str_flags_ds)
 
     test_init_vfs ("UTF-8");
 
-    test_subclass1.flags = VFS_S_REMOTE;
-    vfs_s_init_class (&vfs_test_ops1, &test_subclass1);
-    vfs_test_ops1.name = "testfs1";
-    vfs_test_ops1.flags = VFSF_NOLINKS;
-    vfs_test_ops1.prefix = "test1";
+    vfs_init_class (&vfs_test_ops1, "testfs1", VFS_NOLINKS | VFS_REMOTE, "test1");
     vfs_register_class (&vfs_test_ops1);
 
     /* when */
