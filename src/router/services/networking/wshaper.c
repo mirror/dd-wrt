@@ -46,7 +46,7 @@ static char *get_wanface(void)
 	return dev;
 }
 
-static int client_bridged_enabled(void)
+int client_bridged_enabled(void)
 {
 	// enumerate all possible interfaces
 	char iflist[512];

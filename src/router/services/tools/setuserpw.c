@@ -29,7 +29,7 @@ int setuserpasswd_main(int argc, char **argv)
 	}
 	char passout[MD5_OUT_BUFSIZE];
 
-	if (nvram_match("http_username", DEFAULT_PASS))
+	if (nvram_match("http_passwd", DEFAULT_PASS))
 		nvram_seti("unblock", 1);
 	nvram_set("http_username", zencrypt(argv[1], passout));
 	nvram_set("http_passwd", zencrypt(argv[2], passout));
