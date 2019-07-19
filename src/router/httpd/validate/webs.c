@@ -4649,7 +4649,7 @@ void changepass(webs_t wp)
 	if (pass && value && strcmp(pass, TMP_PASSWD)
 	    && valid_name(wp, pass, NULL)) {
 		char passout[MD5_OUT_BUFSIZE];
-		if (nvram_match("http_username", DEFAULT_PASS))
+		if (nvram_match("http_passwd", DEFAULT_PASS))
 			nvram_seti("unblock", 1);
 		nvram_set("http_passwd", zencrypt(pass, passout));
 
