@@ -14,10 +14,42 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
  * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-
 #ifndef SFE_BACKPORT_H
 #define SFE_BACKPORT_H
+
 #include <linux/version.h>
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 4, 0))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 7, 0))
+#include <net/netfilter/nf_conntrack_timeout.h>
+#else
+enum udp_conntrack {
+	UDP_CT_UNREPLIED,
+	UDP_CT_REPLIED,
+	UDP_CT_MAX
+};
+
+static inline unsigned int *
+nf_ct_timeout_lookup(struct net *net, struct nf_conn *ct,
+		     struct nf_conntrack_l4proto *l4proto)
+{
+#ifdef CONFIG_NF_CONNTRACK_TIMEOUT
+	struct nf_conn_timeout *timeout_ext;
+	unsigned int *timeouts;
+
+	timeout_ext = nf_ct_timeout_find(ct);
+	if (timeout_ext)
+		timeouts = NF_CT_TIMEOUT_EXT_DATA(timeout_ext);
+	else
+		timeouts = l4proto->get_timeouts(net);
+
+	return timeouts;
+#else
+	return l4proto->get_timeouts(net);
+#endif /*CONFIG_NF_CONNTRACK_TIMEOUT*/
+}
+#endif /*KERNEL_VERSION(3, 7, 0)*/
+#endif /*KERNEL_VERSION(3, 4, 0)*/
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0))
 #define sfe_define_post_routing_hook(FN_NAME, HOOKNUM, OPS, SKB, UNUSED, OUT, OKFN) \

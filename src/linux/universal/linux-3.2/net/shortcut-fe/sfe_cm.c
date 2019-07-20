@@ -311,6 +311,8 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 	struct net_device *dev;
 	struct net_device *src_dev;
 	struct net_device *dest_dev;
+	struct net_device *src_dev_tmp;
+	struct net_device *dest_dev_tmp;
 	struct net_device *src_br_dev = NULL;
 	struct net_device *dest_br_dev = NULL;
 	struct nf_conntrack_tuple orig_tuple;
@@ -606,12 +608,13 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 	 * Get the net device and MAC addresses that correspond to the various source and
 	 * destination host addresses.
 	 */
-	if (!sfe_cm_find_dev_and_mac_addr(&sic.src_ip, &src_dev, sic.src_mac, is_v4)) {
+	if (!sfe_cm_find_dev_and_mac_addr(&sic.src_ip, &src_dev_tmp, sic.src_mac, is_v4)) {
 #ifdef SFE_DEBUG
 		sfe_cm_incr_exceptions(SFE_CM_EXCEPTION_NO_SRC_DEV);
 #endif
 		return NF_ACCEPT;
 	}
+	src_dev = src_dev_tmp;
 
 	if (!sfe_cm_find_dev_and_mac_addr(&sic.src_ip_xlate, &dev, sic.src_mac_xlate, is_v4)) {
 #ifdef SFE_DEBUG
@@ -631,12 +634,13 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 
 	dev_put(dev);
 
-	if (!sfe_cm_find_dev_and_mac_addr(&sic.dest_ip_xlate, &dest_dev, sic.dest_mac_xlate, is_v4)) {
+	if (!sfe_cm_find_dev_and_mac_addr(&sic.dest_ip_xlate, &dest_dev_tmp, sic.dest_mac_xlate, is_v4)) {
 #ifdef SFE_DEBUG
 		sfe_cm_incr_exceptions(SFE_CM_EXCEPTION_NO_DEST_XLATE_DEV);
 #endif
 		goto done1;
 	}
+	dest_dev = dest_dev_tmp;
 
 	/*
 	 * Our devices may actually be part of a bridge interface.  If that's
@@ -695,10 +699,10 @@ done3:
 	}
 
 done2:
-	dev_put(dest_dev);
+	dev_put(dest_dev_tmp);
 
 done1:
-	dev_put(src_dev);
+	dev_put(src_dev_tmp);
 
 	return NF_ACCEPT;
 }
@@ -727,10 +731,16 @@ sfe_cm_ipv6_post_routing_hook(hooknum, ops, skb, in_unused, out, okfn)
  * sfe_cm_conntrack_event()
  *	Callback event invoked when a conntrack connection's state changes.
  */
+#ifdef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
 static int sfe_cm_conntrack_event(struct notifier_block *this,
-				  unsigned long events, void *ptr)
+ 				  unsigned long events, void *ptr)
+#else
+static int sfe_cm_conntrack_event(unsigned int events, struct nf_ct_event *item)
+#endif
 {
-	struct nf_ct_event *item = ptr;
+#ifdef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
+ 	struct nf_ct_event *item = ptr;
+#endif
 	struct sfe_connection_destroy sid;
 	struct nf_conn *ct = item->ct;
 	struct nf_conntrack_tuple orig_tuple;
@@ -806,9 +816,15 @@ static int sfe_cm_conntrack_event(struct notifier_block *this,
 /*
  * Netfilter conntrack event system to monitor connection tracking changes
  */
-static struct notifier_block sfe_cm_conntrack_notifier = {
-	.notifier_call = sfe_cm_conntrack_event,
+#ifdef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
+ static struct notifier_block sfe_cm_conntrack_notifier = {
+ 	.notifier_call = sfe_cm_conntrack_event,
+ };
+#else
+static struct nf_ct_event_notifier sfe_cm_conntrack_notifier = {
+	.fcn = sfe_cm_conntrack_event,
 };
+#endif
 #endif
 
 /*
