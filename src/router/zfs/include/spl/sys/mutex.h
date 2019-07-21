@@ -128,6 +128,8 @@ spl_mutex_lockdep_on_maybe(kmutex_t *mp)			\
 })
 /* END CSTYLED */
 
+#define	NESTED_SINGLE 1
+
 #ifdef CONFIG_DEBUG_LOCK_ALLOC
 #define	mutex_enter_nested(mp, subclass)			\
 {								\
@@ -179,8 +181,5 @@ spl_mutex_lockdep_on_maybe(kmutex_t *mp)			\
 	spin_unlock(&(mp)->m_lock);				\
 	/* NOTE: do not dereference mp after this point */	\
 }
-
-int spl_mutex_init(void);
-void spl_mutex_fini(void);
 
 #endif /* _SPL_MUTEX_H */
