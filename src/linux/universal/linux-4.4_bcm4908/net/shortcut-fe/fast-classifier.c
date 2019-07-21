@@ -765,17 +765,27 @@ fast_classifier_offload_genl_msg(struct sk_buff *skb, struct genl_info *info)
 	na = info->attrs[FAST_CLASSIFIER_A_TUPLE];
 	fc_msg = nla_data(na);
 
-	DEBUG_TRACE((fc_msg->ethertype == AF_INET ?
-		"want to offload: %d-%d, %pI4, %pI4, %d, %d SMAC=%pM DMAC=%pM\n" :
-		"want to offload: %d-%d, %pI6, %pI6, %d, %d SMAC=%pM DMAC=%pM\n"),
-		    fc_msg->ethertype,
-		    fc_msg->proto,
-		    &fc_msg->src_saddr,
-		    &fc_msg->dst_saddr,
-		    fc_msg->sport,
-		    fc_msg->dport,
-		    fc_msg->smac,
-		    fc_msg->dmac);
+	if (fc_msg->ethertype == AF_INET) {
+		DEBUG_TRACE("want to offload: %d-%d, %pI4, %pI4, %d, %d SMAC=%pM DMAC=%pM\n",
+			    fc_msg->ethertype,
+			    fc_msg->proto,
+			    &fc_msg->src_saddr,
+			    &fc_msg->dst_saddr,
+			    fc_msg->sport,
+			    fc_msg->dport,
+			    fc_msg->smac,
+			    fc_msg->dmac);
+	} else {
+		DEBUG_TRACE("want to offload: %d-%d, %pI6, %pI6, %d, %d SMAC=%pM DMAC=%pM\n",
+			    fc_msg->ethertype,
+			    fc_msg->proto,
+			    &fc_msg->src_saddr,
+			    &fc_msg->dst_saddr,
+			    fc_msg->sport,
+			    fc_msg->dport,
+			    fc_msg->smac,
+			    fc_msg->dmac);
+	}
 
 	spin_lock_bh(&sfe_connections_lock);
 	conn = fast_classifier_sb_find_conn((sfe_ip_addr_t *)&fc_msg->src_saddr,
@@ -1261,10 +1271,10 @@ done3:
 	}
 
 done2:
-	dev_put(dest_dev);
+	dev_put(dest_dev_tmp);
 
 done1:
-	dev_put(src_dev);
+	dev_put(src_dev_tmp);
 
 	return NF_ACCEPT;
 }
