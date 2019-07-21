@@ -19,6 +19,13 @@
 #  define INLINE_KEYWORD inline
 #  define FORCE_INLINE_ATTR __always_inline
 
+/* vectorization */
+#if !defined(__clang__) && defined(__GNUC__)
+#  define DONT_VECTORIZE __attribute__((optimize("no-tree-vectorize")))
+#else
+#  define DONT_VECTORIZE
+#endif
+
 /**
  * FORCE_INLINE_TEMPLATE is used to define C "templates", which take constant
  * parameters. They must be inlined for the compiler to eliminate the constant
@@ -41,9 +48,7 @@
 #else
 #  define HINT_INLINE static INLINE_KEYWORD FORCE_INLINE_ATTR
 #endif
-#ifdef noinline 
-#define FORCE_NOINLINE noinline
-#else
+
 #ifdef _KERNEL
 /* force no inlining */
 #  ifdef __GNUC__
@@ -60,7 +65,7 @@
 
 
 #endif
-#endif
+
 /* target attribute */
 #ifndef __has_attribute
   #define __has_attribute(x) 0  /* Compatibility with non-clang compilers. */

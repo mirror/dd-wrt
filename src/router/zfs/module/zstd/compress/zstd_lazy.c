@@ -84,7 +84,10 @@ ZSTD_insertDUBT1(ZSTD_matchState_t* ms,
     U32* largerPtr  = smallerPtr + 1;
     U32 matchIndex = *smallerPtr;   /* this candidate is unsorted : next sorted candidate is reached through *smallerPtr, while *largerPtr contains previous unsorted candidate (which is already saved and can be overwritten) */
     U32 dummy32;   /* to be nullified at the end */
-    U32 const windowLow = ms->window.lowLimit;
+    U32 const windowValid = ms->window.lowLimit;
+    U32 const maxDistance = 1U << cParams->windowLog;
+    U32 const windowLow = (c_current - windowValid > maxDistance) ? c_current - maxDistance : windowValid;
+
 
     DEBUGLOG(8, "ZSTD_insertDUBT1(%u) (dictLimit=%u, lowLimit=%u)",
                 c_current, dictLimit, windowLow);
@@ -240,7 +243,9 @@ ZSTD_DUBT_findBestMatch(ZSTD_matchState_t* ms,
 
     const BYTE* const base = ms->window.base;
     U32    const c_current = (U32)(ip-base);
-    U32    const windowLow = ms->window.lowLimit;
+    U32    const maxDistance = 1U << cParams->windowLog;
+    U32    const windowValid = ms->window.lowLimit;
+    U32    const windowLow = (c_current - windowValid > maxDistance) ? c_current - maxDistance : windowValid;
 
     U32*   const bt = ms->chainTable;
     U32    const btLog  = cParams->chainLog - 1;
@@ -491,8 +496,10 @@ size_t ZSTD_HcFindBestMatch_generic (
     const U32 dictLimit = ms->window.dictLimit;
     const BYTE* const prefixStart = base + dictLimit;
     const BYTE* const dictEnd = dictBase + dictLimit;
-    const U32 lowLimit = ms->window.lowLimit;
     const U32 c_current = (U32)(ip-base);
+    const U32 maxDistance = 1U << cParams->windowLog;
+    const U32 lowValid = ms->window.lowLimit;
+    const U32 lowLimit = (c_current - lowValid > maxDistance) ? c_current - maxDistance : lowValid;
     const U32 minChain = c_current > chainSize ? c_current - chainSize : 0;
     U32 nbAttempts = 1U << cParams->searchLog;
     size_t ml=4-1;
@@ -654,7 +661,6 @@ size_t ZSTD_compressBlock_lazy_generic(
 
     /* init */
     ip += (dictAndPrefixLength == 0);
-    ms->nextToUpdate3 = ms->nextToUpdate;
     if (dictMode == ZSTD_noDict) {
         U32 const maxRep = (U32)(ip - prefixLowest);
         if (offset_2 > maxRep) savedOffset = offset_2, offset_2 = 0;
@@ -934,7 +940,6 @@ size_t ZSTD_compressBlock_lazy_extDict_generic(
     U32 offset_1 = rep[0], offset_2 = rep[1];
 
     /* init */
-    ms->nextToUpdate3 = ms->nextToUpdate;
     ip += (ip == prefixStart);
 
     /* Match Loop */

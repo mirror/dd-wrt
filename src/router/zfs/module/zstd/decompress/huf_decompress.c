@@ -36,7 +36,6 @@
 /* **************************************************************
 *  Dependencies
 ****************************************************************/
-#include <sys/zstd/mem.h>
 #include <sys/zstd/compiler.h>
 #include <sys/zstd/bitstream.h>  /* BIT_* */
 #include <sys/zstd/fse.h>        /* to compress headers */
@@ -61,7 +60,8 @@
 /* **************************************************************
 *  Error Management
 ****************************************************************/
-#define CHECK_HUFD_F(f) { size_t const err_ = (f); if (HUF_isError(err_)) return err_; }
+#define HUF_isError ERR_isError
+#define CHECK_F(f) { size_t const err_ = (f); if (HUF_isError(err_)) return err_; }
 
 
 /* **************************************************************
@@ -193,6 +193,13 @@ size_t HUF_readDTableX1_wksp(HUF_DTable* DTable, const void* src, size_t srcSize
     return iSize;
 }
 
+size_t HUF_readDTableX1(HUF_DTable* DTable, const void* src, size_t srcSize)
+{
+    U32 workSpace[HUF_DECOMPRESS_WORKSPACE_SIZE_U32];
+    return HUF_readDTableX1_wksp(DTable, src, srcSize,
+                                 workSpace, sizeof(workSpace));
+}
+
 FORCE_INLINE_TEMPLATE BYTE
 HUF_decodeSymbolX1(BIT_DStream_t* Dstream, const HUF_DEltX1* dt, const U32 dtLog)
 {
@@ -252,7 +259,7 @@ HUF_decompress1X1_usingDTable_internal_body(
     DTableDesc const dtd = HUF_getDTableDesc(DTable);
     U32 const dtLog = dtd.tableLog;
 
-    CHECK_HUFD_F( BIT_initDStream(&bitD, cSrc, cSrcSize) );
+    CHECK_F( BIT_initDStream(&bitD, cSrc, cSrcSize) );
 
     HUF_decodeStreamX1(op, &bitD, oend, dt, dtLog);
 
@@ -302,10 +309,10 @@ HUF_decompress4X1_usingDTable_internal_body(
         U32 const dtLog = dtd.tableLog;
 
         if (length4 > cSrcSize) return ERROR(corruption_detected);   /* overflow */
-        CHECK_HUFD_F( BIT_initDStream(&bitD1, istart1, length1) );
-        CHECK_HUFD_F( BIT_initDStream(&bitD2, istart2, length2) );
-        CHECK_HUFD_F( BIT_initDStream(&bitD3, istart3, length3) );
-        CHECK_HUFD_F( BIT_initDStream(&bitD4, istart4, length4) );
+        CHECK_F( BIT_initDStream(&bitD1, istart1, length1) );
+        CHECK_F( BIT_initDStream(&bitD2, istart2, length2) );
+        CHECK_F( BIT_initDStream(&bitD3, istart3, length3) );
+        CHECK_F( BIT_initDStream(&bitD4, istart4, length4) );
 
         /* up to 16 symbols per loop (4 symbols per stream) in 64-bit mode */
         endSignal = BIT_reloadDStream(&bitD1) | BIT_reloadDStream(&bitD2) | BIT_reloadDStream(&bitD3) | BIT_reloadDStream(&bitD4);
@@ -364,6 +371,7 @@ typedef size_t (*HUF_decompress_usingDTable_t)(void *dst, size_t dstSize,
 HUF_DGEN(HUF_decompress1X1_usingDTable_internal)
 HUF_DGEN(HUF_decompress4X1_usingDTable_internal)
 
+
 static size_t HUF_decompress4X1_DCtx_wksp_bmi2(HUF_DTable* dctx, void* dst, size_t dstSize,
                                    const void* cSrc, size_t cSrcSize,
                                    void* workSpace, size_t wkspSize, int bmi2)
@@ -378,6 +386,11 @@ static size_t HUF_decompress4X1_DCtx_wksp_bmi2(HUF_DTable* dctx, void* dst, size
 
     return HUF_decompress4X1_usingDTable_internal(dst, dstSize, ip, cSrcSize, dctx, bmi2);
 }
+
+#endif /* HUF_FORCE_DECOMPRESS_X2 */
+
+
+#ifndef HUF_FORCE_DECOMPRESS_X1
 
 /* *************************/
 /* double-symbols decoding */
@@ -431,10 +444,6 @@ static void HUF_fillDTableX2Level2(HUF_DEltX2* DTable, U32 sizeLog, const U32 co
     }   }
 }
 
-#endif /* HUF_FORCE_DECOMPRESS_X2 */
-
-
-#ifndef HUF_FORCE_DECOMPRESS_X1
 
 static void HUF_fillDTableX2(HUF_DEltX2* DTable, const U32 targetLog,
                            const sortedSymbol_t* sortedList, const U32 sortedListSize,
@@ -650,7 +659,7 @@ HUF_decompress1X2_usingDTable_internal_body(
     BIT_DStream_t bitD;
 
     /* Init */
-    CHECK_HUFD_F( BIT_initDStream(&bitD, cSrc, cSrcSize) );
+    CHECK_F( BIT_initDStream(&bitD, cSrc, cSrcSize) );
 
     /* decode */
     {   BYTE* const ostart = (BYTE*) dst;
@@ -709,10 +718,10 @@ HUF_decompress4X2_usingDTable_internal_body(
         U32 const dtLog = dtd.tableLog;
 
         if (length4 > cSrcSize) return ERROR(corruption_detected);   /* overflow */
-        CHECK_HUFD_F( BIT_initDStream(&bitD1, istart1, length1) );
-        CHECK_HUFD_F( BIT_initDStream(&bitD2, istart2, length2) );
-        CHECK_HUFD_F( BIT_initDStream(&bitD3, istart3, length3) );
-        CHECK_HUFD_F( BIT_initDStream(&bitD4, istart4, length4) );
+        CHECK_F( BIT_initDStream(&bitD1, istart1, length1) );
+        CHECK_F( BIT_initDStream(&bitD2, istart2, length2) );
+        CHECK_F( BIT_initDStream(&bitD3, istart3, length3) );
+        CHECK_F( BIT_initDStream(&bitD4, istart4, length4) );
 
         /* 16-32 symbols per loop (4-8 symbols per stream) */
         endSignal = BIT_reloadDStream(&bitD1) | BIT_reloadDStream(&bitD2) | BIT_reloadDStream(&bitD3) | BIT_reloadDStream(&bitD4);
@@ -776,10 +785,15 @@ static size_t HUF_decompress4X2_DCtx_wksp_bmi2(HUF_DTable* dctx, void* dst, size
     return HUF_decompress4X2_usingDTable_internal(dst, dstSize, ip, cSrcSize, dctx, bmi2);
 }
 
+#endif /* HUF_FORCE_DECOMPRESS_X1 */
+
+
 /* ***********************************/
 /* Universal decompression selectors */
 /* ***********************************/
 
+
+#if !defined(HUF_FORCE_DECOMPRESS_X1) && !defined(HUF_FORCE_DECOMPRESS_X2)
 typedef struct { U32 tableTime; U32 decode256Time; } algo_time_t;
 static const algo_time_t algoTime[16 /* Quantization */][3 /* single, double, quad */] =
 {
@@ -801,6 +815,7 @@ static const algo_time_t algoTime[16 /* Quantization */][3 /* single, double, qu
     {{1455,128}, {2422,124}, {4174,124}},   /* Q ==14 : 87-93% */
     {{ 722,128}, {1891,145}, {1936,146}},   /* Q ==15 : 93-99% */
 };
+#endif
 
 /** HUF_selectDecoder() :
  *  Tells which decoder is likely to decode faster,
@@ -830,8 +845,6 @@ U32 HUF_selectDecoder (size_t dstSize, size_t cSrcSize)
     }
 #endif
 }
-
-#endif /* HUF_FORCE_DECOMPRESS_X1 */
 
 
 typedef size_t (*decompressionAlgo)(void* dst, size_t dstSize, const void* cSrc, size_t cSrcSize);
