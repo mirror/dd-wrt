@@ -2720,8 +2720,24 @@ ztest_spa_create_destroy(ztest_ds_t *zd, uint64_t id)
 	VERIFY3U(EEXIST, ==,
 	    spa_create(zo->zo_pool, nvroot, NULL, NULL, NULL));
 	nvlist_free(nvroot);
+
+	/*
+	 * We open a reference to the spa and then we try to export it
+	 * expecting one of the following errors:
+	 *
+	 * EBUSY
+	 *	Because of the reference we just opened.
+	 *
+	 * ZFS_ERR_EXPORT_IN_PROGRESS
+	 *	For the case that there is another ztest thread doing
+	 *	an export concurrently.
+	 */
 	VERIFY3U(0, ==, spa_open(zo->zo_pool, &spa, FTAG));
-	VERIFY3U(EBUSY, ==, spa_destroy(zo->zo_pool));
+	int error = spa_destroy(zo->zo_pool);
+	if (error != EBUSY && error != ZFS_ERR_EXPORT_IN_PROGRESS) {
+		fatal(0, "spa_destroy(%s) returned unexpected value %d",
+		    spa->spa_name, error);
+	}
 	spa_close(spa, FTAG);
 
 	(void) pthread_rwlock_unlock(&ztest_name_lock);
@@ -2925,24 +2941,12 @@ vdev_lookup_by_path(vdev_t *vd, const char *path)
 	return (NULL);
 }
 
-/*
- * Find the first available hole which can be used as a top-level.
- */
-int
-find_vdev_hole(spa_t *spa)
+static int
+spa_num_top_vdevs(spa_t *spa)
 {
 	vdev_t *rvd = spa->spa_root_vdev;
-	int c;
-
-	ASSERT(spa_config_held(spa, SCL_VDEV, RW_READER) == SCL_VDEV);
-
-	for (c = 0; c < rvd->vdev_children; c++) {
-		vdev_t *cvd = rvd->vdev_child[c];
-
-		if (cvd->vdev_ishole)
-			break;
-	}
-	return (c);
+	ASSERT3U(spa_config_held(spa, SCL_VDEV, RW_READER), ==, SCL_VDEV);
+	return (rvd->vdev_children);
 }
 
 /*
@@ -2967,7 +2971,7 @@ ztest_vdev_add_remove(ztest_ds_t *zd, uint64_t id)
 
 	spa_config_enter(spa, SCL_VDEV, FTAG, RW_READER);
 
-	ztest_shared->zs_vdev_next_leaf = find_vdev_hole(spa) * leaves;
+	ztest_shared->zs_vdev_next_leaf = spa_num_top_vdevs(spa) * leaves;
 
 	/*
 	 * If we have slogs then remove them 1/4 of the time.
@@ -3074,7 +3078,7 @@ ztest_vdev_class_add(ztest_ds_t *zd, uint64_t id)
 	leaves = MAX(zs->zs_mirrors + zs->zs_splits, 1) * ztest_opts.zo_raidz;
 
 	spa_config_enter(spa, SCL_VDEV, FTAG, RW_READER);
-	ztest_shared->zs_vdev_next_leaf = find_vdev_hole(spa) * leaves;
+	ztest_shared->zs_vdev_next_leaf = spa_num_top_vdevs(spa) * leaves;
 	spa_config_exit(spa, SCL_VDEV, FTAG);
 
 	nvroot = make_vdev_root(NULL, NULL, NULL, ztest_opts.zo_vdev_size, 0,
@@ -7330,6 +7334,15 @@ ztest_init(ztest_shared_t *zs)
 
 	for (i = 0; i < SPA_FEATURES; i++) {
 		char *buf;
+
+		/*
+		 * 75% chance of using the log space map feature. We want ztest
+		 * to exercise both the code paths that use the log space map
+		 * feature and the ones that don't.
+		 */
+		if (i == SPA_FEATURE_LOG_SPACEMAP && ztest_random(4) == 0)
+			continue;
+
 		VERIFY3S(-1, !=, asprintf(&buf, "feature@%s",
 		    spa_feature_table[i].fi_uname));
 		VERIFY3U(0, ==, nvlist_add_uint64(props, buf, 0));
