@@ -1,3 +1,4 @@
+/* BEGIN CSTYLED */
 /*
  * Copyright (c) 2016-present, Yann Collet, Facebook, Inc.
  * All rights reserved.
@@ -70,7 +71,7 @@ size_t ZSTD_getcBlockSize(const void* src, size_t srcSize,
 
 
 /* Hidden declaration for fullbench */
-static size_t ZSTD_decodeLiteralsBlock(ZSTD_DCtx* dctx,
+size_t ZSTD_decodeLiteralsBlock(ZSTD_DCtx* dctx,
                           const void* src, size_t srcSize);
 /*! ZSTD_decodeLiteralsBlock() :
  * @return : nb of bytes read from src (< srcSize )
@@ -504,7 +505,7 @@ size_t ZSTD_decodeSeqHeaders(ZSTD_DCtx* dctx, int* nbSeqPtr,
     *nbSeqPtr = nbSeq;
 
     /* FSE table descriptors */
-    RETURN_ERROR_IF(ip+4 > iend, srcSize_wrong); /* minimum possible size */
+    RETURN_ERROR_IF(ip+1 > iend, srcSize_wrong); /* minimum possible size: 1 byte for symbol encoding types */
     {   symbolEncodingType_e const LLtype = (symbolEncodingType_e)(*ip >> 6);
         symbolEncodingType_e const OFtype = (symbolEncodingType_e)((*ip >> 4) & 3);
         symbolEncodingType_e const MLtype = (symbolEncodingType_e)((*ip >> 2) & 3);
@@ -577,7 +578,7 @@ typedef struct {
  * note : this case is supposed to be never generated "naturally" by reference encoder,
  *        since in most cases it needs at least 8 bytes to look for a match.
  *        but it's allowed by the specification. */
-static FORCE_NOINLINE
+FORCE_NOINLINE
 size_t ZSTD_execSequenceLast7(BYTE* op,
                               BYTE* const oend, seq_t sequence,
                               const BYTE** litPtr, const BYTE* const litLimit,
@@ -636,9 +637,10 @@ size_t ZSTD_execSequence(BYTE* op,
     if (oLitEnd>oend_w) return ZSTD_execSequenceLast7(op, oend, sequence, litPtr, litLimit, prefixStart, virtualStart, dictEnd);
 
     /* copy Literals */
-    ZSTD_copy8(op, *litPtr);
     if (sequence.litLength > 8)
-        ZSTD_wildcopy(op+8, (*litPtr)+8, sequence.litLength - 8);   /* note : since oLitEnd <= oend-WILDCOPY_OVERLENGTH, no risk of overwrite beyond oend */
+        ZSTD_wildcopy_16min(op, (*litPtr), sequence.litLength, ZSTD_no_overlap);   /* note : since oLitEnd <= oend-WILDCOPY_OVERLENGTH, no risk of overwrite beyond oend */
+    else
+        ZSTD_copy8(op, *litPtr);
     op = oLitEnd;
     *litPtr = iLitEnd;   /* update for next sequence */
 
@@ -685,13 +687,13 @@ size_t ZSTD_execSequence(BYTE* op,
 
     if (oMatchEnd > oend-(16-MINMATCH)) {
         if (op < oend_w) {
-            ZSTD_wildcopy(op, match, oend_w - op);
+            ZSTD_wildcopy(op, match, oend_w - op, ZSTD_overlap_src_before_dst);
             match += oend_w - op;
             op = oend_w;
         }
         while (op < oMatchEnd) *op++ = *match++;
     } else {
-        ZSTD_wildcopy(op, match, (ptrdiff_t)sequence.matchLength-8);   /* works even if matchLength < 8 */
+        ZSTD_wildcopy(op, match, (ptrdiff_t)sequence.matchLength-8, ZSTD_overlap_src_before_dst);   /* works even if matchLength < 8 */
     }
     return sequenceLength;
 }
@@ -716,9 +718,11 @@ size_t ZSTD_execSequenceLong(BYTE* op,
     if (oLitEnd > oend_w) return ZSTD_execSequenceLast7(op, oend, sequence, litPtr, litLimit, prefixStart, dictStart, dictEnd);
 
     /* copy Literals */
-    ZSTD_copy8(op, *litPtr);  /* note : op <= oLitEnd <= oend_w == oend - 8 */
     if (sequence.litLength > 8)
-        ZSTD_wildcopy(op+8, (*litPtr)+8, sequence.litLength - 8);   /* note : since oLitEnd <= oend-WILDCOPY_OVERLENGTH, no risk of overwrite beyond oend */
+        ZSTD_wildcopy_16min(op, *litPtr, sequence.litLength, ZSTD_no_overlap);   /* note : since oLitEnd <= oend-WILDCOPY_OVERLENGTH, no risk of overwrite beyond oend */
+    else
+        ZSTD_copy8(op, *litPtr);  /* note : op <= oLitEnd <= oend_w == oend - 8 */
+
     op = oLitEnd;
     *litPtr = iLitEnd;   /* update for next sequence */
 
@@ -765,13 +769,13 @@ size_t ZSTD_execSequenceLong(BYTE* op,
 
     if (oMatchEnd > oend-(16-MINMATCH)) {
         if (op < oend_w) {
-            ZSTD_wildcopy(op, match, oend_w - op);
+            ZSTD_wildcopy(op, match, oend_w - op, ZSTD_overlap_src_before_dst);
             match += oend_w - op;
             op = oend_w;
         }
         while (op < oMatchEnd) *op++ = *match++;
     } else {
-        ZSTD_wildcopy(op, match, (ptrdiff_t)sequence.matchLength-8);   /* works even if matchLength < 8 */
+        ZSTD_wildcopy(op, match, (ptrdiff_t)sequence.matchLength-8, ZSTD_overlap_src_before_dst);   /* works even if matchLength < 8 */
     }
     return sequenceLength;
 }
@@ -888,6 +892,7 @@ ZSTD_decodeSequence(seqState_t* seqState, const ZSTD_longOffset_e longOffsets)
 }
 
 FORCE_INLINE_TEMPLATE size_t
+DONT_VECTORIZE
 ZSTD_decompressSequences_body( ZSTD_DCtx* dctx,
                                void* dst, size_t maxDstSize,
                          const void* seqStart, size_t seqSize, int nbSeq,
@@ -1136,6 +1141,7 @@ ZSTD_decompressSequencesLong_default(ZSTD_DCtx* dctx,
 
 #ifndef ZSTD_FORCE_DECOMPRESS_SEQUENCES_LONG
 static TARGET_ATTRIBUTE("bmi2") size_t
+DONT_VECTORIZE
 ZSTD_decompressSequences_bmi2(ZSTD_DCtx* dctx,
                                  void* dst, size_t maxDstSize,
                            const void* seqStart, size_t seqSize, int nbSeq,
@@ -1302,3 +1308,16 @@ ZSTD_decompressBlock_internal(ZSTD_DCtx* dctx,
 #endif
     }
 }
+
+
+size_t ZSTD_decompressBlock(ZSTD_DCtx* dctx,
+                            void* dst, size_t dstCapacity,
+                      const void* src, size_t srcSize)
+{
+    size_t dSize;
+    ZSTD_checkContinuity(dctx, dst);
+    dSize = ZSTD_decompressBlock_internal(dctx, dst, dstCapacity, src, srcSize, /* frame */ 0);
+    dctx->previousDstEnd = (char*)dst + dSize;
+    return dSize;
+}
+/* END CSTYLED */
