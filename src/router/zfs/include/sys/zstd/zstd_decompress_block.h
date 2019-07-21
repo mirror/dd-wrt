@@ -1,3 +1,4 @@
+/* BEGIN CSTYLED */
 /*
  * Copyright (c) 2016-present, Yann Collet, Facebook, Inc.
  * All rights reserved.
@@ -39,7 +40,7 @@
  * @return : decompressed block size,
  *           or an error code (which can be tested using ZSTD_isError())
  */
-static size_t ZSTD_decompressBlock_internal(ZSTD_DCtx* dctx,
+size_t ZSTD_decompressBlock_internal(ZSTD_DCtx* dctx,
                                void* dst, size_t dstCapacity,
                          const void* src, size_t srcSize, const int frame);
 
@@ -50,10 +51,11 @@ static size_t ZSTD_decompressBlock_internal(ZSTD_DCtx* dctx,
  * in which case it cannot fail.
  * Internal use only.
  */
-static void ZSTD_buildFSETable(ZSTD_seqSymbol* dt,
+void ZSTD_buildFSETable(ZSTD_seqSymbol* dt,
              const short* normalizedCounter, unsigned maxSymbolValue,
              const U32* baseValue, const U32* nbAdditionalBits,
                    unsigned tableLog);
 
 
 #endif /* ZSTD_DEC_BLOCK_H */
+/* END CSTYLED */

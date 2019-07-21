@@ -48,10 +48,10 @@
  *           or an error code, which can be tested using HIST_isError().
  *           note : if return == srcSize, there is only one symbol.
  */
-static size_t HIST_count(unsigned* count, unsigned* maxSymbolValuePtr,
+size_t HIST_count(unsigned* count, unsigned* maxSymbolValuePtr,
                   const void* src, size_t srcSize);
 
-static unsigned HIST_isError(size_t code);  /**< tells if a return value is an error code */
+unsigned HIST_isError(size_t code);  /**< tells if a return value is an error code */
 
 
 /* --- advanced histogram functions --- */
@@ -64,7 +64,7 @@ static unsigned HIST_isError(size_t code);  /**< tells if a return value is an e
  * `workSpace` is a writable buffer which must be 4-bytes aligned,
  * `workSpaceSize` must be >= HIST_WKSP_SIZE
  */
-static size_t HIST_count_wksp(unsigned* count, unsigned* maxSymbolValuePtr,
+size_t HIST_count_wksp(unsigned* count, unsigned* maxSymbolValuePtr,
                        const void* src, size_t srcSize,
                        void* workSpace, size_t workSpaceSize);
 
@@ -72,7 +72,7 @@ static size_t HIST_count_wksp(unsigned* count, unsigned* maxSymbolValuePtr,
  *  same as HIST_count(), but blindly trusts that all byte values within src are <= *maxSymbolValuePtr.
  *  This function is unsafe, and will segfault if any value within `src` is `> *maxSymbolValuePtr`
  */
-static size_t HIST_countFast(unsigned* count, unsigned* maxSymbolValuePtr,
+size_t HIST_countFast(unsigned* count, unsigned* maxSymbolValuePtr,
                       const void* src, size_t srcSize);
 
 /** HIST_countFast_wksp() :
@@ -80,7 +80,7 @@ static size_t HIST_countFast(unsigned* count, unsigned* maxSymbolValuePtr,
  * `workSpace` is a writable buffer which must be 4-bytes aligned,
  * `workSpaceSize` must be >= HIST_WKSP_SIZE
  */
-static size_t HIST_countFast_wksp(unsigned* count, unsigned* maxSymbolValuePtr,
+size_t HIST_countFast_wksp(unsigned* count, unsigned* maxSymbolValuePtr,
                            const void* src, size_t srcSize,
                            void* workSpace, size_t workSpaceSize);
 
@@ -92,6 +92,6 @@ static size_t HIST_countFast_wksp(unsigned* count, unsigned* maxSymbolValuePtr,
  * @return : count of the most frequent symbol.
  *  Note this function doesn't produce any error (i.e. it must succeed).
  */
-static unsigned HIST_count_simple(unsigned* count, unsigned* maxSymbolValuePtr,
+unsigned HIST_count_simple(unsigned* count, unsigned* maxSymbolValuePtr,
                            const void* src, size_t srcSize);
 /* END CSTYLED */

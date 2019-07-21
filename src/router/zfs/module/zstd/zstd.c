@@ -40,24 +40,7 @@
 #define	ZSTD_STATIC_LINKING_ONLY
 #include <sys/zstd/zstd.h>
 #include <sys/zstd/zstd_errors.h>
-
-#include "common/zstd_common.c"
-#include "common/fse_decompress.c"
-#include "common/entropy_common.c"
-#include "common/xxhash.c"
-#include "compress/hist.c"
-#include "compress/zstd_compress.c"
-#include "compress/fse_compress.c"
-#include "compress/huf_compress.c"
-#include "compress/zstd_double_fast.c"
-#include "compress/zstd_fast.c"
-#include "compress/zstd_lazy.c"
-#include "compress/zstd_ldm.c"
-#include "compress/zstd_opt.c"
-#include "decompress/zstd_ddict.c"
-#include "decompress/zstd_decompress.c"
-#include "decompress/zstd_decompress_block.c"
-#include "decompress/huf_decompress.c"
+#include <sys/zstd/error_private.h>
 
 
 #define	ZSTD_KMEM_MAGIC		0x20160831
@@ -356,6 +339,9 @@ zstd_decompress(void *s_start, void *d_start, size_t s_len, size_t d_len, int n)
 
 	/* invalid compressed buffer size encoded at start */
 	if (bufsiz + sizeof (bufsiz) > s_len) {
+#ifdef _KERNEL
+		printk(KERN_INFO "zstd: invalid compressed buffer size\n");
+#endif
 		return (1);
 	}
 
@@ -367,6 +353,9 @@ zstd_decompress(void *s_start, void *d_start, size_t s_len, size_t d_len, int n)
 	    &src[sizeof (bufsiz) + sizeof (zstdlevel)], \
 	    d_start, bufsiz, d_len);
 	if (ZSTD_isError(len)) {
+#ifdef _KERNEL
+		printk(KERN_INFO "zstd: decompression failed %zu\n", len);
+#endif
 		return (1);
 	}
 
@@ -484,10 +473,8 @@ zstd_alloc(void *opaque __unused, size_t size)
 			z->isvm = B_TRUE;
 		}
 	}
-			
 
 	/* allocation should always be successful */
-	ASSERT0(z);
 	if (z == NULL) {
 		return (NULL);
 	}
@@ -514,8 +501,8 @@ zstd_free(void *opaque __unused, void *ptr)
 	} else {
 		if (zstd_kmem_cache[type] && z->isvm == B_FALSE) {
 			kmem_cache_free(zstd_kmem_cache[type], z);
-		} else if (zstd_vmem_cache[type].vm \
-		    && zstd_vmem_cache[type].inuse == B_TRUE) {
+		} else if (zstd_vmem_cache[type].vm && \
+		    zstd_vmem_cache[type].inuse == B_TRUE) {
 			zstd_vmem_cache[type].inuse = B_FALSE;
 			/* release barrier */
 			mutex_exit(&zstd_vmem_cache[type].barrier);
@@ -526,9 +513,6 @@ zstd_free(void *opaque __unused, void *ptr)
 #ifndef _KERNEL
 #define	__init
 #define	__exit
-#define STATIC
-#else
-#define STATIC static
 #endif
 
 static void create_vmem_cache(struct zstd_vmem *mem, char *name, size_t size)
@@ -556,6 +540,7 @@ static int zstd_meminit(void)
 	    zstd_cache_config[1].cache_name, zstd_cache_size[1].kmem_size,
 	    0, NULL, NULL, NULL, NULL, NULL, KMC_KVMEM);
 	zstd_cache_size[1].kmem_flags = zstd_cache_config[1].flags;
+
 	/*
 	 * Estimate the size of the ZSTD CCtx workspace required for each record
 	 * size at each compression level.
@@ -586,6 +571,7 @@ static int zstd_meminit(void)
 	    KMC_KVMEM);
 	zstd_cache_size[i].kmem_flags = zstd_cache_config[i].flags;
 
+
 	create_vmem_cache(&zstd_vmem_cache[i], \
 	    zstd_cache_config[i].cache_name, \
 	    zstd_cache_size[i].kmem_size);
@@ -597,14 +583,14 @@ static int zstd_meminit(void)
 	return (0);
 }
 
-STATIC int __init
+extern int __init
 zstd_init(void)
 {
 	zstd_meminit();
 	return (0);
 }
 
-STATIC void __exit
+extern void __exit
 zstd_fini(void)
 {
 	int i, type;
@@ -635,5 +621,5 @@ EXPORT_SYMBOL(zstd_getlevel);
 
 MODULE_DESCRIPTION("ZSTD Compression for ZFS");
 MODULE_LICENSE("Dual BSD/GPL");
-MODULE_VERSION("1.4.0");
+MODULE_VERSION("1.4.1");
 #endif
