@@ -1120,7 +1120,7 @@ static int __init sfe_cm_init(void)
 	sfe_ipv4_init();
 
 // code block disabled by quarkysg, 14/10/17
-#if 0
+#if 1
 	DEBUG_INFO("SFE CM init\n");
 
 	/*
@@ -1194,7 +1194,7 @@ static int __init sfe_cm_init(void)
 	return 0;
 
 // code block disabled by quarkysg, 14/10/17
-#if 0
+#if 1
 #ifdef CONFIG_NF_CONNTRACK_EVENTS
 exit4:
 	for_each_net(net) {
@@ -1237,8 +1237,7 @@ static void __exit sfe_cm_exit(void)
 	fast_classifier_exit();
 
 // code block disabled by quarkysg, 14/10/17
-#if 0
-
+#if 1
 	/*
 	 * Unregister our sync callback.
 	 */
