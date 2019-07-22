@@ -254,7 +254,7 @@ static bool sfe_cm_find_dev_and_mac_addr(sfe_ip_addr_t *addr, struct net_device 
 	}
 
 	rcu_read_lock();
-	neigh = sfe_dst_get_neighbour(dst, addr);
+	neigh = dst_neigh_lookup(dst, addr);
 	if (unlikely(!neigh)) {
 		rcu_read_unlock();
 		dst_release(dst);
@@ -311,8 +311,6 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 	struct net_device *dev;
 	struct net_device *src_dev;
 	struct net_device *dest_dev;
-	struct net_device *src_dev_tmp;
-	struct net_device *dest_dev_tmp;
 	struct net_device *src_br_dev = NULL;
 	struct net_device *dest_br_dev = NULL;
 	struct nf_conntrack_tuple orig_tuple;
@@ -470,7 +468,10 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 		sic.dest_ip_xlate.ip = (__be32)reply_tuple.src.u3.ip;
 
 		dscp = ipv4_get_dsfield(ip_hdr(skb)) >> XT_DSCP_SHIFT;
-		if (dscp) {
+#ifndef SFE_TOS
+		if (dscp)
+#endif
+		 {
 			sic.dest_dscp = dscp;
 			sic.src_dscp = sic.dest_dscp;
 			sic.flags |= SFE_CREATE_FLAG_REMARK_DSCP;
@@ -500,7 +501,10 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 		sic.dest_ip_xlate.ip6[0] = *((struct sfe_ipv6_addr *)&reply_tuple.src.u3.in6);
 
 		dscp = ipv6_get_dsfield(ipv6_hdr(skb)) >> XT_DSCP_SHIFT;
-		if (dscp) {
+#ifndef SFE_TOS
+		if (dscp)
+#endif
+		{
 			sic.dest_dscp = dscp;
 			sic.src_dscp = sic.dest_dscp;
 			sic.flags |= SFE_CREATE_FLAG_REMARK_DSCP;
@@ -608,13 +612,12 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 	 * Get the net device and MAC addresses that correspond to the various source and
 	 * destination host addresses.
 	 */
-	if (!sfe_cm_find_dev_and_mac_addr(&sic.src_ip, &src_dev_tmp, sic.src_mac, is_v4)) {
+	if (!sfe_cm_find_dev_and_mac_addr(&sic.src_ip, &src_dev, sic.src_mac, is_v4)) {
 #ifdef SFE_DEBUG
 		sfe_cm_incr_exceptions(SFE_CM_EXCEPTION_NO_SRC_DEV);
 #endif
 		return NF_ACCEPT;
 	}
-	src_dev = src_dev_tmp;
 
 	if (!sfe_cm_find_dev_and_mac_addr(&sic.src_ip_xlate, &dev, sic.src_mac_xlate, is_v4)) {
 #ifdef SFE_DEBUG
@@ -634,13 +637,12 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 
 	dev_put(dev);
 
-	if (!sfe_cm_find_dev_and_mac_addr(&sic.dest_ip_xlate, &dest_dev_tmp, sic.dest_mac_xlate, is_v4)) {
+	if (!sfe_cm_find_dev_and_mac_addr(&sic.dest_ip_xlate, &dest_dev, sic.dest_mac_xlate, is_v4)) {
 #ifdef SFE_DEBUG
 		sfe_cm_incr_exceptions(SFE_CM_EXCEPTION_NO_DEST_XLATE_DEV);
 #endif
 		goto done1;
 	}
-	dest_dev = dest_dev_tmp;
 
 	/*
 	 * Our devices may actually be part of a bridge interface.  If that's
@@ -699,10 +701,10 @@ done3:
 	}
 
 done2:
-	dev_put(dest_dev_tmp);
+	dev_put(dest_dev);
 
 done1:
-	dev_put(src_dev_tmp);
+	dev_put(src_dev);
 
 	return NF_ACCEPT;
 }
@@ -731,16 +733,10 @@ sfe_cm_ipv6_post_routing_hook(hooknum, ops, skb, in_unused, out, okfn)
  * sfe_cm_conntrack_event()
  *	Callback event invoked when a conntrack connection's state changes.
  */
-#ifdef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
 static int sfe_cm_conntrack_event(struct notifier_block *this,
- 				  unsigned long events, void *ptr)
-#else
-static int sfe_cm_conntrack_event(unsigned int events, struct nf_ct_event *item)
-#endif
+				  unsigned long events, void *ptr)
 {
-#ifdef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
- 	struct nf_ct_event *item = ptr;
-#endif
+	struct nf_ct_event *item = ptr;
 	struct sfe_connection_destroy sid;
 	struct nf_conn *ct = item->ct;
 	struct nf_conntrack_tuple orig_tuple;
@@ -816,15 +812,9 @@ static int sfe_cm_conntrack_event(unsigned int events, struct nf_ct_event *item)
 /*
  * Netfilter conntrack event system to monitor connection tracking changes
  */
-#ifdef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
- static struct notifier_block sfe_cm_conntrack_notifier = {
- 	.notifier_call = sfe_cm_conntrack_event,
- };
-#else
-static struct nf_ct_event_notifier sfe_cm_conntrack_notifier = {
-	.fcn = sfe_cm_conntrack_event,
+static struct notifier_block sfe_cm_conntrack_notifier = {
+	.notifier_call = sfe_cm_conntrack_event,
 };
-#endif
 #endif
 
 /*
@@ -1105,7 +1095,7 @@ static int __init sfe_cm_init(void)
 	sfe_ipv4_init();
 
 // code block disabled by quarkysg, 14/10/17
-#if 1
+#if 0
 	DEBUG_INFO("SFE CM init\n");
 
 	/*
@@ -1177,7 +1167,7 @@ static int __init sfe_cm_init(void)
 	return 0;
 
 // code block disabled by quarkysg, 14/10/17
-#if 1
+#if 0
 #ifdef CONFIG_NF_CONNTRACK_EVENTS
 exit4:
 	nf_unregister_hooks(sfe_cm_ops_post_routing, ARRAY_SIZE(sfe_cm_ops_post_routing));
@@ -1218,7 +1208,7 @@ static void __exit sfe_cm_exit(void)
 	fast_classifier_exit();
 
 // code block disabled by quarkysg, 14/10/17
-#if 1
+#if 0
 	/*
 	 * Unregister our sync callback.
 	 */
