@@ -25,7 +25,10 @@ struct xz_dec_bcj {
 		BCJ_IA64 = 6,       /* Big or little endian */
 		BCJ_ARM = 7,        /* Little endian only */
 		BCJ_ARMTHUMB = 8,   /* Little endian only */
-		BCJ_SPARC = 9       /* Big or little endian */
+		BCJ_SPARC = 9,       /* Big or little endian */
+		BCJ_SWIZZLE16 = 10,  /* Swizzle 16 Bit */
+		BCJ_SWIZZLE32 = 11, /* Swizzle 32 Bit */
+		BCJ_SWIZZLE64 = 12  /* Swizzle 64 Bit */
 	} type;
 
 	/*
@@ -335,6 +338,55 @@ static size_t bcj_sparc(struct xz_dec_bcj *s, uint8_t *buf, size_t size)
 }
 #endif
 
+static size_t bcj_swizzle16(struct xz_dec_bcj *s, uint8_t *buf, size_t size)
+{
+	size_t i;
+	int d = size / 2;
+	uint8_t *dest = kmemdup(buf, size, GFP_KERNEL);
+	int cnt = 0;
+	for (i = 0; i + 2 <= size; i += 2) {
+		buf[cnt++] = dest[i];
+		buf[cnt++] = dest[i+d];
+	}
+	kfree(dest);
+	return i;
+}
+
+static size_t bcj_swizzle32(struct xz_dec_bcj *s, uint8_t *buf, size_t size)
+{
+	size_t i;
+	int d = size / 4;
+	uint8_t *dest = kmemdup(buf, size, GFP_KERNEL);
+	int cnt = 0;
+	for (i = 0; i + 4 <= size; i += 4) {
+		buf[cnt++] = dest[i];
+		buf[cnt++] = dest[i+d];
+		buf[cnt++] = dest[i+d+d];
+		buf[cnt++] = dest[i+d+d+d];
+	}
+	kfree(dest);
+	return i;
+}
+
+static size_t bcj_swizzle64(struct xz_dec_bcj *s, uint8_t *buf, size_t size)
+{
+	size_t i;
+	int d = size / 8;
+	uint8_t *dest = kmemdup(buf, size, GFP_KERNEL);
+	int cnt = 0;
+	for (i = 0; i + 4 <= size; i += 4) {
+		buf[cnt++] = dest[i];
+		buf[cnt++] = dest[i+d];
+		buf[cnt++] = dest[i+d+d];
+		buf[cnt++] = dest[i+d+d+d];
+		buf[cnt++] = dest[i+d+d+d+d];
+		buf[cnt++] = dest[i+d+d+d+d+d];
+		buf[cnt++] = dest[i+d+d+d+d+d+d];
+		buf[cnt++] = dest[i+d+d+d+d+d+d+d];
+	}
+	kfree(dest);
+	return i;
+}
 /*
  * Apply the selected BCJ filter. Update *pos and s->pos to match the amount
  * of data that got filtered.
@@ -382,6 +434,15 @@ static void bcj_apply(struct xz_dec_bcj *s,
 		filtered = bcj_sparc(s, buf, size);
 		break;
 #endif
+	case BCJ_SWIZZLE16:
+		filtered = bcj_swizzle16(s, buf, size);
+		break;
+	case BCJ_SWIZZLE32:
+		filtered = bcj_swizzle32(s, buf, size);
+		break;
+	case BCJ_SWIZZLE64:
+		filtered = bcj_swizzle64(s, buf, size);
+		break;
 	default:
 		/* Never reached but silence compiler warnings. */
 		filtered = 0;
@@ -555,6 +616,9 @@ XZ_EXTERN enum xz_ret xz_dec_bcj_reset(struct xz_dec_bcj *s, uint8_t id)
 #ifdef XZ_DEC_SPARC
 	case BCJ_SPARC:
 #endif
+	case BCJ_SWIZZLE16:
+	case BCJ_SWIZZLE32:
+	case BCJ_SWIZZLE64:
 		break;
 
 	default:
