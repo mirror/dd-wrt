@@ -345,8 +345,9 @@ static size_t bcj_swizzle16(struct xz_dec_bcj *s, uint8_t *buf, size_t size)
 	uint8_t *dest = kmemdup(buf, size, GFP_KERNEL);
 	int cnt = 0;
 	for (i = 0; i + 2 <= size; i += 2) {
-		buf[cnt++] = dest[i];
-		buf[cnt++] = dest[i+d];
+		buf[i] = dest[cnt];
+		buf[i+1] = dest[cnt+d];
+		cnt++;
 	}
 	kfree(dest);
 	return i;
@@ -359,10 +360,11 @@ static size_t bcj_swizzle32(struct xz_dec_bcj *s, uint8_t *buf, size_t size)
 	uint8_t *dest = kmemdup(buf, size, GFP_KERNEL);
 	int cnt = 0;
 	for (i = 0; i + 4 <= size; i += 4) {
-		buf[cnt++] = dest[i];
-		buf[cnt++] = dest[i+d];
-		buf[cnt++] = dest[i+d+d];
-		buf[cnt++] = dest[i+d+d+d];
+		buf[i] = dest[cnt];
+		buf[i+1] = dest[cnt+d];
+		buf[i+2] = dest[cnt+d+d];
+		buf[i+3] = dest[cnt+d+d+d];
+		cnt++;
 	}
 	kfree(dest);
 	return i;
@@ -374,15 +376,15 @@ static size_t bcj_swizzle64(struct xz_dec_bcj *s, uint8_t *buf, size_t size)
 	int d = size / 8;
 	uint8_t *dest = kmemdup(buf, size, GFP_KERNEL);
 	int cnt = 0;
-	for (i = 0; i + 4 <= size; i += 4) {
-		buf[cnt++] = dest[i];
-		buf[cnt++] = dest[i+d];
-		buf[cnt++] = dest[i+d+d];
-		buf[cnt++] = dest[i+d+d+d];
-		buf[cnt++] = dest[i+d+d+d+d];
-		buf[cnt++] = dest[i+d+d+d+d+d];
-		buf[cnt++] = dest[i+d+d+d+d+d+d];
-		buf[cnt++] = dest[i+d+d+d+d+d+d+d];
+	for (i = 0; i + 8 <= size; i += 8) {
+		buf[i] = dest[cnt];
+		buf[i+1] = dest[cnt+d];
+		buf[i+2] = dest[cnt+d+d];
+		buf[i+3] = dest[cnt+d+d+d];
+		buf[i+4] = dest[cnt+d+d+d+d];
+		buf[i+5] = dest[cnt+d+d+d+d+d];
+		buf[i+6] = dest[cnt+d+d+d+d+d+d];
+		buf[i+7] = dest[cnt+d+d+d+d+d+d+d];
 	}
 	kfree(dest);
 	return i;
