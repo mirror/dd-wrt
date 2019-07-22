@@ -39,6 +39,9 @@ static struct bcj bcj[] = {
 	{"arm", LZMA_FILTER_ARM, 0},
 	{"armthumb", LZMA_FILTER_ARMTHUMB, 0},
 	{"sparc", LZMA_FILTER_SPARC, 0},
+	{"swizzle16", LZMA_FILTER_SWIZZLE16, 0},
+	{"swizzle32", LZMA_FILTER_SWIZZLE32, 0},
+	{"swizzle64", LZMA_FILTER_SWIZZLE64, 0},
 	{NULL, LZMA_VLI_UNKNOWN, 0}
 };
 

@@ -829,7 +829,7 @@ inline unsigned int get_inode_no(struct inode_info *inode)
 }
 
 
-inline unsigned int get_parent_no(struct dir_info *dir)
+static unsigned int get_parent_no(struct dir_info *dir)
 {
 	return dir->depth ? get_inode_no(dir->dir_ent->inode) : inode_no;
 }
@@ -2054,7 +2054,7 @@ struct file_info *duplicate(long long file_size, long long bytes,
 }
 
 
-inline int is_fragment(struct inode_info *inode)
+static int is_fragment(struct inode_info *inode)
 {
 	int file_size = inode->buf.st_size;
 
