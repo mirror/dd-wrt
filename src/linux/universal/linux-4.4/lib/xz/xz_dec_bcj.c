@@ -338,57 +338,36 @@ static size_t bcj_sparc(struct xz_dec_bcj *s, uint8_t *buf, size_t size)
 }
 #endif
 
-static size_t bcj_swizzle16(struct xz_dec_bcj *s, uint8_t *buf, size_t size)
+static size_t bcj_swizzleX(struct xz_dec_bcj *s, uint8_t *buf, size_t size, int len)
 {
 	size_t i;
-	int d = size / 2;
+	int a;
+	int d = size / len;
 	uint8_t *dest = kmemdup(buf, size, GFP_KERNEL);
 	int cnt = 0;
-	for (i = 0; i + 2 <= size; i += 2) {
-		buf[i] = dest[cnt];
-		buf[i+1] = dest[cnt+d];
+	for (i = 0; i + len <= size; i += len) {
+		for (a = 0;a < len;a++) {
+		    buf[i + a] = dest[cnt + (d * a)];
+		}	
 		cnt++;
 	}
 	kfree(dest);
 	return i;
+}
+
+static size_t bcj_swizzle16(struct xz_dec_bcj *s, uint8_t *buf, size_t size)
+{
+	return bcj_swizzleX(s, buf, size, 2);
 }
 
 static size_t bcj_swizzle32(struct xz_dec_bcj *s, uint8_t *buf, size_t size)
 {
-	size_t i;
-	int d = size / 4;
-	uint8_t *dest = kmemdup(buf, size, GFP_KERNEL);
-	int cnt = 0;
-	for (i = 0; i + 4 <= size; i += 4) {
-		buf[i] = dest[cnt];
-		buf[i+1] = dest[cnt+d];
-		buf[i+2] = dest[cnt+d+d];
-		buf[i+3] = dest[cnt+d+d+d];
-		cnt++;
-	}
-	kfree(dest);
-	return i;
+	return bcj_swizzleX(s, buf, size, 4);
 }
 
 static size_t bcj_swizzle64(struct xz_dec_bcj *s, uint8_t *buf, size_t size)
 {
-	size_t i;
-	int d = size / 8;
-	uint8_t *dest = kmemdup(buf, size, GFP_KERNEL);
-	int cnt = 0;
-	for (i = 0; i + 8 <= size; i += 8) {
-		buf[i] = dest[cnt];
-		buf[i+1] = dest[cnt+d];
-		buf[i+2] = dest[cnt+d+d];
-		buf[i+3] = dest[cnt+d+d+d];
-		buf[i+4] = dest[cnt+d+d+d+d];
-		buf[i+5] = dest[cnt+d+d+d+d+d];
-		buf[i+6] = dest[cnt+d+d+d+d+d+d];
-		buf[i+7] = dest[cnt+d+d+d+d+d+d+d];
-		cnt++;
-	}
-	kfree(dest);
-	return i;
+	return bcj_swizzleX(s, buf, size, 8);
 }
 /*
  * Apply the selected BCJ filter. Update *pos and s->pos to match the amount
