@@ -342,10 +342,10 @@ static size_t bcj_sparc(struct xz_dec_bcj *s, uint8_t *buf, size_t size)
 static size_t bcj_swizzleX(struct xz_dec_bcj *s, uint8_t *buf, size_t size, int len)
 {
 	size_t i;
-	int a;
+	int a, cnt = 0;
 	int d = size / len;
-	uint8_t *dest = kmemdup(buf, size, GFP_KERNEL);
-	int cnt = 0;
+	uint8_t *dest = kmalloc(size, GFP_KERNEL);
+	memcpy(dest, buf, size);
 	for (i = 0; i + len <= size; i += len) {
 		for (a = 0;a < len;a++) {
 		    buf[i + a] = dest[cnt + (d * a)];
