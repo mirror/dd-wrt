@@ -385,6 +385,7 @@ static size_t bcj_swizzle64(struct xz_dec_bcj *s, uint8_t *buf, size_t size)
 		buf[i+5] = dest[cnt+d+d+d+d+d];
 		buf[i+6] = dest[cnt+d+d+d+d+d+d];
 		buf[i+7] = dest[cnt+d+d+d+d+d+d+d];
+		cnt++;
 	}
 	kfree(dest);
 	return i;
