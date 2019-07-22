@@ -2,7 +2,7 @@
  * sfe_ipv6.c
  *	Shortcut forwarding engine - IPv6 support.
  *
- * Copyright (c) 2015-2016, 2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2016 The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -37,7 +37,7 @@
  */
 #define SFE_IPV6_UNALIGNED_IP_HEADER 1
 #if SFE_IPV6_UNALIGNED_IP_HEADER
-#define SFE_IPV6_UNALIGNED_STRUCT __attribute__((packed))
+#define SFE_IPV6_UNALIGNED_STRUCT __attribute__((aligned(4)))
 #else
 #define SFE_IPV6_UNALIGNED_STRUCT
 #endif
@@ -231,9 +231,6 @@ struct sfe_ipv6_connection_match {
 	 * Control the operations of the match.
 	 */
 	u32 flags;			/* Bit flags */
-#ifdef CONFIG_NF_FLOW_COOKIE
-	u32 flow_cookie;		/* used flow cookie, for debug */
-#endif
 #ifdef CONFIG_XFRM
 	u32 flow_accel;            	/* The flow accelerated or not */
 #endif
@@ -327,16 +324,7 @@ struct sfe_ipv6_connection {
 #define SFE_IPV6_CONNECTION_HASH_SIZE (1 << SFE_IPV6_CONNECTION_HASH_SHIFT)
 #define SFE_IPV6_CONNECTION_HASH_MASK (SFE_IPV6_CONNECTION_HASH_SIZE - 1)
 
-#ifdef CONFIG_NF_FLOW_COOKIE
-#define SFE_FLOW_COOKIE_SIZE 2048
-#define SFE_FLOW_COOKIE_MASK 0x7ff
-
-struct sfe_ipv6_flow_cookie_entry {
-	struct sfe_ipv6_connection_match *match;
-	unsigned long last_clean_time;
-};
-#endif
-
+#ifdef SFE_DEBUG
 enum sfe_ipv6_exception_events {
 	SFE_IPV6_EXCEPTION_EVENT_UDP_HEADER_INCOMPLETE,
 	SFE_IPV6_EXCEPTION_EVENT_UDP_NO_CONNECTION,
@@ -375,10 +363,8 @@ enum sfe_ipv6_exception_events {
 	SFE_IPV6_EXCEPTION_EVENT_IP_OPTIONS_INCOMPLETE,
 	SFE_IPV6_EXCEPTION_EVENT_UNHANDLED_PROTOCOL,
 	SFE_IPV6_EXCEPTION_EVENT_FLOW_COOKIE_ADD_FAIL,
-	SFE_IPV6_EXCEPTION_EVENT_CLONED_SKB_UNSHARE_ERROR,
 	SFE_IPV6_EXCEPTION_EVENT_LAST
 };
-
 static char *sfe_ipv6_exception_events_string[SFE_IPV6_EXCEPTION_EVENT_LAST] = {
 	"UDP_HEADER_INCOMPLETE",
 	"UDP_NO_CONNECTION",
@@ -416,10 +402,9 @@ static char *sfe_ipv6_exception_events_string[SFE_IPV6_EXCEPTION_EVENT_LAST] = {
 	"DATAGRAM_INCOMPLETE",
 	"IP_OPTIONS_INCOMPLETE",
 	"UNHANDLED_PROTOCOL",
-	"FLOW_COOKIE_ADD_FAIL",
-	"CLONED_SKB_UNSHARE_ERROR"
+	"FLOW_COOKIE_ADD_FAIL"
 };
-
+#endif
 /*
  * Per-module structure.
  */
@@ -441,14 +426,6 @@ struct sfe_ipv6 {
 					/* Connection hash table */
 	struct sfe_ipv6_connection_match *conn_match_hash[SFE_IPV6_CONNECTION_HASH_SIZE];
 					/* Connection match hash table */
-#ifdef CONFIG_NF_FLOW_COOKIE
-	struct sfe_ipv6_flow_cookie_entry sfe_flow_cookie_table[SFE_FLOW_COOKIE_SIZE];
-					/* flow cookie table*/
-	sfe_ipv6_flow_cookie_set_func_t flow_cookie_set_func;
-					/* function used to configure flow cookie in hardware*/
-	int flow_cookie_enable;
-					/* Enable/disable flow cookie at runtime */
-#endif
 
 	/*
 	 * Stats recorded in a sync period. These stats will be added to
@@ -469,8 +446,9 @@ struct sfe_ipv6 {
 	u32 connection_flushes;		/* Number of IPv6 connection flushes */
 	u32 packets_forwarded;		/* Number of IPv6 packets forwarded */
 	u32 packets_not_forwarded;	/* Number of IPv6 packets not forwarded */
+#ifdef SFE_DEBUG
 	u32 exception_events[SFE_IPV6_EXCEPTION_EVENT_LAST];
-
+#endif
 	/*
 	 * Summary statistics.
 	 */
@@ -490,13 +468,17 @@ struct sfe_ipv6 {
 	u64 packets_forwarded64;	/* Number of IPv6 packets forwarded */
 	u64 packets_not_forwarded64;
 					/* Number of IPv6 packets not forwarded */
+#ifdef SFE_DEBUG
 	u64 exception_events64[SFE_IPV6_EXCEPTION_EVENT_LAST];
+#endif
 
 	/*
 	 * Control state.
 	 */
 	struct kobject *sys_sfe_ipv6;	/* sysfs linkage */
+#ifdef SFE_DEBUG
 	int debug_dev;			/* Major number of the debug char device */
+#endif
 	u32 debug_read_seq;		/* sequence number for debug dump */
 };
 
@@ -530,6 +512,7 @@ typedef bool (*sfe_ipv6_debug_xml_write_method_t)(struct sfe_ipv6 *si, char *buf
 
 static struct sfe_ipv6 __si6;
 
+#ifdef SFE_DEBUG
 /*
  * sfe_ipv6_get_debug_dev()
  */
@@ -540,7 +523,7 @@ static ssize_t sfe_ipv6_get_debug_dev(struct device *dev, struct device_attribut
  */
 static const struct device_attribute sfe_ipv6_debug_dev_attr =
 	__ATTR(debug_dev, S_IWUSR | S_IRUGO, sfe_ipv6_get_debug_dev, NULL);
-
+#endif
 /*
  * sfe_ipv6_is_ext_hdr()
  *	check if we recognize ipv6 extension header
@@ -800,11 +783,12 @@ static void sfe_ipv6_update_summary_stats(struct sfe_ipv6 *si)
 	si->packets_forwarded = 0;
 	si->packets_not_forwarded64 += si->packets_not_forwarded;
 	si->packets_not_forwarded = 0;
-
+#ifdef SFE_DEBUG
 	for (i = 0; i < SFE_IPV6_EXCEPTION_EVENT_LAST; i++) {
 		si->exception_events64[i] += si->exception_events[i];
 		si->exception_events[i] = 0;
 	}
+#endif
 }
 
 /*
@@ -832,38 +816,6 @@ static inline void sfe_ipv6_insert_connection_match(struct sfe_ipv6 *si,
 
 	cm->next = prev_head;
 	*hash_head = cm;
-
-#ifdef CONFIG_NF_FLOW_COOKIE
-	if (!si->flow_cookie_enable || !(cm->flags & (SFE_IPV6_CONNECTION_MATCH_FLAG_XLATE_SRC | SFE_IPV6_CONNECTION_MATCH_FLAG_XLATE_DEST)))
-		return;
-
-	/*
-	 * Configure hardware to put a flow cookie in packet of this flow,
-	 * then we can accelerate the lookup process when we received this packet.
-	 */
-	for (conn_match_idx = 1; conn_match_idx < SFE_FLOW_COOKIE_SIZE; conn_match_idx++) {
-		struct sfe_ipv6_flow_cookie_entry *entry = &si->sfe_flow_cookie_table[conn_match_idx];
-
-		if ((NULL == entry->match) && time_is_before_jiffies(entry->last_clean_time + HZ)) {
-			sfe_ipv6_flow_cookie_set_func_t func;
-
-			rcu_read_lock();
-			func = rcu_dereference(si->flow_cookie_set_func);
-			if (func) {
-				if (!func(cm->match_protocol, cm->match_src_ip->addr, cm->match_src_port,
-					 cm->match_dest_ip->addr, cm->match_dest_port, conn_match_idx)) {
-					entry->match = cm;
-					cm->flow_cookie = conn_match_idx;
-				} else {
-					si->exception_events[SFE_IPV6_EXCEPTION_EVENT_FLOW_COOKIE_ADD_FAIL]++;
-				}
-			}
-			rcu_read_unlock();
-
-			break;
-		}
-	}
-#endif
 }
 
 /*
@@ -874,36 +826,6 @@ static inline void sfe_ipv6_insert_connection_match(struct sfe_ipv6 *si,
  */
 static inline void sfe_ipv6_remove_connection_match(struct sfe_ipv6 *si, struct sfe_ipv6_connection_match *cm)
 {
-#ifdef CONFIG_NF_FLOW_COOKIE
-	if (si->flow_cookie_enable) {
-		/*
-		 * Tell hardware that we no longer need a flow cookie in packet of this flow
-		 */
-		unsigned int conn_match_idx;
-
-		for (conn_match_idx = 1; conn_match_idx < SFE_FLOW_COOKIE_SIZE; conn_match_idx++) {
-			struct sfe_ipv6_flow_cookie_entry *entry = &si->sfe_flow_cookie_table[conn_match_idx];
-
-			if (cm == entry->match) {
-				sfe_ipv6_flow_cookie_set_func_t func;
-
-				rcu_read_lock();
-				func = rcu_dereference(si->flow_cookie_set_func);
-				if (func) {
-					func(cm->match_protocol, cm->match_src_ip->addr, cm->match_src_port,
-					     cm->match_dest_ip->addr, cm->match_dest_port, 0);
-				}
-				rcu_read_unlock();
-
-				cm->flow_cookie = 0;
-				entry->match = NULL;
-				entry->last_clean_time = jiffies;
-				break;
-			}
-		}
-	}
-#endif
-
 	/*
 	 * Unlink the connection match entry from the hash.
 	 */
@@ -1011,7 +933,7 @@ static inline struct sfe_ipv6_connection *sfe_ipv6_find_connection(struct sfe_ip
  *
  * Will take hash lock upon entry
  */
-void sfe_ipv6_mark_rule(struct sfe_connection_mark *mark)
+static void sfe_ipv6_mark_rule(struct sfe_connection_mark *mark)
 {
 	struct sfe_ipv6 *si = &__si6;
 	struct sfe_ipv6_connection *c;
@@ -1256,7 +1178,9 @@ static int sfe_ipv6_recv_udp(struct sfe_ipv6 *si, struct sk_buff *skb, struct ne
 	 */
 	if (!pskb_may_pull(skb, (sizeof(struct sfe_ipv6_udp_hdr) + ihl))) {
 		spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV6_EXCEPTION_EVENT_UDP_HEADER_INCOMPLETE]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -1281,16 +1205,11 @@ static int sfe_ipv6_recv_udp(struct sfe_ipv6 *si, struct sk_buff *skb, struct ne
 	/*
 	 * Look for a connection match.
 	 */
-#ifdef CONFIG_NF_FLOW_COOKIE
-	cm = si->sfe_flow_cookie_table[skb->flow_cookie & SFE_FLOW_COOKIE_MASK].match;
-	if (unlikely(!cm)) {
-		cm = sfe_ipv6_find_connection_match(si, dev, IPPROTO_UDP, src_ip, src_port, dest_ip, dest_port);
-	}
-#else
 	cm = sfe_ipv6_find_connection_match(si, dev, IPPROTO_UDP, src_ip, src_port, dest_ip, dest_port);
-#endif
 	if (unlikely(!cm)) {
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV6_EXCEPTION_EVENT_UDP_NO_CONNECTION]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -1306,7 +1225,9 @@ static int sfe_ipv6_recv_udp(struct sfe_ipv6 *si, struct sk_buff *skb, struct ne
 	if (unlikely(flush_on_find)) {
 		struct sfe_ipv6_connection *c = cm->connection;
 		sfe_ipv6_remove_connection(si, c);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV6_EXCEPTION_EVENT_UDP_IP_OPTIONS_OR_INITIAL_FRAGMENT]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -1333,7 +1254,9 @@ static int sfe_ipv6_recv_udp(struct sfe_ipv6 *si, struct sk_buff *skb, struct ne
 	if (unlikely(iph->hop_limit < 2)) {
 		struct sfe_ipv6_connection *c = cm->connection;
 		sfe_ipv6_remove_connection(si, c);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV6_EXCEPTION_EVENT_UDP_SMALL_TTL]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -1349,7 +1272,9 @@ static int sfe_ipv6_recv_udp(struct sfe_ipv6 *si, struct sk_buff *skb, struct ne
 	if (unlikely(len > cm->xmit_dev_mtu)) {
 		struct sfe_ipv6_connection *c = cm->connection;
 		sfe_ipv6_remove_connection(si, c);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV6_EXCEPTION_EVENT_UDP_NEEDS_FRAGMENTATION]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -1361,30 +1286,6 @@ static int sfe_ipv6_recv_udp(struct sfe_ipv6 *si, struct sk_buff *skb, struct ne
 	/*
 	 * From this point on we're good to modify the packet.
 	 */
-
-	/*
-	 * Check if skb was cloned. If it was, unshare it. Because
-	 * the data area is going to be written in this path and we don't want to
-	 * change the cloned skb's data section.
-	 */
-	if (unlikely(skb_cloned(skb))) {
-		DEBUG_TRACE("%p: skb is a cloned skb\n", skb);
-		skb = skb_unshare(skb, GFP_ATOMIC);
-                if (!skb) {
-			DEBUG_WARN("Failed to unshare the cloned skb\n");
-			si->exception_events[SFE_IPV6_EXCEPTION_EVENT_CLONED_SKB_UNSHARE_ERROR]++;
-			si->packets_not_forwarded++;
-			spin_unlock_bh(&si->lock);
-
-			return 0;
-		}
-
-		/*
-		 * Update the iph and udph pointers with the unshared skb's data area.
-		 */
-		iph = (struct sfe_ipv6_ip_hdr *)skb->data;
-		udph = (struct sfe_ipv6_udp_hdr *)(skb->data + ihl);
-	}
 
 	/*
 	 * Update DSCP
@@ -1625,7 +1526,9 @@ static int sfe_ipv6_recv_tcp(struct sfe_ipv6 *si, struct sk_buff *skb, struct ne
 	 */
 	if (!pskb_may_pull(skb, (sizeof(struct sfe_ipv6_tcp_hdr) + ihl))) {
 		spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV6_EXCEPTION_EVENT_TCP_HEADER_INCOMPLETE]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -1651,14 +1554,7 @@ static int sfe_ipv6_recv_tcp(struct sfe_ipv6 *si, struct sk_buff *skb, struct ne
 	/*
 	 * Look for a connection match.
 	 */
-#ifdef CONFIG_NF_FLOW_COOKIE
-	cm = si->sfe_flow_cookie_table[skb->flow_cookie & SFE_FLOW_COOKIE_MASK].match;
-	if (unlikely(!cm)) {
-		cm = sfe_ipv6_find_connection_match(si, dev, IPPROTO_TCP, src_ip, src_port, dest_ip, dest_port);
-	}
-#else
 	cm = sfe_ipv6_find_connection_match(si, dev, IPPROTO_TCP, src_ip, src_port, dest_ip, dest_port);
-#endif
 	if (unlikely(!cm)) {
 		/*
 		 * We didn't get a connection but as TCP is connection-oriented that
@@ -1666,14 +1562,18 @@ static int sfe_ipv6_recv_tcp(struct sfe_ipv6 *si, struct sk_buff *skb, struct ne
 		 * For diagnostic purposes we differentiate this here.
 		 */
 		if (likely((flags & (TCP_FLAG_SYN | TCP_FLAG_RST | TCP_FLAG_FIN | TCP_FLAG_ACK)) == TCP_FLAG_ACK)) {
+#ifdef SFE_DEBUG
 			si->exception_events[SFE_IPV6_EXCEPTION_EVENT_TCP_NO_CONNECTION_FAST_FLAGS]++;
+#endif
 			si->packets_not_forwarded++;
 			spin_unlock_bh(&si->lock);
 
 			DEBUG_TRACE("no connection found - fast flags\n");
 			return 0;
 		}
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV6_EXCEPTION_EVENT_TCP_NO_CONNECTION_SLOW_FLAGS]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -1690,7 +1590,9 @@ static int sfe_ipv6_recv_tcp(struct sfe_ipv6 *si, struct sk_buff *skb, struct ne
 	if (unlikely(flush_on_find)) {
 		struct sfe_ipv6_connection *c = cm->connection;
 		sfe_ipv6_remove_connection(si, c);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV6_EXCEPTION_EVENT_TCP_IP_OPTIONS_OR_INITIAL_FRAGMENT]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -1717,7 +1619,9 @@ static int sfe_ipv6_recv_tcp(struct sfe_ipv6 *si, struct sk_buff *skb, struct ne
 	if (unlikely(iph->hop_limit < 2)) {
 		struct sfe_ipv6_connection *c = cm->connection;
 		sfe_ipv6_remove_connection(si, c);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV6_EXCEPTION_EVENT_TCP_SMALL_TTL]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -1733,7 +1637,9 @@ static int sfe_ipv6_recv_tcp(struct sfe_ipv6 *si, struct sk_buff *skb, struct ne
 	if (unlikely((len > cm->xmit_dev_mtu) && !skb_is_gso(skb))) {
 		struct sfe_ipv6_connection *c = cm->connection;
 		sfe_ipv6_remove_connection(si, c);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV6_EXCEPTION_EVENT_TCP_NEEDS_FRAGMENTATION]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -1749,7 +1655,9 @@ static int sfe_ipv6_recv_tcp(struct sfe_ipv6 *si, struct sk_buff *skb, struct ne
 	if (unlikely((flags & (TCP_FLAG_SYN | TCP_FLAG_RST | TCP_FLAG_FIN | TCP_FLAG_ACK)) != TCP_FLAG_ACK)) {
 		struct sfe_ipv6_connection *c = cm->connection;
 		sfe_ipv6_remove_connection(si, c);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV6_EXCEPTION_EVENT_TCP_FLAGS]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -1781,7 +1689,9 @@ static int sfe_ipv6_recv_tcp(struct sfe_ipv6 *si, struct sk_buff *skb, struct ne
 		if (unlikely((s32)(seq - (cm->protocol_state.tcp.max_end + 1)) > 0)) {
 			struct sfe_ipv6_connection *c = cm->connection;
 			sfe_ipv6_remove_connection(si, c);
+#ifdef SFE_DEBUG
 			si->exception_events[SFE_IPV6_EXCEPTION_EVENT_TCP_SEQ_EXCEEDS_RIGHT_EDGE]++;
+#endif
 			si->packets_not_forwarded++;
 			spin_unlock_bh(&si->lock);
 
@@ -1798,7 +1708,9 @@ static int sfe_ipv6_recv_tcp(struct sfe_ipv6 *si, struct sk_buff *skb, struct ne
 		if (unlikely(data_offs < sizeof(struct sfe_ipv6_tcp_hdr))) {
 			struct sfe_ipv6_connection *c = cm->connection;
 			sfe_ipv6_remove_connection(si, c);
+#ifdef SFE_DEBUG
 			si->exception_events[SFE_IPV6_EXCEPTION_EVENT_TCP_SMALL_DATA_OFFS]++;
+#endif
 			si->packets_not_forwarded++;
 			spin_unlock_bh(&si->lock);
 
@@ -1815,7 +1727,9 @@ static int sfe_ipv6_recv_tcp(struct sfe_ipv6 *si, struct sk_buff *skb, struct ne
 		if (unlikely(!sfe_ipv6_process_tcp_option_sack(tcph, data_offs, &sack))) {
 			struct sfe_ipv6_connection *c = cm->connection;
 			sfe_ipv6_remove_connection(si, c);
+#ifdef SFE_DEBUG
 			si->exception_events[SFE_IPV6_EXCEPTION_EVENT_TCP_BAD_SACK]++;
+#endif
 			si->packets_not_forwarded++;
 			spin_unlock_bh(&si->lock);
 
@@ -1831,7 +1745,9 @@ static int sfe_ipv6_recv_tcp(struct sfe_ipv6 *si, struct sk_buff *skb, struct ne
 		if (unlikely(len < data_offs)) {
 			struct sfe_ipv6_connection *c = cm->connection;
 			sfe_ipv6_remove_connection(si, c);
+#ifdef SFE_DEBUG
 			si->exception_events[SFE_IPV6_EXCEPTION_EVENT_TCP_BIG_DATA_OFFS]++;
+#endif
 			si->packets_not_forwarded++;
 			spin_unlock_bh(&si->lock);
 
@@ -1850,7 +1766,9 @@ static int sfe_ipv6_recv_tcp(struct sfe_ipv6 *si, struct sk_buff *skb, struct ne
 						- counter_cm->protocol_state.tcp.max_win - 1)) < 0)) {
 			struct sfe_ipv6_connection *c = cm->connection;
 			sfe_ipv6_remove_connection(si, c);
+#ifdef SFE_DEBUG
 			si->exception_events[SFE_IPV6_EXCEPTION_EVENT_TCP_SEQ_BEFORE_LEFT_EDGE]++;
+#endif
 			si->packets_not_forwarded++;
 			spin_unlock_bh(&si->lock);
 
@@ -1866,7 +1784,9 @@ static int sfe_ipv6_recv_tcp(struct sfe_ipv6 *si, struct sk_buff *skb, struct ne
 		if (unlikely((s32)(sack - (counter_cm->protocol_state.tcp.end + 1)) > 0)) {
 			struct sfe_ipv6_connection *c = cm->connection;
 			sfe_ipv6_remove_connection(si, c);
+#ifdef SFE_DEBUG
 			si->exception_events[SFE_IPV6_EXCEPTION_EVENT_TCP_ACK_EXCEEDS_RIGHT_EDGE]++;
+#endif
 			si->packets_not_forwarded++;
 			spin_unlock_bh(&si->lock);
 
@@ -1886,7 +1806,9 @@ static int sfe_ipv6_recv_tcp(struct sfe_ipv6 *si, struct sk_buff *skb, struct ne
 		if (unlikely((s32)(sack - left_edge) < 0)) {
 			struct sfe_ipv6_connection *c = cm->connection;
 			sfe_ipv6_remove_connection(si, c);
+#ifdef SFE_DEBUG
 			si->exception_events[SFE_IPV6_EXCEPTION_EVENT_TCP_ACK_BEFORE_LEFT_EDGE]++;
+#endif
 			si->packets_not_forwarded++;
 			spin_unlock_bh(&si->lock);
 
@@ -1921,30 +1843,6 @@ static int sfe_ipv6_recv_tcp(struct sfe_ipv6 *si, struct sk_buff *skb, struct ne
 	/*
 	 * From this point on we're good to modify the packet.
 	 */
-
-	/*
-	 * Check if skb was cloned. If it was, unshare it. Because
-	 * the data area is going to be written in this path and we don't want to
-	 * change the cloned skb's data section.
-	 */
-	if (unlikely(skb_cloned(skb))) {
-		DEBUG_TRACE("%p: skb is a cloned skb\n", skb);
-		skb = skb_unshare(skb, GFP_ATOMIC);
-                if (!skb) {
-			DEBUG_WARN("Failed to unshare the cloned skb\n");
-			si->exception_events[SFE_IPV6_EXCEPTION_EVENT_CLONED_SKB_UNSHARE_ERROR]++;
-			si->packets_not_forwarded++;
-			spin_unlock_bh(&si->lock);
-
-			return 0;
-		}
-
-		/*
-		 * Update the iph and tcph pointers with the unshared skb's data area.
-		 */
-		iph = (struct sfe_ipv6_ip_hdr *)skb->data;
-		tcph = (struct sfe_ipv6_tcp_hdr *)(skb->data + ihl);
-	}
 
 	/*
 	 * Update DSCP
@@ -2112,7 +2010,9 @@ static int sfe_ipv6_recv_icmp(struct sfe_ipv6 *si, struct sk_buff *skb, struct n
 	len -= ihl;
 	if (!pskb_may_pull(skb, ihl + sizeof(struct icmp6hdr))) {
 		spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV6_EXCEPTION_EVENT_ICMP_HEADER_INCOMPLETE]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -2127,7 +2027,9 @@ static int sfe_ipv6_recv_icmp(struct sfe_ipv6 *si, struct sk_buff *skb, struct n
 	if ((icmph->icmp6_type != ICMPV6_DEST_UNREACH)
 	    && (icmph->icmp6_type != ICMPV6_TIME_EXCEED)) {
 		spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV6_EXCEPTION_EVENT_ICMP_UNHANDLED_TYPE]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -2144,7 +2046,9 @@ static int sfe_ipv6_recv_icmp(struct sfe_ipv6 *si, struct sk_buff *skb, struct n
 	ihl += sizeof(struct icmp6hdr);
 	if (!pskb_may_pull(skb, ihl + sizeof(struct sfe_ipv6_ip_hdr) + sizeof(struct sfe_ipv6_ext_hdr))) {
 		spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV6_EXCEPTION_EVENT_ICMP_IPV6_HEADER_INCOMPLETE]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -2158,7 +2062,9 @@ static int sfe_ipv6_recv_icmp(struct sfe_ipv6 *si, struct sk_buff *skb, struct n
 	icmp_iph = (struct sfe_ipv6_ip_hdr *)(icmph + 1);
 	if (unlikely(icmp_iph->version != 6)) {
 		spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV6_EXCEPTION_EVENT_ICMP_IPV6_NON_V6]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -2180,7 +2086,9 @@ static int sfe_ipv6_recv_icmp(struct sfe_ipv6 *si, struct sk_buff *skb, struct n
 
 			if (frag_off & SFE_IPV6_FRAG_OFFSET) {
 				spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 				si->exception_events[SFE_IPV6_EXCEPTION_EVENT_NON_INITIAL_FRAGMENT]++;
+#endif
 				si->packets_not_forwarded++;
 				spin_unlock_bh(&si->lock);
 
@@ -2200,7 +2108,9 @@ static int sfe_ipv6_recv_icmp(struct sfe_ipv6 *si, struct sk_buff *skb, struct n
 		 */
 		if (!pskb_may_pull(skb, ihl + sizeof(struct sfe_ipv6_ext_hdr))) {
 			spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 			si->exception_events[SFE_IPV6_EXCEPTION_EVENT_HEADER_INCOMPLETE]++;
+#endif
 			si->packets_not_forwarded++;
 			spin_unlock_bh(&si->lock);
 
@@ -2229,7 +2139,9 @@ static int sfe_ipv6_recv_icmp(struct sfe_ipv6 *si, struct sk_buff *skb, struct n
 
 	default:
 		spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV6_EXCEPTION_EVENT_ICMP_IPV6_UNHANDLED_PROTOCOL]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -2251,7 +2163,9 @@ static int sfe_ipv6_recv_icmp(struct sfe_ipv6 *si, struct sk_buff *skb, struct n
 	 */
 	cm = sfe_ipv6_find_connection_match(si, dev, icmp_iph->nexthdr, dest_ip, dest_port, src_ip, src_port);
 	if (unlikely(!cm)) {
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV6_EXCEPTION_EVENT_ICMP_NO_CONNECTION]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -2265,7 +2179,9 @@ static int sfe_ipv6_recv_icmp(struct sfe_ipv6 *si, struct sk_buff *skb, struct n
 	 */
 	c = cm->connection;
 	sfe_ipv6_remove_connection(si, c);
+#ifdef SFE_DEBUG
 	si->exception_events[SFE_IPV6_EXCEPTION_EVENT_ICMP_FLUSHED_CONNECTION]++;
+#endif
 	si->packets_not_forwarded++;
 	spin_unlock_bh(&si->lock);
 
@@ -2279,7 +2195,7 @@ static int sfe_ipv6_recv_icmp(struct sfe_ipv6 *si, struct sk_buff *skb, struct n
  *
  * Returns 1 if the packet is forwarded or 0 if it isn't.
  */
-int sfe_ipv6_recv(struct net_device *dev, struct sk_buff *skb)
+static int sfe_ipv6_recv(struct net_device *dev, struct sk_buff *skb)
 {
 	struct sfe_ipv6 *si = &__si6;
 	unsigned int len;
@@ -2295,7 +2211,9 @@ int sfe_ipv6_recv(struct net_device *dev, struct sk_buff *skb)
 	len = skb->len;
 	if (!pskb_may_pull(skb, ihl + sizeof(struct sfe_ipv6_ext_hdr))) {
 		spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV6_EXCEPTION_EVENT_HEADER_INCOMPLETE]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -2309,7 +2227,9 @@ int sfe_ipv6_recv(struct net_device *dev, struct sk_buff *skb)
 	iph = (struct sfe_ipv6_ip_hdr *)skb->data;
 	if (unlikely(iph->version != 6)) {
 		spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV6_EXCEPTION_EVENT_NON_V6]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -2323,7 +2243,9 @@ int sfe_ipv6_recv(struct net_device *dev, struct sk_buff *skb)
 	payload_len = ntohs(iph->payload_len);
 	if (unlikely(payload_len > (len - ihl))) {
 		spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV6_EXCEPTION_EVENT_DATAGRAM_INCOMPLETE]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -2343,7 +2265,9 @@ int sfe_ipv6_recv(struct net_device *dev, struct sk_buff *skb)
 
 			if (frag_off & SFE_IPV6_FRAG_OFFSET) {
 				spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 				si->exception_events[SFE_IPV6_EXCEPTION_EVENT_NON_INITIAL_FRAGMENT]++;
+#endif
 				si->packets_not_forwarded++;
 				spin_unlock_bh(&si->lock);
 
@@ -2358,7 +2282,9 @@ int sfe_ipv6_recv(struct net_device *dev, struct sk_buff *skb)
 		ihl += ext_hdr_len;
 		if (!pskb_may_pull(skb, ihl + sizeof(struct sfe_ipv6_ext_hdr))) {
 			spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 			si->exception_events[SFE_IPV6_EXCEPTION_EVENT_HEADER_INCOMPLETE]++;
+#endif
 			si->packets_not_forwarded++;
 			spin_unlock_bh(&si->lock);
 
@@ -2383,7 +2309,9 @@ int sfe_ipv6_recv(struct net_device *dev, struct sk_buff *skb)
 	}
 
 	spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 	si->exception_events[SFE_IPV6_EXCEPTION_EVENT_UNHANDLED_PROTOCOL]++;
+#endif
 	si->packets_not_forwarded++;
 	spin_unlock_bh(&si->lock);
 
@@ -2459,7 +2387,7 @@ sfe_ipv6_update_protocol_state(struct sfe_ipv6_connection *c,
  * sfe_ipv6_update_rule()
  *	update forwarding rule after rule is created.
  */
-void sfe_ipv6_update_rule(struct sfe_connection_create *sic)
+static void sfe_ipv6_update_rule(struct sfe_connection_create *sic)
 {
 	struct sfe_ipv6_connection *c;
 	struct sfe_ipv6 *si = &__si6;
@@ -2483,7 +2411,7 @@ void sfe_ipv6_update_rule(struct sfe_connection_create *sic)
  * sfe_ipv6_create_rule()
  *	Create a forwarding rule.
  */
-int sfe_ipv6_create_rule(struct sfe_connection_create *sic)
+static int sfe_ipv6_create_rule(struct sfe_connection_create *sic)
 {
 	struct sfe_ipv6 *si = &__si6;
 	struct sfe_ipv6_connection *c;
@@ -2591,9 +2519,6 @@ int sfe_ipv6_create_rule(struct sfe_connection_create *sic)
 		original_cm->dscp = sic->src_dscp << SFE_IPV6_DSCP_SHIFT;
 		original_cm->flags |= SFE_IPV6_CONNECTION_MATCH_FLAG_DSCP_REMARK;
 	}
-#ifdef CONFIG_NF_FLOW_COOKIE
-	original_cm->flow_cookie = 0;
-#endif
 #ifdef CONFIG_XFRM
 	original_cm->flow_accel = sic->original_accel;
 #endif
@@ -2650,9 +2575,6 @@ int sfe_ipv6_create_rule(struct sfe_connection_create *sic)
 		reply_cm->dscp = sic->dest_dscp << SFE_IPV6_DSCP_SHIFT;
 		reply_cm->flags |= SFE_IPV6_CONNECTION_MATCH_FLAG_DSCP_REMARK;
 	}
-#ifdef CONFIG_NF_FLOW_COOKIE
-	reply_cm->flow_cookie = 0;
-#endif
 #ifdef CONFIG_XFRM
 	reply_cm->flow_accel = sic->reply_accel;
 #endif
@@ -2756,7 +2678,7 @@ int sfe_ipv6_create_rule(struct sfe_connection_create *sic)
  * sfe_ipv6_destroy_rule()
  *	Destroy a forwarding rule.
  */
-void sfe_ipv6_destroy_rule(struct sfe_connection_destroy *sid)
+static void sfe_ipv6_destroy_rule(struct sfe_connection_destroy *sid)
 {
 	struct sfe_ipv6 *si = &__si6;
 	struct sfe_ipv6_connection *c;
@@ -2797,7 +2719,7 @@ void sfe_ipv6_destroy_rule(struct sfe_connection_destroy *sid)
  * sfe_ipv6_register_sync_rule_callback()
  *	Register a callback for rule synchronization.
  */
-void sfe_ipv6_register_sync_rule_callback(sfe_sync_rule_callback_t sync_rule_callback)
+static void sfe_ipv6_register_sync_rule_callback(sfe_sync_rule_callback_t sync_rule_callback)
 {
 	struct sfe_ipv6 *si = &__si6;
 
@@ -2806,6 +2728,7 @@ void sfe_ipv6_register_sync_rule_callback(sfe_sync_rule_callback_t sync_rule_cal
 	spin_unlock_bh(&si->lock);
 }
 
+#ifdef SFE_DEBUG
 /*
  * sfe_ipv6_get_debug_dev()
  */
@@ -2824,14 +2747,14 @@ static ssize_t sfe_ipv6_get_debug_dev(struct device *dev,
 	count = snprintf(buf, (ssize_t)PAGE_SIZE, "%d\n", num);
 	return count;
 }
-
+#endif
 /*
  * sfe_ipv6_destroy_all_rules_for_dev()
  *	Destroy all connections that match a particular device.
  *
  * If we pass dev as NULL then this destroys all connections.
  */
-void sfe_ipv6_destroy_all_rules_for_dev(struct net_device *dev)
+static void sfe_ipv6_destroy_all_rules_for_dev(struct net_device *dev)
 {
 	struct sfe_ipv6 *si = &__si6;
 	struct sfe_ipv6_connection *c;
@@ -2961,6 +2884,7 @@ done:
 	mod_timer(&si->timer, jiffies + ((HZ + 99) / 100));
 }
 
+#ifdef SFE_DEBUG
 /*
  * sfe_ipv6_debug_dev_read_start()
  *	Generate part of the XML output.
@@ -3033,9 +2957,6 @@ static bool sfe_ipv6_debug_dev_read_connections_connection(struct sfe_ipv6 *si, 
 	u64 dest_rx_bytes;
 	u64 last_sync_jiffies;
 	u32 mark, src_priority, dest_priority, src_dscp, dest_dscp;
-#ifdef CONFIG_NF_FLOW_COOKIE
-	int src_flow_cookie, dst_flow_cookie;
-#endif
 
 	spin_lock_bh(&si->lock);
 
@@ -3083,10 +3004,7 @@ static bool sfe_ipv6_debug_dev_read_connections_connection(struct sfe_ipv6 *si, 
 	dest_rx_bytes = reply_cm->rx_byte_count64;
 	last_sync_jiffies = get_jiffies_64() - c->last_sync_jiffies;
 	mark = c->mark;
-#ifdef CONFIG_NF_FLOW_COOKIE
-	src_flow_cookie = original_cm->flow_cookie;
-	dst_flow_cookie = reply_cm->flow_cookie;
-#endif
+
 	spin_unlock_bh(&si->lock);
 
 	bytes_read = snprintf(msg, CHAR_DEV_MSG_SIZE, "\t\t<connection "
@@ -3101,9 +3019,6 @@ static bool sfe_ipv6_debug_dev_read_connections_connection(struct sfe_ipv6 *si, 
 				"dest_port=\"%u\" dest_port_xlate=\"%u\" "
 				"dest_priority=\"%u\" dest_dscp=\"%u\" "
 				"dest_rx_pkts=\"%llu\" dest_rx_bytes=\"%llu\" "
-#ifdef CONFIG_NF_FLOW_COOKIE
-				"src_flow_cookie=\"%d\" dst_flow_cookie=\"%d\" "
-#endif
 				"last_sync=\"%llu\" "
 				"mark=\"%08x\" />\n",
 				protocol,
@@ -3117,9 +3032,6 @@ static bool sfe_ipv6_debug_dev_read_connections_connection(struct sfe_ipv6 *si, 
 				ntohs(dest_port), ntohs(dest_port_xlate),
 				dest_priority, dest_dscp,
 				dest_rx_packets, dest_rx_bytes,
-#ifdef CONFIG_NF_FLOW_COOKIE
-				src_flow_cookie, dst_flow_cookie,
-#endif
 				last_sync_jiffies, mark);
 
 	if (copy_to_user(buffer + *total_read, msg, CHAR_DEV_MSG_SIZE)) {
@@ -3427,75 +3339,7 @@ static struct file_operations sfe_ipv6_debug_dev_fops = {
 	.open = sfe_ipv6_debug_dev_open,
 	.release = sfe_ipv6_debug_dev_release
 };
-
-#ifdef CONFIG_NF_FLOW_COOKIE
-/*
- * sfe_ipv6_register_flow_cookie_cb
- *	register a function in SFE to let SFE use this function to configure flow cookie for a flow
- *
- * Hardware driver which support flow cookie should register a callback function in SFE. Then SFE
- * can use this function to configure flow cookie for a flow.
- * return: 0, success; !=0, fail
- */
-int sfe_ipv6_register_flow_cookie_cb(sfe_ipv6_flow_cookie_set_func_t cb)
-{
-	struct sfe_ipv6 *si = &__si6;
-
-	BUG_ON(!cb);
-
-	if (si->flow_cookie_set_func) {
-		return -1;
-	}
-
-	rcu_assign_pointer(si->flow_cookie_set_func, cb);
-	return 0;
-}
-
-/*
- * sfe_ipv6_unregister_flow_cookie_cb
- *	unregister function which is used to configure flow cookie for a flow
- *
- * return: 0, success; !=0, fail
- */
-int sfe_ipv6_unregister_flow_cookie_cb(sfe_ipv6_flow_cookie_set_func_t cb)
-{
-	struct sfe_ipv6 *si = &__si6;
-
-	RCU_INIT_POINTER(si->flow_cookie_set_func, NULL);
-	return 0;
-}
-
-/*
- * sfe_ipv6_get_flow_cookie()
- */
-static ssize_t sfe_ipv6_get_flow_cookie(struct device *dev,
-					struct device_attribute *attr,
-					char *buf)
-{
-	struct sfe_ipv6 *si = &__si6;
-	return snprintf(buf, (ssize_t)PAGE_SIZE, "%d\n", si->flow_cookie_enable);
-}
-
-/*
- * sfe_ipv6_set_flow_cookie()
- */
-static ssize_t sfe_ipv6_set_flow_cookie(struct device *dev,
-					struct device_attribute *attr,
-					const char *buf, size_t size)
-{
-	struct sfe_ipv6 *si = &__si6;
-	strict_strtol(buf, 0, (long int *)&si->flow_cookie_enable);
-
-	return size;
-}
-
-/*
- * sysfs attributes.
- */
-static const struct device_attribute sfe_ipv6_flow_cookie_attr =
-	__ATTR(flow_cookie_enable, S_IWUSR | S_IRUGO, sfe_ipv6_get_flow_cookie, sfe_ipv6_set_flow_cookie);
-#endif /*CONFIG_NF_FLOW_COOKIE*/
-
+#endif
 /*
  * sfe_ipv6_init()
  */
@@ -3515,6 +3359,7 @@ static int sfe_ipv6_init(void)
 		goto exit1;
 	}
 
+#ifdef SFE_DEBUG
 	/*
 	 * Create files, one for each parameter supported by this module.
 	 */
@@ -3524,24 +3369,16 @@ static int sfe_ipv6_init(void)
 		goto exit2;
 	}
 
-#ifdef CONFIG_NF_FLOW_COOKIE
-	result = sysfs_create_file(si->sys_sfe_ipv6, &sfe_ipv6_flow_cookie_attr.attr);
-	if (result) {
-		DEBUG_ERROR("failed to register flow cookie enable file: %d\n", result);
-		goto exit3;
-	}
-#endif /* CONFIG_NF_FLOW_COOKIE */
-
 	/*
 	 * Register our debug char device.
 	 */
 	result = register_chrdev(0, "sfe_ipv6", &sfe_ipv6_debug_dev_fops);
 	if (result < 0) {
 		DEBUG_ERROR("Failed to register chrdev: %d\n", result);
-		goto exit4;
+		goto exit3;
 	}
-
 	si->debug_dev = result;
+#endif
 
 	/*
 	 * Create a timer to handle periodic statistics.
@@ -3553,14 +3390,10 @@ static int sfe_ipv6_init(void)
 
 	return 0;
 
-exit4:
-#ifdef CONFIG_NF_FLOW_COOKIE
-	sysfs_remove_file(si->sys_sfe_ipv6, &sfe_ipv6_flow_cookie_attr.attr);
-
 exit3:
-#endif /* CONFIG_NF_FLOW_COOKIE */
+#ifdef SFE_DEBUG
 	sysfs_remove_file(si->sys_sfe_ipv6, &sfe_ipv6_debug_dev_attr.attr);
-
+#endif
 exit2:
 	kobject_put(si->sys_sfe_ipv6);
 
@@ -3584,12 +3417,10 @@ static void sfe_ipv6_exit(void)
 
 	del_timer_sync(&si->timer);
 
+#ifdef SFE_DEBUG
 	unregister_chrdev(si->debug_dev, "sfe_ipv6");
 
-#ifdef CONFIG_NF_FLOW_COOKIE
-	sysfs_remove_file(si->sys_sfe_ipv6, &sfe_ipv6_flow_cookie_attr.attr);
-#endif /* CONFIG_NF_FLOW_COOKIE */
 	sysfs_remove_file(si->sys_sfe_ipv6, &sfe_ipv6_debug_dev_attr.attr);
-
+#endif
 	kobject_put(si->sys_sfe_ipv6);
 }
