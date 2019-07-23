@@ -36,7 +36,7 @@ int rtnl_open_byproto(struct rtnl_handle *rth, unsigned subscriptions, int proto
 	int sndbuf = 32768;
 	int rcvbuf = 32768;
 
-	memset(rth, 0, sizeof(rth));
+	memset(rth, 0, sizeof(*rth));
 
 	rth->fd = socket(AF_NETLINK, SOCK_RAW, protocol);
 	if (rth->fd < 0) {
@@ -119,11 +119,17 @@ int rtnl_dump_request(struct rtnl_handle *rth, int type, void *req, int len)
 {
 	struct nlmsghdr nlh;
 	struct sockaddr_nl nladdr;
-	struct iovec iov[2] = { { &nlh, sizeof(nlh) }, { req, len } };
+	struct iovec iov[2] = { 
+	    { .iov_base = &nlh,
+	      .iov_len = sizeof(nlh)
+	    }, 
+	    { .iov_base = req, 
+	      .iov_len = len
+	    } };
 	struct msghdr msg = {
 			.msg_name = (void*)&nladdr,
 			.msg_namelen = sizeof(nladdr),
-			.msg_iov = &iov,
+			.msg_iov = &iov[0],
 			.msg_iovlen = 2,
 			.msg_control = NULL,
 			.msg_controllen = 0,
