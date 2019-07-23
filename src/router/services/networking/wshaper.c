@@ -1020,11 +1020,6 @@ void start_wshaper(void)
 
 	stop_wshaper();
 
-	if (!strcmp(wshaper_dev, "WAN")
-	    && (nvram_match("wan_proto", "disabled")
-		|| client_bridged_enabled()))
-		return;
-
 	if (!nvram_matchi("wshaper_enable", 1)) {
 		if (nvram_matchi("sfe", 1))
 			insmod("shortcut-fe");
@@ -1033,6 +1028,12 @@ void start_wshaper(void)
 		return;
 	} else
 		rmmod("shortcut-fe");
+
+	if (!strcmp(wshaper_dev, "WAN")
+	    && (nvram_match("wan_proto", "disabled")
+		|| client_bridged_enabled()))
+		return;
+
 	writeint("/sys/fast_classifier/skip_to_bridge_ingress", 1);
 	int mtu_vali = get_mtu_val();
 	sprintf(mtu_val, "%d", mtu_vali);
