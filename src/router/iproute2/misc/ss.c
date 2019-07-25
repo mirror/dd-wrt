@@ -1482,38 +1482,44 @@ int tcp_show_netlink(struct filter *f, FILE *dump_fp)
 		req.r.tcpdiag_ext |= (1<<(TCPDIAG_VEGASINFO-1));
 	}
 
-	iov[0] = (struct iovec){ &req, sizeof(req) };
+	iov[0] = (struct iovec){ .iov_base = &req, .iov_len = sizeof(req) };
 	if (f->f) {
 		bclen = ssfilter_bytecompile(f->f, &bc);
 		rta.rta_type = TCPDIAG_REQ_BYTECODE;
 		rta.rta_len = RTA_LENGTH(bclen);
-		iov[1] = (struct iovec){ &rta, sizeof(rta) };
-		iov[2] = (struct iovec){ bc, bclen };
+		iov[1] = (struct iovec){ .iov_base = &rta, .iov_len = sizeof(rta) };
+		iov[2] = (struct iovec){ .iov_base = bc, .iov_len = bclen };
 		req.nlh.nlmsg_len += RTA_LENGTH(bclen);
 	}
 
 	msg = (struct msghdr) {
-		(void*)&nladdr, sizeof(nladdr),
-		iov,	f->f ? 3 : 1,
-		NULL,	0,
-		0
+		.msg_name = (void*)&nladdr,
+		.msg_len = sizeof(nladdr),
+		.msg_iov = iov,	
+		.msg_iovlen = f->f ? 3 : 1,
+		.msg_control = NULL,	
+		.msg_controllen = 0,
+		.msg_flags = 0
 	};
 
 	if (sendmsg(fd, &msg, 0) < 0)
 		return -1;
 
 
-	iov[0] = (struct iovec){ buf, sizeof(buf) };
+	iov[0] = (struct iovec){ .iov_base = buf, .iov_len = sizeof(buf) };
 
 	while (1) {
 		int status;
 		struct nlmsghdr *h;
 
 		msg = (struct msghdr) {
-			(void*)&nladdr, sizeof(nladdr),
-			iov,	1,
-			NULL,	0,
-			0
+			.msg_name = (void*)&nladdr, 
+			.msg_len = sizeof(nladdr),
+			.msg_iov = iov,	
+			.msg_iovlen = 1,
+			.msg_control = NULL,	
+			.msg_controllen = 0,
+			.msg_flags = 0
 		};
 
 		status = recvmsg(fd, &msg, 0);
