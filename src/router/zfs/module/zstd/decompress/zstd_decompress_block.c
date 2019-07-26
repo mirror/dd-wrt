@@ -71,7 +71,7 @@ size_t ZSTD_getcBlockSize(const void* src, size_t srcSize,
 
 
 /* Hidden declaration for fullbench */
-size_t ZSTD_decodeLiteralsBlock(ZSTD_DCtx* dctx,
+static size_t ZSTD_decodeLiteralsBlock(ZSTD_DCtx* dctx,
                           const void* src, size_t srcSize);
 /*! ZSTD_decodeLiteralsBlock() :
  * @return : nb of bytes read from src (< srcSize )
@@ -578,7 +578,7 @@ typedef struct {
  * note : this case is supposed to be never generated "naturally" by reference encoder,
  *        since in most cases it needs at least 8 bytes to look for a match.
  *        but it's allowed by the specification. */
-FORCE_NOINLINE
+static FORCE_NOINLINE
 size_t ZSTD_execSequenceLast7(BYTE* op,
                               BYTE* const oend, seq_t sequence,
                               const BYTE** litPtr, const BYTE* const litLimit,
