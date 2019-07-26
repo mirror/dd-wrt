@@ -3,7 +3,7 @@
  *	Shortcut forwarding engine connection manager.
  *	fast-classifier
  *
- * Copyright (c) 2013-2018 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2017 The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -229,7 +229,7 @@ static int fast_classifier_recv(struct sk_buff *skb)
 	    (dev->priv_flags & IFF_BRIDGE_PORT)) {
 		master_dev = sfe_dev_get_master(dev);
 		if (!master_dev) {
-			DEBUG_WARN("master dev is NULL %s\n", dev->name);
+			DEBUG_WARN("master dev is NULL %s\n");
 			goto rx_exit;
 		}
 		dev = master_dev;
@@ -489,9 +489,9 @@ static int fast_classifier_update_protocol(struct sfe_connection_create *p_sic, 
 		 * state can not be SYN_SENT, SYN_RECV because connection is assured
 		 * Not managed states: FIN_WAIT, CLOSE_WAIT, LAST_ACK, TIME_WAIT, CLOSE.
 		 */
-		spin_lock_bh(&ct->lock);
+		spin_lock(&ct->lock);
 		if (ct->proto.tcp.state != TCP_CONNTRACK_ESTABLISHED) {
-			spin_unlock_bh(&ct->lock);
+			spin_unlock(&ct->lock);
 #ifdef SFE_DEBUG
 			fast_classifier_incr_exceptions(FAST_CL_EXCEPTION_TCP_NOT_ESTABLISHED);
 #endif
@@ -500,7 +500,7 @@ static int fast_classifier_update_protocol(struct sfe_connection_create *p_sic, 
 				    &p_sic->dest_ip, ntohs(p_sic->dest_port));
 			return 0;
 		}
-		spin_unlock_bh(&ct->lock);
+		spin_unlock(&ct->lock);
 		break;
 
 	case IPPROTO_UDP:
@@ -844,6 +844,7 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 	struct nf_conntrack_tuple orig_tuple;
 	struct nf_conntrack_tuple reply_tuple;
 	struct sfe_connection *conn;
+	struct sk_buff *tmp_skb = NULL;
 
 	/*
 	 * Don't process broadcast or multicast packets.
@@ -962,12 +963,7 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 		sic.dest_ip_xlate.ip = (__be32)reply_tuple.src.u3.ip;
 
 		dscp = ipv4_get_dsfield(ip_hdr(skb)) >> XT_DSCP_SHIFT;
-#ifndef SFE_TOS
-		if (dscp)
-#else
-		if (dscp || sic.protocol != IPPROTO_UDP)
-#endif
-		{
+		if (dscp) { //todo. dscp is valid with 0 as well
 			sic.dest_dscp = dscp;
 			sic.src_dscp = sic.dest_dscp;
 			sic.flags |= SFE_CREATE_FLAG_REMARK_DSCP;
@@ -997,12 +993,7 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 		sic.dest_ip_xlate.ip6[0] = *((struct sfe_ipv6_addr *)&reply_tuple.src.u3.in6);
 
 		dscp = ipv6_get_dsfield(ipv6_hdr(skb)) >> XT_DSCP_SHIFT;
-#ifndef SFE_TOS
-		if (dscp)
-#else
-		if (dscp || sic.protocol != IPPROTO_UDP)
-#endif
-		{
+		if (dscp) {
 			sic.dest_dscp = dscp;
 			sic.src_dscp = sic.dest_dscp;
 			sic.flags |= SFE_CREATE_FLAG_REMARK_DSCP;
@@ -1035,6 +1026,22 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 		sic.dest_port = orig_tuple.dst.u.udp.port;
 		sic.src_port_xlate = reply_tuple.dst.u.udp.port;
 		sic.dest_port_xlate = reply_tuple.src.u.udp.port;
+
+
+		/*
+		 * Somehow, SFE is not playing nice with IPSec traffic.
+		 * Do not accelerate for now.
+		 */
+		if (ntohs(sic.dest_port) == 4500 || ntohs(sic.dest_port) == 500) {
+			if (likely(is_v4))
+				DEBUG_TRACE("quarkysg:: IPsec bypass: %pI4:%d(%pI4:%d) to %pI4:%d(%pI4:%d)\n",
+					&sic.src_ip.ip, ntohs(sic.src_port), &sic.src_ip_xlate.ip, ntohs(sic.src_port_xlate),
+					&sic.dest_ip.ip, ntohs(sic.dest_port), &sic.dest_ip_xlate.ip, ntohs(sic.dest_port_xlate));
+			else
+				DEBUG_TRACE("quarkysg:: IPsec bypass: %pI6:%d to %pI6:%d\n",
+					&sic.src_ip.ip6, ntohs(sic.src_port), &sic.dest_ip.ip6, ntohs(sic.dest_port));
+			return NF_ACCEPT;
+		}
 		break;
 
 	default:
@@ -1140,7 +1147,6 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 	 * Get the net device and MAC addresses that correspond to the various source and
 	 * destination host addresses.
 	 */
-	//if (!fast_classifier_find_dev_and_mac_addr(&sic.src_ip, &src_dev, sic.src_mac, is_v4)) {
 	if (!fast_classifier_find_dev_and_mac_addr(NULL, &sic.src_ip, &src_dev_tmp, sic.src_mac, is_v4)) {
 #ifdef SFE_DEBUG
 		fast_classifier_incr_exceptions(FAST_CL_EXCEPTION_NO_SRC_DEV);
@@ -1149,6 +1155,7 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 	}
 	src_dev = src_dev_tmp;
 
+	//if (!fast_classifier_find_dev_and_mac_addr(&sic.src_ip_xlate, &dev, sic.src_mac_xlate, is_v4)) {
 	if (!fast_classifier_find_dev_and_mac_addr(NULL, &sic.src_ip_xlate, &dev, sic.src_mac_xlate, is_v4)) {
 #ifdef SFE_DEBUG
 		fast_classifier_incr_exceptions(FAST_CL_EXCEPTION_NO_SRC_XLATE_DEV);
@@ -1159,7 +1166,10 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 	dev_put(dev);
 
 	//if (!fast_classifier_find_dev_and_mac_addr(&sic.dest_ip, &dev, sic.dest_mac, is_v4)) {
-	if (!fast_classifier_find_dev_and_mac_addr(NULL, &sic.dest_ip, &dev, sic.dest_mac, is_v4)) {
+	if (unlikely(!is_v4))
+		tmp_skb = skb;
+
+	if (!fast_classifier_find_dev_and_mac_addr(tmp_skb, &sic.dest_ip, &dev, sic.dest_mac, is_v4)) {
 #ifdef SFE_DEBUG
 		fast_classifier_incr_exceptions(FAST_CL_EXCEPTION_NO_DEST_DEV);
 #endif
@@ -1168,8 +1178,6 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 
 	dev_put(dev);
 
-	//if (!fast_classifier_find_dev_and_mac_addr(&sic.dest_ip_xlate, &dest_dev, sic.dest_mac_xlate, is_v4)) {
-	// we pass in sk_buff(skb) to enable acceleration of policy routed packets, quarkysg, 22/12/17
 	if (!fast_classifier_find_dev_and_mac_addr(skb, &sic.dest_ip_xlate, &dest_dev_tmp, sic.dest_mac_xlate, is_v4)) {
 #ifdef SFE_DEBUG
 		fast_classifier_incr_exceptions(FAST_CL_EXCEPTION_NO_DEST_XLATE_DEV);
@@ -1191,6 +1199,7 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 			DEBUG_TRACE("no bridge found for: %s\n", src_dev->name);
 			goto done2;
 		}
+
 		src_dev = src_br_dev;
 	}
 
@@ -1203,6 +1212,7 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 			DEBUG_TRACE("no bridge found for: %s\n", dest_dev->name);
 			goto done3;
 		}
+
 		dest_dev = dest_br_dev;
 	}
 
@@ -1247,19 +1257,22 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 		kfree(conn);
 	}
 
+done4:
 	/*
 	 * If we had bridge ports then release them too.
 	 */
-done4:
 	if (dest_br_dev) {
 		dev_put(dest_br_dev);
 	}
+
 done3:
 	if (src_br_dev) {
 		dev_put(src_br_dev);
 	}
+
 done2:
 	dev_put(dest_dev_tmp);
+
 done1:
 	dev_put(src_dev_tmp);
 
@@ -1311,10 +1324,16 @@ static void fast_classifier_update_mark(struct sfe_connection_mark *mark, bool i
  * fast_classifier_conntrack_event()
  *	Callback event invoked when a conntrack connection's state changes.
  */
-static int fast_classifier_conntrack_event(struct notifier_block *this,
-					   unsigned long events, void *ptr)
+#ifdef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
+ static int fast_classifier_conntrack_event(struct notifier_block *this,
+ 					   unsigned long events, void *ptr)
+#else
+static int fast_classifier_conntrack_event(unsigned int events, struct nf_ct_event *item)
+#endif
 {
-	struct nf_ct_event *item = ptr;
+#ifdef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
+ 	struct nf_ct_event *item = ptr;
+#endif
 	struct sfe_connection_destroy sid;
 	struct nf_conn *ct = item->ct;
 	struct nf_conntrack_tuple orig_tuple;
@@ -1463,9 +1482,15 @@ static int fast_classifier_conntrack_event(struct notifier_block *this,
 /*
  * Netfilter conntrack event system to monitor connection tracking changes
  */
-static struct notifier_block fast_classifier_conntrack_notifier = {
-	.notifier_call = fast_classifier_conntrack_event,
+#ifdef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
+ static struct notifier_block fast_classifier_conntrack_notifier = {
+ 	.notifier_call = fast_classifier_conntrack_event,
+ };
+#else
+static struct nf_ct_event_notifier fast_classifier_conntrack_notifier = {
+	.fcn = fast_classifier_conntrack_event,
 };
+#endif
 #endif
 
 /*
@@ -1719,9 +1744,9 @@ static ssize_t fast_classifier_get_debug_info(struct device *dev,
 				conn->sic->protocol,
 				conn->sic->src_mac,
 				&conn->sic->src_ip,
-				conn->sic->src_port,
+				ntohs(conn->sic->src_port),
 				&conn->sic->dest_ip,
-				conn->sic->dest_port,
+				ntohs(conn->sic->dest_port),
 				conn->sic->dest_mac_xlate,
 				conn->sic->mark,
 				conn->hits);
@@ -1806,7 +1831,7 @@ static int fast_classifier_init(void)
 
 //	printk(KERN_ALERT "fast-classifier: starting up\n");
 //	DEBUG_INFO("SFE CM init\n");
-	printk(KERN_ALERT "fast-classifier (PBR safe v2.1b): starting up\n");
+	printk(KERN_ALERT "fast-classifier (PBR safe v2.1.3b): starting up\n");
 	DEBUG_INFO("SFE FC init\n");
 
 	hash_init(fc_conn_ht);
