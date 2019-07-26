@@ -19,6 +19,9 @@ extern "C" {
 #include <stddef.h>   /* size_t */
 
 
+#define ZSTDLIB_API static
+
+#if 0
 /* =====   ZSTDLIB_API : control library symbols visibility   ===== */
 #ifndef ZSTDLIB_VISIBILITY
 #  if defined(__GNUC__) && (__GNUC__ >= 4)
@@ -34,7 +37,7 @@ extern "C" {
 #else
 #  define ZSTDLIB_API ZSTDLIB_VISIBILITY
 #endif
-
+#endif
 
 /*******************************************************************************
   Introduction
