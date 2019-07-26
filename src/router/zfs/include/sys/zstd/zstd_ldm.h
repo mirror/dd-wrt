@@ -38,7 +38,7 @@ extern "C" {
  * NOTE: This function returns an error if it runs out of space to store
  *       sequences.
  */
-size_t ZSTD_ldm_generateSequences(
+static size_t ZSTD_ldm_generateSequences(
             ldmState_t* ldms, rawSeqStore_t* sequences,
             ldmParams_t const* params, void const* src, size_t srcSize);
 
@@ -60,7 +60,7 @@ size_t ZSTD_ldm_generateSequences(
  * two. We handle that case correctly, and update `rawSeqStore` appropriately.
  * NOTE: This function does not return any errors.
  */
-size_t ZSTD_ldm_blockCompress(rawSeqStore_t* rawSeqStore,
+static size_t ZSTD_ldm_blockCompress(rawSeqStore_t* rawSeqStore,
             ZSTD_matchState_t* ms, seqStore_t* seqStore, U32 rep[ZSTD_REP_NUM],
             void const* src, size_t srcSize);
 
@@ -71,7 +71,7 @@ size_t ZSTD_ldm_blockCompress(rawSeqStore_t* rawSeqStore,
  * Avoids emitting matches less than `minMatch` bytes.
  * Must be called for data with is not passed to ZSTD_ldm_blockCompress().
  */
-void ZSTD_ldm_skipSequences(rawSeqStore_t* rawSeqStore, size_t srcSize,
+static void ZSTD_ldm_skipSequences(rawSeqStore_t* rawSeqStore, size_t srcSize,
     U32 const minMatch);
 
 
@@ -79,13 +79,13 @@ void ZSTD_ldm_skipSequences(rawSeqStore_t* rawSeqStore, size_t srcSize,
  *  Estimate the space needed for long distance matching tables or 0 if LDM is
  *  disabled.
  */
-size_t ZSTD_ldm_getTableSize(ldmParams_t params);
+static size_t ZSTD_ldm_getTableSize(ldmParams_t params);
 
 /** ZSTD_ldm_getSeqSpace() :
  *  Return an upper bound on the number of sequences that can be produced by
  *  the long distance matcher, or 0 if LDM is disabled.
  */
-size_t ZSTD_ldm_getMaxNbSeq(ldmParams_t params, size_t maxChunkSize);
+static size_t ZSTD_ldm_getMaxNbSeq(ldmParams_t params, size_t maxChunkSize);
 
 /** ZSTD_ldm_adjustParameters() :
  *  If the params->hashRateLog is not set, set it to its default value based on
@@ -96,7 +96,7 @@ size_t ZSTD_ldm_getMaxNbSeq(ldmParams_t params, size_t maxChunkSize);
  *
  *  Ensures that the minMatchLength >= targetLength during optimal parsing.
  */
-void ZSTD_ldm_adjustParameters(ldmParams_t* params,
+static void ZSTD_ldm_adjustParameters(ldmParams_t* params,
                                ZSTD_compressionParameters const* cParams);
 
 #if defined (__cplusplus)

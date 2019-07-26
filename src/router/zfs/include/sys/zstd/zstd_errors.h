@@ -19,11 +19,14 @@ extern "C" {
 /*===== dependency =====*/
 #include <stddef.h>   /* size_t */
 
+#define ZSTDERRORLIB_API  static
+
 #define	ZSTD_isError ERR_isError   /* for inlining */
 #define	FSE_isError  ERR_isError
 #define	HUF_isError  ERR_isError
 #define	HIST_isError  ERR_isError
 
+#if 0
 /* =====   ZSTDERRORLIB_API : control library symbols visibility   ===== */
 #ifndef ZSTDERRORLIB_VISIBILITY
 #  if defined(__GNUC__) && (__GNUC__ >= 4)
@@ -39,7 +42,7 @@ extern "C" {
 #else
 #  define ZSTDERRORLIB_API ZSTDERRORLIB_VISIBILITY
 #endif
-
+#endif
 /*-*********************************************
  *  Error codes list
  *-*********************************************
