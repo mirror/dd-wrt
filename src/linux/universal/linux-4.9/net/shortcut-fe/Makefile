@@ -14,7 +14,7 @@ endif
 
 ccflags-$(SFE_SUPPORT_IPV6) += -DSFE_SUPPORT_IPV6 
 #-DSFE_TOS
-#cflags-y += -DSFE_TOS
+cflags-y += -DCONFIG_NF_CONNTRACK_CHAIN_EVENTS
 
 shortcut-fe-objs := sfe_cm.o
 
