@@ -48,6 +48,9 @@
 #else
 #  define HINT_INLINE static INLINE_KEYWORD FORCE_INLINE_ATTR
 #endif
+#ifdef noinline 
+#define FORCE_NOINLINE noinline
+#else
 
 #ifdef _KERNEL
 /* force no inlining */
@@ -64,6 +67,7 @@
 #  endif
 
 
+#endif
 #endif
 
 /* target attribute */
