@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 4.9.176 Kernel Configuration
+# Linux/mips 4.9.186 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -1757,4 +1757,3 @@ CONFIG_GENERIC_ATOMIC64=y
 # CONFIG_ARCH_HAS_SG_CHAIN is not set
 CONFIG_SBITMAP=y
 # CONFIG_VIRTUALIZATION is not set
-# CONFIG_DEFAULT_BBR is not set
