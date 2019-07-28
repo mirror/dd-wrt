@@ -40,7 +40,6 @@
 #include "sfe.h"
 #include "sfe_cm.h"
 #include "fast-classifier.h"
-#ifdef SFE_DEBUG
 typedef enum fast_classifier_exception {
 	FAST_CL_EXCEPTION_PACKET_BROADCAST,
 	FAST_CL_EXCEPTION_PACKET_MULTICAST,
@@ -89,7 +88,6 @@ static char *fast_classifier_exception_events_string[FAST_CL_EXCEPTION_MAX] = {
 	"UPDATE_PROTOCOL_FAIL",
 	"CT_DESTROY_MISS",
 };
-#endif
 /*
  * Per-module structure.
  */
@@ -109,9 +107,7 @@ struct fast_classifier {
 #ifdef SFE_SUPPORT_IPV6
 	struct notifier_block inet6_notifier;	/* IPv6 notifier */
 #endif
-#ifdef SFE_DEBUG
 	u32 exceptions[FAST_CL_EXCEPTION_MAX];
-#endif
 
 };
 
@@ -187,7 +183,6 @@ static atomic_t done_fail_msgs = ATOMIC_INIT(0);
  */
 static bool skip_to_bridge_ingress;
 
-#ifdef SFE_DEBUG
 /*
  * fast_classifier_incr_exceptions()
  *	increase an exception counter.
@@ -200,7 +195,6 @@ static inline void fast_classifier_incr_exceptions(fast_classifier_exception_t e
 	sc->exceptions[except]++;
 	spin_unlock_bh(&sc->lock);
 }
-#endif
 /*
  * fast_classifier_recv()
  *	Handle packet receives.
@@ -492,9 +486,7 @@ static int fast_classifier_update_protocol(struct sfe_connection_create *p_sic, 
 		spin_lock(&ct->lock);
 		if (ct->proto.tcp.state != TCP_CONNTRACK_ESTABLISHED) {
 			spin_unlock(&ct->lock);
-#ifdef SFE_DEBUG
 			fast_classifier_incr_exceptions(FAST_CL_EXCEPTION_TCP_NOT_ESTABLISHED);
-#endif
 			DEBUG_TRACE("connection in termination state: %#x, s: %pI4:%u, d: %pI4:%u\n",
 				    ct->proto.tcp.state, &p_sic->src_ip, ntohs(p_sic->src_port),
 				    &p_sic->dest_ip, ntohs(p_sic->dest_port));
@@ -507,9 +499,7 @@ static int fast_classifier_update_protocol(struct sfe_connection_create *p_sic, 
 		break;
 
 	default:
-#ifdef SFE_DEBUG
 		fast_classifier_incr_exceptions(FAST_CL_EXCEPTION_UNKNOW_PROTOCOL);
-#endif
 		DEBUG_TRACE("unhandled protocol %d\n", p_sic->protocol);
 		return 0;
 	}
@@ -850,16 +840,12 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 	 * Don't process broadcast or multicast packets.
 	 */
 	if (unlikely(skb->pkt_type == PACKET_BROADCAST)) {
-#ifdef SFE_DEBUG
 		fast_classifier_incr_exceptions(FAST_CL_EXCEPTION_PACKET_BROADCAST);
-#endif
 		DEBUG_TRACE("broadcast, ignoring\n");
 		return NF_ACCEPT;
 	}
 	if (unlikely(skb->pkt_type == PACKET_MULTICAST)) {
-#ifdef SFE_DEBUG
 		fast_classifier_incr_exceptions(FAST_CL_EXCEPTION_PACKET_MULTICAST);
-#endif
 		DEBUG_TRACE("multicast, ignoring\n");
 		return NF_ACCEPT;
 	}
@@ -869,9 +855,7 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 	 */
 	in = dev_get_by_index(&init_net, skb->skb_iif);
 	if (!in) {
-#ifdef SFE_DEBUG
 		fast_classifier_incr_exceptions(FAST_CL_EXCEPTION_NO_IIF);
-#endif
 		DEBUG_TRACE("packet not forwarding\n");
 		return NF_ACCEPT;
 	}
@@ -883,9 +867,7 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 	 */
 	ct = nf_ct_get(skb, &ctinfo);
 	if (unlikely(!ct)) {
-#ifdef SFE_DEBUG
 		fast_classifier_incr_exceptions(FAST_CL_EXCEPTION_NO_CT);
-#endif
 		DEBUG_TRACE("no conntrack connection, ignoring\n");
 		return NF_ACCEPT;
 	}
@@ -894,9 +876,7 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 	 * Don't process untracked connections.
 	 */
 	if (unlikely(nf_ct_is_untracked(ct))) {
-#ifdef SFE_DEBUG
 		fast_classifier_incr_exceptions(FAST_CL_EXCEPTION_CT_NO_TRACK);
-#endif
 		DEBUG_TRACE("untracked connection\n");
 		return NF_ACCEPT;
 	}
@@ -906,9 +886,7 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 	 * So we don't process unconfirmed connections.
 	 */
 	if (!nf_ct_is_confirmed(ct)) {
-#ifdef SFE_DEBUG
 		fast_classifier_incr_exceptions(FAST_CL_EXCEPTION_CT_NO_CONFIRM);
-#endif
 		DEBUG_TRACE("unconfirmed connection\n");
 		return NF_ACCEPT;
 	}
@@ -917,9 +895,7 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 	 * Don't process connections that require support from a 'helper' (typically a NAT ALG).
 	 */
 	if (unlikely(nfct_help(ct))) {
-#ifdef SFE_DEBUG
 		fast_classifier_incr_exceptions(FAST_CL_EXCEPTION_CT_IS_ALG);
-#endif
 		DEBUG_TRACE("connection has helper\n");
 		return NF_ACCEPT;
 	}
@@ -948,9 +924,7 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 		sic.dest_ip.ip = (__be32)orig_tuple.dst.u3.ip;
 
 		if (ipv4_is_multicast(sic.src_ip.ip) || ipv4_is_multicast(sic.dest_ip.ip)) {
-#ifdef SFE_DEBUG
 			fast_classifier_incr_exceptions(FAST_CL_EXCEPTION_IS_IPV4_MCAST);
-#endif
 			DEBUG_TRACE("multicast address\n");
 			return NF_ACCEPT;
 		}
@@ -963,7 +937,8 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 		sic.dest_ip_xlate.ip = (__be32)reply_tuple.src.u3.ip;
 
 		dscp = ipv4_get_dsfield(ip_hdr(skb)) >> XT_DSCP_SHIFT;
-		if (dscp) { //todo. dscp is valid with 0 as well
+//		if (dscp)  //allow rewrite of DSCP 0
+		{
 			sic.dest_dscp = dscp;
 			sic.src_dscp = sic.dest_dscp;
 			sic.flags |= SFE_CREATE_FLAG_REMARK_DSCP;
@@ -978,9 +953,7 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 
 		if (ipv6_addr_is_multicast((struct in6_addr *)sic.src_ip.ip6) ||
 		    ipv6_addr_is_multicast((struct in6_addr *)sic.dest_ip.ip6)) {
-#ifdef SFE_DEBUG
 			fast_classifier_incr_exceptions(FAST_CL_EXCEPTION_IS_IPV6_MCAST);
-#endif
 			DEBUG_TRACE("multicast address\n");
 			return NF_ACCEPT;
 		}
@@ -993,7 +966,8 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 		sic.dest_ip_xlate.ip6[0] = *((struct sfe_ipv6_addr *)&reply_tuple.src.u3.in6);
 
 		dscp = ipv6_get_dsfield(ipv6_hdr(skb)) >> XT_DSCP_SHIFT;
-		if (dscp) {
+//		if (dscp)  //allow rewrite of DSCP 0 
+		{
 			sic.dest_dscp = dscp;
 			sic.src_dscp = sic.dest_dscp;
 			sic.flags |= SFE_CREATE_FLAG_REMARK_DSCP;
@@ -1012,9 +986,7 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 		 * Don't try to manage a non-established connection.
 		 */
 		if (!test_bit(IPS_ASSURED_BIT, &ct->status)) {
-#ifdef SFE_DEBUG
 			fast_classifier_incr_exceptions(FAST_CL_EXCEPTION_TCP_NOT_ASSURED);
-#endif
 			DEBUG_TRACE("non-established connection\n");
 			return NF_ACCEPT;
 		}
@@ -1045,9 +1017,7 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 		break;
 
 	default:
-#ifdef SFE_DEBUG
 		fast_classifier_incr_exceptions(FAST_CL_EXCEPTION_UNKNOW_PROTOCOL);
-#endif
 		DEBUG_TRACE("unhandled protocol %d\n", sic.protocol);
 		return NF_ACCEPT;
 	}
@@ -1090,9 +1060,7 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 
 				if (fast_classifier_update_protocol(conn->sic, conn->ct) == 0) {
 					spin_unlock_bh(&sfe_connections_lock);
-#ifdef SFE_DEBUG
 					fast_classifier_incr_exceptions(FAST_CL_EXCEPTION_UPDATE_PROTOCOL_FAIL);
-#endif
 					DEBUG_TRACE("UNKNOWN PROTOCOL OR CONNECTION CLOSING, SKIPPING\n");
 					return NF_ACCEPT;
 				}
@@ -1135,9 +1103,7 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 		}
 
 		DEBUG_TRACE("FOUND, SKIPPING\n");
-#ifdef SFE_DEBUG
 		fast_classifier_incr_exceptions(FAST_CL_EXCEPTION_WAIT_FOR_ACCELERATION);
-#endif
 		return NF_ACCEPT;
 	}
 
@@ -1148,18 +1114,14 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 	 * destination host addresses.
 	 */
 	if (!fast_classifier_find_dev_and_mac_addr(NULL, &sic.src_ip, &src_dev_tmp, sic.src_mac, is_v4)) {
-#ifdef SFE_DEBUG
 		fast_classifier_incr_exceptions(FAST_CL_EXCEPTION_NO_SRC_DEV);
-#endif
 		return NF_ACCEPT;
 	}
 	src_dev = src_dev_tmp;
 
 	//if (!fast_classifier_find_dev_and_mac_addr(&sic.src_ip_xlate, &dev, sic.src_mac_xlate, is_v4)) {
 	if (!fast_classifier_find_dev_and_mac_addr(NULL, &sic.src_ip_xlate, &dev, sic.src_mac_xlate, is_v4)) {
-#ifdef SFE_DEBUG
 		fast_classifier_incr_exceptions(FAST_CL_EXCEPTION_NO_SRC_XLATE_DEV);
-#endif
 		goto done1;
 	}
 
@@ -1170,18 +1132,14 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 		tmp_skb = skb;
 
 	if (!fast_classifier_find_dev_and_mac_addr(tmp_skb, &sic.dest_ip, &dev, sic.dest_mac, is_v4)) {
-#ifdef SFE_DEBUG
 		fast_classifier_incr_exceptions(FAST_CL_EXCEPTION_NO_DEST_DEV);
-#endif
 		goto done1;
 	}
 
 	dev_put(dev);
 
 	if (!fast_classifier_find_dev_and_mac_addr(skb, &sic.dest_ip_xlate, &dest_dev_tmp, sic.dest_mac_xlate, is_v4)) {
-#ifdef SFE_DEBUG
 		fast_classifier_incr_exceptions(FAST_CL_EXCEPTION_NO_DEST_XLATE_DEV);
-#endif
 		goto done1;
 	}
 	dest_dev = dest_dev_tmp;
@@ -1193,9 +1151,7 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 	if (src_dev->priv_flags & IFF_BRIDGE_PORT) {
 		src_br_dev = sfe_dev_get_master(src_dev);
 		if (!src_br_dev) {
-#ifdef SFE_DEBUG
 			fast_classifier_incr_exceptions(FAST_CL_EXCEPTION_NO_BRIDGE);
-#endif
 			DEBUG_TRACE("no bridge found for: %s\n", src_dev->name);
 			goto done2;
 		}
@@ -1206,9 +1162,7 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 	if (dest_dev->priv_flags & IFF_BRIDGE_PORT) {
 		dest_br_dev = sfe_dev_get_master(dest_dev);
 		if (!dest_br_dev) {
-#ifdef SFE_DEBUG
 			fast_classifier_incr_exceptions(FAST_CL_EXCEPTION_NO_BRIDGE);
-#endif
 			DEBUG_TRACE("no bridge found for: %s\n", dest_dev->name);
 			goto done3;
 		}
@@ -1463,11 +1417,9 @@ static int fast_classifier_conntrack_event(unsigned int events, struct nf_ct_eve
 		kfree(conn->sic);
 		kfree(conn);
 	}
-#ifdef SFE_DEBUG
 	 else {
 		fast_classifier_incr_exceptions(FAST_CL_EXCEPTION_CT_DESTROY_MISS);
 	}
-#endif
 	spin_unlock_bh(&sfe_connections_lock);
 
 	is_v4 ? sfe_ipv4_destroy_rule(&sid) : sfe_ipv6_destroy_rule(&sid);
@@ -1785,7 +1737,6 @@ static ssize_t fast_classifier_set_skip_bridge_ingress(struct device *dev,
 	return size;
 }
 
-#ifdef SFE_DEBUG
 /*
  * fast_classifier_get_exceptions
  * 	dump exception counters
@@ -1807,7 +1758,6 @@ static ssize_t fast_classifier_get_exceptions(struct device *dev,
 
 	return len;
 }
-#endif
 /*
  * sysfs attributes.
  */
@@ -1817,10 +1767,8 @@ static const struct device_attribute fast_classifier_debug_info_attr =
 	__ATTR(debug_info, S_IRUGO, fast_classifier_get_debug_info, NULL);
 static const struct device_attribute fast_classifier_skip_bridge_ingress =
 	__ATTR(skip_to_bridge_ingress, S_IWUSR | S_IRUGO, fast_classifier_get_skip_bridge_ingress, fast_classifier_set_skip_bridge_ingress);
-#ifdef SFE_DEBUG
 static const struct device_attribute fast_classifier_exceptions_attr =
 	__ATTR(exceptions, S_IRUGO, fast_classifier_get_exceptions, NULL);
-#endif
 /*
  * fast_classifier_init()
  */
@@ -1866,7 +1814,6 @@ static int fast_classifier_init(void)
 		goto exit2;
 	}
 
-#ifdef SFE_DEBUG
 	result = sysfs_create_file(sc->sys_fast_classifier, &fast_classifier_exceptions_attr.attr);
 	if (result) {
 		DEBUG_ERROR("failed to register exceptions file: %d\n", result);
@@ -1875,7 +1822,6 @@ static int fast_classifier_init(void)
 		sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_skip_bridge_ingress.attr);
 		goto exit2;
 	}
-#endif
 	sc->dev_notifier.notifier_call = fast_classifier_device_event;
 	sc->dev_notifier.priority = 1;
 	register_netdevice_notifier(&sc->dev_notifier);
@@ -1981,9 +1927,7 @@ exit3:
 	sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_offload_at_pkts_attr.attr);
 	sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_debug_info_attr.attr);
 	sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_skip_bridge_ingress.attr);
-#ifdef SFE_DEBUG
 	sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_exceptions_attr.attr);
-#endif
 exit2:
 	kobject_put(sc->sys_fast_classifier);
 
