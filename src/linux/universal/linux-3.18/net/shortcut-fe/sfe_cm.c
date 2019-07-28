@@ -895,6 +895,7 @@ static void sfe_cm_sync_rule(struct sfe_connection_sync *sis)
 		break;
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 4, 0))
 	case IPPROTO_UDP:
+		{
 		struct nf_conntrack_l4proto *l4proto;
 		unsigned int *timeouts;
 		/*
@@ -920,11 +921,12 @@ static void sfe_cm_sync_rule(struct sfe_connection_sync *sis)
 		timeouts = nf_ct_timeout_lookup(&init_net, ct, l4proto);
 		spin_lock_bh(&ct->lock);
 		if (test_bit(IPS_SEEN_REPLY_BIT, &ct->status)) {
-			ct->timeout.expires = nfct_time_stamp + timeouts[UDP_CT_REPLIED];
+			ct->timeout.expires = jiffies + timeouts[UDP_CT_REPLIED];
 		} else {
-			ct->timeout.expires = nfct_time_stamp + timeouts[UDP_CT_UNREPLIED];
+			ct->timeout.expires = jiffies + timeouts[UDP_CT_UNREPLIED];
 		}
 		spin_unlock_bh(&ct->lock);
+		}
 		break;
 #endif
 	}
