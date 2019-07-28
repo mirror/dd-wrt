@@ -373,7 +373,7 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 	/*
 	 * Don't process untracked connections.
 	 */
-	if (unlikely(nf_ct_is_untracked(ct))) {
+	if (unlikely(ctinfo == IP_CT_UNTRACKED)) {
 		sfe_cm_incr_exceptions(SFE_CM_EXCEPTION_CT_NO_TRACK);
 		DEBUG_TRACE("untracked connection\n");
 		return NF_ACCEPT;

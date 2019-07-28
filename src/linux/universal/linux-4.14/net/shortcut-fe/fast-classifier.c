@@ -880,7 +880,7 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 	/*
 	 * Don't process untracked connections.
 	 */
-	if (unlikely(nf_ct_is_untracked(ct))) {
+	if (unlikely(ctinfo == IP_CT_UNTRACKED)) {
 		fast_classifier_incr_exceptions(FAST_CL_EXCEPTION_CT_NO_TRACK);
 		DEBUG_TRACE("untracked connection\n");
 		return NF_ACCEPT;
