@@ -448,7 +448,8 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 		sic.dest_ip_xlate.ip = (__be32)reply_tuple.src.u3.ip;
 
 		dscp = ipv4_get_dsfield(ip_hdr(skb)) >> XT_DSCP_SHIFT;
-		if (dscp) {
+//		if (dscp)  //allow rewrite of DSCP 0 
+		{
 			sic.dest_dscp = dscp;
 			sic.src_dscp = sic.dest_dscp;
 			sic.flags |= SFE_CREATE_FLAG_REMARK_DSCP;
@@ -476,7 +477,8 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 		sic.dest_ip_xlate.ip6[0] = *((struct sfe_ipv6_addr *)&reply_tuple.src.u3.in6);
 
 		dscp = ipv6_get_dsfield(ipv6_hdr(skb)) >> XT_DSCP_SHIFT;
-		if (dscp) {
+//		if (dscp)  //allow rewrite of DSCP 0 
+		{
 			sic.dest_dscp = dscp;
 			sic.src_dscp = sic.dest_dscp;
 			sic.flags |= SFE_CREATE_FLAG_REMARK_DSCP;
