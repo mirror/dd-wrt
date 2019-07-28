@@ -43,7 +43,6 @@
 #endif
 #include "fast-classifier.c"
 
-#ifdef SFE_DEBUG
 typedef enum sfe_cm_exception {
 	SFE_CM_EXCEPTION_PACKET_BROADCAST,
 	SFE_CM_EXCEPTION_PACKET_MULTICAST,
@@ -86,7 +85,7 @@ static char *sfe_cm_exception_events_string[SFE_CM_EXCEPTION_MAX] = {
 	"NO_BRIDGE",
 	"LOCAL_OUT"
 };
-#endif
+
 /*
  * Per-module structure.
  */
@@ -106,14 +105,11 @@ struct sfe_cm {
 #ifdef SFE_SUPPORT_IPV6
 	struct notifier_block inet6_notifier;	/* IPv6 notifier */
 #endif
-#ifdef SFE_DEBUG
 	u32 exceptions[SFE_CM_EXCEPTION_MAX];
-#endif
 };
 
 static struct sfe_cm __sc;
 
-#ifdef SFE_DEBUG
 
 /*
  * sfe_cm_incr_exceptions()
@@ -127,7 +123,6 @@ static inline void sfe_cm_incr_exceptions(sfe_cm_exception_t except)
 	sc->exceptions[except]++;
 	spin_unlock_bh(&sc->lock);
 }
-#endif
 /*
  * sfe_cm_recv()
  *	Handle packet receives.
@@ -323,16 +318,12 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 	 * Don't process broadcast or multicast packets.
 	 */
 	if (unlikely(skb->pkt_type == PACKET_BROADCAST)) {
-#ifdef SFE_DEBUG
 		sfe_cm_incr_exceptions(SFE_CM_EXCEPTION_PACKET_BROADCAST);
-#endif
 		DEBUG_TRACE("broadcast, ignoring\n");
 		return NF_ACCEPT;
 	}
 	if (unlikely(skb->pkt_type == PACKET_MULTICAST)) {
-#ifdef SFE_DEBUG
 		sfe_cm_incr_exceptions(SFE_CM_EXCEPTION_PACKET_MULTICAST);
-#endif
 		DEBUG_TRACE("multicast, ignoring\n");
 		return NF_ACCEPT;
 	}
@@ -351,9 +342,7 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 	 * Don't process locally generated packets.
 	 */
 	if (skb->sk) {
-#ifdef SFE_DEBUG
 		sfe_cm_incr_exceptions(SFE_CM_EXCEPTION_LOCAL_OUT);
-#endif
 		DEBUG_TRACE("skip local out packet\n");
 		return NF_ACCEPT;
 	}
@@ -363,9 +352,7 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 	 */
 	in = dev_get_by_index(&init_net, skb->skb_iif);
 	if (!in) {
-#ifdef SFE_DEBUG
 		sfe_cm_incr_exceptions(SFE_CM_EXCEPTION_NO_IIF);
-#endif
 		DEBUG_TRACE("packet not forwarding\n");
 		return NF_ACCEPT;
 	}
@@ -377,9 +364,7 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 	 */
 	ct = nf_ct_get(skb, &ctinfo);
 	if (unlikely(!ct)) {
-#ifdef SFE_DEBUG
 		sfe_cm_incr_exceptions(SFE_CM_EXCEPTION_NO_CT);
-#endif
 		DEBUG_TRACE("no conntrack connection, ignoring\n");
 		return NF_ACCEPT;
 	}
@@ -388,9 +373,7 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 	 * Don't process untracked connections.
 	 */
 	if (unlikely(nf_ct_is_untracked(ct))) {
-#ifdef SFE_DEBUG
 		sfe_cm_incr_exceptions(SFE_CM_EXCEPTION_CT_NO_TRACK);
-#endif
 		DEBUG_TRACE("untracked connection\n");
 		return NF_ACCEPT;
 	}
@@ -400,9 +383,7 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 	 * So we don't process unconfirmed connections.
 	 */
 	if (!nf_ct_is_confirmed(ct)) {
-#ifdef SFE_DEBUG
 		sfe_cm_incr_exceptions(SFE_CM_EXCEPTION_CT_NO_CONFIRM);
-#endif
 		DEBUG_TRACE("unconfirmed connection\n");
 		return NF_ACCEPT;
 	}
@@ -411,9 +392,7 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 	 * Don't process connections that require support from a 'helper' (typically a NAT ALG).
 	 */
 	if (unlikely(nfct_help(ct))) {
-#ifdef SFE_DEBUG
 		sfe_cm_incr_exceptions(SFE_CM_EXCEPTION_CT_IS_ALG);
-#endif
 		DEBUG_TRACE("connection has helper\n");
 		return NF_ACCEPT;
 	}
@@ -455,9 +434,7 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 		sic.dest_ip.ip = (__be32)orig_tuple.dst.u3.ip;
 
 		if (ipv4_is_multicast(sic.src_ip.ip) || ipv4_is_multicast(sic.dest_ip.ip)) {
-#ifdef SFE_DEBUG
 			sfe_cm_incr_exceptions(SFE_CM_EXCEPTION_IS_IPV4_MCAST);
-#endif
 			DEBUG_TRACE("multicast address\n");
 			return NF_ACCEPT;
 		}
@@ -485,9 +462,7 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 
 		if (ipv6_addr_is_multicast((struct in6_addr *)sic.src_ip.ip6) ||
 		    ipv6_addr_is_multicast((struct in6_addr *)sic.dest_ip.ip6)) {
-#ifdef SFE_DEBUG
 			sfe_cm_incr_exceptions(SFE_CM_EXCEPTION_IS_IPV6_MCAST);
-#endif
 			DEBUG_TRACE("multicast address\n");
 			return NF_ACCEPT;
 		}
@@ -532,9 +507,7 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 		 * Don't try to manage a non-established connection.
 		 */
 		if (!test_bit(IPS_ASSURED_BIT, &ct->status)) {
-#ifdef SFE_DEBUG
 			sfe_cm_incr_exceptions(SFE_CM_EXCEPTION_TCP_NOT_ASSURED);
-#endif
 			DEBUG_TRACE("non-established connection\n");
 			return NF_ACCEPT;
 		}
@@ -547,9 +520,7 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 		spin_lock_bh(&ct->lock);
 		if (ct->proto.tcp.state != TCP_CONNTRACK_ESTABLISHED) {
 			spin_unlock_bh(&ct->lock);
-#ifdef SFE_DEBUG
 			sfe_cm_incr_exceptions(SFE_CM_EXCEPTION_TCP_NOT_ESTABLISHED);
-#endif
 			DEBUG_TRACE("connection in termination state: %#x, s: %pI4:%u, d: %pI4:%u\n",
 				    ct->proto.tcp.state, &sic.src_ip, ntohs(sic.src_port),
 				    &sic.dest_ip, ntohs(sic.dest_port));
@@ -566,9 +537,7 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 		break;
 
 	default:
-#ifdef SFE_DEBUG
 		sfe_cm_incr_exceptions(SFE_CM_EXCEPTION_UNKNOW_PROTOCOL);
-#endif
 		DEBUG_TRACE("unhandled protocol %d\n", sic.protocol);
 		return NF_ACCEPT;
 	}
@@ -609,35 +578,27 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 	 * destination host addresses.
 	 */
 	if (!sfe_cm_find_dev_and_mac_addr(&sic.src_ip, &src_dev_tmp, sic.src_mac, is_v4)) {
-#ifdef SFE_DEBUG
 		sfe_cm_incr_exceptions(SFE_CM_EXCEPTION_NO_SRC_DEV);
-#endif
 		return NF_ACCEPT;
 	}
 	src_dev = src_dev_tmp;
 
 	if (!sfe_cm_find_dev_and_mac_addr(&sic.src_ip_xlate, &dev, sic.src_mac_xlate, is_v4)) {
-#ifdef SFE_DEBUG
 		sfe_cm_incr_exceptions(SFE_CM_EXCEPTION_NO_SRC_XLATE_DEV);
-#endif
 		goto done1;
 	}
 
 	dev_put(dev);
 
 	if (!sfe_cm_find_dev_and_mac_addr(&sic.dest_ip, &dev, sic.dest_mac, is_v4)) {
-#ifdef SFE_DEBUG
 		sfe_cm_incr_exceptions(SFE_CM_EXCEPTION_NO_DEST_DEV);
-#endif
 		goto done1;
 	}
 
 	dev_put(dev);
 
 	if (!sfe_cm_find_dev_and_mac_addr(&sic.dest_ip_xlate, &dest_dev_tmp, sic.dest_mac_xlate, is_v4)) {
-#ifdef SFE_DEBUG
 		sfe_cm_incr_exceptions(SFE_CM_EXCEPTION_NO_DEST_XLATE_DEV);
-#endif
 		goto done1;
 	}
 	dest_dev = dest_dev_tmp;
@@ -649,9 +610,7 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 	if (src_dev->priv_flags & IFF_BRIDGE_PORT) {
 		src_br_dev = sfe_dev_get_master(src_dev);
 		if (!src_br_dev) {
-#ifdef SFE_DEBUG
 			sfe_cm_incr_exceptions(SFE_CM_EXCEPTION_NO_BRIDGE);
-#endif
 			DEBUG_TRACE("no bridge found for: %s\n", src_dev->name);
 			goto done2;
 		}
@@ -662,9 +621,7 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 	if (dest_dev->priv_flags & IFF_BRIDGE_PORT) {
 		dest_br_dev = sfe_dev_get_master(dest_dev);
 		if (!dest_br_dev) {
-#ifdef SFE_DEBUG
 			sfe_cm_incr_exceptions(SFE_CM_EXCEPTION_NO_BRIDGE);
-#endif
 			DEBUG_TRACE("no bridge found for: %s\n", dest_dev->name);
 			goto done3;
 		}
@@ -935,6 +892,38 @@ static void sfe_cm_sync_rule(struct sfe_connection_sync *sis)
 		}
 		spin_unlock_bh(&ct->lock);
 		break;
+	case IPPROTO_UDP:
+		struct nf_conntrack_l4proto *l4proto;
+		unsigned int *timeouts;
+		/*
+		 * In Linux connection track, UDP flow has two timeout values:
+		 * /proc/sys/net/netfilter/nf_conntrack_udp_timeout:
+		 * 	this is for uni-direction UDP flow, normally its value is 60 seconds
+		 * /proc/sys/net/netfilter/nf_conntrack_udp_timeout_stream:
+		 * 	this is for bi-direction UDP flow, normally its value is 180 seconds
+		 *
+		 * Linux will update timer of UDP flow to stream timeout once it seen packets
+		 * in reply direction. But if flow is accelerated by NSS or SFE, Linux won't
+		 * see any packets. So we have to do the same thing in our stats sync message.
+		 */
+
+
+		if (!test_bit(IPS_ASSURED_BIT, &ct->status) && acct) {
+			if (atomic64_read(&SFE_ACCT_COUNTER(acct)[IP_CT_DIR_REPLY].packets)) {
+				set_bit(IPS_SEEN_REPLY_BIT, &ct->status);
+				set_bit(IPS_ASSURED_BIT, &ct->status);
+			}
+		}
+		l4proto = __nf_ct_l4proto_find((sis->is_v6 ? AF_INET6 : AF_INET), IPPROTO_UDP);
+		timeouts = nf_ct_timeout_lookup(&init_net, ct, l4proto);
+		spin_lock_bh(&ct->lock);
+		if (test_bit(IPS_SEEN_REPLY_BIT, &ct->status)) {
+			ct->timeout.expires = nfct_time_stamp + timeouts[UDP_CT_REPLIED];
+		} else {
+			ct->timeout.expires = nfct_time_stamp + timeouts[UDP_CT_UNREPLIED];
+		}
+		spin_unlock_bh(&ct->lock);
+		break;
 	}
 
 	/*
@@ -1010,7 +999,6 @@ static ssize_t sfe_cm_get_exceptions(struct device *dev,
 
 	return len;
 }
-#endif
 /*
  * sfe_cm_get_stop
  * 	dump stop
@@ -1083,9 +1071,7 @@ static ssize_t sfe_cm_set_defunct_all(struct device *dev,
  * sysfs attributes.
  */
 static const struct device_attribute sfe_attrs[] = {
-#ifdef SFE_DEBUG
 	__ATTR(exceptions, S_IRUGO, sfe_cm_get_exceptions, NULL),
-#endif
 	__ATTR(stop, S_IWUSR | S_IRUGO, sfe_cm_get_stop, sfe_cm_set_stop),
 	__ATTR(defunct_all, S_IWUSR | S_IRUGO, sfe_cm_get_defunct_all, sfe_cm_set_defunct_all),
 };
