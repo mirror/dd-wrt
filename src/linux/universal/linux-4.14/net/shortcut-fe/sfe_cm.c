@@ -887,6 +887,7 @@ static void sfe_cm_sync_rule(struct sfe_connection_sync *sis)
 		break;
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 4, 0))
 	case IPPROTO_UDP:
+		{
 		struct nf_conntrack_l4proto *l4proto;
 		unsigned int *timeouts;
 		/*
@@ -917,6 +918,7 @@ static void sfe_cm_sync_rule(struct sfe_connection_sync *sis)
 			ct->timeout = nfct_time_stamp + timeouts[UDP_CT_UNREPLIED];
 		}
 		spin_unlock_bh(&ct->lock);
+		}
 		break;
 #endif
 	}
