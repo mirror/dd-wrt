@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 4.9.176 Kernel Configuration
+# Linux/mips 4.9.186 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -524,7 +524,7 @@ CONFIG_TCP_CONG_BBR=y
 # CONFIG_DEFAULT_VEGAS is not set
 CONFIG_DEFAULT_WESTWOOD=y
 # CONFIG_DEFAULT_CDG is not set
-CONFIG_TCP_CONG_BBR=y
+# CONFIG_DEFAULT_BBR is not set
 # CONFIG_DEFAULT_RENO is not set
 CONFIG_DEFAULT_TCP_CONG="westwood"
 # CONFIG_TCP_MD5SIG is not set
@@ -1490,7 +1490,6 @@ CONFIG_WATCHDOG=y
 #
 # Watchdog Pretimeout Governors
 #
-# CONFIG_WATCHDOG_PRETIMEOUT_GOV is not set
 CONFIG_SSB_POSSIBLE=y
 
 #
@@ -2428,4 +2427,3 @@ CONFIG_SG_POOL=y
 CONFIG_SBITMAP=y
 CONFIG_HAVE_KVM=y
 # CONFIG_VIRTUALIZATION is not set
-# CONFIG_DEFAULT_BBR is not set

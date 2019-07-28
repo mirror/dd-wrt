@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 4.9.176 Kernel Configuration
+# Linux/arm 4.9.186 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_ARM_HAS_SG_CHAIN=y
@@ -740,7 +740,7 @@ CONFIG_TCP_CONG_BBR=y
 # CONFIG_DEFAULT_VENO is not set
 CONFIG_DEFAULT_WESTWOOD=y
 # CONFIG_DEFAULT_CDG is not set
-CONFIG_TCP_CONG_BBR=y
+# CONFIG_DEFAULT_BBR is not set
 # CONFIG_DEFAULT_RENO is not set
 CONFIG_DEFAULT_TCP_CONG="westwood"
 # CONFIG_TCP_MD5SIG is not set
@@ -4239,4 +4239,3 @@ CONFIG_SG_POOL=y
 CONFIG_ARCH_HAS_SG_CHAIN=y
 CONFIG_SBITMAP=y
 # CONFIG_VIRTUALIZATION is not set
-# CONFIG_DEFAULT_BBR is not set
