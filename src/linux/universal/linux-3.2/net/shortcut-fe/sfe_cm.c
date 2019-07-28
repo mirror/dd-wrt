@@ -798,6 +798,9 @@ static struct nf_hook_ops sfe_cm_ops_post_routing[] __read_mostly = {
 #endif
 };
 
+extern unsigned int nf_ct_udp_timeout;
+extern unsigned int nf_ct_udp_timeout_stream;
+
 /*
  * sfe_cm_sync_rule()
  *	Synchronize a connection's state.
@@ -893,8 +896,8 @@ static void sfe_cm_sync_rule(struct sfe_connection_sync *sis)
 		spin_unlock_bh(&ct->lock);
 		break;
 	case IPPROTO_UDP:
+		{
 		struct nf_conntrack_l4proto *l4proto;
-		unsigned int *timeouts;
 		/*
 		 * In Linux connection track, UDP flow has two timeout values:
 		 * /proc/sys/net/netfilter/nf_conntrack_udp_timeout:
@@ -909,20 +912,20 @@ static void sfe_cm_sync_rule(struct sfe_connection_sync *sis)
 
 
 		if (!test_bit(IPS_ASSURED_BIT, &ct->status) && acct) {
-			if (atomic64_read(&SFE_ACCT_COUNTER(acct)[IP_CT_DIR_REPLY].packets)) {
+			if (atomic64_read((atomic64_t *)&SFE_ACCT_COUNTER(acct)[IP_CT_DIR_REPLY].packets)) {
 				set_bit(IPS_SEEN_REPLY_BIT, &ct->status);
 				set_bit(IPS_ASSURED_BIT, &ct->status);
 			}
 		}
 		l4proto = __nf_ct_l4proto_find((sis->is_v6 ? AF_INET6 : AF_INET), IPPROTO_UDP);
-		timeouts = nf_ct_timeout_lookup(&init_net, ct, l4proto);
 		spin_lock_bh(&ct->lock);
 		if (test_bit(IPS_SEEN_REPLY_BIT, &ct->status)) {
-			ct->timeout.expires = nfct_time_stamp + timeouts[UDP_CT_REPLIED];
+			ct->timeout.expires = jiffies + nf_ct_udp_timeout_stream;
 		} else {
-			ct->timeout.expires = nfct_time_stamp + timeouts[UDP_CT_UNREPLIED];
+			ct->timeout.expires = jiffies + nf_ct_udp_timeout;
 		}
 		spin_unlock_bh(&ct->lock);
+		}
 		break;
 	}
 
@@ -977,7 +980,6 @@ static int sfe_cm_inet6_event(struct notifier_block *this, unsigned long event, 
 	return NOTIFY_DONE;
 }
 #endif
-#ifdef SFE_DEBUG
 /*
  * sfe_cm_get_exceptions
  * 	dump exception counters
