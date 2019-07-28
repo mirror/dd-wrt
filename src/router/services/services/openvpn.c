@@ -545,6 +545,9 @@ void start_openvpn(void)
 		fprintf(fp, "startservice set_routes -f\n");
 		fprintf(fp, "startservice firewall -f\n");
 		fprintf(fp, "startservice wshaper -f\n");
+		fprintf(fp, "cat /tmp/resolv.dnsmasq > /tmp/resolv.dnsmasq_isp\n");
+		fprintf(fp, "env | grep 'dhcp-option DNS' | awk '{ print \"nameserver \" $3 }' > /tmp/resolv.dnsmasq\n"); 
+		fprintf(fp, "cat /tmp/resolv.dnsmasq_isp >> /tmp/resolv.dnsmasq\n");
 		fprintf(fp, "sleep 5\n");
 	}
 
