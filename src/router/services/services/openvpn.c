@@ -238,6 +238,14 @@ void start_openvpnserver(void)
 	if (nvram_match("openvpn_tuntap", "tap")) {
 		fprintf(fp, "brctl addif br0 tap2\n" "ifconfig tap2 0.0.0.0 up\n");	//non promisc for performance reasons
 	}
+
+	if (nvram_matchi("wshaper_enable", 1)) {
+		fprintf(fp, "startservice set_routes -f\n");
+		fprintf(fp, "startservice firewall -f\n");
+		fprintf(fp, "startservice wshaper -f\n");
+		fprintf(fp, "sleep 5\n");
+	}
+
 	if (nvram_matchi("block_multicast", 0)	//block multicast on bridged vpns
 	    && nvram_match("openvpn_tuntap", "tap"))
 		fprintf(fp, "insmod ebtables\n" "insmod ebtable_filter\n" "insmod ebtable_nat\n" "insmod ebt_pkttype\n"
@@ -251,13 +259,6 @@ void start_openvpnserver(void)
 			"ebtables -t nat -D POSTROUTING -o tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
 			"ebtables -t nat -I PREROUTING -i tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
 			"ebtables -t nat -I POSTROUTING -o tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n");
-
-	if (nvram_matchi("wshaper_enable", 1)) {
-		fprintf(fp, "startservice set_routes -f\n");
-		fprintf(fp, "startservice firewall -f\n");
-		fprintf(fp, "startservice wshaper -f\n");
-		fprintf(fp, "sleep 5\n");
-	}
 
 	if (nvram_default_matchi("openvpn_fw", 1, 0)) {
 		fprintf(fp, "iptables -I INPUT -i tap2 -m state --state NEW -j DROP\n");
@@ -528,6 +529,14 @@ void start_openvpn(void)
 		    && *(nvram_safe_get("openvpncl_ip")))
 			fprintf(fp, "ifconfig %s %s netmask %s up\n", ovpniface, nvram_safe_get("openvpncl_ip"), nvram_safe_get("openvpncl_mask"));
 	}
+
+	if (nvram_matchi("wshaper_enable", 1)) {
+		fprintf(fp, "startservice set_routes -f\n");
+		fprintf(fp, "startservice firewall -f\n");
+		fprintf(fp, "startservice wshaper -f\n");
+		fprintf(fp, "sleep 5\n");
+	}
+
 	if (nvram_matchi("openvpncl_nat", 1))
 		fprintf(fp, "iptables -D POSTROUTING -t nat -o %s -j MASQUERADE\n" "iptables -I POSTROUTING -t nat -o %s -j MASQUERADE\n", ovpniface, ovpniface);
 	if (nvram_matchi("openvpncl_sec", 0))
@@ -541,18 +550,10 @@ void start_openvpn(void)
 				"iptables -I INPUT -i %s -j ACCEPT\n" "iptables -I FORWARD -i %s -j ACCEPT\n" "iptables -I FORWARD -o %s -j ACCEPT\n", ovpniface, ovpniface, ovpniface, ovpniface, ovpniface, ovpniface);
 	}
 
-	if (nvram_matchi("wshaper_enable", 1)) {
-		fprintf(fp, "startservice set_routes -f\n");
-		fprintf(fp, "startservice firewall -f\n");
-		fprintf(fp, "startservice wshaper -f\n");
-		if (nvram_match("openvpncl_tuntap", "tun")) {
-			fprintf(fp, "stopservice dnsmasq -f\n");
-			fprintf(fp, "startservice dnsmasq -f\n");
-			fprintf(fp, "cat /tmp/resolv.dnsmasq > /tmp/resolv.dnsmasq_isp\n");
-			fprintf(fp, "env | grep 'dhcp-option DNS' | awk '{ print \"nameserver \" $3 }' > /tmp/resolv.dnsmasq\n");
-			fprintf(fp, "cat /tmp/resolv.dnsmasq_isp >> /tmp/resolv.dnsmasq\n");
-		}
-		fprintf(fp, "sleep 5\n");
+	if (nvram_match("openvpncl_tuntap", "tun")) {
+		fprintf(fp, "cat /tmp/resolv.dnsmasq > /tmp/resolv.dnsmasq_isp\n");
+		fprintf(fp, "env | grep 'dhcp-option DNS' | awk '{ print \"nameserver \" $3 }' > /tmp/resolv.dnsmasq\n");
+		fprintf(fp, "cat /tmp/resolv.dnsmasq_isp >> /tmp/resolv.dnsmasq\n");
 	}
 
 	if (nvram_default_matchi("openvpncl_fw", 1, 0)) {
@@ -616,8 +617,7 @@ void start_openvpn(void)
 	}
 
 	if (nvram_match("openvpncl_tuntap", "tun")) {
-		fprintf(fp, "stopservice dnsmasq -f\n");
-		fprintf(fp, "startservice dnsmasq -f\n");
+		fprintf(fp, "[ -f /tmp/resolv.dnsmasq_isp ] && mv -f /tmp/resolv.dnsmasq_isp /tmp/resolv.dnsmasq\n");
 	}
 
 /*	if (nvram_matchi("block_multicast",0) //block multicast on bridged vpns
