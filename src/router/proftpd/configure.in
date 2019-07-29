@@ -131,7 +131,7 @@ if test $ac_cv_prog_gcc = yes; then
     AC_MSG_RESULT(yes); fullCFLAGS="$fullCFLAGS $CFLAGS",
     AC_MSG_RESULT(no))
 
-  CFLAGS="-g2 $fullCFLAGS"
+  CFLAGS="$fullCFLAGS"
 fi
 
 dnl We substitute these in the man page templates.
