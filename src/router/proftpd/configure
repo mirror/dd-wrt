@@ -15768,7 +15768,7 @@ fi
 
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
-  CFLAGS="-g2 $fullCFLAGS"
+  CFLAGS="$fullCFLAGS"
 fi
 
 if test x$exec_prefix = xNONE ; then
