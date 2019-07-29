@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp disconnect msgs
- * Copyright (c) 2008-2016 TJ Saunders
+ * Copyright (c) 2008-2017 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -46,7 +46,7 @@ static struct disconnect_reason explanations[] = {
   { SFTP_SSH2_DISCONNECT_PROTOCOL_VERSION_NOT_SUPPORTED, "Protocol version not supported", NULL },
   { SFTP_SSH2_DISCONNECT_HOST_KEY_NOT_VERIFIABLE, "Host key not verifiable", NULL },
   { SFTP_SSH2_DISCONNECT_CONNECTION_LOST, "Connection lost", NULL },
-  { SFTP_SSH2_DISCONNECT_BY_APPLICATION, "Application error", NULL },
+  { SFTP_SSH2_DISCONNECT_BY_APPLICATION, "Application disconnected", NULL },
   { SFTP_SSH2_DISCONNECT_TOO_MANY_CONNECTIONS, "Too many connections", NULL },
   { SFTP_SSH2_DISCONNECT_AUTH_CANCELLED_BY_USER, "Authentication cancelled by user", NULL },
   { SFTP_SSH2_DISCONNECT_NO_MORE_AUTH_METHODS_AVAILABLE, "No other authentication mechanisms available", NULL },

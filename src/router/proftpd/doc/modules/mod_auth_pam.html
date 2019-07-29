@@ -125,6 +125,87 @@ this automatic inclusion, use the <code>--disable-auth-pam</code> configure
 option.
 
 <p>
+<hr>
+<h2><a name="Usage">Usage</a></h2>
+The following are some example platform-specific PAM configurations.
+
+<p>
+<i>FreeBSD</i><br>
+To use PAM with ProFTPD, you must edit <code>/etc/pam.conf</code> (or
+<code>/etc/pam.d/ftpd</code>) and add the following lines, if they are not
+already present:
+<pre>
+  ftpd auth    required    pam_unix.so         try_first_pass
+  ftpd account required    pam_unix.so         try_first_pass
+  ftpd session required    pam_permit.so
+</pre>
+In your <code>proftpd.conf</code>, you will need to set
+<code>AuthPAMConfig</code> to use the above service name, <i>i.e.</i> "ftpd":
+<pre>
+  &lt;IfModule mod_auth_pam.c&gt;
+    AuthPAMConfig ftpd
+  &lt;/IfModule&gt;
+</pre>
+PAM authentication should now work properly.
+
+<p>
+<i>Linux</i><br>
+To use PAM with ProFTPD, you must edit <code>/etc/pam.d/ftp</code> and add the
+following lines for RedHat installations:
+<pre>
+  #%PAM-1.0
+  auth       required     /lib/security/pam_pwdb.so shadow nullok
+  account    required     /lib/security/pam_pwdb.so
+  session    required     /lib/security/pam_pwdb.so
+</pre>
+For SuSE:
+<pre>
+  #%PAM-1.0
+  auth       required     /lib/security/pam_unix.so shadow nullok
+  account    required     /lib/security/pam_unix.so
+  session    required     /lib/security/pam_unix.so
+</pre>
+These settings are valid for RedHat and SuSE Linux systems.  Other Linux
+distributions may differ.
+
+<p>
+<b>NOTE</b>: If you are using a 64-bit system, you may need to change the above
+paths from "/lib/security/..." to "/lib64/security/...".  Without this
+correction, on 64-bit systems, your ProFTPD logs may contain errors like:
+<pre>
+  PAM unable to dlopen(/lib/security/pam_pwdb.so)
+  PAM [dlerror: /lib/security/pam_pwdb.so: cannot open shared object file:
+  No such file or directory]
+</pre>
+After updating the paths in your <code>/etc/pam.d/ftp</code> file, be sure to
+restart ProFTPD, so that the new PAM configuration takes effect.
+
+<p>
+<i>Mac OS X</i><br>
+To use PAM with ProFTPD, you must edit <code>/etc/pam.d/ftp</code> and add the
+following lines:
+<pre>
+  auth       required    pam_unix.so try_first_pass
+  account    required    pam_unix.so try_first_pass
+  session    required    pam_permit.so
+</pre>
+Or, if you are running Mac OSX 10.3 or later, you should have an
+<code>/etc/pam.d/ftpd</code> file that contains the following:
+<pre>
+  auth       sufficient     pam_securityserver.so
+  auth       required       pam_deny.so
+  account    required       pam_permit.so
+  password   required       pam_deny.so
+  session    required       pam_permit.so
+</pre>
+Then, in your <code>proftpd.conf</code>, use:
+<pre>
+  &lt;IfModule mod_auth_pam.c&gt;
+    AuthPAMConfig ftpd
+  &lt;/IfModule&gt;
+</pre>
+
+<p>
 <b>Logging</b><br>
 The <code>mod_auth_pam</code> module supports <a href="../howto/Tracing.html">trace logging</a>, via the module-specific log channels:
 <ul>

@@ -52,12 +52,17 @@ START_TEST (pool_destroy_pool_test) {
   p = make_sub_pool(permanent_pool);
   destroy_pool(p);
 
-#if !defined(PR_USE_DEVEL)
   /* What happens if we destroy an already-destroyed pool?  Answer: IFF
    * --enable-devel was used, THEN destroying an already-destroyed pool
    * will result in an exit(2) call from within pool.c, via the
    * chk_on_blk_list() function.  How impolite.
+   *
+   * And if --enable-devel was NOT used, on SOME systems, this test tickles
+   * other libc/malloc/free behaviors, which are unsettling.
+   *
+   * Sigh.  So for now, I'll just leave this here, but commented out.
    */
+#if 0
   mark_point();
   destroy_pool(p);
 #endif

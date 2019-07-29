@@ -614,7 +614,9 @@ LIBS
 build_alias
 host_alias
 target_alias
+INCLUDES
 LDFLAGS
+LIBDIRS
 MODULE_LIBS
 LIBOBJS
 LTLIBOBJS'
@@ -1197,6 +1199,18 @@ Optional Features:
                           see hosts_options(5) man page for details
 
 
+Optional Packages:
+  --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
+  --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-includes=LIST    add additional include paths to proftpd. LIST is a
+                          colon-separated list of include paths to add e.g.
+                          --with-includes=/some/mysql/include:/my/include
+
+  --with-libraries=LIST   add additional library paths to proftpd. LIST is a
+                          colon-separated list of include paths to add e.g.
+                          --with-libraries=/some/mysql/libdir:/my/libs
+
+
 _ACEOF
 ac_status=$?
 fi
@@ -1617,6 +1631,38 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+
+# Check whether --with-includes was given.
+if test "${with_includes+set}" = set; then
+  withval=$with_includes;  ac_addl_includes=`echo "$withval" | sed -e 's/:/ /g'` ;
+    for ainclude in $ac_addl_includes; do
+      if test x"$ac_build_addl_includes" = x ; then
+        ac_build_addl_includes="-I$ainclude"
+      else
+        ac_build_addl_includes="-I$ainclude $ac_build_addl_includes"
+      fi
+    done
+    CPPFLAGS="$CPPFLAGS $ac_build_addl_includes"
+
+fi
+
+
+
+# Check whether --with-libraries was given.
+if test "${with_libraries+set}" = set; then
+  withval=$with_libraries;  ac_addl_libdirs=`echo "$withval" | sed -e 's/:/ /g'` ;
+    for alibdir in $ac_addl_libdirs; do
+      if test x"$ac_build_addl_libdirs" = x ; then
+        ac_build_addl_libdirs="-L$alibdir"
+      else
+        ac_build_addl_libdirs="-L$alibdir $ac_build_addl_libdirs"
+      fi
+    done
+    LDFLAGS="$LDFLAGS $ac_build_addl_libdirs"
+
+fi
+
+
 ac_wrap2_libs=""
 
 # Check whether --enable-nis was given.
@@ -1651,6 +1697,12 @@ fi
 
 
 MODULE_LIBS="$ac_wrap2_libs"
+
+INCLUDES="$ac_build_addl_includes"
+LIBDIRS="$ac_build_addl_libdirs"
+
+
+
 
 
 
@@ -2310,13 +2362,15 @@ LIBS!$LIBS$ac_delim
 build_alias!$build_alias$ac_delim
 host_alias!$host_alias$ac_delim
 target_alias!$target_alias$ac_delim
+INCLUDES!$INCLUDES$ac_delim
 LDFLAGS!$LDFLAGS$ac_delim
+LIBDIRS!$LIBDIRS$ac_delim
 MODULE_LIBS!$MODULE_LIBS$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 41; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 43; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

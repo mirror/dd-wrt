@@ -1,6 +1,6 @@
 /*
  * ProFTPD: mod_facts -- a module for handling "facts" [RFC3659]
- * Copyright (c) 2007-2017 The ProFTPD Project
+ * Copyright (c) 2007-2019 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@
 
 #include "conf.h"
 #include "privs.h"
+#include "error.h"
 
 #define MOD_FACTS_VERSION		"mod_facts/0.6"
 
@@ -51,7 +52,7 @@ static unsigned long facts_mlinfo_opts = 0;
 #define FACTS_MLINFO_FL_SHOW_SYMLINKS_USE_SLINK		0x00002
 #define FACTS_MLINFO_FL_NO_CDIR				0x00004
 #define FACTS_MLINFO_FL_APPEND_CRLF			0x00008
-#define FACTS_MLINFO_FL_NO_ADJUSTED_SYMLINKS		0x00010
+#define FACTS_MLINFO_FL_ADJUSTED_SYMLINKS		0x00010
 #define FACTS_MLINFO_FL_NO_NAMES			0x00020
 
 struct mlinfo {
@@ -245,7 +246,7 @@ static size_t facts_mlinfo_fmt(struct mlinfo *info, char *buf, size_t bufsz,
 
   if (facts_opts & FACTS_OPT_SHOW_MODIFY) {
     if (info->tm != NULL) {
-      len = snprintf(ptr, bufsz, "modify=%04d%02d%02d%02d%02d%02d;",
+      len = pr_snprintf(ptr, bufsz, "modify=%04d%02d%02d%02d%02d%02d;",
         info->tm->tm_year+1900, info->tm->tm_mon+1, info->tm->tm_mday,
         info->tm->tm_hour, info->tm->tm_min, info->tm->tm_sec);
 
@@ -258,34 +259,34 @@ static size_t facts_mlinfo_fmt(struct mlinfo *info, char *buf, size_t bufsz,
   }
 
   if (facts_opts & FACTS_OPT_SHOW_PERM) {
-    len = snprintf(ptr, bufsz - buflen, "perm=%s;", info->perm);
+    len = pr_snprintf(ptr, bufsz - buflen, "perm=%s;", info->perm);
     buflen += len;
     ptr = buf + buflen;
   }
 
   if (!S_ISDIR(info->st.st_mode) &&
       (facts_opts & FACTS_OPT_SHOW_SIZE)) {
-    len = snprintf(ptr, bufsz - buflen, "size=%" PR_LU ";",
+    len = pr_snprintf(ptr, bufsz - buflen, "size=%" PR_LU ";",
       (pr_off_t) info->st.st_size);
     buflen += len;
     ptr = buf + buflen;
   }
 
   if (facts_opts & FACTS_OPT_SHOW_TYPE) {
-    len = snprintf(ptr, bufsz - buflen, "type=%s;", info->type);
+    len = pr_snprintf(ptr, bufsz - buflen, "type=%s;", info->type);
     buflen += len;
     ptr = buf + buflen;
   }
 
   if (facts_opts & FACTS_OPT_SHOW_UNIQUE) {
-    len = snprintf(ptr, bufsz - buflen, "unique=%lXU%lX;",
+    len = pr_snprintf(ptr, bufsz - buflen, "unique=%lXU%lX;",
       (unsigned long) info->st.st_dev, (unsigned long) info->st.st_ino);
     buflen += len;
     ptr = buf + buflen;
   }
 
   if (facts_opts & FACTS_OPT_SHOW_UNIX_GROUP) {
-    len = snprintf(ptr, bufsz - buflen, "UNIX.group=%s;",
+    len = pr_snprintf(ptr, bufsz - buflen, "UNIX.group=%s;",
       pr_gid2str(NULL, info->st.st_gid));
     buflen += len;
     ptr = buf + buflen;
@@ -293,21 +294,21 @@ static size_t facts_mlinfo_fmt(struct mlinfo *info, char *buf, size_t bufsz,
 
   if (!(facts_mlinfo_opts & FACTS_MLINFO_FL_NO_NAMES)) {
     if (facts_opts & FACTS_OPT_SHOW_UNIX_GROUP_NAME) {
-      len = snprintf(ptr, bufsz - buflen, "UNIX.groupname=%s;", info->group);
+      len = pr_snprintf(ptr, bufsz - buflen, "UNIX.groupname=%s;", info->group);
       buflen += len;
       ptr = buf + buflen;
     }
   }
 
   if (facts_opts & FACTS_OPT_SHOW_UNIX_MODE) {
-    len = snprintf(ptr, bufsz - buflen, "UNIX.mode=0%o;",
+    len = pr_snprintf(ptr, bufsz - buflen, "UNIX.mode=0%o;",
       (unsigned int) info->st.st_mode & 07777);
     buflen += len;
     ptr = buf + buflen;
   }
 
   if (facts_opts & FACTS_OPT_SHOW_UNIX_OWNER) {
-    len = snprintf(ptr, bufsz - buflen, "UNIX.owner=%s;",
+    len = pr_snprintf(ptr, bufsz - buflen, "UNIX.owner=%s;",
       pr_uid2str(NULL, info->st.st_uid));
     buflen += len;
     ptr = buf + buflen;
@@ -315,7 +316,7 @@ static size_t facts_mlinfo_fmt(struct mlinfo *info, char *buf, size_t bufsz,
 
   if (!(facts_mlinfo_opts & FACTS_MLINFO_FL_NO_NAMES)) {
     if (facts_opts & FACTS_OPT_SHOW_UNIX_OWNER_NAME) {
-      len = snprintf(ptr, bufsz - buflen, "UNIX.ownername=%s;", info->user);
+      len = pr_snprintf(ptr, bufsz - buflen, "UNIX.ownername=%s;", info->user);
       buflen += len;
       ptr = buf + buflen;
     }
@@ -326,7 +327,7 @@ static size_t facts_mlinfo_fmt(struct mlinfo *info, char *buf, size_t bufsz,
 
     mime_type = facts_mime_type(info);
     if (mime_type != NULL) {
-      len = snprintf(ptr, bufsz - buflen, "media-type=%s;",
+      len = pr_snprintf(ptr, bufsz - buflen, "media-type=%s;",
         mime_type);
       buflen += len;
       ptr = buf + buflen;
@@ -334,10 +335,10 @@ static size_t facts_mlinfo_fmt(struct mlinfo *info, char *buf, size_t bufsz,
   }
 
   if (flags & FACTS_MLINFO_FL_APPEND_CRLF) {
-    len = snprintf(ptr, bufsz - buflen, " %s\r\n", info->path);
+    len = pr_snprintf(ptr, bufsz - buflen, " %s\r\n", info->path);
 
   } else {
-    len = snprintf(ptr, bufsz - buflen, " %s", info->path);
+    len = pr_snprintf(ptr, bufsz - buflen, " %s", info->path);
   }
 
   buf[bufsz-1] = '\0';
@@ -469,9 +470,7 @@ static int facts_mlinfo_get(struct mlinfo *info, const char *path,
     if (S_ISLNK(info->st.st_mode)) {
       struct stat target_st;
       const char *dst_path;
-      char *link_path;
-      size_t link_pathsz;
-      int len;
+      int len = 0;
 
       /* Now we need to use stat(2) on the path (versus lstat(2)) to get the
        * info for the target, and copy its st_dev and st_ino values to our
@@ -482,28 +481,38 @@ static int facts_mlinfo_get(struct mlinfo *info, const char *path,
        * absolute path.
        */
 
-      link_pathsz = PR_TUNABLE_PATH_MAX;
-      link_path = pcalloc(info->pool, link_pathsz);
-      len = dir_readlink(info->pool, path, link_path, link_pathsz-1,
-        PR_DIR_READLINK_FL_HANDLE_REL_PATH);
-      if (len > 0 &&
-          (size_t) len < link_pathsz) {
-        char *best_path;
+      if (flags & FACTS_MLINFO_FL_ADJUSTED_SYMLINKS) {
+        char *link_path;
+        size_t link_pathsz;
 
-        best_path = dir_best_path(info->pool, link_path);
-        if (best_path != NULL) {
-          dst_path = best_path;
+        link_pathsz = PR_TUNABLE_PATH_MAX;
+        link_path = pcalloc(info->pool, link_pathsz);
+        len = dir_readlink(info->pool, path, link_path, link_pathsz-1,
+          PR_DIR_READLINK_FL_HANDLE_REL_PATH);
+        if (len > 0 &&
+            (size_t) len < link_pathsz) {
+          char *best_path;
+
+          best_path = dir_best_path(info->pool, link_path);
+          if (best_path != NULL) {
+            dst_path = best_path;
+
+          } else {
+            dst_path = link_path;
+          }
 
         } else {
-          dst_path = link_path;
+          dst_path = path;
         }
+
+        pr_fs_clear_cache2(dst_path);
+        res = pr_fsio_stat(dst_path, &target_st);
 
       } else {
         dst_path = path;
+        res = pr_fsio_stat(dst_path, &target_st);
       }
 
-      pr_fs_clear_cache2(dst_path);
-      res = pr_fsio_stat(dst_path, &target_st);
       if (res < 0) {
         int xerrno = errno;
 
@@ -542,12 +551,12 @@ static int facts_mlinfo_get(struct mlinfo *info, const char *path,
           char target[PR_TUNABLE_PATH_MAX+1];
           int targetlen;
 
-          if (flags & FACTS_MLINFO_FL_NO_ADJUSTED_SYMLINKS) {
-            targetlen = pr_fsio_readlink(path, target, sizeof(target)-1);
-
-          } else {
+          if (flags & FACTS_MLINFO_FL_ADJUSTED_SYMLINKS) {
             sstrncpy(target, dst_path, sizeof(target)-1);
             targetlen = len;
+
+          } else {
+            targetlen = pr_fsio_readlink(path, target, sizeof(target)-1);
           }
 
           if (targetlen < 0) { 
@@ -894,12 +903,14 @@ static int facts_modify_mtime(pool *p, const char *path, char *timestamp) {
 
 static int facts_modify_unix_group(pool *p, const char *path,
     const char *group) {
+  int res, xerrno = 0;
   gid_t gid;
-  char *tmp = NULL;
+  char *ptr = NULL;
+  pr_error_t *err = NULL;
 
-  gid = strtoul(group, &tmp, 10);
-  if (tmp &&
-      *tmp) {
+  gid = strtoul(group, &ptr, 10);
+  if (ptr &&
+      *ptr) {
     /* Try to lookup the GID using the value as a name. */
     gid = pr_auth_name2gid(p, group);
     if (gid == (gid_t) -1) {
@@ -909,9 +920,26 @@ static int facts_modify_unix_group(pool *p, const char *path,
     }
   }
 
-  if (pr_fsio_chown(path, (uid_t) -1, gid) < 0) {
-    pr_log_debug(DEBUG5, MOD_FACTS_VERSION
-      ": error modifying UNIX.group fact for '%s': %s", path, strerror(errno));
+  res = pr_fsio_chown_with_error(p, path, (uid_t) -1, gid, &err);
+  xerrno = errno;
+
+  if (res < 0) {
+    pr_error_set_where(err, &facts_module, __FILE__, __LINE__ - 4);
+    pr_error_set_why(err, pstrcat(p, "modify UNIX.group fact for '", path,
+      "'", NULL));
+
+    if (err != NULL) {
+      pr_log_debug(DEBUG5, MOD_FACTS_VERSION ": %s", pr_error_strerror(err, 0));
+      pr_error_destroy(err);
+      err = NULL;
+
+    } else {
+      pr_log_debug(DEBUG5, MOD_FACTS_VERSION
+        ": error modifying UNIX.group fact for '%s': %s", path,
+        strerror(xerrno));
+    }
+
+    errno = xerrno;
     return -1;
   }
 
@@ -919,20 +947,40 @@ static int facts_modify_unix_group(pool *p, const char *path,
 }
 
 static int facts_modify_unix_mode(pool *p, const char *path, char *mode_str) {
+  int res, xerrno = 0;
   mode_t mode;
-  char *tmp = NULL;
+  char *ptr = NULL;
+  pr_error_t *err = NULL;
 
-  mode = strtoul(mode_str, &tmp, 8);
-  if (tmp &&
-      *tmp) {
+  mode = strtoul(mode_str, &ptr, 8);
+  if (ptr &&
+      *ptr) {
     pr_log_debug(DEBUG3, MOD_FACTS_VERSION
       ": UNIX.mode fact '%s' is not an octal number", mode_str);
+    errno = EINVAL;
     return -1;
   }
 
-  if (pr_fsio_chmod(path, mode) < 0) {
-    pr_log_debug(DEBUG5, MOD_FACTS_VERSION
-      ": error modifying UNIX.mode fact for '%s': %s", path, strerror(errno));
+  res = pr_fsio_chmod_with_error(p, path, mode, &err);
+  xerrno = errno;
+
+  if (res < 0) {
+    pr_error_set_where(err, &facts_module, __FILE__, __LINE__ - 4);
+    pr_error_set_why(err, pstrcat(p, "modify UNIX.mode fact for '", path, "'",
+      NULL));
+
+    if (err != NULL) {
+      pr_log_debug(DEBUG5, MOD_FACTS_VERSION ": %s", pr_error_strerror(err, 0));
+      pr_error_destroy(err);
+      err = NULL;
+
+    } else {
+      pr_log_debug(DEBUG5, MOD_FACTS_VERSION
+        ": error modifying UNIX.mode fact for '%s': %s", path,
+        strerror(xerrno));
+    }
+
+    errno = xerrno;
     return -1;
   }
 
@@ -1875,8 +1923,11 @@ MODRET set_factsoptions(cmd_rec *cmd) {
     if (strcmp(cmd->argv[i], "UseSlink") == 0) {
       opts |= FACTS_MLINFO_FL_SHOW_SYMLINKS_USE_SLINK;
 
+    } else if (strcmp(cmd->argv[i], "AdjustedSymlinks") == 0) {
+      opts |= FACTS_MLINFO_FL_ADJUSTED_SYMLINKS;
+
     } else if (strcmp(cmd->argv[i], "NoAdjustedSymlinks") == 0) {
-      opts |= FACTS_MLINFO_FL_NO_ADJUSTED_SYMLINKS;
+      /* Ignore; retained for backward compatibility. */
 
     } else if (strcmp(cmd->argv[i], "NoNames") == 0) {
       opts |= FACTS_MLINFO_FL_NO_NAMES;

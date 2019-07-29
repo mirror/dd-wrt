@@ -232,7 +232,7 @@ you could do the following:
   &lt;/Limit&gt;
 </pre>
 
-<p>
+<p><a name="UsingClasses">
 <font color=red>Question</font>: How can I make <code>proftpd</code> use
 a different <code>MasqueradeAddress</code> based on the address of the
 connecting client?<br>
@@ -265,6 +265,32 @@ For those that need to see a concrete example configuration of this:
     <font color=blue># Note that there is <b>no</b> MasqueradeAddress directive
     # used in this section!</font>
   &lt;/VirtualHost&gt;
+</pre>
+
+<p>
+On the other hand, there <em>can</em> be cases where you really do need
+different <code>MasqueradeAddress</code> values, <i>in the same vhost</i>,
+depending on the client IP address.  For these situations, you should
+use <a href="Classes.html">classes</a> and the
+<a href="../contrib/mod_ifsession.html"><code>mod_ifsession</code></a>
+module, like so:
+<pre>
+  &lt;IfModule mod_ifsession.c&gt;
+    # Define a class for internal clients
+    &lt;Class internal&gt;
+      From 10.0.0.0/8
+    &lt;/Class&gt;
+
+    # Internal clients get a different MasqueradeAddress
+    &lt;IfClass internal&gt;
+      MasqueradeAddress 10.1.2.3
+    &lt;/IfClass&gt;
+
+    # All other clients get some different, public MasqueradeAddress
+    &lt;IfClass !internal&gt;
+      MasqueradeAddress 1.2.3.4
+    &lt;/IfClass&gt;
+  &lt;/IfModule&gt;
 </pre>
 
 <p>

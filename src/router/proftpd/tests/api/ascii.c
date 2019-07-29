@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2015-2016 The ProFTPD Project team
+ * Copyright (c) 2015-2018 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -203,6 +203,7 @@ START_TEST (ascii_ftp_to_crlf_test) {
   char *src, *dst, *expected;
   size_t src_len, dst_len, expected_len;
 
+  mark_point();
   pr_ascii_ftp_reset();
   res = pr_ascii_ftp_to_crlf(NULL, NULL, 0, NULL, NULL);
   fail_unless(res == -1, "Failed to handle null arguments");
@@ -210,6 +211,7 @@ START_TEST (ascii_ftp_to_crlf_test) {
     strerror(errno), errno);
 
   /* Handle empty input buffer. */
+  mark_point();
   pr_ascii_ftp_reset();
   src = "";
   src_len = 0;
@@ -221,6 +223,7 @@ START_TEST (ascii_ftp_to_crlf_test) {
   fail_unless(dst == src, "Failed to set output buffer");
 
   /* Handle input buffer with no CRLFs. */
+  mark_point();
   pr_ascii_ftp_reset();
   src = "hello";
   src_len = 5;
@@ -235,8 +238,10 @@ START_TEST (ascii_ftp_to_crlf_test) {
     (unsigned long) dst_len);
   fail_unless(strncmp(dst, expected, dst_len) == 0,
     "Expected output buffer '%s', got '%s'", expected, dst);
+  free(dst);
 
   /* Handle input buffer with CRs, no LFs. */
+  mark_point();
   pr_ascii_ftp_reset();
   src = "he\rl\rlo";
   src_len = 7;
@@ -251,8 +256,10 @@ START_TEST (ascii_ftp_to_crlf_test) {
     (unsigned long) dst_len);
   fail_unless(strncmp(dst, expected, dst_len) == 0,
     "Expected output buffer '%s', got '%s'", expected, dst);
+  free(dst);
 
   /* Handle input buffer with LFs, no CRs. */
+  mark_point();
   pr_ascii_ftp_reset();
   src = "he\nl\nlo";
   src_len = 7;
@@ -267,8 +274,10 @@ START_TEST (ascii_ftp_to_crlf_test) {
     (unsigned long) dst_len);
   fail_unless(strncmp(dst, expected, dst_len) == 0,
     "Expected output buffer '%s', got '%s'", expected, dst);
+  free(dst);
 
   /* Handle input buffer CRLFs. */
+  mark_point();
   pr_ascii_ftp_reset();
   src = "he\r\nl\r\nlo";
   src_len = 9;
@@ -283,8 +292,10 @@ START_TEST (ascii_ftp_to_crlf_test) {
     (unsigned long) dst_len);
   fail_unless(strncmp(dst, expected, dst_len) == 0,
     "Expected output buffer '%s', got '%s'", expected, dst);
+  free(dst);
 
   /* Handle input buffer with leading LF. */
+  mark_point();
   pr_ascii_ftp_reset();
   src = "\nhello";
   src_len = 6;
@@ -299,8 +310,10 @@ START_TEST (ascii_ftp_to_crlf_test) {
     (unsigned long) dst_len);
   fail_unless(strncmp(dst, expected, dst_len) == 0,
     "Expected output buffer '%s', got '%s'", expected, dst);
+  free(dst);
 
   /* Handle input buffer with trailing CR. */
+  mark_point();
   pr_ascii_ftp_reset();
   src = "hel\r";
   src_len = 4;
@@ -315,7 +328,9 @@ START_TEST (ascii_ftp_to_crlf_test) {
     (unsigned long) dst_len);
   fail_unless(strncmp(dst, expected, dst_len) == 0,
     "Expected output buffer '%s', got '%s'", expected, dst);
+  free(dst);
 
+  mark_point();
   src = "\nlo\n";
   src_len = 4;
   dst = NULL;
@@ -329,6 +344,7 @@ START_TEST (ascii_ftp_to_crlf_test) {
     (unsigned long) dst_len);
   fail_unless(strncmp(dst, expected, dst_len) == 0,
     "Expected output buffer '%s', got '%s'", expected, dst);
+  free(dst);
 }
 END_TEST
 

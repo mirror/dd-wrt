@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_auth_file - file-based authentication module that supports
  *                          restrictions on the file contents
- * Copyright (c) 2002-2016 The ProFTPD Project team
+ * Copyright (c) 2002-2017 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -80,6 +80,12 @@ typedef struct file_rec {
 /* List of server-specific AuthFiles */
 static authfile_file_t *af_user_file = NULL;
 static authfile_file_t *af_group_file = NULL;
+static unsigned long auth_file_opts = 0UL;
+
+/* Tell mod_auth_file to skip/ignore the permissions checks on the configured
+ * AuthUserFile/AuthGroupFile.
+ */
+#define AUTH_FILE_OPT_INSECURE_PERMS		0x0001
 
 static int handle_empty_salt = FALSE;
 
@@ -1334,6 +1340,41 @@ MODRET authfile_chkpass(cmd_rec *cmd) {
 /* Configuration handlers
  */
 
+/* usage: AuthFileOptions opt1 ... */
+MODRET set_authfileoptions(cmd_rec *cmd) {
+  config_rec *c = NULL;
+  register unsigned int i = 0;
+  unsigned long opts = 0UL;
+
+  if (cmd->argc-1 == 0) {
+    CONF_ERROR(cmd, "wrong number of parameters");
+  }
+
+  CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
+
+  c = add_config_param(cmd->argv[0], 1, NULL);
+
+  for (i = 1; i < cmd->argc; i++) {
+    if (strcmp(cmd->argv[i], "InsecurePerms") == 0) {
+      opts |= AUTH_FILE_OPT_INSECURE_PERMS;
+
+      /* Note that this option disables some parse-time checks, so we need
+       * to set it globally now, rather than at sess_init time.
+       */
+      auth_file_opts |= AUTH_FILE_OPT_INSECURE_PERMS;
+
+    } else {
+      CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, ": unknown AuthFileOption '",
+        cmd->argv[i], "'", NULL));
+    }
+  }
+
+  c->argv[0] = pcalloc(c->pool, sizeof(unsigned long));
+  *((unsigned long *) c->argv[0]) = opts;
+
+  return PR_HANDLED(cmd);
+}
+
 /* usage: AuthGroupFile path [id <min-max>] [name <regex>] */
 MODRET set_authgroupfile(cmd_rec *cmd) {
   config_rec *c = NULL;
@@ -1360,14 +1401,16 @@ MODRET set_authgroupfile(cmd_rec *cmd) {
       path, "'.", NULL));
   }
 
-  /* Make sure the configured file has the correct permissions.  Note that
-   * AuthGroupFiles, unlike AuthUserFiles, do not contain any sensitive
-   * information, and can thus be world-readable.
-   */
-  flags = PR_AUTH_FILE_FL_ALLOW_WORLD_READABLE;
-  if (af_check_file(cmd->tmp_pool, cmd->argv[0], cmd->argv[1], flags) < 0) {
-    CONF_ERROR(cmd, pstrcat(cmd->tmp_pool,
-      "unable to use ", path, ": ", strerror(errno), NULL));
+  if (!(auth_file_opts & AUTH_FILE_OPT_INSECURE_PERMS)) {
+    /* Make sure the configured file has the correct permissions.  Note that
+     * AuthGroupFiles, unlike AuthUserFiles, do not contain any sensitive
+     * information, and can thus be world-readable.
+     */
+    flags = PR_AUTH_FILE_FL_ALLOW_WORLD_READABLE;
+    if (af_check_file(cmd->tmp_pool, cmd->argv[0], cmd->argv[1], flags) < 0) {
+      CONF_ERROR(cmd, pstrcat(cmd->tmp_pool,
+        "unable to use ", path, ": ", strerror(errno), NULL));
+    }
   }
 
   c = add_config_param(cmd->argv[0], 1, NULL);
@@ -1482,14 +1525,16 @@ MODRET set_authuserfile(cmd_rec *cmd) {
       path, "'.", NULL));
   }
 
-  /* Make sure the configured file has the correct permissions.  Note that
-   * AuthUserFiles, unlike AuthGroupFiles, DO contain any sensitive
-   * information, and thus CANNOT be world-readable.
-   */
-  flags = 0;
-  if (af_check_file(cmd->tmp_pool, cmd->argv[0], cmd->argv[1], flags) < 0) {
-    CONF_ERROR(cmd, pstrcat(cmd->tmp_pool,
-      "unable to use ", path, ": ", strerror(errno), NULL));
+  if (!(auth_file_opts & AUTH_FILE_OPT_INSECURE_PERMS)) {
+    /* Make sure the configured file has the correct permissions.  Note that
+     * AuthUserFiles, unlike AuthGroupFiles, DO contain any sensitive
+     * information, and thus CANNOT be world-readable.
+     */
+    flags = 0;
+    if (af_check_file(cmd->tmp_pool, cmd->argv[0], cmd->argv[1], flags) < 0) {
+      CONF_ERROR(cmd, pstrcat(cmd->tmp_pool,
+        "unable to use ", path, ": ", strerror(errno), NULL));
+    }
   }
 
   c = add_config_param(cmd->argv[0], 1, NULL);
@@ -1668,12 +1713,12 @@ static int authfile_sess_init(void) {
     authfile_sess_reinit_ev, NULL);
 
   c = find_config(main_server->conf, CONF_PARAM, "AuthUserFile", FALSE);
-  if (c) {
+  if (c != NULL) {
     af_user_file = c->argv[0];
   }
 
   c = find_config(main_server->conf, CONF_PARAM, "AuthGroupFile", FALSE);
-  if (c) {
+  if (c != NULL) {
     af_group_file = c->argv[0];
   }
 
@@ -1684,6 +1729,7 @@ static int authfile_sess_init(void) {
  */
 
 static conftable authfile_conftab[] = {
+  { "AuthFileOptions",	set_authfileoptions,	NULL },
   { "AuthGroupFile",	set_authgroupfile,	NULL },
   { "AuthUserFile",	set_authuserfile,	NULL },
   { NULL }

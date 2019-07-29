@@ -40,7 +40,7 @@ int log_wtmp(const char *line, const char *name, const char *host,
     !(defined(LINUX) || defined(__hpux) || defined (_AIX))
   /* This "auxilliary" utmp doesn't exist under linux. */
 
-#if defined(__sparcv9) && !defined(__NetBSD__) && !defined(__FreeBSD__)
+#if (defined(__sparcv9) || defined(__sun)) && !defined(__NetBSD__) && !defined(__FreeBSD__)
   struct futmpx utx;
   time_t t;
 
@@ -102,7 +102,7 @@ int log_wtmp(const char *line, const char *name, const char *host,
 #else /* SVR4 */
     utx.ut_syslen = strlen(utx.ut_host)+1;
 
-#  if defined(__sparcv9) && !defined(__FreeBSD__)
+#  if (defined(__sparcv9) || defined(__sun)) && !defined(__FreeBSD__)
     time(&t);
     utx.ut_tv.tv_sec = (time32_t)t;
 #  else

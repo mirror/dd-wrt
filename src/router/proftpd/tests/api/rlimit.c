@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2015 The ProFTPD Project team
+ * Copyright (c) 2015-2018 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -145,6 +145,7 @@ START_TEST (rlimit_memory_test) {
 }
 END_TEST
 
+#ifdef RLIMIT_NPROC
 START_TEST (rlimit_nproc_test) {
   int res;
   rlim_t curr_rlim = 0, max_rlim = 0 ;
@@ -170,6 +171,7 @@ START_TEST (rlimit_nproc_test) {
   }
 }
 END_TEST
+#endif /* RLIMIT_NPROC */
 
 Suite *tests_get_rlimit_suite(void) {
   Suite *suite;
@@ -184,7 +186,9 @@ Suite *tests_get_rlimit_suite(void) {
   tcase_add_test(testcase, rlimit_cpu_test);
   tcase_add_test(testcase, rlimit_files_test);
   tcase_add_test(testcase, rlimit_memory_test);
+#ifdef RLIMIT_NPROC
   tcase_add_test(testcase, rlimit_nproc_test);
+#endif /* RLIMIT_NPROC */
 
   suite_add_tcase(suite, testcase);
   return suite;

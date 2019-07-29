@@ -331,16 +331,24 @@ of supported cipher algorithms is, in the default order of preference:
   <li>aes256-cbc
   <li>aes192-cbc
   <li>aes128-cbc
-  <li>blowfish-ctr
-  <li>blowfish-cbc
   <li>cast128-cbc
-  <li>arcfour256
-  <li>arcfour128
   <li>3des-ctr
   <li>3des-cbc
 </ul>
 By default, all of the above cipher algorithms are presented to the client,
 in the above order, during the key exchange.
+
+<p>
+In ProFTPD 1.3.7rc1 and later, the following list of algorithms are
+<em>supported</em>, but <b>not</b> presented to clients by default.  These
+algorithms must be <em>explicitly</em> configured via <code>SFTPCiphers</code>
+to be available for use by clients:
+<ul>
+  <li>blowfish-ctr
+  <li>blowfish-cbc
+  <li>arcfour256
+  <li>arcfour128
+</ul>
 
 <p>
 The "none" cipher (<i>i.e.</i> no encryption) will <b>not</b> be presented to
@@ -596,9 +604,6 @@ of supported MAC algorithms is:
   <li>hmac-sha2-512
   <li>hmac-sha1
   <li>hmac-sha1-96
-  <li>hmac-md5
-  <li>hmac-md5-96
-  <li>hmac-ripemd160
   <li>umac-64@openssh.com
   <li>umac-128@openssh.com
 </ul>
@@ -606,6 +611,16 @@ By default, all of the above MAC algorithms are presented to the client,
 in the above order, during the key exchange.  <b>Note</b> that some algorithms
 (<i>e.g.</i> the SHA256 and SHA512 algorithms) may not be supported by
 the version of OpenSSL used; this will be automatically detected.
+
+<p>
+The following list of algorithms are <em>supported</em>, but <b>not</b>
+presented to clients by default.  These algorithms must be <em>explicitly</em>
+configured via <code>SFTPDigests</code> to be available for use by clients:
+<ul>
+  <li>hmac-md5
+  <li>hmac-md5-96
+  <li>hmac-ripemd160
+</ul>
 
 <p>
 The "none" MAC (<i>i.e.</i> no MAC) will <b>not</b> be presented to the client
@@ -1073,6 +1088,23 @@ The currently implemented options are:
     permissions in an upload.) If you need more FTP-like functionality for any
     reason and wish to have <code>mod_sftp</code> silently ignore any
     permissions sent by the SFTP client, use this option.
+  </li>
+
+  <p>
+  <li><code>IncludeSFTPTimes</code><br>
+    <p>
+    Some SFTP clients (<i>e.g.</i> the Rebex SFTP library) do not implement
+    SFTP protocol versions 4+ well, and do not <em>request</em> the
+    access/modify time attributes but <em>expect/assume</em> that those
+    time attributes will be present in the <code>STAT</code> responses.
+    Use this option to tell <code>mod_sftp</code> to always include the
+    access and modify time attributes in <code>STAT</code> responses for
+    clients using SFTP protocol version 4 and higher.
+
+    <p>
+    <b>Note</b> that this option first appeared in
+    <code>proftpd-1.3.7rc1</code>.
+  </li>
 
   <p>
   <li><code>InsecureHostKeyPerms</code><br>
@@ -1501,13 +1533,18 @@ values), once the client has successfully exchanged keys with
   <li><code>SFTP_SERVER_COMPRESSION_ALGO</code>
   <li><code>SFTP_SERVER_MAC_ALGO</code>
 </ul>
-And after the client has successfully authenticated, the following variables
-<i>may</i> be set, depending on the authentication mechanism used:
+When a client attempts to use publickey authentication, the following variables
+<i>may</i> be set:
 <ul>
+  <li><code>SFTP_USER_AUTH_METHOD</code>
   <li><code>SFTP_USER_PUBLICKEY_ALGO</code>
   <li><code>SFTP_USER_PUBLICKEY_FINGERPRINT</code>
   <li><code>SFTP_USER_PUBLICKEY_FINGERPRINT_ALGO</code>
 </ul>
+<b>Note</b> that the above variables may be present even if the user was
+authenticated by a mechanism <i>other than publickey authentication</i>.  This
+is intentional; the logs may be used to help troubleshoot <i>failed</i>
+authentication attempts, as well as successful authentications.
 
 <p>
 These environment variables are intended for informational purposes,
@@ -2434,6 +2471,79 @@ by the users.
 Fortunately <code>mod_sftp</code> will function without issue if it
 cannot read either the <code>SFTPDHParamFile</code> or the
 <code>SFTPKeyBlacklist</code> files.
+
+<p><a name="SFTPSHA2">
+<font color=red>Question</font>: I see that many sites are phasing out their
+use of the SHA-1 algorithm as it is felt to be <em>unsafe</em>.  How can I
+configure <code>mod_sftp</code> to no longer use SHA-1?<br>
+<font color=blue>Answer</font>:  The main uses of SHA-1 in <code>mod_sftp</code>
+are in the algorithms for MACs (the
+<a href="#SFTPDigests"><code>SFTPDigests</code></a> directive) and key exchanges
+(the <a href="#SFTPKeyExchanges"><code>SFTPKeyExchanges</code></a> directive).
+
+<p>
+For <code>SFTPDigests</code>, the algorithms that <em>use</em> SHA-1, and thus
+the ones to <em>avoid</em> are:
+<ul>
+  <li>hmac-sha1
+  <li>hmac-sha1-96
+  <li>hmac-md5
+  <li>hmac-md5-96
+</ul>
+Then you would want to use something like this in your <code>mod_sftp</code>
+configuration:
+<pre>
+  SFTPDigests \
+    umac-128@openssh.com \
+    umac-64@openssh.com \
+    hmac-sha2-256 \
+    hmac-sha2-512
+</pre>
+Note that some of the algorithms above may not be supported by your version
+of <code>mod_sftp</code>.
+
+<p>
+Similarly, for key exchanges, the algorithms to avoid because they use SHA-1
+are:
+<ul>
+  <li>diffie-hellman-group-exchange-sha1
+  <li>diffie-hellman-group14-sha1
+  <li>diffie-hellman-group1-sha1
+  </li>rsa1024-sha1
+</ul>
+And to do this, you might use something like this in your configuration:
+<pre>
+  SFTPKeyExchanges \
+    curve25519-sha256@libssh.org \
+    ecdh-sha2-nistp521 \
+    ecdh-sha2-nistp384 \
+    ecdh-sha2-nistp256 \
+    diffie-hellman-group18-sha512 \
+    diffie-hellman-group16-sha512 \
+    diffie-hellman-group14-sha256 \
+    diffie-hellman-group-exchange-sha256 \
+</pre>
+
+<p><a name="SFTPOpenSSL1.1.x">
+<font color=red>Question</font>: I am using ProFTPD 1.3.5, and I am unable to
+use <code>mod_sftp</code>.  When I connect, I see these errors in my
+<code>SFTPLog</code>:
+<pre>
+  2017-07-28 22:38:13,904 mod_sftp/0.9.9[24363]: error setting key/IV for aes256-ctr cipher for decryption:
+    (1) error:0906D06C:PEM routines:PEM_read_bio:no start line
+    (2) error:0607B083:digital envelope routines:EVP_CipherInit_ex:no cipher set
+</pre>
+Is this a bug?<br>
+<font color=blue>Answer</font>: These error messages indicate that you are
+using a newer version of OpenSSL, <i>e.g.</i> OpenSSL 1.1.<i>x</i>, than
+ProFTPD 1.3.5 can support.
+
+<p>
+The OpenSSL APIs <em>changed</em> from OpenSSL 1.0.<i>x</i> to OpenSSL
+1.1.<i>x</i>, requiring changes in the applications that use OpenSSL (see
+<a href="http://bugs.proftpd.org/show_bug.cgi?id=4240">Bug#4240</a>).  To
+deal with this issue, then, you can hopefully upgrade to ProFTPD 1.3.6 or later,
+<i>or</i> downgrade your OpenSSL version to 1.0.<i>x</i>.
 
 <p>
 <hr>

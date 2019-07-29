@@ -990,6 +990,33 @@ sub quit {
   }
 }
 
+sub rang {
+  my $self = shift;
+  my $range_start = shift;
+  croak("Missing range start") unless defined($range_start);
+  my $range_end = shift;
+  croak("Missing range end") unless defined($range_end);
+  my $code;
+
+  $code = $self->{ftp}->quot('RANG', $range_start, $range_end);
+  unless ($code) {
+    croak("RANG command failed: " .  $self->{ftp}->code . ' ' .
+      $self->response_msg());
+  }
+
+  if ($code == 4 || $code == 5) {
+    croak("RANG command failed: " .  $self->{ftp}->code . ' ' .
+      $self->response_msg());
+  }
+
+  my $msg = $self->response_msg();
+  if (wantarray()) {
+    return ($self->{ftp}->code, $msg);
+  }
+
+  return $msg;
+}
+
 sub rest {
   my $self = shift;
   my $offset = shift;

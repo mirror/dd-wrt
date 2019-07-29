@@ -124,7 +124,7 @@ int sftp_date_set_params(pool *p, uint32_t channel_id, array_header *req) {
       case '?':
         /* Ignore unsupported options */
         (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-          "ingoring supported date(1) option '%c'", (char) optopt);
+          "ignoring supported date(1) option '%c'", (char) optopt);
         break;
     }
   }

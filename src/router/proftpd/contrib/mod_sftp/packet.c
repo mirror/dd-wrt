@@ -1079,7 +1079,7 @@ static int write_packet_padding(struct ssh2_packet *pkt) {
 
   /* Fill the padding with pseudo-random data. */
   for (i = 0; i < pkt->padding_len; i++) {
-    pkt->padding[i] = rand();
+    pkt->padding[i] = (unsigned char) pr_random_next(0, UCHAR_MAX);
   }
 
   return 0;

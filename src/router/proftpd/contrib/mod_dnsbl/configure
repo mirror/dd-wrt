@@ -673,6 +673,7 @@ CPP
 GREP
 EGREP
 INCLUDES
+LIBDIRS
 MODULE_LIBS
 LIBOBJS
 LTLIBOBJS'
@@ -4299,7 +4300,9 @@ rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
 
 INCLUDES="$ac_build_addl_includes"
+LIBDIRS="$ac_build_addl_libdirs"
 MODULE_LIBS="$ac_dnsbl_libs"
+
 
 
 
@@ -4984,12 +4987,13 @@ CPP!$CPP$ac_delim
 GREP!$GREP$ac_delim
 EGREP!$EGREP$ac_delim
 INCLUDES!$INCLUDES$ac_delim
+LIBDIRS!$LIBDIRS$ac_delim
 MODULE_LIBS!$MODULE_LIBS$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 63; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 64; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

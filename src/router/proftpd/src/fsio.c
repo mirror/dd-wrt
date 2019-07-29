@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2017 The ProFTPD Project
+ * Copyright (c) 2001-2019 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@
 
 /* ProFTPD virtual/modular file-system support */
 
+#include "error.h"
 #include "conf.h"
 #include "privs.h"
 
@@ -1114,7 +1115,7 @@ static int fs_cmp(const void *a, const void *b) {
       return -1;
     }
   }
-   
+
   fsa = *((pr_fs_t **) a);
   fsb = *((pr_fs_t **) b);
 
@@ -1219,8 +1220,8 @@ static int fs_statcache_evict(pr_table_t *cache_tab, time_t now) {
    * lower the maximum age, and try again.  If not enough room by then, then
    * we'll try again on the next stat.
    */
- 
-  evict_data.now = now; 
+
+  evict_data.now = now;
   evict_data.max_age = statcache_max_age;
   evict_data.cache_tab = cache_tab;
 
@@ -1317,7 +1318,7 @@ static int cache_stat(pr_fs_t *fs, const char *path, struct stat *st,
   char cleaned_path[PR_TUNABLE_PATH_MAX+1], pathbuf[PR_TUNABLE_PATH_MAX+1];
   int (*mystat)(pr_fs_t *, const char *, struct stat *) = NULL;
   size_t path_len;
-  pr_table_t *cache_tab = NULL; 
+  pr_table_t *cache_tab = NULL;
   const struct fs_statcache *sc = NULL;
   time_t now;
 
@@ -1586,7 +1587,7 @@ static void statcache_dumpf(const char *fmt, ...) {
   memset(buf, '\0', sizeof(buf));
 
   va_start(msg, fmt);
-  vsnprintf(buf, sizeof(buf), fmt, msg);
+  pr_vsnprintf(buf, sizeof(buf), fmt, msg);
   va_end(msg);
 
   buf[sizeof(buf)-1] = '\0';
@@ -1645,7 +1646,7 @@ void pr_fs_statcache_reset(void) {
   lstat_statcache_tab = pr_table_alloc(statcache_pool, 0);
 }
 
-int pr_fs_statcache_set_policy(unsigned int size, unsigned int max_age, 
+int pr_fs_statcache_set_policy(unsigned int size, unsigned int max_age,
     unsigned int flags) {
 
   statcache_size = size;
@@ -2063,7 +2064,7 @@ int pr_fs_copy_file2(const char *src, const char *dst, int flags,
     const char **names;
 
     names = xattrs->elts;
-    for (i = 0; xattrs->nelts; i++) {
+    for (i = 0; i < xattrs->nelts; i++) {
       ssize_t valsz;
 
       /* First, find out how much memory we need for this attribute's
@@ -3301,7 +3302,7 @@ char *pr_fs_decode_path2(pool *p, const char *path, int flags) {
       raw_path = pcalloc(p, raw_pathlen + 1);
 
       for (i = 0; i < pathlen; i++) {
-        snprintf((char *) (raw_path + (i * 5)), (raw_pathlen - 1) - (i * 5),
+        pr_snprintf((char *) (raw_path + (i * 5)), (raw_pathlen - 1) - (i * 5),
           "0x%02x ", (unsigned char) path[i]);
       }
 
@@ -3376,7 +3377,7 @@ char *pr_fs_encode_path(pool *p, const char *path) {
       raw_path = pcalloc(p, raw_pathlen + 1);
 
       for (i = 0; i < pathlen; i++) {
-        snprintf((char *) (raw_path + (i * 5)), (raw_pathlen - 1) - (i * 5),
+        pr_snprintf((char *) (raw_path + (i * 5)), (raw_pathlen - 1) - (i * 5),
           "0x%02x ", (unsigned char) path[i]);
       }
 
@@ -3951,8 +3952,9 @@ struct dirent *pr_fsio_readdir(void *dir) {
 }
 
 int pr_fsio_mkdir(const char *path, mode_t mode) {
-  int res;
+  int res, xerrno;
   pr_fs_t *fs;
+  mode_t dir_umask = -1, prev_umask = -1, *umask_ptr = NULL;
 
   if (path == NULL) {
     errno = EINVAL;
@@ -3971,11 +3973,58 @@ int pr_fsio_mkdir(const char *path, mode_t mode) {
     fs = fs->fs_next;
   }
 
+  /* Make sure we honor the directory Umask, if any (Bug#4311). */
+  umask_ptr = get_param_ptr(CURRENT_CONF, "DirUmask", FALSE);
+  if (umask_ptr == NULL) {
+    /* If Umask was configured with a single parameter, then DirUmask
+     * would not be present; we still should check for Umask.
+     */
+    umask_ptr = get_param_ptr(CURRENT_CONF, "Umask", FALSE);
+  }
+
+  if (umask_ptr != NULL) {
+    dir_umask = *umask_ptr;
+
+    if (dir_umask != (mode_t) -1) {
+      prev_umask = umask(dir_umask);
+    }
+  }
+
   pr_trace_msg(trace_channel, 8, "using %s mkdir() for path '%s'", fs->fs_name,
     path);
   res = (fs->mkdir)(fs, path, mode);
+  xerrno = errno;
+
   if (res == 0) {
     pr_fs_clear_cache2(path);
+  }
+
+  if (dir_umask != (mode_t) -1) {
+    (void) umask(prev_umask);
+  }
+
+  errno = xerrno;
+  return res;
+}
+
+int pr_fsio_mkdir_with_error(pool *p, const char *path, mode_t mode,
+    pr_error_t **err) {
+  int res;
+
+  res = pr_fsio_mkdir(path, mode);
+  if (res < 0) {
+    int xerrno = errno;
+
+    if (p != NULL &&
+        err != NULL) {
+      *err = pr_error_create(p, xerrno);
+      if (pr_error_explain_mkdir(*err, path, mode) < 0) {
+        pr_error_destroy(*err);
+        *err = NULL;
+      }
+    }
+
+    errno = xerrno;
   }
 
   return res;
@@ -4286,7 +4335,7 @@ int pr_fsio_smkdir(pool *p, const char *path, mode_t mode, uid_t uid,
      */
     tmpl_len = dst_dirlen + 15;
     tmpl = pcalloc(p, tmpl_len);
-    snprintf(tmpl, tmpl_len-1, "%s/.dstXXXXXXXXX",
+    pr_snprintf(tmpl, tmpl_len-1, "%s/.dstXXXXXXXXX",
       dst_dirlen > 1 ? dst_dir : "");
 
     /* Use mkdtemp(3) to create the temporary directory (in the same destination
@@ -4508,30 +4557,26 @@ int pr_fsio_rmdir(const char *path) {
   return res;
 }
 
-int pr_fsio_stat_canon(const char *path, struct stat *st) {
-  pr_fs_t *fs;
+int pr_fsio_rmdir_with_error(pool *p, const char *path, pr_error_t **err) {
+  int res;
 
-  if (path == NULL ||
-      st == NULL) {
-    errno = EINVAL;
-    return -1;
+  res = pr_fsio_rmdir(path);
+  if (res < 0) {
+    int xerrno = errno;
+
+    if (p != NULL &&
+        err != NULL) {
+      *err = pr_error_create(p, xerrno);
+      if (pr_error_explain_rmdir(*err, path) < 0) {
+        pr_error_destroy(*err);
+        *err = NULL;
+      }
+    }
+
+    errno = xerrno;
   }
 
-  fs = lookup_file_canon_fs(path, NULL, FSIO_FILE_STAT);
-  if (fs == NULL) {
-    return -1;
-  }
-
-  /* Find the first non-NULL custom stat handler.  If there are none,
-   * use the system stat.
-   */
-  while (fs && fs->fs_next && !fs->stat) {
-    fs = fs->fs_next;
-  }
-
-  pr_trace_msg(trace_channel, 8, "using %s stat() for path '%s'",
-    fs ? fs->fs_name : "system", path);
-  return fs_cache_stat(fs ? fs : root_fs, path, st);
+  return res;
 }
 
 int pr_fsio_stat(const char *path, struct stat *st) {
@@ -4560,6 +4605,29 @@ int pr_fsio_stat(const char *path, struct stat *st) {
   return fs_cache_stat(fs ? fs : root_fs, path, st);
 }
 
+int pr_fsio_stat_with_error(pool *p, const char *path, struct stat *st,
+    pr_error_t **err) {
+  int res;
+
+  res = pr_fsio_stat(path, st);
+  if (res < 0) {
+    int xerrno = errno;
+
+    if (p != NULL &&
+        err != NULL) {
+      *err = pr_error_create(p, xerrno);
+      if (pr_error_explain_stat(*err, path, st) < 0) {
+        pr_error_destroy(*err);
+        *err = NULL;
+      }
+    }
+
+    errno = xerrno;
+  }
+
+  return res;
+}
+
 int pr_fsio_fstat(pr_fh_t *fh, struct stat *st) {
   int res;
   pr_fs_t *fs;
@@ -4583,32 +4651,6 @@ int pr_fsio_fstat(pr_fh_t *fh, struct stat *st) {
   res = (fs->fstat)(fh, fh->fh_fd, st);
 
   return res;
-}
-
-int pr_fsio_lstat_canon(const char *path, struct stat *st) {
-  pr_fs_t *fs;
-
-  if (path == NULL ||
-      st == NULL) {
-    errno = EINVAL;
-    return -1;
-  }
-
-  fs = lookup_file_canon_fs(path, NULL, FSIO_FILE_LSTAT);
-  if (fs == NULL) {
-    return -1;
-  }
-
-  /* Find the first non-NULL custom lstat handler.  If there are none,
-   * use the system lstat.
-   */
-  while (fs && fs->fs_next && !fs->lstat) {
-    fs = fs->fs_next;
-  }
-
-  pr_trace_msg(trace_channel, 8, "using %s lstat() for path '%s'",
-    fs ? fs->fs_name : "system", path);
-  return fs_cache_lstat(fs ? fs : root_fs, path, st);
 }
 
 int pr_fsio_lstat(const char *path, struct stat *st) {
@@ -4637,31 +4679,25 @@ int pr_fsio_lstat(const char *path, struct stat *st) {
   return fs_cache_lstat(fs ? fs : root_fs, path, st);
 }
 
-int pr_fsio_readlink_canon(const char *path, char *buf, size_t buflen) {
+int pr_fsio_lstat_with_error(pool *p, const char *path, struct stat *st,
+    pr_error_t **err) {
   int res;
-  pr_fs_t *fs;
 
-  if (path == NULL ||
-      buf == NULL) {
-    errno = EINVAL;
-    return -1;
+  res = pr_fsio_lstat(path, st);
+  if (res < 0) {
+    int xerrno = errno;
+
+    if (p != NULL &&
+        err != NULL) {
+      *err = pr_error_create(p, xerrno);
+      if (pr_error_explain_lstat(*err, path, st) < 0) {
+        pr_error_destroy(*err);
+        *err = NULL;
+      }
+    }
+
+    errno = xerrno;
   }
-
-  fs = lookup_file_canon_fs(path, NULL, FSIO_FILE_READLINK);
-  if (fs == NULL) {
-    return -1;
-  }
-
-  /* Find the first non-NULL custom readlink handler.  If there are none,
-   * use the system readlink.
-   */
-  while (fs && fs->fs_next && !fs->readlink) {
-    fs = fs->fs_next;
-  }
-
-  pr_trace_msg(trace_channel, 8, "using %s readlink() for path '%s'",
-    fs->fs_name, path);
-  res = (fs->readlink)(fs, path, buf, buflen);
 
   return res;
 }
@@ -4724,55 +4760,6 @@ void pr_fs_globfree(glob_t *pglob) {
   }
 }
 
-int pr_fsio_rename_canon(const char *rnfr, const char *rnto) {
-  int res;
-  pr_fs_t *from_fs, *to_fs, *fs;
-
-  if (rnfr == NULL ||
-      rnto == NULL) {
-    errno = EINVAL;
-    return -1;
-  }
-
-  from_fs = lookup_file_canon_fs(rnfr, NULL, FSIO_FILE_RENAME);
-  if (from_fs == NULL) {
-    return -1;
-  }
-
-  to_fs = lookup_file_canon_fs(rnto, NULL, FSIO_FILE_RENAME);
-  if (to_fs == NULL) {
-    return -1;
-  }
-
-  if (from_fs->allow_xdev_rename == FALSE ||
-      to_fs->allow_xdev_rename == FALSE) {
-    if (from_fs != to_fs) {
-      errno = EXDEV;
-      return -1;
-    }
-  }
-
-  fs = to_fs;
-
-  /* Find the first non-NULL custom rename handler.  If there are none,
-   * use the system rename.
-   */
-  while (fs && fs->fs_next && !fs->rename) {
-    fs = fs->fs_next;
-  }
-
-  pr_trace_msg(trace_channel, 8, "using %s rename() for paths '%s', '%s'",
-    fs->fs_name, rnfr, rnto);
-  res = (fs->rename)(fs, rnfr, rnto);
-
-  if (res == 0) {
-    pr_fs_clear_cache2(rnfr);
-    pr_fs_clear_cache2(rnto);
-  }
-
-  return res;
-}
-
 int pr_fsio_rename(const char *rnfr, const char *rnto) {
   int res;
   pr_fs_t *from_fs, *to_fs, *fs;
@@ -4821,32 +4808,24 @@ int pr_fsio_rename(const char *rnfr, const char *rnto) {
   return res;
 }
 
-int pr_fsio_unlink_canon(const char *name) {
+int pr_fsio_rename_with_error(pool *p, const char *rnfr, const char *rnto,
+    pr_error_t **err) {
   int res;
-  pr_fs_t *fs;
 
-  if (name == NULL) {
-    errno = EINVAL;
-    return -1;
-  }
+  res = pr_fsio_rename(rnfr, rnto);
+  if (res < 0) {
+    int xerrno = errno;
 
-  fs = lookup_file_canon_fs(name, NULL, FSIO_FILE_UNLINK);
-  if (fs == NULL) {
-    return -1;
-  }
+    if (p != NULL &&
+        err != NULL) {
+      *err = pr_error_create(p, xerrno);
+      if (pr_error_explain_rename(*err, rnfr, rnto) < 0) {
+        pr_error_destroy(*err);
+        *err = NULL;
+      }
+    }
 
-  /* Find the first non-NULL custom unlink handler.  If there are none,
-   * use the system unlink.
-   */
-  while (fs && fs->fs_next && !fs->unlink) {
-    fs = fs->fs_next;
-  }
-
-  pr_trace_msg(trace_channel, 8, "using %s unlink() for path '%s'",
-    fs->fs_name, name);
-  res = (fs->unlink)(fs, name);
-  if (res == 0) {
-    pr_fs_clear_cache2(name);
+    errno = xerrno;
   }
 
   return res;
@@ -4878,6 +4857,28 @@ int pr_fsio_unlink(const char *name) {
   res = (fs->unlink)(fs, name);
   if (res == 0) {
     pr_fs_clear_cache2(name);
+  }
+
+  return res;
+}
+
+int pr_fsio_unlink_with_error(pool *p, const char *path, pr_error_t **err) {
+  int res;
+
+  res = pr_fsio_unlink(path);
+  if (res < 0) {
+    int xerrno = errno;
+
+    if (p != NULL &&
+        err != NULL) {
+      *err = pr_error_create(p, xerrno);
+      if (pr_error_explain_unlink(*err, path) < 0) {
+        pr_error_destroy(*err);
+        *err = NULL;
+      }
+    }
+
+    errno = xerrno;
   }
 
   return res;
@@ -5006,6 +5007,29 @@ pr_fh_t *pr_fsio_open(const char *name, int flags) {
   return fh;
 }
 
+pr_fh_t *pr_fsio_open_with_error(pool *p, const char *name, int flags,
+    pr_error_t **err) {
+  pr_fh_t *fh;
+
+  fh = pr_fsio_open(name, flags);
+  if (fh == NULL) {
+    int xerrno = errno;
+
+    if (p != NULL &&
+        err != NULL) {
+      *err = pr_error_create(p, xerrno);
+      if (pr_error_explain_open(*err, name, flags, PR_OPEN_MODE) < 0) {
+        pr_error_destroy(*err);
+        *err = NULL;
+      }
+    }
+
+    errno = xerrno;
+  }
+
+  return fh;
+}
+
 int pr_fsio_close(pr_fh_t *fh) {
   int res = 0, xerrno = 0;
   pr_fs_t *fs;
@@ -5049,6 +5073,35 @@ int pr_fsio_close(pr_fh_t *fh) {
   return res;
 }
 
+int pr_fsio_close_with_error(pool *p, pr_fh_t *fh, pr_error_t **err) {
+  int res;
+
+  res = pr_fsio_close(fh);
+  if (res < 0) {
+    int xerrno = errno;
+
+    if (p != NULL &&
+        err != NULL) {
+      int fd = -1;
+
+      *err = pr_error_create(p, xerrno);
+
+      if (fh != NULL) {
+        fd = fh->fh_fd;
+      }
+
+      if (pr_error_explain_close(*err, fd) < 0) {
+        pr_error_destroy(*err);
+        *err = NULL;
+      }
+    }
+
+    errno = xerrno;
+  }
+
+  return res;
+}
+
 int pr_fsio_read(pr_fh_t *fh, char *buf, size_t size) {
   int res;
   pr_fs_t *fs;
@@ -5071,6 +5124,35 @@ int pr_fsio_read(pr_fh_t *fh, char *buf, size_t size) {
   pr_trace_msg(trace_channel, 8, "using %s read() for path '%s' (%lu bytes)",
     fs->fs_name, fh->fh_path, (unsigned long) size);
   res = (fs->read)(fh, fh->fh_fd, buf, size);
+
+  return res;
+}
+
+int pr_fsio_read_with_error(pool *p, pr_fh_t *fh, char *buf, size_t sz,
+    pr_error_t **err) {
+  int res;
+
+  res = pr_fsio_read(fh, buf, sz);
+  if (res < 0) {
+    int xerrno = errno;
+
+    if (p != NULL &&
+        err != NULL) {
+      int fd = -1;
+
+      if (fh != NULL) {
+        fd = fh->fh_fd;
+      }
+
+      *err = pr_error_create(p, xerrno);
+      if (pr_error_explain_read(*err, fd, buf, sz) < 0) {
+        pr_error_destroy(*err);
+        *err = NULL;
+      }
+    }
+
+    errno = xerrno;
+  }
 
   return res;
 }
@@ -5100,6 +5182,35 @@ int pr_fsio_write(pr_fh_t *fh, const char *buf, size_t size) {
   return res;
 }
 
+int pr_fsio_write_with_error(pool *p, pr_fh_t *fh, const char *buf, size_t sz,
+    pr_error_t **err) {
+  int res;
+
+  res = pr_fsio_write(fh, buf, sz);
+  if (res < 0) {
+    int xerrno = errno;
+
+    if (p != NULL &&
+        err != NULL) {
+      int fd = -1;
+
+      if (fh != NULL) {
+        fd = fh->fh_fd;
+      }
+
+      *err = pr_error_create(p, xerrno);
+      if (pr_error_explain_write(*err, fd, buf, sz) < 0) {
+        pr_error_destroy(*err);
+        *err = NULL;
+      }
+    }
+
+    errno = xerrno;
+  }
+
+  return res;
+}
+
 off_t pr_fsio_lseek(pr_fh_t *fh, off_t offset, int whence) {
   off_t res;
   pr_fs_t *fs;
@@ -5120,53 +5231,6 @@ off_t pr_fsio_lseek(pr_fh_t *fh, off_t offset, int whence) {
   pr_trace_msg(trace_channel, 8, "using %s lseek() for path '%s'", fs->fs_name,
     fh->fh_path);
   res = (fs->lseek)(fh, fh->fh_fd, offset, whence);
-
-  return res;
-}
-
-int pr_fsio_link_canon(const char *target_path, const char *link_path) {
-  int res;
-  pr_fs_t *target_fs, *link_fs, *fs;
-
-  if (target_path == NULL ||
-      link_path == NULL) {
-    errno = EINVAL;
-    return -1;
-  }
-
-  target_fs = lookup_file_fs(target_path, NULL, FSIO_FILE_LINK);
-  if (target_fs == NULL) {
-    return -1;
-  }
-
-  link_fs = lookup_file_fs(link_path, NULL, FSIO_FILE_LINK);
-  if (link_fs == NULL) {
-    return -1;
-  }
-
-  if (target_fs->allow_xdev_link == FALSE ||
-      link_fs->allow_xdev_link == FALSE) {
-    if (target_fs != link_fs) {
-      errno = EXDEV;
-      return -1;
-    }
-  }
-
-  fs = link_fs;
-
-  /* Find the first non-NULL custom link handler.  If there are none,
-   * use the system link.
-   */
-  while (fs && fs->fs_next && !fs->link) {
-    fs = fs->fs_next;
-  }
-
-  pr_trace_msg(trace_channel, 8, "using %s link() for paths '%s', '%s'",
-    fs->fs_name, target_path, link_path);
-  res = (fs->link)(fs, target_path, link_path);
-  if (res == 0) {
-    pr_fs_clear_cache2(link_path);
-  }
 
   return res;
 }
@@ -5211,38 +5275,6 @@ int pr_fsio_link(const char *target_path, const char *link_path) {
   pr_trace_msg(trace_channel, 8, "using %s link() for paths '%s', '%s'",
     fs->fs_name, target_path, link_path);
   res = (fs->link)(fs, target_path, link_path);
-  if (res == 0) {
-    pr_fs_clear_cache2(link_path);
-  }
-
-  return res;
-}
-
-int pr_fsio_symlink_canon(const char *target_path, const char *link_path) {
-  int res;
-  pr_fs_t *fs;
-
-  if (target_path == NULL ||
-      link_path == NULL) {
-    errno = EINVAL;
-    return -1;
-  }
-
-  fs = lookup_file_canon_fs(link_path, NULL, FSIO_FILE_SYMLINK);
-  if (fs == NULL) {
-    return -1;
-  }
-
-  /* Find the first non-NULL custom symlink handler.  If there are none,
-   * use the system symlink
-   */
-  while (fs && fs->fs_next && !fs->symlink) {
-    fs = fs->fs_next;
-  }
-
-  pr_trace_msg(trace_channel, 8, "using %s symlink() for path '%s'",
-    fs->fs_name, link_path);
-  res = (fs->symlink)(fs, target_path, link_path);
   if (res == 0) {
     pr_fs_clear_cache2(link_path);
   }
@@ -5315,41 +5347,10 @@ int pr_fsio_ftruncate(pr_fh_t *fh, off_t len) {
   return res;
 }
 
-int pr_fsio_truncate_canon(const char *path, off_t len) {
-  int res;
-  pr_fs_t *fs;
-
-  if (path == NULL) {
-    errno = EINVAL;
-    return -1;
-  }
-
-  fs = lookup_file_canon_fs(path, NULL, FSIO_FILE_TRUNC);
-  if (fs == NULL) {
-    return -1;
-  }
-
-  /* Find the first non-NULL custom truncate handler.  If there are none,
-   * use the system truncate.
-   */
-  while (fs && fs->fs_next && !fs->truncate) {
-    fs = fs->fs_next;
-  }
-
-  pr_trace_msg(trace_channel, 8, "using %s truncate() for path '%s'",
-    fs->fs_name, path);
-  res = (fs->truncate)(fs, path, len);
-  if (res == 0) {
-    pr_fs_clear_cache2(path);
-  }
-
-  return res;
-}
-
 int pr_fsio_truncate(const char *path, off_t len) {
   int res;
   pr_fs_t *fs;
- 
+
   if (path == NULL) {
     errno = EINVAL;
     return -1;
@@ -5374,38 +5375,6 @@ int pr_fsio_truncate(const char *path, off_t len) {
     pr_fs_clear_cache2(path);
   }
   
-  return res;
-}
-
-int pr_fsio_chmod_canon(const char *name, mode_t mode) {
-  int res;
-  char *deref = NULL;
-  pr_fs_t *fs;
-
-  if (name == NULL) {
-    errno = EINVAL;
-    return -1;
-  }
-
-  fs = lookup_file_canon_fs(name, &deref, FSIO_FILE_CHMOD);
-  if (fs == NULL) {
-    return -1;
-  }
-
-  /* Find the first non-NULL custom chmod handler.  If there are none,
-   * use the system chmod.
-   */
-  while (fs && fs->fs_next && !fs->chmod) {
-    fs = fs->fs_next;
-  }
-
-  pr_trace_msg(trace_channel, 8, "using %s chmod() for path '%s'",
-    fs->fs_name, name);
-  res = (fs->chmod)(fs, deref, mode);
-  if (res == 0) {
-    pr_fs_clear_cache2(name);
-  }
-
   return res;
 }
 
@@ -5440,6 +5409,29 @@ int pr_fsio_chmod(const char *name, mode_t mode) {
   return res;
 }
 
+int pr_fsio_chmod_with_error(pool *p, const char *path, mode_t mode,
+    pr_error_t **err) {
+  int res;
+
+  res = pr_fsio_chmod(path, mode);
+  if (res < 0) {
+    int xerrno = errno;
+
+    if (p != NULL &&
+        err != NULL) {
+      *err = pr_error_create(p, xerrno);
+      if (pr_error_explain_chmod(*err, path, mode) < 0) {
+        pr_error_destroy(*err);
+        *err = NULL;
+      }
+    }
+
+    errno = xerrno;
+  }
+
+  return res;
+}
+
 int pr_fsio_fchmod(pr_fh_t *fh, mode_t mode) {
   int res;
   pr_fs_t *fs;
@@ -5467,32 +5459,30 @@ int pr_fsio_fchmod(pr_fh_t *fh, mode_t mode) {
   return res;
 }
 
-int pr_fsio_chown_canon(const char *name, uid_t uid, gid_t gid) {
+int pr_fsio_fchmod_with_error(pool *p, pr_fh_t *fh, mode_t mode,
+    pr_error_t **err) {
   int res;
-  pr_fs_t *fs;
 
-  if (name == NULL) {
-    errno = EINVAL;
-    return -1;
-  }
+  res = pr_fsio_fchmod(fh, mode);
+  if (res < 0) {
+    int xerrno = errno;
 
-  fs = lookup_file_canon_fs(name, NULL, FSIO_FILE_CHOWN);
-  if (fs == NULL) {
-    return -1;
-  }
+    if (p != NULL &&
+        err != NULL) {
+      int fd = -1;
 
-  /* Find the first non-NULL custom chown handler.  If there are none,
-   * use the system chown.
-   */
-  while (fs && fs->fs_next && !fs->chown) {
-    fs = fs->fs_next;
-  }
+      if (fh != NULL) {
+        fd = fh->fh_fd;
+      }
 
-  pr_trace_msg(trace_channel, 8, "using %s chown() for path '%s'",
-    fs->fs_name, name);
-  res = (fs->chown)(fs, name, uid, gid);
-  if (res == 0) {
-    pr_fs_clear_cache2(name);
+      *err = pr_error_create(p, xerrno);
+      if (pr_error_explain_fchmod(*err, fd, mode) < 0) {
+        pr_error_destroy(*err);
+        *err = NULL;
+      }
+    }
+
+    errno = xerrno;
   }
 
   return res;
@@ -5529,6 +5519,29 @@ int pr_fsio_chown(const char *name, uid_t uid, gid_t gid) {
   return res;
 }
 
+int pr_fsio_chown_with_error(pool *p, const char *path, uid_t uid, gid_t gid,
+    pr_error_t **err) {
+  int res;
+
+  res = pr_fsio_chown(path, uid, gid);
+  if (res < 0) {
+    int xerrno = errno;
+
+    if (p != NULL &&
+        err != NULL) {
+      *err = pr_error_create(p, xerrno);
+      if (pr_error_explain_chown(*err, path, uid, gid) < 0) {
+        pr_error_destroy(*err);
+        *err = NULL;
+      }
+    }
+
+    errno = xerrno;
+  }
+
+  return res;
+}
+
 int pr_fsio_fchown(pr_fh_t *fh, uid_t uid, gid_t gid) {
   int res;
   pr_fs_t *fs;
@@ -5551,6 +5564,35 @@ int pr_fsio_fchown(pr_fh_t *fh, uid_t uid, gid_t gid) {
   res = (fs->fchown)(fh, fh->fh_fd, uid, gid);
   if (res == 0) {
     pr_fs_clear_cache2(fh->fh_path);
+  }
+
+  return res;
+}
+
+int pr_fsio_fchown_with_error(pool *p, pr_fh_t *fh, uid_t uid, gid_t gid,
+    pr_error_t **err) {
+  int res;
+
+  res = pr_fsio_fchown(fh, uid, gid);
+  if (res < 0) {
+    int xerrno = errno;
+
+    if (p != NULL &&
+        err != NULL) {
+      int fd = -1;
+
+      if (fh != NULL) {
+        fd = fh->fh_fd;
+      }
+
+      *err = pr_error_create(p, xerrno);
+      if (pr_error_explain_fchown(*err, fd, uid, gid) < 0) {
+        pr_error_destroy(*err);
+        *err = NULL;
+      }
+    }
+
+    errno = xerrno;
   }
 
   return res;
@@ -5582,6 +5624,29 @@ int pr_fsio_lchown(const char *name, uid_t uid, gid_t gid) {
   res = (fs->lchown)(fs, name, uid, gid);
   if (res == 0) {
     pr_fs_clear_cache2(name);
+  }
+
+  return res;
+}
+
+int pr_fsio_lchown_with_error(pool *p, const char *path, uid_t uid, gid_t gid,
+    pr_error_t **err) {
+  int res;
+
+  res = pr_fsio_lchown(path, uid, gid);
+  if (res < 0) {
+    int xerrno = errno;
+
+    if (p != NULL &&
+        err != NULL) {
+      *err = pr_error_create(p, xerrno);
+      if (pr_error_explain_lchown(*err, path, uid, gid) < 0) {
+        pr_error_destroy(*err);
+        *err = NULL;
+      }
+    }
+
+    errno = xerrno;
   }
 
   return res;
@@ -6291,6 +6356,28 @@ int pr_fsio_chroot(const char *path) {
   return res;
 }
 
+int pr_fsio_chroot_with_error(pool *p, const char *path, pr_error_t **err) {
+  int res;
+
+  res = pr_fsio_chroot(path);
+  if (res < 0) {
+    int xerrno = errno;
+
+    if (p != NULL &&
+        err != NULL) {
+      *err = pr_error_create(p, xerrno);
+      if (pr_error_explain_chroot(*err, path) < 0) {
+        pr_error_destroy(*err);
+        *err = NULL;
+      }
+    }
+
+    errno = xerrno;
+  }
+
+  return res;
+}
+
 char *pr_fsio_getpipebuf(pool *p, int fd, long *bufsz) {
   char *buf = NULL;
   long buflen;
@@ -6476,6 +6563,61 @@ char *pr_fsio_getline(char *buf, size_t buflen, pr_fh_t *fh,
   }
 
   return (buf > start ? start : NULL);
+}
+
+#define FSIO_MAX_FD_COUNT		1024
+
+void pr_fs_close_extra_fds(void) {
+  register unsigned int i;
+  long nfiles = 0;
+  struct rlimit rlim;
+
+  /* Close any but the big three open fds.
+   *
+   * First, use getrlimit() to obtain the maximum number of open files
+   * for this process -- then close that number.
+   */
+#if defined(RLIMIT_NOFILE) || defined(RLIMIT_OFILE)
+# if defined(RLIMIT_NOFILE)
+  if (getrlimit(RLIMIT_NOFILE, &rlim) < 0) {
+# elif defined(RLIMIT_OFILE)
+  if (getrlimit(RLIMIT_OFILE, &rlim) < 0) {
+# endif
+    /* Ignore ENOSYS (and EPERM, since some libc's use this as ENOSYS); pick
+     * some arbitrary high number.
+     */
+    nfiles = FSIO_MAX_FD_COUNT;
+
+  } else {
+    nfiles = rlim.rlim_max;
+  }
+
+#else /* no RLIMIT_NOFILE or RLIMIT_OFILE */
+   nfiles = FSIO_MAX_FD_COUNT;
+#endif
+
+  /* Yes, using a long for the nfiles variable is not quite kosher; it should
+   * be an unsigned type, otherwise a large limit (say, RLIMIT_INFINITY)
+   * might overflow the data type.  In that case, though, we want to know
+   * about it -- and using a signed type, we will know if the overflowed
+   * value is a negative number.  Chances are we do NOT want to be closing
+   * fds whose value is as high as they can possibly get; that's too many
+   * fds to iterate over.  Long story short, using a long int is just fine.
+   * (Plus it makes mod_exec work on Mac OSX 10.4; without this tweak,
+   * mod_exec's forked processes never return/exit.)
+   */
+
+  if (nfiles < 0 ||
+      nfiles > FSIO_MAX_FD_COUNT) {
+    nfiles = FSIO_MAX_FD_COUNT;
+  }
+
+  /* Close the "non-standard" file descriptors. */
+  for (i = 3; i < nfiles; i++) {
+    /* This is a potentially long-running loop, so handle signals. */
+    pr_signals_handle();
+    (void) close(i);
+  }
 }
 
 /* Be generous in the maximum allowed number of dup fds, in our search for
@@ -6670,15 +6812,15 @@ static int fs_getsize(int fd, char *path, off_t *fs_size) {
    * we'll use typecasting.
    */
   if (sizeof(fs.f_bavail) > 4 ||
-      sizeof(fs.f_bsize) > 4) {
+      sizeof(fs.f_frsize) > 4) {
 
     /* In order to return a size in KB, as get_fs_size() does, we need
      * to divide by 1024.
      */
-    *fs_size = (((off_t) fs.f_bavail * (off_t) fs.f_bsize) / 1024);
+    *fs_size = (((off_t) fs.f_bavail * (off_t) fs.f_frsize) / 1024);
 
   } else {
-    *fs_size = get_fs_size(fs.f_bavail, fs.f_bsize);
+    *fs_size = get_fs_size(fs.f_bavail, fs.f_frsize);
   }
 
   res = 0;
@@ -6726,15 +6868,15 @@ static int fs_getsize(int fd, char *path, off_t *fs_size) {
    * we'll use typecasting.
    */
   if (sizeof(fs.f_bavail) > 4 ||
-      sizeof(fs.f_bsize) > 4) {
+      sizeof(fs.f_frsize) > 4) {
 
     /* In order to return a size in KB, as get_fs_size() does, we need
      * to divide by 1024.
      */
-    *fs_size = (((off_t) fs.f_bavail * (off_t) fs.f_bsize) / 1024);
+    *fs_size = (((off_t) fs.f_bavail * (off_t) fs.f_frsize) / 1024);
 
   } else {
-    *fs_size = get_fs_size(fs.f_bavail, fs.f_bsize);
+    *fs_size = get_fs_size(fs.f_bavail, fs.f_frsize);
   }
 
   res = 0;
@@ -6782,15 +6924,15 @@ static int fs_getsize(int fd, char *path, off_t *fs_size) {
    * we'll use typecasting.
    */
   if (sizeof(fs.f_bavail) > 4 ||
-      sizeof(fs.f_bsize) > 4) {
+      sizeof(fs.f_frsize) > 4) {
 
     /* In order to return a size in KB, as get_fs_size() does, we need
      * to divide by 1024.
      */
-    *fs_size = (((off_t) fs.f_bavail * (off_t) fs.f_bsize) / 1024);
+    *fs_size = (((off_t) fs.f_bavail * (off_t) fs.f_frsize) / 1024);
 
   } else {
-    *fs_size = get_fs_size(fs.f_bavail, fs.f_bsize);
+    *fs_size = get_fs_size(fs.f_bavail, fs.f_frsize);
   }
 
   res = 0;
@@ -7315,7 +7457,7 @@ static void fs_printf(const char *fmt, ...) {
 
   memset(buf, '\0', sizeof(buf));
   va_start(msg, fmt);
-  vsnprintf(buf, sizeof(buf)-1, fmt, msg);
+  pr_vsnprintf(buf, sizeof(buf)-1, fmt, msg);
   va_end(msg);
 
   buf[sizeof(buf)-1] = '\0';

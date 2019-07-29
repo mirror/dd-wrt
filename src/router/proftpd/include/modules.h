@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2016 The ProFTPD Project team
+ * Copyright (c) 2001-2017 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -74,25 +74,26 @@ typedef struct conftab_rec {
 
 } conftable;
 
-/* classes for command table */
+/* Classes of commands.  These are used as logging categories as well. */
+#define CL_NONE		0x0000
+#define CL_AUTH		0x0001  /* USER, PASS */
+#define CL_INFO		0x0002  /* Informational commands (PWD, SYST, etc) */
+#define CL_DIRS		0x0004  /* Directory commands (LIST, NLST, CWD, etc) */
+#define CL_READ		0x0008  /* File reading commands (RETR) */
+#define CL_WRITE	0x0010  /* Writing commands (STOR, MKD, etc) */
+#define CL_MISC		0x0020  /* Miscellaneous (RNFR/RNTO, SITE, etc) */
+#define CL_SEC		0x0040  /* RFC2228 Security commands */
+#define CL_CONNECT	0x0080  /* Session start */
+#define CL_DISCONNECT	0x0100  /* Session end */
+#define CL_SSH		0x0200  /* SSH requests */
+#define CL_SFTP		0x0400  /* SFTP requests */
 
-#define CL_NONE				0x0
-#define CL_AUTH				(1 << 0) /* USER, PASS */
-#define CL_INFO				(1 << 1) /* Informational commands (PWD, SYST, etc) */
-#define CL_DIRS				(1 << 2) /* Directory commands (LIST, NLST, CWD, etc) */
-#define CL_READ				(1 << 3) /* File reading commands (RETR) */
-#define CL_WRITE			(1 << 4) /* Writing commands (STOR, MKD, etc) */
-#define CL_MISC				(1 << 5) /* Miscellaneous (RNFR/RNTO, SITE, etc) */
-#define CL_SEC				(1 << 6) /* RFC2228 Security commands */
-#define CL_EXIT				(1 << 7) /* Session exit */
-#define CL_SSH				(1 << 8) /* SSH requests */
-#define CL_SFTP				(1 << 9) /* SFTP requests */
-
-/* Note that CL_ALL explicitly does NOT include CL_EXIT; this is to preserve
- * backward compatible behavior.
+/* Note that CL_ALL explicitly does NOT include CL_DISCONNECT; this is to
+ * preserve backward compatible behavior.
  */
-#define CL_ALL				(CL_AUTH|CL_INFO|CL_DIRS|CL_READ| \
-					CL_WRITE|CL_MISC|CL_SEC|CL_SSH|CL_SFTP)
+#define CL_ALL\
+  (CL_AUTH|CL_INFO|CL_DIRS|CL_READ|\
+   CL_WRITE|CL_MISC|CL_SEC|CL_SSH|CL_SFTP)
 
 /* Command handler types for command table */
 #define PRE_CMD				1

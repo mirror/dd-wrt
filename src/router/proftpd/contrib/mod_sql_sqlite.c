@@ -84,16 +84,20 @@ static void db_trace(void *user_data, const char *trace_msg) {
 static conn_entry_t *sql_sqlite_get_conn(char *name) {
   register unsigned int i = 0;
 
-  if (!name)
+  if (name == NULL) {
+    errno = EINVAL;
     return NULL;
+  }
 
   for (i = 0; i < conn_cache->nelts; i++) {
     conn_entry_t *entry = ((conn_entry_t **) conn_cache->elts)[i];
 
-    if (strcmp(name, entry->name) == 0)
+    if (strcmp(name, entry->name) == 0) {
       return entry;
+    }
   }
 
+  errno = ENOENT;
   return NULL;
 }
 
@@ -286,7 +290,7 @@ MODRET sql_sqlite_open(cmd_rec *cmd) {
   conn_entry_t *entry = NULL;
   db_conn_t *conn = NULL;
   const char *stmt = NULL;
-  int res;
+  int res, xerrno = 0;
   unsigned int nretries = 0;
 
   sql_log(DEBUG_FUNC, "%s", "entering \tsqlite cmd_open");
@@ -301,7 +305,7 @@ MODRET sql_sqlite_open(cmd_rec *cmd) {
   if (entry == NULL) {
     sql_log(DEBUG_FUNC, "%s", "exiting \tsqlite cmd_open");
     return PR_ERROR_MSG(cmd, MOD_SQL_SQLITE_VERSION,
-      "unknown named connection");
+      pstrcat(cmd->tmp_pool, "unknown named connection: ", cmd->argv[0], NULL));
   } 
 
   conn = (db_conn_t *) entry->data;
@@ -322,18 +326,23 @@ MODRET sql_sqlite_open(cmd_rec *cmd) {
     return PR_HANDLED(cmd);
   }
 
+  /* Note that we do NOT automatically create the database if it does not
+   * exist; we do not know the schema a database should have a priori.
+   */
   PRIVS_ROOT
-  res = sqlite3_open(conn->dsn, &(conn->dbh));
+  res = sqlite3_open_v2(conn->dsn, &(conn->dbh), SQLITE_OPEN_READWRITE, NULL);
+  xerrno = errno;
   PRIVS_RELINQUISH
 
   if (res != SQLITE_OK) {
-    char *errstr = pstrdup(cmd->pool, sqlite3_errmsg(conn->dbh));
+    char *errstr;
 
-    sql_log(DEBUG_FUNC, "error opening SQLite database '%s': %s",
-      conn->dsn, errstr);
+    errstr = pstrcat(cmd->pool, sqlite3_errmsg(conn->dbh),
+      " (", strerror(xerrno), ")", NULL);
+    sql_log(DEBUG_FUNC, "error opening SQLite database '%s': %s", conn->dsn,
+      errstr);
 
     sql_log(DEBUG_FUNC, "%s", "exiting \tsqlite cmd_open");
-
     return PR_ERROR_MSG(cmd, MOD_SQL_SQLITE_VERSION, errstr);
   }
 
@@ -434,7 +443,7 @@ MODRET sql_sqlite_close(cmd_rec *cmd) {
   if (entry == NULL) {
     sql_log(DEBUG_FUNC, "%s", "exiting \tsqlite cmd_close");
     return PR_ERROR_MSG(cmd, MOD_SQL_SQLITE_VERSION,
-      "unknown named connection");
+      pstrcat(cmd->tmp_pool, "unknown named connection: ", cmd->argv[0], NULL));
   }
 
   conn = (db_conn_t *) entry->data;
@@ -591,7 +600,7 @@ MODRET sql_sqlite_select(cmd_rec *cmd) {
   if (entry == NULL) {
     sql_log(DEBUG_FUNC, "%s", "exiting \tsqlite cmd_select");
     return PR_ERROR_MSG(cmd, MOD_SQL_SQLITE_VERSION,
-      "unknown named connection");
+      pstrcat(cmd->tmp_pool, "unknown named connection: ", cmd->argv[0], NULL));
   }
  
   conn = (db_conn_t *) entry->data;
@@ -699,7 +708,7 @@ MODRET sql_sqlite_insert(cmd_rec *cmd) {
   if (entry == NULL) {
     sql_log(DEBUG_FUNC, "%s", "exiting \tsqlite cmd_insert");
     return PR_ERROR_MSG(cmd, MOD_SQL_SQLITE_VERSION,
-      "unknown named connection");
+      pstrcat(cmd->tmp_pool, "unknown named connection: ", cmd->argv[0], NULL));
   }
 
   conn = (db_conn_t *) entry->data;
@@ -788,7 +797,7 @@ MODRET sql_sqlite_update(cmd_rec *cmd) {
   if (entry == NULL) {
     sql_log(DEBUG_FUNC, "%s", "exiting \tsqlite cmd_update");
     return PR_ERROR_MSG(cmd, MOD_SQL_SQLITE_VERSION,
-      "unknown named connection");
+      pstrcat(cmd->tmp_pool, "unknown named connection: ", cmd->argv[0], NULL));
   }
 
   conn = (db_conn_t *) entry->data;
@@ -909,7 +918,7 @@ MODRET sql_sqlite_query(cmd_rec *cmd) {
   if (entry == NULL) {
     sql_log(DEBUG_FUNC, "%s", "exiting \tsqlite cmd_query");
     return PR_ERROR_MSG(cmd, MOD_SQL_SQLITE_VERSION,
-      "unknown named connection");
+      pstrcat(cmd->tmp_pool, "unknown named connection: ", cmd->argv[0], NULL));
   }
 
   conn = (db_conn_t *) entry->data;
@@ -970,9 +979,7 @@ MODRET sql_sqlite_query(cmd_rec *cmd) {
 MODRET sql_sqlite_quote(cmd_rec *cmd) {
   conn_entry_t *entry = NULL;
   modret_t *mr = NULL;
-  char *unescaped = NULL;
-  char *escaped = NULL;
-  char *tmp;
+  char *unescaped = NULL, *escaped = NULL, *ptr = NULL;
   cmd_rec *close_cmd;
 
   sql_log(DEBUG_FUNC, "%s", "entering \tsqlite cmd_escapestring");
@@ -987,7 +994,7 @@ MODRET sql_sqlite_quote(cmd_rec *cmd) {
   if (entry == NULL) {
     sql_log(DEBUG_FUNC, "%s", "exiting \tsqlite cmd_escapestring");
     return PR_ERROR_MSG(cmd, MOD_SQL_SQLITE_VERSION,
-      "unknown named connection");
+      pstrcat(cmd->tmp_pool, "unknown named connection: ", cmd->argv[0], NULL));
   }
 
   /* Make sure the connection is open. */
@@ -998,9 +1005,10 @@ MODRET sql_sqlite_quote(cmd_rec *cmd) {
   }
 
   unescaped = cmd->argv[1];
-  tmp = sqlite3_mprintf("%q", unescaped);
-  escaped = pstrdup(cmd->pool, tmp);
-  sqlite3_free(tmp);
+  ptr = sqlite3_mprintf("%q", unescaped);
+  escaped = pstrdup(cmd->pool, ptr);
+  pr_trace_msg(trace_channel, 17, "quoted '%s' to '%s'", unescaped, escaped);
+  sqlite3_free(ptr);
 
   close_cmd = pr_cmd_alloc(cmd->tmp_pool, 1, entry->name);
   sql_sqlite_close(close_cmd);
@@ -1008,23 +1016,6 @@ MODRET sql_sqlite_quote(cmd_rec *cmd) {
 
   sql_log(DEBUG_FUNC, "%s", "exiting \tsqlite cmd_escapestring");
   return mod_create_data(cmd, escaped);
-}
-
-MODRET sql_sqlite_checkauth(cmd_rec *cmd) {
-  sql_log(DEBUG_FUNC, "%s", "entering \tsqlite cmd_checkauth");
-
-  if (cmd->argc != 3) {
-    sql_log(DEBUG_FUNC, "exiting \tsqlite cmd_checkauth");
-    return PR_ERROR_MSG(cmd, MOD_SQL_SQLITE_VERSION, "badly formed request");
-  }
-
-  sql_log(DEBUG_WARN, MOD_SQL_SQLITE_VERSION
-    ": SQLite does not support the 'Backend' SQLAuthType");
-  sql_log(DEBUG_FUNC, "%s", "exiting \tsqlite cmd_checkauth");
-
-  /* SQLite doesn't provide this functionality. */
-  return PR_ERROR_MSG(cmd, MOD_SQL_SQLITE_VERSION,
-    "SQLite does not support the 'Backend' SQLAuthType");
 }
 
 MODRET sql_sqlite_identify(cmd_rec *cmd) {
@@ -1043,7 +1034,6 @@ MODRET sql_sqlite_identify(cmd_rec *cmd) {
 }  
 
 static cmdtable sql_sqlite_cmdtable[] = {
-  { CMD, "sql_checkauth",	G_NONE, sql_sqlite_checkauth,	FALSE, FALSE },
   { CMD, "sql_close",		G_NONE, sql_sqlite_close,	FALSE, FALSE },
   { CMD, "sql_cleanup",		G_NONE, sql_sqlite_cleanup,	FALSE, FALSE },
   { CMD, "sql_defineconnection",G_NONE, sql_sqlite_def_conn,	FALSE, FALSE },

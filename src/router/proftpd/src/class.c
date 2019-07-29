@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2003-2016 The ProFTPD Project team
+ * Copyright (c) 2003-2017 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -46,6 +46,81 @@ const pr_class_t *pr_class_get(const pr_class_t *prev) {
   return class_list;
 }
 
+int pr_class_satisfied(pool *p, const pr_class_t *cls,
+    const pr_netaddr_t *addr) {
+  register unsigned int i;
+  array_header *acl_list;
+  const pr_netacl_t **acls;
+  int next_class = FALSE;
+
+  if (cls == NULL ||
+      addr == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  acl_list = cls->cls_acls;
+  acls = acl_list->elts;
+
+  /* For each ACL rule in this class, compare the rule against the given
+   * address.  The address matches the given class depending on the
+   * Satisfy setting: if "any", the class matches if any rule matches;
+   * if "all", the class matches only if _all_ rules match.
+   */
+  for (i = 0; i < acl_list->nelts; i++) {
+    int res;
+
+    pr_signals_handle();
+
+    if (next_class) {
+      break;
+    }
+
+    if (acls[i] == NULL) {
+      continue;
+    }
+
+    switch (cls->cls_satisfy) {
+      case PR_CLASS_SATISFY_ANY:
+        pr_trace_msg(trace_channel, 6,
+          "checking addr '%s' (%s) against class '%s' rule: %s "
+          "(requires any ACL matching)", pr_netaddr_get_ipstr(addr),
+          pr_netaddr_get_dnsstr(addr), cls->cls_name,
+          pr_netacl_get_str(p, acls[i]));
+
+        res = pr_netacl_match(acls[i], addr);
+        if (res == 1) {
+          return TRUE;
+        }
+        break;
+
+      case PR_CLASS_SATISFY_ALL:
+        pr_trace_msg(trace_channel, 6,
+          "checking addr '%s' (%s) against class '%s' ACL: %s "
+          "(requires all ACLs matching)", pr_netaddr_get_ipstr(addr),
+          pr_netaddr_get_dnsstr(addr), cls->cls_name,
+          pr_netacl_get_str(p, acls[i]));
+
+        res = pr_netacl_match(acls[i], addr);
+        if (res <= 0) {
+          next_class = TRUE;
+        }
+        break;
+    }
+  }
+
+  /* If this is a "Satisfy all" class, and all rules have matched
+   * (positively or negatively), then it matches the address.
+   */
+  if (next_class == FALSE &&
+      cls->cls_satisfy == PR_CLASS_SATISFY_ALL &&
+      i == acl_list->nelts) {
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
 const pr_class_t *pr_class_match_addr(const pr_netaddr_t *addr) {
   pr_class_t *cls;
   pool *tmp_pool;
@@ -58,75 +133,16 @@ const pr_class_t *pr_class_match_addr(const pr_netaddr_t *addr) {
   tmp_pool = make_sub_pool(permanent_pool);
 
   for (cls = class_list; cls; cls = cls->cls_next) {
-    array_header *acl_list;
-    const pr_netacl_t **acls;
-    register unsigned int i;
-    int next_class = FALSE;
+    int res;
 
-    acl_list = cls->cls_acls;
-    acls = acl_list->elts;
-
-    /* For each ACL rule in this class, compare the rule against the given
-     * address.  The address matches the given class depending on the
-     * Satisfy setting: if "any", the class matches if any rule matches;
-     * if "all", the class matches only if _all_ rules match.
-     */
-    for (i = 0; i < acl_list->nelts; i++) {
-      int res;
-
-      pr_signals_handle();
-
-      if (next_class) {
-        break;
-      }
-
-      if (acls[i] == NULL) {
-        continue;
-      }
-
-      switch (cls->cls_satisfy) {
-        case PR_CLASS_SATISFY_ANY:
-          pr_trace_msg(trace_channel, 6,
-            "checking addr '%s' (%s) against class '%s' rule: %s "
-            "(requires any ACL matching)", pr_netaddr_get_ipstr(addr),
-            pr_netaddr_get_dnsstr(addr), cls->cls_name,
-            pr_netacl_get_str(tmp_pool, acls[i]));
-
-          res = pr_netacl_match(acls[i], addr);
-          if (res == 1) {
-            destroy_pool(tmp_pool);
-            return cls;
-          }
-          break;
-
-        case PR_CLASS_SATISFY_ALL:
-          pr_trace_msg(trace_channel, 6,
-            "checking addr '%s' (%s) against class '%s' ACL: %s "
-            "(requires all ACLs matching)", pr_netaddr_get_ipstr(addr),
-            pr_netaddr_get_dnsstr(addr), cls->cls_name,
-            pr_netacl_get_str(tmp_pool, acls[i]));
-
-          res = pr_netacl_match(acls[i], addr);
-          if (res <= 0) {
-            next_class = TRUE;
-          }
-          break;
-      }
-    }
-
-    /* If this is a "Satisfy all" class, and all rules have matched
-     * (positively or negatively), then it matches the address.
-     */
-    if (next_class == FALSE &&
-        cls->cls_satisfy == PR_CLASS_SATISFY_ALL &&
-        i == acl_list->nelts) {
+    res = pr_class_satisfied(tmp_pool, cls, addr);
+    if (res == TRUE) {
       destroy_pool(tmp_pool);
       return cls;
     }
   }
 
   destroy_pool(tmp_pool);
-
   errno = ENOENT;
   return NULL;
 }

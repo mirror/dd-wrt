@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2014-2016 The ProFTPD Project team
+ * Copyright (c) 2014-2017 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -433,6 +433,80 @@ START_TEST (config_find_config2_test) {
 }
 END_TEST
 
+START_TEST (config_find_config2_recurse_test) {
+  int res;
+  config_rec *c;
+  xaset_t *set = NULL;
+  const char *name;
+  unsigned long flags = 0;
+
+  c = find_config2(NULL, -1, NULL, TRUE, flags);
+  fail_unless(c == NULL, "Failed to handle null arguments");
+  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL, got %d (%s)",
+    errno, strerror(errno));
+
+  mark_point();
+
+  name = "foo";
+  c = add_config_param_set(&set, name, 0);
+  fail_unless(c != NULL, "Failed to add config '%s': %s", name,
+    strerror(errno));
+
+  name = "bar";
+  c = find_config2(set, -1, name, TRUE, flags);
+  fail_unless(c == NULL, "Failed to handle null arguments");
+  fail_unless(errno == ENOENT, "Failed to set errno to ENOENT, got %d (%s)",
+    errno, strerror(errno));
+
+  mark_point();
+
+  /* We expect to find "foo", but a 'next' should be empty. */
+  name = "foo";
+  c = find_config2(set, -1, name, TRUE, flags);
+  fail_unless(c != NULL, "Failed to find config '%s': %s", name,
+    strerror(errno));
+
+  mark_point();
+
+  c = find_config_next2(c, c->next, -1, name, TRUE, flags);
+  fail_unless(c == NULL, "Found next config unexpectedly");
+  fail_unless(errno == ENOENT, "Failed to set errno to ENOENT, got %d (%s)",
+    errno, strerror(errno));
+
+  /* Now add another config, find "foo" again; this time, a 'next' should
+   * NOT be empty; it should find the 2nd config we added.
+   */
+
+  name = "foo2";
+  c = add_config_param_set(&set, name, 0);
+  fail_unless(c != NULL, "Failed to add config '%s': %s", name,
+    strerror(errno));
+
+  name = NULL;
+  c = find_config2(set, -1, name, TRUE, flags);
+  fail_unless(c != NULL, "Failed to find any config: %s", strerror(errno));
+
+  mark_point();
+
+  c = find_config_next2(c, c->next, -1, name, TRUE, flags);
+  fail_unless(c != NULL, "Expected to find another config");
+
+  mark_point();
+
+  name = "foo";
+  res = remove_config(set, name, FALSE);
+  fail_unless(res > 0, "Failed to remove config '%s': %s", name,
+    strerror(errno));
+
+  mark_point();
+
+  c = find_config2(set, -1, name, TRUE, flags);
+  fail_unless(c == NULL, "Found config '%s' unexpectedly", name);
+  fail_unless(errno == ENOENT, "Failed to set errno to ENOENT, got %d (%s)",
+    errno, strerror(errno));
+}
+END_TEST
+
 START_TEST (config_get_param_ptr_test) {
   void *res;
   int count;
@@ -633,6 +707,7 @@ Suite *tests_get_config_suite(void) {
   tcase_add_test(testcase, config_add_config_set_test);
   tcase_add_test(testcase, config_find_config_test);
   tcase_add_test(testcase, config_find_config2_test);
+  tcase_add_test(testcase, config_find_config2_recurse_test);
   tcase_add_test(testcase, config_get_param_ptr_test);
   tcase_add_test(testcase, config_set_get_id_test);
   tcase_add_test(testcase, config_merge_down_test);

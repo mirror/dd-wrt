@@ -324,7 +324,7 @@ have been provisioned with the necessary shared key.  To prevent
 continue using the standard FTP response messages, use the following in
 your configuration for <code>mod_auth_otp</code>:
 <pre>
-  AuthOTPOption StandardResponse
+  AuthOTPOptions StandardResponse
 </pre>
 
 <p>
@@ -447,6 +447,14 @@ the normal steps for using third-party modules in ProFTPD.  For including
 <pre>
   $ ./configure --enable-openssl --with-modules=mod_sql:mod_sql_sqlite:mod_auth_otp:...
 </pre>
+<b>Note</b> the ordering of modules in the above <code>--with-modules</code>
+list; <code>mod_sql</code> <b>must</b> preceed <code>mod_auth_otp</code>,
+otherwise you will see errors like this:
+<pre>
+  mod_auth_otp/0.2: Missing required 'mod_sql.c'; HOTP/TOTP logins will FAIL
+</pre>
+
+<p>
 To build <code>mod_auth_otp</code> as a DSO module:
 <pre>
   $ ./configure --enable-dso --enable-openssl --with-shared=mod_auth_otp:...
@@ -460,7 +468,7 @@ Then follow the usual steps:
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2015-2016 TJ Saunders<br>
+&copy; Copyright 2015-2019 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

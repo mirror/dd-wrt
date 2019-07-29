@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2004-2016 The ProFTPD Project team
+ * Copyright (c) 2004-2017 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -340,7 +340,7 @@ static pr_table_entry_t *tab_entry_next(pr_table_t *tab) {
 }
 
 static void tab_entry_remove(pr_table_t *tab, pr_table_entry_t *e) {
-  pr_table_entry_t *h;
+  pr_table_entry_t *h = NULL;
 
   h = tab->chains[e->idx];
   tab->entremove(&h, e);
@@ -358,21 +358,23 @@ static void tab_entry_remove(pr_table_t *tab, pr_table_entry_t *e) {
 static unsigned int tab_get_seed(void) {
   unsigned int seed = 0;
 #ifndef PR_USE_OPENSSL
-  FILE *fp = NULL;
-  size_t nitems = 0;
+  int fd = -1;
+  ssize_t nread = 0;
 #endif /* Not PR_USE_OPENSSL */
 
 #ifdef PR_USE_OPENSSL
   RAND_bytes((unsigned char *) &seed, sizeof(seed));
 #else
-  /* Try reading from /dev/urandom, if present */
-  fp = fopen("/dev/urandom", "rb");
-  if (fp != NULL) {
-    nitems = fread(&seed, sizeof(seed), 1, fp);
-    (void) fclose(fp);
+  /* Try reading from /dev/urandom, if present.  Use non-blocking IO, so that
+   * we do not block/wait; many platforms alias /dev/urandom to /dev/random.
+   */
+  fd = open("/dev/urandom", O_RDONLY|O_NONBLOCK);
+  if (fd >= 0) {
+    nread = read(fd, &seed, sizeof(seed));
+    (void) close(fd);
   }
 
-  if (nitems == 0) {
+  if (nread < 0) {
     time_t now = time(NULL);
 
     /* No /dev/urandom present (e.g. we might be in a chroot) or not able
@@ -391,8 +393,8 @@ static unsigned int tab_get_seed(void) {
 
 int pr_table_kadd(pr_table_t *tab, const void *key_data, size_t key_datasz,
     const void *value_data, size_t value_datasz) {
-  unsigned int h, idx;
-  pr_table_entry_t *e, *n;
+  unsigned int h = 0, idx = 0;
+  pr_table_entry_t *e = NULL, *n = NULL;
 
   if (tab == NULL ||
       key_data == NULL ||
@@ -538,8 +540,8 @@ int pr_table_kexists(pr_table_t *tab, const void *key_data, size_t key_datasz) {
 
 const void *pr_table_kget(pr_table_t *tab, const void *key_data,
     size_t key_datasz, size_t *value_datasz) {
-  unsigned int h;
-  pr_table_entry_t *head, *ent;
+  unsigned int h = 0;
+  pr_table_entry_t *head = NULL, *ent = NULL;
 
   if (tab == NULL) {
     errno = EINVAL;
@@ -629,8 +631,8 @@ const void *pr_table_kget(pr_table_t *tab, const void *key_data,
 
 const void *pr_table_kremove(pr_table_t *tab, const void *key_data,
     size_t key_datasz, size_t *value_datasz) {
-  unsigned int h, idx;
-  pr_table_entry_t *head, *ent;
+  unsigned int h = 0, idx = 0;
+  pr_table_entry_t *head = NULL, *ent = NULL;
 
   if (tab == NULL ||
       key_data == NULL) {
@@ -865,6 +867,7 @@ pr_table_t *pr_table_nalloc(pool *p, int flags, unsigned int nchains) {
 
   tab->seed = tab_get_seed();
   tab->nmaxents = PR_TABLE_DEFAULT_MAX_ENTS;
+
   return tab;
 }
 
@@ -1198,7 +1201,7 @@ static void table_printf(const char *fmt, ...) {
 
   memset(buf, '\0', sizeof(buf));
   va_start(msg, fmt);
-  vsnprintf(buf, sizeof(buf)-1, fmt, msg);
+  pr_vsnprintf(buf, sizeof(buf)-1, fmt, msg);
   va_end(msg);
 
   buf[sizeof(buf)-1] = '\0';

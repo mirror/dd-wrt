@@ -1,5 +1,6 @@
 @SET_MAKE@
 
+top_builddir=@top_builddir@
 top_srcdir=@top_srcdir@
 srcdir=@srcdir@
 VPATH=@srcdir@
@@ -35,12 +36,12 @@ lib: libsupp.a $(LIB_DEPS)
 install:
 
 clean:
-	$(RM) -f *.o libsupp.a
+	$(RM) *.o libsupp.a
 	test -z $(LIB_DEPS) || (cd libltdl/ && $(MAKE) clean)
 
 depend:
-	$(MAKEDEPEND) $(CPPFLAGS) *.c 2>/dev/null
-	$(MAKEDEPEND) $(CPPFLAGS) -fMakefile.in *.c 2>/dev/null
+	$(MAKEDEPEND) $(CPPFLAGS) $(top_srcdir)/lib/*.c 2>/dev/null
+	$(MAKEDEPEND) $(CPPFLAGS) -fMakefile.in $(top_srcdir)/lib/*.c 2>/dev/null
 
 distclean: clean
 	-$(RM) *.gcda *.gcno

@@ -300,6 +300,20 @@ or configurable, that will work well for all sites <i>and</i> achieve
 delay time for one site will be unacceptably long for another site.
 
 <p>
+<font color=red>Question</font>: Is it OK to configure my
+<code>DelayTable</code> on some ephemeral storage like <code>tmpfs</code>?<br>
+<font color=blue>Answer</font>: Yes, this is fine.
+
+<p>
+The <code>mod_delay</code> module is designed to create and populate a new
+<code>DelayTable</code> when one is not present.  So if your
+<code>DelayTable</code> is stored on something like <code>tmpfs</code> such
+that it goes away when your host is restarted, <code>mod_delay</code> will
+create a new one.  This <i>does</i> mean that the previously stored timing
+data will be lost, and that <code>mod_delay</code> will start calculating and
+storing new timing data; the functional impact should be neglible.
+
+<p>
 <hr>
 <h2><a name="Installation">Installation</a></h2>
 The <code>mod_delay</code> module is compiled by default.
@@ -308,7 +322,7 @@ The <code>mod_delay</code> module is compiled by default.
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2004-2014 TJ Saunders<br>
+&copy; Copyright 2004-2017 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
 

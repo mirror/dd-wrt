@@ -1,6 +1,6 @@
 /*
  * ProFTPD: mod_exec -- a module for executing external scripts
- * Copyright (c) 2002-2016 TJ Saunders
+ * Copyright (c) 2002-2017 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,16 +31,14 @@
 # include <sys/resource.h>
 #endif
 
-#define MOD_EXEC_VERSION	"mod_exec/0.9.14"
+#define MOD_EXEC_VERSION	"mod_exec/0.9.16"
 
 /* Make sure the version of proftpd is as necessary. */
-#if PROFTPD_VERSION_NUMBER < 0x0001030402
-# error "ProFTPD 1.3.4rc2 or later required"
+#if PROFTPD_VERSION_NUMBER < 0x0001030701
+# error "ProFTPD 1.3.7rc1 or later required"
 #endif
 
 module exec_module;
-
-#define EXEC_MAX_FD_COUNT		1024
 
 static pool *exec_pool = NULL;
 static int exec_engine = FALSE;
@@ -241,7 +239,7 @@ static char **exec_prepare_environ(pool *env_pool, cmd_rec *cmd) {
   array_header *env = make_array(env_pool, 0, sizeof(char *));
 
   c = find_config(main_server->conf, CONF_PARAM, "ExecEnviron", FALSE);
-  while (c) {
+  while (c != NULL) {
     pr_signals_handle();
 
     if (strncmp("-", c->argv[1], 2) == 0) {
@@ -263,10 +261,6 @@ static char **exec_prepare_environ(pool *env_pool, cmd_rec *cmd) {
 }
 
 static void exec_prepare_fds(int stdin_fd, int stdout_fd, int stderr_fd) {
-  long nfiles = 0;
-  register unsigned int i = 0;
-  struct rlimit rlim;
-
   if (stdin_fd < 0) {
     stdin_fd = open("/dev/null", O_RDONLY);
     if (stdin_fd < 0) {
@@ -314,59 +308,8 @@ static void exec_prepare_fds(int stdin_fd, int stdout_fd, int stderr_fd) {
    * dup /dev/null.  For stdout and stderr, we dup some pipes, so that
    * we can capture what the command may write to stdout or stderr.  The
    * stderr output will be logged to the ExecLog.
-   *
-   * First, use getrlimit() to obtain the maximum number of open files
-   * for this process -- then close that number.
    */
-#if defined(RLIMIT_NOFILE) || defined(RLIMIT_OFILE)
-# if defined(RLIMIT_NOFILE)
-  if (getrlimit(RLIMIT_NOFILE, &rlim) < 0) {
-# elif defined(RLIMIT_OFILE)
-  if (getrlimit(RLIMIT_OFILE, &rlim) < 0) {
-# endif
-    /* Ignore ENOSYS (and EPERM, since some libc's use this as ENOSYS). */
-    if (errno != ENOSYS &&
-        errno != EPERM) {
-      exec_log("getrlimit() error: %s", strerror(errno));
-    }
-
-    /* Pick some arbitrary high number. */
-    nfiles = EXEC_MAX_FD_COUNT;
-
-  } else {
-    nfiles = rlim.rlim_max;
-  }
-
-#else /* no RLIMIT_NOFILE or RLIMIT_OFILE */
-   nfiles = EXEC_MAX_FD_COUNT;
-#endif
-
-  /* Yes, using a long for the nfiles variable is not quite kosher; it should
-   * be an unsigned type, otherwise a large limit (say, RLIMIT_INFINITY)
-   * might overflow the data type.  In that case, though, we want to know
-   * about it -- and using a signed type, we will know if the overflowed
-   * value is a negative number.  Chances are we do NOT want to be closing
-   * fds whose value is as high as they can possibly get; that's too many
-   * fds to iterate over.  Long story short, using a long int is just fine.
-   * (Plus it makes mod_exec work on Mac OSX 10.4; without this tweak,
-   * mod_exec's forked processes never return/exit.)
-   */
-
-  if (nfiles < 0 ||
-      nfiles > EXEC_MAX_FD_COUNT) {
-    nfiles = EXEC_MAX_FD_COUNT;
-  }
-
-  /* Close the "non-standard" file descriptors. */
-  for (i = 3; i < nfiles; i++) {
-
-    /* This is a potentially long-running loop, so handle signals. */
-    pr_signals_handle();
-
-    close(i);
-  }
-
-  return;
+  pr_fs_close_extra_fds();
 }
 
 static void exec_prepare_pipes(void) {
@@ -952,6 +895,20 @@ static const char *exec_subst_var(pool *tmp_pool, const char *varstr,
     }
 
     varstr = sreplace(tmp_pool, varstr, "%A", anon_pass, NULL);
+  }
+
+  ptr = strstr(varstr, "%b");
+  if (ptr != NULL) {
+    char buf[1024];
+
+    memset(buf, '\0', sizeof(buf));
+
+    if (session.xfer.p != NULL) {
+      pr_snprintf(buf, sizeof(buf)-1, "%" PR_LU,
+        (pr_off_t) session.xfer.total_bytes);
+    }
+
+    varstr = sreplace(tmp_pool, varstr, "%b", buf, NULL);
   }
 
   ptr = strstr(varstr, "%C");

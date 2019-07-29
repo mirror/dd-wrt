@@ -146,6 +146,9 @@ int pr_json_array_get_object(pool *p, const pr_json_array_t *json,
 /* Validates that the given text is a valid JSON string. */
 int pr_json_text_validate(pool *p, const char *text);
 
+/* Provides textual label of the JSON type. */
+const char *pr_json_type_name(unsigned int json_type);
+
 /* Internal use only. */
 int init_json(void);
 int finish_json(void);

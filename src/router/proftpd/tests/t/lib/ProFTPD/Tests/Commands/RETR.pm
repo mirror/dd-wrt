@@ -22,6 +22,11 @@ my $TESTS = {
     test_class => [qw(forking)],
   },
 
+  retr_ok_raw_active_multiple_downloads => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
   retr_ok_raw_passive => {
     order => ++$order,
     test_class => [qw(forking)],
@@ -222,6 +227,93 @@ sub retr_ok_raw_active {
   # Stop server
   server_stop($setup->{pid_file});
 
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub retr_ok_raw_active_multiple_downloads {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'cmds');
+
+  my $test_file = File::Spec->rel2abs($setup->{config_file});
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'binding:20 data:20 netio:20',
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 1, 1);
+      $client->login($setup->{user}, $setup->{passwd});
+
+      for (my $i = 0; $i < 5; $i++) {
+        my $conn = $client->retr_raw($test_file);
+        unless ($conn) {
+          die("Failed to RETR: " . $client->response_code() . " " .
+            $client->response_msg());
+        }
+
+        my $buf;
+        $conn->read($buf, 8192, 30);
+        eval { $conn->close() };
+
+        my $resp_code = $client->response_code();
+        my $resp_msg = $client->response_msg();
+        $self->assert_transfer_ok($resp_code, $resp_msg);
+      }
+
+      $client->quit();
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
   test_cleanup($setup->{log_file}, $ex);

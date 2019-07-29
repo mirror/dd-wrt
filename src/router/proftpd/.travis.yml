@@ -1,5 +1,5 @@
 env:
-  - PACKAGE_VERSION=1.3.6
+  - PACKAGE_VERSION=1.3.7rc1
 
 language: c
 
@@ -56,6 +56,10 @@ install:
   - sudo apt-get install -y zlib1g-dev
   # for static code analysis
   - sudo apt-get install -y cppcheck rats
+  # for integration/regression test
+  - sudo apt-get install -y libtest-unit-perl
+  - sudo apt-get install -y libwww-perl libnet-telnet-perl
+  - sudo apt-get install -y libssh2-1-dev libnet-ssh2-perl
   # for test code coverage
   - sudo apt-get install -y lcov
   - gem install coveralls-lcov
@@ -75,7 +79,14 @@ script:
   - make clean
   - ./configure LIBS="-lodbc -lm -lrt -pthread" --enable-devel --enable-ctrls --enable-dso --enable-facl --enable-memcache --enable-nls --enable-pcre --enable-tests --with-shared=mod_sql:mod_sql_mysql:mod_sql_odbc:mod_sql_postgres:mod_sql_sqlite:mod_sql_passwd:mod_sftp:mod_sftp_sql:mod_sftp_pam:mod_tls:mod_tls_fscache:mod_tls_shmcache:mod_tls_memcache:mod_ban:mod_copy:mod_ctrls_admin:mod_deflate:mod_dnsbl:mod_dynmasq:mod_exec:mod_facl:mod_geoip:mod_ifversion:mod_ldap:mod_load:mod_log_forensic:mod_qos:mod_quotatab:mod_quotatab_file:mod_quotatab_ldap:mod_quotatab_radius:mod_quotatab_sql:mod_radius:mod_readme:mod_rewrite:mod_shaper:mod_site_misc:mod_snmp:mod_wrap:mod_wrap2:mod_wrap2_file:mod_wrap2_redis:mod_wrap2_sql:mod_digest:mod_auth_otp:mod_statcache:mod_unique_id:mod_ifsession
   - make
-  - (cd contrib/dist/travis && sudo docker run -e PACKAGE_VERSION=${PACKAGE_VERSION} -e TRAVIS_BRANCH=${TRAVIS_BRANCH} -v `pwd`:`pwd` -w `pwd` centos:centos7 /bin/bash `pwd`/docker-rpmbuild.sh)
+  # Check our Perl scripts
+  - perl -cw contrib/ftpasswd
+  - perl -cw contrib/ftpquota
+  - if [ "${CC}" != "clang" ]; then sudo make install; fi
+  # NOTE: Temporarily commented out until the EPEL metalink issues (stale
+  # epel-release-7-10.noarch.rpm with regard to EPEL mirror updates on
+  # 2017-10-08) are sorted.
+  # - (cd contrib/dist/travis && sudo docker run -e PACKAGE_VERSION=${PACKAGE_VERSION} -e TRAVIS_BRANCH=${TRAVIS_BRANCH} -v `pwd`:`pwd` -w `pwd` centos:centos7 /bin/bash `pwd`/docker-rpmbuild.sh)
 
 after_success:
   - cd ${TRAVIS_BUILD_DIR}

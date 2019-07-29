@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 # ---------------------------------------------------------------------------
-# Copyright (C) 2000-2015 TJ Saunders <tj@castaglia.org>
+# Copyright (C) 2000-2019 TJ Saunders <tj@castaglia.org>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,8 +44,11 @@ my @data;
 
 my %opts = ();
 GetOptions(\%opts,
+  'add-member=s',
+  'change-home',
   'change-password',
   'delete-group',
+  'delete-member=s',
   'delete-user',
   'des',
   'enable-group-passwd',
@@ -115,9 +118,20 @@ if (defined($opts{'use-cracklib'})) {
   }
 }
 
+# Make sure that the given --home path exists, and is a directory.
+if (exists($opts{'home'})) {
+  my $path = $opts{'home'};
+  unless (-e $path) {
+    die "$program: --home $path does not exist\n";
+  }
+
+  unless (-d $path) {
+    die "$program: --home $path is not a directory\n";
+  }
+}
+
 # make sure that both passwd and group modes haven't been simultaneously
 # requested
-
 if ((exists($opts{'passwd'}) && exists($opts{'group'})) ||
     (exists($opts{'passwd'}) && exists($opts{'hash'})) ||
     (exists($opts{'group'}) && exists($opts{'hash'}))) {
@@ -217,6 +231,30 @@ if ((exists($opts{'passwd'}) && exists($opts{'group'})) ||
     exit 0;
   }
 
+  # Now check for the --change-home option.  If present, lookup the given name
+  # in the password file, and reuse all the information except for the home.
+  if (defined($opts{'change-home'})) {
+    if (!defined($opts{'home'})) {
+      die "$program: --change-home requires use of --home\n";
+    }
+
+    open_output_file();
+
+    my ($pass, $uid, $gid, $gecos, $home, $shell) = find_passwd_entry(name =>
+      $opts{'name'});
+
+    # We trick this function into not prompting for a password by acting
+    # as if we are handling a new password.
+    handle_passwd_entry(name => $opts{'name'}, uid => $uid, gid => $gid,
+      gecos => $gecos, home => $opts{'home'}, shell => $shell,
+      new_passwd => $pass);
+
+    close_output_file();
+
+    # done
+    exit 0;
+  }
+
   # check for the --not-system-password option.  If present, make sure that
   # a) the script is running with root privs, and b) perl on the system is
   # such that getpwnam() will return the system password
@@ -268,8 +306,10 @@ if ((exists($opts{'passwd'}) && exists($opts{'group'})) ||
   if (defined($opts{'delete-group'})) {
     open_output_file();
 
-    handle_group_entry(name => $opts{'name'},
-      delete_group => $opts{'delete-group'});
+    handle_group_entry(
+      name => $opts{'name'},
+      delete_group => $opts{'delete-group'}
+    );
 
     close_output_file();
 
@@ -278,17 +318,25 @@ if ((exists($opts{'passwd'}) && exists($opts{'group'})) ||
   }
 
   # make sure the required options are present
-  die "$program: --group: missing required argument: --gid\n"
-    unless (defined($opts{'gid'}));
+  if (!defined($opts{'add-member'}) &&
+      !defined($opts{'delete-member'})) {
+    die "$program: --group: missing required argument: --gid\n"
+      unless (defined($opts{'gid'}));
+  }
 
   die "$program: --group: missing required argument: --name\n"
     unless (defined($opts{'name'}));
 
   open_output_file();
 
-  handle_group_entry(gid => $opts{'gid'}, members => $opts{'m'},
-    name => $opts{'name'}, delete_user => $opts{'delete-user'},
-    delete_group => $opts{'delete-group'});
+  handle_group_entry(
+    gid => $opts{'gid'},
+    members => $opts{'m'},
+    name => $opts{'name'},
+    add_user => $opts{'add-member'},
+    delete_group => $opts{'delete-group'},
+    delete_user => $opts{'delete-member'}
+  );
 
   close_output_file();
 
@@ -701,6 +749,7 @@ sub handle_group_entry {
   my $name = $args{'name'};
   my $delete_group = $args{'delete_group'};
   my $delete_user = $args{'delete_user'};
+  my $add_user = $args{'add_user'};
   my $passwd;
 
   my $members = "";
@@ -716,6 +765,16 @@ sub handle_group_entry {
 
     if ($name eq $entry[0]) {
       $found = 1;
+
+      # If we have not been given an explicit password, reuse the existing one.
+      $passwd = $entry[1] unless $passwd;
+
+      # If we have not been given an explicit GID, reuse the existing one.
+      $gid = $entry[2] unless $gid;
+
+      # If we have not been given explicit members, reuse the existing ones.
+      $members = $entry[3] if $members eq '';
+
       last;
     }
   }
@@ -746,8 +805,28 @@ sub handle_group_entry {
     return;
   }
 
+  if ($delete_user) {
+    $members =~ s/$delete_user//g;
+    $members =~ s/,,/,/g;
+    $members =~ s/^,//g;
+    $members =~ s/,$//g;
+  }
+
+  if ($add_user) {
+    if (length($members) > 0) {
+      $members .= ",$add_user";
+
+    } else {
+      $members = $add_user;
+    }
+  }
+
+  # Ensure that we have a sorted list of unique members
+  my $uniq_members = { map { $_ => 1 } split(',', $members) };
+  my $names = join(',', sort { $a <=> $b } keys(%$uniq_members));
+
   # format: $name:$passwd:$gid:$members
-  push(@data, "$name:$passwd:$gid:$members");
+  push(@data, "$name:$passwd:$gid:$names");
 
   # always sort by GIDs before printing out the file
   @data = map { $_->[0] }
@@ -957,6 +1036,12 @@ usage: $program [--help] [--hash|--group|--passwd]
 
     --uid       Numerical user ID (required)
 
+    --change-home
+
+                Update only the home directory field for a user.  This option
+                requires that the --name and --passwd options be used, but no
+                others.
+
     --change-password
 
                 Update only the password field for a user.  This option
@@ -1020,6 +1105,13 @@ usage: $program [--help] [--hash|--group|--passwd]
   By default, using --group will write output to "$default_group_file".
 
   Options:
+
+    --add-member
+
+                Add the named member to the given group name from the file.
+                Example:
+
+        \$ ftpasswd --group --file=... --name=ftpd --add-member=bob
 
     --delete-group
 

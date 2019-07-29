@@ -33,7 +33,6 @@ file transfers.
   <li><a href="#TimeoutNoTransfer">TimeoutNoTransfer</a>
   <li><a href="#TimeoutStalled">TimeoutStalled</a>
   <li><a href="#TransferOptions">TransferOptions</a>
-  <li><a href="#TransferPriority">TransferPriority</a>
   <li><a href="#TransferRate">TransferRate</a>
   <li><a href="#UseSendfile">UseSendfile</a>
 </ul>
@@ -484,40 +483,6 @@ The currently implemented options are:
 
 <p>
 <hr>
-<h3><a name="TransferPriority">TransferPriority</a></h3>
-<strong>Syntax:</strong> TransferPriority <em>cmd-list "low"|"medium"|"high"|number</em><br>
-<strong>Default:</strong> None<br>
-<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code><br>
-<strong>Module:</strong> mod_xfer<br>
-<strong>Compatibility:</strong> 1.3.2rc1 and later
-
-<p>
-The <code>TransferPriority</code> directive is used to tweak the process
-priority (<i>a la</i> <code>nice(1)</code>) of the session during data
-transfers.  For example, large (or anonymous) data transfers can be configured
-to have lower priorities, so as to get lower priority than other applications
-from the kernel.
-
-<p>
-The <em>priority</em> parameter can one of the convenient "high", "medium", or
-"low" keywords, or it can be an explicit number.  As per the
-<code>nice(1)</code> man page, the higher the number, the lower the priority;
-the highest priority is -20, and the lower priority is 19.
-
-<p>
-Examples:
-<pre>
-  # All data transfers get a low priority
-  TransferPriority APPE,RETR,STOR low
-</pre>
-Or maybe only downloads should have lower priorities, but uploads should be
-fine:
-<pre>
-  TransferPriority RETR low
-</pre>
-
-<p>
-<hr>
 <h3><a name="TransferRate">TransferRate</a></h3>
 <strong>Syntax:</strong> TransferRate <em>cmd-list kbytes-per-sec[:free-bytes]</em><br>
 <strong>Default:</strong> None<br>
@@ -583,7 +548,7 @@ operations, and buffer allocations.  Read this
 <p>
 <hr>
 <h2><a name="Installation">Installation</a></h2>
-The <code>mod_xfer</code>module is <b>always</b> installed.
+The <code>mod_xfer</code> module is <b>always</b> installed.
 
 <p>
 <b>Logging</b><br>
@@ -603,7 +568,7 @@ only, and should be removed from any production configuration.
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2000-2016 The ProFTPD Project<br>
+&copy; Copyright 2000-2017 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

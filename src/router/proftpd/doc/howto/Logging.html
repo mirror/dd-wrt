@@ -275,7 +275,6 @@ There are a variety of log analyzers available; these are just a few:
 <ul>
   <li>Webalizer: <a href="http://www.webalizer.org/">http://www.webalizer.org/</a>
   <li>HTTP-analyze: <a href="http://www.netstore.de/Supply/http-analyze/">http://www.netstore.de/Supply/http-analyze/</a>
-  <li>Analog: <a href="http://www.analog.cx/">http://www.analog.cx/</a>
   <li>Report Magic: <a href="http://www.reportmagic.org/">http://www.reportmagic.org/</a>
   <li>FTPWeblog: <a href="http://www.nihongo.org/snowhare/utilities/ftpweblog/">http://www.nihongo.org/snowhare/utilities/ftpweblog/</a>
 </ul>
@@ -520,9 +519,38 @@ directive:
 in your <code>proftpd.conf</code>.
 
 <p>
+<font color=red>Question</font>: I usually run in a non-English locale; my
+ProFTPD version is older than 1.3.6, <i>and</i> I use <code>fail2ban</code>.
+Unfortunately, <code>fail2ban</code> has trouble with the non-English
+localized dates in the syslog messages, <i>e.g.</i>:
+<pre>
+  juil. 28 16:42:17 server-hostname proftpd[9423] server-hostname ...
+</pre>
+in my logs.  How can I get ProFTPD to log using the English locale, for
+working with <code>fail2ban</code> properly?<br>
+<font color=blue>Answer</font>: The locale-related environment variable which
+governs how dates are formatted is the <code>LC_TIME</code> environment
+variable.  Thus you need to set that environment variable, <em>before</em>
+ProFTPD is started, to use the English locale if you want English localization,
+<i>e.g.</i>:
+<pre>
+  $ export LC_TIME=en_US.UTF-8
+  $ service proftpd start
+</pre>
+Note that the above is only really needed due to the older version of ProFTPD.
+
+<p>
+In later version of ProFTPD, the syslog logging format changed (to avoid such
+localization issues), so that it now looks like:
+<pre>
+  2017-07-28 16:42:17 server-hostname proftpd[9423] server-hostname ...
+</pre>
+This should help many such log-parsing issues.
+
+<p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2017 The ProFTPD Project<br>
+&copy; Copyright 2017-2018 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

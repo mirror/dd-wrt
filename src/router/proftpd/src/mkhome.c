@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2003-2016 The ProFTPD Project team
+ * Copyright (c) 2003-2017 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -312,7 +312,15 @@ int create_home(pool *p, const char *home, const char *user, uid_t uid,
 
   dst_mode = *((mode_t *) c->argv[1]);
 
-  if (!(flags & PR_MKHOME_FL_USE_USER_PRIVS)) {
+  if (flags & PR_MKHOME_FL_USE_USER_PRIVS) {
+    /* Make sure we are the actual end user here (Issue#568).  Without this,
+     * we will not be using root privs, true, but we will not be creating
+     * the directory as the logging-in user; we will be creating the directory
+     * using the User/Group identity, which is not expected.
+     */
+    PRIVS_USER
+
+  } else {
     PRIVS_ROOT
   }
 

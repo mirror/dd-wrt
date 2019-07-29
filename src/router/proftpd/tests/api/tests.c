@@ -39,6 +39,7 @@ static struct testsuite_info suites[] = {
   { "var", 		tests_get_var_suite },
   { "event", 		tests_get_event_suite },
   { "env", 		tests_get_env_suite },
+  { "random", 		tests_get_random_suite },
   { "version", 		tests_get_version_suite },
   { "feat", 		tests_get_feat_suite },
   { "netaddr", 		tests_get_netaddr_suite },
@@ -69,7 +70,9 @@ static struct testsuite_info suites[] = {
   { "display",		tests_get_display_suite },
   { "misc",		tests_get_misc_suite },
   { "json",		tests_get_json_suite },
+  { "jot",		tests_get_jot_suite },
   { "redis",		tests_get_redis_suite },
+  { "error",		tests_get_error_suite },
 
   { NULL, NULL }
 };

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2016 The ProFTPD Project team
+ * Copyright (c) 2001-2017 The ProFTPD Project team
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -72,12 +72,20 @@ int pr_fs_get_usable_fd(int fd) {
   return -1;
 }
 
+struct tm *pr_localtime(pool *p, const time_t *t) {
+  return localtime(t);
+}
+
 int pr_privs_root(const char *file, int lineno) {
   return 0;
 }
 
 int pr_privs_relinquish(const char *file, int lineno) {
   return 0;
+}
+
+long pr_random_next(long min, long max) {
+  return 1;
 }
 
 void pr_signals_block(void) {
@@ -87,6 +95,17 @@ void pr_signals_unblock(void) {
 }
 
 void pr_signals_handle(void) {
+}
+
+int pr_snprintf(char *buf, size_t bufsz, const char *fmt, ...) {
+  va_list msg;
+  int res;
+
+  va_start(msg, fmt);
+  res = pr_vsnprintf(buf, bufsz, fmt, msg);
+  va_end(msg);
+
+  return res;
 }
 
 pr_table_t *pr_table_alloc(pool *p, int flags) {
@@ -134,13 +153,13 @@ int pr_table_set(pr_table_t *tab, const char *k, const void *v, size_t sz) {
   return -1;
 }
 
-struct tm *pr_localtime(pool *p, const time_t *t) {
-  return localtime(t);
-}
-
 int pr_trace_msg(const char *channel, int level, const char *fmt, ...) {
   errno = ENOSYS;
   return -1;
+}
+
+int pr_vsnprintf(char *buf, size_t bufsz, const char *fmt, va_list msg) {
+  return vsnprintf(buf, bufsz, fmt, msg);
 }
 
 int sstrncpy(char *dst, const char *src, size_t n) {

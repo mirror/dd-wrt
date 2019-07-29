@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2016 The ProFTPD Project team
+ * Copyright (c) 2001-2019 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -58,7 +58,13 @@ static const char *trace_channel = "scoreboard";
 static char *handle_score_str(const char *fmt, va_list cmdap) {
   static char buf[PR_TUNABLE_SCOREBOARD_BUFFER_SIZE] = {'\0'};
   memset(buf, '\0', sizeof(buf));
-  vsnprintf(buf, sizeof(buf), fmt, cmdap);
+
+  /* Note that we deliberately do NOT use pr_vsnprintf() here, since
+   * truncation of long strings is often normal for these entries; consider
+   * paths longer than PR_TUNABLE_SCOREBOARD_BUFFER_SIZE (Issue#683).
+   */
+  vsnprintf(buf, sizeof(buf)-1, fmt, cmdap);
+
   buf[sizeof(buf)-1] = '\0';
   return buf;
 }
@@ -305,14 +311,14 @@ int pr_scoreboard_entry_lock(int fd, int lock_type) {
 static int unlock_entry(int fd) {
   int res;
 
-  res = pr_scoreboard_entry_lock(fd, F_UNLCK); 
+  res = pr_scoreboard_entry_lock(fd, F_UNLCK);
   return res;
 }
 
 static int wlock_entry(int fd) {
   int res;
 
-  res = pr_scoreboard_entry_lock(fd, F_UNLCK); 
+  res = pr_scoreboard_entry_lock(fd, F_UNLCK);
   return res;
 }
 
@@ -324,16 +330,27 @@ static int write_entry(int fd) {
     return -1;
   }
 
+#if !defined(HAVE_PWRITE)
   if (lseek(fd, entry_lock.l_start, SEEK_SET) < 0) {
     return -1;
   }
+#endif /* HAVE_PWRITE */
 
+#if defined(HAVE_PWRITE)
+  res = pwrite(fd, &entry, sizeof(entry), entry_lock.l_start);
+#else
   res = write(fd, &entry, sizeof(entry));
+#endif /* HAVE_PWRITE */
+
   while (res != sizeof(entry)) {
     if (res < 0) {
       if (errno == EINTR) {
         pr_signals_handle();
+#if defined(HAVE_PWRITE)
+        res = pwrite(fd, &entry, sizeof(entry), entry_lock.l_start);
+#else
         res = write(fd, &entry, sizeof(entry));
+#endif /* HAVE_PWRITE */
         continue;
       }
 
@@ -348,10 +365,12 @@ static int write_entry(int fd) {
     return -1;
   }
 
+#if !defined(HAVE_PWRITE)
   /* Rewind. */
   if (lseek(fd, entry_lock.l_start, SEEK_SET) < 0) {
     return -1;
   }
+#endif /* HAVE_PWRITE */
 
   return 0;
 }
@@ -977,17 +996,20 @@ pr_scoreboard_entry_t *pr_scoreboard_entry_read(void) {
 
   memset(&scan_entry, '\0', sizeof(scan_entry));
 
-  /* NOTE: use readv(2)? */
+  /* NOTE: use readv(2), pread(2)? */
   while (TRUE) {
     while ((res = read(scoreboard_fd, &scan_entry, sizeof(scan_entry))) <= 0) {
-      if (res < 0 && errno == EINTR) {
+      int xerrno = errno;
+
+      if (res < 0 &&
+          xerrno == EINTR) {
         pr_signals_handle();
         continue;
-
-      } else {
-        unlock_scoreboard();
-        return NULL;
       }
+
+      unlock_scoreboard();
+      errno = xerrno;
+      return NULL;
     }
 
     if (scan_entry.sce_pid) {
@@ -1183,7 +1205,7 @@ int pr_scoreboard_entry_update(pid_t pid, ...) {
       case PR_SCORE_CLIENT_ADDR: {
           pr_netaddr_t *remote_addr = va_arg(ap, pr_netaddr_t *);
 
-          snprintf(entry.sce_client_addr, sizeof(entry.sce_client_addr),
+          pr_snprintf(entry.sce_client_addr, sizeof(entry.sce_client_addr),
             "%s", remote_addr ? pr_netaddr_get_ipstr(remote_addr) :
             "(unknown)");
           entry.sce_client_addr[sizeof(entry.sce_client_addr) - 1] = '\0';
@@ -1270,7 +1292,7 @@ int pr_scoreboard_entry_update(pid_t pid, ...) {
           pr_netaddr_t *server_addr = va_arg(ap, pr_netaddr_t *);
           int server_port = va_arg(ap, int);
 
-          snprintf(entry.sce_server_addr, sizeof(entry.sce_server_addr),
+          pr_snprintf(entry.sce_server_addr, sizeof(entry.sce_server_addr),
             "%s:%d", server_addr ? pr_netaddr_get_ipstr(server_addr) :
             "(unknown)", server_port);
           entry.sce_server_addr[sizeof(entry.sce_server_addr)-1] = '\0';

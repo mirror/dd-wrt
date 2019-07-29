@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2015-2016 The ProFTPD Project team
+ * Copyright (c) 2015-2018 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,12 +32,16 @@ static pool *p = NULL;
 static unsigned int schedule_called = 0;
 static const char *misc_test_shutmsg = "/tmp/prt-shutmsg.dat";
 static const char *misc_test_readlink = "/tmp/prt-readlink.lnk";
+static const char *misc_test_readlink2_dir = "/tmp/prt-readlink/";
+static const char *misc_test_readlink2 = "/tmp/prt-readlink/test.lnk";
 
 /* Fixtures */
 
 static void set_up(void) {
   (void) unlink(misc_test_readlink);
+  (void) unlink(misc_test_readlink2);
   (void) unlink(misc_test_shutmsg);
+  (void) rmdir(misc_test_readlink2_dir);
 
   if (p == NULL) {
     p = permanent_pool = make_sub_pool(NULL);
@@ -59,7 +63,9 @@ static void set_up(void) {
 
 static void tear_down(void) {
   (void) unlink(misc_test_readlink);
+  (void) unlink(misc_test_readlink2);
   (void) unlink(misc_test_shutmsg);
+  (void) rmdir(misc_test_readlink2_dir);
 
   pr_fs_statcache_set_policy(PR_TUNABLE_FS_STATCACHE_SIZE,
     PR_TUNABLE_FS_STATCACHE_MAX_AGE, 0);
@@ -336,9 +342,50 @@ START_TEST (dir_readlink_test) {
   fail_unless(strcmp(buf, dst_path) == 0, "Expected '%s', got '%s'",
     dst_path, buf);
 
+  /* Not chrooted, relative dst path without leading '.', flags to ignore rel
+   * path.
+   */
+  memset(buf, '\0', bufsz);
+  dst_path = "file.dat";
+  dst_pathlen = strlen(dst_path);
+
+  (void) unlink(path);
+  res = symlink(dst_path, path);
+  fail_unless(res == 0, "Failed to symlink '%s' to '%s': %s", path, dst_path,
+    strerror(errno));
+
+  res = dir_readlink(p, path, buf, bufsz, flags);
+  fail_if(res < 0, "Failed to read '%s' symlink: %s", path, strerror(errno));
+  fail_unless((size_t) res == dst_pathlen, "Expected length %lu, got %d",
+    (unsigned long) dst_pathlen, res);
+  fail_unless(strcmp(buf, dst_path) == 0, "Expected '%s', got '%s'",
+    dst_path, buf);
+
   /* Not chrooted, relative dst path, flags to HANDLE rel path */
   memset(buf, '\0', bufsz);
   dst_path = "./file.dat";
+  dst_pathlen = strlen(dst_path);
+  expected_path = "/tmp/file.dat";
+  expected_pathlen = strlen(expected_path);
+
+  (void) unlink(path);
+  res = symlink(dst_path, path);
+  fail_unless(res == 0, "Failed to symlink '%s' to '%s': %s", path, dst_path,
+    strerror(errno));
+
+  flags = PR_DIR_READLINK_FL_HANDLE_REL_PATH;
+  res = dir_readlink(p, path, buf, bufsz, flags);
+  fail_if(res < 0, "Failed to read '%s' symlink: %s", path, strerror(errno));
+  fail_unless((size_t) res == expected_pathlen, "Expected length %lu, got %d",
+    (unsigned long) expected_pathlen, res);
+  fail_unless(strcmp(buf, expected_path) == 0, "Expected '%s', got '%s'",
+    expected_path, buf);
+
+  /* Not chrooted, relative dst path without leading '.', flags to HANDLE rel
+   * path.
+   */
+  memset(buf, '\0', bufsz);
+  dst_path = "file.dat";
   dst_pathlen = strlen(dst_path);
   expected_path = "/tmp/file.dat";
   expected_pathlen = strlen(expected_path);
@@ -467,6 +514,25 @@ START_TEST (dir_readlink_test) {
   fail_unless(strcmp(buf, expected_path) == 0, "Expected '%s', got '%s'",
     expected_path, buf);
 
+  /* Chrooted, relative destination (without leading '.') within chroot */
+  memset(buf, '\0', bufsz);
+  dst_path = "file.txt";
+  dst_pathlen = strlen(dst_path);
+  expected_path = "file.txt";
+  expected_pathlen = strlen(expected_path);
+
+  (void) unlink(path);
+  res = symlink(dst_path, path);
+  fail_unless(res == 0, "Failed to symlink '%s' to '%s': %s", path, dst_path,
+    strerror(errno));
+
+  res = dir_readlink(p, path, buf, bufsz, flags);
+  fail_if(res < 0, "Failed to read '%s' symlink: %s", path, strerror(errno));
+  fail_unless((size_t) res == expected_pathlen, "Expected length %lu, got %d",
+    (unsigned long) expected_pathlen, res);
+  fail_unless(strcmp(buf, expected_path) == 0, "Expected '%s', got '%s'",
+    expected_path, buf);
+
   /* Chrooted, relative destination outside of chroot */
   memset(buf, '\0', bufsz);
   dst_path = "../file.txt";
@@ -533,7 +599,109 @@ START_TEST (dir_readlink_test) {
   fail_unless(strcmp(buf, expected_path) == 0, "Expected '%s', got '%s'",
     expected_path, buf);
 
+  /* Now use a relative path that does not start with '.' */
+  memset(buf, '\0', bufsz);
+  dst_path = "file.txt";
+  dst_pathlen = strlen(dst_path);
+  expected_path = "./file.txt";
+  expected_pathlen = strlen(expected_path);
+
+  (void) unlink(path);
+  res = symlink(dst_path, path);
+  fail_unless(res == 0, "Failed to symlink '%s' to '%s': %s", path, dst_path,
+    strerror(errno));
+
+  session.chroot_path = "/tmp";
+  flags = PR_DIR_READLINK_FL_HANDLE_REL_PATH;
+  res = dir_readlink(p, path, buf, bufsz, flags);
+  fail_if(res < 0, "Failed to read '%s' symlink: %s", path, strerror(errno));
+  fail_unless((size_t) res == expected_pathlen,
+    "Expected length %lu, got %d (%s)", (unsigned long) expected_pathlen, res,
+    buf);
+  fail_unless(strcmp(buf, expected_path) == 0, "Expected '%s', got '%s'",
+    expected_path, buf);
+
+  /* Now use a relative path that does not start with '.', and a chroot
+   * deeper down than one diretory.
+   */
+  memset(buf, '\0', bufsz);
+  dst_path = "file.txt";
+  dst_pathlen = strlen(dst_path);
+  expected_path = "/tmp/file.txt";
+  expected_pathlen = strlen(expected_path);
+
+  (void) unlink(path);
+  res = symlink(dst_path, path);
+  fail_unless(res == 0, "Failed to symlink '%s' to '%s': %s", path, dst_path,
+    strerror(errno));
+
+  session.chroot_path = "/tmp/foo/bar";
+  flags = PR_DIR_READLINK_FL_HANDLE_REL_PATH;
+  res = dir_readlink(p, path, buf, bufsz, flags);
+  fail_if(res < 0, "Failed to read '%s' symlink: %s", path, strerror(errno));
+  fail_unless((size_t) res == expected_pathlen,
+    "Expected length %lu, got %d (%s)", (unsigned long) expected_pathlen, res,
+    buf);
+  fail_unless(strcmp(buf, expected_path) == 0, "Expected '%s', got '%s'",
+    expected_path, buf);
+
+  /* Now use a relative path, and a chroot deeper down than one diretory, and
+   * a deeper/longer source path.
+   */
+  memset(buf, '\0', bufsz);
+  dst_path = "./file.txt";
+  dst_pathlen = strlen(dst_path);
+  expected_path = "/tmp/prt-readlink/file.txt";
+  expected_pathlen = strlen(expected_path);
+
+  (void) unlink(path);
+  (void) rmdir(misc_test_readlink2_dir);
+  (void) mkdir(misc_test_readlink2_dir, 0777);
+  path = misc_test_readlink2;
+  res = symlink(dst_path, path);
+  fail_unless(res == 0, "Failed to symlink '%s' to '%s': %s", path, dst_path,
+    strerror(errno));
+
+  session.chroot_path = "/tmp/foo/bar";
+  flags = PR_DIR_READLINK_FL_HANDLE_REL_PATH;
+  res = dir_readlink(p, path, buf, bufsz, flags);
+  fail_if(res < 0, "Failed to read '%s' symlink: %s", path, strerror(errno));
+  fail_unless((size_t) res == expected_pathlen,
+    "Expected length %lu, got %d (%s)", (unsigned long) expected_pathlen, res,
+    buf);
+  fail_unless(strcmp(buf, expected_path) == 0, "Expected '%s', got '%s'",
+    expected_path, buf);
+
+  /* Now use a relative path that does not start with '.', and a chroot
+   * deeper down than one diretory, and a deeper/longer source path.
+   */
+  memset(buf, '\0', bufsz);
+  dst_path = "file.txt";
+  dst_pathlen = strlen(dst_path);
+  expected_path = "/tmp/prt-readlink/file.txt";
+  expected_pathlen = strlen(expected_path);
+
+  (void) unlink(path);
+  (void) rmdir(misc_test_readlink2_dir);
+  (void) mkdir(misc_test_readlink2_dir, 0777);
+  path = misc_test_readlink2;
+  res = symlink(dst_path, path);
+  fail_unless(res == 0, "Failed to symlink '%s' to '%s': %s", path, dst_path,
+    strerror(errno));
+
+  session.chroot_path = "/tmp/foo/bar";
+  flags = PR_DIR_READLINK_FL_HANDLE_REL_PATH;
+  res = dir_readlink(p, path, buf, bufsz, flags);
+  fail_if(res < 0, "Failed to read '%s' symlink: %s", path, strerror(errno));
+  fail_unless((size_t) res == expected_pathlen,
+    "Expected length %lu, got %d (%s)", (unsigned long) expected_pathlen, res,
+    buf);
+  fail_unless(strcmp(buf, expected_path) == 0, "Expected '%s', got '%s'",
+    expected_path, buf);
+
   (void) unlink(misc_test_readlink);
+  (void) unlink(misc_test_readlink2);
+  (void) rmdir(misc_test_readlink2_dir);
 }
 END_TEST
 
@@ -702,7 +870,7 @@ START_TEST (check_shutmsg_test) {
 
   (void) unlink(path);
   res = write_shutmsg(path,
-    "2340 1 1 0 0 0 0000 0000\nGoodbye, cruel world!\n");
+    "2037 1 1 0 0 0 0000 0000\nGoodbye, cruel world!\n");
   fail_unless(res == 0, "Failed to write '%s': %s", path, strerror(errno));
 
   mark_point();
@@ -1039,6 +1207,86 @@ START_TEST (gettimeofday_millis_test) {
 }
 END_TEST
 
+START_TEST (snprintf_test) {
+  char *buf;
+  size_t bufsz;
+  int res, expected;
+
+  res = pr_snprintf(NULL, 0, NULL);
+  fail_unless(res < 0, "Failed to handle null buffer");
+  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+    strerror(errno), errno);
+
+  bufsz = 1;
+  buf = palloc(p, bufsz);
+
+  res = pr_snprintf(buf, 0, NULL);
+  fail_unless(res < 0, "Failed to handle null format");
+  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+    strerror(errno), errno);
+
+  res = pr_snprintf(buf, 0, "%d", 0);
+  fail_unless(res == 0, "Failed to handle zero-length buffer");
+
+  res = pr_snprintf(buf, bufsz, "%d", 0);
+  fail_unless(res < 0, "Failed to handle too-small buffer");
+  fail_unless(errno == ENOSPC, "Expected ENOSPC (%d), got %s (%d)", ENOSPC,
+    strerror(errno), errno);
+
+  res = pr_snprintf(buf, bufsz, "%s", "foobar");
+  fail_unless(res < 0, "Failed to handle too-small buffer");
+  fail_unless(errno == ENOSPC, "Expected ENOSPC (%d), got %s (%d)", ENOSPC,
+    strerror(errno), errno);
+
+  bufsz = 32;
+  buf = palloc(p, bufsz);
+
+  expected = 6;
+  res = pr_snprintf(buf, bufsz, "%s", "foobar");
+  fail_unless(res == expected, "Expected %d, got %d", expected, res);
+}
+END_TEST
+
+START_TEST (snprintfl_test) {
+  char *buf;
+  size_t bufsz;
+  int res, expected;
+
+  res = pr_snprintfl(NULL, -1, NULL, 0, NULL);
+  fail_unless(res < 0, "Failed to handle null buffer");
+  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+    strerror(errno), errno);
+
+  bufsz = 1;
+  buf = palloc(p, bufsz);
+
+  res = pr_snprintfl(NULL, -1, buf, 0, NULL);
+  fail_unless(res < 0, "Failed to handle null format");
+  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+    strerror(errno), errno);
+
+  res = pr_snprintfl(__FILE__, __LINE__, buf, 0, "%d", 0);
+  fail_unless(res == 0, "Failed to handle zero-length buffer");
+
+  res = pr_snprintfl(__FILE__, __LINE__, buf, bufsz, "%d", 0);
+  fail_unless(res < 0, "Failed to handle too-small buffer");
+  fail_unless(errno == ENOSPC, "Expected ENOSPC (%d), got %s (%d)", ENOSPC,
+    strerror(errno), errno);
+
+  res = pr_snprintfl(__FILE__, __LINE__, buf, bufsz, "%s", "foobar");
+  fail_unless(res < 0, "Failed to handle too-small buffer");
+  fail_unless(errno == ENOSPC, "Expected ENOSPC (%d), got %s (%d)", ENOSPC,
+    strerror(errno), errno);
+
+  bufsz = 32;
+  buf = palloc(p, bufsz);
+
+  expected = 6;
+  res = pr_snprintfl(__FILE__, __LINE__, buf, bufsz, "%s", "foobar");
+  fail_unless(res == expected, "Expected %d, got %d", expected, res);
+}
+END_TEST
+
 START_TEST (path_subst_uservar_test) {
   const char *path = NULL, *res, *original, *expected;
 
@@ -1186,6 +1434,8 @@ Suite *tests_get_misc_suite(void) {
   tcase_add_test(testcase, strtime2_test);
   tcase_add_test(testcase, timeval2millis_test);
   tcase_add_test(testcase, gettimeofday_millis_test);
+  tcase_add_test(testcase, snprintf_test);
+  tcase_add_test(testcase, snprintfl_test);
   tcase_add_test(testcase, path_subst_uservar_test);
 
   suite_add_tcase(suite, testcase);

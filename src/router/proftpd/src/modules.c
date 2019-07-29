@@ -1,7 +1,7 @@
 /*
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
- * Copyright (c) 2001-2016 The ProFTPD Project team
+ * Copyright (c) 2001-2017 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -176,7 +176,7 @@ module *pr_module_get(const char *name) {
   /* Check the list of compiled-in modules. */
   for (m = loaded_modules; m; m = m->next) {
     memset(buf, '\0', sizeof(buf));
-    snprintf(buf, sizeof(buf), "mod_%s.c", m->name);
+    pr_snprintf(buf, sizeof(buf), "mod_%s.c", m->name);
     buf[sizeof(buf)-1] = '\0';
 
     if (strcmp(buf, name) == 0) {
@@ -337,7 +337,7 @@ int pr_module_load(module *m) {
 
   /* Do not allow multiple modules with the same name. */
   memset(buf, '\0', sizeof(buf));
-  snprintf(buf, sizeof(buf), "mod_%s.c", m->name);
+  pr_snprintf(buf, sizeof(buf), "mod_%s.c", m->name);
   buf[sizeof(buf)-1] = '\0';
 
   if (pr_module_get(buf) != NULL) {
@@ -396,7 +396,7 @@ int pr_module_unload(module *m) {
    */
 
   memset(buf, '\0', sizeof(buf));
-  snprintf(buf, sizeof(buf), "mod_%s.c", m->name);
+  pr_snprintf(buf, sizeof(buf), "mod_%s.c", m->name);
   buf[sizeof(buf)-1] = '\0';
 
   if (pr_module_get(buf) == NULL) {

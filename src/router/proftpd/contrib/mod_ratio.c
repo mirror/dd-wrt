@@ -2,7 +2,7 @@
  * ProFTPD: mod_ratio -- Support upload/download ratios.
  * Portions Copyright (c) 1998-1999 Johnie Ingram.
  * Copyright (c) 2002 James Dogopoulos.
- * Copyright (c) 2008-2014 The ProFTPD Project team
+ * Copyright (c) 2008-2017 The ProFTPD Project team
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -242,26 +242,26 @@ static void update_ratios(const char *frate, const char *fcred,
     {
       stats.files = (stats.frate * stats.fstor) + stats.fcred - stats.fretr;
       memset(stats.ftext, '\0', sizeof(stats.ftext));
-      snprintf (stats.ftext, sizeof(stats.ftext)-1, "1:%dF", stats.frate);
+      pr_snprintf (stats.ftext, sizeof(stats.ftext)-1, "1:%dF", stats.frate);
     }
   else
     {
       stats.files = (stats.fstor / (stats.frate * -1)) + stats.fcred - stats.fretr;
       memset(stats.ftext, '\0', sizeof(stats.ftext));
-      snprintf (stats.ftext, sizeof(stats.ftext)-1, "%d:1F", stats.frate * -1);
+      pr_snprintf (stats.ftext, sizeof(stats.ftext)-1, "%d:1F", stats.frate * -1);
     }
 
   if (stats.brate >= 0)
     {
       stats.bytes = (stats.brate * stats.bstor) + stats.bcred - stats.bretr;
       memset(stats.btext, '\0', sizeof(stats.btext));
-      snprintf (stats.btext, sizeof(stats.btext)-1, "1:%dB", stats.brate);
+      pr_snprintf (stats.btext, sizeof(stats.btext)-1, "1:%dB", stats.brate);
     }
   else
     {
       stats.bytes = (stats.bstor / (stats.brate * -1)) + stats.bcred - stats.bretr;
       memset(stats.btext, '\0', sizeof(stats.btext));
-      snprintf (stats.btext, sizeof(stats.btext)-1, "%d:1B", stats.brate * -1);
+      pr_snprintf (stats.btext, sizeof(stats.btext)-1, "%d:1B", stats.brate * -1);
     }
 }
 
@@ -396,7 +396,7 @@ log_ratios (cmd_rec * cmd)
   char buf[1024] = {'\0'};
 
   memset(buf, '\0', sizeof(buf));
-  snprintf (buf, sizeof(buf)-1, SHORT_RATIO_STUFFS);
+  pr_snprintf (buf, sizeof(buf)-1, SHORT_RATIO_STUFFS);
   pr_log_debug(DEBUG0, MOD_RATIO_VERSION ": %s in %s: %s %s%s%s", g.user,
     session.cwd, cmd->argv[0], cmd->arg, RATIO_ENFORCE ? " :" : "",
     RATIO_ENFORCE ? buf : "");
@@ -580,7 +580,7 @@ MODRET ratio_log_pass(cmd_rec *cmd) {
     char buf[256];
 
     memset(buf, '\0', sizeof(buf));
-    snprintf(buf, sizeof(buf)-1, RATIO_STUFFS);
+    pr_snprintf(buf, sizeof(buf)-1, RATIO_STUFFS);
     pr_log_pri(PR_LOG_INFO, "Ratio: %s/%s %s[%s]: %s.", g.user,
       session.group, session.c->remote_name, pr_netaddr_get_ipstr
       (session.c->remote_addr), buf);
@@ -771,14 +771,14 @@ MODRET ratio_post_cmd(cmd_rec *cmd) {
       if (cwding || !strcasecmp (cmd->argv[0], "PASS"))
 	calc_ratios (cmd);
 
-      snprintf(sbuf1, sizeof(sbuf1), "Down: %d Files (%lumb)  Up: %d Files (%lumb)",
+      pr_snprintf(sbuf1, sizeof(sbuf1), "Down: %d Files (%lumb)  Up: %d Files (%lumb)",
 	stats.fretr, (unsigned long) (stats.bretr / 1024),
         stats.fstor, (unsigned long) (stats.bstor / 1024));
       if (stats.frate)
-	snprintf (sbuf2, sizeof(sbuf2),
+	pr_snprintf (sbuf2, sizeof(sbuf2),
 		  "   %s CR: %d", stats.ftext, stats.files);
       if (stats.brate)
-	snprintf (sbuf3, sizeof(sbuf3), "   %s CR: %lu", stats.btext,
+	pr_snprintf (sbuf3, sizeof(sbuf3), "   %s CR: %lu", stats.btext,
           (unsigned long) (stats.bytes / 1024));
 
       if (RATIO_ENFORCE)
@@ -806,7 +806,7 @@ cmd_site (cmd_rec * cmd)
   
   if (strcasecmp(cmd->argv[1], "RATIO") == 0) {
     calc_ratios(cmd);
-    snprintf(buf, sizeof(buf), RATIO_STUFFS);
+    pr_snprintf(buf, sizeof(buf), RATIO_STUFFS);
     pr_response_add(R_214, "Current Ratio: ( %s )", buf);
     if(stats.frate)
       pr_response_add(R_214,

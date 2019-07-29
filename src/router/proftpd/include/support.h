@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2016 The ProFTPD Project team
+ * Copyright (c) 2001-2017 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -108,6 +108,32 @@ const char *pr_strtime2(time_t, int);
 
 int pr_gettimeofday_millis(uint64_t *);
 int pr_timeval2millis(struct timeval *, uint64_t *);
+
+/* Wrappers around snprintf(3)/vsnprintf(3) which carefully check the
+ * return values.
+ */
+
+int pr_snprintf(char *buf, size_t bufsz, const char *fmt, ...)
+#ifdef __GNUC__
+  __attribute__ ((format (printf, 3, 4)));
+#else
+  ;
+#endif
+
+/* Just like pr_snprintf(), except that the caller can provide their
+ * source code location.
+ */
+int pr_snprintfl(const char *file, int lineno, char *buf, size_t bufsz,
+  const char *fmt, ...)
+#ifdef __GNUC__
+  __attribute__ ((format (printf, 5, 6)));
+#else
+  ;
+#endif
+
+int pr_vsnprintf(char *buf, size_t bufsz, const char *fmt, va_list msg);
+int pr_vsnprintfl(const char *file, int lineno, char *buf, size_t bufsz,
+  const char *fmt, va_list msg);
 
 /* Resolve/substitute any "%u" variables in the path.  Returns the resolved
  * path, or NULL if there was an error.

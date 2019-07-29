@@ -48,6 +48,7 @@ Suite *tests_get_table_suite(void);
 Suite *tests_get_var_suite(void);
 Suite *tests_get_event_suite(void);
 Suite *tests_get_env_suite(void);
+Suite *tests_get_random_suite(void);
 Suite *tests_get_version_suite(void);
 Suite *tests_get_feat_suite(void);
 Suite *tests_get_netaddr_suite(void);
@@ -78,7 +79,9 @@ Suite *tests_get_privs_suite(void);
 Suite *tests_get_display_suite(void);
 Suite *tests_get_misc_suite(void);
 Suite *tests_get_json_suite(void);
+Suite *tests_get_jot_suite(void);
 Suite *tests_get_redis_suite(void);
+Suite *tests_get_error_suite(void);
 
 /* Temporary hack/placement for this variable, until we get to testing
  * the Signals API.

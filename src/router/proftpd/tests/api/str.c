@@ -1469,25 +1469,23 @@ START_TEST (similars_test) {
   mark_point();
   similars = (const char **) res->elts;
 
-  /* Note: We see different results here due to (I think) different
-   * qsort(3) implementations.
+  /*
+   * Note: expected distances are as follows:
+   *
+   * Candidate       Case-Sensitive      Case-Insensitive
+   * fools                 0                     0
+   * odd                   5                     5
+   * bar                   5                     5
+   * FOO                   5                     0
    */
 
-  expected = "FOO";
-  if (strcmp(similars[0], expected) != 0) {
-    expected = "fools";
-  }
+  expected = "fools";
 
   fail_unless(strcmp(similars[0], expected) == 0,
     "Expected similar '%s', got '%s'", expected, similars[0]);
 
-  expected = "fools";
-  if (strcmp(similars[1], expected) != 0) {
-    expected = "FOO";
-  }
-
-  fail_unless(strcmp(similars[1], expected) == 0,
-    "Expected similar '%s', got '%s'", expected, similars[1]);
+  fail_unless(strcmp(similars[1], expected) != 0,
+    "Unexpectedly got similar '%s'", similars[1]);
 
   mark_point();
   res = pr_str_get_similars(p, s, candidates, 0, PR_STR_FL_IGNORE_CASE);
@@ -1499,18 +1497,22 @@ START_TEST (similars_test) {
   mark_point();
   similars = (const char **) res->elts;
 
+  /*
+   * similars[0] and similars[1] should be "FOO" and "fools", but
+   * not necessarily in that order
+   */
   expected = "FOO";
   if (strcmp(similars[0], expected) != 0) {
-    expected = "fools";
+    expected = similars[0];
+    similars[0] = similars[1];
+    similars[1] = expected;
+    expected = "FOO";
   }
 
   fail_unless(strcmp(similars[0], expected) == 0,
     "Expected similar '%s', got '%s'", expected, similars[0]);
 
   expected = "fools";
-  if (strcmp(similars[1], expected) != 0) {
-    expected = "FOO";
-  }
 
   fail_unless(strcmp(similars[1], expected) == 0,
     "Expected similar '%s', got '%s'", expected, similars[1]);

@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_shaper -- a module implementing daemon-wide rate throttling
  *                        via IPC
- * Copyright (c) 2004-2016 TJ Saunders
+ * Copyright (c) 2004-2017 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1492,12 +1492,12 @@ static int shaper_handle_info(pr_ctrls_t *ctrl, int reqargc,
     memset(downbuf, '\0', downbufsz);
     memset(upbuf, '\0', upbufsz);
 
-    snprintf(downbuf, downbufsz, "%u/%u (%s%d)",
+    pr_snprintf(downbuf, downbufsz, "%u/%u (%s%d)",
       shaper_tab.def_downshares + sess_list[i].sess_downincr, total_downshares,
       sess_list[i].sess_downincr > 0 ? "+" : "", sess_list[i].sess_downincr);
     downbuf[downbufsz-1] = '\0';
 
-    snprintf(upbuf, upbufsz, "%u/%u (%s%d)",
+    pr_snprintf(upbuf, upbufsz, "%u/%u (%s%d)",
       shaper_tab.def_upshares + sess_list[i].sess_upincr, total_upshares,
       sess_list[i].sess_upincr > 0 ? "+" : "", sess_list[i].sess_upincr);
     upbuf[upbufsz-1] = '\0';

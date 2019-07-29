@@ -127,6 +127,21 @@ my $TESTS = {
     test_class => [qw(bug forking)],
   },
 
+  mlsd_symlink_rel_path_chrooted_bug4322 => {
+    order => ++$order,
+    test_class => [qw(bug forking rootprivs)],
+  },
+
+  mlsd_symlink_rel_path_subdir_chrooted_bug4322 => {
+    order => ++$order,
+    test_class => [qw(bug forking rootprivs)],
+  },
+
+  mlsd_symlink_rel_path_subdir_cwd_chrooted_bug4322 => {
+    order => ++$order,
+    test_class => [qw(bug forking rootprivs)],
+  },
+
   # XXX Plenty of other tests needed: params, maxfiles, maxdirs, depth, etc
 };
 
@@ -625,7 +640,7 @@ sub mlsd_ok_cwd_dir {
       # Make sure that the 'type' fact for the current directory is
       # "cdir" (Bug#4198).
       my $type = $res->{'.'};
-      my $expected = 'cdir';
+      $expected = 'cdir';
       $self->assert($expected eq $type,
         test_msg("Expected type '$expected', got '$type'"));
     };
@@ -767,14 +782,14 @@ sub mlsd_ok_other_dir_bug4198 {
       # Make sure that the 'type' fact for the current directory is
       # "cdir" (Bug#4198).
       my $type = $res->{'.'};
-      my $expected = 'cdir';
+      $expected = 'cdir';
       $self->assert($expected eq $type,
         test_msg("Expected type '$expected', got '$type'"));
 
       # Similarly, make sure that the 'type' fact for parent directory
       # (by name) is NOT "cdir", but is just "dir" (Bug#4198).
-      my $type = $res->{'sub.d'};
-      my $expected = 'dir';
+      $type = $res->{'sub.d'};
+      $expected = 'dir';
       $self->assert($expected eq $type,
         test_msg("Expected type '$expected', got '$type'"));
     };
@@ -3126,6 +3141,433 @@ sub mlsd_wide_dir {
       $client->quit();
     };
 
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub mlsd_symlink_rel_path_chrooted_bug4322 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'cmds');
+
+  my $dst_path = 'domains/test.oxilion.nl/public_html';
+  my $dst_dir = File::Spec->rel2abs("$tmpdir/$dst_path");
+  mkpath($dst_dir);
+
+  my $cwd = getcwd();
+  unless (chdir("$tmpdir")) {
+    die("Can't chdir to $tmpdir: $!");
+  }
+
+  unless (symlink("./$dst_path", 'public_html')) {
+    die("Can't symlink 'public_html' to './$dst_path': $!");
+  }
+
+  unless (symlink("$dst_path", 'public_html2')) {
+    die("Can't symlink 'public_html2' to '$dst_path': $!");
+  }
+
+  unless (chdir($cwd)) {
+    die("Can't chdir to $cwd: $!");
+  }
+
+  if ($< == 0) {
+    unless (chmod(0755, $dst_dir)) {
+      die("Can't set perms on $dst_dir to 0755: $!");
+    }
+
+    unless (chown($setup->{uid}, $setup->{gid}, $dst_dir)) {
+      die("Can't set owner of $dst_dir to $setup->{uid}/$setup->{gid}: $!");
+    }
+  }
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+    ShowSymlinks => 'on',
+    DefaultRoot => '~',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($setup->{user}, $setup->{passwd});
+
+      my $conn = $client->mlsd_raw();
+      unless ($conn) {
+        die("MLSD failed: " . $client->response_code() . " " .
+          $client->response_msg());
+      }
+
+      my $buf;
+      $conn->read($buf, 8192, 30);
+      eval { $conn->close() };
+      $client->quit();
+
+      if ($ENV{TEST_VERBOSE}) {
+        print STDERR "# MLSD:\n$buf\n";
+      }
+
+      my $res = {};
+      my $lines = [split(/(\r)?\n/, $buf)];
+
+      foreach my $line (@$lines) {
+        if ($line =~ /^modify=\S+;perm=\S+;type=(\S+);unique=(\S+);UNIX\.group=\d+;UNIX\.groupname=\S+;UNIX\.mode=\d+;UNIX\.owner=\d+;UNIX\.ownername=\S+; (.*?)$/) {
+          $res->{$3} = { type => $1, unique => $2 };
+        }
+      }
+
+      my $count = scalar(keys(%$res));
+      my $expected = 11;
+      unless ($count == $expected) {
+        die("MLSD returned wrong number of entries (expected $expected, got $count)");
+      }
+
+      # public_html and public_html2 are symlinks to
+      # domains/test.oxilion.nl/public_html.  According to RFC3659, the unique
+      # fact for both of these should thus be the same, since they are the same
+      # underlying object.
+
+      $expected = 'OS.unix=symlink';
+      my $got = $res->{'public_html'}->{type};
+      $self->assert(qr/$expected/i, $got,
+        "Expected type fact '$expected', got '$got'");
+
+      $got = $res->{'public_html2'}->{type};
+      $self->assert(qr/$expected/i, $got,
+        "Expected type fact '$expected', got '$got'");
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub mlsd_symlink_rel_path_subdir_chrooted_bug4322 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'cmds');
+
+  my $dst_path = 'domains/test.oxilion.nl/public_html';
+  my $dst_dir = File::Spec->rel2abs("$tmpdir/test.d/$dst_path");
+  mkpath($dst_dir);
+
+  my $cwd = getcwd();
+  unless (chdir("$tmpdir/test.d")) {
+    die("Can't chdir to $tmpdir/test.d: $!");
+  }
+
+  unless (symlink("./$dst_path", 'public_html')) {
+    die("Can't symlink 'public_html' to './$dst_path': $!");
+  }
+
+  unless (symlink("$dst_path", 'public_html2')) {
+    die("Can't symlink 'public_html2' to '$dst_path': $!");
+  }
+
+  unless (chdir($cwd)) {
+    die("Can't chdir to $cwd: $!");
+  }
+
+  if ($< == 0) {
+    unless (chmod(0755, $dst_dir)) {
+      die("Can't set perms on $dst_dir to 0755: $!");
+    }
+
+    unless (chown($setup->{uid}, $setup->{gid}, $dst_dir)) {
+      die("Can't set owner of $dst_dir to $setup->{uid}/$setup->{gid}: $!");
+    }
+  }
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+    ShowSymlinks => 'on',
+    DefaultRoot => '~',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($setup->{user}, $setup->{passwd});
+
+      my $conn = $client->mlsd_raw('test.d');
+      unless ($conn) {
+        die("MLSD test.d failed: " . $client->response_code() . " " .
+          $client->response_msg());
+      }
+
+      my $buf;
+      $conn->read($buf, 8192, 30);
+      eval { $conn->close() };
+      $client->quit();
+
+      if ($ENV{TEST_VERBOSE}) {
+        print STDERR "# MLSD:\n$buf\n";
+      }
+
+      my $res = {};
+      my $lines = [split(/(\r)?\n/, $buf)];
+
+      foreach my $line (@$lines) {
+        if ($line =~ /^modify=\S+;perm=\S+;type=(\S+);unique=(\S+);UNIX\.group=\d+;UNIX\.groupname=\S+;UNIX\.mode=\d+;UNIX\.owner=\d+;UNIX\.ownername=\S+; (.*?)$/) {
+          $res->{$3} = { type => $1, unique => $2 };
+        }
+      }
+
+      my $count = scalar(keys(%$res));
+      my $expected = 5;
+      unless ($count == $expected) {
+        die("MLSD returned wrong number of entries (expected $expected, got $count)");
+      }
+
+      # public_html and public_html2 are symlinks to
+      # domains/test.oxilion.nl/public_html.  According to RFC3659, the unique
+      # fact for both of these should thus be the same, since they are the same
+      # underlying object.
+
+      $expected = 'OS.unix=symlink';
+      my $got = $res->{'public_html'}->{type};
+      $self->assert(qr/$expected/i, $got,
+        "Expected type fact '$expected', got '$got'");
+
+      $got = $res->{'public_html2'}->{type};
+      $self->assert(qr/$expected/i, $got,
+        "Expected type fact '$expected', got '$got'");
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub mlsd_symlink_rel_path_subdir_cwd_chrooted_bug4322 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'cmds');
+
+  my $dst_path = 'domains/test.oxilion.nl/public_html';
+  my $dst_dir = File::Spec->rel2abs("$tmpdir/test.d/$dst_path");
+  mkpath($dst_dir);
+
+  my $cwd = getcwd();
+  unless (chdir("$tmpdir/test.d")) {
+    die("Can't chdir to $tmpdir/test.d: $!");
+  }
+
+  unless (symlink("./$dst_path", 'public_html')) {
+    die("Can't symlink 'public_html' to './$dst_path': $!");
+  }
+
+  unless (symlink("$dst_path", 'public_html2')) {
+    die("Can't symlink 'public_html2' to '$dst_path': $!");
+  }
+
+  unless (chdir($cwd)) {
+    die("Can't chdir to $cwd: $!");
+  }
+
+  if ($< == 0) {
+    unless (chmod(0755, $dst_dir)) {
+      die("Can't set perms on $dst_dir to 0755: $!");
+    }
+
+    unless (chown($setup->{uid}, $setup->{gid}, $dst_dir)) {
+      die("Can't set owner of $dst_dir to $setup->{uid}/$setup->{gid}: $!");
+    }
+  }
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+    ShowSymlinks => 'on',
+    DefaultRoot => '~',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($setup->{user}, $setup->{passwd});
+      $client->cwd('test.d');
+
+      my $conn = $client->mlsd_raw();
+      unless ($conn) {
+        die("MLSD failed: " . $client->response_code() . " " .
+          $client->response_msg());
+      }
+
+      my $buf;
+      $conn->read($buf, 8192, 30);
+      eval { $conn->close() };
+      $client->quit();
+
+      if ($ENV{TEST_VERBOSE}) {
+        print STDERR "# MLSD:\n$buf\n";
+      }
+
+      my $res = {};
+      my $lines = [split(/(\r)?\n/, $buf)];
+
+      foreach my $line (@$lines) {
+        if ($line =~ /^modify=\S+;perm=\S+;type=(\S+);unique=(\S+);UNIX\.group=\d+;UNIX\.groupname=\S+;UNIX\.mode=\d+;UNIX\.owner=\d+;UNIX\.ownername=\S+; (.*?)$/) {
+          $res->{$3} = { type => $1, unique => $2 };
+        }
+      }
+
+      my $count = scalar(keys(%$res));
+      my $expected = 5;
+      unless ($count == $expected) {
+        die("MLSD returned wrong number of entries (expected $expected, got $count)");
+      }
+
+      # public_html and public_html2 are symlinks to
+      # domains/test.oxilion.nl/public_html.  According to RFC3659, the unique
+      # fact for both of these should thus be the same, since they are the same
+      # underlying object.
+
+      $expected = 'OS.unix=symlink';
+      my $got = $res->{'public_html'}->{type};
+      $self->assert(qr/$expected/i, $got,
+        "Expected type fact '$expected', got '$got'");
+
+      $got = $res->{'public_html2'}->{type};
+      $self->assert(qr/$expected/i, $got,
+        "Expected type fact '$expected', got '$got'");
+    };
     if ($@) {
       $ex = $@;
     }

@@ -725,11 +725,11 @@ static int distance_cmp(const void *a, const void *b) {
   const char *s1, *s2;
   int distance1, distance2;
 
-  cand1 = a;
+  cand1 = *((const struct candidate **) a);
   s1 = cand1->s;
   distance1 = cand1->distance;
 
-  cand2 = b;
+  cand2 = *((const struct candidate **) b);
   s2 = cand2->s;
   distance2 = cand2->distance;
 
@@ -962,12 +962,12 @@ const char *pr_uid2str(pool *p, uid_t uid) {
   memset(&buf, 0, sizeof(buf));
   if (uid != (uid_t) -1) {
 #if SIZEOF_UID_T == SIZEOF_LONG_LONG
-    snprintf(buf, sizeof(buf)-1, "%llu", (unsigned long long) uid);
+    pr_snprintf(buf, sizeof(buf)-1, "%llu", (unsigned long long) uid);
 #else
-    snprintf(buf, sizeof(buf)-1, "%lu", (unsigned long) uid);
+    pr_snprintf(buf, sizeof(buf)-1, "%lu", (unsigned long) uid);
 #endif /* sizeof(uid_t) != sizeof(long long) */
   } else {
-    snprintf(buf, sizeof(buf)-1, "%d", -1);
+    pr_snprintf(buf, sizeof(buf)-1, "%d", -1);
   }
 
   if (p != NULL) {
@@ -983,12 +983,12 @@ const char *pr_gid2str(pool *p, gid_t gid) {
   memset(&buf, 0, sizeof(buf));
   if (gid != (gid_t) -1) {
 #if SIZEOF_GID_T == SIZEOF_LONG_LONG
-    snprintf(buf, sizeof(buf)-1, "%llu", (unsigned long long) gid);
+    pr_snprintf(buf, sizeof(buf)-1, "%llu", (unsigned long long) gid);
 #else
-    snprintf(buf, sizeof(buf)-1, "%lu", (unsigned long) gid);
+    pr_snprintf(buf, sizeof(buf)-1, "%lu", (unsigned long) gid);
 #endif /* sizeof(gid_t) != sizeof(long long) */
   } else {
-    snprintf(buf, sizeof(buf)-1, "%d", -1);
+    pr_snprintf(buf, sizeof(buf)-1, "%d", -1);
   }
 
   if (p != NULL) {

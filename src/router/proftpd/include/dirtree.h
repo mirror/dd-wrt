@@ -33,6 +33,7 @@
 #include "sets.h"
 #include "table.h"
 #include "configdb.h"
+#include "netaddr.h"
 
 struct conn_struc;
 

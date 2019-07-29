@@ -129,7 +129,7 @@ AC_TRY_LINK(
 
 dnl Splice out -lsupp, since that library hasn't been built yet
 LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
-LIBS="-lcrypto -lz $LIBS"
+LIBS="-lcrypto $LIBS"
 
 AC_MSG_CHECKING([whether OpenSSL has crippled AES support])
 AC_TRY_LINK(
@@ -156,7 +156,7 @@ AC_TRY_LINK(
 
 dnl Splice out -lsupp, since that library hasn't been built yet
 LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
-LIBS="-lcrypto -lz $LIBS"
+LIBS="-lcrypto $LIBS"
 
 AC_MSG_CHECKING([whether OpenSSL supports SHA256])
 AC_TRY_LINK(
@@ -164,7 +164,7 @@ AC_TRY_LINK(
     #include <openssl/evp.h>
   ],
   [
-    EVP_MD *md;
+    const EVP_MD *md;
     md = EVP_sha256();
   ],
   [
@@ -180,7 +180,7 @@ AC_TRY_LINK(
 
 dnl Splice out -lsupp, since that library hasn't been built yet
 LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
-LIBS="-lcrypto -lz $LIBS"
+LIBS="-lcrypto $LIBS"
 
 AC_MSG_CHECKING([whether OpenSSL supports SHA512])
 AC_TRY_LINK(
@@ -188,7 +188,7 @@ AC_TRY_LINK(
     #include <openssl/evp.h>
   ],
   [
-    EVP_MD *md;
+    const EVP_MD *md;
     md = EVP_sha512();
   ],
   [

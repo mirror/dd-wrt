@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp keyboard-interactive driver mgmt
- * Copyright (c) 2008-2016 TJ Saunders
+ * Copyright (c) 2008-2017 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -264,6 +264,7 @@ int sftp_kbdint_recv_response(pool *p, uint32_t expected_count,
   struct ssh2_packet *pkt;
   char mesg_type;
   int res;
+  pool *resp_pool = NULL;
 
   if (p == NULL ||
       rcvd_count == NULL ||
@@ -282,6 +283,9 @@ int sftp_kbdint_recv_response(pool *p, uint32_t expected_count,
 
   pr_response_clear(&resp_list);
   pr_response_clear(&resp_err_list);
+
+  /* Cache a reference to the current response pool used. */
+  resp_pool = pr_response_get_pool();
   pr_response_set_pool(pkt->pool);
 
   mesg_type = sftp_ssh2_packet_get_mesg_type(pkt);
@@ -290,6 +294,7 @@ int sftp_kbdint_recv_response(pool *p, uint32_t expected_count,
       "expecting USER_AUTH_INFO_RESP message, received %s (%d)",
       sftp_ssh2_packet_get_mesg_type_desc(mesg_type), mesg_type);
     destroy_pool(pkt->pool);
+    pr_response_set_pool(resp_pool);
     errno = EPERM;
     return -1;
   }
@@ -315,6 +320,7 @@ int sftp_kbdint_recv_response(pool *p, uint32_t expected_count,
       expected_count != 1 ? "challenges" : "challenge",
       (unsigned long) resp_count, resp_count != 1 ? "responses" : "response");
     destroy_pool(pkt->pool);
+    pr_response_set_pool(resp_pool);
     errno = EPERM;
     return -1;
   }
@@ -324,6 +330,7 @@ int sftp_kbdint_recv_response(pool *p, uint32_t expected_count,
       "received too many responses (%lu > max %lu), rejecting",
       (unsigned long) resp_count, (unsigned long) SFTP_KBDINT_MAX_RESPONSES);
     destroy_pool(pkt->pool);
+    pr_response_set_pool(resp_pool);
     errno = EPERM;
     return -1;
   }
@@ -339,6 +346,7 @@ int sftp_kbdint_recv_response(pool *p, uint32_t expected_count,
   *rcvd_count = resp_count;
   *responses = ((const char **) list->elts);
   destroy_pool(pkt->pool);
+  pr_response_set_pool(resp_pool);
 
   return 0;
 }

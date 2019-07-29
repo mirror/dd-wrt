@@ -1,8 +1,7 @@
 /*
  * ProFTPD: mod_quotatab_sql -- a mod_quotatab sub-module for managing quota
  *                              data via SQL-based tables
- *
- * Copyright (c) 2002-2015 TJ Saunders
+ * Copyright (c) 2002-2017 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -127,46 +126,46 @@ static int sqltab_create(quota_table_t *sqltab, void *ptr) {
    * files_in_used, files_out_used, files_xfer_used.
    */
 
-  snprintf(tally_quota_name, 83, "'%s'",
+  pr_snprintf(tally_quota_name, 83, "'%s'",
     sqltab_get_name(tmp_pool, tally->name));
   tally_quota_name[82] = '\0';
 
   if (tally->quota_type == USER_QUOTA) {
-    snprintf(tally_quota_type, QUOTATAB_SQL_VALUE_BUFSZ, "'%s'", "user");
+    pr_snprintf(tally_quota_type, QUOTATAB_SQL_VALUE_BUFSZ, "'%s'", "user");
 
   } else if (tally->quota_type == GROUP_QUOTA) {
-    snprintf(tally_quota_type, QUOTATAB_SQL_VALUE_BUFSZ, "'%s'", "group");
+    pr_snprintf(tally_quota_type, QUOTATAB_SQL_VALUE_BUFSZ, "'%s'", "group");
 
   } else if (tally->quota_type == CLASS_QUOTA) {
-    snprintf(tally_quota_type, QUOTATAB_SQL_VALUE_BUFSZ, "'%s'", "class");
+    pr_snprintf(tally_quota_type, QUOTATAB_SQL_VALUE_BUFSZ, "'%s'", "class");
 
   } else if (tally->quota_type == ALL_QUOTA) {
-    snprintf(tally_quota_type, QUOTATAB_SQL_VALUE_BUFSZ, "'%s'", "all");
+    pr_snprintf(tally_quota_type, QUOTATAB_SQL_VALUE_BUFSZ, "'%s'", "all");
   }
 
   tally_quota_type[QUOTATAB_SQL_VALUE_BUFSZ-1] = '\0';
 
-  snprintf(tally_bytes_in, QUOTATAB_SQL_VALUE_BUFSZ, "%f",
+  pr_snprintf(tally_bytes_in, QUOTATAB_SQL_VALUE_BUFSZ, "%f",
     tally->bytes_in_used);
   tally_bytes_in[QUOTATAB_SQL_VALUE_BUFSZ-1] = '\0';
 
-  snprintf(tally_bytes_out, QUOTATAB_SQL_VALUE_BUFSZ, "%f",
+  pr_snprintf(tally_bytes_out, QUOTATAB_SQL_VALUE_BUFSZ, "%f",
     tally->bytes_out_used);
   tally_bytes_out[QUOTATAB_SQL_VALUE_BUFSZ-1] = '\0';
 
-  snprintf(tally_bytes_xfer, QUOTATAB_SQL_VALUE_BUFSZ, "%f",
+  pr_snprintf(tally_bytes_xfer, QUOTATAB_SQL_VALUE_BUFSZ, "%f",
     tally->bytes_xfer_used);
   tally_bytes_xfer[QUOTATAB_SQL_VALUE_BUFSZ-1] = '\0';
 
-  snprintf(tally_files_in, QUOTATAB_SQL_VALUE_BUFSZ, "%u",
+  pr_snprintf(tally_files_in, QUOTATAB_SQL_VALUE_BUFSZ, "%u",
     tally->files_in_used);
   tally_files_in[QUOTATAB_SQL_VALUE_BUFSZ-1] = '\0';
 
-  snprintf(tally_files_out, QUOTATAB_SQL_VALUE_BUFSZ, "%u",
+  pr_snprintf(tally_files_out, QUOTATAB_SQL_VALUE_BUFSZ, "%u",
     tally->files_out_used);
   tally_files_out[QUOTATAB_SQL_VALUE_BUFSZ-1] = '\0';
 
-  snprintf(tally_files_xfer, QUOTATAB_SQL_VALUE_BUFSZ, "%u",
+  pr_snprintf(tally_files_xfer, QUOTATAB_SQL_VALUE_BUFSZ, "%u",
     tally->files_xfer_used);
   tally_files_xfer[QUOTATAB_SQL_VALUE_BUFSZ-1] = '\0';
 
@@ -478,16 +477,16 @@ static int sqltab_write(quota_table_t *sqltab, void *ptr) {
    */
 
   if (tally->quota_type == USER_QUOTA) {
-    snprintf(tally_quota_type, QUOTATAB_SQL_VALUE_BUFSZ, "%s", "user");
+    pr_snprintf(tally_quota_type, QUOTATAB_SQL_VALUE_BUFSZ, "%s", "user");
 
   } else if (tally->quota_type == GROUP_QUOTA) {
-    snprintf(tally_quota_type, QUOTATAB_SQL_VALUE_BUFSZ, "%s", "group");
+    pr_snprintf(tally_quota_type, QUOTATAB_SQL_VALUE_BUFSZ, "%s", "group");
 
   } else if (tally->quota_type == CLASS_QUOTA) {
-    snprintf(tally_quota_type, QUOTATAB_SQL_VALUE_BUFSZ, "%s", "class");
+    pr_snprintf(tally_quota_type, QUOTATAB_SQL_VALUE_BUFSZ, "%s", "class");
 
   } else if (tally->quota_type == ALL_QUOTA) {
-    snprintf(tally_quota_type, QUOTATAB_SQL_VALUE_BUFSZ, "%s", "all");
+    pr_snprintf(tally_quota_type, QUOTATAB_SQL_VALUE_BUFSZ, "%s", "all");
   }
 
   tally_quota_type[QUOTATAB_SQL_VALUE_BUFSZ-1] = '\0';
@@ -495,30 +494,30 @@ static int sqltab_write(quota_table_t *sqltab, void *ptr) {
   /* Note: use the deltas data, not the tally members, so that the
    * UPDATE can do an "atomic" read+update all in one shot.
    */
-  snprintf(tally_bytes_in, QUOTATAB_SQL_VALUE_BUFSZ, "%f",
+  pr_snprintf(tally_bytes_in, QUOTATAB_SQL_VALUE_BUFSZ, "%f",
     quotatab_deltas.bytes_in_delta);
   tally_bytes_in[QUOTATAB_SQL_VALUE_BUFSZ-1] = '\0';
 
-  snprintf(tally_bytes_out, QUOTATAB_SQL_VALUE_BUFSZ, "%f",
+  pr_snprintf(tally_bytes_out, QUOTATAB_SQL_VALUE_BUFSZ, "%f",
     quotatab_deltas.bytes_out_delta);
   tally_bytes_out[QUOTATAB_SQL_VALUE_BUFSZ-1] = '\0';
 
-  snprintf(tally_bytes_xfer, QUOTATAB_SQL_VALUE_BUFSZ, "%f",
+  pr_snprintf(tally_bytes_xfer, QUOTATAB_SQL_VALUE_BUFSZ, "%f",
     quotatab_deltas.bytes_xfer_delta);
   tally_bytes_xfer[QUOTATAB_SQL_VALUE_BUFSZ-1] = '\0';
 
   /* Don't try to prevent underflows here; mod_quotatab already makes
    * these checks.
    */
-  snprintf(tally_files_in, QUOTATAB_SQL_VALUE_BUFSZ, "%d",
+  pr_snprintf(tally_files_in, QUOTATAB_SQL_VALUE_BUFSZ, "%d",
     quotatab_deltas.files_in_delta);
   tally_files_in[QUOTATAB_SQL_VALUE_BUFSZ-1] = '\0';
 
-  snprintf(tally_files_out, QUOTATAB_SQL_VALUE_BUFSZ, "%d",
+  pr_snprintf(tally_files_out, QUOTATAB_SQL_VALUE_BUFSZ, "%d",
     quotatab_deltas.files_out_delta);
   tally_files_out[QUOTATAB_SQL_VALUE_BUFSZ-1] = '\0';
 
-  snprintf(tally_files_xfer, QUOTATAB_SQL_VALUE_BUFSZ, "%d",
+  pr_snprintf(tally_files_xfer, QUOTATAB_SQL_VALUE_BUFSZ, "%d",
     quotatab_deltas.files_xfer_delta);
   tally_files_xfer[QUOTATAB_SQL_VALUE_BUFSZ-1] = '\0';
 

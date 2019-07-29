@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2007-2016 The ProFTPD Project team
+ * Copyright (c) 2007-2018 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -60,7 +60,7 @@ static unsigned int proc_flags = 0;
 #define PR_PROCTITLE_FL_USE_STATIC		0x001
 
 void pr_proctitle_init(int argc, char *argv[], char *envp[]) {
-  register int i;
+  register int i, j;
   register size_t envpsize;
   char **p;
 
@@ -69,10 +69,11 @@ void pr_proctitle_init(int argc, char *argv[], char *envp[]) {
     envpsize += strlen(envp[i]) + 1;
   }
 
-  p = (char **) malloc((i + 1) * sizeof(char *));
+  p = (char **) calloc((i + 1), sizeof(char *));
   if (p != NULL) {
     environ = p;
 
+    j = 0;
     for (i = 0; envp[i] != NULL; i++) {
       size_t envp_len = strlen(envp[i]);
 
@@ -81,13 +82,13 @@ void pr_proctitle_init(int argc, char *argv[], char *envp[]) {
         continue;
       }
 
-      environ[i] = malloc(envp_len + 1);
-      if (environ[i] != NULL) {
-        sstrncpy(environ[i], envp[i], envp_len + 1);
+      environ[j] = malloc(envp_len + 1);
+      if (environ[j] != NULL) {
+        sstrncpy(environ[j], envp[i], envp_len + 1);
+        j++;
       }
     }
 
-    environ[i] = NULL;
   }
 
   prog_argv = argv;
@@ -189,6 +190,10 @@ void pr_proctitle_set_str(const char *str) {
 #endif /* HAVE_SETPROCTITLE */
 }
 
+/* Note that we deliberately do NOT use pr_vsnprintf() here, since truncation
+ * of long strings is often normal for these entries; consider paths longer
+ * than PR_TUNABLE_SCOREBOARD_BUFFER_SIZE (Issue#683).
+ */
 void pr_proctitle_set(const char *fmt, ...) {
   va_list msg;
 
@@ -215,22 +220,22 @@ void pr_proctitle_set(const char *fmt, ...) {
 #ifdef HAVE_SETPROCTITLE
 # if __FreeBSD__ >= 4 && !defined(FREEBSD4_0) && !defined(FREEBSD4_1)
   /* FreeBSD's setproctitle() automatically prepends the process name. */
-  vsnprintf(proc_title_buf, sizeof(proc_title_buf), fmt, msg);
+  vsnprintf(proc_title_buf, sizeof(proc_title_buf)-1, fmt, msg);
 
 # else /* FREEBSD4 */
   /* Manually append the process name for non-FreeBSD platforms. */
-  snprintf(proc_title_buf, sizeof(proc_title_buf), "%s", "proftpd: ");
+  snprintf(proc_title_buf, sizeof(proc_title_buf)-1, "%s", "proftpd: ");
   vsnprintf(proc_title_buf + strlen(proc_title_buf),
-    sizeof(proc_title_buf) - strlen(proc_title_buf), fmt, msg);
+    sizeof(proc_title_buf)-1 - strlen(proc_title_buf), fmt, msg);
 
 # endif /* FREEBSD4 */
   setproctitle("%s", proc_title_buf);
 
 #else /* HAVE_SETPROCTITLE */
   /* Manually append the process name for non-setproctitle() platforms. */
-  snprintf(proc_title_buf, sizeof(proc_title_buf), "%s", "proftpd: ");
+  snprintf(proc_title_buf, sizeof(proc_title_buf)-1, "%s", "proftpd: ");
   vsnprintf(proc_title_buf + strlen(proc_title_buf),
-    sizeof(proc_title_buf) - strlen(proc_title_buf), fmt, msg);
+    sizeof(proc_title_buf)-1 - strlen(proc_title_buf), fmt, msg);
 
 #endif /* HAVE_SETPROCTITLE */
 

@@ -40,6 +40,11 @@ my $TESTS = {
     test_class => [qw(bug forking rootprivs)],
   },
 
+  authaliasonly_on_anon_bug4314 => {
+    order => ++$order,
+    test_class => [qw(bug forking rootprivs)],
+  },
+
 };
 
 sub new {
@@ -623,6 +628,114 @@ sub authaliasonly_on_anon_bug4255 {
       $client->quit();
     };
 
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub authaliasonly_on_anon_bug4314 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'config');
+
+  my ($config_user, $config_group) = config_get_identity();
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'auth:20',
+
+    User => $config_user,
+    Group => $config_group,
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
+    Anonymous => {
+      $setup->{home_dir} => {
+        User => $setup->{user},
+        Group => $setup->{group},
+        RequireValidShell => 'off',
+        UserAlias => "anonymous $setup->{user}",
+        AuthAliasOnly => 'on',
+        AnonRequirePassword => 'off',
+      },
+    },
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my $port;
+  ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      sleep(1);
+
+      # First, try logging in as user 'anonymous', i.e. the alias.
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0, 1);
+      my ($resp_code, $resp_msg) = $client->user("anonymous");
+
+      my $expected = 331;
+      $self->assert($expected == $resp_code,
+        "Expected response code $expected, got $resp_code");
+
+      $expected = 'Anonymous login ok, send your complete email address as your password';
+      $self->assert($expected eq $resp_msg,
+        "Expected response message '$expected', got '$resp_msg'");
+
+      ($resp_code, $resp_msg) = $client->pass('ftp@nospam.org');
+
+      $expected = 230;
+      $self->assert($expected == $resp_code,
+        "Expected response code $expected, got $resp_code");
+
+      $expected = 'Anonymous access granted, restrictions apply';
+      $self->assert($expected eq $resp_msg,
+        "Expected response message '$expected', got '$resp_msg'");
+
+      $client->quit();
+    };
     if ($@) {
       $ex = $@;
     }

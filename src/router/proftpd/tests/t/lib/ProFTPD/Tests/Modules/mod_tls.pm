@@ -299,6 +299,41 @@ my $TESTS = {
     test_class => [qw(bug forking)],
   },
 
+  tls_config_tlsciphersuite_bad_cipher => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
+  tls_config_tlscacertfile_bad_format => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
+  tls_config_tlscarevocationfile_bad_format => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
+  tls_config_tlsdsacertfile_bad_format => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
+  tls_config_tlsdsacertfile_not_dsa => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
+  tls_config_tlsdsacertkeyfile_bad_format => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
+  tls_config_tlsrsacertkeyfile_passphrase => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
   tls_session_cache_off_bug3869 => {
     order => ++$order,
     test_class => [qw(bug forking)],
@@ -355,6 +390,11 @@ my $TESTS = {
   },
 
   tls_restart_protected_certs_bug4260 => {
+    order => ++$order,
+    test_class => [qw(bug forking)],
+  },
+
+  tls_fxp_issue618 => {
     order => ++$order,
     test_class => [qw(bug forking)],
   },
@@ -8983,6 +9023,406 @@ sub tls_config_tlsdhparamfile_bug3868 {
   unlink($log_file);
 }
 
+sub tls_config_tlsciphersuite_bad_cipher {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'tls');
+
+  my $cert_file = File::Spec->rel2abs('t/etc/modules/mod_tls/server-cert.pem');
+  my $ca_file = File::Spec->rel2abs('t/etc/modules/mod_tls/ca-cert.pem');
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_tls.c' => {
+        TLSEngine => 'on',
+        TLSLog => $setup->{log_file},
+        TLSRSACertificateFile => $cert_file,
+        TLSCACertificateFile => $ca_file,
+        TLSCipherSuite => 'FOOBAR',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  my $ex;
+
+  # This should silently fail.
+  server_start($setup->{config_file});
+
+  # This is where we detect the actual problem.
+  eval { server_stop($setup->{pid_file}) };
+  unless ($@) {
+    $ex = "Server start with bad config unexpectedly";
+  }
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub tls_config_tlscacertfile_bad_format {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'tls');
+
+  my $cert_file = File::Spec->rel2abs('t/etc/modules/mod_tls/server-cert.pem');
+
+  my $ca_file = File::Spec->rel2abs("$tmpdir/bad-ca.pem");
+  if (open(my $fh, "> $ca_file")) {
+    print $fh "foobar\n";
+    unless (close($fh)) {
+      die("Can't write $ca_file: $!");
+    }
+
+  } else {
+    die("Can't open $ca_file: $!");
+  }
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_tls.c' => {
+        TLSEngine => 'on',
+        TLSLog => $setup->{log_file},
+        TLSRSACertificateFile => $cert_file,
+        TLSCACertificateFile => $ca_file,
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  my $ex;
+
+  # This should silently fail.
+  server_start($setup->{config_file});
+
+  # This is where we detect the actual problem.
+  eval { server_stop($setup->{pid_file}) };
+  unless ($@) {
+    $ex = "Server start with bad config unexpectedly";
+  }
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub tls_config_tlscarevocationfile_bad_format {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'tls');
+
+  my $cert_file = File::Spec->rel2abs('t/etc/modules/mod_tls/server-cert.pem');
+  my $ca_file = File::Spec->rel2abs('t/etc/modules/mod_tls/ca-cert.pem');
+
+  my $crl_file = File::Spec->rel2abs("$tmpdir/bad-crl.pem");
+  if (open(my $fh, "> $crl_file")) {
+    print $fh "foobar\n";
+    unless (close($fh)) {
+      die("Can't write $crl_file: $!");
+    }
+
+  } else {
+    die("Can't open $crl_file: $!");
+  }
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_tls.c' => {
+        TLSEngine => 'on',
+        TLSLog => $setup->{log_file},
+        TLSRSACertificateFile => $cert_file,
+        TLSCACertificateFile => $ca_file,
+        TLSCARevocationFile => $crl_file,
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  my $ex;
+
+  # This should silently fail.
+  server_start($setup->{config_file});
+
+  # This is where we detect the actual problem.
+  eval { server_stop($setup->{pid_file}) };
+  unless ($@) {
+    $ex = "Server start with bad config unexpectedly";
+  }
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub tls_config_tlscertchainfile_bad_format {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'tls');
+
+  my $cert_file = File::Spec->rel2abs('t/etc/modules/mod_tls/server-cert.pem');
+
+  my $cert_chain_file = File::Spec->rel2abs("$tmpdir/cert-chain.pem");
+  if (open(my $fh, "> $cert_chain_file")) {
+    print $fh "FooBar\n";
+    unless (close($fh)) {
+      die("Can't write $cert_chain_file: $!");
+    }
+
+  } else {
+    die("Can't open $cert_chain_file: $!");
+  }
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_tls.c' => {
+        TLSEngine => 'on',
+        TLSLog => $setup->{log_file},
+        TLSRSACertificateFile => $cert_file,
+        TLSCertificateChainFile => $cert_chain_file,
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  my $ex;
+
+  # This should silently fail.
+  server_start($setup->{config_file});
+
+  # This is where we detect the actual problem.
+  eval { server_stop($setup->{pid_file}) };
+  unless ($@) {
+    $ex = "Server start with bad config unexpectedly";
+  }
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub tls_config_tlsdsacertfile_bad_format {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'tls');
+
+  my $cert_file = File::Spec->rel2abs("$tmpdir/bad-dsa.pem");
+  if (open(my $fh, "> $cert_file")) {
+    print $fh "FooBar\n";
+    unless (close($fh)) {
+      die("Can't write $cert_file: $!");
+    }
+
+  } else {
+    die("Can't open $cert_file: $!");
+  }
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_tls.c' => {
+        TLSEngine => 'on',
+        TLSLog => $setup->{log_file},
+        TLSDSACertificateFile => $cert_file,
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  my $ex;
+
+  # This should silently fail.
+  server_start($setup->{config_file});
+
+  # This is where we detect the actual problem.
+  eval { server_stop($setup->{pid_file}) };
+  unless ($@) {
+    $ex = "Server start with bad config unexpectedly";
+  }
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub tls_config_tlsdsacertfile_not_dsa {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'tls');
+
+  my $cert_file = File::Spec->rel2abs('t/etc/modules/mod_tls/server-cert.pem');
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_tls.c' => {
+        TLSEngine => 'on',
+        TLSLog => $setup->{log_file},
+        TLSDSACertificateFile => $cert_file,
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  my $ex;
+
+  # This should silently fail.
+  server_start($setup->{config_file});
+
+  # This is where we detect the actual problem.
+  eval { server_stop($setup->{pid_file}) };
+  unless ($@) {
+    $ex = "Server start with bad config unexpectedly";
+  }
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub tls_config_tlsdsacertkeyfile_bad_format {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'tls');
+
+  my $key_file = File::Spec->rel2abs('t/etc/modules/mod_tls/bad-key.pem');
+  if (open(my $fh, "> $key_file")) {
+    print $fh "FooBar\n";
+    unless (close($fh)) {
+      die("Can't write $key_file: $!");
+    }
+
+  } else {
+    die("Can't open $key_file: $!");
+  }
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_tls.c' => {
+        TLSEngine => 'on',
+        TLSLog => $setup->{log_file},
+        TLSDSACertificateKeyFile => $key_file,
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  my $ex;
+
+  # This should silently fail.
+  server_start($setup->{config_file});
+
+  # This is where we detect the actual problem.
+  eval { server_stop($setup->{pid_file}) };
+  unless ($@) {
+    $ex = "Server start with bad config unexpectedly";
+  }
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub tls_config_tlsrsacertkeyfile_passphrase {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'tls');
+
+  my $cert_file = File::Spec->rel2abs('t/etc/modules/mod_tls/server-cert-passwd.pem');
+  my $key_file = $cert_file;
+  my $ca_file = File::Spec->rel2abs('t/etc/modules/mod_tls/ca-cert.pem');
+  my $passphrase_provider = File::Spec->rel2abs('t/etc/modules/mod_tls/tls-get-passphrase.pl');
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_tls.c' => {
+        TLSEngine => 'on',
+        TLSLog => $setup->{log_file},
+        TLSRSACertificateFile => $cert_file,
+        TLSRSACertificateKeyFile => $key_file,
+        TLSPassPhraseProvider => $passphrase_provider,
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  my $ex;
+
+  # This should silently fail.
+  server_start($setup->{config_file});
+
+  # This is where we detect the actual problem.
+  eval { server_stop($setup->{pid_file}) };
+  unless ($@) {
+    $ex = "Server start with bad config unexpectedly";
+  }
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
 sub tls_session_cache_off_bug3869 {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
@@ -10684,6 +11124,274 @@ sub tls_restart_protected_certs_bug4260 {
   }
 
   unlink($lock_file);
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub tls_fxp_issue618 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'tls');
+
+  my $src_file = File::Spec->rel2abs("$tmpdir/src.txt");
+  if (open(my $fh, "> $src_file")) {
+    print $fh "Hello, FXP World!\n";
+
+    unless (close($fh)) {
+      die("Can't write $src_file: $!");
+    }
+
+  } else {
+    die("Can't open $src_file: $!");
+  }
+
+  my $dst_file = File::Spec->rel2abs("$tmpdir/dst.txt");
+
+  my $cert_file = File::Spec->rel2abs('t/etc/modules/mod_tls/server-cert.pem');
+  my $ca_file = File::Spec->rel2abs('t/etc/modules/mod_tls/ca-cert.pem');
+
+  # For this test, we will ask the servers to do FXP over TLS for the
+  # data transfer, but NOT for the control connections.  Net::FTPSSL does
+  # not support FXP over TLS.
+
+  my $tls_opts = 'NoSessionReuseRequired';
+  if ($ENV{TEST_VERBOSE}) {
+    $tls_opts .= ' EnableDiags';
+  }
+
+  my $timeout_idle = 15;
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'command:20 response:20 data:20 netio:20 tls:20',
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
+    AllowForeignAddress => 'on',
+    AllowOverwrite => 'on',
+    TimeoutIdle => $timeout_idle,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_tls.c' => {
+        TLSEngine => 'on',
+        TLSLog => $setup->{log_file},
+        TLSRequired => 'on',
+        TLSRSACertificateFile => $cert_file,
+        TLSCACertificateFile => $ca_file,
+        TLSOptions => $tls_opts,
+        TLSVerifyClient => 'off',
+        TLSVerifyServer => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      # Allow server to start up
+      sleep(2);
+
+      my $client_opts = {
+        Encryption => 'E',
+        Port => $port,
+      };
+
+      if ($ENV{TEST_VERBOSE}) {
+        $client_opts->{Debug} = 1;
+      }
+
+      my $client1 = Net::FTPSSL->new('127.0.0.1', $client_opts);
+      unless ($client1) {
+        die("Can't connect to FTPS server: " . IO::Socket::SSL::errstr());
+      }
+
+      unless ($client1->login($setup->{user}, $setup->{passwd})) {
+        die("Can't login: " . $client1->last_message());
+      }
+
+      my $client2 = Net::FTPSSL->new('127.0.0.1', $client_opts);
+      unless ($client2) {
+        die("Can't connect to FTPS server: " . IO::Socket::SSL::errstr());
+      }
+
+      unless ($client2->login($setup->{user}, $setup->{passwd})) {
+        die("Can't login: " . $client2->last_message());
+      }
+
+      $client1->binary();
+      $client2->binary();
+
+      my ($resp1, $resp2);
+
+      if ($Net::FTPSSL::VERSION == 0.21) {
+        # Note: The duplicated arguments here are to work around a bug in
+        # Net::FTPSSL, version 0.21, in the quot() function.
+
+        # One of the two servers needs to act as a client; use SSCN to indicate
+        # this.  The default SSCN value is to act as a server, thus the need
+        # for an explicit SSCN command.
+        $client1->quot('SSCN', 'ON', 'ON');
+
+        unless ($client1->quot('PROT', 'P', 'P')) {
+          die("PROT P error: " . $client1->last_message());
+        }
+        unless ($client2->quot('PROT', 'P', 'P')) {
+          die("PROT P error: " . $client2->last_message());
+        }
+
+        # Get the PASV address from the first connection, and give it
+        # to the second connection as a PORT command.
+        unless ($client1->quot('PASV', '', '')) {
+          die("PASV error: " . $client1->last_message());
+        }
+
+        my $resp_msg = $client1->last_message();
+        my $expected = 'Entering Passive Mode \(\d+,\d+,\d+,\d+,\d+,\d+\)';
+        $self->assert(qr/$expected/, $resp_msg,
+          "Expected response message '$expected', got '$resp_msg'");
+
+        # This will actually work, since both our connections are
+        # from 127.0.0.1, which means we shouldn't run afoul of the
+        # AllowForeignAddress limit.
+        $resp_msg =~ /Entering Passive Mode \((\d+,\d+,\d+,\d+,\d+,\d+\))/;
+        my $port_addr = $1;
+
+        unless ($client2->quot('PORT', $port_addr, $port_addr)) {
+          die("PORT error: " . $client2->last_message());
+        }
+
+        $resp_msg = $client2->last_message();
+        $expected = 'PORT command successful';
+        $self->assert(qr/$expected/, $resp_msg,
+          "Expected response message '$expected', got '$resp_msg'");
+
+        # Note that we use command() here, not quot(), as the latter tries
+        # to protect users from using data-transfer-causing commands like we
+        # are doing.
+        $resp1 = $client1->command('RETR', $src_file, $src_file);
+        unless ($resp1) {
+          die("Can't RETR $src_file: " . $client1->last_message());
+        }
+        $resp2 = $client2->command('STOR', $dst_file, $dst_file);
+        unless ($resp2) {
+          die("Can't STOR $dst_file: " . $client2->last_message());
+        }
+
+      } else {
+        # One of the two servers needs to act as a client; use SSCN to indicate
+        # this.  The default SSCN value is to act as a server, thus the need
+        # for an explicit SSCN command.
+        $client1->quot('SSCN', 'ON');
+
+        unless ($client1->quot('PROT', 'P')) {
+          die("PROT P error: " . $client1->last_message());
+        }
+        unless ($client2->quot('PROT', 'P')) {
+          die("PROT P error: " . $client2->last_message());
+        }
+
+        # Get the PASV address from the first connection, and give it
+        # to the second connection as a PORT command.
+        unless ($client1->quot('PASV', '')) {
+          die("PASV error: " . $client1->last_message());
+        }
+
+        my $resp_msg = $client1->last_message();
+        my $expected = 'Entering Passive Mode \(\d+,\d+,\d+,\d+,\d+,\d+\)';
+        $self->assert(qr/$expected/, $resp_msg,
+          "Expected response message '$expected', got '$resp_msg'");
+
+        # This will actually work, since both our connections are
+        # from 127.0.0.1, which means we shouldn't run afoul of the
+        # AllowForeignAddress limit.
+        $resp_msg =~ /Entering Passive Mode \((\d+,\d+,\d+,\d+,\d+,\d+\))/;
+        my $port_addr = $1;
+
+        unless ($client2->quot('PORT', $port_addr)) {
+          die("PORT error: " . $client2->last_message());
+        }
+
+        $resp_msg = $client2->last_message();
+        $expected = 'PORT command successful';
+        $self->assert(qr/$expected/, $resp_msg,
+          "Expected response message '$expected', got '$resp_msg'");
+
+        # Note that we use command() here, not quot(), as the latter tries
+        # to protect users from using data-transfer-causing commands like we
+        # are doing.
+        $resp1 = $client1->command('RETR', $src_file);
+        unless ($resp1) {
+          die("Can't RETR $src_file: " . $client1->last_message());
+        }
+        $resp2 = $client2->command('STOR', $dst_file);
+        unless ($resp2) {
+          die("Can't STOR $dst_file: " . $client2->last_message());
+        }
+      }
+
+      # First, we read the 150 responses, then the 226 responses.
+      my $res1 = $resp1->response();
+      my $res2 = $resp2->response();
+
+      if ($res1 eq '1') {
+        $res1 = $resp1->response();
+      }
+      if ($res2 eq '1') {
+        $res2 = $resp2->response();
+      }
+
+      $client1->quit();
+      $client2->quit();
+
+      $self->assert(-f $dst_file, "File $dst_file does not exist as expected");
+      my $dst_size = -s $dst_file;
+      my $expected = -s $src_file;
+      $self->assert($expected == $dst_size,
+        "Expected file size $expected, got $dst_size");
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh, $timeout_idle + 5) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
   test_cleanup($setup->{log_file}, $ex);
 }
 

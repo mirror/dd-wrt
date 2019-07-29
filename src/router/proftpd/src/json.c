@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2017 The ProFTPD Project team
+ * Copyright (c) 2017-2018 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -80,16 +80,24 @@ static unsigned int get_count(JsonNode *json) {
   return count;
 }
 
-static char *get_text(pool *p, JsonNode *json, const char *ident) {
+static char *get_text(pool *p, JsonNode *json, const char *indent) {
   char *str, *text = NULL;
 
   if (p == NULL ||
-      ident == NULL) {
+      indent == NULL) {
     errno = EINVAL;
     return NULL;
   }
 
-  str = json_stringify(json, ident);
+  /* An interesting gotcha: if you use "" as the indent, then json_stringify()
+   * WILL include newlines in its text.  But if you use NULL, then it will
+   * not include newlines.  This is not the behavior we expect.
+   */
+  if (*indent == '\0') {
+    indent = NULL;
+  }
+
+  str = json_stringify(json, indent);
   if (str != NULL) {
     text = pstrdup(p, str);
     free(str);
@@ -288,7 +296,11 @@ static int get_val_from_node(pool *p, JsonNode *node, JsonTag tag, void *val) {
        * as a string, then decode it again.
        */
       if (node->children.head != NULL) {
-        array->array = json_decode(json_encode(node->children.head));
+        char *encoded_str = NULL;
+
+        encoded_str = json_encode(node);
+        array->array = json_decode(encoded_str);
+        free(encoded_str);
 
       } else {
         array->array = json_mkarray();
@@ -312,7 +324,11 @@ static int get_val_from_node(pool *p, JsonNode *node, JsonTag tag, void *val) {
        * as a string, then decode it again.
        */
       if (node->children.head != NULL) {
-        object->object = json_decode(json_encode(node->children.head));
+        char *encoded_str = NULL;
+
+        encoded_str = json_encode(node);
+        object->object = json_decode(encoded_str);
+        free(encoded_str);
 
       } else {
         object->object = json_mkobject();
@@ -824,6 +840,42 @@ int pr_json_text_validate(pool *p, const char *text) {
   }
 
   return json_validate(text);
+}
+
+const char *pr_json_type_name(unsigned int json_type) {
+  const char *name;
+
+  switch (json_type) {
+    case PR_JSON_TYPE_BOOL:
+      name = "boolean";
+      break;
+
+    case PR_JSON_TYPE_NUMBER:
+      name = "number";
+      break;
+
+    case PR_JSON_TYPE_NULL:
+      name = "null";
+      break;
+
+    case PR_JSON_TYPE_STRING:
+      name = "string";
+      break;
+
+    case PR_JSON_TYPE_ARRAY:
+      name = "array";
+      break;
+
+    case PR_JSON_TYPE_OBJECT:
+      name = "object";
+      break;
+
+    default:
+      errno = EINVAL;
+      name = NULL;
+  }
+
+  return name;
 }
 
 static void json_oom(void) {

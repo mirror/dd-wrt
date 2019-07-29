@@ -1,55 +1,58 @@
 CC=@CC@
 @SET_MAKE@
 
-top_builddir=..
-top_srcdir=..
+top_builddir=@top_builddir@
+top_srcdir=@top_srcdir@
 srcdir=@srcdir@
 VPATH=@srcdir@
 
-include $(top_srcdir)/Make.rules
+include $(top_builddir)/Make.rules
 
 EXEEXT=@EXEEXT@
 
 TEST_API_DEPS=\
-  $(top_srcdir)/src/pool.o \
-  $(top_srcdir)/src/privs.o \
-  $(top_srcdir)/src/str.o \
-  $(top_srcdir)/src/sets.o \
-  $(top_srcdir)/src/timers.o \
-  $(top_srcdir)/src/table.o \
-  $(top_srcdir)/src/support.o \
-  $(top_srcdir)/src/var.o \
-  $(top_srcdir)/src/event.o \
-  $(top_srcdir)/src/env.o \
-  $(top_srcdir)/src/version.o \
-  $(top_srcdir)/src/feat.o \
-  $(top_srcdir)/src/netaddr.o \
-  $(top_srcdir)/src/netacl.o \
-  $(top_srcdir)/src/class.o \
-  $(top_srcdir)/src/regexp.o \
-  $(top_srcdir)/src/expr.o \
-  $(top_srcdir)/src/scoreboard.o \
-  $(top_srcdir)/src/stash.o \
-  $(top_srcdir)/src/modules.o \
-  $(top_srcdir)/src/cmd.o \
-  $(top_srcdir)/src/response.o \
-  $(top_srcdir)/src/rlimit.o \
-  $(top_srcdir)/src/fsio.o \
-  $(top_srcdir)/src/netio.o \
-  $(top_srcdir)/src/encode.o \
-  $(top_srcdir)/src/trace.o \
-  $(top_srcdir)/src/parser.o \
-  $(top_srcdir)/src/pidfile.o \
-  $(top_srcdir)/src/configdb.o \
-  $(top_srcdir)/src/auth.o \
-  $(top_srcdir)/src/filter.o \
-  $(top_srcdir)/src/inet.o \
-  $(top_srcdir)/src/data.o \
-  $(top_srcdir)/src/ascii.o \
-  $(top_srcdir)/src/help.o \
-  $(top_srcdir)/src/display.o \
-  $(top_srcdir)/src/json.o \
-  $(top_srcdir)/src/redis.o
+  $(top_builddir)/src/pool.o \
+  $(top_builddir)/src/privs.o \
+  $(top_builddir)/src/str.o \
+  $(top_builddir)/src/sets.o \
+  $(top_builddir)/src/timers.o \
+  $(top_builddir)/src/table.o \
+  $(top_builddir)/src/support.o \
+  $(top_builddir)/src/var.o \
+  $(top_builddir)/src/event.o \
+  $(top_builddir)/src/env.o \
+  $(top_builddir)/src/random.o \
+  $(top_builddir)/src/version.o \
+  $(top_builddir)/src/feat.o \
+  $(top_builddir)/src/netaddr.o \
+  $(top_builddir)/src/netacl.o \
+  $(top_builddir)/src/class.o \
+  $(top_builddir)/src/regexp.o \
+  $(top_builddir)/src/expr.o \
+  $(top_builddir)/src/scoreboard.o \
+  $(top_builddir)/src/stash.o \
+  $(top_builddir)/src/modules.o \
+  $(top_builddir)/src/cmd.o \
+  $(top_builddir)/src/response.o \
+  $(top_builddir)/src/rlimit.o \
+  $(top_builddir)/src/fsio.o \
+  $(top_builddir)/src/netio.o \
+  $(top_builddir)/src/encode.o \
+  $(top_builddir)/src/trace.o \
+  $(top_builddir)/src/parser.o \
+  $(top_builddir)/src/pidfile.o \
+  $(top_builddir)/src/configdb.o \
+  $(top_builddir)/src/auth.o \
+  $(top_builddir)/src/filter.o \
+  $(top_builddir)/src/inet.o \
+  $(top_builddir)/src/data.o \
+  $(top_builddir)/src/ascii.o \
+  $(top_builddir)/src/help.o \
+  $(top_builddir)/src/display.o \
+  $(top_builddir)/src/json.o \
+  $(top_builddir)/src/jot.o \
+  $(top_builddir)/src/redis.o \
+  $(top_builddir)/src/error.o
 
 TEST_API_LIBS=-lcheck -lm
 
@@ -63,6 +66,7 @@ TEST_API_OBJS=\
   api/var.o \
   api/event.o \
   api/env.o \
+  api/random.o \
   api/version.o \
   api/feat.o \
   api/netaddr.o \
@@ -93,7 +97,9 @@ TEST_API_OBJS=\
   api/display.o \
   api/misc.o \
   api/json.o \
+  api/jot.o \
   api/redis.o \
+  api/error.o \
   api/stubs.o \
   api/tests.o
 
@@ -106,10 +112,13 @@ dummy:
 Makefile: Makefile.in ../config.status
 	cd ../ && ./config.status
 
+api.d:
+	-mkdir -p api/
+
 api/.c.o:
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
 
-api-tests$(EXEEXT): $(TEST_API_OBJS) $(TEST_API_DEPS)
+api-tests$(EXEEXT): api.d $(TEST_API_OBJS) $(TEST_API_DEPS)
 	$(LIBTOOL) --mode=link --tag=CC $(CC) $(LDFLAGS) -o $@ $(TEST_API_DEPS) $(TEST_API_OBJS) $(TEST_API_LIBS) $(LIBS)
 	./$@
 

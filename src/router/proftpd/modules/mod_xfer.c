@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2016 The ProFTPD Project team
+ * Copyright (c) 2001-2019 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@
 
 #include "conf.h"
 #include "privs.h"
+#include "error.h"
 
 #ifdef HAVE_SYS_SENDFILE_H
 # include <sys/sendfile.h>
@@ -65,23 +66,11 @@ static int xfer_check_limit(cmd_rec *);
 #define PR_XFER_OPT_IGNORE_ASCII	0x0002
 static unsigned long xfer_opts = PR_XFER_OPT_HANDLE_ALLO;
 
-/* Transfer priority */
-static int xfer_prio_config = 0;
-static int xfer_prio_curr = 0;
-static unsigned long xfer_prio_flags = 0;
-#define PR_XFER_PRIO_FL_APPE  0x0001
-#define PR_XFER_PRIO_FL_RETR  0x0002
-#define PR_XFER_PRIO_FL_STOR  0x0004
-#define PR_XFER_PRIO_FL_STOU  0x0008
-
 static void xfer_exit_ev(const void *, void *);
 static void xfer_sigusr2_ev(const void *, void *);
 static void xfer_timeout_session_ev(const void *, void *);
 static void xfer_timeout_stalled_ev(const void *, void *);
 static int xfer_sess_init(void);
-
-static int xfer_prio_adjust(void);
-static int xfer_prio_restore(void);
 
 /* Used for MaxTransfersPerHost and TransferRate */
 static int xfer_parse_cmdlist(const char *, config_rec *, char *);
@@ -278,7 +267,7 @@ static int xfer_check_limit(cmd_rec *cmd) {
   char server_addr[128];
 
   memset(server_addr, '\0', sizeof(server_addr));
-  snprintf(server_addr, sizeof(server_addr)-1, "%s:%d",
+  pr_snprintf(server_addr, sizeof(server_addr)-1, "%s:%d",
     pr_netaddr_get_ipstr(main_server->addr), main_server->ServerPort);
   server_addr[sizeof(server_addr)-1] = '\0';
 
@@ -345,7 +334,7 @@ static int xfer_check_limit(cmd_rec *cmd) {
       pr_event_generate("mod_xfer.max-transfers-per-host", session.c);
 
       memset(maxn, '\0', sizeof(maxn));
-      snprintf(maxn, sizeof(maxn)-1, "%u", max);
+      pr_snprintf(maxn, sizeof(maxn)-1, "%u", max);
       pr_response_send(R_451, "%s", sreplace(cmd->tmp_pool, maxstr, "%m",
         maxn, NULL));
       pr_log_debug(DEBUG4, "MaxTransfersPerHost %u exceeded for %s for "
@@ -417,7 +406,7 @@ static int xfer_check_limit(cmd_rec *cmd) {
       pr_event_generate("mod_xfer.max-transfers-per-user", session.user);
 
       memset(maxn, '\0', sizeof(maxn));
-      snprintf(maxn, sizeof(maxn)-1, "%u", max);
+      pr_snprintf(maxn, sizeof(maxn)-1, "%u", max);
       pr_response_send(R_451, "%s", sreplace(cmd->tmp_pool, maxstr, "%m",
         maxn, NULL));
       pr_log_debug(DEBUG4, "MaxTransfersPerUser %u exceeded for %s for "
@@ -460,88 +449,6 @@ static void xfer_displayfile(void) {
   }
 }
 
-static int xfer_prio_adjust(void) {
-  int res, xerrno = 0;
-
-  if (xfer_prio_config == 0) {
-    return 0;
-  }
-
-  errno = 0;
-  res = getpriority(PRIO_PROCESS, 0);
-  if (res < 0 &&
-      errno != 0) {
-    xerrno = errno;
-
-    pr_trace_msg(trace_channel, 7, "unable to get current process priority: %s",
-      strerror(xerrno));
-    errno = xerrno;
-    return -1;
-  }
-
-  /* No need to adjust anything if the current priority already is the
-   * configured priority.
-   */
-  if (res == xfer_prio_config) {
-    pr_trace_msg(trace_channel, 10,
-      "current process priority (%d) matches configured priority", res);
-    return 0;
-  }
-
-  xfer_prio_curr = res;
-
-  pr_trace_msg(trace_channel, 10,
-    "adjusting process priority to be %d (currently %d)", xfer_prio_config,
-    xfer_prio_curr);
-
-  if (xfer_prio_config > 0) {
-    res = setpriority(PRIO_PROCESS, 0, xfer_prio_config);
-    xerrno = errno;
-
-  } else {
-    /* Increasing the process priority requires root privs. */
-    PRIVS_ROOT
-    res = setpriority(PRIO_PROCESS, 0, xfer_prio_config);
-    xerrno = errno;
-    PRIVS_RELINQUISH
-  }
-
-  if (res < 0) {
-    pr_trace_msg(trace_channel, 1, "error adjusting process priority: %s",
-      strerror(xerrno));
-
-    errno = xerrno;
-    return -1;
-  }
-
-  return 0;
-}
-
-static int xfer_prio_restore(void) {
-  int res, xerrno;
-
-  if (xfer_prio_config == 0 ||
-      xfer_prio_curr == 0) {
-    return 0;
-  }
-
-  pr_trace_msg(trace_channel, 10, "restoring process priority to %d",
-    xfer_prio_curr);
-
-  PRIVS_ROOT
-  res = setpriority(PRIO_PROCESS, 0, xfer_prio_curr);
-  xerrno = errno;
-  PRIVS_RELINQUISH
-
-  if (res < 0) {
-    pr_trace_msg(trace_channel, 1, "error restoring process priority: %s",
-      strerror(xerrno));
-  }
-
-  xfer_prio_curr = 0;
-  return 0;
-}
-
 static int xfer_parse_cmdlist(const char *name, config_rec *c,
     char *cmdlist) {
   char *cmd = NULL;
@@ -578,25 +485,46 @@ static int xfer_parse_cmdlist(const char *name, config_rec *c,
 }
 
 static int transmit_normal(pool *p, char *buf, size_t bufsz) {
-  long sz = pr_fsio_read(retr_fh, buf, bufsz);
+  int xerrno;
+  long nread;
+  size_t read_len;
+  pr_error_t *err = NULL;
 
-  if (sz < 0) {
-    int xerrno = errno;
+  read_len = bufsz;
+  if (session.range_len > 0) {
+    if (((off_t) read_len) > session.range_len) {
+      read_len = session.range_len;
+    }
+  }
+
+  nread = pr_fsio_read_with_error(p, retr_fh, buf, read_len, &err);
+  xerrno = errno;
+
+  if (nread < 0) {
+    pr_error_set_where(err, &xfer_module, __FILE__, __LINE__ - 4);
+    pr_error_set_why(err, pstrcat(p, "normal download of '", retr_fh->fh_path,
+      "'", NULL));
 
     (void) pr_trace_msg("fileperms", 1, "RETR, user '%s' (UID %s, GID %s): "
       "error reading from '%s': %s", session.user,
       pr_uid2str(p, session.uid), pr_gid2str(p, session.gid),
       retr_fh->fh_path, strerror(xerrno));
 
+    if (err != NULL) {
+      pr_log_debug(DEBUG9, "%s", pr_error_strerror(err, 0));
+      pr_error_destroy(err);
+      err = NULL;
+    }
+
     errno = xerrno;
     return 0;
   }
 
-  if (sz == 0) {
+  if (nread == 0) {
     return 0;
   }
 
-  return pr_data_xfer(buf, sz);
+  return pr_data_xfer(buf, nread);
 }
 
 #ifdef HAVE_SENDFILE
@@ -659,7 +587,12 @@ static int transmit_sendfile(off_t data_len, off_t *data_offset,
    * of the remaining size, or the length/percentage.
    */
 
-  send_len = session.xfer.file_size - data_len;
+  if (session.range_len > 0) {
+    send_len = session.range_len;
+
+  } else {
+    send_len = session.xfer.file_size - data_len;
+  }
 
   if (use_sendfile_len > 0 &&
       send_len > use_sendfile_len) {
@@ -823,15 +756,28 @@ static void stor_chown(pool *p) {
   if (session.fsuid != (uid_t) -1 &&
       xfer_path != NULL) {
     int res, xerrno = 0;
+    pr_error_t *err = NULL;
 
     PRIVS_ROOT
-    res = pr_fsio_lchown(xfer_path, session.fsuid, session.fsgid);
+    res = pr_fsio_lchown_with_error(p, xfer_path, session.fsuid, session.fsgid,
+      &err);
     xerrno = errno;
     PRIVS_RELINQUISH
 
     if (res < 0) {
-      pr_log_pri(PR_LOG_WARNING, "lchown(%s) as root failed: %s", xfer_path,
-        strerror(xerrno));
+      pr_error_set_where(err, &xfer_module, __FILE__, __LINE__ - 6);
+      pr_error_set_why(err, pstrcat(p, "set UserOwner of '", xfer_path,
+        "'", NULL));
+
+      if (err != NULL) {
+        pr_log_pri(PR_LOG_WARNING, "%s", pr_error_strerror(err, 0));
+        pr_error_destroy(err);
+        err = NULL;
+
+      } else {
+        pr_log_pri(PR_LOG_WARNING, "lchown(%s) as root failed: %s", xfer_path,
+          strerror(xerrno));
+      }
 
     } else {
       if (session.fsgid != (gid_t) -1) {
@@ -862,13 +808,24 @@ static void stor_chown(pool *p) {
        */
       xerrno = 0;
       PRIVS_ROOT
-      res = pr_fsio_chmod(xfer_path, st.st_mode);
+      res = pr_fsio_chmod_with_error(p, xfer_path, st.st_mode, &err);
       xerrno = errno;
       PRIVS_RELINQUISH
 
       if (res < 0) {
-        pr_log_debug(DEBUG0, "root chmod(%s) to %04o failed: %s", xfer_path,
-          (unsigned int) st.st_mode, strerror(xerrno));
+        pr_error_set_where(err, &xfer_module, __FILE__, __LINE__ - 5);
+        pr_error_set_why(err, pstrcat(p, "restore SUID/SGID on '", xfer_path,
+          "'", NULL));
+
+        if (err != NULL) {
+          pr_log_debug(DEBUG0, "%s", pr_error_strerror(err, 0));
+          pr_error_destroy(err);
+          err = NULL;
+
+        } else {
+          pr_log_debug(DEBUG0, "root chmod(%s) to %04o failed: %s", xfer_path,
+            (unsigned int) st.st_mode, strerror(xerrno));
+        }
 
       } else {
         pr_log_debug(DEBUG2, "root chmod(%s) to %04o successful", xfer_path,
@@ -880,6 +837,7 @@ static void stor_chown(pool *p) {
              xfer_path != NULL) {
     register unsigned int i;
     int res, use_root_privs = TRUE, xerrno = 0;
+    pr_error_t *err = NULL;
 
     /* Check if session.fsgid is in session.gids.  If not, use root privs. */
     for (i = 0; i < session.gids->nelts; i++) {
@@ -895,7 +853,8 @@ static void stor_chown(pool *p) {
       PRIVS_ROOT
     }
 
-    res = pr_fsio_lchown(xfer_path, (uid_t) -1, session.fsgid);
+    res = pr_fsio_lchown_with_error(p, xfer_path, (uid_t) -1, session.fsgid,
+      &err);
     xerrno = errno;
 
     if (use_root_privs) {
@@ -903,8 +862,19 @@ static void stor_chown(pool *p) {
     }
 
     if (res < 0) {
-      pr_log_pri(PR_LOG_WARNING, "%slchown(%s) failed: %s",
-        use_root_privs ? "root " : "", xfer_path, strerror(xerrno));
+      pr_error_set_where(err, &xfer_module, __FILE__, __LINE__ - 9);
+      pr_error_set_why(err, pstrcat(p, "set GroupOwner of '", xfer_path, "'",
+        NULL));
+
+      if (err != NULL) {
+        pr_log_pri(PR_LOG_WARNING, "%s", pr_error_strerror(err, 0));
+        pr_error_destroy(err);
+        err = NULL;
+
+      } else {
+        pr_log_pri(PR_LOG_WARNING, "%slchown(%s) failed: %s",
+          use_root_privs ? "root " : "", xfer_path, strerror(xerrno));
+      }
 
     } else {
       pr_log_debug(DEBUG2, "%slchown(%s) to GID %s successful",
@@ -922,7 +892,7 @@ static void stor_chown(pool *p) {
         PRIVS_ROOT
       }
 
-      res = pr_fsio_chmod(xfer_path, st.st_mode);
+      res = pr_fsio_chmod_with_error(p, xfer_path, st.st_mode, &err);
       xerrno = errno;
 
       if (use_root_privs) {
@@ -930,15 +900,26 @@ static void stor_chown(pool *p) {
       }
 
       if (res < 0) {
-        pr_log_debug(DEBUG0, "%schmod(%s) to %04o failed: %s",
-          use_root_privs ? "root " : "", xfer_path, (unsigned int) st.st_mode,
-          strerror(xerrno));
+        pr_error_set_where(err, &xfer_module, __FILE__, __LINE__ - 8);
+        pr_error_set_why(err, pstrcat(p, "restore SUID/SGID of '", xfer_path,
+          "'", NULL));
+
+        if (err != NULL) {
+          pr_log_debug(DEBUG0, "%s", pr_error_strerror(err, 0));
+          pr_error_destroy(err);
+          err = NULL;
+
+        } else {
+          pr_log_debug(DEBUG0, "%schmod(%s) to %04o failed: %s",
+            use_root_privs ? "root " : "", xfer_path, (unsigned int) st.st_mode,
+            strerror(xerrno));
+        }
       }
     }
   }
 }
 
-static void retr_abort(void) {
+static void retr_abort(pool *p) {
   /* Isn't necessary to send anything here, just cleanup */
 
   if (retr_fh) {
@@ -949,20 +930,37 @@ static void retr_abort(void) {
   _log_transfer('o', 'i');
 }
 
-static void retr_complete(void) {
+static void retr_complete(pool *p) {
   pr_fsio_close(retr_fh);
   retr_fh = NULL;
 }
 
-static void stor_abort(void) {
+static void stor_abort(pool *p) {
+  int res, xerrno = 0;
+  pool *tmp_pool;
+  pr_error_t *err = NULL;
   unsigned char *delete_stores = NULL;
 
-  if (stor_fh) {
-    if (pr_fsio_close(stor_fh) < 0) {
-      int xerrno = errno;
+  tmp_pool = make_sub_pool(p);
 
-      pr_log_pri(PR_LOG_NOTICE, "notice: error closing '%s': %s",
-        stor_fh->fh_path, strerror(xerrno));
+  if (stor_fh != NULL) {
+    res = pr_fsio_close_with_error(tmp_pool, stor_fh, &err);
+    xerrno = errno;
+
+    if (res < 0) {
+      pr_error_set_where(err, &xfer_module, __FILE__, __LINE__ - 4);
+      pr_error_set_why(err, pstrcat(tmp_pool, "close file '", stor_fh->fh_path,
+        "'", NULL));
+
+      if (err != NULL) {
+        pr_log_pri(PR_LOG_NOTICE, "%s", pr_error_strerror(err, 0));
+        pr_error_destroy(err);
+        err = NULL;
+
+      } else {
+        pr_log_pri(PR_LOG_NOTICE, "notice: error closing '%s': %s",
+         stor_fh->fh_path, strerror(xerrno));
+      }
  
       errno = xerrno;
     }
@@ -981,38 +979,86 @@ static void stor_abort(void) {
       if (session.xfer.path_hidden) {
         pr_log_debug(DEBUG5, "removing aborted HiddenStores file '%s'",
           session.xfer.path_hidden);
-        if (pr_fsio_unlink(session.xfer.path_hidden) < 0) {
-          if (errno != ENOENT) {
-            pr_log_debug(DEBUG0, "error deleting HiddenStores file '%s': %s",
-              session.xfer.path_hidden, strerror(errno));
+
+        res = pr_fsio_unlink_with_error(tmp_pool, session.xfer.path_hidden,
+          &err);
+        xerrno = errno;
+
+        if (res < 0) {
+          pr_error_set_where(err, &xfer_module, __FILE__, __LINE__ - 5);
+          pr_error_set_why(err, pstrcat(tmp_pool, "delete HiddenStores file '",
+            session.xfer.path_hidden, "'", NULL));
+
+          if (xerrno != ENOENT) {
+            if (err != NULL) {
+              pr_log_debug(DEBUG0, "%s", pr_error_strerror(err, 0));
+
+            } else {
+              pr_log_debug(DEBUG0, "error deleting HiddenStores file '%s': %s",
+                session.xfer.path_hidden, strerror(xerrno));
+            }
           }
+
+          pr_error_destroy(err);
+          err = NULL;
         } 
       }
     }
   }
 
-  if (session.xfer.path) {
+  if (session.xfer.path != NULL) {
     if (delete_stores != NULL &&
         *delete_stores == TRUE) {
       pr_log_debug(DEBUG5, "removing aborted file '%s'", session.xfer.path);
-      if (pr_fsio_unlink(session.xfer.path) < 0) {
-        pr_log_debug(DEBUG0, "error deleting aborted file '%s': %s",
-          session.xfer.path, strerror(errno));
+
+      res = pr_fsio_unlink_with_error(tmp_pool, session.xfer.path, &err);
+      xerrno = errno;
+
+      if (res < 0) {
+        pr_error_set_where(err, &xfer_module, __FILE__, __LINE__ - 4);
+        pr_error_set_why(err, pstrcat(tmp_pool, "delete aborted file '",
+          session.xfer.path, "'", NULL));
+
+        if (err != NULL) {
+          pr_log_debug(DEBUG0, "%s", pr_error_strerror(err, 0));
+          pr_error_destroy(err);
+          err = NULL;
+
+        } else {
+          pr_log_debug(DEBUG0, "error deleting aborted file '%s': %s",
+            session.xfer.path, strerror(xerrno));
+        }
       }
     }
   }
 
+  destroy_pool(tmp_pool);
   _log_transfer('i', 'i');
 }
 
-static int stor_complete(void) {
-  int res = 0;
+static int stor_complete(pool *p) {
+  int res, xerrno = 0;
+  pool *tmp_pool;
+  pr_error_t *err = NULL;
 
-  if (pr_fsio_close(stor_fh) < 0) {
-    int xerrno = errno;
+  tmp_pool = make_sub_pool(p);
+  res = pr_fsio_close_with_error(tmp_pool, stor_fh, &err);
+  xerrno = errno;
 
-    pr_log_pri(PR_LOG_NOTICE, "notice: error closing '%s': %s",
-      stor_fh->fh_path, strerror(xerrno));
+  if (res < 0) {
+    pr_error_set_where(err, &xfer_module, __FILE__, __LINE__ - 4);
+    pr_error_set_why(err, pstrcat(tmp_pool, "close uploaded file '",
+      stor_fh->fh_path, "'", NULL));
+
+    if (err != NULL) {
+      pr_log_pri(PR_LOG_NOTICE, "%s", pr_error_strerror(err, 0));
+      pr_error_destroy(err);
+      err = NULL;
+
+    } else {
+      pr_log_pri(PR_LOG_NOTICE, "notice: error closing '%s': %s",
+        stor_fh->fh_path, strerror(xerrno));
+    }
 
     /* We will unlink failed writes, but only if it's a HiddenStores file.
      * Other files will need to be explicitly deleted/removed by the client.
@@ -1021,11 +1067,28 @@ static int stor_complete(void) {
       if (session.xfer.path_hidden) {
         pr_log_debug(DEBUG5, "failed to close HiddenStores file '%s', removing",
           session.xfer.path_hidden);
-        if (pr_fsio_unlink(session.xfer.path_hidden) < 0) {
-          if (errno != ENOENT) {
-            pr_log_debug(DEBUG0, "error deleting HiddenStores file '%s': %s",
-              session.xfer.path_hidden, strerror(errno));
+
+        res = pr_fsio_unlink_with_error(tmp_pool, session.xfer.path_hidden,
+          &err);
+        xerrno = errno;
+
+        if (res < 0) {
+          pr_error_set_where(err, &xfer_module, __FILE__, __LINE__ - 4);
+          pr_error_set_why(err, pstrcat(tmp_pool, "close HiddenStores file '",
+            session.xfer.path_hidden, "'", NULL));
+
+          if (xerrno != ENOENT) {
+            if (err != NULL) {
+              pr_log_debug(DEBUG0, "%s", pr_error_strerror(err, 0));
+
+            } else {
+              pr_log_debug(DEBUG0, "error deleting HiddenStores file '%s': %s",
+                session.xfer.path_hidden, strerror(xerrno));
+            }
           }
+
+          pr_error_destroy(err);
+          err = NULL;
         } 
       }
     }
@@ -1034,6 +1097,7 @@ static int stor_complete(void) {
     res = -1;
   }
 
+  destroy_pool(tmp_pool);
   stor_fh = NULL;
   return res;
 }
@@ -1217,7 +1281,6 @@ MODRET xfer_pre_stor(cmd_rec *cmd) {
   unsigned char *allow_overwrite = NULL, *allow_restart = NULL;
   config_rec *c;
   int res;
-  struct stat st;
 
   if (cmd->argc < 2) {
     pr_response_add_err(R_500, _("'%s' not understood"),
@@ -1244,21 +1307,6 @@ MODRET xfer_pre_stor(cmd_rec *cmd) {
   }
 
   pr_fs_clear_cache2(decoded_path);
-  if (pr_fsio_lstat(decoded_path, &st) == 0) {
-    if (S_ISLNK(st.st_mode)) {
-      char buf[PR_TUNABLE_PATH_MAX];
-      int len;
-
-      memset(buf, '\0', sizeof(buf));
-      len = dir_readlink(cmd->tmp_pool, decoded_path, buf, sizeof(buf)-1,
-        PR_DIR_READLINK_FL_HANDLE_REL_PATH);
-      if (len > 0) {
-        buf[len] = '\0';
-        decoded_path = pstrdup(cmd->tmp_pool, buf);
-      }
-    }
-  }
-
   path = dir_best_path(cmd->tmp_pool, decoded_path);
 
   if (path == NULL ||
@@ -1351,7 +1399,8 @@ MODRET xfer_pre_stor(cmd_rec *cmd) {
   allow_restart = get_param_ptr(CURRENT_CONF, "AllowStoreRestart", FALSE);
 
   if (fmode &&
-     (session.restart_pos || (session.xfer.xfer_type == STOR_APPEND)) &&
+     ((session.restart_pos > 0 || session.range_len > 0) ||
+      (session.xfer.xfer_type == STOR_APPEND)) &&
      (!allow_restart || *allow_restart == FALSE)) {
 
     pr_response_add_err(R_451, _("%s: Append/Restart not permitted, try again"),
@@ -1359,6 +1408,15 @@ MODRET xfer_pre_stor(cmd_rec *cmd) {
     session.restart_pos = 0L;
     session.xfer.xfer_type = STOR_DEFAULT;
 
+    pr_cmd_set_errno(cmd, EPERM);
+    errno = EPERM;
+    return PR_ERROR(cmd);
+  }
+
+  /* Reject APPE preceded by RANG. */
+  if (session.xfer.xfer_type == STOR_APPEND &&
+      session.range_len > 0) {
+    pr_response_add_err(R_550, _("APPE incompatible with RANG"));
     pr_cmd_set_errno(cmd, EPERM);
     errno = EPERM;
     return PR_ERROR(cmd);
@@ -1389,15 +1447,24 @@ MODRET xfer_pre_stor(cmd_rec *cmd) {
   }
 
   c = find_config(CURRENT_CONF, CONF_PARAM, "HiddenStores", FALSE);
-  if (c &&
+  if (c != NULL &&
       *((int *) c->argv[0]) == TRUE) {
     const char *prefix, *suffix;
 
-    /* If we're using HiddenStores, then REST won't work. */
-    if (session.restart_pos) {
-      pr_log_debug(DEBUG9, "HiddenStore in effect, refusing restarted upload");
+    /* If we're using HiddenStores, then RANG/REST won't work. */
+    if (session.restart_pos > 0 ||
+        session.range_len > 0) {
+      int used_rest = TRUE;
+
+      if (session.range_len > 0) {
+        used_rest = FALSE;
+      }
+
+      pr_log_debug(DEBUG9, "HiddenStore in effect, refusing %s upload",
+        used_rest ? "restarted" : "range");
       pr_response_add_err(R_501,
-        _("REST not compatible with server configuration"));
+        _("%s not compatible with server configuration"),
+        used_rest ? C_REST : C_RANG);
 
       pr_cmd_set_errno(cmd, EPERM);
       errno = EPERM;
@@ -1420,7 +1487,7 @@ MODRET xfer_pre_stor(cmd_rec *cmd) {
         char pid_buf[32];
 
         memset(pid_buf, '\0', sizeof(pid_buf));
-        snprintf(pid_buf, sizeof(pid_buf)-1, "%lu",
+        pr_snprintf(pid_buf, sizeof(pid_buf)-1, "%lu",
           (unsigned long) session.pid);
         prefix = sreplace(cmd->pool, prefix, "%P", pid_buf, NULL);
       }
@@ -1429,7 +1496,7 @@ MODRET xfer_pre_stor(cmd_rec *cmd) {
         char pid_buf[32];
 
         memset(pid_buf, '\0', sizeof(pid_buf));
-        snprintf(pid_buf, sizeof(pid_buf)-1, "%lu",
+        pr_snprintf(pid_buf, sizeof(pid_buf)-1, "%lu",
           (unsigned long) session.pid);
         suffix = sreplace(cmd->pool, suffix, "%P", pid_buf, NULL);
       }
@@ -1448,7 +1515,6 @@ MODRET xfer_pre_stor(cmd_rec *cmd) {
     }
   }
 
-  (void) xfer_prio_adjust();
   return PR_HANDLED(cmd);
 }
 
@@ -1487,12 +1553,18 @@ MODRET xfer_pre_stou(cmd_rec *cmd) {
     return PR_ERROR(cmd);
   }
 
-  /* Watch for STOU preceded by REST, which makes no sense.
-   *
-   *   REST: session.restart_pos > 0
+  /* Watch for STOU preceded by REST, which makes no sense.  Similarly
+   * for STOU preceded by RANG.
    */
-  if (session.restart_pos) {
-    pr_response_add_err(R_550, _("STOU incompatible with REST"));
+  if (session.restart_pos > 0 ||
+      session.range_len > 0) {
+
+    if (session.restart_pos > 0) {
+      pr_response_add_err(R_550, _("STOU incompatible with REST"));
+
+    } else {
+      pr_response_add_err(R_550, _("STOU incompatible with RANG"));
+    }
 
     pr_cmd_set_errno(cmd, EPERM);
     errno = EPERM;
@@ -1594,8 +1666,6 @@ MODRET xfer_pre_stou(cmd_rec *cmd) {
   }
 
   session.xfer.xfer_type = STOR_UNIQUE;
-
-  (void) xfer_prio_adjust();
   return PR_HANDLED(cmd);
 }
 
@@ -1684,7 +1754,9 @@ MODRET xfer_stor(cmd_rec *cmd) {
   off_t nbytes_stored, nbytes_max_store = 0;
   unsigned char have_limit = FALSE;
   struct stat st;
+  off_t start_offset = 0, upload_len = 0;
   off_t curr_offset, curr_pos = 0;
+  pr_error_t *err = NULL;
 
   memset(&st, 0, sizeof(st));
 
@@ -1725,9 +1797,14 @@ MODRET xfer_stor(cmd_rec *cmd) {
         session.xfer.path_hidden);
     }
 
-    stor_fh = pr_fsio_open(session.xfer.path_hidden, oflags);
+    stor_fh = pr_fsio_open_with_error(cmd->pool, session.xfer.path_hidden,
+      oflags, &err);
+    xerrno = errno;
+
     if (stor_fh == NULL) {
-      xerrno = errno;
+      pr_error_set_where(err, &xfer_module, __FILE__, __LINE__ - 5);
+      pr_error_set_why(err, pstrcat(cmd->pool, "open HiddenStores file '",
+        session.xfer.path_hidden, "'", NULL));
 
       (void) pr_trace_msg("fileperms", 1, "%s, user '%s' (UID %s, GID %s): "
         "error opening '%s': %s", (char *) cmd->argv[0], session.user,
@@ -1737,29 +1814,10 @@ MODRET xfer_stor(cmd_rec *cmd) {
     }
 
   } else if (session.xfer.xfer_type == STOR_APPEND) {
-    const char *appe_path;
+    stor_fh = pr_fsio_open_with_error(cmd->pool, session.xfer.path,
+      O_CREAT|O_WRONLY, &err);
+    xerrno = errno;
 
-    /* Need to handle the case where the path may be a symlink, and we are
-     * chrooted (Bug#4219).
-     */
-    appe_path = session.xfer.path;
-
-    pr_fs_clear_cache2(appe_path);
-    if (pr_fsio_lstat(appe_path, &st) == 0) {
-      if (S_ISLNK(st.st_mode)) {
-        char buf[PR_TUNABLE_PATH_MAX];
-
-        memset(buf, '\0', sizeof(buf));
-        len = dir_readlink(cmd->tmp_pool, appe_path, buf, sizeof(buf)-1,
-          PR_DIR_READLINK_FL_HANDLE_REL_PATH);
-        if (len > 0) {
-          buf[len] = '\0';
-          appe_path = pstrdup(cmd->pool, buf);
-        }
-      }
-    }
-
-    stor_fh = pr_fsio_open(appe_path, O_CREAT|O_WRONLY);
     if (stor_fh != NULL) {
       if (pr_fsio_lseek(stor_fh, 0, SEEK_END) == (off_t) -1) {
         pr_log_debug(DEBUG4, "unable to seek to end of '%s' for appending: %s",
@@ -1771,18 +1829,36 @@ MODRET xfer_stor(cmd_rec *cmd) {
     } else {
       xerrno = errno;
 
+      pr_error_set_where(err, &xfer_module, __FILE__, __LINE__ - 15);
+      pr_error_set_why(err, pstrcat(cmd->pool, "append to file '",
+        session.xfer.path, "'", NULL));
+
       (void) pr_trace_msg("fileperms", 1, "%s, user '%s' (UID %s, GID %s): "
         "error opening '%s': %s", (char *) cmd->argv[0], session.user,
         pr_uid2str(cmd->tmp_pool, session.uid),
-        pr_gid2str(cmd->tmp_pool, session.gid), appe_path, strerror(xerrno));
+        pr_gid2str(cmd->tmp_pool, session.gid), session.xfer.path,
+        strerror(xerrno));
     }
 
   } else {
+    int open_flags = O_WRONLY|O_CREAT;
+
+    if (session.range_len == 0 &&
+        session.restart_pos == 0) {
+      /* If we are not resuming an upload or handling a byte range transfer,
+       * then we should truncate the file to receive the new data.
+       */
+      open_flags |= O_TRUNC;
+    }
+
     /* Normal session */
-    stor_fh = pr_fsio_open(path,
-        O_WRONLY|(session.restart_pos ? 0 : O_TRUNC|O_CREAT));
+    stor_fh = pr_fsio_open_with_error(cmd->pool, path, open_flags, &err);
+    xerrno = errno;
+
     if (stor_fh == NULL) {
-      xerrno = errno;
+      pr_error_set_where(err, &xfer_module, __FILE__, __LINE__ - 4);
+      pr_error_set_why(err, pstrcat(cmd->pool, "upload file '", path, "'",
+        NULL));
 
       (void) pr_trace_msg("fileperms", 1, "%s, user '%s' (UID %s, GID %s): "
         "error opening '%s': %s", (char *) cmd->argv[0], session.user,
@@ -1791,14 +1867,21 @@ MODRET xfer_stor(cmd_rec *cmd) {
     }
   }
 
+  if (session.restart_pos > 0) {
+    start_offset = session.restart_pos;
+
+  } else if (session.range_start > 0) {
+    start_offset = session.range_start;
+  }
+
   if (stor_fh != NULL &&
-      session.restart_pos) {
+      start_offset > 0) {
     xerrno = 0;
 
     pr_fs_clear_cache2(path);
-    if (pr_fsio_lseek(stor_fh, session.restart_pos, SEEK_SET) == -1) {
+    if (pr_fsio_lseek(stor_fh, start_offset, SEEK_SET) == -1) {
       pr_log_debug(DEBUG4, "unable to seek to position %" PR_LU " of '%s': %s",
-        (pr_off_t) session.restart_pos, cmd->arg, strerror(errno));
+        (pr_off_t) start_offset, cmd->arg, strerror(errno));
       xerrno = errno;
 
     } else if (pr_fsio_stat(path, &st) < 0) {
@@ -1817,8 +1900,15 @@ MODRET xfer_stor(cmd_rec *cmd) {
      * file being resumed).
      */
     if (stor_fh != NULL &&
-        session.restart_pos > st.st_size) {
-      pr_response_add_err(R_554, _("%s: invalid REST argument"), cmd->arg);
+        start_offset > st.st_size) {
+      int used_rest = TRUE;
+
+      if (session.range_start > 0) {
+        used_rest = FALSE;
+      }
+
+      pr_response_add_err(R_554, _("%s: invalid %s argument"),
+        used_rest ? C_REST : C_RANG, cmd->arg);
       (void) pr_fsio_close(stor_fh);
       stor_fh = NULL;
 
@@ -1827,13 +1917,27 @@ MODRET xfer_stor(cmd_rec *cmd) {
       return PR_ERROR(cmd);
     }
 
-    curr_pos = session.restart_pos;
-    session.restart_pos = 0L;
+    curr_pos = start_offset;
+
+    if (session.restart_pos > 0) {
+      session.restart_pos = 0L;
+
+    } else if (session.range_start > 0) {
+      session.range_start = 0;
+    }
   }
 
   if (stor_fh == NULL) {
-    pr_log_debug(DEBUG4, "unable to open '%s' for writing: %s", cmd->arg,
-      strerror(xerrno));
+    if (err != NULL) {
+      pr_log_debug(DEBUG4, "%s", pr_error_strerror(err, 0));
+      pr_error_destroy(err);
+      err = NULL;
+
+    } else {
+      pr_log_debug(DEBUG4, "unable to open '%s' for writing: %s", cmd->arg,
+        strerror(xerrno));
+    }
+
     pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
 
     pr_cmd_set_errno(cmd, xerrno);
@@ -1888,10 +1992,14 @@ MODRET xfer_stor(cmd_rec *cmd) {
   /* First, make sure the uploaded file has the requested ownership. */
   stor_chown(cmd->tmp_pool);
 
-  if (pr_data_open(cmd->arg, NULL, PR_NETIO_IO_RD, 0) < 0) {
+  if (session.range_len > 0) {
+    upload_len = session.range_len;
+  }
+
+  if (pr_data_open(cmd->arg, NULL, PR_NETIO_IO_RD, upload_len) < 0) {
     xerrno = errno;
 
-    stor_abort();
+    stor_abort(cmd->pool);
     pr_data_abort(0, TRUE);
 
     pr_cmd_set_errno(cmd, xerrno);
@@ -1938,7 +2046,7 @@ MODRET xfer_stor(cmd_rec *cmd) {
         "aborting transfer of '%s'", (pr_off_t) nbytes_max_store, path);
 
       /* Abort the transfer. */
-      stor_abort();
+      stor_abort(cmd->pool);
 
       /* Set errno to EFBIG (or the most appropriate alternative). */
 #if defined(EFBIG)
@@ -1960,12 +2068,18 @@ MODRET xfer_stor(cmd_rec *cmd) {
      * be doing short writes, and we ideally should be more resilient/graceful
      * in the face of such things.
      */
-    res = pr_fsio_write(stor_fh, lbuf, len);
+    res = pr_fsio_write_with_error(cmd->pool, stor_fh, lbuf, len, &err);
+    xerrno = errno;
+
     if (res != len) {
       xerrno = EIO;
 
       if (res < 0) {
         xerrno = errno;
+
+        pr_error_set_where(err, &xfer_module, __FILE__, __LINE__ - 9);
+        pr_error_set_why(err, pstrcat(cmd->pool, "writing '", stor_fh->fh_path,
+          "'", NULL));
       }
 
       (void) pr_trace_msg("fileperms", 1, "%s, user '%s' (UID %s, GID %s): "
@@ -1974,7 +2088,13 @@ MODRET xfer_stor(cmd_rec *cmd) {
         pr_gid2str(cmd->tmp_pool, session.gid), stor_fh->fh_path,
         strerror(xerrno));
 
-      stor_abort();
+      if (err != NULL) {
+        pr_log_debug(DEBUG9, "%s", pr_error_strerror(err, 0));
+        pr_error_destroy(err);
+        err = NULL;
+      }
+
+      stor_abort(cmd->pool);
       pr_data_abort(xerrno, FALSE);
 
       pr_cmd_set_errno(cmd, xerrno);
@@ -1984,22 +2104,44 @@ MODRET xfer_stor(cmd_rec *cmd) {
 
     /* If no throttling is configured, this does nothing. */
     pr_throttle_pause(nbytes_stored, FALSE);
+
+    if (session.range_len > 0) {
+      if (nbytes_stored == upload_len) {
+        break;
+      }
+
+      if (nbytes_stored > upload_len) {
+        xerrno = EPERM;
+
+        pr_log_pri(PR_LOG_NOTICE, "Transfer range length (%" PR_LU
+          " %s) exceeded; aborting transfer of '%s'", (pr_off_t) upload_len,
+          upload_len != 1 ? "bytes" : "byte", path);
+
+        /* Abort the transfer. */
+        stor_abort(cmd->pool);
+
+        pr_data_abort(xerrno, FALSE);
+        pr_cmd_set_errno(cmd, xerrno);
+        errno = xerrno;
+        return PR_ERROR(cmd);
+      }
+    }
   }
 
   if (XFER_ABORTED) {
-    stor_abort();
-    pr_data_abort(0, 0);
+    stor_abort(cmd->pool);
+    pr_data_abort(0, FALSE);
 
     pr_cmd_set_errno(cmd, EIO);
     errno = EIO; 
     return PR_ERROR(cmd);
+  }
 
-  } else if (len < 0) {
-
-    /* default abort errno, in case session.d et al has already gone away */
+  if (len < 0) {
+    /* Default abort errno, in case session.d et al has already gone away */
     xerrno = ECONNABORTED;
 
-    stor_abort();
+    stor_abort(cmd->pool);
 
     if (session.d != NULL &&
         session.d->instrm != NULL) {
@@ -2010,89 +2152,132 @@ MODRET xfer_stor(cmd_rec *cmd) {
     pr_cmd_set_errno(cmd, xerrno);
     errno = xerrno;
     return PR_ERROR(cmd);
+  }
 
-  } else {
+  /* Did we receive all of the expected bytes in a range? */
+  if (session.range_len > 0 &&
+      nbytes_stored < upload_len) {
+    xerrno = EPERM;
 
-    /* If no throttling is configured, this does nothing. */
-    pr_throttle_pause(nbytes_stored, TRUE);
+    pr_log_pri(PR_LOG_NOTICE, "Transfer range length (%" PR_LU
+      " %s) not provided; aborting transfer of '%s'", (pr_off_t) upload_len,
+      upload_len != 1 ? "bytes" : "byte", path);
 
-    if (stor_complete() < 0) {
-      xerrno = errno;
+    /* Abort the transfer. */
+    stor_abort(cmd->pool);
 
-      _log_transfer('i', 'i');
+    pr_data_abort(xerrno, FALSE);
+    pr_cmd_set_errno(cmd, xerrno);
+    errno = xerrno;
+    return PR_ERROR(cmd);
+  }
 
-      /* Check errno for EDQOUT (or the most appropriate alternative).
-       * (I hate the fact that FTP has a special response code just for
-       * this, and that clients actually expect it.  Special cases are
-       * stupid.)
-       */
+  /* If no throttling is configured, this does nothing. */
+  pr_throttle_pause(nbytes_stored, TRUE);
+
+  if (stor_complete(cmd->pool) < 0) {
+    xerrno = errno;
+
+    _log_transfer('i', 'i');
+
+    /* Check errno for EDQOUT (or the most appropriate alternative).
+     * (I hate the fact that FTP has a special response code just for
+     * this, and that clients actually expect it.  Special cases are
+     * stupid.)
+     */
 #if defined(EDQUOT)
-      if (xerrno == EDQUOT) {
-        pr_response_add_err(R_552, "%s: %s", cmd->arg, strerror(xerrno));
+    if (xerrno == EDQUOT) {
+      pr_response_add_err(R_552, "%s: %s", cmd->arg, strerror(xerrno));
 
-        pr_cmd_set_errno(cmd, xerrno);
-        errno = xerrno;
-        return PR_ERROR(cmd);
-      }
+      pr_cmd_set_errno(cmd, xerrno);
+      errno = xerrno;
+      return PR_ERROR(cmd);
+    }
 #elif defined(EFBIG)
-      if (xerrno == EFBIG) {
-        pr_response_add_err(R_552, "%s: %s", cmd->arg, strerror(xerrno));
+    if (xerrno == EFBIG) {
+      pr_response_add_err(R_552, "%s: %s", cmd->arg, strerror(xerrno));
 
-        pr_cmd_set_errno(cmd, xerrno);
-        errno = xerrno;
-        return PR_ERROR(cmd);
-      }
+      pr_cmd_set_errno(cmd, xerrno);
+      errno = xerrno;
+      return PR_ERROR(cmd);
+    }
 #endif
 
-      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
+    pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
+
+    pr_cmd_set_errno(cmd, xerrno);
+    errno = xerrno;
+    return PR_ERROR(cmd);
+  }
+
+  if (session.xfer.path &&
+      session.xfer.path_hidden) {
+    if (pr_fsio_rename(session.xfer.path_hidden, session.xfer.path) < 0) {
+      xerrno = errno;
+
+      /* This should only fail on a race condition with a chmod/chown or if
+       * STOR_APPEND is on and the permissions are squirrely.  The poor user
+       * will have to re-upload, but we've got more important problems to worry
+       * about and this failure should be fairly rare.
+       */
+      pr_log_pri(PR_LOG_WARNING, "Rename of %s to %s failed: %s.",
+        session.xfer.path_hidden, session.xfer.path, strerror(xerrno));
+
+      pr_response_add_err(R_550, _("%s: Rename of hidden file %s failed: %s"),
+        session.xfer.path, session.xfer.path_hidden, strerror(xerrno));
+
+      if (pr_fsio_unlink(session.xfer.path_hidden) < 0) {
+        if (errno != ENOENT) {
+          pr_log_debug(DEBUG0, "failed to delete HiddenStores file '%s': %s",
+            session.xfer.path_hidden, strerror(errno));
+        }
+      }
 
       pr_cmd_set_errno(cmd, xerrno);
       errno = xerrno;
       return PR_ERROR(cmd);
     }
 
-    if (session.xfer.path &&
-        session.xfer.path_hidden) {
-      if (pr_fsio_rename(session.xfer.path_hidden, session.xfer.path) < 0) {
-        xerrno = errno;
-
-        /* This should only fail on a race condition with a chmod/chown
-         * or if STOR_APPEND is on and the permissions are squirrely.
-         * The poor user will have to re-upload, but we've got more important
-         * problems to worry about and this failure should be fairly rare.
-         */
-        pr_log_pri(PR_LOG_WARNING, "Rename of %s to %s failed: %s.",
-          session.xfer.path_hidden, session.xfer.path, strerror(xerrno));
-
-        pr_response_add_err(R_550, _("%s: Rename of hidden file %s failed: %s"),
-          session.xfer.path, session.xfer.path_hidden, strerror(xerrno));
-
-        if (pr_fsio_unlink(session.xfer.path_hidden) < 0) {
-          if (errno != ENOENT) {
-            pr_log_debug(DEBUG0, "failed to delete HiddenStores file '%s': %s",
-              session.xfer.path_hidden, strerror(errno));
-          }
-        } 
-
-        pr_cmd_set_errno(cmd, xerrno);
-        errno = xerrno;
-        return PR_ERROR(cmd);
-      }
-
-      /* One way or another, we've dealt with the HiddenStores file. */
-      session.xfer.path_hidden = NULL;
-    }
-
-    xfer_displayfile();
-    pr_data_close(FALSE);
+    /* One way or another, we've dealt with the HiddenStores file. */
+    session.xfer.path_hidden = NULL;
   }
+
+  xfer_displayfile();
+  pr_data_close(FALSE);
 
   return PR_HANDLED(cmd);
 }
 
+/* Should this become part of the String API? */
+static int parse_offset(char *str, off_t *num) {
+  char *ptr, *tmp = NULL;
+
+  /* Don't allow negative numbers.  strtoul()/strtoull() will silently
+   * handle them.
+   */
+  ptr = str;
+  if (*ptr == '-') {
+    errno = EINVAL;
+    return -1;
+  }
+
+#ifdef HAVE_STRTOULL
+  *num = strtoull(ptr, &tmp, 10);
+#else
+  *num = strtoul(ptr, &tmp, 10);
+#endif /* HAVE_STRTOULL */
+
+  if (tmp && *tmp) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  return 0;
+}
+
 MODRET xfer_rest(cmd_rec *cmd) {
-  off_t pos;
-  char *endp = NULL, *ptr;
+  int res;
+  off_t pos = 0;
 
   if (cmd->argc != 2) {
     pr_response_add_err(R_500, _("'%s' not understood"),
@@ -2103,32 +2288,15 @@ MODRET xfer_rest(cmd_rec *cmd) {
     return PR_ERROR(cmd);
   }
 
-  /* Don't allow negative numbers.  strtoul()/strtoull() will silently
-   * handle them.
-   */
-  ptr = cmd->argv[1];
-  if (*ptr == '-') {
+  res = parse_offset(cmd->argv[1], &pos);
+  if (res < 0) {
+    int xerrno = errno;
+
     pr_response_add_err(R_501,
       _("REST requires a value greater than or equal to 0"));
 
-    pr_cmd_set_errno(cmd, EINVAL);
-    errno = EINVAL;
-    return PR_ERROR(cmd);
-  }
-
-#ifdef HAVE_STRTOULL
-  pos = strtoull(ptr, &endp, 10);
-#else
-  pos = strtoul(ptr, &endp, 10);
-#endif /* HAVE_STRTOULL */
-
-  if (endp &&
-      *endp) {
-    pr_response_add_err(R_501,
-      _("REST requires a value greater than or equal to 0"));
-
-    pr_cmd_set_errno(cmd, EINVAL);
-    errno = EINVAL;
+    pr_cmd_set_errno(cmd, xerrno);
+    errno = xerrno;
     return PR_ERROR(cmd);
   }
 
@@ -2156,8 +2324,111 @@ MODRET xfer_rest(cmd_rec *cmd) {
 
   session.restart_pos = pos;
 
+  /* We can honor REST, or RANG, but not both at the same time. */
+  session.range_start = session.range_len = 0;
+
   pr_response_add(R_350, _("Restarting at %" PR_LU
     ". Send STORE or RETRIEVE to initiate transfer"), (pr_off_t) pos);
+  return PR_HANDLED(cmd);
+}
+
+MODRET xfer_rang(cmd_rec *cmd) {
+  int res;
+  off_t range_start, range_end;
+
+  if (cmd->argc != 3) {
+    pr_response_add_err(R_500, _("'%s' not understood"),
+      pr_cmd_get_displayable_str(cmd, NULL));
+
+    pr_cmd_set_errno(cmd, EINVAL);
+    errno = EINVAL;
+    return PR_ERROR(cmd);
+  }
+
+  if (!dir_check(cmd->tmp_pool, cmd, cmd->group, session.cwd, NULL)) {
+    int xerrno = EPERM;
+
+    pr_log_debug(DEBUG8, "RANG denied by <Limit> configuration");
+    pr_response_add_err(R_552, "%s: %s", (char *) cmd->argv[0],
+      strerror(xerrno));
+
+    pr_cmd_set_errno(cmd, xerrno);
+    errno = xerrno;
+    return PR_ERROR(cmd);
+  }
+
+  res = parse_offset(cmd->argv[1], &range_start);
+  if (res < 0) {
+    int xerrno = errno;
+
+    pr_response_add_err(R_501,
+      _("RANG requires a value greater than or equal to 0"));
+
+    pr_cmd_set_errno(cmd, xerrno);
+    errno = xerrno;
+    return PR_ERROR(cmd);
+  }
+
+  res = parse_offset(cmd->argv[2], &range_end);
+  if (res < 0) {
+    int xerrno = errno;
+
+    pr_response_add_err(R_501,
+      _("RANG requires a value greater than or equal to 0"));
+
+    pr_cmd_set_errno(cmd, xerrno);
+    errno = xerrno;
+    return PR_ERROR(cmd);
+  }
+
+  if (range_start > range_end) {
+    /* Per Draft, such ranges will automatically reset the range. */
+    session.range_start = session.range_len = 0;
+
+    /* Iff start = 1 AND end = 0, then this is the acceptable way to reset
+     * the range.  Otherwise, it is an error.
+     */
+    if (range_start == 1 &&
+        range_end == 0) {
+      pr_response_add(R_350, _("Reset byte transfer range"));
+      return PR_HANDLED(cmd);
+    }
+
+    pr_log_debug(DEBUG9, "rejecting RANG: start %" PR_LU " > end %" PR_LU,
+      (pr_off_t) range_start, (pr_off_t) range_end);
+    pr_response_add_err(R_501, _("RANG start must be less than end"));
+
+    pr_cmd_set_errno(cmd, EINVAL);
+    errno = EINVAL;
+    return PR_ERROR(cmd);
+  }
+
+  /* Per Draft, refuse (with 551) if we are not in IMAGE type, STREAM mode. */
+  if (session.sf_flags & SF_ASCII) {
+    pr_log_debug(DEBUG5, "%s not allowed in ASCII mode", (char *) cmd->argv[0]);
+    pr_response_add_err(R_551,
+      _("%s: Transfer ranges not allowed in ASCII mode"),
+      (char *) cmd->argv[0]);
+
+    pr_cmd_set_errno(cmd, EPERM);
+    errno = EPERM;
+    return PR_ERROR(cmd);
+  }
+
+  /* Per Draft, the values given are positions, inclusive.  Thus
+   * "RANG 0 1" would be a transfer range of TWO bytes.
+   *
+   * For consistency, we store offset+len, rather than start/end positions.
+   */
+  session.range_start = range_start;
+  session.range_len = (range_end - range_start + 1);
+
+  /* We can honor RANG, or REST, but not both at the same time. */
+  session.restart_pos = 0;
+
+  pr_response_add(R_350, _("Transferring byte range of %" PR_LU
+    " %s starting from %" PR_LU), (pr_off_t) session.range_len,
+    session.range_len != 1 ? "bytes" : "byte", (pr_off_t) range_start);
   return PR_HANDLED(cmd);
 }
 
@@ -2170,7 +2441,6 @@ MODRET xfer_pre_retr(cmd_rec *cmd) {
   mode_t fmode;
   unsigned char *allow_restart = NULL;
   config_rec *c;
-  struct stat st;
 
   xfer_logged_sendfile_decline_msg = FALSE;
 
@@ -2199,30 +2469,7 @@ MODRET xfer_pre_retr(cmd_rec *cmd) {
   }
 
   pr_fs_clear_cache2(decoded_path);
-  if (pr_fsio_lstat(decoded_path, &st) == 0) {
-    if (S_ISLNK(st.st_mode)) {
-      char buf[PR_TUNABLE_PATH_MAX];
-      int len;
-
-      memset(buf, '\0', sizeof(buf));
-      len = dir_readlink(cmd->tmp_pool, decoded_path, buf, sizeof(buf)-1,
-        PR_DIR_READLINK_FL_HANDLE_REL_PATH);
-      if (len > 0) {
-        buf[len] = '\0';
-        dir = pstrdup(cmd->tmp_pool, buf);
-
-      } else {
-        dir = dir_realpath(cmd->tmp_pool, decoded_path);
-      }
-
-    } else {
-      dir = dir_realpath(cmd->tmp_pool, decoded_path);
-    }
-
-  } else {
-    dir = dir_realpath(cmd->tmp_pool, decoded_path);
-  }
-
+  dir = dir_realpath(cmd->tmp_pool, decoded_path);
   if (dir == NULL ||
       !dir_check(cmd->tmp_pool, cmd, cmd->group, dir, NULL)) {
     int xerrno = errno;
@@ -2240,7 +2487,7 @@ MODRET xfer_pre_retr(cmd_rec *cmd) {
   use_sendfile_pct = -1.0;
 
   c = find_config(CURRENT_CONF, CONF_PARAM, "UseSendfile", FALSE);
-  if (c) {
+  if (c != NULL) {
     use_sendfile = *((unsigned char *) c->argv[0]);
     use_sendfile_len = *((off_t *) c->argv[1]);
     use_sendfile_pct = *((float *) c->argv[2]);
@@ -2283,8 +2530,8 @@ MODRET xfer_pre_retr(cmd_rec *cmd) {
    */
   allow_restart = get_param_ptr(CURRENT_CONF, "AllowRetrieveRestart", FALSE);
 
-  if (session.restart_pos &&
-     (allow_restart && *allow_restart == FALSE)) {
+  if ((session.restart_pos > 0 || session.range_len > 0) &&
+      (allow_restart && *allow_restart == FALSE)) {
     pr_response_add_err(R_451, _("%s: Restart not permitted, try again"),
       cmd->arg);
     session.restart_pos = 0L;
@@ -2303,7 +2550,6 @@ MODRET xfer_pre_retr(cmd_rec *cmd) {
     }
   }
 
-  (void) xfer_prio_adjust();
   return PR_HANDLED(cmd);
 }
 
@@ -2328,27 +2574,40 @@ MODRET xfer_post_retr(cmd_rec *cmd) {
 }
 
 MODRET xfer_retr(cmd_rec *cmd) {
+  int xerrno = 0;
   const char *dir = NULL;
   char *lbuf;
   struct stat st;
   off_t nbytes_max_retrieve = 0;
   unsigned char have_limit = FALSE;
   long bufsz, len = 0;
+  off_t start_offset = 0, download_len = 0;
   off_t curr_offset, curr_pos = 0, nbytes_sent = 0, cnt_steps = 0, cnt_next = 0;
+  pr_error_t *err = NULL;
 
   /* Prepare for any potential throttling. */
   pr_throttle_init(cmd);
 
   dir = pr_table_get(cmd->notes, "mod_xfer.retr-path", NULL);
 
-  retr_fh = pr_fsio_open(dir, O_RDONLY);
+  retr_fh = pr_fsio_open_with_error(cmd->pool, dir, O_RDONLY, &err);
+  xerrno = errno;
+
   if (retr_fh == NULL) {
-    int xerrno = errno;
+    pr_error_set_where(err, &xfer_module, __FILE__, __LINE__ - 4);
+    pr_error_set_why(err, pstrcat(cmd->pool, "download file '", dir, "'",
+      NULL));
 
     (void) pr_trace_msg("fileperms", 1, "%s, user '%s' (UID %s, GID %s): "
       "error opening '%s': %s", (char *) cmd->argv[0], session.user,
       pr_uid2str(cmd->tmp_pool, session.uid),
       pr_gid2str(cmd->tmp_pool, session.gid), dir, strerror(xerrno));
+
+    if (err != NULL) {
+      pr_log_debug(DEBUG9, "%s", pr_error_strerror(err, 0));
+      pr_error_destroy(err);
+      err = NULL;
+    }
 
     pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
 
@@ -2359,7 +2618,7 @@ MODRET xfer_retr(cmd_rec *cmd) {
 
   if (pr_fsio_fstat(retr_fh, &st) < 0) {
     /* Error stat'ing the file. */
-    int xerrno = errno;
+    xerrno = errno;
 
     pr_fsio_close(retr_fh);
     retr_fh = NULL;
@@ -2377,15 +2636,31 @@ MODRET xfer_retr(cmd_rec *cmd) {
    */
   pr_fs_fadvise(PR_FH_FD(retr_fh), 0, 0, PR_FS_FADVISE_SEQUENTIAL);
 
-  if (session.restart_pos) {
+  if (session.restart_pos > 0) {
+    start_offset = session.restart_pos;
+
+  } else if (session.range_start > 0) {
+    start_offset = session.range_start;
+  }
+
+  if (start_offset > 0) {
+    char *offset_cmd;
+
+    offset_cmd = C_REST;
+    if (session.range_start > 0) {
+      offset_cmd = C_RANG;
+    }
+
     /* Make sure that the requested offset is valid (within the size of the
      * file being resumed).
      */
-    if (session.restart_pos > st.st_size) {
+
+    if (start_offset > st.st_size) {
       pr_trace_msg(trace_channel, 4,
-        "REST offset %" PR_LU " exceeds file size (%" PR_LU " bytes)",
-        (pr_off_t) session.restart_pos, (pr_off_t) st.st_size);
-      pr_response_add_err(R_554, _("%s: invalid REST argument"), cmd->arg);
+        "%s offset %" PR_LU " exceeds file size (%" PR_LU " bytes)",
+        offset_cmd, (pr_off_t) start_offset, (pr_off_t) st.st_size);
+      pr_response_add_err(R_554, _("%s: invalid %s argument"), offset_cmd,
+        cmd->arg);
       pr_fsio_close(retr_fh);
       retr_fh = NULL;
 
@@ -2394,9 +2669,36 @@ MODRET xfer_retr(cmd_rec *cmd) {
       return PR_ERROR(cmd);
     }
 
-    if (pr_fsio_lseek(retr_fh, session.restart_pos,
-        SEEK_SET) == (off_t) -1) {
-      int xerrno = errno;
+    /* The RANG Draft says, on this topic:
+     *
+     *   The server-PI SHOULD transfer 0 octets with RETR if the specified
+     *   start point or start point and end point are larger than the actual
+     *   file size.
+     *
+     * However, I vehemently disagree.  Sending zero bytes in such a case
+     * would be treated as a successful download by the client, not informing
+     * the user of the erroneous conditions.  Thus, IMHO, violating the
+     * principle of least surprise; the user might end up asking "Why did
+     * my download succeed, but I have zero bytes?".  That is a terrible user
+     * experience.  So instead, we return an error in this case.
+     */
+
+    if ((start_offset + session.range_len) > st.st_size) {
+      pr_trace_msg(trace_channel, 4,
+        "%s offset %" PR_LU " exceeds file size (%" PR_LU " bytes)",
+        offset_cmd, (pr_off_t) (start_offset + session.range_len),
+        (pr_off_t) st.st_size);
+      pr_response_add_err(R_554, _("%s: invalid RANG argument"), cmd->arg);
+      pr_fsio_close(retr_fh);
+      retr_fh = NULL;
+
+      pr_cmd_set_errno(cmd, EINVAL);
+      errno = EINVAL;
+      return PR_ERROR(cmd);
+    }
+
+    if (pr_fsio_lseek(retr_fh, start_offset, SEEK_SET) == (off_t) -1) {
+      xerrno = errno;
       pr_fsio_close(retr_fh);
       errno = xerrno;
       retr_fh = NULL;
@@ -2404,21 +2706,27 @@ MODRET xfer_retr(cmd_rec *cmd) {
       (void) pr_trace_msg("fileperms", 1, "%s, user '%s' (UID %s, GID %s): "
         "error seeking to byte %" PR_LU " of '%s': %s", (char *) cmd->argv[0],
         session.user, pr_uid2str(cmd->tmp_pool, session.uid),
-        pr_gid2str(cmd->tmp_pool, session.gid), (pr_off_t) session.restart_pos,
+        pr_gid2str(cmd->tmp_pool, session.gid), (pr_off_t) start_offset,
         dir, strerror(xerrno));
 
       pr_log_debug(DEBUG0, "error seeking to offset %" PR_LU
-        " for file %s: %s", (pr_off_t) session.restart_pos, dir,
-        strerror(xerrno));
-      pr_response_add_err(R_554, _("%s: invalid REST argument"), cmd->arg);
+        " for file %s: %s", (pr_off_t) start_offset, dir, strerror(xerrno));
+      pr_response_add_err(R_554, _("%s: invalid %s argument"), offset_cmd,
+        cmd->arg);
 
       pr_cmd_set_errno(cmd, EINVAL);
       errno = EINVAL;
       return PR_ERROR(cmd);
     }
 
-    curr_pos = session.restart_pos;
-    session.restart_pos = 0L;
+    curr_pos = start_offset;
+
+    if (session.restart_pos > 0) {
+      session.restart_pos = 0L;
+
+    } else if (session.range_start > 0) {
+      session.range_start = 0;
+    }
   }
 
   /* Stash the offset at which we're writing from this file. */
@@ -2448,13 +2756,29 @@ MODRET xfer_retr(cmd_rec *cmd) {
   pr_alarms_unblock();
 
   cnt_steps = session.xfer.file_size / 100;
-  if (cnt_steps == 0)
+  if (cnt_steps == 0) {
     cnt_steps = 1;
+  }
 
-  if (pr_data_open(cmd->arg, NULL, PR_NETIO_IO_WR, st.st_size - curr_pos) < 0) {
-    int xerrno = errno;
+  if (session.range_len > 0) {
+    if (curr_pos + session.range_len > st.st_size) {
+      /* If the RANG end point is past the end of our file, ignore it and
+       * treat this as the remainder of the file, from the starting offset.
+       */
+      download_len = st.st_size - curr_pos;
 
-    retr_abort();
+    } else {
+      download_len = session.range_len;
+    }
+
+  } else {
+    download_len = st.st_size - curr_pos;
+  }
+
+  if (pr_data_open(cmd->arg, NULL, PR_NETIO_IO_WR, download_len) < 0) {
+    xerrno = errno;
+
+    retr_abort(cmd->pool);
     pr_data_abort(0, TRUE);
 
     pr_cmd_set_errno(cmd, xerrno);
@@ -2483,7 +2807,7 @@ MODRET xfer_retr(cmd_rec *cmd) {
       nbytes_max_retrieve != 1 ? "bytes" : "byte", dir);
 
     /* Abort the transfer. */
-    retr_abort();
+    retr_abort(cmd->pool);
 
     /* Set errno to EPERM ("Operation not permitted") */
     pr_data_abort(EPERM, FALSE);
@@ -2498,21 +2822,25 @@ MODRET xfer_retr(cmd_rec *cmd) {
   pr_trace_msg("data", 8, "allocated download buffer of %lu bytes",
     (unsigned long) bufsz);
 
-  nbytes_sent = curr_pos;
-
   pr_scoreboard_entry_update(session.pid,
-    PR_SCORE_XFER_SIZE, session.xfer.file_size,
+    PR_SCORE_XFER_SIZE, download_len,
     PR_SCORE_XFER_DONE, (off_t) 0,
     NULL);
 
-  while (nbytes_sent != session.xfer.file_size) {
+  if (session.range_len > 0) {
+    if (bufsz > session.range_len) {
+      bufsz = session.range_len;
+    }
+  }
+
+  while (nbytes_sent != download_len) {
     pr_signals_handle();
 
     if (XFER_ABORTED) {
       break;
     }
 
-    len = transmit_data(cmd->pool, nbytes_sent, &curr_pos, lbuf, bufsz);
+    len = transmit_data(cmd->pool, curr_offset, &curr_pos, lbuf, bufsz);
     if (len == 0) {
       break;
     }
@@ -2521,9 +2849,10 @@ MODRET xfer_retr(cmd_rec *cmd) {
       /* Make sure that the errno value, needed for the pr_data_abort() call,
        * is preserved; errno itself might be overwritten in retr_abort().
        */
-      int already_aborted = FALSE, xerrno = errno;
+      int already_aborted = FALSE;
 
-      retr_abort();
+      xerrno = errno;
+      retr_abort(cmd->pool);
 
       /* Do we need to abort the data transfer here?  It's possible that
        * the transfer has already been aborted, e.g. via the TCP OOB marker
@@ -2565,6 +2894,7 @@ MODRET xfer_retr(cmd_rec *cmd) {
     }
 
     nbytes_sent += len;
+    curr_offset += len;
 
     if ((nbytes_sent / cnt_steps) != cnt_next) {
       cnt_next = nbytes_sent / cnt_steps;
@@ -2584,7 +2914,7 @@ MODRET xfer_retr(cmd_rec *cmd) {
   }
 
   if (XFER_ABORTED) {
-    retr_abort();
+    retr_abort(cmd->pool);
     pr_data_abort(0, FALSE);
 
     pr_cmd_set_errno(cmd, EIO);
@@ -2601,7 +2931,7 @@ MODRET xfer_retr(cmd_rec *cmd) {
      */
     pr_throttle_pause(session.xfer.total_bytes, TRUE);
 
-    retr_complete();
+    retr_complete(cmd->pool);
     xfer_displayfile();
     pr_data_close(FALSE);
   }
@@ -2620,10 +2950,10 @@ MODRET xfer_abor(cmd_rec *cmd) {
   }
 
   if (session.xfer.direction == PR_NETIO_IO_RD) {
-    stor_abort();
+    stor_abort(cmd->pool);
 
   } else if (session.xfer.direction == PR_NETIO_IO_WR) {
-    retr_abort();
+    retr_abort(cmd->pool);
   }
 
   pr_data_abort(0, FALSE);
@@ -2905,10 +3235,10 @@ MODRET xfer_err_cleanup(cmd_rec *cmd) {
 
   memset(&session.xfer, '\0', sizeof(session.xfer));
 
-  /* Don't forget to clear any possible REST parameter as well. */
+  /* Don't forget to clear any possible RANG/REST parameters as well. */
+  session.range_start = session.range_len = 0;
   session.restart_pos = 0;
 
-  (void) xfer_prio_restore();
   return PR_DECLINED(cmd);
 }
 
@@ -2921,10 +3251,10 @@ MODRET xfer_log_stor(cmd_rec *cmd) {
 
   pr_data_cleanup();
 
-  /* Don't forget to clear any possible REST parameter as well. */
+  /* Don't forget to clear any possible RANG/REST parameters as well. */
+  session.range_start = session.range_len = 0;
   session.restart_pos = 0;
 
-  (void) xfer_prio_restore();
   return PR_DECLINED(cmd);
 }
 
@@ -2937,10 +3267,10 @@ MODRET xfer_log_retr(cmd_rec *cmd) {
 
   pr_data_cleanup();
 
-  /* Don't forget to clear any possible REST parameter as well. */
+  /* Don't forget to clear any possible RANG/REST parameters as well. */
+  session.range_start = session.range_len = 0;
   session.restart_pos = 0;
 
-  (void) xfer_prio_restore();
   return PR_DECLINED(cmd);
 }
 
@@ -3045,13 +3375,6 @@ MODRET xfer_post_pass(cmd_rec *cmd) {
   if (xfer_opts & PR_XFER_OPT_IGNORE_ASCII) {
     pr_log_debug(DEBUG8, "Ignoring ASCII translation for this session");
     pr_data_ignore_ascii(TRUE);
-  }
-
-  /* Check for TransferPriority. */
-  c = find_config(TOPLEVEL_CONF, CONF_PARAM, "TransferPriority", FALSE);
-  if (c) {
-    xfer_prio_flags = *((unsigned long *) c->argv[0]);
-    xfer_prio_config = *((int *) c->argv[1]);
   }
 
   /* If we are chrooted, then skip actually processing the ALLO command
@@ -3515,71 +3838,6 @@ MODRET set_transferoptions(cmd_rec *cmd) {
   return PR_HANDLED(cmd);
 }
 
-/* usage: TransferPriority cmds "low"|"medium"|"high"|number */
-MODRET set_transferpriority(cmd_rec *cmd) {
-  config_rec *c;
-  int prio;
-  char *param, *str;
-  unsigned long flags = 0;
-
-  CHECK_ARGS(cmd, 2);
-  CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL|CONF_ANON);
-
-  if (strcasecmp(cmd->argv[2], "low") == 0) {
-    prio = 15;
-
-  } else if (strcasecmp(cmd->argv[2], "medium") == 0) {
-    prio = 0;
-
-  } else if (strcasecmp(cmd->argv[2], "high") == 0) {
-    prio = -15;
-
-  } else {
-    int res = atoi(cmd->argv[2]);
-
-    if (res < PRIO_MIN ||
-        res > PRIO_MAX) {
-      CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, ": invalid priority '",
-        cmd->argv[2], "'", NULL));
-    }
-
-    prio = res;
-  }
-
-  c = add_config_param(cmd->argv[0], 2, NULL, NULL);
-
-  /* Parse the command list. */
-
-  param = cmd->argv[1];
-  while ((str = get_cmd_from_list(&param)) != NULL) {
-
-    if (strcmp(str, C_APPE) == 0) {
-      flags |= PR_XFER_PRIO_FL_APPE;
-
-    } else if (strcmp(str, C_RETR) == 0) {
-      flags |= PR_XFER_PRIO_FL_RETR;
-
-    } else if (strcmp(str, C_STOR) == 0) {
-      flags |= PR_XFER_PRIO_FL_STOR;
-
-    } else if (strcmp(str, C_STOU) == 0) {
-      flags |= PR_XFER_PRIO_FL_STOU;
-
-    } else {
-      CONF_ERROR(cmd, pstrcat(cmd->tmp_pool,
-        ": invalid FTP transfer command: '", str, "'", NULL));
-    }
-  }
-
-  c->argv[0] = pcalloc(c->pool, sizeof(unsigned long));
-  *((unsigned long *) c->argv[0]) = flags;
-  c->argv[1] = pcalloc(c->pool, sizeof(int));
-  *((int *) c->argv[1]) = prio;
-  c->flags |= CF_MERGEDOWN;
-
-  return PR_HANDLED(cmd);
-}
-
 /* usage: TransferRate cmds kbps[:free-bytes] ["user"|"group"|"class"
  *          expression]
  */
@@ -3814,12 +4072,12 @@ static void xfer_exit_ev(const void *event_data, void *user_data) {
   if (stor_fh != NULL) {
      /* An upload is occurring... */
     pr_trace_msg(trace_channel, 6, "session exiting, aborting upload");
-    stor_abort();
+    stor_abort(session.pool);
   
   } else if (retr_fh != NULL) {
     /* A download is occurring... */
     pr_trace_msg(trace_channel, 6, "session exiting, aborting download");
-    retr_abort();
+    retr_abort(session.pool);
   }
 
   if (session.sf_flags & SF_XFER) {
@@ -3895,11 +4153,11 @@ static void xfer_sigusr2_ev(const void *event_data, void *user_data) {
 static void xfer_timedout(const char *reason) {
   if (stor_fh != NULL) {
     pr_trace_msg(trace_channel, 6, "%s, aborting upload", reason);
-    stor_abort();
+    stor_abort(session.pool);
 
   } else if (retr_fh != NULL) {
     pr_trace_msg(trace_channel, 6, "%s, aborting download", reason);
-    retr_abort();
+    retr_abort(session.pool);
   }
 }
 
@@ -3935,6 +4193,12 @@ static int xfer_init(void) {
   pr_help_add(C_APPE, _("<sp> pathname"), TRUE);
   pr_help_add(C_REST, _("<sp> byte-count"), TRUE);
   pr_help_add(C_ABOR, _("(abort current operation)"), TRUE);
+  pr_help_add(C_RANG, _("<sp> start-point <sp> end-point"), TRUE);
+
+  /* Add the additional features implemented by this module into the
+   * list, to be displayed in response to a FEAT command.
+   */
+  pr_feat_add(C_RANG " STREAM");
 
   return 0;
 }
@@ -4024,7 +4288,6 @@ static conftable xfer_conftab[] = {
   { "TimeoutNoTransfer",	set_timeoutnoxfer,		NULL },
   { "TimeoutStalled",		set_timeoutstalled,		NULL },
   { "TransferOptions",		set_transferoptions,		NULL },
-  { "TransferPriority",		set_transferpriority,		NULL },
   { "TransferRate",		set_transferrate,		NULL },
   { "UseSendfile",		set_usesendfile,		NULL },
 
@@ -4061,6 +4324,7 @@ static cmdtable xfer_cmdtab[] = {
   { CMD,     C_ABOR,	G_NONE,	 xfer_abor,	TRUE,	TRUE,  CL_MISC  },
   { LOG_CMD, C_ABOR,	G_NONE,	 xfer_log_abor,	TRUE,	TRUE,  CL_MISC  },
   { CMD,     C_REST,	G_NONE,	 xfer_rest,	TRUE,	FALSE, CL_MISC  },
+  { CMD,     C_RANG,	G_NONE,	 xfer_rang,	TRUE,	FALSE, CL_MISC  },
   { POST_CMD,C_PROT,	G_NONE,  xfer_post_prot,	FALSE,	FALSE },
   { POST_CMD,C_PASS,	G_NONE,	 xfer_post_pass,	FALSE, FALSE },
   { 0, NULL }

@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 # ---------------------------------------------------------------------------
-# Copyright (C) 2008-2013 TJ Saunders <tj@castaglia.org>
+# Copyright (C) 2008-2017 TJ Saunders <tj@castaglia.org>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,8 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
-#
-#  $Id: ftpmail,v 1.8 2013-10-13 22:34:14 castaglia Exp $
 # ---------------------------------------------------------------------------
 
 use strict;
@@ -312,7 +310,7 @@ sub send_email {
   }
 
   my $text = <<EOT;
-File just uploaded via FTP:
+File just $transferred via FTP:
 
   User: $transfer_info->{user}
     Client: $transfer_info->{client}

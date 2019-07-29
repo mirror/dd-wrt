@@ -1,6 +1,6 @@
 /*
  * ProFTPD: mod_radius -- a module for RADIUS authentication and accounting
- * Copyright (c) 2001-2016 TJ Saunders
+ * Copyright (c) 2001-2017 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -2890,7 +2890,7 @@ static int radius_start_accting(void) {
   now = htonl(time(NULL));
 
   memset(pid_str, '\0', sizeof(pid_str));
-  pid_len = snprintf(pid_str, sizeof(pid_str), "%08u",
+  pid_len = pr_snprintf(pid_str, sizeof(pid_str), "%08u",
     (unsigned int) session.pid);
 
   /* Loop through the list of servers, trying each one until the packet is
@@ -3096,7 +3096,7 @@ static int radius_stop_accting(void) {
   terminate_cause = htonl(radius_get_terminate_cause());
 
   memset(pid_str, '\0', sizeof(pid_str));
-  pid_len = snprintf(pid_str, sizeof(pid_str)-1, "%08u",
+  pid_len = pr_snprintf(pid_str, sizeof(pid_str)-1, "%08u",
     (unsigned int) session.pid);
 
   /* Loop through the list of servers, trying each one until the packet is
@@ -3539,7 +3539,7 @@ MODRET radius_pre_pass(cmd_rec *cmd) {
   radius_auth_ok = FALSE;
 
   memset(pid_str, '\0', sizeof(pid_str));
-  pid_len = snprintf(pid_str, sizeof(pid_str)-1, "%08u",
+  pid_len = pr_snprintf(pid_str, sizeof(pid_str)-1, "%08u",
     (unsigned int) session.pid);
 
   /* If mod_radius expects to find VSAs in the returned packet, it needs
@@ -3937,10 +3937,10 @@ MODRET set_radiusgroupinfo(cmd_rec *cmd) {
     char ngroups_str[32], ngids_str[32];
 
     memset(ngroups_str, '\0', sizeof(ngroups_str));
-    snprintf(ngroups_str, sizeof(ngroups_str)-1, "%u", ngroups);
+    pr_snprintf(ngroups_str, sizeof(ngroups_str)-1, "%u", ngroups);
 
     memset(ngids_str, '\0', sizeof(ngids_str));
-    snprintf(ngids_str, sizeof(ngids_str)-1, "%u", ngids);
+    pr_snprintf(ngids_str, sizeof(ngids_str)-1, "%u", ngids);
 
     CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "mismatched number of group names (",
       ngroups_str, ") and group IDs (", ngids_str, ")", NULL));

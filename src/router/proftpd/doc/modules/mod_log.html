@@ -268,6 +268,11 @@ indicated when logging.
   </tr>
 
   <tr>
+    <td>&nbsp;<code>%{epoch}</code>&nbsp;</td>
+    <td>Unix epoch; seconds since January 1, 1970</td>
+  </tr>
+
+  <tr>
     <td>&nbsp;<code>%{<em>NAME</em>}e</code>&nbsp;</td>
     <td>Contents of environment variable <em>NAME</em></td>
   </tr>
@@ -530,6 +535,30 @@ The <code>mod_log</code> module is compiled by default.
 
 <p><a name="FAQ">
 <b>Frequently Asked Questions</b><br>
+
+<p>
+<font color=red>Question</font>: Why are successful logins no longer being
+logged, after upgrading to ProFTPD 1.3.6, even though I am using the
+<code>SystemLog</code> directive?<br>
+<font color=blue>Answer</font>: The default log level was changed from
+<code>DEBUG</code> to <code>NOTICE</code> in ProFTPD 1.3.6; see
+<a href="http://bugs.proftpd.org/show_bug.cgi?id=3983">Bug#3983</a>.  And
+the "Login successful" log message is logged at the <code>INFO</code> level,
+which means that it will <em>not</em> be logged by default.
+
+<p>
+Why not?  The <code>INFO</code> log level is for "normal operating conditions"
+(see the <a href="../howto/LogLevels.html">log levels</a> howto), and successful
+logins are considered normal, and thus are not noteworthy or needed for logging.
+<em>Failed</em> logins, however, <em>are</em> logged at the <code>NOTICE</code>
+log level.
+
+<p>
+For having successful logins logged once more, use the following in your
+<code>proftpd.conf</code>:
+<pre>
+  SyslogLevel INFO
+</pre>
 
 <p>
 <font color=red>Question</font>: I have configured ProFTPD to use DNS names

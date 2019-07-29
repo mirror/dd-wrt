@@ -337,7 +337,7 @@ static modret_t *sqlodbc_get_error(cmd_rec *cmd, SQLSMALLINT handle_type,
   char numstr[20];
 
   memset(errstr, '\0', sizeof(errstr));
-  snprintf((char *) errstr, sizeof(errstr)-1, "%s", "(no data)");
+  pr_snprintf((char *) errstr, sizeof(errstr)-1, "%s", "(no data)");
 
   res = SQLGetDiagRec(handle_type, handle, recno++, state, &odbc_errno,
     errstr, sizeof(errstr), &errlen);
@@ -361,7 +361,7 @@ static modret_t *sqlodbc_get_error(cmd_rec *cmd, SQLSMALLINT handle_type,
    * have logged all the previous errors.
    */
   memset(numstr, '\0', sizeof(numstr));
-  snprintf(numstr, 20, "%d", (int) odbc_errno);
+  pr_snprintf(numstr, 20, "%d", (int) odbc_errno);
 
   return PR_ERROR_MSG(cmd, numstr, (char *) errstr);
 }
@@ -378,7 +378,8 @@ static modret_t *sqlodbc_get_data(cmd_rec *cmd, db_conn_t *conn) {
   sd = (sql_data_t *) pcalloc(cmd->tmp_pool, sizeof(sql_data_t));
 
   res = SQLNumResultCols(conn->sth, &ncols);
-  if (res != SQL_SUCCESS && res != SQL_SUCCESS_WITH_INFO) {
+  if (res != SQL_SUCCESS &&
+      res != SQL_SUCCESS_WITH_INFO) {
     char *err;
     SQLCHAR *state = NULL;
 
@@ -519,7 +520,7 @@ static modret_t *sqlodbc_get_data(cmd_rec *cmd, db_conn_t *conn) {
                   break;
                 }
 
-                snprintf(buf, sizeof(buf), "%hd", col_cval);
+                pr_snprintf(buf, sizeof(buf), "%hd", col_cval);
                 buf[sizeof(buf)-1] = '\0';
 
                 *((char **) push_array(dh)) = pstrdup(cmd->tmp_pool, buf);
@@ -557,7 +558,7 @@ static modret_t *sqlodbc_get_data(cmd_rec *cmd, db_conn_t *conn) {
                   break;
                 }
 
-                snprintf(buf, sizeof(buf), "%hd", col_cval);
+                pr_snprintf(buf, sizeof(buf), "%hd", col_cval);
                 buf[sizeof(buf)-1] = '\0';
 
                 *((char **) push_array(dh)) = pstrdup(cmd->tmp_pool, buf);
@@ -595,7 +596,7 @@ static modret_t *sqlodbc_get_data(cmd_rec *cmd, db_conn_t *conn) {
                   break;
                 }
 
-                snprintf(buf, sizeof(buf), "%d", col_cval);
+                pr_snprintf(buf, sizeof(buf), "%d", col_cval);
                 buf[sizeof(buf)-1] = '\0';
 
                 *((char **) push_array(dh)) = pstrdup(cmd->tmp_pool, buf);
@@ -633,7 +634,7 @@ static modret_t *sqlodbc_get_data(cmd_rec *cmd, db_conn_t *conn) {
                   break;
                 }
 
-                snprintf(buf, sizeof(buf), "%ld", col_cval);
+                pr_snprintf(buf, sizeof(buf), "%ld", col_cval);
                 buf[sizeof(buf)-1] = '\0';
 
                 *((char **) push_array(dh)) = pstrdup(cmd->tmp_pool, buf);
@@ -671,7 +672,7 @@ static modret_t *sqlodbc_get_data(cmd_rec *cmd, db_conn_t *conn) {
                   break;
                 }
 
-                snprintf(buf, sizeof(buf), "%ld", col_cval);
+                pr_snprintf(buf, sizeof(buf), "%ld", col_cval);
                 buf[sizeof(buf)-1] = '\0';
 
                 *((char **) push_array(dh)) = pstrdup(cmd->tmp_pool, buf);
@@ -709,7 +710,7 @@ static modret_t *sqlodbc_get_data(cmd_rec *cmd, db_conn_t *conn) {
                   break;
                 }
 
-                snprintf(buf, sizeof(buf), "%f", col_cval);
+                pr_snprintf(buf, sizeof(buf), "%f", col_cval);
                 buf[sizeof(buf)-1] = '\0';
 
                 *((char **) push_array(dh)) = pstrdup(cmd->tmp_pool, buf);
@@ -747,7 +748,7 @@ static modret_t *sqlodbc_get_data(cmd_rec *cmd, db_conn_t *conn) {
                   break;
                 }
 
-                snprintf(buf, sizeof(buf), "%f", col_cval);
+                pr_snprintf(buf, sizeof(buf), "%f", col_cval);
                 buf[sizeof(buf)-1] = '\0';
 
                 *((char **) push_array(dh)) = pstrdup(cmd->tmp_pool, buf);
@@ -801,7 +802,8 @@ MODRET sqlodbc_open(cmd_rec *cmd) {
   entry = sqlodbc_get_conn(cmd->argv[0]);
   if (entry == NULL) {
     sql_log(DEBUG_FUNC, "%s", "exiting \todbc cmd_open");
-    return PR_ERROR_MSG(cmd, MOD_SQL_ODBC_VERSION, "unknown named connection");
+    return PR_ERROR_MSG(cmd, MOD_SQL_ODBC_VERSION,
+      pstrcat(cmd->tmp_pool, "unknown named connection: ", cmd->argv[0], NULL));
   } 
 
   conn = (db_conn_t *) entry->data;
@@ -856,7 +858,8 @@ MODRET sqlodbc_open(cmd_rec *cmd) {
 
   res = SQLConnect(conn->dbh, (SQLCHAR *) conn->dsn, SQL_NTS,
     (SQLCHAR *) conn->user, SQL_NTS, (SQLCHAR *) conn->pass, SQL_NTS);
-  if (res != SQL_SUCCESS) {
+  if (res != SQL_SUCCESS &&
+      res != SQL_SUCCESS_WITH_INFO) {
     sql_log(DEBUG_FUNC, "error connecting to dsn '%s': %s", conn->dsn,
       sqlodbc_strerror(res));
     sql_log(DEBUG_FUNC, "%s", "exiting \todbc cmd_open");
@@ -1009,7 +1012,8 @@ MODRET sqlodbc_close(cmd_rec *cmd) {
   entry = sqlodbc_get_conn(cmd->argv[0]);
   if (entry == NULL) {
     sql_log(DEBUG_FUNC, "%s", "exiting \todbc cmd_close");
-    return PR_ERROR_MSG(cmd, MOD_SQL_ODBC_VERSION, "unknown named connection");
+    return PR_ERROR_MSG(cmd, MOD_SQL_ODBC_VERSION,
+      pstrcat(cmd->tmp_pool, "unknown named connection: ", cmd->argv[0], NULL));
   }
 
   conn = (db_conn_t *) entry->data;
@@ -1137,7 +1141,8 @@ MODRET sqlodbc_select(cmd_rec *cmd) {
   entry = sqlodbc_get_conn(cmd->argv[0]);
   if (entry == NULL) {
     sql_log(DEBUG_FUNC, "%s", "exiting \todbc cmd_select");
-    return PR_ERROR_MSG(cmd, MOD_SQL_ODBC_VERSION, "unknown named connection");
+    return PR_ERROR_MSG(cmd, MOD_SQL_ODBC_VERSION,
+      pstrcat(cmd->tmp_pool, "unknown named connection: ", cmd->argv[0], NULL));
   }
  
   conn = (db_conn_t *) entry->data;
@@ -1286,7 +1291,8 @@ MODRET sqlodbc_insert(cmd_rec *cmd) {
   entry = sqlodbc_get_conn(cmd->argv[0]);
   if (entry == NULL) {
     sql_log(DEBUG_FUNC, "%s", "exiting \todbc cmd_insert");
-    return PR_ERROR_MSG(cmd, MOD_SQL_ODBC_VERSION, "unknown named connection");
+    return PR_ERROR_MSG(cmd, MOD_SQL_ODBC_VERSION,
+      pstrcat(cmd->tmp_pool, "unknown named connection: ", cmd->argv[0], NULL));
   }
 
   conn = (db_conn_t *) entry->data;
@@ -1377,7 +1383,8 @@ MODRET sqlodbc_update(cmd_rec *cmd) {
   entry = sqlodbc_get_conn(cmd->argv[0]);
   if (entry == NULL) {
     sql_log(DEBUG_FUNC, "%s", "exiting \todbc cmd_update");
-    return PR_ERROR_MSG(cmd, MOD_SQL_ODBC_VERSION, "unknown named connection");
+    return PR_ERROR_MSG(cmd, MOD_SQL_ODBC_VERSION,
+      pstrcat(cmd->tmp_pool, "unknown named connection: ", cmd->argv[0], NULL));
   }
 
   conn = (db_conn_t *) entry->data;
@@ -1484,7 +1491,8 @@ MODRET sqlodbc_query(cmd_rec *cmd) {
   entry = sqlodbc_get_conn(cmd->argv[0]);
   if (entry == NULL) {
     sql_log(DEBUG_FUNC, "%s", "exiting \todbc cmd_query");
-    return PR_ERROR_MSG(cmd, MOD_SQL_ODBC_VERSION, "unknown named connection");
+    return PR_ERROR_MSG(cmd, MOD_SQL_ODBC_VERSION,
+      pstrcat(cmd->tmp_pool, "unknown named connection: ", cmd->argv[0], NULL));
   }
 
   conn = (db_conn_t *) entry->data;
@@ -1587,7 +1595,8 @@ MODRET sqlodbc_quote(cmd_rec *cmd) {
   entry = sqlodbc_get_conn(cmd->argv[0]);
   if (entry == NULL) {
     sql_log(DEBUG_FUNC, "%s", "exiting \todbc cmd_escapestring");
-    return PR_ERROR_MSG(cmd, MOD_SQL_ODBC_VERSION, "unknown named connection");
+    return PR_ERROR_MSG(cmd, MOD_SQL_ODBC_VERSION,
+      pstrcat(cmd->tmp_pool, "unknown named connection: ", cmd->argv[0], NULL));
   }
 
   /* Make sure the connection is open. */
@@ -1630,22 +1639,6 @@ MODRET sqlodbc_exit(cmd_rec *cmd) {
   return PR_HANDLED(cmd);
 }
 
-MODRET sqlodbc_checkauth(cmd_rec *cmd) {
-  sql_log(DEBUG_FUNC, "%s", "entering \todbc cmd_checkauth");
-
-  if (cmd->argc != 3) {
-    sql_log(DEBUG_FUNC, "exiting \todbc cmd_checkauth");
-    return PR_ERROR_MSG(cmd, MOD_SQL_ODBC_VERSION, "badly formed request");
-  }
-
-  /* This mod_sql backend doesn't support any database-specific password
-   * checking mechanisms.
-   */
-
-  sql_log(DEBUG_FUNC, "%s", "exiting \todbc cmd_checkauth");
-  return PR_ERROR(cmd);
-}
-
 MODRET sqlodbc_identify(cmd_rec *cmd) {
   sql_data_t *sd = NULL;
 
@@ -1673,7 +1666,6 @@ static cmdtable sqlodbc_cmdtable[] = {
   { CMD, "sql_query",		G_NONE, sqlodbc_query,	FALSE, FALSE },
   { CMD, "sql_escapestring",	G_NONE, sqlodbc_quote,	FALSE, FALSE },
   { CMD, "sql_exit",		G_NONE, sqlodbc_exit,	FALSE, FALSE },
-  { CMD, "sql_checkauth",	G_NONE, sqlodbc_checkauth, FALSE, FALSE },
   { CMD, "sql_identify",	G_NONE, sqlodbc_identify, FALSE, FALSE },
 
   { 0, NULL }

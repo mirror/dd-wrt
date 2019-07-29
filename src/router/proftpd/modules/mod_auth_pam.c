@@ -2,7 +2,7 @@
  * ProFTPD: mod_auth_pam -- Support for PAM-style authentication.
  * Copyright (c) 1998, 1999, 2000 Habeeb J. Dihu aka
  *   MacGyver <macgyver@tos.net>, All Rights Reserved.
- * Copyright 2000-2016 The ProFTPD Project
+ * Copyright 2000-2017 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -386,7 +386,7 @@ MODRET pam_auth(cmd_rec *cmd) {
 
   if (!(auth_pam_opts & AUTH_PAM_OPT_NO_TTY)) {
     memset(ttyentry, '\0', sizeof(ttyentry));
-    snprintf(ttyentry, sizeof(ttyentry), "/dev/ftpd%02lu",
+    pr_snprintf(ttyentry, sizeof(ttyentry), "/dev/ftpd%02lu",
       (unsigned long) getpid());
     ttyentry[sizeof(ttyentry)-1] = '\0';
 

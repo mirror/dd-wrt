@@ -82,8 +82,8 @@ the privileges of the logged-in user.
 
 <p>
 Any number of arbitrary arguments may be configured to pass to the script.
-In addition, the &quot;cookies&quot; supported by the <code>ExecEnviron</code>
-directive may also be used in the script argument list.
+In addition, the variables supported by the <code>ExecEnviron</code> directive
+may also be used in the script argument list.
 
 <p>
 <b>Important</b>: use of <code>DefaultRoot</code> will cause complications
@@ -153,11 +153,12 @@ to follow the convention for environment variable keys.
 
 <p>
 The <i>value</i> parameter may be any arbitrary string which may contain
-any of the following &quot;cookies&quot;, which will be substituted with the
+any of the following variables, which will be substituted with the
 corresponding value before the script is executed:
 <ul>
-  <li><b>%A</b> - Anonymous login password
+  <li><b>%A</b> - anonymous login password
   <li><b>%a</b> - client's IP address
+  <li><b>%b</b> - bytes transferred
   <li><b>%C</b> - current working directory
   <li><b>%c</b> - connection class
   <li><b>%F</b> - transfered file as seen by client
@@ -218,8 +219,8 @@ with the privileges of the logged-in user.
 
 <p>
 Any number of arbitrary arguments may be configured to pass to the script.
-In addition, the &quot;cookies&quot; supported by the <code>ExecEnviron</code>
-directive may also be used in the script argument list.
+In addition, the variables supported by the <code>ExecEnviron</code> directive
+may also be used in the script argument list.
 
 <p>
 <b>Important</b>: use of <code>DefaultRoot</code> will cause complications
@@ -258,8 +259,8 @@ set via the <code>User</code>/<code>Group</code> directives.
 
 <p>
 Any number of arbitrary arguments may be configured to pass to the script.
-In addition, the &quot;cookies&quot; supported by the <code>ExecEnviron</code>
-directive may also be used in the script argument list.
+In addition, the variables supported by the <code>ExecEnviron</code> directive
+may also be used in the script argument list.
 
 <p>
 Example:
@@ -295,8 +296,8 @@ the privileges of the logged-in user.
 
 <p>
 Any number of arbitrary arguments may be configured to pass to the script.
-In addition, the &quot;cookies&quot; supported by the <code>ExecEnviron</code>
-directive may also be used in the script argument list.
+In addition, the variables supported by the <code>ExecEnviron</code> directive
+may also be used in the script argument list.
 
 <p>
 <b>Important</b>: use of <code>DefaultRoot</code> will cause complications
@@ -348,8 +349,8 @@ the program will be executed with the privileges of the logged-in user.
 
 <p>
 Any number of arbitrary arguments may be configured to pass to the script.
-In addition, the &quot;cookies&quot; supported by the <code>ExecEnviron</code>
-directive may also be used in the script argument list.
+In addition, the variables supported by the <code>ExecEnviron</code> directive
+may also be used in the script argument list.
 
 <p>
 Presently only two specific events are supported: <code>MaxConnectionRate</code>
@@ -395,8 +396,8 @@ set via the <code>User</code>/<code>Group</code> directives.
 
 <p>
 Any number of arbitrary arguments may be configured to pass to the script.
-In addition, the &quot;cookies&quot; supported by the <code>ExecEnviron</code>
-directive may also be used in the script argument list.
+In addition, the variables supported by the <code>ExecEnviron</code> directive
+may also be used in the script argument list.
 
 <p>
 Example:
@@ -430,8 +431,8 @@ server, which are set via the <code>User</code>/<code>Group</code> directives.
 
 <p>
 Any number of arbitrary arguments may be configured to pass to the script.
-In addition, the &quot;cookies&quot; supported by the <code>ExecEnviron</code>
-directive may also be used in the script argument list.
+In addition, the variables supported by the <code>ExecEnviron</code> directive
+may also be used in the script argument list.
 
 <p>
 Example:
@@ -630,7 +631,7 @@ the <code>%U/%u</code> variables.
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2000-2014 TJ Saunders<br>
+&copy; Copyright 2000-2017 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

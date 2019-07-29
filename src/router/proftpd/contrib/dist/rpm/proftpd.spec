@@ -52,11 +52,11 @@
 # RHEL5 and clones don't have suitably recent versions of pcre/libmemcached
 # so use --with rhel5 to inhibit those features when using --with everything
 
-%global proftpd_version			1.3.6
+%global proftpd_version			1.3.7rc1
 
 # rc_version should be incremented for each RC release, and reset back to 1
 # AFTER each stable release.
-%global rc_version			5
+%global rc_version			1
 
 # release_version should be incremented for each maint release, and reset back
 # to 1 BEFORE starting new release cycle.
@@ -72,7 +72,7 @@
 
 %global usecvsversion             	0%{?_with_cvs:1}
 
-%global proftpd_cvs_version_main	1.3.6
+%global proftpd_cvs_version_main	1.3.7
 %global proftpd_cvs_version_date  	20150527
 
 # Spec default assumes that a gzipped tarball is used, since nightly CVS builds,
@@ -458,9 +458,6 @@ mkdir -p %{buildroot}%{_localstatedir}/ftp/pub/
 # Find translations
 %find_lang proftpd
 
-# We do not want this dangling symlink to make it into the RPM
-rm -f contrib/README.mod_sql
-
 %post
 %if %{use_systemd}
 /bin/systemctl daemon-reload &>/dev/null || :
@@ -583,9 +580,7 @@ rm -rf %{_builddir}/%{name}-%{version}
 %config(noreplace) %{_sysconfdir}/xinetd.d/proftpd
 %config(noreplace) %{_sysconfdir}/PROFTPD-MIB.txt
 
-%doc COPYING CREDITS ChangeLog NEWS README.md RELEASE_NOTES
-%doc README.DSO README.modules README.IPv6 README.PAM
-%doc README.capabilities README.classes README.controls README.facl
+%doc COPYING CREDITS ChangeLog NEWS README.md RELEASE_NOTES README.modules
 %doc contrib/README.contrib contrib/README.ratio
 %doc contrib/dist/systemd/README.systemd
 %doc doc/* sample-configurations/

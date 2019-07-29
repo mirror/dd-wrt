@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2003-2016 The ProFTPD Project team
+ * Copyright (c) 2003-2017 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -106,7 +106,7 @@ int xferlog_write(long xfertime, const char *remhost, off_t fsize,
 
   xfer_proto = pr_session_get_protocol(0);
 
-  len = snprintf(buf, sizeof(buf),
+  len = pr_snprintf(buf, sizeof(buf),
     "%s %ld %s %" PR_LU " %s %c %s %c %c %s %s %c %s %c\n",
       pr_strtime(time(NULL)),
       xfertime,

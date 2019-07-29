@@ -295,7 +295,13 @@ Example:
 <strong>Compatibility:</strong> 1.2.7rc1 and later
 
 <p>
-Default cipher list is &quot;DEFAULT:!ADH:!EXPORT:!DES&quot;.
+Sets the list of SSL/TLS ciphersuites for use.  Default cipher list is
+&quot;DEFAULT:!ADH:!EXPORT:!DES&quot;.
+
+<p>
+<b>Note</b> that <code>mod_tls</code> will automatically <i>prepend</i> the
+configured <em>cipher-list</em> with "!EXPORT", in order to <i>prevent</i> the
+use of the insecure "export grade" ciphers.
 
 <p>
 How to put together a <em>cipher list</em> parameter:
@@ -623,6 +629,13 @@ library, use:
 </pre>
 
 <p>
+If you are using OpenSSL 1.0.2 or later, then you can specify multiple curve
+names as a colon-separated list, <i>e.g.</i>:
+<pre>
+  TLSECDHCurve secp521r1:prime256v1
+</pre>
+
+<p>
 <hr>
 <h3><a name="TLSEngine">TLSEngine</a></h3>
 <strong>Syntax:</strong> TLSEngine <em>on|off</em><br>
@@ -907,7 +920,7 @@ The currently implemented options are:
     <a href="http://www.kb.cert.org/vuls/id/864643">&quot;BEAST&quot;
     attack</a>), the <code>mod_tls</code> module was changed to use OpenSSL's
     builtin countermeasure of inserting <a href="http://www.openssl.org/~bodo/tls-cbc.txt">empty fragments</a>.  However, some browsers/clients may not handle
-    such empty fragments well.  Use this <code>NoEmptyFragaments</code>
+    such empty fragments well.  Use this <code>NoEmptyFragments</code>
     TLSOption in order to interoperate with such clients, with risk of losing
     the protective countermeasure.
    
@@ -1316,6 +1329,11 @@ The allowed protocols are:
     <td>Allow only TLSv1.2</td>
   </tr>
 
+  <tr>
+    <td><code>TLSv1.3</code></td>
+    <td>Allow only TLSv1.3</td>
+  </tr>
+
 </table>
 To support both SSLv3 and TLSv1, simply list both parameters for the
 <code>TLSProtocol</code> directive, <i>e.g.</i>:
@@ -1576,7 +1594,7 @@ Example:
 <hr>
 <h3><a name="TLSServerCipherPreference">TLSServerCipherPreference</a></h3>
 <strong>Syntax:</strong> TLSServerCipherPreference <em>on|off</em><br>
-<strong>Default:</strong> Off<br>
+<strong>Default:</strong> Depends<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_tls<br>
 <strong>Compatibility:</strong> 1.3.5rc1 and later
@@ -1592,6 +1610,10 @@ For example:
 <pre>
   TLSServerCipherPreference on
 </pre>
+
+<p>
+Note that starting with ProFTPD 1.3.7rc1, <code>TLSServerCipherPreference</code>
+is <em>enabled</em> by default.
 
 <p>
 <hr>
@@ -1731,7 +1753,7 @@ directive.
 <p>
 <hr>
 <h3><a name="TLSStapling">TLSStapling</a></h3>
-<strong>Syntax:</strong> TLStapling <em>on|off</em><br>
+<strong>Syntax:</strong> TLSStapling <em>on|off</em><br>
 <strong>Default:</strong> off<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_tls<br>
@@ -1760,7 +1782,7 @@ See also: <a href="#TLSStaplingCache"><code>TLSStaplingCache</code></a>,
 <p>
 <hr>
 <h3><a name="TLSStaplingCache">TLSStaplingCache</a></h3>
-<strong>Syntax:</strong> TLStaplingCache <em>type:/info</em><br>
+<strong>Syntax:</strong> TLSStaplingCache <em>type:/info</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config<br>
 <strong>Module:</strong> mod_tls<br>
@@ -1786,7 +1808,7 @@ memcached servers as an OCSP response cache.
 <p>
 <hr>
 <h3><a name="TLSStaplingOptions">TLSStaplingOptions</a></h3>
-<strong>Syntax:</strong> TLStaplingOptions <em>opt1 ...</em><br>
+<strong>Syntax:</strong> TLSStaplingOptions <em>opt1 ...</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_tls<br>
@@ -1799,6 +1821,32 @@ behaviors of <code>mod_tls</code> when querying OCSP responders.
 <p>
 The currently implemented options are:
 <ul>
+  <li><code>NoFakeTryLater</code><br>
+    <p>
+    If the TLS client requests a stapled OCSP response, yet <code>mod_tls</code>
+    cannot provide one (<i>e.g.</i> due to inability to contact the OCSP
+    responder), the module will provide a fake <code>tryLater</code> OCSP
+    response.  Some client implementations, however, have trouble with such
+    fake OCSP responses; use this option to disable the use of such fake OCSP
+    response:
+    <pre>
+  # Skip using a fake tryLater OCSP response, if we cannot obtain one from
+  # an OCSP responder
+  TLSStaplingOptions NoFakeTryLater
+    </pre>
+    <b>However</b>, a fake <code>tryLater</code> OCSP response <b>might still
+    be emitted</b>, even if this option is used, if the server certificate
+    in question bears the "must staple" TLS feature; see
+    <a href="https://tools.ietf.org/html/rfc7633#section-3">RFC 7633</a>.  In
+    such cases, <code>mod_tls</code> is <em>required</em> to staple an OCSP
+    response.
+
+    <p>
+    <b>Note</b> that this option first appeared in
+    <code>proftpd-1.3.7rc1</code>.
+  </li>
+
+  <p>
   <li><code>NoNonce</code><br>
     <p>
     To defend against replay attacks of OCSP responses, the protocol allows
@@ -1818,7 +1866,7 @@ The currently implemented options are:
 <p>
 <hr>
 <h3><a name="TLSStaplingResponder">TLSStaplingResponder</a></h3>
-<strong>Syntax:</strong> TLStaplingResponder <em>url</em><br>
+<strong>Syntax:</strong> TLSStaplingResponder <em>url</em><br>
 <strong>Default:</strong> none<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_tls<br>
@@ -1838,7 +1886,7 @@ Example:
 <p>
 <hr>
 <h3><a name="TLSStaplingTimeout">TLSStaplingTimeout</a></h3>
-<strong>Syntax:</strong> TLStaplingTimeout <em>secs</em><br>
+<strong>Syntax:</strong> TLSStaplingTimeout <em>secs</em><br>
 <strong>Default:</strong> 10s<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_tls<br>
@@ -2210,6 +2258,19 @@ Then tell <code>mod_tls</code> to use that DH parameter:
   # Use 1024-bit DH parameters for the Java clients
   TLSDHParamFile /path/to/dh1024.pem
 </pre>
+
+<p><a name="TLSNoCipherMatch">
+<font color=red>Question</font>: I tried to configure a specific ciphersuite
+using <code>TLSCipherSuite</code>, but ProFTPD fails on startup with this error:
+<pre>
+  fatal: TLSCipherSuite: unable to use configured TLSCipherSuite '!EXPORT:MYCIPHER':
+  (1) error:1410D0B9:SSL routines:SSL_CTX_set_cipher_list:no cipher match on line 16 of '/etc/proftpd/tls.conf'
+</pre>
+<font color=blue>Answer</font>: This error indicates that the version of OpenSSL
+does not recognize/support one of the ciphers that you configured in your
+<code>TLSCipherSuite</code> list.  Unfortunately the OpenSSL error reporting
+does not pinpoint <i>which</i> is the offending ciphersuite; experimenting
+with your cipher list will reveal which ones are problematic.
 
 <p>
 <hr>

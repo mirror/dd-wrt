@@ -384,11 +384,6 @@ HREF="#GROUPOWNER"
 >&nbsp;--&nbsp;Change default group for new files and directories</DT
 ><DT
 ><A
-HREF="#GROUPPASSWORD"
->&#13;GroupPassword</A
->&nbsp;--&nbsp;Set a group-wide password</DT
-><DT
-><A
 HREF="#GROUPRATIO"
 >&#13;GroupRatio</A
 >&nbsp;--&nbsp;Ratio directive</DT
@@ -639,11 +634,6 @@ HREF="#LISTOPTIONS"
 HREF="#LOGFORMAT"
 >&#13;LogFormat</A
 >&nbsp;--&nbsp;Specify a logging format</DT
-><DT
-><A
-HREF="#LOGINPASSWORDPROMPT"
->&#13;LoginPasswordPrompt</A
->&nbsp;--&nbsp;Configure to display the passwort prompt or not</DT
 ><DT
 ><A
 HREF="#MASQUERADEADDRESS"
@@ -9848,119 +9838,6 @@ NAME="AEN3326"
 ></DIV
 ><H1
 ><A
-NAME="GROUPPASSWORD"
-></A
->
-GroupPassword</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="AEN3337"
-></A
-><H2
->Name</H2
->GroupPassword&nbsp;--&nbsp;Set a group-wide password</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="AEN3340"
-></A
-><H2
->Synopsis</H2
-><P
-><B
-CLASS="COMMAND"
->GroupPassword</B
->  [  <CODE
-CLASS="OPTION"
->GroupPassword groupid hashed-password</CODE
->]</P
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><P
-><B
-></B
-></P
-><DL
-><DT
-><PRE
-CLASS="SYNOPSIS"
->Default</PRE
-></DT
-><DD
-><P
->None</P
-></DD
-><DT
-><PRE
-CLASS="SYNOPSIS"
->Context</PRE
-></DT
-><DD
-><P
->server config, &lt;VirtualHost&gt;, &lt;Anonymous&gt;, &lt;Global&gt;</P
-></DD
-><DT
-><PRE
-CLASS="SYNOPSIS"
->Module</PRE
-></DT
-><DD
-><P
->mod_auth</P
-></DD
-><DT
-><PRE
-CLASS="SYNOPSIS"
->Compatibility</PRE
-></DT
-><DD
-><P
->0.99.0pl5 and later</P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="AEN3367"
-></A
-><H2
->Description</H2
-><P
->The GroupPassword directive creates a special &quot;group&quot; password which 
-allows all users in the specified group to authenticate using a single password. 
-The group/password supplied is only effective inside the context to which GroupPassword 
-is applied. The hashed-password argument is a standard 
-cleartext password which has been passed through the standard unix crypt() library 
-function. Extreme care should be taken when using GroupPassword, as 
-serious security problems may arise if group membership is not carefully controlled.</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="AEN3370"
-></A
-><H2
->See also</H2
-><P
->UserPassword</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="AEN3373"
-></A
-><H2
->Examples</H2
-><P
-></P
-></DIV
-><H1
-><A
 NAME="GROUPRATIO"
 ></A
 >
@@ -15895,115 +15772,6 @@ HREF="#TRANSFERLOG"
 CLASS="REFSECT1"
 ><A
 NAME="AEN5695"
-></A
-><H2
->Examples</H2
-><P
-></P
-></DIV
-><H1
-><A
-NAME="LOGINPASSWORDPROMPT"
-></A
->
-LoginPasswordPrompt</H1
-><DIV
-CLASS="REFNAMEDIV"
-><A
-NAME="AEN5706"
-></A
-><H2
->Name</H2
->LoginPasswordPrompt&nbsp;--&nbsp;Configure to display the passwort prompt or not</DIV
-><DIV
-CLASS="REFSYNOPSISDIV"
-><A
-NAME="AEN5709"
-></A
-><H2
->Synopsis</H2
-><P
-><B
-CLASS="COMMAND"
->LoginPasswordPrompt</B
->  [  <CODE
-CLASS="OPTION"
->LoginPasswordPrompt on|off</CODE
->]</P
-><P
-></P
-><DIV
-CLASS="VARIABLELIST"
-><P
-><B
-></B
-></P
-><DL
-><DT
-><PRE
-CLASS="SYNOPSIS"
->Default</PRE
-></DT
-><DD
-><P
->LoginPasswordPrompt on</P
-></DD
-><DT
-><PRE
-CLASS="SYNOPSIS"
->Context</PRE
-></DT
-><DD
-><P
->server config, &lt;VirtualHost&gt;, &lt;Anonymous&gt;, &lt;Global&gt;</P
-></DD
-><DT
-><PRE
-CLASS="SYNOPSIS"
->Module</PRE
-></DT
-><DD
-><P
->mod_auth</P
-></DD
-><DT
-><PRE
-CLASS="SYNOPSIS"
->Compatibility</PRE
-></DT
-><DD
-><P
->1.2.0pre1 and later</P
-></DD
-></DL
-></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="AEN5736"
-></A
-><H2
->Description</H2
-><P
->If set to off, ProFTPd will skip the password request if the 
-login will be denied regardless of password, e.g., if a &lt;Limit LOGIN&gt; 
-directive forbids the connection.</P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="AEN5739"
-></A
-><H2
->See also</H2
-><P
-></P
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="AEN5742"
 ></A
 ><H2
 >Examples</H2
@@ -26507,7 +26275,7 @@ CLASS="SYNOPSIS"
 ></DT
 ><DD
 ><P
->None</P
+>NOTICE</P
 ></DD
 ><DT
 ><PRE
@@ -32769,7 +32537,7 @@ The hashed-password argument is a cleartext string
 which has been passed through the standard unix crypt() function. Do 
 NOT use a cleartext password. This can be useful when combined with 
 UserAlias to provide multiple logins to an Anonymous FTP site.
-See Also: GroupPassword</P
+</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -33481,14 +33249,6 @@ HREF="#DEFAULTCHDIR"
 <A
 HREF="#DEFAULTROOT"
 >DefaultRoot</A
->
-<A
-HREF="#GROUPPASSWORD"
->GroupPassword</A
->
-<A
-HREF="#LOGINPASSWORDPROMPT"
->LoginPasswordPrompt</A
 >
 <A
 HREF="#MAXCLIENTS"

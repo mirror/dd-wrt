@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2004-2016 The ProFTPD Project team
+ * Copyright (c) 2004-2017 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -101,28 +101,10 @@ static char *get_config_word(pool *p, char *word) {
   if (wordlen > 7) {
     char *ptr = NULL;
 
-    /* Does the given word use the environment syntax?
-     *
-     * In the simple (and most common) case, the entire word is the variable
-     * syntax.  But we also need to check for cases where the environment
-     * variable syntax is embedded within the word string.
-     */
-
-    if (strncmp(word, "%{env:", 6) == 0 &&
-        word[wordlen-1] == '}') {
-      char *env;
-
-      word[wordlen-1] = '\0';
-
-      env = pr_env_get(p, word + 6);
-
-      return env ? pstrdup(p, env) : "";
-    }
-
-    /* This is in a while loop in order to handle a) multiple different
-     * variables, and b) cases where the substituted value is itself a
-     * variable.   (Hopefully no one is so clever as to want to actually
-     * _use_ the latter approach.)
+    /* Does the given word use the environment syntax? We handle this in a
+     * while loop in order to handle a) multiple different variables, and b)
+     * cases where the substituted value is itself a variable.  Hopefully no
+     * one is so clever as to want to actually _use_ the latter approach.
      */
     ptr = strstr(word, "%{env:");
     while (ptr != NULL) {
@@ -1267,7 +1249,7 @@ int parse_config_path2(pool *p, const char *path, unsigned int depth) {
     }
   }
 
-  pr_log_pri(PR_LOG_DEBUG, "processing configuration directory '%s'", dup_path);
+  pr_trace_msg(trace_channel, 3, "processing configuration directory '%s'", dup_path);
 
   dirh = pr_fsio_opendir(dup_path);
   if (dirh == NULL) {

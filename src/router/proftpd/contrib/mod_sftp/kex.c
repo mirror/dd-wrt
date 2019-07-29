@@ -1399,48 +1399,65 @@ static int create_ecdh(struct sftp_kex *kex, int type) {
   int curve_nid = -1;
   char *curve_name = NULL;
 
-  if (type != SFTP_ECDH_SHA256 &&
-      type != SFTP_ECDH_SHA384 &&
-      type != SFTP_ECDH_SHA512) {
-    errno = EINVAL;
-    return -1;
-  }
-
   switch (type) {
-# if defined(HAVE_SHA256_OPENSSL)
     case SFTP_ECDH_SHA256:
-      curve_nid = NID_X9_62_prime256v1;
       curve_name = "NID_X9_62_prime256v1";
+# if defined(HAVE_SHA256_OPENSSL)
+      curve_nid = NID_X9_62_prime256v1;
       kex->hash = EVP_sha256();
+# else
+      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+        "unable to generate EC key using '%s': OpenSSL lacks SHA256 support",
+        curve_name);
+      errno = ENOSYS;
+      return -1;
+# endif /* HAVE_SHA256_OPENSSL */
       break;
 
     case SFTP_ECDH_SHA384:
-      curve_nid = NID_secp384r1;
       curve_name = "NID_secp384r1";
+# if defined(HAVE_SHA256_OPENSSL)
+      curve_nid = NID_secp384r1;
       kex->hash = EVP_sha384();
-      break;
+# else
+      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+        "unable to generate EC key using '%s': OpenSSL lacks SHA256 support",
+        curve_name);
+      errno = ENOSYS;
+      return -1;
 # endif /* HAVE_SHA256_OPENSSL */
-
-# if defined(HAVE_SHA512_OPENSSL)
-    case SFTP_ECDH_SHA512:
-      curve_nid = NID_secp521r1;
-      curve_name = "NID_secp521r1";
-      kex->hash = EVP_sha512();
       break;
+
+    case SFTP_ECDH_SHA512:
+      curve_name = "NID_secp521r1";
+# if defined(HAVE_SHA512_OPENSSL)
+      curve_nid = NID_secp521r1;
+      kex->hash = EVP_sha512();
+# else
+      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+        "unable to generate EC key using '%s': OpenSSL lacks SHA512 support",
+        curve_name);
+      errno = ENOSYS;
+      return -1;
 # endif /* HAVE_SHA512_OPENSSL */
+      break;
+
+    default:
+      errno = EINVAL;
+      return -1;
   }
 
   ec = EC_KEY_new_by_curve_name(curve_nid);
   if (ec == NULL) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-      "error generating new ECC key using '%s': %s", curve_name,
+      "error generating new EC key using '%s': %s", curve_name,
       sftp_crypto_get_errors());
     return -1;
   }
 
   if (EC_KEY_generate_key(ec) != 1) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-      "error generating new ECC key: %s", sftp_crypto_get_errors());
+      "error generating new EC key: %s", sftp_crypto_get_errors());
     EC_KEY_free(ec);
     return -1;
   }
@@ -3732,14 +3749,22 @@ static int read_curve25519_init(struct ssh2_packet *pkt, struct sftp_kex *kex) {
   char *data;
 
   buf = pkt->payload;
-  buflen = pkt->payload_len;
+  buflen = data_len = pkt->payload_len;
 
   data = sftp_msg_read_string(pkt->pool, &buf, &buflen);
-  data_len = strlen(data);
+
+  /* The "string" we read MIGHT contain NULs, thus using strlen(3) to determine
+   * the length of data is a Bad Idea (Issue #556).  Thus instead, we track
+   * the packet payload length remaining after the read; the data length is
+   * the difference, including the length value prefix of 4 bytes.
+   */
+  data_len -= (buflen + sizeof(uint32_t));
+
   if (data_len != CURVE25519_SIZE) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-      "rejecting invalid length (%lu bytes) client Curve25519 key",
-      (unsigned long) data_len);
+      "rejecting invalid length (%lu %s, wanted %d) client Curve25519 key",
+      (unsigned long) data_len, data_len != 1 ? "bytes" : "byte",
+      CURVE25519_SIZE);
     errno = EINVAL;
     return -1;
   }

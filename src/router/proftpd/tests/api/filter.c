@@ -128,6 +128,7 @@ START_TEST (filter_allow_path_test) {
   res = pr_filter_allow_path(set, path);
   fail_unless(res == 0,
     "Failed to allow path '%s' with non-matching PathDenyFilter", path);
+  pr_regexp_free(NULL, deny_pre);
 
   /* Now, let's add a PathAllowFilter. */
   allow_pre = pr_regexp_alloc(NULL);
@@ -142,6 +143,7 @@ START_TEST (filter_allow_path_test) {
   res = pr_filter_allow_path(set, path);
   fail_unless(res == PR_FILTER_ERR_FAILS_ALLOW_FILTER,
     "Failed to allow path '%s' with matching PathAllowFilter", path);
+  pr_regexp_free(NULL, allow_pre);
 }
 END_TEST
 

@@ -25,7 +25,12 @@ these platforms.
 
 <p>
 Installation instructions for <code>mod_facl</code> can be found
-<a href="#Installation">here</a>.
+<a href="#Installation">here</a>.  <i>Note</i> that the <code>configure</code>
+script will automatically determine whether the system supports POSIX ACLs,
+but it will <b>not</b> automatically make use of that support <em>unless</em>
+the <code>--enable-facl</code> option is used.  <i>In addition</i>, to have
+ProFTPD fully <em>honor</b> POSIX ACLs on files, you will also need this
+<code>mod_facl</code> module.
 
 <p>
 The most current version of <code>mod_facl</code> can be found in the
@@ -78,7 +83,7 @@ only, and should be removed from any production configuration.
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2000-2014 TJ Saunders<br>
+&copy; Copyright 2000-2017 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>
