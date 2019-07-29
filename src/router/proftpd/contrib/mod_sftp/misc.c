@@ -287,6 +287,10 @@ int sftp_misc_chown_path(pool *p, const char *path) {
   return 0;
 }
 
+const char *sftp_misc_get_chroot(pool *p) {
+  return pr_table_get(session.notes, "mod_sftp.chroot-path", NULL);
+}
+
 const char *sftp_misc_namelist_shared(pool *p, const char *c2s_names,
     const char *s2c_names) {
   register unsigned int i;
@@ -322,4 +326,26 @@ const char *sftp_misc_namelist_shared(pool *p, const char *c2s_names,
   destroy_pool(tmp_pool);
 
   return name;
+}
+
+/* If we are chrooted, AND mod_vroot is present, then abs_path will not
+ * actually point to the real absolute path on disk.  Try to account for
+ * this.
+ */
+char *sftp_misc_vroot_abs_path(pool *p, const char *path, int interpolate) {
+  const char *curr_chroot_path, *real_chroot_path;
+  char *abs_path;
+
+  curr_chroot_path = session.chroot_path;
+  real_chroot_path = sftp_misc_get_chroot(p);
+
+  if (real_chroot_path != NULL &&
+      pr_module_exists("mod_vroot.c") == TRUE) {
+    session.chroot_path = real_chroot_path;
+  }
+
+  abs_path = dir_abs_path(p, path, interpolate);
+  session.chroot_path = curr_chroot_path;
+
+  return abs_path;
 }

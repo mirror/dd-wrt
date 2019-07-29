@@ -162,6 +162,7 @@
 ../include/display.h
 ../include/encode.h
 ../include/env.h
+../include/error.h
 ../include/event.h
 ../include/expr.h
 ../include/feat.h
@@ -173,6 +174,7 @@
 ../include/help.h
 ../include/ident.h
 ../include/inet.h
+../include/jot.h
 ../include/json.h
 ../include/lastlog.h
 ../include/libsupp.h
@@ -186,6 +188,7 @@
 ../include/netaddr.h
 ../include/netio.h
 ../include/options.h
+../include/os.h
 ../include/parser.h
 ../include/pidfile.h
 ../include/pool.h
@@ -193,6 +196,7 @@
 ../include/privs.h
 ../include/proctitle.h
 ../include/proftpd.h
+../include/random.h
 ../include/redis.h
 ../include/regexp.h
 ../include/response.h
@@ -247,6 +251,7 @@
 ../src/display.c
 ../src/encode.c
 ../src/env.c
+../src/error.c
 ../src/event.c
 ../src/expr.c
 ../src/feat.c
@@ -256,6 +261,7 @@
 ../src/help.c
 ../src/ident.c
 ../src/inet.c
+../src/jot.c
 ../src/json.c
 ../src/lastlog.c
 ../src/log.c
@@ -271,6 +277,7 @@
 ../src/pool.c
 ../src/privs.c
 ../src/proctitle.c
+../src/random.c
 ../src/redis.c
 ../src/regexp.c
 ../src/response.c

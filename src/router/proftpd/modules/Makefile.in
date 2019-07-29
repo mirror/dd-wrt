@@ -25,13 +25,13 @@ Makefile: Makefile.in ../config.status
 
 # Special instructions for mod_dso, to include the libltdl headers
 mod_dso.o: mod_dso.c
-	$(CC) $(CPPFLAGS) $(LTDLINCL) $(CFLAGS) -c mod_dso.c
+	$(CC) $(CPPFLAGS) $(LTDLINCL) $(CFLAGS) -c $(top_srcdir)/modules/mod_dso.c
 
 .c.o:
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
 
 .c.la:
-	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(CPPFLAGS) $(CFLAGS) $(SHARED_CFLAGS) -c $*.c
+	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(CPPFLAGS) $(CFLAGS) $(SHARED_CFLAGS) -c $(top_srcdir)/modules/$*.c
 	$(LIBTOOL) --mode=link --tag=CC $(CC) -o $@ -rpath $(LIBEXECDIR) $(LDFLAGS) $(SHARED_LDFLAGS) $*.lo `cat $(top_srcdir)/modules/$*.c | grep '$$Libraries:' | sed -e 's/^.*\$$Libraries: \(.*\)\\$$/\1/'`
 
 module_glue.c: module_glue.c.tmpl $(STATIC_MODULE_OBJS)
@@ -40,22 +40,22 @@ module_glue.c: module_glue.c.tmpl $(STATIC_MODULE_OBJS)
 shared: $(SHARED_MODULE_OBJS)
 	@dirs="$(SHARED_MODULE_DIRS)"; \
 	for dir in $$dirs; do \
-		(cd $(top_srcdir)/$$dir/ && $(MAKE) shared); \
+		(cd $(top_builddir)/$$dir/ && $(MAKE) shared); \
 	done
 
 static: $(STATIC_MODULE_OBJS) module_glue.o
 	@dirs="$(STATIC_MODULE_DIRS)"; \
 	for dir in $$dirs; do \
 		module=`echo "$$dir" | sed -e 's/^.*\///'`; \
-		(cd $(top_srcdir)/$$dir/ && $(MAKE) static) && \
-		cp $(top_srcdir)/$$dir/$$module.o .; \
+		(cd $(top_builddir)/$$dir/ && $(MAKE) static) && \
+		cp $(top_builddir)/$$dir/$$module.o .; \
 	done
 
 install:
 	test -z "$(SHARED_MODULE_OBJS)" || $(LIBTOOL) --mode=install --tag=CC $(INSTALL_BIN) $(SHARED_MODULE_OBJS) $(DESTDIR)$(LIBEXECDIR)
 	@dirs="$(SHARED_MODULE_DIRS) $(STATIC_MODULE_DIRS)"; \
 	for dir in $$dirs; do \
-		(cd $(top_srcdir)/$$dir/ && $(MAKE) install); \
+		(cd $(top_builddir)/$$dir/ && $(MAKE) install); \
 	done
 
 clean:
@@ -64,13 +64,13 @@ clean:
 	$(LIBTOOL) --mode=clean $(RM) `echo $(SHARED_MODULE_OBJS) | sed 's/\.la$\/.lo/g'`
 	@dirs="$(SHARED_MODULE_DIRS) $(STATIC_MODULE_DIRS)"; \
 	for dir in $$dirs; do \
-		(cd $(top_srcdir)/$$dir/ && $(MAKE) clean); \
+		(cd $(top_builddir)/$$dir/ && $(MAKE) clean); \
 	done
 
 depend:
 	$(RM) module_glue.c
-	$(MAKEDEPEND) $(CPPFLAGS) *.c 2>/dev/null
-	$(MAKEDEPEND) $(CPPFLAGS) -fMakefile.in *.c 2>/dev/null
+	$(MAKEDEPEND) $(CPPFLAGS) $(top_srcdir)/modules/*.c 2>/dev/null
+	$(MAKEDEPEND) $(CPPFLAGS) -fMakefile.in $(top_srcdir)/modules/*.c 2>/dev/null
 
 distclean: clean
 	-$(RM) *.gcda *.gcno

@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2016 The ProFTPD Project team
+ * Copyright (c) 2001-2019 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -440,6 +440,9 @@ int dir_readlink(pool *p, const char *path, char *buf, size_t bufsz,
     return -1;
   }
 
+  pr_trace_msg("fsio", 9,
+    "dir_readlink() read link '%.*s' for path '%s'", (int) len, buf, path);
+
   if (len == 0 ||
       (size_t) len == bufsz) {
     /* If we read nothing in, OR if the given buffer was completely
@@ -530,15 +533,16 @@ int dir_readlink(pool *p, const char *path, char *buf, size_t bufsz,
      */
 
     ptr = strrchr(path, '/');
-    if (ptr != NULL &&
-        ptr != path) {
-      char *parent_dir;
+    if (ptr != NULL) {
+      if (ptr != path) {
+        char *parent_dir;
 
-      parent_dir = pstrndup(tmp_pool, path, (ptr - path));
-      dst_path = pdircat(tmp_pool, parent_dir, dst_path, NULL);
+        parent_dir = pstrndup(tmp_pool, path, (ptr - path));
+        dst_path = pdircat(tmp_pool, parent_dir, dst_path, NULL);
 
-    } else {
-      dst_path = pdircat(tmp_pool, path, dst_path, NULL);
+      } else {
+        dst_path = pdircat(tmp_pool, "/", dst_path, NULL);
+      }
     }
   }
 
@@ -780,7 +784,7 @@ static int _exists(pool *p, const char *path, int flags) {
         break;
 
       default:
-        break; 
+        break;
     }
 
     return TRUE;
@@ -997,10 +1001,11 @@ void pr_memscrub(void *ptr, size_t ptrlen) {
 void pr_getopt_reset(void) {
 #if defined(FREEBSD4) || defined(FREEBSD5) || defined(FREEBSD6) || \
     defined(FREEBSD7) || defined(FREEBSD8) || defined(FREEBSD9) || \
-    defined(FREEBSD10) || \
+    defined(FREEBSD10) || defined(FREEBSD11) || \
     defined(DARWIN7) || defined(DARWIN8) || defined(DARWIN9) || \
     defined(DARWIN10) || defined(DARWIN11) || defined(DARWIN12) || \
-    defined(DARWIN13) || defined(DARWIN14)
+    defined(DARWIN13) || defined(DARWIN14) || defined(DARWIN15) || \
+    defined(DARWIN16) || defined(DARWIN17) || defined(DARWIN18)
   optreset = 1;
   opterr = 1;
   optind = 1;
@@ -1134,9 +1139,9 @@ const char *pr_strtime2(time_t t, int use_gmtime) {
   }
 
   if (tr != NULL) {
-    snprintf(buf, sizeof(buf), "%s %s %02d %02d:%02d:%02d %d",
-      days[tr->tm_wday], mons[tr->tm_mon], tr->tm_mday, tr->tm_hour,
-      tr->tm_min, tr->tm_sec, tr->tm_year + 1900);
+    pr_snprintfl(__FILE__, __LINE__, buf, sizeof(buf),
+      "%s %s %02d %02d:%02d:%02d %d", days[tr->tm_wday], mons[tr->tm_mon],
+      tr->tm_mday, tr->tm_hour, tr->tm_min, tr->tm_sec, tr->tm_year + 1900);
   }
 
   buf[sizeof(buf)-1] = '\0';
@@ -1169,6 +1174,89 @@ int pr_gettimeofday_millis(uint64_t *millis) {
   }
 
   return 0;
+}
+
+int pr_vsnprintfl(const char *file, int lineno, char *buf, size_t bufsz,
+    const char *fmt, va_list msg) {
+  int res, xerrno = 0;
+
+  if (buf == NULL ||
+      fmt == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (bufsz == 0) {
+    return 0;
+  }
+
+  res = vsnprintf(buf, bufsz, fmt, msg);
+  xerrno = errno;
+
+  if (res < 0) {
+    /* Unexpected error. */
+
+#ifdef EOVERFLOW
+    if (xerrno == EOVERFLOW) {
+      xerrno = ENOSPC;
+    }
+#endif /* EOVERFLOW */
+
+  } else if ((size_t) res >= bufsz) {
+    /* Buffer too small. */
+    xerrno = ENOSPC;
+    res = -1;
+  }
+
+  /* We are mostly concerned with tracking down the locations of truncated
+   * buffers, hence the stacktrace logging only for these conditions.
+   */
+  if (res < 0 &&
+      xerrno == ENOSPC) {
+    if (file != NULL &&
+        lineno > 0) {
+      pr_log_pri(PR_LOG_WARNING,
+        "%s:%d: error writing format string '%s' into %lu-byte buffer: %s",
+        file, lineno, fmt, (unsigned long) bufsz, strerror(xerrno));
+
+    } else {
+      pr_log_pri(PR_LOG_WARNING,
+        "error writing format string '%s' into %lu-byte buffer: %s", fmt,
+        (unsigned long) bufsz, strerror(xerrno));
+    }
+
+    pr_log_stacktrace(-1, NULL);
+  }
+
+  errno = xerrno;
+  return res;
+}
+
+int pr_vsnprintf(char *buf, size_t bufsz, const char *fmt, va_list msg) {
+  return pr_vsnprintfl(NULL, -1, buf, bufsz, fmt, msg);
+}
+
+int pr_snprintfl(const char *file, int lineno, char *buf, size_t bufsz,
+    const char *fmt, ...) {
+  va_list msg;
+  int res;
+
+  va_start(msg, fmt);
+  res = pr_vsnprintfl(file, lineno, buf, bufsz, fmt, msg);
+  va_end(msg);
+
+  return res;
+}
+
+int pr_snprintf(char *buf, size_t bufsz, const char *fmt, ...) {
+  va_list msg;
+  int res;
+
+  va_start(msg, fmt);
+  res = pr_vsnprintfl(NULL, -1, buf, bufsz, fmt, msg);
+  va_end(msg);
+
+  return res;
 }
 
 /* Substitute any appearance of the %u variable in the given string with

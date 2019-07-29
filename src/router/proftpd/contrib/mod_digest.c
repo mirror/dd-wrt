@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_digest - File hashing/checksumming module
  * Copyright (c) Mathias Berchtold <mb@smartftp.com>
- * Copyright (c) 2016-2017 TJ Saunders <tj@castaglia.org>
+ * Copyright (c) 2016-2018 TJ Saunders <tj@castaglia.org>
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -75,6 +75,11 @@
 # include <openssl/bio.h>
 # include <openssl/evp.h>
 # include <openssl/err.h>
+#endif
+
+/* Define if you have the LibreSSL library.  */
+#if defined(LIBRESSL_VERSION_NUMBER)
+# define HAVE_LIBRESSL  1
 #endif
 
 module digest_module;
@@ -314,21 +319,59 @@ static int CRC32_Free(CRC32_CTX *ctx) {
 }
 
 static int crc32_init(EVP_MD_CTX *ctx) {
-  return CRC32_Init(ctx->md_data);
+  void *md_data;
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
+    !defined(HAVE_LIBRESSL)
+  md_data = EVP_MD_CTX_md_data(ctx);
+#else
+  md_data = ctx->md_data;
+#endif /* prior to OpenSSL-1.1.0 */
+
+  return CRC32_Init(md_data);
 }
 
 static int crc32_update(EVP_MD_CTX *ctx, const void *data, size_t datasz) {
-  return CRC32_Update(ctx->md_data, data, datasz);
+  void *md_data;
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
+    !defined(HAVE_LIBRESSL)
+  md_data = EVP_MD_CTX_md_data(ctx);
+#else
+  md_data = ctx->md_data;
+#endif /* prior to OpenSSL-1.1.0 */
+
+  return CRC32_Update(md_data, data, datasz);
 }
 
 static int crc32_final(EVP_MD_CTX *ctx, unsigned char *md) {
-  return CRC32_Final(md, ctx->md_data);
+  void *md_data;
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
+    !defined(HAVE_LIBRESSL)
+  md_data = EVP_MD_CTX_md_data(ctx);
+#else
+  md_data = ctx->md_data;
+#endif /* prior to OpenSSL-1.1.0 */
+
+  return CRC32_Final(md, md_data);
 }
 
 static int crc32_free(EVP_MD_CTX *ctx) {
-  return CRC32_Free(ctx->md_data);
+  void *md_data;
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
+    !defined(HAVE_LIBRESSL)
+  md_data = EVP_MD_CTX_md_data(ctx);
+#else
+  md_data = ctx->md_data;
+#endif /* prior to OpenSSL-1.1.0 */
+
+  return CRC32_Free(md_data);
 }
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || \
+    defined(HAVE_LIBRESSL)
 static const EVP_MD crc32_md = {
   NID_undef,
   NID_undef,
@@ -343,9 +386,30 @@ static const EVP_MD crc32_md = {
   CRC32_BLOCK,
   sizeof(EVP_MD *) + sizeof(CRC32_CTX)
 };
+#endif /* Older OpenSSLs */
 
 static const EVP_MD *EVP_crc32(void) {
-  return &crc32_md;
+  const EVP_MD *md;
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
+    !defined(HAVE_LIBRESSL)
+  /* XXX TODO: At some point, we also need to call EVP_MD_meth_free() on
+   * this, to avoid a resource leak.
+   */
+  md = EVP_MD_meth_new(NID_undef, NID_undef);
+  EVP_MD_meth_set_input_blocksize(md, CRC32_BLOCK);
+  EVP_MD_meth_set_result_size(md, CRC32_DIGEST_LENGTH);
+  EVP_MD_meth_set_app_datasize(md, sizeof(EVP_MD *) + sizeof(CRC32_CTX));
+  EVP_MD_meth_set_init(md, crc32_init);
+  EVP_MD_meth_set_update(md, crc32_update);
+  EVP_MD_meth_set_final(md, crc32_final);
+  EVP_MD_meth_set_cleanup(md, crc32_free);
+  EVP_MD_meth_set_flags(md, 0);
+#else
+  md = &crc32_md;
+#endif /* prior to OpenSSL-1.1.0 */
+
+  return md;
 }
 
 static const char *get_errors(void) {
@@ -974,7 +1038,11 @@ static int compute_digest(pool *p, const char *path, off_t start, off_t len,
   struct stat st;
   unsigned char *buf;
   size_t bufsz, readsz, iter_count;
-  EVP_MD_CTX md_ctx;
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || \
+    defined(HAVE_LIBRESSL)
+  EVP_MD_CTX ctx;
+#endif /* prior to OpenSSL-1.1.0 */
+  EVP_MD_CTX *pctx;
 
   fh = pr_fsio_open(path, O_RDONLY);
   if (fh == NULL) {
@@ -1028,12 +1096,22 @@ static int compute_digest(pool *p, const char *path, off_t start, off_t len,
     return -1;
   }
 
-  EVP_MD_CTX_init(&md_ctx);
-  if (EVP_DigestInit_ex(&md_ctx, md, NULL) != 1) {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || \
+    defined(HAVE_LIBRESSL)
+  pctx = &ctx;
+#else
+  pctx = EVP_MD_CTX_new();
+#endif /* prior to OpenSSL-1.1.0 */
+
+  EVP_MD_CTX_init(pctx);
+  if (EVP_DigestInit_ex(pctx, md, NULL) != 1) {
     pr_log_debug(DEBUG1, MOD_DIGEST_VERSION
       ": error preparing digest context: %s", get_errors());
     (void) pr_fsio_close(fh);
-    EVP_MD_CTX_cleanup(&md_ctx);
+# if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
+     !defined(HAVE_LIBRESSL)
+    EVP_MD_CTX_free(pctx);
+# endif /* OpenSSL-1.1.0 and later */
     errno = EPERM;
     return -1;
   }
@@ -1067,7 +1145,7 @@ static int compute_digest(pool *p, const char *path, off_t start, off_t len,
       continue;
     }
 
-    if (EVP_DigestUpdate(&md_ctx, buf, res) != 1) {
+    if (EVP_DigestUpdate(pctx, buf, res) != 1) {
       pr_log_debug(DEBUG1, MOD_DIGEST_VERSION
         ": error updating digest: %s", get_errors());
     }
@@ -1091,7 +1169,10 @@ static int compute_digest(pool *p, const char *path, off_t start, off_t len,
   (void) pr_fsio_close(fh);
 
   if (len != 0) {
-    EVP_MD_CTX_cleanup(&md_ctx);
+# if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
+     !defined(HAVE_LIBRESSL)
+    EVP_MD_CTX_free(pctx);
+# endif /* OpenSSL-1.1.0 and later */
     pr_log_debug(DEBUG3, MOD_DIGEST_VERSION
       ": failed to read all %" PR_LU " bytes of '%s' (premature EOF?)",
       (pr_off_t) len, path);
@@ -1099,15 +1180,22 @@ static int compute_digest(pool *p, const char *path, off_t start, off_t len,
     return -1;
   }
 
-  if (EVP_DigestFinal_ex(&md_ctx, digest, digest_len) != 1) {
+  if (EVP_DigestFinal_ex(pctx, digest, digest_len) != 1) {
     pr_log_debug(DEBUG1, MOD_DIGEST_VERSION
       ": error finishing digest: %s", get_errors());
-    EVP_MD_CTX_cleanup(&md_ctx);
+# if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
+     !defined(HAVE_LIBRESSL)
+    EVP_MD_CTX_free(pctx);
+# endif /* OpenSSL-1.1.0 and later */
     errno = EPERM;
     return -1;
   }
 
-  EVP_MD_CTX_cleanup(&md_ctx);
+# if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
+     !defined(HAVE_LIBRESSL)
+  EVP_MD_CTX_free(pctx);
+# endif /* OpenSSL-1.1.0 and later */
+
   return 0;
 }
 
@@ -1281,13 +1369,14 @@ static const char *get_key_for_cache(pool *p, const char *path, time_t mtime,
   char mtime_str[256], start_str[256], len_str[256];
 
   memset(mtime_str, '\0', sizeof(mtime_str));
-  snprintf(mtime_str, sizeof(mtime_str)-1, "%llu", (unsigned long long) mtime);
+  pr_snprintf(mtime_str, sizeof(mtime_str)-1, "%llu",
+    (unsigned long long) mtime);
 
   memset(start_str, '\0', sizeof(start_str));
-  snprintf(start_str, sizeof(start_str)-1, "%" PR_LU, (pr_off_t) start);
+  pr_snprintf(start_str, sizeof(start_str)-1, "%" PR_LU, (pr_off_t) start);
 
   memset(len_str, '\0', sizeof(len_str));
-  snprintf(len_str, sizeof(len_str)-1, "%llu", (unsigned long long) len);
+  pr_snprintf(len_str, sizeof(len_str)-1, "%llu", (unsigned long long) len);
 
   key = pstrcat(p, path, "@", mtime_str, ",", start_str, "+", len_str, NULL);
   return key;

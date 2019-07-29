@@ -107,15 +107,15 @@ The currently implemented options are:
   </li>
 
   <p>
-  <li><code>NoAdjustedSymlinks</code><br>
+  <li><code>AdjustedSymlinks</code><br>
     <p>
-    By default, <code>mod_facts</code> tries to automatically adjust any
-    symlink destination paths when the FTP session is chrooted, so that
-    the adjusted symlinks work properly <i>e.g.</i> for FTP clients.
+    Using this option will cause <code>mod_facts</code> to try to automatically
+    adjust any symlink destination paths when the FTP session is chrooted, so
+    that the adjusted symlinks work properly <i>e.g.</i> for FTP clients.
 
     <p>
     <b>Note</b> that this option first appeared in
-    <code>proftpd-1.3.6rc2</code>.
+    <code>proftpd-1.3.7rc1</code>.
   </li>
 
   <p>
@@ -287,7 +287,7 @@ Then follow the usual steps:
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2007-2016 The ProFTPD Project<br>
+&copy; Copyright 2007-2019 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

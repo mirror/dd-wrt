@@ -4301,7 +4301,7 @@ rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
 
 LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
-LIBS="-lcrypto -lz $LIBS"
+LIBS="-lcrypto $LIBS"
 
 { echo "$as_me:$LINENO: checking whether OpenSSL has crippled AES support" >&5
 echo $ECHO_N "checking whether OpenSSL has crippled AES support... $ECHO_C" >&6; }
@@ -4372,7 +4372,7 @@ rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
 
 LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
-LIBS="-lcrypto -lz $LIBS"
+LIBS="-lcrypto $LIBS"
 
 { echo "$as_me:$LINENO: checking whether OpenSSL supports SHA256" >&5
 echo $ECHO_N "checking whether OpenSSL supports SHA256... $ECHO_C" >&6; }
@@ -4389,7 +4389,7 @@ int
 main ()
 {
 
-    EVP_MD *md;
+    const EVP_MD *md;
     md = EVP_sha256();
 
   ;
@@ -4440,7 +4440,7 @@ rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
 
 LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
-LIBS="-lcrypto -lz $LIBS"
+LIBS="-lcrypto $LIBS"
 
 { echo "$as_me:$LINENO: checking whether OpenSSL supports SHA512" >&5
 echo $ECHO_N "checking whether OpenSSL supports SHA512... $ECHO_C" >&6; }
@@ -4457,7 +4457,7 @@ int
 main ()
 {
 
-    EVP_MD *md;
+    const EVP_MD *md;
     md = EVP_sha512();
 
   ;

@@ -236,7 +236,7 @@ Again, these are example numbers, and should <b>not be blindly copied</b>.
 Finally, there are some <code>configure</code> options that can be used
 to tune your <code>proftpd</code> daemon.  All of the
 <code>--enable-</code> options are available; of particular interest
-are <code>--enable-tunable-buffer-size</code> and
+are <code>--enable-buffer-size</code> and
 <code>--enable-sendfile</code>.  Use of the <code>sendfile(2)</code> function
 (via the latter <code>configure</code> option) may or may not increase
 download speeds, but it will reduce disk I/O: <code>sendfile(2)</code>
@@ -245,7 +245,7 @@ directly from the file into the socket, all in kernel space; normal
 <code>read()</code> transfers spend time copying buffers from kernel space
 to application space (reading the file), and then back to kernel space
 (writing to the socket).  By increasing the buffer size using the
-<code>--enable-tunable-buffer-size</code> option, proftpd reads and writes
+<code>--enable-buffer-size</code> option, proftpd reads and writes
 data in larger chunks, and makes fewer expensive system calls.  Use of
 this option to set buffer sizes of 8K or more has been reported to drastically
 increase transfer speeds (depending on network configurations).

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_auth_otp database storage
- * Copyright (c) 2015-2016 TJ Saunders
+ * Copyright (c) 2015-2017 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -315,7 +315,7 @@ int auth_otp_db_update_counter(struct auth_otp_db *dbh, const char *user,
   update_query = dbh->update_query;
   counter_len = AUTH_OTP_SQL_VALUE_BUFSZ * sizeof(char);
   counter_str = pcalloc(tmp_pool, counter_len);
-  snprintf(counter_str, counter_len-1, "%lu", counter);
+  pr_snprintf(counter_str, counter_len-1, "%lu", counter);
 
   sql_cmd = pr_cmd_alloc(tmp_pool, 4, "sql_change", update_query,
     db_get_name(tmp_pool, user), counter_str);

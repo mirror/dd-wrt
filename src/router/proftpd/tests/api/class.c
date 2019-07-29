@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2008-2016 The ProFTPD Project team
+ * Copyright (c) 2008-2017 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -257,12 +257,83 @@ START_TEST (class_find_test) {
 }
 END_TEST
 
+START_TEST (class_satisfied_test) {
+  const pr_netaddr_t *addr;
+  const pr_class_t *cls;
+  pr_netacl_t *acl;
+  int res;
+
+  /* Reset the class list. */
+  init_class();
+
+  mark_point();
+  res = pr_class_satisfied(p, NULL, NULL);
+  fail_unless(res < 0, "Failed to handle null class");
+  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+    strerror(errno), errno);
+
+  res = pr_class_open(p, "localhost");
+  fail_unless(res == 0, "Failed to open class: %s", strerror(errno));
+
+  acl = pr_netacl_create(p, "127.0.0.1");
+  fail_unless(acl != NULL, "Failed to create ACL: %s", strerror(errno));
+
+  res = pr_class_add_acl(acl);
+  fail_unless(res == 0, "Failed to add ACL to class: %s", strerror(errno));
+
+  res = pr_class_close();
+  fail_unless(res == 0, "Failed to close class: %s", strerror(errno));
+
+  cls = pr_class_find("localhost");
+  fail_unless(cls != NULL, "Failed to find class 'localhost': %s",
+    strerror(errno));
+
+  mark_point();
+  res = pr_class_satisfied(p, cls, NULL);
+  fail_unless(res < 0, "Failed to handle null addr");
+  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+    strerror(errno), errno);
+
+  addr = pr_netaddr_get_addr(p, "localhost", FALSE);
+  fail_unless(addr != NULL, "Failed to get addr: %s", strerror(errno));
+
+  mark_point();
+  res = pr_class_satisfied(p, cls, addr);
+  fail_unless(res == TRUE, "Class not satisfied by address: %s",
+    strerror(errno));
+
+  res = pr_class_open(p, "!localhost");
+  fail_unless(res == 0, "Failed to open class: %s", strerror(errno));
+
+  acl = pr_netacl_create(p, "!127.0.0.1");
+  fail_unless(acl != NULL, "Failed to create ACL: %s", strerror(errno));
+
+  res = pr_class_add_acl(acl);
+  fail_unless(res == 0, "Failed to add ACL to class: %s", strerror(errno));
+
+  res = pr_class_close();
+  fail_unless(res == 0, "Failed to close class: %s", strerror(errno));
+
+  cls = pr_class_find("!localhost");
+  fail_unless(cls != NULL, "Failed to find class '!localhost': %s",
+    strerror(errno));
+
+  mark_point();
+  res = pr_class_satisfied(p, cls, addr);
+  fail_unless(res == FALSE, "Class satisfied unexpectedly by address");
+}
+END_TEST
+
 START_TEST (class_match_addr_test) {
   const pr_netaddr_t *addr;
   const pr_class_t *class;
   pr_netacl_t *acl;
   int res;
 
+  /* Reset the class list. */
+  init_class();
+
+  mark_point();
   class = pr_class_match_addr(NULL);
   fail_unless(class == NULL, "Failed to handle NULL argument");
   fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
@@ -477,6 +548,7 @@ Suite *tests_get_class_suite(void) {
   tcase_add_test(testcase, class_set_satisfy_test);
   tcase_add_test(testcase, class_get_test);
   tcase_add_test(testcase, class_find_test);
+  tcase_add_test(testcase, class_satisfied_test);
   tcase_add_test(testcase, class_match_addr_test);
 
   suite_add_tcase(suite, testcase);

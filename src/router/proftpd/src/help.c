@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2004-2015 The ProFTPD Project team
+ * Copyright (c) 2004-2017 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -115,7 +115,7 @@ int pr_help_add_response(cmd_rec *cmd, const char *target) {
 
           for (j = 0; j < 8; j++) {
             if (outa[j]) {
-              snprintf(buf, sizeof(buf), "%-8s", outa[j]);
+              pr_snprintf(buf, sizeof(buf), "%-8s", outa[j]);
               buf[sizeof(buf)-1] = '\0';
               outstr = pstrcat(cmd->tmp_pool, outstr, buf, NULL);
 

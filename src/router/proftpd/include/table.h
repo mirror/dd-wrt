@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2004-2016 The ProFTPD Project team
+ * Copyright (c) 2004-2017 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +27,8 @@
 #ifndef PR_TABLE_H
 #define PR_TABLE_H
 
-#include "conf.h"
+#include "os.h"
+#include "pool.h"
 
 typedef struct tab_key {
   struct tab_key *next;

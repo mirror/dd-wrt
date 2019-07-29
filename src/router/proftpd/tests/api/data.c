@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2015-2016 The ProFTPD Project team
+ * Copyright (c) 2015-2018 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -291,7 +291,8 @@ START_TEST (data_sendfile_test) {
   mark_point();
   res = pr_data_sendfile(fd, &offset, 1);
   fail_unless(res < 0, "Failed to handle bad file descriptor");
-  fail_unless(errno == EBADF, "Expected EBADF (%d), got %s (%d)", EBADF,
+  fail_unless(errno == EBADF || errno == EINVAL,
+    "Expected EBADF (%d) or EINVAL (%d), got %s (%d)", EBADF, EINVAL,
     strerror(errno), errno);
 
   fh = pr_fsio_open(data_test_path, O_CREAT|O_EXCL|O_WRONLY);
@@ -313,8 +314,9 @@ START_TEST (data_sendfile_test) {
   mark_point();
   res = pr_data_sendfile(fd, &offset, strlen(text));
   if (res < 0) {
-    fail_unless(errno == ENOTSOCK, "Expected ENOTSOCK (%d), got %s (%d)",
-      ENOTSOCK, strerror(errno), errno);
+    fail_unless(errno == ENOTSOCK || errno == EINVAL,
+     "Expected ENOTSOCK (%d) or EINVAL (%d), got %s (%d)", ENOTSOCK, EINVAL,
+     strerror(errno), errno);
   }
 
   (void) close(fd);
@@ -1004,8 +1006,6 @@ START_TEST (data_xfer_write_ascii_test) {
   fail_unless(session.xfer.buflen == ascii_buflen,
     "Expected session.xfer.buflen %lu, got %lu", (unsigned long) ascii_buflen,
     (unsigned long) session.xfer.buflen);
-  fail_unless(strncmp(session.xfer.buf, ascii_buf, ascii_buflen) == 0,
-    "Expected '%s', got '%.100s'", ascii_buf, session.xfer.buf);
 
   mark_point();
   cmd = pr_cmd_alloc(p, 1, pstrdup(p, "noop"));
@@ -1023,8 +1023,6 @@ START_TEST (data_xfer_write_ascii_test) {
   fail_unless(session.xfer.buflen == ascii_buflen,
     "Expected session.xfer.buflen %lu, got %lu", (unsigned long) ascii_buflen,
     (unsigned long) session.xfer.buflen);
-  fail_unless(strncmp(session.xfer.buf, ascii_buf, ascii_buflen) == 0,
-    "Expected '%s', got '%.100s'", ascii_buf, session.xfer.buf);
 
   session.xfer.p = make_sub_pool(p);
   mark_point();
@@ -1043,8 +1041,6 @@ START_TEST (data_xfer_write_ascii_test) {
   fail_unless(session.xfer.buflen == ascii_buflen,
     "Expected session.xfer.buflen %lu, got %lu", (unsigned long) ascii_buflen,
     (unsigned long) session.xfer.buflen);
-  fail_unless(strncmp(session.xfer.buf, ascii_buf, ascii_buflen) == 0,
-    "Expected '%s', got '%.100s'", ascii_buf, session.xfer.buf);
 
   mark_point();
   pr_ascii_ftp_reset();
@@ -1060,8 +1056,6 @@ START_TEST (data_xfer_write_ascii_test) {
   fail_unless(session.xfer.buflen == ascii_buflen,
     "Expected session.xfer.buflen %lu, got %lu", (unsigned long) ascii_buflen,
     (unsigned long) session.xfer.buflen);
-  fail_unless(strncmp(session.xfer.buf, ascii_buf, ascii_buflen) == 0,
-    "Expected '%s', got '%.100s'", ascii_buf, session.xfer.buf);
 }
 END_TEST
 

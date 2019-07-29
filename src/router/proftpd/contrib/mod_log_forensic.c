@@ -1,7 +1,7 @@
 /*
  * mod_log_forensic - a buffering log module for aiding in server behavior
  *                    forensic analysis
- * Copyright (c) 2011-2016 TJ Saunders
+ * Copyright (c) 2011-2017 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, TJ Saunders and other respective copyright holders
  * give permission to link this program with OpenSSL, and distribute the
@@ -293,7 +293,7 @@ static void forensic_write_metadata(void) {
   niov++;
 
   memset(server_port_str, '\0', sizeof(server_port_str));
-  res = snprintf(server_port_str, sizeof(server_port_str)-1, ":%d\n",
+  res = pr_snprintf(server_port_str, sizeof(server_port_str)-1, ":%d\n",
     server_port);
   iov[niov].iov_base = server_port_str;
   iov[niov].iov_len = res;
@@ -308,7 +308,7 @@ static void forensic_write_metadata(void) {
   elapsed_ms = (unsigned long) (now - session.connect_time_ms);
 
   memset(elapsed_str, '\0', sizeof(elapsed_str));
-  res = snprintf(elapsed_str, sizeof(elapsed_str)-1, "%lu\n", elapsed_ms);
+  res = pr_snprintf(elapsed_str, sizeof(elapsed_str)-1, "%lu\n", elapsed_ms);
   iov[niov].iov_base = (void *) elapsed_str;
   iov[niov].iov_len = res;
   niov++;
@@ -348,7 +348,7 @@ static void forensic_write_metadata(void) {
   niov++;
 
   memset(uid_str, '\0', sizeof(uid_str));
-  res = snprintf(uid_str, sizeof(uid_str)-1, "%lu\n",
+  res = pr_snprintf(uid_str, sizeof(uid_str)-1, "%lu\n",
     (unsigned long) geteuid());
   iov[niov].iov_base = uid_str;
   iov[niov].iov_len = res;
@@ -360,7 +360,7 @@ static void forensic_write_metadata(void) {
   niov++;
 
   memset(gid_str, '\0', sizeof(gid_str));
-  res = snprintf(gid_str, sizeof(gid_str)-1, "%lu\n",
+  res = pr_snprintf(gid_str, sizeof(gid_str)-1, "%lu\n",
     (unsigned long) getegid());
   iov[niov].iov_base = gid_str;
   iov[niov].iov_len = res;
@@ -394,7 +394,7 @@ static void forensic_write_metadata(void) {
 
   } else {
     memset(raw_bytes_in_str, '\0', sizeof(raw_bytes_in_str));
-    res = snprintf(raw_bytes_in_str, sizeof(raw_bytes_in_str)-1,
+    res = pr_snprintf(raw_bytes_in_str, sizeof(raw_bytes_in_str)-1,
       "%" PR_LU "\n", (pr_off_t) session.total_raw_in);
     iov[niov].iov_base = raw_bytes_in_str;
     iov[niov].iov_len = res;
@@ -413,7 +413,7 @@ static void forensic_write_metadata(void) {
 
   } else {
     memset(raw_bytes_out_str, '\0', sizeof(raw_bytes_out_str));
-    res = snprintf(raw_bytes_out_str, sizeof(raw_bytes_out_str)-1,
+    res = pr_snprintf(raw_bytes_out_str, sizeof(raw_bytes_out_str)-1,
       "%" PR_LU "\n", (pr_off_t) session.total_raw_out);
     iov[niov].iov_base = raw_bytes_out_str;
     iov[niov].iov_len = res;
@@ -432,7 +432,7 @@ static void forensic_write_metadata(void) {
 
   } else {
     memset(total_bytes_in_str, '\0', sizeof(total_bytes_in_str));
-    res = snprintf(total_bytes_in_str, sizeof(total_bytes_in_str)-1,
+    res = pr_snprintf(total_bytes_in_str, sizeof(total_bytes_in_str)-1,
       "%" PR_LU "\n", (pr_off_t) session.total_bytes_in);
     iov[niov].iov_base = total_bytes_in_str;
     iov[niov].iov_len = res;
@@ -451,7 +451,7 @@ static void forensic_write_metadata(void) {
 
   } else {
     memset(total_bytes_out_str, '\0', sizeof(total_bytes_out_str));
-    res = snprintf(total_bytes_out_str, sizeof(total_bytes_out_str)-1,
+    res = pr_snprintf(total_bytes_out_str, sizeof(total_bytes_out_str)-1,
       "%" PR_LU "\n", (pr_off_t) session.total_bytes_out);
     iov[niov].iov_base = total_bytes_out_str;
     iov[niov].iov_len = res;
@@ -470,7 +470,7 @@ static void forensic_write_metadata(void) {
 
   } else {
     memset(total_files_in_str, '\0', sizeof(total_files_in_str));
-    res = snprintf(total_files_in_str, sizeof(total_files_in_str)-1,
+    res = pr_snprintf(total_files_in_str, sizeof(total_files_in_str)-1,
       "%u\n", session.total_files_in);
     iov[niov].iov_base = total_files_in_str;
     iov[niov].iov_len = res;
@@ -489,7 +489,7 @@ static void forensic_write_metadata(void) {
 
   } else {
     memset(total_files_out_str, '\0', sizeof(total_files_out_str));
-    res = snprintf(total_files_out_str, sizeof(total_files_out_str)-1,
+    res = pr_snprintf(total_files_out_str, sizeof(total_files_out_str)-1,
       "%u\n", session.total_files_out);
     iov[niov].iov_base = total_files_out_str;
     iov[niov].iov_len = res;
@@ -571,7 +571,7 @@ static void forensic_write_msgs(unsigned int criterion) {
           res = write(forensic_logfd, ", PID ", 6);
 
           memset(pid_str, '\0', sizeof(pid_str));
-          res = snprintf(pid_str, sizeof(pid_str)-1, "%lu",
+          res = pr_snprintf(pid_str, sizeof(pid_str)-1, "%lu",
             (unsigned long) (session.pid ? session.pid : getpid()));
           res = write(forensic_logfd, pid_str, res);
 

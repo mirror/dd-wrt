@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_snmp ASN.1 support
- * Copyright (c) 2008-2016 TJ Saunders
+ * Copyright (c) 2008-2017 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -117,7 +117,7 @@ const char *snmp_asn1_get_oidstr(pool *p, oid_t *asn1_oid,
     char buf[16];
 
     memset(buf, '\0', sizeof(buf));
-    snprintf(buf, sizeof(buf)-1, "%lu", (unsigned long) asn1_oid[i]);
+    pr_snprintf(buf, sizeof(buf)-1, "%lu", (unsigned long) asn1_oid[i]);
 
     oidstr = pstrcat(p, oidstr, buf, NULL);
 

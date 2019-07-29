@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2009-2016 The ProFTPD Project team
+ * Copyright (c) 2009-2017 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -102,6 +102,7 @@ int pr_cmd_get_id(const char *name_name);
 #define PR_CMD_MFMT_ID		57
 #define PR_CMD_HOST_ID		58
 #define PR_CMD_CLNT_ID		59
+#define PR_CMD_RANG_ID		60
 
 /* The minimum and maximum command name lengths. */
 #define PR_CMD_MIN_NAMELEN	3

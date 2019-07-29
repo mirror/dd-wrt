@@ -1,8 +1,10 @@
-top_builddir=../..
-top_srcdir=../..
+# Note: we include the additional tweaking of top_builddir, so that LIBTOOL
+# resolves to the correct place.
+top_builddir=@top_builddir@/../..
+top_srcdir=@top_srcdir@
 srcdir=@srcdir@
 
-include ../../Make.rules
+include $(top_builddir)/Make.rules
 
 .SUFFIXES: .la .lo
 
@@ -20,8 +22,8 @@ UTILS_API_OBJS=../../src/pool.o \
   ../../src/str.o
 
 # Necessary redefinitions
-INCLUDES=-I. -I../.. -I../../include @INCLUDES@
-CPPFLAGS= $(ADDL_CPPFLAGS) -DHAVE_CONFIG_H $(DEFAULT_PATHS) $(PLATFORM) $(INCLUDES)
+INCLUDES=-I. -I../.. -I../../include -I$(top_srcdir)/../../include @INCLUDES@
+CPPFLAGS=$(ADDL_CPPFLAGS) -DHAVE_CONFIG_H $(DEFAULT_PATHS) $(PLATFORM) $(INCLUDES)
 LDFLAGS=-L../../lib @LDFLAGS@
 
 .c.o:
@@ -31,7 +33,7 @@ LDFLAGS=-L../../lib @LDFLAGS@
 	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(CPPFLAGS) $(CFLAGS) $(SHARED_CFLAGS) -c $<
 
 shared: $(SHARED_MODULE_OBJS)
-	$(LIBTOOL) --mode=link --tag=CC $(CC) -o $(MODULE_NAME).la $(SHARED_MODULE_OBJS) -rpath $(LIBEXECDIR) $(LDFLAGS) $(SHARED_LDFLAGS) $(SHARED_MODULE_LIBS) `cat $(MODULE_NAME).c | grep '$$Libraries:' | sed -e 's/^.*\$$Libraries: \(.*\)\\$$/\1/'`
+	$(LIBTOOL) --mode=link --tag=CC $(CC) -o $(MODULE_NAME).la $(SHARED_MODULE_OBJS) -rpath $(LIBEXECDIR) $(LDFLAGS) $(SHARED_LDFLAGS) $(SHARED_MODULE_LIBS) `cat $(top_srcdir)/$(MODULE_NAME).c | grep '$$Libraries:' | sed -e 's/^.*\$$Libraries: \(.*\)\\$$/\1/'`
 
 static: $(MODULE_OBJS) auth-otp$(EXEEXT)
 	$(AR) rc $(MODULE_NAME).a $(MODULE_OBJS)
@@ -40,21 +42,24 @@ static: $(MODULE_OBJS) auth-otp$(EXEEXT)
 auth-otp$(EXEEXT): $(UTILS_OBJS)
 	$(CC) $(LDFLAGS) -o $@ $(UTILS_OBJS) $(UTILS_API_OBJS) $(UTILS_LIBS)
 
-install: install-man install-utils
+install: install-headers install-man install-utils
 	if [ -f $(MODULE_NAME).la ] ; then \
 		$(LIBTOOL) --mode=install --tag=CC $(INSTALL_BIN) $(MODULE_NAME).la $(DESTDIR)$(LIBEXECDIR) ; \
 	fi
 
 # BSD install -d doesn't work, so ...
-$(DESTDIR)$(mandir) $(DESTDIR)$(mandir)/man1 $(DESTDIR)$(mandir)/man5 $(DESTDIR)$(mandir)/man8:
+$(DESTDIR)$(includedir) $(DESTDIR)$(includedir)/proftpd $(DESTDIR)$(mandir) $(DESTDIR)$(mandir)/man1 $(DESTDIR)$(mandir)/man5 $(DESTDIR)$(mandir)/man8:
 	@if [ ! -d $@ ]; then \
 		mkdir -p $@; \
 		chown $(INSTALL_USER):$(INSTALL_GROUP) $@; \
 		chmod 0755 $@; \
 	fi
 
+install-headers: $(DESTDIR)$(includedir)/proftpd
+	$(INSTALL_MAN) $(MODULE_NAME).h $(DESTDIR)$(includedir)/proftpd/$(MODULE_NAME).h
+
 install-man: $(DESTDIR)$(mandir) $(DESTDIR)$(mandir)/man8
-	$(INSTALL_MAN) auth-otp.8 $(DESTDIR)$(mandir)/man8
+	$(INSTALL_MAN) $(top_srcdir)/auth-otp.8 $(DESTDIR)$(mandir)/man8
 
 install-utils: $(DESTDIR)$(sbindir) auth-otp$(EXEEXT)
 	$(INSTALL_BIN) auth-otp$(EXEEXT) $(DESTDIR)$(sbindir)/auth-otp$(EXEEXT)

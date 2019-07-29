@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp ciphers
- * Copyright (c) 2008-2017 TJ Saunders
+ * Copyright (c) 2008-2018 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -73,6 +73,8 @@ static size_t cipher_blockszs[2] = {
 
 static unsigned int read_cipher_idx = 0;
 static unsigned int write_cipher_idx = 0;
+
+static const char *trace_channel = "ssh2";
 
 static void clear_cipher(struct sftp_cipher *);
 
@@ -244,13 +246,15 @@ static int set_cipher_key(struct sftp_cipher *cipher, const EVP_MD *hash,
   key_sz = sftp_crypto_get_size(cipher->key_len > 0 ?
       cipher->key_len : EVP_CIPHER_key_length(cipher->cipher),
     EVP_MD_size(hash));
-
   if (key_sz == 0) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "unable to determine key length for cipher '%s'", cipher->algo);
     errno = EINVAL;
     return -1;
   }
+
+  pr_trace_msg(trace_channel, 19, "setting key (%lu bytes) for cipher %s",
+    (unsigned long) key_sz, cipher->algo);
 
   key = malloc(key_sz);
   if (key == NULL) {
@@ -266,6 +270,9 @@ static int set_cipher_key(struct sftp_cipher *cipher, const EVP_MD *hash,
   EVP_DigestUpdate(ctx, (char *) id, id_len);
   EVP_DigestFinal(ctx, key, &key_len);
   EVP_MD_CTX_destroy(ctx);
+
+  pr_trace_msg(trace_channel, 19, "hashed data to produce key (%lu bytes)",
+    (unsigned long) key_len);
 
   /* If we need more, keep hashing, as per RFC, until we have enough
    * material.
@@ -287,8 +294,6 @@ static int set_cipher_key(struct sftp_cipher *cipher, const EVP_MD *hash,
   }
 
   cipher->key = key;
-  cipher->key_len = key_len;
-
   return 0;
 }
 
@@ -311,22 +316,24 @@ static int set_cipher_discarded(struct sftp_cipher *cipher,
 
   garbage_out = malloc(cipher->discard_len);
   if (garbage_out == NULL) {
-    pr_log_pri(PR_LOG_ALERT, MOD_SFTP_VERSION ": Out of memory!");
     free(garbage_in);
+    pr_log_pri(PR_LOG_ALERT, MOD_SFTP_VERSION ": Out of memory!");
     _exit(1);
   }
 
   if (EVP_Cipher(cipher_ctx, garbage_out, garbage_in,
       cipher->discard_len) != 1) {
-    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-      "error ciphering discard data: %s", sftp_crypto_get_errors());
     free(garbage_in);
     pr_memscrub(garbage_out, cipher->discard_len);
     free(garbage_out);
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "error ciphering discard data: %s", sftp_crypto_get_errors());
 
     return -1;
   }
 
+  pr_trace_msg(trace_channel, 19, "discarded %lu bytes of cipher data",
+    (unsigned long) cipher->discard_len);
   free(garbage_in);
   pr_memscrub(garbage_out, cipher->discard_len);
   free(garbage_out);
@@ -355,7 +362,7 @@ const char *sftp_cipher_get_read_algo(void) {
 
 int sftp_cipher_set_read_algo(const char *algo) {
   unsigned int idx = read_cipher_idx;
-  size_t key_len, discard_len;
+  size_t key_len = 0, discard_len = 0;
 
   if (read_ciphers[idx].key) {
     /* If we have an existing key, it means that we are currently rekeying. */
@@ -366,6 +373,18 @@ int sftp_cipher_set_read_algo(const char *algo) {
     &discard_len);
   if (read_ciphers[idx].cipher == NULL) {
     return -1;
+  }
+
+  if (key_len > 0) {
+    pr_trace_msg(trace_channel, 19,
+      "setting read key for cipher %s: key len = %lu", algo,
+      (unsigned long) key_len);
+  }
+
+  if (discard_len > 0) {
+    pr_trace_msg(trace_channel, 19,
+      "setting read key for cipher %s: discard len = %lu", algo,
+      (unsigned long) discard_len);
   }
 
   read_ciphers[idx].algo = algo;
@@ -419,8 +438,6 @@ int sftp_cipher_set_read_key(pool *p, const EVP_MD *hash, const BIGNUM *k,
     return -1;
   }
 
-  key_len = (int) cipher->key_len;
-
   /* client-to-server key: HASH(K || H || "C" || session_id)
    * server-to-client key: HASH(K || H || "D" || session_id)
    */
@@ -431,8 +448,12 @@ int sftp_cipher_set_read_key(pool *p, const EVP_MD *hash, const BIGNUM *k,
     return -1;
   }
 
-  if (EVP_CipherInit(cipher_ctx, cipher->cipher, cipher->key,
-      cipher->iv, 0) != 1) {
+#if defined(PR_USE_OPENSSL_EVP_CIPHERINIT_EX)
+  if (EVP_CipherInit_ex(cipher_ctx, cipher->cipher, NULL, NULL,
+    cipher->iv, 0) != 1) {
+#else
+  if (EVP_CipherInit(cipher_ctx, cipher->cipher, NULL, cipher->iv, 0) != 1) {
+#endif /* PR_USE_OPENSSL_EVP_CIPHERINIT_EX */
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "error initializing %s cipher for decryption: %s", cipher->algo,
       sftp_crypto_get_errors());
@@ -440,8 +461,9 @@ int sftp_cipher_set_read_key(pool *p, const EVP_MD *hash, const BIGNUM *k,
     return -1;
   }
 
+  /* Next, set the key length. */
+  key_len = (int) cipher->key_len;
   if (key_len > 0) {
-    /* Next, set the key length. */
     if (EVP_CIPHER_CTX_set_key_length(cipher_ctx, key_len) != 1) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "error setting key length (%d bytes) for %s cipher for decryption: %s",
@@ -449,6 +471,22 @@ int sftp_cipher_set_read_key(pool *p, const EVP_MD *hash, const BIGNUM *k,
       pr_memscrub(ptr, bufsz);
       return -1;
     }
+
+    pr_trace_msg(trace_channel, 19,
+      "set key length (%d) for %s cipher for decryption", key_len,
+      cipher->algo);
+  }
+
+#if defined(PR_USE_OPENSSL_EVP_CIPHERINIT_EX)
+  if (EVP_CipherInit_ex(cipher_ctx, NULL, NULL, cipher->key, NULL, -1) != 1) {
+#else
+  if (EVP_CipherInit(cipher_ctx, NULL, cipher->key, NULL, -1) != 1) {
+#endif /* PR_USE_OPENSSL_EVP_CIPHERINIT_EX */
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "error re-initializing %s cipher for decryption: %s", cipher->algo,
+      sftp_crypto_get_errors());
+    pr_memscrub(ptr, bufsz);
+    return -1;
   }
 
   if (set_cipher_discarded(cipher, cipher_ctx) < 0) {
@@ -522,7 +560,7 @@ const char *sftp_cipher_get_write_algo(void) {
 
 int sftp_cipher_set_write_algo(const char *algo) {
   unsigned int idx = write_cipher_idx;
-  size_t key_len, discard_len;
+  size_t key_len = 0, discard_len = 0;
 
   if (write_ciphers[idx].key) {
     /* If we have an existing key, it means that we are currently rekeying. */
@@ -533,6 +571,18 @@ int sftp_cipher_set_write_algo(const char *algo) {
     &discard_len);
   if (write_ciphers[idx].cipher == NULL) {
     return -1;
+  }
+
+  if (key_len > 0) {
+    pr_trace_msg(trace_channel, 19,
+      "setting write key for cipher %s: key len = %lu", algo,
+      (unsigned long) key_len);
+  }
+
+  if (discard_len > 0) {
+    pr_trace_msg(trace_channel, 19,
+      "setting write key for cipher %s: discard len = %lu", algo,
+      (unsigned long) discard_len);
   }
 
   write_ciphers[idx].algo = algo;
@@ -586,8 +636,6 @@ int sftp_cipher_set_write_key(pool *p, const EVP_MD *hash, const BIGNUM *k,
     return -1;
   }
 
-  key_len = (int) cipher->key_len;
-
   /* client-to-server key: HASH(K || H || "C" || session_id)
    * server-to-client key: HASH(K || H || "D" || session_id)
    */
@@ -598,8 +646,12 @@ int sftp_cipher_set_write_key(pool *p, const EVP_MD *hash, const BIGNUM *k,
     return -1;
   }
 
-  if (EVP_CipherInit(cipher_ctx, cipher->cipher, cipher->key,
-      cipher->iv, 1) != 1) {
+#if defined(PR_USE_OPENSSL_EVP_CIPHERINIT_EX)
+  if (EVP_CipherInit_ex(cipher_ctx, cipher->cipher, NULL, NULL,
+    cipher->iv, 1) != 1) {
+#else
+  if (EVP_CipherInit(cipher_ctx, cipher->cipher, NULL, cipher->iv, 1) != 1) {
+#endif /* PR_USE_OPENSSL_EVP_CIPHERINIT_EX */
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "error initializing %s cipher for encryption: %s", cipher->algo,
       sftp_crypto_get_errors());
@@ -607,8 +659,9 @@ int sftp_cipher_set_write_key(pool *p, const EVP_MD *hash, const BIGNUM *k,
     return -1;
   }
 
+  /* Next, set the key length. */
+  key_len = (int) cipher->key_len;
   if (key_len > 0) {
-    /* Next, set the key length. */
     if (EVP_CIPHER_CTX_set_key_length(cipher_ctx, key_len) != 1) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "error setting key length (%d bytes) for %s cipher for decryption: %s",
@@ -616,6 +669,22 @@ int sftp_cipher_set_write_key(pool *p, const EVP_MD *hash, const BIGNUM *k,
       pr_memscrub(ptr, bufsz);
       return -1;
     }
+
+    pr_trace_msg(trace_channel, 19,
+      "set key length (%d) for %s cipher for encryption", key_len,
+      cipher->algo);
+  }
+
+#if defined(PR_USE_OPENSSL_EVP_CIPHERINIT_EX)
+  if (EVP_CipherInit_ex(cipher_ctx, NULL, NULL, cipher->key, NULL, -1) != 1) {
+#else
+  if (EVP_CipherInit(cipher_ctx, NULL, cipher->key, NULL, -1) != 1) {
+#endif /* PR_USE_OPENSSL_EVP_CIPHERINIT_EX */
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "error re-initializing %s cipher for encryption: %s", cipher->algo,
+      sftp_crypto_get_errors());
+    pr_memscrub(ptr, bufsz);
+    return -1;
   }
 
   if (set_cipher_discarded(cipher, cipher_ctx) < 0) {

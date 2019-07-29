@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp 'password' user authentication
- * Copyright (c) 2008-2015 TJ Saunders
+ * Copyright (c) 2008-2017 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@ int sftp_auth_password(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
   char *passwd;
   int have_new_passwd, res;
   struct passwd *pw;
+  size_t passwd_len;
 
   cipher_algo = sftp_cipher_get_read_algo();
   mac_algo = sftp_mac_get_read_algo();
@@ -77,6 +78,7 @@ int sftp_auth_password(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
 
   passwd = sftp_msg_read_string(pkt->pool, buf, buflen);
   passwd = sftp_utf8_decode_str(pkt->pool, passwd);
+  passwd_len = strlen(passwd);
 
   pass_cmd->arg = passwd;
 
@@ -92,7 +94,7 @@ int sftp_auth_password(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
     pr_cmd_dispatch_phase(pass_cmd, POST_CMD_ERR, 0);
     pr_cmd_dispatch_phase(pass_cmd, LOG_CMD_ERR, 0);
 
-    pr_memscrub(passwd, strlen(passwd));
+    pr_memscrub(passwd, passwd_len);
 
     *send_userauth_fail = TRUE;
     errno = EPERM;
@@ -109,15 +111,46 @@ int sftp_auth_password(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
       session.c->remote_name, pr_netaddr_get_ipstr(session.c->remote_addr),
       pr_netaddr_get_ipstr(session.c->local_addr), session.c->local_port);
 
-    pr_memscrub(passwd, strlen(passwd));
+    pr_memscrub(passwd, passwd_len);
 
     *send_userauth_fail = TRUE;
     errno = ENOENT;
     return 0;
   }
 
+  if (passwd_len == 0) {
+    config_rec *c;
+    int allow_empty_passwords = TRUE;
+
+    c = find_config(main_server->conf, CONF_PARAM, "AllowEmptyPasswords",
+      FALSE);
+    if (c != NULL) {
+      allow_empty_passwords = *((int *) c->argv[0]);
+    }
+
+    if (allow_empty_passwords == FALSE) {
+      pr_log_debug(DEBUG5,
+        "Refusing empty password from user '%s' (AllowEmptyPasswords false)",
+         user);
+      pr_log_auth(PR_LOG_NOTICE,
+        "Refusing empty password from user '%s'", user);
+
+      pr_event_generate("mod_auth.empty-password", user);
+      pr_response_add_err(R_501, "Login incorrect.");
+
+      pr_cmd_dispatch_phase(pass_cmd, POST_CMD_ERR, 0);
+      pr_cmd_dispatch_phase(pass_cmd, LOG_CMD_ERR, 0);
+
+      pr_memscrub(passwd, passwd_len);
+
+      *send_userauth_fail = TRUE;
+      errno = EPERM;
+      return 0;
+    }
+  }
+
   res = pr_auth_authenticate(pkt->pool, user, passwd);
-  pr_memscrub(passwd, strlen(passwd));
+  pr_memscrub(passwd, passwd_len);
 
   switch (res) {
     case PR_AUTH_OK:

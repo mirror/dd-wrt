@@ -187,7 +187,6 @@ EOC
       AccessGrantMsg => "Welcome %u",
       AllowOverride => 'off',
       ListOptions => '-al',
-      LoginPasswordPrompt => 'on',
       MaxLoginAttempts => 3,
       PathAllowFilter => '^([A-Za-z0-9._-]|\/)+$',
       RequireValidShell => 'no',

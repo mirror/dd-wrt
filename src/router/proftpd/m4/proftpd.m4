@@ -37,7 +37,7 @@ AC_DEFUN(PR_CHECK_CC_OPT,
    else
      AC_MSG_RESULT(no)
    fi
-   rm -f conftest*
+   rm -fr conftest*
   ])
 
 # PR_CHECK_SS_FAMILY

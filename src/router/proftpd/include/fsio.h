@@ -30,6 +30,7 @@
 #define PR_FSIO_H
 
 #include "conf.h"
+#include "error.h"
 
 #ifdef PR_USE_XATTR
 # if defined(HAVE_SYS_EXTATTR_H)
@@ -238,12 +239,9 @@ struct fh_rec {
 #define PR_FH_FD(f)	((f)->fh_fd)
 
 int pr_fsio_stat(const char *, struct stat *);
-int pr_fsio_stat_canon(const char *, struct stat *);
 int pr_fsio_fstat(pr_fh_t *, struct stat *);
 int pr_fsio_lstat(const char *, struct stat *);
-int pr_fsio_lstat_canon(const char *, struct stat *);
 int pr_fsio_readlink(const char *, char *, size_t);
-int pr_fsio_readlink_canon(const char *, char *, size_t);
 int pr_fsio_chdir(const char *, int);
 int pr_fsio_chdir_canon(const char *, int);
 void *pr_fsio_opendir(const char *);
@@ -252,29 +250,22 @@ struct dirent *pr_fsio_readdir(void *);
 int pr_fsio_mkdir(const char *, mode_t);
 int pr_fsio_rmdir(const char *);
 int pr_fsio_rename(const char *, const char *);
-int pr_fsio_rename_canon(const char *, const char *);
 int pr_fsio_smkdir(pool *, const char *, mode_t, uid_t, gid_t);
 int pr_fsio_unlink(const char *);
-int pr_fsio_unlink_canon(const char *);
 pr_fh_t *pr_fsio_open(const char *, int);
 pr_fh_t *pr_fsio_open_canon(const char *, int);
 int pr_fsio_close(pr_fh_t *);
 int pr_fsio_read(pr_fh_t *, char *, size_t);
 int pr_fsio_write(pr_fh_t *, const char *, size_t);
 int pr_fsio_link(const char *, const char *);
-int pr_fsio_link_canon(const char *, const char *);
 int pr_fsio_symlink(const char *, const char *);
-int pr_fsio_symlink_canon(const char *, const char *);
 int pr_fsio_ftruncate(pr_fh_t *, off_t);
 int pr_fsio_truncate(const char *, off_t);
-int pr_fsio_truncate_canon(const char *, off_t);
 int pr_fsio_chmod(const char *, mode_t);
 int pr_fsio_fchmod(pr_fh_t *, mode_t);
-int pr_fsio_chmod_canon(const char *, mode_t);
 int pr_fsio_chown(const char *, uid_t, gid_t);
 int pr_fsio_fchown(pr_fh_t *, uid_t, gid_t);
 int pr_fsio_lchown(const char *, uid_t, gid_t);
-int pr_fsio_chown_canon(const char *, uid_t, gid_t);
 int pr_fsio_chroot(const char *);
 int pr_fsio_access(const char *, int, uid_t, gid_t, array_header *);
 int pr_fsio_faccess(pr_fh_t *, int, uid_t, gid_t, array_header *);
@@ -301,6 +292,36 @@ int pr_fsio_fsetxattr(pool *, pr_fh_t *, const char *, void *, size_t, int);
 /* setxattr flags */
 #define PR_FSIO_XATTR_FL_CREATE		0x001
 #define PR_FSIO_XATTR_FL_REPLACE	0x002
+
+/* Error-using variants of the FSIO API. */
+int pr_fsio_chmod_with_error(pool *p, const char *path, mode_t mode,
+  pr_error_t **err);
+int pr_fsio_chown_with_error(pool *p, const char *path, uid_t uid, gid_t gid,
+  pr_error_t **err);
+int pr_fsio_chroot_with_error(pool *p, const char *path, pr_error_t **err);
+int pr_fsio_close_with_error(pool *p, pr_fh_t *fh, pr_error_t **err);
+int pr_fsio_fchmod_with_error(pool *p, pr_fh_t *fh, mode_t mode,
+  pr_error_t **err);
+int pr_fsio_fchown_with_error(pool *p, pr_fh_t *fh, uid_t uid, gid_t gid,
+  pr_error_t **err);
+int pr_fsio_lchown_with_error(pool *p, const char *path, uid_t uid, gid_t gid,
+  pr_error_t **err);
+int pr_fsio_lstat_with_error(pool *p, const char *path, struct stat *st,
+  pr_error_t **err);
+int pr_fsio_mkdir_with_error(pool *p, const char *path, mode_t mode,
+  pr_error_t **err);
+pr_fh_t *pr_fsio_open_with_error(pool *p, const char *path, int flags,
+  pr_error_t **err);
+int pr_fsio_read_with_error(pool *p, pr_fh_t *fh, char *buf, size_t sz,
+  pr_error_t **err);
+int pr_fsio_rename_with_error(pool *p, const char *from, const char *to,
+  pr_error_t **err);
+int pr_fsio_rmdir_with_error(pool *p, const char *path, pr_error_t **err);
+int pr_fsio_stat_with_error(pool *p, const char *path, struct stat *st,
+  pr_error_t **err);
+int pr_fsio_unlink_with_error(pool *p, const char *path, pr_error_t **err);
+int pr_fsio_write_with_error(pool *p, pr_fh_t *fh, const char *buf, size_t sz,
+  pr_error_t **err);
 
 /* Set a flag determining whether we guard against write operations in
  * certain sensitive directories while we are chrooted, e.g. "Roaring Beast"
@@ -412,6 +433,9 @@ int pr_fs_clean_path2(const char *, char *, size_t, int);
 int pr_fs_glob(const char *, int, int (*errfunc)(const char *, int), glob_t *);
 void pr_fs_globfree(glob_t *);
 void pr_resolve_fs_map(void);
+
+/* Close all but the main three fds. */
+void pr_fs_close_extra_fds(void);
 
 /* The main three fds (stdin, stdout, stderr) need to be protected, reserved
  * for use.  This function uses dup(2) to open new fds on the given fd

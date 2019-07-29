@@ -279,7 +279,7 @@ See also: <a href="#DenyFilter"><code>DenyFilter</code></a>, <a href="#PathAllow
 <p>
 <hr>
 <h3><a name="AllowForeignAddress">AllowForeignAddress</a></h3>
-<strong>Syntax:</strong> AllowForeignAddress <em>on|off</em><br>
+<strong>Syntax:</strong> AllowForeignAddress <em>on|off|class-name</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code><br>
 <strong>Module:</strong> mod_core<br>
@@ -304,6 +304,23 @@ considered a bad idea, security-wise.  The <code>AllowForeignAddress</code>
 directive only affects FTP data connection addresses; not TCP ports.  There is
 no way (and no valid reason) to allow a client to use a low-numbered port in
 its <code>PORT</code> or <code>EPRT</code> command.
+
+<p>
+In ProFTPD 1.3.7rc1 and later, the <code>AllowForeignAddress</code> directive
+started supporting selectively allowing foreign address based on matching
+the requested foreign address against a configured
+<a href="../howto/Classes.html"><code>&lt;Class&gt;</code></a> name.  Rather
+than providing <em>on</em> or <em>off</em>, you can now provide the name of
+a class; if the foreign address satisfies that class, the transfer is allowed:
+<pre>
+  &lt;Class allowed-fxps&gt;
+    From 172.16.0.0/16
+    From *.example.com
+  &lt;/Class&gt;
+
+  # Allow site-to-site transfers for some sites
+  AllowForeignAddress allowed-fxps
+</pre>
 
 <p>
 <hr>
@@ -2657,7 +2674,7 @@ See also: <a href="#SyslogLevel"><code>SyslogLevel</code></a>,
 <hr>
 <h3><a name="SyslogLevel">SyslogLevel</a></h3>
 <strong>Syntax:</strong> SyslogLevel <em>level</em><br>
-<strong>Default:</strong> SyslogLevel debug<br>
+<strong>Default:</strong> SyslogLevel notice<br>
 <strong>Context:</strong> server config<br>
 <strong>Module:</strong> mod_core<br>
 <strong>Compatibility:</strong> 1.2.0rc2 and later
@@ -2714,6 +2731,7 @@ are available, in order of decreasing significance:
     <td>Debug-level messages</td>
   </tr>
 </table>
+See also the <a href="../howto/LogLevels.html">Log Levels</a> docs.
 
 <p>
 When a particular <em>level</em> is specified, messages from all other levels

@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2017 The ProFTPD Project team
+ * Copyright (c) 2001-2019 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -90,15 +90,19 @@ static void conn_cleanup_cb(void *cv) {
    * we really care if they fail, though?
    */
 
-  if (c->instrm) {
+  if (c->instrm != NULL) {
     pr_netio_close(c->instrm);
-    c->instrm = NULL;
   }
 
-  if (c->outstrm && c->outstrm != c->instrm) {
+  if (c->outstrm != NULL &&
+      c->outstrm != c->instrm) {
     pr_netio_close(c->outstrm);
-    c->outstrm = NULL;
   }
+
+  /* Set these to NULL only AFTER comparing them with each other, and closing
+   * them.  Otherwise, we may try to close the same stream twice.
+   */
+  c->instrm = c->outstrm = NULL;
 
   if (c->listen_fd != -1) {
     close(c->listen_fd);
@@ -253,11 +257,13 @@ static conn_t *init_conn(pool *p, int fd, const pr_netaddr_t *bind_addr,
 #if defined(SOLARIS2) || defined(FREEBSD2) || defined(FREEBSD3) || \
     defined(FREEBSD4) || defined(FREEBSD5) || defined(FREEBSD6) || \
     defined(FREEBSD7) || defined(FREEBSD8) || defined(FREEBSD9) || \
-    defined(FREEBSD10) || \
+    defined(FREEBSD10) || defined(FREEBSD11) || \
     defined(__OpenBSD__) || defined(__NetBSD__) || \
     defined(DARWIN6) || defined(DARWIN7) || defined(DARWIN8) || \
     defined(DARWIN9) || defined(DARWIN10) || defined(DARWIN11) || \
     defined(DARWIN12) || defined(DARWIN13) || defined(DARWIN14) || \
+    defined(DARWIN15) || defined(DARWIN16) || defined(DARWIN17) || \
+    defined(DARWIN18) || \
     defined(SCO3) || defined(CYGWIN) || defined(SYSV4_2MP) || \
     defined(SYSV5SCO_SV6) || defined(SYSV5UNIXWARE7)
 # ifdef SOLARIS2
@@ -278,11 +284,13 @@ static conn_t *init_conn(pool *p, int fd, const pr_netaddr_t *bind_addr,
 #if defined(SOLARIS2) || defined(FREEBSD2) || defined(FREEBSD3) || \
     defined(FREEBSD4) || defined(FREEBSD5) || defined(FREEBSD6) || \
     defined(FREEBSD7) || defined(FREEBSD8) || defined(FREEBSD9) || \
-    defined(FREEBSD10) || \
+    defined(FREEBSD10) || defined(FREEBSD11) || \
     defined(__OpenBSD__) || defined(__NetBSD__) || \
     defined(DARWIN6) || defined(DARWIN7) || defined(DARWIN8) || \
     defined(DARWIN9) || defined(DARWIN10) || defined(DARWIN11) || \
     defined(DARWIN12) || defined(DARWIN13) || defined(DARWIN14) || \
+    defined(DARWIN15) || defined(DARWIN16) || defined(DARWIN17) || \
+    defined(DARWIN18) || \
     defined(SCO3) || defined(CYGWIN) || defined(SYSV4_2MP) || \
     defined(SYSV5SCO_SV6) || defined(SYSV5UNIXWARE7)
 # ifdef SOLARIS2
@@ -315,6 +323,21 @@ static conn_t *init_conn(pool *p, int fd, const pr_netaddr_t *bind_addr,
       pr_log_pri(PR_LOG_NOTICE, "error setting SO_REUSEADDR: %s",
         strerror(errno));
     }
+
+#ifdef SO_REUSEPORT
+    /* Note that we only want to use this socket option if we are NOT the
+     * master/parent daemon.  Otherwise, we would allow multiple daemon
+     * processes to bind to the same socket, causing unexpected terror
+     * and madness (see Issue #622).
+     */
+    if (!is_master) {
+      if (setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, (void *) &one,
+          sizeof(one)) < 0) {
+        pr_log_pri(PR_LOG_NOTICE, "error setting SO_REUSEPORT: %s",
+          strerror(errno));
+      }
+    }
+#endif /* SO_REUSEPORT */
 
     /* Allow socket keep-alive messages. */
     if (setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, (void *) &one,
@@ -433,7 +456,16 @@ static conn_t *init_conn(pool *p, int fd, const pr_netaddr_t *bind_addr,
       }
 
       if (res != -1 ||
+        /* Note that on Solaris, bind(2) might fail with EACCES if the
+         * randomly selected port for e.g. passive transfers is used by
+         * NFS.  Thus, for Solaris only, we treat EACCES as the same as
+         * EADDRINUSE.  Silly Solaris.
+         */
+#ifdef SOLARIS2
+          (hold_errno != EADDRINUSE && hold_errno != EACCES) ||
+#else
           hold_errno != EADDRINUSE ||
+#endif /* SOLARIS2 */
           (port != INPORT_ANY && !retry_bind)) {
         break;
       }

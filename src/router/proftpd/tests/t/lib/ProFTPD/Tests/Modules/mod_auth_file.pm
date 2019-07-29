@@ -82,6 +82,11 @@ my $TESTS = {
     test_class => [qw(bug forking)],
   },
 
+  auth_user_file_world_readable_insecure_perms_opt => {
+    order => ++$order,
+    test_class => [qw(bug forking)],
+  },
+
   auth_group_file_world_readable_bug3892 => {
     order => ++$order,
     test_class => [qw(bug forking)],
@@ -1511,6 +1516,61 @@ sub auth_user_file_world_writable_bug3892 {
   }
 
   unlink($log_file);
+}
+
+sub auth_user_file_world_readable_insecure_perms_opt {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'authfile');
+
+  # Deliberately set world-readable perms on the AuthUserFile, to trigger
+  # the checks done for Bug#3892.
+  unless (chmod(0444, $setup->{auth_user_file})) {
+    die("Can't set perms on $setup->{auth_user_file}: $!");
+  }
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Note that we set this AuthFileOption here using an array, so that the
+  # order of the directives is deterministic!
+  if (open(my $fh, ">> $setup->{config_file}")) {
+    print $fh <<EOC;
+AuthFileOptions InsecurePerms
+AuthUserFile $setup->{auth_user_file}
+AuthGroupFile $setup->{auth_group_file}
+EOC
+    unless (close($fh)) {
+      die("Can't write $setup->{config_file}: $!");
+    }
+
+  } else {
+    die("Can't open $setup->{config_file}: $!");
+  }
+
+  my $ex;
+
+  eval { server_start($setup->{config_file}, $setup->{pid_file}) };
+  if ($@) {
+    $ex = $@;
+
+  } else {
+    server_stop($setup->{pid_file});
+  }
+
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub auth_group_file_world_readable_bug3892 {

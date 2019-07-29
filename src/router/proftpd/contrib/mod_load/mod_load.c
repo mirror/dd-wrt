@@ -1,6 +1,6 @@
 /*
  * ProFTPD: mod_load -- a module for refusing connections based on system load
- * Copyright (c) 2001-2016 TJ Saunders
+ * Copyright (c) 2001-2017 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1037,20 +1037,22 @@ static int load_sess_init(void) {
 
   /* Register some Variable entries for showing the system load. */
   memset(curr_load_str, '\0', sizeof(curr_load_str));
-  snprintf(curr_load_str, sizeof(curr_load_str)-1, "%.2f", curr_load);
+  pr_snprintf(curr_load_str, sizeof(curr_load_str)-1, "%.2f", curr_load);
   if (pr_var_set(session.pool, "%{mod_load.curr_load}",
-      "Current system load average", PR_VAR_TYPE_STR,
-      curr_load_str, NULL, 0) < 0)
+      "Current system load average", PR_VAR_TYPE_STR, curr_load_str, NULL,
+      0) < 0) {
     pr_log_debug(DEBUG1, MOD_LOAD_VERSION
       ": error setting %%{mod_load.curr_load} variable: %s", strerror(errno));
+  }
 
   memset(max_load_str, '\0', sizeof(max_load_str));
-  snprintf(max_load_str, sizeof(max_load_str)-1, "%.2f", max_load);
+  pr_snprintf(max_load_str, sizeof(max_load_str)-1, "%.2f", max_load);
   if (pr_var_set(session.pool, "%{mod_load.max_load}",
-      "Maximum system load average", PR_VAR_TYPE_STR,
-      max_load_str, NULL, 0) < 0)
+      "Maximum system load average", PR_VAR_TYPE_STR, max_load_str, NULL,
+      0) < 0) {
     pr_log_debug(DEBUG1, MOD_LOAD_VERSION
       ": error setting %%{mod_load.max_load} variable: %s", strerror(errno));
+  }
 
   return 0;
 }

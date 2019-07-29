@@ -146,6 +146,7 @@ START_TEST (netaddr_get_addr_test) {
   fail_unless(res->na_family == AF_INET, "Expected family %d, got %d",
     AF_INET, res->na_family);
 
+#if defined(PR_USE_NETWORK_TESTS)
   /* Google: the Dial Tone of the Internet. */
   name = "www.google.com";
 
@@ -161,6 +162,7 @@ START_TEST (netaddr_get_addr_test) {
     strerror(errno));
   fail_unless(res->na_family == AF_INET, "Expected family %d, got %d",
     AF_INET, res->na_family);
+#endif
 
   name = "127.0.0.1";
 
@@ -903,6 +905,7 @@ START_TEST (netaddr_get_dnsstr_list_test) {
 
   pr_netaddr_clear_cache();
 
+#if defined(PR_USE_NETWORK_TESTS)
   addr = pr_netaddr_get_addr(p, "www.google.com", &addrs);
   fail_unless(addr != NULL, "Failed to resolve 'www.google.com': %s",
     strerror(errno));
@@ -921,6 +924,7 @@ START_TEST (netaddr_get_dnsstr_list_test) {
   /* Ideally we would check that res->nelts > 0, BUT this turns out to
    * a fragile test condition, dependent on DNS vagaries.
    */
+#endif
 
   pr_netaddr_set_reverse_dns(reverse_dns);
 }
@@ -1082,6 +1086,7 @@ START_TEST (netaddr_is_loopback_test) {
   fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
+#if defined(PR_USE_NETWORK_TESTS)
   name = "www.google.com";
   addr = pr_netaddr_get_addr(p, name, NULL);
   fail_unless(addr != NULL, "Failed to resolve '%s': %s", name,
@@ -1089,6 +1094,7 @@ START_TEST (netaddr_is_loopback_test) {
 
   res = pr_netaddr_is_loopback(addr);
   fail_unless(res == FALSE, "Expected FALSE, got %d", res);
+#endif
 
   name = "127.0.0.1";
   addr = pr_netaddr_get_addr(p, name, NULL);

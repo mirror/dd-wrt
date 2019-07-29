@@ -113,7 +113,7 @@ Installation Instructions
     Or, to place the configuration file in /etc/ and the runtime state
     files in /var/proftpd/, you would use:
 
-        $ ./configure --sysconfdir=/etc --localstatedir=/var
+        $ ./configure --sysconfdir=/etc --localstatedir=/var/proftpd
 
     Optional ProFTPD modules can be included using '--with-modules=LIST',
     where 'LIST' is a colon-separated list of module names.  This applies

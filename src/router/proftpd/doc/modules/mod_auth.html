@@ -340,7 +340,7 @@ See also: <a href="#AnonRequirePassword"><code>AnonRequirePassword</code></a>, <
 <p>
 <hr>
 <h3><a name="CreateHome">CreateHome</a></h3>
-<strong>Syntax:</strong> CreateHome <em>off|on [mode] [skel path] [dirmode mode]</em><br>
+<strong>Syntax:</strong> CreateHome <em>off|on [mode] [skel path] [dirmode mode]...</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_auth<br>
@@ -832,7 +832,8 @@ If not for that requirement, then with "RootRevoke on" in the
 to use root privileges for binding to a privileged port like port 20.
 
 <p>
-Thus the <code>RootRevoke</code> directive also accepts (as of <code>proftpd-1.3.5rc1</code>) a parameter of "UseNonCompliantActiveTransfers", <i>e.g.</i>:
+Thus the <code>RootRevoke</code> directive also accepts (as of ProFTPD 1.3.5rc1)
+a parameter of "UseNonCompliantActiveTransfers", <i>e.g.</i>:
 <pre>
   # Drop root privs, but allow active data tranfers (only use a non-standard
   # source port for the active data connection).
@@ -850,6 +851,14 @@ getting <code>proftpd</code> to drop root privileges for sessions more often,
 which is a <b>far more secure configuration</b>.  Exploits such as the
 "Roaring Beast" attack would not be possible in a session where root privileges
 have been dropped completely.
+
+<p>
+<b>Note</b>: In ProFTPD 1.3.7rc1 and later, the default value for
+<code>RootRevoke</code> became <em>on</em>, meaning that root privileges are
+dropped by default, unless explicitly configured via this directive.  The
+default behavior is that of the <code>UseNonCompliantActiveTransfers</code>
+parameter, so that <code>PORT</code> and <code>EPRT</code> commands are not
+rejected.
 
 <p>
 <hr>

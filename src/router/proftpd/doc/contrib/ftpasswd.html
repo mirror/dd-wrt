@@ -202,6 +202,12 @@ usage: ftpasswd [--help] [--hash|--group|--passwd]
 
     --uid       Numerical user ID (required)
 
+    --change-home
+
+                Update only the home directory field for a user.  This option
+                requires that the --name and --passwd options be used, but no
+                others.
+
     --change-password
 
                 Update only the password field for a user.  This option
@@ -265,9 +271,23 @@ usage: ftpasswd [--help] [--hash|--group|--passwd]
 
   Options:
 
+    --add-member
+
+                Add the named member to the given group name from the file.
+                Example:
+
+        $ ftpasswd --group --file=... --name=ftpd --add-member=bob
+
     --delete-group
 
                 Remove the entry for the given group name from the file.
+
+    --delete-member
+
+                Remove the named member from the given group name from the file.
+                Example:
+
+        $ ftpasswd --group --file=... --name=ftpd --delete-member=bob
 
     --enable-group-passwd
 
@@ -352,7 +372,7 @@ usage: ftpasswd [--help] [--hash|--group|--passwd]
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2000-2016 TJ Saunders<br>
+&copy; Copyright 2000-2017 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

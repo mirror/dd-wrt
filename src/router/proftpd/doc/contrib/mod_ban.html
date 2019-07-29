@@ -668,6 +668,18 @@ addresses, to be excluded from the effects of <code>mod_ban</code>?<br>
 Note that it is <b>important</b> to have <i>both</i>
 <code>&lt;IfClass&gt;</code> sections in your configuration.
 
+<p>
+It is <b>also important</b> that for the above to work, when using shared/DSO
+modules, that <code>mod_ban</code> be loaded in your configuration
+<i>before</i> <code>mod_ifsession</code>:
+<pre>
+  LoadModule mod_ban.c
+  ...
+  LoadModule mod_ifsession.c
+</pre>
+Otherwise, when parsing the configuration, <code>mod_ban</code> might not
+set all of the proper internal state for implementing the whitelists.
+
 <p><a name="BanRootLogins">
 <font color=red>Question</font>: I would like to ban clients which try to
 login as root.  How would I do this?<br>

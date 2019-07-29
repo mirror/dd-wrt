@@ -1192,7 +1192,7 @@ sub mkd_sgid_umask_one_param_ok {
   }
  
   # Make sure that our sub directory has the SGID bit set
-  my $mode = oct(2755);
+  my $mode = 2755;
   unless (chmod($mode, $sub_dir)) {
     die("Can't set perms on $sub_dir: $!"); 
   }
@@ -1249,10 +1249,15 @@ sub mkd_sgid_umask_one_param_ok {
       $self->assert(-d $test_dir,
         test_msg("$test_dir directory does not exist as expected"));
 
-      my $perms = ((stat($test_dir))[2] & 07777);
-      $expected = oct(2700);
-      $self->assert($expected == $perms,
-        test_msg("Expected perms $expected, got $perms"));
+      my $perms = sprintf("%04o", ((stat($test_dir))[2] & 07777));
+      $expected = '0700';
+      if ($^O =~ /bsd/i) {
+        # *BSD filesystems inherit their SGID bit from parent directories
+        $expected = '2700';
+      }
+
+      $self->assert($expected eq $perms,
+        "Expected perms $expected, got $perms");
     };
     if ($@) {
       $ex = $@;
@@ -1299,7 +1304,7 @@ sub mkd_sgid_umask_two_params_ok {
   }
  
   # Make sure that our sub directory has the SGID bit set
-  my $mode = oct(2755);
+  my $mode = 2755;
   unless (chmod($mode, $sub_dir)) {
     die("Can't set perms on $sub_dir: $!"); 
   }
@@ -1356,10 +1361,15 @@ sub mkd_sgid_umask_two_params_ok {
       $self->assert(-d $test_dir,
         test_msg("$test_dir directory does not exist as expected"));
 
-      my $perms = ((stat($test_dir))[2] & 07777);
-      $expected = oct(2700);
-      $self->assert($expected == $perms,
-        test_msg("Expected perms $expected, got $perms"));
+      my $perms = sprintf("%04o", ((stat($test_dir))[2] & 07777));
+      $expected = '0700';
+      if ($^O =~ /bsd/i) {
+        # *BSD filesystems inherit their SGID bit from parent directories
+        $expected = '2700';
+      }
+
+      $self->assert($expected eq $perms,
+        "Expected perms $expected, got $perms");
     };
     if ($@) {
       $ex = $@;

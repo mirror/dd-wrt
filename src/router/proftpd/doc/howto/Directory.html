@@ -165,7 +165,7 @@ One proftpd user used this feature in the following way: the
 directive was used to make all files look read-only (mostly so that FTP
 mirroring tools would create a read-only mirror of the site).  However, a
 particular file on the site needed have execute permissions,
-even in the FTP mirrored site.  A <code>&lt;Directorygt;</code> section
+even in the FTP mirrored site.  A <code>&lt;Directory&gt;</code> section
 was used just for this one file, <i>e.g.</i>:
 <pre>
   # Make all files look read-only to clients, regardless of the actual
@@ -306,7 +306,7 @@ but instead matches the <code>&lt;Directory /dir/*&gt;</code> section.
 
 <p>
 Renaming of files via FTP is done by first sending the <code>RNFR</code>
-command (for the old filename), then sending <code>RNFTO</code> (with the
+command (for the old filename), then sending <code>RNTO</code> (with the
 new filename).  By placing <code>RNFR</code> in the
 <code>&lt;Directory /dir/subdir&gt;</code> section's <code>&lt;Limit&gt;</code>
 list, we make sure that the <code><i>RNFR</i></code> <i>does</i> match the

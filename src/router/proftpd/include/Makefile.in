@@ -7,7 +7,7 @@ srcdir=@srcdir@
 LS=/bin/ls
 VPATH=@srcdir@
 
-include ../Make.rules
+include $(top_builddir)/Make.rules
 
 .SUFFIXES: .h
 
@@ -20,8 +20,14 @@ all:
 Makefile: Makefile.in ../config.status
 	cd ../ && ./config.status
 
-install:
-	@headers=`$(LS) *.h`; \
-	for h in $$headers; do \
-		$(INSTALL_MAN) $$h $(DESTDIR)$(includedir)/proftpd/$$h; \
-	done
+# BSD install -d doesn't work, so ...
+$(DESTDIR)$(includedir) $(DESTDIR)$(includedir)/proftpd:
+	@if [ ! -d $@ ]; then \
+		mkdir -p $@; \
+		chown $(INSTALL_USER):$(INSTALL_GROUP) $@; \
+		chmod 0755 $@; \
+	fi
+
+install: $(DESTDIR)$(includedir)/proftpd
+	(cd $(srcdir) && $(INSTALL_MAN) *.h $(DESTDIR)$(includedir)/proftpd/)
+	(cd $(top_builddir) && $(INSTALL_MAN) *.h $(DESTDIR)$(includedir)/proftpd/)

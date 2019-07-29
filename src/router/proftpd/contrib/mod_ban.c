@@ -3653,7 +3653,7 @@ static int ban_sess_init(void) {
 
 #if defined(PR_USE_REDIS)
     if (strcasecmp(driver, "redis") == 0) {
-      redis = pr_redis_conn_get(session.pool);
+      redis = pr_redis_conn_get(session.pool, 0UL);
       if (redis == NULL) {
         (void) pr_log_writefile(ban_logfd, MOD_BAN_VERSION,
           "error connecting to Redis: %s", strerror(errno));

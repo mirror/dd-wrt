@@ -273,7 +273,7 @@ static char *prepare_core(void) {
   static char dir[256];
 
   memset(dir, '\0', sizeof(dir));
-  snprintf(dir, sizeof(dir)-1, "%s/proftpd-core-%lu", PR_CORE_DIR,
+  pr_snprintf(dir, sizeof(dir)-1, "%s/proftpd-core-%lu", PR_CORE_DIR,
     (unsigned long) getpid());
 
   if (mkdir(dir, 0700) < 0) {

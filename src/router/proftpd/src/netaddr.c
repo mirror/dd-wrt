@@ -239,7 +239,7 @@ int pr_getnameinfo(const struct sockaddr *sa, socklen_t salen, char *host,
     return EAI_FAMILY;
 
   if (serv != NULL && servlen > (size_t) 1)
-    snprintf(serv, servlen, "%lu", (unsigned long) ntohs(sai->sin_port));
+    pr_snprintf(serv, servlen, "%lu", (unsigned long) ntohs(sai->sin_port));
 
   if (host != NULL && hostlen > (size_t) 1) {
     struct hostent *he = NULL;
@@ -793,7 +793,7 @@ static pr_netaddr_t *get_addr_by_name(pool *p, const char *name,
 static pr_netaddr_t *get_addr_by_device(pool *p, const char *name,
     array_header **addrs) {
 #ifdef HAVE_GETIFADDRS
-  struct ifaddrs *ifaddr;
+  struct ifaddrs *ifaddr = NULL;
   pr_netaddr_t *na = NULL;
   int res, xerrno;
 
@@ -873,6 +873,10 @@ static pr_netaddr_t *get_addr_by_device(pool *p, const char *name,
             pr_netaddr_get_ipstr(*elt));
         }
       }
+    }
+
+    if (ifaddr != NULL) {
+      freeifaddrs(ifaddr);
     }
 
     if (found_device) {

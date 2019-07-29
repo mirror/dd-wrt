@@ -148,31 +148,6 @@ only, and should be removed from any production configuration.
 <p><a name="FAQ">
 <b>Frequently Asked Questions</b><br>
 
-<p><a name="DeflateRFC2228">
-<font color=red>Question</font>: I have compiled and configured <code>mod_deflate</code> properly in my <code>proftpd</code>, but I still can't use the MODE
-Z functionality.  In my client, I see the following error.  Why?
-<pre>
-  501 'MODE Z' unrecognized transfer mode
-</pre>
-<font color=blue>Answer</font>: The most likely culprit is that your FTP client
-is using an RFC 2228 protection mechanism (<i>e.g.</i> SSL/TLS).  In the
-<code>DeflateLog</code>, you might see a message like:
-<pre>
-  Jul 21 23:01:37 mod_deflate/0.3.2[31084]: declining MODE Z (RFC2228 mechanism 'TLS' in effect)
-</pre>
-
-<p>
-There are two reasons for the current behavior.  First, the SSL/TLS ciphersuite
-that is negotiated can (depending on the ciphersuite) already include
-compression of the encrypted data -- in which case, <code>MODE Z</code> is
-redundant (and in effect inefficient, as it would waste CPU cycles trying to
-re-compress already-compressed data).  Second, the internal ProFTPD APIs that
-<code>mod_deflate</code> uses are the same APIs that <code>mod_tls</code> uses;
-and that API does not currently handle chaining together of registered
-handlers.  This would be needed in order to support <code>mod_deflate</code>'s
-<code>MODE Z</code> functionality <i>and</i> the <code>mod_tls</code> encryption
-at the same time.
-
 <p><a name="DeflateDataError">
 <font color=red>Question</font>: I'm uploading a file using <code>MODE Z</code>,
 but the upload always fails.  In the <code>DeflateLog</code>, I see:
@@ -199,7 +174,7 @@ files as binary files, not as ASCII files.
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2006-2014 TJ Saunders<br>
+&copy; Copyright 2006-2017 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

@@ -1,5 +1,5 @@
 dnl ProFTPD - mod_dnsbl
-dnl Copyright (c) 2012-2015 TJ Saunders <tj@castaglia.org>
+dnl Copyright (c) 2012-2017 TJ Saunders <tj@castaglia.org>
 dnl
 dnl This program is free software; you can redistribute it and/or modify
 dnl it under the terms of the GNU General Public License as published by
@@ -179,10 +179,12 @@ AC_TRY_LINK(
 ) 
 
 INCLUDES="$ac_build_addl_includes"
+LIBDIRS="$ac_build_addl_libdirs"
 MODULE_LIBS="$ac_dnsbl_libs"
 
 AC_SUBST(INCLUDES)
 AC_SUBST(LDFLAGS)
+AC_SUBST(LIBDIRS)
 AC_SUBST(MODULE_LIBS)
 
 AC_CONFIG_HEADER(mod_dnsbl.h)

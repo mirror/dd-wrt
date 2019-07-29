@@ -1,5 +1,5 @@
 dnl ProFTPD - mod_auth_otp
-dnl Copyright (c) 2015-2016 TJ Saunders <tj@castaglia.org>
+dnl Copyright (c) 2015-2017 TJ Saunders <tj@castaglia.org>
 dnl
 dnl This program is free software; you can redistribute it and/or modify
 dnl it under the terms of the GNU General Public License as published by
@@ -185,7 +185,7 @@ AC_TRY_LINK(
 
 dnl Splice out -lsupp, since that library hasn't been built yet
 LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
-LIBS="-lcrypto -lz $LIBS"
+LIBS="-lcrypto $LIBS"
 
 AC_MSG_CHECKING([whether OpenSSL supports SHA256])
 AC_TRY_LINK(
@@ -193,7 +193,7 @@ AC_TRY_LINK(
     #include <openssl/evp.h>
   ],
   [
-    EVP_MD *md;
+    const EVP_MD *md;
     md = EVP_sha256();
   ],
   [
@@ -209,7 +209,7 @@ AC_TRY_LINK(
 
 dnl Splice out -lsupp, since that library hasn't been built yet
 LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
-LIBS="-lcrypto -lz $LIBS"
+LIBS="-lcrypto $LIBS"
 
 AC_MSG_CHECKING([whether OpenSSL supports SHA512])
 AC_TRY_LINK(
@@ -217,7 +217,7 @@ AC_TRY_LINK(
     #include <openssl/evp.h>
   ],
   [
-    EVP_MD *md;
+    const EVP_MD *md;
     md = EVP_sha512();
   ],
   [

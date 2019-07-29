@@ -46,7 +46,7 @@ RC_VERSION=@RC_VERSION@
 
 # Directory include paths.
 #
-INCLUDES=-I.. -I$(top_srcdir)/include @INCLUDES@
+INCLUDES=-I.. -I$(top_srcdir)/include -I$(top_builddir)/include @INCLUDES@
 
 # Preprocessor compilation flags.
 #
@@ -68,8 +68,8 @@ OBJS=main.o timers.o sets.o pool.o privs.o str.o table.o regexp.o configdb.o \
      log.o lastlog.o xferlog.o bindings.o netacl.o class.o scoreboard.o help.o \
      feat.o netio.o cmd.o response.o ascii.o data.o modules.o stash.o \
      display.o auth.o fsio.o mkhome.o ctrls.o event.o var.o throttle.o \
-     session.o trace.o encode.o proctitle.o filter.o pidfile.o env.o version.o \
-     rlimit.o wtmp.o json.o memcache.o redis.o
+     session.o trace.o encode.o proctitle.o filter.o pidfile.o env.o random.o \
+     version.o rlimit.o wtmp.o json.o jot.o memcache.o redis.o error.o
 
 BUILD_OBJS=src/main.o src/timers.o src/sets.o src/pool.o src/privs.o src/str.o \
            src/table.o src/regexp.o src/configdb.o src/dirtree.o src/expr.o \
@@ -80,8 +80,9 @@ BUILD_OBJS=src/main.o src/timers.o src/sets.o src/pool.o src/privs.o src/str.o \
            src/modules.o src/stash.o src/display.o src/auth.o src/fsio.o \
            src/mkhome.o src/ctrls.o src/event.o src/var.o src/throttle.o \
            src/session.o src/trace.o src/encode.o src/proctitle.o src/filter.o \
-           src/pidfile.o src/env.o src/version.o src/rlimit.o src/wtmp.o \
-           src/json.o src/memcache.o src/redis.o
+           src/pidfile.o src/env.o src/random.o src/version.o src/rlimit.o \
+           src/wtmp.o src/json.o src/jot.o src/memcache.o src/redis.o \
+           src/error.o
 
 SHARED_MODULE_DIRS=@SHARED_MODULE_DIRS@
 SHARED_MODULE_LIBS=@SHARED_MODULE_LIBS@

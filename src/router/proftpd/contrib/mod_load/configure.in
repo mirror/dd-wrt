@@ -1,5 +1,5 @@
 dnl ProFTPD - mod_load
-dnl Copyright (c) 2012-2015 TJ Saunders <tj@castaglia.org>
+dnl Copyright (c) 2012-2017 TJ Saunders <tj@castaglia.org>
 dnl
 dnl This program is free software; you can redistribute it and/or modify
 dnl it under the terms of the GNU General Public License as published by
@@ -65,20 +65,25 @@ AC_ARG_WITH(libraries,
 AC_HEADER_STDC
 AC_CHECK_HEADERS(stdlib.h unistd.h limits.h fcntl.h)
 
-AC_SUBST(LDFLAGS)
-
-MODULE_LIBS=
-if test "$ostype" = "SOLARIS" ; then
-  MODULE_LIBS="-lkstat"
-fi
-AC_SUBST(MODULE_LIBS)
-
 dnl _Must_ come before AC_FUNC_GETLOADAVG
 AC_CHECK_LIB(kstat, kstat_open)
 
 dnl Supposedly in AC_FUNC_GETLOADAVG, but...?
 AC_CHECK_FUNCS(pstat_getdynamic)
 AC_FUNC_GETLOADAVG
+
+INCLUDES="$ac_build_addl_includes"
+LIBDIRS="$ac_build_addl_libdirs"
+
+AC_SUBST(INCLUDES)
+AC_SUBST(LDFLAGS)
+AC_SUBST(LIBDIRS)
+
+MODULE_LIBS=
+if test "$ostype" = "SOLARIS" ; then
+  MODULE_LIBS="-lkstat"
+fi
+AC_SUBST(MODULE_LIBS)
 
 AC_CONFIG_HEADER(mod_load.h)
 AC_OUTPUT(Makefile)

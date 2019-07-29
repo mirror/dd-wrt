@@ -1,7 +1,7 @@
 /*
  * ProFTPD - FTP server daemon
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2015 The ProFTPD Project team
+ * Copyright (c) 2001-2017 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -78,7 +78,9 @@
 /* Location of the file that tells proftpd to discontinue servicing
  * requests.
  */
-#define PR_SHUTMSG_PATH		"/etc/shutmsg"
+#ifndef PR_SHUTMSG_PATH
+# define PR_SHUTMSG_PATH	"/etc/shutmsg"
+#endif
 
 /* Location of the file containing users that *cannot* use ftp
  * services (odd, eh?)

@@ -1,8 +1,10 @@
-top_builddir=../..
-top_srcdir=../..
+# Note: we include the additional tweaking of top_builddir, so that LIBTOOL
+# resolves to the correct place.
+top_builddir=@top_builddir@/../..
+top_srcdir=@top_srcdir@
 srcdir=@srcdir@
 
-include $(top_srcdir)/Make.rules
+include $(top_builddir)/Make.rules
 
 .SUFFIXES: .la .lo
 
@@ -26,42 +28,53 @@ SHARED_MODULE_OBJS=mod_sftp.lo msg.lo packet.lo cipher.lo mac.lo umac.lo \
   date.lo
 
 # Necessary redefinitions
-INCLUDES=-I. -I../.. -I../../include @INCLUDES@
-CPPFLAGS= $(ADDL_CPPFLAGS) -DHAVE_CONFIG_H $(DEFAULT_PATHS) $(PLATFORM) $(INCLUDES)
+INCLUDES=-I. -I../.. -I../../include -I$(top_srcdir)/../../include @INCLUDES@
+CPPFLAGS=$(ADDL_CPPFLAGS) -DHAVE_CONFIG_H $(DEFAULT_PATHS) $(PLATFORM) $(INCLUDES)
 LDFLAGS=-L../../lib @LDFLAGS@
 
 # We special-case the building of umac128.o in order to use preprocessor
 # tricks to get the implementation, rather than making it be all in runtime.
 UMAC128_CPPFLAGS=-DUMAC_OUTPUT_LEN=16 -Dumac_alloc=umac128_alloc -Dumac_init=umac128_init -Dumac_new=umac128_new -Dumac_update=umac128_update -Dumac_final=umac128_final -Dumac_delete=umac128_delete -Dumac_reset=umac128_reset
 
-umac128.o: umac.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(UMAC128_CPPFLAGS) -o umac128.o -c umac.c
+umac128.o: $(top_srcdir)/umac.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(UMAC128_CPPFLAGS) -o umac128.o -c $(top_srcdir)/umac.c
 
 %.o: %.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
 
-umac128.lo: umac.c
-	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(CPPFLAGS) $(CFLAGS) $(SHARED_CFLAGS) $(UMAC128_CPPFLAGS) -o umac128.lo -c umac.c
+umac128.lo: $(top_srcdir)/umac.c
+	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(CPPFLAGS) $(CFLAGS) $(SHARED_CFLAGS) $(UMAC128_CPPFLAGS) -o umac128.lo -c $(top_srcdir)/umac.c
 
 %.lo: %.c
 	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(CPPFLAGS) $(CFLAGS) $(SHARED_CFLAGS) -c $<
 
 shared: $(SHARED_MODULE_OBJS)
-	$(LIBTOOL) --mode=link --tag=CC $(CC) -o $(MODULE_NAME).la $(SHARED_MODULE_OBJS) -rpath $(LIBEXECDIR) $(LDFLAGS) $(SHARED_LDFLAGS) $(MODULE_LIBS) $(SHARED_MODULE_LIBS) `cat $(MODULE_NAME).c | grep '$$Libraries:' | sed -e 's/^.*\$$Libraries: \(.*\)\\$$/\1/'`
+	$(LIBTOOL) --mode=link --tag=CC $(CC) -o $(MODULE_NAME).la $(SHARED_MODULE_OBJS) -rpath $(LIBEXECDIR) $(LDFLAGS) $(SHARED_LDFLAGS) $(MODULE_LIBS) $(SHARED_MODULE_LIBS) `cat $(top_srcdir)/$(MODULE_NAME).c | grep '$$Libraries:' | sed -e 's/^.*\$$Libraries: \(.*\)\\$$/\1/'`
 
 static: $(MODULE_OBJS)
 	test -z "$(MODULE_LIBS)" || echo "$(MODULE_LIBS)" >> $(MODULE_LIBS_FILE)
 	$(AR) rc $(MODULE_NAME).a $(MODULE_OBJS)
 	$(RANLIB) $(MODULE_NAME).a
 
-install: install-misc
+install: install-headers install-misc
 	if [ -f $(MODULE_NAME).la ] ; then \
 		$(LIBTOOL) --mode=install --tag=CC $(INSTALL_BIN) $(MODULE_NAME).la $(DESTDIR)$(LIBEXECDIR) ; \
 	fi
 
+# BSD install -d doesn't work, so ...
+$(DESTDIR)$(includedir) $(DESTDIR)$(includedir)/proftpd:
+	@if [ ! -d $@ ]; then \
+		mkdir -p $@; \
+		chown $(INSTALL_USER):$(INSTALL_GROUP) $@; \
+		chmod 0755 $@; \
+	fi
+
+install-headers: $(DESTDIR)$(includedir)/proftpd
+	$(INSTALL_MAN) $(MODULE_NAME).h $(DESTDIR)$(includedir)/proftpd/$(MODULE_NAME).h
+
 install-misc:
-	$(INSTALL) -o $(INSTALL_USER) -g $(INSTALL_GROUP) -m 0644 dhparams.pem $(DESTDIR)$(sysconfdir)/dhparams.pem 
-	$(INSTALL) -o $(INSTALL_USER) -g $(INSTALL_GROUP) -m 0644 blacklist.dat $(DESTDIR)$(sysconfdir)/blacklist.dat
+	$(INSTALL) -o $(INSTALL_USER) -g $(INSTALL_GROUP) -m 0644 $(top_srcdir)/dhparams.pem $(DESTDIR)$(sysconfdir)/dhparams.pem
+	$(INSTALL) -o $(INSTALL_USER) -g $(INSTALL_GROUP) -m 0644 $(top_srcdir)/blacklist.dat $(DESTDIR)$(sysconfdir)/blacklist.dat
 
 clean:
 	$(LIBTOOL) --mode=clean $(RM) $(MODULE_NAME).a $(MODULE_NAME).la *.o *.lo .libs/*.o

@@ -1,6 +1,6 @@
 /*
  * ProFTPD: mod_dso -- support for loading/unloading modules at run-time
- * Copyright (c) 2004-2016 TJ Saunders <tj@castaglia.org>
+ * Copyright (c) 2004-2017 TJ Saunders <tj@castaglia.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,9 +27,7 @@
 
 #include "conf.h"
 #include "mod_ctrls.h"
-
-/* Make sure we use the libltdl shipped with proftpd, not the system libltdl. */
-#include "lib/libltdl/ltdl.h"
+#include "ltdl.h"
 
 #define MOD_DSO_VERSION		"mod_dso/0.5"
 
@@ -559,10 +557,10 @@ MODRET set_moduleorder(cmd_rec *cmd) {
       if (strcmp(cmd->argv[i], cmd->argv[j]) == 0) {
         char ibuf[4], jbuf[4];
 
-        snprintf(ibuf, sizeof(ibuf), "%u", i);
+        pr_snprintf(ibuf, sizeof(ibuf), "%u", i);
         ibuf[sizeof(ibuf)-1] = '\0';
 
-        snprintf(jbuf, sizeof(jbuf), "%u", j);
+        pr_snprintf(jbuf, sizeof(jbuf), "%u", j);
         jbuf[sizeof(jbuf)-1] = '\0';
 
         CONF_ERROR(cmd, pstrcat(cmd->tmp_pool,

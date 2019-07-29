@@ -2,8 +2,7 @@
  * ProFTPD: mod_ctrls -- a module implementing the ftpdctl local socket
  *          server, as well as several utility functions for other Controls
  *          modules
- *
- * Copyright (c) 2000-2016 TJ Saunders
+ * Copyright (c) 2000-2017 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -80,8 +79,6 @@ static unsigned int cl_maxlistlen = 5;
 static ctrls_acl_t ctrls_sock_acl;
 
 static unsigned char ctrls_engine = TRUE;
-
-#define CTRLS_LISTEN_FL_REMOVE_SOCKET	0x0001
 
 /* Necessary prototypes */
 static int ctrls_setblock(int sockfd);
@@ -437,7 +434,7 @@ static int ctrls_cls_write(void) {
 }
 
 /* Create a listening local socket */
-static int ctrls_listen(const char *sock_file, int flags) {
+static int ctrls_listen(const char *sock_file) {
   int sockfd = -1, len = 0;
   struct sockaddr_un sock;
 #if !defined(SO_PEERCRED) && !defined(HAVE_GETPEEREID) && \
@@ -497,12 +494,10 @@ static int ctrls_listen(const char *sock_file, int flags) {
     return -1;
   }
 
-  if (flags & CTRLS_LISTEN_FL_REMOVE_SOCKET) {
-    /* Make sure the path to which we want to bind this socket doesn't already
-     * exist.
-     */
-    (void) unlink(sock_file);
-  }
+  /* Make sure the path to which we want to bind this socket doesn't already
+   * exist.
+   */
+  (void) unlink(sock_file);
 
   /* Fill in the socket structure fields */
   memset(&sock, 0, sizeof(sock));
@@ -1206,7 +1201,7 @@ static void ctrls_postparse_ev(const void *event_data, void *user_data) {
 
   /* Start listening on the ctrl socket */
   PRIVS_ROOT
-  ctrls_sockfd = ctrls_listen(ctrls_sock_file, CTRLS_LISTEN_FL_REMOVE_SOCKET);
+  ctrls_sockfd = ctrls_listen(ctrls_sock_file);
   PRIVS_RELINQUISH
 
   /* Start a timer for the checking/processing of the ctrl socket.  */
@@ -1297,9 +1292,6 @@ static int ctrls_init(void) {
   /* Make certain the socket ACL is initialized. */
   memset(&ctrls_sock_acl, '\0', sizeof(ctrls_acl_t));
   ctrls_sock_acl.acl_usrs.allow = ctrls_sock_acl.acl_grps.allow = FALSE;
-
-  /* Start listening on the ctrl socket */
-  ctrls_sockfd = ctrls_listen(ctrls_sock_file, 0);
 
   pr_event_register(&ctrls_module, "core.restart", ctrls_restart_ev, NULL);
   pr_event_register(&ctrls_module, "core.shutdown", ctrls_shutdown_ev, NULL);

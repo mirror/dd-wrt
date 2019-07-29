@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2006-2016 The ProFTPD Project team
+ * Copyright (c) 2006-2017 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -56,7 +56,7 @@ int log_lastlog(uid_t uid, const char *user_name, const char *tty,
 
   if (S_ISDIR(st.st_mode)) {
     memset(path, '\0', sizeof(path));
-    snprintf(path, sizeof(path), "%s/%s", PR_LASTLOG_PATH, user_name);
+    pr_snprintf(path, sizeof(path), "%s/%s", PR_LASTLOG_PATH, user_name);
     path[sizeof(path)-1] = '\0';
 
     fd = open(path, O_RDWR|O_CREAT, 0600);

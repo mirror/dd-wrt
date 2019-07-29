@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp miscellaneous
- * Copyright (c) 2010-2016 TJ Saunders
+ * Copyright (c) 2010-2017 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,6 +29,8 @@
 
 int sftp_misc_chown_file(pool *, pr_fh_t *);
 int sftp_misc_chown_path(pool *, const char *);
+const char *sftp_misc_get_chroot(pool *p);
 const char *sftp_misc_namelist_shared(pool *, const char *, const char *);
+char *sftp_misc_vroot_abs_path(pool *p, const char *, int);
 
 #endif /* MOD_SFTP_MISC_H */

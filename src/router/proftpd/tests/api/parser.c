@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2014-2016 The ProFTPD Project team
+ * Copyright (c) 2014-2017 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -316,6 +316,23 @@ START_TEST (parser_parse_line_test) {
   fail_unless(strcmp(cmd->argv[0], "BarBaz") == 0,
     "Expected 'BarBaz', got '%s'", (char *) cmd->argv[0]);
   fail_unless(strcmp(cmd->arg, "") == 0, "Expected '', got '%s'", cmd->arg);
+  lineno = pr_parser_get_lineno();
+  fail_unless(lineno != 3, "Expected lineno 3, got %u", lineno);
+
+  /* This time, with a single word containing multiple environment variables
+   * (Issue #507).
+   */
+  pr_env_set(p, "FOO_TEST", "Foo");
+  pr_env_set(p, "BAR_TEST", "baR");
+  text = pstrdup(p, "BarBaz %{env:FOO_TEST}@%{env:BAR_TEST}");
+  cmd = pr_parser_parse_line(p, text, 0);
+  fail_unless(cmd != NULL, "Failed to parse text '%s': %s", text,
+    strerror(errno));
+  fail_unless(cmd->argc == 2, "Expected 2, got %d", cmd->argc);
+  fail_unless(strcmp(cmd->argv[0], "BarBaz") == 0,
+    "Expected 'BarBaz', got '%s'", (char *) cmd->argv[0]);
+  fail_unless(strcmp(cmd->arg, "Foo@baR") == 0,
+    "Expected 'Foo@baR', got '%s'", cmd->arg);
   lineno = pr_parser_get_lineno();
   fail_unless(lineno != 3, "Expected lineno 3, got %u", lineno);
 

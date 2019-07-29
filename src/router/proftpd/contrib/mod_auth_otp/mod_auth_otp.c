@@ -1,6 +1,6 @@
 /*
  * ProFTPD: mod_auth_otp
- * Copyright (c) 2015-2016 TJ Saunders
+ * Copyright (c) 2015-2017 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -232,7 +232,7 @@ static int check_otp_code(pool *p, const char *user, const char *user_otp,
   /* Note: If/when more than 6 digits are needed, the following format string
    * would need to change to match.
    */
-  snprintf(code_str, sizeof(code_str)-1, "%06u", code);
+  pr_snprintf(code_str, sizeof(code_str)-1, "%06u", code);
 
   pr_trace_msg(trace_channel, 13,
     "computed code '%s', client sent code '%s'", code_str, user_otp);

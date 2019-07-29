@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp channels
- * Copyright (c) 2008-2015 TJ Saunders
+ * Copyright (c) 2008-2017 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -439,7 +439,7 @@ static int handle_channel_close(struct ssh2_packet *pkt) {
   channel_id = sftp_msg_read_int(pkt->pool, &buf, &buflen);
 
   memset(chan_str, '\0', sizeof(chan_str));
-  snprintf(chan_str, sizeof(chan_str)-1, "%lu", (unsigned long) channel_id);
+  pr_snprintf(chan_str, sizeof(chan_str)-1, "%lu", (unsigned long) channel_id);
 
   cmd = pr_cmd_alloc(pkt->pool, 1, pstrdup(pkt->pool, "CHANNEL_CLOSE"));
   cmd->arg = pstrdup(pkt->pool, chan_str);
@@ -675,7 +675,7 @@ static int handle_channel_eof(struct ssh2_packet *pkt) {
   channel_id = sftp_msg_read_int(pkt->pool, &buf, &buflen);
 
   memset(chan_str, '\0', sizeof(chan_str));
-  snprintf(chan_str, sizeof(chan_str)-1, "%lu", (unsigned long) channel_id);
+  pr_snprintf(chan_str, sizeof(chan_str)-1, "%lu", (unsigned long) channel_id);
 
   cmd = pr_cmd_alloc(pkt->pool, 1, pstrdup(pkt->pool, "CHANNEL_EOF"));
   cmd->arg = pstrdup(pkt->pool, chan_str);
@@ -1142,7 +1142,7 @@ static int handle_channel_window_adjust(struct ssh2_packet *pkt) {
   adjust_len = sftp_msg_read_int(pkt->pool, &buf, &buflen);
 
   memset(adjust_str, '\0', sizeof(adjust_str));
-  snprintf(adjust_str, sizeof(adjust_str)-1, "%lu %lu",
+  pr_snprintf(adjust_str, sizeof(adjust_str)-1, "%lu %lu",
     (unsigned long) channel_id, (unsigned long) adjust_len);
 
   cmd = pr_cmd_alloc(pkt->pool, 1, pstrdup(pkt->pool, "CHANNEL_WINDOW_ADJUST"));

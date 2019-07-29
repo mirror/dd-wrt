@@ -1,17 +1,19 @@
 CC=@CC@
 @SET_MAKE@
 
-top_builddir=../../..
-top_srcdir=../../..
-module_srcdir=..
+# Note: we include the additional tweaking of top_builddir, so that LIBTOOL
+# resolves to the correct place.
+top_builddir=@top_builddir@/../../../
+top_srcdir=@top_srcdir@
+module_srcdir=@top_builddir@/..
 srcdir=@srcdir@
 VPATH=@srcdir@
 
-include $(top_srcdir)/Make.rules
+include $(top_builddir)/Make.rules
 
 # Necessary redefinitions
 INCLUDES=-I. -I.. -I$(top_srcdir) -I$(top_srcdir)/include @INCLUDES@
-CPPFLAGS= $(ADDL_CPPFLAGS) -DHAVE_CONFIG_H $(DEFAULT_PATHS) $(PLATFORM) $(INCLUDES)
+CPPFLAGS=$(ADDL_CPPFLAGS) -DHAVE_CONFIG_H $(DEFAULT_PATHS) $(PLATFORM) $(INCLUDES)
 LDFLAGS=-L$(top_srcdir)/lib @LIBDIRS@
 
 EXEEXT=@EXEEXT@
