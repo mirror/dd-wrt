@@ -109,34 +109,34 @@ $(DESTDIR)$(localedir) $(DESTDIR)$(includedir) $(DESTDIR)$(includedir)/proftpd $
 		chmod 0755 $@; \
 	fi
 
-install-proftpd: proftpd $(DESTDIR)$(includedir) $(DESTDIR)$(localstatedir) $(DESTDIR)$(sysconfdir) $(DESTDIR)$(sbindir)
-	$(INSTALL_SBIN) proftpd $(DESTDIR)$(sbindir)/proftpd
+install-proftpd: proftpd$(EXEEXT) $(DESTDIR)$(includedir) $(DESTDIR)$(localstatedir) $(DESTDIR)$(sysconfdir) $(DESTDIR)$(sbindir)
+	$(INSTALL_SBIN) $(top_builddir)/proftpd $(DESTDIR)$(sbindir)/proftpd
 	if [ -f $(DESTDIR)$(sbindir)/in.proftpd ] ; then \
 		rm -f $(DESTDIR)$(sbindir)/in.proftpd ; \
 	fi
-	ln -s proftpd $(DESTDIR)$(sbindir)/in.proftpd
+	ln -s $(top_builddir)/proftpd $(DESTDIR)$(sbindir)/in.proftpd
 	-chown -h $(INSTALL_USER):$(INSTALL_GROUP) $(DESTDIR)$(sbindir)/in.proftpd
 
 install-libs: $(DESTDIR)$(libdir)/proftpd
 	cd lib/ && $(MAKE) install
 
 install-headers: $(DESTDIR)$(includedir)/proftpd
-	$(INSTALL_MAN) config.h $(DESTDIR)$(includedir)/proftpd/config.h
+	$(INSTALL_MAN) $(top_builddir)/config.h $(DESTDIR)$(includedir)/proftpd/config.h
 	cd include/ && $(MAKE) install
 
 install-pkgconfig: $(DESTDIR)$(pkgconfigdir)
-	@echo 'prefix=$(prefix)' > proftpd.pc
-	@echo 'exec_prefix=$${prefix}' >> proftpd.pc
-	@echo 'libdir=$${prefix}/lib/proftpd' >> proftpd.pc
-	@echo 'includedir=$${prefix}/include/proftpd' >> proftpd.pc
-	@echo '' >> proftpd.pc
-	@echo 'Name: ProFTPD' >> proftpd.pc
-	@echo 'Description: Professional FTP Daemon' >> proftpd.pc
-	@echo 'Version: $(BUILD_VERSION)' >> proftpd.pc
-	@echo 'Requires: ' >> proftpd.pc
-	@echo 'Libs: -L$${libdir}' >> proftpd.pc
-	@echo 'Cflags: -I$${includedir}' >> proftpd.pc
-	$(INSTALL_MAN) proftpd.pc $(DESTDIR)$(pkgconfigdir)/proftpd.pc
+	@echo 'prefix=$(prefix)' > $(top_builddir)/proftpd.pc
+	@echo 'exec_prefix=$${prefix}' >> $(top_builddir)/proftpd.pc
+	@echo 'libdir=${libdir}/proftpd' >> $(top_builddir)/proftpd.pc
+	@echo 'includedir=${includedir}/proftpd' >> $(top_builddir)/proftpd.pc
+	@echo '' >> $(top_builddir)/proftpd.pc
+	@echo 'Name: ProFTPD' >> $(top_builddir)/proftpd.pc
+	@echo 'Description: Professional FTP Daemon' >> $(top_builddir)/proftpd.pc
+	@echo 'Version: $(BUILD_VERSION)' >> $(top_builddir)/proftpd.pc
+	@echo 'Requires: ' >> $(top_builddir)/proftpd.pc
+	@echo 'Libs: -L$${libdir}' >> $(top_builddir)/proftpd.pc
+	@echo 'Cflags: -I$${includedir}' >> $(top_builddir)/proftpd.pc
+	$(INSTALL_MAN) $(top_builddir)/proftpd.pc $(DESTDIR)$(pkgconfigdir)/proftpd.pc
 
 install-locales: $(DESTDIR)$(localedir)
 	test -z "$(ENABLE_NLS)" || (cd locale/ && $(MAKE) install)
@@ -146,13 +146,13 @@ install-modules: $(DESTDIR)$(libexecdir) $(DESTDIR)$(sysconfdir)
 
 install-utils: $(DESTDIR)$(sbindir) $(DESTDIR)$(bindir)
 	cd contrib/ && $(MAKE) install-utils
-	$(INSTALL_BIN)  ftpcount $(DESTDIR)$(bindir)/ftpcount
-	$(INSTALL_BIN)  ftpdctl  $(DESTDIR)$(bindir)/ftpdctl
-	$(INSTALL_SBIN) ftpscrub $(DESTDIR)$(sbindir)/ftpscrub
-	$(INSTALL_SBIN) ftpshut  $(DESTDIR)$(sbindir)/ftpshut
-	$(INSTALL_BIN)  ftptop   $(DESTDIR)$(bindir)/ftptop
-	$(INSTALL_BIN)  ftpwho   $(DESTDIR)$(bindir)/ftpwho
-	$(INSTALL) -o $(INSTALL_USER) -g $(INSTALL_GROUP) -m 0755 src/prxs $(DESTDIR)$(bindir)/prxs
+	$(INSTALL_BIN)  $(top_builddir)/ftpcount $(DESTDIR)$(bindir)/ftpcount
+	$(INSTALL_BIN)  $(top_builddir)/ftpdctl  $(DESTDIR)$(bindir)/ftpdctl
+	$(INSTALL_SBIN) $(top_builddir)/ftpscrub $(DESTDIR)$(sbindir)/ftpscrub
+	$(INSTALL_SBIN) $(top_builddir)/ftpshut  $(DESTDIR)$(sbindir)/ftpshut
+	$(INSTALL_BIN)  $(top_builddir)/ftptop   $(DESTDIR)$(bindir)/ftptop
+	$(INSTALL_BIN)  $(top_builddir)/ftpwho   $(DESTDIR)$(bindir)/ftpwho
+	$(INSTALL) -o $(INSTALL_USER) -g $(INSTALL_GROUP) -m 0755 $(top_builddir)/src/prxs $(DESTDIR)$(bindir)/prxs
 
 install-conf: $(DESTDIR)$(sysconfdir)
 	if [ ! -f $(DESTDIR)$(sysconfdir)/proftpd.conf ] ; then \
@@ -165,22 +165,22 @@ install-libltdl:
 	cd lib/libltdl/ && $(MAKE) install
 
 install-man: $(DESTDIR)$(mandir) $(DESTDIR)$(mandir)/man1 $(DESTDIR)$(mandir)/man5 $(DESTDIR)$(mandir)/man8
-	$(INSTALL_MAN) $(top_srcdir)/src/ftpdctl.8    $(DESTDIR)$(mandir)/man8
-	$(INSTALL_MAN) $(top_srcdir)/src/proftpd.8    $(DESTDIR)$(mandir)/man8
+	$(INSTALL_MAN) $(top_builddir)/src/ftpdctl.8    $(DESTDIR)$(mandir)/man8
+	$(INSTALL_MAN) $(top_builddir)/src/proftpd.8    $(DESTDIR)$(mandir)/man8
 	$(INSTALL_MAN) $(top_srcdir)/utils/ftpasswd.1 $(DESTDIR)$(mandir)/man1
 	$(INSTALL_MAN) $(top_srcdir)/utils/ftpmail.1  $(DESTDIR)$(mandir)/man1
 	$(INSTALL_MAN) $(top_srcdir)/utils/ftpquota.1 $(DESTDIR)$(mandir)/man1
-	$(INSTALL_MAN) $(top_srcdir)/utils/ftpscrub.8 $(DESTDIR)$(mandir)/man8
-	$(INSTALL_MAN) $(top_srcdir)/utils/ftpshut.8  $(DESTDIR)$(mandir)/man8
-	$(INSTALL_MAN) $(top_srcdir)/utils/ftpcount.1 $(DESTDIR)$(mandir)/man1
-	$(INSTALL_MAN) $(top_srcdir)/utils/ftptop.1   $(DESTDIR)$(mandir)/man1
-	$(INSTALL_MAN) $(top_srcdir)/utils/ftpwho.1   $(DESTDIR)$(mandir)/man1
-	$(INSTALL_MAN) $(top_srcdir)/src/proftpd.conf.5 $(DESTDIR)$(mandir)/man5
-	$(INSTALL_MAN) $(top_srcdir)/src/xferlog.5    $(DESTDIR)$(mandir)/man5
+	$(INSTALL_MAN) $(top_builddir)/utils/ftpscrub.8 $(DESTDIR)$(mandir)/man8
+	$(INSTALL_MAN) $(top_builddir)/utils/ftpshut.8  $(DESTDIR)$(mandir)/man8
+	$(INSTALL_MAN) $(top_builddir)/utils/ftpcount.1 $(DESTDIR)$(mandir)/man1
+	$(INSTALL_MAN) $(top_builddir)/utils/ftptop.1   $(DESTDIR)$(mandir)/man1
+	$(INSTALL_MAN) $(top_builddir)/utils/ftpwho.1   $(DESTDIR)$(mandir)/man1
+	$(INSTALL_MAN) $(top_builddir)/src/proftpd.conf.5 $(DESTDIR)$(mandir)/man5
+	$(INSTALL_MAN) $(top_builddir)/src/xferlog.5    $(DESTDIR)$(mandir)/man5
 
 install-all: install-proftpd install-modules install-utils install-conf install-man install-libs install-headers install-pkgconfig install-locales $(INSTALL_DEPS)
 
-install: all install-all
+install: $(BUILD_BIN) install-all
 
 depend:
 	cd src/     && $(MAKE) depend
@@ -202,7 +202,7 @@ clean:
 		if [ -d "$$dir" ]; then cd $$dir/ && $(MAKE) clean; fi; \
 	done
 
-	rm -f proftpd.pc include/buildstamp.h
+	rm -f $(top_builddir)/proftpd.pc $(top_builddir)/include/buildstamp.h
 	rm -f $(BUILD_BIN) $(MODULE_LIBS_FILE)
 
 distclean: clean
@@ -210,17 +210,29 @@ distclean: clean
 	cd modules/ && $(MAKE) distclean
 	cd src/ && $(MAKE) distclean
 	cd utils/ && $(MAKE) distclean
-	rm -f Makefile Make.modules Make.rules \
-	      contrib/Makefile include/Makefile lib/Makefile \
-	      locale/Makefile modules/Makefile src/Makefile \
-	      tests/Makefile utils/Makefile
-	rm -f config.h config.status config.cache config.log libtool stamp-h
-	rm -f include/buildstamp.h
-	rm -rf .libs/
+	$(RM) $(top_builddir)/Makefile \
+	  $(top_builddir)/Make.modules \
+	  $(top_builddir)/Make.rules \
+	  $(top_builddir)/contrib/Makefile \
+	  $(top_builddir)/include/Makefile \
+	  $(top_builddir)/lib/Makefile \
+	  $(top_builddir)/locale/Makefile \
+	  $(top_builddir)/modules/Makefile \
+	  $(top_builddir)/src/Makefile \
+	  $(top_builddir)/tests/Makefile \
+	  $(top_builddir)/utils/Makefile
+	$(RM) $(top_builddir)/config.h \
+	  $(top_builddir)/config.status \
+	  $(top_builddir)/config.cache \
+	  $(top_builddir)/config.log \
+	  $(top_builddir)/libtool \
+	  $(top_builddir)/stamp-h
+	$(RM) $(top_builddir)/include/buildstamp.h
+	$(RM) -r $(top_builddir)/.libs/
 
 spec:
 	# RPM needs this in the top-level directory in order to support '-t'
-	mv -f contrib/dist/rpm/proftpd.spec .
+	mv -f $(top_srcdir)/contrib/dist/rpm/proftpd.spec .
 
 dist: depend distclean spec
 	rm -rf `find . -name CVS`

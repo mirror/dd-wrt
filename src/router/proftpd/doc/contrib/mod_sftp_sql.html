@@ -127,14 +127,14 @@ recommended.
 An example MySQL schema looks like:
 <pre>
   CREATE TABLE sftpuserkeys (
-    name TEXT(8192) NOT NULL,
-    key TEXT(8192) NOT NULL
+    user VARCHAR(256) NOT NULL,
+    user_key VARCHAR(8192) NOT NULL
   );
-  CREATE INDEX sftpuserkeys_idx ON sftpuserkeys (name);
+  CREATE INDEX sftpuserkeys_idx ON sftpuserkeys (user);
 
   CREATE TABLE sftphostkeys (
-    host TEXT(8192) NOT NULL,
-    key TEXT(8192) NOT NULL
+    host VARCHAR(256) NOT NULL,
+    host_key VARCHAR(8192) NOT NULL
   );
   CREATE INDEX sftphostkeys_idx ON sftphostkeys (host);
 </pre>
@@ -165,7 +165,7 @@ could lead to unexpected parsing issues, which will be logged as:
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2009-2016 TJ Saunders<br>
+&copy; Copyright 2009-2017 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

@@ -149,7 +149,7 @@ sub statcache_file {
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/.*\/test\.txt$';
+      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.groupname=\S+;UNIX.mode=\d+;UNIX.owner=\d+;UNIX.ownername=\S+; \/.*\/test\.txt$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
 
@@ -162,7 +162,7 @@ sub statcache_file {
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/.*\/test\.txt$';
+      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.groupname=\S+;UNIX.mode=\d+;UNIX.owner=\d+;UNIX.ownername=\S+; \/.*\/test\.txt$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
 
@@ -178,7 +178,7 @@ sub statcache_file {
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/.*\/test\.txt$';
+      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX\.group=\d+;UNIX\.groupname=\S+;UNIX.mode=\d+;UNIX.owner=\d+;UNIX.ownername=\S+; \/.*\/test\.txt$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
 
@@ -368,7 +368,7 @@ sub statcache_file_chrooted {
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/test\.txt$';
+      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.groupname=\S+;UNIX.mode=\d+;UNIX.owner=\d+;UNIX.ownername=\S+; \/test\.txt$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
 
@@ -381,7 +381,7 @@ sub statcache_file_chrooted {
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/test\.txt$';
+      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.groupname=\S+;UNIX.mode=\d+;UNIX.owner=\d+;UNIX.ownername=\S+; \/test\.txt$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
 
@@ -397,7 +397,7 @@ sub statcache_file_chrooted {
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/test\.txt$';
+      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.groupname=\S+;UNIX.mode=\d+;UNIX.owner=\d+;UNIX.ownername=\S+; \/test\.txt$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
 
@@ -587,7 +587,7 @@ sub statcache_file_tilde {
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/.*\/~test\.txt$';
+      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.groupname=\S+;UNIX.mode=\d+;UNIX.owner=\d+;UNIX.ownername=\S+; \/.*\/~test\.txt$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
 
@@ -600,7 +600,7 @@ sub statcache_file_tilde {
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/.*\/~test\.txt$';
+      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.groupname=\S+;UNIX.mode=\d+;UNIX.owner=\d+;UNIX.ownername=\S+; \/.*\/~test\.txt$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
 
@@ -616,7 +616,7 @@ sub statcache_file_tilde {
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/.*\/~test\.txt$';
+      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.groupname=\S+;UNIX.mode=\d+;UNIX.owner=\d+;UNIX.ownername=\S+; \/.*\/~test\.txt$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
 
@@ -800,7 +800,7 @@ sub statcache_dir {
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=flcdmpe;type=dir;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/.*\/test\.d$';
+      $expected = 'modify=\d+;perm=flcdmpe;type=dir;unique=\S+;UNIX.group=\d+;UNIX.groupname=\S+;UNIX.mode=\d+;UNIX.owner=\d+;UNIX.ownername=\S+; \/.*\/test\.d$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
 
@@ -813,7 +813,7 @@ sub statcache_dir {
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=flcdmpe;type=dir;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/.*\/test\.d$';
+      $expected = 'modify=\d+;perm=flcdmpe;type=dir;unique=\S+;UNIX.group=\d+;UNIX.groupname=\S+;UNIX.mode=\d+;UNIX.owner=\d+;UNIX.ownername=\S+; \/.*\/test\.d$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
 
@@ -829,7 +829,7 @@ sub statcache_dir {
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=flcdmpe;type=dir;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/.*\/test\.d$';
+      $expected = 'modify=\d+;perm=flcdmpe;type=dir;unique=\S+;UNIX.group=\d+;UNIX.groupname=\S+;UNIX.mode=\d+;UNIX.owner=\d+;UNIX.ownername=\S+; \/.*\/test\.d$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
 
@@ -1014,7 +1014,7 @@ sub statcache_dir_chrooted {
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=flcdmpe;type=dir;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/test\.d$';
+      $expected = 'modify=\d+;perm=flcdmpe;type=dir;unique=\S+;UNIX.group=\d+;UNIX.groupname=\S+;UNIX.mode=\d+;UNIX.owner=\d+;UNIX.ownername=\S+; \/test\.d$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
 
@@ -1027,7 +1027,7 @@ sub statcache_dir_chrooted {
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=flcdmpe;type=dir;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/test\.d$';
+      $expected = 'modify=\d+;perm=flcdmpe;type=dir;unique=\S+;UNIX.group=\d+;UNIX.groupname=\S+;UNIX.mode=\d+;UNIX.owner=\d+;UNIX.ownername=\S+; \/test\.d$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
 
@@ -1043,7 +1043,7 @@ sub statcache_dir_chrooted {
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=flcdmpe;type=dir;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/test\.d$';
+      $expected = 'modify=\d+;perm=flcdmpe;type=dir;unique=\S+;UNIX.group=\d+;UNIX.groupname=\S+;UNIX.mode=\d+;UNIX.owner=\d+;UNIX.ownername=\S+; \/test\.d$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
 
@@ -1251,7 +1251,7 @@ sub statcache_rel_symlink_file {
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/.*\/test\.lnk$';
+      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.groupname=\S+;UNIX.mode=\d+;UNIX.owner=\d+;UNIX.ownername=\S+; \/.*\/test\.lnk$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
 
@@ -1264,7 +1264,7 @@ sub statcache_rel_symlink_file {
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/.*\/test\.lnk$';
+      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.groupname=\S+;UNIX.mode=\d+;UNIX.owner=\d+;UNIX.ownername=\S+; \/.*\/test\.lnk$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
 
@@ -1280,7 +1280,7 @@ sub statcache_rel_symlink_file {
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/.*\/test\.lnk$';
+      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.groupname=\S+;UNIX.mode=\d+;UNIX.owner=\d+;UNIX.ownername=\S+; \/.*\/test\.lnk$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
 
@@ -1496,7 +1496,7 @@ sub statcache_rel_symlink_file_chrooted {
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/test\.lnk$';
+      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.groupname=\S+;UNIX.mode=\d+;UNIX.owner=\d+;UNIX.ownername=\S+; \/test\.lnk$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
 
@@ -1509,7 +1509,7 @@ sub statcache_rel_symlink_file_chrooted {
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/test\.lnk$';
+      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.groupname=\S+;UNIX.mode=\d+;UNIX.owner=\d+;UNIX.ownername=\S+; \/test\.lnk$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
 
@@ -1525,7 +1525,7 @@ sub statcache_rel_symlink_file_chrooted {
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/test\.lnk$';
+      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.groupname=\S+;UNIX.mode=\d+;UNIX.owner=\d+;UNIX.ownername=\S+; \/test\.lnk$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
 
@@ -1730,7 +1730,7 @@ sub statcache_rel_symlink_dir {
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=dir;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/.*\/test\.lnk$';
+      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=dir;unique=\S+;UNIX.group=\d+;UNIX.groupname=\S+;UNIX.mode=\d+;UNIX.owner=\d+;UNIX.ownername=\S+; \/.*\/test\.lnk$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
 
@@ -1743,7 +1743,7 @@ sub statcache_rel_symlink_dir {
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=dir;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/.*\/test\.lnk$';
+      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=dir;unique=\S+;UNIX.group=\d+;UNIX.groupname=\S+;UNIX.mode=\d+;UNIX.owner=\d+;UNIX.ownername=\S+; \/.*\/test\.lnk$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
 
@@ -1759,7 +1759,7 @@ sub statcache_rel_symlink_dir {
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=dir;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/.*\/test\.lnk$';
+      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=dir;unique=\S+;UNIX.group=\d+;UNIX.groupname=\S+;UNIX.mode=\d+;UNIX.owner=\d+;UNIX.ownername=\S+; \/.*\/test\.lnk$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
 
@@ -1967,7 +1967,7 @@ sub statcache_rel_symlink_dir_chrooted {
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=dir;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/test\.lnk$';
+      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=dir;unique=\S+;UNIX.group=\d+;UNIX.groupname=\S+;UNIX.mode=\d+;UNIX.owner=\d+;UNIX.ownername=\S+; \/test\.lnk$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
 
@@ -1980,7 +1980,7 @@ sub statcache_rel_symlink_dir_chrooted {
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=dir;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/test\.lnk$';
+      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=dir;unique=\S+;UNIX.group=\d+;UNIX.groupname=\S+;UNIX.mode=\d+;UNIX.owner=\d+;UNIX.ownername\=S+; \/test\.lnk$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
 
@@ -1996,7 +1996,7 @@ sub statcache_rel_symlink_dir_chrooted {
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=dir;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/test\.lnk$';
+      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=dir;unique=\S+;UNIX.group=\d+;UNIX.groupname=\S+;UNIX.mode=\d+;UNIX.owner=\d+;UNIX.ownername=\S+; \/test\.lnk$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
 
@@ -2194,7 +2194,7 @@ sub statcache_config_max_age {
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/.*\/test\.txt$';
+      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.groupname=\S+;UNIX.mode=\d+;UNIX.owner=\d+;UNIX.ownername=\S+; \/.*\/test\.txt$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
 
@@ -2207,7 +2207,7 @@ sub statcache_config_max_age {
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/.*\/test\.txt$';
+      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.groupname=\S+;UNIX.mode=\d+;UNIX.owner=\d+;UNIX.ownername=\S+; \/.*\/test\.txt$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
 
@@ -2225,7 +2225,7 @@ sub statcache_config_max_age {
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/.*\/test\.txt$';
+      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.groupname=\S+;UNIX.mode=\d+;UNIX.owner=\d+;UNIX.ownername=\S+; \/.*\/test\.txt$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
 
@@ -2267,6 +2267,7 @@ sub statcache_config_max_age {
       }
 
       while (my $line = <$fh>) {
+        chomp($line);
         if ($line =~ /<statcache:9>/) {
           if ($line =~ /adding entry.*?type file/) {
             $adding_entry++;
@@ -2296,7 +2297,7 @@ sub statcache_config_max_age {
         }
 
         if ($adding_entry >= 2 &&
-            $expired_entry >= 2 &&
+            $expired_entry >= 1 &&
             $cached_stat == 1 &&
             $cached_lstat == 1) {
           last;
@@ -2306,7 +2307,7 @@ sub statcache_config_max_age {
       close($fh);
 
       $self->assert($adding_entry >= 2 &&
-                    $expired_entry >= 2 &&
+                    $expired_entry >= 1 &&
                     $cached_stat == 1 &&
                     $cached_lstat == 1,
         test_msg("Did not see expected 'statcache' TraceLog messages"));
@@ -2431,7 +2432,7 @@ sub statcache_config_capacity {
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/.*\/test\.txt$';
+      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.groupname=\S+;UNIX.mode=\d+;UNIX.owner=\d+;UNIX.ownername=\S+; \/.*\/test\.txt$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
 
@@ -2444,7 +2445,7 @@ sub statcache_config_capacity {
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/.*\/test\.txt$';
+      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.groupname=\S+;UNIX.mode=\d+;UNIX.owner=\d+;UNIX.ownername=\S+; \/.*\/test\.txt$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
 
@@ -2462,7 +2463,7 @@ sub statcache_config_capacity {
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/.*\/test\.txt$';
+      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.groupname=\S+;UNIX.mode=\d+;UNIX.owner=\d+;UNIX.ownername=\S+; \/.*\/test\.txt$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
 
@@ -2533,7 +2534,7 @@ sub statcache_config_capacity {
         }
 
         if ($adding_entry >= 2 &&
-            $expired_entry >= 2 &&
+            $expired_entry >= 1 &&
             $cached_stat == 1 &&
             $cached_lstat == 1) {
           last;
@@ -2543,7 +2544,7 @@ sub statcache_config_capacity {
       close($fh);
 
       $self->assert($adding_entry >= 2 &&
-                    $expired_entry >= 2 &&
+                    $expired_entry >= 1 &&
                     $cached_stat == 1 &&
                     $cached_lstat == 1,
         test_msg("Did not see expected 'statcache' TraceLog messages"));

@@ -18,10 +18,50 @@ ProFTPD 1.3.<i>x</i>, and is compiled by default.
 
 <h2>Directives</h2>
 <ul>
+  <li><a href="#AuthFileOptions">AuthFileOptions</a>
   <li><a href="#AuthGroupFile">AuthGroupFile</a>
   <li><a href="#AuthUserFile">AuthUserFile</a>
 </ul>
 
+<hr>
+<h3><a name="AuthFileOptions">AuthFileOptions</a></h3>
+<strong>Syntax:</strong> AuthFileOptions <em>opt1 ...</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_auth_file<br>
+<strong>Compatibility:</strong> 1.3.7rc1
+
+<p>
+The <code>AuthFileOptions</code> directive is used to configure various optional
+behavior of <code>mod_auth_file</code>.
+
+<p>
+Example:
+<pre>
+  AuthFileOptions InsecurePerms
+</pre>
+
+<p>
+The currently implemented options are:
+<ul>
+  <p>
+  <li><code>InsecurePerms</code><br>
+    <p>
+    When this option is used, <code>mod_auth_file</code> will ignore insecure
+    permissions (<i>i.e.</i> group- or world-readable) on
+    <code>AuthUserFile</code> and <code>AuthGroupFile</code> files.  <b>Note</b>
+    that this option <b>must</b> appear <em>before</em> any
+    <code>AuthUserFile</code> and <code>AuthGroupFile</code> directives in
+    order to function properly, for the option changes the behavior of the
+    <code>mod_auth_file</code> module at <i>parse</i> time.
+
+    <p>
+    <b>Note</b> that this option first appeared in
+    <code>proftpd-1.3.7rc1</code>.
+  </li>
+</ul>
+
+<p>
 <hr>
 <h3><a name="AuthGroupFile">AuthGroupFile</a></h3>
 <strong>Syntax:</strong> AuthGroupFile <em>path [id min-max] [name regex]</em><br>

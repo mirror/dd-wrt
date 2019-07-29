@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2014-2016 The ProFTPD Project team
+ * Copyright (c) 2014-2017 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -172,7 +172,7 @@ static void config_dumpf(const char *fmt, ...) {
   va_list msg;
 
   va_start(msg, fmt);
-  vsnprintf(buf, sizeof(buf), fmt, msg);
+  pr_vsnprintf(buf, sizeof(buf), fmt, msg);
   va_end(msg);
 
   buf[sizeof(buf)-1] = '\0';
@@ -463,6 +463,21 @@ config_rec *find_config_next2(config_rec *prev, config_rec *c, int type,
 
   /* We do two searches (if recursing) so that we find the "deepest"
    * level first.
+   *
+   * The `recurse` argument tells us HOW to perform that search, e.g.
+   * how to do our DFS (depth-first search) approch:
+   *
+   *  recurse = 0:
+   *    Start at c, search all `next` nodes in list, i.e. all nodes at
+   *    the same depth, no recursion.
+   *
+   *  recurse = 1:
+   *    Start at c, search all `subset` nodes in tree first, then siblings,
+   *    then `next` nodes of parent.
+   *
+   *  recurse > 1:
+   *    Start with child nodes first (`subset`), then c itself (skipping
+   *    siblings nodes).
    */
 
   if (c == NULL &&
@@ -480,12 +495,13 @@ config_rec *find_config_next2(config_rec *prev, config_rec *c, int type,
     namelen = strlen(name);
   }
 
-  if (recurse) {
-    do {
+  do {
+    if (recurse) {
       config_rec *res = NULL;
 
       pr_signals_handle();
 
+      /* Search subsets. */
       for (c = top; c; c = c->next) {
         if (c->subset &&
             c->subset->xas_list) {
@@ -526,51 +542,24 @@ config_rec *find_config_next2(config_rec *prev, config_rec *c, int type,
             }
           }
         }
-      }
 
-      /* If deep recursion yielded no match try the current subset.
-       *
-       * NOTE: the string comparison here is specifically case sensitive.
-       * The config_rec names are supplied by the modules and intentionally
-       * case sensitive (they shouldn't be verbatim from the config file)
-       * Do NOT change this to strcasecmp(), no matter how tempted you are
-       * to do so, it will break stuff. ;)
-       */
-      for (c = top; c; c = c->next) {
-        pr_signals_handle();
-
-        if (type == -1 ||
-            type == c->config_type) {
-
-          if (name == NULL) {
-            return c;
-          }
-
-          if (cid != 0 &&
-              cid == c->config_id) {
-            return c;
-          }
-
-          if (strncmp(name, c->name, namelen + 1) == 0) {
-            return c;
-          }
+        if (recurse > 1) {
+          /* Sibling subsets are already searched by the caller; no need to
+           * continue here (Bug#4307).
+           */
+          break;
         }
       }
+    }
 
-      /* Restart the search at the previous level if required */
-      if (prev->parent &&
-          recurse == 1 &&
-          prev->parent->next &&
-          prev->parent->set != find_config_top) {
-        prev = top = prev->parent->next;
-        c = top;
-        continue;
-      }
-
-      break;
-    } while (TRUE);
-
-  } else {
+    /* Recurse: If deep recursion yielded no match try the current subset.
+     *
+     * NOTE: the string comparison here is specifically case-sensitive.
+     * The config_rec names are supplied by the modules and intentionally
+     * case sensitive (they shouldn't be verbatim from the config file)
+     * Do NOT change this to strcasecmp(), no matter how tempted you are
+     * to do so, it will break stuff. ;)
+     */
     for (c = top; c; c = c->next) {
       pr_signals_handle();
 
@@ -590,8 +579,30 @@ config_rec *find_config_next2(config_rec *prev, config_rec *c, int type,
           return c;
         }
       }
+
+      if (recurse > 1) {
+        /* Sibling subsets are already searched by the caller; no need to
+         * continue here (Bug#4307).
+         */
+        break;
+      }
     }
-  }
+
+    if (recurse == 1) {
+      /* All siblings have been searched; continue the search at the previous
+       * level.
+       */
+      if (prev->parent &&
+          prev->parent->next &&
+          prev->parent->set != find_config_top) {
+        prev = top = prev->parent->next;
+        c = top;
+        continue;
+      }
+    }
+    break;
+
+  } while (TRUE);
 
   errno = ENOENT;
   return NULL;

@@ -1,7 +1,7 @@
 dnl ProFTPD - FTP server daemon
 dnl Copyright (c) 1997, 1998 Public Flood Software
 dnl Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
-dnl Copyright (c) 2001-2017 The ProFTPD Project team
+dnl Copyright (c) 2001-2018 The ProFTPD Project team
 dnl
 dnl This program is free software; you can redistribute it and/or modify
 dnl it under the terms of the GNU General Public License as published by
@@ -87,7 +87,7 @@ if test $ac_cv_prog_gcc = no -a "$OSTYPE" = "-DHPUX10"; then
   CFLAGS="$CFLAGS -Ae"
 fi
 
-LDFLAGS="-L\$(top_srcdir)/lib $LDFLAGS"
+LDFLAGS="-L\$(top_srcdir)/lib -L\$(top_builddir)/lib $LDFLAGS"
 
 if test $ac_cv_prog_gcc = yes; then
   dnl Make sure to use the -rdynamic linker flag, for stacktraces
@@ -411,6 +411,9 @@ AC_ARG_WITH(modules,
 
 dnl Memcache
 if test x"$enable_memcache" = xyes; then
+  AC_CHECK_LIB(memcached, memcached_create)
+  AC_CHECK_LIB(memcachedutil, libmemcached_util_ping)
+
   # Yes, we DO want mod_memcache AFTER the other modules in the static
   # module list. Otherwise, the module load ordering will be such that
   # memcache support will not work as expected
@@ -420,6 +423,8 @@ fi
 
 dnl Redis
 if test x"$enable_redis" = xyes; then
+  AC_CHECK_LIB(hiredis, redisConnect)
+
   # Yes, we DO want mod_redis AFTER the other modules in the static
   # module list. Otherwise, the module load ordering will be such that
   # Redis support will not work as expected.
@@ -719,7 +724,7 @@ AC_ARG_ENABLE(dso,
       ac_build_core_modules="$ac_build_core_modules modules/mod_dso.o"
 
       MAIN_LDFLAGS="-L\$(top_srcdir)/lib/libltdl -dlopen self -export-dynamic"
-      MAIN_LIBS="\$(LIBLTDL)"
+      MAIN_LIBS="$MAIN_LIBS \$(LIBLTDL)"
 
       MODULE_LDFLAGS="-avoid-version -export-dynamic -module"
 
@@ -742,8 +747,8 @@ AC_ARG_ENABLE(dso,
 dnl ident (RFC1413) support
 AC_ARG_ENABLE(ident,
   [AC_HELP_STRING(
-    [--disable-ident],
-    [disable use of ident (RFC1413) lookups (default=no)])
+    [--enable-ident],
+    [enable use of ident (RFC1413) lookups (default=no)])
   ])
 
 dnl Memcache support
@@ -885,7 +890,52 @@ AC_ARG_ENABLE(redis,
     [enable support for Redis (default=no)])
   ],
   [ if test x"$enableval" = xyes ; then
-      AC_DEFINE(PR_USE_REDIS, 1, [Define if using Redis support.])
+      AC_CHECK_HEADER(hiredis/hiredis.h,
+        [AC_DEFINE(HAVE_HIREDIS_HIREDIS_H, 1, [Define if hiredis.h is present.])
+         AC_DEFINE(PR_USE_REDIS, 1, [Define if using Redis support.])
+      ])
+
+      # Check for the redisReconnect() function in Hiredis; earlier versions
+      # did not have this.
+      saved_ldflags="$LDFLAGS"
+      saved_libs="$LIBS"
+      saved_cppflags="$CPPFLAGS"
+
+      # fiddle with CPPFLAGS, LDFLAGS
+      CPPFLAGS="$CPPFLAGS $ac_build_addl_includes"
+      LDFLAGS="$LDFLAGS $ac_build_addl_libdirs"
+
+      dnl Splice out -lsupp, since that library hasn't been built yet
+      LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
+      LIBS="$LIBS -lhiredis"
+
+      AC_MSG_CHECKING([for Hiredis' redisReconnect])
+      AC_TRY_LINK(
+        [
+          #ifdef HAVE_STDLIB_H
+          # include <stdlib.h>
+          #endif
+          #ifdef HAVE_SYS_TYPES_H
+          # include <sys/types.h>
+          #endif
+          #include <hiredis/hiredis.h>
+        ],
+        [
+          (void) redisReconnect(NULL);
+        ],
+        [
+          AC_MSG_RESULT(yes)
+          AC_DEFINE(HAVE_HIREDIS_REDISRECONNECT, 1, [Define if you have Hiredis' redisReconnect])
+        ],
+        [
+          AC_MSG_RESULT(no)
+        ]
+      )
+
+      # restore CPPFLAGS, LDFLAGS
+      CPPFLAGS="$saved_cppflags"
+      LDFLAGS="$saved_ldflags"
+      LIBS="$saved_libs"
     fi
   ])
 
@@ -985,7 +1035,8 @@ AC_ARG_ENABLE(tests,
     [--enable-tests],
     [enable unit tests (default=no)])
   ],
-  [ if test x"$enableval" = x"yes" ; then
+  [
+    if test "$enableval" != xno ; then
       AC_CHECK_HEADERS(check.h)
 
       AC_CHECK_LIB(check, tcase_create,
@@ -997,6 +1048,10 @@ AC_ARG_ENABLE(tests,
          AC_MSG_ERROR([libcheck support, required for tests, not present -- aborting])
         ]
       )
+
+      if test x"$enableval" != x"nonetwork" ; then
+        AC_DEFINE(PR_USE_NETWORK_TESTS, 1, [Define if non-local network tests are enabled.])
+      fi
     fi
   ])
 
@@ -1385,10 +1440,12 @@ AC_CHECK_HEADERS(hpsecurity.h, [
 dnl AIX's "lastlog" support is done via specific functions, rather than a
 dnl struct (Bug#4285).
 AC_MSG_CHECKING(for AIX authenticate)
-AC_TRY_COMPILE([
+AC_TRY_LINK([
   #include <sys/types.h>
   #ifdef HAVE_USERSEC_H
   # include <usersec.h>
+  #else
+  # error "we are not on AIX"
   #endif
   ],
   [
@@ -1404,10 +1461,12 @@ AC_TRY_COMPILE([
 
 
 AC_MSG_CHECKING(for AIX loginfailed)
-AC_TRY_COMPILE([
+AC_TRY_LINK([
   #include <sys/types.h>
   #ifdef HAVE_USERSEC_H
   # include <usersec.h>
+  #else
+  # error "we are not on AIX"
   #endif
   ],
   [
@@ -1422,10 +1481,12 @@ AC_TRY_COMPILE([
 )
 
 AC_MSG_CHECKING(for AIX loginsuccess)
-AC_TRY_COMPILE([
+AC_TRY_LINK([
   #include <sys/types.h>
   #ifdef HAVE_USERSEC_H
   # include <usersec.h>
+  #else
+  # error "we are not on AIX"
   #endif
   ],
   [
@@ -1640,12 +1701,11 @@ AC_CHECK_HEADERS(netinet/ip.h,,,
     ]
   ])
 
-AC_CHECK_HEADERS(netinet/tcp.h arpa/inet.h libintl.h)
-AC_CHECK_HEADERS(sys/stat.h errno.h sys/termios.h sys/termio.h)
+AC_CHECK_HEADERS(netinet/tcp.h arpa/inet.h idna.h libintl.h)
+AC_CHECK_HEADERS(regex.h sys/stat.h errno.h sys/termios.h sys/termio.h)
 AC_CHECK_HEADERS(sys/statfs.h sys/statvfs.h sys/un.h sys/vfs.h sys/select.h)
 AC_CHECK_HEADERS(termios.h dirent.h ndir.h sys/ndir.h sys/dir.h vmsdir.h)
 AC_CHECK_HEADERS(ucred.h ucontext.h utime.h utmpx.h)
-AC_CHECK_HEADERS(regex.h)
 AC_CHECK_HEADER(syslog.h, have_syslog_h="yes",)
 AC_CHECK_HEADERS(curses.h ncurses.h)
 
@@ -1675,6 +1735,25 @@ AC_TYPE_SIZE_T
 AC_TYPE_MODE_T
 AC_TYPE_OFF_T
 AC_TYPE_GETGROUPS
+
+dnl Check the function signature of getgrouplist()
+AC_MSG_CHECKING([whether the getgrouplist(3) function takes ints])
+AC_TRY_LINK([
+  #define _GNU_SOURCE
+  #ifdef HAVE_GRP_H
+  # include <grp.h>
+  #endif
+  #ifdef HAVE_UNISTD_H
+  # include <unistd.h>
+  #endif
+], [
+  int (*f)(const char *, int, int *, int *) = getgrouplist;
+], [
+  AC_MSG_RESULT(yes)
+  AC_DEFINE(HAVE_GETGROUPLIST_TAKES_INTS, 1, [Define if getgrouplist3() takes ints as arguments])
+], [
+  AC_MSG_RESULT(no)
+])
 
 AC_HEADER_TIME
 AC_STRUCT_TM
@@ -1858,6 +1937,30 @@ AC_TRY_LINK(
   ]
 )
 
+AC_MSG_CHECKING([for idna_to_ascii_8z])
+AC_TRY_COMPILE(
+  [
+    #include <sys/types.h>
+    #ifdef HAVE_IDNA_H
+    #  include <idna.h>
+    #endif
+  ],
+  [
+    int flags = 0, res = 0;
+    const char *input = NULL;
+    char *output = NULL;
+    res = idna_to_ascii_8z(input, &output, flags);
+  ],
+  [
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(HAVE_IDNA_TO_ASCII_8Z, 1, [Define if you have idna_to_ascii_8z])
+    MAIN_LIBS="$MAIN_LIBS -lidn"
+  ],
+  [
+    AC_MSG_RESULT(no)
+  ]
+)
+
 AC_MSG_CHECKING([for dirfd])
 AC_TRY_LINK(
   [ #ifdef HAVE_STDDEF_H
@@ -1929,7 +2032,7 @@ AC_CHECK_FUNCS(getcwd getenv getgrouplist getgroups getgrset gethostbyname2 geth
 AC_CHECK_FUNCS(gettimeofday hstrerror inet_aton inet_ntop inet_pton initgroups)
 AC_CHECK_FUNCS(loginrestrictions)
 AC_CHECK_FUNCS(memcpy mempcpy memset_s mkdir mkstemp mlock mlockall munlock munlockall)
-AC_CHECK_FUNCS(pathconf posix_fadvise prctl putenv regcomp rmdir select setgroups socket statfs strchr strcoll strerror)
+AC_CHECK_FUNCS(pathconf posix_fadvise pread prctl putenv pwrite random regcomp rmdir select setgroups socket srandom statfs strchr strcoll strerror)
 AC_CHECK_FUNCS(strlcat strlcpy strsep strtod strtof strtol strtoll strtoull setprotoent setspent endprotoent)
 # __snprintf and __vsnprintf are only on solaris and _really_ broken there.
 AC_CHECK_FUNCS(vsnprintf snprintf)
@@ -2050,6 +2153,9 @@ AC_CHECK_MEMBER(struct statfs.f_fstypename,
     #if HAVE_SYS_VFS_H
     # include <sys/vfs.h>
     #endif
+    #if HAVE_SYS_STATFS_H
+    # include <sys/statfs.h>
+    #endif
   ])
 
 AC_CHECK_MEMBER(struct statfs.f_type,
@@ -2066,6 +2172,9 @@ AC_CHECK_MEMBER(struct statfs.f_type,
     #endif
     #if HAVE_SYS_VFS_H
     # include <sys/vfs.h>
+    #endif
+    #if HAVE_SYS_STATFS_H
+    # include <sys/statfs.h>
     #endif
   ])
 
@@ -2687,7 +2796,7 @@ if test x"$enable_nonblocking_log_open" != xno; then
   AC_DEFINE(PR_USE_NONBLOCKING_LOG_OPEN, 1, [Define if using nonblocking open of log files])
 fi
 
-if test x"$enable_ident" != xno ; then
+if test x"$enable_ident" == xyes ; then
   ac_static_modules="mod_ident.o $ac_static_modules"
   ac_build_static_modules="modules/mod_ident.o $ac_build_static_modules"
 fi
@@ -3215,6 +3324,7 @@ if test x"$pr_use_openssl" = xyes; then
 
   AC_TRY_RUN(
     [
+      #include <openssl/crypto.h>
       #include <openssl/fips.h>
       int main(int argc, char *argv[]) {
       # ifdef OPENSSL_FIPS
@@ -3326,6 +3436,30 @@ if test x"$pr_use_openssl" = xyes; then
     [
       AC_MSG_RESULT(yes)
       AC_DEFINE(PR_USE_OPENSSL_ECC, 1, [Define if your OpenSSL supports ECC])
+    ],
+    [
+      AC_MSG_RESULT(no)
+    ]
+  )
+  LIBS="$saved_libs"
+
+  AC_MSG_CHECKING([whether OpenSSL has EVP_CipherInit_ex support])
+  saved_libs="$LIBS"
+
+  dnl Splice out -lsupp, since that library hasn't been built yet
+  LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
+  LIBS="-lcrypto $LIBS"
+
+  AC_TRY_LINK(
+    [
+      #include <openssl/evp.h>
+    ],
+    [
+      (void) EVP_CipherInit_ex(NULL, NULL, NULL, NULL, NULL, 1);
+    ],
+    [
+      AC_MSG_RESULT(yes)
+      AC_DEFINE(PR_USE_OPENSSL_EVP_CIPHERINIT_EX, 1, [Define if your OpenSSL supports EVP_CipherInit_ex])
     ],
     [
       AC_MSG_RESULT(no)
@@ -3968,14 +4102,15 @@ AC_OUTPUT(
 
 dnl After everything has been generated, we need to double-check for
 dnl header files in the module directories.
+builddir=.
 for moduledir in $ac_shared_module_dirs $ac_static_module_dirs; do
   srcinc=`echo "$moduledir" | sed -e 's/^.*\///'`.h;
 
-  if test -d $srcdir/$moduledir ; then
-    if test ! -e $srcdir/include/$srcinc ; then
-      if test -e $srcdir/$moduledir/$srcinc ; then
+  if test -d $builddir/$moduledir ; then
+    if test ! -e $builddir/include/$srcinc ; then
+      if test -e $builddir/$moduledir/$srcinc ; then
         olddir=`pwd`
-        cd $srcdir/include
+        cd $builddir/include
         ln -s ../$moduledir/$srcinc $srcinc
         cd $olddir
       fi

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2004-2016 The ProFTPD Project team
+ * Copyright (c) 2004-2017 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -50,8 +50,7 @@ static void format_size_str(char *buf, size_t buflen, off_t size) {
   }
 
   /* Now, prepare the buffer. */
-  res = snprintf(buf, buflen, "%.3" PR_LU "%sB", (pr_off_t) size, units[i]);
-
+  res = pr_snprintf(buf, buflen, "%.3" PR_LU "%sB", (pr_off_t) size, units[i]);
   if (res > 2) {
     /* Check for leading zeroes; it's an aethetic choice. */
     if (buf[0] == '0' && buf[1] != '.') {
@@ -174,7 +173,7 @@ static int display_fh(pr_fh_t *fh, const char *fs, const char *resp_code,
     fs_size = 0;
   }
 
-  snprintf(mg_size, sizeof(mg_size), "%" PR_LU, (pr_off_t) fs_size);
+  pr_snprintf(mg_size, sizeof(mg_size), "%" PR_LU, (pr_off_t) fs_size);
   format_size_str(mg_size_units, sizeof(mg_size_units), fs_size);
 
   p = make_sub_pool(session.pool);
@@ -191,7 +190,7 @@ static int display_fh(pr_fh_t *fh, const char *fs, const char *resp_code,
     current_clients = v;
   }
 
-  snprintf(mg_cur, sizeof(mg_cur), "%u",
+  pr_snprintf(mg_cur, sizeof(mg_cur), "%u",
     current_clients ? *current_clients : 1);
 
   if (session.conn_class != NULL &&
@@ -205,7 +204,7 @@ static int display_fh(pr_fh_t *fh, const char *fs, const char *resp_code,
       class_clients = v;
     }
 
-    snprintf(mg_cur_class, sizeof(mg_cur_class), "%u",
+    pr_snprintf(mg_cur_class, sizeof(mg_cur_class), "%u",
       class_clients ? *class_clients : 0);
 
     /* For the %z variable, first we scan through the MaxClientsPerClass,
@@ -236,33 +235,33 @@ static int display_fh(pr_fh_t *fh, const char *fs, const char *resp_code,
       }
     }
 
-    snprintf(mg_class_limit, sizeof(mg_class_limit), "%u", maxclients);
+    pr_snprintf(mg_class_limit, sizeof(mg_class_limit), "%u", maxclients);
 
   } else {
-    snprintf(mg_class_limit, sizeof(mg_class_limit), "%u",
+    pr_snprintf(mg_class_limit, sizeof(mg_class_limit), "%u",
       max_clients ? *max_clients : 0);
-    snprintf(mg_cur_class, sizeof(mg_cur_class), "%u", 0);
+    pr_snprintf(mg_cur_class, sizeof(mg_cur_class), "%u", 0);
   }
 
-  snprintf(mg_xfer_bytes, sizeof(mg_xfer_bytes), "%" PR_LU,
+  pr_snprintf(mg_xfer_bytes, sizeof(mg_xfer_bytes), "%" PR_LU,
     (pr_off_t) session.total_bytes >> 10);
-  snprintf(mg_xfer_units, sizeof(mg_xfer_units), "%" PR_LU "B",
+  pr_snprintf(mg_xfer_units, sizeof(mg_xfer_units), "%" PR_LU "B",
     (pr_off_t) session.total_bytes);
 
   if (session.total_bytes >= 10240) {
-    snprintf(mg_xfer_units, sizeof(mg_xfer_units), "%" PR_LU "kB",
+    pr_snprintf(mg_xfer_units, sizeof(mg_xfer_units), "%" PR_LU "kB",
       (pr_off_t) session.total_bytes >> 10);
 
   } else if ((session.total_bytes >> 10) >= 10240) {
-    snprintf(mg_xfer_units, sizeof(mg_xfer_units), "%" PR_LU "MB",
+    pr_snprintf(mg_xfer_units, sizeof(mg_xfer_units), "%" PR_LU "MB",
       (pr_off_t) session.total_bytes >> 20);
 
   } else if ((session.total_bytes >> 20) >= 10240) {
-    snprintf(mg_xfer_units, sizeof(mg_xfer_units), "%" PR_LU "GB",
+    pr_snprintf(mg_xfer_units, sizeof(mg_xfer_units), "%" PR_LU "GB",
       (pr_off_t) session.total_bytes >> 30);
   }
 
-  snprintf(mg_max, sizeof(mg_max), "%u", max_clients ? *max_clients : 0);
+  pr_snprintf(mg_max, sizeof(mg_max), "%u", max_clients ? *max_clients : 0);
 
   user = pr_table_get(session.notes, "mod_auth.orig-user", NULL);
   if (user == NULL) {
@@ -283,15 +282,15 @@ static int display_fh(pr_fh_t *fh, const char *fs, const char *resp_code,
   }
 
   /* "Stringify" the file number for this session. */
-  snprintf(total_files_in, sizeof(total_files_in), "%u",
+  pr_snprintf(total_files_in, sizeof(total_files_in), "%u",
     session.total_files_in);
   total_files_in[sizeof(total_files_in)-1] = '\0';
 
-  snprintf(total_files_out, sizeof(total_files_out), "%u",
+  pr_snprintf(total_files_out, sizeof(total_files_out), "%u",
     session.total_files_out);
   total_files_out[sizeof(total_files_out)-1] = '\0';
 
-  snprintf(total_files_xfer, sizeof(total_files_xfer), "%u",
+  pr_snprintf(total_files_xfer, sizeof(total_files_xfer), "%u",
     session.total_files_xfer);
   total_files_xfer[sizeof(total_files_xfer)-1] = '\0';
 

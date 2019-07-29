@@ -32,11 +32,11 @@
 #include "conf.h"
 #include "privs.h"
 
-#define MOD_DEFLATE_VERSION		"mod_deflate/0.5.7"
+#define MOD_DEFLATE_VERSION		"mod_deflate/0.6"
 
 /* Make sure the version of proftpd is as necessary. */
-#if PROFTPD_VERSION_NUMBER < 0x0001030504
-# error "ProFTPD 1.3.5rc4 or later required"
+#if PROFTPD_VERSION_NUMBER < 0x0001030604
+# error "ProFTPD 1.3.6 or later required"
 #endif
 
 module deflate_module;
@@ -47,6 +47,16 @@ static int deflate_enabled = FALSE;
 static int deflate_engine = FALSE;
 static int deflate_logfd = -1;
 static pr_netio_t *deflate_netio = NULL;
+static pr_netio_t *deflate_next_netio = NULL;
+
+/* These are for tracking the callbacks of the next NetIO, if any, that we
+ * override, for restoring later via OPTS.
+ */
+static int (*deflate_next_netio_close)(pr_netio_stream_t *) = NULL;
+static pr_netio_stream_t *(*deflate_next_netio_open)(pr_netio_stream_t *, int, int) = NULL;
+static int (*deflate_next_netio_read)(pr_netio_stream_t *, char *, size_t) = NULL;
+static int (*deflate_next_netio_shutdown)(pr_netio_stream_t *, int) = NULL;
+static int (*deflate_next_netio_write)(pr_netio_stream_t *, char *, size_t) = NULL;
 
 /* Draft-recommended ZLIB defaults:
  *
@@ -134,14 +144,29 @@ static const char *deflate_zstrerror(int zerrno) {
  */
 
 static int deflate_netio_close_cb(pr_netio_stream_t *nstrm) {
-  int res;
+  int res = 0;
 
   if (nstrm->strm_type == PR_NETIO_STRM_DATA) {
     z_stream *zstrm;
 
     zstrm = (z_stream *) pr_table_get(nstrm->notes, DEFLATE_NETIO_NOTE, NULL);
     if (zstrm == NULL) {
-      return 0;
+      int xerrno = 0;
+
+      res = 0;
+
+      if (deflate_next_netio_close != NULL) {
+        res = (deflate_next_netio_close)(nstrm);
+        xerrno = errno;
+
+        if (res < 0) {
+          pr_trace_msg(trace_channel, 1, "error calling next netio close: %s",
+            strerror(xerrno));
+        }
+      }
+
+      errno = xerrno;
+      return res;
     }
 
     if (nstrm->strm_mode == PR_NETIO_IO_WR) {
@@ -190,11 +215,21 @@ static int deflate_netio_close_cb(pr_netio_stream_t *nstrm) {
           zstrm->msg ? zstrm->msg : deflate_zstrerror(res));
       }
     }
+
+    if (deflate_next_netio == NULL) {
+      res = close(nstrm->strm_fd);
+      nstrm->strm_fd = -1;
+    }
+
+    pr_table_remove(nstrm->notes, DEFLATE_NETIO_NOTE, NULL);
   }
 
-  res = close(nstrm->strm_fd);
-  nstrm->strm_fd = -1;
-  pr_table_remove(nstrm->notes, DEFLATE_NETIO_NOTE, NULL);
+  if (deflate_next_netio_close != NULL) {
+    if ((deflate_next_netio_close)(nstrm) < 0) {
+      pr_trace_msg(trace_channel, 1, "error calling next netio close: %s",
+        strerror(errno));
+    }
+  }
 
   return res;
 }
@@ -204,6 +239,17 @@ static pr_netio_stream_t *deflate_netio_open_cb(pr_netio_stream_t *nstrm,
 
   nstrm->strm_fd = fd;
   nstrm->strm_mode = mode;
+
+  if (deflate_next_netio_open != NULL) {
+    if ((deflate_next_netio_open)(nstrm, fd, mode) == NULL) {
+      int xerrno = errno;
+
+      pr_trace_msg(trace_channel, 1, "error calling next netio open: %s",
+        strerror(xerrno));
+      errno = xerrno;
+      return NULL;
+    }
+  }
 
   if (nstrm->strm_type == PR_NETIO_STRM_DATA) {
     int res;
@@ -222,10 +268,10 @@ static pr_netio_stream_t *deflate_netio_open_cb(pr_netio_stream_t *nstrm,
     if (pr_table_add(nstrm->notes,
         pstrdup(nstrm->strm_pool, DEFLATE_NETIO_NOTE), zstrm,
         sizeof(z_stream *)) < 0) {
-      (void) pr_log_writefile(deflate_logfd, MOD_DEFLATE_VERSION,
-        "error stashing '%s' note: %s", DEFLATE_NETIO_NOTE, strerror(errno));
-      errno = EPERM;
-      return NULL;
+      if (errno != EEXIST) {
+        (void) pr_log_writefile(deflate_logfd, MOD_DEFLATE_VERSION,
+          "error stashing '%s' note: %s", DEFLATE_NETIO_NOTE, strerror(errno));
+      }
     }
 
     memset(deflate_zbuf_ptr, '\0', deflate_zbufsz);
@@ -393,8 +439,14 @@ static int deflate_netio_read_cb(pr_netio_stream_t *nstrm, char *buf,
 
     datalen = deflate_rbufsz - deflate_rbuflen;
 
-    /* Read in some data from the stream's fd. */
-    nread = read(nstrm->strm_fd, deflate_rbuf, datalen);
+    if (deflate_next_netio_read != NULL) {
+      nread = (deflate_next_netio_read)(nstrm, (char *) deflate_rbuf, datalen);
+
+    } else {
+      /* Read in some data from the stream's fd. */
+      nread = read(nstrm->strm_fd, deflate_rbuf, datalen);
+    }
+
     if (nread < 0) {
       xerrno = errno;
 
@@ -561,7 +613,14 @@ static int deflate_netio_shutdown_cb(pr_netio_stream_t *nstrm, int how) {
         offset = 0;
 
         while (datalen > 0) {
-          res = write(nstrm->strm_fd, deflate_zbuf + offset, datalen);
+          if (deflate_next_netio_write != NULL) {
+            res = (deflate_next_netio_write)(nstrm,
+              (char *) (deflate_zbuf + offset), datalen);
+
+          } else {
+            res = write(nstrm->strm_fd, deflate_zbuf + offset, datalen);
+          }
+
           if (res < 0) {
             if (errno == EINTR ||
                 errno == EAGAIN) {
@@ -593,7 +652,14 @@ static int deflate_netio_shutdown_cb(pr_netio_stream_t *nstrm, int how) {
         }
       }
 
-      return 0;
+      if (deflate_next_netio_shutdown != NULL) {
+        res = (deflate_next_netio_shutdown)(nstrm, how);
+
+      } else {
+        res = shutdown(nstrm->strm_fd, how);
+      }
+
+      return res;
     }
   }
 
@@ -658,7 +724,14 @@ static int deflate_netio_write_cb(pr_netio_stream_t *nstrm, char *buf,
     while (datalen > 0) {
       pr_signals_handle();
 
-      res = write(nstrm->strm_fd, deflate_zbuf + offset, datalen);
+      if (deflate_next_netio_write != NULL) {
+        res = (deflate_next_netio_write)(nstrm,
+          (char *) (deflate_zbuf + offset), datalen);
+
+      } else {
+        res = write(nstrm->strm_fd, deflate_zbuf + offset, datalen);
+      }
+
       if (res < 0) {
         if (errno == EINTR ||
             errno == EAGAIN) {
@@ -760,8 +833,9 @@ MODRET set_deflatelog(cmd_rec *cmd) {
  */
 
 MODRET deflate_opts(cmd_rec *cmd) {
-  if (!deflate_engine)
+  if (deflate_engine == FALSE) {
     return PR_DECLINED(cmd);
+  }
 
   if (cmd->argc < 3) {
     return PR_DECLINED(cmd);
@@ -846,7 +920,7 @@ MODRET deflate_opts(cmd_rec *cmd) {
 MODRET deflate_mode(cmd_rec *cmd) {
   char *mode;
 
-  if (!deflate_engine) {
+  if (deflate_engine == FALSE) {
     return PR_DECLINED(cmd);
   }
 
@@ -860,72 +934,115 @@ MODRET deflate_mode(cmd_rec *cmd) {
   mode[0] = toupper(mode[0]);
 
   if (mode[0] == 'Z') {
-    if (session.rfc2228_mech) {
-      (void) pr_log_writefile(deflate_logfd, MOD_DEFLATE_VERSION,
-        "declining MODE Z (RFC2228 mechanism '%s' in effect)",
-        session.rfc2228_mech);
-      pr_log_debug(DEBUG2, MOD_DEFLATE_VERSION
-        ": declining MODE Z (RFC2228 mechanism '%s' in effect)",
-        session.rfc2228_mech);
+    if (session.rfc2228_mech != NULL) {
+      if (strcasecmp(session.rfc2228_mech, "tls") != 0) {
+        (void) pr_log_writefile(deflate_logfd, MOD_DEFLATE_VERSION,
+          "declining MODE Z (RFC2228 mechanism '%s' in effect)",
+          session.rfc2228_mech);
+        pr_log_debug(DEBUG2, MOD_DEFLATE_VERSION
+          ": declining MODE Z (RFC2228 mechanism '%s' in effect)",
+          session.rfc2228_mech);
 
-      pr_response_add_err(R_504, _("Unable to handle MODE Z at this time"));
+        pr_response_add_err(R_504, _("Unable to handle MODE Z at this time"));
 
-      pr_cmd_set_errno(cmd, EPERM);
-      errno = EPERM;
-      return PR_ERROR(cmd);
+        pr_cmd_set_errno(cmd, EPERM);
+        errno = EPERM;
+        return PR_ERROR(cmd);
+      }
     }
 
-    if (deflate_enabled) {
+    if (deflate_enabled == TRUE) {
       pr_response_add(R_200, _("OK"));
       return PR_HANDLED(cmd);
     }
 
-    /* Need to install some sort of NetIO handlers here, to handle
-     * compression.
-     */
+    deflate_next_netio = pr_get_netio(PR_NETIO_STRM_DATA);
+    if (deflate_next_netio != NULL) {
+      /* If another module has registered a NetIO callback already (e.g.
+       * mod_tls), we want to leave it in place, but replace some (but not all)
+       * of its callbacks with our own.
+       *
+       * We cache copies/pointers of the original callbacks, for restoring
+       * later if requested.
+       */
+      pr_trace_msg(trace_channel, 9, "overriding existing %s NetIO callbacks",
+        deflate_next_netio->owner_name? deflate_next_netio->owner_name :
+        deflate_next_netio->owner->name);
 
-    deflate_netio = pr_alloc_netio2(session.pool, &deflate_module, NULL);
-    deflate_netio->close = deflate_netio_close_cb;
-    deflate_netio->open = deflate_netio_open_cb;
-    deflate_netio->read = deflate_netio_read_cb;
-    deflate_netio->shutdown = deflate_netio_shutdown_cb;
-    deflate_netio->write = deflate_netio_write_cb;
+      deflate_next_netio_close = deflate_next_netio->close;
+      deflate_next_netio->close = deflate_netio_close_cb;
 
-    /* XXX Report on any previously registered NetIO streams (e.g. mod_tls)?
-     * Doing so would require a new pr_netio_ function, e.g. pr_netio_get().
-     */
-    pr_unregister_netio(PR_NETIO_STRM_DATA);
+      deflate_next_netio_open = deflate_next_netio->open;
+      deflate_next_netio->open = deflate_netio_open_cb;
 
-    if (pr_register_netio(deflate_netio, PR_NETIO_STRM_DATA) < 0) {
-      (void) pr_log_writefile(deflate_logfd, MOD_DEFLATE_VERSION,
-        "error registering netio: %s", strerror(errno));
+      deflate_next_netio_read = deflate_next_netio->read;
+      deflate_next_netio->read = deflate_netio_read_cb;
+
+      deflate_next_netio_shutdown = deflate_next_netio->shutdown;
+      deflate_next_netio->shutdown = deflate_netio_shutdown_cb;
+
+      deflate_next_netio_write = deflate_next_netio->write;
+      deflate_next_netio->write = deflate_netio_write_cb;
 
     } else {
-      deflate_enabled = TRUE;
+      /* Need to install some sort of NetIO handlers here, to handle
+       * compression.
+       */
+      deflate_netio = pr_alloc_netio2(session.pool, &deflate_module, NULL);
+      deflate_netio->close = deflate_netio_close_cb;
+      deflate_netio->open = deflate_netio_open_cb;
+      deflate_netio->read = deflate_netio_read_cb;
+      deflate_netio->shutdown = deflate_netio_shutdown_cb;
+      deflate_netio->write = deflate_netio_write_cb;
 
-      pr_response_add(R_200, _("OK"));
-      return PR_HANDLED(cmd);
+      if (pr_register_netio(deflate_netio, PR_NETIO_STRM_DATA) < 0) {
+        (void) pr_log_writefile(deflate_logfd, MOD_DEFLATE_VERSION,
+          "error registering netio: %s", strerror(errno));
+      }
     }
+
+    deflate_enabled = TRUE;
+
+    pr_response_add(R_200, _("OK"));
+    return PR_HANDLED(cmd);
 
   } else {
     if (deflate_enabled) {
-      /* Switch to some other transmission mode.  Remove our NetIO.
-       * XXX Ideally, we would restore the previous NetIO.
-       */
+      /* Switch to some other transmission mode.  Remove our NetIO. */
 
-      if (pr_unregister_netio(PR_NETIO_STRM_DATA) < 0) {
-        (void) pr_log_writefile(deflate_logfd, MOD_DEFLATE_VERSION,
-          "error unregistering netio: %s", strerror(errno));
+      if (deflate_next_netio != NULL) {
+        deflate_next_netio->close = deflate_next_netio_close;
+        deflate_next_netio_close = NULL;
+
+        deflate_next_netio->open = deflate_next_netio_open;
+        deflate_next_netio_open = NULL;
+
+        deflate_next_netio->read = deflate_next_netio_read;
+        deflate_next_netio_read = NULL;
+
+        deflate_next_netio->shutdown = deflate_next_netio_shutdown;
+        deflate_next_netio_shutdown = NULL;
+
+        deflate_next_netio->write = deflate_next_netio_write;
+        deflate_next_netio_write = NULL;
+
+        deflate_next_netio = NULL;
 
       } else {
-        (void) pr_log_writefile(deflate_logfd, MOD_DEFLATE_VERSION,
-          "%s %s: unregistered netio", (char *) cmd->argv[0],
-          (char *) cmd->argv[1]);
-      }
+        if (pr_unregister_netio(PR_NETIO_STRM_DATA) < 0) {
+          (void) pr_log_writefile(deflate_logfd, MOD_DEFLATE_VERSION,
+            "error unregistering netio: %s", strerror(errno));
 
-      if (deflate_netio) {
-        destroy_pool(deflate_netio->pool);
-        deflate_netio = NULL;
+        } else {
+          (void) pr_log_writefile(deflate_logfd, MOD_DEFLATE_VERSION,
+            "%s %s: unregistered netio", (char *) cmd->argv[0],
+            (char *) cmd->argv[1]);
+        }
+
+        if (deflate_netio != NULL) {
+          destroy_pool(deflate_netio->pool);
+          deflate_netio = NULL;
+        }
       }
 
       deflate_enabled = FALSE;

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2010-2016 The ProFTPD Project team
+ * Copyright (c) 2010-2017 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -820,7 +820,7 @@ static void stash_dumpf(const char *fmt, ...) {
   va_list msg;
 
   va_start(msg, fmt);
-  vsnprintf(buf, sizeof(buf), fmt, msg);
+  pr_vsnprintf(buf, sizeof(buf), fmt, msg);
   va_end(msg);
 
   buf[sizeof(buf)-1] = '\0';

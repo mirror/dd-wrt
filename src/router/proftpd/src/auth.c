@@ -28,6 +28,7 @@
 
 #include "conf.h"
 #include "privs.h"
+#include "error.h"
 
 static pool *auth_pool = NULL;
 static size_t auth_max_passwd_len = PR_TUNABLE_PASSWORD_MAX;
@@ -1312,7 +1313,7 @@ const char *pr_auth_uid2name(pool *p, uid_t uid) {
 
   if (!have_name) {
     /* TODO: This conversion is data type sensitive, per Bug#4164. */
-    snprintf(namebuf, sizeof(namebuf)-1, "%lu", (unsigned long) uid);
+    pr_snprintf(namebuf, sizeof(namebuf)-1, "%lu", (unsigned long) uid);
     res = namebuf;
 
     if (auth_caching & PR_AUTH_CACHE_FL_BAD_UID2NAME) {
@@ -1368,7 +1369,7 @@ const char *pr_auth_gid2name(pool *p, gid_t gid) {
 
   if (!have_name) {
     /* TODO: This conversion is data type sensitive, per Bug#4164. */
-    snprintf(namebuf, sizeof(namebuf)-1, "%lu", (unsigned long) gid);
+    pr_snprintf(namebuf, sizeof(namebuf)-1, "%lu", (unsigned long) gid);
     res = namebuf;
 
     if (auth_caching & PR_AUTH_CACHE_FL_BAD_GID2NAME) {
@@ -1784,6 +1785,14 @@ config_rec *pr_auth_get_anon_config(pool *p, const char **login_user,
     }
   }
 
+  if (anon_config != NULL) {
+    config_user_name = get_param_ptr(anon_config->subset, "UserName", FALSE);
+    if (config_user_name != NULL &&
+        real_user != NULL) {
+      *real_user = config_user_name;
+    }
+  }
+
   return anon_config;
 }
 
@@ -1896,6 +1905,8 @@ int pr_auth_chroot(const char *path) {
   time_t now;
   char *tz = NULL;
   const char *default_tz;
+  pool *tmp_pool;
+  pr_error_t *err = NULL;
 
   if (path == NULL) {
     errno = EINVAL;
@@ -1932,25 +1943,39 @@ int pr_auth_chroot(const char *path) {
    * our pr_localtime() routine now, which will cause libc (via localtime(2))
    * to load the tzinfo data into memory, and hopefully retain it (Bug#3431).
    */
+  tmp_pool = make_sub_pool(session.pool);
   now = time(NULL);
   (void) pr_localtime(NULL, &now);
 
   pr_event_generate("core.chroot", path);
 
   PRIVS_ROOT
-  res = pr_fsio_chroot(path);
+  res = pr_fsio_chroot_with_error(tmp_pool, path, &err);
   xerrno = errno;
   PRIVS_RELINQUISH
 
   if (res < 0) {
-    pr_log_pri(PR_LOG_ERR, "chroot to '%s' failed for user '%s': %s", path,
-      session.user ? session.user : "(unknown)", strerror(xerrno));
+    pr_error_set_where(err, NULL, __FILE__, __LINE__ - 5);
+    pr_error_set_why(err, pstrcat(tmp_pool, "chroot to directory '", path,
+      "'", NULL));
 
+    if (err != NULL) {
+      pr_log_pri(PR_LOG_ERR, "%s", pr_error_strerror(err, 0));
+      pr_error_destroy(err);
+      err = NULL;
+
+    } else {
+      pr_log_pri(PR_LOG_ERR, "chroot to '%s' failed for user '%s': %s", path,
+        session.user ? session.user : "(unknown)", strerror(xerrno));
+    }
+
+    destroy_pool(tmp_pool);
     errno = xerrno;
     return -1;
   }
 
   pr_log_debug(DEBUG1, "Environment successfully chroot()ed");
+  destroy_pool(tmp_pool);
   return 0;
 }
 
@@ -2039,7 +2064,7 @@ int set_groups(pool *p, gid_t primary_gid, array_header *suppl_gids) {
 
   for (i = 0; i < nproc_gids; i++) {
     char buf[64];
-    snprintf(buf, sizeof(buf)-1, "%lu", (unsigned long) proc_gids[i]);
+    pr_snprintf(buf, sizeof(buf)-1, "%lu", (unsigned long) proc_gids[i]);
     buf[sizeof(buf)-1] = '\0';
 
     strgids = pstrcat(p, strgids, i != 0 ? ", " : "", buf, NULL);

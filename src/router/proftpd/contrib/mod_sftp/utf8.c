@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp UTF8 encoding
- * Copyright (c) 2008-2015 TJ Saunders
+ * Copyright (c) 2008-2017 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -247,7 +247,7 @@ char *sftp_utf8_decode_str(pool *p, const char *str) {
       raw_str = pcalloc(p, raw_len + 1);
 
       for (i = 0; i < len; i++) {
-        snprintf((char *) (raw_str + (i * 5)), (raw_len - 1) - (i * 5),
+        pr_snprintf((char *) (raw_str + (i * 5)), (raw_len - 1) - (i * 5),
           "0x%02x ", (unsigned char) str[i]);
       }
 
@@ -306,7 +306,7 @@ char *sftp_utf8_encode_str(pool *p, const char *str) {
       raw_str = pcalloc(p, raw_len + 1);
 
       for (i = 0; i < len; i++) {
-        snprintf((char *) (raw_str + (i * 5)), (raw_len - 1) - (i * 5),
+        pr_snprintf((char *) (raw_str + (i * 5)), (raw_len - 1) - (i * 5),
           "0x%02x ", (unsigned char) str[i]);
       }
 

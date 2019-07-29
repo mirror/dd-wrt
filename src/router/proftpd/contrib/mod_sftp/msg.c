@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp message format
- * Copyright (c) 2008-2017 TJ Saunders
+ * Copyright (c) 2008-2019 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -51,43 +51,104 @@ unsigned char *sftp_msg_getbuf(pool *p, size_t sz) {
   return palloc(p, sz);
 }
 
-char sftp_msg_read_byte(pool *p, unsigned char **buf, uint32_t *buflen) {
-  char byte = 0;
-
+uint32_t sftp_msg_read_byte2(pool *p, unsigned char **buf, uint32_t *buflen,
+    char *byte) {
   (void) p;
 
   if (*buflen < sizeof(char)) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "message format error: unable to read byte (buflen = %lu)",
       (unsigned long) *buflen);
+    return 0;
+  }
+
+  memcpy(byte, *buf, sizeof(char));
+  (*buf) += sizeof(char);
+  (*buflen) -= sizeof(char);
+
+  return sizeof(char);
+}
+
+char sftp_msg_read_byte(pool *p, unsigned char **buf, uint32_t *buflen) {
+  char byte = 0;
+  uint32_t len;
+
+  len = sftp_msg_read_byte2(p, buf, buflen, &byte);
+  if (len == 0) {
     pr_log_stacktrace(sftp_logfd, MOD_SFTP_VERSION);
     SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
   }
 
-  memcpy(&byte, *buf, sizeof(char));
-  (*buf) += sizeof(char);
-  (*buflen) -= sizeof(char);
-
   return byte;
 }
 
-int sftp_msg_read_bool(pool *p, unsigned char **buf, uint32_t *buflen) {
-  char bool = 0;
+uint32_t sftp_msg_read_bool2(pool *p, unsigned char **buf, uint32_t *buflen,
+    int *bool) {
+  char byte = 0;
+  uint32_t len;
 
   (void) p;
 
-  bool = sftp_msg_read_byte(p, buf, buflen);
-  if (bool == 0)
+  len = sftp_msg_read_byte2(p, buf, buflen, &byte);
+  if (len == 0) {
     return 0;
+  }
 
-  return 1;
+  *bool = byte;
+  return len;
+}
+
+int sftp_msg_read_bool(pool *p, unsigned char **buf, uint32_t *buflen) {
+  int bool = 0;
+  uint32_t len;
+
+  len = sftp_msg_read_bool2(p, buf, buflen, &bool);
+  if (len == 0) {
+    pr_log_stacktrace(sftp_logfd, MOD_SFTP_VERSION);
+    SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
+  }
+
+  if (bool == 0) {
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+uint32_t sftp_msg_read_data2(pool *p, unsigned char **buf,
+    uint32_t *buflen, size_t datalen, unsigned char **data) {
+  if (datalen == 0) {
+    return 0;
+  }
+
+  if (*buflen < datalen) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "message format error: unable to read %lu bytes of raw data "
+      "(buflen = %lu)", (unsigned long) datalen, (unsigned long) *buflen);
+    return 0;
+  }
+
+  *data = palloc(p, datalen);
+
+  memcpy(*data, *buf, datalen);
+  (*buf) += datalen;
+  (*buflen) -= datalen;
+
+  return datalen;
 }
 
 unsigned char *sftp_msg_read_data(pool *p, unsigned char **buf,
     uint32_t *buflen, size_t datalen) {
   unsigned char *data = NULL;
+  uint32_t len;
 
-  if (*buflen < datalen) {
+  if (datalen == 0) {
+    errno = EINVAL;
+    return NULL;
+  }
+
+  len = sftp_msg_read_data2(p, buf, buflen, datalen, &data);
+  if (len == 0) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "message format error: unable to read %lu bytes of raw data "
       "(buflen = %lu)", (unsigned long) datalen, (unsigned long) *buflen);
@@ -95,21 +156,11 @@ unsigned char *sftp_msg_read_data(pool *p, unsigned char **buf,
     SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
   }
 
-  if (datalen == 0) {
-    return NULL;
-  }
-
-  data = palloc(p, datalen);
-
-  memcpy(data, *buf, datalen);
-  (*buf) += datalen;
-  (*buflen) -= datalen;
-
   return data;
 }
 
-uint32_t sftp_msg_read_int(pool *p, unsigned char **buf, uint32_t *buflen) {
-  uint32_t val = 0;
+uint32_t sftp_msg_read_int2(pool *p, unsigned char **buf, uint32_t *buflen,
+    uint32_t *val) {
 
   (void) p;
 
@@ -117,88 +168,114 @@ uint32_t sftp_msg_read_int(pool *p, unsigned char **buf, uint32_t *buflen) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "message format error: unable to read int (buflen = %lu)",
       (unsigned long) *buflen);
+    return 0;
+  }
+
+  memcpy(val, *buf, sizeof(uint32_t));
+  (*buf) += sizeof(uint32_t);
+  (*buflen) -= sizeof(uint32_t);
+
+  *val = ntohl(*val);
+  return sizeof(uint32_t);
+}
+
+uint32_t sftp_msg_read_int(pool *p, unsigned char **buf, uint32_t *buflen) {
+  uint32_t val = 0;
+  uint32_t len;
+
+  len = sftp_msg_read_int2(p, buf, buflen, &val);
+  if (len == 0) {
     pr_log_stacktrace(sftp_logfd, MOD_SFTP_VERSION);
     SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
   }
 
-  memcpy(&val, *buf, sizeof(uint32_t));
-  (*buf) += sizeof(uint32_t);
-  (*buflen) -= sizeof(uint32_t);
-
-  val = ntohl(val);
   return val;
 }
 
-uint64_t sftp_msg_read_long(pool *p, unsigned char **buf, uint32_t *buflen) {
-  uint64_t val = 0;
+uint32_t sftp_msg_read_long2(pool *p, unsigned char **buf, uint32_t *buflen,
+    uint64_t *val) {
   unsigned char data[8];
 
   if (*buflen < sizeof(data)) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "message format error: unable to read long (buflen = %lu)",
       (unsigned long) *buflen);
-    pr_log_stacktrace(sftp_logfd, MOD_SFTP_VERSION);
-    SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
+    return 0;
   }
 
   memcpy(data, *buf, sizeof(data));
   (*buf) += sizeof(data);
   (*buflen) -= sizeof(data);
 
-  val = (uint64_t) data[0] << 56;
-  val |= (uint64_t) data[1] << 48;
-  val |= (uint64_t) data[2] << 40;
-  val |= (uint64_t) data[3] << 32;
-  val |= (uint64_t) data[4] << 24;
-  val |= (uint64_t) data[5] << 16;
-  val |= (uint64_t) data[6] << 8;
-  val |= (uint64_t) data[7];
+  (*val) = (uint64_t) data[0] << 56;
+  (*val) |= (uint64_t) data[1] << 48;
+  (*val) |= (uint64_t) data[2] << 40;
+  (*val) |= (uint64_t) data[3] << 32;
+  (*val) |= (uint64_t) data[4] << 24;
+  (*val) |= (uint64_t) data[5] << 16;
+  (*val) |= (uint64_t) data[6] << 8;
+  (*val) |= (uint64_t) data[7];
+
+  return sizeof(data);
+}
+
+uint64_t sftp_msg_read_long(pool *p, unsigned char **buf, uint32_t *buflen) {
+  uint64_t val = 0;
+  uint32_t len;
+
+  len = sftp_msg_read_long2(p, buf, buflen, &val);
+  if (len == 0) {
+    pr_log_stacktrace(sftp_logfd, MOD_SFTP_VERSION);
+    SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
+  }
 
   return val;
 }
 
-BIGNUM *sftp_msg_read_mpint(pool *p, unsigned char **buf, uint32_t *buflen) {
-  BIGNUM *mpint = NULL;
+uint32_t sftp_msg_read_mpint2(pool *p, unsigned char **buf, uint32_t *buflen,
+    BIGNUM **mpint) {
+  unsigned char *mpint_data = NULL;
   const unsigned char *data = NULL, *ptr = NULL;
-  uint32_t datalen = 0, len = 0;
+  uint32_t datalen = 0, mpint_len = 0, len = 0, total_len = 0;
 
-  len = sftp_msg_read_int(p, buf, buflen);
+  len = sftp_msg_read_int2(p, buf, buflen, &mpint_len);
+  if (len == 0) {
+    return 0;
+  }
 
-  if (*buflen < len) {
+  if (*buflen < mpint_len) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "message format error: unable to read %lu bytes of mpint (buflen = %lu)",
       (unsigned long) len, (unsigned long) *buflen);
-    pr_log_stacktrace(sftp_logfd, MOD_SFTP_VERSION);
-    SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
+    return 0;
   }
 
   if (len > (1024 * 16)) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "message format error: unable to handle mpint of %lu bytes",
       (unsigned long) len);
-    pr_log_stacktrace(sftp_logfd, MOD_SFTP_VERSION);
-    SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
+    return 0;
   }
 
-  ptr = (const unsigned char *) sftp_msg_read_data(p, buf, buflen, len);
-  if (ptr == NULL) {
-    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-      "message format error: unable to read %lu bytes of mpint data",
-      (unsigned long) len);
-    pr_log_stacktrace(sftp_logfd, MOD_SFTP_VERSION);
-    SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
+  total_len += len;
+
+  len = sftp_msg_read_data2(p, buf, buflen, mpint_len, &mpint_data);
+  if (len == 0) {
+    return 0;
   }
 
+  total_len += len;
+
+  ptr = (const unsigned char *) mpint_data;
   if ((ptr[0] & 0x80) != 0) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "message format error: negative mpint numbers not supported");
-    pr_log_stacktrace(sftp_logfd, MOD_SFTP_VERSION);
-    SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
+    return 0;
   }
 
   /* Trim any leading zeros. */
   data = ptr;
-  datalen = len;
+  datalen = mpint_len;
   while (datalen > 0 &&
          *data == 0x00) {
     pr_signals_handle();
@@ -206,11 +283,23 @@ BIGNUM *sftp_msg_read_mpint(pool *p, unsigned char **buf, uint32_t *buflen) {
     datalen--;
   }
 
-  mpint = BN_bin2bn(data, (int) datalen, NULL);
-  if (mpint == NULL) {
+  *mpint = BN_bin2bn(data, (int) datalen, NULL);
+  if (*mpint == NULL) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "message format error: unable to convert binary mpint: %s",
       sftp_crypto_get_errors());
+    return 0;
+  }
+
+  return total_len;
+}
+
+BIGNUM *sftp_msg_read_mpint(pool *p, unsigned char **buf, uint32_t *buflen) {
+  BIGNUM *mpint = NULL;
+  uint32_t len;
+
+  len = sftp_msg_read_mpint2(p, buf, buflen, &mpint);
+  if (len == 0) {
     pr_log_stacktrace(sftp_logfd, MOD_SFTP_VERSION);
     SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
   }
@@ -218,9 +307,9 @@ BIGNUM *sftp_msg_read_mpint(pool *p, unsigned char **buf, uint32_t *buflen) {
   return mpint;
 }
 
-char *sftp_msg_read_string(pool *p, unsigned char **buf, uint32_t *buflen) {
-  uint32_t len = 0;
-  char *str = NULL;
+uint32_t sftp_msg_read_string2(pool *p, unsigned char **buf, uint32_t *buflen,
+    char **str) {
+  uint32_t data_len = 0, len = 0;
 
   /* If there is no data remaining, treat this as if the string is empty
    * (see Bug#4093).
@@ -229,98 +318,133 @@ char *sftp_msg_read_string(pool *p, unsigned char **buf, uint32_t *buflen) {
     pr_trace_msg(trace_channel, 9,
       "malformed message format (buflen = %lu) for reading string, using \"\"",
       (unsigned long) *buflen);
-    return "";
+    *str = pstrdup(p, "");
+    return 1;
   }
 
-  len = sftp_msg_read_int(p, buf, buflen);
+  len = sftp_msg_read_int2(p, buf, buflen, &data_len);
+  if (len == 0) {
+    return 0;
+  }
 
   /* We can't use sftp_msg_read_data() here, since we need to allocate and
    * populate a buffer that is one byte longer than the len just read in,
    * for the terminating NUL.
    */
 
-  if (*buflen < len) {
+  if (*buflen < data_len) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "message format error: unable to read %lu bytes of string data "
-      "(buflen = %lu)", (unsigned long) len, (unsigned long) *buflen);
+      "(buflen = %lu)", (unsigned long) data_len, (unsigned long) *buflen);
+    return 0;
+  }
+
+  *str = palloc(p, data_len + 1);
+
+  if (data_len > 0) {
+    memcpy(*str, *buf, data_len);
+    (*buf) += data_len;
+    (*buflen) -= data_len;
+  }
+  (*str)[data_len] = '\0';
+
+  return len + data_len;
+}
+
+char *sftp_msg_read_string(pool *p, unsigned char **buf, uint32_t *buflen) {
+  char *str = NULL;
+  uint32_t len;
+
+  len = sftp_msg_read_string2(p, buf, buflen, &str);
+  if (len == 0) {
     pr_log_stacktrace(sftp_logfd, MOD_SFTP_VERSION);
     SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
   }
-
-  str = palloc(p, len + 1);
-
-  if (len > 0) {
-    memcpy(str, *buf, len);
-    (*buf) += len;
-    (*buflen) -= len;
-  }
-  str[len] = '\0';
 
   return str;
 }
 
 #ifdef PR_USE_OPENSSL_ECC
-EC_POINT *sftp_msg_read_ecpoint(pool *p, unsigned char **buf, uint32_t *buflen,
-    const EC_GROUP *curve, EC_POINT *point) {
+uint32_t sftp_msg_read_ecpoint2(pool *p, unsigned char **buf, uint32_t *buflen,
+    const EC_GROUP *curve, EC_POINT **point) {
   BN_CTX *bn_ctx;
   unsigned char *data = NULL;
-  uint32_t datalen = 0;
+  uint32_t datalen = 0, len = 0, total_len = 0;
 
-  datalen = sftp_msg_read_int(p, buf, buflen);
+  len = sftp_msg_read_int2(p, buf, buflen, &datalen);
+  if (len == 0) {
+    return 0;
+  }
 
   if (*buflen < datalen) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "message format error: unable to read %lu bytes of EC point"
       " (buflen = %lu)", (unsigned long) datalen, (unsigned long) *buflen);
-    pr_log_stacktrace(sftp_logfd, MOD_SFTP_VERSION);
-    SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
+    return 0;
   }
 
   if (datalen > MAX_ECPOINT_LEN) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "message format error: EC point length too long (%lu > max %lu)",
       (unsigned long) datalen, (unsigned long) MAX_ECPOINT_LEN);
-    pr_log_stacktrace(sftp_logfd, MOD_SFTP_VERSION);
-    SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
+    return 0;
   }
 
-  data = sftp_msg_read_data(p, buf, buflen, datalen); 
+  total_len += len;
+
+  len = sftp_msg_read_data2(p, buf, buflen, datalen, &data);
+  if (len == 0) {
+    return 0;
+  }
+
   if (data == NULL) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "message format error: unable to read %lu bytes of EC point data",
       (unsigned long) datalen);
-    pr_log_stacktrace(sftp_logfd, MOD_SFTP_VERSION);
-    SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
+    return 0;
   }
+
+  total_len += len;
 
   if (data[0] != POINT_CONVERSION_UNCOMPRESSED) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "message format error: EC point data formatted incorrectly "
       "(leading byte 0x%02x should be 0x%02x)", data[0],
       POINT_CONVERSION_UNCOMPRESSED);
-    pr_log_stacktrace(sftp_logfd, MOD_SFTP_VERSION);
-    SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
+    return 0;
   }
 
   bn_ctx = BN_CTX_new();
   if (bn_ctx == NULL) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "error allocating new BN_CTX: %s", sftp_crypto_get_errors());
-    return NULL;
+    return 0;
   }
 
-  if (EC_POINT_oct2point(curve, point, data, datalen, bn_ctx) != 1) {
+  if (EC_POINT_oct2point(curve, *point, data, datalen, bn_ctx) != 1) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "message format error: unable to convert binary EC point data: %s",
       sftp_crypto_get_errors());
     BN_CTX_free(bn_ctx);
+    return 0;
+  }
+
+  BN_CTX_free(bn_ctx);
+  pr_memscrub(data, datalen);
+
+  return total_len;
+}
+
+EC_POINT *sftp_msg_read_ecpoint(pool *p, unsigned char **buf, uint32_t *buflen,
+    const EC_GROUP *curve, EC_POINT *point) {
+  uint32_t len;
+
+  len = sftp_msg_read_ecpoint2(p, buf, buflen, curve, &point);
+  if (len == 0) {
     pr_log_stacktrace(sftp_logfd, MOD_SFTP_VERSION);
     SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
   }
 
-  BN_CTX_free(bn_ctx);
-
-  pr_memscrub(data, datalen);
   return point;
 }
 #endif /* PR_USE_OPENSSL_ECC */

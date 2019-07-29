@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp SCP
- * Copyright (c) 2008-2016 TJ Saunders
+ * Copyright (c) 2008-2018 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1456,7 +1456,8 @@ static int recv_path(pool *p, uint32_t channel_id, struct scp_path *sp,
           pstrdup(p, sp->best_path), 0) < 0) {
         if (errno != EEXIST) {
           (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-            "error adding 'mod_xfer.store-path: %s", strerror(errno));
+            "error adding 'mod_xfer.store-path for SCP upload: %s",
+            strerror(errno));
         }
       }
     }
@@ -1643,6 +1644,8 @@ static int recv_path(pool *p, uint32_t channel_id, struct scp_path *sp,
       }
     }
 
+    session.xfer.path = sftp_misc_vroot_abs_path(session.xfer.p,
+      session.xfer.path, FALSE);
     (void) pr_cmd_dispatch_phase(cmd, POST_CMD, 0);
     (void) pr_cmd_dispatch_phase(cmd, LOG_CMD, 0);
 
@@ -1694,7 +1697,7 @@ static int send_timeinfo(pool *p, uint32_t channel_id, struct scp_path *sp,
    *  0       (future proof field for sending atime usecs)
    */
 
-  snprintf((char *) ctrl_msg, sizeof(ctrl_msg), "T%lu 0 %lu 0",
+  pr_snprintf((char *) ctrl_msg, sizeof(ctrl_msg), "T%lu 0 %lu 0",
     (unsigned long) (st->st_mtime > 0 ? st->st_mtime : 0),
     (unsigned long) (st->st_atime > 0 ? st->st_atime : 0));
 
@@ -1733,7 +1736,7 @@ static int send_dirinfo(pool *p, uint32_t channel_id, struct scp_path *sp,
   }
 
   memset(ctrl_msg, '\0', sizeof(ctrl_msg));
-  snprintf((char *) ctrl_msg, sizeof(ctrl_msg), "D%04o 0 %.1024s",
+  pr_snprintf((char *) ctrl_msg, sizeof(ctrl_msg), "D%04o 0 %.1024s",
     (unsigned int) (st->st_mode & SFTP_SCP_ST_MODE_MASK), tmp);
 
   pr_trace_msg(trace_channel, 3, "sending '%s' D (directory): %s", sp->path,
@@ -1771,7 +1774,7 @@ static int send_finfo(pool *p, uint32_t channel_id, struct scp_path *sp,
   }
 
   memset(ctrl_msg, '\0', sizeof(ctrl_msg));
-  snprintf((char *) ctrl_msg, sizeof(ctrl_msg), "C%04o %" PR_LU " %.1024s",
+  pr_snprintf((char *) ctrl_msg, sizeof(ctrl_msg), "C%04o %" PR_LU " %.1024s",
     (unsigned int) (st->st_mode & SFTP_SCP_ST_MODE_MASK),
     (pr_off_t) st->st_size, tmp);
 
@@ -2060,6 +2063,15 @@ static int send_path(pool *p, uint32_t channel_id, struct scp_path *sp) {
     }
   }
 
+  if (pr_table_add(cmd->notes, "mod_xfer.retr-path",
+      pstrdup(cmd->pool, sp->path), 0) < 0) {
+    if (errno != EEXIST) {
+      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+        "error adding 'mod_xfer.retr-path' for SCP download: %s",
+        strerror(errno));
+    }
+  }
+
   pr_fs_clear_cache2(sp->path);
   if (pr_fsio_lstat(sp->path, &st) == 0) {
     if (S_ISLNK(st.st_mode)) {
@@ -2282,6 +2294,8 @@ static int send_path(pool *p, uint32_t channel_id, struct scp_path *sp) {
   pr_fsio_close(sp->fh);
   sp->fh = NULL;
 
+  session.xfer.path = sftp_misc_vroot_abs_path(session.xfer.p,
+    session.xfer.path, FALSE);
   (void) pr_cmd_dispatch_phase(cmd, POST_CMD, 0);
   (void) pr_cmd_dispatch_phase(cmd, LOG_CMD, 0);
 
@@ -2835,7 +2849,8 @@ int sftp_scp_close_session(uint32_t channel_id) {
                 curr_path = pstrdup(scp_pool, elt->fh->fh_path);
 
                 /* Write out an 'incomplete' TransferLog entry for this. */
-                abs_path = dir_abs_path(scp_pool, elt->best_path, TRUE);
+                abs_path = sftp_misc_vroot_abs_path(scp_pool, elt->best_path,
+                  TRUE);
             
                 if (elt->recvlen > 0) {
                   xferlog_write(0, pr_netaddr_get_sess_remote_name(),

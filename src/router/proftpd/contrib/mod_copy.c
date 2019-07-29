@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_copy -- a module supporting copying of files on the server
  *                      without transferring the data to the client and back
- * Copyright (c) 2009-2016 TJ Saunders
+ * Copyright (c) 2009-2019 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -657,7 +657,7 @@ MODRET copy_copy(cmd_rec *cmd) {
 MODRET copy_cpfr(cmd_rec *cmd) {
   register unsigned int i;
   int res;
-  char *path = "";
+  char *cmd_name, *path = "";
   unsigned char *authenticated = NULL;
 
   if (copy_engine == FALSE) {
@@ -704,6 +704,21 @@ MODRET copy_cpfr(cmd_rec *cmd) {
 
     path = pstrcat(cmd->tmp_pool, path, *path ? " " : "", decoded_path, NULL);
   }
+
+  cmd_name = cmd->argv[0];
+  pr_cmd_set_name(cmd, "SITE_CPFR");
+  if (!dir_check(cmd->tmp_pool, cmd, G_READ, path, NULL)) {
+    int xerrno = EPERM;
+
+    pr_cmd_set_name(cmd, cmd_name);
+    pr_response_add_err(R_550, "%s: %s", (char *) cmd->argv[3],
+      strerror(xerrno));
+
+    pr_cmd_set_errno(cmd, xerrno);
+    errno = xerrno;
+    return PR_ERROR(cmd);
+  }
+  pr_cmd_set_name(cmd, cmd_name);
 
   res = pr_filter_allow_path(CURRENT_CONF, path);
   switch (res) {
@@ -758,6 +773,7 @@ MODRET copy_cpfr(cmd_rec *cmd) {
 MODRET copy_cpto(cmd_rec *cmd) {
   register unsigned int i;
   const char *from, *to = "";
+  char *cmd_name;
   unsigned char *authenticated = NULL;
 
   if (copy_engine == FALSE) {
@@ -815,6 +831,20 @@ MODRET copy_cpto(cmd_rec *cmd) {
   }
 
   to = dir_canonical_vpath(cmd->tmp_pool, to);
+
+  cmd_name = cmd->argv[0];
+  pr_cmd_set_name(cmd, "SITE_CPTO");
+  if (!dir_check(cmd->tmp_pool, cmd, G_WRITE, to, NULL)) {
+    int xerrno = EPERM;
+
+    pr_cmd_set_name(cmd, cmd_name);
+    pr_response_add_err(R_550, "%s: %s", to, strerror(xerrno));
+
+    pr_cmd_set_errno(cmd, xerrno);
+    errno = xerrno;
+    return PR_ERROR(cmd);
+  }
+  pr_cmd_set_name(cmd, cmd_name);
 
   if (copy_paths(cmd->tmp_pool, from, to) < 0) {
     int xerrno = errno;
@@ -940,7 +970,7 @@ static conftable copy_conftab[] = {
 
 static cmdtable copy_cmdtab[] = {
   { CMD, 	C_SITE, G_WRITE,	copy_copy,	FALSE,	FALSE, CL_MISC },
-  { CMD, 	C_SITE, G_DIRS,		copy_cpfr,	FALSE,	FALSE, CL_MISC },
+  { CMD, 	C_SITE, G_READ,		copy_cpfr,	FALSE,	FALSE, CL_MISC },
   { CMD, 	C_SITE, G_WRITE,	copy_cpto,	FALSE,	FALSE, CL_MISC },
   { POST_CMD,	C_PASS,	G_NONE,		copy_post_pass, FALSE,	FALSE },
   { LOG_CMD, 	C_SITE, G_NONE,		copy_log_site,	FALSE,	FALSE },

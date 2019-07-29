@@ -112,6 +112,17 @@ module *pr_module_get(const char *name) {
 void pr_signals_handle(void) {
 }
 
+int pr_snprintf(char *buf, size_t bufsz, const char *fmt, ...) {
+  va_list msg;
+  int res;
+
+  va_start(msg, fmt);
+  res = pr_vsnprintf(buf, bufsz, fmt, msg);
+  va_end(msg);
+
+  return res;
+}
+
 int pr_trace_msg(const char *name, int level, const char *fmt, ...) {
   if (verbose) {
     va_list msg;
@@ -126,6 +137,10 @@ int pr_trace_msg(const char *name, int level, const char *fmt, ...) {
   }
 
   return 0;
+}
+
+int pr_vsnprintf(char *buf, size_t bufsz, const char *fmt, va_list msg) {
+  return vsnprintf(buf, bufsz, fmt, msg);
 }
 
 static struct option_help {

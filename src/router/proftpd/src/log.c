@@ -348,17 +348,17 @@ int pr_log_vwritefile(int logfd, const char *ident, const char *fmt,
   /* Convert microsecs to millisecs. */
   millis = now.tv_usec / 1000;
 
-  len = snprintf(buf + buflen, sizeof(buf) - len, ",%03lu ", millis);
+  len = pr_snprintf(buf + buflen, sizeof(buf) - len, ",%03lu ", millis);
   buflen += len;
 
   /* Prepend a small header */
-  len = snprintf(buf + buflen, sizeof(buf) - buflen, "%s[%u]: ", ident,
+  len = pr_snprintf(buf + buflen, sizeof(buf) - buflen, "%s[%u]: ", ident,
     (unsigned int) (session.pid ? session.pid : getpid()));
   buflen += len;
   buf[sizeof(buf)-1] = '\0';
 
   /* Affix the message */
-  len = vsnprintf(buf + buflen, sizeof(buf) - buflen - 1, fmt, msg);
+  len = pr_vsnprintf(buf + buflen, sizeof(buf) - buflen - 1, fmt, msg);
   buflen += len;
   buf[sizeof(buf)-1] = '\0';
 
@@ -487,7 +487,8 @@ static void log_write(int priority, int f, char *s, int discard) {
     remote_addr = pr_netaddr_get_sess_remote_addr();
     remote_name = pr_netaddr_get_sess_remote_name();
 
-    snprintf(serverinfo, sizeof(serverinfo)-1, "%s", main_server->ServerFQDN);
+    pr_snprintf(serverinfo, sizeof(serverinfo)-1, "%s",
+      main_server->ServerFQDN);
     serverinfo[sizeof(serverinfo)-1] = '\0';
 
     if (remote_addr != NULL &&
@@ -496,7 +497,7 @@ static void log_write(int priority, int f, char *s, int discard) {
 
       serverinfo_len = strlen(serverinfo);
 
-      snprintf(serverinfo + serverinfo_len,
+      pr_snprintf(serverinfo + serverinfo_len,
         sizeof(serverinfo) - serverinfo_len, " (%s[%s])",
         remote_name, pr_netaddr_get_ipstr(remote_addr));
 
@@ -525,17 +526,17 @@ static void log_write(int priority, int f, char *s, int discard) {
     /* Convert microsecs to millisecs. */
     millis = now.tv_usec / 1000;
 
-    len = snprintf(buf + buflen, sizeof(buf) - len, ",%03lu ", millis);
+    len = pr_snprintf(buf + buflen, sizeof(buf) - len, ",%03lu ", millis);
     buflen += len;
     buf[sizeof(buf)-1] = '\0';
 
     if (*serverinfo) {
-      len = snprintf(buf + buflen, sizeof(buf) - buflen,
+      len = pr_snprintf(buf + buflen, sizeof(buf) - buflen,
         "%s proftpd[%u] %s: %s\n", systemlog_host,
         (unsigned int) (session.pid ? session.pid : getpid()), serverinfo, s);
 
     } else {
-      len = snprintf(buf + buflen, sizeof(buf) - buflen,
+      len = pr_snprintf(buf + buflen, sizeof(buf) - buflen,
         "%s proftpd[%u]: %s\n", systemlog_host,
         (unsigned int) (session.pid ? session.pid : getpid()), s);
     }
@@ -606,17 +607,17 @@ static void log_write(int priority, int f, char *s, int discard) {
     /* Convert microsecs to millisecs. */
     millis = now.tv_usec / 1000;
 
-    len = snprintf(buf + buflen, sizeof(buf) - len, ",%03lu ", millis);
+    len = pr_snprintf(buf + buflen, sizeof(buf) - len, ",%03lu ", millis);
     buflen += len;
     buf[sizeof(buf) - 1] = '\0';
 
     if (*serverinfo) {
-      len = snprintf(buf + buflen, sizeof(buf) - buflen,
+      len = pr_snprintf(buf + buflen, sizeof(buf) - buflen,
         "%s proftpd[%u] %s: %s\n", systemlog_host,
         (unsigned int) (session.pid ? session.pid : getpid()), serverinfo, s);
 
     } else {
-      len = snprintf(buf + buflen, sizeof(buf) - buflen,
+      len = pr_snprintf(buf + buflen, sizeof(buf) - buflen,
         "%s proftpd[%u]: %s\n", systemlog_host,
         (unsigned int) (session.pid ? session.pid : getpid()), s);
     }
@@ -695,7 +696,7 @@ void pr_log_pri(int priority, const char *fmt, ...) {
   va_list msg;
 
   va_start(msg, fmt);
-  vsnprintf(buf, sizeof(buf), fmt, msg);
+  pr_vsnprintf(buf, sizeof(buf), fmt, msg);
   va_end(msg);
 
   /* Always make sure the buffer is NUL-terminated. */
@@ -712,7 +713,7 @@ void pr_log_auth(int priority, const char *fmt, ...) {
   va_list msg;
 
   va_start(msg, fmt);
-  vsnprintf(buf, sizeof(buf), fmt, msg);
+  pr_vsnprintf(buf, sizeof(buf), fmt, msg);
   va_end(msg);
 
   /* Always make sure the buffer is NUL-terminated. */
@@ -801,7 +802,7 @@ void pr_log_debug(int level, const char *fmt, ...) {
 
   memset(buf, '\0', sizeof(buf));
   va_start(msg, fmt);
-  vsnprintf(buf, sizeof(buf), fmt, msg);
+  pr_vsnprintf(buf, sizeof(buf), fmt, msg);
   va_end(msg);
 
   /* Always make sure the buffer is NUL-terminated. */

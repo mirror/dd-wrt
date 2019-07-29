@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_quotatab -- a module for managing FTP byte/file quotas via
  *                          centralized tables
- * Copyright (c) 2001-2016 TJ Saunders
+ * Copyright (c) 2001-2017 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -235,7 +235,7 @@ static char *quota_display_bytes(pool *p, double bytes_used,
 
     case BYTE:
       /* no manipulation needed */
-      snprintf(display, display_len - 1, _("%.2f of %.2f %s %s"), bytes_used,
+      pr_snprintf(display, display_len - 1, _("%.2f of %.2f %s %s"), bytes_used,
         bytes_avail, xferstr, bytes_avail > 1.0 ? _("bytes") : _("byte"));
       break;
 
@@ -243,7 +243,7 @@ static char *quota_display_bytes(pool *p, double bytes_used,
       /* divide by 1024.0 */
       adj_used = (bytes_used / 1024.0);
       adj_avail = (bytes_avail / 1024.0);
-      snprintf(display, display_len - 1, _("%.2f of %.2f %s Kb"), adj_used,
+      pr_snprintf(display, display_len - 1, _("%.2f of %.2f %s Kb"), adj_used,
         adj_avail, xferstr);
       break;
 
@@ -251,7 +251,7 @@ static char *quota_display_bytes(pool *p, double bytes_used,
       /* divide by 1024.0 * 1024.0 */
       adj_used = (bytes_used / (1024.0 * 1024.0));
       adj_avail = (bytes_avail / (1024.0 * 1024.0));
-      snprintf(display, display_len -1 , _("%.2f of %.2f %s Mb"), adj_used,
+      pr_snprintf(display, display_len -1 , _("%.2f of %.2f %s Mb"), adj_used,
         adj_avail, xferstr);
       break;
 
@@ -259,7 +259,7 @@ static char *quota_display_bytes(pool *p, double bytes_used,
       /* divide by 1024.0 * 1024.0 * 1024.0 */
       adj_used = (bytes_used / (1024.0 * 1024.0 * 1024.0));
       adj_avail = (bytes_avail / (1024.0 * 1024.0 * 1024.0));
-      snprintf(display, display_len - 1, _("%.2f of %.2f %s Gb"), adj_used,
+      pr_snprintf(display, display_len - 1, _("%.2f of %.2f %s Gb"), adj_used,
         adj_avail, xferstr);
       break;
 
@@ -296,9 +296,8 @@ static char *quota_display_files(pool *p, unsigned int files_used,
       break;
   }
 
-  snprintf(display, display_len - 1, _("%u of %u %s %s"), files_used,
+  pr_snprintf(display, display_len - 1, _("%u of %u %s %s"), files_used,
     files_avail, xferstr, files_avail > 1.0 ? _("files") : _("file"));
-
   return display;
 }
 
@@ -314,11 +313,13 @@ static char *quota_display_site_bytes(pool *p, double bytes_used,
     case BYTE:
       /* no calculation needed */
 
-      if (bytes_avail > 0.0)
-        snprintf(display, display_len - 1, _("bytes:\t%.2f/%.2f"), bytes_used,
-          bytes_avail);
-      else
-        snprintf(display, display_len - 1, _("bytes:\tunlimited"));
+      if (bytes_avail > 0.0) {
+        pr_snprintf(display, display_len - 1, _("bytes:\t%.2f/%.2f"),
+          bytes_used, bytes_avail);
+
+      } else {
+        pr_snprintf(display, display_len - 1, _("bytes:\tunlimited"));
+      }
       break;
 
     case KILO:
@@ -326,11 +327,13 @@ static char *quota_display_site_bytes(pool *p, double bytes_used,
       adj_used = (bytes_used / 1024.0);
       adj_avail = (bytes_avail / 1024.0);
 
-      if (adj_avail > 0.0)
-        snprintf(display, display_len - 1, _("Kb:\t%s%.2f/%.2f"),
+      if (adj_avail > 0.0) {
+        pr_snprintf(display, display_len - 1, _("Kb:\t%s%.2f/%.2f"),
           xfer_type != IN ? "" : "\t", adj_used, adj_avail);
-      else
-        snprintf(display, display_len - 1, _("Kb:\tunlimited"));
+
+      } else {
+        pr_snprintf(display, display_len - 1, _("Kb:\tunlimited"));
+      }
       break;
 
     case MEGA:
@@ -338,11 +341,13 @@ static char *quota_display_site_bytes(pool *p, double bytes_used,
       adj_used = (bytes_used / (1024.0 * 1024.0));
       adj_avail = (bytes_avail / (1024.0 * 1024.0));
 
-      if (adj_avail > 0.0)
-        snprintf(display, display_len - 1, _("Mb:\t%s%.2f/%.2f"),
+      if (adj_avail > 0.0) {
+        pr_snprintf(display, display_len - 1, _("Mb:\t%s%.2f/%.2f"),
           xfer_type != IN ? "" : "\t", adj_used, adj_avail);
-      else
-        snprintf(display, display_len - 1, _("Mb:\tunlimited"));
+
+      } else {
+        pr_snprintf(display, display_len - 1, _("Mb:\tunlimited"));
+      }
       break;
 
     case GIGA:
@@ -350,11 +355,13 @@ static char *quota_display_site_bytes(pool *p, double bytes_used,
       adj_used = (bytes_used / (1024.0 * 1024.0 * 1024.0));
       adj_avail = (bytes_avail / (1024.0 * 1024.0 * 1024.0));
 
-      if (adj_avail > 0.0)
-        snprintf(display, display_len - 1, _("Gb:\t%s%.2f/%.2f"),
+      if (adj_avail > 0.0) {
+        pr_snprintf(display, display_len - 1, _("Gb:\t%s%.2f/%.2f"),
           xfer_type != IN ? "" : "\t", adj_used, adj_avail);
-      else
-        snprintf(display, display_len - 1, _("Gb:\tunlimited"));
+
+      } else {
+        pr_snprintf(display, display_len - 1, _("Gb:\tunlimited"));
+      }
       break;
 
     default:
@@ -372,11 +379,13 @@ static char *quota_display_site_files(pool *p, unsigned int files_used,
 
   display = pcalloc(p, display_len);
 
-  if (files_avail != 0)
-    snprintf(display, display_len - 1, _("files:\t%u/%u"), files_used,
+  if (files_avail != 0) {
+    pr_snprintf(display, display_len - 1, _("files:\t%u/%u"), files_used,
       files_avail);
-  else
-    snprintf(display, display_len - 1, _("files:\tunlimited"));
+
+  } else {
+    pr_snprintf(display, display_len - 1, _("files:\tunlimited"));
+  }
 
   return display;
 }
@@ -515,7 +524,7 @@ static int quotatab_create_tally(void) {
   int res = TRUE;
 
   memset(sess_tally.name, '\0', sizeof(sess_tally.name));
-  snprintf(sess_tally.name, sizeof(sess_tally.name), "%s",
+  pr_snprintf(sess_tally.name, sizeof(sess_tally.name), "%s",
     sess_limit.name);
   sess_tally.name[sizeof(sess_tally.name)-1] = '\0';
 
@@ -1762,7 +1771,7 @@ static const char *quota_get_bytes_str(void *data, size_t datasz) {
       if (bytes > 0.0) {
         char buf[PR_TUNABLE_BUFFER_SIZE];
         memset(buf, '\0', sizeof(buf));
-        snprintf(buf, sizeof(buf), "%.2f", bytes);
+        pr_snprintf(buf, sizeof(buf), "%.2f", bytes);
         res = pstrdup(session.pool, buf);
 
       } else {
@@ -1777,7 +1786,7 @@ static const char *quota_get_bytes_str(void *data, size_t datasz) {
       if (adj > 0.0) {
         char buf[PR_TUNABLE_BUFFER_SIZE];
         memset(buf, '\0', sizeof(buf));
-        snprintf(buf, sizeof(buf), "%.2f KB", adj);
+        pr_snprintf(buf, sizeof(buf), "%.2f KB", adj);
         res = pstrdup(session.pool, buf);
 
       } else {
@@ -1792,7 +1801,7 @@ static const char *quota_get_bytes_str(void *data, size_t datasz) {
       if (adj > 0.0) {
         char buf[PR_TUNABLE_BUFFER_SIZE];
         memset(buf, '\0', sizeof(buf));
-        snprintf(buf, sizeof(buf), "%.2f MB", adj);
+        pr_snprintf(buf, sizeof(buf), "%.2f MB", adj);
         res = pstrdup(session.pool, buf);
 
       } else {
@@ -1807,7 +1816,7 @@ static const char *quota_get_bytes_str(void *data, size_t datasz) {
       if (adj > 0.0) {
         char buf[PR_TUNABLE_BUFFER_SIZE];
         memset(buf, '\0', sizeof(buf));
-        snprintf(buf, sizeof(buf), "%.2f GB", adj);
+        pr_snprintf(buf, sizeof(buf), "%.2f GB", adj);
         res = pstrdup(session.pool, buf);
 
       } else {
@@ -1830,7 +1839,7 @@ static const char *quota_get_files_str(void *data, size_t datasz) {
   if (files != 0) {
     char buf[PR_TUNABLE_BUFFER_SIZE];
     memset(buf, '\0', sizeof(buf));
-    snprintf(buf, sizeof(buf), "%u", files);
+    pr_snprintf(buf, sizeof(buf), "%u", files);
     res = pstrdup(session.pool, buf);
 
   } else {

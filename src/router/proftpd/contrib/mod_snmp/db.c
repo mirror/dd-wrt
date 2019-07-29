@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_snmp database storage
- * Copyright (c) 2008-2016 TJ Saunders
+ * Copyright (c) 2008-2017 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -568,7 +568,7 @@ const char *snmp_db_get_fieldstr(pool *p, unsigned int field) {
   db_name = snmp_dbs[db_id].db_name;
 
   memset(fieldstr, '\0', sizeof(fieldstr));
-  snprintf(fieldstr, sizeof(fieldstr)-1, "%s (%d) [%s (%d)]",
+  pr_snprintf(fieldstr, sizeof(fieldstr)-1, "%s (%d) [%s (%d)]",
     field_name, field, db_name, db_id);
   return pstrdup(p, fieldstr);
 }

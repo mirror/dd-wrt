@@ -49,7 +49,7 @@ my $TESTS = {
 
   rnfr_rel_symlink_chrooted_bug4219 => {
     order => ++$order,
-    test_class => [qw(forking)],
+    test_class => [qw(forking rootprivs)],
   },
 
   rnfr_rel_symlink_enoent => {
@@ -59,7 +59,7 @@ my $TESTS = {
 
   rnfr_rel_symlink_enoent_chrooted_bug4219 => {
     order => ++$order,
-    test_class => [qw(forking)],
+    test_class => [qw(forking rootprivs)],
   },
 
   rnfr_fails_login_required => {

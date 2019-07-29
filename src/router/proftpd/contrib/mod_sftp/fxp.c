@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp sftp
- * Copyright (c) 2008-2017 TJ Saunders
+ * Copyright (c) 2008-2019 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -297,6 +297,8 @@ struct fxp_extpair {
 static pool *fxp_pool = NULL;
 static int fxp_use_gmt = TRUE;
 
+/* FSOptions */
+static unsigned long fxp_fsio_opts = 0UL;
 static unsigned int fxp_min_client_version = 1;
 static unsigned int fxp_max_client_version = 6;
 static unsigned int fxp_utf8_protocol_version = 4;
@@ -1023,7 +1025,7 @@ static const char *fxp_strtime(pool *p, time_t t) {
 
   tm = pr_gmtime(p, &t);
   if (tm != NULL) {
-    snprintf(buf, sizeof(buf), "%s %s %2d %02d:%02d:%02d %d",
+    pr_snprintf(buf, sizeof(buf), "%s %s %2d %02d:%02d:%02d %d",
       days[tm->tm_wday], mons[tm->tm_mon], tm->tm_mday, tm->tm_hour,
       tm->tm_min, tm->tm_sec, tm->tm_year + 1900);
 
@@ -1196,7 +1198,7 @@ static void fxp_status_write(pool *p, unsigned char **buf, uint32_t *buflen,
   pr_response_clear(&resp_err_list);
 
   memset(num, '\0', sizeof(num));
-  snprintf(num, sizeof(num)-1, "%lu", (unsigned long) status_code);
+  pr_snprintf(num, sizeof(num)-1, "%lu", (unsigned long) status_code);
   num[sizeof(num)-1] = '\0';
   pr_response_add(pstrdup(p, num), "%s", status_msg);
 
@@ -1327,6 +1329,60 @@ static void fxp_msg_write_extpair(unsigned char **buf, uint32_t *buflen,
     TRUE);
 }
 
+static uint32_t fxp_attrs_clear_unsupported(uint32_t attr_flags) {
+
+  /* Clear any unsupported flags. */
+  if (attr_flags & SSH2_FX_ATTR_ALLOCATION_SIZE) {
+    pr_trace_msg(trace_channel, 17,
+      "clearing unsupported ALLOCATION_SIZE attribute flag");
+    attr_flags &= ~SSH2_FX_ATTR_ALLOCATION_SIZE;
+  }
+
+  if (attr_flags & SSH2_FX_ATTR_SUBSECOND_TIMES) {
+    pr_trace_msg(trace_channel, 17,
+      "clearing unsupported SUBSECOND_TIMES attribute flag");
+    attr_flags &= ~SSH2_FX_ATTR_SUBSECOND_TIMES;
+  }
+
+  if (attr_flags & SSH2_FX_ATTR_ACL) {
+    pr_trace_msg(trace_channel, 17,
+      "clearing unsupported ACL attribute flag");
+    attr_flags &= ~SSH2_FX_ATTR_ACL;
+  }
+
+  if (attr_flags & SSH2_FX_ATTR_BITS) {
+    pr_trace_msg(trace_channel, 17,
+      "clearing unsupported BITS attribute flag");
+    attr_flags &= ~SSH2_FX_ATTR_BITS;
+  }
+
+  if (attr_flags & SSH2_FX_ATTR_TEXT_HINT) {
+    pr_trace_msg(trace_channel, 17,
+      "clearing unsupported TEXT_HINT attribute flag");
+    attr_flags &= ~SSH2_FX_ATTR_TEXT_HINT;
+  }
+
+  if (attr_flags & SSH2_FX_ATTR_MIME_TYPE) {
+    pr_trace_msg(trace_channel, 17,
+      "clearing unsupported MIME_TYPE attribute flag");
+    attr_flags &= ~SSH2_FX_ATTR_MIME_TYPE;
+  }
+
+  if (attr_flags & SSH2_FX_ATTR_UNTRANSLATED_NAME) {
+    pr_trace_msg(trace_channel, 17,
+      "clearing unsupported UNTRANSLATED_NAME attribute flag");
+    attr_flags &= ~SSH2_FX_ATTR_UNTRANSLATED_NAME;
+  }
+
+  if (attr_flags & SSH2_FX_ATTR_CTIME) {
+    pr_trace_msg(trace_channel, 17,
+      "clearing unsupported CTIME attribute flag");
+    attr_flags &= ~SSH2_FX_ATTR_CTIME;
+  }
+
+  return attr_flags;
+}
+
 static int fxp_attrs_set(pr_fh_t *fh, const char *path, struct stat *attrs,
     uint32_t attr_flags, array_header *xattrs, unsigned char **buf,
     uint32_t *buflen, struct fxp_packet *fxp) {
@@ -1371,8 +1427,7 @@ static int fxp_attrs_set(pr_fh_t *fh, const char *path, struct stat *attrs,
         st.st_mode != attrs->st_mode) {
       cmd_rec *cmd;
 
-      cmd = pr_cmd_alloc(fxp->pool, 1, "SITE_CHMOD");
-      cmd->arg = pstrdup(fxp->pool, path);
+      cmd = fxp_cmd_alloc(fxp->pool, "SITE_CHMOD", pstrdup(fxp->pool, path));
       if (!dir_check(fxp->pool, cmd, G_WRITE, (char *) path, NULL)) {
         (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
           "chmod of '%s' blocked by <Limit> configuration", path);
@@ -1436,8 +1491,7 @@ static int fxp_attrs_set(pr_fh_t *fh, const char *path, struct stat *attrs,
     if (do_chown) {
       cmd_rec *cmd;
 
-      cmd = pr_cmd_alloc(fxp->pool, 1, "SITE_CHGRP");
-      cmd->arg = pstrdup(fxp->pool, path);
+      cmd = fxp_cmd_alloc(fxp->pool, "SITE_CHGRP", pstrdup(fxp->pool, path));
       if (!dir_check(fxp->pool, cmd, G_WRITE, (char *) path, NULL)) {
         (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
           "chown of '%s' blocked by <Limit> configuration", path);
@@ -1808,31 +1862,32 @@ static char *fxp_strattrs(pool *p, struct stat *st, uint32_t *attr_flags) {
     }
   }
 
-  snprintf(ptr, bufsz - buflen, "type=%s;", fxp_strftype(st->st_mode));
+  pr_snprintf(ptr, bufsz - buflen, "type=%s;", fxp_strftype(st->st_mode));
   buflen = strlen(buf);
   ptr = buf + buflen;
 
   if (flags & SSH2_FX_ATTR_SIZE) {
-    snprintf(ptr, bufsz - buflen, "size=%" PR_LU ";", (pr_off_t) st->st_size);
+    pr_snprintf(ptr, bufsz - buflen, "size=%" PR_LU ";",
+      (pr_off_t) st->st_size);
     buflen = strlen(buf);
     ptr = buf + buflen;
   }
 
   if ((flags & SSH2_FX_ATTR_UIDGID) ||
       (flags & SSH2_FX_ATTR_OWNERGROUP)) {
-    snprintf(ptr, bufsz - buflen, "UNIX.owner=%s;",
+    pr_snprintf(ptr, bufsz - buflen, "UNIX.owner=%s;",
       pr_uid2str(NULL, st->st_uid));
     buflen = strlen(buf);
     ptr = buf + buflen;
 
-    snprintf(ptr, bufsz - buflen, "UNIX.group=%s;",
+    pr_snprintf(ptr, bufsz - buflen, "UNIX.group=%s;",
       pr_gid2str(NULL, st->st_gid));
     buflen = strlen(buf);
     ptr = buf + buflen;
   }
 
   if (flags & SSH2_FX_ATTR_PERMISSIONS) {
-    snprintf(ptr, bufsz - buflen, "UNIX.mode=%04o;",
+    pr_snprintf(ptr, bufsz - buflen, "UNIX.mode=%04o;",
       (unsigned int) st->st_mode & 07777);
     buflen = strlen(buf);
     ptr = buf + buflen;
@@ -1844,7 +1899,7 @@ static char *fxp_strattrs(pool *p, struct stat *st, uint32_t *attr_flags) {
 
       tm = pr_gmtime(p, (const time_t *) &st->st_atime);
       if (tm != NULL) {
-        snprintf(ptr, bufsz - buflen, "access=%04d%02d%02d%02d%02d%02d;",
+        pr_snprintf(ptr, bufsz - buflen, "access=%04d%02d%02d%02d%02d%02d;",
           tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday, tm->tm_hour, tm->tm_min,
           tm->tm_sec);
         buflen = strlen(buf);
@@ -1857,7 +1912,7 @@ static char *fxp_strattrs(pool *p, struct stat *st, uint32_t *attr_flags) {
 
       tm = pr_gmtime(p, (const time_t *) &st->st_mtime);
       if (tm != NULL) {
-        snprintf(ptr, bufsz - buflen, "modify=%04d%02d%02d%02d%02d%02d;",
+        pr_snprintf(ptr, bufsz - buflen, "modify=%04d%02d%02d%02d%02d%02d;",
           tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday, tm->tm_hour, tm->tm_min,
           tm->tm_sec);
 
@@ -1876,7 +1931,7 @@ static char *fxp_strattrs(pool *p, struct stat *st, uint32_t *attr_flags) {
 
       tm = pr_gmtime(p, (const time_t *) &st->st_atime);
       if (tm != NULL) {
-        snprintf(ptr, bufsz - buflen, "access=%04d%02d%02d%02d%02d%02d;",
+        pr_snprintf(ptr, bufsz - buflen, "access=%04d%02d%02d%02d%02d%02d;",
           tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday, tm->tm_hour, tm->tm_min,
           tm->tm_sec);
 
@@ -1894,7 +1949,7 @@ static char *fxp_strattrs(pool *p, struct stat *st, uint32_t *attr_flags) {
 
       tm = pr_gmtime(p, (const time_t *) &st->st_mtime);
       if (tm != NULL) {
-        snprintf(ptr, bufsz - buflen, "modify=%04d%02d%02d%02d%02d%02d;",
+        pr_snprintf(ptr, bufsz - buflen, "modify=%04d%02d%02d%02d%02d%02d;",
           tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday, tm->tm_hour, tm->tm_min,
           tm->tm_sec);
 
@@ -1908,7 +1963,7 @@ static char *fxp_strattrs(pool *p, struct stat *st, uint32_t *attr_flags) {
     }
 
     if (flags & SSH2_FX_ATTR_LINK_COUNT) {
-      snprintf(ptr, bufsz - buflen, "UNIX.nlink=%lu;",
+      pr_snprintf(ptr, bufsz - buflen, "UNIX.nlink=%lu;",
         (unsigned long) st->st_nlink);
       buflen = strlen(buf);
       ptr = buf + buflen;
@@ -2743,7 +2798,7 @@ static char *fxp_get_path_listing(pool *p, const char *path, struct stat *st,
 
   group_len = MAX(strlen(group), 8);
 
-  snprintf(listing, sizeof(listing)-1,
+  pr_snprintf(listing, sizeof(listing)-1,
     "%s %3u %-*s %-*s %8" PR_LU " %s %s", mode_str,
     (unsigned int) st->st_nlink, user_len, user, group_len, group,
     (pr_off_t) st->st_size, time_str, path);
@@ -2850,7 +2905,7 @@ static int fxp_handle_add(uint32_t channel_id, struct fxp_handle *fxh) {
 static struct fxp_handle *fxp_handle_create(pool *p) {
   unsigned char *data;
   char *handle;
-  size_t data_len, handle_len;
+  size_t data_len;
   pool *sub_pool;
   struct fxp_handle *fxh;
 
@@ -2865,13 +2920,7 @@ static struct fxp_handle *fxp_handle_create(pool *p) {
   data_len = 8;
   data = palloc(p, data_len);
 
-  handle_len = (2 * data_len);
-  handle = palloc(fxh->pool, handle_len + 1);
-  handle[handle_len] = '\0';
-
   while (TRUE) {
-    register unsigned int i;
-
     /* Keep trying until mktemp(3) returns a string that we haven't used
      * yet.  We need to avoid collisions.
      */
@@ -2880,9 +2929,7 @@ static struct fxp_handle *fxp_handle_create(pool *p) {
     RAND_bytes(data, data_len);
 
     /* Encode the data as hex to create the handle ID. */
-    for (i = 0; i < data_len; i++) {
-      sprintf((char *) &(handle[i*2]), "%02x", data[i]);
-    }
+    handle = pr_str_bin2hex(fxh->pool, data, data_len, PR_STR_FL_HEX_USE_LC);
 
     if (fxp_handle_get(handle) == NULL) {
       fxh->name = handle;
@@ -2944,7 +2991,7 @@ static int fxp_handle_abort(const void *key_data, size_t key_datasz,
   }
 
   /* Write an 'incomplete' TransferLog entry for this. */
-  abs_path = dir_abs_path(fxh->pool, real_path, TRUE);
+  abs_path = sftp_misc_vroot_abs_path(fxh->pool, real_path, TRUE);
 
   if (fxh->fh_flags == O_RDONLY) {
     direction = 'o';
@@ -3931,7 +3978,7 @@ static int fxp_handle_ext_check_file(struct fxp_packet *fxp, char *digest_list,
   unsigned char *buf, *ptr;
   char *supported_digests;
   const char *digest_name, *reason;
-  uint32_t buflen, bufsz, status_code;
+  uint32_t buflen, bufsz, expected_buflen, status_code;
   struct fxp_packet *resp;
   int data_len, res, xerrno = 0;
   struct stat st;
@@ -3940,7 +3987,12 @@ static int fxp_handle_ext_check_file(struct fxp_packet *fxp, char *digest_list,
   unsigned long nblocks;
   off_t range_len, total_len = 0;
   void *data;
-  BIO *bio, *fd_bio, *md_bio;
+  BIO *bio;
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || \
+    defined(HAVE_LIBRESSL)
+  EVP_MD_CTX md_ctx;
+#endif /* prior to OpenSSL-1.1.0 */
+  EVP_MD_CTX *pctx;
   const EVP_MD *md;
 
   pr_trace_msg(trace_channel, 8, "client sent check-file request: "
@@ -4084,8 +4136,7 @@ static int fxp_handle_ext_check_file(struct fxp_packet *fxp, char *digest_list,
     return fxp_packet_write(resp);
   }
 
-  cmd = pr_cmd_alloc(fxp->pool, 1, "SITE_DIGEST");
-  cmd->arg = pstrdup(fxp->pool, path);
+  cmd = fxp_cmd_alloc(fxp->pool, "SITE_DIGEST", pstrdup(fxp->pool, path));
   if (!dir_check(fxp->pool, cmd, "READ", path, NULL)) {
     xerrno = EACCES;
 
@@ -4249,15 +4300,34 @@ static int fxp_handle_ext_check_file(struct fxp_packet *fxp, char *digest_list,
     return fxp_packet_write(resp);
   }
 
-  md_bio = BIO_new(BIO_f_md());
+  /* Calculate the size of the response buffer, based on the number of blocks.
+   * Our already-allocated response buffer might be too small (see Issue #576).
+   *
+   * Each block needs at most EVP_MAX_MD_SIZE bytes, plus 4 bytes for the
+   * length prefix.
+   */
+  expected_buflen = FXP_RESPONSE_DATA_DEFAULT_SZ +
+    (nblocks * (EVP_MAX_MD_SIZE + 4));
+  if (buflen < expected_buflen) {
+    pr_trace_msg(trace_channel, 15, "allocated larger buffer (%lu bytes) for "
+      "check-file request on '%s', %s digest, %lu %s",
+      (unsigned long) expected_buflen, path, digest_name, nblocks,
+      nblocks == 1 ? "block/checksum" : "nblocks/checksums");
 
-  /* XXX Check the return value here */
-  BIO_set_md(md_bio, md);
+    buflen = bufsz = expected_buflen;
+    buf = ptr = palloc(fxp->pool, bufsz);
+  }
 
-  fd_bio = BIO_new(BIO_s_fd());
-  BIO_set_fd(fd_bio, PR_FH_FD(fh), BIO_NOCLOSE);
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || \
+    defined(HAVE_LIBRESSL)
+  pctx = &md_ctx;
+  EVP_MD_CTX_init(pctx);
+#else
+  pctx = EVP_MD_CTX_new();
+#endif /* prior to OpenSSL-1.1.0 */
 
-  bio = BIO_push(md_bio, fd_bio);
+  bio = BIO_new(BIO_s_fd());
+  BIO_set_fd(bio, PR_FH_FD(fh), BIO_NOCLOSE);
 
   sftp_msg_write_byte(&buf, &buflen, SFTP_SSH2_FXP_EXTENDED_REPLY);
   sftp_msg_write_int(&buf, &buflen, fxp->request_id);
@@ -4281,7 +4351,7 @@ static int fxp_handle_ext_check_file(struct fxp_packet *fxp, char *digest_list,
 
     res = BIO_read(bio, data, data_len);
     if (res < 0) {
-      if (BIO_should_read(fd_bio)) {
+      if (BIO_should_read(bio)) {
         continue;
       }
 
@@ -4312,10 +4382,20 @@ static int fxp_handle_ext_check_file(struct fxp_packet *fxp, char *digest_list,
       resp->payload = ptr;
       resp->payload_sz = (bufsz - buflen);
 
+      /* Cleanup. */
+      BIO_free(bio);
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || \
+    defined(HAVE_LIBRESSL)
+      EVP_MD_CTX_cleanup(pctx);
+#else
+      EVP_MD_CTX_free(pctx);
+#endif /* prior to OpenSSL-1.1.0 */
+
       return fxp_packet_write(resp);
 
     } else if (res == 0) {
-      if (BIO_should_retry(fd_bio) != 0) {
+      if (BIO_should_retry(bio) != 0) {
         continue;
       }
 
@@ -4324,16 +4404,14 @@ static int fxp_handle_ext_check_file(struct fxp_packet *fxp, char *digest_list,
     }
 
     if (blocksz != 0) {
-      char digest[EVP_MAX_MD_SIZE];
-      unsigned int digest_len;
+      unsigned char digest[EVP_MAX_MD_SIZE];
+      unsigned int digest_len = 0;
 
-      (void) BIO_flush(bio);
-      digest_len = BIO_gets(md_bio, digest, sizeof(digest));
+      EVP_DigestInit(pctx, md);
+      EVP_DigestUpdate(pctx, data, res);
+      EVP_DigestFinal(pctx, digest, &digest_len);
 
-      sftp_msg_write_data(&buf, &buflen, (unsigned char *) digest, digest_len,
-        FALSE);
-
-      (void) BIO_reset(md_bio);
+      sftp_msg_write_data(&buf, &buflen, digest, digest_len, FALSE);
 
       total_len += res; 
       if (len > 0 &&
@@ -4344,17 +4422,24 @@ static int fxp_handle_ext_check_file(struct fxp_packet *fxp, char *digest_list,
   }
 
   if (blocksz == 0) {
-    char digest[EVP_MAX_MD_SIZE];
-    unsigned int digest_len;
+    unsigned char digest[EVP_MAX_MD_SIZE];
+    unsigned int digest_len = 0;
 
-    (void) BIO_flush(bio);
-    digest_len = BIO_gets(md_bio, digest, sizeof(digest));
+    EVP_DigestInit(pctx, md);
+    EVP_DigestUpdate(pctx, data, res);
+    EVP_DigestFinal(pctx, digest, &digest_len);
 
-    sftp_msg_write_data(&buf, &buflen, (unsigned char *) digest, digest_len,
-      FALSE);
+    sftp_msg_write_data(&buf, &buflen, digest, digest_len, FALSE);
   }
 
-  BIO_free_all(bio);
+  /* Cleanup. */
+  BIO_free(bio);
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || \
+    defined(HAVE_LIBRESSL)
+  EVP_MD_CTX_cleanup(pctx);
+#else
+  EVP_MD_CTX_free(pctx);
+#endif /* prior to OpenSSL-1.1.0 */
   pr_fsio_close(fh);
 
   resp = fxp_packet_create(fxp->pool, fxp->channel_id);
@@ -4610,7 +4695,7 @@ static int fxp_handle_ext_copy_file(struct fxp_packet *fxp, char *src,
   fxp_cmd_dispatch(cmd);
 
   /* Write a TransferLog entry as well. */
-  abs_path = dir_abs_path(fxp->pool, dst, TRUE);
+  abs_path = sftp_misc_vroot_abs_path(fxp->pool, dst, TRUE);
   xferlog_write(0, session.c->remote_name, st.st_size, abs_path, 'b', 'i',
     'r', session.user, 'c', "_");
 
@@ -6545,6 +6630,8 @@ static int fxp_handle_close(struct fxp_packet *fxp) {
 
       } else {
         pr_response_add(R_226, "%s", "Transfer complete");
+        session.xfer.path = sftp_misc_vroot_abs_path(cmd2->pool,
+          session.xfer.path, FALSE);
         fxp_cmd_dispatch(cmd2);
       }
     }
@@ -7325,6 +7412,8 @@ static int fxp_handle_fsetstat(struct fxp_packet *fxp) {
   }
   pr_cmd_set_name(cmd, cmd_name);
 
+  attr_flags = fxp_attrs_clear_unsupported(attr_flags);
+
   /* If the SFTPOption for ignoring the owners for SFTP setstat requests is set,
    * handle it by clearing the SSH2_FX_ATTR_UIDGID and SSH2_FX_ATTR_OWNERGROUP
    * flags.
@@ -7453,6 +7542,11 @@ static int fxp_handle_fstat(struct fxp_packet *fxp) {
     pr_trace_msg(trace_channel, 7, "received request: FSTAT %s", name);
     attr_flags = SSH2_FX_ATTR_SIZE|SSH2_FX_ATTR_UIDGID|SSH2_FX_ATTR_PERMISSIONS|
       SSH2_FX_ATTR_ACMODTIME;
+#ifdef PR_USE_XATTR
+    if (!(fxp_fsio_opts & PR_FSIO_OPT_IGNORE_XATTR)) {
+      attr_flags |= SSH2_FX_ATTR_EXTENDED;
+    }
+#endif /* PR_USE_XATTR */
   }
 
   fxb = pcalloc(fxp->pool, sizeof(struct fxp_buffer));
@@ -7581,6 +7675,16 @@ static int fxp_handle_fstat(struct fxp_packet *fxp) {
   fxb->buf = buf;
   fxb->buflen = buflen;
 
+  attr_flags = fxp_attrs_clear_unsupported(attr_flags);
+  if (fxp_session->client_version > 3 &&
+      sftp_opts & SFTP_OPT_INCLUDE_SFTP_TIMES) {
+    pr_trace_msg(trace_channel, 17,
+      "SFTPOption IncludeSFTPTimes in effect; assuring presence of "
+      "ACCESSTIME/MODIFYTIME attributes");
+    attr_flags |= SSH2_FX_ATTR_ACCESSTIME;
+    attr_flags |= SSH2_FX_ATTR_MODIFYTIME;
+  }
+
   fxp_attrs_write(fxp->pool, fxb, fxh->fh->fh_path, &st, attr_flags, fake_user,
     fake_group);
 
@@ -7603,12 +7707,13 @@ static int fxp_handle_init(struct fxp_packet *fxp) {
   uint32_t buflen, bufsz;
   struct fxp_packet *resp;
   cmd_rec *cmd;
+  config_rec *c;
 
   fxp_session->client_version = sftp_msg_read_int(fxp->pool, &fxp->payload,
     &fxp->payload_sz);
 
   memset(version_str, '\0', sizeof(version_str));
-  snprintf(version_str, sizeof(version_str)-1, "%lu",
+  pr_snprintf(version_str, sizeof(version_str)-1, "%lu",
     (unsigned long) fxp_session->client_version);
 
   cmd = fxp_cmd_alloc(fxp->pool, "INIT", version_str);
@@ -7691,6 +7796,22 @@ static int fxp_handle_init(struct fxp_packet *fxp) {
   }
 
   fxp_version_add_openssh_exts(fxp->pool, &buf, &buflen);
+
+  /* Look up the FSOptions here, for use later (Issue #593).  We do not need
+   * set these for the FSIO API; that is already done by mod_core.  Instead,
+   * we look them up for ourselves, for our own consumption/use.
+   */
+  c = find_config(main_server->conf, CONF_PARAM, "FSOptions", FALSE);
+  while (c != NULL) {
+    unsigned long opts = 0;
+
+    pr_signals_handle();
+
+    opts = *((unsigned long *) c->argv[0]);
+    fxp_fsio_opts |= opts;
+
+    c = find_config_next(c, c->next, CONF_PARAM, "FSOptions", FALSE);
+  }
 
   pr_event_generate("mod_sftp.sftp.protocol-version",
     &(fxp_session->client_version));
@@ -8142,7 +8263,9 @@ static int fxp_handle_lstat(struct fxp_packet *fxp) {
     attr_flags = SSH2_FX_ATTR_SIZE|SSH2_FX_ATTR_UIDGID|SSH2_FX_ATTR_PERMISSIONS|
       SSH2_FX_ATTR_ACMODTIME;
 #ifdef PR_USE_XATTR
-    attr_flags |= SSH2_FX_ATTR_EXTENDED;
+    if (!(fxp_fsio_opts & PR_FSIO_OPT_IGNORE_XATTR)) {
+      attr_flags |= SSH2_FX_ATTR_EXTENDED;
+    }
 #endif /* PR_USE_XATTR */
   }
 
@@ -8286,6 +8409,16 @@ static int fxp_handle_lstat(struct fxp_packet *fxp) {
 
   fxb->buf = buf;
   fxb->buflen = buflen;
+
+  attr_flags = fxp_attrs_clear_unsupported(attr_flags);
+  if (fxp_session->client_version > 3 &&
+      sftp_opts & SFTP_OPT_INCLUDE_SFTP_TIMES) {
+    pr_trace_msg(trace_channel, 17,
+      "SFTPOption IncludeSFTPTimes in effect; assuring presence of "
+      "ACCESSTIME/MODIFYTIME attributes");
+    attr_flags |= SSH2_FX_ATTR_ACCESSTIME;
+    attr_flags |= SSH2_FX_ATTR_MODIFYTIME;
+  }
 
   fxp_attrs_write(fxp->pool, fxb, path, &st, attr_flags, fake_user, fake_group);
 
@@ -9130,6 +9263,8 @@ static int fxp_handle_open(struct fxp_packet *fxp) {
       fh->fh_path, strerror(errno));
   }
  
+  attr_flags = fxp_attrs_clear_unsupported(attr_flags);
+
   /* If the SFTPOption for ignoring perms for SFTP uploads is set, handle
    * it by clearing the SSH2_FX_ATTR_PERMISSIONS flag.
    */
@@ -10208,7 +10343,15 @@ static int fxp_handle_readdir(struct fxp_packet *fxp) {
 
     /* How much non-path data do we expect to be associated with this entry? */
 #ifdef PR_USE_XATTR
-    max_entry_metadata = (1024 * 4);
+    /* Note that the "extra space" to allocate for extended attributes is
+     * currently a bit of a guess.  Initially, this was 4K; that was causing
+     * slower directory listings due to the need for more READDIR requests,
+     * since we were sending fewer entries back (limited by the max packet
+     * size) per READDIR request.
+     *
+     * Now, we are trying 1K, and will see how that does.
+     */
+    max_entry_metadata = 1024;
 #else
     max_entry_metadata = 256;
 #endif /* PR_USE_XATTR */
@@ -10352,7 +10495,9 @@ static int fxp_handle_readdir(struct fxp_packet *fxp) {
      * to protocol version 6 clients.
      */
 #ifdef PR_USE_XATTR
-    attr_flags |= SSH2_FX_ATTR_EXTENDED;
+    if (!(fxp_fsio_opts & PR_FSIO_OPT_IGNORE_XATTR)) {
+      attr_flags |= SSH2_FX_ATTR_EXTENDED;
+    }
 #endif /* PR_USE_XATTR */
   }
 
@@ -11225,7 +11370,7 @@ static int fxp_handle_remove(struct fxp_packet *fxp) {
     /* The TransferLog format wants the full path to the deleted file,
      * regardless of a chroot.
      */
-    abs_path = dir_abs_path(fxp->pool, path, TRUE);
+    abs_path = sftp_misc_vroot_abs_path(fxp->pool, path, TRUE);
 
     xferlog_write(0, session.c->remote_name, st.st_size, abs_path,
       'b', 'd', 'r', session.user, 'c', "_");
@@ -11335,7 +11480,7 @@ static int fxp_handle_rename(struct fxp_packet *fxp) {
   buf = ptr = palloc(fxp->pool, bufsz);
 
   cmd2 = fxp_cmd_alloc(fxp->pool, C_RNFR, old_path);
-  cmd2->cmd_class =  CL_MISC|CL_WRITE;
+  cmd2->cmd_class = CL_MISC|CL_WRITE;
   if (pr_cmd_dispatch_phase(cmd2, PRE_CMD, 0) < 0) {
     status_code = SSH2_FX_PERMISSION_DENIED;
 
@@ -12099,6 +12244,8 @@ static int fxp_handle_setstat(struct fxp_packet *fxp) {
   }
   pr_cmd_set_name(cmd, cmd_name);
 
+  attr_flags = fxp_attrs_clear_unsupported(attr_flags);
+
   /* If the SFTPOption for ignoring the owners for SFTP setstat requests is set,
    * handle it by clearing the SSH2_FX_ATTR_UIDGID and SSH2_FX_ATTR_OWNERGROUP
    * flags.
@@ -12208,7 +12355,9 @@ static int fxp_handle_stat(struct fxp_packet *fxp) {
     attr_flags = SSH2_FX_ATTR_SIZE|SSH2_FX_ATTR_UIDGID|SSH2_FX_ATTR_PERMISSIONS|
       SSH2_FX_ATTR_ACMODTIME;
 #ifdef PR_USE_XATTR
-    attr_flags |= SSH2_FX_ATTR_EXTENDED;
+    if (!(fxp_fsio_opts & PR_FSIO_OPT_IGNORE_XATTR)) {
+      attr_flags |= SSH2_FX_ATTR_EXTENDED;
+    }
 #endif /* PR_USE_XATTR */
   }
 
@@ -12351,7 +12500,7 @@ static int fxp_handle_stat(struct fxp_packet *fxp) {
   }
 
   pr_trace_msg(trace_channel, 8, "sending response: ATTRS %s",
-    fxp_strattrs(fxp->pool, &st, NULL));
+    fxp_strattrs(fxp->pool, &st, &attr_flags));
 
   sftp_msg_write_byte(&buf, &buflen, SFTP_SSH2_FXP_ATTRS);
   sftp_msg_write_int(&buf, &buflen, fxp->request_id);
@@ -12372,6 +12521,16 @@ static int fxp_handle_stat(struct fxp_packet *fxp) {
 
   fxb->buf = buf;
   fxb->buflen = buflen;
+
+  attr_flags = fxp_attrs_clear_unsupported(attr_flags);
+  if (fxp_session->client_version > 3 &&
+      sftp_opts & SFTP_OPT_INCLUDE_SFTP_TIMES) {
+    pr_trace_msg(trace_channel, 17,
+      "SFTPOption IncludeSFTPTimes in effect; assuring presence of "
+      "ACCESSTIME/MODIFYTIME attributes");
+    attr_flags |= SSH2_FX_ATTR_ACCESSTIME;
+    attr_flags |= SSH2_FX_ATTR_MODIFYTIME;
+  }
 
   fxp_attrs_write(fxp->pool, fxb, path, &st, attr_flags, fake_user, fake_group);
 
@@ -12649,7 +12808,7 @@ static int fxp_handle_write(struct fxp_packet *fxp) {
     datalen);
 
   memset(cmd_arg, '\0', sizeof(cmd_arg)); 
-  snprintf(cmd_arg, sizeof(cmd_arg)-1, "%s %" PR_LU " %lu", name,
+  pr_snprintf(cmd_arg, sizeof(cmd_arg)-1, "%s %" PR_LU " %lu", name,
     (pr_off_t) offset, (unsigned long) datalen);
   cmd = fxp_cmd_alloc(fxp->pool, "WRITE", cmd_arg);
   cmd->cmd_class = CL_WRITE|CL_SFTP;

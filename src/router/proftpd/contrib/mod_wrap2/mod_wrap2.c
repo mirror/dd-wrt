@@ -1,6 +1,6 @@
 /*
  * ProFTPD: mod_wrap2 -- tcpwrappers-like access control
- * Copyright (c) 2000-2016 TJ Saunders
+ * Copyright (c) 2000-2017 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -390,7 +390,7 @@ static char *wrap2_get_client(wrap2_conn_t *conn) {
   hostinfo = wrap2_get_hostinfo(conn->client);
 
   if (strcasecmp(wrap2_get_user(conn), WRAP2_UNKNOWN) != 0) {
-    snprintf(both, sizeof(both), "%s@%s", conn->user, hostinfo);
+    pr_snprintf(both, sizeof(both), "%s@%s", conn->user, hostinfo);
     both[sizeof(both)-1] = '\0';
     return both;
   }
@@ -1446,7 +1446,7 @@ MODRET set_wrapgrouptables(cmd_rec *cmd) {
 
     tmp = strchr(cmd->argv[i], ':');
     if (tmp == NULL) {
-      CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "badly table parameter: '",
+      CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "bad table parameter: '",
         (char *) cmd->argv[i], "'", NULL));
     }
 
@@ -1561,7 +1561,7 @@ MODRET set_wraptables(cmd_rec *cmd) {
 
     tmp = strchr(cmd->argv[i], ':');
     if (tmp == NULL) {
-      CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "badly table parameter: '",
+      CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "bad table parameter: '",
         cmd->argv[i], "'", NULL));
     }
 
@@ -1607,7 +1607,7 @@ MODRET set_wrapusertables(cmd_rec *cmd) {
 
     tmp = strchr(cmd->argv[i], ':');
     if (tmp == NULL) {
-      CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "badly table parameter: '",
+      CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "bad table parameter: '",
         (char *) cmd->argv[i], "'", NULL));
     }
 

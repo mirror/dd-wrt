@@ -1,8 +1,7 @@
 /*
  * ProFTPD: mod_delay -- a module for adding arbitrary delays to the FTP
  *                       session lifecycle
- *
- * Copyright (c) 2004-2016 TJ Saunders
+ * Copyright (c) 2004-2017 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1216,7 +1215,7 @@ static int delay_handle_info(pr_ctrls_t *ctrl, int reqargc,
         char buf[80];
 
         memset(buf, '\0', sizeof(buf));
-        snprintf(buf, sizeof(buf)-1, "%10ld",
+        pr_snprintf(buf, sizeof(buf)-1, "%10ld",
           dv->dv_vals[DELAY_NVALUES - 1 - j]);
 
         vals = pstrcat(tmp_pool, vals, " ", buf, NULL);
@@ -1258,7 +1257,7 @@ static int delay_handle_info(pr_ctrls_t *ctrl, int reqargc,
         char buf[80];
 
         memset(buf, '\0', sizeof(buf));
-        snprintf(buf, sizeof(buf)-1, "%10ld",
+        pr_snprintf(buf, sizeof(buf)-1, "%10ld",
           dv->dv_vals[DELAY_NVALUES - 1 - j]);
 
         vals = pstrcat(tmp_pool, vals, " ", buf, NULL);

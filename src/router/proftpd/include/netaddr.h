@@ -27,7 +27,48 @@
 #ifndef PR_NETADDR_H
 #define PR_NETADDR_H
 
-#include "conf.h"
+#include "os.h"
+#include "pool.h"
+
+#ifndef INET_ADDRSTRLEN
+# define INET_ADDRSTRLEN        16
+#endif /* INET_ADDRSTRLEN */
+
+#ifndef INET6_ADDRSTRLEN
+# define INET6_ADDRSTRLEN       46
+#endif /* INET6_ADDRSTRLEN */
+
+struct netaddr_struc {
+  int na_family;
+
+  /* Note: this assumes that DNS names have a maximum size of
+   * 256 characters.
+   */
+  char na_dnsstr[256];
+  int na_have_dnsstr;
+
+#ifdef PR_USE_IPV6
+  char na_ipstr[INET6_ADDRSTRLEN];
+#else
+  char na_ipstr[INET_ADDRSTRLEN];
+#endif /* PR_USE_IPV6 */
+  int na_have_ipstr;
+
+  /* Note: at some point, this union might/should be replaced with
+   * struct sockaddr_storage.  Why?  The sockaddr_storage struct is
+   * better defined to be aligned on OS/arch boundaries, for more efficient
+   * allocation/access.
+   */
+
+  union {
+    struct sockaddr_in v4;
+#ifdef PR_USE_IPV6
+    struct sockaddr_in6 v6;
+#endif /* PR_USE_IPV6 */
+  } na_addr;
+};
+
+typedef struct netaddr_struc pr_netaddr_t;
 
 #ifndef HAVE_STRUCT_ADDRINFO
 struct addrinfo {

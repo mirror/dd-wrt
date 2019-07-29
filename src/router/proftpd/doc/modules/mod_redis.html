@@ -22,6 +22,9 @@ The <code>mod_redis</code> module enables ProFTPD support for caching data in
   <li><a href="#RedisEngine">RedisEngine</a>
   <li><a href="#RedisLog">RedisLog</a>
   <li><a href="#RedisLogOnCommand">RedisLogOnCommand</a>
+  <li><a href="#RedisLogOnEvent">RedisLogOnEvent</a>
+  <li><a href="#RedisOptions">RedisOptions</a>
+  <li><a href="#RedisSentinel">RedisSentinel</a>
   <li><a href="#RedisServer">RedisServer</a>
   <li><a href="#RedisTimeouts">RedisTimeouts</a>
 </ul>
@@ -62,9 +65,9 @@ unless <code>AllowLogSymlinks</code> is explicitly set to <em>on</em>
 <p>
 <hr>
 <h3><a name="RedisLogOnCommand">RedisLogOnCommand</a></h3>
-<strong>Syntax:</strong> RedisLogOnCommand <em>commands format-name</em><br>
+<strong>Syntax:</strong> RedisLogOnCommand <em>"none"|commands format-name [key]</em><br>
 <strong>Default:</strong> None<br>
-<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code>, <code>&lt;Directory&gt;</code><br>
 <strong>Module:</strong> mod_redis<br>
 <strong>Compatibility:</strong> 1.3.6rc5 and later
 
@@ -75,9 +78,17 @@ occurs, <code>mod_redis</code> will compose a JSON object, using the
 <a href="mod_log.html#LogFormat"><code>LogFormat</code></a> named by
 <em>format-name</em> as a <i>template</i> for the fields to include in the
 JSON object.  The JSON object of that event will then be appended to a list
-stored in Redis, using <em>format-name</em> as the key name.  Multiple
+stored in Redis, using <em>format-name</em> as the default key name.  Multiple
 <code>RedisLogOnCommand</code> directives can be used, for different log formats
 for different events.
+
+<p>
+The optional <em>key</em> parameter, if present, specifies the value to use
+as the Redis key.  This <em>key</em> parameter supports all of the
+<code>LogFormat</code> variables, thus you can use <i>e.g.</i>:
+<pre>
+  RedisLogOnCommand RETR,STOR xferlog %m:ftpxfer:%u
+</pre>
 
 <p>
 More on the use of Redis logging, including a table showing how
@@ -88,24 +99,151 @@ More on the use of Redis logging, including a table showing how
 Example:
 <pre>
   LogFormat file-transfers "%h %l %u %t \"%r\" %s %b"
-  RedisLogOnCommand APPE,RETR,STOR,STOU file-transfers
 
-  LogFormat sessions "%{iso8601}"
-  RedisLogOnCommand CONNECT,DISCONNECT sessions
+  # Only log to Redis for uploads in this directory
+  <Directory /path/to/inbox>
+    RedisLogOnCommand APPE,STOR,STOU file-transfers
+  </Directory>
+
+  # Only log to Redis for downloads from this directory
+  <Directory /path/to/pub>
+    RedisLogOnCommand RETR file-transfers
+  </Directory>
+
+  # ...but prevent Redis logging in this subdirectory
+  <Directory /path/to/pub/subdir>
+    RedisLogOnCommand none
+  </Directory
 </pre>
 
 <p>
-In addition to specific FTP commands, the <em>commands</em> list can specify
+<b>Note</b> that <code>RedisLogOnCommand</code> does <b>not</b> currently
+support the logging <i>classes</i> that the <code>ExtendedLog</code> directive
+supports.
+
+<p>
+<hr>
+<h3><a name="RedisLogOnEvent">RedisLogOnEvent</a></h3>
+<strong>Syntax:</strong> RedisLogOnEvent <em>"none"|events format-name [key]</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code>, <code>&lt;Directory&gt;</code><br>
+<strong>Module:</strong> mod_redis<br>
+<strong>Compatibility:</strong> 1.3.7rc1 and later
+
+<p>
+The <code>RedisLogOnEvent</code> directive configures the use of Redis for
+<em>logging</em>.  Whenever one of the comma-separated list of <em>events</em>
+occurs, <code>mod_redis</code> will compose a JSON object, using the
+<a href="mod_log.html#LogFormat"><code>LogFormat</code></a> named by
+<em>format-name</em> as a <i>template</i> for the fields to include in the
+JSON object.  The JSON object of that event will then be appended to a list
+stored in Redis, using <em>format-name</em> as the default key name.  Multiple
+<code>RedisLogOnEvent</code> directives can be used, for different log formats
+for different events.
+
+<p>
+The optional <em>key</em> parameter, if present, specifies the value to use
+as the Redis key.  This <em>key</em> parameter supports all of the
+<code>LogFormat</code> variables, thus you can use <i>e.g.</i>:
+<pre>
+  RedisLogOnEvent READ ftp.download.%u.%m:%f
+</pre>
+
+<p>
+More on the use of Redis logging, including a table showing how
+<code>LogFormat</code> variables are mapped to JSON object keys can be found
+<a href="#Logging">here</a>.
+
+<p>
+Example:
+<pre>
+  LogFormat sessions "%{iso8601} %a"
+  RedisLogOnEvent CONNECT,DISCONNECT sessions
+</pre>
+
+<p>
+In addition to specific FTP commands, the <em>events</em> list can specify
 "ALL", for logging on <b>all</b> commands.  Or it can <i>include</i> the
-"CONNECT" and "DISCONNECT" <i>commands</i>, which can be useful for logging the
+"CONNECT" and "DISCONNECT" <i>events</i>, which can be useful for logging the
 start and end times of a session.  <b>Note</b> that
-<code>RedisLogOnCommand</code> does <b>not</b> currently support the logging
-<i>classes</i> that the <code>ExtendedLog</code> directive supports.
+<code>RedisLogOnEvent</code> <i>does</i> support the logging <i>classes</i>
+that the <code>ExtendedLog</code> directive supports.
+
+<p>
+<hr>
+<h3><a name="RedisOptions">RedisOptions</a></h3>
+<strong>Syntax:</strong> RedisOptions <em>opt1 ...</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_redis<br>
+<strong>Compatibility:</strong> 1.3.7rc1 and later
+
+<p>
+The <code>RedisOptions</code> directive is used to configure various optional
+behavior of <code>mod_redis</code>.
+
+<p>
+Example:
+<pre>
+  RedisOptions NoReconnect
+</pre>
+
+<p>
+The currently implemented options are:
+<ul>
+  <li><code>NoReconnect</code><br>
+    <p>
+    If the connection to Redis breaks unexpectedly, <code>mod_redis</code>
+    will attempt to <em>reconnect</em> automatically.  Use this option to
+    disable the automatic reconnection.
+  </li>
+</ul>
+
+<p>
+<hr>
+<h3><a name="RedisSentinel">RedisSentinel</a></h3>
+<strong>Syntax:</strong> RedisSentinel host1 ... ["master" name]</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_redis<br>
+<strong>Compatibility:</strong> 1.3.7rc1 and later
+
+<p>
+The <code>RedisSentinel</code> directive is used to configure a list of IP
+addresses/ports of Redis Sentinels that the <code>mod_redis</code> module is
+to use, for discovering the location of named <em>master</em> database.  For
+example:
+<pre>
+  # Configure two Sentinels; the first master discovered will be used
+  RedisSentinel 1.2.3.4:26379 5.6.7.8:36379
+
+  # Configure two Sentinels on the default Sentinel port, and
+  # look for the location of the master named "proftpd".
+  RedisSentinel 1.2.3.4 5.6.7.8 master proftpd
+
+  # Configure three Sentinels including an IPv6 address, with explicit ports,
+  # and look for the location of the "proftpd" master.
+  RedisSentinel redis1.example.com:26379 1.2.3.4:26379 [::1]:26379 master proftpd
+</pre>
+
+<p>
+The <code>RedisSentinel</code> directive can be used <em>instead of</em> the
+<code>RedisServer</code> directive, for discovering the Redis server to use.
+<b>However</b>, if your Redis server requires authentication, <b>or</b>
+supports multiple databases, then you <b>will</b> need to use
+<code>RedisServer</code> as well:
+<pre>
+  # Use this to configure our password and database
+  RedisServer 127.0.0.1:6379 redisr0cks 2
+
+  # And use Sentinels to discover the true address/port
+  RedisSentine 1.2.3.4 5.6.7.8 9.10.11.12
+</pre>
 
 <p>
 <hr>
 <h3><a name="RedisServer">RedisServer</a></h3>
-<strong>Syntax:</strong> RedisServer <em>server [password]</em><br>
+<strong>Syntax:</strong> RedisServer <em>server [password] [db-index]</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_redis<br>
@@ -133,6 +271,18 @@ Alternatively, you can configure a Unix domain socket path using <i>e.g.</i>:
 <p>
 An optional <em>password</em> parameter can be provided, for Redis servers
 which are password protected.
+
+<p>
+As of ProFTPD 1.3.7rc1, the optional <em>db-index</em> parameter can be
+provided, for <i>selecting</i> the server-side Redis database by index:
+<pre>
+  RedisServer 1.2.3.4:6379 passwd 2
+</pre>
+Connecting to a Redis server without password authentication <i>but</i> still
+selecting the database would be done using the empty string for the password:
+<pre>
+  RedisServer 1.2.3.4:6379 "" 2
+</pre>
 
 <p>
 <hr>
@@ -252,6 +402,11 @@ logging objects:
   <tr>
     <td>&nbsp;<code>%E</code>&nbsp;</td>
     <td>session_end_reason</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>%{epoch}</code>&nbsp;</td>
+    <td>Unix timestamp, in seconds since Jan 1 1970.</td>
   </tr>
 
   <tr>

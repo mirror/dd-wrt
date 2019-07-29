@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_snmp notification routines
- * Copyright (c) 2008-2016 TJ Saunders
+ * Copyright (c) 2008-2017 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -439,15 +439,7 @@ int snmp_notify_generate(pool *p, int sockfd, const char *community,
 }
 
 long snmp_notify_get_request_id(void) {
-  long request_id;
-
-#ifdef HAVE_RANDOM
-  request_id = random();
-#else
-  request_id = rand();
-#endif /* HAVE_RANDOM */
-
-  return request_id;
+  return pr_random_next(1L, 10000L);
 }
 
 void snmp_notify_poll_cond(void) {

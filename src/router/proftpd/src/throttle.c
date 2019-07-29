@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2008-2016 The ProFTPD Project team
+ * Copyright (c) 2008-2017 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -307,8 +307,10 @@ void pr_throttle_pause(off_t xferlen, int xfer_ending) {
       /* At this point, we've probably been interrupted by one of the few
        * signals not masked off, e.g. SIGTERM.
        */
-      pr_log_debug(DEBUG0, "unable to throttle bandwidth: %s",
-        strerror(xerrno));
+      if (xerrno != EINTR) {
+        pr_log_debug(DEBUG0, "unable to throttle bandwidth: %s",
+          strerror(xerrno));
+      }
     }
 
     xfer_rate_sigmask(FALSE);

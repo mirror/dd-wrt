@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp
- * Copyright (c) 2008-2017 TJ Saunders
+ * Copyright (c) 2008-2018 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -235,6 +235,7 @@ static void sftp_cmd_loop(server_rec *s, conn_t *conn) {
   const char *k, *v;
 
   sftp_conn = conn;
+  pr_session_set_protocol("ssh2");
 
   if (sftp_opts & SFTP_OPT_PESSIMISTIC_KEXINIT) {
     /* If we are being pessimistic, we will send our version string to the
@@ -281,7 +282,7 @@ static void sftp_cmd_loop(server_rec *s, conn_t *conn) {
 
   memset(buf, '\0', sizeof(buf));
   k = pstrdup(session.pool, "SSH_CONNECTION");
-  snprintf(buf, sizeof(buf)-1, "%.50s %d %.50s %d",
+  pr_snprintf(buf, sizeof(buf)-1, "%.50s %d %.50s %d",
     pr_netaddr_get_ipstr(conn->remote_addr), conn->remote_port,
     pr_netaddr_get_ipstr(conn->local_addr), conn->local_port);
   v = pstrdup(session.pool, buf);
@@ -1211,6 +1212,8 @@ MODRET set_sftphostkey(cmd_rec *cmd) {
           insecure_hostkey_perms = TRUE;
           break;
         }
+
+        c = find_config_next(c, c->next, CONF_PARAM, "SFTPOptions", FALSE);
       }
 
       if (insecure_hostkey_perms) {
@@ -1459,6 +1462,9 @@ MODRET set_sftpoptions(cmd_rec *cmd) {
     } else if (strcmp(cmd->argv[i], "IgnoreSFTPSetExtendedAttributes") == 0) {
       opts |= SFTP_OPT_IGNORE_SFTP_SET_XATTRS;
 
+    } else if (strcmp(cmd->argv[i], "IncludeSFTPTimes") == 0) {
+      opts |= SFTP_OPT_INCLUDE_SFTP_TIMES;
+
     } else {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, ": unknown SFTPOption '",
         cmd->argv[i], "'", NULL));
@@ -1602,6 +1608,10 @@ MODRET set_sftptrafficpolicy(cmd_rec *cmd) {
 
 /* Event handlers
  */
+
+static void sftp_chroot_ev(const void *event_data, void *user_data) {
+  (void) pr_table_add_dup(session.notes, "mod_sftp.chroot-path", event_data, 0);
+}
 
 extern pid_t mpid;
 
@@ -1843,7 +1853,7 @@ static void pool_printf(const char *fmt, ...) {
   memset(buf, '\0', sizeof(buf));
 
   va_start(msg, fmt);
-  vsnprintf(buf, sizeof(buf), fmt, msg);
+  pr_vsnprintf(buf, sizeof(buf), fmt, msg);
   va_end(msg);
 
   buf[sizeof(buf)-1] = '\0';
@@ -2007,13 +2017,15 @@ static int sftp_sess_init(void) {
   int times_gmt = TRUE;
 
   c = find_config(main_server->conf, CONF_PARAM, "SFTPEngine", FALSE);
-  if (c) {
+  if (c != NULL) {
     sftp_engine = *((int *) c->argv[0]);
   }
 
-  if (!sftp_engine)
+  if (sftp_engine == FALSE) {
     return 0;
+  }
 
+  pr_event_register(&sftp_module, "core.chroot", sftp_chroot_ev, NULL);
   pr_event_register(&sftp_module, "core.exit", sftp_exit_ev, NULL);
 #ifdef PR_USE_DEVEL
   pr_event_register(&sftp_module, "core.signal.USR2", sftp_sigusr2_ev, NULL);
@@ -2032,33 +2044,35 @@ static int sftp_sess_init(void) {
     sftp_max_conns_ev, NULL);
 
   c = find_config(main_server->conf, CONF_PARAM, "SFTPLog", FALSE);
-  if (c) {
-    int res, xerrno;
-
+  if (c != NULL) {
     sftp_logname = c->argv[0];
 
-    pr_signals_block();
-    PRIVS_ROOT
-    res = pr_log_openfile(sftp_logname, &sftp_logfd, PR_LOG_SYSTEM_MODE);
-    xerrno = errno;
-    PRIVS_RELINQUISH
-    pr_signals_unblock();
+    if (strcasecmp(sftp_logname, "none") != 0) {
+      int res, xerrno;
 
-    if (res < 0) {
-      if (res == -1) {
-        pr_log_pri(PR_LOG_NOTICE, MOD_SFTP_VERSION
-          ": notice: unable to open SFTPLog '%s': %s", sftp_logname,
-          strerror(xerrno));
+      pr_signals_block();
+      PRIVS_ROOT
+      res = pr_log_openfile(sftp_logname, &sftp_logfd, PR_LOG_SYSTEM_MODE);
+      xerrno = errno;
+      PRIVS_RELINQUISH
+      pr_signals_unblock();
 
-      } else if (res == PR_LOG_WRITABLE_DIR) {
-        pr_log_pri(PR_LOG_WARNING, MOD_SFTP_VERSION
-          ": notice: unable to open SFTPLog '%s': parent directory is "
-          "world-writable", sftp_logname);
+      if (res < 0) {
+        if (res == -1) {
+          pr_log_pri(PR_LOG_NOTICE, MOD_SFTP_VERSION
+            ": notice: unable to open SFTPLog '%s': %s", sftp_logname,
+            strerror(xerrno));
 
-      } else if (res == PR_LOG_SYMLINK) {
-        pr_log_pri(PR_LOG_WARNING, MOD_SFTP_VERSION
-          ": notice: unable to open SFTPLog '%s': cannot log to a symlink",
-          sftp_logname);
+        } else if (res == PR_LOG_WRITABLE_DIR) {
+          pr_log_pri(PR_LOG_WARNING, MOD_SFTP_VERSION
+            ": notice: unable to open SFTPLog '%s': parent directory is "
+            "world-writable", sftp_logname);
+
+        } else if (res == PR_LOG_SYMLINK) {
+          pr_log_pri(PR_LOG_WARNING, MOD_SFTP_VERSION
+            ": notice: unable to open SFTPLog '%s': cannot log to a symlink",
+            sftp_logname);
+        }
       }
     }
   }
@@ -2376,10 +2390,11 @@ static int sftp_sess_init(void) {
     }
   }
 
+  pr_session_set_protocol("ssh2");
+
   /* Use our own "authenticated yet?" check. */
   set_auth_check(sftp_have_authenticated);
 
-  pr_session_set_protocol("ssh2");
   pr_cmd_set_handler(sftp_cmd_loop);
 
   /* Check for any UseEncoding directives.  Specifically, we're interested

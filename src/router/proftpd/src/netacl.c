@@ -563,7 +563,7 @@ const char *pr_netacl_get_str2(pool *p, const pr_netacl_t *acl, int flags) {
         char masklenstr[64];
 
         memset(masklenstr, '\0', sizeof(masklenstr));
-        snprintf(masklenstr, sizeof(masklenstr)-1, "%u", acl->masklen);
+        pr_snprintf(masklenstr, sizeof(masklenstr)-1, "%u", acl->masklen);
         res = pstrcat(p, res, " <IP address mask, ", masklenstr, "-bit mask",
           NULL);
       }

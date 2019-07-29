@@ -30,6 +30,8 @@
 #define PR_PROFTPD_H
 
 #include "class.h"
+#include "netaddr.h"
+#include "options.h"
 
 #ifndef TRUE
 # define TRUE				1
@@ -58,6 +60,7 @@
 
 typedef int (*callback_t)(CALLBACK_FRAME);
 
+struct class_struc;
 struct conn_struc;
 struct cmd_struc;
 struct config_struc;
@@ -119,7 +122,7 @@ typedef struct {
 
   pr_table_t *notes;			/* Session notes table */
 
-  const pr_class_t *conn_class;		/* Session class */
+  const struct class_struc *conn_class;	/* Session class */
   const char *proc_prefix;		/* The "prefix" of our process name */
 
   int wtmp_log;				/* Are we logging to wtmp? */
@@ -145,7 +148,8 @@ typedef struct {
 					 * the main_server pointer.
 					 */
 
-  off_t restart_pos;			/* Restart marked position */
+  off_t restart_pos;			/* Restart marked position (REST) */
+  off_t range_start, range_len;		/* Transfer range (RANG) */
 
   struct {
     struct pool_rec *p;

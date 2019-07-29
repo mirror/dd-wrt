@@ -15,6 +15,90 @@
   where `N' is the issue number.
 -----------------------------------------------------------------------------
 
+1.3.7rc1
+--------------------------------
+- Bug 4304 - Configure script wrongly detects AIX lastlog functions.
+- Bug 3127 - ProFTPD does not build when configure is run from directory other
+  than source directory.
+- Bug 4279 - Disable Blowfish, RC4, RIPE-MD160 SSH2 algorithms by default.
+- Bug 4306 - AllowChrootSymlinks off could cause login failures depending on
+  filesystem permissions.
+- Issue 269 - Disable building of mod_ident by default.
+- Issue 501 - mod_ctrls: error: unable to bind to local socket: Address already
+  in use.
+- Issue 507 - Failed to handle multiple %{env:...} variables in single word
+  in configuration.
+- Issue 515 - Support %b variable for ExecEnviron directive.
+- Issue 521 - Broken OCSP Stapling implementation fails to find issuing
+  certificate properly.
+- Issue 518 - Provide option to disable sending of fake "tryLater" OCSP
+  response.
+- Issue 519 - Improve handling of cached OCSP responses.
+- Bug 4307 - High CPU load on CWD to non existing directory.  This has been
+  addressed by improving the in-memory config tree DFS algorithm to
+  short-circuit recursive searching where possible.
+- Issue 505 - Support MODE Z even for FTPS sessions.
+- Issue 351 - Support FTP RANG command.
+- Bug 4308 - mod_sftp fails to check shadow password information when publickey
+  authentication used.
+- Bug 4309 - Use of "AllowEmptyPasswords off" breaks SFTP/SCP logins.
+- Issue 534 - Support configuring multiple curves using TLSECDHCurve.
+- Bug 4310 - Use of mod_facl as static module causes ProFTPD to die on
+  SIGHUP/restart.
+- Bug 4311 - Directory creation in mod_site_misc, mod_copy does not honor
+  directory Umask.
+- Issue 445 - Remove non-functional TransferPriority directive.
+- Issue 550 - Support Redis SELECT for multiple databases.
+- Issue 396 - Support for Redis Sentinel deployments in mod_redis.
+- Issue 556 - Use of curve25519-sha256@libssh.org SSH2 key exchange sometimes
+  fails.
+- Issue 536 - Support TLSv1.3 (assuming OpenSSL support).
+- Bug 4312 - Close extra file descriptors at startup.
+- Bug 4314 - <Anonymous> with AuthAliasOnly in effect does not work as expected.
+- Issue 568 - CreateHome NoRootPrivs only works partially.
+- Bug 4313 - ExtendedLog incorrectly/unexpectedly logs unknown/unsupported
+  commands.
+- Issue 578 - SFTP OPEN response includes attribute flags that are not actually
+  provided.
+- Bug 4318 - Truncation of file while being downloaded with sendfile enabled
+  causes timeouts due to infinite loop.
+- Bug 4320 - Confusing mod_sftp log message "disconnected by user (Application
+  error)" changed to "(Application disconnected)".
+- Bug 4241 - RootRevoke should be on/true by default.
+- Bug 4281 - Redesign support for Backend SQLAuthType for MySQL.  If the MySQL
+  client library cannot support the SQLAuthType Backend, mod_sql_mysql will
+  emit a warning on startup.
+- Bug 4319 - FTP uploads frequently break due to "Interrupted system call"
+  error.
+- Issue 618 - Site-to-site transfers over TLS fail.
+- Bug 4322 - Can't see symlinks using any FTP client when using MLSD.
+- Issue 610 - Generate new DH parameters for mod_tls, mod_sftp for 1.3.7.
+- Bug 4325 - mod_tls 1.3.6 fails to compile using OpenSSL 0.9.8e.
+- Bug 4326 - Using MaxClientsPerHost 1 in <Anonymous> section denies logins.
+- Issue 642 - SQLNamedConnectInfo with different backend database does not work
+  properly.
+- Issue 654 - mod_sql_sqlite should error if configured SQLite database does
+  not exist.
+- Issue 656 - Segfault with mod_sftp+mod_sftp_pam after successful
+  authentication using keyboard-interactive method
+- Issue 660 - autoconf always fails to detect support for FIPS.
+- Issue 663 - SFTP connections fail when using "arcfour256" cipher.
+- Bug 4335 - mod_auth_otp fails to build with OpenSSL 1.1.x.
+- Bug 4341 - scp broken on FreeBSD 11.
+- Issue 676 - SQLLog for SCP: %{file-size} is not available.
+- Issue 674 - Update mod_sftp to handle changed APIs in OpenSSL 1.1.x releases.
+- Bug 4356 - Infinite loop possible in mod_sftp's set_sftphostkey() function.
+- Bug 4352 - Some ASCII text files corrupted when downloading.
+- Issue 797 - Properly use the --includedir, --libdir configure variables in
+  the generated proftpd.pc pkgconfig file.
+- Bug 4350 - Reading invalid SSH key from database results in
+  unexpected/unlogged disconnect failures.
+- Bug 4332 - Symlink navigation broken after 1.3.6 update.  The changes for
+  Bug#4219 have been rolled back.
+- Issue 795 - Unable to connect to ProFTPD using TLSSessionTickets and TLSv1.3.
+- Bug 4372 - SITE CPFR/CPTO do not honor <Limit> configurations.
+- Issue 807 - Using "TLSProtocol SSLv23" does not enable all protocol versions.
+
 1.3.6 - Released 09-Apr-2017
 --------------------------------
 - Bug 4284 - SITE UTIME not working with group permissions.

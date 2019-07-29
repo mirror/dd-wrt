@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server API testsuite
- * Copyright (c) 2008-2016 The ProFTPD Project team
+ * Copyright (c) 2008-2017 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@ session_t session;
 
 char ServerType = SERVER_STANDALONE;
 int ServerUseReverseDNS = 1;
+unsigned char is_master = FALSE;
 server_rec *main_server = NULL;
 pid_t mpid = 1;
 module *static_modules[] = { NULL };
@@ -46,6 +47,10 @@ int tests_stubs_set_next_cmd(cmd_rec *cmd) {
 int tests_stubs_set_main_server(server_rec *s) {
   main_server = s;
   return 0;
+}
+
+const char *get_full_cmd(cmd_rec *cmd) {
+  return "TEST";
 }
 
 void init_dirtree(void) {
@@ -210,6 +215,18 @@ void pr_proctitle_set_str(const char *str) {
 }
 
 void pr_session_disconnect(module *m, int reason_code, const char *details) {
+}
+
+const char *pr_session_get_disconnect_reason(const char **details) {
+  if (details != NULL) {
+    *details = "bebugging";
+  }
+
+  return "testing";
+}
+
+const char *pr_session_get_protocol(int flags) {
+  return "ftp";
 }
 
 int pr_session_set_idle(void) {

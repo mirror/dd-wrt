@@ -8,6 +8,7 @@ use Carp;
 use File::Path qw(mkpath);
 use File::Spec;
 use IO::Handle;
+use Sys::HostAddr;
 
 use ProFTPD::TestSuite::FTP;
 use ProFTPD::TestSuite::Utils qw(:auth :config :running :test :testsuite);
@@ -442,6 +443,11 @@ my $TESTS = {
     test_class => [qw(forking rootprivs)],
   },
 
+  sql_sqlite_log_db_enoent_issue654 => {
+    order => ++$order,
+    test_class => [qw(forking bug)],
+  },
+
 };
 
 sub new {
@@ -482,19 +488,7 @@ sub build_db {
 sub sql_bug2045 {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/sqlite.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/sqlite.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlite.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
+  my $setup = test_setup($tmpdir, 'sqlite');
 
   my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
 
@@ -512,14 +506,14 @@ CREATE TABLE users (
   shell TEXT,
   lastdir TEXT
 );
-INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$setup->{user}', '$setup->{passwd}', $setup->{uid}, $setup->{gid}, '$setup->{home_dir}', '/bin/bash');
 
 CREATE TABLE groups (
   groupname TEXT,
   gid INTEGER,
   members TEXT
 );
-INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '$user');
+INSERT INTO groups (groupname, gid, members) VALUES ('$setup->{group}', $setup->{gid}, '$setup->{user}');
 EOS
 
     unless (close($fh)) {
@@ -542,9 +536,11 @@ EOS
   }
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'sql:20',
 
     IfModules => {
       'mod_delay.c' => {
@@ -555,14 +551,15 @@ EOS
         SQLAuthTypes => 'plaintext',
         SQLBackend => 'sqlite3',
         SQLConnectInfo => $db_file,
-        SQLLogFile => $log_file,
+        SQLLogFile => $setup->{log_file},
         SQLNamedQuery => 'lastdir SELECT "lastdir FROM users WHERE userid = \'%u\'"',
         SQLShowInfo => 'PASS "230" "\"%{lastdir}\" was the last directory"',
       },
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -580,24 +577,18 @@ EOS
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-
-      $client->login($user, $passwd);
+      $client->login($setup->{user}, $setup->{passwd});
 
       my $resp_msgs = $client->response_msgs();
       my $nmsgs = scalar(@$resp_msgs);
 
-      my $expected;
-
-      $expected = 1;
-      $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+      my $expected = 1;
+      $self->assert($expected == $nmsgs, "Expected $expected, got $nmsgs");
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
-        test_msg("Expected '$expected', got '$resp_msgs->[0]'"));
-
+        "Expected '$expected', got '$resp_msgs->[0]'");
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -606,7 +597,7 @@ EOS
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -616,18 +607,10 @@ EOS
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub sql_bug2922 {
@@ -1337,20 +1320,9 @@ EOS
 sub sql_user_where_clause_with_vars_ok {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'sqlite');
 
-  my $config_file = "$tmpdir/sqlite.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/sqlite.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlite.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $user1 = 'proftpd';
   my $user2 = 'proftpd2';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
 
   my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
 
@@ -1368,15 +1340,15 @@ CREATE TABLE users (
   shell TEXT,
   allowed_ip TEXT
 );
-INSERT INTO users (userid, passwd, uid, gid, homedir, shell, allowed_ip) VALUES ('$user1', '$passwd', $uid, $gid, '$home_dir', '/bin/bash', '1.2.3.4');
-INSERT INTO users (userid, passwd, uid, gid, homedir, shell, allowed_ip) VALUES ('$user2', '$passwd', $uid, $gid, '$home_dir', '/bin/bash', '127.0.0.1');
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell, allowed_ip) VALUES ('$setup->{user}', '$setup->{passwd}', $setup->{uid}, $setup->{gid}, '$setup->{home_dir}', '/bin/bash', '1.2.3.4');
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell, allowed_ip) VALUES ('$user2', '$setup->{passwd}', $setup->{uid}, $setup->{gid}, '$setup->{home_dir}', '/bin/bash', '127.0.0.1');
 
 CREATE TABLE groups (
   groupname TEXT,
   gid INTEGER,
   members TEXT
 );
-INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '$user1,$user2');
+INSERT INTO groups (groupname, gid, members) VALUES ('$setup->{group}', $setup->{gid}, '$setup->{user},$user2');
 EOS
 
     unless (close($fh)) {
@@ -1399,9 +1371,11 @@ EOS
   }
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'jot:20 sql:20',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1412,13 +1386,14 @@ EOS
         SQLAuthTypes => 'plaintext',
         SQLBackend => 'sqlite3',
         SQLConnectInfo => $db_file,
-        SQLLogFile => $log_file,
+        SQLLogFile => $setup->{log_file},
         SQLUserWhereClause => '"allowed_ip = \'%L\'"',
       },
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -1439,16 +1414,15 @@ EOS
 
       # This account should not be allowed to login based on the
       # SQLUserWhereClause...
-      eval { $client->login($user1, $passwd) };
+      eval { $client->login($setup->{user}, $setup->{passwd}) };
       unless ($@) {
-        die("Login for user '$user1' succeeded unexpectedly");
+        die("Login for user '$setup->{user}' succeeded unexpectedly");
       }
 
       # ...but this one should succeed.
-      $client->login($user2, $passwd);
+      $client->login($user2, $setup->{passwd});
       $client->quit();
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -1457,7 +1431,7 @@ EOS
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -1467,18 +1441,10 @@ EOS
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub sql_group_where_clause_ok {
@@ -1643,18 +1609,9 @@ EOC
 sub sql_bug3149 {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'sqlite');
 
-  my $config_file = "$tmpdir/sqlite.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/sqlite.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlite.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $user1 = 'proftpd';
   my $user2 = 'proftpd2';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
 
   my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
 
@@ -1672,15 +1629,15 @@ CREATE TABLE users (
   shell TEXT,
   host TEXT
 );
-INSERT INTO users (userid, passwd, uid, gid, homedir, shell, host) VALUES ('$user1', '$passwd', 500, 500, '$home_dir', '/bin/bash', 'remotehost');
-INSERT INTO users (userid, passwd, uid, gid, homedir, shell, host) VALUES ('$user2', '$passwd', 500, 500, '$home_dir', '/bin/bash', '127.0.0.1');
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell, host) VALUES ('$setup->{user}', '$setup->{passwd}', $setup->{uid}, $setup->{gid}, '$setup->{home_dir}', '/bin/bash', 'remotehost');
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell, host) VALUES ('$user2', '$setup->{passwd}', $setup->{uid}, $setup->{gid}, '$setup->{home_dir}', '/bin/bash', '127.0.0.1');
 
 CREATE TABLE groups (
   groupname TEXT,
   gid INTEGER,
   members TEXT
 );
-INSERT INTO groups (groupname, gid, members) VALUES ('$group', 500, '$user1,$user2');
+INSERT INTO groups (groupname, gid, members) VALUES ('$setup->{group}', $setup->{gid}, '$setup->{user},$user2');
 EOS
 
     unless (close($fh)) {
@@ -1703,9 +1660,11 @@ EOS
   }
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'jot:20 sql:20',
 
     IfModules => {
       'mod_delay.c' => {
@@ -1718,13 +1677,14 @@ EOS
         SQLAuthTypes => 'plaintext',
         SQLBackend => 'sqlite3',
         SQLConnectInfo => $db_file,
-        SQLLogFile => $log_file,
+        SQLLogFile => $setup->{log_file},
         SQLUserWhereClause => '"host=\'%V\'"',
       },
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -1745,15 +1705,15 @@ EOS
 
       # This account should not be allowed to login based on the
       # SQLUserWhereClause...
-      eval { $client->login($user1, $passwd) };
+      eval { $client->login($setup->{user}, $setup->{passwd}) };
       unless ($@) {
-        die("Login for user '$user1' succeeded unexpectedly");
+        die("Login for user '$setup->{user}' succeeded unexpectedly");
       }
 
       # ...but this one should succeed.
-      $client->login($user2, $passwd);
+      $client->login($user2, $setup->{passwd});
+      $client->quit();
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -1762,7 +1722,7 @@ EOS
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -1772,18 +1732,10 @@ EOS
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub get_sessions {
@@ -1811,38 +1763,7 @@ sub get_sessions {
 sub sql_sqllog {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/sqlite.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/sqlite.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlite.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sqlite.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sqlite.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
+  my $setup = test_setup($tmpdir, 'sqlite');
 
   my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
 
@@ -1878,12 +1799,14 @@ EOS
   }
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'jot:20 sql:20',
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
 
     IfModules => {
       'mod_delay.c' => {
@@ -1894,14 +1817,15 @@ EOS
         SQLEngine => 'log',
         SQLBackend => 'sqlite3',
         SQLConnectInfo => $db_file,
-        SQLLogFile => $log_file,
+        SQLLogFile => $setup->{log_file},
         SQLNamedQuery => 'session_start FREEFORM "INSERT INTO ftpsessions (user, ip_addr, timestamp) VALUES (\'%u\', \'%L\', \'%{time:%Y-%m-%d %H:%M:%S}\')"',
         SQLLog => 'PASS session_start',
       },
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -1919,10 +1843,9 @@ EOS
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-
-      $client->login($user, $passwd);
+      $client->login($setup->{user}, $setup->{passwd});
+      $client->quit();
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -1931,7 +1854,7 @@ EOS
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -1941,35 +1864,33 @@ EOS
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
   if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
+    test_cleanup($setup->{log_file}, $ex);
   }
 
-  my ($login, $ip_addr, $timestamp) = get_sessions($db_file,
-    "user = \'$user\'");
+  eval {
+    my ($login, $ip_addr, $timestamp) = get_sessions($db_file,
+      "user = \'$setup->{user}\'");
 
-  my $expected;
+    my $expected = $setup->{user};
+    $self->assert($expected eq $login, "Expected '$expected', got '$login'");
 
-  $expected = $user;
-  $self->assert($expected eq $login,
-    test_msg("Expected '$expected', got '$login'"));
+    $expected = '127.0.0.1';
+    $self->assert($expected eq $ip_addr,
+      "Expected '$expected', got '$ip_addr'");
 
-  $expected = '127.0.0.1';
-  $self->assert($expected eq $ip_addr,
-    test_msg("Expected '$expected', got '$ip_addr'"));
+    $expected = '\d{4}\-\d{2}\-\d{2} \d{2}:\d{2}:\d{2}';
+    $self->assert(qr/$expected/, $timestamp,
+      "Expected '$expected', got '$timestamp'");
+  };
+  if ($@) {
+    $ex = $@;
+  }
 
-  $expected = '\d{4}\-\d{2}\-\d{2} \d{2}:\d{2}:\d{2}';
-  $self->assert(qr/$expected/, $timestamp,
-    test_msg("Expected '$expected', got '$timestamp'"));
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub sql_sqlite_sqllog_with_chroot {
@@ -4332,38 +4253,7 @@ EOS
 sub sql_sqllog_var_S_err {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/sqlite.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/sqlite.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlite.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sqlite.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sqlite.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
+  my $setup = test_setup($tmpdir, 'sqlite');
 
   my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
 
@@ -4399,12 +4289,14 @@ EOS
   }
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'jot:20 sql:20',
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
 
     IfModules => {
       'mod_delay.c' => {
@@ -4415,14 +4307,15 @@ EOS
         SQLEngine => 'log',
         SQLBackend => 'sqlite3',
         SQLConnectInfo => $db_file,
-        SQLLogFile => $log_file,
+        SQLLogFile => $setup->{log_file},
         SQLNamedQuery => 'info FREEFORM "INSERT INTO ftpsessions (user, ip_addr, resp_mesg) VALUES (\'%u\', \'%L\', \'%S\')"',
         SQLLog => 'ERR_* info',
       },
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -4440,11 +4333,10 @@ EOS
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-      $client->login($user, $passwd);
-      eval { $client->quote('CLNT', 'NcFTP 3.2.2 linux-x86_64-glibc2.3') };
+      $client->login($setup->{user}, $setup->{passwd});
+      eval { $client->quote('CLIENT', 'NcFTP 3.2.2 linux-x86_64-glibc2.3') };
       $client->quit();
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -4453,7 +4345,7 @@ EOS
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -4463,35 +4355,33 @@ EOS
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
   if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
+    test_cleanup($setup->{log_file}, $ex);
   }
 
-  my ($login, $ip_addr, $resp_mesg) = get_resp_mesgs($db_file,
-    "user = \'$user\'", "user, ip_addr, resp_mesg");
+  eval {
+    my ($login, $ip_addr, $resp_mesg) = get_resp_mesgs($db_file,
+      "user = \'$setup->{user}\'", "user, ip_addr, resp_mesg");
 
-  my $expected;
+    my $expected = $setup->{user};
+    $self->assert($expected eq $login, "Expected '$expected', got '$login'");
 
-  $expected = $user;
-  $self->assert($expected eq $login,
-    test_msg("Expected '$expected', got '$login'"));
+    $expected = '127.0.0.1';
+    $self->assert($expected eq $ip_addr,
+      "Expected '$expected', got '$ip_addr'");
 
-  $expected = '127.0.0.1';
-  $self->assert($expected eq $ip_addr,
-    test_msg("Expected '$expected', got '$ip_addr'"));
+    $expected = 'CLIENT not understood';
+    $self->assert($expected eq $resp_mesg,
+      "Expected '$expected', got '$resp_mesg'");
+  };
+  if ($@) {
+    $ex = $@;
+  }
 
-  $expected = 'CLNT not understood';
-  $self->assert($expected eq $resp_mesg,
-    test_msg("Expected '$expected', got '$resp_mesg'"));
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub sql_negative_cache_bug3282 {
@@ -4653,38 +4543,7 @@ EOS
 sub sql_sqllog_var_T_rnfr {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/sqlite.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/sqlite.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlite.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sqlite.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sqlite.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
+  my $setup = test_setup($tmpdir, 'sqlite');
 
   my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
 
@@ -4731,12 +4590,14 @@ EOS
   my $dst_file = File::Spec->rel2abs("$tmpdir/foo.txt");
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'jot:20 sql:20',
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
 
     IfModules => {
       'mod_delay.c' => {
@@ -4747,14 +4608,15 @@ EOS
         SQLEngine => 'log',
         SQLBackend => 'sqlite3',
         SQLConnectInfo => $db_file,
-        SQLLogFile => $log_file,
+        SQLLogFile => $setup->{log_file},
         SQLNamedQuery => 'rename FREEFORM "INSERT INTO ftpsessions (user, ip_addr, rename_from, rename_time) VALUES (\'%u\', \'%L\', \'%w\', %T)"',
         SQLLog => 'RNTO rename',
       },
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -4772,12 +4634,10 @@ EOS
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-
-      $client->login($user, $passwd);
+      $client->login($setup->{user}, $setup->{passwd});
       $client->rnfr('test.txt');
       $client->rnto('foo.txt');
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -4786,7 +4646,7 @@ EOS
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -4796,53 +4656,51 @@ EOS
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
   if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
+    test_cleanup($setup->{log_file}, $ex);
   }
 
-  my $query = "SELECT user, ip_addr, rename_from, rename_time FROM ftpsessions WHERE user = \'$user\'";
-  $cmd = "sqlite3 $db_file \"$query\"";
+  eval {
+    my $query = "SELECT user, ip_addr, rename_from, rename_time FROM ftpsessions WHERE user = \'$setup->{user}\'";
+    $cmd = "sqlite3 $db_file \"$query\"";
 
-  if ($ENV{TEST_VERBOSE}) {
-    print STDERR "Executing sqlite3: $cmd\n";
+    if ($ENV{TEST_VERBOSE}) {
+      print STDERR "Executing sqlite3: $cmd\n";
+    }
+
+    my $res = join('', `$cmd`);
+    chomp($res);
+
+    my ($login, $ip_addr, $rnfr_path, $rename_time) = split(/\|/, $res);
+
+    my $expected = $setup->{user};
+    $self->assert($expected eq $login, "Expected '$expected', got '$login'");
+
+    $expected = '127.0.0.1';
+    $self->assert($expected eq $ip_addr,
+      "Expected '$expected', got '$ip_addr'");
+
+    if ($^O eq 'darwin') {
+      # MacOSX-specific hack
+      $src_file = '/private' . $src_file;
+    }
+
+    $expected = $src_file;
+    $self->assert($expected eq $rnfr_path,
+      "Expected '$expected', got '$rnfr_path'");
+
+    $expected = '0.0';
+    $self->assert($expected eq $rename_time,
+      "Expected '$expected', got '$rename_time'");
+  };
+  if ($@) {
+    $ex = $@;
   }
 
-  my $res = join('', `$cmd`);
-  chomp($res);
-
-  my ($login, $ip_addr, $rnfr_path, $rename_time) = split(/\|/, $res);
-
-  my $expected;
-
-  $expected = $user;
-  $self->assert($expected eq $login,
-    test_msg("Expected '$expected', got '$login'"));
-
-  $expected = '127.0.0.1';
-  $self->assert($expected eq $ip_addr,
-    test_msg("Expected '$expected', got '$ip_addr'"));
-
-  if ($^O eq 'darwin') {
-    # MacOSX-specific hack
-    $src_file = '/private' . $src_file;
-  }
-
-  $expected = $src_file;
-  $self->assert($expected eq $rnfr_path,
-    test_msg("Expected '$expected', got '$rnfr_path'"));
-
-  $expected = '0.0';
-  $self->assert($expected eq $rename_time,
-    test_msg("Expected '$expected', got '$rename_time'"));
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub sql_sqllog_var_T_retr {
@@ -5494,38 +5352,7 @@ EOS
 sub sql_sqllog_exit_var_remote_port_bug4296 {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/sqlite.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/sqlite.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlite.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sqlite.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sqlite.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
+  my $setup = test_setup($tmpdir, 'sqlite');
 
   my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
 
@@ -5561,12 +5388,14 @@ EOS
   }
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'jot:20 sql:20',
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
 
     IfModules => {
       'mod_delay.c' => {
@@ -5577,14 +5406,15 @@ EOS
         SQLEngine => 'log',
         SQLBackend => 'sqlite3',
         SQLConnectInfo => $db_file,
-        SQLLogFile => $log_file,
+        SQLLogFile => $setup->{log_file},
         SQLNamedQuery => 'logout FREEFORM "INSERT INTO ftpsessions (user, ip_addr, port) VALUES (\'%u\', \'%L\', %{remote-port})"',
         SQLLog => 'EXIT logout',
       },
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -5602,10 +5432,9 @@ EOS
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-      $client->login($user, $passwd);
+      $client->login($setup->{user}, $setup->{passwd});
       $client->quit();
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -5614,7 +5443,7 @@ EOS
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -5624,41 +5453,39 @@ EOS
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
   if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
+    test_cleanup($setup->{log_file}, $ex);
   }
 
-  my $query = "SELECT * FROM ftpsessions where user = '$user'";
-  $cmd = "sqlite3 $db_file \"$query\"";
+  eval {
+    my $query = "SELECT * FROM ftpsessions where user = '$setup->{user}'";
+    $cmd = "sqlite3 $db_file \"$query\"";
 
-  if ($ENV{TEST_VERBOSE}) {
-    print STDERR "Executing sqlite3: $cmd\n";
+    if ($ENV{TEST_VERBOSE}) {
+      print STDERR "Executing sqlite3: $cmd\n";
+    }
+
+    my $output = `$cmd`;
+    my $res = join('', `$cmd`);
+    chomp($res);
+
+    my ($login, $ip_addr, $remote_port) = split(/\|/, $res);
+
+    my $expected = $setup->{user};
+    $self->assert($expected eq $login, "Expected '$expected', got '$login'");
+
+    $expected = '127.0.0.1';
+    $self->assert($expected eq $ip_addr,
+      "Expected '$expected', got '$ip_addr'");
+  };
+  if ($@) {
+    $ex = $@;
   }
 
-  my $output = `$cmd`;
-  my $res = join('', `$cmd`);
-  chomp($res);
-
-  my ($login, $ip_addr, $remote_port) = split(/\|/, $res);
-
-  my $expected;
-
-  $expected = $user;
-  $self->assert($expected eq $login,
-    test_msg("Expected '$expected', got '$login'"));
-
-  $expected = '127.0.0.1';
-  $self->assert($expected eq $ip_addr,
-    test_msg("Expected '$expected', got '$ip_addr'"));
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub get_locations {
@@ -5679,6 +5506,10 @@ sub get_locations {
   my $res = join('', `$cmd`);
   chomp($res);
 
+  if ($ENV{TEST_VERBOSE}) {
+    print STDERR "Results: $res\n";
+  }
+
   # The default sqlite3 delimiter is '|'
   return split(/\|/, $res);
 }
@@ -5686,22 +5517,7 @@ sub get_locations {
 sub sql_sqllog_var_d_bug3395 {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/sqlite.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/sqlite.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlite.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sqlite.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sqlite.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
+  my $setup = test_setup($tmpdir, 'sqlite');
 
   my $sub_dir = File::Spec->rel2abs("$tmpdir/foo");
   mkpath($sub_dir);
@@ -5709,18 +5525,14 @@ sub sql_sqllog_var_d_bug3395 {
   # Make sure that, if we're running as root, that the home directory has
   # permissions/privs set for the account we create
   if ($< == 0) {
-    unless (chmod(0755, $home_dir, $sub_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
+    unless (chmod(0755, $sub_dir)) {
+      die("Can't set perms on $sub_dir to 0755: $!");
     }
 
-    unless (chown($uid, $gid, $home_dir, $sub_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    unless (chown($setup->{uid}, $setup->{gid}, $sub_dir)) {
+      die("Can't set owner of $sub_dir to $setup->{uid}/$setup->{gid}: $!");
     }
   }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
 
@@ -5756,12 +5568,14 @@ EOS
   }
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'jot:20 sql:20',
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
 
     IfModules => {
       'mod_delay.c' => {
@@ -5772,14 +5586,15 @@ EOS
         SQLEngine => 'log',
         SQLBackend => 'sqlite3',
         SQLConnectInfo => $db_file,
-        SQLLogFile => $log_file,
+        SQLLogFile => $setup->{log_file},
         SQLNamedQuery => 'location FREEFORM "INSERT INTO ftpsessions (user, ip_addr, dir) VALUES (\'%u\', \'%L\', \'%d\')"',
         SQLLog => 'EXIT location',
       },
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -5797,11 +5612,10 @@ EOS
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-      $client->login($user, $passwd);
+      $client->login($setup->{user}, $setup->{passwd});
       $client->cwd('foo');
       $client->quit();
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -5810,7 +5624,7 @@ EOS
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -5820,39 +5634,36 @@ EOS
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
   if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
+    test_cleanup($setup->{log_file}, $ex);
   }
 
-  my ($login, $ip_addr, $dir) = get_locations($db_file, "user = \'$user\'");
+  eval {
+    my ($login, $ip_addr, $dir) = get_locations($db_file, "user = \'$setup->{user}\'");
 
-  my $expected;
+    my $expected = $setup->{user};
+    $self->assert($expected eq $login, "Expected '$expected', got '$login'");
 
-  $expected = $user;
-  $self->assert($expected eq $login,
-    test_msg("Expected '$expected', got '$login'"));
+    $expected = '127.0.0.1';
+    $self->assert($expected eq $ip_addr,
+      "Expected '$expected', got '$ip_addr'");
 
-  $expected = '127.0.0.1';
-  $self->assert($expected eq $ip_addr,
-    test_msg("Expected '$expected', got '$ip_addr'"));
+    if ($^O eq 'darwin') {
+      # MacOSX-specific hack
+      $sub_dir = '/private' . $sub_dir;
+    }
 
-  if ($^O eq 'darwin') {
-    # MacOSX-specific hack
-    $sub_dir = '/private' . $sub_dir;
+    $expected = $sub_dir;
+    $self->assert($expected eq $dir, "Expected '$expected', got '$dir'");
+  };
+  if ($@) {
+    $ex = $@;
   }
 
-  $expected = $sub_dir;
-  $self->assert($expected eq $dir,
-    test_msg("Expected '$expected', got '$dir'"));
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub sql_sqllog_var_d_chroot_bug3395 {
@@ -6215,69 +6026,14 @@ EOS
 sub sql_sqlite_auth_type_backend_bug3511 {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/sqlite.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/sqlite.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlite.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
+  my $setup = test_setup($tmpdir, 'sqlite');
 
   my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
 
-  # Build up sqlite3 command to create users, groups tables and populate them
-  my $db_script = File::Spec->rel2abs("$tmpdir/proftpd.sql");
-
-  if (open(my $fh, "> $db_script")) {
-    print $fh <<EOS;
-CREATE TABLE users (
-  userid TEXT,
-  passwd TEXT,
-  uid INTEGER,
-  gid INTEGER,
-  homedir TEXT, 
-  shell TEXT,
-  lastdir TEXT
-);
-INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
-
-CREATE TABLE groups (
-  groupname TEXT,
-  gid INTEGER,
-  members TEXT
-);
-INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '$user');
-EOS
-
-    unless (close($fh)) {
-      die("Can't write $db_script: $!");
-    }
-
-  } else {
-    die("Can't open $db_script: $!");
-  }
-
-  my $cmd = "sqlite3 $db_file < $db_script";
-  build_db($cmd, $db_script);
-
-  # Make sure that, if we're running as root, the database file has
-  # the permissions/privs set for use by proftpd
-  if ($< == 0) {
-    unless (chmod(0666, $db_file)) {
-      die("Can't set perms on $db_file to 0666: $!");
-    }
-  }
-
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
 
     IfModules => {
       'mod_delay.c' => {
@@ -6288,80 +6044,30 @@ EOS
         SQLAuthTypes => 'backend',
         SQLBackend => 'sqlite3',
         SQLConnectInfo => $db_file,
-        SQLLogFile => $log_file,
+        SQLLogFile => $setup->{log_file},
       },
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
-  # Open pipes, for use between the parent and child processes.  Specifically,
-  # the child will indicate when it's done with its test by writing a message
-  # to the parent.
-  my ($rfh, $wfh);
-  unless (pipe($rfh, $wfh)) {
-    die("Can't open pipe: $!");
-  }
+  # As of Bug#4281, the mod_sql module no longer supports the "Backend"
+  # SQLAuthType itself.  Which means that attempting to use it here, with
+  # mod_sql_sqlite, will cause the server to not start up at all.
 
   my $ex;
 
-  # Fork child
-  $self->handle_sigchld();
-  defined(my $pid = fork()) or die("Can't fork: $!");
-  if ($pid) {
-    eval {
-      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+  # This should silently fail.
+  server_start($setup->{config_file});
 
-      eval { $client->login($user, $passwd) };
-      unless ($@) {
-        die("Login succeeded unexpectedly");
-      }
-
-      my $resp_code = $client->response_code();
-      my $resp_msg = $client->response_msg();
-
-      my $expected;
-
-      $expected = 530;
-      $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code")); 
-
-      $expected = "Login incorrect.";
-      $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
-
-    };
-
-    if ($@) {
-      $ex = $@;
-    }
-
-    $wfh->print("done\n");
-    $wfh->flush();
-
-  } else {
-    eval { server_wait($config_file, $rfh) };
-    if ($@) {
-      warn($@);
-      exit 1;
-    }
-
-    exit 0;
+  # This is where we detect the actual problem.
+  eval { server_stop($setup->{pid_file}) };
+  unless ($@) {
+    $ex = "Server start with bad config unexpectedly";
   }
 
-  # Stop server
-  server_stop($pid_file);
-
-  $self->assert_child_ok($pid);
-
-  if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub sql_sqllog_pass_ok_var_s_bug3528 {
@@ -6861,19 +6567,8 @@ EOS
 sub sql_sqlshowinfo_pass_bug3423 {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'sqlite');
 
-  my $config_file = "$tmpdir/sqlite.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/sqlite.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlite.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
   my $lastdir = '/path/to/lastdir';
 
   my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
@@ -6892,14 +6587,14 @@ CREATE TABLE users (
   shell TEXT,
   lastdir TEXT
 );
-INSERT INTO users (userid, passwd, uid, gid, homedir, shell, lastdir) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash', '$lastdir');
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell, lastdir) VALUES ('$setup->{user}', '$setup->{passwd}', $setup->{uid}, $setup->{gid}, '$setup->{home_dir}', '/bin/bash', '$lastdir');
 
 CREATE TABLE groups (
   groupname TEXT,
   gid INTEGER,
   members TEXT
 );
-INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '$user');
+INSERT INTO groups (groupname, gid, members) VALUES ('$setup->{group}', $setup->{gid}, '$setup->{user}');
 EOS
 
     unless (close($fh)) {
@@ -6922,9 +6617,11 @@ EOS
   }
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'jot:20 sql:20',
 
     IfModules => {
       'mod_delay.c' => {
@@ -6938,15 +6635,13 @@ EOS
         'SQLAuthTypes plaintext',
         'SQLBackend sqlite3',
         "SQLConnectInfo $db_file",
-        "SQLLogFile $log_file",
+        "SQLLogFile $setup->{log_file}",
         'SQLMinID 100',
 
         'SQLNamedQuery lastdir SELECT "lastdir FROM users WHERE userid = \'%u\'"',
 
-
         # Configure the equivalent of a multiline DisplayLogin file
         # using the SQLShowInfo directive
-
         'SQLShowInfo PASS 230 " "',
         'SQLShowInfo PASS 230 "Greetings, %u"',
         'SQLShowInfo PASS 230 "Last directory: \"%{lastdir}\""',
@@ -6955,7 +6650,8 @@ EOS
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -6973,41 +6669,36 @@ EOS
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-
-      $client->login($user, $passwd);
+      $client->login($setup->{user}, $setup->{passwd});
 
       my $resp_msgs = $client->response_msgs();
       my $nmsgs = scalar(@$resp_msgs);
 
-      my $expected;
-
-      $expected = 5;
-      $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+      my $expected = 5;
+      $self->assert($expected == $nmsgs, "Expected $expected, got $nmsgs");
 
       $expected = " ";
       $self->assert($expected eq $resp_msgs->[0],
-        test_msg("Expected '$expected', got '$resp_msgs->[0]'"));
+        "Expected '$expected', got '$resp_msgs->[0]'");
 
-      $expected = " Greetings, $user";
+      $expected = " Greetings, $setup->{user}";
       $self->assert($expected eq $resp_msgs->[1],
-        test_msg("Expected '$expected', got '$resp_msgs->[1]'"));
+        "Expected '$expected', got '$resp_msgs->[1]'");
 
       $expected = " Last directory: \"$lastdir\"";
       $self->assert($expected eq $resp_msgs->[2],
-        test_msg("Expected '$expected', got '$resp_msgs->[2]'"));
+        "Expected '$expected', got '$resp_msgs->[2]'");
 
       $expected = " -";
       $self->assert($expected eq $resp_msgs->[3],
-        test_msg("Expected '$expected', got '$resp_msgs->[3]'"));
+        "Expected '$expected', got '$resp_msgs->[3]'");
 
-      $expected = "User $user logged in";
+      $expected = "User $setup->{user} logged in";
       $self->assert($expected eq $resp_msgs->[4],
-        test_msg("Expected '$expected', got '$resp_msgs->[4]'"));
+        "Expected '$expected', got '$resp_msgs->[4]'");
 
       $client->quit();
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -7016,7 +6707,7 @@ EOS
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -7026,36 +6717,17 @@ EOS
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub sql_sqlshowinfo_list_bug3423 {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'sqlite');
 
-  my $config_file = "$tmpdir/sqlite.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/sqlite.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlite.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
   my $lastdir = '/path/to/lastdir';
 
   my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
@@ -7074,14 +6746,14 @@ CREATE TABLE users (
   shell TEXT,
   lastdir TEXT
 );
-INSERT INTO users (userid, passwd, uid, gid, homedir, shell, lastdir) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash', '$lastdir');
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell, lastdir) VALUES ('$setup->{user}', '$setup->{passwd}', $setup->{uid}, $setup->{gid}, '$setup->{home_dir}', '/bin/bash', '$lastdir');
 
 CREATE TABLE groups (
   groupname TEXT,
   gid INTEGER,
   members TEXT
 );
-INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '$user');
+INSERT INTO groups (groupname, gid, members) VALUES ('$setup->{group}', $setup->{gid}, '$setup->{user}');
 EOS
 
     unless (close($fh)) {
@@ -7104,9 +6776,11 @@ EOS
   }
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'jot:20 sql:20',
 
     IfModules => {
       'mod_delay.c' => {
@@ -7120,7 +6794,7 @@ EOS
         'SQLAuthTypes plaintext',
         'SQLBackend sqlite3',
         "SQLConnectInfo $db_file",
-        "SQLLogFile $log_file",
+        "SQLLogFile $setup->{log_file}",
         'SQLMinID 100',
 
         # Configure the equivalent of a multiline DisplayLogin file
@@ -7132,7 +6806,8 @@ EOS
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -7150,21 +6825,18 @@ EOS
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-
-      $client->login($user, $passwd);
+      $client->login($setup->{user}, $setup->{passwd});
 
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg();
 
-      my $expected;
-
-      $expected = 230;
+      my $expected = 230;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code")); 
+        "Expected response code $expected, got $resp_code"); 
 
-      $expected = "User $user logged in";
+      $expected = "User $setup->{user} logged in";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        "Expected response message '$expected', got '$resp_msg'");
 
       my $conn = $client->list_raw();
       unless ($conn) {
@@ -7180,34 +6852,32 @@ EOS
 
       $expected = 226;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code")); 
+        "Expected response code $expected, got $resp_code"); 
 
       my $resp_msgs = $client->response_msgs();
       my $nmsgs = scalar(@$resp_msgs);
 
       $expected = 4;
-      $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs"));
+      $self->assert($expected == $nmsgs, "Expected $expected, got $nmsgs");
 
       $expected = "Opening ASCII mode data connection for file list";
       $self->assert($expected eq $resp_msgs->[0],
-        test_msg("Expected '$expected', got '$resp_msgs->[0]'"));
+        "Expected response message '$expected', got '$resp_msgs->[0]'");
 
       $expected = "Transfer complete";
       $self->assert($expected eq $resp_msgs->[1],
-        test_msg("Expected '$expected', got '$resp_msgs->[1]'"));
+        "Expected response message '$expected', got '$resp_msgs->[1]'");
 
-      $expected = " Get that directory listing OK, $user?";
+      $expected = " Get that directory listing OK, $setup->{user}?";
       $self->assert($expected eq $resp_msgs->[2],
-        test_msg("Expected '$expected', got '$resp_msgs->[2]'"));
+        "Expected response message '$expected', got '$resp_msgs->[2]'");
 
       $expected = "-";
       $self->assert($expected eq $resp_msgs->[3],
-        test_msg("Expected '$expected', got '$resp_msgs->[3]'"));
+        "Expected response message '$expected', got '$resp_msgs->[3]'");
 
       $client->quit();
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -7216,7 +6886,7 @@ EOS
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -7226,18 +6896,10 @@ EOS
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub sql_multiple_users_shared_uid_gid {
@@ -7632,38 +7294,7 @@ sub get_session_io {
 sub sql_sqllog_vars_I_O_bug3554 {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/sqlite.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/sqlite.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlite.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sqlite.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sqlite.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
+  my $setup = test_setup($tmpdir, 'sqlite');
 
   my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
 
@@ -7700,14 +7331,14 @@ EOS
   }
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
-    TraceLog => $log_file,
-    Trace => 'DEFAULT:10',
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'DEFAULT:10 jot:20 sql:20',
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
 
     IfModules => {
       'mod_delay.c' => {
@@ -7718,14 +7349,15 @@ EOS
         SQLEngine => 'log',
         SQLBackend => 'sqlite3',
         SQLConnectInfo => $db_file,
-        SQLLogFile => $log_file,
+        SQLLogFile => $setup->{log_file},
         SQLNamedQuery => 'session_io FREEFORM "INSERT INTO ftpsessions (user, ip_addr, bytes_in, bytes_out) VALUES (\'%u\', \'%L\', %I, %O)"',
         SQLLog => 'EXIT session_io',
       },
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -7743,7 +7375,7 @@ EOS
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-      $client->login($user, $passwd);
+      $client->login($setup->{user}, $setup->{passwd});
       $client->type('ascii');
 
       my $conn = $client->stor_raw('test.txt');
@@ -7763,13 +7395,12 @@ EOS
 
       my $expected = 226;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        "Expected response code $expected, got $resp_code");
 
       $expected = 'Transfer complete';
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        "Expected response message '$expected', got '$resp_msg'");
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -7778,7 +7409,7 @@ EOS
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -7788,45 +7419,43 @@ EOS
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
   if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
+    test_cleanup($setup->{log_file}, $ex);
   }
 
-  my ($login, $ip_addr, $bytes_in, $bytes_out) = get_session_io($db_file,
-    "user = \'$user\'");
+  eval {
+    my ($login, $ip_addr, $bytes_in, $bytes_out) = get_session_io($db_file,
+      "user = \'$setup->{user}\'");
 
-  my $expected;
+    my $expected = $setup->{user};
+    $self->assert($expected eq $login, "Expected '$expected', got '$login'");
 
-  $expected = $user;
-  $self->assert($expected eq $login,
-    test_msg("Expected '$expected', got '$login'"));
+    $expected = '127.0.0.1';
+    $self->assert($expected eq $ip_addr,
+      "Expected '$expected', got '$ip_addr'");
 
-  $expected = '127.0.0.1';
-  $self->assert($expected eq $ip_addr,
-    test_msg("Expected '$expected', got '$ip_addr'"));
+    $expected = 108;
+    $self->assert($expected == $bytes_in,
+      "Expected $expected, got $bytes_in");
 
-  $expected = 108;
-  $self->assert($expected == $bytes_in,
-    test_msg("Expected $expected, got $bytes_in"));
+    # Why would this number vary so widely?  It's because of the notation
+    # used to express the port number in a PASV response.  That port
+    # number is ephemeral, chosen by the kernel.
 
-  # Why would this number vary so widely?  It's because of the notation
-  # used to express the port number in a PASV response.  That port
-  # number is ephemeral, chosen by the kernel.
+    my $expected_min = 232;
+    my $expected_max = 236;
+    $self->assert($expected_min <= $bytes_out ||
+                  $expected_max >= $bytes_out,
+      "Expected $expected_min - $expected_max, got $bytes_out");
+  };
+  if ($@) {
+    $ex = $@;
+  }
 
-  my $expected_min = 232;
-  my $expected_max = 236;
-  $self->assert($expected_min <= $bytes_out ||
-                $expected_max >= $bytes_out,
-    test_msg("Expected $expected_min - $expected_max, got $bytes_out"));
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub get_session_id {
@@ -8400,38 +8029,7 @@ EOS
 sub sql_sqllog_var_E {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/sqlite.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/sqlite.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlite.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sqlite.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sqlite.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
+  my $setup = test_setup($tmpdir, 'sqlite');
 
   my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
 
@@ -8467,12 +8065,14 @@ EOS
   }
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'jot:20 sql:20',
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
 
     IfModules => {
       'mod_delay.c' => {
@@ -8483,14 +8083,15 @@ EOS
         SQLEngine => 'log',
         SQLBackend => 'sqlite3',
         SQLConnectInfo => $db_file,
-        SQLLogFile => $log_file,
+        SQLLogFile => $setup->{log_file},
         SQLNamedQuery => 'info FREEFORM "INSERT INTO ftpsessions (user, ip_addr, resp_mesg) VALUES (\'%u\', \'%L\', \'%E\')"',
         SQLLog => 'EXIT info',
       },
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -8508,11 +8109,10 @@ EOS
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-      $client->login($user, $passwd);
+      $client->login($setup->{user}, $setup->{passwd});
       $client->list();
       $client->quit();
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -8521,7 +8121,7 @@ EOS
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -8531,35 +8131,33 @@ EOS
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
   if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
+    test_cleanup($setup->{log_file}, $ex);
   }
 
-  my ($login, $ip_addr, $resp_mesg) = get_resp_mesgs($db_file,
-    "user = \'$user\'", "user, ip_addr, resp_mesg");
+  eval {
+    my ($login, $ip_addr, $resp_mesg) = get_resp_mesgs($db_file,
+      "user = \'$setup->{user}\'", "user, ip_addr, resp_mesg");
 
-  my $expected;
+    my $expected = $setup->{user};
+    $self->assert($expected eq $login, "Expected '$expected', got '$login'");
 
-  $expected = $user;
-  $self->assert($expected eq $login,
-    test_msg("Expected '$expected', got '$login'"));
+    $expected = '127.0.0.1';
+    $self->assert($expected eq $ip_addr,
+      "Expected '$expected', got '$ip_addr'");
 
-  $expected = '127.0.0.1';
-  $self->assert($expected eq $ip_addr,
-    test_msg("Expected '$expected', got '$ip_addr'"));
+    $expected = 'Quit';
+    $self->assert($expected eq $resp_mesg,
+      "Expected '$expected', got '$resp_mesg'");
+  };
+  if ($@) {
+    $ex = $@;
+  }
 
-  $expected = 'Quit';
-  $self->assert($expected eq $resp_mesg,
-    test_msg("Expected '$expected', got '$resp_mesg'"));
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub sql_named_conn_bug3262 {
@@ -9016,38 +8614,7 @@ EOS
 sub sql_sqllog_vars_H_L_matching_server_bug3620 {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/sqlite.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/sqlite.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlite.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sqlite.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sqlite.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
+  my $setup = test_setup($tmpdir, 'sqlite');
 
   my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
 
@@ -9093,185 +8660,14 @@ EOS
   my $dst_file = File::Spec->rel2abs("$tmpdir/foo.txt");
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'jot:20 sql:20',
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
-
-    IfModules => {
-      'mod_delay.c' => {
-        DelayEngine => 'off',
-      },
-
-      'mod_sql.c' => {
-        SQLEngine => 'log',
-        SQLBackend => 'sqlite3',
-        SQLConnectInfo => $db_file,
-        SQLLogFile => $log_file,
-        SQLNamedQuery => 'session_start FREEFORM "INSERT INTO ftpsessions (user, ip_addr, rename_from) VALUES (\'%u\', \'%L\', \'%H\')"',
-        SQLLog => 'PASS session_start',
-      },
-    },
-  };
-
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
-
-  # Open pipes, for use between the parent and child processes.  Specifically,
-  # the child will indicate when it's done with its test by writing a message
-  # to the parent.
-  my ($rfh, $wfh);
-  unless (pipe($rfh, $wfh)) {
-    die("Can't open pipe: $!");
-  }
-
-  my $ex;
-
-  # Fork child
-  $self->handle_sigchld();
-  defined(my $pid = fork()) or die("Can't fork: $!");
-  if ($pid) {
-    eval {
-      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-      $client->login($user, $passwd);
-      $client->quit();
-    };
-
-    if ($@) {
-      $ex = $@;
-    }
-
-    $wfh->print("done\n");
-    $wfh->flush();
-
-  } else {
-    eval { server_wait($config_file, $rfh) };
-    if ($@) {
-      warn($@);
-      exit 1;
-    }
-
-    exit 0;
-  }
-
-  # Stop server
-  server_stop($pid_file);
-
-  $self->assert_child_ok($pid);
-
-  if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  my ($login, $ip_addr, $vhost_addr) = get_renames($db_file, "user = \'$user\'");
-
-  my $expected;
-
-  $expected = $user;
-  $self->assert($expected eq $login,
-    test_msg("Expected '$expected', got '$login'"));
-
-  $expected = '127.0.0.1';
-  $self->assert($expected eq $ip_addr,
-    test_msg("Expected '$expected', got '$ip_addr'"));
-
-  $self->assert($expected eq $vhost_addr,
-    test_msg("Expected '$expected', got '$vhost_addr'"));
-
-  unlink($log_file);
-}
-
-sub sql_sqllog_vars_H_L_default_server_bug3620 {
-  my $self = shift;
-  my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/sqlite.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/sqlite.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlite.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sqlite.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sqlite.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
-
-  my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
-
-  # Build up sqlite3 command to create users, groups tables and populate them
-  my $db_script = File::Spec->rel2abs("$tmpdir/proftpd.sql");
-
-  if (open(my $fh, "> $db_script")) {
-    print $fh <<EOS;
-CREATE TABLE ftpsessions (
-  user TEXT,
-  ip_addr TEXT,
-  rename_from TEXT
-);
-EOS
-
-    unless (close($fh)) {
-      die("Can't write $db_script: $!");
-    }
-
-  } else {
-    die("Can't open $db_script: $!");
-  }
-
-  my $cmd = "sqlite3 $db_file < $db_script";
-  build_db($cmd, $db_script);
-
-  # Make sure that, if we're running as root, the database file has
-  # the permissions/privs set for use by proftpd
-  if ($< == 0) {
-    unless (chmod(0666, $db_file)) {
-      die("Can't set perms on $db_file to 0666: $!");
-    }
-  }
-
-  my $src_file = File::Spec->rel2abs("$tmpdir/test.txt");
-  if (open(my $fh, "> $src_file")) {
-    close($fh);
-
-  } else {
-    die("Can't open $src_file: $!");
-  }
-
-  my $dst_file = File::Spec->rel2abs("$tmpdir/foo.txt");
-
-  my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
-
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
-
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
     DefaultServer => 'off',
     SocketBindTight => 'off',
     Port => '0',
@@ -9280,37 +8676,26 @@ EOS
       'mod_delay.c' => {
         DelayEngine => 'off',
       },
-
-      'mod_sql.c' => {
-        SQLEngine => 'log',
-        SQLBackend => 'sqlite3',
-        SQLConnectInfo => $db_file,
-        SQLLogFile => $log_file,
-        SQLNamedQuery => 'session_start FREEFORM "INSERT INTO ftpsessions (user, ip_addr, rename_from) VALUES (\'%u\', \'%L\', \'%H\')"',
-        SQLLog => 'PASS session_start',
-      },
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
-  # NOTE: this real_addr value may need to be tweaked as necessary.  Or
-  # maybe find a Perl module which can list the interfaces currently configured
-  # for the machine; all we really want is a non-127.0.0.1 address.
-  my $real_addr = '192.168.0.101';
+  my $sysaddr = Sys::HostAddr->new();
+  my $real_addr = $sysaddr->main_ip();
   my $real_port = ProFTPD::TestSuite::Utils::get_high_numbered_port();
   my $vhost_addr = '0.0.0.0';
 
-  if (open(my $fh, ">> $config_file")) {
+  if (open(my $fh, ">> $setup->{config_file}")) {
     print $fh <<EOC;
-
 <VirtualHost $vhost_addr>
   ServerName "DefaultServer VHost"
   Port $real_port
   DefaultServer on
 
-  AuthUserFile $auth_user_file
-  AuthGroupFile $auth_group_file
+  AuthUserFile $setup->{auth_user_file}
+  AuthGroupFile $setup->{auth_group_file}
   RequireValidShell off
   WtmpLog off
 
@@ -9318,18 +8703,18 @@ EOS
     SQLEngine log
     SQLBackend sqlite3
     SQLConnectInfo $db_file
-    SQLLogFile $log_file
-    SQLNamedQuery session_start FREEFORM "INSERT INTO ftpsessions (user, ip_addr, rename_from) VALUES (\'%u\', \'%L\', \'%H\')"
+    SQLLogFile $setup->{log_file}
+    SQLNamedQuery session_start FREEFORM "INSERT INTO ftpsessions (user, ip_addr, rename_from) VALUES ('%u', '%L', '%H')"
     SQLLog PASS session_start
   </IfModule>
 </VirtualHost>
 EOC
     unless (close($fh)) {
-      die("Can't write $config_file: $!");
+      die("Can't write $setup->{config_file}: $!");
     }
 
   } else {
-    die("Can't open $config_file: $!");
+    die("Can't open $setup->{config_file}: $!");
   }
 
   # Open pipes, for use between the parent and child processes.  Specifically,
@@ -9348,10 +8733,9 @@ EOC
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new($real_addr, $real_port);
-      $client->login($user, $passwd);
+      $client->login($setup->{user}, $setup->{passwd});
       $client->quit();
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -9360,7 +8744,7 @@ EOC
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -9370,34 +8754,215 @@ EOC
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
   if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
+    test_cleanup($setup->{log_file}, $ex);
   }
 
-  my ($login, $ip_addr, $sess_addr) = get_renames($db_file, "user = \'$user\'");
+  eval {
+    my ($login, $ip_addr, $sess_vhost_addr) = get_renames($db_file, "user = \'$setup->{user}\'");
 
-  my $expected;
+    my $expected = $setup->{user};
+    $self->assert($expected eq $login,
+      test_msg("Expected '$expected', got '$login'"));
 
-  $expected = $user;
-  $self->assert($expected eq $login,
-    test_msg("Expected '$expected', got '$login'"));
+    $expected = $real_addr;
+    $self->assert($expected eq $ip_addr,
+      test_msg("Expected '$expected', got '$ip_addr'"));
 
-  $expected = $real_addr;
-  $self->assert($expected eq $ip_addr,
-    test_msg("Expected '$expected', got '$ip_addr'"));
+    $expected = $vhost_addr;
+    $self->assert($expected eq $sess_vhost_addr,
+      test_msg("Expected '$expected', got '$sess_vhost_addr'"));
+  };
+  if ($@) {
+    $ex = $@;
+  }
 
-  $expected = $vhost_addr;
-  $self->assert($expected eq $sess_addr,
-    test_msg("Expected '$expected', got '$sess_addr'"));
+  test_cleanup($setup->{log_file}, $ex);
+}
 
-  unlink($log_file);
+sub sql_sqllog_vars_H_L_default_server_bug3620 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'sqlite');
+
+  my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
+
+  # Build up sqlite3 command to create users, groups tables and populate them
+  my $db_script = File::Spec->rel2abs("$tmpdir/proftpd.sql");
+
+  if (open(my $fh, "> $db_script")) {
+    print $fh <<EOS;
+CREATE TABLE ftpsessions (
+  user TEXT,
+  ip_addr TEXT,
+  rename_from TEXT
+);
+EOS
+
+    unless (close($fh)) {
+      die("Can't write $db_script: $!");
+    }
+
+  } else {
+    die("Can't open $db_script: $!");
+  }
+
+  my $cmd = "sqlite3 $db_file < $db_script";
+  build_db($cmd, $db_script);
+
+  # Make sure that, if we're running as root, the database file has
+  # the permissions/privs set for use by proftpd
+  if ($< == 0) {
+    unless (chmod(0666, $db_file)) {
+      die("Can't set perms on $db_file to 0666: $!");
+    }
+  }
+
+  my $src_file = File::Spec->rel2abs("$tmpdir/test.txt");
+  if (open(my $fh, "> $src_file")) {
+    close($fh);
+
+  } else {
+    die("Can't open $src_file: $!");
+  }
+
+  my $dst_file = File::Spec->rel2abs("$tmpdir/foo.txt");
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'jot:20 sql:20',
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
+    DefaultServer => 'off',
+    SocketBindTight => 'off',
+    Port => '0',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sql.c' => {
+        SQLEngine => 'log',
+        SQLBackend => 'sqlite3',
+        SQLConnectInfo => $db_file,
+        SQLLogFile => $setup->{log_file},
+        SQLNamedQuery => 'session_start FREEFORM "INSERT INTO ftpsessions (user, ip_addr, rename_from) VALUES (\'%u\', \'%L\', \'%H\')"',
+        SQLLog => 'PASS session_start',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  my $sysaddr = Sys::HostAddr->new();
+  my $real_addr = $sysaddr->main_ip();
+  my $real_port = ProFTPD::TestSuite::Utils::get_high_numbered_port();
+  my $vhost_addr = '0.0.0.0';
+
+  if (open(my $fh, ">> $setup->{config_file}")) {
+    print $fh <<EOC;
+
+<VirtualHost $vhost_addr>
+  ServerName "DefaultServer VHost"
+  Port $real_port
+  DefaultServer on
+
+  AuthUserFile $setup->{auth_user_file}
+  AuthGroupFile $setup->{auth_group_file}
+  RequireValidShell off
+  WtmpLog off
+
+  <IfModule mod_sql.c>
+    SQLEngine log
+    SQLBackend sqlite3
+    SQLConnectInfo $db_file
+    SQLLogFile $setup->{log_file}
+    SQLNamedQuery session_start FREEFORM "INSERT INTO ftpsessions (user, ip_addr, rename_from) VALUES (\'%u\', \'%L\', \'%H\')"
+    SQLLog PASS session_start
+  </IfModule>
+</VirtualHost>
+EOC
+    unless (close($fh)) {
+      die("Can't write $setup->{config_file}: $!");
+    }
+
+  } else {
+    die("Can't open $setup->{config_file}: $!");
+  }
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new($real_addr, $real_port);
+      $client->login($setup->{user}, $setup->{passwd});
+      $client->quit();
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    test_cleanup($setup->{log_file}, $ex);
+  }
+
+  eval {
+    my ($login, $ip_addr, $sess_addr) = get_renames($db_file, "user = \'$setup->{user}\'");
+
+    my $expected = $setup->{user};
+    $self->assert($expected eq $login, "Expected '$expected', got '$login'");
+
+    $expected = $real_addr;
+    $self->assert($expected eq $ip_addr,
+      "Expected '$expected', got '$ip_addr'");
+
+    $expected = $vhost_addr;
+    $self->assert($expected eq $sess_addr,
+      "Expected '$expected', got '$sess_addr'");
+  };
+  if ($@) {
+    $ex = $@;
+  }
+
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub sql_sqllog_exit_ifuser {
@@ -12355,19 +11920,7 @@ EOS
 sub sql_sqlshowinfo_pass_failed_bug3782 {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/sqlite.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/sqlite.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlite.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
+  my $setup = test_setup($tmpdir, 'sqlite');
 
   my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
 
@@ -12385,14 +11938,14 @@ CREATE TABLE users (
   shell TEXT,
   secure_only INTEGER
 );
-INSERT INTO users (userid, passwd, uid, gid, homedir, shell, secure_only) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash', 1);
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell, secure_only) VALUES ('$setup->{user}', '$setup->{passwd}', $setup->{uid}, $setup->{gid}, '$setup->{home_dir}', '/bin/bash', 1);
 
 CREATE TABLE groups (
   groupname TEXT,
   gid INTEGER,
   members TEXT
 );
-INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '$user');
+INSERT INTO groups (groupname, gid, members) VALUES ('$setup->{group}', $setup->{gid}, '$setup->{user}');
 
 CREATE TABLE login_responses (
   secure_only INTEGER,
@@ -12423,11 +11976,11 @@ EOS
   }
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
-    TraceLog => $log_file,
-    Trace => 'response:20 sql:20',
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'jot:20 response:20 sql:20',
 
     IfModules => {
       'mod_delay.c' => {
@@ -12441,12 +11994,11 @@ EOS
         'SQLAuthTypes plaintext',
         'SQLBackend sqlite3',
         "SQLConnectInfo $db_file",
-        "SQLLogFile $log_file",
+        "SQLLogFile $setup->{log_file}",
         'SQLMinID 100',
 
         'SQLUserWhereClause "secure_only != 1"',
         'SQLNamedQuery login_failure SELECT "response FROM users u, login_responses lr WHERE u.userid = \'%U\' AND u.secure_only = lr.secure_only"',
-
 
         # Configure the equivalent of a multiline DisplayLogin file
         # using the SQLShowInfo directive
@@ -12458,7 +12010,8 @@ EOS
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -12476,8 +12029,7 @@ EOS
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-
-      eval { $client->login($user, $passwd) };
+      eval { $client->login($setup->{user}, $setup->{passwd}) };
       unless ($@) {
         die("Login succeeded unexpectedly");
       }
@@ -12485,27 +12037,23 @@ EOS
       my $resp_msgs = $client->response_msgs();
       my $nmsgs = scalar(@$resp_msgs);
 
-      my $expected;
-
-      $expected = 4;
-      $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+      my $expected = 4;
+      $self->assert($expected == $nmsgs, "Expected $expected, got $nmsgs"); 
 
       $expected = "Login incorrect.";
       $self->assert($expected eq $resp_msgs->[0],
-        test_msg("Expected response '$expected', got '$resp_msgs->[0]'"));
+        "Expected response '$expected', got '$resp_msgs->[0]'");
 
-      $expected = " Sorry, $user";
+      $expected = " Sorry, $setup->{user}";
       $self->assert($expected eq $resp_msgs->[1],
-        test_msg("Expected response '$expected', got '$resp_msgs->[1]'"));
+        "Expected response '$expected', got '$resp_msgs->[1]'");
 
       $expected = " You may not log into this account via FTP. Please use SFTP instead.";
       $self->assert($expected eq $resp_msgs->[2],
-        test_msg("Expected response '$expected', got '$resp_msgs->[2]'"));
+        "Expected response '$expected', got '$resp_msgs->[2]'");
 
       $client->quit();
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -12514,7 +12062,7 @@ EOS
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -12524,18 +12072,10 @@ EOS
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub sql_sqllog_preauth_var_U_bug3822 {
@@ -13626,38 +13166,7 @@ EOS
 sub sql_sqllogonevent_bug3893 {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/sqlite.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/sqlite.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlite.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sqlite.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sqlite.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
+  my $setup = test_setup($tmpdir, 'sqlite');
 
   my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
 
@@ -13695,15 +13204,15 @@ EOS
   my $max_login_attempts = 2;
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
-    TraceLog => $log_file,
-    Trace => 'event:10 sql:20',
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'jot:20 sql:20 sql.sqlite:20',
 
     AuthOrder => 'mod_auth_file.c',
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
     MaxLoginAttempts => $max_login_attempts,
 
     IfModules => {
@@ -13715,14 +13224,15 @@ EOS
         SQLEngine => 'log',
         SQLBackend => 'sqlite3',
         SQLConnectInfo => $db_file,
-        SQLLogFile => $log_file,
+        SQLLogFile => $setup->{log_file},
         SQLNamedQuery => 'max_logins_exceeded FREEFORM "INSERT INTO ftpsessions (user, ip_addr, timestamp) VALUES (\'%U\', \'%L\', \'%{time:%Y-%m-%d %H:%M:%S}\')"',
         SQLLogOnEvent => 'MaxLoginAttempts max_logins_exceeded',
       },
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -13740,17 +13250,16 @@ EOS
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-      eval { $client->login($user, 'badpassword') };
+      eval { $client->login($setup->{user}, 'badpassword') };
       unless ($@) {
         die("Login succeeded unexpectedly");
       }
 
-      eval { $client->login($user, 'badpassword') };
+      eval { $client->login($setup->{user}, 'badpassword') };
       unless ($@) {
         die("Login succeeded unexpectedly");
       }
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -13759,7 +13268,7 @@ EOS
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -13769,35 +13278,34 @@ EOS
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
   if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
+    test_cleanup($setup->{log_file}, $ex);
   }
 
-  my ($login, $ip_addr, $timestamp) = get_sessions($db_file,
-    "user = \'$user\'");
+  eval {
+    my ($login, $ip_addr, $timestamp) = get_sessions($db_file,
+      "user = \'$setup->{user}\'");
 
-  my $expected;
+    my $expected = $setup->{user};
+    $self->assert($expected eq $login,
+      test_msg("Expected '$expected', got '$login'"));
 
-  $expected = $user;
-  $self->assert($expected eq $login,
-    test_msg("Expected '$expected', got '$login'"));
+    $expected = '127.0.0.1';
+    $self->assert($expected eq $ip_addr,
+      test_msg("Expected '$expected', got '$ip_addr'"));
 
-  $expected = '127.0.0.1';
-  $self->assert($expected eq $ip_addr,
-    test_msg("Expected '$expected', got '$ip_addr'"));
+    $expected = '\d{4}\-\d{2}\-\d{2} \d{2}:\d{2}:\d{2}';
+    $self->assert(qr/$expected/, $timestamp,
+      test_msg("Expected '$expected', got '$timestamp'"));
+  };
+  if ($@) {
+    $ex = $@;
+  }
 
-  $expected = '\d{4}\-\d{2}\-\d{2} \d{2}:\d{2}:\d{2}';
-  $self->assert(qr/$expected/, $timestamp,
-    test_msg("Expected '$expected', got '$timestamp'"));
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub get_session_with_primary_key {
@@ -14358,19 +13866,7 @@ EOS
 sub sql_groupprimarykey_custom_bug3864 {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/sqlite.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/sqlite.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlite.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
+  my $setup = test_setup($tmpdir, 'sqlite');
 
   my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
 
@@ -14387,7 +13883,7 @@ CREATE TABLE users (
   homedir TEXT, 
   shell TEXT
 );
-INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$setup->{user}', '$setup->{passwd}', $setup->{uid}, $setup->{gid}, '$setup->{home_dir}', '/bin/bash');
 
 CREATE TABLE groups (
   groupname TEXT,
@@ -14395,7 +13891,7 @@ CREATE TABLE groups (
   members TEXT,
   primary_key INTEGER
 );
-INSERT INTO groups (groupname, gid, members, primary_key) VALUES ('$group', $gid, '$user', $gid);
+INSERT INTO groups (groupname, gid, members, primary_key) VALUES ('$setup->{group}', $setup->{gid}, '$setup->{user}', $setup->{gid});
 
 CREATE TABLE sessions (
   name TEXT,
@@ -14403,7 +13899,6 @@ CREATE TABLE sessions (
   primary_key INTEGER
 );
 EOS
-
     unless (close($fh)) {
       die("Can't write $db_script: $!");
     }
@@ -14424,11 +13919,11 @@ EOS
   }
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
-    TraceLog => $log_file,
-    Trace => 'sql:20',
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'jot:20 sql:20',
 
     IfModules => {
       'mod_delay.c' => {
@@ -14439,7 +13934,7 @@ EOS
         'SQLAuthTypes plaintext',
         'SQLBackend sqlite3',
         "SQLConnectInfo $db_file",
-        "SQLLogFile $log_file",
+        "SQLLogFile $setup->{log_file}",
         'SQLMinID 200',
 
         'SQLNamedQuery get-group-primary-key SELECT "primary_key from groups WHERE groupname = \'%{0}\'"',
@@ -14451,7 +13946,8 @@ EOS
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -14469,10 +13965,9 @@ EOS
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-      $client->login($user, $passwd);
+      $client->login($setup->{user}, $setup->{passwd});
       $client->quit();
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -14481,7 +13976,7 @@ EOS
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -14491,47 +13986,33 @@ EOS
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
   if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
+    test_cleanup($setup->{log_file}, $ex);
   }
 
   eval {
     my ($name, $ip_addr, $primary_key) = get_session_with_primary_key($db_file,
-      "name = \'$group\'");
+      "name = \'$setup->{group}\'");
 
-    my $expected;
-
-    $expected = $group;
-    $self->assert($expected eq $name,
-      test_msg("Expected name '$expected', got '$name'"));
+    my $expected = $setup->{group};
+    $self->assert($expected eq $name, "Expected name '$expected', got '$name'");
 
     $expected = '127.0.0.1';
     $self->assert($expected eq $ip_addr,
-      test_msg("Expected IP address '$expected', got '$ip_addr'"));
+      "Expected IP address '$expected', got '$ip_addr'");
 
-    $expected = $uid;
+    $expected = $setup->{gid};
     $self->assert($expected == $primary_key,
-      test_msg("Expected primary key $expected, got $primary_key"));
+      "Expected primary key $expected, got $primary_key");
   };
   if ($@) {
     $ex = $@;
   }
 
-  if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub sql_sqllog_var_basename_bug3987 {
@@ -15496,6 +14977,88 @@ EOS
       $self->assert($file_gid != 0, "Expected GID non-0, got $file_gid");
     };
 
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub sql_sqlite_log_db_enoent_issue654 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'sqlite');
+
+  my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'sql:20',
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sql.c' => {
+        SQLEngine => 'log',
+        SQLBackend => 'sqlite3',
+        SQLConnectInfo => $db_file,
+        SQLLogFile => $setup->{log_file},
+        SQLNamedQuery => 'session_start FREEFORM "INSERT INTO ftpsessions (user, ip_addr, timestamp) VALUES (\'%u\', \'%L\', \'%{time:%Y-%m-%d %H:%M:%S}\')"',
+        SQLLog => 'PASS session_start',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      eval { $client->login($setup->{user}, $setup->{passwd}) };
+      unless ($@) {
+        $client->quit();
+        die("Login succeeded unexpectedly");
+      }
+    };
     if ($@) {
       $ex = $@;
     }

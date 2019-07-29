@@ -715,34 +715,40 @@ static char *get_pwd_info(pool *p, const char *u, time_t *lstchg, time_t *min,
 MODRET pw_auth(cmd_rec *cmd) {
   int res;
   time_t now;
-  char *cpw;
-  time_t lstchg = -1, max = -1, inact = -1, disable = -1;
+  char *cleartxt_passwd;
+  time_t lstchg = -1, max = -1, inact = -1, expire = -1;
   const char *name;
+  size_t cleartxt_passwdlen;
 
   name = cmd->argv[0];
-  time(&now);
 
-  cpw = get_pwd_info(cmd->tmp_pool, name, &lstchg, NULL, &max, NULL, &inact,
-    &disable);
-  if (cpw == NULL) {
+  cleartxt_passwd = get_pwd_info(cmd->tmp_pool, name, &lstchg, NULL, &max,
+    NULL, &inact, &expire);
+  if (cleartxt_passwd == NULL) {
     return PR_DECLINED(cmd);
   }
 
-  res = pr_auth_check(cmd->tmp_pool, cpw, cmd->argv[0], cmd->argv[1]);
+  res = pr_auth_check(cmd->tmp_pool, cleartxt_passwd, cmd->argv[0],
+    cmd->argv[1]);
+  cleartxt_passwdlen = strlen(cleartxt_passwd);
+  pr_memscrub(cleartxt_passwd, cleartxt_passwdlen);
+
   if (res < PR_AUTH_OK) {
     return PR_ERROR_INT(cmd, res);
   }
 
+  time(&now);
+
   if (lstchg > (time_t) 0 &&
       max > (time_t) 0 &&
       inact > (time_t) 0) {
-    if (now > lstchg + max + inact) {
+    if (now > (lstchg + max + inact)) {
       return PR_ERROR_INT(cmd, PR_AUTH_AGEPWD);
     }
   }
 
-  if (disable > (time_t) 0 &&
-      now > disable) {
+  if (expire > (time_t) 0 &&
+      now > expire) {
     return PR_ERROR_INT(cmd, PR_AUTH_DISABLEDPWD);
   }
 
@@ -751,14 +757,49 @@ MODRET pw_auth(cmd_rec *cmd) {
 }
 
 MODRET pw_authz(cmd_rec *cmd) {
+  time_t now;
+  char *user, *cleartxt_passwd;
+  time_t lstchg = -1, max = -1, inact = -1, expire = -1;
+  size_t cleartxt_passwdlen;
+
+  user = cmd->argv[0];
+
+  cleartxt_passwd = get_pwd_info(cmd->tmp_pool, user, &lstchg, NULL, &max,
+    NULL, &inact, &expire);
+  if (cleartxt_passwd == NULL) {
+    pr_log_auth(LOG_WARNING, "no password information found for user '%.100s'",
+      user);
+    return PR_ERROR_INT(cmd, PR_AUTH_NOPWD);
+  }
+
+  cleartxt_passwdlen = strlen(cleartxt_passwd);
+  pr_memscrub(cleartxt_passwd, cleartxt_passwdlen);
+
+  time(&now);
+
+  if (lstchg > (time_t) 0 &&
+      max > (time_t) 0 &&
+      inact > (time_t) 0) {
+    if (now > (lstchg + max + inact)) {
+      pr_log_auth(LOG_WARNING,
+        "account for user '%.100s' disabled due to inactivity", user);
+      return PR_ERROR_INT(cmd, PR_AUTH_AGEPWD);
+    }
+  }
+
+  if (expire > (time_t) 0 &&
+      now > expire) {
+    pr_log_auth(LOG_WARNING,
+      "account for user '%.100s' disabled due to password expiration", user);
+    return PR_ERROR_INT(cmd, PR_AUTH_DISABLEDPWD);
+  }
+
   /* XXX Any other implementations here? */
 
 #ifdef HAVE_LOGINRESTRICTIONS
   if (!(auth_unix_opts & AUTH_UNIX_OPT_AIX_NO_RLOGIN)) {
     int res, xerrno, code = 0;
-    char *user = NULL, *reason = NULL;
-
-    user = cmd->argv[0];
+    char *reason = NULL;
 
     /* Check for account login restrictions and such using AIX-specific
      * functions.
@@ -1212,7 +1253,12 @@ static int get_groups_by_getgrouplist(const char *user, gid_t primary_gid,
     "using getgrouplist(3) to look up group membership");
 
   memset(group_ids, 0, sizeof(group_ids));
-  if (getgrouplist(user, primary_gid, group_ids, &ngroups) < 0) {
+#ifdef HAVE_GETGROUPLIST_TAKES_INTS
+  res = getgrouplist(user, primary_gid, (int *) group_ids, &ngroups);
+#else
+  res = getgrouplist(user, primary_gid, group_ids, &ngroups);
+#endif
+  if (res < 0) {
     int xerrno = errno;
 
     pr_log_pri(PR_LOG_WARNING, "getgrouplist(3) error: %s", strerror(xerrno));

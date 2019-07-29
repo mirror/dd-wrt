@@ -1,6 +1,6 @@
 /*
  * ProFTPD: mod_rewrite -- a module for rewriting FTP commands
- * Copyright (c) 2001-2016 TJ Saunders
+ * Copyright (c) 2001-2017 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,11 +27,15 @@
 #include "conf.h"
 #include "privs.h"
 
-#define MOD_REWRITE_VERSION "mod_rewrite/0.9"
+#ifdef HAVE_IDNA_H
+# include <idna.h>
+#endif /* HAVE_IDNA_H */
+
+#define MOD_REWRITE_VERSION		"mod_rewrite/1.0"
 
 /* Make sure the version of proftpd is as necessary. */
-#if PROFTPD_VERSION_NUMBER < 0x0001030501
-# error "ProFTPD 1.3.5rc1 or later required"
+#if PROFTPD_VERSION_NUMBER < 0x0001030701
+# error "ProFTPD 1.3.7rc1 or later required"
 #endif
 
 #ifdef PR_USE_REGEX
@@ -228,7 +232,7 @@ static const char *rewrite_expand_var(cmd_rec *cmd, const char *subst_pattern,
 
   } else if (strncmp(var, "%p", 3) == 0) {
     char *port = pcalloc(cmd->tmp_pool, 8 * sizeof(char));
-    snprintf(port, 8, "%d", main_server->ServerPort);
+    pr_snprintf(port, 8, "%d", main_server->ServerPort);
     port[7] = '\0';
     return port;
 
@@ -237,7 +241,7 @@ static const char *rewrite_expand_var(cmd_rec *cmd, const char *subst_pattern,
 
   } else if (strncmp(var, "%P", 3) == 0) {
     char *pid = pcalloc(cmd->tmp_pool, 8 * sizeof(char));
-    snprintf(pid, 8, "%lu", (unsigned long) getpid());
+    pr_snprintf(pid, 8, "%lu", (unsigned long) getpid());
     pid[7] = '\0';
     return pid;
 
@@ -296,7 +300,7 @@ static const char *rewrite_expand_var(cmd_rec *cmd, const char *subst_pattern,
 
   } else if (strncmp(var, "%t", 3) == 0) {
     char *timestr = pcalloc(cmd->tmp_pool, 80 * sizeof(char));
-    snprintf(timestr, 80, "%lu", (unsigned long) time(NULL));
+    pr_snprintf(timestr, 80, "%lu", (unsigned long) time(NULL));
     timestr[79] = '\0';
     return timestr;
 
@@ -326,7 +330,7 @@ static const char *rewrite_expand_var(cmd_rec *cmd, const char *subst_pattern,
     if (tm != NULL) {
       if (varlen == 7) {
         /* %{TIME} */
-        snprintf(time_str, sizeof(time_str)-1, "%04d%02d%02d%02d%02d%02d",
+        pr_snprintf(time_str, sizeof(time_str)-1, "%04d%02d%02d%02d%02d%02d",
           tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday, tm->tm_hour,
           tm->tm_min, tm->tm_sec);
 
@@ -334,38 +338,39 @@ static const char *rewrite_expand_var(cmd_rec *cmd, const char *subst_pattern,
         switch (var[7]) {
           case 'D':
             /* %{TIME_DAY} */
-            snprintf(time_str, sizeof(time_str)-1, "%02d", tm->tm_mday);
+            pr_snprintf(time_str, sizeof(time_str)-1, "%02d", tm->tm_mday);
             break;
 
           case 'H':
             /* %{TIME_HOUR} */
-            snprintf(time_str, sizeof(time_str)-1, "%02d", tm->tm_hour);
+            pr_snprintf(time_str, sizeof(time_str)-1, "%02d", tm->tm_hour);
             break;
 
           case 'M':
             if (var[8] == 'I') {
               /* %{TIME_MIN} */
-              snprintf(time_str, sizeof(time_str)-1, "%02d", tm->tm_min);
+              pr_snprintf(time_str, sizeof(time_str)-1, "%02d", tm->tm_min);
 
             } else if (var[8] == 'O') {
               /* %{TIME_MON} */
-              snprintf(time_str, sizeof(time_str)-1, "%02d", tm->tm_mon + 1);
+              pr_snprintf(time_str, sizeof(time_str)-1, "%02d", tm->tm_mon + 1);
             }
             break;
 
           case 'S':
             /* %{TIME_SEC} */
-            snprintf(time_str, sizeof(time_str)-1, "%02d", tm->tm_sec);
+            pr_snprintf(time_str, sizeof(time_str)-1, "%02d", tm->tm_sec);
             break;
 
           case 'W':
             /* %{TIME_WDAY} */
-            snprintf(time_str, sizeof(time_str)-1, "%02d", tm->tm_wday);
+            pr_snprintf(time_str, sizeof(time_str)-1, "%02d", tm->tm_wday);
             break;
 
           case 'Y':
             /* %{TIME_YEAR} */
-            snprintf(time_str, sizeof(time_str)-1, "%04d", tm->tm_year + 1900);
+            pr_snprintf(time_str, sizeof(time_str)-1, "%04d",
+              tm->tm_year + 1900);
             break;
 
           default:
@@ -975,15 +980,16 @@ static const char *rewrite_subst_backrefs(cmd_rec *cmd, const char *pattern,
 
     if (matches == &rewrite_rule_matches) {
       /* Substitute "$N" backreferences for RewriteRule matches */
-      snprintf(buf, sizeof(buf), "$%u", i);
+      pr_snprintf(buf, sizeof(buf), "$%u", i);
 
     } else if (matches == &rewrite_cond_matches) {
       /* Substitute "%N" backreferences for RewriteCondition matches */
-      snprintf(buf, sizeof(buf), "%%%u", i);
+      pr_snprintf(buf, sizeof(buf), "%%%u", i);
     }
 
-    if (!replacement_pattern)
+    if (replacement_pattern == NULL) {
       replacement_pattern = pstrdup(cmd->pool, pattern);
+    }
 
     /* Make sure there's a backreference for this in the substitution
      * pattern.
@@ -1994,7 +2000,7 @@ static char *rewrite_map_int_utf8trans(pool *map_pool, char *key) {
 
   /* If the key is NULL or empty, do nothing. */
   if (key == NULL ||
-      !strlen(key)) {
+      strlen(key) == 0) {
     return NULL;
   }
 
@@ -2027,6 +2033,34 @@ static char *rewrite_map_int_utf8trans(pool *map_pool, char *key) {
 
   return NULL;
 }
+
+#if defined(HAVE_IDNA_H) && defined(HAVE_IDNA_TO_ASCII_8Z)
+static char *rewrite_map_int_idnatrans(pool *map_pool, char *key) {
+  int flags = 0, res;
+  char *ascii_val = NULL, *map_val = NULL;
+
+  /* If the key is NULL or empty, do nothing. */
+  if (key == NULL ||
+      strlen(key) == 0) {
+    return NULL;
+  }
+
+  /* TODO: Should we enforce the use of e.g. the IDNA_USE_STD3_ASCII_RULES
+   * flag?
+   */
+  res = idna_to_ascii_8z(key, &ascii_val, flags);
+  if (res != IDNA_SUCCESS) {
+    rewrite_log("rewrite_map_int_idnatrans(): failed transforming IDNA "
+      "'%s' to ASCII: %s", key, idna_strerror(res));
+    return NULL;
+  }
+
+  map_val = pstrdup(map_pool, ascii_val);
+  free(ascii_val);
+
+  return map_val;
+}
+#endif /* IDNA support */
 
 /* Rewrite logging functions */
 
@@ -2378,9 +2412,10 @@ MODRET set_rewritemap(cmd_rec *cmd) {
 
   /* Check the configured map types */
   mapsrc = strchr(cmd->argv[2], ':');
-  if (mapsrc == NULL)
+  if (mapsrc == NULL) {
     CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "invalid RewriteMap parameter: '",
       cmd->argv[2], "'", NULL));
+  }
 
   *mapsrc = '\0';
   mapsrc++;
@@ -2404,9 +2439,18 @@ MODRET set_rewritemap(cmd_rec *cmd) {
     } else if (strcmp(mapsrc, "utf8trans") == 0) {
       map = (void *) rewrite_map_int_utf8trans;
 
-    } else
+    } else if (strcmp(mapsrc, "idnatrans") == 0) {
+#if defined(HAVE_IDNA_H) && defined(HAVE_IDNA_TO_ASCII_8Z)
+      map = (void *) rewrite_map_int_idnatrans;
+#else
+      CONF_ERROR(cmd, pstrcat(cmd->tmp_pool,
+        "unsupported internal map function requested: '", mapsrc, "'", NULL));
+#endif /* IDNA support */
+
+    } else {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool,
         "unknown internal map function requested: '", mapsrc, "'", NULL));
+    }
 
   } else if (strcmp(cmd->argv[2], "fifo") == 0) {
     struct stat st;
@@ -2414,18 +2458,21 @@ MODRET set_rewritemap(cmd_rec *cmd) {
     c = add_config_param(cmd->argv[0], 4, NULL, NULL, NULL, NULL);
 
     /* Make sure the given path is absolute. */
-    if (*mapsrc != '/')
+    if (*mapsrc != '/') {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, cmd->argv[0],
         ": fifo: absolute path required", NULL));
+    }
 
     /* Stat the path, to make sure it is indeed a FIFO. */
-    if (pr_fsio_stat(mapsrc, &st) < 0)
+    if (pr_fsio_stat(mapsrc, &st) < 0) {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, cmd->argv[0],
         ": fifo: error stat'ing '", mapsrc, "': ", strerror(errno), NULL));
+    }
 
-    if (!S_ISFIFO(st.st_mode))
+    if (!S_ISFIFO(st.st_mode)) {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, cmd->argv[0],
         ": fifo: error: '", mapsrc, "' is not a FIFO", NULL));
+    }
 
     map = (void *) pstrdup(c->pool, mapsrc);
 
@@ -3074,5 +3121,4 @@ module rewrite_module = {
   /* Module version */
   MOD_REWRITE_VERSION
 };
-
 #endif /* regex support */

@@ -123,6 +123,11 @@ my $TESTS = {
     test_class => [qw(bug forking rootprivs)],
   },
 
+  list_symlink_issue697 => {
+    order => ++$order,
+    test_class => [qw(bug forking rootprivs)],
+  },
+
   list_symlink_rel_with_double_slash_bug3719 => {
     order => ++$order,
     test_class => [qw(bug forking rootprivs)],
@@ -216,6 +221,21 @@ my $TESTS = {
   list_option_parsing => {
     order => ++$order,
     test_class => [qw(bug forking)],
+  },
+
+  list_symlink_rel_path_chrooted_bug4322 => {
+    order => ++$order,
+    test_class => [qw(bug forking rootprivs)],
+  },
+
+  list_symlink_rel_path_subdir_chrooted_bug4322 => {
+    order => ++$order,
+    test_class => [qw(bug forking rootprivs)],
+  },
+
+  list_symlink_rel_path_subdir_cwd_chrooted_bug4322 => {
+    order => ++$order,
+    test_class => [qw(bug forking rootprivs)],
   },
 
   # XXX Plenty of other tests needed: params, maxfiles, maxdirs, depth, etc
@@ -3247,6 +3267,163 @@ EOL
   unlink($log_file);
 }
 
+sub list_symlink_issue697 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/cmds.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
+
+  my $log_file = test_get_logfile();
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  my $a_dir = File::Spec->rel2abs("$tmpdir/a");
+  my $b_dir = File::Spec->rel2abs("$tmpdir/b");
+  mkpath([$a_dir, $b_dir]);
+
+  my $a_file = File::Spec->rel2abs("$a_dir/file");
+  if (open(my $fh, "> $a_file")) {
+    close($fh);
+
+  } else {
+    die("Can't open $a_file: $!");
+  }
+
+  # Change to the 'b' directory in order to create a relative path in the
+  # symlink we need
+
+  my $cwd = getcwd();
+  unless (chdir("$b_dir")) {
+    die("Can't chdir to $b_dir: $!");
+  }
+
+  unless (symlink('../file', 'link')) {
+    die("Can't symlink '../file' to 'link': $!");
+  }
+
+  unless (chdir($cwd)) {
+    die("Can't chdir to $cwd: $!");
+  }
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir, $a_dir, $b_dir)) {
+      die("Can't set perms on dirs to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir, $a_dir, $b_dir)) {
+      die("Can't set owner of dirs to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    AllowOverride => 'on',
+    DefaultRoot => '~',
+    ListOptions => '-al NoAdjustedSymlinks',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+
+      $client->login($user, $passwd);
+
+      $client->cwd("b");
+      my $conn = $client->list_raw();
+      unless ($conn) {
+        die("Failed to LIST: " . $client->response_code() . " " .
+          $client->response_msg());
+      }
+
+      my $buf;
+      $conn->read($buf, 8192, 30);
+      eval { $conn->close() };
+
+      if ($ENV{TEST_VERBOSE}) {
+        print STDERR "# LIST:\n$buf\n";
+      }
+
+      my $resp_code = $client->response_code();
+      my $resp_msg = $client->response_msg();
+      $self->assert_transfer_ok($resp_code, $resp_msg);
+
+      $client->quit();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
 sub list_symlink_rel_with_double_slash_bug3719 {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
@@ -6203,6 +6380,427 @@ sub list_option_parsing {
   }
 
   unlink($log_file);
+}
+
+sub list_symlink_rel_path_chrooted_bug4322 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'cmds');
+
+  my $dst_path = 'domains/test.oxilion.nl/public_html';
+  my $dst_dir = File::Spec->rel2abs("$tmpdir/$dst_path");
+  mkpath($dst_dir);
+
+  my $cwd = getcwd();
+  unless (chdir("$tmpdir")) {
+    die("Can't chdir to $tmpdir: $!");
+  }
+
+  unless (symlink("./$dst_path", 'public_html')) {
+    die("Can't symlink 'public_html' to './$dst_path': $!");
+  }
+
+  unless (symlink("$dst_path", 'public_html2')) {
+    die("Can't symlink 'public_html2' to '$dst_path': $!");
+  }
+
+  unless (chdir($cwd)) {
+    die("Can't chdir to $cwd: $!");
+  }
+
+  if ($< == 0) {
+    unless (chmod(0755, $dst_dir)) {
+      die("Can't set perms on $dst_dir to 0755: $!");
+    }
+
+    unless (chown($setup->{uid}, $setup->{gid}, $dst_dir)) {
+      die("Can't set owner of $dst_dir to $setup->{uid}/$setup->{gid}: $!");
+    }
+  }
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+    DefaultRoot => '~',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($setup->{user}, $setup->{passwd});
+
+      my $conn = $client->list_raw();
+      unless ($conn) {
+        die("LIST failed: " . $client->response_code() . " " .
+          $client->response_msg());
+      }
+
+      my $buf;
+      my $res = $conn->read($buf, 8192, 25);
+      eval { $conn->close() };
+
+      my $resp_code = $client->response_code();
+      my $resp_msg = $client->response_msg();
+      $self->assert_transfer_ok($resp_code, $resp_msg);
+      $client->quit();
+
+      if ($ENV{TEST_VERBOSE}) {
+        print STDERR "# LIST:\n$buf\n";
+      }
+
+      $res = {};
+      my $lines = [split(/(\r)?\n/, $buf)];
+      my $line_count = 0;
+      foreach my $line (@$lines) {
+        if ($line =~ /\s+(\S+)$/) {
+          $line_count++;
+          $res->{$1} = 1;
+        }
+      }
+
+      my $expected = 9;
+      $self->assert($line_count == $expected,
+        "Expected $expected lines, got $line_count");
+
+      # The keys are the filenames; we have two symlinks pointing to the same
+      # file.  Hence the different line vs key counts.
+      my $list_count = scalar(keys(%$res));
+      $expected = 8;
+      $self->assert($list_count == $expected,
+        "Expected $expected entries, got $list_count");
+
+      $self->assert($res->{'/domains/test.oxilion.nl/public_html'},
+        "Expected '/domains/test.oxilion.nl/public_html'");
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub list_symlink_rel_path_subdir_chrooted_bug4322 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'cmds');
+
+  my $dst_path = 'domains/test.oxilion.nl/public_html';
+  my $dst_dir = File::Spec->rel2abs("$tmpdir/test.d/$dst_path");
+  mkpath($dst_dir);
+
+  my $cwd = getcwd();
+  unless (chdir("$tmpdir/test.d")) {
+    die("Can't chdir to $tmpdir: $!");
+  }
+
+  unless (symlink("./$dst_path", 'public_html')) {
+    die("Can't symlink 'public_html' to './$dst_path': $!");
+  }
+
+  unless (symlink("$dst_path", 'public_html2')) {
+    die("Can't symlink 'public_html2' to '$dst_path': $!");
+  }
+
+  unless (chdir($cwd)) {
+    die("Can't chdir to $cwd: $!");
+  }
+
+  if ($< == 0) {
+    unless (chmod(0755, $dst_dir)) {
+      die("Can't set perms on $dst_dir to 0755: $!");
+    }
+
+    unless (chown($setup->{uid}, $setup->{gid}, $dst_dir)) {
+      die("Can't set owner of $dst_dir to $setup->{uid}/$setup->{gid}: $!");
+    }
+  }
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+    DefaultRoot => '~',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($setup->{user}, $setup->{passwd});
+
+      my $conn = $client->list_raw('test.d');
+      unless ($conn) {
+        die("LIST test.d failed: " . $client->response_code() . " " .
+          $client->response_msg());
+      }
+
+      my $buf;
+      my $res = $conn->read($buf, 8192, 25);
+      eval { $conn->close() };
+
+      my $resp_code = $client->response_code();
+      my $resp_msg = $client->response_msg();
+      $self->assert_transfer_ok($resp_code, $resp_msg);
+      $client->quit();
+
+      if ($ENV{TEST_VERBOSE}) {
+        print STDERR "# LIST:\n$buf\n";
+      }
+
+      $res = {};
+      my $lines = [split(/(\r)?\n/, $buf)];
+      my $line_count = 0;
+      foreach my $line (@$lines) {
+        if ($line =~ /\s+(\S+)$/) {
+          $line_count++;
+          $res->{$1} = 1;
+        }
+      }
+
+      my $expected = 3;
+      $self->assert($line_count == $expected,
+        "Expected $expected lines, got $line_count");
+
+      # The keys are the filenames; we have two symlinks pointing to the same
+      # file.  Hence the different line vs key counts.
+      my $list_count = scalar(keys(%$res));
+      $expected = 2;
+      $self->assert($list_count == $expected,
+        "Expected $expected entries, got $list_count");
+
+      $self->assert($res->{'/domains/test.oxilion.nl/public_html'},
+        "Expected '/domains/test.oxilion.nl/public_html'");
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub list_symlink_rel_path_subdir_cwd_chrooted_bug4322 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'cmds');
+
+  my $dst_path = 'domains/test.oxilion.nl/public_html';
+  my $dst_dir = File::Spec->rel2abs("$tmpdir/test.d/$dst_path");
+  mkpath($dst_dir);
+
+  my $cwd = getcwd();
+  unless (chdir("$tmpdir/test.d")) {
+    die("Can't chdir to $tmpdir: $!");
+  }
+
+  unless (symlink("./$dst_path", 'public_html')) {
+    die("Can't symlink 'public_html' to './$dst_path': $!");
+  }
+
+  unless (symlink("$dst_path", 'public_html2')) {
+    die("Can't symlink 'public_html2' to '$dst_path': $!");
+  }
+
+  unless (chdir($cwd)) {
+    die("Can't chdir to $cwd: $!");
+  }
+
+  if ($< == 0) {
+    unless (chmod(0755, $dst_dir)) {
+      die("Can't set perms on $dst_dir to 0755: $!");
+    }
+
+    unless (chown($setup->{uid}, $setup->{gid}, $dst_dir)) {
+      die("Can't set owner of $dst_dir to $setup->{uid}/$setup->{gid}: $!");
+    }
+  }
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+    DefaultRoot => '~',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($setup->{user}, $setup->{passwd});
+      $client->cwd('test.d');
+
+      my $conn = $client->list_raw();
+      unless ($conn) {
+        die("LIST failed: " . $client->response_code() . " " .
+          $client->response_msg());
+      }
+
+      my $buf;
+      my $res = $conn->read($buf, 8192, 25);
+      eval { $conn->close() };
+
+      my $resp_code = $client->response_code();
+      my $resp_msg = $client->response_msg();
+      $self->assert_transfer_ok($resp_code, $resp_msg);
+      $client->quit();
+
+      if ($ENV{TEST_VERBOSE}) {
+        print STDERR "# LIST:\n$buf\n";
+      }
+
+      $res = {};
+      my $lines = [split(/(\r)?\n/, $buf)];
+      my $line_count = 0;
+      foreach my $line (@$lines) {
+        if ($line =~ /\s+(\S+)$/) {
+          $line_count++;
+          $res->{$1} = 1;
+        }
+      }
+
+      my $expected = 3;
+      $self->assert($line_count == $expected,
+        "Expected $expected lines, got $line_count");
+
+      # The keys are the filenames; we have two symlinks pointing to the same
+      # file.  Hence the different line vs key counts.
+      my $list_count = scalar(keys(%$res));
+      $expected = 2;
+      $self->assert($list_count == $expected,
+        "Expected $expected entries, got $list_count");
+
+      $self->assert($res->{'/domains/test.oxilion.nl/public_html'},
+        "Expected '/domains/test.oxilion.nl/public_html'");
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 1;

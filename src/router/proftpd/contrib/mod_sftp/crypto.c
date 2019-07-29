@@ -96,8 +96,8 @@ static struct sftp_cipher ciphers[] = {
 #endif
 
 #if !defined(OPENSSL_NO_BF)
-  { "blowfish-ctr",	NULL,		0,	NULL,	TRUE, FALSE },
-  { "blowfish-cbc",	"bf-cbc",	0,	EVP_bf_cbc, TRUE, FALSE },
+  { "blowfish-ctr",	NULL,		0,	NULL,	FALSE, FALSE },
+  { "blowfish-cbc",	"bf-cbc",	0,	EVP_bf_cbc, FALSE, FALSE },
 #endif /* !OPENSSL_NO_BF */
 
 #if !defined(OPENSSL_NO_CAST)
@@ -105,8 +105,8 @@ static struct sftp_cipher ciphers[] = {
 #endif /* !OPENSSL_NO_CAST */
 
 #if !defined(OPENSSL_NO_RC4)
-  { "arcfour256",	"rc4",		1536,	EVP_rc4, TRUE, FALSE },
-  { "arcfour128",	"rc4",		1536,	EVP_rc4, TRUE, FALSE },
+  { "arcfour256",	"rc4",		1536,	EVP_rc4, FALSE, FALSE },
+  { "arcfour128",	"rc4",		1536,	EVP_rc4, FALSE, FALSE },
 #endif /* !OPENSSL_NO_RC4 */
 
 #if 0
@@ -164,10 +164,10 @@ static struct sftp_digest digests[] = {
 #endif /* SHA512 support in OpenSSL */
   { "hmac-sha1",	"sha1",		EVP_sha1,	0, 	TRUE, TRUE },
   { "hmac-sha1-96",	"sha1",		EVP_sha1,	12,	TRUE, TRUE },
-  { "hmac-md5",		"md5",		EVP_md5,	0,	TRUE, FALSE },
-  { "hmac-md5-96",	"md5",		EVP_md5,	12,	TRUE, FALSE },
+  { "hmac-md5",		"md5",		EVP_md5,	0,	FALSE, FALSE },
+  { "hmac-md5-96",	"md5",		EVP_md5,	12,	FALSE, FALSE },
 #if !defined(OPENSSL_NO_RIPEMD)
-  { "hmac-ripemd160",	"rmd160",	EVP_ripemd160,	0,	TRUE, FALSE },
+  { "hmac-ripemd160",	"rmd160",	EVP_ripemd160,	0,	FALSE, FALSE },
 #endif /* !OPENSSL_NO_RIPEMD */
 #if OPENSSL_VERSION_NUMBER > 0x000907000L
   { "umac-64@openssh.com", NULL,	NULL,		8,	TRUE, FALSE },

@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2016 The ProFTPD Project team
+ * Copyright (c) 2001-2017 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -284,7 +284,8 @@ static const char *show_uptime(time_t uptime_since) {
 
   updays = (int) uptime_secs / (60 * 60 * 24);
   if (updays > 0) {
-    pos += sprintf(buf + pos, "%d day%s, ", updays, (updays != 1) ? "s" : "");
+    pos += snprintf(buf + pos, sizeof(buf) - pos, "%d %s, ", updays,
+      updays != 1 ? "days" : "day");
   }
 
   upminutes = (int) uptime_secs / 60;
@@ -295,11 +296,11 @@ static const char *show_uptime(time_t uptime_since) {
   upminutes = upminutes % 60;
 
   if (uphours) {
-    sprintf(buf + pos, "%2d hr%s %02d min", uphours,
-      (uphours != 1) ? "s" : "", upminutes);
+    snprintf(buf + pos, sizeof(buf) - pos, "%2d %s %02d min", uphours,
+      uphours != 1 ? "hrs" : "hr", upminutes);
 
   } else {
-    sprintf(buf + pos, "%d min", upminutes);
+    snprintf(buf + pos, sizeof(buf) - pos, "%d min", upminutes);
   }
 
   return buf;

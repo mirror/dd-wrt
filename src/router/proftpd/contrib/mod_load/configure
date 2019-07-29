@@ -672,11 +672,13 @@ OBJEXT
 CPP
 GREP
 EGREP
-MODULE_LIBS
 LIBOBJS
 NEED_SETGID
 KMEM_GROUP
 GETLOADAVG_LIBS
+INCLUDES
+LIBDIRS
+MODULE_LIBS
 LTLIBOBJS'
 ac_subst_files=''
       ac_precious_vars='build_alias
@@ -4033,14 +4035,6 @@ done
 
 
 
-
-MODULE_LIBS=
-if test "$ostype" = "SOLARIS" ; then
-  MODULE_LIBS="-lkstat"
-fi
-
-
-
 { echo "$as_me:$LINENO: checking for kstat_open in -lkstat" >&5
 echo $ECHO_N "checking for kstat_open in -lkstat... $ECHO_C" >&6; }
 if test "${ac_cv_lib_kstat_kstat_open+set}" = set; then
@@ -6044,6 +6038,19 @@ LIBS=$ac_save_LIBS
 
 
 
+INCLUDES="$ac_build_addl_includes"
+LIBDIRS="$ac_build_addl_libdirs"
+
+
+
+
+
+MODULE_LIBS=
+if test "$ostype" = "SOLARIS" ; then
+  MODULE_LIBS="-lkstat"
+fi
+
+
 ac_config_headers="$ac_config_headers mod_load.h"
 
 ac_config_files="$ac_config_files Makefile"
@@ -6722,15 +6729,17 @@ OBJEXT!$OBJEXT$ac_delim
 CPP!$CPP$ac_delim
 GREP!$GREP$ac_delim
 EGREP!$EGREP$ac_delim
-MODULE_LIBS!$MODULE_LIBS$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 NEED_SETGID!$NEED_SETGID$ac_delim
 KMEM_GROUP!$KMEM_GROUP$ac_delim
 GETLOADAVG_LIBS!$GETLOADAVG_LIBS$ac_delim
+INCLUDES!$INCLUDES$ac_delim
+LIBDIRS!$LIBDIRS$ac_delim
+MODULE_LIBS!$MODULE_LIBS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 65; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 67; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

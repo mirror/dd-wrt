@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2013-2015 The ProFTPD Project team
+ * Copyright (c) 2013-2018 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -56,6 +56,9 @@ int pr_ascii_ftp_from_crlf(pool *p, char *in, size_t inlen, char **out,
 /*
  * Returns the number N on success, and -1 on error, setting errno
  * appropriately.
+ *
+ * NOTE: This function uses malloc(3) deliberately (see Bug#4352), and thus
+ * the caller MUST call free(3) on the **out pointer.
  */
 int pr_ascii_ftp_to_crlf(pool *p, char *in, size_t inlen, char **out,
   size_t *outlen);

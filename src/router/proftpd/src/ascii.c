@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2015-2016 The ProFTPD Project team
+ * Copyright (c) 2015-2018 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -130,8 +130,17 @@ found_lf:
 
   if (lf_pos == src_len) {
     /* No translation needed. */
-    *out = in;
     *outlen = inlen;
+
+    dst = malloc(inlen);
+    if (dst == NULL) {
+      pr_log_pri(PR_LOG_ALERT, "Out of memory!");
+      exit(1);
+    }
+
+    memcpy(dst, in, inlen);
+    *out = dst;
+
     return 0;
   }
 
@@ -166,11 +175,7 @@ found_lf:
   pr_signals_handle();
 
   *outlen = i;
-  *out = pcalloc(p, *outlen);
-  memcpy(*out, dst, i);
-
-  free(dst);
-  dst = NULL;
+  *out = dst;
 
   return i - j;
 }

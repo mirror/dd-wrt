@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2016 The ProFTPD Project team
+ * Copyright (c) 2001-2017 The ProFTPD Project team
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -220,7 +220,7 @@ void pr_response_add_err(const char *numeric, const char *fmt, ...) {
   }
 
   va_start(msg, fmt);
-  res = vsnprintf(resp_buf, sizeof(resp_buf), fmt, msg);
+  res = pr_vsnprintf(resp_buf, sizeof(resp_buf), fmt, msg);
   va_end(msg);
   
   resp_buf[sizeof(resp_buf) - 1] = '\0';
@@ -273,7 +273,7 @@ void pr_response_add(const char *numeric, const char *fmt, ...) {
   }
 
   va_start(msg, fmt);
-  res = vsnprintf(resp_buf, sizeof(resp_buf), fmt, msg);
+  res = pr_vsnprintf(resp_buf, sizeof(resp_buf), fmt, msg);
   va_end(msg);
 
   resp_buf[sizeof(resp_buf) - 1] = '\0';
@@ -342,7 +342,7 @@ void pr_response_send_async(const char *resp_numeric, const char *fmt, ...) {
   max_len = sizeof(buf) - len;
   
   va_start(msg, fmt);
-  res = vsnprintf(buf + len + 1, max_len, fmt, msg);
+  res = pr_vsnprintf(buf + len + 1, max_len, fmt, msg);
   va_end(msg);
   
   buf[sizeof(buf) - 1] = '\0';
@@ -370,7 +370,7 @@ void pr_response_send(const char *resp_numeric, const char *fmt, ...) {
   }
 
   va_start(msg, fmt);
-  vsnprintf(resp_buf, sizeof(resp_buf), fmt, msg);
+  pr_vsnprintf(resp_buf, sizeof(resp_buf), fmt, msg);
   va_end(msg);
   
   resp_buf[sizeof(resp_buf) - 1] = '\0';
@@ -399,7 +399,7 @@ void pr_response_send_raw(const char *fmt, ...) {
   }
 
   va_start(msg, fmt);
-  vsnprintf(resp_buf, sizeof(resp_buf), fmt, msg);
+  pr_vsnprintf(resp_buf, sizeof(resp_buf), fmt, msg);
   va_end(msg);
 
   resp_buf[sizeof(resp_buf) - 1] = '\0';

@@ -74,7 +74,7 @@ my $TESTS = {
     test_class => [qw(forking)],
   },
 
-  deflate_mode_z_tls => {
+  deflate_tls_mode_z => {
     order => ++$order,
     test_class => [qw(forking mod_tls)],
   },
@@ -2082,7 +2082,7 @@ sub deflate_stor_64kb_binary_chunks {
   unlink($log_file);
 }
 
-sub deflate_mode_z_tls {
+sub deflate_tls_mode_z {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
 
@@ -2190,7 +2190,9 @@ sub deflate_mode_z_tls {
       my $resp_msg = $client->last_message();
       my $expected;
 
-      $expected = '504 Unable to handle MODE Z at this time';
+      # Now that we support MODE Z for FTPS connections (Issue #505), we
+      # expect success here.
+      $expected = '200 OK';
       $self->assert($expected eq $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
     };

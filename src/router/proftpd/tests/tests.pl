@@ -77,6 +77,7 @@ if (scalar(@ARGV) > 0) {
     t/commands/feat.t
     t/commands/help.t
     t/commands/quit.t
+    t/commands/rang.t
     t/commands/rnfr.t
     t/commands/rnto.t
     t/commands/rest.t
@@ -140,7 +141,6 @@ if (scalar(@ARGV) > 0) {
     t/config/ifdefine.t
     t/config/include.t
     t/config/listoptions.t
-    t/config/loginpasswordprompt.t
     t/config/masqueradeaddress.t
     t/config/maxclients.t
     t/config/maxclientsperclass.t
@@ -174,6 +174,7 @@ if (scalar(@ARGV) > 0) {
     t/config/showsymlinks.t
     t/config/socketoptions.t
     t/config/storeuniqueprefix.t
+    t/config/sysloglevel.t
     t/config/timeoutidle.t
     t/config/timeoutlogin.t
     t/config/timeoutnotransfer.t
@@ -287,6 +288,11 @@ if (scalar(@ARGV) > 0) {
       test_class => [qw(mod_exec)],
     },
 
+    't/modules/mod_facl.t' => {
+      order => ++$order,
+      test_class => [qw(mod_facl)],
+    },
+
     't/modules/mod_geoip.t' => {
       order => ++$order,
       test_class => [qw(mod_geoip)],
@@ -346,6 +352,11 @@ if (scalar(@ARGV) > 0) {
     't/modules/mod_readme.t' => {
       order => ++$order,
       test_class => [qw(mod_readme)],
+    },
+
+    't/modules/mod_redis.t' => {
+      order => ++$order,
+      test_class => [qw(mod_redis)],
     },
 
     't/modules/mod_rewrite.t' => {

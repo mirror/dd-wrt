@@ -111,7 +111,7 @@ and neither directive affects permissions, real ownership or access control
 <p>
 <hr>
 <h3><a name="ListOptions">ListOptions</a></h3>
-<strong>Syntax:</strong> ListOptions <em>options [strict [maxdepth depth] [maxfiles count] [maxdirs count] [LISTOnly] [NLSTOnly] [NoErrorIfAbsent] [NoAdjustedSymlinks] [SortedNLST]</em><br>
+<strong>Syntax:</strong> ListOptions <em>options [strict [maxdepth depth] [maxfiles count] [maxdirs count] [LISTOnly] [NLSTOnly] [NoErrorIfAbsent] [AdjustedSymlinks] [SortedNLST]</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code>, <code>&lt;Directory&gt;</code>, .ftpaccess<br>
 <strong>Module:</strong> mod_ls<br>
@@ -154,15 +154,15 @@ The currently supported <em>flags</em> are:
   </li>
 
   <p>
-  <li><code>NoAdjustedSymlinks</code><br>
+  <li><code>AdjustedSymlinks</code><br>
     <p>
-    By default, <code>mod_ls</code> tries to automatically adjust any
-    symlink destination paths when the FTP session is chrooted, so that
-    the adjusted symlinks work properly <i>e.g.</i> for FTP clients.
+    This <em>flag</em> tells <code>mod_ls</code> to try to automatically
+    adjust any symlink destination paths when the FTP session is chrooted,
+    so that the adjusted symlinks work properly <i>e.g.</i> for FTP clients.
 
     <p>
     <b>Note</b> that this <em>flag</em> first appeared in
-    <code>proftpd-1.3.6rc2</code>.
+    <code>proftpd-1.3.7rc1</code>.
   </li>
 
   <p>
@@ -229,11 +229,28 @@ Examples:
 <h2><a name="Installation">Installation</a></h2>
 The <code>mod_ls</code>module is <b>always</b> installed.
 
+<p><a name="FAQ">
+<b>Frequently Asked Questions</b><br>
+
+<p><a name="NLSTNamesOnly">
+<font color=red>Question</font>: I have a legacy FTP application which sends
+the <code>NLST</code> command, and expects to receive <i>only</i> file
+<em>names</em>, without any directory prefix (relative or absolute).  I cannot
+change this application.  How can I configure ProFTPD to return only names
+for the <code>NLST</code> command?<br>
+<font color=blue>Answer</font>: You can use the
+<a href="#ListOptions"><code>ListOptions</code></a> directive to achieve
+this, like so:
+<pre>
+  # We want only names, no hidden files, and only for NLST
+  ListOptions '-A -1 NLSTOnly'
+</pre>
+
 <p>
 <hr><br>
 
 <font size=2><b><i>
-&copy; Copyright 2000-2016 The ProFTPD Project<br>
+&copy; Copyright 2000-2019 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
 
