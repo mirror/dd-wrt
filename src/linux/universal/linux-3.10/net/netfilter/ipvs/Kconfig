@@ -206,6 +206,7 @@ config	IP_VS_SH
 
 config	IP_VS_MH
 	tristate "maglev hashing scheduling"
+	select SIPHASH
 	---help---
 	  The maglev consistent hashing scheduling algorithm provides the
 	  Google's Maglev hashing algorithm as a IPVS scheduler. It assigns
