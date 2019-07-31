@@ -1466,6 +1466,7 @@ networking.lblcr="Locality Least-Connection / Replication";
 networking.dh="Destination Hash";
 networking.sh="Source Hash";
 networking.sed="Shortest Expected Delay";
+networking.mh="Maglev Hashing";
 networking.nq="Never Queue";
 networking.ipvs_targets="Virtual Server Targets";
 networking.ipvs_targetip="Target IP";
