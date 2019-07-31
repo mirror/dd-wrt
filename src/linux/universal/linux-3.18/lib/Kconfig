@@ -16,6 +16,9 @@ config BITREVERSE
 config RATIONAL
 	boolean
 
+config SIPHASH
+	bool
+
 config GENERIC_STRNCPY_FROM_USER
 	bool
 
