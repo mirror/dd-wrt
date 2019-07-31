@@ -120,7 +120,6 @@ void start_ftpsrv(void)
 		"User            root\n"
 		"Group           root\n"
 		"UseReverseDNS   off\n"
-		"IdentLookups    off\n"
 		"RootLogin       on\n"
 		"AllowOverwrite  on\n"
 		"AllowRetrieveRestart  on\n"
