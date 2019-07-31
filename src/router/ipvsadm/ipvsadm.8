@@ -267,6 +267,24 @@ fixed service rate (weight) of the ith server.
 \fBnq\fR - Never Queue: assigns an incoming job to an idle server if
 there is, instead of waiting for a fast one; if all the servers are
 busy, it adopts the Shortest Expected Delay policy to assign the job.
+.sp
+\fBfo\fR - Weighted Failover: assigns an incoming job to the server
+with the highest weight that is currently available.
+.sp
+\fBovf\fR - Weighted Overflow: assigns an incoming job to the server
+with the highest weight that is currently available and overflows
+to the next when active connections exceed the node's weight. Note
+that this scheduler might not be suitable for UDP because it only uses
+active connections.
+.sp
+\fBmh\fR - Maglev Hashing: assigns incoming jobs based on Google's
+Maglev hashing algorithm, providing an almost equal share of jobs to
+each real server and provides minimal disruption. When the set of real
+servers changes, a connection will likely be sent to the same real
+server as it was before.
+This scheduler has two flags: mh-fallback, which enables fallback to a
+different server if the selected server was unavailable, and mh-port,
+which adds the source port number to the hash computation.
 .TP
 .B -p, --persistent [\fItimeout\fP]
 Specify that a virtual service is persistent. If this option is
