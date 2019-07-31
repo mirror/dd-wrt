@@ -25,6 +25,7 @@ https://www.usenix.org/system/files/conference/nsdi16/nsdi16-paper-eisenbud.pdf
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/skbuff.h>
+#include <linux/version.h>
 
 #include <net/ip_vs.h>
 
@@ -34,6 +35,15 @@ https://www.usenix.org/system/files/conference/nsdi16/nsdi16-paper-eisenbud.pdf
 
 #define IP_VS_SVC_F_SCHED_MH_FALLBACK	IP_VS_SVC_F_SCHED1 /* MH fallback */
 #define IP_VS_SVC_F_SCHED_MH_PORT	IP_VS_SVC_F_SCHED2 /* MH use port */
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,4,0)
+/* No support for inverse packets before 4.4 */
+static inline bool
+ip_vs_iph_inverse(const struct ip_vs_iphdr *iph)
+{
+	return false;
+}
+#endif
 
 struct ip_vs_mh_lookup {
 	struct ip_vs_dest __rcu	*dest;	/* real server (cache) */
