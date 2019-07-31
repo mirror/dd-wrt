@@ -63,7 +63,7 @@ struct nl_msg *ipvs_nl_message(int cmd, int flags)
 	if (!msg)
 		return NULL;
 
-	genlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ, family, 0, flags,
+	genlmsg_put(msg, NL_AUTO_PORT, NL_AUTO_SEQ, family, 0, flags,
 		    cmd, IPVS_GENL_VERSION);
 
 	return msg;
@@ -74,9 +74,23 @@ static int ipvs_nl_noop_cb(struct nl_msg *msg, void *arg)
 	return NL_OK;
 }
 
+struct cb_err_data {
+	int	err;
+};
+
+static int ipvs_nl_err_cb(struct sockaddr_nl *nla, struct nlmsgerr *nlerr,
+			  void *arg)
+{
+	struct cb_err_data *data = arg;
+
+	data->err = nlerr->error;
+	return -nl_syserr2nlerr(nlerr->error);
+}
+
 int ipvs_nl_send_message(struct nl_msg *msg, nl_recvmsg_msg_cb_t func, void *arg)
 {
 	int err = EINVAL;
+	struct cb_err_data err_data = { .err = 0 };
 
 	sock = nl_socket_alloc();
 	if (!sock) {
@@ -100,12 +114,18 @@ int ipvs_nl_send_message(struct nl_msg *msg, nl_recvmsg_msg_cb_t func, void *arg
 
 	if (nl_socket_modify_cb(sock, NL_CB_VALID, NL_CB_CUSTOM, func, arg) != 0)
 		goto fail_genl;
+	if (nl_socket_modify_err_cb(sock, NL_CB_CUSTOM, ipvs_nl_err_cb,
+				    &err_data) != 0)
+		goto fail_genl;
 
 	if (nl_send_auto_complete(sock, msg) < 0)
 		goto fail_genl;
 
-	if ((err = -nl_recvmsgs_default(sock)) > 0)
+	if (nl_recvmsgs_default(sock) < 0) {
+		if (err_data.err)
+			err = -err_data.err;
 		goto fail_genl;
+	}
 
 	nlmsg_free(msg);
 
@@ -699,7 +719,7 @@ static int ipvs_services_parse_cb(struct nl_msg *msg, void *arg)
 
 	strncpy(get->entrytable[i].sched_name,
 		nla_get_string(svc_attrs[IPVS_SVC_ATTR_SCHED_NAME]),
-		IP_VS_SCHEDNAME_MAXLEN);
+		IP_VS_SCHEDNAME_MAXLEN - 1);
 
 	if (svc_attrs[IPVS_SVC_ATTR_PE_NAME])
 		strncpy(get->entrytable[i].pe_name,
@@ -1179,7 +1199,7 @@ static int ipvs_daemon_parse_cb(struct nl_msg *msg, void *arg)
 	u[i].state = nla_get_u32(daemon_attrs[IPVS_DAEMON_ATTR_STATE]);
 	strncpy(u[i].mcast_ifn,
 		nla_get_string(daemon_attrs[IPVS_DAEMON_ATTR_MCAST_IFN]),
-		IP_VS_IFNAME_MAXLEN);
+		IP_VS_IFNAME_MAXLEN - 1);
 	u[i].syncid = nla_get_u32(daemon_attrs[IPVS_DAEMON_ATTR_SYNC_ID]);
 
 	a = daemon_attrs[IPVS_DAEMON_ATTR_SYNC_MAXLEN];
@@ -1245,7 +1265,8 @@ ipvs_daemon_t *ipvs_get_daemon(void)
 	}
 	for (i = 0; i < 2; i++) {
 		u[i].state = dmk[i].state;
-		strncpy(u[i].mcast_ifn, dmk[i].mcast_ifn, IP_VS_IFNAME_MAXLEN);
+		strncpy(u[i].mcast_ifn, dmk[i].mcast_ifn,
+			IP_VS_IFNAME_MAXLEN - 1);
 		u[i].syncid = dmk[i].syncid;
 	}
 	return u;

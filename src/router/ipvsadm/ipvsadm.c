@@ -118,7 +118,7 @@
 #include "libipvs/libipvs.h"
 
 #define IPVSADM_VERSION_NO	"v" VERSION
-#define IPVSADM_VERSION_DATE	"2016/12/23"
+#define IPVSADM_VERSION_DATE	"2019/07/02"
 #define IPVSADM_VERSION		IPVSADM_VERSION_NO " " IPVSADM_VERSION_DATE
 
 #define MAX_TIMEOUT		(86400*31)	/* 31 days */
@@ -595,7 +595,7 @@ parse_options(int argc, char **argv, struct ipvs_command_entry *ce,
 		case 's':
 			set_option(options, OPT_SCHEDULER);
 			strncpy(ce->svc.sched_name,
-				optarg, IP_VS_SCHEDNAME_MAXLEN);
+				optarg, IP_VS_SCHEDNAME_MAXLEN - 1);
 			break;
 		case 'p':
 			set_option(options, OPT_PERSISTENT);
@@ -670,7 +670,7 @@ parse_options(int argc, char **argv, struct ipvs_command_entry *ce,
 		case TAG_MCAST_INTERFACE:
 			set_option(options, OPT_MCAST);
 			strncpy(ce->daemon.mcast_ifn,
-				optarg, IP_VS_IFNAME_MAXLEN);
+				optarg, IP_VS_IFNAME_MAXLEN - 1);
 			break;
 		case 'I':
 			set_option(options, OPT_SYNCID);
@@ -1145,6 +1145,16 @@ static unsigned int parse_sched_flags(const char *sched, char *optarg)
 			if (strcmp(sched, "sh"))
 				fail(2, "incompatible scheduler flag `%s'",
 				     flag);
+		} else if (!strcmp(flag, "mh-fallback")) {
+			flags |= IP_VS_SVC_F_SCHED_MH_FALLBACK;
+			if (strcmp(sched, "mh"))
+				fail(2, "incompatible scheduler flag `%s'",
+				     flag);
+		} else if (!strcmp(flag, "mh-port")) {
+			flags |= IP_VS_SVC_F_SCHED_MH_PORT;
+			if (strcmp(sched, "mh"))
+				fail(2, "incompatible scheduler flag `%s'",
+				     flag);
 		} else {
 			fail(2, "invalid scheduler flag `%s'", flag);
 		}
@@ -1415,8 +1425,8 @@ static void print_conn(char *buf, unsigned int format)
 	unsigned int    expires;
 	unsigned short  af = AF_INET;
 	unsigned short  daf = AF_INET;
-	char		pe_name[IP_VS_PENAME_MAXLEN];
-	char		pe_data[IP_VS_PEDATA_MAXLEN];
+	char		pe_name[IP_VS_PENAME_MAXLEN + 1];
+	char		pe_data[IP_VS_PEDATA_MAXLEN + 1];
 
 	int n;
 	char temp1[INET6_ADDRSTRLEN], temp2[INET6_ADDRSTRLEN], temp3[INET6_ADDRSTRLEN];
@@ -1589,8 +1599,11 @@ static void print_sched_flags(ipvs_service_entry_t *se)
 			strcat(flags, "sh-fallback,");
 		if (se->flags & IP_VS_SVC_F_SCHED_SH_PORT)
 			strcat(flags, "sh-port,");
-		if (se->flags & IP_VS_SVC_F_SCHED3)
-			strcat(flags, "flag-3,");
+	} else if (!strcmp(se->sched_name, "mh")) {
+		if (se->flags & IP_VS_SVC_F_SCHED_MH_FALLBACK)
+			strcat(flags, "mh-fallback,");
+		if (se->flags & IP_VS_SVC_F_SCHED_MH_PORT)
+			strcat(flags, "mh-port,");
 	} else {
 		if (se->flags & IP_VS_SVC_F_SCHED1)
 			strcat(flags, "flag-1,");
