@@ -141,7 +141,7 @@ void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 	char *ipvsname, *sourceip, *sourceport, *scheduler, *sourceproto;
 	char ipvs_name[32];
 	char buf[128];
-	char *schedulers[] = { "wrr", "lc", "wlc", "fo", "ovf", "lblc", "lblcr", "dh", "sh", "sed", "nq", NULL };
+	char *schedulers[] = {"dh", "fo",  "lblc", "lblcr", "lc", "mh", "nq", "ovf", "sed", "sh", "wlc", "wrr", NULL };
 
 	int realcount = nvram_default_geti("ipvs_count", 0);
 
