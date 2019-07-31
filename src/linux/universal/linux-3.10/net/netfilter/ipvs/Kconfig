@@ -204,26 +204,6 @@ config	IP_VS_SH
 	  If you want to compile it in kernel, say Y. To compile it as a
 	  module, choose M here. If unsure, say N.
 
-config	IP_VS_MH
-	tristate "maglev hashing scheduling"
-	select SIPHASH
-	---help---
-	  The maglev consistent hashing scheduling algorithm provides the
-	  Google's Maglev hashing algorithm as a IPVS scheduler. It assigns
-	  network connections to the servers through looking up a statically
-	  assigned special hash table called the lookup table. Maglev hashing
-	  is to assign a preference list of all the lookup table positions
-	  to each destination.
-
-	  Through this operation, The maglev hashing gives an almost equal
-	  share of the lookup table to each of the destinations and provides
-	  minimal disruption by using the lookup table. When the set of
-	  destinations changes, a connection will likely be sent to the same
-	  destination as it was before.
-
-	  If you want to compile it in kernel, say Y. To compile it as a
-	  module, choose M here. If unsure, say N.
-
 config	IP_VS_SED
 	tristate "shortest expected delay scheduling"
 	---help---
