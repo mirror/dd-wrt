@@ -1459,6 +1459,9 @@ static struct nf_hook_ops fast_classifier_ops_post_routing[] __read_mostly = {
 #endif
 };
 
+extern unsigned int nf_ct_udp_timeout;
+extern unsigned int nf_ct_udp_timeout_stream;
+
 /*
  * fast_classifier_sync_rule()
  *	Synchronize a connection's state.
