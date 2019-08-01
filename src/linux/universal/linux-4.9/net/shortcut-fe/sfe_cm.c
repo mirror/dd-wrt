@@ -1124,7 +1124,7 @@ static int __init sfe_cm_init(void)
 	sfe_ipv4_init();
 
 // code block disabled by quarkysg, 14/10/17
-#if 0
+#if 1
 	DEBUG_INFO("SFE CM init\n");
 
 	/*
@@ -1191,12 +1191,12 @@ static int __init sfe_cm_init(void)
 #endif
 // end code block disable by quarkysg, 14/10/17
 
-	fast_classifier_init();
+//	fast_classifier_init();
 
 	return 0;
 
 // code block disabled by quarkysg, 14/10/17
-#if 0
+#if 1
 #ifdef CONFIG_NF_CONNTRACK_EVENTS
 exit4:
 	nf_unregister_hooks(sfe_cm_ops_post_routing, ARRAY_SIZE(sfe_cm_ops_post_routing));
@@ -1234,10 +1234,10 @@ static void __exit sfe_cm_exit(void)
 	struct sfe_cm *sc = &__sc;
 
 	//DEBUG_INFO("SFE CM exit\n");
-	fast_classifier_exit();
+//	fast_classifier_exit();
 
 // code block disabled by quarkysg, 14/10/17
-#if 0
+#if 1
 	/*
 	 * Unregister our sync callback.
 	 */

@@ -1828,7 +1828,7 @@ static const struct device_attribute fast_classifier_exceptions_attr =
 /*
  * fast_classifier_init()
  */
-static int fast_classifier_init(void)
+static int __init fast_classifier_init(void)
 {
 	struct fast_classifier *sc = &__fsc;
 	int result = -1;
@@ -1994,7 +1994,7 @@ exit1:
 /*
  * fast_classifier_exit()
  */
-static void fast_classifier_exit(void)
+static void __exit fast_classifier_exit(void)
 {
 	struct fast_classifier *sc = &__fsc;
 	int result = -1;
@@ -2055,3 +2055,10 @@ static void fast_classifier_exit(void)
 
 	kobject_put(sc->sys_fast_classifier);
 }
+
+module_init(fast_classifier_init)
+module_exit(fast_classifier_exit)
+
+MODULE_DESCRIPTION("Shortcut Forwarding Engine - Connection Manager");
+MODULE_LICENSE("Dual BSD/GPL");
+
