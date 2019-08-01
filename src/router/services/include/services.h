@@ -283,6 +283,8 @@ void start_wlconf(void);
 void stop_wlconf(void);
 void start_emf(void);
 void stop_emf(void);
+void start_sfe(void);
+void stop_sfe(void);
 
 void start_nvram(void);
 void start_restore_defaults(void);
