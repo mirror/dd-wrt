@@ -1579,6 +1579,42 @@ static void fast_classifier_sync_rule(struct sfe_connection_sync *sis)
 		}
 		spin_unlock_bh(&ct->lock);
 		break;
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 4, 0))
+	case IPPROTO_UDP:
+		{
+		struct nf_conntrack_l4proto *l4proto;
+		unsigned int *timeouts;
+		/*
+		 * In Linux connection track, UDP flow has two timeout values:
+		 * /proc/sys/net/netfilter/nf_conntrack_udp_timeout:
+		 * 	this is for uni-direction UDP flow, normally its value is 60 seconds
+		 * /proc/sys/net/netfilter/nf_conntrack_udp_timeout_stream:
+		 * 	this is for bi-direction UDP flow, normally its value is 180 seconds
+		 *
+		 * Linux will update timer of UDP flow to stream timeout once it seen packets
+		 * in reply direction. But if flow is accelerated by NSS or SFE, Linux won't
+		 * see any packets. So we have to do the same thing in our stats sync message.
+		 */
+
+
+		if (!test_bit(IPS_ASSURED_BIT, &ct->status) && acct) {
+			if (atomic64_read(&SFE_ACCT_COUNTER(acct)[IP_CT_DIR_REPLY].packets)) {
+				set_bit(IPS_SEEN_REPLY_BIT, &ct->status);
+				set_bit(IPS_ASSURED_BIT, &ct->status);
+			}
+		}
+		l4proto = __nf_ct_l4proto_find((sis->is_v6 ? AF_INET6 : AF_INET), IPPROTO_UDP);
+		timeouts = nf_ct_timeout_lookup(&init_net, ct, l4proto);
+		spin_lock_bh(&ct->lock);
+		if (test_bit(IPS_SEEN_REPLY_BIT, &ct->status)) {
+			ct->timeout = nfct_time_stamp + timeouts[UDP_CT_REPLIED];
+		} else {
+			ct->timeout = nfct_time_stamp + timeouts[UDP_CT_UNREPLIED];
+		}
+		spin_unlock_bh(&ct->lock);
+		}
+		break;
+#endif
 	}
 
 	/*
