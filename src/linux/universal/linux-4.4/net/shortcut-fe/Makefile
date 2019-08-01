@@ -3,6 +3,7 @@
 #
 
 obj-m += shortcut-fe.o
+obj-m += fast-classifier.o
 
 
 ifeq ($(CONFIG_IPV6),y)
