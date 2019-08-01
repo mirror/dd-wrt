@@ -1021,14 +1021,18 @@ void start_wshaper(void)
 	stop_wshaper();
 
 	if (!nvram_matchi("wshaper_enable", 1)) {
+#ifdef HAVE_SFE
 		if (nvram_matchi("sfe", 1))
-			insmod("shortcut-fe");
+			start_sfe();
 		else
-			rmmod("shortcut-fe");
+			stop_sfe();
+#endif
 		return;
-	} else
-		rmmod("shortcut-fe");
-
+	} 
+#ifdef HAVE_SFE
+	else
+		stop_sfe();
+#endif
 	if (!strcmp(wshaper_dev, "WAN")
 	    && (nvram_match("wan_proto", "disabled")
 		|| client_bridged_enabled()))

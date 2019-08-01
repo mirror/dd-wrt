@@ -207,6 +207,10 @@ endif
 ifeq ($(CONFIG_AP120C),y)
 CFLAGS_EXTRA += -DHAVE_AP120C
 endif
+#ifeq ($(CONFIG_SHORTCUT_FE),m)
+CFLAGS_EXTRA += -DHAVE_SFE
+OBJS += sfe.o
+#endif
 ifeq ($(CONFIG_80211AC),y)
 CFLAGS_EXTRA += -DHAVE_EMF
 OBJS += emf.o
