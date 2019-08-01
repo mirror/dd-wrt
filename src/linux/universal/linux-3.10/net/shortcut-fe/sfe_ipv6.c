@@ -3499,7 +3499,7 @@ static const struct device_attribute sfe_ipv6_flow_cookie_attr =
 /*
  * sfe_ipv6_init()
  */
-static int sfe_ipv6_init(void)
+static int __init sfe_ipv6_init(void)
 {
 	struct sfe_ipv6 *si = &__si6;
 	int result = -1;
@@ -3571,7 +3571,7 @@ exit1:
 /*
  * sfe_ipv6_exit()
  */
-static void sfe_ipv6_exit(void)
+static void __exit sfe_ipv6_exit(void)
 {
 	struct sfe_ipv6 *si = &__si6;
 
@@ -3593,3 +3593,22 @@ static void sfe_ipv6_exit(void)
 
 	kobject_put(si->sys_sfe_ipv6);
 }
+
+module_init(sfe_ipv6_init)
+module_exit(sfe_ipv6_exit)
+
+EXPORT_SYMBOL(sfe_ipv6_recv);
+EXPORT_SYMBOL(sfe_ipv6_create_rule);
+EXPORT_SYMBOL(sfe_ipv6_destroy_rule);
+EXPORT_SYMBOL(sfe_ipv6_destroy_all_rules_for_dev);
+EXPORT_SYMBOL(sfe_ipv6_register_sync_rule_callback);
+EXPORT_SYMBOL(sfe_ipv6_mark_rule);
+EXPORT_SYMBOL(sfe_ipv6_update_rule);
+#ifdef CONFIG_NF_FLOW_COOKIE
+EXPORT_SYMBOL(sfe_ipv6_register_flow_cookie_cb);
+EXPORT_SYMBOL(sfe_ipv6_unregister_flow_cookie_cb);
+#endif
+
+MODULE_DESCRIPTION("Shortcut Forwarding Engine - IPv6 support");
+MODULE_LICENSE("Dual BSD/GPL");
+
