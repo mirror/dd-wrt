@@ -869,7 +869,7 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 	 * Don't process locally generated packets.
 	 */
 	if (skb->sk) {
-		sfe_cm_incr_exceptions(FAST_CL_EXCEPTION_LOCAL_OUT);
+		fast_classifier_incr_exceptions(FAST_CL_EXCEPTION_LOCAL_OUT);
 		DEBUG_TRACE("skip local out packet\n");
 		return NF_ACCEPT;
 	}
