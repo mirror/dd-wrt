@@ -29,7 +29,7 @@
 #include <signal.h>
 #include <services.h>
 
-void start_emf(void)
+void start_sfe(void)
 {
 	insmod("shortcut-fe");
 	insmod("shortcut-fe-ipv6");
@@ -38,7 +38,7 @@ void start_emf(void)
 	return;
 }
 
-void stop_emf(void)
+void stop_sfe(void)
 {
 	rmmod("fast-classifier");
 	rmmod("shortcut-fe-ipv6");
