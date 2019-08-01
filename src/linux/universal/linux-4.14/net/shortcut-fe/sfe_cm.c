@@ -1105,10 +1105,6 @@ static int __init sfe_cm_init(void)
 	size_t i, j;
 	struct net *net;
 
-#ifdef SFE_SUPPORT_IPV6
-	sfe_ipv6_init();
-#endif
-	sfe_ipv4_init();
 
 // code block disabled by quarkysg, 14/10/17
 #if 1
@@ -1180,7 +1176,6 @@ static int __init sfe_cm_init(void)
 #endif
 // end code block disable by quarkysg, 14/10/17
 
-//	fast_classifier_init();
 
 	return 0;
 
@@ -1221,7 +1216,6 @@ static void __exit sfe_cm_exit(void)
 	struct sfe_cm *sc = &__sc;
 	struct net *net;
 //	DEBUG_INFO("SFE CM exit\n");
-//	fast_classifier_exit();
 
 // code block disabled by quarkysg, 14/10/17
 #if 1
