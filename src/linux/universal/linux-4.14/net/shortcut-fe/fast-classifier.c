@@ -1602,7 +1602,7 @@ static void fast_classifier_sync_rule(struct sfe_connection_sync *sis)
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 4, 0))
 	case IPPROTO_UDP:
 		{
-		struct nf_conntrack_l4proto *l4proto;
+		const struct nf_conntrack_l4proto *l4proto;
 		unsigned int *timeouts;
 		/*
 		 * In Linux connection track, UDP flow has two timeout values:
