@@ -227,6 +227,17 @@ static bool sfe_cm_find_dev_and_mac_addr(sfe_ip_addr_t *addr, struct net_device 
 	struct net_device *mac_dev;
 
 	/*
+	 * If we have skb provided, use it as the original code is unable
+	 * to lookup routes that are policy routed.
+	 *
+	 * quarkysg, 22/12/17
+	 */
+	if (unlikely(skb)) {
+		dst = skb_dst(skb);
+		goto skip_dst_lookup;
+	}
+
+	/*
 	 * Look up the rtable entry for the IP address then get the hardware
 	 * address from its neighbour structure.  This means this work when the
 	 * neighbours are routers too.
@@ -248,18 +259,27 @@ static bool sfe_cm_find_dev_and_mac_addr(sfe_ip_addr_t *addr, struct net_device 
 		dst = (struct dst_entry *)rt6;
 	}
 
+skip_dst_lookup:	// quarkysg, 21/10/17
 	rcu_read_lock();
 	neigh = sfe_dst_get_neighbour(dst, addr);
 	if (unlikely(!neigh)) {
 		rcu_read_unlock();
-		dst_release(dst);
+		//dst_release(dst);
+		// only release dst_entry found in this method, quarkysg, 21/10/17
+		if (likely(!skb)) {
+			dst_release(dst);
+		}
 		goto ret_fail;
 	}
 
 	if (unlikely(!(neigh->nud_state & NUD_VALID))) {
 		rcu_read_unlock();
 		neigh_release(neigh);
-		dst_release(dst);
+		//dst_release(dst);
+		// only release dst_entry found in this method, quarkysg, 21/10/17
+		if (likely(!skb)) {
+			dst_release(dst);
+		}
 		goto ret_fail;
 	}
 
@@ -267,7 +287,11 @@ static bool sfe_cm_find_dev_and_mac_addr(sfe_ip_addr_t *addr, struct net_device 
 	if (!mac_dev) {
 		rcu_read_unlock();
 		neigh_release(neigh);
-		dst_release(dst);
+		//dst_release(dst);
+		// only release dst_entry found in this method, quarkysg, 21/10/17
+		if (likely(!skb)) {
+			dst_release(dst);
+		}
 		goto ret_fail;
 	}
 
@@ -277,7 +301,11 @@ static bool sfe_cm_find_dev_and_mac_addr(sfe_ip_addr_t *addr, struct net_device 
 	*dev = mac_dev;
 	rcu_read_unlock();
 	neigh_release(neigh);
-	dst_release(dst);
+	//dst_release(dst);
+	// only release dst_entry found in this method, quarkysg, 21/10/17
+	if (likely(!skb)) {
+		dst_release(dst);
+	}
 
 	return true;
 
