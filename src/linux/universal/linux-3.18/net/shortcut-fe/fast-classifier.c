@@ -851,6 +851,26 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 		return NF_ACCEPT;
 	}
 
+#ifdef CONFIG_XFRM
+	/*
+	 * Packet to xfrm for encapsulation, we can't process it
+	 */
+	if (unlikely(skb_dst(skb)->xfrm)) {
+		DEBUG_TRACE("packet to xfrm, ignoring\n");
+		return NF_ACCEPT;
+	}
+#endif
+
+	/*
+	 * Don't process locally generated packets.
+	 */
+	if (skb->sk) {
+		sfe_cm_incr_exceptions(FAST_CL_EXCEPTION_LOCAL_OUT);
+		DEBUG_TRACE("skip local out packet\n");
+		return NF_ACCEPT;
+	}
+
+
 	/*
 	 * Don't process packets that are not being forwarded.
 	 */
