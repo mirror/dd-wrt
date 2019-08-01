@@ -34,6 +34,7 @@ void start_emf(void)
 	insmod("shortcut-fe");
 	insmod("shortcut-fe-ipv6");
 	insmod("fast-classifier");
+	dd_loginfo("sfe", "shortcut forwarding engine successfully started\n");
 	return;
 }
 
@@ -42,6 +43,7 @@ void stop_emf(void)
 	rmmod("fast-classifier");
 	rmmod("shortcut-fe-ipv6");
 	rmmod("shortcut-fe");
+	dd_loginfo("sfe", "shortcut forwarding engine successfully stopped\n");
 	return;
 }
 #endif
