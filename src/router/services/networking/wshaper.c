@@ -596,7 +596,7 @@ static int svqos_iptables(void)
 		sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:20", wan_dev, get_tcfmark(20));
 		sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:30", wan_dev, get_tcfmark(30));
 		sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:40", wan_dev, get_tcfmark(40));
- 
+
 //              eval("tc", "filter", "add", "dev", wan_dev, "protocol", "ip", "parent", "1:", "u32", "match", "mark", get_tcfmark(100), "flowid", "1:100");
 //              eval("tc", "filter", "add", "dev", wan_dev, "protocol", "ip", "parent", "1:", "u32", "match", "mark", get_tcfmark(10), "flowid", "1:10");
 //              eval("tc", "filter", "add", "dev", wan_dev, "protocol", "ip", "parent", "1:", "u32", "match", "mark", get_tcfmark(20), "flowid", "1:20");
@@ -609,7 +609,7 @@ static int svqos_iptables(void)
 	sysprintf("tc filter del dev imq0 pref 5");
 	sysprintf("tc filter del dev imq0 pref 8");
 	sysprintf("tc filter del dev imq0 pref 9");
- 
+
 	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:100", "imq0", get_tcfmark(100));
 	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:10", "imq0", get_tcfmark(10));
 	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:20", "imq0", get_tcfmark(20));
@@ -788,6 +788,12 @@ static int svqos_iptables(void)
 
 #endif
 
+	if (strcmp(wan_dev, "wwan0")) {
+		if (wanactive(get_wan_ipaddr()) && (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off"))) {
+			eval("iptables", "-A", "PREROUTING", "-i", "!", get_wan_face(), "-d", get_wan_ipaddr(), "-j", "MARK", "--set-mark", get_NFServiceMark("FORWARD", 1));
+			eval("iptables", "-A", "PREROUTING", "-j", "CONNMARK", "--save-mark");
+		}
+	}
 #ifndef HAVE_AQOS
 
 	char *qos_mac = nvram_safe_get("svqos_macs");
@@ -1028,7 +1034,7 @@ void start_wshaper(void)
 			stop_sfe();
 #endif
 		return;
-	} 
+	}
 #ifdef HAVE_SFE
 	else
 		stop_sfe();
