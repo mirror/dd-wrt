@@ -978,6 +978,7 @@ int __neigh_event_send(struct neighbour *neigh, struct sk_buff *skb)
 			unsigned long next, now = jiffies;
 
 			atomic_set(&neigh->probes, neigh->parms->ucast_probes);
+			neigh_del_timer(neigh);
 			neigh->nud_state     = NUD_INCOMPLETE;
 			neigh->updated = now;
 			next = now + max(neigh->parms->retrans_time, HZ/2);
@@ -993,6 +994,7 @@ int __neigh_event_send(struct neighbour *neigh, struct sk_buff *skb)
 		}
 	} else if (neigh->nud_state & NUD_STALE) {
 		neigh_dbg(2, "neigh %p is delayed\n", neigh);
+		neigh_del_timer(neigh);
 		neigh->nud_state = NUD_DELAY;
 		neigh->updated = jiffies;
 		neigh_add_timer(neigh,
