@@ -809,11 +809,6 @@ static void nat_prerouting(char *wanface, char *wanaddr, char *lan_cclass, int d
 
 }
 
-static int wanactive(char *wanaddr)
-{
-	return (!nvram_match("wan_proto", "disabled") && strcmp(wanaddr, "0.0.0.0") && check_wan_link(0));
-}
-
 static void nat_postrouting(char *wanface, char *wanaddr, char *vifs)
 {
 	char word[80], *tmp;
