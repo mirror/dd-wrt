@@ -37,6 +37,16 @@
 
 static void br_multicast_start_querier(struct net_bridge *br,
 				       struct bridge_mcast_own_query *query);
+static void br_ip4_multicast_leave_group(struct net_bridge *br,
+					 struct net_bridge_port *port,
+					 __be32 group,
+					 __u16 vid, const unsigned char *src);
+#if IS_ENABLED(CONFIG_IPV6)
+static void br_ip6_multicast_leave_group(struct net_bridge *br,
+					 struct net_bridge_port *port,
+					 const struct in6_addr *group,
+					 __u16 vid, const unsigned char *src);
+#endif
 unsigned int br_mdb_rehash_seq;
 
 static inline int br_ip_equal(const struct br_ip *a, const struct br_ip *b)
@@ -997,13 +1007,11 @@ static int br_ip4_multicast_igmp3_report(struct net_bridge *br,
 	int type;
 	int err = 0;
 	__be32 group;
-
-	if (!pskb_may_pull(skb, sizeof(*ih)))
-		return -EINVAL;
+	u16 nsrcs;
 
 	ih = igmpv3_report_hdr(skb);
 	num = ntohs(ih->ngrec);
-	len = sizeof(*ih);
+	len = skb_transport_offset(skb) + sizeof(*ih);
 
 	for (i = 0; i < num; i++) {
 		len += sizeof(*grec);
@@ -1013,8 +1021,9 @@ static int br_ip4_multicast_igmp3_report(struct net_bridge *br,
 		grec = (void *)(skb->data + len - sizeof(*grec));
 		group = grec->grec_mca;
 		type = grec->grec_type;
+		nsrcs = ntohs(grec->grec_nsrcs);
 
-		len += ntohs(grec->grec_nsrcs) * 4;
+		len += nsrcs * 4;
 		if (!pskb_may_pull(skb, len))
 			return -EINVAL;
 
@@ -1032,9 +1041,16 @@ static int br_ip4_multicast_igmp3_report(struct net_bridge *br,
 			continue;
 		}
 		src = eth_hdr(skb)->h_source;
-		err = br_ip4_multicast_add_group(br, port, group, vid, src);
-		if (err)
-			break;
+
+		if ((type == IGMPV3_CHANGE_TO_INCLUDE ||
+		     type == IGMPV3_MODE_IS_INCLUDE) &&
+		    nsrcs == 0) {
+			br_ip4_multicast_leave_group(br, port, group, vid, src);
+		} else {
+			err = br_ip4_multicast_add_group(br, port, group, vid, src);
+			if (err)
+				break;
+		}
 	}
 
 	return err;
@@ -1059,26 +1075,29 @@ static int br_ip6_multicast_mld2_report(struct net_bridge *br,
 
 	icmp6h = icmp6_hdr(skb);
 	num = ntohs(icmp6h->icmp6_dataun.un_data16[1]);
-	len = sizeof(*icmp6h);
+	len = skb_transport_offset(skb) + sizeof(*icmp6h);
 
 	for (i = 0; i < num; i++) {
-		__be16 *nsrcs, _nsrcs;
+		__be16 *_nsrcs, __nsrcs;
+		u16 nsrcs;
 
-		nsrcs = skb_header_pointer(skb,
-					   len + offsetof(struct mld2_grec,
-							  grec_nsrcs),
-					   sizeof(_nsrcs), &_nsrcs);
-		if (!nsrcs)
+		_nsrcs = skb_header_pointer(skb,
+					    len + offsetof(struct mld2_grec,
+							   grec_nsrcs),
+					    sizeof(__nsrcs), &__nsrcs);
+		if (!_nsrcs)
 			return -EINVAL;
+
+		nsrcs = ntohs(*_nsrcs);
 
 		if (!pskb_may_pull(skb,
 				   len + sizeof(*grec) +
-				   sizeof(struct in6_addr) * ntohs(*nsrcs)))
+				   sizeof(struct in6_addr) * nsrcs))
 			return -EINVAL;
 
 		grec = (struct mld2_grec *)(skb->data + len);
 		len += sizeof(*grec) +
-		       sizeof(struct in6_addr) * ntohs(*nsrcs);
+		       sizeof(struct in6_addr) * nsrcs;
 
 		/* We treat these as MLDv1 reports for now. */
 		switch (grec->grec_type) {
@@ -1093,12 +1112,20 @@ static int br_ip6_multicast_mld2_report(struct net_bridge *br,
 		default:
 			continue;
 		}
-
+ 
 		src = eth_hdr(skb)->h_source;
-		err = br_ip6_multicast_add_group(br, port, &grec->grec_mca,
-						 vid, src);
-		if (err)
-			break;
+
+		if ((grec->grec_type == MLD2_CHANGE_TO_INCLUDE ||
+		     grec->grec_type == MLD2_MODE_IS_INCLUDE) &&
+		    nsrcs == 0) {
+			br_ip6_multicast_leave_group(br, port, &grec->grec_mca,
+						     vid, src);
+		} else {
+			err = br_ip6_multicast_add_group(br, port,
+							 &grec->grec_mca, vid, src);
+			if (err)
+				break;
+		}
 	}
 
 	return err;
@@ -1335,7 +1362,6 @@ static int br_ip6_multicast_query(struct net_bridge *br,
 				  struct sk_buff *skb,
 				  u16 vid)
 {
-	const struct ipv6hdr *ip6h = ipv6_hdr(skb);
 	struct mld_msg *mld;
 	struct net_bridge_mdb_entry *mp;
 	struct mld2_query *mld2q;
@@ -1392,7 +1418,7 @@ static int br_ip6_multicast_query(struct net_bridge *br,
 
 	if (is_general_query) {
 		saddr.proto = htons(ETH_P_IPV6);
-		saddr.u.ip6 = ip6h->saddr;
+		saddr.u.ip6 = ipv6_hdr(skb)->saddr;
 
 		br_multicast_query_received(br, port, &br->ip6_other_query,
 					    &saddr, max_delay);
