@@ -560,6 +560,11 @@ int check_wan_link(int num)
 	return wan_link;
 }
 
+int wanactive(char *wanaddr)
+{
+	return (!nvram_match("wan_proto", "disabled") && strcmp(wanaddr, "0.0.0.0") && check_wan_link(0));
+}
+
 #ifdef HAVE_WZR450HP2
 struct ENV_EXTDATA {
 	unsigned char wanmac[6];	// 0x0
