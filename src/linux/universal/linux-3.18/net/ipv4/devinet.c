@@ -70,7 +70,7 @@
 #define IPV6ONLY_FLAGS	\
 		(IFA_F_NODAD | IFA_F_OPTIMISTIC | IFA_F_DADFAILED | \
 		 IFA_F_HOMEADDRESS | IFA_F_TENTATIVE | \
-		 IFA_F_MANAGETEMPADDR | IFA_F_STABLE_PRIVACY)
+		 IFA_F_MANAGETEMPADDR)
 
 static struct ipv4_devconf ipv4_devconf = {
 	.data = {
