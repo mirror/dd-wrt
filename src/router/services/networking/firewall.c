@@ -913,7 +913,7 @@ static void nat_postrouting(char *wanface, char *wanaddr, char *vifs)
 		//eval("iptables", "-t", "raw", "-A", "PREROUTING", "-p", "udp", "-j", "CT", "--helper", "ddtb");       //this speeds up networking alot on slow systems 
 //              }
 #ifdef HAVE_SFE
-		if (!nvram_match("sfe","1"))
+		if (!nvram_match("sfe", "1"))
 #endif
 			eval("iptables", "-t", "raw", "-A", "PREROUTING", "-j", "NOTRACK");	//this speeds up networking alot on slow systems 
 		/* the following code must be used in future kernel versions, not yet used. we still need to test it */
@@ -2468,11 +2468,10 @@ static void mangle_table(char *wanface, char *wanaddr, char *vifs)
 		eval("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-m", "mark", "--mark", "0x100000", "-j", "TOS", "--set-tos", "0x00");
 	}
 #endif
-	if (strcmp(wanface, "wwan0")) {
-
+	if (strcmp(wanface, "wwan0") && nvram_matchi("wshaper_enable", 0)) {
 		if (wanactive(wanaddr) && (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off"))) {
 			insmod("ipt_mark xt_mark ipt_CONNMARK xt_CONNMARK xt_connmark");
-			save2file_A_prerouting("-i ! %s -d %s -j MARK --set-mark %s", get_wan_face(), get_wan_ipaddr(), get_NFServiceMark("FORWARD", 1));
+			save2file_A_prerouting("-i ! %s -d %s -j MARK --set-mark %s", wanface, wanaddr, get_NFServiceMark("FORWARD", 1));
 			save2file_A_prerouting("-j CONNMARK --save-mark");
 		}
 	}
