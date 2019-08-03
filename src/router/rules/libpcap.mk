@@ -13,7 +13,7 @@ libpcap-configure:
 		CC="$(CC)" CFLAGS="$(COPTS) -fPIC"
 libpcap:
 #	$(MAKE) -C libpcap CC="$(CC)" AR=$(AR) RANLIB=$(RANLIB) libpcap.so 
-	$(MAKE) -C libpcap CC="$(CC)" AR=$(AR) RANLIB=$(RANLIB) version.h
+	$(MAKE) -C libpcap CC="$(CC)" AR=$(AR) RANLIB=$(RANLIB)
 ifeq ($(CONFIG_LIBPCAP_SHARED),y)
 	$(MAKE) -C libpcap CC="$(CC)" AR=$(AR) RANLIB=$(RANLIB) libpcap.so 
 	-cd libpcap ; ln -s libpcap.so.1.7.2 libpcap.so
