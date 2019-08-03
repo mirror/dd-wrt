@@ -3586,22 +3586,3 @@ static void __exit sfe_ipv4_exit(void)
 	kobject_put(si->sys_sfe_ipv4);
 
 }
-
-module_init(sfe_ipv4_init)
-module_exit(sfe_ipv4_exit)
-
-EXPORT_SYMBOL(sfe_ipv4_recv);
-EXPORT_SYMBOL(sfe_ipv4_create_rule);
-EXPORT_SYMBOL(sfe_ipv4_destroy_rule);
-EXPORT_SYMBOL(sfe_ipv4_destroy_all_rules_for_dev);
-EXPORT_SYMBOL(sfe_ipv4_register_sync_rule_callback);
-EXPORT_SYMBOL(sfe_ipv4_mark_rule);
-EXPORT_SYMBOL(sfe_ipv4_update_rule);
-#ifdef CONFIG_NF_FLOW_COOKIE
-EXPORT_SYMBOL(sfe_register_flow_cookie_cb);
-EXPORT_SYMBOL(sfe_unregister_flow_cookie_cb);
-#endif
-
-MODULE_DESCRIPTION("Shortcut Forwarding Engine - IPv4 edition");
-MODULE_LICENSE("Dual BSD/GPL");
-
