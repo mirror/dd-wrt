@@ -28,6 +28,8 @@ libzstd_sources = [join_paths(zstd_rootdir, 'lib/common/entropy_common.c'),
   join_paths(zstd_rootdir, 'lib/compress/fse_compress.c'),
   join_paths(zstd_rootdir, 'lib/compress/huf_compress.c'),
   join_paths(zstd_rootdir, 'lib/compress/zstd_compress.c'),
+  join_paths(zstd_rootdir, 'lib/compress/zstd_compress_literals.c'),
+  join_paths(zstd_rootdir, 'lib/compress/zstd_compress_sequences.c'),
   join_paths(zstd_rootdir, 'lib/compress/zstdmt_compress.c'),
   join_paths(zstd_rootdir, 'lib/compress/zstd_fast.c'),
   join_paths(zstd_rootdir, 'lib/compress/zstd_double_fast.c'),
@@ -98,7 +100,7 @@ if use_debug
   if cc_id == compiler_gcc or cc_id == compiler_clang
     libzstd_debug_cflags = ['-Wstrict-aliasing=1', '-Wswitch-enum',
       '-Wdeclaration-after-statement', '-Wstrict-prototypes',
-      '-Wundef', '-Wpointer-arith', '-Wformat-security', '-Wvla',
+      '-Wundef', '-Wpointer-arith', '-Wvla',
       '-Wformat=2', '-Winit-self', '-Wfloat-equal', '-Wwrite-strings',
       '-Wredundant-decls', '-Wmissing-prototypes', '-Wc++-compat']
   endif
