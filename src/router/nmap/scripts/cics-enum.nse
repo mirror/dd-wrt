@@ -8,6 +8,7 @@ local unpwdb    = require "unpwdb"
 local io        = require "io"
 local table     = require "table"
 local string   = require "string"
+local stringaux = require "stringaux"
 
 
 description = [[
@@ -24,7 +25,7 @@ found for CICS transaction IDs.
 ---
 -- @args idlist Path to list of transaction IDs.
 --  Defaults to the list of CICS transactions from IBM.
--- @args cics-enum.commands Commands in a semi-colon seperated list needed
+-- @args cics-enum.commands Commands in a semi-colon separated list needed
 --  to access CICS. Defaults to <code>CICS</code>.
 -- @args cics-enum.path Folder used to store valid transaction id 'screenshots'
 --  Defaults to <code>None</code> and doesn't store anything.
@@ -56,6 +57,7 @@ found for CICS transaction IDs.
 -- 2015-07-04 - v0.1 - created by Soldier of Fortran
 -- 2015-11-14 - v0.2 - rewrote iterator
 -- 2017-01-22 - v0.3 - added authenticated CICS ID enumeration
+-- 2019-02-01 - v0.4 - Removed TN3270E support (breaks location)
 --
 -- @author Philip Young
 -- @copyright Same as Nmap--See https://nmap.org/book/man-legal.html
@@ -89,6 +91,7 @@ Driver = {
     o.port = port
     o.options = options
     o.tn3270 = tn3270.Telnet:new()
+    o.tn3270:disable_tn3270e()
     return o
   end,
   connect = function( self )
@@ -115,7 +118,7 @@ Driver = {
     local loop = 1
     local err, status
     stdnse.debug(2,"Getting to CICS")
-    local run = stdnse.strsplit(";%s*", commands)
+    local run = stringaux.strsplit(";%s*", commands)
     for i = 1, #run do
       stdnse.debug(1,"Issuing Command (#%s of %s): %s", i, #run ,run[i])
       self.tn3270:send_cursor(run[i])
@@ -262,6 +265,7 @@ Driver = {
 local function cics_test( host, port, commands, user, pass )
   stdnse.debug("Checking for CICS")
   local tn = tn3270.Telnet:new()
+  tn:disable_tn3270e()
   local status, err = tn:initiate(host,port)
   local msg = 'Unable to get to CICS'
   local cics = false -- initially we're not at CICS
@@ -271,7 +275,7 @@ local function cics_test( host, port, commands, user, pass )
   end
   tn:get_screen_debug(2) -- prints TN3270 screen to debug
   stdnse.debug("Getting to CICS")
-  local run = stdnse.strsplit(";%s*", commands)
+  local run = stringaux.strsplit(";%s*", commands)
   for i = 1, #run do
     stdnse.debug(1,"Issuing Command (#%s of %s): %s", i, #run ,run[i])
     tn:send_cursor(run[i])

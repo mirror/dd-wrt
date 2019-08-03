@@ -425,7 +425,7 @@ AC_HELP_STRING([--with-libpcap=included], [Always use version included with Nmap
 [  case "$with_libpcap" in
   yes)
     AC_CHECK_HEADER(pcap.h,[
-      AC_CHECK_LIB(pcap, pcap_datalink,
+      AC_CHECK_LIB(pcap, pcap_create,
       [have_libpcap=yes ])])
     ;;
   included)
@@ -439,7 +439,7 @@ AC_HELP_STRING([--with-libpcap=included], [Always use version included with Nmap
     LDFLAGS="-L$with_libpcap/lib $LDFLAGS"
 
     AC_CHECK_HEADER(pcap.h,[
-      AC_CHECK_LIB(pcap, pcap_datalink,
+      AC_CHECK_LIB(pcap, pcap_create,
         [have_libpcap=yes
         LIBPCAP_INC=$with_libpcap/include
         LIBPCAP_LIB=$with_libpcap/lib])])
@@ -479,9 +479,15 @@ if test $have_libpcap != yes; then
   PCAP_CLEAN="clean-pcap"
   PCAP_DIST_CLEAN="distclean-pcap"
   AC_DEFINE(PCAP_INCLUDED, 1, [Using included libpcap])
+  AC_DEFINE(HAVE_PCAP_SET_IMMEDIATE_MODE, 1, [Included libpcap has pcap_set_immediate_mode])
 else
   # We assume our included libpcap doesn't need this check-and-define
-  PCAP_DEFINE_NETMASK_UNKNOWN
+  # link with -lpcap for the purposes of this test
+  LIBS_OLD="$LIBS"
+  LIBS="$LIBS -lpcap"
+  AC_CHECK_FUNCS([pcap_set_immediate_mode])
+  # Restore libs
+  LIBS="$LIBS_OLD"
 
   AC_DEFINE(HAVE_LIBPCAP, 1, [Have libpcap library])
   LIBPCAP_LIBS="-lpcap"
@@ -558,11 +564,6 @@ AC_SUBST(PCRE_DIST_CLEAN)
 have_libz="no"
 requested_included_libz="no"
 test "${with_libz+set}" != "set" && with_libz="yes"
-# For now, libz is a libssh2 dependency.
-# If we end up using it for something else, we'll have to change this line.
-if test "x${with_libssh2}" = "xno"; then
-  with_libz=no
-fi
 
 AC_ARG_WITH(libz,
 AC_HELP_STRING([--with-libz=DIR], [Use specific copy of libz])
@@ -795,7 +796,7 @@ AC_HELP_STRING([--without-liblua], [Compile without lua (this will exclude all o
     LUA_CLEAN="clean-lua"
     LUA_DIST_CLEAN="distclean-lua"
       have_lua="yes"
-
+    AC_DEFINE(LUA_INCLUDED, 1, [Using included liblua])
   ;;
   no)
     no_lua="yes"
@@ -814,7 +815,7 @@ AC_SEARCH_LIBS(dlopen, dl)
 if test "$no_lua" = "yes"; then
   trace_no_use="$trace_no_use lua"
   CPPFLAGS="-DNOLUA $CPPFLAGS"
-  LIBLUA_LIBS=""
+  NOLUA="yes"
   LUA_BUILD=""
   LUA_CLEAN=""
   LUA_DIST_CLEAN=""
@@ -825,20 +826,30 @@ else
 
   # If they didn't specify it, we try to find it
   if test $have_lua != yes; then
-    AC_CHECK_HEADERS([lua5.3/lua.h lua/5.3/lua.h lua.h lua/lua.h],
-      AC_CHECK_LIB(lua5.3, lua_isyieldable, [have_lua=yes; LIBLUA_LIBS="-llua5.3"; CPPFLAGS="-I/usr/include/lua5.3 $CPPFLAGS"; break],, [-lm])
-      AC_CHECK_LIB(lua53, lua_isyieldable, [have_lua=yes; LIBLUA_LIBS="-llua53"; CPPFLAGS="-I/usr/include/lua53 $CPPFLAGS"; break],, [-lm])
-      AC_CHECK_LIB(lua, lua_isyieldable, [have_lua=yes; LIBLUA_LIBS="-llua"; CPPFLAGS="-I/usr/include/lua $CPPFLAGS"; break],, [-lm])
-    )
-
-    AC_LANG_PUSH(C++)
-    # We need Lua 5.2 exactly
+    AC_CHECK_HEADERS([lua5.3/lua.h lua/5.3/lua.h lua.h lua/lua.h], [break])
+    AC_SEARCH_LIBS(lua_isyieldable, [lua5.3 lua53 lua], [have_lua=yes],, [-lm])
+    AC_LANG_PUSH(C)
+    # We need Lua 5.3 exactly
     AC_MSG_CHECKING([for lua version == 503])
-    AC_RUN_IFELSE([ AC_LANG_PROGRAM(
-      [[#include <lua.h>]],
-      [[if(LUA_VERSION_NUM != 503) return 1;]])],
-      have_lua=yes, have_lua=no, AC_MSG_RESULT(cross-compiling -- assuming yes); have_lua=yes)
-    AC_LANG_POP(C++)
+    AC_PREPROC_IFELSE([ AC_LANG_PROGRAM( [[
+      #ifdef HAVE_LUA5_3_LUA_H
+          #include <lua5.3/lua.h>
+      #elif defined HAVE_LUA_5_3_LUA_H
+          #include <lua/5.3/lua.h>
+      #elif defined HAVE_LUA_H || defined LUA_INCLUDED
+          #include <lua.h>
+      #elif defined HAVE_LUA_LUA_H
+          #include <lua/lua.h>
+      #endif
+
+      #if (LUA_VERSION_NUM != 503)
+          #error Incorrect Lua version
+      #endif
+        ]],
+        [[if(LUA_VERSION_NUM != 503) return 1;]])
+    ],
+    [have_lua=yes], [have_lua=no])
+    AC_LANG_POP(C)
 
     LUA_BUILD=""
     LUA_CLEAN=""
@@ -862,6 +873,7 @@ else
   NSE_CHECK="check-nse"
 fi
 
+AC_SUBST(NOLUA)
 AC_SUBST(LIBLUA_LIBS)
 AC_SUBST(LIBLUADIR)
 AC_SUBST(LUA_BUILD)

@@ -3,7 +3,6 @@
 ;;
 ;; Recognizes the options (case sensitive):
 ;;   /S                silent install
-;;   /NPFSTARTUP=NO    start NPF now and at startup (ignored with /NPCAP=NO)
 ;;   /NMAP=NO          don't install Nmap
 ;;   /REGISTERPATH=NO  don't add the installation directory to PATH
 ;;   /NPCAP=NO         don't install Npcap
@@ -20,6 +19,15 @@
 ;;  It must be the last parameter used in the command line and must not
 ;;  contain any quotes, even if the path contains spaces. Only absolute
 ;;  paths are supported.
+
+; Ensure large strings build is used
+!if ${NSIS_MAX_STRLEN} < 8192
+!error "Need to use large strings build of NSIS."
+!endif
+
+!ifdef NMAP_OEM
+!include "..\..\..\nmap-build\nmap-oem.nsh"
+!endif
 
 ;--------------------------------
 ;Include Modern UI
@@ -255,32 +263,25 @@ Section "Register Nmap Path" SecRegisterPath
 SectionEnd
 
 Section "Npcap @@NPCAP_VERSION@@" SecNpcap
-  SetOutPath "$INSTDIR"
+!ifdef NMAP_OEM
+  !insertmacro NPCAP_OEM_INSTALL "npcap-@@NPCAP_VERSION@@-oem.exe"
+!else
+  SetOutPath "$PLUGINSDIR"
   SetOverwrite on
-  File ..\npcap-@@NPCAP_VERSION@@-oem.exe
-  ; If the Nmap installer was launched using /S then pass some arguments to Npcap
-  IfSilent npcap_silent npcap_loud
-  npcap_silent:
-    StrCpy $1 ""
-    ${GetParameters} $R0
-    ClearErrors
-    ${GetOptions} $R0 "/NPFSTARTUP=" $2
-    StrCmp $2 "NO" 0 NoSkipNPFStartup
-    StrCpy $1 "/NPFSTARTUP=NO $1"
-    NoSkipNPFStartup:
-    ExecWait '"$INSTDIR\npcap-@@NPCAP_VERSION@@-oem.exe" $1 /S /winpcap_mode=no'
-    Goto delete_npcap
-  npcap_loud:
-    ExecWait '"$INSTDIR\npcap-@@NPCAP_VERSION@@-oem.exe" /winpcap_mode=no'
-  delete_npcap:
-  Delete "$INSTDIR\npcap-@@NPCAP_VERSION@@-oem.exe"
+  File "..\npcap-@@NPCAP_VERSION@@.exe"
+  ExecWait '"$PLUGINSDIR\npcap-@@NPCAP_VERSION@@.exe" /winpcap_mode=no'
+  Delete "$PLUGINSDIR\npcap-@@NPCAP_VERSION@@.exe"
+!endif
 SectionEnd
 
 Section "Network Performance Improvements" SecPerfRegistryMods
-  SetOutPath "$INSTDIR"
+  SetOutPath "$PLUGINSDIR"
   SetOverwrite on
   File ${STAGE_DIR}\nmap_performance.reg
-  Exec 'regedt32 /S "$INSTDIR\nmap_performance.reg"'
+  ; Apply the changes from the random PLUGINSDIR for better security
+  Exec 'regedt32 /S "$PLUGINSDIR\nmap_performance.reg"'
+  ; Keep a copy in the installation directory for users to inspect
+  CopyFiles /SILENT "$PLUGINSDIR\nmap_performance.reg" "$INSTDIR"
 SectionEnd
 
 Section "Zenmap (GUI Frontend)" SecZenmap
@@ -350,8 +351,9 @@ Function vcredist2013installer
   ;If VC++ 2013 runtimes are not installed...
   vcredist_silent_install:
     DetailPrint "Installing Microsoft Visual C++ 2013 Redistributable"
+    SetOutPath $PLUGINSDIR
     File ${STAGE_DIR}\vcredist_x86.exe
-    ExecWait '"$INSTDIR\vcredist_x86.exe" /q' $0
+    ExecWait '"$PLUGINSDIR\vcredist_x86.exe" /q' $0
     ;Check for successful installation of our vcredist_x86.exe...
     ReadRegStr $0 HKLM "SOFTWARE\Microsoft\DevDiv\vc\Servicing\12.0\RuntimeMinimum" "Install"
     StrCmp $0 "1" vcredist_success vcredist_not_present_check_wow6432node
@@ -361,12 +363,10 @@ Function vcredist2013installer
 
     vcredist_not_present:
       DetailPrint "Microsoft Visual C++ 2013 Redistributable failed to install"
-      IfSilent vcredist_done vcredist_messagebox
-      vcredist_messagebox:
-        MessageBox MB_OK "Microsoft Visual C++ 2013 Redistributable Package (x86) failed to install ($INSTDIR\vcredist_x86.exe). Please ensure your system meets the minimum requirements before running the installer again."
-        Goto vcredist_done
+      MessageBox MB_OK "Microsoft Visual C++ 2013 Redistributable Package (x86) failed to install. Please ensure your system meets the minimum requirements before running the installer again."
+      Goto vcredist_done
     vcredist_success:
-      Delete "$INSTDIR\vcredist_x86.exe"
+      Delete "$PLUGINSDIR\vcredist_x86.exe"
       DetailPrint "Microsoft Visual C++ 2013 Redistributable was successfully installed"
   vcredist_done:
 FunctionEnd
@@ -386,8 +386,9 @@ Function vcredist2008installer
   ;If VC++ 2008 runtimes are not installed...
   vcredist2008_silent_install:
     DetailPrint "Installing Microsoft Visual C++ 2008 Redistributable"
+    SetOutPath $PLUGINSDIR
     File ${STAGE_DIR}\vcredist2008_x86.exe
-    ExecWait '"$INSTDIR\vcredist2008_x86.exe" /q' $0
+    ExecWait '"$PLUGINSDIR\vcredist2008_x86.exe" /q' $0
     ;Check for successful installation of our 2008 version of vcredist_x86.exe...
     ReadRegStr $0 HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{9BE518E6-ECC6-35A9-88E4-87755C07200F}" "DisplayName"
     StrCmp $0 "Microsoft Visual C++ 2008 Redistributable - x86 9.0.30729.6161" vcredist2008_success vcredist2008_not_present_check_wow6432node
@@ -396,12 +397,10 @@ Function vcredist2008installer
       StrCmp $0 "Microsoft Visual C++ 2008 Redistributable - x86 9.0.30729.6161" vcredist2008_success vcredist2008_not_present
     vcredist2008_not_present:
       DetailPrint "Microsoft Visual C++ 2008 Redistributable failed to install"
-      IfSilent vcredist2008_done vcredist2008_messagebox
-      vcredist2008_messagebox:
-        MessageBox MB_OK "Microsoft Visual C++ 2008 Redistributable Package (x86) failed to install ($INSTDIR\vcredist2008_x86.exe). Please ensure your system meets the minimum requirements before running the installer again."
-        Goto vcredist2008_done
+      MessageBox MB_OK "Microsoft Visual C++ 2008 Redistributable Package (x86) failed to install. Please ensure your system meets the minimum requirements before running the installer again."
+      Goto vcredist2008_done
     vcredist2008_success:
-      Delete "$INSTDIR\vcredist2008_x86.exe"
+      Delete "$PLUGINSDIR\vcredist2008_x86.exe"
       DetailPrint "Microsoft Visual C++ 2008 Redistributable was successfully installed"
   vcredist2008_done:
 FunctionEnd
@@ -411,9 +410,9 @@ Function create_uninstaller
   ; Register Nmap with add/remove programs
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Nmap" "DisplayName" "Nmap ${VERSION}"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Nmap" "DisplayVersion" "${VERSION}"
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\NpcapInst" "Publisher" "Nmap Project"
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\NpcapInst" "URLInfoAbout" "https://nmap.org/"
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\NpcapInst" "URLUpdateInfo" "https://nmap.org/download.html"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Nmap" "Publisher" "Nmap Project"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Nmap" "URLInfoAbout" "https://nmap.org/"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Nmap" "URLUpdateInfo" "https://nmap.org/download.html"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Nmap" "UninstallString" '"$INSTDIR\uninstall.exe"'
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Nmap" "DisplayIcon" '"$INSTDIR\icon1.ico"'
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Nmap" "NoModify" 1
@@ -451,6 +450,10 @@ Function .onInit
 
   WriteUninstaller "$%TEMP%\Uninstall.exe"
   Quit  ; just bail out quickly when running the "inner" installer
+!endif
+
+!ifndef NMAP_OEM
+  SetSilent normal
 !endif
 
   !insertmacro MUI_INSTALLOPTIONS_EXTRACT "shortcuts.ini"

@@ -2,7 +2,7 @@
  * ncat_listen.c -- --listen mode.                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2018 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2019 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -125,7 +125,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: ncat_listen.c 37187 2018-03-11 03:50:53Z dmiller $ */
+/* $Id$ */
 
 #include "ncat.h"
 
@@ -878,8 +878,14 @@ static int ncat_listen_dgram(int proto)
             ncat_log_recv(buf, nbytes);
         }
 
-        if (o.verbose)
+        if (o.verbose) {
+#if HAVE_SYS_UN_H
+        if (remotess.sockaddr.sa_family == AF_UNIX)
+            loguser("Connection from %s.\n", remotess.un.sun_path);
+        else
+#endif
             loguser("Connection from %s.\n", inet_socktop(&remotess));
+        }
 
         conn_inc++;
 
@@ -986,6 +992,14 @@ int ncat_listen()
         else
             return ncat_listen_stream(0);
     else
+#endif
+#if HAVE_LINUX_VM_SOCKETS_H
+    if (o.af == AF_VSOCK) {
+        if (o.proto == IPPROTO_UDP)
+            return ncat_listen_dgram(0);
+        else
+            return ncat_listen_stream(0);
+    } else
 #endif
     if (o.httpserver)
         return ncat_http_server();

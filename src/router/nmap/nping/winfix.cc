@@ -6,7 +6,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2018 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2019 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -131,16 +131,13 @@
 
 /* $Id: */
 
-#include <winclude.h>
-#include <sys/timeb.h>
-#include <shellapi.h>
-
-
+#include "winfix.h"
 #include "nping.h"
 //#include "tcpip.h"
-#include "winfix.h"
 #include "NpingOps.h"
 #include "output.h"
+#include <Packet32.h>
+#include <shellapi.h>
 
 #ifdef _MSC_VER
 # include <delayimp.h>
@@ -315,8 +312,6 @@ void win_init()
 	__try
 #endif
 	{
-    HANDLE pcapMutex;
-    DWORD wait;
 		ULONG len = sizeof(pcaplist);
 
     if(o.getDebugging() >= DBG_2) printf("Trying to initialize Windows pcap engine\n");
@@ -341,13 +336,7 @@ void win_init()
     if (pcap_driver == PCAP_DRIVER_NPCAP)
       init_npcap_dll_path();
 
-    pcapMutex = CreateMutex(NULL, 0, "Global\\DnetPcapHangAvoidanceMutex");
-    wait = WaitForSingleObject(pcapMutex, INFINITE);
 		PacketGetAdapterNames(pcaplist, &len);
-    if (wait == WAIT_ABANDONED || wait == WAIT_OBJECT_0) {
-      ReleaseMutex(pcapMutex);
-    }
-    CloseHandle(pcapMutex);
 
 #ifdef _MSC_VER
 		if(FAILED(__HrLoadAllImportsForDll("wpcap.dll")))
@@ -362,7 +351,7 @@ void win_init()
 	}
 #ifdef _MSC_VER
 	__except (1) {
-			error("WARNING: Could not import all necessary Npcap functions. You may need to upgrade to the latest version from http://www.npcap.org. Resorting to connect() mode -- Nmap may not function completely");
+			error("WARNING: Could not import all necessary Npcap functions. You may need to upgrade to the latest version from https://npcap.org. Resorting to connect() mode -- Nmap may not function completely");
 		o.setHavePcap(false);
 		}
 #endif

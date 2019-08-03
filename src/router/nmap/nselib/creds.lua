@@ -110,17 +110,18 @@
 --                * table to file in CSV or text formats
 --
 -- Revised 2015/19/08 - v0.5 - Gioacchino Mazzurco <gmazzurco89@gmail.com>
---                * added multitag support to share credential easier accross
+--                * added multitag support to share credential easier across
 --                  scripts
 --
 
-local bit = require "bit"
 local coroutine = require "coroutine"
 local io = require "io"
 local ipOps = require "ipOps"
 local nmap = require "nmap"
 local stdnse = require "stdnse"
+local stringaux = require "stringaux"
 local table = require "table"
+local tableaux = require "tableaux"
 _ENV = stdnse.module("creds", stdnse.seeall)
 
 
@@ -248,7 +249,7 @@ RegStorage = {
             coroutine.yield(v)
           end
         elseif ( ( host and ( h == host or h == host.ip ) ) and port.number == v.port ) then
-          if ( not(self.filter.state) or ( v.state == bit.band(self.filter.state, v.state) ) ) then
+          if ( not(self.filter.state) or ( v.state == (self.filter.state & v.state) ) ) then
             coroutine.yield(v)
           end
         end
@@ -307,7 +308,7 @@ Account = {
 -- which will cause the table to yield its values sorted by key.
 local function sorted_pairs (sortby)
   return function (t)
-    local order = stdnse.keys(t)
+    local order = tableaux.keys(t)
     table.sort(order, sortby)
     return coroutine.wrap(function()
         for i,k in ipairs(order) do
@@ -395,7 +396,7 @@ Credentials = {
         end
       end
 
-      if ( state and State.PARAM == bit.band(state, State.PARAM) ) then
+      if ( state and State.PARAM == (state & State.PARAM) ) then
         local creds_global = stdnse.get_script_args('creds.global')
         local creds_service
         local creds_params
@@ -413,7 +414,7 @@ Credentials = {
 
         if ( not(creds_params) ) then return end
 
-        for _, cred in ipairs(stdnse.strsplit(",", creds_params)) do
+        for _, cred in ipairs(stringaux.strsplit(",", creds_params)) do
           -- if the credential contains a ':' we have a user + pass pair
           -- if not, we only have a user with an empty password
           local user, pass

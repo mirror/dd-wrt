@@ -7,7 +7,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2018 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2019 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -130,7 +130,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: timing.cc 37126 2018-01-28 21:18:17Z fyodor $ */
+/* $Id$ */
 
 #include "timing.h"
 #include "NmapOps.h"
@@ -703,7 +703,13 @@ bool ScanProgressMeter::printStats(double perc_done,
   if (perc_done < 0.01) {
     log_write(LOG_STDOUT, "%s Timing: About %.2f%% done\n",
         scantypestr, perc_done * 100);
-    log_flush(LOG_STDOUT);
+    xml_open_start_tag("taskprogress");
+    xml_attribute("task", "%s", scantypestr);
+    xml_attribute("time", "%lu", (unsigned long) now->tv_sec);
+    xml_attribute("percent", "%.2f", perc_done * 100);
+    xml_close_empty_tag();
+    xml_newline();
+    log_flush(LOG_STDOUT|LOG_XML);
     return true;
   }
 

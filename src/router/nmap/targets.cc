@@ -6,7 +6,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2018 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2019 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -129,10 +129,10 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: targets.cc 37126 2018-01-28 21:18:17Z fyodor $ */
+/* $Id$ */
 
 
-#include "nbase/nbase_addrset.h"
+#include <nbase.h>
 #include "targets.h"
 #include "timing.h"
 #include "tcpip.h"
@@ -206,7 +206,7 @@ void returnhost(HostGroupState *hs) {
 /* Is the host passed as Target to be excluded? Much of this logic had
    to be rewritten from wam's original code to allow for the objects */
 static int hostInExclude(struct sockaddr *checksock, size_t checksocklen,
-                  const addrset *exclude_group) {
+                  const struct addrset *exclude_group) {
   if (exclude_group == NULL)
     return 0;
 
@@ -219,7 +219,7 @@ static int hostInExclude(struct sockaddr *checksock, size_t checksocklen,
 }
 
 /* Load an exclude list from a file for --excludefile. */
-int load_exclude_file(addrset *excludelist, FILE *fp) {
+int load_exclude_file(struct addrset *excludelist, FILE *fp) {
   char host_spec[1024];
   size_t n;
 
@@ -236,7 +236,7 @@ int load_exclude_file(addrset *excludelist, FILE *fp) {
 
 /* Load a comma-separated exclude list from a string, the argument to
    --exclude. */
-int load_exclude_string(addrset *excludelist, const char *s) {
+int load_exclude_string(struct addrset *excludelist, const char *s) {
   const char *begin, *p;
 
   p = s;
@@ -259,12 +259,8 @@ int load_exclude_string(addrset *excludelist, const char *s) {
 
 /* A debug routine to dump some information to stdout. Invoked if debugging is
    set to 4 or higher. */
-int dumpExclude(addrset *exclude_group) {
-  const struct addrset_elem *elem;
-
-  for (elem = exclude_group->head; elem != NULL; elem = elem->next)
-    addrset_elem_print(stdout, elem);
-
+int dumpExclude(struct addrset *exclude_group) {
+  addrset_print(stdout, exclude_group);
   return 1;
 }
 
@@ -294,6 +290,8 @@ static void massping(Target *hostbatch[], int num_hosts, struct scan_lists *port
   }
 
   for (i = 0; i < num_hosts; i++) {
+    if (hostbatch[i]->flags & HOST_DOWN)
+      continue;
     initialize_timeout_info(&hostbatch[i]->to);
     targets.push_back(hostbatch[i]);
   }
@@ -449,16 +447,8 @@ static Target *setup_target(const HostGroupState *hs,
   }
 
   /* We figure out the source IP/device IFF
-     1) We are r00t AND
-     2) We are doing tcp or udp pingscan OR
-     3) We are doing a raw-mode portscan or osscan or traceroute OR
-     4) We are on windows and doing ICMP ping */
-  if (o.isr00t &&
-      ((pingtype & (PINGTYPE_TCP|PINGTYPE_UDP|PINGTYPE_SCTP_INIT|PINGTYPE_PROTO|PINGTYPE_ARP)) || o.RawScan()
-#ifdef WIN32
-       || (pingtype & (PINGTYPE_ICMP_PING|PINGTYPE_ICMP_MASK|PINGTYPE_ICMP_TS))
-#endif // WIN32
-      )) {
+   * the scan type requires us to */
+  if (o.RawScan()) {
     if (!nmap_route_dst(ss, &rnfo)) {
       log_bogus_target(inet_ntop_ez(ss, sslen));
       error("%s: failed to determine route to %s", __func__, t->NameIP());
@@ -501,7 +491,7 @@ bail:
   return NULL;
 }
 
-static Target *next_target(HostGroupState *hs, const addrset *exclude_group,
+static Target *next_target(HostGroupState *hs, const struct addrset *exclude_group,
   struct scan_lists *ports, int pingtype) {
   struct sockaddr_storage ss;
   size_t sslen;
@@ -554,7 +544,7 @@ tryagain:
   return t;
 }
 
-static void refresh_hostbatch(HostGroupState *hs, const addrset *exclude_group,
+static void refresh_hostbatch(HostGroupState *hs, const struct addrset *exclude_group,
   struct scan_lists *ports, int pingtype) {
   int i;
   bool arpping_done = false;
@@ -597,7 +587,7 @@ static void refresh_hostbatch(HostGroupState *hs, const addrset *exclude_group,
       hs->hostbatch[0]->af() == AF_INET &&
       hs->hostbatch[0]->directlyConnected() &&
       o.sendpref != PACKET_SEND_IP_STRONG &&
-      (pingtype == PINGTYPE_ARP || o.implicitARPPing)) {
+      o.implicitARPPing) {
     arpping(hs->hostbatch, hs->current_batch_sz);
     arpping_done = true;
   }
@@ -608,7 +598,7 @@ static void refresh_hostbatch(HostGroupState *hs, const addrset *exclude_group,
       hs->hostbatch[0]->af() == AF_INET6 &&
       hs->hostbatch[0]->directlyConnected() &&
       o.sendpref != PACKET_SEND_IP_STRONG &&
-      (pingtype == PINGTYPE_ARP || o.implicitARPPing)) {
+      o.implicitARPPing) {
     arpping(hs->hostbatch, hs->current_batch_sz);
     arpping_done = true;
   }
@@ -620,8 +610,9 @@ static void refresh_hostbatch(HostGroupState *hs, const addrset *exclude_group,
       if (!(hs->hostbatch[i]->flags & HOST_DOWN) &&
           !hs->hostbatch[i]->timedOut(&now)) {
         if (!setTargetNextHopMAC(hs->hostbatch[i])) {
-          fatal("%s: Failed to determine dst MAC address for target %s",
+          error("%s: Failed to determine dst MAC address for target %s",
               __func__, hs->hostbatch[i]->NameIP());
+          hs->hostbatch[i]->flags = HOST_DOWN;
         }
       }
     }
@@ -630,7 +621,7 @@ static void refresh_hostbatch(HostGroupState *hs, const addrset *exclude_group,
   /* Then we do the mass ping (if required - IP-level pings) */
   if ((pingtype == PINGTYPE_NONE && !arpping_done) || hs->hostbatch[0]->ifType() == devt_loopback) {
     for (i=0; i < hs->current_batch_sz; i++) {
-      if (!hs->hostbatch[i]->timedOut(&now)) {
+      if (!(hs->hostbatch[i]->flags & HOST_DOWN || hs->hostbatch[i]->timedOut(&now))) {
         initialize_timeout_info(&hs->hostbatch[i]->to);
         hs->hostbatch[i]->flags |= HOST_UP; /*hostbatch[i].up = 1;*/
         if (pingtype == PINGTYPE_NONE && !arpping_done)
@@ -647,7 +638,7 @@ static void refresh_hostbatch(HostGroupState *hs, const addrset *exclude_group,
     nmap_mass_rdns(hs->hostbatch, hs->current_batch_sz);
 }
 
-Target *nexthost(HostGroupState *hs, const addrset *exclude_group,
+Target *nexthost(HostGroupState *hs, const struct addrset *exclude_group,
                  struct scan_lists *ports, int pingtype) {
   if (hs->next_batch_no >= hs->current_batch_sz)
     refresh_hostbatch(hs, exclude_group, ports, pingtype);

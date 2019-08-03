@@ -10,7 +10,6 @@ local _G = require "_G"
 local coroutine = require "coroutine"
 local math = require "math"
 local nmap = require "nmap"
-local os = require "os"
 local string = require "string"
 local table = require "table"
 local assert = assert;
@@ -27,12 +26,10 @@ local tonumber = tonumber;
 local tostring = tostring;
 local print = print;
 local type = type
+local pcall = pcall
 
 local ceil = math.ceil
-local floor = math.floor
-local fmod = math.fmod
 local max = math.max
-local random = math.random
 
 local format = string.format;
 local rep = string.rep
@@ -42,16 +39,13 @@ local sub = string.sub
 local gsub = string.gsub
 local char = string.char
 local byte = string.byte
+local gmatch = string.gmatch
 
 local concat = table.concat;
 local insert = table.insert;
 local remove = table.remove;
 local pack = table.pack;
 local unpack = table.unpack;
-
-local difftime = os.difftime;
-local time = os.time;
-local date = os.date;
 
 local EMPTY = {}; -- Empty constant table
 
@@ -190,79 +184,6 @@ print_verbose = function(level, fmt, ...)
   elseif not l and 1 <= d then
     nmap.log_write("stdout", format(level, fmt, ...));
   end
-end
-
---- Join a list of strings with a separator string.
---
--- This is Lua's <code>table.concat</code> function with the parameters
--- swapped for coherence.
--- @usage
--- stdnse.strjoin(", ", {"Anna", "Bob", "Charlie", "Dolores"})
--- --> "Anna, Bob, Charlie, Dolores"
--- @param delimiter String to delimit each element of the list.
--- @param list Array of strings to concatenate.
--- @return Concatenated string.
-function strjoin(delimiter, list)
-  assert(type(delimiter) == "string" or type(delimiter) == nil, "delimiter is of the wrong type! (did you get the parameters backward?)")
-
-  return concat(list, delimiter);
-end
-
---- Split a string at a given delimiter, which may be a pattern.
--- @usage
--- stdnse.strsplit(",%s*", "Anna, Bob, Charlie, Dolores")
--- --> { "Anna", "Bob", "Charlie", "Dolores" }
--- @param pattern Pattern that separates the desired strings.
--- @param text String to split.
--- @return Array of substrings without the separating pattern.
-function strsplit(pattern, text)
-  local list, pos = {}, 1;
-
-  assert(pattern ~= "", "delimiter matches empty string!");
-
-  while true do
-    local first, last = text:find(pattern, pos);
-    if first then -- found?
-      list[#list+1] = text:sub(pos, first-1);
-      pos = last+1;
-    else
-      list[#list+1] = text:sub(pos);
-      break;
-    end
-  end
-  return list;
-end
-
---- Generate a random string.
---
--- You can either provide your own charset or the function will use
--- a default one which is [A-Z].
--- @param len Length of the string we want to generate.
--- @param charset Charset that will be used to generate the string. String or table
--- @return A random string of length <code>len</code> consisting of
--- characters from <code>charset</code> if one was provided, otherwise
--- <code>charset</code> defaults to [A-Z] letters.
-function generate_random_string(len, charset)
-  local t = {}
-  local ascii_A = 65
-  local ascii_Z = 90
-  if charset then
-    if type(charset) == "string" then
-      for i=1,len do
-        local r = random(#charset)
-        t[i] = sub(charset, r, r)
-      end
-    else
-      for i=1,len do
-        t[i]=charset[random(#charset)]
-      end
-    end
-  else
-    for i=1,len do
-      t[i]=char(random(ascii_A,ascii_Z))
-    end
-  end
-  return concat(t)
 end
 
 --- Return a wrapper closure around a socket that buffers socket reads into
@@ -499,176 +420,6 @@ function parse_timespec(timespec)
   return t * m
 end
 
--- Find the offset in seconds between local time and UTC. That is, if we
--- interpret a UTC date table as a local date table by passing it to os.time,
--- how much must be added to the resulting integer timestamp to make it
--- correct?
-local function utc_offset(t)
-  -- What does the calendar say locally?
-  local localtime = date("*t", t)
-  -- What does the calendar say in UTC?
-  local gmtime = date("!*t", t)
-  -- Interpret both as local calendar dates and find the difference.
-  return difftime(time(localtime), time(gmtime))
-end
---- Convert a date table into an integer timestamp.
---
--- Unlike os.time, this does not assume that the date table represents a local
--- time. Rather, it takes an optional offset number of seconds representing the
--- time zone, and returns the timestamp that would result using that time zone
--- as local time. If the offset is omitted or 0, the date table is interpreted
--- as a UTC date. For example, 4:00 UTC is the same as 5:00 UTC+1:
--- <code>
--- date_to_timestamp({year=1970,month=1,day=1,hour=4,min=0,sec=0})          --> 14400
--- date_to_timestamp({year=1970,month=1,day=1,hour=4,min=0,sec=0}, 0)       --> 14400
--- date_to_timestamp({year=1970,month=1,day=1,hour=5,min=0,sec=0}, 1*60*60) --> 14400
--- </code>
--- And 4:00 UTC+1 is an earlier time:
--- <code>
--- date_to_timestamp({year=1970,month=1,day=1,hour=4,min=0,sec=0}, 1*60*60) --> 10800
--- </code>
-function date_to_timestamp(date, offset)
-  offset = offset or 0
-  return time(date) + utc_offset(time(date)) - offset
-end
-
-local function format_tz(offset)
-  local sign, hh, mm
-
-  if not offset then
-    return ""
-  end
-  if offset < 0 then
-    sign = "-"
-    offset = -offset
-  else
-    sign = "+"
-  end
-  -- Truncate to minutes.
-  offset = floor(offset / 60)
-  hh = floor(offset / 60)
-  mm = floor(fmod(offset, 60))
-
-  return format("%s%02d:%02d", sign, hh, mm)
-end
---- Format a date and time (and optional time zone) for structured output.
---
--- Formatting is done according to RFC 3339 (a profile of ISO 8601), except
--- that a time zone may be omitted to signify an unspecified local time zone.
--- Time zones are given as an integer number of seconds from UTC. Use
--- <code>0</code> to mark UTC itself. Formatted strings with a time zone look
--- like this:
--- <code>
--- format_timestamp(os.time(), 0)       --> "2012-09-07T23:37:42+00:00"
--- format_timestamp(os.time(), 2*60*60) --> "2012-09-07T23:37:42+02:00"
--- </code>
--- Without a time zone they look like this:
--- <code>
--- format_timestamp(os.time())          --> "2012-09-07T23:37:42"
--- </code>
---
--- This function should be used for all dates emitted as part of NSE structured
--- output.
-function format_timestamp(t, offset)
-  if type(t) == "table" then
-    return format(
-      "%d-%02d-%02dT%02d:%02d:%02d",
-      t.year, t.month, t.day, t.hour, t.min, t.sec
-      )
-  else
-    local tz_string = format_tz(offset)
-    offset = offset or 0
-    return date("!%Y-%m-%dT%H:%M:%S", floor(t + offset)) .. tz_string
-  end
-end
-
---- Format a time interval into a string
---
--- String is in the same format as format_difftime
--- @param interval A time interval
--- @param unit The time unit division as a number. If <code>interval</code> is
---             in milliseconds, this is 1000 for instance. Default: 1 (seconds)
--- @return The time interval in string format
-function format_time(interval, unit)
-  local sign = ""
-  if interval < 0 then
-    sign = "-"
-    interval = math.abs(interval)
-  end
-  unit = unit or 1
-  local precision = floor(math.log(unit, 10))
-
-  local sec = (interval % (60 * unit)) / unit
-  interval = interval // (60 * unit)
-  local min = interval % 60
-  interval = interval // 60
-  local hr = interval % 24
-  interval = interval // 24
-
-  local s = format("%.0fd%02.0fh%02.0fm%02.".. precision .."fs",
-    interval, hr, min, sec)
-  -- trim off leading 0 and "empty" units
-  return sign .. (match(s, "([1-9].*)") or format("%0.".. precision .."fs", 0))
-end
-
---- Format the difference between times <code>t2</code> and <code>t1</code>
--- into a string
---
--- String is in one of the forms (signs may vary):
--- * 0s
--- * -4s
--- * +2m38s
--- * -9h12m34s
--- * +5d17h05m06s
--- * -2y177d10h13m20s
--- The string shows <code>t2</code> relative to <code>t1</code>; i.e., the
--- calculation is <code>t2</code> minus <code>t1</code>.
-function format_difftime(t2, t1)
-  local d, s, sign, yeardiff
-
-  d = difftime(time(t2), time(t1))
-  if d > 0 then
-    sign = "+"
-  elseif d < 0 then
-    sign = "-"
-    t2, t1 = t1, t2
-    d = -d
-  else
-    sign = ""
-  end
-  -- t2 is always later than or equal to t1 here.
-
-  -- The year is a tricky case because it's not a fixed number of days
-  -- the way a day is a fixed number of hours or an hour is a fixed
-  -- number of minutes. For example, the difference between 2008-02-10
-  -- and 2009-02-10 is 366 days because 2008 was a leap year, but it
-  -- should be printed as 1y0d0h0m0s, not 1y1d0h0m0s. We advance t1 to be
-  -- the latest year such that it is still before t2, which means that its
-  -- year will be equal to or one less than t2's. The number of years
-  -- skipped is stored in yeardiff.
-  if t2.year > t1.year then
-    local tmpyear = t1.year
-    -- Put t1 in the same year as t2.
-    t1.year = t2.year
-    d = difftime(time(t2), time(t1))
-    if d < 0 then
-      -- Too far. Back off one year.
-      t1.year = t2.year - 1
-      d = difftime(time(t2), time(t1))
-    end
-    yeardiff = t1.year - tmpyear
-    t1.year = tmpyear
-  else
-    yeardiff = 0
-  end
-
-  local s = format_time(d)
-  if yeardiff == 0 then return sign .. s end
-  -- Years.
-  s = format("%dy", yeardiff) .. s
-  return sign .. s
-end
-
 --- Returns the current time in milliseconds since the epoch
 -- @return The current time in milliseconds since the epoch
 function clock_ms()
@@ -685,28 +436,6 @@ end
 local function format_get_indent(indent)
   return rep("  ", #indent)
 end
-
-local function splitlines(s)
-  local result = {}
-  local i = 0
-
-  while i <= #s do
-    local b, e
-    b, e = find(s, "\r?\n", i)
-    if not b then
-      break
-    end
-    result[#result + 1] = sub(s, i, b - 1)
-    i = e + 1
-  end
-
-  if i <= #s then
-    result[#result + 1] = sub(s, i)
-  end
-
-  return result
-end
-
 
 -- A helper for format_output (see below).
 local function format_output_sub(status, data, indent)
@@ -770,9 +499,9 @@ local function format_output_sub(status, data, indent)
       insert(output, format_output_sub(status, value, new_indent))
 
     elseif(type(value) == 'string') then
-      local lines = splitlines(value)
-
-      for j, line in ipairs(lines) do
+      -- ensure it ends with a newline
+      if sub(value, -1) ~= "\n" then value = value .. "\n" end
+      for line in gmatch(value, "([^\r\n]-)\n") do
         insert(output, format("%s  %s%s\n",
           format_get_indent(indent),
           prefix, line))
@@ -1153,77 +882,6 @@ do end -- no function here, see nse_main.lua
 do end -- no function here, see nse_main.lua
 
 
-
----Checks if the port is in the port range
---
--- For example, calling:
--- <code>in_port_range({number=31337,protocol="udp"},"T:15,50-75,U:31334-31339")</code>
--- would result in a true value
---@param port a port structure containing keys port number(number) and protocol(string)
---@param port_range a port range string in Nmap standard format (ex. "T:80,1-30,U:31337,21-25")
---@returns boolean indicating whether the port is in the port range
-function in_port_range(port,port_range)
-  assert(port and type(port.number)=="number" and type(port.protocol)=="string" and
-    (port.protocol=="udp" or port.protocol=="tcp"),"Port structure missing or invalid: port={ number=<port_number>, protocol=<port_protocol> }")
-  assert((type(port_range)=="string" or type(port_range)=="number") and port_range~="","Incorrect port range specification.")
-
-  -- Proto - true for TCP, false for UDP
-  local proto
-  if(port.protocol=="tcp") then proto = true else proto = false end
-
-  --TCP flag for iteration - true for TCP, false for UDP, if not specified we presume TCP
-  local tcp_flag = true
-
-  -- in case the port_range is a single number
-  if type(port_range)=="number" then
-    if proto and port_range==port.number then return true
-    else return false
-    end
-  end
-
-  --clean the string a bit
-  port_range=port_range:gsub("%s+","")
-
-  -- single_pr - single port range
-  for i, single_pr in ipairs(strsplit(",",port_range)) do
-    if single_pr:match("T:") then
-      tcp_flag = true
-      single_pr = single_pr:gsub("T:","")
-    else
-      if single_pr:match("U:") then
-        tcp_flag = false
-        single_pr = single_pr:gsub("U:","")
-      end
-    end
-
-    -- compare ports only when the port's protocol is the same as
-    -- the current single port range
-    if tcp_flag == proto then
-      local pone = single_pr:match("^(%d+)$")
-      if pone then
-        pone = tonumber(pone)
-        assert(pone>-1 and pone<65536, "Port range number out of range (0-65535).")
-
-        if pone == port.number then
-          return true
-        end
-      else
-        local pstart, pend = single_pr:match("^(%d+)%-(%d+)$")
-        pstart, pend = tonumber(pstart), tonumber(pend)
-        assert(pstart,"Incorrect port range specification.")
-        assert(pstart<=pend,"Incorrect port range specification, the starting port should have a smaller value than the ending port.")
-        assert(pstart>-1 and pstart<65536 and pend>-1 and pend<65536, "Port range number out of range (0-65535).")
-
-        if port.number >=pstart and port.number <= pend then
-          return true
-        end
-      end
-    end
-  end
-  -- if no match is found then the port doesn't belong to the port_range
-  return false
-end
-
 --- Module function that mimics some behavior of Lua 5.1 module function.
 --
 -- This convenience function returns a module environment to set the _ENV
@@ -1350,56 +1008,6 @@ function pretty_printer (obj, printer)
   return aux(obj, "")
 end
 
--- This pattern must match the percent sign '%' since it is used in
--- escaping.
-local FILESYSTEM_UNSAFE = "[^a-zA-Z0-9._-]"
----
--- Escape a string to remove bytes and strings that may have meaning to
--- a filesystem, such as slashes.
---
--- All bytes are escaped, except for:
--- * alphabetic <code>a</code>-<code>z</code> and <code>A</code>-<code>Z</code>
--- * digits 0-9
--- * <code>.</code> <code>_</code> <code>-</code>
--- In addition, the strings <code>"."</code> and <code>".."</code> have
--- their characters escaped.
---
--- Bytes are escaped by a percent sign followed by the two-digit
--- hexadecimal representation of the byte value.
--- * <code>filename_escape("filename.ext") --> "filename.ext"</code>
--- * <code>filename_escape("input/output") --> "input%2foutput"</code>
--- * <code>filename_escape(".") --> "%2e"</code>
--- * <code>filename_escape("..") --> "%2e%2e"</code>
--- This escaping is somewhat like that of JavaScript
--- <code>encodeURIComponent</code>, except that fewer bytes are
--- whitelisted, and it works on bytes, not Unicode characters or UTF-16
--- code points.
-function filename_escape(s)
-  if s == "." then
-    return "%2e"
-  elseif s == ".." then
-    return "%2e%2e"
-  else
-    return (gsub(s, FILESYSTEM_UNSAFE, function (c)
-      return format("%%%02x", byte(c))
-    end))
-  end
-end
-
---- Check for the presence of a value in a table
---@param tab the table to search into
---@param item the searched value
---@return Boolean true if the item was found, false if not
---@return The index or key where the value was found, or nil
-function contains(tab, item)
-  for k, val in pairs(tab) do
-    if val == item then
-      return true, k
-    end
-  end
-  return false, nil
-end
-
 --- Returns a conservative timeout for a host
 --
 -- If the host parameter is a NSE host table with a <code>times.timeout</code>
@@ -1434,44 +1042,6 @@ function get_timeout(host, max_timeout, min_timeout)
     return max_timeout
   end
   return t
-end
-
---- Returns the keys of a table as an array
--- @param t The table
--- @return A table of keys
-function keys(t)
-  local ret = {}
-  local k, v = next(t)
-  while k do
-    ret[#ret+1] = k
-    k, v = next(t, k)
-  end
-  return ret
-end
-
--- Returns the case insensitive pattern of given parameter
--- Useful while doing case insensitive pattern match using string library.
--- https://stackoverflow.com/questions/11401890/case-insensitive-lua-pattern-matching/11402486#11402486
---
--- Ex: generate_case_insensitive_pattern("user") = "[uU][sS][eE][rR]"
---
--- @param pattern The string
--- @return A case insensitive patterned string
-function generate_case_insensitive_pattern(pattern)
-  -- Find an optional '%' (group 1) followed by any character (group 2)
-  local p = pattern:gsub("(%%?)(.)", function(percent, letter)
-
-    if percent ~= "" or not letter:match("%a") then
-      -- If the '%' matched, or `letter` is not a letter, return "as is"
-      return percent .. letter
-    else
-      -- Else, return a case-insensitive character class of the matched letter
-      return format("[%s%s]", letter:lower(), letter:upper())
-    end
-
-  end)
-
-  return p
 end
 
 return _ENV;

@@ -3,7 +3,7 @@
 
 # ***********************IMPORTANT NMAP LICENSE TERMS************************
 # *                                                                         *
-# * The Nmap Security Scanner is (C) 1996-2018 Insecure.Com LLC ("The Nmap  *
+# * The Nmap Security Scanner is (C) 1996-2019 Insecure.Com LLC ("The Nmap  *
 # * Project"). Nmap is also a registered trademark of the Nmap Project.     *
 # * This program is free software; you may redistribute and/or modify it    *
 # * under the terms of the GNU General Public License as published by the   *
@@ -214,10 +214,7 @@ class SearchParser(object):
         # processed by the SearchResult.search() function. It is needed only to
         # create a new SearchDir object, which is then used to perform the
         # actual search().
-        if "dir" in self.search_dict:
-            self.search_gui.init_search_dirs(self.search_dict["dir"])
-        else:
-            self.search_gui.init_search_dirs([])
+        self.search_gui.init_search_dirs(self.search_dict.pop("dir", []))
 
 
 class SearchGUI(gtk.VBox, object):

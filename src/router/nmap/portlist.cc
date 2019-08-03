@@ -4,7 +4,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2018 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2019 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -127,7 +127,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: portlist.cc 37126 2018-01-28 21:18:17Z fyodor $ */
+/* $Id$ */
 
 
 #include "nmap.h"
@@ -853,9 +853,9 @@ bool PortList::isIgnoredState(int state) {
   /* We will show more ports when verbosity is requested */
   if (o.verbose || o.debugging) {
     if (o.ipprotscan)
-      max_per_state *= (o.verbose + 3 * o.debugging);
+      max_per_state *= ((o.verbose + 1) + 3 * o.debugging);
     else
-      max_per_state *= (o.verbose + 20 * o.debugging);
+      max_per_state *= ((o.verbose + 1) + 20 * o.debugging);
   }
 
   if (getStateCounts(state) > max_per_state)

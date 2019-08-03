@@ -7,7 +7,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2018 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2019 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -130,12 +130,13 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: TargetGroup.h 37126 2018-01-28 21:18:17Z fyodor $ */
+/* $Id$ */
 
 #ifndef TARGETGROUP_H
 #define TARGETGROUP_H
 
 #include <list>
+#include <cstddef>
 
 class NetBlock;
 
@@ -157,7 +158,7 @@ public:
   /* Grab the next host from this expression (if any).  Returns 0 and
      fills in ss if successful.  ss must point to a pre-allocated
      sockaddr_storage structure */
-  int get_next_host(struct sockaddr_storage *ss, size_t *sslen);
+  int get_next_host(struct sockaddr_storage *ss, std::size_t *sslen);
   /* Returns true iff the given address is the one that was resolved to create
      this target group; i.e., not one of the addresses derived from it with a
      netmask. */

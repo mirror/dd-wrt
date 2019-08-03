@@ -6,6 +6,7 @@ local nmap = require "nmap"
 local os = require "os"
 local stdnse = require "stdnse"
 local string = require "string"
+local stringaux = require "stringaux"
 local table = require "table"
 
 description = [[
@@ -434,21 +435,16 @@ function get_prefix_length( range )
   local first, last, err = ipOps.get_ips_from_range( range )
   if err then return nil end
 
-  first = ipOps.ip_to_bin( first ):reverse()
-  last = ipOps.ip_to_bin( last ):reverse()
+  first = ipOps.ip_to_bin(first)
+  last = ipOps.ip_to_bin(last)
 
-  local hostbits = 0
-  for pos = 1, string.len( first ), 1 do
-
-    if first:sub( pos, pos ) == "0" and last:sub( pos, pos ) == "1" then
-      hostbits = hostbits + 1
-    else
-      break
+  for pos = 1, #first do
+    if first:byte(pos) ~= last:byte(pos) then
+      return pos - 1
     end
-
   end
 
-  return ( string.len( first ) - hostbits )
+  return #first
 
 end
 
@@ -697,7 +693,7 @@ function analyse_response( tracking, ip, response, data )
         -- fetch an object immediately in front of inetnum
         stdnse.debug5("%s Searching for an object group immediately before this range.", this_db)
         -- split objects from the record, up to offset.  Last object should be the one we want.
-        local obj_sel = stdnse.strsplit( "\r?\n\r?\n", response:sub( 1, offset ) )
+        local obj_sel = stringaux.strsplit( "\r?\n\r?\n", response:sub( 1, offset ) )
         response_chunk = "\n" .. obj_sel[#obj_sel] .. "\n"
         -- check if any of the objects we like match this single object in response chunk
         for ob, t in pairs( meta.fieldreq ) do
@@ -1148,9 +1144,9 @@ function smallest_range( range_1, range_2 )
   local r2_first, r2_last = ipOps.get_ips_from_range( range_2.range )
 
   if  range_1.pointer
-  and ipOps.compare_ip( r1_first, "eq", r2_first )
-  and ipOps.compare_ip( r1_last, "eq", r2_last )
-  and range_1.pointer < range_2.pointer then
+      and ipOps.compare_ip( r1_first, "eq", r2_first )
+      and ipOps.compare_ip( r1_last, "eq", r2_last )
+      and range_1.pointer < range_2.pointer then
     sorted = false
   end
 
@@ -1811,7 +1807,7 @@ function get_local_assignments_data()
         elseif http_response.status == 200 then
           -- prepend our file header
           stdnse.debug2("Retrieved %s.", assignment_data_spec.remote_resource)
-          file_content = stdnse.strsplit( "\r?\n", http_response.body )
+          file_content = stringaux.strsplit( "\r?\n", http_response.body )
           table.insert( file_content, 1, "** Do Not Alter This Line or The Following Line **" )
           local hline = {}
           hline[#hline+1] = "<" .. os.time() .. ">"
@@ -2223,7 +2219,7 @@ end
 
 function get_period( period )
 
-  if type( period ) ~= string or ( period == "" ) then return nil end
+  if type( period ) ~= 'string' or ( period == "" ) then return nil end
   local quant, unit = period:match( "(-?+?%d*%.?%d*)([SsMmHhDd]?)" )
   if not ( tonumber( quant ) ) then return nil end
 

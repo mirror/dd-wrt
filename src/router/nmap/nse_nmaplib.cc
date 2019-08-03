@@ -1,9 +1,5 @@
 
-extern "C" {
-  #include "lua.h"
-  #include "lauxlib.h"
-  #include "lualib.h"
-}
+#include "nse_lua.h"
 
 #include <math.h>
 
@@ -20,6 +16,7 @@ extern "C" {
 #include "osscan.h"
 #include "protocols.h"
 #include "libnetutil/netutil.h"
+#include <nbase.h>
 
 #include "nse_nmaplib.h"
 #include "nse_utility.h"
@@ -30,6 +27,10 @@ extern NmapOps o;
 
 static const char *NSE_PROTOCOL_OP[] = {"tcp", "udp", "sctp", NULL};
 static const int NSE_PROTOCOL[] = {IPPROTO_TCP, IPPROTO_UDP, IPPROTO_SCTP};
+
+// Number of fields in the "version" table
+// used as a hint to Lua when allocating it
+#define NSE_NUM_VERSION_FIELDS 12
 
 void set_version (lua_State *L, const struct serviceDeductions *sd)
 {
@@ -50,7 +51,7 @@ void set_version (lua_State *L, const struct serviceDeductions *sd)
       sd->dtype == SERVICE_DETECTION_TABLE ? "table" :
       sd->dtype == SERVICE_DETECTION_PROBED ? "probed" :
       NULL);
-  lua_newtable(L);
+  lua_createtable(L, sd->cpe.size(), 0);
   for (size_t i = 0; i < sd->cpe.size(); i++) {
     lua_pushstring(L, sd->cpe[i]);
     lua_rawseti(L, -2, i+1);
@@ -73,7 +74,7 @@ void set_portinfo (lua_State *L, const Target *target, const Port *port)
   nseU_setsfield(L, -1, "state", statenum2str(port->state));
   nseU_setsfield(L, -1, "reason", reason_str(port->reason.reason_id, 1));
   nseU_setifield(L, -1, "reason_ttl", port->reason.ttl);
-  lua_newtable(L);
+  lua_createtable(L, 0, NSE_NUM_VERSION_FIELDS);
   set_version(L, &sd);
   lua_setfield(L, -2, "version");
 }
@@ -108,14 +109,15 @@ static void push_osclass_table(lua_State *L,
   const struct OS_Classification *osclass) {
   unsigned int i;
 
-  lua_newtable(L);
+#define NSE_NUM_OSCLASS_FIELDS 5
+  lua_createtable(L, 0, NSE_NUM_OSCLASS_FIELDS);
 
   set_string_or_nil(L, "vendor", osclass->OS_Vendor);
   set_string_or_nil(L, "osfamily", osclass->OS_Family);
   set_string_or_nil(L, "osgen", osclass->OS_Generation);
   set_string_or_nil(L, "type", osclass->Device_Type);
 
-  lua_newtable(L);
+  lua_createtable(L, osclass->cpe.size(), 0);
   for (i = 0; i < osclass->cpe.size(); i++) {
     lua_pushstring(L, osclass->cpe[i]);
     lua_rawseti(L, -2, i + 1);
@@ -127,12 +129,13 @@ static void push_osmatch_table(lua_State *L, const FingerMatch *match,
   const OS_Classification_Results *OSR) {
   int i;
 
-  lua_newtable(L);
+#define NSE_NUM_OSMATCH_FIELDS 2
+  lua_createtable(L, 0, NSE_NUM_OSMATCH_FIELDS);
 
   lua_pushstring(L, match->OS_name);
   lua_setfield(L, -2, "name");
 
-  lua_newtable(L);
+  lua_createtable(L, OSR->OSC_num_matches, 0);
   for (i = 0; i < OSR->OSC_num_matches; i++) {
     push_osclass_table(L, OSR->OSC[i]);
     lua_rawseti(L, -2, i + 1);
@@ -181,7 +184,8 @@ void set_hostinfo(lua_State *L, Target *currenths) {
   push_bin_ip(L, currenths->SourceSockAddr());
   lua_setfield(L, -2, "bin_ip_src");
 
-  lua_newtable(L);
+#define NSE_NUM_TIMES_FIELDS 3
+  lua_createtable(L, 0, NSE_NUM_TIMES_FIELDS);
   nseU_setnfield(L, -1, "srtt", (lua_Number) currenths->to.srtt / 1000000.0);
   nseU_setnfield(L, -1, "rttvar", (lua_Number) currenths->to.rttvar / 1000000.0);
   nseU_setnfield(L, -1, "timeout", (lua_Number) currenths->to.timeout / 1000000.0);
@@ -195,19 +199,18 @@ void set_hostinfo(lua_State *L, Target *currenths) {
   {
     std::list<TracerouteHop>::iterator it;
 
-    lua_newtable(L);
+    lua_createtable(L, currenths->traceroute_hops.size(), 0);
     for (it = currenths->traceroute_hops.begin(); it != currenths->traceroute_hops.end(); it++)
     {
-      lua_newtable(L);
+#define NSE_NUM_TRACEROUTE_FIELDS 3
+      lua_createtable(L, 0, NSE_NUM_TRACEROUTE_FIELDS);
       /* fill the table if the hop has not timed out, otherwise an empty table
        * is inserted */
       if (!it->timedout) {
         nseU_setsfield(L, -1, "ip", inet_ntop_ez(&it->addr, sizeof(it->addr)));
         if (!it->name.empty())
           nseU_setsfield(L, -1, "name", it->name.c_str());
-        lua_newtable(L);
         nseU_setnfield(L, -1, "srtt", it->rtt / 1000.0);
-        lua_setfield(L, -2, "times");
       }
       lua_rawseti(L, -2, lua_rawlen(L, -2)+1);
     }
@@ -232,7 +235,7 @@ void set_hostinfo(lua_State *L, Target *currenths) {
       int i;
       const OS_Classification_Results *OSR = FPR->getOSClassification();
 
-      lua_newtable(L);
+      lua_createtable(L, FPR->num_perfect_matches, 0);
       for (i = 0; i < FPR->num_perfect_matches; i++) {
         push_osmatch_table(L, FPR->matches[i], OSR);
         lua_rawseti(L, -2, i + 1);
@@ -462,7 +465,7 @@ static int l_get_ports (lua_State *L)
   if (!(p = target->ports.nextPort(p, &port, protocol, state))) {
     lua_pushnil(L);
   } else {
-    lua_newtable(L);
+    lua_createtable(L, 0, NSE_NUM_PORTINFO_FIELDS);
     set_portinfo(L, target, p);
   }
   return 1;
@@ -489,7 +492,7 @@ static int l_get_port_state (lua_State *L)
     lua_pushnil(L);
   else
   {
-    lua_newtable(L);
+    lua_createtable(L, 0, NSE_NUM_PORTINFO_FIELDS);
     set_portinfo(L, target, p);
   }
   return 1;
@@ -660,7 +663,7 @@ static int l_get_version_intensity (lua_State *L)
   lua_pop(L,1);
 
   if (selected_by_name) {
-    lua_pushnumber(L, max_intensity);
+    lua_pushinteger(L, max_intensity);
     return 1;
   }
 
@@ -687,7 +690,7 @@ static int l_get_version_intensity (lua_State *L)
     }
   }
 
-  lua_pushnumber(L, intensity);
+  lua_pushinteger(L, intensity);
 
   return 1;
 }
@@ -701,13 +704,13 @@ static int l_get_verbosity (lua_State *L)
      we lie to it and say the verbosity is one higher than it really is. */
   verbosity += (nse_selectedbyname(L), lua_toboolean(L, -1) ? 1 : 0);
 
-  lua_pushnumber(L, verbosity);
+  lua_pushinteger(L, verbosity);
   return 1;
 }
 
 static int l_get_debugging (lua_State *L)
 {
-  lua_pushnumber(L, o.debugging);
+  lua_pushinteger(L, o.debugging);
   return 1;
 }
 
@@ -732,7 +735,7 @@ static int l_fetchfile (lua_State *L)
 
 static int l_get_timing_level (lua_State *L)
 {
-  lua_pushnumber(L, o.timing_level);
+  lua_pushinteger(L, o.timing_level);
   return 1;
 }
 
@@ -764,18 +767,18 @@ static int l_add_targets (lua_State *L)
     }
     /* was able to add some targets */
     if (ntarget) {
-      lua_pushnumber(L, ntarget);
+      lua_pushinteger(L, ntarget);
       return 1;
     /* errors */
     } else {
-      lua_pushnumber(L, ntarget);
+      lua_pushinteger(L, ntarget);
       lua_pushstring(L, "failed to add new targets.");
       return 2;
     }
   } else {
       /* function called without arguments */
       /* push the number of pending targets that are in the queue */
-      lua_pushnumber(L, NewTargets::insert(""));
+      lua_pushinteger(L, NewTargets::insert(""));
       return 1;
   }
 }
@@ -783,7 +786,7 @@ static int l_add_targets (lua_State *L)
 /* Return the number of added targets */
 static int l_get_new_targets_num (lua_State *L)
 {
-  lua_pushnumber(L, NewTargets::get_number());
+  lua_pushinteger(L, NewTargets::get_number());
   return 1;
 }
 
@@ -793,7 +796,7 @@ static int l_get_dns_servers (lua_State *L)
   std::list<std::string> servs2 = get_dns_servers();
   std::list<std::string>::iterator servI2;
 
-  lua_newtable(L);
+  lua_createtable(L, servs2.size(), 0);
   for (servI2 = servs2.begin(); servI2 != servs2.end(); servI2++)
     nseU_appendfstr(L, -1, "%s", servI2->c_str());
   return 1;
@@ -884,10 +887,11 @@ static int l_list_interfaces (lua_State *L)
     memset(ipstr, 0, INET6_ADDRSTRLEN);
     memset(&src, 0, sizeof(src));
     memset(&bcast, 0, sizeof(bcast));
-    lua_newtable(L); //base table
+    lua_createtable(L, numifs, 0); //base table
 
     for(i=0; i< numifs; i++) {
-      lua_newtable(L); //interface table
+#define NSE_NUM_INTERFACE_FIELDS 9
+      lua_createtable(L, 0, NSE_NUM_INTERFACE_FIELDS); //interface table
       nseU_setsfield(L, -1, "device", iflist[i].devfullname);
       nseU_setsfield(L, -1, "shortname", iflist[i].devname);
       nseU_setifield(L, -1, "netmask", iflist[i].netmask_bits);
@@ -939,9 +943,9 @@ static int l_list_interfaces (lua_State *L)
 static int l_get_ttl (lua_State *L)
 {
   if (o.ttl < 0 || o.ttl > 255)
-    lua_pushnumber(L, 64); //default TTL
+    lua_pushinteger(L, 64); //default TTL
   else
-    lua_pushnumber(L, o.ttl);
+    lua_pushinteger(L, o.ttl);
   return 1;
 }
 
@@ -952,9 +956,31 @@ static int l_get_ttl (lua_State *L)
 static int l_get_payload_length(lua_State *L)
 {
   if (o.extra_payload_length < 0)
-    lua_pushnumber(L, 0); //default payload length
+    lua_pushinteger(L, 0); //default payload length
   else
-    lua_pushnumber(L, o.extra_payload_length);
+    lua_pushinteger(L, o.extra_payload_length);
+  return 1;
+}
+
+/* Get a string of pseudorandom bytes. See nbase's get_random_bytes for details */
+static int l_get_random_bytes(lua_State *L)
+{
+  luaL_Buffer b;
+  int numbytes;
+  char *buf;
+  numbytes = luaL_checkinteger(L, 1);
+  if (numbytes < 0)
+    return luaL_error(L, "Invalid length argument to get_random_bytes.");
+  else if (numbytes == 0) {
+    lua_pushliteral(L, "");
+  }
+  else {
+    buf = luaL_buffinitsize(L, &b, (size_t) numbytes);
+    if (get_random_bytes(buf, numbytes) != 0) {
+      return luaL_error(L, "Error in nbase's get_random_bytes.");
+    }
+    luaL_pushresultsize(&b, (size_t) numbytes);
+  }
   return 1;
 }
 
@@ -986,6 +1012,7 @@ int luaopen_nmap (lua_State *L)
     {"list_interfaces", l_list_interfaces},
     {"get_ttl", l_get_ttl},
     {"get_payload_length",l_get_payload_length},
+    {"get_random_bytes", l_get_random_bytes},
     {"new_dnet", nseU_placeholder}, /* imported from nmap.dnet */
     {"get_interface_info", nseU_placeholder}, /* imported from nmap.dnet */
     {"new_socket", nseU_placeholder}, /* imported from nmap.socket */

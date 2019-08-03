@@ -6,7 +6,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2018 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2019 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -129,7 +129,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: tcpip.h 37126 2018-01-28 21:18:17Z fyodor $ */
+/* $Id$ */
 
 
 #ifndef TCPIP_H
@@ -138,12 +138,6 @@
 #include "nbase.h"
 
 #include <pcap.h>
-#ifdef WIN32
-/* WinPCAP doesn't have this, but Npcap does.
- * Using 0 is safe for both, but change this if we decide to drop WinPcap */
-#undef PCAP_NETMASK_UNKNOWN
-#define PCAP_NETMASK_UNKNOWN 0
-#endif
 
 class Target;
 

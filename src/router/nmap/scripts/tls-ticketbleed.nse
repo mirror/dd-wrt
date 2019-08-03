@@ -1,13 +1,13 @@
-local bin = require("bin")
-local match = require("match")
 local nmap = require("nmap")
 local packet = require "packet"
 local shortport = require("shortport")
 local sslcert = require("sslcert")
 local stdnse = require("stdnse")
 local table = require("table")
+local tableaux = require "tableaux"
 local tls = require "tls"
 local vulns = require("vulns")
+local rand = require "rand"
 
 description = [[
 Detects whether a server is vulnerable to the F5 Ticketbleed bug (CVE-2016-9244).
@@ -23,8 +23,6 @@ For additional information:
 -- nmap -p 443 --script tls-ticketbleed <target>
 --
 -- @output
--- PORT    STATE SERVICE
--- 445/tcp open  https
 -- | tls-ticketbleed:
 -- |   VULNERABLE:
 -- |   Ticketbleed is a serious issue in products manufactured by F5, a popular
@@ -34,7 +32,7 @@ For additional information:
 -- |     Risk factor: High
 -- |       Ticketbleed is vulnerability in the implementation of the TLS
 -- SessionTicket extension found in some F5 products. It allows the leakage
--- ("bleeding") of up to 31 bytes of data from unin itialized memory. This is
+-- ("bleeding") of up to 31 bytes of data from uninitialized memory. This is
 -- caused by the TLS stack padding a Session ID, passed from the client, with
 -- data to make it 32-bits long.
 -- |     Exploit results:
@@ -50,6 +48,7 @@ For additional information:
 author = "Mak Kolybabi <mak@kolybabi.com>"
 license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"vuln", "safe"}
+dependencies = {"https-redirect"}
 
 portrule = function(host, port)
   if not tls.handshake_parse.NewSessionTicket then
@@ -208,14 +207,14 @@ local function is_vuln(host, port, version)
   -- reduces the chance of a false positive caused by the server
   -- issuing us a new, valid session ID that just happens to match the
   -- random one we provided.
-  local sid_old = stdnse.generate_random_string(16)
+  local sid_old = rand.random_string(16)
 
   local hello = tls.client_hello({
     ["protocol"] = version,
     ["session_id"] = sid_old,
     -- Claim to support every cipher
     -- Doesn't work with IIS, but only F5 products should be affected
-    ["ciphers"] = stdnse.keys(tls.CIPHERS),
+    ["ciphers"] = tableaux.keys(tls.CIPHERS),
     ["compressors"] = {"NULL"},
     ["extensions"] = {
       -- Claim to support common elliptic curves

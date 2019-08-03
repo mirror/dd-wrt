@@ -6,14 +6,15 @@
 -- @copyright Same as Nmap--See https://nmap.org/book/man-legal.html
 
 
-local bin = require "bin"
 local io = require "io"
 local math = require "math"
 local nmap = require "nmap"
 local os = require "os"
 local stdnse = require "stdnse"
 local string = require "string"
+local stringaux = require "stringaux"
 local table = require "table"
+local base64 = require "base64"
 local openssl = stdnse.silent_require "openssl"
 _ENV = stdnse.module("ssh1", stdnse.seeall)
 
@@ -30,8 +31,7 @@ _ENV = stdnse.module("ssh1", stdnse.seeall)
 --  the return is similar to the lua function string:find()
 check_packet_length = function( buffer )
   if #buffer < 4 then return nil end
-  local payload_length, packet_length, offset
-  offset, payload_length = bin.unpack( ">I", buffer )
+  local payload_length = string.unpack( ">I4", buffer )
   local padding = 8 - payload_length % 8
   assert(payload_length)
   local total = 4+payload_length+padding;
@@ -51,6 +51,11 @@ end
 receive_ssh_packet = function( socket )
   local status, packet = socket:receive_buf(check_packet_length, true)
   return status, packet
+end
+
+local function unpack_with_padding(len_bytes, data, offset)
+  local length, offset = string.unpack( ">I".. len_bytes, data, offset )
+  return string.unpack( ">c" .. math.ceil( length / 8 ), data, offset )
 end
 
 --- Fetch an SSH-1 host key.
@@ -78,29 +83,25 @@ fetch_host_key = function(host, port)
   socket:close()
   if not status then return end
 
-  offset, packet_length = bin.unpack( ">i", data )
+  packet_length, offset = string.unpack( ">I4", data )
   padding = 8 - packet_length % 8
   offset = offset + padding
 
   if padding + packet_length + 4 == #data then
     -- seems to be a proper SSH1 packet
     local msg_code,host_key_bits,exp,mod,length,fp_input
-    offset, msg_code = bin.unpack( ">c", data, offset )
+    msg_code, offset = string.unpack( ">B", data, offset )
     if msg_code == 2 then -- 2 => SSH_SMSG_PUBLIC_KEY
       -- ignore cookie and server key bits
-      offset, _, _ = bin.unpack( ">A8i", data, offset )
+      offset = offset + 8 + 4
       -- skip server key exponent and modulus
-      offset, length = bin.unpack( ">S", data, offset )
-      offset = offset + math.ceil( length / 8 )
-      offset, length = bin.unpack( ">S", data, offset )
-      offset = offset + math.ceil( length / 8 )
+      _, offset = unpack_with_padding(2, data, offset)
+      _, offset = unpack_with_padding(2, data, offset)
 
-      offset, host_key_bits = bin.unpack( ">i", data, offset )
-      offset, length = bin.unpack( ">S", data, offset )
-      offset, exp = bin.unpack( ">A" .. math.ceil( length / 8 ), data, offset )
+      host_key_bits, offset = string.unpack( ">I4", data, offset )
+      exp, offset = unpack_with_padding(2, data, offset)
       exp = openssl.bignum_bin2bn( exp )
-      offset, length = bin.unpack( ">S", data, offset )
-      offset, mod = bin.unpack( ">A" .. math.ceil( length / 8 ), data, offset )
+      mod, offset = unpack_with_padding(2, data, offset)
       mod = openssl.bignum_bin2bn( mod )
 
       fp_input = mod:tobin()..exp:tobin()
@@ -108,7 +109,7 @@ fetch_host_key = function(host, port)
       return {exp=exp,mod=mod,bits=host_key_bits,key_type='rsa1',fp_input=fp_input,
               full_key=('%d %s %s'):format(host_key_bits, exp:todec(), mod:todec()),
               key=('%s %s'):format(exp:todec(), mod:todec()), algorithm="RSA1",
-              fingerprint=openssl.md5(fp_input)}
+              fingerprint=openssl.md5(fp_input), fp_sha256=openssl.digest("sha256",fp_input)}
     end
   end
 end
@@ -120,6 +121,16 @@ end
 fingerprint_hex = function( fingerprint, algorithm, bits )
   fingerprint = stdnse.tohex(fingerprint,{separator=":",group=2})
   return ("%d %s (%s)"):format( bits, fingerprint, algorithm )
+end
+
+--- Format a key fingerprint in base64.
+-- @param fingerprint Key fingerprint.
+-- @param hash The hashing algorithm used
+-- @param algorithm Key algorithm.
+-- @param bits Key size in bits.
+fingerprint_base64 = function( fingerprint, hash, algorithm, bits )
+  fingerprint = base64.enc(fingerprint)
+  return ("%d %s:%s (%s)"):format( bits, hash, fingerprint:match("[^=]+"), algorithm )
 end
 
 --- Format a key fingerprint in Bubble Babble.
@@ -254,7 +265,7 @@ parse_known_hosts_file = function(path)
     for l in io.lines(knownhostspath) do
         lnumber = lnumber + 1
         if l and string.sub(l, 1, 1) ~= "#" then
-            local parts = stdnse.strsplit(" ", l)
+            local parts = stringaux.strsplit(" ", l)
             table.insert(known_host_entries, {entry=parts, linenumber=lnumber})
         end
     end

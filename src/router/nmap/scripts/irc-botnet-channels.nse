@@ -3,6 +3,7 @@ local irc = require "irc"
 local stdnse = require "stdnse"
 local string = require "string"
 local table = require "table"
+local rand = require "rand"
 
 description = [[
 Checks an IRC server for channels that are commonly used by malicious botnets.
@@ -157,11 +158,7 @@ local function irc_compose_message(prefix, command, ...)
     end
   end
 
-  return stdnse.strjoin(" ", parts) .. "\r\n"
-end
-
-local function random_nick()
-  return stdnse.generate_random_string(9, "abcdefghijklmnopqrstuvwxyz")
+  return table.concat(parts, " ") .. "\r\n"
 end
 
 local function splitlines(s)
@@ -190,7 +187,7 @@ local function irc_connect(host, port, nick, user, pass)
   if pass then
     commands[#commands + 1] = irc_compose_message(nil, "PASS", pass)
   end
-  nick = nick or random_nick()
+  nick = nick or rand.random_alpha(9)
   commands[#commands + 1] = irc_compose_message(nil, "NICK", nick)
   user = user or nick
   commands[#commands + 1] = irc_compose_message(nil, "USER", user, "8", "*", user)
@@ -260,7 +257,7 @@ local function concat_channel_list(channels)
     mod[#mod + 1] = channel
   end
 
-  return stdnse.strjoin(",", mod)
+  return table.concat(mod, ",")
 end
 
 function action(host, port)
@@ -311,7 +308,7 @@ function action(host, port)
   irc_disconnect(irc)
 
   if errorparams then
-    channels[#channels + 1] = "ERROR: " .. stdnse.strjoin(" ", errorparams)
+    channels[#channels + 1] = "ERROR: " .. table.concat(errorparams, " ")
   end
 
   return stdnse.format_output(true, channels)

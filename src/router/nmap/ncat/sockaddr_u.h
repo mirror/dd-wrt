@@ -3,7 +3,7 @@
  * strict-aliasing rules.                                                  *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2018 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2019 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -133,10 +133,17 @@
 #ifndef SOCKADDR_U_H_
 #define SOCKADDR_U_H_
 
+#if HAVE_LINUX_VM_SOCKETS_H
+#include <linux/vm_sockets.h>
+#endif
+
 union sockaddr_u {
     struct sockaddr_storage storage;
 #ifdef HAVE_SYS_UN_H
     struct sockaddr_un un;
+#endif
+#ifdef HAVE_LINUX_VM_SOCKETS_H
+    struct sockaddr_vm vm;
 #endif
     struct sockaddr_in in;
     struct sockaddr_in6 in6;

@@ -1,5 +1,6 @@
 local nmap = require "nmap"
 local string = require "string"
+local stringaux = require "stringaux"
 local stdnse    = require "stdnse"
 local shortport = require "shortport"
 local tn3270    = require "tn3270"
@@ -12,7 +13,7 @@ CICS User ID brute forcing script for the CESL login screen.
 ]]
 
 ---
--- @args cics-user-brute.commands Commands in a semi-colon seperated list needed
+-- @args cics-user-brute.commands Commands in a semi-colon separated list needed
 --  to access CICS. Defaults to <code>CICS</code>.
 --
 -- @usage
@@ -33,9 +34,10 @@ CICS User ID brute forcing script for the CESL login screen.
 -- 2016-08-29 - v0.1 - created by Soldier of Fortran
 -- 2016-10-26 - v0.2 - Added RACF support
 -- 2017-01-23 - v0.3 - Rewrote script to use fields and skip enumeration to speed up testing
+-- 2019-02-01 - v0.4 - Disabled new TN3270E support
 
 author = "Philip Young aka Soldier of Fortran"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"intrusive", "brute"}
 portrule = shortport.port_or_service({23,992}, "tn3270")
 
@@ -59,6 +61,7 @@ Driver = {
     o.port = port
     o.options = options
     o.tn3270 = tn3270.Telnet:new(brute.new_socket())
+    o.tn3270:disable_tn3270e()
     return o
   end,
   connect = function( self )
@@ -83,7 +86,7 @@ Driver = {
     local loop = 1
     local err
     stdnse.debug(2,"Getting to CICS")
-    local run = stdnse.strsplit(";%s*", commands)
+    local run = stringaux.strsplit(";%s*", commands)
     for i = 1, #run do
       stdnse.debug(2,"Issuing Command (#%s of %s): %s", i, #run ,run[i])
       self.tn3270:send_cursor(run[i])
@@ -119,9 +122,10 @@ Driver = {
 
       -- Ok we're good we're at CESL. Send the Userid and Password.
     local fields = self.tn3270:writeable() -- Get the writeable field areas
-    local user_loc = {fields[1][1],user}   -- This is the 'UserID:' field
-    local pass_loc = {fields[3][1],pass}   -- This is the 'Password:' field ([2] is a group ID)
-    stdnse.verbose('Trying CICS: ' .. user ..' : ' .. pass)
+    local user_loc = {fields[2][1],user}   -- This is the 'UserID:' field
+    local pass_loc = {fields[4][1],pass}   -- This is the 'Password:' field ([2] is a group ID)
+    stdnse.verbose('[BRUTE] Trying CICS: ' .. user ..' : ' .. pass)
+    stdnse.debug(3,"[BRUTE] Location:" .. fields[2][1] .. " x " .. fields[4][1])
     self.tn3270:send_locations({user_loc,pass_loc})
     self.tn3270:get_all_data()
     stdnse.debug(2,"Screen Received for User ID: %s/%s", user, pass)
@@ -193,6 +197,7 @@ Driver = {
 local function cics_test( host, port, commands )
   stdnse.verbose(2,"Checking for CICS Login Page")
   local tn = tn3270.Telnet:new()
+  tn:disable_tn3270e()
   local status, err = tn:initiate(host,port)
   local cesl = false -- initially we're not at CICS
   if not status then
@@ -201,7 +206,7 @@ local function cics_test( host, port, commands )
   end
   tn:get_screen_debug(2) -- prints TN3270 screen to debug
   stdnse.debug(2,"Getting to CICS")
-  local run = stdnse.strsplit(";%s*", commands)
+  local run = stringaux.strsplit(";%s*", commands)
   for i = 1, #run do
     stdnse.debug(2,"Issuing Command (#%s of %s): %s", i, #run ,run[i])
     tn:send_cursor(run[i])

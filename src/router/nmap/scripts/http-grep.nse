@@ -3,6 +3,7 @@ local httpspider = require "httpspider"
 local shortport = require "shortport"
 local stdnse = require "stdnse"
 local table = require "table"
+local tableaux = require "tableaux"
 
 
 description = [[
@@ -20,16 +21,14 @@ The script searches for email and ip by default.
 -- nmap -p 80 www.example.com --script http-grep --script-args='match="[A-Za-z0-9%.%%%+%-]+@[A-Za-z0-9%.%%%+%-]+%.%w%w%w?%w?",breakonmatch'
 -- nmap -p 80 www.example.com --script http-grep --script-args 'http-grep.builtins ={"mastercard", "discover"}, http-grep.url="example.html"'
 -- @output
--- PORT   STATE SERVICE REASON
--- 80/tcp open  http    syn-ack
 -- | http-grep:
--- |   (1) http://nmap.org/book/man-bugs.html:
+-- |   (1) https://nmap.org/book/man-bugs.html:
 -- |     (1) email:
 -- |       + dev@nmap.org
--- |   (1) http://nmap.org/book/install.html:
+-- |   (1) https://nmap.org/book/install.html:
 -- |     (1) email:
 -- |       + fyodor@nmap.org
--- |   (16) http://nmap.org/changelog.html:
+-- |   (16) https://nmap.org/changelog.html:
 -- |     (7) ip:
 -- |       + 255.255.255.255
 -- |       + 10.99.24.140
@@ -48,7 +47,7 @@ The script searches for email and ip by default.
 -- |       + president@whitehouse.gov
 -- |       + haesslich@loyalty.org
 -- |       + rchong@fcc.gov
--- |   (6) http://nmap.org/5/#5changes:
+-- |   (6) https://nmap.org/5/#5changes:
 -- |     (6) ip:
 -- |       + 207.68.200.30
 -- |       + 64.13.134.52
@@ -76,17 +75,17 @@ The script searches for email and ip by default.
 -- visa, amex, ssn and ip addresses. If you just put in script-args http-grep.builtins then all will be enabled.
 --
 -- @xmloutput
--- <table key="(1) http://nmap.org/book/man-bugs.html">
+-- <table key="(1) https://nmap.org/book/man-bugs.html">
 --   <table key="(1) email">
 --     <elem>+ dev@nmap.org</elem>
 --   </table>
 -- </table>
--- <table key="(1) http://nmap.org/book/install.html">
+-- <table key="(1) https://nmap.org/book/install.html">
 --   <table key="(1) email">
 --     <elem>+ fyodor@nmap.org</elem>
 --   </table>
 -- </table>
--- <table key="(16) http://nmap.org/changelog.html">
+-- <table key="(16) https://nmap.org/changelog.html">
 --   <table key="(7) ip">
 --     <elem>+ 255.255.255.255</elem>
 --     <elem>+ 10.99.24.140</elem>
@@ -108,7 +107,7 @@ The script searches for email and ip by default.
 --     <elem>+ rchong@fcc.gov</elem>
 --   </table>
 -- </table>
--- <table key="(6) http://nmap.org/5/#5changes">
+-- <table key="(6) https://nmap.org/5/#5changes">
 --   <table key="(6) ip">
 --     <elem>+ 207.68.200.30</elem>
 --     <elem>+ 64.13.134.52</elem>
@@ -231,7 +230,7 @@ action = function(host, port)
   local results = stdnse.output_table()
   local all_match = {} -- a table that stores all matches. used to eliminate duplicates.
 
-  -- check if builtin arugment is a table or a single value
+  -- check if builtin argument is a table or a single value
   if builtins and builtins == 1 then
     for name, patterns in pairs(BUILT_IN_PATTERNS) do
       to_be_searched[name] = {}
@@ -257,14 +256,15 @@ action = function(host, port)
     end
   end
 
-  -- check if match arugment is a table or a single value
-  if match and type(match) ~= table then
+  -- check if match argument is a table or a single value
+  if match and type(match) ~= 'table' then
     to_be_searched['User Pattern 1'] = {}
     table.insert(to_be_searched['User Pattern 1'], match)
   elseif type(match) == 'table' then
     for i, pattern in pairs(match) do
-      to_be_searched['User Pattern ' .. tostring(i)] = {}
-      table.insert(to_be_searched['User Pattern   ' .. tostring(i)], pattern)
+      local k = 'User Pattern ' .. tostring(i)
+      to_be_searched[k] = {}
+      table.insert(to_be_searched[k], pattern)
     end
   end
 
@@ -305,7 +305,7 @@ action = function(host, port)
           count = count + pattern_count
           for match in body:gmatch(pattern) do
             local validate = BUILT_IN_PATTERNS[pattern_name]and BUILT_IN_PATTERNS[pattern_name]['validate'] or default
-            if validate(match) and not stdnse.contains(all_match, match) then
+            if validate(match) and not tableaux.contains(all_match, match) then
               table.insert(pattern_type, "+ " .. shortenMatch(match))
               table.insert(all_match, match)
             else

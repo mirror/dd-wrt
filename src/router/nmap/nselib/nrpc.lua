@@ -38,10 +38,10 @@
 --
 
 
-local bin = require "bin"
 local match = require "match"
 local nmap = require "nmap"
 local stdnse = require "stdnse"
+local string = require "string"
 _ENV = stdnse.module("nrpc", stdnse.seeall)
 
 -- The Domino Packet
@@ -66,14 +66,14 @@ DominoPacket = {
   -- @return Error code (if status is false).
   read = function( self, domsock )
     local status, data = domsock:receive_buf(match.numbytes(2), true)
-    local pos, len = bin.unpack( "<S", data )
+    local len = string.unpack( "<I2", data )
 
     return domsock:receive_buf(match.numbytes(len), true)
   end,
 
   --- converts the packet to a string
   __tostring = function(self)
-    return bin.pack("<SA", #self.data, self.data )
+    return string.pack("<s2", self.data )
   end,
 
 }
@@ -121,20 +121,24 @@ Helper = {
   -- @return domino_id if it exists and status is true
   --         err if status is false
   isValidUser = function( self, username )
-    local data = bin.pack("H", "00001e00000001000080000007320000700104020000fb2b2d00281f1e000000124c010000000000")
+    local data = stdnse.fromhex("00001e00000001000080000007320000700104020000fb2b2d00281f1e000000124c010000000000")
     local status, id_data
-    local data_len, pos, total_len, pkt_type, valid_user
+    local data_len, total_len, pkt_type, valid_user
 
     self.domsock:send( tostring(DominoPacket:new( data )) )
     data = DominoPacket:new():read( self.domsock )
 
-    data = bin.pack("HCHAH", "0100320002004f000100000500000900", #username + 1, "000000000000000000000000000000000028245573657273290000", username, "00")
+    data = stdnse.fromhex("0100320002004f000100000500000900")
+    .. string.char(#username + 1)
+    .. stdnse.fromhex("000000000000000000000000000000000028245573657273290000")
+    .. string.pack("z", username)
+
     self.domsock:send( tostring(DominoPacket:new( data ) ) )
     status, id_data = DominoPacket:new():read( self.domsock )
 
-    pos, pkt_type = bin.unpack("C", id_data, 3)
-    pos, valid_user = bin.unpack("C", id_data, 11)
-    pos, total_len = bin.unpack("<S", id_data, 13)
+    pkt_type = string.unpack("B", id_data, 3)
+    valid_user = string.unpack("B", id_data, 11)
+    total_len = string.unpack("<I2", id_data, 13)
 
     if ( pkt_type == 0x16 ) then
       if ( valid_user == 0x19 ) then

@@ -1,6 +1,6 @@
-local bit    = require 'bit'
 local smb    = require 'smb'
 local string = require 'string'
+local stringaux = require "stringaux"
 local stdnse = require 'stdnse'
 local ls     = require 'ls'
 
@@ -124,7 +124,7 @@ end
 
 -- checks whether the file entry is a directory
 local function is_dir(fe)
-  return ( bit.band(fe.attrs, 16) == 16 )
+  return ( (fe.attrs & 16) == 16 )
 end
 
 local function list_files(host, share, smbstate, path, options, output, maxdepth, basedir)
@@ -171,7 +171,7 @@ action = function(host)
 
   -- give priority to specified shares if specified
   if arg_shares ~= nil then
-    arg_shares = stdnse.strsplit(":", arg_shares)
+    arg_shares = stringaux.strsplit(":", arg_shares)
   elseif arg_share ~= nil then
     arg_shares = {arg_share}
   else

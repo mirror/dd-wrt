@@ -44,6 +44,8 @@
 
 local debug4 = require "stdnse".debug4
 local debug5 = require "stdnse".debug5
+local verbose = require "stdnse".verbose
+verbose(0, "DEPRECATION WARNING: bin.lua is deprecated. Please use Lua 5.3 string.pack")
 
 local assert = assert
 local error = error
@@ -101,7 +103,7 @@ function _ENV.pack (format, ...)
         n = #n == 0 and 1 or tointeger(n)
         if o == "H" then
             -- hex string
-            -- N.B. n is the reptition
+            -- N.B. n is the repetition
             assert(n > 0, "n cannot be 0") -- original bin library allowed this, it doesn't make sense
             local new = "=" -- !! in original bin library, hex strings are always native
             for j = i, i+n-1 do
@@ -113,7 +115,7 @@ function _ENV.pack (format, ...)
             return new
         elseif o == "B" then
             -- bit string
-            -- N.B. n is the reptition
+            -- N.B. n is the repetition
             error "pack option \"B\" is no longer supported"
         elseif o == "p" then
             i = i + n
@@ -126,7 +128,7 @@ function _ENV.pack (format, ...)
             return ("s4"):rep(n)
         elseif o == "A" then
             -- an unterminated string
-            -- N.B. n is the reptition
+            -- N.B. n is the repetition
             assert(n > 0, "n cannot be 0") -- original bin library allowed this, it doesn't make sense
             local new = ""
             for j = i, i+n-1 do

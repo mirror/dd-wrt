@@ -8,11 +8,12 @@
 -- @author Patrik Karlsson <patrik [at] cqure.net>
 --
 
-local bin = require("bin")
 local nmap = require("nmap")
 local os = require("os")
 local stdnse = require("stdnse")
 local table = require("table")
+local string = require "string"
+local stringaux = require "stringaux"
 
 _ENV = stdnse.module("bjnp", stdnse.seeall)
 
@@ -39,15 +40,14 @@ BJNP = {
 
     parse = function(data)
       local hdr = BJNP.Header:new({ code = -1 })
-      local pos
 
-      pos, hdr.id, hdr.type, hdr.code,
-        hdr.seq, hdr.session, hdr.length = bin.unpack(">A4CCISI", data)
+      hdr.id, hdr.type, hdr.code,
+        hdr.seq, hdr.session, hdr.length = string.unpack(">c4BBI4I2I4", data)
       return hdr
     end,
 
     __tostring = function(self)
-      return bin.pack(">ACCISI",
+      return string.pack(">c4BBI4I2I4",
       self.id,
       self.type,
       self.code,
@@ -93,7 +93,7 @@ BJNP = {
         end,
 
         __tostring = function(self)
-          return tostring(self.header) .. bin.pack(">I", self.data)
+          return tostring(self.header) .. string.pack(">I4", self.data)
         end,
       }
 
@@ -115,11 +115,12 @@ BJNP = {
           identity.header = BJNP.Header.parse(data)
 
           local pos = #tostring(identity.header) + 1
-          local pos, len = bin.unpack(">S", data, pos)
-          if ( len ) then
-            pos, identity.data = bin.unpack("A" .. len - 2, data, pos)
-            return identity
+          if pos - 1 > #data - 2 then
+            return nil
           end
+          local len, pos = string.unpack(">I2", data, pos)
+          identity.data = string.unpack("c" .. len - 2, data, pos)
+          return identity
         end,
 
 
@@ -184,11 +185,12 @@ BJNP = {
           identity.header = BJNP.Header.parse(data)
 
           local pos = #tostring(identity.header) + 1
-          local pos, len = bin.unpack(">S", data, pos)
-          if ( len ) then
-            pos, identity.data = bin.unpack("A" .. len - 2, data, pos)
-            return identity
+          if pos - 1 > #data - 2 then
+            return nil
           end
+          local len, pos = string.unpack(">I2", data, pos)
+          identity.data = string.unpack("c" .. len - 2, data, pos)
+          return identity
         end,
 
 
@@ -324,7 +326,7 @@ Helper = {
     end
     local attrs, kvps = {}, {}
 
-    for k, v in ipairs(stdnse.strsplit(";", identity.data)) do
+    for k, v in ipairs(stringaux.strsplit(";", identity.data)) do
       local nm, val = v:match("^([^:]*):(.*)$")
       if ( nm ) then kvps[nm] = val end
     end

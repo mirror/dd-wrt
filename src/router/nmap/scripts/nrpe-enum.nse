@@ -1,9 +1,8 @@
-local bin = require "bin"
-local bit = require "bit"
 local nmap = require "nmap"
 local shortport = require "shortport"
 local stdnse = require "stdnse"
 local string = require "string"
+local stringaux = require "stringaux"
 local tab = require "tab"
 
 -- -*- mode: lua -*-
@@ -108,17 +107,12 @@ local CRC32_CONSTANTS = {
 local crc32 = function(s)
   local crc = 0xFFFFFFFF
   for i = 1, #s do
-    local p1 = s:byte(i)
-    local p2 = bit.bxor(crc, p1)
-    local p3 = bit.band(p2, 0xFF)
-    local p4 = bit.band(p3)
+    local p4 = (crc ~ s:byte(i)) & 0xff
     local p5 = CRC32_CONSTANTS[p4 + 1]
-    local p6 = bit.rshift(crc, 8)
-
-    crc = bit.bxor(p6, p5)
+    crc = p5 ~ (crc >> 8)
   end
 
-  return bit.bxor(crc, 0xFFFFFFFF)
+  return crc ~ 0xFFFFFFFF
 end
 
 local nrpe_open = function(host, port)
@@ -140,31 +134,30 @@ end
 
 local nrpe_write = function(cmd)
   -- Create request packet, before checksum.
-  local pkt = bin.pack(">SSISAAS",
+  local pkt = string.pack(">I2 I2 I4 I2",
    2,
    1,
    0,
-   0,
-   cmd,
-   string.rep("\0", 1024 - #cmd),
    0)
+   .. cmd
+   .. string.rep("\0", 1024 - #cmd)
+   .. "\0\0"
 
   -- Calculate the checksum, and insert it into the packet.
-  pkt = pkt:sub(1,4) .. bin.pack(">I", crc32(pkt)) .. pkt:sub(9)
+  pkt = pkt:sub(1,4) .. string.pack(">I4", crc32(pkt)) .. pkt:sub(9)
 
   return pkt
 end
 
 local nrpe_read = function(pkt)
-  local i
   local result = {}
 
   -- Parse packet.
-  i, result.version = bin.unpack(">S", pkt, i)
-  i, result.type = bin.unpack(">S", pkt, i)
-  i, result.crc32 = bin.unpack(">I", pkt, i)
-  i, result.state = bin.unpack(">S", pkt, i)
-  i, result.data = bin.unpack("z", pkt, i)
+  result.version,
+  result.type,
+  result.crc32,
+  result.state,
+  result.data = string.unpack(">I2 I2 I4 I2 z", pkt)
 
   return result
 end
@@ -203,7 +196,7 @@ action = function(host, port)
   -- Get script arguments.
   local cmds = stdnse.get_script_args("nrpe-enum.cmds")
   if cmds then
-    cmds = stdnse.strsplit(":", cmds)
+    cmds = stringaux.strsplit(":", cmds)
   else
     cmds = NRPE_COMMANDS
   end

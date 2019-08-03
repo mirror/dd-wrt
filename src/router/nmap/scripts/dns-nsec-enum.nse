@@ -3,7 +3,9 @@ local nmap = require "nmap"
 local shortport = require "shortport"
 local stdnse = require "stdnse"
 local string = require "string"
+local stringaux = require "stringaux"
 local table = require "table"
+local tableaux = require "tableaux"
 
 description = [[
 Enumerates DNS names using the DNSSEC NSEC-walking technique.
@@ -29,7 +31,7 @@ servers that use NSEC3 rather than NSEC; for that, see
 -- @see dns-nsec3-enum.nse
 -- @see dns-ip6-arpa-scan.nse
 -- @see dns-brute.nse
--- @see dns-zone-transfer
+-- @see dns-zone-transfer.nse
 --
 -- @output
 -- 53/udp open  domain  udp-response
@@ -82,11 +84,11 @@ local function remove_empty(t)
 end
 
 local function split(domain)
-  return stdnse.strsplit("%.", domain)
+  return stringaux.strsplit("%.", domain)
 end
 
 local function join(components)
-  return stdnse.strjoin(".", remove_empty(components))
+  return table.concat(remove_empty(components, "."))
 end
 
 -- Remove the first component of a domain name. Return nil if the number of
@@ -119,16 +121,6 @@ local function guess_domain(host)
   end
 end
 
-local function invert(t)
-  local result = {}
-
-  for k, v in pairs(t) do
-    result[v] = k
-  end
-
-  return result
-end
-
 -- RFC 952: "A 'name' is a text string up to 24 characters drawn from the
 -- alphabet (A-Z), digits (0-9), minus sign (-), and period (.). ... The first
 -- character must be an alpha character."
@@ -138,7 +130,7 @@ end
 -- RFC 2782: An underscore (_) is prepended to the service identifier to avoid
 -- collisions with DNS labels that occur in nature.
 local DNS_CHARS = { string.byte("-0123456789_abcdefghijklmnopqrstuvwxyz", 1, -1) }
-local DNS_CHARS_INV = invert(DNS_CHARS)
+local DNS_CHARS_INV = tableaux.invert(DNS_CHARS)
 
 -- Return the lexicographically next component, or nil if component is the
 -- lexicographically last.

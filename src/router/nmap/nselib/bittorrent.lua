@@ -99,6 +99,7 @@ local stdnse = require "stdnse"
 local string = require "string"
 local table = require "table"
 local url = require "url"
+local rand = require "rand"
 _ENV = stdnse.module("bittorrent", stdnse.seeall)
 
 --- Given a buffer and a starting position in the buffer, this function decodes
@@ -152,9 +153,9 @@ bdecode = function(buf)
   cur.ref = t
   table.insert(stack, cur)
   cur.ref.type="list"
+  cur.ref.start = pos
 
-  while true do
-    if pos == len or (len-pos)==-1 then break end
+  while pos <= len do
 
     if cur.type == "list" then
       -- next element is a string
@@ -180,6 +181,7 @@ bdecode = function(buf)
         cur = {}
         cur.type = "list"
         cur.ref = new_list
+        cur.ref.start = pos
         table.insert(stack, cur)
         pos = pos+1
 
@@ -192,15 +194,21 @@ bdecode = function(buf)
         cur = {}
         cur.type = "dict"
         cur.ref = new_dict
+        cur.ref.start = pos
         table.insert(stack, cur)
         pos = pos+1
 
       --escape from the list
       elseif "e" == string.char(buf:byte(pos)) then
+        stack[#stack].ref.endpos = pos
         table.remove(stack, #stack)
         cur = stack[#stack]
         if not cur then return nil, "Problem with list closure:", pos end
         pos = pos+1
+
+      -- trailing whitespace
+      elseif string.match(buf, "^%s*$", pos) then
+        pos = len+1
       else
         return nil, "Unknown type found.", pos
       end
@@ -218,6 +226,7 @@ bdecode = function(buf)
         if not str then return nil, "Error parsing string.", pos end
         item.key = str
       elseif "e" == string.char(buf:byte(pos)) then
+        stack[#stack].ref.endpos = pos
         table.remove(stack, #stack)
         cur = stack[#stack]
         if not cur then return nil, "Problem with list closure:", pos end
@@ -256,6 +265,7 @@ bdecode = function(buf)
           cur = {}
           cur.type = "list"
           cur.ref = item.value
+          cur.ref.start = pos
 
           table.insert(stack, cur)
           pos = pos+1
@@ -269,12 +279,14 @@ bdecode = function(buf)
           cur = {}
           cur.type = "dict"
           cur.ref = item.value
+          cur.ref.start = pos
 
           table.insert(stack, cur)
           pos = pos+1
 
         --escape from the dict
         elseif "e" == string.char(buf:byte(pos)) then
+          stack[#stack].ref.endpos = pos
           table.remove(stack, #stack)
           cur = stack[#stack]
           if not cur then return false, "Problem with dict closure", pos end
@@ -421,7 +433,7 @@ local find_node_thread = function(pnt, timeout)
       -- q = "find_node" (type of query),
       -- find_node Query = {"t":<transaction_id>, "y":"q", "q":"find_node", "a": {"id":<node_id>, "target":<info_hash>}}
       local find_node_query = "d1:ad2:id20:" .. pnt.node_id .. "6:target20:" ..
-        pnt.info_hash .. "e1:q9:find_node1:t2:" .. openssl.rand_bytes(2) .. "1:y1:qe"
+        pnt.info_hash .. "e1:q9:find_node1:t2:" .. rand.random_string(2) .. "1:y1:qe"
 
       -- add the traversed nodes to pnt.nodes_get_peers so they can be traversed by get_peers_thread
       pnt.nodes_get_peers[node_ip] = node_info
@@ -498,7 +510,7 @@ local get_peers_thread = function(pnt, timeout)
       -- and q = "get_peers" (type of query)
       -- {"t":<transaction_id>, "y":"q", "q":"get_peers", "a": {"id":<node_id>, "info_hash":<info_hash>}}
       local get_peers_query = "d1:ad2:id20:" .. pnt.node_id .. "9:info_hash20:" ..
-        pnt.info_hash .. "e1:q9:get_peers1:t2:" .. openssl.rand_bytes(2) .. "1:y1:qe"
+        pnt.info_hash .. "e1:q9:get_peers1:t2:" .. rand.random_string(2) .. "1:y1:qe"
 
       pnt.nodes[node_ip] = node_info
       pnt.nodes_get_peers[node_ip] = nil
@@ -699,7 +711,7 @@ Torrent =
 
     if not timeout or type(timeout)~="number" then timeout = 30 end
 
-    -- peer node table aka the condvar!
+    -- peer node table a.k.a. the condvar!
     local pnt = {}
     pnt.peers = {}
     pnt.peers_dht_ping = self.peers
@@ -708,7 +720,7 @@ Torrent =
     pnt.nodes_get_peers = {}
     pnt.nodes_find_node = self.nodes
 
-    pnt.node_id = openssl.rand_bytes(20)
+    pnt.node_id = rand.random_string(20)
     pnt.info_hash = self.info_hash
 
     local condvar = nmap.condvar(pnt)
@@ -752,200 +764,18 @@ Torrent =
   -- This function is similar to the bdecode function but it has a few
   -- additions for calculating torrent file specific fields
   parse_buffer = function(self)
-    local buf = self.buffer
-
-    local len = #buf
-
-    -- the main table
-    local t = {}
-    self.tor_struct = t
-    local stack = {}
-
-    local pos = 1
-    local cur = {}
-    cur.type = "list"
-    cur.ref = t
-    table.insert(stack, cur)
-    cur.ref.type="list"
-
-    -- starting and ending position of the info dict
-    local info_pos_start, info_pos_end, info_buf_count = nil, nil, 0
-
-    while true do
-      if pos == len or (len-pos)==-1 then break end
-
-      if cur.type == "list" then
-        -- next element is a string
-        if tonumber( string.char( buf:byte(pos) ) ) then
-          local str
-          str, pos = bdec_string(buf, pos)
-          if not str then return nil, "Error parsing string", pos end
-          table.insert(cur.ref, str)
-
-        -- next element is a number
-        elseif "i" == string.char(buf:byte(pos)) then
-          local num
-          num, pos = bdec_number(buf, pos)
-          if not num then return nil, "Error parsing number", pos end
-          table.insert(cur.ref, num)
-
-        -- next element is a list
-        elseif "l" == string.char(buf:byte(pos)) then
-          if info_pos_start and (not info_pos_end) then
-            info_buf_count = info_buf_count +1
-          end
-
-          local new_list = {}
-          new_list.type="list"
-          table.insert(cur.ref, new_list)
-
-          cur = {}
-          cur.type = "list"
-          cur.ref = new_list
-          table.insert(stack, cur)
-          pos = pos+1
-
-        --next element is a dict
-        elseif "d" == string.char(buf:byte(pos)) then
-          if info_pos_start and (not info_pos_end) then
-            info_buf_count = info_buf_count +1
-          end
-
-          local new_dict = {}
-          new_dict.type = "dict"
-          table.insert(cur.ref, new_dict)
-
-          cur = {}
-          cur.type = "dict"
-          cur.ref = new_dict
-          table.insert(stack, cur)
-          pos = pos+1
-
-        --escape from the list
-        elseif "e" == string.char(buf:byte(pos)) then
-          if info_buf_count == 0 then
-            info_pos_end = pos-1
-          end
-          if info_pos_start and (not info_pos_end) then
-            info_buf_count = info_buf_count -1
-          end
-
-          table.remove(stack, #stack)
-          cur = stack[#stack]
-          if not cur then return nil, "Problem with list closure:", pos end
-          pos = pos+1
-        else
-          return nil, "Unknown type found.", pos
-        end
-
-      elseif cur.type == "dict" then
-        local item = {} -- {key = <string>, value = <.*>}
-        -- key
-        if tonumber( string.char( buf:byte(pos) ) ) then
-          local str
-          local tmp_pos = pos
-          str, pos = bdec_string(buf, pos)
-          if not str then return nil, "Error parsing string.", pos end
-          item.key = str
-          -- fill the info_pos_start
-          if item.key == "info" and not info_pos_start then info_pos_start = pos end
-
-        elseif "e" == string.char(buf:byte(pos)) then
-          if info_buf_count == 0 then
-            info_pos_end = pos-1
-          end
-          if info_pos_start and (not info_pos_end) then
-            info_buf_count = info_buf_count -1
-          end
-
-          table.remove(stack, #stack)
-          cur = stack[#stack]
-          if not cur then return nil, "Problem with list closure:", pos end
-          pos = pos+1
-
-        else
-          return nil, "A dict key has to be a string or escape.", pos
-        end
-
-        -- value
-        -- next element is a string
-        if tonumber( string.char( buf:byte(pos) ) ) then
-          local str
-          str, pos = bdec_string(buf, pos)
-          if not str then return nil, "Error parsing string.", pos end
-          item.value = str
-          table.insert(cur.ref, item)
-
-          --next element is a number
-        elseif "i" == string.char(buf:byte(pos)) then
-          local num
-          num, pos = bdec_number(buf, pos)
-          if not num then return nil, "Error parsing number.", pos end
-          item.value = num
-          table.insert(cur.ref, item)
-
-        -- next element is a list
-        elseif "l" == string.char(buf:byte(pos)) then
-          if info_pos_start and (not info_pos_end) then
-            info_buf_count = info_buf_count +1
-          end
-
-          item.value = {}
-          item.value.type = "list"
-          table.insert(cur.ref, item)
-
-          cur = {}
-          cur.type = "list"
-          cur.ref = item.value
-
-          table.insert(stack, cur)
-          pos = pos+1
-
-        --next element is a dict
-        elseif "d" == string.char(buf:byte(pos)) then
-          if info_pos_start and (not info_pos_end) then
-            info_buf_count = info_buf_count +1
-          end
-
-          item.value = {}
-          item.value.type = "dict"
-          table.insert(cur.ref, item)
-
-          cur = {}
-          cur.type = "dict"
-          cur.ref = item.value
-
-          table.insert(stack, cur)
-          pos = pos+1
-
-        --escape from the dict
-        elseif "e" == string.char(buf:byte(pos)) then
-          if info_buf_count == 0 then
-            info_pos_end = pos-1
-          end
-          if info_pos_start and (not info_pos_end) then
-            info_buf_count = info_buf_count -1
-          end
-
-          table.remove(stack, #stack)
-          cur = stack[#stack]
-          if not cur then return false, "Problem with dict closure", pos end
-          pos = pos+1
-        else
-          return false, "Error parsing file, unknown type found", pos
-        end
-      else
-        return false, "Invalid type of structure. Fix the code."
-      end
-    end -- while(true)
-
-    -- next(stack) is never gonna be nil because we're always in the main list
-    -- next(stack, next(stack)) should be nil if we're in the main list
-    if next(stack, next(stack)) then
-      return false, "Probably file incorrect format"
+    local status, t = bdecode(self.buffer)
+    if not status then
+      return status, t
     end
+    self.tor_struct = t
 
-    self.info_buf = buf:sub(info_pos_start, info_pos_end)
+    for _, i in ipairs(t[1]) do
+      if i.key == "info" then
+        self.info_buf = self.buffer:sub(i.value.start, i.value.endpos)
+        break
+      end
+    end
 
     return true
   end,
@@ -992,10 +822,10 @@ Torrent =
   calc_torrent_size = function(self)
     local tor = self.tor_struct
     local size = nil
-    if tor[1].type ~= "dict" then return nil end
+    if tor[1].type ~= "dict" then return nil, "first element not a dict" end
     for _, m in ipairs(tor[1]) do
       if m.key == "info" then
-        if m.value.type ~= "dict" then return nil end
+        if m.value.type ~= "dict" then return nil, "info is not a dict" end
         for _, n in ipairs(m.value) do
           if n.key == "files" then
             size = 0
@@ -1016,7 +846,8 @@ Torrent =
       end
     end
     self.size=size
-    if size == 0 then return false end
+    if size == 0 then return false, "size is zero" end
+    return true
   end,
 
   --- Calculates the info hash using self.info_buf.
@@ -1038,7 +869,7 @@ Torrent =
     local fingerprint = "-KT4110-"
     local chars = {}
     -- the full length of a peer_id is 20 bytes but we already have 8 from the fingerprint
-    return fingerprint .. stdnse.generate_random_string(12,
+    return fingerprint .. rand.random_string(12,
       "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
   end,
 
@@ -1063,7 +894,7 @@ Torrent =
 
     local response = http.get(url, trac_port, url_ext .. request, nil)
 
-    if not response then
+    if not response or not response.body then
       return false, "No response from tracker: " .. tracker
     end
 
@@ -1127,7 +958,8 @@ Torrent =
   -- peers. For a good specification refer to:
   -- http://www.rasterbar.com/products/libtorrent/udp_tracker_protocol.html
   udp_tracker_peers = function(self, tracker)
-    local host, port = tracker:match("^udp://(.-):(.+)")
+    local host, port = tracker:match("^udp://(.-):(%d+)")
+    port = tonumber(port)
     if (not host) or (not port) then
       return false, "Could not parse tracker url"
     end
@@ -1135,7 +967,7 @@ Torrent =
     local socket = nmap.new_socket("udp")
 
     -- The initial connection parameters' variables have hello_ prefixed names
-    local hello_transaction_id = openssl.rand_bytes(4)
+    local hello_transaction_id = rand.random_string(4)
     local hello_packet = "\0\0\x04\x17\x27\x10\x19\x80" -- identification of the protocol
     .. "\0\0\0\0" -- 0 for a connection request
     .. hello_transaction_id
@@ -1161,7 +993,7 @@ Torrent =
 
     -- the announce connection parameters' variables are prefixed with a_
     local a_action = 1 -- 1 for announce
-    local a_transaction_id = openssl.rand_bytes(4)
+    local a_transaction_id = rand.random_string(4)
     local a_info_hash = self.info_hash -- info_hash of the torrent
     local a_peer_id = self:generate_peer_id()
     local a_downloaded = 0 -- 0 bytes downloaded
@@ -1172,7 +1004,7 @@ Torrent =
     local a_event = 2 -- value of 2 for started torrent
     local a_ip = 0 -- not necessary to specify our ip since it's resolved
       -- by tracker automatically
-    local a_key = openssl.rand_bytes(4)
+    local a_key = rand.random_string(4)
     local a_num_want = 0xFFFFFFFF -- request for many many peers
     local a_port = 6881 -- the port "we are listening on"
     local a_extensions = 0 -- client recognizes no extensions of the bittorrent proto

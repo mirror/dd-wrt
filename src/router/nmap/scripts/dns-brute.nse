@@ -5,8 +5,10 @@ local math = require "math"
 local nmap = require "nmap"
 local stdnse = require "stdnse"
 local string = require "string"
+local stringaux = require "stringaux"
 local table = require "table"
 local target = require "target"
+local rand = require "rand"
 
 description = [[
 Attempts to enumerate DNS hostnames by brute force guessing of common
@@ -32,7 +34,7 @@ Wildcard records are listed as "*A" and "*AAAA" for IPv4 and IPv6 respectively.
 -- @see dns-nsec3-enum.nse
 -- @see dns-ip6-arpa-scan.nse
 -- @see dns-nsec-enum.nse
--- @see dns-zone-transfer
+-- @see dns-zone-transfer.nse
 --
 -- @output
 -- Pre-scan script results:
@@ -158,7 +160,7 @@ local function srv_main(domainname, srvresults, srv_iter)
     if(res) then
       for _,addr in ipairs(res) do
         local hostn = name..'.'..domainname
-        addr = stdnse.strsplit(":",addr)
+        addr = stringaux.strsplit(":",addr)
         for _, dtype in ipairs({"A", "AAAA"}) do
           local srvres = resolve(addr[4], dtype)
           if(srvres) then
@@ -179,8 +181,8 @@ local function srv_main(domainname, srvresults, srv_iter)
 end
 
 local function detect_wildcard(domainname, record)
-  local rand_host1 = stdnse.generate_random_string(24).."."..domainname
-  local rand_host2 = stdnse.generate_random_string(24).."."..domainname
+  local rand_host1 = rand.random_alpha(24).."."..domainname
+  local rand_host2 = rand.random_alpha(24).."."..domainname
   local res1 = resolve(rand_host1, record)
 
   stdnse.debug1("Detecting wildcard for \"%s\" records using random hostname \"%s\".", record, rand_host1)

@@ -3,7 +3,7 @@
 
 # ***********************IMPORTANT NMAP LICENSE TERMS************************
 # *                                                                         *
-# * The Nmap Security Scanner is (C) 1996-2018 Insecure.Com LLC ("The Nmap  *
+# * The Nmap Security Scanner is (C) 1996-2019 Insecure.Com LLC ("The Nmap  *
 # * Project"). Nmap is also a registered trademark of the Nmap Project.     *
 # * This program is free software; you may redistribute and/or modify it    *
 # * under the terms of the GNU General Public License as published by the   *
@@ -767,9 +767,18 @@ This scan has not been run yet. Start the scan with the "Scan" button first.'))
             scan_interface.saved_filename = directory
 
             # Saving recent scan information
-            for filename in filenames:
-                recent_scans.add_recent_scan(filename)
-            recent_scans.save()
+            try:
+                for filename in filenames:
+                    recent_scans.add_recent_scan(filename)
+                recent_scans.save()
+            except (OSError, IOError), e:
+                alert = HIGAlertDialog(
+                        message_format=_(
+                            "Can't save recent scan information"),
+                        secondary_text=_(
+                            "Can't open file to write.\n%s") % str(e))
+                alert.run()
+                alert.destroy()
 
     def _save(self, scan_interface, saved_filename, selected_index,
             format="xml"):
@@ -794,8 +803,17 @@ This scan has not been run yet. Start the scan with the "Scan" button first.'))
 
             if format == "xml":
                 # Saving recent scan information
-                recent_scans.add_recent_scan(saved_filename)
-                recent_scans.save()
+                try:
+                    recent_scans.add_recent_scan(saved_filename)
+                    recent_scans.save()
+                except (OSError, IOError), e:
+                    alert = HIGAlertDialog(
+                            message_format=_(
+                                "Can't save recent scan information"),
+                            secondary_text=_(
+                                "Can't open file to write.\n%s") % str(e))
+                    alert.run()
+                    alert.destroy()
 
     def get_empty_interface(self):
         """Return this window if it is empty, otherwise create and return a new
