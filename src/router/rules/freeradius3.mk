@@ -158,7 +158,7 @@ freeradius3-configure: libtalloc openssl libpcap
 	sed -i 's/-isystem \/usr\/include/ /g' $(TOP)/freeradius3/Make.inc
 
 
-freeradius3: libtalloc
+freeradius3: libtalloc libpcap
 	cd freeradius3 && mkdir -p build/make; gcc scripts/jlibtool.c -o build/make/jlibtool
 	make -C freeradius3 R="$(INSTALLDIR)/freeradius3" INSTALLSTRIP="" all
 
