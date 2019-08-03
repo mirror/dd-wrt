@@ -1,7 +1,8 @@
-local bin = require "bin"
 local nmap = require "nmap"
 local shortport = require "shortport"
 local stdnse = require "stdnse"
+local string = require "string"
+local stringaux = require "stringaux"
 local tab = require "tab"
 local table = require "table"
 
@@ -55,7 +56,7 @@ local function exchPacket(socket, packet)
     stdnse.debug2("Failed to read packet from server")
     return false, "Failed to read packet from server"
   end
-  local pos, len = bin.unpack("<S", data)
+  local len = string.unpack("<I2", data)
 
   -- make sure we've got it all
   if ( len ~= #data ) then
@@ -101,7 +102,7 @@ end
 local function parseVersion(data)
   local version_info = {}
   if ( #data > 27 ) then
-    for _, line in ipairs(stdnse.strsplit("\n", data:sub(28))) do
+    for _, line in ipairs(stringaux.strsplit("\n", data:sub(28))) do
       local key, val = line:match("^(%S+)%s-=%s(.*)%s*$")
       if ( key ) then  version_info[key] = val end
     end
@@ -115,7 +116,7 @@ end
 local function parseDatabases(data)
   local result = tab.new(5)
   tab.addrow(result, "instance", "path", "version", "kernel", "state")
-  for _, line in ipairs(stdnse.strsplit("\n", data:sub(28))) do
+  for _, line in ipairs(stringaux.strsplit("\n", data:sub(28))) do
     local cols = {}
     cols.instance, cols.path, cols.ver, cols.kernel,
       cols.state = line:match("^(.-)%s*\t(.-)%s*\t(.-)%s*\t(.-)%s-\t(.-)%s-$")

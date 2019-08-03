@@ -6,6 +6,7 @@ local creds     = require "creds"
 local unpwdb    = require "unpwdb"
 local nmap = require "nmap"
 local string = require "string"
+local stringaux = require "stringaux"
 
 description = [[
 TSO account brute forcer.
@@ -33,7 +34,7 @@ TSO user IDs have the following rules:
 -- |_  Statistics: Performed 6 guesses in 6 seconds, average tps: 1
 -- Final times for host: srtt: 96305 rttvar: 72303  to: 385517
 --
--- @args tso-brute.commands Commands in a semi-colon seperated list needed
+-- @args tso-brute.commands Commands in a semi-colon separated list needed
 --       to access TSO. Defaults to <code>TSO</code>.
 --
 -- @args tso-brute.always_logon TSO logon can kick a user off if it guesses
@@ -74,6 +75,7 @@ Driver = {
     o.port = port
     o.options = options
     o.tn3270 = tn3270.Telnet:new(brute.new_socket())
+    o.tn3270:disable_tn3270e()
     return o
   end,
   connect = function( self )
@@ -96,7 +98,7 @@ Driver = {
     local always_logon = self.options['key2']
     local skip = self.options['skip']
     stdnse.debug(2,"Getting to TSO")
-    local run = stdnse.strsplit(";%s*", commands)
+    local run = stringaux.strsplit(";%s*", commands)
     stdnse.verbose(2,"Trying User ID/Password: %s/%s", user, pass)
     for i = 1, #run do
       stdnse.debug(2,"Issuing Command (#%s of %s): %s", i, #run ,run[i])
@@ -179,12 +181,23 @@ Driver = {
         -- IKJ56425I LOGON rejected User already logged on to system
         register_invalid(user)
         return true, creds.Account:new(user, "<skipped>", "User logged on. Skipped.")
+      elseif (self.tn3270:find("IKJ56425I") and self.tn3270:find("IKJ56418I")) then
+        -- IKJ56425I LOGON REJECTED, RACF® TEMPORARILY REVOKING USER ACCESS
+        -- IKJ56418I CONTACT YOUR TSO ADMINISTRATOR
+        -- The first message (5I) is always followed by the second if the account it revoked
+        -- But not followed by the second message if its just logged on already
+        register_invalid(user) -- We dont want to keep generating errors
+        stdnse.verbose(3,"User: " .. user .. " LOCKED OUT")
+        return false, brute.Error:new("Account Locked out")
       elseif not (self.tn3270:find("IKJ56421I") or
+          self.tn3270:find("IKJ56443I") or
           self.tn3270:find("TSS7101E")  or
           self.tn3270:find("TSS714[0-3]E")  or
+          self.tn3270:find("TSS7099E") or
           self.tn3270:find("TSS7120E")) then
         -- RACF:
         -- IKJ56421I PASSWORD NOT AUTHORIZED FOR USERID
+        -- IKJ56443I TSOLOGON RECONNECT REJECTED - USER ACCESS REVOKED BY RACF
 
         -- Top Secret:
         -- TSS7101E Password is Incorrect
@@ -193,6 +206,7 @@ Driver = {
         -- TSS7142E Accessor ID Not Yet Available for Use - Still Inactive
         -- TSS7143E Accessor ID Has Been Inactive Too Long
         -- TSS7120E PASSWORD VIOLATION THRESHOLD EXCEEDED
+        -- TSS7099E Signon credentials invalid
 
         -- The 'MSG allows testers to discern any relevant messages they may get for the account'
         stdnse.verbose(2,"Valid User/Pass: " .. user .. "/" .. pass)
@@ -215,6 +229,7 @@ Driver = {
 local function tso_test( host, port, commands )
   stdnse.debug("Checking for TSO")
   local tn = tn3270.Telnet:new()
+  tn:disable_tn3270e()
   local status, err = tn:initiate(host,port)
   local tso = false -- initially we're not at TSO logon panel
   local secprod = "RACF"
@@ -223,7 +238,7 @@ local function tso_test( host, port, commands )
     stdnse.debug("Could not initiate TN3270: %s", err )
     return tso, "Could not Initiate TN3270"
   end
-  local run = stdnse.strsplit(";%s*", commands)
+  local run = stringaux.strsplit(";%s*", commands)
   for i = 1, #run do
     stdnse.debug(2,"Issuing Command (#%s of %s): %s", i, #run ,run[i])
     tn:send_cursor(run[i])
@@ -246,7 +261,7 @@ local function tso_test( host, port, commands )
   end
   tn:send_pf(3)
   tn:disconnect()
-  return tso, secprod, "Could not get to TSO. Try --script-args=tso-enum.commands='logon applid(tso)'. Aborting."
+  return tso, secprod, "Could not get to TSO. Try --script-args=tso-brute.commands='logon applid(tso)'. Aborting."
 end
 
 --- Tests the target to see if we can speed up brute forcing
@@ -261,6 +276,7 @@ end
 local function tso_skip( host, port, commands )
   stdnse.debug("Checking for IKJ56700A message skip")
   local tn = tn3270.Telnet:new()
+  tn:disable_tn3270e()
   stdnse.debug2("Connecting TN3270 to %s:%s", host.targetname or host.ip, port.number)
   local status, err = tn:initiate(host,port)
   stdnse.debug2("Displaying initial TN3270 Screen:")
@@ -278,7 +294,7 @@ local function tso_skip( host, port, commands )
     stdnse.debug(2,"Not using LOGON command, testing adding userid to command" )
   end
 
-  local run = stdnse.strsplit(";%s*", commands)
+  local run = stringaux.strsplit(";%s*", commands)
   for i = 1, #run do
     stdnse.debug(2,"Issuing Command (#%s of %s): %s", i, #run ,run[i])
     if i == #run then

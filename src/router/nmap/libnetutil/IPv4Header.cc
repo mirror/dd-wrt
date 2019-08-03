@@ -6,7 +6,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2018 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2019 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -491,7 +491,7 @@ int IPv4Header::setNextProto(u8 p){
 
 
 /** Sets field "next protocol" to the number that corresponds to the supplied
- *  protocol name. Currently onyl TCP, UDP and ICMP are supported. Any
+ *  protocol name. Currently only TCP, UDP and ICMP are supported. Any
  *  help to extend this functionality would be appreciated. For a list of all
  *  proto names and numbers check:
  *  http://www.iana.org/assignments/protocol-numbers/                        */

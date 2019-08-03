@@ -7,7 +7,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2018 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2019 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -1820,7 +1820,7 @@ bool PacketParser::is_response(PacketElement *sent, PacketElement *rcvd){
  *
  * It returns NULL if no transport layer header is found.
  *
- * Note that this method onyl understands IPv4, IPv6 (and its
+ * Note that this method only understands IPv4, IPv6 (and its
  * extension headers) and Ethernet. If the supplied packet contains
  * something different before the tranport layer, NULL will be returned.
  * */

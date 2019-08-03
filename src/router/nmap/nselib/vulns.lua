@@ -192,6 +192,7 @@ local ipOps = require "ipOps"
 local nmap = require "nmap"
 local stdnse = require "stdnse"
 local string = require "string"
+local stringaux = require "stringaux"
 local table = require "table"
 local type    = type
 local next    = next
@@ -388,6 +389,7 @@ STATE = {
   VULN = 0x04,
   DoS = 0x08,
   EXPLOIT = 0x10,
+  UNKNOWN = 0x20,
 }
 
 -- The vulnerability messages.
@@ -399,6 +401,7 @@ STATE_MSG = {
   [STATE.EXPLOIT] = 'VULNERABLE (Exploitable)',
   [STATE.DoS | STATE.VULN] = 'VULNERABLE (DoS)',
   [STATE.EXPLOIT | STATE.VULN] = 'VULNERABLE (Exploitable)',
+  [STATE.UNKNOWN] = 'UNKNOWN (unable to test)',
 }
 
 -- Scripts must provide the correct risk factor string.
@@ -451,7 +454,7 @@ local POPULAR_IDS_LINKS = {
             return string_format("%s%s", link, id)
           end,
   BID = function(id)
-          local link = 'http://www.securityfocus.com/bid/'
+          local link = 'https://www.securityfocus.com/bid/'
           return string_format("%s%s", link, id)
         end,
 }
@@ -1774,14 +1777,14 @@ local format_vuln_special_fields = function(vuln_field)
   if vuln_field then
     if type(vuln_field) == "table" then
       for _, line in ipairs(vuln_field) do
-				if type(line) == "string" then
-          tadd(out, stdnse.strsplit("\r?\n", line))
-				else
-					insert(out, line)
-				end
+        if type(line) == "string" then
+          tadd(out, stringaux.strsplit("\r?\n", line))
+        else
+          insert(out, line)
+        end
       end
     elseif type(vuln_field) == "string" then
-      out = stdnse.strsplit("\r?\n", vuln_field)
+      out = stringaux.strsplit("\r?\n", vuln_field)
     end
   end
   return next(out) and out or nil
@@ -1816,15 +1819,14 @@ local format_vuln_base = function(vuln_table, showall)
             or "", STATE_MSG[vuln_table.state])
     return nil
   end
-  if SHORT_OUTPUT then
-    return {("%s %s %s"):format(
-        vuln_table.host.targetname or vuln_table.host.ip,
-        STATE_MSG[vuln_table.state],
-        vuln_table.IDS.CVE or vuln_table.title
-      )}
-  end
   local output_table = stdnse.output_table()
   local out = {}
+  if SHORT_OUTPUT then
+    -- Don't waste time/space inserting anything
+    setmetatable(out, {
+        __newindex = function () return nil end
+      })
+  end
   output_table.title = vuln_table.title
   insert(out, vuln_table.title)
   output_table.state = STATE_MSG[vuln_table.state]
@@ -1952,6 +1954,13 @@ local format_vuln_base = function(vuln_table, showall)
     end
   end
 
+  if SHORT_OUTPUT then
+    out = {("%s %s %s"):format(
+        vuln_table.host.targetname or vuln_table.host.ip,
+        STATE_MSG[vuln_table.state],
+        vuln_table.IDS.CVE or vuln_table.title
+      )}
+  end
   return out, output_table
 end
 

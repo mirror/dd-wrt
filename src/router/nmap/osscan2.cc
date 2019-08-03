@@ -6,7 +6,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2018 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2019 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -129,7 +129,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: osscan2.cc 37126 2018-01-28 21:18:17Z fyodor $ */
+/* $Id$ */
 
 #include "osscan.h"
 #include "osscan2.h"
@@ -451,19 +451,6 @@ const char *tsseqclass2ascii(int seqclass) {
     return "unknown class";
   default:
     return "ERROR, WTF?";
-  }
-}
-
-
-/* Start the timeout clocks of any targets that aren't already timedout */
-static void startTimeOutClocks(OsScanInfo *OSI) {
-  std::list<HostOsScanInfo *>::iterator hostI;
-
-  gettimeofday(&now, NULL);
-  for (hostI = OSI->incompleteHosts.begin();
-       hostI != OSI->incompleteHosts.end(); hostI++) {
-    if (!(*hostI)->target->timedOut(NULL))
-      (*hostI)->target->startTimeOutClock(&now);
   }
 }
 
@@ -1768,6 +1755,10 @@ void HostOsScan::sendNextProbe(HostOsScanStats *hss) {
 
   if (hss->probesToSend.empty())
     return;
+
+  if (!hss->target->timeOutClockRunning() && !hss->target->timedOut(NULL)) {
+    hss->target->startTimeOutClock(&now);
+  }
 
   probeI = hss->probesToSend.begin();
   probe = *probeI;
@@ -3729,7 +3720,6 @@ int OSScan::os_scan_ipv4(std::vector<Target *> &Targets) {
     return OP_FAILURE;
   }
   OSI.starttime = o.TimeSinceStart();
-  startTimeOutClocks(&OSI);
 
   HostOsScan HOS(Targets[0]);
 

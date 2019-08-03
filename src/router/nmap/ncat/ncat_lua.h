@@ -2,7 +2,7 @@
  * ncat_lua.h -- ncat lua facilities header file                           *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2018 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2019 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -125,18 +125,34 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: ncat_lua.h 37126 2018-01-28 21:18:17Z fyodor $ */
+/* $Id$ */
 
 #ifndef _NCAT_LUA_H
 #define _NCAT_LUA_H
+
+#include "ncat_config.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "lua.h"
-#include "lualib.h"
-#include "lauxlib.h"
+#ifdef HAVE_LUA5_3_LUA_H
+  #include <lua5.3/lua.h>
+  #include <lua5.3/lauxlib.h>
+  #include <lua5.3/lualib.h>
+#elif defined HAVE_LUA_5_3_LUA_H
+  #include <lua/5.3/lua.h>
+  #include <lua/5.3/lauxlib.h>
+  #include <lua/5.3/lualib.h>
+#elif defined HAVE_LUA_H || defined LUA_INCLUDED
+  #include <lua.h>
+  #include <lauxlib.h>
+  #include <lualib.h>
+#elif defined HAVE_LUA_LUA_H
+  #include <lua/lua.h>
+  #include <lua/lauxlib.h>
+  #include <lua/lualib.h>
+#endif
 
 #ifdef __cplusplus
 }

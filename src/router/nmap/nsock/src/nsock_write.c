@@ -4,7 +4,7 @@
  *                                                                         *
  ***********************IMPORTANT NSOCK LICENSE TERMS***********************
  *                                                                         *
- * The nsock parallel socket event library is (C) 1999-2018 Insecure.Com   *
+ * The nsock parallel socket event library is (C) 1999-2019 Insecure.Com   *
  * LLC This library is free software; you may redistribute and/or          *
  * modify it under the terms of the GNU General Public License as          *
  * published by the Free Software Foundation; Version 2.  This guarantees  *
@@ -53,7 +53,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nsock_write.c 37126 2018-01-28 21:18:17Z fyodor $ */
+/* $Id$ */
 
 #include "nsock.h"
 #include "nsock_internal.h"
@@ -170,24 +170,28 @@ nsock_event_id nsock_printf(nsock_pool ms_pool, nsock_iod ms_iod,
   struct nevent *nse;
   char buf[4096];
   char *buf2 = NULL;
+  size_t buf2size;
   int res, res2;
   int strlength = 0;
   char displaystr[256];
 
   va_list ap;
-  va_start(ap,format);
 
   nse = event_new(nsp, NSE_TYPE_WRITE, nsi, timeout_msecs, handler, userdata);
   assert(nse);
 
+  va_start(ap,format);
   res = Vsnprintf(buf, sizeof(buf), format, ap);
   va_end(ap);
 
-  if (res != -1) {
-    if (res > sizeof(buf)) {
-      buf2 = (char * )safe_malloc(res + 16);
-      res2 = Vsnprintf(buf2, sizeof(buf), format, ap);
-      if (res2 == -1 || res2 > res) {
+  if (res >= 0) {
+    if (res >= sizeof(buf)) {
+      buf2size = res + 16;
+      buf2 = (char * )safe_malloc(buf2size);
+      va_start(ap,format);
+      res2 = Vsnprintf(buf2, buf2size, format, ap);
+      va_end(ap);
+      if (res2 < 0 || res2 >= buf2size) {
         free(buf2);
         buf2 = NULL;
       } else

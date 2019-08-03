@@ -1,8 +1,10 @@
+local datetime = require "datetime"
 local nmap = require "nmap"
 local shortport = require "shortport"
 local sslcert = require "sslcert"
 local stdnse = require "stdnse"
 local string = require "string"
+local table = require "table"
 local tls = require "tls"
 local unicode = require "unicode"
 
@@ -66,7 +68,7 @@ certificate.
 ]]
 
 ---
--- @see ssl-cert-intaddr
+-- @see ssl-cert-intaddr.nse
 --
 -- @output
 -- 443/tcp open  https
@@ -119,7 +121,7 @@ author = "David Fifield"
 license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 categories = { "default", "safe", "discovery" }
-
+dependencies = {"https-redirect"}
 
 portrule = function(host, port)
   return shortport.ssl(host, port) or sslcert.isPortSupported(port) or sslcert.getPrepareTLSWithoutReconnect(port)
@@ -143,7 +145,7 @@ function date_to_string(date)
   if type(date) == "string" then
     return string.format("Can't parse; string is \"%s\"", date)
   else
-    return stdnse.format_timestamp(date)
+    return datetime.format_timestamp(date)
   end
 end
 
@@ -186,20 +188,20 @@ function stringify_name(name)
       -- Don't include a field twice.
       if not table_find(NON_VERBOSE_FIELDS, k) then
         if type(k) == "table" then
-          k = stdnse.strjoin(".", k)
+          k = table.concat(k, ".")
         end
         fields[#fields + 1] = string.format("%s=%s", k, maybe_decode(v) or '')
       end
     end
   end
-  return stdnse.strjoin("/", fields)
+  return table.concat(fields, "/")
 end
 
 local function name_to_table(name)
   local output = {}
   for k, v in pairs(name) do
     if type(k) == "table" then
-      k = stdnse.strjoin(".", k)
+      k = table.concat(k, ".")
     end
     output[k] = v
   end
@@ -218,7 +220,7 @@ local function output_tab(cert)
     if type(v)=="string" then
       o.validity[k] = v
     else
-      o.validity[k] = stdnse.format_timestamp(v)
+      o.validity[k] = datetime.format_timestamp(v)
     end
   end
   o.md5 = stdnse.tohex(cert:digest("md5"))
@@ -263,7 +265,7 @@ local function output_str(cert)
   if nmap.verbosity() > 1 then
     lines[#lines + 1] = cert.pem
   end
-  return stdnse.strjoin("\n", lines)
+  return table.concat(lines, "\n")
 end
 
 action = function(host, port)

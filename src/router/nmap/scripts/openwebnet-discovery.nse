@@ -1,7 +1,9 @@
+local datetime = require "datetime"
 local stdnse = require "stdnse"
 local shortport = require "shortport"
 local comm = require "comm"
 local string = require "string"
+local stringaux = require "stringaux"
 local table = require "table"
 
 description = [[
@@ -153,7 +155,7 @@ local function get_response(sd, request)
     if status == nil then
       stdnse.debug("Error: " .. data)
       if data == "TIMEOUT" then
-        -- Avoids false results by capturing NACK after TIMEOUT occured.
+        -- Avoids false results by capturing NACK after TIMEOUT occurred.
         status, data = sd:receive_buf("##", true)
         break
       else
@@ -188,11 +190,11 @@ local function format_dimensions(res)
     }
 
     local values = {}
-    for counter, val in ipairs(stdnse.strsplit("%.%s*", res["Date and Time"])) do
+    for counter, val in ipairs(stringaux.strsplit("%.%s*", res["Date and Time"])) do
       values[ params[counter] ] = val
     end
 
-    res["Date and Time"] = stdnse.format_timestamp(values)
+    res["Date and Time"] = datetime.format_timestamp(values)
   end
 
   if res["Device Type"] then
@@ -216,7 +218,7 @@ local function format_dimensions(res)
       "d", "h", "m", "s"
     }
 
-    for counter, v in ipairs(stdnse.strsplit("%.%s*", res["Uptime"])) do
+    for counter, v in ipairs(stringaux.strsplit("%.%s*", res["Uptime"])) do
       table.insert(t, v .. units[counter])
     end
 

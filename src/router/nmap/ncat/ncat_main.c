@@ -3,7 +3,7 @@
  * to mode-specific functions.                                             *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2018 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2019 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -126,7 +126,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: ncat_main.c 37156 2018-03-05 01:53:34Z nnposter $ */
+/* $Id$ */
 
 #include "nsock.h"
 #include "ncat.h"
@@ -160,21 +160,37 @@
 static int ncat_connect_mode(void);
 static int ncat_listen_mode(void);
 
+/* Parses a port number */
+static unsigned int parseport(char *str, unsigned int maxport, char *msg)
+{
+    unsigned long port;
+    char *next;
+    errno = 0;
+    port = strtoul(str, &next, 10);
+    if (errno || *next || (maxport && port > maxport))
+        bye("Invalid %s number \"%s\".", msg, str);
+    return (unsigned int) port;
+}
+
 /* Parses proxy address/port combo */
 static size_t parseproxy(char *str, struct sockaddr_storage *ss,
     size_t *sslen, unsigned short *portno)
 {
-    char *p = strrchr(str, ':');
-    char *q;
-    long pno;
+    char *p = str;
     int rc;
 
-    if (p != NULL) {
+    if (*p == '[') {
+        p = strchr(p, ']');
+        if (p == NULL)
+            bye("Invalid proxy IPv6 address \"%s\".", str);
+        ++str;
         *p++ = '\0';
-        pno = strtol(p, &q, 10);
-        if (pno < 1 || pno > 0xFFFF || *q)
-            bye("Invalid proxy port number \"%s\".", p);
-        *portno = (unsigned short) pno;
+    }
+
+    p = strchr(p, ':');
+    if (p != NULL && strchr(p + 1, ':') == NULL) {
+        *p++ = '\0';
+        *portno = (unsigned short) parseport(p, 0xFFFF, "proxy port");
     }
 
     rc = resolve(str, *portno, ss, sslen, o.af);
@@ -277,8 +293,10 @@ int main(int argc, char *argv[])
     struct host_list_node *allow_host_list = NULL;
     struct host_list_node *deny_host_list = NULL;
 
-	unsigned short proxyport;
-    int srcport = -1;
+    unsigned short proxyport;
+    /* vsock ports are 32 bits, so port variables must be at least that wide. */
+    unsigned int max_port = 65535;
+    long long int srcport = -1;
     char *source = NULL;
 
     struct option long_options[] = {
@@ -286,6 +304,9 @@ int main(int argc, char *argv[])
         {"6",               no_argument,        NULL,         '6'},
 #if HAVE_SYS_UN_H
         {"unixsock",        no_argument,        NULL,         'U'},
+#endif
+#if HAVE_LINUX_VM_SOCKETS_H
+        {"vsock",           no_argument,        NULL,         0},
 #endif
         {"crlf",            no_argument,        NULL,         'C'},
         {"g",               required_argument,  NULL,         'g'},
@@ -327,6 +348,7 @@ int main(int argc, char *argv[])
         {"proxy",           required_argument,  NULL,         0},
         {"proxy-type",      required_argument,  NULL,         0},
         {"proxy-auth",      required_argument,  NULL,         0},
+        {"proxy-dns",       required_argument,  NULL,         0},
         {"nsock-engine",    required_argument,  NULL,         0},
         {"test",            no_argument,        NULL,         0},
         {"ssl",             no_argument,        &o.ssl,       1},
@@ -439,9 +461,7 @@ int main(int argc, char *argv[])
             o.hexlog = optarg;
             break;
         case 'p':
-            srcport = atoi(optarg);
-            if (srcport < 0 || srcport > 0xffff)
-                bye("Invalid source port %d.", srcport);
+            srcport = parseport(optarg, 0, "source port");
             break;
         case 'i':
             o.idletimeout = parse_timespec(optarg, "-i timeout");
@@ -490,6 +510,17 @@ int main(int argc, char *argv[])
                 if (o.proxy_auth)
                     bye("You can't specify more than one --proxy-auth.");
                 o.proxy_auth = optarg;
+            } else if (strcmp(long_options[option_index].name, "proxy-dns") == 0) {
+                if (strcmp(optarg, "none") == 0)
+                    o.proxydns = 0;
+                else if (strcmp(optarg, "local") == 0)
+                    o.proxydns = PROXYDNS_LOCAL;
+                else if (strcmp(optarg, "remote") == 0)
+                    o.proxydns = PROXYDNS_REMOTE;
+                else if (strcmp(optarg, "both") == 0)
+                    o.proxydns = PROXYDNS_LOCAL | PROXYDNS_REMOTE;
+                else
+                    bye("Invalid proxy DNS type.");
             } else if (strcmp(long_options[option_index].name, "nsock-engine") == 0) {
                 if (nsock_set_default_engine(optarg) < 0)
                     bye("Unknown or non-available engine: %s.", optarg);
@@ -596,6 +627,11 @@ int main(int argc, char *argv[])
                 lua_run();
             }
 #endif
+#if HAVE_LINUX_VM_SOCKETS_H
+            else if (strcmp(long_options[option_index].name, "vsock") == 0) {
+                o.af = AF_VSOCK;
+            }
+#endif
             break;
         case 'h':
             printf("%s %s ( %s )\n", NCAT_NAME, NCAT_VERSION, NCAT_URL);
@@ -608,6 +644,9 @@ int main(int argc, char *argv[])
 "  -6                         Use IPv6 only\n"
 #if HAVE_SYS_UN_H
 "  -U, --unixsock             Use Unix domain sockets only\n"
+#endif
+#if HAVE_LINUX_VM_SOCKETS_H
+"      --vsock                Use vsock sockets only\n"
 #endif
 "  -C, --crlf                 Use CRLF for EOL sequence\n"
 "  -c, --sh-exec <command>    Executes the given command via /bin/sh\n"
@@ -637,6 +676,7 @@ int main(int argc, char *argv[])
 "      --append-output        Append rather than clobber specified output files\n"
 "      --send-only            Only send data, ignoring received; quit on EOF\n"
 "      --recv-only            Only receive data, never send anything\n"
+"      --no-shutdown          Continue half-duplex when receiving EOF on stdin\n"
 "      --allow                Allow only given hosts to connect to Ncat\n"
 "      --allowfile            A file of hosts allowed to connect to Ncat\n"
 "      --deny                 Deny given hosts from connecting to Ncat\n"
@@ -644,8 +684,9 @@ int main(int argc, char *argv[])
 "      --broker               Enable Ncat's connection brokering mode\n"
 "      --chat                 Start a simple Ncat chat server\n"
 "      --proxy <addr[:port]>  Specify address of host to proxy through\n"
-"      --proxy-type <type>    Specify proxy type (\"http\" or \"socks4\" or \"socks5\")\n"
+"      --proxy-type <type>    Specify proxy type (\"http\", \"socks4\", \"socks5\")\n"
 "      --proxy-auth <auth>    Authenticate with HTTP or SOCKS proxy server\n"
+"      --proxy-dns <type>     Specify where to resolve proxy destination\n"
 
 #ifdef HAVE_OPENSSL
 "      --ssl                  Connect or listen with SSL\n"
@@ -669,6 +710,14 @@ int main(int argc, char *argv[])
             bye("Unrecognised option.");
         }
     }
+
+#if HAVE_LINUX_VM_SOCKETS_H
+    if (o.af == AF_VSOCK)
+        max_port = UINT32_MAX;
+#endif
+
+    if (srcport > max_port)
+        bye("Invalid source port %lld.", srcport);
 
 #ifndef HAVE_OPENSSL
     if (o.ssl)
@@ -706,6 +755,21 @@ int main(int argc, char *argv[])
     }
 #endif  /* HAVE_SYS_UN_H */
 
+#if HAVE_LINUX_VM_SOCKETS_H
+    if (o.af == AF_VSOCK) {
+        if (o.proxyaddr || o.proxytype)
+            bye("Proxy option not supported when using vsock sockets.");
+#ifdef HAVE_OPENSSL
+        if (o.ssl)
+            bye("SSL option not supported when using vsock sockets.");
+#endif
+        if (o.broker)
+            bye("Connection brokering not supported when using vsock sockets.");
+        if (o.numsrcrtes > 0)
+            bye("Loose source routing not allowed when using vsock sockets.");
+    }
+#endif  /* HAVE_LINUX_VM_SOCKETS_H */
+
     /* Create a static target address, because at least one target address must be always allocated */
     targetaddrs = (struct sockaddr_list *)safe_zalloc(sizeof(struct sockaddr_list));
 
@@ -731,7 +795,7 @@ int main(int argc, char *argv[])
             proxyport = DEFAULT_SOCKS4_PORT;
         else if (!strcmp(o.proxytype, "socks5") || !strcmp(o.proxytype, "5"))
             proxyport = DEFAULT_SOCKS5_PORT;
-        else 
+        else
             bye("Invalid proxy type \"%s\".", o.proxytype);
 
         /* Parse HTTP/SOCKS proxy address and store it in targetss.
@@ -796,14 +860,29 @@ int main(int argc, char *argv[])
                     loguser("Specifying source socket for other than DATAGRAM Unix domain sockets have no effect.\n");
         } else
 #endif
+#if HAVE_LINUX_VM_SOCKETS_H
+        if (o.af == AF_VSOCK) {
+            long long_cid;
+
+            srcaddr.vm.svm_family = AF_VSOCK;
+
+            errno = 0;
+            long_cid = strtol(source, NULL, 10);
+            if (errno != 0 || long_cid <= 0 || long_cid > UINT32_MAX)
+                bye("Invalid source address CID \"%s\".", source);
+            srcaddr.vm.svm_cid = long_cid;
+
+            srcaddrlen = sizeof(srcaddr.vm);
+        } else
+#endif
             rc = resolve(source, 0, &srcaddr.storage, &srcaddrlen, o.af);
         if (rc != 0)
             bye("Could not resolve source address \"%s\": %s.", source, gai_strerror(rc));
     }
 
-    host_list_to_set(&o.allowset, allow_host_list);
+    host_list_to_set(o.allowset, allow_host_list);
     host_list_free(allow_host_list);
-    host_list_to_set(&o.denyset, deny_host_list);
+    host_list_to_set(o.denyset, deny_host_list);
     host_list_free(deny_host_list);
 
     if (optind == argc) {
@@ -827,6 +906,26 @@ int main(int argc, char *argv[])
             targetaddrs->addrlen = SUN_LEN(&targetaddrs->addr.un);
             o.target = argv[optind];
             optind++;
+        } else
+#endif
+#if HAVE_LINUX_VM_SOCKETS_H
+        if (o.af == AF_VSOCK) {
+            if (!o.listen || optind + 1 < argc) {
+                long long_cid;
+
+                memset(&targetaddrs->addr.storage, 0, sizeof(struct sockaddr_vm));
+                targetaddrs->addr.vm.svm_family = AF_VSOCK;
+
+                errno = 0;
+                long_cid = strtol(argv[optind], NULL, 10);
+                if (errno != 0 || long_cid <= 0 || long_cid > UINT32_MAX)
+                    bye("Invalid CID \"%s\".", argv[optind]);
+                targetaddrs->addr.vm.svm_cid = long_cid;
+
+                targetaddrs->addrlen = sizeof(targetaddrs->addr.vm);
+                o.target = argv[optind];
+                optind++;
+            }
         } else
 #endif
         /* Resolve hostname if we're given one */
@@ -858,21 +957,13 @@ int main(int argc, char *argv[])
     if (optind + 1 < argc || (o.listen && srcport != -1 && optind + 1 == argc)) {
         loguser("Got more than one port specification:");
         if (o.listen && srcport != -1)
-            loguser_noprefix(" %d", srcport);
+            loguser_noprefix(" %lld", srcport);
         for (; optind < argc; optind++)
             loguser_noprefix(" %s", argv[optind]);
         loguser_noprefix(". QUITTING.\n");
         exit(2);
-    } else if (optind + 1 == argc) {
-        long long_port;
-
-        errno = 0;
-        long_port = strtol(argv[optind], NULL, 10);
-        if (errno != 0 || long_port <= 0 || long_port > 65535)
-            bye("Invalid port number \"%s\".", argv[optind]);
-
-        o.portno = (unsigned short) long_port;
-    }
+    } else if (optind + 1 == argc)
+        o.portno = parseport(argv[optind], max_port, "port");
 
     if (o.proxytype && !o.listen)
         ; /* Do nothing - port is already set to proxyport  */
@@ -891,6 +982,10 @@ int main(int argc, char *argv[])
             else if (targetaddrs_item->addr.storage.ss_family == AF_UNIX)
                 ; /* Do nothing. */
 #endif
+#if HAVE_LINUX_VM_SOCKETS_H
+            else if (targetaddrs_item->addr.storage.ss_family == AF_VSOCK)
+                targetaddrs_item->addr.vm.svm_port = o.portno;
+#endif
             else if (targetaddrs_item->addr.storage.ss_family == AF_UNSPEC)
                 ; /* Leave unspecified. */
             else
@@ -903,7 +998,7 @@ int main(int argc, char *argv[])
         if (o.listen) {
             /* Treat "ncat -l -p <port>" the same as "ncat -l <port>" for nc
                compatibility. */
-            o.portno = srcport;
+            o.portno = (unsigned int) srcport;
         } else {
             if (srcaddr.storage.ss_family == AF_UNSPEC) {
                 /* We have a source port but not an explicit source address;
@@ -916,10 +1011,14 @@ int main(int argc, char *argv[])
                     srcaddr.in6.sin6_addr = in6addr_any;
             }
             if (srcaddr.storage.ss_family == AF_INET)
-                srcaddr.in.sin_port = htons(srcport);
+                srcaddr.in.sin_port = htons((unsigned int) srcport);
 #ifdef HAVE_IPV6
-            else
-                srcaddr.in6.sin6_port = htons(srcport);
+            else if (srcaddr.storage.ss_family == AF_INET6)
+                srcaddr.in6.sin6_port = htons((unsigned int) srcport);
+#endif
+#ifdef HAVE_LINUX_VM_SOCKETS_H
+            else if (srcaddr.storage.ss_family == AF_VSOCK)
+                srcaddr.vm.svm_port = (unsigned int) srcport;
 #endif
         }
     }
@@ -1029,6 +1128,14 @@ static int ncat_listen_mode(void)
                 bye("Failed to resolve default IPv4 address: %s.", gai_strerror(rc));
             num_listenaddrs++;
         }
+#ifdef HAVE_LINUX_VM_SOCKETS_H
+        if (o.af == AF_VSOCK) {
+            listenaddrs[num_listenaddrs].vm.svm_family = AF_VSOCK;
+            listenaddrs[num_listenaddrs].vm.svm_cid = VMADDR_CID_ANY;
+            listenaddrs[num_listenaddrs].vm.svm_port = o.portno;
+            num_listenaddrs++;
+        }
+#endif
     }
 
     if (o.proxytype) {

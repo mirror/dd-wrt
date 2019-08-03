@@ -83,8 +83,12 @@ action = function(host, port)
         return stdnse.format_output(false, mounts)
     end
 
+    if #mounts < 1 then
+      return "No NFS mounts available"
+    end
+
     for _, v in ipairs( mounts ) do
-        local entry = v.name .. " " .. stdnse.strjoin(" ", v)
+        local entry = v.name .. " " .. table.concat(v, " ")
         table.insert( result, entry )
     end
 

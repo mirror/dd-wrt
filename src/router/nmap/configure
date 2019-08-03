@@ -653,6 +653,7 @@ LUA_CLEAN
 LUA_BUILD
 LIBLUADIR
 LIBLUA_LIBS
+NOLUA
 DNET_DIST_CLEAN
 DNET_CLEAN
 DNET_BUILD
@@ -1947,48 +1948,6 @@ $as_echo "$ac_res" >&6; }
   eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
 
 } # ac_fn_c_check_decl
-
-# ac_fn_cxx_try_run LINENO
-# ------------------------
-# Try to link conftest.$ac_ext, and return whether this succeeded. Assumes
-# that executables *can* be run.
-ac_fn_cxx_try_run ()
-{
-  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
-  if { { ac_try="$ac_link"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval ac_try_echo="\"\$as_me:${as_lineno-$LINENO}: $ac_try_echo\""
-$as_echo "$ac_try_echo"; } >&5
-  (eval "$ac_link") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; } && { ac_try='./conftest$ac_exeext'
-  { { case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval ac_try_echo="\"\$as_me:${as_lineno-$LINENO}: $ac_try_echo\""
-$as_echo "$ac_try_echo"; } >&5
-  (eval "$ac_try") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; }; then :
-  ac_retval=0
-else
-  $as_echo "$as_me: program exited with status $ac_status" >&5
-       $as_echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-       ac_retval=$ac_status
-fi
-  rm -rf conftest.dSYM conftest_ipa8_conftest.oo
-  eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
-  as_fn_set_status $ac_retval
-
-} # ac_fn_cxx_try_run
 
 # ac_fn_c_check_func LINENO FUNC VAR
 # ----------------------------------
@@ -6164,9 +6123,9 @@ if test "${with_libpcap+set}" = set; then :
     ac_fn_c_check_header_mongrel "$LINENO" "pcap.h" "ac_cv_header_pcap_h" "$ac_includes_default"
 if test "x$ac_cv_header_pcap_h" = xyes; then :
 
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pcap_datalink in -lpcap" >&5
-$as_echo_n "checking for pcap_datalink in -lpcap... " >&6; }
-if ${ac_cv_lib_pcap_pcap_datalink+:} false; then :
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pcap_create in -lpcap" >&5
+$as_echo_n "checking for pcap_create in -lpcap... " >&6; }
+if ${ac_cv_lib_pcap_pcap_create+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
@@ -6180,27 +6139,27 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 #ifdef __cplusplus
 extern "C"
 #endif
-char pcap_datalink ();
+char pcap_create ();
 int
 main ()
 {
-return pcap_datalink ();
+return pcap_create ();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_pcap_pcap_datalink=yes
+  ac_cv_lib_pcap_pcap_create=yes
 else
-  ac_cv_lib_pcap_pcap_datalink=no
+  ac_cv_lib_pcap_pcap_create=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_pcap_pcap_datalink" >&5
-$as_echo "$ac_cv_lib_pcap_pcap_datalink" >&6; }
-if test "x$ac_cv_lib_pcap_pcap_datalink" = xyes; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_pcap_pcap_create" >&5
+$as_echo "$ac_cv_lib_pcap_pcap_create" >&6; }
+if test "x$ac_cv_lib_pcap_pcap_create" = xyes; then :
   have_libpcap=yes
 fi
 
@@ -6221,9 +6180,9 @@ fi
     ac_fn_c_check_header_mongrel "$LINENO" "pcap.h" "ac_cv_header_pcap_h" "$ac_includes_default"
 if test "x$ac_cv_header_pcap_h" = xyes; then :
 
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pcap_datalink in -lpcap" >&5
-$as_echo_n "checking for pcap_datalink in -lpcap... " >&6; }
-if ${ac_cv_lib_pcap_pcap_datalink+:} false; then :
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pcap_create in -lpcap" >&5
+$as_echo_n "checking for pcap_create in -lpcap... " >&6; }
+if ${ac_cv_lib_pcap_pcap_create+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
@@ -6237,27 +6196,27 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 #ifdef __cplusplus
 extern "C"
 #endif
-char pcap_datalink ();
+char pcap_create ();
 int
 main ()
 {
-return pcap_datalink ();
+return pcap_create ();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_pcap_pcap_datalink=yes
+  ac_cv_lib_pcap_pcap_create=yes
 else
-  ac_cv_lib_pcap_pcap_datalink=no
+  ac_cv_lib_pcap_pcap_create=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_pcap_pcap_datalink" >&5
-$as_echo "$ac_cv_lib_pcap_pcap_datalink" >&6; }
-if test "x$ac_cv_lib_pcap_pcap_datalink" = xyes; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_pcap_pcap_create" >&5
+$as_echo "$ac_cv_lib_pcap_pcap_create" >&6; }
+if test "x$ac_cv_lib_pcap_pcap_create" = xyes; then :
   have_libpcap=yes
         LIBPCAP_INC=$with_libpcap/include
         LIBPCAP_LIB=$with_libpcap/lib
@@ -6413,45 +6372,27 @@ if test $have_libpcap != yes; then
 
 $as_echo "#define PCAP_INCLUDED 1" >>confdefs.h
 
+
+$as_echo "#define HAVE_PCAP_SET_IMMEDIATE_MODE 1" >>confdefs.h
+
 else
   # We assume our included libpcap doesn't need this check-and-define
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if PCAP_NETMASK_UNKNOWN is defined/handled by libpcap" >&5
-$as_echo_n "checking if PCAP_NETMASK_UNKNOWN is defined/handled by libpcap... " >&6; }
-  if ${ac_cv_have_pcap_netmask_unknown+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-      #include <pcap.h>
-
-int
-main ()
-{
-
-      int i = PCAP_NETMASK_UNKNOWN;
-
-  ;
-  return 0;
-}
+  # link with -lpcap for the purposes of this test
+  LIBS_OLD="$LIBS"
+  LIBS="$LIBS -lpcap"
+  for ac_func in pcap_set_immediate_mode
+do :
+  ac_fn_c_check_func "$LINENO" "pcap_set_immediate_mode" "ac_cv_func_pcap_set_immediate_mode"
+if test "x$ac_cv_func_pcap_set_immediate_mode" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_PCAP_SET_IMMEDIATE_MODE 1
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  ac_cv_have_pcap_netmask_unknown=yes
-else
-  ac_cv_have_pcap_netmask_unknown=no
+
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
+done
 
-  if test $ac_cv_have_pcap_netmask_unknown = no; then
-
-$as_echo "#define PCAP_NETMASK_UNKNOWN 0" >>confdefs.h
-
-  fi
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_have_pcap_netmask_unknown" >&5
-$as_echo "$ac_cv_have_pcap_netmask_unknown" >&6; }
-
+  # Restore libs
+  LIBS="$LIBS_OLD"
 
 
 $as_echo "#define HAVE_LIBPCAP 1" >>confdefs.h
@@ -6633,11 +6574,6 @@ fi
 have_libz="no"
 requested_included_libz="no"
 test "${with_libz+set}" != "set" && with_libz="yes"
-# For now, libz is a libssh2 dependency.
-# If we end up using it for something else, we'll have to change this line.
-if test "x${with_libssh2}" = "xno"; then
-  with_libz=no
-fi
 
 
 # Check whether --with-libz was given.
@@ -7060,6 +6996,8 @@ if test "${with_liblua+set}" = set; then :
     LUA_DIST_CLEAN="distclean-lua"
       have_lua="yes"
 
+$as_echo "#define LUA_INCLUDED 1" >>confdefs.h
+
   ;;
   no)
     no_lua="yes"
@@ -7135,7 +7073,7 @@ fi
 if test "$no_lua" = "yes"; then
   trace_no_use="$trace_no_use lua"
   CPPFLAGS="-DNOLUA $CPPFLAGS"
-  LIBLUA_LIBS=""
+  NOLUA="yes"
   LUA_BUILD=""
   LUA_CLEAN=""
   LUA_DIST_CLEAN=""
@@ -7154,149 +7092,93 @@ if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
 #define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
 _ACEOF
- { $as_echo "$as_me:${as_lineno-$LINENO}: checking for lua_isyieldable in -llua5.3" >&5
-$as_echo_n "checking for lua_isyieldable in -llua5.3... " >&6; }
-if ${ac_cv_lib_lua5_3_lua_isyieldable+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-llua5.3 -lm $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char lua_isyieldable ();
-int
-main ()
-{
-return lua_isyieldable ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_lua5_3_lua_isyieldable=yes
-else
-  ac_cv_lib_lua5_3_lua_isyieldable=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_lua5_3_lua_isyieldable" >&5
-$as_echo "$ac_cv_lib_lua5_3_lua_isyieldable" >&6; }
-if test "x$ac_cv_lib_lua5_3_lua_isyieldable" = xyes; then :
-  have_lua=yes; LIBLUA_LIBS="-llua5.3"; CPPFLAGS="-I/usr/include/lua5.3 $CPPFLAGS"; break
-fi
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for lua_isyieldable in -llua53" >&5
-$as_echo_n "checking for lua_isyieldable in -llua53... " >&6; }
-if ${ac_cv_lib_lua53_lua_isyieldable+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-llua53 -lm $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char lua_isyieldable ();
-int
-main ()
-{
-return lua_isyieldable ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_lua53_lua_isyieldable=yes
-else
-  ac_cv_lib_lua53_lua_isyieldable=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_lua53_lua_isyieldable" >&5
-$as_echo "$ac_cv_lib_lua53_lua_isyieldable" >&6; }
-if test "x$ac_cv_lib_lua53_lua_isyieldable" = xyes; then :
-  have_lua=yes; LIBLUA_LIBS="-llua53"; CPPFLAGS="-I/usr/include/lua53 $CPPFLAGS"; break
-fi
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for lua_isyieldable in -llua" >&5
-$as_echo_n "checking for lua_isyieldable in -llua... " >&6; }
-if ${ac_cv_lib_lua_lua_isyieldable+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-llua -lm $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char lua_isyieldable ();
-int
-main ()
-{
-return lua_isyieldable ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_lua_lua_isyieldable=yes
-else
-  ac_cv_lib_lua_lua_isyieldable=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_lua_lua_isyieldable" >&5
-$as_echo "$ac_cv_lib_lua_lua_isyieldable" >&6; }
-if test "x$ac_cv_lib_lua_lua_isyieldable" = xyes; then :
-  have_lua=yes; LIBLUA_LIBS="-llua"; CPPFLAGS="-I/usr/include/lua $CPPFLAGS"; break
-fi
-
-
+ break
 fi
 
 done
 
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing lua_isyieldable" >&5
+$as_echo_n "checking for library containing lua_isyieldable... " >&6; }
+if ${ac_cv_search_lua_isyieldable+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
 
-    ac_ext=cpp
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char lua_isyieldable ();
+int
+main ()
+{
+return lua_isyieldable ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' lua5.3 lua53 lua; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib -lm $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_lua_isyieldable=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_lua_isyieldable+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_lua_isyieldable+:} false; then :
 
-    # We need Lua 5.2 exactly
+else
+  ac_cv_search_lua_isyieldable=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_lua_isyieldable" >&5
+$as_echo "$ac_cv_search_lua_isyieldable" >&6; }
+ac_res=$ac_cv_search_lua_isyieldable
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+  have_lua=yes
+fi
+
+    ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+    # We need Lua 5.3 exactly
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for lua version == 503" >&5
 $as_echo_n "checking for lua version == 503... " >&6; }
-
-if test "$cross_compiling" = yes; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: cross-compiling -- assuming yes" >&5
-$as_echo "cross-compiling -- assuming yes" >&6; }; have_lua=yes
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
- #include <lua.h>
+
+      #ifdef HAVE_LUA5_3_LUA_H
+          #include <lua5.3/lua.h>
+      #elif defined HAVE_LUA_5_3_LUA_H
+          #include <lua/5.3/lua.h>
+      #elif defined HAVE_LUA_H || defined LUA_INCLUDED
+          #include <lua.h>
+      #elif defined HAVE_LUA_LUA_H
+          #include <lua/lua.h>
+      #endif
+
+      #if (LUA_VERSION_NUM != 503)
+          #error Incorrect Lua version
+      #endif
+
 int
 main ()
 {
@@ -7304,16 +7186,14 @@ if(LUA_VERSION_NUM != 503) return 1;
   ;
   return 0;
 }
+
 _ACEOF
-if ac_fn_cxx_try_run "$LINENO"; then :
+if ac_fn_c_try_cpp "$LINENO"; then :
   have_lua=yes
 else
   have_lua=no
 fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
+rm -f conftest.err conftest.i conftest.$ac_ext
     ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -7346,6 +7226,7 @@ $as_echo "yes" >&6; }
   INSTALLNSE="install-nse"
   NSE_CHECK="check-nse"
 fi
+
 
 
 
@@ -7875,6 +7756,7 @@ _ACEOF
 
 fi
 done
+
 
 
    ac_ext=cpp

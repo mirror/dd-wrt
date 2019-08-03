@@ -4,7 +4,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2018 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2019 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -127,14 +127,10 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nmap_error.h 37126 2018-01-28 21:18:17Z fyodor $ */
+/* $Id$ */
 
 #ifndef NMAP_ERROR_H
 #define NMAP_ERROR_H
-
-#ifdef WIN32
-#include "mswin32\winclude.h"
-#endif
 
 #ifdef HAVE_CONFIG_H
 #include "nmap_config.h"

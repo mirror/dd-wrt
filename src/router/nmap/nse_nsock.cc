@@ -329,6 +329,7 @@ static void status (lua_State *L, enum nse_status status)
   switch (status)
   {
     case NSE_STATUS_SUCCESS:
+      assert(lua_status(L) == LUA_YIELD);
       lua_pushboolean(L, true);
       nse_restore(L, 1);
       break;
@@ -339,6 +340,7 @@ static void status (lua_State *L, enum nse_status status)
     case NSE_STATUS_ERROR:
     case NSE_STATUS_TIMEOUT:
     case NSE_STATUS_PROXYERROR:
+      assert(lua_status(L) == LUA_YIELD);
       lua_pushnil(L);
       lua_pushstring(L, nse_status2str(status));
       nse_restore(L, 2);
@@ -354,6 +356,7 @@ static void callback (nsock_pool nsp, nsock_event nse, void *ud)
 {
   nse_nsock_udata *nu = (nse_nsock_udata *) ud;
   lua_State *L = nu->thread;
+  assert(nse_type(nse) != NSE_TYPE_READ);
   if (lua_status(L) == LUA_OK && nse_status(nse) == NSE_STATUS_ERROR) {
     // Sometimes Nsock fails immediately and callback is called before
     // l_connect has a chance to yield. We'll use nu->action to signal
@@ -375,6 +378,10 @@ static int yield (lua_State *L, nse_nsock_udata *nu, const char *action,
   lua_pushthread(L);
   lua_rawseti(L, -2, THREAD_I);
   lua_pop(L, 1); /* nsock udata environment */
+  if (nu->thread != NULL && nu->thread != L)
+  {
+    luaL_error(L, "Invalid reuse of a socket from one thread to another.");
+  }
   nu->thread = L;
   nu->action = action;
   nu->direction = direction;
@@ -609,9 +616,10 @@ static void receive_callback (nsock_pool nsp, nsock_event nse, void *udata)
 {
   nse_nsock_udata *nu = (nse_nsock_udata *) udata;
   lua_State *L = nu->thread;
-  assert(lua_status(L) == LUA_YIELD);
+  assert(nse_type(nse) == NSE_TYPE_READ);
   if (nse_status(nse) == NSE_STATUS_SUCCESS)
   {
+    assert(lua_status(L) == LUA_YIELD);
     int len;
     const char *str = nse_readbuf(nse, &len);
     trace(nse_iod(nse), hexify((const unsigned char *) str, len).c_str(), FROM);
@@ -1011,16 +1019,18 @@ static int l_pcap_open (lua_State *L)
 
     lua_pop(L, 1); /* the nonexistant socket */
     nsiod = (nsock_iod *) lua_newuserdata(L, sizeof(nsock_iod));
+    *nsiod = nsock_iod_new(nsp, nu);
+    rc = nsock_pcap_open(nsp, *nsiod, lua_tostring(L, 6), snaplen,
+                         lua_toboolean(L, 4), bpf);
+    if (rc) {
+      nsock_iod_delete(*nsiod, NSOCK_PENDING_ERROR);
+      luaL_error(L, "can't open pcap reader on %s", device);
+    }
     lua_pushvalue(L, PCAP_SOCKET);
     lua_setmetatable(L, -2);
-    *nsiod = nsock_iod_new(nsp, nu);
     lua_pushvalue(L, 7); /* the pcap socket key */
     lua_pushvalue(L, -2); /* the pcap socket nsiod */
     lua_rawset(L, KEY_PCAP); /* KEY_PCAP["dev|snap|promis|bpf"] = pcap_nsiod */
-    rc = nsock_pcap_open(nsp, *nsiod, lua_tostring(L, 6), snaplen,
-                         lua_toboolean(L, 4), bpf);
-    if (rc)
-      luaL_error(L, "can't open pcap reader on %s", device);
   }
   lua_getuservalue(L, 1); /* the socket user value */
   lua_pushvalue(L, -2); /* the pcap socket nsiod */

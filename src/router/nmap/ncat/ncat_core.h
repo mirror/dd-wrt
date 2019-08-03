@@ -2,7 +2,7 @@
  * ncat_core.h                                                             *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2018 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2019 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -125,7 +125,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: ncat_core.h 37126 2018-01-28 21:18:17Z fyodor $ */
+/* $Id$ */
 
 #ifndef NCAT_CORE_H
 #define NCAT_CORE_H
@@ -160,8 +160,12 @@ enum exec_mode {
     EXEC_LUA,
 };
 
+/* Proxy DNS resolution options (mask bits) */
+#define PROXYDNS_LOCAL  1
+#define PROXYDNS_REMOTE 2
+
 struct options {
-    unsigned short portno;
+    unsigned int portno;
 
     int verbose;
     int debug;
@@ -189,8 +193,8 @@ struct options {
     /* Were any hosts specifically allowed? If so, deny all others. */
     int allow;
     int deny;
-    struct addrset allowset;
-    struct addrset denyset;
+    struct addrset *allowset;
+    struct addrset *denyset;
     int httpserver;
     int nsock_engine;
     /* Output messages useful for testing to stderr? */
@@ -211,6 +215,7 @@ struct options {
     char *proxy_auth;
     char *proxytype;
     char *proxyaddr;
+    int proxydns;
 
     int ssl;
     char *sslcert;
@@ -240,6 +245,18 @@ void options_init(void);
 
    If the global o.nodns is true, then do not resolve any names with DNS. */
 int resolve(const char *hostname, unsigned short port,
+            struct sockaddr_storage *ss, size_t *sslen, int af);
+
+/* Resolves the given hostname or IP address with getaddrinfo, and stores the
+   first result (if any) in *ss and *sslen. The value of port will be set in the
+   appropriate place in *ss; set to 0 if you don't care. af may be AF_UNSPEC, in
+   which case getaddrinfo may return e.g. both IPv4 and IPv6 results; which one
+   is first depends on the system configuration. Returns 0 on success, or a
+   getaddrinfo return code (suitable for passing to gai_strerror) on failure.
+   *ss and *sslen are always defined when this function returns 0.
+
+   Resolve the hostname with DNS only if global o.proxydns includes PROXYDNS_LOCAL. */
+int proxyresolve(const char *hostname, unsigned short port,
             struct sockaddr_storage *ss, size_t *sslen, int af);
 
 /* Resolves the given hostname or IP address with getaddrinfo, and stores

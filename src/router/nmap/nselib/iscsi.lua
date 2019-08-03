@@ -34,14 +34,13 @@
 --                             with multiple addresses <patrik@cqure.net>
 
 
-local bin = require "bin"
-local bit = require "bit"
 local ipOps = require "ipOps"
 local match = require "match"
 local nmap = require "nmap"
 local stdnse = require "stdnse"
 local openssl = stdnse.silent_require "openssl"
 local string = require "string"
+local stringaux = require "stringaux"
 local table = require "table"
 _ENV = stdnse.module("iscsi", stdnse.seeall)
 
@@ -126,20 +125,20 @@ Packet = {
       local pad = 4 - ((#kvps + 48) % 4)
       pad = ( pad == 4 ) and 0 or pad
 
-      local len = bit.lshift( self.total_ahs_len, 24 ) + self.data_seg_len
-      local flags = bit.lshift( ( self.flags.transit or 0 ), 7 )
-      flags = flags + bit.lshift( ( self.flags.continue or 0 ), 6)
+      local len = ( self.total_ahs_len << 24 ) + self.data_seg_len
+      local flags = ( ( self.flags.transit or 0 ) << 7 )
+      flags = flags + ( ( self.flags.continue or 0 ) << 6)
       flags = flags + ( self.flags.nsg or 0 )
-      flags = flags + bit.lshift( ( self.flags.csg or 0 ), 2 )
+      flags = flags + ( ( self.flags.csg or 0 ) << 2 )
 
-      local opcode = self.opcode + bit.lshift((self.immediate or 0), 6)
+      local opcode = self.opcode + ((self.immediate or 0) << 6)
 
-      local data = bin.pack(">CCCCICSCSSISSIILLAA", opcode,
+      local data = string.pack(">BBBB I4 BI2B I2I2 I4 I2I2 I4 I4 I8I8", opcode,
       flags, self.ver_max, self.ver_min, len,
-      bit.lshift( self.isid.t, 6 ) + bit.band( self.isid.a, 0x3f),
+      ( self.isid.t << 6 ) + ( self.isid.a & 0x3f),
       self.isid.b, self.isid.c, self.isid.d, self.tsih,
       self.initiator_task_tag, self.cid, reserved, self.cmdsn,
-      self.expstatsn, reserved, reserved, kvps, string.rep('\0', pad) )
+      self.expstatsn, reserved, reserved) .. kvps .. string.rep('\0', pad)
 
       return data
     end
@@ -206,11 +205,11 @@ Packet = {
       end
 
       local resp = Packet.LoginResponse:new()
-      local pos, len = bin.unpack(">I", header, 5)
+      local len, pos = string.unpack(">I4", header, 5)
 
-      resp.total_ahs_len = bit.rshift(len, 24)
-      resp.data_seg_len = bit.band(len, 0x00ffffff)
-      pos, resp.status_code = bin.unpack(">S", header, 37)
+      resp.total_ahs_len = len >> 24
+      resp.data_seg_len = len & 0x00ffffff
+      resp.status_code, pos = string.unpack(">I2", header, 37)
 
       local pad = ( 4 - ( resp.data_seg_len % 4 ) )
       pad = ( pad == 4 ) and 0 or pad
@@ -221,7 +220,7 @@ Packet = {
       end
 
       resp.kvp = KVP:new()
-      for _, kvp in ipairs(stdnse.strsplit( "\0", data )) do
+      for _, kvp in ipairs(stringaux.strsplit( "\0", data )) do
         local k, v = kvp:match("(.*)=(.*)")
         if ( v ) then resp.kvp:add( k, v ) end
       end
@@ -265,18 +264,18 @@ Packet = {
     --
     -- @return string containing the converted instance
     __tostring = function(self)
-      local flags = bit.lshift( ( self.flags.final or 0 ), 7 )
-      flags = flags + bit.lshift( (self.flags.continue or 0), 6 )
+      local flags = ( self.flags.final or 0 ) << 7
+      flags = flags + ( (self.flags.continue or 0) << 6 )
 
       local kvps = tostring(self.kvp)
       kvps = kvps .. string.rep('\0', #kvps % 2)
       self.data_seg_len = #kvps
 
-      local len = bit.lshift( self.total_ahs_len, 24 ) + self.data_seg_len
+      local len = ( self.total_ahs_len << 24 ) + self.data_seg_len
       local reserved = 0
-      local data = bin.pack(">CCSILIIIILLA", self.opcode, flags, reserved,
+      local data = string.pack(">BBI2 I4 I8 I4 I4 I4 I4 I8I8", self.opcode, flags, reserved,
       len, self.lun, self.initiator_task_tag, self.target_trans_tag,
-      self.cmdsn, self.expstatsn, reserved, reserved, kvps)
+      self.cmdsn, self.expstatsn, reserved, reserved) .. kvps
 
       return data
     end,
@@ -307,11 +306,11 @@ Packet = {
       repeat
         local status, header = s:receive_buf(match.numbytes(48), true)
         if not status then return status, header end
-        local pos, _, flags, _, _, len = bin.unpack(">CCCCI", header)
-        local cont = ( bit.band(flags, 0x40) == 0x40 )
+        local flags, len, pos = string.unpack(">xBxxI4", header)
+        local cont = ( (flags & 0x40) == 0x40 )
 
-        resp.total_ahs_len = bit.rshift(len, 24)
-        resp.data_seg_len = bit.band(len, 0x00ffffff)
+        resp.total_ahs_len = len >> 24
+        resp.data_seg_len = len & 0x00ffffff
 
         local data
         status, data = s:receive_buf(match.numbytes(resp.data_seg_len), true)
@@ -322,7 +321,7 @@ Packet = {
 
       resp.records = {}
 
-      local kvps = stdnse.strsplit( "\0", textdata )
+      local kvps = stringaux.strsplit( "\0", textdata )
       local record
 
       -- Each target record starts with one text key of the form:
@@ -381,10 +380,11 @@ Packet = {
     --
     -- @return string containing the converted instance
     __tostring = function(self)
-      local opcode = self.opcode + bit.lshift((self.immediate or 0), 6)
+      local opcode = self.opcode + ((self.immediate or 0) << 6)
       local reserved = 0
-      local len = bit.lshift( self.total_ahs_len, 24 ) + self.data_seg_len
-      local data = bin.pack(">CCSILISSIILL", opcode, (0x80 + self.reasoncode),
+      local len = ( self.total_ahs_len << 24 ) + self.data_seg_len
+      local data = string.pack(">BBI2 I4 I8 I4 I2I2 I4 I4 I8I8",
+        opcode, (0x80 + self.reasoncode),
       reserved, len, reserved,self.initiator_task_tag, self.cid,
       reserved, self.cmdsn, self.expstatsn, reserved, reserved )
 
@@ -689,14 +689,14 @@ Helper = {
 
     local chall = resp.kvp:get("CHAP_C")[1]
     if ( not(chall) ) then return false, "Failed to decode challenge" end
-    chall = bin.pack("H", chall:sub(3))
+    chall = stdnse.fromhex(chall:sub(3))
 
     local ident = resp.kvp:get("CHAP_I")[1]
     if (not(ident)) then return false, "Failed to decoded identifier" end
     ident = string.char(tonumber(ident))
 
     local resp = CHAP.calcResponse( ident, chall, password )
-    resp = "0x" .. select(2, bin.unpack("H16", resp))
+    resp = "0x" .. stdnse.tohex(resp)
 
     p = Packet.LoginRequest:new()
     p:setImmediate(true)

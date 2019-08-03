@@ -5,7 +5,9 @@ local ssh1 = require "ssh1"
 local ssh2 = require "ssh2"
 local stdnse = require "stdnse"
 local string = require "string"
+local stringaux = require "stringaux"
 local table = require "table"
+local tableaux = require "tableaux"
 local base64 = require "base64"
 local comm = require "comm"
 
@@ -35,6 +37,8 @@ gathered keys.
 --@args ssh_hostkey Controls the output format of keys. Multiple values may be
 -- given, separated by spaces. Possible values are
 -- * <code>"full"</code>: The entire key, not just the fingerprint.
+-- * <code>"sha256"</code>: Base64-encoded SHA256 fingerprint.
+-- * <code>"md5"</code>: hex-encoded MD5 fingerprint (the default).
 -- * <code>"bubble"</code>: Bubble Babble output,
 -- * <code>"visual"</code>: Visual ASCII art representation.
 -- * <code>"all"</code>: All of the above.
@@ -167,7 +171,7 @@ local function check_keys(host, keys, f)
       -- the line might be hashed
       if string.match(parts[1], "^|") then
         -- split the first part of the line - it contains base64'ed salt and hashed hostname
-        local parts_hostname = stdnse.strsplit("|", parts[1])
+        local parts_hostname = stringaux.strsplit("|", parts[1])
         if #parts_hostname == 4 then
           -- check if the hash corresponds to the host being scanned
           local salt = base64.dec(parts_hostname[3])
@@ -189,7 +193,7 @@ local function check_keys(host, keys, f)
           end
         end
       else
-        if stdnse.contains(possible_host_names, parts[1]) then
+        if tableaux.contains(possible_host_names, parts[1]) then
           stdnse.debug2("Found an entry that matches: %s", parts[1])
           table.insert(keys_from_file, ("%s %s"):format(parts[2], parts[3]))
         else
@@ -279,8 +283,20 @@ local function portaction(host, port)
   local output_tab = {}
   local keys = {}
   local key
-  local format = nmap.registry.args.ssh_hostkey or "hex"
-  local all_formats = format:find( 'all', 1, true )
+  local format = nmap.registry.args.ssh_hostkey or "md5"
+  local format_bits = {
+    md5 = 1,
+    hex = 1, -- compatibility alias for md5
+    sha256 = 1 << 1,
+    bubble = 1 << 2,
+    visual = 1 << 3,
+    full = 1 << 4,
+    all = 0xffff,
+  }
+  local format_mask = 0
+  for word in format:gmatch("%w+") do
+    format_mask = format_mask | (format_bits[word] or 0)
+  end
 
   key = ssh1.fetch_host_key( host, port )
   if key then table.insert( keys, key ) end
@@ -316,16 +332,19 @@ local function portaction(host, port)
       bits=key.bits,
       key=key.key,
     }
-    if format:find( 'hex', 1, true ) or all_formats then
+    if format_mask & format_bits.md5 ~= 0 then
       table.insert( output, ssh1.fingerprint_hex( key.fingerprint, key.algorithm, key.bits ) )
     end
-    if format:find( 'bubble', 1, true ) or all_formats then
+    if format_mask & format_bits.sha256 ~= 0 then
+      table.insert( output, ssh1.fingerprint_base64( key.fp_sha256, "SHA256", key.algorithm, key.bits ) )
+    end
+    if format_mask & format_bits.bubble ~= 0 then
       table.insert( output, ssh1.fingerprint_bubblebabble( openssl.sha1(key.fp_input), key.algorithm, key.bits ) )
     end
-    if format:find( 'visual', 1, true ) or all_formats then
+    if format_mask & format_bits.visual ~= 0 then
       table.insert( output, ssh1.fingerprint_visual( key.fingerprint, key.algorithm, key.bits ) )
     end
-    if nmap.verbosity() > 1 or format:find( 'full', 1, true ) or all_formats then
+    if nmap.verbosity() > 1 or format_mask & format_bits.full ~= 0 then
       table.insert( output, key.full_key )
     end
     setmetatable(out, {
@@ -367,7 +386,7 @@ local function postaction()
         }
       end
       -- discard duplicate IPs
-      if not stdnse.contains(hostkeys[fp], ip) then
+      if not tableaux.contains(hostkeys[fp], ip) then
         table.insert(hostkeys[fp], ip)
       end
     end

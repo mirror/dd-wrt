@@ -239,6 +239,11 @@ local function log_error (fmt, ...)
   log_write("stderr", format(fmt, ...));
 end
 
+-- Check for and warn about some known bad behaviors
+if ("test"):gsub(".*$", "x") == "xx" then
+  log_error("Known bug in string.gsub in Lua 5.3 before 5.3.3 will cause bugs in NSE scripts.")
+end
+
 local function table_size (t)
   local n = 0; for _ in pairs(t) do n = n + 1; end return n;
 end
@@ -261,17 +266,7 @@ end
 
 -- recursively copy a table, for host/port tables
 -- not very rigorous, but it doesn't need to be
-local function tcopy (t)
-  local tc = {};
-  for k,v in pairs(t) do
-    if type(v) == "table" then
-      tc[k] = tcopy(v);
-    else
-      tc[k] = v;
-    end
-  end
-  return tc;
-end
+local tcopy = require "tableaux".tcopy
 
 -- copies the host table while preserving the registry
 local function host_copy(t)

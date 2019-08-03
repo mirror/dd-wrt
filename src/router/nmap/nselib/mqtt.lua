@@ -1,5 +1,3 @@
-local bin = require "bin"
-local bit = require "bit"
 local comm = require "comm"
 local match = require "match"
 local nmap = require "nmap"
@@ -7,6 +5,7 @@ local stdnse = require "stdnse"
 local string = require "string"
 local table = require "table"
 local unittest = require "unittest"
+local rand = require "rand"
 
 _ENV = stdnse.module("mqtt", stdnse.seeall)
 
@@ -16,7 +15,7 @@ _ENV = stdnse.module("mqtt", stdnse.seeall)
 --
 -- This library does not currently implement the entire MQTT protocol,
 -- only those control packets which are necessary for existing scripts
--- are included. Extending to accomodate additional control packets
+-- are included. Extending to accommodate additional control packets
 -- should not be difficult.
 --
 -- @author "Mak Kolybabi <mak@kolybabi.com>"
@@ -215,7 +214,7 @@ Comm = {
       length = length .. chunk
 
       -- If the byte has the continuation bit cleared, stop receiving.
-      local _, byte = bin.unpack("C", chunk)
+      local byte = string.unpack("B", chunk)
       if byte < 128 then
         break
       end
@@ -302,10 +301,10 @@ Comm = {
     assert(pos < #buf)
 
     -- Parse the type and flags of the control packet's fixed header.
-    local pos, type_and_flags = bin.unpack("C", buf, pos)
-    if not pos then
+    if #buf - pos + 1 < 1 then
       return false, "Failed to parse control packet."
     end
+    local type_and_flags, pos = string.unpack("B", buf, pos)
 
     -- Parse the remaining length.
     local pos, length = MQTT.length_parse(buf, pos)
@@ -322,8 +321,8 @@ Comm = {
     pos = end_pos
 
     -- Parse type and flags.
-    local type = bit.rshift(type_and_flags, 4)
-    local fhflags = bit.band(type_and_flags, 0x0F)
+    local type = type_and_flags >> 4
+    local fhflags = type_and_flags & 0x0F
 
     -- Search for the definition of the packet type.
     local def = nil
@@ -371,7 +370,7 @@ Comm = {
   -- @return Unique identifier for a packet.
   packet_identifier = function(self)
     self.packet_id = self.packet_id + 1
-    local num = bin.pack(">S", self.packet_id)
+    local num = string.pack(">I2", self.packet_id)
     return num
   end,
 }
@@ -533,14 +532,14 @@ MQTT.packet["CONNECT"].build = function(options)
     protocol_level = 4
   end
   assert(type(protocol_level) == "number")
-  head = head .. bin.pack("C", protocol_level)
+  head = head .. string.pack("B", protocol_level)
 
   -- 3.1.3.1 Client Identifier
   local client_id = options.client_id
   if not client_id then
     -- We throw in randomness in case there are multiple scripts using this
     -- library on a single port.
-    client_id = "nmap" .. stdnse.generate_random_string(16)
+    client_id = "nmap" .. rand.random_alpha(16)
   end
   assert(type(client_id) == "string")
   tail = tail .. MQTT.utf8_build(client_id)
@@ -550,7 +549,7 @@ MQTT.packet["CONNECT"].build = function(options)
 
   -- 3.1.2.4 Clean Session
   if options.clean_session then
-    cflags = bit.bor(cflags, 0x02)
+    cflags = cflags | 0x02
   end
 
   -- 3.1.2.6 Will QoS
@@ -559,39 +558,39 @@ MQTT.packet["CONNECT"].build = function(options)
   end
   assert(options.will_qos >= 0)
   assert(options.will_qos <= 2)
-  cflags = bit.bor(cflags, bit.lshift(options.will_qos, 3))
+  cflags = cflags | (options.will_qos << 3)
 
   -- 3.1.2.7 Will Retain
   if options.will_retain then
-    cflags = bit.bor(cflags, 0x20)
+    cflags = cflags | 0x20
   end
 
   -- 3.1.2.5 Will Flag
   if options.will_topic and options.will_message then
-    cflags = bit.bor(cflags, 0x04)
+    cflags = cflags | 0x04
     tail = tail .. MQTT.utf8_build(options.will_topic)
     tail = tail .. MQTT.utf8_build(options.will_message)
   end
 
   -- 3.1.2.8 User Name Flag
   if options.username then
-    cflags = bit.bor(cflags, 0x80)
+    cflags = cflags | 0x80
     tail = tail .. MQTT.utf8_build(options.username)
   end
 
   -- 3.1.2.9 Password Flag
   if options.password then
-    cflags = bit.bor(cflags, 0x40)
+    cflags = cflags | 0x40
     tail = tail .. MQTT.utf8_build(options.password)
   end
 
-  head = head .. bin.pack("C", cflags)
+  head = head .. string.pack("B", cflags)
 
   -- 3.1.2.10 Keep Alive
   if not options.keep_alive_secs then
     options.keep_alive_secs = 30
   end
-  head = head .. bin.pack(">S", options.keep_alive_secs)
+  head = head .. string.pack(">I2", options.keep_alive_secs)
 
   return true, MQTT.fixed_header(1, 0x0, head .. tail)
 end
@@ -622,10 +621,10 @@ MQTT.packet["CONNACK"].parse = function(fhflags, buf)
 
   -- 3.2.2.1 Connect Acknowledge Flags
   local res = {["type"] = "CONNACK"}
-  local _, caflags, crcode = bin.unpack("CC", buf)
+  local caflags, crcode = string.unpack("BB", buf)
 
   -- 3.2.2.2 Session Present
-  res.session_present = (bit.band(caflags, 0x01) == 1)
+  res.session_present = ((caflags & 0x01) == 1)
 
   -- 3.2.2.3 Connect Return code
   res.accepted = (crcode == 0x00)
@@ -656,10 +655,8 @@ end
 MQTT.packet["SUBSCRIBE"].build = function(options)
   assert(type(options) == "table")
 
-  local pkt = ""
-
   -- 3.8.2 Variable header
-  pkt = pkt .. options.packet_id
+  local pkt = {options.packet_id}
 
   for key, val in pairs(options.filters) do
     local name = val.filter
@@ -673,11 +670,11 @@ MQTT.packet["SUBSCRIBE"].build = function(options)
     assert(qos >= 0)
     assert(qos <= 2)
 
-    pkt = pkt .. MQTT.utf8_build(name)
-    pkt = pkt .. bin.pack("C", qos)
+    pkt[#pkt+1] = MQTT.utf8_build(name)
+    pkt[#pkt+1] = string.pack("B", qos)
   end
 
-  return true, MQTT.fixed_header(8, 0x2, pkt)
+  return true, MQTT.fixed_header(8, 0x2, table.concat(pkt))
 end
 
 --- Parse an MQTT SUBACK control packet.
@@ -708,14 +705,14 @@ MQTT.packet["SUBACK"].parse = function(fhflags, buf)
   if length < 2 then
     return false, ("Failed to parse SUBACK packet, too short.")
   end
-  local pos, packet_id = bin.unpack(">S", buf)
+  local packet_id, pos = string.unpack(">I2", buf)
   res.packet_id = packet_id
 
   -- 3.9.3 Payload
   local code
   local codes = {}
   while pos <= length do
-    pos, code = bin.unpack("C", buf, pos)
+    code, pos = string.unpack("B", buf, pos)
     if code == 0x00 then
       table.insert(codes, {["success"] = true, ["max_qos"] = 0})
     elseif code == 0x01 then
@@ -749,15 +746,15 @@ MQTT.packet["PUBLISH"].parse = function(fhflags, buf)
   local res = {["type"] = "PUBLISH"}
 
   -- 3.3.1.1 DUP
-  local dup = (bit.band(fhflags, 0x8) == 0x8)
+  local dup = ((fhflags & 0x8) == 0x8)
   res.dup = dup
 
   -- 3.3.1.2 QoS
-  local qos = bit.rshift(bit.band(fhflags, 0x6), 1)
+  local qos = ((fhflags & 0x6) >> 1)
   res.qos = qos
 
   -- 3.3.1.3 RETAIN
-  local ret = (bit.band(fhflags, 0x1) == 0x8)
+  local ret = ((fhflags & 0x1) == 0x1)
   res.retain = ret
 
   -- 3.3.2.1 Topic Name
@@ -769,10 +766,10 @@ MQTT.packet["PUBLISH"].parse = function(fhflags, buf)
 
   -- 3.3.2.2 Packet Identifier
   if qos == 1 or qos == 2 then
-    pos, val = bin.unpack(">S", buf, pos)
-    if not pos then
-      return false, val
+    if #buf - pos + 1 < 2 then
+      return false, "packet truncated"
     end
+    val, pos = string.unpack(">I2", buf, pos)
     res.packet_id = val
   end
 
@@ -809,12 +806,12 @@ MQTT.length_build = function(num)
 
   local field = {}
   repeat
-    local byte = bit.band(num, 0x7F)
-    num = bit.rshift(num, 7)
+    local byte = num & 0x7F
+    num = num >> 7
     if num > 0 then
-      byte = bit.bor(byte, 0x80)
+      byte = byte | 0x80
     end
-    field[#field+1] = bin.pack("C", byte)
+    field[#field+1] = string.pack("B", byte)
   until num == 0
 
   -- This field has a limit on its length in binary form.
@@ -854,14 +851,14 @@ MQTT.length_parse = function(buf, pos)
     if pos > #buf then
       return false, "Reached end of buffer before variable-length numeric field was parsed."
     end
-    pos, byte = bin.unpack("C", buf, pos)
-    num = num + bit.band(byte, 0x7F) * multiplier
+    byte, pos = string.unpack("B", buf, pos)
+    num = num + (byte & 0x7F) * multiplier
     if offset > 3 then
       return false, "Buffer contained an invalid variable-length numeric field."
     end
-    multiplier = bit.lshift(multiplier, 7)
+    multiplier = multiplier << 7
     offset = offset + 1
-  until bit.band(byte, 0x80) == 0
+  until (byte & 0x80) == 0
 
   -- This field represents a limited range of integers.
   assert(num >= 0)
@@ -889,7 +886,7 @@ end
 MQTT.utf8_build = function(str)
   assert(type(str) == "string")
 
-  return bin.pack(">P", str)
+  return string.pack(">s2", str)
 end
 
 --- Parse a UTF-8 string in MQTT's length-prefixed format.
@@ -918,12 +915,13 @@ MQTT.utf8_parse = function(buf, pos)
     return false, ("Buffer at position %d has no space for a UTF-8 length-prefixed string."):format(pos)
   end
 
-  local _, str_length = bin.unpack(">S", buf, pos)
+  local str_length = string.unpack(">I2", buf, pos)
   if pos + 1 + str_length > buf_length then
     return false, ("Buffer at position %d has no space for a %d-byte UTF-8 string."):format(pos, str_length)
   end
 
-  return bin.unpack(">P", buf, pos)
+  local value, pos = string.unpack(">s2", buf, pos)
+  return pos, value
 end
 
 --- Prefix the body of an MQTT packet with a fixed header.
@@ -942,9 +940,9 @@ MQTT.fixed_header = function(num, flags, pkt)
   -- Build the fixed header.
   -- 2.2.1 MQTT Control Packet type
   -- 2.2.2 Flags
-  local hdr = bit.bor(bit.lshift(num, 4), flags)
+  local hdr = (num << 4) | flags
 
-  return bin.pack("C", hdr) .. MQTT.length_build(#pkt) .. pkt
+  return string.pack("B", hdr) .. MQTT.length_build(#pkt) .. pkt
 end
 
 -- Skip unit tests unless we're explicitly testing.

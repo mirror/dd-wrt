@@ -2,6 +2,7 @@ local nbd = require "nbd"
 local shortport = require "shortport"
 local stdnse = require "stdnse"
 local table = require "table"
+local tableaux = require "tableaux"
 
 description = [[
 Displays protocol and block device information from NBD servers.
@@ -100,7 +101,7 @@ local function parse_args()
     -- An empty string for an export name indicates to the server that
     -- we wish to attach to the default export.
     arg = {}
-  elseif type(arg) ~= table then
+  elseif type(arg) ~= 'table' then
     arg = {arg}
   end
   args.export_name = arg
@@ -160,7 +161,7 @@ action = function(host, port)
   -- Format exported block device information.
   local exports = stdnse.output_table()
   local no_shares = true
-  local names = stdnse.keys(comm.exports)
+  local names = tableaux.keys(comm.exports)
   -- keep exports in stable order
   table.sort(names)
   for _, name in ipairs(names) do

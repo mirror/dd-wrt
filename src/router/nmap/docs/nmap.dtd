@@ -1,7 +1,7 @@
 <!--
     nmap.dtd
     This is the DTD for Nmap's XML output (-oX) format.
-    $Id: nmap.dtd 35197 2015-08-21 16:35:19Z dmiller $
+    $Id$
 
     Originally written by:
     William McVey <wam@cisco.com> <wam+nmap@wamber.net>

@@ -7,6 +7,7 @@ local unpwdb    = require "unpwdb"
 local io = require "io"
 local nmap = require "nmap"
 local string = require "string"
+local stringaux = require "stringaux"
 local table = require "table"
 
 description = [[
@@ -27,7 +28,7 @@ found for application IDs.
 ---
 --@args idlist Path to list of application IDs to test.
 --  Defaults to <code>nselib/data/vhosts-default.lst</code>.
---@args vtam-enum.commands Commands in a semi-colon seperated list needed
+--@args vtam-enum.commands Commands in a semi-colon separated list needed
 --  to access VTAM. Defaults to <code>nothing</code>.
 --@args vtam-enum.path Folder used to store valid transaction id 'screenshots'
 --  Defaults to <code>None</code> and doesn't store anything.
@@ -56,7 +57,7 @@ found for application IDs.
 -- 2015-11-14 - v0.3 - rewrote iterator
 -- 2017-01-13 - v0.4 - Fixed 'macros' bug with default vtam screen and test
 --                     and added threshold for macros screen checking
---
+-- 2019-02-01 - v0.5 - Disabling Enhanced mode
 
 author = "Philip Young aka Soldier of Fortran"
 license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
@@ -87,7 +88,7 @@ local function screen_diff( orig_screen, current_screen )
   if #orig_screen == 0 or #current_screen == 0 then return 0 end
   local m = 1
   for i =1 , #orig_screen do
-    if orig_screen:sub(i,i) == current_screen:sub(i,i) then
+    if orig_screen:byte(i) == current_screen:byte(i) then
       m = m + 1
     end
   end
@@ -103,6 +104,7 @@ Driver = {
     o.port = port
     o.options = options
     o.tn3270 = tn3270.Telnet:new()
+    o.tn3270:disable_tn3270e()
     return o
   end,
   connect = function( self )
@@ -180,6 +182,7 @@ Driver = {
 -- @return status true on success, false on failure
 local function vtam_test( host, port, commands, macros)
   local tn = tn3270.Telnet:new()
+  tn:disable_tn3270e()
   local status, err = tn:initiate(host,port)
   stdnse.debug1("Testing if VTAM and 'logon applid' command supported")
   stdnse.debug2("Connecting TN3270 to %s:%s", host.targetname or host.ip, port.number)
@@ -193,7 +196,7 @@ local function vtam_test( host, port, commands, macros)
   tn:get_screen_debug(2) -- prints TN3270 screen to debug
 
   if commands ~= nil then
-    local run = stdnse.strsplit(";%s*", commands)
+    local run = stringaux.strsplit(";%s*", commands)
     for i = 1, #run do
       stdnse.debug(2,"Issuing Command (#%s of %s) or %s", i, #run ,run[i])
       tn:send_cursor(run[i])

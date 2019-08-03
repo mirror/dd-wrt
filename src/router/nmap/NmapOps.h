@@ -5,7 +5,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2018 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2019 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -128,7 +128,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: NmapOps.h 37126 2018-01-28 21:18:17Z fyodor $ */
+/* $Id$ */
 
 #ifndef NMAP_OPS_H
 #define NMAP_OPS_H
@@ -188,7 +188,7 @@ class NmapOps {
   int isr00t;
   /* Whether we have pcap functions (can be false on Windows). */
   bool have_pcap;
-  int debugging;
+  u8 debugging;
   bool resuming;
 
 #define PACKET_SEND_NOPREF 1
@@ -221,7 +221,7 @@ class NmapOps {
   void setVersionTrace(bool vt) { vTrace = vt;  }
   bool openOnly() { return open_only; }
   void setOpenOnly(bool oo) { open_only = oo; }
-  int verbose;
+  u8 verbose;
   /* The requested minimum packet sending rate, or 0.0 if unset. */
   float min_packet_send_rate;
   /* The requested maximum packet sending rate, or 0.0 if unset. */

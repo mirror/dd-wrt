@@ -4,7 +4,7 @@
  *                                                                         *
  ***********************IMPORTANT NSOCK LICENSE TERMS***********************
  *                                                                         *
- * The nsock parallel socket event library is (C) 1999-2018 Insecure.Com   *
+ * The nsock parallel socket event library is (C) 1999-2019 Insecure.Com   *
  * LLC This library is free software; you may redistribute and/or          *
  * modify it under the terms of the GNU General Public License as          *
  * published by the Free Software Foundation; Version 2.  This guarantees  *
@@ -53,7 +53,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nsock_pcap.c 37126 2018-01-28 21:18:17Z fyodor $ */
+/* $Id$ */
 
 #include "nsock.h"
 #include "nsock_internal.h"
@@ -80,6 +80,11 @@
 extern struct timeval nsock_tod;
 
 #if HAVE_PCAP
+
+#ifndef PCAP_NETMASK_UNKNOWN
+/* libpcap before 1.1.1 (e.g. WinPcap) doesn't handle this specially, so just use 0 netmask */
+#define PCAP_NETMASK_UNKNOWN 0
+#endif
 
 #define PCAP_OPEN_MAX_RETRIES   3
 
@@ -197,18 +202,6 @@ static int nsock_pcap_get_l3_offset(pcap_t *pt, int *dl) {
   return (offset);
 }
 
-static int nsock_pcap_try_open(struct npool *nsp, mspcap *mp, const char *dev,
-                               int snaplen, int promisc, int timeout_ms,
-                               char *errbuf) {
-    mp->pt = pcap_open_live(dev, snaplen, promisc, timeout_ms, errbuf);
-    if (!mp->pt) {
-      nsock_log_error("pcap_open_live(%s, %d, %d, %d) failed with error: %s",
-                      dev, snaplen, promisc, timeout_ms, errbuf);
-      return -1;
-    }
-    return 0;
-}
-
 /* Convert new nsiod to pcap descriptor. Other parameters have
  * the same meaning as for pcap_open_live in pcap(3).
  *   device   : pcap-style device name
@@ -265,32 +258,59 @@ int nsock_pcap_open(nsock_pool nsp, nsock_iod nsiod, const char *pcap_device,
                  "(promisc=%i snaplen=%i to_ms=%i) (IOD #%li)",
                  pcap_device,bpf, promisc, snaplen, to_ms, nsi->id);
 
-  failed = 0;
-  do {
-    rc = nsock_pcap_try_open(ms, mp, pcap_device, snaplen, promisc, to_ms, errbuf);
-    if (rc) {
-      failed++;
-      nsock_log_error("Will wait %d seconds then retry.", 4 * failed);
-      sleep(4 * failed);
-    }
-  } while (rc && failed < PCAP_OPEN_MAX_RETRIES);
-
-  if (rc) {
-    nsock_log_error("pcap_open_live(%s, %d, %d, %d) failed %d times.",
-                    pcap_device, snaplen, promisc, to_ms, failed);
+#ifdef __amigaos__
+  // Amiga doesn't have pcap_create
+  // TODO: Does Nmap still work on Amiga?
+  mp->pt = pcap_open_live(pcap_device, snaplen, promisc, to_ms, errbuf);
+  if (!mp->pt) {
+    nsock_log_error("pcap_open_live(%s, %d, %d, %d) failed with error: %s",
+        pcap_device, snaplen, promisc, to_ms, errbuf);
+    nsock_log_error(PCAP_FAILURE_EXPL_MESSAGE);
+    nsock_log_error("Can't open pcap! Are you root?");
+    return -1;
+  }
+#else
+  mp->pt = pcap_create(pcap_device, errbuf);
+  if (!mp->pt) {
+    nsock_log_error("pcap_create(%s) failed with error: %s", pcap_device, errbuf);
     nsock_log_error(PCAP_FAILURE_EXPL_MESSAGE);
     nsock_log_error("Can't open pcap! Are you root?");
     return -1;
   }
 
+#define MY_PCAP_SET(func, p_t, val) do {\
+  failed = func(p_t, val);\
+  if (failed) {\
+    nsock_log_error(#func "(%d) FAILED: %d.", val, failed);\
+    pcap_close(p_t);\
+    return -1;\
+  }\
+} while(0);
+
+  MY_PCAP_SET(pcap_set_snaplen, mp->pt, snaplen);
+  MY_PCAP_SET(pcap_set_promisc, mp->pt, promisc);
+  MY_PCAP_SET(pcap_set_timeout, mp->pt, to_ms);
+#ifdef HAVE_PCAP_SET_IMMEDIATE_MODE
+  MY_PCAP_SET(pcap_set_immediate_mode, mp->pt, 1);
+#endif
+
+  failed = pcap_activate(mp->pt);
+  if (failed < 0) {
+    // PCAP error
+    nsock_log_error("pcap_activate(%s) FAILED: %s.", pcap_device, pcap_geterr(mp->pt));
+    pcap_close(mp->pt);
+    mp->pt = NULL;
+    return -1;
+  }
+  else if (failed > 0) {
+    // PCAP warning, report but assume it'll still work
+    nsock_log_error("pcap_activate(%s) WARNING: %s.", pcap_device, pcap_geterr(mp->pt));
+  }
+#endif /* not __amigaos__ */
+
   rc = nsock_pcap_set_filter(ms, mp->pt, pcap_device, bpf);
   if (rc)
     return rc;
-
-#ifdef WIN32
-  /* We want any responses back ASAP */
-  pcap_setmintocopy(mp->pt, 1);
-#endif
 
   mp->l3_offset = nsock_pcap_get_l3_offset(mp->pt, &datalink);
   mp->snaplen = snaplen;
@@ -303,18 +323,24 @@ int nsock_pcap_open(nsock_pool nsp, nsock_iod nsiod, const char *pcap_device,
 #endif
   mp->readsd_count = 0;
 
+#ifndef HAVE_PCAP_SET_IMMEDIATE_MODE
+  /* This is already handled by pcap_set_immediate_mode if available */
+#ifdef BIOCIMMEDIATE
   /* Without setting this ioctl, some systems (BSDs, though it depends on the
    * release) will buffer packets in non-blocking mode and only return them in a
    * bunch when the buffer is full. Setting the ioctl makes each one be
    * delivered immediately. This is how Linux works by default. See the comments
    * surrounding the setting of BIOCIMMEDIATE in libpcap/pcap-bpf.c. */
-#ifdef BIOCIMMEDIATE
   if (mp->pcap_desc != -1) {
     int immediate = 1;
 
     if (ioctl(mp->pcap_desc, BIOCIMMEDIATE, &immediate) < 0)
       fatal("Cannot set BIOCIMMEDIATE on pcap descriptor");
   }
+#elif defined WIN32
+  /* We want any responses back ASAP */
+  pcap_setmintocopy(mp->pt, 0);
+#endif
 #endif
 
   /* Set device non-blocking */

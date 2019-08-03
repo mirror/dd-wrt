@@ -6,6 +6,7 @@ local creds     = require "creds"
 local unpwdb    = require "unpwdb"
 local nmap = require "nmap"
 local string = require "string"
+local stringaux = require "stringaux"
 
 description = [[
 TSO User ID enumerator for IBM mainframes (z/OS). The TSO logon panel
@@ -32,7 +33,7 @@ TSO user IDs have the following rules:
 ]]
 
 ---
--- @args tso-enum.commands Commands in a semi-colon seperated list needed
+-- @args tso-enum.commands Commands in a semi-colon separated list needed
 -- to access TSO. Defaults to <code>tso</code>.
 --
 -- @usage
@@ -56,6 +57,7 @@ TSO user IDs have the following rules:
 -- 2015-10-30 - v0.2 - streamlined the code, relying on brute and unpwdb and
 --                     renamed to tso-enum.
 -- 2017-1-13  - v0.3 - Fixed 'data' bug and added options checking to speedup
+-- 2019-02-01 - v0.4 - Disabled TN3270 Enhanced support and fixed debug errors
 
 
 author = "Philip Young aka Soldier of Fortran"
@@ -73,6 +75,7 @@ Driver = {
     o.port = port
     o.options = options
     o.tn3270 = tn3270.Telnet:new()
+    o.tn3270:disable_tn3270e()
     return o
   end,
   connect = function( self )
@@ -95,7 +98,7 @@ Driver = {
     local commands = self.options['key1']
     local skip = self.options['skip']
     stdnse.debug(2,"Getting to TSO")
-    local run = stdnse.strsplit(";%s*", commands)
+    local run = stringaux.strsplit(";%s*", commands)
     for i = 1, #run do
       stdnse.debug(2,"Issuing Command (#%s of %s): %s", i, #run ,run[i])
       if i == #run and run[i]:upper():find("LOGON APPLID") and skip then
@@ -164,6 +167,7 @@ Driver = {
 local function tso_test( host, port, commands )
   stdnse.debug("Checking for TSO")
   local tn = tn3270.Telnet:new()
+  tn:disable_tn3270e()
   local status, err = tn:initiate(host,port)
   local tso = false -- initially we're not at TSO logon panel
   local secprod = "RACF"
@@ -172,7 +176,7 @@ local function tso_test( host, port, commands )
     stdnse.debug("Could not initiate TN3270: %s", err )
     return tso, "Could not Initiate TN3270"
   end
-  local run = stdnse.strsplit(";%s*", commands)
+  local run = stringaux.strsplit(";%s*", commands)
   for i = 1, #run do
     stdnse.debug(2,"Issuing Command (#%s of %s): %s", i, #run ,run[i])
     tn:send_cursor(run[i])
@@ -210,6 +214,7 @@ end
 local function tso_skip( host, port, commands )
   stdnse.debug("Checking for IKJ56700A message skip")
   local tn = tn3270.Telnet:new()
+  tn:disable_tn3270e()
   stdnse.debug2("Connecting TN3270 to %s:%s", host.targetname or host.ip, port.number)
   local status, err = tn:initiate(host,port)
   stdnse.debug2("Displaying initial TN3270 Screen:")
@@ -227,7 +232,7 @@ local function tso_skip( host, port, commands )
     stdnse.debug(2,"Not using LOGON command, testing adding userid to command" )
   end
 
-  local run = stdnse.strsplit(";%s*", commands)
+  local run = stringaux.strsplit(";%s*", commands)
   for i = 1, #run do
     stdnse.debug(2,"Issuing Command (#%s of %s): %s", i, #run ,run[i])
     if i == #run then

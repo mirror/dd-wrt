@@ -2,7 +2,7 @@ dnl # -*- mode: fundamental; -*-
 dnl # Autoconf configuration file for Nbase
 dnl #
 dnl # Process this file with autoconf to produce a configure script.
-dnl # $Id: configure.ac 36993 2017-09-19 17:01:39Z dmiller $
+dnl # $Id$
 
 # Because nbase is usually distributed with Nmap, the necessary files
 # config.guess, config.guess, and install-sh are not distributed with
@@ -185,8 +185,13 @@ AC_ARG_ENABLE(ipv6,
 AC_SEARCH_LIBS(getaddrinfo, [inet6 socket])
 AC_SEARCH_LIBS(gai_strerror, [inet6 socket])
 AC_SEARCH_LIBS(getnameinfo, [inet6 socket])
-AC_CHECK_FUNCS(gai_strerror)
-AC_REPLACE_FUNCS(inet_ntop inet_pton)
+AC_CHECK_FUNCS([gai_strerror inet_pton inet_ntop])
+AC_SEARCH_LIBS(inet_ntop, [nsl resolv network], [],
+               [AC_LIBOBJ(inet_ntop)
+               ])
+AC_SEARCH_LIBS(inet_pton, [nsl resolv network], [],
+               [AC_LIBOBJ(inet_pton)
+               ])
 APR_CHECK_WORKING_GETADDRINFO
 # The inet_addr function is used by APR_CHECK_WORKING_GETNAMEINFO.
 AC_SEARCH_LIBS(inet_addr, [nsl])

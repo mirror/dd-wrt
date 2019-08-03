@@ -4,8 +4,7 @@ local shortport = require "shortport"
 local stdnse = require "stdnse"
 local string = require "string"
 local vulns = require "vulns"
-
-local openssl = stdnse.silent_require "openssl"
+local rand = require "rand"
 
 description = [[
 Tests for the CVE-2011-3368 (Reverse Proxy Bypass) vulnerability in Apache HTTP server's reverse proxy mode.
@@ -29,7 +28,7 @@ References:
 -- |   VULNERABLE:
 -- |   Apache mod_proxy Reverse Proxy Security Bypass
 -- |     State: VULNERABLE
--- |     IDs:  CVE:CVE-2011-3368  OSVDB:76079
+-- |     IDs:  CVE:CVE-2011-3368  BID:49957
 -- |     Description:
 -- |       An exposure was reported affecting the use of Apache HTTP Server in
 -- |       reverse proxy mode. The exposure could inadvertently expose internal
@@ -38,8 +37,8 @@ References:
 -- |     Extra information:
 -- |       Proxy allows requests to external websites
 -- |     References:
--- |       http://osvdb.org/76079
--- |_      http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2011-3368
+-- |       https://www.securityfocus.com/bid/49957
+-- |_      https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2011-3368
 --
 -- @args http-vuln-cve2011-3368.prefix sets the path prefix (directory) to check for the vulnerability.
 --
@@ -56,12 +55,12 @@ action = function(host, port)
 
   local vuln = {
     title = 'Apache mod_proxy Reverse Proxy Security Bypass',
-    IDS = { CVE='CVE-2011-3368', OSVDB='76079'},
+    IDS = { CVE='CVE-2011-3368', BID='49957'},
     description = [[
 An exposure was reported affecting the use of Apache HTTP Server in
 reverse proxy mode. The exposure could inadvertently expose internal
 servers to remote users who send carefully crafted requests.]],
-    references = { 'http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2011-3368' },
+    references = { 'https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2011-3368' },
     dates = {
       disclosure = { year='2011', month='10', day='05'}
     },
@@ -72,7 +71,7 @@ servers to remote users who send carefully crafted requests.]],
 
   -- Take a reference chrono for a 404
   local start = os.time(os.date('*t'))
-  local random_page = stdnse.tohex(openssl.sha1(openssl.rand_pseudo_bytes(512)))
+  local random_page = rand.random_alpha(20)
   local reference = http.get(host,port,("%s/%s.htm"):format(prefix,random_page))
   local chrono_404 = os.time(os.date('*t'))-start
 

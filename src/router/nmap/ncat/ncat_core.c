@@ -2,7 +2,7 @@
  * ncat_core.c -- Contains option definitions and miscellaneous functions. *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2018 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2019 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -125,7 +125,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: ncat_core.c 37187 2018-03-11 03:50:53Z dmiller $ */
+/* $Id$ */
 
 #include "ncat.h"
 #include "util.h"
@@ -188,8 +188,8 @@ void options_init(void)
     o.crlf = 0;
     o.allow = 0;
     o.deny = 0;
-    addrset_init(&o.allowset);
-    addrset_init(&o.denyset);
+    o.allowset = addrset_new();
+    o.denyset = addrset_new();
     o.httpserver = 0;
 
     o.nsock_engine = 0;
@@ -206,6 +206,8 @@ void options_init(void)
     o.execmode = EXEC_PLAIN;
     o.proxy_auth = NULL;
     o.proxytype = NULL;
+    o.proxyaddr = NULL;
+    o.proxydns = PROXYDNS_REMOTE;
     o.zerobyte = 0;
 
 #ifdef HAVE_OPENSSL
@@ -296,6 +298,32 @@ int resolve(const char *hostname, unsigned short port,
     return result;
 }
 
+/* Resolves the given hostname or IP address with getaddrinfo, and stores the
+   first result (if any) in *ss and *sslen. The value of port will be set in the
+   appropriate place in *ss; set to 0 if you don't care. af may be AF_UNSPEC, in
+   which case getaddrinfo may return e.g. both IPv4 and IPv6 results; which one
+   is first depends on the system configuration. Returns 0 on success, or a
+   getaddrinfo return code (suitable for passing to gai_strerror) on failure.
+   *ss and *sslen are always defined when this function returns 0.
+
+   Resolve the hostname with DNS only if global o.proxydns includes PROXYDNS_LOCAL. */
+int proxyresolve(const char *hostname, unsigned short port,
+    struct sockaddr_storage *ss, size_t *sslen, int af)
+{
+    int flags;
+    struct sockaddr_list sl;
+    int result;
+
+    flags = 0;
+    if (!(o.proxydns & PROXYDNS_LOCAL))
+        flags |= AI_NUMERICHOST;
+
+    result = resolve_internal(hostname, port, &sl, af, flags, 0);
+    *ss = sl.addr.storage;
+    *sslen = sl.addrlen;
+    return result;
+}
+
 /* Resolves the given hostname or IP address with getaddrinfo, and stores
    all results into a linked list.
    The rest of the behavior is same as resolve(). */
@@ -347,13 +375,11 @@ int fdinfo_recv(struct fdinfo *fdn, char *buf, size_t size)
             /* SSL_read returns <0 in some cases like renegotiation. In these
              * cases, SSL_get_error gives SSL_ERROR_WANT_{READ,WRITE}, and we
              * should try the SSL_read again. */
-            if (n < 0) {
-                err = SSL_get_error(fdn->ssl, n);
-                if (err != SSL_ERROR_WANT_READ || err != SSL_ERROR_WANT_WRITE) {
-                    logdebug("SSL error on %d: %s\n", fdn->fd, ERR_error_string(err, NULL));
-                }
-            }
+            err = (n < 0) ? SSL_get_error(fdn->ssl, n) : SSL_ERROR_NONE;
         } while (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE);
+        if (err != SSL_ERROR_NONE) {
+            logdebug("SSL_read error on %d: %s\n", fdn->fd, ERR_error_string(err, NULL));
+        }
         return n;
     }
 #endif
@@ -408,8 +434,22 @@ int ncat_recv(struct fdinfo *fdn, char *buf, size_t size, int *pending)
 int fdinfo_send(struct fdinfo *fdn, const char *buf, size_t size)
 {
 #ifdef HAVE_OPENSSL
+    int n;
+    int err = SSL_ERROR_NONE;
     if (o.ssl && fdn->ssl != NULL)
-        return SSL_write(fdn->ssl, buf, size);
+    {
+        do {
+            n = SSL_write(fdn->ssl, buf, size);
+            /* SSL_write returns <0 in some cases like renegotiation. In these
+             * cases, SSL_get_error gives SSL_ERROR_WANT_{READ,WRITE}, and we
+             * should try the SSL_write again. */
+            err = (n < 0) ? SSL_get_error(fdn->ssl, n) : SSL_ERROR_NONE;
+        } while (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE);
+        if (err != SSL_ERROR_NONE) {
+            logdebug("SSL_write error on %d: %s\n", fdn->fd, ERR_error_string(err, NULL));
+        }
+        return n;
+    }
 #endif
     return send(fdn->fd, buf, size, 0);
 }
@@ -646,6 +686,17 @@ void setup_environment(struct fdinfo *info)
         setenv_portable("NCAT_REMOTE_PORT", "");
     } else
 #endif
+#ifdef HAVE_LINUX_VM_SOCKETS_H
+    if (su.sockaddr.sa_family == AF_VSOCK) {
+        char char_u32[11];
+
+        snprintf(char_u32, sizeof(char_u32), "%u", su.vm.svm_cid);
+        setenv_portable("NCAT_REMOTE_ADDR", char_u32);
+
+        snprintf(char_u32, sizeof(char_u32), "%u", su.vm.svm_port);
+        setenv_portable("NCAT_REMOTE_PORT", char_u32);
+    } else
+#endif
     if (getnameinfo((struct sockaddr *)&su, alen, ip, sizeof(ip),
             port, sizeof(port), NI_NUMERICHOST | NI_NUMERICSERV) == 0) {
         setenv_portable("NCAT_REMOTE_ADDR", ip);
@@ -662,6 +713,17 @@ void setup_environment(struct fdinfo *info)
         /* say localhost to keep it backwards compatible, else su.un.sun_path */
         setenv_portable("NCAT_LOCAL_ADDR", "localhost");
         setenv_portable("NCAT_LOCAL_PORT", "");
+    } else
+#endif
+#ifdef HAVE_LINUX_VM_SOCKETS_H
+    if (su.sockaddr.sa_family == AF_VSOCK) {
+        char char_u32[11];
+
+        snprintf(char_u32, sizeof(char_u32), "%u", su.vm.svm_cid);
+        setenv_portable("NCAT_LOCAL_ADDR", char_u32);
+
+        snprintf(char_u32, sizeof(char_u32), "%u", su.vm.svm_port);
+        setenv_portable("NCAT_LOCAL_PORT", char_u32);
     } else
 #endif
     if (getnameinfo((struct sockaddr *)&su, alen, ip, sizeof(ip),

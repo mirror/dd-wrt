@@ -1,5 +1,3 @@
-local bin = require "bin"
-local bit = require "bit"
 local ipOps = require "ipOps"
 local math = require "math"
 local nmap = require "nmap"
@@ -320,14 +318,14 @@ function check(status, response, track)
   end
 
   -- response bit set
-  if bit.rshift(pkt:u8(off), 7) ~= 1 then
+  if (pkt:u8(off) >> 7) ~= 1 then
     track.errcond = true
     track.evil_pkts = track.evil_pkts+1
     stdnse.debug1('Bad response from %s - did not have response bit set.', track.target)
     return nil
   end
   -- version is as expected
-  val = bit.band(bit.rshift(pkt:u8(off), 3), 0x07)
+  val = (pkt:u8(off) >> 3) & 0x07
   if val ~= track.v then
     track.errcond = true
     track.evil_pkts = track.evil_pkts+1
@@ -335,7 +333,7 @@ function check(status, response, track)
     return nil
   end
   -- mode is as expected
-  val = bit.band(pkt:u8(off), 0x07)
+  val = pkt:u8(off) & 0x07
   if val ~= track.m then
     track.errcond = true
     track.evil_pkts = track.evil_pkts+1
@@ -360,7 +358,7 @@ function check(status, response, track)
   end
   -- NTP error conditions - defined codes are not evil (bogus codes are).
   local fail, msg = false
-  local err = bit.band(bit.rshift(pkt:u8(off+4), 4), 0x0f)
+  local err = (pkt:u8(off+4) >> 4) & 0x0f
   if err == 0 then
     -- NoOp
   elseif err == 1 then
@@ -397,9 +395,9 @@ function check(status, response, track)
   -- implementation and request type.
 
   -- Err 4 bits, Number of Data Items 12 bits
-  local icount = bit.band(pkt:u16(off+4), 0xFFF)
+  local icount = pkt:u16(off+4) & 0xFFF
   -- MBZ 4 bits, Size of Data Items: 12 bits
-  local isize  = bit.band(pkt:u16(off+6), 0xFFF)
+  local isize  = pkt:u16(off+6) & 0xFFF
   if icount < 1 then
     track.errcond = true
     track.evil_pkts = track.evil_pkts+1
@@ -436,7 +434,7 @@ function check(status, response, track)
   end
 
   -- is the response out of sequence, a duplicate or is it peachy
-  local seq = bit.band(pkt:u8(off+1), 0x7f)
+  local seq = pkt:u8(off+1) & 0x7f
   if seq == track.hseq+1 then -- all good
     track.hseq = track.hseq+1
   elseif track.mseq:match(('|%d|'):format(seq)) then -- one of our missing seq#
@@ -464,7 +462,7 @@ function check(status, response, track)
 
   -- if the more bit is set or if we have missing sequence numbers then we'll
   -- want to receive more packets after parsing this one.
-  local more = bit.band(bit.rshift(pkt:u8(off), 6), 0x01)
+  local more = (pkt:u8(off) >> 6) & 0x01
   if more == 1 then
     track.rcv_again = true
   elseif track.mseq:len() > 1 then
@@ -495,14 +493,14 @@ function make_udp_packet(response)
   -- dummy headers
   -- ip
   local dh = "\x45\x00" -- IPv4, 20-byte header, no DSCP, no ECN
-  .. bin.pack('>S', iplen) -- total length
+  .. string.pack('>I2', iplen) -- total length
   .. "\x00\x00" -- IPID 0
   .. "\x40\x00" -- DF
   .. "\x40\x11" -- TTL 0x40, UDP (proto 17)
   .. "\x00\x00" -- checksum 0
   .. "\x00\x00\x00\x00\x00\x00\x00\x00" -- Source, destination 0.0.0.0
   .. "\x00\x00\x00\x00" -- UDP source, dest port 0
-  .. bin.pack('S', udplen) -- UDP length
+  .. string.pack('>I2', udplen) -- UDP length
   .. "\x00\x00" -- UDP checksum 0
 
   return packet.Packet:new(dh .. response, iplen)
@@ -554,8 +552,8 @@ end
 function parse_monlist_1(pkt, recs)
 
   local off = pkt.udp_offset + 8 -- beginning of NTP
-  local icount = bit.band(pkt:u16(off+4), 0xFFF)
-  local isize  = bit.band(pkt:u16(off+6), 0xFFF)
+  local icount = pkt:u16(off+4) & 0xFFF
+  local isize  = pkt:u16(off+6) & 0xFFF
   local remaining = icount
 
   off = off+8 -- beginning of data section
@@ -593,7 +591,7 @@ function parse_monlist_1(pkt, recs)
     -- Some implementations are not doing htonl for this field?
     if t.flags > 0xFFFFFF then
       -- only concerned with the high order byte
-      t.flags = bit.rshift(t.flags, 24)
+      t.flags = t.flags >> 24
     end
     t.mode    = pkt:u8(pos+30)
     t.version = pkt:u8(pos+31)
@@ -622,8 +620,8 @@ end
 function parse_peerlist(pkt, recs)
 
   local off = pkt.udp_offset + 8 -- beginning of NTP
-  local icount = bit.band(pkt:u16(off+4), 0xFFF)
-  local isize  = bit.band(pkt:u16(off+6), 0xFFF)
+  local icount = pkt:u16(off+4) & 0xFFF
+  local isize  = pkt:u16(off+6) & 0xFFF
   local remaining = icount
 
   off = off+8 -- beginning of data section
@@ -814,7 +812,7 @@ function interpret(recs, targetip)
   -- busy the server is.
   if t.have_peerlist then
     for _, peer in ipairs(recs.peerlist) do
-      if bit.band(peer.flags, 0x2) == 0x2 then
+      if (peer.flags & 0x2) == 0x2 then
         t.sync = peer.saddr
         if peer.saddr:match('^127') then -- always IPv4, never IPv6!
           t.sync = t.sync .. ' (reference clock)'

@@ -2,7 +2,7 @@
 
 # ***********************IMPORTANT NMAP LICENSE TERMS************************
 # *                                                                         *
-# * The Nmap Security Scanner is (C) 1996-2018 Insecure.Com LLC ("The Nmap  *
+# * The Nmap Security Scanner is (C) 1996-2019 Insecure.Com LLC ("The Nmap  *
 # * Project"). Nmap is also a registered trademark of the Nmap Project.     *
 # * This program is free software; you may redistribute and/or modify it    *
 # * under the terms of the GNU General Public License as published by the   *
@@ -456,9 +456,9 @@ class ScriptMetadata (object):
         returned as a list of (argname, description) tuples."""
         args = []
         for tag_name, tag_text in nsedoc_tags_iter(f):
-            m = re.match(r'([\w._-]+)', tag_text)
+            m = re.match(r'(\S+)\s+(.*?)', tag_text, re.DOTALL)
             if (tag_name == "arg" or tag_name == "args") and m:
-                args.append((m.group(1), re.sub(r'^[\w._-]+', '', tag_text)))
+                args.append((m.group(1), m.group(2)))
         return args
 
     def get_arguments(self, filename):
