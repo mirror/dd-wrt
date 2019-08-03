@@ -2,7 +2,7 @@
  * util.c -- Various utility functions.                                    *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2018 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2019 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -125,7 +125,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: util.c 37126 2018-01-28 21:18:17Z fyodor $ */
+/* $Id$ */
 
 #include "sys_wrap.h"
 #include "util.h"
@@ -149,6 +149,10 @@
 #endif
 #if HAVE_UNISTD_H
 #include <unistd.h>
+#endif
+
+#if HAVE_LINUX_VM_SOCKETS_H
+#include <linux/vm_sockets.h>
 #endif
 
 /* safely add 2 size_t */
@@ -464,6 +468,11 @@ int do_listen(int type, int proto, const union sockaddr_u *srcaddr_u)
         sa_len = SUN_LEN(&srcaddr_u->un);
         break;
 #endif
+#ifdef HAVE_LINUX_VM_SOCKETS_H
+      case AF_VSOCK:
+        sa_len = sizeof (struct sockaddr_vm);
+        break;
+#endif
 #ifdef HAVE_SOCKADDR_SA_LEN
       default:
         sa_len = srcaddr_u->sockaddr.sa_len;
@@ -490,6 +499,14 @@ int do_listen(int type, int proto, const union sockaddr_u *srcaddr_u)
                 socket_strerror(socket_errno()));
         else
 #endif
+#ifdef HAVE_LINUX_VM_SOCKETS_H
+        if (srcaddr_u->storage.ss_family == AF_VSOCK)
+            bye("bind to %u:%u: %s.",
+                srcaddr_u->vm.svm_cid,
+                srcaddr_u->vm.svm_port,
+                socket_strerror(socket_errno()));
+        else
+#endif
             bye("bind to %s:%hu: %s.", inet_socktop(srcaddr_u),
                 inet_port(srcaddr_u), socket_strerror(socket_errno()));
     }
@@ -503,6 +520,13 @@ int do_listen(int type, int proto, const union sockaddr_u *srcaddr_u)
             loguser("Listening on %s\n", srcaddr_u->un.sun_path);
         else
 #endif
+#ifdef HAVE_LINUX_VM_SOCKETS_H
+        if (srcaddr_u->storage.ss_family == AF_VSOCK)
+            loguser("Listening on %u:%u\n",
+                    srcaddr_u->vm.svm_cid,
+                    srcaddr_u->vm.svm_port);
+        else
+#endif
             loguser("Listening on %s:%hu\n", inet_socktop(srcaddr_u), inet_port(srcaddr_u));
     }
     if (o.test)
@@ -511,6 +535,8 @@ int do_listen(int type, int proto, const union sockaddr_u *srcaddr_u)
     return sock;
 }
 
+/* Only used in proxy connect functions, so doesn't need to support address
+ * families that don't support proxying like AF_UNIX and AF_VSOCK */
 int do_connect(int type)
 {
     int sock = 0;
@@ -581,9 +607,9 @@ int allow_access(const union sockaddr_u *su)
 {
     /* A host not in the allow set is denied, but only if the --allow or
        --allowfile option was given. */
-    if (o.allow && !addrset_contains(&o.allowset, &su->sockaddr))
+    if (o.allow && !addrset_contains(o.allowset, &su->sockaddr))
         return 0;
-    if (addrset_contains(&o.denyset, &su->sockaddr))
+    if (addrset_contains(o.denyset, &su->sockaddr))
         return 0;
 
     return 1;

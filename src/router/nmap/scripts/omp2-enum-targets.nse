@@ -48,7 +48,7 @@ portrule = shortport.port_or_service(9390, "openvas")
 --- Return the list of targets defined for a given user
 --
 -- @param host the target host table
--- @param port the targetted OMP port
+-- @param port the targeted OMP port
 -- @param username the username to use to login
 -- @param password the password to use to login
 -- @return the list of targets for this user or nil
@@ -115,7 +115,7 @@ action = function(host, port)
     end
 
     if target.ALLOW_NEW_TARGETS and targets ~= nil then
-      stdnse.debug1("adding new targets %s", stdnse.strjoin(", ", targets))
+      stdnse.debug1("adding new targets %s", table.concat(targets, ", "))
       target.add(table.unpack(targets))
     end
 

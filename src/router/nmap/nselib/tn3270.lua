@@ -61,12 +61,13 @@ Telnet = {
     EOR        = "\239"
   },
 
+    -- Thesse are the options we accept for telnet
   options = {
-    BINARY  = "\000",
-    EOR     = "\025",
-    TTYPE   = "\024"
-    --TN3270  = "\040" -- if we enable this it would mean we support TN3270E
-    -- which we do not support
+    BINARY   = "\000",
+    EOR      = "\025",
+    TTYPE    = "\024",
+    TN3270   = "\028",
+    TN3270E  = "\040" 
   },
 
   command = {
@@ -218,14 +219,22 @@ Telnet = {
   NEG_OPERATION_CHECK        = 0x02,
   NEG_COMPONENT_DISCONNECTED = 0x03,
 
-  -- Attention Identifiers (AID)
-
+  -- TN3270E Negotiation Options
+  TN3270E_ASSOCIATE   = 0x00,
+  TN3270E_CONNECT     = 0x01,
+  TN3270E_DEVICE_TYPE = 0x02,
+  TN3270E_FUNCTIONS   = 0x03,
+  TN3270E_IS          = 0x04,
+  TN3270E_REASON      = 0x05,
+  TN3270E_REJECT      = 0x06,
+  TN3270E_REQUEST     = 0x07,
+  TN3270E_SEND        = 0x08,
 
   -- SFE Attributes
   SFE_3270 = "192",
   order_max = "\063", -- tn3270 orders can't be greater than 0x3F
   COLS = 80, -- hardcoded width.
-  ROWS = 24, -- hardcoded rows. We only support 3270 model 2 wich was 24x80.
+  ROWS = 24, -- hardcoded rows. We only support 3270 model 2 which was 24x80.
   buffer_addr = 1,
   cursor_addr = 1,
   isSSL = true,
@@ -243,6 +252,7 @@ Telnet = {
       telnet_state   = 0, -- same as TNS_DATA to begin with
       server_options = {},
       client_options = {},
+      unsupported_opts = {},
       sb_options     = '',
       connected_lu   = '',
       connected_dtype= '',
@@ -320,10 +330,10 @@ Telnet = {
   DECODE_BADDR = function ( byte1, byte2 )
     if (byte1 & 0xC0) == 0 then
       -- (byte1 & 0x3F) << 8 | byte2
-      return (((byte1 & 0x3F) << 8) | byte2) + 1
+      return (((byte1 & 0x3F) << 8) | byte2) 
     else
       -- (byte1 & 0x3F) << 6 | (byte2 & 0x3F)
-      return (((byte1 & 0x3F) << 6) | (byte2 & 0x3F)) + 1
+      return (((byte1 & 0x3F) << 6) | (byte2 & 0x3F)) 
     end
   end,
 
@@ -444,6 +454,7 @@ Telnet = {
     local TNS_DONT   = 5
     local TNS_SB     = 6
     local TNS_SB_IAC = 7
+    local supported  = false
     local DO_reply   = self.commands.IAC .. self.commands.DO
     local DONT_reply = self.commands.IAC .. self.commands.DONT
     local WILL_reply = self.commands.IAC .. self.commands.WILL
@@ -480,48 +491,72 @@ Telnet = {
       elseif data == self.commands.SB   then self.telnet_state = TNS_SB
       end
     elseif self.telnet_state == TNS_WILL then
-      -- I know if could use a for loop here with ipairs() but i find this easier to read
-      if data == self.options.BINARY or data == self.options.EOR or
-        data == self.options.TTYPE  or data == self.options.TN3270 then
+      stdnse.debug(3, "[TELNET] IAC WILL 0x%s?", stdnse.tohex(data))
+      for _,v in pairs(self.options) do -- check to see if we support this sub option (SB)
+        if v == data then
+          stdnse.debug(3, "[TELNET] IAC DO 0x%s", stdnse.tohex(data))
+          supported = true
+          break
+        end
+      end -- end of checking options
+      for _,v in pairs(self.unsupported_opts) do
+        if v == data then
+          stdnse.debug(3, "[TELNET] IAC DONT 0x%s (disabled)", stdnse.tohex(data))
+          supported = false
+        end
+      end 
+      if supported then
         if not self.server_options[data] then -- if we haven't already replied to this, let's reply
           self.server_options[data] = true
           self:send_data(DO_reply..data)
-          stdnse.debug(3, "Sent Will Reply: " .. data)
+          stdnse.debug(3, "[TELNET] Sent Will Reply: 0x%s", stdnse.tohex(data))
           self:in3270()
         end
       else
         self:send_data(DONT_reply..data)
-        stdnse.debug(3, "Sent Don't Reply: " .. data)
+        stdnse.debug(3, "[TELNET] Sent Don't Reply: 0x%s", stdnse.tohex(data))
       end
       self.telnet_state = TNS_DATA
     elseif self.telnet_state == TNS_WONT then
       if self.server_options[data] then
         self.server_options[data] = false
         self:send_data(DONT_reply..data)
-        stdnse.debug(3, "Sent Don't Reply: " .. data)
+        stdnse.debug(3, "[TELNET] Sent Don't Reply: 0x%s", stdnse.tohex(data))
         self:in3270()
       end
       self.telnet_state = TNS_DATA
     elseif self.telnet_state == TNS_DO then
-      if data == self.options.BINARY or data == self.options.EOR or
-        data == self.options.TTYPE  or data == self.options.TN3270 then
-        -- data == self.options.STARTTLS -- ssl encryption to be added later
+      stdnse.debug(3, "[TELNET] IAC DO 0x%s?", stdnse.tohex(data))
+      for _,v in pairs(self.options) do -- check to see if we support this sub option (SB)
+        if v == data then
+          stdnse.debug(3, "[TELNET] IAC WILL 0x%s", stdnse.tohex(data))
+          supported = true
+          break
+        end
+      end -- end of checking options
+      for _,v in pairs(self.unsupported_opts) do
+        if v == data then
+          stdnse.debug(3, "[TELNET] IAC WONT 0x%s (disabled)", stdnse.tohex(data))
+          supported = false
+        end
+      end 
+      if supported then
         if not self.client_options[data] then
           self.client_options[data] = true
           self:send_data(WILL_reply..data)
-          stdnse.debug(3, "Sent Do Reply: " .. data)
+          stdnse.debug(3, "[TELNET] Sent Do Reply: 0x%s" , stdnse.tohex(data))
           self:in3270()
         end
       else
         self:send_data(WONT_reply..data)
-        stdnse.debug(3, "Got unsupported Do. Sent Won't Reply: " .. data .. " " .. self.telnet_data)
+        stdnse.debug(3, "[TELNET] Got unsupported Do. Sent Won't Reply: " .. data .. " " .. self.telnet_data)
       end
       self.telnet_state = TNS_DATA
     elseif self.telnet_state == TNS_DONT then
       if self.client_options[data] then
         self.client_options[data] = false
         self:send_data(WONT_reply .. data)
-        stdnse.debug(3, "Sent Wont Reply: " .. data)
+        stdnse.debug(3, "[TELNET] Sent Wont Reply: 0x%s", stdnse.tohex(data))
         self:in3270()
       end
       self.telnet_state = TNS_DATA
@@ -532,9 +567,8 @@ Telnet = {
         self.sb_options = self.sb_options .. data
       end
     elseif self.telnet_state == TNS_SB_IAC then
-      stdnse.debug(3, "Processing SB options")
-      --nsedebug.print_hex(self.sb_options)
-      self.sb_options = self.sb_options .. data
+      stdnse.debug(3, "[TELNET] Processing SB options")
+--      self.sb_options = self.sb_options .. data -- looks like this is a bug? Why append F0 to the end?
       if data == self.commands.SE then
         self.telnet_state = TNS_DATA
         if self.sb_options:sub(1,1) == self.options.TTYPE and
@@ -546,12 +580,13 @@ Telnet = {
             self.device_type   ..
             self.commands.IAC  ..
             self.commands.SE   )
-        elseif self.client_options[self.options.TN3270] and
-          self.sb_options:sub(1,1) == self.options.TN3270 then
+        elseif (self.client_options[self.options.TN3270] or self.client_options[self.options.TN3270E]) and
+               (self.sb_options:sub(1,1) == self.options.TN3270 or 
+                self.sb_options:sub(1,1) == self.options.TN3270E) then
           if not self:negotiate_tn3270() then
             return false
           end
-          stdnse.debug(3, "Done Negotiating Options")
+          stdnse.debug(3, "[TELNET] Done Negotiating Options")
         else
           self.telnet_state = TNS_DATA
         end
@@ -571,39 +606,60 @@ Telnet = {
   --- Function to negotiate TN3270 sub options
 
   negotiate_tn3270 = function ( self )
-    stdnse.debug(3, "Processing tn data subnegotiation options")
+    stdnse.debug(3, "[TN3270] Processing tn data subnegotiation options ")
     local option = self.sb_options:sub(2,2)
-
+   -- stdnse.debug("[TN3270E] We got this: 0x%s", stdnse.tohex(option))
+    
     if option == self.tncommands.SEND then
       if self.sb_options:sub(3,3) == self.tncommands.DEVICETYPE then
-        self:send_data(self.commands.IAC          ..
+        if self.connected_lu == '' then
+          self:send_data(self.commands.IAC          ..
           self.commands.SB           ..
-          self.options.TN3270        ..
+          self.options.TN3270E        ..
           self.tncommands.DEVICETYPE ..
           self.tncommands.REQUEST    ..
           self.device_type           ..
           self.commands.IAC          ..
           self.commands.SE           )
+        else
+          stdnse.debug(3,"[TN3270] Sending LU: %s", self.connected_lu)
+          self:send_data(self.commands.IAC          ..
+          self.commands.SB           ..
+          self.options.TN3270E       ..
+          self.tncommands.DEVICETYPE ..
+          self.tncommands.REQUEST    ..
+          self.device_type           ..
+          self.tncommands.CONNECT    ..
+          self.connected_lu          ..
+          self.commands.IAC          ..
+          self.commands.SE           )
+        end
       else
-        stdnse.debug(3,"Received TN3270 Send but not device type. Weird.")
+        stdnse.debug(3,"[TN3270] Received TN3270 Send but not device type. Weird.")
+        return false
       end
     elseif option == self.tncommands.DEVICETYPE then -- Mainframe is confirming device type. Good!
-      if self.sb_options:sub(3,3) == self.tncommands.IS then
+      if self.sb_options:sub(3,3) == self.tncommands.REJECT then
+        -- Welp our LU request failed, shut it down
+        stdnse.debug(3,"[TN3270] Received TN3270 REJECT.")
+        return false
+      elseif self.sb_options:sub(3,3) == self.tncommands.IS then
         local tn_loc = 1
         while self.sb_options:sub(4+tn_loc,4+tn_loc) ~= self.commands.SE and
         self.sb_options:sub(4+tn_loc,4+tn_loc) ~= self.tncommands.CONNECT do
           tn_loc = tn_loc + 1
         end
         --XXX Unused variable??? Should this be tn_loc?
-        local sn_loc = 1
+        -- local sn_loc = 1
         if self.sb_options:sub(4+tn_loc,4+tn_loc) == self.tncommands.CONNECT then
-          self.connected_lu = self.sb_options:sub(5+tn_loc, #self.sb_options-1)
+          self.connected_lu = self.sb_options:sub(5+tn_loc, #self.sb_options)
           self.connected_dtype = self.sb_options:sub(4,3+tn_loc)
+          stdnse.debug(3,"[TN3270] Current LU: %s", self.connected_lu)
         end
         -- since We've connected lets send our options
         self:send_data(self.commands.IAC          ..
           self.commands.SB           ..
-          self.options.TN3270        ..
+          self.options.TN3270E       ..
           self.tncommands.FUNCTIONS  ..
           self.tncommands.REQUEST    ..
           --self.tncommands.RESPONSES  .. -- we'll only support basic 3270E mode
@@ -614,14 +670,14 @@ Telnet = {
       if self.sb_options:sub(3,3) == self.tncommands.IS then
         -- they accepted the function request, lets move on
         self.negotiated = true
-        stdnse.verbose(2,"TN3270 Option Negotiation Done!")
+        stdnse.debug(3,"[TN3270] Option Negotiation Done!")
         self:in3270()
       elseif self.sb_options:sub(3,3) == self.tncommands.REQUEST then
         -- dummy functions for now. Our client doesn't have any
         -- functions really but we'll agree to whatever they want
         self:send_data(self.commands.IAC         ..
           self.commands.SB          ..
-          self.options.TN3270       ..
+          self.options.TN3270E      ..
           self.tncommands.FUNCTIONS ..
           self.tncommands.IS        ..
           self.sb_options:sub(4,4)  ..
@@ -630,37 +686,38 @@ Telnet = {
         self.negotiated = true
         self:in3270()
       end
-
     end
-
     return true
   end,
 
   --- Check to see if we're in TN3270
   in3270 = function ( self )
-    if self.client_options[self.options.TN3270] then
+    if self.client_options[self.options.TN3270E] then
+    stdnse.debug(3,"[in3270] In TN3270E mode")
       if self.negotiated then
+        stdnse.debug(3,"[in3270] TN3270E negotiated")
         self.state = self.TN3270E_DATA
       end
-    elseif self.server_options[self.options.EOR]    and
-      self.server_options[self.options.BINARY] and
-      self.client_options[self.options.EOR]    and
+    elseif self.client_options[self.options.EOR] and
       self.client_options[self.options.BINARY] and
-      self.client_options[self.options.TTYPE]  then
+      self.client_options[self.options.EOR] and
+      self.client_options[self.options.BINARY] and
+      self.client_options[self.options.TTYPE] then
+      stdnse.debug(3,"[in3270] In TN3270 mode")
       self.state = self.TN3270_DATA
     end
 
     if self.state == self.TN3270_DATA or self.state == self.TN3270E_DATA then
       -- since we're in TN3270 mode, let's create an empty buffer
-      stdnse.debug(3, "Creating Empty IBM-3278-2 Buffer")
-      for i=1, 1920 do
+      stdnse.debug(3, "[in3270] Creating Empty IBM-3278-2 Buffer")
+      for i=0, 1920 do
         self.buffer[i] = "\0"
         self.fa_buffer[i] = "\0"
         self.overwrite_buf[i] = "\0"
       end
-      stdnse.debug(3, "Empty Buffer Created. Length: " .. #self.buffer)
+      stdnse.debug(3, "[in3270] Empty Buffer Created. Length: " .. #self.buffer)
     end
-    stdnse.debug(3,"Current State: "..self.word_state[self.state])
+    stdnse.debug(3,"[in3270] Current State: "..self.word_state[self.state])
   end,
 
   --- Also known as process_eor
@@ -668,14 +725,16 @@ Telnet = {
     local reply = 0
     stdnse.debug(3,"Processing TN3270 Data")
     if self.state == self.TN3270E_DATA then
+      stdnse.debug(3,"[TN3270E] Processing TN3270 Data header: %s", stdnse.tohex(self.tn_buffer:sub(1,5)))
       self.tn3270_header.data_type     = self.tn_buffer:sub(1,1)
       self.tn3270_header.request_flag  = self.tn_buffer:sub(2,2)
       self.tn3270_header.response_flag = self.tn_buffer:sub(3,3)
       self.tn3270_header.seq_number    = self.tn_buffer:sub(4,5)
       if self.tn3270_header.data_type == "\000" then
         reply = self:process_3270(self.tn_buffer:sub(6))
+        stdnse.debug(3,"[TN3270E] Reply: %s", reply)
       end
-      if reply < 0 and self.tn3270_header.request_flag ~= self.TN3270E_RSF_NO_RESPONSE then
+      if reply < 0  and self.tn3270_header.request_flag ~= self.TN3270E_RSF_NO_RESPONSE then
         self:tn3270e_nak(reply)
       elseif reply == self.NO_OUTPUT and
         self.tn3270_header.request_flag == self.ALWAYS_RESPONSE then
@@ -740,7 +799,7 @@ Telnet = {
   process_3270 = function ( self, data )
     -- the first byte will be the command we have to follow
     local com = data:sub(1,1)
-    stdnse.debug(3, "Value Received: 0x%s", stdnse.tohex(com))
+    stdnse.debug(3, "[PROCESS 3270] Value Received: 0x%s", stdnse.tohex(com))
     if com == self.command.EAU then
       stdnse.debug(3,"TN3270 Command: Erase All Unprotected")
       self:clear_unprotected()
@@ -777,6 +836,7 @@ Telnet = {
       return self.BAD_COMMAND
 
     end
+    return 1 -- we may sometimes enter a state where we have nothing which is fine
 
   end,
 
@@ -816,10 +876,10 @@ Telnet = {
         stdnse.debug(4,"Writting Zero to buffer at address: " .. self.buffer_address)
         stdnse.debug(4,"Attribute Type: 0x".. stdnse.tohex(data:sub(i,i)))
         self:write_field_attribute(data:sub(i,i))
+        self:write_char("\00")
         self.buffer_address = self:INC_BUF_ADDR(self.buffer_address)
         -- set the current position one ahead (after SF)
         i = i + 1
-        self:write_char("\00")
 
       elseif cp == self.orders.SFE then
         stdnse.debug(4,"Start Field Extended")
@@ -992,8 +1052,13 @@ Telnet = {
      \x87\x88\xa1\xa6\xa8\x96\x99\xb0\xb1\xb2\xb3\xb4\xb6\x00\x08\x81\z
      \x84\x00\x0a\x00\x04\x00\x06\x81\x99\x00\x00\xff\xef"
     stdnse.debug(3, "Current WSF : %s", stdnse.tohex(wsf_data:sub(4,4)) )
+
+    if self.state == self.TN3270E_DATA then 
+      -- We need to add the header here since we're in TN3270E mode
+      query_options = "\x00\x00\x00\x00\x00" .. query_options
+    end
     self:send_data(query_options)
-    return true
+    return 1
   end,
 
 
@@ -1004,14 +1069,15 @@ Telnet = {
   send_tn3270 = function ( self, data )
     local packet = ''
     if self.state == self.TN3270E_DATA then
+      packet = "\x00\x00\x00\x00\x00"
       -- we need to create the tn3270E (the E is important) header
       -- which, in basic 3270E is 5 bytes of 0x00
-      packet = string.pack("BBB >I2",
-        self.DT_3270_DATA, -- type
-        0, -- request
-        0, -- response
-        0
-        )
+      --packet = string.pack("BBB >I2",
+      --  self.DT_3270_DATA, -- type
+      --  0, -- request
+      --  0, -- response
+      --  0
+       -- )
       --self.tn3270_header.seq_number
     end
     -- create send buffer and double up IACs
@@ -1030,13 +1096,13 @@ Telnet = {
   get_screen = function ( self )
     stdnse.debug(3,"Returning the current TN3270 buffer")
     local buff = '\n'
-    for i = 1,#self.buffer do
+    for i = 0,#self.buffer do
       if self.buffer[i] == "\00" then
         buff = buff .. " "
       else
         buff = buff .. drda.StringUtil.toASCII(self.buffer[i])
       end
-      if i % 80 == 0 then
+      if (i+1) % 80 == 0 then
         buff = buff .. "\n"
       end
     end
@@ -1047,13 +1113,13 @@ Telnet = {
     lvl = lvl or 1
     stdnse.debug(lvl,"---------------------- Printing the current TN3270 buffer ----------------------")
     local buff = ''
-    for i = 1,#self.buffer do
+    for i = 0,#self.buffer do
       if self.buffer[i] == "\00" then
         buff = buff .. " "
       else
         buff = buff .. drda.StringUtil.toASCII(self.buffer[i])
       end
-      if i % 80 == 0 then
+      if (i+1) % 80 == 0 then
         stdnse.debug(lvl, buff)
         buff = ''
       end
@@ -1065,7 +1131,7 @@ Telnet = {
 
   get_screen_raw = function ( self )
     local buff = ''
-    for i = 1,#self.buffer do
+    for i = 0,#self.buffer do
       buff = buff .. drda.StringUtil.toASCII(self.buffer[i])
     end
     return buff
@@ -1179,13 +1245,13 @@ Telnet = {
   writeable = function (self)
     -- Returns a list with all writeable fields as {location, length} tuples
     local writeable_list = {}
-    for i = 1,#self.fa_buffer do
+    for i = 0,#self.fa_buffer do
       if ( self.fa_buffer[i] ~= "\00" ) and (self.fa_buffer[i]:byte(1) & 0x20) ~= 0x20 then
         -- found writeable flag
         for j = i,#self.fa_buffer do
           -- find end of field
           if (self.fa_buffer[j]:byte(1) & 0x20) == 0x20 then
-            stdnse.debug(3,"Writeable Area: %d Row: %d Col: %d Length: %d", i + 1, self:BA_TO_ROW(i + 1), self:BA_TO_COL(i + 2), j-i-1)
+            stdnse.debug(3,"[WRITEABLE] Area: %d Row: %d Col: %d Length: %d", i + 1, self:BA_TO_ROW(i + 1), self:BA_TO_COL(i + 2), j-i-1)
             table.insert(writeable_list, {i + 1, j-i-1})
             break
           end
@@ -1197,7 +1263,7 @@ Telnet = {
 
   find = function ( self, str )
     local buff = ''
-    for i = 1,#self.buffer do
+    for i = 0,#self.buffer do
       if self.buffer[i] == "\00" then
         buff = buff .. " "
       else
@@ -1205,20 +1271,20 @@ Telnet = {
       end
     end
     --local buff = self:get_screen()
-    stdnse.debug(3, "Looking for: "..str)
+    stdnse.debug(3, "[FIND] Looking for: %s", tostring(str))
     local i, j = string.find(buff, str)
     if i == nil then
-      stdnse.debug(3, "Couldn't find: "..str)
+      stdnse.debug(3, "[FIND] Couldn't find: %s", tostring(str))
       return false
     else
-      stdnse.debug(3, "Found String: "..str)
+      stdnse.debug(3, "[FIND] Found String: %s", tostring(str))
       return i , j
     end
   end,
 
   isClear = function ( self )
     local buff = ''
-    for i = 1,#self.buffer do
+    for i = 0,#self.buffer do
       if self.buffer[i] == "\00" then
         buff = buff .. " "
       else
@@ -1227,10 +1293,10 @@ Telnet = {
     end
     local i, j = string.find(buff, '%w')
     if i ~= nil then
-      stdnse.debug(3, "Screen has text")
+      stdnse.debug(3, "[CLEAR] Screen has text")
       return false
     else
-      stdnse.debug(3, "Screen is Empty")
+      stdnse.debug(3, "[CLEAR] Screen is Empty")
       return true
     end
   end,
@@ -1240,7 +1306,7 @@ Telnet = {
   -- @returns true if there are any hidden fields in the buffer
   any_hidden = function ( self )
     local hidden_attrib = 0x0c -- 00001100 is hidden
-    for i = 1,#self.fa_buffer do
+    for i = 0,#self.fa_buffer do
       if (self.fa_buffer[i]:byte(1) & hidden_attrib) == hidden_attrib then
         return true
       end
@@ -1301,13 +1367,25 @@ Telnet = {
     return false
   end,
 
+  set_lu = function (self, LU)
+    -- Sets an LU
+    self.connected_lu = LU
+  end,
+
+  get_lu = function ( self )
+     return self.connected_lu
+  end,
+  disable_tn3270e = function ( self )
+    stdnse.debug(3,"Disabling TN3270E")
+    table.insert(self.unsupported_opts,self.options.TN3270E)
+  end, 
   overwrite_data = function ( self )
     if not self:any_overwritten() then
       return false
     end
     stdnse.debug(3,"Printing the overwritten TN3270 buffer")
     local buff = '\n'
-    for i = 1,#self.overwrite_buf do
+    for i = 0,#self.overwrite_buf do
       if self.overwrite_buf[i] == "\0" then
         buff = buff .. " "
       else

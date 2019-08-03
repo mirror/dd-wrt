@@ -18,12 +18,12 @@
 -- @author Patrik Karlsson <patrik@cqure.net>
 --
 
-local bit = require "bit"
 local coroutine = require "coroutine"
 local dns = require "dns"
 local ipOps = require "ipOps"
 local nmap = require "nmap"
 local stdnse = require "stdnse"
+local stringaux = require "stringaux"
 local table = require "table"
 _ENV = stdnse.module("dnsbl", stdnse.seeall)
 
@@ -214,7 +214,7 @@ SERVICES = {
           local result = {}
 
           for k, v in pairs(responses) do
-            if ( bit.band( code, k ) == k ) then
+            if ( ( code & k ) == k ) then
               table.insert(result, v)
             end
           end
@@ -397,17 +397,17 @@ SERVICES = {
             local activity = {}
             activity['name'] = "Activity"
             -- Suspicious activity
-            if ( bit.band(octet4, 1) == 1) then
+            if ( (octet4 & 1) == 1) then
               table.insert(activity, "Suspicious")
             end
 
             -- Harvester
-            if ( bit.band(octet4, 2) == 2) then
+            if ( (octet4 & 2) == 2) then
               table.insert(activity, "Harvester")
             end
 
             -- Comment spammer
-            if ( bit.band(octet4, 4)  == 4) then
+            if ( (octet4 & 4)  == 4) then
               table.insert(activity, "Comment spammer")
             end
 
@@ -505,7 +505,7 @@ Helper = {
 
     local all = SERVICES[self.category]
     self.filter = {}
-    for _, f in pairs(stdnse.strsplit(",%s*", self.filterstr)) do
+    for _, f in pairs(stringaux.strsplit(",%s*", self.filterstr)) do
       if ( not(SERVICES[self.category][f]) ) then
         self.filter = nil
         return false, ("Service does not exist '%s'"):format(f)

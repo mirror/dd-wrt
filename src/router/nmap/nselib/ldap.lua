@@ -19,11 +19,13 @@
 --
 
 local asn1 = require "asn1"
+local datetime = require "datetime"
 local io = require "io"
 local nmap = require "nmap"
 local os = require "os"
 local stdnse = require "stdnse"
 local string = require "string"
+local stringaux = require "stringaux"
 local table = require "table"
 local comm = require "comm"
 _ENV = stdnse.module("ldap", stdnse.seeall)
@@ -178,10 +180,10 @@ end
 local function decodeSeq(encStr, len, pos)
   local seq = {}
   local sPos = 1
-  local sStr, newpos = string.unpack("c" .. len, encStr, pos)
-  if(sStr==nil) then
-    return seq, newpos
+  if #encStr - pos + 1 < len then
+    return seq, nil
   end
+  local sStr, newpos = string.unpack("c" .. len, encStr, pos)
   while (sPos < len) do
     local newSeq
     newSeq, sPos = decode(sStr, sPos)
@@ -543,7 +545,7 @@ function createFilter( filter )
     local val = ''
     if ( filter.op == FILTER['substrings'] ) then
 
-      local tmptable = stdnse.strsplit('*', filter.val)
+      local tmptable = stringaux.strsplit('*', filter.val)
       local tmp_result = ''
 
       if (#tmptable <= 1 ) then
@@ -576,7 +578,7 @@ function createFilter( filter )
 
     elseif ( filter.op == FILTER['extensibleMatch'] ) then
 
-      local tmptable = stdnse.strsplit(':=', filter.val)
+      local tmptable = stringaux.strsplit(':=', filter.val)
       local tmp_result = ''
       local OID, bitmask
 
@@ -834,7 +836,7 @@ function convertADTimeStamp(timestamp)
 
     result = ( timestamp //  10000000 ) - 3036
     result = result + base_time
-    result = os.date("%Y/%m/%d %H:%M:%S UTC", result)
+    result = datetime.format_timestamp(result, 0)
   else
     result = 'Never'
   end

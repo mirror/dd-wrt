@@ -1,5 +1,4 @@
-local bin = require "bin"
-local bit = require "bit"
+local bits = require "bits"
 local brute = require "brute"
 local creds = require "creds"
 local nmap = require "nmap"
@@ -50,23 +49,20 @@ categories = {"intrusive", "brute"}
 -- This portrule succeeds only when the open|filtered port is in the port range
 -- which is specified by the ports script argument
 portrule = function(host, port)
-  if not stdnse.get_script_args(SCRIPT_NAME .. ".ports") then
-    stdnse.debug3("Skipping '%s' %s, 'ports' argument is missing.",SCRIPT_NAME, SCRIPT_TYPE)
-    return false
-  end
 
   local ports = stdnse.get_script_args(SCRIPT_NAME .. ".ports")
-
-  --print out a debug message if port 31337/udp is open
-  if port.number==31337 and port.protocol == "udp" and not(ports) then
-    stdnse.debug1("Port 31337/udp is open. Possibility of version detection and password bruteforcing using the backorifice-brute script")
+  if not ports then
+    stdnse.verbose1("Skipping '%s' %s, 'ports' argument is missing.",SCRIPT_NAME, SCRIPT_TYPE)
     return false
   end
 
-  return port.protocol == "udp" and stdnse.in_port_range(port, ports:gsub(",",",") ) and
+  -- ensure UDP
+  ports = ports:gsub("^[U:]*", "U:")
+  return port.protocol == "udp" and shortport.port_range(ports)(host, port) and
     not(shortport.port_is_excluded(port.number,port.protocol))
 end
 
+local MAGICSTRING ="*!*QWTY?"
 local backorifice =
 {
   new = function(self, host, port)
@@ -95,7 +91,7 @@ local backorifice =
   -- @return err string containing error message on failure
   try_password = function(self, password, initial_seed)
     --initialize BackOrifice PING packet:   |MAGICSTRING|size|packetID|TYPE_PING|arg1|arg_separat|arg2|CRC/disregarded|
-    local PING_PACKET = bin.pack("A<IICACAC", "*!*QWTY?",  19,       0,     0x01,  "",       0x00,  "",           0x00)
+    local PING_PACKET = MAGICSTRING .. string.pack("<I4 I4 B zz", 19, 0, 1,  "",  "")
     local seed, status, response, encrypted_ping
 
     if not(initial_seed) then
@@ -175,7 +171,7 @@ local backorifice =
   -- @return seed number containing next seed
   gen_next_seed = function(self, seed)
     seed = seed*214013 + 2531011
-    seed = bit.band(seed,0xffffff)
+    seed = seed & 0xffffff
     return seed
   end,
 
@@ -186,26 +182,23 @@ local backorifice =
   -- @return data binary string containing encrypted/decrypted data
   BOcrypt = function(self, data, initial_seed )
     if data==nil then return end
+    local output = {}
 
-    local output =""
     local seed = initial_seed
-    local data_byte
-    local crypto_byte
 
     for i = 1, #data  do
-      data_byte = string.byte(data,i)
+      local data_byte = string.byte(data,i)
 
       --calculate next seed
       seed = self:gen_next_seed(seed)
       --calculate encryption key based on seed
-      local key = bit.band(bit.arshift(seed,16), 0xff)
+      local key = bits.arshift(seed,16) & 0xff
 
-      crypto_byte = bit.bxor(data_byte,key)
-      output = bin.pack("AC",output,crypto_byte)
-      --ARGSIZE limitation from BackOrifice server
-      if i == 256 then break end
+      local crypto_byte = data_byte ~ key
+      output[i] = string.char(crypto_byte)
+      if i == 256 then break end --ARGSIZE limitation
     end
-    return output
+    return table.concat(output, "")
   end,
 
   insert_version_info = function(self,BOversion,BOhostname,initial_seed,password)

@@ -1,13 +1,11 @@
-local bin = require "bin"
-local bit = require "bit"
 local comm = require "comm"
 local json = require "json"
 local lpeg = require "lpeg"
-local match = require "match"
 local math = require "math"
 local nmap = require "nmap"
 local stdnse = require "stdnse"
 local string = require "string"
+local stringaux = require "stringaux"
 local table = require "table"
 local unittest = require "unittest"
 
@@ -19,7 +17,7 @@ _ENV = stdnse.module("coap", stdnse.seeall)
 --
 -- This library does not currently implement the entire CoAP protocol,
 -- only those behaviours which are necessary for existing scripts are
--- included. Extending to accomodate additional control packets should
+-- included. Extending to accommodate additional control packets should
 -- not be difficult.
 --
 -- @author "Mak Kolybabi <mak@kolybabi.com>"
@@ -331,22 +329,23 @@ COAP.header.build = function(options)
   code = COAP.header.codes.build(code)
 
   -- Build the fixed portion of the header.
-  local pkt = ""
 
-  ver = bit.lshift(ver, 6)
-  mtype = bit.lshift(mtype, 4)
+  ver = ver << 6
+  mtype = mtype << 4
 
-  pkt = pkt .. bin.pack("C", bit.bor(bit.bor(ver, mtype), tkl))
-  pkt = pkt .. code
-  pkt = pkt .. bin.pack(">S", id)
-  pkt = pkt .. token
+  local pkt = {
+    string.pack("B", ver | mtype | tkl),
+    code,
+    string.pack(">I2", id),
+    token,
+  }
 
   -- Include optional portions of the header.
   if options["options"] then
-    pkt = pkt .. COAP.header.options.build(options.options)
+    pkt[#pkt+1] = COAP.header.options.build(options.options)
   end
 
-  return pkt
+  return table.concat(pkt)
 end
 
 --- Parses a CoAP message header.
@@ -363,9 +362,6 @@ end
 --         string containing the error message on failure.
 COAP.header.parse = function(buf, pos)
   assert(type(buf) == "string")
-  if #buf < 4 then
-    return false, "Cannot parse a string of less than four bytes."
-  end
 
   if not pos or pos == 0 then
     pos = 1
@@ -373,23 +369,20 @@ COAP.header.parse = function(buf, pos)
   assert(type(pos) == "number")
   assert(pos <= #buf)
 
-  if pos + 4 - 1 > #buf then
+  if #buf - pos + 1 < 4 then
     return false, "Fixed header extends past end of buffer."
   end
 
-  local pos, ver_type_tkl, code, id = bin.unpack("CA>S", buf, pos)
-  if not pos then
-    return false, "Failed to parse fixed header."
-  end
+  local ver_type_tkl, code, id, pos = string.unpack(">Bc1I2", buf, pos)
 
   -- Parse the fixed header.
   local hdr = {}
 
-  local ver = bit.rshift(ver_type_tkl, 6)
+  local ver = ver_type_tkl >> 6
   hdr.version = ver
 
-  local mtype = bit.rshift(ver_type_tkl, 4)
-  mtype = bit.band(mtype, 0x3)
+  local mtype = ver_type_tkl >> 4
+  mtype = mtype & 0x3
 
   hdr.type = ("(unrecognized: %d)"):format(mtype)
   for key, val in pairs(COAP.header.types) do
@@ -399,7 +392,7 @@ COAP.header.parse = function(buf, pos)
     end
   end
 
-  local tkl = bit.band(ver_type_tkl, 0xF)
+  local tkl = ver_type_tkl & 0xF
   if tkl < 0 or tkl > 8 then
     return false, ("Token length was %d, but must be 0 through 8."):format(tkl)
   end
@@ -486,9 +479,9 @@ COAP.header.codes.build = function(name)
   local class = id[1]
   local detail = id[2]
 
-  class = bit.lshift(class, 5)
+  class = class << 5
 
-  return bin.pack("C", bit.bor(class, detail))
+  return string.pack("B", class | detail)
 end
 
 --- Parses a CoAP request or response code.
@@ -513,13 +506,13 @@ COAP.header.codes.parse = function(buf, pos)
   assert(type(pos) == "number")
   assert(pos <= #buf)
 
-  local pos, id = bin.unpack("C", buf, pos)
+  local id, pos = string.unpack("B", buf, pos)
   if not pos then
     return false, id
   end
 
-  local class = bit.rshift(id, 5)
-  local detail = bit.band(id, 0x1F)
+  local class = id >> 5
+  local detail = id & 0x1F
 
   for key, val in pairs(COAP.header.codes.ids) do
     if val[1] == class and val[2] == detail then
@@ -1255,15 +1248,15 @@ COAP.header.options.value.block.build = function(val)
   assert(val.number >= 0)
   assert(val.number <= 1048575)
 
-  num = bit.lshift(num, 1)
+  num = num << 1
 
   local mf = val.more
   assert(type(mf) == "boolean")
   if mf then
-    num = bit.bor(num, 0x1)
+    num = num | 0x1
   end
 
-  num = bit.lshift(num, 3)
+  num = num << 3
 
   local length = val.length
   assert(type(length) == "number")
@@ -1274,7 +1267,7 @@ COAP.header.options.value.block.build = function(val)
   local szx = map[length]
   assert(szx)
 
-  num = bit.bor(num, szx)
+  num = num | szx
 
   -- The final number that results from combining all the fields
   -- should fit within 3 bytes when built.
@@ -1333,7 +1326,7 @@ COAP.header.options.value.block.parse = function(buf)
   -- Note that this field could have a value as high as 7, it is only
   -- allowed to go up to 6. This prevents the option's value from
   -- being misinterpreted as the payload marker.
-  local szx = bit.band(num, 0x7)
+  local szx = num & 0x7
   if szx == 7 then
     szx = 6
   end
@@ -1342,13 +1335,13 @@ COAP.header.options.value.block.parse = function(buf)
   assert(length >= 16)
   assert(length <= 1024)
 
-  num = bit.rshift(num, 3)
+  num = num >> 3
 
   -- Extract more flag which indicates whether this is the last block.
-  local mf = (bit.band(num, 0x1) == 0x1)
+  local mf = ((num & 0x1) == 0x1)
   assert(type(mf) == "boolean")
 
-  num = bit.rshift(num, 1)
+  num = num >> 1
 
   -- The remainder of the number is the block number in sequence.
   assert(num >= 0)
@@ -1464,20 +1457,8 @@ COAP.header.options.value.uint.build = function(val)
   if val == 0 then
     return ""
   end
-
-  if val <= 255 then
-    return bin.pack("C", val)
-  end
-
-  if val <= 65535 then
-    return bin.pack(">S", val)
-  end
-
-  if val <= 16777215 then
-    return bin.pack(">I", val):sub(2, 5)
-  end
-
-  return bin.pack(">I", val)
+  -- strip leading null bytes to use smallest space
+  return string.pack(">I16", val):gsub("^\0*","")
 end
 
 --- Parses a CoAP message Uint header option value.
@@ -1492,25 +1473,15 @@ end
 COAP.header.options.value.uint.parse = function(buf)
   assert(type(buf) == "string")
   assert(#buf >= 0)
-  assert(#buf <= 4)
+  assert(#buf <= 16)
 
   if #buf == 0 then
     return 0
   end
 
-  local val, pos
-  if #buf == 1 then
-    pos, val = bin.unpack("C", buf)
-  elseif #buf == 2 then
-    pos, val = bin.unpack(">S", buf)
-  elseif #buf == 3 then
-    pos, val = bin.unpack(">I", string.char(0x00) .. buf)
-  else
-    pos, val = bin.unpack(">I", buf)
-  end
+  local val = string.unpack(">I" .. #buf, buf)
 
   -- There should be no way for this to fail.
-  assert(pos)
   assert(val)
   assert(type(val) == "number")
 
@@ -1569,19 +1540,18 @@ COAP.header.options.delta_length.build = function(delta, length)
     end
 
     if num <= 268 then
-      return 13, bin.pack("C", num - 13)
+      return 13, string.pack("B", num - 13)
     end
 
-    return 14, bin.pack(">S", num - 269)
+    return 14, string.pack(">I2", num - 269)
   end
 
   local d1, d2 = build(delta)
   local l1, l2 = build(length)
 
-  d1 = bit.lshift(d1, 4)
-  bin.pack("C", bit.bor(d1, l1))
+  d1 = d1 << 4
 
-  return bin.pack("C", bit.bor(d1, l1)) .. d2 .. l2
+  return string.pack("B", d1 | l1) .. d2 .. l2
 end
 
 --- Parse the variable-length option delta and length field.
@@ -1615,12 +1585,12 @@ COAP.header.options.delta_length.parse = function(buf, pos)
   assert(type(pos) == "number")
   assert(pos <= #buf)
 
-  local pos, delta_and_length = bin.unpack("C", buf, pos)
+  local delta_and_length, pos = string.unpack("B", buf, pos)
   if not pos then
     return false, nil, nil, delta_and_length
   end
-  local delta = bit.rshift(delta_and_length, 4)
-  local length = bit.band(delta_and_length, 0x0F)
+  local delta = delta_and_length >> 4
+  local length = delta_and_length & 0x0F
 
   -- Sanity check the first byte's value.
   if delta == 15 then
@@ -1638,20 +1608,20 @@ COAP.header.options.delta_length.parse = function(buf, pos)
 
   if delta == 13 then
     required_bytes = required_bytes + 1
-    dspec = "C"
+    dspec = "B"
   elseif delta == 14 then
     required_bytes = required_bytes + 2
     delta = 269
-    dspec = ">S"
+    dspec = ">I2"
   end
 
   if length == 13 then
     required_bytes = required_bytes + 1
-    lspec = "C"
+    lspec = "B"
   elseif length == 14 then
     required_bytes = required_bytes + 2
     length = 269
-    lspec = ">S"
+    lspec = ">I2"
   end
 
   if pos + required_bytes - 1 > #buf then
@@ -1661,7 +1631,7 @@ COAP.header.options.delta_length.parse = function(buf, pos)
   -- Extract the remaining bytes of each field.
   if dspec then
     local num
-    pos, num = bin.unpack(dspec, buf, pos)
+    num, pos = string.unpack(dspec, buf, pos)
     if not pos then
       return false, nil, nil, num
     end
@@ -1670,7 +1640,7 @@ COAP.header.options.delta_length.parse = function(buf, pos)
 
   if lspec then
     local num
-    pos, num = bin.unpack(lspec, buf, pos)
+    num, pos = string.unpack(lspec, buf, pos)
     if not pos then
       return false, nil, nil, num
     end
@@ -2113,7 +2083,7 @@ Helper = {
     end
 
     assert(options.uri)
-    local components = stdnse.strsplit("/", options.uri)
+    local components = stringaux.strsplit("/", options.uri)
     for _, component in ipairs(components) do
       if component ~= "" then
         table.insert(options.options, {["name"] = "uri_path", ["value"] = component})
@@ -2428,7 +2398,7 @@ local tests = {
     {
       {["name"] = "etag", ["value"] = "ETAGETAG"},
     },
-    bin.pack("CA", 0x48, "ETAGETAG")
+    "\x48ETAGETAG"
   },
   {
     -- Before
@@ -2452,7 +2422,7 @@ local tests = {
       {["name"] = "uri_path", ["value"] = "foo"},
       {["name"] = "max_age", ["value"] = 0},
     },
-    bin.pack("CAC", 0xB3, "foo", 0x30)
+    "\xB3foo\x30"
   },
   {
     -- Before
@@ -2465,7 +2435,7 @@ local tests = {
       {["name"] = "uri_path", ["value"] = ".well-known"},
       {["name"] = "uri_path", ["value"] = "core"},
     },
-    bin.pack("CACA", 0xBB, ".well-known", 0x04, "core")
+    "\xBB.well-known\x04core"
   },
   {
     -- Before
@@ -2484,14 +2454,7 @@ local tests = {
       {["name"] = "uri_path", ["value"] = "core"},
       {["name"] = "max_age", ["value"] = 0},
     },
-    bin.pack(
-      "CACCACAC",
-      0x48, "ETAGETAG",    -- ID:  4, Delta: 4
-      0x10,                -- ID:  5, Delta: 1
-      0x6B, ".well-known", -- ID: 11, Delta: 6
-      0x04, "core",        -- ID: 11, Delta: 0
-      0x30                 -- ID: 14, Delta: 3
-    )
+    "\x48ETAGETAG\x10\x6B.well-known\x04core\x30"
   },
 }
 
@@ -2539,15 +2502,7 @@ local tests = {
         {["name"] = "uri_path", ["value"] = "core"},
       },
     },
-    bin.pack(
-      "CC>SACACA",
-      0x48,
-      0x01,
-      0x1234,
-      "nmapcoap",
-      0xBB, ".well-known",
-      0x04, "core"
-    )
+    "\x48\x01\x12\x34nmapcoap\xBB.well-known\x04core"
   },
 }
 

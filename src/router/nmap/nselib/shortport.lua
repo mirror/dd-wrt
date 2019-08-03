@@ -8,17 +8,28 @@
 
 local nmap = require "nmap"
 local stdnse = require "stdnse"
+local tableaux = require "tableaux"
+local comm
 _ENV = stdnse.module("shortport", stdnse.seeall)
 
----
--- See if a table contains a value.
--- @param t A table representing a set.
--- @param value The value to check for.
--- @return True if <code>t</code> contains <code>value</code>, false otherwise.
-local function includes(t, value)
+-- Just like tableaux.contains, but can match simple port ranges
+local function port_includes(t, value)
   for _, elem in ipairs(t) do
     if elem == value then
       return true
+    elseif type(elem) == "string" then
+      local pstart, pend = elem:match("^(%d+)%-(%d+)$")
+      if not pstart then
+        pstart = elem:match("^(%d+)$")
+        pend = pstart
+      end
+      pstart, pend = tonumber(pstart), tonumber(pend)
+      assert(pstart,"Incorrect port range specification.")
+      assert(pstart<=pend,"Incorrect port range specification, the starting port should have a smaller value than the ending port.")
+      assert(pstart>-1 and pend<65536, "Port range number out of range (0-65535).")
+      if value >= pstart and value <= pend then
+        return true
+      end
     end
   end
   return false
@@ -59,9 +70,9 @@ portnumber = function(ports, protos, states)
   end
 
   return function(host, port)
-    return includes(ports, port.number)
-      and includes(protos, port.protocol)
-      and includes(states, port.state)
+    return port_includes(ports, port.number)
+      and tableaux.contains(protos, port.protocol, true)
+      and tableaux.contains(states, port.state, true)
   end
 end
 
@@ -96,9 +107,9 @@ service = function(services, protos, states)
   end
 
   return function(host, port)
-    return includes(services, port.service)
-    and includes(protos, port.protocol)
-    and includes(states, port.state)
+    return tableaux.contains(services, port.service, true)
+    and tableaux.contains(protos, port.protocol, true)
+    and tableaux.contains(states, port.state, true)
   end
 end
 
@@ -229,8 +240,105 @@ local LIKELY_SSL_SERVICES = {
 -- @usage
 -- portrule = shortport.ssl
 function ssl(host, port)
-  return (port.version and port.version.service_tunnel == "ssl") or
-    port_or_service(LIKELY_SSL_PORTS, LIKELY_SSL_SERVICES, {"tcp", "sctp"})(host, port)
+  if (port.version and port.version.service_tunnel == "ssl") or
+    port_or_service(LIKELY_SSL_PORTS, LIKELY_SSL_SERVICES, {"tcp", "sctp"})(host, port) then
+    return true
+  end
+  -- If we're just looking up port info, stop here.
+  if not host then return false end
+  -- if we didn't detect something *not* SSL, check it ourselves
+  if port.version and port.version.name_confidence <= 3 and host.registry then
+    comm = comm or require "comm"
+    host.registry.ssl = host.registry.ssl or {}
+    local mtx = nmap.mutex(host.registry.ssl)
+    mtx "lock"
+    local v = host.registry.ssl[port.number .. port.protocol]
+    if v == nil then
+      -- probes from nmap-service-probes
+      for _, probe in ipairs({
+          --TLSSessionReq
+          "\x16\x03\0\0\x69\x01\0\0\x65\x03\x03U\x1c\xa7\xe4random1random2random3\z
+          random4\0\0\x0c\0/\0\x0a\0\x13\x009\0\x04\0\xff\x01\0\0\x30\0\x0d\0,\0*\0\z
+          \x01\0\x03\0\x02\x06\x01\x06\x03\x06\x02\x02\x01\x02\x03\x02\x02\x03\x01\z
+          \x03\x03\x03\x02\x04\x01\x04\x03\x04\x02\x01\x01\x01\x03\x01\x02\x05\x01\z
+          \x05\x03\x05\x02",
+          -- SSLSessionReq
+          "\x16\x03\0\0S\x01\0\0O\x03\0?G\xd7\xf7\xba,\xee\xea\xb2`~\xf3\0\xfd\z
+          \x82{\xb9\xd5\x96\xc8w\x9b\xe6\xc4\xdb<=\xdbo\xef\x10n\0\0(\0\x16\0\x13\z
+          \0\x0a\0f\0\x05\0\x04\0e\0d\0c\0b\0a\0`\0\x15\0\x12\0\x09\0\x14\0\x11\0\z
+          \x08\0\x06\0\x03\x01\0",
+        }) do
+        local status, resp = comm.exchange(host, port, probe)
+        if status and resp then
+          if resp:match("^\x16\x03[\0-\x03]..\x02...\x03[\0-\x03]")
+            or resp:match("^\x15\x03[\0-\x03]\0\x02\x02[F\x28]") then
+            -- Definitely SSL
+            v = true
+            break
+          elseif not resp:match("^[\x16\x15]\x03") then
+            -- Something definitely not SSL
+            v = false
+            break
+          end
+          -- Something else? better try the other probes
+        end
+      end
+      host.registry.ssl[port.number .. port.protocol] = v or false
+    end
+    mtx "done"
+    return v
+  end
+  return false
+end
+
+
+--- Return a portrule that returns true when given an open port matching a port range
+--
+--@param range A port range string in Nmap standard format (ex. "T:80,1-30,U:31337,21-25")
+--@return Function for the portrule.
+function port_range(range)
+  assert(type(range)=="string" and range~="","Incorrect port range specification.")
+
+  local ports = {
+    tcp = {},
+    udp = {},
+  }
+  local proto = "both"
+  local pos = 1
+  repeat
+    local i, j, protspec = range:find("^%s*([TU:]+)", pos)
+    if i then
+      pos = j + 1
+      if protspec == "U:" then
+        proto = "udp"
+      elseif protspec == "T:" then
+        proto = "tcp"
+      else
+        assert(protspec == "", "Incorrect port range specification.")
+      end
+    end
+    repeat
+      local i, j, portspec = range:find("^%s*([%d%-]+),?", pos)
+      if not i then break end
+      pos = j + 1
+      portspec = tonumber(portspec) or portspec
+      if proto == "both" then
+        local ttab = ports.tcp
+        ttab[#ttab+1] = portspec
+        local utab = ports.udp
+        utab[#utab+1] = portspec
+      else
+        local ptab = ports[proto]
+        ptab[#ptab+1] = portspec
+      end
+    until pos >= #range
+  until pos >= #range
+
+  local tcp_rule = portnumber(ports.tcp, "tcp")
+  local udp_rule = portnumber(ports.udp, "udp")
+  return function(host, port)
+    return tcp_rule(host, port) or udp_rule(host, port)
+  end
 end
 
 return _ENV;

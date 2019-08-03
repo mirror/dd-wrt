@@ -75,8 +75,8 @@
 -- @args rpc.protocol table If set overrides the preferred order in which
 --       protocols are tested. (ie. "tcp", "udp")
 
-local bin = require "bin"
 local datafiles = require "datafiles"
+local datetime = require "datetime"
 local math = require "math"
 local nmap = require "nmap"
 local stdnse = require "stdnse"
@@ -121,7 +121,7 @@ local mutex = nmap.mutex("rpc")
 
 -- Supported protocol versions
 RPC_version = {
-  ["rpcbind"] = { min=2, max=2 },
+  ["rpcbind"] = { min=2, max=4 },
   ["nfs"] = { min=1, max=3 },
   ["mountd"] = { min=1, max=3 },
 }
@@ -331,10 +331,10 @@ Comm = {
     local xid = xid or math.random(1234567890)
     local procedure = procedure or 0
 
-    packet = bin.pack( ">IIIIII", xid, Portmap.MessageType.CALL, RPC_VERSION,
+    packet = string.pack( ">I4 I4 I4 I4 I4 I4", xid, Portmap.MessageType.CALL, RPC_VERSION,
       self.program_id, self.version, procedure )
     if auth.type == Portmap.AuthType.NULL then
-      packet = packet .. bin.pack( "IIII", 0, 0, 0, 0 )
+      packet = packet .. string.pack( ">I4 I4 I4 I4", 0, 0, 0, 0 )
     elseif auth.type == Portmap.AuthType.UNIX then
       packet = packet .. Util.marshall_int32(auth.type)
       local blob = (
@@ -352,7 +352,7 @@ Comm = {
         blob = blob .. Util.marshall_int32(0)
       end
       packet = (packet .. Util.marshall_vopaque(blob)
-        .. bin.pack( "II", 0, 0 ) --AUTH_NULL verf
+        .. string.pack( ">I4 I4", 0, 0 ) --AUTH_NULL verf
         )
     else
       return false, "Comm.CreateHeader: invalid authentication type specified"
@@ -375,7 +375,8 @@ Comm = {
 
     header.verifier = {}
 
-    if ( data:len() - pos < HEADER_LEN ) then
+    pos = pos or 1
+    if ( data:len() - pos + 1 < HEADER_LEN ) then
       local tmp
       status, tmp = self:GetAdditionalBytes( data, pos, HEADER_LEN - ( data:len() - pos ) )
       if not status then
@@ -385,15 +386,15 @@ Comm = {
       data = data .. tmp
     end
 
-    pos, header.xid, header.type, header.state = bin.unpack(">III", data, pos)
+    header.xid, header.type, header.state, pos = string.unpack(">I4 I4 I4", data, pos)
 
     if ( header.state == Portmap.State.MSG_DENIED ) then
-      pos, header.denied_state = bin.unpack(">I", data, pos )
+      header.denied_state, pos = string.unpack(">I4", data, pos )
       return pos, header
     end
 
-    pos, header.verifier.flavor = bin.unpack(">I", data, pos)
-    pos, header.verifier.length = bin.unpack(">I", data, pos)
+    header.verifier.flavor, pos = string.unpack(">I4", data, pos)
+    header.verifier.length, pos = string.unpack(">I4", data, pos)
 
     if header.verifier.length - 8 > 0 then
       status, data = self:GetAdditionalBytes( data, pos, header.verifier.length - 8 )
@@ -401,9 +402,9 @@ Comm = {
         stdnse.debug4("Comm.DecodeHeader: failed to call GetAdditionalBytes")
         return -1, nil
       end
-      pos, header.verifier.data = bin.unpack("A" .. header.verifier.length - 8, data, pos )
+      header.verifier.data, pos = string.unpack("c" .. header.verifier.length - 8, data, pos )
     end
-    pos, header.accept_state = bin.unpack(">I", data, pos )
+    header.accept_state, pos = string.unpack(">I4", data, pos )
 
     return pos, header
   end,
@@ -436,7 +437,7 @@ Comm = {
           return false, "Comm.ReceivePacket: failed to call GetAdditionalBytes"
         end
 
-        pos, tmp = bin.unpack(">i", data, pos )
+        tmp, pos = string.unpack(">I4", data, pos )
         length = tmp & 0x7FFFFFFF
 
         if (tmp & 0x80000000) == 0x80000000 then
@@ -503,7 +504,7 @@ Comm = {
     else
       -- set the high bit as this is our last fragment
       len = 0x80000000 + packet:len()
-      return bin.pack(">I", len) .. packet
+      return string.pack(">I4", len) .. packet
     end
   end,
 
@@ -576,6 +577,16 @@ Portmap =
       CALLIT = 5,
     },
 
+    [3] =
+    {
+      DUMP = 4,
+    },
+
+    [4] =
+    {
+      DUMP = 4,
+    },
+
   },
 
   State =
@@ -634,11 +645,13 @@ Portmap =
   -- <code>
   -- table[program_id][protocol]["port"] = <port number>
   -- table[program_id][protocol]["version"] = <table of versions>
+  -- table[program_id][protocol]["addr"] = <IP address, for RPCv3 and higher>
   -- </code>
   --
   -- Where
   --  o program_id is the number associated with the program
-  --  o protocol is either "tcp" or "udp"
+  --  o protocol is one of "tcp", "udp", "tcp6", or "udp6", or another netid
+  --    reported by the system.
   --
   Dump = function(self, comm)
     local status, data, packet, response, pos, header
@@ -695,21 +708,43 @@ Portmap =
       if ( not(status) ) then
         return false, "Portmap.Dump: Failed to call GetAdditionalBytes"
       end
-      pos, vfollows = bin.unpack( ">I", data, pos )
+      vfollows, pos = string.unpack(">I4", data, pos)
       if ( vfollows == 0 ) then
         break
       end
 
-      pos, program, version, protocol, port = bin.unpack(">IIII", data, pos)
-      if ( protocol == Portmap.PROTOCOLS.tcp ) then
-        protocol = "tcp"
-      elseif ( protocol == Portmap.PROTOCOLS.udp ) then
-        protocol = "udp"
+      program, version, pos = string.unpack(">I4 I4", data, pos)
+      local addr, owner
+      if comm.version > 2 then
+        local len
+        len, pos = string.unpack(">I4", data, pos)
+        pos, protocol = Util.unmarshall_vopaque(len, data, pos)
+        len, pos = string.unpack(">I4", data, pos)
+        pos, addr = Util.unmarshall_vopaque(len, data, pos)
+        len, pos = string.unpack(">I4", data, pos)
+        pos, owner = Util.unmarshall_vopaque(len, data, pos)
+        if protocol:match("^[tu][cd]p6?$") then
+            -- RFC 5665
+            local upper, lower
+            addr, upper, lower = addr:match("^(.-)%.(%d+)%.(%d+)$")
+            if addr then
+              port = tonumber(upper) * 0x100 + tonumber(lower)
+            end
+        end
+      else
+        protocol, port, pos = string.unpack(">I4 I4", data, pos)
+        if ( protocol == Portmap.PROTOCOLS.tcp ) then
+          protocol = "tcp"
+        elseif ( protocol == Portmap.PROTOCOLS.udp ) then
+          protocol = "udp"
+        end
       end
 
       program_table[program] = program_table[program] or {}
       program_table[program][protocol] = program_table[program][protocol] or {}
       program_table[program][protocol]["port"] = port
+      program_table[program][protocol]["addr"] = addr
+      program_table[program][protocol]["owner"] = owner
       program_table[program][protocol]["version"] = program_table[program][protocol]["version"] or {}
       table.insert( program_table[program][protocol]["version"], version )
       -- parts of the code rely on versions being in order
@@ -739,7 +774,7 @@ Portmap =
       return false, ("Portmap.Callit: Unknown program name: %s"):format(program)
     end
 
-    local data = bin.pack(">IIII", Util.ProgNameToNumber(program), version, 0, 0 )
+    local data = string.pack(">I4 I4 I4 I4", Util.ProgNameToNumber(program), version, 0, 0 )
     local packet = comm:EncodePacket(nil, Portmap.Procedure[comm.version].CALLIT,
       { type=Portmap.AuthType.NULL }, data )
 
@@ -787,7 +822,7 @@ Portmap =
       return false, ("Portmap.GetPort: Unknown program name: %s"):format(program)
     end
 
-    data = bin.pack(">I>I>I>I", Util.ProgNameToNumber(program), version,
+    data = string.pack(">I4 I4 I4 I4", Util.ProgNameToNumber(program), version,
       Portmap.PROTOCOLS[protocol], 0 )
     packet = comm:EncodePacket(xid, Portmap.Procedure[comm.version].GETPORT,
       { type=Portmap.AuthType.NULL }, data )
@@ -838,7 +873,7 @@ Portmap =
       return false, "Portmap.GetPort: Failed to call GetAdditionalBytes"
     end
 
-    return true, select(2, bin.unpack(">I", data, pos ) )
+    return true, string.unpack(">I4", data, pos)
   end,
 
 }
@@ -1041,10 +1076,9 @@ Mount = {
   -- @return fhandle string containing the filehandle of the remote export
   Mount = function(self, comm, path)
     local packet, mount_status
-    local _, pos, data, header, fhandle = "", 1, "", "", {}
     local status, len
 
-    data = Util.marshall_vopaque(path)
+    local data = Util.marshall_vopaque(path)
 
     packet = comm:EncodePacket( nil, Mount.Procedure.MOUNT, { type=Portmap.AuthType.UNIX }, data )
     if (not(comm:SendPacket(packet))) then
@@ -1056,7 +1090,7 @@ Mount = {
       return false, "Mount: Failed to read data from socket"
     end
 
-    pos, header = comm:DecodeHeader( data, pos )
+    local pos, header = comm:DecodeHeader(data)
     if not header then
       return false, "Mount: Failed to decode header"
     end
@@ -1099,23 +1133,24 @@ Mount = {
       end
     end
 
+    local fhandle
     if ( comm.version == 3 ) then
       status, data = comm:GetAdditionalBytes( data, pos, 4 )
       if (not(status)) then
         return false, "Mount: Failed to call GetAdditionalBytes"
       end
-      _, len = bin.unpack(">I", data, pos )
+      len = string.unpack(">I4", data, pos)
       status, data = comm:GetAdditionalBytes( data, pos, len + 4 )
       if (not(status)) then
         return false, "Mount: Failed to call GetAdditionalBytes"
       end
-      pos, fhandle = bin.unpack( "A" .. len + 4, data, pos )
+      fhandle, pos = string.unpack( "c" .. len + 4, data, pos )
     elseif ( comm.version < 3 ) then
       status, data = comm:GetAdditionalBytes( data, pos, 32 )
       if (not(status)) then
         return false, "Mount: Failed to call GetAdditionalBytes"
       end
-      pos, fhandle = bin.unpack( "A32", data, pos )
+      fhandle, pos = string.unpack( "c32", data, pos )
     else
       return false, "Mount failed"
     end
@@ -1483,7 +1518,7 @@ NFS = {
         stdnse.debug4("NFS.ReadDirDecode: Failed to call GetAdditionalBytes")
         return -1, nil
       end
-      pos, _ = bin.unpack(">L", data, pos)
+      _, pos = string.unpack(">I8", data, pos)
     end
 
     response.entries = {}
@@ -1569,9 +1604,9 @@ NFS = {
 
     if ( comm.version == 3 ) then
       local opaque_data = 0
-      data = bin.pack("A>L>L>I", file_handle, cookie, opaque_data, count)
+      data = file_handle .. string.pack(">I8 I8 I4", cookie, opaque_data, count)
     else
-      data = bin.pack("A>I>I", file_handle, cookie, count)
+      data = file_handle .. string.pack(">I4 I4", cookie, count)
     end
     packet = comm:EncodePacket( nil, NFS.Procedure[comm.version].READDIR,
       { type=Portmap.AuthType.UNIX }, data )
@@ -1621,7 +1656,7 @@ NFS = {
         stdnse.debug4("NFS.LookUpDecode: Failed to call GetAdditionalBytes")
         return -1, nil
       end
-      pos, lookup.fhandle = bin.unpack( "A" .. len + 4, data, pos)
+      lookup.fhandle, pos = string.unpack( "c" .. len + 4, data, pos)
 
       status, data = comm:GetAdditionalBytes( data, pos, 4)
       if (not(status)) then
@@ -1667,7 +1702,7 @@ NFS = {
         stdnse.debug4("NFS.LookUpDecode: Failed to call GetAdditionalBytes")
         return -1, nil
       end
-      pos, lookup.fhandle = bin.unpack("A32", data, pos)
+      lookup.fhandle, pos = string.unpack("c32", data, pos)
       status, data = comm:GetAdditionalBytes( data, pos, 64 )
       if (not(status)) then
         stdnse.debug4("NFS.LookUpDecode: Failed to call GetAdditionalBytes")
@@ -1736,7 +1771,7 @@ NFS = {
       return -1, nil
     end
 
-    pos, value_follows = bin.unpack(">I", data, pos)
+    value_follows, pos = string.unpack(">I4", data, pos)
     if value_follows == 0 then
       stdnse.debug4("NFS.ReadDirPlusDecode: Attributes follow failed")
       return -1, nil
@@ -1756,7 +1791,7 @@ NFS = {
       stdnse.debug4("NFS.ReadDirPlusDecode: Failed to call GetAdditionalBytes")
       return -1, nil
     end
-    pos, _ = bin.unpack(">L", data, pos)
+    _, pos = string.unpack(">I8", data, pos)
 
     response.entries = {}
     while true do
@@ -1767,7 +1802,7 @@ NFS = {
         return -1, nil
       end
 
-      pos, value_follows = bin.unpack(">I", data, pos)
+      value_follows, pos = string.unpack(">I4", data, pos)
 
       if (value_follows == 0) then
         break
@@ -1777,7 +1812,7 @@ NFS = {
         stdnse.debug4("NFS.ReadDirPlusDecode: Failed to call GetAdditionalBytes")
         return -1, nil
       end
-      pos, entry.fileid = bin.unpack(">L", data, pos)
+      entry.fileid, pos = string.unpack(">I8", data, pos)
 
       status, data = comm:GetAdditionalBytes(data, pos, 4)
 
@@ -1786,7 +1821,7 @@ NFS = {
         return -1, nil
       end
 
-      pos, entry.length = bin.unpack(">I", data, pos)
+      entry.length, pos = string.unpack(">I4", data, pos)
       status, data = comm:GetAdditionalBytes( data, pos, entry.length )
       if not status then
         stdnse.debug4("NFS.ReadDirPlusDecode: Failed to call GetAdditionalBytes")
@@ -1799,7 +1834,7 @@ NFS = {
         stdnse.debug4("NFS.ReadDirPlusDecode: Failed to call GetAdditionalBytes")
         return -1, nil
       end
-      pos, entry.cookie = bin.unpack(">L", data, pos)
+      entry.cookie, pos = string.unpack(">I8", data, pos)
       status, data = comm:GetAdditionalBytes(data, pos, 4)
       if not status then
         stdnse.debug4("NFS.ReadDirPlusDecode: Failed to call GetAdditionalBytes")
@@ -1807,7 +1842,7 @@ NFS = {
       end
 
       entry.attributes = {}
-      pos, value_follows = bin.unpack(">I", data, pos)
+      value_follows, pos = string.unpack(">I4", data, pos)
       if (value_follows ~= 0) then
         status, data = comm:GetAdditionalBytes(data, pos, 84)
         if not status then
@@ -1827,7 +1862,7 @@ NFS = {
       end
 
       entry.fhandle = ""
-      pos, value_follows = bin.unpack(">I", data, pos)
+      value_follows, pos = string.unpack(">I4", data, pos)
       if (value_follows ~= 0) then
         status, data = comm:GetAdditionalBytes(data, pos, 4)
         if not status then
@@ -1835,13 +1870,13 @@ NFS = {
           return -1, nil
         end
 
-        _, len = bin.unpack(">I", data, pos)
+        len = string.unpack(">I4", data, pos)
         status, data = comm:GetAdditionalBytes(data, pos, len + 4)
         if not status then
           stdnse.debug4("NFS.ReadDirPlusDecode: Failed to call GetAdditionalBytes")
           return -1, nil
         end
-        pos, entry.fhandle = bin.unpack( "A" .. len + 4, data, pos )
+        entry.fhandle, pos = string.unpack( "c" .. len + 4, data, pos )
       else
         stdnse.debug4("NFS.ReadDirPlusDecode: %s handle follow failed",
           entry.name)
@@ -1867,8 +1902,7 @@ NFS = {
       return false, "ReadDirPlus: No filehandle received"
     end
 
-    data = bin.pack("A>L>L>I>I", file_handle, cookie,
-      opaque_data, dircount, maxcount)
+    data = file_handle .. string.pack(">I8 I8 I4 I4", cookie, opaque_data, dircount, maxcount)
 
     packet = comm:EncodePacket(nil, NFS.Procedure[comm.version].READDIRPLUS,
       {type = Portmap.AuthType.UNIX }, data)
@@ -2761,7 +2795,8 @@ Helper = {
   RpcInfo = function( host, port )
     local status, result
     local portmap = Portmap:new()
-    local comm = Comm:new('rpcbind', 2)
+    local pversion = 4
+    local comm = Comm:new('rpcbind', pversion)
 
     mutex "lock"
 
@@ -2775,21 +2810,25 @@ Helper = {
       return true, nmap.registry[host.ip]['portmapper']
     end
 
-    status, result = comm:Connect(host, port)
-    if (not(status)) then
-      mutex "done"
-      stdnse.debug4("rpc.Helper.RpcInfo: %s", result)
-      return status, result
-    end
+    while pversion >= 2 do
+      status, result = comm:Connect(host, port)
+      if (not(status)) then
+        mutex "done"
+        stdnse.debug4("rpc.Helper.RpcInfo: %s", result)
+        return status, result
+      end
 
-    status, result = portmap:Dump(comm)
-    comm:Disconnect()
+      status, result = portmap:Dump(comm)
+      comm:Disconnect()
+
+      if status then
+        break
+      end
+      stdnse.debug4("rpc.Helper.RpcInfo: %s", result)
+      pversion = pversion - 1
+    end
 
     mutex "done"
-    if (not(status)) then
-      stdnse.debug4("rpc.Helper.RpcInfo: %s", result)
-    end
-
     return status, result
   end,
 
@@ -2837,40 +2876,60 @@ Helper = {
       return status, portmap_table
     end
 
-    local info = {}
     -- assume failure
     status = false
 
-    for _, p in ipairs( RPC_PROTOCOLS ) do
-      local tmp = portmap_table[Util.ProgNameToNumber(program)]
+    local tmp = portmap_table[Util.ProgNameToNumber(program)]
+    if not tmp then
+      return false, "Program not supported by target"
+    end
 
-      if ( tmp and tmp[p] ) then
-        info = {}
+    local info = {}
+    local proginfo
+    local ipv6 = nmap.address_family() == "inet6"
+    ::AF_FALLBACK::
+    for _, p in ipairs( RPC_PROTOCOLS ) do
+      if ipv6 then
+        proginfo = tmp[p .. "6"]
+      else
+        proginfo = tmp[p]
+      end
+      if proginfo then
         info.port = {}
-        info.port.number = tmp[p].port
+        info.port.number = proginfo.port
         info.port.protocol = p
-        -- choose the highest version available
-        if ( not(RPC_version[program]) ) then
-          info.version = tmp[p].version[#tmp[p].version]
-          status = true
-        else
-          for i=#tmp[p].version, 1, -1 do
-            if ( RPC_version[program].max >= tmp[p].version[i] ) then
-              if ( not(max_version) ) then
-                info.version = tmp[p].version[i]
-                status = true
-                break
-              else
-                if ( max_version >= tmp[p].version[i] ) then
-                  info.version = tmp[p].version[i]
-                  status = true
-                  break
-                end
-              end
+        break
+      end
+    end
+    if ipv6 and not proginfo then
+      -- Fall back to trying IPv4
+      ipv6 = false
+      goto AF_FALLBACK
+    end
+
+    if not proginfo then
+      return false, "No transport protocol supported"
+    end
+
+    -- choose the highest version available
+    if ( not(RPC_version[program]) ) then
+      info.version = proginfo.version[#proginfo.version]
+      status = true
+    else
+      for i=#proginfo.version, 1, -1 do
+        if ( RPC_version[program].max >= proginfo.version[i] ) then
+          if ( not(max_version) ) then
+            info.version = proginfo.version[i]
+            status = true
+            break
+          else
+            if ( max_version >= proginfo.version[i] ) then
+              info.version = proginfo.version[i]
+              status = true
+              break
             end
           end
         end
-        break
       end
     end
 
@@ -3042,60 +3101,52 @@ Util =
       Util.TimeToString(attr[time].seconds))
   end,
 
-  marshall_int32 = function(int32, count)
-    if count then
-      return bin.pack(">i" .. count, int32)
-    end
-    return bin.pack(">i", int32)
+  marshall_int32 = function(int32)
+    return string.pack(">i4", int32)
   end,
 
   unmarshall_int32 = function(data, pos, count)
-    if count then
-      return bin.unpack(">i" .. count, data, pos)
+    local ints = {}
+    for i=1,(count or 1) do
+      ints[i], pos = string.unpack(">i4", data, pos)
     end
-    return bin.unpack(">i", data, pos)
+    return pos, table.unpack(ints)
   end,
 
-  marshall_uint32 = function(uint32, count)
-    if count then
-      return bin.pack(">I" .. count, uint32)
-    end
-    return bin.pack(">I", uint32)
+  marshall_uint32 = function(uint32)
+    return string.pack(">I4", uint32)
   end,
 
   unmarshall_uint32 = function(data, pos, count)
-    if count then
-      return bin.unpack(">I" .. count, data, pos)
+    local ints = {}
+    for i=1,(count or 1) do
+      ints[i], pos = string.unpack(">I4", data, pos)
     end
-    return bin.unpack(">I", data, pos)
+    return pos, table.unpack(ints)
   end,
 
-  marshall_int64 = function(int64, count)
-    if count then
-      return bin.pack(">l" .. count, int64)
-    end
-    return bin.pack(">l", int64)
+  marshall_int64 = function(int64)
+    return string.pack(">i8", int64)
   end,
 
   unmarshall_int64 = function(data, pos, count)
-    if count then
-      return bin.unpack(">l" .. count, data, pos)
+    local ints = {}
+    for i=1,(count or 1) do
+      ints[i], pos = string.unpack(">i8", data, pos)
     end
-    return bin.unpack(">l", data, pos)
+    return pos, table.unpack(ints)
   end,
 
-  marshall_uint64 = function(uint64, count)
-    if count then
-      return bin.pack(">L" .. count, uint64)
-    end
-    return bin.pack(">L", uint64)
+  marshall_uint64 = function(uint64)
+    return string.pack(">I8", uint64)
   end,
 
   unmarshall_uint64 = function(data, pos, count)
-    if count then
-      return bin.unpack(">L" .. count, data, pos)
+    local ints = {}
+    for i=1,(count or 1) do
+      ints[i], pos = string.unpack(">I8", data, pos)
     end
-    return bin.unpack(">L", data, pos)
+    return pos, table.unpack(ints)
   end,
 
   marshall_opaque = function(data)
@@ -3103,7 +3154,8 @@ Util =
   end,
 
   unmarshall_opaque = function(len, data, pos)
-    return bin.unpack(">A" .. len, data, pos)
+    local opaque, pos = string.unpack("c" .. len, data, pos)
+    return pos, opaque
   end,
 
   marshall_vopaque = function(data)
@@ -3117,7 +3169,7 @@ Util =
   unmarshall_vopaque = function(len, data, pos)
     local opaque, pad
     pad = Util.CalcFillBytes(len)
-    pos, opaque = bin.unpack(">A" .. len, data, pos)
+    opaque, pos = string.unpack("c" .. len, data, pos)
     return pos + pad, opaque
   end,
 
@@ -3204,7 +3256,7 @@ Util =
   -- @param number of seconds since some given start time
   --        (the "epoch")
   -- @return string that represents time.
-  TimeToString = stdnse.format_timestamp,
+  TimeToString = datetime.format_timestamp,
 
   --- Converts the size in bytes to a human readable format
   --

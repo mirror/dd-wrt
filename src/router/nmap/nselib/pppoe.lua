@@ -21,12 +21,11 @@
 -- @author Patrik Karlsson <patrik@cqure.net>
 --
 
-local bin = require "bin"
-local bit = require "bit"
-local math = require "math"
+local rand = require "rand"
 local nmap = require "nmap"
 local packet = require "packet"
 local stdnse = require "stdnse"
+local string = require "string"
 local table = require "table"
 _ENV = stdnse.module("pppoe", stdnse.seeall)
 
@@ -74,12 +73,12 @@ LCP = {
     -- @return o instance of ConfigOption
     parse = function(data)
       local opt, pos, len = {}, 1, 0
-      pos, opt.option, len = bin.unpack("CC", data, pos)
-      pos, opt.raw = bin.unpack("A" .. ( len - 2 ), data, pos)
+      opt.option, len, pos = string.unpack("BB", data, pos)
+      opt.raw, pos = string.unpack("c" .. ( len - 2 ), data, pos)
 
       -- MRU
       if ( 1 == opt.option ) then
-        opt.value = select(2, bin.unpack(">S", opt.raw))
+        opt.value = string.unpack(">I2", opt.raw)
       end
       return LCP.ConfigOption:new(opt.option, opt.value, opt.raw)
     end,
@@ -89,9 +88,9 @@ LCP = {
     __tostring = function(self)
       -- MRU
       if ( self.raw ) then
-        return bin.pack(">CCA", self.option, #self.raw + 2, self.raw )
+        return string.pack(">BB", self.option, #self.raw + 2) .. self.raw
       elseif( 1 == self.option ) then
-        return bin.pack(">CCS", 1, 4, self.value)
+        return string.pack(">BBI2", 1, 4, self.value)
       else
         error( ("Unsupported configuration option %d"):format(self.option) )
       end
@@ -147,9 +146,9 @@ LCP = {
       local pos, opt, opt_val, len
 
       repeat
-        pos, opt, len = bin.unpack(">CC", data, pos)
+        opt, len, pos = string.unpack(">BB", data, pos)
         if ( 0 == opt ) then break end
-        pos, opt_val = bin.unpack("A"..len, data, (pos - 2))
+        opt_val, pos = string.unpack("c"..len, data, (pos - 2))
         options:add(LCP.ConfigOption.parse(opt_val))
       until( pos == #data )
       return options
@@ -208,15 +207,14 @@ LCP = {
     -- @return o instance of ConfigOption
     parse = function(data)
       local header = LCP.Header:new()
-      local pos
-      pos, header.code, header.identifier, header.length = bin.unpack(">CCS", data)
+      header.code, header.identifier, header.length = string.unpack(">BBI2", data)
       return header
     end,
 
     -- Converts the class instance to string
     -- @return string containing the raw config option
     __tostring = function(self)
-      return bin.pack(">CCS", self.code, self.identifier, self.length)
+      return string.pack(">BBI2", self.code, self.identifier, self.length)
     end,
 
   },
@@ -393,19 +391,19 @@ PPPoE = {
     -- @param data string containing raw bytes to parse
     -- @return o instance of Header
     parse = function(data)
-      local pos, vertyp
       local header = PPPoE.Header:new()
-      pos, vertyp, header.code, header.session, header.length = bin.unpack(">CCSS", data)
-      header.version = bit.rshift(vertyp,4)
-      header.type = bit.band(vertyp, 0x0F)
+      local vertyp
+      vertyp, header.code, header.session, header.length = string.unpack(">BBI2I2", data)
+      header.version = (vertyp >> 4)
+      header.type = (vertyp & 0x0F)
       return header
     end,
 
     -- Converts the instance to string
     -- @return string containing the raw config option
     __tostring = function(self)
-      local vertype = bit.lshift(self.version, 4) + self.type
-      return bin.pack(">CCSS", vertype, self.code, self.session, self.length)
+      local vertype = (self.version << 4) + self.type
+      return string.pack(">BBI2I2", vertype, self.code, self.session, self.length)
     end,
 
 
@@ -428,7 +426,7 @@ PPPoE = {
     -- Converts the instance to string
     -- @return string containing the raw config option
     __tostring = function(self)
-      return bin.pack(">SSA", self.tag, #self.value, self.value)
+      return string.pack(">I2s2", self.tag, self.value)
     end,
   },
 
@@ -439,10 +437,7 @@ PPPoE = {
     -- @param value string/number containing the tag value
     -- @return o instance of ConfigNak
     new = function(self, tags)
-      local c = ""
-      for i=1, 4 do
-        c = c .. math.random(255)
-      end
+      local c = rand.random_string(8)
 
       local o = {
         header = PPPoE.Header:new(PPPoE.Code.PADI),
@@ -490,14 +485,12 @@ PPPoE = {
       pado.data = data:sub(pos)
 
       repeat
-        local tag, len, decoded, raw
-        pos, tag, len = bin.unpack(">SS", data, pos)
-        raw = select(2, bin.unpack("A" .. len, data, pos))
+        local tag, decoded, raw
+        tag, raw, pos = string.unpack(">I2s2", pos)
         if ( PPPoE.TagDecoder[tag] ) then
-          pos, decoded = PPPoE.TagDecoder[tag](data, pos, len)
+          decoded = PPPoE.TagDecoder[tag](raw)
         else
           stdnse.debug1("PPPoE: Unsupported tag (%d)", tag)
-          pos = pos + len
         end
         local t = PPPoE.Tag:new(tag, raw)
         t.decoded = decoded
@@ -622,7 +615,7 @@ PPPoE = {
     __tostring = function(self)
       -- 2 for the encapsulation
       self.header.length = 2 + 4 + #self.data
-      return tostring(self.header) .. bin.pack(">S", 0xC021) .. self.data
+      return tostring(self.header) .. "\xC0\x21" .. self.data
     end,
 
   }
@@ -632,8 +625,8 @@ PPPoE = {
 
 -- A bunch of tag decoders
 PPPoE.TagDecoder = {}
-PPPoE.TagDecoder.decodeHex = function(data, pos, len) return pos + len, stdnse.tohex(data:sub(pos, pos+len)) end
-PPPoE.TagDecoder.decodeStr = function(data, pos, len) return pos + len, data:sub(pos, pos + len - 1) end
+PPPoE.TagDecoder.decodeHex = stdnse.tohex
+PPPoE.TagDecoder.decodeStr = function(data) return data end
 PPPoE.TagDecoder[PPPoE.TagType.SERVICE_NAME] = PPPoE.TagDecoder.decodeStr
 PPPoE.TagDecoder[PPPoE.TagType.AC_NAME] = PPPoE.TagDecoder.decodeStr
 PPPoE.TagDecoder[PPPoE.TagType.AC_COOKIE] = PPPoE.TagDecoder.decodeHex
@@ -664,10 +657,7 @@ Comm = {
     self.socket = nmap.new_socket()
     self.socket:set_timeout(10000)
 
-    -- there's probably a more elegant way of doing this
-    local mac = {}
-    for i=1, #self.src_mac do table.insert(mac, select(2,bin.unpack("H", self.src_mac, i))) end
-    mac = stdnse.strjoin(":", mac)
+    local mac = stdnse.format_mac(self.src_mac)
 
     -- let's set a filter on PPPoE we can then check what packet is ours,
     -- based on the HOST_UNIQUE tag, if we need to
@@ -680,7 +670,7 @@ Comm = {
   -- @return status true on success, false on failure
   send = function(self, data)
     local eth_type = ( data.header.code == PPPoE.Code.SESSION_DATA ) and 0x8864 or 0x8863
-    local ether = bin.pack(">AAS", self.dst_mac, self.src_mac, eth_type)
+    local ether = self.dst_mac .. self.src_mac .. string.pack(">I2", eth_type)
     local p = packet.Frame:new(ether .. tostring(data))
 
     local sock = nmap.new_dnet()
@@ -806,7 +796,7 @@ Helper = {
   -- @return pado instance of PADO on success, err string on failure
   discoverInit = function(self)
     local padi = PPPoE.PADI:new()
-    self.comm.dst_mac = bin.pack("H", "FF FF FF FF FF FF")
+    self.comm.dst_mac = ("\xFF"):rep(6)
     local status, err = self.comm:send(padi)
     if ( not(status) ) then
       return false, err
@@ -896,10 +886,10 @@ Helper = {
 
     local AuthMethod = {
       methods = {
-        { name = "EAP", value = bin.pack("H", "C227") },
-        { name = "MSCHAPv1", value = bin.pack("H", "C22380") },
-        { name = "MSCHAPv2", value = bin.pack("H", "C22381") },
-        { name = "PAP", value = bin.pack("H", "C023") },
+        { name = "EAP", value = "\xC2\x27" },
+        { name = "MSCHAPv1", value = "\xC2\x23\x80" },
+        { name = "MSCHAPv2", value = "\xC2\x23\x81" },
+        { name = "PAP", value = "\xC0\x23" },
       }
     }
 

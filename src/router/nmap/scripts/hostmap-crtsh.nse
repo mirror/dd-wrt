@@ -44,14 +44,14 @@ license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
 categories = {"external", "discovery"}
 
-local ipOps = require "ipOps"
 local io = require "io"
 local http = require "http"
 local stdnse = require "stdnse"
 local string = require "string"
+local stringaux = require "stringaux"
 local target = require "target"
 local table = require "table"
-local shortport = require "shortport"
+local tableaux = require "tableaux"
 
 -- Different from stdnse.get_hostname
 -- this function returns nil if the host is only known by IP address
@@ -71,7 +71,7 @@ local function query_ctlogs(host)
     return string.format("Error: could not GET http://%s%s", "crt.sh", query)
   end
   for domain in string.gmatch(response.body, "name_value\":\"(.-)\"") do
-    if not stdnse.contains(hostnames, domain) and domain ~= "" then
+    if not tableaux.contains(hostnames, domain) and domain ~= "" then
       if target.ALLOW_NEW_TARGETS then
         local status, err = target.add(domain)
       end
@@ -107,8 +107,8 @@ action = function(host)
   output_tab.subdomains = hostnames
   --write to file
   if filename_prefix then
-    local filename = filename_prefix .. stdnse.filename_escape(get_hostname(host))
-    hostnames_str = stdnse.strjoin("\n", hostnames)
+    local filename = filename_prefix .. stringaux.filename_escape(get_hostname(host))
+    hostnames_str = table.concat(hostnames, "\n")
 
     local status, err = write_file(filename, hostnames_str)
     if status then

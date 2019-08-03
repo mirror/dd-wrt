@@ -2,6 +2,7 @@
 --A very basic IKE library.
 --
 --The current functionality includes:
+--
 --  1. Generating a Main or Aggressive Mode IKE request packet with a variable amount of transforms and a vpn group.
 --  2. Sending a packet
 --  3. Receiving the response
@@ -10,11 +11,11 @@
 --  6. returning a parsed info table
 --
 --This library is meant for extension, which could include:
+--
 --  1. complete parsing of the response packet (might allow for better fingerprinting)
 --  2. adding more options to the request packet
 --     vendor field (might give better fingerprinting of services, e.g. Checkpoint)
 --  3. backoff pattern analyses
---  ...
 --
 --An a implementation resembling 'ike-scan' could be built.
 --
@@ -22,11 +23,11 @@
 --@license Same as Nmap--See https://nmap.org/book/man-legal.html
 
 local _G = require "_G"
-local bin = require "bin"
 local nmap = require "nmap"
 local stdnse = require "stdnse"
 local string = require "string"
 local table = require "table"
+local rand = require "rand"
 _ENV = stdnse.module("ike", stdnse.seeall)
 
 local ENC_METHODS = {
@@ -67,27 +68,27 @@ local EXCHANGE_MODE = {
 }
 
 local PROTOCOL_IDS = {
-  ["tcp"] = "06",
-  ["udp"] = "11",
+  ["tcp"] = 0x06,
+  ["udp"] = 0x11,
 }
 
 -- Response packet types
 local EXCHANGE_TYPE = {
-  ["02"] = "Main",
-  ["04"] = "Aggressive",
-  ["05"] = "Informational",
+  [0x02] = "Main",
+  [0x04] = "Aggressive",
+  [0x05] = "Informational",
 }
 
 -- Payload names
 local PAYLOADS = {
-  ["00"] = "None",
-  ["01"] = "SA",
-  ["03"] = "Transform",
-  ["04"] = "Key Exchange",
-  ["05"] = "ID",
-  ["08"] = "Hash",
-  ["0A"] = "Nonce",
-  ["0D"] = "VID",
+  [0x00] = "None",
+  [0x01] = "SA",
+  [0x03] = "Transform",
+  [0x04] = "Key Exchange",
+  [0x05] = "ID",
+  [0x08] = "Hash",
+  [0x0A] = "Nonce",
+  [0x0D] = "VID",
 }
 
 
@@ -127,59 +128,39 @@ local function load_fingerprints()
 end
 
 
--- generate a random hex-string of length 'length'
---
-local function generate_random(length)
-  return stdnse.generate_random_string(length * 2, '0123456789ABCDEF')
-end
-
-
--- convert a string to a hex-string (of the ASCII representation)
---
-local function convert_to_hex(id)
-  local hex_str = ""
-  for c in string.gmatch(id, ".") do
-    hex_str = hex_str .. string.format("%X", c:byte())
-  end
-  return hex_str
-end
-
-
 -- Extract Payloads
 local function extract_payloads(packet)
 
   -- packet only contains HDR
-  if packet:len() < 61 then return {} end
+  if #packet < 29 then return {} end
 
-  local np = packet:sub(33,34) -- next payload
-  local index = 61 -- starting point for search
+  local np = packet:byte(17) -- next payload
+  local np_txt = PAYLOADS[np]
+  local index = 29 -- starting point for search
   local ike_headers = {} -- ike headers
-  local payload = ''
 
   -- loop over packet
-  while PAYLOADS[np] ~= "None" and index <= packet:len() do
-    local payload_length = tonumber("0x"..packet:sub(index, index+3)) * 2
-    payload = string.lower(packet:sub(index+4, index+payload_length-5))
+  while np_txt and np_txt ~= "None" and index <= #packet do
+    local payload_length, payload
+    np, payload_length, index = string.unpack(">B x I2", packet, index)
+    payload, index = string.unpack("c" .. (payload_length - 4), packet, index)
+    payload = stdnse.tohex(payload)
 
     -- debug
-    if PAYLOADS[np] == 'VID' then
-      stdnse.debug2('IKE: Found IKE Header: %s: %s - %s', np, PAYLOADS[np], payload)
+    if np_txt == 'VID' then
+      stdnse.debug2('IKE: Found IKE Header: %s - %s', np_txt, payload)
     else
-      stdnse.debug2('IKE: Found IKE Header: %s: %s', np, PAYLOADS[np])
+      stdnse.debug2('IKE: Found IKE Header: %s', np_txt)
     end
 
     -- Store payload
-    if ike_headers[PAYLOADS[np]] == nil then
-      ike_headers[PAYLOADS[np]] = {payload}
+    if ike_headers[np_txt] == nil then
+      ike_headers[np_txt] = {payload}
     else
-      table.insert(ike_headers[PAYLOADS[np]], payload)
+      table.insert(ike_headers[np_txt], payload)
     end
 
-    -- find the next payload type
-    np = packet:sub(index-4, index-3)
-
-    -- jump to the next payload
-    index = index + payload_length
+    np_txt = PAYLOADS[np]
   end
   return ike_headers
 
@@ -308,18 +289,21 @@ end
 
 ---
 -- Handle a response packet
--- A very limited response parser
--- Currently only the VIDs are extracted
+--
+-- A very limited response parser.
+-- Currently only the VIDs are extracted.
 -- This could be made more advanced to
 -- allow for fingerprinting via the order
 -- of the returned headers
+-- @param packet A received IKE packet
+-- @return A table of parsed response values
 function response(packet)
   local resp = { ["mode"] = "", ["info"] = nil, ['vids']={}, ['success'] = false }
 
-  if packet:len() > 38 then
+  if #packet > 19 then
 
     -- extract the return type
-    local resp_type = EXCHANGE_TYPE[packet:sub(37,38)]
+    local resp_type = EXCHANGE_TYPE[packet:byte(19)]
     local ike_headers = {}
 
     -- simple check that the type is something other than 'Informational'
@@ -344,14 +328,16 @@ function response(packet)
 end
 
 
--- Send a request
--- The 'packet' argument must be generated by the function 'request'
--- and is a hex string
+--- Send a request and parse the response
 --
+-- Sends an IKE request such as generated by <code>ike.request()</code>,
+-- binding to the same source port as the destination port.
+-- @param host Destination host
+-- @param port Destination port (table)
+-- @return Parsed IKE response (output of <code>ike.response()</code>)
 function send_request( host, port, packet )
 
   local socket = nmap.new_socket()
-  local s_status, r_status, data, i, hexstring, _
 
   -- lock resource (port 500/udp)
   local mutex = nmap.mutex("ike_port_500");
@@ -361,19 +347,18 @@ function send_request( host, port, packet )
   socket:set_timeout(1000)
   socket:bind(nil, port.number)
   socket:connect(host, port, "udp")
-  s_status,_ = socket:send(packet)
+  local s_status = socket:send(packet)
 
   -- receive answer
   if s_status then
-    r_status, data = socket:receive_lines(1)
+    local r_status, data = socket:receive_bytes(1)
 
     if r_status then
-      i, hexstring = bin.unpack("H" .. data:len(), data)
       socket:close()
 
       -- release mutex
       mutex "done";
-      return response(hexstring)
+      return response(data)
     else
       socket:close()
     end
@@ -392,10 +377,6 @@ end
 --  length of this has to be taken into account
 --
 local function generate_aggressive(port, protocol, id, diffie)
-  local hex_port = string.format("%.4X", port)
-  local hex_prot = PROTOCOL_IDS[protocol]
-  local id_len = string.format("%.4X", 8 + id:len())
-
   -- get length of key data based on diffie
   local key_length
   if diffie == 1 then
@@ -406,25 +387,28 @@ local function generate_aggressive(port, protocol, id, diffie)
     key_length = 192
   end
 
-  return bin.pack(">SHHSSHSHCHHH",
+  return (
     -- Key Exchange
-    0x0a00, -- Next payload (Nonce)
-    string.format("%04X", key_length+4), -- Length (132-bit)
-    generate_random(key_length), -- Random key data
+    string.pack(">Bx I2",
+      0x0a, -- Next payload (Nonce)
+      key_length + 4) -- Length
+    .. rand.random_string(key_length) -- Random key data
 
     -- Nonce
-    0x0500, -- Next payload (Identification)
-    0x0018, -- Length (24)
-    generate_random(20), -- Nonce data
+    .. string.pack(">Bx I2",
+      0x05, -- Next payload (Identification)
+      20 + 4) -- Length
+    ..rand.random_string(20) -- Nonce data
 
     -- Identification
-    0x0000, -- Next Payload (None)
-    id_len, -- Payload length (id + 8)
-    0x03, -- ID Type (USER_FQDN)
-    hex_prot, -- Protocol ID (UDP)
-    hex_port, -- Port (500)
-    convert_to_hex(id) -- Id Data (as hex)
-  )
+    .. string.pack(">Bx I2 BBI2",
+      0x00, -- Next Payload (None)
+      #id + 4 + 4, -- Payload length
+      0x03, -- ID Type (USER_FQDN)
+      PROTOCOL_IDS(protocol), -- Protocol ID (UDP)
+      port) -- Port (500)
+    .. id
+    )
 end
 
 
@@ -449,20 +433,18 @@ local function generate_transform(auth, encryption, hash, group, number, total)
 
   -- check if there are more transforms
   if number == total then
-    next_payload = 0x0000 -- none
+    next_payload = 0x00 -- none
   else
-    next_payload = 0x0300 -- transform
+    next_payload = 0x03 -- transform
   end
 
   -- set the payload number
-  payload_number = string.format("%.2X", number)
 
-  local trans = bin.pack(">SSHCSIIII",
+  local trans = string.pack(">Bx I2 BB xx I4I4I4I4",
   next_payload, -- Next payload
   trans_length, -- Transform length
-  payload_number, -- Transform number
+  number, -- Transform number
   0x01, -- Transform ID (IKE)
-  0x0000, -- spacers ?
   enc, -- Encryption algorithm
   HASH_ALGORITHM[hash], -- Hash algorithm
   AUTH_TYPES[auth], -- Authentication method
@@ -470,10 +452,10 @@ local function generate_transform(auth, encryption, hash, group, number, total)
   )
 
   if key_length ~= nil then
-    trans = trans .. bin.pack(">I", key_length) -- only set for aes
+    trans = trans .. string.pack(">I4", key_length) -- only set for aes
   end
 
-  trans = trans .. bin.pack(">IL",
+  trans = trans .. string.pack(">I4I8",
   0x800b0001, -- Life type (seconds)
   0x000c000400007080 -- Life duration (28800)
   )
@@ -496,36 +478,42 @@ local function generate_transforms(transform_table)
 end
 
 
--- Create a request packet
+--- Create a request packet
+--
 -- Support for multiple transforms, which minimizes the
 -- the amount of traffic/packets needed to be sent
---
+-- @param port Associated port number
+-- @param proto Associated protocol
+-- @param mode "Aggressive" or "Main"
+-- @param transforms Table of IKE transforms
+-- @param diffie DH group number
+-- @param id Identification data
+-- @return IKE request datagram
 function request(port, proto, mode, transforms, diffie, id)
   local payload_after_sa, str_aggressive, l, l_sa, l_pro
-  local number_transforms, transform_string
 
-  transform_string = generate_transforms(transforms)
-  number_transforms = string.format("%.2X", #transforms)
+  local transform_string = generate_transforms(transforms)
 
   -- check for aggressive vs Main mode
   if mode == "Aggressive" then
     str_aggressive = generate_aggressive(port, proto, id, diffie)
-    payload_after_sa = 0x0400
+    payload_after_sa = 0x04
   else
     str_aggressive = ""
-    payload_after_sa = 0x0000
+    payload_after_sa = 0x00
   end
 
 
   -- calculate lengths
-  l = string.format("%.8X", 48 + transform_string:len() + str_aggressive:len())
-  l_sa = string.format("%.4X", 20 + transform_string:len())
-  l_pro = string.format("%.4X", 8 + transform_string:len())
+  l = 48 + transform_string:len() + str_aggressive:len()
+  l_sa = 20 + transform_string:len()
+  l_pro = 8 + transform_string:len()
 
   -- Build the packet
-  local packet = bin.pack(">HLCCCCIHSHIISHCCCH",
-    generate_random(8), -- Initiator cookie
-    0x0000000000000000, -- Responder cookie
+  local packet =
+    rand.random_string(8) -- Initiator cookie
+    .. ("\0"):rep(8) -- Responder cookie
+  .. string.pack(">BBBBI4I4 BxI2I4I4 BxI2BBBB",
     0x01, -- Next payload (SA)
     0x10, -- Version
     EXCHANGE_MODE[mode], -- Exchange type
@@ -541,12 +529,12 @@ function request(port, proto, mode, transforms, diffie, id)
     0x00000001, -- Situation
 
     --## Proposal
-    0x0000, -- Next payload (None)
+    0x00, -- Next payload (None)
     l_pro, -- Payload length
     0x01, -- Proposal number
     0x01, -- Protocol ID (ISAKMP)
     0x00, -- SPI Size
-    number_transforms -- Proposal transforms
+    #transforms -- Proposal transforms
   )
 
   packet = packet .. transform_string -- transform

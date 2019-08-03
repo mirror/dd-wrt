@@ -144,7 +144,7 @@ AC_HELP_STRING([--without-libpcap], [Disable pcap functions.]),
     LDFLAGS="-L$with_libpcap/lib $LDFLAGS"
 
     AC_CHECK_HEADER(pcap.h,[
-      AC_CHECK_LIB(pcap, pcap_datalink,
+      AC_CHECK_LIB(pcap, pcap_create,
         [have_libpcap=yes
         LIBPCAP_LIBS=-lpcap
         LIBPCAP_INC=$with_libpcap/include
@@ -161,7 +161,16 @@ if test "$with_libpcap" != "no" -a "$have_libpcap" = "no"; then
   LIBPCAP_LIB=${top_nmap_srcdir}/libpcap
   LIBPCAP_LIBS=${LIBPCAP_LIB}/libpcap.a
   have_libpcap=yes
+  AC_DEFINE(HAVE_PCAP_SET_IMMEDIATE_MODE, 1, [Included libpcap has pcap_set_immediate_mode])
+else
+  # link with -lpcap for the purposes of this test
+  LIBS_OLD="$LIBS"
+  LIBS="$LIBS -lpcap"
+  AC_CHECK_FUNCS([pcap_set_immediate_mode])
+  # Restore libs
+  LIBS="$LIBS_OLD"
 fi
+
 if test "$have_libpcap" != "no"; then
   AC_DEFINE(HAVE_PCAP, 1, [libpcap is available])
   if test "${LIBPCAP_INC+set}" = "set"; then
@@ -170,8 +179,6 @@ if test "$have_libpcap" != "no"; then
   fi
 fi
 AC_SUBST(LIBPCAP_LIBS)
-
-PCAP_DEFINE_NETMASK_UNKNOWN
 
 AX_HAVE_EPOLL([AC_DEFINE(HAVE_EPOLL, 1, [epoll is available])], )
 AX_HAVE_POLL([AC_DEFINE(HAVE_POLL, 1, [poll is available])], )
@@ -199,6 +206,7 @@ AC_CHECK_FUNC(nanosleep, , AC_CHECK_LIB(posix4, nanosleep))
 dnl Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS(net/bpf.h sys/ioctl.h sys/un.h netdb.h)
+AC_CHECK_HEADERS([linux/vm_sockets.h], , , [#include <sys/socket.h>])
 
 # We test whether they specified openssl desires explicitly
 use_openssl="yes"

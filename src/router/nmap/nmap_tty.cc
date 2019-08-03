@@ -4,7 +4,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2018 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2019 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -147,6 +147,17 @@
 #include <unistd.h>
 #endif
 #include <stdlib.h>
+
+#if TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# if HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
 
 #include "nmap_tty.h"
 #include "NmapOps.h"
@@ -320,14 +331,13 @@ bool keyWasPressed()
 
     // printf("You pressed key '%c'!\n", c);
     if (c == 'v') {
-       o.verbose++;
+       if (o.verbose < 10) o.verbose++;
        log_write(LOG_STDOUT, "Verbosity Increased to %d.\n", o.verbose);
     } else if (c == 'V') {
-       if (o.verbose > 0)
-         o.verbose--;
+       if (o.verbose > 0) o.verbose--;
        log_write(LOG_STDOUT, "Verbosity Decreased to %d.\n", o.verbose);
     } else if (c == 'd') {
-       o.debugging++;
+       if (o.debugging < 10) o.debugging++;
        log_write(LOG_STDOUT, "Debugging Increased to %d.\n", o.debugging);
     } else if (c == 'D') {
        if (o.debugging > 0) o.debugging--;
@@ -368,9 +378,10 @@ bool keyWasPressed()
     if (TIMEVAL_AFTER(now, stats_time)) {
       /* Advance to the next print time. */
       TIMEVAL_ADD(stats_time, stats_time, (time_t) (o.stats_interval * 1000000));
-      /* If it's still in the past, catch it up to the present. */
+      /* If it's still in the past, catch it up to the present,
+       * plus half a second to avoid double-printing without any progress. */
       if (TIMEVAL_AFTER(now, stats_time))
-        stats_time = now;
+        TIMEVAL_MSEC_ADD(stats_time, now, 500);
       printStatusMessage();
       /* Instruct the caller to print status too. */
       return true;

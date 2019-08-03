@@ -2,6 +2,7 @@ local shortport = require "shortport"
 local sslcert = require "sslcert"
 local stdnse = require "stdnse"
 local string = require "string"
+local table = require "table"
 local ipOps = require "ipOps"
 
 description = [[
@@ -33,11 +34,12 @@ address itself is not private.  Nmap v7.30 or later is required.
 -- </table>
 --
 -- @see http-internal-ip-disclosure.nse
--- @see ssl-cert
+-- @see ssl-cert.nse
 
 author = "Steve Benson"
 license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"vuln", "discovery", "safe"}
+dependencies = {"https-redirect"}
 
 -- only run this script if the target host is NOT a private (RFC1918) IP address)
 -- and the port is an open SSL service
@@ -85,7 +87,7 @@ local searchCertField = function(certField, certFieldName)
       -- if the name of this X509 field is numeric object identifier
       -- (i.e.  "1.2.33.4..")
       if type(k)=="table" then
-        k = stdnse.strjoin(".", k)
+        k = table.concat(k, ".")
       end
 
       stdnse.debug2("search %s %s", certFieldName, k)

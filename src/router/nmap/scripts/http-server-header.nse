@@ -30,6 +30,7 @@ correctly.
 author = "Daniel Miller"
 license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"version"}
+dependencies = {"https-redirect"}
 
 portrule = function(host, port)
   return (shortport.http(host,port) and nmap.version_intensity() >= 7)
@@ -48,19 +49,21 @@ action = function(host, port)
   end
   if #responses == 0 then
     -- Have to send the probe ourselves.
-    local status, result = comm.tryssl(host, port, "GET / HTTP/1.0\r\n\r\n")
+    local socket, result = comm.tryssl(host, port, "GET / HTTP/1.0\r\n\r\n")
 
-    if (not status) then
+    if (not socket) then
       return nil
     end
+    socket:close()
     responses[1] = result
   end
 
   -- Also send a probe with host header if we can. IIS reported to send
   -- different Server headers depending on presence of Host header.
-  local status, result = comm.tryssl(host, port,
+  local socket, result = comm.tryssl(host, port,
     ("GET / HTTP/1.1\r\nHost: %s\r\n\r\n"):format(stdnse.get_hostname(host)))
-  if status then
+  if socket then
+    socket:close()
     responses[#responses+1] = result
   end
 
@@ -69,17 +72,19 @@ action = function(host, port)
   local headers = {}
   for _, result in ipairs(responses) do
     if string.match(result, "^HTTP/1.[01] %d%d%d") then
-      port.version.service = "http"
 
       local http_server = string.match(result, "\n[Ss][Ee][Rr][Vv][Ee][Rr]:[ \t]*(.-)\r?\n")
 
       -- Avoid setting version info if -sV scan already got a match
       if port.version.product == nil and (port.version.name_confidence or 0) <= 3 then
+        port.version.service = "http"
         port.version.product = http_server
+        -- Setting "softmatched" allows the service fingerprint to be printed
+        nmap.set_port_version(host, port, "softmatched")
+      elseif port.version.product == http_server then
+        -- If we already detected exactly this, no need to report it
+        http_server = nil
       end
-
-      -- Setting "softmatched" allows the service fingerprint to be printed
-      nmap.set_port_version(host, port, "softmatched")
 
       if http_server then
         headers[http_server] = true

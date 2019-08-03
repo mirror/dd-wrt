@@ -5,7 +5,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2018 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2019 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -128,7 +128,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nbase_str.c 37126 2018-01-28 21:18:17Z fyodor $ */
+/* $Id$ */
 
 #include "nbase.h"
 #include <assert.h>
@@ -171,8 +171,10 @@ char *strcasestr(const char *haystack, const char *pneedle) {
           free(needle);
         return (char *)(p - needlelen + 1);
       }
-    } else
+    } else {
+      p -= foundto - needle;
       foundto = needle;
+    }
   }
   if (needlelen >= sizeof(buf))
     free(needle);
@@ -194,7 +196,7 @@ int Vsnprintf(char *s, size_t n, const char *fmt, va_list ap) {
   ret = vsnprintf(s, n, fmt, ap);
 
   if (ret < 0 || (unsigned)ret >= n)
-    s[n - 1] = '\0';
+    s[n - 1] = '\0'; /* technically redundant */
 
   return ret;
 }
@@ -241,6 +243,7 @@ int alloc_vsprintf(char **strp, const char *fmt, va_list va) {
     va_copy(va_tmp, va);
 #endif
     n = vsnprintf(s, size, fmt, va_tmp);
+    va_end(va_tmp);
 
     if (n >= size)
       size = n + 1;

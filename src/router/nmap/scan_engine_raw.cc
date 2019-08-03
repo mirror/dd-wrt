@@ -5,7 +5,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2018 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2019 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -134,6 +134,7 @@
 #include "NmapOps.h"
 #include "Target.h"
 #include "payload.h"
+#include "scan_engine.h"
 #include "scan_engine_raw.h"
 #include "struct_ip.h"
 #include "tcpip.h"
@@ -1593,7 +1594,11 @@ bool get_arp_result(UltraScanInfo *USI, struct timeval *stime) {
         continue;
       }
       probeI = hss->probes_outstanding.end();
-      probeI--;
+      do {
+        /* Delay in libpcap could mean we sent another probe *after* this
+         * response was received. Search back for the last probe before rcvdtime. */
+        probeI--;
+      } while (TIMEVAL_AFTER((*probeI)->sent, rcvdtime) && probeI != hss->probes_outstanding.begin());
       ultrascan_host_probe_update(USI, hss, probeI, HOST_UP, &rcvdtime);
       /* Now that we know the host is up, we can forget our other probes. */
       hss->destroyAllOutstandingProbes();
@@ -1661,11 +1666,17 @@ bool get_ns_result(UltraScanInfo *USI, struct timeval *stime) {
       hss->target->reason.reason_id = ER_NDRESPONSE;
 
       if (hss->probes_outstanding.empty()) {
+        /* It's up because we got a response, but doesn't count as a response
+         * within this timeout window. Go around again. */
+        hss->target->flags = HOST_UP;
         continue;
-        /* TODO: I suppose I should really mark the @@# host as up */
       }
       probeI = hss->probes_outstanding.end();
-      probeI--;
+      do {
+        /* Delay in libpcap could mean we sent another probe *after* this
+         * response was received. Search back for the last probe before rcvdtime. */
+        probeI--;
+      } while (TIMEVAL_AFTER((*probeI)->sent, rcvdtime) && probeI != hss->probes_outstanding.begin());
       ultrascan_host_probe_update(USI, hss, probeI, HOST_UP, &rcvdtime);
       /* Now that we know the host is up, we can forget our other probes. */
       hss->destroyAllOutstandingProbes();

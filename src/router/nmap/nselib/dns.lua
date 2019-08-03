@@ -30,13 +30,12 @@
 -- @copyright Same as Nmap--See https://nmap.org/book/man-legal.html
 
 
-local bin = require "bin"
-local bit = require "bit"
 local coroutine = require "coroutine"
 local ipOps = require "ipOps"
 local nmap = require "nmap"
 local stdnse = require "stdnse"
 local string = require "string"
+local stringaux = require "stringaux"
 local table = require "table"
 local base32 = require "base32"
 local unittest = require "unittest"
@@ -307,7 +306,7 @@ end
 -- * <code>id</code>: numeric value to use for the DNS transaction id
 -- * <code>nsid</code>: If true, queries the server for the nameserver identifier (RFC 5001)
 -- * <code>subnet</code>: table, if set perform a edns-client-subnet lookup. The table should contain the fields:
---                        <code>family</code> - string can be either inet or inet6
+--                        <code>family</code> - IPv4: "inet" or 1 (default), IPv6: "inet6" or 2
 --                        <code>address</code> - string containing the originating subnet IP address
 --                        <code>mask</code> - number containing the number of subnet bits
 -- @return <code>true</code> if a dns response was received and contained an answer of the requested type,
@@ -360,9 +359,6 @@ function query(dname, options)
   if ( options.nsid ) then
     addNSID(pkt, dnssec)
   elseif ( options.subnet ) then
-    local family = { ["inet"] = 1, ["inet6"] = 2 }
-    assert( family[options.subnet.family], "Unsupported subnet family")
-    options.subnet.family = family[options.subnet.family]
     addClientSubnet(pkt, dnssec, options.subnet )
   elseif ( dnssec.DO ) then
     addOPT(pkt, {DO = true})
@@ -418,7 +414,7 @@ function reverse(ip)
     delim = ":"
     arpa = ".ip6.arpa"
   end
-  local ipParts = stdnse.strsplit(delim, ip)
+  local ipParts = stringaux.strsplit(delim, ip)
   if #ipParts == 8 then
     -- padding
     local mask = "0000"
@@ -595,7 +591,7 @@ answerFetcher[types.NSEC] = function(dec, retAll)
     return false, "No Answers"
   end
   for _, nsecrec in ipairs(nsec) do
-    table.insert( answers, ("%s:%s:%s"):format(nsecrec.name or "-", nsecrec.dname or "-", stdnse.strjoin(":", nsecrec.types) or "-"))
+    table.insert( answers, ("%s:%s:%s"):format(nsecrec.name or "-", nsecrec.dname or "-", table.concat(nsecrec.types, ":") or "-"))
   end
   if not retAll then return true, answers[1] end
   return true, answers
@@ -806,7 +802,7 @@ local function encodeFQDN(fqdn)
 
   local encQ = {}
   for part in string.gmatch(fqdn, "[^%.]+") do
-    encQ[#encQ+1] = bin.pack("p", part)
+    encQ[#encQ+1] = string.pack("s1", part)
   end
   encQ[#encQ+1] = "\0"
   return table.concat(encQ)
@@ -821,7 +817,7 @@ local function encodeQuestions(questions)
   local encQ = {}
   for _, v in ipairs(questions) do
     encQ[#encQ+1] = encodeFQDN(v.dname)
-    encQ[#encQ+1] = bin.pack(">SS", v.dtype, v.class)
+    encQ[#encQ+1] = string.pack(">I2I2", v.dtype, v.class)
   end
   return table.concat(encQ)
 end
@@ -839,7 +835,7 @@ local function encodeUpdates(updates)
   local encQ = {}
   for _, v in ipairs(updates) do
     encQ[#encQ+1] = encodeFQDN(v.dname)
-    encQ[#encQ+1] = bin.pack(">SSISA", v.dtype, v.class, v.ttl, #v.data, v.data)
+    encQ[#encQ+1] = string.pack(">I2I2I4s2", v.dtype, v.class, v.ttl, v.data)
   end
   return table.concat(encQ)
 end
@@ -847,14 +843,14 @@ end
 ---
 -- Encodes the additional part of a DNS request.
 -- @param additional Table of additional records. Each must have the keys
--- <code>type</code>, <code>class</code>, <code>ttl</code>, <code>rdlen</code>,
+-- <code>type</code>, <code>class</code>, <code>ttl</code>,
 -- and <code>rdata</code>.
 -- @return Encoded additional string.
 local function encodeAdditional(additional)
   if type(additional) ~= "table" then return nil end
   local encA = {}
   for _, v in ipairs(additional) do
-    encA[#encA+1] = bin.pack(">xSSISA",  v.type, v.class, v.ttl, v.rdlen, v.rdata)
+    encA[#encA+1] = string.pack(">xI2I2I4s2",  v.type, v.class, v.ttl, v.rdata)
   end
   return table.concat(encA)
 end
@@ -911,9 +907,9 @@ function encode(pkt)
 
   local encStr
   if ( pkt.flags.raw ) then
-    encStr = bin.pack(">SSS4", pkt.id, pkt.flags.raw, qorzlen, aorplen, aorulen, #pkt.additional) .. data .. additional
+    encStr = string.pack(">I2I2I2I2I2I2", pkt.id, pkt.flags.raw, qorzlen, aorplen, aorulen, #pkt.additional) .. data .. additional
   else
-    encStr = bin.pack(">SSS4", pkt.id, encFlags, qorzlen, aorplen, aorulen, #pkt.additional) .. data .. additional
+    encStr = string.pack(">I2I2I2I2I2I2", pkt.id, encFlags, qorzlen, aorplen, aorulen, #pkt.additional) .. data .. additional
   end
   return encStr
 end
@@ -937,17 +933,17 @@ function decStr(data, pos)
       return pos, nil
     end
 
-    pos, partlen = bin.unpack(">C", data, pos)
+    partlen, pos = string.unpack(">B", data, pos)
     while (partlen ~= 0) do
       if (partlen < 64) then
-        pos, part = bin.unpack("A" .. partlen, data, pos)
-        if part == nil then
+        if (#data - pos + 1) < partlen then
           return pos
         end
+        part, pos = string.unpack("c" .. partlen, data, pos)
         table.insert(parts, part)
-        pos, partlen = bin.unpack(">C", data, pos)
+        partlen, pos = string.unpack(">B", data, pos)
       else
-        pos, partlen = bin.unpack(">S", data, pos - 1)
+        partlen, pos = string.unpack(">I2", data, pos - 1)
         local _, part = dec(data, partlen - 0xC000 + 1, limit - 1)
         if part == nil then
           return pos
@@ -975,7 +971,7 @@ local function decodeQuestions(data, count, pos)
   for i = 1, count do
     local currQ = {}
     pos, currQ.dname = decStr(data, pos)
-    pos, currQ.dtype, currQ.class = bin.unpack(">SS", data, pos)
+    currQ.dtype, currQ.class, pos = string.unpack(">I2I2", data, pos)
     table.insert(q, currQ)
   end
   return pos, q
@@ -989,23 +985,13 @@ local decoder = {}
 -- Decodes IP of A record, puts it in <code>entry.ip</code>.
 -- @param entry RR in packet.
 decoder[types.A] = function(entry)
-  local ip = {}
-  local _
-  _, ip[1], ip[2], ip[3], ip[4] = bin.unpack(">C4", entry.data)
-  entry.ip = table.concat(ip, ".")
+  entry.ip = ipOps.str_to_ip(entry.data:sub(1,4))
 end
 
 -- Decodes IP of AAAA record, puts it in <code>entry.ipv6</code>.
 -- @param entry RR in packet.
 decoder[types.AAAA] = function(entry)
-  local ip = {}
-  local pos = 1
-  local num
-  for i = 1, 8 do
-    pos, num = bin.unpack(">S", entry.data, pos)
-    table.insert(ip, string.format('%x', num))
-  end
-  entry.ipv6 = table.concat(ip, ":")
+  entry.ipv6 = ipOps.str_to_ip(entry.data:sub(1,16))
 end
 
 -- Decodes SSH fingerprint record, puts it in <code>entry.SSHFP</code> as
@@ -1015,10 +1001,10 @@ end
 -- <code>fptype</code>, and <code>fingerprint</code>.
 -- @param entry RR in packet.
 decoder[types.SSHFP] = function(entry)
-  local _
+  local pos
   entry.SSHFP = {}
-  _, entry.SSHFP.algorithm,
-  entry.SSHFP.fptype, entry.SSHFP.fingerprint = bin.unpack(">C2H" .. (#entry.data - 2), entry.data)
+  entry.SSHFP.algorithm, entry.SSHFP.fptype, pos = string.unpack(">BB", entry.data)
+  entry.SSHFP.fingerprint = stdnse.tohex(entry.data:sub(pos))
 end
 
 
@@ -1038,12 +1024,12 @@ decoder[types.SOA] = function(entry, data, pos)
 
   np, entry.SOA.mname = decStr(data, np)
   np, entry.SOA.rname = decStr(data, np)
-  np, entry.SOA.serial,
+  entry.SOA.serial,
   entry.SOA.refresh,
   entry.SOA.retry,
   entry.SOA.expire,
-  entry.SOA.minimum
-  = bin.unpack(">I5", data, np)
+  entry.SOA.minimum,
+  np = string.unpack(">I4I4I4I4I4", data, np)
 end
 
 -- An iterator that returns the positions of nonzero bits in the given binary
@@ -1056,11 +1042,11 @@ local function bit_iter(bits)
       local mask = 0x80
 
       while mask > 0 do
-        if bit.band(n, mask) ~= 0 then
+        if (n & mask) ~= 0 then
           coroutine.yield((i - 1) * 8 + j)
         end
         j = j + 1
-        mask = bit.rshift(mask, 1)
+        mask = (mask >> 1)
       end
     end
   end)
@@ -1081,7 +1067,7 @@ decoder[types.NSEC] = function (entry, data, pos)
   np, entry.NSEC.next_dname = decStr(data, np)
   while np < pos do
     local block_num, type_bitmap
-    np, block_num, type_bitmap = bin.unpack(">Cp", data, np)
+    block_num, type_bitmap, np = string.unpack(">Bs1", data, np)
     entry.NSEC.types = {}
     for i in bit_iter(type_bitmap) do
       entry.NSEC.types[(block_num - 1) * 256 + i] = true
@@ -1107,28 +1093,21 @@ decoder[types.NSEC3] = function (entry, data, pos)
   entry.NSEC3.dname = entry.dname
   entry.NSEC3.salt, entry.NSEC3.hash = {}, {}
 
-  np, entry.NSEC3.hash.alg,flags,entry.NSEC3.iterations = bin.unpack(">CBS", data, np)
+  entry.NSEC3.hash.alg, entry.NSEC3.flags, entry.NSEC3.iterations, np = string.unpack(">BBI2", data, np)
   -- do we even need to decode these do we care about opt out?
   -- entry.NSEC3.flags = decodeFlagsNSEC3(flags)
 
-  np, entry.NSEC3.salt.bin = bin.unpack(">p",  data, np)
-  _, entry.NSEC3.salt.hex = bin.unpack("H" .. #entry.NSEC3.salt.bin, entry.NSEC3.salt.bin)
+  entry.NSEC3.salt.bin, np = string.unpack(">s1",  data, np)
+  entry.NSEC3.salt.hex = stdnse.tohex(entry.NSEC3.salt.bin)
 
-  np, entry.NSEC3.hash.bin = bin.unpack(">p" , data, np)
-  _, entry.NSEC3.hash.hex = bin.unpack(">H" .. #entry.NSEC3.hash.bin , entry.NSEC3.hash.bin)
+  entry.NSEC3.hash.bin, np = string.unpack(">s1" , data, np)
+  entry.NSEC3.hash.hex = stdnse.tohex(entry.NSEC3.hash.bin)
   entry.NSEC3.hash.base32 = base32.enc(entry.NSEC3.hash.bin, true)
 
-  np, entry.NSEC3.WinBlockNo, entry.NSEC3.bmplength = bin.unpack(">CC", data, np)
-  np, entry.NSEC3.bin = bin.unpack(">B".. entry.NSEC3.bmplength, data, np)
+  entry.NSEC3.WinBlockNo, entry.NSEC3.bin, np = string.unpack(">Bs1", data, np)
   entry.NSEC3.types = {}
-  if entry.NSEC3.bin == nil then
-    entry.NSEC3.bin = ""
-  end
-  for i=1, string.len(entry.NSEC3.bin) do
-    local bit = string.sub(entry.NSEC3.bin,i,i)
-    if bit == "1" then
-      table.insert(entry.NSEC3.types, (entry.NSEC3.WinBlockNo*256+i-1))
-    end
+  for i in bit_iter(entry.NSEC3.bin) do
+    entry.NSEC3.types[(entry.NSEC3.WinBlockNo - 1) * 256 + i] = true
   end
 end
 
@@ -1190,10 +1169,8 @@ function (entry, data, pos)
     entry.TXT.text = {}
   end
 
-  while len > 0 do
-    np, txt_len = bin.unpack("C", data, np)
-    np, txt = bin.unpack("A" .. txt_len, data, np )
-    len = len - txt_len - 1
+  while np < len do
+    txt, np = string.unpack("s1", data, np)
     table.insert( entry.TXT.text, txt )
   end
 
@@ -1212,8 +1189,7 @@ decoder[types.OPT] =
 function(entry, data, pos)
   local np = pos - #entry.data - 6
   local opt = { bufsize = entry.class }
-  np, opt.rcode, opt.version, opt.zflags, opt.rdlen = bin.unpack(">CCSS", data, np)
-  np, opt.data = bin.unpack("A" .. opt.rdlen, data, np)
+  opt.rcode, opt.version, opt.zflags, opt.data, np = string.unpack(">BBI2s2", data, np)
   entry.OPT = opt
 end
 
@@ -1230,7 +1206,7 @@ function(entry, data, pos)
   local np = pos - #entry.data + 2
   local _
   entry.MX = {}
-  _, entry.MX.pref = bin.unpack(">S", entry.data)
+  entry.MX.pref = string.unpack(">I2", entry.data)
   _, entry.MX.server = decStr(data, np)
 end
 
@@ -1247,7 +1223,7 @@ function(entry, data, pos)
   local np = pos - #entry.data
   local _
   entry.SRV = {}
-  np, entry.SRV.prio, entry.SRV.weight, entry.SRV.port = bin.unpack(">S>S>S", data, np)
+  entry.SRV.prio, entry.SRV.weight, entry.SRV.port, np = string.unpack(">I2I2I2", data, np)
   np, entry.SRV.target = decStr(data, np)
 end
 
@@ -1261,12 +1237,9 @@ local function decodeRR(data, count, pos)
   for i = 1, count do
     local currRR = {}
     pos, currRR.dname = decStr(data, pos)
-    pos, currRR.dtype, currRR.class, currRR.ttl = bin.unpack(">SSI", data, pos)
+    currRR.dtype, currRR.class, currRR.ttl, pos = string.unpack(">I2I2I4", data, pos)
 
-    local reslen
-    pos, reslen = bin.unpack(">S", data, pos)
-
-    pos, currRR.data = bin.unpack("A" .. reslen, data, pos)
+    currRR.data, pos = string.unpack(">s2", data, pos)
 
     -- try to be smart: decode per type
     if decoder[currRR.dtype] then
@@ -1309,7 +1282,7 @@ function decode(data)
   local pkt = {}
   local encFlags
   local cnt = {}
-  pos, pkt.id, encFlags, cnt.q, cnt.a, cnt.auth, cnt.add = bin.unpack(">SSS4", data)
+  pkt.id, encFlags, cnt.q, cnt.a, cnt.auth, cnt.add, pos = string.unpack(">I2I2I2I2I2I2", data)
   -- for now, don't decode the flags
   pkt.flags = decodeFlags(encFlags)
 
@@ -1398,19 +1371,29 @@ end
 ---
 -- Adds an client-subnet payload to the OPT packet
 --
--- implementing http://tools.ietf.org/html/draft-vandergaast-edns-client-subnet-00
+-- implementing https://tools.ietf.org/html/rfc7871
 -- @param pkt Table representing DNS packet.
 -- @param Z Table of Z flags. Only DO is supported.
 -- @param client_subnet table containing the following fields
---        <code>family</code>  - 1 IPv4, 2 - IPv6
+--        <code>family</code>  - IPv4: "inet" or 1 (default), IPv6: "inet6" or 2
 --        <code>mask</code>    - byte containing the length of the subnet mask
 --        <code>address</code> - string containing the IP address
 function addClientSubnet(pkt,Z,subnet)
-  local udp_payload_size = 4096
-  local code = 20730 -- temporary option-code http://comments.gmane.org/gmane.ietf.dnsext/19776
-  local scope_mask = 0 -- In requests, it MUST be set to 0 see draft
-  local data = bin.pack(">SCCA",subnet.family or 1,subnet.mask,scope_mask,ipOps.ip_to_str(subnet.address))
-  local opt = bin.pack(">SS",code, #data) .. data
+  local family = subnet.family or 1
+  if type(family) == "string" then
+    family = ({inet=1,inet6=2})[family]
+  end
+  assert(family == 1 or family == 2, "Unsupported subnet family")
+  local code = 8 -- https://www.iana.org/assignments/dns-parameters/dns-parameters.xhtml#dns-parameters-11
+  local mask = subnet.mask
+  local scope_mask = 0 -- In requests, it MUST be set to 0
+  -- Per RFC 7871, section 6:
+  -- Address must have all insignificant bits zeroed out and insignificant bytes
+  -- must be trimmed off. (/24 IPv4 address is submitted as 3 octets, not 4.)
+  local addr = ipOps.get_first_ip(subnet.address, mask)
+  addr = ipOps.ip_to_str(addr):sub(1, (mask + 7) // 8)
+  local data = string.pack(">I2BB", family, mask, scope_mask) .. addr
+  local opt = string.pack(">I2s2", code, data)
   addOPT(pkt,Z,opt)
 end
 
@@ -1419,8 +1402,7 @@ end
 -- @param pkt Table representing DNS packet.
 -- @param Z Table of Z flags. Only DO is supported.
 function addNSID (pkt,Z)
-  local udp_payload_size = 4096
-  local opt = bin.pack(">SS",3, 0) -- nsid data
+  local opt = string.pack(">I2I2", 3, 0) -- nsid data
   addOPT(pkt,Z,opt)
 end
 
@@ -1440,7 +1422,6 @@ function addOPT(pkt, Z, opt)
     type = types.OPT,
     class = 4096,  -- Actually the sender UDP payload size.
     ttl = 0 * (0x01000000) + 0 * (0x00010000) + Z_int,
-    rdlen = #rdata,
     rdata = rdata,
   }
   table.insert(pkt.additional, opt)
@@ -1517,8 +1498,8 @@ function update(dname, options)
   flags.RD = false
   flags.OC1, flags.OC2, flags.OC3, flags.OC4 = false, true, false, true
 
-  -- If ttl is zero and updata is string and zero length or nil, assume delete record
-  if ( ttl == 0 and ( ( type(updata) == "string" and #updata == 0 ) or not(updata) ) ) then
+  -- If ttl is zero and updata is nil or a string of zero length, assume delete record
+  if ttl == 0 and (not updata or (type(updata) == "string" and #updata == 0)) then
     class = CLASS.ANY
     updata = ""
     if ( types.MX == dtype and not(options.zone) ) then zone=dname end
@@ -1527,19 +1508,19 @@ function update(dname, options)
     end
     -- if not, let's try to update the zone
   else
-    if ( dtype == types.A ) then
-      updata = updata and bin.pack(">I", ipOps.todword(updata)) or ""
+    if ( dtype == types.A or dtype == types.AAAA ) then
+      updata = updata and ipOps.ip_to_str(updata) or ""
     elseif( dtype == types.CNAME ) then
       updata = encodeFQDN(updata)
     elseif( dtype == types.MX ) then
       assert( not( type(updata) ~= "table" ), "dns.update expected options.data to be a table")
       if ( not(options.zone) ) then zone = dname end
-      local data = bin.pack(">S", updata.pref)
+      local data = string.pack(">I2", updata.pref)
       data = data .. encodeFQDN(updata.mx)
       updata = data
     elseif ( dtype == types.SRV ) then
       assert( not( type(updata) ~= "table" ), "dns.update expected options.data to be a table")
-      local data = bin.pack(">SSS", updata.prio, updata.weight, updata.port )
+      local data = string.pack(">I2I2I2", updata.prio, updata.weight, updata.port )
       data = data .. encodeFQDN(updata.target)
       updata = data
       zone = options.zone or dname:match("^_.-%._.-%.(.+)$")

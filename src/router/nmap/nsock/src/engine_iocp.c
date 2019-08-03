@@ -3,7 +3,7 @@
  *                                                                         *
  ***********************IMPORTANT NSOCK LICENSE TERMS***********************
  *                                                                         *
- * The nsock parallel socket event library is (C) 1999-2018 Insecure.Com   *
+ * The nsock parallel socket event library is (C) 1999-2019 Insecure.Com   *
  * LLC This library is free software; you may redistribute and/or          *
  * modify it under the terms of the GNU General Public License as          *
  * published by the Free Software Foundation; Version 2.  This guarantees  *
@@ -717,7 +717,7 @@ static void terminate_overlapped_event(struct npool *nsp, struct nevent *nse) {
   }
 }
 
-/* Retrieve the ammount of bytes transferred or set the appropriate error */
+/* Retrieve the amount of bytes transferred or set the appropriate error */
 static int get_overlapped_result(struct npool *nsp, int fd, const void *buffer, size_t count) {
   char *buf = (char *)buffer;
   DWORD dwRes = 0;

@@ -1,5 +1,5 @@
 # Nmap nmap payload database -*- mode: fundamental; -*-
-# $Id: nmap-payloads 37154 2018-03-02 19:07:14Z dmiller $
+# $Id$
 #
 # These payloads are sent with every host discovery or port scan probe
 # by default. This database should only include payloads that are
@@ -241,6 +241,9 @@ udp 5353
 
 # CoAP GET .well-known/core
 udp 5683 "@\x01\x01\xce\xbb.well-known\x04core"
+
+# Ubiquiti Discovery Service - v1
+udp 10001 "\x01\x00\x00\x00"
 
 # Amanda backup service noop request. I think that this does nothing on the
 # server but only asks it to send back its feature list. In reply we expect an

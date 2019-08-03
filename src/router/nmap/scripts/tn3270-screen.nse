@@ -44,11 +44,15 @@ Hidden fields will be listed below the screen with (row, col) coordinates.
 --
 -- @args tn3270-screen.commands a semi-colon separated list of commands you want to
 --                       issue before printing the screen
+--       tn3270-screen.lu specify a logical unit you with to use, fails if can't connect
+--       tn3270-screen.disable_tn3270e disables TN3270 Enhanced mode
 --
 --
 -- @changelog
 -- 2015-05-30 - v0.1 - created by Soldier of Fortran
 -- 2015-11-14 - v0.2 - added commands argument
+-- 2018-09-07 - v0.3 - added support for Logical Units
+-- 2019-02-01 - v0.4 - Added ability to disable TN3270E mode
 --
 
 author = "Philip Young aka Soldier of Fortran"
@@ -65,7 +69,17 @@ local hidden_field_mt = {
 
 action = function(host, port)
   local commands = stdnse.get_script_args(SCRIPT_NAME .. '.commands')
+  local disable_tn3270e = stdnse.get_script_args(SCRIPT_NAME .. '.disable_tn3270e') or false
+  local lu = stdnse.get_script_args(SCRIPT_NAME .. '.lu')
   local t = tn3270.Telnet:new()
+  if lu and not disable_tn3270e then
+    stdnse.debug("Setting LU: %s", lu)
+    t:set_lu(lu)
+  end
+   
+  if disable_tn3270e then
+      t:disable_tn3270e()
+  end
   local status, err = t:initiate(host,port)
   if not status then
     stdnse.debug("Could not initiate TN3270: %s", err )
@@ -100,6 +114,9 @@ action = function(host, port)
     local out = stdnse.output_table()
     out.screen = t:get_screen()
     out["hidden fields"] = hidden
+    if not disable_tn3270e then 
+      out["logical unit"]= t:get_lu()
+    end
     return out
   end
 end

@@ -1,9 +1,6 @@
 local brute = require "brute"
-local bin = require "bin"
 local creds = require "creds"
-local nmap = require "nmap"
 local shortport = require "shortport"
-local stdnse = require "stdnse"
 local string = require "string"
 
 local have_zlib, zlib = pcall(require, "zlib")
@@ -26,7 +23,7 @@ Performs brute force password auditing against the DelugeRPC daemon.
 -- |_    Performed 8 guesses in 1 seconds, average tps: 8
 
 author = "Claudiu Perta <claudiu.perta@gmail.com>"
-license = "Same as Nmap--See http://nmap.org/book/man-legal.html"
+license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"intrusive", "brute"}
 
 portrule = shortport.port_or_service(58846, "deluge-rpc")
@@ -62,19 +59,24 @@ local rencoded_login_request = function(username, password)
 
   -- Encode the login request:
   -- ((0, 'daemon.login', ('username', 'password'), {}),)
-  local request = bin.pack("CCCCACCACAC",
+  local request = string.pack("BBBB",
     LIST_FIXED_START + 1,
     LIST_FIXED_START + 4,
     INT_POS_FIXED_START,
-    STR_FIXED_START + string.len("daemon.login"),
-    "daemon.login",
+    STR_FIXED_START + string.len("daemon.login")
+    )
+  .. "daemon.login"
+  .. string.pack("BB",
     LIST_FIXED_START + 2,
-    STR_FIXED_START + string.len(username),
-    username,
-    STR_FIXED_START + string.len(password),
-    password,
-    DICT_FIXED_START
-  )
+    STR_FIXED_START + string.len(username)
+    )
+  ..  username
+  .. string.pack("B",
+    STR_FIXED_START + string.len(password)
+    )
+  ..  password
+  .. string.pack("B", DICT_FIXED_START)
+
   return request
 end
 

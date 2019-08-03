@@ -3579,9 +3579,9 @@ fi
     ac_fn_c_check_header_mongrel "$LINENO" "pcap.h" "ac_cv_header_pcap_h" "$ac_includes_default"
 if test "x$ac_cv_header_pcap_h" = xyes; then :
 
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pcap_datalink in -lpcap" >&5
-$as_echo_n "checking for pcap_datalink in -lpcap... " >&6; }
-if ${ac_cv_lib_pcap_pcap_datalink+:} false; then :
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pcap_create in -lpcap" >&5
+$as_echo_n "checking for pcap_create in -lpcap... " >&6; }
+if ${ac_cv_lib_pcap_pcap_create+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
@@ -3595,27 +3595,27 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 #ifdef __cplusplus
 extern "C"
 #endif
-char pcap_datalink ();
+char pcap_create ();
 int
 main ()
 {
-return pcap_datalink ();
+return pcap_create ();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_pcap_pcap_datalink=yes
+  ac_cv_lib_pcap_pcap_create=yes
 else
-  ac_cv_lib_pcap_pcap_datalink=no
+  ac_cv_lib_pcap_pcap_create=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_pcap_pcap_datalink" >&5
-$as_echo "$ac_cv_lib_pcap_pcap_datalink" >&6; }
-if test "x$ac_cv_lib_pcap_pcap_datalink" = xyes; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_pcap_pcap_create" >&5
+$as_echo "$ac_cv_lib_pcap_pcap_create" >&6; }
+if test "x$ac_cv_lib_pcap_pcap_create" = xyes; then :
   have_libpcap=yes
         LIBPCAP_LIBS=-lpcap
         LIBPCAP_INC=$with_libpcap/include
@@ -3639,7 +3639,28 @@ if test "$with_libpcap" != "no" -a "$have_libpcap" = "no"; then
   LIBPCAP_LIB=${top_nmap_srcdir}/libpcap
   LIBPCAP_LIBS=${LIBPCAP_LIB}/libpcap.a
   have_libpcap=yes
+
+$as_echo "#define HAVE_PCAP_SET_IMMEDIATE_MODE 1" >>confdefs.h
+
+else
+  # link with -lpcap for the purposes of this test
+  LIBS_OLD="$LIBS"
+  LIBS="$LIBS -lpcap"
+  for ac_func in pcap_set_immediate_mode
+do :
+  ac_fn_c_check_func "$LINENO" "pcap_set_immediate_mode" "ac_cv_func_pcap_set_immediate_mode"
+if test "x$ac_cv_func_pcap_set_immediate_mode" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_PCAP_SET_IMMEDIATE_MODE 1
+_ACEOF
+
 fi
+done
+
+  # Restore libs
+  LIBS="$LIBS_OLD"
+fi
+
 if test "$have_libpcap" != "no"; then
 
 $as_echo "#define HAVE_PCAP 1" >>confdefs.h
@@ -3649,44 +3670,6 @@ $as_echo "#define HAVE_PCAP 1" >>confdefs.h
     LDFLAGS="-L$LIBPCAP_LIB $LDFLAGS"
   fi
 fi
-
-
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if PCAP_NETMASK_UNKNOWN is defined/handled by libpcap" >&5
-$as_echo_n "checking if PCAP_NETMASK_UNKNOWN is defined/handled by libpcap... " >&6; }
-  if ${ac_cv_have_pcap_netmask_unknown+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-      #include <pcap.h>
-
-int
-main ()
-{
-
-      int i = PCAP_NETMASK_UNKNOWN;
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  ac_cv_have_pcap_netmask_unknown=yes
-else
-  ac_cv_have_pcap_netmask_unknown=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-
-  if test $ac_cv_have_pcap_netmask_unknown = no; then
-
-$as_echo "#define PCAP_NETMASK_UNKNOWN 0" >>confdefs.h
-
-  fi
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_have_pcap_netmask_unknown" >&5
-$as_echo "$ac_cv_have_pcap_netmask_unknown" >&6; }
 
 
   ax_have_epoll_cppflags="${CPPFLAGS}"
@@ -4705,6 +4688,19 @@ ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_include
 if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
 #define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+
+fi
+
+done
+
+for ac_header in linux/vm_sockets.h
+do :
+  ac_fn_c_check_header_compile "$LINENO" "linux/vm_sockets.h" "ac_cv_header_linux_vm_sockets_h" "#include <sys/socket.h>
+"
+if test "x$ac_cv_header_linux_vm_sockets_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LINUX_VM_SOCKETS_H 1
 _ACEOF
 
 fi

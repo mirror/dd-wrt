@@ -1,4 +1,4 @@
-<refentry id="ncat-man">
+<refentry id="ncatman">
   <refmeta>
     <refentrytitle>Ncat</refentrytitle>
     <manvolnum>1</manvolnum>
@@ -119,8 +119,8 @@
         <term>
           <option>-U</option>,
           <option>--unixsock</option> (Use Unix domain sockets)
-          <indexterm><primary><option>--unixsock</option> (Ncat option)</primary><see><option>-U</option></see></indexterm>
-          <indexterm><primary><option>-U</option> (Ncat option)</primary></indexterm>
+          <indexterm><primary><option>--unixsock</option> (Ncat option)</primary></indexterm>
+          <indexterm><primary><option>-U</option> (Ncat option)</primary><see><option>--unixsock</option></see></indexterm>
         </term>
         <listitem>
           <para>Use Unix domain sockets rather than network sockets.
@@ -135,8 +135,8 @@
         <term>
           <option>-u</option>,
           <option>--udp</option> (Use UDP)
-          <indexterm><primary><option>-u</option> (Ncat option)</primary><see><option>--udp</option></see></indexterm>
           <indexterm><primary><option>--udp</option> (Ncat option)</primary></indexterm>
+          <indexterm><primary><option>-u</option> (Ncat option)</primary><see><option>--udp</option></see></indexterm>
         </term>
         <listitem>
           <para>Use UDP for the connection (the default is TCP).</para>
@@ -151,6 +151,19 @@
         <listitem>
           <para>Use SCTP for the connection (the default is TCP).
           SCTP support is implemented in TCP-compatible mode.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+          <option>--vsock</option> (Use AF_VSOCK sockets)
+          <indexterm><primary><option>--vsock</option> (Ncat option)</primary></indexterm>
+        </term>
+        <listitem>
+          <para>Use AF_VSOCK sockets rather than the default TCP sockets (Linux only).
+          This option may be used on its own for stream sockets or combined with <option>--udp</option> for datagram sockets.
+          A description of <option>--vsock</option> mode is in
+          <xref linkend="ncat-man-vsock"/>.</para>
         </listitem>
       </varlistentry>
     </variablelist>
@@ -421,7 +434,7 @@
     <variablelist>
       <varlistentry>
         <term>
-          <option>--proxy <replaceable>host</replaceable>[:<replaceable>port</replaceable>]</option> (Specify proxy address)
+          <option>--proxy <replaceable>host</replaceable><optional>:<replaceable>port</replaceable></optional></option> (Specify proxy address)
           <indexterm><primary><option>--proxy</option> (Ncat option)</primary></indexterm>
         </term>
         <listitem>
@@ -429,8 +442,10 @@
           using the protocol specified by <option>--proxy-type</option>.</para>
 
           <para>If no port is specified, the proxy protocol's well-known port is used (1080 for
-          SOCKS and 3128 for HTTP).  However, when specifying an IPv6 HTTP proxy server using
-          the IP address rather than the hostname, the port number MUST be specified as well.
+          SOCKS and 3128 for HTTP).  When specifying an IPv6 HTTP proxy server
+          using the IP address rather than the hostname, the square-bracket
+          notation (for example [2001:db8::1]:8080) MUST be used to separate
+          the port from the IPv6 address.
           If the proxy requires authentication, use <option>--proxy-auth</option>.</para>
         </listitem>
       </varlistentry>
@@ -466,6 +481,38 @@
           <option>--proxy-type socks5</option>, the form should be
           username:password.  For
           <option>--proxy-type socks4</option>, it should be a username only.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+          <option>--proxy-dns <replaceable>type</replaceable></option> (Specify where to resolve proxy destination)
+          <indexterm><primary><option>--proxy-dns</option> (Ncat option)</primary></indexterm>
+        </term>
+        <listitem>
+          <para>In connect mode, it provides control over whether proxy
+          destination hostnames are resolved by the remote proxy server or
+          locally, by Ncat itself.
+          Possible values for <replaceable>type</replaceable> are:</para>
+
+          <para><literal>local</literal> - Hostnames are resolved locally on
+          the Ncat host. Ncat exits with error if the hostname cannot be
+          resolved.</para>
+
+          <para><literal>remote</literal> - Hostnames are passed directly onto
+          the remote proxy server. This is the default behavior.</para>
+
+          <para><literal>both</literal> - Hostname resolution is first
+          attempted on the Ncat host. Unresolvable hostnames are passed onto
+          the remote proxy server.</para>
+
+          <para><literal>none</literal> - Hostname resolution is completely
+          disabled. Only a literal IPv4 or IPv6 address can be used as
+          the proxy destination.</para>
+
+          <para>Local hostname resolution generally respects IP version
+          specified with options <option>-4</option> or <option>-6</option>,
+          except for SOCKS4, which is incompatible with IPv6.</para>
         </listitem>
       </varlistentry>
     </variablelist>
@@ -801,7 +848,7 @@
         </term>
         <listitem>
           <para>If this option is passed, Ncat will not invoke shutdown on a
-          socket aftering seeing EOF on stdin. This is provided for
+          socket after seeing EOF on stdin. This is provided for
           backward-compatibility with OpenBSD netcat, which exhibits this
           behavior when executed with its '-d' option.</para>
         </listitem>
@@ -809,9 +856,26 @@
 
       <varlistentry>
         <term>
+          <option>-n</option>,
+          <option>--nodns</option> (Do not resolve hostnames)
+          <indexterm><primary><option>--nodns</option> (Ncat option)</primary></indexterm>
+          <indexterm><primary><option>-n</option> (Ncat option)</primary><see><option>--nodns</option></see></indexterm>
+        </term>
+        <listitem>
+          <para>Completely disable hostname resolution across all Ncat options,
+          such as the destination, source address, source routing hops, and
+          the proxy. All addresses must be specified numerically.
+          (Note that resolution of proxy destinations is controlled separately
+          via option <option>--proxy-dns</option>.)</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
           <option>-t</option>,
           <option>--telnet</option> (Answer Telnet negotiations)
-          <indexterm><primary><option>-t</option> (Ncat option)</primary></indexterm>
+          <indexterm><primary><option>--telnet</option> (Ncat option)</primary></indexterm>
+          <indexterm><primary><option>-t</option> (Ncat option)</primary><see><option>--telnet</option></see></indexterm>
         </term>
         <listitem>
           <para>Handle DO/DONT WILL/WONT Telnet negotiations.  This makes it
@@ -865,6 +929,26 @@
 
   </refsect1>
 
+  <refsect1 id="ncat-man-vsock">
+    <title>AF_VSOCK Sockets</title>
+
+    <para>
+      The <option>--vsock</option> option causes Ncat to use AF_VSOCK
+      sockets rather than network sockets. A CID must be given instead of a
+      hostname or IP address. For example, to make a connection to the host,
+    </para>
+    <para><command>ncat --vsock 2 1234</command></para>
+    <para>
+    To listen on a socket:
+    </para>
+    <para><command>ncat -l --vsock 1234</command></para>
+    <para>
+    Both stream and datagram domain sockets are supported, but socket type
+    availability depends on the hypervisor. Use
+    <option>--vsock</option> on its own for stream sockets, or
+    combine it with <option>--udp</option> for datagram sockets.
+    </para>
+  </refsect1>
   <refsect1 id="ncat-man-examples">
     <title>Examples</title>
 
@@ -1033,7 +1117,7 @@
   <indexterm><primary>GNU General Public License</primary></indexterm>
 
 
-  <para>Ncat is (C) 2005&ndash;2012 Insecure.Com LLC. It is distributed
+  <para>Ncat is (C) 2005&ndash;2018 Insecure.Com LLC. It is distributed
   as free and open source software under the same license terms as our
   Nmap software.  Precise terms and further details are available
   <man>from <ulink url="https://nmap.org/man/man-legal.html"/>.</man>
@@ -1042,7 +1126,7 @@
 
 <refsect2 id="ncat-man-copyright">
   <title>Creative Commons License for this Ncat Guide</title>
-  <para>This <citetitle>Ncat Reference Guide</citetitle> is (C) 2005&ndash;2012 Insecure.Com LLC. It is
+  <para>This <citetitle>Ncat Reference Guide</citetitle> is (C) 2005&ndash;2018 Insecure.Com LLC. It is
    hereby placed under version 3.0 of the <ulink
    url="http://creativecommons.org/licenses/by/3.0/">Creative Commons
    Attribution License</ulink>.  This allows you redistribute and modify
@@ -1104,7 +1188,7 @@ url="http://www.tcpdump.org">Libpcap portable packet capture
 library</ulink><indexterm><primary>libpcap</primary></indexterm>
 is distributed along with Ncat.
 The Windows version of Ncat utilized the Libpcap-derived
-<ulink role="hidepdf" url="http://www.npcap.org">Npcap library</ulink><indexterm><primary>Npcap</primary></indexterm>
+<ulink role="hidepdf" url="https://npcap.org">Npcap library</ulink><indexterm><primary>Npcap</primary></indexterm>
 instead.
 Certain raw networking functions use the
 <ulink role="hidepdf" url="http://libdnet.sourceforge.net">Libdnet</ulink><indexterm><primary>libdnet</primary></indexterm>

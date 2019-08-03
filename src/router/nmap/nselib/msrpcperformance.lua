@@ -17,11 +17,10 @@
 --@copyright Same as Nmap--See https://nmap.org/book/man-legal.html
 -----------------------------------------------------------------------
 
-local bin = require "bin"
-local bit = require "bit"
 local msrpc = require "msrpc"
 local msrpctypes = require "msrpctypes"
 local stdnse = require "stdnse"
+local string = require "string"
 _ENV = stdnse.module("msrpcperformance", stdnse.seeall)
 
 ---Parses the title database, which is a series of null-terminated string pairs.
@@ -36,7 +35,7 @@ local function parse_perf_title_database(data, pos)
 
   repeat
     local number, name
-    pos, number, name = bin.unpack("<zz", data, pos)
+    number, name, pos = string.unpack("<zz", data, pos)
 
     if(number == nil) then
       return false, "Couldn't parse the title database: end of string encountered early"
@@ -327,7 +326,6 @@ local function parse_perf_counter(data, pos, counter_definition)
     pos, result = msrpctypes.unmarshall_int32(data, pos)
   elseif(counter_definition['CounterSize'] == 8) then
     pos, result = msrpctypes.unmarshall_int64(data, pos)
-    -- pos, result = bin.unpack("<d", data, pos)
   else
     pos, result = msrpctypes.unmarshall_raw(data, pos, counter_definition['CounterSize'])
   end
@@ -536,7 +534,7 @@ function get_performance_data(host, objects)
       pos = object_start + object_type['DefinitionLength']
 
       -- Check if we have any instances (sometimes we don't -- if we don't, the value returned is a negative)
-      if(bit.band(object_type['NumInstances'], 0x80000000) == 0) then
+      if (object_type['NumInstances'] & 0x80000000) == 0 then
         -- Parse the object instances and counters
         for j = 1, object_type['NumInstances'], 1 do
           local instance_start = pos

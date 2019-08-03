@@ -2,7 +2,7 @@
  * ncat_connect.c -- Ncat connect mode.                                    *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2018 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2019 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -125,7 +125,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: ncat_connect.c 37126 2018-01-28 21:18:17Z fyodor $ */
+/* $Id$ */
 
 #include "base64.h"
 #include "nsock.h"
@@ -353,7 +353,7 @@ static const char *sock_to_url(char *host_str, unsigned short port)
            Snprintf(buf, sizeof(buf), "%s:%hu", host_str, port);
            break;
        case 2:
-           Snprintf(buf, sizeof(buf), "[%s]:%hu]", host_str, port);
+           Snprintf(buf, sizeof(buf), "[%s]:%hu", host_str, port);
     }
 
     return buf;
@@ -438,6 +438,15 @@ static int do_proxy_http(void)
     size_t len;
     int sd, code;
     int n;
+    char *target;
+    union sockaddr_u addr;
+    size_t sslen;
+    void *addrbuf;
+    char addrstr[INET6_ADDRSTRLEN];
+
+    request = NULL;
+    status_line = NULL;
+    header = NULL;
 
     sd = do_connect(SOCK_STREAM);
     if (sd == -1) {
@@ -445,17 +454,41 @@ static int do_proxy_http(void)
         return -1;
     }
 
-    status_line = NULL;
-    header = NULL;
+    if (proxyresolve(o.target, 0, &addr.storage, &sslen, o.af)) {
+        /* target resolution has failed, possibly because it is disabled */
+        if (!(o.proxydns & PROXYDNS_REMOTE)) {
+            loguser("Error: Failed to resolve host %s locally.\n", o.target);
+            goto bail;
+        }
+        if (o.verbose)
+            loguser("Host %s will be resolved by the proxy.\n", o.target);
+        target = o.target;
+    } else {
+        /* addr is now populated with either sockaddr_in or sockaddr_in6 */
+        switch (addr.sockaddr.sa_family) {
+            case AF_INET:
+                addrbuf = &addr.in.sin_addr;
+                break;
+            case AF_INET6:
+                addrbuf = &addr.in6.sin6_addr;
+                break;
+            default:
+                ncat_assert(0);
+        }
+        inet_ntop(addr.sockaddr.sa_family, addrbuf, addrstr, sizeof(addrstr));
+        target = addrstr;
+        if (o.verbose && getaddrfamily(o.target) == -1)
+            loguser("Host %s locally resolved to %s.\n", o.target, target);
+    }
 
     /* First try a request with no authentication. */
-    request = http_connect_request(o.target,o.portno, &n);
+    request = http_connect_request(target, o.portno, &n);
     if (send(sd, request, n, 0) < 0) {
         loguser("Error sending proxy request: %s.\n", socket_strerror(socket_errno()));
-        free(request);
-        return -1;
+        goto bail;
     }
     free(request);
+    request = NULL;
 
     socket_buffer_init(&sockbuf, sd);
 
@@ -500,7 +533,7 @@ static int do_proxy_http(void)
             goto bail;
         }
 
-        request = http_connect_request_auth(o.target,o.portno, &n, &challenge);
+        request = http_connect_request_auth(target, o.portno, &n, &challenge);
         if (request == NULL) {
             loguser("Error building Proxy-Authorization header.\n");
             http_challenge_free(&challenge);
@@ -510,11 +543,11 @@ static int do_proxy_http(void)
           logdebug("Reconnection header:\n%s", request);
         if (send(sd, request, n, 0) < 0) {
             loguser("Error sending proxy request: %s.\n", socket_strerror(socket_errno()));
-            free(request);
             http_challenge_free(&challenge);
             goto bail;
         }
         free(request);
+        request = NULL;
         http_challenge_free(&challenge);
 
         socket_buffer_init(&sockbuf, sd);
@@ -534,13 +567,13 @@ static int do_proxy_http(void)
         }
     }
 
-    free(header);
-    header = NULL;
-
     if (code != 200) {
         loguser("Proxy returned status code %d.\n", code);
-        return -1;
+        goto bail;
     }
+
+    free(header);
+    header = NULL;
 
     remainder = socket_buffer_remainder(&sockbuf, &len);
     Write(STDOUT_FILENO, remainder, len);
@@ -550,6 +583,8 @@ static int do_proxy_http(void)
 bail:
     if (sd != -1)
         close(sd);
+    if (request != NULL)
+        free(request);
     if (status_line != NULL)
         free(status_line);
     if (header != NULL)
@@ -566,9 +601,18 @@ bail:
 static int do_proxy_socks4(void)
 {
     struct socket_buffer stateful_buf;
-    struct socks4_data socks4msg;
     char socksbuf[8];
-    int sd,len = 9;
+    struct socks4_data socks4msg;
+    size_t datalen;
+    char *username = o.proxy_auth != NULL ? o.proxy_auth : "";
+    union sockaddr_u addr;
+    size_t sslen;
+    int sd;
+
+    if (getaddrfamily(o.target) == 2) {
+        loguser("Error: IPv6 addresses are not supported with Socks4.\n");
+        return -1;
+    }
 
     sd = do_connect(SOCK_STREAM);
     if (sd == -1) {
@@ -588,46 +632,40 @@ static int do_proxy_socks4(void)
     socks4msg.type = SOCKS_CONNECT;
     socks4msg.port = htons(o.portno);
 
-    switch(getaddrfamily(o.target)) {
-        case 1: // IPv4 address family
-            socks4msg.address = inet_addr(o.target);
+    if (strlen(username) >= sizeof(socks4msg.data)) {
+        loguser("Error: username is too long.\n");
+        close(sd);
+        return -1;
+    }
+    strcpy(socks4msg.data, username);
+    datalen = strlen(username) + 1;
 
-            if (o.proxy_auth){
-                memcpy(socks4msg.data, o.proxy_auth, strlen(o.proxy_auth));
-                len += strlen(o.proxy_auth);
-            }
-            break;
-
-        case 2: // IPv6 address family
-
-            loguser("Error: IPv6 addresses are not supported with Socks4.\n");
+    if (proxyresolve(o.target, 0, &addr.storage, &sslen, AF_INET)) {
+        /* target resolution has failed, possibly because it is disabled */
+        if (!(o.proxydns & PROXYDNS_REMOTE)) {
+            loguser("Error: Failed to resolve host %s locally.\n", o.target);
             close(sd);
             return -1;
-
-        case -1: // fqdn
-
-            socks4msg.address = inet_addr("0.0.0.1");
-
-            if (strlen(o.target) > SOCKS_BUFF_SIZE-2) {
-                loguser("Error: host name is too long.\n");
-                close(sd);
-                return -1;
-            }
-
-            if (o.proxy_auth){
-                if (strlen(o.target)+strlen(o.proxy_auth) > SOCKS_BUFF_SIZE-2) {
-                    loguser("Error: host name and username are too long.\n");
-                    close(sd);
-                    return -1;
-                }
-                Strncpy(socks4msg.data,o.proxy_auth,sizeof(socks4msg.data));
-                len += strlen(o.proxy_auth);
-            }
-            memcpy(socks4msg.data+(len-8), o.target, strlen(o.target));
-            len += strlen(o.target)+1;
+        }
+        if (o.verbose)
+            loguser("Host %s will be resolved by the proxy.\n", o.target);
+        socks4msg.address = inet_addr("0.0.0.1");
+        if (datalen + strlen(o.target) >= sizeof(socks4msg.data)) {
+            loguser("Error: host name is too long.\n");
+            close(sd);
+            return -1;
+        }
+        strcpy(socks4msg.data + datalen, o.target);
+        datalen += strlen(o.target) + 1;
+    } else {
+        /* addr is now populated with sockaddr_in */
+        socks4msg.address = addr.in.sin_addr.s_addr;
+        if (o.verbose && getaddrfamily(o.target) == -1)
+            loguser("Host %s locally resolved to %s.\n", o.target,
+                inet_ntoa(addr.in.sin_addr));
     }
 
-    if (send(sd, (char *) &socks4msg, len, 0) < 0) {
+    if (send(sd, (char *)&socks4msg, offsetof(struct socks4_data, data) + datalen, 0) < 0) {
         loguser("Error: sending proxy request: %s.\n", socket_strerror(socket_errno()));
         close(sd);
         return -1;
@@ -656,18 +694,21 @@ static int do_proxy_socks4(void)
  */
 static int do_proxy_socks5(void)
 {
-
     struct socket_buffer stateful_buf;
     struct socks5_connect socks5msg;
-    uint32_t inetaddr;
-    char inet6addr[16];
-    unsigned short proxyport = htons(o.portno);
+    uint16_t proxyport = htons(o.portno);
     char socksbuf[8];
-    int sd,len,lenfqdn;
+    int sd;
+    size_t dstlen, targetlen;
     struct socks5_request socks5msg2;
     struct socks5_auth socks5auth;
     char *uptr, *pptr;
     size_t authlen, ulen, plen;
+    union sockaddr_u addr;
+    size_t sslen;
+    void *addrbuf;
+    size_t addrlen;
+    char addrstr[INET6_ADDRSTRLEN];
 
     sd = do_connect(SOCK_STREAM);
     if (sd == -1) {
@@ -810,49 +851,53 @@ static int do_proxy_socks5(void)
     socks5msg2.cmd = SOCKS_CONNECT;
     socks5msg2.rsv = 0;
 
-    switch(getaddrfamily(o.target)) {
-
-        case 1: // IPv4 address family
-            socks5msg2.atyp = SOCKS5_ATYP_IPv4;
-            inetaddr = inet_addr(o.target);
-            memcpy(socks5msg2.dst, &inetaddr, 4);
-            len = 4;
-            break;
-
-        case 2: // IPv6 address family
-            socks5msg2.atyp = SOCKS5_ATYP_IPv6;
-            inet_pton(AF_INET6,o.target,&inet6addr);
-            memcpy(socks5msg2.dst, inet6addr,16);
-            len = 16;
-            break;
-
-        case -1: // FQDN
-            socks5msg2.atyp = SOCKS5_ATYP_NAME;
-            lenfqdn=strlen(o.target);
-            if (lenfqdn > SOCKS_BUFF_SIZE-5){
-                loguser("Error: host name too long.\n");
-                close(sd);
-                return -1;
-            }
-            socks5msg2.dst[0]=lenfqdn;
-            memcpy(socks5msg2.dst+1,o.target,lenfqdn);
-            len = 1 + lenfqdn;
-            break;
-
-        default: // this shall not happen
-            ncat_assert(0);
+    if (proxyresolve(o.target, 0, &addr.storage, &sslen, o.af)) {
+        /* target resolution has failed, possibly because it is disabled */
+        if (!(o.proxydns & PROXYDNS_REMOTE)) {
+            loguser("Error: Failed to resolve host %s locally.\n", o.target);
+            close(sd);
+            return -1;
+        }
+        if (o.verbose)
+            loguser("Host %s will be resolved by the proxy.\n", o.target);
+        socks5msg2.atyp = SOCKS5_ATYP_NAME;
+        targetlen=strlen(o.target);
+        if (targetlen > SOCKS5_DST_MAXLEN){
+            loguser("Error: hostname length exceeds %d.\n", SOCKS5_DST_MAXLEN);
+            close(sd);
+            return -1;
+        }
+        dstlen = 0;
+        socks5msg2.dst[dstlen++] = targetlen;
+        memcpy(socks5msg2.dst + dstlen, o.target, targetlen);
+        dstlen += targetlen;
+    } else {
+        /* addr is now populated with either sockaddr_in or sockaddr_in6 */
+        switch (addr.sockaddr.sa_family) {
+            case AF_INET:
+                socks5msg2.atyp = SOCKS5_ATYP_IPv4;
+                addrbuf = &addr.in.sin_addr;
+                addrlen = 4;
+                break;
+            case AF_INET6:
+                socks5msg2.atyp = SOCKS5_ATYP_IPv6;
+                addrbuf = &addr.in6.sin6_addr;
+                addrlen = 16;
+                break;
+            default:
+                ncat_assert(0);
+        }
+        memcpy(socks5msg2.dst, addrbuf, addrlen);
+        dstlen = addrlen;
+        if (o.verbose && getaddrfamily(o.target) == -1)
+            loguser("Host %s locally resolved to %s.\n", o.target,
+                inet_ntop(addr.sockaddr.sa_family, addrbuf, addrstr, sizeof(addrstr)));
     }
 
-    memcpy(socks5msg2.dst+len, &proxyport, sizeof(proxyport));
-    len += 2 + 1 + 3;
+    memcpy(socks5msg2.dst + dstlen, &proxyport, 2);
+    dstlen += 2;
 
-    if (len > sizeof(socks5msg2)){
-        loguser("Error: address information too large.\n");
-        close(sd);
-        return -1;
-    }
-
-    if (send(sd, (char *) &socks5msg2, len, 0) < 0) {
+    if (send(sd, (char *) &socks5msg2, offsetof(struct socks5_request , dst) + dstlen, 0) < 0) {
         loguser("Error: sending proxy request: %s.\n", socket_strerror(socket_errno()));
         close(sd);
         return -1;
@@ -1049,7 +1094,7 @@ int ncat_connect(void)
         /* A proxy connection. */
         static int connect_socket;
 
-	    if (strcmp(o.proxytype, "http") == 0) {
+        if (strcmp(o.proxytype, "http") == 0) {
             connect_socket = do_proxy_http();
         } else if (strcmp(o.proxytype, "socks4") == 0) {
             connect_socket = do_proxy_socks4();
@@ -1119,6 +1164,21 @@ static void try_nsock_connect(nsock_pool nsp, struct sockaddr_list *conn_addr)
     }
     else
 #endif
+#ifdef HAVE_LINUX_VM_SOCKETS_H
+    if (o.af == AF_VSOCK) {
+        if (o.proto == IPPROTO_UDP) {
+            nsock_connect_vsock_datagram(nsp, cs.sock_nsi, connect_handler,
+                    (void *)conn_addr->next, &conn_addr->addr.sockaddr,
+                    conn_addr->addrlen, conn_addr->addr.vm.svm_port);
+        } else {
+            nsock_connect_vsock_stream(nsp, cs.sock_nsi, connect_handler,
+                    o.conntimeout, (void *)conn_addr->next,
+                    &conn_addr->addr.sockaddr, conn_addr->addrlen,
+                    conn_addr->addr.vm.svm_port);
+        }
+    }
+    else
+#endif
     if (o.proto == IPPROTO_UDP) {
         nsock_connect_udp(nsp, cs.sock_nsi, connect_handler, (void *)conn_addr->next,
                           &conn_addr->addr.sockaddr, conn_addr->addrlen,
@@ -1154,7 +1214,6 @@ static void connect_handler(nsock_pool nsp, nsock_event evt, void *data)
     ncat_assert(type == NSE_TYPE_CONNECT || type == NSE_TYPE_CONNECT_SSL);
 
     if (status == NSE_STATUS_ERROR || status == NSE_STATUS_TIMEOUT) {
-        int errcode = (status == NSE_STATUS_TIMEOUT)?ETIMEDOUT:nse_errorcode(evt);
         /* If there are more resolved addresses, try connecting to next one */
         if (next_addr != NULL) {
             if (o.verbose) {
@@ -1162,7 +1221,10 @@ static void connect_handler(nsock_pool nsp, nsock_event evt, void *data)
                 zmem(&peer, sizeof(peer.storage));
                 nsock_iod_get_communication_info(cs.sock_nsi, NULL, NULL, NULL,
                     &peer.sockaddr, sizeof(peer.storage));
-                loguser("Connection to %s failed: %s.\n", inet_socktop(&peer), socket_strerror(errcode));
+                loguser("Connection to %s failed: %s.\n", inet_socktop(&peer),
+                    (status == NSE_STATUS_TIMEOUT)
+                    ? nse_status2str(status)
+                    : socket_strerror(nse_errorcode(evt)));
                 loguser("Trying next address...\n");
             }
 #ifdef HAVE_OPENSSL
@@ -1178,7 +1240,10 @@ static void connect_handler(nsock_pool nsp, nsock_event evt, void *data)
         else {
             free_sockaddr_list(targetaddrs);
             if (!o.zerobyte||o.verbose)
-              loguser("%s.\n", socket_strerror(errcode));
+              loguser("%s.\n",
+                  (status == NSE_STATUS_TIMEOUT)
+                  ? nse_status2str(status)
+                  : socket_strerror(nse_errorcode(evt)));
             exit(1);
         }
     } else {
@@ -1266,7 +1331,7 @@ static void read_stdin_handler(nsock_pool nsp, nsock_event evt, void *data)
         loguser("%s.\n", socket_strerror(nse_errorcode(evt)));
         exit(1);
     } else if (status == NSE_STATUS_TIMEOUT) {
-        loguser("%s.\n", socket_strerror(ETIMEDOUT));
+        loguser("%s.\n", nse_status2str(status));
         exit(1);
     } else if (status == NSE_STATUS_CANCELLED || status == NSE_STATUS_KILL) {
         return;
@@ -1305,7 +1370,7 @@ static void read_socket_handler(nsock_pool nsp, nsock_event evt, void *data)
 
     if (status == NSE_STATUS_EOF) {
 #ifdef WIN32
-		_close(STDOUT_FILENO);
+        _close(STDOUT_FILENO);
 #else
         Close(STDOUT_FILENO);
 #endif
@@ -1318,7 +1383,7 @@ static void read_socket_handler(nsock_pool nsp, nsock_event evt, void *data)
           loguser("%s.\n", socket_strerror(nse_errorcode(evt)));
         exit(1);
     } else if (status == NSE_STATUS_TIMEOUT) {
-        loguser("%s.\n", socket_strerror(ETIMEDOUT));
+        loguser("%s.\n", nse_status2str(status));
         exit(1);
     } else if (status == NSE_STATUS_CANCELLED || status == NSE_STATUS_KILL) {
         return;
@@ -1354,7 +1419,7 @@ static void write_socket_handler(nsock_pool nsp, nsock_event evt, void *data)
         loguser("%s.\n", socket_strerror(nse_errorcode(evt)));
         exit(1);
     } else if (status == NSE_STATUS_TIMEOUT) {
-        loguser("%s.\n", socket_strerror(ETIMEDOUT));
+        loguser("%s.\n", nse_status2str(status));
         exit(1);
     } else if (status == NSE_STATUS_CANCELLED || status == NSE_STATUS_KILL) {
         return;

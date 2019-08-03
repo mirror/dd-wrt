@@ -36,23 +36,27 @@
 #define PASS_EVP_CTX(ctx) (&(ctx))
 #endif
 
-extern "C" {
-  #include "lua.h"
-  #include "lauxlib.h"
-}
+#include "nse_lua.h"
+#if OPENSSL_API_COMPAT >= 0x10100000L
+  /* Needed for get_random_bytes, since RAND_pseudo_bytes is gone */
+  #include <nbase.h>
+#endif
 
 #include "nse_openssl.h"
 
 typedef struct bignum_data {
   BIGNUM * bn;
+  bool should_free;
 } bignum_data_t;
 
-static int nse_pushbn( lua_State *L, BIGNUM *num )
+static int nse_pushbn( lua_State *L, BIGNUM *num)
 {
   bignum_data_t * data = (bignum_data_t *) lua_newuserdata( L, sizeof(bignum_data_t));
   luaL_getmetatable( L, "BIGNUM" );
   lua_setmetatable( L, -2 );
   data->bn = num;
+  /* Currently this is true for all uses in this file. */
+  data->should_free = true;
   return 1;
 }
 
@@ -135,14 +139,14 @@ static int l_bignum_add( lua_State *L ) /** bignum_add( BIGNUM a, BIGNUM b ) */
 static int l_bignum_num_bits( lua_State *L ) /** bignum_num_bits( BIGNUM bn ) */
 {
   bignum_data_t * userdata = (bignum_data_t *) luaL_checkudata(L, 1, "BIGNUM");
-  lua_pushnumber( L, BN_num_bits( userdata->bn) );
+  lua_pushinteger( L, BN_num_bits( userdata->bn) );
   return 1;
 }
 
 static int l_bignum_num_bytes( lua_State *L ) /** bignum_num_bytes( BIGNUM bn ) */
 {
   bignum_data_t * userdata = (bignum_data_t *) luaL_checkudata(L, 1, "BIGNUM");
-  lua_pushnumber( L, BN_num_bytes( userdata->bn) );
+  lua_pushinteger( L, BN_num_bytes( userdata->bn) );
   return 1;
 }
 
@@ -234,7 +238,9 @@ static int l_bignum_bn2hex( lua_State *L ) /** bignum_bn2hex( BIGNUM bn ) */
 static int l_bignum_free( lua_State *L ) /** bignum_free( bignum ) */
 {
   bignum_data_t * userdata = (bignum_data_t *) luaL_checkudata(L, 1, "BIGNUM");
-  BN_clear_free( userdata->bn );
+  if (userdata->should_free) {
+    BN_clear_free( userdata->bn );
+  }
   return 0;
 }
 
@@ -244,7 +250,9 @@ static int l_rand_bytes( lua_State *L ) /** rand_bytes( number bytes ) */
   unsigned char * result = (unsigned char *) malloc( len );
   if (!result) return luaL_error( L, "Couldn't allocate memory.");
 
-  RAND_bytes( result, len );
+  if (RAND_bytes( result, len ) != 1) {
+    return luaL_error(L, "Failure in RAND_bytes.");
+  }
   lua_pushlstring( L, (char *) result, len );
   free( result );
   return 1;
@@ -256,9 +264,11 @@ static int l_rand_pseudo_bytes( lua_State *L ) /** rand_pseudo_bytes( number byt
   unsigned char * result = (unsigned char *) malloc( len );
   if (!result) return luaL_error( L, "Couldn't allocate memory.");
 
-  if (RAND_bytes( result, len ) != 1) {
-    return luaL_error(L, "Failure in RAND_bytes.");
-  }
+#if OPENSSL_API_COMPAT < 0x10100000L
+  RAND_pseudo_bytes( result, len );
+#else
+  get_random_bytes( result, len );
+#endif
   lua_pushlstring( L, (char *) result, len );
   free( result );
   return 1;

@@ -6,7 +6,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2018 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2019 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -129,7 +129,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: scan_engine.cc 37126 2018-01-28 21:18:17Z fyodor $ */
+/* $Id$ */
 
 #ifdef WIN32
 #include "nmap_winconfig.h"
@@ -1796,6 +1796,13 @@ static unsigned int pingprobe_score(const probespec *pspec, int state) {
       score = 2;
     else if (pspec->pd.tcp.flags == TH_SYN && (state == PORT_OPEN || state == PORT_UNKNOWN))
       score = 3;
+    else if (pspec->pd.tcp.dport == 25 ||
+      pspec->pd.tcp.dport == 113 ||
+      pspec->pd.tcp.dport == 135 ||
+      pspec->pd.tcp.dport == 139 ||
+      pspec->pd.tcp.dport == 445)
+      /* Frequently spoofed port numbers */
+      score = 5;
     else
       score = 6;
     break;
@@ -2028,6 +2035,15 @@ static bool ultrascan_host_pspec_update(UltraScanInfo *USI, HostScanStats *hss,
   return hss->target->flags != oldstate;
 }
 
+static void ultrascan_host_timeout_init(UltraScanInfo *USI, HostScanStats *hss) {
+  if (!hss->target->timeOutClockRunning() && !hss->target->timedOut(NULL)) {
+    if (o.debugging > 2) {
+      log_write(LOG_STDOUT, "Ultrascan timeout init for %s at %.6f\n", hss->target->targetipstr(), TIMEVAL_SECS(USI->now));
+    }
+    hss->target->startTimeOutClock(&USI->now);
+  }
+}
+
 /* Called when a new status is determined for host in hss (eg. it is
    found to be up or down by a ping/ping_arp scan.  The probe that led
    to this new decision is in probeI.  This function needs to update
@@ -2248,6 +2264,7 @@ static void doAnyNewProbes(UltraScanInfo *USI) {
   hss = USI->nextIncompleteHost();
   while (hss != NULL && hss != unableToSend && USI->gstats->sendOK(NULL)) {
     if (hss->freshPortsLeft() && hss->sendOK(NULL)) {
+      ultrascan_host_timeout_init(USI, hss);
       sendNextScanProbe(USI, hss);
       unableToSend = NULL;
     } else if (unableToSend == NULL) {
@@ -2681,18 +2698,6 @@ static void processData(UltraScanInfo *USI) {
   }
 }
 
-/* Start the timeout clocks of any targets that aren't already timedout */
-static void startTimeOutClocks(std::vector<Target *> &Targets) {
-  struct timeval tv;
-  std::vector<Target *>::iterator hostI;
-
-  gettimeofday(&tv, NULL);
-  for (hostI = Targets.begin(); hostI != Targets.end(); hostI++) {
-    if (!(*hostI)->timedOut(NULL))
-      (*hostI)->startTimeOutClock(&tv);
-  }
-}
-
 /* 3rd generation Nmap scanning function. Handles most Nmap port scan types.
 
    The parameter to gives group timing information, and if it is not NULL,
@@ -2723,8 +2728,14 @@ void ultra_scan(std::vector<Target *> &Targets, struct scan_lists *ports,
   // Set the variable for status printing
   o.numhosts_scanning = Targets.size();
 
-  startTimeOutClocks(Targets);
   UltraScanInfo USI(Targets, ports, scantype);
+
+  if (USI.gstats->numprobes <= 0) {
+    if (o.debugging) {
+      log_write(LOG_STDOUT, "Skipping %s: no probes to send\n", scantype2str(scantype));
+    }
+    return;
+  }
 
   /* Use the requested timeouts. */
   if (to != NULL)

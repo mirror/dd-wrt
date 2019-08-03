@@ -1,7 +1,9 @@
 local ajp = require "ajp"
 local shortport = require "shortport"
 local stdnse = require "stdnse"
+local stringaux = require "stringaux"
 local table = require "table"
+local tableaux = require "tableaux"
 
 description = [[
 Discovers which options are supported by the AJP (Apache JServ
@@ -44,7 +46,7 @@ local UNINTERESTING_METHODS = { "GET", "HEAD", "POST", "OPTIONS" }
 local function filter_out(t, filter)
   local result = {}
   for _, e in ipairs(t) do
-    if ( not(stdnse.contains(filter, e)) ) then
+    if ( not(tableaux.contains(filter, e)) ) then
       result[#result + 1] = e
     end
   end
@@ -65,14 +67,14 @@ action = function(host, port)
     return "Failed to get a valid response for the OPTION request"
   end
 
-  local methods = stdnse.strsplit(",%s", response.headers['allow'])
+  local methods = stringaux.strsplit(",%s", response.headers['allow'])
 
   local output = {}
-  table.insert(output, ("Supported methods: %s"):format(stdnse.strjoin(" ", methods)))
+  table.insert(output, ("Supported methods: %s"):format(table.concat(methods, " ")))
 
   local interesting = filter_out(methods, UNINTERESTING_METHODS)
   if ( #interesting > 0 ) then
-    table.insert(output, "Potentially risky methods: " .. stdnse.strjoin(" ", interesting))
+    table.insert(output, "Potentially risky methods: " .. table.concat(interesting, " "))
     table.insert(output, "See https://nmap.org/nsedoc/scripts/ajp-methods.html")
   end
   return stdnse.format_output(true, output)

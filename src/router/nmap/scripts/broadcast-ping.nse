@@ -1,14 +1,14 @@
-local bin = require "bin"
 local coroutine = require "coroutine"
 local ipOps = require "ipOps"
 local nmap = require "nmap"
 local packet = require "packet"
 local stdnse = require "stdnse"
 local tab = require "tab"
+local string = require "string"
 local table = require "table"
 local target = require "target"
+local rand = require "rand"
 
-local openssl = stdnse.silent_require "openssl"
 
 description = [[
 Sends broadcast pings on a selected interface using raw ethernet packets and
@@ -96,28 +96,30 @@ local icmp_packet = function(srcIP, dstIP, ttl, data_length, mtu, seqNo, icmp_id
   -- ICMP Message
   local icmp_payload = nil
   if data_length and data_length>0 then
-    icmp_payload = openssl.rand_bytes(data_length)
+    icmp_payload = rand.random_string(data_length)
   else
     icmp_payload = ""
   end
 
   -- Type=08; Code=00; Chksum=0000; ID=icmp_id; SeqNo=icmp_seqNo; Payload=icmp_payload(hex string);
-  local icmp_msg = bin.pack(">CCSASA", 8, 0, 0, icmp_id, seqNo, icmp_payload)
+  local icmp_msg = string.pack(">BBI2", 8, 0, 0) .. icmp_id .. string.pack("I2", seqNo) .. icmp_payload
 
   local icmp_checksum = packet.in_cksum(icmp_msg)
 
-  icmp_msg = bin.pack(">CCSASA", 8, 0, icmp_checksum, icmp_id, seqNo, icmp_payload)
+  icmp_msg = string.pack(">BBI2", 8, 0, icmp_checksum) .. icmp_id .. string.pack("I2", seqNo) .. icmp_payload
 
 
   --IP header
-  local ip_bin = bin.pack(">ASSACCx10", -- x10 = checksum & addresses
-    "\x45\x00", -- IPv4, no options, no DSCN, no ECN
+  local ip_bin = "\x45\x00", -- IPv4, no options, no DSCN, no ECN
+    string.pack(">I2I2",
     20 + #icmp_msg, -- total length
-    0, -- IP ID
-    "\x40\x00", -- DF
+    0) -- IP ID
+    .. "\x40\x00" -- DF
+    .. string.pack("BB",
     ttl,
     1 -- ICMP
     )
+    .. ("\0"):rep(10) -- checksum & addresses
 
   -- IP+ICMP; Addresses and checksum need to be filled
   local icmp_bin = ip_bin .. icmp_msg
@@ -168,7 +170,7 @@ local broadcast_if = function(if_table,icmp_responders)
 
   for i = 1, num_probes do
     -- ICMP packet
-    local icmp_id = openssl.rand_bytes(2)
+    local icmp_id = rand.random_string(2)
     icmp_ids[icmp_id]=true
     local icmp = icmp_packet( source_IP, destination_IP, ttl,
     data_length, mtu, sequence_number, icmp_id)

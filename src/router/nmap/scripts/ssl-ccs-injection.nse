@@ -2,12 +2,9 @@ local nmap = require('nmap')
 local shortport = require('shortport')
 local sslcert = require('sslcert')
 local stdnse = require('stdnse')
-local table = require('table')
 local vulns = require('vulns')
-local have_tls, tls = pcall(require,'tls')
-
-assert(have_tls,
-  "This script requires tls.lua from https://nmap.org/nsedoc/lib/tls.html")
+local tls = require 'tls'
+local tableaux = require "tableaux"
 
 description = [[
 Detects whether a server is vulnerable to the SSL/TLS "CCS Injection"
@@ -69,7 +66,7 @@ the server is vulnerable.
 author = "Claudiu Perta <claudiu.perta@gmail.com>"
 license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = { "vuln", "safe" }
-
+dependencies = {"https-redirect"}
 
 portrule = function(host, port)
  return shortport.ssl(host, port) or sslcert.getPrepareTLSWithoutReconnect(port)
@@ -82,6 +79,33 @@ local Error = {
   SSL_HANDSHAKE     = 3,
   TIMEOUT           = 4
 }
+
+---
+-- Reads an SSL/TLS record and returns true if it's any fatal
+-- alert and false otherwise.
+local function fatal_alert(s)
+  local status, buffer = tls.record_buffer(s)
+  if not status then
+    return false
+  end
+
+  local position, record = tls.record_read(buffer, 1)
+  if record == nil then
+    return false
+  end
+
+  if record.type ~= "alert" then
+    return false
+  end
+
+  for _, body in ipairs(record.body) do
+    if body.level == "fatal" then
+      return true
+    end
+  end
+
+  return false
+end
 
 ---
 -- Reads an SSL/TLS record and returns true if it's a fatal,
@@ -115,9 +139,12 @@ end
 local function test_ccs_injection(host, port, version)
   local hello = tls.client_hello({
       ["protocol"] = version,
+      -- Only negotiate SSLv3 on its own;
+      -- TLS implementations may refuse to answer if SSLv3 is mentioned.
+      ["record_protocol"] = (version == "SSLv3") and "SSLv3" or "TLSv1.0",
       -- Claim to support every cipher
       -- Doesn't work with IIS, but IIS isn't vulnerable
-      ["ciphers"] = stdnse.keys(tls.CIPHERS),
+      ["ciphers"] = tableaux.keys(tls.CIPHERS),
       ["compressors"] = {"NULL"},
       ["extensions"] = {
         -- Claim to support common elliptic curves
@@ -177,6 +204,14 @@ local function test_ccs_injection(host, port, version)
       stdnse.debug1("Protocol version mismatch (%s)", version)
       s:close()
       return false, Error.PROTOCOL_MISMATCH
+    elseif record.type == "alert" then
+      for _, body in ipairs(record.body) do
+        if body.level == "fatal" then
+          stdnse.debug1("Fatal alert: %s", body.description)
+          -- Could be something else, but this lets us retry
+          return false, Error.PROTOCOL_MISMATCH
+        end
+      end
     end
 
     if record.type == "handshake" then
@@ -204,6 +239,17 @@ local function test_ccs_injection(host, port, version)
     s:close()
     return false, Error.SSL_HANDSHAKE
   end
+
+  -- Optimistically read the first alert message
+  -- Shorter timeout: we expect most servers will bail at this point.
+  s:set_timeout(stdnse.get_timeout(host))
+  -- If we got an alert right away, we can stop right away: it's not vulnerable.
+  if fatal_alert(s) then
+    s:close()
+    return false, Error.NOT_VULNERABLE
+  end
+  -- Restore our slow timeout
+  s:set_timeout(10000)
 
   -- Send the second ccs message
   status, err = s:send(ccs)
@@ -258,8 +304,10 @@ a crafted TLS handshake, aka the "CCS Injection" vulnerability.
 
   local report = vulns.Report:new(SCRIPT_NAME, host, port)
 
-  -- Iterate over tls.PROTOCOLS
-  for tls_version, _ in pairs(tls.PROTOCOLS) do
+  -- client hello will support multiple versions of TLS. We only retry to fall
+  -- back to SSLv3, which some implementations won't allow in combination with
+  -- newer versions.
+  for _, tls_version in ipairs({"TLSv1.2", "SSLv3"}) do
     local vulnerable, err = test_ccs_injection(host, port, tls_version)
 
     -- Return an explicit message in case of a TIMEOUT,

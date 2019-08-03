@@ -3,7 +3,9 @@ local nmap = require "nmap"
 local shortport = require "shortport"
 local stdnse = require "stdnse"
 local string = require "string"
+local stringaux = require "stringaux"
 local table = require "table"
+local rand = require "rand"
 
 description = [[
 Enumerates TFTP (trivial file transfer protocol) filenames by testing
@@ -66,7 +68,7 @@ end
 
 local generate_cisco_address_confg = function(base_address)
   local filenames = {}
-  local octets = stdnse.strsplit("%.", base_address)
+  local octets = stringaux.strsplit("%.", base_address)
 
   for i = 0, 255 do
     local address_confg = octets[1] .. "." .. octets[2] .. "." .. octets[3] .. "." .. i .. "-confg"
@@ -175,7 +177,7 @@ local check_file_present = function(host, port, filename)
 end
 
 local check_open_tftp = function(host, port)
-  local random_name = stdnse.generate_random_string(8, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_")
+  local random_name = rand.random_string(8, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_")
   local ret_value = check_file_present(host, port, random_name)
   if (ret_value == FILE_FOUND or ret_value == FILE_NOT_FOUND) then
     return true

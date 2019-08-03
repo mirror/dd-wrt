@@ -6,7 +6,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2018 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2019 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -129,16 +129,12 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nmap.h 37193 2018-03-15 14:28:43Z dmiller $ */
+/* $Id$ */
 
 #ifndef NMAP_H
 #define NMAP_H
 
 /************************INCLUDES**********************************/
-
-#ifdef WIN32
-#include "mswin32\winclude.h"
-#endif
 
 #ifdef HAVE_CONFIG_H
 #include "nmap_config.h"
@@ -187,11 +183,20 @@
 
 /*******  DEFINES  ************/
 
+#ifdef NMAP_OEM
+#include "../nmap-build/nmap-oem.h"
+#endif
+
+#ifndef NMAP_NAME
+#define NMAP_NAME "Nmap"
+#endif
+#define NMAP_URL "https://nmap.org"
+
 #ifndef NMAP_VERSION
 /* Edit this definition only within the quotes, because it is read from this
    file by the makefiles. */
-#define NMAP_VERSION "7.70"
-#define NMAP_NUM_VERSION "7.0.70.000"
+#define NMAP_VERSION "7.70SVN"
+#define NMAP_NUM_VERSION "7.0.70.100"
 #endif
 /* The version number of updates retrieved by the nmap-update
    program. It can be different (but should always be the same or
@@ -292,7 +297,7 @@
 /* # define PINGTYPE_RAWTCP 128 used to be here, but was never used. */
 #define PINGTYPE_CONNECTTCP 256
 #define PINGTYPE_UDP  512
-#define PINGTYPE_ARP 1024
+/* #define PINGTYPE_ARP 1024 // Not used; see o.implicitARPPing */
 #define PINGTYPE_PROTO 2048
 #define PINGTYPE_SCTP_INIT 4096
 

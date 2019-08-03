@@ -9,7 +9,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2018 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2019 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -132,7 +132,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: output.cc 37126 2018-01-28 21:18:17Z fyodor $ */
+/* $Id$ */
 
 #include "nmap.h"
 #include "output.h"
@@ -309,16 +309,18 @@ void win32_fatal_raw_sockets(const char *devname) {
    words the names of interfaces Nmap has no way of using.*/
 static void print_iflist_pcap_mapping(const struct interface_info *iflist,
                                       int numifs) {
-  pcap_if_t *pcap_ifs;
+  pcap_if_t *pcap_ifs = NULL;
   std::list<const pcap_if_t *> leftover_pcap_ifs;
   std::list<const pcap_if_t *>::iterator leftover_p;
   int i;
 
   /* Build a list of "leftover" libpcap interfaces. Initially it contains all
      the interfaces. */
-  pcap_ifs = getpcapinterfaces();
-  for (const pcap_if_t *p = pcap_ifs; p != NULL; p = p->next)
-    leftover_pcap_ifs.push_front(p);
+  if (o.have_pcap) {
+    pcap_ifs = getpcapinterfaces();
+    for (const pcap_if_t *p = pcap_ifs; p != NULL; p = p->next)
+      leftover_pcap_ifs.push_front(p);
+  }
 
   if (numifs > 0 || !leftover_pcap_ifs.empty()) {
     NmapOutputTable Tbl(1 + numifs + leftover_pcap_ifs.size(), 2);
@@ -362,7 +364,9 @@ static void print_iflist_pcap_mapping(const struct interface_info *iflist,
     log_flush_all();
   }
 
-  pcap_freealldevs(pcap_ifs);
+  if (pcap_ifs) {
+    pcap_freealldevs(pcap_ifs);
+  }
 }
 #endif
 
@@ -489,8 +493,21 @@ static std::string escape_for_screen(const std::string s) {
    xml_write_escaped is not enough; some characters are not allowed to appear in
    XML, not even escaped. */
 std::string protect_xml(const std::string s) {
-  /* escape_for_screen is good enough. */
-  return escape_for_screen(s);
+  std::string r;
+
+  for (unsigned int i = 0; i < s.size(); i++) {
+    char buf[5];
+    unsigned char c = s[i];
+    // Printable and some whitespace ok.
+    if (c == '\t' || c == '\r' || c == '\n' || (0x20 <= c && c <= 0x7e)) {
+      r += c;
+    } else {
+      Snprintf(buf, sizeof(buf), "\\x%02X", c);
+      r += buf;
+    }
+  }
+
+  return r;
 }
 
 /* This is a helper function to determine the ordering of the script results
@@ -2104,7 +2121,7 @@ void printosscanoutput(Target *currenths) {
   log_flush_all();
 }
 
-/* An auxillary function for printserviceinfooutput(). Returns
+/* An auxiliary function for printserviceinfooutput(). Returns
    non-zero if a and b are considered the same hostnames. */
 static int hostcmp(const char *a, const char *b) {
   return strcasecmp(a, b) == 0;

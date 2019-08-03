@@ -2,7 +2,7 @@
  * ncat.h                                                                  *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2018 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2019 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -125,7 +125,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: ncat.h 37193 2018-03-15 14:28:43Z dmiller $ */
+/* $Id$ */
 
 #ifndef NCAT_H_
 #define NCAT_H_
@@ -152,7 +152,7 @@
 /* Ncat information for output, etc. */
 #define NCAT_NAME "Ncat"
 #define NCAT_URL "https://nmap.org/ncat"
-#define NCAT_VERSION "7.70"
+#define NCAT_VERSION "7.70SVN"
 
 #ifndef __GNUC__
 #ifndef __attribute__
@@ -191,7 +191,7 @@ struct socks5_request {
     char cmd;
     char rsv;
     char atyp;
-    char dst[SOCKS_BUFF_SIZE]; // addr/name and port info
+    unsigned char dst[SOCKS_BUFF_SIZE]; // addr/name and port info
 } __attribute__((packed));
 #ifdef WIN32
 #pragma pack()
@@ -265,9 +265,14 @@ struct socks5_request {
 
 #define SOCKS5_USR_MAXLEN       255
 #define SOCKS5_PWD_MAXLEN       255
+#define SOCKS5_DST_MAXLEN       255
 
 #if SOCKS_BUFF_SIZE < (1 + SOCKS5_USR_MAXLEN) + (1 + SOCKS5_PWD_MAXLEN)
 #error SOCKS_BUFF_SIZE is defined too small to handle SOCKS5 authentication
+#endif
+
+#if SOCKS_BUFF_SIZE < (1 + SOCKS5_DST_MAXLEN) + 2
+#error SOCKS_BUFF_SIZE is defined too small to handle SOCKS5 destination
 #endif
 
 /* Length of IPv6 address */

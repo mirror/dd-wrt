@@ -2,10 +2,12 @@ local stdnse = require "stdnse"
 local shortport = require "shortport"
 local dns = require "dns"
 local base32 = require "base32"
-local bin = require "bin"
 local nmap = require "nmap"
 local string = require "string"
+local stringaux = require "stringaux"
 local table = require "table"
+local tableaux = require "tableaux"
+local rand = require "rand"
 
 local openssl = stdnse.silent_require "openssl"
 
@@ -60,7 +62,7 @@ References:
 -- @see dns-nsec-enum.nse
 -- @see dns-ip6-arpa-scan.nse
 -- @see dns-brute.nse
--- @see dns-zone-transfer
+-- @see dns-zone-transfer.nse
 --
 -- @output
 -- PORT   STATE SERVICE
@@ -102,11 +104,11 @@ local function remove_empty(t)
 end
 
 local function split(domain)
-  return stdnse.strsplit("%.", domain)
+  return stringaux.strsplit("%.", domain)
 end
 
 local function join(components)
-  return stdnse.strjoin(".", remove_empty(components))
+  return table.concat(remove_empty(components, "."))
 end
 
 -- Remove the first component of a domain name. Return nil if the number of
@@ -174,14 +176,14 @@ end
 -- generate a random hash with domains suffix
 -- return both domain and its hash
 local function generate_hash(domain, iter, salt)
-  local rand_str = stdnse.generate_random_string(8, "etaoinshrdlucmfw")
+  local rand_str = rand.random_string(8, "etaoinshrdlucmfw")
   local random_domain = rand_str .. "." .. domain
   local packed_domain = {}
   for word in string.gmatch(random_domain, "[^%.]+") do
-    packed_domain[#packed_domain+1] = bin.pack("p", word)
+    packed_domain[#packed_domain+1] = string.pack("s1", word)
   end
   salt = stdnse.fromhex( salt)
-  local to_hash = bin.pack("AxA", table.concat(packed_domain), salt)
+  local to_hash = ("%s\0%s"):format(table.concat(packed_domain), salt)
   iter = iter - 1
   local hash = openssl.sha1(to_hash)
   for i=0,iter do
@@ -217,7 +219,7 @@ local function query_for_hashes(host,subdomain,domain)
     for _, nsec3 in ipairs(auth_filter(result, "NSEC3")) do
       local h1 = string.lower(remove_suffix(nsec3.dname,domain))
       local h2 = string.lower(nsec3.hash.base32)
-      if not stdnse.contains(all_results,"nexthash " .. h1 .. " " .. h2) then
+      if not tableaux.contains(all_results,"nexthash " .. h1 .. " " .. h2) then
         table.insert(all_results, "nexthash " .. h1 .. " " .. h2)
         stdnse.debug1("nexthash " .. h1 .. " " .. h2)
       end
@@ -238,7 +240,7 @@ local function enum(host, port, domain)
   local todo = {}
   local dnssec, status, result = false, false, "No Answer"
   local result = {}
-  local subdomain = stdnse.generate_random_string(8, "etaoinshrdlucmfw")
+  local subdomain = rand.random_string(8, "etaoinshrdlucmfw")
   local full_domain = join({subdomain, domain})
   local iter
   local salt

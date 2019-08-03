@@ -20,8 +20,6 @@
 --    - A class containing code for handling SIP responses
 -- * Request
 --    - A class containing code for handling SIP requests
--- * Util
---    - A class containing static utility functions
 -- * SIPAuth
 --    - A class containing code related to SIP Authentication
 -- * Helper
@@ -36,13 +34,13 @@
 -- Version 0.1
 -- Created 2011/03/30 - v0.1 - created by Patrik Karlsson <patrik@cqure.net>
 
-local bin = require "bin"
 local nmap = require "nmap"
 local os = require "os"
 local stdnse = require "stdnse"
 local openssl = stdnse.silent_require "openssl"
-local string = require "string"
+local stringaux = require "stringaux"
 local table = require "table"
+local rand = require "rand"
 _ENV = stdnse.module("sip", stdnse.seeall)
 
 -- Method constants
@@ -66,6 +64,13 @@ Error = {
   NOTFOUND = 404,
   PROXY_AUTH_REQUIRED = 407,
 }
+
+-- Generates a random string of the requested length.
+-- @param length The length of the string to return
+-- @return The random string.
+local get_random_string = function(length)
+  return rand.random_string(length, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_")
+end
 
 -- The SessionData class
 SessionData = {
@@ -214,16 +219,17 @@ Session = {
     request:setUri(uri)
     request:setSessionData(self.sessdata)
 
-    local data = {}
-    table.insert(data, "v=0")
-    table.insert(data, ("o=- %s %s IN IP4 %s"):format(tm, tm, lhost))
-    table.insert(data, "s=-")
-    table.insert(data, ("c=IN IP4 %s"):format(lhost))
-    table.insert(data, "t=0 0")
-    table.insert(data, "m=audio 49174 RTP/AVP 0")
-    table.insert(data, "a=rtpmap:0 PCMU/8000")
+    local data = {
+      "v=0",
+      ("o=- %s %s IN IP4 %s"):format(tm, tm, lhost),
+      "s=-",
+      ("c=IN IP4 %s"):format(lhost),
+      "t=0 0",
+      "m=audio 49174 RTP/AVP 0",
+      "a=rtpmap:0 PCMU/8000",
+    }
 
-    request:setContent(stdnse.strjoin("\r\n", data))
+    request:setContent(table.concat(data, "\r\n"))
     request:setContentType("application/sdp")
 
     local status, response = self:exch(request)
@@ -447,7 +453,7 @@ Response = {
     local o = {}
     setmetatable(o, self)
     self.__index = self
-    o.tbl = stdnse.strsplit("\r\n", str)
+    o.tbl = stringaux.strsplit("\r\n", str)
     return o
   end,
 
@@ -530,7 +536,7 @@ Request = {
     o.maxfwd = 70
     o.method = method
     o.length = 0
-    o.cid = Util.get_random_string(60)
+    o.cid = get_random_string(60)
     return o
   end,
 
@@ -572,7 +578,7 @@ Request = {
   --- Sets the allow header
   -- @name Request.setAllow
   -- @param allow table containing all of the allowed SIP methods
-  setAllow = function(self, allow) self.allow = stdnse.strjoin(", ", allow) end,
+  setAllow = function(self, allow) self.allow = table.concat(allow, ", ") end,
 
   --- Sets the request content data
   -- @name Request.setContent
@@ -639,9 +645,9 @@ Request = {
   -- @return ret string containing the complete request for sending over the socket
   __tostring = function(self)
     local data = {}
-    local branch = "z9hG4bK" .. Util.get_random_string(25)
+    local branch = "z9hG4bK" .. get_random_string(25)
     -- must be at least 32-bit unique
-    self.from_tag = self.from_tag or Util.get_random_string(20)
+    self.from_tag = self.from_tag or get_random_string(20)
     local sessdata = self.sessdata
     local lhost, lport = sessdata:getClient()
     local rhost, rport = sessdata:getServer()
@@ -723,22 +729,7 @@ Request = {
       table.insert(data, ("Content-Length:  %d"):format(self.length))
       table.insert(data, "")
     end
-    return stdnse.strjoin("\r\n", data)
-  end,
-
-}
-
--- A minimal Util class with supporting functions
-Util = {
-
-  --- Generates a random string of the requested length.
-  -- @name Util.get_random_string
-  -- @param length (optional) The length of the string to return. Default: 8.
-  -- @param set    (optional) The set of letters to choose from. Default: upper, lower, numbers, and underscore.
-  -- @return The random string.
-  get_random_string = function(length, set)
-    return stdnse.generate_random_string(length or 8,
-      set or "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_")
+    return table.concat(data, "\r\n")
   end,
 
 }
@@ -804,12 +795,12 @@ SipAuth = {
     assert(self.uri, "SipAuth: No uri specified")
 
     local result
-    if ( self.algorithm == "MD5" ) then
-      local HA1 = select(2, bin.unpack("H16", openssl.md5(self.username .. ":" .. self.realm .. ":" .. self.password)))
-      local HA2 = select(2, bin.unpack("H16", openssl.md5(self.method .. ":" .. self.uri)))
+    if ( self.algorithm:upper() == "MD5" ) then
+      local HA1 = stdnse.tohex(openssl.md5(self.username .. ":" .. self.realm .. ":" .. self.password))
+      local HA2 = stdnse.tohex(openssl.md5(self.method .. ":" .. self.uri))
       result = openssl.md5(HA1:lower() .. ":" .. self.nonce ..":" .. HA2:lower())
     end
-    return select(2, bin.unpack("H16", result)):lower()
+    return stdnse.tohex(result):lower()
   end,
 
   --- Creates the complete authentication response
