@@ -40,6 +40,12 @@
 #include "sfe.h"
 #include "sfe_cm.h"
 #include "fast-classifier.h"
+
+#include "sfe_ipv4.c"
+#ifdef SFE_SUPPORT_IPV6
+#include "sfe_ipv6.c"
+#endif
+
 typedef enum fast_classifier_exception {
 	FAST_CL_EXCEPTION_PACKET_BROADCAST,
 	FAST_CL_EXCEPTION_PACKET_MULTICAST,
@@ -65,6 +71,7 @@ typedef enum fast_classifier_exception {
 	FAST_CL_EXCEPTION_MAX
 } fast_classifier_exception_t;
 
+#if (DEBUG_LEVEL > 0)
 static char *fast_classifier_exception_events_string[FAST_CL_EXCEPTION_MAX] = {
 	"PACKET_BROADCAST",
 	"PACKET_MULTICAST",
@@ -88,6 +95,7 @@ static char *fast_classifier_exception_events_string[FAST_CL_EXCEPTION_MAX] = {
 	"UPDATE_PROTOCOL_FAIL",
 	"CT_DESTROY_MISS",
 };
+#endif
 /*
  * Per-module structure.
  */
@@ -107,8 +115,9 @@ struct fast_classifier {
 #ifdef SFE_SUPPORT_IPV6
 	struct notifier_block inet6_notifier;	/* IPv6 notifier */
 #endif
+#if (DEBUG_LEVEL > 0)
 	u32 exceptions[FAST_CL_EXCEPTION_MAX];
-
+#endif
 };
 
 static struct fast_classifier __fsc;
@@ -192,6 +201,7 @@ static bool skip_to_bridge_ingress;
  * fast_classifier_incr_exceptions()
  *	increase an exception counter.
  */
+#if (DEBUG_LEVEL > 0)
 static inline void fast_classifier_incr_exceptions(fast_classifier_exception_t except)
 {
 	struct fast_classifier *sc = &__fsc;
@@ -200,6 +210,11 @@ static inline void fast_classifier_incr_exceptions(fast_classifier_exception_t e
 	sc->exceptions[except]++;
 	spin_unlock_bh(&sc->lock);
 }
+#else
+static inline void fast_classifier_incr_exceptions(fast_classifier_exception_t except) 
+{
+}
+#endif
 /*
  * fast_classifier_recv()
  *	Handle packet receives.
@@ -1803,6 +1818,8 @@ static ssize_t fast_classifier_set_skip_bridge_ingress(struct device *dev,
 	return size;
 }
 
+#if (DEBUG_LEVEL > 0)
+
 /*
  * fast_classifier_get_exceptions
  * 	dump exception counters
@@ -1824,6 +1841,7 @@ static ssize_t fast_classifier_get_exceptions(struct device *dev,
 
 	return len;
 }
+#endif
 /*
  * sysfs attributes.
  */
@@ -1833,8 +1851,11 @@ static const struct device_attribute fast_classifier_debug_info_attr =
 	__ATTR(debug_info, S_IRUGO, fast_classifier_get_debug_info, NULL);
 static const struct device_attribute fast_classifier_skip_bridge_ingress =
 	__ATTR(skip_to_bridge_ingress, S_IWUSR | S_IRUGO, fast_classifier_get_skip_bridge_ingress, fast_classifier_set_skip_bridge_ingress);
+
+#if (DEBUG_LEVEL > 0)
 static const struct device_attribute fast_classifier_exceptions_attr =
 	__ATTR(exceptions, S_IRUGO, fast_classifier_get_exceptions, NULL);
+#endif
 /*
  * fast_classifier_init()
  */
@@ -1844,8 +1865,10 @@ static int __init fast_classifier_init(void)
 	int result = -1;
 	struct net *net;
 
-//	printk(KERN_ALERT "fast-classifier: starting up\n");
-//	DEBUG_INFO("SFE CM init\n");
+	sfe_ipv4_init();
+#ifdef SFE_SUPPORT_IPV6
+	sfe_ipv6_init();
+#endif
 	printk(KERN_ALERT "fast-classifier (PBR safe v2.1.6b): starting up\n");
 	DEBUG_INFO("SFE FC init\n");
 
@@ -1881,6 +1904,7 @@ static int __init fast_classifier_init(void)
 		goto exit2;
 	}
 
+#if (DEBUG_LEVEL > 0)
 	result = sysfs_create_file(sc->sys_fast_classifier, &fast_classifier_exceptions_attr.attr);
 	if (result) {
 		DEBUG_ERROR("failed to register exceptions file: %d\n", result);
@@ -1889,6 +1913,7 @@ static int __init fast_classifier_init(void)
 		sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_skip_bridge_ingress.attr);
 		goto exit2;
 	}
+#endif
 	sc->dev_notifier.notifier_call = fast_classifier_device_event;
 	sc->dev_notifier.priority = 1;
 	register_netdevice_notifier(&sc->dev_notifier);
@@ -1974,7 +1999,9 @@ exit3:
 	sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_offload_at_pkts_attr.attr);
 	sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_debug_info_attr.attr);
 	sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_skip_bridge_ingress.attr);
+#if (DEBUG_LEVEL > 0)
 	sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_exceptions_attr.attr);
+#endif
 exit2:
 	kobject_put(sc->sys_fast_classifier);
 
@@ -2047,6 +2074,11 @@ static void __exit fast_classifier_exit(void)
 	unregister_netdevice_notifier(&sc->dev_notifier);
 
 	kobject_put(sc->sys_fast_classifier);
+#ifdef SFE_SUPPORT_IPV6
+	sfe_ipv6_exit();
+#endif
+	sfe_ipv4_exit();
+
 }
 
 module_init(fast_classifier_init)
