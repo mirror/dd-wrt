@@ -57,6 +57,7 @@
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/utsname.h>
+#include <limits.h>
 #ifdef HAVE_LINUX_USBDEVICE_FS_H
 /*
  * We might need <linux/compiler.h> to define __user for
