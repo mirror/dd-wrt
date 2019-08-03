@@ -1159,7 +1159,20 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 
 	dev_put(dev);
 
-	if (!fast_classifier_find_dev_and_mac_addr(skb, &sic.dest_ip_xlate, &dest_dev_tmp, sic.dest_mac_xlate, is_v4)) {
+	/*
+	 * This is a hack to work-around the issue where dest_ip & dest_ip_xlate differs, i.e. reverse NAT, which
+	 * interferes with UDP port forwarding in DD-WRT.  Not sure why TCP is OK, since both UDP and TCP lookup
+	 * destination interface are the same.  For now, we fall back to the original behaviour of the destination
+	 * interface lookup if we detect that we're handling post-routed reverse NAT traffic.
+	 *
+	 * TODO: to improve the way destination interface is looked up.
+	 */
+	if (likely(sfe_addr_equal(&sic.dest_ip_xlate, &sic.dest_ip, is_v4)))
+		tmp_skb = skb;
+	else
+		tmp_skb = NULL;
+
+	if (!fast_classifier_find_dev_and_mac_addr(tmp_skb, &sic.dest_ip_xlate, &dest_dev_tmp, sic.dest_mac_xlate, is_v4)) {
 		fast_classifier_incr_exceptions(FAST_CL_EXCEPTION_NO_DEST_XLATE_DEV);
 		goto done1;
 	}
@@ -1836,7 +1849,7 @@ static int __init fast_classifier_init(void)
 
 //	printk(KERN_ALERT "fast-classifier: starting up\n");
 //	DEBUG_INFO("SFE CM init\n");
-	printk(KERN_ALERT "fast-classifier (PBR safe v2.1.3b): starting up\n");
+	printk(KERN_ALERT "fast-classifier (PBR safe v2.1.6b): starting up\n");
 	DEBUG_INFO("SFE FC init\n");
 
 	hash_init(fc_conn_ht);
