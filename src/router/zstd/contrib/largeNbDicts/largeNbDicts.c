@@ -424,7 +424,7 @@ static ddict_collection_t createDDictCollection(const void* dictBuffer, size_t d
 }
 
 
-/* mess with adresses, so that linear scanning dictionaries != linear address scanning */
+/* mess with addresses, so that linear scanning dictionaries != linear address scanning */
 void shuffleDictionaries(ddict_collection_t dicts)
 {
     size_t const nbDicts = dicts.nbDDict;
@@ -559,7 +559,7 @@ static int benchMem(slice_collection_t dstBlocks,
         CONTROL(BMK_isSuccessful_runOutcome(outcome));
 
         BMK_runTime_t const result = BMK_extract_runTime(outcome);
-        U64 const dTime_ns = result.nanoSecPerRun;
+        double const dTime_ns = result.nanoSecPerRun;
         double const dTime_sec = (double)dTime_ns / 1000000000;
         size_t const srcSize = result.sumOfReturn;
         double const dSpeed_MBps = (double)srcSize / dTime_sec / (1 MB);

@@ -26,7 +26,7 @@ if (MSVC)
     set(PlatformDependResources ${MSVC_RESOURCE_DIR}/zstd.rc)
 endif ()
 
-add_executable(zstd ${PROGRAMS_DIR}/zstdcli.c ${PROGRAMS_DIR}/util.c ${PROGRAMS_DIR}/fileio.c ${PROGRAMS_DIR}/benchfn.c ${PROGRAMS_DIR}/benchzstd.c ${PROGRAMS_DIR}/datagen.c ${PROGRAMS_DIR}/dibio.c ${PlatformDependResources})
+add_executable(zstd ${PROGRAMS_DIR}/zstdcli.c ${PROGRAMS_DIR}/util.c ${PROGRAMS_DIR}/timefn.c ${PROGRAMS_DIR}/fileio.c ${PROGRAMS_DIR}/benchfn.c ${PROGRAMS_DIR}/benchzstd.c ${PROGRAMS_DIR}/datagen.c ${PROGRAMS_DIR}/dibio.c ${PlatformDependResources})
 target_link_libraries(zstd libzstd_static)
 if (CMAKE_SYSTEM_NAME MATCHES "(Solaris|SunOS)")
     target_link_libraries(zstd rt)
@@ -38,6 +38,8 @@ if (UNIX)
     add_custom_target(unzstd ALL ${CMAKE_COMMAND} -E create_symlink zstd unzstd DEPENDS zstd COMMENT "Creating unzstd symlink")
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/zstdcat DESTINATION "bin")
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/unzstd DESTINATION "bin")
+    install(PROGRAMS ${PROGRAMS_DIR}/zstdgrep DESTINATION "bin")
+    install(PROGRAMS ${PROGRAMS_DIR}/zstdless DESTINATION "bin")
 
     add_custom_target(zstd.1 ALL
         ${CMAKE_COMMAND} -E copy ${PROGRAMS_DIR}/zstd.1 .
@@ -63,7 +65,7 @@ if (UNIX)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/zstdgrep.1 DESTINATION "${MAN_INSTALL_DIR}")
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/zstdless.1 DESTINATION "${MAN_INSTALL_DIR}")
 
-    add_executable(zstd-frugal ${PROGRAMS_DIR}/zstdcli.c ${PROGRAMS_DIR}/util.c ${PROGRAMS_DIR}/fileio.c)
+    add_executable(zstd-frugal ${PROGRAMS_DIR}/zstdcli.c ${PROGRAMS_DIR}/util.c ${PROGRAMS_DIR}/timefn.c ${PROGRAMS_DIR}/fileio.c)
     target_link_libraries(zstd-frugal libzstd_static)
     set_property(TARGET zstd-frugal APPEND PROPERTY COMPILE_DEFINITIONS "ZSTD_NOBENCH;ZSTD_NODICT")
 endif ()
@@ -83,7 +85,9 @@ endif ()
 
 option(ZSTD_ZLIB_SUPPORT "ZLIB SUPPORT" OFF)
 option(ZSTD_LZMA_SUPPORT "LZMA SUPPORT" OFF)
+option(ZSTD_LZ4_SUPPORT "LZ4 SUPPORT" OFF)
 
+# Add gzip support
 if (ZSTD_ZLIB_SUPPORT)
     find_package(ZLIB REQUIRED)
 
@@ -96,6 +100,7 @@ if (ZSTD_ZLIB_SUPPORT)
     endif ()
 endif ()
 
+# Add lzma support
 if (ZSTD_LZMA_SUPPORT)
     find_package(LibLZMA REQUIRED)
 
@@ -105,5 +110,18 @@ if (ZSTD_LZMA_SUPPORT)
         set_property(TARGET zstd APPEND PROPERTY COMPILE_DEFINITIONS "ZSTD_LZMACOMPRESS;ZSTD_LZMADECOMPRESS")
     else ()
         message(SEND_ERROR "lzma library is missing")
+    endif ()
+endif ()
+
+# Add lz4 support
+if (ZSTD_LZ4_SUPPORT)
+    find_package(LibLZ4 REQUIRED)
+
+    if (LIBLZ4_FOUND)
+        include_directories(${LIBLZ4_INCLUDE_DIRS})
+        target_link_libraries(zstd ${LIBLZ4_LIBRARIES})
+        set_property(TARGET zstd APPEND PROPERTY COMPILE_DEFINITIONS "ZSTD_LZ4COMPRESS;ZSTD_LZ4DECOMPRESS")
+    else ()
+        message(SEND_ERROR "lz4 library is missing")
     endif ()
 endif ()
