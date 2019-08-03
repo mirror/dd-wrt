@@ -178,7 +178,7 @@ cflags-$(CONFIG_CPU_R10000)	+= $(call cc-option,-march=r10000,-march=r8000) \
 			-Wa,--trap
 ifdef CONFIG_CPU_CAVIUM_OCTEON
 ifdef CONFIG_CAVIUM_OCTEON2
-cflags-y += $(call cc-option,-march=octeon2) -Wa,--trap
+cflags-y += $(call cc-option,-march=octeon+) -Wa,--trap
 ifeq (,$(findstring march=octeon+, $(cflags-y)))
 cflags-y += -Wa,-march=octeon+
 endif
