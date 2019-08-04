@@ -6,7 +6,7 @@
  *  Copyright (C) 2014-2018 Jonathan Morton <chromatix99@gmail.com>
  *  Copyright (C) 2017-2018 Toke Høiland-Jørgensen <toke@toke.dk>
  */
-
+#ifdef HAVE_CAKE
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -920,3 +920,4 @@ struct qdisc_util cake_qdisc_util = {
 	.print_qopt	= cake_print_opt,
 	.print_xstats	= cake_print_xstats,
 };
+#endif
