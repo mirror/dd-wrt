@@ -331,6 +331,7 @@ obj-$(CONFIG_RAID) += mdadm raidmanager
 obj-$(CONFIG_I2C_GPIO_CUSTOM) += i2c-gpio-custom
 obj-$(CONFIG_NEWPORT) += cpt8x
 obj-$(CONFIG_RSYNC) += rsync
+obj-$(CONFIG_CAKE) += cake
 
 obj-y+=configs
 
