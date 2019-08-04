@@ -22,7 +22,7 @@ CXXFLAGS	+= $(CFLAGS)
 PWD			= /home/luis/devel/Kai/kaid
 
 PCAP		= ../../libpcap/pcap.o \
-../../libpcap/inet.o \
+../../libpcap/fmtutils.o \
 ../../libpcap/gencode.o \
 ../../libpcap/savefile.o \
 ../../libpcap/bpf_filter.o \
@@ -32,7 +32,7 @@ PCAP		= ../../libpcap/pcap.o \
 ../../libpcap/grammar.o \
 ../../libpcap/pcap-usb-linux.o \
 ../../libpcap/sf-pcap.o \
-../../libpcap/sf-pcap-ng.o \
+../../libpcap/sf-pcapng.o \
 ../../libpcap/pcap-common.o \
 ../../libpcap/scanner.o
 
@@ -42,8 +42,8 @@ else
 PCAP	+= ../../libpcap/pcap-linux.o
 endif
 
-#PCAP		+= ../../libpcap/fad-gifc.o
-PCAP		+= ../../libpcap/fad-getad.o
+PCAP		+= ../../libpcap/fad-gifc.o
+#PCAP		+= ../../libpcap/fad-getad.o
 PRE_CFLAGS	+= -DOPENWRT
 
 # Uneeded obj, cutting down size for OPENWRT static bin

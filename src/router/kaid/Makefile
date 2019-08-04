@@ -43,3 +43,4 @@ clean:
 	make -C src/pthreadcc clean
 	make -C src/socketcc clean
 	make -C src clean
+	rm -f kaid
