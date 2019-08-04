@@ -107,21 +107,6 @@ void addHost(char *host, char *ip, int withdomain)
  */
 void start_tmp_ppp(int num);
 
-int write_nvram(char *name, char *nv)
-{
-	if (nvram_invmatch(nv, "")) {
-		FILE *fp = fopen(name, "wb");
-
-		if (fp) {
-			fwritenvram(nv, fp);
-			fprintf(fp, "\n");
-			fclose(fp);
-		}
-	} else
-		return -1;
-	return 0;
-}
-
 int usejffs = 0;
 
 void stop_ntpc(void)

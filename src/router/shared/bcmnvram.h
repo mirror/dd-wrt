@@ -187,6 +187,7 @@ extern int nvram2file(char *varname, char *filename);
 
 extern void fwritenvram(const char *var, FILE * fp);
 extern void writenvram(const char *var, char *file);
+extern int write_nvram(char *name, char *nv);
 
 #endif				/* _LANGUAGE_ASSEMBLY */
 

@@ -304,6 +304,21 @@ void writenvram(const char *var, char *file)
 	fclose(fp);
 }
 
+int write_nvram(char *name, char *nv)
+{
+	if (nvram_invmatch(nv, "")) {
+		FILE *fp = fopen(name, "wb");
+
+		if (fp) {
+			fwritenvram(nv, fp);
+			fprintf(fp, "\n");
+			fclose(fp);
+		}
+	} else
+		return -1;
+	return 0;
+}
+
 #define foreach_int(word, wordlist, next) \
 	for (next = &wordlist[strspn(wordlist, " ")], \
 	     strncpy(word, next, sizeof(word)), \
@@ -403,17 +418,3 @@ int nvhas(char *nvname, char *key)
 
 }
 
-int write_nvram(char *name, char *nv)
-{
-	if (nvram_invmatch(nv, "")) {
-		FILE *fp = fopen(name, "wb");
-
-		if (fp) {
-			fwritenvram(nv, fp);
-			fprintf(fp, "\n");
-			fclose(fp);
-		}
-	} else
-		return -1;
-	return 0;
-}
