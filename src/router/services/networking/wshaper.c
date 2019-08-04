@@ -1085,6 +1085,12 @@ void start_wshaper(void)
 		writeprocsysnet("core/default_qdisc", "pie");
 	}
 #endif
+#ifdef HAVE_CAKE
+	if (!strcmp(aqd, "cake")) {
+		insmod("sch_cake");
+		writeprocsysnet("core/default_qdisc", "cake");
+	}
+#endif
 
 	//under K3 interface defaults are way to high, set some sane values
 	eval("ifconfig", "imq0", "down");
