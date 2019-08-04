@@ -189,8 +189,6 @@ kernel:
 	-$(MAKE) -f Makefile.thunderx opendpi
 	-$(MAKE) -f Makefile.thunderx opendpi-install
 ifeq ($(CONFIG_ZFS),y)
-	-$(MAKE) -f Makefile.thunderx spl
-	-$(MAKE) -f Makefile.thunderx spl-install
 	-$(MAKE) -f Makefile.thunderx zfs
 	-$(MAKE) -f Makefile.thunderx zfs-install
 endif
@@ -201,6 +199,10 @@ endif
 ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.thunderx wireguard
 	-$(MAKE) -f Makefile.thunderx wireguard-install
+endif
+ifeq ($(CONFIG_CAKE),y)
+	-$(MAKE) -f Makefile.thunderx cake
+	-$(MAKE) -f Makefile.thunderx cake-install
 endif
 	-$(MAKE) -f Makefile.thunderx uniwip-gpio
 	-$(MAKE) -f Makefile.thunderx uniwip-gpio-install

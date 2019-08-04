@@ -198,6 +198,10 @@ ifeq ($(CONFIG_WIREGUARD),y)
 endif
 	-$(MAKE) -f Makefile.mpc85xx uniwip-gpio
 	-$(MAKE) -f Makefile.mpc85xx uniwip-gpio-install
+ifeq ($(CONFIG_CAKE),y)
+	-$(MAKE) -f Makefile.mpc85xx cake
+	-$(MAKE) -f Makefile.mpc85xx cake-install
+endif
 
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source

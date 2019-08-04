@@ -224,9 +224,17 @@ ifeq ($(CONFIG_OPENDPI),y)
 	-$(MAKE) -f Makefile.northstar opendpi
 	-$(MAKE) -f Makefile.northstar opendpi-install
 endif
+ifeq ($(CONFIG_ZFS),y)
+	-$(MAKE) -f Makefile.northstar zfs
+	-$(MAKE) -f Makefile.northstar zfs-install
+endif
 ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.northstar wireguard
 	-$(MAKE) -f Makefile.northstar wireguard-install
+endif
+ifeq ($(CONFIG_CAKE),y)
+	-$(MAKE) -f Makefile.northstar cake
+	-$(MAKE) -f Makefile.northstar cake-install
 endif
 
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build

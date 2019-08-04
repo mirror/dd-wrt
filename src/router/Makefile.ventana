@@ -183,8 +183,6 @@ kernel:
 	-$(MAKE) -f Makefile.ventana opendpi
 	-$(MAKE) -f Makefile.ventana opendpi-install
 ifeq ($(CONFIG_ZFS),y)
-	-$(MAKE) -f Makefile.ventana spl
-	-$(MAKE) -f Makefile.ventana spl-install
 	-$(MAKE) -f Makefile.ventana zfs
 	-$(MAKE) -f Makefile.ventana zfs-install
 endif
@@ -195,6 +193,10 @@ endif
 ifeq ($(CONFIG_I2C_GPIO_CUSTOM),y)
 	-$(MAKE) -f Makefile.ventana i2c-custom-gpio
 	-$(MAKE) -f Makefile.ventana i2c-custom-gpio-install
+endif
+ifeq ($(CONFIG_CAKE),y)
+	-$(MAKE) -f Makefile.ventana cake
+	-$(MAKE) -f Makefile.ventana cake-install
 endif
 	-$(MAKE) -f Makefile.ventana uniwip-gpio
 	-$(MAKE) -f Makefile.ventana uniwip-gpio-install

@@ -279,7 +279,10 @@ ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.rt2880 wireguard
 	-$(MAKE) -f Makefile.rt2880 wireguard-install
 endif
-
+ifeq ($(CONFIG_CAKE),y)
+	-$(MAKE) -f Makefile.rt2880 cake
+	-$(MAKE) -f Makefile.rt2880 cake-install
+endif
 	-$(MAKE) -f Makefile.rt2880 uniwip-gpio
 	-$(MAKE) -f Makefile.rt2880 uniwip-gpio-install
 
