@@ -38,8 +38,8 @@ static void stop_softetherserver(void);
 
 void start_softether(void)
 {
-	int usejffs = (freediskSpace("/jffs") > (512 * 1024))
-	    int reload = 0;
+	int usejffs = (freediskSpace("/jffs") > (512 * 1024));
+	int reload = 0;
 	if (usejffs) {
 		mkdir("/jffs/var", 0700);
 		mkdir(JFFSVPNDIR, 0700);
