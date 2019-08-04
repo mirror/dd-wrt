@@ -721,7 +721,8 @@ dsl_pool_sync(dsl_pool_t *dp, uint64_t txg)
 	 * Now that the datasets have been completely synced, we can
 	 * clean up our in-memory structures accumulated while syncing:
 	 *
-	 *  - move dead blocks from the pending deadlist to the on-disk deadlist
+	 *  - move dead blocks from the pending deadlist and livelists
+	 *    to the on-disk versions
 	 *  - release hold from dsl_dataset_dirty()
 	 *  - release key mapping hold from dsl_dataset_dirty()
 	 */
@@ -888,14 +889,14 @@ dsl_pool_need_dirty_delay(dsl_pool_t *dp)
 	    zfs_dirty_data_max * zfs_delay_min_dirty_percent / 100;
 	uint64_t dirty_min_bytes =
 	    zfs_dirty_data_max * zfs_dirty_data_sync_percent / 100;
-	boolean_t rv;
+	uint64_t dirty;
 
 	mutex_enter(&dp->dp_lock);
-	if (dp->dp_dirty_total > dirty_min_bytes)
-		txg_kick(dp);
-	rv = (dp->dp_dirty_total > delay_min_bytes);
+	dirty = dp->dp_dirty_total;
 	mutex_exit(&dp->dp_lock);
-	return (rv);
+	if (dirty > dirty_min_bytes)
+		txg_kick(dp);
+	return (dirty > delay_min_bytes);
 }
 
 void
