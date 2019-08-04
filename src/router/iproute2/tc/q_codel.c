@@ -41,7 +41,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <syslog.h>
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -59,7 +58,7 @@ static void explain(void)
 }
 
 static int codel_parse_opt(struct qdisc_util *qu, int argc, char **argv,
-			   struct nlmsghdr *n)
+			   struct nlmsghdr *n, const char *dev)
 {
 	unsigned int limit = 0;
 	unsigned int target = 0;
@@ -118,11 +117,10 @@ static int codel_parse_opt(struct qdisc_util *qu, int argc, char **argv,
 		addattr_l(n, 1024, TCA_CODEL_TARGET, &target, sizeof(target));
 	if (ecn != -1)
 		addattr_l(n, 1024, TCA_CODEL_ECN, &ecn, sizeof(ecn));
-#ifdef CE_THRESHOLD
 	if (ce_threshold != ~0U)
 		addattr_l(n, 1024, TCA_CODEL_CE_THRESHOLD,
 			  &ce_threshold, sizeof(ce_threshold));
-#endif
+
 	tail->rta_len = (void *) NLMSG_TAIL(n) - (void *) tail;
 	return 0;
 }
@@ -153,7 +151,6 @@ static int codel_print_opt(struct qdisc_util *qu, FILE *f, struct rtattr *opt)
 		target = rta_getattr_u32(tb[TCA_CODEL_TARGET]);
 		fprintf(f, "target %s ", sprint_time(target, b1));
 	}
-#ifdef CE_THRESHOLD
 	if (tb[TCA_CODEL_CE_THRESHOLD] &&
 	    RTA_PAYLOAD(tb[TCA_CODEL_CE_THRESHOLD]) >= sizeof(__u32)) {
 		ce_threshold = rta_getattr_u32(tb[TCA_CODEL_CE_THRESHOLD]);
@@ -164,7 +161,6 @@ static int codel_print_opt(struct qdisc_util *qu, FILE *f, struct rtattr *opt)
 		interval = rta_getattr_u32(tb[TCA_CODEL_INTERVAL]);
 		fprintf(f, "interval %s ", sprint_time(interval, b1));
 	}
-#endif
 	if (tb[TCA_CODEL_ECN] &&
 	    RTA_PAYLOAD(tb[TCA_CODEL_ECN]) >= sizeof(__u32)) {
 		ecn = rta_getattr_u32(tb[TCA_CODEL_ECN]);
@@ -201,10 +197,8 @@ static int codel_print_xstats(struct qdisc_util *qu, FILE *f,
 		fprintf(f, " drop_next %s", sprint_time(st->drop_next, b1));
 	fprintf(f, "\n  maxpacket %u ecn_mark %u drop_overlimit %u",
 		st->maxpacket, st->ecn_mark, st->drop_overlimit);
-#ifdef CE_THRESHOLD
 	if (st->ce_mark)
 		fprintf(f, " ce_mark %u", st->ce_mark);
-#endif
 	return 0;
 
 }
