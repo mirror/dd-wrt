@@ -88,22 +88,9 @@ void start_freeradius(void)
 	if (!nvram_matchi("radius_enabled", 1))
 		return;
 
-#ifndef HAVE_OPENRISC
-#if !defined(HAVE_VENTANA) || defined(HAVE_NEWPORT)
-#ifndef HAVE_RAMBUTAN
-#ifndef HAVE_WDR4900
-#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600)
-	system("mount --bind /usr/local /jffs");
-#elif HAVE_IPQ806X
-	eval("mount", "-t", "ubifs", "-o", "sync", "ubi0:rootfs_data", "/jffs");
-#else
-	if (!nvram_matchi("jffs_mounted", 1) && (freediskSpace("/jffs") < 134217728))
+	if (!nvram_matchi("jffs_mounted", 1) && (freediskSpace("/jffs") < 8 * 1024 * 1024))
 		return;		//jffs is a requirement for radius and must be mounted at this point here
-#endif
-#endif
-#endif
-#endif
-#endif
+
 	prep();
 	sysprintf("sed \"s/port = 0/port = %s/g\" /etc/freeradius/sites-available/default > /jffs/etc/freeradius/sites-available/default", nvram_safe_get("radius_port"));
 	sysprintf("sed \"s/private_key_password = whatever/private_key_password = %s/g\" /etc/freeradius/mods-available/eap > /jffs/etc/freeradius/mods-available/eap", nvram_safe_get("radius_passphrase"));
