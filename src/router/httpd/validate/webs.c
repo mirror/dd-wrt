@@ -1942,7 +1942,7 @@ void qos_save(webs_t wp)
 	nvram_set("wshaper_dev", websGetVar(wp, "wshaper_dev", "WAN"));
 	nvram_seti("qos_type", websGetVari(wp, "qos_type", 0));
 
-#if defined(HAVE_CODEL) || defined(HAVE_FQ_CODEL) || defined(HAVE_PIE)
+#if defined(HAVE_CODEL) || defined(HAVE_FQ_CODEL) || defined(HAVE_PIE) || defined(HAVE_CAKE)
 	nvram_set("svqos_aqd", websGetVar(wp, "qos_aqd", "sfq"));
 #endif
 

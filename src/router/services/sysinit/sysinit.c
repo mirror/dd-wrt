@@ -3542,9 +3542,15 @@ void start_nvram(void)
 		nvram_set("svqos_aqd", "sfq");
 	}
 #endif
+#ifndef HAVE_CAKE
+	if (!strcmp(aqd, "cake")) {
+		nvram_set("svqos_aqd", "cake");
+	}
+#endif
 	if (strcmp(aqd, "codel")
 	    && strcmp(aqd, "fq_codel")
-	    && strcmp(aqd, "pie")) {
+	    && strcmp(aqd, "pie")
+	    && strcmp(aqd, "cake")) {
 		nvram_set("svqos_aqd", "sfq");
 	}
 #endif
