@@ -247,9 +247,9 @@ endif
 	fi
 
 	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
-ifeq ($(CONFIG_ATH9K),y)
-	-$(MAKE) -f Makefile.rt2880 ath9k
-	-$(MAKE) -f Makefile.rt2880 ath9k-install
+ifeq ($(CONFIG_MT76),y)
+	-$(MAKE) -f Makefile.mt7621 ath9k
+	-$(MAKE) -f Makefile.mt7621 ath9k-install
 endif
 	-$(MAKE) -f Makefile.mt7621 libutils
 #	-$(MAKE) -f Makefile.rt2880 madwifi
@@ -266,12 +266,12 @@ ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.mt7621 wireguard
 	-$(MAKE) -f Makefile.mt7621 wireguard-install
 endif
-	-$(MAKE) -f Makefile.mt7621 uniwip-gpio
-	-$(MAKE) -f Makefile.mt7621 uniwip-gpio-install
 ifeq ($(CONFIG_CAKE),y)
 	-$(MAKE) -f Makefile.mt7621 cake
 	-$(MAKE) -f Makefile.mt7621 cake-install
 endif
+	-$(MAKE) -f Makefile.mt7621 uniwip-gpio
+	-$(MAKE) -f Makefile.mt7621 uniwip-gpio-install
 
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
@@ -335,15 +335,14 @@ ifeq ($(CONFIG_3G_ONLY),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs
 endif
 
-
+ifeq ($(CONFIG_NOSTRIP),y)
 	find $(ARCH)-uclibc/install $(ARCH)-uclibc/target  -name \*.ko | \
 		xargs $(ARCH)-linux-nm | \
 		awk '$$1 == "U" { print $$2 } ' | \
 		sort -u > $(LINUXDIR)/mod_symtab.txt
-	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | grep ' r __ksymtab' | sed -e 's,........ r __ksymtab_,,' > $(LINUXDIR)/kernel_symtab.txt
-	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | grep ' R __ksymtab' | sed -e 's,........ R __ksymtab_,,' >> $(LINUXDIR)/kernel_symtab.txt
-	grep -f $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_include.txt
-	grep -vf $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_exclude.txt
+	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | grep ' [rR] __ksymtab' | sed -e 's,........ [rR] __ksymtab_,,' > $(LINUXDIR)/kernel_symtab.txt
+	grep -Ff $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_include.txt
+	grep -Fvf $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_exclude.txt
 	( \
 		echo '#define SYMTAB_KEEP \'; \
 		cat $(LINUXDIR)/sym_include.txt | \
@@ -362,18 +361,20 @@ endif
 			awk '{print "*(___ksymtab_gpl+" $$$$1 ") \\" }'; \
 		echo; \
 	) > $(LINUXDIR)/symtab.h
+	rm -f $(LINUXDIR)/vmlinux
 
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) vmlinux vmlinux EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ARCH=mips ; \
+	    $(MAKE) -j 4 -C $(LINUXDIR) vmlinux EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ARCH=mips ; \
 	fi
+endif
 ifeq ($(CONFIG_MT7620),y)
 	cp $(LINUXDIR)/vmlinux $(LINUXDIR)/vmlinux-mt7620
 ifeq ($(CONFIG_DIR860),y)
 ifeq ($(CONFIG_DIR882),y)
-	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -undef -D__DTS__ -o $(LINUXDIR)/dts/DIR-882.dtb.tmp $(LINUXDIR)/dts/DIR-882.dts
+	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include -undef -D__DTS__ -o $(LINUXDIR)/dts/DIR-882.dtb.tmp $(LINUXDIR)/dts/DIR-882.dts
 	$(LINUXDIR)/scripts/dtc/dtc -i $(LINUXDIR)/dts/ -O dtb -o $(LINUXDIR)/dts/MT7620a.dtb $(LINUXDIR)/dts/DIR-882.dtb.tmp
 else
-	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -undef -D__DTS__ -o $(LINUXDIR)/dts/DIR-860.dtb.tmp $(LINUXDIR)/dts/DIR-860.dts
+	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -I$(LINUXDIR)/include -undef -D__DTS__ -o $(LINUXDIR)/dts/DIR-860.dtb.tmp $(LINUXDIR)/dts/DIR-860.dts
 	$(LINUXDIR)/scripts/dtc/dtc -i $(LINUXDIR)/dts/ -O dtb -o $(LINUXDIR)/dts/MT7620a.dtb $(LINUXDIR)/dts/DIR-860.dtb.tmp
 endif
 else
@@ -527,12 +528,18 @@ endif
 	export STRIP_KMOD="$(LINUXDIR)/scripts/strip-kmod.sh" && \
 	export STRIP="sstrip" && \
 	$(LINUXDIR)/scripts/rstrip.sh $(TARGETDIR)
+
+#	export STRIP_KMOD="echo" && \
+#	export STRIP="sstrip" && \
+#	$(LINUXDIR)/scripts/rstrip.sh $(TARGETDIR)
+
 	$(TOP)/../../tools/removewhitespace.sh $(TOP)/../../tools $(TARGETDIR)/etc/config
 	$(LINUXDIR)/scripts/squashfs/mksquashfs4 $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -comp xz -nopad  -root-owned -noappend
 #	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -root-owned -le -nopad
-
-	dd if=mipsel-uclibc/root-mt7621_dir882.uimage of=mipsel-uclibc/aligned-mt7621_dir882.uimage bs=4096 conv=sync
-	dd if=mipsel-uclibc/root-mt7621_dir878.uimage of=mipsel-uclibc/aligned-mt7621_dir878.uimage bs=4096 conv=sync
+	dd if=mipsel-uclibc/root-mt7621_dir882.uimage of=mipsel-uclibc/aligned-mt7621_dir882.uimage bs=65536 conv=sync
+	dd if=mipsel-uclibc/root-mt7621_dir878.uimage of=mipsel-uclibc/aligned-mt7621_dir878.uimage bs=65536 conv=sync
+#	cp mipsel-uclibc/root-mt7621_dir882.uimage mipsel-uclibc/aligned-mt7621_dir882.uimage
+#	cp mipsel-uclibc/root-mt7621_dir878.uimage mipsel-uclibc/aligned-mt7621_dir878.uimage
 
 
 	cat mipsel-uclibc/root.fs  >> mipsel-uclibc/aligned-mt7621_dir878.uimage
