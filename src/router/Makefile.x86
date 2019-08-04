@@ -180,10 +180,12 @@ endif
 	-$(MAKE) -f Makefile.x86 opendpi
 	-$(MAKE) -f Makefile.x86 opendpi-install
 ifeq ($(CONFIG_ZFS),y)
-	-$(MAKE) -f Makefile.x86 spl
-	-$(MAKE) -f Makefile.x86 spl-install
 	-$(MAKE) -f Makefile.x86 zfs
 	-$(MAKE) -f Makefile.x86 zfs-install
+endif
+ifeq ($(CONFIG_CAKE),y)
+	-$(MAKE) -f Makefile.x86 cake
+	-$(MAKE) -f Makefile.x86 cake-install
 endif
 ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.x86 wireguard

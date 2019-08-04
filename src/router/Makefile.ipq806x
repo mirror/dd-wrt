@@ -159,8 +159,6 @@ endif
 	-$(MAKE) -f Makefile.ipq806x opendpi
 	-$(MAKE) -f Makefile.ipq806x opendpi-install
 ifeq ($(CONFIG_ZFS),y)
-	-$(MAKE) -f Makefile.ipq806x spl
-	-$(MAKE) -f Makefile.ipq806x spl-install
 	-$(MAKE) -f Makefile.ipq806x zfs
 	-$(MAKE) -f Makefile.ipq806x zfs-install
 endif
@@ -171,6 +169,10 @@ endif
 ifeq ($(CONFIG_I2C_GPIO_CUSTOM),y)
 	-$(MAKE) -f Makefile.ipq806x i2c-custom-gpio
 	-$(MAKE) -f Makefile.ipq806x i2c-custom-gpio-install
+endif
+ifeq ($(CONFIG_CAKE),y)
+	-$(MAKE) -f Makefile.ipq806x cake
+	-$(MAKE) -f Makefile.ipq806x cake-install
 endif
 #	-$(MAKE) -f Makefile.ipq806x uniwip-gpio
 #	-$(MAKE) -f Makefile.ipq806x uniwip-gpio-install

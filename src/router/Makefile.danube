@@ -198,6 +198,10 @@ ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.danube wireguard
 	-$(MAKE) -f Makefile.dabube wireguard-install
 endif
+ifeq ($(CONFIG_CAKE),y)
+	-$(MAKE) -f Makefile.danube cake
+	-$(MAKE) -f Makefile.danube cake-install
+endif
 	-$(MAKE) -f Makefile.danube uniwip-gpio
 	-$(MAKE) -f Makefile.danube uniwip-gpio-install
 

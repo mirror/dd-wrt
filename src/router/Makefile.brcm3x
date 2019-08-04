@@ -211,6 +211,10 @@ ifeq ($(CONFIG_WIREGUARD),y)
 endif
 	-$(MAKE) -f Makefile.brcm3x uniwip-gpio
 	-$(MAKE) -f Makefile.brcm3x uniwip-gpio-install
+ifeq ($(CONFIG_CAKE),y)
+	-$(MAKE) -f Makefile.brcm3x cake
+	-$(MAKE) -f Makefile.brcm3x cake-install
+endif
 
 ifneq ($(CONFIG_USB),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb

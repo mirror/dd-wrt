@@ -694,12 +694,13 @@ ifeq ($(CONFIG_OPENDPI),y)
 	-$(MAKE) -f Makefile.pb42 opendpi-install
 endif
 ifeq ($(CONFIG_ZFS),y)
-	-$(MAKE) -f Makefile.pb42 spl
-	-$(MAKE) -f Makefile.pb42 spl-install
 	-$(MAKE) -f Makefile.pb42 zfs
 	-$(MAKE) -f Makefile.pb42 zfs-install
 endif
-
+ifeq ($(CONFIG_CAKE),y)
+	-$(MAKE) -f Makefile.pb42 cake
+	-$(MAKE) -f Makefile.pb42 cake-install
+endif
 ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.pb42 wireguard
 	-$(MAKE) -f Makefile.pb42 wireguard-install

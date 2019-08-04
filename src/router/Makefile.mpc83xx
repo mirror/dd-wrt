@@ -197,6 +197,10 @@ ifeq ($(CONFIG_WIREGUARD),y)
 endif
 	-$(MAKE) -f Makefile.mpc83xx uniwip-gpio
 	-$(MAKE) -f Makefile.mpc83xx uniwip-gpio-install
+ifeq ($(CONFIG_CAKE),y)
+	-$(MAKE) -f Makefile.mpc83xx cake
+	-$(MAKE) -f Makefile.mpc83xx cake-install
+endif
 
 	find $(ARCH)-uclibc/install $(ARCH)-uclibc/target  -name \*.ko | \
 		xargs $(ARCH)-linux-nm | \

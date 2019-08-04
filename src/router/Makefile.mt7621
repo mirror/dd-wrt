@@ -247,8 +247,10 @@ endif
 	fi
 
 	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
-#	-$(MAKE) -f Makefile.rt2880 ath9k
-#	-$(MAKE) -f Makefile.rt2880 ath9k-install
+ifeq ($(CONFIG_ATH9K),y)
+	-$(MAKE) -f Makefile.rt2880 ath9k
+	-$(MAKE) -f Makefile.rt2880 ath9k-install
+endif
 	-$(MAKE) -f Makefile.mt7621 libutils
 #	-$(MAKE) -f Makefile.rt2880 madwifi
 #	-$(MAKE) -f Makefile.rt2880 madwifi-install
@@ -266,6 +268,10 @@ ifeq ($(CONFIG_WIREGUARD),y)
 endif
 	-$(MAKE) -f Makefile.mt7621 uniwip-gpio
 	-$(MAKE) -f Makefile.mt7621 uniwip-gpio-install
+ifeq ($(CONFIG_CAKE),y)
+	-$(MAKE) -f Makefile.mt7621 cake
+	-$(MAKE) -f Makefile.mt7621 cake-install
+endif
 
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source

@@ -174,33 +174,37 @@ endif
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
 
-	-$(MAKE) -f Makefile.pb42 ath9k
-	-$(MAKE) -f Makefile.pb42 ath9k-install
-	-$(MAKE) -f Makefile.pb42 libutils
-	-$(MAKE) -f Makefile.pb42 madwifi
-	-$(MAKE) -f Makefile.pb42 madwifi-install
+	-$(MAKE) -f Makefile.adm5120 ath9k
+	-$(MAKE) -f Makefile.adm5120 ath9k-install
+	-$(MAKE) -f Makefile.adm5120 libutils
+	-$(MAKE) -f Makefile.adm5120 madwifi
+	-$(MAKE) -f Makefile.adm5120 madwifi-install
 ifeq ($(CONFIG_BATMANADV),y)
-	-$(MAKE) -f Makefile.pb42 batman-adv
-	-$(MAKE) -f Makefile.pb42 batman-adv-install
+	-$(MAKE) -f Makefile.adm5120 batman-adv
+	-$(MAKE) -f Makefile.adm5120 batman-adv-install
 endif
 ifeq ($(CONFIG_OPENDPI),y)
-	-$(MAKE) -f Makefile.pb42 opendpi
-	-$(MAKE) -f Makefile.pb42 opendpi-install
+	-$(MAKE) -f Makefile.adm5120 opendpi
+	-$(MAKE) -f Makefile.adm5120 opendpi-install
 endif
 ifeq ($(CONFIG_ZFS),y)
-	-$(MAKE) -f Makefile.pb42 spl
-	-$(MAKE) -f Makefile.pb42 spl-install
-	-$(MAKE) -f Makefile.pb42 zfs
-	-$(MAKE) -f Makefile.pb42 zfs-install
+	-$(MAKE) -f Makefile.adm5120 spl
+	-$(MAKE) -f Makefile.adm5120 spl-install
+	-$(MAKE) -f Makefile.adm5120 zfs
+	-$(MAKE) -f Makefile.adm5120 zfs-install
 endif
 
 ifeq ($(CONFIG_WIREGUARD),y)
-	-$(MAKE) -f Makefile.pb42 wireguard
-	-$(MAKE) -f Makefile.pb42 wireguard-install
+	-$(MAKE) -f Makefile.adm5120 wireguard
+	-$(MAKE) -f Makefile.adm5120 wireguard-install
 endif
 ifeq ($(CONFIG_SERVICEGATE),y)
-	-$(MAKE) -f Makefile.pb42 servicegate
-	-$(MAKE) -f Makefile.pb42 servicegate-install
+	-$(MAKE) -f Makefile.adm5120 servicegate
+	-$(MAKE) -f Makefile.adm5120 servicegate-install
+endif
+ifeq ($(CONFIG_CAKE),y)
+	-$(MAKE) -f Makefile.adm5120 cake
+	-$(MAKE) -f Makefile.adm5120 cake-install
 endif
 
 ifneq ($(CONFIG_SAMBA),y)

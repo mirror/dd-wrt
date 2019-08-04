@@ -299,6 +299,10 @@ ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.ar531x wireguard
 	-$(MAKE) -f Makefile.ar531x wireguard-install
 endif
+ifeq ($(CONFIG_CAKE),y)
+	-$(MAKE) -f Makefile.ar531x cake
+	-$(MAKE) -f Makefile.ar531x cake-install
+endif
 
 	-$(MAKE) -f Makefile.ar531x uniwip-gpio
 	-$(MAKE) -f Makefile.ar531x uniwip-gpio-install
