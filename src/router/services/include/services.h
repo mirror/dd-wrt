@@ -173,8 +173,6 @@ extern void stop_milkfish(void);
 #endif
 
 extern void start_mkfiles(void);
-
-int write_nvram(char *name, char *nv);
 void start_pppoe(int pppoe_num);
 void stop_single_pppoe(int pppoe_num);
 
