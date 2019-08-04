@@ -41,6 +41,9 @@ void ej_show_qos_aqd(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_PIE
 	websWrite(wp, "<option value=\"pie\" %s><script type=\"text/javascript\">Capture(qos.aqd_pie)</script></option>\n", strcmp(aqd, "pie") == 0 ? "selected" : "");
 #endif
+#ifdef HAVE_CAKE
+	websWrite(wp, "<option value=\"cake\" %s><script type=\"text/javascript\">Capture(qos.aqd_cake)</script></option>\n", strcmp(aqd, "cake") == 0 ? "selected" : "");
+#endif
 
 	websWrite(wp, "</select>\n</div>\n");
 

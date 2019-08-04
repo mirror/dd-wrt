@@ -1041,6 +1041,9 @@ endif
 ifeq ($(CONFIG_NET_SCH_PIE),m)
 CFLAGS += -DHAVE_PIE
 endif
+ifeq ($(CONFIG_CAKE),y)
+CFLAGS += -DHAVE_CAKE
+endif
 
 ifeq ($(CONFIG_WTS),y)
 CFLAGS += -DHAVE_WTS
