@@ -57,6 +57,9 @@ include ../.config
 ifneq ($(CONFIG_NOMESSAGE),y)
 CFLAGS += -DNEED_PRINTF
 endif
+ifeq ($(CONFIG_CAKE),y)
+CFLAGS += -DHAVE_CAKE
+endif
 
 CFLAGS += $(CCOPTS) $(MIPS16_OPT) -I$(KERNEL_INCLUDE) $(ASM_INCLUDE) -I../include $(DEFINES) -ffunction-sections -fdata-sections -Wl,--gc-sections
 LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
