@@ -320,6 +320,46 @@ void start_nas_wan(int c)
 	}
 }
 
+
+void stop_nas_process(void)
+{
+	int ret = 0;
+	char name[80], *next;
+
+	unlink("/tmp/.nas");
+
+	led_control(LED_SEC0, LED_OFF);
+	led_control(LED_SEC1, LED_OFF);
+
+	stop_process("nas", "daemon");
+	stop_process("wrt-radauth", "radauth daemon");
+
+#ifdef HAVE_WPA_SUPPLICANT
+	killall("wpa_supplicant", SIGKILL);
+#endif
+	int cnt = get_wl_instances();
+	int c;
+	char vifs_name[32];
+
+	for (c = 0; c < cnt; c++) {
+		char pidname[32];
+		sprintf(pidname, "/tmp/nas.wl%dlan.pid", c);
+		unlink(pidname);
+		sprintf(pidname, "/tmp/nas.wl%dwan.pid", c);
+		unlink(pidname);
+		sprintf(vifs_name, "wl%d_vifs", c);
+		char *vifs = nvram_safe_get(vifs_name);
+		foreach(name, vifs, next) {
+			sprintf(pidname, "/tmp/nas.%slan.pid", name);
+			unlink(pidname);
+		}
+	}
+
+	cprintf("done\n");
+	return;
+}
+
+
 #ifdef HAVE_WPA_SUPPLICANT
 extern void setupSupplicant(char *prefix);
 #endif
@@ -333,11 +373,12 @@ void start_nas(void)
 	}
 	char *iface;
 	eval("touch", "/tmp/.startnas");
-	sleep(3);
+	network_delay("nas");
 	int cnt = get_wl_instances();
 	int c;
 	int deadcount;
 	int radiostate = -1;
+	stop_nas_process(); // ensure that no nas is running
 #ifdef HAVE_QTN
 	cnt = 1;
 #endif
@@ -399,6 +440,9 @@ void start_nas(void)
 	return;
 }
 
+
+
+
 void start_nas_single(char *type, char *prefix)
 {
 	FILE *fnas;
@@ -413,7 +457,6 @@ void start_nas_single(char *type, char *prefix)
 	}, *mode = {
 		0
 	};
-	network_delay("nas");
 
 	if (!strcmp(prefix, "wl0")) {
 		led_control(LED_SEC0, LED_OFF);
@@ -585,38 +628,7 @@ void stop_nas(void)
 		fclose(check);
 		return;
 	}
-
-	unlink("/tmp/.nas");
-
-	led_control(LED_SEC0, LED_OFF);
-	led_control(LED_SEC1, LED_OFF);
-
-	stop_process("nas", "daemon");
-	stop_process("wrt-radauth", "radauth daemon");
-
-#ifdef HAVE_WPA_SUPPLICANT
-	killall("wpa_supplicant", SIGKILL);
-#endif
-	int cnt = get_wl_instances();
-	int c;
-	char vifs_name[32];
-
-	for (c = 0; c < cnt; c++) {
-		char pidname[32];
-		sprintf(pidname, "/tmp/nas.wl%dlan.pid", c);
-		unlink(pidname);
-		sprintf(pidname, "/tmp/nas.wl%dwan.pid", c);
-		unlink(pidname);
-		sprintf(vifs_name, "wl%d_vifs", c);
-		char *vifs = nvram_safe_get(vifs_name);
-		foreach(name, vifs, next) {
-			sprintf(pidname, "/tmp/nas.%slan.pid", name);
-			unlink(pidname);
-		}
-	}
-
-	cprintf("done\n");
-	return;
+	stop_nas_process();
 }
 
 #endif
