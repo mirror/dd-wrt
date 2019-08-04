@@ -196,7 +196,6 @@ extern int zio_decompress_data_buf(enum zio_compress c, void *src, void *dst,
     size_t s_len, size_t d_len, uint8_t *level);
 extern int zio_decompress_getcomplevel(enum zio_compress c, void *src,
     size_t s_len, uint8_t *level);
-extern int zio_getcomplevel(enum zio_compress c, abd_t *src, size_t s_len);
 extern int zio_decompress_getlevel(enum zio_compress c, abd_t *src, void *dst,
     size_t s_len, size_t d_len, enum zio_zstd_levels *level);
 extern int zio_compress_to_feature(enum zio_compress comp);
