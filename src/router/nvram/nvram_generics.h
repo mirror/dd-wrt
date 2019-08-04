@@ -402,3 +402,18 @@ int nvhas(char *nvname, char *key)
 	return 0;
 
 }
+
+int write_nvram(char *name, char *nv)
+{
+	if (nvram_invmatch(nv, "")) {
+		FILE *fp = fopen(name, "wb");
+
+		if (fp) {
+			fwritenvram(nv, fp);
+			fprintf(fp, "\n");
+			fclose(fp);
+		}
+	} else
+		return -1;
+	return 0;
+}
