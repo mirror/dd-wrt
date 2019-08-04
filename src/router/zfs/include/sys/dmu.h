@@ -495,6 +495,7 @@ void dmu_object_set_checksum(objset_t *os, uint64_t object, uint8_t checksum,
  * Set the compress property on a dnode.  The new compression algorithm will
  * apply to all newly written blocks; existing blocks will not be affected.
  */
+/* XXX: Allan: complevel? */
 void dmu_object_set_compress(objset_t *os, uint64_t object, uint8_t compress,
     dmu_tx_t *tx);
 

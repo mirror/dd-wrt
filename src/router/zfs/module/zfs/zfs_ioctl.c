@@ -2122,7 +2122,6 @@ static int
 zfs_ioc_objset_stats_impl(zfs_cmd_t *zc, objset_t *os)
 {
 	int error = 0;
-	int zstd_error = 0;
 	nvlist_t *nv;
 
 	dmu_objset_fast_stat(os, &zc->zc_objset_stats);
@@ -2148,7 +2147,7 @@ zfs_ioc_objset_stats_impl(zfs_cmd_t *zc, objset_t *os)
 		}
 		/*
 		 * ZSTD stores the compression level in a separate hidden
-		 * property to avoid using up a large chunk of space in the
+		 * property to avoid using up a large number of bits in the
 		 * on-disk compression algorithm enum. We need to swap things
 		 * back around when the property is read.
 		 */
@@ -2156,17 +2155,18 @@ zfs_ioc_objset_stats_impl(zfs_cmd_t *zc, objset_t *os)
 		uint64_t compval, levelval;
 
 		if (get_prop_uint64(nv, "compression", &cnv, &compval) != 0)
-			zstd_error = EINVAL;
+			compval = ZIO_COMPRESS_INHERIT;
 
-		if (zstd_error == 0 && compval == ZIO_COMPRESS_ZSTD &&
-		    get_prop_uint64(nv, "zstd_compress_level", NULL,
+		if (error == 0 && compval == ZIO_COMPRESS_ZSTD &&
+		    get_prop_uint64(nv, "compress_level", NULL,
 		    &levelval) == 0) {
-			if (levelval == ZIO_ZSTDLVL_DEFAULT)
+			if (levelval == ZIO_COMPLEVEL_DEFAULT)
 				levelval = 0;
 			fnvlist_remove(cnv, ZPROP_VALUE);
 			fnvlist_add_uint64(cnv, ZPROP_VALUE,
 			    compval | (levelval << SPA_COMPRESSBITS));
 		}
+
 		if (error == 0)
 			error = put_nvlist(zc, nv);
 		nvlist_free(nv);
@@ -2622,12 +2622,12 @@ zfs_prop_set_special(const char *dsname, zprop_source_t source,
 		uint64_t levelval;
 
 		if (intval == ZIO_COMPRESS_ZSTD) {
-			levelval = ZIO_ZSTDLVL_DEFAULT;
+			levelval = ZIO_COMPLEVEL_DEFAULT;
 		} else {
 			levelval = (intval & ~SPA_COMPRESSMASK)
 			    >> SPA_COMPRESSBITS;
 		}
-		err = dsl_prop_set_int(dsname, "zstd_compress_level", source,
+		err = dsl_prop_set_int(dsname, "compress_level", source,
 		    levelval);
 		if (err == 0) {
 			/* Store the compression algorithm normally */
@@ -4390,7 +4390,6 @@ zfs_check_settable(const char *dsname, nvpair_t *pair, cred_t *cr)
 		 * we'll catch them later.
 		 */
 		if (nvpair_value_uint64(pair, &intval) == 0) {
-			intval &= SPA_COMPRESSMASK;
 			if (intval >= ZIO_COMPRESS_GZIP_1 &&
 			    intval <= ZIO_COMPRESS_GZIP_9 &&
 			    zfs_earlier_version(dsname,
@@ -4417,7 +4416,7 @@ zfs_check_settable(const char *dsname, nvpair_t *pair, cred_t *cr)
 				spa_close(spa, FTAG);
 			}
 
-			if ((intval & SPA_COMPRESSMASK) == ZIO_COMPRESS_ZSTD) {
+			if (intval == ZIO_COMPRESS_ZSTD) {
 				spa_t *spa;
 
 				if ((err = spa_open(dsname, &spa, FTAG)) != 0)

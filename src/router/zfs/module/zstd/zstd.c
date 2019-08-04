@@ -182,7 +182,7 @@ zstd_compare(const void *a, const void *b)
 }
 
 static enum zio_zstd_levels
-zstd_level_to_enum(int level)
+zstd_cookie_to_enum(uint32_t level)
 {
 	enum zio_zstd_levels elevel = ZIO_ZSTDLVL_INHERIT;
 
@@ -233,24 +233,35 @@ zstd_level_to_enum(int level)
 				return (ZIO_ZSTDLVL_FAST_500);
 			case -1000:
 				return (ZIO_ZSTDLVL_FAST_1000);
+			default:
+				/* This shouldn't happen. Cause a panic. */
+#ifdef _KERNEL
+			printk(KERN_ERR
+			    "%s:Invalid ZSTD level encountered: %d",
+			    __func__, level);
+#endif
+			return (ZIO_ZSTD_LEVEL_DEFAULT);
 		}
 	}
 
 	/* This shouldn't happen. Cause a panic. */
-	panic("Invalid ZSTD level encountered: %d", level);
-
-	return (ZIO_ZSTDLVL_INHERIT);
+#ifdef _KERNEL
+	printk(KERN_ERR "%s:Invalid ZSTD level encountered: %d",
+	    __func__, level);
+#endif
+	return (ZIO_ZSTD_LEVEL_DEFAULT);
 }
 
-static int
-zstd_enum_to_level(enum zio_zstd_levels elevel)
+static uint32_t
+zstd_enum_to_cookie(enum zio_zstd_levels elevel)
 {
 	int level = 0;
 
 	if (elevel > ZIO_ZSTDLVL_INHERIT && elevel <= ZIO_ZSTDLVL_MAX) {
 		level = elevel;
 		return (level);
-	} else if (elevel > ZIO_ZSTDLVL_FAST) {
+	} else if (elevel > ZIO_ZSTDLVL_FAST &&
+	    elevel <= ZIO_ZSTDLVL_FAST_MAX) {
 		switch (elevel) {
 			case ZIO_ZSTDLVL_FAST_1:
 				return (-1);
@@ -295,11 +306,24 @@ zstd_enum_to_level(enum zio_zstd_levels elevel)
 			case ZIO_ZSTDLVL_FAST_1000:
 				return (-1000);
 			default:
-			break;
+				/* This shouldn't happen. Cause a panic. */
+#ifdef _KERNEL
+			printk(KERN_ERR
+			    "%s:Invalid ZSTD enum level encountered: %d",
+			    __func__, elevel);
+#endif
+				return (3);
 		}
 	}
 
-	return (ZIO_ZSTD_LEVEL_DEFAULT);
+	/* This shouldn't happen. Cause a panic. */
+#ifdef _KERNEL
+	printk(KERN_ERR
+	    "%s:Invalid ZSTD enum level encountered: %d",
+	    __func__, elevel);
+#endif
+
+	return (3);
 }
 
 size_t
@@ -307,18 +331,18 @@ zstd_compress(void *s_start, void *d_start, size_t s_len, size_t d_len, int n)
 {
 	size_t c_len;
 	uint32_t bufsiz;
-	int32_t zstdlevel;
+	uint32_t levelcookie;
 	char *dest = d_start;
 
-	ASSERT(d_len >= sizeof (bufsiz));
-	ASSERT(d_len <= s_len);
+	ASSERT3U(d_len, >=, sizeof (bufsiz));
+	ASSERT3U(d_len, <=, s_len);
 
-	zstdlevel = zstd_enum_to_level(n);
+	levelcookie = zstd_enum_to_cookie(n);
 
 	/* XXX: this could overflow, but we never have blocks that big */
 	c_len = real_zstd_compress(s_start,
-	    &dest[sizeof (bufsiz) + sizeof (zstdlevel)], s_len,
-	    d_len - sizeof (bufsiz) - sizeof (zstdlevel), zstdlevel);
+	    &dest[sizeof (bufsiz) + sizeof (levelcookie)], s_len,
+	    d_len - sizeof (bufsiz) - sizeof (levelcookie), levelcookie);
 
 	/* Signal an error if the compression routine returned an error. */
 	if (ZSTD_isError(c_len)) {
@@ -340,28 +364,41 @@ zstd_compress(void *s_start, void *d_start, size_t s_len, size_t d_len, int n)
 	 * Encode the actual level, so if the enum changes in the future,
 	 * we will be compatible.
 	 */
-	*(uint32_t *)(&dest[sizeof (bufsiz)]) = BE_32(zstdlevel);
+	*(uint32_t *)(&dest[sizeof (bufsiz)]) = BE_32(levelcookie);
 
-	return (c_len + sizeof (bufsiz) + sizeof (zstdlevel));
+	return (c_len + sizeof (bufsiz) + sizeof (levelcookie));
 }
 
 int
-zstd_decompress(void *s_start, void *d_start, size_t s_len, size_t d_len, int n)
+zstd_get_level(void *s_start, size_t s_len, uint8_t *level)
+{
+	const char *src = s_start;
+	uint32_t levelcookie = BE_IN32(&src[sizeof (levelcookie)]);
+	uint8_t zstdlevel = zstd_cookie_to_enum(levelcookie);
+
+	ASSERT3U(zstdlevel, !=, ZIO_ZSTDLVL_INHERIT);
+
+	if (level != NULL) {
+		*level = zstdlevel;
+	}
+
+	return (0);
+}
+
+int
+zstd_decompress_level(void *s_start, void *d_start, size_t s_len, size_t d_len,
+    uint8_t *level)
 {
 	const char *src = s_start;
 	uint32_t bufsiz = BE_IN32(src);
-	uint32_t cookie = BE_IN32(&src[sizeof (bufsiz)]);
-	int32_t zstdlevel = zstd_level_to_enum(cookie);
+	uint32_t levelcookie = BE_IN32(&src[sizeof (bufsiz)]);
+	uint8_t zstdlevel = zstd_cookie_to_enum(levelcookie);
 
-	ASSERT(d_len >= s_len);
-	ASSERT(zstdlevel > ZIO_ZSTDLVL_INHERIT);
-	ASSERT(zstdlevel < ZIO_ZSTDLVL_LEVELS);
+	ASSERT3U(d_len, >=, s_len);
+	ASSERT3U(zstdlevel, !=, ZIO_ZSTDLVL_INHERIT);
 
 	/* invalid compressed buffer size encoded at start */
 	if (bufsiz + sizeof (bufsiz) > s_len) {
-#ifdef _KERNEL
-		printk(KERN_INFO "zstd: invalid compressed buffer size\n");
-#endif
 		return (1);
 	}
 
@@ -369,30 +406,24 @@ zstd_decompress(void *s_start, void *d_start, size_t s_len, size_t d_len, int n)
 	 * Returns 0 on success (decompression function returned non-negative)
 	 * and non-zero on failure (decompression function returned negative.
 	 */
-	size_t len = real_zstd_decompress(
-	    &src[sizeof (bufsiz) + sizeof (zstdlevel)], \
-	    d_start, bufsiz, d_len);
-	if (ZSTD_isError(len)) {
-#ifdef _KERNEL
-		printk(KERN_INFO "zstd: decompression failed %zu\n", len);
-#endif
+	if (ZSTD_isError(real_zstd_decompress(
+	    &src[sizeof (bufsiz) + sizeof (levelcookie)], d_start, bufsiz,
+	    d_len))) {
 		return (1);
+	}
+
+	if (level != NULL) {
+		*level = zstdlevel;
 	}
 
 	return (0);
 }
 
 int
-zstd_getlevel(void *s_start, size_t s_len __unused)
+zstd_decompress(void *s_start, void *d_start, size_t s_len, size_t d_len, int n)
 {
-	const char *src = s_start;
-	uint32_t cookie = BE_IN32(&src[sizeof (uint32_t)]);
-	int32_t zstdlevel = zstd_level_to_enum(cookie);
 
-	ASSERT(zstdlevel > ZIO_ZSTDLVL_INHERIT);
-	ASSERT(zstdlevel < ZIO_ZSTDLVL_LEVELS);
-
-	return (zstdlevel);
+	return (zstd_decompress_level(s_start, d_start, s_len, d_len, NULL));
 }
 
 static size_t
@@ -402,24 +433,28 @@ real_zstd_compress(const char *source, char *dest, int isize, int osize,
 	size_t result;
 	ZSTD_CCtx *cctx;
 
-	ASSERT(level != 0);
-	if (level == ZIO_ZSTDLVL_DEFAULT)
+	ASSERT3U(level, !=, 0);
+	if (level == ZIO_COMPLEVEL_DEFAULT) {
 		level = ZIO_ZSTD_LEVEL_DEFAULT;
+	}
+	if (level == ZIO_ZSTDLVL_DEFAULT) {
+		level = ZIO_ZSTD_LEVEL_DEFAULT;
+	}
 
 	cctx = ZSTD_createCCtx_advanced(zstd_malloc);
 	/*
 	 * out of kernel memory, gently fall through - this will disable
 	 * compression in zio_compress_data
 	 */
-	if (cctx == NULL)
+	if (cctx == NULL) {
 		return (0);
+	}
 
 	result = ZSTD_compressCCtx(cctx, dest, osize, source, isize, level);
 
 	ZSTD_freeCCtx(cctx);
 	return (result);
 }
-
 
 static size_t
 real_zstd_decompress(const char *source, char *dest, int isize, int maxosize)
@@ -434,11 +469,11 @@ real_zstd_decompress(const char *source, char *dest, int isize, int maxosize)
 	result = ZSTD_decompressDCtx(dctx, dest, maxosize, source, isize);
 
 	ZSTD_freeDCtx(dctx);
+
 	return (result);
 }
+
 static int zstd_meminit(void);
-
-
 
 extern void *
 zstd_alloc(void *opaque __unused, size_t size)
@@ -636,8 +671,9 @@ zstd_fini(void)
 module_init(zstd_init);
 module_exit(zstd_fini);
 EXPORT_SYMBOL(zstd_compress);
+EXPORT_SYMBOL(zstd_decompress_level);
 EXPORT_SYMBOL(zstd_decompress);
-EXPORT_SYMBOL(zstd_getlevel);
+EXPORT_SYMBOL(zstd_get_level);
 
 MODULE_DESCRIPTION("ZSTD Compression for ZFS");
 MODULE_LICENSE("Dual BSD/GPL");
