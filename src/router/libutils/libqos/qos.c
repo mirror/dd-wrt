@@ -570,6 +570,7 @@ void add_client_classes(unsigned int base, unsigned int level)
 #if defined(HAVE_CODEL) || defined(HAVE_FQ_CODEL)
 	if (!strcmp(aqd, "codel")
 	    || !strcmp(aqd, "fq_codel")
+	    || !strcmp(aqd, "cake")
 	    || !strcmp(aqd, "pie")) {
 
 		int i;
