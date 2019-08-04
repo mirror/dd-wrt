@@ -489,24 +489,22 @@ get_special_prop(lua_State *state, dsl_dataset_t *ds, const char *dsname,
 	case ZFS_PROP_COMPRESSION:
 		error = dsl_prop_get_ds(ds, prop_name, sizeof (numval), 1,
 		    &numval, setpoint);
-
 		/* Special handling is only required for ZSTD */
-		if (error || (numval & SPA_COMPRESSMASK) != ZIO_COMPRESS_ZSTD)
+		if (error || numval != ZIO_COMPRESS_ZSTD)
 			break;
 
 		uint64_t levelval;
-		const char *zstd_name = zfs_prop_to_name(ZFS_PROP_ZSTD_LEVEL);
+		const char *complevel_name =
+		    zfs_prop_to_name(ZFS_PROP_COMPRESS_LEVEL);
 
-		error = dsl_prop_get_ds(ds, zstd_name, sizeof (levelval),
+		error = dsl_prop_get_ds(ds, complevel_name, sizeof (levelval),
 		    1, &levelval, setpoint);
 		if (error == 0) {
-			if (levelval == ZIO_ZSTDLVL_DEFAULT)
+			if (levelval == ZIO_COMPLEVEL_DEFAULT)
 				break;
-			numval = (numval & SPA_COMPRESSMASK) | \
-			    levelval << SPA_COMPRESSBITS;
+			numval |= levelval << SPA_COMPRESSBITS;
 		}
 		break;
-
 	default:
 		/* Did not match these props, check in the dsl_dir */
 		error = get_dsl_dir_prop(ds, zfs_prop, &numval);

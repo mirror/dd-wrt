@@ -55,15 +55,16 @@ enum zio_compress {
 	ZIO_COMPRESS_FUNCTIONS
 };
 
-#define	ZIO_ZSTD_LEVEL_MIN	1
-#define	ZIO_ZSTD_LEVEL_DEFAULT	3
-#define	ZIO_ZSTD_LEVEL_MAX	19
+#define	ZIO_COMPLEVEL_INHERIT	0
+#define	ZIO_COMPLEVEL_DEFAULT	255
 
 enum zio_zstd_levels {
 	ZIO_ZSTDLVL_INHERIT = 0,
 	ZIO_ZSTDLVL_1,
+#define	ZIO_ZSTD_LEVEL_MIN	ZIO_ZSTDLVL_1
 	ZIO_ZSTDLVL_2,
 	ZIO_ZSTDLVL_3,
+#define	ZIO_ZSTD_LEVEL_DEFAULT	ZIO_ZSTDLVL_3
 	ZIO_ZSTDLVL_4,
 	ZIO_ZSTDLVL_5,
 	ZIO_ZSTDLVL_6,
@@ -80,8 +81,9 @@ enum zio_zstd_levels {
 	ZIO_ZSTDLVL_17,
 	ZIO_ZSTDLVL_18,
 	ZIO_ZSTDLVL_19,
-#define	ZIO_ZSTDLVL_MAX ZIO_ZSTDLVL_19
-	ZIO_ZSTDLVL_RESERVE = 31, /* Leave room for new positive levels */
+#define	ZIO_ZSTD_LEVEL_MAX	ZIO_ZSTDLVL_19
+#define	ZIO_ZSTDLVL_MAX		ZIO_ZSTDLVL_19
+	ZIO_ZSTDLVL_RESERVE = 101, /* Leave room for new positive levels */
 	ZIO_ZSTDLVL_FAST, /* Fast levels are negative */
 	ZIO_ZSTDLVL_FAST_1,
 	ZIO_ZSTDLVL_FAST_2,
@@ -104,8 +106,9 @@ enum zio_zstd_levels {
 	ZIO_ZSTDLVL_FAST_100,
 	ZIO_ZSTDLVL_FAST_500,
 	ZIO_ZSTDLVL_FAST_1000,
-	ZIO_ZSTDLVL_DEFAULT = 62, /* Allow the default level to change */
-	ZIO_ZSTDLVL_AUTO = 63, /* Reserved for future use */
+#define	ZIO_ZSTDLVL_FAST_MAX	ZIO_ZSTDLVL_FAST_1000
+	ZIO_ZSTDLVL_DEFAULT = 250, /* Allow the default level to change */
+	ZIO_ZSTDLVL_AUTO = 251, /* Reserved for future use */
 	ZIO_ZSTDLVL_LEVELS
 };
 
@@ -118,8 +121,12 @@ typedef size_t zio_compress_func_t(void *src, void *dst,
 /* Common signature for all zio decompress functions. */
 typedef int zio_decompress_func_t(void *src, void *dst,
     size_t s_len, size_t d_len, int);
+/* Common signature for all zio decompress and get level functions. */
+typedef int zio_decompresslevel_func_t(void *src, void *dst,
+    size_t s_len, size_t d_len, uint8_t *level);
 /* Common signature for all zio get-compression-level functions. */
-typedef int zio_getcomplevel_func_t(void *src, size_t s_len);
+typedef int zio_getlevel_func_t(void *src, size_t s_len, uint8_t *level);
+
 
 /*
  * Common signature for all zio decompress functions using an ABD as input.
@@ -136,7 +143,8 @@ typedef const struct zio_compress_info {
 	int				ci_level;
 	zio_compress_func_t		*ci_compress;
 	zio_decompress_func_t		*ci_decompress;
-	zio_getcomplevel_func_t		*ci_getlevel;
+	zio_decompresslevel_func_t	*ci_decompress_level;
+	zio_getlevel_func_t		*ci_get_level;
 } zio_compress_info_t;
 
 extern zio_compress_info_t zio_compress_table[ZIO_COMPRESS_FUNCTIONS];
@@ -174,16 +182,20 @@ extern size_t zstd_compress(void *src, void *dst, size_t s_len, size_t d_len,
     int level);
 extern int zstd_decompress(void *src, void *dst, size_t s_len, size_t d_len,
     int level);
-extern int zstd_getlevel(void *src, size_t s_len);
+extern int zstd_decompress_level(void *src, void *dst, size_t s_len,
+    size_t d_len, uint8_t *level);
+extern int zstd_get_level(void *src, size_t s_len, uint8_t *level);
 /*
  * Compress and decompress data if necessary.
  */
 extern size_t zio_compress_data(enum zio_compress c, abd_t *src, void *dst,
-    size_t s_len, enum zio_zstd_levels zstd_level);
+    size_t s_len, uint8_t level);
 extern int zio_decompress_data(enum zio_compress c, abd_t *src, void *dst,
-    size_t s_len, size_t d_len);
+    size_t s_len, size_t d_len, uint8_t *level);
 extern int zio_decompress_data_buf(enum zio_compress c, void *src, void *dst,
-    size_t s_len, size_t d_len);
+    size_t s_len, size_t d_len, uint8_t *level);
+extern int zio_decompress_getcomplevel(enum zio_compress c, void *src,
+    size_t s_len, uint8_t *level);
 extern int zio_getcomplevel(enum zio_compress c, abd_t *src, size_t s_len);
 extern int zio_decompress_getlevel(enum zio_compress c, abd_t *src, void *dst,
     size_t s_len, size_t d_len, enum zio_zstd_levels *level);
