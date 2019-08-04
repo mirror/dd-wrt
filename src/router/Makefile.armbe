@@ -213,6 +213,10 @@ ifeq ($(CONFIG_WIREGUARD),y)
 endif
 	-$(MAKE) -f Makefile.armbe uniwip-gpio
 	-$(MAKE) -f Makefile.armbe uniwip-gpio-install
+ifeq ($(CONFIG_CAKE),y)
+	-$(MAKE) -f Makefile.armbe cake
+	-$(MAKE) -f Makefile.armbe cake-install
+endif
 
 ifeq ($(CONFIG_WP18),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs

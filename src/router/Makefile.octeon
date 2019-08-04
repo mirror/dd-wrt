@@ -222,14 +222,16 @@ ifeq ($(CONFIG_OPENDPI),y)
 	-$(MAKE) -f Makefile.octeon opendpi-install
 endif
 ifeq ($(CONFIG_ZFS),y)
-	-$(MAKE) -f Makefile.octeon spl
-	-$(MAKE) -f Makefile.octeon spl-install
 	-$(MAKE) -f Makefile.octeon zfs
 	-$(MAKE) -f Makefile.octeon zfs-install
 endif
 ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.octeon wireguard
 	-$(MAKE) -f Makefile.octeon wireguard-install
+endif
+ifeq ($(CONFIG_CAKE),y)
+	-$(MAKE) -f Makefile.octeon cake
+	-$(MAKE) -f Makefile.octeon cake-install
 endif
 
 ifneq ($(CONFIG_SAMBA),y)
