@@ -335,7 +335,7 @@ endif
 	cp tools/ubinize.cfg $(ARCH)-uclibc
 	cd $(ARCH)-uclibc && ubinize -m 2048 -p 128KiB -s 2048 -o root.ubi ubinize.cfg && cd ..
 	dd if=$(ARCH)-uclibc/root.ubi of=$(ARCH)-uclibc/root-aligned.ubi bs=128k conv=sync
-	./tools/trx_n -m 125000000 -o $(ARCH)-uclibc/webflash-ventana.trx $(ARCH)-uclibc/root-aligned.ubi
+	./tools/trx_n -m 200000000 -o $(ARCH)-uclibc/webflash-ventana.trx $(ARCH)-uclibc/root-aligned.ubi
 	
 #	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -root-owned -le
 #	mkfs.jffs2 --pad --big-endian --squash -e 0x20000 -o $(ARCH)-uclibc/dd-wrt.jffs2 -d $(ARCH)-uclibc/target
