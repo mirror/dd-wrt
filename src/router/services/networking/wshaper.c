@@ -790,8 +790,8 @@ static int svqos_iptables(void)
 
 	if (strcmp(wan_dev, "wwan0")) {
 		if (wanactive(get_wan_ipaddr()) && (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off"))) {
-			eval("iptables", "-A", "PREROUTING", "-i", "!", get_wan_face(), "-d", get_wan_ipaddr(), "-j", "MARK", "--set-mark", get_NFServiceMark("FORWARD", 1));
-			eval("iptables", "-A", "PREROUTING", "-j", "CONNMARK", "--save-mark");
+			eval("iptables", "-t", "mangle", "-A", "PREROUTING", "-i", "!", get_wan_face(), "-d", get_wan_ipaddr(), "-j", "MARK", "--set-mark", get_NFServiceMark("FORWARD", 1));
+			eval("iptables", "-t", "mangle", "-A", "PREROUTING", "-j", "CONNMARK", "--save-mark");
 		}
 	}
 #ifndef HAVE_AQOS
