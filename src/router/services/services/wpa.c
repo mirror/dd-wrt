@@ -371,8 +371,10 @@ void start_nas(void)
 		fclose(check);
 		return;
 	}
+	check = fopen("/tmp/.startnas", "wb");
+	putc('f',check);
+	fclose(check);
 	char *iface;
-	eval("touch", "/tmp/.startnas");
 	network_delay("nas");
 	int cnt = get_wl_instances();
 	int c;
