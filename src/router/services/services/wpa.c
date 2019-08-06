@@ -439,6 +439,9 @@ void start_nas(void)
 //      wlconf_up(iface);       // double tip
 //      }
 	unlink("/tmp/.startnas");
+	check = fopen("/tmp/.startmon", "wb");
+	putc('f',check);
+	fclose(check);
 	return;
 }
 
