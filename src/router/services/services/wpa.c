@@ -120,7 +120,7 @@ void start_nas_notify(char *ifname)
 	_evalpid(argv, ">/dev/console", 0, &pid);
 }
 
-void start_radius(char *prefix)
+static void start_radius(char *prefix)
 {
 
 	// wrt-radauth $IFNAME $server $port $share $override $mackey $maxun &
@@ -151,7 +151,7 @@ void start_radius(char *prefix)
 
 }
 
-void start_nas_single(char *type, char *prefix);
+static void start_nas_single(char *type, char *prefix);
 
 static void convert_wds(int instance)
 {
@@ -239,7 +239,7 @@ static char *getAuthMode(char *prefix)
 		return "255";
 }
 
-char *getKey(char *prefix)
+static char *getKey(char *prefix)
 {
 	char akm[32];
 
@@ -274,7 +274,7 @@ char *getKey(char *prefix)
  * 
  * _eval (argv, NULL, 0, &pid); cprintf ("done\n"); } } 
  */
-void start_nas_lan(int c)
+static void start_nas_lan(int c)
 {
 	char wlname[32];
 	char *next;
@@ -295,7 +295,7 @@ void start_nas_lan(int c)
 	}
 }
 
-void start_nas_wan(int c)
+static void start_nas_wan(int c)
 {
 	char wlname[32];
 
@@ -321,7 +321,7 @@ void start_nas_wan(int c)
 }
 
 
-void stop_nas_process(void)
+static void stop_nas_process(void)
 {
 	int ret = 0;
 	char name[80], *next;
@@ -374,6 +374,7 @@ void start_nas(void)
 	check = fopen("/tmp/.startnas", "wb");
 	putc('f',check);
 	fclose(check);
+	sleep(1);
 	char *iface;
 	network_delay("nas");
 	int cnt = get_wl_instances();
@@ -448,7 +449,7 @@ void start_nas(void)
 
 
 
-void start_nas_single(char *type, char *prefix)
+static void start_nas_single(char *type, char *prefix)
 {
 	FILE *fnas;
 	char pidfile[64];
