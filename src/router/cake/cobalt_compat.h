@@ -94,7 +94,7 @@ static inline unsigned int __tcp_hdrlen(const struct tcphdr *th)
 }
 #endif
 
-#if KERNEL_VERSION(4, 6, 0) > LINUX_VERSION_CODE
+#if KERNEL_VERSION(4, 4, 0) > LINUX_VERSION_CODE
 static inline int skb_try_make_writable(struct sk_buff *skb,
 					unsigned int write_len)
 {
@@ -116,7 +116,7 @@ static inline int skb_try_make_writable(struct sk_buff *skb,
 #endif
 
 
-#if KERNEL_VERSION(4, 9, 0) > LINUX_VERSION_CODE
+#if KERNEL_VERSION(4, 4, 0) > LINUX_VERSION_CODE
 static void *kvzalloc(size_t sz, gfp_t flags)
 {
 	void *ptr = kzalloc(sz, flags);
