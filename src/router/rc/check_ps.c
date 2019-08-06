@@ -113,11 +113,14 @@ static void checknas(void)	// for broadcom v24 only
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 
 	char buf[32];
-	FILE *fnas = fopen("/tmp/.nas", "r");
+	FILE *fnas = fopen("/tmp/.startmon", "r");
 
 	if (fnas == NULL)
 		return;
-
+	fclose(fnas);
+	fnas = fopen("/tmp/.nas", "r");
+	if (fnas == NULL)
+		return;
 	fgets(buf, sizeof(buf), fnas);
 	fclose(fnas);
 
