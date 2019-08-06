@@ -124,10 +124,10 @@ static void checknas(void)	// for broadcom v24 only
 	if (strlen(buf) != count_processes("nas"))	// restart all nas
 		// processes
 	{
-		stop_service("nas");
-		start_service_force_arg("nas", 1);
 		stop_service("wlconf");
 		start_service_force_arg("wlconf", 1);
+		stop_service("nas");
+		start_service_force_arg("nas", 1);
 	}
 
 	return;
