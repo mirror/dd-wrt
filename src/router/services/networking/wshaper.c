@@ -977,7 +977,7 @@ static int svqos_iptables(void)
 	if (nvram_invmatchi("openvpn_enable", 0) || nvram_invmatchi("openvpncl_enable", 0)) {
 		eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "VPN_DSCP");
 	}
-#if 1 //ndef HAVE_80211AC
+#ifndef HAVE_80211AC
 	// seems to crash northstar
 
 	// http://svn.dd-wrt.com:8000/ticket/2803 && http://svn.dd-wrt.com/ticket/2811   
