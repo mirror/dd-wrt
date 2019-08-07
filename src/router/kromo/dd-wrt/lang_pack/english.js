@@ -1496,6 +1496,7 @@ qos.aqd="Queuing Discipline";
 qos.aqd_sfq="SFQ";
 qos.aqd_codel="CODEL";
 qos.aqd_fqcodel="FQ_CODEL";
+qos.aqd_cake="CAKE";
 qos.aqd_pie="PIE";
 qos.uplink="Uplink (kbps)";
 qos.dnlink="Downlink (kbps)";
