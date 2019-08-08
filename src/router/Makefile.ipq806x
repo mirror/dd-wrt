@@ -289,6 +289,10 @@ endif
 
 include common.mk
 
+its:
+	./tools/ipq40xx/mkits.sh -D 8dev_habanero-dvk-c2 -o $(ARCH)-uclibc/habanero.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.gz -d $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq4019-habanero-dvk-c2.dtb -C gzip -a 0x80208000 -e 0x80208000 -c "config@1" -A arm -v 4.9
+	gzip -f -9n -c $(LINUXDIR)/arch/arm/boot/Image > $(ARCH)-uclibc/Image.gz
+	./tools/r7500/mkimage -f $(ARCH)-uclibc/habanero.itb.its $(ARCH)-uclibc/habanero.itb.new
 
 install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $(LINUXDIR)/.config
         # Install binaries into target directory
@@ -497,6 +501,12 @@ endif
 	
 	cp $(ARCH)-uclibc/ddwrt-ipq806x-EA8500-squashfs-nand-factory.ubi $(ARCH)-uclibc/ddwrt-ea8500-squashfs-nand-factory.ubi
 	
+
+	./tools/ipq40xx/mkits.sh -D 8dev_habanero-dvk-c2 -o $(ARCH)-uclibc/habanero.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.gz -d $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq4019-habanero-dvk-c2.dtb -C gzip -a 0x80208000 -e 0x80208000 -c "config@1" -A arm -v 4.9
+	gzip -f -9n -c $(LINUXDIR)/arch/arm/boot/Image > $(ARCH)-uclibc/Image.gz
+	./tools/r7500/mkimage -f $(ARCH)-uclibc/habanero.itb.its $(ARCH)-uclibc/habanero.itb.new
+
+	( dd if=$(ARCH)-uclibc/habanero.itb.new bs=3072k conv=sync count=1; dd if=$(ARCH)-uclibc/root.squashfs.new bs=64k; ) > $(ARCH)-uclibc/habanero.image
 
 	-./tools/trx_n -m 55000000 -o $(ARCH)-uclibc/ddwrt-netgear-R7500v1.bin $(ARCH)-uclibc/ddwrt-R7500v1.bin 
 	-./tools/trx_n -m 55000000 -o $(ARCH)-uclibc/ddwrt-netgear-R7500v2.bin $(ARCH)-uclibc/ddwrt-R7500v2.bin
