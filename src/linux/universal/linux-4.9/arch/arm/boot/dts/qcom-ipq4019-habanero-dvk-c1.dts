@@ -1,0 +1,99 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qcom-ipq4019-habanero.dtsi"
+
+/ {
+	model = "8devices Habanero DVK-C1";
+	compatible = "8dev,habanero-dvk-c1", "8dev,habanero", "qcom,ipq4019";
+
+	soc {
+		usb2@60f8800 {
+			status = "okay";
+		};
+
+		usb3@8af8800 {
+			status = "okay";
+		};
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		wps {
+			label = "wps";
+			gpios = <&tlmm 8 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		io37 {
+			label = "habanero_dvk:green:io37";
+			gpios = <&tlmm 37 GPIO_ACTIVE_HIGH>;
+		};
+		io40 {
+			label = "habanero_dvk:green:io40";
+			gpios = <&tlmm 40 GPIO_ACTIVE_HIGH>;
+		};
+		io46 {
+			label = "habanero_dvk:green:io46";
+			gpios = <&tlmm 46 GPIO_ACTIVE_HIGH>;
+		};
+		io48 {
+			label = "habanero_dvk:green:io48";
+			gpios = <&tlmm 48 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&sdhci {
+	pinctrl-0 = <&sd_pins>;
+	pinctrl-names = "default";
+	cd-gpios = <&tlmm 22 0x1>;
+	vqmmc-supply = <&vqmmc>;
+	status = "okay";
+};
+
+&pcie0 {
+	perst-gpio = <&tlmm 38 GPIO_ACTIVE_LOW>;
+	wake-gpio = <&tlmm 50 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
+&tlmm {
+	sd_pins: sd_pins {
+		pinmux {
+			function = "sdio";
+			pins = "gpio23", "gpio24", "gpio25", "gpio26",
+				"gpio28", "gpio29", "gpio30", "gpio31";
+			drive-strength = <10>;
+		};
+
+		pinmux_sd_clk {
+			function = "sdio";
+			pins = "gpio27";
+			drive-strength = <16>;
+		};
+
+		pinmux_sd7 {
+			function = "sdio";
+			pins = "gpio32";
+			drive-strength = <10>;
+			bias-disable;
+		};
+	};
+};
+
+&usb2_hs_phy {
+	status = "okay";
+};
+
+&usb3_hs_phy {
+	status = "okay";
+};
+
+&usb3_ss_phy {
+	status = "okay";
+};
