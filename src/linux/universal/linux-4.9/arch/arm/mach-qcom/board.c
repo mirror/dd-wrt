@@ -38,6 +38,7 @@ static const char * const qcom4019_dt_match[] __initconst = {
 
 #define MSM_CLK_CTL_BASE    0x00900000
 #define MSM_TMR_BASE        0x0200A000
+
 #define APCS_WDT0_EN        (0x0040)
 #define APCS_WDT0_RST       (0x0038)
 #define APCS_WDT0_BARK_TIME (0x004C)
@@ -64,21 +65,25 @@ static void qcom_restart(enum reboot_mode mode, const char *cmd)
 #define IPQ40XX_CLK_CTL_BASE    0x01800000
 #define IPQ40XX_TMR_BASE        0x0b017000
 
+#define KPSS_WDT0_EN        (0x0008)
+#define KPSS_WDT0_RST       (0x0004)
+#define KPSS_WDT0_BARK_TIME (0x0010)
+#define KPSS_WDT0_BITE_TIME (0x0014)
+#define KPSS_WDT0_CPU0_WDOG_EXPIRED_ENABLE (0x3820)
+
 static void qcom_restart_ipq40xx(enum reboot_mode mode, const char *cmd)
 {
 	void __iomem		*tmrbase;
 	void __iomem		*clkbase;
-	printk(KERN_INFO "\nResetting with watch dog!\n");
+	printk(KERN_INFO "\nResetting with watch dog! (IPQ4019)\n");
 	tmrbase = ioremap(IPQ40XX_TMR_BASE,0x1000);
-	clkbase = ioremap(MSM_CLK_CTL_BASE,0x4000);
-	writel(0, tmrbase + APCS_WDT0_EN);
-	writel(1, tmrbase + APCS_WDT0_RST);
-	writel(RESET_WDT_BARK_TIME, tmrbase + APCS_WDT0_BARK_TIME);
-	writel(RESET_WDT_BITE_TIME, tmrbase + APCS_WDT0_BITE_TIME);
-	writel(1, tmrbase + APCS_WDT0_EN);
-	writel(1, clkbase + APCS_WDT0_CPU0_WDOG_EXPIRED_ENABLE);
-
-
+	clkbase = ioremap(IPQ40XX_CLK_CTL_BASE,0x4000);
+	writel(0, tmrbase + KPSS_WDT0_EN);
+	writel(1, tmrbase + KPSS_WDT0_RST);
+	writel(RESET_WDT_BARK_TIME, tmrbase + KPSS_WDT0_BARK_TIME);
+	writel(RESET_WDT_BITE_TIME, tmrbase + KPSS_WDT0_BITE_TIME);
+	writel(1, tmrbase + KPSS_WDT0_EN);
+	writel(1, clkbase + KPSS_WDT0_CPU0_WDOG_EXPIRED_ENABLE);
 }
 
 
@@ -86,7 +91,7 @@ DT_MACHINE_START(QCOM_DT, "Qualcomm (Flattened Device Tree)")
 	.dt_compat = qcom_dt_match,
 	.restart = qcom_restart,
 MACHINE_END
-//DT_MACHINE_START(QCOM_DT_IPQ40XX, "Qualcomm (Flattened Device Tree)")
-//	.dt_compat = qcom4019_dt_match,
-//	.restart = qcom_restart_ipq40xx,
-//MACHINE_END
+DT_MACHINE_START(QCOM_DT_IPQ40XX, "Qualcomm (Flattened Device Tree)")
+	.dt_compat = qcom4019_dt_match,
+	.restart = qcom_restart_ipq40xx,
+MACHINE_END
