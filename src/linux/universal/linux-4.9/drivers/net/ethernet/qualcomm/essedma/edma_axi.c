@@ -17,6 +17,11 @@
 #include <linux/of.h>
 #include <linux/of_net.h>
 #include <linux/timer.h>
+#include <linux/of_platform.h>
+#include <linux/of_address.h>
+#include <linux/clk.h>
+#include <linux/string.h>
+#include <linux/reset.h>
 #include "edma.h"
 #include "ess_edma.h"
 
@@ -81,6 +86,101 @@ void edma_write_reg(u16 reg_addr, u32 reg_value)
 void edma_read_reg(u16 reg_addr, volatile u32 *reg_value)
 {
 	*reg_value = readl((void __iomem *)(edma_hw_addr + reg_addr));
+}
+
+static void ess_write_reg(struct edma_common_info *edma, u16 reg_addr, u32 reg_value)
+{
+	writel(reg_value, ((void __iomem *)
+		((unsigned long)edma->ess_hw_addr + reg_addr)));
+}
+
+static void ess_read_reg(struct edma_common_info *edma, u16 reg_addr,
+		  volatile u32 *reg_value)
+{
+	*reg_value = readl((void __iomem *)
+		((unsigned long)edma->ess_hw_addr + reg_addr));
+}
+
+static int ess_reset(struct edma_common_info *edma)
+{
+	struct device_node *switch_node = NULL;
+	struct reset_control *ess_rst;
+	u32 regval;
+
+	switch_node = of_find_node_by_name(NULL, "ess-switch");
+	if (!switch_node) {
+		pr_err("switch-node not found\n");
+		return -EINVAL;
+	}
+
+	ess_rst = of_reset_control_get(switch_node, "ess_rst");
+	of_node_put(switch_node);
+
+	if (IS_ERR(ess_rst)) {
+		pr_err("failed to find ess_rst!\n");
+		return -ENOENT;
+	}
+
+	reset_control_assert(ess_rst);
+	msleep(10);
+	reset_control_deassert(ess_rst);
+	msleep(100);
+	reset_control_put(ess_rst);
+
+	/* Enable only port 5 <--> port 0
+	 * bits 0:6 bitmap of ports it can fwd to */
+#define SET_PORT_BMP(r,v) \
+		ess_read_reg(edma, r, &regval); \
+		ess_write_reg(edma, r, ((regval & ~0x3F) | v));
+
+	SET_PORT_BMP(ESS_PORT0_LOOKUP_CTRL,0x20);
+	SET_PORT_BMP(ESS_PORT1_LOOKUP_CTRL,0x00);
+	SET_PORT_BMP(ESS_PORT2_LOOKUP_CTRL,0x00);
+	SET_PORT_BMP(ESS_PORT3_LOOKUP_CTRL,0x00);
+	SET_PORT_BMP(ESS_PORT4_LOOKUP_CTRL,0x00);
+	SET_PORT_BMP(ESS_PORT5_LOOKUP_CTRL,0x01);
+	ess_write_reg(edma, ESS_RGMII_CTRL, 0x400);
+	ess_write_reg(edma, ESS_PORT0_STATUS, ESS_PORT_1G_FDX);
+	ess_write_reg(edma, ESS_PORT5_STATUS, ESS_PORT_1G_FDX);
+	ess_write_reg(edma, ESS_PORT0_HEADER_CTRL, 0);
+#undef SET_PORT_BMP
+
+	/* forward multicast and broadcast frames to CPU */
+	ess_write_reg(edma, ESS_FWD_CTRL1,
+		(ESS_PORTS_ALL << ESS_FWD_CTRL1_UC_FLOOD_S) |
+		(ESS_PORTS_ALL << ESS_FWD_CTRL1_MC_FLOOD_S) |
+		(ESS_PORTS_ALL << ESS_FWD_CTRL1_BC_FLOOD_S));
+
+	return 0;
+}
+
+void ess_set_port_status_speed(struct edma_common_info *edma,
+			       struct phy_device *phydev, uint8_t port_id)
+{
+	uint16_t reg_off = ESS_PORT0_STATUS + (4 * port_id);
+	uint32_t reg_val = 0;
+
+	ess_read_reg(edma, reg_off, &reg_val);
+
+	/* reset the speed bits [0:1] */
+	reg_val &= ~ESS_PORT_STATUS_SPEED_INV;
+
+	/* set the new speed */
+	switch(phydev->speed) {
+		case SPEED_1000:  reg_val |= ESS_PORT_STATUS_SPEED_1000; break;
+		case SPEED_100:   reg_val |= ESS_PORT_STATUS_SPEED_100;  break;
+		case SPEED_10:    reg_val |= ESS_PORT_STATUS_SPEED_10;   break;
+		default:          reg_val |= ESS_PORT_STATUS_SPEED_INV;  break;
+	}
+
+	/* check full/half duplex */
+	if (phydev->duplex) {
+		reg_val |= ESS_PORT_STATUS_DUPLEX_MODE;
+	} else {
+		reg_val &= ~ESS_PORT_STATUS_DUPLEX_MODE;
+	}
+
+	ess_write_reg(edma, reg_off, reg_val);
 }
 
 /* edma_change_tx_coalesce()
@@ -551,6 +651,31 @@ static struct ctl_table edma_table[] = {
 	{}
 };
 
+static int ess_parse(struct edma_common_info *edma)
+{
+	struct device_node *switch_node;
+	int ret = -EINVAL;
+
+	switch_node = of_find_node_by_name(NULL, "ess-switch");
+	if (!switch_node) {
+		pr_err("cannot find ess-switch node\n");
+		goto out;
+	}
+
+	edma->ess_hw_addr = of_io_request_and_map(switch_node,
+						  0, KBUILD_MODNAME);
+	if (!edma->ess_hw_addr) {
+		pr_err("%s ioremap fail.", __func__);
+		goto out;
+	}
+
+	edma->ess_clk = of_clk_get_by_name(switch_node, "ess_clk");
+	ret = clk_prepare_enable(edma->ess_clk);
+out:
+	of_node_put(switch_node);
+	return ret;
+}
+
 /* edma_axi_netdev_ops
  *	Describe the operations supported by registered netdevices
  *
@@ -572,7 +697,6 @@ static const struct net_device_ops edma_axi_netdev_ops = {
 	.ndo_get_default_vlan_tag = edma_get_default_vlan_tag,
 #endif
 	.ndo_get_stats          = edma_get_stats,
-	.ndo_change_mtu		= edma_change_mtu,
 };
 
 /* edma_axi_probe()
@@ -785,6 +909,17 @@ static int edma_axi_probe(struct platform_device *pdev)
 		}
 
 		miibus = mdio_data->mii_bus;
+	}
+
+	if (of_property_read_bool(np, "qcom,single-phy") &&
+	    edma_cinfo->num_gmac == 1) {
+		err = ess_parse(edma_cinfo);
+		if (!err)
+			err = ess_reset(edma_cinfo);
+		if (err)
+			goto err_single_phy_init;
+		else
+			edma_cinfo->is_single_phy = true;
 	}
 
 	for_each_available_child_of_node(np, pnp) {
@@ -1074,11 +1209,15 @@ static int edma_axi_probe(struct platform_device *pdev)
 
 	for (i = 0; i < edma_cinfo->num_gmac; i++) {
 		if (adapter[i]->poll_required) {
+			int phy_mode = of_get_phy_mode(np);
+
+			if (phy_mode < 0)
+				phy_mode = PHY_INTERFACE_MODE_SGMII;
 			adapter[i]->phydev =
 				phy_connect(edma_netdev[i],
 					    (const char *)adapter[i]->phy_id,
 					    &edma_adjust_link,
-					    PHY_INTERFACE_MODE_SGMII);
+					    phy_mode);
 			if (IS_ERR(adapter[i]->phydev)) {
 				dev_dbg(&pdev->dev, "PHY attach FAIL");
 				err = -EIO;
@@ -1097,6 +1236,7 @@ static int edma_axi_probe(struct platform_device *pdev)
 	}
 
 	spin_lock_init(&edma_cinfo->stats_lock);
+
 
 	init_timer(&edma_stats_timer);
 	edma_stats_timer.expires = jiffies + 1*HZ;
@@ -1125,6 +1265,9 @@ err_rmap_alloc_fail:
 	for (i = 0; i < edma_cinfo->num_gmac; i++)
 		unregister_netdev(edma_netdev[i]);
 err_register:
+err_single_phy_init:
+	iounmap(edma_cinfo->ess_hw_addr);
+	clk_disable_unprepare(edma_cinfo->ess_clk);
 err_mdiobus_init_fail:
 	edma_free_rx_rings(edma_cinfo);
 err_rx_rinit:
@@ -1185,6 +1328,8 @@ static int edma_axi_remove(struct platform_device *pdev)
 	del_timer_sync(&edma_stats_timer);
 	edma_free_irqs(adapter);
 	unregister_net_sysctl_table(edma_cinfo->edma_ctl_table_hdr);
+	iounmap(edma_cinfo->ess_hw_addr);
+	clk_disable_unprepare(edma_cinfo->ess_clk);
 	edma_free_tx_resources(edma_cinfo);
 	edma_free_rx_resources(edma_cinfo);
 	edma_free_tx_rings(edma_cinfo);

@@ -103,6 +103,9 @@ static int edma_alloc_rx_ring(struct edma_common_info *edma_cinfo,
 		return -ENOMEM;
 	}
 
+	/* Initialize pending_fill */
+	erxd->pending_fill = 0;
+
 	return 0;
 }
 
@@ -161,8 +164,10 @@ static void edma_configure_rx(struct edma_common_info *edma_cinfo)
 	/* Set Rx FIFO threshold to start to DMA data to host */
 	rxq_ctrl_data = EDMA_FIFO_THRESH_128_BYTE;
 
+	if (!edma_cinfo->is_single_phy) {
 	/* Set RX remove vlan bit */
 	rxq_ctrl_data |= EDMA_RXQ_CTRL_RMV_VLAN;
+	}
 
 	edma_write_reg(EDMA_REG_RXQ_CTRL, rxq_ctrl_data);
 }
@@ -183,11 +188,8 @@ static int edma_alloc_rx_buf(struct edma_common_info
 	u16 prod_idx, length;
 	u32 reg_data;
 
-	if (cleaned_count > erdr->count) {
-		dev_err(&pdev->dev, "Incorrect cleaned_count %d",
-		       cleaned_count);
-		return -1;
-	}
+	if (cleaned_count > erdr->count)
+		cleaned_count = erdr->count - 1;
 
 	i = erdr->sw_next_to_fill;
 
@@ -197,9 +199,12 @@ static int edma_alloc_rx_buf(struct edma_common_info
 
 		if (sw_desc->flags & EDMA_SW_DESC_FLAG_SKB_REUSE) {
 			skb = sw_desc->skb;
+
+			/* Clear REUSE Flag */
+			sw_desc->flags &= ~EDMA_SW_DESC_FLAG_SKB_REUSE;
 		} else {
 			/* alloc skb */
-			skb = netdev_alloc_skb(edma_netdev[0], length);
+			skb = netdev_alloc_skb_ip_align(edma_netdev[0], length);
 			if (!skb) {
 				/* Better luck next round */
 				break;
@@ -262,6 +267,13 @@ static int edma_alloc_rx_buf(struct edma_common_info
 	reg_data &= ~EDMA_RFD_PROD_IDX_BITS;
 	reg_data |= prod_idx;
 	edma_write_reg(EDMA_REG_RFD_IDX_Q(queue_id), reg_data);
+
+	/* If we couldn't allocate all the buffers
+	 * we increment the alloc failure counters
+	 */
+	if (cleaned_count)
+		edma_cinfo->edma_ethstats.rx_alloc_fail_ctr++;
+
 	return cleaned_count;
 }
 
@@ -532,7 +544,7 @@ static int edma_rx_complete_paged(struct sk_buff *skb, u16 num_rfds, u16 length,
  * edma_rx_complete()
  *	Main api called from the poll function to process rx packets.
  */
-static void edma_rx_complete(struct edma_common_info *edma_cinfo,
+static u16 edma_rx_complete(struct edma_common_info *edma_cinfo,
 			    int *work_done, int work_to_do, int queue_id,
 			    struct napi_struct *napi)
 {
@@ -552,6 +564,7 @@ static void edma_rx_complete(struct edma_common_info *edma_cinfo,
 	u16 count = erdr->count, rfd_avail;
 	u8 queue_to_rxid[8] = {0, 0, 1, 1, 2, 2, 3, 3};
 
+	cleaned_count = erdr->pending_fill;
 	sw_next_to_clean = erdr->sw_next_to_clean;
 
 	edma_read_reg(EDMA_REG_RFD_IDX_Q(queue_id), &data);
@@ -650,12 +663,13 @@ static void edma_rx_complete(struct edma_common_info *edma_cinfo,
 						(*work_done)++;
 						drop_count = 0;
 					}
-					if (cleaned_count == EDMA_RX_BUFFER_WRITE) {
+					if (cleaned_count >= EDMA_RX_BUFFER_WRITE) {
 						/* If buffer clean count reaches 16, we replenish HW buffers. */
 						ret_count = edma_alloc_rx_buf(edma_cinfo, erdr, cleaned_count, queue_id);
 						edma_write_reg(EDMA_REG_RX_SW_CONS_IDX_Q(queue_id),
 							      sw_next_to_clean);
 						cleaned_count = ret_count;
+						erdr->pending_fill = ret_count;
 					}
 					continue;
 				}
@@ -728,11 +742,12 @@ static void edma_rx_complete(struct edma_common_info *edma_cinfo,
 			adapter->stats.rx_bytes += length;
 
 			/* Check if we reached refill threshold */
-			if (cleaned_count == EDMA_RX_BUFFER_WRITE) {
+			if (cleaned_count >= EDMA_RX_BUFFER_WRITE) {
 				ret_count = edma_alloc_rx_buf(edma_cinfo, erdr, cleaned_count, queue_id);
 				edma_write_reg(EDMA_REG_RX_SW_CONS_IDX_Q(queue_id),
 					      sw_next_to_clean);
 				cleaned_count = ret_count;
+				erdr->pending_fill = ret_count;
 			}
 
 			/* At this point skb should go to stack */
@@ -754,11 +769,17 @@ static void edma_rx_complete(struct edma_common_info *edma_cinfo,
 	/* Refill here in case refill threshold wasn't reached */
 	if (likely(cleaned_count)) {
 		ret_count = edma_alloc_rx_buf(edma_cinfo, erdr, cleaned_count, queue_id);
-		if (ret_count)
-			dev_dbg(&pdev->dev, "Not all buffers was reallocated");
+		erdr->pending_fill = ret_count;
+		if (ret_count) {
+			if (net_ratelimit())
+				dev_dbg(&pdev->dev, "Not all buffers was reallocated");
+		}
+
 		edma_write_reg(EDMA_REG_RX_SW_CONS_IDX_Q(queue_id),
 			      erdr->sw_next_to_clean);
 	}
+
+	return erdr->pending_fill;
 }
 
 /* edma_delete_rfs_filter()
@@ -1295,6 +1316,10 @@ void edma_adjust_link(struct net_device *netdev)
 	if (status == __EDMA_LINKUP && adapter->link_state == __EDMA_LINKDOWN) {
 		dev_info(&adapter->pdev->dev, "%s: GMAC Link is up with phy_speed=%d\n", netdev->name, phydev->speed);
 		adapter->link_state = __EDMA_LINKUP;
+		if (adapter->edma_cinfo->is_single_phy) {
+			ess_set_port_status_speed(adapter->edma_cinfo, phydev,
+						  ffs(adapter->dp_bitmap) - 1);
+		}
 		netif_carrier_on(netdev);
 		if (netif_running(netdev))
 			netif_tx_wake_all_queues(netdev);
@@ -1388,10 +1413,12 @@ netdev_tx_t edma_xmit(struct sk_buff *skb,
 	}
 
 	/* Check and mark VLAN tag offload */
-	if (skb_vlan_tag_present(skb))
-		flags_transmit |= EDMA_VLAN_TX_TAG_INSERT_FLAG;
-	else if (adapter->default_vlan_tag)
-		flags_transmit |= EDMA_VLAN_TX_TAG_INSERT_DEFAULT_FLAG;
+	if (!adapter->edma_cinfo->is_single_phy) {
+		if (unlikely(skb_vlan_tag_present(skb)))
+			flags_transmit |= EDMA_VLAN_TX_TAG_INSERT_FLAG;
+		else if (adapter->default_vlan_tag)
+			flags_transmit |= EDMA_VLAN_TX_TAG_INSERT_DEFAULT_FLAG;
+	}
 
 	/* Check and mark checksum offload */
 	if (likely(skb->ip_summed == CHECKSUM_PARTIAL))
@@ -1937,31 +1964,6 @@ int edma_fill_netdev(struct edma_common_info *edma_cinfo, int queue_id,
 	return 0;
 }
 
-/* edma_change_mtu()
- *	change the MTU of the NIC.
- */
-int edma_change_mtu(struct net_device *netdev, int new_mtu)
-{
-	struct edma_adapter *adapter = netdev_priv(netdev);
-	struct edma_common_info *edma_cinfo = adapter->edma_cinfo;
-	int old_mtu = netdev->mtu;
-	int max_frame_size = new_mtu + ETH_HLEN + ETH_FCS_LEN + (2 * VLAN_HLEN);
-
-	if ((max_frame_size < ETH_ZLEN + ETH_FCS_LEN) ||
-		(max_frame_size > EDMA_MAX_JUMBO_FRAME_SIZE)) {
-			dev_err(&edma_cinfo->pdev->dev, "MTU setting not correct\n");
-			return -EINVAL;
-	}
-
-	/* set MTU */
-	if (old_mtu != new_mtu) {
-		netdev->mtu = new_mtu;
-		netdev_update_features(netdev);
-	}
-
-	return 0;
-}
-
 /* edma_set_mac()
  *	Change the Ethernet Address of the NIC
  */
@@ -2081,6 +2083,7 @@ int edma_poll(struct napi_struct *napi, int budget)
 	u32 shadow_rx_status, shadow_tx_status;
 	int queue_id;
 	int i, work_done = 0;
+	u16 rx_pending_fill;
 
 	/* Store the Rx/Tx status by ANDing it with
 	 * appropriate CPU RX?TX mask
@@ -2114,13 +2117,19 @@ int edma_poll(struct napi_struct *napi, int budget)
 	 */
 	while (edma_percpu_info->rx_status) {
 		queue_id = ffs(edma_percpu_info->rx_status) - 1;
-		edma_rx_complete(edma_cinfo, &work_done,
-			        budget, queue_id, napi);
+		rx_pending_fill = edma_rx_complete(edma_cinfo, &work_done,
+						   budget, queue_id, napi);
 
-		if (likely(work_done < budget))
+		if (likely(work_done < budget)) {
+			if (rx_pending_fill) {
+                          	/* reschedule poll() to refill rx buffer deficit */
+				work_done = budget;
+				break;
+			}
 			edma_percpu_info->rx_status &= ~(1 << queue_id);
-		else
+		} else {
 			break;
+		}
 	}
 
 	/* Clear the status register, to avoid the interrupts to
