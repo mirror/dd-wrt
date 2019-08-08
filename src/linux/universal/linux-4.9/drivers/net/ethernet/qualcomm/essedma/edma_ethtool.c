@@ -78,6 +78,7 @@ static const struct edma_ethtool_stats edma_gstrings_stats[] = {
 	{"rx_q6_byte", EDMA_STAT(rx_q6_byte)},
 	{"rx_q7_byte", EDMA_STAT(rx_q7_byte)},
 	{"tx_desc_error", EDMA_STAT(tx_desc_error)},
+	{"rx_alloc_fail_ctr", EDMA_STAT(rx_alloc_fail_ctr)},
 };
 
 #define EDMA_STATS_LEN ARRAY_SIZE(edma_gstrings_stats)

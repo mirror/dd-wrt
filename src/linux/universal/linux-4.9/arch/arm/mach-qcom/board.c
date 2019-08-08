@@ -24,6 +24,9 @@ static const char * const qcom_dt_match[] __initconst = {
 	"qcom,msm8960-cdp",
 	NULL
 };
+static const char * const qcom4019_dt_match[] __initconst = {
+	"qcom,ipq4019",
+};
 
 /* Watchdog bite time set to default reset value */
 #define RESET_WDT_BITE_TIME 0x31F3
@@ -57,7 +60,33 @@ static void qcom_restart(enum reboot_mode mode, const char *cmd)
 
 
 }
+
+#define IPQ40XX_CLK_CTL_BASE    0x01800000
+#define IPQ40XX_TMR_BASE        0x0b017000
+
+static void qcom_restart_ipq40xx(enum reboot_mode mode, const char *cmd)
+{
+	void __iomem		*tmrbase;
+	void __iomem		*clkbase;
+	printk(KERN_INFO "\nResetting with watch dog!\n");
+	tmrbase = ioremap(IPQ40XX_TMR_BASE,0x1000);
+	clkbase = ioremap(MSM_CLK_CTL_BASE,0x4000);
+	writel(0, tmrbase + APCS_WDT0_EN);
+	writel(1, tmrbase + APCS_WDT0_RST);
+	writel(RESET_WDT_BARK_TIME, tmrbase + APCS_WDT0_BARK_TIME);
+	writel(RESET_WDT_BITE_TIME, tmrbase + APCS_WDT0_BITE_TIME);
+	writel(1, tmrbase + APCS_WDT0_EN);
+	writel(1, clkbase + APCS_WDT0_CPU0_WDOG_EXPIRED_ENABLE);
+
+
+}
+
+
 DT_MACHINE_START(QCOM_DT, "Qualcomm (Flattened Device Tree)")
 	.dt_compat = qcom_dt_match,
 	.restart = qcom_restart,
 MACHINE_END
+//DT_MACHINE_START(QCOM_DT_IPQ40XX, "Qualcomm (Flattened Device Tree)")
+//	.dt_compat = qcom4019_dt_match,
+//	.restart = qcom_restart_ipq40xx,
+//MACHINE_END

@@ -31,6 +31,7 @@
 #include <linux/platform_device.h>
 #include <linux/of.h>
 #include <linux/of_device.h>
+#include <linux/clk.h>
 #include <linux/kernel.h>
 #include <linux/device.h>
 #include <linux/sysctl.h>
@@ -224,6 +225,7 @@ struct edma_ethtool_statistics {
 	u32 rx_q6_byte;
 	u32 rx_q7_byte;
 	u32 tx_desc_error;
+	u32 rx_alloc_fail_ctr;
 };
 
 struct edma_mdio_data {
@@ -331,6 +333,10 @@ struct edma_common_info {
 	struct edma_hw hw; /* edma hw specific structure */
 	struct edma_per_cpu_queues_info edma_percpu_info[CONFIG_NR_CPUS]; /* per cpu information */
 	spinlock_t stats_lock; /* protect edma stats area for updation */
+	struct timer_list edma_stats_timer;
+	bool is_single_phy;
+	void __iomem *ess_hw_addr;
+	struct clk *ess_clk;
 };
 
 /* transimit packet descriptor (tpd) ring */
@@ -357,6 +363,7 @@ struct edma_rfd_desc_ring {
 	dma_addr_t dma; /* descriptor ring physical address */
 	u16 sw_next_to_fill; /* next descriptor to fill */
 	u16 sw_next_to_clean; /* next descriptor to clean */
+	u16 pending_fill; /* fill pending from previous iteration */
 };
 
 /* edma_rfs_flter_node - rfs filter node in hash table */
@@ -433,7 +440,6 @@ int edma_register_rfs_filter(struct net_device *netdev,
 		set_rfs_filter_callback_t set_filter);
 void edma_flow_may_expire(unsigned long data);
 void edma_set_ethtool_ops(struct net_device *netdev);
-int edma_change_mtu(struct net_device *netdev, int new_mtu);
 void edma_set_stp_rstp(bool tag);
 void edma_assign_ath_hdr_type(int tag);
 int edma_get_default_vlan_tag(struct net_device *netdev);
@@ -444,4 +450,6 @@ void edma_change_tx_coalesce(int usecs);
 void edma_change_rx_coalesce(int usecs);
 void edma_get_tx_rx_coalesce(u32 *reg_val);
 void edma_clear_irq_status(void);
+void ess_set_port_status_speed(struct edma_common_info *edma_cinfo,
+                               struct phy_device *phydev, uint8_t port_id);
 #endif /* _EDMA_H_ */
