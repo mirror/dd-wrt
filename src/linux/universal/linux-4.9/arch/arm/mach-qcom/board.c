@@ -71,11 +71,14 @@ static void qcom_restart(enum reboot_mode mode, const char *cmd)
 #define KPSS_WDT0_BITE_TIME (0x0014)
 #define KPSS_WDT0_CPU0_WDOG_EXPIRED_ENABLE (0x3820)
 
+#define GCNT_PSHOLD		0x004AB000
+
 static void qcom_restart_ipq40xx(enum reboot_mode mode, const char *cmd)
 {
+#if 0
 	void __iomem		*tmrbase;
 	void __iomem		*clkbase;
-	printk(KERN_INFO "\nResetting with watch dog! (IPQ4019)\n");
+	printk(KERN_INFO "\nResetting with Watchdog (IPQ4019)\n");
 	tmrbase = ioremap(IPQ40XX_TMR_BASE,0x1000);
 	clkbase = ioremap(IPQ40XX_CLK_CTL_BASE,0x4000);
 	writel(0, tmrbase + KPSS_WDT0_EN);
@@ -83,7 +86,12 @@ static void qcom_restart_ipq40xx(enum reboot_mode mode, const char *cmd)
 	writel(RESET_WDT_BARK_TIME, tmrbase + KPSS_WDT0_BARK_TIME);
 	writel(RESET_WDT_BITE_TIME, tmrbase + KPSS_WDT0_BITE_TIME);
 	writel(1, tmrbase + KPSS_WDT0_EN);
-	writel(1, clkbase + KPSS_WDT0_CPU0_WDOG_EXPIRED_ENABLE);
+#endif
+	void __iomem		*base;
+	pshold = ioremap(GCNT_PSHOLD,0x1000);
+	printk(KERN_INFO "\nResetting with PSHOLD! (IPQ4019)\n");
+	writel(0, pshold);
+
 }
 
 
