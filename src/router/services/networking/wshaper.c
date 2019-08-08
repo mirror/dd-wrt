@@ -977,17 +977,20 @@ static int svqos_iptables(void)
 	if (nvram_invmatchi("openvpn_enable", 0) || nvram_invmatchi("openvpncl_enable", 0)) {
 		eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "VPN_DSCP");
 	}
-#ifndef HAVE_80211AC
-	// seems to crash northstar
-
-	// http://svn.dd-wrt.com:8000/ticket/2803 && http://svn.dd-wrt.com/ticket/2811   
-	do {
-		if (sscanf(qos_pkts, "%3s ", pkt_filter) < 1)
-			break;
-		eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-p", "tcp", "-m", "tcp", "--tcp-flags", pkt_filter, pkt_filter, "-m", "length", "--length", ":64", "-j", "CLASSIFY", "--set-class", "1:100");
-
-	} while ((qos_pkts = strpbrk(++qos_pkts, "|")) && qos_pkts++);
+#ifdef HAVE_80211AC
+	if (nvram_match("bcmdebug", "1"))
 #endif
+	{
+		// seems to crash northstar
+
+		// http://svn.dd-wrt.com:8000/ticket/2803 && http://svn.dd-wrt.com/ticket/2811   
+		do {
+			if (sscanf(qos_pkts, "%3s ", pkt_filter) < 1)
+				break;
+			eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-p", "tcp", "-m", "tcp", "--tcp-flags", pkt_filter, pkt_filter, "-m", "length", "--length", ":64", "-j", "CLASSIFY", "--set-class", "1:100");
+
+		} while ((qos_pkts = strpbrk(++qos_pkts, "|")) && qos_pkts++);
+	}
 	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "CONNMARK", "--save-mark");
 	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "RETURN");
 
