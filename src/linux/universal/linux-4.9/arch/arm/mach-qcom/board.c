@@ -87,7 +87,7 @@ static void qcom_restart_ipq40xx(enum reboot_mode mode, const char *cmd)
 	writel(RESET_WDT_BITE_TIME, tmrbase + KPSS_WDT0_BITE_TIME);
 	writel(1, tmrbase + KPSS_WDT0_EN);
 #endif
-	void __iomem		*base;
+	void __iomem		*pshold;
 	pshold = ioremap(GCNT_PSHOLD,0x1000);
 	printk(KERN_INFO "\nResetting with PSHOLD! (IPQ4019)\n");
 	writel(0, pshold);
