@@ -1315,6 +1315,11 @@ int internal_getRouterBrand()
 		return ROUTER_NETGEAR_R7800;
 	}
 
+	if (!strncmp(modelstr, "Habanero", 8)) {
+		setRouter("8devices Habanero");
+		return ROUTER_HABANERO;
+	}
+
 	if (!strcmp(modelstr, "XR500")) {
 		setRouter("Netgear XR500");
 		return ROUTER_NETGEAR_R7800;

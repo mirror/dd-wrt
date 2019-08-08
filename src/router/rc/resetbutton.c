@@ -190,6 +190,11 @@ static int getbuttonstate()
 	case ROUTER_ASROCK_G10:
 		ret = get_gpio(16);
 		break;
+	case ROUTER_HABANERO:
+//		ret = get_gpio(8);
+		fprintf(stderr, "habanero\n");
+		ret = 0;
+		break;
 	default:
 		ret = get_gpio(54);
 	}
@@ -1737,6 +1742,7 @@ static void resetbtn_period_check(int sig)
 
 int main(int argc, char *argv[])
 {
+	return 0;
 	brand = getRouterBrand();
 #ifndef HAVE_MI424WR
 #if !defined(HAVE_NOP8670) && !defined(HAVE_TONZE)
