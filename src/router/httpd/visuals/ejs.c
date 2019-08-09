@@ -2176,7 +2176,7 @@ void ej_nvram_selected(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-EJALIAS (ej_nvram_selected, ej_nvs);
+EJALIAS(ej_nvram_selected, ej_nvs);
 
 void ej_nvram_selected_js(webs_t wp, int argc, char_t ** argv)
 {
@@ -2187,7 +2187,7 @@ void ej_nvram_selected_js(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-EJALIAS (ej_nvram_selected_js, ej_nvsjs);
+EJALIAS(ej_nvram_selected_js, ej_nvsjs);
 
 void ej_getboottime(webs_t wp, int argc, char_t ** argv)
 {

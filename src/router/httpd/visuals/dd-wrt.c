@@ -4551,10 +4551,12 @@ static void show_cryptovar(webs_t wp, char *prefix, char *name, char *var, int s
 
 	sprintf(nvar, "%s_%s", prefix, var);
 	if (selmode)
-		websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" onclick=\"SelMode('%s', '%s_security_mode',this.form.%s_security_mode.selectedIndex,this.form)\" %s %s /><script type=\"text/javascript\">Capture(%s)</script>", nvar, prefix, gvar, gvar,
-			  force ? "checked=\"checked\"" : selmatch(nvar, "1", "checked=\"checked\""), force ? "disabled=\"disabled\"" : "", name);
+		websWrite(wp,
+			  "<input type=\"checkbox\" name=\"%s\" value=\"1\" onclick=\"SelMode('%s', '%s_security_mode',this.form.%s_security_mode.selectedIndex,this.form)\" %s %s /><script type=\"text/javascript\">Capture(%s)</script>",
+			  nvar, prefix, gvar, gvar, force ? "checked=\"checked\"" : selmatch(nvar, "1", "checked=\"checked\""), force ? "disabled=\"disabled\"" : "", name);
 	else
-		websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" %s %s /><script type=\"text/javascript\">Capture(%s)</script>", nvar, force ? "checked=\"checked\"" : selmatch(nvar, "1", "checked=\"checked\""), force ? "disabled=\"disabled\"" : "", name);
+		websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" %s %s /><script type=\"text/javascript\">Capture(%s)</script>", nvar,
+			  force ? "checked=\"checked\"" : selmatch(nvar, "1", "checked=\"checked\""), force ? "disabled=\"disabled\"" : "", name);
 
 }
 
