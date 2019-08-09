@@ -191,8 +191,7 @@ static int getbuttonstate()
 		ret = get_gpio(16);
 		break;
 	case ROUTER_HABANERO:
-//		ret = get_gpio(8);
-		fprintf(stderr, "habanero\n");
+		ret = get_gpio(8);
 		ret = 0;
 		break;
 	default:
