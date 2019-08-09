@@ -147,8 +147,10 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	if ((wifiname0 && !strcmp(wifiname0, "QCA99X0 802.11ac")) || (wifiname1 && !strcmp(wifiname1, "QCA99X0 802.11ac"))) {
 		disable_wifitemp = 1;
 	}
-	show_temp(wp, "CPU %d.%d &#176;C");
-	cpufound = 1;
+	if (wifiname0) {
+		show_temp(wp, "CPU %d.%d &#176;C");
+		cpufound = 1;
+	}
 #endif
 #ifdef HAVE_BCMMODERN
 	static int tempcount = -2;
