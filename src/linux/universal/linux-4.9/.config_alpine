@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 4.9.187-rc1 Kernel Configuration
+# Linux/arm 4.9.188 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_ARM_HAS_SG_CHAIN=y
@@ -2578,6 +2578,7 @@ CONFIG_REGULATOR=y
 # CONFIG_REGULATOR_TPS65023 is not set
 # CONFIG_REGULATOR_TPS6507X is not set
 # CONFIG_REGULATOR_TPS6524X is not set
+# CONFIG_REGULATOR_VCTRL is not set
 # CONFIG_MEDIA_SUPPORT is not set
 
 #
