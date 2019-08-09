@@ -278,6 +278,8 @@ void start_setup_vlans(void)
 				sysprintf("swconfig dev switch0 vlan %d set ports \"%st %s%s\"", vlan_number, nvram_safe_get("sw_lancpuport"), ports, tagged[vlan_number] ? "t" : "");
 			else
 				sysprintf("swconfig dev switch0 vlan %d set ports \"%st %s%s\"", vlan_number, nvram_safe_get("sw_cpuport"), ports, tagged[vlan_number] ? "t" : "");
+		} else {
+			sysprintf("swconfig dev switch0 vlan %d set ports \"\"", vlan_number);
 		}
 	}
 	eval("swconfig", "dev", "switch0", "set", "apply");
