@@ -117,11 +117,13 @@ EXPORT_SYMBOL_GPL(syscore_resume);
 void syscore_shutdown(void)
 {
 	struct syscore_ops *ops;
-
+printk(KERN_EMERG "%s:%d\n",__func__,__LINE__);
 	mutex_lock(&syscore_ops_lock);
-
+	
 	list_for_each_entry_reverse(ops, &syscore_ops_list, node)
+printk(KERN_EMERG "%s:%d\n",__func__,__LINE__);
 		if (ops->shutdown) {
+printk(KERN_EMERG "%s:%d %pF\n",__func__,__LINE__, ops->shutdown);
 			if (initcall_debug)
 				pr_info("PM: Calling %pF\n", ops->shutdown);
 			ops->shutdown();
