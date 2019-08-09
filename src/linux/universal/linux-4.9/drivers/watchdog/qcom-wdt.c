@@ -38,7 +38,7 @@ static const u32 reg_offset_data_apcs_tmr[] = {
 
 static const u32 reg_offset_data_kpss[] = {
 	[WDT_RST] = 0x4,
-	[WDT_EN] = 0x8,
+    	[WDT_EN] = 0x8,
 	[WDT_STS] = 0xC,
 	[WDT_BARK_TIME] = 0x10,
 	[WDT_BITE_TIME] = 0x14,

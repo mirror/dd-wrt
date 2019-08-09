@@ -26,6 +26,7 @@ static const char * const qcom_dt_match[] __initconst = {
 };
 static const char * const qcom4019_dt_match[] __initconst = {
 	"qcom,ipq4019",
+	NULL
 };
 
 /* Watchdog bite time set to default reset value */
@@ -75,21 +76,25 @@ static void qcom_restart(enum reboot_mode mode, const char *cmd)
 
 static void qcom_restart_ipq40xx(enum reboot_mode mode, const char *cmd)
 {
-#if 0
+#if 1
 	void __iomem		*tmrbase;
 	void __iomem		*clkbase;
 	printk(KERN_INFO "\nResetting with Watchdog (IPQ4019)\n");
 	tmrbase = ioremap(IPQ40XX_TMR_BASE,0x1000);
 	clkbase = ioremap(IPQ40XX_CLK_CTL_BASE,0x4000);
+	printk(KERN_INFO "\nResetting with Watchdog2 (IPQ4019)\n");
 	writel(0, tmrbase + KPSS_WDT0_EN);
 	writel(1, tmrbase + KPSS_WDT0_RST);
+	printk(KERN_INFO "\nResetting with Watchdog3 (IPQ4019)\n");
 	writel(RESET_WDT_BARK_TIME, tmrbase + KPSS_WDT0_BARK_TIME);
 	writel(RESET_WDT_BITE_TIME, tmrbase + KPSS_WDT0_BITE_TIME);
+	printk(KERN_INFO "\nResetting with Watchdog4 (IPQ4019)\n");
 	writel(1, tmrbase + KPSS_WDT0_EN);
 #endif
 	void __iomem		*pshold;
-	pshold = ioremap(GCNT_PSHOLD,0x1000);
 	printk(KERN_INFO "\nResetting with PSHOLD! (IPQ4019)\n");
+	pshold = ioremap(GCNT_PSHOLD,0x1000);
+	printk(KERN_INFO "\nResetting with PSHOLD2! (IPQ4019)\n");
 	writel(0, pshold);
 
 }
@@ -99,7 +104,9 @@ DT_MACHINE_START(QCOM_DT, "Qualcomm (Flattened Device Tree)")
 	.dt_compat = qcom_dt_match,
 	.restart = qcom_restart,
 MACHINE_END
+/*
 DT_MACHINE_START(QCOM_DT_IPQ40XX, "Qualcomm (Flattened Device Tree)")
 	.dt_compat = qcom4019_dt_match,
 	.restart = qcom_restart_ipq40xx,
 MACHINE_END
+*/
