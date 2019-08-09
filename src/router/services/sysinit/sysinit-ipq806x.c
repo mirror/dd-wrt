@@ -392,6 +392,8 @@ void start_sysinit(void)
 	int board = getRouterBrand();
 	// this is for TEW827 only. i dont know how it works for other boards. offsets might be different
 	int mtd = getMTD("art");
+	if (mtd == -1)
+		mtd = getMTD("ART");
 	char *maddr = NULL;
 	sprintf(mtdpath, "/dev/mtdblock/%d", mtd);
 
@@ -512,9 +514,7 @@ void start_sysinit(void)
 	case ROUTER_HABANERO:
 		eval("swconfig", "dev", "switch0", "set", "reset", "1");
 		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
-		eval("swconfig", "dev", "switch0", "set", "igmp_snooping", "0");
-		eval("swconfig", "dev", "switch0", "set", "igmp_v3", "1");
-		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "0t 1 2 3 4");
+		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "0t 2 3 4 5");
 		eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", "0t 1");
 		eval("swconfig", "dev", "switch0", "set", "apply");
 		eval("ifconfig", "eth0", "up");
@@ -529,8 +529,8 @@ void start_sysinit(void)
 		nvram_set("sw_lan2", "3");
 		nvram_set("sw_lan3", "4");
 		nvram_set("sw_lan4", "5");
-	
-	break;
+
+		break;
 	case ROUTER_NETGEAR_R7800:	// why is this extra? looks like the default one
 		eval("swconfig", "dev", "switch0", "set", "reset", "1");
 		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "0");
@@ -549,6 +549,8 @@ void start_sysinit(void)
 		nvram_set("sw_lan2", "2");
 		nvram_set("sw_lan3", "3");
 		nvram_set("sw_lan4", "4");
+		writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
+		writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
 		break;
 	case ROUTER_ASROCK_G10:
 		eval("swconfig", "dev", "switch0", "set", "reset", "1");
@@ -568,6 +570,8 @@ void start_sysinit(void)
 		nvram_set("sw_lan2", "3");
 		nvram_set("sw_lan3", "4");
 		nvram_set("sw_lan4", "5");
+		writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
+		writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
 		break;
 	case ROUTER_LINKSYS_EA8500:
 		eval("swconfig", "dev", "switch0", "set", "reset", "1");
@@ -587,6 +591,8 @@ void start_sysinit(void)
 		nvram_set("sw_lan2", "2");
 		nvram_set("sw_lan3", "3");
 		nvram_set("sw_lan4", "4");
+		writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
+		writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
 		break;
 	default:
 		eval("swconfig", "dev", "switch0", "set", "reset", "1");
@@ -606,6 +612,8 @@ void start_sysinit(void)
 		nvram_set("sw_lan2", "2");
 		nvram_set("sw_lan3", "3");
 		nvram_set("sw_lan4", "4");
+		writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
+		writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
 		break;
 	}
 	nvram_default_get("port0vlans", "2");
@@ -613,8 +621,6 @@ void start_sysinit(void)
 	nvram_default_get("port2vlans", "1");
 	nvram_default_get("port3vlans", "1");
 	nvram_default_get("port4vlans", "1");
-	writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
-	writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
 
 	eval("ifconfig", "eth1", "up");
 	eval("ifconfig", "eth0", "up");
