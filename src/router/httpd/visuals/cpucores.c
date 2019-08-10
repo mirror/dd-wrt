@@ -122,10 +122,7 @@ void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 	} else if (fp3) {
 		int freq;
 		fscanf(fp3, "%d", &freq);
-		if (argc && !strcmp(argv[0], "1"))
-			websWrite(wp, "%d", freq / 1000000);
-		else
-			websWrite(wp, "%d MHz", freq / 1000000);
+		websWrite(wp, "%d", freq / 1000);
 	} else {
 		websWrite(wp, "1400");
 
