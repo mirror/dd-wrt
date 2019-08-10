@@ -1101,6 +1101,10 @@ endif
 ifeq ($(CONFIG_POWERNOC),y)
 CFLAGS += -DHAVE_POWERNOC
 endif
+ifeq ($(CONFIG_HABANERO),y)
+CFLAGS += -DHAVE_HABANERO
+endif
+
 ifeq ($(CONFIG_R2M),y)
   CFLAGS += -DHAVE_R2M
 endif

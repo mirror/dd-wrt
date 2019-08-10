@@ -273,6 +273,9 @@ endif
 ifeq ($(CONFIG_IPQ806X),y)
 CFLAGS += -DHAVE_IPQ806X
 endif
+ifeq ($(CONFIG_HABANERO),y)
+CFLAGS += -DHAVE_HABANERO
+endif
 ifeq ($(CONFIG_ALPINE),y)
 CFLAGS += -DHAVE_ALPINE
 endif
