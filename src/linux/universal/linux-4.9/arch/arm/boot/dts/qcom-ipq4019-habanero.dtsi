@@ -139,7 +139,6 @@
 			partition7@170000 {
 				label = "ART";
 				reg = <0x00170000 0x00010000>;
-				read-only;
 			};
 			partition8@180000 {
 				label = "cfg";
