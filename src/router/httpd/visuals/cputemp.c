@@ -150,6 +150,8 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	if (wifiname0) {
 		show_temp(wp, "CPU %d.%d &#176;C");
 		cpufound = 1;
+	} else {
+		disable_wifitemp = 1;
 	}
 #endif
 #ifdef HAVE_BCMMODERN
