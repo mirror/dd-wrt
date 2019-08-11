@@ -34,7 +34,7 @@
  * DAMAGE.
  *
  */
-
+#ifdef HAVE_FQ_CODEL_FAST
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -296,3 +296,4 @@ struct qdisc_util fq_codel_fast_qdisc_util = {
 	.print_qopt	= fq_codel_print_opt,
 	.print_xstats	= fq_codel_print_xstats,
 };
+#endif
