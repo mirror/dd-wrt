@@ -74,10 +74,6 @@
 		edma@c080000 {
 			status = "okay";
 		};
-
-		restart@4ab000 {
-			status = "disabled";
-		};
 	};
 };
 
@@ -153,9 +149,9 @@
 				compatible = "denx,fit";
 				reg = <0x001c0000 0x01e20000>;
 			};
-			partition10@4c0000 {
+			partition10@3c0000 {
 				label = "rootfs";
-				reg = <0x004c0000 0x01b20000>;
+				reg = <0x003c0000 0x01c20000>;
 			};
 			partition11@1fe0000 {
 				label = "nvram";
