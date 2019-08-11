@@ -82,10 +82,3 @@ config CPU_IDLE_ALPINE
 	help
 	  Select this to enable cpuidle on  Annapurna Labs Alpine SOC.
 	  If unsure say Y.
-
-config ARM_QCOM_CPUIDLE
-	bool "CPU Idle Driver for QCOM processors"
-	depends on ARCH_QCOM
-	select ARM_CPUIDLE
-	help
-	  Select this to enable cpuidle on QCOM processors.
