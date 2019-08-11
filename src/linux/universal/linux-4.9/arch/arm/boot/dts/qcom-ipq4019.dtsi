@@ -39,11 +39,6 @@
 		};
 	};
 
-	chosen {
-		bootargs = "console=ttyMSM0,115200n8 rootfstype=squashfs noinitrd root=/dev/mtdblock10";
-		linux,stdout-path = "serial0:115200n8";
-	};
-
 	aliases {
 		spi0 = &blsp1_spi1;
 		spi1 = &blsp1_spi2;
