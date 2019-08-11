@@ -28,7 +28,9 @@
 
 #include "qcom_scm.h"
 
-#define SCM_NOCLK 1
+#define SCM_HAS_CORE_CLK	BIT(0)
+#define SCM_HAS_IFACE_CLK	BIT(1)
+#define SCM_HAS_BUS_CLK		BIT(2)
 
 struct qcom_scm {
 	struct device *dev;
@@ -36,7 +38,6 @@ struct qcom_scm {
 	struct clk *iface_clk;
 	struct clk *bus_clk;
 	struct reset_controller_dev reset;
-	int is_clkdisabled;
 };
 
 static struct qcom_scm *__scm;
@@ -44,9 +45,6 @@ static struct qcom_scm *__scm;
 static int qcom_scm_clk_enable(void)
 {
 	int ret;
-
-	if (__scm->is_clkdisabled)
-		return 0;
 
 	ret = clk_prepare_enable(__scm->core_clk);
 	if (ret)
@@ -72,9 +70,6 @@ bail:
 
 static void qcom_scm_clk_disable(void)
 {
-	if (__scm->is_clkdisabled)
-		return;
-
 	clk_disable_unprepare(__scm->core_clk);
 	clk_disable_unprepare(__scm->iface_clk);
 	clk_disable_unprepare(__scm->bus_clk);
@@ -320,6 +315,24 @@ static const struct reset_control_ops qcom_scm_pas_reset_ops = {
 	.deassert = qcom_scm_pas_reset_deassert,
 };
 
+int qcom_scm_restore_sec_cfg(u32 device_id, u32 spare)
+{
+	return __qcom_scm_restore_sec_cfg(__scm->dev, device_id, spare);
+}
+EXPORT_SYMBOL(qcom_scm_restore_sec_cfg);
+
+int qcom_scm_iommu_secure_ptbl_size(u32 spare, size_t *size)
+{
+	return __qcom_scm_iommu_secure_ptbl_size(__scm->dev, spare, size);
+}
+EXPORT_SYMBOL(qcom_scm_iommu_secure_ptbl_size);
+
+int qcom_scm_iommu_secure_ptbl_init(u64 addr, u32 size, u32 spare)
+{
+	return __qcom_scm_iommu_secure_ptbl_init(__scm->dev, addr, size, spare);
+}
+EXPORT_SYMBOL(qcom_scm_iommu_secure_ptbl_init);
+
 /**
  * qcom_scm_is_available() - Checks if SCM is available
  */
@@ -329,74 +342,64 @@ bool qcom_scm_is_available(void)
 }
 EXPORT_SYMBOL(qcom_scm_is_available);
 
-static const struct of_device_id qcom_scm_dt_match[] = {
-	{ .compatible = "qcom,scm-apq8064",},
-	{ .compatible = "qcom,scm-msm8660",},
-	{ .compatible = "qcom,scm-msm8960",},
-	{ .compatible = "qcom,scm-ipq807x", .data = (void *)SCM_NOCLK },
-	{ .compatible = "qcom,scm-ipq806x", .data = (void *)SCM_NOCLK },
-	{ .compatible = "qcom,scm-ipq40xx", .data = (void *)SCM_NOCLK },
-	{ .compatible = "qcom,scm-msm8960",},
-	{ .compatible = "qcom,scm-msm8960",},
-	{ .compatible = "qcom,scm",},
-	{}
-};
+int qcom_scm_set_remote_state(u32 state, u32 id)
+{
+	return __qcom_scm_set_remote_state(__scm->dev, state, id);
+}
+EXPORT_SYMBOL(qcom_scm_set_remote_state);
 
 static int qcom_scm_probe(struct platform_device *pdev)
 {
 	struct qcom_scm *scm;
-	const struct of_device_id *id;
+	unsigned long clks;
 	int ret;
 
 	scm = devm_kzalloc(&pdev->dev, sizeof(*scm), GFP_KERNEL);
 	if (!scm)
 		return -ENOMEM;
 
-	id = of_match_device(qcom_scm_dt_match, &pdev->dev);
-	if (id)
-		scm->is_clkdisabled = (unsigned int)id->data;
-	else
-		scm->is_clkdisabled = 0;
-
-	if (!(scm->is_clkdisabled)) {
-
+	clks = (unsigned long)of_device_get_match_data(&pdev->dev);
+	if (clks & SCM_HAS_CORE_CLK) {
 		scm->core_clk = devm_clk_get(&pdev->dev, "core");
 		if (IS_ERR(scm->core_clk)) {
-			if (PTR_ERR(scm->core_clk) == -EPROBE_DEFER)
-				return PTR_ERR(scm->core_clk);
-
-			scm->core_clk = NULL;
+			if (PTR_ERR(scm->core_clk) != -EPROBE_DEFER)
+				dev_err(&pdev->dev,
+					"failed to acquire core clk\n");
+			return PTR_ERR(scm->core_clk);
 		}
+	}
 
-		if (of_device_is_compatible(pdev->dev.of_node, "qcom,scm")) {
-			scm->iface_clk = devm_clk_get(&pdev->dev, "iface");
-			if (IS_ERR(scm->iface_clk)) {
-				if (PTR_ERR(scm->iface_clk) != -EPROBE_DEFER)
-					dev_err(&pdev->dev, "failed to acquire iface clk\n");
-				return PTR_ERR(scm->iface_clk);
-			}
-
-			scm->bus_clk = devm_clk_get(&pdev->dev, "bus");
-			if (IS_ERR(scm->bus_clk)) {
-				if (PTR_ERR(scm->bus_clk) != -EPROBE_DEFER)
-					dev_err(&pdev->dev, "failed to acquire bus clk\n");
-				return PTR_ERR(scm->bus_clk);
-			}
+	if (clks & SCM_HAS_IFACE_CLK) {
+		scm->iface_clk = devm_clk_get(&pdev->dev, "iface");
+		if (IS_ERR(scm->iface_clk)) {
+			if (PTR_ERR(scm->iface_clk) != -EPROBE_DEFER)
+				dev_err(&pdev->dev,
+					"failed to acquire iface clk\n");
+			return PTR_ERR(scm->iface_clk);
 		}
+	}
 
+	if (clks & SCM_HAS_BUS_CLK) {
+		scm->bus_clk = devm_clk_get(&pdev->dev, "bus");
+		if (IS_ERR(scm->bus_clk)) {
+			if (PTR_ERR(scm->bus_clk) != -EPROBE_DEFER)
+				dev_err(&pdev->dev,
+					"failed to acquire bus clk\n");
+			return PTR_ERR(scm->bus_clk);
+		}
 	}
 
 	scm->reset.ops = &qcom_scm_pas_reset_ops;
 	scm->reset.nr_resets = 1;
 	scm->reset.of_node = pdev->dev.of_node;
-	reset_controller_register(&scm->reset);
+	ret = devm_reset_controller_register(&pdev->dev, &scm->reset);
+	if (ret)
+		return ret;
 
-	if (!(scm->is_clkdisabled)) {
-		/* vote for max clk rate for highest performance */
-		ret = clk_set_rate(scm->core_clk, INT_MAX);
-		if (ret)
-			return ret;
-	}
+	/* vote for max clk rate for highest performance */
+	ret = clk_set_rate(scm->core_clk, INT_MAX);
+	if (ret)
+		return ret;
 
 	__scm = scm;
 	__scm->dev = &pdev->dev;
@@ -405,6 +408,27 @@ static int qcom_scm_probe(struct platform_device *pdev)
 
 	return 0;
 }
+
+static const struct of_device_id qcom_scm_dt_match[] = {
+	{ .compatible = "qcom,scm-apq8064",
+	  /* FIXME: This should have .data = (void *) SCM_HAS_CORE_CLK */
+	},
+	{ .compatible = "qcom,scm-msm8660",
+	  .data = (void *) SCM_HAS_CORE_CLK,
+	},
+	{ .compatible = "qcom,scm-msm8960",
+	  .data = (void *) SCM_HAS_CORE_CLK,
+	},
+	{ .compatible = "qcom,scm-msm8996",
+	  .data = NULL, /* no clocks */
+	},
+	{ .compatible = "qcom,scm",
+	  .data = (void *)(SCM_HAS_CORE_CLK
+			   | SCM_HAS_IFACE_CLK
+			   | SCM_HAS_BUS_CLK),
+	},
+	{}
+};
 
 static struct platform_driver qcom_scm_driver = {
 	.driver = {
@@ -443,16 +467,3 @@ static int __init qcom_scm_init(void)
 	return platform_driver_register(&qcom_scm_driver);
 }
 subsys_initcall(qcom_scm_init);
-
-int qcom_scm_pinmux_read(u32 arg1)
-{
-	return __qcom_scm_pinmux_read(SCM_SVC_IO_ACCESS, SCM_IO_READ, arg1);
-}
-EXPORT_SYMBOL(qcom_scm_pinmux_read);
-
-int qcom_scm_pinmux_write(u32 arg1, u32 arg2)
-{
-	return __qcom_scm_pinmux_write(SCM_SVC_IO_ACCESS, SCM_IO_WRITE,
-					arg1, arg2);
-}
-EXPORT_SYMBOL(qcom_scm_pinmux_write);
