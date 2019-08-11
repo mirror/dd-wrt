@@ -119,7 +119,7 @@ obj-$(CONFIG_SAMBA3) += samba3
 obj-$(CONFIG_SAMBA3) += jansson
 obj-$(CONFIG_MINIDLNA) += jansson
 obj-$(CONFIG_NTFS3G) += ntfs-3g
-obj-$(CONFIG_SPEEDTEST_CLI) += curl speedtest-cli
+obj-$(CONFIG_SPEEDTEST_CLI) += curl speedtest-cli zlib
 obj-$(CONFIG_RADAUTH) += radauth
 ifneq ($(CONFIG_FONERA),y)
 ifneq ($(CONFIG_XSCALE),y)
@@ -172,7 +172,7 @@ obj-$(CONFIG_WDSWATCHDOG) += wdswatchdog
 obj-$(CONFIG_IPV6) += ipv6 dhcpv6
 obj-$(CONFIG_CONNTRACK) += conntrack
 obj-$(CONFIG_RADIOOFF) += radiooff
-obj-$(CONFIG_PHP) += zlib libzip libgd libpng libxml2 libmcrypt curl icu glib20 php7
+obj-$(CONFIG_PHP) += zlib libzip libgd libpng libxml2 libmcrypt curl icu glib20 php7 zlib
 obj-$(CONFIG_NCURSES) += ncurses
 obj-$(CONFIG_IFTOP) += iftop
 obj-$(CONFIG_IPTRAF) += iptraf
@@ -285,7 +285,7 @@ obj-$(CONFIG_PRIVOXY) += zlib pcre privoxy
 obj-$(CONFIG_VENTANA) += kobs-ng
 obj-$(CONFIG_WEBSERVER) += libffi zlib libzip openssl glib20 libxml2 libmcrypt lighttpd curl libpng icu php7 util-linux
 obj-$(CONFIG_TRANSMISSION) += libevent curl transmission zlib
-obj-$(CONFIG_CLOUD4WI) += curl
+obj-$(CONFIG_CLOUD4WI) += curl zlib
 obj-$(CONFIG_UNIWIP) += uniwip_gpio
 obj-$(CONFIG_MACTELNET) += mactelnet
 obj-$(CONFIG_FIRMWARES) += firmwares
@@ -332,6 +332,7 @@ obj-$(CONFIG_I2C_GPIO_CUSTOM) += i2c-gpio-custom
 obj-$(CONFIG_NEWPORT) += cpt8x
 obj-$(CONFIG_RSYNC) += rsync
 obj-$(CONFIG_CAKE) += cake
+obj-$(CONFIG_FQ_CODEL_FAST) += fq_codel_fast
 
 obj-y+=configs
 
