@@ -578,7 +578,8 @@ CONFIG_ARM_APPENDED_DTB=y
 CONFIG_CMDLINE=""
 # CONFIG_KEXEC is not set
 # CONFIG_CRASH_DUMP is not set
-# CONFIG_AUTO_ZRELADDR is not set
+CONFIG_AUTO_ZRELADDR=y
+# CONFIG_EFI is not set
 
 #
 # CPU Power Management
