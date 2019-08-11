@@ -1069,7 +1069,6 @@ static const struct msm_pinctrl_soc_data msm8x74_pinctrl = {
 	.groups = msm8x74_groups,
 	.ngroups = ARRAY_SIZE(msm8x74_groups),
 	.ngpios = NUM_GPIO_PINGROUPS,
-	.gpio_pull = &msm_gpio_pull,
 };
 
 static int msm8x74_pinctrl_probe(struct platform_device *pdev)
