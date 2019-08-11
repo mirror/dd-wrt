@@ -15,6 +15,8 @@
 #define QCOM_SCM_SVC_BOOT		0x1
 #define QCOM_SCM_BOOT_ADDR		0x1
 #define QCOM_SCM_BOOT_ADDR_MC		0x11
+#define QCOM_SCM_SET_REMOTE_STATE	0xa
+extern int __qcom_scm_set_remote_state(struct device *dev, u32 state, u32 id);
 
 #define QCOM_SCM_FLAG_HLOS		0x01
 #define QCOM_SCM_FLAG_COLDBOOT_MC	0x02
@@ -56,13 +58,6 @@ extern int  __qcom_scm_pas_auth_and_reset(struct device *dev, u32 peripheral);
 extern int  __qcom_scm_pas_shutdown(struct device *dev, u32 peripheral);
 extern int  __qcom_scm_pas_mss_reset(struct device *dev, bool reset);
 
-#define SCM_IO_READ	1
-#define SCM_IO_WRITE	2
-#define SCM_SVC_IO_ACCESS	0x5
-
-s32 __qcom_scm_pinmux_read(u32 svc_id, u32 cmd_id, u32 arg1);
-s32 __qcom_scm_pinmux_write(u32 svc_id, u32 cmd_id, u32 arg1, u32 arg2);
-
 /* common error codes */
 #define QCOM_SCM_V2_EBUSY	-12
 #define QCOM_SCM_ENOMEM		-5
@@ -89,5 +84,16 @@ static inline int qcom_scm_remap_error(int err)
 	}
 	return -EINVAL;
 }
+
+#define QCOM_SCM_SVC_MP			0xc
+#define QCOM_SCM_RESTORE_SEC_CFG	2
+extern int __qcom_scm_restore_sec_cfg(struct device *dev, u32 device_id,
+				      u32 spare);
+#define QCOM_SCM_IOMMU_SECURE_PTBL_SIZE	3
+#define QCOM_SCM_IOMMU_SECURE_PTBL_INIT	4
+extern int __qcom_scm_iommu_secure_ptbl_size(struct device *dev, u32 spare,
+					     size_t *size);
+extern int __qcom_scm_iommu_secure_ptbl_init(struct device *dev, u64 addr,
+					     u32 size, u32 spare);
 
 #endif
