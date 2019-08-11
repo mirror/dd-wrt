@@ -270,30 +270,31 @@ void shutdown_system(void)
 	 */
 	for (sig = 0; sig < (_NSIG - 1); sig++)
 		signal(sig, SIG_DFL);
-
-	start_service("run_rc_shutdown");
+	if (!nvram_match("shutdown", "fast")) {
+		start_service("run_rc_shutdown");
 #ifdef HAVE_LAGUNA
-	start_service("deconfigurewifi");
+		start_service("deconfigurewifi");
 #endif
-	fprintf(stderr, "send dhcp lease release signal\n");
-	killall("udhcpc", SIGUSR2);
-	sleep(1);
-	fprintf(stderr, "Sending SIGTERM to all processes\n");
-	kill(-1, SIGTERM);
-	sync();
-	unmount_fs();		// try to unmount a first time
-	fprintf(stderr, "Sending SIGKILL to all processes\n");
-	kill(-1, SIGKILL);
-	sync();
-	unmount_fs();		// try it a second time, but consider that kill already could have reached init process
-	nvram_seti("end_time", time(NULL));
-	nvram_commit();
+		fprintf(stderr, "send dhcp lease release signal\n");
+		killall("udhcpc", SIGUSR2);
+		sleep(1);
+		fprintf(stderr, "Sending SIGTERM to all processes\n");
+		kill(-1, SIGTERM);
+		sync();
+		unmount_fs();	// try to unmount a first time
+		fprintf(stderr, "Sending SIGKILL to all processes\n");
+		kill(-1, SIGKILL);
+		sync();
+		unmount_fs();	// try it a second time, but consider that kill already could have reached init process
+		nvram_seti("end_time", time(NULL));
+		nvram_commit();
 #if defined(HAVE_X86) || defined(HAVE_VENTANA) || defined(HAVE_NEWPORT) || defined(HAVE_OPENRISC)
-	eval("mount", "-o", "remount,ro", "/usr/local");
-	eval("mount", "-o", "remount,ro", "/");
-	eval("umount", "-r", "-f", "/usr/local");
-	eval("umount", "-r", "-f", "/");
+		eval("mount", "-o", "remount,ro", "/usr/local");
+		eval("mount", "-o", "remount,ro", "/");
+		eval("umount", "-r", "-f", "/usr/local");
+		eval("umount", "-r", "-f", "/");
 #endif
+	}
 
 }
 
@@ -352,13 +353,16 @@ void fatal_signal(int sig)
 	case SIGTERM:
 		message = "Terminated";
 		break;
+	case SIGUSR1:
+		message = "User Signal 1";
+		break;
 		// case SIGUSR1: message = "User-defined signal 1"; break;
 	}
 
 	if (message)
-		cprintf("%s....................................\n", message);
+		fprintf(stderr, "%s....................................\n", message);
 	else
-		cprintf("Caught signal %d.......................................\n", sig);
+		fprintf(stderr, "Caught signal %d.......................................\n", sig);
 
 	shutdown_system();
 
