@@ -62,8 +62,6 @@ then
 	exit
 fi
 
-
-
 $TQA $3 root handle 1: htb default 30 
 $TCA $3 parent 1: classid 1:1 htb rate ${UL}kbit ceil ${UL}kbit quantum $((${4}+14)) 
 $TCA $3 parent 1:1 classid 1:2 htb rate $((75*${UL}/100))kbit ceil ${UL}kbit quantum $((${4}+14)) 
@@ -91,7 +89,14 @@ then
 	$TQA $3 parent 1:20 handle 20: $6 $TGT $ECN
 	$TQA $3 parent 1:30 handle 30: $6 $TGT $ECN
 	$TQA $3 parent 1:40 handle 40: $6 $TGT $ECN
-elif [ "$6" = "fq_codel" || [ "$6" = "cake" ]
+elif [ "$6" = "fq_codel" ]
+then
+	$TQA $3 parent 1:100 handle 100: $6
+	$TQA $3 parent 1:10 handle 10: $6
+	$TQA $3 parent 1:20 handle 20: $6
+	$TQA $3 parent 1:30 handle 30: $6
+	$TQA $3 parent 1:40 handle 40: $6
+elif [ "$6" = "cake" ]
 then
 	$TQA $3 parent 1:100 handle 100: $6 quantum $((${4}+14)) $TGT $ECN
 	$TQA $3 parent 1:10 handle 10: $6 quantum $((${4}+14)) $TGT $ECN
@@ -145,7 +150,14 @@ if [ "$2" != "0" ] ; then
 		$TQA $5 parent 1:20 handle 20: $6 $TGT $ECN
 		$TQA $5 parent 1:30 handle 30: $6 $TGT $ECN
 		$TQA $5 parent 1:40 handle 40: $6 $TGT $ECN
-	elif [ "$6" = "fq_codel" || [ "$6" = "cake" ]
+	elif [ "$6" = "fq_codel" ]
+	then
+		$TQA $5 parent 1:100 handle 100: $6
+		$TQA $5 parent 1:10 handle 10: $6
+		$TQA $5 parent 1:20 handle 20: $6
+		$TQA $5 parent 1:30 handle 30: $6
+		$TQA $5 parent 1:40 handle 40: $6
+	elif [ "$6" = "cake" ]
 	then
 		$TQA $5 parent 1:100 handle 100: $6 quantum $((${4}+14))
 		$TQA $5 parent 1:10 handle 10: $6 quantum $((${4}+14))
@@ -199,7 +211,14 @@ if [ "$7" != "0" ] ; then
 		$TQA $7 parent 1:20 handle 20: $6 $TGT $ECN
 		$TQA $7 parent 1:30 handle 30: $6 $TGT $ECN
 		$TQA $7 parent 1:40 handle 40: $6 $TGT $ECN
-	elif [ "$6" = "fq_codel" || [ "$6" = "cake" ]
+	elif [ "$6" = "fq_codel" ]
+	then
+		$TQA $7 parent 1:100 handle 100: $6
+		$TQA $7 parent 1:10 handle 10: $6
+		$TQA $7 parent 1:20 handle 20: $6
+		$TQA $7 parent 1:30 handle 30: $6
+		$TQA $7 parent 1:40 handle 40: $6
+	elif [ "$6" = "cake" ]
 	then
 		$TQA $7 parent 1:100 handle 100: $6 quantum $((${4}+14))
 		$TQA $7 parent 1:10 handle 10: $6 quantum $((${4}+14))
