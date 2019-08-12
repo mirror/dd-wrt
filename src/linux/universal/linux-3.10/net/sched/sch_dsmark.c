@@ -196,6 +196,7 @@ static inline struct tcf_proto **dsmark_find_tcf(struct Qdisc *sch,
 
 static int dsmark_enqueue(struct sk_buff *skb, struct Qdisc *sch)
 {
+	unsigned int len = qdisc_pkt_len(skb);
 	struct dsmark_qdisc_data *p = qdisc_priv(sch);
 	int err;
 

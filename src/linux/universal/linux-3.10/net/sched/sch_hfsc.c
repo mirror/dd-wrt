@@ -1583,8 +1583,10 @@ hfsc_dump_qdisc(struct Qdisc *sch, struct sk_buff *skb)
 static int
 hfsc_enqueue(struct sk_buff *skb, struct Qdisc *sch)
 {
+	unsigned int len = qdisc_pkt_len(skb);
 	struct hfsc_class *cl;
 	int uninitialized_var(err);
+	bool first;
 
 	cl = hfsc_classify(skb, sch, &err);
 	if (cl == NULL) {
@@ -1594,6 +1596,7 @@ hfsc_enqueue(struct sk_buff *skb, struct Qdisc *sch)
 		return err;
 	}
 
+	first = !cl->qdisc->q.qlen;
 	err = qdisc_enqueue(skb, cl->qdisc);
 	if (unlikely(err != NET_XMIT_SUCCESS)) {
 		if (net_xmit_drop_count(err)) {
@@ -1603,7 +1606,7 @@ hfsc_enqueue(struct sk_buff *skb, struct Qdisc *sch)
 		return err;
 	}
 
-	if (cl->qdisc->q.qlen == 1)
+	if (first)
 		set_active(cl, qdisc_pkt_len(skb));
 
 	sch->q.qlen++;
