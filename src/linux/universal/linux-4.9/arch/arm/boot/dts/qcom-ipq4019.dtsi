@@ -61,7 +61,6 @@
 			reg = <0x0>;
 			clocks = <&gcc GCC_APPS_CLK_SRC>;
 			clock-frequency = <0>;
-			clock-latency = <256000>;
 			operating-points-v2 = <&cpu0_opp_table>;
 		};
 
@@ -75,7 +74,6 @@
 			reg = <0x1>;
 			clocks = <&gcc GCC_APPS_CLK_SRC>;
 			clock-frequency = <0>;
-			clock-latency = <256000>;
 			operating-points-v2 = <&cpu0_opp_table>;
 		};
 
@@ -89,7 +87,6 @@
 			reg = <0x2>;
 			clocks = <&gcc GCC_APPS_CLK_SRC>;
 			clock-frequency = <0>;
-			clock-latency = <256000>;
 			operating-points-v2 = <&cpu0_opp_table>;
 		};
 
@@ -103,7 +100,6 @@
 			reg = <0x3>;
 			clocks = <&gcc GCC_APPS_CLK_SRC>;
 			clock-frequency = <0>;
-			clock-latency = <256000>;
 			operating-points-v2 = <&cpu0_opp_table>;
 		};
 
@@ -120,22 +116,18 @@
 
 		opp-48000000 {
 			opp-hz = /bits/ 64 <48000000>;
-			opp-microvolt = <1100000>;
 			clock-latency-ns = <256000>;
 		};
 		opp-200000000 {
 			opp-hz = /bits/ 64 <200000000>;
-			opp-microvolt = <1100000>;
 			clock-latency-ns = <256000>;
 		};
 		opp-500000000 {
 			opp-hz = /bits/ 64 <500000000>;
-			opp-microvolt = <1100000>;
 			clock-latency-ns = <256000>;
 		};
 		opp-716000000 {
 			opp-hz = /bits/ 64 <716000000>;
-			opp-microvolt = <1100000>;
 			clock-latency-ns = <256000>;
  		};
 	};
@@ -173,7 +165,6 @@
 			     <1 4 0xf08>,
 			     <1 1 0xf08>;
 		clock-frequency = <48000000>;
-		always-on;
 	};
 
 	soc {
@@ -381,7 +372,7 @@
 			dma-names = "rx", "tx";
 		};
 
-		blsp1_uart2: serial@78b0000 {
+		serial@78b0000 {
 			compatible = "qcom,msm-uartdm-v1.4", "qcom,msm-uartdm";
 			reg = <0x78b0000 0x200>;
 			interrupts = <GIC_SPI 108 IRQ_TYPE_LEVEL_HIGH>;
