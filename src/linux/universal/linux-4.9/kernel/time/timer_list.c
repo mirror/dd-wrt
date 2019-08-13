@@ -18,7 +18,7 @@
 #include <linux/kallsyms.h>
 #include <linux/nmi.h>
 
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 
 #include "tick-internal.h"
 

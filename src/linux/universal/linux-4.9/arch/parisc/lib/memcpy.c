@@ -29,7 +29,7 @@
 
 DECLARE_PER_CPU(struct exception_data, exception_data);
 
-#define get_user_space() (segment_eq(get_fs(), KERNEL_DS) ? 0 : mfsp(3))
+#define get_user_space() (uaccess_kernel() ? 0 : mfsp(3))
 #define get_kernel_space() (0)
 
 /* Returns 0 for success, otherwise, returns number of bytes not transferred. */

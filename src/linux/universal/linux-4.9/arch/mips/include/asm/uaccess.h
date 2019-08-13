@@ -12,8 +12,6 @@
 #define _ASM_UACCESS_H
 
 #include <linux/kernel.h>
-#include <linux/errno.h>
-#include <linux/thread_info.h>
 #include <linux/string.h>
 #include <asm/asm-eva.h>
 #include <asm/extable.h>
@@ -71,9 +69,6 @@ extern u64 __ua_limit;
 #define USER_DS		((mm_segment_t) { __UA_LIMIT })
 #endif
 
-#define VERIFY_READ    0
-#define VERIFY_WRITE   1
-
 #define get_ds()	(KERNEL_DS)
 #define get_fs()	(current_thread_info()->addr_limit)
 #define set_fs(x)	(current_thread_info()->addr_limit = (x))
@@ -93,7 +88,7 @@ static inline bool eva_kernel_access(void)
 	if (!IS_ENABLED(CONFIG_EVA))
 		return false;
 
-	return segment_eq(get_fs(), get_ds());
+	return uaccess_kernel();
 }
 
 /*
