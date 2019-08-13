@@ -9,7 +9,7 @@
 #include <linux/notifier.h>
 #include <linux/reboot.h>
 #include <linux/init.h>
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 #include <asm/sgi/mc.h>
 #include "ralink_wdt.h"
 

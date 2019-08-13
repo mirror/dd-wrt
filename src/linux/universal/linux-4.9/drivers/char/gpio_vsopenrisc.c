@@ -41,7 +41,7 @@
 #if LINUX_VERSION_CODE < 0x020100
 #define Get_user(a,b)	a = get_user(b)
 #else
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 #define Get_user(a,b)	get_user(a,b)
 #endif
 

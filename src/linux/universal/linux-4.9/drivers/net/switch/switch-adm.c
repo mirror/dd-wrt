@@ -32,7 +32,7 @@
 #include <linux/if_arp.h>
 #include <linux/sockios.h>
 #include <linux/delay.h>
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 
 #include "switch-core.h"
 #include "gpio.h"
