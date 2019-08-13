@@ -37,7 +37,7 @@
 
 #include <asm/irq.h>
 #include <asm/io.h>
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 
 /* enable EPLD for VS OpenRISC devices */
 #if defined(CONFIG_MACH_KS8695_VSOPENRISC)

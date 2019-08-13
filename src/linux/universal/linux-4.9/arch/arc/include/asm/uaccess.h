@@ -24,12 +24,10 @@
 #ifndef _ASM_ARC_UACCESS_H
 #define _ASM_ARC_UACCESS_H
 
-#include <linux/sched.h>
-#include <asm/errno.h>
 #include <linux/string.h>	/* for generic string functions */
 
 
-#define __kernel_ok		(segment_eq(get_fs(), KERNEL_DS))
+#define __kernel_ok		(uaccess_kernel())
 
 /*
  * Algorithmically, for __user_ok() we want do:
@@ -752,7 +750,5 @@ extern long arc_strnlen_user_noinline(const char __user *src, long n);
 #endif
 
 #include <asm-generic/uaccess.h>
-
-extern int fixup_exception(struct pt_regs *regs);
 
 #endif
