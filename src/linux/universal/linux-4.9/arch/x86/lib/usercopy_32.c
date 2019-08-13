@@ -434,23 +434,6 @@ unsigned long __copy_user_ll(void *to, const void *from, unsigned long n)
 }
 EXPORT_SYMBOL(__copy_user_ll);
 
-unsigned long __copy_from_user_ll_nocache(void *to, const void __user *from,
-					unsigned long n)
-{
-	stac();
-#ifdef CONFIG_X86_INTEL_USERCOPY
-	if (n > 64 && static_cpu_has(X86_FEATURE_XMM2))
-		n = __copy_user_zeroing_intel_nocache(to, from, n);
-	else
-		__copy_user_zeroing(to, from, n);
-#else
-	__copy_user_zeroing(to, from, n);
-#endif
-	clac();
-	return n;
-}
-EXPORT_SYMBOL(__copy_from_user_ll_nocache);
-
 unsigned long __copy_from_user_ll_nocache_nozero(void *to, const void __user *from,
 					unsigned long n)
 {
