@@ -14,7 +14,7 @@
 #include <linux/mm.h>
 //#include <asm/addrspace.h>
 #include <asm/io.h>
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 
 #include "nvram_linux.h"
 
@@ -176,7 +176,7 @@ int _nvram_read(char *buf)
 	filp_close(srcf, NULL);
 	set_fs(old_fs);
 	if (!offs || header->magic != NVRAM_MAGIC) {
-		printk(KERN_EMERG "Broken NVRAM found, recovering it (header error) len = %lu\n", offs);
+		printk(KERN_EMERG "Broken NVRAM found, recovering it (header error) len = %llu\n", offs);
 		/* Maybe we can recover some data from early initialization */
 		memcpy(buf, nvram_buf, NVRAM_SPACE);
 		memset(buf, 0, NVRAM_SPACE);
@@ -331,7 +331,7 @@ int nvram_commit(void)
 		offs += len;
 		wr += PAGE_SIZE;
 	}
-	printk(KERN_EMERG "nvram_commit: %lu bytes written\n", offs);
+	printk(KERN_EMERG "nvram_commit: %lld bytes written\n", offs);
 	filp_close(srcf, NULL);
 	set_fs(old_fs);
 done:
