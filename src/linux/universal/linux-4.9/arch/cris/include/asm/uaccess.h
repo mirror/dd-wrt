@@ -16,13 +16,8 @@
 #define _CRIS_UACCESS_H
 
 #ifndef __ASSEMBLY__
-#include <linux/sched.h>
-#include <linux/errno.h>
 #include <asm/processor.h>
 #include <asm/page.h>
-
-#define VERIFY_READ	0
-#define VERIFY_WRITE	1
 
 /*
  * The fs value determines whether argument validity checking should be
@@ -49,7 +44,7 @@
 
 #define segment_eq(a, b)	((a).seg == (b).seg)
 
-#define __kernel_ok (segment_eq(get_fs(), KERNEL_DS))
+#define __kernel_ok (uaccess_kernel())
 #define __user_ok(addr, size) \
 	(((size) <= TASK_SIZE) && ((addr) <= TASK_SIZE-(size)))
 #define __access_ok(addr, size) (__kernel_ok || __user_ok((addr), (size)))

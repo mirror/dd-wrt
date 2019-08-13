@@ -37,7 +37,7 @@
 #include <linux/mtd/partitions.h>
 #include <linux/mtd/map.h>
 
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 
 #ifdef CONFIG_RT2880_FLASH_8M
         /* marklin 20080605 : return read mode for ST */

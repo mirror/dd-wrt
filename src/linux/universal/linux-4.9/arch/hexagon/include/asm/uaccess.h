@@ -23,7 +23,6 @@
 /*
  * User space memory access functions
  */
-#include <linux/sched.h>
 #include <linux/mm.h>
 #include <asm/segment.h>
 #include <asm/sections.h>
@@ -50,8 +49,6 @@
  * reasonably simple and not *too* slow.  After all, we've got the
  * MMU for backup.
  */
-#define VERIFY_READ     0
-#define VERIFY_WRITE    1
 
 #define __access_ok(addr, size) \
 	((get_fs().seg == KERNEL_DS.seg) || \

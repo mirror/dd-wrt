@@ -31,7 +31,7 @@
 #include <linux/dax.h>
 #include <linux/badblocks.h>
 #include <linux/falloc.h>
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 #include "internal.h"
 
 struct bdev_inode {
