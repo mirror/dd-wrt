@@ -4,7 +4,7 @@
 #include <linux/version.h>
 #include <linux/module.h>
 #include <linux/kernel.h>   
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 
 #include "rtl8368s_types.h"
 

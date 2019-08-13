@@ -40,7 +40,7 @@
 
 #include <asm/io.h>
 #include <asm/irq.h>
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 #include "adm6996.h"
 
 MODULE_DESCRIPTION("Infineon ADM6996 Switch");

@@ -24,7 +24,7 @@
 #include <linux/kernel.h>
 #include <linux/interrupt.h>
 #include <linux/fs.h>
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 #include <asm/addrspace.h>
 #include <asm/rt2880/surfboardint.h>
 

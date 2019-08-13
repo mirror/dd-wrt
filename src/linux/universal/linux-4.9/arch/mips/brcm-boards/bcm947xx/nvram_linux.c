@@ -32,7 +32,7 @@
 #include <linux/mtd/mtd.h>
 #include <asm/addrspace.h>
 #include <asm/io.h>
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 #include <asm/cacheflush.h>
 
 #include <typedefs.h>
