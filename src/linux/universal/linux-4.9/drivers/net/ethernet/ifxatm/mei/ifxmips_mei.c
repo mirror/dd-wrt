@@ -43,7 +43,7 @@
 #include <linux/delay.h>
 #include <linux/device.h>
 #include <linux/sched.h>
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 #include <asm/hardirq.h>
 
 #include <ifxmips.h>

@@ -22,7 +22,7 @@
 
 #include <asm/io.h>
 #include <asm/mach/irq.h>
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 #include <asm/arch/regs-wan.h>
 #include <asm/arch/regs-lan.h>
 #include <asm/arch/regs-hpna.h>
