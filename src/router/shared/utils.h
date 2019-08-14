@@ -1100,6 +1100,8 @@ extern int get_mtu_val(void);
 extern void add_client_dev_srvfilter(char *name, char *type, char *data, int level, int base, char *chain);
 extern void add_client_mac_srvfilter(char *name, char *type, char *data, int level, int base, char *client);
 extern void add_client_ip_srvfilter(char *name, char *type, char *data, int level, int base, char *client);
+void deinit_qos(char *wandev, char *imq_wan, char *imq_lan);
+void init_qos(char *type, int up, int down, char *wandev, int mtu, char *imq_wan, char *aqd, char *imq_lan);
 #ifdef HAVE_AQOS
 extern void add_usermac(char *mac, int idx, int upstream, int downstream, int lanstream);
 extern void add_userip(char *ip, int idx, int upstream, int downstream, int lanstream);

@@ -42,8 +42,8 @@
 #include <stdbool.h>
 #include <glob.h>
 
-#include "wlutils.h"
-#include "unl.h"
+#include <wlutils.h>
+#include <unl.h>
 
 #include <stdio.h>
 #include <string.h>
