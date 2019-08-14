@@ -1,0 +1,28 @@
+#!/bin/sh
+
+# start: [up] [down] [wan_if] [mtu] [imq_wan] [aqd] [imq_lan]
+# status: status [wan_if] [imq_wan] [imq_lan]
+# stop:	stop xx [wan_if] xx	[imq_wan] [imq_lan]
+
+TC=/usr/sbin/tc
+if [ "$1" = "status" ]
+then
+	echo "Interface: $2"; echo
+	$TC -s qdisc ls dev $2
+	echo 
+	$TC -s class ls dev $2
+	$TC filter show dev $2
+	echo; echo "Interface: $3"; echo
+	$TC -s qdisc ls dev $3
+	echo
+	$TC -s class ls dev $3
+	$TC filter show dev $3
+	if [ "$4" != "0" ]; then
+	echo; echo "Interface: $4"; echo
+	$TC -s qdisc ls dev $4
+	echo
+	$TC -s class ls dev $4
+	$TC filter show dev $4
+	fi	
+	exit
+fi
