@@ -884,6 +884,9 @@ ATH9KCFLAGS+= $(COPTS) -fPIC -DHAVE_ATH9K -I. -I$(TOP)/services/include -I$(TOP)
 ATH9KOBJS += mac80211.o site_survey_mac80211.o
 ATH9KFILES += networking/mac80211.c tools/site_survey_mac80211.c
 ATH9KLDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
+ATH9KCFLAGS += -I. -I$(LINUXDIR)/brcm/$(ARCH)/include -Wall -I$(TOP)/shared
+ATH9KCFLAGS += -DNDEBUG -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
+
 ifeq ($(CONFIG_UNIWIP),y)
 ATH9KCFLAGS += -DHAVE_UNIWIP
 endif
@@ -1826,7 +1829,7 @@ vpath %.c sysinit sysinit/switchlib services tools networking utils $(TOP)/share
 
 %.o : %.c
 	@echo "[CC] $@"
-	@$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 all: services.so services.a
 ifeq ($(CONFIG_RT2880),y)
@@ -1869,10 +1872,10 @@ services.so: $(OBJS)
 	@echo "[LD] $@"
 ifeq ($(CONFIG_ATH9K),y)
 ifneq ($(CONFIG_NOWIFI),y)
-	@$(CC) -shared -L ../wireless-tools -c $(ATH9KCFLAGS)  $(MAD_FLAGS)  $(ATH9KFILES) -liw
+	$(CC) -shared -L ../wireless-tools -c $(ATH9KCFLAGS)  $(MAD_FLAGS)  $(ATH9KFILES) -liw
 endif
 endif
-	@$(CC) --shared -L ../wireless-tools $(CFLAGS)  $(MAD_FLAGS) -o $@ $^  $(NOBJS) $(ATH9KOBJS) $(LDFLAGS) $(ATH9KLDFLAGS)
+	$(CC) --shared -L ../wireless-tools $(CFLAGS)  $(MAD_FLAGS) -o $@ $^  $(NOBJS) $(ATH9KOBJS) $(LDFLAGS) $(ATH9KLDFLAGS)
 #	$(CC) $(CFLAGS) -o wland $^ $(LDFLAGS)
 	
 services.a: $(OBJS)
