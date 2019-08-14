@@ -1013,7 +1013,6 @@ void start_wshaper(void)
 	char *wshaper_dev;
 	char *wan_dev;
 	char *aqd;
-	char *script_name;
 	wan_dev = get_wanface();
 	if (!wan_dev)
 		wan_dev = "xx";
@@ -1021,11 +1020,6 @@ void start_wshaper(void)
 		writeprocsysnet("core/default_qdisc", "sfq");
 
 	wshaper_dev = nvram_safe_get("wshaper_dev");
-
-	if (!nvram_invmatchi("qos_type", 0))
-		script_name = "svqos";
-	else
-		script_name = "svqos2";
 
 	stop_wshaper();
 
@@ -1103,13 +1097,13 @@ void start_wshaper(void)
 
 	if (!strcmp(wshaper_dev, "WAN")) {
 		eval("ifconfig", "imq1", "down");
-		eval(script_name, ul_val, dl_val, wan_dev, mtu_val, "imq0", aqd, "0");
+		init_qos(atoi(ul_val), atoi(dl_val), wan_dev, mtu_val, "imq0", aqd, "0", nvram_matchi("qos_type",0) ? "htb":"hfsc");
 	} else {
 		eval("ifconfig", "imq1", "down");
 		eval("ifconfig", "imq1", "mtu", "1500");
 		eval("ifconfig", "imq1", "txqueuelen", "30");
 		eval("ifconfig", "imq1", "up");
-		eval(script_name, ul_val, dl_val, wan_dev, mtu_val, "imq0", aqd, "imq1");
+		init_qos(atoi(ul_val), atoi(dl_val), wan_dev, mtu_val, "imq0", aqd, "imq1", nvram_matchi("qos_type",0) ? "htb": "hfsc");
 	}
 	eval("ifconfig", "imq0", "down");
 	eval("ifconfig", "imq1", "down");
@@ -1155,15 +1149,8 @@ void stop_wshaper(void)
 	if (!wan_dev)
 		wan_dev = "xx";
 
-	char *script_name;
-	if (!nvram_invmatchi("qos_type", 0))
-		script_name = "svqos";
-	else
-		script_name = "svqos2";
-
 	nvram_seti("qos_done", 0);
-
-	eval(script_name, "stop", "XX", wan_dev, "XX", "imq0", "imq1");
+	deinit_qos(wan_dev, "imq0", "imq1");
 
 	char eths2[512];
 	char eths[512];
