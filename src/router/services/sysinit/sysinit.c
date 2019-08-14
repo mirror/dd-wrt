@@ -1192,6 +1192,15 @@ void start_restore_defaults(void)
 		{ "wan_default", "eth0" },
 		{ 0, 0 }
 	};
+	struct nvram_param habanero[] = {
+		{ "lan_ifname", "br0" },
+		{ "lan_ifnames", "eth0 eth1 ath0 ath1" },
+		{ "wan_ifname", "eth1" },
+		{ "wan_ifname2", "eth1" },
+		{ "wan_ifnames", "eth1" },
+		{ "wan_default", "eth1" },
+		{ 0, 0 }
+	};
 	struct nvram_param ea8500[] = {
 		{ "lan_ifname", "br0" },
 		{ "lan_ifnames", "vlan1 vlan2 ath0 ath1" },
@@ -1205,8 +1214,10 @@ void start_restore_defaults(void)
 	struct nvram_param *generic = NULL;
 
 	int wrt_brand = getRouterBrand();
-	if (wrt_brand == ROUTER_LINKSYS_EA8500 || wrt_brand == ROUTER_ASROCK_G10 || wrt_brand == ROUTER_HABANERO)
+	if (wrt_brand == ROUTER_LINKSYS_EA8500 || wrt_brand == ROUTER_ASROCK_G10)
 		generic = ea8500;
+	else if (wrt_brand == ROUTER_HABANERO)
+		generic = habanero;
 	else if (wrt_brand == ROUTER_NETGEAR_R7800)
 		generic = ipq806x;
 	else

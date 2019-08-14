@@ -514,21 +514,18 @@ void start_sysinit(void)
 	case ROUTER_HABANERO:
 		eval("swconfig", "dev", "switch0", "set", "reset", "1");
 		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
-		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "0t 2 3 4 5");
-		eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", "0t 1");
+		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "0 1 2 3 4");
+		eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", "0t 5");
 		eval("swconfig", "dev", "switch0", "set", "apply");
 		eval("ifconfig", "eth0", "up");
 		eval("ifconfig", "eth1", "up");
-		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
-		eval("vconfig", "add", "eth0", "1");
-		eval("vconfig", "add", "eth0", "2");
 
-		nvram_seti("sw_cpuport", 0);
+/*		nvram_seti("sw_cpuport", 0);
 		nvram_seti("sw_wan", 1);
 		nvram_seti("sw_lan1", 2);
 		nvram_seti("sw_lan2", 3);
 		nvram_seti("sw_lan3", 4);
-		nvram_seti("sw_lan4", 5);
+		nvram_seti("sw_lan4", 5);*/
 		writeproc("/proc/irq/167/smp_affinity", "2");
 
 		break;
