@@ -216,11 +216,11 @@ void start_sysinit(void)
 	}
 	eval("ifconfig", "eth0", "up");
 
-	nvram_default_get("port0vlans", "2");
-	nvram_default_get("port1vlans", "1");
-	nvram_default_get("port2vlans", "1");
-	nvram_default_get("port3vlans", "1");
-	nvram_default_get("port4vlans", "1");
+	nvram_default_geti("port0vlans", 2);
+	nvram_default_geti("port1vlans", 1);
+	nvram_default_geti("port2vlans", 1);
+	nvram_default_geti("port3vlans", 1);
+	nvram_default_geti("port4vlans", 1);
 	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 	eval("vconfig", "add", "eth0", "1");	//LAN
 	eval("vconfig", "add", "eth0", "2");	//WAN

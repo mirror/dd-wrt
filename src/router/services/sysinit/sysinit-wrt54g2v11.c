@@ -134,11 +134,11 @@ void start_sysinit(void)
 	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 	eval("vconfig", "add", "eth0", "1");
 	eval("vconfig", "add", "eth0", "2");
-	nvram_default_get("port0vlans", "2");
-	nvram_default_get("port1vlans", "1");
-	nvram_default_get("port2vlans", "1");
-	nvram_default_get("port3vlans", "1");
-	nvram_default_get("port4vlans", "1");
+	nvram_default_geti("port0vlans", 2);
+	nvram_default_geti("port1vlans", 1);
+	nvram_default_geti("port2vlans", 1);
+	nvram_default_geti("port3vlans", 1);
+	nvram_default_geti("port4vlans", 1);
 
 	char macaddr[32];
 	if (get_hwaddr("eth0", macaddr)) {
