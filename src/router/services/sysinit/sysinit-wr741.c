@@ -116,12 +116,12 @@ void start_sysinit(void)
 	eval("vconfig", "add", "eth0", "1");
 	eval("vconfig", "add", "eth0", "2");
 
-	nvram_set("sw_cpuport", "9");
-	nvram_set("sw_wan", "0");
-	nvram_set("sw_lan1", "1");
-	nvram_set("sw_lan2", "2");
-	nvram_set("sw_lan3", "3");
-	nvram_set("sw_lan4", "4");
+	nvram_seti("sw_cpuport", 9);
+	nvram_seti("sw_wan", 0);
+	nvram_seti("sw_lan1", 1);
+	nvram_seti("sw_lan2", 2);
+	nvram_seti("sw_lan3", 3);
+	nvram_seti("sw_lan4", 4);
 
 #else
 	eval("swconfig", "dev", "eth1", "set", "reset", "1");
@@ -129,12 +129,12 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports", "0 1 2 3 4");
 	eval("swconfig", "dev", "eth1", "set", "apply");
 
-	nvram_set("sw_cpuport", "0");
-	nvram_set("sw_wan", "-1");
-	nvram_set("sw_lan1", "1");
-	nvram_set("sw_lan2", "2");
-	nvram_set("sw_lan3", "3");
-	nvram_set("sw_lan4", "4");
+	nvram_seti("sw_cpuport", 0);
+	nvram_seti("sw_wan", -1);
+	nvram_seti("sw_lan1", 1);
+	nvram_seti("sw_lan2", 2);
+	nvram_seti("sw_lan3", 3);
+	nvram_seti("sw_lan4", 4);
 
 	setEthLED(17, "eth0");
 	setSwitchLED(13, 0x2);
