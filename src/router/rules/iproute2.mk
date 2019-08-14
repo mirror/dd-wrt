@@ -13,9 +13,7 @@ endif
 
 ifeq ($(CONFIG_SVQOS),y)
 	chmod 0644 iproute2/svqos.htb
-	install -D iproute2/svqos.htb $(INSTALLDIR)/iproute2/usr/sbin/svqos
-	chmod 0644 iproute2/svqos.hfsc
-	install -D iproute2/svqos.hfsc $(INSTALLDIR)/iproute2/usr/sbin/svqos2
+	install -D iproute2/svqos $(INSTALLDIR)/iproute2/usr/sbin/svqos
 else
 	@true
 endif
