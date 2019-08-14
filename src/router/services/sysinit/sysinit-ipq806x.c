@@ -523,12 +523,12 @@ void start_sysinit(void)
 		eval("vconfig", "add", "eth0", "1");
 		eval("vconfig", "add", "eth0", "2");
 
-		nvram_set("sw_cpuport", "0");
-		nvram_set("sw_wan", "1");
-		nvram_set("sw_lan1", "2");
-		nvram_set("sw_lan2", "3");
-		nvram_set("sw_lan3", "4");
-		nvram_set("sw_lan4", "5");
+		nvram_seti("sw_cpuport", 0);
+		nvram_seti("sw_wan", 1);
+		nvram_seti("sw_lan1", 2);
+		nvram_seti("sw_lan2", 3);
+		nvram_seti("sw_lan3", 4);
+		nvram_seti("sw_lan4", 5);
 		writeproc("/proc/irq/167/smp_affinity", "2");
 
 		break;
@@ -543,13 +543,13 @@ void start_sysinit(void)
 		eval("ifconfig", "eth0", "up");
 		eval("ifconfig", "eth1", "up");
 
-		nvram_set("sw_wancpuport", "0");
-		nvram_set("sw_lancpuport", "6");
-		nvram_set("sw_wan", "5");
-		nvram_set("sw_lan1", "1");
-		nvram_set("sw_lan2", "2");
-		nvram_set("sw_lan3", "3");
-		nvram_set("sw_lan4", "4");
+		nvram_seti("sw_wancpuport", 0);
+		nvram_seti("sw_lancpuport", 6);
+		nvram_seti("sw_wan", 5);
+		nvram_seti("sw_lan1", 1);
+		nvram_seti("sw_lan2", 2);
+		nvram_seti("sw_lan3", 3);
+		nvram_seti("sw_lan4", 4);
 		writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
 		writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
 		writeproc("/proc/irq/101/smp_affinity", "2");
@@ -569,12 +569,12 @@ void start_sysinit(void)
 		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("vconfig", "add", "eth1", "1");
 		eval("vconfig", "add", "eth1", "2");
-		nvram_set("sw_cpuport", "6");
-		nvram_set("sw_wan", "1");
-		nvram_set("sw_lan1", "2");
-		nvram_set("sw_lan2", "3");
-		nvram_set("sw_lan3", "4");
-		nvram_set("sw_lan4", "5");
+		nvram_seti("sw_cpuport", 6);
+		nvram_seti("sw_wan", 1);
+		nvram_seti("sw_lan1", 2);
+		nvram_seti("sw_lan2", 3);
+		nvram_seti("sw_lan3", 4);
+		nvram_seti("sw_lan4", 5);
 		writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
 		writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
 		writeproc("/proc/irq/101/smp_affinity", "2");
@@ -594,12 +594,12 @@ void start_sysinit(void)
 		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("vconfig", "add", "eth0", "1");
 		eval("vconfig", "add", "eth0", "2");
-		nvram_set("sw_cpuport", "0");
-		nvram_set("sw_wan", "5");
-		nvram_set("sw_lan1", "1");
-		nvram_set("sw_lan2", "2");
-		nvram_set("sw_lan3", "3");
-		nvram_set("sw_lan4", "4");
+		nvram_seti("sw_cpuport", 0);
+		nvram_seti("sw_wan", 5);
+		nvram_seti("sw_lan1", 1);
+		nvram_seti("sw_lan2", 2);
+		nvram_seti("sw_lan3", 3);
+		nvram_seti("sw_lan4", 4);
 		writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
 		writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
 		writeproc("/proc/irq/101/smp_affinity", "2");
@@ -618,13 +618,13 @@ void start_sysinit(void)
 		eval("ifconfig", "eth0", "up");
 		eval("ifconfig", "eth1", "up");
 
-		nvram_set("sw_wancpuport", "0");
-		nvram_set("sw_lancpuport", "6");
-		nvram_set("sw_wan", "5");
-		nvram_set("sw_lan1", "1");
-		nvram_set("sw_lan2", "2");
-		nvram_set("sw_lan3", "3");
-		nvram_set("sw_lan4", "4");
+		nvram_seti("sw_wancpuport", 0);
+		nvram_seti("sw_lancpuport", 6);
+		nvram_seti("sw_wan", 5);
+		nvram_seti("sw_lan1", 1);
+		nvram_seti("sw_lan2", 2);
+		nvram_seti("sw_lan3", 3);
+		nvram_seti("sw_lan4", 4);
 		writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
 		writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
 		writeproc("/proc/irq/101/smp_affinity", "2");
@@ -633,11 +633,11 @@ void start_sysinit(void)
 		writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq", "800000");
 		break;
 	}
-	nvram_default_get("port0vlans", "2");
-	nvram_default_get("port1vlans", "1");
-	nvram_default_get("port2vlans", "1");
-	nvram_default_get("port3vlans", "1");
-	nvram_default_get("port4vlans", "1");
+	nvram_default_geti("port0vlans", 2);
+	nvram_default_geti("port1vlans", 1);
+	nvram_default_geti("port2vlans", 1);
+	nvram_default_geti("port3vlans", 1);
+	nvram_default_geti("port4vlans", 1);
 	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold", "20");
 	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_rate", "1000000");
 

@@ -253,13 +253,13 @@ void start_sysinit(void)
 	nvram_set("sw_lan5", "12");	// switch 1
 	nvram_set("sw_lan6", "11");	// switch 1
 
-	nvram_default_get("port0vlans", "2");
-	nvram_default_get("port1vlans", "1");
-	nvram_default_get("port2vlans", "1");
-	nvram_default_get("port3vlans", "1");
-	nvram_default_get("port4vlans", "1");
-	nvram_default_get("port5vlans", "1");
-	nvram_default_get("port6vlans", "1");
+	nvram_default_geti("port0vlans", 2);
+	nvram_default_geti("port1vlans", 1);
+	nvram_default_geti("port2vlans", 1);
+	nvram_default_geti("port3vlans", 1);
+	nvram_default_geti("port4vlans", 1);
+	nvram_default_geti("port5vlans", 1);
+	nvram_default_geti("port6vlans", 1);
 
 	eval("/sbin/vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 	eval("/sbin/vconfig", "add", "eth1", "1");
