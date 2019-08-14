@@ -114,21 +114,21 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 1 2 3 4");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 5");
 
-	nvram_set("sw_cpuport", "0");
-	nvram_set("sw_wan", "5");
-	nvram_set("sw_lan1", "1");
-	nvram_set("sw_lan2", "2");
-	nvram_set("sw_lan3", "3");
-	nvram_set("sw_lan4", "4");
+	nvram_seti("sw_cpuport", 0);
+	nvram_seti("sw_wan", 5);
+	nvram_seti("sw_lan1", 1);
+	nvram_seti("sw_lan2", 2);
+	nvram_seti("sw_lan3", 3);
+	nvram_seti("sw_lan4", 4);
 #else
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2 3 4 5");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 1");
-	nvram_set("sw_cpuport", "0");
-	nvram_set("sw_wan", "1");
-	nvram_set("sw_lan1", "2");
-	nvram_set("sw_lan2", "3");
-	nvram_set("sw_lan3", "4");
-	nvram_set("sw_lan4", "5");
+	nvram_seti("sw_cpuport", 0);
+	nvram_seti("sw_wan", 1);
+	nvram_seti("sw_lan1", 2);
+	nvram_seti("sw_lan2", 3);
+	nvram_seti("sw_lan3", 4);
+	nvram_seti("sw_lan4", 5);
 #endif
 	eval("swconfig", "dev", "eth0", "set", "apply");
 	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
