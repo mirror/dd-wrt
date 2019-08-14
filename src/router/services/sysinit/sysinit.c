@@ -3555,7 +3555,7 @@ void start_nvram(void)
 #endif
 #ifndef HAVE_CAKE
 	if (!strcmp(aqd, "cake")) {
-		nvram_set("svqos_aqd", "cake");
+		nvram_set("svqos_aqd", "sfq");
 	}
 #endif
 	if (strcmp(aqd, "codel")
