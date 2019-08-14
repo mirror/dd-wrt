@@ -159,6 +159,14 @@ config USB_MSM_OTG
 	  This driver is not supported on boards like trout which
 	  has an external PHY.
 
+config PHY_QCOM_IPQ4019_USB
+	tristate "Qualcomm IPQ4019 USB PHY module"
+	depends on OF && ARCH_QCOM
+	select GENERIC_PHY
+	help
+	  Support for the USB PHY on QCOM IPQ4019/Dakota chipsets.
+
+
 config USB_QCOM_8X16_PHY
 	tristate "Qualcomm APQ8016/MSM8916 on-chip USB PHY controller support"
 	depends on ARCH_QCOM || COMPILE_TEST
