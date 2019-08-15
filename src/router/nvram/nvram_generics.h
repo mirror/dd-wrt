@@ -207,6 +207,11 @@ int nvram_exists(const char *name)
 	return nvram_get(name) ? 1 : 0;
 }
 
+int nvram_emtpy(const char *name)
+{
+	return strlen(nvram_safe_get(name)) == 0;
+}
+
 int nvram_nexists(const char *fmt, ...)
 {
 	char varbuf[64];
