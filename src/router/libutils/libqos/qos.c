@@ -733,13 +733,20 @@ static void add_sfq(const char *dev, int handle, int mtu)
 
 }
 
-static void add_codel(const char *dev, int handle, const char *aqd, int rtt, const char *ECN)
+static void add_codel(const char *dev, int handle, const char *aqd, int rtt, int noecn)
 {
 	char p[32];
 	char h[32];
+	char r[32];
 	sprintf(p, "1:%d", handle);
 	sprintf(h, "%d:", handle);
 	sprintf(r, "%dms", rtt);
+	char *ECN = NULL;
+	if (noecn == 1)
+		ECN = "noecn";
+	if (noecn == 0)
+		ECN = "ecn";
+
 	if (rtt != -1)
 		eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd, "target", r, ECN);
 	else
@@ -769,12 +776,18 @@ static void add_cake(const char *dev, int handle, const char *aqd, int rtt)
 		eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd, "unlimited", "ethernet", "besteffort", "noatm", "raw", "internet", "dual-srchost", "ack-filter", "nat");
 }
 
-static void add_pie(const char *dev, int handle, const char *aqd, int ms5, const char *ECN)
+static void add_pie(const char *dev, int handle, const char *aqd, int ms5, int noecn)
 {
 	char p[32];
 	char h[32];
 	sprintf(p, "1:%d", handle);
 	sprintf(h, "%d:", handle);
+	char *ECN = NULL;
+	if (noecn == 1)
+		ECN = "noecn";
+	if (noecn == 0)
+		ECN = "ecn";
+
 	if (ms5)
 		eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd, "target", "5ms", ECN);
 	else
@@ -783,7 +796,7 @@ static void add_pie(const char *dev, int handle, const char *aqd, int ms5, const
 
 static void init_qdisc(const char *type, const char *wandev, const char *dev, const char *aqd, int mtu, int up, int ms5)
 {
-	char *TGT = NULL;
+	int noecn = -1;
 	int rtt = -1;
 	int rtt_cake = -1;
 	if (!strcmp(type, "hfsc")) {
@@ -793,7 +806,7 @@ static void init_qdisc(const char *type, const char *wandev, const char *dev, co
 	if (strcmp(wandev, "xx") && up < 2000) {
 		rtt = 20;
 		rtt_cake = 20;
-		ECN = "noecn";
+		noecn = 1;
 	}
 
 	if (!strcmp(aqd, "sfq")) {
@@ -804,11 +817,11 @@ static void init_qdisc(const char *type, const char *wandev, const char *dev, co
 		add_sfq(dev, 40, mtu);
 	}
 	if (!strcmp(aqd, "codel")) {
-		add_codel(dev, 100, aqd, rtt, ECN);
-		add_codel(dev, 10, aqd, rtt, ECN);
-		add_codel(dev, 20, aqd, rtt, ECN);
-		add_codel(dev, 30, aqd, rtt, ECN);
-		add_codel(dev, 40, aqd, rtt, ECN);
+		add_codel(dev, 100, aqd, rtt, noecn);
+		add_codel(dev, 10, aqd, rtt, noecn);
+		add_codel(dev, 20, aqd, rtt, noecn);
+		add_codel(dev, 30, aqd, rtt, noecn);
+		add_codel(dev, 40, aqd, rtt, noecn);
 	}
 	if (!strcmp(aqd, "fq_codel")) {
 		add_fq_codel(dev, 100, aqd);
@@ -827,12 +840,12 @@ static void init_qdisc(const char *type, const char *wandev, const char *dev, co
 	if (!strcmp(aqd, "pie")) {
 		/* for imq_wan and htb only 5ms is enforced. i dont know why. i just took it from the original script */
 		if (ms5 || !strcmp(type, "hfsc"))
-			ECN = "ecn";
-		add_pie(dev, 100, aqd, ms5, ECN);
-		add_pie(dev, 10, aqd, ms5, ECN);
-		add_pie(dev, 20, aqd, ms5, ECN);
-		add_pie(dev, 30, aqd, ms5, ECN);
-		add_pie(dev, 40, aqd, ms5, ECN);
+			noecn = 0;
+		add_pie(dev, 100, aqd, ms5, noecn);
+		add_pie(dev, 10, aqd, ms5, noecn);
+		add_pie(dev, 20, aqd, ms5, noecn);
+		add_pie(dev, 30, aqd, ms5, noecn);
+		add_pie(dev, 40, aqd, ms5, noecn);
 	}
 
 }
