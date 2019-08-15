@@ -682,7 +682,7 @@ static void add_htb_class(const char *dev, const char *parent, const char *class
 	char buf[32];
 	char qmtu[32];
 	char prio[32];
-	sprintf(qmtu, "%d", mtu);
+	sprintf(qmtu, "%d", mtu + 14);
 	sprintf(prio, "%d", p);
 	if (p != -1)
 		eval("tc", "class", "add", "dev", dev, "parent", parent, "classid", classid, "htb", "rate", math(buf, rate, "kbit"), "ceil", math(buf, limit, "kbit"), "prio", prio, "quantum", qmtu);
@@ -724,11 +724,11 @@ static void init_hfsc_class(const char *dev, int rate)
 static void add_sfq(const char *dev, int handle, int mtu)
 {
 	char qmtu[32];
-	sprintf(qmtu, "%d", mtu);
+	sprintf(qmtu, "%d", mtu + 14);
 	char p[32];
 	char h[32];
 	sprintf(p, "1:%d", handle);
-	sprintf(h, "%s:", handle);
+	sprintf(h, "%d:", handle);
 	eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, "sfq", "quantum", qmtu, "perturb", "10");
 
 }
@@ -738,7 +738,7 @@ static void add_codel(const char *dev, int handle, const char *aqd, const char *
 	char p[32];
 	char h[32];
 	sprintf(p, "1:%d", handle);
-	sprintf(h, "%s:", handle);
+	sprintf(h, "%d:", handle);
 	eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd, TGT, MS, ECN);
 }
 
@@ -747,7 +747,7 @@ static void add_fq_codel(const char *dev, int handle, const char *aqd)
 	char p[32];
 	char h[32];
 	sprintf(p, "1:%d", handle);
-	sprintf(h, "%s:", handle);
+	sprintf(h, "%d:", handle);
 	eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd);
 }
 
@@ -756,7 +756,7 @@ static void add_cake(const char *dev, int handle, const char *aqd)
 	char p[32];
 	char h[32];
 	sprintf(p, "1:%d", handle);
-	sprintf(h, "%s:", handle);
+	sprintf(h, "%d:", handle);
 	eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd, "unlimited", "ethernet", "besteffort", "noatm", "raw", "internet", "dual-srchost", "ack-filter", "nat");
 }
 
@@ -765,7 +765,7 @@ static void add_pie(const char *dev, int handle, const char *aqd, int ms5, const
 	char p[32];
 	char h[32];
 	sprintf(p, "1:%d", handle);
-	sprintf(h, "%s:", handle);
+	sprintf(h, "%d:", handle);
 	if (ms5)
 		eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd, "target", "5ms", ECN);
 	else
@@ -774,8 +774,6 @@ static void add_pie(const char *dev, int handle, const char *aqd, int ms5, const
 
 static void init_qdisc(const char *type, const char *dev, const char *aqd, int mtu, int up, int ms5)
 {
-	char qmtu[32];
-	sprintf(qmtu, "%d", mtu);
 	char *TGT = NULL;
 	char *MS = NULL;
 	char *ECN = NULL;
@@ -784,7 +782,7 @@ static void init_qdisc(const char *type, const char *dev, const char *aqd, int m
 		MS = "5ms";
 	}
 
-	if (up < 2000) {
+	if (strcmp(dev, "xx") && up < 2000) {
 		TGT = "target";
 		MS = "20ms";
 		ECN = "noecn";
@@ -856,8 +854,6 @@ static void init_filter(const char *dev)
 void init_qos(const char *type, int up, int down, const char *wandev, int mtu, const char *imq_wan, const char *aqd, const char *imq_lan)
 {
 	deinit_qos(wandev, imq_wan, imq_lan);
-	char qmtu[32];
-	sprintf(qmtu, "%d", mtu + 14);
 
 	int ll = 1000000;
 
