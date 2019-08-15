@@ -1,4 +1,4 @@
-MAKENSIS="/cygdrive/c/Program Files/NSIS/makensis.exe"
+MAKENSIS="/cygdrive/c/Program Files (x86)/NSIS/makensis.exe"
 # VCExpress.exe is devenv.com with the commercial Visual Studio suite instead of VC++ Express
 VCEXPRESS := $(shell reg query "HKEY_CLASSES_ROOT\\Applications\\devenv.exe\\shell\\edit\\command" | egrep -i '[A-Z]:\\' | cut -d\" -f2 | sed 's%\\%/%g' | tr -d '\r\n')
 SIGNTOOL := $(shell reg query "HKEY_LOCAL_MACHINE\\SOFTWARE\\Wow6432Node\\Microsoft\\Microsoft SDKs\\Windows\\v8.1" /v "InstallationFolder" | egrep InstallationFolder | cut -d ' ' -f13- | sed 's%\\%/%g' | tr -d '\r\n' | sed 's%$$%bin/x86/signtool.exe%')
@@ -28,7 +28,8 @@ stage-nmap: build-nmap LICENSE
 # "cp" means that the copied DLLs don't have the same ACL and cause an
 # error on startup: 0xc0000022.
 	cmd /c copy $(subst /,\\,$(NMAP_MSWIN32_AUX))\\OpenSSL\\bin\\*.dll nmap-$(NMAP_VERSION)
-	cmd /c copy Release\\libssh2.dll Release\\zlibwapi.dll nmap-$(NMAP_VERSION)
+	cmd /c copy Release\\libssh2.dll nmap-$(NMAP_VERSION)
+	cmd /c copy Release\\zlibwapi.dll nmap-$(NMAP_VERSION)
 	mkdir nmap-$(NMAP_VERSION)/scripts
 	cd Release && cp -f $(NSE_FILES) ../nmap-$(NMAP_VERSION)/scripts/
 	cd Release && for f in `find nselib -name .svn -prune -o -type d -print`; do \

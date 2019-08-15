@@ -1,4 +1,4 @@
-# $Id: $ generated with make-mac-prefixes.pl
+# $Id: nmap-mac-prefixes 37638 2019-05-28 21:35:45Z dmiller $ generated with make-mac-prefixes.pl
 # Original data comes from http://standards.ieee.org/regauth/oui/oui.txt
 # These values are known as Organizationally Unique Identifiers (OUIs)
 # See http://standards.ieee.org/faqs/OUI.html
