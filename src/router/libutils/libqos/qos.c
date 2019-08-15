@@ -794,7 +794,7 @@ static void add_pie(const char *dev, int handle, const char *aqd, int ms5, int n
 		eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd, ECN);
 }
 
-static void init_qdisc(const char *type, const char *wandev, const char *dev, const char *aqd, int mtu, int up, int ms5)
+static void init_qdisc(const char *type, const char *dev, const char *wandev, const char *aqd, int mtu, int up, int ms5)
 {
 	int noecn = -1;
 	int rtt = -1;
