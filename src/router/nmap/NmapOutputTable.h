@@ -128,7 +128,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id$ */
+/* $Id: NmapOutputTable.h 37640 2019-05-28 21:36:04Z dmiller $ */
 
 #ifndef NMAPOUTPUTTABLE_H
 #define NMAPOUTPUTTABLE_H
