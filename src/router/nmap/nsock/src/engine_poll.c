@@ -52,7 +52,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id$ */
+/* $Id: engine_poll.c 37640 2019-05-28 21:36:04Z dmiller $ */
 
 #ifndef WIN32
 /* Allow the use of POLLRDHUP, if available. */

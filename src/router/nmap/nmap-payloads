@@ -1,5 +1,5 @@
 # Nmap nmap payload database -*- mode: fundamental; -*-
-# $Id$
+# $Id: nmap-payloads 37577 2019-02-09 19:49:15Z tomsellers $
 #
 # These payloads are sent with every host discovery or port scan probe
 # by default. This database should only include payloads that are

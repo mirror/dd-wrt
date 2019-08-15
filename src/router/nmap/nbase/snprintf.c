@@ -37,7 +37,7 @@
  * SUCH DAMAGE.
  */
 
-/* $Id$ */
+/* $Id: snprintf.c 37584 2019-02-19 00:24:51Z nnposter $ */
 
 #if HAVE_CONFIG_H
 #include "nbase_config.h"

@@ -1,5 +1,5 @@
 # Nmap service detection probe list -*- mode: fundamental; -*-
-# $Id$
+# $Id: nmap-service-probes 37673 2019-06-26 17:06:45Z dmiller $
 #
 # This is a database of custom probes and expected responses that the
 # Nmap Security Scanner ( https://nmap.org ) uses to
