@@ -671,17 +671,114 @@ static char *math(char *buf, int val, char *ext)
 	return buf;
 }
 
-void init_qos(char *type, int up, int down, char *wandev, int mtu, char *imq_wan, char *aqd, char *imq_lan)
+static void add_hfsc_class(char *dev, char *parent, char *classid, int rate, int limit)
 {
-	deinit_qos(wandev, imq_wan, imq_lan);
-	char qmtu[32];
-	sprintf(qmtu, "%d", mtu + 14);
 	char buf[32];
+	eval("tc", "class", "add", "dev", dev, "parent", parent, "classid", classid, "hfsc", "sc", "rate", math(buf, rate, "kbit"), "ul", "rate", math(buf, limit, "kbit"));
+}
 
+static void add_htb_class(char *dev, char *parent, char *classid, int rate, int limit, int mtu, int p)
+{
+	char buf[32];
+	char qmtu[32];
+	char prio[32];
+	sprintf(qmtu, "%d", mtu);
+	sprintf(prio, "%d", p);
+	if (p != -1)
+		eval("tc", "class", "add", "dev", dev, "parent", parent, "classid", classid, "htb", "rate", math(buf, rate, "kbit"), "ceil", math(buf, limit, "kbit"), "prio", prio, "quantum", qmtu);
+	else
+		eval("tc", "class", "add", "dev", dev, "parent", parent, "classid", classid, "htb", "rate", math(buf, rate, "kbit"), "ceil", math(buf, limit, "kbit"), "quantum", qmtu);
+}
+
+static void init_htb_class(char *dev, int rate, int mtu)
+{
+	add_htb_class(dev, "1:", "1:1", rate, rate, mtu, -1);
+	add_htb_class(dev, "1:1", "1:2", 75 * rate / 100, rate, mtu, -1);
+	add_htb_class(dev, "1:1", "1:3", 50 * rate / 100, rate, mtu, -1);
+	add_htb_class(dev, "1:1", "1:4", 25 * rate / 100, rate, mtu, -1);
+	add_htb_class(dev, "1:1", "1:5", 15 * rate / 100, rate, mtu, -1);
+	add_htb_class(dev, "1:1", "1:6", 5 * rate / 100, rate, mtu, -1);
+	add_htb_class(dev, "1:2", "1:100", 75 * rate / 100, rate, mtu, 0);
+	add_htb_class(dev, "1:3", "1:10", 50 * rate / 100, rate, mtu, 1);
+	add_htb_class(dev, "1:4", "1:20", 25 * rate / 100, rate, mtu, 2);
+	add_htb_class(dev, "1:5", "1:30", 15 * rate / 100, rate, mtu, 5);
+	add_htb_class(dev, "1:6", "1:40", 5 * rate / 100, rate, mtu, 7);
+}
+
+static void init_hfsc_class(char *dev, int rate)
+{
+	add_hfsc_class(dev, "1:", "1:1", rate, rate);
+	add_hfsc_class(dev, "1:1", "1:2", 75 * rate / 100, rate);
+	add_hfsc_class(dev, "1:1", "1:3", 50 * rate / 100, rate);
+	add_hfsc_class(dev, "1:1", "1:4", 25 * rate / 100, rate);
+	add_hfsc_class(dev, "1:1", "1:5", 15 * rate / 100, rate);
+	add_hfsc_class(dev, "1:1", "1:6", 5 * rate / 100, rate);
+	add_hfsc_class(dev, "1:2", "1:100", 75 * rate / 100, rate);
+	add_hfsc_class(dev, "1:3", "1:10", 50 * rate / 100, rate);
+	add_hfsc_class(dev, "1:4", "1:20", 25 * rate / 100, rate);
+	add_hfsc_class(dev, "1:5", "1:30", 15 * rate / 100, rate);
+	add_hfsc_class(dev, "1:6", "1:40", 5 * rate / 100, rate);
+
+}
+
+static void add_sfq(char *dev, int handle, int mtu)
+{
+	char qmtu[32];
+	sprintf(qmtu, "%d", mtu);
+	char p[32];
+	char h[32];
+	sprintf(p, "1:%d", handle);
+	sprintf(h, "%s:", handle);
+	eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, "sfq", "quantum", qmtu, "perturb", "10");
+
+}
+
+static void add_codel(char *dev, int handle, char *aqd, char *TGT, char *MS, char *ECN)
+{
+	char p[32];
+	char h[32];
+	sprintf(p, "1:%d", handle);
+	sprintf(h, "%s:", handle);
+	eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd, TGT, MS, ECN);
+}
+
+static void add_fq_codel(char *dev, int handle, char *aqd)
+{
+	char p[32];
+	char h[32];
+	sprintf(p, "1:%d", handle);
+	sprintf(h, "%s:", handle);
+	eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd);
+}
+
+static void add_cake(char *dev, int handle, char *aqd)
+{
+	char p[32];
+	char h[32];
+	sprintf(p, "1:%d", handle);
+	sprintf(h, "%s:", handle);
+	eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd, "unlimited", "ethernet", "besteffort", "noatm", "raw", "internet", "dual-srchost", "ack-filter", "nat");
+}
+
+static void add_pie(char *dev, int handle, char *aqd, int ms5, char *ECN)
+{
+	char p[32];
+	char h[32];
+	sprintf(p, "1:%d", handle);
+	sprintf(h, "%s:", handle);
+	if (ms5)
+		eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd, "target", "5ms", ECN);
+	else
+		eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd, ECN);
+}
+
+static void init_qdisc(char *type, char *dev, char *aqd, int mtu, int up, int ms5)
+{
+	char qmtu[32];
+	sprintf(qmtu, "%d", mtu);
 	char *TGT = NULL;
 	char *MS = NULL;
 	char *ECN = NULL;
-	int ll = 1000000;
 	if (!strcmp(type, "hfsc")) {
 		TGT = "target";
 		MS = "5ms";
@@ -693,82 +790,88 @@ void init_qos(char *type, int up, int down, char *wandev, int mtu, char *imq_wan
 		ECN = "noecn";
 	}
 
+	if (!strcmp(aqd, "sfq")) {
+		add_sfq(dev, 100, mtu);
+		add_sfq(dev, 10, mtu);
+		add_sfq(dev, 20, mtu);
+		add_sfq(dev, 30, mtu);
+		add_sfq(dev, 40, mtu);
+	}
+	if (!strcmp(aqd, "codel")) {
+		add_codel(dev, 100, aqd, TGT, MS, ECN);
+		add_codel(dev, 10, aqd, TGT, MS, ECN);
+		add_codel(dev, 20, aqd, TGT, MS, ECN);
+		add_codel(dev, 30, aqd, TGT, MS, ECN);
+		add_codel(dev, 40, aqd, TGT, MS, ECN);
+	}
+	if (!strcmp(aqd, "fq_codel")) {
+		add_fq_codel(dev, 100, aqd);
+		add_fq_codel(dev, 10, aqd);
+		add_fq_codel(dev, 20, aqd);
+		add_fq_codel(dev, 30, aqd);
+		add_fq_codel(dev, 40, aqd);
+	}
+	if (!strcmp(aqd, "cake")) {
+		add_cake(dev, 100, aqd);
+		add_cake(dev, 10, aqd);
+		add_cake(dev, 20, aqd);
+		add_cake(dev, 30, aqd);
+		add_cake(dev, 40, aqd);
+	}
+	if (!strcmp(aqd, "pie")) {
+		if (ms5 || !strcmp(type, "hfsc"))
+			ECN = "ecn";
+		add_pie(dev, 100, aqd, ms5, ECN);
+		add_pie(dev, 10, aqd, ms5, ECN);
+		add_pie(dev, 20, aqd, ms5, ECN);
+		add_pie(dev, 30, aqd, ms5, ECN);
+		add_pie(dev, 40, aqd, ms5, ECN);
+	}
+
+}
+
+static void add_filter(char *dev, int pref, int handle, int classid)
+{
+
+	char p[32];
+	char h[32];
+	char c[32];
+	sprintf(p, "%d", pref);
+	sprintf(h, "0x02X", handle);
+	sprintf(c, "1:%d", classid);
+	eval("tc", "filter", "add", "dev", dev, "protocol", "ip", "pref", p, "handle", h, "fw", "classid", c);
+
+}
+
+static void init_filter(char *dev)
+{
+	add_filter(dev, 1, 0x64, 100);
+	add_filter(dev, 3, 0x0A, 10);
+	add_filter(dev, 5, 0x14, 20);
+	add_filter(dev, 8, 0x1E, 30);
+	add_filter(dev, 9, 0x28, 40);
+}
+
+void init_qos(char *type, int up, int down, char *wandev, int mtu, char *imq_wan, char *aqd, char *imq_lan)
+{
+	deinit_qos(wandev, imq_wan, imq_lan);
+	char qmtu[32];
+	sprintf(qmtu, "%d", mtu + 14);
+
+	int ll = 1000000;
+
 	if (!strcmp(type, "htb")) {
 		eval("tc", "qdisc", "add", "dev", wandev, "root", "handle", "1:", "htb", "default", "30");
-		eval("tc", "class", "add", "dev", wandev, "parent", "1:", "classid", "1:1", "htb", "rate", math(buf, up, "kbit"), "ceil", math(buf, up, "kbit"), "quantum", qmtu);
-		eval("tc", "class", "add", "dev", wandev, "parent", "1:1", "classid", "1:2", "htb", "rate", math(buf, 75 * up / 100, "kbit"), "ceil", math(buf, up, "kbit"), "quantum", qmtu);
-		eval("tc", "class", "add", "dev", wandev, "parent", "1:1", "classid", "1:3", "htb", "rate", math(buf, 50 * up / 100, "kbit"), "ceil", math(buf, up, "kbit"), "quantum", qmtu);
-		eval("tc", "class", "add", "dev", wandev, "parent", "1:1", "classid", "1:4", "htb", "rate", math(buf, 25 * up / 100, "kbit"), "ceil", math(buf, up, "kbit"), "quantum", qmtu);
-		eval("tc", "class", "add", "dev", wandev, "parent", "1:1", "classid", "1:5", "htb", "rate", math(buf, 15 * up / 100, "kbit"), "ceil", math(buf, up, "kbit"), "quantum", qmtu);
-		eval("tc", "class", "add", "dev", wandev, "parent", "1:1", "classid", "1:6", "htb", "rate", math(buf, 5 * up / 100, "kbit"), "ceil", math(buf, up, "kbit"), "quantum", qmtu);
-		eval("tc", "class", "add", "dev", wandev, "parent", "1:2", "classid", "1:100", "htb", "rate", math(buf, 75 * up / 100, "kbit"), "ceil", math(buf, up, "kbit"), "prio", "0", "quantum", qmtu);
-		eval("tc", "class", "add", "dev", wandev, "parent", "1:3", "classid", "1:10", "htb", "rate", math(buf, 50 * up / 100, "kbit"), "ceil", math(buf, up, "kbit"), "prio", "1", "quantum", qmtu);
-		eval("tc", "class", "add", "dev", wandev, "parent", "1:4", "classid", "1:20", "htb", "rate", math(buf, 25 * up / 100, "kbit"), "ceil", math(buf, up, "kbit"), "prio", "2", "quantum", qmtu);
-		eval("tc", "class", "add", "dev", wandev, "parent", "1:5", "classid", "1:30", "htb", "rate", math(buf, 15 * up / 100, "kbit"), "ceil", math(buf, up, "kbit"), "prio", "5", "quantum", qmtu);
-		eval("tc", "class", "add", "dev", wandev, "parent", "1:6", "classid", "1:40", "htb", "rate", math(buf, 5 * up / 100, "kbit"), "ceil", math(buf, up, "kbit"), "prio", "7", "quantum", qmtu);
+		init_htb_class(wandev, up, mtu);
 	}
 	if (!strcmp(type, "hfsc")) {
 
 		eval("tc", "qdisc", "add", "dev", wandev, "root", "handle", "1:", "hfsc", "default", "30");
-		eval("tc", "class", "add", "dev", wandev, "parent", "1:", "classid", "1:1", "hfsc", "sc", "rate", math(buf, up, "kbit"), "ul", "rate", math(buf, up, "kbit"));
-		eval("tc", "class", "add", "dev", wandev, "parent", "1:1", "classid", "1:2", "hfsc", "sc", "rate", math(buf, 75 * up / 100, "kbit"), "ul", "rate", math(buf, up, "kbit"));
-		eval("tc", "class", "add", "dev", wandev, "parent", "1:1", "classid", "1:3", "hfsc", "sc", "rate", math(buf, 50 * up / 100, "kbit"), "ul", "rate", math(buf, up, "kbit"));
-		eval("tc", "class", "add", "dev", wandev, "parent", "1:1", "classid", "1:4", "hfsc", "sc", "rate", math(buf, 25 * up / 100, "kbit"), "ul", "rate", math(buf, up, "kbit"));
-		eval("tc", "class", "add", "dev", wandev, "parent", "1:1", "classid", "1:5", "hfsc", "sc", "rate", math(buf, 15 * up / 100, "kbit"), "ul", "rate", math(buf, up, "kbit"));
-		eval("tc", "class", "add", "dev", wandev, "parent", "1:1", "classid", "1:6", "hfsc", "sc", "rate", math(buf, 5 * up / 100, "kbit"), "ul", "rate", math(buf, up, "kbit"));
-		eval("tc", "class", "add", "dev", wandev, "parent", "1:2", "classid", "1:100", "hfsc", "sc", "rate", math(buf, 75 * up / 100, "kbit"), "ul", "rate", math(buf, up, "kbit"));
-		eval("tc", "class", "add", "dev", wandev, "parent", "1:3", "classid", "1:10", "hfsc", "sc", "rate", math(buf, 50 * up / 100, "kbit"), "ul", "rate", math(buf, up, "kbit"));
-		eval("tc", "class", "add", "dev", wandev, "parent", "1:4", "classid", "1:20", "hfsc", "sc", "rate", math(buf, 25 * up / 100, "kbit"), "ul", "rate", math(buf, up, "kbit"));
-		eval("tc", "class", "add", "dev", wandev, "parent", "1:5", "classid", "1:30", "hfsc", "sc", "rate", math(buf, 15 * up / 100, "kbit"), "ul", "rate", math(buf, up, "kbit"));
-		eval("tc", "class", "add", "dev", wandev, "parent", "1:6", "classid", "1:40", "hfsc", "sc", "rate", math(buf, 5 * up / 100, "kbit"), "ul", "rate", math(buf, up, "kbit"));
+		init_hfsc_class(wandev, up);
 	}
 
-	if (!strcmp(aqd, "sfq")) {
-
-		eval("tc", "qdisc", "add", "dev", wandev, "parent", "1:100", "handle", "100:", "sfq", "quantum", qmtu, "perturb", "10");
-		eval("tc", "qdisc", "add", "dev", wandev, "parent", "1:10", "handle", "10:", "sfq", "quantum", qmtu, "perturb", "10");
-		eval("tc", "qdisc", "add", "dev", wandev, "parent", "1:20", "handle", "20:", "sfq", "quantum", qmtu, "perturb", "10");
-		eval("tc", "qdisc", "add", "dev", wandev, "parent", "1:30", "handle", "30:", "sfq", "quantum", qmtu, "perturb", "10");
-		eval("tc", "qdisc", "add", "dev", wandev, "parent", "1:40", "handle", "40:", "sfq", "quantum", qmtu, "perturb", "10");
-	}
-	if (!strcmp(aqd, "codel")) {
-
-		eval("tc", "qdisc", "add", "dev", wandev, "parent", "1:100", "handle", "100:", aqd, TGT, MS, ECN);
-		eval("tc", "qdisc", "add", "dev", wandev, "parent", "1:10", "handle", "10:", aqd, TGT, MS, ECN);
-		eval("tc", "qdisc", "add", "dev", wandev, "parent", "1:20", "handle", "20:", aqd, TGT, MS, ECN);
-		eval("tc", "qdisc", "add", "dev", wandev, "parent", "1:30", "handle", "30:", aqd, TGT, MS, ECN);
-		eval("tc", "qdisc", "add", "dev", wandev, "parent", "1:40", "handle", "40:", aqd, TGT, MS, ECN);
-	}
-	if (!strcmp(aqd, "fq_codel")) {
-
-		eval("tc", "qdisc", "add", "dev", wandev, "parent", "1:100", "handle", "100:", aqd);
-		eval("tc", "qdisc", "add", "dev", wandev, "parent", "1:10", "handle", "10:", aqd);
-		eval("tc", "qdisc", "add", "dev", wandev, "parent", "1:20", "handle", "20:", aqd);
-		eval("tc", "qdisc", "add", "dev", wandev, "parent", "1:30", "handle", "30:", aqd);
-		eval("tc", "qdisc", "add", "dev", wandev, "parent", "1:40", "handle", "40:", aqd);
-	}
-	if (!strcmp(aqd, "cake")) {
-
-		eval("tc", "qdisc", "add", "dev", wandev, "parent", "1:100", "handle", "100:", aqd, "unlimited", "ethernet", "besteffort", "noatm", "raw", "internet", "dual-srchost", "ack-filter", "nat");
-		eval("tc", "qdisc", "add", "dev", wandev, "parent", "1:10", "handle", "10:", aqd, "unlimited", "ethernet", "besteffort", "noatm", "raw", "internet", "dual-srchost", "ack-filter", "nat");
-		eval("tc", "qdisc", "add", "dev", wandev, "parent", "1:20", "handle", "20:", aqd, "unlimited", "ethernet", "besteffort", "noatm", "raw", "internet", "dual-srchost", "ack-filter", "nat");
-		eval("tc", "qdisc", "add", "dev", wandev, "parent", "1:30", "handle", "30:", aqd, "unlimited", "ethernet", "besteffort", "noatm", "raw", "internet", "dual-srchost", "ack-filter", "nat");
-		eval("tc", "qdisc", "add", "dev", wandev, "parent", "1:40", "handle", "40:", aqd, "unlimited", "ethernet", "besteffort", "noatm", "raw", "internet", "dual-srchost", "ack-filter", "nat");
-	}
-	if (!strcmp(aqd, "pie")) {
-
-		eval("tc", "qdisc", "add", "dev", wandev, "parent", "1:100", "handle", "100:", aqd, ECN);
-		eval("tc", "qdisc", "add", "dev", wandev, "parent", "1:10", "handle", "10:", aqd, ECN);
-		eval("tc", "qdisc", "add", "dev", wandev, "parent", "1:20", "handle", "20:", aqd, ECN);
-		eval("tc", "qdisc", "add", "dev", wandev, "parent", "1:30", "handle", "30:", aqd, ECN);
-		eval("tc", "qdisc", "add", "dev", wandev, "parent", "1:40", "handle", "40:", aqd, ECN);
-	}
-
-	eval("tc", "filter", "add", "dev", wandev, "protocol", "ip", "pref", "1", "handle", "0x64", "fw", "classid", "1:100");
-	eval("tc", "filter", "add", "dev", wandev, "protocol", "ip", "pref", "3", "handle", "0x0A", "fw", "classid", "1:10");
-	eval("tc", "filter", "add", "dev", wandev, "protocol", "ip", "pref", "5", "handle", "0x14", "fw", "classid", "1:20");
-	eval("tc", "filter", "add", "dev", wandev, "protocol", "ip", "pref", "8", "handle", "0x1E", "fw", "classid", "1:30");
-	eval("tc", "filter", "add", "dev", wandev, "protocol", "ip", "pref", "9", "handle", "0x28", "fw", "classid", "1:40");
+	init_qdisc(type, wandev, aqd, mtu, up, 0);
+	init_filter(wandev);
 
 	if (down != 0) {
 
@@ -776,156 +879,33 @@ void init_qos(char *type, int up, int down, char *wandev, int mtu, char *imq_wan
 
 		if (!strcmp(type, "htb")) {
 			eval("tc", "qdisc", "add", "dev", imq_wan, "root", "handle", "1:", "htb", "default", "30");
-			eval("tc", "class", "add", "dev", imq_wan, "parent", "1:", "classid", "1:1", "htb", "rate", math(buf, down, "kbit"), "ceil", math(buf, down, "kbit"), "quantum", qmtu);
-			eval("tc", "class", "add", "dev", imq_wan, "parent", "1:1", "classid", "1:2", "htb", "rate", math(buf, 75 * down / 100, "kbit"), "ceil", math(buf, down, "kbit"), "quantum", qmtu);
-			eval("tc", "class", "add", "dev", imq_wan, "parent", "1:1", "classid", "1:3", "htb", "rate", math(buf, 50 * down / 100, "kbit"), "ceil", math(buf, down, "kbit"), "quantum", qmtu);
-			eval("tc", "class", "add", "dev", imq_wan, "parent", "1:1", "classid", "1:4", "htb", "rate", math(buf, 25 * down / 100, "kbit"), "ceil", math(buf, down, "kbit"), "quantum", qmtu);
-			eval("tc", "class", "add", "dev", imq_wan, "parent", "1:1", "classid", "1:5", "htb", "rate", math(buf, 15 * down / 100, "kbit"), "ceil", math(buf, down, "kbit"), "quantum", qmtu);
-			eval("tc", "class", "add", "dev", imq_wan, "parent", "1:1", "classid", "1:6", "htb", "rate", math(buf, 5 * down / 100, "kbit"), "ceil", math(buf, down, "kbit"), "quantum", qmtu);
-			eval("tc", "class", "add", "dev", imq_wan, "parent", "1:2", "classid", "1:100", "htb", "rate", math(buf, 75 * down / 100, "kbit"), "ceil", math(buf, down, "kbit"), "prio", "0", "quantum", qmtu);
-			eval("tc", "class", "add", "dev", imq_wan, "parent", "1:3", "classid", "1:10", "htb", "rate", math(buf, 50 * down / 100, "kbit"), "ceil", math(buf, down, "kbit"), "prio", "1", "quantum", qmtu);
-			eval("tc", "class", "add", "dev", imq_wan, "parent", "1:4", "classid", "1:20", "htb", "rate", math(buf, 25 * down / 100, "kbit"), "ceil", math(buf, down, "kbit"), "prio", "2", "quantum", qmtu);
-			eval("tc", "class", "add", "dev", imq_wan, "parent", "1:5", "classid", "1:30", "htb", "rate", math(buf, 15 * down / 100, "kbit"), "ceil", math(buf, down, "kbit"), "prio", "5", "quantum", qmtu);
-			eval("tc", "class", "add", "dev", imq_wan, "parent", "1:6", "classid", "1:40", "htb", "rate", math(buf, 5 * down / 100, "kbit"), "ceil", math(buf, down, "kbit"), "prio", "7", "quantum", qmtu);
+			init_htb_class(imq_wan, down, mtu);
+			init_qdisc(type, imq_wan, aqd, mtu, up, 1);
+
 		}
 		if (!strcmp(type, "hfsc")) {
 			eval("tc", "qdisc", "add", "dev", imq_wan, "root", "handle", "1:", "hfsc", "default", "30");
-			eval("tc", "class", "add", "dev", imq_wan, "parent", "1:", "classid", "1:1", "hfsc", "sc", "rate", math(buf, down, "kbit"), "ul", "rate", math(buf, down, "kbit"));
-			eval("tc", "class", "add", "dev", imq_wan, "parent", "1:1", "classid", "1:2", "hfsc", "sc", "rate", math(buf, 75 * down / 100, "kbit"), "ul", "rate", math(buf, down, "kbit"));
-			eval("tc", "class", "add", "dev", imq_wan, "parent", "1:1", "classid", "1:3", "hfsc", "sc", "rate", math(buf, 50 * down / 100, "kbit"), "ul", "rate", math(buf, down, "kbit"));
-			eval("tc", "class", "add", "dev", imq_wan, "parent", "1:1", "classid", "1:4", "hfsc", "sc", "rate", math(buf, 25 * down / 100, "kbit"), "ul", "rate", math(buf, down, "kbit"));
-			eval("tc", "class", "add", "dev", imq_wan, "parent", "1:1", "classid", "1:5", "hfsc", "sc", "rate", math(buf, 15 * down / 100, "kbit"), "ul", "rate", math(buf, down, "kbit"));
-			eval("tc", "class", "add", "dev", imq_wan, "parent", "1:1", "classid", "1:6", "hfsc", "sc", "rate", math(buf, 5 * down / 100, "kbit"), "ul", "rate", math(buf, down, "kbit"));
-			eval("tc", "class", "add", "dev", imq_wan, "parent", "1:2", "classid", "1:100", "hfsc", "sc", "rate", math(buf, 75 * down / 100, "kbit"), "ul", "rate", math(buf, down, "kbit"));
-			eval("tc", "class", "add", "dev", imq_wan, "parent", "1:3", "classid", "1:10", "hfsc", "sc", "rate", math(buf, 50 * down / 100, "kbit"), "ul", "rate", math(buf, down, "kbit"));
-			eval("tc", "class", "add", "dev", imq_wan, "parent", "1:4", "classid", "1:20", "hfsc", "sc", "rate", math(buf, 25 * down / 100, "kbit"), "ul", "rate", math(buf, down, "kbit"));
-			eval("tc", "class", "add", "dev", imq_wan, "parent", "1:5", "classid", "1:30", "hfsc", "sc", "rate", math(buf, 15 * down / 100, "kbit"), "ul", "rate", math(buf, down, "kbit"));
-			eval("tc", "class", "add", "dev", imq_wan, "parent", "1:6", "classid", "1:40", "hfsc", "sc", "rate", math(buf, 5 * down / 100, "kbit"), "ul", "rate", math(buf, down, "kbit"));
+			init_hfsc_class(imq_wan, down);
+			init_qdisc(type, imq_wan, aqd, mtu, up, 0);
 		}
-		if (!strcmp(aqd, "sfq")) {
+		init_filter(imq_wan);
 
-			eval("tc", "qdisc", "add", "dev", imq_wan, "parent", "1:100", "handle", "100:", "sfq", "quantum", qmtu, "perturb", "10");
-			eval("tc", "qdisc", "add", "dev", imq_wan, "parent", "1:10", "handle", "10:", "sfq", "quantum", qmtu, "perturb", "10");
-			eval("tc", "qdisc", "add", "dev", imq_wan, "parent", "1:20", "handle", "20:", "sfq", "quantum", qmtu, "perturb", "10");
-			eval("tc", "qdisc", "add", "dev", imq_wan, "parent", "1:30", "handle", "30:", "sfq", "quantum", qmtu, "perturb", "10");
-			eval("tc", "qdisc", "add", "dev", imq_wan, "parent", "1:40", "handle", "40:", "sfq", "quantum", qmtu, "perturb", "10");
-		}
-		if (!strcmp(aqd, "codel")) {
-
-			eval("tc", "qdisc", "add", "dev", imq_wan, "parent", "1:100", "handle", "100:", aqd, TGT, ECN);
-			eval("tc", "qdisc", "add", "dev", imq_wan, "parent", "1:10", "handle", "10:", aqd, TGT, ECN);
-			eval("tc", "qdisc", "add", "dev", imq_wan, "parent", "1:20", "handle", "20:", aqd, TGT, ECN);
-			eval("tc", "qdisc", "add", "dev", imq_wan, "parent", "1:30", "handle", "30:", aqd, TGT, ECN);
-			eval("tc", "qdisc", "add", "dev", imq_wan, "parent", "1:40", "handle", "40:", aqd, TGT, ECN);
-		}
-		if (!strcmp(aqd, "fq_codel")) {
-
-			eval("tc", "qdisc", "add", "dev", imq_wan, "parent", "1:100", "handle", "100:", aqd);
-			eval("tc", "qdisc", "add", "dev", imq_wan, "parent", "1:10", "handle", "10:", aqd);
-			eval("tc", "qdisc", "add", "dev", imq_wan, "parent", "1:20", "handle", "20:", aqd);
-			eval("tc", "qdisc", "add", "dev", imq_wan, "parent", "1:30", "handle", "30:", aqd);
-			eval("tc", "qdisc", "add", "dev", imq_wan, "parent", "1:40", "handle", "40:", aqd);
-		}
-		if (!strcmp(aqd, "cake")) {
-
-			eval("tc", "qdisc", "add", "dev", imq_wan, "parent", "1:100", "handle", "100:", aqd, "unlimited", "ethernet", "besteffort", "noatm", "raw", "internet", "dual-dsthost", "ack-filter", "nat");
-			eval("tc", "qdisc", "add", "dev", imq_wan, "parent", "1:10", "handle", "10:", aqd, "unlimited", "ethernet", "besteffort", "noatm", "raw", "internet", "dual-dsthost", "ack-filter", "nat");
-			eval("tc", "qdisc", "add", "dev", imq_wan, "parent", "1:20", "handle", "20:", aqd, "unlimited", "ethernet", "besteffort", "noatm", "raw", "internet", "dual-dsthost", "ack-filter", "nat");
-			eval("tc", "qdisc", "add", "dev", imq_wan, "parent", "1:30", "handle", "30:", aqd, "unlimited", "ethernet", "besteffort", "noatm", "raw", "internet", "dual-dsthost", "ack-filter", "nat");
-			eval("tc", "qdisc", "add", "dev", imq_wan, "parent", "1:40", "handle", "40:", aqd, "unlimited", "ethernet", "besteffort", "noatm", "raw", "internet", "dual-dsthost", "ack-filter", "nat");
-		}
-		if (!strcmp(aqd, "pie")) {
-
-			eval("tc", "qdisc", "add", "dev", imq_wan, "parent", "1:100", "handle", "100:", aqd, "target", "5ms", "ecn");
-			eval("tc", "qdisc", "add", "dev", imq_wan, "parent", "1:10", "handle", "10:", aqd, "target", "5ms", "ecn");
-			eval("tc", "qdisc", "add", "dev", imq_wan, "parent", "1:20", "handle", "20:", aqd, "target", "5ms", "ecn");
-			eval("tc", "qdisc", "add", "dev", imq_wan, "parent", "1:30", "handle", "30:", aqd, "target", "5ms", "ecn");
-			eval("tc", "qdisc", "add", "dev", imq_wan, "parent", "1:40", "handle", "40:", aqd, "target", "5ms", "ecn");
-		}
-
-		eval("tc", "filter", "add", "dev", imq_wan, "protocol", "ip", "pref", "1", "handle", "0x64", "fw", "classid", "1:100");
-		eval("tc", "filter", "add", "dev", imq_wan, "protocol", "ip", "pref", "3", "handle", "0x0A", "fw", "classid", "1:10");
-		eval("tc", "filter", "add", "dev", imq_wan, "protocol", "ip", "pref", "5", "handle", "0x14", "fw", "classid", "1:20");
-		eval("tc", "filter", "add", "dev", imq_wan, "protocol", "ip", "pref", "8", "handle", "0x1E", "fw", "classid", "1:30");
-		eval("tc", "filter", "add", "dev", imq_wan, "protocol", "ip", "pref", "9", "handle", "0x28", "fw", "classid", "1:40");
 	}
 	if (strcmp(imq_lan, "0")) {
 		eval("ip", "link", "set", imq_lan, "up");
 
 		if (!strcmp(type, "htb")) {
 			eval("tc", "qdisc", "add", "dev", imq_lan, "root", "handle", "1:", "htb", "default", "30");
-			eval("tc", "class", "add", "dev", imq_lan, "parent", "1:", "classid", "1:1", "htb", "rate", math(buf, ll, "kbit"), "prio", "0", "quantum", qmtu);
-			eval("tc", "class", "add", "dev", imq_lan, "parent", "1:1", "classid", "1:2", "htb", "rate", math(buf, 75 * ll / 100, "kbit"), "ceil", math(buf, ll, "kbit"), "quantum", qmtu);
-			eval("tc", "class", "add", "dev", imq_lan, "parent", "1:1", "classid", "1:3", "htb", "rate", math(buf, 50 * ll / 100, "kbit"), "ceil", math(buf, ll, "kbit"), "quantum", qmtu);
-			eval("tc", "class", "add", "dev", imq_lan, "parent", "1:1", "classid", "1:4", "htb", "rate", math(buf, 25 * ll / 100, "kbit"), "ceil", math(buf, ll, "kbit"), "quantum", qmtu);
-			eval("tc", "class", "add", "dev", imq_lan, "parent", "1:1", "classid", "1:5", "htb", "rate", math(buf, 15 * ll / 100, "kbit"), "ceil", math(buf, ll, "kbit"), "quantum", qmtu);
-			eval("tc", "class", "add", "dev", imq_lan, "parent", "1:1", "classid", "1:6", "htb", "rate", math(buf, 5 * ll / 100, "kbit"), "ceil", math(buf, ll, "kbit"), "quantum", qmtu);
-			eval("tc", "class", "add", "dev", imq_lan, "parent", "1:2", "classid", "1:100", "htb", "rate", math(buf, 75 * ll / 100, "kbit"), "ceil", math(buf, ll, "kbit"), "prio", "0", "quantum", qmtu);
-			eval("tc", "class", "add", "dev", imq_lan, "parent", "1:3", "classid", "1:10", "htb", "rate", math(buf, 50 * ll / 100, "kbit"), "ceil", math(buf, ll, "kbit"), "prio", "1", "quantum", qmtu);
-			eval("tc", "class", "add", "dev", imq_lan, "parent", "1:4", "classid", "1:20", "htb", "rate", math(buf, 25 * ll / 100, "kbit"), "ceil", math(buf, ll, "kbit"), "prio", "2", "quantum", qmtu);
-			eval("tc", "class", "add", "dev", imq_lan, "parent", "1:5", "classid", "1:30", "htb", "rate", math(buf, 15 * ll / 100, "kbit"), "ceil", math(buf, ll, "kbit"), "prio", "5", "quantum", qmtu);
-			eval("tc", "class", "add", "dev", imq_lan, "parent", "1:6", "classid", "1:40", "htb", "rate", math(buf, 5 * ll / 100, "kbit"), "ceil", math(buf, ll, "kbit"), "prio", "7", "quantum", qmtu);
+			init_htb_class(imq_lan, ll, mtu);
 		}
 		if (!strcmp(type, "hfsc")) {
 			eval("tc", "qdisc", "add", "dev", imq_lan, "root", "handle", "1:", "hfsc", "default", "30");
-			eval("tc", "class", "add", "dev", imq_lan, "parent", "1:", "classid", "1:1", "hfsc", "sc", "rate", math(buf, ll, "kbit"), "ul", "rate", math(buf, ll, "kbit"));
-			eval("tc", "class", "add", "dev", imq_lan, "parent", "1:1", "classid", "1:2", "hfsc", "sc", "rate", math(buf, 75 * ll / 100, "kbit"), "ul", "rate", math(buf, ll, "kbit"));
-			eval("tc", "class", "add", "dev", imq_lan, "parent", "1:1", "classid", "1:3", "hfsc", "sc", "rate", math(buf, 50 * ll / 100, "kbit"), "ul", "rate", math(buf, ll, "kbit"));
-			eval("tc", "class", "add", "dev", imq_lan, "parent", "1:1", "classid", "1:4", "hfsc", "sc", "rate", math(buf, 25 * ll / 100, "kbit"), "ul", "rate", math(buf, ll, "kbit"));
-			eval("tc", "class", "add", "dev", imq_lan, "parent", "1:1", "classid", "1:5", "hfsc", "sc", "rate", math(buf, 15 * ll / 100, "kbit"), "ul", "rate", math(buf, ll, "kbit"));
-			eval("tc", "class", "add", "dev", imq_lan, "parent", "1:1", "classid", "1:6", "hfsc", "sc", "rate", math(buf, 5 * ll / 100, "kbit"), "ul", "rate", math(buf, ll, "kbit"));
-			eval("tc", "class", "add", "dev", imq_lan, "parent", "1:2", "classid", "1:100", "hfsc", "sc", "rate", math(buf, 75 * ll / 100, "kbit"), "ul", "rate", math(buf, ll, "kbit"));
-			eval("tc", "class", "add", "dev", imq_lan, "parent", "1:3", "classid", "1:10", "hfsc", "sc", "rate", math(buf, 50 * ll / 100, "kbit"), "ul", "rate", math(buf, ll, "kbit"));
-			eval("tc", "class", "add", "dev", imq_lan, "parent", "1:4", "classid", "1:20", "hfsc", "sc", "rate", math(buf, 25 * ll / 100, "kbit"), "ul", "rate", math(buf, ll, "kbit"));
-			eval("tc", "class", "add", "dev", imq_lan, "parent", "1:5", "classid", "1:30", "hfsc", "sc", "rate", math(buf, 15 * ll / 100, "kbit"), "ul", "rate", math(buf, ll, "kbit"));
-			eval("tc", "class", "add", "dev", imq_lan, "parent", "1:6", "classid", "1:40", "hfsc", "sc", "rate", math(buf, 5 * ll / 100, "kbit"), "ul", "rate", math(buf, ll, "kbit"));
+			init_hfsc_class(imq_lan, ll);
 		}
-		if (!strcmp(aqd, "sfq")) {
+		init_qdisc(type, imq_lan, aqd, mtu, up, 0);
 
-			eval("tc", "qdisc", "add", "dev", imq_lan, "parent", "1:100", "handle", "100:", "sfq", "quantum", qmtu, "perturb", "10");
-			eval("tc", "qdisc", "add", "dev", imq_lan, "parent", "1:10", "handle", "10:", "sfq", "quantum", qmtu, "perturb", "10");
-			eval("tc", "qdisc", "add", "dev", imq_lan, "parent", "1:20", "handle", "20:", "sfq", "quantum", qmtu, "perturb", "10");
-			eval("tc", "qdisc", "add", "dev", imq_lan, "parent", "1:30", "handle", "30:", "sfq", "quantum", qmtu, "perturb", "10");
-			eval("tc", "qdisc", "add", "dev", imq_lan, "parent", "1:40", "handle", "40:", "sfq", "quantum", qmtu, "perturb", "10");
-		}
-		if (!strcmp(aqd, "codel")) {
+		init_filter(imq_lan);
 
-			eval("tc", "qdisc", "add", "dev", imq_lan, "parent", "1:100", "handle", "100:", aqd, TGT, ECN);
-			eval("tc", "qdisc", "add", "dev", imq_lan, "parent", "1:10", "handle", "10:", aqd, TGT, ECN);
-			eval("tc", "qdisc", "add", "dev", imq_lan, "parent", "1:20", "handle", "20:", aqd, TGT, ECN);
-			eval("tc", "qdisc", "add", "dev", imq_lan, "parent", "1:30", "handle", "30:", aqd, TGT, ECN);
-			eval("tc", "qdisc", "add", "dev", imq_lan, "parent", "1:40", "handle", "40:", aqd, TGT, ECN);
-		}
-		if (!strcmp(aqd, "fq_codel")) {
-
-			eval("tc", "qdisc", "add", "dev", imq_lan, "parent", "1:100", "handle", "100:", aqd);
-			eval("tc", "qdisc", "add", "dev", imq_lan, "parent", "1:10", "handle", "10:", aqd);
-			eval("tc", "qdisc", "add", "dev", imq_lan, "parent", "1:20", "handle", "20:", aqd);
-			eval("tc", "qdisc", "add", "dev", imq_lan, "parent", "1:30", "handle", "30:", aqd);
-			eval("tc", "qdisc", "add", "dev", imq_lan, "parent", "1:40", "handle", "40:", aqd);
-		}
-		if (!strcmp(aqd, "cake")) {
-
-			eval("tc", "qdisc", "add", "dev", imq_lan, "parent", "1:100", "handle", "100:", aqd, "unlimited", "ethernet", "besteffort", "noatm", "raw", "lan", "triple-isolate", "no-ack-filter", "nonat");
-			eval("tc", "qdisc", "add", "dev", imq_lan, "parent", "1:10", "handle", "10:", aqd, "unlimited", "ethernet", "besteffort", "noatm", "raw", "lan", "triple-isolate", "no-ack-filter", "nonat");
-			eval("tc", "qdisc", "add", "dev", imq_lan, "parent", "1:20", "handle", "20:", aqd, "unlimited", "ethernet", "besteffort", "noatm", "raw", "lan", "triple-isolate", "no-ack-filter", "nonat");
-			eval("tc", "qdisc", "add", "dev", imq_lan, "parent", "1:30", "handle", "30:", aqd, "unlimited", "ethernet", "besteffort", "noatm", "raw", "lan", "triple-isolate", "no-ack-filter", "nonat");
-			eval("tc", "qdisc", "add", "dev", imq_lan, "parent", "1:40", "handle", "40:", aqd, "unlimited", "ethernet", "besteffort", "noatm", "raw", "lan", "triple-isolate", "no-ack-filter", "nonat");
-		}
-		if (!strcmp(aqd, "pie")) {
-
-			eval("tc", "qdisc", "add", "dev", imq_lan, "parent", "1:100", "handle", "100:", aqd);
-			eval("tc", "qdisc", "add", "dev", imq_lan, "parent", "1:10", "handle", "10:", aqd);
-			eval("tc", "qdisc", "add", "dev", imq_lan, "parent", "1:20", "handle", "20:", aqd);
-			eval("tc", "qdisc", "add", "dev", imq_lan, "parent", "1:30", "handle", "30:", aqd);
-			eval("tc", "qdisc", "add", "dev", imq_lan, "parent", "1:40", "handle", "40:", aqd);
-		}
-
-		eval("tc", "filter", "add", "dev", imq_lan, "protocol", "ip", "pref", "1", "handle", "0x64", "fw", "classid", "1:100");
-		eval("tc", "filter", "add", "dev", imq_lan, "protocol", "ip", "pref", "3", "handle", "0x0A", "fw", "classid", "1:10");
-		eval("tc", "filter", "add", "dev", imq_lan, "protocol", "ip", "pref", "5", "handle", "0x14", "fw", "classid", "1:20");
-		eval("tc", "filter", "add", "dev", imq_lan, "protocol", "ip", "pref", "8", "handle", "0x1E", "fw", "classid", "1:30");
-		eval("tc", "filter", "add", "dev", imq_lan, "protocol", "ip", "pref", "9", "handle", "0x28", "fw", "classid", "1:40");
 	}
 
 }
