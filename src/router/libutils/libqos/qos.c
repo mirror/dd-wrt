@@ -857,18 +857,19 @@ void init_qos(const char *type, int up, int down, const char *wandev, int mtu, c
 
 	int ll = 1000000;
 
-	if (!strcmp(type, "htb")) {
+	if (!strcmp(type, "htb") && strcmp(wandev, "xx")) {
 		eval("tc", "qdisc", "add", "dev", wandev, "root", "handle", "1:", "htb", "default", "30");
 		init_htb_class(wandev, up, mtu);
+		init_qdisc(type, wandev, aqd, mtu, up, 0);
+		init_filter(wandev);
 	}
-	if (!strcmp(type, "hfsc")) {
+	if (!strcmp(type, "hfsc") && strcmp(wandev, "xx")) {
 
 		eval("tc", "qdisc", "add", "dev", wandev, "root", "handle", "1:", "hfsc", "default", "30");
 		init_hfsc_class(wandev, up);
+		init_qdisc(type, wandev, aqd, mtu, up, 0);
+		init_filter(wandev);
 	}
-
-	init_qdisc(type, wandev, aqd, mtu, up, 0);
-	init_filter(wandev);
 
 	if (down != 0) {
 		eval("ip", "link", "set", imq_wan, "up");
@@ -876,7 +877,7 @@ void init_qos(const char *type, int up, int down, const char *wandev, int mtu, c
 		if (!strcmp(type, "htb")) {
 			eval("tc", "qdisc", "add", "dev", imq_wan, "root", "handle", "1:", "htb", "default", "30");
 			init_htb_class(imq_wan, down, mtu);
-			init_qdisc(type, imq_wan, aqd, mtu, up, 1); // force 5ms for PIE on imq_wan
+			init_qdisc(type, imq_wan, aqd, mtu, up, 1);	// force 5ms for PIE on imq_wan
 
 		}
 		if (!strcmp(type, "hfsc")) {
