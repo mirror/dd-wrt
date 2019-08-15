@@ -57,6 +57,8 @@ extern char *nvram_safe_get(const char *name);
 
 extern int nvram_exists(const char *name);
 
+extern int nvram_empty(const char *name);
+
 extern int nvram_nexists(const char *fmt, ...);
 
 extern void nvram_safe_unset(const char *name);
