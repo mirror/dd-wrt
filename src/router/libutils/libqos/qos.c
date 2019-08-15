@@ -772,7 +772,7 @@ static void add_pie(const char *dev, int handle, const char *aqd, int ms5, const
 		eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd, ECN);
 }
 
-static void init_qdisc(const char *type, const char *dev, const char *aqd, int mtu, int up, int ms5)
+static void init_qdisc(const char *type, const char *wandev, const char *dev, const char *aqd, int mtu, int up, int ms5)
 {
 	char *TGT = NULL;
 	char *MS = NULL;
@@ -782,7 +782,7 @@ static void init_qdisc(const char *type, const char *dev, const char *aqd, int m
 		MS = "5ms";
 	}
 
-	if (strcmp(dev, "xx") && up < 2000) {
+	if (strcmp(wandev, "xx") && up < 2000) {
 		TGT = "target";
 		MS = "20ms";
 		ECN = "noecn";
@@ -860,14 +860,14 @@ void init_qos(const char *type, int up, int down, const char *wandev, int mtu, c
 	if (!strcmp(type, "htb") && strcmp(wandev, "xx")) {
 		eval("tc", "qdisc", "add", "dev", wandev, "root", "handle", "1:", "htb", "default", "30");
 		init_htb_class(wandev, up, mtu);
-		init_qdisc(type, wandev, aqd, mtu, up, 0);
+		init_qdisc(type, wandev, wandev, aqd, mtu, up, 0);
 		init_filter(wandev);
 	}
 	if (!strcmp(type, "hfsc") && strcmp(wandev, "xx")) {
 
 		eval("tc", "qdisc", "add", "dev", wandev, "root", "handle", "1:", "hfsc", "default", "30");
 		init_hfsc_class(wandev, up);
-		init_qdisc(type, wandev, aqd, mtu, up, 0);
+		init_qdisc(type, wandev, wandev, aqd, mtu, up, 0);
 		init_filter(wandev);
 	}
 
@@ -877,13 +877,13 @@ void init_qos(const char *type, int up, int down, const char *wandev, int mtu, c
 		if (!strcmp(type, "htb")) {
 			eval("tc", "qdisc", "add", "dev", imq_wan, "root", "handle", "1:", "htb", "default", "30");
 			init_htb_class(imq_wan, down, mtu);
-			init_qdisc(type, imq_wan, aqd, mtu, up, 1);	// force 5ms for PIE on imq_wan
+			init_qdisc(type, imq_wan, wandev, aqd, mtu, up, 1);	// force 5ms for PIE on imq_wan
 
 		}
 		if (!strcmp(type, "hfsc")) {
 			eval("tc", "qdisc", "add", "dev", imq_wan, "root", "handle", "1:", "hfsc", "default", "30");
 			init_hfsc_class(imq_wan, down);
-			init_qdisc(type, imq_wan, aqd, mtu, up, 0);
+			init_qdisc(type, imq_wan, wandev, aqd, mtu, up, 0);
 		}
 		init_filter(imq_wan);
 
@@ -899,7 +899,7 @@ void init_qos(const char *type, int up, int down, const char *wandev, int mtu, c
 			eval("tc", "qdisc", "add", "dev", imq_lan, "root", "handle", "1:", "hfsc", "default", "30");
 			init_hfsc_class(imq_lan, ll);
 		}
-		init_qdisc(type, imq_lan, aqd, mtu, up, 0);
+		init_qdisc(type, imq_lan, wandev, aqd, mtu, up, 0);
 
 		init_filter(imq_lan);
 
