@@ -1006,9 +1006,8 @@ static int svqos_iptables(void)
 void start_wshaper(void)
 {
 //      int ret = 0;
-	char *dl_val;
-	char *ul_val;
-	char mtu_val[32];
+	int dl;
+	int ul;
 
 	char *wshaper_dev;
 	char *wan_dev;
@@ -1043,13 +1042,12 @@ void start_wshaper(void)
 
 	writeint("/sys/fast_classifier/skip_to_bridge_ingress", 1);
 
-	if ((dl_val = nvram_safe_get("wshaper_downlink")) == NULL && atoi(dl_val) > 0)
-		return;
-	if ((ul_val = nvram_safe_get("wshaper_uplink")) == NULL && atoi(ul_val) > 0)
+	dl = nvram_geti("wshaper_downlink");
+	ul = nvram_geti("wshaper_uplink");
+	if (ul < 0 || dl < 0)
 		return;
 
-	int mtu_vali = get_mtu_val();
-	sprintf(mtu_val, "%d", mtu_vali);
+	int mtu = get_mtu_val();
 #ifdef HAVE_SVQOS
 	aqd = nvram_safe_get("svqos_aqd");
 
@@ -1097,13 +1095,13 @@ void start_wshaper(void)
 
 	if (!strcmp(wshaper_dev, "WAN")) {
 		eval("ifconfig", "imq1", "down");
-		init_qos(nvram_matchi("qos_type",0) ? "htb":"hfsc", atoi(ul_val), atoi(dl_val), wan_dev, mtu_val, "imq0", aqd, "0");
+		init_qos(nvram_matchi("qos_type", 0) ? "htb" : "hfsc", ul, dl, wan_dev, mtu, "imq0", aqd, "0");
 	} else {
 		eval("ifconfig", "imq1", "down");
 		eval("ifconfig", "imq1", "mtu", "1500");
 		eval("ifconfig", "imq1", "txqueuelen", "30");
 		eval("ifconfig", "imq1", "up");
-		init_qos(nvram_matchi("qos_type",0) ? "htb":"hfsc", atoi(ul_val), atoi(dl_val), wan_dev, mtu_val, "imq0", aqd, "imq1");
+		init_qos(nvram_matchi("qos_type", 0) ? "htb" : "hfsc", ul, dl, wan_dev, mtu, "imq0", aqd, "imq1");
 	}
 	eval("ifconfig", "imq0", "down");
 	eval("ifconfig", "imq1", "down");
