@@ -819,6 +819,7 @@ static void init_qdisc(char *type, char *dev, char *aqd, int mtu, int up, int ms
 		add_cake(dev, 40, aqd);
 	}
 	if (!strcmp(aqd, "pie")) {
+		/* for imq_wan and htb only 5ms is enforced. i dont know why. i just took it from the original script */
 		if (ms5 || !strcmp(type, "hfsc"))
 			ECN = "ecn";
 		add_pie(dev, 100, aqd, ms5, ECN);
@@ -874,13 +875,12 @@ void init_qos(char *type, int up, int down, char *wandev, int mtu, char *imq_wan
 	init_filter(wandev);
 
 	if (down != 0) {
-
 		eval("ip", "link", "set", imq_wan, "up");
 
 		if (!strcmp(type, "htb")) {
 			eval("tc", "qdisc", "add", "dev", imq_wan, "root", "handle", "1:", "htb", "default", "30");
 			init_htb_class(imq_wan, down, mtu);
-			init_qdisc(type, imq_wan, aqd, mtu, up, 1);
+			init_qdisc(type, imq_wan, aqd, mtu, up, 1); // force 5ms for PIE on imq_wan
 
 		}
 		if (!strcmp(type, "hfsc")) {
