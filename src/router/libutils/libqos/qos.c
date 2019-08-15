@@ -836,11 +836,11 @@ void init_qos(char *type, int up, int down, char *wandev, int mtu, char *imq_wan
 		}
 		if (!strcmp(aqd, "pie")) {
 
-			eval("tc", "qdisc", "add", "dev", imq_wan, "parent", "1:100", "handle", "100:", aqd, "target", "5 ms", "ecn");
-			eval("tc", "qdisc", "add", "dev", imq_wan, "parent", "1:10", "handle", "10:", aqd, "target", "5 ms", "ecn");
-			eval("tc", "qdisc", "add", "dev", imq_wan, "parent", "1:20", "handle", "20:", aqd, "target", "5 ms", "ecn");
-			eval("tc", "qdisc", "add", "dev", imq_wan, "parent", "1:30", "handle", "30:", aqd, "target", "5 ms", "ecn");
-			eval("tc", "qdisc", "add", "dev", imq_wan, "parent", "1:40", "handle", "40:", aqd, "target", "5 ms", "ecn");
+			eval("tc", "qdisc", "add", "dev", imq_wan, "parent", "1:100", "handle", "100:", aqd, "target", "5ms", "ecn");
+			eval("tc", "qdisc", "add", "dev", imq_wan, "parent", "1:10", "handle", "10:", aqd, "target", "5ms", "ecn");
+			eval("tc", "qdisc", "add", "dev", imq_wan, "parent", "1:20", "handle", "20:", aqd, "target", "5ms", "ecn");
+			eval("tc", "qdisc", "add", "dev", imq_wan, "parent", "1:30", "handle", "30:", aqd, "target", "5ms", "ecn");
+			eval("tc", "qdisc", "add", "dev", imq_wan, "parent", "1:40", "handle", "40:", aqd, "target", "5ms", "ecn");
 		}
 
 		eval("tc", "filter", "add", "dev", imq_wan, "protocol", "ip", "pref", "1", "handle", "0x64", "fw", "classid", "1:100");
