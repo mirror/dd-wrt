@@ -656,7 +656,7 @@ void add_userip(char *ip, int base, int uprate, int downrate, int lanrate)
 }
 #endif
 
-void deinit_qos(char *wandev, char *imq_wan, char *imq_lan)
+void deinit_qos(const char *wandev, const char *imq_wan, const char *imq_lan)
 {
 	eval("tc", "qdisc", "del", "dev", wandev, "root");
 	eval("tc", "qdisc", "del", "dev", imq_wan, "root");
@@ -665,19 +665,19 @@ void deinit_qos(char *wandev, char *imq_wan, char *imq_lan)
 	eval("ip", "link", "set", imq_lan, "down");
 }
 
-static char *math(char *buf, int val, char *ext)
+static const char *math(char *buf, int val, const char *ext)
 {
 	sprintf(buf, "%d%s", val, ext);
 	return buf;
 }
 
-static void add_hfsc_class(char *dev, char *parent, char *classid, int rate, int limit)
+static void add_hfsc_class(const char *dev, const char *parent, const char *classid, int rate, int limit)
 {
 	char buf[32];
 	eval("tc", "class", "add", "dev", dev, "parent", parent, "classid", classid, "hfsc", "sc", "rate", math(buf, rate, "kbit"), "ul", "rate", math(buf, limit, "kbit"));
 }
 
-static void add_htb_class(char *dev, char *parent, char *classid, int rate, int limit, int mtu, int p)
+static void add_htb_class(const char *dev, const char *parent, const char *classid, int rate, int limit, int mtu, int p)
 {
 	char buf[32];
 	char qmtu[32];
@@ -690,7 +690,7 @@ static void add_htb_class(char *dev, char *parent, char *classid, int rate, int 
 		eval("tc", "class", "add", "dev", dev, "parent", parent, "classid", classid, "htb", "rate", math(buf, rate, "kbit"), "ceil", math(buf, limit, "kbit"), "quantum", qmtu);
 }
 
-static void init_htb_class(char *dev, int rate, int mtu)
+static void init_htb_class(const char *dev, int rate, int mtu)
 {
 	add_htb_class(dev, "1:", "1:1", rate, rate, mtu, -1);
 	add_htb_class(dev, "1:1", "1:2", 75 * rate / 100, rate, mtu, -1);
@@ -705,7 +705,7 @@ static void init_htb_class(char *dev, int rate, int mtu)
 	add_htb_class(dev, "1:6", "1:40", 5 * rate / 100, rate, mtu, 7);
 }
 
-static void init_hfsc_class(char *dev, int rate)
+static void init_hfsc_class(const char *dev, int rate)
 {
 	add_hfsc_class(dev, "1:", "1:1", rate, rate);
 	add_hfsc_class(dev, "1:1", "1:2", 75 * rate / 100, rate);
@@ -721,7 +721,7 @@ static void init_hfsc_class(char *dev, int rate)
 
 }
 
-static void add_sfq(char *dev, int handle, int mtu)
+static void add_sfq(const char *dev, int handle, int mtu)
 {
 	char qmtu[32];
 	sprintf(qmtu, "%d", mtu);
@@ -733,7 +733,7 @@ static void add_sfq(char *dev, int handle, int mtu)
 
 }
 
-static void add_codel(char *dev, int handle, char *aqd, char *TGT, char *MS, char *ECN)
+static void add_codel(const char *dev, int handle, const char *aqd, const char *TGT, const char *MS, const char *ECN)
 {
 	char p[32];
 	char h[32];
@@ -742,7 +742,7 @@ static void add_codel(char *dev, int handle, char *aqd, char *TGT, char *MS, cha
 	eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd, TGT, MS, ECN);
 }
 
-static void add_fq_codel(char *dev, int handle, char *aqd)
+static void add_fq_codel(const char *dev, int handle, const char *aqd)
 {
 	char p[32];
 	char h[32];
@@ -751,7 +751,7 @@ static void add_fq_codel(char *dev, int handle, char *aqd)
 	eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd);
 }
 
-static void add_cake(char *dev, int handle, char *aqd)
+static void add_cake(const char *dev, int handle, const char *aqd)
 {
 	char p[32];
 	char h[32];
@@ -760,7 +760,7 @@ static void add_cake(char *dev, int handle, char *aqd)
 	eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd, "unlimited", "ethernet", "besteffort", "noatm", "raw", "internet", "dual-srchost", "ack-filter", "nat");
 }
 
-static void add_pie(char *dev, int handle, char *aqd, int ms5, char *ECN)
+static void add_pie(const char *dev, int handle, const char *aqd, int ms5, const char *ECN)
 {
 	char p[32];
 	char h[32];
@@ -772,7 +772,7 @@ static void add_pie(char *dev, int handle, char *aqd, int ms5, char *ECN)
 		eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd, ECN);
 }
 
-static void init_qdisc(char *type, char *dev, char *aqd, int mtu, int up, int ms5)
+static void init_qdisc(const char *type, const char *dev, const char *aqd, int mtu, int up, int ms5)
 {
 	char qmtu[32];
 	sprintf(qmtu, "%d", mtu);
@@ -831,7 +831,7 @@ static void init_qdisc(char *type, char *dev, char *aqd, int mtu, int up, int ms
 
 }
 
-static void add_filter(char *dev, int pref, int handle, int classid)
+static void add_filter(const char *dev, int pref, int handle, int classid)
 {
 
 	char p[32];
@@ -844,7 +844,7 @@ static void add_filter(char *dev, int pref, int handle, int classid)
 
 }
 
-static void init_filter(char *dev)
+static void init_filter(const char *dev)
 {
 	add_filter(dev, 1, 0x64, 100);
 	add_filter(dev, 3, 0x0A, 10);
@@ -853,7 +853,7 @@ static void init_filter(char *dev)
 	add_filter(dev, 9, 0x28, 40);
 }
 
-void init_qos(char *type, int up, int down, char *wandev, int mtu, char *imq_wan, char *aqd, char *imq_lan)
+void init_qos(const char *type, int up, int down, const char *wandev, int mtu, const char *imq_wan, const char *aqd, const char *imq_lan)
 {
 	deinit_qos(wandev, imq_wan, imq_lan);
 	char qmtu[32];
