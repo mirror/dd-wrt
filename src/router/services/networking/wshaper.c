@@ -1097,13 +1097,13 @@ void start_wshaper(void)
 
 	if (!strcmp(wshaper_dev, "WAN")) {
 		eval("ifconfig", "imq1", "down");
-		init_qos(atoi(ul_val), atoi(dl_val), wan_dev, mtu_val, "imq0", aqd, "0", nvram_matchi("qos_type",0) ? "htb":"hfsc");
+		init_qos(nvram_matchi("qos_type",0) ? "htb":"hfsc", atoi(ul_val), atoi(dl_val), wan_dev, mtu_val, "imq0", aqd, "0");
 	} else {
 		eval("ifconfig", "imq1", "down");
 		eval("ifconfig", "imq1", "mtu", "1500");
 		eval("ifconfig", "imq1", "txqueuelen", "30");
 		eval("ifconfig", "imq1", "up");
-		init_qos(atoi(ul_val), atoi(dl_val), wan_dev, mtu_val, "imq0", aqd, "imq1", nvram_matchi("qos_type",0) ? "htb": "hfsc");
+		init_qos(nvram_matchi("qos_type",0) ? "htb":"hfsc", atoi(ul_val), atoi(dl_val), wan_dev, mtu_val, "imq0", aqd, "imq1");
 	}
 	eval("ifconfig", "imq0", "down");
 	eval("ifconfig", "imq1", "down");
