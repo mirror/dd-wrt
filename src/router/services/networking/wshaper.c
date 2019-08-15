@@ -1042,10 +1042,10 @@ void start_wshaper(void)
 
 	writeint("/sys/fast_classifier/skip_to_bridge_ingress", 1);
 
+	if (nvram_empty("wshaper_downlink") || nvram_empty("wshaper_uplink"))
+		return;
 	dl = nvram_geti("wshaper_downlink");
 	ul = nvram_geti("wshaper_uplink");
-	if (ul < 0 || dl < 0)
-		return;
 
 	int mtu = get_mtu_val();
 #ifdef HAVE_SVQOS
