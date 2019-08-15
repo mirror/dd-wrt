@@ -182,7 +182,7 @@ void start_sysinit(void)
 	}
 
 	nvram_seti("sw_wancpuport", 5);
-	nvram_seti("sw_lancpuport", 6´);
+	nvram_seti("sw_lancpuport", 6);
 	nvram_seti("sw_wan", 4);
 	nvram_seti("sw_lan1", 0);
 	nvram_seti("sw_lan2", 1);
