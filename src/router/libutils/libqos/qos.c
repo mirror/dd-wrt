@@ -733,13 +733,17 @@ static void add_sfq(const char *dev, int handle, int mtu)
 
 }
 
-static void add_codel(const char *dev, int handle, const char *aqd, const char *TGT, const char *MS, const char *ECN)
+static void add_codel(const char *dev, int handle, const char *aqd, int rtt, const char *ECN)
 {
 	char p[32];
 	char h[32];
 	sprintf(p, "1:%d", handle);
 	sprintf(h, "%d:", handle);
-	eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd, TGT, MS, ECN);
+	sprintf(r, "%dms", rtt);
+	if (rtt != -1)
+		eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd, "target", r, ECN);
+	else
+		eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd, TGT, MS, ECN);
 }
 
 static void add_fq_codel(const char *dev, int handle, const char *aqd)
@@ -751,13 +755,18 @@ static void add_fq_codel(const char *dev, int handle, const char *aqd)
 	eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd);
 }
 
-static void add_cake(const char *dev, int handle, const char *aqd)
+static void add_cake(const char *dev, int handle, const char *aqd, int rtt)
 {
 	char p[32];
 	char h[32];
+	char r[32];
 	sprintf(p, "1:%d", handle);
 	sprintf(h, "%d:", handle);
-	eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd, "unlimited", "ethernet", "besteffort", "noatm", "raw", "internet", "dual-srchost", "ack-filter", "nat");
+	sprintf(r, "%dms", rtt);
+	if (rtt != -1)
+		eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd, "unlimited", "ethernet", "besteffort", "noatm", "raw", "internet", "dual-srchost", "ack-filter", "nat", "rtt", r);
+	else
+		eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd, "unlimited", "ethernet", "besteffort", "noatm", "raw", "internet", "dual-srchost", "ack-filter", "nat");
 }
 
 static void add_pie(const char *dev, int handle, const char *aqd, int ms5, const char *ECN)
@@ -777,14 +786,15 @@ static void init_qdisc(const char *type, const char *wandev, const char *dev, co
 	char *TGT = NULL;
 	char *MS = NULL;
 	char *ECN = NULL;
+	int rtt = -1;
+	int rtt_cake = -1;
 	if (!strcmp(type, "hfsc")) {
-		TGT = "target";
-		MS = "5ms";
+		rtt = 5;
 	}
 
 	if (strcmp(wandev, "xx") && up < 2000) {
-		TGT = "target";
-		MS = "20ms";
+		rtt = 20;
+		rtt_cake = 20;
 		ECN = "noecn";
 	}
 
@@ -796,11 +806,11 @@ static void init_qdisc(const char *type, const char *wandev, const char *dev, co
 		add_sfq(dev, 40, mtu);
 	}
 	if (!strcmp(aqd, "codel")) {
-		add_codel(dev, 100, aqd, TGT, MS, ECN);
-		add_codel(dev, 10, aqd, TGT, MS, ECN);
-		add_codel(dev, 20, aqd, TGT, MS, ECN);
-		add_codel(dev, 30, aqd, TGT, MS, ECN);
-		add_codel(dev, 40, aqd, TGT, MS, ECN);
+		add_codel(dev, 100, aqd, rtt, ECN);
+		add_codel(dev, 10, aqd, rtt, ECN);
+		add_codel(dev, 20, aqd, rtt, ECN);
+		add_codel(dev, 30, aqd, rtt, ECN);
+		add_codel(dev, 40, aqd, rtt, ECN);
 	}
 	if (!strcmp(aqd, "fq_codel")) {
 		add_fq_codel(dev, 100, aqd);
@@ -810,11 +820,11 @@ static void init_qdisc(const char *type, const char *wandev, const char *dev, co
 		add_fq_codel(dev, 40, aqd);
 	}
 	if (!strcmp(aqd, "cake")) {
-		add_cake(dev, 100, aqd);
-		add_cake(dev, 10, aqd);
-		add_cake(dev, 20, aqd);
-		add_cake(dev, 30, aqd);
-		add_cake(dev, 40, aqd);
+		add_cake(dev, 100, aqd, rtt_cake);
+		add_cake(dev, 10, aqd, rtt_cake);
+		add_cake(dev, 20, aqd, rtt_cake);
+		add_cake(dev, 30, aqd, rtt_cake);
+		add_cake(dev, 40, aqd, rtt_cake);
 	}
 	if (!strcmp(aqd, "pie")) {
 		/* for imq_wan and htb only 5ms is enforced. i dont know why. i just took it from the original script */
