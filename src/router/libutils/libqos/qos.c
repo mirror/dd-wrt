@@ -743,7 +743,7 @@ static void add_codel(const char *dev, int handle, const char *aqd, int rtt, con
 	if (rtt != -1)
 		eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd, "target", r, ECN);
 	else
-		eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd, TGT, MS, ECN);
+		eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd, ECN);
 }
 
 static void add_fq_codel(const char *dev, int handle, const char *aqd)
@@ -784,8 +784,6 @@ static void add_pie(const char *dev, int handle, const char *aqd, int ms5, const
 static void init_qdisc(const char *type, const char *wandev, const char *dev, const char *aqd, int mtu, int up, int ms5)
 {
 	char *TGT = NULL;
-	char *MS = NULL;
-	char *ECN = NULL;
 	int rtt = -1;
 	int rtt_cake = -1;
 	if (!strcmp(type, "hfsc")) {
