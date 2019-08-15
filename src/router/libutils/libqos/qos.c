@@ -689,7 +689,7 @@ void init_qos(char *type, int up, int down, char *wandev, int mtu, char *imq_wan
 
 	if (up < 2000) {
 		TGT = "target";
-		MS = "20 ms";
+		MS = "20ms";
 		ECN = "noecn";
 	}
 
