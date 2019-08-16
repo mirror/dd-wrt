@@ -76,11 +76,7 @@ extern char *get_NFServiceMark(char *service, uint32 mark);
 extern char *get_tcfmark(uint32 mark);
 #endif
 
-#ifdef HAVE_AQOS
 extern void add_client_classes(unsigned int base, unsigned int uprate, unsigned int downrate, unsigned int lanrate, unsigned int level);
-#else
-extern void add_client_classes(unsigned int base, unsigned int level);
-#endif
 
 static void svqos_reset_ports(void)
 {
@@ -224,7 +220,6 @@ static int svqos_set_ports(void)
 	return 0;
 }
 
-#ifdef HAVE_AQOS
 #ifdef HAVE_OPENVPN
 static inline int is_in_bridge(char *interface)
 {
@@ -554,7 +549,6 @@ static void aqos_tables(void)
 	fclose(outips);
 	fclose(outmacs);
 }
-#endif
 
 static int svqos_iptables(void)
 {
@@ -664,7 +658,6 @@ static int svqos_iptables(void)
 	}
 
 	/* add openvpn filter rules */
-#ifdef HAVE_AQOS
 #ifdef HAVE_OPENVPN
 	if (nvram_invmatchi("openvpn_enable", 0) || nvram_invmatchi("openvpncl_enable", 0)) {
 		char iflist[256];
@@ -764,100 +757,12 @@ static int svqos_iptables(void)
 
 	aqos_tables();
 
-#endif
-
 	if (wan_dev && strcmp(wan_dev, "wwan0")) {
 		if (wanactive(get_wan_ipaddr()) && (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off"))) {
 			eval("iptables", "-t", "mangle", "-A", "PREROUTING", "-i", "!", get_wan_face(), "-d", get_wan_ipaddr(), "-j", "MARK", "--set-mark", get_NFServiceMark("FORWARD", 1));
 			eval("iptables", "-t", "mangle", "-A", "PREROUTING", "-j", "CONNMARK", "--save-mark");
 		}
 	}
-#ifndef HAVE_AQOS
-
-	char *qos_mac = nvram_safe_get("svqos_macs");
-	char *qos_ipaddr = nvram_safe_get("svqos_ips");
-	char *qos_devs = nvram_safe_get("svqos_devs");
-
-	char srvname[32], srvtype[32], srvdata[32];
-	int srvlevel;
-
-	int base = 210;
-
-	/*
-	 *      mac format is "mac level | mac level |" ..etc 
-	 */
-	do {
-		if (sscanf(qos_mac, "%31s %d |", data, &level) < 2)
-			break;
-
-		add_client_classes(base, level);
-
-		qos_svcs = nvram_safe_get("svqos_svcs");
-		do {
-			if (sscanf(qos_svcs, "%31s %31s %31s %d ", srvname, srvtype, srvdata, &srvlevel) < 4)
-				break;
-
-			add_client_mac_srvfilter(srvname, srvtype, srvdata, srvlevel, base, data);
-		} while ((qos_svcs = strpbrk(++qos_svcs, "|")) && qos_svcs++);
-
-		// not service-prioritized, then default class          
-		eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-m", "mark", "--mark", nullmask, "-m", "mac", "--mac-source", data, "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
-
-		base += 10;
-	}
-	while ((qos_mac = strpbrk(++qos_mac, "|")) && qos_mac++);
-
-	/*
-	 * ipaddr format is "ipaddr level | ipaddr level |" ..etc 
-	 */
-	do {
-
-		if (sscanf(qos_ipaddr, "%31s %d |", data, &level) < 2)
-			break;
-
-		add_client_classes(base, level);
-
-		qos_svcs = nvram_safe_get("svqos_svcs");
-		do {
-			if (sscanf(qos_svcs, "%31s %31s %31s %d ", srvname, srvtype, srvdata, &srvlevel) < 4)
-				break;
-
-			add_client_ip_srvfilter(srvname, srvtype, srvdata, srvlevel, base, data);
-		} while ((qos_svcs = strpbrk(++qos_svcs, "|")) && qos_svcs++);
-
-		// not service-prioritized, then default class          
-		eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-s", data, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
-		eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-d", data, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
-		eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-s", data, "-m", "mark", "--mark", "0", "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
-		eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-d", data, "-m", "mark", "--mark", "0", "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
-
-		base += 10;
-	}
-	while ((qos_ipaddr = strpbrk(++qos_ipaddr, "|")) && qos_ipaddr++);
-
-	do {
-
-		if (sscanf(qos_devs, "%31s %d |", data, &level) < 2)
-			break;
-
-		add_client_classes(base, level);
-
-		svcs = nvram_safe_get("svqos_svcs");
-		do {
-			if (sscanf(svcs, "%31s %31s %31s %d ", srvname, srvtype, srvdata, &srvlevel) < 4)
-				break;
-
-			add_client_ip_srvfilter(srvname, srvtype, srvdata, srvlevel, base, data);
-		} while ((svcs = strpbrk(++svcs, "|")) && svcs++);
-		// not service-prioritized, then default class          
-		eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-o", data, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
-		eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-i", data, "-m", "mark", "--mark", "0", "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
-
-		base += 10;
-	}
-	while ((qos_devs = strpbrk(++qos_devs, "|")) && qos_devs++);
-#endif
-
 	// if OSPF is active put it into the Express bucket for outgoing QoS
 	if (nvram_match("wk_mode", "ospf"))
 		eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-p", "ospf", "-j", "MARK", "--set-mark", nullmask);
