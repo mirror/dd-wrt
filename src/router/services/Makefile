@@ -1648,7 +1648,7 @@ endif
 ifeq ($(CONFIG_NET_SCH_PIE),y)
 CFLAGS_EXTRA += -DHAVE_PIE
 endif
-ifeq ($(HAVE_CAKE),y)
+ifeq ($(CONFIG_CAKE),y)
 CFLAGS_EXTRA += -DHAVE_CAKE
 endif
 ifeq ($(CONFIG_NET_SCH_PIE),m)
