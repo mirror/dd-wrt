@@ -405,7 +405,6 @@ static void add_tc_hfsc(char *dev, int parent, int class, int uprate, int uplimi
 	sysprintf("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", dev, parent, class, uprate, uplimit);
 }
 
-#ifdef HAVE_AQOS
 void add_client_classes(unsigned int base, unsigned int uprate, unsigned int downrate, unsigned int lanrate, unsigned int level)
 {
 	char *wan_dev = get_wan_face();
@@ -428,23 +427,6 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 
 	if (lanrate < 1)
 		lanrate = lanlimit;
-
-#else
-void add_client_classes(unsigned int base, unsigned int level)
-{
-	char *wan_dev = get_wan_face();
-
-	unsigned int uplimit = nvram_geti("wshaper_uplink");
-	unsigned int downlimit = nvram_geti("wshaper_downlink");
-	unsigned int lanlimit = 1000000;
-	unsigned int prio;
-	unsigned int parent;
-
-	unsigned int quantum = get_mtu_val() + 14;
-
-	unsigned int uprate = 0, downrate = 0;
-	int lanrate = lanlimit;
-#endif
 
 	char *aqd = nvram_safe_get("svqos_aqd");
 
@@ -585,8 +567,6 @@ void add_client_classes(unsigned int base, unsigned int level)
 #endif
 }
 
-#ifdef HAVE_AQOS
-
 void add_usermac(char *mac, int base, int uprate, int downrate, int lanrate)
 {
 
@@ -654,7 +634,6 @@ void add_userip(char *ip, int base, int uprate, int downrate, int lanrate)
 	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "CONNMARK", "--save");
 	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "RETURN");
 }
-#endif
 
 void deinit_qos(const char *wandev, const char *imq_wan, const char *imq_lan)
 {
