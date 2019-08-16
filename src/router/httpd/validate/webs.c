@@ -1502,11 +1502,7 @@ void qos_add_dev(webs_t wp)
 	/*
 	 * if this ip exists, return an error 
 	 */
-#ifdef HAVE_AQOS
 	asprintf(&new_ip, "%s %s 100 100 0 0 none |", svqos_ips, add_dev);
-#else
-	asprintf(&new_ip, "%s %s 30 |", svqos_ips, add_dev);
-#endif
 
 	nvram_set("svqos_devs", new_ip);
 	free(new_ip);
@@ -1537,11 +1533,7 @@ void qos_add_ip(webs_t wp)
 	 */
 	if (strstr(svqos_ips, add_ip))
 		return;
-#ifdef HAVE_AQOS
 	asprintf(&new_ip, "%s %s 100 100 0 0 |", svqos_ips, add_ip);
-#else
-	asprintf(&new_ip, "%s %s 30 |", svqos_ips, add_ip);
-#endif
 
 	nvram_set("svqos_ips", new_ip);
 	free(new_ip);
@@ -1573,11 +1565,7 @@ void qos_add_mac(webs_t wp)
 	 */
 	if (strstr(svqos_macs, add_mac))
 		return;
-#ifdef HAVE_AQOS
 	asprintf(&new_mac, "%s %s 100 100 user 0 0 |", svqos_macs, add_mac);
-#else
-	asprintf(&new_mac, "%s %s 30 |", svqos_macs, add_mac);
-#endif
 
 	nvram_set("svqos_macs", new_mac);
 	free(new_mac);
@@ -2043,22 +2031,6 @@ void qos_save(webs_t wp)
 		if (!data)
 			continue;
 
-#ifndef HAVE_AQOS
-		snprintf(field, sizeof(field), "svqos_devprio%d", i);
-		level = websGetVar(wp, field, NULL);
-		if (!level)
-			continue;
-		if (*(svqos_var)) {
-			asprintf(&copy, sizeof(copy), "%s %s %s |", svqos_var, data, level);
-			strcpy(svqos_var, copy);
-			free(copy);
-		} else {
-			char *copy;
-			asprintf(&copy, "%s %s |", data, level);
-			strcpy(svqos_var, copy);
-			free(copy);
-		}
-#else
 		snprintf(field, sizeof(field), "svqos_devprio%d", i);
 		prio = websGetVar(wp, field, NULL);
 
@@ -2089,8 +2061,6 @@ void qos_save(webs_t wp)
 		} else
 			sprintf(svqos_var, "%s %s %s %s %s %s |", data, level, level2, lanlevel, prio, proto);
 
-#endif
-
 	}
 
 	nvram_set("svqos_devs", svqos_var);
@@ -2112,16 +2082,6 @@ void qos_save(webs_t wp)
 		if (!data)
 			continue;
 
-#ifndef HAVE_AQOS
-		snprintf(field, sizeof(field), "svqos_ipprio%d", i);
-		level = websGetVar(wp, field, NULL);
-		if (!level)
-			continue;
-		if (*(svqos_var))
-			sprintf(svqos_var, "%s %s %s |", svqos_var, data, level);
-		else
-			sprintf(svqos_var, "%s %s |", data, level);
-#else
 		snprintf(field, sizeof(field), "svqos_ipprio%d", i);
 		prio = websGetVar(wp, field, NULL);
 		if (!prio)
@@ -2148,8 +2108,6 @@ void qos_save(webs_t wp)
 		} else
 			sprintf(svqos_var, "%s %s %s %s %s |", data, level, level2, lanlevel, prio);
 
-#endif
-
 	}
 
 	nvram_set("svqos_ips", svqos_var);
@@ -2171,17 +2129,6 @@ void qos_save(webs_t wp)
 		if (!data)
 			continue;
 
-#ifndef HAVE_AQOS
-		snprintf(field, sizeof(field), "svqos_macprio%d", i);
-		level = websGetVar(wp, field, NULL);
-		if (!level)
-			continue;
-
-		if (*(svqos_var))
-			sprintf(svqos_var, "%s %s %s |", svqos_var, data, level);
-		else
-			sprintf(svqos_var, "%s %s |", data, level);
-#else
 		snprintf(field, sizeof(field), "svqos_macprio%d", i);
 		prio = websGetVar(wp, field, NULL);
 		if (!prio)
@@ -2207,8 +2154,6 @@ void qos_save(webs_t wp)
 			free(tmp);
 		} else
 			sprintf(svqos_var, "%s %s %s user %s %s |", data, level, level2, lanlevel, prio);
-
-#endif
 
 	}
 
