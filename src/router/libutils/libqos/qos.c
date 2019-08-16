@@ -609,7 +609,7 @@ void add_userip(char *ip, int base, int uprate, int downrate, int lanrate)
 	eval("iptables", "-t", "mangle", "-D", "FILTER_IN", "-j", "CONNMARK", "--save");
 	eval("iptables", "-t", "mangle", "-D", "FILTER_IN", "-j", "RETURN");
 
-	eval("iptables", "-t", "mangle", "-D", "FILTER_OUT", "-j", "VPN_DSCP");
+//	eval("iptables", "-t", "mangle", "-D", "FILTER_OUT", "-j", "VPN_DSCP");
 	eval("iptables", "-t", "mangle", "-D", "FILTER_OUT", "-j", "CONNMARK", "--save");
 	eval("iptables", "-t", "mangle", "-D", "FILTER_OUT", "-j", "RETURN");
 
@@ -630,7 +630,7 @@ void add_userip(char *ip, int base, int uprate, int downrate, int lanrate)
 	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-j", "CONNMARK", "--save");
 	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-j", "RETURN");
 
-	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "VPN_DSCP");
+//	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "VPN_DSCP");
 	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "CONNMARK", "--save");
 	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "RETURN");
 }

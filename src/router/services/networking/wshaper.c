@@ -624,9 +624,9 @@ static int svqos_iptables(void)
 	eval("iptables", "-t", "mangle", "-D", "POSTROUTING", "-j", "FILTER_OUT");
 	eval("iptables", "-t", "mangle", "-I", "POSTROUTING", "-j", "FILTER_OUT");
 
-	insmod("xt_dscp");
-	insmod("xt_DSCP");
-	eval("iptables", "-t", "mangle", "-A", "POSTROUTING", "-m", "dscp", "--dscp", "!", "0", "-j", "DSCP", "--set-dscp", "0");
+//	insmod("xt_dscp");
+//	insmod("xt_DSCP");
+//	eval("iptables", "-t", "mangle", "-A", "POSTROUTING", "-m", "dscp", "--dscp", "!", "0", "-j", "DSCP", "--set-dscp", "0");
 
 	if (!strcmp(wshaper_dev, "WAN") && wan_dev != NULL) {
 		eval("iptables", "-t", "mangle", "-D", "INPUT", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
@@ -657,103 +657,103 @@ static int svqos_iptables(void)
 		}
 	}
 
-	/* add openvpn filter rules */
-#ifdef HAVE_OPENVPN
-	if (nvram_invmatchi("openvpn_enable", 0) || nvram_invmatchi("openvpncl_enable", 0)) {
-		char iflist[256];
-		char word[256];
-		char *next;
-		bool unbridged_tap = 0;
-
-		insmod("xt_dscp");
-		insmod("xt_DSCP");
-
-		eval("iptables", "-t", "mangle", "-F", "VPN_IN");
-		eval("iptables", "-t", "mangle", "-X", "VPN_IN");
-		eval("iptables", "-t", "mangle", "-N", "VPN_IN");
-		eval("iptables", "-t", "mangle", "-A", "VPN_IN", "-j", "CONNMARK", "--save-mark");
-
-		eval("iptables", "-t", "mangle", "-F", "VPN_OUT");
-		eval("iptables", "-t", "mangle", "-X", "VPN_OUT");
-		eval("iptables", "-t", "mangle", "-N", "VPN_OUT");
-
-		eval("iptables", "-t", "mangle", "-F", "VPN_DSCP");
-		eval("iptables", "-t", "mangle", "-X", "VPN_DSCP");
-		eval("iptables", "-t", "mangle", "-N", "VPN_DSCP");
-		eval("iptables", "-t", "mangle", "-A", "VPN_DSCP", "-m", "dscp", "--dscp", "10", "-j", "MARK", "--set-mark", qos_nfmark(100));
-		eval("iptables", "-t", "mangle", "-A", "VPN_DSCP", "-m", "dscp", "--dscp", "1", "-j", "MARK", "--set-mark", qos_nfmark(10));
-		eval("iptables", "-t", "mangle", "-A", "VPN_DSCP", "-m", "dscp", "--dscp", "2", "-j", "MARK", "--set-mark", qos_nfmark(20));
-		eval("iptables", "-t", "mangle", "-A", "VPN_DSCP", "-m", "dscp", "--dscp", "3", "-j", "MARK", "--set-mark", qos_nfmark(30));
-		eval("iptables", "-t", "mangle", "-A", "VPN_DSCP", "-m", "dscp", "--dscp", "4", "-j", "MARK", "--set-mark", qos_nfmark(40));
-		eval("iptables", "-t", "mangle", "-A", "VPN_DSCP", "-m", "dscp", "--dscp", "!", "0", "-j", "DSCP", "--set-dscp", "0");
-		eval("iptables", "-t", "mangle", "-A", "VPN_DSCP", "-j", "RETURN");
-
-		// look for present tun-devices
-		if (getifcount("tun")) {
-			eval("iptables", "-t", "mangle", "-A", "PREROUTING", "-i", "tun+", "-j", "VPN_IN");
-			eval("iptables", "-t", "mangle", "-A", "INPUT", "-i", "tun+", "-j", "IMQ", "--todev", "0");
-			eval("iptables", "-t", "mangle", "-A", "FORWARD", "-i", "tun+", "-j", "IMQ", "--todev", "0");
-			eval("iptables", "-t", "mangle", "-A", "POSTROUTING", "-o", "tun+", "-j", "VPN_OUT");
-		}
-		insmod("xt_physdev");
-		// look for present tap-devices
-		if (getifcount("tap")) {
-			writeprocsysnet("bridge/bridge-nf-call-arptables", "1");
-			writeprocsysnet("bridge/bridge-nf-call-ip6tables", "1");
-			writeprocsysnet("bridge/bridge-nf-call-iptables", "1");
-
-			insmod("ebtables");
-
-			getIfList(iflist, "tap");
-			foreach(word, iflist, next) {
-				if (is_in_bridge(word)) {
-					if (!is_mac80211(word))
-						eval("ifconfig", word, "down");
-					down_addIF(word);
-					eval("iptables", "-t", "mangle", "-A", "PREROUTING", "-m", "physdev", "--physdev-in", word, "-j", "VPN_IN");
-					eval("iptables", "-t", "mangle", "-A", "INPUT", "-m", "physdev", "--physdev-is-bridged", "--physdev-in", word, "-j", "IMQ", "--todev", "0");
-					eval("iptables", "-t", "mangle", "-A", "FORWARD", "-m", "physdev", "--physdev-in", word, "-j", "IMQ", "--todev", "0");
-					eval("iptables", "-t", "mangle", "-A", "POSTROUTING", "-m", "physdev", "--physdev-is-bridged", "--physdev-out", word, "-j", "VPN_OUT");
-				} else
-					unbridged_tap = 1;
-			}
-
-			if (unbridged_tap) {
-				eval("iptables", "-t", "mangle", "-A", "PREROUTING", "-i", "tap+", "-j", "VPN_IN");
-				eval("iptables", "-t", "mangle", "-A", "INPUT", "-i", "tap+", "-j", "IMQ", "--todev", "0");
-				eval("iptables", "-t", "mangle", "-A", "FORWARD", "-i", "tap+", "-j", "IMQ", "--todev", "0");
-				eval("iptables", "-t", "mangle", "-A", "POSTROUTING", "-o", "tap+", "-j", "VPN_OUT");
-			}
-		}
-		//system2("iptables -t mangle -A POSTROUTING -m dscp --dscp ! 0 -j DSCP --set-dscp 0");
-
-		char *qos_vpn = nvram_safe_get("svqos_vpns");
-		insmod("xt_dscp");
-		insmod("xt_DSCP");
-
-		/*
-		 *  vpn format is "interface level | interface level |" ..etc 
-		 */
-		do {
-			if (sscanf(qos_vpn, "%32s %d |", data, &level) < 2)
-				break;
-
-			/* incomming data */
-			eval("iptables", "-t", "mangle", "-A", "VPN_IN", "-i", data, "-j", "MARK", "--set-mark", qos_nfmark(level));
-			char s_level[32];
-			sprintf(s_level, "%d", level / 10);
-			/* outgoing data */
-			if (is_in_bridge(data)) {
-				if (!is_mac80211(data))
-					eval("ifconfig", data, "down");
-				down_addIF(data);
-				eval("iptables", "-t", "mangle", "-A", "VPN_OUT", "-m", "physdev", "--physdev-is-bridged", "--physdev-out", data, "-j", "DSCP", "--set-dscp", s_level);
-			} else
-				eval("iptables", "-t", "mangle", "-A", "VPN_OUT", "-o", data, "-j", "DSCP", "--set-dscp", s_level);
-
-		} while ((qos_vpn = strpbrk(++qos_vpn, "|")) && qos_vpn++);
-	}
-#endif
+//	/* add openvpn filter rules */
+//#ifdef HAVE_OPENVPN
+//	if (nvram_invmatchi("openvpn_enable", 0) || nvram_invmatchi("openvpncl_enable", 0)) {
+//		char iflist[256];
+//		char word[256];
+//		char *next;
+//		bool unbridged_tap = 0;
+//
+//		insmod("xt_dscp");
+//		insmod("xt_DSCP");
+//
+//		eval("iptables", "-t", "mangle", "-F", "VPN_IN");
+//		eval("iptables", "-t", "mangle", "-X", "VPN_IN");
+//		eval("iptables", "-t", "mangle", "-N", "VPN_IN");
+//		eval("iptables", "-t", "mangle", "-A", "VPN_IN", "-j", "CONNMARK", "--save-mark");
+//
+//		eval("iptables", "-t", "mangle", "-F", "VPN_OUT");
+//		eval("iptables", "-t", "mangle", "-X", "VPN_OUT");
+//		eval("iptables", "-t", "mangle", "-N", "VPN_OUT");
+//
+//		eval("iptables", "-t", "mangle", "-F", "VPN_DSCP");
+//		eval("iptables", "-t", "mangle", "-X", "VPN_DSCP");
+//		eval("iptables", "-t", "mangle", "-N", "VPN_DSCP");
+//		eval("iptables", "-t", "mangle", "-A", "VPN_DSCP", "-m", "dscp", "--dscp", "10", "-j", "MARK", "--set-mark", qos_nfmark(100));
+//		eval("iptables", "-t", "mangle", "-A", "VPN_DSCP", "-m", "dscp", "--dscp", "1", "-j", "MARK", "--set-mark", qos_nfmark(10));
+//		eval("iptables", "-t", "mangle", "-A", "VPN_DSCP", "-m", "dscp", "--dscp", "2", "-j", "MARK", "--set-mark", qos_nfmark(20));
+//		eval("iptables", "-t", "mangle", "-A", "VPN_DSCP", "-m", "dscp", "--dscp", "3", "-j", "MARK", "--set-mark", qos_nfmark(30));
+//		eval("iptables", "-t", "mangle", "-A", "VPN_DSCP", "-m", "dscp", "--dscp", "4", "-j", "MARK", "--set-mark", qos_nfmark(40));
+//		eval("iptables", "-t", "mangle", "-A", "VPN_DSCP", "-m", "dscp", "--dscp", "!", "0", "-j", "DSCP", "--set-dscp", "0");
+//		eval("iptables", "-t", "mangle", "-A", "VPN_DSCP", "-j", "RETURN");
+//
+//		// look for present tun-devices
+//		if (getifcount("tun")) {
+//			eval("iptables", "-t", "mangle", "-A", "PREROUTING", "-i", "tun+", "-j", "VPN_IN");
+//			eval("iptables", "-t", "mangle", "-A", "INPUT", "-i", "tun+", "-j", "IMQ", "--todev", "0");
+//			eval("iptables", "-t", "mangle", "-A", "FORWARD", "-i", "tun+", "-j", "IMQ", "--todev", "0");
+//			eval("iptables", "-t", "mangle", "-A", "POSTROUTING", "-o", "tun+", "-j", "VPN_OUT");
+//		}
+//		insmod("xt_physdev");
+//		// look for present tap-devices
+//		if (getifcount("tap")) {
+//			writeprocsysnet("bridge/bridge-nf-call-arptables", "1");
+//			writeprocsysnet("bridge/bridge-nf-call-ip6tables", "1");
+//			writeprocsysnet("bridge/bridge-nf-call-iptables", "1");
+//
+//			insmod("ebtables");
+//
+//			getIfList(iflist, "tap");
+//			foreach(word, iflist, next) {
+//				if (is_in_bridge(word)) {
+//					if (!is_mac80211(word))
+//						eval("ifconfig", word, "down");
+//					down_addIF(word);
+//					eval("iptables", "-t", "mangle", "-A", "PREROUTING", "-m", "physdev", "--physdev-in", word, "-j", "VPN_IN");
+//					eval("iptables", "-t", "mangle", "-A", "INPUT", "-m", "physdev", "--physdev-is-bridged", "--physdev-in", word, "-j", "IMQ", "--todev", "0");
+//					eval("iptables", "-t", "mangle", "-A", "FORWARD", "-m", "physdev", "--physdev-in", word, "-j", "IMQ", "--todev", "0");
+//					eval("iptables", "-t", "mangle", "-A", "POSTROUTING", "-m", "physdev", "--physdev-is-bridged", "--physdev-out", word, "-j", "VPN_OUT");
+//				} else
+//					unbridged_tap = 1;
+//			}
+//
+//			if (unbridged_tap) {
+//				eval("iptables", "-t", "mangle", "-A", "PREROUTING", "-i", "tap+", "-j", "VPN_IN");
+//				eval("iptables", "-t", "mangle", "-A", "INPUT", "-i", "tap+", "-j", "IMQ", "--todev", "0");
+//				eval("iptables", "-t", "mangle", "-A", "FORWARD", "-i", "tap+", "-j", "IMQ", "--todev", "0");
+//				eval("iptables", "-t", "mangle", "-A", "POSTROUTING", "-o", "tap+", "-j", "VPN_OUT");
+//			}
+//		}
+//		//system2("iptables -t mangle -A POSTROUTING -m dscp --dscp ! 0 -j DSCP --set-dscp 0");
+//
+//		char *qos_vpn = nvram_safe_get("svqos_vpns");
+//		insmod("xt_dscp");
+//		insmod("xt_DSCP");
+//
+//		/*
+//		 *  vpn format is "interface level | interface level |" ..etc 
+//		 */
+//		do {
+//			if (sscanf(qos_vpn, "%32s %d |", data, &level) < 2)
+//				break;
+//
+//			/* incomming data */
+//			eval("iptables", "-t", "mangle", "-A", "VPN_IN", "-i", data, "-j", "MARK", "--set-mark", qos_nfmark(level));
+//			char s_level[32];
+//			sprintf(s_level, "%d", level / 10);
+//			/* outgoing data */
+//			if (is_in_bridge(data)) {
+//				if (!is_mac80211(data))
+//					eval("ifconfig", data, "down");
+//				down_addIF(data);
+//				eval("iptables", "-t", "mangle", "-A", "VPN_OUT", "-m", "physdev", "--physdev-is-bridged", "--physdev-out", data, "-j", "DSCP", "--set-dscp", s_level);
+//			} else
+//				eval("iptables", "-t", "mangle", "-A", "VPN_OUT", "-o", data, "-j", "DSCP", "--set-dscp", s_level);
+//
+//		} while ((qos_vpn = strpbrk(++qos_vpn, "|")) && qos_vpn++);
+//	}
+//#endif
 
 	aqos_tables();
 
@@ -857,9 +857,9 @@ static int svqos_iptables(void)
 	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-j", "CONNMARK", "--save-mark");
 	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-j", "RETURN");
 	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-m", "mark", "--mark", nullmask, "-j", "SVQOS_SVCS");
-	if (nvram_invmatchi("openvpn_enable", 0) || nvram_invmatchi("openvpncl_enable", 0)) {
-		eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "VPN_DSCP");
-	}
+//	if (nvram_invmatchi("openvpn_enable", 0) || nvram_invmatchi("openvpncl_enable", 0)) {
+//		eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "VPN_DSCP");
+//	}
 #ifdef HAVE_80211AC
 	if (nvram_match("bcmdebug", "1"))
 #endif
