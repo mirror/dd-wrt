@@ -772,7 +772,6 @@ void ej_show_control(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-#ifdef HAVE_AQOS
 void ej_show_default_level(webs_t wp, int argc, char_t ** argv)
 {
 	char *defaults = nvram_safe_get("svqos_defaults");
@@ -798,7 +797,6 @@ void ej_show_default_level(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "</fieldset><br />\n");
 	return;
 }
-#endif
 
 static char *selmatch(char *var, char *is, char *ret)
 {
