@@ -1,7 +1,7 @@
 /*
  * qos.c
  *
- * Copyright (C) 2017 Sebastian Gottschall <gottschall@dd-wrt.com>
+ * Copyright (C) 2019 Sebastian Gottschall <gottschall@dd-wrt.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -922,7 +922,7 @@ void init_qos(const char *strtype, int up, int down, const char *wandev, int mtu
 			init_htb_class(imq_wan, down, mtu);
 			init_qdisc(type, imq_wan, wandev, aqd, mtu, up, 1);	// force 5ms for PIE on imq_wan
 
-		}
+		}else
 		{
 			eval("tc", "qdisc", "add", "dev", imq_wan, "root", "handle", "1:", "hfsc", "default", "30");
 			init_hfsc_class(imq_wan, down);
