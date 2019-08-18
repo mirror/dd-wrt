@@ -1485,27 +1485,31 @@ endif
 ifeq ($(CONFIG_GWMF54G2),y)
 CFLAGS += -DHAVE_GWMF54G2
 endif
-
 ifeq ($(CONFIG_SVQOS),y)
 CFLAGS += -DHAVE_SVQOS
 endif
-
 ifeq ($(CONFIG_NET_SCH_CODEL),y)
 CFLAGS += -DHAVE_CODEL
 endif
 ifeq ($(CONFIG_NET_SCH_CODEL),m)
 CFLAGS += -DHAVE_CODEL
 endif
-
 ifeq ($(CONFIG_NET_SCH_FQ_CODEL),y)
 CFLAGS += -DHAVE_FQ_CODEL
 endif
 ifeq ($(CONFIG_NET_SCH_FQ_CODEL),m)
 CFLAGS += -DHAVE_FQ_CODEL
 endif
-
+ifeq ($(CONFIG_NET_SCH_PIE),y)
+CFLAGS += -DHAVE_PIE
+endif
+ifeq ($(CONFIG_NET_SCH_PIE),m)
+CFLAGS += -DHAVE_PIE
+endif
+ifeq ($(CONFIG_CAKE),y)
+CFLAGS += -DHAVE_CAKE
+endif
 CFLAGS += -DHAVE_AQOS
-
 ifeq ($(CONFIG_NVRAM_60K),y)
 CFLAGS += -DHAVE_NVRAM_60K
 endif

@@ -652,7 +652,7 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 		}
 
 	}
-#if defined(HAVE_CODEL) || defined(HAVE_FQ_CODEL)
+#ifdef HAVE_CODEL
 	if (!strcmp(aqd, "codel")) {
 		int i;
 		for (i = 1; i < 6; i++) {
@@ -663,6 +663,8 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 			}
 		}
 	}
+#endif
+#ifdef HAVE_FQ_CODEL
 	if (!strcmp(aqd, "fq_codel")) {
 		int i;
 		for (i = 1; i < 6; i++) {
@@ -674,6 +676,7 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 		}
 	}
 #endif
+#ifdef HAVE_CAKE
 	if (!strcmp(aqd, "cake")) {
 		int i;
 		for (i = 1; i < 6; i++) {
@@ -684,6 +687,8 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 			}
 		}
 	}
+#endif
+#ifdef HAVE_PIE
 	if (!strcmp(aqd, "pie")) {
 		if (!nvram_matchi("qos_type", 0))
 			noecn = 0;
@@ -699,6 +704,7 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 			}
 		}
 	}
+#endif
 }
 
 void add_usermac(char *mac, int base, int uprate, int downrate, int lanrate)
@@ -831,6 +837,7 @@ static void init_qdisc(int type, const char *dev, const char *wandev, const char
 		add_sfq(dev, 30, mtu);
 		add_sfq(dev, 40, mtu);
 	}
+#ifdef HAVE_CODEL
 	if (!strcmp(aqd, "codel")) {
 		add_codel(dev, 100, aqd, rtt, noecn);
 		add_codel(dev, 10, aqd, rtt, noecn);
@@ -838,6 +845,8 @@ static void init_qdisc(int type, const char *dev, const char *wandev, const char
 		add_codel(dev, 30, aqd, rtt, noecn);
 		add_codel(dev, 40, aqd, rtt, noecn);
 	}
+#endif
+#ifdef HAVE_FQ_CODEL
 	if (!strcmp(aqd, "fq_codel")) {
 		add_fq_codel(dev, 100, aqd);
 		add_fq_codel(dev, 10, aqd);
@@ -845,6 +854,8 @@ static void init_qdisc(int type, const char *dev, const char *wandev, const char
 		add_fq_codel(dev, 30, aqd);
 		add_fq_codel(dev, 40, aqd);
 	}
+#endif
+#ifdef HAVE_CAKE
 	if (!strcmp(aqd, "cake")) {
 		add_cake(dev, 100, aqd, rtt_cake);
 		add_cake(dev, 10, aqd, rtt_cake);
@@ -852,6 +863,8 @@ static void init_qdisc(int type, const char *dev, const char *wandev, const char
 		add_cake(dev, 30, aqd, rtt_cake);
 		add_cake(dev, 40, aqd, rtt_cake);
 	}
+#endif
+#ifdef HAVE_PIE
 	if (!strcmp(aqd, "pie")) {
 		/* for imq_wan and htb only 5ms is enforced. i dont know why. i just took it from the original script */
 		if (ms5 || type == TYPE_HFSC)
@@ -862,6 +875,7 @@ static void init_qdisc(int type, const char *dev, const char *wandev, const char
 		add_pie(dev, 30, aqd, ms5, noecn);
 		add_pie(dev, 40, aqd, ms5, noecn);
 	}
+#endif
 
 }
 
