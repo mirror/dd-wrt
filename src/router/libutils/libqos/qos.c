@@ -897,7 +897,7 @@ void init_qos(const char *strtype, int up, int down, const char *wandev, int mtu
 	else
 		type = TYPE_HFSC;
 
-	int ll = 1000000;
+	int lanlimit = 1000000;
 
 	if (strcmp(wandev, "xx")) {
 		if (type == TYPE_HTB) {
@@ -936,10 +936,10 @@ void init_qos(const char *strtype, int up, int down, const char *wandev, int mtu
 
 		if (type == TYPE_HTB) {
 			eval("tc", "qdisc", "add", "dev", imq_lan, "root", "handle", "1:", "htb", "default", "30");
-			init_htb_class(imq_lan, ll, mtu);
+			init_htb_class(imq_lan, lanlimit, mtu);
 		} else {
 			eval("tc", "qdisc", "add", "dev", imq_lan, "root", "handle", "1:", "hfsc", "default", "30");
-			init_hfsc_class(imq_lan, ll);
+			init_hfsc_class(imq_lan, lanlimit);
 		}
 		init_qdisc(type, imq_lan, wandev, aqd, mtu, up, 0);
 
