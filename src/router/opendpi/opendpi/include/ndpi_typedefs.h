@@ -652,6 +652,13 @@ typedef enum {
 	NDPI_PROTOCOL_CATEGORY_CUSTOM_4,	/* User custom category 4 */
 	NDPI_PROTOCOL_CATEGORY_CUSTOM_5,	/* User custom category 5 */
 
+	      /* Further categories... */
+	      NDPI_PROTOCOL_CATEGORY_MUSIC,
+	      NDPI_PROTOCOL_CATEGORY_VIDEO,
+	      NDPI_PROTOCOL_CATEGORY_SHOPPING,
+	      NDPI_PROTOCOL_CATEGORY_PRODUCTIVITY,
+	      NDPI_PROTOCOL_CATEGORY_FILE_SHARING,
+
 	NDPI_PROTOCOL_NUM_CATEGORIES	/*
 					   NOTE: Keep this as last member
 					   Unused as value but useful to getting the number of elements
@@ -793,6 +800,12 @@ typedef struct ndpi_detection_module_struct {
 	u_int8_t http_dont_dissect_response:1, dns_dissect_response:1, direction_detect_disable:1;	/* disable internal detection of packet direction */
 } ndpi_detection_module_struct_t;
 
+typedef enum {
+   ndpi_cipher_safe = NDPI_CIPHER_SAFE,
+   ndpi_cipher_weak = NDPI_CIPHER_WEAK,
+   ndpi_cipher_insecure = NDPI_CIPHER_INSECURE
+} ndpi_cipher_weakness;
+
 typedef struct ndpi_flow_struct {
 	u_int16_t detected_protocol_stack[NDPI_PROTOCOL_HISTORY_SIZE];
 #if !defined(WIN32)
@@ -860,7 +873,11 @@ typedef struct ndpi_flow_struct {
 
 		struct {
 			struct {
-				char client_certificate[48], server_certificate[48];
+	u_int16_t ssl_version;
+	char client_certificate[64], server_certificate[64], server_organization[64];
+	char ja3_client[33], ja3_server[33];
+	u_int16_t server_cipher;
+	ndpi_cipher_weakness server_unsafe_cipher;
 			} ssl;
 
 			struct {

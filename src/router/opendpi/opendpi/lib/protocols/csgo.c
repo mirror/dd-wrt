@@ -30,6 +30,9 @@ static void ndpi_search_csgo(struct ndpi_detection_module_struct *ndpi_struct, s
 	struct ndpi_packet_struct *packet = &flow->packet;
 
 	if (packet->udp != NULL) {
+    if (packet->payload_packet_len < sizeof(uint32_t)) {
+      return;
+    }
 		uint32_t w = htonl(get_u_int32_t(packet->payload, 0));
 		NDPI_LOG(NDPI_PROTOCOL_CSGO, ndpi_struct, NDPI_LOG_DEBUG, "CSGO: word %08x\n", w);
 
