@@ -222,10 +222,11 @@ static int internal_eval_va(int silence, int space, const char *cmd, va_list arg
 			char *c = strdup(arg);
 			foreach(word, c, next) {
 				s_args[i] = strdup(word);
-				i++;
+				i;
 			}
 			free(c);
 		}
+		i++;
 		if (!arg)
 			break;
 	}
