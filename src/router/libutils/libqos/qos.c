@@ -388,9 +388,7 @@ static void add_tc_class(char *dev, int pref, int handle, int classid)
 #else
 static void add_tc_mark(char *dev, char *mark, int flow)
 {
-	char f[32];
-	sprintf(f, "1:%d", flow);
-	eval("tc", "filter", "add", "dev", dev, "protocol", "ip", "parent", "1:", "u32", "match", "mark", mark, "flowid", f);
+	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", dev, mark, flow);
 }
 #endif
 
