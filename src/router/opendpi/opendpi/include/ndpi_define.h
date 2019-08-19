@@ -360,4 +360,9 @@ static __inline uint64_t __bswap64(uint64_t __x)
 
 #define NDPI_MAX_DNS_REQUESTS                   16
 
+/* IMPORTANT: order according to its severity */
+#define NDPI_CIPHER_SAFE                        0
+#define NDPI_CIPHER_WEAK                        1
+#define NDPI_CIPHER_INSECURE                    2
+
 #endif				/* __NDPI_DEFINE_INCLUDE_FILE__ */

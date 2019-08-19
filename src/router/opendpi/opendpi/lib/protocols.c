@@ -174,3 +174,6 @@
 #include "protocols/nest_log_sink.c"
 #include "protocols/ookla.c"
 #include "protocols/upnp.c"
+#include "protocols/amazon_video.c"
+#include "protocols/line.c"
+//#include "protocols/tls.c"
