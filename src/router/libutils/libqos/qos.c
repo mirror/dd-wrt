@@ -449,21 +449,21 @@ static void add_cake(int type, const char *dev, int handle, const char *aqd, int
 	sprintf(p, "1:%d", handle);
 	sprintf(h, "%d:", handle);
 	sprintf(r, "%dms", rtt);
+	char *rttarg1 = NULL;
+	char *rttarg2 = NULL;
+	if (rtt != -1) {
+		rttarg1 = "rtt";
+		rttarg2 = r;
+	}
+
 	switch (type) {
 	case IFTYPE_WAN:
 	case IFTYPE_IMQ_WAN:
-		if (rtt != -1)
-			eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd, "unlimited", "ethernet", "besteffort", "noatm", "raw", "internet", type == IFTYPE_WAN ? "dual-srchost" : "dual-dsthost",
-			     "ack-filter", "nat", "rtt", r);
-		else
-			eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd, "unlimited", "ethernet", "besteffort", "noatm", "raw", "internet", type == IFTYPE_WAN ? "dual-srchost" : "dual-dsthost",
-			     "ack-filter", "nat");
+		eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd, "unlimited", "ethernet", "besteffort", "noatm", "raw", "internet", type == IFTYPE_WAN ? "dual-srchost" : "dual-dsthost", "ack-filter",
+		     "nat", rttarg1, rttarg2);
 		break;
 	case IFTYPE_IMQ_LAN:
-		if (rtt != -1)
-			eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd, "unlimited", "ethernet", "besteffort", "noatm", "raw", "lan", "triple-isolate", "no-ack-filter", "nat", "rtt", r);
-		else
-			eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd, "unlimited", "ethernet", "besteffort", "noatm", "raw", "lan", "triple-isolate", "no-ack-filter", "nat");
+		eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd, "unlimited", "ethernet", "besteffort", "noatm", "raw", "lan", "triple-isolate", "no-ack-filter", "nat", rttarg1, rttarg2);
 		break;
 	}
 }
