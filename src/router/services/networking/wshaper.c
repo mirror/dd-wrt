@@ -301,7 +301,7 @@ static void down_upIF(void)
 			eval("ifconfig", word, "up");
 		}
 	}
-	start_set_routes();
+    	start_set_routes();
 }
 
 static void aqos_tables(void)
@@ -579,11 +579,6 @@ static int svqos_iptables(void)
 #if !defined(ARCH_broadcom) || defined(HAVE_BCMMODERN)
 	// if kernel version later then 2.4, overwrite all old tc filter
 	if (nvram_match("wshaper_dev", "WAN") && wan_dev != NULL) {
-		eval("tc", "filter", "del", "dev", wan_dev, "pref", "1");
-		eval("tc", "filter", "del", "dev", wan_dev, "pref", "3");
-		eval("tc", "filter", "del", "dev", wan_dev, "pref", "5");
-		eval("tc", "filter", "del", "dev", wan_dev, "pref", "8");
-		eval("tc", "filter", "del", "dev", wan_dev, "pref", "9");
 		eval("tc", "filter", "add", "dev", wan_dev, "protocol", "ip", "parent", "1:", "u32", "match", "mark", get_tcfmark(100), "flowid", "1:100");
 		eval("tc", "filter", "add", "dev", wan_dev, "protocol", "ip", "parent", "1:", "u32", "match", "mark", get_tcfmark(10), "flowid", "1:10");
 		eval("tc", "filter", "add", "dev", wan_dev, "protocol", "ip", "parent", "1:", "u32", "match", "mark", get_tcfmark(20), "flowid", "1:20");
@@ -591,11 +586,6 @@ static int svqos_iptables(void)
 		eval("tc", "filter", "add", "dev", wan_dev, "protocol", "ip", "parent", "1:", "u32", "match", "mark", get_tcfmark(40), "flowid", "1:40");
 
 	}
-		eval("tc", "filter", "del", "dev", "imq0", "pref", "1");
-		eval("tc", "filter", "del", "dev", "imq0", "pref", "3");
-		eval("tc", "filter", "del", "dev", "imq0", "pref", "5");
-		eval("tc", "filter", "del", "dev", "imq0", "pref", "8");
-		eval("tc", "filter", "del", "dev", "imq0", "pref", "9");
 	eval("tc", "filter", "add", "dev", "imq0", "protocol", "ip", "parent", "1:", "u32", "match", "mark", get_tcfmark(100), "flowid", "1:100");
 	eval("tc", "filter", "add", "dev", "imq0", "protocol", "ip", "parent", "1:", "u32", "match", "mark", get_tcfmark(10), "flowid", "1:10");
 	eval("tc", "filter", "add", "dev", "imq0", "protocol", "ip", "parent", "1:", "u32", "match", "mark", get_tcfmark(20), "flowid", "1:20");
@@ -603,11 +593,6 @@ static int svqos_iptables(void)
 	eval("tc", "filter", "add", "dev", "imq0", "protocol", "ip", "parent", "1:", "u32", "match", "mark", get_tcfmark(40), "flowid", "1:40");
 
 	if (nvram_match("wshaper_dev", "LAN")) {
-		eval("tc", "filter", "del", "dev", "imq1", "pref", "1");
-		eval("tc", "filter", "del", "dev", "imq1", "pref", "3");
-		eval("tc", "filter", "del", "dev", "imq1", "pref", "5");
-		eval("tc", "filter", "del", "dev", "imq1", "pref", "8");
-		eval("tc", "filter", "del", "dev", "imq1", "pref", "9");
 		eval("tc", "filter", "add", "dev", "imq1", "protocol", "ip", "parent", "1:", "u32", "match", "mark", get_tcfmark(100), "flowid", "1:100");
 		eval("tc", "filter", "add", "dev", "imq1", "protocol", "ip", "parent", "1:", "u32", "match", "mark", get_tcfmark(10), "flowid", "1:10");
 		eval("tc", "filter", "add", "dev", "imq1", "protocol", "ip", "parent", "1:", "u32", "match", "mark", get_tcfmark(20), "flowid", "1:20");
@@ -1022,7 +1007,6 @@ void start_wshaper(void)
 			system("/tmp/.rc_firewall");
 		}
 	}
-
 	return;
 }
 
@@ -1127,6 +1111,17 @@ void stop_wshaper(void)
 }
 
 #ifdef TEST
+void start_set_routes(void) {
+
+}
+
+void runStartup(char *call) {
+
+}
+
+int create_rc_file(char *p) {
+
+}
 int main(int argc, char *argv[])
 {
 	start_wshaper();
