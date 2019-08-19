@@ -2650,11 +2650,19 @@ static int ndpi_init_packet_header(struct ndpi_detection_module_struct *ndpi_str
 			 * idea: reset detection state if a connection is unknown
 			 */
 			if (flow && flow->packet.tcp->syn != 0 && flow->packet.tcp->ack == 0 && flow->init_finished != 0 && flow->detected_protocol_stack[0] == NDPI_PROTOCOL_UNKNOWN) {
+	u_int8_t backup;
+	u_int16_t backup1, backup2;
 				if (flow->http.url)
 					ndpi_free(flow->http.url);
 				if (flow->http.content_type)
 					ndpi_free(flow->http.content_type);
-				memset(flow, 0, sizeof(*(flow)));
+	backup  = flow->num_processed_pkts;
+	backup1 = flow->guessed_protocol_id;
+	backup2 = flow->guessed_host_protocol_id;
+	memset(flow, 0, sizeof(*(flow)));
+	flow->num_processed_pkts = backup;
+	flow->guessed_protocol_id      = backup1;
+	flow->guessed_host_protocol_id = backup2;
 
 				NDPI_LOG(NDPI_PROTOCOL_UNKNOWN, ndpi_struct, NDPI_LOG_DEBUG, "%s:%u: tcp syn packet for unknown protocol, reset detection state\n", __FUNCTION__, __LINE__);
 
@@ -3105,6 +3113,8 @@ static ndpi_protocol ndpi_detection_process_packet(struct ndpi_detection_module_
 
 	if (flow == NULL)
 		return (ret);
+
+	flow->num_processed_pkts++;
 
 	if (flow->server_id == NULL)
 		flow->server_id = dst;	/* Default */

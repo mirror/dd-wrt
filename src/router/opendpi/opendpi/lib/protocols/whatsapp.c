@@ -28,19 +28,29 @@
 static void ndpi_search_whatsapp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
 	struct ndpi_packet_struct *packet = &flow->packet;
-	u_int8_t whatsapp_sequence[] = {
+	static u_int8_t whatsapp_sequence[] = {
 		0x45, 0x44, 0x0, 0x01, 0x0, 0x0, 0x02, 0x08,
 		0x0, 0x57, 0x41, 0x02, 0x0, 0x0, 0x0
 	};
 
 	NDPI_LOG_DBG(ndpi_struct, "search WhatsApp\n");
 
-	if ((packet->payload_packet_len > 240)
-	    && (memcmp(packet->payload, whatsapp_sequence, sizeof(whatsapp_sequence)) == 0)) {
-		NDPI_LOG_INFO(ndpi_struct, "found WhatsApp\n");
-		ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_WHATSAPP, NDPI_PROTOCOL_UNKNOWN);
-	} else
-		NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_AIMINI);
+	if (flow->l4.tcp.wa_matched_so_far < sizeof(whatsapp_sequence)) {
+		size_t match_len = sizeof(whatsapp_sequence) - flow->l4.tcp.wa_matched_so_far;
+		if (packet->payload_packet_len < match_len)
+			match_len = packet->payload_packet_len;
+
+		if (!memcmp(packet->payload, &whatsapp_sequence[flow->l4.tcp.wa_matched_so_far], match_len)) {
+			flow->l4.tcp.wa_matched_so_far += match_len;
+			if (flow->l4.tcp.wa_matched_so_far == sizeof(whatsapp_sequence)) {
+				NDPI_LOG_INFO(ndpi_struct, "found WhatsApp\n");
+				ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_WHATSAPP, NDPI_PROTOCOL_UNKNOWN);
+			}
+			return;
+		}
+ 	}
+
+	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_AIMINI);
 }
 
 static void init_whatsapp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK * detection_bitmask)

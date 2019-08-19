@@ -313,6 +313,8 @@ struct ndpi_flow_tcp_struct {
 #ifdef NDPI_PROTOCOL_QQ
 	u_int16_t qq_nxt_len;
 #endif
+    /* NDPI_PROTOCOL_WHATSAPP */
+       u_int8_t wa_matched_so_far;
 #ifdef NDPI_PROTOCOL_TDS
 	u_int8_t tds_login_version;
 #endif
@@ -824,6 +826,7 @@ typedef struct ndpi_flow_struct {
 
 	u_int8_t max_extra_packets_to_check;
 	u_int8_t num_extra_packets_checked;
+        u_int8_t num_processed_pkts; /* <= WARNING it can wrap but we do expect people to giveup earlier */
 	int (*extra_packets_func) (struct ndpi_detection_module_struct *, struct ndpi_flow_struct * flow);
 
 	/* the tcp / udp / other l4 value union
