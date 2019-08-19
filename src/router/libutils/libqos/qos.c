@@ -28,6 +28,10 @@
 #define TYPE_HTB 0x0
 #define TYPE_HFSC 0x1
 
+#define IFTYPE_WAN 0x0
+#define IFTYPE_IMQ_WAN 0x1
+#define IFTYPE_IMQ_LAN 0x2
+
 /* NF Mark/Mask
  *
  * since multiple services needs a NF packet mark,
@@ -437,7 +441,7 @@ static void add_fq_codel(const char *dev, int handle, const char *aqd)
 	eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd);
 }
 
-static void add_cake(const char *dev, int handle, const char *aqd, int rtt)
+static void add_cake(int type, const char *dev, int handle, const char *aqd, int rtt)
 {
 	char p[32];
 	char h[32];
@@ -445,10 +449,23 @@ static void add_cake(const char *dev, int handle, const char *aqd, int rtt)
 	sprintf(p, "1:%d", handle);
 	sprintf(h, "%d:", handle);
 	sprintf(r, "%dms", rtt);
-	if (rtt != -1)
-		eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd, "unlimited", "ethernet", "besteffort", "noatm", "raw", "internet", "dual-srchost", "ack-filter", "nat", "rtt", r);
-	else
-		eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd, "unlimited", "ethernet", "besteffort", "noatm", "raw", "internet", "dual-srchost", "ack-filter", "nat");
+	switch (type) {
+	case IFTYPE_WAN:
+	case IFTYPE_IMQ_WAN:
+		if (rtt != -1)
+			eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd, "unlimited", "ethernet", "besteffort", "noatm", "raw", "internet", type == IFTYPE_WAN ? "dual-srchost" : "dual-dsthost",
+			     "ack-filter", "nat", "rtt", r);
+		else
+			eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd, "unlimited", "ethernet", "besteffort", "noatm", "raw", "internet", type == IFTYPE_WAN ? "dual-srchost" : "dual-dsthost",
+			     "ack-filter", "nat");
+		break;
+	case IFTYPE_IMQ_LAN:
+		if (rtt != -1)
+			eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd, "unlimited", "ethernet", "besteffort", "noatm", "raw", "lan", "triple-isolate", "no-ack-filter", "nat", "rtt", r);
+		else
+			eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd, "unlimited", "ethernet", "besteffort", "noatm", "raw", "lan", "triple-isolate", "no-ack-filter", "nat");
+		break;
+	}
 }
 
 static void add_pie(const char *dev, int handle, const char *aqd, int ms5, int noecn)
@@ -680,10 +697,10 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 	if (!strcmp(aqd, "cake")) {
 		int i;
 		for (i = 1; i < 6; i++) {
-			add_cake(wan_dev, base + i, aqd, rtt_cake);
-			add_cake("imq0", base + i, aqd, -1);
+			add_cake(IFTYPE_WAN, wan_dev, base + i, aqd, rtt_cake);
+			add_cake(IFTYPE_IMQ_WAN, "imq0", base + i, aqd, -1);
 			if (nvram_match("wshaper_dev", "LAN")) {
-				add_cake("imq1", base + i, aqd, -1);
+				add_cake(IFTYPE_IMQ_LAN, "imq1", base + i, aqd, -1);
 			}
 		}
 	}
@@ -815,7 +832,7 @@ static void init_hfsc_class(const char *dev, int rate)
 
 }
 
-static void init_qdisc(int type, const char *dev, const char *wandev, const char *aqd, int mtu, int up, int ms5)
+static void init_qdisc(int type, int wan_type, const char *dev, const char *wandev, const char *aqd, int mtu, int up, int ms5)
 {
 	int noecn = -1;
 	int rtt = -1;
@@ -857,11 +874,11 @@ static void init_qdisc(int type, const char *dev, const char *wandev, const char
 #endif
 #ifdef HAVE_CAKE
 	if (!strcmp(aqd, "cake")) {
-		add_cake(dev, 100, aqd, rtt_cake);
-		add_cake(dev, 10, aqd, rtt_cake);
-		add_cake(dev, 20, aqd, rtt_cake);
-		add_cake(dev, 30, aqd, rtt_cake);
-		add_cake(dev, 40, aqd, rtt_cake);
+		add_cake(wan_type, dev, 100, aqd, rtt_cake);
+		add_cake(wan_type, dev, 10, aqd, rtt_cake);
+		add_cake(wan_type, dev, 20, aqd, rtt_cake);
+		add_cake(wan_type, dev, 30, aqd, rtt_cake);
+		add_cake(wan_type, dev, 40, aqd, rtt_cake);
 	}
 #endif
 #ifdef HAVE_PIE
@@ -917,13 +934,13 @@ void init_qos(const char *strtype, int up, int down, const char *wandev, int mtu
 		if (type == TYPE_HTB) {
 			eval("tc", "qdisc", "add", "dev", wandev, "root", "handle", "1:", "htb", "default", "30");
 			init_htb_class(wandev, up, mtu);
-			init_qdisc(type, wandev, wandev, aqd, mtu, up, 0);
+			init_qdisc(type, IFTYPE_WAN, wandev, wandev, aqd, mtu, up, 0);
 			init_filter(wandev);
 		} else {
 
 			eval("tc", "qdisc", "add", "dev", wandev, "root", "handle", "1:", "hfsc", "default", "30");
 			init_hfsc_class(wandev, up);
-			init_qdisc(type, wandev, wandev, aqd, mtu, up, 0);
+			init_qdisc(type, IFTYPE_WAN, wandev, wandev, aqd, mtu, up, 0);
 			init_filter(wandev);
 		}
 	}
@@ -934,13 +951,12 @@ void init_qos(const char *strtype, int up, int down, const char *wandev, int mtu
 		if (type == TYPE_HTB) {
 			eval("tc", "qdisc", "add", "dev", imq_wan, "root", "handle", "1:", "htb", "default", "30");
 			init_htb_class(imq_wan, down, mtu);
-			init_qdisc(type, imq_wan, wandev, aqd, mtu, up, 1);	// force 5ms for PIE on imq_wan
+			init_qdisc(type, IFTYPE_IMQ_WAN, imq_wan, wandev, aqd, mtu, up, 1);	// force 5ms for PIE on imq_wan
 
-		}else
-		{
+		} else {
 			eval("tc", "qdisc", "add", "dev", imq_wan, "root", "handle", "1:", "hfsc", "default", "30");
 			init_hfsc_class(imq_wan, down);
-			init_qdisc(type, imq_wan, wandev, aqd, mtu, up, 0);
+			init_qdisc(type, IFTYPE_IMQ_WAN, imq_wan, wandev, aqd, mtu, up, 0);
 		}
 		init_filter(imq_wan);
 
@@ -955,8 +971,7 @@ void init_qos(const char *strtype, int up, int down, const char *wandev, int mtu
 			eval("tc", "qdisc", "add", "dev", imq_lan, "root", "handle", "1:", "hfsc", "default", "30");
 			init_hfsc_class(imq_lan, lanlimit);
 		}
-		init_qdisc(type, imq_lan, wandev, aqd, mtu, up, 0);
-
+		init_qdisc(type, IFTYPE_IMQ_LAN, imq_lan, wandev, aqd, mtu, up, 0);
 		init_filter(imq_lan);
 
 	}
