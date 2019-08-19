@@ -206,40 +206,65 @@ void dd_logstart(const char *servicename, int retcode)
 		dd_loginfo(servicename, "successfully started");
 }
 #endif
-int eval_va(const char *cmd, ...)
+
+static int internal_eval_va(int silence, int space, const char *cmd, va_list args)
 {
 	const char *s_args[128];
-	va_list args;
-	va_start(args, (char *)cmd);
-	char *next;
-	int i;
+	int i = 1;
 	s_args[0] = cmd;
-	for (i = 0; i < 127; i++) {
+	while (1) {
 		const char *arg = va_arg(args, const char *);
-		s_args[i + 1] = arg;
-		if (arg == NULL)
+		char word[128];
+		char *next;
+		if (!arg || !space)
+			s_args[i] = arg;
+		else {
+			char *c = strdup(arg);
+			foreach(word, c, next) {
+				s_args[i] = strdup(word);
+				i++;
+			}
+			free(c);
+		}
+		if (!arg)
 			break;
 	}
-	return _evalpid(s_args, ">/dev/console", 0, NULL);
+	int ret = _evalpid(s_args, silence ? NULL : ">/dev/console", 0, NULL);
+	i = 1;
+	while (1) {
+		if (!space || !s_args[i])
+			break;
+		free((void *)s_args[i++]);
+	}
+	return ret;
+}
 
+int eval_va(const char *cmd, ...)
+{
+	va_list args;
+	va_start(args, (char *)cmd);
+	return internal_eval_va(0, 0, cmd, args);
 }
 
 int eval_va_silence(const char *cmd, ...)
 {
-	const char *s_args[128];
 	va_list args;
 	va_start(args, (char *)cmd);
-	char *next;
-	int i;
-	s_args[0] = cmd;
-	for (i = 0; i < 127; i++) {
-		const char *arg = va_arg(args, const char *);
-		s_args[i + 1] = arg;
-		if (arg == NULL)
-			break;
-	}
-	return _evalpid(s_args, NULL, 0, NULL);
+	return internal_eval_va(1, 0, cmd, args);
+}
 
+int eval_va_space(const char *cmd, ...)
+{
+	va_list args;
+	va_start(args, (char *)cmd);
+	return internal_eval_va(0, 1, cmd, args);
+}
+
+int eval_va_silence_space(const char *cmd, ...)
+{
+	va_list args;
+	va_start(args, (char *)cmd);
+	return internal_eval_va(1, 1, cmd, args);
 }
 
 // FILE *debugfp=NULL;
@@ -1014,7 +1039,6 @@ int dd_sprintf(char *str, const char *fmt, ...)
 
 static void strcpyto(char *dest, char *src, char *delim)
 {
-	int cnt = 0;
 	int len = strlen(src);
 	char *to = strpbrk(src, delim);
 	if (to)
@@ -1228,7 +1252,7 @@ char *get_ipfromsock(int socket, char *ip)
 		struct sockaddr_in *sa = (struct sockaddr_in *)&addr;
 		inet_ntop(AF_INET, &sa->sin_addr, ip, INET_ADDRSTRLEN);
 	} else {
-		struct sockaddr_in6 *sa = (struct sockaddr_in *)&addr;
+		struct sockaddr_in6 *sa = (struct sockaddr_in6 *)&addr;
 		inet_ntop(AF_INET6, &sa->sin6_addr, ip, INET6_ADDRSTRLEN);
 	}
 	return ip;
@@ -1273,7 +1297,6 @@ static void dump_blocklist(void)
 {
 	pthread_mutex_lock(&mutex_block);
 	struct blocklist *entry = blocklist_root.next;
-	struct blocklist *last = &blocklist_root;
 	FILE *fp = NULL;
 	fp = fopen("/tmp/blocklist", "wb");
 	if (fp) {
