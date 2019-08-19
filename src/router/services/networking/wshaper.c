@@ -579,6 +579,7 @@ static int svqos_iptables(void)
 #if !defined(ARCH_broadcom) || defined(HAVE_BCMMODERN)
 	// if kernel version later then 2.4, overwrite all old tc filter
 	if (nvram_match("wshaper_dev", "WAN") && wan_dev != NULL) {
+		sysprintf("tc filter del dev %s", wan_dev);
 		sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:100", wan_dev, get_tcfmark(100));
 		sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:10", wan_dev, get_tcfmark(10));
 		sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:20", wan_dev, get_tcfmark(20));
@@ -586,6 +587,7 @@ static int svqos_iptables(void)
 		sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:40", wan_dev, get_tcfmark(40));
 	}
 
+	sysprintf("tc filter del dev %s", "imq0");
 	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:100", "imq0", get_tcfmark(100));
 	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:10", "imq0", get_tcfmark(10));
 	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:20", "imq0", get_tcfmark(20));
@@ -593,6 +595,7 @@ static int svqos_iptables(void)
 	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:40", "imq0", get_tcfmark(40));
 
 	if (nvram_match("wshaper_dev", "LAN")) {
+		sysprintf("tc filter del dev %s", "imq1");
 		sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:100", "imq1", get_tcfmark(100));
 		sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:10", "imq1", get_tcfmark(10));
 		sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:20", "imq1", get_tcfmark(20));
