@@ -76,6 +76,10 @@ static void ndpi_search_xbox(struct ndpi_detection_module_struct *ndpi_struct, s
 			NDPI_LOG(NDPI_PROTOCOL_XBOX, ndpi_struct, NDPI_LOG_DEBUG, "maybe xbox.\n");
 			flow->l4.udp.xbox_stage++;
 			return;
+		} else if ((dport == 3075 || dport == 3076 || dport == 3077 || dport == 3078) || (sport == 3075 || sport == 3076 || sport == 3077 || sport == 3078)) {
+			ndpi_int_xbox_add_connection(ndpi_struct, flow);
+			NDPI_LOG_INFO(ndpi_struct, "found xbox udp port connection detected\n");
+			return;
 		}
 
 		/* exclude here all non matched udp traffic, exclude here tcp only if http has been excluded, because xbox could use http */
@@ -92,7 +96,7 @@ static void ndpi_search_xbox(struct ndpi_detection_module_struct *ndpi_struct, s
 static void init_xbox_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK * detection_bitmask)
 {
 	ndpi_set_bitmask_protocol_detection("Xbox", ndpi_struct, detection_bitmask, *id,
-					    NDPI_PROTOCOL_XBOX, ndpi_search_xbox, NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD, NO_SAVE_DETECTION_BITMASK_AS_UNKNOWN, ADD_TO_DETECTION_BITMASK);
+					    NDPI_PROTOCOL_XBOX, ndpi_search_xbox, NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD, NO_SAVE_DETECTION_BITMASK_AS_UNKNOWN, ADD_TO_DETECTION_BITMASK);
 
 	*id += 1;
 }
