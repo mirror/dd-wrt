@@ -580,7 +580,7 @@ static int svqos_iptables(void)
 	// if kernel version later then 2.4, overwrite all old tc filter
 	if (nvram_match("wshaper_dev", "WAN") && wan_dev != NULL) {
 		eval("tc", "filter", "del", "dev", wan_dev, "pref", "1");
-		eval("tc", "filter", "del", "dev", wan_dev, "pref", "2");
+		eval("tc", "filter", "del", "dev", wan_dev, "pref", "3");
 		eval("tc", "filter", "del", "dev", wan_dev, "pref", "5");
 		eval("tc", "filter", "del", "dev", wan_dev, "pref", "8");
 		eval("tc", "filter", "del", "dev", wan_dev, "pref", "9");
@@ -592,7 +592,7 @@ static int svqos_iptables(void)
 
 	}
 		eval("tc", "filter", "del", "dev", "imq0", "pref", "1");
-		eval("tc", "filter", "del", "dev", "imq0", "pref", "2");
+		eval("tc", "filter", "del", "dev", "imq0", "pref", "3");
 		eval("tc", "filter", "del", "dev", "imq0", "pref", "5");
 		eval("tc", "filter", "del", "dev", "imq0", "pref", "8");
 		eval("tc", "filter", "del", "dev", "imq0", "pref", "9");
@@ -604,7 +604,7 @@ static int svqos_iptables(void)
 
 	if (nvram_match("wshaper_dev", "LAN")) {
 		eval("tc", "filter", "del", "dev", "imq1", "pref", "1");
-		eval("tc", "filter", "del", "dev", "imq1", "pref", "2");
+		eval("tc", "filter", "del", "dev", "imq1", "pref", "3");
 		eval("tc", "filter", "del", "dev", "imq1", "pref", "5");
 		eval("tc", "filter", "del", "dev", "imq1", "pref", "8");
 		eval("tc", "filter", "del", "dev", "imq1", "pref", "9");
