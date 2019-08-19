@@ -794,11 +794,17 @@ void add_userip(char *ip, int base, int uprate, int downrate, int lanrate)
 
 void deinit_qos(const char *wandev, const char *imq_wan, const char *imq_lan)
 {
+	eval("ip", "link", "set", imq_wan, "down");
+	eval("ip", "link", "set", imq_lan, "down");
+	eval("tc", "filter", "del", "dev", wandev);
+	eval("tc", "filter", "del", "dev", imq_wan);
+	eval("tc", "filter", "del", "dev", imq_lan);
 	eval("tc", "qdisc", "del", "dev", wandev, "root");
 	eval("tc", "qdisc", "del", "dev", imq_wan, "root");
 	eval("tc", "qdisc", "del", "dev", imq_lan, "root");
-	eval("ip", "link", "set", imq_wan, "down");
-	eval("ip", "link", "set", imq_lan, "down");
+	eval("tc", "class", "del", "dev", wandev);
+	eval("tc", "class", "del", "dev", imq_wan);
+	eval("tc", "class", "del", "dev", imq_lan);
 }
 
 static void init_htb_class(const char *dev, int rate, int mtu)
