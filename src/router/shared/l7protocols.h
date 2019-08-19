@@ -284,6 +284,7 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{ "lastfm", NDPI_ONLY },
 	{ "ldap", NDPI_ONLY },
+	{ "line", NDPI_ONLY },
 	{ "linkedin", NDPI_ONLY },
 	{ "lisp", NDPI_ONLY },
 #endif
