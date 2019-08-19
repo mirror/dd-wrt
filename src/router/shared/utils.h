@@ -1089,7 +1089,6 @@ extern char *getMTU(char *);
 extern int getBridgeSTP(char *br, char *word);
 extern char *get_NFServiceMark(char *service, uint32 mark);
 
-#ifdef HAVE_SVQOS
 char *qos_nfmark(uint32 x);
 
 #if !defined(ARCH_broadcom) || defined(HAVE_BCMMODERN)
@@ -1102,14 +1101,9 @@ extern void add_client_mac_srvfilter(char *name, char *type, char *data, int lev
 extern void add_client_ip_srvfilter(char *name, char *type, char *data, int level, int base, char *client);
 void deinit_qos(const char *wandev, const char *imq_wan, const char *imq_lan);
 void init_qos(const char *type, int up, int down, const char *wandev, int mtu, const char *imq_wan, const char *aqd, const char *imq_lan);
-#ifdef HAVE_AQOS
 extern void add_usermac(char *mac, int idx, int upstream, int downstream, int lanstream);
 extern void add_userip(char *ip, int idx, int upstream, int downstream, int lanstream);
 extern void add_client_classes(unsigned int base, unsigned int uprate, unsigned int downrate, unsigned int lanrate, unsigned int level);
-#else
-extern void add_client_classes(unsigned int base, unsigned int level);
-#endif
-#endif
 
 void getHostName(char *buf, char *ip);
 int ishexit(char c);
