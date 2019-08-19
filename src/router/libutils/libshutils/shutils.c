@@ -217,16 +217,14 @@ static int internal_eval_va(int silence, int space, const char *cmd, va_list arg
 		char word[128];
 		char *next;
 		if (!arg || !space)
-			s_args[i] = arg;
+			s_args[i++] = arg;
 		else {
 			char *c = strdup(arg);
 			foreach(word, c, next) {
-				s_args[i] = strdup(word);
-				i;
+				s_args[i++] = strdup(word);
 			}
 			free(c);
 		}
-		i++;
 		if (!arg)
 			break;
 	}
