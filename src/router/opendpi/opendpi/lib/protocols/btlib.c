@@ -450,7 +450,7 @@ static const u_int8_t *bt_decode(const u_int8_t *b, size_t *l, int *ret, bt_pars
 	i_int64_t d = 0;
 	register u_int8_t c;
 
-	if (*l == 0)
+	if (!l || *l == 0)
 		return NULL;
 	if (cbd->level > BDEC_MAXDEPT)
 		goto bad_data;

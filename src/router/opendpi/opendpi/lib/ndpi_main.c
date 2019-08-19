@@ -1219,6 +1219,13 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_AJP, no_master, no_master, "AJP", ndpi_build_default_ports(ports_a, 8009, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
+        ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_AMAZON_VIDEO, no_master, no_master, "AmazonVideo",
+			    ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */,
+			    ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
+   ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_LINE, no_master,
+			    no_master, "Line",
+ 			    ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */,
+ 			    ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
 
 	ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0);
 	ports_b[0].port_low = 7000;
@@ -2345,6 +2352,12 @@ static void ndpi_set_protocol_detection_bitmask2(struct ndpi_detection_module_st
 
 	/* Nest Log Sink */
 	init_nest_log_sink_dissector(ndpi_struct, &a, detection_bitmask);
+
+         /* AMAZON_VIDEO */
+         init_amazon_video_dissector(ndpi_struct, &a, detection_bitmask);
+
+  /* LINE */
+  init_line_dissector(ndpi_struct, &a, detection_bitmask);
 
 	/* ----------------------------------------------------------------- */
 
