@@ -194,6 +194,8 @@ endif
 ifeq ($(CONFIG_CAKE),y)
 	-$(MAKE) -f Makefile.laguna cake
 	-$(MAKE) -f Makefile.laguna cake-install
+	-$(MAKE) -f Makefile.laguna fq_codel_fast
+	-$(MAKE) -f Makefile.laguna fq_codel_fast-install
 endif
 
 	find $(ARCH)-uclibc/install $(ARCH)-uclibc/target  -name \*.ko | \

@@ -201,6 +201,8 @@ endif
 ifeq ($(CONFIG_CAKE),y)
 	-$(MAKE) -f Makefile.mpc85xx cake
 	-$(MAKE) -f Makefile.mpc85xx cake-install
+	-$(MAKE) -f Makefile.mpc85xx fq_codel_fast
+	-$(MAKE) -f Makefile.mpc85xx fq_codel_fast-install
 endif
 
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build

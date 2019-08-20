@@ -197,6 +197,8 @@ endif
 ifeq ($(CONFIG_CAKE),y)
 	-$(MAKE) -f Makefile.ventana cake
 	-$(MAKE) -f Makefile.ventana cake-install
+	-$(MAKE) -f Makefile.ventana fq_codel_fast
+	-$(MAKE) -f Makefile.ventana fq_codel_fast-install
 endif
 	-$(MAKE) -f Makefile.ventana uniwip-gpio
 	-$(MAKE) -f Makefile.ventana uniwip-gpio-install

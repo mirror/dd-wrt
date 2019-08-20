@@ -153,6 +153,8 @@ endif
 ifeq ($(CONFIG_CAKE),y)
 	-$(MAKE) -f Makefile.mvebu cake
 	-$(MAKE) -f Makefile.mvebu cake-install
+	-$(MAKE) -f Makefile.mvebu fq_codel_fast
+	-$(MAKE) -f Makefile.mvebu fq_codel_fast-install
 endif
 #	-$(MAKE) -f Makefile.mvebu uniwip-gpio
 #	-$(MAKE) -f Makefile.mvebu uniwip-gpio-install

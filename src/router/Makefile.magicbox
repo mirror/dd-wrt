@@ -205,6 +205,8 @@ endif
 ifeq ($(CONFIG_CAKE),y)
 	-$(MAKE) -f Makefile.magicbox cake
 	-$(MAKE) -f Makefile.magicbox cake-install
+	-$(MAKE) -f Makefile.magicbox fq_codel_fast
+	-$(MAKE) -f Makefile.magicbox fq_codel_fast-install
 endif
 
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build

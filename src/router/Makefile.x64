@@ -190,6 +190,8 @@ endif
 ifeq ($(CONFIG_CAKE),y)
 	-$(MAKE) -f Makefile.x64 cake
 	-$(MAKE) -f Makefile.x64 cake-install
+	-$(MAKE) -f Makefile.x64 fq_codel_fast
+	-$(MAKE) -f Makefile.x64 fq_codel_fast-install
 endif
 ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.x64 wireguard

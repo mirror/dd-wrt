@@ -269,6 +269,8 @@ endif
 ifeq ($(CONFIG_CAKE),y)
 	-$(MAKE) -f Makefile.mt7621 cake
 	-$(MAKE) -f Makefile.mt7621 cake-install
+	-$(MAKE) -f Makefile.mt7621 fq_codel_fast
+	-$(MAKE) -f Makefile.mt7621 fq_codel_fast-install
 endif
 	-$(MAKE) -f Makefile.mt7621 uniwip-gpio
 	-$(MAKE) -f Makefile.mt7621 uniwip-gpio-install

@@ -205,6 +205,8 @@ endif
 ifeq ($(CONFIG_CAKE),y)
 	-$(MAKE) -f Makefile.adm5120 cake
 	-$(MAKE) -f Makefile.adm5120 cake-install
+	-$(MAKE) -f Makefile.adm5120 fq_codel_fast
+	-$(MAKE) -f Makefile.adm5120 fq_codel_fast-install
 endif
 
 ifneq ($(CONFIG_SAMBA),y)

@@ -201,6 +201,8 @@ endif
 ifeq ($(CONFIG_CAKE),y)
 	-$(MAKE) -f Makefile.danube cake
 	-$(MAKE) -f Makefile.danube cake-install
+	-$(MAKE) -f Makefile.danube fq_codel_fast
+	-$(MAKE) -f Makefile.danube fq_codel_fast-install
 endif
 	-$(MAKE) -f Makefile.danube uniwip-gpio
 	-$(MAKE) -f Makefile.danube uniwip-gpio-install
