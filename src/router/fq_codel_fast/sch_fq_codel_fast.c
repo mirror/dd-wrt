@@ -115,8 +115,12 @@ static inline void flow_queue_add(struct fq_codel_flow *flow,
 	skb->next = NULL;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0)
+static unsigned int fq_codel_drop(struct Qdisc *sch, unsigned int max_packets)
+#else
 static unsigned int fq_codel_drop(struct Qdisc *sch, unsigned int max_packets,
 				  struct sk_buff **to_free)
+#endif
 {
 	struct fq_codel_sched_data *q = qdisc_priv(sch);
 	struct sk_buff *skb;
@@ -140,7 +144,11 @@ static unsigned int fq_codel_drop(struct Qdisc *sch, unsigned int max_packets,
 		skb = dequeue_head(flow);
 		len += qdisc_pkt_len(skb);
 		mem += get_codel_cb(skb)->mem_usage;
+	#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0)
+		kfree_skb(skb);
+	#else
 		__qdisc_drop(skb, to_free);
+	#endif
 	} while (++i < max_packets && len < threshold);
 
 	flow->cvars.count += i;
@@ -157,8 +165,12 @@ static unsigned int fq_codel_drop(struct Qdisc *sch, unsigned int max_packets,
 	return idx;
 }
 
-static int fq_codel_enqueue(struct sk_buff *skb, struct Qdisc *sch,
-			    struct sk_buff **to_free)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0)
+static s32 fq_codel_enqueue(struct sk_buff *skb, struct Qdisc *sch)
+#else
+static s32 fq_codel_enqueue(struct sk_buff *skb, struct Qdisc *sch,
+			struct sk_buff **to_free)
+#endif
 {
 	struct fq_codel_sched_data *q = qdisc_priv(sch);
 	unsigned int idx, prev_backlog, prev_qlen;
@@ -180,7 +192,11 @@ static int fq_codel_enqueue(struct sk_buff *skb, struct Qdisc *sch,
 
 		segs = skb_gso_segment(skb, features & ~NETIF_F_GSO_MASK);
 		if (IS_ERR_OR_NULL(segs))
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0)
+			return qdisc_reshape_fail(skb, sch);
+#else
 			return qdisc_drop(skb, sch, to_free);
+#endif
 		while (segs) {
 			nskb = segs->next;
 			segs->next = NULL;
@@ -240,8 +256,11 @@ static int fq_codel_enqueue(struct sk_buff *skb, struct Qdisc *sch,
 	 * instead of dropping a single packet, it drops half of its backlog
 	 * with a 64 packets limit to not add a too big cpu spike here.
 	 */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0)
+	ret = fq_codel_drop(sch, q->drop_batch_size);
+#else
 	ret = fq_codel_drop(sch, q->drop_batch_size, to_free);
-
+#endif
 	prev_qlen -= sch->q.qlen;
 	prev_backlog -= sch->qstats.backlog;
 	q->drop_overlimit += prev_qlen;
@@ -346,7 +365,10 @@ begin:
 
 static void fq_codel_flow_purge(struct fq_codel_flow *flow)
 {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0)
+#else
 	rtnl_kfree_skbs(flow->head, flow->tail);
+#endif
 	flow->head = NULL;
 }
 
@@ -360,7 +382,16 @@ static void fq_codel_reset(struct Qdisc *sch)
 	for (i = 0; i < FQ_FLOWS; i++) {
 		struct fq_codel_flow *flow = q->flows + i;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0)
+		while (flow->head) {
+			struct sk_buff *skb = dequeue_head(flow);
+
+			qdisc_qstats_backlog_dec(sch, skb);
+			kfree_skb(skb);
+		}
+#else
 		fq_codel_flow_purge(flow);
+#endif
 		INIT_LIST_HEAD(&flow->flowchain);
 		codel_vars_init(&flow->cvars);
 	}
@@ -448,7 +479,11 @@ static int fq_codel_change(struct Qdisc *sch, struct nlattr *opt,
 		struct sk_buff *skb = fq_codel_dequeue(sch);
 
 		q->cstats.drop_len += qdisc_pkt_len(skb);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0)
+		kfree_skb(skb);
+#else
 		rtnl_kfree_skbs(skb, skb);
+#endif
 		q->cstats.drop_count++;
 	}
 	qdisc_tree_reduce_backlog(sch, q->cstats.drop_count, q->cstats.drop_len);

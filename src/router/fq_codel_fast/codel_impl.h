@@ -85,6 +85,15 @@ static void codel_Newton_step(struct codel_vars *vars)
 	vars->rec_inv_sqrt = val >> REC_INV_SQRT_SHIFT;
 }
 
+#if KERNEL_VERSION(3, 14, 0) > LINUX_VERSION_CODE
+
+static inline u32 reciprocal_scale(u32 val, u32 ep_ro)
+{
+	return (u32)(((u64) val * ep_ro) >> 32);
+}
+
+#endif
+
 /*
  * CoDel control_law is t + interval/sqrt(count)
  * We maintain in rec_inv_sqrt the reciprocal value of sqrt(count) to avoid
