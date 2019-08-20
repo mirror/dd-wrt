@@ -519,6 +519,7 @@ l7filters filters_list[] = {
 #endif
 	{ "tar", L7_ONLY },
 #ifdef HAVE_OPENDPI
+	{ "targus_getdata", NDPI_ONLY },
 	{ "tds", NDPI_ONLY },
 #endif
 	{ "teamfortress2", L7_ONLY },
