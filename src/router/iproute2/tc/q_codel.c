@@ -58,7 +58,7 @@ static void explain(void)
 }
 
 static int codel_parse_opt(struct qdisc_util *qu, int argc, char **argv,
-			   struct nlmsghdr *n, const char *dev)
+			   struct nlmsghdr *n)
 {
 	unsigned int limit = 0;
 	unsigned int target = 0;
