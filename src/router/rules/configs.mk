@@ -332,7 +332,7 @@ obj-$(CONFIG_I2C_GPIO_CUSTOM) += i2c-gpio-custom
 obj-$(CONFIG_NEWPORT) += cpt8x
 obj-$(CONFIG_RSYNC) += rsync
 obj-$(CONFIG_CAKE) += cake
-obj-$(CONFIG_FQ_CODEL_FAST) += fq_codel_fast
+obj-$(CONFIG_CAKE) += fq_codel_fast
 
 obj-y+=configs
 
