@@ -38,6 +38,9 @@ void ej_show_qos_aqd(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_FQ_CODEL
 	websWrite(wp, "<option value=\"fq_codel\" %s><script type=\"text/javascript\">Capture(qos.aqd_fqcodel)</script></option>\n", strcmp(aqd, "fq_codel") == 0 ? "selected" : "");
 #endif
+#ifdef HAVE_FQ_CODEL_FAST
+	websWrite(wp, "<option value=\"fq_codel_fast\" %s><script type=\"text/javascript\">Capture(qos.aqd_fqcodel_fast)</script></option>\n", strcmp(aqd, "fq_codel_fast") == 0 ? "selected" : "");
+#endif
 #ifdef HAVE_PIE
 	websWrite(wp, "<option value=\"pie\" %s><script type=\"text/javascript\">Capture(qos.aqd_pie)</script></option>\n", strcmp(aqd, "pie") == 0 ? "selected" : "");
 #endif
