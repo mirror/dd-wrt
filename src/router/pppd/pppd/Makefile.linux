@@ -104,7 +104,8 @@ CFLAGS= -DBROADCOM
 endif
 endif
 
-CFLAGS+= -Wall $(COMPILE_FLAGS) $(COPTS) $(MIPS16_OPT) -Os -ffunction-sections -fdata-sections -Wl,--gc-sections $(INCLUDE_DIRS) '-DDESTDIR="@DESTDIR@"'
+CFLAGS+= -Wall $(COMPILE_FLAGS) $(COPTS) $(MIPS16_OPT) -Os -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,-u,set_mppe_enc_types $(INCLUDE_DIRS) '-DDESTDIR="@DESTDIR@"'
+#CFLAGS+= -Wall $(COMPILE_FLAGS) $(COPTS) $(MIPS16_OPT) -Os  $(INCLUDE_DIRS) '-DDESTDIR="@DESTDIR@"'
 
 
 ifdef CHAPMS

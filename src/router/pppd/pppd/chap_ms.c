@@ -948,8 +948,9 @@ ChapMS2(u_char *rchallenge, u_char *PeerChallenge,
 /*
  * Set MPPE options from plugins.
  */
-void
-set_mppe_enc_types(int policy, int types)
+void set_mppe_enc_types(int policy, int types) __attribute__((used));
+
+void set_mppe_enc_types(int policy, int types)
 {
     /* Early exit for unknown policies. */
     if (policy != MPPE_ENC_POL_ENC_ALLOWED ||
