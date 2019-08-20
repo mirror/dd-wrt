@@ -364,8 +364,8 @@ static void ndpi_search_yahoo(struct ndpi_detection_module_struct *ndpi_struct, 
 #ifdef NDPI_PROTOCOL_HTTP
 			    || packet->detected_protocol_stack[0] == NDPI_PROTOCOL_HTTP
 #endif
-#ifdef NDPI_PROTOCOL_SSL
-			    || packet->detected_protocol_stack[0] == NDPI_PROTOCOL_SSL) {
+#ifdef NDPI_PROTOCOL_TLS
+			    || packet->detected_protocol_stack[0] == NDPI_PROTOCOL_TLS) {
 #endif
 				ndpi_search_yahoo_tcp(ndpi_struct, flow);
 			}

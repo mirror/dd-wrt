@@ -42,10 +42,10 @@ static void ndpi_search_mail_imap_tcp(struct ndpi_detection_module_struct *ndpi_
 	NDPI_LOG(NDPI_PROTOCOL_MAIL_IMAP, ndpi_struct, NDPI_LOG_DEBUG, "search IMAP.\n");
 
 	if (flow->l4.tcp.mail_imap_starttls == 2) {
-#ifdef NDPI_PROTOCOL_SSL
+#ifdef NDPI_PROTOCOL_TLS
 		NDPI_LOG(NDPI_PROTOCOL_MAIL_IMAP, ndpi_struct, NDPI_LOG_DEBUG, "starttls detected\n");
 		NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_MAIL_IMAP);
-		NDPI_DEL_PROTOCOL_FROM_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_SSL);
+		NDPI_DEL_PROTOCOL_FROM_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_TLS);
 		return;
 #endif
 	}

@@ -21,7 +21,7 @@ all:
 		mkdir ${OPENDPI_SRC}; \
 		cp ${OPENDPI_PATH2}/* ${OPENDPI_SRC} -R; \
 	fi
-	make -C ${KERNEL_DIR} CROSS_COMPILE="ccache $(CROSS_COMPILE)" M=$$PWD;
+	-make -C ${KERNEL_DIR} CROSS_COMPILE="ccache $(CROSS_COMPILE)" M=$$PWD;
 	rm -r ${OPENDPI_SRC}
 modules:
 	make -C ${KERNEL_DIR} M=$$PWD $@;

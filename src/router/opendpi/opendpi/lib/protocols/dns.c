@@ -140,7 +140,7 @@ static void ndpi_search_dns(struct ndpi_detection_module_struct *ndpi_struct, st
 				       || ((dns_header.additional_rrs > 0) && (dns_header.additional_rrs <= NDPI_MAX_DNS_REQUESTS)))
 				    ) {
 					/* This is a good reply */
-					if (ndpi_struct->dns_dissect_response) {
+					if (!ndpi_struct->dns_dont_dissect_response) {
 						x++;
 
 						if (flow->packet.payload[x] != '\0') {
@@ -213,7 +213,7 @@ static void ndpi_search_dns(struct ndpi_detection_module_struct *ndpi_struct, st
 #endif
 
 			if (flow->packet.detected_protocol_stack[0] == NDPI_PROTOCOL_UNKNOWN) {
-				if (is_query && ndpi_struct->dns_dissect_response)
+				if (is_query && !ndpi_struct->dns_dont_dissect_response)
 					return;	/* The response will set the verdict */
 
 	/**

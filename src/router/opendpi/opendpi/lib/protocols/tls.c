@@ -23,13 +23,15 @@
 
 #include "ndpi_protocol_ids.h"
 
-#define NDPI_CURRENT_PROTO NDPI_PROTOCOL_TLS
+//#define NDPI_CURRENT_PROTO NDPI_PROTOCOL_TLS
 
 #include "ndpi_api.h"
 
 // #define DEBUG_TLS 1
 
 #define NDPI_MAX_TLS_REQUEST_SIZE 10000
+
+static int check_punycode_string(char *buffer, int len);
 
 /* Skype.c */
 extern u_int8_t is_skype_flow(struct ndpi_detection_module_struct *ndpi_struct,
@@ -366,7 +368,7 @@ struct ja3_info {
 
 /* **************************************** */
 
-int getTLScertificate(struct ndpi_detection_module_struct *ndpi_struct,
+static int getTLScertificate(struct ndpi_detection_module_struct *ndpi_struct,
 		      struct ndpi_flow_struct *flow,
 		      char *buffer, int buffer_len) {
   struct ndpi_packet_struct *packet = &flow->packet;
@@ -863,7 +865,7 @@ int getTLScertificate(struct ndpi_detection_module_struct *ndpi_struct,
 
 /* **************************************** */
 
-void getSSLorganization(struct ndpi_detection_module_struct *ndpi_struct,
+static void getSSLorganization(struct ndpi_detection_module_struct *ndpi_struct,
 			struct ndpi_flow_struct *flow,
 			char *buffer, int buffer_len) {
   struct ndpi_packet_struct *packet = &flow->packet;
@@ -928,7 +930,7 @@ void getSSLorganization(struct ndpi_detection_module_struct *ndpi_struct,
 
 /* **************************************** */
 
-int sslTryAndRetrieveServerCertificate(struct ndpi_detection_module_struct *ndpi_struct,
+static int sslTryAndRetrieveServerCertificate(struct ndpi_detection_module_struct *ndpi_struct,
 				       struct ndpi_flow_struct *flow) {
   struct ndpi_packet_struct *packet = &flow->packet;
 
@@ -972,7 +974,7 @@ int sslTryAndRetrieveServerCertificate(struct ndpi_detection_module_struct *ndpi
 
 /* **************************************** */
 
-void sslInitExtraPacketProcessing(int caseNum, struct ndpi_flow_struct *flow) {
+static void sslInitExtraPacketProcessing(int caseNum, struct ndpi_flow_struct *flow) {
   flow->check_extra_packets = 1;
   /* 0 is the case for waiting for the server certificate */
   if(caseNum == 0) {
@@ -984,7 +986,7 @@ void sslInitExtraPacketProcessing(int caseNum, struct ndpi_flow_struct *flow) {
 
 /* **************************************** */
 
-int tlsDetectProtocolFromCertificate(struct ndpi_detection_module_struct *ndpi_struct,
+static int tlsDetectProtocolFromCertificate(struct ndpi_detection_module_struct *ndpi_struct,
 				     struct ndpi_flow_struct *flow) {
   struct ndpi_packet_struct *packet = &flow->packet;
 
@@ -1234,7 +1236,7 @@ static u_int8_t ndpi_search_tlsv3_direction1(struct ndpi_detection_module_struct
 
 /* **************************************** */
 
-void ndpi_search_tls_tcp_udp(struct ndpi_detection_module_struct *ndpi_struct,
+static void ndpi_search_tls_tcp_udp(struct ndpi_detection_module_struct *ndpi_struct,
 			     struct ndpi_flow_struct *flow) {
   struct ndpi_packet_struct *packet = &flow->packet;
   u_int8_t ret;
@@ -1387,7 +1389,7 @@ void ndpi_search_tls_tcp_udp(struct ndpi_detection_module_struct *ndpi_struct,
 
 /* **************************************** */
 
-void init_tls_dissector(struct ndpi_detection_module_struct *ndpi_struct,
+static void init_tls_dissector(struct ndpi_detection_module_struct *ndpi_struct,
 			u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask) {
   ndpi_set_bitmask_protocol_detection("TLS", ndpi_struct, detection_bitmask, *id,
 				      NDPI_PROTOCOL_TLS,

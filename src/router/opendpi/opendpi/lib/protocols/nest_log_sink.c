@@ -25,7 +25,7 @@
 
 #include "ndpi_protocol_ids.h"
 
-#define NDPI_CURRENT_PROTO      NDPI_PROTOCOL_NEST_LOG_SINK
+//#define NDPI_CURRENT_PROTO      NDPI_PROTOCOL_NEST_LOG_SINK
 
 #include "ndpi_api.h"
 

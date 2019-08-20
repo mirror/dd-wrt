@@ -333,11 +333,11 @@
 #define NDPI_PROTOCOL_NEST_LOG_SINK     282 /* Nest Log Sink (Nest Protect) - Darryl Sokoloski <darryl@egloo.ca> */
 #define NDPI_PROTOCOL_MODBUS            283 /* Modbus */
 #define NDPI_PROTOCOL_LINE            284 /* Modbus */
-//#define NDPI_PROTOCOL_TLS            285 /* Modbus */
-//#define NDPI_PROTOCOL_TLS_NO_CERT            286 /* Modbus */
+#define NDPI_PROTOCOL_TLS            285 /* Modbus */
+#define NDPI_PROTOCOL_TLS_NO_CERT            286 /* Modbus */
 
 /* UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE (NDPI_PROTOCOL_PANDORA) */
-#define NDPI_LAST_IMPLEMENTED_PROTOCOL			284
+#define NDPI_LAST_IMPLEMENTED_PROTOCOL			286
 
 #define NDPI_MAX_SUPPORTED_PROTOCOLS (NDPI_LAST_IMPLEMENTED_PROTOCOL + 1)
 #define NDPI_MAX_NUM_CUSTOM_PROTOCOLS                   (NDPI_NUM_BITS-NDPI_LAST_IMPLEMENTED_PROTOCOL)
