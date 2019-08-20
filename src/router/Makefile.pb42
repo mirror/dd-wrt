@@ -700,6 +700,8 @@ endif
 ifeq ($(CONFIG_CAKE),y)
 	-$(MAKE) -f Makefile.pb42 cake
 	-$(MAKE) -f Makefile.pb42 cake-install
+	-$(MAKE) -f Makefile.pb42 fq_codel_fast
+	-$(MAKE) -f Makefile.pb42 fq_codel_fast-install
 endif
 ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.pb42 wireguard

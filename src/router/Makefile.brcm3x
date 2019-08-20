@@ -214,6 +214,8 @@ endif
 ifeq ($(CONFIG_CAKE),y)
 	-$(MAKE) -f Makefile.brcm3x cake
 	-$(MAKE) -f Makefile.brcm3x cake-install
+	-$(MAKE) -f Makefile.brcm3x fq_codel_fast
+	-$(MAKE) -f Makefile.brcm3x fq_codel_fast-install
 endif
 
 ifneq ($(CONFIG_USB),y)

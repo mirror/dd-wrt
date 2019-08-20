@@ -282,6 +282,8 @@ endif
 ifeq ($(CONFIG_CAKE),y)
 	-$(MAKE) -f Makefile.rt2880 cake
 	-$(MAKE) -f Makefile.rt2880 cake-install
+	-$(MAKE) -f Makefile.rt2880 fq_codel_fast
+	-$(MAKE) -f Makefile.rt2880 fq_codel_fast-install
 endif
 	-$(MAKE) -f Makefile.rt2880 uniwip-gpio
 	-$(MAKE) -f Makefile.rt2880 uniwip-gpio-install
