@@ -870,7 +870,7 @@ static void init_qdisc(int type, int wan_type, const char *dev, const char *wand
 	}
 #endif
 #if defined(HAVE_FQ_CODEL) || defined(HAVE_FQ_CODEL_FAST)
-	if (!strcmp(aqd, "fq_codel") || !strcmp(aqd, "fq_codel_fast") || )) {
+	if (!strcmp(aqd, "fq_codel") || !strcmp(aqd, "fq_codel_fast")) {
 		add_fq_codel(dev, 100, aqd);
 		add_fq_codel(dev, 10, aqd);
 		add_fq_codel(dev, 20, aqd);
