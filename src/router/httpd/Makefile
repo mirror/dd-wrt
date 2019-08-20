@@ -1043,6 +1043,7 @@ CFLAGS += -DHAVE_PIE
 endif
 ifeq ($(CONFIG_CAKE),y)
 CFLAGS += -DHAVE_CAKE
+CFLAGS += -DHAVE_FQ_CODEL_FAST
 endif
 
 ifeq ($(CONFIG_WTS),y)
