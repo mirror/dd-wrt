@@ -165,6 +165,8 @@ endif
 ifeq ($(CONFIG_CAKE),y)
 	-$(MAKE) -f Makefile.alpine cake
 	-$(MAKE) -f Makefile.alpine cake-install
+	-$(MAKE) -f Makefile.alpine fq_codel_fast
+	-$(MAKE) -f Makefile.alpine fq_codel_fast-install
 endif
 #	-$(MAKE) -f Makefile.alpine uniwip-gpio
 #	-$(MAKE) -f Makefile.alpine uniwip-gpio-install

@@ -232,6 +232,8 @@ endif
 ifeq ($(CONFIG_CAKE),y)
 	-$(MAKE) -f Makefile.octeon cake
 	-$(MAKE) -f Makefile.octeon cake-install
+	-$(MAKE) -f Makefile.octeon fq_codel_fast
+	-$(MAKE) -f Makefile.octeon fq_codel_fast-install
 endif
 
 ifneq ($(CONFIG_SAMBA),y)

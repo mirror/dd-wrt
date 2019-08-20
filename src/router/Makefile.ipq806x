@@ -173,6 +173,8 @@ endif
 ifeq ($(CONFIG_CAKE),y)
 	-$(MAKE) -f Makefile.ipq806x cake
 	-$(MAKE) -f Makefile.ipq806x cake-install
+	-$(MAKE) -f Makefile.ipq806x fq_codel_fast
+	-$(MAKE) -f Makefile.ipq806x fq_codel_fast-install
 endif
 #	-$(MAKE) -f Makefile.ipq806x uniwip-gpio
 #	-$(MAKE) -f Makefile.ipq806x uniwip-gpio-install

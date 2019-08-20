@@ -216,6 +216,8 @@ endif
 ifeq ($(CONFIG_CAKE),y)
 	-$(MAKE) -f Makefile.armbe cake
 	-$(MAKE) -f Makefile.armbe cake-install
+	-$(MAKE) -f Makefile.armbe fq_codel_fast
+	-$(MAKE) -f Makefile.armbe fq_codel_fast-install
 endif
 
 ifeq ($(CONFIG_WP18),y)

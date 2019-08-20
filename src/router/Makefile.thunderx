@@ -203,6 +203,8 @@ endif
 ifeq ($(CONFIG_CAKE),y)
 	-$(MAKE) -f Makefile.thunderx cake
 	-$(MAKE) -f Makefile.thunderx cake-install
+	-$(MAKE) -f Makefile.thunderx fq_codel_fast
+	-$(MAKE) -f Makefile.thunderx fq_codel_fast-install
 endif
 	-$(MAKE) -f Makefile.thunderx uniwip-gpio
 	-$(MAKE) -f Makefile.thunderx uniwip-gpio-install
