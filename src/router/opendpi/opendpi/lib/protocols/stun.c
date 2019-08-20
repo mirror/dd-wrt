@@ -26,7 +26,7 @@
 
 #ifdef NDPI_PROTOCOL_STUN
 
-#define NDPI_CURRENT_PROTO NDPI_PROTOCOL_STUN
+//#define NDPI_CURRENT_PROTO NDPI_PROTOCOL_STUN
 
 #include "ndpi_api.h"
 

@@ -385,9 +385,11 @@ struct ndpi_flow_tcp_struct {
 #ifdef NDPI_PROTOCOL_TELNET
 	u_int32_t telnet_stage:2;	// 0 - 2
 #endif
-#ifdef NDPI_PROTOCOL_SSL
-	u_int8_t ssl_stage:2, ssl_seen_client_cert:1, ssl_seen_server_cert:1;	// 0 - 5
-#endif
+  /* NDPI_PROTOCOL_TLS */
+  u_int8_t ssl_seen_client_cert:1,
+    ssl_seen_server_cert:1,
+    ssl_seen_certificate:1,
+    ssl_stage:2; // 0 - 5
 #ifdef NDPI_PROTOCOL_POSTGRES
 	u_int32_t postgres_stage:3;
 #endif
@@ -668,6 +670,14 @@ typedef enum {
 					 */
 } ndpi_protocol_category_t;
 
+typedef enum {
+	      ndpi_pref_http_dont_dissect_response = 0,
+      ndpi_pref_dns_dont_dissect_response,
+	      ndpi_pref_direction_detect_disable,
+	      ndpi_pref_disable_metadata_export,
+	      ndpi_pref_enable_category_substring_match
+} ndpi_detection_preference;
+
 /* ntop extensions */
 typedef struct ndpi_proto_defaults {
 	char *protoName;
@@ -799,7 +809,11 @@ typedef struct ndpi_detection_module_struct {
 
 	ndpi_proto_defaults_t proto_defaults[NDPI_MAX_SUPPORTED_PROTOCOLS + NDPI_MAX_NUM_CUSTOM_PROTOCOLS];
 
-	u_int8_t http_dont_dissect_response:1, dns_dissect_response:1, direction_detect_disable:1;	/* disable internal detection of packet direction */
+     u_int8_t http_dont_dissect_response:1, dns_dont_dissect_response:1,
+     direction_detect_disable:1, /* disable internal detection of packet direction */
+     disable_metadata_export:1, /* No metadata is exported */
+     enable_category_substring_match:1 /* Default is perfect match */
+     ;
 } ndpi_detection_module_struct_t;
 
 typedef enum {
