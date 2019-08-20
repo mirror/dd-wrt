@@ -177,3 +177,4 @@
 #include "protocols/amazon_video.c"
 #include "protocols/line.c"
 #include "protocols/tls.c"
+#include "protocols/targus_getdata.c"
