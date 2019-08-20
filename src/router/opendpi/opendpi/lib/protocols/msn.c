@@ -59,8 +59,8 @@ static void ndpi_search_msn_tcp(struct ndpi_detection_module_struct *ndpi_struct
 	u_int16_t status = 0;
 
 	NDPI_LOG(NDPI_PROTOCOL_MSN, ndpi_struct, NDPI_LOG_TRACE, "MSN tcp detection...\n");
-#ifdef NDPI_PROTOCOL_SSL
-	if (packet->detected_protocol_stack[0] == NDPI_PROTOCOL_SSL) {
+#ifdef NDPI_PROTOCOL_TLS
+	if (packet->detected_protocol_stack[0] == NDPI_PROTOCOL_TLS) {
 
 		NDPI_LOG(NDPI_PROTOCOL_MSN, ndpi_struct, NDPI_LOG_TRACE, "msn ssl ft test\n");
 
@@ -93,8 +93,8 @@ static void ndpi_search_msn_tcp(struct ndpi_detection_module_struct *ndpi_struct
 	 */
 	/* now we have a look at the first packet only. */
 	if (flow->packet_counter == 1
-#ifdef NDPI_PROTOCOL_SSL
-	    || ((packet->detected_protocol_stack[0] == NDPI_PROTOCOL_SSL) && flow->packet_counter <= 3)
+#ifdef NDPI_PROTOCOL_TLS
+	    || ((packet->detected_protocol_stack[0] == NDPI_PROTOCOL_TLS) && flow->packet_counter <= 3)
 #endif
 	    ) {
 
@@ -468,8 +468,8 @@ static void ndpi_search_msn(struct ndpi_detection_module_struct *ndpi_struct, st
 #ifdef NDPI_PROTOCOL_HTTP
 			    || packet->detected_protocol_stack[0] == NDPI_PROTOCOL_HTTP
 #endif
-#ifdef NDPI_PROTOCOL_SSL
-			    || packet->detected_protocol_stack[0] == NDPI_PROTOCOL_SSL
+#ifdef NDPI_PROTOCOL_TLS
+			    || packet->detected_protocol_stack[0] == NDPI_PROTOCOL_TLS
 #endif
 #ifdef NDPI_PROTOCOL_STUN
 			    || packet->detected_protocol_stack[0] == NDPI_PROTOCOL_STUN

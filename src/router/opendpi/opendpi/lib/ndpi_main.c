@@ -70,6 +70,7 @@ static int check_punycode_string(char *buffer, int len)
 
 #include "ndpi_http_hdr.c.inc"
 
+#include "ndpi_utils.c"
 #include "protocols.c"
 
 #ifdef WIN32
@@ -191,152 +192,6 @@ static int atoi(const char *str)
 }
 #endif
 
-/* ftp://ftp.cc.uoc.gr/mirrors/OpenBSD/src/lib/libc/stdlib/tsearch.c */
-/* find or insert datum into search tree */
-void *ndpi_tsearch(const void *vkey, void **vrootp, int (*compar) (const void *, const void *))
-{
-	ndpi_node *q;
-	char *key = (char *)vkey;
-	ndpi_node **rootp = (ndpi_node **) vrootp;
-
-	if (rootp == (ndpi_node **) 0)
-		return ((void *)0);
-	while (*rootp != (ndpi_node *) 0) {	/* Knuth's T1: */
-		int r;
-
-		if ((r = (*compar) (key, (*rootp)->key)) == 0)	/* T2: */
-			return ((void *)*rootp);	/* we found it! */
-		rootp = (r < 0) ? &(*rootp)->left :	/* T3: follow left branch */
-		    &(*rootp)->right;	/* T4: follow right branch */
-	}
-	q = (ndpi_node *) ndpi_malloc(sizeof(ndpi_node));	/* T5: key not found */
-	if (q != (ndpi_node *) 0) {	/* make new node */
-		*rootp = q;	/* link new node to old */
-		q->key = key;	/* initialize new node */
-		q->left = q->right = (ndpi_node *) 0;
-	}
-	return ((void *)q);
-}
-
-/* delete node with given key */
-void *ndpi_tdelete(const void *vkey, void **vrootp, int (*compar) (const void *, const void *))
-{
-	ndpi_node **rootp = (ndpi_node **) vrootp;
-	char *key = (char *)vkey;
-	ndpi_node *p = (ndpi_node *) 1;
-	ndpi_node *q;
-	ndpi_node *r;
-	int cmp;
-
-	if (rootp == (ndpi_node **) 0 || *rootp == (ndpi_node *) 0)
-		return ((ndpi_node *) 0);
-	while ((cmp = (*compar) (key, (*rootp)->key)) != 0) {
-		p = *rootp;
-		rootp = (cmp < 0) ? &(*rootp)->left :	/* follow left branch */
-		    &(*rootp)->right;	/* follow right branch */
-		if (*rootp == (ndpi_node *) 0)
-			return ((void *)0);	/* key not found */
-	}
-	r = (*rootp)->right;	/* D1: */
-	if ((q = (*rootp)->left) == (ndpi_node *) 0)	/* Left (ndpi_node *)0? */
-		q = r;
-	else if (r != (ndpi_node *) 0) {	/* Right link is null? */
-		if (r->left == (ndpi_node *) 0) {	/* D2: Find successor */
-			r->left = q;
-			q = r;
-		} else {	/* D3: Find (ndpi_node *)0 link */
-			for (q = r->left; q->left != (ndpi_node *) 0; q = r->left)
-				r = q;
-			r->left = q->right;
-			q->left = (*rootp)->left;
-			q->right = (*rootp)->right;
-		}
-	}
-	ndpi_free((ndpi_node *) * rootp);	/* D4: Free node */
-	*rootp = q;		/* link parent to new node */
-	return (p);
-}
-
-/* Walk the nodes of a tree */
-static void ndpi_trecurse(ndpi_node * root, void (*action) (const void *, ndpi_VISIT, int, void *), int level, void *user_data)
-{
-	if (root->left == (ndpi_node *) 0 && root->right == (ndpi_node *) 0)
-		(*action) (root, ndpi_leaf, level, user_data);
-	else {
-		(*action) (root, ndpi_preorder, level, user_data);
-		if (root->left != (ndpi_node *) 0)
-			ndpi_trecurse(root->left, action, level + 1, user_data);
-		(*action) (root, ndpi_postorder, level, user_data);
-		if (root->right != (ndpi_node *) 0)
-			ndpi_trecurse(root->right, action, level + 1, user_data);
-		(*action) (root, ndpi_endorder, level, user_data);
-	}
-}
-
-/* Walk the nodes of a tree */
-void ndpi_twalk(const void *vroot, void (*action) (const void *, ndpi_VISIT, int, void *), void *user_data)
-{
-	ndpi_node *root = (ndpi_node *) vroot;
-
-	if (root != (ndpi_node *) 0 && action != (void (*)(const void *, ndpi_VISIT, int, void *))0)
-		ndpi_trecurse(root, action, 0, user_data);
-}
-
-/* find a node, or return 0 */
-void *ndpi_tfind(const void *vkey, void *vrootp, int (*compar) (const void *, const void *))
-{
-	char *key = (char *)vkey;
-	ndpi_node **rootp = (ndpi_node **) vrootp;
-
-	if (rootp == (ndpi_node **) 0)
-		return ((ndpi_node *) 0);
-	while (*rootp != (ndpi_node *) 0) {	/* T1: */
-		int r;
-		if ((r = (*compar) (key, (*rootp)->key)) == 0)	/* T2: */
-			return (*rootp);	/* key found */
-		rootp = (r < 0) ? &(*rootp)->left :	/* T3: follow left branch */
-		    &(*rootp)->right;	/* T4: follow right branch */
-	}
-	return (ndpi_node *) 0;
-}
-
-/* ****************************************** */
-
-/* Walk the nodes of a tree */
-static void ndpi_tdestroy_recurse(ndpi_node * root, void (*free_action) (void *))
-{
-	if (root->left != NULL)
-		ndpi_tdestroy_recurse(root->left, free_action);
-	if (root->right != NULL)
-		ndpi_tdestroy_recurse(root->right, free_action);
-
-	(*free_action) ((void *)root->key);
-	ndpi_free(root);
-}
-
-void ndpi_tdestroy(void *vrootp, void (*freefct) (void *))
-{
-	ndpi_node *root = (ndpi_node *) vrootp;
-
-	if (root != NULL)
-		ndpi_tdestroy_recurse(root, freefct);
-}
-
-/* ****************************************** */
-
-u_int8_t ndpi_net_match(u_int32_t ip_to_check, u_int32_t net, u_int32_t num_bits)
-{
-	u_int32_t mask = 0;
-
-	mask = ~(~mask >> num_bits);
-
-	return (((ip_to_check & mask) == (net & mask)) ? 1 : 0);
-}
-
-u_int8_t ndpi_ips_match(u_int32_t src, u_int32_t dst, u_int32_t net, u_int32_t num_bits)
-{
-	return (ndpi_net_match(src, net, num_bits) || ndpi_net_match(dst, net, num_bits));
-}
 
 /* ****************************************** */
 
@@ -962,8 +817,8 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_SOULSEEK, no_master, no_master, "Soulseek", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
 
-	custom_master[0] = NDPI_PROTOCOL_SSL, custom_master[1] = NDPI_PROTOCOL_UNKNOWN;
-	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_SSL_NO_CERT, custom_master, no_master, "SSL_No_Cert", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
+	custom_master[0] = NDPI_PROTOCOL_TLS, custom_master[1] = NDPI_PROTOCOL_UNKNOWN;
+	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_TLS_NO_CERT, custom_master, no_master, "TLS_No_Cert", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_IRC, no_master, no_master, "IRC", ndpi_build_default_ports(ports_a, 194, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 194, 0, 0, 0, 0) /* UDP */ );
@@ -1024,8 +879,8 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_WHATSAPP, no_master, no_master, "WhatsApp", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
 
-	custom_master[0] = NDPI_PROTOCOL_SSL_NO_CERT, custom_master[1] = NDPI_PROTOCOL_UNKNOWN;
-	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_SSL, no_master, custom_master, "SSL", ndpi_build_default_ports(ports_a, 443, 3001 /* ntop */ , 0, 0, 0) /* TCP */ ,
+	custom_master[0] = NDPI_PROTOCOL_TLS_NO_CERT, custom_master[1] = NDPI_PROTOCOL_UNKNOWN;
+	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_TLS, no_master, custom_master, "TLS", ndpi_build_default_ports(ports_a, 443, 3001 /* ntop */ , 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_SSH, no_master, no_master, "SSH", ndpi_build_default_ports(ports_a, 22, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
@@ -1849,7 +1704,7 @@ static void ndpi_set_protocol_detection_bitmask2(struct ndpi_detection_module_st
 	init_starcraft_dissector(ndpi_struct, &a, detection_bitmask);
 
 	/* SSL */
-	init_ssl_dissector(ndpi_struct, &a, detection_bitmask);
+	init_tls_dissector(ndpi_struct, &a, detection_bitmask);
 
 	/* STUN */
 	init_stun_dissector(ndpi_struct, &a, detection_bitmask);
@@ -3050,9 +2905,9 @@ static ndpi_protocol ndpi_detection_giveup(struct ndpi_detection_module_struct *
 			ndpi_int_change_protocol(ndpi_struct, flow, NDPI_PROTOCOL_HTTP, NDPI_PROTOCOL_UNKNOWN);
 		else if ((flow->packet.l4_protocol == IPPROTO_TCP) && (flow->l4.tcp.ssl_stage > 1)) {
 			if (flow->guessed_protocol_id != NDPI_PROTOCOL_UNKNOWN)
-				ndpi_int_change_protocol(ndpi_struct, flow, flow->guessed_protocol_id, NDPI_PROTOCOL_SSL);
+				ndpi_int_change_protocol(ndpi_struct, flow, flow->guessed_protocol_id, NDPI_PROTOCOL_TLS);
 			else
-				ndpi_int_change_protocol(ndpi_struct, flow, NDPI_PROTOCOL_SSL, NDPI_PROTOCOL_UNKNOWN);
+				ndpi_int_change_protocol(ndpi_struct, flow, NDPI_PROTOCOL_TLS, NDPI_PROTOCOL_UNKNOWN);
 		} else {
 			flow->detected_protocol_stack[1] = flow->guessed_protocol_id, flow->detected_protocol_stack[0] = flow->guessed_host_protocol_id;
 
@@ -3118,8 +2973,8 @@ static ndpi_protocol ndpi_detection_process_packet(struct ndpi_detection_module_
 
 	if (flow->server_id == NULL)
 		flow->server_id = dst;	/* Default */
-	if (flow->detected_protocol_stack[0] != NDPI_PROTOCOL_UNKNOWN)
-		goto ret_protocols;
+  if(flow->detected_protocol_stack[0] != NDPI_PROTOCOL_UNKNOWN)
+      goto ret_protocols;
 
 	/* need at least 20 bytes for ip header */
 	if (packetlen < 20) {
@@ -4016,7 +3871,7 @@ static ndpi_protocol ndpi_guess_undetected_protocol(struct ndpi_detection_module
 		if (rc != NDPI_PROTOCOL_UNKNOWN) {
 			ret.protocol = rc;
 
-			if (rc == NDPI_PROTOCOL_SSL)
+			if (rc == NDPI_PROTOCOL_TLS)
 				goto check_guessed_skype;
 			else
 				return (ret);

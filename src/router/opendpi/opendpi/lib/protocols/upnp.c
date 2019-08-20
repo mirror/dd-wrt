@@ -20,7 +20,7 @@
 
 #include "ndpi_protocol_ids.h"
 
-#define NDPI_CURRENT_PROTO NDPI_PROTOCOL_UPNP
+//#define NDPI_CURRENT_PROTO NDPI_PROTOCOL_UPNP
 
 #include "ndpi_api.h"
 

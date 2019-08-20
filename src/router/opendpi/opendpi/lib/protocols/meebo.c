@@ -127,7 +127,7 @@ static void ndpi_search_meebo(struct ndpi_detection_module_struct
 		return;
 	}
 
-	if (flow->packet_counter < 5 && packet->detected_protocol_stack[0] == NDPI_PROTOCOL_UNKNOWN && NDPI_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_SSL) == 0) {
+	if (flow->packet_counter < 5 && packet->detected_protocol_stack[0] == NDPI_PROTOCOL_UNKNOWN && NDPI_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_TLS) == 0) {
 		NDPI_LOG(NDPI_PROTOCOL_MEEBO, ndpi_struct, NDPI_LOG_DEBUG, "ssl not yet excluded. need next packet.\n");
 		return;
 	}
