@@ -3548,6 +3548,11 @@ void start_nvram(void)
 		nvram_set("svqos_aqd", "sfq");
 	}
 #endif
+#ifndef HAVE_FQ_CODEL_FAST
+	if (!strcmp(aqd, "fq_codel_fast")) {
+		nvram_set("svqos_aqd", "sfq");
+	}
+#endif
 #ifndef HAVE_PIE
 	if (!strcmp(aqd, "pie")) {
 		nvram_set("svqos_aqd", "sfq");
@@ -3560,6 +3565,7 @@ void start_nvram(void)
 #endif
 	if (strcmp(aqd, "codel")
 	    && strcmp(aqd, "fq_codel")
+	    && strcmp(aqd, "fq_codel_fast")
 	    && strcmp(aqd, "pie")
 	    && strcmp(aqd, "cake")) {
 		nvram_set("svqos_aqd", "sfq");
