@@ -47,6 +47,85 @@
 #include "utils.h"
 #include "tc_util.h"
 
+/* FQ_CODEL */
+
+enum {
+	TCQ_FQ_CODEL_FAST_UNSPEC,
+	TCQ_FQ_CODEL_FAST_TARGET,
+	TCQ_FQ_CODEL_FAST_LIMIT,
+	TCQ_FQ_CODEL_FAST_INTERVAL,
+	TCQ_FQ_CODEL_FAST_ECN,
+	TCQ_FQ_CODEL_FAST_FLOWS,
+	TCQ_FQ_CODEL_FAST_QUANTUM,
+	TCQ_FQ_CODEL_FAST_CE_THRESHOLD,
+	TCQ_FQ_CODEL_FAST_DROP_BATCH_SIZE,
+	TCQ_FQ_CODEL_FAST_MEMORY_LIMIT,
+	__TCQ_FQ_CODEL_FAST_MAX
+};
+
+#define TCQ_FQ_CODEL_FAST_MAX	(__TCQ_FQ_CODEL_FAST_MAX - 1)
+
+enum {
+	TCQ_FQ_CODEL_FAST_XSTATS_QDISC,
+	TCQ_FQ_CODEL_FAST_XSTATS_CLASS,
+};
+
+struct tc_fq_codel_fast_qd_stats {
+	__u32	maxpacket;	/* largest packet we've seen so far */
+	__u32	drop_overlimit; /* number of time max qdisc
+				 * packet limit was hit
+				 */
+	__u32	ecn_mark;	/* number of packets we ECN marked
+				 * instead of being dropped
+				 */
+	__u32	new_flow_count; /* number of time packets
+				 * created a 'new flow'
+				 */
+	__u32	new_flows_len;	/* count of flows in new list */
+	__u32	old_flows_len;	/* count of flows in old list */
+	__u32	ce_mark;	/* packets above ce_threshold */
+	__u32	memory_usage;	/* in bytes */
+	__u32	drop_overmemory;
+};
+
+struct tc_fq_codel_fast_cl_stats {
+	__s32	deficit;
+	__u32	ldelay;		/* in-queue delay seen by most recently
+				 * dequeued packet
+				 */
+	__u32	count;
+	__u32	lastcount;
+	__u32	dropping;
+	__s32	drop_next;
+};
+
+struct tc_fq_codel_fast_xstats {
+	__u32	type;
+	union {
+		struct tc_fq_codel_fast_qd_stats qdisc_stats;
+		struct tc_fq_codel_fast_cl_stats class_stats;
+	};
+};
+#define PRINT_JSON 0x0
+#define PRINT_ANY 0x1
+#define PRINT_FP 0x2
+
+#define true 1
+
+
+#define print_uint(dummy,dummy2, fmt, args...) { \
+			    if ((dummy == PRINT_ANY || dummy == PRINT_FP) && fmt!=NULL) fprintf(f, fmt, ##args); \
+			    }
+
+#define print_string(dummy,dummy2, fmt, args...) { \
+			    if ((dummy == PRINT_ANY || dummy == PRINT_FP) && fmt!=NULL) {fprintf(f, fmt, ##args);} \
+			    }
+
+#define print_bool(dummy,dummy2, fmt, istrue) { \
+			    if ((dummy == PRINT_ANY || dummy == PRINT_FP) && istrue) fprintf(f, fmt); \
+			    }
+
+
 static void explain(void)
 {
 	fprintf(stderr, "Usage: ... fq_codel [ limit PACKETS ] [ flows NUMBER ]\n");
@@ -57,7 +136,7 @@ static void explain(void)
 }
 
 static int fq_codel_parse_opt(struct qdisc_util *qu, int argc, char **argv,
-			      struct nlmsghdr *n, const char *dev)
+			      struct nlmsghdr *n)
 {
 	unsigned int limit = 0;
 	unsigned int flows = 0;
@@ -130,22 +209,22 @@ static int fq_codel_parse_opt(struct qdisc_util *qu, int argc, char **argv,
 	tail = NLMSG_TAIL(n);
 	addattr_l(n, 1024, TCA_OPTIONS, NULL, 0);
 	if (limit)
-		addattr_l(n, 1024, TCA_FQ_CODEL_LIMIT, &limit, sizeof(limit));
+		addattr_l(n, 1024, TCQ_FQ_CODEL_FAST_LIMIT, &limit, sizeof(limit));
 	if (flows)
-		addattr_l(n, 1024, TCA_FQ_CODEL_FLOWS, &flows, sizeof(flows));
+		addattr_l(n, 1024, TCQ_FQ_CODEL_FAST_FLOWS, &flows, sizeof(flows));
 	if (quantum)
-		addattr_l(n, 1024, TCA_FQ_CODEL_QUANTUM, &quantum, sizeof(quantum));
+		addattr_l(n, 1024, TCQ_FQ_CODEL_FAST_QUANTUM, &quantum, sizeof(quantum));
 	if (interval)
-		addattr_l(n, 1024, TCA_FQ_CODEL_INTERVAL, &interval, sizeof(interval));
+		addattr_l(n, 1024, TCQ_FQ_CODEL_FAST_INTERVAL, &interval, sizeof(interval));
 	if (target)
-		addattr_l(n, 1024, TCA_FQ_CODEL_TARGET, &target, sizeof(target));
+		addattr_l(n, 1024, TCQ_FQ_CODEL_FAST_TARGET, &target, sizeof(target));
 	if (ecn != -1)
-		addattr_l(n, 1024, TCA_FQ_CODEL_ECN, &ecn, sizeof(ecn));
+		addattr_l(n, 1024, TCQ_FQ_CODEL_FAST_ECN, &ecn, sizeof(ecn));
 	if (ce_threshold != ~0U)
-		addattr_l(n, 1024, TCA_FQ_CODEL_CE_THRESHOLD,
+		addattr_l(n, 1024, TCQ_FQ_CODEL_FAST_CE_THRESHOLD,
 			  &ce_threshold, sizeof(ce_threshold));
 	if (memory != ~0U)
-		addattr_l(n, 1024, TCA_FQ_CODEL_MEMORY_LIMIT,
+		addattr_l(n, 1024, TCQ_FQ_CODEL_FAST_MEMORY_LIMIT,
 			  &memory, sizeof(memory));
 
 	tail->rta_len = (void *) NLMSG_TAIL(n) - (void *) tail;
@@ -154,7 +233,7 @@ static int fq_codel_parse_opt(struct qdisc_util *qu, int argc, char **argv,
 
 static int fq_codel_print_opt(struct qdisc_util *qu, FILE *f, struct rtattr *opt)
 {
-	struct rtattr *tb[TCA_FQ_CODEL_MAX + 1];
+	struct rtattr *tb[TCQ_FQ_CODEL_FAST_MAX + 1];
 	unsigned int limit;
 	unsigned int flows;
 	unsigned int interval;
@@ -169,54 +248,50 @@ static int fq_codel_print_opt(struct qdisc_util *qu, FILE *f, struct rtattr *opt
 	if (opt == NULL)
 		return 0;
 
-	parse_rtattr_nested(tb, TCA_FQ_CODEL_MAX, opt);
+	parse_rtattr_nested(tb, TCQ_FQ_CODEL_FAST_MAX, opt);
 
-	if (tb[TCA_FQ_CODEL_LIMIT] &&
-	    RTA_PAYLOAD(tb[TCA_FQ_CODEL_LIMIT]) >= sizeof(__u32)) {
-		limit = rta_getattr_u32(tb[TCA_FQ_CODEL_LIMIT]);
+	if (tb[TCQ_FQ_CODEL_FAST_LIMIT] &&
+	    RTA_PAYLOAD(tb[TCQ_FQ_CODEL_FAST_LIMIT]) >= sizeof(__u32)) {
+		limit = rta_getattr_u32(tb[TCQ_FQ_CODEL_FAST_LIMIT]);
 		print_uint(PRINT_ANY, "limit", "limit %up ", limit);
 	}
-	if (tb[TCA_FQ_CODEL_FLOWS] &&
-	    RTA_PAYLOAD(tb[TCA_FQ_CODEL_FLOWS]) >= sizeof(__u32)) {
-		flows = rta_getattr_u32(tb[TCA_FQ_CODEL_FLOWS]);
+	if (tb[TCQ_FQ_CODEL_FAST_FLOWS] &&
+	    RTA_PAYLOAD(tb[TCQ_FQ_CODEL_FAST_FLOWS]) >= sizeof(__u32)) {
+		flows = rta_getattr_u32(tb[TCQ_FQ_CODEL_FAST_FLOWS]);
 		print_uint(PRINT_ANY, "flows", "flows %u ", flows);
 	}
-	if (tb[TCA_FQ_CODEL_QUANTUM] &&
-	    RTA_PAYLOAD(tb[TCA_FQ_CODEL_QUANTUM]) >= sizeof(__u32)) {
-		quantum = rta_getattr_u32(tb[TCA_FQ_CODEL_QUANTUM]);
+	if (tb[TCQ_FQ_CODEL_FAST_QUANTUM] &&
+	    RTA_PAYLOAD(tb[TCQ_FQ_CODEL_FAST_QUANTUM]) >= sizeof(__u32)) {
+		quantum = rta_getattr_u32(tb[TCQ_FQ_CODEL_FAST_QUANTUM]);
 		print_uint(PRINT_ANY, "quantum", "quantum %u ", quantum);
 	}
-	if (tb[TCA_FQ_CODEL_TARGET] &&
-	    RTA_PAYLOAD(tb[TCA_FQ_CODEL_TARGET]) >= sizeof(__u32)) {
-		target = rta_getattr_u32(tb[TCA_FQ_CODEL_TARGET]);
-		print_uint(PRINT_JSON, "target", NULL, target);
+	if (tb[TCQ_FQ_CODEL_FAST_TARGET] &&
+	    RTA_PAYLOAD(tb[TCQ_FQ_CODEL_FAST_TARGET]) >= sizeof(__u32)) {
+		target = rta_getattr_u32(tb[TCQ_FQ_CODEL_FAST_TARGET]);
 		print_string(PRINT_FP, NULL, "target %s ",
 			     sprint_time(target, b1));
 	}
-	if (tb[TCA_FQ_CODEL_CE_THRESHOLD] &&
-	    RTA_PAYLOAD(tb[TCA_FQ_CODEL_CE_THRESHOLD]) >= sizeof(__u32)) {
-		ce_threshold = rta_getattr_u32(tb[TCA_FQ_CODEL_CE_THRESHOLD]);
-		print_uint(PRINT_JSON, "sce_threshold", NULL, ce_threshold);
+	if (tb[TCQ_FQ_CODEL_FAST_CE_THRESHOLD] &&
+	    RTA_PAYLOAD(tb[TCQ_FQ_CODEL_FAST_CE_THRESHOLD]) >= sizeof(__u32)) {
+		ce_threshold = rta_getattr_u32(tb[TCQ_FQ_CODEL_FAST_CE_THRESHOLD]);
 		print_string(PRINT_FP, NULL, "sce_threshold %s ",
 			     sprint_time(ce_threshold, b1));
 	}
-	if (tb[TCA_FQ_CODEL_INTERVAL] &&
-	    RTA_PAYLOAD(tb[TCA_FQ_CODEL_INTERVAL]) >= sizeof(__u32)) {
-		interval = rta_getattr_u32(tb[TCA_FQ_CODEL_INTERVAL]);
-		print_uint(PRINT_JSON, "interval", NULL, interval);
+	if (tb[TCQ_FQ_CODEL_FAST_INTERVAL] &&
+	    RTA_PAYLOAD(tb[TCQ_FQ_CODEL_FAST_INTERVAL]) >= sizeof(__u32)) {
+		interval = rta_getattr_u32(tb[TCQ_FQ_CODEL_FAST_INTERVAL]);
 		print_string(PRINT_FP, NULL, "interval %s ",
 			     sprint_time(interval, b1));
 	}
-	if (tb[TCA_FQ_CODEL_MEMORY_LIMIT] &&
-	    RTA_PAYLOAD(tb[TCA_FQ_CODEL_MEMORY_LIMIT]) >= sizeof(__u32)) {
-		memory_limit = rta_getattr_u32(tb[TCA_FQ_CODEL_MEMORY_LIMIT]);
-		print_uint(PRINT_JSON, "memory_limit", NULL, memory_limit);
+	if (tb[TCQ_FQ_CODEL_FAST_MEMORY_LIMIT] &&
+	    RTA_PAYLOAD(tb[TCQ_FQ_CODEL_FAST_MEMORY_LIMIT]) >= sizeof(__u32)) {
+		memory_limit = rta_getattr_u32(tb[TCQ_FQ_CODEL_FAST_MEMORY_LIMIT]);
 		print_string(PRINT_FP, NULL, "memory_limit %s ",
 			     sprint_size(memory_limit, b1));
 	}
-	if (tb[TCA_FQ_CODEL_ECN] &&
-	    RTA_PAYLOAD(tb[TCA_FQ_CODEL_ECN]) >= sizeof(__u32)) {
-		ecn = rta_getattr_u32(tb[TCA_FQ_CODEL_ECN]);
+	if (tb[TCQ_FQ_CODEL_FAST_ECN] &&
+	    RTA_PAYLOAD(tb[TCQ_FQ_CODEL_FAST_ECN]) >= sizeof(__u32)) {
+		ecn = rta_getattr_u32(tb[TCQ_FQ_CODEL_FAST_ECN]);
 		if (ecn)
 			print_bool(PRINT_ANY, "ecn", "ecn ", true);
 	}
@@ -227,7 +302,7 @@ static int fq_codel_print_opt(struct qdisc_util *qu, FILE *f, struct rtattr *opt
 static int fq_codel_print_xstats(struct qdisc_util *qu, FILE *f,
 				 struct rtattr *xstats)
 {
-	struct tc_fq_codel_xstats _st = {}, *st;
+	struct tc_fq_codel_fast_xstats _st = {}, *st;
 
 	SPRINT_BUF(b1);
 
@@ -239,7 +314,7 @@ static int fq_codel_print_xstats(struct qdisc_util *qu, FILE *f,
 		memcpy(&_st, st, RTA_PAYLOAD(xstats));
 		st = &_st;
 	}
-	if (st->type == TCA_FQ_CODEL_XSTATS_QDISC) {
+	if (st->type == TCQ_FQ_CODEL_FAST_XSTATS_QDISC) {
 		print_uint(PRINT_ANY, "maxpacket", "  maxpacket %u",
 			st->qdisc_stats.maxpacket);
 		print_uint(PRINT_ANY, "drop_overlimit", " drop_overlimit %u",
@@ -262,25 +337,21 @@ static int fq_codel_print_xstats(struct qdisc_util *qu, FILE *f,
 		print_uint(PRINT_ANY, "old_flows_len", " old_flows_len %u",
 			st->qdisc_stats.old_flows_len);
 	}
-	if (st->type == TCA_FQ_CODEL_XSTATS_CLASS) {
+	if (st->type == TCQ_FQ_CODEL_FAST_XSTATS_CLASS) {
 		print_uint(PRINT_ANY, "deficit", "  deficit %u",
 			st->class_stats.deficit);
 		print_uint(PRINT_ANY, "count", " count %u",
 			st->class_stats.count);
 		print_uint(PRINT_ANY, "lastcount", " lastcount %u",
 			st->class_stats.lastcount);
-		print_uint(PRINT_JSON, "ldelay", NULL,
-			st->class_stats.ldelay);
 		print_string(PRINT_FP, NULL, " ldelay %s",
 			sprint_time(st->class_stats.ldelay, b1));
 		if (st->class_stats.dropping) {
 			print_bool(PRINT_ANY, "dropping", " dropping", true);
-			if (st->class_stats.drop_next < 0)
+			if (st->class_stats.drop_next < 0) {
 				print_string(PRINT_FP, NULL, " drop_next -%s",
 					sprint_time(-st->class_stats.drop_next, b1));
-			else {
-				print_uint(PRINT_JSON, "drop_next", NULL,
-					st->class_stats.drop_next);
+			}else {
 				print_string(PRINT_FP, NULL, " drop_next %s",
 					sprint_time(st->class_stats.drop_next, b1));
 			}
