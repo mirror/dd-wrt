@@ -681,8 +681,8 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 		}
 	}
 #endif
-#ifdef HAVE_FQ_CODEL
-	if (!strcmp(aqd, "fq_codel")) {
+#if defined(HAVE_FQ_CODEL) || defined(HAVE_FQ_CODEL_FAST)
+	if (!strcmp(aqd, "fq_codel") || !strcmp(aqd, "fq_codel_fast")) {
 		int i;
 		for (i = 1; i < 6; i++) {
 			add_fq_codel(wan_dev, base + i, aqd);
@@ -869,8 +869,8 @@ static void init_qdisc(int type, int wan_type, const char *dev, const char *wand
 		add_codel(dev, 40, aqd, rtt, noecn);
 	}
 #endif
-#ifdef HAVE_FQ_CODEL
-	if (!strcmp(aqd, "fq_codel")) {
+#if defined(HAVE_FQ_CODEL) || defined(HAVE_FQ_CODEL_FAST)
+	if (!strcmp(aqd, "fq_codel") || !strcmp(aqd, "fq_codel_fast") || )) {
 		add_fq_codel(dev, 100, aqd);
 		add_fq_codel(dev, 10, aqd);
 		add_fq_codel(dev, 20, aqd);
