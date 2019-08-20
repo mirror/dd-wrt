@@ -505,9 +505,8 @@ l7filters filters_list[] = {
 #endif
 	{ "ssdp", DPI },
 	{ "ssh", DPI },
-	{ "ssl", DPI },
+	{ "ssl", L7_ONLY },
 #ifdef HAVE_OPENDPI
-	{ "ssl_no_cert", NDPI_ONLY },
 	{ "starcraft", NDPI_ONLY },
 	{ "stealthnet", NDPI_ONLY },
 	{ "steam", NDPI_ONLY },
@@ -550,6 +549,8 @@ l7filters filters_list[] = {
 	{ "timrecarga", NDPI_ONLY },
 	{ "timsomdechamada", NDPI_ONLY },
 	{ "tinc", NDPI_ONLY },
+	{ "tls", NDPI_ONLY },
+	{ "tls_no_cert", NDPI_ONLY },
 #endif
 	{ "tonghuashun", L7_ONLY },
 	{ "tor", DPI },
