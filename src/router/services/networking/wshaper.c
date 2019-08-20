@@ -956,6 +956,12 @@ void start_wshaper(void)
 		writeprocsysnet("core/default_qdisc", "fq_codel");
 	}
 #endif
+#ifdef HAVE_FQ_CODEL_FAST
+	if (!strcmp(aqd, "fq_codel_fast")) {
+		insmod("sch_fq_codel_fast");
+		writeprocsysnet("core/default_qdisc", "fq_codel_fast");
+	}
+#endif
 #ifdef HAVE_PIE
 	if (!strcmp(aqd, "pie")) {
 		insmod("sch_pie");
@@ -1096,6 +1102,8 @@ void stop_wshaper(void)
 	rmmod("imq");
 	rmmod("sch_codel");
 	rmmod("sch_fq_codel");
+	rmmod("sch_fq_codel_fast");
+	rmmod("sch_cake");
 //      rmmod("ebtables");
 	rmmod("sch_red");
 	rmmod("sch_hfsc");

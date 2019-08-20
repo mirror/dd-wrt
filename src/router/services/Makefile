@@ -1651,6 +1651,9 @@ endif
 ifeq ($(CONFIG_CAKE),y)
 CFLAGS_EXTRA += -DHAVE_CAKE
 endif
+ifeq ($(CONFIG_CAKE),y)
+CFLAGS_EXTRA += -DHAVE_FQ_CODEL_FAST
+endif
 ifeq ($(CONFIG_NET_SCH_PIE),m)
 CFLAGS_EXTRA += -DHAVE_PIE
 endif
