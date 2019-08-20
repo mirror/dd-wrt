@@ -1074,6 +1074,11 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_AJP, no_master, no_master, "AJP", ndpi_build_default_ports(ports_a, 8009, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
+    ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_TARGUS_GETDATA,
+			    no_master,
+			    no_master, "Targus Dataspeed",
+			    ndpi_build_default_ports(ports_a, 5001, 5201, 0, 0, 0) /* TCP */,
+			    ndpi_build_default_ports(ports_b, 5001, 5201, 0, 0, 0) /* UDP */);
         ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_AMAZON_VIDEO, no_master, no_master, "AmazonVideo",
 			    ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */,
 			    ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
@@ -2210,6 +2215,8 @@ static void ndpi_set_protocol_detection_bitmask2(struct ndpi_detection_module_st
 
          /* AMAZON_VIDEO */
          init_amazon_video_dissector(ndpi_struct, &a, detection_bitmask);
+  /* Targus Getdata */
+  init_targus_getdata_dissector(ndpi_struct, &a, detection_bitmask);
 
   /* LINE */
   init_line_dissector(ndpi_struct, &a, detection_bitmask);
