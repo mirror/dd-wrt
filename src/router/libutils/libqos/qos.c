@@ -487,14 +487,15 @@ static void add_pie(const char *dev, int handle, const char *aqd, int ms5, int n
 static void add_htb_class(const char *dev, const char *parent, const char *classid, int rate, int limit, int mtu, int p)
 {
 	char buf[32];
+	char buf2[32];
 	char qmtu[32];
 	char prio[32];
 	sprintf(qmtu, "%d", mtu + 14);
 	sprintf(prio, "%d", p);
 	if (p != -1)
-		eval("tc", "class", "add", "dev", dev, "parent", parent, "classid", classid, "htb", "rate", math(buf, rate, "kbit"), "ceil", math(buf, limit, "kbit"), "prio", prio, "quantum", qmtu);
+		eval("tc", "class", "add", "dev", dev, "parent", parent, "classid", classid, "htb", "rate", math(buf, rate, "kbit"), "ceil", math(buf2, limit, "kbit"), "prio", prio, "quantum", qmtu);
 	else
-		eval("tc", "class", "add", "dev", dev, "parent", parent, "classid", classid, "htb", "rate", math(buf, rate, "kbit"), "ceil", math(buf, limit, "kbit"), "quantum", qmtu);
+		eval("tc", "class", "add", "dev", dev, "parent", parent, "classid", classid, "htb", "rate", math(buf, rate, "kbit"), "ceil", math(buf2, limit, "kbit"), "quantum", qmtu);
 }
 
 static void add_tc_htb(char *dev, int parent, int class, int rate, int ceil, int quantum, int prio)
@@ -509,7 +510,8 @@ static void add_tc_htb(char *dev, int parent, int class, int rate, int ceil, int
 static void add_hfsc_class(const char *dev, const char *parent, const char *classid, int rate, int limit)
 {
 	char buf[32];
-	eval("tc", "class", "add", "dev", dev, "parent", parent, "classid", classid, "hfsc", "sc", "rate", math(buf, rate, "kbit"), "ul", "rate", math(buf, limit, "kbit"));
+	char buf2[32];
+	eval("tc", "class", "add", "dev", dev, "parent", parent, "classid", classid, "hfsc", "sc", "rate", math(buf, rate, "kbit"), "ul", "rate", math(buf2, limit, "kbit"));
 }
 
 static void add_tc_hfsc(char *dev, int parent, int class, int uprate, int uplimit)
