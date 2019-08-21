@@ -820,6 +820,10 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 	custom_master[0] = NDPI_PROTOCOL_TLS, custom_master[1] = NDPI_PROTOCOL_UNKNOWN;
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_TLS_NO_CERT, custom_master, no_master, "TLS_No_Cert", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
+
+	custom_master[0] = NDPI_PROTOCOL_SSL, custom_master[1] = NDPI_PROTOCOL_UNKNOWN;
+	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_SSL_NO_CERT, custom_master, no_master, "SSL_No_Cert", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
+				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_IRC, no_master, no_master, "IRC", ndpi_build_default_ports(ports_a, 194, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 194, 0, 0, 0, 0) /* UDP */ );
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_AYIYA, no_master, no_master, "Ayiya", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
@@ -881,6 +885,10 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 
 	custom_master[0] = NDPI_PROTOCOL_TLS_NO_CERT, custom_master[1] = NDPI_PROTOCOL_UNKNOWN;
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_TLS, no_master, custom_master, "TLS", ndpi_build_default_ports(ports_a, 443, 3001 /* ntop */ , 0, 0, 0) /* TCP */ ,
+				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
+
+	custom_master[0] = NDPI_PROTOCOL_SSL_NO_CERT, custom_master[1] = NDPI_PROTOCOL_UNKNOWN;
+	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_SSL, no_master, custom_master, "SSL", ndpi_build_default_ports(ports_a, 443, 3001 /* ntop */ , 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_SSH, no_master, no_master, "SSH", ndpi_build_default_ports(ports_a, 22, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
@@ -1710,6 +1718,9 @@ static void ndpi_set_protocol_detection_bitmask2(struct ndpi_detection_module_st
 
 	/* SSL */
 	init_tls_dissector(ndpi_struct, &a, detection_bitmask);
+
+	/* SSL */
+	init_ssl_dissector(ndpi_struct, &a, detection_bitmask);
 
 	/* STUN */
 	init_stun_dissector(ndpi_struct, &a, detection_bitmask);

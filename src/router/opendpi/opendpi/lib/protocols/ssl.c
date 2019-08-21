@@ -95,7 +95,7 @@ static void ndpi_int_ssl_add_connection(struct ndpi_detection_module_struct *ndp
 			  ((ch) >= '[' && (ch) <= '`') ||	\
 			  ((ch) >= '{' && (ch) <= '~'))
 
-static void stripCertificateTrailer(char *buffer, int buffer_len)
+static void ssl_stripCertificateTrailer(char *buffer, int buffer_len)
 {
 
 	int i, is_puny;
@@ -223,7 +223,7 @@ static int getSSLcertificate(struct ndpi_detection_module_struct *ndpi_struct, s
 							}
 
 							if (num_dots >= 2) {
-								stripCertificateTrailer(buffer, buffer_len);
+								ssl_stripCertificateTrailer(buffer, buffer_len);
 								snprintf(flow->protos.stun_ssl.ssl.server_certificate, sizeof(flow->protos.stun_ssl.ssl.server_certificate), "%s", buffer);
 								return (1 /* Server Certificate */ );
 							}
@@ -283,7 +283,7 @@ static int getSSLcertificate(struct ndpi_detection_module_struct *ndpi_struct, s
 											len = (u_int) ndpi_min(extension_len - begin, buffer_len - 1);
 											strncpy(buffer, &server_name[begin], len);
 											buffer[len] = '\0';
-											stripCertificateTrailer(buffer, buffer_len);
+											ssl_stripCertificateTrailer(buffer, buffer_len);
 
 											snprintf(flow->protos.stun_ssl.ssl.client_certificate, sizeof(flow->protos.stun_ssl.ssl.client_certificate), "%s", buffer);
 
@@ -305,7 +305,7 @@ static int getSSLcertificate(struct ndpi_detection_module_struct *ndpi_struct, s
 	return (0);		/* Not found */
 }
 
-static int sslTryAndRetrieveServerCertificate(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+static int ssl_sslTryAndRetrieveServerCertificate(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
 	struct ndpi_packet_struct *packet = &flow->packet;
 
@@ -335,14 +335,14 @@ static int sslTryAndRetrieveServerCertificate(struct ndpi_detection_module_struc
 	return 1;
 }
 
-static void sslInitExtraPacketProcessing(int caseNum, struct ndpi_flow_struct *flow)
+static void ssl_sslInitExtraPacketProcessing(int caseNum, struct ndpi_flow_struct *flow)
 {
 	flow->check_extra_packets = 1;
 	/* 0 is the case for waiting for the server certificate */
 	if (caseNum == 0) {
 		/* At most 7 packets should almost always be enough to find the server certificate if it's there */
 		flow->max_extra_packets_to_check = 7;
-		flow->extra_packets_func = sslTryAndRetrieveServerCertificate;
+		flow->extra_packets_func = ssl_sslTryAndRetrieveServerCertificate;
 	}
 }
 
@@ -373,7 +373,7 @@ static int sslDetectProtocolFromCertificate(struct ndpi_detection_module_struct 
 					 * to see the server certificate yet, set up extra packet processing to wait
 					 * a few more packets. */
 					if ((flow->protos.stun_ssl.ssl.client_certificate[0] != '\0') && (flow->protos.stun_ssl.ssl.server_certificate[0] == '\0')) {
-						sslInitExtraPacketProcessing(0, flow);
+						ssl_sslInitExtraPacketProcessing(0, flow);
 					}
 					ndpi_set_detected_protocol(ndpi_struct, flow, subproto, ndpi_ssl_refine_master_protocol(ndpi_struct, flow, NDPI_PROTOCOL_SSL));
 					return (rc);	/* Fix courtesy of Gianluca Costa <g.costa@xplico.org> */
