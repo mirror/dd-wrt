@@ -59,12 +59,10 @@ CFLAGS += -DNEED_PRINTF
 endif
 ifeq ($(CONFIG_CAKE),y)
 CFLAGS += -DHAVE_CAKE
-endif
-ifeq ($(CONFIG_FQ_CODEL_FAST),y)
 CFLAGS += -DHAVE_FQ_CODEL_FAST
 endif
 
-CFLAGS += $(CCOPTS) $(MIPS16_OPT) -I$(KERNEL_INCLUDE) $(ASM_INCLUDE) -I../include $(DEFINES) -ffunction-sections -fdata-sections -Wl,--gc-sections
+CFLAGS += $(CCOPTS) $(MIPS16_OPT) -I$(KERNEL_INCLUDE) $(ASM_INCLUDE) -I../include $(DEFINES) -ffunction-sections -fdata-sections -Wl,--gc-sections -DNEED_PRINTF
 LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 
