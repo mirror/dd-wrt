@@ -50,7 +50,7 @@
 #include <linux/timer.h>
 #include <linux/freezer.h>
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #include <trace/events/timer.h>
 

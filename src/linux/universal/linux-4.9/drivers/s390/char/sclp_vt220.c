@@ -26,7 +26,7 @@
 #include <linux/reboot.h>
 #include <linux/slab.h>
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #include "sclp.h"
 #include "ctrlchar.h"
 

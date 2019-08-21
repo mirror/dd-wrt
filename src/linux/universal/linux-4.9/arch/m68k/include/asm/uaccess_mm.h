@@ -5,8 +5,13 @@
  * User space memory access functions
  */
 #include <linux/compiler.h>
+#include <linux/errno.h>
 #include <linux/types.h>
+#include <linux/sched.h>
 #include <asm/segment.h>
+
+#define VERIFY_READ	0
+#define VERIFY_WRITE	1
 
 /* We let the MMU do all checking */
 static inline int access_ok(int type, const void __user *addr,
@@ -375,7 +380,7 @@ __constant_copy_to_user(void __user *to, const void *from, unsigned long n)
 #define copy_to_user(to, from, n)	__copy_to_user(to, from, n)
 
 #define user_addr_max() \
-	(uaccess_kernel() ? ~0UL : TASK_SIZE)
+	(segment_eq(get_fs(), USER_DS) ? TASK_SIZE : ~0UL)
 
 extern long strncpy_from_user(char *dst, const char __user *src, long count);
 extern __must_check long strlen_user(const char __user *str);

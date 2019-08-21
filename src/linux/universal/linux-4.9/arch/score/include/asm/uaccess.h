@@ -2,7 +2,12 @@
 #define __SCORE_UACCESS_H
 
 #include <linux/kernel.h>
+#include <linux/errno.h>
+#include <linux/thread_info.h>
 #include <asm/extable.h>
+
+#define VERIFY_READ		0
+#define VERIFY_WRITE		1
 
 #define get_ds()		(KERNEL_DS)
 #define get_fs()		(current_thread_info()->addr_limit)

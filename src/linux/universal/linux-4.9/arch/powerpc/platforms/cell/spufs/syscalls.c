@@ -5,7 +5,7 @@
 #include <linux/namei.h>
 #include <linux/slab.h>
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #include "spufs.h"
 

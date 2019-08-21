@@ -37,7 +37,7 @@
 #include <linux/migrate.h>
 #include <linux/uio.h>
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 static const struct super_operations hugetlbfs_ops;
 static const struct address_space_operations hugetlbfs_aops;

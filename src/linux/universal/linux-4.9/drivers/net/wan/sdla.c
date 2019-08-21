@@ -56,7 +56,7 @@
 
 #include <asm/io.h>
 #include <asm/dma.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 static const char* version = "SDLA driver v0.30, 12 Sep 1996, mike.mclagan@linux.org";
 

@@ -18,7 +18,7 @@
 #include <linux/proc_fs.h>
 #include <linux/skbuff.h>
 #include <linux/seq_file.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #include "platform.h"
 #include "di_defs.h"

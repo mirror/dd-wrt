@@ -29,7 +29,7 @@
 #include <linux/ptrace.h>
 #include <linux/regset.h>
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 /*
  * retrieve the contents of SCORE userspace general registers

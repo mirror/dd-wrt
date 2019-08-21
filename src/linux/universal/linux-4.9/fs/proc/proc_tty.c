@@ -4,7 +4,7 @@
  * Copyright 1997, Theodore Ts'o
  */
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/errno.h>

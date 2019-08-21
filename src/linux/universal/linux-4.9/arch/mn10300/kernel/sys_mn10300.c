@@ -21,7 +21,7 @@
 #include <linux/file.h>
 #include <linux/tty.h>
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 asmlinkage long old_mmap(unsigned long addr, unsigned long len,
 			 unsigned long prot, unsigned long flags,

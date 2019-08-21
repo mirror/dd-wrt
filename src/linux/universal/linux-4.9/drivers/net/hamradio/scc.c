@@ -178,7 +178,7 @@
 
 #include <asm/irq.h>
 #include <asm/io.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #include "z8530.h"
 

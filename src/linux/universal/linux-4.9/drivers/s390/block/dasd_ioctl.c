@@ -21,7 +21,7 @@
 #include <asm/ccwdev.h>
 #include <asm/schid.h>
 #include <asm/cmb.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 /* This is ugly... */
 #define PRINTK_HEADER "dasd_ioctl:"

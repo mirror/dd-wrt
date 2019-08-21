@@ -4,6 +4,10 @@
 /*
  * User space memory access functions
  */
+#include <linux/sched.h>
+
+#define VERIFY_READ	0
+#define VERIFY_WRITE	1
 
 /*
  * The fs value determines whether argument validity checking should be

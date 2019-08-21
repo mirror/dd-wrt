@@ -7,7 +7,7 @@
 #endif
 
 #define user_addr_max() \
-	(uaccess_kernel() ? ~0UL : TASK_SIZE)
+	(segment_eq(get_fs(), USER_DS) ? TASK_SIZE : ~0UL)
 
 long strncpy_from_user(char *dest, const char __user *src, long count);
 

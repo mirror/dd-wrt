@@ -73,7 +73,7 @@
 #include <net/ip6_checksum.h>
 #include <net/xfrm.h>
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #include <trace/events/skb.h>
 #include <linux/highmem.h>
 #include <linux/capability.h>

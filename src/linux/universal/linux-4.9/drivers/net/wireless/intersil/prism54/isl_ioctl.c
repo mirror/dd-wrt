@@ -26,7 +26,7 @@
 #include <linux/pci.h>
 #include <linux/etherdevice.h>
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #include "prismcompat.h"
 #include "isl_ioctl.h"

@@ -72,7 +72,7 @@
 
 #include <linux/module.h>
 #include <linux/slab.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #include <linux/types.h>
 #include <linux/kernel.h>
 #include <linux/jiffies.h>

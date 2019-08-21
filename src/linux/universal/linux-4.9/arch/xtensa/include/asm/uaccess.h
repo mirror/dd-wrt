@@ -16,8 +16,14 @@
 #ifndef _XTENSA_UACCESS_H
 #define _XTENSA_UACCESS_H
 
+#include <linux/errno.h>
 #include <linux/prefetch.h>
 #include <asm/types.h>
+
+#define VERIFY_READ    0
+#define VERIFY_WRITE   1
+
+#include <linux/sched.h>
 
 /*
  * The fs value determines whether argument validity checking should
@@ -37,7 +43,7 @@
 
 #define segment_eq(a, b)	((a).seg == (b).seg)
 
-#define __kernel_ok (uaccess_kernel())
+#define __kernel_ok (segment_eq(get_fs(), KERNEL_DS))
 #define __user_ok(addr, size) \
 		(((size) <= TASK_SIZE)&&((addr) <= TASK_SIZE-(size)))
 #define __access_ok(addr, size) (__kernel_ok || __user_ok((addr), (size)))

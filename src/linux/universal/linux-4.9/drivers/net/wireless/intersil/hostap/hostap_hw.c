@@ -32,7 +32,7 @@
 
 
 #include <asm/delay.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #include <linux/slab.h>
 #include <linux/netdevice.h>

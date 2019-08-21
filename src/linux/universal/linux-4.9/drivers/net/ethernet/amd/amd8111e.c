@@ -87,7 +87,7 @@ Revision History:
 
 #include <asm/io.h>
 #include <asm/byteorder.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #if IS_ENABLED(CONFIG_VLAN_8021Q)
 #define AMD8111E_VLAN_TAG_USED 1

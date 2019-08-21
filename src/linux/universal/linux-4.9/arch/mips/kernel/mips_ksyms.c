@@ -12,7 +12,7 @@
 #include <linux/export.h>
 #include <asm/checksum.h>
 #include <linux/mm.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #include <asm/ftrace.h>
 #include <asm/fpu.h>
 #include <asm/msa.h>
@@ -59,7 +59,7 @@ EXPORT_SYMBOL(copy_page);
  * Userspace access stuff.
  */
 EXPORT_SYMBOL(__copy_user);
-//EXPORT_SYMBOL(__copy_user_inatomic);
+EXPORT_SYMBOL(__copy_user_inatomic);
 #ifdef CONFIG_EVA
 EXPORT_SYMBOL(__copy_from_user_eva);
 EXPORT_SYMBOL(__copy_in_user_eva);

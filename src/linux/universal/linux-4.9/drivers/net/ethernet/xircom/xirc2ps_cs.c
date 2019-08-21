@@ -88,7 +88,7 @@
 #include <pcmcia/ciscode.h>
 
 #include <asm/io.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #ifndef MANFID_COMPAQ
   #define MANFID_COMPAQ 	   0x0138

@@ -9,7 +9,7 @@
 #include <linux/delay.h>
 #include <linux/slab.h>
 #include <linux/vmalloc.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 /*
  * NVRAM support routines

@@ -391,10 +391,14 @@ no_rx:
 
 static inline void msm_wait_for_xmitr(struct uart_port *port)
 {
+	unsigned int timeout = 500000;
+
 	while (!(msm_read(port, UART_SR) & UART_SR_TX_EMPTY)) {
 		if (msm_read(port, UART_ISR) & UART_ISR_TX_READY)
 			break;
 		udelay(1);
+		if (!timeout--)
+			break;
 	}
 	msm_write(port, UART_CR_CMD_RESET_TX_READY, UART_CR);
 }
@@ -868,6 +872,7 @@ static void msm_handle_tx(struct uart_port *port)
 	struct circ_buf *xmit = &msm_port->uart.state->xmit;
 	struct msm_dma *dma = &msm_port->tx_dma;
 	unsigned int pio_count, dma_count, dma_min;
+	char buf[4] = { 0 };
 	void __iomem *tf;
 	int err = 0;
 
@@ -877,10 +882,12 @@ static void msm_handle_tx(struct uart_port *port)
 		else
 			tf = port->membase + UART_TF;
 
+		buf[0] = port->x_char;
+
 		if (msm_port->is_uartdm)
 			msm_reset_dm_count(port, 1);
 
-		iowrite8_rep(tf, &port->x_char, 1);
+		iowrite32_rep(tf, buf, 1);
 		port->icount.tx++;
 		port->x_char = 0;
 		return;
@@ -1175,6 +1182,11 @@ static int msm_startup(struct uart_port *port)
 	snprintf(msm_port->name, sizeof(msm_port->name),
 		 "msm_serial%d", port->line);
 
+	ret = request_irq(port->irq, msm_uart_irq, IRQF_TRIGGER_HIGH,
+			  msm_port->name, port);
+	if (unlikely(ret))
+		return ret;
+
 	msm_init_clock(port);
 
 	if (likely(port->fifosize > 12))
@@ -1201,21 +1213,7 @@ static int msm_startup(struct uart_port *port)
 		msm_request_rx_dma(msm_port, msm_port->uart.mapbase);
 	}
 
-	ret = request_irq(port->irq, msm_uart_irq, IRQF_TRIGGER_HIGH,
-			  msm_port->name, port);
-	if (unlikely(ret))
-		goto err_irq;
-
 	return 0;
-
-err_irq:
-	if (msm_port->is_uartdm)
-		msm_release_dma(msm_port);
-
-	clk_disable_unprepare(msm_port->pclk);
-	clk_disable_unprepare(msm_port->clk);
-
-	return ret;
 }
 
 static void msm_shutdown(struct uart_port *port)
@@ -1354,6 +1352,7 @@ static int msm_request_port(struct uart_port *port)
 		return -EBUSY;
 
 	port->membase = ioremap(port->mapbase, size);
+	printk(KERN_INFO "physical %p = virtual %p\n",port->mapbase, port->membase);
 	if (!port->membase) {
 		ret = -EBUSY;
 		goto fail_release_port;

@@ -40,7 +40,7 @@
 #include <linux/interrupt.h>
 #include <linux/device.h>		/* for MODULE_ALIAS_CHARDEV_MAJOR */
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #include <net/irda/irda.h>
 #include <net/irda/irmod.h>

@@ -18,7 +18,7 @@
 #include <linux/hugetlb.h>
 
 #include <asm/shmparam.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 unsigned long
 arch_get_unmapped_area (struct file *filp, unsigned long addr, unsigned long len,

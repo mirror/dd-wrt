@@ -22,7 +22,7 @@
 #include <linux/sockios.h>
 #include <linux/net.h>
 #include <linux/skbuff.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #include <net/sock.h>
 #include <linux/init.h>
 

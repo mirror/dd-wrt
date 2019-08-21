@@ -42,7 +42,7 @@
  *		Hirokazu Takahashi:	sendfile() on UDP works now.
  */
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #include <linux/module.h>
 #include <linux/types.h>
 #include <linux/kernel.h>

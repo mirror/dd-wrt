@@ -9,7 +9,7 @@
  */
 
 #include <linux/ptrace.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #include <arch/sv_addr_ag.h>
 #include <arch/system.h>
 

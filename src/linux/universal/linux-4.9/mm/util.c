@@ -13,7 +13,7 @@
 #include <linux/vmalloc.h>
 
 #include <asm/sections.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #include "internal.h"
 

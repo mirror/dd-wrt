@@ -22,7 +22,7 @@
 #include <linux/bitops.h>
 #include <linux/spinlock.h>
 #include <linux/completion.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #include "internal.h"
 

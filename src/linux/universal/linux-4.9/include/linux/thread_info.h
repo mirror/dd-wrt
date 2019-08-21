@@ -9,7 +9,6 @@
 
 #include <linux/types.h>
 #include <linux/bug.h>
-#include <linux/errno.h>
 
 struct timespec;
 struct compat_timespec;

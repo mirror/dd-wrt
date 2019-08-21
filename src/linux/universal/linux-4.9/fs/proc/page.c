@@ -13,7 +13,7 @@
 #include <linux/mmu_notifier.h>
 #include <linux/page_idle.h>
 #include <linux/kernel-page-flags.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #include "internal.h"
 
 #define KPMSIZE sizeof(u64)

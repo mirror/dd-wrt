@@ -90,7 +90,7 @@ __copy_to_user_memcpy(void __user *to, const void *from, unsigned long n)
 	unsigned long ua_flags;
 	int atomic;
 
-	if (uaccess_kernel()) {
+	if (unlikely(segment_eq(get_fs(), KERNEL_DS))) {
 		memcpy((void *)to, from, n);
 		return 0;
 	}
@@ -163,7 +163,7 @@ __clear_user_memset(void __user *addr, unsigned long n)
 {
 	unsigned long ua_flags;
 
-	if (uaccess_kernel()) {
+	if (unlikely(segment_eq(get_fs(), KERNEL_DS))) {
 		memset((void *)addr, 0, n);
 		return 0;
 	}

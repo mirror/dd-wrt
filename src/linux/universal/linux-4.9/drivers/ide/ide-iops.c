@@ -24,7 +24,7 @@
 
 #include <asm/byteorder.h>
 #include <asm/irq.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #include <asm/io.h>
 
 void SELECT_MASK(ide_drive_t *drive, int mask)

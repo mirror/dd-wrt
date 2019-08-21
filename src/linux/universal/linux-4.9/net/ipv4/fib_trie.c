@@ -50,7 +50,7 @@
 
 #define VERSION "0.409"
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #include <linux/bitops.h>
 #include <linux/types.h>
 #include <linux/kernel.h>

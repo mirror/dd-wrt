@@ -22,7 +22,7 @@
 #include <linux/vmalloc.h>
 #include <linux/posix_acl_xattr.h>
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 static const char *
 strcmp_prefix(const char *a, const char *a_prefix)

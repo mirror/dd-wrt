@@ -29,7 +29,7 @@
 #include <asm/opcodes.h>
 #include <asm/system_info.h>
 #include <asm/traps.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 /*
  * Error-checking SWP macros implemented using ldrex{b}/strex{b}

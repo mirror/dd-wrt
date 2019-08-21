@@ -81,7 +81,7 @@
 #include <linux/tty_flip.h>
 #include <asm/hvconsole.h>
 #include <asm/hvcserver.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #include <asm/vio.h>
 
 /*

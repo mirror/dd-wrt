@@ -19,7 +19,7 @@
 #include <linux/kernel_stat.h>
 #include <linux/interrupt.h>
 #include <linux/module.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 /*
  * do_IRQ handles all normal device IRQs (the special

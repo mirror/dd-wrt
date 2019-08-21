@@ -40,7 +40,7 @@
 #include <linux/thermal.h>
 #include <linux/acpi.h>
 #include <linux/workqueue.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #define PREFIX "ACPI: "
 

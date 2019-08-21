@@ -20,7 +20,7 @@
 #include <linux/vmalloc.h>
 #include <linux/sched.h>
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #include "ncp_fs.h"
 

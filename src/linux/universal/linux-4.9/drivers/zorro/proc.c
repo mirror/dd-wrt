@@ -16,7 +16,7 @@
 #include <linux/export.h>
 
 #include <asm/byteorder.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #include <asm/amigahw.h>
 #include <asm/setup.h>
 

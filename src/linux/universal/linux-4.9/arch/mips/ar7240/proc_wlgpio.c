@@ -18,7 +18,7 @@
 #include <linux/kernel.h>
 #include <linux/string.h>
 #include <linux/fs.h>
-#include <linux/uaccess.h>	/* for copy_from_user */
+#include <asm/uaccess.h>	/* for copy_from_user */
 
 #include "ar7240.h"
 

@@ -5,8 +5,7 @@
 #include <linux/kernel.h>
 #include <linux/interrupt.h>
 #include <linux/fs.h>
-
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #include <asm/rt2880/surfboardint.h>
 #include <linux/pci.h>
 #include <linux/delay.h>

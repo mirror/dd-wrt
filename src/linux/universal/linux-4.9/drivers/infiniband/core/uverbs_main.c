@@ -46,7 +46,7 @@
 #include <linux/anon_inodes.h>
 #include <linux/slab.h>
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #include <rdma/ib.h>
 

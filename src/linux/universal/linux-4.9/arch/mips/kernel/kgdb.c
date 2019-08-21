@@ -32,7 +32,7 @@
 #include <asm/cacheflush.h>
 #include <asm/processor.h>
 #include <asm/sigcontext.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 static struct hard_trap_info {
 	unsigned char tt;	/* Trap type code for MIPS R3xxx and R4xxx */

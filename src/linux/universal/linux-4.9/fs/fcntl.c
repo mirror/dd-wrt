@@ -25,7 +25,7 @@
 
 #include <asm/poll.h>
 #include <asm/siginfo.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #define SETFL_MASK (O_APPEND | O_NONBLOCK | O_NDELAY | O_DIRECT | O_NOATIME)
 

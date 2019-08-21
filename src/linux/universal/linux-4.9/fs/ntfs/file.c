@@ -30,7 +30,7 @@
 #include <linux/writeback.h>
 
 #include <asm/page.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #include "attrib.h"
 #include "bitmap.h"

@@ -15,11 +15,15 @@
 /*
  * User space memory access functions
  */
+#include <linux/sched.h>
 #include <linux/mm.h>
 #include <asm/segment.h>
 #include <asm/sections.h>
 
 #define __ptr(x) ((unsigned long __force *)(x))
+
+#define VERIFY_READ	0
+#define VERIFY_WRITE	1
 
 /*
  * check that a range of addresses falls within the current address limit

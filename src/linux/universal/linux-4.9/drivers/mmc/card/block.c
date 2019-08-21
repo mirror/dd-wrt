@@ -43,7 +43,7 @@
 #include <linux/mmc/mmc.h>
 #include <linux/mmc/sd.h>
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #include "queue.h"
 #include "block.h"

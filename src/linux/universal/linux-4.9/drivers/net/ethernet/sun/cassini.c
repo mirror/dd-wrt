@@ -99,7 +99,7 @@
 #include <linux/atomic.h>
 #include <asm/io.h>
 #include <asm/byteorder.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #define cas_page_map(x)      kmap_atomic((x))
 #define cas_page_unmap(x)    kunmap_atomic((x))

@@ -56,7 +56,7 @@
 #include <net/tcp_states.h>
 #include <net/net_namespace.h>
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 /* Configuration Variables */
 static unsigned char ipxcfg_max_hops = 16;

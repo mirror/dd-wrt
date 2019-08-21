@@ -1,6 +1,10 @@
 #ifndef __ALPHA_UACCESS_H
 #define __ALPHA_UACCESS_H
 
+#include <linux/errno.h>
+#include <linux/sched.h>
+
+
 /*
  * The fs value determines whether argument validity checking should be
  * performed or not.  If get_fs() == USER_DS, checking is performed, with
@@ -15,6 +19,9 @@
 
 #define KERNEL_DS	((mm_segment_t) { 0UL })
 #define USER_DS		((mm_segment_t) { -0x40000000000UL })
+
+#define VERIFY_READ	0
+#define VERIFY_WRITE	1
 
 #define get_fs()  (current_thread_info()->addr_limit)
 #define get_ds()  (KERNEL_DS)
@@ -425,7 +432,7 @@ clear_user(void __user *to, long len)
 #undef __module_call
 
 #define user_addr_max() \
-        (uaccess_kernel() ? ~0UL : TASK_SIZE)
+        (segment_eq(get_fs(), USER_DS) ? TASK_SIZE : ~0UL)
 
 extern long strncpy_from_user(char *dest, const char __user *src, long count);
 extern __must_check long strlen_user(const char __user *str);

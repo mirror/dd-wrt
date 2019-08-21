@@ -22,7 +22,7 @@
 #include <linux/init.h>
 
 #include <asm/sections.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 /*
  * mutex protecting text section modification (dynamic code patching).

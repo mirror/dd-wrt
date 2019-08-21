@@ -41,7 +41,7 @@
 #include <linux/suspend.h>
 #include <linux/platform_device.h>
 #include <linux/gfp.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #define XPRAM_NAME	"xpram"
 #define XPRAM_DEVS	1	/* one partition */
