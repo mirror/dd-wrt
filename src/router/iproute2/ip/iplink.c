@@ -32,11 +32,11 @@
 #include "ip_common.h"
 
 
-//#define usage() exit(-1);
-//#define iplink_usage() exit(-1);
+#define usage() exit(-1);
+#define iplink_usage() exit(-1);
 
 
-static void usage(void) __attribute__((noreturn));
+/*static void usage(void) __attribute__((noreturn));
 
 void iplink_usage(void)
 {
@@ -59,7 +59,7 @@ static void usage(void)
 {
 	iplink_usage();
 }
-
+*/
 static int on_off(char *msg)
 {
 //	fprintf(stderr, "Error: argument of \"%s\" must be \"on\" or \"off\"\n", msg);
