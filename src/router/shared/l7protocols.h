@@ -505,8 +505,9 @@ l7filters filters_list[] = {
 #endif
 	{ "ssdp", DPI },
 	{ "ssh", DPI },
-	{ "ssl", L7_ONLY },
+	{ "ssl", DPI },
 #ifdef HAVE_OPENDPI
+	{ "ssl_no_cert", NDPI_ONLY },
 	{ "starcraft", NDPI_ONLY },
 	{ "stealthnet", NDPI_ONLY },
 	{ "steam", NDPI_ONLY },
