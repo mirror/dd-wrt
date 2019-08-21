@@ -29,7 +29,7 @@
 #include <asm/opal-prd.h>
 #include <asm/opal.h>
 #include <asm/io.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 
 /**

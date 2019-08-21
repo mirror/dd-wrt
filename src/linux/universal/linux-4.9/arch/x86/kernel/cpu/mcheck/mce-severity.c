@@ -14,7 +14,7 @@
 #include <linux/init.h>
 #include <linux/debugfs.h>
 #include <asm/mce.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #include "mce-internal.h"
 

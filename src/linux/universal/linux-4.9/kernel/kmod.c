@@ -39,7 +39,7 @@
 #include <linux/rwsem.h>
 #include <linux/ptrace.h>
 #include <linux/async.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #include <trace/events/module.h>
 

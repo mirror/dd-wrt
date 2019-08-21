@@ -16,7 +16,7 @@
 #include <linux/init.h>
 #include <linux/fs.h>
 #include <linux/miscdevice.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #include <typedefs.h>
 #include <bcmutils.h>

@@ -83,7 +83,7 @@
 #include <net/netns/generic.h>
 #include <net/sock.h>
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #define PPPOE_HASH_BITS 4
 #define PPPOE_HASH_SIZE (1 << PPPOE_HASH_BITS)

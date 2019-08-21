@@ -12,6 +12,7 @@
 /*
  * User space memory access functions
  */
+#include <linux/sched.h>
 #include <linux/mm.h>
 #include <linux/string.h>
 
@@ -27,6 +28,9 @@ static inline void set_fs(mm_segment_t fs)
 }
 
 #define segment_eq(a, b) ((a) == (b))
+
+#define VERIFY_READ	0
+#define VERIFY_WRITE	1
 
 #define access_ok(type, addr, size) _access_ok((unsigned long)(addr), (size))
 

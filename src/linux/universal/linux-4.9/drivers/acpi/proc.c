@@ -4,7 +4,7 @@
 #include <linux/suspend.h>
 #include <linux/bcd.h>
 #include <linux/acpi.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #include "sleep.h"
 #include "internal.h"

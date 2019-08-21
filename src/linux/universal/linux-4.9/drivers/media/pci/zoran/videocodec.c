@@ -40,7 +40,7 @@
 #ifdef CONFIG_PROC_FS
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #endif
 
 #include "videocodec.h"

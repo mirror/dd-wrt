@@ -52,7 +52,7 @@
 #include <pcmcia/ss.h>
 
 #include <asm/io.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 /*====================================================================*/
 

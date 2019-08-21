@@ -14,7 +14,7 @@
 #include <linux/security.h>
 #include <linux/syscalls.h>
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 SYSCALL_DEFINE3(chown16, const char __user *, filename, old_uid_t, user, old_gid_t, group)
 {

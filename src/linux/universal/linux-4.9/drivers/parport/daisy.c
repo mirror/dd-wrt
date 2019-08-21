@@ -26,7 +26,7 @@
 #include <linux/sched.h>
 
 #include <asm/current.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #undef DEBUG
 

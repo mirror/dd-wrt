@@ -22,7 +22,7 @@
 
 #include <net/checksum.h>
 #include <asm/byteorder.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 /*
  * Copy while checksumming, otherwise like csum_partial

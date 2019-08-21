@@ -13,9 +13,14 @@
 #ifndef _ASM_NIOS2_UACCESS_H
 #define _ASM_NIOS2_UACCESS_H
 
+#include <linux/errno.h>
+#include <linux/thread_info.h>
 #include <linux/string.h>
 
 #include <asm/page.h>
+
+#define VERIFY_READ	0
+#define VERIFY_WRITE	1
 
 /*
  * The exception table consists of pairs of addresses: the first is the

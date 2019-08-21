@@ -35,7 +35,7 @@
 #include <linux/pagemap.h>
 #include <linux/swap.h>
 #include <linux/task_io_accounting_ops.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #include "cifspdu.h"
 #include "cifsglob.h"
 #include "cifsacl.h"

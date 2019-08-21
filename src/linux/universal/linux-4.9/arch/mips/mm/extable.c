@@ -8,7 +8,7 @@
 #include <linux/extable.h>
 #include <linux/spinlock.h>
 #include <asm/branch.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 int fixup_exception(struct pt_regs *regs)
 {

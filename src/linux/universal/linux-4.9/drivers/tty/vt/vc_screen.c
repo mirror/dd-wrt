@@ -39,7 +39,7 @@
 #include <linux/slab.h>
 #include <linux/notifier.h>
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #include <asm/byteorder.h>
 #include <asm/unaligned.h>
 

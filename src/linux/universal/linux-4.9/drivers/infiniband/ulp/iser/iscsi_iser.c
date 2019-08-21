@@ -62,7 +62,7 @@
 
 #include <net/sock.h>
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #include <scsi/scsi_cmnd.h>
 #include <scsi/scsi_device.h>

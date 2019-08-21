@@ -16,7 +16,7 @@
 #include <linux/vmalloc.h>
 //#include <asm/addrspace.h>
 #include <asm/io.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #include "nvram_linux.h"
 

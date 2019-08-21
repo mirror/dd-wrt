@@ -26,7 +26,7 @@
 #include <linux/timer.h>
 #include <asm/atomic.h>
 #include <linux/io.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 static int wep_on_off;
 #define	WEP_OFF		0

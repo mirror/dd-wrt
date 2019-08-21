@@ -328,12 +328,6 @@ void flush_dcache_page(struct page *page)
 	if (page == ZERO_PAGE(0))
 		return;
 
-	if (!cache_ops_need_broadcast() && cache_is_vipt_nonaliasing()) {
-		if (test_bit(PG_dcache_clean, &page->flags))
-			clear_bit(PG_dcache_clean, &page->flags);
-		return;
-	}
-
 	mapping = page_mapping(page);
 
 #ifndef CONFIG_DMA_CACHE_FIQ_BROADCAST

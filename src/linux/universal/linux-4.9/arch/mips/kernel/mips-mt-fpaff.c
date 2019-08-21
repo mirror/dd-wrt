@@ -11,7 +11,7 @@
 #include <linux/sched.h>
 #include <linux/security.h>
 #include <linux/types.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 /*
  * CPU mask used to set process affinity for MT VPEs/TCs with FPUs

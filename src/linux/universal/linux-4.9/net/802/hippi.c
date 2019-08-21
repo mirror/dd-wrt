@@ -34,7 +34,7 @@
 #include <linux/errno.h>
 #include <net/arp.h>
 #include <net/sock.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 /*
  * Create the HIPPI MAC header for an arbitrary protocol layer

@@ -23,7 +23,7 @@
 #include <linux/slab.h>
 
 #include <linux/atomic.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 static DEFINE_MUTEX(mem_sysfs_mutex);
 

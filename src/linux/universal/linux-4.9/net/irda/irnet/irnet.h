@@ -250,7 +250,7 @@
 #include <linux/capability.h>
 #include <linux/ctype.h>	/* isspace() */
 #include <linux/string.h>	/* skip_spaces() */
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #include <linux/init.h>
 
 #include <linux/ppp_defs.h>

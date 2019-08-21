@@ -59,7 +59,7 @@
 /* Move somewhere else to avoid recompiling? */
 #include <generated/utsrelease.h>
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #include <asm/io.h>
 #include <asm/unistd.h>
 

@@ -10,7 +10,7 @@
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
 #include <linux/types.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 /*
  * If read and write race, the read will still atomically read a valid

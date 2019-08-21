@@ -29,7 +29,7 @@
 #include <asm/local.h>
 #include <asm/mipsregs.h>
 #include <asm/ptrace.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #ifdef CONFIG_64BIT
 #define ADDIU	"daddiu "

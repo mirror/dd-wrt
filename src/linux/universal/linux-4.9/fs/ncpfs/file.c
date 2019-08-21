@@ -8,7 +8,7 @@
 
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #include <linux/time.h>
 #include <linux/kernel.h>

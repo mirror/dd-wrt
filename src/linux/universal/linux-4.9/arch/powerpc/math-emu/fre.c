@@ -1,6 +1,6 @@
 #include <linux/types.h>
 #include <linux/errno.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 int fre(void *frD, void *frB)
 {

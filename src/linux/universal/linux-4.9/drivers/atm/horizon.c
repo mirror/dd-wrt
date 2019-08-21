@@ -45,7 +45,7 @@
 
 #include <asm/io.h>
 #include <linux/atomic.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #include <asm/string.h>
 #include <asm/byteorder.h>
 

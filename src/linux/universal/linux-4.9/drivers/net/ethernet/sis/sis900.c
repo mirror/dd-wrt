@@ -74,7 +74,7 @@
 #include <asm/processor.h>      /* Processor type for cache alignment. */
 #include <asm/io.h>
 #include <asm/irq.h>
-#include <linux/uaccess.h>	/* User space memory access functions */
+#include <asm/uaccess.h>	/* User space memory access functions */
 
 #include "sis900.h"
 

@@ -16,7 +16,7 @@
 #include <linux/init.h>
 #include <linux/sched.h>
 #include <asm/semaphore.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #include <asm/io.h> /* ioremap */
 #include <linux/ioport.h>
 

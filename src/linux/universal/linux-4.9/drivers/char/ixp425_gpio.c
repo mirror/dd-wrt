@@ -24,7 +24,7 @@
 #include <linux/fcntl.h>
 #include <linux/miscdevice.h>
 
-#include <linux/uaccess.h>	/* copy_to_user, copy_from_user */
+#include <asm/uaccess.h>	/* copy_to_user, copy_from_user */
 //#include <asm-arm/arch-ixp4xx/gpio.h>
 
 //#include <linux/ixp425-gpio.h>

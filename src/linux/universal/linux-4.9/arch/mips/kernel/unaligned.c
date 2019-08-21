@@ -89,7 +89,7 @@
 #include <asm/fpu.h>
 #include <asm/fpu_emulator.h>
 #include <asm/inst.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #define STR(x)	__STR(x)
 #define __STR(x)  #x
@@ -1026,7 +1026,7 @@ static void emulate_load_store_insn(struct pt_regs *regs,
 			goto sigbus;
 
 		if (IS_ENABLED(CONFIG_EVA)) {
-			if (uaccess_kernel())
+			if (segment_eq(get_fs(), get_ds()))
 				LoadHW(addr, value, res);
 			else
 				LoadHWE(addr, value, res);
@@ -1045,7 +1045,7 @@ static void emulate_load_store_insn(struct pt_regs *regs,
 			goto sigbus;
 
 		if (IS_ENABLED(CONFIG_EVA)) {
-			if (uaccess_kernel())
+			if (segment_eq(get_fs(), get_ds()))
 				LoadW(addr, value, res);
 			else
 				LoadWE(addr, value, res);
@@ -1064,7 +1064,7 @@ static void emulate_load_store_insn(struct pt_regs *regs,
 			goto sigbus;
 
 		if (IS_ENABLED(CONFIG_EVA)) {
-			if (uaccess_kernel())
+			if (segment_eq(get_fs(), get_ds()))
 				LoadHWU(addr, value, res);
 			else
 				LoadHWUE(addr, value, res);
@@ -1132,7 +1132,7 @@ static void emulate_load_store_insn(struct pt_regs *regs,
 		value = regs->regs[insn.i_format.rt];
 
 		if (IS_ENABLED(CONFIG_EVA)) {
-			if (uaccess_kernel())
+			if (segment_eq(get_fs(), get_ds()))
 				StoreHW(addr, value, res);
 			else
 				StoreHWE(addr, value, res);
@@ -1152,7 +1152,7 @@ static void emulate_load_store_insn(struct pt_regs *regs,
 		value = regs->regs[insn.i_format.rt];
 
 		if (IS_ENABLED(CONFIG_EVA)) {
-			if (uaccess_kernel())
+			if (segment_eq(get_fs(), get_ds()))
 				StoreW(addr, value, res);
 			else
 				StoreWE(addr, value, res);

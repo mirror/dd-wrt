@@ -37,7 +37,7 @@
 
 #include <asm/io.h>
 #include <asm/irq.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #include "gianfar.h"
 #include "gianfar_mii.h"

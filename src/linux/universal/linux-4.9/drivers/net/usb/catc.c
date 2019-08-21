@@ -42,7 +42,7 @@
 #include <linux/crc32.h>
 #include <linux/bitops.h>
 #include <linux/gfp.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #undef DEBUG
 

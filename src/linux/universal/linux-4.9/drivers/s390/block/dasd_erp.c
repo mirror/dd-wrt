@@ -15,7 +15,7 @@
 
 #include <asm/debug.h>
 #include <asm/ebcdic.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 /* This is ugly... */
 #define PRINTK_HEADER "dasd_erp:"

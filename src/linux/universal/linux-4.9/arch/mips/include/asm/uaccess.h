@@ -12,6 +12,8 @@
 #define _ASM_UACCESS_H
 
 #include <linux/kernel.h>
+#include <linux/errno.h>
+#include <linux/thread_info.h>
 #include <linux/string.h>
 #include <asm/asm-eva.h>
 #include <asm/extable.h>
@@ -69,6 +71,9 @@ extern u64 __ua_limit;
 #define USER_DS		((mm_segment_t) { __UA_LIMIT })
 #endif
 
+#define VERIFY_READ    0
+#define VERIFY_WRITE   1
+
 #define get_ds()	(KERNEL_DS)
 #define get_fs()	(current_thread_info()->addr_limit)
 #define set_fs(x)	(current_thread_info()->addr_limit = (x))
@@ -88,7 +93,7 @@ static inline bool eva_kernel_access(void)
 	if (!IS_ENABLED(CONFIG_EVA))
 		return false;
 
-	return uaccess_kernel();
+	return segment_eq(get_fs(), get_ds());
 }
 
 /*
@@ -830,14 +835,129 @@ extern size_t __copy_user(void *__to, const void *__from, size_t __n);
 
 #endif
 
-static inline unsigned long
-raw_copy_to_user(void __user *to, const void *from, unsigned long n)
-{
-	if (eva_kernel_access())
-		return __invoke_copy_to_kernel(to, from, n);
-	else
-		return __invoke_copy_to_user(to, from, n);
-}
+/*
+ * __copy_to_user: - Copy a block of data into user space, with less checking.
+ * @to:	  Destination address, in user space.
+ * @from: Source address, in kernel space.
+ * @n:	  Number of bytes to copy.
+ *
+ * Context: User context only. This function may sleep if pagefaults are
+ *          enabled.
+ *
+ * Copy data from kernel space to user space.  Caller must check
+ * the specified block with access_ok() before calling this function.
+ *
+ * Returns number of bytes that could not be copied.
+ * On success, this will be zero.
+ */
+#define __copy_to_user(to, from, n)					\
+({									\
+	void __user *__cu_to;						\
+	const void *__cu_from;						\
+	long __cu_len;							\
+									\
+	__cu_to = (to);							\
+	__cu_from = (from);						\
+	__cu_len = (n);							\
+									\
+	check_object_size(__cu_from, __cu_len, true);			\
+	might_fault();							\
+									\
+	if (eva_kernel_access())					\
+		__cu_len = __invoke_copy_to_kernel(__cu_to, __cu_from,	\
+						   __cu_len);		\
+	else								\
+		__cu_len = __invoke_copy_to_user(__cu_to, __cu_from,	\
+						 __cu_len);		\
+	__cu_len;							\
+})
+
+extern size_t __copy_user_inatomic(void *__to, const void *__from, size_t __n);
+
+#define __copy_to_user_inatomic(to, from, n)				\
+({									\
+	void __user *__cu_to;						\
+	const void *__cu_from;						\
+	long __cu_len;							\
+									\
+	__cu_to = (to);							\
+	__cu_from = (from);						\
+	__cu_len = (n);							\
+									\
+	check_object_size(__cu_from, __cu_len, true);			\
+									\
+	if (eva_kernel_access())					\
+		__cu_len = __invoke_copy_to_kernel(__cu_to, __cu_from,	\
+						   __cu_len);		\
+	else								\
+		__cu_len = __invoke_copy_to_user(__cu_to, __cu_from,	\
+						 __cu_len);		\
+	__cu_len;							\
+})
+
+#define __copy_from_user_inatomic(to, from, n)				\
+({									\
+	void *__cu_to;							\
+	const void __user *__cu_from;					\
+	long __cu_len;							\
+									\
+	__cu_to = (to);							\
+	__cu_from = (from);						\
+	__cu_len = (n);							\
+									\
+	check_object_size(__cu_to, __cu_len, false);			\
+									\
+	if (eva_kernel_access())					\
+		__cu_len = __invoke_copy_from_kernel_inatomic(__cu_to,	\
+							      __cu_from,\
+							      __cu_len);\
+	else								\
+		__cu_len = __invoke_copy_from_user_inatomic(__cu_to,	\
+							    __cu_from,	\
+							    __cu_len);	\
+	__cu_len;							\
+})
+
+/*
+ * copy_to_user: - Copy a block of data into user space.
+ * @to:	  Destination address, in user space.
+ * @from: Source address, in kernel space.
+ * @n:	  Number of bytes to copy.
+ *
+ * Context: User context only. This function may sleep if pagefaults are
+ *          enabled.
+ *
+ * Copy data from kernel space to user space.
+ *
+ * Returns number of bytes that could not be copied.
+ * On success, this will be zero.
+ */
+#define copy_to_user(to, from, n)					\
+({									\
+	void __user *__cu_to;						\
+	const void *__cu_from;						\
+	long __cu_len;							\
+									\
+	__cu_to = (to);							\
+	__cu_from = (from);						\
+	__cu_len = (n);							\
+									\
+	check_object_size(__cu_from, __cu_len, true);			\
+									\
+	if (eva_kernel_access()) {					\
+		__cu_len = __invoke_copy_to_kernel(__cu_to,		\
+						   __cu_from,		\
+						   __cu_len);		\
+	} else {							\
+		if (access_ok(VERIFY_WRITE, __cu_to, __cu_len)) {       \
+			might_fault();                                  \
+			__cu_len = __invoke_copy_to_user(__cu_to,	\
+							 __cu_from,	\
+							 __cu_len);     \
+		}							\
+	}								\
+	__cu_len;							\
+})
 
 #ifndef CONFIG_EVA
 
@@ -989,28 +1109,137 @@ extern size_t __copy_in_user_eva(void *__to, const void *__from, size_t __n);
 
 #endif /* CONFIG_EVA */
 
+/*
+ * __copy_from_user: - Copy a block of data from user space, with less checking.
+ * @to:	  Destination address, in kernel space.
+ * @from: Source address, in user space.
+ * @n:	  Number of bytes to copy.
+ *
+ * Context: User context only. This function may sleep if pagefaults are
+ *          enabled.
+ *
+ * Copy data from user space to kernel space.  Caller must check
+ * the specified block with access_ok() before calling this function.
+ *
+ * Returns number of bytes that could not be copied.
+ * On success, this will be zero.
+ *
+ * If some data could not be copied, this function will pad the copied
+ * data to the requested size using zero bytes.
+ */
+#define __copy_from_user(to, from, n)					\
+({									\
+	void *__cu_to;							\
+	const void __user *__cu_from;					\
+	long __cu_len;							\
+									\
+	__cu_to = (to);							\
+	__cu_from = (from);						\
+	__cu_len = (n);							\
+									\
+	check_object_size(__cu_to, __cu_len, false);			\
+									\
+	if (eva_kernel_access()) {					\
+		__cu_len = __invoke_copy_from_kernel(__cu_to,		\
+						     __cu_from,		\
+						     __cu_len);		\
+	} else {							\
+		might_fault();						\
+		__cu_len = __invoke_copy_from_user(__cu_to, __cu_from,	\
+						   __cu_len);		\
+	}								\
+	__cu_len;							\
+})
 
-static inline unsigned long
-raw_copy_from_user(void *to, const void __user *from, unsigned long n)
-{
-	if (eva_kernel_access())
-		return __invoke_copy_from_kernel(to, from, n);
-	else
-		return __invoke_copy_from_user(to, from, n);
-}
+/*
+ * copy_from_user: - Copy a block of data from user space.
+ * @to:	  Destination address, in kernel space.
+ * @from: Source address, in user space.
+ * @n:	  Number of bytes to copy.
+ *
+ * Context: User context only. This function may sleep if pagefaults are
+ *          enabled.
+ *
+ * Copy data from user space to kernel space.
+ *
+ * Returns number of bytes that could not be copied.
+ * On success, this will be zero.
+ *
+ * If some data could not be copied, this function will pad the copied
+ * data to the requested size using zero bytes.
+ */
+#define copy_from_user(to, from, n)					\
+({									\
+	void *__cu_to;							\
+	const void __user *__cu_from;					\
+	long __cu_len;							\
+									\
+	__cu_to = (to);							\
+	__cu_from = (from);						\
+	__cu_len = (n);							\
+									\
+	check_object_size(__cu_to, __cu_len, false);			\
+									\
+	if (eva_kernel_access()) {					\
+		__cu_len = __invoke_copy_from_kernel(__cu_to,		\
+						     __cu_from,		\
+						     __cu_len);		\
+	} else {							\
+		if (access_ok(VERIFY_READ, __cu_from, __cu_len)) {	\
+			might_fault();                                  \
+			__cu_len = __invoke_copy_from_user(__cu_to,	\
+							   __cu_from,	\
+							   __cu_len);   \
+		} else {						\
+			memset(__cu_to, 0, __cu_len);			\
+		}							\
+	}								\
+	__cu_len;							\
+})
 
-#define INLINE_COPY_FROM_USER
-#define INLINE_COPY_TO_USER
+#define __copy_in_user(to, from, n)					\
+({									\
+	void __user *__cu_to;						\
+	const void __user *__cu_from;					\
+	long __cu_len;							\
+									\
+	__cu_to = (to);							\
+	__cu_from = (from);						\
+	__cu_len = (n);							\
+	if (eva_kernel_access()) {					\
+		__cu_len = ___invoke_copy_in_kernel(__cu_to, __cu_from,	\
+						    __cu_len);		\
+	} else {							\
+		might_fault();						\
+		__cu_len = ___invoke_copy_in_user(__cu_to, __cu_from,	\
+						  __cu_len);		\
+	}								\
+	__cu_len;							\
+})
 
-static inline unsigned long
-raw_copy_in_user(void __user*to, const void __user *from, unsigned long n)
-{
-	if (eva_kernel_access())
-		return ___invoke_copy_in_kernel(to, from, n);
-	else
-		return ___invoke_copy_in_user(to, from,	n);
-}
-
+#define copy_in_user(to, from, n)					\
+({									\
+	void __user *__cu_to;						\
+	const void __user *__cu_from;					\
+	long __cu_len;							\
+									\
+	__cu_to = (to);							\
+	__cu_from = (from);						\
+	__cu_len = (n);							\
+	if (eva_kernel_access()) {					\
+		__cu_len = ___invoke_copy_in_kernel(__cu_to,__cu_from,	\
+						    __cu_len);		\
+	} else {							\
+		if (likely(access_ok(VERIFY_READ, __cu_from, __cu_len) &&\
+			   access_ok(VERIFY_WRITE, __cu_to, __cu_len))) {\
+			might_fault();					\
+			__cu_len = ___invoke_copy_in_user(__cu_to,	\
+							  __cu_from,	\
+							  __cu_len);	\
+		}							\
+	}								\
+	__cu_len;							\
+})
 
 /*
  * __clear_user: - Zero a block of memory in user space, with less checking.

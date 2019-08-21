@@ -118,7 +118,7 @@
 #include <linux/memcontrol.h>
 #include <linux/prefetch.h>
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #include <linux/netdevice.h>
 #include <net/protocol.h>

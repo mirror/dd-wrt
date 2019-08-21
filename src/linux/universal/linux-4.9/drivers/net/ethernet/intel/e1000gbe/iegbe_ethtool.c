@@ -43,7 +43,7 @@ GPL LICENSE SUMMARY
 #include "iegbe.h"
 
 #ifdef    SIOCETHTOOL
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #endif
 
 #ifdef ETHTOOL_OPS_COMPAT
