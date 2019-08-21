@@ -87,7 +87,7 @@
 #include "protocols/sip.c"
 #include "protocols/skinny.c"
 #include "protocols/skype.c"
-//#include "protocols/ssl.c"
+#include "protocols/ssl.c"
 #include "protocols/smb.c"
 #include "protocols/snmp.c"
 #include "protocols/socks45.c"
