@@ -35,8 +35,8 @@ char * _SL_ = NULL;
 
 //static void usage(void) __attribute__((noreturn));
 
-//#define usage() exit(-1)
-
+#define usage() exit(-1)
+/*
 static void usage(void)
 {
 	fprintf(stderr,
@@ -47,7 +47,7 @@ static void usage(void)
 "                    -f[amily] { inet | inet6 | ipx | dnet | link } | -o[neline] }\n");
 	exit(-1);
 }
-
+*/
 int main(int argc, char **argv)
 {
 	char *basename;
@@ -115,7 +115,7 @@ int main(int argc, char **argv)
 		} else if (matches(opt, "-help") == 0) {
 			usage();
 		} else {
-			fprintf(stderr, "Option \"%s\" is unknown, try \"ip -help\".\n", opt);
+//			fprintf(stderr, "Option \"%s\" is unknown, try \"ip -help\".\n", opt);
 			exit(-1);
 		}
 		argc--;	argv++;
@@ -173,7 +173,7 @@ int main(int argc, char **argv)
 			return do_xfrm(argc-2, argv+2);
 		if (matches(argv[1], "help") == 0)
 			usage();
-		fprintf(stderr, "Object \"%s\" is unknown, try \"ip help\".\n", argv[1]);
+//		fprintf(stderr, "Object \"%s\" is unknown, try \"ip help\".\n", argv[1]);
 		exit(-1);
 	}
 	usage();
