@@ -18,10 +18,14 @@
 /*
  * User space memory access functions
  */
+#include <linux/sched.h>
 #include <linux/mm.h>
 #include <asm-generic/uaccess-unaligned.h>
 #include <asm/processor.h>
 #include <asm/page.h>
+
+#define VERIFY_READ	0
+#define VERIFY_WRITE	1
 
 /*
  * The fs value determines whether argument validity checking should be

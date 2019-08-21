@@ -17,7 +17,7 @@
 #include <linux/kernel.h>
 #include <linux/string.h>
 #include <asm/io.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #include <typedefs.h>
 #include <osl.h>

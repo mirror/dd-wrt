@@ -21,7 +21,7 @@
 #include <linux/bitops.h>
 #include <linux/tracehook.h>
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #include <asm/ptrace.h>
 #include <asm/pgtable.h>
 #include <asm/psrcompat.h>

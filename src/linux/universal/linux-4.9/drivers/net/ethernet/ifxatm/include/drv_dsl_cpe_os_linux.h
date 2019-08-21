@@ -38,7 +38,7 @@
 #include <linux/errno.h>
 #include <linux/delay.h>
 #include <linux/poll.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 //#include <linux/smp_lock.h>
 #include <asm/ioctl.h>
 

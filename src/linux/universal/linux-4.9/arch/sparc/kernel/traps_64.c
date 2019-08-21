@@ -29,7 +29,7 @@
 #include <asm/page.h>
 #include <asm/pgtable.h>
 #include <asm/unistd.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #include <asm/fpumacro.h>
 #include <asm/lsu.h>
 #include <asm/dcu.h>

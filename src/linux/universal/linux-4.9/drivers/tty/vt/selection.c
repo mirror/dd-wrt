@@ -16,7 +16,7 @@
 #include <linux/slab.h>
 #include <linux/types.h>
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #include <linux/kbd_kern.h>
 #include <linux/vt_kern.h>

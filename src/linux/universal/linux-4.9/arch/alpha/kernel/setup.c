@@ -53,7 +53,7 @@ static struct notifier_block alpha_panic_block = {
         INT_MAX /* try to do it first */
 };
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #include <asm/pgtable.h>
 #include <asm/hwrpb.h>
 #include <asm/dma.h>

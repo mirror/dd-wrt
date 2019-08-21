@@ -18,7 +18,7 @@
  |    other processes using the emulator while swapping is in progress.      |
  +---------------------------------------------------------------------------*/
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #include "fpu_system.h"
 #include "exception.h"

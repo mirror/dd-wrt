@@ -15,12 +15,17 @@
 #ifndef __ASSEMBLY__
 
 #include <linux/kernel.h>
+#include <linux/errno.h>
+#include <linux/sched.h> /* RLIMIT_FSIZE */
 #include <linux/mm.h>
 
 #include <asm/mmu.h>
 #include <asm/page.h>
 #include <asm/pgtable.h>
 #include <linux/string.h>
+
+#define VERIFY_READ	0
+#define VERIFY_WRITE	1
 
 /*
  * On Microblaze the fs value is actually the top of the corresponding

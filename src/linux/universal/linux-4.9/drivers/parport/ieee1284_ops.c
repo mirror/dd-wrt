@@ -18,7 +18,7 @@
 #include <linux/parport.h>
 #include <linux/delay.h>
 #include <linux/sched.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #undef DEBUG /* undef me for production */
 

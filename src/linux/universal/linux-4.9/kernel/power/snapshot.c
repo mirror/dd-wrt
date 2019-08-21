@@ -30,7 +30,7 @@
 #include <linux/compiler.h>
 #include <linux/ktime.h>
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #include <asm/mmu_context.h>
 #include <asm/pgtable.h>
 #include <asm/tlbflush.h>

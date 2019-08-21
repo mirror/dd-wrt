@@ -16,7 +16,7 @@
 #include <linux/tracehook.h>
 #include <linux/audit.h>
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #include <asm/pgtable.h>
 #include <asm/fpu.h>
 

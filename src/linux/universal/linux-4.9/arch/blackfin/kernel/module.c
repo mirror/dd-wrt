@@ -14,7 +14,7 @@
 #include <linux/kernel.h>
 #include <asm/dma.h>
 #include <asm/cacheflush.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 /* Transfer the section to the L1 memory */
 int

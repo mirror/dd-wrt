@@ -65,7 +65,7 @@
 #include <linux/n_r3964.h>
 #include <linux/poll.h>
 #include <linux/init.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 /*#define DEBUG_QUEUE*/
 

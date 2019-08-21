@@ -500,6 +500,6 @@ typedef struct {
  *
  */
 extern int register_isdn(isdn_if*);
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #endif /* __ISDNIF_H__ */

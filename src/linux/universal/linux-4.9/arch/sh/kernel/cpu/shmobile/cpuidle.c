@@ -16,7 +16,7 @@
 #include <linux/cpuidle.h>
 #include <linux/export.h>
 #include <asm/suspend.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 static unsigned long cpuidle_mode[] = {
 	SUSP_SH_SLEEP, /* regular sleep mode */

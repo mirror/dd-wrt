@@ -48,7 +48,7 @@
 #include <net/sock.h>
 #include <net/genetlink.h>
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #include <net/ip_vs.h>
 

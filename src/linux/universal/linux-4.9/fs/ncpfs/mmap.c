@@ -18,7 +18,7 @@
 #include <linux/fcntl.h>
 #include <linux/memcontrol.h>
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #include "ncp_fs.h"
 

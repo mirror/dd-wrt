@@ -24,7 +24,7 @@
 #include <linux/freezer.h>
 #include <linux/wait.h>
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #include "delegation.h"
 #include "internal.h"

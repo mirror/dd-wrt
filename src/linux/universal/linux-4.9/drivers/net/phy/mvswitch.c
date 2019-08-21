@@ -27,7 +27,7 @@
 
 #include <asm/io.h>
 #include <asm/irq.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #include "mvswitch.h"
 
 /* Undefine this to use trailer mode instead.

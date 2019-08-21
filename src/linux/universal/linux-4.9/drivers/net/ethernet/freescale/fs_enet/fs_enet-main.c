@@ -44,7 +44,7 @@
 #include <linux/vmalloc.h>
 #include <asm/pgtable.h>
 #include <asm/irq.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #include "fs_enet.h"
 

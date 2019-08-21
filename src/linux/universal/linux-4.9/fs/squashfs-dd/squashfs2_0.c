@@ -39,7 +39,7 @@
 #include <linux/zlib.h>
 #include <linux/blkdev.h>
 #include <linux/vmalloc.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #include <asm/semaphore.h>
 
 #include "squashfs.h"

@@ -134,7 +134,7 @@
 #include <linux/lp.h>
 
 #include <asm/irq.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 /* if you have more than 8 printers, remember to increase LP_NO */
 #define LP_NO 8

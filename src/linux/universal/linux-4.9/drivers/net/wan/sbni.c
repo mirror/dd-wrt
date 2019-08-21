@@ -63,7 +63,7 @@
 #include <asm/types.h>
 #include <asm/byteorder.h>
 #include <asm/irq.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #include "sbni.h"
 

@@ -18,7 +18,7 @@
 #include <linux/initrd.h>
 
 #include <asm/sections.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 /*
  * ZERO_PAGE is a special page that is used for zero-initialized

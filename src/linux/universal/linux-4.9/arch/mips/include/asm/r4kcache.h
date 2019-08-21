@@ -20,7 +20,7 @@
 #include <asm/cpu-features.h>
 #include <asm/cpu-type.h>
 #include <asm/mipsmtregs.h>
-#include <linux/uaccess.h> /* for uaccess_kernel() */
+#include <asm/uaccess.h> /* for segment_eq() */
 
 #ifdef CONFIG_BCM47XX
 #include <asm/paccess.h>
@@ -826,7 +826,7 @@ static inline void protected_blast_##pfx##cache##_range(unsigned long start,\
 									\
 	__##pfx##flush_prologue						\
 									\
-	if (!uaccess_kernel()) {					\
+	if (segment_eq(get_fs(), USER_DS)) {				\
 		while (1) {						\
 			protected_cachee_op(hitop, addr);		\
 			if (addr == aend)				\

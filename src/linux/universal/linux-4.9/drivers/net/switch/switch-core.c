@@ -33,7 +33,7 @@
 
 #include <linux/module.h>
 #include <linux/init.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #include <linux/proc_fs.h>
 #include <linux/list.h>
 

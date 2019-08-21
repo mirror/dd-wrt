@@ -33,6 +33,8 @@
  */
 
 #include <linux/compiler.h>
+#include <linux/errno.h>
+#include <linux/sched.h>
 #include <linux/page-flags.h>
 #include <linux/mm.h>
 
@@ -45,6 +47,9 @@
  */
 #define KERNEL_DS	((mm_segment_t) { ~0UL })		/* cf. access_ok() */
 #define USER_DS		((mm_segment_t) { TASK_SIZE-1 })	/* cf. access_ok() */
+
+#define VERIFY_READ	0
+#define VERIFY_WRITE	1
 
 #define get_ds()  (KERNEL_DS)
 #define get_fs()  (current_thread_info()->addr_limit)

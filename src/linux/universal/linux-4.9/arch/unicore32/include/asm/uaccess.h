@@ -12,6 +12,9 @@
 #ifndef __UNICORE_UACCESS_H__
 #define __UNICORE_UACCESS_H__
 
+#include <linux/thread_info.h>
+#include <linux/errno.h>
+
 #include <asm/memory.h>
 
 #define __copy_from_user	__copy_from_user
@@ -20,7 +23,7 @@
 #define __strnlen_user		__strnlen_user
 #define __clear_user		__clear_user
 
-#define __kernel_ok		(uaccess_kernel())
+#define __kernel_ok		(segment_eq(get_fs(), KERNEL_DS))
 #define __user_ok(addr, size)	(((size) <= TASK_SIZE)			\
 				&& ((addr) <= TASK_SIZE - (size)))
 #define __access_ok(addr, size)	(__kernel_ok || __user_ok((addr), (size)))
@@ -37,5 +40,7 @@ extern unsigned long
 __strnlen_user(const char __user *s, long n);
 
 #include <asm-generic/uaccess.h>
+
+extern int fixup_exception(struct pt_regs *regs);
 
 #endif /* __UNICORE_UACCESS_H__ */

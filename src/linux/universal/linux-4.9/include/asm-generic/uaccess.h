@@ -35,6 +35,9 @@ static inline void set_fs(mm_segment_t fs)
 #define segment_eq(a, b) ((a).seg == (b).seg)
 #endif
 
+#define VERIFY_READ	0
+#define VERIFY_WRITE	1
+
 #define access_ok(type, addr, size) __access_ok((unsigned long)(addr),(size))
 
 /*
@@ -47,6 +50,24 @@ static inline int __access_ok(unsigned long addr, unsigned long size)
 	return 1;
 }
 #endif
+
+/*
+ * The exception table consists of pairs of addresses: the first is the
+ * address of an instruction that is allowed to fault, and the second is
+ * the address at which the program should continue.  No registers are
+ * modified, so it is entirely up to the continuation code to figure out
+ * what to do.
+ *
+ * All the routines below use bits of fixup code that are out of line
+ * with the main instruction path.  This means when everything is well,
+ * we don't even have to jump over them.  Further, they do not intrude
+ * on our cache or tlb entries.
+ */
+
+struct exception_table_entry
+{
+	unsigned long insn, fixup;
+};
 
 /*
  * architectures with an MMU should override these two
@@ -150,11 +171,8 @@ static inline __must_check long __copy_to_user(void __user *to,
 
 static inline int __put_user_fn(size_t size, void __user *ptr, void *x)
 {
-#ifdef CONFIG_ARCH_HAS_RAW_COPY_USER
-	return unlikely(raw_copy_to_user(ptr, x, size)) ? -EFAULT : 0;
-#else
- 	return unlikely(__copy_to_user(ptr, x, size)) ? -EFAULT : 0;
-#endif
+	size = __copy_to_user(ptr, x, size);
+	return size ? -EFAULT : size;
 }
 
 #define __put_user_fn(sz, u, k)	__put_user_fn(sz, u, k)
@@ -215,11 +233,12 @@ extern int __put_user_bad(void) __attribute__((noreturn));
 #ifndef __get_user_fn
 static inline int __get_user_fn(size_t size, const void __user *ptr, void *x)
 {
-#ifdef CONFIG_ARCH_HAS_RAW_COPY_USER
-	return unlikely(raw_copy_from_user(x, ptr, size)) ? -EFAULT : 0;
-#else
- 	return unlikely(__copy_from_user(x, ptr, size)) ? -EFAULT : 0;
-#endif
+	size_t n = __copy_from_user(x, ptr, size);
+	if (unlikely(n)) {
+		memset(x + (size - n), 0, n);
+		return -EFAULT;
+	}
+	return 0;
 }
 
 #define __get_user_fn(sz, u, k)	__get_user_fn(sz, u, k)
@@ -227,8 +246,6 @@ static inline int __get_user_fn(size_t size, const void __user *ptr, void *x)
 #endif
 
 extern int __get_user_bad(void) __attribute__((noreturn));
-
-#ifndef CONFIG_ARCH_HAS_RAW_COPY_USER
 
 #ifndef __copy_from_user_inatomic
 #define __copy_from_user_inatomic __copy_from_user
@@ -259,7 +276,6 @@ static inline long copy_to_user(void __user *to,
 	else
 		return n;
 }
-#endif
 
 /*
  * Copy a null terminated string from userspace.
@@ -331,7 +347,5 @@ clear_user(void __user *to, unsigned long n)
 
 	return __clear_user(to, n);
 }
-
-#include <asm/extable.h>
 
 #endif /* __ASM_GENERIC_UACCESS_H */

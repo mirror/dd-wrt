@@ -28,7 +28,7 @@
 #ifdef CONFIG_RALINK_GPIO_LED
 #include <linux/timer.h>
 #endif
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #include "ralink_gpio.h"
 
 #include <asm/rt2880/surfboardint.h>

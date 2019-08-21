@@ -68,7 +68,7 @@
 #include <linux/poll.h>
 #include <linux/miscdevice.h>
 #endif
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #include <acpi/video.h>
 
 #define dprintk(fmt, ...)			\

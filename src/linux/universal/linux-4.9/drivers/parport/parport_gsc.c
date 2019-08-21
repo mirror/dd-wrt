@@ -34,7 +34,7 @@
 
 #include <asm/io.h>
 #include <asm/dma.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #include <asm/superio.h>
 
 #include <linux/parport.h>

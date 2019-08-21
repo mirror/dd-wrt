@@ -1,6 +1,6 @@
 #include <linux/types.h>
 #include <linux/errno.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 int
 fnabs(u32 *frD, u32 *frB)

@@ -69,7 +69,7 @@
 #include <net/ip6_route.h>
 #endif
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #include <asm/page.h>
 #include <net/sock.h>
 #include <net/snmp.h>

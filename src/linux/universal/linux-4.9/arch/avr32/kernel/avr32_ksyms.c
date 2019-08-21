@@ -12,7 +12,7 @@
 #include <linux/module.h>
 
 #include <asm/checksum.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 /*
  * GCC functions

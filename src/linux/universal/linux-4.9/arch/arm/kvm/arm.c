@@ -34,7 +34,7 @@
 #define CREATE_TRACE_POINTS
 #include "trace.h"
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #include <asm/ptrace.h>
 #include <asm/mman.h>
 #include <asm/tlbflush.h>

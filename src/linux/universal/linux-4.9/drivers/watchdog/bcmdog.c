@@ -48,7 +48,7 @@
 #include <linux/init.h>
 #include <linux/jiffies.h>
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #define PFX "SoftDog: "
 

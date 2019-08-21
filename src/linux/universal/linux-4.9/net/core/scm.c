@@ -29,7 +29,7 @@
 #include <linux/nsproxy.h>
 #include <linux/slab.h>
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 #include <net/protocol.h>
 #include <linux/skbuff.h>

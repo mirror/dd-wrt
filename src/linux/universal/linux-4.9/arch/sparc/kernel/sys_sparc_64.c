@@ -26,7 +26,7 @@
 #include <linux/export.h>
 #include <linux/context_tracking.h>
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #include <asm/utrap.h>
 #include <asm/unistd.h>
 

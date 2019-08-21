@@ -414,11 +414,6 @@ void __set_fixmap(enum fixed_addresses idx, phys_addr_t phys, pgprot_t prot)
 		     FIXADDR_END);
 	BUG_ON(idx >= __end_of_fixed_addresses);
 
-	/* we only support device mappings until pgprot_kernel has been set */
-	if (WARN_ON(pgprot_val(prot) != pgprot_val(FIXMAP_PAGE_IO) &&
-		    pgprot_val(pgprot_kernel) == 0))
-		return;
-
 	if (pgprot_val(prot))
 		set_pte_at(NULL, vaddr, pte,
 			pfn_pte(phys >> PAGE_SHIFT, prot));
@@ -1501,7 +1496,7 @@ pgtables_remap lpae_pgtables_remap_asm;
  * early_paging_init() recreates boot time page table setup, allowing machines
  * to switch over to a high (>4G) address space on LPAE systems
  */
-static void __init early_paging_init(const struct machine_desc *mdesc)
+void __init early_paging_init(const struct machine_desc *mdesc)
 {
 	pgtables_remap *lpae_pgtables_remap;
 	unsigned long pa_pgd;
@@ -1569,7 +1564,7 @@ static void __init early_paging_init(const struct machine_desc *mdesc)
 
 #else
 
-static void __init early_paging_init(const struct machine_desc *mdesc)
+void __init early_paging_init(const struct machine_desc *mdesc)
 {
 	long long offset;
 
@@ -1625,6 +1620,7 @@ void __init paging_init(const struct machine_desc *mdesc)
 {
 	void *zero_page;
 
+	build_mem_type_table();
 	prepare_page_table();
 	map_lowmem();
 	memblock_set_current_limit(arm_lowmem_limit);
@@ -1643,10 +1639,4 @@ void __init paging_init(const struct machine_desc *mdesc)
 
 	empty_zero_page = virt_to_page(zero_page);
 	__flush_dcache_page(NULL, empty_zero_page);
-}
-
-void __init early_mm_init(const struct machine_desc *mdesc)
-{
-	build_mem_type_table();
-	early_paging_init(mdesc);
 }

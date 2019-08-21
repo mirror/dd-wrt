@@ -78,7 +78,7 @@
 #include <linux/uio.h>
 #include "loop.h"
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 static DEFINE_IDR(loop_index_idr);
 static DEFINE_MUTEX(loop_index_mutex);

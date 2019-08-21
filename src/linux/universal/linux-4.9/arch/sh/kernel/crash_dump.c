@@ -7,7 +7,7 @@
 #include <linux/errno.h>
 #include <linux/crash_dump.h>
 #include <linux/io.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 
 /**
  * copy_oldmem_page - copy one page from "oldmem"

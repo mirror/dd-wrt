@@ -8,7 +8,7 @@
 *  $Id: smi.c,v 1.5 2007/05/23 11:30:59 abelshie Exp $
 */
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #include "rtl8366s_types.h"
 #include "gpio.h"
 #include "smi.h"

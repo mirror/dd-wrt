@@ -4,10 +4,14 @@
 /*
  * User space memory access functions
  */
+#include <linux/sched.h>
 #include <linux/mm.h>
 #include <linux/string.h>
 
 #include <asm/segment.h>
+
+#define VERIFY_READ	0
+#define VERIFY_WRITE	1
 
 #define access_ok(type,addr,size)	_access_ok((unsigned long)(addr),(size))
 

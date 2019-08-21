@@ -62,7 +62,7 @@
 #endif
 #include <net/calipso.h>
 
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #include <linux/mroute6.h>
 
 #include "ip6_offload.h"
