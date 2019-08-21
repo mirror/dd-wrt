@@ -55,7 +55,7 @@ much traffic. */
 #define DROPBEAR_SMALL_CODE 1
 
 /* Enable X11 Forwarding - server only */
-#define DROPBEAR_X11FWD 1
+#define DROPBEAR_X11FWD 0
 
 /* Enable TCP Fowarding */
 /* 'Local' is "-L" style (client listening port forwarded via server)
