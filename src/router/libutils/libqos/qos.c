@@ -484,44 +484,36 @@ static void add_pie(const char *dev, int handle, const char *aqd, int ms5, int n
 		eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd, ECN);
 }
 
-static void add_htb_class(const char *dev, const char *parent, const char *classid, int rate, int limit, int mtu, int p)
+static void add_htb_class(const char *dev, int parent, int class, int rate, int limit, int mtu, int p)
 {
 	char buf[32];
 	char buf2[32];
 	char qmtu[32];
 	char prio[32];
+	char parentid[32];
+	char classid[32];
 	sprintf(qmtu, "%d", mtu + 14);
 	sprintf(prio, "%d", p);
+	sprintf(parentid,"1:%d", parent);
+	sprintf(classid,"1:%d", class);
 	if (p != -1)
-		eval("tc", "class", "add", "dev", dev, "parent", parent, "classid", classid, "htb", "rate", math(buf, rate, "kbit"), "ceil", math(buf2, limit, "kbit"), "prio", prio, "quantum", qmtu);
+		eval("tc", "class", "add", "dev", dev, "parent", parentid, "classid", classid, "htb", "rate", math(buf, rate, "kbit"), "ceil", math(buf2, limit, "kbit"), "prio", prio, "quantum", qmtu);
 	else
-		eval("tc", "class", "add", "dev", dev, "parent", parent, "classid", classid, "htb", "rate", math(buf, rate, "kbit"), "ceil", math(buf2, limit, "kbit"), "quantum", qmtu);
+		eval("tc", "class", "add", "dev", dev, "parent", parentid, "classid", classid, "htb", "rate", math(buf, rate, "kbit"), "ceil", math(buf2, limit, "kbit"), "quantum", qmtu);
 }
 
-static void add_tc_htb(char *dev, int parent, int class, int rate, int ceil, int quantum, int prio)
-{
-	char classid[32];
-	char parentid[32];
-	sprintf(classid, "1:%d", class);
-	sprintf(parentid, "1:%d", parent);
-	add_htb_class(dev, parentid, classid, rate, ceil, quantum, prio);
-}
 
-static void add_hfsc_class(const char *dev, const char *parent, const char *classid, int rate, int limit)
+static void add_hfsc_class(const char *dev, int parent, int class, int rate, int limit)
 {
 	char buf[32];
 	char buf2[32];
-	eval("tc", "class", "add", "dev", dev, "parent", parent, "classid", classid, "hfsc", "sc", "rate", math(buf, rate, "kbit"), "ul", "rate", math(buf2, limit, "kbit"));
-}
-
-static void add_tc_hfsc(char *dev, int parent, int class, int uprate, int uplimit)
-{
 	char classid[32];
 	char parentid[32];
 	sprintf(classid, "1:%d", class);
 	sprintf(parentid, "1:%d", parent);
-	add_hfsc_class(dev, classid, parentid, uprate, uplimit);
+	eval("tc", "class", "add", "dev", dev, "parent", parent, "classid", classid, "hfsc", "sc", "rate", math(buf, rate, "kbit"), "ul", "rate", math(buf2, limit, "kbit"));
 }
+
 
 void add_client_classes(unsigned int base, unsigned int uprate, unsigned int downrate, unsigned int lanrate, unsigned int level)
 {
@@ -605,31 +597,31 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 	if (nvram_matchi("qos_type", 0)) {
 		char prios[5] = { 0, prio, prio + 1, prio + 1, 7 };
 
-		add_tc_htb(wan_dev, parent, base, uprate, uplimit, mtu, -1);
-		add_tc_htb("imq0", parent, base, downrate, downlimit, mtu, -1);
+		add_htb_class(wan_dev, parent, base, uprate, uplimit, mtu, -1);
+		add_htb_class("imq0", parent, base, downrate, downlimit, mtu, -1);
 		if (nvram_match("wshaper_dev", "LAN")) {
-			add_tc_htb("imq1", parent, base, lanrate, lanlimit, mtu, -1);
+			add_htb_class("imq1", parent, base, lanrate, lanlimit, mtu, -1);
 		}
 		int i;
 		for (i = 0; i < 5; i++) {
-			add_tc_htb(wan_dev, base, base + 1 + i, uprates[i], uplimit, mtu, prios[i]);
-			add_tc_htb("imq0", base, base + 1 + i, downrates[i], downlimit, mtu, prios[i]);
+			add_htb_class(wan_dev, base, base + 1 + i, uprates[i], uplimit, mtu, prios[i]);
+			add_htb_class("imq0", base, base + 1 + i, downrates[i], downlimit, mtu, prios[i]);
 			if (nvram_match("wshaper_dev", "LAN")) {
-				add_tc_htb("imq1", base, base + 1 + i, lanrates[i], lanlimit, mtu, prios[i]);
+				add_htb_class("imq1", base, base + 1 + i, lanrates[i], lanlimit, mtu, prios[i]);
 			}
 		}
 
 	} else {
 
-		add_tc_hfsc(wan_dev, 1, base, uprate, uplimit);
-		add_tc_hfsc("imq0", 1, base, downrate, downlimit);
-		add_tc_hfsc("imq1", 1, base, lanrate, lanlimit);
+		add_hfsc_class(wan_dev, 1, base, uprate, uplimit);
+		add_hfsc_class("imq0", 1, base, downrate, downlimit);
+		add_hfsc_class("imq1", 1, base, lanrate, lanlimit);
 		int i;
 		for (i = 0; i < 5; i++) {
-			add_tc_hfsc(wan_dev, base, base + 1 + i, uprates[i], uplimit);
-			add_tc_hfsc("imq0", base, base + 1 + i, downrates[i], downlimit);
+			add_hfsc_class(wan_dev, base, base + 1 + i, uprates[i], uplimit);
+			add_hfsc_class("imq0", base, base + 1 + i, downrates[i], downlimit);
 			if (nvram_match("wshaper_dev", "LAN")) {
-				add_tc_hfsc("imq1", base, base + 1 + i, lanrates[i], lanlimit);
+				add_hfsc_class("imq1", base, base + 1 + i, lanrates[i], lanlimit);
 			}
 		}
 
@@ -809,32 +801,32 @@ void deinit_qos(const char *wandev, const char *imq_wan, const char *imq_lan)
 
 static void init_htb_class(const char *dev, int rate, int mtu)
 {
-	add_htb_class(dev, "1:", "1:1", rate, rate, mtu, -1);
-	add_htb_class(dev, "1:1", "1:2", 75 * rate / 100, rate, mtu, -1);
-	add_htb_class(dev, "1:1", "1:3", 50 * rate / 100, rate, mtu, -1);
-	add_htb_class(dev, "1:1", "1:4", 25 * rate / 100, rate, mtu, -1);
-	add_htb_class(dev, "1:1", "1:5", 15 * rate / 100, rate, mtu, -1);
-	add_htb_class(dev, "1:1", "1:6", 5 * rate / 100, rate, mtu, -1);
-	add_htb_class(dev, "1:2", "1:100", 75 * rate / 100, rate, mtu, 0);
-	add_htb_class(dev, "1:3", "1:10", 50 * rate / 100, rate, mtu, 1);
-	add_htb_class(dev, "1:4", "1:20", 25 * rate / 100, rate, mtu, 2);
-	add_htb_class(dev, "1:5", "1:30", 15 * rate / 100, rate, mtu, 5);
-	add_htb_class(dev, "1:6", "1:40", 5 * rate / 100, rate, mtu, 7);
+	add_htb_class(dev, 0, 1, rate, rate, mtu, -1);
+	add_htb_class(dev, 1, 2, 75 * rate / 100, rate, mtu, -1);
+	add_htb_class(dev, 1, 3, 50 * rate / 100, rate, mtu, -1);
+	add_htb_class(dev, 1, 4, 25 * rate / 100, rate, mtu, -1);
+	add_htb_class(dev, 1, 5, 15 * rate / 100, rate, mtu, -1);
+	add_htb_class(dev, 1, 6, 5 * rate / 100, rate, mtu, -1);
+	add_htb_class(dev, 2, 100, 75 * rate / 100, rate, mtu, 0);
+	add_htb_class(dev, 3, 10, 50 * rate / 100, rate, mtu, 1);
+	add_htb_class(dev, 4, 20, 25 * rate / 100, rate, mtu, 2);
+	add_htb_class(dev, 5, 30, 15 * rate / 100, rate, mtu, 5);
+	add_htb_class(dev, 6, 40, 5 * rate / 100, rate, mtu, 7);
 }
 
 static void init_hfsc_class(const char *dev, int rate)
 {
-	add_hfsc_class(dev, "1:", "1:1", rate, rate);
-	add_hfsc_class(dev, "1:1", "1:2", 75 * rate / 100, rate);
-	add_hfsc_class(dev, "1:1", "1:3", 50 * rate / 100, rate);
-	add_hfsc_class(dev, "1:1", "1:4", 25 * rate / 100, rate);
-	add_hfsc_class(dev, "1:1", "1:5", 15 * rate / 100, rate);
-	add_hfsc_class(dev, "1:1", "1:6", 5 * rate / 100, rate);
-	add_hfsc_class(dev, "1:2", "1:100", 75 * rate / 100, rate);
-	add_hfsc_class(dev, "1:3", "1:10", 50 * rate / 100, rate);
-	add_hfsc_class(dev, "1:4", "1:20", 25 * rate / 100, rate);
-	add_hfsc_class(dev, "1:5", "1:30", 15 * rate / 100, rate);
-	add_hfsc_class(dev, "1:6", "1:40", 5 * rate / 100, rate);
+	add_hfsc_class(dev, 0, 1, rate, rate);
+	add_hfsc_class(dev, 1, 2, 75 * rate / 100, rate);
+	add_hfsc_class(dev, 1, 3, 50 * rate / 100, rate);
+	add_hfsc_class(dev, 1, 4, 25 * rate / 100, rate);
+	add_hfsc_class(dev, 1, 5, 15 * rate / 100, rate);
+	add_hfsc_class(dev, 1, 6, 5 * rate / 100, rate);
+	add_hfsc_class(dev, 2, 100, 75 * rate / 100, rate);
+	add_hfsc_class(dev, 3, 10, 50 * rate / 100, rate);
+	add_hfsc_class(dev, 4, 20, 25 * rate / 100, rate);
+	add_hfsc_class(dev, 5, 30, 15 * rate / 100, rate);
+	add_hfsc_class(dev, 6, 40, 5 * rate / 100, rate);
 
 }
 
