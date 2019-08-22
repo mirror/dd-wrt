@@ -1741,7 +1741,6 @@ static void resetbtn_period_check(int sig)
 
 int main(int argc, char *argv[])
 {
-	return 0;
 	brand = getRouterBrand();
 #ifndef HAVE_MI424WR
 #if !defined(HAVE_NOP8670) && !defined(HAVE_TONZE)
