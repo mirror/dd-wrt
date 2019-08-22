@@ -96,6 +96,8 @@ static int codel_qdisc_enqueue(struct sk_buff *skb, struct Qdisc *sch)
 	struct codel_sched_data *q;
 
 	if (likely(qdisc_qlen(sch) < sch->limit)) {
+		if(qdisc_qlen(sch) > 128)
+			skb = skb_reduce_truesize(skb);
 		codel_set_enqueue_time(skb);
 		return qdisc_enqueue_tail(skb, sch);
 	}
