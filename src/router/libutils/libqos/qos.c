@@ -511,7 +511,7 @@ static void add_hfsc_class(const char *dev, int parent, int class, int rate, int
 	char parentid[32];
 	sprintf(classid, "1:%d", class);
 	sprintf(parentid, "1:%d", parent);
-	eval("tc", "class", "add", "dev", dev, "parent", parent, "classid", classid, "hfsc", "sc", "rate", math(buf, rate, "kbit"), "ul", "rate", math(buf2, limit, "kbit"));
+	eval("tc", "class", "add", "dev", dev, "parent", parentid, "classid", classid, "hfsc", "sc", "rate", math(buf, rate, "kbit"), "ul", "rate", math(buf2, limit, "kbit"));
 }
 
 
