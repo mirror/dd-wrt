@@ -123,6 +123,7 @@ static void checknas(void)	// for broadcom v24 only
 		return;
 	fgets(buf, sizeof(buf), fnas);
 	fclose(fnas);
+	dd_loginfo("checknas", "nas content is %s, strlen is %d", buf, strlen(buf));
 
 	if (strlen(buf) != count_processes("nas"))	// restart all nas
 		// processes
