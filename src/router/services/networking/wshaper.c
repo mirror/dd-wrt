@@ -869,7 +869,7 @@ static int svqos_iptables(void)
 		do {
 			if (sscanf(qos_pkts, "%3s ", pkt_filter) < 1)
 				break;
-			eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-p", "tcp", "-m", "tcp", "--tcp-flags", pkt_filter, pkt_filter, "-m", "length", "--length", "64", "-j", "CLASSIFY", "--set-class", "1:100");
+			eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-p", "tcp", "-m", "tcp", "--tcp-flags", pkt_filter, pkt_filter, "-m", "length", "--length", "0:63", "-j", "CLASSIFY", "--set-class", "1:100");
 
 		} while ((qos_pkts = strpbrk(++qos_pkts, "|")) && qos_pkts++);
 	}
