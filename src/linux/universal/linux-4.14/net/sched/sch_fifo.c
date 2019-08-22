@@ -22,11 +22,8 @@
 static int bfifo_enqueue(struct sk_buff *skb, struct Qdisc *sch,
 			 struct sk_buff **to_free)
 {
-	if (likely(sch->qstats.backlog + qdisc_pkt_len(skb) <= sch->limit)) {
-		if (skb_queue_len(&sch->q) > 128)
-			skb = skb_reduce_truesize(skb);
+	if (likely(sch->qstats.backlog + qdisc_pkt_len(skb) <= sch->limit))
 		return qdisc_enqueue_tail(skb, sch);
-	}
 
 	return qdisc_drop(skb, sch, to_free);
 }
@@ -35,10 +32,11 @@ static int pfifo_enqueue(struct sk_buff *skb, struct Qdisc *sch,
 			 struct sk_buff **to_free)
 {
 	if (likely(sch->q.qlen < sch->limit)) {
-		if (skb_queue_len(&sch->q) > 128)
+		if (sch->q.qlen > 128)
 			skb = skb_reduce_truesize(skb);
 		return qdisc_enqueue_tail(skb, sch);
 	}
+
 	return qdisc_drop(skb, sch, to_free);
 }
 
@@ -47,9 +45,12 @@ static int pfifo_tail_enqueue(struct sk_buff *skb, struct Qdisc *sch,
 {
 	unsigned int prev_backlog;
 
-	if (likely(sch->q.qlen < sch->limit))
+	if (likely(sch->q.qlen < sch->limit)) {
+		if (sch->q.qlen > 128)
+			skb = skb_reduce_truesize(skb);
 		return qdisc_enqueue_tail(skb, sch);
-
+	}
+	
 	prev_backlog = sch->qstats.backlog;
 	/* queue full, remove one skb to fulfill the limit */
 	__qdisc_queue_drop_head(sch, &sch->q, to_free);
