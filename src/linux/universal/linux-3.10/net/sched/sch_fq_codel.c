@@ -182,8 +182,6 @@ static int fq_codel_enqueue(struct sk_buff *skb, struct Qdisc *sch)
 		return ret;
 	}
 	idx--;
-	if (sch->q.qlen > 128)
-		skb = skb_reduce_truesize(skb);
 
 	codel_set_enqueue_time(skb);
 	flow = &q->flows[idx];
