@@ -1895,7 +1895,7 @@ void qos_save(webs_t wp)
 {
 	char *value = websGetVar(wp, "action", "");
 	char *svqos_var;
-	char svqos_pktstr[sizeof("ACK | XXX | XXX | XXX | XXX | ")] = {0}, 
+	char svqos_pktstr[sizeof("ACK | XXX | XXX | XXX | XXX | ")] = {0}; 
 	char field[32] = { 0 };
 	char *name, *data, *level, *level2, *lanlevel, *prio, *delete, *pktopt, *proto;
 	int no_svcs = websGetVari(wp, "svqos_nosvcs", 0);
