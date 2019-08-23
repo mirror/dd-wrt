@@ -494,14 +494,13 @@ static void add_htb_class(const char *dev, int parent, int class, int rate, int 
 	char classid[32];
 	sprintf(qmtu, "%d", mtu + 14);
 	sprintf(prio, "%d", p);
-	sprintf(parentid,"1:%d", parent);
-	sprintf(classid,"1:%d", class);
+	sprintf(parentid, "1:%d", parent);
+	sprintf(classid, "1:%d", class);
 	if (p != -1)
 		eval("tc", "class", "add", "dev", dev, "parent", parentid, "classid", classid, "htb", "rate", math(buf, rate, "kbit"), "ceil", math(buf2, limit, "kbit"), "prio", prio, "quantum", qmtu);
 	else
 		eval("tc", "class", "add", "dev", dev, "parent", parentid, "classid", classid, "htb", "rate", math(buf, rate, "kbit"), "ceil", math(buf2, limit, "kbit"), "quantum", qmtu);
 }
-
 
 static void add_hfsc_class(const char *dev, int parent, int class, int rate, int limit)
 {
@@ -513,7 +512,6 @@ static void add_hfsc_class(const char *dev, int parent, int class, int rate, int
 	sprintf(parentid, "1:%d", parent);
 	eval("tc", "class", "add", "dev", dev, "parent", parentid, "classid", classid, "hfsc", "sc", "rate", math(buf, rate, "kbit"), "ul", "rate", math(buf2, limit, "kbit"));
 }
-
 
 void add_client_classes(unsigned int base, unsigned int uprate, unsigned int downrate, unsigned int lanrate, unsigned int level)
 {
@@ -894,6 +892,51 @@ static void init_qdisc(int type, int wan_type, const char *dev, const char *wand
 
 }
 
+void init_ackprio(char *dev)
+{
+
+	char *qos_pkts = nvram_safe_get("svqos_pkts");
+	char pkt_filter[4];
+	do {
+		if (sscanf(qos_pkts, "%3s ", pkt_filter) < 1)
+			break;
+		if (!strcmp(pkt_filter, "ACK")) {
+			eval("tc", "filter", "add", "dev", dev, "parent", "1:", "protocol", "ip", "u32",	//
+			     "match", "ip", "protocol", "6", "0xff",	//
+			     "match", "u8", "0x05", "0x0f", "at", "0",	//
+			     "match", "u16", "0x0000", "0xffc0", "at", "2",	//
+			     "match", "u8", "0x10", "0xff", "at", "33",	//
+			     "flowid", "1:100");
+		}
+		if (!strcmp(pkt_filter, "SYN")) {
+			eval("tc", "filter", "add", "dev", dev, "parent", "1:", "protocol", "ip", "u32",	//
+			     "match", "ip", "protocol", "6", "0xff",	//
+			     "match", "u8", "0x05", "0x0f", "at", "0",	//
+			     "match", "u16", "0x0000", "0xffc0", "at", "2",	//
+			     "match", "u8", "0x02", "0x02", "at", "33",	//
+			     "flowid", "1:100");
+		}
+		if (!strcmp(pkt_filter, "FIN")) {
+			eval("tc", "filter", "add", "dev", dev, "parent", "1:", "protocol", "ip", "u32",	//
+			     "match", "ip", "protocol", "6", "0xff",	//
+			     "match", "u8", "0x05", "0x0f", "at", "0",	//
+			     "match", "u16", "0x0000", "0xffc0", "at", "2",	//
+			     "match", "u8", "0x01", "0x01", "at", "33",	//
+			     "flowid", "1:100");
+		}
+		if (!strcmp(pkt_filter, "RST")) {
+			eval("tc", "filter", "add", "dev", dev, "parent", "1:", "protocol", "ip", "u32",	//
+			     "match", "ip", "protocol", "6", "0xff",	//
+			     "match", "u8", "0x05", "0x0f", "at", "0",	//
+			     "match", "u16", "0x0000", "0xffc0", "at", "2",	//
+			     "match", "u8", "0x04", "0x04", "at", "33",	//
+			     "flowid", "1:100");
+		}
+	} while ((qos_pkts = strpbrk(++qos_pkts, "|")) && qos_pkts++);
+
+}
+
+#if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)
 static void add_filter(const char *dev, int pref, int handle, int classid)
 {
 
@@ -909,12 +952,19 @@ static void add_filter(const char *dev, int pref, int handle, int classid)
 
 static void init_filter(const char *dev)
 {
+
 	add_filter(dev, 1, 0x64, 100);
 	add_filter(dev, 3, 0x0A, 10);
 	add_filter(dev, 5, 0x14, 20);
 	add_filter(dev, 8, 0x1E, 30);
 	add_filter(dev, 9, 0x28, 40);
 }
+#else
+static inline void init_filter(const char *dev)
+{
+}
+
+#endif
 
 void init_qos(const char *strtype, int up, int down, const char *wandev, int mtu, const char *imq_wan, const char *aqd, const char *imq_lan)
 {
@@ -933,14 +983,16 @@ void init_qos(const char *strtype, int up, int down, const char *wandev, int mtu
 			eval("tc", "qdisc", "add", "dev", wandev, "root", "handle", "1:", "htb", "default", "30");
 			init_htb_class(wandev, up, mtu);
 			init_qdisc(type, IFTYPE_WAN, wandev, wandev, aqd, mtu, up, 0);
-			init_filter(wandev);
 		} else {
 
 			eval("tc", "qdisc", "add", "dev", wandev, "root", "handle", "1:", "hfsc", "default", "30");
 			init_hfsc_class(wandev, up);
 			init_qdisc(type, IFTYPE_WAN, wandev, wandev, aqd, mtu, up, 0);
-			init_filter(wandev);
 		}
+#if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)
+		init_ackprio(wandev);
+#endif
+		init_filter(wandev);
 	}
 
 	if (down != 0) {
