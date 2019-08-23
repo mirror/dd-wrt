@@ -6,10 +6,8 @@
  */
 
 #ifdef __KERNEL__
-#include <linux/errno.h>
 #include <linux/compiler.h>
 #include <linux/string.h>
-#include <linux/thread_info.h>
 #include <asm/asi.h>
 #include <asm/spitfire.h>
 #include <asm-generic/uaccess-unaligned.h>
@@ -35,9 +33,6 @@
 
 #define KERNEL_DS   ((mm_segment_t) { ASI_P })
 #define USER_DS     ((mm_segment_t) { ASI_AIUS })	/* har har har */
-
-#define VERIFY_READ	0
-#define VERIFY_WRITE	1
 
 #define get_fs() ((mm_segment_t){(current_thread_info()->current_ds)})
 #define get_ds() (KERNEL_DS)

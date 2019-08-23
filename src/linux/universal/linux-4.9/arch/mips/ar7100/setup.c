@@ -473,7 +473,7 @@ void ar7100_serial_out(int offset, int value)
 	UART16550_WRITE(offset, (u8)value);
 }
 
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 #define M_PERFCTL_EVENT(event)          ((event) << 5)
 unsigned int clocks_at_start;
 

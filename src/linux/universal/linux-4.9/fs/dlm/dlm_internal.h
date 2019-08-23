@@ -39,7 +39,7 @@
 #include <linux/mutex.h>
 #include <linux/idr.h>
 #include <linux/ratelimit.h>
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 
 #include <linux/dlm.h>
 #include "config.h"

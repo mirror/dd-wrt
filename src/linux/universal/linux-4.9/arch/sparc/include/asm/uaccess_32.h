@@ -9,9 +9,7 @@
 
 #ifdef __KERNEL__
 #include <linux/compiler.h>
-#include <linux/sched.h>
 #include <linux/string.h>
-#include <linux/errno.h>
 #endif
 
 #ifndef __ASSEMBLY__
@@ -30,9 +28,6 @@
 #define KERNEL_DS   ((mm_segment_t) { 0 })
 #define USER_DS     ((mm_segment_t) { -1 })
 
-#define VERIFY_READ	0
-#define VERIFY_WRITE	1
-
 #define get_ds()	(KERNEL_DS)
 #define get_fs()	(current->thread.current_ds)
 #define set_fs(val)	((current->thread.current_ds) = (val))
@@ -45,7 +40,7 @@
  * large size and address near to PAGE_OFFSET - a fault will break his intentions.
  */
 #define __user_ok(addr, size) ({ (void)(size); (addr) < STACK_TOP; })
-#define __kernel_ok (segment_eq(get_fs(), KERNEL_DS))
+#define __kernel_ok (uaccess_kernel())
 #define __access_ok(addr, size) (__user_ok((addr) & get_fs().seg, (size)))
 #define access_ok(type, addr, size) \
 	({ (void)(type); __access_ok((unsigned long)(addr), size); })

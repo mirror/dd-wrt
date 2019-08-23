@@ -29,7 +29,7 @@
 #include <linux/timex.h>
 
 #include <asm/io.h>
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 
 #include <linux/nospec.h>
 
