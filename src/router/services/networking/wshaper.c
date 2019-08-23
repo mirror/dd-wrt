@@ -580,6 +580,7 @@ static int svqos_iptables(void)
 	// if kernel version later then 2.4, overwrite all old tc filter
 	if (nvram_match("wshaper_dev", "WAN") && wan_dev != NULL) {
 		sysprintf("tc filter del dev %s", wan_dev);
+		init_ackprio(wan_dev);
 		sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:100", wan_dev, get_tcfmark(100));
 		sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:10", wan_dev, get_tcfmark(10));
 		sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:20", wan_dev, get_tcfmark(20));
@@ -859,6 +860,7 @@ static int svqos_iptables(void)
 //      if (nvram_invmatchi("openvpn_enable", 0) || nvram_invmatchi("openvpncl_enable", 0)) {
 //              eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "VPN_DSCP");
 //      }
+#if 0
 #ifdef HAVE_80211AC
 	if (nvram_match("bcmdebug", "1"))
 #endif
@@ -873,6 +875,7 @@ static int svqos_iptables(void)
 
 		} while ((qos_pkts = strpbrk(++qos_pkts, "|")) && qos_pkts++);
 	}
+#endif
 	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "CONNMARK", "--save-mark");
 	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "RETURN");
 
