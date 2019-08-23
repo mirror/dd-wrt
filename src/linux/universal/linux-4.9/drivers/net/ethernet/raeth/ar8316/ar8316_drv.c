@@ -5,7 +5,8 @@
 #include <linux/kernel.h>
 #include <linux/interrupt.h>
 #include <linux/fs.h>
-#include <asm/uaccess.h>
+
+#include <linux/uaccess.h>
 
 //#include <linux/delay.h>
 

@@ -28,7 +28,7 @@
 #include <linux/ctype.h>
 #include <linux/edac.h>
 #include <linux/bitops.h>
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 #include <asm/page.h>
 #include "edac_core.h"
 #include "edac_module.h"

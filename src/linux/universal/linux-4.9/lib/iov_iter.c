@@ -410,7 +410,7 @@ void iov_iter_init(struct iov_iter *i, int direction,
 			size_t count)
 {
 	/* It will get better.  Eventually... */
-	if (segment_eq(get_fs(), KERNEL_DS)) {
+	if (uaccess_kernel()) {
 		direction |= ITER_KVEC;
 		i->type = direction;
 		i->kvec = (struct kvec *)iov;
@@ -576,7 +576,7 @@ size_t copy_from_iter_nocache(void *addr, size_t bytes, struct iov_iter *i)
 		return 0;
 	}
 	iterate_and_advance(i, bytes, v,
-		__copy_from_user_nocache((to += v.iov_len) - v.iov_len,
+		__copy_from_user_inatomic_nocache((to += v.iov_len) - v.iov_len,
 					 v.iov_base, v.iov_len),
 		memcpy_from_page((to += v.bv_len) - v.bv_len, v.bv_page,
 				 v.bv_offset, v.bv_len),

@@ -11,7 +11,7 @@
 #include <linux/kernel.h>
 #include <linux/string.h>
 #include <linux/fs.h>
-#include <asm/uaccess.h>	/* for copy_from_user */
+#include <linux/uaccess.h>	/* for copy_from_user */
 #include <ar5312_regs.h>
 #include <ar2315_regs.h>
 #include <ar231x.h>

@@ -31,7 +31,7 @@
 #include <linux/mii.h>
 #include <linux/delay.h>
 #include <linux/gpio.h>
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 
 #include "switch-core.h"
 #include "etc53xx.h"

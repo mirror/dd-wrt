@@ -568,38 +568,8 @@
 	LOADK	t0, THREAD_BUADDR(t0)	# t0 is just past last good address
 	 nop
 	SUB	len, AT, t0		# len number of uncopied bytes
-	bnez	t6, .Ldone\@	/* Skip the zeroing part if inatomic */
-	/*
-	 * Here's where we rely on src and dst being incremented in tandem,
-	 *   See (3) above.
-	 * dst += (fault addr - src) to put dst at first byte to clear
-	 */
-	ADD	dst, t0			# compute start address in a1
-	SUB	dst, src
-	/*
-	 * Clear len bytes starting at dst.  Can't call __bzero because it
-	 * might modify len.  An inefficient loop for these rare times...
-	 */
-	.set	reorder				/* DADDI_WAR */
-	SUB	src, len, 1
-	beqz	len, .Ldone\@
-	.set	noreorder
-1:	sb	zero, 0(dst)
-	ADD	dst, dst, 1
-#ifndef CONFIG_CPU_DADDI_WORKAROUNDS
-	bnez	src, 1b
-	 SUB	src, src, 1
-#else
-	.set	push
-	.set	noat
-	li	v1, 1
-	bnez	src, 1b
-	 SUB	src, src, v1
-	.set	pop
-#endif
 	jr	ra
 	 nop
-
 
 #define SEXC(n)							\
 	.set	reorder;			/* DADDI_WAR */ \

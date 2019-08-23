@@ -41,7 +41,7 @@
 #include <linux/errno.h>
 #include <linux/ethtool.h>
 #include <linux/netdevice.h>
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 
 #undef ethtool_ops
 #define ethtool_ops _kc_ethtool_ops

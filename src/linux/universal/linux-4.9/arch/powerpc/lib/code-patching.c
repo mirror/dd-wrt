@@ -13,7 +13,7 @@
 #include <linux/mm.h>
 #include <asm/page.h>
 #include <asm/code-patching.h>
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 #include <asm/setup.h>
 #include <asm/sections.h>
 

@@ -31,7 +31,7 @@
 #include <linux/delay.h>
 #include <linux/slab.h>
 #include <linux/atomic.h>
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 
 #include "ap_bus.h"
 #include "zcrypt_api.h"
