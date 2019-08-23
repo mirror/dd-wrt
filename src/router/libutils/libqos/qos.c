@@ -925,7 +925,7 @@ void init_ackprio(const char *dev)
 			     "flowid", "1:100");
 		}
 		if (!strcmp(pkt_filter, "RST")) {
-			eval("tc", "filter", "add", "dev", dev, "parent", "1:" , "prio", "1", "protocol", "ip", "u32",	//
+			eval("tc", "filter", "add", "dev", dev, "parent", "1:", "prio", "1", "protocol", "ip", "u32",	//
 			     "match", "ip", "protocol", "6", "0xff",	//
 			     "match", "u8", "0x05", "0x0f", "at", "0",	//
 			     "match", "u16", "0x0000", "0xffc0", "at", "2",	//
