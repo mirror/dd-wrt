@@ -946,7 +946,7 @@ static void add_filter(const char *dev, int pref, int handle, int classid)
 	sprintf(p, "%d", pref);
 	sprintf(h, "0x%02X", handle);
 	sprintf(c, "1:%d", classid);
-	eval("tc", "filter", "add", "dev", dev, "protocol", "ip", "pref", p, "handle", h, "fw", "classid", c);
+	eval("tc", "filter", "add", "dev", dev, "prio", "2", "protocol", "ip", "pref", p, "handle", h, "fw", "classid", c);
 
 }
 
