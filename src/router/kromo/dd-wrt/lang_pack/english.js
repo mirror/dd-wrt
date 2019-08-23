@@ -1524,6 +1524,7 @@ qos.pktack="ACK";
 qos.pktrst="RST";
 qos.pktsyn="SYN";
 qos.pktfin="FIN";
+qos.pktigmp="IGMP";
 qos.enabledefaultlvls="Enable Per User Default Limits";
 qos.bandwidth="Bandwidth in kbits";
 qos.up="Up";
