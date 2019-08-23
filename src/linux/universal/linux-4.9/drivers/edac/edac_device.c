@@ -25,7 +25,7 @@
 #include <linux/list.h>
 #include <linux/ctype.h>
 #include <linux/workqueue.h>
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 #include <asm/page.h>
 
 #include "edac_core.h"

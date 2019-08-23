@@ -10,7 +10,7 @@
 #include <linux/proc_fs.h>
 #include <linux/fcntl.h> /* O_ACCMODE */
 #include <asm/system.h> /* cli(), *_flags */
-#include <asm/uaccess.h> /* copy_from/to_user */
+#include <linux/uaccess.h> /* copy_from/to_user */
 #include <linux/interrupt.h>
 #include <linux/mm.h>
 #include <asm/rt2880/surfboardint.h>

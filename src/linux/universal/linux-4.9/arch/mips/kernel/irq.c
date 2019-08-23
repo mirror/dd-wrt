@@ -23,7 +23,7 @@
 #include <linux/ftrace.h>
 
 #include <linux/atomic.h>
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 
 void *irq_stack[NR_CPUS];
 

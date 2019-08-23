@@ -65,7 +65,7 @@
 #include <net/busy_poll.h>
 
 #include <asm/unaligned.h>
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>

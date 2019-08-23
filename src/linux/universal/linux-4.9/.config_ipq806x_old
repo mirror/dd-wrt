@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 4.9.188 Kernel Configuration
+# Linux/arm 4.9.189 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_ARM_HAS_SG_CHAIN=y
@@ -628,7 +628,6 @@ CONFIG_CPU_IDLE_GOV_MENU=y
 # ARM CPU Idle Drivers
 #
 # CONFIG_ARM_CPUIDLE is not set
-# CONFIG_ARM_QCOM_CPUIDLE is not set
 # CONFIG_ARCH_NEEDS_CPU_IDLE_COUPLED is not set
 
 #

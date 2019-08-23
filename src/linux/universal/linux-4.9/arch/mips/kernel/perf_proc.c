@@ -10,7 +10,7 @@
 #include <asm/processor.h>
 #include <asm/system.h>
 #include <asm/mipsregs.h>
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 #include <linux/proc_fs.h>
 
 /*

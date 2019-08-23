@@ -5,7 +5,7 @@
 
 #include <linux/futex.h>
 #include <asm/errno.h>
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 
 extern int arch_futex_atomic_op_inuser(int op, int oparg, int *oval,
 		u32 __user *uaddr);

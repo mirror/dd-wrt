@@ -4,14 +4,9 @@
 #ifdef __KERNEL__
 #ifndef __ASSEMBLY__
 
-#include <linux/sched.h>
-#include <linux/errno.h>
 #include <asm/asm-compat.h>
 #include <asm/processor.h>
 #include <asm/page.h>
-
-#define VERIFY_READ	0
-#define VERIFY_WRITE	1
 
 /*
  * The fs value determines whether argument validity checking should be
