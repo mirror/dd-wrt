@@ -892,7 +892,7 @@ static void init_qdisc(int type, int wan_type, const char *dev, const char *wand
 
 }
 
-void init_ackprio(char *dev)
+void init_ackprio(const char *dev)
 {
 
 	char *qos_pkts = nvram_safe_get("svqos_pkts");
