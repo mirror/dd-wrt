@@ -65,8 +65,8 @@ void ej_get_qospkts(webs_t wp, int argc, char_t ** argv)
 		  "<td><input type=\"checkbox\" name=\"svqos_pktsyn\" value=\"SYN\" %s><script type=\"text/javascript\">Capture(qos.pktsyn)</script></input></td>\n"
 		  "<td><input type=\"checkbox\" name=\"svqos_pktfin\" value=\"FIN\" %s><script type=\"text/javascript\">Capture(qos.pktfin)</script></input></td>\n"
 		  "<td><input type=\"checkbox\" name=\"svqos_pktrst\" value=\"RST\" %s><script type=\"text/javascript\">Capture(qos.pktrst)</script></input></td>\n"
-		  "<td><input type=\"checkbox\" name=\"svqos_pktigmp\" value=\"IGMP\" %s><script type=\"text/javascript\">Capture(qos.pktigmp)</script></input></td>\n"
-		  "</tr>\n", strstr(qos_pkts, "ACK") ? "checked" : "", strstr(qos_pkts, "SYN") ? "checked" : "", strstr(qos_pkts, "FIN") ? "checked" : "", strstr(qos_pkts, "RST") ? "checked" : "", strstr(qos_pkts, "IGMP") ? "checked" : "");
+		  "<td><input type=\"checkbox\" name=\"svqos_pkticmp\" value=\"ICMP\" %s><script type=\"text/javascript\">Capture(qos.pkticmp)</script></input></td>\n"
+		  "</tr>\n", strstr(qos_pkts, "ACK") ? "checked" : "", strstr(qos_pkts, "SYN") ? "checked" : "", strstr(qos_pkts, "FIN") ? "checked" : "", strstr(qos_pkts, "RST") ? "checked" : "", strstr(qos_pkts, "ICMP") ? "checked" : "");
 }
 
 void ej_get_qossvcs(webs_t wp, int argc, char_t ** argv)
