@@ -932,6 +932,11 @@ void init_ackprio(const char *dev)
 			     "match", "u8", "0x04", "0x04", "at", "33",	//
 			     "flowid", "1:100");
 		}
+		if (!strcmp(pkt_filter, "IGMP")) {
+			eval("tc", "filter", "add", "dev", dev, "parent", "1:", "prio", "1", "protocol", "ip", "u32",	//
+			     "match", "ip", "protocol", "1", "0xff",	//
+			     "flowid", "1:100");
+		}
 	} while ((qos_pkts = strpbrk(++qos_pkts, "|")) && qos_pkts++);
 
 }
