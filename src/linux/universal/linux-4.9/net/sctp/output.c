@@ -568,7 +568,7 @@ int sctp_packet_transmit(struct sctp_packet *packet, gfp_t gfp)
 
 			padding = SCTP_PAD4(chunk->skb->len) - chunk->skb->len;
 			if (padding)
-				memset(skb_put(chunk->skb, padding), 0, padding);
+				skb_put_zero(chunk->skb, padding);
 
 			/* if this is the auth chunk that we are adding,
 			 * store pointer where it will be added and put

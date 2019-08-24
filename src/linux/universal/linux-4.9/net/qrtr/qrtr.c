@@ -269,8 +269,7 @@ static struct sk_buff *qrtr_alloc_resume_tx(u32 src_node,
 	hdr->dst_node_id = cpu_to_le32(dst_node);
 	hdr->dst_port_id = cpu_to_le32(QRTR_PORT_CTRL);
 
-	buf = (__le32 *)skb_put(skb, pkt_len);
-	memset(buf, 0, pkt_len);
+	buf = skb_put_zero(skb, pkt_len);
 	buf[0] = cpu_to_le32(QRTR_TYPE_RESUME_TX);
 	buf[1] = cpu_to_le32(src_node);
 	buf[2] = cpu_to_le32(port);

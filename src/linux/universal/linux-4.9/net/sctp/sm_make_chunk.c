@@ -1286,8 +1286,7 @@ struct sctp_chunk *sctp_make_auth(const struct sctp_association *asoc)
 	retval->subh.auth_hdr = sctp_addto_chunk(retval, sizeof(sctp_authhdr_t),
 						&auth_hdr);
 
-	hmac = skb_put(retval->skb, hmac_desc->hmac_len);
-	memset(hmac, 0, hmac_desc->hmac_len);
+	hmac = skb_put_zero(retval->skb, hmac_desc->hmac_len);
 
 	/* Adjust the chunk header to include the empty MAC */
 	retval->chunk_hdr->length =
@@ -1474,10 +1473,9 @@ void *sctp_addto_chunk(struct sctp_chunk *chunk, int len, const void *data)
 	int chunklen = ntohs(chunk->chunk_hdr->length);
 	int padlen = SCTP_PAD4(chunklen) - chunklen;
 
-	padding = skb_put(chunk->skb, padlen);
+	padding = skb_put_zero(chunk->skb, padlen);
 	target = skb_put(chunk->skb, len);
 
-	memset(padding, 0, padlen);
 	memcpy(target, data, len);
 
 	/* Adjust the chunk length field.  */
