@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 4.4.186 Kernel Configuration
+# Linux/mips 4.4.190-rc1 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -819,6 +819,7 @@ CONFIG_BRIDGE_EBT_REDIRECT=m
 CONFIG_BRIDGE_EBT_SNAT=m
 CONFIG_BRIDGE_EBT_LOG=m
 CONFIG_BRIDGE_EBT_NFLOG=m
+CONFIG_SHORTCUT_FE=m
 # CONFIG_IP_DCCP is not set
 # CONFIG_IP_SCTP is not set
 # CONFIG_RDS is not set
@@ -2844,4 +2845,3 @@ CONFIG_OID_REGISTRY=y
 # CONFIG_SG_SPLIT is not set
 # CONFIG_ARCH_HAS_SG_CHAIN is not set
 # CONFIG_VIRTUALIZATION is not set
-CONFIG_SHORTCUT_FE=m
