@@ -1325,8 +1325,7 @@ static char * ap_auth_make_challenge(struct ap_data *ap)
 	}
 
 	skb_reserve(skb, ap->crypt->extra_mpdu_prefix_len);
-	memset(skb_put(skb, WLAN_AUTH_CHALLENGE_LEN), 0,
-	       WLAN_AUTH_CHALLENGE_LEN);
+	skb_put_zero(skb, WLAN_AUTH_CHALLENGE_LEN);
 	if (ap->crypt->encrypt_mpdu(skb, 0, ap->crypt_priv)) {
 		dev_kfree_skb(skb);
 		kfree(tmpbuf);

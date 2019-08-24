@@ -392,8 +392,7 @@ void *__nla_reserve_nohdr(struct sk_buff *skb, int attrlen)
 {
 	void *start;
 
-	start = skb_put(skb, NLA_ALIGN(attrlen));
-	memset(start, 0, NLA_ALIGN(attrlen));
+	start = skb_put_zero(skb, NLA_ALIGN(attrlen));
 
 	return start;
 }
