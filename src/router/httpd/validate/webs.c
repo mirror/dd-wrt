@@ -1953,7 +1953,7 @@ void qos_save(webs_t wp)
 	pktopt = websGetVar(wp, "svqos_pktrst", NULL);
 	if (pktopt)
 		strcat(svqos_pktstr, "RST | ");
-	pktopt = websGetVar(wp, "svqos_pktigmp", NULL);
+	pktopt = websGetVar(wp, "svqos_pkticmp", NULL);
 	if (pktopt)
 		strcat(svqos_pktstr, "ICMP | ");
 
