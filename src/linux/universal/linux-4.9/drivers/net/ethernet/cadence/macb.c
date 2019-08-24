@@ -56,7 +56,7 @@
 #define MACB_MAX_TX_LEN		((unsigned int)((1 << MACB_TX_FRMLEN_SIZE) - 1))
 #define GEM_MAX_TX_LEN		((unsigned int)((1 << GEM_TX_FRMLEN_SIZE) - 1))
 
-#define GEM_MTU_MIN_SIZE	68
+#define GEM_MTU_MIN_SIZE	ETH_MIN_MTU
 
 #define MACB_WOL_HAS_MAGIC_PACKET	(0x1 << 0)
 #define MACB_WOL_ENABLED		(0x1 << 1)
@@ -1987,18 +1987,8 @@ static int macb_close(struct net_device *dev)
 
 static int macb_change_mtu(struct net_device *dev, int new_mtu)
 {
-	struct macb *bp = netdev_priv(dev);
-	u32 max_mtu;
-
 	if (netif_running(dev))
 		return -EBUSY;
-
-	max_mtu = ETH_DATA_LEN;
-	if (bp->caps & MACB_CAPS_JUMBO)
-		max_mtu = gem_readl(bp, JML) - ETH_HLEN - ETH_FCS_LEN;
-
-	if ((new_mtu > max_mtu) || (new_mtu < GEM_MTU_MIN_SIZE))
-		return -EINVAL;
 
 	dev->mtu = new_mtu;
 
@@ -2710,7 +2700,7 @@ static void at91ether_rx(struct net_device *dev)
 		skb = netdev_alloc_skb(dev, pktlen + 2);
 		if (skb) {
 			skb_reserve(skb, 2);
-			memcpy(skb_put(skb, pktlen), p_recv, pktlen);
+			skb_put_data(skb, p_recv, pktlen);
 
 			skb->protocol = eth_type_trans(skb, dev);
 			lp->stats.rx_packets++;
@@ -3043,6 +3033,13 @@ static int macb_probe(struct platform_device *pdev)
 		err = dev->irq;
 		goto err_out_free_netdev;
 	}
+
+	/* MTU range: 68 - 1500 or 10240 */
+	dev->min_mtu = GEM_MTU_MIN_SIZE;
+	if (bp->caps & MACB_CAPS_JUMBO)
+		dev->max_mtu = gem_readl(bp, JML) - ETH_HLEN - ETH_FCS_LEN;
+	else
+		dev->max_mtu = ETH_DATA_LEN;
 
 	mac = of_get_mac_address(np);
 	if (mac)

@@ -165,8 +165,7 @@ static void batadv_v_ogm_send(struct work_struct *work)
 		goto reschedule;
 
 	skb_reserve(skb, ETH_HLEN);
-	pkt_buff = skb_put(skb, ogm_buff_len);
-	memcpy(pkt_buff, ogm_buff, ogm_buff_len);
+	pkt_buff = skb_put_data(skb, ogm_buff, ogm_buff_len);
 
 	ogm_packet = (struct batadv_ogm2_packet *)skb->data;
 	ogm_packet->seqno = htonl(atomic_read(&bat_priv->bat_v.ogm_seqno));
@@ -356,8 +355,7 @@ static void batadv_v_ogm_forward(struct batadv_priv *bat_priv,
 		goto out;
 
 	skb_reserve(skb, ETH_HLEN);
-	skb_buff = skb_put(skb, packet_len);
-	memcpy(skb_buff, ogm_received, packet_len);
+	skb_buff = skb_put_data(skb, ogm_received, packet_len);
 
 	/* apply forward penalty */
 	ogm_forward = (struct batadv_ogm2_packet *)skb_buff;
