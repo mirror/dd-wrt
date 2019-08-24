@@ -1868,9 +1868,6 @@ static int enic_change_mtu(struct net_device *netdev, int new_mtu)
 {
 	struct enic *enic = netdev_priv(netdev);
 
-	if (new_mtu < ENIC_MIN_MTU || new_mtu > ENIC_MAX_MTU)
-		return -EINVAL;
-
 	if (enic_is_dynamic(enic) || enic_is_sriov_vf(enic))
 		return -EOPNOTSUPP;
 
@@ -2730,6 +2727,10 @@ static int enic_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 
 	netdev->priv_flags |= IFF_UNICAST_FLT;
 	netdev->mtu = enic->port_mtu;
+
+	/* MTU range: 68 - 9000 */
+	netdev->min_mtu = ENIC_MIN_MTU;
+	netdev->max_mtu = ENIC_MAX_MTU;
 
 	err = register_netdev(netdev);
 	if (err) {

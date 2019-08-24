@@ -1000,7 +1000,7 @@ static void prism2_send_mgmt(struct net_device *dev,
 	hdrlen = hostap_80211_get_hdrlen(cpu_to_le16(type_subtype));
 	hdr = (struct ieee80211_hdr *) skb_put(skb, hdrlen);
 	if (body)
-		memcpy(skb_put(skb, body_len), body, body_len);
+		skb_put_data(skb, body, body_len);
 
 	memset(hdr, 0, hdrlen);
 

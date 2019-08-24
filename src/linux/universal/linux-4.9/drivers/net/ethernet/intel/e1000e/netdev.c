@@ -7222,6 +7222,11 @@ static int e1000_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 		netdev->vlan_features |= NETIF_F_HIGHDMA;
 	}
 
+	/* MTU range: 68 - max_hw_frame_size */
+	netdev->min_mtu = ETH_MIN_MTU;
+	netdev->max_mtu = adapter->max_hw_frame_size -
+			  (VLAN_ETH_HLEN + ETH_FCS_LEN);
+
 	if (e1000e_enable_mng_pass_thru(&adapter->hw))
 		adapter->flags |= FLAG_MNG_PT_ENABLED;
 
