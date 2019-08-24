@@ -2012,8 +2012,7 @@ static void igmp6_send(struct in6_addr *addr, struct net_device *dev, int type)
 
 	skb_put_data(skb, ra, sizeof(ra));
 
-	hdr = (struct mld_msg *) skb_put(skb, sizeof(struct mld_msg));
-	memset(hdr, 0, sizeof(struct mld_msg));
+	hdr = skb_put_zero(skb, sizeof(struct mld_msg));
 	hdr->mld_type = type;
 	hdr->mld_mca = *addr;
 

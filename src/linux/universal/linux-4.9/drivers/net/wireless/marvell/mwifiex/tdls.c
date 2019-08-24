@@ -391,8 +391,7 @@ mwifiex_tdls_add_wmm_param_ie(struct mwifiex_private *priv, struct sk_buff *skb)
 	u8 ac_be[] = {0x03, 0xa4, 0x00, 0x00};
 	u8 ac_bk[] = {0x27, 0xa4, 0x00, 0x00};
 
-	wmm = (void *)skb_put(skb, sizeof(*wmm));
-	memset(wmm, 0, sizeof(*wmm));
+	wmm = skb_put_zero(skb, sizeof(*wmm));
 
 	wmm->element_id = WLAN_EID_VENDOR_SPECIFIC;
 	wmm->len = sizeof(*wmm) - 2;
@@ -809,8 +808,8 @@ int mwifiex_send_tdls_action_frame(struct mwifiex_private *priv, const u8 *peer,
 
 	pkt_type = PKT_TYPE_MGMT;
 	tx_control = 0;
-	pos = skb_put(skb, MWIFIEX_MGMT_FRAME_HEADER_SIZE + sizeof(pkt_len));
-	memset(pos, 0, MWIFIEX_MGMT_FRAME_HEADER_SIZE + sizeof(pkt_len));
+	pos = skb_put_zero(skb,
+			   MWIFIEX_MGMT_FRAME_HEADER_SIZE + sizeof(pkt_len));
 	memcpy(pos, &pkt_type, sizeof(pkt_type));
 	memcpy(pos + sizeof(pkt_type), &tx_control, sizeof(tx_control));
 
