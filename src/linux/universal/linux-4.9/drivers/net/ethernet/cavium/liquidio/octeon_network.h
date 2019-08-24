@@ -29,7 +29,7 @@
 #include <linux/ptp_clock_kernel.h>
 
 #define LIO_MAX_MTU_SIZE (OCTNET_MAX_FRM_SIZE - OCTNET_FRM_HEADER_SIZE)
-#define LIO_MIN_MTU_SIZE 68
+#define LIO_MIN_MTU_SIZE ETH_MIN_MTU
 
 struct oct_nic_stats_resp {
 	u64     rh;
@@ -425,8 +425,8 @@ static inline void octeon_fast_packet_next(struct octeon_droq *droq,
 					   int copy_len,
 					   int idx)
 {
-	memcpy(skb_put(nicbuf, copy_len),
-	       get_rbd(droq->recv_buf_list[idx].buffer), copy_len);
+	skb_put_data(nicbuf, get_rbd(droq->recv_buf_list[idx].buffer),
+		     copy_len);
 }
 
 #endif

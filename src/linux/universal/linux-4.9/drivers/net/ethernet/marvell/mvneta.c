@@ -1913,9 +1913,8 @@ err_drop_frame:
 						      MVNETA_MH_SIZE + NET_SKB_PAD,
 						      rx_bytes,
 						      DMA_FROM_DEVICE);
-			memcpy(skb_put(skb, rx_bytes),
-			       data + MVNETA_MH_SIZE + NET_SKB_PAD,
-			       rx_bytes);
+			skb_put_data(skb, data + MVNETA_MH_SIZE + NET_SKB_PAD,
+				     rx_bytes);
 
 			skb->protocol = eth_type_trans(skb, dev);
 			mvneta_rx_csum(pp, rx_status, skb);
@@ -2040,9 +2039,8 @@ err_drop_frame:
 			                              MVNETA_MH_SIZE + NET_SKB_PAD,
 			                              rx_bytes,
 			                              DMA_FROM_DEVICE);
-			memcpy(skb_put(skb, rx_bytes),
-			       data + MVNETA_MH_SIZE + NET_SKB_PAD,
-			       rx_bytes);
+			skb_put_data(skb, data + MVNETA_MH_SIZE + NET_SKB_PAD,
+				     rx_bytes);
 
 			skb->protocol = eth_type_trans(skb, dev);
 			mvneta_rx_csum(pp, rx_status, skb);
@@ -3002,29 +3000,6 @@ static void mvneta_stop_dev(struct mvneta_port *pp)
 	mvneta_rx_reset(pp);
 }
 
-/* Return positive if MTU is valid */
-static int mvneta_check_mtu_valid(struct net_device *dev, int mtu)
-{
-	if (mtu < 68) {
-		netdev_err(dev, "cannot change mtu to less than 68\n");
-		return -EINVAL;
-	}
-
-	/* 9676 == 9700 - 20 and rounding to 8 */
-	if (mtu > 9676) {
-		netdev_info(dev, "Illegal MTU value %d, round to 9676\n", mtu);
-		mtu = 9676;
-	}
-
-	if (!IS_ALIGNED(MVNETA_RX_PKT_SIZE(mtu), 8)) {
-		netdev_info(dev, "Illegal MTU value %d, rounding to %d\n",
-			mtu, ALIGN(MVNETA_RX_PKT_SIZE(mtu), 8));
-		mtu = ALIGN(MVNETA_RX_PKT_SIZE(mtu), 8);
-	}
-
-	return mtu;
-}
-
 static void mvneta_percpu_enable(void *arg)
 {
 	struct mvneta_port *pp = arg;
@@ -3045,9 +3020,11 @@ static int mvneta_change_mtu(struct net_device *dev, int mtu)
 	struct mvneta_port *pp = netdev_priv(dev);
 	int ret;
 
-	mtu = mvneta_check_mtu_valid(dev, mtu);
-	if (mtu < 0)
-		return -EINVAL;
+	if (!IS_ALIGNED(MVNETA_RX_PKT_SIZE(mtu), 8)) {
+		netdev_info(dev, "Illegal MTU value %d, rounding to %d\n",
+			    mtu, ALIGN(MVNETA_RX_PKT_SIZE(mtu), 8));
+		mtu = ALIGN(MVNETA_RX_PKT_SIZE(mtu), 8);
+	}
 
 	dev->mtu = mtu;
 
@@ -4330,6 +4307,11 @@ static int mvneta_probe(struct platform_device *pdev)
 	}
 
 	pp->phylink = phylink;
+
+	/* MTU range: 68 - 9676 */
+	dev->min_mtu = ETH_MIN_MTU;
+	/* 9676 == 9700 - 20 and rounding to 8 */
+	dev->max_mtu = 9676;
 
 	err = register_netdev(dev);
 	if (err < 0) {

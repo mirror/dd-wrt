@@ -1314,8 +1314,8 @@ static int ncm_unwrap_ntb(struct gether *port,
 							 dg_len - crc_len);
 			if (skb2 == NULL)
 				goto err;
-			memcpy(skb_put(skb2, dg_len - crc_len),
-			       skb->data + index, dg_len - crc_len);
+			skb_put_data(skb2, skb->data + index,
+				     dg_len - crc_len);
 
 			skb_queue_tail(list, skb2);
 

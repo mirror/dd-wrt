@@ -472,7 +472,7 @@ static int btusb_recv_intr(struct btusb_data *data, void *buffer, int count)
 		}
 
 		len = min_t(uint, hci_skb_expect(skb), count);
-		memcpy(skb_put(skb, len), buffer, len);
+		skb_put_data(skb, buffer, len);
 
 		count -= len;
 		buffer += len;
@@ -527,7 +527,7 @@ static int btusb_recv_bulk(struct btusb_data *data, void *buffer, int count)
 		}
 
 		len = min_t(uint, hci_skb_expect(skb), count);
-		memcpy(skb_put(skb, len), buffer, len);
+		skb_put_data(skb, buffer, len);
 
 		count -= len;
 		buffer += len;
@@ -584,7 +584,7 @@ static int btusb_recv_isoc(struct btusb_data *data, void *buffer, int count)
 		}
 
 		len = min_t(uint, hci_skb_expect(skb), count);
-		memcpy(skb_put(skb, len), buffer, len);
+		skb_put_data(skb, buffer, len);
 
 		count -= len;
 		buffer += len;
@@ -928,8 +928,8 @@ static void btusb_diag_complete(struct urb *urb)
 
 		skb = bt_skb_alloc(urb->actual_length, GFP_ATOMIC);
 		if (skb) {
-			memcpy(skb_put(skb, urb->actual_length),
-			       urb->transfer_buffer, urb->actual_length);
+			skb_put_data(skb, urb->transfer_buffer,
+				     urb->actual_length);
 			hci_recv_diag(hdev, skb);
 		}
 	} else if (urb->status == -ENOENT) {

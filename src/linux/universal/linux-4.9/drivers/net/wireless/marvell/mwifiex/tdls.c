@@ -641,8 +641,7 @@ int mwifiex_send_tdls_data_frame(struct mwifiex_private *priv, const u8 *peer,
 			return ret;
 		}
 		if (extra_ies_len)
-			memcpy(skb_put(skb, extra_ies_len), extra_ies,
-			       extra_ies_len);
+			skb_put_data(skb, extra_ies, extra_ies_len);
 		mwifiex_tdls_add_link_ie(skb, priv->curr_addr, peer,
 					 priv->cfg_bssid);
 		break;
@@ -655,8 +654,7 @@ int mwifiex_send_tdls_data_frame(struct mwifiex_private *priv, const u8 *peer,
 			return ret;
 		}
 		if (extra_ies_len)
-			memcpy(skb_put(skb, extra_ies_len), extra_ies,
-			       extra_ies_len);
+			skb_put_data(skb, extra_ies, extra_ies_len);
 		mwifiex_tdls_add_link_ie(skb, peer, priv->curr_addr,
 					 priv->cfg_bssid);
 		break;
@@ -824,7 +822,7 @@ int mwifiex_send_tdls_action_frame(struct mwifiex_private *priv, const u8 *peer,
 	}
 
 	if (extra_ies_len)
-		memcpy(skb_put(skb, extra_ies_len), extra_ies, extra_ies_len);
+		skb_put_data(skb, extra_ies, extra_ies_len);
 
 	/* the TDLS link IE is always added last we are the responder */
 
