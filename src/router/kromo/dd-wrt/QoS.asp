@@ -15,6 +15,7 @@ function pkts_grey(sw_disabled,F) {
     F.svqos_pktsyn.disabled = sw_disabled;
     F.svqos_pktfin.disabled = sw_disabled;
     F.svqos_pktrst.disabled = sw_disabled;
+    F.svqos_pkticmp.disabled = sw_disabled;
 }
 
 function macs_grey(sw_disabled,F,overwrite) {
