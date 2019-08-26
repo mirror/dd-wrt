@@ -5,7 +5,7 @@
  *
  * Definitions subject to change without notice.
  *
- * Copyright (C) 2016, Broadcom. All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -19,7 +19,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: wlioctl.h 651263 2016-07-26 06:32:28Z $
+ * $Id: wlioctl.h 586916 2015-09-16 21:09:07Z $
  */
 
 #ifndef _wlioctl_h_
@@ -82,13 +82,10 @@ typedef struct wl_dfs_forced_params {
 
 #define DFS_PREFCHANLIST_VER 0x01
 #define WL_CHSPEC_LIST_FIXED_SIZE	OFFSETOF(chanspec_list_t, list)
-/* size of dfs forced param size given n channels are in the list */
-#define WL_DFS_FORCED_PARAMS_SIZE(n) \
-	(sizeof(wl_dfs_forced_t) + (((n) < 1) ? (0) : (((n) - 1)* sizeof(chanspec_t))))
 #define WL_DFS_FORCED_PARAMS_FIXED_SIZE \
 	(WL_CHSPEC_LIST_FIXED_SIZE + OFFSETOF(wl_dfs_forced_t, chspec_list))
 #define WL_DFS_FORCED_PARAMS_MAX_SIZE \
-	WL_DFS_FORCED_PARAMS_FIXED_SIZE + (WL_NUMCHANSPECS * sizeof(chanspec_t))
+	WL_DFS_FORCED_PARAMS_FIXED_SIZE + (WL_NUMCHANNELS * sizeof(chanspec_t))
 
 #define WLC_DC_DWDS_DATA_LENGTH 1
 
@@ -1136,14 +1133,12 @@ typedef struct {
 								 */
 	uint32			rx_pkts_retried;	/* # rx with retry bit set */
 	uint32			tx_rate_fallback;	/* lowest fallback TX rate */
-	wl_rateset_args_t	rateset_adv;	/* rateset along with mcs index bitmap */
 } sta_info_t;
 
 #define WL_OLD_STAINFO_SIZE	OFFSETOF(sta_info_t, tx_tot_pkts)
 
-#define WL_STA_VER		5
+#define WL_STA_VER		4
 
-#define STAMON_MODULE_VER		1
 #endif /* LINUX_POSTMOGRIFY_REMOVAL */
 
 #define	WLC_NUMRATES	16	/* max # of rates in a rateset */
@@ -1180,18 +1175,6 @@ typedef struct maclist {
 	uint count;			/* number of MAC addresses */
 	struct ether_addr ea[1];	/* variable length array of MAC addresses */
 } maclist_t;
-
-/* FOR ioctl that take the sta monitor information */
-typedef struct stamon_data {
-	struct ether_addr  ea;
-	int rssi;
-} stamon_data_t;
-
-typedef struct stamon_info {
-	int version;
-	uint count;
-	stamon_data_t sta_data[1];
-} stamon_info_t;
 
 #ifndef LINUX_POSTMOGRIFY_REMOVAL
 /* get pkt count struct passed through ioctl */
@@ -1261,17 +1244,6 @@ typedef struct wl_ioctl {
 	uint used;	/* bytes read or written (optional) */
 	uint needed;	/* bytes needed (optional) */
 } wl_ioctl_t;
-
-#ifdef CONFIG_COMPAT
-typedef struct compat_wl_ioctl {
-	uint cmd;	/**< common ioctl definition */
-	uint32 buf;	/**< pointer to user buffer */
-	uint len;	/**< length of user buffer */
-	uint8 set;		/**< 1=set IOCTL; 0=query IOCTL */
-	uint used;	/**< bytes read or written (optional) */
-	uint needed;	/**< bytes needed (optional) */
-} compat_wl_ioctl_t;
-#endif /* CONFIG_COMPAT */
 
 #define WL_NUM_RATES_CCK			4 /* 1, 2, 5.5, 11 Mbps */
 #define WL_NUM_RATES_OFDM			8 /* 6, 9, 12, 18, 24, 36, 48, 54 Mbps SISO/CDD */
@@ -1615,16 +1587,6 @@ typedef struct {
 } wl_radar_thr_t;
 
 #define WL_RADAR_THR_VERSION	2
-
-typedef struct {
-	uint ver;
-	uint len;
-	int rssi_th[3];
-	uint8 rssi_gain_80[4];
-	uint8 rssi_gain_160[4];
-} wl_dyn_switch_th_t;
-
-#define WL_PHY_DYN_SWITCH_TH_VERSION	1
 
 /* RSSI per antenna */
 typedef struct {
@@ -2123,6 +2085,8 @@ typedef struct {
 	uint32  rxprobersp;     /**< Number of RX probe response */
 	uint32  txaction;       /**< Number of TX action frame */
 	uint32  rxaction;       /**< Number of RX action frame */
+	uint32	ampdu_wds;	/* Number of AMPDU watchdogs */
+	uint32	txlost;		/* Number of lost packets reported in txs */
 } wl_cnt_wlc_t;
 
 /* MACXSTAT counters for ucodex (corerev >= 64) */
@@ -4913,11 +4877,8 @@ typedef struct nbr_element {
 	uint8 reg;
 	uint8 channel;
 	uint8 phytype;
-	uint8 addtype; /* static for manual add or dynamic if auto-learning of neighbors */
 	uint8 pad;
 } nbr_element_t;
-#define NBR_ADD_STATIC 0
-#define NBR_ADD_DYNAMIC 1
 
 /* no default structure packing */
 #include <packed_section_end.h>
@@ -6502,48 +6463,6 @@ typedef struct wl_wsec_info {
 	wl_wsec_info_tlv_t tlvs[1]; /* tlv data follows */
 } wl_wsec_info_t;
 
-/* Data structures for Interface Create/Remove  */
-
-#define WL_INTERFACE_CREATE_VER	(0)
-
-/*
- * The flags filed of the wl_interface_create is designed to be
- * a Bit Mask. As of now only Bit 0 and Bit 1 are used as mentioned below.
- * The rest of the bits can be used, incase we have to provide
- * more information to the dongle
- */
-
-/*
- * Bit 0 of flags field is used to inform whether the interface requested to
- * be created is STA or AP.
- * 0 - Create a STA interface
- * 1 - Create an AP interface
- */
-#define WL_INTERFACE_CREATE_STA	(0 << 0)
-#define WL_INTERFACE_CREATE_AP	(1 << 0)
-
-/*
- * Bit 1 of flags field is used to inform whether MAC is present in the
- * data structure or not.
- * 0 - Ignore mac_addr field
- * 1 - Use the mac_addr field
- */
-#define WL_INTERFACE_MAC_DONT_USE	(0 << 1)
-#define WL_INTERFACE_MAC_USE		(1 << 1)
-
-typedef struct wl_interface_create {
-	uint16	ver;			/* version of this struct */
-	uint32  flags;			/* flags that defines the operation */
-	struct	ether_addr   mac_addr;	/* Optional Mac address */
-} wl_interface_create_t;
-
-typedef struct wl_interface_info {
-	uint16	ver;			/* version of this struct */
-	struct ether_addr    mac_addr;	/* MAC address of the interface */
-	char	ifname[BCM_MSG_IFNAME_MAX]; /* name of interface */
-	uint8	bsscfgidx;		/* source bsscfg index */
-} wl_interface_info_t;
-
 /* no default structure packing */
 #include <packed_section_end.h>
 
@@ -6725,64 +6644,6 @@ typedef struct statreq {
 	uint16 reps;
 } statreq_t;
 
-typedef struct txstrmreq {
-	struct ether_addr da;	/* Destination address */
-	uint16 random_int;	/* Random interval for measurement start */
-	uint16 dur;		/* Measurement duration */
-	uint16 reps;		/* number of repetitions */
-	struct ether_addr peer;	/* Peer MAC address */
-	uint8 tid;		/* Traffic ID */
-	uint8 bin0_range;	/* Delay range of the first bin */
-} txstrmreq_t;
-
-typedef struct lcireq {
-	struct ether_addr da;	/* Destination address */
-	uint16 reps;		/* number of repetitions */
-	uint8 subj;		/* Local/Remote/Thid party */
-	uint8 lat_res;		/* Latitude requested Resolution */
-	uint8 lon_res;		/* Longitude requested Resolution */
-	uint8 alt_res;		/* Altitude requested Resolution */
-} lcireq_t;
-
-typedef struct civicreq {
-	struct ether_addr da;	/* Destination address */
-	uint16 reps;		/* number of repetitions */
-	uint8 subj;		/* Local/Remote/Thid party */
-	uint8 civloc_type;	/* Format of location info */
-	uint8 siu;		/* Unit of Location service interval */
-	uint16 si;		/* Location service interval */
-} civicreq_t;
-
-typedef struct locidreq {
-	struct ether_addr da;	/* Destination address */
-	uint16 reps;		/* number of repetitions */
-	uint8 subj;		/* Local/Remote/Thid party */
-	uint8 siu;		/* Unit of Location service interval */
-	uint16 si;		/* Location service interval */
-} locidreq_t;
-
-typedef struct wl_rrm_config_ioc {
-	uint16 version; /* command version */
-	uint16 id;      /* subiovar cmd ID */
-	uint16 len;     /* total length of all bytes in data[] */
-	uint16 pad;     /* 4-byte boundary padding */
-	uint8 data[1];  /* payload */
-} wl_rrm_config_ioc_t;
-
-enum {
-	WL_RRM_CONFIG_NONE	= 0,	/* reserved */
-	WL_RRM_CONFIG_GET_LCI	= 1,	/* get LCI */
-	WL_RRM_CONFIG_SET_LCI	= 2,	/* set LCI */
-	WL_RRM_CONFIG_GET_CIVIC	= 3,	/* get civic location */
-	WL_RRM_CONFIG_SET_CIVIC	= 4,	/* set civic location */
-	WL_RRM_CONFIG_GET_LOCID	= 5,	/* get location identifier */
-	WL_RRM_CONFIG_SET_LOCID	= 6,	/* set location identifier */
-	WL_RRM_CONFIG_MAX	= 7
-};
-
-#define WL_RRM_CONFIG_NAME "rrm_config"
-#define WL_RRM_CONFIG_MIN_LENGTH OFFSETOF(wl_rrm_config_ioc_t, data)
-
 #define WL_RRM_RPT_VER		0
 #define WL_RRM_RPT_MAX_PAYLOAD	256
 #define WL_RRM_RPT_MIN_PAYLOAD	7
@@ -6841,9 +6702,7 @@ typedef enum wl_stamon_cfg_cmd_type {
 	STAMON_CFG_CMD_ADD = 1,
 	STAMON_CFG_CMD_ENB = 2,
 	STAMON_CFG_CMD_DSB = 3,
-	STAMON_CFG_CMD_CNT = 4,
-	STAMON_CFG_CMD_RSTCNT = 5,
-	STAMON_CFG_CMD_GET_STATS = 6
+	STAMON_CFG_CMD_CNT = 4
 } wl_stamon_cfg_cmd_type_t;
 
 typedef struct wlc_stamon_sta_config {
