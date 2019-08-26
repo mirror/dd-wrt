@@ -61,7 +61,7 @@
 
 	/*
 	 * This file exists because board_draminit is an entry point for cfe as well
-	 * as for rte & min_osl. Because of the former case, we cannot assume
+	 * as for hndrte & min_osl. Because of the former case, we cannot assume
 	 * any of the register settings from boot.S,
 	 */
 
