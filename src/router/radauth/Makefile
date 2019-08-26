@@ -6,7 +6,7 @@ WRT_BUILDROOT=/opt/
 #STRIP=mipsel-linux-uclibc-strip
 
 ifeq ($(CONFIG_80211AC),y)
-CFLAGS	= -I. -I$(LINUXDIR)/brcm/$(ARCH)/include -Wall -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
+CFLAGS	= -I. -I$(LINUXDIR)/brcm/$(ARCH)/include  -I$(LINUXDIR)/brcm/$(ARCH)/common/include -Wall -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
 
 endif
 
