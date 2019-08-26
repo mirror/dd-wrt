@@ -43,7 +43,7 @@ endif
 ifeq ($(CONFIG_80211AC),y)
 OBJS := wlconf_3.x.c 
 CFLAGS	+= -I. -I$(TOP)/shared -Wall -I$(SRCBASE)/
-CFLAGS +=  -I$(LINUXDIR)/brcm/$(ARCH)/include  -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
+CFLAGS +=  -I$(LINUXDIR)/brcm/$(ARCH)/include -I$(LINUXDIR)/brcm/$(ARCH)/common/include  -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
 else
 CFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include.v24 -Wall -I$(SRCBASE)/
 CFLAGS	+= -I. -I$(TOP)/shared -I$(LINUXDIR)/brcm/include -Wall -I$(SRCBASE)/ -I$(LINUXDIR)/brcm/shared/bcmwifi/include
