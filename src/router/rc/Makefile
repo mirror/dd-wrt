@@ -8,6 +8,7 @@ endif
 
 ifeq ($(CONFIG_80211AC),y)
 CFLAGS	= -I. -I$(LINUXDIR)/brcm/$(ARCH)/include -Wall
+CFLAGS	= -I. -I$(LINUXDIR)/brcm/$(ARCH)/common/include
 endif
 
 ifeq ($(CONFIG_MSSID),y)
