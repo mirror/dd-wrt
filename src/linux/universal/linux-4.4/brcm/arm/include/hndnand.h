@@ -96,13 +96,13 @@ struct hndnand {
 	int (*erase)(hndnand_t *nfl, uint64 offset);
 	int (*checkbadb)(hndnand_t *nfl, uint64 offset);
 	int (*markbadb)(hndnand_t *nfl, uint64 offset);
-	int (*read_oob)(hndnand_t *nfl, uint64 addr, uint8 *oob);
 
 #ifndef _CFE_
 	int (*dev_ready)(hndnand_t *nfl);
 	int (*select_chip)(hndnand_t *nfl, int chip);
 	int (*cmdfunc)(hndnand_t *nfl, uint64 addr, int cmd);
 	int (*waitfunc)(hndnand_t *nfl, int *status);
+	int (*read_oob)(hndnand_t *nfl, uint64 addr, uint8 *oob);
 	int (*write_oob)(hndnand_t *nfl, uint64 addr, uint8 *oob);
 	int (*read_page)(hndnand_t *nfl, uint64 addr, uint8 *buf, uint8 *oob, bool ecc,
 		uint32 *herr, uint32 *serr);
@@ -118,7 +118,6 @@ int hndnand_write(hndnand_t *nfl, uint64 offset, uint len, const uchar *buf);
 int hndnand_erase(hndnand_t *nfl, uint64 offset);
 int hndnand_checkbadb(hndnand_t *nfl, uint64 offset);
 int hndnand_mark_badb(hndnand_t *nfl, uint64 offset);
-int hndnand_read_oob(hndnand_t *nfl, uint64 addr, uint8 *oob);
 
 #ifndef _CFE_
 int hndnand_dev_ready(hndnand_t *nfl);
@@ -126,6 +125,7 @@ int hndnand_select_chip(hndnand_t *nfl, int chip);
 int hndnand_devcie_width(hndnand_t *nfl, int chip);
 int hndnand_cmdfunc(hndnand_t *nfl, uint64 addr, int cmd);
 int hndnand_waitfunc(hndnand_t *nfl, int *status);
+int hndnand_read_oob(hndnand_t *nfl, uint64 addr, uint8 *oob);
 int hndnand_write_oob(hndnand_t *nfl, uint64 addr, uint8 *oob);
 int hndnand_read_page(hndnand_t *nfl, uint64 addr, uint8 *buf, uint8 *oob, bool ecc,
 	uint32 *herr, uint32 *serr);
