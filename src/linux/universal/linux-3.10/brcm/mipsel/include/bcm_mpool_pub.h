@@ -49,7 +49,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: bcm_mpool_pub.h 527455 2015-01-19 06:04:33Z $
+ * $Id: bcm_mpool_pub.h 407097 2013-06-11 18:43:16Z $
  */
 
 #ifndef _BCM_MPOOL_PUB_H
@@ -334,7 +334,7 @@ int bcm_mp_free(bcm_mp_pool_h pool, void *objp);
  *    other     Error getting statistics.
  *
  */
-void bcm_mp_stats(bcm_mp_pool_h pool, bcm_mp_stats_t *stats);
+int bcm_mp_stats(bcm_mp_pool_h pool, bcm_mp_stats_t *stats);
 
 
 /*

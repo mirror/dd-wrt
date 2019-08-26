@@ -16,20 +16,17 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: hnddma.h 534407 2015-02-13 07:04:36Z $
+ * $Id: hnddma.h 456077 2014-02-17 20:17:52Z $
  */
 
 #ifndef	_hnddma_h_
 #define	_hnddma_h_
 
-#include <typedefs.h>
-#include <osl_decl.h>
-#include <siutils.h>
-
 #ifndef _hnddma_pub_
 #define _hnddma_pub_
 /* for pktpool_t */
 #include <bcmutils.h>
+
 typedef const struct hnddma_pub hnddma_t;
 #endif /* _hnddma_pub_ */
 
@@ -52,13 +49,8 @@ enum dma_param_id {
 	HNDDMA_PID_RX_BURSTLEN,
 	HNDDMA_PID_BURSTLEN_CAP,
 	HNDDMA_PID_BURSTLEN_WAR,
-	HNDDMA_SEP_RX_HDR,
-	HNDDMA_SPLIT_FIFO,
-	HNDDMA_PID_D11RX_WAR,
-	HNDDMA_PID_RX_WAIT_CMPL
+	HNDDMA_SEP_RX_HDR
 };
-#define SPLIT_FIFO_0	1
-#define SPLIT_FIFO_1	2
 
 /* dma function type */
 typedef void (*di_detach_t)(hnddma_t *dmah);
@@ -72,8 +64,10 @@ typedef void (*di_txsuspend_t)(hnddma_t *dmah);
 typedef void (*di_txresume_t)(hnddma_t *dmah);
 typedef bool (*di_txsuspended_t)(hnddma_t *dmah);
 typedef bool (*di_txsuspendedidle_t)(hnddma_t *dmah);
+#ifdef WL_MULTIQUEUE
 typedef void (*di_txflush_t)(hnddma_t *dmah);
 typedef void (*di_txflush_clear_t)(hnddma_t *dmah);
+#endif /* WL_MULTIQUEUE */
 typedef int (*di_txfast_t)(hnddma_t *dmah, void *p, bool commit);
 typedef int (*di_txunframed_t)(hnddma_t *dmah, void *p, uint len, bool commit);
 typedef void* (*di_getpos_t)(hnddma_t *di, bool direction);
@@ -122,8 +116,10 @@ typedef struct di_fcn_s {
 	di_txresume_t           txresume;
 	di_txsuspended_t        txsuspended;
 	di_txsuspendedidle_t    txsuspendedidle;
+#ifdef WL_MULTIQUEUE
 	di_txflush_t            txflush;
 	di_txflush_clear_t      txflush_clear;
+#endif /* WL_MULTIQUEUE */
 	di_txfast_t             txfast;
 	di_txunframed_t         txunframed;
 	di_getpos_t             getpos;
@@ -206,8 +202,10 @@ extern hnddma_t * dma_attach(osl_t *osh, const char *name, si_t *sih,
 #define dma_txresume(di)                ((di)->di_fn->txresume(di))
 #define dma_txsuspended(di)             ((di)->di_fn->txsuspended(di))
 #define dma_txsuspendedidle(di)         ((di)->di_fn->txsuspendedidle(di))
+#ifdef WL_MULTIQUEUE
 #define dma_txflush(di)                 ((di)->di_fn->txflush(di))
 #define dma_txflush_clear(di)           ((di)->di_fn->txflush_clear(di))
+#endif /* WL_MULTIQUEUE */
 #define dma_txfast(di, p, commit)	((di)->di_fn->txfast(di, p, commit))
 #define dma_txfast(di, p, commit)		((di)->di_fn->txfast(di, p, commit))
 #define dma_fifoloopbackenable(di)      ((di)->di_fn->fifoloopbackenable(di))
@@ -265,8 +263,10 @@ extern const di_fcn_t dma64proc;
 #define dma_txresume(di)                (dma64proc.txresume(di))
 #define dma_txsuspended(di)             (dma64proc.txsuspended(di))
 #define dma_txsuspendedidle(di)         (dma64proc.txsuspendedidle(di))
+#ifdef WL_MULTIQUEUE
 #define dma_txflush(di)                 (dma64proc.txflush(di))
 #define dma_txflush_clear(di)           (dma64proc.txflush_clear(di))
+#endif /* WL_MULTIQUEUE */
 #define dma_txfast(di, p, commit)	(dma64proc.txfast(di, p, commit))
 #define dma_txunframed(di, p, l, commit)(dma64proc.txunframed(di, p, l, commit))
 #define dma_getpos(di, dir)		(dma64proc.getpos(di, dir))
@@ -319,16 +319,14 @@ extern const di_fcn_t dma64proc;
  */
 extern uint dma_addrwidth(si_t *sih, void *dmaregs);
 
-/* count the number of tx packets that are queued to the dma ring */
-extern uint dma_txp(hnddma_t *di);
-
+#ifdef WL_MULTIQUEUE
 extern void dma_txrewind(hnddma_t *di);
+#endif
+
 /* pio helpers */
 extern void dma_txpioloopback(osl_t *osh, dma32regs_t *);
 extern int dma_msgbuf_txfast(hnddma_t *di, dma64addr_t p0, bool com, uint32 ln, bool fst, bool lst);
 
 extern int dma_rxfast(hnddma_t *di, dma64addr_t p, uint32 len);
 extern int dma_rxfill_suspend(hnddma_t *dmah, bool suspended);
-extern void dma_link_handle(hnddma_t *dmah1, hnddma_t *dmah2);
-extern int dma_rxfill_unframed(hnddma_t *di, void *buf, uint len, bool commit);
 #endif	/* _hnddma_h_ */
