@@ -102,7 +102,7 @@ enum {
 #define DHD_GLOM_VAL	0x0400
 #define DHD_EVENT_VAL	0x0800
 #define DHD_BTA_VAL	0x1000
-#if defined(NDIS) && (NDISVER >= 0x0630) && 0
+#if defined(NDIS) && (NDISVER >= 0x0630) && defined(BCMDONGLEHOST)
 #define DHD_SCAN_VAL	0x2000
 #else
 #define DHD_ISCAN_VAL	0x2000
