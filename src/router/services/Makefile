@@ -67,6 +67,8 @@ endif
 ifeq ($(CONFIG_80211AC),y)
 BCFLAGS	= -I. -I$(LINUXDIR)/brcm/$(ARCH)/include -Wall
 HCFLAGS	= -I. -I$(LINUXDIR)/brcm/$(ARCH)/include -Wall
+BCFLAGS	= -I. -I$(LINUXDIR)/brcm/$(ARCH)/common/include
+HCFLAGS	= -I. -I$(LINUXDIR)/brcm/$(ARCH)/common/include
 endif
 
 COPTS += $(MIPS16_OPT) -D_GNU_SOURCE 
