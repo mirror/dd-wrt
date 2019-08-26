@@ -896,9 +896,9 @@ void init_ackprio(const char *dev)
 {
 
 	char *qos_pkts = nvram_safe_get("svqos_pkts");
-	char pkt_filter[4];
+	char pkt_filter[5];
 	do {
-		if (sscanf(qos_pkts, "%3s ", pkt_filter) < 1)
+		if (sscanf(qos_pkts, "%4s ", pkt_filter) < 1)
 			break;
 		if (!strcmp(pkt_filter, "ACK")) {
 			eval("tc", "filter", "add", "dev", dev, "parent", "1:", "prio", "1", "protocol", "ip", "u32",	//
