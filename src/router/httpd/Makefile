@@ -81,6 +81,7 @@ BCFLAGS	= $(COPTS)  -fPIC -DMEMLEAK_OVERRIDE
 
 ifeq ($(CONFIG_80211AC),y)
 BCFLAGS	+= -I. -I$(LINUXDIR)/brcm/$(ARCH)/include -Wall
+BCFLAGS	+= -I. -I$(LINUXDIR)/brcm/$(ARCH)/common/include -Wall
 endif
 
 ifeq ($(CONFIG_MSSID),y)
