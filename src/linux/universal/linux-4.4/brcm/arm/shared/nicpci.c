@@ -17,7 +17,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: nicpci.c 542540 2015-03-20 04:44:40Z $
+ * $Id: nicpci.c 468895 2014-04-09 02:33:06Z $
  */
 
 #include <bcm_cfg.h>
@@ -55,17 +55,15 @@ typedef struct {
 	uint16	pcie_reqsize;
 	uint16	pcie_mps;
 	uint8	pciecap_devctrl2_offset; /* PCIE DevControl2 reg offset in the config space */
-	uint32	pcie_ltr0_regval; /* PCIE LTR0 reg cached val */
-	uint32	pcie_ltr1_regval; /* PCIE LTR1 reg cached val */
-	uint32	pcie_ltr2_regval; /* PCIE LTR2 reg cached val */
+	uint32	pciecap_ltr0_reg_offset; /* PCIE LTR0 reg offset in the config space */
+	uint32	pciecap_ltr1_reg_offset; /* PCIE LTR1 reg offset in the config space */
+	uint32	pciecap_ltr2_reg_offset; /* PCIE LTR2 reg offset in the config space */
 	uint8	pcie_configspace[PCI_CONFIG_SPACE_SIZE];
 } pcicore_info_t;
 
 /* debug/trace */
 #ifdef BCMDBG_ERR
-#if !defined(PCI_ERROR) /* allow over-riding */
 #define	PCI_ERROR(args)	printf args
-#endif
 #else
 #define	PCI_ERROR(args)
 #endif	/* BCMDBG_ERR */
@@ -166,6 +164,9 @@ pcicore_init(si_t *sih, osl_t *osh, void *regs)
 		pi->pciecap_devctrl_offset = cap_ptr + PCIE_CAP_DEVCTRL_OFFSET;
 		pi->pciecap_lcreg_offset = cap_ptr + PCIE_CAP_LINKCTRL_OFFSET;
 		pi->pciecap_devctrl2_offset = cap_ptr + PCIE_CAP_DEVCTRL2_OFFSET;
+		pi->pciecap_ltr0_reg_offset = cap_ptr + PCIE_CAP_LTR0_REG_OFFSET;
+		pi->pciecap_ltr1_reg_offset = cap_ptr + PCIE_CAP_LTR1_REG_OFFSET;
+		pi->pciecap_ltr2_reg_offset = cap_ptr + PCIE_CAP_LTR2_REG_OFFSET;
 	} else if (sih->buscoretype == PCIE_CORE_ID) {
 		pi->regs.pcieregs = (sbpcieregs_t*)regs;
 		cap_ptr = pcicore_find_pci_capability(pi->osh, PCI_CAP_PCIECAP_ID, NULL, NULL);
@@ -173,13 +174,13 @@ pcicore_init(si_t *sih, osl_t *osh, void *regs)
 		pi->pciecap_lcreg_offset = cap_ptr + PCIE_CAP_LINKCTRL_OFFSET;
 		pi->pciecap_devctrl_offset = cap_ptr + PCIE_CAP_DEVCTRL_OFFSET;
 		pi->pciecap_devctrl2_offset = cap_ptr + PCIE_CAP_DEVCTRL2_OFFSET;
+		pi->pciecap_ltr0_reg_offset = cap_ptr + PCIE_CAP_LTR0_REG_OFFSET;
+		pi->pciecap_ltr1_reg_offset = cap_ptr + PCIE_CAP_LTR1_REG_OFFSET;
+		pi->pciecap_ltr2_reg_offset = cap_ptr + PCIE_CAP_LTR2_REG_OFFSET;
 		pi->pcie_power_save = TRUE; /* Enable pcie_power_save by default */
 	} else
 		pi->regs.pciregs = (sbpciregs_t*)regs;
 
-	pi->pcie_ltr0_regval = PCIE_LTR0_REG_DEFAULT_60;
-	pi->pcie_ltr1_regval = PCIE_LTR1_REG_DEFAULT;
-	pi->pcie_ltr2_regval = PCIE_LTR2_REG_DEFAULT;
 	return pi;
 }
 
@@ -194,7 +195,6 @@ pcicore_deinit(void *pch)
 
 	if (PCIE_GEN2(pi->sih))
 		pcie_watchdog_reset(pi->osh, pi->sih, pi->regs.pcieregs);
-
 	MFREE(pi->osh, pi, sizeof(pcicore_info_t));
 }
 
@@ -660,27 +660,36 @@ uint32
 pcie_ltr_reg(void *pch, uint32 reg, uint32 mask, uint32 val)
 {
 	pcicore_info_t *pi = (pcicore_info_t *)pch;
+	uint32 reg_val;
+	uint32 offset;
 
 	if (PCIE_GEN1(pi->sih))
 		return 0;
 
-	if ((reg != PCIE_LTR0_REG_OFFSET) &&
-	    (reg != PCIE_LTR1_REG_OFFSET) &&
-	    (reg != PCIE_LTR2_REG_OFFSET)) {
-		PCI_ERROR(("pcie_ltr_reg: unsupported LTR register offset 0x%x\n", reg));
+	if (reg == PCIE_CAP_LTR0_REG)
+		offset = pi->pciecap_ltr0_reg_offset;
+	else if (reg == PCIE_CAP_LTR1_REG)
+		offset = pi->pciecap_ltr1_reg_offset;
+	else if (reg == PCIE_CAP_LTR2_REG)
+		offset = pi->pciecap_ltr2_reg_offset;
+	else {
+		PCI_ERROR(("pcie_ltr_reg: unsupported LTR register offset %d\n",
+			reg));
 		return 0;
 	}
 
+	if (!offset)
+		return 0;
+
 	if (mask) { /* set operation */
-		if (reg == PCIE_LTR0_REG_OFFSET)
-			pi->pcie_ltr0_regval = val;
-		else if (reg == PCIE_LTR1_REG_OFFSET)
-			pi->pcie_ltr1_regval = val;
-		else
-			pi->pcie_ltr2_regval = val;
-		pcie_writereg(pi->sih, pi->regs.pcieregs, PCIE_CONFIGREGS, reg, val);
+		reg_val = val;
+		pcie_writereg(pi->sih, pi->regs.pcieregs, PCIE_CONFIGREGS, offset, reg_val);
 	}
-	return pcie_readreg(pi->sih, pi->regs.pcieregs, PCIE_CONFIGREGS, reg);
+	else { /* get operation */
+		reg_val = pcie_readreg(pi->sih, pi->regs.pcieregs, PCIE_CONFIGREGS, offset);
+	}
+
+	return reg_val;
 }
 
 uint32
@@ -689,6 +698,7 @@ pcieltrspacing_reg(void *pch, uint32 mask, uint32 val)
 	pcicore_info_t *pi = (pcicore_info_t *)pch;
 	si_t *sih = pi->sih;
 	sbpcieregs_t *pcieregs = pi->regs.pcieregs;
+	uint32 retval;
 
 	if (PCIE_GEN1(sih))
 		return 0;
@@ -696,9 +706,14 @@ pcieltrspacing_reg(void *pch, uint32 mask, uint32 val)
 	ASSERT(pcieregs != NULL);
 
 	if (mask) { /* set operation */
+		retval = val;
 		W_REG(pi->osh, &(pcieregs->ltrspacing), val);
 	}
-	return R_REG(pi->osh, &(pcieregs->ltrspacing));
+	else { /* get operation */
+		retval = R_REG(pi->osh, &(pcieregs->ltrspacing));
+	}
+
+	return retval;
 }
 
 uint32
@@ -707,6 +722,7 @@ pcieltrhysteresiscnt_reg(void *pch, uint32 mask, uint32 val)
 	pcicore_info_t *pi = (pcicore_info_t *)pch;
 	si_t *sih = pi->sih;
 	sbpcieregs_t *pcieregs = pi->regs.pcieregs;
+	uint32 retval;
 
 	if (PCIE_GEN1(sih))
 		return 0;
@@ -714,9 +730,14 @@ pcieltrhysteresiscnt_reg(void *pch, uint32 mask, uint32 val)
 	ASSERT(pcieregs != NULL);
 
 	if (mask) { /* set operation */
+		retval = val;
 		W_REG(pi->osh, &(pcieregs->ltrhysteresiscnt), val);
 	}
-	return R_REG(pi->osh, &(pcieregs->ltrhysteresiscnt));
+	else { /* get operation */
+		retval = R_REG(pi->osh, &(pcieregs->ltrhysteresiscnt));
+	}
+
+	return retval;
 }
 
 static void
@@ -1012,19 +1033,18 @@ pcie_ltr_war(void *pch, bool enable)
 
 /* Set the LTR_ACTIVE_LATENCY, LTR_ACTIVE_IDLE_LATENCY & LTR_SLEEP_LATENCY */
 static void
-pcie_set_LTRvals(osl_t *osh, pcicore_info_t *pi)
+pcie_set_LTRvals(osl_t *osh, sbpcieregs_t *pcieregs)
 {
-	sbpcieregs_t *pcieregs = pi->regs.pcieregs;
 	/* make sure the LTR values good */
 	/* LTR0 */
-	W_REG(osh, &pcieregs->configaddr, PCIE_LTR0_REG_OFFSET);
-	W_REG(osh, &pcieregs->configdata, pi->pcie_ltr0_regval);
+	W_REG(osh, &pcieregs->configaddr, 0x844);
+	W_REG(osh, &pcieregs->configdata, 0x883c883c);
 	/* LTR1 */
-	W_REG(osh, &pcieregs->configaddr, PCIE_LTR1_REG_OFFSET);
-	W_REG(osh, &pcieregs->configdata, pi->pcie_ltr1_regval);
+	W_REG(osh, &pcieregs->configaddr, 0x848);
+	W_REG(osh, &pcieregs->configdata, 0x88648864);
 	/* LTR2 */
-	W_REG(osh, &pcieregs->configaddr, PCIE_LTR2_REG_OFFSET);
-	W_REG(osh, &pcieregs->configdata, pi->pcie_ltr2_regval);
+	W_REG(osh, &pcieregs->configaddr, 0x84C);
+	W_REG(osh, &pcieregs->configdata, 0x90039003);
 }
 
 void
@@ -1058,6 +1078,9 @@ pcie_hw_L1SS_war(void *pch)
 			mask = PMU_CC7_ENABLE_MDIO_RESET_WAR | PMU_CC7_ENABLE_L2REFCLKPAD_PWRDWN;
 			si_pmu_chipcontrol(sih, PMU_CHIPCTL7, mask, mask);
 		}
+		mask = pcie_readreg(sih, pcieregs, PCIE_CONFIGREGS, PCIECFGREG_PDL_IDDQ);
+		mask &= 0x7fffffff;
+		pcie_writereg(sih, pcieregs, PCIE_CONFIGREGS, PCIECFGREG_PDL_IDDQ, mask);
 	} else if (sih->buscorerev == 9) {
 		mask = PMU43602_CC2_PCIE_CLKREQ_L_WAKE_EN |
 		       PMU43602_CC2_ENABLE_L2REFCLKPAD_PWRDWN |
@@ -1086,7 +1109,7 @@ pcie_hw_LTR_war(void *pch)
 			R_REG(osh, &pcieregs->iocstatus)));
 
 		/* force the right LTR values ..same as JIRA 859 */
-		pcie_set_LTRvals(osh, pi);
+		pcie_set_LTRvals(osh, pcieregs);
 
 		si_core_wrapperreg(sih, 3, 0x60, 0x8080, 0);
 
@@ -1097,6 +1120,10 @@ pcie_hw_LTR_war(void *pch)
 
 		/* set the LTR state to be active */
 		W_REG(osh, &pcieregs->u.pcie2.ltr_state, LTR_ACTIVE);
+		OSL_DELAY(1000);
+
+		/* set the LTR state to be sleep */
+		W_REG(osh, &pcieregs->u.pcie2.ltr_state, LTR_SLEEP);
 		OSL_DELAY(1000);
 	} else {
 		PCI_ERROR(("no work around for loading the LTR values\n"));
@@ -1182,18 +1209,6 @@ pciedev_crwlpciegen2(void *pch)
 }
 
 static void
-pciedev_crwlpciegen2_117(void *pch)
-{
-	pcicore_info_t *pi = (pcicore_info_t *)pch;
-	si_t *sih = pi->sih;
-	osl_t *osh = si_osh(sih);
-	sbpcieregs_t *pcieregs = pi->regs.pcieregs;
-
-	if ((sih->buscorerev == 9) || (sih->buscorerev == 13))
-		OR_REG(osh, &pcieregs->control, PCIE_PipeIddqDisable1);
-}
-
-static void
 pciedev_crwlpciegen2_180(void *pch)
 {
 	pcicore_info_t *pi = (pcicore_info_t *)pch;
@@ -1201,30 +1216,22 @@ pciedev_crwlpciegen2_180(void *pch)
 	osl_t *osh = si_osh(sih);
 	sbpcieregs_t *pcieregs = pi->regs.pcieregs;
 
-	if (PCIE_GEN2(pi->sih) && sih->buscorerev >= 2) {
-		W_REG(osh, &pcieregs->configaddr, PCI_PMCR_REFUP);
-		OR_REG(osh, &pcieregs->configdata, 0x1f);
-		PCI_ERROR(("%s:Reg:0x%x ::0x%x\n", __FUNCTION__,
-			PCI_PMCR_REFUP, R_REG(osh, &pcieregs->configdata)));
-	}
+	W_REG(osh, &pcieregs->configaddr, PCI_PMCR_REFUP);
+	OR_REG(osh, &pcieregs->configdata, 0x1f);
+	PCI_ERROR(("%s:Reg:0x%x ::0x%x\n", __FUNCTION__,
+		PCI_PMCR_REFUP, R_REG(osh, &pcieregs->configdata)));
 }
 
 static void
 pciedev_crwlpciegen2_182(void *pch)
 {
-#ifndef WLOFFLD
 	pcicore_info_t *pi = (pcicore_info_t *)pch;
 	si_t *sih = pi->sih;
 	osl_t *osh = si_osh(sih);
 	sbpcieregs_t *pcieregs = pi->regs.pcieregs;
 
-	if (PCIE_GEN2(pi->sih) && sih->buscorerev >= 2 && sih->buscorerev <= 13) {
-		W_REG(osh, &pcieregs->configaddr, PCISBMbx);
-		W_REG(osh, &pcieregs->configdata, 1 << 0);
-	}
-#else
-	BCM_REFERENCE(pch);
-#endif /* WLOFFLD */
+	W_REG(osh, &pcieregs->configaddr, PCISBMbx);
+	W_REG(osh, &pcieregs->configdata, 1 << 0);
 }
 
 void
@@ -1260,7 +1267,7 @@ pcie_power_save_enable(void *pch, bool enable)
 }
 
 static void
-pcie_power_save_upd(pcicore_info_t *pi, bool is_up)
+pcie_power_save_upd(pcicore_info_t *pi, bool up)
 {
 	si_t *sih = pi->sih;
 
@@ -1272,7 +1279,7 @@ pcie_power_save_upd(pcicore_info_t *pi, bool is_up)
 
 		pcicore_pcieserdesreg(pi, MDIO_DEV_BLK1, BLK1_PWR_MGMT1, 1, 0x7F64);
 
-		if (is_up)
+		if (up)
 			pcicore_pcieserdesreg(pi, MDIO_DEV_BLK1, BLK1_PWR_MGMT3, 1, 0x74);
 		else
 			pcicore_pcieserdesreg(pi, MDIO_DEV_BLK1, BLK1_PWR_MGMT3, 1, 0x7C);
@@ -1281,7 +1288,7 @@ pcie_power_save_upd(pcicore_info_t *pi, bool is_up)
 
 		pcicore_pcieserdesreg(pi, MDIO_DEV_BLK1, BLK1_PWR_MGMT1, 1, 0x7E65);
 
-		if (is_up)
+		if (up)
 			pcicore_pcieserdesreg(pi, MDIO_DEV_BLK1, BLK1_PWR_MGMT3, 1, 0x175);
 		else
 			pcicore_pcieserdesreg(pi, MDIO_DEV_BLK1, BLK1_PWR_MGMT3, 1, 0x17D);
@@ -1548,11 +1555,8 @@ BCMATTACHFN(pcicore_attach)(void *pch, char *pvars, int state)
 		pcie_hw_LTR_war(pch);
 		pciedev_crwlpciegen2(pch);
 		pciedev_reg_pm_clk_period(pch);
-		pciedev_crwlpciegen2_117(pch);
 		pciedev_crwlpciegen2_180(pch);
 		pciedev_crwlpciegen2_182(pch);
-		pcie_hw_L1SS_war(pch);
-		pciedev_prep_D3(pch, FALSE);
 		return;
 	}
 
@@ -1631,7 +1635,6 @@ pcicore_hwup(void *pch)
 	}
 }
 
-/** state: [SI_DOATTACH, SI_PCIDOWN, SI_PCIUP] */
 void
 pcicore_up(void *pch, int state)
 {
@@ -1651,7 +1654,6 @@ pcicore_up(void *pch, int state)
 		pcie_hw_LTR_war(pch);
 		pciedev_crwlpciegen2(pch);
 		pciedev_reg_pm_clk_period(pch);
-		pciedev_crwlpciegen2_117(pch);
 		pciedev_crwlpciegen2_180(pch);
 		pciedev_crwlpciegen2_182(pch);
 		pcie_hw_L1SS_war(pch);
@@ -1948,7 +1950,7 @@ pcie_configspace_cache(void* pch)
 		*tmp++ = OSL_PCI_READ_CONFIG(pi->osh, offset, sizeof(uint32));
 		offset += 4;
 	}
-	return BCME_OK;
+	return 0;
 }
 
 int
@@ -1960,14 +1962,14 @@ pcie_configspace_restore(void* pch)
 
 	/* if config space was not buffered, than abort restore */
 	if (*tmp == 0)
-		return BCME_NOTREADY;
+		return -1;
 
 	while (offset < PCI_CONFIG_SPACE_SIZE) {
 		OSL_PCI_WRITE_CONFIG(pi->osh, offset, sizeof(uint32), *tmp);
 		tmp++;
 		offset += 4;
 	}
-	return BCME_OK;
+	return 0;
 }
 
 int

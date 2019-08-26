@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: hndpci.c 502092 2014-09-11 21:12:39Z $
+ * $Id: hndpci.c 404499 2013-05-28 01:06:37Z $
  */
 
 #include <bcm_cfg.h>
@@ -620,8 +620,9 @@ hndpci_write_config(si_t *sih, uint bus, uint dev, uint func, uint off, void *bu
 	else
 		return extpci_write_config(sih, bus, dev, func, off, buf, len);
 }
+
 void
-BCMATTACHFN(hndpci_ban)(uint16 core)
+hndpci_ban(uint16 core)
 {
 	if (pci_banned < ARRAYSIZE(pci_ban))
 		pci_ban[pci_banned++] = core;
