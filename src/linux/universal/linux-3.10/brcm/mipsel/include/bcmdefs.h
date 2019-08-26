@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: bcmdefs.h 545635 2015-04-01 07:09:17Z $
+ * $Id: bcmdefs.h 549999 2015-04-17 16:16:58Z $
  */
 
 #ifndef	_bcmdefs_h_
@@ -62,7 +62,6 @@
 
 extern bool bcmreclaimed;
 extern bool attach_part_reclaimed;
-extern bool preattach_part_reclaimed;
 
 #define BCMATTACHDATA(_data)	__attribute__ ((__section__ (".dataini2." #_data))) _data
 #define BCMATTACHFN(_fn)	__attribute__ ((__section__ (".textini2." #_fn), noinline)) _fn
@@ -75,17 +74,26 @@ extern bool preattach_part_reclaimed;
 #define BCMPREATTACHFN(_fn)	__attribute__ ((__section__ (".textini2." #_fn), noinline)) _fn
 #endif
 
+#ifdef BCMDBG_SR
+/*
+ * Don't reclaim so we can compare SR ASM
+ */
+#define BCMPREATTACHDATASR(_data)	_data
+#define BCMPREATTACHFNSR(_fn)		_fn
+#else
+#define BCMPREATTACHDATASR(_data)	BCMPREATTACHDATA(_data)
+#define BCMPREATTACHFNSR(_fn)		BCMPREATTACHFN(_fn)
+#endif
+
 #if defined(BCMRECLAIM)
 #define BCMINITDATA(_data)	__attribute__ ((__section__ (".dataini1." #_data))) _data
 #define BCMINITFN(_fn)		__attribute__ ((__section__ (".textini1." #_fn), noinline)) _fn
 #define CONST
-#else /* BCMRECLAIM */
+#else
 #define BCMINITDATA(_data)	_data
 #define BCMINITFN(_fn)		_fn
-#ifndef CONST
 #define CONST	const
 #endif
-#endif /* BCMRECLAIM */
 
 /* Non-manufacture or internal attach function/dat */
 #if !defined(WLTEST)
@@ -99,14 +107,6 @@ extern bool preattach_part_reclaimed;
 #define BCMUNINITFN(_fn)	_fn
 
 #define BCMFASTPATH
-
-/* used for per O3 function optimization for Rx & Tx DATAPATH in DONGLE build */
-#if defined(DATAFASTPATH)
-#define BCMSPEEDOPT 	__attribute__ ((optimize(push, DATAFASTPATH_FLAGS)))
-#else
-#define BCMSPEEDOPT
-#endif /* DATAFASTPATH */
-
 #else /* DONGLEBUILD */
 
 #define bcmreclaimed 		0
@@ -114,16 +114,14 @@ extern bool preattach_part_reclaimed;
 #define BCMATTACHFN(_fn)	_fn
 #define BCMPREATTACHDATA(_data)	_data
 #define BCMPREATTACHFN(_fn)	_fn
+#define BCMPREATTACHDATASR(_data)	_data
+#define BCMPREATTACHFNSR(_fn)		_fn
 #define BCMINITDATA(_data)	_data
 #define BCMINITFN(_fn)		_fn
-#define BCMROMDATA(_data)	_data
-#define BCMROMFN(_fn)		_fn
 #define BCMUNINITFN(_fn)	_fn
 #define	BCMNMIATTACHFN(_fn)	_fn
 #define	BCMNMIATTACHDATA(_data)	_data
 #define CONST	const
-
-#define BCMSPEEDOPT
 
 #if defined(__ARM_ARCH_7A__) && !defined(OEM_ANDROID)
 #define BCM47XX_CA9
@@ -155,7 +153,31 @@ extern bool preattach_part_reclaimed;
 	#define BCMRAMFN(_fn)	_fn
 #endif
 
+
+#if defined(BCMROMBUILD)
+typedef struct {
+	uint16 esiz;
+	uint16 cnt;
+	void *addr;
+} bcmromdat_patch_t;
+#endif
+
+/* Put some library data/code into ROM to reduce RAM requirements */
+#if defined(BCMROMBUILD) && !defined(BCMROMSYMGEN_BUILD) && !defined(BCMJMPTBL_TCAM) && \
+	!defined(WLC_PATCH_IOCTL_CHECKSUM)
+#include <bcmjmptbl.h>
 #define STATIC	static
+#else /* !BCMROMBUILD */
+#define BCMROMDATA(_data)	_data
+#define BCMROMDAT_NAME(_data)	_data
+#define BCMROMFN(_fn)		_fn
+#define BCMROMFN_NAME(_fn)	_fn
+#define STATIC	static
+#define BCMROMDAT_ARYSIZ(data)	ARRAYSIZE(data)
+#define BCMROMDAT_SIZEOF(data)	sizeof(data)
+#define BCMROMDAT_APATCH(data)
+#define BCMROMDAT_SPATCH(data)
+#endif /* !BCMROMBUILD */
 
 /* Bus types */
 #define	SI_BUS			0	/* SOC Interconnect */
@@ -255,7 +277,6 @@ typedef unsigned long dmaaddr_t;
 		(_pa) = (_val);			\
 	} while (0)
 #endif /* BCMDMA64OSL */
-#define PHYSADDRISZERO(_pa) (PHYSADDRLO(_pa) == 0 && PHYSADDRHI(_pa) == 0)
 
 /* One physical DMA segment */
 typedef struct  {
@@ -272,9 +293,9 @@ typedef struct  {
 /* In NetBSD we also want more segments because the lower level mbuf mapping api might
  * allocate a large number of segments
  */
-#define MAX_DMA_SEGS 16
+#define MAX_DMA_SEGS 32
 #elif defined(linux)
-#define MAX_DMA_SEGS 8
+#define MAX_DMA_SEGS 32
 #else
 #define MAX_DMA_SEGS 4
 #endif
@@ -299,7 +320,11 @@ typedef struct {
 #define BCMEXTRAHDROOM 260
 #else /* BCM_RPC_NOCOPY || BCM_RPC_TXNOCOPY */
 #if defined(linux) && defined(BCM47XX_CA9)
+#if defined(BCM_GMAC3)
+#define BCMEXTRAHDROOM 32 /* For FullDongle, no D11 headroom space required. */
+#else
 #define BCMEXTRAHDROOM 224
+#endif /* ! BCM_GMAC3 */
 #else
 #ifdef CTFMAP
 #define BCMEXTRAHDROOM 208
@@ -371,13 +396,13 @@ typedef struct {
 
 /* Max. nvram variable table size */
 #ifndef MAXSZ_NVRAM_VARS
-/* SROM12 changes */
-#define	MAXSZ_NVRAM_VARS	10000
-#endif
-
 #ifdef ATE_BUILD
-#define ATE_NVRAM_MAXSIZE 18432
+#define	MAXSZ_NVRAM_VARS	8192
+#else
+#define	MAXSZ_NVRAM_VARS	4096
 #endif
+#endif /* !def MAXSZ_NVRAM_VARS */
+
 
 #ifdef EFI
 #define __attribute__(x)	/* CSTYLED */
@@ -405,52 +430,18 @@ typedef struct {
 #else
 	#define BCMLFRAG_ENAB()		(0)
 #endif /* BCMLFRAG_ENAB */
-#define	RXMODE1	1	/* descriptor split */
-#define	RXMODE2	2	/* descriptor split + classification */
-#define	RXMODE3	3	/* fifo split + classification */
-#define	RXMODE4	4	/* fifo split + classification + hdr conversion */
-
 #ifdef BCMSPLITRX /* BCMLFRAG support enab macros  */
 	extern bool _bcmsplitrx;
-	extern uint8 _bcmsplitrx_mode;
 	#if defined(WL_ENAB_RUNTIME_CHECK) || !defined(DONGLEBUILD)
 		#define BCMSPLITRX_ENAB() (_bcmsplitrx)
-		#define BCMSPLITRX_MODE() (_bcmsplitrx_mode)
 	#elif defined(BCMSPLITRX_DISABLED)
 		#define BCMSPLITRX_ENAB()	(0)
-		#define BCMSPLITRX_MODE()	(0)
 	#else
 		#define BCMSPLITRX_ENAB()	(1)
-		#define BCMSPLITRX_MODE() (_bcmsplitrx_mode)
 	#endif
 #else
 	#define BCMSPLITRX_ENAB()		(0)
-	#define BCMSPLITRX_MODE()		(0)
 #endif /* BCMSPLITRX */
-
-#ifdef BCMPCIEDEV /* BCMPCIEDEV support enab macros */
-extern bool _pciedevenab;
-	#if defined(WL_ENAB_RUNTIME_CHECK) || !defined(DONGLEBUILD)
-		#define BCMPCIEDEV_ENAB() (_pciedevenab)
-	#elif defined(BCMPCIEDEV_ENABLED)
-		#define BCMPCIEDEV_ENAB()	1
-	#else
-		#define BCMPCIEDEV_ENAB()	0
-	#endif
-#else
-	#define BCMPCIEDEV_ENAB()	0
-#endif /* BCMPCIEDEV */
-
-#define SPLIT_RXMODE1()	((BCMSPLITRX_MODE() == RXMODE1))
-#define SPLIT_RXMODE2()	((BCMSPLITRX_MODE() == RXMODE2))
-#define SPLIT_RXMODE3()	((BCMSPLITRX_MODE() == RXMODE3))
-#define SPLIT_RXMODE4()	((BCMSPLITRX_MODE() == RXMODE4))
-
-#define PKT_CLASSIFY()	(SPLIT_RXMODE2() || SPLIT_RXMODE3() || SPLIT_RXMODE4())
-#define RXFIFO_SPLIT()	(SPLIT_RXMODE3() || SPLIT_RXMODE4())
-#define HDR_CONV()	(SPLIT_RXMODE4())
-
-#define PKT_CLASSIFY_EN(x)	((PKT_CLASSIFY()) && (PKT_CLASSIFY_FIFO == (x)))
 #ifdef BCM_SPLITBUF
 	extern bool _bcmsplitbuf;
 	#if defined(WL_ENAB_RUNTIME_CHECK) || !defined(DONGLEBUILD)
@@ -463,16 +454,14 @@ extern bool _pciedevenab;
 #else
 	#define BCM_SPLITBUF_ENAB()		(0)
 #endif	/* BCM_SPLITBUF */
+
 /* Max size for reclaimable NVRAM array */
 #ifdef DL_NVRAM
 #define NVRAM_ARRAY_MAXSIZE	DL_NVRAM
-#elif defined(ATE_BUILD)
-#define  NVRAM_ARRAY_MAXSIZE ATE_NVRAM_MAXSIZE
 #else
 #define NVRAM_ARRAY_MAXSIZE	MAXSZ_NVRAM_VARS
 #endif /* DL_NVRAM */
 
 extern uint32 gFWID;
-
 
 #endif /* _bcmdefs_h_ */
