@@ -1,5 +1,5 @@
 /*
- * RTE ARM boot code for standalone apps.
+ * HNDRTE ARM boot code for standalone apps.
  *
  * Code should be position-independent until it copies itself to SRAM.
  *

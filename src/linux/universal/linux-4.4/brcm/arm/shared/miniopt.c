@@ -14,7 +14,7 @@
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- * $Id: miniopt.c 467150 2014-04-02 17:30:43Z $
+ * $Id: miniopt.c 310902 2012-01-26 19:45:33Z $
  */
 
 /* ---- Include Files ---------------------------------------------------- */
@@ -100,7 +100,7 @@ miniopt(miniopt_t *t, char **argv)
 			err = 1;
 			goto exit;
 		}
-		keylen = eq ? (int)(eq - (p + 2)) : (int)strlen(p) - 2;
+		keylen = eq ? (eq - (p + 2)) : (int)strlen(p) - 2;
 		if (keylen > 63) keylen = 63;
 		memcpy(t->key, p + 2, keylen);
 

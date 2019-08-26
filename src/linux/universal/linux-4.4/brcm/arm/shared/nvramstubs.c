@@ -15,10 +15,15 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: nvramstubs.c 542540 2015-03-20 04:44:40Z $
+ * $Id: nvramstubs.c 503082 2014-09-17 06:36:56Z $
  */
 
+#if defined(__NetBSD__)
+#if defined(_KERNEL)
 #include <bcm_cfg.h>
+#endif /* defined(_KERNEL) */
+#endif /* defined(__NetBSD__) */
+
 #include <typedefs.h>
 #include <bcmutils.h>
 #undef strcmp
@@ -28,8 +33,6 @@
 int
 nvram_init(void *sih)
 {
-	BCM_REFERENCE(sih);
-
 	return 0;
 }
 
@@ -37,8 +40,6 @@ nvram_init(void *sih)
 int
 devinfo_nvram_init(void *sih)
 {
-	BCM_REFERENCE(sih);
-
 	return 0;
 }
 #endif
@@ -46,40 +47,29 @@ devinfo_nvram_init(void *sih)
 int
 nvram_append(void *sb, char *vars, uint varsz)
 {
-	BCM_REFERENCE(sb);
-	BCM_REFERENCE(vars);
-	BCM_REFERENCE(varsz);
-
 	return 0;
 }
 
 void
 nvram_exit(void *sih)
 {
-	BCM_REFERENCE(sih);
 }
 
 char *
 nvram_get(const char *name)
 {
-	BCM_REFERENCE(name);
-
 	return (char *) 0;
 }
 
 int
 nvram_set(const char *name, const char *value)
 {
-	BCM_REFERENCE(name);
-	BCM_REFERENCE(value);
 	return 0;
 }
 
 int
 nvram_unset(const char *name)
 {
-	BCM_REFERENCE(name);
-
 	return 0;
 }
 

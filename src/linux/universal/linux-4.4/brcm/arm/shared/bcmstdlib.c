@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: bcmstdlib.c 549681 2015-04-16 17:18:30Z $
+ * $Id: bcmstdlib.c 446340 2014-01-03 17:01:34Z $
  */
 
 /*
@@ -25,7 +25,8 @@
 */
 
 #include <typedefs.h>
-#if defined(NDIS) || defined(_MINOSL_) || defined(PCBIOS) || defined(EFI)
+#if defined(NDIS) || defined(_MINOSL_) || defined(__vxworks) || defined(PCBIOS) || \
+	defined(EFI)
 /* debatable */
 #include <osl.h>
 #else
@@ -42,9 +43,9 @@
 /*
  * Define BCMSTDLIB_SNPRINTF_ONLY if we only want snprintf & vsnprintf implementations
  */
-#if (defined(_WIN32) && !defined(EFI)) || defined(_CFE_)
+#if (defined(_WIN32) && !defined(EFI)) || defined(__vxworks) || defined(_CFE_)
 #define BCMSTDLIB_SNPRINTF_ONLY 1
-#endif /* _WIN32 || !EFI || _CFE_ */
+#endif 
 
 #include <stdarg.h>
 #include <bcmstdlib.h>
@@ -55,81 +56,6 @@
 #ifdef MSGTRACE
 #include <msgtrace.h>
 #endif
-
-#ifdef HND_PRINTF_THREAD_SAFE
-#include <osl.h>
-#include <osl_ext.h>
-#include <bcmstdlib_ext.h>
-
-/* mutex macros for thread safe */
-#define HND_PRINTF_MUTEX_DECL(mutex)		static OSL_EXT_MUTEX_DECL(mutex)
-#define HND_PRINTF_MUTEX_CREATE(name, mutex)	osl_ext_mutex_create(name, mutex)
-#define HND_PRINTF_MUTEX_DELETE(mutex)		osl_ext_mutex_delete(mutex)
-#define HND_PRINTF_MUTEX_ACQUIRE(mutex, msec)	osl_ext_mutex_acquire(mutex, msec)
-#define HND_PRINTF_MUTEX_RELEASE(mutex)	osl_ext_mutex_release(mutex)
-
-HND_PRINTF_MUTEX_DECL(printf_mutex);
-int in_isr_handler = 0, in_trap_handler = 0, in_fiq_handler = 0;
-
-bool
-printf_lock_init(void)
-{
-	/* create mutex for critical section locking */
-	if (HND_PRINTF_MUTEX_CREATE("printf_mutex", &printf_mutex) != OSL_EXT_SUCCESS)
-		return FALSE;
-	return TRUE;
-}
-
-bool
-printf_lock_cleanup(void)
-{
-	/* create mutex for critical section locking */
-	if (HND_PRINTF_MUTEX_DELETE(&printf_mutex) != OSL_EXT_SUCCESS)
-		return FALSE;
-	return TRUE;
-}
-
-/* returns TRUE if allowed to proceed, FALSE to discard.
-* printf from isr hook or fiq hook is not allowed due to IRQ_MODE and FIQ_MODE stack size
-* limitation. For instruction on this, check:
-* http://hwnbu-twiki.sj.broadcom.com/bin/view/Mwgroup/ThreadXPort#printf.
-*/
-static bool
-printf_lock(void)
-{
-
-	/* discard for irq or fiq context, we need to keep irq/fiq stack small. */
-	if (in_isr_handler || in_fiq_handler)
-		return FALSE;
-
-	/* allow printf in trap handler, proceed without mutex. */
-	if (in_trap_handler)
-		return TRUE;
-
-	/* if not in isr or trap, then go thread-protection with mutex. */
-	if (HND_PRINTF_MUTEX_ACQUIRE(&printf_mutex, OSL_EXT_TIME_FOREVER) != OSL_EXT_SUCCESS)
-		return FALSE;
-	else
-		return TRUE;
-}
-
-static void
-printf_unlock(void)
-{
-	if (in_isr_handler || in_fiq_handler)
-		return;
-
-	if (in_trap_handler)
-		return;
-
-	if (HND_PRINTF_MUTEX_RELEASE(&printf_mutex) != OSL_EXT_SUCCESS)
-		return;
-}
-
-#else
-#define printf_lock() (TRUE)
-#define printf_unlock()
-#endif	/* HND_PRINTF_THREAD_SAFE */
 
 #ifdef BCMSTDLIB_WIN32_APP
 
@@ -207,7 +133,7 @@ __atox(char *buf, char * end, unsigned int num, unsigned int radix, int width,
 }
 
 int
-vsnprintf(char *buf, size_t size, const char *fmt, va_list ap)
+BCMROMFN(vsnprintf)(char *buf, size_t size, const char *fmt, va_list ap)
 {
 	char *optr;
 	char *end;
@@ -356,7 +282,7 @@ vsnprintf(char *buf, size_t size, const char *fmt, va_list ap)
 
 
 int
-snprintf(char *buf, size_t bufsize, const char *fmt, ...)
+BCMROMFN(snprintf)(char *buf, size_t bufsize, const char *fmt, ...)
 {
 	va_list		ap;
 	int			r;
@@ -375,14 +301,14 @@ snprintf(char *buf, size_t bufsize, const char *fmt, ...)
 
 
 int
-vsprintf(char *buf, const char *fmt, va_list ap)
+BCMROMFN(vsprintf)(char *buf, const char *fmt, va_list ap)
 {
 	return (vsnprintf(buf, INT_MAX, fmt, ap));
 }
 
 
 int
-sprintf(char *buf, const char *fmt, ...)
+BCMROMFN(sprintf)(char *buf, const char *fmt, ...)
 {
 	va_list ap;
 	int count;
@@ -396,7 +322,7 @@ sprintf(char *buf, const char *fmt, ...)
 
 
 void *
-memmove(void *dest, const void *src, size_t n)
+BCMROMFN(memmove)(void *dest, const void *src, size_t n)
 {
 	/* only use memcpy if there is no overlap. otherwise copy each byte in a safe sequence */
 	if (((const char *)src >= (char *)dest + n) || ((const char *)src + n <= (char *)dest)) {
@@ -425,7 +351,7 @@ memmove(void *dest, const void *src, size_t n)
 
 #ifndef EFI
 int
-memcmp(const void *s1, const void *s2, size_t n)
+BCMROMFN(memcmp)(const void *s1, const void *s2, size_t n)
 {
 	const unsigned char *ss1;
 	const unsigned char *ss2;
@@ -448,7 +374,7 @@ memcmp(const void *s1, const void *s2, size_t n)
 
 /* Skip over functions that are being used from DriverLibrary to save space */
 char *
-strcpy(char *dest, const char *src)
+BCMROMFN(strcpy)(char *dest, const char *src)
 {
 	char *ptr = dest;
 
@@ -459,7 +385,7 @@ strcpy(char *dest, const char *src)
 }
 
 char *
-strncpy(char *dest, const char *src, size_t n)
+BCMROMFN(strncpy)(char *dest, const char *src, size_t n)
 {
 	char *endp;
 	char *p;
@@ -478,7 +404,7 @@ strncpy(char *dest, const char *src, size_t n)
 }
 
 size_t
-strlen(const char *s)
+BCMROMFN(strlen)(const char *s)
 {
 	size_t n = 0;
 
@@ -491,7 +417,7 @@ strlen(const char *s)
 }
 
 int
-strcmp(const char *s1, const char *s2)
+BCMROMFN(strcmp)(const char *s1, const char *s2)
 {
 	while (*s2 && *s1) {
 		if (*s1 < *s2)
@@ -511,7 +437,7 @@ strcmp(const char *s1, const char *s2)
 #endif /* EFI */
 
 int
-strncmp(const char *s1, const char *s2, size_t n)
+BCMROMFN(strncmp)(const char *s1, const char *s2, size_t n)
 {
 	while (*s2 && *s1 && n) {
 		if (*s1 < *s2)
@@ -533,7 +459,7 @@ strncmp(const char *s1, const char *s2, size_t n)
 }
 
 char *
-strchr(const char *str, int c)
+BCMROMFN(strchr)(const char *str, int c)
 {
 	const char *x = str;
 
@@ -546,7 +472,7 @@ strchr(const char *str, int c)
 }
 
 char *
-strrchr(const char *str, int c)
+BCMROMFN(strrchr)(const char *str, int c)
 {
 	const char *save = NULL;
 
@@ -561,7 +487,7 @@ strrchr(const char *str, int c)
 /* Skip over functions that are being used from DriverLibrary to save space */
 #ifndef EFI
 char *
-strcat(char *d, const char *s)
+BCMROMFN(strcat)(char *d, const char *s)
 {
 	strcpy(&d[strlen(d)], s);
 	return (d);
@@ -571,7 +497,7 @@ strcat(char *d, const char *s)
 /* Skip over functions that are being used from DriverLibrary to save space */
 #ifndef EFI
 char *
-strstr(const char *s, const char *substr)
+BCMROMFN(strstr)(const char *s, const char *substr)
 {
 	int substr_len = strlen(substr);
 
@@ -584,7 +510,7 @@ strstr(const char *s, const char *substr)
 #endif /* EFI */
 
 size_t
-strspn(const char *s, const char *accept)
+BCMROMFN(strspn)(const char *s, const char *accept)
 {
 	uint count = 0;
 
@@ -595,7 +521,7 @@ strspn(const char *s, const char *accept)
 }
 
 size_t
-strcspn(const char *s, const char *reject)
+BCMROMFN(strcspn)(const char *s, const char *reject)
 {
 	uint count = 0;
 
@@ -606,7 +532,7 @@ strcspn(const char *s, const char *reject)
 }
 
 void *
-memchr(const void *s, int c, size_t n)
+BCMROMFN(memchr)(const void *s, int c, size_t n)
 {
 	if (n != 0) {
 		const unsigned char *ptr = s;
@@ -622,7 +548,7 @@ memchr(const void *s, int c, size_t n)
 }
 
 unsigned long
-strtoul(const char *cp, char **endp, int base)
+BCMROMFN(strtoul)(const char *cp, char **endp, int base)
 {
 	ulong result, value;
 	bool minus;
@@ -676,8 +602,7 @@ strtoul(const char *cp, char **endp, int base)
 /* memset is not in ROM offload because it is used directly by the compiler in
  * structure assignments/character array initialization with "".
  */
-
-void * BCMSPEEDOPT
+void *
 memset(void *dest, int c, size_t n)
 {
 	uint32 w, *dw;
@@ -815,7 +740,10 @@ memcpy(void *dest, const void *src, size_t n)
 			             : "0" (sw), "1" (dw));
 			break;
 		default:
-			ASSERT(0);
+			i = n / 4;
+			while (i--) {
+				*dw++ = *sw++;
+			}
 			break;
 		}
 		n = n % 4;
@@ -872,20 +800,19 @@ memcpy(void *dest, const void *src, size_t n)
 
 /* Include printf if it has already not been defined as NULL */
 #ifndef printf
+bool last_nl = FALSE;
 int
 printf(const char *fmt, ...)
 {
 	va_list ap;
 	int count = 0, i;
 	char buffer[PRINTF_BUFLEN + 1];
-
-	if (!printf_lock())
-		return 0;
-
 #ifdef DONGLEBUILD
-	{
+	if (last_nl) {
 		/* add the dongle ref time */
-		uint32 dongle_time_ms = hnd_get_reftime_ms();
+		uint32 dongle_time_ms;
+		dongle_time_ms = hndrte_reftime_ms();
+
 		count = sprintf(buffer, "%06u.%03u ", dongle_time_ms / 1000, dongle_time_ms % 1000);
 	}
 #endif /* DONGLEBUILD */
@@ -903,11 +830,14 @@ printf(const char *fmt, ...)
 #endif
 	}
 
+	if (buffer[i - 1] == '\n')
+		last_nl = TRUE;
+	else
+		last_nl = FALSE;
+
 #ifdef MSGTRACE
 	msgtrace_put(buffer, count);
 #endif
-
-	printf_unlock();
 
 	return count;
 }
@@ -957,5 +887,5 @@ rand(void)
 	seed = t;
 	return t;
 }
-#endif /* !_WIN32 && !_CFE_ && !EFI */
+#endif 
 #endif /* BCMSTDLIB_SNPRINTF_ONLY */
