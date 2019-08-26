@@ -1239,7 +1239,7 @@ init:
 et:
 ifeq ($(CONFIG_NORTHSTAR),y)
 	@echo "[LD] et"
-	@$(CC) $(CFLAGS) -I$(LINUXDIR)/brcm/arm/include  -o et et.c
+	@$(CC) -Dlinux -I$(LINUXDIR)/brcm/arm/include -I$(LINUXDIR)/brcm/arm/common/include $(CFLAGS) -o et et.c
 endif
 	@true
 
