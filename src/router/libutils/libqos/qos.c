@@ -637,11 +637,11 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 	int i;
 	char priorities[5] = { 1, 3, 5, 8, 9 };
 	for (i = 0; i < 5; i++) {
-		add_tc_class(wan_dev, priorities[i], base + i, base + 1 + i);
-		add_tc_class("imq0", priorities[i], base + i, base + 1 + i);
+		add_tc_class(wan_dev, priorities[i] + 10, base + i, base + 1 + i);
+		add_tc_class("imq0", priorities[i] + 10, base + i, base + 1 + i);
 
 		if (nvram_match("wshaper_dev", "LAN")) {
-			add_tc_class("imq1", priorities[i], base + i, base + 1 + i);
+			add_tc_class("imq1", priorities[i] + 10, base + i, base + 1 + i);
 		}
 	}
 #else
@@ -651,7 +651,7 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 		add_tc_mark(wan_dev, priorities[i], get_tcfmark(base + i), base + 1 + i);
 		add_tc_mark("imq0", priorities[i], get_tcfmark(base + i), base + 1 + i);
 		if (nvram_match("wshaper_dev", "LAN")) {
-			add_tc_mark("imq1", priorities[i], get_tcfmark(base + i), base + 1 + i);
+			add_tc_mark("imq1", priorities[i] + 10, get_tcfmark(base + i), base + 1 + i);
 		}
 	}
 #endif
@@ -960,7 +960,7 @@ static void add_filter(const char *dev, int pref, int handle, int classid)
 	sprintf(p, "%d", pref);
 	sprintf(h, "0x%02X", handle);
 	sprintf(c, "1:%d", classid);
-	eval("tc", "filter", "add", "dev", dev, "prio", "2", "protocol", "ip", "pref", p, "handle", h, "fw", "classid", c);
+	eval("tc", "filter", "add", "dev", dev, "protocol", "ip", "pref", p, "handle", h, "fw", "classid", c);
 
 }
 
