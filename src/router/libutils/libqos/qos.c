@@ -510,7 +510,11 @@ static void add_hfsc_class(const char *dev, int parent, int class, int rate, int
 	char parentid[32];
 	sprintf(classid, "1:%d", class);
 	sprintf(parentid, "1:%d", parent);
+//      if (class == 100) {
+//      eval("tc","class","add",dev,"parent",parentid,"classid",classid,"hfsc","rt","umax","1500b","dmax","30ms","rate","100kbit","sc","rate",math(buf,limit,"kbit"),"ul","rate",math(buf2, limit, "kbit"));
+//      }else{
 	eval("tc", "class", "add", "dev", dev, "parent", parentid, "classid", classid, "hfsc", "sc", "rate", math(buf, rate, "kbit"), "ul", "rate", math(buf2, limit, "kbit"));
+//      }
 }
 
 void add_client_classes(unsigned int base, unsigned int uprate, unsigned int downrate, unsigned int lanrate, unsigned int level)
