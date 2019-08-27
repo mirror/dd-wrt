@@ -187,7 +187,7 @@ char *getWDSSTA(void)
 
 		sprintf(mode, "ath%d_mode", i);
 		sprintf(netmode, "ath%d_net_mode", i);
-		if (nvram_match(mode, "wdssta")
+		if ((nvram_match(mode, "wdssta") || nvram_match(mode, "wdssta_mtik"))
 		    && !nvram_match(netmode, "disabled")) {
 			return stalist[i];
 		}
