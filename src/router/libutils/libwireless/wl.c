@@ -2071,6 +2071,7 @@ int getassoclist(char *ifname, unsigned char *list)
 
 	if (nvram_nmatch("wdssta", "%s_mode", ifname)
 	    || nvram_nmatch("sta", "%s_mode", ifname)
+	    || nvram_nmatch("wdssta_mtik", "%s_mode", ifname)
 	    || nvram_nmatch("wet", "%s_mode", ifname)) {
 		int assoc = isAssociated(ifname);
 
