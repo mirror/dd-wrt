@@ -10,7 +10,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: wep.h 241182 2011-02-17 21:50:03Z $
+ * $Id: wep.h 451682 2014-01-27 20:30:17Z $
  */
 
 #ifndef _WEP_H_
@@ -22,12 +22,12 @@
 /* assumes a contiguous buffer, with IV prepended, and with enough space at
  * the end for the ICV
  */
-extern void BCMROMFN(wep_encrypt)(uint buf_len, uint8 *buf, uint sec_len, uint8 *sec_data);
+extern void wep_encrypt(uint buf_len, uint8 *buf, uint sec_len, uint8 *sec_data);
 
 /* wep-decrypt a buffer */
 /* Assumes a contigious buffer, with IV prepended, and return TRUE on ICV pass
  * else FAIL
  */
-extern bool BCMROMFN(wep_decrypt)(uint buf_len, uint8 *buf, uint sec_len, uint8 *sec_data);
+extern bool wep_decrypt(uint buf_len, uint8 *buf, uint sec_len, uint8 *sec_data);
 
 #endif /* _WEP_H_ */

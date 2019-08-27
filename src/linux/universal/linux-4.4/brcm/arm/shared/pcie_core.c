@@ -66,13 +66,15 @@ void pcie_watchdog_reset(osl_t *osh, si_t *sih, sbpcieregs_t *sbpcieregs)
 	W_REG(osh, &sbpcieregs->configaddr, PCIECFGREG_LINK_STATUS_CTRL);
 	W_REG(osh, &sbpcieregs->configdata, lsc);
 
-	/* Write configuration registers back to the shadow registers
-	 * cause shadow registers are cleared out after watchdog reset.
-	 */
-	for (i = 0; i < ARRAYSIZE(cfg_offset); i++) {
-		W_REG(osh, &sbpcieregs->configaddr, cfg_offset[i]);
-		val = R_REG(osh, &sbpcieregs->configdata);
-		W_REG(osh, &sbpcieregs->configdata, val);
+	if (sih->buscorerev <= 13) {
+		/* Write configuration registers back to the shadow registers
+		 * cause shadow registers are cleared out after watchdog reset.
+		 */
+		for (i = 0; i < ARRAYSIZE(cfg_offset); i++) {
+			W_REG(osh, &sbpcieregs->configaddr, cfg_offset[i]);
+			val = R_REG(osh, &sbpcieregs->configdata);
+			W_REG(osh, &sbpcieregs->configdata, val);
+		}
 	}
 	si_setcoreidx(sih, origidx);
 }

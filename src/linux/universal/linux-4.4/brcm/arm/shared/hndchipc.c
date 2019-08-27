@@ -1,5 +1,5 @@
 /*
- * BCM47XX support code for some chipcommon facilities (uart, jtagm)
+ * Support code for chipcommon facilities (uart, jtagm) - OS independent.
  *
  * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: hndchipc.c 310902 2012-01-26 19:45:33Z $
+ * $Id: hndchipc.c 473343 2014-04-29 01:45:22Z $
  */
 
 #include <bcm_cfg.h>
@@ -42,36 +42,6 @@
 #else
 #define	CC_MSG(args)
 #endif	/* BCMDBG */
-
-/* interested chipcommon interrupt source
- *  - GPIO
- *  - EXTIF
- *  - ECI
- *  - PMU
- *  - UART
- */
-#define	MAX_CC_INT_SOURCE 5
-
-/* chipc secondary isr info */
-typedef struct {
-	uint intmask;		/* int mask */
-	cc_isr_fn isr;		/* secondary isr handler */
-	void *cbdata;		/* pointer to private data */
-} cc_isr_info_t;
-
-static cc_isr_info_t cc_isr_desc[MAX_CC_INT_SOURCE];
-
-/* chip common intmask */
-static uint32 cc_intmask = 0;
-
-/*
- * ROM accessor to avoid struct in shdat
- */
-static cc_isr_info_t *
-get_cc_isr_desc(void)
-{
-	return cc_isr_desc;
-}
 
 /*
  * Initializes UART access. The callback function will be called once
@@ -146,8 +116,13 @@ BCMATTACHFN(si_serial_init)(si_t *sih, si_serial_init_fn add)
 	n = cap & CC_CAP_UARTS_MASK;
 	for (i = 0; i < n; i++) {
 		regs = (void *)((ulong) &cc->uart0data + (i * 256));
-		if (add)
+		if (add != NULL) {
+#ifdef RTE_UART
+			add(sih, regs, irq, baud_base, 0);
+#else
 			add(regs, irq, baud_base, 0);
+#endif
+		}
 	}
 }
 
@@ -293,72 +268,4 @@ jtag_scan(si_t *sih, void *h, uint irsz, uint32 ir0, uint32 ir1,
 		*dr1 = jtm_wait(cc, TRUE);
 	}
 	return (tmp);
-}
-
-
-/*
- * Interface to register chipc secondary isr
- */
-
-bool
-BCMATTACHFN(si_cc_register_isr)(si_t *sih, cc_isr_fn isr, uint32 ccintmask, void *cbdata)
-{
-	bool done = FALSE;
-	chipcregs_t *regs;
-	uint origidx;
-	uint i;
-
-	/* Save the current core index */
-	origidx = si_coreidx(sih);
-	regs = si_setcoreidx(sih, SI_CC_IDX);
-	ASSERT(regs);
-
-	for (i = 0; i < MAX_CC_INT_SOURCE; i++) {
-		if (cc_isr_desc[i].isr == NULL) {
-			cc_isr_desc[i].isr = isr;
-			cc_isr_desc[i].cbdata = cbdata;
-			cc_isr_desc[i].intmask = ccintmask;
-			done = TRUE;
-			break;
-		}
-	}
-
-	if (done) {
-		cc_intmask = R_REG(si_osh(sih), &regs->intmask);
-		cc_intmask |= ccintmask;
-		W_REG(si_osh(sih), &regs->intmask, cc_intmask);
-	}
-
-	/* restore original coreidx */
-	si_setcoreidx(sih, origidx);
-	return done;
-}
-
-/*
- * chipc primary interrupt handler
- *
- */
-
-void
-si_cc_isr(si_t *sih, chipcregs_t *regs)
-{
-	uint32 ccintstatus;
-	uint32 intstatus;
-	uint32 i;
-	cc_isr_info_t *desc;
-
-	/* prior to rev 21 chipc interrupt means uart and gpio */
-	if (sih->ccrev >= 21)
-		ccintstatus = R_REG(si_osh(sih), &regs->intstatus) & cc_intmask;
-	else
-		ccintstatus = (CI_UART | CI_GPIO);
-
-	desc = get_cc_isr_desc();
-	ASSERT(desc);
-	for (i = 0; i < MAX_CC_INT_SOURCE; i++, desc++) {
-		if ((desc->isr != NULL) &&
-		    (intstatus = (desc->intmask & ccintstatus))) {
-			(desc->isr)(desc->cbdata, intstatus);
-		}
-	}
 }

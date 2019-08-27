@@ -36,7 +36,7 @@ extern uint32 emf_log_lvl;
 #define        EMF_LOG_PKT          (1 << 5)
 #define        EMF_LOG_ALL          ((1 << 6) - 1)
 
-#define  EMFDBG
+//#define  EMFDBG
 #ifdef EMFDBG
 #define EMF_DEBUG(fmt, args...)  if (emf_log_lvl & EMF_LOG_DEBUG) printf("EMF_DEBUG: " fmt, ##args)
 #define EMF_ERROR(fmt, args...)  if (emf_log_lvl & EMF_LOG_ERROR) printf("EMF_ERROR: " fmt, ##args)
