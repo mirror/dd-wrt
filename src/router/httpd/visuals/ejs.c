@@ -2521,6 +2521,8 @@ void ej_getwirelessmode(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "Capture(wl_basic.repeaterbridge)");
 	if (nvram_match(mode, "wdssta"))
 		websWrite(wp, "Capture(wl_basic.wdssta)");
+	if (nvram_match(mode, "wdssta_mtik"))
+		websWrite(wp, "Capture(wl_basic.wdssta_mtik)");
 	if (nvram_match(mode, "wdsap"))
 		websWrite(wp, "Capture(wl_basic.wdsap)");
 	if (nvram_match(mode, "mesh"))
