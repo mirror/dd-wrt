@@ -2790,6 +2790,7 @@ wl_basic.clientBridge="Client Bridge";
 wl_basic.clientRelayd="Client Bridge (Routed)";
 wl_basic.adhoc="Adhoc";
 wl_basic.wdssta="WDS Station";
+wl_basic.wdssta_mtik="WDS Station (Mikrotik)";
 wl_basic.wdsap="WDS AP";
 wl_basic.mesh="Mesh / 802.11s";
 wl_basic.tdma="TDMA";
