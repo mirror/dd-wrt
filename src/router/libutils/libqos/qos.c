@@ -912,7 +912,7 @@ void init_ackprio(const char *dev)
 		if (sscanf(qos_pkts, "%4s ", pkt_filter) < 1)
 			break;
 		if (!strcmp(pkt_filter, "ACK")) {
-			eval("tc", "filter", "add", "dev", dev, "parent", "1:", "prio", "0", "protocol", "ip", "u32",	//
+			eval("tc", "filter", "add", "dev", dev, "parent", "1:", "prio", "4", "protocol", "ip", "u32",	//
 			     "match", "ip", "protocol", "6", "0xff",	//
 			     "match", "u8", "0x05", "0x0f", "at", "0",	//
 			     "match", "u16", "0x0000", "0xffc0", "at", "2",	//
@@ -920,7 +920,7 @@ void init_ackprio(const char *dev)
 			     "flowid", "1:100");
 		}
 		if (!strcmp(pkt_filter, "SYN")) {
-			eval("tc", "filter", "add", "dev", dev, "parent", "1:", "prio", "0", "protocol", "ip", "u32",	//
+			eval("tc", "filter", "add", "dev", dev, "parent", "1:", "prio", "5", "protocol", "ip", "u32",	//
 			     "match", "ip", "protocol", "6", "0xff",	//
 			     "match", "u8", "0x05", "0x0f", "at", "0",	//
 			     "match", "u16", "0x0000", "0xffc0", "at", "2",	//
@@ -928,7 +928,7 @@ void init_ackprio(const char *dev)
 			     "flowid", "1:100");
 		}
 		if (!strcmp(pkt_filter, "FIN")) {
-			eval("tc", "filter", "add", "dev", dev, "parent", "1:", "prio", "0", "protocol", "ip", "u32",	//
+			eval("tc", "filter", "add", "dev", dev, "parent", "1:", "prio", "6", "protocol", "ip", "u32",	//
 			     "match", "ip", "protocol", "6", "0xff",	//
 			     "match", "u8", "0x05", "0x0f", "at", "0",	//
 			     "match", "u16", "0x0000", "0xffc0", "at", "2",	//
@@ -936,7 +936,7 @@ void init_ackprio(const char *dev)
 			     "flowid", "1:100");
 		}
 		if (!strcmp(pkt_filter, "RST")) {
-			eval("tc", "filter", "add", "dev", dev, "parent", "1:", "prio", "0", "protocol", "ip", "u32",	//
+			eval("tc", "filter", "add", "dev", dev, "parent", "1:", "prio", "7", "protocol", "ip", "u32",	//
 			     "match", "ip", "protocol", "6", "0xff",	//
 			     "match", "u8", "0x05", "0x0f", "at", "0",	//
 			     "match", "u16", "0x0000", "0xffc0", "at", "2",	//
@@ -944,7 +944,7 @@ void init_ackprio(const char *dev)
 			     "flowid", "1:100");
 		}
 		if (!strcmp(pkt_filter, "ICMP")) {
-			eval("tc", "filter", "add", "dev", dev, "parent", "1:", "prio", "0", "protocol", "ip", "u32",	//
+			eval("tc", "filter", "add", "dev", dev, "parent", "1:", "prio", "8", "protocol", "ip", "u32",	//
 			     "match", "ip", "protocol", "1", "0xff",	//
 			     "flowid", "1:100");
 		}
@@ -1024,9 +1024,6 @@ void init_qos(const char *strtype, int up, int down, const char *wandev, int mtu
 			init_hfsc_class(imq_wan, down);
 			init_qdisc(type, IFTYPE_IMQ_WAN, imq_wan, wandev, aqd, mtu, up, 0);
 		}
-#if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)
-		init_ackprio(imq_wan);
-#endif
 		init_filter(imq_wan);
 
 	}
