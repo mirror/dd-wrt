@@ -18,7 +18,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: dbus.c 550891 2015-04-21 20:18:21Z $
+ * $Id: dbus.c 453919 2014-02-06 23:10:30Z $
  */
 
 
@@ -48,13 +48,6 @@
 #include <linux/usb.h>
 #endif /* EHCI_FASTPATH_TX || EHCI_FASTPATH_RX */
 
-#if defined(linux) && defined(STBLINUX)
-
-#include <linux/vmalloc.h>
-#define VMALLOC(osh, size)  vmalloc(size)
-#define VFREE(osh, addr, size)  vfree(addr)
-
-#endif
 
 #if defined(BCM_DNGL_EMBEDIMAGE)
 /* zlib file format field ids etc from gzio.c */

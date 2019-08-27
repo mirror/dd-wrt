@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: pcie_core.h 468895 2014-04-09 02:33:06Z $
+ * $Id: pcie_core.h 558784 2015-05-25 05:13:49Z $
  */
 #ifndef	_PCIE_CORE_H
 #define	_PCIE_CORE_H
@@ -82,7 +82,8 @@ typedef struct sbpcieregs {
 	uint32 biststatus;	/* bist Status: 0x00C */
 	uint32 gpiosel;		/* PCIE gpio sel: 0x010 */
 	uint32 gpioouten;	/* PCIE gpio outen: 0x14 */
-	uint32 PAD[2];
+	uint32 gpioout;		/* PCIE gpio out */
+	uint32 PAD;
 	uint32 intstatus;	/* Interrupt status: 0x20 */
 	uint32 intmask;		/* Interrupt mask: 0x24 */
 	uint32 sbtopcimailbox;	/* sb to pcie mailbox: 0x028 */
@@ -136,7 +137,15 @@ typedef struct sbpcieregs {
 			uint32	ltr_state;	/* 0x1A0 */
 			uint32	pwr_int_status;	/* 0x1A4 */
 			uint32	pwr_int_mask;	/* 0x1A8 */
-			uint32  PAD[21]; 	/* 0x1AC - 0x200 */
+			uint32	pme_source; /* 0x1AC */
+			uint32	err_hdr_logreg1; /* 0x1B0 */
+			uint32	err_hdr_logreg2; /* 0x1B4 */
+			uint32	err_hdr_logreg3; /* 0x1B8 */
+			uint32	err_hdr_logreg4; /* 0x1BC */
+			uint32	err_code_logreg; /* 0x1C0 */
+			uint32  PAD[7]; /* 0x1C4 - 0x1DF */
+			uint32  clk_ctl_st;	/* 0x1E0 */
+			uint32  PAD[7];		/* 0x1E4 - 0x1FF */
 			pcie_devdmaregs_t  h2d0_dmaregs; /* 0x200 - 0x23c */
 			pcie_devdmaregs_t  d2h0_dmaregs; /* 0x240 - 0x27c */
 			pcie_devdmaregs_t  h2d1_dmaregs; /* 0x280 - 0x2bc */
@@ -462,7 +471,7 @@ typedef struct sbpcieregs {
 #define PCIE_CAP_DEVCTRL2_LTR_ENAB_MASK	0x400	/* Latency Tolerance Reporting Enable */
 #define PCIE_CAP_DEVCTRL2_OBFF_ENAB_SHIFT 13	/* Enable OBFF mechanism, select signaling method */
 #define PCIE_CAP_DEVCTRL2_OBFF_ENAB_MASK 0x6000	/* Enable OBFF mechanism, select signaling method */
-    
+
 /* LTR registers in PCIE Cap */
 #define PCIE_LTR0_REG_OFFSET	0x844	/* ltr0_reg offset in pcie cap */
 #define PCIE_LTR1_REG_OFFSET	0x848	/* ltr1_reg offset in pcie cap */
@@ -471,14 +480,6 @@ typedef struct sbpcieregs {
 #define PCIE_LTR0_REG_DEFAULT_150	0x88968896	/* active latency default to 150usec */
 #define PCIE_LTR1_REG_DEFAULT		0x88648864	/* idle latency default to 100usec */
 #define PCIE_LTR2_REG_DEFAULT		0x90039003	/* sleep latency default to 3msec */
-
-/* LTR registers in PCIE Cap */
-#define PCIE_CAP_LTR0_REG_OFFSET	0x798	/* ltr0_reg offset in pcie cap */
-#define PCIE_CAP_LTR1_REG_OFFSET	0x79C	/* ltr1_reg offset in pcie cap */
-#define PCIE_CAP_LTR2_REG_OFFSET	0x7A0	/* ltr2_reg offset in pcie cap */
-#define PCIE_CAP_LTR0_REG			0		/* ltr0_reg */
-#define PCIE_CAP_LTR1_REG			1		/* ltr1_reg */
-#define PCIE_CAP_LTR2_REG			2		/* ltr2_reg */
 
 /* Status reg PCIE_PLP_STATUSREG */
 #define PCIE_PLP_POLARITYINV_STAT	0x10
@@ -547,6 +548,7 @@ typedef struct sbpcieregs {
 
 /* enumeration Core regs */
 #define PCIH2D_MailBox  0x140
+#define PCIH2D_DB1 0x144
 #define PCID2H_MailBox  0x148
 #define PCIMailBoxInt	0x48
 #define PCIMailBoxMask	0x4C
@@ -555,6 +557,8 @@ typedef struct sbpcieregs {
 #define I_F0_B1         (0x1 << 9) /* Mail box interrupt Function 0 interrupt, bit 1 */
 
 #define PCIECFGREG_DEVCONTROL	0xB4
+#define PCIECFGREG_DEVCONTROL_MRRS_SHFT	12
+#define PCIECFGREG_DEVCONTROL_MRRS_MASK	(0x7 << PCIECFGREG_DEVCONTROL_MRRS_SHFT)
 
 /* SROM hardware region */
 #define SROM_OFFSET_BAR1_CTRL  52
@@ -575,11 +579,10 @@ typedef struct sbpcieregs {
  * Sleep is most tolerant
  */
 #define LTR_ACTIVE				2
-#define LTR_ACTIVE_IDLE			1
+#define LTR_ACTIVE_IDLE				1
 #define LTR_SLEEP				0
-#define LTR_FINAL_MASK			0x300
-#define LTR_FINAL_SHIFT			8
-
+#define LTR_FINAL_MASK				0x300
+#define LTR_FINAL_SHIFT				8
 
 /* pwrinstatus, pwrintmask regs */
 #define PCIEGEN2_PWRINT_D0_STATE_SHIFT		0
@@ -615,8 +618,8 @@ typedef struct sbpcieregs {
 #define PCIEGEN2_IOC_D3_STATE_SHIFT		11
 #define PCIEGEN2_IOC_L0_LINK_SHIFT		12
 #define PCIEGEN2_IOC_L1_LINK_SHIFT		13
-#define PCIEGEN2_IOC_L1L2_LINK_SHIFT	14
-#define PCIEGEN2_IOC_L2_L3_LINK_SHIFT	15
+#define PCIEGEN2_IOC_L1L2_LINK_SHIFT		14
+#define PCIEGEN2_IOC_L2_L3_LINK_SHIFT		15
 
 #define PCIEGEN2_IOC_D0_STATE_MASK		(1 << PCIEGEN2_IOC_D0_STATE_SHIFT)
 #define PCIEGEN2_IOC_D1_STATE_MASK		(1 << PCIEGEN2_IOC_D1_STATE_SHIF)
@@ -625,7 +628,7 @@ typedef struct sbpcieregs {
 #define PCIEGEN2_IOC_L0_LINK_MASK		(1 << PCIEGEN2_IOC_L0_LINK_SHIF)
 #define PCIEGEN2_IOC_L1_LINK_MASK		(1 << PCIEGEN2_IOC_L1_LINK_SHIF)
 #define PCIEGEN2_IOC_L1L2_LINK_MASK		(1 << PCIEGEN2_IOC_L1L2_LINK_SHIFT)
-#define PCIEGEN2_IOC_L2_L3_LINK_MASK	(1 << PCIEGEN2_IOC_L2_L3_LINK_SHIFT)
+#define PCIEGEN2_IOC_L2_L3_LINK_MASK		(1 << PCIEGEN2_IOC_L2_L3_LINK_SHIFT)
 
 /* stat_ctrl */
 #define PCIE_STAT_CTRL_RESET		0x1
