@@ -353,19 +353,15 @@ void add_client_ip_srvfilter(char *name, char *type, char *data, int level, int 
 }
 
 #if !defined(ARCH_broadcom) || defined(HAVE_BCMMODERN)
-char *get_tcfmark(uint32 mark, int seg)
+char *get_tcfmark(char *tcfmark, uint32 mark, int seg)
 {
-	static char tcfmark[24];
-	char nfmark[24];
+	char nfmark[24]={0};
 	char *ntoken = NULL;
-
-	bzero(&tcfmark, sizeof(tcfmark));
-	bzero(&nfmark, sizeof(nfmark));
+	*tcfmark = 0;
 
 	strcpy(nfmark, qos_nfmark(mark));
-
 	ntoken = strtok(nfmark, "/");
-	strcat(tcfmark, ntoken);
+	strcpy(tcfmark, ntoken);
 	if (seg == 1)
 		return tcfmark;
 	ntoken = strtok(NULL, "/");
@@ -652,10 +648,12 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 	int i;
 	char priorities[5] = { 1, 3, 5, 8, 9 };
 	for (i = 0; i < 5; i++) {
-		add_tc_mark(wan_dev, priorities[i] + 1, get_tcfmark(base + i, 1), get_tcfmark(base + i, 2), base + 1 + i);
-		add_tc_mark("imq0", priorities[i] + 1, get_tcfmark(base + i, 1), get_tcfmark(base + i, 2), base + 1 + i);
+		char tcfmark[32] = { 0 };
+		char tcfmark2[32] = { 0 };
+		add_tc_mark(wan_dev, priorities[i] + 1, get_tcfmark(tcfmark, base + i, 1), get_tcfmark(tcfmark2, base + i, 2), base + 1 + i);
+		add_tc_mark("imq0", priorities[i] + 1, get_tcfmark(tcfmark, base + i, 1), get_tcfmark(tcfmark2, base + i, 2), base + 1 + i);
 		if (nvram_match("wshaper_dev", "LAN")) {
-			add_tc_mark("imq1", priorities[i] + 1, get_tcfmark(base + i, 1), get_tcfmark(base + i, 2), base + 1 + i);
+			add_tc_mark("imq1", priorities[i] + 1, get_tcfmark(tcfmark, base + i, 1), get_tcfmark(tcfmark2, base + i, 2), base + 1 + i);
 		}
 	}
 #endif
