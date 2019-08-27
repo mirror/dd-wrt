@@ -369,8 +369,10 @@ char *get_tcfmark(uint32 mark, int seg)
 	if (seg == 1)
 		return tcfmark;
 	ntoken = strtok(NULL, "/");
-	if (seg == 2)
+	if (seg == 2) {
+		strcpy(tcfmark, ntoken);
 		return tcfmark;
+	}
 	strcat(tcfmark, " ");
 	strcat(tcfmark, ntoken);
 	return tcfmark;
