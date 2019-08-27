@@ -353,7 +353,7 @@ void add_client_ip_srvfilter(char *name, char *type, char *data, int level, int 
 }
 
 #if !defined(ARCH_broadcom) || defined(HAVE_BCMMODERN)
-char *get_tcfmark(uint32 mark)
+char *get_tcfmark(uint32 mark, int seg)
 {
 	static char tcfmark[24];
 	char nfmark[24];
@@ -366,11 +366,13 @@ char *get_tcfmark(uint32 mark)
 
 	ntoken = strtok(nfmark, "/");
 	strcat(tcfmark, ntoken);
-
+	if (seg == 1)
+		return tcfmark;
 	ntoken = strtok(NULL, "/");
+	if (seg == 2)
+		return tcfmark;
 	strcat(tcfmark, " ");
 	strcat(tcfmark, ntoken);
-
 	return tcfmark;
 }
 #endif
@@ -386,13 +388,13 @@ static void add_tc_class(char *dev, int pref, int handle, int classid)
 	eval("tc", "filter", "add", "dev", dev, "protocol", "ip", "pref", p, "handle", h, "fw", "classid", c);
 }
 #else
-static void add_tc_mark(char *dev, int pref, char *mark, int flow)
+static void add_tc_mark(char *dev, int pref, char *mark, char *mark2, int flow)
 {
 	char p[32];
 	sprintf(p, "%d", pref);
 	char f[32];
 	sprintf(f, "1:%d", flow);
-	eval("tc", "filter", "add", "dev", dev, "protocol", "ip", "pref", p, "parent", "1:", "u32", "match", "mark", mark, "flowid", f);
+	eval("tc", "filter", "add", "dev", dev, "protocol", "ip", "pref", p, "parent", "1:", "u32", "match", "mark", mark, mark2, "flowid", f);
 }
 #endif
 
@@ -648,10 +650,10 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 	int i;
 	char priorities[5] = { 1, 3, 5, 8, 9 };
 	for (i = 0; i < 5; i++) {
-		add_tc_mark(wan_dev, priorities[i] + 1, get_tcfmark(base + i), base + 1 + i);
-		add_tc_mark("imq0", priorities[i] + 1, get_tcfmark(base + i), base + 1 + i);
+		add_tc_mark(wan_dev, priorities[i] + 1, get_tcfmark(base + i, 1), get_tcfmark(base + i, 2), base + 1 + i);
+		add_tc_mark("imq0", priorities[i] + 1, get_tcfmark(base + i, 1), get_tcfmark(base + i, 2), base + 1 + i);
 		if (nvram_match("wshaper_dev", "LAN")) {
-			add_tc_mark("imq1", priorities[i] + 1, get_tcfmark(base + i), base + 1 + i);
+			add_tc_mark("imq1", priorities[i] + 1, get_tcfmark(base + i, 1), get_tcfmark(base + i, 2), base + 1 + i);
 		}
 	}
 #endif
