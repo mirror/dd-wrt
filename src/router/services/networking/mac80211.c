@@ -342,8 +342,10 @@ void configure_single_ath9k(int count)
 
 		strcpy(primary, dev);
 	} else if (!strcmp(apm, "wdssta")) {
-		eval("iw", wif, "interface", "add", dev, "type", "managed", "4addr", "on");
-
+		eval("iw", wif, "interface", "add", dev, "type", "managed", "4addr", "on", "mtik","off");
+		strcpy(primary, dev);
+	} else if (!strcmp(apm, "wdssta_mtik")) {
+		eval("iw", wif, "interface", "add", dev, "type", "managed", "4addr", "on", "mtik","on");
 		strcpy(primary, dev);
 	} else if (!strcmp(apm, "mesh")) {
 		char akm[16];
@@ -424,7 +426,7 @@ void configure_single_ath9k(int count)
 	cprintf("setup encryption");
 	// setup encryption
 	int isfirst = 1;
-	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wet") && strcmp(apm, "infra") && strcmp(apm, "mesh") && strcmp(apm, "tdma")) {
+	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wdssta_mtik") && strcmp(apm, "wet") && strcmp(apm, "infra") && strcmp(apm, "mesh") && strcmp(apm, "tdma")) {
 		setupHostAP_ath9k(dev, isfirst, 0, 0);
 		isfirst = 0;
 	} else {
@@ -1867,7 +1869,7 @@ void ath9k_start_supplicant(int count, char *prefix)
 	char pid[64];
 	sprintf(pid, "/var/run/%s_wpa_supplicant.pid", dev);
 
-	if (strcmp(apm, "sta") && strcmp(apm, "wdssta")
+	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wdssta_mtik")
 	    && strcmp(apm, "infra")
 	    && strcmp(apm, "mesh")
 	    && strcmp(apm, "tdma")
@@ -1890,7 +1892,7 @@ void ath9k_start_supplicant(int count, char *prefix)
 			sprintf(ctrliface, "/var/run/hostapd/%s.%d", dev, ctrl);
 			sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
 			if (!nvram_match(wmode, "mesh") && !nvram_match(wmode, "infra")) {
-				if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh")
+				if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh") || nvram_match(wmode, "wdsta_mtik")
 				     || wet)
 				    && nvram_matchi(bridged, 1))
 					eval("wpa_supplicant", "-P", pid, "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface, "-H", ctrliface, "-c", fstr);
@@ -1910,8 +1912,8 @@ void ath9k_start_supplicant(int count, char *prefix)
 			}
 		} else {
 			sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
-			if (nvram_match(wmode, "sta") || nvram_match(wmode, "wdssta") || wet || nvram_match(wmode, "infra") || nvram_match(wmode, "mesh")) {
-				if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh") || wet) && nvram_matchi(bridged, 1)) {
+			if (nvram_match(wmode, "sta") || nvram_match(wmode, "wdssta") || nvram_match(wmode, "wdssta_mtik") || wet || nvram_match(wmode, "infra") || nvram_match(wmode, "mesh")) {
+				if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh") || nvram_match(wmode, "wdsta_mtik") || wet) && nvram_matchi(bridged, 1)) {
 					eval("wpa_supplicant", "-P", pid, "-b", getBridge(dev, tmp), background, "-Dnl80211", subinterface, "-c", fstr);
 				} else {
 					eval("wpa_supplicant", "-P", pid, background, "-Dnl80211", subinterface, "-c", fstr);
