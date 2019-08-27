@@ -593,13 +593,18 @@ static int svqos_iptables(void)
 		init_ackprio("imq0");
 	}
 
-	eval("tc", "filter", "add", "dev", "imq0", "protocol", "ip", "parent", "1:", "prio", "2", "u32", "match", "mark", get_tcfmark(tcfmark, 100, 1), get_tcfmark(tcfmark2, 100, 2), "flowid", "1:100");
-	eval("tc", "filter", "add", "dev", "imq0", "protocol", "ip", "parent", "1:", "prio", "2", "u32", "match", "mark", get_tcfmark(tcfmark, 10, 1), get_tcfmark(tcfmark2, 10, 2), "flowid", "1:10");
-	eval("tc", "filter", "add", "dev", "imq0", "protocol", "ip", "parent", "1:", "prio", "2", "u32", "match", "mark", get_tcfmark(tcfmark, 20, 1), get_tcfmark(tcfmark2, 20, 2), "flowid", "1:20");
-	eval("tc", "filter", "add", "dev", "imq0", "protocol", "ip", "parent", "1:", "prio", "2", "u32", "match", "mark", get_tcfmark(tcfmark, 30, 1), get_tcfmark(tcfmark2, 30, 2), "flowid", "1:30");
-	eval("tc", "filter", "add", "dev", "imq0", "protocol", "ip", "parent", "1:", "prio", "2", "u32", "match", "mark", get_tcfmark(tcfmark, 40, 1), get_tcfmark(tcfmark2, 40, 2), "flowid", "1:40");
-
+	{
+		char tcfmark[32] = { 0 };
+		char tcfmark2[32] = { 0 };
+		eval("tc", "filter", "add", "dev", "imq0", "protocol", "ip", "parent", "1:", "prio", "2", "u32", "match", "mark", get_tcfmark(tcfmark, 100, 1), get_tcfmark(tcfmark2, 100, 2), "flowid", "1:100");
+		eval("tc", "filter", "add", "dev", "imq0", "protocol", "ip", "parent", "1:", "prio", "2", "u32", "match", "mark", get_tcfmark(tcfmark, 10, 1), get_tcfmark(tcfmark2, 10, 2), "flowid", "1:10");
+		eval("tc", "filter", "add", "dev", "imq0", "protocol", "ip", "parent", "1:", "prio", "2", "u32", "match", "mark", get_tcfmark(tcfmark, 20, 1), get_tcfmark(tcfmark2, 20, 2), "flowid", "1:20");
+		eval("tc", "filter", "add", "dev", "imq0", "protocol", "ip", "parent", "1:", "prio", "2", "u32", "match", "mark", get_tcfmark(tcfmark, 30, 1), get_tcfmark(tcfmark2, 30, 2), "flowid", "1:30");
+		eval("tc", "filter", "add", "dev", "imq0", "protocol", "ip", "parent", "1:", "prio", "2", "u32", "match", "mark", get_tcfmark(tcfmark, 40, 1), get_tcfmark(tcfmark2, 40, 2), "flowid", "1:40");
+	}
 	if (nvram_match("wshaper_dev", "LAN")) {
+		char tcfmark[32] = { 0 };
+		char tcfmark2[32] = { 0 };
 
 		eval("tc", "filter", "add", "dev", "imq1", "protocol", "ip", "parent", "1:", "prio", "2", "u32", "match", "mark", get_tcfmark(tcfmark, 100, 1), get_tcfmark(tcfmark2, 100, 2), "flowid", "1:100");
 		eval("tc", "filter", "add", "dev", "imq1", "protocol", "ip", "parent", "1:", "prio", "2", "u32", "match", "mark", get_tcfmark(tcfmark, 10, 1), get_tcfmark(tcfmark2, 10, 2), "flowid", "1:10");
