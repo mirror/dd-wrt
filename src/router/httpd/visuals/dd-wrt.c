@@ -2985,6 +2985,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 //#endif
 #else
 			websWrite(wp, "document.write(\"<option value=\\\"wdssta\\\" %s >\" + wl_basic.wdssta + \"</option>\");\n", nvram_match(wl_mode, "wdssta") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"wdssta_mtik\\\" %s >\" + wl_basic.wdssta_mtik + \"</option>\");\n", nvram_match(wl_mode, "wdssta_mtik") ? "selected=\\\"selected\\\"" : "");
 			if (!cpeonly) {
 				websWrite(wp, "document.write(\"<option value=\\\"wdsap\\\" %s >\" + wl_basic.wdsap + \"</option>\");\n", nvram_match(wl_mode, "wdsap") ? "selected=\\\"selected\\\"" : "");
 			}
@@ -3658,6 +3659,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 //#endif
 #else
 			websWrite(wp, "document.write(\"<option value=\\\"wdssta\\\" %s >\" + wl_basic.wdssta + \"</option>\");\n", nvram_match(wl_mode, "wdssta") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"wdssta\\\" %s >\" + wl_basic.wdssta_mtik + \"</option>\");\n", nvram_match(wl_mode, "wdssta_mtik") ? "selected=\\\"selected\\\"" : "");
 			if (!cpeonly) {
 				websWrite(wp, "document.write(\"<option value=\\\"wdsap\\\" %s >\" + wl_basic.wdsap + \"</option>\");\n", nvram_match(wl_mode, "wdsap") ? "selected=\\\"selected\\\"" : "");
 			}
