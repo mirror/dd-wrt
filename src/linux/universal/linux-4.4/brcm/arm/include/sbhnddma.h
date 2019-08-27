@@ -16,7 +16,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: sbhnddma.h 452437 2014-01-30 11:59:09Z $
+ * $Id: sbhnddma.h 534407 2015-02-13 07:04:36Z $
  */
 
 #ifndef	_sbhnddma_h_
@@ -74,11 +74,7 @@ typedef volatile struct {
 #define	XC_SE		((uint32)1 << 1)	/* transmit suspend request */
 #define	XC_LE		((uint32)1 << 2)	/* loopback enable */
 #define	XC_FL		((uint32)1 << 4)	/* flush request */
-#ifdef USE_4345B0_MR_MASK_2BITS_IN_ROM
-#define XC_MR_MASK	0x000000C0		/* Multiple outstanding reads */
-#else /* USE_4345B0_MR_MASK_2BITS_IN_ROM */
 #define XC_MR_MASK	0x000001C0		/* Multiple outstanding reads */
-#endif /* USE_4345B0_MR_MASK_2BITS_IN_ROM */
 #define XC_MR_SHIFT	6
 #define	XC_PD		((uint32)1 << 11)	/* parity check disable */
 #define	XC_AE		((uint32)3 << 16)	/* address extension bits */
@@ -160,7 +156,8 @@ typedef volatile struct {
 #define RC_PC_SHIFT	21
 #define RC_PT_MASK	0x03000000		/* Prefetch threshold */
 #define RC_PT_SHIFT	24
-
+#define RC_WAITCMP_MASK 0x00001000
+#define RC_WAITCMP_SHIFT 12
 /* receive descriptor table pointer */
 #define	RP_LD_MASK	0xfff			/* last valid descriptor */
 
@@ -282,14 +279,7 @@ typedef volatile struct {
 #define	D64_XC_SE		0x00000002	/* transmit suspend request */
 #define	D64_XC_LE		0x00000004	/* loopback enable */
 #define	D64_XC_FL		0x00000010	/* flush request */
-
-/* XX: followng ifdef is added just to avoid the ROM abandon on 4345B0 */
-#ifdef USE_4345B0_MR_MASK_2BITS_IN_ROM
-#define D64_XC_MR_MASK		0x000000C0	/* Multiple outstanding reads */
-#else /* USE_4345B0_MR_MASK_2BITS_IN_ROM */
 #define D64_XC_MR_MASK		0x000001C0	/* Multiple outstanding reads */
-#endif /* USE_4345B0_MR_MASK_2BITS_IN_ROM */
-
 #define D64_XC_MR_SHIFT		6
 #define	D64_XC_PD		0x00000800	/* parity check disable */
 #define	D64_XC_AE		0x00030000	/* address extension bits */
@@ -343,6 +333,8 @@ typedef volatile struct {
 #define D64_RC_PC_SHIFT		21
 #define D64_RC_PT_MASK		0x03000000	/* Prefetch threshold */
 #define D64_RC_PT_SHIFT		24
+#define D64_RC_WAITCMP_MASK	0x00001000
+#define D64_RC_WAITCMP_SHIFT	12
 
 /* flags for dma controller */
 #define DMA_CTRL_PEN		(1 << 0)	/* partity enable */
@@ -352,7 +344,8 @@ typedef volatile struct {
 #define DMA_CTRL_USB_BOUNDRY4KB_WAR (1 << 4)
 #define DMA_CTRL_DMA_AVOIDANCE_WAR (1 << 5)	/* DMA avoidance WAR for 4331 */
 #define DMA_CTRL_RXSINGLE	(1 << 6)	/* always single buffer */
-#define DMA_CTRL_SDIO_RXGLOM		(1 << 7)	/* DMA Rx glome is supported */
+#define DMA_CTRL_SDIO_RXGLOM	(1 << 7)	/* DMA Rx glome is enabled */
+
 /* receive descriptor table pointer */
 #define	D64_RP_LD_MASK		0x00001fff	/* last valid descriptor */
 

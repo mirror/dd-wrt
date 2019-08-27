@@ -15,13 +15,16 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: hndpmu.h 450539 2014-01-22 09:40:44Z $
+ * $Id: hndpmu.h 554483 2015-05-05 21:51:58Z $
  */
 
 #ifndef _hndpmu_h_
 #define _hndpmu_h_
 
-#if !defined(BCMDONGLEHOST)
+#include <typedefs.h>
+#include <osl_decl.h>
+#include <siutils.h>
+
 #define SET_LDO_VOLTAGE_LDO1		1
 #define SET_LDO_VOLTAGE_LDO2		2
 #define SET_LDO_VOLTAGE_LDO3		3
@@ -33,11 +36,21 @@
 #define SET_LDO_VOLTAGE_LNLDO1		9
 #define SET_LDO_VOLTAGE_LNLDO2_SEL	10
 #define SET_LNLDO_PWERUP_LATCH_CTRL	11
+#define SET_LDO_VOLTAGE_CLDO_ADJ	12
 
 #define BBPLL_NDIV_FRAC_BITS		24
 #define P1_DIV_SCALE_BITS			12
 
 #define PMUREQTIMER (1 << 0)
+
+/* PMU ULB BW */
+enum {
+	PMU_ULB_BW_NONE = 0,
+	PMU_ULB_BW_10MHZ = 1,
+	PMU_ULB_BW_5MHZ = 2,
+	PMU_ULB_BW_2P5MHZ = 3,
+	MAX_SUPP_PMU_ULB_BW = 4
+};
 
 extern void si_pmu_init(si_t *sih, osl_t *osh);
 extern void si_pmu_chip_init(si_t *sih, osl_t *osh);
@@ -91,14 +104,18 @@ typedef void (*si_pmu_callback_t)(void* arg);
 
 extern uint32 si_mac_clk(si_t *sih, osl_t *osh);
 extern void si_pmu_switch_on_PARLDO(si_t *sih, osl_t *osh);
+extern void si_pmu_switch_off_PARLDO(si_t *sih, osl_t *osh);
 extern int si_pmu_fvco_pllreg(si_t *sih, uint32 *fvco, uint32 *pllreg);
 
-#endif /* !defined(BCMDONGLEHOST) */
+extern bool si_pmu_reset_ret_sleep_log(si_t *sih, osl_t *osh);
 
 extern void si_pmu_otp_power(si_t *sih, osl_t *osh, bool on, uint32* min_res_mask);
 extern void si_sdiod_drive_strength_init(si_t *sih, osl_t *osh, uint32 drivestrength);
 
 extern void si_pmu_minresmask_htavail_set(si_t *sih, osl_t *osh, bool set_clear);
 extern void si_pmu_slow_clk_reinit(si_t *sih, osl_t *osh);
-
+extern void si_pmu_avbtimer_enable(si_t *sih, osl_t *osh, bool set_flag);
+extern uint si_pmu_set_ulbmode(si_t *sih, osl_t *osh, uint8 ulb_bw);
+extern uint32 si_pmu_dump_pmucap_binary(si_t *sih, uchar *p);
+extern uint32 si_pmu_dump_buf_size_pmucap(si_t *sih);
 #endif /* _hndpmu_h_ */

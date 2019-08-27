@@ -16,7 +16,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: sbutils.c 426572 2013-09-30 06:06:51Z $
+ * $Id: sbutils.c 467150 2014-04-02 17:30:43Z $
  */
 
 #include <bcm_cfg.h>
@@ -28,9 +28,7 @@
 #include <bcmdevs.h>
 #include <hndsoc.h>
 #include <sbchipc.h>
-#if !defined(BCMDONGLEHOST)
 #include <pci_core.h>
-#endif /* !defined(BCMDONGLEHOST) */
 #include <pcicfg.h>
 #include <sbpcmcia.h>
 
@@ -43,7 +41,6 @@ static uint _sb_scan(si_info_t *sii, uint32 sba, void *regs, uint bus, uint32 sb
                      uint ncores);
 static uint32 _sb_coresba(si_info_t *sii);
 static void *_sb_setcoreidx(si_info_t *sii, uint coreidx);
-
 #define	SET_SBREG(sii, r, mask, val)	\
 		W_SBREG((sii), (r), ((R_SBREG((sii), (r)) & ~(mask)) | (val)))
 #define	REGS2SB(va)	(sbconfig_t*) ((int8*)(va) + SBCONFIGOFF)
@@ -60,6 +57,7 @@ static void *_sb_setcoreidx(si_info_t *sii, uint coreidx);
 static uint32
 sb_read_sbreg(si_info_t *sii, volatile uint32 *sbr)
 {
+	si_cores_info_t *cores_info = (si_cores_info_t *)sii->cores_info;
 	uint8 tmp;
 	uint32 val, intr_val = 0;
 
@@ -91,6 +89,7 @@ sb_read_sbreg(si_info_t *sii, volatile uint32 *sbr)
 static void
 sb_write_sbreg(si_info_t *sii, volatile uint32 *sbr, uint32 v)
 {
+	si_cores_info_t *cores_info = (si_cores_info_t *)sii->cores_info;
 	uint8 tmp;
 	volatile uint32 dummy;
 	uint32 intr_val = 0;
@@ -150,12 +149,11 @@ sb_coreid(si_t *sih)
 uint
 sb_intflag(si_t *sih)
 {
-	si_info_t *sii;
+	si_info_t *sii = SI_INFO(sih);
+	si_cores_info_t *cores_info = (si_cores_info_t *)sii->cores_info;
 	void *corereg;
 	sbconfig_t *sb;
 	uint origidx, intflag, intr_val = 0;
-
-	sii = SI_INFO(sih);
 
 	INTR_OFF(sii, intr_val);
 	origidx = si_coreidx(sih);
@@ -203,9 +201,10 @@ static uint
 BCMATTACHFN(_sb_coreidx)(si_info_t *sii, uint32 sba)
 {
 	uint i;
+	si_cores_info_t *cores_info = (si_cores_info_t *)sii->cores_info;
 
 	for (i = 0; i < sii->numcores; i ++)
-		if (sba == sii->coresba[i])
+		if (sba == cores_info->coresba[i])
 			return i;
 	return BADIDX;
 }
@@ -381,9 +380,8 @@ sb_corereg(si_t *sih, uint coreidx, uint regoff, uint mask, uint val)
 	uint w;
 	uint intr_val = 0;
 	bool fast = FALSE;
-	si_info_t *sii;
-
-	sii = SI_INFO(sih);
+	si_info_t *sii = SI_INFO(sih);
+	si_cores_info_t *cores_info = (si_cores_info_t *)sii->cores_info;
 
 	ASSERT(GOODIDX(coreidx));
 	ASSERT(regoff < SI_CORE_SIZE);
@@ -396,16 +394,16 @@ sb_corereg(si_t *sih, uint coreidx, uint regoff, uint mask, uint val)
 		/* If internal bus, we can always get at everything */
 		fast = TRUE;
 		/* map if does not exist */
-		if (!sii->regs[coreidx]) {
-			sii->regs[coreidx] = REG_MAP(sii->coresba[coreidx],
+		if (!cores_info->regs[coreidx]) {
+			cores_info->regs[coreidx] = REG_MAP(cores_info->coresba[coreidx],
 			                            SI_CORE_SIZE);
-			ASSERT(GOODREGS(sii->regs[coreidx]));
+			ASSERT(GOODREGS(cores_info->regs[coreidx]));
 		}
-		r = (uint32 *)((uchar *)sii->regs[coreidx] + regoff);
+		r = (uint32 *)((uchar *)cores_info->regs[coreidx] + regoff);
 	} else if (BUSTYPE(sii->pub.bustype) == PCI_BUS) {
 		/* If pci/pcie, we can get at pci/pcie regs and on newer cores to chipc */
 
-		if ((sii->coreid[coreidx] == CC_CORE_ID) && SI_FAST(sii)) {
+		if ((cores_info->coreid[coreidx] == CC_CORE_ID) && SI_FAST(sii)) {
 			/* Chipc registers are mapped at 12KB */
 
 			fast = TRUE;
@@ -485,9 +483,8 @@ sb_corereg_addr(si_t *sih, uint coreidx, uint regoff)
 {
 	uint32 *r = NULL;
 	bool fast = FALSE;
-	si_info_t *sii;
-
-	sii = SI_INFO(sih);
+	si_info_t *sii = SI_INFO(sih);
+	si_cores_info_t *cores_info = (si_cores_info_t *)sii->cores_info;
 
 	ASSERT(GOODIDX(coreidx));
 	ASSERT(regoff < SI_CORE_SIZE);
@@ -499,16 +496,16 @@ sb_corereg_addr(si_t *sih, uint coreidx, uint regoff)
 		/* If internal bus, we can always get at everything */
 		fast = TRUE;
 		/* map if does not exist */
-		if (!sii->regs[coreidx]) {
-			sii->regs[coreidx] = REG_MAP(sii->coresba[coreidx],
+		if (!cores_info->regs[coreidx]) {
+			cores_info->regs[coreidx] = REG_MAP(cores_info->coresba[coreidx],
 			                            SI_CORE_SIZE);
-			ASSERT(GOODREGS(sii->regs[coreidx]));
+			ASSERT(GOODREGS(cores_info->regs[coreidx]));
 		}
-		r = (uint32 *)((uchar *)sii->regs[coreidx] + regoff);
+		r = (uint32 *)((uchar *)cores_info->regs[coreidx] + regoff);
 	} else if (BUSTYPE(sii->pub.bustype) == PCI_BUS) {
 		/* If pci/pcie, we can get at pci/pcie regs and on newer cores to chipc */
 
-		if ((sii->coreid[coreidx] == CC_CORE_ID) && SI_FAST(sii)) {
+		if ((cores_info->coreid[coreidx] == CC_CORE_ID) && SI_FAST(sii)) {
 			/* Chipc registers are mapped at 12KB */
 
 			fast = TRUE;
@@ -549,6 +546,7 @@ BCMATTACHFN(_sb_scan)(si_info_t *sii, uint32 sba, void *regs, uint bus, uint32 s
 	uint next;
 	uint ncc = 0;
 	uint i;
+	si_cores_info_t *cores_info = (si_cores_info_t *)sii->cores_info;
 
 	if (bus >= SB_MAXBUSES) {
 		SI_ERROR(("_sb_scan: bus 0x%08x at level %d is too deep to scan\n", sbba, bus));
@@ -560,23 +558,23 @@ BCMATTACHFN(_sb_scan)(si_info_t *sii, uint32 sba, void *regs, uint bus, uint32 s
 	 * Core addresses must be contiguous on each bus.
 	 */
 	for (i = 0, next = sii->numcores; i < numcores && next < SB_BUS_MAXCORES; i++, next++) {
-		sii->coresba[next] = sbba + (i * SI_CORE_SIZE);
+		cores_info->coresba[next] = sbba + (i * SI_CORE_SIZE);
 
 		/* keep and reuse the initial register mapping */
-		if ((BUSTYPE(sii->pub.bustype) == SI_BUS) && (sii->coresba[next] == sba)) {
+		if ((BUSTYPE(sii->pub.bustype) == SI_BUS) && (cores_info->coresba[next] == sba)) {
 			SI_VMSG(("_sb_scan: reuse mapped regs %p for core %u\n", regs, next));
-			sii->regs[next] = regs;
+			cores_info->regs[next] = regs;
 		}
 
 		/* change core to 'next' and read its coreid */
 		sii->curmap = _sb_setcoreidx(sii, next);
 		sii->curidx = next;
 
-		sii->coreid[next] = sb_coreid(&sii->pub);
+		cores_info->coreid[next] = sb_coreid(&sii->pub);
 
 		/* core specific processing... */
 		/* chipc provides # cores */
-		if (sii->coreid[next] == CC_CORE_ID) {
+		if (cores_info->coreid[next] == CC_CORE_ID) {
 			chipcregs_t *cc = (chipcregs_t *)sii->curmap;
 			uint32 ccrev = sb_corerev(&sii->pub);
 
@@ -606,7 +604,7 @@ BCMATTACHFN(_sb_scan)(si_info_t *sii, uint32 sba, void *regs, uint bus, uint32 s
 				sii->pub.issim ? "QT" : ""));
 		}
 		/* scan bridged SB(s) and add results to the end of the list */
-		else if (sii->coreid[next] == OCP_CORE_ID) {
+		else if (cores_info->coreid[next] == OCP_CORE_ID) {
 			sbconfig_t *sb = REGS2SB(sii->curmap);
 			uint32 nsbba = R_SBREG(sii, &sb->sbadmatch1);
 			uint nsbcc;
@@ -637,11 +635,10 @@ BCMATTACHFN(_sb_scan)(si_info_t *sii, uint32 sba, void *regs, uint bus, uint32 s
 void
 BCMATTACHFN(sb_scan)(si_t *sih, void *regs, uint devid)
 {
-	si_info_t *sii;
 	uint32 origsba;
 	sbconfig_t *sb;
+	si_info_t *sii = SI_INFO(sih);
 
-	sii = SI_INFO(sih);
 	sb = REGS2SB(sii->curmap);
 
 	sii->pub.socirev = (R_SBREG(sii, &sb->sbidlow) & SBIDL_RV_MASK) >> SBIDL_RV_SHIFT;
@@ -663,9 +660,7 @@ BCMATTACHFN(sb_scan)(si_t *sih, void *regs, uint devid)
 void *
 sb_setcoreidx(si_t *sih, uint coreidx)
 {
-	si_info_t *sii;
-
-	sii = SI_INFO(sih);
+	si_info_t *sii = SI_INFO(sih);
 
 	if (coreidx >= sii->numcores)
 		return (NULL);
@@ -688,17 +683,18 @@ sb_setcoreidx(si_t *sih, uint coreidx)
 static void *
 _sb_setcoreidx(si_info_t *sii, uint coreidx)
 {
-	uint32 sbaddr = sii->coresba[coreidx];
+	si_cores_info_t *cores_info = (si_cores_info_t *)sii->cores_info;
+	uint32 sbaddr = cores_info->coresba[coreidx];
 	void *regs;
 
 	switch (BUSTYPE(sii->pub.bustype)) {
 	case SI_BUS:
 		/* map new one */
-		if (!sii->regs[coreidx]) {
-			sii->regs[coreidx] = REG_MAP(sbaddr, SI_CORE_SIZE);
-			ASSERT(GOODREGS(sii->regs[coreidx]));
+		if (!cores_info->regs[coreidx]) {
+			cores_info->regs[coreidx] = REG_MAP(sbaddr, SI_CORE_SIZE);
+			ASSERT(GOODREGS(cores_info->regs[coreidx]));
 		}
-		regs = sii->regs[coreidx];
+		regs = cores_info->regs[coreidx];
 		break;
 
 	case PCI_BUS:
@@ -721,11 +717,11 @@ _sb_setcoreidx(si_info_t *sii, uint coreidx)
 #ifdef BCMJTAG
 	case JTAG_BUS:
 		/* map new one */
-		if (!sii->regs[coreidx]) {
-			sii->regs[coreidx] = (void *)(uintptr)sbaddr;
-			ASSERT(GOODREGS(sii->regs[coreidx]));
+		if (!cores_info->regs[coreidx]) {
+			cores_info->regs[coreidx] = (void *)(uintptr)sbaddr;
+			ASSERT(GOODREGS(cores_info->regs[coreidx]));
 		}
-		regs = sii->regs[coreidx];
+		regs = cores_info->regs[coreidx];
 		break;
 #endif	/* BCMJTAG */
 
@@ -817,6 +813,7 @@ sb_serr_clear(si_info_t *sii)
 	uint origidx;
 	uint i, intr_val = 0;
 	void *corereg = NULL;
+	si_cores_info_t *cores_info = (si_cores_info_t *)sii->cores_info;
 
 	INTR_OFF(sii, intr_val);
 	origidx = si_coreidx(&sii->pub);
@@ -844,7 +841,8 @@ sb_serr_clear(si_info_t *sii)
 bool
 sb_taclear(si_t *sih, bool details)
 {
-	si_info_t *sii;
+	si_info_t *sii = SI_INFO(sih);
+	si_cores_info_t *cores_info = (si_cores_info_t *)sii->cores_info;
 	sbconfig_t *sb;
 	uint origidx;
 	uint intr_val = 0;
@@ -856,7 +854,6 @@ sb_taclear(si_t *sih, bool details)
 	bool printed = FALSE;
 #endif
 
-	sii = SI_INFO(sih);
 
 	if (BUSTYPE(sii->pub.bustype) == PCI_BUS) {
 		volatile uint32 stcmd;
@@ -978,11 +975,10 @@ sb_taclear(si_t *sih, bool details)
 void
 sb_commit(si_t *sih)
 {
-	si_info_t *sii;
+	si_info_t *sii = SI_INFO(sih);
+	si_cores_info_t *cores_info = (si_cores_info_t *)sii->cores_info;
 	uint origidx;
 	uint intr_val = 0;
-
-	sii = SI_INFO(sih);
 
 	origidx = sii->curidx;
 	ASSERT(GOODIDX(origidx));
@@ -997,14 +993,12 @@ sb_commit(si_t *sih)
 		/* do the buffer registers update */
 		W_REG(sii->osh, &ccregs->broadcastaddress, SB_COMMIT);
 		W_REG(sii->osh, &ccregs->broadcastdata, 0x0);
-#if !defined(BCMDONGLEHOST)
 	} else if (PCI(sii)) {
 		sbpciregs_t *pciregs = (sbpciregs_t *)si_setcore(sih, PCI_CORE_ID, 0);
 
 		/* do the buffer registers update */
 		W_REG(sii->osh, &pciregs->bcastaddr, SB_COMMIT);
 		W_REG(sii->osh, &pciregs->bcastdata, 0x0);
-#endif /* !defined(BCMDONGLEHOST) */
 	} else
 		ASSERT(0);
 
@@ -1149,13 +1143,13 @@ sb_core_reset(si_t *sih, uint32 bits, uint32 resetbits)
 uint32
 sb_set_initiator_to(si_t *sih, uint32 to, uint idx)
 {
-	si_info_t *sii;
+	si_info_t *sii = SI_INFO(sih);
+	si_cores_info_t *cores_info = (si_cores_info_t *)sii->cores_info;
 	uint origidx;
 	uint intr_val = 0;
 	uint32 tmp, ret = 0xffffffff;
 	sbconfig_t *sb;
 
-	sii = SI_INFO(sih);
 
 	if ((to & ~TO_MASK) != 0)
 		return ret;
@@ -1245,16 +1239,16 @@ sb_size(uint32 admatch)
 	return (size);
 }
 
-#if defined(BCMDBG)
+#if defined(BCMDBG) || defined(BCMDBG_PHYDUMP)
 /* print interesting sbconfig registers */
 void
 sb_dumpregs(si_t *sih, struct bcmstrbuf *b)
 {
-	si_info_t *sii;
 	sbconfig_t *sb;
 	uint origidx, i, intr_val = 0;
+	si_info_t *sii = SI_INFO(sih);
+	si_cores_info_t *cores_info = (si_cores_info_t *)sii->cores_info;
 
-	sii = SI_INFO(sih);
 	origidx = sii->curidx;
 
 	INTR_OFF(sii, intr_val);
@@ -1262,7 +1256,7 @@ sb_dumpregs(si_t *sih, struct bcmstrbuf *b)
 	for (i = 0; i < sii->numcores; i++) {
 		sb = REGS2SB(sb_setcoreidx(sih, i));
 
-		bcm_bprintf(b, "core 0x%x: \n", sii->coreid[i]);
+		bcm_bprintf(b, "core 0x%x: \n", cores_info->coreid[i]);
 
 		if (sii->pub.socirev > SONICS_2_2)
 			bcm_bprintf(b, "sbimerrlog 0x%x sbimerrloga 0x%x\n",
