@@ -736,13 +736,13 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		fclose(fp);
 		sprintf(psk, "-i%s", prefix);
 #ifdef HAVE_RELAYD
-		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh"))
+		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh")|| nvram_match(wmode, "wdssta_mtik"))
 		    && nvram_matchi(bridged, 1))
 			eval("wpa_supplicant", "-P", pid, "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
 		else
 			eval("wpa_supplicant", "-P", pid, background, driver, psk, "-c", fstr);
 #else
-		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "wet") || nvram_match(wmode, "mesh"))
+		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "wet") || nvram_match(wmode, "mesh")|| nvram_match(wmode, "wdssta_mtik"))
 		    && nvram_matchi(bridged, 1))
 			eval("wpa_supplicant", "-P", pid, "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
 		else
@@ -773,13 +773,13 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		eval("iwpriv", prefix, "hostroaming", "2");
 #ifdef HAVE_RELAYD
 		if (nvram_matchi(bridged, 1)
-		    && (nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh")))
+		    && (nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh")|| nvram_match(wmode, "wdssta_mtik")))
 			eval("wpa_supplicant", "-P", pid, "-b", nvram_safe_get("lan_ifname"), background, driver, psk, "-c", fstr);
 		else
 			eval("wpa_supplicant", "-P", pid, background, driver, psk, "-c", fstr);
 #else
 		if (nvram_matchi(bridged, 1)
-		    && (nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh")
+		    && (nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh")|| nvram_match(wmode, "wdssta_mtik")
 			|| nvram_match(wmode, "wet")))
 			eval("wpa_supplicant", "-P", pid, "-b", nvram_safe_get("lan_ifname"), background, driver, psk, "-c", fstr);
 		else
@@ -837,13 +837,13 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		fclose(fp);
 		sprintf(psk, "-i%s", prefix);
 #ifdef HAVE_RELAYD
-		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh"))
+		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "mesh") || nvram_match(wmode, "wdssta_mtik"))
 		    && nvram_matchi(bridged, 1))
 			eval("wpa_supplicant", "-P", pid, "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
 		else
 			eval("wpa_supplicant", "-P", pid, background, driver, psk, "-c", fstr);
 #else
-		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "wet") || nvram_match(wmode, "mesh"))
+		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "wet") || nvram_match(wmode, "mesh") || nvram_match(wmode, "wdssta_mtik"))
 		    && nvram_matchi(bridged, 1))
 			eval("wpa_supplicant", "-P", pid, "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
 		else
@@ -911,7 +911,7 @@ static void checkhostapd(char *ifname, int force)
 		if (fp)
 			sup = 1;
 	}
-	if (nvram_nmatch("mesh", "%s_mode", ifname) || nvram_nmatch("sta", "%s_mode", ifname) || nvram_nmatch("wdssta", "%s_mode", ifname) || nvram_nmatch("infra", "%s_mode", ifname))
+	if (nvram_nmatch("mesh", "%s_mode", ifname) || nvram_nmatch("sta", "%s_mode", ifname) || nvram_nmatch("wdssta", "%s_mode", ifname) || nvram_nmatch("wdssta_mtik", "%s_mode", ifname) || nvram_nmatch("infra", "%s_mode", ifname))
 		sup = 1;
 	if (fp || force) {
 		if (fp) {
@@ -2012,7 +2012,7 @@ static void configure_single(int count)
 		// create device
 		if (*mode) {
 			if (!strcmp(vapm, "wet") || !strcmp(vapm, "sta")
-			    || !strcmp(vapm, "wdssta"))
+			    || !strcmp(vapm, "wdssta") || !strcmp(vapm, "wdssta_mtik"))
 				eval("wlanconfig", var, "create", "wlandev", wif, "wlanmode", "sta", "nosbeacon");
 			else if (!strcmp(vapm, "ap")
 				 || !strcmp(vapm, "wdsap"))
@@ -2034,7 +2034,7 @@ static void configure_single(int count)
 		}
 
 	if (strcmp(apm, "ap") && strcmp(apm, "wdsap")) {
-		if (!strcmp(apm, "wet") || !strcmp(apm, "wdssta")
+		if (!strcmp(apm, "wet")|| !strcmp(apm, "wdssta")  || !strcmp(apm, "wdssta_mtik")
 		    || !strcmp(apm, "sta")) {
 			if (vif)
 				eval("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "sta", "nosbeacon");
@@ -2263,7 +2263,7 @@ static void configure_single(int count)
 		eval("iwpriv", dev, "channelshift", "0");
 		break;
 	}
-	if (!strcmp(apm, "wdssta") || !strcmp(apm, "wdsap"))
+	if (!strcmp(apm, "wdssta") || !strcmp(apm, "wdsap") || !strcmp(apm, "wdssta_mtik"))
 		eval("iwpriv", dev, "wds", "1");
 
 	if (!strcmp(apm, "wdsap"))
@@ -2311,7 +2311,7 @@ static void configure_single(int count)
 		set_scanlist(dev, wif);
 		setRTS(var);
 		eval("iwpriv", var, "bgscan", "0");
-		if (strcmp(mvap, "sta") && strcmp(mvap, "wdssta")
+		if (strcmp(mvap, "sta") && strcmp(mvap, "wdssta")&& strcmp(mvap, "wdssta_mtik")
 		    && strcmp(mvap, "wet")) {
 			cprintf("set channel\n");
 			char *ch = nvram_default_get(channel, "0");
@@ -2377,7 +2377,7 @@ static void configure_single(int count)
 		sprintf(isolate, "%s_ap_isolate", var);
 		if (nvram_default_matchi(isolate, 1, 0))
 			eval("iwpriv", var, "ap_bridge", "0");
-		if (!strcmp(mvap, "wdssta") || !strcmp(mvap, "wdsap"))
+		if (!strcmp(mvap, "wdssta") || !strcmp(mvap, "wdsap") || !strcmp(mvap, "wdssta_mtik"))
 			eval("iwpriv", var, "wds", "1");
 		eval("iwpriv", var, "addmtikie", "1");
 
@@ -2473,7 +2473,7 @@ static void configure_single(int count)
 	} else
 		eval("iwpriv", dev, "shpreamble", "0");
 
-	if (strcmp(apm, "sta") == 0 || strcmp(apm, "infra") == 0 || strcmp(apm, "wet") == 0 || strcmp(apm, "wdssta") == 0) {
+	if (strcmp(apm, "sta") == 0 || strcmp(apm, "infra") == 0 || strcmp(apm, "wet") == 0 || strcmp(apm, "wdssta") == 0 || strcmp(apm, "wdssta_mtik") == 0) {
 		cprintf("set ssid\n");
 #ifdef HAVE_MAKSAT
 #ifdef HAVE_MAKSAT_BLANK
@@ -2536,7 +2536,7 @@ static void configure_single(int count)
 	}
 
 	apm = nvram_default_get(wl, "ap");
-	if (strcmp(apm, "sta") && strcmp(apm, "wdssta")
+	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wdssta_mtik")
 	    && strcmp(apm, "wet")) {
 		cprintf("set channel\n");
 		char *ch = nvram_default_get(channel, "0");
@@ -2634,7 +2634,7 @@ static void configure_single(int count)
 		}
 	}
 	// setup encryption
-	if (strcmp(apm, "sta") && strcmp(apm, "wdssta")
+	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wdssta_mtik")
 	    && strcmp(apm, "wet"))
 		setupHostAP(dev, "madwifi", 0);
 	else
@@ -2645,7 +2645,7 @@ static void configure_single(int count)
 		foreach(var, vifs, next) {
 		sprintf(mode, "%s_mode", var);
 		char *vapm = nvram_default_get(mode, "ap");
-		if (strcmp(vapm, "sta") && strcmp(vapm, "wdssta")
+		if (strcmp(vapm, "sta") && strcmp(vapm, "wdssta") && strcmp(vapm, "wdssta_mtik")
 		    && strcmp(vapm, "wet"))
 			setupHostAP(var, "madwifi", 0);
 		else

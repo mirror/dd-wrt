@@ -2438,6 +2438,7 @@ void start_lan(void)
 	if (getRouterBrand() != ROUTER_BOARD_FONERA2200 && getRouterBrand() != ROUTER_BOARD_CA8PRO && getRouterBrand() != ROUTER_BOARD_RCAA01)
 		if (nvram_match("ath0_mode", "sta")
 		    || nvram_match("ath0_mode", "wdssta")
+		    || nvram_match("ath0_mode", "wdssta_mtik")
 		    || nvram_match("ath0_mode", "wet")
 		    || CANBRIDGE())
 #endif
