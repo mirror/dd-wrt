@@ -313,7 +313,7 @@ addEvent(window, "unload", function() {
                                 <legend><% tran("qos.legend7"); %></legend>
                                 <table class="table" summary="packet-type priority table">
                                     <tr>
-                                        <td colspan="4"><% tran("qos.pktdesc"); %></td>
+                                        <td colspan="5"><% tran("qos.pktdesc"); %></td>
                                     </tr>
                                     <% get_qospkts(); %>
                                 </table>
