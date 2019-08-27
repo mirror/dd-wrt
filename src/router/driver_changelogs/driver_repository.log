@@ -1,4 +1,16 @@
 ------------------------------------------------------------------------
+r4682 | brainslayer | 2019-08-27 14:27:17 +0400 (Tue, 27 Aug 2019) | 1 line
+
+delete orphan files: remove old files
+------------------------------------------------------------------------
+r4681 | brainslayer | 2019-08-27 14:25:38 +0400 (Tue, 27 Aug 2019) | 1 line
+
+rollback to last known working version: remove old files
+------------------------------------------------------------------------
+r4680 | brainslayer | 2019-08-27 14:25:32 +0400 (Tue, 27 Aug 2019) | 1 line
+
+rollback to last known working version: add new files
+------------------------------------------------------------------------
 r4679 | brainslayer | 2019-08-27 12:20:18 +0400 (Tue, 27 Aug 2019) | 1 line
 
 use some older osl code
