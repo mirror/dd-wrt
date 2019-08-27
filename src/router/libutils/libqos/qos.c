@@ -610,10 +610,10 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 		}
 		int i;
 		for (i = 0; i < 5; i++) {
-			add_htb_class(wan_dev, base, base + 1 + i, uprates[i], uplimit, mtu, prios[i]);
-			add_htb_class("imq0", base, base + 1 + i, downrates[i], downlimit, mtu, prios[i]);
+			add_htb_class(wan_dev, base, base + 1 + i, uprates[i], uplimit, mtu, prios[i] + 1);
+			add_htb_class("imq0", base, base + 1 + i, downrates[i], downlimit, mtu, prios[i] + 1);
 			if (nvram_match("wshaper_dev", "LAN")) {
-				add_htb_class("imq1", base, base + 1 + i, lanrates[i], lanlimit, mtu, prios[i]);
+				add_htb_class("imq1", base, base + 1 + i, lanrates[i], lanlimit, mtu, prios[i] + 1);
 			}
 		}
 
@@ -637,21 +637,21 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 	int i;
 	char priorities[5] = { 1, 3, 5, 8, 9 };
 	for (i = 0; i < 5; i++) {
-		add_tc_class(wan_dev, priorities[i] + 10, base + i, base + 1 + i);
-		add_tc_class("imq0", priorities[i] + 10, base + i, base + 1 + i);
+		add_tc_class(wan_dev, priorities[i] + 1, base + i, base + 1 + i);
+		add_tc_class("imq0", priorities[i] + 1, base + i, base + 1 + i);
 
 		if (nvram_match("wshaper_dev", "LAN")) {
-			add_tc_class("imq1", priorities[i] + 10, base + i, base + 1 + i);
+			add_tc_class("imq1", priorities[i] + 1, base + i, base + 1 + i);
 		}
 	}
 #else
 	int i;
 	char priorities[5] = { 1, 3, 5, 8, 9 };
 	for (i = 0; i < 5; i++) {
-		add_tc_mark(wan_dev, priorities[i], get_tcfmark(base + i), base + 1 + i);
-		add_tc_mark("imq0", priorities[i], get_tcfmark(base + i), base + 1 + i);
+		add_tc_mark(wan_dev, priorities[i] + 1, get_tcfmark(base + i), base + 1 + i);
+		add_tc_mark("imq0", priorities[i] + 1, get_tcfmark(base + i), base + 1 + i);
 		if (nvram_match("wshaper_dev", "LAN")) {
-			add_tc_mark("imq1", priorities[i] + 10, get_tcfmark(base + i), base + 1 + i);
+			add_tc_mark("imq1", priorities[i] + 1, get_tcfmark(base + i), base + 1 + i);
 		}
 	}
 #endif
@@ -967,11 +967,11 @@ static void add_filter(const char *dev, int pref, int handle, int classid)
 static void init_filter(const char *dev)
 {
 
-	add_filter(dev, 1, 0x64, 100);
-	add_filter(dev, 3, 0x0A, 10);
-	add_filter(dev, 5, 0x14, 20);
-	add_filter(dev, 8, 0x1E, 30);
-	add_filter(dev, 9, 0x28, 40);
+	add_filter(dev, 1 + 1, 0x64, 100);
+	add_filter(dev, 3 + 1, 0x0A, 10);
+	add_filter(dev, 5 + 1, 0x14, 20);
+	add_filter(dev, 8 + 1, 0x1E, 30);
+	add_filter(dev, 9 + 1, 0x28, 40);
 }
 #else
 static inline void init_filter(const char *dev)
