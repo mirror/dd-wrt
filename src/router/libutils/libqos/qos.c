@@ -814,11 +814,11 @@ static void init_htb_class(const char *dev, int rate, int mtu)
 	add_htb_class(dev, 1, 4, 25 * rate / 100, rate, mtu, -1);
 	add_htb_class(dev, 1, 5, 15 * rate / 100, rate, mtu, -1);
 	add_htb_class(dev, 1, 6, 5 * rate / 100, rate, mtu, -1);
-	add_htb_class(dev, 2, 100, 75 * rate / 100, rate, mtu, 0);
-	add_htb_class(dev, 3, 10, 50 * rate / 100, rate, mtu, 1);
-	add_htb_class(dev, 4, 20, 25 * rate / 100, rate, mtu, 2);
-	add_htb_class(dev, 5, 30, 15 * rate / 100, rate, mtu, 5);
-	add_htb_class(dev, 6, 40, 5 * rate / 100, rate, mtu, 7);
+	add_htb_class(dev, 2, 100, 75 * rate / 100, rate, mtu, 0 + 1);
+	add_htb_class(dev, 3, 10, 50 * rate / 100, rate, mtu, 1 + 1);
+	add_htb_class(dev, 4, 20, 25 * rate / 100, rate, mtu, 2 + 1);
+	add_htb_class(dev, 5, 30, 15 * rate / 100, rate, mtu, 5 + 1);
+	add_htb_class(dev, 6, 40, 5 * rate / 100, rate, mtu, 7 + 1);
 }
 
 static void init_hfsc_class(const char *dev, int rate)
