@@ -1092,7 +1092,7 @@ extern char *get_NFServiceMark(char *service, uint32 mark);
 char *qos_nfmark(uint32 x);
 
 #if !defined(ARCH_broadcom) || defined(HAVE_BCMMODERN)
-extern char *get_tcfmark(uint32 mark);
+extern char *get_tcfmark(uint32 mark, int seg);
 #endif
 
 extern int get_mtu_val(void);
