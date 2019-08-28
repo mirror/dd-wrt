@@ -554,7 +554,7 @@ static int svqos_iptables(void)
 {
 	char *qos_pkts = nvram_safe_get("svqos_pkts");
 	char *qos_svcs = nvram_safe_get("svqos_svcs");
-	char name[32], type[32], data[32], pkt_filter[4];
+	char name[32], type[32], data[32], pkt_filter[5];
 	int level;
 	char *wshaper_dev = nvram_safe_get("wshaper_dev");
 	char *wan_dev = get_wanface();
@@ -885,8 +885,7 @@ static int svqos_iptables(void)
 			if (!strcmp(pkt_filter, "ICMP"))
 				eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-p", "icmp", "-j", "CLASSIFY", "--set-class", "1:100");
 			else
-				eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-p", "tcp", "-m", "tcp", "--tcp-flags", pkt_filter, pkt_filter, "-m", "length", "--length", "0:64", "-j", "CLASSIFY", "--set-class",
-				     "1:100");
+				eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-p", "tcp", "-m", "tcp", "--tcp-flags", pkt_filter, pkt_filter, "-m", "length", "--length", "0:64", "-j", "CLASSIFY", "--set-class","1:100");
 		} while ((qos_pkts = strpbrk(++qos_pkts, "|")) && qos_pkts++);
 	}
 #endif
