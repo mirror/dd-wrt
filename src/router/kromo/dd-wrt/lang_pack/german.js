@@ -1277,6 +1277,7 @@ qos.aqd_fqcodel="FQ_CODEL";
 qos.uplink="Uplink (kbps)";
 qos.dnlink="Downlink (kbps)";
 qos.legend2="Dienst-Priorit&auml;t";
+qos.prio_exempt="&Uuml;bervorteilt";
 qos.prio_m="Manuell";
 qos.prio_x="Maximal";
 qos.prio_p="Premium";
