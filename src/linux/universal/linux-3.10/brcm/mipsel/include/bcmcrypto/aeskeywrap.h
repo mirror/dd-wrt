@@ -16,7 +16,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: aeskeywrap.h 451682 2014-01-27 20:30:17Z $
+ * $Id: aeskeywrap.h 241182 2011-02-17 21:50:03Z $
  */
 
 #ifndef _AESWRAP_H_
@@ -46,13 +46,13 @@
  *	input is il bytes
  *	output is (il+8) bytes
  */
-int aes_wrap(size_t kl, uint8 *key, size_t il, uint8 *input, uint8 *output);
+int BCMROMFN(aes_wrap)(size_t kl, uint8 *key, size_t il, uint8 *input, uint8 *output);
 
 /* aes_unwrap: perform AES-based key unwrap function defined in RFC3394,
  *	return 0 on success, 1 on error
  *	input is il bytes
  *	output is (il-8) bytes
  */
-int aes_unwrap(size_t kl, uint8 *key, size_t il, uint8 *input, uint8 *output);
+int BCMROMFN(aes_unwrap)(size_t kl, uint8 *key, size_t il, uint8 *input, uint8 *output);
 
 #endif /* _AESWRAP_H_ */
