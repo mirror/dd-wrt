@@ -823,7 +823,7 @@ static void init_htb_class(const char *dev, int rate, int mtu)
 	add_htb_class(dev, 1, 4, 25 * rate / 100, rate, mtu, -1);
 	add_htb_class(dev, 1, 5, 15 * rate / 100, rate, mtu, -1);
 	add_htb_class(dev, 1, 6, 5 * rate / 100, rate, mtu, -1);
-	add_htb_class(dev, 2, 1000, 100 * rate / 100, rate, mtu, 0 + 1); // special class which allows to steal all traffic from other classes
+//	add_htb_class(dev, 2, 1000, 100 * rate / 100, rate, mtu, 0 + 1); // special class which allows to steal all traffic from other classes
 	add_htb_class(dev, 3, 100, 75 * rate / 100, rate, mtu, 0 + 1);
 	add_htb_class(dev, 4, 10, 50 * rate / 100, rate, mtu, 1 + 1);
 	add_htb_class(dev, 5, 20, 25 * rate / 100, rate, mtu, 2 + 1);
@@ -839,7 +839,7 @@ static void init_hfsc_class(const char *dev, int rate)
 	add_hfsc_class(dev, 1, 4, 25 * rate / 100, rate);
 	add_hfsc_class(dev, 1, 5, 15 * rate / 100, rate);
 	add_hfsc_class(dev, 1, 6, 5 * rate / 100, rate);
-	add_hfsc_class(dev, 2, 1000, 100 * rate / 100, rate); // special class which allows to steal all traffic from other classes
+//	add_hfsc_class(dev, 2, 1000, 100 * rate / 100, rate); // special class which allows to steal all traffic from other classes
 	add_hfsc_class(dev, 3, 100, 75 * rate / 100, rate);
 	add_hfsc_class(dev, 4, 10, 50 * rate / 100, rate);
 	add_hfsc_class(dev, 5, 20, 25 * rate / 100, rate);
@@ -977,7 +977,7 @@ static void add_filter(const char *dev, int pref, int handle, int classid)
 
 static void init_filter(const char *dev)
 {
-	add_filter(dev, 0 + 1, 1000, 1000);
+//	add_filter(dev, 0 + 1, 1000, 1000);
 	add_filter(dev, 1 + 1, 100, 100);
 	add_filter(dev, 3 + 1, 10, 10);
 	add_filter(dev, 5 + 1, 20, 20);
