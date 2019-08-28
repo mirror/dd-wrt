@@ -15,15 +15,11 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: bcmsrom.h 471127 2014-04-17 23:24:23Z $
+ * $Id: bcmsrom.h 375723 2012-12-20 00:18:39Z $
  */
 
 #ifndef	_bcmsrom_h_
 #define	_bcmsrom_h_
-
-#include <typedefs.h>
-#include <osl_decl.h>
-#include <siutils.h>
 
 #include <bcmsrom_fmt.h>
 
@@ -47,8 +43,8 @@ extern int srom_otp_write_region_crc(si_t *sih, uint nbytes, uint16* buf16, bool
 /* parse standard PCMCIA cis, normally used by SB/PCMCIA/SDIO/SPI/OTP
  *   and extract from it into name=value pairs
  */
-extern int srom_probe_boardtype(si_t *sih, uint8 *pcis[], uint ciscnt);
-extern int srom_parsecis(si_t *sih, osl_t *osh, uint8 **pcis, uint ciscnt,
+extern int srom_probe_boardtype(uint8 *pcis[], uint ciscnt);
+extern int srom_parsecis(osl_t *osh, uint8 **pcis, uint ciscnt,
                          char **vars, uint *count);
 
 #if defined(BCMUSBDEV)
