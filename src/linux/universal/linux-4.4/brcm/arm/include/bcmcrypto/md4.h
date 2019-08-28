@@ -13,7 +13,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: md4.h 451682 2014-01-27 20:30:17Z $
+ * $Id: md4.h 241182 2011-02-17 21:50:03Z $
  */
 
 #ifndef _MD4_H_
@@ -22,7 +22,7 @@
 /*
  * md4.h, copied from src/router/ppp/pppd to src/include/bcmcrypto for general use
  *
- * $Id: md4.h 451682 2014-01-27 20:30:17Z $
+ * $Id: md4.h 241182 2011-02-17 21:50:03Z $
  *
 ** ********************************************************************
 ** md4.h -- Header file for implementation of                        **
@@ -53,7 +53,7 @@ typedef struct {
 ** Initialize the MD4_CTX prepatory to doing a message digest
 ** computation.
 */
-extern void MD4Init __P((MD4_CTX *MD));
+extern void BCMROMFN(MD4Init) __P((MD4_CTX *MD));
 
 /* MD4Update(MD,X,count)
 ** Input: X -- a pointer to an array of unsigned characters.
@@ -67,7 +67,7 @@ extern void MD4Init __P((MD4_CTX *MD));
 ** every MD computation should end with one call to MD4Update with a
 ** count less than 512.  Zero is OK for a count.
 */
-extern void MD4Update __P((MD4_CTX *MD, unsigned char *X, unsigned int count));
+extern void BCMROMFN(MD4Update) __P((MD4_CTX *MD, unsigned char *X, unsigned int count));
 
 /* MD4Print(MD)
 ** Prints message digest buffer MD as 32 hexadecimal digits.
@@ -81,7 +81,7 @@ extern void MD4Print __P((MD4_CTX *));
 ** Returns message digest from MD and terminates the message
 ** digest computation.
 */
-extern void MD4Final __P((unsigned char *, MD4_CTX *));
+extern void BCMROMFN(MD4Final) __P((unsigned char *, MD4_CTX *));
 
 /*
 ** End of md4.h
