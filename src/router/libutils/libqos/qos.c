@@ -551,6 +551,13 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 	char *aqd = nvram_safe_get("svqos_aqd");
 
 	switch (level) {
+	case 1000:
+		uprate = uplimit * 100 / 100;
+		downrate = downlimit * 100 / 100;
+		lanrate = lanlimit * 100 / 100;
+		prio = 1;
+		parent = 1;
+		break;
 	case 100:
 		uprate = uplimit * 75 / 100;
 		downrate = downlimit * 75 / 100;
@@ -816,11 +823,12 @@ static void init_htb_class(const char *dev, int rate, int mtu)
 	add_htb_class(dev, 1, 4, 25 * rate / 100, rate, mtu, -1);
 	add_htb_class(dev, 1, 5, 15 * rate / 100, rate, mtu, -1);
 	add_htb_class(dev, 1, 6, 5 * rate / 100, rate, mtu, -1);
-	add_htb_class(dev, 2, 100, 75 * rate / 100, rate, mtu, 0 + 1);
-	add_htb_class(dev, 3, 10, 50 * rate / 100, rate, mtu, 1 + 1);
-	add_htb_class(dev, 4, 20, 25 * rate / 100, rate, mtu, 2 + 1);
-	add_htb_class(dev, 5, 30, 15 * rate / 100, rate, mtu, 5 + 1);
-	add_htb_class(dev, 6, 40, 5 * rate / 100, rate, mtu, 7 + 1);
+	add_htb_class(dev, 2, 1000, 100 * rate / 100, rate, mtu, 0 + 1); // special class which allows to steal all traffic from other classes
+	add_htb_class(dev, 3, 100, 75 * rate / 100, rate, mtu, 0 + 1);
+	add_htb_class(dev, 4, 10, 50 * rate / 100, rate, mtu, 1 + 1);
+	add_htb_class(dev, 5, 20, 25 * rate / 100, rate, mtu, 2 + 1);
+	add_htb_class(dev, 6, 30, 15 * rate / 100, rate, mtu, 5 + 1);
+	add_htb_class(dev, 7, 40, 5 * rate / 100, rate, mtu, 7 + 1);
 }
 
 static void init_hfsc_class(const char *dev, int rate)
@@ -831,11 +839,12 @@ static void init_hfsc_class(const char *dev, int rate)
 	add_hfsc_class(dev, 1, 4, 25 * rate / 100, rate);
 	add_hfsc_class(dev, 1, 5, 15 * rate / 100, rate);
 	add_hfsc_class(dev, 1, 6, 5 * rate / 100, rate);
-	add_hfsc_class(dev, 2, 100, 75 * rate / 100, rate);
-	add_hfsc_class(dev, 3, 10, 50 * rate / 100, rate);
-	add_hfsc_class(dev, 4, 20, 25 * rate / 100, rate);
-	add_hfsc_class(dev, 5, 30, 15 * rate / 100, rate);
-	add_hfsc_class(dev, 6, 40, 5 * rate / 100, rate);
+	add_hfsc_class(dev, 2, 1000, 100 * rate / 100, rate); // special class which allows to steal all traffic from other classes
+	add_hfsc_class(dev, 3, 100, 75 * rate / 100, rate);
+	add_hfsc_class(dev, 4, 10, 50 * rate / 100, rate);
+	add_hfsc_class(dev, 5, 20, 25 * rate / 100, rate);
+	add_hfsc_class(dev, 6, 30, 15 * rate / 100, rate);
+	add_hfsc_class(dev, 7, 40, 5 * rate / 100, rate);
 
 }
 
@@ -968,12 +977,12 @@ static void add_filter(const char *dev, int pref, int handle, int classid)
 
 static void init_filter(const char *dev)
 {
-
-	add_filter(dev, 1 + 1, 0x64, 100);
-	add_filter(dev, 3 + 1, 0x0A, 10);
-	add_filter(dev, 5 + 1, 0x14, 20);
-	add_filter(dev, 8 + 1, 0x1E, 30);
-	add_filter(dev, 9 + 1, 0x28, 40);
+	add_filter(dev, 0 + 1, 1000, 1000);
+	add_filter(dev, 1 + 1, 100, 100);
+	add_filter(dev, 3 + 1, 10, 10);
+	add_filter(dev, 5 + 1, 20, 20);
+	add_filter(dev, 8 + 1, 30, 30);
+	add_filter(dev, 9 + 1, 40, 40);
 }
 #else
 static inline void init_filter(const char *dev)
