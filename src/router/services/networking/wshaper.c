@@ -582,7 +582,6 @@ static int svqos_iptables(void)
 	sysprintf("tc filter del dev %s", "imq0");
 	sysprintf("tc filter del dev %s", "imq1");
 	if (nvram_match("wshaper_dev", "WAN") && wan_dev != NULL) {
-		init_ackprio(wan_dev);
 		char tcfmark[32] = { 0 };
 		char tcfmark2[32] = { 0 };
 		eval("tc", "filter", "add", "dev", wan_dev, "protocol", "ip", "parent", "1:", "prio", "12", "u32", "match", "mark", get_tcfmark(tcfmark, 100, 1), get_tcfmark(tcfmark2, 100, 2), "flowid", "1:100");
@@ -590,6 +589,7 @@ static int svqos_iptables(void)
 		eval("tc", "filter", "add", "dev", wan_dev, "protocol", "ip", "parent", "1:", "prio", "10", "u32", "match", "mark", get_tcfmark(tcfmark, 20, 1), get_tcfmark(tcfmark2, 20, 2), "flowid", "1:20");
 		eval("tc", "filter", "add", "dev", wan_dev, "protocol", "ip", "parent", "1:", "prio", "9", "u32", "match", "mark", get_tcfmark(tcfmark, 30, 1), get_tcfmark(tcfmark2, 30, 2), "flowid", "1:30");
 		eval("tc", "filter", "add", "dev", wan_dev, "protocol", "ip", "parent", "1:", "prio", "3", "u32", "match", "mark", get_tcfmark(tcfmark, 40, 1), get_tcfmark(tcfmark2, 40, 2), "flowid", "1:40");
+		init_ackprio(wan_dev);
 	}
 
 	{

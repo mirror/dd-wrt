@@ -342,10 +342,10 @@ void configure_single_ath9k(int count)
 
 		strcpy(primary, dev);
 	} else if (!strcmp(apm, "wdssta")) {
-		eval("iw", wif, "interface", "add", dev, "type", "managed", "4addr", "on", "mtik","off");
+		eval("iw", wif, "interface", "add", dev, "type", "managed", "4addr", "on", "mtikwds","off");
 		strcpy(primary, dev);
 	} else if (!strcmp(apm, "wdssta_mtik")) {
-		eval("iw", wif, "interface", "add", dev, "type", "managed", "4addr", "on", "mtik","on");
+		eval("iw", wif, "interface", "add", dev, "type", "managed", "4addr", "on", "mtikwds","on");
 		strcpy(primary, dev);
 	} else if (!strcmp(apm, "mesh")) {
 		char akm[16];
