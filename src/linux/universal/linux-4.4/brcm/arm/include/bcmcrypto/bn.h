@@ -18,7 +18,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: bn.h 241182 2011-02-17 21:50:03Z $
+ * $Id: bn.h 460158 2014-03-06 04:17:57Z $
  */
 /* Copyright (C) 1995-1997 Eric Young (eay@cryptsoft.com)
  * All rights reserved.
@@ -80,7 +80,12 @@
 #ifndef HEADER_BN_H
 #define HEADER_BN_H
 
+#ifdef BN64_BIT
+#define SIXTY_FOUR_BIT_LONG
+#else
 #define THIRTY_TWO_BIT
+#endif
+
 #define OPENSSL_NO_ASM
 
 #ifndef OPENSSL_NO_FP_API
@@ -122,6 +127,7 @@ extern "C" {
  * unsigned long long is only 64 bits :-(, don't define
  * BN_LLONG for the DEC Alpha
  */
+
 #ifdef SIXTY_FOUR_BIT_LONG
 #define BN_ULLONG	unsigned long long
 #define BN_ULONG	unsigned long
