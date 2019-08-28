@@ -1503,6 +1503,7 @@ qos.uplink="Uplink (kbps)";
 qos.dnlink="Downlink (kbps)";
 qos.legend2="Services Priority";
 qos.prio_m="Manual";
+qos.prio_exempt="Exempt";
 qos.prio_x="Maximum";
 qos.prio_p="Premium";
 qos.prio_e="Express";
