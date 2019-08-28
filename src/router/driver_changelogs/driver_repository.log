@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r4691 | brainslayer | 2019-08-28 22:31:40 +0400 (Wed, 28 Aug 2019) | 1 line
+
+update broadcom wl driver, works now: remove old files
+------------------------------------------------------------------------
+r4690 | brainslayer | 2019-08-28 22:31:40 +0400 (Wed, 28 Aug 2019) | 1 line
+
+update broadcom wl driver, works now: add new files
+------------------------------------------------------------------------
 r4689 | brainslayer | 2019-08-28 13:27:21 +0400 (Wed, 28 Aug 2019) | 1 line
 
 allow arguments after
