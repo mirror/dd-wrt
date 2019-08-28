@@ -584,7 +584,7 @@ static int svqos_iptables(void)
 	if (nvram_match("wshaper_dev", "WAN") && wan_dev != NULL) {
 		char tcfmark[32] = { 0 };
 		char tcfmark2[32] = { 0 };
-//		eval("tc", "filter", "add", "dev", wan_dev, "protocol", "ip", "parent", "1:", "prio", "13", "u32", "match", "mark", get_tcfmark(tcfmark, 1000, 1), get_tcfmark(tcfmark2, 1000, 2), "flowid", "1:1000");
+//              eval("tc", "filter", "add", "dev", wan_dev, "protocol", "ip", "parent", "1:", "prio", "13", "u32", "match", "mark", get_tcfmark(tcfmark, 1000, 1), get_tcfmark(tcfmark2, 1000, 2), "flowid", "1:1000");
 		eval("tc", "filter", "add", "dev", wan_dev, "protocol", "ip", "parent", "1:", "prio", "12", "u32", "match", "mark", get_tcfmark(tcfmark, 100, 1), get_tcfmark(tcfmark2, 100, 2), "flowid", "1:100");
 		eval("tc", "filter", "add", "dev", wan_dev, "protocol", "ip", "parent", "1:", "prio", "11", "u32", "match", "mark", get_tcfmark(tcfmark, 10, 1), get_tcfmark(tcfmark2, 10, 2), "flowid", "1:10");
 		eval("tc", "filter", "add", "dev", wan_dev, "protocol", "ip", "parent", "1:", "prio", "10", "u32", "match", "mark", get_tcfmark(tcfmark, 20, 1), get_tcfmark(tcfmark2, 20, 2), "flowid", "1:20");
@@ -596,7 +596,7 @@ static int svqos_iptables(void)
 	{
 		char tcfmark[32] = { 0 };
 		char tcfmark2[32] = { 0 };
-//		eval("tc", "filter", "add", "dev", "imq0", "protocol", "ip", "parent", "1:", "prio", "13", "u32", "match", "mark", get_tcfmark(tcfmark, 1000, 1), get_tcfmark(tcfmark2, 1000, 2), "flowid", "1:1000");
+//              eval("tc", "filter", "add", "dev", "imq0", "protocol", "ip", "parent", "1:", "prio", "13", "u32", "match", "mark", get_tcfmark(tcfmark, 1000, 1), get_tcfmark(tcfmark2, 1000, 2), "flowid", "1:1000");
 		eval("tc", "filter", "add", "dev", "imq0", "protocol", "ip", "parent", "1:", "prio", "12", "u32", "match", "mark", get_tcfmark(tcfmark, 100, 1), get_tcfmark(tcfmark2, 100, 2), "flowid", "1:100");
 		eval("tc", "filter", "add", "dev", "imq0", "protocol", "ip", "parent", "1:", "prio", "11", "u32", "match", "mark", get_tcfmark(tcfmark, 10, 1), get_tcfmark(tcfmark2, 10, 2), "flowid", "1:10");
 		eval("tc", "filter", "add", "dev", "imq0", "protocol", "ip", "parent", "1:", "prio", "10", "u32", "match", "mark", get_tcfmark(tcfmark, 20, 1), get_tcfmark(tcfmark2, 20, 2), "flowid", "1:20");
@@ -607,7 +607,7 @@ static int svqos_iptables(void)
 		char tcfmark[32] = { 0 };
 		char tcfmark2[32] = { 0 };
 
-//		eval("tc", "filter", "add", "dev", "imq1", "protocol", "ip", "parent", "1:", "prio", "13", "u32", "match", "mark", get_tcfmark(tcfmark, 1000, 1), get_tcfmark(tcfmark2, 1000, 2), "flowid", "1:1000");
+//              eval("tc", "filter", "add", "dev", "imq1", "protocol", "ip", "parent", "1:", "prio", "13", "u32", "match", "mark", get_tcfmark(tcfmark, 1000, 1), get_tcfmark(tcfmark2, 1000, 2), "flowid", "1:1000");
 		eval("tc", "filter", "add", "dev", "imq1", "protocol", "ip", "parent", "1:", "prio", "12", "u32", "match", "mark", get_tcfmark(tcfmark, 100, 1), get_tcfmark(tcfmark2, 100, 2), "flowid", "1:100");
 		eval("tc", "filter", "add", "dev", "imq1", "protocol", "ip", "parent", "1:", "prio", "11", "u32", "match", "mark", get_tcfmark(tcfmark, 10, 1), get_tcfmark(tcfmark2, 10, 2), "flowid", "1:10");
 		eval("tc", "filter", "add", "dev", "imq1", "protocol", "ip", "parent", "1:", "prio", "10", "u32", "match", "mark", get_tcfmark(tcfmark, 20, 1), get_tcfmark(tcfmark2, 20, 2), "flowid", "1:20");
@@ -871,7 +871,7 @@ static int svqos_iptables(void)
 //      if (nvram_invmatchi("openvpn_enable", 0) || nvram_invmatchi("openvpncl_enable", 0)) {
 //              eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "VPN_DSCP");
 //      }
-#if 0
+#if 1
 #ifdef HAVE_80211AC
 	if (nvram_match("bcmdebug", "1"))
 #endif
@@ -880,10 +880,13 @@ static int svqos_iptables(void)
 
 		// http://svn.dd-wrt.com:8000/ticket/2803 && http://svn.dd-wrt.com/ticket/2811   
 		do {
-			if (sscanf(qos_pkts, "%3s ", pkt_filter) < 1)
+			if (sscanf(qos_pkts, "%4s ", pkt_filter) < 1)
 				break;
-			eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-p", "tcp", "-m", "tcp", "--tcp-flags", pkt_filter, pkt_filter, "-m", "length", "--length", "0:63", "-j", "CLASSIFY", "--set-class", "1:100");
-
+			if (!strcmp(pkt_filter, "ICMP"))
+				eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-p", "icmp", "-j", "CLASSIFY", "--set-class", "1:100");
+			else
+				eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-p", "tcp", "-m", "tcp", "--tcp-flags", pkt_filter, pkt_filter, "-m", "length", "--length", "0:64", "-j", "CLASSIFY", "--set-class",
+				     "1:100");
 		} while ((qos_pkts = strpbrk(++qos_pkts, "|")) && qos_pkts++);
 	}
 #endif
