@@ -102,6 +102,7 @@ void ej_get_qossvcs(webs_t wp, int argc, char_t ** argv)
 			  "<input type=\"checkbox\" name=\"svqos_svcdel%d\" />\n"
 			  "<input type=\"hidden\" name=\"svqos_svcname%d\" value=\"%s\" />\n"
 			  "<input type=\"hidden\" name=\"svqos_svctype%d\" value=\"%s\" />\n" "</td>\n" "<td><em>%s</em></td>\n" "<td >\n", i, i, name, i, type, name);
+#if 0
 		websWrite(wp, "<select name=\"svqos_svcprio%d\"> \n"
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n"
 			  "document.write(\"<option value=\\\"1000\\\" %s >\" + qos.prio_exempt + \"</option>\");\n"
@@ -115,7 +116,20 @@ void ej_get_qossvcs(webs_t wp, int argc, char_t ** argv)
 			  "</tr>\n", i, strcmp(level, "1000") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "100") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "10") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level,
 																					  "20") ==
 			  0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "40") == 0 ? "selected=\\\"selected\\\"" : "");
-
+#else
+		websWrite(wp, "<select name=\"svqos_svcprio%d\"> \n"
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n"
+			  "document.write(\"<option value=\\\"100\\\" %s >\" + qos.prio_x + \"</option>\");\n"
+			  "document.write(\"<option value=\\\"10\\\" %s >\" + qos.prio_p + \"</option>\");\n"
+			  "document.write(\"<option value=\\\"20\\\" %s >\" + qos.prio_e + \"</option>\");\n"
+			  "document.write(\"<option value=\\\"30\\\" %s >\" + share.standard + \"</option>\");\n"
+			  "document.write(\"<option value=\\\"40\\\" %s >\" + qos.prio_b + \"</option>\");\n//]]>\n</script>\n"
+			  "</select>\n"
+			  "</td>\n"
+			  "</tr>\n", i, strcmp(level, "100") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "10") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level,
+																					  "20") ==
+			  0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "40") == 0 ? "selected=\\\"selected\\\"" : "");
+#endif
 		qos_svcs = strpbrk(++qos_svcs, "|");
 		qos_svcs++;
 
