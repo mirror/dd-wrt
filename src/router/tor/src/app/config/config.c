@@ -86,6 +86,8 @@
 #include "feature/client/entrynodes.h"
 #include "feature/client/transports.h"
 #include "feature/control/control.h"
+#include "feature/control/control_auth.h"
+#include "feature/control/control_events.h"
 #include "feature/dirauth/bwauth.h"
 #include "feature/dirauth/guardfraction.h"
 #include "feature/dircache/consdiffmgr.h"
@@ -154,6 +156,7 @@
 #include "lib/evloop/procmon.h"
 
 #include "feature/dirauth/dirvote.h"
+#include "feature/dirauth/dirauth_periodic.h"
 #include "feature/dirauth/recommend_pkg.h"
 #include "feature/dirauth/authmode.h"
 
@@ -594,6 +597,8 @@ static config_var_t option_vars_[] = {
   V(ReducedConnectionPadding,    BOOL,     "0"),
   V(ConnectionPadding,           AUTOBOOL, "auto"),
   V(RefuseUnknownExits,          AUTOBOOL, "auto"),
+  V(CircuitPadding,              BOOL,     "1"),
+  V(ReducedCircuitPadding,       BOOL,     "0"),
   V(RejectPlaintextPorts,        CSV,      ""),
   V(RelayBandwidthBurst,         MEMUNIT,  "0"),
   V(RelayBandwidthRate,          MEMUNIT,  "0"),
@@ -2382,7 +2387,8 @@ options_act(const or_options_t *old_options)
     if (!bool_eq(directory_fetches_dir_info_early(options),
                  directory_fetches_dir_info_early(old_options)) ||
         !bool_eq(directory_fetches_dir_info_later(options),
-                 directory_fetches_dir_info_later(old_options))) {
+                 directory_fetches_dir_info_later(old_options)) ||
+        !config_lines_eq(old_options->Bridges, options->Bridges)) {
       /* Make sure update_router_have_minimum_dir_info() gets called. */
       router_dir_info_changed();
       /* We might need to download a new consensus status later or sooner than
@@ -2444,6 +2450,7 @@ static const struct {
   { "--quiet",                TAKES_NO_ARGUMENT },
   { "--hush",                 TAKES_NO_ARGUMENT },
   { "--version",              TAKES_NO_ARGUMENT },
+  { "--list-modules",         TAKES_NO_ARGUMENT },
   { "--library-versions",     TAKES_NO_ARGUMENT },
   { "-h",                     TAKES_NO_ARGUMENT },
   { "--help",                 TAKES_NO_ARGUMENT },
@@ -2663,6 +2670,13 @@ list_deprecated_options(void)
   for (d = option_deprecation_notes_; d->name; ++d) {
     printf("%s\n", d->name);
   }
+}
+
+/** Print all compile-time modules and their enabled/disabled status. */
+static void
+list_enabled_modules(void)
+{
+  printf("%s: %s\n", "dirauth", have_module_dirauth() ? "yes" : "no");
 }
 
 /** Last value actually set by resolve_my_address. */
@@ -3537,7 +3551,7 @@ options_validate(or_options_t *old_options, or_options_t *options,
     tor_free(t);
     t = format_recommended_version_list(options->RecommendedServerVersions, 1);
     tor_free(t);
-#endif
+#endif /* defined(HAVE_MODULE_DIRAUTH) */
 
     if (options->UseEntryGuards) {
       log_info(LD_CONFIG, "Authoritative directory servers can't set "
@@ -3553,6 +3567,7 @@ options_validate(or_options_t *old_options, or_options_t *options,
           options->V3AuthoritativeDir))
       REJECT("AuthoritativeDir is set, but none of "
              "(Bridge/V3)AuthoritativeDir is set.");
+#ifdef HAVE_MODULE_DIRAUTH
     /* If we have a v3bandwidthsfile and it's broken, complain on startup */
     if (options->V3BandwidthsFile && !old_options) {
       dirserv_read_measured_bandwidths(options->V3BandwidthsFile, NULL, NULL,
@@ -3562,6 +3577,7 @@ options_validate(or_options_t *old_options, or_options_t *options,
     if (options->GuardfractionFile && !old_options) {
       dirserv_read_guardfraction_file(options->GuardfractionFile, NULL);
     }
+#endif /* defined(HAVE_MODULE_DIRAUTH) */
   }
 
   if (options->AuthoritativeDir && !options->DirPort_set)
@@ -3737,6 +3753,14 @@ options_validate(or_options_t *old_options, or_options_t *options,
 
   if (server_mode(options) && options->ReducedConnectionPadding != 0) {
     REJECT("Relays cannot set ReducedConnectionPadding. ");
+  }
+
+  if (server_mode(options) && options->CircuitPadding == 0) {
+    REJECT("Relays cannot set CircuitPadding to 0. ");
+  }
+
+  if (server_mode(options) && options->ReducedCircuitPadding == 1) {
+    REJECT("Relays cannot set ReducedCircuitPadding. ");
   }
 
   if (options->BridgeDistribution) {
@@ -4189,6 +4213,10 @@ options_validate(or_options_t *old_options, or_options_t *options,
              "You should also make sure you aren't listing this bridge's "
              "fingerprint in any other MyFamily.");
   }
+  if (options->MyFamily_lines && !options->ContactInfo) {
+    log_warn(LD_CONFIG, "MyFamily is set but ContactInfo is not configured. "
+             "ContactInfo should always be set when MyFamily option is too.");
+  }
   if (normalize_nickname_list(&options->MyFamily,
                               options->MyFamily_lines, "MyFamily", msg))
     return -1;
@@ -4577,7 +4605,7 @@ compute_real_max_mem_in_queues(const uint64_t val, int log_guess)
 #else
 /* On a 32-bit platform, we can't have 8GB of ram. */
 #define RAM_IS_VERY_LARGE(x) (0)
-#endif
+#endif /* SIZEOF_SIZE_T > 4 */
 
       if (RAM_IS_VERY_LARGE(ram)) {
         /* If we have 8 GB, or more, RAM available, we set the MaxMemInQueues
@@ -5176,6 +5204,11 @@ options_init_from_torrc(int argc, char **argv)
     return 1;
   }
 
+  if (config_line_find(cmdline_only_options, "--list-modules")) {
+    list_enabled_modules();
+    return 1;
+  }
+
   if (config_line_find(cmdline_only_options, "--library-versions")) {
     printf("Tor version %s. \n", get_version());
     printf("Library versions\tCompiled\t\tRuntime\n");
@@ -5744,7 +5777,7 @@ options_init_logs(const or_options_t *old_options, or_options_t *options,
 #else
         log_warn(LD_CONFIG, "Android logging is not supported"
                             " on this system. Sorry.");
-#endif // HAVE_ANDROID_LOG_H.
+#endif /* defined(HAVE_ANDROID_LOG_H) */
         goto cleanup;
       }
     }
@@ -7058,7 +7091,7 @@ parse_port_config(smartlist_t *out,
         if (!strcasecmpstart(elt, "SessionGroup=")) {
           int group = (int)tor_parse_long(elt+strlen("SessionGroup="),
                                           10, 0, INT_MAX, &ok, NULL);
-          if (!ok || !allow_no_stream_options) {
+          if (!ok || allow_no_stream_options) {
             log_warn(LD_CONFIG, "Invalid %sPort option '%s'",
                      portname, escaped(elt));
             goto err;
