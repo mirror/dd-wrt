@@ -1,4 +1,4 @@
-/* $Id: rijndael-alg-fst.h 241182 2011-02-17 21:50:03Z $ */
+/* $Id: rijndael-alg-fst.h 451682 2014-01-27 20:30:17Z $ */
 
 /**
  * rijndael-alg-fst.h
@@ -39,7 +39,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: rijndael-alg-fst.h 241182 2011-02-17 21:50:03Z $
+ * $Id: rijndael-alg-fst.h 451682 2014-01-27 20:30:17Z $
  */
 
 #ifndef __RIJNDAEL_ALG_FST_H
@@ -57,13 +57,13 @@
 #include <typedefs.h>
 
 
-int BCMROMFN(rijndaelKeySetupEnc)(uint32 rk[], const uint8 cipherKey[], int keyBits);
+int rijndaelKeySetupEnc(uint32 rk[], const uint8 cipherKey[], int keyBits);
 
-int BCMROMFN(rijndaelKeySetupDec)(uint32 rk[], const uint8 cipherKey[], int keyBits);
+int rijndaelKeySetupDec(uint32 rk[], const uint8 cipherKey[], int keyBits);
 
-void BCMROMFN(rijndaelEncrypt)(const uint32 rk[], int Nr, const uint8 pt[16], uint8 ct[16]);
+void rijndaelEncrypt(const uint32 rk[], int Nr, const uint8 pt[16], uint8 ct[16]);
 
-void BCMROMFN(rijndaelDecrypt)(const uint32 rk[], int Nr, const uint8 ct[16], uint8 pt[16]);
+void rijndaelDecrypt(const uint32 rk[], int Nr, const uint8 ct[16], uint8 pt[16]);
 
 
 #ifdef INTERMEDIATE_VALUE_KAT
