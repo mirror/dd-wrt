@@ -18,6 +18,9 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
+ *
+ * <<Broadcom-WL-IPTag/Open:>>
+ *
  * $Id: wlioctl_defs.h 403826 2013-05-22 16:40:55Z $
  */
 
@@ -66,6 +69,9 @@
 #define WL_RSPEC_BW_40MHZ       0x00020000
 #define WL_RSPEC_BW_80MHZ       0x00030000
 #define WL_RSPEC_BW_160MHZ      0x00040000
+#define WL_RSPEC_BW_10MHZ	0x00050000
+#define WL_RSPEC_BW_5MHZ	0x00060000
+#define WL_RSPEC_BW_2P5MHZ      0x00070000
 
 /* Legacy defines for the nrate iovar */
 #define OLD_NRATE_MCS_INUSE         0x00000080 /* MSC in use,indicates b0-6 holds an mcs */
@@ -83,6 +89,18 @@
 #define OLD_NRATE_STF_SDM	3		/* stf mode SDM */
 
 #define HIGHEST_SINGLE_STREAM_MCS	7 /* MCS values greater than this enable multiple streams */
+
+#define WLC_11N_N_PROP_MCS	6
+#define WLC_11N_FIRST_PROP_MCS	87
+#define WLC_11N_LAST_PROP_MCS	102
+
+#ifndef OEM_ANDROID
+/* given a proprietary MCS, get number of spatial streams */
+#define GET_PROPRIETARY_11N_MCS_NSS(mcs) (1 + ((mcs) - 85) / 8)
+
+#define GET_11N_MCS_NSS(mcs) ((mcs) < 32 ? (1 + ((mcs) / 8)) \
+				: ((mcs) == 32 ? 1 : GET_PROPRIETARY_11N_MCS_NSS(mcs)))
+#endif /* !OEM_ANDROID */
 
 #define MAX_CCA_CHANNELS 38	/* Max number of 20 Mhz wide channels */
 #ifdef DONGLEBUILD
@@ -137,6 +155,7 @@
 #define WL_STA_WPS		0x00200000	/* WPS state */
 #define WL_STA_DWDS_CAP		0x01000000	/* DWDS CAP */
 #define WL_STA_DWDS		0x02000000	/* DWDS active */
+
 #define WL_WDS_LINKUP		WL_STA_WDS_LINKUP	/* deprecated */
 
 /* STA HT cap fields */
@@ -182,17 +201,19 @@
 #define WLC_TXFILTER_OVERRIDE_DISABLED  0
 #define WLC_TXFILTER_OVERRIDE_ENABLED   1
 
-#define WL_IOCTL_ACTION_GET				0x0
-#define WL_IOCTL_ACTION_SET				0x1
+#define WL_IOCTL_ACTION_GET		0x0
+#define WL_IOCTL_ACTION_SET		0x1
 #define WL_IOCTL_ACTION_OVL_IDX_MASK	0x1e
-#define WL_IOCTL_ACTION_OVL_RSV			0x20
-#define WL_IOCTL_ACTION_OVL				0x40
-#define WL_IOCTL_ACTION_MASK			0x7e
-#define WL_IOCTL_ACTION_OVL_SHIFT		1
+#define WL_IOCTL_ACTION_OVL_RSV		0x20
+#define WL_IOCTL_ACTION_OVL		0x40
+#define WL_IOCTL_ACTION_MASK		0x7e
+#define WL_IOCTL_ACTION_OVL_SHIFT	1
 
-#define WL_BSSTYPE_INFRA 1
+/* For WLC_SET_INFRA ioctl & infra_configuration iovar SET/GET operations */
 #define WL_BSSTYPE_INDEP 0
-#define WL_BSSTYPE_ANY   2
+#define WL_BSSTYPE_INFRA 1
+#define WL_BSSTYPE_ANY   2	/* deprecated */
+#define WL_BSSTYPE_MESH  3
 
 /* Bitmask for scan_type */
 #define WL_SCANFLAGS_PASSIVE	0x01	/* force passive scan */
@@ -201,6 +222,13 @@
 #define WL_SCANFLAGS_OFFCHAN	0x08	/* allow scanning/reporting off-channel APs */
 #define WL_SCANFLAGS_HOTSPOT	0x10	/* automatic ANQP to hotspot APs */
 #define WL_SCANFLAGS_SWTCHAN	0x20	/* Force channel switch for differerent bandwidth */
+#define WL_SCANFLAGS_FORCE_PARALLEL 0x40 /* Force parallel scan even when actcb_fn_t is on.
+					  * by default parallel scan will be disabled if actcb_fn_t
+					  * is provided.
+					  */
+#define WL_SCANFLAGS_SISO	0x40	/* Use 1 RX chain for scanning */
+#define WL_SCANFLAGS_MIMO	0x80	/* Force MIMO scanning */
+
 
 /* wl_iscan_results status values */
 #define WL_SCAN_RESULTS_SUCCESS	0
@@ -304,16 +332,6 @@
 /* current gain setting is maintained */
 #define WL_ATTEN_PCL_OFF		2	/* turn off PCL. */
 
-#define	PLC_CMD_FAILOVER	1
-#define	PLC_CMD_MAC_COST	2
-#define	PLC_CMD_LINK_COST	3
-#define	PLC_CMD_NODE_LIST	4
-
-#define NODE_TYPE_UNKNOWN	0	/* Unknown link */
-#define NODE_TYPE_WIFI_ONLY	1	/* Pure Wireless STA node */
-#define NODE_TYPE_PLC_ONLY	2	/* Pure PLC only node */
-#define NODE_TYPE_WIFI_PLC	3	/* WiFi PLC capable node */
-
 /* defines used by poweridx iovar - it controls power in a-band */
 /* current gain setting is maintained */
 #define WL_PWRIDX_PCL_OFF	-2	/* turn off PCL.  */
@@ -412,6 +430,9 @@
 #define WSEC_ENABLED(wsec)	((wsec) & (WEP_ENABLED | TKIP_ENABLED | AES_ENABLED))
 #define WSEC_SES_OW_ENABLED(wsec)	((wsec) & SES_OW_ENABLED)
 
+/* Following macros are not used any more. Just kept here to
+ * avoid build issue in BISON/CARIBOU branch
+ */
 #define MFP_CAPABLE		0x0200
 #define MFP_REQUIRED	0x0400
 #define MFP_SHA256		0x0800 /* a special configuration for STA for WIFI test tool */
@@ -426,22 +447,28 @@
 #define WPA2_AUTH_PSK		0x0080	/* Pre-shared key */
 #define BRCM_AUTH_PSK           0x0100  /* BRCM specific PSK */
 #define BRCM_AUTH_DPT		0x0200	/* DPT PSK without group keys */
-#define WPA2_AUTH_MFP           0x1000  /* MFP (11w) in contrast to CCX */
-#define WPA2_AUTH_TPK		0x2000 	/* TDLS Peer Key */
-#define WPA2_AUTH_FT		0x4000 	/* Fast Transition. */
+#define WPA2_AUTH_1X_SHA256	0x1000  /* 1X with SHA256 key derivation */
+#define WPA2_AUTH_TPK		0x2000	/* TDLS Peer Key */
+#define WPA2_AUTH_FT		0x4000	/* Fast Transition. */
+#define WPA2_AUTH_PSK_SHA256	0x8000	/* PSK with SHA256 key derivation */
+/* WPA2_AUTH_SHA256 not used anymore. Just kept here to avoid build issue in DINGO */
+#define WPA2_AUTH_SHA256	0x8000
 #define WPA_AUTH_PFN_ANY	0xffffffff	/* for PFN, match only ssid */
 
 /* pmkid */
 #define	MAXPMKID		16
 
+/* SROM12 changes */
 #define	WLC_IOCTL_MAXLEN		8192	/* max length ioctl buffer required */
+
+
 #define	WLC_IOCTL_SMLEN			256	/* "small" length ioctl buffer required */
 #define WLC_IOCTL_MEDLEN		1536    /* "med" length ioctl buffer required */
 #ifdef WLC_HIGH_ONLY
 #define WLC_SAMPLECOLLECT_MAXLEN	1024	/* limit sample size for bmac  */
 #define WLC_SAMPLECOLLECT_MAXLEN_LCN40  1024
 #else
-#if defined(LCNCONF) || defined(LCN40CONF)
+#if defined(LCNCONF) || defined(LCN40CONF) || defined(LCN20CONF)
 #define WLC_SAMPLECOLLECT_MAXLEN	8192	/* Max Sample Collect buffer */
 #else
 #define WLC_SAMPLECOLLECT_MAXLEN	10240	/* Max Sample Collect buffer for two cores */
@@ -889,6 +916,7 @@
 #define	WLC_BAND_5G		1	/* 5 Ghz */
 #define	WLC_BAND_2G		2	/* 2.4 Ghz */
 #define	WLC_BAND_ALL		3	/* all bands */
+#define WLC_BAND_INVALID	-1	/* Invalid band */
 
 /* band range returned by band_range iovar */
 #define WL_CHAN_FREQ_RANGE_2G      0
@@ -906,10 +934,27 @@
 #define WL_CHAN_FREQ_RANGE_5G_BAND1     2
 #define WL_CHAN_FREQ_RANGE_5G_BAND2     3
 #define WL_CHAN_FREQ_RANGE_5G_BAND3     4
+#define WL_CHAN_FREQ_RANGE_5G_4BAND     5
 
-#define WL_CHAN_FREQ_RANGE_5G_4BAND	5
 
-/* MAC list modes */
+/* SROM12 */
+#define WL_CHAN_FREQ_RANGE_5G_BAND4 5
+#define WL_CHAN_FREQ_RANGE_2G_40 6
+#define WL_CHAN_FREQ_RANGE_5G_BAND0_40 7
+#define WL_CHAN_FREQ_RANGE_5G_BAND1_40 8
+#define WL_CHAN_FREQ_RANGE_5G_BAND2_40 9
+#define WL_CHAN_FREQ_RANGE_5G_BAND3_40 10
+#define WL_CHAN_FREQ_RANGE_5G_BAND4_40 11
+#define WL_CHAN_FREQ_RANGE_5G_BAND0_80 12
+#define WL_CHAN_FREQ_RANGE_5G_BAND1_80 13
+#define WL_CHAN_FREQ_RANGE_5G_BAND2_80 14
+#define WL_CHAN_FREQ_RANGE_5G_BAND3_80 15
+#define WL_CHAN_FREQ_RANGE_5G_BAND4_80 16
+
+#define WL_CHAN_FREQ_RANGE_5G_5BAND	18
+#define WL_CHAN_FREQ_RANGE_5G_5BAND_40	19
+#define WL_CHAN_FREQ_RANGE_5G_5BAND_80	20
+
 #define WLC_MACMODE_DISABLED	0	/* MAC list disabled */
 #define WLC_MACMODE_DENY	1	/* Deny specified (i.e. allow unspecified) */
 #define WLC_MACMODE_ALLOW	2	/* Allow specified (i.e. deny unspecified) */
@@ -985,6 +1030,9 @@
 #define WLC_BW_40MHZ_BIT		(1<<1)
 #define WLC_BW_80MHZ_BIT		(1<<2)
 #define WLC_BW_160MHZ_BIT		(1<<3)
+#define WLC_BW_10MHZ_BIT		(1<<4)
+#define WLC_BW_5MHZ_BIT			(1<<5)
+#define WLC_BW_2P5MHZ_BIT		(1<<6)
 
 /* Bandwidth capabilities */
 #define WLC_BW_CAP_20MHZ		(WLC_BW_20MHZ_BIT)
@@ -992,12 +1040,18 @@
 #define WLC_BW_CAP_80MHZ		(WLC_BW_80MHZ_BIT|WLC_BW_40MHZ_BIT|WLC_BW_20MHZ_BIT)
 #define WLC_BW_CAP_160MHZ		(WLC_BW_160MHZ_BIT|WLC_BW_80MHZ_BIT| \
 	WLC_BW_40MHZ_BIT|WLC_BW_20MHZ_BIT)
+#define WLC_BW_CAP_2P5MHZ		(WLC_BW_2P5MHZ_BIT)
+#define WLC_BW_CAP_5MHZ			(WLC_BW_5MHZ_BIT)
+#define WLC_BW_CAP_10MHZ		(WLC_BW_10MHZ_BIT)
 #define WLC_BW_CAP_UNRESTRICTED		0xFF
 
 #define WL_BW_CAP_20MHZ(bw_cap)	(((bw_cap) & WLC_BW_20MHZ_BIT) ? TRUE : FALSE)
 #define WL_BW_CAP_40MHZ(bw_cap)	(((bw_cap) & WLC_BW_40MHZ_BIT) ? TRUE : FALSE)
 #define WL_BW_CAP_80MHZ(bw_cap)	(((bw_cap) & WLC_BW_80MHZ_BIT) ? TRUE : FALSE)
 #define WL_BW_CAP_160MHZ(bw_cap)(((bw_cap) & WLC_BW_160MHZ_BIT) ? TRUE : FALSE)
+#define WL_BW_CAP_2P5MHZ(bw_cap)(((bw_cap) & WLC_BW_2P5MHZ_BIT) ? TRUE : FALSE)
+#define WL_BW_CAP_5MHZ(bw_cap)	(((bw_cap) & WLC_BW_5MHZ_BIT) ? TRUE : FALSE)
+#define WL_BW_CAP_10MHZ(bw_cap)	(((bw_cap) & WLC_BW_10MHZ_BIT) ? TRUE : FALSE)
 
 /* values to force tx/rx chain */
 #define WLC_N_TXRX_CHAIN0		0
@@ -1054,6 +1108,7 @@
 #define WL_OTA_ARG_PARSE_BLK_SIZE	1200
 #define WL_OTA_TEST_MAX_NUM_RATE	30
 #define WL_OTA_TEST_MAX_NUM_SEQ		100
+#define WL_OTA_TEST_MAX_NUM_RSSI	85
 
 #define WL_THRESHOLD_LO_BAND	70	/* range from 5250MHz - 5350MHz */
 
@@ -1063,9 +1118,13 @@
 #define WL_RADAR_SIMULATED		2	/* force radar detector to declare
 						 * detection once
 						 */
+#define WL_RADAR_SIMULATED_SC		3	/* force radar detector to declare
+						 * detection once on scan core
+						 * if available and active
+						 */
 #define WL_RSSI_ANT_VERSION	1	/* current version of wl_rssi_ant_t */
 #define WL_ANT_RX_MAX		2	/* max 2 receive antennas */
-#define WL_ANT_HT_RX_MAX	3	/* max 3 receive antennas/cores */
+#define WL_ANT_HT_RX_MAX	4	/* max 4 receive antennas/cores */
 #define WL_ANT_IDX_1		0	/* antenna index 1 */
 #define WL_ANT_IDX_2		1	/* antenna index 2 */
 
@@ -1098,6 +1157,9 @@
 #define WL_BW_80MHZ		2
 #define WL_BW_160MHZ		3
 #define WL_BW_8080MHZ		4
+#define WL_BW_2P5MHZ		5
+#define WL_BW_5MHZ		6
+#define WL_BW_10MHZ		7
 
 /* tx_power_t.flags bits */
 #define WL_TX_POWER_F_ENABLED	1
@@ -1107,6 +1169,7 @@
 #define WL_TX_POWER_F_HT		0x10
 #define WL_TX_POWER_F_VHT		0x20
 #define WL_TX_POWER_F_OPENLOOP		0x40
+#define WL_TX_POWER_F_PROP11NRATES	0x80
 
 /* Message levels */
 #define WL_ERROR_VAL		0x00000001
@@ -1120,35 +1183,41 @@
 #define WL_ASSOC_VAL		0x00000100
 #define WL_PRUSR_VAL		0x00000200
 #define WL_PS_VAL		0x00000400
-#define WL_TXPWR_VAL		0x00000800	/* retired in TOT on 6/10/2009 */
-#ifdef WL11AC
+#define WL_TXPWR_VAL		0x00000000	/* retired in TOT on 6/10/2009 */
 #define WL_MODE_SWITCH_VAL	0x00000800 /* Using retired TXPWR val */
-#endif
 #define WL_PORT_VAL		0x00001000
 #define WL_DUAL_VAL		0x00002000
 #define WL_WSEC_VAL		0x00004000
 #define WL_WSEC_DUMP_VAL	0x00008000
 #define WL_LOG_VAL		0x00010000
-#define WL_NRSSI_VAL		0x00020000	/* retired in TOT on 6/10/2009 */
-#define WL_LOFT_VAL		0x00040000	/* retired in TOT on 6/10/2009 */
+#define WL_NRSSI_VAL		0x00000000	/* retired in TOT on 6/10/2009 */
+#define WL_BCNTRIM_VAL		0x00020000	/* Using retired NRSSI VAL */
+#define WL_LOFT_VAL		0x00000000	/* retired in TOT on 6/10/2009 */
+#define WL_PFN_VAL		0x00040000 /* Using retired LOFT_VAL */
 #define WL_REGULATORY_VAL	0x00080000
 #define WL_TAF_VAL		0x00100000
-#define WL_RADAR_VAL		0x00200000	/* retired in TOT on 6/10/2009 */
+#define WL_RADAR_VAL		0x00000000	/* retired in TOT on 6/10/2009 */
+#define WL_WDI_VAL		0x00200000	/* Using retired WL_RADAR_VAL VAL */
 #define WL_MPC_VAL		0x00400000
 #define WL_APSTA_VAL		0x00800000
 #define WL_DFS_VAL		0x01000000
-#define WL_BA_VAL		0x02000000	/* retired in TOT on 6/14/2010 */
+#define WL_BA_VAL		0x00000000	/* retired in TOT on 6/14/2010 */
+#define WL_MUMIMO_VAL		0x02000000      /* Using retired WL_BA_VAL */
 #define WL_ACI_VAL		0x04000000
+#define WL_PRMAC_VAL		0x04000000
 #define WL_MBSS_VAL		0x04000000
 #define WL_CAC_VAL		0x08000000
 #define WL_AMSDU_VAL		0x10000000
 #define WL_AMPDU_VAL		0x20000000
 #define WL_FFPLD_VAL		0x40000000
+#define WL_ROAM_EXP_VAL		0x80000000
 
 /* wl_msg_level is full. For new bits take the next one and AND with
  * wl_msg_level2 in wl_dbg.h
  */
 #define WL_DPT_VAL		0x00000001
+/* re-using WL_DPT_VAL */
+#define WL_MESH_VAL		0x00000001
 #define WL_SCAN_VAL		0x00000002
 #define WL_WOWL_VAL		0x00000004
 #define WL_COEX_VAL		0x00000008
@@ -1171,17 +1240,18 @@
 #define WL_TXBF_VAL		0x00100000
 #define WL_P2PO_VAL		0x00200000
 #define WL_TBTT_VAL		0x00400000
-#define WL_RRM_VAL		0x00800000
+#define WL_FBT_VAL		0x00800000
 #define WL_MQ_VAL		0x01000000
 
 /* This level is currently used in Phoenix2 only */
 #define WL_SRSCAN_VAL		0x02000000
 
 #define WL_WNM_VAL		0x04000000
-#define WL_AWDL_VAL		0x08000000
 #define WL_PWRSEL_VAL		0x10000000
 #define WL_NET_DETECT_VAL	0x20000000
 #define WL_PCIE_VAL		0x40000000
+#define WL_PMDUR_VAL	0x80000000
+
 
 /* use top-bit for WL_TIME_STAMP_VAL because this is a modifier
  * rather than a message-type of its own
@@ -1260,13 +1330,19 @@
  */
 #define SPECT_MNGMT_LOOSE_11H_D		4		/* operation defined above */
 
-#define WL_CHAN_VALID_HW	(1 << 0)	/* valid with current HW */
-#define WL_CHAN_VALID_SW	(1 << 1)	/* valid with current country setting */
-#define WL_CHAN_BAND_5G		(1 << 2)	/* 5GHz-band channel */
-#define WL_CHAN_RADAR		(1 << 3)	/* radar sensitive  channel */
-#define WL_CHAN_INACTIVE	(1 << 4)	/* temporarily inactive due to radar */
-#define WL_CHAN_PASSIVE		(1 << 5)	/* channel is in passive mode */
-#define WL_CHAN_RESTRICTED	(1 << 6)	/* restricted use channel */
+/* bit position in per_chan_info; these depend on current country/regulatory domain */
+#define WL_CHAN_VALID_HW		(1 << 0)	/* valid with current HW */
+#define WL_CHAN_VALID_SW		(1 << 1)	/* valid with current country setting */
+#define WL_CHAN_BAND_5G			(1 << 2)	/* 5GHz-band channel */
+#define WL_CHAN_RADAR			(1 << 3)	/* radar sensitive channel */
+#define WL_CHAN_INACTIVE		(1 << 4)	/* temporarily inactive due to radar */
+#define WL_CHAN_PASSIVE			(1 << 5)	/* channel is in passive mode */
+#define WL_CHAN_RESTRICTED		(1 << 6)	/* restricted use channel */
+#define WL_CHAN_RADAR_EU_WEATHER	(1 << 7)	/* EU Radar weather channel. Implies an
+							 * EU Radar channel.
+							 */
+/* following definition is for precommit; will be removed once wl, acsd switch to the new def */
+#define WL_CHAN_WEATHER_RADAR		WL_CHAN_RADAR_EU_WEATHER
 
 /* BTC mode used by "btc_mode" iovar */
 #define	WL_BTC_DISABLE		0	/* disable BT coexistence */
@@ -1302,7 +1378,11 @@
 #define WL_NUMCHANNELS		64
 
 /* max number of chanspecs (used by the iovar to calc. buf space) */
+#ifdef WL11AC_80P80
 #define WL_NUMCHANSPECS 206
+#else
+#define WL_NUMCHANSPECS 110
+#endif
 
 /* WDS link local endpoint WPA role */
 #define WL_WDS_WPA_ROLE_AUTH	0	/* authenticator */
@@ -1364,8 +1444,13 @@
 #define WL_PKTENG_PER_MASK			0xff
 
 #define WL_PKTENG_SYNCHRONOUS			0x100	/* synchronous flag */
-
-#define WL_PKTENG_MAXPKTSZ				16384	/* max pktsz limit for pkteng */
+#define WL_PKTENG_SYNCHRONOUS_UNBLK		0x200	/* synchronous unblock flag */
+#ifdef PKTENG_LONGPKTSZ
+/* max pktsz limit for pkteng */
+#define WL_PKTENG_MAXPKTSZ				PKTENG_LONGPKTSZ
+#else
+#define WL_PKTENG_MAXPKTSZ				16384
+#endif
 
 #define NUM_80211b_RATES	4
 #define NUM_80211ag_RATES	8
@@ -1384,6 +1469,10 @@
 #define WL_WOWL_M1              (1 << 6)    /* Wakeup after PTK refresh */
 #define WL_WOWL_EAPID           (1 << 7)    /* Wakeup after receipt of EAP-Identity Req */
 #define WL_WOWL_PME_GPIO        (1 << 8)    /* Wakeind via PME(0) or GPIO(1) */
+#define WL_WOWL_ULP_BAILOUT     (1 << 8)    /* wakeind via unknown pkt by basic ULP-offloads -
+ * WL_WOWL_ULP_BAILOUT - same as WL_WOWL_PME_GPIO used only for DONGLE BUILDS and
+ * not WLC_HIGH_ONLY case
+ */
 #define WL_WOWL_NEEDTKIP1       (1 << 9)    /* need tkip phase 1 key to be updated by the driver */
 #define WL_WOWL_GTK_FAILURE     (1 << 10)   /* enable wakeup if GTK fails */
 #define WL_WOWL_EXTMAGPAT       (1 << 11)   /* support extended magic packets */
@@ -1400,6 +1489,8 @@
 #define WL_WOWL_ENAB_HWRADIO    (1 << 22)   /* Enable detection of radio button changes */
 #define WL_WOWL_MIC_FAIL        (1 << 23)   /* Offloads detected MIC failure(s) */
 #define WL_WOWL_UNASSOC         (1 << 24)   /* Wakeup in Unassociated state (Net/Magic Pattern) */
+#define WL_WOWL_SECURE          (1 << 25)   /* Wakeup if received matched secured pattern */
+#define WL_WOWL_EXCESS_WAKE     (1 << 26)   /* Excess wake */
 #define WL_WOWL_LINKDOWN        (1 << 31)   /* Link Down indication in WoWL mode */
 
 #define WL_WOWL_TCPKEEP         (1 << 20)   /* temp copy to satisfy automerger */
@@ -1684,6 +1775,19 @@
 #define WL_WNM_NOTIF		0x00000100
 #define WL_WNM_MAX		0x00000200
 
+#ifdef WLWNM_BRCM
+#define BRCM_WNM_FEATURE_SET\
+					(WL_WNM_PROXYARP | \
+					WL_WNM_SLEEP | \
+					WL_WNM_FMS | \
+					WL_WNM_TFS | \
+					WL_WNM_TIMBC | \
+					WL_WNM_BSSTRANS | \
+					WL_WNM_DMS | \
+					WL_WNM_NOTIF | \
+					0)
+#endif /* WLWNM_BRCM */
+
 #ifndef ETHER_MAX_DATA
 #define ETHER_MAX_DATA	1500
 #endif /* ETHER_MAX_DATA */
@@ -1818,6 +1922,8 @@
 
 #define WL_PFN_SUPPRESSFOUND_MASK	0x08
 #define WL_PFN_SUPPRESSLOST_MASK	0x10
+#define WL_PFN_SSID_A_BAND_TRIG     0x20
+#define WL_PFN_SSID_BG_BAND_TRIG    0x40
 #define WL_PFN_RSSI_MASK		0xff00
 #define WL_PFN_RSSI_SHIFT		8
 
@@ -1833,6 +1939,9 @@
 #define PNO_SCAN_MAX_FW_SEC		PNO_SCAN_MAX_FW/1000 /* max time scan time in SEC */
 #define PNO_SCAN_MIN_FW_SEC		10			/* min time scan time in SEC */
 #define WL_PFN_HIDDEN_MASK		0x4
+#define MAX_SSID_WHITELIST_NUM         4
+#define MAX_BSSID_PREF_LIST_NUM        32
+#define MAX_BSSID_BLACKLIST_NUM        32
 
 #ifndef BESTN_MAX
 #define BESTN_MAX			8
@@ -1861,35 +1970,17 @@
 #define ND_MULTIHOMING_MAX 10	/* Maximum local host IP addresses */
 #define ND_REQUEST_MAX		5	/* Max set of offload params */
 
-/* AWDL AF flags for awdl_oob_af iovar */
-#define AWDL_OOB_AF_FILL_TSF_PARAMS			0x00000001
-#define AWDL_OOB_AF_FILL_SYNC_PARAMS		0x00000002
-#define AWDL_OOB_AF_FILL_ELECT_PARAMS		0x00000004
-#define AWDL_OOB_AF_PARAMS_SIZE 38
-
-#define AWDL_OPMODE_AUTO	0
-#define AWDL_OPMODE_FIXED	1
-
-#define AWDL_PEER_STATE_OPEN	0
-#define AWDL_PEER_STATE_CLOSE	1
-
-#define SYNC_ROLE_SLAVE			0
-#define SYNC_ROLE_NE_MASTER		1	/* Non-election master */
-#define SYNC_ROLE_MASTER		2
-
-/* peer opcode */
-#define AWDL_PEER_OP_ADD	0
-#define AWDL_PEER_OP_DEL	1
-#define AWDL_PEER_OP_INFO	2
-#define AWDL_PEER_OP_UPD	3
 
 /* AOAC wake event flag */
 #define WAKE_EVENT_NLO_DISCOVERY_BIT		1
 #define WAKE_EVENT_AP_ASSOCIATION_LOST_BIT	2
 #define WAKE_EVENT_GTK_HANDSHAKE_ERROR_BIT 4
 #define WAKE_EVENT_4WAY_HANDSHAKE_REQUEST_BIT 8
+#define WAKE_EVENT_NET_PACKET_BIT 0x10
 
-#define MAX_NUM_WOL_PATTERN	16 /* LOGO requirements min 16 */
+
+#define MAX_NUM_WOL_PATTERN	22 /* LOGO requirements min 22 */
+
 
 /* Packet filter operation mode */
 /* True: 1; False: 0 */
@@ -1998,6 +2089,7 @@
 #define WL_RADIO_HW_DISABLE		(1<<1)
 #define WL_RADIO_MPC_DISABLE		(1<<2)
 #define WL_RADIO_COUNTRY_DISABLE	(1<<3)	/* some countries don't support any channel */
+#define WL_RADIO_PERCORE_DISABLE	(1<<4)	/* Radio diable per core for DVT */
 
 #define	WL_SPURAVOID_OFF	0
 #define	WL_SPURAVOID_ON1	1
@@ -2030,6 +2122,7 @@
 #define	WLC_PHY_TYPE_LCN	8
 #define	WLC_PHY_TYPE_LCN40	10
 #define WLC_PHY_TYPE_AC		11
+#define	WLC_PHY_TYPE_LCN20	12
 #define	WLC_PHY_TYPE_NULL	0xf
 
 /* Values for PM */
@@ -2051,6 +2144,16 @@
 /* TCP Checksum Offload defines */
 #define TOE_TX_CSUM_OL		0x00000001
 #define TOE_RX_CSUM_OL		0x00000002
+
+/* Wi-Fi Display Services (WFDS) */
+#define WL_P2P_SOCIAL_CHANNELS_MAX  WL_NUMCHANNELS
+#define MAX_WFDS_SEEK_SVC 4	/* Max # of wfds services to seek */
+#define MAX_WFDS_ADVERT_SVC 4	/* Max # of wfds services to advertise */
+#define MAX_WFDS_SVC_NAME_LEN 200	/* maximum service_name length */
+#define MAX_WFDS_ADV_SVC_INFO_LEN 65000	/* maximum adv service_info length */
+#define P2P_WFDS_HASH_LEN 6		/* Length of a WFDS service hash */
+#define MAX_WFDS_SEEK_SVC_INFO_LEN 255	/* maximum seek service_info req length */
+#define MAX_WFDS_SEEK_SVC_NAME_LEN 200	/* maximum service_name length */
 
 /* ap_isolate bitmaps */
 #define AP_ISOLATE_DISABLED		0x0
