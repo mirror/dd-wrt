@@ -50,7 +50,7 @@ new_establish_intro_cell(const char *circ_nonce,
 
   /* Auth key pair is generated in the constructor so we are all set for
    * using this IP object. */
-  ip = service_intro_point_new(NULL, 0, 0);
+  ip = service_intro_point_new(NULL);
   tt_assert(ip);
   cell_len = hs_cell_build_establish_intro(circ_nonce, ip, buf);
   tt_i64_op(cell_len, OP_GT, 0);
@@ -76,7 +76,7 @@ new_establish_intro_encoded_cell(const char *circ_nonce, uint8_t *cell_out)
 
   /* Auth key pair is generated in the constructor so we are all set for
    * using this IP object. */
-  ip = service_intro_point_new(NULL, 0, 0);
+  ip = service_intro_point_new(NULL);
   tt_assert(ip);
   cell_len = hs_cell_build_establish_intro(circ_nonce, ip, cell_out);
   tt_i64_op(cell_len, OP_GT, 0);
@@ -140,7 +140,7 @@ helper_create_introduce1_cell(void)
   {
     size_t auth_key_len = sizeof(auth_key_kp.pubkey);
     trn_cell_introduce1_set_auth_key_type(cell,
-                                         HS_INTRO_AUTH_KEY_TYPE_ED25519);
+                                     TRUNNEL_HS_INTRO_AUTH_KEY_TYPE_ED25519);
     trn_cell_introduce1_set_auth_key_len(cell, auth_key_len);
     trn_cell_introduce1_setlen_auth_key(cell, auth_key_len);
     uint8_t *auth_key_ptr = trn_cell_introduce1_getarray_auth_key(cell);
@@ -751,7 +751,7 @@ test_introduce1_validation(void *arg)
   ret = validate_introduce1_parsed_cell(cell);
   tt_int_op(ret, OP_EQ, -1);
   /* Reset is to correct value and make sure it's correct. */
-  cell->auth_key_type = HS_INTRO_AUTH_KEY_TYPE_ED25519;
+  cell->auth_key_type = TRUNNEL_HS_INTRO_AUTH_KEY_TYPE_ED25519;
   ret = validate_introduce1_parsed_cell(cell);
   tt_int_op(ret, OP_EQ, 0);
 
