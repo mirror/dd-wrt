@@ -3,7 +3,7 @@
 /* Define if building universal (internal helper macro) */
 #undef AC_APPLE_UNIVERSAL_BUILD
 
-/* # for 0.4.0.5 Approximate date when this software was released. (Updated
+/* # for 0.4.1.5 Approximate date when this software was released. (Updated
    when the version changes.) */
 #undef APPROX_RELEASE_DATE
 
@@ -127,6 +127,9 @@
 
 /* Define to 1 if you have the `EVP_PBE_scrypt' function. */
 #undef HAVE_EVP_PBE_SCRYPT
+
+/* Define to 1 if you have the `EVP_sha3_256' function. */
+#undef HAVE_EVP_SHA3_256
 
 /* Define to 1 if you have the `evutil_secure_rng_add_bytes' function. */
 #undef HAVE_EVUTIL_SECURE_RNG_ADD_BYTES
@@ -704,6 +707,9 @@
 
 /* The size of `time_t', as computed by sizeof. */
 #undef SIZEOF_TIME_T
+
+/* The size of `unsigned int', as computed by sizeof. */
+#undef SIZEOF_UNSIGNED_INT
 
 /* The size of `void *', as computed by sizeof. */
 #undef SIZEOF_VOID_P

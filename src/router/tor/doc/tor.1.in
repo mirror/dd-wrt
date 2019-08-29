@@ -2,12 +2,12 @@
 .\"     Title: tor
 .\"    Author: [see the "AUTHORS" section]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 04/11/2019
+.\"      Date: 06/25/2019
 .\"    Manual: Tor Manual
 .\"    Source: Tor
 .\"  Language: English
 .\"
-.TH "TOR" "1" "04/11/2019" "Tor" "Tor Manual"
+.TH "TOR" "1" "06/25/2019" "Tor" "Tor Manual"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -111,6 +111,11 @@ List all valid options\&.
 List all valid options that are scheduled to become obsolete in a future version\&. (This is a warning, not a promise\&.)
 .RE
 .PP
+\fB\-\-list\-modules\fR
+.RS 4
+For each optional module, list whether or not it has been compiled into Tor\&. (Any module not listed is not optional in this version of Tor\&.)
+.RE
+.PP
 \fB\-\-version\fR
 .RS 4
 Display Tor version and exit\&. The output is a single line of the format "Tor version [version number]\&." (The version number format is as specified in version\-spec\&.txt\&.)
@@ -162,7 +167,7 @@ is "sign"\&.
 Running "tor \-\-key\-expiration sign" will attempt to find your signing key certificate and will output, both in the logs as well as to stdout, the signing key certificate\(cqs expiration time in ISO\-8601 format\&. For example, the output sent to stdout will be of the form: "signing\-cert\-expiry: 2017\-07\-25 08:30:15 UTC"
 .RE
 .sp
-Other options can be specified on the command\-line in the format "\-\-option value", in the format "option value", or in a configuration file\&. For instance, you can tell Tor to start listening for SOCKS connections on port 9999 by passing \-\-SocksPort 9999 or SocksPort 9999 to it on the command line, or by putting "SocksPort 9999" in the configuration file\&. You will need to quote options with spaces in them: if you want Tor to log all debugging messages to debug\&.log, you will probably need to say \-\-Log \fIdebug file debug\&.log\fR\&.
+Other options can be specified on the command\-line in the format "\-\-option value", in the format "option value", or in a configuration file\&. For instance, you can tell Tor to start listening for SOCKS connections on port 9999 by passing \-\-SocksPort 9999 or SocksPort 9999 to it on the command line, or by putting "SocksPort 9999" in the configuration file\&. You will need to quote options with spaces in them: if you want Tor to log all debugging messages to debug\&.log, you will probably need to say \fB\-\-Log\fR "debug file debug\&.log"\&.
 .sp
 Options on the command line override those in configuration files\&. See the next section for more information\&.
 .SH "THE CONFIGURATION FILE FORMAT"
@@ -604,7 +609,7 @@ by a set of "logging domains"\&. Each logging domain corresponds to an area of f
 This is an advanced feature which is most useful for debugging one or two of Tor\(cqs subsystems at a time\&.
 
 
-The currently recognized domains are: general, crypto, net, config, fs, protocol, mm, http, app, control, circ, rend, bug, dir, dirserv, or, edge, acct, hist, handshake, heartbeat, channel, sched, guard, consdiff, dos, process, pt, and btrack\&. Domain names are case\-insensitive\&.
+The currently recognized domains are: general, crypto, net, config, fs, protocol, mm, http, app, control, circ, rend, bug, dir, dirserv, or, edge, acct, hist, handshake, heartbeat, channel, sched, guard, consdiff, dos, process, pt, btrack, and mesg\&. Domain names are case\-insensitive\&.
 
 
 For example, "Log [handshake]debug [~net,~mm]info notice stdout" sends to stdout: all handshake messages of any severity, all info\-and\-higher messages from domains other than networking and memory management, and all messages of severity notice or higher\&.
@@ -810,6 +815,16 @@ This option governs Tor\(cqs use of padding to defend against some forms of traf
 If set to 1, Tor will not not hold OR connections open for very long, and will send less padding on these connections\&. Only clients may set this option\&. This option should be offered via the UI to mobile users for use where bandwidth may be expensive\&. (Default: 0)
 .RE
 .PP
+\fBCircuitPadding\fR \fB0\fR|\fB1\fR
+.RS 4
+If set to 0, Tor will not pad client circuits with additional cover traffic\&. Only clients may set this option\&. This option should be offered via the UI to mobile users for use where bandwidth may be expensive\&. If set to 1, padding will be negotiated as per the consensus and relay support (unlike ConnectionPadding, CircuitPadding cannot be force\-enabled)\&. (Default: 1)
+.RE
+.PP
+\fBReducedCircuitPadding\fR \fB0\fR|\fB1\fR
+.RS 4
+If set to 1, Tor will only use circuit padding algorithms that have low overhead\&. Only clients may set this option\&. This option should be offered via the UI to mobile users for use where bandwidth may be expensive\&. (Default: 0)
+.RE
+.PP
 \fBExcludeNodes\fR \fInode\fR,\fInode\fR,\fI\&...\fR
 .RS 4
 A list of identity fingerprints, country codes, and address patterns of nodes to avoid when building a circuit\&. Country codes are 2\-letter ISO3166 codes, and must be wrapped in braces; fingerprints may be preceded by a dollar sign\&. (Example: ExcludeNodes ABCD1234CDEF5678ABCD1234CDEF5678ABCD1234, {cc}, 255\&.254\&.0\&.0/8)
@@ -919,7 +934,7 @@ option for more information on how to specify nodes\&.
 .PP
 \fBStrictNodes\fR \fB0\fR|\fB1\fR
 .RS 4
-If StrictNodes is set to 1, Tor will treat solely the ExcludeNodes option as a requirement to follow for all the circuits you generate, even if doing so will break functionality for you (StrictNodes applies to neither ExcludeExitNodes nor to ExitNodes, nor to MiddleNodes)\&. If StrictNodes is set to 0, Tor will still try to avoid nodes in the ExcludeNodes list, but it will err on the side of avoiding unexpected errors\&. Specifically, StrictNodes 0 tells Tor that it is okay to use an excluded node when it is
+If StrictNodes is set to 1, Tor will treat solely the ExcludeNodes option as a requirement to follow for all the circuits you generate, even if doing so will break functionality for you (StrictNodes does not apply to ExcludeExitNodes, ExitNodes, MiddleNodes, or MapAddress)\&. If StrictNodes is set to 0, Tor will still try to avoid nodes in the ExcludeNodes list, but it will err on the side of avoiding unexpected errors\&. Specifically, StrictNodes 0 tells Tor that it is okay to use an excluded node when it is
 \fBnecessary\fR
 to perform relay reachability self\-tests, connect to a hidden service, provide a hidden service to a client, fulfill a \&.exit request, upload directory information, or download directory information\&. (Default: 0)
 .RE
@@ -1005,8 +1020,7 @@ is the fingerprint of the server), use "MapAddress www\&.example\&.com www\&.exa
 \fItorserver\fR
 (where
 \fItorserver\fR
-is the fingerprint of the server), use "MapAddress *\&.example\&.com *\&.example\&.com\&.torserver\&.exit"\&. (Note the leading "*\&." in each part of the directive\&.) You can also redirect all subdomains of a domain to a single address\&. For example, "MapAddress *\&.example\&.com www\&.example\&.com"\&.
-
+is the fingerprint of the server), use "MapAddress *\&.example\&.com *\&.example\&.com\&.torserver\&.exit"\&. (Note the leading "*\&." in each part of the directive\&.) You can also redirect all subdomains of a domain to a single address\&. For example, "MapAddress *\&.example\&.com www\&.example\&.com"\&. If the specified exit is not available, or the exit can not connect to the site, Tor will fail any connections to the mapped address\&.+
 
 NOTES:
 .sp
@@ -1084,6 +1098,28 @@ MapAddress www\&.torproject\&.org *\&.torproject\&.org\&.torserver\&.exit
 .IP "  4." 4.2
 .\}
 Using a wildcard to match only part of a string (as in *ample\&.com) is also invalid\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 5.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  5." 4.2
+.\}
+Tor maps hostnames and IP addresses separately\&. If you MapAddress a DNS name, but use an IP address to connect, then Tor will ignore the DNS name mapping\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 6.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  6." 4.2
+.\}
+MapAddress does not apply to redirects in the application protocol\&. For example, HTTP redirects and alt\-svc headers will ignore mappings for the original address\&. You can use a wildcard mapping to handle redirects within the same site\&.
 .RE
 .RE
 .PP
@@ -1739,13 +1775,13 @@ be set to a working address if you run more than one relay or bridge\&. (Really,
 .PP
 \fBExitRelay\fR \fB0\fR|\fB1\fR|\fBauto\fR
 .RS 4
-Tells Tor whether to run as an exit relay\&. If Tor is running as a non\-bridge server, and ExitRelay is set to 1, then Tor allows traffic to exit according to the ExitPolicy option (or the default ExitPolicy if none is specified)\&.
+Tells Tor whether to run as an exit relay\&. If Tor is running as a non\-bridge server, and ExitRelay is set to 1, then Tor allows traffic to exit according to the ExitPolicy option, the ReducedExitPolicy option, or the default ExitPolicy (if no other exit policy option is specified)\&.
 
 
-If ExitRelay is set to 0, no traffic is allowed to exit, and the ExitPolicy option is ignored\&.
+If ExitRelay is set to 0, no traffic is allowed to exit, and the ExitPolicy, ReducedExitPolicy, and IPv6Exit options are ignored\&.
 
 
-If ExitRelay is set to "auto", then Tor behaves as if it were set to 1, but warns the user if this would cause traffic to exit\&. In a future version, the default value will be 0\&. (Default: auto)
+If ExitRelay is set to "auto", then Tor checks the ExitPolicy, ReducedExitPolicy, and IPv6Exit options\&. If at least one of these options is set, Tor behaves as if ExitRelay were set to 1\&. If none of these exit policy options are set, Tor behaves as if ExitRelay were set to 0\&. (Default: auto)
 .RE
 .PP
 \fBExitPolicy\fR \fIpolicy\fR,\fIpolicy\fR,\fI\&...\fR
@@ -1938,7 +1974,7 @@ reject *:*
 .PP
 \fBIPv6Exit\fR \fB0\fR|\fB1\fR
 .RS 4
-If set, and we are an exit node, allow clients to use us for IPv6 traffic\&. (Default: 0)
+If set, and we are an exit node, allow clients to use us for IPv6 traffic\&. When this option is set and ExitRelay is auto, we act as if ExitRelay is 1\&. (Default: 0)
 .RE
 .PP
 \fBMaxOnionQueueDelay\fR \fINUM\fR [\fBmsec\fR|\fBsecond\fR]
@@ -2115,7 +2151,7 @@ When this option is disabled, Tor does not try to resolve hostnames containing i
 .PP
 \fBBridgeRecordUsageByCountry\fR \fB0\fR|\fB1\fR
 .RS 4
-When this option is enabled and BridgeRelay is also enabled, and we have GeoIP data, Tor keeps a per\-country count of how many client addresses have contacted it so that it can help the bridge authority guess which countries have blocked access to it\&. (Default: 1)
+When this option is enabled and BridgeRelay is also enabled, and we have GeoIP data, Tor keeps a per\-country count of how many client addresses have contacted it so that it can help the bridge authority guess which countries have blocked access to it\&. If ExtraInfoStatistics is enabled, it will be published as part of extra\-info document\&. (Default: 1)
 .RE
 .PP
 \fBServerDNSRandomizeCase\fR \fB0\fR|\fB1\fR
@@ -2170,7 +2206,7 @@ Relays only\&. When this option is enabled, a Tor relay writes obfuscated statis
 .PP
 \fBExtraInfoStatistics\fR \fB0\fR|\fB1\fR
 .RS 4
-When this option is enabled, Tor includes previously gathered statistics in its extra\-info documents that it uploads to the directory authorities\&. (Default: 1)
+When this option is enabled, Tor includes previously gathered statistics in its extra\-info documents that it uploads to the directory authorities\&. Disabling this option also removes bandwidth usage statistics, and GeoIPFile and GeoIPv6File hashes from the extra\-info file\&. Bridge ServerTransportPlugin lines are always includes in the extra\-info file, because they are required by BridgeDB\&. (Default: 1)
 .RE
 .PP
 \fBExtendAllowPrivateAddresses\fR \fB0\fR|\fB1\fR
