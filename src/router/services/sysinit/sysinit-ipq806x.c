@@ -638,6 +638,7 @@ void start_sysinit(void)
 	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold", "20");
 	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_rate", "1000000");
 	writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
+	writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_governor", "performance");
 
 	eval("ifconfig", "eth1", "up");
 	eval("ifconfig", "eth0", "up");
