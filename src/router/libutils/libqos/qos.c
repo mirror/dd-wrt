@@ -914,7 +914,7 @@ static void init_qdisc(int type, int wan_type, const char *dev, const char *wand
 
 void init_ackprio(const char *dev)
 {
-
+#if 0
 	char *qos_pkts = nvram_safe_get("svqos_pkts");
 	char pkt_filter[5];
 	do {
@@ -958,7 +958,7 @@ void init_ackprio(const char *dev)
 			     "flowid", "1:100");
 		}
 	} while ((qos_pkts = strpbrk(++qos_pkts, "|")) && qos_pkts++);
-
+#endif
 }
 
 #if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)
