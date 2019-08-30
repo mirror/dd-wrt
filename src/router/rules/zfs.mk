@@ -1,4 +1,4 @@
-zfs-configure: libtirpc-configure libtirpc libudev openssl
+zfs-configure: libtirpc-configure libtirpc libudev openssl zlib
 	cd zfs && ./autogen.sh
 	cd zfs && autoreconf
 	cd zfs && ./configure \
@@ -12,7 +12,7 @@ zfs-configure: libtirpc-configure libtirpc libudev openssl
 	cd zfs && find . -name *.la -exec sed -i 's/relink_command/# relink_command/g' {} +
 	cd zfs && find . -name *.la -exec touch {} +
 
-zfs: libtirpc libudev openssl
+zfs: libtirpc libudev openssl zlib
 	$(MAKE) -j 4 -C zfs
 
 zfs-clean:
