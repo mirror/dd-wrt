@@ -66,7 +66,37 @@ void ej_get_qospkts(webs_t wp, int argc, char_t ** argv)
 		  "<td><input type=\"checkbox\" name=\"svqos_pktfin\" value=\"FIN\" %s><script type=\"text/javascript\">Capture(qos.pktfin)</script></input></td>\n"
 		  "<td><input type=\"checkbox\" name=\"svqos_pktrst\" value=\"RST\" %s><script type=\"text/javascript\">Capture(qos.pktrst)</script></input></td>\n"
 		  "<td><input type=\"checkbox\" name=\"svqos_pkticmp\" value=\"ICMP\" %s><script type=\"text/javascript\">Capture(qos.pkticmp)</script></input></td>\n"
-		  "</tr>\n", strstr(qos_pkts, "ACK") ? "checked" : "", strstr(qos_pkts, "SYN") ? "checked" : "", strstr(qos_pkts, "FIN") ? "checked" : "", strstr(qos_pkts, "RST") ? "checked" : "", strstr(qos_pkts, "ICMP") ? "checked" : "");
+		  "</tr>\n", strstr(qos_pkts, "ACK") ? "checked" : "", strstr(qos_pkts, "SYN") ? "checked" : "", strstr(qos_pkts, "FIN") ? "checked" : "", strstr(qos_pkts, "RST") ? "checked" : "", strstr(qos_pkts,
+																									    "ICMP") ?
+		  "checked" : "");
+}
+
+
+#include <stdio.h>
+#include <string.h>
+#include <iptables.h>
+
+static void getpacketcounts(unsigned long long *counts, int len)
+{
+	int c = 0;
+	const char *this;
+	if (!len)
+		return;
+	iptc_handle_t handle = iptc_init("mangle");
+
+	for (this = iptc_first_chain(&handle); this; this = iptc_next_chain(&handle)) {
+		const struct ipt_entry *i;
+		if (strcmp("SVQOS_SVCS", this) != 0)
+			continue;
+		i = iptc_first_rule(this, &handle);
+		while (i) {
+			counts[c++] = i->counters.pcnt;
+			if (c == len)
+				return;
+			i = iptc_next_rule(i, &handle);
+		}
+	}
+	iptc_free(&handle);
 }
 
 void ej_get_qossvcs(webs_t wp, int argc, char_t ** argv)
@@ -85,7 +115,7 @@ void ej_get_qossvcs(webs_t wp, int argc, char_t ** argv)
 
 	// write HTML data
 
-	websWrite(wp, "<tr><td colspan=\"3\"><input type=\"hidden\" name=\"svqos_nosvcs\" value=\"%d\" /></td></tr>", no_svcs);
+	websWrite(wp, "<tr><td colspan=\"4\"><input type=\"hidden\" name=\"svqos_nosvcs\" value=\"%d\" /></td></tr>", no_svcs);
 
 	qos_svcs = nvram_safe_get("svqos_svcs");
 
@@ -93,6 +123,11 @@ void ej_get_qossvcs(webs_t wp, int argc, char_t ** argv)
 	 * services format is "name type data level | name type data level |"
 	 * ..etc 
 	 */
+	unsigned long long *counts = NULL;
+	if (no_svcs) {
+		counts = malloc(sizeof(unsigned long long) * no_svcs);
+		getpacketcounts(counts, no_svcs);
+	}
 	for (i = 0; i < no_svcs && qos_svcs && qos_svcs[0]; i++) {
 		if (sscanf(qos_svcs, "%31s %31s %31s %31s ", name, type, data, level) < 4)
 			break;
@@ -112,10 +147,9 @@ void ej_get_qossvcs(webs_t wp, int argc, char_t ** argv)
 			  "document.write(\"<option value=\\\"30\\\" %s >\" + share.standard + \"</option>\");\n"
 			  "document.write(\"<option value=\\\"40\\\" %s >\" + qos.prio_b + \"</option>\");\n//]]>\n</script>\n"
 			  "</select>\n"
-			  "</td>\n"
-			  "</tr>\n", i, strcmp(level, "1000") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "100") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "10") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level,
-																					  "20") ==
-			  0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "40") == 0 ? "selected=\\\"selected\\\"" : "");
+			  "</td>\n", i, strcmp(level, "1000") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "100") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level,
+																					    "10") == 0 ? "selected=\\\"selected\\\"" : "",
+			  strcmp(level, "20") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "40") == 0 ? "selected=\\\"selected\\\"" : "");
 #else
 		websWrite(wp, "<select name=\"svqos_svcprio%d\"> \n"
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n"
@@ -125,15 +159,18 @@ void ej_get_qossvcs(webs_t wp, int argc, char_t ** argv)
 			  "document.write(\"<option value=\\\"30\\\" %s >\" + share.standard + \"</option>\");\n"
 			  "document.write(\"<option value=\\\"40\\\" %s >\" + qos.prio_b + \"</option>\");\n//]]>\n</script>\n"
 			  "</select>\n"
-			  "</td>\n"
-			  "</tr>\n", i, strcmp(level, "100") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "10") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level,
+			  "</td>\n", i, strcmp(level, "100") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "10") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level,
 																					  "20") ==
 			  0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "40") == 0 ? "selected=\\\"selected\\\"" : "");
 #endif
+		websWrite(wp, "<td>%llu</td>", counts[i]);
+		websWrite(wp, "</tr>\n");
 		qos_svcs = strpbrk(++qos_svcs, "|");
 		qos_svcs++;
 
 	}
+	if (no_svcs)
+		free(counts);
 
 	return;
 }
