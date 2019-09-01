@@ -75,7 +75,7 @@ COPTS +=$(call cc-option,-Werror=return-local-addr,)
 
 # -Werror=maybe-uninitialized -Werror=int-conversion -Werror=array-bounds
 
-BCFLAGS	= $(COPTS)  -fPIC -DMEMLEAK_OVERRIDE
+BCFLAGS	= $(COPTS)  -fPIC -DMEMLEAK_OVERRIDE -I$(TOP)/iptables/include  -I$(TOP)/iptables -DSTATIC=static
 
 
 
@@ -1480,7 +1480,7 @@ visuals.so: dd-wrt.o lib.o ejs.o wireless.o getservice.o ddns.o index.o status.o
 ifeq ($(CONFIG_ATH9K),y)
 	@$(CC) --shared -c -o $(ATH9KVISOBJS) $(ATH9KVISFILES) $(CFLAGS) -DVISUALSOURCE $(LDFLAGS)
 endif
-	@$(CC) --shared -o $@ $^ $(NVISOBJS) $(ATH9KVISOBJS) $(CFLAGS) -DVISUALSOURCE $(LDFLAGS) $(WEBSLDFLAGS)
+	@$(CC) --shared -o $@ $^ $(NVISOBJS) $(ATH9KVISOBJS) $(TOP)/iptables/libiptc/libip4tc.c $(CFLAGS) -DVISUALSOURCE $(LDFLAGS) $(WEBSLDFLAGS)
 	
 	
 build_date.o: build_date.c
