@@ -133,7 +133,7 @@ void ej_get_qossvcs(webs_t wp, int argc, char_t ** argv)
 	unsigned long long *counts = NULL;
 	if (no_svcs) {
 		counts = malloc(sizeof(unsigned long long) * realno);
-		memset(counts, 0 ,sizeof(unsigned long long) * realno);
+		memset(counts, 0, sizeof(unsigned long long) * realno);
 		getpacketcounts(counts, realno);
 	}
 	int c = 0;
