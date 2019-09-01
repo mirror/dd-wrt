@@ -91,8 +91,10 @@ static void getpacketcounts(unsigned long long *counts, int len)
 		i = iptc_first_rule(this, &handle);
 		while (i) {
 			counts[c++] = i->counters.pcnt;
-			if (c == len)
+			if (c == len) {
+				iptc_free(&handle);
 				return;
+			}
 			i = iptc_next_rule(i, &handle);
 		}
 	}
@@ -130,8 +132,9 @@ void ej_get_qossvcs(webs_t wp, int argc, char_t ** argv)
 	 */
 	unsigned long long *counts = NULL;
 	if (no_svcs) {
-		counts = malloc(sizeof(unsigned long long) * no_svcs);
-		getpacketcounts(counts, no_svcs);
+		counts = malloc(sizeof(unsigned long long) * realno);
+		memset(counts, 0 ,sizeof(unsigned long long) * realno);
+		getpacketcounts(counts, realno);
 	}
 	int c = 0;
 	for (i = 0; i < no_svcs && qos_svcs && qos_svcs[0]; i++) {
