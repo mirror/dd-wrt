@@ -33,7 +33,7 @@ RELEASE_DIR:=/tmp
 #DO_IPV6:=1
 #endif
 COPTS += $(MIPS16_OPT) 
-COPT_FLAGS:=$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections -fPIC -D_GNU_SOURCE
+COPT_FLAGS:=$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections -fPIC -D_GNU_SOURCE -DSTATIC=
 ifneq ($(CONFIG_DIST),"micro")
 ifneq ($(CONFIG_DIST),"micro-special")
 COPT_FLAGS += -DNEED_PRINTF
