@@ -125,7 +125,7 @@ typedef unsigned int socklen_t;
 
 #define IP_PARTS(n) IP_PARTS_NATIVE(ntohl(n))
 
-int
+STATIC int
 dump_entry(STRUCT_ENTRY *e, const TC_HANDLE_T handle)
 {
 	size_t i;
