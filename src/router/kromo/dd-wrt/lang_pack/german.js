@@ -7,6 +7,7 @@
 lang_charset.set="iso-8859-1";
 
 
+share.packets="Packete";
 share.annex="Annex Typ";
 share.apn="APN";
 share.pin="PIN";
