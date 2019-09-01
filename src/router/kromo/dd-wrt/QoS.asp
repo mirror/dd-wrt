@@ -326,6 +326,7 @@ addEvent(window, "unload", function() {
 										<th><% tran("share.del"); %></th>
 										<th><% tran("share.srv"); %></th>
 										<th><% tran("share.priority"); %></th>
+										<th><% tran("share.packets"); %></th>
 									</tr>
 									<% get_qossvcs(); %>
 									<tr>
@@ -348,6 +349,7 @@ addEvent(window, "unload", function() {
 												</script>
 											</select>
 										</td>
+										<td>&nbsp;</td>
 									</tr>
 								</table><br />
 								<div class="center">
