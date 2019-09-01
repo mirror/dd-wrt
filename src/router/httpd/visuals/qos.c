@@ -71,10 +71,10 @@ void ej_get_qospkts(webs_t wp, int argc, char_t ** argv)
 		  "checked" : "");
 }
 
-
 #include <stdio.h>
 #include <string.h>
 #include <iptables.h>
+#include <libiptc/libip4tc.c>
 
 static void getpacketcounts(unsigned long long *counts, int len)
 {
@@ -103,7 +103,7 @@ void ej_get_qossvcs(webs_t wp, int argc, char_t ** argv)
 {
 	char *qos_svcs = nvram_safe_get("svqos_svcs");
 	char name[32], type[32], data[32], level[32];
-	int no_svcs = 0, i = 0;
+	int no_svcs = 0, i = 0, realno = 0;
 
 	// calc # of services
 	// no_svcs = strspn(qos_svcs,"|");
@@ -111,6 +111,11 @@ void ej_get_qossvcs(webs_t wp, int argc, char_t ** argv)
 	while ((qos_svcs = strpbrk(qos_svcs, "|"))) {
 		no_svcs++;
 		qos_svcs++;
+		realno++;
+		if (sscanf(qos_svcs, "%31s %31s %31s %31s ", name, type, data, level) < 4)
+			continue;
+		if (!strcmp(type, "both") || !strcmp(type, "udp") || !strcmp(type, "tcp"))
+			realno++;
 	}
 
 	// write HTML data
@@ -128,6 +133,7 @@ void ej_get_qossvcs(webs_t wp, int argc, char_t ** argv)
 		counts = malloc(sizeof(unsigned long long) * no_svcs);
 		getpacketcounts(counts, no_svcs);
 	}
+	int c = 0;
 	for (i = 0; i < no_svcs && qos_svcs && qos_svcs[0]; i++) {
 		if (sscanf(qos_svcs, "%31s %31s %31s %31s ", name, type, data, level) < 4)
 			break;
@@ -163,7 +169,12 @@ void ej_get_qossvcs(webs_t wp, int argc, char_t ** argv)
 																					  "20") ==
 			  0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(level, "40") == 0 ? "selected=\\\"selected\\\"" : "");
 #endif
-		websWrite(wp, "<td>%llu</td>", counts[i]);
+		if (!strcmp(type, "both") || !strcmp(type, "udp") || !strcmp(type, "tcp")) {
+			websWrite(wp, "<td>%llu</td>", counts[c] + counts[c + 1]);
+			c += 2;
+		} else {
+			websWrite(wp, "<td>%llu</td>", counts[c++]);
+		}
 		websWrite(wp, "</tr>\n");
 		qos_svcs = strpbrk(++qos_svcs, "|");
 		qos_svcs++;
