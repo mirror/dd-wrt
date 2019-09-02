@@ -501,9 +501,9 @@ static void add_htb_class(const char *dev, int parent, int class, int rate, int 
 	sprintf(parentid, "1:%d", parent);
 	sprintf(classid, "1:%d", class);
 	if (p != -1)
-		eval("tc", "class", "add", "dev", dev, "parent", parentid, "classid", classid, "htb", "rate", math(buf, rate, "kbit"), "ceil", math(buf2, limit, "kbit"), "prio", prio, "quantum", qmtu);
+		eval("tc", "class", "add", "dev", dev, "parent", parentid, "classid", classid, "htb", "rate", math(buf, 128, "kbit"), "ceil", math(buf2, limit, "kbit"), "prio", prio, "quantum", qmtu);
 	else
-		eval("tc", "class", "add", "dev", dev, "parent", parentid, "classid", classid, "htb", "rate", math(buf, rate, "kbit"), "ceil", math(buf2, limit, "kbit"), "quantum", qmtu);
+		eval("tc", "class", "add", "dev", dev, "parent", parentid, "classid", classid, "htb", "rate", math(buf, 128, "kbit"), "ceil", math(buf2, limit, "kbit"), "quantum", qmtu);
 }
 
 static void add_hfsc_class(const char *dev, int parent, int class, int rate, int limit)
@@ -517,7 +517,7 @@ static void add_hfsc_class(const char *dev, int parent, int class, int rate, int
 //      if (class == 100) {
 //      eval("tc","class","add",dev,"parent",parentid,"classid",classid,"hfsc","rt","umax","1500b","dmax","30ms","rate","100kbit","sc","rate",math(buf,limit,"kbit"),"ul","rate",math(buf2, limit, "kbit"));
 //      }else{
-	eval("tc", "class", "add", "dev", dev, "parent", parentid, "classid", classid, "hfsc", "sc", "rate", math(buf, rate, "kbit"), "ul", "rate", math(buf2, limit, "kbit"));
+	eval("tc", "class", "add", "dev", dev, "parent", parentid, "classid", classid, "hfsc", "sc", "rate", math(buf, 128, "kbit"), "ul", "rate", math(buf2, limit, "kbit"));
 //      }
 }
 
@@ -563,35 +563,35 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 		downrate = downlimit * 75 / 100;
 		lanrate = lanlimit * 75 / 100;
 		prio = 2;
-		parent = 2;
+		parent = 100;
 		break;
 	case 10:
 		uprate = uplimit * 50 / 100;
 		downrate = downlimit * 50 / 100;
 		lanrate = lanlimit * 50 / 100;
 		prio = 3;
-		parent = 3;
+		parent = 10;
 		break;
 	case 20:
 		uprate = uplimit * 25 / 100;
 		downrate = downlimit * 25 / 100;
 		lanrate = lanlimit * 25 / 100;
 		prio = 4;
-		parent = 4;
+		parent = 20;
 		break;
 	case 30:
 		uprate = uplimit * 15 / 100;
 		downrate = downlimit * 15 / 100;
 		lanrate = lanlimit * 15 / 100;
 		prio = 5;
-		parent = 5;
+		parent = 30;
 		break;
 	case 40:
 		uprate = uprate * 5 / 100;
 		downrate = downlimit * 5 / 100;
 		lanrate = lanlimit * 5 / 100;
 		prio = 6;
-		parent = 6;
+		parent = 40;
 		break;
 	default:
 		if (uprate)
@@ -818,33 +818,23 @@ void deinit_qos(const char *wandev, const char *imq_wan, const char *imq_lan)
 static void init_htb_class(const char *dev, int rate, int mtu)
 {
 	add_htb_class(dev, 0, 1, rate, rate, mtu, -1);
-	add_htb_class(dev, 1, 2, 75 * rate / 100, rate, mtu, -1);
-	add_htb_class(dev, 1, 3, 50 * rate / 100, rate, mtu, -1);
-	add_htb_class(dev, 1, 4, 25 * rate / 100, rate, mtu, -1);
-	add_htb_class(dev, 1, 5, 15 * rate / 100, rate, mtu, -1);
-	add_htb_class(dev, 1, 6, 5 * rate / 100, rate, mtu, -1);
-//	add_htb_class(dev, 2, 1000, 100 * rate / 100, rate, mtu, 0 + 1); // special class which allows to steal all traffic from other classes
-	add_htb_class(dev, 2, 100, 75 * rate / 100, rate, mtu, 0 + 1);
-	add_htb_class(dev, 3, 10, 50 * rate / 100, rate, mtu, 1 + 1);
-	add_htb_class(dev, 4, 20, 25 * rate / 100, rate, mtu, 2 + 1);
-	add_htb_class(dev, 5, 30, 15 * rate / 100, rate, mtu, 5 + 1);
-	add_htb_class(dev, 6, 40, 5 * rate / 100, rate, mtu, 7 + 1);
+//	add_htb_class(dev, 1, 1000, 100 * rate / 100, rate, mtu, 0 + 1); // special class which allows to steal all traffic from other classes
+	add_htb_class(dev, 1, 100, 75 * rate / 100, rate, mtu, 0 + 1);
+	add_htb_class(dev, 1, 10, 50 * rate / 100, rate, mtu, 1 + 1);
+	add_htb_class(dev, 1, 20, 25 * rate / 100, rate, mtu, 2 + 1);
+	add_htb_class(dev, 1, 30, 15 * rate / 100, rate, mtu, 5 + 1);
+	add_htb_class(dev, 1, 40, 5 * rate / 100, rate, mtu, 7 + 1);
 }
 
 static void init_hfsc_class(const char *dev, int rate)
 {
 	add_hfsc_class(dev, 0, 1, rate, rate);
-	add_hfsc_class(dev, 1, 2, 75 * rate / 100, rate);
-	add_hfsc_class(dev, 1, 3, 50 * rate / 100, rate);
-	add_hfsc_class(dev, 1, 4, 25 * rate / 100, rate);
-	add_hfsc_class(dev, 1, 5, 15 * rate / 100, rate);
-	add_hfsc_class(dev, 1, 6, 5 * rate / 100, rate);
-//	add_hfsc_class(dev, 2, 1000, 100 * rate / 100, rate); // special class which allows to steal all traffic from other classes
-	add_hfsc_class(dev, 2, 100, 75 * rate / 100, rate);
-	add_hfsc_class(dev, 3, 10, 50 * rate / 100, rate);
-	add_hfsc_class(dev, 4, 20, 25 * rate / 100, rate);
-	add_hfsc_class(dev, 5, 30, 15 * rate / 100, rate);
-	add_hfsc_class(dev, 6, 40, 5 * rate / 100, rate);
+//	add_hfsc_class(dev, 1, 1000, 100 * rate / 100, rate); // special class which allows to steal all traffic from other classes
+	add_hfsc_class(dev, 1, 100, 75 * rate / 100, rate);
+	add_hfsc_class(dev, 1, 10, 50 * rate / 100, rate);
+	add_hfsc_class(dev, 1, 20, 25 * rate / 100, rate);
+	add_hfsc_class(dev, 1, 30, 15 * rate / 100, rate);
+	add_hfsc_class(dev, 1, 40, 5 * rate / 100, rate);
 
 }
 
