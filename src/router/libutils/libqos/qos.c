@@ -33,6 +33,8 @@
 #define IFTYPE_IMQ_LAN 0x2
 
 #define MAXIMUM_PERCENT 80
+
+#define SERVICEBASE_PERCENT 20 // base if maximum is used
 #define EXPRESS_PERCENT 60
 #define PREMIUM_PERCENT 30
 #define DEFAULT_PERCENT 10
@@ -818,7 +820,7 @@ static void init_htb_class(const char *dev, int rate, int mtu)
 {
 	add_htb_class(dev, 0, 1, rate, rate, mtu, -1);
 	add_htb_class(dev, 1, 100, MAXIMUM_PERCENT * rate / 100, rate, mtu, 1);
-	add_htb_class(dev, 1, 2, 20 * rate / 100, rate, mtu, 2);
+	add_htb_class(dev, 1, 2, SERVICEBASE_PERCENT * rate / 100, rate, mtu, 2);
 
 //	add_htb_class(dev, 1, 1000, MAXIMUM_PERCENT * rate / 100, rate, mtu, 0 + 1); // special class which allows to steal all traffic from other classes
 //	add_htb_class(dev, 2, 100, MAXIMUM_PERCENT * rate / 100, rate, mtu, 2);
@@ -832,7 +834,7 @@ static void init_hfsc_class(const char *dev, int rate)
 {
 	add_hfsc_class(dev, 0, 1, rate, rate);
 	add_hfsc_class(dev, 1, 100, MAXIMUM_PERCENT * rate / 100, rate);
-	add_hfsc_class(dev, 1, 2, 20 * rate / 100, rate);
+	add_hfsc_class(dev, 1, 2, SERVICEBASE_PERCENT * rate / 100, rate);
 //	add_hfsc_class(dev, 1, 1000, * MAXIMUM_PERCENT rate / 100, rate); // special class which allows to steal all traffic from other classes
 //	add_hfsc_class(dev, 2, 100, MAXIMUM_PERCENT * rate / 100, rate);
 	add_hfsc_class(dev, 2, 10, EXPRESS_PERCENT * rate / 100, rate);
