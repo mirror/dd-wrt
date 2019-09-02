@@ -501,9 +501,9 @@ static void add_htb_class(const char *dev, int parent, int class, int rate, int 
 	sprintf(parentid, "1:%d", parent);
 	sprintf(classid, "1:%d", class);
 	if (p != -1)
-		eval("tc", "class", "add", "dev", dev, "parent", parentid, "classid", classid, "htb", "rate", math(buf, 128, "kbit"), "ceil", math(buf2, limit, "kbit"), "prio", prio, "quantum", qmtu);
+		eval("tc", "class", "add", "dev", dev, "parent", parentid, "classid", classid, "htb", "rate", math(buf, rate, "kbit"), "ceil", math(buf2, limit, "kbit"), "prio", prio, "quantum", qmtu);
 	else
-		eval("tc", "class", "add", "dev", dev, "parent", parentid, "classid", classid, "htb", "rate", math(buf, 128, "kbit"), "ceil", math(buf2, limit, "kbit"), "quantum", qmtu);
+		eval("tc", "class", "add", "dev", dev, "parent", parentid, "classid", classid, "htb", "rate", math(buf, rate, "kbit"), "ceil", math(buf2, limit, "kbit"), "quantum", qmtu);
 }
 
 static void add_hfsc_class(const char *dev, int parent, int class, int rate, int limit)
@@ -517,7 +517,7 @@ static void add_hfsc_class(const char *dev, int parent, int class, int rate, int
 //      if (class == 100) {
 //      eval("tc","class","add",dev,"parent",parentid,"classid",classid,"hfsc","rt","umax","1500b","dmax","30ms","rate","100kbit","sc","rate",math(buf,limit,"kbit"),"ul","rate",math(buf2, limit, "kbit"));
 //      }else{
-	eval("tc", "class", "add", "dev", dev, "parent", parentid, "classid", classid, "hfsc", "sc", "rate", math(buf, 128, "kbit"), "ul", "rate", math(buf2, limit, "kbit"));
+	eval("tc", "class", "add", "dev", dev, "parent", parentid, "classid", classid, "hfsc", "sc", "rate", math(buf, rate, "kbit"), "ul", "rate", math(buf2, limit, "kbit"));
 //      }
 }
 
@@ -819,22 +819,22 @@ static void init_htb_class(const char *dev, int rate, int mtu)
 {
 	add_htb_class(dev, 0, 1, rate, rate, mtu, -1);
 //	add_htb_class(dev, 1, 1000, 100 * rate / 100, rate, mtu, 0 + 1); // special class which allows to steal all traffic from other classes
-	add_htb_class(dev, 1, 100, 75 * rate / 100, rate, mtu, 0 + 1);
-	add_htb_class(dev, 1, 10, 50 * rate / 100, rate, mtu, 1 + 1);
-	add_htb_class(dev, 1, 20, 25 * rate / 100, rate, mtu, 2 + 1);
-	add_htb_class(dev, 1, 30, 15 * rate / 100, rate, mtu, 5 + 1);
-	add_htb_class(dev, 1, 40, 5 * rate / 100, rate, mtu, 7 + 1);
+	add_htb_class(dev, 1, 100, 128, rate, mtu, 0 + 1);
+	add_htb_class(dev, 1, 10, 128, rate, mtu, 1 + 1);
+	add_htb_class(dev, 1, 20, 128, rate, mtu, 2 + 1);
+	add_htb_class(dev, 1, 30, 128, rate, mtu, 5 + 1);
+	add_htb_class(dev, 1, 40, 128, rate, mtu, 7 + 1);
 }
 
 static void init_hfsc_class(const char *dev, int rate)
 {
 	add_hfsc_class(dev, 0, 1, rate, rate);
 //	add_hfsc_class(dev, 1, 1000, 100 * rate / 100, rate); // special class which allows to steal all traffic from other classes
-	add_hfsc_class(dev, 1, 100, 75 * rate / 100, rate);
-	add_hfsc_class(dev, 1, 10, 50 * rate / 100, rate);
-	add_hfsc_class(dev, 1, 20, 25 * rate / 100, rate);
-	add_hfsc_class(dev, 1, 30, 15 * rate / 100, rate);
-	add_hfsc_class(dev, 1, 40, 5 * rate / 100, rate);
+	add_hfsc_class(dev, 1, 100, 128, rate);
+	add_hfsc_class(dev, 1, 10, 128, rate);
+	add_hfsc_class(dev, 1, 20, 128, rate);
+	add_hfsc_class(dev, 1, 30, 128, rate);
+	add_hfsc_class(dev, 1, 40, 128, rate);
 
 }
 
