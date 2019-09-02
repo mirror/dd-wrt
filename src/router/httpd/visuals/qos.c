@@ -71,6 +71,8 @@ void ej_get_qospkts(webs_t wp, int argc, char_t ** argv)
 		  "checked" : "");
 }
 
+void getpacketcounts(unsigned long long *counts, int len);
+
 void ej_get_qossvcs(webs_t wp, int argc, char_t ** argv)
 {
 	char *qos_svcs = nvram_safe_get("svqos_svcs");
