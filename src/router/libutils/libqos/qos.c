@@ -816,9 +816,10 @@ void deinit_qos(const char *wandev, const char *imq_wan, const char *imq_lan)
 
 static void init_htb_class(const char *dev, int rate, int mtu)
 {
+	add_htb_class(dev, 0, 2, rate, rate, mtu, -1);
 	add_htb_class(dev, 0, 1, rate, rate, mtu, -1);
 //	add_htb_class(dev, 1, 1000, MAXIMUM_PERCENT * rate / 100, rate, mtu, 0 + 1); // special class which allows to steal all traffic from other classes
-	add_htb_class(dev, 1, 100, MAXIMUM_PERCENT * rate / 100, rate, mtu, 0 + 1);
+	add_htb_class(dev, 2, 100, MAXIMUM_PERCENT * rate / 100, rate, mtu, 0 + 1);
 	add_htb_class(dev, 1, 10, EXPRESS_PERCENT * rate / 100, rate, mtu, 1 + 1);
 	add_htb_class(dev, 1, 20, PREMIUM_PERCENT * rate / 100, rate, mtu, 2 + 1);
 	add_htb_class(dev, 1, 30, DEFAULT_PERCENT * rate / 100, rate, mtu, 5 + 1);
@@ -827,9 +828,10 @@ static void init_htb_class(const char *dev, int rate, int mtu)
 
 static void init_hfsc_class(const char *dev, int rate)
 {
+	add_hfsc_class(dev, 0, 2, rate, rate);
 	add_hfsc_class(dev, 0, 1, rate, rate);
 //	add_hfsc_class(dev, 1, 1000, * MAXIMUM_PERCENT rate / 100, rate); // special class which allows to steal all traffic from other classes
-	add_hfsc_class(dev, 1, 100, MAXIMUM_PERCENT * rate / 100, rate);
+	add_hfsc_class(dev, 2, 100, MAXIMUM_PERCENT * rate / 100, rate);
 	add_hfsc_class(dev, 1, 10, EXPRESS_PERCENT * rate / 100, rate);
 	add_hfsc_class(dev, 1, 20, PREMIUM_PERCENT * rate / 100, rate);
 	add_hfsc_class(dev, 1, 30, DEFAULT_PERCENT * rate / 100, rate);
