@@ -894,8 +894,8 @@ static int svqos_iptables(void)
 	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "CONNMARK", "--save-mark");
 	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "RETURN");
 
-	/* anything which doesnt match should get default class */
-	eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-j", "MARK", "--set-mark", qos_nfmark(30));
+//	/* anything which doesnt match should get default class */
+//	eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-j", "MARK", "--set-mark", qos_nfmark(30));
 
 	eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-j", "RETURN");
 
