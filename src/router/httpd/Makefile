@@ -75,7 +75,7 @@ COPTS +=$(call cc-option,-Werror=return-local-addr,)
 
 # -Werror=maybe-uninitialized -Werror=int-conversion -Werror=array-bounds
 
-BCFLAGS	= $(COPTS)  -fPIC -DMEMLEAK_OVERRIDE  -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/iptables/include  -I$(TOP)/iptables -DSTATIC=static
+BCFLAGS	= $(COPTS)  -fPIC -DMEMLEAK_OVERRIDE
 
 
 
@@ -1462,6 +1462,10 @@ else
 endif
 endif
 endif
+
+packets.o: packets.c
+	@$(CC) -c -o $@ $^ $(BCFLAGS) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/iptables/include  -I$(TOP)/iptables -DSTATIC=static
+
 	
 httpd: httpd.o $(ADDOBJ) $(OBJS)
 	@echo "[LD] $@"
