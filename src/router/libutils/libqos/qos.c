@@ -37,7 +37,6 @@
 #define PREMIUM_PERCENT 30
 #define DEFAULT_PERCENT 10
 
-
 /* NF Mark/Mask
  *
  * since multiple services needs a NF packet mark,
@@ -361,7 +360,7 @@ void add_client_ip_srvfilter(char *name, char *type, char *data, int level, int 
 #if !defined(ARCH_broadcom) || defined(HAVE_BCMMODERN)
 char *get_tcfmark(char *tcfmark, uint32 mark, int seg)
 {
-	char nfmark[24]={0};
+	char nfmark[24] = { 0 };
 	char *ntoken = NULL;
 	*tcfmark = 0;
 
@@ -408,12 +407,12 @@ static const char *math(char *buf, int val, const char *ext)
 	return buf;
 }
 
-static void add_codel(const char *dev, int handle, const char *aqd, int rtt, int noecn)
+static void add_codel(const char *dev, int major, int handle, const char *aqd, int rtt, int noecn)
 {
 	char p[32];
 	char h[32];
 	char r[32];
-	sprintf(p, "1:%d", handle);
+	sprintf(p, "%d:%d", major, handle);
 	sprintf(h, "%d:", handle);
 	sprintf(r, "%dms", rtt);
 	char *ECN = NULL;
@@ -428,33 +427,33 @@ static void add_codel(const char *dev, int handle, const char *aqd, int rtt, int
 		eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd, ECN);
 }
 
-static void add_sfq(const char *dev, int handle, int mtu)
+static void add_sfq(const char *dev, int major, int handle, int mtu)
 {
 	char qmtu[32];
 	sprintf(qmtu, "%d", mtu + 14);
 	char p[32];
 	char h[32];
-	sprintf(p, "1:%d", handle);
+	sprintf(p, "%d:%d", major, handle);
 	sprintf(h, "%d:", handle);
 	eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, "sfq", "quantum", qmtu, "perturb", "10");
 
 }
 
-static void add_fq_codel(const char *dev, int handle, const char *aqd)
+static void add_fq_codel(const char *dev, int major, int handle, const char *aqd)
 {
 	char p[32];
 	char h[32];
-	sprintf(p, "1:%d", handle);
+	sprintf(p, "%d:%d", major, handle);
 	sprintf(h, "%d:", handle);
 	eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd);
 }
 
-static void add_cake(int type, const char *dev, int handle, const char *aqd, int rtt)
+static void add_cake(int type, const char *dev, int major, int handle, const char *aqd, int rtt)
 {
 	char p[32];
 	char h[32];
 	char r[32];
-	sprintf(p, "1:%d", handle);
+	sprintf(p, "%d:%d", major, handle);
 	sprintf(h, "%d:", handle);
 	sprintf(r, "%dms", rtt);
 	char *rttarg1 = NULL;
@@ -476,11 +475,11 @@ static void add_cake(int type, const char *dev, int handle, const char *aqd, int
 	}
 }
 
-static void add_pie(const char *dev, int handle, const char *aqd, int ms5, int noecn)
+static void add_pie(const char *dev, int major, int handle, const char *aqd, int ms5, int noecn)
 {
 	char p[32];
 	char h[32];
-	sprintf(p, "1:%d", handle);
+	sprintf(p, "%d:%d", major, handle);
 	sprintf(h, "%d:", handle);
 	char *ECN = NULL;
 	if (noecn == 1)
@@ -494,7 +493,7 @@ static void add_pie(const char *dev, int handle, const char *aqd, int ms5, int n
 		eval("tc", "qdisc", "add", "dev", dev, "parent", p, "handle", h, aqd, ECN);
 }
 
-static void add_htb_class(const char *dev, int parent, int class, int rate, int limit, int mtu, int p)
+static void add_htb_class(const char *dev, int parentmajor, int parentminor, int classmajor, int classminor, int rate, int limit, int mtu, int p)
 {
 	char buf[32];
 	char buf2[32];
@@ -504,22 +503,22 @@ static void add_htb_class(const char *dev, int parent, int class, int rate, int 
 	char classid[32];
 	sprintf(qmtu, "%d", mtu + 14);
 	sprintf(prio, "%d", p);
-	sprintf(parentid, "1:%d", parent);
-	sprintf(classid, "1:%d", class);
+	sprintf(parentid, "%d:%d", parentmajor, parentminor);
+	sprintf(classid, "%d:%d", classmajor, classminor);
 	if (p != -1)
 		eval("tc", "class", "add", "dev", dev, "parent", parentid, "classid", classid, "htb", "rate", math(buf, rate, "kbit"), "ceil", math(buf2, limit, "kbit"), "prio", prio, "quantum", qmtu);
 	else
 		eval("tc", "class", "add", "dev", dev, "parent", parentid, "classid", classid, "htb", "rate", math(buf, rate, "kbit"), "ceil", math(buf2, limit, "kbit"), "quantum", qmtu);
 }
 
-static void add_hfsc_class(const char *dev, int parent, int class, int rate, int limit)
+static void add_hfsc_class(const char *dev, int parentmajor, int parentminor, int classmajor, int classminor, int rate, int limit)
 {
 	char buf[32];
 	char buf2[32];
 	char classid[32];
 	char parentid[32];
-	sprintf(classid, "1:%d", class);
-	sprintf(parentid, "1:%d", parent);
+	sprintf(classid, "%d:%d", classmajor, classminor);
+	sprintf(parentid, "%d:%d", parentmajor, parentminor);
 //      if (class == 100) {
 //      eval("tc","class","add",dev,"parent",parentid,"classid",classid,"hfsc","rt","umax","1500b","dmax","30ms","rate","100kbit","sc","rate",math(buf,limit,"kbit"),"ul","rate",math(buf2, limit, "kbit"));
 //      }else{
@@ -536,6 +535,7 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 	unsigned int lanlimit = 1000000;
 	unsigned int prio;
 	unsigned int parent;
+	unsigned int major = 3;
 	int rtt = -1;
 	int noecn = -1;
 	int max = 50;
@@ -562,6 +562,7 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 		downrate = downlimit * MAXIMUM_PERCENT / 100;
 		lanrate = lanlimit * MAXIMUM_PERCENT / 100;
 		prio = 2;
+		major = 4;
 		parent = 100;
 		break;
 	case 10:
@@ -609,31 +610,31 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 	if (nvram_matchi("qos_type", 0)) {
 		char prios[5] = { 0, prio, prio + 1, prio + 1, 7 };
 
-		add_htb_class(wan_dev, parent, base, uprate, uplimit, mtu, -1);
-		add_htb_class("imq0", parent, base, downrate, downlimit, mtu, -1);
+		add_htb_class(wan_dev, major, parent, 3, base, uprate, uplimit, mtu, -1);
+		add_htb_class("imq0", major, parent, 3, base, downrate, downlimit, mtu, -1);
 		if (nvram_match("wshaper_dev", "LAN")) {
-			add_htb_class("imq1", parent, base, lanrate, lanlimit, mtu, -1);
+			add_htb_class("imq1", major, parent, 3, base, lanrate, lanlimit, mtu, -1);
 		}
 		int i;
 		for (i = 0; i < 5; i++) {
-			add_htb_class(wan_dev, base, base + 1 + i, uprates[i], uplimit, mtu, prios[i] + 1);
-			add_htb_class("imq0", base, base + 1 + i, downrates[i], downlimit, mtu, prios[i] + 1);
+			add_htb_class(wan_dev, major, base, major, base + 1 + i, uprates[i], uplimit, mtu, prios[i] + 1);
+			add_htb_class("imq0", major, base, major, base + 1 + i, downrates[i], downlimit, mtu, prios[i] + 1);
 			if (nvram_match("wshaper_dev", "LAN")) {
-				add_htb_class("imq1", base, base + 1 + i, lanrates[i], lanlimit, mtu, prios[i] + 1);
+				add_htb_class("imq1", major, base, major, base + 1 + i, lanrates[i], lanlimit, mtu, prios[i] + 1);
 			}
 		}
 
 	} else {
 
-		add_hfsc_class(wan_dev, 1, base, uprate, uplimit);
-		add_hfsc_class("imq0", 1, base, downrate, downlimit);
-		add_hfsc_class("imq1", 1, base, lanrate, lanlimit);
+		add_hfsc_class(wan_dev, 2, 2, major, base, uprate, uplimit);
+		add_hfsc_class("imq0", 2, 2, major, base, downrate, downlimit);
+		add_hfsc_class("imq1", 2, 2, major, base, lanrate, lanlimit);
 		int i;
 		for (i = 0; i < 5; i++) {
-			add_hfsc_class(wan_dev, base, base + 1 + i, uprates[i], uplimit);
-			add_hfsc_class("imq0", base, base + 1 + i, downrates[i], downlimit);
+			add_hfsc_class(wan_dev, major, base, major, base + 1 + i, uprates[i], uplimit);
+			add_hfsc_class("imq0", major, base, major, base + 1 + i, downrates[i], downlimit);
 			if (nvram_match("wshaper_dev", "LAN")) {
-				add_hfsc_class("imq1", base, base + 1 + i, lanrates[i], lanlimit);
+				add_hfsc_class("imq1", major, base, major, base + 1 + i, lanrates[i], lanlimit);
 			}
 		}
 
@@ -668,10 +669,10 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 	if (!strcmp(aqd, "sfq")) {
 		int i;
 		for (i = 1; i < 6; i++) {
-			add_sfq(wan_dev, base + i, mtu);
-			add_sfq("imq0", base + i, mtu);
+			add_sfq(wan_dev, major, base + i, mtu);
+			add_sfq("imq0", major, base + i, mtu);
 			if (nvram_match("wshaper_dev", "LAN")) {
-				add_sfq("imq1", base + i, mtu);
+				add_sfq("imq1", major, base + i, mtu);
 			}
 		}
 
@@ -680,10 +681,10 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 	if (!strcmp(aqd, "codel")) {
 		int i;
 		for (i = 1; i < 6; i++) {
-			add_codel(wan_dev, base + i, aqd, rtt, noecn);
-			add_codel("imq0", base + i, aqd, -1, -1);
+			add_codel(wan_dev, major, base + i, aqd, rtt, noecn);
+			add_codel("imq0", major, base + i, aqd, -1, -1);
 			if (nvram_match("wshaper_dev", "LAN")) {
-				add_codel("imq1", base + i, aqd, -1, -1);
+				add_codel("imq1", major, base + i, aqd, -1, -1);
 			}
 		}
 	}
@@ -692,10 +693,10 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 	if (!strcmp(aqd, "fq_codel") || !strcmp(aqd, "fq_codel_fast")) {
 		int i;
 		for (i = 1; i < 6; i++) {
-			add_fq_codel(wan_dev, base + i, aqd);
-			add_fq_codel("imq0", base + i, aqd);
+			add_fq_codel(wan_dev, major, base + i, aqd);
+			add_fq_codel("imq0", major, base + i, aqd);
 			if (nvram_match("wshaper_dev", "LAN")) {
-				add_fq_codel("imq1", base + i, aqd);
+				add_fq_codel("imq1", major, base + i, aqd);
 			}
 		}
 	}
@@ -704,10 +705,10 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 	if (!strcmp(aqd, "cake")) {
 		int i;
 		for (i = 1; i < 6; i++) {
-			add_cake(IFTYPE_WAN, wan_dev, base + i, aqd, rtt_cake);
-			add_cake(IFTYPE_IMQ_WAN, "imq0", base + i, aqd, -1);
+			add_cake(IFTYPE_WAN, wan_dev, major, base + i, aqd, rtt_cake);
+			add_cake(IFTYPE_IMQ_WAN, "imq0", major, base + i, aqd, -1);
 			if (nvram_match("wshaper_dev", "LAN")) {
-				add_cake(IFTYPE_IMQ_LAN, "imq1", base + i, aqd, -1);
+				add_cake(IFTYPE_IMQ_LAN, "imq1", major, base + i, aqd, -1);
 			}
 		}
 	}
@@ -718,13 +719,13 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 			noecn = 0;
 		int i;
 		for (i = 1; i < 6; i++) {
-			add_pie(wan_dev, base + i, aqd, 0, noecn);
+			add_pie(wan_dev, major, base + i, aqd, 0, noecn);
 			if (nvram_matchi("qos_type", 0))
-				add_pie("imq0", base + i, aqd, 1, 0);
+				add_pie("imq0", major, base + i, aqd, 1, 0);
 			else
-				add_pie("imq0", base + i, aqd, 0, noecn);
+				add_pie("imq0", major, base + i, aqd, 0, noecn);
 			if (nvram_match("wshaper_dev", "LAN")) {
-				add_pie("imq1", base + i, aqd, 0, noecn);
+				add_pie("imq1", major, base + i, aqd, 0, noecn);
 			}
 		}
 	}
@@ -816,29 +817,29 @@ void deinit_qos(const char *wandev, const char *imq_wan, const char *imq_lan)
 
 static void init_htb_class(const char *dev, int rate, int mtu)
 {
-	add_htb_class(dev, 0, 1, rate, rate, mtu, -1);
-	add_htb_class(dev, 1, 2, 80 * rate / 100, rate, mtu, 1);
-	add_htb_class(dev, 1, 3, 20 * rate / 100, rate, mtu, 3);
+	add_htb_class(dev, 1, 0, 1, 1, rate, rate, mtu, -1);
+	add_htb_class(dev, 1, 1, 2, 1, 80 * rate / 100, rate, mtu, 1);
+	add_htb_class(dev, 1, 1, 2, 2, 20 * rate / 100, rate, mtu, 3);
 
-//	add_htb_class(dev, 1, 1000, MAXIMUM_PERCENT * rate / 100, rate, mtu, 0 + 1); // special class which allows to steal all traffic from other classes
-	add_htb_class(dev, 2, 100, MAXIMUM_PERCENT * rate / 100, rate, mtu, 2);
-	add_htb_class(dev, 3, 10, EXPRESS_PERCENT * rate / 100, rate, mtu, 4);
-	add_htb_class(dev, 3, 20, PREMIUM_PERCENT * rate / 100, rate, mtu, 5);
-	add_htb_class(dev, 3, 30, DEFAULT_PERCENT * rate / 100, rate, mtu, 6);
-	add_htb_class(dev, 3, 40, 128, rate, mtu, 7);
+//      add_htb_class(dev, 1, 1000, MAXIMUM_PERCENT * rate / 100, rate, mtu, 0 + 1); // special class which allows to steal all traffic from other classes
+	add_htb_class(dev, 2, 1, 3, 100, MAXIMUM_PERCENT * rate / 100, rate, mtu, 2);
+	add_htb_class(dev, 2, 2, 4, 10, EXPRESS_PERCENT * rate / 100, rate, mtu, 4);
+	add_htb_class(dev, 2, 2, 4, 20, PREMIUM_PERCENT * rate / 100, rate, mtu, 5);
+	add_htb_class(dev, 2, 2, 4, 30, DEFAULT_PERCENT * rate / 100, rate, mtu, 6);
+	add_htb_class(dev, 2, 2, 4, 40, 128, rate, mtu, 7);
 }
 
 static void init_hfsc_class(const char *dev, int rate)
 {
-	add_hfsc_class(dev, 0, 1, rate, rate);
-	add_hfsc_class(dev, 1, 2, 80 * rate / 100, rate);
-	add_hfsc_class(dev, 1, 3, 20 * rate / 100, rate);
-//	add_hfsc_class(dev, 1, 1000, * MAXIMUM_PERCENT rate / 100, rate); // special class which allows to steal all traffic from other classes
-	add_hfsc_class(dev, 2, 100, MAXIMUM_PERCENT * rate / 100, rate);
-	add_hfsc_class(dev, 3, 10, EXPRESS_PERCENT * rate / 100, rate);
-	add_hfsc_class(dev, 3, 20, PREMIUM_PERCENT * rate / 100, rate);
-	add_hfsc_class(dev, 3, 30, DEFAULT_PERCENT * rate / 100, rate);
-	add_hfsc_class(dev, 3, 40, 128, rate);
+	add_hfsc_class(dev, 1, 0, 1, 1, rate, rate);
+	add_hfsc_class(dev, 1, 1, 2, 1, 80 * rate / 100, rate);
+	add_hfsc_class(dev, 1, 1, 2, 2, 20 * rate / 100, rate);
+//      add_hfsc_class(dev, 1, 1000, * MAXIMUM_PERCENT rate / 100, rate); // special class which allows to steal all traffic from other classes
+	add_hfsc_class(dev, 2, 1, 3, 100, MAXIMUM_PERCENT * rate / 100, rate);
+	add_hfsc_class(dev, 2, 2, 4, 10, EXPRESS_PERCENT * rate / 100, rate);
+	add_hfsc_class(dev, 2, 2, 4, 20, PREMIUM_PERCENT * rate / 100, rate);
+	add_hfsc_class(dev, 2, 2, 4, 30, DEFAULT_PERCENT * rate / 100, rate);
+	add_hfsc_class(dev, 2, 2, 4, 40, 128, rate);
 
 }
 
@@ -858,37 +859,37 @@ static void init_qdisc(int type, int wan_type, const char *dev, const char *wand
 	}
 
 	if (!strcmp(aqd, "sfq")) {
-		add_sfq(dev, 100, mtu);
-		add_sfq(dev, 10, mtu);
-		add_sfq(dev, 20, mtu);
-		add_sfq(dev, 30, mtu);
-		add_sfq(dev, 40, mtu);
+		add_sfq(dev, 3, 100, mtu);
+		add_sfq(dev, 4, 10, mtu);
+		add_sfq(dev, 4, 20, mtu);
+		add_sfq(dev, 4, 30, mtu);
+		add_sfq(dev, 4, 40, mtu);
 	}
 #ifdef HAVE_CODEL
 	if (!strcmp(aqd, "codel")) {
-		add_codel(dev, 100, aqd, rtt, noecn);
-		add_codel(dev, 10, aqd, rtt, noecn);
-		add_codel(dev, 20, aqd, rtt, noecn);
-		add_codel(dev, 30, aqd, rtt, noecn);
-		add_codel(dev, 40, aqd, rtt, noecn);
+		add_codel(dev, 3, 100, aqd, rtt, noecn);
+		add_codel(dev, 4, 10, aqd, rtt, noecn);
+		add_codel(dev, 4, 20, aqd, rtt, noecn);
+		add_codel(dev, 4, 30, aqd, rtt, noecn);
+		add_codel(dev, 4, 40, aqd, rtt, noecn);
 	}
 #endif
 #if defined(HAVE_FQ_CODEL) || defined(HAVE_FQ_CODEL_FAST)
 	if (!strcmp(aqd, "fq_codel") || !strcmp(aqd, "fq_codel_fast")) {
-		add_fq_codel(dev, 100, aqd);
-		add_fq_codel(dev, 10, aqd);
-		add_fq_codel(dev, 20, aqd);
-		add_fq_codel(dev, 30, aqd);
-		add_fq_codel(dev, 40, aqd);
+		add_fq_codel(dev, 3, 100, aqd);
+		add_fq_codel(dev, 4, 10, aqd);
+		add_fq_codel(dev, 4, 20, aqd);
+		add_fq_codel(dev, 4, 30, aqd);
+		add_fq_codel(dev, 4, 40, aqd);
 	}
 #endif
 #ifdef HAVE_CAKE
 	if (!strcmp(aqd, "cake")) {
-		add_cake(wan_type, dev, 100, aqd, rtt_cake);
-		add_cake(wan_type, dev, 10, aqd, rtt_cake);
-		add_cake(wan_type, dev, 20, aqd, rtt_cake);
-		add_cake(wan_type, dev, 30, aqd, rtt_cake);
-		add_cake(wan_type, dev, 40, aqd, rtt_cake);
+		add_cake(wan_type, dev, 3, 100, aqd, rtt_cake);
+		add_cake(wan_type, dev, 4, 10, aqd, rtt_cake);
+		add_cake(wan_type, dev, 4, 20, aqd, rtt_cake);
+		add_cake(wan_type, dev, 4, 30, aqd, rtt_cake);
+		add_cake(wan_type, dev, 4, 40, aqd, rtt_cake);
 	}
 #endif
 #ifdef HAVE_PIE
@@ -896,11 +897,11 @@ static void init_qdisc(int type, int wan_type, const char *dev, const char *wand
 		/* for imq_wan and htb only 5ms is enforced. i dont know why. i just took it from the original script */
 		if (ms5 || type == TYPE_HFSC)
 			noecn = 0;
-		add_pie(dev, 100, aqd, ms5, noecn);
-		add_pie(dev, 10, aqd, ms5, noecn);
-		add_pie(dev, 20, aqd, ms5, noecn);
-		add_pie(dev, 30, aqd, ms5, noecn);
-		add_pie(dev, 40, aqd, ms5, noecn);
+		add_pie(dev, 3, 100, aqd, ms5, noecn);
+		add_pie(dev, 4, 10, aqd, ms5, noecn);
+		add_pie(dev, 4, 20, aqd, ms5, noecn);
+		add_pie(dev, 4, 30, aqd, ms5, noecn);
+		add_pie(dev, 4, 40, aqd, ms5, noecn);
 	}
 #endif
 
@@ -971,7 +972,7 @@ static void add_filter(const char *dev, int pref, int handle, int classid)
 
 static void init_filter(const char *dev)
 {
-//	add_filter(dev, 0 + 1, 1000, 1000);
+//      add_filter(dev, 0 + 1, 1000, 1000);
 	add_filter(dev, 1 + 1, 100, 100);
 	add_filter(dev, 3 + 1, 10, 10);
 	add_filter(dev, 5 + 1, 20, 20);
