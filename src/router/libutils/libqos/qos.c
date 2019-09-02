@@ -829,7 +829,7 @@ static void init_hfsc_class(const char *dev, int rate)
 {
 	add_hfsc_class(dev, 0, 1, rate, rate);
 //	add_hfsc_class(dev, 1, 1000, * MAXIMUM_PERCENT rate / 100, rate); // special class which allows to steal all traffic from other classes
-	add_hfsc_class(dev, 1, 100, * MAXIMUM_PERCENT rate / 100, rate);
+	add_hfsc_class(dev, 1, 100, MAXIMUM_PERCENT * rate / 100, rate);
 	add_hfsc_class(dev, 1, 10, EXPRESS_PERCENT * rate / 100, rate);
 	add_hfsc_class(dev, 1, 20, PREMIUM_PERCENT * rate / 100, rate);
 	add_hfsc_class(dev, 1, 30, DEFAULT_PERCENT * rate / 100, rate);
