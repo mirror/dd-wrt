@@ -34,11 +34,10 @@
 
 #define MAXIMUM_PERCENT 80
 
-#define SERVICEBASE_PERCENT 20 // base if maximum is used
+#define SERVICEBASE_PERCENT 20	// base if maximum is used
 #define EXPRESS_PERCENT 60
 #define PREMIUM_PERCENT 30
 #define DEFAULT_PERCENT 10
-
 
 /* NF Mark/Mask
  *
@@ -363,7 +362,7 @@ void add_client_ip_srvfilter(char *name, char *type, char *data, int level, int 
 #if !defined(ARCH_broadcom) || defined(HAVE_BCMMODERN)
 char *get_tcfmark(char *tcfmark, uint32 mark, int seg)
 {
-	char nfmark[24]={0};
+	char nfmark[24] = { 0 };
 	char *ntoken = NULL;
 	*tcfmark = 0;
 
@@ -538,6 +537,7 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 	unsigned int lanlimit = 1000000;
 	unsigned int prio;
 	unsigned int parent;
+	unsigned int hfscparent = 2;
 	int rtt = -1;
 	int noecn = -1;
 	int max = 50;
@@ -565,6 +565,7 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 		lanrate = lanlimit * MAXIMUM_PERCENT / 100;
 		prio = 2;
 		parent = 0;
+		hfscparent = 0;
 		break;
 	case 10:
 		uprate = uplimit * EXPRESS_PERCENT / 100;
@@ -627,9 +628,9 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 
 	} else {
 
-		add_hfsc_class(wan_dev, 1, base, uprate, uplimit);
-		add_hfsc_class("imq0", 1, base, downrate, downlimit);
-		add_hfsc_class("imq1", 1, base, lanrate, lanlimit);
+		add_hfsc_class(wan_dev, hfscparent, base, uprate, uplimit);
+		add_hfsc_class("imq0", hfscparent, base, downrate, downlimit);
+		add_hfsc_class("imq1", hfscparent, base, lanrate, lanlimit);
 		int i;
 		for (i = 0; i < 5; i++) {
 			add_hfsc_class(wan_dev, base, base + 1 + i, uprates[i], uplimit);
@@ -822,8 +823,8 @@ static void init_htb_class(const char *dev, int rate, int mtu)
 	add_htb_class(dev, 0, 100, MAXIMUM_PERCENT * rate / 100, rate, mtu, 1);
 	add_htb_class(dev, 1, 2, SERVICEBASE_PERCENT * rate / 100, rate, mtu, 2);
 
-//	add_htb_class(dev, 1, 1000, MAXIMUM_PERCENT * rate / 100, rate, mtu, 0 + 1); // special class which allows to steal all traffic from other classes
-//	add_htb_class(dev, 2, 100, MAXIMUM_PERCENT * rate / 100, rate, mtu, 2);
+//      add_htb_class(dev, 1, 1000, MAXIMUM_PERCENT * rate / 100, rate, mtu, 0 + 1); // special class which allows to steal all traffic from other classes
+//      add_htb_class(dev, 2, 100, MAXIMUM_PERCENT * rate / 100, rate, mtu, 2);
 	add_htb_class(dev, 2, 10, EXPRESS_PERCENT * rate / 100, rate, mtu, 3);
 	add_htb_class(dev, 2, 20, PREMIUM_PERCENT * rate / 100, rate, mtu, 4);
 	add_htb_class(dev, 2, 30, DEFAULT_PERCENT * rate / 100, rate, mtu, 5);
@@ -835,8 +836,8 @@ static void init_hfsc_class(const char *dev, int rate)
 	add_hfsc_class(dev, 0, 1, rate, rate);
 	add_hfsc_class(dev, 0, 100, MAXIMUM_PERCENT * rate / 100, rate);
 	add_hfsc_class(dev, 1, 2, SERVICEBASE_PERCENT * rate / 100, rate);
-//	add_hfsc_class(dev, 1, 1000, * MAXIMUM_PERCENT rate / 100, rate); // special class which allows to steal all traffic from other classes
-//	add_hfsc_class(dev, 2, 100, MAXIMUM_PERCENT * rate / 100, rate);
+//      add_hfsc_class(dev, 1, 1000, * MAXIMUM_PERCENT rate / 100, rate); // special class which allows to steal all traffic from other classes
+//      add_hfsc_class(dev, 2, 100, MAXIMUM_PERCENT * rate / 100, rate);
 	add_hfsc_class(dev, 2, 10, EXPRESS_PERCENT * rate / 100, rate);
 	add_hfsc_class(dev, 2, 20, PREMIUM_PERCENT * rate / 100, rate);
 	add_hfsc_class(dev, 2, 30, DEFAULT_PERCENT * rate / 100, rate);
@@ -973,7 +974,7 @@ static void add_filter(const char *dev, int pref, int handle, int classid)
 
 static void init_filter(const char *dev)
 {
-//	add_filter(dev, 0 + 1, 1000, 1000);
+//      add_filter(dev, 0 + 1, 1000, 1000);
 	add_filter(dev, 1 + 1, 100, 100);
 	add_filter(dev, 3 + 1, 10, 10);
 	add_filter(dev, 5 + 1, 20, 20);
