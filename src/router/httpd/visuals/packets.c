@@ -9,12 +9,12 @@ void getpacketcounts(unsigned long long *counts, int len)
 
 	for (this = iptc_first_chain(&handle); this; this = iptc_next_chain(&handle)) {
 		const struct ipt_entry *i;
-		if (strcmp("SVQOS_SVCS", this) != 0)
+		if (strcmp("SVQOS_SVCS", this))
 			continue;
 		i = iptc_first_rule(this, &handle);
 		while (i) {
 			counts[c++] = i->counters.pcnt;
-			if (c == len) {
+			if (c == len - 1) {
 				iptc_free(&handle);
 				return;
 			}
