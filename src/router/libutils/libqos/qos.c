@@ -35,8 +35,8 @@
 #define MAXIMUM_PERCENT 80
 
 #define SERVICEBASE_PERCENT 20	// base if maximum is used
-#define EXPRESS_PERCENT 60
-#define PREMIUM_PERCENT 30
+#define PREMIUM_PERCENT 60
+#define EXPRESS_PERCENT 30
 #define DEFAULT_PERCENT 10
 
 /* NF Mark/Mask
