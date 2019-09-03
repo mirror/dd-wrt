@@ -88,12 +88,14 @@ struct htb_prio {
 	 * last valid ptr (used when ptr is NULL).
 	 */
 	u32		last_ptr_id;
+	unsigned int		overlimits;
 };
 
 /* interior & leaf nodes; props specific to leaves are marked L:
  * To reduce false sharing, place mostly read fields at beginning,
  * and mostly written ones at the end.
  */
+ 
 struct htb_class {
 	struct Qdisc_class_common common;
 	struct psched_ratecfg	rate;
@@ -162,7 +164,8 @@ struct htb_sched {
 
 	/* non shaped skbs; let them go directly thru */
 	struct sk_buff_head	direct_queue;
-	long			direct_pkts;
+	u32			direct_pkts;
+	u32			overlimits;
 
 	struct qdisc_watchdog	watchdog;
 
@@ -524,6 +527,11 @@ htb_change_class_mode(struct htb_sched *q, struct htb_class *cl, s64 *diff)
 
 	if (new_mode == cl->cmode)
 		return;
+
+	if (new_mode == HTB_CANT_SEND) {
+		cl->overlimits++;
+		q->overlimits++;
+	}
 
 	if (cl->prio_activity) {	/* not necessary: speed optimization */
 		if (cl->cmode != HTB_CANT_SEND)
@@ -928,7 +936,6 @@ ok:
 				goto ok;
 		}
 	}
-	qdisc_qstats_overlimit(sch);
 	if (likely(next_event > q->now))
 		qdisc_watchdog_schedule_ns(&q->watchdog, next_event, true);
 	else
@@ -1062,6 +1069,7 @@ static int htb_dump(struct Qdisc *sch, struct sk_buff *skb)
 	struct nlattr *nest;
 	struct tc_htb_glob gopt;
 
+	sch->qstats.overlimits = q->overlimits;
 	/* Its safe to not acquire qdisc lock. As we hold RTNL,
 	 * no change can happen on the qdisc parameters.
 	 */
@@ -1135,6 +1143,10 @@ htb_dump_class_stats(struct Qdisc *sch, unsigned long arg, struct gnet_dump *d)
 {
 	struct htb_class *cl = (struct htb_class *)arg;
 	__u32 qlen = 0;
+	struct gnet_stats_queue qs = {
+		.drops = cl->qstats.drops,
+		.overlimits = cl->overlimits,
+	};
 
 	if (!cl->level && cl->un.leaf.q)
 		qlen = cl->un.leaf.q->q.qlen;
@@ -1143,7 +1155,7 @@ htb_dump_class_stats(struct Qdisc *sch, unsigned long arg, struct gnet_dump *d)
 
 	if (gnet_stats_copy_basic(d, NULL, &cl->bstats) < 0 ||
 	    gnet_stats_copy_rate_est(d, NULL, &cl->rate_est) < 0 ||
-	    gnet_stats_copy_queue(d, NULL, &cl->qstats, qlen) < 0)
+	    gnet_stats_copy_queue(d, NULL, &qs, qlen) < 0)
 		return -1;
 
 	return gnet_stats_copy_app(d, &cl->xstats, sizeof(cl->xstats));
