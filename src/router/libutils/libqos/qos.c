@@ -564,8 +564,8 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 		downrate = downlimit * MAXIMUM_PERCENT / 100;
 		lanrate = lanlimit * MAXIMUM_PERCENT / 100;
 		prio = 2;
-		parent = 0;
-		hfscparent = 0;
+		parent = 1;
+		hfscparent = 1;
 		break;
 	case 10:
 		uprate = uplimit * EXPRESS_PERCENT / 100;
