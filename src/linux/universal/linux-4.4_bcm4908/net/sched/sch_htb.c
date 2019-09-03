@@ -88,7 +88,6 @@ struct htb_prio {
 	 * last valid ptr (used when ptr is NULL).
 	 */
 	u32		last_ptr_id;
-	unsigned int		overlimits;
 };
 
 /* interior & leaf nodes; props specific to leaves are marked L:
@@ -142,6 +141,7 @@ struct htb_class {
 	enum htb_cmode		cmode;		/* current mode of the class */
 	struct rb_node		pq_node;	/* node for event queue */
 	struct rb_node		node[TC_HTB_NUMPRIO];	/* node for self or feed tree */
+	unsigned int		overlimits;
 };
 
 struct htb_level {
