@@ -141,6 +141,7 @@ struct htb_class {
 	struct rb_node		node[TC_HTB_NUMPRIO];	/* node for self or feed tree */
 
 	unsigned int drops ____cacheline_aligned_in_smp;
+	unsigned int		overlimits;
 };
 
 struct htb_level {
@@ -163,7 +164,8 @@ struct htb_sched {
 
 	/* non shaped skbs; let them go directly thru */
 	struct qdisc_skb_head	direct_queue;
-	long			direct_pkts;
+	u32			direct_pkts;
+	u32			overlimits;
 
 	struct qdisc_watchdog	watchdog;
 
@@ -525,6 +527,11 @@ htb_change_class_mode(struct htb_sched *q, struct htb_class *cl, s64 *diff)
 
 	if (new_mode == cl->cmode)
 		return;
+
+	if (new_mode == HTB_CANT_SEND) {
+		cl->overlimits++;
+		q->overlimits++;
+	}
 
 	if (cl->prio_activity) {	/* not necessary: speed optimization */
 		if (cl->cmode != HTB_CANT_SEND)
@@ -946,7 +953,6 @@ ok:
 				goto ok;
 		}
 	}
-	qdisc_qstats_overlimit(sch);
 	if (likely(next_event > q->now))
 		qdisc_watchdog_schedule_ns(&q->watchdog, next_event);
 	else
@@ -1057,6 +1063,7 @@ static int htb_dump(struct Qdisc *sch, struct sk_buff *skb)
 	struct nlattr *nest;
 	struct tc_htb_glob gopt;
 
+	sch->qstats.overlimits = q->overlimits;
 	/* Its safe to not acquire qdisc lock. As we hold RTNL,
 	 * no change can happen on the qdisc parameters.
 	 */
@@ -1133,6 +1140,7 @@ htb_dump_class_stats(struct Qdisc *sch, unsigned long arg, struct gnet_dump *d)
 	struct htb_class *cl = (struct htb_class *)arg;
 	struct gnet_stats_queue qs = {
 		.drops = cl->drops,
+		.overlimits = cl->overlimits,
 	};
 	__u32 qlen = 0;
 
