@@ -568,16 +568,16 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 		hfscparent = 1;
 		break;
 	case 10:
-		uprate = uplimit * EXPRESS_PERCENT / 100;
-		downrate = downlimit * EXPRESS_PERCENT / 100;
-		lanrate = lanlimit * EXPRESS_PERCENT / 100;
+		uprate = uplimit * PREMIUM_PERCENT / 100;
+		downrate = downlimit * PREMIUM_PERCENT / 100;
+		lanrate = lanlimit * PREMIUM_PERCENT / 100;
 		prio = 3;
 		parent = 10;
 		break;
 	case 20:
-		uprate = uplimit * PREMIUM_PERCENT / 100;
-		downrate = downlimit * PREMIUM_PERCENT / 100;
-		lanrate = lanlimit * PREMIUM_PERCENT / 100;
+		uprate = uplimit * EXPRESS_PERCENT / 100;
+		downrate = downlimit * EXPRESS_PERCENT / 100;
+		lanrate = lanlimit * EXPRESS_PERCENT / 100;
 		prio = 4;
 		parent = 20;
 		break;
@@ -606,9 +606,9 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 		parent = 1;
 		break;
 	}
-	unsigned int uprates[5] = { uprate * MAXIMUM_PERCENT / 100, uprate * EXPRESS_PERCENT / 100, uprate * PREMIUM_PERCENT / 100, uprate * DEFAULT_PERCENT / 100, 128 };
-	unsigned int downrates[5] = { downrate * MAXIMUM_PERCENT / 100, downrate * EXPRESS_PERCENT / 100, downrate * PREMIUM_PERCENT / 100, downrate * DEFAULT_PERCENT / 100, 128 };
-	unsigned int lanrates[5] = { lanrate * MAXIMUM_PERCENT / 100, lanrate * EXPRESS_PERCENT / 100, lanrate * PREMIUM_PERCENT / 100, lanrate * DEFAULT_PERCENT / 100, 128 };
+	unsigned int uprates[5] = { uprate * MAXIMUM_PERCENT / 100, uprate * PREMIUM_PERCENT / 100, uprate * EXPRESS_PERCENT / 100, uprate * DEFAULT_PERCENT / 100, 128 };
+	unsigned int downrates[5] = { downrate * MAXIMUM_PERCENT / 100, downrate * PREMIUM_PERCENT / 100, downrate * EXPRESS_PERCENT / 100, downrate * DEFAULT_PERCENT / 100, 128 };
+	unsigned int lanrates[5] = { lanrate * MAXIMUM_PERCENT / 100, lanrate * PREMIUM_PERCENT / 100, lanrate * EXPRESS_PERCENT / 100, lanrate * DEFAULT_PERCENT / 100, 128 };
 	if (nvram_matchi("qos_type", 0)) {
 		char prios[5] = { 0, prio, prio + 1, prio + 1, 7 };
 
@@ -825,8 +825,8 @@ static void init_htb_class(const char *dev, int rate, int mtu)
 
 //      add_htb_class(dev, 1, 1000, MAXIMUM_PERCENT * rate / 100, rate, mtu, 0 + 1); // special class which allows to steal all traffic from other classes
 //      add_htb_class(dev, 2, 100, MAXIMUM_PERCENT * rate / 100, rate, mtu, 2);
-	add_htb_class(dev, 2, 10, EXPRESS_PERCENT * rate / 100, rate, mtu, 3);
-	add_htb_class(dev, 2, 20, PREMIUM_PERCENT * rate / 100, rate, mtu, 4);
+	add_htb_class(dev, 2, 10, PREMIUM_PERCENT * rate / 100, rate, mtu, 3);
+	add_htb_class(dev, 2, 20, EXPRESS_PERCENT * rate / 100, rate, mtu, 4);
 	add_htb_class(dev, 2, 30, DEFAULT_PERCENT * rate / 100, rate, mtu, 5);
 	add_htb_class(dev, 2, 40, 128, rate, mtu, 6);
 }
@@ -838,8 +838,8 @@ static void init_hfsc_class(const char *dev, int rate)
 	add_hfsc_class(dev, 1, 2, SERVICEBASE_PERCENT * rate / 100, rate);
 //      add_hfsc_class(dev, 1, 1000, * MAXIMUM_PERCENT rate / 100, rate); // special class which allows to steal all traffic from other classes
 //      add_hfsc_class(dev, 2, 100, MAXIMUM_PERCENT * rate / 100, rate);
-	add_hfsc_class(dev, 2, 10, EXPRESS_PERCENT * rate / 100, rate);
-	add_hfsc_class(dev, 2, 20, PREMIUM_PERCENT * rate / 100, rate);
+	add_hfsc_class(dev, 2, 10, PREMIUM_PERCENT * rate / 100, rate);
+	add_hfsc_class(dev, 2, 20, EXPRESS_PERCENT * rate / 100, rate);
 	add_hfsc_class(dev, 2, 30, DEFAULT_PERCENT * rate / 100, rate);
 	add_hfsc_class(dev, 2, 40, 128, rate);
 
