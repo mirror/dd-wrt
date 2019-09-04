@@ -1004,7 +1004,7 @@ void start_wshaper(void)
 
 	if (!strcmp(wshaper_dev, "WAN")) {
 		eval("ifconfig", "imq1", "down");
-		init_qos(nvram_matchi("qos_type", 0) ? "htb" : "hfsc", ul, dl, wan_dev, mtu, "imq0", aqd, "0");
+		init_qos(nvram_matchi("qos_type", 0) ? "htb" : "hfsc", ul, dl, wan_dev, mtu, "imq0", aqd, NULL);
 	} else {
 		eval("ifconfig", "imq1", "down");
 		eval("ifconfig", "imq1", "mtu", "1500");
