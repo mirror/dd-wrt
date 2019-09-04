@@ -1038,7 +1038,7 @@ void init_qos(const char *strtype, int up, int down, const char *wandev, int mtu
 		init_filter(imq_wan);
 
 	}
-	if (lan_imq) {
+	if (imq_lan) {
 		eval("ip", "link", "set", imq_lan, "up");
 
 		if (type == TYPE_HTB) {
