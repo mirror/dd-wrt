@@ -804,17 +804,22 @@ void add_userip(char *ip, int base, int uprate, int downrate, int lanrate)
 
 void deinit_qos(const char *wandev, const char *imq_wan, const char *imq_lan)
 {
-	eval("ip", "link", "set", imq_wan, "down");
-	eval("ip", "link", "set", imq_lan, "down");
 	eval("tc", "filter", "del", "dev", wandev);
-	eval("tc", "filter", "del", "dev", imq_wan);
-	eval("tc", "filter", "del", "dev", imq_lan);
 	eval("tc", "qdisc", "del", "dev", wandev, "root");
-	eval("tc", "qdisc", "del", "dev", imq_wan, "root");
-	eval("tc", "qdisc", "del", "dev", imq_lan, "root");
 	eval("tc", "class", "del", "dev", wandev);
-	eval("tc", "class", "del", "dev", imq_wan);
-	eval("tc", "class", "del", "dev", imq_lan);
+	if (imq_wan) {
+		eval("ip", "link", "set", imq_wan, "down");
+		eval("tc", "filter", "del", "dev", imq_wan);
+		eval("tc", "qdisc", "del", "dev", imq_wan, "root");
+		eval("tc", "class", "del", "dev", imq_wan);
+	}
+
+	if (imq_lan) {
+		eval("ip", "link", "set", imq_lan, "down");
+		eval("tc", "filter", "del", "dev", imq_lan);
+		eval("tc", "qdisc", "del", "dev", imq_lan, "root");
+		eval("tc", "class", "del", "dev", imq_lan);
+	}
 }
 
 static void init_htb_class(const char *dev, int rate, int mtu)
@@ -1033,7 +1038,7 @@ void init_qos(const char *strtype, int up, int down, const char *wandev, int mtu
 		init_filter(imq_wan);
 
 	}
-	if (strcmp(imq_lan, "0")) {
+	if (lan_imq) {
 		eval("ip", "link", "set", imq_lan, "up");
 
 		if (type == TYPE_HTB) {
