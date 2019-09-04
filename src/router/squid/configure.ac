@@ -2436,10 +2436,6 @@ else
   else
     AC_MSG_ERROR(Build environment $buildmodel not known to getconf.)
   fi
-  CFLAGS="`getconf ${buildmodel}_CFLAGS` $CFLAGS"
-  CXXFLAGS="`getconf ${buildmodel}_CFLAGS` $CXXFLAGS"
-  LIBS="`getconf ${buildmodel}_LIBS` $LIBS"
-  LDFLAGS="`getconf ${buildmodel}_LDFLAGS` $LDFLAGS"
   if test "x$squid_host_os" = "xsolaris" ; then
 
 # On Solaris getconf returns for CFLAGS -xarch=generic64, -Xa and -Usun options, and
@@ -2452,9 +2448,6 @@ else
       CFLAGS="`echo $CFLAGS | sed -e 's/-Xa//'`"
       CXXFLAGS="`echo $CXXFLAGS | sed -e 's/-Xa//'`"
       AC_MSG_NOTICE([Replacing -xarch=generic64 with -m64 for gcc/g++ on $host])
-      CFLAGS="`echo $CFLAGS | sed -e 's/-xarch=generic64/-m64/'`"
-      CXXFLAGS="`echo $CXXFLAGS | sed -e 's/-xarch=generic64/-m64/'`"
-      LDFLAGS="`echo $LDFLAGS | sed -e 's/-xarch=generic64//'`"
     fi
     AC_MSG_NOTICE([Removing -Usun on $host])
     CFLAGS="`echo $CFLAGS | sed -e 's/-Usun//'`"
