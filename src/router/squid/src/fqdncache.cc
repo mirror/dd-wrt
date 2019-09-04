@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -708,8 +708,7 @@ fqdncache_init(void)
     debugs(35, 3, "Initializing FQDN Cache...");
 
     memset(&FqdncacheStats, '\0', sizeof(FqdncacheStats));
-
-    memset(&lru_list, '\0', sizeof(lru_list));
+    lru_list = dlink_list();
 
     fqdncache_high = (long) (((float) Config.fqdncache.size *
                               (float) FQDN_HIGH_WATER) / (float) 100);

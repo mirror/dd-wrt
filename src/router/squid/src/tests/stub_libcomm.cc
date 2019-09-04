@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -52,7 +52,6 @@ void Comm::CallbackTableDestruct() STUB
 #include "comm/Loops.h"
 void Comm::SelectLoopInit(void) STUB
 void Comm::SetSelect(int, unsigned int, PF *, void *, time_t) STUB
-void Comm::ResetSelect(int) STUB
 Comm::Flag Comm::DoSelect(int) STUB_RETVAL(Comm::COMM_ERROR)
 void Comm::QuickPollRequired(void) STUB
 

@@ -1,6 +1,6 @@
 
 <html><head>
-<meta type="copyright" content="Copyright (C) 1996-2017 The Squid Software Foundation and contributors">
+<meta type="copyright" content="Copyright (C) 1996-2019 The Squid Software Foundation and contributors">
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <title>Configuration du navigateur Web</title>
 <style type="text/css"><!--
@@ -24,19 +24,19 @@ body
 <p>Comment trouver ces réglages dans votre navigateur :</p>
 
 <div id="firefox"> For Firefox browsers go to: <ul>
-<li>Outils -&gt; Options -&gt; Avancé -&gt; Réseau -&gt; Paramètres de Connexion</li>
+<li>Tools -> Options -> Advanced -> Network -> Connection Settings</li>
 <li>Vous devez indiquer dans la fenêtre du proxy HTTP, le nom du proxy %h et le port %b</li>
 </ul>
 </div>
 
 <div id="microsoft"> For Internet Explorer browsers go to: <ul>
-<li>Outils -&gt; Options Internet -&gt; Connexion -&gt; Paramètres LAN -&gt; Proxy</li>
+<li>Tools -> Internet Options -> Connection -> LAN Settings ->Proxy</li>
 <li>Vous devez indiquer dans la fenêtre du proxy HTTP, le nom du proxy %h et le port %b</li>
 </ul>
 </div>
 
 <div id="opera"> For Opera browsers go to: <ul>
-<li>Outils -&gt; Préférences -&gt; Avancé -&gt; Réseau -&gt; Serveur Proxy</li>
+<li>Tools -> Preferences -> Advanced -> Network -> Proxy Servers</li>
 <li>Vous devez indiquer dans la fenêtre du proxy HTTP, le nom du proxy %h et le port %b</li>
 </ul>
 </div>

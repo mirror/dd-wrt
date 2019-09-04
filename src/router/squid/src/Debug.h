@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -11,6 +11,7 @@
 #ifndef SQUID_DEBUG_H
 #define SQUID_DEBUG_H
 
+#include "base/Here.h"
 // XXX should be mem/forward.h once it removes dependencies on typedefs.h
 #include "mem/AllocatorProxy.h"
 
@@ -67,6 +68,7 @@ public:
         void formatStream();
         Context *upper; ///< previous or parent record in nested debugging calls
         std::ostringstream buf; ///< debugs() output sink
+        bool forceAlert; ///< the current debugs() will be a syslog ALERT
     };
 
     /// whether debugging the given section and the given level produces output
@@ -95,14 +97,23 @@ public:
     /// logs output buffer created in Start() and closes debugging context
     static void Finish();
 
+    /// configures the active debugging context to write syslog ALERT
+    static void ForceAlert();
 private:
     static Context *Current; ///< deepest active context; nil outside debugs()
 };
 
-extern FILE *debug_log;
+/// cache.log FILE or, as the last resort, stderr stream;
+/// may be nil during static initialization and destruction!
+FILE *DebugStream();
+/// change-avoidance macro; new code should call DebugStream() instead
+#define debug_log DebugStream()
 
-size_t BuildPrefixInit();
-const char * SkipBuildPrefix(const char* path);
+/// start logging to stderr (instead of cache.log, if any)
+void StopUsingDebugLog();
+
+/// a hack for low-level file descriptor manipulations in ipcCreate()
+void ResyncDebugLog(FILE *newDestination);
 
 /* Debug stream
  *
@@ -117,12 +128,17 @@ const char * SkipBuildPrefix(const char* path);
             std::ostream &_dbo = Debug::Start((SECTION), _dbg_level); \
             if (_dbg_level > DBG_IMPORTANT) { \
                 _dbo << (SECTION) << ',' << _dbg_level << "| " \
-                     << SkipBuildPrefix(__FILE__)<<"("<<__LINE__<<") "<<__FUNCTION__<<": "; \
+                     << Here() << ": "; \
             } \
             _dbo << CONTENT; \
             Debug::Finish(); \
         } \
    } while (/*CONSTCOND*/ 0)
+
+/// Does not change the stream being manipulated. Exists for its side effect:
+/// In a debugs() context, forces the message to become a syslog ALERT.
+/// Outside of debugs() context, has no effect and should not be used.
+std::ostream& ForceAlert(std::ostream& s);
 
 /** stream manipulator which does nothing.
  * \deprecated Do not add to new code, and remove when editing old code
@@ -158,7 +174,6 @@ inline std::ostream& operator <<(std::ostream &os, const uint8_t d)
 
 /* Legacy debug function definitions */
 void _db_init(const char *logfile, const char *options);
-void _db_print(const char *,...) PRINTF_FORMAT_ARG1;
 void _db_set_syslog(const char *facility);
 void _db_rotate_log(void);
 
@@ -235,6 +250,29 @@ operator <<(std::ostream &os, const RawPointerT<Pointer> &pd)
     else
         return os << "[nil]";
 }
+
+/// std::ostream manipulator to print integers as hex numbers prefixed by 0x
+template <class Integer>
+class AsHex
+{
+public:
+    explicit AsHex(const Integer n): raw(n) {}
+    Integer raw; ///< the integer to print
+};
+
+template <class Integer>
+inline std::ostream &
+operator <<(std::ostream &os, const AsHex<Integer> number)
+{
+    const auto oldFlags = os.flags();
+    os << std::hex << std::showbase << number.raw;
+    os.setf(oldFlags);
+    return os;
+}
+
+/// a helper to ease AsHex object creation
+template <class Integer>
+inline AsHex<Integer> asHex(const Integer n) { return AsHex<Integer>(n); }
 
 #endif /* SQUID_DEBUG_H */
 

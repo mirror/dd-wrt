@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -37,15 +37,14 @@ void StoreEntry::replaceHttpReply(HttpReply *, bool andStartWriting) STUB
 bool StoreEntry::mayStartSwapOut() STUB_RETVAL(false)
 void StoreEntry::trimMemory(const bool preserveSwappable) STUB
 void StoreEntry::abort() STUB
-void StoreEntry::makePublic(const KeyScope scope) STUB
+bool StoreEntry::makePublic(const KeyScope scope) STUB
 void StoreEntry::makePrivate(const bool shareable) STUB
-void StoreEntry::setPublicKey(const KeyScope scope) STUB
-void StoreEntry::setPrivateKey(const bool shareable) STUB
+bool StoreEntry::setPublicKey(const KeyScope scope) STUB
+void StoreEntry::setPrivateKey(const bool, const bool) STUB
 void StoreEntry::expireNow() STUB
 void StoreEntry::releaseRequest(const bool shareable) STUB
 void StoreEntry::negativeCache() STUB
-void StoreEntry::cacheNegatively() STUB
-void StoreEntry::purgeMem() STUB
+bool StoreEntry::cacheNegatively() STUB
 void StoreEntry::swapOut() STUB
 void StoreEntry::swapOutFileClose(int how) STUB
 const char *StoreEntry::url() const STUB_RETVAL(NULL)
@@ -54,8 +53,9 @@ int StoreEntry::checkNegativeHit() const STUB_RETVAL(0)
 int StoreEntry::locked() const STUB_RETVAL(0)
 int StoreEntry::validToSend() const STUB_RETVAL(0)
 bool StoreEntry::memoryCachable() STUB_RETVAL(false)
-MemObject *StoreEntry::makeMemObject() STUB_RETVAL(NULL)
+void StoreEntry::createMemObject() STUB
 void StoreEntry::createMemObject(const char *, const char *, const HttpRequestMethod &aMethod) STUB
+void StoreEntry::ensureMemObject(const char *, const char *, const HttpRequestMethod &) STUB
 void StoreEntry::dump(int debug_lvl) const STUB
 void StoreEntry::hashDelete() STUB
 void StoreEntry::hashInsert(const cache_key *) STUB
@@ -82,7 +82,6 @@ void *StoreEntry::operator new(size_t byteCount)
     return new StoreEntry();
 }
 void StoreEntry::operator delete(void *address) STUB
-void StoreEntry::setReleaseFlag() STUB
 //#if USE_SQUID_ESI
 //ESIElement::Pointer StoreEntry::cachedESITree STUB_RETVAL(NULL)
 //#endif
@@ -111,6 +110,8 @@ void Store::Maintain(void *unused) STUB
 int Store::Controller::store_dirs_rebuilding = 0;
 StoreSearch *Store::Controller::search() STUB_RETVAL(NULL)
 void Store::Controller::maintain() STUB
+bool Store::Controller::markedForDeletion(const cache_key *) const STUB_RETVAL(false)
+void Store::Controller::freeMemorySpace(const int) STUB
 
 std::ostream &operator <<(std::ostream &os, const StoreEntry &)
 {
@@ -124,7 +125,7 @@ StoreEntry *storeGetPublic(const char *uri, const HttpRequestMethod& method) STU
 StoreEntry *storeGetPublicByRequest(HttpRequest * request, const KeyScope scope) STUB_RETVAL(NULL)
 StoreEntry *storeGetPublicByRequestMethod(HttpRequest * request, const HttpRequestMethod& method, const KeyScope scope) STUB_RETVAL(NULL)
 StoreEntry *storeCreateEntry(const char *, const char *, const RequestFlags &, const HttpRequestMethod&) STUB_RETVAL(NULL)
-StoreEntry *storeCreatePureEntry(const char *storeId, const char *logUrl, const RequestFlags &, const HttpRequestMethod&) STUB_RETVAL(NULL)
+StoreEntry *storeCreatePureEntry(const char *storeId, const char *logUrl, const HttpRequestMethod&) STUB_RETVAL(nullptr)
 void storeConfigure(void) STUB
 int expiresMoreThan(time_t, time_t) STUB_RETVAL(0)
 void storeAppendPrintf(StoreEntry *, const char *,...) STUB

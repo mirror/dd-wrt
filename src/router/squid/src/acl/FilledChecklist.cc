@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -79,7 +79,7 @@ showDebugWarning(const char *msg)
 }
 
 void
-ACLFilledChecklist::syncAle() const
+ACLFilledChecklist::verifyAle() const
 {
     // make sure the ALE fields used by Format::assemble to
     // fill the old external_acl_type codes are set if any
@@ -93,6 +93,8 @@ ACLFilledChecklist::syncAle() const
     if (request) {
         if (!al->request) {
             showDebugWarning("HttpRequest object");
+            // XXX: al->request should be original,
+            // but the request may be already adapted
             al->request = request;
             HTTPMSGLOCK(al->request);
         }
@@ -105,7 +107,9 @@ ACLFilledChecklist::syncAle() const
 
         if (al->url.isEmpty()) {
             showDebugWarning("URL");
-            al->url = request->url.absolute();
+            // XXX: al->url should be the request URL from client,
+            // but request->url may be different (e.g.,redirected)
+            al->url = request->effectiveRequestUri();
         }
     }
 
@@ -121,6 +125,19 @@ ACLFilledChecklist::syncAle() const
         al->cache.rfc931 = xstrdup(rfc931);
     }
 #endif
+}
+
+void
+ACLFilledChecklist::syncAle(HttpRequest *adaptedRequest, const char *logUri) const
+{
+    if (!al)
+        return;
+    if (adaptedRequest && !al->adapted_request) {
+        al->adapted_request = adaptedRequest;
+        HTTPMSGLOCK(al->adapted_request);
+    }
+    if (logUri && al->url.isEmpty())
+        al->url = logUri;
 }
 
 ConnStateData *

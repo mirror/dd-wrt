@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -78,7 +78,7 @@ public:
     int64_t firstOffset() const;
     int64_t lowestOffset(int64_t) const;
     bool offsetLimitExceeded(const int64_t limit) const;
-    bool contains(HttpHdrRangeSpec& r) const;
+    bool contains(const HttpHdrRangeSpec& r) const;
     std::vector<HttpHdrRangeSpec *> specs;
 
 private:

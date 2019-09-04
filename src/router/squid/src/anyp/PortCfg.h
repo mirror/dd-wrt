@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -16,10 +16,6 @@
 #include "sbuf/SBuf.h"
 #include "security/ServerOptions.h"
 
-#if USE_OPENSSL
-#include "ssl/gadgets.h"
-#endif
-
 namespace AnyP
 {
 
@@ -29,10 +25,6 @@ public:
     PortCfg();
     ~PortCfg();
     AnyP::PortCfgPointer clone() const;
-#if USE_OPENSSL
-    /// creates, configures, and validates SSL context and related port options
-    void configureSslServerContext();
-#endif
 
     PortCfgPointer next;
 
@@ -71,21 +63,6 @@ public:
 
     /// TLS configuration options for this listening port
     Security::ServerOptions secure;
-
-#if USE_OPENSSL
-    char *clientca;
-    char *sslContextSessionId; ///< "session id context" for secure.staticSslContext
-    bool generateHostCertificates; ///< dynamically make host cert for sslBump
-    size_t dynamicCertMemCacheSize; ///< max size of generated certificates memory cache
-
-    Security::CertPointer signingCert; ///< x509 certificate for signing generated certificates
-    Ssl::EVP_PKEY_Pointer signPkey; ///< private key for sighing generated certificates
-    Ssl::X509_STACK_Pointer certsToChain; ///<  x509 certificates to send with the generated cert
-    Security::CertPointer untrustedSigningCert; ///< x509 certificate for signing untrusted generated certificates
-    Ssl::EVP_PKEY_Pointer untrustedSignPkey; ///< private key for signing untrusted generated certificates
-
-    Ssl::X509_NAME_STACK_Pointer clientCA; ///< CA certificates to use when verifying client certificates
-#endif
 };
 
 } // namespace AnyP

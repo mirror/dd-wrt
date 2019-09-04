@@ -1,6 +1,6 @@
 
 <html><head>
-<meta type="copyright" content="Copyright (C) 1996-2017 The Squid Software Foundation and contributors">
+<meta type="copyright" content="Copyright (C) 1996-2019 The Squid Software Foundation and contributors">
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <title>A böngésző konfigurálása</title>
 <style type="text/css"><!--
@@ -24,19 +24,19 @@ body
 <p>Ezeket a beállításokat az alábbi menüpontokon keresztül találhatja meg:</p>
 
 <div id="firefox"> For Firefox browsers go to: <ul>
-<li>Eszközök -&gt; Beállítások -&gt; Fejlett -&gt; Hálózat -&gt; Kapcsolatbeállítások</li>
+<li>Tools -> Options -> Advanced -> Network -> Connection Settings</li>
 <li>Válassza ki a „Proxybeállítások automatikus felismerése ehhez a hálózathoz” jelölőnégyzetet</li>
 </ul>
 </div>
 
 <div id="microsoft"> For Internet Explorer browsers go to: <ul>
-<li>Eszközök -&gt; Internetbeállítások -&gt; Kapcsolat -&gt; Helyi hálózat beállításai -&gt; Proxy</li>
+<li>Tools -> Internet Options -> Connection -> LAN Settings ->Proxy</li>
 <li>Válassza ki az „Automatikus felismerés” opciót</li>
 </ul>
 </div>
 
 <div id="opera"> For Opera browsers go to: <ul>
-<li>Eszközök -&gt; Beállítások -&gt; Fejlett -&gt; Hálózat -&gt; Proxyszerverek</li>
+<li>Tools -> Preferences -> Advanced -> Network -> Proxy Servers</li>
 <li>Válassza ki az "Automatikus proxybeállítás használata" opciót</li>
 </ul>
 </div>

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -90,7 +90,7 @@ public:
     bool noDirect = false;
     /** Reply with chunked transfer encoding */
     bool chunkedReply = false;
-    /** set if stream error has occured */
+    /** set if stream error has occurred */
     bool streamError = false;
     /** internal ssl-bump request to get server cert */
     bool sslPeek = false;

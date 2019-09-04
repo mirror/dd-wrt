@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -134,7 +134,7 @@ public:
     HttpHdrRange *getRange() const;
     HttpHdrSc *getSc() const;
     HttpHdrContRange *getContRange() const;
-    const char *getAuth(Http::HdrType id, const char *auth_scheme) const;
+    SBuf getAuthToken(Http::HdrType id, const char *auth_scheme) const;
     ETag getETag(Http::HdrType id) const;
     TimeOrTag getTimeOrTag(Http::HdrType id) const;
     int hasListMember(Http::HdrType id, const char *member, const char separator) const;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -50,7 +50,7 @@ main(int argc, char **argv)
 {
     Debug::Levels[1] = 8;
     debugs (1,1,"test" << "string");
-    debugs (1,9,"dont show this" << "string");
+    debugs (1,9,"do not show this" << "string");
     debugs (1,1,"test" << "string");
     debugs (1,1,"test" << "string");
     if (true)

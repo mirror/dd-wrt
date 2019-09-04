@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -12,5 +12,6 @@
 #define STUB_API "CollapsedForwarding.cc"
 #include "tests/STUB.h"
 
-void CollapsedForwarding::Broadcast(StoreEntry const&) STUB
+void CollapsedForwarding::Broadcast(StoreEntry const&, const bool) STUB
+void CollapsedForwarding::Broadcast(const sfileno, const bool) STUB
 

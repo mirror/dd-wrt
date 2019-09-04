@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -52,7 +52,8 @@ public:
 
     HttpHdrSc *surrogate_control;
 
-    HttpHdrContRange *content_range;
+    /// \returns parsed Content-Range for a 206 response and nil for others
+    const HttpHdrContRange *contentRange() const;
 
     short int keep_alive;
 
@@ -100,7 +101,11 @@ public:
 
     int validatorsMatch (HttpReply const *other) const;
 
-    void packHeadersInto(Packable * p) const;
+    /// adds status line and header to the given Packable
+    /// assumes that `p` can quickly process small additions
+    void packHeadersUsingFastPacker(Packable &p) const;
+    /// same as packHeadersUsingFastPacker() but assumes that `p` cannot quickly process small additions
+    void packHeadersUsingSlowPacker(Packable &p) const;
 
     /** Clone this reply.
      *  Could be done as a copy-contructor but we do not want to accidently copy a HttpReply..
@@ -124,7 +129,7 @@ private:
 
     void hdrCacheClean();
 
-    void packInto(Packable * p) const;
+    void packInto(MemBuf &) const;
 
     /* ez-routines */
     /** \return construct 304 reply and pack it into a MemBuf */
@@ -141,6 +146,8 @@ private:
     String removeStaleWarningValues(const String &value);
 
     mutable int64_t bodySizeMax; /**< cached result of calcMaxBodySize */
+
+    HttpHdrContRange *content_range; ///< parsed Content-Range; nil for non-206 responses!
 
 protected:
     virtual void packFirstLineInto(Packable * p, bool) const { sline.packInto(p); }

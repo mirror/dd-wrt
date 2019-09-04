@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -12,6 +12,8 @@
 #include "base/RefCount.h"
 #include "Debug.h"
 #include "esi/Segment.h"
+
+#include <vector>
 
 typedef enum {
     ESI_PROCESS_COMPLETE = 0,
@@ -82,6 +84,22 @@ public:
     /* The top level no longer needs this element */
     virtual void finish() = 0;
 };
+
+/// ESI protocol types and operators
+namespace Esi {
+
+/// an ordered set of ESI elements
+typedef std::vector<ESIElement::Pointer> Elements;
+
+} // namespace Esi
+
+/// Call finish() and set to nil the given element. Element may already be nil.
+/// When element is part of a set, use pos to indicate position/ID
+/// for debugging.
+extern void FinishAnElement(ESIElement::Pointer &, int pos = -1);
+
+// for all elements call finish() and set Pointer to nil
+extern void FinishAllElements(Esi::Elements &);
 
 #endif /* SQUID_ESIELEMENT_H */
 

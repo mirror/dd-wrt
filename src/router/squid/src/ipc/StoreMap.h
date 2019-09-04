@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -42,6 +42,9 @@ public:
         return *this;
     }
 
+    /// restore default-constructed state
+    void clear() { size = 0; next = -1; }
+
     std::atomic<Size> size; ///< slice contents size
     std::atomic<StoreMapSliceId> next; ///< ID of the next entry slice
 };
@@ -56,7 +59,9 @@ public:
     StoreMapAnchor();
 
     /// store StoreEntry key and basics for an inode slot
-    void set(const StoreEntry &anEntry);
+    void set(const StoreEntry &anEntry, const cache_key *aKey = nullptr);
+    /// load StoreEntry basics that were previously stored with set()
+    void exportInto(StoreEntry &) const;
 
     void setKey(const cache_key *const aKey);
     bool sameKey(const cache_key *const aKey) const;
@@ -74,21 +79,32 @@ public:
 public:
     mutable ReadWriteLock lock; ///< protects slot data below
     std::atomic<uint8_t> waitingToBeFreed; ///< may be accessed w/o a lock
+    /// whether StoreMap::abortWriting() was called for a read-locked entry
+    std::atomic<uint8_t> writerHalted;
 
     // fields marked with [app] can be modified when appending-while-reading
     // fields marked with [update] can be modified when updating-while-reading
 
-    uint64_t key[2]; ///< StoreEntry key
+    uint64_t key[2] = {0, 0}; ///< StoreEntry key
 
     // STORE_META_STD TLV field from StoreEntry
     struct Basics {
-        time_t timestamp;
-        time_t lastref;
-        time_t expires;
-        time_t lastmod;
+        void clear() {
+            timestamp = 0;
+            lastref = 0;
+            expires = 0;
+            lastmod = 0;
+            swap_file_sz.store(0);
+            refcount = 0;
+            flags = 0;
+        }
+        time_t timestamp = 0;
+        time_t lastref = 0;
+        time_t expires = 0;
+        time_t lastmod = 0;
         std::atomic<uint64_t> swap_file_sz; // [app]
-        uint16_t refcount;
-        uint16_t flags;
+        uint16_t refcount = 0;
+        uint16_t flags = 0;
     } basics;
 
     /// where the chain of StoreEntry slices begins [app]
@@ -229,7 +245,9 @@ public:
     /// restrict opened for writing entry to appending operations; allow reads
     void startAppending(const sfileno fileno);
     /// successfully finish creating or updating the entry at fileno pos
-    void closeForWriting(const sfileno fileno, bool lockForReading = false);
+    void closeForWriting(const sfileno fileno);
+    /// stop writing (or updating) the locked entry and start reading it
+    void switchWritingToReading(const sfileno fileno);
     /// unlock and "forget" openForWriting entry, making it Empty again
     /// this call does not free entry slices so the caller has to do that
     void forgetWritingEntry(const sfileno fileno);
@@ -248,10 +266,18 @@ public:
     const Anchor &peekAtEntry(const sfileno fileno) const;
 
     /// free the entry if possible or mark it as waiting to be freed if not
-    void freeEntry(const sfileno fileno);
+    /// \returns whether the entry was neither empty nor marked
+    bool freeEntry(const sfileno);
     /// free the entry if possible or mark it as waiting to be freed if not
     /// does nothing if we cannot check that the key matches the cached entry
     void freeEntryByKey(const cache_key *const key);
+
+    /// whether the entry with the given key exists and was marked as
+    /// "waiting to be freed" some time ago
+    bool markedForDeletion(const cache_key *const);
+
+    /// whether the index contains a valid readable entry with the given key
+    bool hasReadableEntry(const cache_key *const);
 
     /// opens entry (identified by key) for reading, increments read level
     const Anchor *openForReading(const cache_key *const key, sfileno &fileno);
@@ -268,6 +294,9 @@ public:
     Anchor &writeableEntry(const AnchorId anchorId);
     /// readable anchor for the entry created by openForReading()
     const Anchor &readableEntry(const AnchorId anchorId) const;
+
+    /// prepare a chain-unaffiliated slice for being added to an entry chain
+    void prepFreeSlice(const SliceId sliceId);
 
     /// Returns the ID of the entry slice containing n-th byte or
     /// a negative ID if the entry does not store that many bytes (yet).

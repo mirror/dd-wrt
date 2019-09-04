@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -418,10 +418,9 @@ testSBuf::testRawSpace()
 {
     SBuf s1(literal);
     SBuf s2(fox1);
-    SBuf::size_type sz=s2.length();
-    char *rb=s2.rawSpace(strlen(fox2)+1);
+    char *rb=s2.rawAppendStart(strlen(fox2)+1);
     strcpy(rb,fox2);
-    s2.forceSize(sz+strlen(fox2));
+    s2.rawAppendFinish(rb, strlen(fox2));
     CPPUNIT_ASSERT_EQUAL(s1,s2);
 }
 
@@ -813,7 +812,7 @@ void
 testSBuf::testReserve()
 {
     SBufReservationRequirements requirements;
-    // use unusual numbers to ensure we dont hit a lucky boundary situation
+    // use unusual numbers to ensure we do not hit a lucky boundary situation
     requirements.minSpace = 10;
     requirements.idealSpace = 82;
     requirements.maxCapacity = 259;

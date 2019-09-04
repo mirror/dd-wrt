@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -143,7 +143,6 @@ FwdState::FwdState(const Comm::ConnectionPointer &client, StoreEntry * e, HttpRe
     HTTPMSGLOCK(request);
     serverDestinations.reserve(Config.forward_max_tries);
     e->lock("FwdState");
-    EBIT_SET(e->flags, ENTRY_FWD_HDR_WAIT);
     flags.connected_okay = false;
     flags.dont_retry = false;
     flags.forward_completed = false;
@@ -258,7 +257,6 @@ FwdState::completed()
             }
 #endif
         } else {
-            EBIT_CLR(entry->flags, ENTRY_FWD_HDR_WAIT);
             entry->complete();
             entry->releaseRequest();
         }
@@ -323,7 +321,9 @@ FwdState::Start(const Comm::ConnectionPointer &clientConn, StoreEntry *entry, Ht
          * we do NOT want the indirect client address to be tested here.
          */
         ACLFilledChecklist ch(Config.accessList.miss, request, NULL);
+        ch.al = al;
         ch.src_addr = request->client_addr;
+        ch.syncAle(request, nullptr);
         if (ch.fastCheck().denied()) {
             err_type page_id;
             page_id = aclGetDenyInfoPage(&Config.denyInfoList, AclMatchedName, 1);
@@ -526,7 +526,6 @@ FwdState::complete()
             debugs(17, 3, HERE << "server FD " << serverConnection()->fd << " not re-forwarding status " << entry->getReply()->sline.status());
         else
             debugs(17, 3, HERE << "server (FD closed) not re-forwarding status " << entry->getReply()->sline.status());
-        EBIT_CLR(entry->flags, ENTRY_FWD_HDR_WAIT);
         entry->complete();
 
         if (!Comm::IsConnOpen(serverConn))
@@ -588,7 +587,7 @@ FwdState::checkRetry()
     if (!entry->isEmpty())
         return false;
 
-    if (n_tries > Config.forward_max_tries)
+    if (exhaustedTries())
         return false;
 
     if (!EnoughTimeToReForward(start_t))
@@ -812,9 +811,9 @@ void
 FwdState::syncHierNote(const Comm::ConnectionPointer &server, const char *host)
 {
     if (request)
-        request->hier.note(server, host);
+        request->hier.resetPeerNotes(server, host);
     if (al)
-        al->hier.note(server, host);
+        al->hier.resetPeerNotes(server, host);
 }
 
 /**
@@ -922,6 +921,7 @@ FwdState::connectStart()
     Comm::ConnOpener *cs = new Comm::ConnOpener(serverDestinations[0], calls.connector, connTimeout);
     if (host)
         cs->setHost(host);
+    ++n_tries;
     AsyncJob::Start(cs);
 }
 
@@ -956,8 +956,8 @@ FwdState::dispatch()
     if (Ip::Qos::TheConfig.isHitNfmarkActive()) {
         if (Comm::IsConnOpen(clientConn) && Comm::IsConnOpen(serverConnection())) {
             fde * clientFde = &fd_table[clientConn->fd]; // XXX: move the fd_table access into Ip::Qos
-            /* Get the netfilter mark for the connection */
-            Ip::Qos::getNfmarkFromServer(serverConnection(), clientFde);
+            /* Get the netfilter CONNMARK */
+            clientFde->nfmarkFromServer = Ip::Qos::getNfmarkFromConnection(serverConnection(), Ip::Qos::dirOpened);
         }
     }
 
@@ -1073,7 +1073,7 @@ FwdState::reforward()
         return 0;
     }
 
-    if (n_tries > Config.forward_max_tries)
+    if (exhaustedTries())
         return 0;
 
     if (request->bodyNibbled())
@@ -1180,6 +1180,8 @@ FwdState::pconnPop(const Comm::ConnectionPointer &dest, const char *domain)
     bool retriable = checkRetriable();
     if (!retriable && Config.accessList.serverPconnForNonretriable) {
         ACLFilledChecklist ch(Config.accessList.serverPconnForNonretriable, request, NULL);
+        ch.al = al;
+        ch.syncAle(request, nullptr);
         retriable = ch.fastCheck().allowed();
     }
     // always call shared pool first because we need to close an idle
@@ -1219,6 +1221,12 @@ FwdState::logReplyStatus(int tries, const Http::StatusCode status)
         tries = MAX_FWD_STATS_IDX;
 
     ++ FwdReplyCodes[tries][status];
+}
+
+bool
+FwdState::exhaustedTries() const
+{
+    return n_tries >= Config.forward_max_tries;
 }
 
 /**** PRIVATE NON-MEMBER FUNCTIONS ********************************************/
@@ -1270,6 +1278,7 @@ getOutgoingAddress(HttpRequest * request, Comm::ConnectionPointer conn)
             else
 #endif
                 conn->local = request->client_addr;
+            conn->local.port(0); // let OS pick the source port to prevent address clashes
             // some flags need setting on the socket to use this address
             conn->flags |= COMM_DOBIND;
             conn->flags |= COMM_TRANSPARENT;

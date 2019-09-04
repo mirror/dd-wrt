@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -37,7 +37,6 @@
 #include "Store.h"
 #include "StrList.h"
 #include "tools.h"
-#include "URL.h"
 #if USE_AUTH
 #include "auth/UserRequest.h"
 #endif
@@ -308,6 +307,7 @@ clientReplyContext::processExpired()
     }
 
     if (entry) {
+        entry->ensureMemObject(url, http->log_uri, http->request->method);
         debugs(88, 5, "collapsed on existing revalidation entry: " << *entry);
         collapsedRevalidation = crSlave;
     } else {
@@ -315,10 +315,8 @@ clientReplyContext::processExpired()
                                  http->log_uri, http->request->flags, http->request->method);
         /* NOTE, don't call StoreEntry->lock(), storeCreateEntry() does it */
 
-        if (collapsingAllowed) {
+        if (collapsingAllowed && Store::Root().allowCollapsing(entry, http->request->flags, http->request->method)) {
             debugs(88, 5, "allow other revalidation requests to collapse on " << *entry);
-            Store::Root().allowCollapsing(entry, http->request->flags,
-                                          http->request->method);
             collapsedRevalidation = crInitiator;
         } else {
             collapsedRevalidation = crNone;
@@ -670,7 +668,7 @@ clientReplyContext::cacheHit(StoreIOBuffer result)
              */
             http->logType = LOG_TCP_CLIENT_REFRESH_MISS;
             processMiss();
-        } else if (r->url.getScheme() == AnyP::PROTO_HTTP) {
+        } else if (r->url.getScheme() == AnyP::PROTO_HTTP || r->url.getScheme() == AnyP::PROTO_HTTPS) {
             debugs(88, 3, "validate HIT object? YES.");
             /*
              * Object needs to be revalidated
@@ -904,30 +902,16 @@ clientReplyContext::purgeRequestFindObjectToPurge()
 void
 purgeEntriesByUrl(HttpRequest * req, const char *url)
 {
-#if USE_HTCP
-    bool get_or_head_sent = false;
-#endif
-
     for (HttpRequestMethod m(Http::METHOD_NONE); m != Http::METHOD_ENUM_END; ++m) {
         if (m.respMaybeCacheable()) {
-            if (StoreEntry *entry = storeGetPublic(url, m)) {
-                debugs(88, 5, "purging " << *entry << ' ' << m << ' ' << url);
+            const cache_key *key = storeKeyPublic(url, m);
+            debugs(88, 5, m << ' ' << url << ' ' << storeKeyText(key));
 #if USE_HTCP
-                neighborsHtcpClear(entry, url, req, m, HTCP_CLR_INVALIDATION);
-                if (m == Http::METHOD_GET || m == Http::METHOD_HEAD) {
-                    get_or_head_sent = true;
-                }
+            neighborsHtcpClear(nullptr, url, req, m, HTCP_CLR_INVALIDATION);
 #endif
-                entry->release();
-            }
+            Store::Root().evictIfFound(key);
         }
     }
-
-#if USE_HTCP
-    if (!get_or_head_sent) {
-        neighborsHtcpClear(NULL, url, req, HttpRequestMethod(Http::METHOD_GET), HTCP_CLR_INVALIDATION);
-    }
-#endif
 }
 
 void
@@ -993,7 +977,7 @@ clientReplyContext::purgeFoundObject(StoreEntry *entry)
     http->storeEntry(entry);
 
     http->storeEntry()->lock("clientReplyContext::purgeFoundObject");
-    http->storeEntry()->createMemObject(storeId(), http->log_uri,
+    http->storeEntry()->ensureMemObject(storeId(), http->log_uri,
                                         http->request->method);
 
     sc = storeClientListAdd(http->storeEntry(), this);
@@ -1058,7 +1042,7 @@ clientReplyContext::purgeDoPurgeGet(StoreEntry *newEntry)
 #if USE_HTCP
         neighborsHtcpClear(newEntry, NULL, http->request, HttpRequestMethod(Http::METHOD_GET), HTCP_CLR_PURGE);
 #endif
-        newEntry->release();
+        newEntry->release(true);
         purgeStatus = Http::scOkay;
     }
 
@@ -1074,7 +1058,7 @@ clientReplyContext::purgeDoPurgeHead(StoreEntry *newEntry)
 #if USE_HTCP
         neighborsHtcpClear(newEntry, NULL, http->request, HttpRequestMethod(Http::METHOD_HEAD), HTCP_CLR_PURGE);
 #endif
-        newEntry->release();
+        newEntry->release(true);
         purgeStatus = Http::scOkay;
     }
 
@@ -1090,7 +1074,7 @@ clientReplyContext::purgeDoPurgeHead(StoreEntry *newEntry)
 #if USE_HTCP
             neighborsHtcpClear(entry, NULL, http->request, HttpRequestMethod(Http::METHOD_GET), HTCP_CLR_PURGE);
 #endif
-            entry->release();
+            entry->release(true);
             purgeStatus = Http::scOkay;
         }
 
@@ -1101,7 +1085,7 @@ clientReplyContext::purgeDoPurgeHead(StoreEntry *newEntry)
 #if USE_HTCP
             neighborsHtcpClear(entry, NULL, http->request, HttpRequestMethod(Http::METHOD_HEAD), HTCP_CLR_PURGE);
 #endif
-            entry->release();
+            entry->release(true);
             purgeStatus = Http::scOkay;
         }
     }
@@ -1459,13 +1443,8 @@ clientReplyContext::buildReplyHeader()
              */
             /* TODO: if maxage or s-maxage is present, don't do this */
 
-            if (squid_curtime - http->storeEntry()->timestamp >= 86400) {
-                char tbuf[512];
-                snprintf (tbuf, sizeof(tbuf), "%s %s %s",
-                          "113", ThisCache,
-                          "This cache hit is still fresh and more than 1 day old");
-                hdr->putStr(Http::HdrType::WARNING, tbuf);
-            }
+            if (squid_curtime - http->storeEntry()->timestamp >= 86400)
+                hdr->putWarning(113, "This cache hit is still fresh and more than 1 day old");
         }
     }
 
@@ -1844,22 +1823,7 @@ clientReplyContext::doGetMoreData()
 
         http->storeEntry()->lock("clientReplyContext::doGetMoreData");
 
-        MemObject *mem_obj = http->storeEntry()->makeMemObject();
-        if (!mem_obj->hasUris()) {
-            /*
-             * This if-block exists because we don't want to clobber
-             * a preexiting mem_obj->method value if the mem_obj
-             * already exists.  For example, when a HEAD request
-             * is a cache hit for a GET response, we want to keep
-             * the method as GET.
-             */
-            mem_obj->setUris(storeId(), http->log_uri, http->request->method);
-            /**
-             * Here we can see if the object was
-             * created using URL or alternative StoreID from helper.
-             */
-            debugs(88, 3, "storeId: " << http->storeEntry()->mem_obj->storeId());
-        }
+        http->storeEntry()->ensureMemObject(storeId(), http->log_uri, http->request->method);
 
         sc = storeClientListAdd(http->storeEntry(), this);
 #if USE_DELAY_POOLS
@@ -1936,7 +1900,7 @@ clientReplyContext::sendStreamError(StoreIOBuffer const &result)
      * We call into the stream, because we don't know that there is a
      * client socket!
      */
-    debugs(88, 5, "clientReplyContext::sendStreamError: A stream error has occured, marking as complete and sending no data.");
+    debugs(88, 5, "A stream error has occurred, marking as complete and sending no data.");
     StoreIOBuffer localTempBuffer;
     flags.complete = 1;
     http->request->flags.streamError = true;
@@ -2297,7 +2261,10 @@ clientReplyContext::createStoreEntry(const HttpRequestMethod& m, RequestFlags re
 
     if (http->request == NULL) {
         const MasterXaction::Pointer mx = new MasterXaction(XactionInitiator::initClient);
-        http->request = new HttpRequest(m, AnyP::PROTO_NONE, "http", null_string, mx);
+        // XXX: These fake URI parameters shadow the real (or error:...) URI.
+        // TODO: Either always set the request earlier and assert here OR use
+        // http->uri (converted to Anyp::Uri) to create this catch-all request.
+        const_cast<HttpRequest *&>(http->request) =  new HttpRequest(m, AnyP::PROTO_NONE, "http", null_string, mx);
         HTTPMSGLOCK(http->request);
     }
 
@@ -2310,7 +2277,7 @@ clientReplyContext::createStoreEntry(const HttpRequestMethod& m, RequestFlags re
             !reqFlags.needValidation &&
             (m == Http::METHOD_GET || m == Http::METHOD_HEAD)) {
         // make the entry available for future requests now
-        Store::Root().allowCollapsing(e, reqFlags, m);
+        (void)Store::Root().allowCollapsing(e, reqFlags, m);
     }
 
     sc = storeClientListAdd(e, this);

@@ -1,6 +1,6 @@
 
 <html><head>
-<meta type="copyright" content="Copyright (C) 1996-2017 The Squid Software Foundation and contributors">
+<meta type="copyright" content="Copyright (C) 1996-2019 The Squid Software Foundation and contributors">
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <title>Nastavitev spletnega brskalnika</title>
 <style type="text/css"><!--
@@ -24,19 +24,19 @@ body
 <p>Kako najdete te nastavitve v svojem brskalniku:</p>
 
 <div id="firefox"> For Firefox browsers go to: <ul>
-<li>Orodja -&gt; Možnosti -&gt; Napredno -&gt; Omrežje -&gt; Nastavitve povezave</li>
+<li>Tools -> Options -> Advanced -> Network -> Connection Settings</li>
 <li>V polje za posredniški strežnik HTTP vnesite ime posredniškega strežnika %h in vrata %b.</li>
 </ul>
 </div>
 
 <div id="microsoft"> For Internet Explorer browsers go to: <ul>
-<li>Orodja -&gt; Internetne možnosti -&gt; Povezava -&gt; Nastavitve LAN -&gt;Proxy</li>
+<li>Tools -> Internet Options -> Connection -> LAN Settings ->Proxy</li>
 <li>V polje za posredniški strežnik HTTP vnesite ime posredniškega strežnika %h in vrata %b.</li>
 </ul>
 </div>
 
 <div id="opera"> For Opera browsers go to: <ul>
-<li>Orodja -&gt; Nastavitve -&gt; Napredno -&gt; Omrežje -&gt; Posredovalni strežniki</li>
+<li>Tools -> Preferences -> Advanced -> Network -> Proxy Servers</li>
 <li>V polje za posredniški strežnik HTTP vnesite ime posredniškega strežnika %h in vrata %b.</li>
 </ul>
 </div>

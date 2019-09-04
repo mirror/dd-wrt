@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -22,7 +22,6 @@
 #include "SquidConfig.h"
 #include "SquidTime.h"
 #include "Store.h"
-#include "URL.h"
 #include "util.h"
 
 typedef enum {
@@ -420,7 +419,7 @@ refreshCheck(const StoreEntry * entry, HttpRequest * request, time_t delta)
             int maxAge = -1;
             if (cc->hasMaxAge(&maxAge)) {
 
-                // draft-mcmanus-immutable-00: reply contains CC:immutable then ignore client CC:max-age=N
+                // RFC 8246: reply contains CC:immutable then ignore client CC:max-age=N
                 if (reply && reply->cache_control && reply->cache_control->hasImmutable()) {
                     debugs(22, 3, "MAYBE: Ignoring client CC:max-age=" << maxAge << " request - 'Cache-Control: immutable'");
 

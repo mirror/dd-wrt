@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -35,7 +35,6 @@
 #include "SquidTime.h"
 #include "Store.h"
 #include "tools.h"
-#include "URL.h"
 #include "wordlist.h"
 #if USE_OPENSSL
 #include "ssl/ServerBump.h"
@@ -285,7 +284,7 @@ parse_externalAclHelper(external_acl ** list)
         (*fmt)->quote = a->quote;
 
         // compatibility for old tokens incompatible with Format::Token syntax
-#if USE_OPENSSL // dont bother if we dont have to.
+#if USE_OPENSSL // do not bother unless we have to.
         if (strncmp(token, "%USER_CERT_", 11) == 0) {
             (*fmt)->type = Format::LFT_EXT_ACL_USER_CERT;
             (*fmt)->data.string = xstrdup(token + 11);
@@ -301,13 +300,31 @@ parse_externalAclHelper(external_acl ** list)
             (*fmt)->data.header.header = (*fmt)->data.string;
         } else
 #endif
-        {
-            // we can use the Format::Token::parse() method since it
-            // only pulls off one token. Since we already checked
-            // for '%' prefix above this is guaranteed to be a token.
-            const size_t len = (*fmt)->parse(token, &quote);
-            assert(len == strlen(token));
-        }
+            if (strncmp(token,"%<{", 3) == 0) {
+                SBuf tmp("%<h");
+                tmp.append(token+2);
+                debugs(82, DBG_PARSE_NOTE(DBG_IMPORTANT), "WARNING: external_acl_type format %<{...} is deprecated. Use " << tmp);
+                const size_t parsedLen = (*fmt)->parse(tmp.c_str(), &quote);
+                assert(parsedLen == tmp.length());
+                assert((*fmt)->type == Format::LFT_REPLY_HEADER ||
+                       (*fmt)->type == Format::LFT_REPLY_HEADER_ELEM);
+
+            } else if (strncmp(token,"%>{", 3) == 0) {
+                SBuf tmp("%>ha");
+                tmp.append(token+2);
+                debugs(82, DBG_PARSE_NOTE(DBG_IMPORTANT), "WARNING: external_acl_type format %>{...} is deprecated. Use " << tmp);
+                const size_t parsedLen = (*fmt)->parse(tmp.c_str(), &quote);
+                assert(parsedLen == tmp.length());
+                assert((*fmt)->type == Format::LFT_ADAPTED_REQUEST_HEADER ||
+                       (*fmt)->type == Format::LFT_ADAPTED_REQUEST_HEADER_ELEM);
+
+            } else {
+                // we can use the Format::Token::parse() method since it
+                // only pulls off one token. Since we already checked
+                // for '%' prefix above this is guaranteed to be a token.
+                const size_t len = (*fmt)->parse(token, &quote);
+                assert(len == strlen(token));
+            }
 
         // process special token-specific actions (only if necessary)
 #if USE_AUTH
@@ -592,7 +609,7 @@ aclMatchExternal(external_acl_data *acl, ACLFilledChecklist *ch)
             if (!key)
                 return ACCESS_DUNNO; // insufficent data to continue
             if (strcmp(key, (char*)entry->key) != 0) {
-                debugs(82, 9, "entry key='" << (char *)entry->key << "', our key='" << key << "' dont match. Discarded.");
+                debugs(82, 9, "entry key='" << (char *)entry->key << "', our key='" << key << "' do not match. Discarded.");
                 // too bad. need a new lookup.
                 entry = ch->extacl_entry = NULL;
             }
@@ -973,6 +990,8 @@ externalAclHandleReply(void *data, const Helper::Reply &reply)
         entryData.password = label;
 #endif
 
+    // XXX: This state->def access conflicts with the cbdata validity check
+    // below.
     dlinkDelete(&state->list, &state->def->queue);
 
     ExternalACLEntryPointer entry;

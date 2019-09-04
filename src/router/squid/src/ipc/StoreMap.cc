@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -12,6 +12,7 @@
 #include "ipc/StoreMap.h"
 #include "sbuf/SBuf.h"
 #include "Store.h"
+#include "store/Controller.h"
 #include "store_key_md5.h"
 #include "tools.h"
 
@@ -154,20 +155,24 @@ Ipc::StoreMap::startAppending(const sfileno fileno)
 }
 
 void
-Ipc::StoreMap::closeForWriting(const sfileno fileno, bool lockForReading)
+Ipc::StoreMap::closeForWriting(const sfileno fileno)
 {
     Anchor &s = anchorAt(fileno);
     assert(s.writing());
-    if (lockForReading) {
-        s.lock.switchExclusiveToShared();
-        debugs(54, 5, "switched entry " << fileno <<
-               " from writing to reading " << path);
-        assert(s.complete());
-    } else {
-        s.lock.unlockExclusive();
-        debugs(54, 5, "closed entry " << fileno << " for writing " << path);
-        // cannot assert completeness here because we have no lock
-    }
+    // TODO: assert(!s.empty()); // i.e., unlocked s becomes s.complete()
+    s.lock.unlockExclusive();
+    debugs(54, 5, "closed entry " << fileno << " for writing " << path);
+    // cannot assert completeness here because we have no lock
+}
+
+void
+Ipc::StoreMap::switchWritingToReading(const sfileno fileno)
+{
+    debugs(54, 5, "switching entry " << fileno << " from writing to reading " << path);
+    Anchor &s = anchorAt(fileno);
+    assert(s.writing());
+    s.lock.switchExclusiveToShared();
+    assert(s.complete());
 }
 
 Ipc::StoreMap::Slice &
@@ -212,6 +217,7 @@ Ipc::StoreMap::abortWriting(const sfileno fileno)
         debugs(54, 5, "closed clean entry " << fileno << " for writing " << path);
     } else {
         s.waitingToBeFreed = true;
+        s.writerHalted = true;
         s.lock.unlockExclusive();
         debugs(54, 5, "closed dirty entry " << fileno << " for writing " << path);
     }
@@ -253,17 +259,22 @@ Ipc::StoreMap::peekAtEntry(const sfileno fileno) const
     return anchorAt(fileno);
 }
 
-void
+bool
 Ipc::StoreMap::freeEntry(const sfileno fileno)
 {
     debugs(54, 5, "marking entry " << fileno << " to be freed in " << path);
 
     Anchor &s = anchorAt(fileno);
 
-    if (s.lock.lockExclusive())
+    if (s.lock.lockExclusive()) {
+        const bool result = !s.waitingToBeFreed && !s.empty();
         freeChain(fileno, s, false);
-    else
-        s.waitingToBeFreed = true; // mark to free it later
+        return result;
+    }
+
+    uint8_t expected = false;
+    // mark to free the locked entry later (if not already marked)
+    return s.waitingToBeFreed.compare_exchange_strong(expected, true);
 }
 
 void
@@ -288,6 +299,25 @@ Ipc::StoreMap::freeEntryByKey(const cache_key *const key)
         if (s.sameKey(key))
             s.waitingToBeFreed = true; // mark to free it later
     }
+}
+
+bool
+Ipc::StoreMap::markedForDeletion(const cache_key *const key)
+{
+    const int idx = fileNoByKey(key);
+    const Anchor &s = anchorAt(idx);
+    return s.sameKey(key) ? bool(s.waitingToBeFreed) : false;
+}
+
+bool
+Ipc::StoreMap::hasReadableEntry(const cache_key *const key)
+{
+    sfileno index;
+    if (openForReading(reinterpret_cast<const cache_key*>(key), index)) {
+        closeForReading(index);
+        return true;
+    }
+    return false;
 }
 
 /// unconditionally frees an already locked chain of slots, unlocking if needed
@@ -316,8 +346,7 @@ Ipc::StoreMap::freeChainAt(SliceId sliceId, const SliceId splicingPoint)
     while (sliceId >= 0) {
         Slice &slice = sliceAt(sliceId);
         const SliceId nextId = slice.next;
-        slice.size = 0;
-        slice.next = -1;
+        slice.clear();
         if (cleaner)
             cleaner->noteFreeMapSlice(sliceId); // might change slice state
         if (sliceId == splicingPoint) {
@@ -328,6 +357,14 @@ Ipc::StoreMap::freeChainAt(SliceId sliceId, const SliceId splicingPoint)
         sliceId = nextId;
     }
     debugs(54, 7, "freed chain #" << chainId << " in " << path);
+}
+
+void
+Ipc::StoreMap::prepFreeSlice(const SliceId sliceId)
+{
+    // TODO: Move freeSlots here, along with reserveSlotForWriting() logic.
+    assert(validSlice(sliceId));
+    sliceAt(sliceId).clear();
 }
 
 Ipc::StoreMap::SliceId
@@ -671,6 +708,7 @@ Ipc::StoreMap::anchorAt(const sfileno fileno) const
 sfileno
 Ipc::StoreMap::nameByKey(const cache_key *const key) const
 {
+    assert(key);
     const uint64_t *const k = reinterpret_cast<const uint64_t *>(key);
     // TODO: use a better hash function
     const int hash = (k[0] + k[1]) % entryLimit();
@@ -725,8 +763,6 @@ Ipc::StoreMap::sliceAt(const SliceId sliceId) const
 
 Ipc::StoreMapAnchor::StoreMapAnchor(): start(0), splicingPoint(-1)
 {
-    memset(&key, 0, sizeof(key));
-    memset(&basics, 0, sizeof(basics));
     // keep in sync with rewind()
 }
 
@@ -734,6 +770,7 @@ void
 Ipc::StoreMapAnchor::setKey(const cache_key *const aKey)
 {
     memcpy(key, aKey, sizeof(key));
+    waitingToBeFreed = Store::Root().markedForDeletion(aKey);
 }
 
 bool
@@ -744,17 +781,36 @@ Ipc::StoreMapAnchor::sameKey(const cache_key *const aKey) const
 }
 
 void
-Ipc::StoreMapAnchor::set(const StoreEntry &from)
+Ipc::StoreMapAnchor::set(const StoreEntry &from, const cache_key *aKey)
 {
     assert(writing() && !reading());
-    memcpy(key, from.key, sizeof(key));
+    setKey(reinterpret_cast<const cache_key*>(aKey ? aKey : from.key));
     basics.timestamp = from.timestamp;
     basics.lastref = from.lastref;
     basics.expires = from.expires;
     basics.lastmod = from.lastModified();
     basics.swap_file_sz = from.swap_file_sz;
     basics.refcount = from.refcount;
-    basics.flags = from.flags;
+
+    // do not copy key bit if we are not using from.key
+    // TODO: Replace KEY_PRIVATE with a nil StoreEntry::key!
+    uint16_t cleanFlags = from.flags;
+    if (aKey)
+        EBIT_CLR(cleanFlags, KEY_PRIVATE);
+    basics.flags = cleanFlags;
+}
+
+void
+Ipc::StoreMapAnchor::exportInto(StoreEntry &into) const
+{
+    assert(reading());
+    into.timestamp = basics.timestamp;
+    into.lastref = basics.lastref;
+    into.expires = basics.expires;
+    into.lastModified(basics.lastmod);
+    into.swap_file_sz = basics.swap_file_sz;
+    into.refcount = basics.refcount;
+    into.flags = basics.flags;
 }
 
 void
@@ -764,8 +820,9 @@ Ipc::StoreMapAnchor::rewind()
     start = 0;
     splicingPoint = -1;
     memset(&key, 0, sizeof(key));
-    memset(&basics, 0, sizeof(basics));
+    basics.clear();
     waitingToBeFreed = false;
+    writerHalted = false;
     // but keep the lock
 }
 

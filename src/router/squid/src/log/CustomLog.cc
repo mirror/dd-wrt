@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -7,5 +7,12 @@
  */
 
 #include "squid.h"
-#include "CustomLog.h"
+#include "log/CustomLog.h"
+#include "log/File.h"
+
+bool
+CustomLog::usesDaemon() const
+{
+    return (filename && strncmp(filename, "daemon:", 7) == 0);
+}
 

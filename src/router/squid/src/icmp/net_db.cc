@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -38,7 +38,6 @@
 #include "Store.h"
 #include "StoreClient.h"
 #include "tools.h"
-#include "URL.h"
 #include "wordlist.h"
 
 #if HAVE_SYS_STAT_H
@@ -132,9 +131,9 @@ static void
 netdbHashInsert(netdbEntry * n, Ip::Address &addr)
 {
     networkFromInaddr(addr).toStr(n->network, MAX_IPSTRLEN);
-    n->hash.key = n->network;
+    n->key = n->network;
     assert(hash_lookup(addr_table, n->network) == NULL);
-    hash_join(addr_table, &n->hash);
+    hash_join(addr_table, n);
 }
 
 static void
@@ -154,7 +153,7 @@ net_db_name::net_db_name(const char *hostname, netdbEntry *e) :
     next(e ? e->hosts : nullptr),
     net_db_entry(e)
 {
-    hash.key = xstrdup(hostname);
+    key = xstrdup(hostname);
     if (e) {
         e->hosts = this;
         ++ e->link_count;
@@ -166,7 +165,7 @@ netdbHostInsert(netdbEntry * n, const char *hostname)
 {
     net_db_name *x = new net_db_name(hostname, n);
     assert(hash_lookup(host_table, hostname) == NULL);
-    hash_join(host_table, &x->hash);
+    hash_join(host_table, x);
 }
 
 static void
@@ -503,7 +502,7 @@ netdbSaveState(void *foo)
     unlink(Config.netdbFilename);
     lf = logfileOpen(Config.netdbFilename, 4096, 0);
 
-    if (lf) {
+    if (!lf) {
         int xerrno = errno;
         debugs(50, DBG_IMPORTANT, MYNAME << Config.netdbFilename << ": " << xstrerr(xerrno));
         return;
@@ -525,7 +524,7 @@ netdbSaveState(void *foo)
                       (int) n->last_use_time);
 
         for (x = n->hosts; x; x = x->next)
-            logfilePrintf(lf, " %s", hashKeyStr(&x->hash));
+            logfilePrintf(lf, " %s", hashKeyStr(x));
 
         logfilePrintf(lf, "\n");
 
@@ -591,7 +590,7 @@ netdbReloadState(void)
         char *q;
         assert(s - buf < l);
         *s = '\0';
-        memset(&N, '\0', sizeof(netdbEntry));
+        N = netdbEntry();
         q = strtok(t, w_space);
         t = s + 1;
 
@@ -1023,7 +1022,7 @@ netdbDump(StoreEntry * sentry)
                           n->hops);
 
         for (x = n->hosts; x; x = x->next)
-            storeAppendPrintf(sentry, " %s", hashKeyStr(&x->hash));
+            storeAppendPrintf(sentry, " %s", hashKeyStr(x));
 
         storeAppendPrintf(sentry, "\n");
 
@@ -1095,7 +1094,7 @@ netdbHostData(const char *host, int *samp, int *rtt, int *hops)
 }
 
 void
-netdbUpdatePeer(const URL &url, CachePeer * e, int irtt, int ihops)
+netdbUpdatePeer(const AnyP::Uri &url, CachePeer *e, int irtt, int ihops)
 {
 #if USE_ICMP
     netdbEntry *n;
@@ -1283,14 +1282,13 @@ netdbExchangeStart(void *data)
 #if USE_ICMP
     CachePeer *p = (CachePeer *)data;
     static const SBuf netDB("netdb");
-    char *uri = internalRemoteUri(p->host, p->http_port, "/squid-internal-dynamic/", netDB);
-    debugs(38, 3, "netdbExchangeStart: Requesting '" << uri << "'");
-    assert(NULL != uri);
+    char *uri = internalRemoteUri(p->secure.encryptTransport, p->host, p->http_port, "/squid-internal-dynamic/", netDB);
+    debugs(38, 3, "Requesting '" << uri << "'");
     const MasterXaction::Pointer mx = new MasterXaction(XactionInitiator::initIcmp);
     HttpRequest *req = HttpRequest::FromUrl(uri, mx);
 
-    if (req == NULL) {
-        debugs(38, DBG_IMPORTANT, "netdbExchangeStart: Bad URI " << uri);
+    if (!req) {
+        debugs(38, DBG_IMPORTANT, MYNAME << ": Bad URI " << uri);
         return;
     }
 

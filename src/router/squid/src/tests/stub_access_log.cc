@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -13,6 +13,11 @@
 #include "tests/STUB.h"
 
 HierarchyLogEntry::HierarchyLogEntry() STUB
+
+void HierarchyLogEntry::notePeerRead() STUB
+void HierarchyLogEntry::notePeerWrite() STUB
+bool HierarchyLogEntry::peerResponseTime(struct timeval &) STUB_RETVAL(false)
+bool HierarchyLogEntry::totalResponseTime(struct timeval &) STUB_RETVAL(false)
 
 ping_data::ping_data() :
     n_sent(0),

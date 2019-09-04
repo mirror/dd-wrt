@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -106,7 +106,7 @@ Security::NewSessionObject(const Security::ContextPointer &ctx)
 #endif
 
 static bool
-CreateSession(const Security::ContextPointer &ctx, const Comm::ConnectionPointer &conn, Security::Io::Type type, const char *squidCtx)
+CreateSession(const Security::ContextPointer &ctx, const Comm::ConnectionPointer &conn, Security::PeerOptions &opts, Security::Io::Type type, const char *squidCtx)
 {
     if (!Comm::IsConnOpen(conn)) {
         debugs(83, DBG_IMPORTANT, "Gone connection");
@@ -122,6 +122,7 @@ CreateSession(const Security::ContextPointer &ctx, const Comm::ConnectionPointer
     if (!session) {
         errCode = ERR_get_error();
         errAction = "failed to allocate handle";
+        debugs(83, DBG_IMPORTANT, "TLS error: " << errAction << ": " << Security::ErrorString(errCode));
     }
 #elif USE_GNUTLS
     gnutls_session_t tmp;
@@ -134,6 +135,7 @@ CreateSession(const Security::ContextPointer &ctx, const Comm::ConnectionPointer
     if (errCode != GNUTLS_E_SUCCESS) {
         session.reset();
         errAction = "failed to initialize session";
+        debugs(83, DBG_IMPORTANT, "TLS error: " << errAction << ": " << Security::ErrorString(errCode));
     }
 #endif
 
@@ -148,10 +150,7 @@ CreateSession(const Security::ContextPointer &ctx, const Comm::ConnectionPointer
         errCode = gnutls_credentials_set(session.get(), GNUTLS_CRD_CERTIFICATE, ctx.get());
         if (errCode == GNUTLS_E_SUCCESS) {
 
-            if (auto *peer = conn->getPeer())
-                peer->secure.updateSessionOptions(session);
-            else
-                Security::ProxyOutgoingConfig.updateSessionOptions(session);
+            opts.updateSessionOptions(session);
 
             // NP: GnuTLS does not yet support the BIO operations
             //     this does the equivalent of SSL_set_fd() for now.
@@ -184,13 +183,17 @@ CreateSession(const Security::ContextPointer &ctx, const Comm::ConnectionPointer
 bool
 Security::CreateClientSession(const Security::ContextPointer &ctx, const Comm::ConnectionPointer &c, const char *squidCtx)
 {
-    return CreateSession(ctx, c, Security::Io::BIO_TO_SERVER, squidCtx);
+    if (!c || !c->getPeer())
+        return CreateSession(ctx, c, Security::ProxyOutgoingConfig, Security::Io::BIO_TO_SERVER, squidCtx);
+
+    auto *peer = c->getPeer();
+    return CreateSession(ctx, c, peer->secure, Security::Io::BIO_TO_SERVER, squidCtx);
 }
 
 bool
-Security::CreateServerSession(const Security::ContextPointer &ctx, const Comm::ConnectionPointer &c, const char *squidCtx)
+Security::CreateServerSession(const Security::ContextPointer &ctx, const Comm::ConnectionPointer &c, Security::PeerOptions &o, const char *squidCtx)
 {
-    return CreateSession(ctx, c, Security::Io::BIO_TO_CLIENT, squidCtx);
+    return CreateSession(ctx, c, o, Security::Io::BIO_TO_CLIENT, squidCtx);
 }
 
 void
@@ -290,13 +293,8 @@ store_session_cb(SSL *ssl, SSL_SESSION *session)
 
     SSL_SESSION_set_timeout(session, Config.SSL.session_ttl);
 
-#if HAVE_LIBSSL_SSL_SESSION_GET_ID
     unsigned int idlen;
     const unsigned char *id = SSL_SESSION_get_id(session, &idlen);
-#else
-    unsigned char *id = session->session_id;
-    unsigned int idlen = session->session_id_length;
-#endif
     // XXX: the other calls [to openForReading()] do not copy the sessionId to a char buffer, does this really have to?
     unsigned char key[MEMMAP_SLOT_KEY_SIZE];
     // Session ids are of size 32bytes. They should always fit to a
@@ -364,7 +362,7 @@ get_session_cb(SSL *, unsigned char *sessionID, int len, int *copy)
     }
 
     if (!session)
-        debugs(83, 5, "Failed to retrieve SSL_SESSION from cache\n");
+        debugs(83, 5, "Failed to retrieve SSL_SESSION from cache");
 
     // With the parameter copy the callback can require the SSL engine
     // to increment the reference count of the SSL_SESSION object, Normally

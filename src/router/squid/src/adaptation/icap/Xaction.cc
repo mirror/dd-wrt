@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -467,7 +467,7 @@ void Adaptation::Icap::Xaction::noteCommRead(const CommIoCbParams &io)
     Must(readBuf.length() < SQUID_TCP_SO_RCVBUF);
     // now we can ensure that there is space to read new data,
     // even if readBuf.spaceSize() currently returns zero.
-    readBuf.rawSpace(1);
+    readBuf.rawAppendStart(1);
 
     CommIoCbParams rd(this); // will be expanded with ReadNow results
     rd.conn = io.conn;
@@ -588,8 +588,7 @@ void Adaptation::Icap::Xaction::noteInitiatorAborted()
 void Adaptation::Icap::Xaction::setOutcome(const Adaptation::Icap::XactOutcome &xo)
 {
     if (al.icap.outcome != xoUnknown) {
-        debugs(93, 3, HERE << "Warning: reseting outcome: from " <<
-               al.icap.outcome << " to " << xo);
+        debugs(93, 3, "WARNING: resetting outcome: from " << al.icap.outcome << " to " << xo);
     } else {
         debugs(93, 4, HERE << xo);
     }
@@ -717,6 +716,7 @@ Ssl::IcapPeerConnector::initialize(Security::SessionPointer &serverSession)
 #if USE_OPENSSL
     SBuf *host = new SBuf(icapService->cfg().secure.sslDomain);
     SSL_set_ex_data(serverSession.get(), ssl_ex_index_server, host);
+    setClientSNI(serverSession.get(), host->c_str());
 
     ACLFilledChecklist *check = static_cast<ACLFilledChecklist *>(SSL_get_ex_data(serverSession.get(), ssl_ex_index_cert_error_check));
     if (check)
@@ -744,7 +744,7 @@ Adaptation::Icap::Xaction::handleSecuredPeer(Security::EncryptorAnswer &answer)
     securer = NULL;
 
     if (closer != NULL) {
-        if (answer.conn != NULL)
+        if (Comm::IsConnOpen(answer.conn))
             comm_remove_close_handler(answer.conn->fd, closer);
         else
             closer->cancel("securing completed");

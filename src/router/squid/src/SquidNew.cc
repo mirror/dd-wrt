@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -19,31 +19,6 @@ void *operator new(size_t size)
     return xmalloc(size);
 }
 void operator delete(void *address)
-{
-    xfree(address);
-}
-void *operator new[](size_t size)
-{
-    return xmalloc(size);
-}
-void operator delete[](void *address)
-{
-    xfree(address);
-}
-
-void *operator new(size_t size, const std::nothrow_t &tag)
-{
-    return xmalloc(size);
-}
-void operator delete(void *address, const std::nothrow_t &tag)
-{
-    xfree(address);
-}
-void *operator new[](size_t size, const std::nothrow_t &tag)
-{
-    return xmalloc(size);
-}
-void operator delete[](void *address, const std::nothrow_t &tag)
 {
     xfree(address);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -35,7 +35,6 @@
 #include "store_key_md5.h"
 #include "StoreClient.h"
 #include "tools.h"
-#include "URL.h"
 
 typedef struct _Countstr Countstr;
 
@@ -152,18 +151,18 @@ private:
     htcpDataHeader *dhdr = nullptr;
 };
 
-class htcpDetail {
+class htcpDetail
+{
     MEMPROXY_CLASS(htcpDetail);
 public:
-    htcpDetail() : resp_hdrs(nullptr), respHdrsSz(0), entity_hdrs(nullptr), entityHdrsSz(0), cache_hdrs(nullptr), cacheHdrsSz(0) {}
-    char *resp_hdrs;
-    size_t respHdrsSz;
+    char *resp_hdrs = nullptr;
+    size_t respHdrsSz = 0;
 
-    char *entity_hdrs;
-    size_t entityHdrsSz;
+    char *entity_hdrs = nullptr;
+    size_t entityHdrsSz = 0;
 
-    char *cache_hdrs;
-    size_t cacheHdrsSz;
+    char *cache_hdrs = nullptr;
+    size_t cacheHdrsSz = 0;
 };
 
 class htcpStuff
@@ -173,18 +172,14 @@ public:
         op(o),
         rr(r),
         f1(f),
-        response(0),
-        reason(0),
         msg_id(id)
-    {
-        memset(&D, 0, sizeof(D));
-    }
+    {}
 
-    int op;
-    int rr;
-    int f1;
-    int response;
-    int reason;
+    int op = 0;
+    int rr = 0;
+    int f1 = 0;
+    int response = 0;
+    int reason = 0;
     uint32_t msg_id;
     htcpSpecifier S;
     htcpDetail D;
@@ -680,6 +675,11 @@ htcpUnpackSpecifier(char *buf, int sz)
 
     const MasterXaction::Pointer mx = new MasterXaction(XactionInitiator::initHtcp);
     s->request = HttpRequest::FromUrl(s->uri, mx, method == Http::METHOD_NONE ? HttpRequestMethod(Http::METHOD_GET) : method);
+    if (!s->request) {
+        debugs(31, 3, "failed to create request. Invalid URI?");
+        return nil;
+    }
+
     return s;
 }
 
@@ -1434,7 +1434,6 @@ htcpQuery(StoreEntry * e, HttpRequest * req, CachePeer * p)
         return 0;
 
     old_squid_format = p->options.htcp_oldsquid;
-    memset(&flags, '\0', sizeof(flags));
     snprintf(vbuf, sizeof(vbuf), "%d/%d",
              req->http_ver.major, req->http_ver.minor);
 
@@ -1484,7 +1483,6 @@ htcpClear(StoreEntry * e, const char *uri, HttpRequest * req, const HttpRequestM
         return;
 
     old_squid_format = p->options.htcp_oldsquid;
-    memset(&flags, '\0', sizeof(flags));
     snprintf(vbuf, sizeof(vbuf), "%d/%d",
              req->http_ver.major, req->http_ver.minor);
 
@@ -1581,6 +1579,7 @@ htcpLogHtcp(Ip::Address &caddr, int opcode, LogTags logcode, const char *url)
         return;
     al->htcp.opcode = htcpOpcodeStr[opcode];
     al->url = url;
+    al->setVirginUrlForMissingRequest(al->url);
     al->cache.caddr = caddr;
     al->cache.code = logcode;
     al->cache.trTime.tv_sec = 0;

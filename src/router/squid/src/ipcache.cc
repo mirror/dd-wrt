@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -575,8 +575,7 @@ ipcache_init(void)
     int n;
     debugs(14, DBG_IMPORTANT, "Initializing IP Cache...");
     memset(&IpcacheStats, '\0', sizeof(IpcacheStats));
-    memset(&lru_list, '\0', sizeof(lru_list));
-    memset(&static_addrs, '\0', sizeof(ipcache_addrs));
+    lru_list = dlink_list();
 
     static_addrs.in_addrs = static_cast<Ip::Address *>(xcalloc(1, sizeof(Ip::Address)));
     static_addrs.in_addrs->setEmpty(); // properly setup the Ip::Address!
@@ -602,7 +601,7 @@ ipcache_init(void)
  \param flags       Default is NULL, set to IP_LOOKUP_IF_MISS
  *          to explicitly perform DNS lookups.
  *
- \retval NULL   An error occured during lookup
+ \retval NULL   An error occurred during lookup
  \retval NULL   No results available in cache and no lookup specified
  \retval *  Pointer to the ipcahce_addrs structure containing the lookup results
  */

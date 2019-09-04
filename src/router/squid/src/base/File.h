@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -10,6 +10,10 @@
 #define SQUID_BASE_FILE_H
 
 #include "sbuf/SBuf.h"
+
+#if HAVE_SYS_FILE_H
+#include <sys/file.h>
+#endif
 
 /// How should a file be opened/created? Should it be locked?
 class FileOpeningConfig
@@ -111,7 +115,7 @@ private:
     // Windows-specific HANDLE is needed because LockFileEx() does not take POSIX FDs.
 #if _SQUID_WINDOWS_
     typedef HANDLE Handle;
-    static const Handle InvalidHandle = INVALID_HANDLE_VALUE;
+    static const Handle InvalidHandle;
 #else
     typedef int Handle;
     static const Handle InvalidHandle = -1;

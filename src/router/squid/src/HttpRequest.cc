@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -30,7 +30,6 @@
 #include "sbuf/StringConvert.h"
 #include "SquidConfig.h"
 #include "Store.h"
-#include "URL.h"
 
 #if USE_AUTH
 #include "auth/UserRequest.h"
@@ -80,7 +79,7 @@ HttpRequest::init()
 #if USE_AUTH
     auth_user_request = NULL;
 #endif
-    memset(&flags, '\0', sizeof(flags));
+    flags = RequestFlags();
     range = NULL;
     ims = -1;
     imslen = 0;
@@ -332,7 +331,7 @@ HttpRequest::parseFirstLine(const char *start, const char *end)
 
     * (char *) end = '\0';     // temp terminate URI, XXX dangerous?
 
-    const bool ret = url.parse(method, (char *) start);
+    const bool ret = url.parse(method, start);
 
     * (char *) end = save;
 
@@ -520,7 +519,7 @@ HttpRequest::expectingBody(const HttpRequestMethod &, int64_t &theSize) const
  * If the request cannot be created cleanly, NULL is returned
  */
 HttpRequest *
-HttpRequest::FromUrl(char * url, const MasterXaction::Pointer &mx, const HttpRequestMethod& method)
+HttpRequest::FromUrl(const char * url, const MasterXaction::Pointer &mx, const HttpRequestMethod& method)
 {
     std::unique_ptr<HttpRequest> req(new HttpRequest(mx));
     if (req->url.parse(method, url)) {
@@ -612,8 +611,8 @@ HttpRequest::getRangeOffsetLimit()
     for (AclSizeLimit *l = Config.rangeOffsetLimit; l; l = l -> next) {
         /* if there is no ACL list or if the ACLs listed match use this limit value */
         if (!l->aclList || ch.fastCheck(l->aclList).allowed()) {
-            debugs(58, 4, HERE << "rangeOffsetLimit=" << rangeOffsetLimit);
             rangeOffsetLimit = l->size; // may be -1
+            debugs(58, 4, rangeOffsetLimit);
             break;
         }
     }
@@ -674,6 +673,12 @@ HttpRequest::effectiveRequestUri() const
     return url.absolute();
 }
 
+char *
+HttpRequest::canonicalCleanUrl() const
+{
+    return urlCanonicalCleanWithoutRequest(effectiveRequestUri(), method, url.getScheme());
+}
+
 void
 HttpRequest::manager(const CbcPointer<ConnStateData> &aMgr, const AccessLogEntryPointer &al)
 {
@@ -704,6 +709,7 @@ HttpRequest::manager(const CbcPointer<ConnStateData> &aMgr, const AccessLogEntry
             if (Config.accessList.spoof_client_ip) {
                 ACLFilledChecklist *checklist = new ACLFilledChecklist(Config.accessList.spoof_client_ip, this, clientConnection->rfc931);
                 checklist->al = al;
+                checklist->syncAle(this, nullptr);
                 flags.spoofClientIp = checklist->fastCheck().allowed();
                 delete checklist;
             } else

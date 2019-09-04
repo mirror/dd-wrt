@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -339,6 +339,7 @@ Ftp::Server::resetLogin(const char *reason)
 void
 Ftp::Server::calcUri(const SBuf *file)
 {
+    // TODO: fill a class AnyP::Uri instead of string
     uri = "ftp://";
     uri.append(host);
     if (port->ftp_track_dirs && master->workingDir.length()) {
@@ -723,16 +724,15 @@ Ftp::Server::parseOneRequest()
     const SBuf *path = (params.length() && CommandHasPathParameter(cmd)) ?
                        &params : NULL;
     calcUri(path);
-    char *newUri = xstrdup(uri.c_str());
     MasterXaction::Pointer mx = new MasterXaction(XactionInitiator::initClient);
     mx->tcpClient = clientConnection;
-    HttpRequest *const request = HttpRequest::FromUrl(newUri, mx, method);
+    HttpRequest *const request = HttpRequest::FromUrl(uri.c_str(), mx, method);
     if (!request) {
         debugs(33, 5, "Invalid FTP URL: " << uri);
         uri.clear();
-        safe_free(newUri);
         return earlyError(EarlyErrorKind::InvalidUri);
     }
+    char *newUri = xstrdup(uri.c_str());
 
     request->flags.ftpNative = true;
     request->http_ver = Http::ProtocolVersion(Ftp::ProtocolVersion().major, Ftp::ProtocolVersion().minor);
@@ -749,10 +749,9 @@ Ftp::Server::parseOneRequest()
     }
 
     ClientHttpRequest *const http = new ClientHttpRequest(this);
-    http->request = request;
-    HTTPMSGLOCK(http->request);
     http->req_sz = tok.parsedSize();
     http->uri = newUri;
+    http->initRequest(request);
 
     Http::Stream *const result =
         new Http::Stream(clientConnection, http);
@@ -1126,10 +1125,12 @@ Ftp::Server::writeErrorReply(const HttpReply *reply, const int scode)
     }
 #endif
 
-    Must(reply);
-    const char *reason = reply->header.has(Http::HdrType::FTP_REASON) ?
-                         reply->header.getStr(Http::HdrType::FTP_REASON):
-                         reply->sline.reason();
+    const char *reason = "Lost Error";
+    if (reply) {
+        reason = reply->header.has(Http::HdrType::FTP_REASON) ?
+                 reply->header.getStr(Http::HdrType::FTP_REASON):
+                 reply->sline.reason();
+    }
 
     mb.appendf("%i %s\r\n", scode, reason); // error terminating line
 
@@ -1543,6 +1544,8 @@ Ftp::Server::handleUploadRequest(String &, String &)
         ClientHttpRequest *http = pipeline.front()->http;
         HttpRequest *request = http->request;
         ACLFilledChecklist bodyContinuationCheck(Config.accessList.forceRequestBodyContinuation, request, NULL);
+        bodyContinuationCheck.al = http->al;
+        bodyContinuationCheck.syncAle(request, http->log_uri);
         if (bodyContinuationCheck.fastCheck().allowed()) {
             request->forcedBodyContinuation = true;
             if (checkDataConnPost()) {
@@ -1732,8 +1735,6 @@ Ftp::Server::setReply(const int code, const char *msg)
 
     HttpReply *const reply = Ftp::HttpReplyWrapper(code, msg, Http::scNoContent, 0);
 
-    setLogUri(http, urlCanonicalClean(http->request));
-
     clientStreamNode *const node = context->getClientReplyContext();
     clientReplyContext *const repContext =
         dynamic_cast<clientReplyContext *>(node->data.getRaw());
@@ -1819,13 +1820,13 @@ void Ftp::Server::userDataCompletionCheckpoint(int finalStatusCode)
         // because we want to signal the FTP user that we are not fully
         // done processing its data stream, even though all data bytes
         // have been sent or received already.
-        debugs(33, 5, "Transfering from FTP server is not complete");
+        debugs(33, 5, "Transferring from FTP server is not complete");
         return;
     }
 
     // Adjust our reply if the server aborted with an error before we are done.
     if (master->userDataDone == 226 && originDataDownloadAbortedOnError) {
-        debugs(33, 5, "Transfering from FTP server terminated with an error, adjust status code");
+        debugs(33, 5, "Transferring from FTP server terminated with an error, adjust status code");
         master->userDataDone = 451;
     }
     completeDataDownload();

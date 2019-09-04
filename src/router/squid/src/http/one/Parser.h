@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -131,7 +131,7 @@ protected:
      *                identified accurately within limit characters.
      *                mimeHeaderBlock_ has been updated and buf_ consumed.
      *
-     * \retval false  An error occured, or no mime terminator found within limit.
+     * \retval false  An error occurred, or no mime terminator found within limit.
      */
     bool grabMimeBlock(const char *which, const size_t limit);
 

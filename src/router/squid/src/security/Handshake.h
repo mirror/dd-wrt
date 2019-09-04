@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -101,7 +101,7 @@ private:
     void parseV23Ciphers(const SBuf &raw);
 
     void parseServerCertificates(const SBuf &raw);
-    static void ParseCertificate(const SBuf &raw, CertPointer &cert);
+    static CertPointer ParseCertificate(const SBuf &raw);
 
     unsigned int currentContentType; ///< The current TLS/SSL record content type
 

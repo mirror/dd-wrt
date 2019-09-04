@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -33,7 +33,6 @@ public:
 
     virtual bool error() const;
     virtual bool isDone() const;
-    virtual StoreEntry *currentItem();
 
     RefCount<UFSSwapDir> sd;
     int n_read;
@@ -63,11 +62,17 @@ private:
     void rebuildFromDirectory();
     void rebuildFromSwapLog();
     void rebuildStep();
-    void undoAdd();
+    void addIfFresh(const cache_key *key,
+                    sfileno file_number,
+                    uint64_t swap_file_sz,
+                    time_t expires,
+                    time_t timestamp,
+                    time_t lastref,
+                    time_t lastmod,
+                    uint32_t refcount,
+                    uint16_t flags);
+    bool evictStaleAndContinue(const cache_key *candidateKey, const time_t maxRef, int &staleCount);
     int getNextFile(sfileno *, int *size);
-    StoreEntry *currentEntry() const;
-    void currentEntry(StoreEntry *);
-    StoreEntry *e;
     bool fromLog;
     bool _done;
     /// \bug (callback) should be hidden behind a proper human readable name

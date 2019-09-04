@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -17,9 +17,6 @@
 
 #if HAVE_FCNTL_H
 #include <fcntl.h>
-#endif
-#if HAVE_SYS_FILE_H
-#include <sys/file.h>
 #endif
 #if HAVE_SYS_STAT_H
 #include <sys/stat.h>
@@ -173,7 +170,7 @@ void
 File::open(const FileOpeningConfig &cfg)
 {
 #if _SQUID_WINDOWS_
-    fd_ = CreateFile(TEXT(name_.c_str()), desiredAccess, shareMode, nullptr, creationDisposition, FILE_ATTRIBUTE_NORMAL, nullptr);
+    fd_ = CreateFile(TEXT(name_.c_str()), cfg.desiredAccess, cfg.shareMode, nullptr, cfg.creationDisposition, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (fd_ == InvalidHandle) {
         const auto savedError = GetLastError();
         throw TexcHere(sysCallFailure("CreateFile", WindowsErrorMessage(savedError).c_str()));
@@ -202,7 +199,7 @@ File::close()
 #if _SQUID_WINDOWS_
     if (!CloseHandle(fd_)) {
         const auto savedError = GetLastError();
-        debugs(54, DBG_IMPORTANT, sysCallFailure("CloseHandle", WindowsErrorMessage(savedError)));
+        debugs(54, DBG_IMPORTANT, sysCallFailure("CloseHandle", WindowsErrorMessage(savedError).c_str()));
     }
 #else
     if (::close(fd_) != 0) {
@@ -244,14 +241,15 @@ File::readSmall(const SBuf::size_type minBytes, const SBuf::size_type maxBytes)
 {
     SBuf buf;
     const auto readLimit = maxBytes + 1; // to detect excessively large files that we do not handle
+    char *rawBuf = buf.rawAppendStart(readLimit);
 #if _SQUID_WINDOWS_
     DWORD result = 0;
-    if (!ReadFile(fd_, buf.rawSpace(readLimit), readLimit, &result, nullptr)) {
+    if (!ReadFile(fd_, rawBuf, readLimit, &result, nullptr)) {
         const auto savedError = GetLastError();
         throw TexcHere(sysCallFailure("ReadFile", WindowsErrorMessage(savedError).c_str()));
     }
 #else
-    const auto result = ::read(fd_, buf.rawSpace(readLimit), readLimit);
+    const auto result = ::read(fd_, rawBuf, readLimit);
     if (result < 0) {
         const auto savedErrno = errno;
         throw TexcHere(sysCallError("read", savedErrno));
@@ -260,7 +258,7 @@ File::readSmall(const SBuf::size_type minBytes, const SBuf::size_type maxBytes)
     const auto bytesRead = static_cast<size_t>(result);
     assert(bytesRead <= readLimit);
     Must(!buf.length());
-    buf.forceSize(bytesRead);
+    buf.rawAppendFinish(rawBuf, bytesRead);
 
     if (buf.length() < minBytes) {
         const auto failure = buf.length() ? "premature eof" : "empty file";
@@ -371,4 +369,8 @@ File::sysCallError(const char *callName, const int savedErrno) const
 {
     return sysCallFailure(callName, xstrerr(savedErrno));
 }
+
+#if _SQUID_WINDOWS_
+const HANDLE File::InvalidHandle = INVALID_HANDLE_VALUE;
+#endif /* _SQUID_WINDOWS_ */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -65,6 +65,30 @@ AccessLogEntry::getLogMethod() const
     return method;
 }
 
+const char *
+AccessLogEntry::getClientIdent() const
+{
+    if (tcpClient)
+        return tcpClient->rfc931;
+
+    if (cache.rfc931 && *cache.rfc931)
+        return cache.rfc931;
+
+    return nullptr;
+}
+
+const char *
+AccessLogEntry::getExtUser() const
+{
+    if (request && request->extacl_user.size())
+        return request->extacl_user.termedBuf();
+
+    if (cache.extuser && *cache.extuser)
+        return cache.extuser;
+
+    return nullptr;
+}
+
 AccessLogEntry::~AccessLogEntry()
 {
     safe_free(headers.request);
@@ -86,5 +110,17 @@ AccessLogEntry::~AccessLogEntry()
     HTTPMSGUNLOCK(icap.reply);
     HTTPMSGUNLOCK(icap.request);
 #endif
+}
+
+const SBuf *
+AccessLogEntry::effectiveVirginUrl() const
+{
+    const SBuf *effectiveUrl = request ? &request->effectiveRequestUri() : &virginUrlForMissingRequest_;
+    if (effectiveUrl && !effectiveUrl->isEmpty())
+        return effectiveUrl;
+    // We can not use ALE::url here because it may contain a request URI after
+    // adaptation/redirection. When the request is missing, a non-empty ALE::url
+    // means that we missed a setVirginUrlForMissingRequest() call somewhere.
+    return nullptr;
 }
 

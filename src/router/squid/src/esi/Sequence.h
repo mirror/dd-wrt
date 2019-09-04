@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -12,7 +12,6 @@
 #define SQUID_ESISEQUENCE_H
 
 #include "esi/Element.h"
-#include "esi/ElementList.h"
 #include "mem/forward.h"
 
 /* esiSequence */
@@ -37,7 +36,7 @@ public:
     void makeUsableElements(esiSequence const &old, ESIVarState &);
     Pointer makeUsable(esiTreeParentPtr, ESIVarState &) const;
 
-    ElementList elements; /* unprocessed or rendered nodes */
+    Esi::Elements elements; /* unprocessed or rendered nodes */
     size_t processedcount;
 
     struct {

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -77,7 +77,11 @@ MemObject::hasUris() const
 void
 MemObject::setUris(char const *aStoreId, char const *aLogUri, const HttpRequestMethod &aMethod)
 {
+    if (hasUris())
+        return;
+
     storeId_ = aStoreId;
+    debugs(88, 3, this << " storeId: " << storeId_);
 
     // fast pointer comparison for a common storeCreateEntry(url,url,...) case
     if (!aLogUri || aLogUri == aStoreId)
@@ -92,31 +96,18 @@ MemObject::setUris(char const *aStoreId, char const *aLogUri, const HttpRequestM
 #endif
 }
 
-MemObject::MemObject() :
-    inmem_lo(0),
-    nclients(0),
-    smpCollapsed(false),
-    request(nullptr),
-    ping_reply_callback(nullptr),
-    ircb_data(nullptr),
-    id(0),
-    object_sz(-1),
-    swap_hdr_sz(0),
-#if URL_CHECKSUM_DEBUG
-    chksum(0),
-#endif
-    vary_headers(nullptr)
+MemObject::MemObject()
 {
-    debugs(20, 3, "new MemObject " << this);
+    debugs(20, 3, "MemObject constructed, this=" << this);
+    ping_reply_callback = nullptr;
     memset(&start_ping, 0, sizeof(start_ping));
-    memset(&abort, 0, sizeof(abort));
     _reply = new HttpReply;
     HTTPMSGLOCK(_reply);
 }
 
 MemObject::~MemObject()
 {
-    debugs(20, 3, "del MemObject " << this);
+    debugs(20, 3, "MemObject destructed, this=" << this);
     const Ctx ctx = ctx_enter(hasUris() ? urlXXX() : "[unknown_ctx]");
 
 #if URL_CHECKSUM_DEBUG
@@ -243,8 +234,6 @@ MemObject::stat(MemBuf * mb) const
         mb->appendf("\tmem-cache index: %d state: %d offset: %" PRId64 "\n", memCache.index, memCache.io, memCache.offset);
     if (object_sz >= 0)
         mb->appendf("\tobject_sz: %" PRId64 "\n", object_sz);
-    if (smpCollapsed)
-        mb->appendf("\tsmp-collapsed\n");
 
     StoreClientStats statsVisitor(mb);
 

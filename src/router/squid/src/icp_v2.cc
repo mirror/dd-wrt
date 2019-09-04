@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -197,6 +197,8 @@ icpLogIcp(const Ip::Address &caddr, const LogTags &logcode, int len, const char 
     al->icp.opcode = ICP_QUERY;
 
     al->url = url;
+
+    al->setVirginUrlForMissingRequest(al->url);
 
     al->cache.caddr = caddr;
 

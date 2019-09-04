@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -44,7 +44,7 @@ static const char *error_string[25] = {
     "There is no such variable name in this MIB.",
     "The value given has the wrong type, length, or value",
     "This variable is read only",
-    "A general failure occured",
+    "A general failure occurred",
 
     /* 0x06 - 0x09 */
     /* SNMPv2 Errors */

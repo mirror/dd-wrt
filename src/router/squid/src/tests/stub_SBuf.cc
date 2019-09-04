@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -49,8 +49,8 @@ SBuf SBuf::consume(size_type n) STUB_RETVAL(*this)
 const SBufStats& SBuf::GetStats() STUB_RETVAL(SBuf::stats)
 SBuf::size_type SBuf::copy(char *dest, size_type n) const STUB_RETVAL(0)
 const char* SBuf::rawContent() const STUB_RETVAL(NULL)
-char *SBuf::rawSpace(size_type minSize) STUB_RETVAL(NULL)
-void SBuf::forceSize(size_type newSize) STUB
+char *SBuf::rawAppendStart(size_type) STUB_RETVAL(NULL)
+void SBuf::rawAppendFinish(const char *, size_type) STUB
 const char* SBuf::c_str() STUB_RETVAL("")
 void SBuf::reserveCapacity(size_type minCapacity) STUB
 SBuf::size_type SBuf::reserve(const SBufReservationRequirements &) STUB_RETVAL(0)

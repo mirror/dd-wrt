@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -1013,7 +1013,7 @@ get_memberof(struct main_args *margs, char *user, char *domain, char *group)
                   "%s| %s: DEBUG: Kerberos is disabled. Use username/password with ldap url instead\n",
                   LogTime(), PROGRAM);
         } else {
-            kc = krb5_create_cache(domain);
+            kc = krb5_create_cache(domain, margs->principal);
             if (kc) {
                 error((char *)
                       "%s| %s: ERROR: Error during setup of Kerberos credential cache\n",

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -44,7 +44,6 @@
 #include "Store.h"
 #include "store_key_md5.h"
 #include "tools.h"
-#include "URL.h"
 
 /* count mcast group peers every 15 minutes */
 #define MCAST_COUNT_RATE 900
@@ -111,7 +110,7 @@ whichPeer(const Ip::Address &from)
 }
 
 peer_t
-neighborType(const CachePeer * p, const URL &url)
+neighborType(const CachePeer * p, const AnyP::Uri &url)
 {
 
     const NeighborTypeDomainList *d = NULL;
@@ -136,7 +135,6 @@ neighborType(const CachePeer * p, const URL &url)
 bool
 peerAllowedToUse(const CachePeer * p, HttpRequest * request)
 {
-
     assert(request != NULL);
 
     if (neighborType(p, request->url) == PEER_SIBLING) {
@@ -167,7 +165,8 @@ peerAllowedToUse(const CachePeer * p, HttpRequest * request)
         return true;
 
     ACLFilledChecklist checklist(p->access, request, NULL);
-
+//    checklist.al = ps->al;
+    checklist.syncAle(request, nullptr);
     return checklist.fastCheck().allowed();
 }
 
@@ -593,7 +592,7 @@ neighborsUdpPing(HttpRequest * request,
     if (Config.peers == NULL)
         return 0;
 
-    assert(entry->swap_status == SWAPOUT_NONE);
+    assert(!entry->hasDisk());
 
     mem->start_ping = current_time;
 
@@ -984,7 +983,7 @@ neighborsUdpAck(const cache_key * key, icp_common_t * header, const Ip::Address 
 
     debugs(15, 6, "neighborsUdpAck: opcode " << opcode << " '" << storeKeyText(key) << "'");
 
-    if (NULL != (entry = Store::Root().get(key)))
+    if ((entry = Store::Root().findCallbackXXX(key)))
         mem = entry->mem_obj;
 
     if ((p = whichPeer(from)))
@@ -1151,14 +1150,6 @@ neighborUp(const CachePeer * p)
     return 1;
 }
 
-void
-peerNoteDigestGone(CachePeer * p)
-{
-#if USE_CACHE_DIGESTS
-    cbdataReferenceDone(p->digest);
-#endif
-}
-
 /// \returns the effective connect timeout for this peer
 time_t
 peerConnectTimeout(const CachePeer *peer)
@@ -1278,7 +1269,7 @@ void
 peerConnectSucceded(CachePeer * p)
 {
     if (!p->tcp_up) {
-        debugs(15, 2, "TCP connection to " << p->host << "/" << p->http_port << " succeded");
+        debugs(15, 2, "TCP connection to " << p->host << "/" << p->http_port << " succeeded");
         p->tcp_up = p->connect_fail_limit; // NP: so peerAlive(p) works properly.
         peerAlive(p);
         if (!p->n_addresses)
@@ -1371,19 +1362,20 @@ peerCountMcastPeersStart(void *data)
 {
     CachePeer *p = (CachePeer *)data;
     ps_state *psstate;
-    StoreEntry *fake;
     MemObject *mem;
     icp_common_t *query;
     int reqnum;
+    // TODO: use class AnyP::Uri instead of constructing and re-parsing a string
     LOCAL_ARRAY(char, url, MAX_URL);
     assert(p->type == PEER_MULTICAST);
     p->mcast.flags.count_event_pending = false;
     snprintf(url, MAX_URL, "http://");
     p->in_addr.toUrl(url+7, MAX_URL -8 );
     strcat(url, "/");
-    fake = storeCreateEntry(url, url, RequestFlags(), Http::METHOD_GET);
     const MasterXaction::Pointer mx = new MasterXaction(XactionInitiator::initPeerMcast);
     HttpRequest *req = HttpRequest::FromUrl(url, mx);
+    assert(req != nullptr);
+    StoreEntry *fake = storeCreateEntry(url, url, RequestFlags(), Http::METHOD_GET);
     psstate = new ps_state;
     psstate->request = req;
     HTTPMSGLOCK(psstate->request);
@@ -1691,7 +1683,7 @@ dump_peers(StoreEntry * sentry, CachePeer * peers)
 void
 neighborsHtcpReply(const cache_key * key, HtcpReplyData * htcp, const Ip::Address &from)
 {
-    StoreEntry *e = Store::Root().get(key);
+    StoreEntry *e = Store::Root().findCallbackXXX(key);
     MemObject *mem = NULL;
     CachePeer *p;
     peer_t ntype = PEER_NONE;

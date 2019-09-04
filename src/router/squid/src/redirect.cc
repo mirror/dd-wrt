@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -35,7 +35,7 @@
 #include "ssl/support.h"
 #endif
 
-/// url maximum lengh + extra informations passed to redirector
+/// url maximum length + extra informations passed to redirector
 #define MAX_REDIRECTOR_REQUEST_STRLEN (MAX_URL + 1024)
 
 class RedirectStateData
@@ -108,10 +108,6 @@ redirectHandleReply(void *data, const Helper::Reply &reply)
             // if we still have anything in other() after all that
             // parse it into status=, url= and rewrite-url= keys
             if (replySize) {
-                /* 2012-06-28: This cast is due to URL::parse() truncating too-long URLs itself.
-                 * At this point altering the helper buffer in that way is not harmful, but annoying.
-                 * When Bug 1961 is resolved and URL::parse has a const API, this needs to die.
-                 */
                 MemBuf replyBuffer;
                 replyBuffer.init(replySize, replySize);
                 replyBuffer.append(reply.other().content(), reply.other().contentSize());
@@ -436,5 +432,12 @@ redirectShutdown(void)
 
     delete storeIdExtrasFmt;
     storeIdExtrasFmt = NULL;
+}
+
+void
+redirectReconfigure()
+{
+    redirectShutdown();
+    redirectInit();
 }
 

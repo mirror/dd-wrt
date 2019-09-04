@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -61,7 +61,8 @@ public:
     virtual bool hasRequest() const { return request != NULL; }
     virtual bool hasReply() const { return reply != NULL; }
     virtual bool hasAle() const { return al != NULL; }
-    virtual void syncAle() const;
+    virtual void syncAle(HttpRequest *adaptedRequest, const char *logUri) const;
+    virtual void verifyAle() const;
 
 public:
     Ip::Address src_addr;

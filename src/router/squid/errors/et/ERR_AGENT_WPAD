@@ -1,6 +1,6 @@
 
 <html><head>
-<meta type="copyright" content="Copyright (C) 1996-2017 The Squid Software Foundation and contributors">
+<meta type="copyright" content="Copyright (C) 1996-2019 The Squid Software Foundation and contributors">
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <title>Web Browser Configuration</title>
 <style type="text/css"><!--
@@ -24,19 +24,19 @@ body
 <p>How to find these settings in your browser:</p>
 
 <div id="firefox"> For Firefox browsers go to: <ul>
-<li>Tools -&gt; Options -&gt; Advanced -&gt; Network -&gt; Connection Settings</li>
+<li>Tools -> Options -> Advanced -> Network -> Connection Settings</li>
 <li>Select Auto-detect proxy settings for this network</li>
 </ul>
 </div>
 
 <div id="microsoft"> For Internet Explorer browsers go to: <ul>
-<li>Tools -&gt; Internet Options -&gt; Connection -&gt; LAN Settings -&gt;Proxy</li>
+<li>Tools -> Internet Options -> Connection -> LAN Settings ->Proxy</li>
 <li>Select Automatically detect settings</li>
 </ul>
 </div>
 
 <div id="opera"> For Opera browsers go to: <ul>
-<li>Tools -&gt; Preferences -&gt; Advanced -&gt; Network -&gt; Proxy Servers</li>
+<li>Tools -> Preferences -> Advanced -> Network -> Proxy Servers</li>
 <li>Select Use Automatic proxy configuration</li>
 </ul>
 </div>

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -39,15 +39,14 @@
 
  \section ssl_crtdInterface Command Line Interface
  \verbatim
-usage: security_file_certgen -hv -s ssl_storage_path -M storage_max_size
+usage: security_file_certgen -hv -s directory -M size -b fs_block_size
     -h                   Help
     -v                   Version
-    -s ssl_storage_path  Path to specific disk storage of ssl server
-                         certificates.
-    -M storage_max_size  max size of ssl certificates storage.
+    -s directory         Directory path of SSL storage database.
+    -M size              Maximum size of SSL certificate disk storage.
     -b fs_block_size     File system block size in bytes. Need for processing
                          natural size of certificate on disk. Default value is
-                         2048 bytes."
+                         2048 bytes.
 
     After running write requests in the next format:
     <request code><whitespace><body_len><whitespace><body>
@@ -149,12 +148,11 @@ static void usage()
     std::stringstream request_string_size_stream;
     request_string_size_stream << request_string.length();
     std::string help_string =
-        "usage: security_file_certgen -hv -s ssl_storage_path -M storage_max_size\n"
+        "usage: security_file_certgen -hv -s directory -M size -b fs_block_size\n"
         "\t-h                   Help\n"
         "\t-v                   Version\n"
-        "\t-s ssl_storage_path  Path to specific disk storage of ssl server\n"
-        "\t                     certificates.\n"
-        "\t-M storage_max_size  max size of ssl certificates storage.\n"
+        "\t-s directory         Directory path of SSL storage database.\n"
+        "\t-M size              Maximum size of SSL certificate disk storage.\n"
         "\t-b fs_block_size     File system block size in bytes. Need for processing\n"
         "\t                     natural size of certificate on disk. Default value is\n"
         "\t                     2048 bytes.\n"
@@ -186,44 +184,47 @@ static bool processNewRequest(Ssl::CrtdMessage & request_message, std::string co
     if (!request_message.parseRequest(certProperties, error))
         throw std::runtime_error("Error while parsing the crtd request: " + error);
 
-    Ssl::CertificateDb db(db_path, max_db_size, fs_block_size);
+    // TODO: create a DB object only once, instead re-allocating here on every call.
+    std::unique_ptr<Ssl::CertificateDb> db;
+    if (!db_path.empty())
+        db.reset(new Ssl::CertificateDb(db_path, max_db_size, fs_block_size));
 
     Security::CertPointer cert;
-    Ssl::EVP_PKEY_Pointer pkey;
-    std::string &cert_subject = certProperties.dbKey();
+    Security::PrivateKeyPointer pkey;
+    Security::CertPointer orig;
+    std::string &certKey = Ssl::OnDiskCertificateDbKey(certProperties);
 
     bool dbFailed = false;
     try {
-        db.find(cert_subject, cert, pkey);
+        if (db)
+            db->find(certKey, certProperties.mimicCert, cert, pkey);
+
     } catch (std::runtime_error &err) {
         dbFailed = true;
         error = err.what();
-    }
-
-    if (cert) {
-        if (!Ssl::certificateMatchesProperties(cert.get(), certProperties)) {
-            // The certificate changed (renewed or other reason).
-            // Generete a new one with the updated fields.
-            cert.reset();
-            pkey.reset();
-            db.purgeCert(cert_subject);
-        }
     }
 
     if (!cert || !pkey) {
         if (!Ssl::generateSslCertificate(cert, pkey, certProperties))
             throw std::runtime_error("Cannot create ssl certificate or private key.");
 
-        if (!dbFailed && db.IsEnabledDiskStore()) {
-            try {
-                if (!db.addCertAndPrivateKey(cert, pkey, cert_subject)) {
-                    dbFailed = true;
-                    error = "Cannot add certificate to db.";
-                }
-            } catch (const std::runtime_error &err) {
-                dbFailed = true;
-                error = err.what();
-            }
+        try {
+            /* XXX: this !dbFailed condition prevents the helper fixing DB issues
+               by adding cleanly generated certs. Which is not consistent with other
+               data caches used by Squid - they purge broken entries and allow clean
+               entries to later try and fix the issue.
+               We leave it in place now only to avoid breaking existing installations
+               behaviour with version 1.x of the helper.
+
+               TODO: remove the !dbFailed condition when fixing the CertificateDb
+                    object lifecycle and formally altering the helper behaviour.
+            */
+            if (!dbFailed && db && !db->addCertAndPrivateKey(certKey, cert, pkey, certProperties.mimicCert))
+                throw std::runtime_error("Cannot add certificate to db.");
+
+        } catch (const std::runtime_error &err) {
+            dbFailed = true;
+            error = err.what();
         }
     }
 
@@ -254,7 +255,7 @@ int main(int argc, char *argv[])
         bool create_new_db = false;
         std::string db_path;
         // process options.
-        while ((c = getopt(argc, argv, "dcghvs:M:b:n:")) != -1) {
+        while ((c = getopt(argc, argv, "dchvs:M:b:")) != -1) {
             switch (c) {
             case 'd':
                 debug_enabled = 1;
@@ -268,6 +269,10 @@ int main(int argc, char *argv[])
                 db_path = optarg;
                 break;
             case 'M':
+                // use of -M without -s is probably an admin mistake, so make it an error
+                if (db_path.empty()) {
+                    throw std::runtime_error("Error -M option requires an -s parameter be set first.");
+                }
                 if (!parseBytesOptionValue(&max_db_size, optarg)) {
                     throw std::runtime_error("Error when parsing -M options value");
                 }
@@ -287,32 +292,40 @@ int main(int argc, char *argv[])
             }
         }
 
+        // when -s is used, -M is required
+        if (!db_path.empty() && max_db_size == 0)
+            throw std::runtime_error("security_file_certgen -s requires an -M parameter");
+
         if (create_new_db) {
+            // when -c is used, -s is required (implying also -M, which is checked above)
+            if (db_path.empty())
+                throw std::runtime_error("security_file_certgen is missing the required parameter. There should be -s and -M parameters when -c is used.");
+
             std::cout << "Initialization SSL db..." << std::endl;
-            Ssl::CertificateDb::create(db_path);
+            Ssl::CertificateDb::Create(db_path);
             std::cout << "Done" << std::endl;
             exit(0);
         }
 
-        if (fs_block_size == 0) {
-            struct statvfs sfs;
+        // only do filesystem checks when a path (-s) is given
+        if (!db_path.empty()) {
+            if (fs_block_size == 0) {
+                struct statvfs sfs;
 
-            if (xstatvfs(db_path.c_str(), &sfs)) {
-                fs_block_size = 2048;
-            } else {
-                fs_block_size = sfs.f_frsize;
-                // Sanity check; make sure we have a meaningful value.
-                if (fs_block_size < 512)
+                if (xstatvfs(db_path.c_str(), &sfs)) {
                     fs_block_size = 2048;
+                } else {
+                    fs_block_size = sfs.f_frsize;
+                    // Sanity check; make sure we have a meaningful value.
+                    if (fs_block_size < 512)
+                        fs_block_size = 2048;
+                }
             }
+            Ssl::CertificateDb::Check(db_path, max_db_size, fs_block_size);
         }
 
-        {
-            Ssl::CertificateDb::check(db_path, max_db_size, fs_block_size);
-        }
         // Initialize SSL subsystem
-        SSL_load_error_strings();
-        SSLeay_add_ssl_algorithms();
+        SQUID_OPENSSL_init_ssl();
         // process request.
         for (;;) {
             char request[HELPER_INPUT_BUFFER];

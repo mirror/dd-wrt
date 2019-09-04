@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -9,14 +9,13 @@
 /* DEBUG: section 33    Client-side Routines */
 
 #include "squid.h"
-
+#include "anyp/Uri.h"
 #include "client_side.h"
 #include "FwdState.h"
 #include "http/Stream.h"
 #include "ssl/ServerBump.h"
 #include "Store.h"
 #include "StoreClient.h"
-#include "URL.h"
 
 CBDATA_NAMESPACED_CLASS_INIT(Ssl, ServerBump);
 

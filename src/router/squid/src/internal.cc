@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -20,7 +20,6 @@
 #include "SquidTime.h"
 #include "Store.h"
 #include "tools.h"
-#include "URL.h"
 #include "util.h"
 #include "wordlist.h"
 
@@ -83,7 +82,7 @@ internalStaticCheck(const SBuf &urlPath)
  * makes internal url with a given host and port (remote internal url)
  */
 char *
-internalRemoteUri(const char *host, unsigned short port, const char *dir, const SBuf &name)
+internalRemoteUri(bool encrypt, const char *host, unsigned short port, const char *dir, const SBuf &name)
 {
     static char lc_host[SQUIDHOSTNAMELEN];
     assert(host && !name.isEmpty());
@@ -108,7 +107,7 @@ internalRemoteUri(const char *host, unsigned short port, const char *dir, const 
                 strlen(lc_host) - 1);
 
     /* build URI */
-    URL tmp(AnyP::PROTO_HTTP);
+    AnyP::Uri tmp(AnyP::PROTO_HTTP);
     tmp.host(lc_host);
     if (port)
         tmp.port(port);
@@ -116,7 +115,7 @@ internalRemoteUri(const char *host, unsigned short port, const char *dir, const 
     static MemBuf mb;
 
     mb.reset();
-    mb.appendf("http://" SQUIDSBUFPH, SQUIDSBUFPRINT(tmp.authority()));
+    mb.appendf("%s://" SQUIDSBUFPH, encrypt ? "https" : "http", SQUIDSBUFPRINT(tmp.authority()));
 
     if (dir)
         mb.append(dir, strlen(dir));
@@ -133,7 +132,10 @@ internalRemoteUri(const char *host, unsigned short port, const char *dir, const 
 char *
 internalLocalUri(const char *dir, const SBuf &name)
 {
-    return internalRemoteUri(getMyHostname(),
+    // XXX: getMy*() may return https_port info, but we force http URIs
+    // because we have not checked whether the callers can handle https.
+    const bool secure = false;
+    return internalRemoteUri(secure, getMyHostname(),
                              getMyPort(), dir, name);
 }
 

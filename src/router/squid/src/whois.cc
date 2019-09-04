@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -158,7 +158,8 @@ WhoisState::readReply(const Comm::ConnectionPointer &conn, char *aBuffer, size_t
     entry->timestampsSet();
     entry->flush();
 
-    entry->makePublic();
+    if (!entry->makePublic())
+        entry->makePrivate(true);
 
     fwd->complete();
     debugs(75, 3, "whoisReadReply: Done: " << entry->url());

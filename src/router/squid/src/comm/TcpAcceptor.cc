@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -43,7 +43,6 @@ CBDATA_NAMESPACED_CLASS_INIT(Comm, TcpAcceptor);
 Comm::TcpAcceptor::TcpAcceptor(const Comm::ConnectionPointer &newConn, const char *, const Subscription::Pointer &aSub) :
     AsyncJob("Comm::TcpAcceptor"),
     errcode(0),
-    isLimited(0),
     theCallSub(aSub),
     conn(newConn),
     listenPort_()
@@ -52,7 +51,6 @@ Comm::TcpAcceptor::TcpAcceptor(const Comm::ConnectionPointer &newConn, const cha
 Comm::TcpAcceptor::TcpAcceptor(const AnyP::PortCfgPointer &p, const char *, const Subscription::Pointer &aSub) :
     AsyncJob("Comm::TcpAcceptor"),
     errcode(0),
-    isLimited(0),
     theCallSub(aSub),
     conn(p->listenConn),
     listenPort_(p)
@@ -233,7 +231,6 @@ Comm::TcpAcceptor::doAccept(int fd, void *data)
         } else {
             afd->acceptNext();
         }
-        SetSelect(fd, COMM_SELECT_READ, Comm::TcpAcceptor::doAccept, afd, 0);
 
     } catch (const std::exception &e) {
         fatalf("FATAL: error while accepting new client connection: %s\n", e.what());
@@ -264,9 +261,11 @@ logAcceptError(const Comm::ConnectionPointer &conn)
     AccessLogEntry::Pointer al = new AccessLogEntry;
     al->tcpClient = conn;
     al->url = "error:accept-client-connection";
+    al->setVirginUrlForMissingRequest(al->url);
     ACLFilledChecklist ch(nullptr, nullptr, nullptr);
     ch.src_addr = conn->remote;
     ch.my_addr = conn->local;
+    ch.al = al;
     accessLogLog(al, &ch);
 }
 
@@ -283,16 +282,7 @@ Comm::TcpAcceptor::acceptOne()
     ConnectionPointer newConnDetails = new Connection();
     const Comm::Flag flag = oldAccept(newConnDetails);
 
-    /* Check for errors */
-    if (!newConnDetails->isOpen()) {
-
-        if (flag == Comm::NOMESSAGE) {
-            /* register interest again */
-            debugs(5, 5, HERE << "try later: " << conn << " handler Subscription: " << theCallSub);
-            SetSelect(conn->fd, COMM_SELECT_READ, doAccept, this, 0);
-            return;
-        }
-
+    if (flag == Comm::COMM_ERROR) {
         // A non-recoverable error; notify the caller */
         debugs(5, 5, HERE << "non-recoverable error:" << status() << " handler Subscription: " << theCallSub);
         if (intendedForUserConnections())
@@ -302,10 +292,17 @@ Comm::TcpAcceptor::acceptOne()
         return;
     }
 
-    debugs(5, 5, HERE << "Listener: " << conn <<
-           " accepted new connection " << newConnDetails <<
-           " handler Subscription: " << theCallSub);
-    notify(flag, newConnDetails);
+    if (flag == Comm::NOMESSAGE) {
+        /* register interest again */
+        debugs(5, 5, "try later: " << conn << " handler Subscription: " << theCallSub);
+    } else {
+        debugs(5, 5, "Listener: " << conn <<
+               " accepted new connection " << newConnDetails <<
+               " handler Subscription: " << theCallSub);
+        notify(flag, newConnDetails);
+    }
+
+    SetSelect(conn->fd, COMM_SELECT_READ, doAccept, this, 0);
 }
 
 void
@@ -342,10 +339,10 @@ Comm::TcpAcceptor::notify(const Comm::Flag flag, const Comm::ConnectionPointer &
  * accept() and process
  * Wait for an incoming connection on our listener socket.
  *
- * \retval Comm::OK         success. details parameter filled.
- * \retval Comm::NOMESSAGE  attempted accept() but nothing useful came in.
- * \retval Comm::COMM_ERROR      an outright failure occured.
- *                         Or if this client has too many connections already.
+ * \retval Comm::OK          success. details parameter filled.
+ * \retval Comm::NOMESSAGE   attempted accept() but nothing useful came in.
+ *                           Or this client has too many connections already.
+ * \retval Comm::COMM_ERROR  an outright failure occurred.
  */
 Comm::Flag
 Comm::TcpAcceptor::oldAccept(Comm::ConnectionPointer &details)
@@ -364,10 +361,10 @@ Comm::TcpAcceptor::oldAccept(Comm::ConnectionPointer &details)
 
         PROF_stop(comm_accept);
 
-        if (ignoreErrno(errcode)) {
+        if (ignoreErrno(errcode) || errcode == ECONNABORTED) {
             debugs(50, 5, status() << ": " << xstrerr(errcode));
             return Comm::NOMESSAGE;
-        } else if (ENFILE == errno || EMFILE == errno) {
+        } else if (errcode == ENFILE || errcode == EMFILE) {
             debugs(50, 3, status() << ": " << xstrerr(errcode));
             return Comm::COMM_ERROR;
         } else {
@@ -379,15 +376,6 @@ Comm::TcpAcceptor::oldAccept(Comm::ConnectionPointer &details)
     Must(sock >= 0);
     details->fd = sock;
     details->remote = *gai;
-
-    if ( Config.client_ip_max_connections >= 0) {
-        if (clientdbEstablished(details->remote, 0) > Config.client_ip_max_connections) {
-            debugs(50, DBG_IMPORTANT, "WARNING: " << details->remote << " attempting more than " << Config.client_ip_max_connections << " connections.");
-            Ip::Address::FreeAddr(gai);
-            PROF_stop(comm_accept);
-            return Comm::COMM_ERROR;
-        }
-    }
 
     // lookup the local-end details of this new connection
     Ip::Address::InitAddr(gai);
@@ -401,6 +389,34 @@ Comm::TcpAcceptor::oldAccept(Comm::ConnectionPointer &details)
     }
     details->local = *gai;
     Ip::Address::FreeAddr(gai);
+
+    // Perform NAT or TPROXY operations to retrieve the real client/dest IP addresses
+    if (conn->flags&(COMM_TRANSPARENT|COMM_INTERCEPTION) && !Ip::Interceptor.Lookup(details, conn)) {
+        debugs(50, DBG_IMPORTANT, "ERROR: NAT/TPROXY lookup failed to locate original IPs on " << details);
+        // Failed.
+        PROF_stop(comm_accept);
+        return Comm::COMM_ERROR;
+    }
+
+#if USE_SQUID_EUI
+    if (Eui::TheConfig.euiLookup) {
+        if (details->remote.isIPv4()) {
+            details->remoteEui48.lookup(details->remote);
+        } else if (details->remote.isIPv6()) {
+            details->remoteEui64.lookup(details->remote);
+        }
+    }
+#endif
+
+    details->nfmark = Ip::Qos::getNfmarkFromConnection(details, Ip::Qos::dirAccepted);
+
+    if (Config.client_ip_max_connections >= 0) {
+        if (clientdbEstablished(details->remote, 0) > Config.client_ip_max_connections) {
+            debugs(50, DBG_IMPORTANT, "WARNING: " << details->remote << " attempting more than " << Config.client_ip_max_connections << " connections.");
+            PROF_stop(comm_accept);
+            return Comm::NOMESSAGE;
+        }
+    }
 
     /* fdstat update */
     // XXX : these are not all HTTP requests. use a note about type and ip:port details->
@@ -422,24 +438,6 @@ Comm::TcpAcceptor::oldAccept(Comm::ConnectionPointer &details)
 
     /* IFF the socket is (tproxy) transparent, pass the flag down to allow spoofing */
     F->flags.transparent = fd_table[conn->fd].flags.transparent; // XXX: can we remove this line yet?
-
-    // Perform NAT or TPROXY operations to retrieve the real client/dest IP addresses
-    if (conn->flags&(COMM_TRANSPARENT|COMM_INTERCEPTION) && !Ip::Interceptor.Lookup(details, conn)) {
-        debugs(50, DBG_IMPORTANT, "ERROR: NAT/TPROXY lookup failed to locate original IPs on " << details);
-        // Failed.
-        PROF_stop(comm_accept);
-        return Comm::COMM_ERROR;
-    }
-
-#if USE_SQUID_EUI
-    if (Eui::TheConfig.euiLookup) {
-        if (details->remote.isIPv4()) {
-            details->remoteEui48.lookup(details->remote);
-        } else if (details->remote.isIPv6()) {
-            details->remoteEui64.lookup(details->remote);
-        }
-    }
-#endif
 
     PROF_stop(comm_accept);
     return Comm::OK;
