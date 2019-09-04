@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -172,7 +172,7 @@ Auth::Basic::UserRequest::HandleReply(void *data, const Helper::Reply &reply)
     r->auth_user_request->user()->notes.appendNewOnly(&reply.notes);
 
     /* this is okay since we only play with the Auth::Basic::User child fields below
-     * and dont pass the pointer itself anywhere */
+     * and do not pass the pointer itself anywhere */
     Auth::Basic::User *basic_auth = dynamic_cast<Auth::Basic::User *>(r->auth_user_request->user().getRaw());
 
     assert(basic_auth != NULL);

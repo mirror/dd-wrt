@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -30,8 +30,7 @@ void
 testStoreHashIndex::testStats()
 {
     StoreEntry *logEntry = new StoreEntry;
-    logEntry->makeMemObject();
-    logEntry->mem_obj->setUris("dummy_storeId", NULL, HttpRequestMethod());
+    logEntry->createMemObject("dummy_storeId", NULL, HttpRequestMethod());
     logEntry->store_status = STORE_PENDING;
     Store::Init();
     TestSwapDirPointer aStore (new TestSwapDir);
@@ -51,8 +50,7 @@ void
 testStoreHashIndex::testMaxSize()
 {
     StoreEntry *logEntry = new StoreEntry;
-    logEntry->makeMemObject();
-    logEntry->mem_obj->setUris("dummy_storeId", NULL, HttpRequestMethod());
+    logEntry->createMemObject("dummy_storeId", NULL, HttpRequestMethod());
     logEntry->store_status = STORE_PENDING;
     Store::Init();
     TestSwapDirPointer aStore (new TestSwapDir);
@@ -91,8 +89,6 @@ addedEntry(Store::Disk *aStore,
     e->expires = squid_curtime;
     e->lastModified(squid_curtime);
     e->refcount = 1;
-    EBIT_CLR(e->flags, RELEASE_REQUEST);
-    e->clearPrivate();
     e->ping_status = PING_NONE;
     EBIT_CLR(e->flags, ENTRY_VALIDATED);
     e->hashInsert((const cache_key *)name.termedBuf()); /* do it after we clear KEY_PRIVATE */

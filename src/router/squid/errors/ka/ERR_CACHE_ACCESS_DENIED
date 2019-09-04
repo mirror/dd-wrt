@@ -1,8 +1,8 @@
 
 <html><head>
-<meta type="copyright" content="Copyright (C) 1996-2017 The Squid Software Foundation and contributors">
+<meta type="copyright" content="Copyright (C) 1996-2019 The Squid Software Foundation and contributors">
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<title>ERROR: Cache Access Denied</title>
+<title>შეცდომა: კეშთან წვდომა აკრძალულია</title>
 <style type="text/css"><!-- 
  %l
 
@@ -12,8 +12,8 @@ body
  --></style>
 </head><body id="%c">
 <div id="titles">
-<h1>ERROR</h1>
-<h2>Cache Access Denied.</h2>
+<h1>შეცდომა</h1>
+<h2>კეშთან წვდომა აკრძალულია.</h2>
 </div>
 <hr>
 
@@ -21,7 +21,7 @@ body
 <p>The following error was encountered while trying to retrieve the URL: <a href="%U">%U</a></p>
 
 <blockquote id="error">
-<p><b>Cache Access Denied.</b></p>
+<p><b>კეშთან წვდომა აკრძალულია.</b></p>
 </blockquote>
 
 <p>Sorry, you are not currently allowed to request %U from this cache until you have authenticated yourself.</p>
@@ -33,7 +33,7 @@ body
 
 <hr> 
 <div id="footer">
-<p>Generated %T by %h (%s)</p>
+<p>დაგენერირების დრო: %T, სერვისი: %h (%s)</p>
 <!-- %c -->
 </div>
 </body></html>

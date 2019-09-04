@@ -1,4 +1,4 @@
-## Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+## Copyright (C) 1996-2019 The Squid Software Foundation and contributors
 ##
 ## Squid software is distributed under GPLv2+ license and includes
 ## contributions from numerous individuals and organizations.
@@ -35,6 +35,11 @@ DEFAULT_ERROR_DIR	= $(datadir)/errors
 AM_CFLAGS = $(SQUID_CFLAGS)
 AM_CXXFLAGS = $(SQUID_CXXFLAGS)
 DEFS = @DEFS@
+
+# Make ./configure location settings above available to the code
+DEFS += -DDEFAULT_CONFIG_FILE=\"$(DEFAULT_CONFIG_FILE)\" \
+	-DDEFAULT_SQUID_DATA_DIR=\"$(datadir)\" \
+	-DDEFAULT_SQUID_CONFIG_DIR=\"$(sysconfdir)\"
 
 ## so that others can always use += for these variables
 CLEANFILES =

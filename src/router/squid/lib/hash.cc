@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -314,7 +314,7 @@ hashPrime(int n)
  * return the key of a hash_link as a const string
  */
 const char *
-hashKeyStr(hash_link * hl)
+hashKeyStr(const hash_link * hl)
 {
     return (const char *) hl->key;
 }

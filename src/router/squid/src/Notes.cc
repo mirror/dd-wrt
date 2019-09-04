@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -42,7 +42,9 @@ Note::match(HttpRequest *request, HttpReply *reply, const AccessLogEntry::Pointe
 
     typedef Values::iterator VLI;
     ACLFilledChecklist ch(NULL, request, NULL);
+    ch.al = al;
     ch.reply = reply;
+    ch.syncAle(request, nullptr);
     if (reply)
         HTTPMSGLOCK(ch.reply);
 

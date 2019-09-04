@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -25,6 +25,7 @@ public:
     bool match(char const *user);
     virtual SBufList dump() const;
     void parse();
+    virtual const Acl::ParameterFlags &supportedFlags() const;
     bool empty() const;
     virtual ACLData<char const *> *clone() const;
 

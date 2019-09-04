@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -80,7 +80,7 @@ Http::StatusLine::parse(const String &protoPrefix, const char *start, const char
     // casesensitive comparison (which is required by HTTP errata?)
 
     if (protoPrefix.cmp("ICY", 3) == 0) {
-        debugs(57, 3, "Invalid HTTP identifier. Detected ICY protocol istead.");
+        debugs(57, 3, "Invalid HTTP identifier. Detected ICY protocol instead.");
         protocol = AnyP::PROTO_ICY;
         start += protoPrefix.size();
     } else if (protoPrefix.caseCmp(start, protoPrefix.size()) == 0) {

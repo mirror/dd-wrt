@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -13,8 +13,11 @@
 #include "Store.h"
 
 #include <limits>
+#if USE_OPENSSL
+#include "compat/openssl.h"
 #if HAVE_OPENSSL_SSL_H
 #include <openssl/ssl.h>
+#endif
 #endif
 
 Ssl::CertificateStorageAction::CertificateStorageAction(const Mgr::Command::Pointer &aCmd)

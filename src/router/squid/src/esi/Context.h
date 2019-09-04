@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -78,7 +78,7 @@ public:
         int oktosend:1;
         int finished:1;
 
-        /* an error has occured, send full body replies
+        /* an error has occurred, send full body replies
          * regardless. Note that we don't fail midstream
          * because we buffer until we can not fail
          */

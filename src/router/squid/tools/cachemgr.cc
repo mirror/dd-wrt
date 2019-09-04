@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -294,7 +294,8 @@ auth_html(const char *host, int port, const char *user_name)
 
         while (fgets(config_line, BUFSIZ, fp)) {
             char *server, *comment;
-            strtok(config_line, "\r\n");
+            if (strtok(config_line, "\r\n") == nullptr)
+                continue;
 
             if (config_line[0] == '#')
                 continue;
@@ -354,7 +355,7 @@ auth_html(const char *host, int port, const char *user_name)
 
     printf("<TR><TH ALIGN=\"left\">Manager name:</TH><TD><INPUT NAME=\"user_name\" ");
 
-    printf("size=\"30\" VALUE=\"%s\"></TD></TR>\n", user_name);
+    printf("size=\"30\" VALUE=\"%s\"></TD></TR>\n", rfc1738_escape(user_name));
 
     printf("<TR><TH ALIGN=\"left\">Password:</TH><TD><INPUT TYPE=\"password\" NAME=\"passwd\" ");
 
@@ -418,7 +419,7 @@ menu_url(cachemgr_request * req, const char *action)
              script_name,
              req->hostname,
              req->port,
-             safe_str(req->user_name),
+             rfc1738_escape(safe_str(req->user_name)),
              action,
              safe_str(req->pub_auth));
     return url;
@@ -1073,16 +1074,16 @@ make_pub_auth(cachemgr_request * req)
     const int bufLen = snprintf(buf, sizeof(buf), "%s|%d|%s|%s",
                                 req->hostname,
                                 (int) now,
-                                req->user_name ? req->user_name : "",
-                                req->passwd);
+                                rfc1738_escape(safe_str(req->user_name)),
+                                rfc1738_escape(req->passwd));
     debug("cmgr: pre-encoded for pub: %s\n", buf);
 
     const int encodedLen = base64_encode_len(bufLen);
     req->pub_auth = (char *) xmalloc(encodedLen);
     struct base64_encode_ctx ctx;
     base64_encode_init(&ctx);
-    size_t blen = base64_encode_update(&ctx, reinterpret_cast<uint8_t*>(req->pub_auth), bufLen, reinterpret_cast<uint8_t*>(buf));
-    blen += base64_encode_final(&ctx, reinterpret_cast<uint8_t*>(req->pub_auth)+blen);
+    size_t blen = base64_encode_update(&ctx, req->pub_auth, bufLen, reinterpret_cast<uint8_t*>(buf));
+    blen += base64_encode_final(&ctx, req->pub_auth + blen);
     req->pub_auth[blen] = '\0';
     debug("cmgr: encoded: '%s'\n", req->pub_auth);
 }
@@ -1090,11 +1091,8 @@ make_pub_auth(cachemgr_request * req)
 static void
 decode_pub_auth(cachemgr_request * req)
 {
-    char *buf;
     const char *host_name;
     const char *time_str;
-    const char *user_name;
-    const char *passwd;
 
     debug("cmgr: decoding pub: '%s'\n", safe_str(req->pub_auth));
     safe_free(req->passwd);
@@ -1102,16 +1100,17 @@ decode_pub_auth(cachemgr_request * req)
     if (!req->pub_auth || strlen(req->pub_auth) < 4 + strlen(safe_str(req->hostname)))
         return;
 
-    size_t decodedLen = BASE64_DECODE_LENGTH(strlen(req->pub_auth));
-    buf = (char*)xmalloc(decodedLen);
+    char *buf = static_cast<char*>(xmalloc(BASE64_DECODE_LENGTH(strlen(req->pub_auth))+1));
     struct base64_decode_ctx ctx;
     base64_decode_init(&ctx);
-    if (!base64_decode_update(&ctx, &decodedLen, reinterpret_cast<uint8_t*>(buf), strlen(req->pub_auth), reinterpret_cast<const uint8_t*>(req->pub_auth)) ||
+    size_t decodedLen = 0;
+    if (!base64_decode_update(&ctx, &decodedLen, reinterpret_cast<uint8_t*>(buf), strlen(req->pub_auth), req->pub_auth) ||
             !base64_decode_final(&ctx)) {
         debug("cmgr: base64 decode failure. Incomplete auth token string.\n");
         xfree(buf);
         return;
     }
+    buf[decodedLen] = '\0';
 
     debug("cmgr: length ok\n");
 
@@ -1130,17 +1129,21 @@ decode_pub_auth(cachemgr_request * req)
 
     debug("cmgr: decoded time: '%s' (now: %d)\n", time_str, (int) now);
 
+    char *user_name;
     if ((user_name = strtok(NULL, "|")) == NULL) {
         xfree(buf);
         return;
     }
+    rfc1738_unescape(user_name);
 
     debug("cmgr: decoded uname: '%s'\n", user_name);
 
+    char *passwd;
     if ((passwd = strtok(NULL, "|")) == NULL) {
         xfree(buf);
         return;
     }
+    rfc1738_unescape(passwd);
 
     debug("cmgr: decoded passwd: '%s'\n", passwd);
 
@@ -1191,7 +1194,7 @@ make_auth_header(const cachemgr_request * req)
     if (encodedLen <= 0)
         return "";
 
-    uint8_t *str64 = static_cast<uint8_t*>(xmalloc(encodedLen));
+    char *str64 = static_cast<char *>(xmalloc(encodedLen));
     struct base64_encode_ctx ctx;
     base64_encode_init(&ctx);
     size_t blen = base64_encode_update(&ctx, str64, bufLen, reinterpret_cast<uint8_t*>(buf));

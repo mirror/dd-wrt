@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -92,8 +92,7 @@ fd_close(int fd)
     }
 
     debugs(51, 3, "fd_close FD " << fd << " " << F->desc);
-    Comm::SetSelect(fd, COMM_SELECT_READ, NULL, NULL, 0);
-    Comm::SetSelect(fd, COMM_SELECT_WRITE, NULL, NULL, 0);
+    Comm::ResetSelect(fd);
     F->flags.open = false;
     fdUpdateBiggest(fd, 0);
     --Number_FD;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -160,7 +160,6 @@ static bool setLogformat(CustomLog *cl, const char *name, const bool dieWhenMiss
 static void configDoConfigure(void);
 static void parse_refreshpattern(RefreshPattern **);
 static uint64_t parseTimeUnits(const char *unit,  bool allowMsec);
-static void parseTimeLine(time_msec_t * tptr, const char *units, bool allowMsec, bool expectMoreArguments);
 static void parse_u_short(unsigned short * var);
 static void parse_string(char **);
 static void default_all(void);
@@ -169,9 +168,6 @@ static void defaults_postscriptum(void);
 static int parse_line(char *);
 static void parse_obsolete(const char *);
 static void parseBytesLine(size_t * bptr, const char *units);
-#if USE_OPENSSL
-static void parseBytesOptionValue(size_t * bptr, const char *units, char const * value);
-#endif
 static void parseBytesLineSigned(ssize_t * bptr, const char *units);
 static size_t parseBytesUnits(const char *unit);
 static void free_all(void);
@@ -341,7 +337,7 @@ static void
 ProcessMacros(char*& line, int& len)
 {
     SubstituteMacro(line, len, "${service_name}", service_name.c_str());
-    SubstituteMacro(line, len, "${process_name}", TheKidName);
+    SubstituteMacro(line, len, "${process_name}", TheKidName.c_str());
     SubstituteMacro(line, len, "${process_number}", xitoa(KidIdentifier));
 }
 
@@ -737,7 +733,16 @@ configDoConfigure(void)
 
     requirePathnameExists("unlinkd_program", Config.Program.unlinkd);
 #endif
-    requirePathnameExists("logfile_daemon", Log::TheConfig.logfile_daemon);
+    bool logDaemonUsed = false;
+    for (const auto *log = Config.Log.accesslogs; !logDaemonUsed && log; log = log->next)
+        logDaemonUsed = log->usesDaemon();
+#if ICAP_CLIENT
+    for (const auto *log = Config.Log.icaplogs; !logDaemonUsed && log; log = log->next)
+        logDaemonUsed = log->usesDaemon();
+#endif
+    if (logDaemonUsed)
+        requirePathnameExists("logfile_daemon", Log::TheConfig.logfile_daemon);
+
     if (Config.Program.redirect)
         requirePathnameExists("redirect_program", Config.Program.redirect->key);
 
@@ -915,14 +920,12 @@ configDoConfigure(void)
         }
     }
 
-#if USE_OPENSSL
     for (AnyP::PortCfgPointer s = HttpPortList; s != NULL; s = s->next) {
         if (!s->secure.encryptTransport)
             continue;
-        debugs(3, DBG_IMPORTANT, "Initializing " << AnyP::UriScheme(s->transport.protocol) << "_port " << s->s << " TLS context");
-        s->configureSslServerContext();
+        debugs(3, DBG_IMPORTANT, "Initializing " << AnyP::UriScheme(s->transport.protocol) << "_port " << s->s << " TLS contexts");
+        s->secure.initServerContexts(*s);
     }
-#endif
 
     // prevent infinite fetch loops in the request parser
     // due to buffer full but not enough data recived to finish parse
@@ -1030,19 +1033,19 @@ parse_obsolete(const char *name)
 
 /* Parse a time specification from the config file.  Store the
  * result in 'tptr', after converting it to 'units' */
-static void
-parseTimeLine(time_msec_t * tptr, const char *units,  bool allowMsec,  bool expectMoreArguments = false)
+static time_msec_t
+parseTimeLine(const char *units,  bool allowMsec,  bool expectMoreArguments = false)
 {
     time_msec_t u = parseTimeUnits(units, allowMsec);
     if (u == 0) {
         self_destruct();
-        return;
+        return 0;
     }
 
-    char *token = ConfigParser::NextToken();;
+    char *token = ConfigParser::NextToken();
     if (!token) {
         self_destruct();
-        return;
+        return 0;
     }
 
     double d = xatof(token);
@@ -1055,7 +1058,7 @@ parseTimeLine(time_msec_t * tptr, const char *units,  bool allowMsec,  bool expe
 
         } else if (!expectMoreArguments) {
             self_destruct();
-            return;
+            return 0;
 
         } else {
             token = NULL; // show default units if dying below
@@ -1064,13 +1067,14 @@ parseTimeLine(time_msec_t * tptr, const char *units,  bool allowMsec,  bool expe
     } else
         token = NULL; // show default units if dying below.
 
-    *tptr = static_cast<time_msec_t>(m * d);
+    const auto result = static_cast<time_msec_t>(m * d);
 
-    if (static_cast<double>(*tptr) * 2 != m * d * 2) {
+    if (static_cast<double>(result) * 2 != m * d * 2) {
         debugs(3, DBG_CRITICAL, "FATAL: Invalid value '" <<
                d << " " << (token ? token : units) << ": integer overflow (time_msec_t).");
         self_destruct();
     }
+    return result;
 }
 
 static uint64_t
@@ -1257,7 +1261,8 @@ parseBytesLineSigned(ssize_t * bptr, const char *units)
  * Similar to the parseBytesLine function but parses the string value instead of
  * the current token value.
  */
-static void parseBytesOptionValue(size_t * bptr, const char *units, char const * value)
+void
+parseBytesOptionValue(size_t * bptr, const char *units, char const * value)
 {
     int u;
     if ((u = parseBytesUnits(units)) == 0) {
@@ -1395,7 +1400,7 @@ parse_address(Ip::Address *addr)
         addr->setNoAddr();
     else if ( (*addr = token) ) // try parse numeric/IPA
         (void) 0;
-    else if (addr->GetHostByName(token)) // dont use ipcache
+    else if (addr->GetHostByName(token)) // do not use ipcache
         (void) 0;
     else { // not an IP and not a hostname
         debugs(3, DBG_CRITICAL, "FATAL: invalid IP address or domain name '" << token << "'");
@@ -2293,16 +2298,12 @@ parse_peer(CachePeer ** head)
         p->connect_fail_limit = 10;
 
 #if USE_CACHE_DIGESTS
-
-    if (!p->options.no_digest) {
-        /* XXX This looks odd.. who has the original pointer
-         * then?
-         */
-        PeerDigest *pd = peerDigestCreate(p);
-        p->digest = cbdataReference(pd);
-    }
-
+    if (!p->options.no_digest)
+        peerDigestCreate(p);
 #endif
+
+    if (p->secure.encryptTransport)
+        p->secure.parseOptions();
 
     p->index =  ++Config.npeers;
 
@@ -2920,8 +2921,7 @@ dump_time_t(StoreEntry * entry, const char *name, time_t var)
 void
 parse_time_t(time_t * var)
 {
-    time_msec_t tval;
-    parseTimeLine(&tval, T_SECOND_STR, false);
+    time_msec_t tval = parseTimeLine(T_SECOND_STR, false);
     *var = static_cast<time_t>(tval/1000);
 }
 
@@ -2943,7 +2943,7 @@ dump_time_msec(StoreEntry * entry, const char *name, time_msec_t var)
 void
 parse_time_msec(time_msec_t * var)
 {
-    parseTimeLine(var, T_SECOND_STR, true);
+    *var = parseTimeLine(T_SECOND_STR, true);
 }
 
 static void
@@ -3442,7 +3442,7 @@ parsePortSpecification(const AnyP::PortCfgPointer &s, char *token)
             s->s.setIPv4();
         debugs(3, 3, portType << "_port: Listen on Host/IP: " << host << " --> " << s->s);
     } else if ( s->s.GetHostByName(host) ) { /* check/parse for FQDN */
-        /* dont use ipcache */
+        /* do not use ipcache */
         s->defaultsite = xstrdup(host);
         s->s.port(port);
         if (!Ip::EnableIpv6)
@@ -3653,8 +3653,7 @@ parse_port_option(AnyP::PortCfgPointer &s, char *token)
     } else if (strncmp(token, "cipher=", 7) == 0) {
         s->secure.parse(token);
     } else if (strncmp(token, "clientca=", 9) == 0) {
-        safe_free(s->clientca);
-        s->clientca = xstrdup(token + 9);
+        s->secure.parse(token);
     } else if (strncmp(token, "cafile=", 7) == 0) {
         debugs(3, DBG_PARSE_NOTE(1), "UPGRADE WARNING: '" << token << "' is deprecated " <<
                "in " << cfg_directive << ". Use 'tls-cafile=' instead.");
@@ -3671,17 +3670,13 @@ parse_port_option(AnyP::PortCfgPointer &s, char *token)
         // NP: deprecation warnings output by secure.parse() when relevant
         s->secure.parse(token+3);
     } else if (strncmp(token, "sslcontext=", 11) == 0) {
-        safe_free(s->sslContextSessionId);
-        s->sslContextSessionId = xstrdup(token + 11);
-    } else if (strcmp(token, "generate-host-certificates") == 0) {
-        s->generateHostCertificates = true;
-    } else if (strcmp(token, "generate-host-certificates=on") == 0) {
-        s->generateHostCertificates = true;
-    } else if (strcmp(token, "generate-host-certificates=off") == 0) {
-        s->generateHostCertificates = false;
-    } else if (strncmp(token, "dynamic_cert_mem_cache_size=", 28) == 0) {
-        parseBytesOptionValue(&s->dynamicCertMemCacheSize, B_BYTES_STR, token + 28);
+        // NP: deprecation warnings output by secure.parse() when relevant
+        s->secure.parse(token+3);
+    } else if (strncmp(token, "generate-host-certificates", 26) == 0) {
+        s->secure.parse(token);
 #endif
+    } else if (strncmp(token, "dynamic_cert_mem_cache_size=", 28) == 0) {
+        s->secure.parse(token);
     } else if (strncmp(token, "tls-", 4) == 0) {
         s->secure.parse(token+4);
     } else if (strcmp(token, "ftp-track-dirs") == 0) {
@@ -3736,12 +3731,7 @@ parsePortCfg(AnyP::PortCfgPointer *head, const char *optionName)
         parse_port_option(s, token);
     }
 
-#if USE_OPENSSL
-    // if clientca has been defined but not cafile, then use it to verify
-    // but if cafile has been defined, only use that to verify
-    if (s->clientca && !s->secure.caFiles.size())
-        s->secure.caFiles.emplace_back(SBuf(s->clientca));
-#endif
+    s->secure.syncCaFiles();
 
     if (s->transport.protocol == AnyP::PROTO_HTTPS) {
         s->secure.encryptTransport = true;
@@ -3779,6 +3769,16 @@ parsePortCfg(AnyP::PortCfgPointer *head, const char *optionName)
         }
     }
 
+    if (s->secure.encryptTransport) {
+        if (s->secure.certs.empty()) {
+            debugs(3, DBG_CRITICAL, "FATAL: " << AnyP::UriScheme(s->transport.protocol) << "_port requires a cert= parameter");
+            self_destruct();
+            return;
+        }
+        s->secure.parseOptions();
+    }
+
+    // *_port line should now be fully valid so we can clone it if necessary
     if (Ip::EnableIpv6&IPV6_SPECIAL_SPLITSTACK && s->s.isAnyAddr()) {
         // clone the port options from *s to *(s->next)
         s->next = s->clone();
@@ -3880,17 +3880,6 @@ dump_generic_port(StoreEntry * e, const char *n, const AnyP::PortCfgPointer &s)
 #endif
 
     s->secure.dumpCfg(e, "tls-");
-
-#if USE_OPENSSL
-    if (s->sslContextSessionId)
-        storeAppendPrintf(e, " sslcontext=%s", s->sslContextSessionId);
-
-    if (!s->generateHostCertificates)
-        storeAppendPrintf(e, " generate-host-certificates=off");
-
-    if (s->dynamicCertMemCacheSize != 4*1024*1024) // 4MB default
-        storeAppendPrintf(e, "dynamic_cert_mem_cache_size=%" PRIuSIZE "%s\n", s->dynamicCertMemCacheSize, B_BYTES_STR);
-#endif
 }
 
 static void
@@ -4319,7 +4308,7 @@ dump_icap_service_type(StoreEntry * entry, const char *name, const Adaptation::I
 static void
 parse_icap_class_type()
 {
-    debugs(93, DBG_CRITICAL, "WARNING: 'icap_class' is depricated. " <<
+    debugs(93, DBG_CRITICAL, "WARNING: 'icap_class' is deprecated. " <<
            "Use 'adaptation_service_set' instead");
     Adaptation::Config::ParseServiceSet();
 }
@@ -4327,7 +4316,7 @@ parse_icap_class_type()
 static void
 parse_icap_access_type()
 {
-    debugs(93, DBG_CRITICAL, "WARNING: 'icap_access' is depricated. " <<
+    debugs(93, DBG_CRITICAL, "WARNING: 'icap_access' is deprecated. " <<
            "Use 'adaptation_access' instead");
     Adaptation::Config::ParseAccess(LegacyParser);
 }
@@ -4828,8 +4817,7 @@ static void free_ftp_epsv(acl_access **ftp_epsv)
 static void
 parse_UrlHelperTimeout(SquidConfig::UrlHelperTimeout *config)
 {
-    time_msec_t tval;
-    parseTimeLine(&tval, T_SECOND_STR, false, true);
+    const auto tval = parseTimeLine(T_SECOND_STR, false, true);
     Config.Timeout.urlRewrite = static_cast<time_t>(tval/1000);
 
     char *key, *value;
@@ -4844,14 +4832,14 @@ parse_UrlHelperTimeout(SquidConfig::UrlHelperTimeout *config)
             else if (strcasecmp(value, "use_configured_response") == 0) {
                 config->action = toutActUseConfiguredResponse;
             } else {
-                debugs(3, DBG_CRITICAL, "FATAL: unsuported \"on_timeout\"  action:" << value);
+                debugs(3, DBG_CRITICAL, "FATAL: unsupported \"on_timeout\" action: " << value);
                 self_destruct();
                 return;
             }
         } else if (strcasecmp(key, "response") == 0) {
             config->response = xstrdup(value);
         } else {
-            debugs(3, DBG_CRITICAL, "FATAL: unsuported option " << key);
+            debugs(3, DBG_CRITICAL, "FATAL: unsupported option " << key);
             self_destruct();
             return;
         }
@@ -4863,7 +4851,7 @@ parse_UrlHelperTimeout(SquidConfig::UrlHelperTimeout *config)
     }
 
     if (config->action != toutActUseConfiguredResponse && config->response) {
-        debugs(3, DBG_CRITICAL, "FATAL: 'response=' option is valid only when used with the  'on_timeout=use_configured_response' option");
+        debugs(3, DBG_CRITICAL, "FATAL: 'response=' option is valid only when used with the 'on_timeout=use_configured_response' option");
         self_destruct();
     }
 }

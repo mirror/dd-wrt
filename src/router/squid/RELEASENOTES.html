@@ -1,11 +1,11 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
 <HTML>
 <HEAD>
- <META NAME="GENERATOR" CONTENT="LinuxDoc-Tools 0.9.72">
- <TITLE>Squid 4.0.21 release notes</TITLE>
+ <META NAME="GENERATOR" CONTENT="LinuxDoc-Tools 0.9.73">
+ <TITLE>Squid 4.8 release notes</TITLE>
 </HEAD>
 <BODY>
-<H1>Squid 4.0.21 release notes</H1>
+<H1>Squid 4.8 release notes</H1>
 
 <H2>Squid Developers</H2>
 <HR>
@@ -32,6 +32,7 @@ for Applied Network Research and members of the Web Caching community.</EM>
 <LI><A NAME="toc2.6">2.6</A> <A HREF="#ss2.6">Improved SMP support</A>
 <LI><A NAME="toc2.7">2.7</A> <A HREF="#ss2.7">Improved process management</A>
 <LI><A NAME="toc2.8">2.8</A> <A HREF="#ss2.8">Initial GnuTLS support</A>
+<LI><A NAME="toc2.9">2.9</A> <A HREF="#ss2.9">ESI Custom Parser removal</A>
 </UL>
 <P>
 <H2><A NAME="toc3">3.</A> <A HREF="#s3">Changes to squid.conf since Squid-3.5</A></H2>
@@ -62,12 +63,10 @@ for Applied Network Research and members of the Web Caching community.</EM>
 <HR>
 <H2><A NAME="s1">1.</A> <A HREF="#toc1">Notice</A></H2>
 
-<P>The Squid Team are pleased to announce the release of Squid-4.0.21 for testing.</P>
+<P>The Squid Team are pleased to announce the release of Squid-4.8 for testing.</P>
 <P>This new release is available for download from 
 <A HREF="http://www.squid-cache.org/Versions/v4/">http://www.squid-cache.org/Versions/v4/</A> or the
 <A HREF="http://www.squid-cache.org/Download/http-mirrors.html">mirrors</A>.</P>
-
-<P>While this release is not deemed ready for production use, we believe it is ready for wider testing by the community.</P>
 
 <P>We welcome feedback and bug reports. If you find a bug, please see 
 <A HREF="http://wiki.squid-cache.org/SquidFaq/BugReporting">http://wiki.squid-cache.org/SquidFaq/BugReporting</A>
@@ -76,7 +75,7 @@ for how to submit a report with a stack trace.</P>
 <H2><A NAME="ss1.1">1.1</A> <A HREF="#toc1.1">Known issues</A>
 </H2>
 
-<P>Although this release is deemed good enough for use in many setups, please note the existence of 
+<P>Although this release is deemed good enough for use in production, please note the existence of
 <A HREF="http://bugs.squid-cache.org/buglist.cgi?query_format=advanced&amp;product=Squid&amp;bug_status=UNCONFIRMED&amp;bug_status=NEW&amp;bug_status=ASSIGNED&amp;bug_status=REOPENED&amp;version=4">open bugs against Squid-4</A>.</P>
 
 <P>This release adds a dependency on C++11 support in any compiler used to build Squid.
@@ -110,6 +109,7 @@ necessary to support OpenSSL 1.1 prevent building with LibreSSL.</P>
 <LI>Improved SMP support</LI>
 <LI>Improved process management</LI>
 <LI>Initial GnuTLS support</LI>
+<LI>ESI Custom Parser removal</LI>
 </UL>
 </P>
 <P>Most user-facing changes are reflected in squid.conf (see below).</P>
@@ -163,11 +163,11 @@ to configure the minimum version the TLS negotiation will allow to be used
 when an old TLS version is requested by the remote endpoint.</P>
 
 <P>The system Trusted CAs are no longer used by default when verifying client
-certificates. The <EM>cafile=</EM> option should be used instead to load
-the specific CA which signed acceptible client certificates explicitly,
+certificates. The <EM>cafile=</EM> option should be used instead to
+explicitly load the specific CA which signed acceptible client certificates,
 even if that CA is one of the system Trusted CAs.
 The <EM>tls-default-ca</EM> option can be used to restore the old
-behaviour explicitly if needed.</P>
+behaviour if needed.</P>
 
 
 <H2><A NAME="ss2.4">2.4</A> <A HREF="#toc2.4">Helper Binary Changes</A>
@@ -190,8 +190,9 @@ option.</P>
 <P>The <EM>ssl_crtd</EM> helper has been renamed to <EM>security_file_certgen</EM>
 and is now built and installed by default whenever OpenSSL support is enabled.
 Building the helper can be controlled using the <EM>--enable-security-cert-generators="file"</EM>
-option.
-NOTE: The <EM>--enable-ssl-crtd</EM> option is still required to enable the
+option.</P>
+
+<P>NOTE: The <EM>--enable-ssl-crtd</EM> option is still required to enable the
 <EM>sslcrtd_program</EM> helper interface within Squid that uses the helper.</P>
 
 <P>The <EM>ntlm_smb_lm_auth</EM> helper is now built using <EM>--enable-auth-ntlm="SMB_LM"</EM>.
@@ -217,8 +218,8 @@ proxy convention. The old 1344 default for plain ICAP ports has not changed.</P>
 
 <P>Use of C++11 atomic operations instead of GNU atomics allows a wider range of
 operating systems and compilers to build Squid SMP and multi-process features.
-However this does require a C++11 or C++0x compiler with a recent version of
-the C++ standard library.</P>
+However this does require a C++11 compiler with a recent version of the C++
+standard library.</P>
 
 <P>IpcIo and Mmapped disk I/O modules are now auto-detected properly which
 enables Rock storage on more systems by default than previously.</P>
@@ -245,14 +246,21 @@ Unlike the old <EM>-N</EM> option,
 cache structures creation), as it allows the caller to wait until Squid has
 finished.</P>
 
+<P>The squid binary now accepts a <EM>--kid</EM> command line option which
+informs the process which role it is to take on. This aids with debugging
+SMP issues with specific process types and resolves some SMP forking issues.</P>
+
 
 <H2><A NAME="ss2.8">2.8</A> <A HREF="#toc2.8">Initial GnuTLS support</A>
 </H2>
 
-<P>If all you need is a proxy that connects over TLS/SSL to a <EM>cache_peer</EM>
-or accepts <EM>https://</EM> URLs over clear-text and performs the necessary
-upstream TLS connections. Then you now have the choice to build Squid with
-GnuTLS instead of OpenSSL.</P>
+<P>Squid can now be built to use GnuTLS in place of OpenSSL for the core
+features of receiving TLS connections from clients and making TLS
+connections to servers. The GnuTLS support is still very much experimental
+and should be tested before use.</P>
+
+<P>SSL-Bump and certificate generation features are not yet supported by
+GnuTLS builds. Nor are many other less commonly used Squid TLS/SSL features.</P>
 
 <P><EM>squid.conf</EM> directives and configuration options which have undergone
 name changes from 'ssl' to 'tls' prefix in Squid-4 have GnuTLS support, unless
@@ -260,7 +268,18 @@ explicitly stated otherwise.</P>
 
 <P>Advanced configuration with specific selection of ciphers and similar settings
 should still work, but needs the GnuTLS <EM>Priority Strings</EM> instead of
-the OpenSSL options when using GnuTLS.</P>
+the OpenSSL options when using GnuTLS.
+See 
+<A HREF="https://www.gnutls.org/manual/gnutls.html#Priority-Strings">GnuTLS manual</A>
+for more details.</P>
+
+
+<H2><A NAME="ss2.9">2.9</A> <A HREF="#toc2.9">ESI Custom Parser removal</A>
+</H2>
+
+<P>The Squid custom ESI (Edge Side Includes) parser has been removed in favour
+of better supported and maintained third-party libraries. At least one of libxml2
+or libexpat is now mandatory to build support for the ESI response processor.</P>
 
 
 <H2><A NAME="s3">3.</A> <A HREF="#toc3">Changes to squid.conf since Squid-3.5</A></H2>
@@ -288,9 +307,20 @@ the OpenSSL options when using GnuTLS.</P>
 <P>New directive to limit the size of a table used for sharing information
 about collapsible entries among SMP workers.</P>
 
+<DT><B>force_request_body_continuation</B><DD>
+<P>New directive to control Squid behaviour on the client connection when
+receiving an HTTP request with an Expect:100-continue header.</P>
+
+<DT><B>hopeless_kid_revival_delay</B><DD>
+<P>New directive to set a cool-down delay reviving a child process if
+the process is encountering frequent deaths.</P>
+
 <DT><B>on_unsupported_protocol</B><DD>
 <P>New directive to set the action performed when encountering strange
 protocol requests at the beginning of an accepted TCP connection.</P>
+
+<DT><B>pconn_lifetime</B><DD>
+<P>New directive to limit the lifetime of persistent connections.</P>
 
 <DT><B>reply_header_add</B><DD>
 <P>New directive to add header fields to outgoing HTTP responses to
@@ -316,7 +346,7 @@ on startup. Protects against SIGBUS errors, but delays startup.</P>
 connections. For example to HTTPS servers.</P>
 
 <DT><B>url_rewrite_timeout</B><DD>
-<P>Squid times active requests to redirector. This option sets
+<P>Squid times active requests to redirector. This directive sets
 the timeout value and the Squid reaction to a timed out
 request.</P>
 
@@ -331,11 +361,19 @@ request.</P>
 <DT><B>access_log</B><DD>
 <P>TCP accept(2) errors logged with URI <EM>error:accept-client-connection</EM>.</P>
 <P>Unused connections received in <EM>http_port</EM> or <EM>https_port</EM>
-or transactions terminated before reading[parsing] request headers
+or transactions terminated before reading[parsing] request headers are
 logged with URI <EM>error:transaction-end-before-headers</EM>.</P>
+<P>New option <EM>rotate=</EM> to control the number of log file rotations
+to make when <EM>-k rotate</EM> command is received. Default is to
+obey the <EM>logfile_rotate</EM> directive.</P>
+<P>Extend <EM>buffer-size=</EM> support to UDP logging. Prior to Squid-4.7
+log entries would be buffered up to 1400 bytes before sending to UDP logger.
+This option may now set smaller buffers, but not larger than 1400 bytes.</P>
 
 <DT><B>acl</B><DD>
 <P>New <EM>-m</EM> flag for <EM>note</EM> ACL to match substrings.</P>
+<P>New <EM>client_connection_mark</EM> type for matching Netfilter
+CONNMARK of the client TCP connection.</P>
 <P>New <EM>connections_encrypted</EM> type for matching transactions
 where all HTTP messages were received over TLS transport connections,
 including messages received from ICAP servers.</P>
@@ -346,6 +384,7 @@ unusual transactions.</P>
 <P>New <EM>--consensus</EM>, <EM>--client-requested</EM> and
 <EM>--server-provided</EM> flags for the <EM>ssl::server_name</EM>
 type to control which server name to match against.</P>
+<P>Added <EM>::/128</EM> IPv6 range to <EM>to_localhost</EM> ACL.</P>
 
 <DT><B>auth_param</B><DD>
 <P>New parameter <EM>queue-size=</EM> to set the maximum number
@@ -361,6 +400,7 @@ which Kerberos credentials to use, instead of specifying a keytab.</P>
 <P>New option <EM>tls-min-version=1.N</EM> to set minimum TLS version allowed.</P>
 <P>New option <EM>tls-default-ca</EM> replaces <EM>sslflags=NO_DEFAULT_CA</EM></P>
 <P>New option <EM>tls-no-npn</EM> to disable sending TLS NPN extension.</P>
+<P>New <EM>tls-options=</EM> option value to disable TLS/1.3.</P>
 <P>All <EM>ssloptions=</EM> values for SSLv2 configuration or disabling
 have been removed.</P>
 <P>Removed <EM>sslversion=</EM> option. Use <EM>tls-options=</EM> instead.</P>
@@ -368,18 +408,33 @@ have been removed.</P>
 <P>Replaced option <EM>sslcafile=</EM> with <EM>tls-cafile=</EM>
 which takes multiple entries.</P>
 
+<DT><B>deny_info</B><DD>
+<P>New format macro <EM>%O</EM> to expand the <EM>message=</EM> value supplied
+by external ACL helpers.</P>
+
+<DT><B>ecap_service</B><DD>
+<P>New <EM>connection-encryption=</EM> option to determine ICAP service
+effect on <EM>connections_encrypted</EM> ACL.</P>
+
+<DT><B>esi_parser</B><DD>
+<P>Removed <EM>custom</EM> parser option.</P>
+<P>Changed default to auto-detect available parsers instead of <EM>custom</EM>.</P>
+
 <DT><B>external_acl_type</B><DD>
 <P>New parameter <EM>queue-size=</EM> to set the maximum number
 of queued requests.</P>
 <P>New parameter <EM>on-persistent-overload=</EM> to set the action taken
 when the helper queue is overloaded.</P>
 <P>Format field updated to accept any logformat %macro code.</P>
+<P>The optional <EM>acl-value</EM> fields in this helper input now expand
+to a dash ('-') if the %DATA macro is not specified explicitly.</P>
 
 <DT><B>http_port</B><DD>
 <P>New option <EM>tls-min-version=1.N</EM> to set minimum TLS version allowed.</P>
 <P>New option <EM>tls-default-ca</EM> replaces <EM>sslflags=NO_DEFAULT_CA</EM>,
 the default is also changed to OFF.</P>
 <P>New option <EM>tls-no-npn</EM> to disable sending TLS NPN extension.</P>
+<P>New <EM>tls-options=</EM> option value to disable TLS/1.3.</P>
 <P>All <EM>option=</EM> values for SSLv2 configuration or disabling
 have been removed.</P>
 <P>Removed <EM>version=</EM> option. Use <EM>tls-options=</EM> instead.</P>
@@ -392,6 +447,7 @@ have been removed.</P>
 <P>New option <EM>tls-default-ca</EM> replaces <EM>sslflags=NO_DEFAULT_CA</EM>,
 the default is also changed to OFF.</P>
 <P>New option <EM>tls-no-npn</EM> to disable sending TLS NPN extension.</P>
+<P>New <EM>tls-options=</EM> option value to disable TLS/1.3.</P>
 <P>All <EM>options=</EM> values for SSLv2
 configuration or disabling have been removed.</P>
 <P>Removed <EM>version=</EM> option. Use <EM>tls-options=</EM> instead.</P>
@@ -402,15 +458,20 @@ configuration or disabling have been removed.</P>
 <DT><B>icap_service</B><DD>
 <P>New scheme <EM>icaps://</EM> to enable TLS/SSL connections to Secure ICAP
 servers on port 11344.</P>
+<P>New <EM>connection-encryption=</EM> option to determine ICAP service
+effect on <EM>connections_encrypted</EM> ACL.</P>
 <P>New <EM>tls-cert=</EM> option to set TLS client certificate to use.</P>
 <P>New <EM>tls-key=</EM> option to set TLS private key matching the client
 certificate used.</P>
 <P>New <EM>tls-min-version=1.N</EM> option to set minimum TLS version allowed
 on server connections.</P>
 <P>New <EM>tls-options=</EM> option to set OpenSSL library parameters.</P>
+<P>New <EM>tls-options=</EM> option value to disable TLS/1.3.</P>
 <P>New <EM>tls-flags=</EM> option to set flags modifying Squid TLS operations.</P>
 <P>New <EM>tls-cipher=</EM> option to set a list of ciphers permitted.</P>
 <P>New <EM>tls-cafile=</EM> option to set a file with additional CA
+certificate(s) to verify the server certificate.</P>
+<P>New <EM>tls-capath=</EM> option to set a directory with additional CA
 certificate(s) to verify the server certificate.</P>
 <P>New <EM>tls-crlfile=</EM> option to set a file with a CRL to verify the
 server certificate.</P>
@@ -418,9 +479,18 @@ server certificate.</P>
 verify the server certificate.</P>
 <P>New <EM>tls-domain=</EM> option to verify the server certificate domain.</P>
 
+<DT><B>logfile_daemon</B><DD>
+<P>Now only requires that helper binary exists when daemon: log module
+is actually being used.</P>
+
 <DT><B>logformat</B><DD>
-<P>New code <EM>%ssl::&lt;cert_errors</EM> to display server
+<P>New quoting modifier to produce <EM>\-escaped</EM> output.</P>
+<P>New code <EM>%ssl::&lt;cert_errors</EM> to display server X.509
 certificate errors.</P>
+<P>New code <EM>%ssl::&lt;cert_issuer</EM> to display Issuer field of
+the received server X.509 certificate.</P>
+<P>New code <EM>%ssl::&lt;cert_subject</EM> to display Subject field of
+the received server X.509 certificate.</P>
 <P>New code <EM>%ssl::&gt;negotiated_version</EM> to display
 negotiated TLS version of the client connection.</P>
 <P>New code <EM>%ssl::&lt;negotiated_version</EM> to display
@@ -437,16 +507,25 @@ the maximum TLS version supported by the TLS server.</P>
 negotiated cipher of the client connection.</P>
 <P>New code <EM>%ssl::&lt;negotiated_cipher</EM> to display the
 negotiated cipher of the last server or peer connection.</P>
+<P>New code <EM>%&gt;handshake</EM> to display initial octets
+received on a client connection (Base64 encoded).</P>
+<P>Fixed <EM>%&lt;Hs</EM>, <EM>%&lt;pt</EM> and <EM>%&lt;tt</EM>
+codes for received CONNECT errors.</P>
+<P>Improved <EM>%&lt;bs</EM> logging on forwarding retries.</P>
+<P>Improved <EM>%&lt;Hs</EM>, <EM>%&lt;pt</EM>, <EM>%&lt;tt</EM>,
+<EM>%&lt;bs</EM> logging on SslBump errors.</P>
 
 <DT><B>pid_filename</B><DD>
 <P>Default value now based on squid -n command line parameter.</P>
+<P>This directive is no longer mandatory to edit for
+multi-instance/tenant Squid installations.</P>
 
 <DT><B>refresh_pattern</B><DD>
 <P>Removed option <EM>ignore-auth</EM>. Its commonly desired behaviour
 is performed by default with correct HTTP/1.1 revalidation.</P>
-<P>Removed <EM>ignore-must-revalidate</EM>. Other more HTTP compliant
-directives (cache, store_miss) can be used to prevent objects from
-caching.</P>
+<P>Removed option <EM>ignore-must-revalidate</EM>. Other more HTTP compliant
+directives (<EM>cache</EM>, <EM>store_miss</EM>) can be used to prevent
+objects from caching.</P>
 
 <DT><B>sslcrtd_children</B><DD>
 <P>New parameter <EM>queue-size=</EM> to set the maximum number
@@ -582,6 +661,10 @@ It needs to be explicitly listed to be built.</P>
 actually auto-detect them without configuring the module
 list manually.</P>
 
+<DT><B>--enable-esi</B><DD>
+<P>Custom ESI parser has been removed.
+Libxml2 or libexpat is now required to enable ESI processing.</P>
+
 </DL>
 </P>
 <H2><A NAME="removedoptions"></A> <A NAME="ss4.3">4.3</A> <A HREF="#toc4.3">Removed options</A>
@@ -656,7 +739,7 @@ Please prefer the default auto-detection though.</P>
 
 <H2><A NAME="s6">6.</A> <A HREF="#toc6">Copyright</A></H2>
 
-<P>Copyright (C) 1996-2017 The Squid Software Foundation and contributors</P>
+<P>Copyright (C) 1996-2019 The Squid Software Foundation and contributors</P>
 <P>Squid software is distributed under GPLv2+ license and includes
 contributions from numerous individuals and organizations.
 Please see the COPYING and CONTRIBUTORS files for details.</P>

@@ -1,4 +1,4 @@
-## Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+## Copyright (C) 1996-2019 The Squid Software Foundation and contributors
 ##
 ## Squid software is distributed under GPLv2+ license and includes
 ## contributions from numerous individuals and organizations.
@@ -250,6 +250,8 @@ squid_SOURCES = \
 	clientStreamForward.h \
 	CollapsedForwarding.cc \
 	CollapsedForwarding.h \
+	CommandLine.cc \
+	CommandLine.h \
 	CompletionDispatcher.cc \
 	CompletionDispatcher.h \
 	CommRead.h \
@@ -471,8 +473,6 @@ squid_SOURCES = \
 	tunnel.cc \
 	typedefs.h \
 	$(UNLINKDSOURCE) \
-	url.cc \
-	URL.h \
 	urn.h \
 	urn.cc \
 	wccp.h \
@@ -725,9 +725,6 @@ EXTRA_DIST = \
 	$(STUB_SOURCE) \
 	mib.txt \
 	mime.conf.default
-
-# Make location configure settings available to the code
-DEFS += -DDEFAULT_CONFIG_FILE=\"$(DEFAULT_CONFIG_FILE)\" -DDEFAULT_SQUID_DATA_DIR=\"$(datadir)\" -DDEFAULT_SQUID_CONFIG_DIR=\"$(sysconfdir)\"
 
 snmp_core.o snmp_agent.o: ../lib/snmplib/libsnmplib.la $(top_srcdir)/include/cache_snmp.h
 
@@ -998,7 +995,7 @@ tests_testHttpReply_SOURCES=\
 	tests/testHttpReply.cc \
 	tests/testHttpReply.h \
 	tests/stub_time.cc \
-	url.cc \
+	tests/stub_libanyp.cc \
 	wordlist.h \
 	wordlist.cc
 nodist_tests_testHttpReply_SOURCES=\
@@ -1121,8 +1118,7 @@ tests_testACLMaxUserIP_SOURCES= \
 	tests/testACLMaxUserIP.cc \
 	tests/testACLMaxUserIP.h \
 	tests/stub_time.cc \
-	url.cc \
-	URL.h \
+	tests/stub_libanyp.cc \
 	MemBuf.cc \
 	wordlist.h \
 	wordlist.cc
@@ -1374,7 +1370,6 @@ tests_testCacheManager_SOURCES = \
 	tests/stub_SwapDir.cc \
 	MemStore.cc \
 	$(UNLINKDSOURCE) \
-	url.cc \
 	urn.h \
 	urn.cc \
 	wccp2.h \
@@ -1558,7 +1553,7 @@ tests_testDiskIO_SOURCES = \
 	tests/testStoreSupport.h \
 	tests/stub_time.cc \
 	$(UNLINKDSOURCE) \
-	url.cc \
+	tests/stub_libanyp.cc \
 	$(WIN32_SOURCE) \
 	wordlist.h \
 	wordlist.cc \
@@ -1808,7 +1803,6 @@ tests_testEvent_SOURCES = \
 	tests/stub_tunnel.cc \
 	MemStore.cc \
 	$(UNLINKDSOURCE) \
-	url.cc \
 	urn.h \
 	urn.cc \
 	wccp2.h \
@@ -2044,7 +2038,6 @@ tests_testEventLoop_SOURCES = \
 	tests/stub_tunnel.cc \
 	MemStore.cc \
 	$(UNLINKDSOURCE) \
-	url.cc \
 	urn.h \
 	urn.cc \
 	wccp2.h \
@@ -2275,7 +2268,6 @@ tests_test_http_range_SOURCES = \
 	tools.cc \
 	tests/stub_tunnel.cc \
 	$(UNLINKDSOURCE) \
-	url.cc \
 	urn.h \
 	urn.cc \
 	wccp2.h \
@@ -2380,6 +2372,7 @@ tests_testHttp1Parser_SOURCES = \
 	tests/testHttp1Parser.cc \
 	tests/testHttp1Parser.h \
 	tests/stub_time.cc \
+	tests/stub_libanyp.cc \
 	wordlist.h \
 	wordlist.cc
 nodist_tests_testHttp1Parser_SOURCES = \
@@ -2578,7 +2571,6 @@ tests_testHttpRequest_SOURCES = \
 	tests/stub_tunnel.cc \
 	tests/stub_SwapDir.cc \
 	MemStore.cc \
-	url.cc \
 	urn.h \
 	urn.cc \
 	wccp2.h \
@@ -2816,7 +2808,7 @@ tests_testStore_SOURCES= \
 	tests/TestSwapDir.cc \
 	tests/TestSwapDir.h \
 	tests/stub_time.cc \
-	url.cc \
+	tests/stub_libanyp.cc \
 	wordlist.h \
 	wordlist.cc
 
@@ -3015,7 +3007,7 @@ tests_testUfs_SOURCES = \
 	HttpHdrCc.cci \
 	HttpHdrSc.cc \
 	HttpHdrScTarget.cc \
-	url.cc \
+	tests/stub_libanyp.cc \
 	StatCounters.h \
 	StatCounters.cc \
 	StatHist.h \
@@ -3215,7 +3207,7 @@ tests_testRock_SOURCES = \
 	tools.h \
 	tests/stub_tools.cc \
 	time.cc \
-	url.cc \
+	tests/stub_libanyp.cc \
 	wordlist.h \
 	wordlist.cc \
 	$(DELAY_POOL_SOURCE) \
@@ -3442,7 +3434,6 @@ tests_testURL_SOURCES = \
 	tools.h \
 	tools.cc \
 	tests/stub_tunnel.cc \
-	url.cc \
 	urn.h \
 	urn.cc \
 	wccp2.h \

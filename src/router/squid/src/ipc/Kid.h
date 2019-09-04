@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -27,7 +27,7 @@ public:
 public:
     Kid();
 
-    Kid(const String& kid_name);
+    Kid(const char *role, const int id);
 
     /// called when this kid got started, records PID
     void start(pid_t cpid);
@@ -46,6 +46,12 @@ public:
 
     /// whether the failures are "repeated and frequent"
     bool hopeless() const;
+
+    /// forgets all past failures, ensuring that we are not hopeless()
+    void forgetFailures() { badFailures = 0; }
+
+    /// \returns the time since process termination
+    time_t deathDuration() const;
 
     /// returns true if the process terminated normally
     bool calledExit() const;
@@ -68,19 +74,26 @@ public:
     /// whether the process was terminated by a given signal
     bool signaled(int sgnl) const;
 
-    /// returns kid name
-    const String& name() const;
+    /// \returns kid's role and ID formatted for use as a process name
+    SBuf processName() const;
+
+    /// \returns kid's role and ID summary; usable as a --kid parameter value
+    SBuf gist() const;
 
 private:
+    void reportStopped() const;
+
     // Information preserved across restarts
-    String theName; ///< process name
-    int badFailures; ///< number of "repeated frequent" failures
+    SBuf processRole;
+    int processId = 0;
+    int badFailures = 0; ///< number of "repeated frequent" failures
 
     // Information specific to a running or stopped kid
-    pid_t  pid; ///< current (for a running kid) or last (for stopped kid) PID
-    time_t startTime; ///< last start time
-    bool   isRunning; ///< whether the kid is assumed to be alive
-    PidStatus status; ///< exit status of a stopped kid
+    pid_t  pid = -1; ///< current (for a running kid) or last (for stopped kid) PID
+    time_t startTime = 0; ///< last start time
+    time_t stopTime = 0; ///< last termination time
+    bool isRunning = false; ///< whether the kid is assumed to be alive
+    PidStatus status = 0; ///< exit status of a stopped kid
 };
 
 // TODO: processes may not be kids; is there a better place to put this?

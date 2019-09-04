@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -109,7 +109,7 @@ void ShutdownTls();
 
 /// write len bytes to the currently open connection.
 /// \return the number of bytes written, or -1 on errors
-ssize_t Write(void *buf, size_t len);
+ssize_t Write(const void *buf, size_t len);
 
 /// read up to len bytes from the currently open connection.
 /// \return the number of bytes read, or -1 on errors

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -82,28 +82,45 @@ public:
     void swapOutDecision(const MemObject::SwapOut::Decision &decision);
 
     void abort();
-    void makePublic(const KeyScope keyScope = ksDefault);
+    bool makePublic(const KeyScope keyScope = ksDefault);
     void makePrivate(const bool shareable);
     /// A low-level method just resetting "private key" flags.
     /// To avoid key inconsistency please use forcePublicKey()
     /// or similar instead.
     void clearPrivate();
-    void setPublicKey(const KeyScope keyScope = ksDefault);
+    bool setPublicKey(const KeyScope keyScope = ksDefault);
     /// Resets existing public key to a public key with default scope,
     /// releasing the old default-scope entry (if any).
     /// Does nothing if the existing public key already has default scope.
     void clearPublicKeyScope();
-    void setPrivateKey(const bool shareable);
+
+    /// \returns public key (if the entry has it) or nil (otherwise)
+    const cache_key *publicKey() const {
+        return (!EBIT_TEST(flags, KEY_PRIVATE)) ?
+               reinterpret_cast<const cache_key*>(key): // may be nil
+               nullptr;
+    }
+
+    /// Either fills this entry with private key or changes the existing key
+    /// from public to private.
+    /// \param permanent whether this entry should be private forever.
+    void setPrivateKey(const bool shareable, const bool permanent);
+
     void expireNow();
+    /// Makes the StoreEntry private and marks the corresponding entry
+    /// for eventual removal from the Store.
     void releaseRequest(const bool shareable = false);
     void negativeCache();
-    void cacheNegatively();     /** \todo argh, why both? */
+    bool cacheNegatively();     /** \todo argh, why both? */
     void invokeHandlers();
-    void purgeMem();
     void cacheInMemory(); ///< start or continue storing in memory cache
     void swapOut();
     /// whether we are in the process of writing this entry to disk
     bool swappingOut() const { return swap_status == SWAPOUT_WRITING; }
+    /// whether the entire entry is now on disk (possibly marked for deletion)
+    bool swappedOut() const { return swap_status == SWAPOUT_DONE; }
+    /// whether we failed to write this entry to disk
+    bool swapoutFailed() const { return swap_status == SWAPOUT_FAILED; }
     void swapOutFileClose(int how);
     const char *url() const;
     /// Satisfies cachability requirements shared among disk and RAM caches.
@@ -115,11 +132,15 @@ public:
     int validToSend() const;
     bool memoryCachable(); ///< checkCachable() and can be cached in memory
 
-    /// if needed, initialize mem_obj member w/o URI-related information
-    MemObject *makeMemObject();
+    /// initialize mem_obj; assert if mem_obj already exists
+    /// avoid this method in favor of createMemObject(trio)!
+    void createMemObject();
 
-    /// initialize mem_obj member (if needed) and supply URI-related info
+    /// initialize mem_obj with URIs/method; assert if mem_obj already exists
     void createMemObject(const char *storeId, const char *logUri, const HttpRequestMethod &aMethod);
+
+    /// initialize mem_obj (if needed) and set URIs/method (if missing)
+    void ensureMemObject(const char *storeId, const char *logUri, const HttpRequestMethod &aMethod);
 
     void dump(int debug_lvl) const;
     void hashDelete();
@@ -154,6 +175,20 @@ public:
 
     /// the disk this entry is [being] cached on; asserts for entries w/o a disk
     Store::Disk &disk() const;
+    /// whether one of this StoreEntry owners has locked the corresponding
+    /// disk entry (at the specified disk entry coordinates, if any)
+    bool hasDisk(const sdirno dirn = -1, const sfileno filen = -1) const;
+    /// Makes hasDisk(dirn, filn) true. The caller should have locked
+    /// the corresponding disk store entry for reading or writing.
+    void attachToDisk(const sdirno, const sfileno, const swap_status_t);
+    /// Makes hasDisk() false. The caller should have unlocked
+    /// the corresponding disk store entry.
+    void detachFromDisk();
+
+    /// whether there is a corresponding locked transients table entry
+    bool hasTransients() const { return mem_obj && mem_obj->xitTable.index >= 0; }
+    /// whether there is a corresponding locked shared memory table entry
+    bool hasMemStore() const { return mem_obj && mem_obj->memCache.index >= 0; }
 
     MemObject *mem_obj;
     RemovalPolicyNode repl;
@@ -194,7 +229,6 @@ public:
 
     void *operator new(size_t byteCount);
     void operator delete(void *address);
-    void setReleaseFlag();
 #if USE_SQUID_ESI
 
     ESIElement::Pointer cachedESITree;
@@ -216,7 +250,18 @@ public:
     /// update last reference timestamp and related Store metadata
     void touch();
 
+    /// One of the three methods to get rid of an unlocked StoreEntry object.
+    /// Removes all unlocked (and marks for eventual removal all locked) Store
+    /// entries, including attached and unattached entries that have our key.
+    /// Also destroys us if we are unlocked or makes us private otherwise.
+    /// TODO: remove virtual.
     virtual void release(const bool shareable = false);
+
+    /// One of the three methods to get rid of an unlocked StoreEntry object.
+    /// May destroy this object if it is unlocked; does nothing otherwise.
+    /// Unlike release(), may not trigger eviction of underlying store entries,
+    /// but, unlike destroyStoreEntry(), does honor an earlier release request.
+    void abandon(const char *context) { if (!locked()) doAbandon(context); }
 
     /// May the caller commit to treating this [previously locked]
     /// entry as a cache hit?
@@ -238,12 +283,17 @@ public:
     virtual void flush();
 
 protected:
+    typedef Store::EntryGuard EntryGuard;
+
     void transientsAbandonmentCheck();
+    /// does nothing except throwing if disk-associated data members are inconsistent
+    void checkDisk() const;
 
 private:
+    void doAbandon(const char *context);
     bool checkTooBig() const;
     void forcePublicKey(const cache_key *newkey);
-    void adjustVary();
+    StoreEntry *adjustVary();
     const cache_key *calcPublicKey(const KeyScope keyScope);
 
     static MemAllocator *pool;
@@ -306,9 +356,53 @@ private:
 typedef void (*STOREGETCLIENT) (StoreEntry *, void *cbdata);
 
 namespace Store {
+
+/// a smart pointer similar to std::unique_ptr<> that automatically
+/// release()s and unlock()s the guarded Entry on stack-unwinding failures
+class EntryGuard {
+public:
+    /// \param entry either nil or a locked Entry to manage
+    /// \param context default unlock() message
+    EntryGuard(Entry *entry, const char *context):
+        entry_(entry), context_(context) {
+        assert(!entry_ || entry_->locked());
+    }
+
+    ~EntryGuard() {
+        if (entry_) {
+            // something went wrong -- the caller did not unlockAndReset() us
+            onException();
+        }
+    }
+
+    EntryGuard(EntryGuard &&) = delete; // no copying or moving (for now)
+
+    /// like std::unique_ptr::get()
+    /// \returns nil or the guarded (locked) entry
+    Entry *get() {
+        return entry_;
+    }
+
+    /// like std::unique_ptr::reset()
+    /// stops guarding the entry
+    /// unlocks the entry (which may destroy it)
+    void unlockAndReset(const char *resetContext = nullptr) {
+        if (entry_) {
+            entry_->unlock(resetContext ? resetContext : context_);
+            entry_ = nullptr;
+        }
+    }
+
+private:
+    void onException() noexcept;
+
+    Entry *entry_; ///< the guarded Entry or nil
+    const char *context_; ///< default unlock() message
+};
+
 void Stats(StoreEntry *output);
 void Maintain(void *unused);
-};
+}; // namespace Store
 
 /// \ingroup StoreAPI
 size_t storeEntryInUse();
@@ -334,7 +428,7 @@ StoreEntry *storeCreateEntry(const char *, const char *, const RequestFlags &, c
 
 /// \ingroup StoreAPI
 /// Creates a new StoreEntry with mem_obj and sets initial flags/states.
-StoreEntry *storeCreatePureEntry(const char *storeId, const char *logUrl, const RequestFlags &, const HttpRequestMethod&);
+StoreEntry *storeCreatePureEntry(const char *storeId, const char *logUrl, const HttpRequestMethod&);
 
 /// \ingroup StoreAPI
 void storeInit(void);
@@ -372,7 +466,10 @@ void storeFsDone(void);
 /// \ingroup StoreAPI
 void storeReplAdd(const char *, REMOVALPOLICYCREATE *);
 
-/// \ingroup StoreAPI
+/// One of the three methods to get rid of an unlocked StoreEntry object.
+/// This low-level method ignores lock()ing and release() promises. It never
+/// leaves the entry in the local store_table.
+/// TODO: Hide by moving its functionality into the StoreEntry destructor.
 extern FREE destroyStoreEntry;
 
 /// \ingroup StoreAPI

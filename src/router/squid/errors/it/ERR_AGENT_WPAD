@@ -1,6 +1,6 @@
 
 <html><head>
-<meta type="copyright" content="Copyright (C) 1996-2017 The Squid Software Foundation and contributors">
+<meta type="copyright" content="Copyright (C) 1996-2019 The Squid Software Foundation and contributors">
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <title>Configurazione del browser</title>
 <style type="text/css"><!--
@@ -24,19 +24,19 @@ body
 <p>Indicazioni su come configurare il tuo browser sono disponibili a:</p>
 
 <div id="firefox"> For Firefox browsers go to: <ul>
-<li>Strumenti -&gt; Opzioni -&gt; Avanzate -&gt; Rete -&gt; Impostazioni di connessione</li>
+<li>Tools -> Options -> Advanced -> Network -> Connection Settings</li>
 <li>Seleziona "Rileva automaticamente impostazioni proxy per questa rete"</li>
 </ul>
 </div>
 
 <div id="microsoft"> For Internet Explorer browsers go to: <ul>
-<li>Strumenti -&gt; Opzioni Internet -&gt; Connessioni -&gt; Impostazioni LAN -&gt;Proxy</li>
+<li>Tools -> Internet Options -> Connection -> LAN Settings ->Proxy</li>
 <li>Seleziona "Rileva automaticamente impostazioni"</li>
 </ul>
 </div>
 
 <div id="opera"> For Opera browsers go to: <ul>
-<li>Strumenti -&gt; Preferenze -&gt; Avanzate -&gt; Rete -&gt; Server proxy</li>
+<li>Tools -> Preferences -> Advanced -> Network -> Proxy Servers</li>
 <li>Seleziona "Usa script di configurazione automatica"</li>
 </ul>
 </div>

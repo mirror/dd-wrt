@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -63,7 +63,7 @@ public:
     VirginBodyAct();
 
     void plan(); // the activity may happen; do not consume at or above offset
-    void disable(); // the activity wont continue; no consumption restrictions
+    void disable(); // the activity will not continue; no consumption restrictions
 
     bool active() const { return theState == stActive; }
     bool disabled() const { return theState == stDisabled; }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -125,7 +125,6 @@ IcmpSquid::Recv()
     static Ip::Address F;
 
     Comm::SetSelect(icmp_sock, COMM_SELECT_READ, icmpSquidRecv, NULL, 0);
-    memset(&preply, '\0', sizeof(pingerReplyData));
     n = comm_udp_recv(icmp_sock,
                       (char *) &preply,
                       sizeof(pingerReplyData),

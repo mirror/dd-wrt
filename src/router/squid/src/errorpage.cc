@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -27,7 +27,6 @@
 #include "SquidConfig.h"
 #include "Store.h"
 #include "tools.h"
-#include "URL.h"
 #include "wordlist.h"
 #if USE_AUTH
 #include "auth/UserRequest.h"
@@ -955,8 +954,8 @@ ErrorState::Convert(char token, bool building_deny_info_url, bool allowRecursion
     case 'R':
         if (building_deny_info_url) {
             if (request != NULL) {
-                SBuf tmp = request->url.path();
-                p = tmp.c_str();
+                const SBuf &tmp = request->url.path();
+                mb.append(tmp.rawContent(), tmp.length());
                 no_urlescape = 1;
             } else
                 p = "[no request]";

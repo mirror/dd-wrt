@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -42,14 +42,12 @@ Http::One::Server::start()
 {
     ConnStateData::start();
 
-#if USE_OPENSSL
     // XXX: Until we create an HttpsServer class, use this hack to allow old
     // client_side.cc code to manipulate ConnStateData object directly
     if (isHttpsServer) {
         postHttpsAccept();
         return;
     }
-#endif
 
     typedef CommCbMemFunT<Server, CommTimeoutCbParams> TimeoutDialer;
     AsyncCall::Pointer timeoutCall =  JobCallback(33, 5,
@@ -77,7 +75,7 @@ Http::One::Server::parseOneRequest()
     PROF_start(HttpServer_parseOneRequest);
 
     // parser is incremental. Generate new parser state if we,
-    // a) dont have one already
+    // a) do not have one already
     // b) have completed the previous request parsing already
     if (!parser_ || !parser_->needsMoreData())
         parser_ = new Http1::RequestParser(mayTunnelUnsupportedProto());
@@ -120,8 +118,10 @@ Http::One::Server::buildHttpRequest(Http::StreamPointer &context)
             // else use default ERR_INVALID_REQ set above.
             break;
         }
-        // setLogUri should called before repContext->setReplyToError
-        setLogUri(http, http->uri, true);
+        // setReplyToError() requires log_uri
+        // must be already initialized via ConnStateData::abortRequestParsing()
+        assert(http->log_uri);
+
         const char * requestErrorBytes = inBuf.c_str();
         if (!clientTunnelOnError(this, context, request, parser_->method(), errPage)) {
             setReplyError(context, request, parser_->method(), errPage, parser_->parseStatusCode, requestErrorBytes);
@@ -132,12 +132,13 @@ Http::One::Server::buildHttpRequest(Http::StreamPointer &context)
         return false;
     }
 
+    // TODO: move URL parse into Http Parser and INVALID_URL into the above parse error handling
     MasterXaction::Pointer mx = new MasterXaction(XactionInitiator::initClient);
     mx->tcpClient = clientConnection;
     if ((request = HttpRequest::FromUrl(http->uri, mx, parser_->method())) == NULL) {
         debugs(33, 5, "Invalid URL: " << http->uri);
-        // setLogUri should called before repContext->setReplyToError
-        setLogUri(http, http->uri, true);
+        // setReplyToError() requires log_uri
+        http->setLogUriToRawUri(http->uri, parser_->method());
 
         const char * requestErrorBytes = inBuf.c_str();
         if (!clientTunnelOnError(this, context, request, parser_->method(), ERR_INVALID_URL)) {
@@ -155,8 +156,8 @@ Http::One::Server::buildHttpRequest(Http::StreamPointer &context)
             (parser_->messageProtocol().major > 1) ) {
 
         debugs(33, 5, "Unsupported HTTP version discovered. :\n" << parser_->messageProtocol());
-        // setLogUri should called before repContext->setReplyToError
-        setLogUri(http, http->uri,  true);
+        // setReplyToError() requires log_uri
+        http->setLogUriToRawUri(http->uri, parser_->method());
 
         const char * requestErrorBytes = NULL; //HttpParserHdrBuf(parser_);
         if (!clientTunnelOnError(this, context, request, parser_->method(), ERR_UNSUP_HTTPVERSION)) {
@@ -169,8 +170,8 @@ Http::One::Server::buildHttpRequest(Http::StreamPointer &context)
     /* compile headers */
     if (parser_->messageProtocol().major >= 1 && !request->parseHeader(*parser_.getRaw())) {
         debugs(33, 5, "Failed to parse request headers:\n" << parser_->mimeHeader());
-        // setLogUri should called before repContext->setReplyToError
-        setLogUri(http, http->uri, true);
+        // setReplyToError() requires log_uri
+        http->setLogUriToRawUri(http->uri, parser_->method());
         const char * requestErrorBytes = NULL; //HttpParserHdrBuf(parser_);
         if (!clientTunnelOnError(this, context, request, parser_->method(), ERR_INVALID_REQ)) {
             setReplyError(context, request, parser_->method(), ERR_INVALID_REQ, Http::scBadRequest, requestErrorBytes);
@@ -189,8 +190,7 @@ Http::One::Server::buildHttpRequest(Http::StreamPointer &context)
         request->header.putStr(Http::HOST, tmp.c_str());
     }
 
-    http->request = request.getRaw();
-    HTTPMSGLOCK(http->request);
+    http->initRequest(request.getRaw());
 
     return true;
 }
@@ -236,8 +236,8 @@ Http::One::Server::processParsedRequest(Http::StreamPointer &context)
         if (!supportedExpect) {
             clientStreamNode *node = context->getClientReplyContext();
             quitAfterError(request.getRaw());
-            // setLogUri should called before repContext->setReplyToError
-            setLogUri(http, urlCanonicalClean(request.getRaw()));
+            // setReplyToError() requires log_uri
+            assert(http->log_uri);
             clientReplyContext *repContext = dynamic_cast<clientReplyContext *>(node->data.getRaw());
             assert (repContext);
             repContext->setReplyToError(ERR_INVALID_REQ, Http::scExpectationFailed, request->method, http->uri,
@@ -250,6 +250,8 @@ Http::One::Server::processParsedRequest(Http::StreamPointer &context)
 
         if (Config.accessList.forceRequestBodyContinuation) {
             ACLFilledChecklist bodyContinuationCheck(Config.accessList.forceRequestBodyContinuation, request.getRaw(), NULL);
+            bodyContinuationCheck.al = http->al;
+            bodyContinuationCheck.syncAle(request.getRaw(), http->log_uri);
             if (bodyContinuationCheck.fastCheck().allowed()) {
                 debugs(33, 5, "Body Continuation forced");
                 request->forcedBodyContinuation = true;
@@ -303,6 +305,7 @@ Http::One::Server::handleReply(HttpReply *rep, StoreIOBuffer receivedData)
     }
 
     assert(rep);
+    HTTPMSGUNLOCK(http->al->reply);
     http->al->reply = rep;
     HTTPMSGLOCK(http->al->reply);
     context->sendStartOfMessage(rep, receivedData);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -32,7 +32,7 @@ class TeChunkedParser : public Http1::Parser
 {
 public:
     TeChunkedParser();
-    virtual ~TeChunkedParser() {theOut=NULL;/* we dont own this object */}
+    virtual ~TeChunkedParser() { theOut=nullptr; /* we do not own this object */ }
 
     /// set the buffer to be used to store decoded chunk data
     void setPayloadBuffer(MemBuf *parsedContent) {theOut = parsedContent;}

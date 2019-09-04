@@ -1,4 +1,4 @@
-## Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+## Copyright (C) 1996-2019 The Squid Software Foundation and contributors
 ##
 ## Squid software is distributed under GPLv2+ license and includes
 ## contributions from numerous individuals and organizations.
@@ -82,7 +82,7 @@ done
 ])
 
 dnl remove duplicates out of a list.
-dnl dnl argument is the name of a variable to be checked and cleaned up
+dnl argument is the name of a variable to be checked and cleaned up
 AC_DEFUN([SQUID_CLEANUP_MODULES_LIST],[
 squid_cleanup_tmp_outlist=""
 for squid_cleanup_tmp in $$1

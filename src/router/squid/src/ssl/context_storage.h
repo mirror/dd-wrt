@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -13,6 +13,7 @@
 
 #include "base/LruMap.h"
 #include "CacheManager.h"
+#include "compat/openssl.h"
 #include "ip/Address.h"
 #include "mgr/Action.h"
 #include "mgr/Command.h"
@@ -48,7 +49,7 @@ public:
     virtual bool aggregatable() const { return false; }
 };
 
-typedef LruMap<Security::ContextPointer, SSL_CTX_SIZE> LocalContextStorage;
+typedef LruMap<SBuf, Security::ContextPointer, SSL_CTX_SIZE> LocalContextStorage;
 
 /// Class for storing/manipulating LocalContextStorage per local listening address/port.
 class GlobalContextStorage

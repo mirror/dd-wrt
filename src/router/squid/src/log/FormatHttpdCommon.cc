@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -27,7 +27,7 @@ Log::Format::HttpdCommon(const AccessLogEntry::Pointer &al, Logfile * logfile)
     if (al->request && al->request->auth_user_request != NULL)
         user_auth = ::Format::QuoteUrlEncodeUsername(al->request->auth_user_request->username());
 #endif
-    const char *user_ident = ::Format::QuoteUrlEncodeUsername(al->cache.rfc931);
+    const char *user_ident = ::Format::QuoteUrlEncodeUsername(al->getClientIdent());
 
     char clientip[MAX_IPSTRLEN];
     al->getLogClientIp(clientip, MAX_IPSTRLEN);

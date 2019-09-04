@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -51,7 +51,7 @@ public:
     void cleanup();
 
     /**
-     * Cleanup cache data after a reconfiguration has occured.
+     * Cleanup cache data after a reconfiguration has occurred.
      * Similar to cleanup() but also flushes stale config dependent
      * state from retained entries.
      */

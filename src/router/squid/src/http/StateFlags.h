@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -17,7 +17,7 @@ class StateFlags
 public:
     unsigned int front_end_https = 0; ///< send "Front-End-Https: On" header (off/on/auto=2)
     bool proxying = false;
-    bool keepalive = false;
+    bool keepalive = false; ///< whether to keep the connection persistent
     bool only_if_cached = false;
     bool handling1xx = false;       ///< we are ignoring or forwarding 1xx response
     bool headers_parsed = false;

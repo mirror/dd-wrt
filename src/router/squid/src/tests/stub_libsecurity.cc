@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -30,6 +30,12 @@ std::ostream &Security::operator <<(std::ostream &os, const Security::EncryptorA
 #include "security/Handshake.h"
 Security::HandshakeParser::HandshakeParser() STUB
 bool Security::HandshakeParser::parseHello(const SBuf &) STUB_RETVAL(false)
+
+#include "security/KeyData.h"
+namespace Security
+{
+void KeyData::loadFromFiles(const AnyP::PortCfg &, const char *) STUB
+}
 
 #include "security/NegotiationHistory.h"
 Security::NegotiationHistory::NegotiationHistory() STUB
@@ -80,6 +86,7 @@ void Security::PeerOptions::updateTlsVersionLimits() STUB
 Security::ContextPointer Security::PeerOptions::createBlankContext() const STUB_RETVAL(Security::ContextPointer())
 void Security::PeerOptions::updateContextCa(Security::ContextPointer &) STUB
 void Security::PeerOptions::updateContextCrl(Security::ContextPointer &) STUB
+void Security::PeerOptions::updateContextTrust(Security::ContextPointer &) STUB
 void Security::PeerOptions::updateSessionOptions(Security::SessionPointer &) STUB
 void Security::PeerOptions::dumpCfg(Packable*, char const*) const STUB
 void Security::PeerOptions::parseOptions() STUB
@@ -87,16 +94,23 @@ void parse_securePeerOptions(Security::PeerOptions *) STUB
 
 #include "security/ServerOptions.h"
 //Security::ServerOptions::ServerOptions(const Security::ServerOptions &) STUB
+Security::ServerOptions &Security::ServerOptions::operator=(Security::ServerOptions const&) STUB_RETVAL(*this);
 void Security::ServerOptions::parse(const char *) STUB
 void Security::ServerOptions::dumpCfg(Packable *, const char *) const STUB
 Security::ContextPointer Security::ServerOptions::createBlankContext() const STUB_RETVAL(Security::ContextPointer())
+void Security::ServerOptions::initServerContexts(AnyP::PortCfg&) STUB
 bool Security::ServerOptions::createStaticServerContext(AnyP::PortCfg &) STUB_RETVAL(false)
+void Security::ServerOptions::createSigningContexts(const AnyP::PortCfg &) STUB
+bool Security::ServerOptions::updateContextConfig(Security::ContextPointer &) STUB_RETVAL(false)
 void Security::ServerOptions::updateContextEecdh(Security::ContextPointer &) STUB
+void Security::ServerOptions::updateContextClientCa(Security::ContextPointer &) STUB
+void Security::ServerOptions::syncCaFiles() STUB
+void Security::ServerOptions::updateContextSessionId(Security::ContextPointer &) STUB
 
 #include "security/Session.h"
 namespace Security {
 bool CreateClientSession(const Security::ContextPointer &, const Comm::ConnectionPointer &, const char *) STUB_RETVAL(false)
-bool CreateServerSession(const Security::ContextPointer &, const Comm::ConnectionPointer &, const char *) STUB_RETVAL(false)
+bool CreateServerSession(const Security::ContextPointer &, const Comm::ConnectionPointer &, Security::PeerOptions &, const char *) STUB_RETVAL(false)
 void SessionSendGoodbye(const Security::SessionPointer &) STUB
 bool SessionIsResumed(const Security::SessionPointer &) STUB_RETVAL(false)
 void MaybeGetSessionResumeData(const Security::SessionPointer &, Security::SessionStatePointer &) STUB

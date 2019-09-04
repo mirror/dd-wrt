@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -372,8 +372,8 @@ HttpHdrRange::canonize(HttpReply *rep)
 {
     assert(rep);
 
-    if (rep->content_range)
-        clen = rep->content_range->elength;
+    if (rep->contentRange())
+        clen = rep->contentRange()->elength;
     else
         clen = rep->content_length;
 
@@ -527,7 +527,7 @@ HttpHdrRange::offsetLimitExceeded(const int64_t limit) const
 }
 
 bool
-HttpHdrRange::contains(HttpHdrRangeSpec& r) const
+HttpHdrRange::contains(const HttpHdrRangeSpec& r) const
 {
     assert(r.length >= 0);
     HttpHdrRangeSpec::HttpRange rrange(r.offset, r.offset + r.length);

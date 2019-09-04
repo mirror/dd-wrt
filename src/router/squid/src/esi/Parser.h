@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -8,6 +8,10 @@
 
 #ifndef SQUID_ESIPARSER_H
 #define SQUID_ESIPARSER_H
+
+#include "base/RefCount.h"
+
+#include <list>
 
 class ESIParserClient
 {
@@ -18,8 +22,6 @@ public:
     virtual void parserComment (const char *s) = 0;
     virtual ~ESIParserClient() {};
 };
-
-#include "base/RefCount.h"
 
 class ESIParser : public RefCountable
 {
@@ -45,9 +47,7 @@ protected:
 
 private:
     static Register *Parser;
-    static Register *Parsers;
-
-public:
+    static std::list<Register *> & GetRegistry();
 };
 
 class ESIParser::Register
@@ -59,7 +59,6 @@ public:
 
     const char *name;
     ESIParser::Pointer (*newParser)(ESIParserClient *aClient);
-    Register * next;
 };
 
 #define EsiParserDefinition(ThisClass) \

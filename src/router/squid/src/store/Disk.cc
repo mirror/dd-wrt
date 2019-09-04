@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -187,10 +187,10 @@ Store::Disk::canStore(const StoreEntry &e, int64_t diskSpaceNeeded, int &load) c
 bool
 Store::Disk::canLog(StoreEntry const &e)const
 {
-    if (e.swap_filen < 0)
+    if (!e.hasDisk())
         return false;
 
-    if (e.swap_status != SWAPOUT_DONE)
+    if (!e.swappedOut())
         return false;
 
     if (e.swap_file_sz <= 0)

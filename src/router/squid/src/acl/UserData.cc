@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -16,6 +16,13 @@
 #include "globals.h"
 #include "sbuf/Algorithms.h"
 #include "util.h"
+
+const Acl::ParameterFlags &
+ACLUserData::supportedFlags() const
+{
+    static const Acl::ParameterFlags flagNames = { "-i", "+i" };
+    return flagNames;
+}
 
 bool
 ACLUserData::match(char const *user)

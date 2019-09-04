@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -128,7 +128,7 @@ protected:
 };
 
 #define HTTPMSGUNLOCK(a) if (a) { if ((a)->unlock() == 0) delete (a); (a)=NULL; }
-#define HTTPMSGLOCK(a) (a)->lock()
+#define HTTPMSGLOCK(a) if (a) { (a)->lock(); }
 
 #endif /* SQUID_HTTPMSG_H */
 

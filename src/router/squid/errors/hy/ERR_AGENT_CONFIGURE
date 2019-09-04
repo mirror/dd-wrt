@@ -1,6 +1,6 @@
 
 <html><head>
-<meta type="copyright" content="Copyright (C) 1996-2017 The Squid Software Foundation and contributors">
+<meta type="copyright" content="Copyright (C) 1996-2019 The Squid Software Foundation and contributors">
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <title>Վեբ բրաուզերի կարգաբերումներ</title>
 <style type="text/css"><!--
@@ -24,19 +24,19 @@ body
 <p>Ինչպես փնտրել այս կարգաբերումները քո բրաուզերում:</p>
 
 <div id="firefox"> For Firefox browsers go to: <ul>
-<li>Գործիքներ -&gt; Կարգաբերումներ -&gt; Լրացուցիչ -&gt; Ցանց -&gt; Կապի կարգաբերումներ</li>
+<li>Tools -> Options -> Advanced -> Network -> Connection Settings</li>
 <li>HTTP proxy դաշտում նշիր proxy name %h և port %b.</li>
 </ul>
 </div>
 
 <div id="microsoft"> For Internet Explorer browsers go to: <ul>
-<li>Գործիքներ -&gt; Ինտերնետ կարգաբերումներ -&gt; Կապ -&gt; LAN կարգաբերումներ -&gt;Պրոքսի</li>
+<li>Tools -> Internet Options -> Connection -> LAN Settings ->Proxy</li>
 <li>HTTP proxy դաշտում նշիր proxy name %h և port %b.</li>
 </ul>
 </div>
 
 <div id="opera"> For Opera browsers go to: <ul>
-<li>Գործիքներ -&gt; Նախընտրություններ -&gt; Լրացուցիչ -&gt; Ցանց -&gt; Պրոքսի սերվերներ</li>
+<li>Tools -> Preferences -> Advanced -> Network -> Proxy Servers</li>
 <li>HTTP proxy դաշտում նշիր proxy name %h և port %b.</li>
 </ul>
 </div>

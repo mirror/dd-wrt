@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -16,19 +16,8 @@
 static void
 fatal_common(const char *message)
 {
-#if HAVE_SYSLOG
-    syslog(LOG_ALERT, "%s", message);
-#endif
-
-    fprintf(debug_log, "FATAL: %s\n", message);
-
-    if (Debug::log_stderr > 0 && debug_log != stderr)
-        fprintf(stderr, "FATAL: %s\n", message);
-
-    fprintf(debug_log, "Squid Cache (Version %s): Terminated abnormally.\n",
-            version_string);
-
-    fflush(debug_log);
+    debugs(1, DBG_CRITICAL, ForceAlert << "FATAL: " << message);
+    debugs(1, DBG_CRITICAL, "Squid Cache (Version " << version_string << "): Terminated abnormally.");
 
     PrintRusage();
 

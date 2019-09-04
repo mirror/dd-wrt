@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -189,7 +189,7 @@ bool
 Adaptation::ServiceConfig::grokUri(const char *value)
 {
     // TODO: find core code that parses URLs and extracts various parts
-    // AYJ: most of this is duplicate of URL::parse() in src/url.cc
+    // AYJ: most of this is duplicate of AnyP::Uri::parse()
 
     if (!value || !*value) {
         debugs(3, DBG_CRITICAL, HERE << cfg_filename << ':' << config_lineno << ": " <<

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -15,6 +15,7 @@
 
 #include "base/CbDataList.h"
 #include "comm/forward.h"
+#include "compat/openssl.h"
 #include "sbuf/SBuf.h"
 #include "security/forward.h"
 #include "ssl/gadgets.h"
@@ -65,6 +66,11 @@ class MemMap;
 
 namespace Ssl
 {
+
+/// callback for receiving password to access password secured PEM files
+/// XXX: Requires SSL_CTX_set_default_passwd_cb_userdata()!
+int AskPasswordCb(char *buf, int size, int rwflag, void *userdata);
+
 /// initialize the SSL library global state.
 /// call before generating any SSL context
 void Initialize();
@@ -78,6 +84,12 @@ bool InitServerContext(Security::ContextPointer &, AnyP::PortCfg &);
 
 /// initialize a TLS client context with OpenSSL specific settings
 bool InitClientContext(Security::ContextPointer &, Security::PeerOptions &, long flags);
+
+/// set the certificate verify callback for a context
+void SetupVerifyCallback(Security::ContextPointer &);
+
+/// if required, setup callback for generating ephemeral RSA keys
+void MaybeSetupRsaCallback(Security::ContextPointer &);
 
 } //namespace Ssl
 
@@ -167,19 +179,19 @@ void SSL_add_untrusted_cert(SSL *ssl, X509 *cert);
  * Searches in serverCertificates list for the cert issuer and if not found
  * and Authority Info Access of cert provides a URI return it.
  */
-const char *uriOfIssuerIfMissing(X509 *cert,  Security::CertList const &serverCertificates);
+const char *uriOfIssuerIfMissing(X509 *cert,  Security::CertList const &serverCertificates, const Security::ContextPointer &context);
 
 /**
  * Fill URIs queue with the uris of missing certificates from serverCertificate chain
  * if this information provided by Authority Info Access.
  */
-void missingChainCertificatesUrls(std::queue<SBuf> &URIs, Security::CertList const &serverCertificates);
+void missingChainCertificatesUrls(std::queue<SBuf> &URIs, Security::CertList const &serverCertificates, const Security::ContextPointer &context);
 
 /**
   \ingroup ServerProtocolSSLAPI
   * Generate a certificate to be used as untrusted signing certificate, based on a trusted CA
 */
-bool generateUntrustedCert(Security::CertPointer & untrustedCert, EVP_PKEY_Pointer & untrustedPkey, Security::CertPointer const & cert, EVP_PKEY_Pointer const & pkey);
+bool generateUntrustedCert(Security::CertPointer & untrustedCert, Security::PrivateKeyPointer & untrustedPkey, Security::CertPointer const & cert, Security::PrivateKeyPointer const & pkey);
 
 /// certificates indexed by issuer name
 typedef std::multimap<SBuf, X509 *> CertsIndexedList;
@@ -208,7 +220,7 @@ void unloadSquidUntrusted();
   \ingroup ServerProtocolSSLAPI
   * Decide on the kind of certificate and generate a CA- or self-signed one
 */
-Security::ContextPointer generateSslContext(CertificateProperties const &properties, AnyP::PortCfg &port);
+Security::ContextPointer GenerateSslContext(CertificateProperties const &, Security::ServerOptions &, bool trusted);
 
 /**
   \ingroup ServerProtocolSSLAPI
@@ -224,19 +236,19 @@ bool verifySslCertificate(Security::ContextPointer &, CertificateProperties cons
   * Read private key and certificate from memory and generate SSL context
   * using their.
  */
-Security::ContextPointer generateSslContextUsingPkeyAndCertFromMemory(const char * data, AnyP::PortCfg &port);
+Security::ContextPointer GenerateSslContextUsingPkeyAndCertFromMemory(const char * data, Security::ServerOptions &, bool trusted);
 
 /**
   \ingroup ServerProtocolSSLAPI
   * Create an SSL context using the provided certificate and key
  */
-Security::ContextPointer createSSLContext(Security::CertPointer & x509, Ssl::EVP_PKEY_Pointer & pkey, AnyP::PortCfg &port);
+Security::ContextPointer createSSLContext(Security::CertPointer & x509, Security::PrivateKeyPointer & pkey, Security::ServerOptions &);
 
 /**
  \ingroup ServerProtocolSSLAPI
  * Chain signing certificate and chained certificates to an SSL Context
  */
-void chainCertificatesToSSLContext(Security::ContextPointer &, AnyP::PortCfg &);
+void chainCertificatesToSSLContext(Security::ContextPointer &, Security::ServerOptions &);
 
 /**
  \ingroup ServerProtocolSSLAPI
@@ -260,25 +272,10 @@ bool configureSSLUsingPkeyAndCertFromMemory(SSL *ssl, const char *data, AnyP::Po
 
 /**
   \ingroup ServerProtocolSSLAPI
-  * Adds the certificates in certList to the certificate chain of the SSL context
- */
-void addChainToSslContext(Security::ContextPointer &, STACK_OF(X509) *certList);
-
-/**
-  \ingroup ServerProtocolSSLAPI
   * Configures sslContext to use squid untrusted certificates internal list
   * to complete certificate chains when verifies SSL servers certificates.
  */
 void useSquidUntrusted(SSL_CTX *sslContext);
-
-/**
- \ingroup ServerProtocolSSLAPI
- *  Read certificate, private key and any certificates which must be chained from files.
- * See also: Ssl::readCertAndPrivateKeyFromFiles function,  defined in gadgets.h
- * \param certFilename name of file with certificate and certificates which must be chainned.
- * \param keyFilename name of file with private key.
- */
-void readCertChainAndPrivateKeyFromFiles(Security::CertPointer & cert, EVP_PKEY_Pointer & pkey, X509_STACK_Pointer & chain, char const * certFilename, char const * keyFilename);
 
 /**
    \ingroup ServerProtocolSSLAPI
@@ -314,10 +311,21 @@ int asn1timeToString(ASN1_TIME *tm, char *buf, int len);
    \ingroup ServerProtocolSSLAPI
    * Sets the hostname for the Server Name Indication (SNI) TLS extension
    * if supported by the used openssl toolkit.
-   \return true if SNI set false otherwise
 */
-bool setClientSNI(SSL *ssl, const char *fqdn);
+void setClientSNI(SSL *ssl, const char *fqdn);
 
+/**
+  \ingroup ServerProtocolSSLAPI
+  * Generates a unique key based on CertificateProperties object and store it to key
+ */
+void InRamCertificateDbKey(const Ssl::CertificateProperties &certProperties, SBuf &key);
+
+/**
+  \ingroup ServerProtocolSSLAPI
+  Creates and returns an OpenSSL BIO object for writing to `buf` (or throws).
+  TODO: Add support for reading from `buf`.
+ */
+BIO *BIO_new_SBuf(SBuf *buf);
 } //namespace Ssl
 
 #if _SQUID_WINDOWS_

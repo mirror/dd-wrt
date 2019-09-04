@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -37,7 +37,6 @@ Mgr::Forwarder::Forwarder(const Comm::ConnectionPointer &aConn, const ActionPara
 
     HTTPMSGLOCK(httpRequest);
     entry->lock("Mgr::Forwarder");
-    EBIT_SET(entry->flags, ENTRY_FWD_HDR_WAIT);
 
     closer = asyncCall(16, 5, "Mgr::Forwarder::noteCommClosed",
                        CommCbMemFunT<Forwarder, CommCloseCbParams>(this, &Forwarder::noteCommClosed));
@@ -46,19 +45,17 @@ Mgr::Forwarder::Forwarder(const Comm::ConnectionPointer &aConn, const ActionPara
 
 Mgr::Forwarder::~Forwarder()
 {
-    debugs(16, 5, HERE);
-    Must(httpRequest != NULL);
-    Must(entry != NULL);
-
-    HTTPMSGUNLOCK(httpRequest);
-    entry->unregisterAbort();
-    entry->unlock("Mgr::Forwarder");
-    cleanup();
+    SWALLOW_EXCEPTIONS({
+        Must(entry);
+        entry->unlock("Mgr::Forwarder");
+        Must(httpRequest);
+        HTTPMSGUNLOCK(httpRequest);
+    });
 }
 
 /// closes our copy of the client HTTP connection socket
 void
-Mgr::Forwarder::cleanup()
+Mgr::Forwarder::swanSong()
 {
     if (Comm::IsConnOpen(conn)) {
         if (closer != NULL) {
@@ -68,6 +65,7 @@ Mgr::Forwarder::cleanup()
         conn->close();
     }
     conn = NULL;
+    Ipc::Forwarder::swanSong();
 }
 
 void
@@ -111,7 +109,6 @@ Mgr::Forwarder::sendError(ErrorState *error)
     Must(entry != NULL);
     Must(httpRequest != NULL);
 
-    EBIT_CLR(entry->flags, ENTRY_FWD_HDR_WAIT);
     entry->buffer();
     entry->replaceHttpReply(error->BuildHttpReply());
     entry->expires = squid_curtime;

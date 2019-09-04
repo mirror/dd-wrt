@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -24,6 +24,8 @@ void parse_eol(char *volatile *var);
 void parse_wordlist(wordlist ** list);
 void requirePathnameExists(const char *name, const char *path);
 void parse_time_t(time_t * var);
+/// Parse bytes number from a string
+void parseBytesOptionValue(size_t * bptr, const char *units, char const * value);
 
 #endif /* SQUID_CACHE_CF_H_ */
 

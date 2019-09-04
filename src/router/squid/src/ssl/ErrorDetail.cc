@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -9,6 +9,7 @@
 #include "squid.h"
 #include "errorpage.h"
 #include "fatal.h"
+#include "html_quote.h"
 #include "ssl/ErrorDetail.h"
 
 #include <climits>
@@ -436,8 +437,11 @@ const char  *Ssl::ErrorDetail::subject() const
 {
     if (broken_cert.get()) {
         static char tmpBuffer[256]; // A temporary buffer
-        if (X509_NAME_oneline(X509_get_subject_name(broken_cert.get()), tmpBuffer, sizeof(tmpBuffer)))
-            return tmpBuffer;
+        if (X509_NAME_oneline(X509_get_subject_name(broken_cert.get()), tmpBuffer, sizeof(tmpBuffer))) {
+            // quote to avoid possible html code injection through
+            // certificate subject
+            return html_quote(tmpBuffer);
+        }
     }
     return "[Not available]";
 }
@@ -465,8 +469,11 @@ const char *Ssl::ErrorDetail::cn() const
         static String tmpStr;  ///< A temporary string buffer
         tmpStr.clean();
         Ssl::matchX509CommonNames(broken_cert.get(), &tmpStr, copy_cn);
-        if (tmpStr.size())
-            return tmpStr.termedBuf();
+        if (tmpStr.size()) {
+            // quote to avoid possible html code injection through
+            // certificate subject
+            return html_quote(tmpStr.termedBuf());
+        }
     }
     return "[Not available]";
 }
@@ -478,8 +485,11 @@ const char *Ssl::ErrorDetail::ca_name() const
 {
     if (broken_cert.get()) {
         static char tmpBuffer[256]; // A temporary buffer
-        if (X509_NAME_oneline(X509_get_issuer_name(broken_cert.get()), tmpBuffer, sizeof(tmpBuffer)))
-            return tmpBuffer;
+        if (X509_NAME_oneline(X509_get_issuer_name(broken_cert.get()), tmpBuffer, sizeof(tmpBuffer))) {
+            // quote to avoid possible html code injection through
+            // certificate issuer subject
+            return html_quote(tmpBuffer);
+        }
     }
     return "[Not available]";
 }
@@ -490,7 +500,7 @@ const char *Ssl::ErrorDetail::ca_name() const
 const char *Ssl::ErrorDetail::notbefore() const
 {
     if (broken_cert.get()) {
-        if (ASN1_UTCTIME * tm = X509_get_notBefore(broken_cert.get())) {
+        if (const auto tm = X509_getm_notBefore(broken_cert.get())) {
             static char tmpBuffer[256]; // A temporary buffer
             Ssl::asn1timeToString(tm, tmpBuffer, sizeof(tmpBuffer));
             return tmpBuffer;
@@ -505,7 +515,7 @@ const char *Ssl::ErrorDetail::notbefore() const
 const char *Ssl::ErrorDetail::notafter() const
 {
     if (broken_cert.get()) {
-        if (ASN1_UTCTIME * tm = X509_get_notAfter(broken_cert.get())) {
+        if (const auto tm = X509_getm_notAfter(broken_cert.get())) {
             static char tmpBuffer[256]; // A temporary buffer
             Ssl::asn1timeToString(tm, tmpBuffer, sizeof(tmpBuffer));
             return tmpBuffer;

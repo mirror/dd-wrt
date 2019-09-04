@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -11,6 +11,7 @@
 
 #include "comm/Flag.h"
 #include "comm/forward.h"
+#include "defines.h"
 
 /* Comm layer select loops API.
  *
@@ -28,7 +29,11 @@ void SelectLoopInit(void);
 void SetSelect(int, unsigned int, PF *, void *, time_t);
 
 /// reset/undo/unregister the watch for an FD which was set by Comm::SetSelect()
-void ResetSelect(int);
+inline void
+ResetSelect(int fd)
+{
+    SetSelect(fd, COMM_SELECT_READ|COMM_SELECT_WRITE, nullptr, nullptr, 0);
+}
 
 /** Perform a select() or equivalent call.
  * This is used by the main select loop engine to check for FD with IO available.

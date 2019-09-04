@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -111,8 +111,8 @@ authDigestNonceEncode(digest_nonce_h * nonce)
     nonce->key = xcalloc(base64_encode_len(sizeof(digest_nonce_data)), 1);
     struct base64_encode_ctx ctx;
     base64_encode_init(&ctx);
-    size_t blen = base64_encode_update(&ctx, reinterpret_cast<uint8_t*>(nonce->key), sizeof(digest_nonce_data), reinterpret_cast<const uint8_t*>(&(nonce->noncedata)));
-    blen += base64_encode_final(&ctx, reinterpret_cast<uint8_t*>(nonce->key)+blen);
+    size_t blen = base64_encode_update(&ctx, reinterpret_cast<char*>(nonce->key), sizeof(digest_nonce_data), reinterpret_cast<const uint8_t*>(&(nonce->noncedata)));
+    blen += base64_encode_final(&ctx, reinterpret_cast<char*>(nonce->key)+blen);
 }
 
 digest_nonce_h *
@@ -787,14 +787,14 @@ Auth::Digest::Config::decode(char const *proxy_auth, const char *aRequestRealm)
             if (keyName == SBuf("domain",6) || keyName == SBuf("uri",3)) {
                 // domain is Special. Not a quoted-string, must not be de-quoted. But is wrapped in '"'
                 // BUG 3077: uri= can also be sent to us in a mangled (invalid!) form like domain
-                if (*p == '"' && *(p + vlen -1) == '"') {
+                if (vlen > 1 && *p == '"' && *(p + vlen -1) == '"') {
                     value.limitInit(p+1, vlen-2);
                 }
             } else if (keyName == SBuf("qop",3)) {
                 // qop is more special.
                 // On request this must not be quoted-string de-quoted. But is several values wrapped in '"'
                 // On response this is a single un-quoted token.
-                if (*p == '"' && *(p + vlen -1) == '"') {
+                if (vlen > 1 && *p == '"' && *(p + vlen -1) == '"') {
                     value.limitInit(p+1, vlen-2);
                 } else {
                     value.limitInit(p, vlen);

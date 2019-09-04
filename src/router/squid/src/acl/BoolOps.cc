@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -17,9 +17,10 @@
 Acl::NotNode::NotNode(ACL *acl)
 {
     assert(acl);
+    Must(strlen(acl->name) <= sizeof(name)-2);
     name[0] = '!';
     name[1] = '\0';
-    strncat(&name[1], acl->name, sizeof(name)-1-1);
+    xstrncpy(&name[1], acl->name, sizeof(name)-1); // -1 for '!'
     add(acl);
 }
 

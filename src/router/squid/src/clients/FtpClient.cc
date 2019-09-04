@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -763,6 +763,8 @@ Ftp::Client::connectDataChannel()
     conn->remote.port(data.port);
     conn->tos = ctrl.conn->tos;
     conn->nfmark = ctrl.conn->nfmark;
+    // Using non-local addresses in TPROXY mode requires appropriate socket option.
+    conn->flags |= ctrl.conn->flags & COMM_TRANSPARENT;
 
     debugs(9, 3, "connecting to " << conn->remote);
 

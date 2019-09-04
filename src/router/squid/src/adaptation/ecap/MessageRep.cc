@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -20,7 +20,6 @@
 #include "adaptation/ecap/MessageRep.h"
 #include "adaptation/ecap/XactionRep.h"
 #include "base/TextException.h"
-#include "URL.h"
 
 /* HeaderRep */
 
@@ -199,12 +198,10 @@ Adaptation::Ecap::RequestLineRep::RequestLineRep(HttpRequest &aMessage):
 void
 Adaptation::Ecap::RequestLineRep::uri(const Area &aUri)
 {
-    // TODO: if method is not set, URL::parse will assume it is not connect;
-    // Can we change URL::parse API to remove the method parameter?
-    // TODO: optimize: URL::parse should take constant URL buffer
-    char *buf = xstrdup(aUri.toString().c_str());
+    // TODO: if method is not set, AnyP::Uri::parse will assume it is not connect;
+    // Can we change AnyP::Uri::parse API to remove the method parameter?
+    const char *buf = aUri.toString().c_str();
     const bool ok = theMessage.url.parse(theMessage.method, buf);
-    xfree(buf);
     Must(ok);
 }
 

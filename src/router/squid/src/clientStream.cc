@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -209,7 +209,7 @@ clientStreamDetach(clientStreamNode * thisObject, ClientHttpRequest * http)
 
     delete thisObject;
 
-    /* and tell the prev that the detach has occured */
+    /* and tell the prev that the detach has occurred */
     /*
      * We do it in thisObject order so that the detaching node is always
      * at the end of the list

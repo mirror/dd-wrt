@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -55,7 +55,7 @@ Fs::Ufs::UFSStoreState::ioCompletedNotification()
            std::setfill('0') << std::hex << std::setw(8) << swap_filen  <<
            " status "<< std::setfill(' ') << std::dec << theFile->error());
 
-    /* Ok, notification past open means an error has occured */
+    /* Ok, notification past open means an error has occurred */
     assert (theFile->error());
     tryClosing();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -18,7 +18,7 @@
 
 #if !HAVE_CPU_AFFINITY
 /* failing replacements to minimize the number of if-HAVE_CPU_AFFINITYs */
-#if !defined(__cpu_set_t_defined)
+#if !HAVE_CPU_SET_T
 typedef struct {
     int bits;
 } cpu_set_t;

@@ -1,4 +1,4 @@
-## Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+## Copyright (C) 1996-2019 The Squid Software Foundation and contributors
 ##
 ## Squid software is distributed under GPLv2+ license and includes
 ## contributions from numerous individuals and organizations.
@@ -35,62 +35,6 @@ if test "$squid_cv_func_strnstr" = "yes" ; then
 fi
 
 ]) dnl SQUID_CHECK_FUNC_STRNSTR
-
-dnl check that va_copy is implemented and works
-dnl sets squid_cv_func_va_copy and defines HAVE_VA_COPY
-AC_DEFUN([SQUID_CHECK_FUNC_VACOPY],[
-
-# check that the system provides a functional va_copy call
-
-AH_TEMPLATE(HAVE_VA_COPY, [The system implements a functional va_copy() ])
-AC_CACHE_CHECK(if va_copy is implemented, squid_cv_func_va_copy,
-  AC_RUN_IFELSE([AC_LANG_SOURCE([[
-      #include <stdarg.h>
-      #include <stdlib.h>
-      int f (int i, ...) {
-         va_list args1, args2;
-         va_start (args1, i);
-         va_copy (args2, args1);
-         if (va_arg (args2, int) != 42 || va_arg (args1, int) != 42)
-            return 1;
-         va_end (args1); va_end (args2);
-         return 0;
-      }
-      int main(int argc, char **argv) { return f (0, 42); }
-      ]])],[squid_cv_func_va_copy="yes"],[squid_cv_func_va_copy="no"],[:])
-)
-if test "$squid_cv_func_va_copy" = "yes" ; then
-  AC_DEFINE(HAVE_VA_COPY, 1)
-fi
-
-]) dnl SQUID_CHECK_FUNC_VACOPY
-
-dnl same sa SQUID_CHECK_FUNC_VACOPY, but checks __va_copy
-dnl sets squid_cv_func___va_copy, and defines HAVE___VA_COPY
-AC_DEFUN([SQUID_CHECK_FUNC___VACOPY],[
-
-AH_TEMPLATE(HAVE___VA_COPY,[Some systems have __va_copy instead of va_copy])
-AC_CACHE_CHECK(if __va_copy is implemented, squid_cv_func___va_copy,
-  AC_RUN_IFELSE([AC_LANG_SOURCE([[
-      #include <stdarg.h>
-      #include <stdlib.h>
-      int f (int i, ...) {
-         va_list args1, args2;
-         va_start (args1, i);
-         __va_copy (args2, args1);
-         if (va_arg (args2, int) != 42 || va_arg (args1, int) != 42)
-            return 1;
-         va_end (args1); va_end (args2);
-         return 0;
-      }
-      int main(int argc, char **argv) { return f (0, 42); }
-      ]])],[squid_cv_func___va_copy="yes"],[squid_cv_func___va_copy="no"],[:])
-)
-if test "$squid_cv_func___va_copy" = "yes" ; then
-  AC_DEFINE(HAVE___VA_COPY, 1)
-fi
-]) dnl SQUID_CHECK_FUNC___VACOPY
-
 
 dnl check that epoll actually works
 dnl sets squid_cv_epoll_works to "yes" or "no"
@@ -220,16 +164,11 @@ dnl checks the maximum number of filedescriptor we can open
 dnl sets shell var squid_filedescriptors_num
 
 AC_DEFUN([SQUID_CHECK_MAXFD],[
-AC_CHECK_FUNCS(setrlimit)
+AC_CHECK_FUNCS(getrlimit setrlimit)
 AC_MSG_CHECKING(Maximum number of filedescriptors we can open)
-dnl damn! FreeBSD pthreads break dup2().
 SQUID_STATE_SAVE(maxfd)
-  case $host in
-  i386-unknown-freebsd*)
-      if echo "$LDFLAGS" | grep -q pthread; then
-  	LDFLAGS=`echo $LDFLAGS | sed -e "s/-pthread//"`
-      fi
-  esac
+dnl FreeBSD pthreads break dup2().
+  AS_CASE([$host_os],[freebsd],[ LDFLAGS=`echo $LDFLAGS | sed -e "s/-pthread//"` ])
   AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <stdio.h>
 #include <unistd.h>
@@ -247,7 +186,7 @@ int main(int argc, char **argv) {
      */
     i = NOFILE;
 #else
-#if HAVE_SETRLIMIT
+#if HAVE_GETRLIMIT && HAVE_SETRLIMIT
     struct rlimit rl;
 #if defined(RLIMIT_NOFILE)
     if (getrlimit(RLIMIT_NOFILE, &rl) < 0) {
@@ -292,19 +231,33 @@ int main(int argc, char **argv) {
 	fprintf (fp, "%d\n", i & ~0x3F);
 	return 0;
 }
-  ]])],[squid_filedescriptors_num=`cat conftestval`],[squid_filedescriptors_num=256],[squid_filedescriptors_num=256])
+  ]])],[squid_filedescriptors_limit=`cat conftestval`],[],[])
   dnl Microsoft MSVCRT.DLL supports 2048 maximum FDs
-  case "$host_os" in
-  mingw|mingw32)
-    squid_filedescriptors_num="2048"
-    ;;
-  esac
-  AC_MSG_RESULT($squid_filedescriptors_num)
+  AS_CASE(["$host_os"],[mingw|mingw32],[squid_filedescriptors_limit="2048"])
+  AC_MSG_RESULT($squid_filedescriptors_limit)
+  AS_IF([ test "x$squid_filedescriptors_num" = "x" ],[
+    AS_IF([ test "x$squid_filedescriptors_limit" != "x" ],[
+      squid_filedescriptors_num=$squid_filedescriptors_limit
+    ],[
+      AC_MSG_NOTICE([Unable to detect filedescriptor limits. Assuming 256 is okay.])
+      squid_filedescriptors_num=256
+    ])
+  ])
 SQUID_STATE_ROLLBACK(maxfd)
 
-if test `expr $squid_filedescriptors_num % 64` != 0; then
-    AC_MSG_WARN([$squid_filedescriptors_num is not an multiple of 64. This may cause issues on certain platforms.])
-fi
+AC_MSG_NOTICE([Default number of filedescriptors: $squid_filedescriptors_num])
+
+AS_IF([ test `expr $squid_filedescriptors_num % 64` != 0 ],[
+  AC_MSG_WARN([$squid_filedescriptors_num is not an multiple of 64. This may cause issues on certain platforms.])
+])
+
+AS_IF([ test "$squid_filedescriptors_num" -lt 512 ],[
+  AC_MSG_WARN([$squid_filedescriptors_num may not be enough filedescriptors if your])
+  AC_MSG_WARN([cache will be very busy.  Please see the FAQ page])
+  AC_MSG_WARN([http://wiki.squid-cache.org/SquidFaq/TroubleShooting])
+  AC_MSG_WARN([on how to increase your filedescriptor limit])
+])
+AC_DEFINE_UNQUOTED(SQUID_MAXFD,$squid_filedescriptors_num,[Maximum number of open filedescriptors])
 ])
 
 
@@ -968,4 +921,41 @@ AC_DEFUN([SQUID_CHECK_BROKEN_SOLARIS_IPFILTER],[
 #define IPFILTER_VERSION        5000004
 #endif
   ])
+
+## Solaris 10+ backported IPv6 NAT to their IPFilter v4.1 instead of using v5
+  AC_CHECK_MEMBERS([
+    struct natlookup.nl_inipaddr.in6,
+    struct natlookup.nl_realipaddr.in6
+  ],,,[
+#if USE_SOLARIS_IPFILTER_MINOR_T_HACK
+#define minor_t fubar
+#endif
+#if HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#if HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
+#if HAVE_NETINET_IN_H
+#include <netinet/in.h>
+#endif
+#if HAVE_SYS_IOCCOM_H
+#include <sys/ioccom.h>
+#endif
+#if USE_SOLARIS_IPFILTER_MINOR_T_HACK
+#undef minor_t
+#endif
+#if HAVE_IP_COMPAT_H
+#include <ip_compat.h>
+#elif HAVE_NETINET_IP_COMPAT_H
+#include <netinet/ip_compat.h>
+#endif
+#if HAVE_IP_FIL_H
+#include <ip_fil.h>
+#elif HAVE_NETINET_IP_FIL_H
+#include <netinet/ip_fil.h>
+#endif
+#include <ip_nat.h>
+  ])
+
 ])

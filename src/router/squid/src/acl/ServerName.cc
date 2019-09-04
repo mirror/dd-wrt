@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -22,7 +22,6 @@
 #include "ssl/bio.h"
 #include "ssl/ServerBump.h"
 #include "ssl/support.h"
-#include "URL.h"
 
 // Compare function for tree search algorithms
 static int

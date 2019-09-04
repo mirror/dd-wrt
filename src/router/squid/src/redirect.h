@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -19,6 +19,7 @@ class ClientHttpRequest;
 
 void redirectInit(void);
 void redirectShutdown(void);
+void redirectReconfigure();
 void redirectStart(ClientHttpRequest *, HLPCB *, void *);
 void storeIdStart(ClientHttpRequest *, HLPCB *, void *);
 

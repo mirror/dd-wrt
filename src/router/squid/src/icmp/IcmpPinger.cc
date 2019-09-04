@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -166,7 +166,7 @@ IcmpPinger::Recv(void)
     int n;
     int guess_size;
 
-    memset(&pecho, '\0', sizeof(pecho));
+    pecho = pingerEchoData();
     n = recv(socket_from_squid, &pecho, sizeof(pecho), 0);
 
     if (n < 0) {
@@ -177,7 +177,7 @@ IcmpPinger::Recv(void)
 
     if (0 == n) {
         /* EOF indicator */
-        debugs(42, DBG_CRITICAL, HERE << "EOF encountered. Pinger exiting.\n");
+        debugs(42, DBG_CRITICAL, "EOF encountered. Pinger exiting.");
         errno = 0;
         Close();
         exit(1);

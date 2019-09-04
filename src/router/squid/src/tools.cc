@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -56,7 +56,7 @@ The Squid Cache (version %s) died.\n\
 You've encountered a fatal error in the Squid Cache version %s.\n\
 If a core file was created (possibly in the swap directory),\n\
 please execute 'gdb squid core' or 'dbx squid core', then type 'where',\n\
-and report the trace back to squid-bugs@squid-cache.org.\n\
+and report the trace back to squid-bugs@lists.squid-cache.org.\n\
 \n\
 Thanks!\n"
 
@@ -291,11 +291,11 @@ void
 death(int sig)
 {
     if (sig == SIGSEGV)
-        fprintf(debug_log, "FATAL: Received Segment Violation...dying.\n");
+        debugs(1, DBG_CRITICAL, ForceAlert << "FATAL: Received Segment Violation...dying.");
     else if (sig == SIGBUS)
-        fprintf(debug_log, "FATAL: Received Bus Error...dying.\n");
+        debugs(1, DBG_CRITICAL, ForceAlert << "FATAL: Received Bus Error...dying.");
     else
-        fprintf(debug_log, "FATAL: Received signal %d...dying.\n", sig);
+        debugs(1, DBG_CRITICAL, ForceAlert << "FATAL: Received signal " << sig << "...dying.");
 
 #if PRINT_STACK_TRACE
 #if _SQUID_HPUX_
@@ -319,7 +319,7 @@ death(int sig)
 #endif /* _SQUID_SOLARIS_and HAVE_LIBOPCOM_STACK */
 #if HAVE_BACKTRACE_SYMBOLS_FD
     {
-        static void *(callarray[8192]);
+        static void *callarray[8192];
         int n;
         n = backtrace(callarray, 8192);
         backtrace_symbols_fd(callarray, n, fileno(debug_log));
@@ -365,8 +365,9 @@ BroadcastSignalIfAny(int& sig)
     if (sig > 0) {
         if (IamMasterProcess()) {
             for (int i = TheKids.count() - 1; i >= 0; --i) {
-                Kid& kid = TheKids.get(i);
-                kill(kid.getPid(), sig);
+                const auto &kid = TheKids.get(i);
+                if (kid.running())
+                    kill(kid.getPid(), sig);
             }
         }
         sig = -1;
@@ -404,7 +405,7 @@ debug_trap(const char *message)
     if (!opt_catch_signals)
         fatal_dump(message);
 
-    _db_print("WARNING: %s\n", message);
+    debugs(50, DBG_CRITICAL, "WARNING: " << message);
 }
 
 const char *
@@ -602,7 +603,7 @@ no_suid(void)
     uid_t uid;
     leave_suid();
     uid = geteuid();
-    debugs(21, 3, "no_suid: PID " << getpid() << " giving up root priveleges forever");
+    debugs(21, 3, "no_suid: PID " << getpid() << " giving up root privileges forever");
 
     if (setuid(0) < 0) {
         int xerrno = errno;
@@ -1109,6 +1110,10 @@ restoreCapabilities(bool keep)
         cap_list[ncaps] = CAP_NET_BIND_SERVICE;
         ++ncaps;
         if (Ip::Interceptor.TransparentActive() ||
+#if USE_LIBNETFILTERCONNTRACK
+                // netfilter_conntrack requires CAP_NET_ADMIN to get client's CONNMARK
+                Ip::Interceptor.InterceptActive() ||
+#endif
                 Ip::Qos::TheConfig.isHitNfmarkActive() ||
                 Ip::Qos::TheConfig.isAclNfmarkActive() ||
                 Ip::Qos::TheConfig.isAclTosActive()) {

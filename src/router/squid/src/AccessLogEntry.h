@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -53,6 +53,12 @@ public:
     /// Knows about several alternate locations of the IP
     /// including indirect forwarded-for IP if configured to log that
     void getLogClientIp(char *buf, size_t bufsz) const;
+
+    /// Fetch the client IDENT string, or nil if none is available.
+    const char *getClientIdent() const;
+
+    /// Fetch the external ACL provided 'user=' string, or nil if none is available.
+    const char *getExtUser() const;
 
     /// Fetch the transaction method string (ICP opcode, HTCP opcode or HTTP method)
     SBuf getLogMethod() const;
@@ -265,6 +271,24 @@ public:
     }
     icap;
 #endif
+
+    /// Effective URI of the received client (or equivalent) HTTP request or,
+    /// in rare cases where that information was not collected, a nil pointer.
+    /// Receiving errors are represented by "error:..." URIs.
+    /// Adaptations and redirections do not affect this URI.
+    const SBuf *effectiveVirginUrl() const;
+
+    /// Remember Client URI (or equivalent) when there is no HttpRequest.
+    void setVirginUrlForMissingRequest(const SBuf &vu)
+    {
+        if (!request)
+            virginUrlForMissingRequest_ = vu;
+    }
+
+private:
+    /// Client URI (or equivalent) for effectiveVirginUrl() when HttpRequest is
+    /// missing. This member is ignored unless the request member is nil.
+    SBuf virginUrlForMissingRequest_;
 };
 
 class ACLChecklist;

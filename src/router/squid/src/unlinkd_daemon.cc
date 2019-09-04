@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -45,7 +45,7 @@
  *
  \param argc Ignored.
  \param argv Ignored.
- \retval ERR An error occured removing the file.
+ \retval ERR An error occurred removing the file.
  \retval OK  The file has been removed.
  */
 int

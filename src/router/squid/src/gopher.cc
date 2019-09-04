@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -241,7 +241,6 @@ gopherMimeCreate(GopherStateData * gopherState)
     }
 
     assert(entry->isEmpty());
-    EBIT_CLR(entry->flags, ENTRY_FWD_HDR_WAIT);
 
     HttpReply *reply = new HttpReply;
     entry->buffer();
@@ -922,7 +921,8 @@ gopherSendRequest(int, void *data)
                                          CommIoCbPtrFun(gopherSendComplete, gopherState));
     Comm::Write(gopherState->serverConn, &mb, call);
 
-    gopherState->entry->makePublic();
+    if (!gopherState->entry->makePublic())
+        gopherState->entry->makePrivate(true);
 }
 
 void

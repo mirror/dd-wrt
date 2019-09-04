@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -12,6 +12,8 @@
 #include "acl/InnerNode.h"
 #include <stack>
 #include <vector>
+
+class HttpRequest;
 
 /// ACL checklist callback
 typedef void ACLCB(allow_t, void *);
@@ -164,7 +166,10 @@ public:
     virtual bool hasRequest() const = 0;
     virtual bool hasReply() const = 0;
     virtual bool hasAle() const = 0;
-    virtual void syncAle() const = 0;
+    /// assigns uninitialized adapted_request and url ALE components
+    virtual void syncAle(HttpRequest *adaptedRequest, const char *logUri) const = 0;
+    /// warns if there are uninitialized ALE components and fills them
+    virtual void verifyAle() const = 0;
 
     /// change the current ACL list
     /// \return a pointer to the old list value (may be nullptr)

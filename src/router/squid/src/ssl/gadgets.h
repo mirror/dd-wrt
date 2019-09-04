@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -13,11 +13,17 @@
 #include "security/forward.h"
 #include "ssl/crtd_message.h"
 
+#if USE_OPENSSL
+#include "compat/openssl.h"
+#if HAVE_OPENSSL_ASN1_H
+#include <openssl/asn1.h>
+#endif
 #if HAVE_OPENSSL_TXT_DB_H
 #include <openssl/txt_db.h>
 #endif
 #if HAVE_OPENSSL_X509V3_H
 #include <openssl/x509v3.h>
+#endif
 #endif
 #include <string>
 
@@ -29,12 +35,6 @@ namespace Ssl
  because they are used by security_file_certgen helper.
  */
 
-#if SQUID_USE_CONST_SSL_METHOD
-typedef const SSL_METHOD * ContextMethod;
-#else
-typedef SSL_METHOD * ContextMethod;
-#endif
-
 #if !defined(SQUID_SSL_SIGN_HASH_IF_NONE)
 #define SQUID_SSL_SIGN_HASH_IF_NONE "sha256"
 #endif
@@ -44,12 +44,6 @@ typedef SSL_METHOD * ContextMethod;
  */
 sk_dtor_wrapper(sk_X509, STACK_OF(X509) *, X509_free);
 typedef std::unique_ptr<STACK_OF(X509), sk_X509_free_wrapper> X509_STACK_Pointer;
-
-CtoCpp1(EVP_PKEY_free, EVP_PKEY *)
-#if defined(CRYPTO_LOCK_EVP_PKEY) // OpenSSL 1.0
-inline int EVP_PKEY_up_ref(EVP_PKEY *t) {if (t) CRYPTO_add(&t->references, 1, CRYPTO_LOCK_EVP_PKEY); return 0;}
-#endif
-typedef Security::LockingPointer<EVP_PKEY, EVP_PKEY_free_cpp, HardFun<int, EVP_PKEY *, EVP_PKEY_up_ref> > EVP_PKEY_Pointer;
 
 typedef std::unique_ptr<BIGNUM, HardFun<void, BIGNUM*, &BN_free>> BIGNUM_Pointer;
 
@@ -66,9 +60,6 @@ typedef std::unique_ptr<X509_NAME, HardFun<void, X509_NAME*, &X509_NAME_free>> X
 typedef std::unique_ptr<RSA, HardFun<void, RSA*, &RSA_free>> RSA_Pointer;
 
 typedef std::unique_ptr<X509_REQ, HardFun<void, X509_REQ*, &X509_REQ_free>> X509_REQ_Pointer;
-
-sk_dtor_wrapper(sk_X509_NAME, STACK_OF(X509_NAME) *, X509_NAME_free);
-typedef std::unique_ptr<STACK_OF(X509_NAME), sk_X509_NAME_free_wrapper> X509_NAME_STACK_Pointer;
 
 typedef std::unique_ptr<AUTHORITY_KEYID, HardFun<void, AUTHORITY_KEYID*, &AUTHORITY_KEYID_free>> AUTHORITY_KEYID_Pointer;
 
@@ -89,7 +80,7 @@ EVP_PKEY * createSslPrivateKey();
  \ingroup SslCrtdSslAPI
  * Write private key and SSL certificate to memory.
  */
-bool writeCertAndPrivateKeyToMemory(Security::CertPointer const & cert, EVP_PKEY_Pointer const & pkey, std::string & bufferToWrite);
+bool writeCertAndPrivateKeyToMemory(Security::CertPointer const & cert, Security::PrivateKeyPointer const & pkey, std::string & bufferToWrite);
 
 /**
  \ingroup SslCrtdSslAPI
@@ -99,21 +90,58 @@ bool appendCertToMemory(Security::CertPointer const & cert, std::string & buffer
 
 /**
  \ingroup SslCrtdSslAPI
- * Write private key and SSL certificate to file.
- */
-bool writeCertAndPrivateKeyToFile(Security::CertPointer const & cert, EVP_PKEY_Pointer const & pkey, char const * filename);
-
-/**
- \ingroup SslCrtdSslAPI
  * Write private key and SSL certificate to memory.
  */
-bool readCertAndPrivateKeyFromMemory(Security::CertPointer & cert, EVP_PKEY_Pointer & pkey, char const * bufferToRead);
+bool readCertAndPrivateKeyFromMemory(Security::CertPointer & cert, Security::PrivateKeyPointer & pkey, char const * bufferToRead);
 
 /**
  \ingroup SslCrtdSslAPI
  * Read SSL certificate from memory.
  */
 bool readCertFromMemory(Security::CertPointer & cert, char const * bufferToRead);
+
+/**
+ \ingroup SslCrtdSslAPI
+ * Read private key from file.
+ */
+void ReadPrivateKeyFromFile(char const * keyFilename, Security::PrivateKeyPointer &pkey, pem_password_cb *passwd_callback);
+
+/**
+ \ingroup SslCrtdSslAPI
+ * Initialize the bio with the file 'filename' openned for reading
+ */
+bool OpenCertsFileForReading(BIO_Pointer &bio, const char *filename);
+
+/**
+ \ingroup SslCrtdSslAPI
+ * Read a certificate from bio
+ */
+bool ReadX509Certificate(BIO_Pointer &bio, Security::CertPointer & cert);
+
+/**
+ \ingroup SslCrtdSslAPI
+ * Read a private key from bio
+ */
+bool ReadPrivateKey(BIO_Pointer &bio, Security::PrivateKeyPointer &pkey, pem_password_cb *passwd_callback);
+
+/**
+ \ingroup SslCrtdSslAPI
+ * Initialize the bio with the file 'filename' openned for writting
+ */
+
+bool OpenCertsFileForWriting(BIO_Pointer &bio, const char *filename);
+
+/**
+ \ingroup SslCrtdSslAPI
+ * Write certificate to BIO.
+ */
+bool WriteX509Certificate(BIO_Pointer &bio, const Security::CertPointer & cert);
+
+/**
+ \ingroup SslCrtdSslAPI
+ * Write private key to BIO.
+ */
+bool WritePrivateKey(BIO_Pointer &bio, const Security::PrivateKeyPointer &pkey);
 
 /**
   \ingroup SslCrtdSslAPI
@@ -187,20 +215,21 @@ public:
     CertificateProperties();
     Security::CertPointer mimicCert; ///< Certificate to mimic
     Security::CertPointer signWithX509; ///< Certificate to sign the generated request
-    EVP_PKEY_Pointer signWithPkey; ///< The key of the signing certificate
+    Security::PrivateKeyPointer signWithPkey; ///< The key of the signing certificate
     bool setValidAfter; ///< Do not mimic "Not Valid After" field
     bool setValidBefore; ///< Do not mimic "Not Valid Before" field
     bool setCommonName; ///< Replace the CN field of the mimicing subject with the given
     std::string commonName; ///< A CN to use for the generated certificate
     CertSignAlgorithm signAlgorithm; ///< The signing algorithm to use
     const EVP_MD *signHash; ///< The signing hash to use
-    /// Returns certificate database primary key. New fake certificates
-    /// purge old fake certificates with the same key.
-    std::string & dbKey() const;
 private:
     CertificateProperties(CertificateProperties &);
     CertificateProperties &operator =(CertificateProperties const &);
 };
+
+/// \ingroup SslCrtdSslAPI
+/// \returns certificate database key
+std::string & OnDiskCertificateDbKey(const CertificateProperties &);
 
 /**
  \ingroup SslCrtdSslAPI
@@ -209,21 +238,7 @@ private:
  * Return generated certificate and private key in resultX509 and resultPkey
  * variables.
  */
-bool generateSslCertificate(Security::CertPointer & cert, EVP_PKEY_Pointer & pkey, CertificateProperties const &properties);
-
-/**
- \ingroup SslCrtdSslAPI
- * Read private key from file. Make sure that this is not encrypted file.
- */
-EVP_PKEY * readSslPrivateKey(char const * keyFilename, pem_password_cb *passwd_callback = NULL);
-
-/**
- \ingroup SslCrtdSslAPI
- *  Read certificate and private key from files.
- * \param certFilename name of file with certificate.
- * \param keyFilename name of file with private key.
- */
-void readCertAndPrivateKeyFromFiles(Security::CertPointer & cert, EVP_PKEY_Pointer & pkey, char const * certFilename, char const * keyFilename);
+bool generateSslCertificate(Security::CertPointer & cert, Security::PrivateKeyPointer & pkey, CertificateProperties const &properties);
 
 /**
  \ingroup SslCrtdSslAPI
@@ -253,6 +268,14 @@ const char *CommonHostName(X509 *x509);
    * Uses static memory to temporary store the extracted name.
 */
 const char *getOrganization(X509 *x509);
+
+/// \ingroup ServerProtocolSSLAPI
+/// \return whether both certificates exist and are the same (e.g., have identical ASN.1 images)
+bool CertificatesCmp(const Security::CertPointer &cert1, const Security::CertPointer &cert2);
+
+/// wrapper for OpenSSL X509_get0_signature() which takes care of
+/// portability issues with older OpenSSL versions
+const ASN1_BIT_STRING *X509_get_signature(const Security::CertPointer &);
 
 } // namespace Ssl
 #endif // SQUID_SSL_GADGETS_H
