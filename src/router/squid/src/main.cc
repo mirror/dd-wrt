@@ -1362,31 +1362,6 @@ mainInitialize(void)
     configured_once = 1;
 }
 
-/// describes active (i.e., thrown but not yet handled) exception
-static std::ostream &
-CurrentException(std::ostream &os)
-{
-#if 0
-    if (std::current_exception()) {
-        try {
-            throw; // re-throw to recognize the exception type
-        }
-        catch (const std::exception &ex) {
-            os << ex.what();
-        }
-        catch (...) {
-            os << "[unknown exception type]";
-        }
-    } else {
-        os << "[no active exception]";
-    }
-#else
-        os << "[no active exception]";
-
-#endif
-    return os;
-}
-
 static void
 OnTerminate()
 {
