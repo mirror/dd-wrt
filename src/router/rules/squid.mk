@@ -17,6 +17,11 @@ GNU_ATOMICS = yes
 LIB_ATOMIC=-latomic
 CONFIG_LIBATOMIC=y
 endif
+ifeq ($(ARCH),powerpc)
+GNU_ATOMICS = yes
+LIB_ATOMIC=-latomic
+CONFIG_LIBATOMIC=y
+endif
 ifeq ($(ARCH),mips64)
 SQUID_BIGENDIAN = yes
 endif
