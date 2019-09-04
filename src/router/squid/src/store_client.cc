@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -162,7 +162,7 @@ store_client::store_client(StoreEntry *e) :
     if (getType() == STORE_DISK_CLIENT) {
         /* assert we'll be able to get the data we want */
         /* maybe we should open swapin_sio here */
-        assert(entry->swap_filen > -1 || entry->swappingOut());
+        assert(entry->hasDisk() && !entry->swapoutFailed());
     }
 }
 
@@ -251,7 +251,7 @@ store_client::moreToSend() const
     const int64_t len = entry->objectLen();
 
     // If we do not know the entry length, then we have to open the swap file.
-    const bool canSwapIn = entry->swap_filen >= 0;
+    const bool canSwapIn = entry->hasDisk();
     if (len < 0)
         return canSwapIn;
 
@@ -276,11 +276,6 @@ storeClientCopy2(StoreEntry * e, store_client * sc)
      */
 
     if (sc->flags.copy_event_pending) {
-        return;
-    }
-
-    if (EBIT_TEST(e->flags, ENTRY_FWD_HDR_WAIT)) {
-        debugs(90, 5, "storeClientCopy2: returning because ENTRY_FWD_HDR_WAIT set");
         return;
     }
 
@@ -441,7 +436,7 @@ store_client::fileRead()
     flags.disk_io_pending = true;
 
     if (mem->swap_hdr_sz != 0)
-        if (entry->swap_status == SWAPOUT_WRITING)
+        if (entry->swappingOut())
             assert(mem->swapout.sio->offset() > copyInto.offset + (int64_t)mem->swap_hdr_sz);
 
     storeRead(swapin_sio,
@@ -667,7 +662,8 @@ storeUnregister(store_client * sc, StoreEntry * e, void *data)
     dlinkDelete(&sc->node, &mem->clients);
     -- mem->nclients;
 
-    if (e->store_status == STORE_OK && e->swap_status != SWAPOUT_DONE)
+    const auto swapoutFinished = e->swappedOut() || e->swapoutFailed();
+    if (e->store_status == STORE_OK && !swapoutFinished)
         e->swapOut();
 
     if (sc->swapin_sio != NULL) {
@@ -711,6 +707,15 @@ storeUnregister(store_client * sc, StoreEntry * e, void *data)
 void
 StoreEntry::invokeHandlers()
 {
+    if (EBIT_TEST(flags, DELAY_SENDING)) {
+        debugs(90, 3, "DELAY_SENDING is on, exiting " << *this);
+        return;
+    }
+    if (EBIT_TEST(flags, ENTRY_FWD_HDR_WAIT)) {
+        debugs(90, 3, "ENTRY_FWD_HDR_WAIT is on, exiting " << *this);
+        return;
+    }
+
     /* Commit what we can to disk, if appropriate */
     swapOut();
     int i = 0;

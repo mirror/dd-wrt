@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -70,6 +70,7 @@ Ssl::PeekingPeerConnector::checkForPeekAndSplice()
         acl_checklist->banAction(allow_t(ACCESS_ALLOWED, Ssl::bumpSplice));
     if (!srvBio->canBump())
         acl_checklist->banAction(allow_t(ACCESS_ALLOWED, Ssl::bumpBump));
+    acl_checklist->syncAle(request.getRaw(), nullptr);
     acl_checklist->nonBlockingCheck(Ssl::PeekingPeerConnector::cbCheckForPeekAndSpliceDone, this);
 }
 
@@ -184,19 +185,14 @@ Ssl::PeekingPeerConnector::initialize(Security::SessionPointer &serverSession)
             srvBio->mode(csd->sslBumpMode);
         } else {
             // Set client SSL options
-            SSL_set_options(serverSession.get(), ::Security::ProxyOutgoingConfig.parsedOptions);
+            ::Security::ProxyOutgoingConfig.updateSessionOptions(serverSession);
 
-            // Use SNI TLS extension only when we connect directly
-            // to the origin server and we know the server host name.
-            const char *sniServer = NULL;
             const bool redirected = request->flags.redirected && ::Config.onoff.redir_rewrites_host;
-            if (!hostName || redirected)
-                sniServer = !request->url.hostIsNumeric() ? request->url.host() : NULL;
-            else
-                sniServer = hostName->c_str();
-
+            const char *sniServer = (!hostName || redirected) ?
+                                    request->url.host() :
+                                    hostName->c_str();
             if (sniServer)
-                Ssl::setClientSNI(serverSession.get(), sniServer);
+                setClientSNI(serverSession.get(), sniServer);
         }
 
         if (Ssl::ServerBump *serverBump = csd->serverBump()) {
@@ -287,11 +283,11 @@ Ssl::PeekingPeerConnector::noteNegotiationError(const int result, const int ssl_
     //
     if (srvBio->bumpMode() == Ssl::bumpPeek && (resumingSession = srvBio->resumingSession())) {
         // we currently splice all resumed sessions unconditionally
-        if (const bool spliceResumed = true) {
-            bypassCertValidator();
-            checkForPeekAndSpliceMatched(Ssl::bumpSplice);
-            return;
-        } // else fall through to find a matching ssl_bump action (with limited info)
+        // if (const bool spliceResumed = true) {
+        bypassCertValidator();
+        checkForPeekAndSpliceMatched(Ssl::bumpSplice);
+        return;
+        // } // else fall through to find a matching ssl_bump action (with limited info)
     }
 
     // If we are in peek-and-splice mode and still we did not write to

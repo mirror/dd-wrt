@@ -1,3 +1,165 @@
+Changes to squid-4.8 (09 Jul 2019):
+
+	- Bug 4957: Multiple XSS issues in cachemgr.cgi
+	- Bug 4953: to_localhost does not include ::
+	- Bug 4937: cachemgr.cgi: unallocated memory access
+	- Bug 4936: terminating c-strings beyond BASE64_DECODE_LENGTH
+	- Bug 4889: Ignore ECONNABORTED in accept(2)
+	- Bug 4842: Memory leak when http_reply_access uses external_acl
+	- TLS: Fix tls-min-version= being ignored
+	- TLS: Add the NO_TLSv1_3 option to available tls-options values
+	- HTTP: RFC 7230 forbids generation of userinfo subcomponent of https URL
+	- HTTP: Remove userinfo support from old protocols
+	- HTTP: Fix Digest auth parameter parsing
+	- HTTP: Send Connection:close with the known-last request on a connection
+	- HTTP: Fix handling of tiny invalid responses
+	- Replace uudecode with libnettle base64 decoder
+	- Update HttpHeader::getAuth to SBuf
+	- ... and some compile issues
+
+Changes to squid-4.7 (06 May 2019):
+
+	- Bug 4942: --with-filedescriptors does not do anything
+	- Bug 4928: Cannot convert non-IPv4 to IPv4
+	- Bug 4823: assertion failed: "lowestOffset () <= target_offset"
+	- Bug 4796: comm.cc !isOpen(conn->fd) assertion when rotating logs
+	- Fix squidclient authentication to origin servers
+	- Fix stack-based buffer-overflow when parsing SNMP messages
+	- Add support for buffer-size= to UDP logging
+	- TLS: When using OpenSSL, trust intermediate CAs from trusted store
+
+Changes to squid-4.6 (19 Feb 2019):
+
+	- Bug 4915: Detect IPv6 loopback binding errors
+	- Bug 4914: Do not call setsid() in --foreground mode
+	- Bug 4875 pt2: GCC-8 compile errors with -O3 optimization
+	- Bug 4856: Exit when GoIntoBackground() fork() call fails
+	- basic_ldap_auth: Return BH on internal errors; polished messages
+	- Fix BodyPipe/Sink memory leaks associated with auto-consumption
+	- Fix OpenSSL builds that define OPENSSL_NO_ENGINE
+	- Fix several cases of rock cache corruption
+	- Add Georgian (ka) language translation
+
+Changes to squid-4.5 (01 Jan 2019):
+
+	- Bug 4253: ssl_bump prevents access to some web contents
+	- TLS: add %>handshake logformat code
+	- Redesign forward_max_tries to count TCP connection attempts
+	- Fix client_connection_mark ACL handling of clientless transactions
+	- Fix netdb exchange with a TLS cache_peer
+	- Update netdb when tunneling requests
+	- Use pkg-config for detecting libxml2
+	- ... and some documentation updates
+	- ... and some code compile fixes
+
+Changes to squid-4.4 (28 Oct 2018):
+
+       - Bug 4893: Malformed %>ru URIs for CONNECT requests
+       - Fix %USER_CA_CERT_xx and %USER_CERT_xx crashes
+       - SSL: support compilation with minimal OpenSSL
+       - SSL: certificate fields injection via %D in ERR_SECURE_CONNECT_FAIL
+       - Fix netdb not saving to disk
+       - Fix memory leak when parsing SNMP packet
+       - ... and some compile issues
+
+Changes to squid-4.3 (01 Oct 2018):
+
+	- Bug 4885: Excessive memory usage when running out of descriptors
+	- Bug 4877: Add missing text about external_acl_type %DATA changes
+	- Bug 4875 pt1: GCC-8 compile errors with -O3 optimization
+	- Bug 4716: Blank lines in cachemgr.conf are not skipped
+	- Bug 4691: balance_on_multiple_ip config option docs
+	- basic_pop3_auth: fix startup errors
+	- langpack: Add missing dialect aliases
+	- Fix range_offset_limit debugging
+	- Fix icc build errors
+	- Update systemd dependencies in squid.service
+
+Changes to squid-4.2 (04 Aug 2018):
+
+	- Regression fix: support for https_port clientca= option
+	- Regression Bug 4870: milliseconds logformats prepend 0s instead of spaces
+	- Bug 4861: HTTPMSGLOCK missing pointer safety
+	- Bug 4843 pt3: GCC-8 fixes and refactoring
+	- HTTP: Do not update stored headers on 304 responses
+	- Fix segmentation fault on -k parse
+	- Fix %>ru logging of huge URLs
+	- ... and several performance optimizations
+	- ... and some documentation updates
+	- ... and all fixes from 3.5.28
+
+Changes to squid-4.1 (02 Jul 2018):
+
+	- Bug 4223: fixed retries of failed re-forwardable transactions
+	- Bug 4791: Build failure on MacOS
+	- Fix --with-netfilter-conntrack error message
+	- ... and many documentation updates
+
+Changes to squid-4.0.25 (11 Jun 2018):
+
+	- Regression Bug 4855: querying private entries for HTCP/ICP
+	- Regression Bug 4852: deny_info %R macro not being expanded
+	- Regression Bug 4847: proxy_auth ACL -i/+i flags not working
+	- Regression Bug 4831: filter chain certificates for validity when loading
+	- Regression fix: Transient reader locking broken in 4.0.24
+	- Bug 4845: NegotiateSsl crash on aborting transaction
+	- Bug 4843 pt1: ext_edirectory_userip_acl refactoring for GCC-8
+	- Bug 4843 pt2: squidclient refactoring for GCC-8
+	- Bug 4829: IPC shared memory leaks when disker queue overflows
+	- Bug 4828: Use feature detection for IPFilter API/ABI checks
+	- Bug 4816: update negotiate_kerberos_auth helper protocol to v3.4
+	- Bug 4811: supply AccessLogEntry (ALE) for more fast ACL checks
+	- Bug 4707: purge tool does not obey --sysconfdir= build option
+	- Bug 4171: checking for log_file_daemon despite disabling logging
+	- Bug 4042: ext_kerberos_ldap_group: add -P principal option
+	- TLS: avoid "ssl_crtd" assertions on reconfiguration
+	- Add timestamps to (most) FATAL messages
+	- Add "--kid role-ID" command line option
+	- ... and many documentation updates
+
+Changes to squid-4.0.24 (07 Mar 2018):
+
+	- Bug 4822: Build failure (-Wformat) where time_t is not long int
+	- Bug 4505: SMP caches sometimes do not purge entries
+	- TLS: GnuTLS implementation for listening ports and client connections
+	- TPROXY: Fix clientside_mark and client port logging
+	- Native FTP: Fix "Cannot assign requested address" with TPROXY
+	- SSL-Bump: Fix authentication with types other than Basic
+	- ... and many small compile and stability fixes
+	- ... and some documentation fixes
+
+Changes to squid-4.0.23 (19 Jan 2018):
+
+	- Bug 4715: security_file_certgen: Remove -g and -n options docs
+	- Bug 4679: User names not sent to url_rewrite_program
+	- Bug 4631: security_file_certgen helper without disk cache
+	- Bug 3911: clang -fsanitize warnings
+	- Bug 2378: Duplicates in selected peer destinations
+	- Nettle v3.4 support
+	- Fix Squid FTP server dying because of an unhandled exception
+	- Automatically revive hopeless kids on reconfigure and after a timeout
+	- Fix %<Hs, %<pt, %<tt, %<bs calculation bugs for error responses
+	- ... and many documentation updates
+	- ... and some stability fixes
+
+Changes to squid-4.0.22 (07 Dec 2017):
+
+	- Regression fix: Relay peer CONNECT error status line and headers to clients
+	- Bug 4767: SMP breaks IPv6 SNMP and cache manager queries
+	- Bug 4718: support filling raw buffer space of shared SBufs
+	- Bug 4648: object revalidation for HTTPS scheme
+	- Bug 4616: store_client.cc:92: "mem" assertion
+	- Bug 2821: ignore Content-Range in non-206 responses
+	- HTCP: Ignore packets with invalid URI
+	- TLS: Validate the shortest certificate chain
+	- TLS: Add checks for OpenSSL 1.1.0f API changes
+	- TLS: Fix reporting of validation errors for downloaded intermediate certs
+	- TLS: Fix SSL certificate cache refresh and collision handling
+	- Fix backwards compatibility for Squid-3.5 external_acl_type formats
+	- Fix invalid mime icon URLs in cache
+	- Do not die silently when dying early
+	- Docs: update translation files
+
 Changes to squid-4.0.21 (02 Jul 2017):
 
 	- Bug 4730: segfault while processing internal HTTP requests
@@ -19,11 +181,11 @@ Changes to squid-4.0.21 (02 Jul 2017):
 
 Changes to squid-4.0.20 (01 Jun 2017):
 
-	- Bug #4692: SslBump breaks intercepted IPv6 connections
-	- Bug #4682: ignoring http_access deny when client-first bumping mode is used
-	- Bug #4662: build errors with LibreSSL 2.4.4
-	- Bug #4659: sslproxy_foreign_intermediate_certs does not work
-	- Bug #4321: ssl_bump terminate does not terminate at step1
+	- Bug 4692: SslBump breaks intercepted IPv6 connections
+	- Bug 4682: ignoring http_access deny when client-first bumping mode is used
+	- Bug 4662: build errors with LibreSSL 2.4.4
+	- Bug 4659: sslproxy_foreign_intermediate_certs does not work
+	- Bug 4321: ssl_bump terminate does not terminate at step1
 	- Add 'has' ACL
 	- Do not forward HTTP requests to dead idle peers
 	- Do not unconditionally revive dead peers after a DNS refresh
@@ -324,6 +486,35 @@ Changes to squid-4.0.1 (14 Oct 2015):
 	- ... and many documentation changes
 	- ... and much code cleanup and polishing
 
+Changes to squid-3.5.28 (15 Jul 2018):
+
+	- SQUID-2018:1: crash processing SSL-Bumped traffic containing ESI
+	- SQUID-2018:2: crash handling responses to internally generated requests
+	- SQUID-2018:3 / CVE-2018-1172: crash in ESI Response processing
+	- Bug 4861: HTTPMSGLOCK missing pointer safety
+	- Bug 4829: IPC shared memory leaks when disker queue overflows
+	- Bug 4767: SMP breaks IPv6 SNMP and cache manager queries
+	- Bug 2821: Ignore Content-Range in non-206 responses
+	- HTCP: Ignore HTCP packets with invalid URI
+	- SSL-Bump: fix authentication with schemes other than Basic
+	- TPROXY: Fix clientside_mark and client port logging
+	- Fix "Cannot assign requested address" for to-origin TPROXY FTP data
+	- Fix --with-netfilter-conntrack error message
+	- Validate mime icon URL before allocating store entries
+	- ... and many documentation changes
+
+Changes to squid-3.5.27 (20 Aug 2017):
+
+	- Regression Bug #4112: ssl_engine does not accept cryptodev
+	- Bug 4687: Wrong names of components in man page, section SEE ALSO
+	- Bug 4671: various GCC 7 compile errors
+	- Bug 4464: Reduce "!Comm::MonitorsRead(serverConnection->fd)" assertions
+	- Bug 2833: Collapse internal revalidation requests (SMP-unaware caches)
+	- Bug 2833: Do not respond with HTTP/304 to unconditional requests
+	- Fix message packing error handling in mgr and snmp SMP Forwarders
+	- Fix mgr query handoff from the original recipient to Coordinator.
+	- ... and some documentation updates
+
 Changes to squid-3.5.26 (01 Jun 2017):
 
 	- Bug 4711: SubjectAlternativeNames is missing in some generated certificates
@@ -335,7 +526,7 @@ Changes to squid-3.5.26 (01 Jun 2017):
 	- Bug 3772: message from FTP server gets mangled
 	- Bug 3102: FTP directory listing drops fist character of file names
 	- Add OpenSSL library details to -v output
-	- ... and some documentatino updates
+	- ... and some documentation updates
 
 Changes to squid-3.5.25 (02 Apr 2017):
 
@@ -1583,7 +1774,7 @@ Changes to squid-3.2.0.7 (19 Apr 2011):
 Changes to squid-3.2.0.6 (04 Apr 2011):
 
 	- Regression fix: upgrade existing icons
-	- Regression fix: dont crash when accessing an SSL certificate with errors
+	- Regression fix: do not crash when accessing an SSL certificate with errors
 	- Regression fix: prevent stdio log module segfaults on rotate
 	- Regression fix: shutdown properly even if a worker process crashes on exit
 	- Regression Bug 3159: (partial fix) ICAP and --disable-auth compile problems

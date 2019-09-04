@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -216,10 +216,10 @@ public:
     /// The caller assumes responsibility for connection closure detection.
     void stopPinnedConnectionMonitoring();
 
-#if USE_OPENSSL
     /// the second part of old httpsAccept, waiting for future HttpsServer home
     void postHttpsAccept();
 
+#if USE_OPENSSL
     /// Initializes and starts a peek-and-splice negotiation with the SSL client
     void startPeekAndSplice();
 
@@ -235,12 +235,10 @@ public:
 
     /// Start to create dynamic Security::ContextPointer for host or uses static port SSL context.
     void getSslContextStart();
-    /**
-     * Done create dynamic ssl certificate.
-     *
-     * \param[in] isNew if generated certificate is new, so we need to add this certificate to storage.
-     */
-    void getSslContextDone(Security::ContextPointer &, bool isNew = false);
+
+    /// finish configuring the newly created SSL context"
+    void getSslContextDone(Security::ContextPointer &);
+
     /// Callback function. It is called when squid receive message from ssl_crtd.
     static void sslCrtdHandleReplyWrapper(void *data, const Helper::Reply &reply);
     /// Proccess response from ssl_crtd.
@@ -276,6 +274,7 @@ public:
 #else
     bool switchedToHttps() const { return false; }
 #endif
+    char *prepareTlsSwitchingURL(const Http1::RequestParserPointer &hp);
 
     /* clt_conn_tag=tag annotation access */
     const SBuf &connectionTag() const { return connectionTag_; }
@@ -369,6 +368,15 @@ private:
     bool parseProxy2p0();
     bool proxyProtocolError(const char *reason);
 
+#if USE_OPENSSL
+    /// \returns a pointer to the matching cached TLS context or nil
+    Security::ContextPointer getTlsContextFromCache(const SBuf &cacheKey, const Ssl::CertificateProperties &certProperties);
+
+    /// Attempts to add a given TLS context to the cache, replacing the old
+    /// same-key context, if any
+    void storeTlsContextToCache(const SBuf &cacheKey, Security::ContextPointer &ctx);
+#endif
+
     /// whether PROXY protocol header is still expected
     bool needProxyProtocolHeader_;
 
@@ -386,11 +394,12 @@ private:
 
     /// The SSL server host name appears in CONNECT request or the server ip address for the intercepted requests
     String sslConnectHostOrIp; ///< The SSL server host name as passed in the CONNECT request
+    unsigned short tlsConnectPort; ///< The TLS server port number as passed in the CONNECT request
     SBuf sslCommonName_; ///< CN name for SSL certificate generation
 
     /// TLS client delivered SNI value. Empty string if none has been received.
     SBuf tlsClientSni_;
-    String sslBumpCertKey; ///< Key to use to store/retrieve generated certificate
+    SBuf sslBumpCertKey; ///< Key to use to store/retrieve generated certificate
 
     /// HTTPS server cert. fetching state for bump-ssl-server-first
     Ssl::ServerBump *sslServerBump;
@@ -404,8 +413,6 @@ private:
 
     SBuf connectionTag_; ///< clt_conn_tag=Tag annotation for client connection
 };
-
-void setLogUri(ClientHttpRequest * http, char const *uri, bool cleanUrl = false);
 
 const char *findTrailingHTTPVersion(const char *uriAndHTTPVersion, const char *end = NULL);
 

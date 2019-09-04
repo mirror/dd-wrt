@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -36,6 +36,13 @@ public:
     /// whether all kids are hopeless
     bool allHopeless() const;
 
+    /// forgets all failures in all kids
+    void forgetAllFailures();
+
+    /// forgets all failures in hopeless kids that were dead for a long time
+    /// \returns seconds till the next check (zero if there are no hopeless kids left)
+    time_t forgetOldFailures();
+
     /// whether all kids called exited happy
     bool allExitedHappy() const;
 
@@ -57,8 +64,7 @@ private:
 
 extern Kids TheKids; ///< All kids being maintained
 
-typedef char KidName[64]; ///< Squid process name (e.g., "squid-coord")
-extern KidName TheKidName; ///< current Squid process name
+extern SBuf TheKidName; ///< current Squid process name (e.g., "squid-coord")
 
 #endif /* SQUID_IPC_KIDS_H */
 

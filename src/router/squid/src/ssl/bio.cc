@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -22,10 +22,6 @@
 #include "parser/BinaryTokenizer.h"
 #include "SquidTime.h"
 #include "ssl/bio.h"
-
-#if HAVE_OPENSSL_SSL_H
-#include <openssl/ssl.h>
-#endif
 
 #if _SQUID_WINDOWS_
 extern int socket_read_method(int, char *, int);
@@ -76,7 +72,7 @@ Ssl::Bio::Create(const int fd, Security::Io::Type type)
         BIO_meth_set_create(SquidMethods, squid_bio_create);
         BIO_meth_set_destroy(SquidMethods, squid_bio_destroy);
     }
-    const BIO_METHOD *useMethod = SquidMethods;
+    BIO_METHOD *useMethod = SquidMethods;
 #else
     BIO_METHOD *useMethod = &SquidMethods;
 #endif
@@ -336,12 +332,12 @@ Ssl::ServerBio::readAndParse(char *buf, const int size, BIO *table)
 int
 Ssl::ServerBio::readAndBuffer(BIO *table)
 {
-    char *space = rbuf.rawSpace(SQUID_TCP_SO_RCVBUF);
-    const int result = Ssl::Bio::read(space, rbuf.spaceSize(), table);
+    char *space = rbuf.rawAppendStart(SQUID_TCP_SO_RCVBUF);
+    const int result = Ssl::Bio::read(space, SQUID_TCP_SO_RCVBUF, table);
     if (result <= 0)
         return result;
 
-    rbuf.forceSize(rbuf.length() + result);
+    rbuf.rawAppendFinish(space, result);
     return result;
 }
 
@@ -706,13 +702,7 @@ applyTlsDetailsToSSL(SSL *ssl, Security::TlsDetails::Pointer const &details, Ssl
             cbytes[0] = (cipherId >> 8) & 0xFF;
             cbytes[1] = cipherId & 0xFF;
             cbytes[2] = 0;
-#if HAVE_LIBSSL_SSL_CIPHER_FIND
-            const SSL_CIPHER *c = SSL_CIPHER_find(ssl, cbytes);
-#else
-            const SSL_METHOD *method = SSLv23_method();
-            const SSL_CIPHER *c = method->get_cipher_by_char(cbytes);
-#endif
-            if (c != NULL) {
+            if (const auto c = SSL_CIPHER_find(ssl, cbytes)) {
                 if (!strCiphers.isEmpty())
                     strCiphers.append(":");
                 strCiphers.append(SSL_CIPHER_get_name(c));

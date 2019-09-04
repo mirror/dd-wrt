@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -135,6 +135,7 @@ Adaptation::AccessCheck::checkCandidates()
             if ((acl_checklist->reply = filter.reply))
                 HTTPMSGLOCK(acl_checklist->reply);
             acl_checklist->al = filter.al;
+            acl_checklist->syncAle(filter.request, nullptr);
             acl_checklist->nonBlockingCheck(AccessCheckCallbackWrapper, this);
             return;
         }

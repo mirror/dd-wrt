@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -10,7 +10,7 @@
 #define SQUID_ENUMS_H
 
 enum fd_type {
-    FD_NONE,
+    FD_NONE_TYPE,
     FD_LOG,
     FD_FILE,
     FD_SOCKET,
@@ -47,10 +47,21 @@ typedef enum {
     STORE_PENDING
 } store_status_t;
 
+/// StoreEntry relationship with a disk cache
 typedef enum {
+    /// StoreEntry is currently not associated with any disk store entry.
+    /// Does not guarantee (or preclude!) a matching disk store entry existence.
     SWAPOUT_NONE,
+    /// StoreEntry is being swapped out to the associated disk store entry.
+    /// Guarantees the disk store entry existence.
     SWAPOUT_WRITING,
-    SWAPOUT_DONE
+    /// StoreEntry is associated with a complete (i.e., fully swapped out) disk store entry.
+    /// Guarantees the disk store entry existence.
+    SWAPOUT_DONE,
+    /// StoreEntry is associated with an unusable disk store entry.
+    /// Swapout attempt has failed. The entry should be marked for eventual deletion.
+    /// Guarantees the disk store entry existence.
+    SWAPOUT_FAILED
 } swap_status_t;
 
 typedef enum {
@@ -68,12 +79,31 @@ typedef enum {
 enum {
     ENTRY_SPECIAL,
     ENTRY_REVALIDATE_ALWAYS,
+
+    /// Tiny Store writes are likely. The writes should be aggregated together
+    /// before Squid announces the new content availability to the store
+    /// clients. For example, forming a cached HTTP response header may result
+    /// in dozens of StoreEntry::write() calls, many of which adding as little
+    /// as two bytes. Sharing those small writes with the store clients
+    /// increases overhead, especially because the client code can do nothing
+    /// useful with the written content until the whole response header is
+    /// stored. Might be combined with ENTRY_FWD_HDR_WAIT. TODO: Rename to
+    /// ENTRY_DELAY_WHILE_COALESCING to emphasize the difference from and
+    /// similarity with ENTRY_FWD_HDR_WAIT.
     DELAY_SENDING,
-    RELEASE_REQUEST,
+    RELEASE_REQUEST, ///< prohibits making the key public
     REFRESH_REQUEST,
     ENTRY_REVALIDATE_STALE,
     ENTRY_DISPATCHED,
     KEY_PRIVATE,
+
+    /// The current entry response may change. The contents of an entry in this
+    /// state must not be shared with its store clients. For example, Squid
+    /// receives (and buffers) an HTTP/504 response but may decide to retry that
+    /// transaction to receive a successful response from another server
+    /// instead. Might be combined with DELAY_SENDING. TODO: Rename to
+    /// ENTRY_DELAY_WHILE_WOBBLING to emphasize the difference from and
+    /// similarity with DELAY_SENDING.
     ENTRY_FWD_HDR_WAIT,
     ENTRY_NEGCACHED,
     ENTRY_VALIDATED,
@@ -88,12 +118,12 @@ enum {
 typedef enum {
     STREAM_NONE,        /* No particular status */
     STREAM_COMPLETE,        /* All data has been flushed, no more reads allowed */
-    /* an unpredicted end has occured, no more
-     * reads occured, but no need to tell
-     * downstream that an error occured
+    /* an unpredicted end has occurred, no more
+     * reads occurred, but no need to tell
+     * downstream that an error occurred
      */
     STREAM_UNPLANNED_COMPLETE,
-    /* An error has occured in this node or an above one,
+    /* An error has occurred in this node or an above one,
      * and the node is not generating an error body / it's
      * midstream
      */

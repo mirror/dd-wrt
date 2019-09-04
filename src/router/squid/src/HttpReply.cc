@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -25,9 +25,16 @@
 #include "Store.h"
 #include "StrList.h"
 
-HttpReply::HttpReply() : HttpMsg(hoReply), date (0), last_modified (0),
-    expires (0), surrogate_control (NULL), content_range (NULL), keep_alive (0),
-    protoPrefix("HTTP/"), bodySizeMax(-2)
+HttpReply::HttpReply():
+    HttpMsg(hoReply),
+    date(0),
+    last_modified(0),
+    expires(0),
+    surrogate_control(nullptr),
+    keep_alive(0),
+    protoPrefix("HTTP/"),
+    bodySizeMax(-2),
+    content_range(nullptr)
 {
     init();
 }
@@ -75,18 +82,27 @@ HttpReply::clean()
 }
 
 void
-HttpReply::packHeadersInto(Packable * p) const
+HttpReply::packHeadersUsingFastPacker(Packable &p) const
 {
-    sline.packInto(p);
-    header.packInto(p);
-    p->append("\r\n", 2);
+    sline.packInto(&p);
+    header.packInto(&p);
+    p.append("\r\n", 2);
 }
 
 void
-HttpReply::packInto(Packable * p) const
+HttpReply::packHeadersUsingSlowPacker(Packable &p) const
 {
-    packHeadersInto(p);
-    body.packInto(p);
+    MemBuf buf;
+    buf.init();
+    packHeadersUsingFastPacker(buf);
+    p.append(buf.content(), buf.contentSize());
+}
+
+void
+HttpReply::packInto(MemBuf &buf) const
+{
+    packHeadersUsingFastPacker(buf);
+    body.packInto(&buf);
 }
 
 /* create memBuf, create mem-based packer, pack, destroy packer, return MemBuf */
@@ -95,7 +111,7 @@ HttpReply::pack() const
 {
     MemBuf *mb = new MemBuf;
     mb->init();
-    packInto(mb);
+    packInto(*mb);
     return mb;
 }
 
@@ -304,7 +320,8 @@ HttpReply::hdrCacheInit()
     date = header.getTime(Http::HdrType::DATE);
     last_modified = header.getTime(Http::HdrType::LAST_MODIFIED);
     surrogate_control = header.getSc();
-    content_range = header.getContRange();
+    content_range = (sline.status() == Http::scPartialContent) ?
+                    header.getContRange() : nullptr;
     keep_alive = persistent() ? 1 : 0;
     const char *str = header.getStr(Http::HdrType::CONTENT_TYPE);
 
@@ -315,6 +332,13 @@ HttpReply::hdrCacheInit()
 
     /* be sure to set expires after date and cache-control */
     expires = hdrExpirationTime();
+}
+
+const HttpHdrContRange *
+HttpReply::contentRange() const
+{
+    assert(!content_range || sline.status() == Http::scPartialContent);
+    return content_range;
 }
 
 /* sync this routine when you update HttpReply struct */
@@ -453,6 +477,7 @@ HttpReply::expectingBody(const HttpRequestMethod& req_method, int64_t& theSize) 
         expectBody = false;
     else if (sline.status() == Http::scNotModified)
         expectBody = false;
+    // TODO: Consider assuming that gray-area 0xx responses have bodies, like 9xx responses.
     else if (sline.status() < Http::scOkay)
         expectBody = false;
     else

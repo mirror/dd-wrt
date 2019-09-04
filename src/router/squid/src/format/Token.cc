@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -141,6 +141,7 @@ static TokenTableEntry TokenTableMisc[] = {
     TokenTableEntry("<qos", LFT_SERVER_LOCAL_TOS),
     TokenTableEntry(">nfmark", LFT_CLIENT_LOCAL_NFMARK),
     TokenTableEntry("<nfmark", LFT_SERVER_LOCAL_NFMARK),
+    TokenTableEntry(">handshake", LFT_CLIENT_HANDSHAKE),
     TokenTableEntry("err_code", LFT_SQUID_ERROR ),
     TokenTableEntry("err_detail", LFT_SQUID_ERROR_DETAIL ),
     TokenTableEntry("note", LFT_NOTE ),
@@ -152,6 +153,7 @@ static TokenTableEntry TokenTableMisc[] = {
     TokenTableEntry("DATA", LFT_EXT_ACL_DATA),
     TokenTableEntry("DST", LFT_CLIENT_REQ_URLDOMAIN),
     TokenTableEntry("EXT_LOG", LFT_EXT_LOG),
+    TokenTableEntry("EXT_TAG", LFT_TAG),
     TokenTableEntry("EXT_USER", LFT_USER_EXTERNAL),
     TokenTableEntry("IDENT", LFT_USER_IDENT),
     TokenTableEntry("LOGIN", LFT_USER_LOGIN),

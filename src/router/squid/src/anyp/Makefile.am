@@ -1,4 +1,4 @@
-## Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+## Copyright (C) 1996-2019 The Squid Software Foundation and contributors
 ##
 ## Squid software is distributed under GPLv2+ license and includes
 ## contributions from numerous individuals and organizations.
@@ -18,6 +18,8 @@ libanyp_la_SOURCES = \
 	ProtocolType.h \
 	ProtocolVersion.h \
 	TrafficMode.h \
+	Uri.cc \
+	Uri.h \
 	UriScheme.cc \
 	UriScheme.h
 

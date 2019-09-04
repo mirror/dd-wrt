@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -11,8 +11,6 @@
 #include "base/RefCount.h"
 #include "Debug.h"
 #include "sbuf/DetailedStats.h"
-#include "sbuf/Exceptions.h"
-#include "sbuf/OutOfBoundsException.h"
 #include "sbuf/SBuf.h"
 #include "util.h"
 
@@ -20,15 +18,6 @@
 #include <functional>
 #include <iostream>
 #include <sstream>
-
-#ifdef VA_COPY
-#undef VA_COPY
-#endif
-#if defined HAVE_VA_COPY
-#define VA_COPY va_copy
-#elif defined HAVE___VA_COPY
-#define VA_COPY __va_copy
-#endif
 
 InstanceIdDefinitions(SBuf, "SBuf");
 
@@ -144,6 +133,27 @@ SBuf::reserve(const SBufReservationRequirements &req)
 }
 
 char *
+SBuf::rawAppendStart(size_type anticipatedSize)
+{
+    char *space = rawSpace(anticipatedSize);
+    debugs(24, 8, id << " start appending up to " << anticipatedSize << " bytes");
+    return space;
+}
+
+void
+SBuf::rawAppendFinish(const char *start, size_type actualSize)
+{
+    Must(bufEnd() == start);
+    Must(store_->canAppend(off_ + len_, actualSize));
+    debugs(24, 8, id << " finish appending " << actualSize << " bytes");
+
+    size_type newSize = length() + actualSize;
+    Must2(newSize <= min(maxSize,store_->capacity-off_), "raw append overflow");
+    len_ = newSize;
+    store_->size = off_ + newSize;
+}
+
+char *
 SBuf::rawSpace(size_type minSpace)
 {
     Must(length() <= maxSize - minSpace);
@@ -247,14 +257,11 @@ SBuf::vappendf(const char *fmt, va_list vargs)
     size_type requiredSpaceEstimate = strlen(fmt)*2;
 
     char *space = rawSpace(requiredSpaceEstimate);
-#ifdef VA_COPY
     va_list ap;
-    VA_COPY(ap, vargs);
+    va_copy(ap, vargs);
     sz = vsnprintf(space, spaceSize(), fmt, ap);
     va_end(ap);
-#else
-    sz = vsnprintf(space, spaceSize(), fmt, vargs);
-#endif
+    Must2(sz >= 0, "vsnprintf() output error");
 
     /* check for possible overflow */
     /* snprintf on Linux returns -1 on output errors, or the size
@@ -266,13 +273,8 @@ SBuf::vappendf(const char *fmt, va_list vargs)
         requiredSpaceEstimate = sz*2; // TODO: tune heuristics
         space = rawSpace(requiredSpaceEstimate);
         sz = vsnprintf(space, spaceSize(), fmt, vargs);
-        if (sz < 0) // output error in vsnprintf
-            throw TextException("output error in second-go vsnprintf",__FILE__,
-                                __LINE__);
+        Must2(sz >= 0, "vsnprintf() output error despite increased buffer space");
     }
-
-    if (sz < 0) // output error in either vsnprintf
-        throw TextException("output error in vsnprintf",__FILE__, __LINE__);
 
     // data was appended, update internal state
     len_ += sz;
@@ -518,18 +520,6 @@ SBuf::rawContent() const
 {
     ++stats.rawAccess;
     return buf();
-}
-
-void
-SBuf::forceSize(size_type newSize)
-{
-    debugs(24, 8, id << " force " << (newSize > length() ? "grow" : "shrink") << " to length=" << newSize);
-
-    Must(store_->LockCount() == 1);
-    if (newSize > min(maxSize,store_->capacity-off_))
-        throw SBufTooBigException(__FILE__,__LINE__);
-    len_ = newSize;
-    store_->size = newSize;
 }
 
 const char*
@@ -853,17 +843,6 @@ SBuf::toUpper()
     ++stats.caseChange;
 }
 
-/**
- * checks whether the requested 'pos' is within the bounds of the SBuf
- * \throw OutOfBoundsException if access is out of bounds
- */
-void
-SBuf::checkAccessBounds(size_type pos) const
-{
-    if (pos >= length())
-        throw OutOfBoundsException(*this, pos, __FILE__, __LINE__);
-}
-
 /** re-allocate the backing store of the SBuf.
  *
  * If there are contents in the SBuf, they will be copied over.
@@ -876,8 +855,7 @@ void
 SBuf::reAlloc(size_type newsize)
 {
     debugs(24, 8, id << " new size: " << newsize);
-    if (newsize > maxSize)
-        throw SBufTooBigException(__FILE__, __LINE__);
+    Must(newsize <= maxSize);
     MemBlob::Pointer newbuf = new MemBlob(newsize);
     if (length() > 0)
         newbuf->append(buf(), length());

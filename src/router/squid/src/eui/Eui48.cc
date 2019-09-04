@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -20,7 +20,7 @@
 #include <cerrno>
 
 /* START Legacy includes pattern */
-/* TODO: clean this up so we dont have per-OS requirements.
+/* TODO: clean this up so we do not have per-OS requirements.
          The files are checked for existence individually
          and can be wrapped
  */

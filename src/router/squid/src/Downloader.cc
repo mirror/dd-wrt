@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -128,12 +128,10 @@ Downloader::buildRequest()
 {
     const HttpRequestMethod method = Http::METHOD_GET;
 
-    char *uri = xstrdup(url_.c_str());
     const MasterXaction::Pointer mx = new MasterXaction(initiator_);
-    HttpRequest *const request = HttpRequest::FromUrl(uri, mx, method);
+    HttpRequest *const request = HttpRequest::FromUrl(url_.c_str(), mx, method);
     if (!request) {
         debugs(33, 5, "Invalid URI: " << url_);
-        xfree(uri);
         return false; //earlyError(...)
     }
     request->http_ver = Http::ProtocolVersion();
@@ -153,11 +151,10 @@ Downloader::buildRequest()
            "\n----------");
 
     ClientHttpRequest *const http = new ClientHttpRequest(nullptr);
-    http->request = request;
-    HTTPMSGLOCK(http->request);
+    http->initRequest(request);
     http->req_sz = 0;
-    http->uri = uri;
-    setLogUri (http, urlCanonicalClean(request));
+    // XXX: performance regression. c_str() reallocates
+    http->uri = xstrdup(url_.c_str());
 
     context_ = new DownloaderContext(this, http);
     StoreIOBuffer tempBuffer;

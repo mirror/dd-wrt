@@ -1,8 +1,8 @@
 
 <html><head>
-<meta type="copyright" content="Copyright (C) 1996-2017 The Squid Software Foundation and contributors">
+<meta type="copyright" content="Copyright (C) 1996-2019 The Squid Software Foundation and contributors">
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<title>FTP PUT Successful.</title>
+<title>FTP PUT წარმატებით დასრულდა.</title>
 <style type="text/css"><!-- 
  %l
 
@@ -12,7 +12,7 @@ body
  --></style>
 </head><body id="%c">
 <div id="titles">
-<h1 id="ftpsuccess">Operation successful</h1>
+<h1 id="ftpsuccess">ოპერაცია წარმატებით დასრულდა</h1>
 <h2>ფაილი განახლდა</h2>
 </div>
 <hr>
@@ -21,7 +21,7 @@ body
 
 <hr>
 <div id="footer">
-<p>Generated %T by %h (%s)</p>
+<p>დაგენერირების დრო: %T, სერვისი: %h (%s)</p>
 <!-- %c -->
 </div>
 </body></html>

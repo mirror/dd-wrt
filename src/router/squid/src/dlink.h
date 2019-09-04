@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -15,20 +15,16 @@ class dlink_node
 {
     MEMPROXY_CLASS(dlink_node);
 public:
-    dlink_node() : data(nullptr), prev(nullptr), next(nullptr) {}
-
-    void *data;
-    dlink_node *prev;
-    dlink_node *next;
+    void *data = nullptr;
+    dlink_node *prev = nullptr;
+    dlink_node *next = nullptr;
 };
 
 class dlink_list
 {
 public:
-    dlink_list() : head(NULL), tail(NULL) {}
-
-    dlink_node *head;
-    dlink_node *tail;
+    dlink_node *head = nullptr;
+    dlink_node *tail = nullptr;
 };
 
 extern dlink_list ClientActiveRequests;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -286,7 +286,7 @@ GetHostWithPort(char *token, Ip::Address *ipa)
 
     if (NULL == host)
         ipa->setAnyAddr();
-    else if ( ipa->GetHostByName(host) ) /* dont use ipcache. Accept either FQDN or IPA. */
+    else if (ipa->GetHostByName(host)) /* do not use ipcache. Accept either FQDN or IPA. */
         (void) 0;
     else
         return false;

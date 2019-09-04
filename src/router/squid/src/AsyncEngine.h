@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -28,7 +28,7 @@ public:
          * registered with it that can create events
          */
         EVENT_IDLE = -1,
-        /* some error has occured in this engine */
+        /* some error has occurred in this engine */
         EVENT_ERROR = -2
     };
 

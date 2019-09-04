@@ -1,16 +1,16 @@
-## Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+## Copyright (C) 1996-2019 The Squid Software Foundation and contributors
 ##
 ## Squid software is distributed under GPLv2+ license and includes
 ## contributions from numerous individuals and organizations.
 ## Please see the COPYING and CONTRIBUTORS files for details.
 ##
 
-AC_INIT([Squid Web Proxy],[4.0.21],[http://bugs.squid-cache.org/],[squid])
+AC_INIT([Squid Web Proxy],[4.8],[http://bugs.squid-cache.org/],[squid])
 AC_PREREQ(2.61)
 AC_CONFIG_HEADERS([include/autoconf.h])
 AC_CONFIG_AUX_DIR(cfgaux)
 AC_CONFIG_SRCDIR([src/main.cc])
-AM_INIT_AUTOMAKE([tar-ustar nostdinc subdir-objects])
+AM_INIT_AUTOMAKE([tar-ustar nostdinc subdir-objects dist-xz])
 AC_REVISION($Revision$)dnl
 AC_PREFIX_DEFAULT(/usr/local/squid)
 AM_MAINTAINER_MODE
@@ -890,75 +890,96 @@ AC_ARG_ENABLE(delay-pools,
 dnl disable generic/common adaptation support by default
 squid_opt_use_adaptation=no
 
-squid_opt_use_esi=yes
-AH_TEMPLATE([USE_SQUID_ESI],
-            [Define to enable the ESI processor and Surrogate header support])
+squid_opt_use_esi=auto
+AH_TEMPLATE([USE_SQUID_ESI],[Define to enable the ESI processor])
 AC_ARG_ENABLE(esi,
-  AS_HELP_STRING([--enable-esi],
-                 [Enable ESI for accelerators. Benefits from expat or libxml2.
+  AS_HELP_STRING([--disable-esi],
+                 [Disable ESI for accelerators. ESI requires expat or libxml2.
                   Enabling ESI will cause squid reverse proxies to be capable
                   of the Edge Acceleration Specification (www.esi.org).]),
-                 [squid_opt_use_esi=$enableval], [squid_opt_use_esi=no])
+                 [squid_opt_use_esi=$enableval],[])
 HAVE_LIBEXPAT=0
 EXPATLIB=
 HAVE_LIBXML2=0
 XMLLIB=
-if test "x$squid_opt_use_esi" = "xyes" ; then
-  AC_MSG_NOTICE([Enabling ESI processor and Surrogate header support.])
-  AC_DEFINE(USE_SQUID_ESI,1,
-    [Compile the ESI processor and Surrogate header support])
-else
-  AC_MSG_NOTICE([Disabling ESI processor])
-fi
 
 # ESI support libraries: expat
 AC_ARG_WITH(expat, AS_HELP_STRING([--without-expat],[Do not use expat for ESI. Default: auto-detect]))
-if test "x$squid_opt_use_esi" = "xyes" -a "x$with_expat" != "xno" ; then
+if test "x$squid_opt_use_esi" != "xno" -a "x$with_expat" != "xno" ; then
   AC_CHECK_LIB([expat], [main], [EXPATLIB="-lexpat"; HAVE_LIBEXPAT=1])
   AC_CHECK_HEADERS([expat.h])
   AC_DEFINE_UNQUOTED(HAVE_LIBEXPAT, $HAVE_LIBEXPAT, [Define to 1 if you have the expat library])
-  if test "x$with_expat" = "xyes" -a "x$HAVE_LIBEXPAT" != "x1" ; then
-    AC_MSG_ERROR([Required library expat is not able to be found.])
-  fi
+  AS_IF(test "x$HAVE_LIBEXPAT" = "x1",[
+    squid_opt_use_esi=yes
+  ],[
+    AS_IF(test "x$with_expat" = "xyes",[
+      AC_MSG_ERROR([Required library expat not found.])
+    ],[
+      AC_MSG_NOTICE([Library expat not found.])
+    ])
+  ])
 fi
 
 AC_ARG_WITH(libxml2, AS_HELP_STRING([--without-libxml2],[Do not use libxml2 for ESI. Default: auto-detect]))
-if test "x$squid_opt_use_esi" = "xyes" -a "x$with_libxml2" != "xno" ; then
-  AC_CHECK_LIB([xml2], [main], [XMLLIB="-lxml2"; HAVE_LIBXML2=1])
-  dnl Find the main header and include path...
-  AC_CACHE_CHECK([location of libxml2 include files], [ac_cv_libxml2_include], [
-    AC_CHECK_HEADERS([libxml/parser.h], [], [
-      AC_MSG_NOTICE([Testing in /usr/include/libxml2])
-      SAVED_CPPFLAGS="$CPPFLAGS"
-      CPPFLAGS="-I/usr/include/libxml2 $CPPFLAGS"
-      unset ac_cv_header_libxml_parser_h
-      AC_CHECK_HEADERS([libxml/parser.h], [ac_cv_libxml2_include="-I/usr/include/libxml2"], [
-        AC_MSG_NOTICE([Testing in /usr/local/include/libxml2])
-        CPPFLAGS="-I/usr/local/include/libxml2 $SAVED_CPPFLAGS"
+if test "x$squid_opt_use_esi" != "xno" -a "x$with_libxml2" != "xno" ; then
+  SQUID_STATE_SAVE([squid_libxml2_save])
+  PKG_CHECK_MODULES([LIBXML2],[libxml-2.0],[],[
+    AC_CHECK_LIB([xml2], [main], [LIBXML2_LIBS="$LIBXML2_LIBS -lxml2"])
+    dnl Find the main header and include path...
+    AC_CACHE_CHECK([location of libxml2 include files], [ac_cv_libxml2_include], [
+      AC_CHECK_HEADERS([libxml/parser.h], [], [
+        AC_MSG_NOTICE([Testing in /usr/include/libxml2])
+        SAVED_CPPFLAGS="$CPPFLAGS"
+        CPPFLAGS="-I/usr/include/libxml2 $CPPFLAGS"
         unset ac_cv_header_libxml_parser_h
-        AC_CHECK_HEADERS([libxml/parser.h], [ac_cv_libxml2_include="-I/usr/local/include/libxml2"], [
-          AC_MSG_NOTICE([Failed to find libxml2 header file libxml/parser.h])
+        AC_CHECK_HEADERS([libxml/parser.h], [LIBXML2_CFLAGS="$LIBXML2_CFLAGS -I/usr/include/libxml2"], [
+          AC_MSG_NOTICE([Testing in /usr/local/include/libxml2])
+          CPPFLAGS="-I/usr/local/include/libxml2 $SAVED_CPPFLAGS"
+          unset ac_cv_header_libxml_parser_h
+          AC_CHECK_HEADERS([libxml/parser.h], [LIBXML2_CFLAGS="$LIBXML2_CFLAGS -I/usr/local/include/libxml2"], [
+            AC_MSG_NOTICE([Failed to find libxml2 header file libxml/parser.h])
+          ])
         ])
+        CPPFLAGS="$SAVED_CPPFLAGS"
       ])
-      CPPFLAGS="$SAVED_CPPFLAGS"
     ])
   ])
-  if test "x$ac_cv_libxml2_include" != "x"; then
-      SQUID_CXXFLAGS="$ac_cv_libxml2_include $SQUID_CXXFLAGS"
-      CPPFLAGS="$ac_cv_libxml2_include $CPPFLAGS"
-  fi
+  CPPFLAGS="$CPPFLAGS $LIBXML2_CFLAGS"
   dnl Now that we know where to look find the headers...
   AC_CHECK_HEADERS(libxml/parser.h libxml/HTMLparser.h libxml/HTMLtree.h)
-  AC_DEFINE_UNQUOTED(HAVE_LIBXML2, $HAVE_LIBXML2, [Define to 1 if you have the libxml2 library])
-  if test "x$with_libxml2" = "xyes" -a "$HAVE_LIBXML2" != "1" ; then
-    AC_MSG_ERROR([Required library libxml2 is not able to be found.])
+  SQUID_STATE_ROLLBACK([squid_libxml2_save])
+
+  if test "x$LIBXML2_LIBS" != "x"; then
+    HAVE_LIBXML2=1
+    squid_opt_use_esi=yes
+    SQUID_CXXFLAGS="$SQUID_CXXFLAGS $LIBXML2_CFLAGS"
+    CPPFLAGS="$CPPFLAGS $LIBXML2_CFLAGS"
+    XMLLIB="$LIBXML2_LIBS"
+    AC_DEFINE_UNQUOTED(HAVE_LIBXML2, $HAVE_LIBXML2, [Define to 1 if you have the libxml2 library])
+  elif test "x$with_libxml2" = "xyes"; then
+    AC_MSG_ERROR([Required library libxml2 not found])
+  else
+    AC_MSG_NOTICE([Library libxml2 not found.])
   fi
 fi
 
+AS_IF([test "x$squid_opt_use_esi" = "xyes"],[
+  AS_IF(test "x$HAVE_LIBXML2" = "x0" -a "x$HAVE_LIBEXPAT" = "x0",[
+    AC_MSG_ERROR([ESI processor requires libxml2 or libexpat])
+  ])
+  AC_MSG_NOTICE([Enabling ESI processor: $EXPATLIB $XMLLIB])
+  AC_DEFINE(USE_SQUID_ESI,1,[Compile the ESI processor])
+],[
+  AS_IF(test "x$squid_opt_use_esi" = "xno",[
+    AC_MSG_NOTICE([Disabling ESI processor.])
+  ],[
+    AC_MSG_NOTICE([Disabling ESI processor. libxml2 and libexpat not found.])
+  ])
+])
 AM_CONDITIONAL(ENABLE_ESI, test "x$squid_opt_use_esi" = "xyes")
-AM_CONDITIONAL(ENABLE_LIBEXPAT, test "$HAVE_LIBEXPAT" = 1)
+AM_CONDITIONAL(ENABLE_LIBEXPAT, test "x$HAVE_LIBEXPAT" = "x1")
 AC_SUBST(EXPATLIB)
-AM_CONDITIONAL(ENABLE_LIBXML2, test "$HAVE_LIBXML2" = 1)
+AM_CONDITIONAL(ENABLE_LIBXML2, test "x$HAVE_LIBXML2" = "x1")
 AC_SUBST(XMLLIB)
 
 # icap argument handling
@@ -1189,16 +1210,16 @@ if test "x$with_nettle" != "xno" ; then
     AC_CHECK_HEADERS(nettle/md5.h)
   ],[with_nettle=no])
   if test "x$with_nettle" != "xno" ; then
-    # Base64 uses the nettle 3.0 API
+    # Base64 uses the nettle 3.4 API
     # which matters on 64-bit systems
     AC_CHECK_HEADERS(nettle/base64.h)
-    AC_MSG_CHECKING([for Nettle 3.0 API compatibility])
+    AC_MSG_CHECKING([for Nettle 3.4 API compatibility])
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #     include <cstddef>
 #     include <cstdint>
 #     include <nettle/base64.h>
     ]],[[
-      uint8_t inData[10]; inData[0] = '\0';
+      char inData[10]; inData[0] = '\0';
       size_t srcLen = 0;
       struct base64_decode_ctx ctx;
       base64_decode_init(&ctx);
@@ -1209,7 +1230,7 @@ if test "x$with_nettle" != "xno" ; then
           return 1;
       }
     ]])],[AC_MSG_RESULT(yes)
-      AC_DEFINE(HAVE_NETTLE30_BASE64,1,[set to 1 if Nettle 3.0 API will link])
+      AC_DEFINE(HAVE_NETTLE34_BASE64,1,[set to 1 if Nettle 3.4 API will link])
     ],[AC_MSG_RESULT(no)])
   fi
 fi
@@ -1251,15 +1272,15 @@ if test "x$with_gnutls" != "xno"; then
   LIBS="$LIBS $LIBGNUTLS_PATH"
 
   # auto-detect using pkg-config
-  PKG_CHECK_MODULES([LIBGNUTLS],[gnutls >= 3.1.5],[
+  PKG_CHECK_MODULES([LIBGNUTLS],[gnutls >= 3.4.0],[
     CPPFLAGS="$CPPFLAGS $LIBGNUTLS_CFLAGS"
     ],[
     ## find the package without pkg-config
     ## check that the library is actually new enough.
-    ## by testing for a 3.1.5+ function which we use
-    AC_CHECK_LIB(gnutls,gnutls_certificate_verify_peers3,[LIBGNUTLS_LIBS="-lgnutls"])
+    ## by testing for a 3.4.0+ function which we use
+    AC_CHECK_LIB(gnutls,gnutls_pcert_export_x509,[LIBGNUTLS_LIBS="-lgnutls"])
   ])
-  AC_CHECK_HEADERS(gnutls/gnutls.h gnutls/x509.h)
+  AC_CHECK_HEADERS(gnutls/gnutls.h gnutls/x509.h gnutls/abstract.h)
 
   SQUID_STATE_ROLLBACK(squid_gnutls_state) #de-pollute LIBS
 
@@ -1300,12 +1321,19 @@ AH_TEMPLATE(USE_OPENSSL,[OpenSSL support is available])
 ## OpenSSL is default disable due to licensing issues on some OS
 if test "x$with_openssl" = "xyes"; then
   AC_CHECK_HEADERS( \
+    openssl/asn1.h \
     openssl/bio.h \
+    openssl/bn.h \
     openssl/crypto.h \
+    openssl/dh.h \
     openssl/err.h \
+    openssl/evp.h \
+    openssl/lhash.h \
     openssl/md5.h \
     openssl/opensslv.h \
+    openssl/rsa.h \
     openssl/ssl.h \
+    openssl/x509.h \
     openssl/x509v3.h \
     openssl/engine.h \
     openssl/txt_db.h \
@@ -1367,6 +1395,7 @@ if test "x$with_openssl" = "xyes"; then
     SQUID_CHECK_OPENSSL_CONST_SSL_METHOD
     SQUID_CHECK_OPENSSL_CONST_CRYPTO_EX_DATA
     SQUID_CHECK_OPENSSL_CONST_SSL_SESSION_CB_ARG
+    SQUID_CHECK_OPENSSL_CONST_X509_GET0_SIGNATURE_ARGS
     SQUID_CHECK_OPENSSL_TXTDB
     SQUID_CHECK_OPENSSL_HELLO_OVERWRITE_HACK
   fi
@@ -1413,7 +1442,7 @@ if test "x$with_mit_krb5" != "xno"; then
   ])
   if test "x$squid_pc_krb5_name" = "x" -a "$cross_compiling" = "no"; then
     # Look for krb5-config (unless cross-compiling)
-    AC_PATH_PROG(krb5_config,krb5-config,no)
+    AC_PATH_PROG(krb5_config,krb5-config,no,$krb5confpath)
     if test "x$ac_cv_path_krb5_config" != "xno" ; then
       krb5confpath="`dirname $ac_cv_path_krb5_config`"
       ac_heimdal="`$ac_cv_path_krb5_config --version 2>/dev/null | grep -c -i heimdal`"
@@ -1646,7 +1675,7 @@ if test "x$with_heimdal_krb5" != "xno" -a "x$KRB5LIBS" = "x"; then
   fi
   if test "x$squid_pc_krb5_name" = "x" -a "$cross_compiling" = "no"; then
     # Look for krb5-config (unless cross-compiling)
-    AC_PATH_PROG(krb5_config,krb5-config,no)
+    AC_PATH_PROG(krb5_config,krb5-config,no,$krb5confpath)
     if test "x$ac_cv_path_krb5_config" != "xno" ; then
       krb5confpath="`dirname $ac_cv_path_krb5_config`"
       ac_heimdal="`$ac_cv_path_krb5_config --version 2>/dev/null | grep -c -i heimdal`"
@@ -2315,7 +2344,7 @@ case "$with_netfilter_conntrack" in
     ;;
   *)
     if test ! -d "$withval" ; then
-      AC_MSG_ERROR([--without-netfilter-conntrack path does not point to a directory])
+      AC_MSG_ERROR([--with-netfilter-conntrack path does not point to a directory])
     fi
     squid_opt_netfilterconntrackpath=$withval
     LDFLAGS="-L$squid_opt_netfilterconntrackpath/lib $LDFLAGS"
@@ -2755,8 +2784,8 @@ AS_IF([test "x$with_cppunit" != "xno"],[
     AS_UNSET(squid_cv_cppunit_version)
 
     SQUID_STATE_SAVE(squid_cppunit_state)
-    AS_VAR_APPEND(CXXFLAGS,[$LIBCPPUNIT_CFLAGS])
-    AS_VAR_APPEND(LIBS,[$LIBCPPUNIT_LIBS])
+    CXXFLAGS="${CXXFLAGS} ${LIBCPPUNIT_CFLAGS}"
+    LIBS="${LIBS} ${LIBCPPUNIT_LIBS}"
     AC_CHECK_HEADERS(cppunit/extensions/HelperMacros.h)
     SQUID_STATE_ROLLBACK(squid_cppunit_state)
   ],[
@@ -2882,7 +2911,7 @@ SQUID_DEFAULT_INCLUDES
 #endif
 )
 
-dnl *BSD dont include the dependencies for all their net/ and netinet/ files
+dnl *BSD do not include the dependencies for all their net/ and netinet/ files
 dnl We must include a few basic type headers for them to work.
 AC_CHECK_HEADERS( \
   net/if.h \
@@ -3007,6 +3036,13 @@ AC_CHECK_TYPE(mtyp_t,AC_DEFINE(HAVE_MTYP_T,1,
    [mtyp_t is defined by the system headers]),,[#include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>])
+
+AC_CHECK_TYPE(cpu_set_t,
+   AC_DEFINE(HAVE_CPU_SET_T,1,[cpu_set_t is defined by the system headers]),,[
+#if HAVE_SCHED_H
+#include <sched.h>
+#endif
+])
 
 # check for compiler support of %zu printf macro
 AH_TEMPLATE(PRIuSIZE,[Compiler supports %zu printf macro])
@@ -3156,16 +3192,6 @@ AC_ARG_WITH(filedescriptors,
 
 SQUID_CHECK_DEFAULT_FD_SETSIZE
 SQUID_CHECK_MAXFD
-if test "x$squid_filedescriptors_num" != "x"; then
-  AC_MSG_NOTICE([Default number of fieldescriptors: $squid_filedescriptors_num])
-fi
-if test "$squid_filedescriptors_num" -lt 512 ; then
-    AC_MSG_WARN([$squid_filedescriptors_num may not be enough filedescriptors if your])
-    AC_MSG_WARN([cache will be very busy.  Please see the FAQ page])
-    AC_MSG_WARN([http://wiki.squid-cache.org/SquidFaq/TroubleShooting])
-    AC_MSG_WARN([on how to increase your filedescriptor limit])
-fi
-AC_DEFINE_UNQUOTED(SQUID_MAXFD, $squid_filedescriptors_num,[Maximum number of open filedescriptors])
 
 
 dnl Enable IPv6 support
@@ -3310,7 +3336,6 @@ AC_CHECK_FUNCS(\
 	getdtablesize \
 	getpagesize \
 	getpass \
-	getrlimit \
 	getrusage \
 	getspnam \
 	gettimeofday \
@@ -3508,8 +3533,6 @@ AC_CHECK_TYPE(struct sockaddr_un,AC_DEFINE(HAVE_SOCKADDR_UN,1,[The system provid
 ])
 
 SQUID_CHECK_FUNC_STRNSTR
-SQUID_CHECK_FUNC_VACOPY
-SQUID_CHECK_FUNC___VACOPY
 
 dnl IP-Filter support requires ipf header files. These aren't
 dnl installed by default, so we need to check for them

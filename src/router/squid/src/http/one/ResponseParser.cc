@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -121,16 +121,7 @@ Http::One::ResponseParser::parseResponseFirstLine()
 {
     Http1::Tokenizer tok(buf_);
 
-    CharacterSet WspDelim = CharacterSet::SP; // strict parse only accepts SP
-
-    if (Config.onoff.relaxed_header_parser) {
-        // RFC 7230 section 3.5
-        // tolerant parser MAY accept any of SP, HTAB, VT (%x0B), FF (%x0C), or bare CR
-        // as whitespace between status-line fields
-        WspDelim += CharacterSet::HTAB
-                    + CharacterSet("VT,FF","\x0B\x0C")
-                    + CharacterSet::CR;
-    }
+    const CharacterSet &WspDelim = DelimiterCharacters();
 
     if (msgProtocol_.protocol != AnyP::PROTO_NONE) {
         debugs(74, 6, "continue incremental parse for " << msgProtocol_);
@@ -168,8 +159,13 @@ Http::One::ResponseParser::parseResponseFirstLine()
         debugs(74, DBG_DATA, "parse remaining buf={length=" << tok.remaining().length() << ", data='" << tok.remaining() << "'}");
         buf_ = tok.remaining(); // resume checkpoint
         return parseResponseStatusAndReason(tok, WspDelim);
-
-    } else if (buf_.length() > Http1magic.length() && buf_.length() > IcyMagic.length()) {
+    } else if (buf_.length() < Http1magic.length() && Http1magic.startsWith(buf_)) {
+        debugs(74, 7, Raw("valid HTTP/1 prefix", buf_.rawContent(), buf_.length()));
+        return 0;
+    } else if (buf_.length() < IcyMagic.length() && IcyMagic.startsWith(buf_)) {
+        debugs(74, 7, Raw("valid ICY prefix", buf_.rawContent(), buf_.length()));
+        return 0;
+    } else {
         debugs(74, 2, "unknown/missing prefix magic. Interpreting as HTTP/0.9");
         // found something that looks like an HTTP/0.9 response
         // Gateway/Transform it into HTTP/1.1
@@ -189,7 +185,9 @@ Http::One::ResponseParser::parseResponseFirstLine()
         return 1; // no more parsing
     }
 
-    return 0; // need more to parse anything.
+    // unreachable
+    assert(false);
+    return -1;
 }
 
 bool

@@ -1,6 +1,6 @@
 
 <html><head>
-<meta type="copyright" content="Copyright (C) 1996-2017 The Squid Software Foundation and contributors">
+<meta type="copyright" content="Copyright (C) 1996-2019 The Squid Software Foundation and contributors">
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <title>Configuración del Navegador de Internet</title>
 <style type="text/css"><!--
@@ -24,19 +24,19 @@ body
 <p>Como encontrar estas preferencias en su navegador:</p>
 
 <div id="firefox"> For Firefox browsers go to: <ul>
-<li>Herramientas -&gt; Opciones -&gt; Avanzado -&gt; Red -&gt; Ajustes de conexión</li>
+<li>Tools -> Options -> Advanced -> Network -> Connection Settings</li>
 <li>Select Auto-detect proxy settings for this network</li>
 </ul>
 </div>
 
 <div id="microsoft"> For Internet Explorer browsers go to: <ul>
-<li>Herramientas -&gt; Opciones de Internet  -&gt; Conexión -&gt; Preferencias de RED -&gt;Proxy</li>
+<li>Tools -> Internet Options -> Connection -> LAN Settings ->Proxy</li>
 <li>Seleccione Detectar preferencias automáticamente</li>
 </ul>
 </div>
 
 <div id="opera"> For Opera browsers go to: <ul>
-<li>Herramientas -&gt; Opciones -&gt; Avanzado -&gt; Red -&gt; Servidores Proxy</li>
+<li>Tools -> Preferences -> Advanced -> Network -> Proxy Servers</li>
 <li>Seleccione Usar Configuración automática de Proxy</li>
 </ul>
 </div>

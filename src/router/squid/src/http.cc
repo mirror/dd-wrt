@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -56,7 +56,6 @@
 #include "Store.h"
 #include "StrList.h"
 #include "tools.h"
-#include "URL.h"
 #include "util.h"
 
 #if USE_AUTH
@@ -97,10 +96,6 @@ HttpStateData::HttpStateData(FwdState *theFwdState) :
     surrogateNoStore = false;
     serverConnection = fwd->serverConnection();
 
-    // reset peer response time stats for %<pt
-    request->hier.peer_http_request_sent.tv_sec = 0;
-    request->hier.peer_http_request_sent.tv_usec = 0;
-
     if (fwd->serverConnection() != NULL)
         _peer = cbdataReference(fwd->serverConnection()->getPeer());         /* might be NULL */
 
@@ -112,7 +107,7 @@ HttpStateData::HttpStateData(FwdState *theFwdState) :
          * for example, the request to this neighbor fails.
          */
         if (_peer->options.proxy_only)
-            entry->releaseRequest();
+            entry->releaseRequest(true);
 
 #if USE_DELAY_POOLS
         entry->setNoDelay(_peer->options.no_delay);
@@ -256,7 +251,7 @@ httpMaybeRemovePublic(StoreEntry * e, Http::StatusCode status)
 #if USE_HTCP
         neighborsHtcpClear(e, NULL, e->mem_obj->request, e->mem_obj->method, HTCP_CLR_INVALIDATION);
 #endif
-        pe->release();
+        pe->release(true);
     }
 
     /** \par
@@ -273,7 +268,7 @@ httpMaybeRemovePublic(StoreEntry * e, Http::StatusCode status)
 #if USE_HTCP
         neighborsHtcpClear(e, NULL, e->mem_obj->request, HttpRequestMethod(Http::METHOD_HEAD), HTCP_CLR_INVALIDATION);
 #endif
-        pe->release();
+        pe->release(true);
     }
 }
 
@@ -338,7 +333,7 @@ HttpStateData::reusableReply(HttpStateData::ReuseDecision &decision)
 #endif
 
     if (EBIT_TEST(entry->flags, RELEASE_REQUEST))
-        return decision.make(ReuseDecision::reuseNot, "the entry has been released");
+        return decision.make(ReuseDecision::doNotCacheButShare, "the entry has been released");
 
     // RFC 7234 section 4: a cache MUST use the most recent response
     // (as determined by the Date header field)
@@ -805,7 +800,9 @@ HttpStateData::handle1xx(HttpReply *reply)
     // check whether the 1xx response forwarding is allowed by squid.conf
     if (Config.accessList.reply) {
         ACLFilledChecklist ch(Config.accessList.reply, originalRequest(), NULL);
+        ch.al = fwd->al;
         ch.reply = reply;
+        ch.syncAle(originalRequest(), nullptr);
         HTTPMSGLOCK(ch.reply);
         if (!ch.fastCheck().allowed()) { // TODO: support slow lookups?
             debugs(11, 3, HERE << "ignoring denied 1xx");
@@ -909,8 +906,11 @@ HttpStateData::haveParsedReplyHeaders()
     /* Check if object is cacheable or not based on reply code */
     debugs(11, 3, "HTTP CODE: " << statusCode);
 
-    if (const StoreEntry *oldEntry = findPreviouslyCachedEntry(entry))
+    if (StoreEntry *oldEntry = findPreviouslyCachedEntry(entry)) {
+        oldEntry->lock("HttpStateData::haveParsedReplyHeaders");
         sawDateGoBack = rep->olderThan(oldEntry->getReply());
+        oldEntry->unlock("HttpStateData::haveParsedReplyHeaders");
+    }
 
     if (neighbors_do_private_keys && !sawDateGoBack)
         httpMaybeRemovePublic(entry, rep->sline.status());
@@ -927,8 +927,8 @@ HttpStateData::haveParsedReplyHeaders()
             // TODO: check whether such responses are shareable.
             // Do not share for now.
             entry->makePrivate(false);
-            if (!fwd->reforwardableStatus(rep->sline.status()))
-                EBIT_CLR(entry->flags, ENTRY_FWD_HDR_WAIT);
+            if (fwd->reforwardableStatus(rep->sline.status()))
+                EBIT_SET(entry->flags, ENTRY_FWD_HDR_WAIT);
             varyFailure = true;
         } else {
             entry->mem_obj->vary_headers = vary;
@@ -946,8 +946,8 @@ HttpStateData::haveParsedReplyHeaders()
          * If its not a reply that we will re-forward, then
          * allow the client to get it.
          */
-        if (!fwd->reforwardableStatus(rep->sline.status()))
-            EBIT_CLR(entry->flags, ENTRY_FWD_HDR_WAIT);
+        if (fwd->reforwardableStatus(rep->sline.status()))
+            EBIT_SET(entry->flags, ENTRY_FWD_HDR_WAIT);
 
         ReuseDecision decision(entry, statusCode);
 
@@ -958,11 +958,17 @@ HttpStateData::haveParsedReplyHeaders()
             break;
 
         case ReuseDecision::cachePositively:
-            entry->makePublic();
+            if (!entry->makePublic()) {
+                decision.make(ReuseDecision::doNotCacheButShare, "public key creation error");
+                entry->makePrivate(true);
+            }
             break;
 
         case ReuseDecision::cacheNegatively:
-            entry->cacheNegatively();
+            if (!entry->cacheNegatively()) {
+                decision.make(ReuseDecision::doNotCacheButShare, "public key creation error");
+                entry->makePrivate(true);
+            }
             break;
 
         case ReuseDecision::doNotCacheButShare:
@@ -1188,12 +1194,7 @@ HttpStateData::readReply(const CommIoCbParams &io)
 
         ++ IOStats.Http.read_hist[bin];
 
-        // update peer response time stats (%<pt)
-        const timeval &sent = request->hier.peer_http_request_sent;
-        if (sent.tv_sec)
-            tvSub(request->hier.peer_response_time, sent, current_time);
-        else
-            request->hier.peer_response_time.tv_sec = -1;
+        request->hier.notePeerRead();
     }
 
         /* Continue to process previously read data */
@@ -1542,7 +1543,7 @@ HttpStateData::maybeMakeSpaceAvailable(bool doGrow)
 
     if (limitBuffer < 0 || inBuf.length() >= (SBuf::size_type)limitBuffer) {
         // when buffer is at or over limit already
-        debugs(11, 7, "wont read up to " << limitBuffer << ". buffer has (" << inBuf.length() << "/" << inBuf.spaceSize() << ") from " << serverConnection);
+        debugs(11, 7, "will not read up to " << limitBuffer << ". buffer has (" << inBuf.length() << "/" << inBuf.spaceSize() << ") from " << serverConnection);
         debugs(11, DBG_DATA, "buffer has {" << inBuf << "}");
         // Process next response from buffer
         processReply();
@@ -1553,17 +1554,17 @@ HttpStateData::maybeMakeSpaceAvailable(bool doGrow)
     const size_t read_size = calcBufferSpaceToReserve(inBuf.spaceSize(), (limitBuffer - inBuf.length()));
 
     if (!read_size) {
-        debugs(11, 7, "wont read up to " << read_size << " into buffer (" << inBuf.length() << "/" << inBuf.spaceSize() << ") from " << serverConnection);
+        debugs(11, 7, "will not read up to " << read_size << " into buffer (" << inBuf.length() << "/" << inBuf.spaceSize() << ") from " << serverConnection);
         return false;
     }
 
-    // just report whether we could grow or not, dont actually do it
+    // just report whether we could grow or not, do not actually do it
     if (doGrow)
         return (read_size >= 2);
 
     // we may need to grow the buffer
     inBuf.reserveSpace(read_size);
-    debugs(11, 8, (!flags.do_next_read ? "wont" : "may") <<
+    debugs(11, 8, (!flags.do_next_read ? "will not" : "may") <<
            " read up to " << read_size << " bytes info buf(" << inBuf.length() << "/" << inBuf.spaceSize() <<
            ") from " << serverConnection);
 
@@ -1580,6 +1581,9 @@ HttpStateData::wroteLast(const CommIoCbParams &io)
     entry->mem_obj->checkUrlChecksum();
 #endif
 
+    // XXX: Keep in sync with Client::sentRequestBody().
+    // TODO: Extract common parts.
+
     if (io.size > 0) {
         fd_bytes(io.fd, io.size, FD_WRITE);
         statCounter.server.all.kbytes_out += io.size;
@@ -1588,6 +1592,9 @@ HttpStateData::wroteLast(const CommIoCbParams &io)
 
     if (io.flag == Comm::ERR_CLOSING)
         return;
+
+    // both successful and failed writes affect response times
+    request->hier.notePeerWrite();
 
     if (io.flag) {
         ErrorState *err = new ErrorState(ERR_WRITE_ERROR, Http::scBadGateway, fwd->request);
@@ -1619,7 +1626,6 @@ HttpStateData::sendComplete()
 
     commSetConnTimeout(serverConnection, Config.Timeout.read, timeoutCall);
     flags.request_sent = true;
-    request->hier.peer_http_request_sent = current_time;
 }
 
 void
@@ -1675,7 +1681,7 @@ httpFixupAuthentication(HttpRequest * request, const HttpHeader * hdr_in, HttpHe
         }
     }
 
-    uint8_t loginbuf[base64_encode_len(MAX_LOGIN_SZ)];
+    char loginbuf[base64_encode_len(MAX_LOGIN_SZ)];
     size_t blen;
     struct base64_encode_ctx ctx;
     base64_encode_init(&ctx);
@@ -1860,7 +1866,7 @@ HttpStateData::httpBuildRequestHeader(HttpRequest * request,
     /* append Authorization if known in URL, not in header and going direct */
     if (!hdr_out->has(Http::HdrType::AUTHORIZATION)) {
         if (!request->flags.proxying && !request->url.userInfo().isEmpty()) {
-            static uint8_t result[base64_encode_len(MAX_URL*2)]; // should be big enough for a single URI segment
+            static char result[base64_encode_len(MAX_URL*2)]; // should be big enough for a single URI segment
             struct base64_encode_ctx ctx;
             base64_encode_init(&ctx);
             size_t blen = base64_encode_update(&ctx, result, request->url.userInfo().length(), reinterpret_cast<const uint8_t*>(request->url.userInfo().rawContent()));
@@ -1903,10 +1909,10 @@ HttpStateData::httpBuildRequestHeader(HttpRequest * request,
         delete cc;
     }
 
-    /* maybe append Connection: keep-alive */
-    if (flags.keepalive) {
-        hdr_out->putStr(Http::HdrType::CONNECTION, "keep-alive");
-    }
+    // Always send Connection because HTTP/1.0 servers need explicit "keep-alive"
+    // while HTTP/1.1 servers need explicit "close", and we do not always know
+    // the server expectations.
+    hdr_out->putStr(Http::HdrType::CONNECTION, flags.keepalive ? "keep-alive" : "close");
 
     /* append Front-End-Https */
     if (flags.front_end_https) {
@@ -2329,6 +2335,8 @@ HttpStateData::finishingBrokenPost()
     }
 
     ACLFilledChecklist ch(Config.accessList.brokenPosts, originalRequest(), NULL);
+    ch.al = fwd->al;
+    ch.syncAle(originalRequest(), nullptr);
     if (!ch.fastCheck().allowed()) {
         debugs(11, 5, HERE << "didn't match brokenPosts");
         return false;

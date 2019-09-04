@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -87,7 +87,7 @@ private:
     TimeEngine * timeService;
     AsyncEngine * primaryEngine;
     int loop_delay; /**< the delay to be given to the primary engine */
-    bool error; /**< has an error occured in this loop */
+    bool error; /**< has an error occurred in this loop */
     bool runOnceResult; /**< the result from runOnce */
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -55,6 +55,8 @@ typedef struct _krb5_kt_list {
     krb5_keytab_entry *entry;
 } *krb5_kt_list;
 krb5_kt_list ktlist = NULL;
+
+krb5_keytab memory_keytab;
 
 krb5_error_code krb5_free_kt_list(krb5_context context, krb5_kt_list kt_list);
 krb5_error_code krb5_write_keytab(krb5_context context,
@@ -300,16 +302,15 @@ close_kt:
  */
 krb5_error_code krb5_write_keytab(krb5_context context, krb5_kt_list list, char *name)
 {
-    krb5_keytab kt;
     char ktname[MAXPATHLEN+sizeof("MEMORY:")+1];
     krb5_error_code retval = 0;
 
     snprintf(ktname, sizeof(ktname), "%s", name);
-    retval = krb5_kt_resolve(context, ktname, &kt);
+    retval = krb5_kt_resolve(context, ktname, &memory_keytab);
     if (retval)
         return retval;
     for (krb5_kt_list lp = list; lp; lp = lp->next) {
-        retval = krb5_kt_add_entry(context, kt, lp->entry);
+        retval = krb5_kt_add_entry(context, memory_keytab, lp->entry);
         if (retval)
             break;
     }
@@ -351,6 +352,7 @@ main(int argc, char *const argv[])
     char default_keytab[MAXPATHLEN];
 #if HAVE_KRB5_MEMORY_KEYTAB
     char *memory_keytab_name = NULL;
+    char *memory_keytab_name_env = NULL;
 #endif
     char *rcache_type = NULL;
     char *rcache_type_env = NULL;
@@ -560,10 +562,10 @@ main(int argc, char *const argv[])
                 debug((char *) "%s| %s: ERROR: Writing list into keytab %s\n",
                       LogTime(), PROGRAM, memory_keytab_name);
             } else {
-                keytab_name_env = (char *) xmalloc(strlen("KRB5_KTNAME=")+strlen(memory_keytab_name)+1);
-                strcpy(keytab_name_env, "KRB5_KTNAME=");
-                strcat(keytab_name_env, memory_keytab_name);
-                putenv(keytab_name_env);
+                memory_keytab_name_env = (char *) xmalloc(strlen("KRB5_KTNAME=")+strlen(memory_keytab_name)+1);
+                strcpy(memory_keytab_name_env, "KRB5_KTNAME=");
+                strcat(memory_keytab_name_env, memory_keytab_name);
+                putenv(memory_keytab_name_env);
                 xfree(keytab_name);
                 keytab_name = xstrdup(memory_keytab_name);
                 debug((char *) "%s| %s: INFO: Changed keytab to %s\n",
@@ -640,6 +642,18 @@ main(int argc, char *const argv[])
                 xfree(spnegoToken);
             }
             xfree(token);
+            xfree(rcache_type);
+            xfree(rcache_type_env);
+            xfree(rcache_dir);
+            xfree(rcache_dir_env);
+            xfree(keytab_name);
+            xfree(keytab_name_env);
+#if HAVE_KRB5_MEMORY_KEYTAB
+            krb5_kt_close(context, memory_keytab);
+            xfree(memory_keytab_name);
+            xfree(memory_keytab_name_env);
+#endif
+            xfree(rfc_user);
             fprintf(stdout, "BH quit command\n");
             exit(0);
         }
@@ -658,7 +672,7 @@ main(int argc, char *const argv[])
             fprintf(stdout, "BH Invalid negotiate request\n");
             continue;
         }
-        const uint8_t *b64Token = reinterpret_cast<const uint8_t*>(buf+3);
+        const char *b64Token = buf+3;
         const size_t srcLen = strlen(buf+3);
         input_token.length = BASE64_DECODE_LENGTH(srcLen);
         debug((char *) "%s| %s: DEBUG: Decode '%s' (decoded length estimate: %d).\n",
@@ -729,15 +743,15 @@ main(int argc, char *const argv[])
             }
             struct base64_encode_ctx tokCtx;
             base64_encode_init(&tokCtx);
-            size_t blen = base64_encode_update(&tokCtx, reinterpret_cast<uint8_t*>(token), spnegoTokenLength, reinterpret_cast<const uint8_t*>(spnegoToken));
-            blen += base64_encode_final(&tokCtx, reinterpret_cast<uint8_t*>(token)+blen);
+            size_t blen = base64_encode_update(&tokCtx, token, spnegoTokenLength, reinterpret_cast<const uint8_t*>(spnegoToken));
+            blen += base64_encode_final(&tokCtx, token+blen);
             token[blen] = '\0';
 
             if (check_gss_err(major_status, minor_status, "gss_accept_sec_context()", log, 1))
                 goto cleanup;
             if (major_status & GSS_S_CONTINUE_NEEDED) {
                 debug((char *) "%s| %s: INFO: continuation needed\n", LogTime(), PROGRAM);
-                fprintf(stdout, "TT %s\n", token);
+                fprintf(stdout, "TT token=%s\n", token);
                 goto cleanup;
             }
             gss_release_buffer(&minor_status, &output_token);
@@ -794,11 +808,11 @@ main(int argc, char *const argv[])
 #endif
             rfc_user = rfc1738_escape(user);
 #if HAVE_PAC_SUPPORT
-            fprintf(stdout, "AF %s %s %s\n", token, rfc_user, ag?ag:"group=");
+            fprintf(stdout, "OK token=%s user=%s %s\n", token, rfc_user, ag?ag:"group=");
 #else
-            fprintf(stdout, "AF %s %s\n", token, rfc_user);
+            fprintf(stdout, "OK token=%s user=%s\n", token, rfc_user);
 #endif
-            debug((char *) "%s| %s: DEBUG: AF %s %s\n", LogTime(), PROGRAM, token, rfc_user);
+            debug((char *) "%s| %s: DEBUG: OK token=%s user=%s\n", LogTime(), PROGRAM, token, rfc_user);
             if (log)
                 fprintf(stderr, "%s| %s: INFO: User %s authenticated\n", LogTime(),
                         PROGRAM, rfc_user);
@@ -808,7 +822,8 @@ main(int argc, char *const argv[])
                 goto cleanup;
             if (major_status & GSS_S_CONTINUE_NEEDED) {
                 debug((char *) "%s| %s: INFO: continuation needed\n", LogTime(), PROGRAM);
-                fprintf(stdout, "NA %s\n", token);
+                // XXX: where to get the server token for delivery to client? token is nullptr here.
+                fprintf(stdout, "ERR\n");
                 goto cleanup;
             }
             gss_release_buffer(&minor_status, &output_token);
@@ -834,11 +849,11 @@ main(int argc, char *const argv[])
             }
             rfc_user = rfc1738_escape(user);
 #if HAVE_PAC_SUPPORT
-            fprintf(stdout, "AF %s %s %s\n", "AA==", rfc_user, ag?ag:"group=");
+            fprintf(stdout, "OK token=%s user=%s %s\n", "AA==", rfc_user, ag?ag:"group=");
 #else
-            fprintf(stdout, "AF %s %s\n", "AA==", rfc_user);
+            fprintf(stdout, "OK token=%s user=%s\n", "AA==", rfc_user);
 #endif
-            debug((char *) "%s| %s: DEBUG: AF %s %s\n", LogTime(), PROGRAM, "AA==", rfc_user);
+            debug((char *) "%s| %s: DEBUG: OK token=%s user=%s\n", LogTime(), PROGRAM, "AA==", rfc_user);
             if (log)
                 fprintf(stderr, "%s| %s: INFO: User %s authenticated\n", LogTime(),
                         PROGRAM, rfc_user);

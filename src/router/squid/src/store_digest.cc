@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -43,25 +43,26 @@
 
 class StoreDigestState
 {
-
 public:
     StoreDigestCBlock cblock;
-    int rebuild_lock;       /* bucket number */
-    StoreEntry * rewrite_lock;  /* points to store entry with the digest */
+    int rebuild_lock = 0;                 ///< bucket number
+    StoreEntry * rewrite_lock = nullptr;  ///< points to store entry with the digest
     StoreSearchPointer theSearch;
-    int rewrite_offset;
-    int rebuild_count;
-    int rewrite_count;
+    int rewrite_offset = 0;
+    int rebuild_count = 0;
+    int rewrite_count = 0;
 };
 
-typedef struct {
-    int del_count;      /* #store entries deleted from store_digest */
-    int del_lost_count;     /* #store entries not found in store_digest on delete */
-    int add_count;      /* #store entries accepted to store_digest */
-    int add_coll_count;     /* #accepted entries that collided with existing ones */
-    int rej_count;      /* #store entries not accepted to store_digest */
-    int rej_coll_count;     /* #not accepted entries that collided with existing ones */
-} StoreDigestStats;
+class StoreDigestStats
+{
+public:
+    int del_count = 0;          /* #store entries deleted from store_digest */
+    int del_lost_count = 0;     /* #store entries not found in store_digest on delete */
+    int add_count = 0;          /* #store entries accepted to store_digest */
+    int add_coll_count = 0;     /* #accepted entries that collided with existing ones */
+    int rej_count = 0;          /* #store entries not accepted to store_digest */
+    int rej_coll_count = 0;     /* #not accepted entries that collided with existing ones */
+};
 
 /* local vars */
 static StoreDigestState sd_state;
@@ -139,7 +140,7 @@ storeDigestInit(void)
            (int) Config.digest.rebuild_period << "/" <<
            (int) Config.digest.rewrite_period << " sec");
 
-    memset(&sd_state, 0, sizeof(sd_state));
+    sd_state = StoreDigestState();
 #else
     store_digest = NULL;
     debugs(71, 3, "Local cache digest is 'off'");
@@ -355,7 +356,7 @@ storeDigestRebuildResume(void)
     if (!storeDigestResize())
         store_digest->clear();     /* not clean()! */
 
-    memset(&sd_stats, 0, sizeof(sd_stats));
+    sd_stats = StoreDigestStats();
 
     eventAdd("storeDigestRebuildStep", storeDigestRebuildStep, NULL, 0.0, 1);
 }
@@ -401,10 +402,6 @@ storeDigestRebuildStep(void *datanotused)
 static void
 storeDigestRewriteStart(void *datanotused)
 {
-    RequestFlags flags;
-    char *url;
-    StoreEntry *e;
-
     assert(store_digest);
     /* prevent overlapping if rewrite schedule is too tight */
 
@@ -414,19 +411,22 @@ storeDigestRewriteStart(void *datanotused)
     }
 
     debugs(71, 2, "storeDigestRewrite: start rewrite #" << sd_state.rewrite_count + 1);
-    /* make new store entry */
-    url = internalLocalUri("/squid-internal-periodic/", SBuf(StoreDigestFileName));
+
+    const char *url = internalLocalUri("/squid-internal-periodic/", SBuf(StoreDigestFileName));
+    const MasterXaction::Pointer mx = new MasterXaction(XactionInitiator::initCacheDigest);
+    auto req = HttpRequest::FromUrl(url, mx);
+
+    RequestFlags flags;
     flags.cachable = true;
-    e = storeCreateEntry(url, url, flags, Http::METHOD_GET);
+
+    StoreEntry *e = storeCreateEntry(url, url, flags, Http::METHOD_GET);
     assert(e);
     sd_state.rewrite_lock = e;
     debugs(71, 3, "storeDigestRewrite: url: " << url << " key: " << e->getMD5Text());
-    const MasterXaction::Pointer mx = new MasterXaction(XactionInitiator::initCacheDigest);
-    HttpRequest *req = HttpRequest::FromUrl(url, mx);
     e->mem_obj->request = req;
     HTTPMSGLOCK(e->mem_obj->request);
-    /* wait for rebuild (if any) to finish */
 
+    /* wait for rebuild (if any) to finish */
     if (sd_state.rebuild_lock) {
         debugs(71, 2, "storeDigestRewriteStart: waiting for rebuild to finish.");
         return;

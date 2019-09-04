@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -178,14 +178,6 @@ Comm::SetSelect(int fd, unsigned int type, PF * handler, void *client_data, time
 
     if (timeout)
         F->timeout = squid_curtime + timeout;
-}
-
-void
-Comm::ResetSelect(int fd)
-{
-    fde *F = &fd_table[fd];
-    F->epoll_state = 0;
-    SetSelect(fd, 0, NULL, NULL, 0);
 }
 
 static void commIncomingStats(StoreEntry * sentry);

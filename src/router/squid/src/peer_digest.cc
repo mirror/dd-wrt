@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -66,23 +66,20 @@ static const time_t GlobDigestReqMinGap = 1 * 60;   /* seconds */
 
 static time_t pd_last_req_time = 0; /* last call to Check */
 
-/* initialize peer digest */
-static void
-peerDigestInit(PeerDigest * pd, CachePeer * p)
+PeerDigest::PeerDigest(CachePeer * p)
 {
-    assert(pd && p);
+    assert(p);
 
-    memset(pd, 0, sizeof(*pd));
     /*
      * DPW 2007-04-12
      * Lock on to the peer here.  The corresponding cbdataReferenceDone()
      * is in peerDigestDestroy().
      */
-    pd->peer = cbdataReference(p);
+    peer = cbdataReference(p);
     /* if peer disappears, we will know it's name */
-    pd->host = p->host;
+    host = p->host;
 
-    pd->times.initialized = squid_curtime;
+    times.initialized = squid_curtime;
 }
 
 CBDATA_CLASS_INIT(PeerDigest);
@@ -129,17 +126,22 @@ DigestFetchState::~DigestFetchState()
 }
 
 /* allocate new peer digest, call Init, and lock everything */
-PeerDigest *
+void
 peerDigestCreate(CachePeer * p)
 {
-    PeerDigest *pd;
     assert(p);
 
-    pd = new PeerDigest;
-    peerDigestInit(pd, p);
+    PeerDigest *pd = new PeerDigest(p);
 
-    /* XXX This does not look right, and the same thing again in the caller */
-    return cbdataReference(pd);
+    // TODO: make CachePeer member a CbcPointer
+    p->digest = cbdataReference(pd);
+
+    // lock a reference to pd again to prevent the PeerDigest
+    // disappearing during peerDigestDestroy() when
+    // cbdataReferenceValidDone is called.
+    // TODO test if it can be moved into peerDigestDestroy() or
+    //      if things can break earlier (eg CachePeer death).
+    (void)cbdataReference(pd);
 }
 
 /* call Clean and free/unlock everything */
@@ -152,17 +154,22 @@ peerDigestDestroy(PeerDigest * pd)
 
     /*
      * DPW 2007-04-12
-     * We locked the peer in peerDigestInit(), this is
-     * where we unlock it.  If the peer is still valid,
-     * tell it that the digest is gone.
+     * We locked the peer in PeerDigest constructor, this is
+     * where we unlock it.
      */
-    if (cbdataReferenceValidDone(peerTmp, &p))
-        peerNoteDigestGone((CachePeer *)p);
-
-    delete pd->cd;
-    pd->host.clean();
+    if (cbdataReferenceValidDone(peerTmp, &p)) {
+        // we locked the p->digest in peerDigestCreate()
+        // this is where we unlock that
+        cbdataReferenceDone(static_cast<CachePeer *>(p)->digest);
+    }
 
     delete pd;
+}
+
+PeerDigest::~PeerDigest()
+{
+    delete cd;
+    // req_result pointer is not owned by us
 }
 
 /* called by peer to indicate that somebody actually needs this digest */
@@ -305,7 +312,6 @@ peerDigestRequest(PeerDigest * pd)
     CachePeer *p = pd->peer;
     StoreEntry *e, *old_e;
     char *url = NULL;
-    const cache_key *key;
     HttpRequest *req;
     StoreIOBuffer tempBuffer;
 
@@ -317,16 +323,13 @@ peerDigestRequest(PeerDigest * pd)
     if (p->digest_url)
         url = xstrdup(p->digest_url);
     else
-        url = xstrdup(internalRemoteUri(p->host, p->http_port, "/squid-internal-periodic/", SBuf(StoreDigestFileName)));
+        url = xstrdup(internalRemoteUri(p->secure.encryptTransport, p->host, p->http_port, "/squid-internal-periodic/", SBuf(StoreDigestFileName)));
+    debugs(72, 2, url);
 
     const MasterXaction::Pointer mx = new MasterXaction(XactionInitiator::initCacheDigest);
     req = HttpRequest::FromUrl(url, mx);
 
     assert(req);
-
-    key = storeKeyPublicByRequest(req);
-
-    debugs(72, 2, "peerDigestRequest: " << url << " key: " << storeKeyText(key));
 
     /* add custom headers */
     assert(!req->header.len);
@@ -351,21 +354,22 @@ peerDigestRequest(PeerDigest * pd)
     pd_last_req_time = squid_curtime;
     req->flags.cachable = true;
 
-    /* the rest is based on clientProcessExpired() */
+    /* the rest is based on clientReplyContext::processExpired() */
     req->flags.refresh = true;
 
-    old_e = fetch->old_entry = Store::Root().get(key);
+    old_e = fetch->old_entry = storeGetPublicByRequest(req);
 
     if (old_e) {
-        debugs(72, 5, "peerDigestRequest: found old entry");
+        debugs(72, 5, "found old " << *old_e);
 
         old_e->lock("peerDigestRequest");
-        old_e->createMemObject(url, url, req->method);
+        old_e->ensureMemObject(url, url, req->method);
 
         fetch->old_sc = storeClientListAdd(old_e, fetch);
     }
 
     e = fetch->entry = storeCreateEntry(url, url, req->flags, req->method);
+    debugs(72, 5, "created " << *e);
     assert(EBIT_TEST(e->flags, KEY_PRIVATE));
     fetch->sc = storeClientListAdd(e, fetch);
     /* set lastmod to trigger IMS request if possible */
@@ -374,8 +378,6 @@ peerDigestRequest(PeerDigest * pd)
         e->lastModified(old_e->lastModified());
 
     /* push towards peer cache */
-    debugs(72, 3, "peerDigestRequest: forwarding to fwdStart...");
-
     FwdState::fwdStart(Comm::ConnectionPointer(), e, req);
 
     tempBuffer.offset = 0;

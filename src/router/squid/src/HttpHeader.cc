@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -1268,43 +1268,46 @@ HttpHeader::getContRange() const
     return cr;
 }
 
-const char *
-HttpHeader::getAuth(Http::HdrType id, const char *auth_scheme) const
+SBuf
+HttpHeader::getAuthToken(Http::HdrType id, const char *auth_scheme) const
 {
     const char *field;
     int l;
     assert(auth_scheme);
     field = getStr(id);
 
+    static const SBuf nil;
     if (!field)         /* no authorization field */
-        return NULL;
+        return nil;
 
     l = strlen(auth_scheme);
 
     if (!l || strncasecmp(field, auth_scheme, l))   /* wrong scheme */
-        return NULL;
+        return nil;
 
     field += l;
 
     if (!xisspace(*field))  /* wrong scheme */
-        return NULL;
+        return nil;
 
     /* skip white space */
     for (; field && xisspace(*field); ++field);
 
     if (!*field)        /* no authorization cookie */
-        return NULL;
+        return nil;
 
-    static char decodedAuthToken[8192];
+    const auto fieldLen = strlen(field);
+    SBuf result;
+    char *decodedAuthToken = result.rawAppendStart(BASE64_DECODE_LENGTH(fieldLen));
     struct base64_decode_ctx ctx;
     base64_decode_init(&ctx);
     size_t decodedLen = 0;
-    if (!base64_decode_update(&ctx, &decodedLen, reinterpret_cast<uint8_t*>(decodedAuthToken), strlen(field), reinterpret_cast<const uint8_t*>(field)) ||
+    if (!base64_decode_update(&ctx, &decodedLen, reinterpret_cast<uint8_t*>(decodedAuthToken), fieldLen, field) ||
             !base64_decode_final(&ctx)) {
-        return NULL;
+        return nil;
     }
-    decodedAuthToken[decodedLen] = '\0';
-    return decodedAuthToken;
+    result.rawAppendFinish(decodedAuthToken, decodedLen);
+    return result;
 }
 
 ETag

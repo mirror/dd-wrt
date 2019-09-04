@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -43,7 +43,7 @@ public:
 private:
     void init(); ///< initialize members
     void assign(const Pdu& pdu); ///< perform full assignment
-    unsigned int aggrCount;  ///< The number of other Pdus merged into
+    unsigned int aggrCount = 0;  ///< The number of other Pdus merged into
 };
 
 } // namespace Snmp

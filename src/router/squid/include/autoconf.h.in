@@ -137,6 +137,9 @@
 /* Support setting CPU affinity for workers */
 #undef HAVE_CPU_AFFINITY
 
+/* cpu_set_t is defined by the system headers */
+#undef HAVE_CPU_SET_T
+
 /* Define to 1 if you have the `crypt' function. */
 #undef HAVE_CRYPT
 
@@ -320,6 +323,9 @@
 /* Define to 1 if you have the <gnumalloc.h> header file. */
 #undef HAVE_GNUMALLOC_H
 
+/* Define to 1 if you have the <gnutls/abstract.h> header file. */
+#undef HAVE_GNUTLS_ABSTRACT_H
+
 /* Define to 1 if you have the <gnutls/gnutls.h> header file. */
 #undef HAVE_GNUTLS_GNUTLS_H
 
@@ -495,6 +501,9 @@
 /* "Define to 1 if the ASN1_STRING_get0_data() OpenSSL API function exists" */
 #undef HAVE_LIBCRYPTO_ASN1_STRING_GET0_DATA
 
+/* "Define to 1 if the BIO_get_data() OpenSSL API function exists" */
+#undef HAVE_LIBCRYPTO_BIO_GET_DATA
+
 /* "Define to 1 if the BIO_get_init() OpenSSL API function exists" */
 #undef HAVE_LIBCRYPTO_BIO_GET_INIT
 
@@ -507,8 +516,17 @@
 /* "Define to 1 if the EVP_PKEY_get0_RSA() OpenSSL API function exists" */
 #undef HAVE_LIBCRYPTO_EVP_PKEY_GET0_RSA
 
+/* "Define to 1 if the EVP_PKEY_up_ref() OpenSSL API function exists" */
+#undef HAVE_LIBCRYPTO_EVP_PKEY_UP_REF
+
+/* "Define to 1 if the OPENSSL_LH_strhash() OpenSSL API function exists" */
+#undef HAVE_LIBCRYPTO_OPENSSL_LH_STRHASH
+
 /* "Define to 1 if the X509_CRL_up_ref() OpenSSL API function exists" */
 #undef HAVE_LIBCRYPTO_X509_CRL_UP_REF
+
+/* "Define to 1 if the X509_get0_signature() OpenSSL API function exists" */
+#undef HAVE_LIBCRYPTO_X509_GET0_SIGNATURE
 
 /* "Define to 1 if the X509_STORE_CTX_get0_cert() OpenSSL API function exists"
    */
@@ -517,10 +535,6 @@
 /* "Define to 1 if the X509_STORE_CTX_get0_untrusted() OpenSSL API function
    exists" */
 #undef HAVE_LIBCRYPTO_X509_STORE_CTX_GET0_UNTRUSTED
-
-/* "Define to 1 if the X509_STORE_CTX_set0_untrusted() OpenSSL API function
-   exists" */
-#undef HAVE_LIBCRYPTO_X509_STORE_CTX_SET0_UNTRUSTED
 
 /* "Define to 1 if the X509_up_ref() OpenSSL API function exists" */
 #undef HAVE_LIBCRYPTO_X509_UP_REF
@@ -557,6 +571,9 @@
 /* Define to 1 if you have the
    <libnetfilter_conntrack/libnetfilter_conntrack_tcp.h> header file. */
 #undef HAVE_LIBNETFILTER_CONNTRACK_LIBNETFILTER_CONNTRACK_TCP_H
+
+/* "Define to 1 if the OPENSSL_init_ssl() OpenSSL API function exists" */
+#undef HAVE_LIBSSL_OPENSSL_INIT_SSL
 
 /* "Define to 1 if the SSL_CIPHER_find() OpenSSL API function exists" */
 #undef HAVE_LIBSSL_SSL_CIPHER_FIND
@@ -707,8 +724,8 @@
 /* Define to 1 if you have the <netinet/tcp.h> header file. */
 #undef HAVE_NETINET_TCP_H
 
-/* set to 1 if Nettle 3.0 API will link */
-#undef HAVE_NETTLE30_BASE64
+/* set to 1 if Nettle 3.4 API will link */
+#undef HAVE_NETTLE34_BASE64
 
 /* Define to 1 if you have the <nettle/base64.h> header file. */
 #undef HAVE_NETTLE_BASE64_H
@@ -743,11 +760,20 @@
 /* OpenLDAP support */
 #undef HAVE_OPENLDAP
 
+/* Define to 1 if you have the <openssl/asn1.h> header file. */
+#undef HAVE_OPENSSL_ASN1_H
+
 /* Define to 1 if you have the <openssl/bio.h> header file. */
 #undef HAVE_OPENSSL_BIO_H
 
+/* Define to 1 if you have the <openssl/bn.h> header file. */
+#undef HAVE_OPENSSL_BN_H
+
 /* Define to 1 if you have the <openssl/crypto.h> header file. */
 #undef HAVE_OPENSSL_CRYPTO_H
+
+/* Define to 1 if you have the <openssl/dh.h> header file. */
+#undef HAVE_OPENSSL_DH_H
 
 /* Define to 1 if you have the <openssl/engine.h> header file. */
 #undef HAVE_OPENSSL_ENGINE_H
@@ -755,11 +781,20 @@
 /* Define to 1 if you have the <openssl/err.h> header file. */
 #undef HAVE_OPENSSL_ERR_H
 
+/* Define to 1 if you have the <openssl/evp.h> header file. */
+#undef HAVE_OPENSSL_EVP_H
+
+/* Define to 1 if you have the <openssl/lhash.h> header file. */
+#undef HAVE_OPENSSL_LHASH_H
+
 /* Define to 1 if you have the <openssl/md5.h> header file. */
 #undef HAVE_OPENSSL_MD5_H
 
 /* Define to 1 if you have the <openssl/opensslv.h> header file. */
 #undef HAVE_OPENSSL_OPENSSLV_H
+
+/* Define to 1 if you have the <openssl/rsa.h> header file. */
+#undef HAVE_OPENSSL_RSA_H
 
 /* Define to 1 if you have the <openssl/ssl.h> header file. */
 #undef HAVE_OPENSSL_SSL_H
@@ -778,6 +813,9 @@
 
 /* Define to 1 if you have the <openssl/x509v3.h> header file. */
 #undef HAVE_OPENSSL_X509V3_H
+
+/* Define to 1 if you have the <openssl/x509.h> header file. */
+#undef HAVE_OPENSSL_X509_H
 
 /* pad128_t is defined in system headers */
 #undef HAVE_PAD128_T
@@ -1003,6 +1041,12 @@
 /* Define to 1 if `ip_hl' is a member of `struct iphdr'. */
 #undef HAVE_STRUCT_IPHDR_IP_HL
 
+/* Define to 1 if `nl_inipaddr.in6' is a member of `struct natlookup'. */
+#undef HAVE_STRUCT_NATLOOKUP_NL_INIPADDR_IN6
+
+/* Define to 1 if `nl_realipaddr.in6' is a member of `struct natlookup '. */
+#undef HAVE_STRUCT_NATLOOKUP_NL_REALIPADDR_IN6___
+
 /* The system provides struct rusage */
 #undef HAVE_STRUCT_RUSAGE
 
@@ -1167,9 +1211,6 @@
 /* Define to 1 if you have the <varargs.h> header file. */
 #undef HAVE_VARARGS_H
 
-/* The system implements a functional va_copy() */
-#undef HAVE_VA_COPY
-
 /* Define to 1 if you have the `vfork' function. */
 #undef HAVE_VFORK
 
@@ -1220,9 +1261,6 @@
 
 /* Define to 1 if you have the `__res_init' function. */
 #undef HAVE___RES_INIT
-
-/* Some systems have __va_copy instead of va_copy */
-#undef HAVE___VA_COPY
 
 /* Enable ICAP client features in Squid */
 #undef ICAP_CLIENT
@@ -1342,6 +1380,10 @@
 
 /* configure command line used to configure Squid */
 #undef SQUID_CONFIGURE_OPTIONS
+
+/* Define to const if X509_get0_signature() accepts const parameters; define
+   as empty otherwise. Don't leave it undefined! */
+#undef SQUID_CONST_X509_GET0_SIGNATURE_ARGS
 
 /* UDP receive buffer size */
 #undef SQUID_DETECT_UDP_SO_RCVBUF
@@ -1518,7 +1560,7 @@
 /* Solaris Kerberos support is available */
 #undef USE_SOLARIS_KRB5
 
-/* Compile the ESI processor and Surrogate header support */
+/* Compile the ESI processor */
 #undef USE_SQUID_ESI
 
 /* Define this to include code which lets you use ethernet addresses. This

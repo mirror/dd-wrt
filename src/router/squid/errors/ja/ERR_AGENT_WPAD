@@ -1,6 +1,6 @@
 
 <html><head>
-<meta type="copyright" content="Copyright (C) 1996-2017 The Squid Software Foundation and contributors">
+<meta type="copyright" content="Copyright (C) 1996-2019 The Squid Software Foundation and contributors">
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <title>Webブラウザの設定</title>
 <style type="text/css"><!--
@@ -24,19 +24,19 @@ body
 <p>ご利用のブラウザを設定する方法の探し方:</p>
 
 <div id="firefox"> For Firefox browsers go to: <ul>
-<li>ツール -&gt; オプション -&gt; 詳細 -&gt; ネットワーク -&gt; 接続設定</li>
+<li>Tools -> Options -> Advanced -> Network -> Connection Settings</li>
 <li>Select Auto-detect proxy settings for this network</li>
 </ul>
 </div>
 
 <div id="microsoft"> For Internet Explorer browsers go to: <ul>
-<li>ツール -&gt; インターネット オプション -&gt; 接続 -&gt; LAN の設定 -&gt; プロキシ サーバー</li>
+<li>Tools -> Internet Options -> Connection -> LAN Settings ->Proxy</li>
 <li>自動検出の設定を選択してください。</li>
 </ul>
 </div>
 
 <div id="opera"> For Opera browsers go to: <ul>
-<li>ツール -&gt; 設定 -&gt; 詳細 -&gt; ネットワーク -&gt; プロキシサーバー</li>
+<li>Tools -> Preferences -> Advanced -> Network -> Proxy Servers</li>
 <li>proxyの自動構成を選択してください。</li>
 </ul>
 </div>

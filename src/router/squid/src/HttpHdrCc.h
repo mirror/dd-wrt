@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -30,7 +30,7 @@ enum HttpHdrCcType : unsigned char {
     CC_MIN_FRESH,
     CC_ONLY_IF_CACHED,
     CC_STALE_IF_ERROR,
-    CC_IMMUTABLE, /* draft-mcmanus-immutable-00 */
+    CC_IMMUTABLE, /* RFC 8246 */
     CC_OTHER,
     CC_ENUM_END /* also used to mean "invalid" */
 };

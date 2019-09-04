@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -8,6 +8,7 @@
 
 #include "squid.h"
 #include "AccessLogEntry.h"
+#include "base64.h"
 #include "client_side.h"
 #include "comm/Connection.h"
 #include "err_detail_type.h"
@@ -27,7 +28,6 @@
 #include "SquidTime.h"
 #include "Store.h"
 #include "tools.h"
-#include "URL.h"
 #if USE_OPENSSL
 #include "ssl/ErrorDetail.h"
 #include "ssl/ServerBump.h"
@@ -548,6 +548,24 @@ Format::Format::assemble(MemBuf &mb, const AccessLogEntry::Pointer &al, int logS
             }
             break;
 
+        case LFT_CLIENT_HANDSHAKE:
+            if (al->request && al->request->clientConnectionManager.valid()) {
+                const auto &handshake = al->request->clientConnectionManager->preservedClientData;
+                if (const auto rawLength = handshake.length()) {
+                    // add 1 byte to optimize the c_str() conversion below
+                    char *buf = sb.rawAppendStart(base64_encode_len(rawLength) + 1);
+
+                    struct base64_encode_ctx ctx;
+                    base64_encode_init(&ctx);
+                    auto encLength = base64_encode_update(&ctx, buf, rawLength, reinterpret_cast<const uint8_t*>(handshake.rawContent()));
+                    encLength += base64_encode_final(&ctx, buf + encLength);
+
+                    sb.rawAppendFinish(buf, encLength);
+                    out = sb.c_str();
+                }
+            }
+            break;
+
         case LFT_TIME_SECONDS_SINCE_EPOCH:
             // some platforms store time in 32-bit, some 64-bit...
             outoff = static_cast<int64_t>(current_time.tv_sec);
@@ -592,17 +610,17 @@ Format::Format::assemble(MemBuf &mb, const AccessLogEntry::Pointer &al, int logS
             break;
 
         case LFT_PEER_RESPONSE_TIME:
-            if (al->hier.peer_response_time.tv_sec != -1) {
-                outtv = al->hier.peer_response_time;
+            struct timeval peerResponseTime;
+            if (al->hier.peerResponseTime(peerResponseTime)) {
+                outtv = peerResponseTime;
                 doMsec = 1;
             }
             break;
 
         case LFT_TOTAL_SERVER_SIDE_RESPONSE_TIME: {
-            timeval total_response_time;
-            al->hier.totalResponseTime(total_response_time);
-            if (total_response_time.tv_sec != -1) {
-                outtv = total_response_time;
+            struct timeval totalResponseTime;
+            if (al->hier.totalResponseTime(totalResponseTime)) {
+                outtv = totalResponseTime;
                 doMsec = 1;
             }
         }
@@ -873,13 +891,13 @@ Format::Format::assemble(MemBuf &mb, const AccessLogEntry::Pointer &al, int logS
                     out = t;
             }
             if (!out)
-                out = strOrNull(al->cache.extuser);
+                out = strOrNull(al->getExtUser());
 #if USE_OPENSSL
             if (!out)
                 out = strOrNull(al->cache.ssluser);
 #endif
             if (!out)
-                out = strOrNull(al->cache.rfc931);
+                out = strOrNull(al->getClientIdent());
             break;
 
         case LFT_USER_LOGIN:
@@ -890,17 +908,11 @@ Format::Format::assemble(MemBuf &mb, const AccessLogEntry::Pointer &al, int logS
             break;
 
         case LFT_USER_IDENT:
-            out = strOrNull(al->cache.rfc931);
+            out = strOrNull(al->getClientIdent());
             break;
 
         case LFT_USER_EXTERNAL:
-            if (al->request && al->request->extacl_user.size()) {
-                if (const char *t = al->request->extacl_user.termedBuf())
-                    out = t;
-            }
-
-            if (!out)
-                out = strOrNull(al->cache.extuser);
+            out = strOrNull(al->getExtUser());
             break;
 
         /* case LFT_USER_REALM: */
@@ -986,9 +998,8 @@ Format::Format::assemble(MemBuf &mb, const AccessLogEntry::Pointer &al, int logS
             break;
 
         case LFT_CLIENT_REQ_URI:
-            // original client URI
-            if (al->request) {
-                sb = al->request->effectiveRequestUri();
+            if (const auto uri = al->effectiveVirginUrl()) {
+                sb = *uri;
                 out = sb.c_str();
                 quote = 1;
             }
@@ -1201,7 +1212,7 @@ Format::Format::assemble(MemBuf &mb, const AccessLogEntry::Pointer &al, int logS
                 ConnStateData *conn = al->request->clientConnectionManager.get();
                 if (conn && Comm::IsConnOpen(conn->clientConnection)) {
                     if (auto ssl = fd_table[conn->clientConnection->fd].ssl.get())
-                        out = sslGetUserAttribute(ssl, format->data.header.header);
+                        out = sslGetUserAttribute(ssl, fmt->data.header.header);
                 }
             }
             break;
@@ -1211,7 +1222,7 @@ Format::Format::assemble(MemBuf &mb, const AccessLogEntry::Pointer &al, int logS
                 ConnStateData *conn = al->request->clientConnectionManager.get();
                 if (conn && Comm::IsConnOpen(conn->clientConnection)) {
                     if (auto ssl = fd_table[conn->clientConnection->fd].ssl.get())
-                        out = sslGetCAAttribute(ssl, format->data.header.header);
+                        out = sslGetCAAttribute(ssl, fmt->data.header.header);
                 }
             }
             break;
@@ -1390,7 +1401,7 @@ Format::Format::assemble(MemBuf &mb, const AccessLogEntry::Pointer &al, int logS
             out = sb.c_str();
         } else if (doMsec) {
             if (fmt->widthMax < 0) {
-                sb.appendf("%0*ld", fmt->widthMin , tvToMsec(outtv));
+                sb.appendf("%0*ld", fmt->zero && fmt->widthMin >= 0 ? fmt->widthMin : 0, tvToMsec(outtv));
             } else {
                 int precision = fmt->widthMax;
                 sb.appendf("%0*" PRId64 ".%0*" PRId64 "", fmt->zero && (fmt->widthMin - precision - 1 >= 0) ? fmt->widthMin - precision - 1 : 0, static_cast<int64_t>(outtv.tv_sec * 1000 + outtv.tv_usec / 1000), precision, static_cast<int64_t>((outtv.tv_usec % 1000 )* (1000 / fmt->divisor)));

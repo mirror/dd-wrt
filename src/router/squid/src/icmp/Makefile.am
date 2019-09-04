@@ -1,4 +1,4 @@
-## Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+## Copyright (C) 1996-2019 The Squid Software Foundation and contributors
 ##
 ## Squid software is distributed under GPLv2+ license and includes
 ## contributions from numerous individuals and organizations.
@@ -7,11 +7,6 @@
 
 include $(top_srcdir)/src/Common.am
 include $(top_srcdir)/src/TestHeaders.am
-
-# TODO: get rid of this when config filename is no longer a global constant.
-#      its only here so the pinger globals.cc will link.
-DEFS += -DDEFAULT_CONFIG_FILE=NULL
-
 
 # ICMP Specific Configurations
 

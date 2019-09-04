@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -13,13 +13,22 @@
 #include "security/Context.h"
 #include "security/Session.h"
 
-#if USE_GNUTLS && HAVE_GNUTLS_X509_H
-#include <gnutls/x509.h>
+#if USE_GNUTLS && HAVE_GNUTLS_ABSTRACT_H
+#include <gnutls/abstract.h>
 #endif
 #include <list>
-#if USE_OPENSSL && HAVE_OPENSSL_ERR_H
+#if USE_OPENSSL
+#include "compat/openssl.h"
+#if HAVE_OPENSSL_BN_H
+#include <openssl/bn.h>
+#endif
+#if HAVE_OPENSSL_ERR_H
 #include <openssl/err.h>
 #endif
+#if HAVE_OPENSSL_RSA_H
+#include <openssl/rsa.h>
+#endif
+#endif /* USE_OPENSSL */
 #include <unordered_set>
 
 #if USE_OPENSSL
@@ -30,31 +39,6 @@
         struct sk_object ## _free_wrapper { \
             void operator()(argument_type a) { sk_object ## _pop_free(a, freefunction); } \
         }
-
-#if !HAVE_LIBCRYPTO_X509_UP_REF // OpenSSL 1.1 API
-#if defined(CRYPTO_LOCK_X509) // OpenSSL 1.0 API
-inline int X509_up_ref(X509 *t) {if (t) CRYPTO_add(&t->references, 1, CRYPTO_LOCK_X509); return 0;}
-#else
-#error missing both OpenSSL API features X509_up_ref (v1.1) and CRYPTO_LOCK_X509 (v1.0)
-#endif /* CRYPTO_LOCK_X509 */
-#endif /* X509_up_ref */
-
-#if !HAVE_LIBCRYPTO_X509_CRL_UP_REF // OpenSSL 1.1 API
-#if defined(CRYPTO_LOCK_X509_CRL) // OpenSSL 1.0 API
-inline int X509_CRL_up_ref(X509_CRL *t) {if (t) CRYPTO_add(&t->references, 1, CRYPTO_LOCK_X509_CRL); return 0;}
-#else
-#error missing both OpenSSL API features X509_up_ref (v1.1) and CRYPTO_LOCK_X509 (v1.0)
-#endif /* CRYPTO_LOCK_X509_CRL */
-#endif /* X509_CRL_up_ref */
-#if !HAVE_LIBCRYPTO_DH_UP_REF // OpenSSL 1.1 API
-#if defined(CRYPTO_LOCK_DH) // OpenSSL 1.0 API
-inline int DH_up_ref(DH *t) {if (t) CRYPTO_add(&t->references, 1, CRYPTO_LOCK_DH); return 0;}
-#else
-
-#error missing both OpenSSL API features DH_up_ref (v1.1) and CRYPTO_LOCK_DH (v1.0)
-#endif /* OpenSSL 1.0 CRYPTO_LOCK_X509_CRL */
-#endif /* OpenSSL 1.1 DH_up_ref */
-
 #endif /* USE_OPENSSL */
 
 /* flags a SSL connection can be configured with */
@@ -78,10 +62,9 @@ typedef CbDataList<Security::CertError> CertErrors;
 CtoCpp1(X509_free, X509 *)
 typedef Security::LockingPointer<X509, X509_free_cpp, HardFun<int, X509 *, X509_up_ref> > CertPointer;
 #elif USE_GNUTLS
-CtoCpp1(gnutls_x509_crt_deinit, gnutls_x509_crt_t)
-typedef Security::LockingPointer<struct gnutls_x509_crt_int, gnutls_x509_crt_deinit> CertPointer;
+typedef std::shared_ptr<struct gnutls_x509_crt_int> CertPointer;
 #else
-typedef void * CertPointer;
+typedef std::shared_ptr<void> CertPointer;
 #endif
 
 #if USE_OPENSSL
@@ -155,6 +138,16 @@ class ParsedOptions {}; // we never parse/use TLS options in this case
 
 class PeerConnector;
 class PeerOptions;
+
+#if USE_OPENSSL
+CtoCpp1(EVP_PKEY_free, EVP_PKEY *)
+typedef Security::LockingPointer<EVP_PKEY, EVP_PKEY_free_cpp, HardFun<int, EVP_PKEY *, EVP_PKEY_up_ref> > PrivateKeyPointer;
+#elif USE_GNUTLS
+typedef std::shared_ptr<struct gnutls_x509_privkey_int> PrivateKeyPointer;
+#else
+typedef std::shared_ptr<void> PrivateKeyPointer;
+#endif
+
 class ServerOptions;
 
 } // namespace Security
