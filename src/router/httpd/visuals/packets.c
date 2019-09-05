@@ -14,7 +14,7 @@ void getpacketcounts(unsigned long long *counts, int len)
 		i = iptc_first_rule(this, &handle);
 		while (i) {
 			counts[c++] = i->counters.pcnt;
-			if (c == len - 1) {
+			if (c == len - 2) {
 				iptc_free(&handle);
 				return;
 			}
