@@ -603,7 +603,7 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 		if (lanrate)
 			lanlimit = lanrate;
 		prio = 3;
-		parent = 1;
+		parent = 2;
 		break;
 	}
 	unsigned int uprates[5] = { uprate * MAXIMUM_PERCENT / 100, uprate * PREMIUM_PERCENT / 100, uprate * EXPRESS_PERCENT / 100, uprate * DEFAULT_PERCENT / 100, 128 };
