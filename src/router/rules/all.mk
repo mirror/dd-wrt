@@ -236,7 +236,7 @@ include rules/ap-serv.mk
 include rules/tolapai.mk
 include rules/buffalo-flash.mk
 include rules/relayd.mk
-include $(TOP)/private/ath9k-rules/ath9k.mk
+include mac80211-rules/ath9k.mk
 include rules/libnltiny.mk
 include rules/hotplug2.mk
 include rules/dsl_cpe_control.mk
