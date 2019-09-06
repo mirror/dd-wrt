@@ -404,9 +404,9 @@ static void add_tc_mark(char *dev, int pref, char *mark, char *mark2, int flow)
 }
 #endif
 
-static const char *math(char *buf, int val, const char *ext)
+static const char *math(char *buf, long long val, const char *ext)
 {
-	sprintf(buf, "%d%s", val, ext);
+	sprintf(buf, "%lld%s", val, ext);
 	return buf;
 }
 
@@ -516,7 +516,7 @@ static void add_htb_class(const char *dev, int parent, int class, int rate, int 
 		eval("tc", "class", "add", "dev", dev, "parent", parentid, "classid", classid, "htb", "rate", math(buf, rate, "kbit"), "ceil", math(buf2, limit, "kbit"), "quantum", qmtu);
 }
 
-static void add_hfsc_class(const char *dev, int parent, int class, int rate, int limit)
+static void add_hfsc_class(const char *dev, int parent, int class, long long rate, long long limit)
 {
 	char buf[32];
 	char buf2[32];
@@ -858,7 +858,7 @@ static void init_htb_class(const char *dev, int rate, int mtu)
 	add_htb_class(dev, 2, 40, BULK_BW, rate, mtu, 6);
 }
 
-static void init_hfsc_class(const char *dev, int rate)
+static void init_hfsc_class(const char *dev, long long rate)
 {
 	rate *= 1000;
 	add_hfsc_class(dev, 0, 1, rate, rate);
