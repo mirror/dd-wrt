@@ -478,10 +478,7 @@ static void add_cake(int type, const char *dev, int handle, const char *aqd, int
 	}
 }
 
-static int percent(int from, int val)
-{
-	return from * val / 100;
-}
+#define percent(from, val) ((from) * (val) / 100)
 
 static void add_pie(const char *dev, int handle, const char *aqd, int ms5, int noecn)
 {
@@ -564,30 +561,30 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 
 	switch (level) {
 	case 100:
-		uprate = uplimit * MAXIMUM_PERCENT / 100;
-		downrate = downlimit * MAXIMUM_PERCENT / 100;
-		lanrate = lanlimit * MAXIMUM_PERCENT / 100;
+		uprate = percent(uplimit, MAXIMUM_PERCENT);
+		downrate = percent(downlimit, MAXIMUM_PERCENT);
+		lanrate = percent(lanlimit, MAXIMUM_PERCENT);
 		prio = 2;
 		parent = 1;
 		break;
 	case 10:
-		uprate = uplimit * PREMIUM_PERCENT / 100;
-		downrate = downlimit * PREMIUM_PERCENT / 100;
-		lanrate = lanlimit * PREMIUM_PERCENT / 100;
+		uprate = percent(uplimit, PREMIUM_PERCENT);
+		downrate = percent(downlimit, PREMIUM_PERCENT);
+		lanrate = percent(lanlimit, PREMIUM_PERCENT);
 		prio = 3;
 		parent = 10;
 		break;
 	case 20:
-		uprate = uplimit * EXPRESS_PERCENT / 100;
-		downrate = downlimit * EXPRESS_PERCENT / 100;
-		lanrate = lanlimit * EXPRESS_PERCENT / 100;
+		uprate = percent(uplimit, EXPRESS_PERCENT);
+		downrate = percent(downlimit, EXPRESS_PERCENT);
+		lanrate = percent(lanlimit, EXPRESS_PERCENT);
 		prio = 4;
 		parent = 20;
 		break;
 	case 30:
-		uprate = uplimit * DEFAULT_PERCENT / 100;
-		downrate = downlimit * DEFAULT_PERCENT / 100;
-		lanrate = lanlimit * DEFAULT_PERCENT / 100;
+		uprate = percent(uplimit, DEFAULT_PERCENT);
+		downrate = percent(downlimit, DEFAULT_PERCENT);
+		lanrate = percent(lanlimit, DEFAULT_PERCENT);
 		prio = 5;
 		parent = 30;
 		break;
