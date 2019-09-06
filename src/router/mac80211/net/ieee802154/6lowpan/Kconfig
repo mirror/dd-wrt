@@ -1,0 +1,7 @@
+config IEEE802154_6LOWPAN
+	depends on !KERNEL_3_5
+	tristate "6lowpan support over IEEE 802.15.4"
+	depends on m
+	depends on 6LOWPAN
+	---help---
+	  IPv6 compression over IEEE 802.15.4.
