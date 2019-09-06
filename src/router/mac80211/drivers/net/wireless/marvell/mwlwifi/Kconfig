@@ -1,0 +1,23 @@
+config MWLWIFI
+	tristate "Marvell Avastar 88W8864/88W8897 PCIe driver (mac80211 compatible)"
+	depends on PCI && MAC80211
+	select FW_LOADER
+	---help---
+		Select to build the driver supporting the:
+
+		Marvell Wireless Wi-Fi 88W8864 modules
+		Marvell Wireless Wi-Fi 88W8897 modules
+
+		This driver uses the kernel's mac80211 subsystem.
+
+		If you want to compile the driver as a module (= code which can be
+		inserted in and removed from the running kernel whenever you want),
+		say M here and read <file:Documentation/kbuild/modules.txt>.  The
+		module will be called mwlwifi.
+
+		NOTE: Selecting this driver may cause conflict with MWIFIEX driver
+		that also operates on the same part number 88W8897. Users should
+		select either MWIFIEX or MWLWIFI, not both. MWIFIEX is fullmac,
+		supporting more comprehensive client functions for laptops/embedded
+		devices. MWLWIFI is mac80211-based for full AP/Wireless Bridge.
+

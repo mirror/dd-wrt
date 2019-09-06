@@ -1,0 +1,16 @@
+ivtv-objs	:= ivtv-routing.o ivtv-cards.o ivtv-controls.o \
+		   ivtv-driver.o ivtv-fileops.o ivtv-firmware.o \
+		   ivtv-gpio.o ivtv-i2c.o ivtv-ioctl.o ivtv-irq.o \
+		   ivtv-mailbox.o ivtv-queue.o ivtv-streams.o ivtv-udma.o \
+		   ivtv-vbi.o ivtv-yuv.o
+ivtv-alsa-objs := ivtv-alsa-main.o ivtv-alsa-pcm.o
+
+obj-$(CPTCFG_VIDEO_IVTV) += ivtv.o
+obj-$(CPTCFG_VIDEO_IVTV_ALSA) += ivtv-alsa.o
+obj-$(CPTCFG_VIDEO_FB_IVTV) += ivtvfb.o
+
+ccflags-y += -I$(backport_srctree)/drivers/media/i2c
+ccflags-y += -I$(backport_srctree)/drivers/media/tuners
+ccflags-y += -I$(backport_srctree)/drivers/media/dvb-core
+ccflags-y += -I$(backport_srctree)/drivers/media/dvb-frontends
+

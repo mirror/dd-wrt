@@ -1,0 +1,6 @@
+config MT7615E
+	tristate "MediaTek MT7615E (PCIe) support"
+	select MT76_CORE
+	depends on MAC80211
+	help
+	  This adds support for MT7615-based wireless PCIe devices.

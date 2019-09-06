@@ -1,0 +1,9 @@
+config WL18XX
+	depends on !KERNEL_3_2
+	tristate "TI wl18xx support"
+	depends on m
+	depends on MAC80211
+	select WLCORE
+	---help---
+	  This module adds support for wireless adapters based on TI
+	  WiLink 8 chipsets.
