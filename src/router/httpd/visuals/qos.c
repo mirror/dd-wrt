@@ -104,8 +104,8 @@ void ej_get_qossvcs(webs_t wp, int argc, char_t ** argv)
 	 */
 	unsigned long long *counts = NULL;
 	if (no_svcs) {
-		counts = malloc(sizeof(unsigned long long) * realno);
-		memset(counts, 0, sizeof(unsigned long long) * realno);
+		counts = malloc(sizeof(unsigned long long) * (realno + 2));
+		memset(counts, 0, sizeof(unsigned long long) * (realno + 2));
 		getpacketcounts(counts, realno);
 	}
 	int c = 0;
@@ -155,7 +155,7 @@ void ej_get_qossvcs(webs_t wp, int argc, char_t ** argv)
 		qos_svcs++;
 
 	}
-	if (no_svcs)
+	if (counts)
 		free(counts);
 
 	return;
