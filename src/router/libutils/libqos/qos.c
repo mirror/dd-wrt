@@ -646,7 +646,9 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 		}
 		add_hfsc_class(wan_dev, parent, base, BULK_BW, up);
 		add_hfsc_class("imq0", parent, base, BULK_BW, down);
-		add_hfsc_class("imq1", parent, base, BULK_BW, lan);
+		if (nvram_match("wshaper_dev", "LAN")) {
+			add_hfsc_class("imq1", parent, base, BULK_BW, lan);
+		}
 		int i;
 		for (i = 0; i < 5; i++) {
 			if (!i) {
