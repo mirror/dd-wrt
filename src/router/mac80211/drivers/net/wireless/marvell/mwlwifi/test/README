@@ -1,0 +1,153 @@
+1. Files for test:
+
+	a. 88W8864.bin,88W8897.bin: F/W binary. Please put this file under directory '/lib/firmware/mwlwifi'.
+	b. mwlwifi.ko: 88W8864/88W8897 mac80211 driver kernel module.
+	c. hostapd.conf: configuration file used to configure hostapd.
+	d. wpa_supplicant.conf: configuration file used to configure wpa_supplicant.
+	e. openwrt-mvebu-armada-xp-mamba-squashfs-factory.img: OpenWRT download image (built with kernel cfg80211/mac80211, iw, hostapd and wpa_supplicant).
+	
+2. Bring up driver:
+
+	a. iw reg set US
+		--> set regulatory domain (Note: cfg80211 will disable DFS channels).
+	b. insmod mwlwifi.ko
+		--> After module is inserted, physical interfaces phy0 and phy1 and network device wlan0 and wlan1
+				will be created. You can issue "iw dev" to check them.
+	c. hostapd -B ./hostapd.conf
+		--> There are few sample configuration files under this directory. Please use them to do test.
+	d. brctl addif br-lan wlan1
+		--> Make sure wlan1 is the interface specified in hostapd.conf.
+		
+	Note: you can run script file 'setup.sh' instead of issuing these commands one by one.
+	
+3. Change configuration:
+
+	After hostapd and driver is running, the way to change configuration:
+	1. Change configuration file hostapd.conf
+	2. Run "killall hostapd" then "hostapd -B ./hostapd.conf" to run hostapd with new configuration.
+	
+4. The way to change channel via hostpad.conf for 80 MHz:
+
+	a. You must check regulatory domain first to see if the channel you setting is allowable for 80 MHz.
+		You can use ¡§iw reg get¡¨ and ¡§iw reg set¡¨ to get and set regulatory domain. For script file ¡§setup.sh¡¨,
+		it sets the regulatory domain to US.
+		If you use ¡§iw reg get¡¨ to check setting regulatory domain:
+				country US: DFS-UNSET
+					(2402 - 2472 @ 40), (30, 0)
+					(5170 - 5250 @ 80), (17, 0)
+					(5250 - 5330 @ 80), (23, 0)
+					(5735 - 5835 @ 80), (30, 0)
+					(57240 - 63720 @ 2160), (40, 0)
+		It allows you to use three ranges to do 80 MHz operation (36 ~ 48), (52 ~ 64) and (149 ~ 161).
+		If you use ¡§iw reg set TW¡¨ to set regulatory domain to TW:
+				country TW: DFS-UNSET
+					(2402 - 2472 @ 40), (30, 0)
+					(5270 - 5330 @ 40), (17, 0)
+					(5490 - 5590 @ 80), (30, 0)
+					(5650 - 5710 @ 40), (30, 0)
+					(5735 - 5835 @ 80), (30, 0)
+		It allows you to use two ranges to do 80 MHz operation (100 ~ 116) and (149 ~ 161).
+		
+	b. After regulatory is set and make sure the channel range you want to use is allowable by the 
+		setting regulatory, you can modify hostapd.conf to run 80 Mhz as:
+		
+		channel=36 -> decide active primary channel.
+		ht_capab=[LDPC][HT40+][SHORT-GI-20][SHORT-GI-40] -> decide primary 40 MHz.
+		vht_oper_centr_freq_seg0_idx=42 -> center channel for this 80 MHz.
+
+		Test sample:
+		
+			a. 149 to 161:
+				channel=149
+				ht_capab=[LDPC][HT40+][SHORT-GI-20][SHORT-GI-40]
+				vht_oper_centr_freq_seg0_idx=155
+
+				channel=153
+				ht_capab=[LDPC][HT40-][SHORT-GI-20][SHORT-GI-40]
+				vht_oper_centr_freq_seg0_idx=155
+
+			b. 100 to 112:
+				Use ¡§iw reg set TW¡¨ to change regulatory domain to allow to use this range for 80 Mhz.
+				channel=100
+				ht_capab=[LDPC][HT40+][SHORT-GI-20][SHORT-GI-40]
+				vht_oper_centr_freq_seg0_idx=106
+
+				channel=104
+				ht_capab=[LDPC][HT40-][SHORT-GI-20][SHORT-GI-40]
+				vht_oper_centr_freq_seg0_idx=106
+
+5. Station mode:
+
+	a. Use iw utlity to set correct regulatory domain.
+	
+	b. Make sure dirver is loaded.
+	
+	c. wpa_supplicant -B -D nl80211 -i wlan1 -c wpa_supplicant.conf
+		--> There are few sample configuration files under this directory. Please use them to do test.
+		
+	d. There are two ways to change configuration for wpa_supplicant:
+
+		* Kill and rerun
+		killall wpa_supplicant
+		<Modify configuration file for new setting>
+		wpa_supplicant -B -D nl80211 -i wlan1 -c wpa_supplicant.conf
+	
+		* Reload configuration file
+		<Modify configuration file for new setting>
+		kill -1 <PID of wpa_supplicant>
+		
+6. Debug mode:
+
+	a. hostapd:
+	
+	hostapd -d[dd] ./hostapd.conf
+	
+	b. wpa_supplicant:
+	
+	wpa_supplicant -ddK -D nl80211 -i wlan1 -c wpa_supplicant.conf
+	
+7. Add/Delete interface via iw:
+
+	iw dev <devname> del
+	iw dev <devname> interface add <name> type <type>
+	
+	You can omit the 'phy' or 'dev' if the identification is unique,
+	e.g. "iw wlan0 info" or "iw phy0 info". (Don't when scripting.)
+
+	Example:
+	root@OpenWrt:/test# iw dev
+	phy#1
+        Interface wlan1
+                ifindex 6
+                wdev 0x100000001
+                addr 00:25:9c:13:01:9a
+                type managed
+	phy#0
+        Interface wlan0
+                ifindex 8
+                wdev 0x3
+                addr 00:25:9c:13:01:99
+                type AP
+	root@OpenWrt:/test# iw wlan0 del
+	root@OpenWrt:/test# iw dev
+	phy#1
+        Interface wlan1
+                ifindex 6
+                wdev 0x100000001
+                addr 00:25:9c:13:01:9a
+                type managed
+	root@OpenWrt:/test# iw phy0 interface add wlan0 type managed
+	root@OpenWrt:/test# iw dev
+	phy#1
+        Interface wlan1
+                ifindex 6
+                wdev 0x100000001
+                addr 00:25:9c:13:01:9a
+                type managed
+	phy#0
+        Interface wlan0
+                ifindex 9
+                wdev 0x4
+                addr 00:25:9c:13:01:99
+                type managed
+	root@OpenWrt:/test#

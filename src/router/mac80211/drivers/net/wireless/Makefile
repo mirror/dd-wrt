@@ -1,0 +1,27 @@
+#
+# Makefile for the Linux Wireless network device drivers.
+#
+
+obj-$(CPTCFG_WLAN_VENDOR_ADMTEK) += admtek/
+obj-$(CPTCFG_WLAN_VENDOR_ATH) += ath/
+obj-$(CPTCFG_WLAN_VENDOR_ATMEL) += atmel/
+obj-$(CPTCFG_WLAN_VENDOR_BROADCOM) += broadcom/
+obj-$(CPTCFG_WLAN_VENDOR_CISCO) += cisco/
+obj-$(CPTCFG_WLAN_VENDOR_INTEL) += intel/
+obj-$(CPTCFG_WLAN_VENDOR_INTERSIL) += intersil/
+obj-$(CPTCFG_WLAN_VENDOR_MARVELL) += marvell/
+obj-$(CPTCFG_WLAN_VENDOR_MEDIATEK) += mediatek/
+obj-$(CPTCFG_WLAN_VENDOR_RALINK) += ralink/
+obj-$(CPTCFG_WLAN_VENDOR_REALTEK) += realtek/
+obj-$(CPTCFG_WLAN_VENDOR_RSI) += rsi/
+obj-$(CPTCFG_WLAN_VENDOR_ST) += st/
+obj-$(CPTCFG_WLAN_VENDOR_TI) += ti/
+obj-$(CPTCFG_WLAN_VENDOR_ZYDAS) += zydas/
+
+# 16-bit wireless PCMCIA client drivers
+#obj-$(CPTCFG_PCMCIA_RAYCS)	+= ray_cs.o
+#obj-$(CPTCFG_PCMCIA_WL3501)	+= wl3501_cs.o
+
+obj-$(CPTCFG_USB_NET_RNDIS_WLAN)	+= rndis_wlan.o
+
+obj-$(CPTCFG_MAC80211_HWSIM)	+= mac80211_hwsim.o
