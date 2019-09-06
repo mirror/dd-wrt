@@ -644,10 +644,10 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 			down = downrate;
 			lan = lanrate;
 		}
-		add_hfsc_class(wan_dev, parent, base, BULK_BW, up);
-		add_hfsc_class("imq0", parent, base, BULK_BW, down);
+		add_hfsc_class(wan_dev, parent, base, BULK_BW * 1000, up);
+		add_hfsc_class("imq0", parent, base, BULK_BW * 1000, down);
 		if (nvram_match("wshaper_dev", "LAN")) {
-			add_hfsc_class("imq1", parent, base, BULK_BW, lan);
+			add_hfsc_class("imq1", parent, base, BULK_BW * 1000, lan);
 		}
 		int i;
 		for (i = 0; i < 5; i++) {
@@ -868,7 +868,7 @@ static void init_hfsc_class(const char *dev, long long rate)
 	add_hfsc_class(dev, 1, 10, percent(percent(rate, PREMIUM_PERCENT), SERVICEBASE_PERCENT), -1);
 	add_hfsc_class(dev, 1, 20, percent(percent(rate, EXPRESS_PERCENT), SERVICEBASE_PERCENT), -1);
 	add_hfsc_class(dev, 1, 30, percent(percent(rate, DEFAULT_PERCENT), SERVICEBASE_PERCENT), -1);
-	add_hfsc_class(dev, 1, 40, BULK_BW, -1);
+	add_hfsc_class(dev, 1, 40, BULK_BW * 1000, -1);
 
 }
 
