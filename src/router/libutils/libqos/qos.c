@@ -525,9 +525,9 @@ static void add_hfsc_class(const char *dev, int parent, int class, int rate, int
 	sprintf(classid, "1:%d", class);
 	sprintf(parentid, "1:%d", parent);
 	if (limit == -1)
-		eval("tc", "class", "add", "dev", dev, "parent", parentid, "classid", classid, "hfsc", "ls", "m2", math(buf, rate, "kbit"));
+		eval("tc", "class", "add", "dev", dev, "parent", parentid, "classid", classid, "hfsc", "ls", "m2", math(buf, rate, "bit"));
 	else
-		eval("tc", "class", "add", "dev", dev, "parent", parentid, "classid", classid, "hfsc", "ls", "m2", math(buf, rate, "kbit"), "ul", "m2", math(buf2, limit, "kbit"));
+		eval("tc", "class", "add", "dev", dev, "parent", parentid, "classid", classid, "hfsc", "ls", "m2", math(buf, rate, "bit"), "ul", "m2", math(buf2, limit, "bit"));
 }
 
 void add_client_classes(unsigned int base, unsigned int uprate, unsigned int downrate, unsigned int lanrate, unsigned int level)
@@ -633,6 +633,9 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 		}
 
 	} else {
+		uprate *= 1000;
+		downrate *= 1000;
+		lanrate *= 1000;
 		int up = -1;
 		int down = -1;
 		int lan = -1;
@@ -652,8 +655,8 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 				lan = percent(lanrate, percentages[i]);
 			} else {
 				up = percent(percent(uprate, percentages[i]), SERVICEBASE_PERCENT);
-				down = percent(percent(down, percentages[i]), SERVICEBASE_PERCENT);
-				lan = percent(percent(lan, percentages[i]), SERVICEBASE_PERCENT);
+				down = percent(percent(downrate, percentages[i]), SERVICEBASE_PERCENT);
+				lan = percent(percent(lanrate, percentages[i]), SERVICEBASE_PERCENT);
 			}
 			add_hfsc_class(wan_dev, base, base + 1 + i, up, -1);
 			add_hfsc_class("imq0", base, base + 1 + i, down, -1);
@@ -857,6 +860,7 @@ static void init_htb_class(const char *dev, int rate, int mtu)
 
 static void init_hfsc_class(const char *dev, int rate)
 {
+	rate *= 1000;
 	add_hfsc_class(dev, 0, 1, rate, rate);
 	add_hfsc_class(dev, 1, 100, percent(rate, MAXIMUM_PERCENT), -1);
 	add_hfsc_class(dev, 1, 10, percent(percent(rate, PREMIUM_PERCENT), SERVICEBASE_PERCENT), -1);
