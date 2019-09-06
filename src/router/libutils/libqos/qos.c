@@ -636,9 +636,9 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 		uprate *= 1000;
 		downrate *= 1000;
 		lanrate *= 1000;
-		int up = -1;
-		int down = -1;
-		int lan = -1;
+		long long up = -1;
+		long long down = -1;
+		long long lan = -1;
 		if (!level) {
 			up = uprate;
 			down = downrate;
@@ -652,13 +652,13 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 		int i;
 		for (i = 0; i < 5; i++) {
 			if (!i) {
-				up = percent(uprate, percentages[i]);
-				down = percent(downrate, percentages[i]);
-				lan = percent(lanrate, percentages[i]);
+				up = percent(BW_BULK * 1000, percentages[i]);
+				down = percent(BW_BULK * 1000, percentages[i]);
+				lan = percent(BW_BULK * 1000, percentages[i]);
 			} else {
-				up = percent(percent(uprate, percentages[i]), SERVICEBASE_PERCENT);
-				down = percent(percent(downrate, percentages[i]), SERVICEBASE_PERCENT);
-				lan = percent(percent(lanrate, percentages[i]), SERVICEBASE_PERCENT);
+				up = percent(percent(BW_BULK * 1000, percentages[i]), SERVICEBASE_PERCENT);
+				down = percent(percent(BW_BULK * 1000, percentages[i]), SERVICEBASE_PERCENT);
+				lan = percent(percent(BW_BULK * 1000, percentages[i]), SERVICEBASE_PERCENT);
 			}
 			add_hfsc_class(wan_dev, base, base + 1 + i, up, -1);
 			add_hfsc_class("imq0", base, base + 1 + i, down, -1);
