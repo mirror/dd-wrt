@@ -47,11 +47,9 @@ void start_httpd(void)
 #ifdef HAVE_HTTPS
 	if (nvram_invmatchi("https_enable", 0)) {
 		do_ssl = 1;
-		ret = eval("httpd", "-S");
 		if (nvram_invmatch("https_lanport", "")) {
 			ssl_lan_port = nvram_safe_get("https_lanport");
 		}
-		dd_loginfo("httpd", "https daemon successfully started\n");
 	}
 #endif
 	int c = 0;
@@ -69,13 +67,15 @@ void start_httpd(void)
 	}
 
 	if (!f_exists("/var/run/httpd.pid")) {
-		dd_loginfo("httpd", "http daemon successfully started\n");
 		if (do_ssl && no_ssl) {
 			eval("httpd", "-n", "-S", args[0], args[1], args[2], args[3]);
+			dd_loginfo("httpd", "http/https daemon successfully started\n");
 		} else if (no_ssl) {
 			eval("httpd", "-n", args[0], args[1], args[2], args[3]);
+			dd_loginfo("httpd", "http daemon successfully started\n");
 		} else if (do_ssl) {
 			eval("httpd", "-S", args[0], args[1], args[2], args[3]);
+			dd_loginfo("httpd", "https daemon successfully started\n");
 		}
 	}
 	chdir("/");
