@@ -184,6 +184,7 @@ static int superchannel = -1;
 
 #define DEFAULT_HTTP_PORT 80
 static int server_port;
+static int ssl_server_port;
 static char pid_file[80];
 static char *server_dir = NULL;
 
@@ -239,7 +240,7 @@ static pthread_mutex_t input_mutex;
 #define CRYPT_MUTEX_UNLOCK(m) do {} while(0)
 #endif
 
-static void lookup_hostname(usockaddr * usa4P, size_t sa4_len, int *gotv4P, usockaddr * usa6P, size_t sa6_len, int *gotv6P)
+static void lookup_hostname(usockaddr * usa4P, size_t sa4_len, int *gotv4P, usockaddr * usa6P, size_t sa6_len, int *gotv6P, int server_port)
 {
 #ifdef USE_IPV6
 
@@ -1406,10 +1407,15 @@ int main(int argc, char **argv)
 {
 	usockaddr host_addr4;
 	usockaddr host_addr6;
+	usockaddr ssl_host_addr4;
+	usockaddr ssl_host_addr6;
 	usockaddr usa;
 	int gotv4, gotv6;
+	int ssl_gotv4, ssl_gotv6;
 	int listen4_fd = -1;
 	int listen6_fd = -1;
+	int ssl_listen4_fd = -1;
+	int ssl_listen6_fd = -1;
 	socklen_t sz = sizeof(usa);
 	int c;
 	int timeout = TIMEOUT;
@@ -1419,7 +1425,10 @@ int main(int argc, char **argv)
 	airbag_init();
 #ifdef HAVE_HTTPS
 	int do_ssl = 0;
+#else
+#define do_ssl 0
 #endif
+	int no_ssl = 0;
 /* SEG addition */
 	Initnvramtab();
 #ifdef HAVE_OPENSSL
@@ -1454,13 +1463,13 @@ int main(int argc, char **argv)
 	strcpy(pid_file, "/var/run/httpd.pid");
 	server_port = DEFAULT_HTTP_PORT;
 
-	while ((c = getopt(argc, argv, "Sih:p:d:t:s:g:e:")) != -1)
+	while ((c = getopt(argc, argv, "Sih:p:m:d:t:s:g:e:")) != -1)
 		switch (c) {
 #ifdef HAVE_HTTPS
 		case 'S':
 #if defined(HAVE_OPENSSL) || defined(HAVE_MATRIXSSL) || defined(HAVE_POLARSSL)
 			do_ssl = 1;
-			server_port = DEFAULT_HTTPS_PORT;
+			ssl_server_port = DEFAULT_HTTPS_PORT;
 			strcpy(pid_file, "/var/run/httpsd.pid");
 #else
 			fprintf(stderr, "No SSL support available\n");
@@ -1468,11 +1477,17 @@ int main(int argc, char **argv)
 #endif
 			break;
 #endif
+		case 'n':
+			no_ssl = 1;
+			break;
 		case 'h':
 			server_dir = optarg;
 			break;
 		case 'p':
 			server_port = atoi(optarg);
+			break;
+		case 'm':
+			ssl_server_port = atoi(optarg);
 			break;
 		case 't':
 			timeout = atoi(optarg);
@@ -1501,8 +1516,15 @@ int main(int argc, char **argv)
 			break;
 		}
 	openlog("httpd", LOG_PID | LOG_NDELAY, LOG_DAEMON);
+	if (!do_ssl && !no_ssl) {
+		dd_loginfo("httpd", "httpd cannot start. ssl and/or http must be selected\n");
+		exit(0);
+	}
 #ifdef HAVE_HTTPS
-	dd_loginfo("httpd", "httpd server %sstarted at port %d\n", do_ssl ? "(ssl support) " : "", server_port);
+	if (no_ssl)
+		dd_loginfo("httpd", "httpd server %sstarted at port %d\n", server_port);
+	if (do_ssl)
+		dd_loginfo("httpd", "httpd SSL server %sstarted at port %d\n", ssl_server_port);
 #else
 	dd_loginfo("httpd", "httpd server started at port %d\n", server_port);
 #endif
@@ -1609,9 +1631,13 @@ int main(int argc, char **argv)
 #endif
 
 	/* Look up hostname. */
-	lookup_hostname(&host_addr4, sizeof(host_addr4), &gotv4, &host_addr6, sizeof(host_addr6), &gotv6);
-
-	if (!(gotv4 || gotv6)) {
+	if (no_ssl)
+		lookup_hostname(&host_addr4, sizeof(host_addr4), &gotv4, &host_addr6, sizeof(host_addr6), &gotv6, server_port);
+#ifdef HAVE_HTTPS
+	if (do_ssl)
+		lookup_hostname(&ssl_host_addr4, sizeof(ssl_host_addr4), &ssl_gotv4, &ssl_host_addr6, sizeof(ssl_host_addr6), &ssl_gotv6, server_port);
+#endif
+	if (!(gotv4 || gotv6 || ssl_gotv4 || ssl_gotv6)) {
 		exit(1);
 	}
 
@@ -1620,18 +1646,32 @@ int main(int argc, char **argv)
 	 ** v4, but in Linux if you bind a v4 socket first then the v6 bind fails.
 	 */
 #ifdef USE_IPV6
-	if (gotv6) {
+	if (no_ssl && gotv6) {
 		listen6_fd = initialize_listen_socket(&host_addr6);
 	} else
 		listen6_fd = -1;
 
+#ifdef HAVE_HTTPS
+	if (do_ssl && ssl_gotv6) {
+		listen6_fd = initialize_listen_socket(&ssl_host_addr6);
+	} else
+		listen6_fd = -1;
+
 #endif
-	if (gotv4) {
+#endif
+	if (no_ssl && gotv4) {
 		listen4_fd = initialize_listen_socket(&host_addr4);
 	} else
 		listen4_fd = -1;
+
+#ifdef HAVE_HTTPS
+	if (do_ssl && ssl_gotv4) {
+		listen4_fd = initialize_listen_socket(&ssl_host_addr4);
+	} else
+		listen4_fd = -1;
+#endif
 	/* If we didn't get any valid sockets, fail. */
-	if (listen4_fd == -1 && listen6_fd == -1) {
+	if (listen4_fd == -1 && listen6_fd == -1 && ssl_listen4_fd == -1 && ssl_listen6_fd == -1) {
 		dd_logerror("httpd", "can't bind to any address");
 		exit(1);
 	}
@@ -1661,23 +1701,36 @@ int main(int argc, char **argv)
 		}
 		bzero(conn_fp, sizeof(webs));
 		SEM_WAIT(&semaphore);
-#ifdef HAVE_HTTPS
-		conn_fp->do_ssl = do_ssl;
-#endif
 
 #ifdef USE_IPV6
 		FD_ZERO(&lfdset);
 		maxfd = -1;
-		if (listen4_fd != -1) {
-			FD_SET(listen4_fd, &lfdset);
-			if (listen4_fd > maxfd)
-				maxfd = listen4_fd;
+		if (no_ssl) {
+			if (listen4_fd != -1) {
+				FD_SET(listen4_fd, &lfdset);
+				if (listen4_fd > maxfd)
+					maxfd = listen4_fd;
+			}
+			if (listen6_fd != -1) {
+				FD_SET(listen6_fd, &lfdset);
+				if (listen6_fd > maxfd)
+					maxfd = listen6_fd;
+			}
 		}
-		if (listen6_fd != -1) {
-			FD_SET(listen6_fd, &lfdset);
-			if (listen6_fd > maxfd)
-				maxfd = listen6_fd;
+#ifdef HAVE_HTTPS
+		if (do_ssl) {
+			if (ssl_listen4_fd != -1) {
+				FD_SET(ssl_listen4_fd, &lfdset);
+				if (ssl_listen4_fd > maxfd)
+					maxfd = listen4_fd;
+			}
+			if (ssl_listen6_fd != -1) {
+				FD_SET(ssl_listen6_fd, &lfdset);
+				if (ssl_listen6_fd > maxfd)
+					maxfd = listen6_fd;
+			}
 		}
+#endif
 		if (select(maxfd + 1, &lfdset, NULL, NULL, NULL) < 0) {
 			if (errno == EINTR || errno == EAGAIN)
 				continue;	/* try again */
@@ -1689,12 +1742,25 @@ int main(int argc, char **argv)
 
 		sz = sizeof(usa);
 #ifdef USE_IPV6
-		if (listen4_fd != -1 && FD_ISSET(listen4_fd, &lfdset))
-			conn_fp->conn_fd = accept(listen4_fd, &usa.sa, &sz);
-		else if (listen6_fd != -1 && FD_ISSET(listen6_fd, &lfdset))
+		if (no_ssl && listen6_fd != -1 && FD_ISSET(listen6_fd, &lfdset)) {
 			conn_fp->conn_fd = accept(listen6_fd, &usa.sa, &sz);
-#else
-		conn_fp->conn_fd = accept(listen4_fd, &usa.sa, &sz);
+		}
+#ifdef HAVE_HTTPS
+		else if (do_ssl && ssl_listen6_fd != -1 && FD_ISSET(ssl_listen6_fd, &lfdset)) {
+			conn_fp->conn_fd = accept(ssl_listen6_fd, &usa.sa, &sz);
+			conn_fp->do_ssl = 1;
+		}
+#endif
+		else
+#endif
+		if (no_ssl && listen4_fd != -1 && FD_ISSET(listen4_fd, &lfdset)) {
+			conn_fp->conn_fd = accept(listen4_fd, &usa.sa, &sz);
+		}
+#ifdef HAVE_HTTPS
+		else if (do_ssl && ssl_listen4_fd != -1 && FD_ISSET(ssl_listen4_fd, &lfdset)) {
+			conn_fp->conn_fd = accept(ssl_listen4_fd, &usa.sa, &sz);
+			conn_fp->do_ssl = 1;
+		}
 #endif
 		if (conn_fp->conn_fd < 0) {
 			perror("accept");
