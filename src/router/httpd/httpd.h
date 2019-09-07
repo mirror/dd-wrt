@@ -155,7 +155,7 @@ struct Webenvironment {
 
 //static void setLength(long len);
 
-static struct mime_handler mime_handlers[];
+//static struct mime_handler mime_handlers[];
 
 /* Regular file handler */
 
