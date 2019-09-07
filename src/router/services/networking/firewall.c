@@ -2889,10 +2889,10 @@ void start_firewall(void)
 #endif
 #ifdef HAVE_HTTPS
 	if (nvram_matchi("remote_mgt_https", 1))
-		web_lanport = HTTPS_PORT;
+		web_lanport = nvram_geti("https_lanport") > 0 ? : HTTPS_PORT;
 	else
 #endif
-		web_lanport = nvram_geti("http_lanport") ? : HTTP_PORT;
+		web_lanport = nvram_geti("http_lanport") > 0 ? : HTTP_PORT;
 	/*
 	 * Remove existent file 
 	 */
