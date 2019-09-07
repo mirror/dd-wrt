@@ -1463,7 +1463,7 @@ int main(int argc, char **argv)
 	strcpy(pid_file, "/var/run/httpd.pid");
 	server_port = DEFAULT_HTTP_PORT;
 
-	while ((c = getopt(argc, argv, "Sih:p:m:d:t:s:g:e:")) != -1)
+	while ((c = getopt(argc, argv, "Snih:p:m:d:t:s:g:e:")) != -1)
 		switch (c) {
 #ifdef HAVE_HTTPS
 		case 'S':
@@ -1521,9 +1521,9 @@ int main(int argc, char **argv)
 	}
 #ifdef HAVE_HTTPS
 	if (no_ssl)
-		dd_loginfo("httpd", "httpd server %sstarted at port %d\n", server_port);
+		dd_loginfo("httpd", "httpd server started at port %d\n", server_port);
 	if (do_ssl)
-		dd_loginfo("httpd", "httpd SSL server %sstarted at port %d\n", ssl_server_port);
+		dd_loginfo("httpd", "httpd SSL server started at port %d\n", ssl_server_port);
 #else
 	dd_loginfo("httpd", "httpd server started at port %d\n", server_port);
 #endif
@@ -1652,9 +1652,9 @@ int main(int argc, char **argv)
 
 #ifdef HAVE_HTTPS
 	if (do_ssl && ssl_gotv6) {
-		listen6_fd = initialize_listen_socket(&ssl_host_addr6);
+		ssl_listen6_fd = initialize_listen_socket(&ssl_host_addr6);
 	} else
-		listen6_fd = -1;
+		ssl_listen6_fd = -1;
 
 #endif
 #endif
@@ -1665,9 +1665,9 @@ int main(int argc, char **argv)
 
 #ifdef HAVE_HTTPS
 	if (do_ssl && ssl_gotv4) {
-		listen4_fd = initialize_listen_socket(&ssl_host_addr4);
+		ssl_listen4_fd = initialize_listen_socket(&ssl_host_addr4);
 	} else
-		listen4_fd = -1;
+		ssl_listen4_fd = -1;
 #endif
 	/* If we didn't get any valid sockets, fail. */
 	if (listen4_fd == -1 && listen6_fd == -1 && ssl_listen4_fd == -1 && ssl_listen6_fd == -1) {
@@ -1721,12 +1721,12 @@ int main(int argc, char **argv)
 			if (ssl_listen4_fd != -1) {
 				FD_SET(ssl_listen4_fd, &lfdset);
 				if (ssl_listen4_fd > maxfd)
-					maxfd = listen4_fd;
+					maxfd = ssl_listen4_fd;
 			}
 			if (ssl_listen6_fd != -1) {
 				FD_SET(ssl_listen6_fd, &lfdset);
 				if (ssl_listen6_fd > maxfd)
-					maxfd = listen6_fd;
+					maxfd = ssl_listen6_fd;
 			}
 		}
 #endif
