@@ -31,36 +31,54 @@
 void start_httpd(void)
 {
 	int ret = 0;
+	int do_ssl = 0;
+	int no_ssl = 0;
+	char *lan_port = NULL;
+	char *ssl_lan_port = NULL;
 	stop_httpd();
 	update_timezone();
-	if (nvram_invmatchi("http_enable", 0)
-	    && !f_exists("/var/run/httpd.pid")) {
-		chdir("/www");
-		cprintf("[HTTPD Starting on /www]\n");
+	chdir("/www");
+	if (nvram_invmatchi("http_enable", 0)) {
+		no_ssl = 1;
 		if (nvram_invmatch("http_lanport", "")) {
-			char *lan_port = nvram_safe_get("http_lanport");
-
-			ret = eval("httpd", "-p", lan_port);
-		} else {
-			ret = eval("httpd");
-			dd_loginfo("httpd", "http daemon successfully started\n");
+			lan_port = nvram_safe_get("http_lanport");
 		}
-		chdir("/");
 	}
 #ifdef HAVE_HTTPS
-	if (nvram_invmatchi("https_enable", 0)
-	    && !f_exists("/var/run/httpsd.pid")) {
-
-		// Generate a new certificate
-		// if(!f_exists("/tmp/cert.pem") || !f_exists("/tmp/key.pem"))
-		// eval("gencert.sh", BUILD_SECS); 
-
-		chdir("/www");
+	if (nvram_invmatchi("https_enable", 0)) {
+		do_ssl = 1;
 		ret = eval("httpd", "-S");
+		if (nvram_invmatch("https_lanport", "")) {
+			ssl_lan_port = nvram_safe_get("https_lanport");
+		}
 		dd_loginfo("httpd", "https daemon successfully started\n");
-		chdir("/");
 	}
 #endif
+	int c = 0;
+	char *args[4] = { NULL, NULL, NULL, NULL };
+	char *lanarg = NULL;
+	char *ssl_lanarg = NULL;
+
+	if (lan_port) {
+		args[c++] = "-p";
+		args[c++] = lan_port;
+	}
+	if (ssl_lan_port) {
+		args[c++] = "-m";
+		args[c++] = ssl_lan_port;
+	}
+
+	if (!f_exists("/var/run/httpd.pid")) {
+		dd_loginfo("httpd", "http daemon successfully started\n");
+		if (do_ssl && no_ssl) {
+			eval("httpd", "-n", "-S", args[0], args[1], args[2], args[3]);
+		} else if (no_ssl) {
+			eval("httpd", "-n", args[0], args[1], args[2], args[3]);
+		} else if (do_ssl) {
+			eval("httpd", "-S", args[0], args[1], args[2], args[3]);
+		}
+	}
+	chdir("/");
 
 	cprintf("done\n");
 	return;
@@ -70,8 +88,5 @@ void stop_httpd(void)
 {
 	stop_process("httpd", "daemon");
 	unlink("/var/run/httpd.pid");
-#ifdef HAVE_HTTPS
-	unlink("/var/run/httpsd.pid");
-#endif
 	return;
 }
