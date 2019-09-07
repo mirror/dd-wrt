@@ -1470,7 +1470,6 @@ int main(int argc, char **argv)
 #if defined(HAVE_OPENSSL) || defined(HAVE_MATRIXSSL) || defined(HAVE_POLARSSL)
 			do_ssl = 1;
 			ssl_server_port = DEFAULT_HTTPS_PORT;
-			strcpy(pid_file, "/var/run/httpsd.pid");
 #else
 			fprintf(stderr, "No SSL support available\n");
 			exit(0);
