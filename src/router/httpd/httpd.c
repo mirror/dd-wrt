@@ -1733,8 +1733,10 @@ int main(int argc, char **argv)
 		}
 #endif
 		if (select(maxfd + 1, &lfdset, NULL, NULL, NULL) < 0) {
-			if (errno == EINTR || errno == EAGAIN)
+			if (errno == EINTR || errno == EAGAIN) {
+				SEM_POST(&semaphore);
 				continue;	/* try again */
+			}
 			perror("select");
 			SEM_POST(&semaphore);
 			return errno;
