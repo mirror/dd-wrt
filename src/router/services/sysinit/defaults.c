@@ -762,6 +762,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "remote_ip", "0.0.0.0 0" },	/* allowed remote ip range */
 	{ "http_wanport", "8080" },	/* WAN port to listen on */
 	{ "http_lanport", "80" },	/* LAN port to listen on */
+	{ "https_lanport", "443" },	/* LAN port to listen on */
 #if defined(HAVE_IPR) || defined(HAVE_UNFY)
 #ifdef HAVE_HTTPS
 	{ "https_enable", "1" },	/* HTTPS server enable/disable */
