@@ -1503,7 +1503,9 @@ int main(int argc, char **argv)
 			fprintf(stderr, "Usage: %s [-S] [-p port]\n"
 #ifdef HAVE_HTTPS
 				"	-S : Support https (port 443)\n"
+				"	-m port : Which SSL port to listen?\n"
 #endif
+				"	-n : Support http (port 80)\n"
 				"	-p port : Which port to listen?\n" "	-t secs : How many seconds to wait before timing out?\n"
 #ifdef DEBUG_CIPHER
 				"	-s ciphers: set cipher lists\n" "	-g: get cipher lists\n"
