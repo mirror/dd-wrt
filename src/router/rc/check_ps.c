@@ -64,6 +64,13 @@ static int check_ddns(void)
 	return !search_process("inadyn", 1);
 }
 
+static int check_httpd(void)
+{
+	if (nvram_match("http_enable", "0") && nvram_match("https_enable", "0"))	// todo: add upstream 
+		return 0;
+	return !search_process("httpd", 1);
+}
+
 enum { M_LAN, M_WAN };
 
 struct mon mons[] = {
@@ -72,7 +79,7 @@ struct mon mons[] = {
 	{ "upnp", M_LAN, "upnp_enable", "1", NULL, NULL, NULL },
 #endif
 	{ "process_monitor", M_LAN, NULL, NULL, NULL, NULL, NULL },
-	{ "httpd", M_LAN, "http_enable", "1", "https_enable", "1", NULL },
+	{ "httpd", M_LAN, "http_enable", "1", "https_enable", "1", &check_httpd},
 #ifdef HAVE_UDHCPD
 	{ "udhcpd", M_LAN, NULL, NULL, NULL, NULL, NULL },
 #endif
