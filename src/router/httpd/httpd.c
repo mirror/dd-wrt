@@ -1900,11 +1900,23 @@ int main(int argc, char **argv)
 		shutdown(listen4_fd, 2);
 		close(listen4_fd);
 	}
+#ifdef HAVE_HTTPS
+	if (ssl_listen4_fd != -1) {
+		shutdown(ssl_listen4_fd, 2);
+		close(ssl_listen4_fd);
+	}
+#endif
 #ifdef USE_IPV6
 	if (listen6_fd != -1) {
 		shutdown(listen6_fd, 2);
 		close(listen6_fd);
 	}
+#ifdef HAVE_HTTPS
+	if (ssl_listen6_fd != -1) {
+		shutdown(ssl_listen6_fd, 2);
+		close(ssl_listen6_fd);
+	}
+#endif
 #endif
 	return 0;
 }
