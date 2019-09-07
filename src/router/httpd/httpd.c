@@ -1634,7 +1634,7 @@ int main(int argc, char **argv)
 		lookup_hostname(&host_addr4, sizeof(host_addr4), &gotv4, &host_addr6, sizeof(host_addr6), &gotv6, server_port);
 #ifdef HAVE_HTTPS
 	if (do_ssl)
-		lookup_hostname(&ssl_host_addr4, sizeof(ssl_host_addr4), &ssl_gotv4, &ssl_host_addr6, sizeof(ssl_host_addr6), &ssl_gotv6, server_port);
+		lookup_hostname(&ssl_host_addr4, sizeof(ssl_host_addr4), &ssl_gotv4, &ssl_host_addr6, sizeof(ssl_host_addr6), &ssl_gotv6, ssl_server_port);
 #endif
 	if (!(gotv4 || gotv6 || ssl_gotv4 || ssl_gotv6)) {
 		exit(1);
