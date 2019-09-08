@@ -280,6 +280,7 @@ typedef enum {
   NDPI_PROTOCOL_GOOGLE_DOCS           = 241,
   NDPI_PROTOCOL_WHATSAPP_FILES        = 242, /* Videos, pictures, voice messages... */
   NDPI_PROTOCOL_TARGUS_GETDATA        = 243,
+  NDPI_PROTOCOL_WIREGUARD             = 244,
   /*
     IMPORTANT
     before allocating a new identifier please fill up
