@@ -57,8 +57,7 @@ int NDPI_BITMASK_IS_EMPTY(NDPI_PROTOCOL_BITMASK a) {
 //#if NDPI_LAST_IMPLEMENTED_PROTOCOL != NDPI_PROTOCOL_MAXNUM
 //#error LAST_IMPLEMENTED_PROTOCOL != PROTOCOL_MAXNUM
 //#endif
-
-static char *prot_short_str[NDPI_NUM_BITS] = { /*NDPI_PROTOCOL_SHORT_STRING,*/ NULL, };
+static char *prot_short_str[NDPI_NUM_BITS] = { "unknown","afp","ajp","amqp","aimini","amazon","amazonvideo","apple","applejuice","applepush","applestore","appleicloud","appleitunes","armagetron","ayiya","bgp","bjnp","battlefield","bittorrent","checkmk","cnn","coap","csgo","ciscoskinny","ciscovpn","citrix","cloudflare","collectd","corba","crossfire","dce_rpc","dhcp","dhcpv6","dns","dnscrypt","drda","deezer","diameter","directconnect","direct_download_link","dofus","dropbox","eaq","egp","fix","ftp_control","ftp_data","facebook","facebookzero","fasttrack","fiesta","florensia","free","free","free","free","free_49","gmail","gre","gtp","genericprotocol","git","github","gnutella","google","googledocs","googledrive","googlehangout","googlemaps","googleplus","googleservices","guildwars","h323","hep","http","http_activesync","http_connect","http_download","http_proxy","halflife2","hotmail","hotspotshield","iax","icmp","icmpv6","iflix","igmp","imap","imaps","ipp","ip_in_ip","ipsec","irc","icecast","instagram","kakaotalk","kakaotalk_voice","kerberos","kontiki","ldap","lisp","llmnr","lastfm","linkedin","lotusnotes","mdns","mgcp","mpeg_ts","mqtt","msn","ms_onedrive","maplestory","megaco","memcached","messenger","microsoft","mining","modbus","mssql-tds","mysql","nfs","noe","ntp","nestlogsink","netbios","netflix","netflow","nintendo","ocs","ospf","office365","ookla","opendns","openft","openvpn","oracle","oscar","pop3","pops","pplive","ppstream","ppstream","pptp","pando_media_booster","pandora","pastebin","pcanywhere","playstore","playstation","postgresql","qq","qqlive","quic","rdp","rsync","rtcp","rtmp","rtp","rtsp","rx","radius","redis","remotescan","sap","sctp","sip","smbv1","smbv23","smpp","smtp","smtps","snmp","socks","someip","ssdp","ssh","ssl","ssl_no_cert","stun","shoutcast","signal","sina(weibo)","skype","skypecall","slack","snapchat","sopcast","soulseek","soundcloud","spotify","starcraft","stealthnet","steam","syslog","tftp","tinc","tvuplayer","targus","teamspeak","teamviewer","telegram","telnet","teredo","thunder","tor","truphone","tuenti","tvants","twitch","twitter","ubntac2","upnp","ubuntuone","unencrypted_jabber","usenet","vhua","vmware","vnc","vrrp","vevo","viber","warcraft3","waze","wechat","webex","whatsapp","whatsappfiles","whatsappvoice","whois-das","wikipedia","windowsupdate","wireguard","worldofkungfu","worldofwarcraft","xdmcp","xbox","yahoo","youtube","youtubeupload","zattoo","zeromq","custom245","custom246","custom247","custom248","custom249","custom250","custom251","custom252","custom253","custom254","custom255","custom256","custom257","custom258","custom259","custom260","custom261","custom262","custom263","custom264","custom265","custom266","custom267","custom268","custom269","custom270","custom271","custom272","custom273","custom274","custom275","custom276","custom277","custom278","custom279","custom280","custom281","custom282","custom283","custom284","custom285","custom286","custom287","custom288","custom289","custom290","custom291","custom292","custom293","custom294","custom295","custom296","custom297","custom298","custom299","custom300","custom301","custom302","custom303","custom304","custom305","custom306","custom307","custom308","custom309","custom310","custom311","custom312","custom313","custom314","custom315","custom316","custom317","custom318","custom319","ebay","edonkey","ntop","sflow",NULL};
 static char  prot_disabled[NDPI_NUM_BITS+1] = { 0, };
 
 #define NDPI_OPT_ERROR    (NDPI_LAST_IMPLEMENTED_PROTOCOL+1)
@@ -680,30 +679,8 @@ void _init(void)
         int i;
 	char buf[128],*c,pname[32],mark[32];
 	uint32_t index;
-
-	FILE *f_proto = fopen("/proc/net/xt_ndpi/proto","r");
-
-	if(!f_proto)
-		xtables_error(PARAMETER_PROBLEM, "xt_ndpi: kernel module not load.");
 	pname[0] = '\0';
 	index = 0;
-	while(!feof(f_proto)) {
-		c = fgets(buf,sizeof(buf)-1,f_proto);
-		if(!c) break;
-		if(buf[0] == '#') {
-			if(!strstr(buf,"#version") || !strstr(buf,NDPI_GIT_RELEASE)) break;
-			pname[0] = ' ';
-			continue;
-		}
-		if(!pname[0]) continue;
-		if(sscanf(buf,"%x %s %s",&index,mark,pname) != 3) continue;
-		if(index >= NDPI_NUM_BITS) continue;
-		prot_disabled[index] = strncmp(mark,"disable",7) == 0;
-		prot_short_str[index] = strdup(pname);	
-	}
-	fclose(f_proto);
-	if(index >= NDPI_NUM_BITS)
-	    xtables_error(PARAMETER_PROBLEM, "xt_ndpi: kernel module version missmatch.");
 
         for (i = 0; i <= NDPI_LAST_IMPLEMENTED_PROTOCOL; i++){
                 ndpi_mt_opts[i].name = prot_short_str[i];
