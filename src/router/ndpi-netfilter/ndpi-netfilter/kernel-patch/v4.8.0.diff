@@ -1,0 +1,108 @@
+diff --git a/include/net/netfilter/nf_conntrack_extend.h b/include/net/netfilter/nf_conntrack_extend.h
+index 1c3035d..28e6e31 100644
+--- a/include/net/netfilter/nf_conntrack_extend.h
++++ b/include/net/netfilter/nf_conntrack_extend.h
+@@ -27,7 +27,8 @@ enum nf_ct_ext_id {
+ #if IS_ENABLED(CONFIG_NETFILTER_SYNPROXY)
+ 	NF_CT_EXT_SYNPROXY,
+ #endif
+-	NF_CT_EXT_NUM,
++	NF_CT_EXT_CUSTOM,
++	NF_CT_EXT_NUM=NF_CT_EXT_CUSTOM+CONFIG_NF_CONNTRACK_CUSTOM,
+ };
+ 
+ #define NF_CT_EXT_HELPER_TYPE struct nf_conn_help
+@@ -112,5 +113,6 @@ struct nf_ct_ext_type {
+ };
+ 
+ int nf_ct_extend_register(struct nf_ct_ext_type *type);
++int nf_ct_extend_custom_register(struct nf_ct_ext_type *type,unsigned long int cid);
+ void nf_ct_extend_unregister(struct nf_ct_ext_type *type);
+ #endif /* _NF_CONNTRACK_EXTEND_H */
+diff --git a/net/netfilter/Kconfig b/net/netfilter/Kconfig
+index 9266cee..a6ee0e6 100644
+--- a/net/netfilter/Kconfig
++++ b/net/netfilter/Kconfig
+@@ -81,6 +81,16 @@ config NF_CONNTRACK_SECMARK
+ 
+ 	  If unsure, say 'N'.
+ 
++config NF_CONNTRACK_CUSTOM
++	int "Number of custom extend"
++	range 0 8
++	depends on NETFILTER_ADVANCED
++	default "4"
++	help
++	  This parameter specifies how many custom extensions can be registered.
++
++	  The default value is 4.
++
+ config NF_CONNTRACK_ZONES
+ 	bool  'Connection tracking zones'
+ 	depends on NETFILTER_ADVANCED
+diff --git a/net/netfilter/nf_conntrack_extend.c b/net/netfilter/nf_conntrack_extend.c
+index 02bcf00..dc6c276 100644
+--- a/net/netfilter/nf_conntrack_extend.c
++++ b/net/netfilter/nf_conntrack_extend.c
+@@ -145,6 +145,28 @@ static void update_alloc_size(struct nf_ct_ext_type *type)
+ 	}
+ }
+ 
++static unsigned long int nf_ct_ext_cust_id[CONFIG_NF_CONNTRACK_CUSTOM];
++static enum nf_ct_ext_id 
++nf_ct_extend_get_custom_id(unsigned long int ext_id)
++{
++	enum nf_ct_ext_id ret = 0;
++	int i;
++	mutex_lock(&nf_ct_ext_type_mutex);
++	for(i = 0; i < CONFIG_NF_CONNTRACK_CUSTOM; i++) {
++		if(!nf_ct_ext_cust_id[i]) {
++			nf_ct_ext_cust_id[i] = ext_id;
++			ret = i+NF_CT_EXT_CUSTOM;
++			break;
++		}
++		if(nf_ct_ext_cust_id[i] == ext_id) {
++			ret = i+NF_CT_EXT_CUSTOM;
++			break;
++		}
++	}
++	mutex_unlock(&nf_ct_ext_type_mutex);
++	return ret;
++}
++
+ /* This MUST be called in process context. */
+ int nf_ct_extend_register(struct nf_ct_ext_type *type)
+ {
+@@ -168,12 +190,32 @@ out:
+ }
+ EXPORT_SYMBOL_GPL(nf_ct_extend_register);
+ 
++int nf_ct_extend_custom_register(struct nf_ct_ext_type *type,
++				 unsigned long int cid)
++{
++	int ret;
++	enum nf_ct_ext_id new_id = nf_ct_extend_get_custom_id(cid);
++	if(!new_id)
++		return -EBUSY;
++	type->id = new_id;
++	ret = nf_ct_extend_register(type);
++	if(ret < 0) {
++		mutex_lock(&nf_ct_ext_type_mutex);
++		nf_ct_ext_cust_id[new_id - NF_CT_EXT_CUSTOM] = 0;
++		mutex_unlock(&nf_ct_ext_type_mutex);
++	}
++	return ret;
++}
++EXPORT_SYMBOL_GPL(nf_ct_extend_custom_register);
++
+ /* This MUST be called in process context. */
+ void nf_ct_extend_unregister(struct nf_ct_ext_type *type)
+ {
+ 	mutex_lock(&nf_ct_ext_type_mutex);
+ 	RCU_INIT_POINTER(nf_ct_ext_types[type->id], NULL);
+ 	update_alloc_size(type);
++	if(type->id >= NF_CT_EXT_CUSTOM && type->id < NF_CT_EXT_NUM)
++		nf_ct_ext_cust_id[type->id-NF_CT_EXT_CUSTOM] = 0;
+ 	mutex_unlock(&nf_ct_ext_type_mutex);
+ 	rcu_barrier(); /* Wait for completion of call_rcu()'s */
+ }

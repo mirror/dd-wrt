@@ -1,0 +1,297 @@
+-----------------
+1. Kernel patches
+-----------------
+
+You _must_ apply the patch to the kernel in two cases:
+- Kernel version 3.2 or 3.4.
+- Kernel version 3.10 or higher (see minimum requirements for the kernel)
+In other cases kernel patches not requhired!
+
+Patches are located in the kernel-patch/*.diff
+
+V3.4.97  patch can be applied for 3.4 kernels (tested on 3.4.97+) and possibly to 3.2.
+V3.10.20 patch can be applied to kernel 3.10 (3.11).
+V3.12.7  patch can be applied to kernel 3.12.
+V3.14.4  patch can be applied to kernel 3.14.2-3.14.4
+V3.14.5  patch can be applied to kernel 3.14.5 and higher (3.18 including).
+v4.8.0   patch can be applied to kernel 4.8,4.9
+v4.12.0   patch can be applied to kernel 4.12
+v4.14.0   patch can be applied to kernel 4.14
+v4.15.3   patch can be applied to kernel 4.15
+
+--------------------------------------------------------
+2. The minimum requirements for the kernel configuration
+--------------------------------------------------------
+
+Kernel version >= 3.4 (3.2 not tested)
+
+Networking support  --->
+  Networking options  --->
+  [*] Network packet filtering framework (Netfilter)  --->
+        Core Netfilter Configuration  --->
+          Netfilter connection tracking support (M/Y)
+          Number of custom extend (1) (if patched kernel)
+	  "connlabel" match support (M)
+
+Check your kernel configuration file. For patched kernel there should be:
+
+CONFIG_NF_CONNTRACK=m or y
+CONFIG_NF_CONNTRACK_CUSTOM=1
+CONFIG_UNUSED_SYMBOLS=y
+
+For non-patched kernel there should be:
+
+CONFIG_NF_CONNTRACK=m or y
+CONFIG_NF_CONNTRACK_LABELS=y
+CONFIG_NETFILTER_XT_MATCH_CONNLABEL=m
+CONFIG_UNUSED_SYMBOLS=y
+
+----------------------
+3. Compile and install
+----------------------
+
+The install the modules follow these steps, always from the modules package
+root (i.e. where this file is located)
+
+Add option KERNEL_DIR=/path/to/kernel if the kernel sources have non-standard location,
+or if you want to compile the module to another kernel configuration.
+
+- To compile the modules first type:
+
+	./autogen.sh
+	( cd src/lib ; make ndpi_network_list.c.inc )
+	cd  ndpi-netfilter
+	make
+
+  For compile with debug messages (not for production)
+
+	./autogen.sh --enable-debug-messages
+	( cd src/lib ; make ndpi_network_list.c.inc )
+	cd  ndpi-netfilter
+	make
+
+- Then, as root, type:
+
+        make modules_install
+
+That would install the nDPI module for the given Linux kernel.
+(default /lib/modules/`uname -r`/extra/xt_ndpi.ko)
+
+- Finally, also as root, you should copy the iptables module into the
+  corresponding directory. Usually this is "/lib/xtables" or
+  "/usr/lib/xtables".
+
+        make install
+
+Now you can read the following section to learn how to use it.
+
+---------------
+4. Module usage
+---------------
+
+Once you have installed modules ("libxt_ndpi.so" and "xt_ndpi.ko")
+you should type (as root):
+
+        modprobe xt_ndpi
+
+If the module has been successfully loaded you shouldn't see any message
+(see dmesg for additional info). After loading the kernel module you can
+use iptables to add a rule. To see available protocols you can match for
+in every packet, type:
+
+        iptables -m ndpi --help
+
+Note that the list is long, you best try: "iptables -m ndpi --help | more"
+
+An example rule would be (as root):
+
+        iptables -A OUTPUT -m ndpi --proto http -j REJECT
+
+This wouldn't allow any HTTP traffic that originates from the machine where the
+rule was added.
+
+------------------------------------------------------------------
+WARNING! You can't use form '--protoname' for user-defined protocols!
+Only '--proto protoname' form is allowed!
+(Iptables not allow  over 256 options on extensions)
+------------------------------------------------------------------
+
+------------------------------------------------------------------
+BIG FAT WARNING!
+
+Do not discard all the unknown traffic. Tcp-syn packets are always treated as an
+unknown protocol.
+------------------------------------------------------------------
+
+Using NDPI target. To see available options type:
+
+        iptables -j NDPI --help
+
+NDPI target may be using for packet marking (see MARK target) or packet classify (see CLASSIFY target).
+Values for mark or class may be give from /proc/net/xt_ndpi/proto (see procfs section below) or specified in netfilter rules (--values).
+
+Example (traffic shaper)
+
+-----------------------------------------------------------------
+#
+# HTB setup
+#
+
+/etc/htb/eth0
+DEFAULT=30
+R2Q=160
+DCACHE=no
+
+/etc/htb/eth0-2.root
+RATE=210Mbit
+BURST=20k
+
+/etc/htb/eth0-2:10.high
+RATE=100Mbit
+CEIL=205Mbit
+LEAF=sfq
+
+/etc/htb/eth0-2:20.slow
+RATE=20Mbit
+CEIL=100Mbit
+LEAF=sfq
+
+/etc/htb/eth0-2:30.default
+RATE=80Mbit
+CEIL=210Mbit
+LEAF=sfq
+
+/etc/htb/eth0-2:40.unknown
+RATE=1Mbit
+CEIL=2Mbit
+LEAF=sfq
+-----------------------------------------------------------------
+modprobe xt_ndpi
+# default class 1:30
+echo "all 10030/ffffff" >/proc/net/xt_ndpi/proto
+for i in ssh mail_pop mail_imap mail_smtp mail_pops mail_smtps mail_imaps dns; do
+# high speed class 1:10
+	echo "$i 10010" >/proc/net/xt_ndpi/proto
+done
+for i in bittorrent edonkey ftp_data ; do
+# low speed class 1:20
+	echo "$i 10020" >/proc/net/xt_ndpi/proto
+done
+echo "unknown 10040" >/proc/net/xt_ndpi/proto
+
+#detect incoming traffic
+iptables -t mangle -A PREROUTING -m ndpi --all
+#detect outgoing local traffic
+iptables -t mangle -A OUTPUT -m ndpi --all
+
+#traffic classification
+iptables -t mangle -A POSTROUTING -o eth0 -j NDPI --ndpi-id --set-clsf
+
+----------------
+5. Module unload
+----------------
+
+In case you want to stop using the nDPI kernel module, first remove every
+iptables rule for nDPI and then type (as root):
+
+        conntrack -F && rmmod xt_ndpi
+
+--------------------
+6. Module parameters
+--------------------
+
+xt_debug:	Debug level for xt_ndpi (0-3). Default 0.
+lib_trace:	Maximem debug level for nDPI library. Default 0.
+		0-off, 1-error, 2-trace, 3-debug, 4->extra debug"
+		(Needed configure with --enable-debug-messages option)
+
+		Use "echo all debug 4 >/proc/net/xt_ndpi/proto"	for 
+		maximum debug output.
+		This settings may be personality for each protocol.
+
+mtu:    Skip non-linear skb (GRO/LRO) if packet size > mtu. Default 48000.
+
+bt_hash_size:  size of BT hash (2-512) entry*1024. Default 0 (off).
+bt6_hash_size: size of BT hash for IPv6 (2-32) entry*1024. Default 0 (off).
+
+bt_hash_timeout: Storage time (sec) of history BT peers. Default 1200.
+                 (Only if bt_hash_size > 0).
+
+bt_log_size: size of log BT announces (kb). 192 bytes per announce. Default 128.
+                 (Only if bt_hash_size > 0).
+
+ndpi_enable_flow: Enable netflow info. See FLOW_INFO.txt
+ndpi_flow_limit:  Limit netflow records. Default 10000000 (~4.3Gb RAM). See FLOW_INFO.txt
+
+---------------
+7. procfs files
+---------------
+
+/proc/net/xt_ndpi/proto - show ID, mark and mask of protocols.
+
+  Use command "cat /proc/net/xt_ndpi/proto" for view settings
+
+  "echo init >/proc/net/xt_ndpi/proto" enable all protocols and set mark by ID and mask 0xff.
+
+  Change mark/mask for protocols:
+  "echo '(protoid|protoname|all|any) mark[/mask]' >/proc/net/xt_ndpi/proto"
+
+  The prohibition detection protocol:
+  "echo '(protoid|protoname) disable' >/proc/net/xt_ndpi/proto"
+
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !!! We must disable protocols before first using it in iptables  !!!
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  Set trace level for protocol:
+  "echo '(all|protoid|protoname) debug 0-4' >/proc/net/xt_ndpi/proto"
+
+  Adding user-defined protocol:
+  "echo 'add_custom protoname' >/proc/net/xt_ndpi/proto"
+  (use ip_proto and host_proto for definition)
+
+  protoid, mark and mask is hex-value.
+
+  Examples:
+  echo all 0/ff >/proc/net/xt_ndpi/proto
+  echo http 1 >/proc/net/xt_ndpi/proto
+  echo http_proxy 1 >/proc/net/xt_ndpi/proto
+  echo 83 1 >/proc/net/xt_ndpi/proto
+  echo "add_custom bad_host" >/proc/net/xt_ndpi/proto && \
+    echo "+bad_host:bad.org" >/proc/net/xt_ndpi/host_proto
+
+/proc/net/xt_ndpi/ip_proto - show and change IP and port based protocols settings
+
+  View current settings:
+  "cat /proc/net/xt_ndpi/ip_proto"
+
+  Change settings:
+  "echo '[-]prefix ([[(tcp|udp|any):]port[-port]:]protocol)+' >/proc/net/xt_ndpi/ip_proto" - change
+
+  Example:      echo '1.1.1.1 any:53:DNS tcp:81:http' >/proc/net/xt_ndpi/ip_proto
+
+/proc/net/xt_ndpi/host_proto - show host based settings (used in DNS,HTTP,SSL)
+
+  View current settings:
+  "cat /proc/net/xt_ndpi/host_proto"
+
+  Change settings:
+  "echo 'protoname:host[,host...][ protoname:host[,host...]]' >/proc/net/xt_ndpi/host_proto"
+
+  Delete all hosts matchs:
+  "echo 'reset' >/proc/net/xt_ndpi/host_proto"
+
+  Updating /proc/net/xt_ndpi/host_prot is slow and expensive.
+  It is recommended to download all the data in one go.
+
+Bittorrents-specific files:
+
+/proc/net/xt_ndpi/announce - show BT announces (from DHT)
+
+/proc/net/xt_ndpi/info[6] - statistics about BT hash. For debug and development.
+
+  "cat /proc/net/xt_ndpi/info" - show number of elements in hash list.
+  "echo XXX >/proc/net/xt_ndpi/info && cat /proc/net/xt_ndpi/info" - show ip/port in selected hash list"
+  "echo -1 >/proc/net/xt_ndpi/info" - restore view common info
+
+
