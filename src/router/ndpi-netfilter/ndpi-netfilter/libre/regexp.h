@@ -33,9 +33,9 @@ typedef struct regexp {
 	char program[1];	/* Unwarranted chumminess with compiler. */
 } regexp;
 
-regexp * ndpi_regcomp(char *exp, int *patternsize);
-int ndpi_regexec(regexp *prog, char *string);
-void ndpi_regerror(char *s);
+static regexp * ndpi_regcomp(char *exp, int *patternsize);
+static int ndpi_regexec(regexp *prog, char *string);
+static void ndpi_regerror(char *s);
 
 #define MAGIC   0234
 

@@ -1,3 +1,5 @@
+#ifndef NDPI_MAIN_NETFILTER_H
+#define NDPI_MAIN_NETFILTER_H
 
 #ifdef NDPI_IPPORT_DEBUG
 #undef DP
@@ -165,9 +167,10 @@ struct nf_ct_ext_ndpi {
  */
 } __attribute ((packed));
 
-extern unsigned long ndpi_log_debug;
+//static unsigned long ndpi_log_debug;
 
 #include "../lib/third_party/include/ahocorasick.h"
-const char *acerr2txt(AC_ERROR_t r);
+static const char *acerr2txt(AC_ERROR_t r);
 
-void set_debug_trace( struct ndpi_net *n);
+static void set_debug_trace( struct ndpi_net *n);
+#endif

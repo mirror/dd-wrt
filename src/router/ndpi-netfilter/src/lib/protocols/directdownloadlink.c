@@ -52,7 +52,7 @@ static void ndpi_int_direct_download_link_add_connection(struct ndpi_detection_m
   return 0 if nothing has been detected
   return 1 if it is a megaupload packet
 */
-u_int8_t search_ddl_domains(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+static u_int8_t search_ddl_domains(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = &flow->packet;
   u_int16_t filename_start = 0;
