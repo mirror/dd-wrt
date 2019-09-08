@@ -1537,6 +1537,11 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 			    no_master, "WhatsApp", NDPI_PROTOCOL_CATEGORY_CHAT,
 			    ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */,
 			    ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
+    ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_TARGUS_GETDATA,
+			    0 /* can_have_a_subprotocol */, no_master,
+			    no_master, "Targus Dataspeed", NDPI_PROTOCOL_CATEGORY_NETWORK,
+			    ndpi_build_default_ports(ports_a, 5001, 5201, 0, 0, 0) /* TCP */,
+			    ndpi_build_default_ports(ports_b, 5001, 5201, 0, 0, 0) /* UDP */);
 
     custom_master[0] = NDPI_PROTOCOL_SSL_NO_CERT, custom_master[1] = NDPI_PROTOCOL_UNKNOWN;
     ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_SSL,
@@ -2011,6 +2016,11 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 			    no_master, "AJP", NDPI_PROTOCOL_CATEGORY_WEB,
 			    ndpi_build_default_ports(ports_a, 8009, 0, 0, 0, 0) /* TCP */,
 			    ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
+    ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_AMAZON_VIDEO,
+			    0 /* can_have_a_subprotocol */, no_master,
+			    no_master, "AmazonVideo", NDPI_PROTOCOL_CATEGORY_CLOUD,
+			    ndpi_build_default_ports(ports_a, 443, 80, 0, 0, 0) /* TCP */,
+			    ndpi_build_default_ports(ports_b, 443, 80, 0, 0, 0) /* UDP */);
 
     /* calling function for host and content matched protocols */
     init_string_based_protocols(ndpi_mod);
@@ -3455,6 +3465,12 @@ void ndpi_set_protocol_detection_bitmask2(struct ndpi_detection_module_struct *n
 
   /* Nest Log Sink */
   init_nest_log_sink_dissector(ndpi_struct, &a, detection_bitmask);
+
+  /* AMAZON_VIDEO */
+  init_amazon_video_dissector(ndpi_struct, &a, detection_bitmask);
+
+  /* Targus Getdata */
+  init_targus_getdata_dissector(ndpi_struct, &a, detection_bitmask);
 
   /* ----------------------------------------------------------------- */
 

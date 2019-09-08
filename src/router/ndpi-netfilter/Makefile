@@ -6,3 +6,4 @@ install:
 
 clean:
 	$(MAKE) -C ndpi-netfilter clean
+	find . -name "*.o.cmd" -delete
