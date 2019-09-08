@@ -6,10 +6,9 @@ ccflags-y += -I${src}/${NDPI_SRC}/include -I${src}/${NDPI_SRC}/lib -I${src}/../l
 ccflags-y += -DHAVE_CONFIG_H -DNDPI_LIB_COMPILATION -DOPENDPI_NETFILTER_MODULE -g
 
 
-MODULES_DIR := /lib/modules/$(shell uname -r)
-KERNEL_DIR := ${MODULES_DIR}/build
+KERNEL_DIR := ${LINUXDIR}
 
-ifeq ($(shell grep -c userid ${MODULES_DIR}/source/include/linux/skbuff.h),1)
+ifeq ($(shell grep -c userid ${LINUXDIR}/include/linux/skbuff.h),1)
 ccflags-y += -DUSE_HACK_USERID=1
 endif
 
