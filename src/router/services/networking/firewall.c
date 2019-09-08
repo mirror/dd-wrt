@@ -1380,7 +1380,7 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 			}
 #ifdef HAVE_OPENDPI
 			if (!strcmp(protocol, "dpi")) {
-				insmod("xt_opendpi");
+				insmod("xt_ndpi");
 				save2file_A("advgrp_%d -m ndpi --%s -j %s", seq, realname, log_drop);
 			}
 #endif
@@ -1421,7 +1421,7 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 					if (!strcmp(proto, "bit")) {
 						/* bittorrent detection enhanced */
 #ifdef HAVE_OPENDPI
-						insmod("xt_opendpi");
+						insmod("xt_ndpi");
 						save2file_A("advgrp_%d -m ndpi --bittorrent -j %s", seq, log_drop);
 #else
 						insmod("ipt_layer7 xt_layer7");
@@ -1459,7 +1459,7 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 
 		/* p2p detection enhanced */
 #ifdef HAVE_OPENDPI
-		insmod("xt_opendpi");
+		insmod("xt_ndpi");
 		/*commonly used protocols, decending */
 		save2file_A("advgrp_%d -m ndpi --bittorrent -j %s", seq, log_drop);
 /*  disable till pattern works
