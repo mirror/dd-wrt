@@ -418,7 +418,7 @@ static char *dbl_lvl_txt[5] = {
 	NULL
 };
 /* debug functions */
-static void debug_printf(u_int32_t protocol, void *id_struct, ndpi_log_level_t log_level,
+NDPI_STATIC void debug_printf(u_int32_t protocol, void *id_struct, ndpi_log_level_t log_level,
 	const char *file_name, const char *func_name, unsigned line_number, const char * format, ...)
 {
 	struct ndpi_net *n = id_struct ? ((struct ndpi_detection_module_struct *)id_struct)->user_data : NULL;
@@ -487,9 +487,65 @@ void set_debug_trace( struct ndpi_net *n) {
 }
 #endif
 
-static char *ct_info(const struct nf_conn * ct,char *buf,size_t buf_size,int dir);
+NDPI_STATIC char *ct_info(const struct nf_conn * ct,char *buf,size_t buf_size,int dir);
 
-static void *malloc_wrapper(size_t size)
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,4,0)
+
+NDPI_STATIC void kvfree(const void *addr)
+{
+	if (is_vmalloc_addr(addr))
+		vfree(addr);
+	else
+		kfree(addr);
+}
+
+#ifndef __GFP_REPEAT
+#define		__GFP_REPEAT __GFP_RETRY_MAYFAIL
+#endif
+
+static void *kvmalloc_node(size_t size, gfp_t flags, int node)
+{
+	gfp_t kmalloc_flags = flags;
+	void *ret;
+
+	/*
+	 * vmalloc uses GFP_KERNEL for some internal allocations (e.g page tables)
+	 * so the given set of flags has to be compatible.
+	 */
+	WARN_ON_ONCE((flags & GFP_KERNEL) != GFP_KERNEL);
+
+	/*
+	 * Make sure that larger requests are not too disruptive - no OOM
+	 * killer and no allocation failure warnings as we have a fallback
+	 */
+	if (size > PAGE_SIZE) {
+		kmalloc_flags |= __GFP_NOWARN;
+
+		if (!(kmalloc_flags & __GFP_REPEAT))
+			kmalloc_flags |= __GFP_NORETRY;
+	}
+
+	ret = kmalloc_node(size, kmalloc_flags, node);
+
+	/*
+	 * It doesn't really make sense to fallback to vmalloc for sub page
+	 * requests
+	 */
+	if (ret || size <= PAGE_SIZE)
+		return ret;
+
+	return __vmalloc_node_flags(size, node, flags | __GFP_HIGHMEM);
+}
+
+static inline void *kvmalloc(size_t size, gfp_t flags)
+{
+	return kvmalloc_node(size, flags, NUMA_NO_NODE);
+}
+
+#endif
+
+NDPI_STATIC void *malloc_wrapper(size_t size)
 {
 	if(size > 32*1024) {
 		/*
@@ -498,25 +554,17 @@ static void *malloc_wrapper(size_t size)
 		 * only during initial initialization. 
 		 * In this case, we can use kvmalloc() instead of kmalloc().
 		 */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,12,0)
 		return kvmalloc(size,GFP_KERNEL);
-#else
-		return vmalloc(size);
-#endif
 	}
 	return kmalloc(size,(in_atomic() || irqs_disabled()) ? GFP_ATOMIC : GFP_KERNEL);
 }
 
-static void free_wrapper(void *freeable)
+NDPI_STATIC void free_wrapper(void *freeable)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,12,0)
 	kvfree(freeable);
-#else
-	vfree(freeable);
-#endif
 }
 
-static void fill_prefix_any(prefix_t *p, union nf_inet_addr *ip,int family) {
+NDPI_STATIC void fill_prefix_any(prefix_t *p, union nf_inet_addr *ip,int family) {
 	memset(p, 0, sizeof(prefix_t));
 	p->ref_count = 0;
 	if(family == AF_INET) {
@@ -534,7 +582,7 @@ static void fill_prefix_any(prefix_t *p, union nf_inet_addr *ip,int family) {
 #endif
 }
 
-static struct ndpi_id_struct *
+NDPI_STATIC struct ndpi_id_struct *
 ndpi_id_search_or_insert(struct ndpi_net *n, 
 		union nf_inet_addr *ip)
 {
@@ -577,7 +625,7 @@ ndpi_id_search_or_insert(struct ndpi_net *n,
 	return &id->ndpi_id;
 }
 
-static void
+NDPI_STATIC void
 ndpi_free_id (struct ndpi_net *n, struct osdpi_id_node * id)
 {
 	if (refcount_dec_and_test(&id->refcnt.refcount)) {
@@ -588,7 +636,7 @@ ndpi_free_id (struct ndpi_net *n, struct osdpi_id_node * id)
 }
 
 #ifdef NF_CT_CUSTOM
-static inline void *nf_ct_ext_add_ndpi(struct nf_conn * ct)
+NDPI_STATIC inline void *nf_ct_ext_add_ndpi(struct nf_conn * ct)
 {
   #if LINUX_VERSION_CODE >= KERNEL_VERSION(4,12,0)
 	return nf_ct_ext_add(ct,nf_ct_ext_id_ndpi,GFP_ATOMIC);
@@ -601,23 +649,23 @@ static inline void *nf_ct_ext_add_ndpi(struct nf_conn * ct)
 }
 #endif
 
-static inline struct nf_ct_ext_ndpi *nf_ct_get_ext_ndpi(struct nf_ct_ext_labels *ext_l) {
+NDPI_STATIC inline struct nf_ct_ext_ndpi *nf_ct_get_ext_ndpi(struct nf_ct_ext_labels *ext_l) {
 	return ext_l && ext_l->magic == MAGIC_CT ? ext_l->ndpi_ext:NULL;
 }
 
-static inline struct nf_ct_ext_ndpi *nf_ct_ext_find_ndpi(const struct nf_conn * ct)
+NDPI_STATIC inline struct nf_ct_ext_ndpi *nf_ct_ext_find_ndpi(const struct nf_conn * ct)
 {
 struct nf_ct_ext_labels *l = (struct nf_ct_ext_labels *)__nf_ct_ext_find(ct,nf_ct_ext_id_ndpi);
 return nf_ct_get_ext_ndpi(l);
 }
 
-static inline struct nf_ct_ext_labels *nf_ct_ext_find_label(const struct nf_conn * ct)
+NDPI_STATIC inline struct nf_ct_ext_labels *nf_ct_ext_find_label(const struct nf_conn * ct)
 {
 	return (struct nf_ct_ext_labels *)__nf_ct_ext_find(ct,nf_ct_ext_id_ndpi);
 }
 
 
-static void ndpi_ct_list_add(struct ndpi_net *n,
+NDPI_STATIC void ndpi_ct_list_add(struct ndpi_net *n,
 			struct nf_ct_ext_ndpi *ct_ndpi) {
 
 	struct nf_ct_ext_ndpi *h;
@@ -631,7 +679,7 @@ static void ndpi_ct_list_add(struct ndpi_net *n,
 	atomic_inc(&n->acc_work);
 }
 
-static void ndpi_init_ct_struct(struct ndpi_net *n, 
+NDPI_STATIC void ndpi_init_ct_struct(struct ndpi_net *n, 
 		struct nf_ct_ext_ndpi *ct_ndpi,
 		uint8_t l4_proto, struct nf_conn * ct,
 		int is_ipv6, uint32_t s_time) {
@@ -668,7 +716,7 @@ static void ndpi_init_ct_struct(struct ndpi_net *n,
 			ct_ndpi,ct,l4_proto);
 }
 
-static void ndpi_nat_detect(struct nf_ct_ext_ndpi *ct_ndpi, struct nf_conn * ct) {
+NDPI_STATIC void ndpi_nat_detect(struct nf_ct_ext_ndpi *ct_ndpi, struct nf_conn * ct) {
 
 	size_t addr_size = test_ipv6(ct_ndpi) ? 16:4;
 	const uint8_t l4_proto = ct_ndpi->l4_proto;
@@ -699,7 +747,7 @@ static void ndpi_nat_detect(struct nf_ct_ext_ndpi *ct_ndpi, struct nf_conn * ct)
 		pr_info("ndpi: %s ct_ndpi %pK\n",__func__,ct_ndpi);
 }
 
-static inline void ndpi_ct_counters_add(struct nf_ct_ext_ndpi *ct_ndpi,
+NDPI_STATIC inline void ndpi_ct_counters_add(struct nf_ct_ext_ndpi *ct_ndpi,
 		size_t npkt, size_t len, enum ip_conntrack_info ctinfo, uint32_t m_time) {
 
 	int rev = CTINFO2DIR(ctinfo) != IP_CT_DIR_ORIGINAL ? 1:0;
@@ -712,7 +760,7 @@ static inline void ndpi_ct_counters_add(struct nf_ct_ext_ndpi *ct_ndpi,
 }
 		
 
-static inline void __ndpi_free_ct_flow(struct nf_ct_ext_ndpi *ct_ndpi) {
+NDPI_STATIC inline void __ndpi_free_ct_flow(struct nf_ct_ext_ndpi *ct_ndpi) {
 	if(ct_ndpi->flow != NULL) {
 		ndpi_free_flow(ct_ndpi->flow);
 		kmem_cache_free (osdpi_flow_cache, ct_ndpi->flow);
@@ -721,7 +769,7 @@ static inline void __ndpi_free_ct_flow(struct nf_ct_ext_ndpi *ct_ndpi) {
 		module_put(THIS_MODULE);
 	}
 }
-static inline void __ndpi_free_ct_ndpi_id(struct ndpi_net *n, struct nf_ct_ext_ndpi *ct_ndpi) {
+NDPI_STATIC inline void __ndpi_free_ct_ndpi_id(struct ndpi_net *n, struct nf_ct_ext_ndpi *ct_ndpi) {
 	spin_lock_bh (&n->id_lock);
 	if(ct_ndpi->src) {
 		ndpi_free_id (n, container_of(ct_ndpi->src,struct osdpi_id_node,ndpi_id ));
@@ -734,7 +782,7 @@ static inline void __ndpi_free_ct_ndpi_id(struct ndpi_net *n, struct nf_ct_ext_n
 	spin_unlock_bh (&n->id_lock);
 }
 
-static inline void __ndpi_free_ct_proto(struct nf_ct_ext_ndpi *ct_ndpi) {
+NDPI_STATIC inline void __ndpi_free_ct_proto(struct nf_ct_ext_ndpi *ct_ndpi) {
         if(ct_ndpi->host) {
                 kfree(ct_ndpi->host);
                 ct_ndpi->host = NULL;
@@ -746,7 +794,7 @@ static inline void __ndpi_free_ct_proto(struct nf_ct_ext_ndpi *ct_ndpi) {
 }
 
 /* free ndpi info on ndpi_net_exit() */
-static int
+NDPI_STATIC int
 __ndpi_free_flow (struct nf_conn * ct,void *data) {
 	struct ndpi_net *n = data;
 	struct nf_ct_ext_labels *ext_l = nf_ct_ext_find_label(ct);
@@ -780,7 +828,7 @@ __ndpi_free_flow (struct nf_conn * ct,void *data) {
 	return 1;
 }
 
-static void
+NDPI_STATIC void
 nf_ndpi_free_flow (struct nf_conn * ct)
 {
 	struct ndpi_net *n;
@@ -822,7 +870,7 @@ nf_ndpi_free_flow (struct nf_conn * ct)
 }
 
 /* must be locked ct_ndpi->lock */
-static struct ndpi_flow_struct * 
+NDPI_STATIC struct ndpi_flow_struct * 
 ndpi_alloc_flow (struct nf_ct_ext_ndpi *ct_ndpi)
 {
         struct ndpi_flow_struct *flow;
@@ -843,9 +891,9 @@ ndpi_alloc_flow (struct nf_ct_ext_ndpi *ct_ndpi)
 }
 #ifndef NF_CT_CUSTOM
 
-static void (*ndpi_nf_ct_destroy)(struct nf_conntrack *) __rcu __read_mostly;
+NDPI_STATIC void (*ndpi_nf_ct_destroy)(struct nf_conntrack *) __rcu __read_mostly;
 
-static void ndpi_destroy_conntrack(struct nf_conntrack *nfct) {
+NDPI_STATIC void ndpi_destroy_conntrack(struct nf_conntrack *nfct) {
 	struct nf_conn *ct = (struct nf_conn *)nfct;
 	void (*destroy)(struct nf_conntrack *);
 
@@ -860,7 +908,7 @@ static void ndpi_destroy_conntrack(struct nf_conntrack *nfct) {
 
 /*****************************************************************/
 
-static void
+NDPI_STATIC void
 ndpi_enable_protocols (struct ndpi_net *n)
 {
         int i,c=0;
@@ -882,7 +930,7 @@ ndpi_enable_protocols (struct ndpi_net *n)
 }
 
 
-static void add_stat(unsigned long int n) {
+NDPI_STATIC void add_stat(unsigned long int n) {
 
 	if(n > ndpi_p9) ndpi_p9 = n;
 	n /= 10;
@@ -892,7 +940,7 @@ static void add_stat(unsigned long int n) {
 	ndpi_pl[n]++;
 }
 
-static char *ct_info(const struct nf_conn * ct,char *buf,size_t buf_size,int dir) {
+NDPI_STATIC char *ct_info(const struct nf_conn * ct,char *buf,size_t buf_size,int dir) {
  const struct nf_conntrack_tuple *t = 
 	 &ct->tuplehash[!dir ? IP_CT_DIR_ORIGINAL: IP_CT_DIR_REPLY].tuple;
  // fixme ipv6
@@ -904,7 +952,7 @@ static char *ct_info(const struct nf_conn * ct,char *buf,size_t buf_size,int dir
  return buf;
 }
 
-static void packet_trace(const struct sk_buff *skb,const struct nf_conn * ct, char *msg) {
+NDPI_STATIC void packet_trace(const struct sk_buff *skb,const struct nf_conn * ct, char *msg) {
   const struct iphdr *iph = ip_hdr(skb);
   if(iph && iph->version == 4) {
 	if(iph->protocol == IPPROTO_TCP || iph->protocol == IPPROTO_UDP) {
@@ -920,7 +968,7 @@ static void packet_trace(const struct sk_buff *skb,const struct nf_conn * ct, ch
   }
 }
 
-static int check_known_ipv4_service( struct ndpi_net *n,
+NDPI_STATIC int check_known_ipv4_service( struct ndpi_net *n,
 		union nf_inet_addr *ipaddr, uint16_t port, uint8_t protocol) {
 
 	prefix_t ipx;
@@ -938,7 +986,7 @@ static int check_known_ipv4_service( struct ndpi_net *n,
 	return app_protocol;
 }
 
-static u32
+NDPI_STATIC u32
 ndpi_process_packet(struct ndpi_net *n, struct nf_conn * ct, struct nf_ct_ext_ndpi *ct_ndpi,
 		    const uint64_t time,
                     const struct sk_buff *skb,int dir)
@@ -1060,7 +1108,7 @@ ndpi_process_packet(struct ndpi_net *n, struct nf_conn * ct, struct nf_ct_ext_nd
 
 	return proto.app_protocol;
 }
-static inline int can_handle(const struct sk_buff *skb,uint8_t *l4_proto)
+NDPI_STATIC inline int can_handle(const struct sk_buff *skb,uint8_t *l4_proto)
 {
 	const struct iphdr *iph;
 	uint32_t l4_len;
@@ -1110,7 +1158,7 @@ static inline int can_handle(const struct sk_buff *skb,uint8_t *l4_proto)
 	return 1;
 }
 
-static void ndpi_host_ssl(struct nf_ct_ext_ndpi *ct_ndpi) {
+NDPI_STATIC void ndpi_host_ssl(struct nf_ct_ext_ndpi *ct_ndpi) {
 
     if(ct_ndpi->proto.app_protocol == NDPI_PROTOCOL_UNKNOWN &&
 	ct_ndpi->proto.master_protocol == NDPI_PROTOCOL_UNKNOWN ) return;
@@ -1142,7 +1190,7 @@ static void ndpi_host_ssl(struct nf_ct_ext_ndpi *ct_ndpi) {
     }
 }
 
-static bool ndpi_host_match( const struct xt_ndpi_mtinfo *info,
+NDPI_STATIC bool ndpi_host_match( const struct xt_ndpi_mtinfo *info,
 			     struct nf_ct_ext_ndpi *ct_ndpi) {
 bool res = false;
 
@@ -1178,7 +1226,7 @@ if(ndpi_log_debug > 2)
 return res;
 }
 
-static inline uint16_t get_in_if(const struct net_device *dev) {
+NDPI_STATIC inline uint16_t get_in_if(const struct net_device *dev) {
 
 	return dev ? dev->ifindex:0;
 }
@@ -1188,7 +1236,7 @@ static inline uint16_t get_in_if(const struct net_device *dev) {
 
 #define pack_proto(proto) ((proto.app_protocol << 16) | proto.master_protocol)
 
-static bool
+NDPI_STATIC bool
 ndpi_mt(const struct sk_buff *skb, struct xt_action_param *par)
 {
 	uint32_t r_proto;
@@ -1514,7 +1562,7 @@ ndpi_mt(const struct sk_buff *skb, struct xt_action_param *par)
 }
 
 
-static int
+NDPI_STATIC int
 ndpi_mt_check(const struct xt_mtchk_param *par)
 {
 struct xt_ndpi_mtinfo *info = par->matchinfo;
@@ -1562,7 +1610,7 @@ struct xt_ndpi_mtinfo *info = par->matchinfo;
 	return 0;
 }
 
-static void 
+NDPI_STATIC void 
 ndpi_mt_destroy (const struct xt_mtdtor_param *par)
 {
 struct xt_ndpi_mtinfo *info = par->matchinfo;
@@ -1576,7 +1624,7 @@ struct xt_ndpi_mtinfo *info = par->matchinfo;
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4,8,0)
 
-static char *ndpi_proto_to_str(char *buf,size_t size,ndpi_protocol *p,ndpi_mod_str_t *ndpi_str)
+NDPI_STATIC char *ndpi_proto_to_str(char *buf,size_t size,ndpi_protocol *p,ndpi_mod_str_t *ndpi_str)
 {
 const char *t_app,*t_mast;
 buf[0] = '\0';
@@ -1590,7 +1638,7 @@ if(p->master_protocol && t_mast) {
 }
 return buf;
 }
-static unsigned int seq_print_ndpi(struct seq_file *s,
+NDPI_STATIC unsigned int seq_print_ndpi(struct seq_file *s,
 					  const struct nf_conn *ct,
 					  int dir)
 {
@@ -1614,7 +1662,7 @@ static unsigned int seq_print_ndpi(struct seq_file *s,
 #endif
 #endif
 
-static void ndpi_proto_markmask(struct ndpi_net *n, u_int32_t *var,
+NDPI_STATIC void ndpi_proto_markmask(struct ndpi_net *n, u_int32_t *var,
 		ndpi_protocol *proto, int mode)
 {
     if(mode == 1) {
@@ -1645,7 +1693,7 @@ static void ndpi_proto_markmask(struct ndpi_net *n, u_int32_t *var,
     }
 }
 
-static unsigned int
+NDPI_STATIC unsigned int
 ndpi_tg(struct sk_buff *skb, const struct xt_action_param *par)
 {
 	const struct xt_ndpi_tginfo *info = par->targinfo;
@@ -1726,7 +1774,7 @@ ndpi_tg(struct sk_buff *skb, const struct xt_action_param *par)
         return info->t_accept ? NF_ACCEPT : XT_CONTINUE;
 }
 
-static int
+NDPI_STATIC int
 ndpi_tg_check(const struct xt_tgchk_param *par)
 {
 	const struct xt_ndpi_tginfo *info = par->targinfo;
@@ -1749,7 +1797,7 @@ ndpi_tg_check(const struct xt_tgchk_param *par)
 	return nf_ct_l3proto_try_module_get (par->family);
 }
 
-static void 
+NDPI_STATIC void 
 ndpi_tg_destroy (const struct xt_tgdtor_param *par)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4,11,0)
@@ -1759,7 +1807,7 @@ ndpi_tg_destroy (const struct xt_tgdtor_param *par)
 }
 
 
-static struct xt_match
+NDPI_STATIC struct xt_match
 ndpi_mt_reg __read_mostly = {
 	.name = "ndpi",
 	.revision = 0,
@@ -1775,7 +1823,7 @@ ndpi_mt_reg __read_mostly = {
 	.me = THIS_MODULE,
 };
 
-static struct xt_target ndpi_tg_reg __read_mostly = {
+NDPI_STATIC struct xt_target ndpi_tg_reg __read_mostly = {
         .name           = "NDPI",
         .revision       = 0,
 #ifdef NDPI_DETECTION_SUPPORT_IPV6
@@ -1790,12 +1838,12 @@ static struct xt_target ndpi_tg_reg __read_mostly = {
         .me             = THIS_MODULE,
 };
 
-static int gc_1=0;
+NDPI_STATIC int gc_1=0;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0)
-static void bt_port_gc(struct timer_list *t) {
+NDPI_STATIC void bt_port_gc(struct timer_list *t) {
 	struct ndpi_net *n = from_timer(n, t, gc);
 #else
-static void bt_port_gc(unsigned long data) {
+NDPI_STATIC void bt_port_gc(unsigned long data) {
         struct ndpi_net *n = (struct ndpi_net *)data;
 #endif
         struct ndpi_detection_module_struct *ndpi_struct = n->ndpi_struct;
@@ -1878,7 +1926,7 @@ return  family == AF_INET6 ?
 	      :	snprintf(lbuf,bufsize-1, "%pI4n:%d",ip,htons(port));
 }
 
-static int ninfo_proc_open(struct inode *inode, struct file *file)
+NDPI_STATIC int ninfo_proc_open(struct inode *inode, struct file *file)
 {
         return 0;
 }
@@ -1986,7 +2034,7 @@ int ndpi_delete_acct(struct ndpi_net *n,int all) {
 	return i2;
 }
 
-static void ndpi_ct_counter_save(struct nf_ct_ext_ndpi *ct) {
+NDPI_STATIC void ndpi_ct_counter_save(struct nf_ct_ext_ndpi *ct) {
 	clear_flow_info(ct);
 	ct->flinfo.b[2] = ct->flinfo.b[0];
 	ct->flinfo.b[3] = ct->flinfo.b[1];
@@ -2155,7 +2203,7 @@ ssize_t nflow_read(struct ndpi_net *n, char __user *buf,
 	return p;
 }
 
-static const char *__acerr2txt[] = {
+NDPI_STATIC const char *__acerr2txt[] = {
     [ACERR_SUCCESS] = "OK", /* No error occurred */
     [ACERR_DUPLICATE_PATTERN] = "ERR:DUP", /* Duplicate patterns */
     [ACERR_LONG_PATTERN] = "ERR:LONG", /* Pattern length is longer than AC_PATTRN_MAX_LENGTH */
@@ -2169,7 +2217,7 @@ const char *acerr2txt(AC_ERROR_t r) {
 }
 
 
-static const struct file_operations nproto_proc_fops = {
+NDPI_STATIC const struct file_operations nproto_proc_fops = {
         .open    = ninfo_proc_open,
         .read    = nproto_proc_read,
         .write   = nproto_proc_write,
@@ -2177,14 +2225,14 @@ static const struct file_operations nproto_proc_fops = {
 	.release = nproto_proc_close
 };
 
-static const struct file_operations ninfo_proc_fops = {
+NDPI_STATIC const struct file_operations ninfo_proc_fops = {
         .open    = ninfo_proc_open,
         .read    = ninfo_proc_read,
         .write   = ninfo_proc_write,
 	.llseek  = noop_llseek,
 };
 
-static const struct file_operations nflow_proc_fops = {
+NDPI_STATIC const struct file_operations nflow_proc_fops = {
         .open    = nflow_proc_open,
         .read    = nflow_proc_read,
         .write   = nflow_proc_write,
@@ -2193,7 +2241,7 @@ static const struct file_operations nflow_proc_fops = {
 };
 
 #ifdef NDPI_DETECTION_SUPPORT_IPV6
-static const struct file_operations ninfo6_proc_fops = {
+NDPI_STATIC const struct file_operations ninfo6_proc_fops = {
         .open    = ninfo_proc_open,
         .read    = ninfo6_proc_read,
         .write   = ninfo_proc_write,
@@ -2202,14 +2250,14 @@ static const struct file_operations ninfo6_proc_fops = {
 #endif
 
 #ifdef BT_ANNOUNCE
-static const struct file_operations nann_proc_fops = {
+NDPI_STATIC const struct file_operations nann_proc_fops = {
         .open    = ninfo_proc_open,
         .read    = nann_proc_read,
 	.llseek  = noop_llseek,
 };
 #endif
 
-static const struct file_operations n_ipdef_proc_fops = {
+NDPI_STATIC const struct file_operations n_ipdef_proc_fops = {
         .open    = n_ipdef_proc_open,
         .read    = n_ipdef_proc_read,
         .write   = n_ipdef_proc_write,
@@ -2217,7 +2265,7 @@ static const struct file_operations n_ipdef_proc_fops = {
         .release = n_ipdef_proc_close,
 };
 
-static const struct file_operations n_hostdef_proc_fops = {
+NDPI_STATIC const struct file_operations n_hostdef_proc_fops = {
         .open    = n_hostdef_proc_open,
         .read    = n_hostdef_proc_read,
         .write   = n_hostdef_proc_write,
@@ -2226,26 +2274,26 @@ static const struct file_operations n_hostdef_proc_fops = {
 };
 
 #if  LINUX_VERSION_CODE < KERNEL_VERSION(3,18,0)
-static unsigned int ndpi_nat_do_chain(unsigned int hooknum,
+NDPI_STATIC unsigned int ndpi_nat_do_chain(unsigned int hooknum,
                                          struct sk_buff *skb,
                                          const struct net_device *in,
                                          const struct net_device *out,
                                          int (*okfn)(struct sk_buff *))
 {
 #elif  LINUX_VERSION_CODE < KERNEL_VERSION(3,19,0)
-static unsigned int ndpi_nat_do_chain(const struct nf_hook_ops *ops,
+NDPI_STATIC unsigned int ndpi_nat_do_chain(const struct nf_hook_ops *ops,
                                          struct sk_buff *skb,
                                          const struct net_device *in,
                                          const struct net_device *out,
                                          int (*okfn)(struct sk_buff *))
 {
 #elif LINUX_VERSION_CODE < KERNEL_VERSION(4,2,0)
-static unsigned int ndpi_nat_do_chain(const struct nf_hook_ops *priv,
+NDPI_STATIC unsigned int ndpi_nat_do_chain(const struct nf_hook_ops *priv,
                                          struct sk_buff *skb,
                                          const struct nf_hook_state *state)
 {
 #else
-static unsigned int ndpi_nat_do_chain(void *priv,
+NDPI_STATIC unsigned int ndpi_nat_do_chain(void *priv,
 					 struct sk_buff *skb,
 					 const struct nf_hook_state *state)
 {
@@ -2292,7 +2340,7 @@ static unsigned int ndpi_nat_do_chain(void *priv,
     return NF_ACCEPT;
 }
 
-static struct nf_hook_ops nf_nat_ipv4_ops[] = {
+NDPI_STATIC struct nf_hook_ops nf_nat_ipv4_ops[] = {
 	{
 		.hook		= ndpi_nat_do_chain,
 		.pf		= NFPROTO_IPV4,
@@ -2313,7 +2361,7 @@ static struct nf_hook_ops nf_nat_ipv4_ops[] = {
 	}
 };
 
-static void __net_exit ndpi_net_exit(struct net *net)
+NDPI_STATIC void __net_exit ndpi_net_exit(struct net *net)
 {
 	struct rb_node * next;
 	struct osdpi_id_node *id;
@@ -2391,7 +2439,7 @@ static void __net_exit ndpi_net_exit(struct net *net)
 	}
 }
 
-static int __net_init ndpi_net_init(struct net *net)
+NDPI_STATIC int __net_init ndpi_net_init(struct net *net)
 {
 	struct ndpi_net *n;
 	int i;
@@ -2658,7 +2706,7 @@ static int __net_init ndpi_net_init(struct net *net)
 }
 
 #ifndef NF_CT_CUSTOM
-static void replace_nf_destroy(void)
+NDPI_STATIC void replace_nf_destroy(void)
 {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4,19,0)
 	void (*destroy)(struct nf_conntrack *);
@@ -2681,7 +2729,7 @@ static void replace_nf_destroy(void)
 #endif
 }
 
-static void restore_nf_destroy(void)
+NDPI_STATIC void restore_nf_destroy(void)
 {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4,19,0)
 	void (*destroy)(struct nf_conntrack *);
@@ -2705,7 +2753,7 @@ static void restore_nf_destroy(void)
 #endif
 }
 #else
-static struct nf_ct_ext_type ndpi_extend = {
+NDPI_STATIC struct nf_ct_ext_type ndpi_extend = {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4,8,0)
        .seq_print = seq_print_ndpi,
 #endif
@@ -2715,14 +2763,14 @@ static struct nf_ct_ext_type ndpi_extend = {
 };
 #endif
 
-static struct pernet_operations ndpi_net_ops = {
+NDPI_STATIC struct pernet_operations ndpi_net_ops = {
         .init   = ndpi_net_init,
         .exit   = ndpi_net_exit,
         .id     = &ndpi_net_id,
         .size   = sizeof(struct ndpi_net),
 };
 
-static int __init ndpi_mt_init(void)
+NDPI_STATIC int __init ndpi_mt_init(void)
 {
         int ret;
 
@@ -2882,7 +2930,7 @@ unreg_ext:
 }
 
 
-static void __exit ndpi_mt_exit(void)
+NDPI_STATIC void __exit ndpi_mt_exit(void)
 {
 	xt_unregister_target(&ndpi_tg_reg);
 	xt_unregister_match(&ndpi_mt_reg);
