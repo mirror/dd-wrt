@@ -226,3 +226,4 @@ void init_rx_dissector(struct ndpi_detection_module_struct *ndpi_struct,
   *id += 1;
 }
 
+#undef DEBUG

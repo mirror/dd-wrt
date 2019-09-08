@@ -22,7 +22,6 @@
  *
  */
 
-
 #ifndef __NDPI_API_H__
 
 #endif

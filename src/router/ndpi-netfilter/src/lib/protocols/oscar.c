@@ -32,7 +32,7 @@
 
 /* Flap channels */
 #define SIGNON              0x01
-#define DATA                0x02
+#define OSCAR_DATA                0x02
 #define O_ERROR               0x03
 #define SIGNOFF             0x04
 #define KEEP_ALIVE          0x05
@@ -230,7 +230,7 @@ static void ndpi_search_oscar_tcp_connect(struct ndpi_detection_module_struct
       /*
 	 Messages using the FLAP connection, usually a SNAC message.
 
-	 DATA -> FLAP__DATA_FRAME
+	 OSCAR_DATA -> FLAP__OSCAR_DATA_FRAME
 	 +-------------------------+
 	 + FLAP__Header | 6 byte   +
 	 + SNAC__Header | 10 byte  +
@@ -244,7 +244,7 @@ static void ndpi_search_oscar_tcp_connect(struct ndpi_detection_module_struct
 	 + requestId    | 4 byte                        +
 	 +----------------------------------------------+
       */
-      if (channel == DATA)
+      if (channel == OSCAR_DATA)
 	{
 	  if (packet->payload_packet_len >= 8)
 	    family = get_u_int16_t(packet->payload, 6);
