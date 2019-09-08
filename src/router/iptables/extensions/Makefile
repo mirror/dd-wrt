@@ -14,8 +14,8 @@ PF_EXT_SLIB:= CLASSIFY ah connlimit dscp ecn esp iprange length limit multiport 
 endif
 endif
 ifeq ($(CONFIG_OPENDPI),y)
-PF_EXT_SLIB += opendpi
-CFLAGS += -DOPENDPI_NETFILTER_MODULE -D__NDPI_MAIN_INCLUDE_FILE__ -I$(TOP)/opendpi/opendpi/include -I$(TOP)/opendpi/src
+PF_EXT_SLIB += ndpi
+CFLAGS += -DOPENDPI_NETFILTER_MODULE -I$(TOP)/ndpi-netfilter -I$(TOP)/ndpi-netfilter/src/include -I$(TOP)/ndpi-netfilter/src/lib -I$(TOP)/ndpi-netfilter/ndpi-netfilter/src -I$(TOP)/ndpi-netfilter/ndpi-netfilter/libre
 endif
 ifneq ($(ARCHITECTURE),broadcom)
 PF_EXT_SLIB+= string
