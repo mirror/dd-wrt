@@ -61,14 +61,14 @@ typedef struct
 } AC_AUTOMATA_t;
 
 
-AC_AUTOMATA_t * ac_automata_init     (MATCH_CALLBACK_f mc);
+static AC_AUTOMATA_t * ac_automata_init     (MATCH_CALLBACK_f mc);
 AC_ERROR_t      ac_automata_add      (AC_AUTOMATA_t * thiz, AC_PATTERN_t * str);
 void            ac_automata_finalize (AC_AUTOMATA_t * thiz);
-int             ac_automata_search   (AC_AUTOMATA_t * thiz, AC_TEXT_t * str, AC_REP_t * param);
-void            ac_automata_reset    (AC_AUTOMATA_t * thiz);
+static int             ac_automata_search   (AC_AUTOMATA_t * thiz, AC_TEXT_t * str, AC_REP_t * param);
+static void            ac_automata_reset    (AC_AUTOMATA_t * thiz);
 void            ac_automata_clean    (AC_AUTOMATA_t * thiz);
 void            ac_automata_release  (AC_AUTOMATA_t * thiz);
-void            ac_automata_display  (AC_AUTOMATA_t * thiz, char repcast);
-void            ac_automata_dump     (AC_AUTOMATA_t * thiz, char *buf, size_t bufsize, char repcast);
+static void            ac_automata_display  (AC_AUTOMATA_t * thiz, char repcast);
+static void            ac_automata_dump     (AC_AUTOMATA_t * thiz, char *buf, size_t bufsize, char repcast);
 
 #endif

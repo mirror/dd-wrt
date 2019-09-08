@@ -63,7 +63,7 @@ typedef struct cache *cache_t;
  * @return a new cache_t, or NULL if an error occurred
  *
  */
-cache_t cache_new(uint32_t cache_max_size);
+static cache_t cache_new(uint32_t cache_max_size);
 
 
 /**
@@ -75,7 +75,7 @@ cache_t cache_new(uint32_t cache_max_size);
  * @return a code representing the result of the function
  *
  */
-cache_result cache_add(cache_t cache, void *item, uint32_t item_size);
+static cache_result cache_add(cache_t cache, void *item, uint32_t item_size);
 
 
 /**
@@ -87,7 +87,7 @@ cache_result cache_add(cache_t cache, void *item, uint32_t item_size);
  * @return a code representing the result of the function
  *
  */
-cache_result cache_contains(cache_t cache, void *item, uint32_t item_size);
+static cache_result cache_contains(cache_t cache, void *item, uint32_t item_size);
 
 
 /**
@@ -99,7 +99,7 @@ cache_result cache_contains(cache_t cache, void *item, uint32_t item_size);
  * @return a code representing the result of the function
  *
  */
-cache_result cache_remove(cache_t cache, void *item, uint32_t item_size);
+static cache_result cache_remove(cache_t cache, void *item, uint32_t item_size);
 
 /**
  * @brief Free the specified cache_t
@@ -107,9 +107,9 @@ cache_result cache_remove(cache_t cache, void *item, uint32_t item_size);
  * @par alist  = the cache
  *
  */
-void cache_free(cache_t cache);
+static void cache_free(cache_t cache);
 
-cache_entry cache_entry_new(void);
-cache_entry_map cache_entry_map_new(void);
+static cache_entry cache_entry_new(void);
+static cache_entry_map cache_entry_map_new(void);
 
 #endif

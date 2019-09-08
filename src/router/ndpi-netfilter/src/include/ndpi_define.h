@@ -211,6 +211,11 @@
 #define NDPI_JABBER_STUN_TIMEOUT                                30
 #define NDPI_JABBER_FT_TIMEOUT				         5
 #define NDPI_SOULSEEK_CONNECTION_IP_TICK_TIMEOUT               600
+#undef NDPI_EXCLUDE_PROTO
+#undef NDPI_LOG_ERR
+#undef NDPI_LOG_INFO
+#undef NDPI_LOG_DBG
+#undef NDPI_LOG_DBG2
 
 #ifdef NDPI_ENABLE_DEBUG_MESSAGES
  #define NDPI_LOG(proto, m, log_level, args...)		                                 \

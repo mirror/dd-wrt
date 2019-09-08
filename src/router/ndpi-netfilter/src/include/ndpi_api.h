@@ -20,6 +20,18 @@
  * along with nDPI.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
+#undef NDPI_EXCLUDE_PROTO
+#define NDPI_EXCLUDE_PROTO(mod,flow) ndpi_exclude_protocol(mod, flow, NDPI_CURRENT_PROTO, __FILE__, __FUNCTION__, __LINE__)
+
+#undef NDPI_LOG_ERR
+#undef NDPI_LOG_INFO
+#undef NDPI_LOG_DBG
+#undef NDPI_LOG_DBG2
+# define NDPI_LOG(proto, mod, log_level, args...) { /* printf(args); */ }
+# define NDPI_LOG_ERR(mod, args...)  { printf(args); }
+# define NDPI_LOG_INFO(mod, args...) { /* printf(args); */ }
+# define NDPI_LOG_DBG(mod,  args...) { /* printf(args); */ }
+# define NDPI_LOG_DBG2(mod, args...) { /* printf(args); */ }
 
 
 #ifndef __NDPI_API_H__

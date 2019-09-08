@@ -62,6 +62,7 @@ int ndpi_debug_print_level = 0;
 #endif
 
 #define NDPI_CONST_GENERIC_PROTOCOL_NAME  "GenericProtocol"
+#include "protocols.c"
 
 static int _ndpi_debug_callbacks = 0;
 
