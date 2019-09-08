@@ -8296,7 +8296,7 @@ https://www.regular-expressions.info/email.html
 
 /* ****************************************************** */
 
-ndpi_protocol_match host_match[] = {
+static ndpi_protocol_match host_match[] = {
   { "s3.ll.dash.row.aiv-cdn.net", NULL, "s3\\.ll\\.dash\\.row\\.aiv-cdn\\.net",          "AmazonVideo",      NDPI_PROTOCOL_AMAZON_VIDEO, NDPI_PROTOCOL_CATEGORY_STREAMING, NDPI_PROTOCOL_FUN },
   { "s3-dub.cf.dash.row.aiv-cdn.net", NULL, "s3-dub\\.cf\\.dash\\.row\\.aiv-cdn\\.net",  "AmazonVideo",      NDPI_PROTOCOL_AMAZON_VIDEO, NDPI_PROTOCOL_CATEGORY_STREAMING, NDPI_PROTOCOL_FUN },
   { "dmqdd6hw24ucf.cloudfront.net", NULL, "dmqdd6hw24ucf\\.cloudfront\\.net",            "AmazonVideo",      NDPI_PROTOCOL_AMAZON_VIDEO, NDPI_PROTOCOL_CATEGORY_STREAMING, NDPI_PROTOCOL_FUN },
@@ -8701,7 +8701,7 @@ ndpi_protocol_match host_match[] = {
 /*
   Mime-type content match match
 */
-ndpi_protocol_match content_match[] = {
+static ndpi_protocol_match content_match[] = {
   { "audio/mpeg",                   NULL, NULL, NULL,           NDPI_CONTENT_CATEGORY_MPEG, NDPI_PROTOCOL_CATEGORY_MEDIA, NDPI_PROTOCOL_FUN },
   { "audio/x-mpeg",                 NULL, NULL, NULL,           NDPI_CONTENT_CATEGORY_MPEG, NDPI_PROTOCOL_CATEGORY_MEDIA, NDPI_PROTOCOL_FUN },
   { "audio/mpeg3",                  NULL, NULL, NULL,           NDPI_CONTENT_CATEGORY_MPEG, NDPI_PROTOCOL_CATEGORY_MEDIA, NDPI_PROTOCOL_FUN },

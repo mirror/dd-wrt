@@ -1,3 +1,5 @@
+#ifndef NDPI_FLOW_INFO_H
+#define NDPI_FLOW_INFO_H
 
 struct flow_data_common {
 	uint8_t			rec_type:2, // 0 - proto name,
@@ -59,3 +61,4 @@ struct flow_data {
  *          byte 3: proto_name_len
  *          
  */
+#endif

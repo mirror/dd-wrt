@@ -42,7 +42,7 @@ SOFTWARE.
 
 // https://en.wikipedia.org/wiki/Jenkins_hash_function
 #define HASH_FUNCTION jenkins_one_at_a_time_hash
-uint32_t jenkins_one_at_a_time_hash(const uint8_t* key, size_t length) {
+static uint32_t jenkins_one_at_a_time_hash(const uint8_t* key, size_t length) {
   size_t i = 0;
   uint32_t hash = 0;
   while (i != length) {
@@ -78,7 +78,7 @@ struct cache_entry {
 };
 
 
-void cache_touch_entry(cache_t cache, cache_entry entry) {
+static void cache_touch_entry(cache_t cache, cache_entry entry) {
   if(entry->prev) {
     if(entry->next) {
       entry->prev->next = entry->next;

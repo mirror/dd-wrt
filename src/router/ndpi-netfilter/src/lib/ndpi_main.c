@@ -55,7 +55,7 @@
   #include "ndpi_kernel_compat.c"
 #endif
 
-int ndpi_debug_print_level = 0;
+static int ndpi_debug_print_level = 0;
 
 #ifdef HAVE_HYPERSCAN
 #include <hs.h>
@@ -609,7 +609,7 @@ static int ndpi_default_ports_tree_node_t_cmp(const void *a, const void *b)
 
 /* ******************************************************************** */
 
-void ndpi_default_ports_tree_node_t_walker(const void *node, const ndpi_VISIT which, const int depth)
+static void ndpi_default_ports_tree_node_t_walker(const void *node, const ndpi_VISIT which, const int depth)
 {
   ndpi_default_ports_tree_node_t *f = *(ndpi_default_ports_tree_node_t **)node;
 
@@ -751,7 +751,7 @@ static int ndpi_add_host_url_subprotocol(struct ndpi_detection_module_struct *nd
 
 /* ****************************************************** */
 
-int ndpi_add_content_subprotocol(struct ndpi_detection_module_struct *ndpi_struct,
+static int ndpi_add_content_subprotocol(struct ndpi_detection_module_struct *ndpi_struct,
 				 char *value, int protocol_id,
 				 ndpi_protocol_category_t category,
 				 ndpi_protocol_breed_t breed) {
@@ -2144,7 +2144,7 @@ static u_int8_t tor_ptree_match(struct ndpi_detection_module_struct *ndpi_struct
 
 /* ******************************************* */
 
-u_int8_t ndpi_is_tor_flow(struct ndpi_detection_module_struct *ndpi_struct,
+static u_int8_t ndpi_is_tor_flow(struct ndpi_detection_module_struct *ndpi_struct,
 			  struct ndpi_flow_struct *flow) {
   struct ndpi_packet_struct *packet = &flow->packet;
 
@@ -2651,7 +2651,7 @@ static ndpi_default_ports_tree_node_t* ndpi_get_guessed_protocol_id(struct ndpi_
   and thus that if have NOT been detected they cannot be guessed
   as they have been excluded
  */
-u_int8_t is_udp_guessable_protocol(u_int16_t l7_guessed_proto) {
+static u_int8_t is_udp_guessable_protocol(u_int16_t l7_guessed_proto) {
   switch(l7_guessed_proto) {
   case NDPI_PROTOCOL_QUIC:
   case NDPI_PROTOCOL_SNMP:
@@ -3697,7 +3697,7 @@ static u_int8_t ndpi_detection_get_l4_internal(struct ndpi_detection_module_stru
   return 0;
 }
 
-void ndpi_apply_flow_protocol_to_packet(struct ndpi_flow_struct *flow,
+static void ndpi_apply_flow_protocol_to_packet(struct ndpi_flow_struct *flow,
 					struct ndpi_packet_struct *packet)
 {
   memcpy(&packet->detected_protocol_stack, &flow->detected_protocol_stack, sizeof(packet->detected_protocol_stack));
@@ -3835,7 +3835,7 @@ static int ndpi_init_packet_header(struct ndpi_detection_module_struct *ndpi_str
   return 0;
 }
 
-void ndpi_connection_tracking(struct ndpi_detection_module_struct *ndpi_struct,
+static void ndpi_connection_tracking(struct ndpi_detection_module_struct *ndpi_struct,
 			      struct ndpi_flow_struct *flow)
 {
   /* const for gcc code optimization and cleaner code */
@@ -3960,7 +3960,7 @@ void ndpi_connection_tracking(struct ndpi_detection_module_struct *ndpi_struct,
   }
 }
 
-void check_ndpi_other_flow_func(struct ndpi_detection_module_struct *ndpi_struct,
+static void check_ndpi_other_flow_func(struct ndpi_detection_module_struct *ndpi_struct,
 				struct ndpi_flow_struct *flow,
 				NDPI_SELECTION_BITMASK_PROTOCOL_SIZE *ndpi_selection_packet) {
   void *func = NULL;
@@ -4005,7 +4005,7 @@ void check_ndpi_other_flow_func(struct ndpi_detection_module_struct *ndpi_struct
 }
 
 
-void check_ndpi_udp_flow_func(struct ndpi_detection_module_struct *ndpi_struct,
+static void check_ndpi_udp_flow_func(struct ndpi_detection_module_struct *ndpi_struct,
 			      struct ndpi_flow_struct *flow,
 			      NDPI_SELECTION_BITMASK_PROTOCOL_SIZE *ndpi_selection_packet) {
   void *func = NULL;
@@ -4048,7 +4048,7 @@ void check_ndpi_udp_flow_func(struct ndpi_detection_module_struct *ndpi_struct,
 }
 
 
-void check_ndpi_tcp_flow_func(struct ndpi_detection_module_struct *ndpi_struct,
+static void check_ndpi_tcp_flow_func(struct ndpi_detection_module_struct *ndpi_struct,
 			      struct ndpi_flow_struct *flow,
 			      NDPI_SELECTION_BITMASK_PROTOCOL_SIZE *ndpi_selection_packet) {
   void *func = NULL;
@@ -5344,7 +5344,7 @@ u_int16_t ndpi_get_flow_masterprotocol(struct ndpi_detection_module_struct *ndpi
 
 /* ********************************************************************************* */
 
-void ndpi_int_change_flow_protocol(struct ndpi_detection_module_struct *ndpi_struct,
+static void ndpi_int_change_flow_protocol(struct ndpi_detection_module_struct *ndpi_struct,
 				   struct ndpi_flow_struct *flow,
 				   u_int16_t upper_detected_protocol,
 				   u_int16_t lower_detected_protocol) {
@@ -5440,14 +5440,14 @@ void ndpi_int_reset_protocol(struct ndpi_flow_struct *flow) {
 
 /* ********************************************************************************* */
 
-void NDPI_PROTOCOL_IP_clear(ndpi_ip_addr_t * ip) {
+static void NDPI_PROTOCOL_IP_clear(ndpi_ip_addr_t * ip) {
   memset(ip, 0, sizeof(ndpi_ip_addr_t));
 }
 
 /* ********************************************************************************* */
 
 /* NTOP */
-int NDPI_PROTOCOL_IP_is_set(const ndpi_ip_addr_t * ip)
+static int NDPI_PROTOCOL_IP_is_set(const ndpi_ip_addr_t * ip)
 {
   return memcmp(ip, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", sizeof(ndpi_ip_addr_t)) != 0;
 }

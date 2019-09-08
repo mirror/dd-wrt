@@ -38,9 +38,9 @@
    different depths */
 
 /* Private function prototype */
-AC_NODE_t *  node_init (AC_NODE_t * thiz);
-int  node_edge_compare (const void * l, const void * r);
-int  node_has_matchstr (AC_NODE_t * thiz, AC_PATTERN_t * newstr);
+static AC_NODE_t *  node_init (AC_NODE_t * thiz);
+static int  node_edge_compare (const void * l, const void * r);
+static int  node_has_matchstr (AC_NODE_t * thiz, AC_PATTERN_t * newstr);
 
 
 /******************************************************************************

@@ -198,7 +198,7 @@ STATIC void regtail(struct match_globals *g, char *p, char *val);
 STATIC void regoptail(struct match_globals *g, char *p, char *val);
 
 
-__kernel_size_t my_strcspn(const char *s1,const char *s2)
+static __kernel_size_t my_strcspn(const char *s1,const char *s2)
 {
         char *scan1;
         char *scan2;

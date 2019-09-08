@@ -39,7 +39,7 @@ static void ndpi_int_amqp_add_connection(struct ndpi_detection_module_struct *nd
 	ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_AMQP, NDPI_PROTOCOL_UNKNOWN);
 }
 
-void ndpi_search_amqp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
+static void ndpi_search_amqp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
 	struct ndpi_packet_struct *packet = &flow->packet;
 
 	NDPI_LOG_DBG(ndpi_struct, "search amqp\n");

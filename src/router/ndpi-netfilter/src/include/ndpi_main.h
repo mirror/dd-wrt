@@ -47,7 +47,7 @@ static  void ndpi_twalk(const void *, void (*)(const void *, ndpi_VISIT, int, vo
 static  void ndpi_tdestroy(void *vrootp, void (*freefct)(void *));
 
 static  int NDPI_BITMASK_COMPARE(NDPI_PROTOCOL_BITMASK a, NDPI_PROTOCOL_BITMASK b);
-int NDPI_BITMASK_IS_EMPTY(NDPI_PROTOCOL_BITMASK a);
+static int NDPI_BITMASK_IS_EMPTY(NDPI_PROTOCOL_BITMASK a);
 static  void NDPI_DUMP_BITMASK(NDPI_PROTOCOL_BITMASK a);
 
 static  u_int8_t ndpi_net_match(u_int32_t ip_to_check,
@@ -120,8 +120,8 @@ static  void ndpi_set_detected_protocol(struct ndpi_detection_module_struct *ndp
 				  const ndpi_ip_addr_t * ip);
   static char *ndpi_get_packet_src_ip_string(struct ndpi_detection_module_struct *ndpi_struct,
 					     const struct ndpi_packet_struct *packet);
-  char* ndpi_get_proto_by_id(struct ndpi_detection_module_struct *ndpi_mod, u_int id);
-  u_int16_t ndpi_get_proto_by_name(struct ndpi_detection_module_struct *ndpi_mod, const char *name);
+  static char* ndpi_get_proto_by_id(struct ndpi_detection_module_struct *ndpi_mod, u_int id);
+  static u_int16_t ndpi_get_proto_by_name(struct ndpi_detection_module_struct *ndpi_mod, const char *name);
 
   static u_int16_t ndpi_guess_protocol_id(struct ndpi_detection_module_struct *ndpi_struct,
 					  struct ndpi_flow_struct *flow,
