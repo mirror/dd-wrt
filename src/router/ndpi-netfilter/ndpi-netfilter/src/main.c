@@ -259,7 +259,7 @@ static unsigned long  ndpi_lib_trace=0;
 #endif
 static unsigned long  ndpi_mtu=48000;
 static unsigned long  bt_log_size=128;
-static unsigned long int bt_hash_size=0;
+static unsigned long int bt_hash_size=2;
 static unsigned long int bt6_hash_size=0;
 static unsigned long int bt_hash_tmo=1200;
 
