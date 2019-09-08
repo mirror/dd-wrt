@@ -22,6 +22,7 @@ xt_ndpi-y := main.o ndpi_strcol.o ndpi_proc_parsers.o ndpi_proc_generic.o \
 		${NDPI_SRC}/lib/third_party/src/ahocorasick.o \
 		${NDPI_SRC}/lib/third_party/src/libcache.o \
 		${NDPI_SRC}/lib/third_party/src/ndpi_patricia.o \
+		${NDPI_SRC}/lib/third_party/src/ndpi_md5.o \
 		${NDPI_SRC}/lib/third_party/src/ht_hash.o \
 		${NDPI_SRC}/lib/third_party/src/btlib.o \
 		${NDPI_SRC}/lib/ndpi_main.o \
