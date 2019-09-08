@@ -205,8 +205,8 @@ endif
 	-$(MAKE) -f Makefile.armbe madwifi-install
 	-$(MAKE) -f Makefile.armbe batman-adv
 	-$(MAKE) -f Makefile.armbe batman-adv-install
-	-$(MAKE) -f Makefile.armbe opendpi
-	-$(MAKE) -f Makefile.armbe opendpi-install
+	-$(MAKE) -f Makefile.armbe ndpi-netfilter
+	-$(MAKE) -f Makefile.armbe ndpi-netfilter-install
 ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.armbe wireguard
 	-$(MAKE) -f Makefile.armbe wireguard-install

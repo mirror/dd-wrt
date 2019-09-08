@@ -140,8 +140,8 @@ kernel:
 	-$(MAKE) -f Makefile.mvebu madwifi-install
 	-$(MAKE) -f Makefile.mvebu batman-adv
 	-$(MAKE) -f Makefile.mvebu batman-adv-install
-	-$(MAKE) -f Makefile.mvebu opendpi
-	-$(MAKE) -f Makefile.mvebu opendpi-install
+	-$(MAKE) -f Makefile.mvebu ndpi-netfilter
+	-$(MAKE) -f Makefile.mvebu ndpi-netfilter-install
 ifeq ($(CONFIG_ZFS),y)
 	-$(MAKE) -f Makefile.mvebu zfs
 	-$(MAKE) -f Makefile.mvebu zfs-install

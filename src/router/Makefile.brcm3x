@@ -202,8 +202,8 @@ ifeq ($(CONFIG_BATMANADV),y)
 	-$(MAKE) -f Makefile.brcm3x batman-adv-install
 endif
 ifeq ($(CONFIG_OPENDPI),y)
-	-$(MAKE) -f Makefile.brcm3x opendpi
-	-$(MAKE) -f Makefile.brcm3x opendpi-install
+	-$(MAKE) -f Makefile.brcm3x ndpi-netfilter
+	-$(MAKE) -f Makefile.brcm3x ndpi-netfilter-install
 endif
 ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.brcm3x wireguard

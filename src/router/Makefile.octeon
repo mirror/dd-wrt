@@ -218,8 +218,8 @@ ifeq ($(CONFIG_BATMANADV),y)
 	-$(MAKE) -f Makefile.octeon batman-adv-install
 endif
 ifeq ($(CONFIG_OPENDPI),y)
-	-$(MAKE) -f Makefile.octeon opendpi
-	-$(MAKE) -f Makefile.octeon opendpi-install
+	-$(MAKE) -f Makefile.octeon ndpi-netfilter
+	-$(MAKE) -f Makefile.octeon ndpi-netfilter-install
 endif
 ifeq ($(CONFIG_ZFS),y)
 	-$(MAKE) -f Makefile.octeon zfs

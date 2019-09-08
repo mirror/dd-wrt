@@ -189,8 +189,8 @@ endif
 	-$(MAKE) -f Makefile.mpc83xx madwifi-install
 	-$(MAKE) -f Makefile.mpc83xx batman-adv
 	-$(MAKE) -f Makefile.mpc83xx batman-adv-install
-	-$(MAKE) -f Makefile.mpc83xx opendpi
-	-$(MAKE) -f Makefile.mpc83xx opendpi-install
+	-$(MAKE) -f Makefile.mpc83xx ndpi-netfilter
+	-$(MAKE) -f Makefile.mpc83xx ndpi-netfilter-install
 ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.mpc83xx wireguard
 	-$(MAKE) -f Makefile.mpc83xx wireguard-install

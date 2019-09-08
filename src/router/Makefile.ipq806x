@@ -156,8 +156,8 @@ endif
 	-$(MAKE) -f Makefile.ipq806x madwifi-install
 	-$(MAKE) -f Makefile.ipq806x batman-adv
 	-$(MAKE) -f Makefile.ipq806x batman-adv-install
-	-$(MAKE) -f Makefile.ipq806x opendpi
-	-$(MAKE) -f Makefile.ipq806x opendpi-install
+	-$(MAKE) -f Makefile.ipq806x ndpi-netfilter
+	-$(MAKE) -f Makefile.ipq806x ndpi-netfilter-install
 ifeq ($(CONFIG_ZFS),y)
 	-$(MAKE) -f Makefile.ipq806x zfs
 	-$(MAKE) -f Makefile.ipq806x zfs-install

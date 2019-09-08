@@ -196,8 +196,8 @@ endif
 	-$(MAKE) -f Makefile.magicbox madwifi-install
 	-$(MAKE) -f Makefile.magicbox batman-adv
 	-$(MAKE) -f Makefile.magicbox batman-adv-install
-	-$(MAKE) -f Makefile.magicbox opendpi
-	-$(MAKE) -f Makefile.magicbox opendpi-install
+	-$(MAKE) -f Makefile.magicbox ndpi-netfilter
+	-$(MAKE) -f Makefile.magicbox ndpi-netfilter-install
 ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.magicbox wireguard
 	-$(MAKE) -f Makefile.magicbox wireguard-install
