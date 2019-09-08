@@ -3,7 +3,7 @@ NDPI_SRC := ../../src
 NDPI_PRO := ${NDPI_SRC}/lib/protocols
 
 ccflags-y += -I${src}/${NDPI_SRC}/include -I${src}/${NDPI_SRC}/lib -I${src}/../libre -I${src}/${NDPI_SRC}/lib/third_party/include 
-ccflags-y += -DHAVE_CONFIG_H -DNDPI_LIB_COMPILATION -DOPENDPI_NETFILTER_MODULE -g
+ccflags-y += -DHAVE_CONFIG_H -DNDPI_LIB_COMPILATION -DOPENDPI_NETFILTER_MODULE
 
 
 KERNEL_DIR := ${LINUXDIR}
@@ -37,8 +37,8 @@ modules:
 	make  -C ${KERNEL_DIR} M=$$PWD $@ $(MFLAGS);
 
 modules_install:
-	make -C ${KERNEL_DIR} M=$$PWD $@;
-	depmod -a;
+	install -D xt_ndpi.ko $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/xt_ndpi.ko
+
 clean:
 	make -C ${KERNEL_DIR} M=$$PWD $@;
 	rm -f ${xt_ndpi-y}
