@@ -1464,7 +1464,7 @@ endif
 endif
 
 packets.o: packets.c
-	@$(CC) -c -o $@ $^ $(BCFLAGS) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/iptables/include  -I$(TOP)/iptables -DSTATIC=static
+	@$(CC) -c -o $@ $^ $(BCFLAGS) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/iptables/include  -I$(TOP)/iptables -DIPTCSTATIC=static
 
 	
 httpd: httpd.o $(ADDOBJ) $(OBJS)
