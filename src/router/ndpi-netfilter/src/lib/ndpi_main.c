@@ -1312,6 +1312,11 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 			    no_master, "Free", NDPI_PROTOCOL_CATEGORY_CUSTOM_1 /* dummy */,
 			    ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */,
 			    ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
+    ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_WIREGUARD,
+ 			    0 /* can_have_a_subprotocol */, no_master,
+			    no_master, "WireGuard", NDPI_PROTOCOL_CATEGORY_VPN,
+ 			    ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */,
+			    ndpi_build_default_ports(ports_b, 51820, 0, 0, 0, 0) /* UDP */);
     ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_VIDTO,
 			    0 /* can_have_a_subprotocol */, no_master,
 			    no_master, "PPStream", NDPI_PROTOCOL_CATEGORY_MEDIA,
@@ -3471,6 +3476,9 @@ void ndpi_set_protocol_detection_bitmask2(struct ndpi_detection_module_struct *n
 
   /* Targus Getdata */
   init_targus_getdata_dissector(ndpi_struct, &a, detection_bitmask);
+
+  /* WireGuard VPN */
+  init_wireguard_dissector(ndpi_struct, &a, detection_bitmask);
 
   /* ----------------------------------------------------------------- */
 
