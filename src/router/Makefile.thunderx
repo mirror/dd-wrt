@@ -186,8 +186,8 @@ kernel:
 	-$(MAKE) -f Makefile.thunderx madwifi-install
 	-$(MAKE) -f Makefile.thunderx batman-adv
 	-$(MAKE) -f Makefile.thunderx batman-adv-install
-	-$(MAKE) -f Makefile.thunderx opendpi
-	-$(MAKE) -f Makefile.thunderx opendpi-install
+	-$(MAKE) -f Makefile.thunderx ndpi-netfilter
+	-$(MAKE) -f Makefile.thunderx ndpi-netfilter-install
 ifeq ($(CONFIG_ZFS),y)
 	-$(MAKE) -f Makefile.thunderx zfs
 	-$(MAKE) -f Makefile.thunderx zfs-install

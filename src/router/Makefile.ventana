@@ -180,8 +180,8 @@ kernel:
 	-$(MAKE) -f Makefile.ventana madwifi-install
 	-$(MAKE) -f Makefile.ventana batman-adv
 	-$(MAKE) -f Makefile.ventana batman-adv-install
-	-$(MAKE) -f Makefile.ventana opendpi
-	-$(MAKE) -f Makefile.ventana opendpi-install
+	-$(MAKE) -f Makefile.ventana ndpi-netfilter
+	-$(MAKE) -f Makefile.ventana ndpi-netfilter-install
 ifeq ($(CONFIG_ZFS),y)
 	-$(MAKE) -f Makefile.ventana zfs
 	-$(MAKE) -f Makefile.ventana zfs-install

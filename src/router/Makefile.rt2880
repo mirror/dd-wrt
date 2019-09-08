@@ -272,8 +272,8 @@ ifeq ($(CONFIG_BATMANADV),y)
 	-$(MAKE) -f Makefile.rt2880 batman-adv-install
 endif
 ifeq ($(CONFIG_OPENDPI),y)
-	-$(MAKE) -f Makefile.rt2880 opendpi
-	-$(MAKE) -f Makefile.rt2880 opendpi-install
+	-$(MAKE) -f Makefile.rt2880 ndpi-netfilter
+	-$(MAKE) -f Makefile.rt2880 ndpi-netfilter-install
 endif
 ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.rt2880 wireguard

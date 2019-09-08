@@ -152,8 +152,8 @@ kernel:
 	-$(MAKE) -f Makefile.alpine madwifi-install
 	-$(MAKE) -f Makefile.alpine batman-adv
 	-$(MAKE) -f Makefile.alpine batman-adv-install
-	-$(MAKE) -f Makefile.alpine opendpi
-	-$(MAKE) -f Makefile.alpine opendpi-install
+	-$(MAKE) -f Makefile.alpine ndpi-netfilter
+	-$(MAKE) -f Makefile.alpine ndpi-netfilter-install
 ifeq ($(CONFIG_ZFS),y)
 	-$(MAKE) -f Makefile.alpine zfs
 	-$(MAKE) -f Makefile.alpine zfs-install

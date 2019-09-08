@@ -221,8 +221,8 @@ ifeq ($(CONFIG_BATMANADV),y)
 	-$(MAKE) -f Makefile.northstar batman-adv-install
 endif
 ifeq ($(CONFIG_OPENDPI),y)
-	-$(MAKE) -f Makefile.northstar opendpi
-	-$(MAKE) -f Makefile.northstar opendpi-install
+	-$(MAKE) -f Makefile.northstar ndpi-netfilter
+	-$(MAKE) -f Makefile.northstar ndpi-netfilter-install
 endif
 ifeq ($(CONFIG_ZFS),y)
 	-$(MAKE) -f Makefile.northstar zfs

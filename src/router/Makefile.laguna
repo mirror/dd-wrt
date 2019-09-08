@@ -183,8 +183,8 @@ endif
 	-$(MAKE) -f Makefile.laguna madwifi-install
 	-$(MAKE) -f Makefile.laguna batman-adv
 	-$(MAKE) -f Makefile.laguna batman-adv-install
-	-$(MAKE) -f Makefile.laguna opendpi
-	-$(MAKE) -f Makefile.laguna opendpi-install
+	-$(MAKE) -f Makefile.laguna ndpi-netfilter
+	-$(MAKE) -f Makefile.laguna ndpi-netfilter-install
 ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.laguna wireguard
 	-$(MAKE) -f Makefile.laguna wireguard-install
