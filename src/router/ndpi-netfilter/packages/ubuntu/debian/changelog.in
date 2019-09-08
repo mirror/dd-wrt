@@ -1,0 +1,4 @@
+ndpi (@NDPI_VERS@-@GIT_REVISION@) stable; urgency=high
+   * Last packaged version
+
+ -- Luca Deri <deri@ntop.org>  @DATE@

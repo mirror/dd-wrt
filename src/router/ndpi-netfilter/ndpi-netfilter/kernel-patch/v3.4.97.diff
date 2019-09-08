@@ -1,0 +1,188 @@
+diff --git a/include/net/netfilter/nf_conntrack_extend.h b/include/net/netfilter/nf_conntrack_extend.h
+index 0066409..9e14d6c 100644
+--- a/include/net/netfilter/nf_conntrack_extend.h
++++ b/include/net/netfilter/nf_conntrack_extend.h
+@@ -23,7 +23,8 @@ enum nf_ct_ext_id {
+ #ifdef CONFIG_NF_CONNTRACK_TIMEOUT
+ 	NF_CT_EXT_TIMEOUT,
+ #endif
+-	NF_CT_EXT_NUM,
++	NF_CT_EXT_CUSTOM,
++	NF_CT_EXT_NUM=NF_CT_EXT_CUSTOM+CONFIG_NF_CONNTRACK_CUSTOM,
+ };
+ 
+ #define NF_CT_EXT_HELPER_TYPE struct nf_conn_help
+@@ -87,12 +88,16 @@ __nf_ct_ext_add(struct nf_conn *ct, enum nf_ct_ext_id id, gfp_t gfp);
+ 
+ #define NF_CT_EXT_F_PREALLOC	0x0001
+ 
++struct seq_file;
++
+ struct nf_ct_ext_type {
+ 	/* Destroys relationships (can be NULL). */
+ 	void (*destroy)(struct nf_conn *ct);
+ 	/* Called when realloacted (can be NULL).
+ 	   Contents has already been moved. */
+ 	void (*move)(void *new, void *old);
++	/* Print custom info (can be NULL) */
++	unsigned int (*seq_print)(struct seq_file *s, const struct nf_conn *ct, int dir);
+ 
+ 	enum nf_ct_ext_id id;
+ 
+@@ -105,6 +110,8 @@ struct nf_ct_ext_type {
+ 	u8 alloc_size;
+ };
+ 
++unsigned int nf_ct_ext_seq_print(struct seq_file *s, const struct nf_conn *ct, int dir);
+ int nf_ct_extend_register(struct nf_ct_ext_type *type);
++int nf_ct_extend_custom_register(struct nf_ct_ext_type *type,unsigned long int cid);
+ void nf_ct_extend_unregister(struct nf_ct_ext_type *type);
+ #endif /* _NF_CONNTRACK_EXTEND_H */
+diff --git a/net/netfilter/Kconfig b/net/netfilter/Kconfig
+index eacf39b..80ec5dc 100644
+--- a/net/netfilter/Kconfig
++++ b/net/netfilter/Kconfig
+@@ -70,6 +70,16 @@ config NF_CONNTRACK_SECMARK
+ 
+ 	  If unsure, say 'N'.
+ 
++config NF_CONNTRACK_CUSTOM
++	int "Number of custom extend"
++	range 0 8
++	depends on NETFILTER_ADVANCED
++	default "4"
++	help
++	  This parameter specifies how many custom extensions can be registered.
++
++	  The default value is 4.
++
+ config NF_CONNTRACK_ZONES
+ 	bool  'Connection tracking zones'
+ 	depends on NETFILTER_ADVANCED
+diff --git a/net/netfilter/nf_conntrack_acct.c b/net/netfilter/nf_conntrack_acct.c
+index f4f8cda..79cf04f 100644
+--- a/net/netfilter/nf_conntrack_acct.c
++++ b/net/netfilter/nf_conntrack_acct.c
+@@ -52,6 +52,7 @@ seq_print_acct(struct seq_file *s, const struct nf_conn *ct, int dir)
+ EXPORT_SYMBOL_GPL(seq_print_acct);
+ 
+ static struct nf_ct_ext_type acct_extend __read_mostly = {
++	.seq_print = seq_print_acct,
+ 	.len	= sizeof(struct nf_conn_counter[IP_CT_DIR_MAX]),
+ 	.align	= __alignof__(struct nf_conn_counter[IP_CT_DIR_MAX]),
+ 	.id	= NF_CT_EXT_ACCT,
+diff --git a/net/netfilter/nf_conntrack_extend.c b/net/netfilter/nf_conntrack_extend.c
+index 641ff5f..9b3cb21 100644
+--- a/net/netfilter/nf_conntrack_extend.c
++++ b/net/netfilter/nf_conntrack_extend.c
+@@ -43,6 +43,30 @@ void __nf_ct_ext_destroy(struct nf_conn *ct)
+ }
+ EXPORT_SYMBOL(__nf_ct_ext_destroy);
+ 
++struct seq_file;
++
++unsigned int nf_ct_ext_seq_print(struct seq_file *s, const struct nf_conn *ct, int dir)
++{
++	unsigned int i,ret=0;
++	struct nf_ct_ext_type *t;
++	struct nf_ct_ext *ext = ct->ext;
++
++	for (i = 0; i < NF_CT_EXT_NUM; i++) {
++		if (!__nf_ct_ext_exist(ext, i))
++			continue;
++
++		rcu_read_lock(); // FIXME
++		t = rcu_dereference(nf_ct_ext_types[i]);
++		if (t && t->seq_print)
++			ret = t->seq_print(s,ct,dir);
++		rcu_read_unlock();
++		if(ret)
++			return ret;
++	}
++	return ret;
++}
++EXPORT_SYMBOL(nf_ct_ext_seq_print);
++
+ static void *
+ nf_ct_ext_create(struct nf_ct_ext **ext, enum nf_ct_ext_id id, gfp_t gfp)
+ {
+@@ -154,6 +178,24 @@ static void update_alloc_size(struct nf_ct_ext_type *type)
+ 	}
+ }
+ 
++static unsigned long int nf_ct_ext_cust_id[CONFIG_NF_CONNTRACK_CUSTOM];
++static enum nf_ct_ext_id 
++nf_ct_extend_get_custom_id(unsigned long int ext_id)
++{
++	enum nf_ct_ext_id ret = 0;
++	int i;
++	mutex_lock(&nf_ct_ext_type_mutex);
++	for(i = 0; i < CONFIG_NF_CONNTRACK_CUSTOM; i++) {
++		if(!nf_ct_ext_cust_id[i]) {
++			nf_ct_ext_cust_id[i] = ext_id;
++			ret = i+NF_CT_EXT_CUSTOM;
++			break;
++		}
++	}
++	mutex_unlock(&nf_ct_ext_type_mutex);
++	return ret;
++}
++
+ /* This MUST be called in process context. */
+ int nf_ct_extend_register(struct nf_ct_ext_type *type)
+ {
+@@ -177,12 +219,32 @@ out:
+ }
+ EXPORT_SYMBOL_GPL(nf_ct_extend_register);
+ 
++int nf_ct_extend_custom_register(struct nf_ct_ext_type *type,
++				 unsigned long int cid)
++{
++	int ret;
++	enum nf_ct_ext_id new_id = nf_ct_extend_get_custom_id(cid);
++	if(!new_id)
++		return -EBUSY;
++	type->id = new_id;
++	ret = nf_ct_extend_register(type);
++	if(ret < 0) {
++		mutex_lock(&nf_ct_ext_type_mutex);
++		nf_ct_ext_cust_id[new_id - NF_CT_EXT_CUSTOM] = 0;
++		mutex_unlock(&nf_ct_ext_type_mutex);
++	}
++	return ret;
++}
++EXPORT_SYMBOL_GPL(nf_ct_extend_custom_register);
++
+ /* This MUST be called in process context. */
+ void nf_ct_extend_unregister(struct nf_ct_ext_type *type)
+ {
+ 	mutex_lock(&nf_ct_ext_type_mutex);
+ 	RCU_INIT_POINTER(nf_ct_ext_types[type->id], NULL);
+ 	update_alloc_size(type);
++	if(type->id >= NF_CT_EXT_CUSTOM && type->id < NF_CT_EXT_NUM)
++		nf_ct_ext_cust_id[type->id-NF_CT_EXT_CUSTOM] = 0;
+ 	mutex_unlock(&nf_ct_ext_type_mutex);
+ 	rcu_barrier(); /* Wait for completion of call_rcu()'s */
+ }
+diff --git a/net/netfilter/nf_conntrack_standalone.c b/net/netfilter/nf_conntrack_standalone.c
+index 42e9621..19807c9 100644
+--- a/net/netfilter/nf_conntrack_standalone.c
++++ b/net/netfilter/nf_conntrack_standalone.c
+@@ -205,7 +205,7 @@ static int ct_seq_show(struct seq_file *s, void *v)
+ 			l3proto, l4proto))
+ 		goto release;
+ 
+-	if (seq_print_acct(s, ct, IP_CT_DIR_ORIGINAL))
++	if (nf_ct_ext_seq_print(s,ct,IP_CT_DIR_ORIGINAL))
+ 		goto release;
+ 
+ 	if (!(test_bit(IPS_SEEN_REPLY_BIT, &ct->status)))
+@@ -216,7 +216,7 @@ static int ct_seq_show(struct seq_file *s, void *v)
+ 			l3proto, l4proto))
+ 		goto release;
+ 
+-	if (seq_print_acct(s, ct, IP_CT_DIR_REPLY))
++	if (nf_ct_ext_seq_print(s,ct,IP_CT_DIR_REPLY))
+ 		goto release;
+ 
+ 	if (test_bit(IPS_ASSURED_BIT, &ct->status))
