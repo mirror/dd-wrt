@@ -793,7 +793,7 @@ out_free_handle:
 }
 
 
-STATIC TC_HANDLE_T
+IPTCSTATIC TC_HANDLE_T
 TC_INIT(const char *tablename)
 {
 	TC_HANDLE_T h;
@@ -874,7 +874,7 @@ error:
 	return NULL;
 }
 
-STATIC void
+IPTCSTATIC void
 TC_FREE(TC_HANDLE_T *h)
 {
 	struct chain_head *c, *tmp;
@@ -910,7 +910,7 @@ print_match(const STRUCT_ENTRY_MATCH *m)
 
 static int dump_entry(STRUCT_ENTRY *e, const TC_HANDLE_T handle);
  
-STATIC void
+IPTCSTATIC void
 TC_DUMP_ENTRIES(const TC_HANDLE_T handle)
 {
 	iptc_fn = TC_DUMP_ENTRIES;
@@ -938,7 +938,7 @@ TC_DUMP_ENTRIES(const TC_HANDLE_T handle)
 }
 
 /* Does this chain exist? */
-STATIC int TC_IS_CHAIN(const char *chain, const TC_HANDLE_T handle)
+IPTCSTATIC int TC_IS_CHAIN(const char *chain, const TC_HANDLE_T handle)
 {
 	iptc_fn = TC_IS_CHAIN;
 	return iptcc_find_label(chain, handle) != NULL;
@@ -956,7 +956,7 @@ static void iptcc_chain_iterator_advance(TC_HANDLE_T handle)
 }
 
 /* Iterator functions to run through the chains. */
-STATIC const char *
+IPTCSTATIC const char *
 TC_FIRST_CHAIN(TC_HANDLE_T *handle)
 {
 	struct chain_head *c = list_entry((*handle)->chains.next,
@@ -978,7 +978,7 @@ TC_FIRST_CHAIN(TC_HANDLE_T *handle)
 }
 
 /* Iterator functions to run through the chains.  Returns NULL at end. */
-STATIC const char *
+IPTCSTATIC const char *
 TC_NEXT_CHAIN(TC_HANDLE_T *handle)
 {
 	struct chain_head *c = (*handle)->chain_iterator_cur;
@@ -997,7 +997,7 @@ TC_NEXT_CHAIN(TC_HANDLE_T *handle)
 }
 
 /* Get first rule in the given chain: NULL for empty chain. */
-STATIC const STRUCT_ENTRY *
+IPTCSTATIC const STRUCT_ENTRY *
 TC_FIRST_RULE(const char *chain, TC_HANDLE_T *handle)
 {
 	struct chain_head *c;
@@ -1027,7 +1027,7 @@ TC_FIRST_RULE(const char *chain, TC_HANDLE_T *handle)
 }
 
 /* Returns NULL when rules run out. */
-STATIC const STRUCT_ENTRY *
+IPTCSTATIC const STRUCT_ENTRY *
 TC_NEXT_RULE(const STRUCT_ENTRY *prev, TC_HANDLE_T *handle)
 {
 	struct rule_head *r;
@@ -1062,7 +1062,7 @@ TC_NEXT_RULE(const STRUCT_ENTRY *prev, TC_HANDLE_T *handle)
 }
 
 /* How many rules in this chain? */
-STATIC unsigned int
+IPTCSTATIC unsigned int
 TC_NUM_RULES(const char *chain, TC_HANDLE_T *handle)
 {
 	struct chain_head *c;
@@ -1078,7 +1078,7 @@ TC_NUM_RULES(const char *chain, TC_HANDLE_T *handle)
 	return c->num_rules;
 }
 
-STATIC const STRUCT_ENTRY *TC_GET_RULE(const char *chain,
+IPTCSTATIC const STRUCT_ENTRY *TC_GET_RULE(const char *chain,
 				unsigned int n,
 				TC_HANDLE_T *handle)
 {
@@ -1102,7 +1102,7 @@ STATIC const STRUCT_ENTRY *TC_GET_RULE(const char *chain,
 }
 
 /* Returns a pointer to the target name of this position. */
-STATIC const char *standard_target_map(int verdict)
+IPTCSTATIC const char *standard_target_map(int verdict)
 {
 	switch (verdict) {
 		case RETURN:
@@ -1128,7 +1128,7 @@ STATIC const char *standard_target_map(int verdict)
 }
 
 /* Returns a pointer to the target name of this position. */
-STATIC const char *TC_GET_TARGET(const STRUCT_ENTRY *ce,
+IPTCSTATIC const char *TC_GET_TARGET(const STRUCT_ENTRY *ce,
 			  TC_HANDLE_T *handle)
 {
 	STRUCT_ENTRY *e = (STRUCT_ENTRY *)ce;
@@ -1157,7 +1157,7 @@ STATIC const char *TC_GET_TARGET(const STRUCT_ENTRY *ce,
 	return NULL;
 }
 /* Is this a built-in chain?  Actually returns hook + 1. */
-STATIC int
+IPTCSTATIC int
 TC_BUILTIN(const char *chain, const TC_HANDLE_T handle)
 {
 	struct chain_head *c;
@@ -1174,7 +1174,7 @@ TC_BUILTIN(const char *chain, const TC_HANDLE_T handle)
 }
 
 /* Get the policy of a given built-in chain */
-STATIC const char *
+IPTCSTATIC const char *
 TC_GET_POLICY(const char *chain,
 	      STRUCT_COUNTERS *counters,
 	      TC_HANDLE_T *handle)
@@ -1274,7 +1274,7 @@ iptcc_map_target(const TC_HANDLE_T handle,
 }
 
 /* Insert the entry `fw' in chain `chain' into position `rulenum'. */
-STATIC int
+IPTCSTATIC int
 TC_INSERT_ENTRY(const IPT_CHAINLABEL chain,
 		const STRUCT_ENTRY *e,
 		unsigned int rulenum,
@@ -1333,7 +1333,7 @@ TC_INSERT_ENTRY(const IPT_CHAINLABEL chain,
 }
 
 /* Atomically replace rule `rulenum' in `chain' with `fw'. */
-STATIC int
+IPTCSTATIC int
 TC_REPLACE_ENTRY(const IPT_CHAINLABEL chain,
 		 const STRUCT_ENTRY *e,
 		 unsigned int rulenum,
@@ -1384,7 +1384,7 @@ TC_REPLACE_ENTRY(const IPT_CHAINLABEL chain,
 
 /* Append entry `fw' to chain `chain'.  Equivalent to insert with
    rulenum = length of chain. */
-STATIC int
+IPTCSTATIC int
 TC_APPEND_ENTRY(const IPT_CHAINLABEL chain,
 		const STRUCT_ENTRY *e,
 		TC_HANDLE_T *handle)
@@ -1491,7 +1491,7 @@ is_same(const STRUCT_ENTRY *a,
 	unsigned char *matchmask);
 
 /* Delete the first rule in `chain' which matches `fw'. */
-STATIC int
+IPTCSTATIC int
 TC_DELETE_ENTRY(const IPT_CHAINLABEL chain,
 		const STRUCT_ENTRY *origfw,
 		unsigned char *matchmask,
@@ -1563,7 +1563,7 @@ TC_DELETE_ENTRY(const IPT_CHAINLABEL chain,
 
 
 /* Delete the rule in position `rulenum' in `chain'. */
-STATIC int
+IPTCSTATIC int
 TC_DELETE_NUM_ENTRY(const IPT_CHAINLABEL chain,
 		    unsigned int rulenum,
 		    TC_HANDLE_T *handle)
@@ -1609,7 +1609,7 @@ TC_DELETE_NUM_ENTRY(const IPT_CHAINLABEL chain,
 
 /* Check the packet `fw' on chain `chain'.  Returns the verdict, or
    NULL and sets errno. */
-STATIC const char *
+IPTCSTATIC const char *
 TC_CHECK_PACKET(const IPT_CHAINLABEL chain,
 		STRUCT_ENTRY *entry,
 		TC_HANDLE_T *handle)
@@ -1620,7 +1620,7 @@ TC_CHECK_PACKET(const IPT_CHAINLABEL chain,
 }
 
 /* Flushes the entries in the given chain (ie. empties chain). */
-STATIC int
+IPTCSTATIC int
 TC_FLUSH_ENTRIES(const IPT_CHAINLABEL chain, TC_HANDLE_T *handle)
 {
 	struct chain_head *c;
@@ -1644,7 +1644,7 @@ TC_FLUSH_ENTRIES(const IPT_CHAINLABEL chain, TC_HANDLE_T *handle)
 }
 
 /* Zeroes the counters in a chain. */
-STATIC int
+IPTCSTATIC int
 TC_ZERO_ENTRIES(const IPT_CHAINLABEL chain, TC_HANDLE_T *handle)
 {
 	struct chain_head *c;
@@ -1669,7 +1669,7 @@ TC_ZERO_ENTRIES(const IPT_CHAINLABEL chain, TC_HANDLE_T *handle)
 	return 1;
 }
 
-STATIC STRUCT_COUNTERS *
+IPTCSTATIC STRUCT_COUNTERS *
 TC_READ_COUNTER(const IPT_CHAINLABEL chain,
 		unsigned int rulenum,
 		TC_HANDLE_T *handle)
@@ -1693,7 +1693,7 @@ TC_READ_COUNTER(const IPT_CHAINLABEL chain,
 	return &r->entry[0].counters;
 }
 
-STATIC int
+IPTCSTATIC int
 TC_ZERO_COUNTER(const IPT_CHAINLABEL chain,
 		unsigned int rulenum,
 		TC_HANDLE_T *handle)
@@ -1722,7 +1722,7 @@ TC_ZERO_COUNTER(const IPT_CHAINLABEL chain,
 	return 1;
 }
 
-STATIC int 
+IPTCSTATIC int 
 TC_SET_COUNTER(const IPT_CHAINLABEL chain,
 	       unsigned int rulenum,
 	       STRUCT_COUNTERS *counters,
@@ -1758,7 +1758,7 @@ TC_SET_COUNTER(const IPT_CHAINLABEL chain,
 /* Creates a new chain. */
 /* To create a chain, create two rules: error node and unconditional
  * return. */
-STATIC int
+IPTCSTATIC int
 TC_CREATE_CHAIN(const IPT_CHAINLABEL chain, TC_HANDLE_T *handle)
 {
 	static struct chain_head *c;
@@ -1800,7 +1800,7 @@ TC_CREATE_CHAIN(const IPT_CHAINLABEL chain, TC_HANDLE_T *handle)
 }
 
 /* Get the number of references to this chain. */
-STATIC int
+IPTCSTATIC int
 TC_GET_REFERENCES(unsigned int *ref, const IPT_CHAINLABEL chain,
 		  TC_HANDLE_T *handle)
 {
@@ -1818,7 +1818,7 @@ TC_GET_REFERENCES(unsigned int *ref, const IPT_CHAINLABEL chain,
 }
 
 /* Deletes a chain. */
-STATIC int
+IPTCSTATIC int
 TC_DELETE_CHAIN(const IPT_CHAINLABEL chain, TC_HANDLE_T *handle)
 {
 	unsigned int references;
@@ -1871,7 +1871,7 @@ TC_DELETE_CHAIN(const IPT_CHAINLABEL chain, TC_HANDLE_T *handle)
 }
 
 /* Renames a chain. */
-STATIC int TC_RENAME_CHAIN(const IPT_CHAINLABEL oldname,
+IPTCSTATIC int TC_RENAME_CHAIN(const IPT_CHAINLABEL oldname,
 		    const IPT_CHAINLABEL newname,
 		    TC_HANDLE_T *handle)
 {
@@ -1908,7 +1908,7 @@ STATIC int TC_RENAME_CHAIN(const IPT_CHAINLABEL oldname,
 }
 
 /* Sets the policy on a built-in chain. */
-STATIC int
+IPTCSTATIC int
 TC_SET_POLICY(const IPT_CHAINLABEL chain,
 	      const IPT_CHAINLABEL policy,
 	      STRUCT_COUNTERS *counters,
@@ -2023,7 +2023,7 @@ static void counters_map_set(STRUCT_COUNTERS_INFO *newcounters,
 }
 
 
-STATIC int
+IPTCSTATIC int
 TC_COMMIT(TC_HANDLE_T *handle)
 {
 	/* Replace, then map back the counters. */
@@ -2228,7 +2228,7 @@ TC_GET_RAW_SOCKET()
 }
 
 /* Translates errno numbers into more human-readable form than strerror. */
-STATIC const char *
+IPTCSTATIC const char *
 TC_STRERROR(int err)
 {
 	unsigned int i;
