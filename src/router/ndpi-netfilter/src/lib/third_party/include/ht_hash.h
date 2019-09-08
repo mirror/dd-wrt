@@ -20,11 +20,11 @@ struct hashtable_s {
 
 typedef struct hashtable_s hashtable_t;
 
-extern hashtable_t *ht_create( int size );
-extern int ht_hash( hashtable_t *hashtable, char *key );
-extern entry_t *ht_newpair( char *key, u_int16_t value );
-extern void ht_set( hashtable_t *hashtable, char *key, u_int16_t value );
-extern u_int16_t ht_get( hashtable_t *hashtable, char *key );
-extern void ht_free( hashtable_t *hashtable );
+static  hashtable_t *ht_create( int size );
+static  int ht_hash( hashtable_t *hashtable, char *key );
+static  entry_t *ht_newpair( char *key, u_int16_t value );
+static  void ht_set( hashtable_t *hashtable, char *key, u_int16_t value );
+static  u_int16_t ht_get( hashtable_t *hashtable, char *key );
+static  void ht_free( hashtable_t *hashtable );
 
 #endif /* _HASH_H_ */

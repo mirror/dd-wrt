@@ -46,7 +46,7 @@ static void ndpi_int_jabber_add_connection(struct ndpi_detection_module_struct *
   ndpi_set_detected_protocol(ndpi_struct, flow, protocol, NDPI_PROTOCOL_UNKNOWN);
 }
 
-static void check_content_type_and_change_protocol(struct ndpi_detection_module_struct *ndpi_struct,
+static void jabber_check_content_type_and_change_protocol(struct ndpi_detection_module_struct *ndpi_struct,
 						   struct ndpi_flow_struct *flow, u_int16_t x)
 {
   struct ndpi_packet_struct *packet = &flow->packet;
@@ -273,7 +273,7 @@ void ndpi_search_jabber_tcp(struct ndpi_detection_module_struct *ndpi_struct, st
       ndpi_int_jabber_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_UNENCRYPTED_JABBER);
 
       /* search for subprotocols */
-      check_content_type_and_change_protocol(ndpi_struct, flow, 13);
+      jabber_check_content_type_and_change_protocol(ndpi_struct, flow, 13);
       return;
     }
   }
