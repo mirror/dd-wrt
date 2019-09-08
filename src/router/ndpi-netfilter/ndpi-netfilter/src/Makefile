@@ -41,6 +41,7 @@ modules_install:
 	depmod -a;
 clean:
 	make -C ${KERNEL_DIR} M=$$PWD $@;
+	rm -f ${xt_ndpi-y}
 	rm -rf modules.order
 distclean:
 	find ../../src/lib/ -type f \( -name \*.o -o -name \*.cmd \) | xargs -r rm
