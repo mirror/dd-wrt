@@ -508,7 +508,11 @@ static void *malloc_wrapper(size_t size)
 
 static void free_wrapper(void *freeable)
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,12,0)
 	kvfree(freeable);
+#else
+	vfree(freeable);
+#endif
 }
 
 static void fill_prefix_any(prefix_t *p, union nf_inet_addr *ip,int family) {
@@ -703,7 +707,7 @@ static inline void ndpi_ct_counters_add(struct nf_ct_ext_ndpi *ct_ndpi,
 	ct_ndpi->flinfo.time_end = m_time;
 	set_flow_info(ct_ndpi);
 	if(ndpi_log_debug > 1)
-		pr_info("ndpi: ct_ndpi %pK counter pkt %lu bytes %lu\n",ct_ndpi,npkt,len);
+		pr_info("ndpi: ct_ndpi %pK counter pkt %zu bytes %zu\n",ct_ndpi,npkt,len);
 }
 		
 
@@ -2219,7 +2223,15 @@ static const struct file_operations n_hostdef_proc_fops = {
         .llseek  = noop_llseek,
         .release = n_hostdef_proc_close,
 };
-#if  LINUX_VERSION_CODE < KERNEL_VERSION(3,19,0)
+
+#if  LINUX_VERSION_CODE < KERNEL_VERSION(3,18,0)
+static unsigned int ndpi_nat_do_chain(unsigned int hooknum,
+                                         struct sk_buff *skb,
+                                         const struct net_device *in,
+                                         const struct net_device *out,
+                                         int (*okfn)(struct sk_buff *))
+{
+#elif  LINUX_VERSION_CODE < KERNEL_VERSION(3,19,0)
 static unsigned int ndpi_nat_do_chain(const struct nf_hook_ops *ops,
                                          struct sk_buff *skb,
                                          const struct net_device *in,
@@ -2261,7 +2273,9 @@ static unsigned int ndpi_nat_do_chain(void *priv,
 	spin_lock_bh (&ct_ndpi->lock);
 	if(!test_nat_done(ct_ndpi)) {
 		ndpi_nat_detect(ct_ndpi,ct);
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,19,0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,18,0)
+		if(hooknum != NF_INET_PRE_ROUTING)
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(3,19,0)
 		if(ops->hooknum != NF_INET_PRE_ROUTING)
 #else
 		if(state->hook != NF_INET_PRE_ROUTING)
