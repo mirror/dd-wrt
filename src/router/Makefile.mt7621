@@ -259,8 +259,8 @@ ifeq ($(CONFIG_BATMANADV),y)
 	-$(MAKE) -f Makefile.mt7621 batman-adv-install
 endif
 ifeq ($(CONFIG_OPENDPI),y)
-	-$(MAKE) -f Makefile.mt7621 opendpi
-	-$(MAKE) -f Makefile.mt7621 opendpi-install
+	-$(MAKE) -f Makefile.mt7621 ndpi-netfilter
+	-$(MAKE) -f Makefile.mt7621 ndpi-netfilter-install
 endif
 ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.mt7621 wireguard

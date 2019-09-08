@@ -690,8 +690,8 @@ ifeq ($(CONFIG_BATMANADV),y)
 	-$(MAKE) -f Makefile.pb42 batman-adv-install
 endif
 ifeq ($(CONFIG_OPENDPI),y)
-	-$(MAKE) -f Makefile.pb42 opendpi
-	-$(MAKE) -f Makefile.pb42 opendpi-install
+	-$(MAKE) -f Makefile.pb42 ndpi-netfilter
+	-$(MAKE) -f Makefile.pb42 ndpi-netfilter-install
 endif
 ifeq ($(CONFIG_ZFS),y)
 	-$(MAKE) -f Makefile.pb42 zfs

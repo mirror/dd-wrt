@@ -181,8 +181,8 @@ endif
 	-$(MAKE) -f Makefile.x64 madwifi-install
 	-$(MAKE) -f Makefile.x64 batman-adv
 	-$(MAKE) -f Makefile.x64 batman-adv-install
-	-$(MAKE) -f Makefile.x64 opendpi
-	-$(MAKE) -f Makefile.x64 opendpi-install
+	-$(MAKE) -f Makefile.x64 ndpi-netfilter
+	-$(MAKE) -f Makefile.x64 ndpi-netfilter-install
 ifeq ($(CONFIG_ZFS),y)
 	-$(MAKE) -f Makefile.x64 zfs
 	-$(MAKE) -f Makefile.x64 zfs-install

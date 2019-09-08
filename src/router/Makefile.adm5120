@@ -184,8 +184,8 @@ ifeq ($(CONFIG_BATMANADV),y)
 	-$(MAKE) -f Makefile.adm5120 batman-adv-install
 endif
 ifeq ($(CONFIG_OPENDPI),y)
-	-$(MAKE) -f Makefile.adm5120 opendpi
-	-$(MAKE) -f Makefile.adm5120 opendpi-install
+	-$(MAKE) -f Makefile.adm5120 ndpi-netfilter
+	-$(MAKE) -f Makefile.adm5120 ndpi-netfilter-install
 endif
 ifeq ($(CONFIG_ZFS),y)
 	-$(MAKE) -f Makefile.adm5120 spl
