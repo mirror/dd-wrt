@@ -1,0 +1,4 @@
+TEST:a.c
+TEST:b.c,c.c 
+TEST:d.c TEST:e.c
+TEST:f.c,g.c TEST:h.c,i.c

@@ -1,0 +1,26 @@
+Source: ndpi
+Section: free
+Priority: optional
+Maintainer: Luca Deri <deri@ntop.org>
+Standards-Version: @NDPI_VERS@
+Build-Depends:
+Build-Conflicts:
+
+Package: ndpi
+Architecture: @EXTN@
+Depends: libnuma1
+Recommends:
+Suggests:
+Pre-Depends:
+Conflicts:
+Provides:
+Replaces:
+Description: A L7 DPI library.
+
+Package: ndpi-dev
+Section: libdevel
+Architecture: @EXTN@
+Depends: ndpi (= ${binary:Version}), ${misc:Depends}
+Conflicts: 
+Description: Development library and header files for ndpi
+

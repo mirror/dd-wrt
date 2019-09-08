@@ -1,0 +1,102 @@
+		Collect and show NDPI flow info.
+
+To activate the "flow info" need load a module with the parameter "ndpi_enable_flow=1".
+Information about network traffic will be available in the /proc/net/xt_ndpi/flows file.
+Data is collected only on the traffic that was selected by "-j NDPI --flow-info".
+If you do not have such a rule, the file /proc/net/xt_ndpi/flows will always be empty!
+
+The "-j NDPI --flow-info" rule can be used anywhere in the mangle and filter tables,
+allowing you to flexibly choose the traffic that interests us.
+
+An example for sample traffic passing only through a specific network
+interface eth1 :
+
+	iptables -t mangle -A PREROUTING -m ndpi --all
+	iptables -t mangle -A OUTPUT -m ndpi --all
+	iptables -t mangle -A PREROUTING -i eth1  -m ndpi ! --error -j NDPI --flow-info
+	iptables -t mangle -A POSTROUTING -o eth1 -m ndpi ! --error -j NDPI --flow-info
+
+For information about traffic, you need to open the /proc/net/xt_ndpi/flows file
+and read it to the end of the file.
+( The process of reading data needs to be done as quickly as possible.
+Not recommended to read by one the line. For a single read operation, 
+you can get up to 256 KB of data. )
+
+
+Example:
+
+	cat /proc/net/xt_ndpi/flows
+
+------------------------------------------------------------------------------
+TIME 1553364302
+1553364302 1553364302 4 6 xxx.xxx.xxx.3 59440 74.125.205.155 443 64 0 1 0 I=20,20 Google.SSL
+1553364302 1553364302 4 6 xxx.xxx.xxx.4 62327 95.106.141.165 40186 52 0 1 0 I=20,20 BitTorrent
+1553364302 1553364302 4 6 xxx.xxx.xxx.4 52418 185.60.115.21 80 52 0 1 0 I=20,20 Starcraft.HTTP
+1553364301 1553364301 4 6 217.66.156.233 62198 xxx.xxx.xxx.153 443 64 60 1 1 I=20,20 SSL
+1553364301 1553364301 4 17 xxx.xxx.xxx.4 49164 173.194.222.157 443 1378 2756 1 2 I=20,20 Google.QUIC H=www.googleadservices.com
+1553364301 1553364301 4 17 xxx.xxx.xxx.49 44919 69.171.255.11 53 100 227 1 1 I=20,20 Facebook.DNS H=instagram.fhel3-1.fna.fbcdn.net
+1553364301 1553364301 4 6 xxx.xxx.xxx.3 59438 64.233.161.104 443 447 2762 4 3 I=20,20 Google.SSL C=www.google.com
+------------------------------------------------------------------------------
+
+The first two lines of the data line may be special: 
+"TIME xxxx" and "LOST_TRAFFIC x x x x"
+
+"TIME xxxxx" - current system time (unix timestamp). This is the first
+line when reading the beginning of the data.
+
+"LOST_TRAFFIC x x x x" - summary information on lost traffic (see below).
+
+Each line of connection information has 14 required fields and 5 additional fields:
+
+1.  Connection start time.
+2.  The time of the last connection packet.
+3.  L3 proto: 4 - IPv4, 6 - IPv6
+4.  L4 protocol (1 - icmp, 6 - tcp, 17 - udp ...)
+5.  Source address
+6.  Source port (0 if not exist)
+7.  Destination address
+8.  Destination port (0 if not exist)
+9.  Bytes from sourse to destination
+10. Bytes from destination to sourse
+11. Packets from sourse to destination
+12. Packets from destination to sourse
+13. Interface indexes. Format: "I=<in_ifindex>,<out_ifindex>"
+14. Connection mark. Optional. Format: "CM=<hexmark>"
+15. Source NAT. Optional, only for IPv4. Format: "SN=ipv4_address:port"
+16. Destination NAT. Optional, only for IPv4. Format: "DN=ipv4_address:port"
+17. NDPI protocol. Format: "P=xxx"
+18. NDPI hostname info. Optional. Only for DNS,HTTP. Format: "H=hostname"
+19. NDPI SSL info. Optional. Only for SSL. Format: "C=cert_name"
+
+We must read the file until we get an EOF. In the process of reading data, the
+memory occupied by closed connections is released. If the number of records of
+closed connections exceeds the limit, the memory occupied by this data will be
+released and the next time the data is read, the first line will be
+"LOST_TRAFFIC" with the total volume of traffic lost.
+
+The limit can be set in two ways:
+ 1) module option ndpi_flow_limit=N
+ 2) echo "limit=N" >/proc/net/xt_ndpi/flows
+ ( Information about one connection takes from 176 to 432 bytes )
+
+To prevent memory overflow, there is one more parameter "timeout" - the
+maximum time interval between reading data from the file /proc/net/xt_ndpi/flows
+This parameter can be changed with the command "echo 330> /proc/net/xt_ndpi/flows"
+If this interval is exceeded, then information about closing connections will
+be deleted immediately.
+
+We have three modes of reading traffic information:
+
+ 1) "read_all" (default mode) - reading all traffic information with zeroing counters.
+ 2) "read_closed" - reading data about closed connections. This is an auxiliary mode, 
+    which is designed to work in systems with limited memory.
+ 3) "read_flows" - read all traffic information without resetting the counters (monitor mode).
+
+You can change the reading mode with the command
+
+echo "mode" >/proc/net/xt_ndpi/flows
+
+Each time the /proc/net/xt_ndpi/flows file is opened, the read mode is reset to "read_all".
+Changing the read mode can be done only if the current position is 0 or when
+the EOF is reached.
+
