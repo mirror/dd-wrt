@@ -63,7 +63,8 @@
 #include "../lib/third_party/include/ndpi_patricia.h"
 #include "../lib/third_party/include/ahocorasick.h"
 
-extern ndpi_protocol_match host_match[];
+
+static ndpi_protocol_match host_match[];
 
 /* Only for debug! */
 //#define NDPI_IPPORT_DEBUG
@@ -250,23 +251,23 @@ static inline int flow_have_info( struct nf_ct_ext_ndpi *c) {
 
 static ndpi_protocol proto_null = NDPI_PROTOCOL_NULL;
 
-unsigned long int ndpi_flow_limit=10000000; // 4.3Gb
-unsigned long int ndpi_enable_flow=0;
-unsigned long int ndpi_log_debug=0;
+static unsigned long int ndpi_flow_limit=10000000; // 4.3Gb
+static unsigned long int ndpi_enable_flow=0;
+static unsigned long int ndpi_log_debug=0;
 #ifdef NDPI_ENABLE_DEBUG_MESSAGES
 static unsigned long  ndpi_lib_trace=0;
 #endif
 static unsigned long  ndpi_mtu=48000;
 static unsigned long  bt_log_size=128;
-unsigned long int bt_hash_size=0;
-unsigned long int bt6_hash_size=0;
-unsigned long int bt_hash_tmo=1200;
+static unsigned long int bt_hash_size=0;
+static unsigned long int bt6_hash_size=0;
+static unsigned long int bt_hash_tmo=1200;
 
 static unsigned long  max_packet_unk_tcp=20;
 static unsigned long  max_packet_unk_udp=20;
 static unsigned long  max_packet_unk_other=20;
 
-unsigned long  flow_read_debug=0;
+static unsigned long  flow_read_debug=0;
 
 static unsigned long  ndpi_size_flow_struct=0;
 static unsigned long  ndpi_size_id_struct=0;
@@ -304,7 +305,7 @@ static unsigned long  ndpi_pjc=0;
 static unsigned long  ndpi_pk=0;
 
 static unsigned long  ndpi_pl[11]={0,};
-unsigned long  ndpi_btp_tm[20]={0,};
+static unsigned long  ndpi_btp_tm[20]={0,};
 
 module_param_named(xt_debug,   ndpi_log_debug, ulong, 0600);
 MODULE_PARM_DESC(xt_debug,"Debug level for xt_ndpi (0-3).");
@@ -380,14 +381,14 @@ module_param_named(l4mismatch,	 ndpi_pj,  ulong, 0400);
 module_param_named(l4mis_size,	 ndpi_pjc, ulong, 0400);
 module_param_named(ndpi_match,	 ndpi_pk,  ulong, 0400);
 
-unsigned long  ndpi_pto=0,
+static unsigned long  ndpi_pto=0,
 	       ndpi_ptss=0, ndpi_ptsd=0,
 	       ndpi_ptds=0, ndpi_ptdd=0,
 	       ndpi_ptussf=0,ndpi_ptusdr=0,
 	       ndpi_ptussr=0,ndpi_ptusdf=0,
 	       ndpi_ptudsf=0,ndpi_ptuddr=0,
 	       ndpi_ptudsr=0,ndpi_ptuddf=0 ;
-unsigned long 
+static unsigned long 
 	       ndpi_pusf=0,ndpi_pusr=0,
 	       ndpi_pudf=0,ndpi_pudr=0,
 	       ndpi_puo=0;
@@ -405,8 +406,8 @@ static uint32_t detection_tick_resolution = 1000;
 static	enum nf_ct_ext_id nf_ct_ext_id_ndpi = 0;
 static	struct kmem_cache *osdpi_flow_cache = NULL;
 static	struct kmem_cache *osdpi_id_cache = NULL;
-struct kmem_cache *ct_info_cache = NULL;
-struct kmem_cache *bt_port_cache = NULL;
+static struct kmem_cache *ct_info_cache = NULL;
+static struct kmem_cache *bt_port_cache = NULL;
 
 #ifdef NDPI_ENABLE_DEBUG_MESSAGES
 static char *dbl_lvl_txt[5] = {
@@ -1575,7 +1576,7 @@ struct xt_ndpi_mtinfo *info = par->matchinfo;
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4,8,0)
 
-char *ndpi_proto_to_str(char *buf,size_t size,ndpi_protocol *p,ndpi_mod_str_t *ndpi_str)
+static char *ndpi_proto_to_str(char *buf,size_t size,ndpi_protocol *p,ndpi_mod_str_t *ndpi_str)
 {
 const char *t_app,*t_mast;
 buf[0] = '\0';
@@ -2900,3 +2901,13 @@ static void __exit ndpi_mt_exit(void)
 
 module_init(ndpi_mt_init);
 module_exit(ndpi_mt_exit);
+
+#include "ndpi_strcol.c" 
+#include "ndpi_proc_parsers.c" 
+#include "ndpi_proc_generic.c"
+#include "ndpi_proc_info.c"
+#include "ndpi_proc_flow.c" 
+#include "ndpi_proc_hostdef.c"
+#include "ndpi_proc_ipdef.c"
+#include "../libre/regexp.c"
+#include "../../src/lib/ndpi_main.c"

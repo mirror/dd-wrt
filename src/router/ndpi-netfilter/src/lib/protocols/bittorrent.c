@@ -66,7 +66,7 @@ static void spin_unlock(spinlock_t *a) { a->val--; };
 #endif
 #endif
 
-time_t ndpi_bt_node_expire = 1200; /* time in seconds */
+static time_t ndpi_bt_node_expire = 1200; /* time in seconds */
 
 #ifndef __KERNEL__
 
@@ -75,7 +75,7 @@ typedef int bool;
 #define false 0
 
 #else
-extern unsigned long 
+/*extern unsigned long 
 	ndpi_pto,
 	ndpi_ptss,ndpi_ptsd,
 	ndpi_ptds,ndpi_ptdd;
@@ -86,9 +86,9 @@ extern unsigned long
 	ndpi_ptussf, ndpi_ptusdr,
 	ndpi_ptussr, ndpi_ptusdf,
 	ndpi_ptudsf, ndpi_ptuddr,
-	ndpi_ptudsr, ndpi_ptuddf;
-extern unsigned long
-	ndpi_btp_tm[20]; /* 3600/ 3m */
+	ndpi_ptudsr, ndpi_ptuddf;*/
+//extern unsigned long
+//	ndpi_btp_tm[20]; /* 3600/ 3m */
 
 static void diagram(unsigned long *d,size_t n,int var) {
 int i = 3600/n;
@@ -102,7 +102,7 @@ d[i >= n ? n-1:i]++;
 #define NDPI_STATICSTRING_LEN( s ) ( sizeof( s ) - 1 )
 #define NDPI_STATICSTRING( s )  s , ( sizeof( s ) - 1 )
 
-int memcmp_packet_hdr(struct ndpi_packet_struct *packet,
+static int memcmp_packet_hdr(struct ndpi_packet_struct *packet,
 		      size_t l,const char *str,size_t len, int offs) {
 
 if(!packet->hdr_line) return 1;
@@ -119,7 +119,7 @@ if(packet->hdr_line[l].ptr+offs+len > packet->payload + packet->l3_packet_len) r
 return memcmp(packet->hdr_line[l].ptr+offs,str,len);
 }
 
-int memcmp_packet_line(struct ndpi_packet_struct *packet,
+static int memcmp_packet_line(struct ndpi_packet_struct *packet,
 		      size_t l,const char *str,size_t len, int offs) {
 
 if(l >= packet->parsed_lines ) return 1;

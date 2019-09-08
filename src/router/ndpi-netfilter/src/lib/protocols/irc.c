@@ -147,7 +147,7 @@ static u_int8_t ndpi_check_for_IRC_traces(const u_int8_t * ptr, u_int16_t len)
 }
 
 
-u_int8_t ndpi_search_irc_ssl_detect_ninety_percent_but_very_fast(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+static u_int8_t ndpi_search_irc_ssl_detect_ninety_percent_but_very_fast(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
 
   struct ndpi_packet_struct *packet = &flow->packet;

@@ -117,7 +117,7 @@ static void ndpi_check_socks5(struct ndpi_detection_module_struct *ndpi_struct, 
   }
 }
 
-void ndpi_search_socks(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+static void ndpi_search_socks(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = &flow->packet;
 

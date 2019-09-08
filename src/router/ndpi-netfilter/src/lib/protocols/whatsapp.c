@@ -23,7 +23,7 @@
 
 #include "ndpi_api.h"
 
-void ndpi_search_whatsapp(struct ndpi_detection_module_struct *ndpi_struct,
+static void ndpi_search_whatsapp(struct ndpi_detection_module_struct *ndpi_struct,
 			  struct ndpi_flow_struct *flow) {
   struct ndpi_packet_struct *packet = &flow->packet;
   static u_int8_t whatsapp_sequence[] = {

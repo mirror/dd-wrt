@@ -62,7 +62,7 @@ struct diameter_header_t
 
 
 // Check packet
-int is_diameter(struct ndpi_packet_struct *packet, int size_payload)
+static int is_diameter(struct ndpi_packet_struct *packet, int size_payload)
 {
   struct diameter_header_t *diameter;
   // check param

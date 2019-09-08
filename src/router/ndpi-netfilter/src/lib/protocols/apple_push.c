@@ -53,7 +53,7 @@ static void ndpi_check_apple_push(struct ndpi_detection_module_struct *ndpi_stru
   NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
 }
 
-void ndpi_search_apple_push(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+static void ndpi_search_apple_push(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = &flow->packet;
 
