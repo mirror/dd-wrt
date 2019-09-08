@@ -523,7 +523,7 @@ static int NDPI_parse_v0(int c, char **argv, int invert, unsigned int *flags,
 
 	mark = strtoul(optarg, &end, 0);
 	if (end == optarg)
-		exit_error(PARAMETER_PROBLEM, "Bad MARK value (mask) `%s' %d", optarg,mark);
+		exit_error(PARAMETER_PROBLEM, "Bad MARK value (mask) `%s' %ld", optarg,mark);
 		
 	if (*end == '/') {
 	    mask = strtoul(end+1,&end,0);
@@ -572,7 +572,7 @@ static int NDPI_parse_v0(int c, char **argv, int invert, unsigned int *flags,
         default:
                 exit_error(PARAMETER_PROBLEM,
                            "NDPI target: unknown --%s",
-                           entry->name);
+                           optarg);
         }
     return 1;
 }
