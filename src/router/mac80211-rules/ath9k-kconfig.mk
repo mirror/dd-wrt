@@ -150,9 +150,9 @@ endif
 	test -f $(MAC80211_PATH)/.config_temp || touch $(MAC80211_PATH)/.config_temp
 	mv $(MAC80211_PATH)/.config_temp $(MAC80211_PATH)/.config_temp_old
 	test -f $(MAC80211_PATH)/.kernel_config || touch $(MAC80211_PATH)/.kernel_config
-	cat $(TOP)/private/ath9k-rules/configs/mac80211.config > $(MAC80211_PATH)/.config_temp
+	cat $(TOP)/mac80211-rules/configs/mac80211.config > $(MAC80211_PATH)/.config_temp
 ifneq ($(CONFIG_MAC80211_NOATH9K),y)
-	cat $(TOP)/private/ath9k-rules/configs/ath9k.config >> $(MAC80211_PATH)/.config_temp
+	cat $(TOP)/mac80211-rules/configs/ath9k.config >> $(MAC80211_PATH)/.config_temp
 ifeq ($(CPTCFG_ATH9K_PCI),y)
 	echo "CPTCFG_ATH9K_PCI=y" >>$(MAC80211_PATH)/.config_temp
 endif
@@ -165,29 +165,29 @@ ifeq ($(CPTCFG_ATH9K_DYNACK),y)
 endif
 endif
 ifeq ($(CONFIG_MAC80211_ATH9K_HTC),y)
-	cat $(TOP)/private/ath9k-rules/configs/ath9k-htc.config >> $(MAC80211_PATH)/.config_temp
+	cat $(TOP)/mac80211-rules/configs/ath9k-htc.config >> $(MAC80211_PATH)/.config_temp
 endif
 
 ifeq ($(CONFIG_ATH10K),y)
-	cat $(TOP)/private/ath9k-rules/configs/ath10k.config >> $(MAC80211_PATH)/.config_temp
+	cat $(TOP)/mac80211-rules/configs/ath10k.config >> $(MAC80211_PATH)/.config_temp
 ifeq ($(CPTCFG_ATH10K_PCI),y)
 	echo "CPTCFG_ATH10K_PCI=y" >>$(MAC80211_PATH)/.config_temp
 endif
 endif
 ifeq ($(CONFIG_BRCMFMAC),y)
-	cat $(TOP)/private/ath9k-rules/configs/brcmfmac.config >> $(MAC80211_PATH)/.config_temp
+	cat $(TOP)/mac80211-rules/configs/brcmfmac.config >> $(MAC80211_PATH)/.config_temp
 endif
 ifeq ($(CONFIG_MVEBU),y)
-	cat $(TOP)/private/ath9k-rules/configs/mwlwifi.config >> $(MAC80211_PATH)/.config_temp
+	cat $(TOP)/mac80211-rules/configs/mwlwifi.config >> $(MAC80211_PATH)/.config_temp
 endif
 ifeq ($(CONFIG_MT7620),y)
-	cat $(TOP)/private/ath9k-rules/configs/mt76xx.config >> $(MAC80211_PATH)/.config_temp
+	cat $(TOP)/mac80211-rules/configs/mt76xx.config >> $(MAC80211_PATH)/.config_temp
 endif
 ifeq ($(CONFIG_WIL6210),y)
-	cat $(TOP)/private/ath9k-rules/configs/wil6210.config >> $(MAC80211_PATH)/.config_temp
+	cat $(TOP)/mac80211-rules/configs/wil6210.config >> $(MAC80211_PATH)/.config_temp
 endif
 ifeq ($(CONFIG_ATH5K),y)
-	cat $(TOP)/private/ath9k-rules/configs/ath5k.config >> $(MAC80211_PATH)/.config_temp
+	cat $(TOP)/mac80211-rules/configs/ath5k.config >> $(MAC80211_PATH)/.config_temp
 ifeq ($(CPTCFG_ATH5K_PCI),y)
 	echo "CPTCFG_ATH5K_PCI=y" >>$(MAC80211_PATH)/.config_temp
 endif
@@ -203,10 +203,10 @@ ifeq ($(CONFIG_IPQ806X),y)
 	echo "CPTCFG_ATH10K_AHB=y" >> $(MAC80211_PATH)/.config_temp
 endif
 ifeq ($(CONFIG_MAC80211_RTL8192CU),y)
-	cat $(TOP)/private/ath9k-rules/configs/rtl8192cu.config >> $(MAC80211_PATH)/.config_temp
+	cat $(TOP)/mac80211-rules/configs/rtl8192cu.config >> $(MAC80211_PATH)/.config_temp
 endif
 ifeq ($(CONFIG_MAC80211_RT2800USB),y)
-	cat $(TOP)/private/ath9k-rules/configs/rt2800.config>> $(MAC80211_PATH)/.config_temp
+	cat $(TOP)/mac80211-rules/configs/rt2800.config>> $(MAC80211_PATH)/.config_temp
 endif
 ifeq ($(CPTCFG_MAC80211_MESH),y)
 	echo "CPTCFG_MAC80211_MESH=y" >>$(MAC80211_PATH)/.config_temp
@@ -342,4 +342,4 @@ ath9k-clean:
 	rm -f $(MAC80211_PATH)/.config $(MAC80211_PATH)/.compat_autoconf_*
 	MAKEFLAGS= KERNELRELEASE= CFLAGS= $(MAKE) -C $(MAC80211_PATH) $(MAKE_OPTS) clean
 
-include $(TOP)/private/ath9k-rules/ath9k-userspace.mk
+include $(TOP)/mac80211-rules/ath9k-userspace.mk

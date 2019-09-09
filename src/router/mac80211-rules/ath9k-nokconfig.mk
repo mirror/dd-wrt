@@ -262,4 +262,4 @@ ath9k-clean:
 	rm -f $(MAC80211_PATH)/.config $(MAC80211_PATH)/.compat_autoconf_*
 	MAKEFLAGS= KERNELRELEASE= CFLAGS= $(MAKE) -C $(MAC80211_PATH) $(MAKE_OPTS) clean
 
-include $(TOP)/private/ath9k-rules/ath9k-userspace.mk
+include $(TOP)/mac80211-rules/ath9k-userspace.mk
