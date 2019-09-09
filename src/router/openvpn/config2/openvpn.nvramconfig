@@ -24,7 +24,7 @@
  "openvpn_switch"   "OpenVPN Switch between GUI versions"   "CHOICE" "2" "0" "1"  "FALSE" "0"
  "openvpn_client"  "Client Public Key (wrong&old)"  "NULL"   "FALSE" "0"
  "openvpn_dupcn"  "allow duplicate client cn"   "CHOICE" "2" "0" "1"  "FALSE" "0"
- "openvpn_cipher" "Cipher" "CHOICE" "6" "aes-512-cbc" "aes-256-cbc" "aes-192-cbc" "aes-128-cbc" "bf-cbc" "none" "FALSE" "0"
+ "openvpn_cipher" "Cipher" "CHOICE" "8" "aes-256-cbc" "aes-192-cbc" "aes-128-cbc" "aes-256-gcm" "aes-192-gcm" "aes-128-gcm" "bf-cbc" "none" "FALSE" "0"
  "openvpn_auth" "Hash Algorithmus" "CHOICE" "6" "sha512" "sha256" "sha1" "md5" "md4" "none" "FALSE" "0" 
  "openvpn_redirgate"  "redirect Gateway"   "CHOICE" "2" "0" "1"  "FALSE" "0"
  "openvpn_mssfix" "UDP MSS" "CHOICE" "2" "0" "1" "FALSE" "0"
