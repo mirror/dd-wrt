@@ -135,11 +135,6 @@ l7filters filters_list[] = {
 	{ "flash", L7_ONLY },
 #ifdef HAVE_OPENDPI
 	{ "florensia", NDPI_ONLY },
-	{ "free", NDPI_ONLY },
-	{ "free", NDPI_ONLY },
-	{ "free", NDPI_ONLY },
-	{ "free", NDPI_ONLY },
-	{ "free_49", NDPI_ONLY },
 #endif
 	{ "freegate_dns", L7_ONLY },
 	{ "freegate_http", L7_ONLY },
