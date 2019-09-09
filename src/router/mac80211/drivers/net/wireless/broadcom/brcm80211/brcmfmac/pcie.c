@@ -1,16 +1,6 @@
-/* Copyright (c) 2014 Broadcom Corporation
- *
- * Permission to use, copy, modify, and/or distribute this software for any
- * purpose with or without fee is hereby granted, provided that the above
- * copyright notice and this permission notice appear in all copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
- * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
- * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
- * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
- * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+// SPDX-License-Identifier: ISC
+/*
+ * Copyright (c) 2014 Broadcom Corporation
  */
 
 #include <linux/kernel.h>
@@ -770,15 +760,22 @@ static void brcmf_pcie_bus_console_init(struct brcmf_pciedev_info *devinfo)
 		  console->base_addr, console->buf_addr, console->bufsize);
 }
 
-
-static void brcmf_pcie_bus_console_read(struct brcmf_pciedev_info *devinfo)
+/**
+ * brcmf_pcie_bus_console_read - reads firmware messages
+ *
+ * @error: specifies if error has occurred (prints messages unconditionally)
+ */
+static void brcmf_pcie_bus_console_read(struct brcmf_pciedev_info *devinfo,
+					bool error)
 {
+	struct pci_dev *pdev = devinfo->pdev;
+	struct brcmf_bus *bus = dev_get_drvdata(&pdev->dev);
 	struct brcmf_pcie_console *console;
 	u32 addr;
 	u8 ch;
 	u32 newidx;
 
-	if (!BRCMF_FWCON_ON())
+	if (!error && !BRCMF_FWCON_ON())
 		return;
 
 	console = &devinfo->shared.console;
@@ -802,7 +799,11 @@ static void brcmf_pcie_bus_console_read(struct brcmf_pciedev_info *devinfo)
 		}
 		if (ch == '\n') {
 			console->log_str[console->log_idx] = 0;
-			pr_debug("CONSOLE: %s", console->log_str);
+			if (error)
+				__brcmf_err(bus, __func__, "CONSOLE: %s",
+					    console->log_str);
+			else
+				pr_debug("CONSOLE: %s", console->log_str);
 			console->log_idx = 0;
 		}
 	}
@@ -929,7 +930,7 @@ static irqreturn_t brcmf_pcie_isr_thread_v2(int irq, void *arg)
 							&devinfo->pdev->dev);
 		}
 	}
-	brcmf_pcie_bus_console_read(devinfo);
+	brcmf_pcie_bus_console_read(devinfo, false);
 	if (devinfo->state == BRCMFMAC_PCIE_STATE_UP)
 		brcmf_pcie_intr_enable(devinfo);
 	devinfo->in_irq = false;
@@ -1517,6 +1518,8 @@ static int brcmf_pcie_reset(struct device *dev)
 	struct brcmf_fw_request *fwreq;
 	int err;
 
+	brcmf_pcie_bus_console_read(devinfo, true);
+
 	brcmf_detach(dev);
 
 	brcmf_pcie_release_irq(devinfo);
@@ -1863,6 +1866,12 @@ static void brcmf_pcie_setup(struct device *dev, int ret,
 	nvram_len = fwreq->items[BRCMF_PCIE_FW_NVRAM].nv_data.len;
 	kfree(fwreq);
 
+	ret = brcmf_chip_get_raminfo(devinfo->ci);
+	if (ret) {
+		brcmf_err(bus, "Failed to get RAM info\n");
+		goto fail;
+	}
+
 	/* Some of the firmwares have the size of the memory of the device
 	 * defined inside the firmware. This is because part of the memory in
 	 * the device is shared and the devision is determined by FW. Parse
@@ -1917,7 +1926,7 @@ static void brcmf_pcie_setup(struct device *dev, int ret,
 		return;
 	}
 	mutex_unlock(&lock);
-	brcmf_pcie_bus_console_read(devinfo);
+	brcmf_pcie_bus_console_read(devinfo, false);
 
 fail:
 	device_release_driver(dev);
