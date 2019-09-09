@@ -1169,7 +1169,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	}
 	sprintf(macaddr, "%02X:%02X:%02X:%02X:%02X:%02X", hwbuff[0], hwbuff[1], hwbuff[2], hwbuff[3], hwbuff[4], hwbuff[5]);
 //              MAC_ADD(macaddr);
-	if (!has_ad(maininterface)) {
+	if (!has_ad(maininterface) && !is_brcmfmac(maininterface)) {
 		fprintf(fp, "bssid=%s\n", macaddr);
 	}
 	char vathmac[16];
