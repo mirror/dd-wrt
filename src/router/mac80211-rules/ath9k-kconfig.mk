@@ -261,11 +261,11 @@ ifeq ($(CONFIG_WIL6210),y)
 endif
 ifeq ($(CONFIG_BRCMFMAC),y)	
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/brcm/
-	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/b43/
-	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/b43legacy/
+#	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/b43/
+#	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/b43legacy/
 	-cp -av $(MAC80211_PATH)/ath10k-firmware*/brcm/* $(INSTALLDIR)/ath9k/lib/firmware/brcm
-	-cp -av $(MAC80211_PATH)/ath10k-firmware*/b43/* $(INSTALLDIR)/ath9k/lib/firmware/b43
-	-cp -av $(MAC80211_PATH)/ath10k-firmware*/b43legacy/* $(INSTALLDIR)/ath9k/lib/firmware/b43legacy
+#	-cp -av $(MAC80211_PATH)/ath10k-firmware*/b43/* $(INSTALLDIR)/ath9k/lib/firmware/b43
+#	-cp -av $(MAC80211_PATH)/ath10k-firmware*/b43legacy/* $(INSTALLDIR)/ath9k/lib/firmware/b43legacy
 endif
 ifeq ($(CONFIG_ATH10K),y)
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware
