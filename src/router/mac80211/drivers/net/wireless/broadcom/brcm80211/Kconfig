@@ -1,4 +1,3 @@
-# SPDX-License-Identifier: GPL-2.0-only
 config BRCMUTIL
 	tristate "Broadcom 802.11 driver utility functions"
 	depends on m
