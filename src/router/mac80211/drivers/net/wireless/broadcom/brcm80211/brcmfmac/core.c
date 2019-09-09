@@ -1,6 +1,17 @@
-// SPDX-License-Identifier: ISC
 /*
  * Copyright (c) 2010 Broadcom Corporation
+ *
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
 #include <linux/kernel.h>
@@ -580,8 +591,7 @@ static int brcmf_netdev_stop(struct net_device *ndev)
 
 	brcmf_cfg80211_down(ndev);
 
-	if (ifp->drvr->bus_if->state == BRCMF_BUS_UP)
-		brcmf_fil_iovar_data_set(ifp, "arp_hostip_clear", NULL, 0);
+	brcmf_fil_iovar_data_set(ifp, "arp_hostip_clear", NULL, 0);
 
 	brcmf_net_setcarrier(ifp, false);
 
@@ -1321,26 +1331,27 @@ void brcmf_detach(struct device *dev)
 	unregister_inet6addr_notifier(&drvr->inet6addr_notifier);
 #endif
 
-	brcmf_bus_change_state(bus_if, BRCMF_BUS_DOWN);
-	brcmf_bus_stop(drvr->bus_if);
-
+	/* stop firmware event handling */
 	brcmf_fweh_detach(drvr);
-	brcmf_proto_detach(drvr);
+	if (drvr->config)
+		brcmf_p2p_detach(&drvr->config->p2p);
+
+	brcmf_bus_change_state(bus_if, BRCMF_BUS_DOWN);
+
+	brcmf_proto_detach_pre_delif(drvr);
 
 	/* make sure primary interface removed last */
-	for (i = BRCMF_MAX_IFS - 1; i > -1; i--) {
-		if (drvr->iflist[i])
-			brcmf_del_if(drvr, drvr->iflist[i]->bsscfgidx, false);
-	}
+	for (i = BRCMF_MAX_IFS-1; i > -1; i--)
+		brcmf_remove_interface(drvr->iflist[i], false);
 
-	if (drvr->config) {
-		brcmf_p2p_detach(&drvr->config->p2p);
-		brcmf_cfg80211_detach(drvr->config);
-		drvr->config = NULL;
-	}
+	brcmf_cfg80211_detach(drvr->config);
+	drvr->config = NULL;
+
+	brcmf_bus_stop(drvr->bus_if);
+
+	brcmf_proto_detach_post_delif(drvr);
 
 	bus_if->drvr = NULL;
-
 	wiphy_free(drvr->wiphy);
 }
 
