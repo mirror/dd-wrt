@@ -183,8 +183,6 @@ static int superchannel = -1;
 #endif
 
 #define DEFAULT_HTTP_PORT 80
-static int server_port;
-static int ssl_server_port;
 static char pid_file[80];
 static char *server_dir = NULL;
 
@@ -240,7 +238,7 @@ static pthread_mutex_t input_mutex;
 #define CRYPT_MUTEX_UNLOCK(m) do {} while(0)
 #endif
 
-static void lookup_hostname(usockaddr * usa4P, size_t sa4_len, int *gotv4P, usockaddr * usa6P, size_t sa6_len, int *gotv6P, int server_port)
+static void lookup_hostname(usockaddr * usa4P, size_t sa4_len, int *gotv4P, usockaddr * usa6P, size_t sa6_len, int *gotv6P, int port)
 {
 #ifdef USE_IPV6
 
@@ -256,7 +254,7 @@ static void lookup_hostname(usockaddr * usa4P, size_t sa4_len, int *gotv4P, usoc
 	hints.ai_family = PF_UNSPEC;
 	hints.ai_flags = AI_PASSIVE;
 	hints.ai_socktype = SOCK_STREAM;
-	(void)snprintf(portstr, sizeof(portstr), "%d", (int)server_port);
+	(void)snprintf(portstr, sizeof(portstr), "%d", (int)port);
 	if ((gaierr = getaddrinfo(NULL, portstr, &hints, &ai)) != 0) {
 		exit(1);
 	}
@@ -310,7 +308,7 @@ static void lookup_hostname(usockaddr * usa4P, size_t sa4_len, int *gotv4P, usoc
 	(void)memset(usa4P, 0, sa4_len);
 	usa4P->sa.sa_family = AF_INET;
 	usa4P->sa_in.sin_addr.s_addr = htonl(INADDR_ANY);
-	usa4P->sa_in.sin_port = htons(server_port);
+	usa4P->sa_in.sin_port = htons(port);
 	*gotv4P = 1;
 
 #endif				/* USE_IPV6 */
@@ -1410,6 +1408,8 @@ int main(int argc, char **argv)
 	usockaddr ssl_host_addr4;
 	usockaddr ssl_host_addr6;
 	usockaddr usa;
+	int server_port;
+	int ssl_server_port;
 	int gotv4, gotv6;
 	int ssl_gotv4, ssl_gotv6;
 	int listen4_fd = -1;
