@@ -277,8 +277,6 @@
 # endif
 #endif							/* NDPI_ENABLE_DEBUG_MESSAGES */
 
-#define NDPI_EXCLUDE_PROTO(mod,flow) ndpi_exclude_protocol(mod, flow, NDPI_CURRENT_PROTO, __FILE__, __FUNCTION__, __LINE__)
-
 /**
  * macro for getting the string len of a static string
  *

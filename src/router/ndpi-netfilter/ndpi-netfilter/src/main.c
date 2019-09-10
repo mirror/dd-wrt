@@ -255,7 +255,7 @@ static unsigned long int ndpi_flow_limit=10000000; // 4.3Gb
 static unsigned long int ndpi_enable_flow=0;
 static unsigned long int ndpi_log_debug=0;
 #ifdef NDPI_ENABLE_DEBUG_MESSAGES
-static unsigned long  ndpi_lib_trace=0;
+static unsigned long  ndpi_lib_trace=3;
 #endif
 static unsigned long  ndpi_mtu=48000;
 static unsigned long  bt_log_size=128;
