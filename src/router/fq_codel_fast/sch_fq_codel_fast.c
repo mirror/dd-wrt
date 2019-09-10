@@ -166,6 +166,17 @@ static unsigned int fq_codel_drop(struct Qdisc *sch, unsigned int max_packets,
 }
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0)
+static unsigned int fq_codel_qdisc_drop(struct Qdisc *sch)
+{
+	unsigned int prev_backlog;
+
+	prev_backlog = sch->qstats.backlog;
+	fq_codel_drop(sch, 1U);
+	return prev_backlog - sch->qstats.backlog;
+}
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0)
 static s32 fq_codel_enqueue(struct sk_buff *skb, struct Qdisc *sch)
 #else
 static s32 fq_codel_enqueue(struct sk_buff *skb, struct Qdisc *sch,
@@ -363,14 +374,13 @@ begin:
 	return skb;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 8, 0)
 static void fq_codel_flow_purge(struct fq_codel_flow *flow)
 {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0)
-#else
 	rtnl_kfree_skbs(flow->head, flow->tail);
-#endif
 	flow->head = NULL;
 }
+#endif
 
 static void fq_codel_reset(struct Qdisc *sch)
 {
@@ -776,6 +786,9 @@ static struct Qdisc_ops fq_codel_fast_qdisc_ops __read_mostly = {
 	.enqueue	=	fq_codel_enqueue,
 	.dequeue	=	fq_codel_dequeue,
 	.peek		=	qdisc_peek_dequeued,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0)
+	.drop		=	fq_codel_qdisc_drop,
+#endif
 	.init		=	fq_codel_init,
 	.reset		=	fq_codel_reset,
 	.destroy	=	fq_codel_destroy,
