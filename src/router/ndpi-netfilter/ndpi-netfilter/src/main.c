@@ -490,7 +490,7 @@ void set_debug_trace( struct ndpi_net *n) {
 NDPI_STATIC char *ct_info(const struct nf_conn * ct,char *buf,size_t buf_size,int dir);
 
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
 
 NDPI_STATIC void kvfree(const void *addr)
 {
@@ -539,7 +539,7 @@ static void *kvmalloc_node(size_t size, gfp_t flags, int node)
 	return __vmalloc_node_flags(size, node, flags | __GFP_HIGHMEM);
 }
 #endif
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 4)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 4, 0)
 
 static inline void *kvmalloc(size_t size, gfp_t flags)
 {
