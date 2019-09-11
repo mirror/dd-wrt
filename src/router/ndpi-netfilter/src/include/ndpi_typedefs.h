@@ -523,6 +523,8 @@ struct ndpi_flow_tcp_struct {
   /* NDPI_PROTOCOL_SOULSEEK */
   u_int32_t soulseek_stage:2;
 
+  u_int32_t filetopia_stage:2;
+
   /* NDPI_PROTOCOL_TDS */
   u_int32_t tds_stage:3;
 
