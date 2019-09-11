@@ -79,7 +79,7 @@ typedef enum {
   NDPI_PROTOCOL_NEST_LOG_SINK         = 43, /* Nest Log Sink (Nest Protect) - Darryl Sokoloski <darryl@egloo.ca> */
   NDPI_PROTOCOL_MODBUS                = 44, /* Modbus */
 
-  NDPI_PROTOCOL_FREE_45               = 45, /* Free */
+  NDPI_PROTOCOL_FILETOPIA               = 45, /* Free */
   NDPI_PROTOCOL_FREE_46               = 46, /* Free */
   
   NDPI_PROTOCOL_XBOX                  = 47,
@@ -240,7 +240,7 @@ typedef enum {
   NDPI_PROTOCOL_IFLIX                 = 202, /* www.vizuamatix.com R&D team & M.Mallawaarachchie <manoj_ws@yahoo.com> */
   NDPI_PROTOCOL_GITHUB                = 203,
   NDPI_PROTOCOL_BJNP                  = 204,
-  NDPI_PROTOCOL_FREE_205              = 205, /* Free */
+  NDPI_PROTOCOL_LINE                  = 205, /* Free */
   NDPI_PROTOCOL_VIDTO                 = 206,
   NDPI_PROTOCOL_SMPP                  = 207, /* Damir Franusic <df@release14.org> */
   NDPI_PROTOCOL_DNSCRYPT              = 208,
