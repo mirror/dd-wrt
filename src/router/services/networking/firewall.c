@@ -1471,7 +1471,7 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 		save2file_A("advgrp_%d -p tcp -m ndpi --gnutella -j %s", seq, log_drop);
 		save2file_A("advgrp_%d -m ndpi --imesh -j %s", seq, log_drop);
 		save2file_A("advgrp_%d -p tcp -m ndpi --openft -j %s", seq, log_drop);
-		save2file_A("advgrp_%d -p tcp -m ndpi --pando_media_booster -j %s", seq, log_drop);
+		save2file_A("advgrp_%d -m ndpi --pando_media_booster -j %s", seq, log_drop);
 		save2file_A("advgrp_%d -p tcp -m ndpi --soulseek -j %s", seq, log_drop);
 		save2file_A("advgrp_%d -p tcp -m ndpi --winmx -j %s", seq, log_drop);
 #else
