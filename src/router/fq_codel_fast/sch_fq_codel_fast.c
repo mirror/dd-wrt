@@ -30,6 +30,14 @@
 #include "codel_impl.h"
 #include "codel_qdisc.h"
 
+#if KERNEL_VERSION(4, 8, 0) > LINUX_VERSION_CODE
+#define fq_codel_maybe_lock(sch)
+#define fq_codel_maybe_unlock(sch)
+#else
+#define fq_codel_maybe_lock(sch) sch_tree_lock(sch);
+#define fq_codel_maybe_unlock(sch) sch_tree_unlock(sch);
+#endif
+
 /*	Fair Queue CoDel.
  *
  * Principles :
@@ -628,13 +636,13 @@ static int fq_codel_dump_stats(struct Qdisc *sch, struct gnet_dump *d)
 	st.qdisc_stats.memory_usage  = q->memory_usage;
 	st.qdisc_stats.drop_overmemory = q->drop_overmemory;
 
-	sch_tree_lock(sch);
+	fq_codel_maybe_lock(sch);
 	list_for_each(pos, &q->new_flows)
 		st.qdisc_stats.new_flows_len++;
 
 	list_for_each(pos, &q->old_flows)
 		st.qdisc_stats.old_flows_len++;
-	sch_tree_unlock(sch);
+	fq_codel_maybe_unlock(sch);
 
 	return gnet_stats_copy_app(d, &st, sizeof(st));
 }
@@ -719,13 +727,13 @@ static int fq_codel_dump_class_stats(struct Qdisc *sch, unsigned long cl,
 				-codel_time_to_us(-delta);
 		}
 		if (flow->head) {
-			sch_tree_lock(sch);
+			fq_codel_maybe_lock(sch);
 			skb = flow->head;
 			while (skb) {
 				qs.qlen++;
 				skb = skb->next;
 			}
-			sch_tree_unlock(sch);
+			fq_codel_maybe_unlock(sch);
 		}
 		qs.backlog = flow->backlog;
 		qs.drops = 0;
