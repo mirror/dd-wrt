@@ -503,8 +503,9 @@ NDPI_STATIC void kvfree(const void *addr)
 #ifndef __GFP_REPEAT
 #define		__GFP_REPEAT __GFP_RETRY_MAYFAIL
 #endif
+#endif
 
-
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 4, 0)
 static void *kvmalloc_node(size_t size, gfp_t flags, int node)
 {
 	gfp_t kmalloc_flags = flags;
@@ -536,10 +537,8 @@ static void *kvmalloc_node(size_t size, gfp_t flags, int node)
 	if (ret || size <= PAGE_SIZE)
 		return ret;
 
-	return __vmalloc_node_flags(size, node, flags | __GFP_HIGHMEM);
+	return (__vmalloc(size, flags | __GFP_HIGHMEM, PAGE_KERNEL));
 }
-#endif
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 4, 0)
 
 static inline void *kvmalloc(size_t size, gfp_t flags)
 {
