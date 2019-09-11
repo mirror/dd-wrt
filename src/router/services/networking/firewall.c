@@ -1462,15 +1462,12 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 		insmod("xt_ndpi");
 		/*commonly used protocols, decending */
 		save2file_A("advgrp_%d -m ndpi --bittorrent -j %s", seq, log_drop);
-/*  disable till pattern works
-		save2file
-		    ("-A advgrp_%d -m ndpi --edonkey -j %s",
-		     seq, log_drop); */
+		save2file_A("advgrp_%d -m ndpi --edonkey -j %s", seq, log_drop); */
 		/*atm rarly used protocols */
-		save2file_A("advgrp_%d -m ndpi --applejuice -j %s", seq, log_drop);
+		save2file_A("advgrp_%d -p tcp -m ndpi --applejuice -j %s", seq, log_drop);
 		save2file_A("advgrp_%d -p tcp -m ndpi --directconnect -j %s", seq, log_drop);
-		save2file_A("advgrp_%d -m ndpi --fasttrack -j %s", seq, log_drop);
-		save2file_A("advgrp_%d -m ndpi --filetopia -j %s", seq, log_drop);
+		save2file_A("advgrp_%d -p tcp -m ndpi --fasttrack -j %s", seq, log_drop);
+		save2file_A("advgrp_%d -p tcp -m ndpi --filetopia -j %s", seq, log_drop);
 		save2file_A("advgrp_%d -p tcp -m ndpi --gnutella -j %s", seq, log_drop);
 		save2file_A("advgrp_%d -m ndpi --imesh -j %s", seq, log_drop);
 		save2file_A("advgrp_%d -p tcp -m ndpi --openft -j %s", seq, log_drop);
