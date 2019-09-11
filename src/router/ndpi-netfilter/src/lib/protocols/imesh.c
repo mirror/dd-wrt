@@ -212,10 +212,10 @@ static void ndpi_search_imesh_tcp_udp(struct ndpi_detection_module_struct *ndpi_
 			    packet->line[1].len == NDPI_STATICSTRING_LEN("Authorization: Basic Og==") &&
 			    packet->line[4].ptr != NULL &&
 			    packet->line[4].len == NDPI_STATICSTRING_LEN("Accept-Encoding: identity") &&
-			    memcmp(packet_line(1), "Authorization: Basic Og==",
+			    memcmp(packet->line[1].ptr, "Authorization: Basic Og==",
 				   NDPI_STATICSTRING_LEN("Authorization: Basic Og==")) == 0 &&
 			    memcmp(packet->host_line.ptr, "login.bearshare.com",
-				   NDPI_STATICSTRING_LEN("login.bearshare.com")) == 0 && memcmp(packet_line(4), "Accept-Encoding: identity", NDPI_STATICSTRING_LEN("Accept-Encoding: identity")) == 0) {
+				   NDPI_STATICSTRING_LEN("login.bearshare.com")) == 0 && memcmp(packet->line[4].ptr, "Accept-Encoding: identity", NDPI_STATICSTRING_LEN("Accept-Encoding: identity")) == 0) {
 				NDPI_LOG(NDPI_PROTOCOL_IMESH, ndpi_struct, NDPI_LOG_DEBUG, "iMesh Login detected\n");
 				ndpi_int_imesh_add_connection(ndpi_struct, flow);
 				return;
