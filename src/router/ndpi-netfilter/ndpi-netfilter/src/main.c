@@ -2779,20 +2779,20 @@ NDPI_STATIC int __init ndpi_mt_init(void)
 	ndpi_size_id_struct = sizeof(struct osdpi_id_node);
 	ndpi_size_flow_struct = ndpi_detection_get_sizeof_ndpi_flow_struct();
 	detection_tick_resolution = HZ;
-
-	if(request_module("nf_conntrack") < 0) {
-		pr_err("xt_ndpi: nf_conntrack required!\n");
-		return -EOPNOTSUPP;
-	}
-	if(request_module("ip_tables") < 0) {
-		pr_err("xt_ndpi: ip_tables required!\n");
-		return -EOPNOTSUPP;
-	}
+	
+//	if(request_module("nf_conntrack") < 0) {
+//		pr_err("xt_ndpi: nf_conntrack required!\n");
+//		return -EOPNOTSUPP;
+//	}
+//	if(request_module("ip_tables") < 0) {
+//		pr_err("xt_ndpi: ip_tables required!\n");
+//		return -EOPNOTSUPP;
+//	}
 #ifdef NDPI_DETECTION_SUPPORT_IPV6
-	if(request_module("ip6_tables") < 0) {
-		pr_err("xt_ndpi: ip6_tables required!\n");
-		return -EOPNOTSUPP;
-	}
+//	if(request_module("ip6_tables") < 0) {
+//		pr_err("xt_ndpi: ip6_tables required!\n");
+//		return -EOPNOTSUPP;
+//	}
 #endif
 #ifdef NF_CT_CUSTOM
 	ret = nf_ct_extend_custom_register(&ndpi_extend,0x4e445049); /* "NDPI" in hex */
