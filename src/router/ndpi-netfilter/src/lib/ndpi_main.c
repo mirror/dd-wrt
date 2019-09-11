@@ -1,4 +1,4 @@
-/*
+/*[18~
  * ndpi_main.c
  *
  * Copyright (C) 2011-18 - ntop.org
@@ -1288,11 +1288,11 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 			    no_master, "Modbus", NDPI_PROTOCOL_CATEGORY_NETWORK, /* Perhaps IoT in the future */
 			    ndpi_build_default_ports(ports_a, 502, 0, 0, 0, 0) /* TCP */,
 			    ndpi_build_default_ports(ports_b, 0,   0, 0, 0, 0) /* UDP */);
-    ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_FREE_45,
+    ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_POTENTIALLY_DANGEROUS, NDPI_PROTOCOL_FILETOPIA, 
 			    0 /* can_have_a_subprotocol */, no_master,
-			    no_master, "Free", NDPI_PROTOCOL_CATEGORY_CUSTOM_1 /* dummy */,
-			    ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */,
-			    ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
+			    no_master, "Filetopia", NDPI_PROTOCOL_CATEGORY_DOWNLOAD_FT, 
+			    ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
+			    ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
     ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_FREE_46,
 			    0 /* can_have_a_subprotocol */, no_master,
 			    no_master, "Free", NDPI_PROTOCOL_CATEGORY_CUSTOM_1 /* dummy */,
@@ -1308,9 +1308,9 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 			    no_master, "Free", NDPI_PROTOCOL_CATEGORY_CUSTOM_1 /* dummy */,
 			    ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */,
 			    ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
-    ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_FREE_205,
+    ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_LINE,
 			    0 /* can_have_a_subprotocol */, no_master,
-			    no_master, "Free", NDPI_PROTOCOL_CATEGORY_CUSTOM_1 /* dummy */,
+			    no_master, "Line", NDPI_PROTOCOL_CATEGORY_VOIP,
 			    ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */,
 			    ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
     ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_WIREGUARD,
@@ -3093,6 +3093,8 @@ void ndpi_set_protocol_detection_bitmask2(struct ndpi_detection_module_struct *n
   init_dns_dissector(ndpi_struct, &a, detection_bitmask);
 
   /* FILETOPIA */
+  init_filetopia_dissector(ndpi_struct, &a, detection_bitmask);
+
   init_fbzero_dissector(ndpi_struct, &a, detection_bitmask);
 
   /* VMWARE */
@@ -3139,6 +3141,9 @@ void ndpi_set_protocol_detection_bitmask2(struct ndpi_detection_module_struct *n
 
   /* VNC */
   init_vnc_dissector(ndpi_struct, &a, detection_bitmask);
+
+  /* LINE */
+  init_line_dissector(ndpi_struct, &a, detection_bitmask);
 
   /* TEAMVIEWER */
   init_teamviewer_dissector(ndpi_struct, &a, detection_bitmask);
