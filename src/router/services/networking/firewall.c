@@ -156,7 +156,7 @@ static void save2file_A_prerouting(const char *fmt, ...)
 {
 	va_list args;
 	va_start(args, fmt);
-	va_save2file("-A PREROUTING ", fmt, args);
+	va_save2file("-A PREROUTING", fmt, args);
 	va_end(args);
 }
 
@@ -164,7 +164,7 @@ static void save2file_A_postrouting(const char *fmt, ...)
 {
 	va_list args;
 	va_start(args, fmt);
-	va_save2file("-A POSTROUTING ", fmt, args);
+	va_save2file("-A POSTROUTING", fmt, args);
 	va_end(args);
 }
 
@@ -172,7 +172,7 @@ static void save2file_I_postrouting(const char *fmt, ...)
 {
 	va_list args;
 	va_start(args, fmt);
-	va_save2file("-I POSTROUTING ", fmt, args);
+	va_save2file("-I POSTROUTING", fmt, args);
 	va_end(args);
 }
 
@@ -180,7 +180,7 @@ static void save2file_A_forward(const char *fmt, ...)
 {
 	va_list args;
 	va_start(args, fmt);
-	va_save2file("-A FORWARD ", fmt, args);
+	va_save2file("-A FORWARD", fmt, args);
 	va_end(args);
 }
 
@@ -188,7 +188,7 @@ static void save2file_I_forward(const char *fmt, ...)
 {
 	va_list args;
 	va_start(args, fmt);
-	va_save2file("-I FORWARD ", fmt, args);
+	va_save2file("-I FORWARD", fmt, args);
 	va_end(args);
 }
 
@@ -196,7 +196,7 @@ static void save2file_A_input(const char *fmt, ...)
 {
 	va_list args;
 	va_start(args, fmt);
-	va_save2file("-A INPUT ", fmt, args);
+	va_save2file("-A INPUT", fmt, args);
 	va_end(args);
 }
 
@@ -204,7 +204,7 @@ static void save2file_A(const char *fmt, ...)
 {
 	va_list args;
 	va_start(args, fmt);
-	va_save2file("-A ", fmt, args);
+	va_save2file("-A", fmt, args);
 	va_end(args);
 }
 
