@@ -234,7 +234,7 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{ "imaps", NDPI_ONLY },
 #endif
-	{ "imesh", L7_ONLY },
+	{ "imesh", DPI },
 #ifdef HAVE_OPENDPI
 	{ "instagram", NDPI_ONLY },
 	{ "ip_in_ip", NDPI_ONLY },
@@ -554,7 +554,7 @@ l7filters filters_list[] = {
 	{ "wikipedia", NDPI_ONLY },
 	{ "windowsupdate", NDPI_ONLY },
 #endif
-	{ "winmx", L7_ONLY },
+	{ "winmx", DPI },
 #ifdef HAVE_OPENDPI
 	{ "worldofkungfu", NDPI_ONLY },
 #endif
