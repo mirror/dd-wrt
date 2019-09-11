@@ -1462,7 +1462,7 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 		insmod("xt_ndpi");
 		/*commonly used protocols, decending */
 		save2file_A("advgrp_%d -m ndpi --bittorrent -j %s", seq, log_drop);
-		save2file_A("advgrp_%d -m ndpi --edonkey -j %s", seq, log_drop); */
+		save2file_A("advgrp_%d -m ndpi --edonkey -j %s", seq, log_drop);
 		/*atm rarly used protocols */
 		save2file_A("advgrp_%d -p tcp -m ndpi --applejuice -j %s", seq, log_drop);
 		save2file_A("advgrp_%d -p tcp -m ndpi --directconnect -j %s", seq, log_drop);
