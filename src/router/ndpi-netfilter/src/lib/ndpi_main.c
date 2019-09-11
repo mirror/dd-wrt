@@ -1293,21 +1293,21 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 			    no_master, "Filetopia", NDPI_PROTOCOL_CATEGORY_DOWNLOAD_FT, 
 			    ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
 			    ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
-    ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_FREE_46,
+    ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_POTENTIALLY_DANGEROUS, NDPI_PROTOCOL_WINMX, 
 			    0 /* can_have_a_subprotocol */, no_master,
-			    no_master, "Free", NDPI_PROTOCOL_CATEGORY_CUSTOM_1 /* dummy */,
-			    ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */,
-			    ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
+			    no_master, "WinMX", NDPI_PROTOCOL_CATEGORY_DOWNLOAD_FT,
+			    ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
+			    ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
     ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_SIGNAL,
 			    0 /* can_have_a_subprotocol */, no_master, /* https://signal.org */
 			    no_master, "Signal", NDPI_PROTOCOL_CATEGORY_CHAT,
 			    ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */,
 			    ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
-    ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_FREE_196,
+    ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_POTENTIALLY_DANGEROUS, NDPI_PROTOCOL_IMESH, 
 			    0 /* can_have_a_subprotocol */, no_master,
-			    no_master, "Free", NDPI_PROTOCOL_CATEGORY_CUSTOM_1 /* dummy */,
-			    ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */,
-			    ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
+			    no_master, "iMESH", NDPI_PROTOCOL_CATEGORY_DOWNLOAD_FT,
+			    ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
+			    ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
     ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_LINE,
 			    0 /* can_have_a_subprotocol */, no_master,
 			    no_master, "Line", NDPI_PROTOCOL_CATEGORY_VOIP,
@@ -3094,6 +3094,12 @@ void ndpi_set_protocol_detection_bitmask2(struct ndpi_detection_module_struct *n
 
   /* FILETOPIA */
   init_filetopia_dissector(ndpi_struct, &a, detection_bitmask);
+
+  /* IMESH */
+  init_imesh_dissector(ndpi_struct, &a, detection_bitmask);
+
+  /* WINMX */
+  init_winmx_dissector(ndpi_struct, &a, detection_bitmask);
 
   init_fbzero_dissector(ndpi_struct, &a, detection_bitmask);
 
