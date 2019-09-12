@@ -1,3 +1,4 @@
+#define NDPI_STATIC
 /* 
  * libxt_ndpi.c
  * Copyright (C) 2010-2012 G. Elian Gidoni <geg@gnu.org>
