@@ -207,13 +207,13 @@ struct nf_ct_ext_labels { /* max size 128 bit */
 	uint8_t			pad2[4];
 #endif
 	struct nf_ct_ext_ndpi	*ndpi_ext;
-} __attribute ((packed));
+};
 
 struct ndpi_cb {
 	unsigned long 	last_ct; // sizeof(unsigned long) == sizeof(void *)
 	uint32_t	proto;
 	uint32_t	magic;
-} __attribute ((packed));
+};
 
 static inline struct ndpi_cb *skb_get_cproto(const struct sk_buff *skb)
 {

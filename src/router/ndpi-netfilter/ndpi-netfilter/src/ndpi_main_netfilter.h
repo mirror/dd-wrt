@@ -29,12 +29,15 @@ struct write_proc_cmd {
 struct nf_ct_ext_ndpi;
 
 struct ndpi_net {
+	spinlock_t	id_lock;
+	spinlock_t	ipq_lock; // for proto & patricia tree
+	spinlock_t	host_lock; /* protect host_ac, hosts, hosts_tmp */
+	spinlock_t	       w_buff_lock;
+	spinlock_t		rem_lock;	// lock ndpi_delete_acct
 	struct ndpi_detection_module_struct *ndpi_struct;
 	struct rb_root osdpi_id_root;
 	NDPI_PROTOCOL_BITMASK protocols_bitmask;
 	atomic_t	protocols_cnt[NDPI_NUM_BITS+1];
-	spinlock_t	id_lock;
-	spinlock_t	ipq_lock; // for proto & patricia tree
 	struct proc_dir_entry   *pde,
 #ifdef NDPI_DETECTION_SUPPORT_IPV6
 				*pe_info6,
@@ -54,14 +57,12 @@ struct ndpi_net {
 	int		labels_word;
         struct		timer_list gc;
 
-	spinlock_t	host_lock; /* protect host_ac, hosts, hosts_tmp */
 	hosts_str_t	*hosts;
 	
 	hosts_str_t	*hosts_tmp;
 	void		*host_ac;
 	int		host_error;
 
-	spinlock_t	       w_buff_lock;
 	struct write_proc_cmd *w_buff[W_BUF_LAST];
 
 	struct ndpi_mark {
@@ -70,7 +71,6 @@ struct ndpi_net {
 #ifdef NDPI_ENABLE_DEBUG_MESSAGES
 	u_int8_t debug_level[NDPI_NUM_BITS+1];
 #endif
-	spinlock_t		rem_lock;	// lock ndpi_delete_acct
 	struct nf_ct_ext_ndpi 	*flow_h;	// Head of info list
 	struct nf_ct_ext_ndpi	*flow_l;	// save point for next read info
 	atomic_t		init_done;	// ndpi_net_init() complete
@@ -104,7 +104,7 @@ struct flow_info {
 	uint32_t		ip_snat,ip_dnat; // 8
 	uint16_t		sport,dport,sport_nat,dport_nat; // 8
 	uint16_t		ifidx,ofidx; // 4
-}  __attribute ((packed)); // 108 bytes
+};
 
 
 #define f_flow_info	0
@@ -149,6 +149,8 @@ struct flow_info {
 
 
 struct nf_ct_ext_ndpi {
+	spinlock_t		lock;		// 2/4 bytes
+	long unsigned int	flags;		// 4/8 bytes
 	struct nf_ct_ext_ndpi	*next;		// 4/8
 	struct ndpi_flow_struct	*flow;		// 4/8
 	struct ndpi_id_struct   *src,*dst;	// 8/16
@@ -156,16 +158,14 @@ struct nf_ct_ext_ndpi {
 	char			*ssl;		// 4/8 bytes
 	struct flow_info	flinfo;		// 108 bytes
 	ndpi_protocol		proto;		// 8 bytes
-	long unsigned int	flags;		// 4/8 bytes
 	uint32_t		connmark;	// 4 bytes
-	spinlock_t		lock;		// 2/4 bytes
 						// ?/56 bytes with debug spinlock
 
 	uint8_t			l4_proto;	// 1
 /* 
  * 32bit - 148 bytes, 64bit - 233+7 bytes;
  */
-} __attribute ((packed));
+};
 
 //static unsigned long ndpi_log_debug;
 
