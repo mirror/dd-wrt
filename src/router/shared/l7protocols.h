@@ -466,6 +466,9 @@ l7filters filters_list[] = {
 	{ "syslog", NDPI_ONLY },
 #endif
 	{ "tar", L7_ONLY },
+#ifdef HAVE_OPENDPI
+	{ "targus_getdata", NDPI_ONLY },
+#endif
 	{ "teamfortress2", L7_ONLY },
 	{ "teamspeak", DPI },
 	{ "teamviewer", DPI },
@@ -556,6 +559,7 @@ l7filters filters_list[] = {
 #endif
 	{ "winmx", DPI },
 #ifdef HAVE_OPENDPI
+	{ "wireguard", NDPI_ONLY },
 	{ "worldofkungfu", NDPI_ONLY },
 #endif
 	{ "worldofwarcraft", DPI },
