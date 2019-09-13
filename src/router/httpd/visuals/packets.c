@@ -31,7 +31,7 @@ void getpacketcounts(unsigned long long *counts, int len)
 unsigned long long getpackettotal(char *table, char *chain)
 {
 	int c = 0;
-	unsigned long long count;
+	unsigned long long count = 0;
 	const char *this;
 	iptc_handle_t handle = iptc_init(table);
 
