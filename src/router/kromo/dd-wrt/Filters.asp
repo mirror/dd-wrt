@@ -348,6 +348,7 @@ addEvent(window, "unload", function() {
 										<input class="spaceradio" type="radio" name="f_status2" value="allow" onclick="Status(this.form,'allow')" <% filter_policy_get("f_status","allow"); %> /><% tran("share.filter"); %>
 									</div>
 								</div>
+								<br />
 								<div class="setting">
 									<div class="label"><% tran("filter.packetcount"); %></div><% filter_getpacketcount(); %>
 								</div>
