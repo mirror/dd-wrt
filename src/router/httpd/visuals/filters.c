@@ -366,14 +366,13 @@ void ej_show_filterif(webs_t wp, int argc, char_t ** argv)
 
 unsigned long long getpackettotal(char *table, char *chain);
 
-
 void ej_filter_getpacketcount(webs_t wp, int argc, char_t ** argv)
 {
 	unsigned long long count;
 	char grp[32];
-	sprintf(grp, "advgrp_%d",wp->p->filter_id);
-	count = getpackettotal("filter",grp);
-	websWrite(wp,"%lld",count);
+	sprintf(grp, "advgrp_%d", wp->p->filter_id);
+	count = getpackettotal("filter", grp);
+	websWrite(wp, "%lld", count);
 }
 
 void ej_filter_policy_get(webs_t wp, int argc, char_t ** argv)
