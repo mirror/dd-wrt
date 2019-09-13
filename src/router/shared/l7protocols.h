@@ -492,8 +492,8 @@ l7filters filters_list[] = {
 	{ "tinc", NDPI_ONLY },
 #endif
 	{ "tonghuashun", L7_ONLY },
-	{ "tor", DPI },
 #ifdef HAVE_OPENDPI
+	{ "tor", NDPI_ONLY },
 	{ "truphone", NDPI_ONLY },
 #endif
 	{ "tsp", L7_ONLY },
@@ -578,8 +578,8 @@ l7filters filters_list[] = {
 	{ "yahoo_file", L7_ONLY },
 	{ "yahoo_login", L7_ONLY },
 	{ "yahoo_voice", L7_ONLY },
-	{ "youtube", DPI },
 #ifdef HAVE_OPENDPI
+	{ "youtube", NDPI_ONLY },
 	{ "youtubeupload", NDPI_ONLY },
 	{ "zattoo", NDPI_ONLY },
 	{ "zeromq", NDPI_ONLY },
