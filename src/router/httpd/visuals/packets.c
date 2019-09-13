@@ -15,18 +15,19 @@ void getpacketcounts(unsigned long long *counts, int len)
 		while (i) {
 			const char *target = iptc_get_target(i, handle);
 			if (target && !strcmp(target, "RETURN"))
-			    goto skip;
+				goto skip;
 			counts[c++] = i->counters.pcnt;
 			if (c == len) {
 				iptc_free(&handle);
 				return;
 			}
-			skip:;
+		      skip:;
 			i = iptc_next_rule(i, &handle);
 		}
 	}
 	iptc_free(&handle);
 }
+
 unsigned long long getpackettotal(char *table, char *chain)
 {
 	int c = 0;
@@ -42,9 +43,9 @@ unsigned long long getpackettotal(char *table, char *chain)
 		while (i) {
 			const char *target = iptc_get_target(i, handle);
 			if (target && !strcmp(target, "RETURN"))
-			    goto skip;
+				goto skip;
 			count += i->counters.pcnt;
-			skip:;
+		      skip:;
 			i = iptc_next_rule(i, &handle);
 		}
 	}
