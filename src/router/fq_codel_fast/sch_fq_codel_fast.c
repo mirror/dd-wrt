@@ -644,13 +644,13 @@ static int fq_codel_dump_stats(struct Qdisc *sch, struct gnet_dump *d)
 	st.qdisc_stats.memory_usage  = q->memory_usage;
 	st.qdisc_stats.drop_overmemory = q->drop_overmemory;
 
-	fq_codel_maybe_lock(sch);
+//	fq_codel_maybe_lock(sch);
 	list_for_each(pos, &q->new_flows)
 		st.qdisc_stats.new_flows_len++;
 
 	list_for_each(pos, &q->old_flows)
 		st.qdisc_stats.old_flows_len++;
-	fq_codel_maybe_unlock(sch);
+//	fq_codel_maybe_unlock(sch);
 
 	return gnet_stats_copy_app(d, &st, sizeof(st));
 }
