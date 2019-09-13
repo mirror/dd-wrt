@@ -1397,7 +1397,7 @@ int get_svc(char *svc, char *protocol, char *ports)
 		strncpy(name, name + sizeof("$NAME:nnn:") - 1, len);
 		name[len] = '\0';
 
-		if (strcasecmp(svc, name))
+		if (strcasecmp(name, svc))
 			continue;
 
 		/*
@@ -1423,7 +1423,7 @@ int get_svc(char *svc, char *protocol, char *ports)
 			return -1;
 		}
 
-		if (strcasecmp(svc, name) == 0) {
+		if (strcasecmp(name, svc) == 0) {
 			free(services);
 			return 0;
 		}
