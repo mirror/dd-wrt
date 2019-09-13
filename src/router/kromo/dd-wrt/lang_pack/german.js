@@ -633,6 +633,7 @@ filter.legend5="Webseite mit Hilfe von Schlagworten blockieren";
 filter.mess1="L&ouml;schen der Richtlinie?";
 filter.mess2="Sie m&uuml;ssen mindestens einen Tag angeben.";
 filter.mess3="Die Endzeit muss nach der Startzeit liegen.";
+filter.packetcount="Gefilterte Packete";
 
 //help container
 

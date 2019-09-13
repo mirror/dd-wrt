@@ -678,6 +678,7 @@ filter.nat="Filter WAN NAT Redirection";
 filter.port113="Filter IDENT (Port 113)";
 filter.snmp="Block WAN SNMP access";
 filter.none="";
+filter.packetcount="Filtered Packets";
 
 //help container
 var hfilter=new Object();
