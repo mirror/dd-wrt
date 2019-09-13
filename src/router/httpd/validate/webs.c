@@ -1453,25 +1453,19 @@ void qos_add_svc(webs_t wp)
 	if (get_svc(add_svc, protocol, ports))
 		return;
 
-	if (strcmp(protocol, "l7") == 0) {
+	if (strcmp(protocol, "l7") == 0 || strcmp(protocol, "dpi") == 0) {
 		int slen = strlen(add_svc);
 
 		for (i = 0; i < slen; i++)
 			add_svc[i] = tolower(add_svc[i]);
 	}
-#ifdef HAVE_OPENDPI
-	if (strcmp(protocol, "dpi") == 0) {
-		int slen = strlen(add_svc);
-
-		for (i = 0; i < slen; i++)
-			add_svc[i] = tolower(add_svc[i]);
-	}
-#endif
 
 	/*
 	 * if this service exists, return an error 
 	 */
-	if (strstr(svqos_svcs, add_svc))
+	char check[128];
+	sprintf(check, "%s ", add_svc);	// check with space to avoid collisions
+	if (strstr(svqos_svcs, check))
 		return;
 
 	if (*(svqos_svcs))
@@ -1895,7 +1889,7 @@ void qos_save(webs_t wp)
 {
 	char *value = websGetVar(wp, "action", "");
 	char *svqos_var;
-	char svqos_pktstr[sizeof("ACK | XXX | XXX | XXX | XXX | ")] = {0}; 
+	char svqos_pktstr[sizeof("ACK | XXX | XXX | XXX | XXX | ")] = { 0 };
 	char field[32] = { 0 };
 	char *name, *data, *level, *level2, *lanlevel, *prio, *delete, *pktopt, *proto;
 	int no_svcs = websGetVari(wp, "svqos_nosvcs", 0);
