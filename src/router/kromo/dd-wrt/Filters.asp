@@ -350,7 +350,8 @@ addEvent(window, "unload", function() {
 								</div>
 								<br />
 								<div class="setting">
-									<div class="label"><% tran("filter.packetcount"); %></div><% filter_getpacketcount(); %>
+									<div class="label"><% tran("filter.packetcount"); %></div>
+									<% filter_getpacketcount(); %>&nbsp;
 								</div>
 								<br />
 							</fieldset><br />
