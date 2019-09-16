@@ -1705,18 +1705,19 @@ int main(int argc, char **argv)
 
 		FD_ZERO(&lfdset);
 		maxfd = -1;
-#ifdef USE_IPV6
 		if (no_ssl) {
 			if (listen4_fd != -1) {
 				FD_SET(listen4_fd, &lfdset);
 				if (listen4_fd > maxfd)
 					maxfd = listen4_fd;
 			}
+#ifdef USE_IPV6
 			if (listen6_fd != -1) {
 				FD_SET(listen6_fd, &lfdset);
 				if (listen6_fd > maxfd)
 					maxfd = listen6_fd;
 			}
+#endif
 		}
 #ifdef HAVE_HTTPS
 		if (do_ssl) {
@@ -1725,13 +1726,14 @@ int main(int argc, char **argv)
 				if (ssl_listen4_fd > maxfd)
 					maxfd = ssl_listen4_fd;
 			}
+#ifdef USE_IPV6
 			if (ssl_listen6_fd != -1) {
 				FD_SET(ssl_listen6_fd, &lfdset);
 				if (ssl_listen6_fd > maxfd)
 					maxfd = ssl_listen6_fd;
 			}
-		}
 #endif
+		}
 		if (select(maxfd + 1, &lfdset, NULL, NULL, NULL) < 0) {
 			if (errno == EINTR || errno == EAGAIN) {
 				SEM_POST(&semaphore);
