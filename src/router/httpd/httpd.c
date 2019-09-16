@@ -1703,9 +1703,9 @@ int main(int argc, char **argv)
 		bzero(conn_fp, sizeof(webs));
 		SEM_WAIT(&semaphore);
 
-#ifdef USE_IPV6
 		FD_ZERO(&lfdset);
 		maxfd = -1;
+#ifdef USE_IPV6
 		if (no_ssl) {
 			if (listen4_fd != -1) {
 				FD_SET(listen4_fd, &lfdset);
