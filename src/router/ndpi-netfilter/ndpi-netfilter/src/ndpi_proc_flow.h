@@ -13,6 +13,9 @@ static size_t ndpi_dump_start_rec(char *buf,size_t bufsize, uint32_t tm);
 
 static ssize_t ndpi_dump_acct_info(struct ndpi_net *n, struct nf_ct_ext_ndpi *ct);
 
+static ssize_t ndpi_dump_acct_info_bin(struct ndpi_net *n, int v6,
+	char *buf, size_t buflen, struct nf_ct_ext_ndpi *ct);
+
 static ssize_t nflow_proc_read(struct file *file, char __user *buf,
 			size_t count, loff_t *ppos);
 static ssize_t nflow_proc_write(struct file *file, const char __user *buffer,
