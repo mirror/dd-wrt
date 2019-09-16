@@ -22,20 +22,23 @@ struct wg_peer *wg_peer_create(struct wg_device *wg,
 			       const u8 preshared_key[NOISE_SYMMETRIC_KEY_LEN])
 {
 	struct wg_peer *peer;
+	int ret = -ENOMEM;
 
 	lockdep_assert_held(&wg->device_update_lock);
 
 	if (wg->num_peers >= MAX_PEERS_PER_DEVICE)
-		return NULL;
+		return ERR_PTR(ret);
 
 	peer = kzalloc(sizeof(*peer), GFP_KERNEL);
 	if (unlikely(!peer))
-		return NULL;
+		return ERR_PTR(ret);
 	peer->device = wg;
 
 	if (!wg_noise_handshake_init(&peer->handshake, &wg->static_identity,
-				     public_key, preshared_key, peer))
+				     public_key, preshared_key, peer)) {
+		ret = -EKEYREJECTED;
 		goto err_1;
+	}
 	if (dst_cache_init(&peer->endpoint_cache, GFP_KERNEL))
 		goto err_1;
 	if (wg_packet_queue_init(&peer->tx_queue, wg_packet_tx_worker, false,
@@ -56,9 +59,7 @@ struct wg_peer *wg_peer_create(struct wg_device *wg,
 	rwlock_init(&peer->endpoint_lock);
 	kref_init(&peer->refcount);
 	skb_queue_head_init(&peer->staged_packet_queue);
-	atomic64_set(&peer->last_sent_handshake,
-		     ktime_get_coarse_boottime_ns() -
-			     (u64)(REKEY_TIMEOUT + 1) * NSEC_PER_SEC);
+	wg_noise_reset_last_sent_handshake(&peer->last_sent_handshake);
 	set_bit(NAPI_STATE_NO_BUSY_POLL, &peer->napi.state);
 	netif_napi_add(wg->dev, &peer->napi, wg_packet_rx_poll,
 		       NAPI_POLL_WEIGHT);
@@ -76,7 +77,7 @@ err_2:
 	dst_cache_destroy(&peer->endpoint_cache);
 err_1:
 	kfree(peer);
-	return NULL;
+	return ERR_PTR(ret);
 }
 
 struct wg_peer *wg_peer_get_maybe_zero(struct wg_peer *peer)
