@@ -200,27 +200,35 @@ ssize_t nproto_proc_read(struct file *file, char __user *buf,
 {
         struct ndpi_net *n = PDE_DATA(file_inode(file));
 	char lbuf[128];
-	char c_buf[12];
-	int i,l,p;
+	char c_buf[32];
+	int i,l,p,ro;
+	loff_t i_pos = 0;
 
 	for(i = 0,p = 0; i < NDPI_NUM_BITS; i++) {
 		const char *t_proto = ndpi_get_proto_by_id(n->ndpi_struct,i);
 		if(!t_proto) {
 			snprintf(c_buf,sizeof(c_buf)-1,"custom%d",i);
-			t_proto = c_buf;
+		} else {
+			char *cb = c_buf;
+			l = sizeof(c_buf)-1;
+			for(;*t_proto && l > 0; t_proto++,l--) {
+				char c = *t_proto;
+				if(c != '_' && c & 0x40) c |= 0x20;
+				*cb++ = c;
+			}
+			*cb = '\0';
 		}
 
-		if(i < *ppos ) continue;
 		l = i ? 0: snprintf(lbuf,sizeof(lbuf),
 				"#id     mark ~mask     name   # count #version %s\n",
 				NDPI_GIT_RELEASE);
 		if(!n->mark[i].mark && !n->mark[i].mask)
 		    l += snprintf(&lbuf[l],sizeof(lbuf)-l,"%02x  %17s %-16s # %d\n",
-				i,"disabled",t_proto ? t_proto:"bad",
+				i,"disabled",c_buf,
 				atomic_read(&n->protocols_cnt[i]));
 		else
 		    l += snprintf(&lbuf[l],sizeof(lbuf)-l,"%02x  %8x/%08x %-16s # %d debug=%d\n",
-				i,n->mark[i].mark,n->mark[i].mask,t_proto ? t_proto :"bad",
+				i,n->mark[i].mark,n->mark[i].mask,c_buf,
 				atomic_read(&n->protocols_cnt[i]),
 #ifdef NDPI_ENABLE_DEBUG_MESSAGES
 					n->debug_level[i]
@@ -229,13 +237,25 @@ ssize_t nproto_proc_read(struct file *file, char __user *buf,
 #endif
 					);
 
-		if(count < l) break;
+		if(i_pos + l <= *ppos ) {
+			i_pos += l;
+			continue;
+		}
+		if(!count) break;
+		ro = 0;
+		if(i_pos < *ppos) {
+			ro = *ppos - i_pos;
+			l -= ro;
+		}
+		if(count < l) l = count;
 
 		if (!(ACCESS_OK(VERIFY_WRITE, buf+p, l) &&
-				!__copy_to_user(buf+p, lbuf, l))) return -EFAULT;
+				!__copy_to_user(buf+p, &lbuf[ro], l))) return -EFAULT;
 		p += l;
 		count -= l;
-		(*ppos)++;
+		(*ppos) += l;
+		i_pos += l + ro;
+		if(!count) break;
 	}
 	return p;
 }
