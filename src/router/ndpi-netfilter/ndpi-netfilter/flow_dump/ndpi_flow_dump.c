@@ -21,14 +21,15 @@
 #include "../src/ndpi_flow_info.h"
 
 /*
- * procfs buffer 256Kb
+ * procfs buffer 256Kb on x86_64 and 64k on i386
  */
 
 #define FLOW_READ_COUNT 256*1024
-
+#define FLOW_PRE_HDR 1024
 struct dump_data {
 	struct dump_data *next;
 	int		 num;
+	int		 offs;
 	size_t		 len;
 	uint8_t		 data[];
 };
@@ -62,6 +63,21 @@ int append_buf(char *data,size_t len) {
 	return 0;
 }
 
+int move_to_next(struct dump_data *dump, int offset) {
+	int tail_len;
+	struct dump_data *n;
+
+	n = dump->next;
+	if(!n) return 0;
+	tail_len = dump->len - offset;
+	if(n->offs  < tail_len) return 0;
+	n->len += tail_len;
+	n->offs -= tail_len;
+	memcpy((char *)&n->data[n->offs],(char *)&dump->data[dump->offs+offset],tail_len);
+	dump->len -= tail_len;
+	return 1;
+}
+
 #define REC_PROTO 1
 #define REC_START 2
 #define REC_FLOW  4
@@ -73,29 +89,51 @@ char *data;
 int offs,rl,n;
 int ret=0;
 	if(!dump) return 0;
-
-	data = (char*)&dump->data[0];
+	data = (char*)&dump->data[dump->offs];
 	offs = 0;
 	n=0;
-	while(offs < dump->len-4) {
+	while(offs < dump->len) {
 		n++;
 		c = (struct flow_data_common *)&data[offs];
 		switch(c->rec_type) {
 		case 0:
+			rl = 4;
+			if(offs+rl > dump->len) {
+				if(!move_to_next(dump,offs)) {
+					printf("T0:%d len\n",n); return -1;
+				}
+				return offs != dump->len ? -1: ret;
+			}
 			if( !c->host_len ) { printf("T0:%d host_len offs %d\n",n,offs); return -1;}
-			rl = 4 + c->host_len;
-			if(offs+rl > dump->len) { printf("T0:%d len\n",n); return -1; }
+			rl += c->host_len;
+			if(offs+rl > dump->len) {
+				if(!move_to_next(dump,offs)) {
+					printf("T0:%d len2\n",n); return -1;
+				}
+				return offs != dump->len ? -1: ret;
+			}
 			ret |= REC_PROTO;
 			offs += rl;
 			break;
 		case 1:
 			rl = 8;
-			if(offs+rl > dump->len) { printf("T1:%d len\n",n); return -1; }
+			if(offs+rl > dump->len) {
+				if(!move_to_next(dump,offs)) {
+					printf("T1:%d len\n",n); return -1; 
+				}
+				return offs != dump->len ? -1: ret;
+			}
 			ret |= REC_START;
 			offs += rl;
 			break;
 		case 3:
-			if(offs+sizeof(struct flow_data_common) > dump->len) { printf("T3:%d len\n",n); return -1; }
+			rl = sizeof(struct flow_data_common);
+			if(offs+rl > dump->len) {
+				if(!move_to_next(dump,offs)) {
+					printf("T3:%d len\n",n); return -1; 
+				}
+				return offs != dump->len ? -1: ret;
+			}
 			offs += sizeof(struct flow_data_common);
 			ret |= REC_LOST;
 			break;
@@ -103,9 +141,21 @@ int ret=0;
 			rl = sizeof(struct flow_data_common) + 
 				( c->family ? sizeof(struct flow_data_v6) :
 				  	      sizeof(struct flow_data_v4));
+			if(offs+rl > dump->len) {
+				if(!move_to_next(dump,offs)) {
+					printf("T2:%d len error1. offs %d\n",n,offs); return -1; 
+				}
+				return offs != dump->len ? -1: ret;
+			}
 			if(offs+rl+c->cert_len+c->host_len > dump->len) {
-				printf("T2:%d len\n",n); return -1; }
-			offs += rl + c->cert_len + c->host_len;
+				if(!move_to_next(dump,offs)) {
+					printf("T2:%d len error1. offs %d\n",n,offs);
+					return -1;
+				}
+				return offs != dump->len ? -1: ret;
+			}
+			rl += c->cert_len + c->host_len;
+			offs += rl;
 			ret |= REC_FLOW;
 			break;
 		}
@@ -201,7 +251,7 @@ char *data,buff[512],
 int offs,l,rl;
 uint16_t id;
 
-	data = (char*)&dump->data[0];
+	data = (char*)&dump->data[dump->offs];
 	offs = 0;
 	while(offs < dump->len-4) {
 		c = (struct flow_data_common *)&data[offs];
@@ -344,7 +394,6 @@ int main(int argc,char **argv) {
 	int fd,e,n;
 	size_t blk_size;
 	long long int r;
-	int file_read;
 	struct dump_data *c;
 	char *src_file= NULL;
 	char *bin_file= NULL;
@@ -388,8 +437,6 @@ int main(int argc,char **argv) {
 			exit(1);
 			exit(1);
 		}
-		blk_size = FLOW_READ_COUNT;
-		file_read = 0;
 	} else {
 		fd = open(src_file ,O_RDONLY);
 		if(fd < 0) {
@@ -403,9 +450,8 @@ int main(int argc,char **argv) {
 		if(!src_st.st_size) {
 			exit(0);
 		}
-		blk_size = src_st.st_size;
-		file_read = 1;
 	}
+	blk_size = FLOW_READ_COUNT;
 	c = NULL;
 	n = 0;
 	e = 0;
@@ -413,13 +459,14 @@ int main(int argc,char **argv) {
 	gettimeofday(&tv1,NULL);
 	while(1) {
 		if(!c) 
-			c = malloc(sizeof(struct dump_data)+blk_size);
+			c = malloc(sizeof(struct dump_data)+blk_size+FLOW_PRE_HDR);
 		if(!c) {
 			perror("malloc");
 			break;
 		}
 		c->next = NULL;
-		e = read(fd,&c->data[0],blk_size);
+		c->offs = FLOW_PRE_HDR;
+		e = read(fd,&c->data[FLOW_PRE_HDR],blk_size);
 		if(e < 0) {
 			if(errno == EINTR) continue;
 			perror("read error");
@@ -442,7 +489,6 @@ int main(int argc,char **argv) {
 			tail = c;
 		}
 		c = NULL;
-		if(file_read) break;
 	}
 	close(fd);
 	gettimeofday(&tv2,NULL);
@@ -482,7 +528,7 @@ int main(int argc,char **argv) {
 			if(!(flow_flags & REC_PROTO) && ndpi_last_proto > 0)
 				write_proto_name(fd);
 			for(c = head; c; c = c->next ) {
-				e = write(fd,&c->data[0],c->len);
+				e = write(fd,&c->data[c->offs],c->len);
 				if(e != c->len) {
 					perror("write");
 					exit(1);

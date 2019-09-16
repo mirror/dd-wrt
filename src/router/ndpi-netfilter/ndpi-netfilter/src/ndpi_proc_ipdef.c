@@ -47,19 +47,16 @@ ssize_t n_ipdef_proc_read(struct file *file, char __user *buf,
 	patricia_node_t *Xstack[PATRICIA_MAXBITS+1], **Xsp, *node;
 	char lbuf[512];
 	char ibuf[64];
-	int i,l,p;
+	int l,bp;
+	loff_t cpos;
 
-	i = 0; p = 0;
+	cpos = 0; bp = 0;
 	pt = n->ndpi_struct->protocols_ptree;
-
 	Xsp = &Xstack[0];
 	node = pt->head;
 	while (node) {
 	    if (node->prefix) {
-
-	      if(i >= *ppos ) {
-
-		l = i ? 0: snprintf(lbuf,sizeof(lbuf),"#ip              proto\n");
+		l = cpos ? 0: snprintf(lbuf,sizeof(lbuf),"#ip              proto\n");
 		
 		px = node->prefix;
 		{
@@ -78,22 +75,32 @@ ssize_t n_ipdef_proc_read(struct file *file, char __user *buf,
 			struct ndpi_port_def *pd = node->data;
 			ndpi_port_range_t *pt = pd->p;
 			if(pd->count[0]+pd->count[1] > 0) {
-			l += snprintf(&lbuf[l],sizeof(lbuf)-l,"%-16s ",ibuf);
-			l += ndpi_print_port_range(pt,pd->count[0]+pd->count[1],
+			    l += snprintf(&lbuf[l],sizeof(lbuf)-l,"%-16s ",ibuf);
+			    l += ndpi_print_port_range(pt,pd->count[0]+pd->count[1],
 					&lbuf[l],sizeof(lbuf)-l,n->ndpi_struct);
-			l += snprintf(&lbuf[l],sizeof(lbuf)-l,"\n");
+			    l += snprintf(&lbuf[l],sizeof(lbuf)-l,"\n");
 			}
 		}
-		if(count < l) break;
-		
-		if (!(ACCESS_OK(VERIFY_WRITE, buf+p, l) &&
-				!__copy_to_user(buf+p, lbuf, l))) return -EFAULT;
-		p += l;
-		count -= l;
-		(*ppos)++;
-	      }
-	      i++;
-	    }
+		if(cpos + l <= *ppos) {
+			cpos += l;
+		} else {
+			int offs = 0;
+			if(!count) break;
+			if(cpos < *ppos) {
+				offs = *ppos - cpos;
+				l -= offs;
+			}
+			if(l > count) l = count;
+			if (!(ACCESS_OK(VERIFY_WRITE, buf+bp, l) &&
+				!__copy_to_user(buf+bp, &lbuf[offs], l))) return -EFAULT;
+			count -= l;
+			(*ppos) += l;
+			cpos += l + offs;
+			bp += l;
+			if(!count) break;
+	    	}
+
+	    } // node->prefix
 	    if (node->l) {
 		if (node->r) {
 		    *Xsp++ = node->r;
@@ -107,5 +114,5 @@ ssize_t n_ipdef_proc_read(struct file *file, char __user *buf,
 	    }
 	    node = Xsp != Xstack ? *(--Xsp): NULL;
 	}
-	return p;
+	return bp;
 }

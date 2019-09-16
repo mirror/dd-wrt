@@ -215,6 +215,9 @@ struct ndpi_cb {
 	uint32_t	magic;
 };
 
+struct nf_ct_ext_ndpi dummy_struct1;
+struct flow_info dummy_struct2;
+
 static inline struct ndpi_cb *skb_get_cproto(const struct sk_buff *skb)
 {
 	return (struct ndpi_cb *)&skb->cb[sizeof(skb->cb)-sizeof(struct ndpi_cb)];
@@ -249,7 +252,7 @@ static inline int flow_have_info( struct nf_ct_ext_ndpi *c) {
 	return (READ_ONCE(c->flags) & m) == m;
 }
 
-static ndpi_protocol proto_null = NDPI_PROTOCOL_NULL;
+static ndpi_protocol_nf proto_null = NDPI_PROTOCOL_NULL;
 
 static unsigned long int ndpi_flow_limit=10000000; // 4.3Gb
 static unsigned long int ndpi_enable_flow=0;
@@ -1105,8 +1108,10 @@ ndpi_process_packet(struct ndpi_net *n, struct nf_conn * ct, struct nf_ct_ext_nd
 		add_stat(flow->packet.parsed_lines);
 	}
 	if( proto.app_protocol != NDPI_PROTOCOL_UNKNOWN ||
-	    proto.master_protocol != NDPI_PROTOCOL_UNKNOWN)
-		ct_ndpi->proto = proto;
+	    proto.master_protocol != NDPI_PROTOCOL_UNKNOWN) {
+		ct_ndpi->proto.app_protocol = proto.app_protocol;
+		ct_ndpi->proto.master_protocol = proto.master_protocol;
+	}
 
 	return proto.app_protocol;
 }
@@ -1242,7 +1247,7 @@ NDPI_STATIC bool
 ndpi_mt(const struct sk_buff *skb, struct xt_action_param *par)
 {
 	uint32_t r_proto;
-	ndpi_protocol proto = NDPI_PROTOCOL_NULL;
+	ndpi_protocol_nf proto = NDPI_PROTOCOL_NULL;
 	uint64_t time;
 	struct timespec tm;
 	const struct xt_ndpi_mtinfo *info = par->matchinfo;
@@ -1366,8 +1371,8 @@ ndpi_mt(const struct sk_buff *skb, struct xt_action_param *par)
 		ct_proto_set_flow_nat(c_proto,FLOW_NAT_START);
 
 #if defined(CONFIG_NF_CONNTRACK_MARK)
-	if(ct->mark && ct->mark != ct_ndpi->connmark)
-		ct_ndpi->connmark = ct->mark;
+	if(ct->mark && ct->mark != ct_ndpi->flinfo.connmark)
+		ct_ndpi->flinfo.connmark = ct->mark;
 #endif
 
 #ifdef USE_HACK_USERID
@@ -1382,7 +1387,8 @@ ndpi_mt(const struct sk_buff *skb, struct xt_action_param *par)
 #endif
 	if( c_proto->magic == NDPI_ID ) {
 	    if(ct_proto_last(c_proto) == ct) {
-		proto = ct_ndpi->proto;
+		proto.app_protocol = ct_ndpi->proto.app_protocol;
+		proto.master_protocol = ct_ndpi->proto.master_protocol;
 		if(info->hostname[0])
 			host_match = ndpi_host_match(info,ct_ndpi);
 
@@ -2044,13 +2050,44 @@ NDPI_STATIC void ndpi_ct_counter_save(struct nf_ct_ext_ndpi *ct) {
 	ct->flinfo.p[3] = ct->flinfo.p[1];
 }
 
+static int nflow_put_str(struct ndpi_net *n, char __user *buf,
+	int *p, size_t *count, loff_t *ppos) {
+
+	int ro,rl;
+
+	if(!n->str_buf_len)  return 0;
+
+	rl = n->str_buf_len - n->str_buf_offs;
+	ro = 0;
+	if(rl > *count) {
+		ro = rl - *count;
+		rl = *count;
+	}
+
+	if (!(ACCESS_OK(VERIFY_WRITE, buf+(*p), rl) &&
+	      !__copy_to_user(buf+(*p), &n->str_buf[n->str_buf_offs], rl))) {
+			n->str_buf_len = 0;
+			n->str_buf_offs = 0;
+			return -1;
+	}
+	if(ro) {
+		n->str_buf_offs += rl;
+	} else {
+		n->str_buf_len = 0;
+		n->str_buf_offs = 0;
+	}
+	*count -= rl;
+	*p += rl;
+	(*ppos) += rl;
+	return ro;
+}
+
 ssize_t nflow_read(struct ndpi_net *n, char __user *buf,
                               size_t count, loff_t *ppos)
 {
 	struct nf_ct_ext_ndpi *ct_ndpi,*next,*prev,*flow_h;
-	int p,del;
+	int p,del,r;
 	ssize_t sl;
-	char buf1[256+128];
 	int cnt_view=0,cnt_del=0,cnt_out=0;
 	loff_t st_pos;
 
@@ -2061,34 +2098,50 @@ ssize_t nflow_read(struct ndpi_net *n, char __user *buf,
 	spin_lock(&n->rem_lock);
 
 	p = 0;
+
+	if(n->str_buf_len) {
+		r = nflow_put_str(n,buf,&p,&count,ppos);
+		if (r != 0) {
+			spin_unlock(&n->rem_lock);
+			return r < 0 ? -EINVAL : p;
+		}
+	}
+
 	if(*ppos == 0) {
 		if(flow_read_debug)
 		  pr_info("%s: Start dump: CT total %d deleted %d\n",
 			__func__, atomic_read(&n->acc_work),atomic_read(&n->acc_rem));
 		sl = n->acc_read_mode > 3 ?
-			ndpi_dump_start_rec(buf1,sizeof(buf1),n->acc_open_time):
-			snprintf(buf1,sizeof(buf1)-1,"TIME %lu\n",n->acc_open_time);
-		if (!(ACCESS_OK(VERIFY_WRITE, buf, sl) &&
-				!__copy_to_user(buf, buf1, sl))) {
-				return -EFAULT;
-		}
-		p += sl; count -= sl;
-	}
-	if(atomic_read(&n->acc_i_packets_lost) || atomic_read(&n->acc_o_packets_lost)) {
-		uint32_t cpi = atomic_xchg(&n->acc_i_packets_lost,0);
-		uint32_t cpo = atomic_xchg(&n->acc_o_packets_lost,0);
-		uint64_t cbi = atomic64_xchg(&n->acc_i_bytes_lost,0);
-		uint64_t cbo = atomic64_xchg(&n->acc_o_bytes_lost,0);
-		sl = n->acc_read_mode > 3 ? 
-			ndpi_dump_lost_rec(buf1,sizeof(buf1),cpi,cpo,cbi,cbo) :
-			snprintf(buf1,sizeof(buf1)-1,
-				"LOST_TRAFFIC %llu %llu %u %u\n",cbi,cbo,cpi,cpo);
+			ndpi_dump_start_rec(n->str_buf,sizeof(n->str_buf),n->acc_open_time):
+			snprintf(n->str_buf,sizeof(n->str_buf)-1,"TIME %lu\n",n->acc_open_time);
 
-		if (!(ACCESS_OK(VERIFY_WRITE, buf+p, sl) &&
-				!__copy_to_user(buf+p, buf1, sl))) {
-				return -EFAULT;
+		n->str_buf_len = sl; n->str_buf_offs = 0;
+		r = nflow_put_str(n,buf,&p,&count,ppos);
+
+		if (r != 0) {
+			spin_unlock(&n->rem_lock);
+			return r < 0 ? -EFAULT : p;
 		}
-		p += sl; count -= sl;
+
+		if(atomic_read(&n->acc_i_packets_lost) ||
+		   atomic_read(&n->acc_o_packets_lost)) {
+			uint32_t cpi = atomic_xchg(&n->acc_i_packets_lost,0);
+			uint32_t cpo = atomic_xchg(&n->acc_o_packets_lost,0);
+			uint64_t cbi = atomic64_xchg(&n->acc_i_bytes_lost,0);
+			uint64_t cbo = atomic64_xchg(&n->acc_o_bytes_lost,0);
+			sl = n->acc_read_mode > 3 ? 
+				ndpi_dump_lost_rec(n->str_buf,sizeof(n->str_buf),cpi,cpo,cbi,cbo) :
+				snprintf(n->str_buf,sizeof(n->str_buf)-1,
+					"LOST_TRAFFIC %llu %llu %u %u\n",cbi,cbo,cpi,cpo);
+
+			n->str_buf_len = sl; n->str_buf_offs = 0;
+			r = nflow_put_str(n,buf,&p,&count,ppos);
+
+			if (r != 0) {
+				spin_unlock(&n->rem_lock);
+				return r < 0 ? -EFAULT : p;
+			}
+		}
 	}
 	st_pos = *ppos;
 	prev = NULL;
@@ -2108,32 +2161,26 @@ ssize_t nflow_read(struct ndpi_net *n, char __user *buf,
 		next = ct_ndpi->next;
 		del  = test_for_delete(ct_ndpi);
 
+		n->str_buf_len = 0; n->str_buf_offs = 0;
+
 		switch(n->acc_read_mode & 0x3) {
 		case 0:
 			sl = flow_have_info(ct_ndpi) ?
-				ndpi_dump_acct_info(n,buf1,sizeof(buf1)-1,ct_ndpi) : 0;
+				ndpi_dump_acct_info(n,ct_ndpi) : 0;
 			break;
 		case 1:
 			sl = del && flow_have_info(ct_ndpi) ?
-				ndpi_dump_acct_info(n,buf1,sizeof(buf1)-1,ct_ndpi) : 0;
+				ndpi_dump_acct_info(n,ct_ndpi) : 0;
 			break;
 		case 2:
 			sl = !del && test_flow_yes(ct_ndpi) ?
-				ndpi_dump_acct_info(n,buf1,sizeof(buf1)-1,ct_ndpi) : 0;
+				ndpi_dump_acct_info(n,ct_ndpi) : 0;
 			break;
 		default:
 			sl = 0;
 		}
-		if(sl) {
-			if(sl <= count) {
-				if((n->acc_read_mode & 0x3) != 2)
-					ndpi_ct_counter_save(ct_ndpi);
-			} else {
-				// we don't delete record if buffer full
-				n->flow_l = prev;
-				spin_unlock_bh(&ct_ndpi->lock);
-				break;
-			}
+		if(sl && (n->acc_read_mode & 0x3) != 2) {
+				ndpi_ct_counter_save(ct_ndpi);
 		}
 		if(del) {
 			if(prev) {
@@ -2143,6 +2190,8 @@ ssize_t nflow_read(struct ndpi_net *n, char __user *buf,
 				spin_unlock_bh(&ct_ndpi->lock);
 				n->flow_l = NULL;
 				n->acc_end = 1;
+				n->str_buf_len = 0;
+				n->str_buf_offs = 0;
 				spin_unlock(&n->rem_lock);
 				return -EINVAL;
 			    }
@@ -2159,15 +2208,13 @@ ssize_t nflow_read(struct ndpi_net *n, char __user *buf,
 		spin_unlock_bh(&ct_ndpi->lock);
 
 		if(sl) {
-			if (!(ACCESS_OK(VERIFY_WRITE, buf+p, sl) &&
-					!__copy_to_user(buf+p, buf1, sl))) {
+			r = nflow_put_str(n,buf,&p,&count,ppos);
+			if(r != 0) {
 				n->flow_l = prev;
 				spin_unlock(&n->rem_lock);
-				return -EFAULT;
+				return r < 0 ? -EFAULT : p;
 			}
 			cnt_out++;
-			p += sl; count -= sl;
-			(*ppos)++;
 		}
 		if(del) {
 			__ndpi_free_ct_proto(ct_ndpi);

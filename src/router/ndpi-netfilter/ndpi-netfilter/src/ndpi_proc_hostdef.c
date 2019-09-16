@@ -148,9 +148,14 @@ ssize_t n_hostdef_proc_read(struct file *file, char __user *buf,
 			if(ndpi_log_debug > 1) 
 				pr_info("read:4 lbuf:%d '%s'\n",l,lbuf);
 
-			if(cpos + l < *ppos) {
+			if(cpos + l <= *ppos) {
 				cpos += l;
 			} else {
+				if(!count) {
+					if(ndpi_log_debug > 1) 
+						pr_info("read:6 buf full, bpos %d\n",bpos);
+					return bpos;
+				}
 				p = 0;
 				// ppos: buf + count, cpos: lbuf + l
 				if(cpos < *ppos) {

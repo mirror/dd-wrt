@@ -3,7 +3,7 @@ NDPI_SRC := ../../src
 NDPI_PRO := ${NDPI_SRC}/lib/protocols
 
 ccflags-y += -I${src}/${NDPI_SRC}/include -I${src}/${NDPI_SRC}/lib -I${src}/../libre -I${src}/${NDPI_SRC}/lib/third_party/include 
-ccflags-y += -DHAVE_CONFIG_H -DNDPI_LIB_COMPILATION -DOPENDPI_NETFILTER_MODULE -DNDPI_STATIC=static
+ccflags-y += -DHAVE_CONFIG_H -DNDPI_LIB_COMPILATION -DOPENDPI_NETFILTER_MODULE -DNDPI_STATIC=static -w -femit-struct-debug-detailed=any
 
 
 KERNEL_DIR := ${LINUXDIR}
