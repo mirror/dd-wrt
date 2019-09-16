@@ -215,8 +215,8 @@ struct ndpi_cb {
 	uint32_t	magic;
 };
 
-struct nf_ct_ext_ndpi dummy_struct1;
-struct flow_info dummy_struct2;
+static struct nf_ct_ext_ndpi dummy_struct1;
+static struct flow_info dummy_struct2;
 
 static inline struct ndpi_cb *skb_get_cproto(const struct sk_buff *skb)
 {
