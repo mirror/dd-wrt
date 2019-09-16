@@ -71,7 +71,7 @@ void ej_get_qospkts(webs_t wp, int argc, char_t ** argv)
 		  "checked" : "");
 }
 
-void getpacketcounts(unsigned long long *counts, int len);
+void getpacketcounts(char *table, char *chain, unsigned long long *counts, int len);
 
 void ej_get_qossvcs(webs_t wp, int argc, char_t ** argv)
 {
@@ -106,7 +106,7 @@ void ej_get_qossvcs(webs_t wp, int argc, char_t ** argv)
 	if (no_svcs) {
 		counts = malloc(sizeof(unsigned long long) * (realno + 2));
 		memset(counts, 0, sizeof(unsigned long long) * (realno + 2));
-		getpacketcounts(counts, realno);
+		getpacketcounts("mangle", "SVQOS_SVCS", counts, realno);
 	}
 	int c = 0;
 	for (i = 0; i < no_svcs && qos_svcs && qos_svcs[0]; i++) {

@@ -1,15 +1,15 @@
 #include <libiptc/libip4tc.c>
-void getpacketcounts(unsigned long long *counts, int len)
+void getpacketcounts(char *table, char *chain, unsigned long long *counts, int len)
 {
 	int c = 0;
 	const char *this;
 	if (!len)
 		return;
-	iptc_handle_t handle = iptc_init("mangle");
+	iptc_handle_t handle = iptc_init(table);
 
 	for (this = iptc_first_chain(&handle); this; this = iptc_next_chain(&handle)) {
 		const struct ipt_entry *i;
-		if (strcmp("SVQOS_SVCS", this))
+		if (strcmp(chain, this))
 			continue;
 		i = iptc_first_rule(this, &handle);
 		while (i) {
