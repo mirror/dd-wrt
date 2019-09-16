@@ -13,6 +13,7 @@
 #include <linux/if.h>
 #include <net/genetlink.h>
 #include <net/sock.h>
+#include <crypto/algapi.h>
 
 static struct genl_family genl_family;
 
@@ -373,8 +374,12 @@ static int set_peer(struct wg_device *wg, struct nlattr **attrs)
 	if (attrs[WGPEER_A_PRESHARED_KEY] &&
 	    nla_len(attrs[WGPEER_A_PRESHARED_KEY]) == NOISE_SYMMETRIC_KEY_LEN)
 		preshared_key = nla_data(attrs[WGPEER_A_PRESHARED_KEY]);
+
 	if (attrs[WGPEER_A_FLAGS])
 		flags = nla_get_u32(attrs[WGPEER_A_FLAGS]);
+	ret = -EOPNOTSUPP;
+	if (flags & ~__WGPEER_F_ALL)
+		goto out;
 
 	ret = -EPFNOSUPPORT;
 	if (attrs[WGPEER_A_PROTOCOL_VERSION]) {
@@ -408,10 +413,16 @@ static int set_peer(struct wg_device *wg, struct nlattr **attrs)
 		}
 		up_read(&wg->static_identity.lock);
 
-		ret = -ENOMEM;
 		peer = wg_peer_create(wg, public_key, preshared_key);
-		if (!peer)
+		if (IS_ERR(peer)) {
+			/* Similar to the above, if the key is invalid, we skip
+			 * it without fanfare, so that services don't need to
+			 * worry about doing key validation themselves.
+			 */
+			ret = PTR_ERR(peer) == -EKEYREJECTED ? 0 : PTR_ERR(peer);
+			peer = NULL;
 			goto out;
+		}
 		/* Take additional reference, as though we've just been
 		 * looked up.
 		 */
@@ -492,6 +503,7 @@ out:
 static int wg_set_device(struct sk_buff *skb, struct genl_info *info)
 {
 	struct wg_device *wg = lookup_interface(info->attrs, skb);
+	u32 flags = 0;
 	int ret;
 
 	if (IS_ERR(wg)) {
@@ -501,6 +513,12 @@ static int wg_set_device(struct sk_buff *skb, struct genl_info *info)
 
 	rtnl_lock();
 	mutex_lock(&wg->device_update_lock);
+
+	if (info->attrs[WGDEVICE_A_FLAGS])
+		flags = nla_get_u32(info->attrs[WGDEVICE_A_FLAGS]);
+	ret = -EOPNOTSUPP;
+	if (flags & ~__WGDEVICE_F_ALL)
+		goto out;
 
 	ret = -EPERM;
 	if ((info->attrs[WGDEVICE_A_LISTEN_PORT] ||
@@ -525,9 +543,7 @@ static int wg_set_device(struct sk_buff *skb, struct genl_info *info)
 			goto out;
 	}
 
-	if (info->attrs[WGDEVICE_A_FLAGS] &&
-	    nla_get_u32(info->attrs[WGDEVICE_A_FLAGS]) &
-		    WGDEVICE_F_REPLACE_PEERS)
+	if (flags & WGDEVICE_F_REPLACE_PEERS)
 		wg_peer_remove_all(wg);
 
 	if (info->attrs[WGDEVICE_A_PRIVATE_KEY] &&
@@ -536,6 +552,10 @@ static int wg_set_device(struct sk_buff *skb, struct genl_info *info)
 		u8 *private_key = nla_data(info->attrs[WGDEVICE_A_PRIVATE_KEY]);
 		u8 public_key[NOISE_PUBLIC_KEY_LEN];
 		struct wg_peer *peer, *temp;
+
+		if (!crypto_memneq(wg->static_identity.static_private,
+				   private_key, NOISE_PUBLIC_KEY_LEN))
+			goto skip_set_private_key;
 
 		/* We remove before setting, to prevent race, which means doing
 		 * two 25519-genpub ops.
@@ -554,12 +574,15 @@ static int wg_set_device(struct sk_buff *skb, struct genl_info *info)
 							 private_key);
 		list_for_each_entry_safe(peer, temp, &wg->peer_list,
 					 peer_list) {
-			if (!wg_noise_precompute_static_static(peer))
+			if (wg_noise_precompute_static_static(peer))
+				wg_noise_expire_current_peer_keypairs(peer);
+			else
 				wg_peer_remove(peer);
 		}
 		wg_cookie_checker_precompute_device_keys(&wg->cookie_checker);
 		up_write(&wg->static_identity.lock);
 	}
+skip_set_private_key:
 
 	if (info->attrs[WGDEVICE_A_PEERS]) {
 		struct nlattr *attr, *peer[WGPEER_A_MAX + 1];
