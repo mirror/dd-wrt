@@ -382,25 +382,34 @@ static int cmp_pname(const void *p1, const void *p2) {
 	return 0;
 }
 
-static int ndpi_print_prot_list(int cond) {
-        int i,c,d,l;
+static int ndpi_print_prot_list(int cond, char *msg) {
+        int i,c,d,l,cp;
 	char line[128];
 	char *pn[NDPI_NUM_BITS+1];
 
 	bzero((char *)&pn[0],sizeof(pn));
 
-        for (i = 1,d = 0; i < NDPI_NUM_BITS; i++) {
-	    if(!prot_short_str[i] || !strncmp(prot_short_str[i],"badproto_",9)) continue;
+        for (i = 1,d = 0,cp = 0; i < NDPI_NUM_BITS; i++) {
+	    if(!prot_short_str[i] ||
+			  !strncmp(prot_short_str[i],"badproto_",9) ||
+			  !strncmp(prot_short_str[i],"free",4)) continue;
 	    if(prot_disabled[i] != cond) { 
 		    d++;
 		    continue;
 	    }
+	    if(cond && !strncmp(prot_short_str[i],"custom",6)) continue;
 	    pn[i-1] = prot_short_str[i];
+	    cp++;
 	}
+	if(!cp) return d;
+	if(msg)
+		puts(msg);
 	qsort(&pn[0],NDPI_NUM_BITS,sizeof(pn[0]),cmp_pname);
+
         for (i = 0,c = 0,l=0; i < NDPI_NUM_BITS; i++) {
 	    if(!pn[i]) break;
 	    l += snprintf(&line[l],sizeof(line)-1-l,"%-20s ", pn[i]);
+	    if(!c) printf("  ");
 	    c++;
 	    if(c == 4) {
 		    printf("%s\n",line);
@@ -428,11 +437,10 @@ ndpi_mt_help(void)
 		"Special protocol names:\n"
 		"  --all              Match any known protocol\n"
 		"  --unknown          Match unknown protocol packets\n");
-	printf( "Enabled protocols: ( option form '--protoname' or --proto protoname[,protoname...])\n");
-	d = ndpi_print_prot_list(0);
+	d = ndpi_print_prot_list(0,
+			"Enabled protocols: ( option --proto protoname[,protoname...])\n");
 	if(!d) return;
-	printf( "Disabled protocols:\n");
-	ndpi_print_prot_list(1);
+	ndpi_print_prot_list(1,"Disabled protocols:\n");
 }
 
 static struct option ndpi_mt_opts[NDPI_LAST_IMPLEMENTED_PROTOCOL+11];
