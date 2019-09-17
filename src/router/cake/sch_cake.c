@@ -2691,17 +2691,14 @@ static void cake_reconfigure(struct Qdisc *sch)
 		do_div(t, USEC_PER_SEC / 4);
 		q->buffer_limit = max_t(u32, t, 4U << 20);
 	} else {
-		q->buffer_limit = ~0;
+		q->buffer_limit = 4U << 20;
 	}
 
 	sch->flags &= ~TCQ_F_CAN_BYPASS;
 
-	if (q->buffer_config_limit)
-		q->buffer_limit = min(q->buffer_limit,
-			max(sch->limit * psched_mtu(qdisc_dev(sch)), q->buffer_config_limit));
-	else
-		q->buffer_limit = min(q->buffer_limit,
-			max(sch->limit * psched_mtu(qdisc_dev(sch)), 4U << 20));
+	q->buffer_limit = min(q->buffer_limit,
+			      max(sch->limit * psched_mtu(qdisc_dev(sch)),
+				  q->buffer_config_limit));
 }
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 0)
