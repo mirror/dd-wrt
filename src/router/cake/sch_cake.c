@@ -2696,9 +2696,12 @@ static void cake_reconfigure(struct Qdisc *sch)
 
 	sch->flags &= ~TCQ_F_CAN_BYPASS;
 
-	q->buffer_limit = min(q->buffer_limit,
-			      max(sch->limit * psched_mtu(qdisc_dev(sch)),
-				  q->buffer_config_limit));
+	if (q->buffer_config_limit)
+		q->buffer_limit = min(q->buffer_limit,
+			max(sch->limit * psched_mtu(qdisc_dev(sch)), q->buffer_config_limit));
+	else
+		q->buffer_limit = min(q->buffer_limit,
+			max(sch->limit * psched_mtu(qdisc_dev(sch)), 4U << 20));
 }
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 0)
