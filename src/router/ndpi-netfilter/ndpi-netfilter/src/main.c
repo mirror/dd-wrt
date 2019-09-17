@@ -1954,12 +1954,13 @@ int ndpi_delete_acct(struct ndpi_net *n,int all) {
 
 	if(!spin_trylock(&n->rem_lock)) return -1;
 
+	if(atomic_read(&n->shutdown)) all = 3;
+
 	skip_del = all != 2 ? 0 : n->acc_limit*3/4;
 
 	if(flow_read_debug) pr_info("%s: all=%d rem %d skip_del %d\n",
 			__func__,all,atomic_read(&n->acc_rem),skip_del);
 
-	if(atomic_read(&n->shutdown)) all = 3;
   restart:
 	next = prev = NULL;
 	smp_rmb();
@@ -2207,15 +2208,6 @@ ssize_t nflow_read(struct ndpi_net *n, char __user *buf,
 		}
 		spin_unlock_bh(&ct_ndpi->lock);
 
-		if(sl) {
-			r = nflow_put_str(n,buf,&p,&count,ppos);
-			if(r != 0) {
-				n->flow_l = prev;
-				spin_unlock(&n->rem_lock);
-				return r < 0 ? -EFAULT : p;
-			}
-			cnt_out++;
-		}
 		if(del) {
 			__ndpi_free_ct_proto(ct_ndpi);
 			kmem_cache_free (ct_info_cache, ct_ndpi);
@@ -2227,7 +2219,15 @@ ssize_t nflow_read(struct ndpi_net *n, char __user *buf,
 			n->flow_l = prev;
 		}
 		ct_ndpi=next;
-
+		if(sl) {
+			r = nflow_put_str(n,buf,&p,&count,ppos);
+			if(r != 0) {
+				n->flow_l = prev;
+				if(r < 0) p = -EFAULT;
+				break;
+			}
+			cnt_out++;
+		}
 	}
 
 	n->cnt_view += cnt_view;
