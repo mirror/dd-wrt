@@ -90,6 +90,17 @@
 #define CAKE_FLOW_MASK 63
 #define CAKE_FLOW_NAT_FLAG 64
 
+#if defined(CONFIG_X86) || defined(CONFIG_ALPINE)
+	#define CAKE_LIMIT 32U << 20;
+#elif defined(CONFIG_ARCH_QCOM) || defined(CONFIG_ARCH_CNS3XXX) || defined(CONFIG_SOC_IMX6)
+	#define CAKE_LIMIT 16U << 20;
+#elif (defined(CONFIG_MIPS) && !defined(CONFIG_64BIT)) || defined(CONFIG_ARCH_IXP4XX)
+	#define CAKE_LIMIT 4U << 20;
+#else
+	#define CAKE_LIMIT 4U << 20;
+#endif
+
+
 /* struct cobalt_params - contains codel and blue parameters
  * @interval:	codel initial drop rate
  * @target:     maximum persistent sojourn time & blue update rate
@@ -2689,9 +2700,9 @@ static void cake_reconfigure(struct Qdisc *sch)
 		u64 t = q->rate_bps * q->interval;
 
 		do_div(t, USEC_PER_SEC / 4);
-		q->buffer_limit = max_t(u32, t, 4U << 20);
+		q->buffer_limit = max_t(u32, t, CAKE_LIMIT);
 	} else {
-		q->buffer_limit = 4U << 20;
+		q->buffer_limit = CAKE_LIMIT;
 	}
 
 	sch->flags &= ~TCQ_F_CAN_BYPASS;
