@@ -91,13 +91,13 @@
 #define CAKE_FLOW_NAT_FLAG 64
 
 #if defined(CONFIG_X86) || defined(CONFIG_ALPINE)
-	#define CAKE_LIMIT 32U << 20;
+	#define CAKE_LIMIT 32U << 20
 #elif defined(CONFIG_ARCH_QCOM) || defined(CONFIG_ARCH_CNS3XXX) || defined(CONFIG_SOC_IMX6)
-	#define CAKE_LIMIT 16U << 20;
+	#define CAKE_LIMIT 16U << 20
 #elif (defined(CONFIG_MIPS) && !defined(CONFIG_64BIT)) || defined(CONFIG_ARCH_IXP4XX)
-	#define CAKE_LIMIT 4U << 20;
+	#define CAKE_LIMIT 4U << 20
 #else
-	#define CAKE_LIMIT 4U << 20;
+	#define CAKE_LIMIT 4U << 20
 #endif
 
 
