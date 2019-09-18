@@ -161,7 +161,7 @@ void start_devinit(void)
 #endif
 #endif
 #endif
-	aqd = nvram_safe_get("svqos_aqd");
+	char *aqd = nvram_safe_get("svqos_aqd");
 #ifdef HAVE_CODEL
 	if (!strcmp(aqd, "codel")) {
 		insmod("sch_codel");
