@@ -967,32 +967,27 @@ void start_wshaper(void)
 #ifdef HAVE_CODEL
 	if (!strcmp(aqd, "codel")) {
 		insmod("sch_codel");
-		writeprocsysnet("core/default_qdisc", "codel");
 	}
 #endif
 
 #ifdef HAVE_FQ_CODEL
 	if (!strcmp(aqd, "fq_codel")) {
 		insmod("sch_fq_codel");
-		writeprocsysnet("core/default_qdisc", "fq_codel");
 	}
 #endif
 #ifdef HAVE_FQ_CODEL_FAST
 	if (!strcmp(aqd, "fq_codel_fast")) {
 		insmod("sch_fq_codel_fast");
-		writeprocsysnet("core/default_qdisc", "fq_codel_fast");
 	}
 #endif
 #ifdef HAVE_PIE
 	if (!strcmp(aqd, "pie")) {
 		insmod("sch_pie");
-		writeprocsysnet("core/default_qdisc", "pie");
 	}
 #endif
 #ifdef HAVE_CAKE
 	if (!strcmp(aqd, "cake")) {
 		insmod("sch_cake");
-		writeprocsysnet("core/default_qdisc", "cake");
 	}
 #endif
 
