@@ -596,11 +596,9 @@ swlib_scan(struct switch_dev *dev)
 {
 	struct attrlist_arg arg;
 
-	fprintf(stderr, "try scan\n");
 	if (dev->ops || dev->port_ops || dev->vlan_ops)
 		return 0;
 
-	fprintf(stderr, "scan start\n");
 	arg.atype = SWLIB_ATTR_GROUP_GLOBAL;
 	arg.dev = dev;
 	arg.id = dev->id;
