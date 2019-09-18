@@ -161,6 +161,41 @@ void start_devinit(void)
 #endif
 #endif
 #endif
-	writeprocsysnet("core/default_qdisc", "sfq");
+	aqd = nvram_safe_get("svqos_aqd");
+#ifdef HAVE_CODEL
+	if (!strcmp(aqd, "codel")) {
+		insmod("sch_codel");
+		writeprocsysnet("core/default_qdisc", "codel");
+	} else
+#endif
+
+#ifdef HAVE_FQ_CODEL
+	if (!strcmp(aqd, "fq_codel")) {
+		insmod("sch_fq_codel");
+		writeprocsysnet("core/default_qdisc", "fq_codel");
+	} else
+#endif
+#ifdef HAVE_FQ_CODEL_FAST
+	if (!strcmp(aqd, "fq_codel_fast")) {
+		insmod("sch_fq_codel_fast");
+		writeprocsysnet("core/default_qdisc", "fq_codel_fast");
+	} else
+#endif
+#ifdef HAVE_PIE
+	if (!strcmp(aqd, "pie")) {
+		insmod("sch_pie");
+		writeprocsysnet("core/default_qdisc", "pie");
+	} else
+#endif
+#ifdef HAVE_CAKE
+	if (!strcmp(aqd, "cake")) {
+		insmod("sch_cake");
+		writeprocsysnet("core/default_qdisc", "cake");
+	} else
+#endif
+	{
+		insmod("sch_sfq");
+		writeprocsysnet("core/default_qdisc", "sfq");
+	}
 	fprintf(stderr, "done\n");
 }
