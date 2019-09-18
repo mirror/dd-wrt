@@ -31,7 +31,7 @@
 #include <net/dst.h>
 
 /* Qdisc to use by default */
-const struct Qdisc_ops *default_qdisc_ops = &fq_codel_qdisc_ops;
+const struct Qdisc_ops *default_qdisc_ops = &pfifo_fast_ops;
 EXPORT_SYMBOL(default_qdisc_ops);
 
 /* Main transmission queue. */
@@ -608,7 +608,7 @@ static void attach_one_default_qdisc(struct net_device *dev,
 
 	if (dev->tx_queue_len) {
 		qdisc = qdisc_create_dflt(dev_queue,
-					  &fq_codel_qdisc_ops, TC_H_ROOT);
+					  &default_qdisc_ops, TC_H_ROOT);
 		if (!qdisc) {
 			netdev_info(dev, "activation failed\n");
 			return;
