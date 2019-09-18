@@ -161,5 +161,6 @@ void start_devinit(void)
 #endif
 #endif
 #endif
+	writeprocsysnet("core/default_qdisc", "sfq");
 	fprintf(stderr, "done\n");
 }
