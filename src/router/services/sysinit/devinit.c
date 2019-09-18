@@ -197,5 +197,9 @@ void start_devinit(void)
 		insmod("sch_sfq");
 		writeprocsysnet("core/default_qdisc", "sfq");
 	}
+
+	if (nvram_match("tcp_congestion_control", "bbr")) {
+		writeprocsysnet("core/default_qdisc", "fq_codel");
+	}
 	fprintf(stderr, "done\n");
 }
