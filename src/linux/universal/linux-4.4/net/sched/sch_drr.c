@@ -349,7 +349,6 @@ static struct drr_class *drr_classify(struct sk_buff *skb, struct Qdisc *sch,
 
 static int drr_enqueue(struct sk_buff *skb, struct Qdisc *sch)
 {
-	unsigned int len = qdisc_pkt_len(skb);
 	struct drr_sched *q = qdisc_priv(sch);
 	struct drr_class *cl;
 	int err = 0;
