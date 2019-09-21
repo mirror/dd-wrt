@@ -2940,11 +2940,11 @@ void setRegulationDomain(char *reg)
 		strcpy(rrev0, "0");
 		strcpy(ccode1, "ALL");
 		strcpy(rrev1, "0");
-	} else if (!strcmp(ccode, "EU") || !strcmp(ccode, "DE") || !strcmp(ccode, "GB") || !strcmp(ccode, "FR")) {
+	} else if (!strcmp(ccode, "EU") || !strcmp(ccode, "DE") || !strcmp(ccode, "GB") || !strcmp(ccode, "FR") || !strcmp(ccode, "NL") || !strcmp(ccode, "ES") || !strcmp(ccode, "IT")) {
 		strcpy(ccode0, "EU");
-		strcpy(rrev0, "66");
-		strcpy(ccode1, "Q1");
-		strcpy(rrev1, "27");
+		strcpy(rrev0, "38");
+		strcpy(ccode1, "E0"); //EU
+		strcpy(rrev1, "938");  //39
 	} else if (!strcmp(ccode, "CN")) {
 		strcpy(ccode0, "CN");
 		strcpy(rrev0, "34");
@@ -2952,14 +2952,14 @@ void setRegulationDomain(char *reg)
 		strcpy(rrev1, "41");
 	} else if (!strcmp(ccode, "JP")) {
 		strcpy(ccode0, "JP");
-		strcpy(rrev0, "44");
+		strcpy(rrev0, "72");
 		strcpy(ccode1, "JP");
-		strcpy(rrev1, "45");
-	} else if (!strcmp(ccode, "CA")) {
-		strcpy(ccode0, "CA");
-		strcpy(rrev0, "2");
-		strcpy(ccode1, "CA");
-		strcpy(rrev1, "2");
+		strcpy(rrev1, "72");
+	} else if (!strcmp(ccode, "CA") || !strcmp(ccode, "US")) {
+		strcpy(ccode0, "Q2");
+		strcpy(rrev0, "992");
+		strcpy(ccode1, "Q2");
+		strcpy(rrev1, "992");
 	} else if (!strcmp(ccode, "AU")) {
 		strcpy(ccode0, "Q1");
 		strcpy(rrev0, "27");
