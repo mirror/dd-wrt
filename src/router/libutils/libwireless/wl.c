@@ -2945,17 +2945,17 @@ void setRegulationDomain(char *reg)
 		strcpy(rrev0, "66");
 		strcpy(ccode1, "EU");
 		strcpy(rrev1, "38");
-		if (brand = ROUTER_ASUS_AC88 || brand == ROUTER_DLINK_DIR895) {
+		if (brand == ROUTER_ASUS_AC88U || brand == ROUTER_DLINK_DIR895) {
 			strcpy(ccode1, "E0");	//EU
 			strcpy(rrev1, "962");	//39
 		}
-		if (brand = ROUTER_NETGEAR_R7000P) {
+		if (brand == ROUTER_NETGEAR_R7000P) {
 			strcpy(ccode0, "EU");
 			strcpy(rrev0, "38");
 			strcpy(ccode1, "E0");	//EU
 			strcpy(rrev1, "938");	//39
 		}
-		if (brand = ROUTER_NETGEAR_R8000) {
+		if (brand == ROUTER_NETGEAR_R8000) {
 			strcpy(ccode0, "EU");
 			strcpy(rrev0, "38");
 			strcpy(ccode0, "EU");
@@ -2998,7 +2998,7 @@ void setRegulationDomain(char *reg)
 	nvram_set("wl1_country_code", ccode1);
 	nvram_set("wl2_country_code", ccode1);
 
-	switch (getRouterBrand()) {
+	switch (brand) {
 	case ROUTER_D1800H:
 		nvram_set("wl_country_rev", rrev1);	//DH1800 wl0 is 5G so needs to be inverted
 		nvram_set("wl0_country_rev", rrev1);
