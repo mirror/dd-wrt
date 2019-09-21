@@ -2940,7 +2940,7 @@ void setRegulationDomain(char *reg)
 		strcpy(rrev0, "0");
 		strcpy(ccode1, "ALL");
 		strcpy(rrev1, "0");
-	} if (!strcmp(ccode, "EU") || !strcmp(ccode, "DE") || !strcmp(ccode, "GB") || !strcmp(ccode, "FR")) {
+	} else if (!strcmp(ccode, "EU") || !strcmp(ccode, "DE") || !strcmp(ccode, "GB") || !strcmp(ccode, "FR")) {
 		strcpy(ccode0, "EU");
 		strcpy(rrev0, "66");
 		strcpy(ccode1, "Q1");
