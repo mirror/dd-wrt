@@ -5607,6 +5607,7 @@ void start_sysinit(void)
 		}
 		nvram_unset("et1macaddr");
 		nvram_unset("et2macaddr");
+		nvram_set("wl1_dyn160","1");
 		set_gpio(0, 1);	//USB
 		set_gpio(13, 1);	//WIFI LED
 		set_gpio(6, 1);
