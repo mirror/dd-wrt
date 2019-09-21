@@ -94,7 +94,7 @@ function valid(F) {
 	return true;
 }
 
-function service(id, name, port_start, port_end, protocol) {
+function service(id, name, port_start, port_end, protocol, servicename) {
 	this.id = id;
 	this.name = name;
 	this.start = port_start;
@@ -102,6 +102,7 @@ function service(id, name, port_start, port_end, protocol) {
 	this.protocol = protocol;
 	this.deleted = false;
 	this.modified = false;
+	this.servicename = servicename;
 }
 
 var sorton = function(x,y) {
@@ -142,7 +143,7 @@ function write_service_options(name) {
 		if(i==index) {
 			document.write(" selected=\"selected\"");
 		}
-		document.write(">"+services[i].name+"</option>");
+		document.write(">"+services[i].name+" [ "+services[i].servicename+" ]"+"</option>");
 	}
 }
 
