@@ -164,11 +164,12 @@ function qos_grey(num,F) {
 	<% nvm("svqos_defaults","0","/"); %><% nvm("svqos_defaults","0","*"); %>else if (F.svqos_defaults.checked) defaultlvl_grey(true, F);<% nvm("svqos_defaults","0","*"); %><% nvm("svqos_defaults","0","/"); %>
 } 
 
-function service(id, name, port_start, port_end) {
+function service(id, name, port_start, port_end, protocol, servicename) {
 	this.id = id;
 	this.name = name;
 	this.start = port_start;
 	this.end = port_end;
+	this.servicename = servicename;
 }
 
 var sorton = function(x,y){
@@ -341,10 +342,16 @@ addEvent(window, "unload", function() {
 												<script type="text/javascript">
 												//<![CDATA[
 													var i=0;
-													for(i=0;i<services_length;i++)
+													for(i=0;i<services_length;i++) {
+													if (services[i].servicename == "udp" || services[i].servicename == "tcp" || services[i].servicename == "both") {
 													document.write("<option value=\""+services[i].name+"\">"+services[i].name+ " [ "+
 													services[i].start+" ~ "+
 													services[i].end + " ]" + "</option>");
+													}else{
+													document.write("<option value=\""+services[i].name+"\">"+services[i].name+ " [ "+
+													services[i].servicename+ " ]" +  "</option>");
+													}
+													}
 												//]]>
 												</script>
 											</select>
