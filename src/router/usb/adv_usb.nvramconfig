@@ -9,3 +9,4 @@
 "usb_runonmount"  "Script name" "NULL" "TRUE" "0"
 "usb_mntopt" "UUID for opt" "NULL" "TRUE" "0"
 "usb_mntjffs" "UUID for jffs" "NULL" "TRUE" "0"
+"drive_ra" "Read ahead buffer" "NULL" "TRUE" "0"
