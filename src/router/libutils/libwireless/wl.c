@@ -2935,8 +2935,12 @@ void setRegulationDomain(char *reg)
 	nvram_set("wl2_tpc_db", tmp);
 
 	strncpy(ccode, getIsoName(reg), 3);
-
-	if (!strcmp(ccode, "EU") || !strcmp(ccode, "DE") || !strcmp(ccode, "GB") || !strcmp(ccode, "FR")) {
+	if (nvram_match("brcm_unlock","1")) {
+		strcpy(ccode0, "ALL");
+		strcpy(rrev0, "0");
+		strcpy(ccode1, "ALL");
+		strcpy(rrev1, "0");
+	} if (!strcmp(ccode, "EU") || !strcmp(ccode, "DE") || !strcmp(ccode, "GB") || !strcmp(ccode, "FR")) {
 		strcpy(ccode0, "EU");
 		strcpy(rrev0, "66");
 		strcpy(ccode1, "Q1");
