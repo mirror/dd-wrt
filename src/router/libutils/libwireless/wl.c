@@ -2933,18 +2933,34 @@ void setRegulationDomain(char *reg)
 	nvram_set("wl0_tpc_db", tmp);
 	nvram_set("wl1_tpc_db", tmp);
 	nvram_set("wl2_tpc_db", tmp);
-
+	int brand = getRouterBrand();
 	strncpy(ccode, getIsoName(reg), 3);
-	if (nvram_match("brcm_unlock","1")) {
+	if (nvram_match("brcm_unlock", "1")) {
 		strcpy(ccode0, "ALL");
 		strcpy(rrev0, "0");
 		strcpy(ccode1, "ALL");
 		strcpy(rrev1, "0");
 	} else if (!strcmp(ccode, "EU") || !strcmp(ccode, "DE") || !strcmp(ccode, "GB") || !strcmp(ccode, "FR") || !strcmp(ccode, "NL") || !strcmp(ccode, "ES") || !strcmp(ccode, "IT")) {
 		strcpy(ccode0, "EU");
-		strcpy(rrev0, "38");
-		strcpy(ccode1, "E0"); //EU
-		strcpy(rrev1, "938");  //39
+		strcpy(rrev0, "66");
+		strcpy(ccode1, "EU");
+		strcpy(rrev1, "38");
+		if (brand = ROUTER_ASUS_AC88 || brand == ROUTER_DLINK_DIR895) {
+			strcpy(ccode1, "E0");	//EU
+			strcpy(rrev1, "962");	//39
+		}
+		if (brand = ROUTER_NETGEAR_R7000P) {
+			strcpy(ccode0, "EU");
+			strcpy(rrev0, "38");
+			strcpy(ccode1, "E0");	//EU
+			strcpy(rrev1, "938");	//39
+		}
+		if (brand = ROUTER_NETGEAR_R8000) {
+			strcpy(ccode0, "EU");
+			strcpy(rrev0, "38");
+			strcpy(ccode0, "EU");
+			strcpy(rrev0, "39");	//for vht160
+		}
 	} else if (!strcmp(ccode, "CN")) {
 		strcpy(ccode0, "CN");
 		strcpy(rrev0, "34");
