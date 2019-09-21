@@ -2948,7 +2948,7 @@ void setRegulationDomain(char *reg)
 		if (brand == ROUTER_ASUS_AC88U || brand == ROUTER_DLINK_DIR895 || ROUTER_NETGEAR_R8500 || ROUTER_ASUS_AC5300) {
 			strcpy(ccode0, "E0");	//EU
 			strcpy(rrev0, "962");	//39
-			strcpy(ccode1, "E0");	//EU
+			strcpy(ccode1, "E0");	//EU 
 			strcpy(rrev1, "962");	//39
 		}
 
