@@ -2936,11 +2936,11 @@ void setRegulationDomain(char *reg)
 
 	strncpy(ccode, getIsoName(reg), 3);
 
-	if (!strcmp(ccode, "EU") || !strcmp(ccode, "DE") || !strcmp(ccode, "GB")) {
+	if (!strcmp(ccode, "EU") || !strcmp(ccode, "DE") || !strcmp(ccode, "GB") || !strcmp(ccode, "FR")) {
 		strcpy(ccode0, "EU");
 		strcpy(rrev0, "66");
-		strcpy(ccode1, "EU");
-		strcpy(rrev1, "38");
+		strcpy(ccode1, "Q1");
+		strcpy(rrev1, "27");
 	} else if (!strcmp(ccode, "CN")) {
 		strcpy(ccode0, "CN");
 		strcpy(rrev0, "34");
