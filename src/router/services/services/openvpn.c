@@ -475,7 +475,7 @@ void start_openvpn(void)
 		if (nvram_invmatch("openvpncl_tuntap", "tun"))
 			fprintf(fp, "ifconfig-noexec\n");
 		else
-			fprintf(fp, "route-noexec\n");
+			fprintf(fp, "pull-filter ignore \"redirect-gateway\"\n");
 	}
 	if (nvram_invmatch("openvpncl_auth", "none") && nvram_invmatchi("openvpncl_tlscip", 0))	//not needed if we have no auth anyway
 		fprintf(fp, "tls-client\n");
