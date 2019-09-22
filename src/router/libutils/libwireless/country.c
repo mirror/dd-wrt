@@ -972,7 +972,21 @@ static int isValidCountry(char *region, char *country)
 #endif
 
 static char *countries = NULL;
-char *getCountryList(void)
+
+static int checkfilter(char *filter, char *check)
+{
+	char *next;
+	char var[32];
+	if (!filter)
+		return 1;
+	foreach(var, filter, next) {
+		if (!strcmp(var, check))
+			return 1;
+	}
+	return 0;
+}
+
+char *getCountryList(char *filter)
 {
 	int i;
 #ifdef HAVE_BUFFALO
@@ -985,6 +999,8 @@ char *getCountryList(void)
 	if (countries == NULL) {
 		int count = 0;
 		for (i = 0; i < N(allCountries); i++) {
+			if (!checkfilter(filter, allCountries[i].isoName))
+				continue;
 #ifdef HAVE_BUFFALO
 			sprintf(country, "%s", allCountries[i].isoName);
 			if (isValidCountry(region, country)) {
@@ -1003,6 +1019,8 @@ char *getCountryList(void)
 		countries = safe_malloc(count);
 		bzero(countries, count);
 		for (i = 0; i < N(allCountries); i++) {
+			if (!checkfilter(filter, allCountries[i].isoName))
+				continue;
 #ifdef HAVE_BUFFALO
 			sprintf(country, "%s", allCountries[i].isoName);
 			if (isValidCountry(region, country)) {

@@ -483,7 +483,7 @@ static inline int has_wpa3(const char *prefix)
 }
 #endif
 
-char *getCountryList(void);
+char *getCountryList(char *filter);
 
 #ifdef HAVE_MADWIFI
 extern struct wifi_channels *list_channels(char *devnr);
