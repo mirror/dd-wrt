@@ -2911,6 +2911,8 @@ int VHTTxRate(unsigned int mcs, unsigned int vhtmcs, unsigned int sgi, unsigned 
 	return table[vhtmcs];
 }
 
+#ifndef HAVE_MADWIFI
+#if defined(HAVE_NORTHSTAR) || defined(HAVE_80211AC) && !defined(HAVE_BUFFALO)
 void setRegulationDomain(char *reg)
 {
 
@@ -3128,6 +3130,8 @@ void setRegulationDomain(char *reg)
 	}
 
 }
+#endif
+#endif
 
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 void set_vifsmac(char *base)	// corrects hwaddr and bssid assignment
