@@ -4,6 +4,24 @@ endif
 
 
 DNSMASQ_COPTS += $(MIPS16_OPT) -DNO_AUTH
+ifeq ($(ARCH),armeb)
+DNSMASQ_COPTS += -DNEED_PRINTF
+endif
+ifeq ($(ARCH),arm)
+DNSMASQ_COPTS += -DNEED_PRINTF
+endif
+ifeq ($(ARCH),mips64)
+DNSMASQ_COPTS += -DNEED_PRINTF
+endif
+ifeq ($(ARCH),i386)
+DNSMASQ_COPTS += -DNEED_PRINTF
+endif
+ifeq ($(ARCH),x86_64)
+DNSMASQ_COPTS += -DNEED_PRINTF
+endif
+ifeq ($(ARCH),aarch64)
+DNSMASQ_COPTS += -DNEED_PRINTF
+endif
 
 ifeq ($(CONFIG_DNSSEC),y)
 export DNSSEC_MAKEFLAGS:=-DHAVE_DNSSEC -DNO_NETTLE_ECC -I$(TOP) -I$(TOP)/gmp
