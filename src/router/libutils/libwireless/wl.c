@@ -2940,78 +2940,122 @@ void setRegulationDomain(char *reg)
 		strcpy(rrev0, "0");
 		strcpy(ccode1, "ALL");
 		strcpy(rrev1, "0");
-	} else if (!strcmp(ccode, "EU") || !strcmp(ccode, "DE") || !strcmp(ccode, "GB") || !strcmp(ccode, "FR") || !strcmp(ccode, "NL") || !strcmp(ccode, "ES") || !strcmp(ccode, "IT")) {
-		strcpy(ccode0, "EU");
-		strcpy(rrev0, "38");
-		strcpy(ccode1, "EU");
-		strcpy(rrev1, "38");
-		if (brand == ROUTER_ASUS_AC88U || brand == ROUTER_DLINK_DIR895 || ROUTER_NETGEAR_R8500 || ROUTER_ASUS_AC5300) {
-			strcpy(ccode0, "E0");	//EU
-			strcpy(rrev0, "962");	//39
-			strcpy(ccode1, "E0");	//EU 
-			strcpy(rrev1, "962");	//39
+	} else {
+		int EU = !strcmp(ccode, "EU") || !strcmp(ccode, "DE") || !strcmp(ccode, "GB") || !strcmp(ccode, "FR") || !strcmp(ccode, "NL") || !strcmp(ccode, "ES") || !strcmp(ccode, "IT");
+		int CN = !strcmp(ccode, "CN");
+		int US = !strcmp(ccode, "US");
+		int JP = !strcmp(ccode, "JP");
+		int AU = !strcmp(ccode, "AU");
+		int SG = !strcmp(ccode, "SG");
+		int BR = !strcmp(ccode, "BR");
+		int RU = !strcmp(ccode, "RU");
+		int TW = !strcmp(ccode, "TW");
+		int CA = !strcmp(ccode, "CA");
+		int KR = !strcmp(ccode, "KR");
+		int LA = !strcmp(ccode, "LA");
+
+		if (EU) {
+			strcpy(ccode0, "EU");
+			strcpy(rrev0, "38");
+			strcpy(ccode1, "EU");
+			strcpy(rrev1, "38");
+		} else if (CN) {
+			strcpy(ccode0, "CN");
+			strcpy(rrev0, "65");
+			strcpy(ccode1, "CN");
+			strcpy(rrev1, "65");
+		} else if (TW) {
+			strcpy(ccode0, "TW");
+			strcpy(rrev0, "990");
+			strcpy(ccode1, "TW");
+			strcpy(rrev1, "990");
+		} else if (JP) {
+			strcpy(ccode0, "JP");
+			strcpy(rrev0, "44");
+			strcpy(ccode1, "JP");
+			strcpy(rrev1, "45");
+		} else if (CA) {
+			strcpy(ccode0, "CA");
+			strcpy(rrev0, "974");
+			strcpy(ccode1, "CA");
+			strcpy(rrev1, "974");
+		} else if (US) {
+			strcpy(ccode0, "Q2");
+			strcpy(rrev0, "989");
+			strcpy(ccode1, "Q2");
+			strcpy(rrev1, "989");
+		} else if (AU) {
+			strcpy(ccode0, "AU");
+			strcpy(rrev0, "8");
+			strcpy(ccode1, "AU");
+			strcpy(rrev1, "8");
+		} else if (RU) {
+			strcpy(ccode0, "RU");
+			strcpy(rrev0, "993");
+			strcpy(ccode1, "RU");
+			strcpy(rrev1, "993");
+		} else if (KR) {
+			strcpy(ccode0, "KR");
+			strcpy(rrev0, "982");
+			strcpy(ccode1, "KR");
+			strcpy(rrev1, "982");
+		} else if (LA) {
+			strcpy(ccode0, "LA");
+			strcpy(rrev0, "6");
+			strcpy(ccode1, "LA");
+			strcpy(rrev1, "6");
+		} else if (BR) {
+			strcpy(ccode0, "BR");
+			strcpy(rrev0, "23");
+			strcpy(ccode1, "BR");
+			strcpy(rrev1, "23");
+		} else if (SG) {
+			strcpy(ccode0, "SG");
+			strcpy(rrev0, "994");
+			strcpy(ccode1, "SG");
+			strcpy(rrev1, "994");
+		} else {
+			strcpy(ccode0, "Q2");
+			strcpy(rrev0, "989");
+			strcpy(ccode1, "Q2");
+			strcpy(rrev1, "989");
 		}
 
-		if (brand == ROUTER_NETGEAR_R7000P) {
+		switch (brand) {
+		case ROUTER_ASUS_AC88U:
+		case ROUTER_DLINK_DIR895:
+		case ROUTER_NETGEAR_R8500:
+		case ROUTER_ASUS_AC5300:
+			if (EU) {
+				strcpy(ccode0, "E0");	//EU
+				strcpy(rrev0, "962");	//39
+				strcpy(ccode1, "E0");	//EU 
+				strcpy(rrev1, "962");	//39
+			} else if (JP) {
+				strcpy(ccode0, "JP");
+				strcpy(rrev0, "72");
+				strcpy(ccode1, "JP");
+				strcpy(rrev1, "72");
+			} else if (CA || US) {
+				strcpy(ccode0, "Q2");
+				strcpy(rrev0, "992");
+				strcpy(ccode1, "Q2");
+				strcpy(rrev1, "992");
+			}
+			break;
+		case ROUTER_NETGEAR_R7000P:
 			strcpy(ccode0, "EU");
 			strcpy(rrev0, "38");
 			strcpy(ccode1, "E0");	//EU
 			strcpy(rrev1, "938");	//39
-		}
-		if (brand == ROUTER_NETGEAR_R8000) {
+			break;
+		case ROUTER_NETGEAR_R8000:
 			strcpy(ccode0, "EU");
 			strcpy(rrev0, "38");
 			strcpy(ccode0, "EU");
 			strcpy(rrev0, "39");	//for vht160
+			break;
 		}
-	} else if (!strcmp(ccode, "CN")) {
-		strcpy(ccode0, "CN");
-		strcpy(rrev0, "34");
-		strcpy(ccode1, "Q2");
-		strcpy(rrev1, "41");
-	} else if (!strcmp(ccode, "JP")) {
-		strcpy(ccode0, "JP");
-		strcpy(rrev0, "44");
-		strcpy(ccode1, "JP");
-		strcpy(rrev1, "45");
-		if (brand == ROUTER_ASUS_AC88U || brand == ROUTER_DLINK_DIR895 || ROUTER_NETGEAR_R8500 || ROUTER_ASUS_AC5300) {
-			strcpy(ccode0, "JP");
-			strcpy(rrev0, "72");
-			strcpy(ccode1, "JP");
-			strcpy(rrev1, "72");
-		}
-	} else if (!strcmp(ccode, "CA")) {
-		strcpy(ccode0, "CA");
-		strcpy(rrev0, "2");
-		strcpy(ccode1, "CA");
-		strcpy(rrev1, "2");
-		if (brand == ROUTER_ASUS_AC88U || brand == ROUTER_DLINK_DIR895 || ROUTER_NETGEAR_R8500 || ROUTER_ASUS_AC5300) {
-			strcpy(ccode0, "Q2");
-			strcpy(rrev0, "992");
-			strcpy(ccode1, "Q2");
-			strcpy(rrev1, "992");
-		}
-	} else if (!strcmp(ccode, "US")) {
-		strcpy(ccode0, "US");
-		strcpy(rrev0, "0");
-		strcpy(ccode1, "US");
-		strcpy(rrev1, "0");
-		if (brand == ROUTER_ASUS_AC88U || brand == ROUTER_DLINK_DIR895 || ROUTER_NETGEAR_R8500 || ROUTER_ASUS_AC5300) {
-			strcpy(ccode0, "Q2");
-			strcpy(rrev0, "992");
-			strcpy(ccode1, "Q2");
-			strcpy(rrev1, "992");
-		}
-	} else if (!strcmp(ccode, "AU")) {
-		strcpy(ccode0, "Q1");
-		strcpy(rrev0, "27");
-		strcpy(ccode1, "AU");
-		strcpy(rrev1, "0");
-	} else {
-		strcpy(ccode0, ccode);
-		strcpy(rrev0, "0");
-		strcpy(ccode1, ccode);
-		strcpy(rrev1, "0");
 	}
 
 	//fprintf(stderr, "setRegulationDomain ccode: %s rrev: %s\n", ccode, rrev);
