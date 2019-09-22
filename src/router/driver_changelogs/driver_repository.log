@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r4730 | brainslayer | 2019-09-22 19:41:10 +0400 (Sun, 22 Sep 2019) | 1 line
+
+translate brcmfmac codes to broadcom codes with revision patch
+------------------------------------------------------------------------
 r4729 | brainslayer | 2019-09-22 14:29:55 +0400 (Sun, 22 Sep 2019) | 1 line
 
 for older chipsets
