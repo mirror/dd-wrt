@@ -51,6 +51,14 @@
 #include <bcmnvram.h>
 //#include <l7protocols.h>
 
+#ifdef HAVE_80211AC
+#define COUNTRYLIST "EU DE GB FR NL ES IT CN US JP AU SG BR RU TW CA KR LA"
+#else
+#define COUNTRYLIST NULL
+#endif
+
+
+
 #ifdef HAVE_OVERCLOCKING
 static unsigned int type2_clocks[7] = { 200, 240, 252, 264, 300, 330, 0 };
 static unsigned int type3_clocks[3] = { 150, 200, 0 };
@@ -2742,7 +2750,7 @@ void ej_show_countrylist(webs_t wp, int argc, char_t ** argv)
 	}
 	if (nvram_matchi("nocountrysel", 1))
 		return;
-	char *list = getCountryList();
+	char *list = getCountryList(NULL);
 	showOptionsChoose(wp, argv[0], list, nvram_safe_get(argv[0]));
 }
 
@@ -2867,7 +2875,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		char wl_regdomain[16];
 		sprintf(wl_regdomain, "%s_regdomain", prefix);
 		if (is_mac80211(prefix) || nvram_nmatch("1", "%s_regulatory", prefix) || !issuperchannel()) {
-			char *list = getCountryList();
+			char *list = getCountryList(COUNTRYLIST);
 			showOptionsLabel(wp, "wl_basic.regdom", wl_regdomain, list, nvram_safe_get(wl_regdomain));
 		}
 	}
@@ -4028,7 +4036,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		char wl_regdomain[16];
 		sprintf(wl_regdomain, "%s_regdomain", prefix);
 		if (1 || nvram_nmatch("1", "%s_regulatory", prefix) || !issuperchannel()) {
-			char *list = getCountryList();
+			char *list = getCountryList(COUNTRYLIST);
 			showOptionsLabel(wp, "wl_basic.regdom", wl_regdomain, list, nvram_safe_get(wl_regdomain));
 		}
 	}
@@ -4480,7 +4488,7 @@ void ej_show_wireless(webs_t wp, int argc, char_t ** argv)
 		sprintf(wl_regdomain, "wl_regdomain");
 		websWrite(wp, "<h2><script type=\"text/javascript\">Capture(wl_basic.country_settings)</script></h2>\n");
 		websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_basic.regdom)</script></legend>\n");
-		char *list = getCountryList();
+		char *list = getCountryList(COUNTRYLIST);
 		showOptionsLabel(wp, "wl_basic.regdom", wl_regdomain, list, nvram_default_get("wl_regdomain", "EUROPE"));
 		websWrite(wp, "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.regmode)</script></div>\n");
 		char *wl_regmode = nvram_default_get("wl_reg_mode", "off");
