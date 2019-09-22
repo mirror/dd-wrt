@@ -51,7 +51,7 @@
 #include <bcmnvram.h>
 //#include <l7protocols.h>
 
-#ifdef HAVE_80211AC
+#if defined(HAVE_80211AC) || defined(HAVE_BRCMFMAC)
 #define COUNTRYLIST "EU DE GB FR NL ES IT CN US JP AU SG BR RU TW CA KR LA"
 #else
 #define COUNTRYLIST NULL
