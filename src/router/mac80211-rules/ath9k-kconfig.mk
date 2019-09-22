@@ -177,6 +177,15 @@ endif
 ifeq ($(CONFIG_BRCMFMAC),y)
 	cat $(TOP)/mac80211-rules/configs/brcmfmac.config >> $(MAC80211_PATH)/.config_temp
 endif
+ifeq ($(CONFIG_B43),y)
+	cat $(TOP)/mac80211-rules/configs/b43.config >> $(MAC80211_PATH)/.config_temp
+endif
+ifeq ($(CONFIG_B43LEGACY),y)
+	cat $(TOP)/mac80211-rules/configs/b43legacy.config >> $(MAC80211_PATH)/.config_temp
+endif
+ifeq ($(CONFIG_BRCMSMAC),y)
+	cat $(TOP)/mac80211-rules/configs/brcmsmac.config >> $(MAC80211_PATH)/.config_temp
+endif
 ifeq ($(CONFIG_MVEBU),y)
 	cat $(TOP)/mac80211-rules/configs/mwlwifi.config >> $(MAC80211_PATH)/.config_temp
 endif
@@ -259,10 +268,20 @@ ifeq ($(CONFIG_WIL6210),y)
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware
 	-cp -av $(MAC80211_PATH)/ath10k-firmware*/wil6210/* $(INSTALLDIR)/ath9k/lib/firmware/
 endif
+ifeq ($(CONFIG_B43),y)	
+	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/b43/
+	-cp -av $(MAC80211_PATH)/ath10k-firmware*/b43/* $(INSTALLDIR)/ath9k/lib/firmware/b43
+endif
+ifeq ($(CONFIG_B43LEGACY),y)	
+	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/b43legacy/
+	-cp -av $(MAC80211_PATH)/ath10k-firmware*/b43legacy/* $(INSTALLDIR)/ath9k/lib/firmware/b43legacy
+endif
+ifeq ($(CONFIG_BRCMSMAC),y)	
+	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/brcm/
+	-cp -av $(MAC80211_PATH)/ath10k-firmware*/brcm/brcm43* $(INSTALLDIR)/ath9k/lib/firmware/brcm
+endif
 ifeq ($(CONFIG_BRCMFMAC),y)	
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/brcm/
-#	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/b43/
-#	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/b43legacy/
 	-cp -av $(MAC80211_PATH)/ath10k-firmware*/brcm/brcmfmac43602-pcie.bin $(INSTALLDIR)/ath9k/lib/firmware/brcm
 	-cp -av $(MAC80211_PATH)/ath10k-firmware*/brcm/brcmfmac4366b-pcie.bin $(INSTALLDIR)/ath9k/lib/firmware/brcm
 	-cp -av $(MAC80211_PATH)/ath10k-firmware*/brcm/brcmfmac4366c-pcie.bin $(INSTALLDIR)/ath9k/lib/firmware/brcm
