@@ -2963,9 +2963,9 @@ void setRegulationDomain(char *reg)
 			strcpy(rrev1, "38");
 		} else if (CN) {
 			strcpy(ccode0, "CN");
-			strcpy(rrev0, "65");
-			strcpy(ccode1, "CN");
-			strcpy(rrev1, "65");
+			strcpy(rrev0, "34");
+			strcpy(ccode1, "Q2");
+			strcpy(rrev1, "41");
 		} else if (TW) {
 			strcpy(ccode0, "TW");
 			strcpy(rrev0, "990");
@@ -2978,44 +2978,44 @@ void setRegulationDomain(char *reg)
 			strcpy(rrev1, "45");
 		} else if (CA) {
 			strcpy(ccode0, "CA");
-			strcpy(rrev0, "974");
+			strcpy(rrev0, "2");
 			strcpy(ccode1, "CA");
-			strcpy(rrev1, "974");
+			strcpy(rrev1, "2");
 		} else if (US) {
 			strcpy(ccode0, "Q2");
 			strcpy(rrev0, "989");
 			strcpy(ccode1, "Q2");
 			strcpy(rrev1, "989");
 		} else if (AU) {
-			strcpy(ccode0, "AU");
-			strcpy(rrev0, "8");
+			strcpy(ccode0, "Q1");
+			strcpy(rrev0, "27");
 			strcpy(ccode1, "AU");
-			strcpy(rrev1, "8");
+			strcpy(rrev1, "0");
 		} else if (RU) {
 			strcpy(ccode0, "RU");
-			strcpy(rrev0, "993");
+			strcpy(rrev0, "5");
 			strcpy(ccode1, "RU");
-			strcpy(rrev1, "993");
+			strcpy(rrev1, "5");
 		} else if (KR) {
 			strcpy(ccode0, "KR");
-			strcpy(rrev0, "982");
+			strcpy(rrev0, "4");
 			strcpy(ccode1, "KR");
-			strcpy(rrev1, "982");
+			strcpy(rrev1, "4");
 		} else if (LA) {
 			strcpy(ccode0, "LA");
-			strcpy(rrev0, "6");
+			strcpy(rrev0, "2");
 			strcpy(ccode1, "LA");
-			strcpy(rrev1, "6");
+			strcpy(rrev1, "2");
 		} else if (BR) {
 			strcpy(ccode0, "BR");
-			strcpy(rrev0, "23");
+			strcpy(rrev0, "2");
 			strcpy(ccode1, "BR");
-			strcpy(rrev1, "23");
+			strcpy(rrev1, "2");
 		} else if (SG) {
 			strcpy(ccode0, "SG");
-			strcpy(rrev0, "994");
+			strcpy(rrev0, "5");
 			strcpy(ccode1, "SG");
-			strcpy(rrev1, "994");
+			strcpy(rrev1, "5");
 		} else {
 			strcpy(ccode0, "Q2");
 			strcpy(rrev0, "989");
