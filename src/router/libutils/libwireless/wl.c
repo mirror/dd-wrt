@@ -2917,11 +2917,42 @@ void setRegulationDomain(char *reg)
 {
 
 	char ccode[4] = "";
-	char ccode0[4] = "";
-	char ccode1[4] = "";
+	int cntry = 0;
+#define DEFAULT 0
+#define EU 1
+#define CN 2
+#define US 3
+#define JP 4
+#define AU 5
+#define SG 6
+#define BR 7
+#define RU 8
+#define TW 9
+#define CA 10
+#define KR 11
+#define LA 12
+	struct PAIRS {
+		char *code0;
+		int rev0;
+		char *code1;
+		int rev1;
+	};
 
-	char rrev0[4] = "";
-	char rrev1[4] = "";
+	struct PAIRS pairs[] = {
+		{ "Q2", 989, "Q2", 989 },
+		{ "EU", 38, "EU", 38 },
+		{ "CN", 65, "CN", 65 },
+		{ "TW", 990, "TW", 990 },
+		{ "JP", 44, "JP", 45 },
+		{ "CA", 974, "CA", 974 },
+		{ "Q2", 989, "Q2", 989 },
+		{ "AU", 8, "AU", 8 },
+		{ "RU", 993, "RU", 993 },
+		{ "KR", 982, "KR", 982 },
+		{ "LA", 6, "LA", 6 },
+		{ "BR", 23, "BR", 23 },
+		{ "SG", 994, "SG", 994 }
+	};
 
 	char *tmp = nvram_safe_get("wl_reg_mode");
 	if (!*tmp)
@@ -2937,30 +2968,14 @@ void setRegulationDomain(char *reg)
 	nvram_set("wl2_tpc_db", tmp);
 	int brand = getRouterBrand();
 	strncpy(ccode, getIsoName(reg), 3);
+	strncpy(ccode, getIsoName(reg), 3);
 	if (nvram_match("brcm_unlock", "1")) {
-		strcpy(ccode0, "ALL");
-		strcpy(rrev0, "0");
-		strcpy(ccode1, "ALL");
-		strcpy(rrev1, "0");
+		pairs[DEFAULT].code0 = "ALL";
+		pairs[DEFAULT].rev0 = 0;
+		pairs[DEFAULT].code1 = "ALL";
+		pairs[DEFAULT].rev1 = 0;
 	} else {
-		typedef struct PAIRS {
-			char *code0;
-			int rev0;
-			char *code1:int rev1;
-		}
-#define EU 1
-#define CN 2
-#define US 3
-#define JP 4
-#define AU 5
-#define SG 6
-#define BR 7
-#define RU 8
-#define TW 9
-#define CA 10
-#define KR 11
-#define LA 12
-		int cntry = (!strcmp(ccode, "EU") || !strcmp(ccode, "DE") || !strcmp(ccode, "GB") || !strcmp(ccode, "FR") || !strcmp(ccode, "NL") || !strcmp(ccode, "ES") || !strcmp(ccode, "IT")) ? EU : 0;
+		cntry = (!strcmp(ccode, "EU") || !strcmp(ccode, "DE") || !strcmp(ccode, "GB") || !strcmp(ccode, "FR") || !strcmp(ccode, "NL") || !strcmp(ccode, "ES") || !strcmp(ccode, "IT")) ? EU : 0;
 		cntry = !strcmp(ccode, "CN") ? CN : cntry;
 		cntry = !strcmp(ccode, "US") ? US : cntry;
 		cntry = !strcmp(ccode, "JP") ? JP : cntry;
@@ -2972,21 +2987,6 @@ void setRegulationDomain(char *reg)
 		cntry = !strcmp(ccode, "CA") ? CA : cntry;
 		cntry = !strcmp(ccode, "KR") ? KR : cntry;
 		cntry = !strcmp(ccode, "LA") ? LA : cntry;
-		struct PAIRS pairs[] = {
-			{ "Q2", 989, "Q2", 989 },
-			{ "EU", 38, "EU", 38 },
-			{ "CN", 65, "CN", 65 },
-			{ "TW", 990, "TW", 990 },
-			{ "JP", 44, "JP", 45 },
-			{ "CA", 974, "CA", 974 },
-			{ "Q2", 989, "Q2", 989 },
-			{ "AU", 8, "AU", 8 },
-			{ "RU", 993, "RU", 993 },
-			{ "KR", 982, "KR", 982 },
-			{ "LA", 6, "LA", 6 },
-			{ "BR", 23, "BR", 23 },
-			{ "SG", 994, "SG", 994 }
-		};
 
 		switch (brand) {
 		case ROUTER_ASUS_AC88U:
@@ -3365,6 +3365,7 @@ int wlconf_up(char *name)
 int wlconf_down(char *name)
 {
 	eval("wlconf", name, "down");
+	return 0;
 }
 
 void radio_off(int idx)
