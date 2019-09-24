@@ -273,8 +273,10 @@ void start_transmission(void)
 		if (config[i].alloc)
 			free(config[i].val);
 	}
-	sysprintf("echo 16777216 > /proc/sys/net/core/rmem_max");
-	sysprintf("echo 4194304 > /proc/sys/net/core/wmem_max");
+	writeprocsysnet("core/rmem_max", "16777216");
+	writeprocsysnet("core/wmem_max", "4194304");
+	writeprocsysnet("ipv4/tcp_adv_win_scale", "4");
+
 	char *web = nvram_default_get("transmission_style", "default");
 	sysprintf("export TRANSMISSION_WEB_HOME=\"/usr/share/transmission/%s\" && transmissiond --config-dir \"%s\"", web, nvram_safe_get("transmission_dir"));
 	dd_loginfo("transmission", "daemon successfully started\n");
