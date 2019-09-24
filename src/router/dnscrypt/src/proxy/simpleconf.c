@@ -475,6 +475,7 @@ try_entry(const SimpleConfEntry *const entry, const char *line,
                 out_pnt++;
                 state = STATE_TEMPLATE_RCHAR;
             } else {
+                free(arg);
                 return ENTRYRESULT_INVALID_ENTRY;
             }
             continue;
@@ -602,6 +603,7 @@ append_to_command_line_from_file(const char *file_name,
                 }
                 if ((argv_tmp = realloc(*argv_p, (sizeof arg) *
                                         ((size_t) *argc_p + 1))) == NULL) {
+                    free(arg);
                     fclose(fp);
                     return -1;
                 }

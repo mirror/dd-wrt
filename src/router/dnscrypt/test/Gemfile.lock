@@ -8,7 +8,7 @@ GEM
       rspec-expectations (>= 2.99)
     builder (3.2.2)
     childprocess (0.5.6)
-      ffi (~> 1.0, >= 1.0.11)
+      ffi (~> 1.0, >= 1.9.24)
     contracts (0.10.1)
     cucumber (2.0.2)
       builder (>= 2.1.2)

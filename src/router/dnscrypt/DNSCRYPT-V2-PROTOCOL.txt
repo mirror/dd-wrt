@@ -444,6 +444,7 @@ Known open source implementations of the DNSCrypt version 2 protocol are:
 
 - dnscrypt-wrapper - server-side implementation in C
 - powerdns dnsdist - a DNS loadbalancer that provides server-side DNSCrypt
+- unbound - a validating, caching resolver that provides server-side DNSCrypt
 - dnscrypt-proxy - client-side implementation in C
 - pcap_dnsproxy - client-side implementation in C++
 - dnscrypt-python - client-side implementation in Python

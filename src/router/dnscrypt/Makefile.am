@@ -18,11 +18,6 @@ SUBDIRS = \
 	dist-build \
 	man
 
-if PLUGINS
-SUBDIRS += \
-	libltdl
-endif
-
 SUBDIRS += \
 	contrib \
 	src \
@@ -55,13 +50,13 @@ dnscrypt-proxy.service: dnscrypt-proxy.service.in
 	$(SED) \
 	-e 's|[@]sbindir@|$(sbindir)|g' \
 	-e 's|[@]sysconfdir@|$(sysconfdir)|g' \
-	< dnscrypt-proxy.service.in > dnscrypt-proxy.service
+	< $< > $@
 
 org.dnscrypt.osx.DNSCryptProxy.plist: org.dnscrypt.osx.DNSCryptProxy.plist.in
 	$(SED) \
 	-e 's|[@]sbindir@|$(sbindir)|g' \
 	-e 's|[@]sysconfdir@|$(sysconfdir)|g' \
-	< org.dnscrypt.osx.DNSCryptProxy.plist.in > org.dnscrypt.osx.DNSCryptProxy.plist
+	< $< > $@
 
 CLEANFILES = \
 	dnscrypt-proxy.service \
@@ -85,5 +80,5 @@ uninstall-local:
 	@if cmp -s $(srcdir)/dnscrypt-proxy.conf $(DESTDIR)$(sysconfdir)/dnscrypt-proxy.conf; then \
 		echo "$(DESTDIR)$(sysconfdir)/dnscrypt-proxy.conf has not changed and will be removed."; \
 		rm -f $(DESTDIR)$(sysconfdir)/dnscrypt-proxy.conf; \
-        rmdir $(DESTDIR)$(sysconfdir) 2> /dev/null ||:; \
+		rmdir $(DESTDIR)$(sysconfdir) 2> /dev/null ||:; \
 	fi

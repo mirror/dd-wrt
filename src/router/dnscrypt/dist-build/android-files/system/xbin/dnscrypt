@@ -1,0 +1,26 @@
+#!/system/bin/sh
+
+if [ "x${1}" = "xenable" -o "x${1}" = "xENABLE" ]; then
+        echo "Enabling dnscrypt-proxy..."
+        iptables -t nat -A OUTPUT -p udp --dport 53 -j DNAT --to-destination 127.0.0.1
+        iptables -t nat -A OUTPUT -p tcp --dport 53 -j DNAT --to-destination 127.0.0.1
+        kill $(cat /data/local/tmp/dnscrypt-proxy.pid)
+        /system/etc/init.d/99dnscrypt
+        echo "Done"
+        exit
+elif [ "x${1}" = "xdisable" -o "x${1}" = "xDISABLE" ]; then
+        echo "Disabling dnscrypt-proxy..."
+        iptables -t nat -D OUTPUT -p udp --dport 53 -j DNAT --to-destination 127.0.0.1
+        iptables -t nat -D OUTPUT -p tcp --dport 53 -j DNAT --to-destination 127.0.0.1
+        kill $(cat /data/local/tmp/dnscrypt-proxy.pid)
+        echo "Done"
+        exit
+else
+        echo "This script allows you to enable or"
+        echo "disable dnscrypt-proxy."
+        echo
+        echo "Usage:"
+        echo "enable    -    Enable dnscrypt"
+        echo "disable   -    Disable dnscrypt"
+        echo
+fi

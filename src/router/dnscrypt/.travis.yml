@@ -1,0 +1,22 @@
+dist: trusty
+sudo: required
+
+language: c
+
+services:
+ - docker
+
+compiler:
+ - gcc
+
+before_install:
+ - git clone https://github.com/jedisct1/libsodium.git --branch=stable
+ - ./autogen.sh
+ - docker run --rm --privileged multiarch/qemu-user-static:register --reset
+
+script:
+ - docker run --rm -v $(pwd):/workdir multiarch/alpine:armhf-edge  /workdir/.travis.sh
+ - docker run --rm -v $(pwd):/workdir pritunl/archlinux:latest     /workdir/dist-build/win32-win64-xcompile.sh
+
+matrix:
+ - fast_finish: true
