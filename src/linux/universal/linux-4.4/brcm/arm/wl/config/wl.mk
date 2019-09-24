@@ -611,7 +611,6 @@ ifeq ($(WLLXIW),1)
 endif
 #endif
 
-#ifdef WLLXCFG80211
 ifdef ($(WLLXCFG80211),1)
 	WLFILES_SRC_HI += src/wl/sys/wl_cfg80211_hybrid.c
 endif
@@ -623,6 +622,8 @@ ifeq ($(BCM_STA_CFG80211),1)
 	WLFILES_SRC_HI += src/wl/sys/wldev_common.c
 	WLFILES_SRC_HI += src/wl/sys/wl_linux_mon.c
 endif
+
+
 
 #ifdef WLCFE
 ifeq ($(WLCFE),1)
@@ -2520,7 +2521,7 @@ endif
 #ifdef WLIPFO
 ifeq ($(WLIPFO), 1)
         WLFLAGS += -DWLIPFO
-        WLFILES_SRC_HI += src/wl/sys/wlc_ipfo.c
+	WLFILES_SRC_HI += src/wl/sys/wlc_ipfo.c
 endif
 #endif
 
