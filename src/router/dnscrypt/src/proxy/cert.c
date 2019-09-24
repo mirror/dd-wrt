@@ -237,7 +237,7 @@ cert_print_bincert_info(ProxyContext * const proxy_context,
     logger(proxy_context, LOG_INFO,
            "Chosen certificate #%" PRIu32 " is valid "
            "from [%d-%02d-%02d] to [%d-%02d-%02d]",
-           htonl(serial),
+           (uint32_t)htonl(serial),
            ts_begin_tm.tm_year + 1900,
            ts_begin_tm.tm_mon + 1, ts_begin_tm.tm_mday,
            ts_end_tm.tm_year + 1900,

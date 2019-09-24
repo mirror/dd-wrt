@@ -11,7 +11,8 @@ hostip_SOURCES = \
 AM_CFLAGS = @CWFLAGS@
 
 AM_CPPFLAGS = \
-	-I../libevent-modified/include
+	-I../libevent-modified/include \
+	-I${srcdir}/../libevent-modified/include
 
 hostip_LDADD = \
 	../libevent-modified/libevent_extra.la \

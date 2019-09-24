@@ -299,8 +299,13 @@ HANDLE evutil_load_windows_system_library(const TCHAR *library_name);
 
 #if defined(__STDC__) && defined(__STDC_VERSION__)
 #if (__STDC_VERSION__ >= 199901L)
+#if defined(_MSC_VER) || defined(__MINGW32__) || defined(__MINGW64__)
+#define EV_SIZE_FMT "%Iu"
+#define EV_SSIZE_FMT "%Id"
+#else
 #define EV_SIZE_FMT "%zu"
 #define EV_SSIZE_FMT "%zd"
+#endif
 #define EV_SIZE_ARG(x) (x)
 #define EV_SSIZE_ARG(x) (x)
 #endif

@@ -25,7 +25,7 @@ fetch_src() {
 
   cd $SRCDEPS_DIR
   (
-    git clone --recursive https://github.com/libressl-portable/portable libressl
+    git clone --recursive https://github.com/libressl-portable/portable libressl --branch=v2.5.4
     cd libressl
     ./autogen.sh
   )
@@ -78,6 +78,8 @@ compile() {
     $SRCDEPS_DIR/libressl/configure --disable-dependency-tracking \
       --host=$TARGET --prefix="$DEPS_DIR"
     make clean
+    $SRCDEPS_DIR/libressl/configure --disable-dependency-tracking \
+      --host=$TARGET --prefix="$DEPS_DIR"
     make install
   )
 

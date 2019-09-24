@@ -55,6 +55,7 @@ load_device_id_from_file(const char * const file_name)
     }
     if (fread(device_id, 1U, sizeof EDNS_DEV_ID, fp) !=
         sizeof EDNS_DEV_ID) {
+        fclose(fp);
         free(device_id);
         return NULL;
     }

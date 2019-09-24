@@ -131,8 +131,8 @@ windows_service_parse_multi_sz(WindowsServiceParseMultiSzCb * const cb,
 char *
 windows_service_registry_parameters_key(void)
 {
-    static unsigned char *key;
-    size_t                sizeof_key;
+    static char *key;
+    size_t      sizeof_key;
 
     if (key != NULL) {
         return key;
