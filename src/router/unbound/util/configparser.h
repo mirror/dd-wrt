@@ -308,7 +308,10 @@ extern int yydebug;
     VAR_STREAM_WAIT_SIZE = 518,
     VAR_TLS_CIPHERS = 519,
     VAR_TLS_CIPHERSUITES = 520,
-    VAR_TLS_SESSION_TICKET_KEYS = 521
+    VAR_TLS_SESSION_TICKET_KEYS = 521,
+    VAR_IPSET = 522,
+    VAR_IPSET_NAME_V4 = 523,
+    VAR_IPSET_NAME_V6 = 524
   };
 #endif
 /* Tokens.  */
@@ -576,6 +579,9 @@ extern int yydebug;
 #define VAR_TLS_CIPHERS 519
 #define VAR_TLS_CIPHERSUITES 520
 #define VAR_TLS_SESSION_TICKET_KEYS 521
+#define VAR_IPSET 522
+#define VAR_IPSET_NAME_V4 523
+#define VAR_IPSET_NAME_V6 524
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
@@ -586,7 +592,7 @@ union YYSTYPE
 
 	char*	str;
 
-#line 590 "util/configparser.h" /* yacc.c:1910  */
+#line 596 "util/configparser.h" /* yacc.c:1910  */
 };
 
 typedef union YYSTYPE YYSTYPE;
