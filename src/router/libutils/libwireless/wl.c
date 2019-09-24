@@ -2943,145 +2943,114 @@ void setRegulationDomain(char *reg)
 		strcpy(ccode1, "ALL");
 		strcpy(rrev1, "0");
 	} else {
-		int EU = !strcmp(ccode, "EU") || !strcmp(ccode, "DE") || !strcmp(ccode, "GB") || !strcmp(ccode, "FR") || !strcmp(ccode, "NL") || !strcmp(ccode, "ES") || !strcmp(ccode, "IT");
-		int CN = !strcmp(ccode, "CN");
-		int US = !strcmp(ccode, "US");
-		int JP = !strcmp(ccode, "JP");
-		int AU = !strcmp(ccode, "AU");
-		int SG = !strcmp(ccode, "SG");
-		int BR = !strcmp(ccode, "BR");
-		int RU = !strcmp(ccode, "RU");
-		int TW = !strcmp(ccode, "TW");
-		int CA = !strcmp(ccode, "CA");
-		int KR = !strcmp(ccode, "KR");
-		int LA = !strcmp(ccode, "LA");
-
-		if (EU) {
-			strcpy(ccode0, "EU");
-			strcpy(rrev0, "38");
-			strcpy(ccode1, "EU");
-			strcpy(rrev1, "38");
-		} else if (CN) {
-			strcpy(ccode0, "CN");
-			strcpy(rrev0, "65");
-			strcpy(ccode1, "CN");
-			strcpy(rrev1, "65");
-		} else if (TW) {
-			strcpy(ccode0, "TW");
-			strcpy(rrev0, "990");
-			strcpy(ccode1, "TW");
-			strcpy(rrev1, "990");
-		} else if (JP) {
-			strcpy(ccode0, "JP");
-			strcpy(rrev0, "44");
-			strcpy(ccode1, "JP");
-			strcpy(rrev1, "45");
-		} else if (CA) {
-			strcpy(ccode0, "CA");
-			strcpy(rrev0, "974");
-			strcpy(ccode1, "CA");
-			strcpy(rrev1, "974");
-		} else if (US) {
-			strcpy(ccode0, "Q2");
-			strcpy(rrev0, "989");
-			strcpy(ccode1, "Q2");
-			strcpy(rrev1, "989");
-		} else if (AU) {
-			strcpy(ccode0, "AU");
-			strcpy(rrev0, "8");
-			strcpy(ccode1, "AU");
-			strcpy(rrev1, "8");
-		} else if (RU) {
-			strcpy(ccode0, "RU");
-			strcpy(rrev0, "993");
-			strcpy(ccode1, "RU");
-			strcpy(rrev1, "993");
-		} else if (KR) {
-			strcpy(ccode0, "KR");
-			strcpy(rrev0, "982");
-			strcpy(ccode1, "KR");
-			strcpy(rrev1, "982");
-		} else if (LA) {
-			strcpy(ccode0, "LA");
-			strcpy(rrev0, "6");
-			strcpy(ccode1, "LA");
-			strcpy(rrev1, "6");
-		} else if (BR) {
-			strcpy(ccode0, "BR");
-			strcpy(rrev0, "23");
-			strcpy(ccode1, "BR");
-			strcpy(rrev1, "23");
-		} else if (SG) {
-			strcpy(ccode0, "SG");
-			strcpy(rrev0, "994");
-			strcpy(ccode1, "SG");
-			strcpy(rrev1, "994");
-		} else {
-			strcpy(ccode0, "Q2");
-			strcpy(rrev0, "989");
-			strcpy(ccode1, "Q2");
-			strcpy(rrev1, "989");
+		typedef struct PAIRS {
+			char *code0;
+			int rev0;
+			char *code1:int rev1;
 		}
+#define EU 1
+#define CN 2
+#define US 3
+#define JP 4
+#define AU 5
+#define SG 6
+#define BR 7
+#define RU 8
+#define TW 9
+#define CA 10
+#define KR 11
+#define LA 12
+		int cntry = (!strcmp(ccode, "EU") || !strcmp(ccode, "DE") || !strcmp(ccode, "GB") || !strcmp(ccode, "FR") || !strcmp(ccode, "NL") || !strcmp(ccode, "ES") || !strcmp(ccode, "IT")) ? EU : 0;
+		cntry = !strcmp(ccode, "CN") ? CN : cntry;
+		cntry = !strcmp(ccode, "US") ? US : cntry;
+		cntry = !strcmp(ccode, "JP") ? JP : cntry;
+		cntry = !strcmp(ccode, "AU") ? AU : cntry;
+		cntry = !strcmp(ccode, "SG") ? SG : cntry;
+		cntry = !strcmp(ccode, "BR") ? BR : cntry;
+		cntry = !strcmp(ccode, "RU") ? RU : cntry;
+		cntry = !strcmp(ccode, "TW") ? TW : cntry;
+		cntry = !strcmp(ccode, "CA") ? CA : cntry;
+		cntry = !strcmp(ccode, "KR") ? KR : cntry;
+		cntry = !strcmp(ccode, "LA") ? LA : cntry;
+		struct PAIRS pairs[] = {
+			{ "Q2", 989, "Q2", 989 },
+			{ "EU", 38, "EU", 38 },
+			{ "CN", 65, "CN", 65 },
+			{ "TW", 990, "TW", 990 },
+			{ "JP", 44, "JP", 45 },
+			{ "CA", 974, "CA", 974 },
+			{ "Q2", 989, "Q2", 989 },
+			{ "AU", 8, "AU", 8 },
+			{ "RU", 993, "RU", 993 },
+			{ "KR", 982, "KR", 982 },
+			{ "LA", 6, "LA", 6 },
+			{ "BR", 23, "BR", 23 },
+			{ "SG", 994, "SG", 994 }
+		};
 
 		switch (brand) {
 		case ROUTER_ASUS_AC88U:
 		case ROUTER_DLINK_DIR895:
 		case ROUTER_NETGEAR_R8500:
 		case ROUTER_ASUS_AC5300:
-			if (EU) {
-				strcpy(ccode0, "E0");	//EU
-				strcpy(rrev0, "962");	//39
-				strcpy(ccode1, "E0");	//EU 
-				strcpy(rrev1, "962");	//39
-			} else if (JP) {
-				strcpy(ccode0, "JP");
-				strcpy(rrev0, "72");
-				strcpy(ccode1, "JP");
-				strcpy(rrev1, "72");
-			} else if (CA || US) {
-				strcpy(ccode0, "Q2");
-				strcpy(rrev0, "992");
-				strcpy(ccode1, "Q2");
-				strcpy(rrev1, "992");
-			}
+			pairs[EU].code0 = "E0";
+			pairs[EU].rev0 = 962;
+			pairs[EU].code1 = "E0";
+			pairs[EU].rev1 = 962;
+
+			pairs[JP].code0 = "JP";
+			pairs[JP].rev0 = 72;
+			pairs[JP].code1 = "JP";
+			pairs[JP].rev1 = 72;
+
+			pairs[CA].code0 = "Q2";
+			pairs[CA].rev0 = 992;
+			pairs[CA].code1 = "Q2";
+			pairs[CA].rev1 = 992;
+
+			pairs[US].code0 = "Q2";
+			pairs[US].rev0 = 992;
+			pairs[US].code1 = "Q2";
+			pairs[US].rev1 = 992;
+
 			break;
 		case ROUTER_NETGEAR_R7000P:
-			strcpy(ccode0, "EU");
-			strcpy(rrev0, "38");
-			strcpy(ccode1, "E0");	//EU
-			strcpy(rrev1, "938");	//39
+			pairs[EU].code0 = "EU";
+			pairs[EU].rev0 = 38;
+			pairs[EU].code1 = "E0";
+			pairs[EU].rev1 = 938;
 			break;
 		case ROUTER_NETGEAR_R8000:
-			strcpy(ccode0, "EU");
-			strcpy(rrev0, "38");
-			strcpy(ccode0, "EU");
-			strcpy(rrev0, "39");	//for vht160
+			pairs[EU].code0 = "EU";
+			pairs[EU].rev0 = 38;
+			pairs[EU].code1 = "EU";
+			pairs[EU].rev1 = 39;
 			break;
 		}
 	}
 
 	//fprintf(stderr, "setRegulationDomain ccode: %s rrev: %s\n", ccode, rrev);
-	nvram_set("wl_country_rev", rrev0);
-	nvram_set("wl0_country_rev", rrev0);
-	nvram_set("wl1_country_rev", rrev1);
-	nvram_set("wl2_country_rev", rrev1);
-	nvram_set("wl_country_code", ccode0);
-	nvram_set("wl0_country_code", ccode0);
-	nvram_set("wl1_country_code", ccode1);
-	nvram_set("wl2_country_code", ccode1);
+	nvram_seti("wl_country_rev", pairs[cntry].rev0);
+	nvram_seti("wl0_country_rev", pairs[cntry].rev0);
+	nvram_seti("wl1_country_rev", pairs[cntry].rev1);
+	nvram_seti("wl2_country_rev", pairs[cntry].rev1);
+	nvram_set("wl_country_code", pairs[cntry].code0);
+	nvram_set("wl0_country_code", pairs[cntry].code0);
+	nvram_set("wl1_country_code", pairs[cntry].code1);
+	nvram_set("wl2_country_code", pairs[cntry].code1);
 
 	switch (brand) {
 	case ROUTER_D1800H:
-		nvram_set("wl_country_rev", rrev1);	//DH1800 wl0 is 5G so needs to be inverted
-		nvram_set("wl0_country_rev", rrev1);
-		nvram_set("wl1_country_rev", rrev0);
-		nvram_set("wl_country_code", ccode1);
-		nvram_set("wl0_country_code", ccode1);
-		nvram_set("wl1_country_code", ccode0);
-		nvram_set("pci/1/1/regrev", rrev1);
-		nvram_set("pci/2/1/regrev", rrev0);
-		nvram_set("pci/1/1/ccode", ccode1);
-		nvram_set("pci/2/1/ccode", ccode0);
+		nvram_seti("wl_country_rev", pairs[cntry].rev1);	//DH1800 wl0 is 5G so needs to be inverted
+		nvram_seti("wl0_country_rev", pairs[cntry].rev1);
+		nvram_seti("wl1_country_rev", pairs[cntry].rev0);
+		nvram_set("wl_country_code", pairs[cntry].code1);
+		nvram_set("wl0_country_code", pairs[cntry].code1);
+		nvram_set("wl1_country_code", pairs[cntry].code0);
+		nvram_seti("pci/1/1/regrev", pairs[cntry].rev1);
+		nvram_seti("pci/2/1/regrev", pairs[cntry].rev0);
+		nvram_set("pci/1/1/ccode", pairs[cntry].code1);
+		nvram_set("pci/2/1/ccode", pairs[cntry].code0);
 		return;
 	case ROUTER_LINKSYS_EA6500:
 	case ROUTER_NETGEAR_WNDR4500:
@@ -3100,33 +3069,33 @@ void setRegulationDomain(char *reg)
 	case ROUTER_LINKSYS_EA6700:
 	case ROUTER_LINKSYS_EA6900:
 	case ROUTER_UBNT_UNIFIAC:
-		nvram_set("pci/1/1/regrev", rrev0);
-		nvram_set("pci/2/1/regrev", rrev1);
-		nvram_set("pci/1/1/ccode", ccode0);
-		nvram_set("pci/2/1/ccode", ccode1);
+		nvram_seti("pci/1/1/regrev", pairs[cntry].rev0);
+		nvram_seti("pci/2/1/regrev", pairs[cntry].rev1);
+		nvram_set("pci/1/1/ccode", pairs[cntry].code0);
+		nvram_set("pci/2/1/ccode", pairs[cntry].code1);
 		break;
 	case ROUTER_NETGEAR_R8000:
 	case ROUTER_NETGEAR_R8500:
-		nvram_set("0:regrev", rrev1);
-		nvram_set("1:regrev", rrev0);
-		nvram_set("2:regrev", rrev1);
-		nvram_set("0:ccode", ccode1);
-		nvram_set("1:ccode", ccode0);
-		nvram_set("2:ccode", ccode1);
-		nvram_set("wl0_country_rev", rrev1);
-		nvram_set("wl1_country_rev", rrev0);
-		nvram_set("wl2_country_rev", rrev1);
-		nvram_set("wl0_country_code", ccode1);
-		nvram_set("wl1_country_code", ccode0);
-		nvram_set("wl2_country_code", ccode1);
+		nvram_seti("0:regrev", pairs[cntry].rev1);
+		nvram_seti("1:regrev", pairs[cntry].rev0);
+		nvram_seti("2:regrev", pairs[cntry].rev1);
+		nvram_set("0:ccode", pairs[cntry].code1);
+		nvram_set("1:ccode", pairs[cntry].code0);
+		nvram_set("2:ccode", pairs[cntry].code1);
+		nvram_seti("wl0_country_rev", pairs[cntry].rev1);
+		nvram_seti("wl1_country_rev", pairs[cntry].rev0);
+		nvram_seti("wl2_country_rev", pairs[cntry].rev1);
+		nvram_set("wl0_country_code", pairs[cntry].code1);
+		nvram_set("wl1_country_code", pairs[cntry].code0);
+		nvram_set("wl2_country_code", pairs[cntry].code1);
 		break;
 	default:
-		nvram_set("0:regrev", rrev0);
-		nvram_set("1:regrev", rrev1);
-		nvram_set("2:regrev", rrev1);
-		nvram_set("0:ccode", ccode0);
-		nvram_set("1:ccode", ccode1);
-		nvram_set("2:ccode", ccode1);
+		nvram_seti("0:regrev", pairs[cntry].rev0);
+		nvram_seti("1:regrev", pairs[cntry].rev1);
+		nvram_seti("2:regrev", pairs[cntry].rev1);
+		nvram_set("0:ccode", pairs[cntry].code0);
+		nvram_set("1:ccode", pairs[cntry].code1);
+		nvram_set("2:ccode", pairs[cntry].code1);
 	}
 
 }
