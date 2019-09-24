@@ -27,6 +27,9 @@ WLTUNEFILE=wltunable_lx_router.h
 # features
 include $(WLCFGDIR)/wlconfig_apdef
 include $(WLCFGDIR)/wlconfig_lx_wl_clm
+#WLLXCFG80211=1
+#WLP2P=1
+#BCM_STA_CFG80211=1
 STA=1
 BCMSUP_PSK=1
 WET=1
