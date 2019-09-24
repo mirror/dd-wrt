@@ -1,0 +1,18 @@
+gpsd-configure:
+#	cd gpsd && ./configure --host=$(ARCH)-linux --enable-pps-on-cts --disable-fv18 --disable-python --disable-tripmate --disable-earthmate --disable-shared --without-x CFLAGS="$(COPTS) -DNEED_PRINTF -I../ncurses/include -L../ncurses/lib " --prefix=/usr 
+
+gpsd:
+	cd gpsd-scons && scons
+
+gpsd-clean:
+	cd gpsd-scons && scons --clean
+
+gpsd-install:
+	
+	cd gpsd-scons && export DESTDIR=$(INSTALLDIR)/gpsd && scons -Q install 
+	rm -rf $(INSTALLDIR)/gpsd/usr/man
+	rm -rf $(INSTALLDIR)/gpsd/usr/lib/pkgconfig
+	rm -rf $(INSTALLDIR)/gpsd/usr/share
+	rm -rf $(INSTALLDIR)/gpsd/usr/lib64
+	rm -rf $(INSTALLDIR)/gpsd/usr/include
+

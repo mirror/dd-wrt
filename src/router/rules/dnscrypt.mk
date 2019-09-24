@@ -23,16 +23,19 @@ DNSCRYPT_CONFIGURE_ARGS+= \
 	--with-lib-path="$(TOP)/openssl , $(TOP)/gmp, $(TOP)/libsodium/src/libsodium/.libs"
 
 dnscrypt-configure: libsodium-configure
-	cd dnscrypt && ./configure --host=$(ARCH)-linux --prefix=/usr \
+	cd dnscrypt && ./autogen.sh && \
+	./configure --host=$(ARCH)-linux --prefix=/usr \
 	$(DNSCRYPT_CONFIGURE_ARGS) \
 	CFLAGS="-fPIC -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) -I$(TOP)/libsodium/src/libsodium/include/ -I$(TOP)/gmp -I$(TOP)/zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/libsodium/src/libsodium/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	LDFLAGS="-L$(TOP)/libsodium/src/libsodium/.libs $(LDFLAGS) -ffunction-sections -fdata-sections -Wl,--gc-sections"
 
 dnscrypt: libsodium
+	make -C dnscrypt/libltdl
 	make -C dnscrypt 
 
 dnscrypt-clean:
+	-make -C dnscrypt/libltdl clean
 	-make -C dnscrypt clean
 
 dnscrypt-install: 
