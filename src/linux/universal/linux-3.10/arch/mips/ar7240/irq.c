@@ -238,17 +238,24 @@ static void ar934x_ip2_irq_dispatch(unsigned int irq, struct irq_desc *desc)
 	disable_irq_nosync(irq);
 
 	status = ar71xx_reset_rr(AR934X_RESET_REG_PCIE_WMAC_INT_STATUS);
+	status &= AR934X_PCIE_WMAC_INT_PCIE_ALL | AR934X_PCIE_WMAC_INT_WMAC_ALL;
+
+	if (status == 0) {
+		spurious_interrupt();
+		goto enable;
+	}
 
 	if (status & AR934X_PCIE_WMAC_INT_PCIE_ALL) {
 		ar71xx_ddr_flush(AR934X_DDR_REG_FLUSH_PCIE);
 		generic_handle_irq(AR934X_IP2_IRQ_PCIE);
-	} else if (status & AR934X_PCIE_WMAC_INT_WMAC_ALL) {
+	}
+	
+	if (status & AR934X_PCIE_WMAC_INT_WMAC_ALL) {
 		ar71xx_ddr_flush(AR934X_DDR_REG_FLUSH_WMAC);
 		generic_handle_irq(AR934X_IP2_IRQ_WMAC);
-	} else {
-		spurious_interrupt();
 	}
 
+enable:
 	enable_irq(irq);
 }
 
