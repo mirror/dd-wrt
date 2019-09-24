@@ -46,11 +46,9 @@ def list_from_url(url):
     try:
         response = urllib2.urlopen(req, timeout=10)
     except urllib2.URLError as err:
-        sys.stderr.write("[{}] could not be loaded: {}\n".format(url, err))
-        exit(1)
+        raise Exception("[{}] could not be loaded: {}\n".format(url, err))
     if trusted is False and response.getcode() != 200:
-        sys.stderr.write("[{}] returned HTTP code {}\n".format(url, response.getcode()))
-        exit(1)
+        raise Exception("[{}] returned HTTP code {}\n".format(url, response.getcode()))
     content = response.read()
 
     return parse_blacklist(content, trusted)
@@ -79,7 +77,7 @@ def whitelist_from_url(url):
     return list_from_url(url)
 
 
-def blacklists_from_config_file(file, whitelist):
+def blacklists_from_config_file(file, whitelist, ignore_retrieval_failure):
     blacklists = {}
     all_names = set()
     unique_names = set()
@@ -95,9 +93,14 @@ def blacklists_from_config_file(file, whitelist):
             if str.startswith(line, "#") or line == "":
                 continue
             url = line
-            names = list_from_url(url)
-            blacklists[url] = names
-            all_names |= names
+            try:
+                names = list_from_url(url)
+                blacklists[url] = names
+                all_names |= names
+            except Exception as e:
+                sys.stderr.write(e.message)
+                if not ignore_retrieval_failure:
+                    exit(1)
 
     for url, names in blacklists.items():
         print("\n\n########## Blacklist from {} ##########\n".format(url))
@@ -126,9 +129,12 @@ argp.add_argument("-c", "--config", default="domains-blacklist.conf",
     help="file containing blacklist sources")
 argp.add_argument("-w", "--whitelist", default="domains-whitelist.txt",
     help="file containing a set of names to exclude from the blacklist")
+argp.add_argument("-i", "--ignore-retrieval-failure", action='store_true',
+    help="generate list even if some urls couldn't be retrieved")
 args = argp.parse_args()
 
 conf = args.config
 whitelist = args.whitelist
+ignore_retrieval_failure = args.ignore_retrieval_failure
 
-blacklists_from_config_file(conf, whitelist)
+blacklists_from_config_file(conf, whitelist, ignore_retrieval_failure)

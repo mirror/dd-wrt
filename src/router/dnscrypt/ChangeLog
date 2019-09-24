@@ -1,3 +1,452 @@
+* Thu Sep 21 09:46:44 2017 +0200
+
+    Sign
+
+* Thu Sep 21 09:46:28 2017 +0200
+
+    d0wn-cr-ns1 is down
+
+* Thu Sep 21 09:45:41 2017 +0200
+
+    freetsa.org is not responsive any more
+
+* Thu Sep 21 09:45:03 2017 +0200
+
+    publicarray-au certificate expired
+
+* Thu Sep 21 03:40:57 2017 -0400
+
+    Add dnscrypt.ca Server 1 and Server 2 (#746)
+
+* Mon Sep 11 00:44:25 2017 +0200
+
+    Sign
+
+* Mon Sep 11 00:40:23 2017 +0200
+
+    cs-de, cs-de2, cs-ru are not responsive
+
+* Sun Aug 27 19:40:30 2017 +0200
+
+    Sign
+
+Merge: 7576e26 bdbd7fb
+* Sun Aug 27 19:40:10 2017 +0200
+
+    Merge branch 'master' of github.com:jedisct1/dnscrypt-proxy
+    
+    * 'master' of github.com:jedisct1/dnscrypt-proxy:
+      d0wn servers update (#728)
+      Add BarbBlock list to domains-blacklist.conf (#734)
+      Explain that PID will require an additional process
+
+* Sun Aug 27 19:39:59 2017 +0200
+
+    Sign
+
+* Sun Aug 27 19:37:29 2017 +0200
+
+    d0wn-de-ns2 is down
+
+* Sun Aug 27 19:37:11 2017 +0200
+
+    cs-rome is down
+
+* Sun Aug 27 21:02:05 2017 +0700
+
+    d0wn servers update (#728)
+    
+    de2 down
+    fr1 ipv4 up [port 1053]
+
+* Wed Aug 23 08:01:12 2017 -0700
+
+    Add BarbBlock list to domains-blacklist.conf (#734)
+    
+    BarbBlock <https://ssl.bblck.me> is a content blocking list that blacklists domains that have used spurious and invalid DMCA takedowns to force removal from other content blocking lists. Originally conceived as a browser extension, it has also been made available as a domain list suitable for domain-level blacklisting: https://ssl.bblck.me/blacklists/domain-list.txt
+
+Merge: 54cd640 ce77b76
+* Mon Aug 21 19:09:16 2017 +0200
+
+    Merge branch 'master' of github.com:jedisct1/dnscrypt-proxy
+
+* Mon Aug 21 19:08:59 2017 +0200
+
+    Explain that PID will require an additional process
+
+* Fri Aug 11 16:35:33 2017 +0200
+
+    freetsa is back
+
+* Wed Aug 9 15:59:38 2017 +0200
+
+    Sign
+
+* Tue Aug 8 15:54:47 2017 +0200
+
+    Temporarily remove unresponsive resolver :(
+
+* Tue Aug 8 00:16:03 2017 +0200
+
+    Mingw64 (#718)
+    
+    * Enable build in builddir, when builddir is not srcdir
+    
+    * Enable detection of gethostbyname on Windows, libws2_32, libpsapi and libiphlpapi on mingw32 and mingw64
+    
+    * Enable detection of getaddrinfo on Windows, don't define _WIN32_WINNT if already defined
+    
+    * On Windows use gmtime_s instead of gmtime
+    
+    * Change pointer type to char to satisfy compiler
+    
+    * mingw and msvc don't support %z, use %I instead
+    
+    * Revert "On Windows use gmtime_s instead of gmtime"
+    
+    
+    * Revert 'rmdir '
+    
+    * Reverted previous changes, result of htonl casted to uint32_t
+    
+    * Reverted previous changes, changed pointer type to char*
+
+* Mon Aug 7 10:10:33 2017 +0200
+
+    Full name
+
+* Mon Aug 7 09:52:38 2017 +0200
+
+    Recommend jent
+
+* Thu Aug 3 12:06:02 2017 +0200
+
+    Fix resource leaks on error paths
+
+* Sat Jul 29 20:58:14 2017 +0200
+
+    Simpleconf: another missing ree() on error path
+
+* Sat Jul 29 20:54:03 2017 +0200
+
+    Simpleconf: Add missing free() on error path
+
+* Sat Jul 29 12:06:15 2017 +0200
+
+    Sign
+
+* Sat Jul 29 12:00:58 2017 +0200
+
+    Adding Babylon Network NL resolver (#709)
+    
+    * Adding Babylon Network resolvers
+    
+    * Updating Babylon Network resolvers
+    
+    * Adding Babylon Network NL resolver
+
+* Mon Jul 24 18:19:55 2017 +0200
+
+    Sign
+
+* Mon Jul 24 23:06:49 2017 +0700
+
+    + d0wn-nl1 d0wn-us1 (#705)
+    
+    d0wn servers update, up : nl1 us1
+    note : nl1 port is 1053
+
+* Fri Jul 21 14:30:09 2017 +0200
+
+    Sign
+
+* Fri Jul 21 14:26:50 2017 +0200
+
+    - fvz-any*-ipv6
+
+* Fri Jul 21 14:26:19 2017 +0200
+
+    - cpunks-ru-ipv6
+
+* Mon Jul 17 15:28:40 2017 +0200
+
+    Sign
+
+* Mon Jul 17 15:01:17 2017 +0200
+
+    Revert "bn-fr1 doesn't seem to work -- temporarily remove"
+    
+
+* Mon Jul 17 12:57:42 2017 +0200
+
+    Sign
+
+* Mon Jul 17 12:42:12 2017 +0200
+
+    cs-lv is dead
+
+* Mon Jul 17 12:41:07 2017 +0200
+
+    bn-fr1 doesn't seem to work -- temporarily remove
+
+* Mon Jul 17 12:33:23 2017 +0200
+
+    Updating Babylon Network resolvers (#697)
+    
+    * Adding Babylon Network resolvers
+    
+    * Updating Babylon Network resolvers
+
+* Sat Jul 8 18:35:36 2017 +0200
+
+    Sign
+
+* Sat Jul 8 18:33:10 2017 +0200
+
+    d0wn-nl-ns3 is down
+
+* Mon Jul 3 18:13:28 2017 +0200
+
+    Sign
+
+* Mon Jul 3 18:12:26 2017 +0200
+
+    Updated resolver SecureDNS with IPv6 and DNSSEC (#693)
+    
+    * added Secure DNS as option
+    
+    * removed 2nd public key
+    
+    * added forgotten port to secure dns entry
+    
+    * updated resolver SecureDNS with DNSSEC and IPv6
+
+* Sat Jul 1 10:07:55 2017 +0200
+
+    Sign
+
+* Sat Jul 1 10:07:40 2017 +0200
+
+    Add cypherpunks.ru
+
+* Sat Jul 1 10:03:49 2017 +0200
+
+    Add a correct entry for securedns
+
+* Fri Jun 23 12:18:43 2017 +0200
+
+    More d0wn servers down
+
+* Fri Jun 16 20:31:19 2017 +0200
+
+    + unbound
+
+* Mon Jun 12 20:49:16 2017 +0200
+
+    sign
+
+* Tue Jun 13 04:27:31 2017 +1000
+
+    add publicarray-au (#682)
+
+* Thu Jun 8 17:43:12 2017 +0200
+
+    Sign
+
+Merge: 2dfaa39 78e3f1b
+* Thu Jun 8 17:42:17 2017 +0200
+
+    Merge branch 'master' of github.com:jedisct1/dnscrypt-proxy
+    
+    * 'master' of github.com:jedisct1/dnscrypt-proxy:
+      d0wn servers update (#678)
+
+* Thu Jun 8 17:42:00 2017 +0200
+
+    Sign
+
+* Thu Jun 8 17:41:49 2017 +0200
+
+    cs-cfii is down
+
+* Thu Jun 8 17:41:36 2017 +0200
+
+    More d0wn servers that are down
+
+* Thu Jun 8 22:10:44 2017 +0700
+
+    d0wn servers update (#678)
+    
+    random1 up; hk1, sg2 offline
+
+* Wed Jun 7 09:51:23 2017 +0200
+
+    Sign
+
+* Wed Jun 7 14:49:06 2017 +0700
+
+    adding bikinhappy.com to dnscrypt-resolvers.csv (#679)
+    
+    * Update dnscrypt-resolvers.csv
+    
+    * Update dnscrypt-resolvers.csv
+    
+    * adding bikinhappy.com dnscrypt-resolvers.csv
+
+* Tue Jun 6 19:54:28 2017 +0200
+
+    Sign
+
+* Tue Jun 6 19:54:05 2017 +0200
+
+    cs-es doesn't seem to resolve namecoin domains
+
+* Tue Jun 6 19:53:11 2017 +0200
+
+    Add cs-es DNSCrypt server (cryptostorm.is) (#675)
+    
+    * Add cs-es DNSCrypt server (cryptostorm.is)
+    
+    Add cs-es DNSCrypt server (cryptostorm.is)
+    
+    * Missing comma at the end
+
+* Sun Jun 4 17:17:17 2017 +0200
+
+    Load the forwarding plugin last
+
+* Fri May 26 21:18:17 2017 +0200
+
+    Fix WINDOWS instructions
+
+* Fri May 26 14:41:43 2017 +0200
+
+    Whitelist msedge.net
+
+* Wed May 24 13:08:05 2017 +0200
+
+    sign
+
+Merge: dc19508 6dba34f
+* Wed May 24 13:07:55 2017 +0200
+
+    Merge branch 'master' of github.com:jedisct1/dnscrypt-proxy
+    
+    * 'master' of github.com:jedisct1/dnscrypt-proxy:
+      d0wn-au offline (#667)
+
+* Wed May 24 13:07:46 2017 +0200
+
+    sign
+
+* Wed May 24 18:07:27 2017 +0700
+
+    d0wn-au offline (#667)
+    
+    d0wn server offline from few days ago. Ping fail too for it's IPv6 address.
+
+* Tue May 23 19:54:14 2017 +0200
+
+    Sign
+
+* Tue May 23 19:53:53 2017 +0200
+
+    Replace 185.121.177.53 with new 169.239.202.202 anycast IP (#664)
+    
+    185.121.177.177 and 185.121.177.53 have always been running on the same network infrastructure, they just ended up on different PowerDNS instances on the same node.
+    169.239.202.202 and 169.239.202.53 are now replacing 185.121.177.53 as they are running on mirrored infrastructure and software
+    This also allows us to revert the temporary port fix back to the standard 443 port and allows users to use any of our DNSCrypt enabled ports (54, 443, 1053, 1194, 5353, 8080 and 27015).
+
+* Sat May 20 19:15:41 2017 +0200
+
+    Android: use PLATFORM 16 by default, don't bother with compat for API 21
+
+* Thu May 18 14:53:14 2017 +0200
+
+    Correct example_ldns_blocking description
+
+* Tue May 16 21:29:24 2017 +0200
+
+    Add extra quotes, for consistency
+    
+    Fixes #658
+
+* Thu May 11 19:44:50 2017 +0200
+
+    Re-add adguard-dns-*-ns2
+
+* Tue May 9 22:40:31 2017 +0200
+
+    Sign
+
+* Wed May 10 03:39:26 2017 +0700
+
+    d0wn servers update (#656)
+    
+    remove offline servers according to d0wn tweet.
+    2 already off with 3 more at risk.
+
+* Sun May 7 17:20:06 2017 +0200
+
+    Android: use clang by default, like libsodium
+
+* Sun May 7 15:33:06 2017 +0200
+
+    Require at least libsodium 1.0.0
+
+* Sun May 7 15:30:22 2017 +0200
+
+    Android: use NDK_PLATFORM="android-24" to fail consistently with libsodium
+
+* Sun May 7 15:29:53 2017 +0200
+
+    Android doesn't have `stdin` any more; use a different test program
+
+* Sun May 7 15:25:22 2017 +0200
+
+    LibreSSL-portable's `make clean` target removes too many files
+    
+    Re-run the `./configure` script as a workaround, in order to get the
+    list of symbols back.
+
+* Sun May 7 14:26:27 2017 +0200
+
+    Compile a stable version of LibreSSL
+
+* Sun May 7 12:38:27 2017 +0200
+
+    Fix freetsa attributes: DNSSEC is supported, not Namecoin
+
+* Sun May 7 12:36:20 2017 +0200
+
+    Sign
+
+Merge: 52c282e 53b7ccd
+* Sun May 7 12:35:52 2017 +0200
+
+    Merge branch 'master' of github.com:jedisct1/dnscrypt-proxy
+    
+    * 'master' of github.com:jedisct1/dnscrypt-proxy:
+      FreeTSA DNSCrypt (USA) server added (#649)
+
+* Sun May 7 12:35:36 2017 +0200
+
+    Sign
+
+* Sun May 7 12:21:44 2017 +0200
+
+    FreeTSA DNSCrypt (USA) server added (#649)
+    
+    FreeTSA DNSCrypt in USA server
+
+* Sat May 6 20:07:09 2017 +0200
+
+    1.9.5
+
+* Sat May 6 19:55:20 2017 +0200
+
+    Update ChangeLog
+
 * Sat May 6 19:38:35 2017 +0200
 
     Cache plugin: fix the way items are moved from recent to frequent lists

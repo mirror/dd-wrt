@@ -351,7 +351,7 @@ entropy_check(void)
             logger(NULL, LOG_WARNING,
                    "This system doesn't provide enough entropy to quickly generate high-quality random numbers");
             logger(NULL, LOG_WARNING,
-                   "Installing the rng-utils/rng-tools or haveged packages may help.");
+                   "Installing the rng-utils/rng-tools, jitterentropy or haveged packages may help.");
             logger(NULL, LOG_WARNING,
                    "On virtualized Linux environments, also consider using virtio-rng.");
             logger(NULL, LOG_WARNING,

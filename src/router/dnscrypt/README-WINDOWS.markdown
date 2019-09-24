@@ -41,13 +41,15 @@ the first column (for example: `dnscrypt.org-fr`).
 
 5) Open an elevated command prompt (see below), enter the dnscrypt-proxy folder and type:
 
-    .\dnscrypt-proxy.exe dnscrypt-proxy.conf --test=0
+    .\dnscrypt-proxy.exe dnscrypt-proxy.conf
 
 This command just tests if everything is properly installed on your
 end, and if the resolver is properly working. If everything looks fine,
 the command should display the server key fingerprint and exit right away.
 
 If an error is displayed, retry with a different server.
+
+If not, hit Control+C to quit.
 
 5) So far, so good? Now, enable the service for real:
 
