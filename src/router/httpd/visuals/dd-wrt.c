@@ -57,8 +57,6 @@
 #define COUNTRYLIST NULL
 #endif
 
-
-
 #ifdef HAVE_OVERCLOCKING
 static unsigned int type2_clocks[7] = { 200, 240, 252, 264, 300, 330, 0 };
 static unsigned int type3_clocks[3] = { 150, 200, 0 };
@@ -3549,19 +3547,16 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	}
 #endif
 
-	// ACK timing
-#if defined(HAVE_ACK) || defined(HAVE_MADWIFI)	// temp fix for v24 broadcom
-	// ACKnot working
+	if (has_acktiming(prefix)) {
+		sprintf(power, "%s_distance", prefix);
+		//websWrite(wp, "<br />\n");
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "wl_basic.label6", NULL);
+		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"8\" maxlength=\"8\" onblur=\"valid_range(this,0,99999999,wl_basic.label6)\" value=\"%s\" />\n", power, nvram_default_get(power, "2000"));
+		websWrite(wp, "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 2000 \" + share.meters + \")\");\n//]]>\n</script></span>\n");
+		websWrite(wp, "</div>\n");
+	}
 
-	sprintf(power, "%s_distance", prefix);
-	//websWrite(wp, "<br />\n");
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "wl_basic.label6", NULL);
-	websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"8\" maxlength=\"8\" onblur=\"valid_range(this,0,99999999,wl_basic.label6)\" value=\"%s\" />\n", power, nvram_default_get(power, "2000"));
-	websWrite(wp, "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 2000 \" + share.meters + \")\");\n//]]>\n</script></span>\n");
-	websWrite(wp, "</div>\n");
-	// end ACK timing
-#endif
 #ifdef HAVE_MADWIFI
 	if (nvram_nmatch("ap", "%s_mode", prefix)
 	    || nvram_nmatch("wdsap", "%s_mode", prefix)
@@ -4325,19 +4320,15 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	}
 #endif
 
-	// ACK timing
-#if defined(HAVE_ACK) || defined(HAVE_MADWIFI)	// temp fix for v24 broadcom
-	// ACKnot working
-
-	sprintf(power, "%s_distance", prefix);
-	//websWrite(wp, "<br />\n");
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "wl_basic.label6", NULL);
-	websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"8\" maxlength=\"8\" onblur=\"valid_range(this,0,99999999,wl_basic.label6)\" value=\"%s\" />\n", power, nvram_default_get(power, "2000"));
-	websWrite(wp, "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 2000 \" + share.meters + \")\");\n//]]>\n</script></span>\n");
-	websWrite(wp, "</div>\n");
-	// end ACK timing
-#endif
+	if (has_acktiming(prefix)) {
+		sprintf(power, "%s_distance", prefix);
+		//websWrite(wp, "<br />\n");
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "wl_basic.label6", NULL);
+		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"8\" maxlength=\"8\" onblur=\"valid_range(this,0,99999999,wl_basic.label6)\" value=\"%s\" />\n", power, nvram_default_get(power, "2000"));
+		websWrite(wp, "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 2000 \" + share.meters + \")\");\n//]]>\n</script></span>\n");
+		websWrite(wp, "</div>\n");
+	}
 #ifdef HAVE_MADWIFI
 	if (nvram_nmatch("ap", "%s_mode", prefix)
 	    || nvram_nmatch("wdsap", "%s_mode", prefix)
