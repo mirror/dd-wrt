@@ -3740,6 +3740,22 @@ int get_maxbssid(char *name)
 	return 4;
 }
 
+int has_acktiming(const char *name)
+{
+	char cap[WLC_IOCTL_SMLEN];
+	char caps[WLC_IOCTL_MEDLEN];
+	char *next;
+	char *ifname = nvram_nget("%s_ifname", name);
+	if (wl_iovar_get(ifname, "cap", (void *)caps, sizeof(caps)))
+		return 0;
+	foreach(cap, caps, next) {
+		if (!strcmp(cap, "acktiming")) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
 #endif
 
 #ifdef HAVE_MADWIFI
