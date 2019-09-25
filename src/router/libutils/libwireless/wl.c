@@ -2917,7 +2917,6 @@ void setRegulationDomain(char *reg)
 {
 
 	char ccode[4] = "";
-	int cntry = 0;
 #define DEFAULT 0
 #define EU 1
 #define CN 2
@@ -2931,6 +2930,8 @@ void setRegulationDomain(char *reg)
 #define CA 10
 #define KR 11
 #define LA 12
+
+	int cntry = DEFAULT;
 	struct PAIRS {
 		char *code0;
 		int rev0;
