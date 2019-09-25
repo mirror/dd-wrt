@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-2.0
 b43-y				+= main.o
 b43-y				+= bus.o
 b43-$(CPTCFG_B43_PHY_G)		+= phy_g.o tables.o lo.o wa.o
@@ -17,7 +18,7 @@ b43-$(CPTCFG_B43_PHY_AC)	+= phy_ac.o
 b43-y				+= sysfs.o
 b43-y				+= xmit.o
 b43-y				+= dma.o
-b43-$(CPTCFG_B43_PIO)		+= pio.o
+b43-y				+= pio.o
 b43-y				+= rfkill.o
 b43-y				+= ppr.o
 b43-$(CPTCFG_B43_LEDS)		+= leds.o
