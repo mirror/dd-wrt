@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
 
   Broadcom B43 wireless driver
@@ -15,20 +16,6 @@
   Some parts of the code in this file are derived from the ipw2200
   driver  Copyright(c) 2003 - 2004 Intel Corporation.
 
-  This program is free software; you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
-
-  You should have received a copy of the GNU General Public License
-  along with this program; see the file COPYING.  If not, write to
-  the Free Software Foundation, Inc., 51 Franklin Steet, Fifth Floor,
-  Boston, MA 02110-1301, USA.
 
 */
 
@@ -85,11 +72,6 @@ MODULE_FIRMWARE("b43/ucode40.fw");
 MODULE_FIRMWARE("b43/ucode42.fw");
 MODULE_FIRMWARE("b43/ucode9.fw");
 
-static int modparam_gpiomask = 0x000F;
-module_param_named(gpiomask, modparam_gpiomask, int, 0444);
-MODULE_PARM_DESC(gpiomask,
-         "GPIO mask for LED control (default 0x000F)");
-
 static int modparam_bad_frames_preempt;
 module_param_named(bad_frames_preempt, modparam_bad_frames_preempt, int, 0444);
 MODULE_PARM_DESC(bad_frames_preempt,
@@ -127,8 +109,7 @@ static int b43_modparam_pio = 0;
 module_param_named(pio, b43_modparam_pio, int, 0644);
 MODULE_PARM_DESC(pio, "Use PIO accesses by default: 0=DMA, 1=PIO");
 
-
-static int modparam_allhwsupport = 1;
+static int modparam_allhwsupport = !IS_ENABLED(CONFIG_BRCMSMAC);
 module_param_named(allhwsupport, modparam_allhwsupport, int, 0444);
 MODULE_PARM_DESC(allhwsupport, "Enable support for all hardware (even it if overlaps with the brcmsmac driver)");
 
@@ -491,7 +472,6 @@ static void b43_ram_write(struct b43_wldev *dev, u16 offset, u32 val)
 		val = swab32(val);
 
 	b43_write32(dev, B43_MMIO_RAM_CONTROL, offset);
-	mmiowb();
 	b43_write32(dev, B43_MMIO_RAM_DATA, val);
 }
 
@@ -662,9 +642,7 @@ static void b43_tsf_write_locked(struct b43_wldev *dev, u64 tsf)
 	/* The hardware guarantees us an atomic write, if we
 	 * write the low register first. */
 	b43_write32(dev, B43_MMIO_REV3PLUS_TSF_LOW, low);
-	mmiowb();
 	b43_write32(dev, B43_MMIO_REV3PLUS_TSF_HIGH, high);
-	mmiowb();
 }
 
 void b43_tsf_write(struct b43_wldev *dev, u64 tsf)
@@ -1659,7 +1637,7 @@ static void b43_write_beacon_template(struct b43_wldev *dev,
 				  len, ram_offset, shm_size_offset, rate);
 
 	/* Write the PHY TX control parameters. */
-	antenna = dev->tx_antenna;
+	antenna = B43_ANTENNA_DEFAULT;
 	antenna = b43_antenna_to_phyctl(antenna);
 	ctl = b43_shm_read16(dev, B43_SHM_SHARED, B43_SHM_SH_BEACPHYCTL);
 	/* We can't send beacons with short preamble. Would get PHY errors. */
@@ -1828,11 +1806,9 @@ static void b43_beacon_update_trigger_work(struct work_struct *work)
 		if (b43_bus_host_is_sdio(dev->dev)) {
 			/* wl->mutex is enough. */
 			b43_do_beacon_update_trigger_work(dev);
-			mmiowb();
 		} else {
 			spin_lock_irq(&wl->hardirq_lock);
 			b43_do_beacon_update_trigger_work(dev);
-			mmiowb();
 			spin_unlock_irq(&wl->hardirq_lock);
 		}
 	}
@@ -2019,12 +1995,10 @@ static void b43_do_interrupt_thread(struct b43_wldev *dev)
 			dma_reason[0], dma_reason[1],
 			dma_reason[2], dma_reason[3],
 			dma_reason[4], dma_reason[5]);
-#ifdef CPTCFG_B43_PIO
 		b43err(dev->wl, "This device does not support DMA "
 			       "on your system. It will now be switched to PIO.\n");
 		/* Fall back to PIO transfers if we get fatal DMA errors! */
 		dev->use_pio = true;
-#endif
 		b43_controller_restart(dev, "DMA error");
 		return;
 	}
@@ -2086,7 +2060,6 @@ static irqreturn_t b43_interrupt_thread_handler(int irq, void *dev_id)
 
 	mutex_lock(&dev->wl->mutex);
 	b43_do_interrupt_thread(dev);
-	mmiowb();
 	mutex_unlock(&dev->wl->mutex);
 
 	return IRQ_HANDLED;
@@ -2151,7 +2124,6 @@ static irqreturn_t b43_interrupt_handler(int irq, void *dev_id)
 
 	spin_lock(&dev->wl->hardirq_lock);
 	ret = b43_do_interrupt(dev);
-	mmiowb();
 	spin_unlock(&dev->wl->hardirq_lock);
 
 	return ret;
@@ -2191,13 +2163,10 @@ static void b43_release_firmware(struct b43_wldev *dev)
 static void b43_print_fw_helptext(struct b43_wl *wl, bool error)
 {
 	const char text[] =
-		"Please open a terminal and enter the command " \
-		"\"sudo /usr/sbin/install_bcm43xx_firmware\" to download " \
-		"the correct firmware for this driver version. " \
-		"For an off-line installation, go to " \
-		"http://en.opensuse.org/HCL/Network_Adapters_(Wireless)/" \
-		"Broadcom_BCM43xx and follow the instructions in the " \
-		"\"Installing firmware from RPM packages\" section.\n";
+		"You must go to " \
+		"http://wireless.kernel.org/en/users/Drivers/b43#devicefirmware " \
+		"and download the correct firmware for this driver version. " \
+		"Please carefully read all instructions on this website.\n";
 
 	if (error)
 		b43err(wl, text);
@@ -2621,17 +2590,12 @@ start_ieee80211:
 
 	err = ieee80211_register_hw(wl->hw);
 	if (err)
-		goto err_one_core_detach;
+		goto out;
 	wl->hw_registered = true;
 	b43_leds_register(wl->current_dev);
 
 	/* Register HW RNG driver */
 	b43_rng_init(wl);
-
-	goto out;
-
-err_one_core_detach:
-	b43_one_core_detach(dev->dev);
 
 out:
 	kfree(ctx);
@@ -2903,24 +2867,16 @@ static int b43_gpio_init(struct b43_wldev *dev)
 	u32 mask, set;
 
 	b43_maskset32(dev, B43_MMIO_MACCTL, ~B43_MACCTL_GPOUTSMSK, 0);
-	b43_maskset16(dev, B43_MMIO_GPIO_MASK, ~0, modparam_gpiomask);
+	b43_maskset16(dev, B43_MMIO_GPIO_MASK, ~0, 0xF);
 
 	mask = 0x0000001F;
-	set = modparam_gpiomask;
+	set = 0x0000000F;
 	if (dev->dev->chip_id == 0x4301) {
 		mask |= 0x0060;
 		set |= 0x0060;
 	} else if (dev->dev->chip_id == 0x5354) {
 		/* Don't allow overtaking buttons GPIOs */
 		set &= 0x2; /* 0x2 is LED GPIO on BCM5354 */
-	} else if (dev->dev->chip_id == BCMA_CHIP_ID_BCM4716 || 
-		   dev->dev->chip_id == BCMA_CHIP_ID_BCM47162 ||
-		   dev->dev->chip_id == BCMA_CHIP_ID_BCM5356 ||
-		   dev->dev->chip_id == BCMA_CHIP_ID_BCM5357 ||
-		   dev->dev->chip_id == BCMA_CHIP_ID_BCM53572) {
-		/* just use gpio 0 and 1 for 2.4 GHz wifi led */
-		set &= 0x3;
-		mask &= 0x3;
 	}
 
 	if (0 /* FIXME: conditional unknown */ ) {
@@ -3319,8 +3275,8 @@ static int b43_chip_init(struct b43_wldev *dev)
 
 	/* Select the antennae */
 	if (phy->ops->set_rx_antenna)
-		phy->ops->set_rx_antenna(dev, dev->rx_antenna);
-	b43_mgmtframe_txantenna(dev, dev->tx_antenna);
+		phy->ops->set_rx_antenna(dev, B43_ANTENNA_DEFAULT);
+	b43_mgmtframe_txantenna(dev, B43_ANTENNA_DEFAULT);
 
 	if (phy->type == B43_PHYTYPE_B) {
 		value16 = b43_read16(dev, 0x005E);
@@ -4020,6 +3976,7 @@ static int b43_op_config(struct ieee80211_hw *hw, u32 changed)
 	struct b43_wldev *dev = wl->current_dev;
 	struct b43_phy *phy = &dev->phy;
 	struct ieee80211_conf *conf = &hw->conf;
+	int antenna;
 	int err = 0;
 
 	mutex_lock(&wl->mutex);
@@ -4062,9 +4019,11 @@ static int b43_op_config(struct ieee80211_hw *hw, u32 changed)
 	}
 
 	/* Antennas for RX and management frame TX. */
-	b43_mgmtframe_txantenna(dev, dev->tx_antenna);
+	antenna = B43_ANTENNA_DEFAULT;
+	b43_mgmtframe_txantenna(dev, antenna);
+	antenna = B43_ANTENNA_DEFAULT;
 	if (phy->ops->set_rx_antenna)
-		phy->ops->set_rx_antenna(dev, dev->rx_antenna);
+		phy->ops->set_rx_antenna(dev, antenna);
 
 	if (wl->radio_enabled != phy->radio_on) {
 		if (wl->radio_enabled) {
@@ -5208,47 +5167,6 @@ static int b43_op_get_survey(struct ieee80211_hw *hw, int idx,
 	return 0;
 }
 
-static int b43_op_set_antenna(struct ieee80211_hw *hw, u32 tx_ant, u32 rx_ant)
-{
-	struct b43_wl *wl = hw_to_b43_wl(hw);
-	struct b43_wldev *dev = wl->current_dev;
-
-	if (tx_ant == 1 && rx_ant == 1) {
-		dev->tx_antenna = B43_ANTENNA0;
-		dev->rx_antenna = B43_ANTENNA0;
-	}
-	else if (tx_ant == 2 && rx_ant == 2) {
-		dev->tx_antenna = B43_ANTENNA1;
-		dev->rx_antenna = B43_ANTENNA1;
-	}
-	else if ((tx_ant & 3) == 3 && (rx_ant & 3) == 3) {
-		dev->tx_antenna = B43_ANTENNA_DEFAULT;
-		dev->rx_antenna = B43_ANTENNA_DEFAULT;
-	}
-	else {
-		return -EINVAL;
-	}
-
-	return 0;
-}
-
-
-static int b43_op_get_antenna(struct ieee80211_hw *hw, u32 *tx_ant, u32 *rx_ant)
-{
-	struct b43_wl *wl = hw_to_b43_wl(hw);
-	struct b43_wldev *dev = wl->current_dev;
-
-	switch (dev->tx_antenna) {
-	case B43_ANTENNA0:
-		*tx_ant = 1; *rx_ant = 1; break;
-	case B43_ANTENNA1:
-		*tx_ant = 2; *rx_ant = 2; break;
-	case B43_ANTENNA_DEFAULT:
-		*tx_ant = 3; *rx_ant = 3; break;
-	}
-	return 0;
-}
-
 static const struct ieee80211_ops b43_hw_ops = {
 	.tx			= b43_op_tx,
 	.conf_tx		= b43_op_conf_tx,
@@ -5270,8 +5188,6 @@ static const struct ieee80211_ops b43_hw_ops = {
 	.sw_scan_complete	= b43_op_sw_scan_complete_notifier,
 	.get_survey		= b43_op_get_survey,
 	.rfkill_poll		= b43_rfkill_poll,
-	.set_antenna		= b43_op_set_antenna,
-	.get_antenna		= b43_op_get_antenna,
 };
 
 /* Hard-reset the chip. Do not call this directly.
@@ -5573,8 +5489,6 @@ static int b43_one_core_attach(struct b43_bus_dev *dev, struct b43_wl *wl)
 	if (!wldev)
 		goto out;
 
-	wldev->rx_antenna = B43_ANTENNA_DEFAULT;
-	wldev->tx_antenna = B43_ANTENNA_DEFAULT;
 	wldev->use_pio = b43_modparam_pio;
 	wldev->dev = dev;
 	wldev->wl = wl;
@@ -5668,9 +5582,6 @@ static struct b43_wl *b43_wireless_init(struct b43_bus_dev *dev)
 	hw->wiphy->flags |= WIPHY_FLAG_IBSS_RSN;
 
 	wiphy_ext_feature_set(hw->wiphy, NL80211_EXT_FEATURE_CQM_RSSI_LIST);
-
-	hw->wiphy->available_antennas_rx = 0x3;
-	hw->wiphy->available_antennas_tx = 0x3;
 
 	wl->hw_registered = false;
 	hw->max_rates = 2;
