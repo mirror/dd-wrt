@@ -690,6 +690,9 @@ endif
 ifeq ($(CONFIG_HOBBIT),y)
   CFLAGS += -DHAVE_HOBBIT
 endif
+ifeq ($(CONFIG_ACK),y)
+  CFLAGS += -DHAVE_ACK
+endif
 ifeq ($(CONFIG_MR3202A),y)
   CFLAGS += -DHAVE_MR3202A
   CFLAGS += -DHAVE_FONERA
