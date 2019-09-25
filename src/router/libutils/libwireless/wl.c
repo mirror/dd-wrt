@@ -2451,7 +2451,7 @@ static struct wifidevices wdevices[] = {
 	{ "88W8897 802.11ac", CHANNELSURVEY, 0x11ab, 0x2b38 },
 	{ "WIL6210 802.11ad", NONE, 0x1ae9, 0x0310 },
 	{ "SD8887 802.11ac", CHANNELSURVEY, 0x02df, 0x9135 },
-	{ "MT7615 802.11ac", NONE, 0x14c3, 0x7615 },
+	{ "MT7615 802.11ac", CHANNELSURVEY, 0x14c3, 0x7615 },
 	{ "MT7662E 802.11ac", NONE, 0x14c3, 0x7662 },
 	{ "BCM4350 802.11ac", NONE, 0x14e4, 0x4350 },
 	{ "BCM4356 802.11ac", NONE, 0x14e4, 0x4356 },
