@@ -391,6 +391,26 @@ static inline int has_dynamic_smps(const char *prefix)
 }
 
 #endif
+#ifdef HAVE_MADWIFI
+#ifdef HAVE_ATH9K
+extern int has_acktiming(const char *prefix);
+#else
+static inline int has_acktiming(const char *prefix)
+{
+	return 1;
+}
+#endif
+#elif  defined(HAVE_RT2880) && defined(HAVE_RT61)
+static inline int has_acktiming(const char *prefix)
+{
+	return 0;
+}
+#else
+extern int has_acktiming(const char *prefix);
+#endif
+
+
+
 #if defined(HAVE_ATH10K) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76)
 extern int has_vht160(const char *interface);
 extern int has_vht80(const char *interface);
