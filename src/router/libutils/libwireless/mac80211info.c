@@ -951,8 +951,9 @@ static void *cipher_worker(struct nlattr **tb, void *priv)
 	return ciphers;
 }
 
-static void *mac80211_has_worker(int phy, void *(*worker)(struct nlattr ** tb, void *priv), void *priv)
+static void *mac80211_has_worker(const char *prefix, void *(*worker)(struct nlattr ** tb, void *priv), void *priv)
 {
+	int phy = get_ath9k_phy_ifname(prefix);
 	struct nlattr *tb[NL80211_ATTR_MAX + 1];
 	struct nl_msg *msg;
 	struct genlmsghdr *gnlh;
@@ -981,23 +982,24 @@ nla_put_failure:
 
 }
 
-static __u32 *mac80211_get_ciphers(int phy, __u32 *num)
+static __u32 *mac80211_get_ciphers(const char *prefix, __u32 *num)
 {
-	return (__u32 *)mac80211_has_worker(phy, &cipher_worker, num);
+	return (__u32 *)mac80211_has_worker(prefix, &cipher_worker, num);
 }
 
-static int mac80211_has_feature(int phy, unsigned int feature)
+static int mac80211_has_feature(const char *prefix, unsigned int feature)
 {
-	return (long)mac80211_has_worker(phy, &feature_worker, &feature);
+	return (long)mac80211_has_worker(prefix, &feature_worker, &feature);
 }
+
 
 int has_smps(const char *prefix)
 {
 	if (!is_mac80211(prefix))
 		return 0;
 	INITVALUECACHE();
-	ret = mac80211_has_feature(get_ath9k_phy_ifname(prefix), NL80211_FEATURE_STATIC_SMPS);
-	ret |= mac80211_has_feature(get_ath9k_phy_ifname(prefix), NL80211_FEATURE_DYNAMIC_SMPS);
+	ret = mac80211_has_feature(prefix, NL80211_FEATURE_STATIC_SMPS);
+	ret |= mac80211_has_feature(prefix, NL80211_FEATURE_DYNAMIC_SMPS);
 	EXITVALUECACHE();
 	return ret;
 }
@@ -1007,7 +1009,7 @@ int has_dynamic_smps(const char *prefix)
 	if (!is_mac80211(prefix))
 		return 0;
 	INITVALUECACHE();
-	ret = mac80211_has_feature(get_ath9k_phy_ifname(prefix), NL80211_FEATURE_DYNAMIC_SMPS);
+	ret = mac80211_has_feature(prefix, NL80211_FEATURE_DYNAMIC_SMPS);
 	EXITVALUECACHE();
 	return ret;
 }
@@ -1017,7 +1019,7 @@ int has_static_smps(const char *prefix)
 	if (!is_mac80211(prefix))
 		return 0;
 	INITVALUECACHE();
-	ret = mac80211_has_feature(get_ath9k_phy_ifname(prefix), NL80211_FEATURE_STATIC_SMPS);
+	ret = mac80211_has_feature(prefix, NL80211_FEATURE_STATIC_SMPS);
 	EXITVALUECACHE();
 	return ret;
 }
@@ -1027,7 +1029,7 @@ int has_uapsd(const char *prefix)
 	if (!is_mac80211(prefix))
 		return 0;
 	INITVALUECACHE();
-	ret = mac80211_has_feature(get_ath9k_phy_ifname(prefix), NL80211_ATTR_SUPPORT_AP_UAPSD);
+	ret = mac80211_has_feature(prefix, NL80211_ATTR_SUPPORT_AP_UAPSD);
 	EXITVALUECACHE();
 	return ret;
 }
@@ -1916,14 +1918,9 @@ void mac80211_set_antennas(int phy, uint32_t tx_ant, uint32_t rx_ant)
 	return;
 }
 
-static int mac80211_has_iftype(int phy, enum nl80211_iftype iftype)
+static int mac80211_has_iftype(const char *prefix, enum nl80211_iftype iftype)
 {
-	return (long)mac80211_has_worker(phy, &iftype_worker, &iftype);
-}
-
-static int mac80211_has_acktiming(int phy)
-{
-	return (long)mac80211_has_worker(phy, &acktiming_worker, NULL);
+	return (long)mac80211_has_worker(prefix, &iftype_worker, &iftype);
 }
 
 int has_acktiming(const char *prefix)
@@ -1931,7 +1928,7 @@ int has_acktiming(const char *prefix)
 	if (!is_mac80211(prefix))
 		return 0;
 	INITVALUECACHE();
-	ret = mac80211_has_acktiming(get_ath9k_phy_ifname(prefix));
+	ret = (long)mac80211_has_worker(prefix, &acktiming_worker, NULL);
 	EXITVALUECACHE();
 	return ret;
 }
@@ -1941,7 +1938,7 @@ int has_ibss(const char *prefix)
 	if (!is_mac80211(prefix))
 		return 0;
 	INITVALUECACHE();
-	ret = mac80211_has_iftype(get_ath9k_phy_ifname(prefix), NL80211_IFTYPE_ADHOC);
+	ret = mac80211_has_iftype(prefix, NL80211_IFTYPE_ADHOC);
 	EXITVALUECACHE();
 	return ret;
 }
@@ -1952,7 +1949,7 @@ int has_mesh(const char *prefix)
 	if (!is_mac80211(prefix))
 		return 0;
 	INITVALUECACHE();
-	ret = mac80211_has_iftype(get_ath9k_phy_ifname(prefix), NL80211_IFTYPE_MESH_POINT);
+	ret = mac80211_has_iftype(prefix, NL80211_IFTYPE_MESH_POINT);
 	EXITVALUECACHE();
 	return ret;
 }
@@ -1962,7 +1959,7 @@ int has_tdma(const char *prefix)
 	if (!is_mac80211(prefix))
 		return 0;
 	INITVALUECACHE();
-	ret = mac80211_has_iftype(get_ath9k_phy_ifname(prefix), NL80211_IFTYPE_TDMA);
+	ret = mac80211_has_iftype(prefix, NL80211_IFTYPE_TDMA);
 	EXITVALUECACHE();
 	return ret;
 }
@@ -2018,11 +2015,8 @@ nla_put_failure:
 
 static int match_cipher(const char *prefix, __u32 cipher)
 {
-	int phy = mac80211_get_phyidx_by_vifname(prefix);
-	if (phy == -1)
-		return 0;
 	__u32 num;
-	__u32 *ciphers = mac80211_get_ciphers(phy, &num);
+	__u32 *ciphers = mac80211_get_ciphers(prefix, &num);
 	if (!ciphers)
 		return 0;
 	int i;
