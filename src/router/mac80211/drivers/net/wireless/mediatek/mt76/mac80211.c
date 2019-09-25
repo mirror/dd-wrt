@@ -294,6 +294,8 @@ mt76_alloc_device(struct device *pdev, unsigned int size,
 	init_waitqueue_head(&dev->tx_wait);
 	skb_queue_head_init(&dev->status_list);
 
+	tasklet_init(&dev->tx_tasklet, mt76_tx_tasklet, (unsigned long)dev);
+
 	return dev;
 }
 EXPORT_SYMBOL_GPL(mt76_alloc_device);
@@ -415,11 +417,6 @@ void mt76_set_channel(struct mt76_dev *dev)
 	bool offchannel = hw->conf.flags & IEEE80211_CONF_OFFCHANNEL;
 	int timeout = HZ / 5;
 
-	if (offchannel)
-		set_bit(MT76_OFFCHANNEL, &dev->state);
-	else
-		clear_bit(MT76_OFFCHANNEL, &dev->state);
-
 	wait_event_timeout(dev->tx_wait, !mt76_has_tx_pending(dev), timeout);
 
 	if (dev->drv->update_survey)
@@ -516,7 +513,7 @@ void mt76_wcid_key_setup(struct mt76_dev *dev, struct mt76_wcid *wcid,
 }
 EXPORT_SYMBOL(mt76_wcid_key_setup);
 
-struct ieee80211_sta *mt76_rx_convert(struct sk_buff *skb)
+static struct ieee80211_sta *mt76_rx_convert(struct sk_buff *skb)
 {
 	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(skb);
 	struct mt76_rx_status mstat;
@@ -543,7 +540,6 @@ struct ieee80211_sta *mt76_rx_convert(struct sk_buff *skb)
 
 	return wcid_to_sta(mstat.wcid);
 }
-EXPORT_SYMBOL(mt76_rx_convert);
 
 static int
 mt76_check_ccmp_pn(struct sk_buff *skb)
@@ -735,6 +731,9 @@ void __mt76_sta_remove(struct mt76_dev *dev, struct ieee80211_vif *vif,
 	rcu_assign_pointer(dev->wcid[idx], NULL);
 	synchronize_rcu();
 
+	for (i = 0; i < ARRAY_SIZE(wcid->aggr); i++)
+		mt76_rx_aggr_stop(dev, wcid, i);
+
 	if (dev->drv->sta_remove)
 		dev->drv->sta_remove(dev, vif, sta);
 
@@ -899,3 +898,20 @@ int mt76_get_rate(struct mt76_dev *dev,
 	return 0;
 }
 EXPORT_SYMBOL_GPL(mt76_get_rate);
+
+void mt76_sw_scan(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
+		  const u8 *mac)
+{
+	struct mt76_dev *dev = hw->priv;
+
+	set_bit(MT76_SCANNING, &dev->state);
+}
+EXPORT_SYMBOL_GPL(mt76_sw_scan);
+
+void mt76_sw_scan_complete(struct ieee80211_hw *hw, struct ieee80211_vif *vif)
+{
+	struct mt76_dev *dev = hw->priv;
+
+	clear_bit(MT76_SCANNING, &dev->state);
+}
+EXPORT_SYMBOL_GPL(mt76_sw_scan_complete);

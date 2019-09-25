@@ -16,7 +16,7 @@
 #define MT7615_WTBL_STA			(MT7615_WTBL_RESERVED - \
 					 MT7615_MAX_INTERFACES)
 
-#define MT7615_WATCHDOG_TIME		100 /* ms */
+#define MT7615_WATCHDOG_TIME		(HZ / 10)
 #define MT7615_RATE_RETRY		2
 
 #define MT7615_TX_RING_SIZE		1024
@@ -26,12 +26,15 @@
 #define MT7615_RX_RING_SIZE		1024
 #define MT7615_RX_MCU_RING_SIZE		512
 
-#define MT7615_FIRMWARE_CR4		"mt7615_cr4.bin"
-#define MT7615_FIRMWARE_N9		"mt7615_n9.bin"
-#define MT7615_ROM_PATCH		"mt7615_rom_patch.bin"
+#define MT7615_FIRMWARE_CR4		"mediatek/mt7615_cr4.bin"
+#define MT7615_FIRMWARE_N9		"mediatek/mt7615_n9.bin"
+#define MT7615_ROM_PATCH		"mediatek/mt7615_rom_patch.bin"
 
 #define MT7615_EEPROM_SIZE		1024
 #define MT7615_TOKEN_SIZE		4096
+
+#define MT_FRAC_SCALE		12
+#define MT_FRAC(val, div)	(((val) << MT_FRAC_SCALE) / (div))
 
 struct mt7615_vif;
 struct mt7615_sta;
@@ -77,8 +80,6 @@ struct mt7615_dev {
 	struct mt76_dev mt76; /* must be first */
 	u32 vif_mask;
 	u32 omac_mask;
-	ktime_t survey_time;
-	ktime_t ed_time;
 
 	struct {
 		u8 n_pulses;
@@ -89,7 +90,7 @@ struct mt7615_dev {
 	u32 hw_pattern;
 	int dfs_state;
 
-	u32 false_cca_ofdm, false_cca_cck;
+	int false_cca_ofdm, false_cca_cck;
 	unsigned long last_cca_adj;
 	u8 mac_work_count;
 	s8 ofdm_sensitivity;
@@ -227,6 +228,7 @@ static inline void mt7615_irq_disable(struct mt7615_dev *dev, u32 mask)
 	mt76_set_irq_mask(&dev->mt76, MT_INT_MASK_CSR, mask, 0);
 }
 
+void mt7615_update_channel(struct mt76_dev *mdev);
 void mt7615_mac_cca_stats_reset(struct mt7615_dev *dev);
 void mt7615_mac_set_scs(struct mt7615_dev *dev, bool enable);
 int mt7615_mac_write_txwi(struct mt7615_dev *dev, __le32 *txwi,
@@ -244,6 +246,7 @@ int mt7615_mcu_set_eeprom(struct mt7615_dev *dev);
 int mt7615_mcu_init_mac(struct mt7615_dev *dev);
 int mt7615_mcu_set_rts_thresh(struct mt7615_dev *dev, u32 val);
 int mt7615_mcu_ctrl_pm_state(struct mt7615_dev *dev, int enter);
+int mt7615_mcu_get_temperature(struct mt7615_dev *dev, int index);
 int mt7615_mcu_set_tx_power(struct mt7615_dev *dev);
 void mt7615_mcu_exit(struct mt7615_dev *dev);
 
@@ -271,7 +274,5 @@ int mt76_dfs_start_rdd(struct mt7615_dev *dev, bool force);
 int mt7615_dfs_init_radar_detector(struct mt7615_dev *dev);
 
 int mt7615_init_debugfs(struct mt7615_dev *dev);
-
-void mt7615_update_channel(struct mt76_dev *mdev);
 
 #endif

@@ -75,6 +75,11 @@ struct mt76x02_beacon_ops {
 	void (*beacon_enable)(struct mt76x02_dev *dev, bool en);
 };
 
+#define mt76x02_beacon_enable(dev, enable)	\
+	(dev)->beacon_ops->beacon_enable(dev, enable)
+#define mt76x02_pre_tbtt_enable(dev, enable)	\
+	(dev)->beacon_ops->pre_tbtt_enable(dev, enable)
+
 struct mt76x02_dev {
 	struct mt76_dev mt76; /* must be first */
 
@@ -183,8 +188,6 @@ int mt76x02_tx_prepare_skb(struct mt76_dev *mdev, void *txwi,
 			   enum mt76_txq_id qid, struct mt76_wcid *wcid,
 			   struct ieee80211_sta *sta,
 			   struct mt76_tx_info *tx_info);
-void mt76x02_sw_scan(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
-		     const u8 *mac);
 void mt76x02_sw_scan_complete(struct ieee80211_hw *hw,
 			      struct ieee80211_vif *vif);
 void mt76x02_sta_ps(struct mt76_dev *dev, struct ieee80211_sta *sta, bool ps);
