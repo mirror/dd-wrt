@@ -909,10 +909,10 @@ static void *iftype_worker(struct nlattr **tb, void *priv)
 	if (tb[NL80211_ATTR_SUPPORTED_IFTYPES]) {
 		nla_for_each_nested(nl_mode, tb[NL80211_ATTR_SUPPORTED_IFTYPES], rem_mode)
 		    if (nla_type(nl_mode) == *((int *)priv)) {
-			return (void*)1;
+			return (void *)1;
 		}
 	}
-	return (void*)0;
+	return (void *)0;
 }
 
 static void *acktiming_worker(struct nlattr **tb, void *priv)
@@ -920,9 +920,9 @@ static void *acktiming_worker(struct nlattr **tb, void *priv)
 	struct nlattr *nl_mode;
 	int rem_mode;
 	if (tb[NL80211_ATTR_WIPHY_COVERAGE_CLASS]) {
-		return (void*)1;
+		return (void *)1;
 	}
-	return (void*)0;
+	return (void *)0;
 }
 
 static void *feature_worker(struct nlattr **tb, void *priv)
@@ -931,10 +931,10 @@ static void *feature_worker(struct nlattr **tb, void *priv)
 	if (tb[NL80211_ATTR_FEATURE_FLAGS]) {
 		unsigned int features = nla_get_u32(tb[NL80211_ATTR_FEATURE_FLAGS]);
 		if ((features & feature) == feature) {
-			return (void*)1;
+			return (void *)1;
 		}
 	}
-	return (void*)0;
+	return (void *)0;
 }
 
 static void *cipher_worker(struct nlattr **tb, void *priv)
@@ -991,7 +991,6 @@ static int mac80211_has_feature(const char *prefix, unsigned int feature)
 {
 	return (long)mac80211_has_worker(prefix, &feature_worker, &feature);
 }
-
 
 int has_smps(const char *prefix)
 {
@@ -2011,7 +2010,6 @@ nla_put_failure:
 	unlock();
 	return 0;
 }
-
 
 static int match_cipher(const char *prefix, __u32 cipher)
 {
