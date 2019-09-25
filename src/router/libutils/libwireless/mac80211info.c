@@ -902,13 +902,46 @@ int has_greenfield(const char *interface)
 
 }
 
-static int mac80211_has_feature(int phy, unsigned int feature)
+static int iftype_worker(struct nlattr **tb, void *priv)
+{
+	struct nlattr *nl_mode;
+	int rem_mode;
+	if (tb[NL80211_ATTR_SUPPORTED_IFTYPES]) {
+		nla_for_each_nested(nl_mode, tb[NL80211_ATTR_SUPPORTED_IFTYPES], rem_mode)
+		    if (nla_type(nl_mode) == *((int *)priv)) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+static int acktiming_worker(struct nlattr **tb, void *priv)
+{
+	struct nlattr *nl_mode;
+	int rem_mode;
+	if (tb[NL80211_ATTR_WIPHY_COVERAGE_CLASS]) {
+		return 1;
+	}
+	return 0;
+}
+
+static int feature_worker(struct nlattr **tb, void *priv)
+{
+	unsigned int feature = *((int *)priv);
+	if (tb[NL80211_ATTR_FEATURE_FLAGS]) {
+		unsigned int features = nla_get_u32(tb[NL80211_ATTR_FEATURE_FLAGS]);
+		if ((features & feature) == feature) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+static int mac80211_has_worker(int phy, int (*worker)(struct nlattr ** tb, void *priv), void *priv)
 {
 	struct nlattr *tb[NL80211_ATTR_MAX + 1];
 	struct nl_msg *msg;
-	struct nlattr *nl_mode;
 	struct genlmsghdr *gnlh;
-	int rem_mode;
 	int ret = 0;
 	lock();
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
@@ -922,14 +955,7 @@ static int mac80211_has_feature(int phy, unsigned int feature)
 	}
 	gnlh = nlmsg_data(nlmsg_hdr(msg));
 	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
-
-	if (tb[NL80211_ATTR_FEATURE_FLAGS]) {
-		unsigned int features = nla_get_u32(tb[NL80211_ATTR_FEATURE_FLAGS]);
-		if ((features & feature) == feature) {
-			ret = 1;
-			goto found;
-		}
-	}
+	ret = worker(tb, priv);
       found:;
 	nlmsg_free(msg);
 	unlock();
@@ -939,6 +965,11 @@ nla_put_failure:
 	unlock();
 	return 0;
 
+}
+
+static int mac80211_has_feature(int phy, unsigned int feature)
+{
+	return mac80211_has_worker(phy, &feature_worker, &feature);
 }
 
 int has_smps(const char *prefix)
@@ -1868,78 +1899,14 @@ void mac80211_set_antennas(int phy, uint32_t tx_ant, uint32_t rx_ant)
 
 static int mac80211_has_iftype(int phy, enum nl80211_iftype iftype)
 {
-	struct nlattr *tb[NL80211_ATTR_MAX + 1];
-	struct nl_msg *msg;
-	struct nlattr *nl_mode;
-	struct genlmsghdr *gnlh;
-	int rem_mode;
-	int ret = 0;
-	lock();
-	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
-	if (!msg) {
-		unlock();
-		return 0;
-	}
-	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
-	if (unl_genl_request_single(&unl, msg, &msg) < 0) {
-		goto nla_put_failure;
-	}
-	gnlh = nlmsg_data(nlmsg_hdr(msg));
-	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
-
-	if (tb[NL80211_ATTR_SUPPORTED_IFTYPES]) {
-		nla_for_each_nested(nl_mode, tb[NL80211_ATTR_SUPPORTED_IFTYPES], rem_mode)
-		    if (nla_type(nl_mode) == iftype) {
-			ret = 1;
-			goto found;
-		}
-	}
-      found:;
-	nlmsg_free(msg);
-	unlock();
-	return ret;
-nla_put_failure:
-	nlmsg_free(msg);
-	unlock();
-	return 0;
-
+	return mac80211_has_worker(phy, &iftype_worker, &iftype);
 }
-
 
 static int mac80211_has_acktiming(int phy)
 {
-	struct nlattr *tb[NL80211_ATTR_MAX + 1];
-	struct nl_msg *msg;
-	struct nlattr *nl_mode;
-	struct genlmsghdr *gnlh;
-	int rem_mode;
-	int ret = 0;
-	lock();
-	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
-	if (!msg) {
-		unlock();
-		return 0;
-	}
-	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
-	if (unl_genl_request_single(&unl, msg, &msg) < 0) {
-		goto nla_put_failure;
-	}
-	gnlh = nlmsg_data(nlmsg_hdr(msg));
-	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
-
-	if (tb[NL80211_ATTR_WIPHY_COVERAGE_CLASS]) {
-		ret = 1;
-	}
-      found:;
-	nlmsg_free(msg);
-	unlock();
-	return ret;
-nla_put_failure:
-	nlmsg_free(msg);
-	unlock();
-	return 0;
-
+	return mac80211_has_worker(phy, &acktiming_worker, NULL);
 }
+
 int has_acktiming(const char *prefix)
 {
 	if (!is_mac80211(prefix))
@@ -1949,7 +1916,6 @@ int has_acktiming(const char *prefix)
 	EXITVALUECACHE();
 	return ret;
 }
-
 
 int has_ibss(const char *prefix)
 {
