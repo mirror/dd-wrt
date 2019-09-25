@@ -4318,10 +4318,8 @@ brcmf_parse_vndr_ies(const u8 *vndr_ie_buf, u32 vndr_ie_len,
 
 		vndr_ies->count++;
 
-		brcmf_dbg(TRACE, "** OUI %02x %02x %02x, type 0x%02x\n",
-			  parsed_info->vndrie.oui[0],
-			  parsed_info->vndrie.oui[1],
-			  parsed_info->vndrie.oui[2],
+		brcmf_dbg(TRACE, "** OUI %3ph, type 0x%02x\n",
+			  parsed_info->vndrie.oui,
 			  parsed_info->vndrie.oui_type);
 
 		if (vndr_ies->count >= VNDR_IE_PARSE_LIMIT)
@@ -4445,12 +4443,10 @@ s32 brcmf_vif_set_mgmt_ie(struct brcmf_cfg80211_vif *vif, s32 pktflag,
 		for (i = 0; i < old_vndr_ies.count; i++) {
 			vndrie_info = &old_vndr_ies.ie_info[i];
 
-			brcmf_dbg(TRACE, "DEL ID : %d, Len: %d , OUI:%02x:%02x:%02x\n",
+			brcmf_dbg(TRACE, "DEL ID : %d, Len: %d , OUI:%3ph\n",
 				  vndrie_info->vndrie.id,
 				  vndrie_info->vndrie.len,
-				  vndrie_info->vndrie.oui[0],
-				  vndrie_info->vndrie.oui[1],
-				  vndrie_info->vndrie.oui[2]);
+				  vndrie_info->vndrie.oui);
 
 			del_add_ie_buf_len = brcmf_vndr_ie(curr_ie_buf, pktflag,
 							   vndrie_info->ie_ptr,
@@ -4482,12 +4478,10 @@ s32 brcmf_vif_set_mgmt_ie(struct brcmf_cfg80211_vif *vif, s32 pktflag,
 			remained_buf_len -= (vndrie_info->ie_len +
 					     VNDR_IE_VSIE_OFFSET);
 
-			brcmf_dbg(TRACE, "ADDED ID : %d, Len: %d, OUI:%02x:%02x:%02x\n",
+			brcmf_dbg(TRACE, "ADDED ID : %d, Len: %d, OUI:%3ph\n",
 				  vndrie_info->vndrie.id,
 				  vndrie_info->vndrie.len,
-				  vndrie_info->vndrie.oui[0],
-				  vndrie_info->vndrie.oui[1],
-				  vndrie_info->vndrie.oui[2]);
+				  vndrie_info->vndrie.oui);
 
 			del_add_ie_buf_len = brcmf_vndr_ie(curr_ie_buf, pktflag,
 							   vndrie_info->ie_ptr,
@@ -4711,7 +4705,7 @@ brcmf_cfg80211_start_ap(struct wiphy *wiphy, struct net_device *ndev,
 
 	/* Interface specific setup */
 	if (dev_role == NL80211_IFTYPE_AP) {
-		if ((brcmf_feat_is_enabled(ifp, BRCMF_FEAT_MBSS)) && (!mbss))
+		if ((brcmf_feat_is_enabled(ifp, BRCMF_FEAT_MBSS4) || brcmf_feat_is_enabled(ifp, BRCMF_FEAT_MBSS8) || brcmf_feat_is_enabled(ifp, BRCMF_FEAT_MBSS16)) && (!mbss))
 			brcmf_fil_iovar_int_set(ifp, "mbss", 1);
 
 		err = brcmf_fil_cmd_int_set(ifp, BRCMF_C_SET_AP, 1);
@@ -4836,7 +4830,7 @@ static int brcmf_cfg80211_stop_ap(struct wiphy *wiphy, struct net_device *ndev)
 		err = brcmf_fil_cmd_int_set(ifp, BRCMF_C_SET_AP, 0);
 		if (err < 0)
 			bphy_err(drvr, "setting AP mode failed %d\n", err);
-		if (brcmf_feat_is_enabled(ifp, BRCMF_FEAT_MBSS))
+		if (brcmf_feat_is_enabled(ifp, BRCMF_FEAT_MBSS4) || brcmf_feat_is_enabled(ifp, BRCMF_FEAT_MBSS8) || brcmf_feat_is_enabled(ifp, BRCMF_FEAT_MBSS16))
 			brcmf_fil_iovar_int_set(ifp, "mbss", 0);
 		brcmf_fil_cmd_int_set(ifp, BRCMF_C_SET_REGULATORY,
 				      ifp->vif->is_11d);
@@ -6578,10 +6572,15 @@ static int brcmf_setup_ifmodes(struct wiphy *wiphy, struct brcmf_if *ifp)
 	struct ieee80211_iface_limit *mbss_limits = NULL;
 	bool mbss, p2p;
 	int i, c, n_combos;
+	int maxbss = 4;
 
-	mbss = brcmf_feat_is_enabled(ifp, BRCMF_FEAT_MBSS);
+	mbss = brcmf_feat_is_enabled(ifp, BRCMF_FEAT_MBSS4) || brcmf_feat_is_enabled(ifp, BRCMF_FEAT_MBSS8) || brcmf_feat_is_enabled(ifp, BRCMF_FEAT_MBSS16);
 	p2p = brcmf_feat_is_enabled(ifp, BRCMF_FEAT_P2P);
-
+    	if (brcmf_feat_is_enabled(ifp, BRCMF_FEAT_MBSS8))
+    		maxbss = 8;
+    	if (brcmf_feat_is_enabled(ifp, BRCMF_FEAT_MBSS16))
+    		maxbss = 16;
+	
 	n_combos = 1 + !!p2p + !!mbss;
 	combo = kcalloc(n_combos, sizeof(*combo), GFP_KERNEL);
 	if (!combo)
@@ -6646,11 +6645,11 @@ static int brcmf_setup_ifmodes(struct wiphy *wiphy, struct brcmf_if *ifp)
 		mbss_limits = kcalloc(1, sizeof(*mbss_limits), GFP_KERNEL);
 		if (!mbss_limits)
 			goto err;
-		mbss_limits[i].max = 4;
+		mbss_limits[i].max = maxbss;
 		mbss_limits[i++].types = BIT(NL80211_IFTYPE_AP);
 		combo[c].beacon_int_infra_match = true;
 		combo[c].num_different_channels = 1;
-		combo[c].max_interfaces = 4;
+		combo[c].max_interfaces = maxbss;
 		combo[c].n_limits = i;
 		combo[c].limits = mbss_limits;
 	}
@@ -7006,6 +7005,53 @@ int brcmf_cfg80211_wait_vif_event(struct brcmf_cfg80211_info *cfg,
 				  vif_event_equals(event, action), timeout);
 }
 
+static void getCountryRev(char *ccode, int *rev, char *alpha2)
+{
+	int EU = !memcmp(alpha2, "EU", 2) || !memcmp(alpha2, "DE", 2) || !memcmp(alpha2, "GB", 2) || !memcmp(alpha2, "FR", 2) || !memcmp(alpha2, "NL", 2) || !memcmp(alpha2, "ES", 2) || !memcmp(alpha2, "IT", 2);
+	int CN = !memcmp(alpha2, "CN", 2);
+	int US = !memcmp(alpha2, "US", 2);
+	int JP = !memcmp(alpha2, "JP", 2);
+	int AU = !memcmp(alpha2, "AU", 2);
+	int SG = !memcmp(alpha2, "SG", 2);
+	int BR = !memcmp(alpha2, "BR", 2);
+	int RU = !memcmp(alpha2, "RU", 2);
+	int TW = !memcmp(alpha2, "TW", 2);
+	int CA = !memcmp(alpha2, "CA", 2);
+	int KR = !memcmp(alpha2, "KR", 2);
+	int LA = !memcmp(alpha2, "LA", 2);
+
+	if (EU) {
+		strcpy(&ccode[0], "EU");
+		*rev = 38;
+	} else if (CN) {
+		*rev = 65;
+	} else if (TW) {
+		*rev = 990;
+	} else if (JP) {
+		*rev = 44;
+	} else if (CA) {
+		*rev = 974;
+	} else if (US) {
+		strcpy(&ccode[0], "Q2");
+		*rev = 989;
+	} else if (AU) {
+		*rev = 8;
+	} else if (RU) {
+		*rev = 993;
+	} else if (KR) {
+		*rev = 982;
+	} else if (LA) {
+		*rev = 6;
+	} else if (BR) {
+		*rev = 23;
+	} else if (SG) {
+		*rev = 994;
+	} else {
+		strcpy(&ccode[0], "Q2");
+		*rev = 989;
+	}
+
+}
 static s32 brcmf_translate_country_code(struct brcmf_pub *drvr, char alpha2[2],
 					struct brcmf_fil_country_le *ccreq)
 {
@@ -7025,10 +7071,8 @@ static s32 brcmf_translate_country_code(struct brcmf_pub *drvr, char alpha2[2],
 		return -EAGAIN;
 	}
 	memset(ccreq, 0, sizeof(*ccreq));
-	ccreq->rev = rev;
-	ccreq->ccode[0] = alpha2[0];
-	ccreq->ccode[1] = alpha2[1];
-	ccreq->ccode[2] = 0;
+	getCountryRev(&ccreq->ccode[0], &ccreq->rev, &alpha2[0]);
+#if 0
 	if (country_codes) {
 		found_index = -1;
 		for (i = 0; i < country_codes->table_size; i++) {
@@ -7049,10 +7093,9 @@ static s32 brcmf_translate_country_code(struct brcmf_pub *drvr, char alpha2[2],
 	memcpy(ccreq->ccode, country_codes->table[found_index].cc,
 	       BRCMF_COUNTRY_BUF_SZ);
 	}
-	ccreq->country_abbrev[0] = alpha2[0];
-	ccreq->country_abbrev[1] = alpha2[1];
-	ccreq->country_abbrev[2] = 0;
-
+#endif
+	getCountryRev(&ccreq->country_abbrev[0], &ccreq->rev, &alpha2[0]);
+	
 	return 0;
 }
 
@@ -7329,7 +7372,6 @@ void brcmf_cfg80211_detach(struct brcmf_cfg80211_info *cfg)
 	brcmf_pno_detach(cfg);
 	brcmf_btcoex_detach(cfg);
 	wiphy_unregister(cfg->wiphy);
-	kfree(cfg->ops);
 	wl_deinit_priv(cfg);
 	brcmf_free_wiphy(cfg->wiphy);
 	kfree(cfg);

@@ -840,17 +840,17 @@ static void brcmf_del_if(struct brcmf_pub *drvr, s32 bsscfgidx,
 			 bool rtnl_locked)
 {
 	struct brcmf_if *ifp;
+	int ifidx;
 
 	ifp = drvr->iflist[bsscfgidx];
-	drvr->iflist[bsscfgidx] = NULL;
 	if (!ifp) {
 		bphy_err(drvr, "Null interface, bsscfgidx=%d\n", bsscfgidx);
 		return;
 	}
 	brcmf_dbg(TRACE, "Enter, bsscfgidx=%d, ifidx=%d\n", bsscfgidx,
 		  ifp->ifidx);
-	if (drvr->if2bss[ifp->ifidx] == bsscfgidx)
-		drvr->if2bss[ifp->ifidx] = BRCMF_BSSIDX_INVALID;
+	ifidx = ifp->ifidx;
+
 	if (ifp->ndev) {
 		if (bsscfgidx == 0) {
 			if (ifp->ndev->netdev_ops == &brcmf_netdev_ops_pri) {
@@ -878,6 +878,10 @@ static void brcmf_del_if(struct brcmf_pub *drvr, s32 bsscfgidx,
 		brcmf_p2p_ifp_removed(ifp, rtnl_locked);
 		kfree(ifp);
 	}
+
+	drvr->iflist[bsscfgidx] = NULL;
+	if (drvr->if2bss[ifidx] == bsscfgidx)
+		drvr->if2bss[ifidx] = BRCMF_BSSIDX_INVALID;
 }
 
 void brcmf_remove_interface(struct brcmf_if *ifp, bool rtnl_locked)
@@ -1091,6 +1095,29 @@ static void brcmf_core_bus_reset(struct work_struct *work)
 	brcmf_bus_reset(drvr->bus_if);
 }
 
+static ssize_t bus_reset_write(struct file *file, const char __user *user_buf,
+			       size_t count, loff_t *ppos)
+{
+	struct brcmf_pub *drvr = file->private_data;
+	u8 value;
+
+	if (kstrtou8_from_user(user_buf, count, 0, &value))
+		return -EINVAL;
+
+	if (value != 1)
+		return -EINVAL;
+
+	schedule_work(&drvr->bus_reset);
+
+	return count;
+}
+
+static const struct file_operations bus_reset_fops = {
+	.open	= simple_open,
+	.llseek	= no_llseek,
+	.write	= bus_reset_write,
+};
+
 static int brcmf_bus_started(struct brcmf_pub *drvr, struct cfg80211_ops *ops)
 {
 	int ret = -1;
@@ -1166,6 +1193,8 @@ static int brcmf_bus_started(struct brcmf_pub *drvr, struct cfg80211_ops *ops)
 
 	/* populate debugfs */
 	brcmf_debugfs_add_entry(drvr, "revinfo", brcmf_revinfo_read);
+	debugfs_create_file("reset", 0600, brcmf_debugfs_get_devdir(drvr), drvr,
+			    &bus_reset_fops);
 	brcmf_feat_debugfs_create(drvr);
 	brcmf_proto_debugfs_create(drvr);
 	brcmf_bus_debugfs_create(bus_if);
@@ -1189,13 +1218,11 @@ fail:
 	return ret;
 }
 
-int brcmf_attach(struct device *dev, struct brcmf_mp_device *settings)
+int brcmf_alloc(struct device *dev, struct brcmf_mp_device *settings)
 {
 	struct wiphy *wiphy;
 	struct cfg80211_ops *ops;
 	struct brcmf_pub *drvr = NULL;
-	int ret = 0;
-	int i;
 
 	brcmf_dbg(TRACE, "Enter\n");
 
@@ -1204,12 +1231,30 @@ int brcmf_attach(struct device *dev, struct brcmf_mp_device *settings)
 		return -ENOMEM;
 
 	wiphy = wiphy_new(ops, sizeof(*drvr));
-	if (!wiphy)
+	if (!wiphy) {
+		kfree(ops);
 		return -ENOMEM;
+	}
 
 	set_wiphy_dev(wiphy, dev);
 	drvr = wiphy_priv(wiphy);
 	drvr->wiphy = wiphy;
+	drvr->ops = ops;
+	drvr->bus_if = dev_get_drvdata(dev);
+	drvr->bus_if->drvr = drvr;
+	drvr->settings = settings;
+
+	return 0;
+}
+
+int brcmf_attach(struct device *dev)
+{
+	struct brcmf_bus *bus_if = dev_get_drvdata(dev);
+	struct brcmf_pub *drvr = bus_if->drvr;
+	int ret = 0;
+	int i;
+
+	brcmf_dbg(TRACE, "Enter\n");
 
 	for (i = 0; i < ARRAY_SIZE(drvr->if2bss); i++)
 		drvr->if2bss[i] = BRCMF_BSSIDX_INVALID;
@@ -1218,9 +1263,6 @@ int brcmf_attach(struct device *dev, struct brcmf_mp_device *settings)
 
 	/* Link to bus module */
 	drvr->hdrlen = 0;
-	drvr->bus_if = dev_get_drvdata(dev);
-	drvr->bus_if->drvr = drvr;
-	drvr->settings = settings;
 	drvr->chan_stats = vzalloc(256 * sizeof(struct brcmf_chan_stats));
 	drvr->num_chan_stats = 256;
 
@@ -1238,18 +1280,16 @@ int brcmf_attach(struct device *dev, struct brcmf_mp_device *settings)
 	/* attach firmware event handler */
 	brcmf_fweh_attach(drvr);
 
-	ret = brcmf_bus_started(drvr, ops);
+	ret = brcmf_bus_started(drvr, drvr->ops);
 	if (ret != 0) {
 		bphy_err(drvr, "dongle is not responding: err=%d\n", ret);
 		goto fail;
 	}
 
-	drvr->config->ops = ops;
 	return 0;
 
 fail:
 	brcmf_detach(dev);
-	kfree(ops);
 
 	return ret;
 }
@@ -1338,8 +1378,19 @@ void brcmf_detach(struct device *dev)
 		brcmf_cfg80211_detach(drvr->config);
 		drvr->config = NULL;
 	}
+}
+
+void brcmf_free(struct device *dev)
+{
+	struct brcmf_bus *bus_if = dev_get_drvdata(dev);
+	struct brcmf_pub *drvr = bus_if->drvr;
+
+	if (!drvr)
+		return;
 
 	bus_if->drvr = NULL;
+
+	kfree(drvr->ops);
 
 	wiphy_free(drvr->wiphy);
 }
