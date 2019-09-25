@@ -102,6 +102,7 @@ struct brcmf_pub {
 	struct brcmf_bus *bus_if;
 	struct brcmf_proto *proto;
 	struct wiphy *wiphy;
+	struct cfg80211_ops *ops;
 	struct brcmf_cfg80211_info *config;
 	int num_chan_stats;
 	struct brcmf_chan_stats *chan_stats;

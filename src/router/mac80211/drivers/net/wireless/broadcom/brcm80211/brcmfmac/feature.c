@@ -34,7 +34,9 @@ struct brcmf_feat_fwcap {
 };
 
 static const struct brcmf_feat_fwcap brcmf_fwcap_map[] = {
-	{ BRCMF_FEAT_MBSS, "mbss" },
+	{ BRCMF_FEAT_MBSS4, "mbss4" },
+	{ BRCMF_FEAT_MBSS8, "mbss8" },
+	{ BRCMF_FEAT_MBSS16, "mbss16" },
 	{ BRCMF_FEAT_MCHAN, "mchan" },
 	{ BRCMF_FEAT_P2P, "p2p" },
 	{ BRCMF_FEAT_MONITOR, "monitor" },
@@ -268,7 +270,9 @@ void brcmf_feat_attach(struct brcmf_pub *drvr)
 	switch (drvr->bus_if->chip) {
 	case BRCM_CC_4330_CHIP_ID:
 	case BRCM_CC_43362_CHIP_ID:
-		ifp->drvr->feat_flags &= ~BIT(BRCMF_FEAT_MBSS);
+		ifp->drvr->feat_flags &= ~BIT(BRCMF_FEAT_MBSS4);
+		ifp->drvr->feat_flags &= ~BIT(BRCMF_FEAT_MBSS8);
+		ifp->drvr->feat_flags &= ~BIT(BRCMF_FEAT_MBSS16);
 		break;
 	default:
 		break;
