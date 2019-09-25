@@ -916,8 +916,8 @@ void mt76x0_phy_calibrate(struct mt76x02_dev *dev, bool power_on)
 }
 EXPORT_SYMBOL_GPL(mt76x0_phy_calibrate);
 
-int mt76x0_phy_set_channel(struct mt76x02_dev *dev,
-			   struct cfg80211_chan_def *chandef)
+void mt76x0_phy_set_channel(struct mt76x02_dev *dev,
+			    struct cfg80211_chan_def *chandef)
 {
 	u32 ext_cca_chan[4] = {
 		[0] = FIELD_PREP(MT_EXT_CCA_CFG_CCA0, 0) |
@@ -951,7 +951,6 @@ int mt76x0_phy_set_channel(struct mt76x02_dev *dev,
 	freq1 = chandef->center_freq1;
 	channel = chandef->chan->hw_value;
 	rf_bw_band = (channel <= 14) ? RF_G_BAND : RF_A_BAND;
-	dev->mt76.chandef = *chandef;
 
 	switch (chandef->width) {
 	case NL80211_CHAN_WIDTH_40:
@@ -1012,7 +1011,7 @@ int mt76x0_phy_set_channel(struct mt76x02_dev *dev,
 	/* enable vco */
 	mt76x0_rf_set(dev, MT_RF(0, 4), BIT(7));
 	if (scan)
-		return 0;
+		return;
 
 	mt76x02_init_agc_gain(dev);
 	mt76x0_phy_calibrate(dev, false);
@@ -1020,8 +1019,6 @@ int mt76x0_phy_set_channel(struct mt76x02_dev *dev,
 
 	ieee80211_queue_delayed_work(dev->mt76.hw, &dev->cal_work,
 				     MT_CALIBRATE_INTERVAL);
-
-	return 0;
 }
 
 static void mt76x0_phy_temp_sensor(struct mt76x02_dev *dev)

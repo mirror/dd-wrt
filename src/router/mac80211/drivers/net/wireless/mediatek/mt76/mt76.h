@@ -32,9 +32,6 @@
 #define MT_RX_BUF_SIZE      2048
 #define MT_SKB_HEAD_LEN     128
 
-#define MT_FRAC_SCALE		12
-#define MT_FRAC(val, div)	(((val) << MT_FRAC_SCALE) / div)
-
 struct mt76_dev;
 struct mt76_wcid;
 
@@ -286,7 +283,6 @@ enum {
 	MT76_STATE_MCU_RUNNING,
 	MT76_SCANNING,
 	MT76_RESET,
-	MT76_OFFCHANNEL,
 	MT76_REMOVED,
 	MT76_READING_STATS,
 };
@@ -505,6 +501,8 @@ struct mt76_dev {
 
 	u8 csa_complete;
 
+	ktime_t survey_time;
+
 	u32 rxfilter;
 
 	union {
@@ -722,6 +720,7 @@ void mt76_stop_tx_queues(struct mt76_dev *dev, struct ieee80211_sta *sta,
 			 bool send_bar);
 void mt76_txq_schedule(struct mt76_dev *dev, enum mt76_txq_id qid);
 void mt76_txq_schedule_all(struct mt76_dev *dev);
+void mt76_tx_tasklet(unsigned long data);
 void mt76_release_buffered_frames(struct ieee80211_hw *hw,
 				  struct ieee80211_sta *sta,
 				  u16 tids, int nframes,
@@ -762,8 +761,6 @@ int mt76_sta_state(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 void __mt76_sta_remove(struct mt76_dev *dev, struct ieee80211_vif *vif,
 		       struct ieee80211_sta *sta);
 
-struct ieee80211_sta *mt76_rx_convert(struct sk_buff *skb);
-
 int mt76_get_min_avg_rssi(struct mt76_dev *dev);
 
 int mt76_get_txpower(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
@@ -777,6 +774,10 @@ void mt76_insert_ccmp_hdr(struct sk_buff *skb, u8 key_id);
 int mt76_get_rate(struct mt76_dev *dev,
 		  struct ieee80211_supported_band *sband,
 		  int idx, bool cck);
+void mt76_sw_scan(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
+		  const u8 *mac);
+void mt76_sw_scan_complete(struct ieee80211_hw *hw,
+			   struct ieee80211_vif *vif);
 
 /* internal */
 void mt76_tx_free(struct mt76_dev *dev);
