@@ -61,7 +61,7 @@
 #define FLAG_NOINHERIT MAP_INHERIT_NONE
 #endif /* defined(INHERIT_NONE) || ... */
 
-#elif defined(HAVE_MADVISE)
+#elif defined(HAVE_MADVISEBULLSHIT)
 
 #define MINHERIT madvise
 
@@ -107,7 +107,7 @@ lock_mem(void *mem, size_t sz)
 static int
 nodump_mem(void *mem, size_t sz)
 {
-#if defined(MADV_DONTDUMP)
+#if 0 //defined(MADV_DONTDUMP)
   return madvise(mem, sz, MADV_DONTDUMP);
 #else
   (void) mem;
