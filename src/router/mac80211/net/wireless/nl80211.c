@@ -24,6 +24,7 @@
 #include <net/inet_connection_sock.h>
 #include "core.h"
 #include "nl80211.h"
+#include "../mac80211/ieee80211_i.h"
 #include "reg.h"
 #include "rdev-ops.h"
 
@@ -1497,6 +1498,7 @@ static int nl80211_send_wiphy(struct cfg80211_registered_device *rdev,
 	enum nl80211_band band;
 	struct ieee80211_channel *chan;
 	int i;
+	struct ieee80211_local *local = wiphy_priv(&rdev->wiphy);
 	const struct ieee80211_txrx_stypes *mgmt_stypes =
 				rdev->wiphy.mgmt_stypes;
 	u32 features;
@@ -1528,8 +1530,6 @@ static int nl80211_send_wiphy(struct cfg80211_registered_device *rdev,
 				rdev->wiphy.frag_threshold) ||
 		    nla_put_u32(msg, NL80211_ATTR_WIPHY_RTS_THRESHOLD,
 				rdev->wiphy.rts_threshold) ||
-		    nla_put_u8(msg, NL80211_ATTR_WIPHY_COVERAGE_CLASS,
-			       rdev->wiphy.coverage_class) ||
 		    nla_put_u8(msg, NL80211_ATTR_MAX_NUM_SCAN_SSIDS,
 			       rdev->wiphy.max_scan_ssids) ||
 		    nla_put_u8(msg, NL80211_ATTR_MAX_NUM_SCHED_SCAN_SSIDS,
@@ -1547,7 +1547,12 @@ static int nl80211_send_wiphy(struct cfg80211_registered_device *rdev,
 		    nla_put_u32(msg, NL80211_ATTR_MAX_SCAN_PLAN_ITERATIONS,
 				rdev->wiphy.max_sched_scan_plan_iterations))
 			goto nla_put_failure;
-
+		
+		if (local && local->ops->set_coverage_class) {
+			if (nla_put_u8(msg, NL80211_ATTR_WIPHY_COVERAGE_CLASS, rdev->wiphy.coverage_class))
+				goto nla_put_failure;
+		}
+		
 		if ((rdev->wiphy.flags & WIPHY_FLAG_IBSS_RSN) &&
 		    nla_put_flag(msg, NL80211_ATTR_SUPPORT_IBSS_RSN))
 			goto nla_put_failure;
