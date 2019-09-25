@@ -52,7 +52,7 @@ typedef enum {
 /* minherit() will always have a working MAP_INHERIT_NONE or MAP_INHERIT_ZERO.
  * NOINHERIT should always work.
  */
-#elif defined(HAVE_MADVISE)
+#elif defined(HAVE_MADVISEBULLSHIT)
 /* madvise() sometimes has neither MADV_DONTFORK and MADV_WIPEONFORK.
  * We need to be ready for the possibility it failed.
  *
