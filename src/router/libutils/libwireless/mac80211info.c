@@ -1905,6 +1905,52 @@ nla_put_failure:
 
 }
 
+
+static int mac80211_has_acktiming(int phy)
+{
+	struct nlattr *tb[NL80211_ATTR_MAX + 1];
+	struct nl_msg *msg;
+	struct nlattr *nl_mode;
+	struct genlmsghdr *gnlh;
+	int rem_mode;
+	int ret = 0;
+	lock();
+	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
+	if (!msg) {
+		unlock();
+		return 0;
+	}
+	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
+	if (unl_genl_request_single(&unl, msg, &msg) < 0) {
+		goto nla_put_failure;
+	}
+	gnlh = nlmsg_data(nlmsg_hdr(msg));
+	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
+
+	if (tb[NL80211_ATTR_WIPHY_COVERAGE_CLASS]) {
+		ret = 1;
+	}
+      found:;
+	nlmsg_free(msg);
+	unlock();
+	return ret;
+nla_put_failure:
+	nlmsg_free(msg);
+	unlock();
+	return 0;
+
+}
+int has_acktiming(const char *prefix)
+{
+	if (!is_mac80211(prefix))
+		return 0;
+	INITVALUECACHE();
+	ret = mac80211_has_acktiming(get_ath9k_phy_ifname(prefix));
+	EXITVALUECACHE();
+	return ret;
+}
+
+
 int has_ibss(const char *prefix)
 {
 	if (!is_mac80211(prefix))
