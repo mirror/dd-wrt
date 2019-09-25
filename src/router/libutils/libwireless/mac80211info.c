@@ -902,52 +902,66 @@ int has_greenfield(const char *interface)
 
 }
 
-static int iftype_worker(struct nlattr **tb, void *priv)
+static void *iftype_worker(struct nlattr **tb, void *priv)
 {
 	struct nlattr *nl_mode;
 	int rem_mode;
 	if (tb[NL80211_ATTR_SUPPORTED_IFTYPES]) {
 		nla_for_each_nested(nl_mode, tb[NL80211_ATTR_SUPPORTED_IFTYPES], rem_mode)
 		    if (nla_type(nl_mode) == *((int *)priv)) {
-			return 1;
+			return (void*)1;
 		}
 	}
-	return 0;
+	return (void*)0;
 }
 
-static int acktiming_worker(struct nlattr **tb, void *priv)
+static void *acktiming_worker(struct nlattr **tb, void *priv)
 {
 	struct nlattr *nl_mode;
 	int rem_mode;
 	if (tb[NL80211_ATTR_WIPHY_COVERAGE_CLASS]) {
-		return 1;
+		return (void*)1;
 	}
-	return 0;
+	return (void*)0;
 }
 
-static int feature_worker(struct nlattr **tb, void *priv)
+static void *feature_worker(struct nlattr **tb, void *priv)
 {
 	unsigned int feature = *((int *)priv);
 	if (tb[NL80211_ATTR_FEATURE_FLAGS]) {
 		unsigned int features = nla_get_u32(tb[NL80211_ATTR_FEATURE_FLAGS]);
 		if ((features & feature) == feature) {
-			return 1;
+			return (void*)1;
 		}
 	}
-	return 0;
+	return (void*)0;
 }
 
-static int mac80211_has_worker(int phy, int (*worker)(struct nlattr ** tb, void *priv), void *priv)
+static void *cipher_worker(struct nlattr **tb, void *priv)
+{
+	__u32 *ciphers = NULL;
+	__u32 *num = (__u32 *)priv;
+	if (tb[NL80211_ATTR_CIPHER_SUITES]) {
+		*num = nla_len(tb[NL80211_ATTR_CIPHER_SUITES]) / sizeof(__u32);
+		if (*num > 0) {
+			ciphers = malloc(*num * sizeof(__u32));
+			memcpy(ciphers, nla_data(tb[NL80211_ATTR_CIPHER_SUITES]), *num * sizeof(__u32));
+		}
+	}
+	return ciphers;
+}
+
+static void *mac80211_has_worker(int phy, void *(*worker)(struct nlattr ** tb, void *priv), void *priv)
 {
 	struct nlattr *tb[NL80211_ATTR_MAX + 1];
 	struct nl_msg *msg;
 	struct genlmsghdr *gnlh;
-	int ret = 0;
+	void *ret;
 	lock();
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
 	if (!msg) {
 		unlock();
-		return 0;
+		return NULL;
 	}
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
 	if (unl_genl_request_single(&unl, msg, &msg) < 0) {
@@ -963,13 +977,18 @@ static int mac80211_has_worker(int phy, int (*worker)(struct nlattr ** tb, void 
 nla_put_failure:
 	nlmsg_free(msg);
 	unlock();
-	return 0;
+	return NULL;
 
+}
+
+static __u32 *mac80211_get_ciphers(int phy, __u32 *num)
+{
+	return (__u32 *)mac80211_has_worker(phy, &cipher_worker, num);
 }
 
 static int mac80211_has_feature(int phy, unsigned int feature)
 {
-	return mac80211_has_worker(phy, &feature_worker, &feature);
+	return (long)mac80211_has_worker(phy, &feature_worker, &feature);
 }
 
 int has_smps(const char *prefix)
@@ -1899,12 +1918,12 @@ void mac80211_set_antennas(int phy, uint32_t tx_ant, uint32_t rx_ant)
 
 static int mac80211_has_iftype(int phy, enum nl80211_iftype iftype)
 {
-	return mac80211_has_worker(phy, &iftype_worker, &iftype);
+	return (long)mac80211_has_worker(phy, &iftype_worker, &iftype);
 }
 
 static int mac80211_has_acktiming(int phy)
 {
-	return mac80211_has_worker(phy, &acktiming_worker, NULL);
+	return (long)mac80211_has_worker(phy, &acktiming_worker, NULL);
 }
 
 int has_acktiming(const char *prefix)
@@ -1996,42 +2015,6 @@ nla_put_failure:
 	return 0;
 }
 
-static __u32 *mac80211_get_ciphers(int phy, __u32 *num)
-{
-	struct nlattr *tb[NL80211_ATTR_MAX + 1];
-	struct nl_msg *msg;
-	struct genlmsghdr *gnlh;
-	int ret = 0;
-	__u32 *ciphers;
-	lock();
-	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
-	if (!msg) {
-		unlock();
-		return 0;
-	}
-	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
-	if (unl_genl_request_single(&unl, msg, &msg) < 0) {
-		unlock();
-		return 0;
-	}
-	gnlh = nlmsg_data(nlmsg_hdr(msg));
-	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
-
-	if (tb[NL80211_ATTR_CIPHER_SUITES]) {
-		*num = nla_len(tb[NL80211_ATTR_CIPHER_SUITES]) / sizeof(__u32);
-		if (*num > 0) {
-			ciphers = malloc(*num * sizeof(__u32));
-			memcpy(ciphers, nla_data(tb[NL80211_ATTR_CIPHER_SUITES]), *num * sizeof(__u32));
-		}
-	}
-	nlmsg_free(msg);
-	unlock();
-	return ciphers;
-nla_put_failure:
-	nlmsg_free(msg);
-	unlock();
-	return NULL;
-}
 
 static int match_cipher(const char *prefix, __u32 cipher)
 {
