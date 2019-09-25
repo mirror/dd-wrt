@@ -61,6 +61,20 @@ static const struct ieee80211_iface_limit mt76x02_if_limits[] = {
 	 },
 };
 
+static const struct ieee80211_iface_limit mt76x02u_if_limits[] = {
+	{
+		.max = 1,
+		.types = BIT(NL80211_IFTYPE_ADHOC)
+	}, {
+		.max = 2,
+		.types = BIT(NL80211_IFTYPE_STATION) |
+#ifdef CONFIG_MAC80211_MESH
+			 BIT(NL80211_IFTYPE_MESH_POINT) |
+#endif
+			 BIT(NL80211_IFTYPE_AP)
+	},
+};
+
 static const struct ieee80211_iface_combination mt76x02_if_comb[] = {
 	{
 		.limits = mt76x02_if_limits,
@@ -72,6 +86,16 @@ static const struct ieee80211_iface_combination mt76x02_if_comb[] = {
 				       BIT(NL80211_CHAN_WIDTH_20) |
 				       BIT(NL80211_CHAN_WIDTH_40) |
 				       BIT(NL80211_CHAN_WIDTH_80),
+	}
+};
+
+static const struct ieee80211_iface_combination mt76x02u_if_comb[] = {
+	{
+		.limits = mt76x02u_if_limits,
+		.n_limits = ARRAY_SIZE(mt76x02u_if_limits),
+		.max_interfaces = 2,
+		.num_different_channels = 1,
+		.beacon_int_infra_match = true,
 	}
 };
 
@@ -151,6 +175,8 @@ void mt76x02_init_device(struct mt76x02_dev *dev)
 	if (mt76_is_usb(dev)) {
 		hw->extra_tx_headroom += sizeof(struct mt76x02_txwi) +
 					 MT_DMA_HDR_LEN;
+		wiphy->iface_combinations = mt76x02u_if_comb;
+		wiphy->n_iface_combinations = ARRAY_SIZE(mt76x02u_if_comb);
 	} else {
 		INIT_DELAYED_WORK(&dev->wdt_work, mt76x02_wdt_work);
 
@@ -375,7 +401,6 @@ int mt76x02_ampdu_action(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 	case IEEE80211_AMPDU_TX_STOP_FLUSH:
 	case IEEE80211_AMPDU_TX_STOP_FLUSH_CONT:
 		mtxq->aggr = false;
-		ieee80211_send_bar(vif, sta->addr, tid, mtxq->agg_ssn);
 		break;
 	case IEEE80211_AMPDU_TX_START:
 		mtxq->agg_ssn = IEEE80211_SN_TO_SEQ(ssn);
@@ -587,15 +612,6 @@ void mt76x02_remove_hdr_pad(struct sk_buff *skb, int len)
 	skb_pull(skb, len);
 }
 EXPORT_SYMBOL_GPL(mt76x02_remove_hdr_pad);
-
-void mt76x02_sw_scan(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
-		     const u8 *mac)
-{
-	struct mt76x02_dev *dev = hw->priv;
-
-	set_bit(MT76_SCANNING, &dev->mt76.state);
-}
-EXPORT_SYMBOL_GPL(mt76x02_sw_scan);
 
 void mt76x02_sw_scan_complete(struct ieee80211_hw *hw,
 			      struct ieee80211_vif *vif)

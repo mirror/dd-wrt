@@ -438,8 +438,7 @@ mt76_txq_send_burst(struct mt76_dev *dev, struct mt76_sw_queue *sq,
 		if (probe)
 			break;
 
-		if (test_bit(MT76_OFFCHANNEL, &dev->state) ||
-		    test_bit(MT76_RESET, &dev->state))
+		if (test_bit(MT76_RESET, &dev->state))
 			return -EBUSY;
 
 		skb = mt76_txq_dequeue(dev, mtxq, false);
@@ -498,8 +497,7 @@ mt76_txq_schedule_list(struct mt76_dev *dev, enum mt76_txq_id qid)
 		if (sq->swq_queued >= 4)
 			break;
 
-		if (test_bit(MT76_OFFCHANNEL, &dev->state) ||
-		    test_bit(MT76_RESET, &dev->state)) {
+		if (test_bit(MT76_RESET, &dev->state)) {
 			ret = -EBUSY;
 			break;
 		}
@@ -567,6 +565,13 @@ void mt76_txq_schedule_all(struct mt76_dev *dev)
 		mt76_txq_schedule(dev, i);
 }
 EXPORT_SYMBOL_GPL(mt76_txq_schedule_all);
+
+void mt76_tx_tasklet(unsigned long data)
+{
+	struct mt76_dev *dev = (struct mt76_dev *)data;
+
+	mt76_txq_schedule_all(dev);
+}
 
 void mt76_stop_tx_queues(struct mt76_dev *dev, struct ieee80211_sta *sta,
 			 bool send_bar)

@@ -16,7 +16,7 @@ static int mt7615_start(struct ieee80211_hw *hw)
 {
 	struct mt7615_dev *dev = hw->priv;
 
-	dev->survey_time = ktime_get_boottime();
+	dev->mt76.survey_time = ktime_get_boottime();
 	set_bit(MT76_STATE_RUNNING, &dev->mt76.state);
 	ieee80211_queue_delayed_work(mt76_hw(dev), &dev->mt76.mac_work,
 				     MT7615_WATCHDOG_TIME);
@@ -150,7 +150,10 @@ static int mt7615_set_channel(struct mt7615_dev *dev)
 
 	ret = mt7615_dfs_init_radar_detector(dev);
 	mt7615_mac_cca_stats_reset(dev);
- 
+	dev->mt76.survey_time = ktime_get_boottime();
+	/* TODO: add DBDC support */
+	mt76_rr(dev, MT_MIB_SDR16(0));
+
 out:
 
 	clear_bit(MT76_RESET, &dev->mt76.state);
@@ -159,11 +162,6 @@ out:
 	mt76_txq_schedule_all(&dev->mt76);
 	ieee80211_queue_delayed_work(mt76_hw(dev), &dev->mt76.mac_work,
 				     MT7615_WATCHDOG_TIME);
-	mt76_clear(dev, MT_MIB_CTL, MT_MIB_CTL_READ_CLR_DIS);
-	mt76_set(dev, MT_MIB_CTL,
-		 MT_MIB_CTL_CCA_NAV_TX | MT_MIB_CTL_PSCCA_TIME);
-	mt76_rr(dev, MT_MIB_STAT_PSCCA);
-	dev->survey_time = ktime_get_boottime();
 	return ret;
 }
 
@@ -476,7 +474,6 @@ mt7615_ampdu_action(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 	case IEEE80211_AMPDU_TX_STOP_FLUSH:
 	case IEEE80211_AMPDU_TX_STOP_FLUSH_CONT:
 		mtxq->aggr = false;
-		ieee80211_send_bar(vif, sta->addr, tid, mtxq->agg_ssn);
 		mt7615_mcu_set_tx_ba(dev, params, 0);
 		break;
 	case IEEE80211_AMPDU_TX_START:
@@ -491,23 +488,6 @@ mt7615_ampdu_action(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 	}
 
 	return 0;
-}
-
-static void
-mt7615_sw_scan(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
-	       const u8 *mac)
-{
-	struct mt7615_dev *dev = hw->priv;
-
-	set_bit(MT76_SCANNING, &dev->mt76.state);
-}
-
-static void
-mt7615_sw_scan_complete(struct ieee80211_hw *hw, struct ieee80211_vif *vif)
-{
-	struct mt7615_dev *dev = hw->priv;
-
-	clear_bit(MT76_SCANNING, &dev->mt76.state);
 }
 
 const struct ieee80211_ops mt7615_ops = {
@@ -526,10 +506,10 @@ const struct ieee80211_ops mt7615_ops = {
 	.set_rts_threshold = mt7615_set_rts_threshold,
 	.wake_tx_queue = mt76_wake_tx_queue,
 	.sta_rate_tbl_update = mt7615_sta_rate_tbl_update,
-	.sw_scan_start = mt7615_sw_scan,
-	.sw_scan_complete = mt7615_sw_scan_complete,
+	.sw_scan_start = mt76_sw_scan,
+	.sw_scan_complete = mt76_sw_scan_complete,
 	.release_buffered_frames = mt76_release_buffered_frames,
 	.get_txpower = mt76_get_txpower,
-	.get_survey = mt76_get_survey,
 	.channel_switch_beacon = mt7615_channel_switch_beacon,
+	.get_survey = mt76_get_survey,
 };

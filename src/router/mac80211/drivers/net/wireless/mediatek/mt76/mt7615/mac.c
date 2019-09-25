@@ -232,11 +232,9 @@ void mt7615_tx_complete_skb(struct mt76_dev *mdev, enum mt76_txq_id qid,
 		struct mt76_txwi_cache *t;
 		struct mt7615_dev *dev;
 		struct mt7615_txp *txp;
-		u8 *txwi_ptr;
 
-		txwi_ptr = mt76_get_txwi_ptr(mdev, e->txwi);
-		txp = (struct mt7615_txp *)(txwi_ptr + MT_TXD_SIZE);
 		dev = container_of(mdev, struct mt7615_dev, mt76);
+		txp = mt7615_txwi_to_txp(mdev, e->txwi);
 
 		spin_lock_bh(&dev->token_lock);
 		t = idr_remove(&dev->token, le16_to_cpu(txp->token));
@@ -337,7 +335,8 @@ int mt7615_mac_write_txwi(struct mt7615_dev *dev, __le32 *txwi,
 	fc_stype = (le16_to_cpu(fc) & IEEE80211_FCTL_STYPE) >> 4;
 
 	if (ieee80211_is_data(fc) || ieee80211_is_bufferable_mmpdu(fc)) {
-		q_idx = skb_get_queue_mapping(skb) + wmm_idx * MT7615_MAX_WMM_SETS;
+		q_idx = wmm_idx * MT7615_MAX_WMM_SETS +
+			skb_get_queue_mapping(skb);
 		p_fmt = MT_TX_TYPE_CT;
 	} else if (ieee80211_is_beacon(fc)) {
 		q_idx = MT_LMAC_BCN0;
@@ -448,11 +447,9 @@ void mt7615_txp_skb_unmap(struct mt76_dev *dev,
 			  struct mt76_txwi_cache *t)
 {
 	struct mt7615_txp *txp;
-	u8 *txwi;
 	int i;
 
-	txwi = mt76_get_txwi_ptr(dev, t);
-	txp = (struct mt7615_txp *)(txwi + MT_TXD_SIZE);
+	txp = mt7615_txwi_to_txp(dev, t);
 	for (i = 1; i < txp->nbuf; i++)
 		dma_unmap_single(dev->dev, le32_to_cpu(txp->buf[i]),
 				 le16_to_cpu(txp->len[i]), DMA_TO_DEVICE);
@@ -1069,27 +1066,6 @@ void mt7615_mac_tx_free(struct mt7615_dev *dev, struct sk_buff *skb)
 	dev_kfree_skb(skb);
 }
 
-void mt7615_update_channel(struct mt76_dev *mdev)
-{
-	struct mt7615_dev *dev = container_of(mdev, struct mt7615_dev, mt76);
-	struct mt76_channel_state *state;
-	ktime_t cur_time;
-	u32 busy;
-
-	if (!test_bit(MT76_STATE_RUNNING, &dev->mt76.state))
-		return;
-
-	state = mt76_channel_state(&dev->mt76, dev->mt76.chandef.chan);
-	busy = mt76_rr(dev, MT_MIB_STAT_PSCCA);
-
-	spin_lock_bh(&dev->mt76.cc_lock);
-	cur_time = ktime_get_boottime();
-	state->cc_busy += busy;
-	state->cc_active += ktime_to_us(ktime_sub(cur_time, dev->survey_time));
-	dev->survey_time = cur_time;
-	spin_unlock_bh(&dev->mt76.cc_lock);
-}
-
 static void
 mt7615_mac_set_default_sensitivity(struct mt7615_dev *dev)
 {
@@ -1114,17 +1090,15 @@ mt7615_mac_set_default_sensitivity(struct mt7615_dev *dev)
 
 void mt7615_mac_set_scs(struct mt7615_dev *dev, bool enable)
 {
-
 	mutex_lock(&dev->mt76.mutex);
 
 	if (dev->scs_en == enable)
 		goto out;
 
 	if (enable) {
+		/* DBDC not supported */
 		mt76_set(dev, MT_WF_PHY_B0_MIN_PRI_PWR,
 			 MT_WF_PHY_B0_PD_BLK);
-		mt76_set(dev, MT_WF_PHY_B1_MIN_PRI_PWR,
-			 MT_WF_PHY_B1_PD_BLK);
 		if (is_mt7622(&dev->mt76)) {
 			mt76_set(dev, MT_MIB_M0_MISC_CR, 0x7 << 8);
 			mt76_set(dev, MT_MIB_M0_MISC_CR, 0x7);
@@ -1153,7 +1127,7 @@ static void
 mt7615_mac_adjust_sensitivity(struct mt7615_dev *dev,
 			      u32 rts_err_rate, bool ofdm)
 {
-	u32 false_cca = ofdm ? dev->false_cca_ofdm : dev->false_cca_cck;
+	int false_cca = ofdm ? dev->false_cca_ofdm : dev->false_cca_cck;
 	u16 def_th = ofdm ? -98 : -110;
 	bool update = false;
 	s8 *sensitivity;
@@ -1161,7 +1135,7 @@ mt7615_mac_adjust_sensitivity(struct mt7615_dev *dev,
 
 	sensitivity = ofdm ? &dev->ofdm_sensitivity : &dev->cck_sensitivity;
 	signal = mt76_get_min_avg_rssi(&dev->mt76);
-	if (!signal || *sensitivity < def_th) {
+	if (!signal) {
 		mt7615_mac_set_default_sensitivity(dev);
 		return;
 	}
@@ -1179,7 +1153,8 @@ mt7615_mac_adjust_sensitivity(struct mt7615_dev *dev,
 			*sensitivity += 2;
 			update = true;
 		}
-	} else if (false_cca < 50 || rts_err_rate > MT_FRAC(60, 100)) {
+	} else if ((false_cca > 0 && false_cca < 50) ||
+		   rts_err_rate > MT_FRAC(60, 100)) {
 		/* increase coverage */
 		if (*sensitivity - 2 >= def_th) {
 			*sensitivity -= 2;
@@ -1260,6 +1235,29 @@ mt7615_mac_scs_check(struct mt7615_dev *dev)
 		mt7615_mac_set_default_sensitivity(dev);
 }
 
+void mt7615_update_channel(struct mt76_dev *mdev)
+{
+	struct mt7615_dev *dev = container_of(mdev, struct mt7615_dev, mt76);
+	struct mt76_channel_state *state;
+	ktime_t cur_time;
+	u32 busy;
+
+	if (!test_bit(MT76_STATE_RUNNING, &mdev->state))
+		return;
+
+	state = mt76_channel_state(mdev, mdev->chandef.chan);
+	/* TODO: add DBDC support */
+	busy = mt76_get_field(dev, MT_MIB_SDR16(0), MT_MIB_BUSY_MASK);
+
+	spin_lock_bh(&mdev->cc_lock);
+	cur_time = ktime_get_boottime();
+	state->cc_busy += busy;
+	state->cc_active += ktime_to_us(ktime_sub(cur_time,
+						  mdev->survey_time));
+	mdev->survey_time = cur_time;
+	spin_unlock_bh(&mdev->cc_lock);
+}
+
 void mt7615_mac_work(struct work_struct *work)
 {
 	struct mt7615_dev *dev;
@@ -1268,6 +1266,7 @@ void mt7615_mac_work(struct work_struct *work)
 						mac_work.work);
 
 	mutex_lock(&dev->mt76.mutex);
+	mt7615_update_channel(&dev->mt76);
 	if (++dev->mac_work_count == 5) {
 		mt7615_mac_scs_check(dev);
 		dev->mac_work_count = 0;
@@ -1275,7 +1274,6 @@ void mt7615_mac_work(struct work_struct *work)
 	mutex_unlock(&dev->mt76.mutex);
 
 	mt76_tx_status_check(&dev->mt76, NULL, false);
-	mt7615_update_channel(&dev->mt76);
 	ieee80211_queue_delayed_work(mt76_hw(dev), &dev->mt76.mac_work,
 				     MT7615_WATCHDOG_TIME);
 }
