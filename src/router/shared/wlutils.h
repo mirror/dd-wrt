@@ -400,7 +400,7 @@ static inline int has_acktiming(const char *prefix)
 	return 1;
 }
 #endif
-#elif  defined(HAVE_RT2880) && defined(HAVE_RT61)
+#elif  defined(HAVE_RT2880) || defined(HAVE_RT61)
 static inline int has_acktiming(const char *prefix)
 {
 	return 0;
