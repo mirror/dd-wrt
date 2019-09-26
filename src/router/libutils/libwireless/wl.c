@@ -3009,8 +3009,12 @@ void setRegulationDomain(char *reg)
 		switch (brand) {
 		case ROUTER_ASUS_AC88U:
 		case ROUTER_DLINK_DIR895:
+		case ROUTER_DLINK_DIR890:
+		case ROUTER_DLINK_DIR885:
 		case ROUTER_NETGEAR_R8500:
 		case ROUTER_ASUS_AC5300:
+		case ROUTER_ASUS_AC3200:
+		case ROUTER_ASUS_AC3100:
 			memcpy(pairs, dhd_pairs, sizeof(pairs));
 			pairs[EU].code0 = "E0";
 			pairs[EU].rev0 = 962;
@@ -3041,6 +3045,7 @@ void setRegulationDomain(char *reg)
 			pairs[EU].rev1 = 938;
 			break;
 		case ROUTER_NETGEAR_R8000:
+		case ROUTER_NETGEAR_R8500:
 			memcpy(pairs, dhd_pairs, sizeof(pairs));
 			pairs[EU].code0 = "EU";
 			pairs[EU].rev0 = 38;
