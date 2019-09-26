@@ -2920,16 +2920,16 @@ void setRegulationDomain(char *reg)
 #define DEFAULT 0
 #define EU 1
 #define CN 2
-#define US 3
+#define TW 3
 #define JP 4
-#define AU 5
-#define SG 6
-#define BR 7
+#define CA 5
+#define US 6
+#define AU 7
 #define RU 8
-#define TW 9
-#define CA 10
-#define KR 11
-#define LA 12
+#define KR 9
+#define LA 10
+#define BR 11
+#define SG 12
 
 	int cntry = DEFAULT;
 	struct PAIRS {
