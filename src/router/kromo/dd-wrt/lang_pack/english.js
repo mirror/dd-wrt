@@ -2865,6 +2865,7 @@ wl_basic.sifstime="OFDM SIFS Time";
 wl_basic.preambletime="OFDM Preamble Time";
 wl_basic.multicast="Multicast forwarding";
 wl_basic.intmit="Noise Immunity";
+wl_basic.qboost="QCA Q-Boost / TDMA";
 wl_basic.noise_immunity="Noise Immunity Level";
 wl_basic.ofdm_weak_det="OFDM Weak Detection";
 wl_basic.radar="Radar Detection";
