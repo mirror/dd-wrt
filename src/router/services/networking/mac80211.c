@@ -289,7 +289,7 @@ void configure_single_ath9k(int count)
 
 #ifdef HAVE_ATH10K
 	if (is_ath10k(dev)) {
-		sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/qboost_enable", nvram_default_get(wl_qboost, "0"), wif
+		sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/qboost_enable", nvram_default_get(wl_qboost, "0"), wif);
 		sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/ani_enable", nvram_default_get(wl_intmit, "0"), wif);
 	} else
 #endif
