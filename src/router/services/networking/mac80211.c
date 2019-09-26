@@ -283,13 +283,15 @@ void configure_single_ath9k(int count)
 			sysprintf("echo 20 > /sys/kernel/debug/ieee80211/%s/ath9k/chanbw", wif);
 	}
 	char wl_intmit[32];
-
 	sprintf(wl_intmit, "%s_intmit", dev);
+	char wl_qboost[32];
+	sprintf(wl_qboost, "%s_qboost", dev);
 
 #ifdef HAVE_ATH10K
-	if (is_ath10k(dev))
+	if (is_ath10k(dev)) {
+		sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/qboost_enable", nvram_default_get(wl_qboost, "0"), wif
 		sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/ani_enable", nvram_default_get(wl_intmit, "0"), wif);
-	else
+	} else
 #endif
 		sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath9k/ani", nvram_default_get(wl_intmit, "1"), wif);
 #ifdef HAVE_REGISTER
