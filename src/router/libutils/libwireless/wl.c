@@ -2963,7 +2963,7 @@ void setRegulationDomain(char *reg)
 		{ "TW", 0, "TW", 0 },
 		{ "JP", 44, "JP", 45 },
 		{ "CA", 2, "CA", 2 },
-		{ "Q2", 0, "Q2", 0 },
+		{ "US", 0, "US", 0 },
 		{ "Q1", 27, "AU", 0 },
 		{ "RU", 0, "RU", 0 },
 		{ "KR", 0, "KR", 0 },
