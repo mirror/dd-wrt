@@ -524,7 +524,8 @@ void start_openvpn(void)
 	if (*(nvram_safe_get("openvpncl_route"))) {	//policy based routing
 		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
 //              fprintf(fp, "ip route flush table 10\n");
-		fprintf(fp, "for IP in `cat /tmp/openvpncl/policy_ips` ; do\n" "\t ip rule add from $IP table 10\n" "done\n");
+//              fprintf(fp, "for IP in `cat /tmp/openvpncl/policy_ips` ; do\n" "\t ip rule add from $IP table 10\n" "done\n"); //egc: deleted and replaced by next line
+		fprintf(fp, "sed '/^[[:blank:]]*#/d;s/#.*//' \"/tmp/openvpncl/policy_ips\" | while read IP; do ip rule add table 10 from $IP; done\n");
 /*              if (nvram_match("openvpncl_tuntap", "tap"))
                         fprintf(fp, "ip route add default via $route_vpn_gateway table 10\n"); //needs investigation cause in TAP mode no gateway is received
                 else */
@@ -576,6 +577,7 @@ void start_openvpn(void)
 	if (*(nvram_safe_get("openvpncl_route"))) {	//policy based routing
 		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
 		fprintf(fp, "ip route flush table 10\n");
+		fprintf(fp, "while ip rule delete from 0/0 to 0/0 table 10; do true; done\n");	//egc: added to delete ip rules
 	}
 	if (nvram_match("openvpncl_tuntap", "tun")) {
 		fprintf(fp, "[ -f /tmp/resolv.dnsmasq_isp ] && mv -f /tmp/resolv.dnsmasq_isp /tmp/resolv.dnsmasq\n");
@@ -603,7 +605,7 @@ void stop_openvpn(void)
                         stop_wshaper();
                         start_wshaper();
                 }*/
-		//remove ebtables rules on shutdown 
+		//remove ebtables rules on shutdown
 		system("/usr/sbin/ebtables -t nat -D POSTROUTING -o tap1 --pkttype-type multicast -j DROP");
 		unlink("/tmp/openvpncl/ca.crt");
 		unlink("/tmp/openvpncl/client.crt");
