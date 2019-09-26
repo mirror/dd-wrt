@@ -2356,6 +2356,7 @@ struct wifidevices {
 };
 #define NONE 0x0
 #define CHANNELSURVEY 0x1
+#define QBOOST 0x2		// qboost is a tdma like protocol. i just added this feature to ath10k for doing some experiments. its only supported on 10.4 based firmwares (9984, ipq40xx etc)
 
 #ifdef HAVE_ATH5K
 #define CHANNELSURVEY5K 0x1
@@ -2440,12 +2441,12 @@ static struct wifidevices wdevices[] = {
 	{ "AR922x 802.11n", CHANNELSURVEY, 0x168c, 0xff1d },
 	{ "QCA988x 802.11ac", CHANNELSURVEY, 0x168c, 0x003c },
 	{ "QCA6174 802.11ac", CHANNELSURVEY, 0x168c, 0x003e },
-	{ "QCA99X0 802.11ac", CHANNELSURVEY, 0x168c, 0x0040 },
+	{ "QCA99X0 802.11ac", CHANNELSURVEY | QBOOST, 0x168c, 0x0040 },
 	{ "QCA6164 802.11ac", CHANNELSURVEY, 0x168c, 0x0041 },
 	{ "QCA9377 802.11ac", CHANNELSURVEY, 0x168c, 0x0042 },
-	{ "QCA9984 802.11ac", CHANNELSURVEY, 0x168c, 0x0046 },
+	{ "QCA9984 802.11ac", CHANNELSURVEY | QBOOST, 0x168c, 0x0046 },
 	{ "QCA9887 802.11ac", CHANNELSURVEY, 0x168c, 0x0050 },
-	{ "QCA9888 802.11ac", CHANNELSURVEY, 0x168c, 0x0056 },
+	{ "QCA9888 802.11ac", CHANNELSURVEY | QBOOST, 0x168c, 0x0056 },
 	{ "88W8964 802.11ac", CHANNELSURVEY, 0x11ab, 0x2b40 },
 	{ "88W8864 802.11ac", CHANNELSURVEY, 0x11ab, 0x2a55 },
 	{ "88W8897 802.11ac", CHANNELSURVEY, 0x11ab, 0x2b38 },
@@ -2537,7 +2538,7 @@ char *getWifiDeviceName(const char *prefix)
 }
 
 #ifdef HAVE_ATH9K
-int has_channelsurvey(const char *prefix)
+static int flagcheck(const char *prefix, int flag)
 {
 	int i;
 	if (!is_mac80211(prefix))
@@ -2547,12 +2548,22 @@ int has_channelsurvey(const char *prefix)
 		return 1;
 	for (i = 0; i < sizeof(wdevices) / sizeof(wdevices[0]); i++) {
 		if (!strcmp(wdevices[i].name, wifiname)) {
-			if (!(wdevices[i].flags & CHANNELSURVEY))
+			if (!(wdevices[i].flags & flag))
 				return 0;
 			return 1;
 		}
 	}
 	return 1;
+}
+
+int has_channelsurvey(const char *prefix)
+{
+	return flagcheck(prefix, CHANNELSURVEY);
+}
+
+int has_qboost(const char *prefix)
+{
+	return flagcheck(prefix, QBOOST);
 }
 #endif
 
