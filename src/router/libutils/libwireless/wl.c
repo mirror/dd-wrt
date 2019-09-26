@@ -2939,7 +2939,8 @@ void setRegulationDomain(char *reg)
 		int rev1;
 	};
 
-	struct PAIRS pairs[] = {
+// need to handle it special on dhd
+	struct PAIRS dhd_pairs[] = {
 		{ "Q2", 989, "Q2", 989 },
 		{ "EU", 38, "EU", 38 },
 		{ "CN", 65, "CN", 65 },
@@ -2953,6 +2954,22 @@ void setRegulationDomain(char *reg)
 		{ "LA", 6, "LA", 6 },
 		{ "BR", 23, "BR", 23 },
 		{ "SG", 994, "SG", 994 }
+	};
+
+	struct PAIRS pairs[] = {
+		{ "EU", 66, "EU", 8 },
+		{ "EU", 66, "EU", 38 },
+		{ "CN", 34, "CN", 41 },
+		{ "TW", 0, "TW", 0 },
+		{ "JP", 44, "JP", 45 },
+		{ "CA", 0, "CA", 0 },
+		{ "Q2", 0, "Q2", 0 },
+		{ "AU", 0, "AU", 0 },
+		{ "RU", 0, "RU", 0 },
+		{ "KR", 0, "KR", 0 },
+		{ "LA", 0, "LA", 0 },
+		{ "BR", 0, "BR", 0 },
+		{ "SG", 0, "SG", 0 }
 	};
 
 	char *tmp = nvram_safe_get("wl_reg_mode");
@@ -2994,6 +3011,7 @@ void setRegulationDomain(char *reg)
 		case ROUTER_DLINK_DIR895:
 		case ROUTER_NETGEAR_R8500:
 		case ROUTER_ASUS_AC5300:
+			memcpy(pairs, dhd_pairs, sizeof(pairs));
 			pairs[EU].code0 = "E0";
 			pairs[EU].rev0 = 962;
 			pairs[EU].code1 = "E0";
@@ -3016,12 +3034,14 @@ void setRegulationDomain(char *reg)
 
 			break;
 		case ROUTER_NETGEAR_R7000P:
+			memcpy(pairs, dhd_pairs, sizeof(pairs));
 			pairs[EU].code0 = "EU";
 			pairs[EU].rev0 = 38;
 			pairs[EU].code1 = "E0";
 			pairs[EU].rev1 = 938;
 			break;
 		case ROUTER_NETGEAR_R8000:
+			memcpy(pairs, dhd_pairs, sizeof(pairs));
 			pairs[EU].code0 = "EU";
 			pairs[EU].rev0 = 38;
 			pairs[EU].code1 = "EU";
