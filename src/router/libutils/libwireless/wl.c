@@ -142,7 +142,7 @@ int has_5ghz(const char *prefix)
 int has_vht160(const char *prefix)
 {
 #ifdef HAVE_RT2880
-	char *dev = getWifiDeviceName(prefix);
+	char *dev = getWifiDeviceName(prefix, NULL);
 	if (dev && !strcmp(dev, "MT7615 802.11ac"))
 		return 1;
 #endif
@@ -2469,7 +2469,7 @@ static struct wifidevices wdevices[] = {
 
 };
 
-char *getWifiDeviceName(const char *prefix)
+char *getWifiDeviceName(const char *prefix, int *flags)
 {
 	int devnum;
 	int device = 0, vendor = 0, subdevice = 0, subvendor = 0;
@@ -2525,13 +2525,19 @@ char *getWifiDeviceName(const char *prefix)
 	}
 	int i;
 	for (i = 0; i < sizeof(wdevices) / sizeof(wdevices[0]); i++) {
-		if (wdevices[i].subvendor && wdevices[i].vendor == vendor && wdevices[i].device == device && wdevices[i].subvendor == subvendor && wdevices[i].subdevice == subdevice)
+		if (wdevices[i].subvendor && wdevices[i].vendor == vendor && wdevices[i].device == device && wdevices[i].subvendor == subvendor && wdevices[i].subdevice == subdevice) {
+			if (flags)
+				*flags = wdevices[i].flags;
 			return wdevices[i].name;
+		}
 	}
 
 	for (i = 0; i < sizeof(wdevices) / sizeof(wdevices[0]); i++) {
-		if (!wdevices[i].subvendor && wdevices[i].vendor == vendor && wdevices[i].device == device)
+		if (!wdevices[i].subvendor && wdevices[i].vendor == vendor && wdevices[i].device == device) {
+			if (flags)
+				*flags = wdevices[i].flags;
 			return wdevices[i].name;
+		}
 	}
 	return NULL;
 
@@ -2541,19 +2547,13 @@ char *getWifiDeviceName(const char *prefix)
 static int flagcheck(const char *prefix, int flag)
 {
 	int i;
+	int flags;
 	if (!is_mac80211(prefix))
 		return 0;
-	char *wifiname = getWifiDeviceName(prefix);
+	char *wifiname = getWifiDeviceName(prefix, &flags);
 	if (!wifiname)
 		return 1;
-	for (i = 0; i < sizeof(wdevices) / sizeof(wdevices[0]); i++) {
-		if (!strcmp(wdevices[i].name, wifiname)) {
-			if (!(wdevices[i].flags & flag))
-				return 0;
-			return 1;
-		}
-	}
-	return 1;
+	return (flags & flag);
 }
 
 int has_channelsurvey(const char *prefix)

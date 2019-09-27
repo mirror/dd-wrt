@@ -2781,7 +2781,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	char wl_shortgi[32];
 	char wl_subf[32];
 	char wl_mubf[32];
-	char *chipset = getWifiDeviceName(prefix);
+	char *chipset = getWifiDeviceName(prefix, NULL);
 	sprintf(wl_mode, "%s_mode", prefix);
 	sprintf(wl_macaddr, "%s_hwaddr", prefix);
 	sprintf(wl_ssid, "%s_ssid", prefix);

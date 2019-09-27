@@ -904,7 +904,7 @@ void ej_spectral_scan(webs_t wp, int argc, char_t ** argv)
 void ej_getchipset(webs_t wp, int argc, char_t ** argv)
 {
 	char buf[128];
-	char *chipset = getWifiDeviceName(nvram_safe_get("wifi_display"));
+	char *chipset = getWifiDeviceName(nvram_safe_get("wifi_display"), NULL);
 	if (!chipset)
 		return;
 	websWrite(wp, "<div class=\"setting\">\n");
