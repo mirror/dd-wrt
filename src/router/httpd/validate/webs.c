@@ -4203,6 +4203,7 @@ static void save_prefix(webs_t wp, char *prefix)
 #if defined(HAVE_ATH10K) || defined(HAVE_BRCMFMAC)
 	copytonv(wp, "%s_subf", prefix);
 	copytonv(wp, "%s_mubf", prefix);
+	copytonv(wp, "%s_qboost", prefix);
 #endif
 	copytonv(wp, "%s_wmm", prefix);
 	copytonv(wp, "%s_bcn", prefix);
