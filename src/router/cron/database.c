@@ -237,12 +237,21 @@ process_crontab(uname, fname, tabname, statbuf, new_db, old_db)
 	struct passwd	*pw = NULL;
 	int		crontab_fd = OK - 1;
 	user		*u;
+	char		dbkey[MAXNAMLEN+1];
 
-	if (strcmp(fname, "*system*") && !(pw = getpwnam(uname))) {
-		/* file doesn't have a user in passwd file.
+	if (strcmp(fname, "*system*") ) {
+		if ( !(pw = getpwnam(uname))) {
+			/* file doesn't have a user in passwd file.
+			 */
+			log_it(fname, getpid(), "ORPHAN", "no passwd entry");
+			goto next_crontab;
+		}
+ 		(void) strncpy(dbkey, fname, MAXNAMLEN);
+	}
+	else {
+		/* can't repeatedly use "*system*" as database key so make unique key
 		 */
-		log_it(fname, getpid(), "ORPHAN", "no passwd entry");
-		goto next_crontab;
+		snprintf(dbkey, MAXNAMLEN+1, "%s%s", fname, tabname);
 	}
 
 	if ((crontab_fd = open(tabname, O_RDONLY, 0)) < OK) {
@@ -258,7 +267,7 @@ process_crontab(uname, fname, tabname, statbuf, new_db, old_db)
 	}
 
 	Debug(DLOAD, ("\t%s:", fname))
-	u = find_user(old_db, fname);
+	u = find_user(old_db, dbkey);
 	if (u != NULL) {
 		/* if crontab has not changed since we last read it
 		 * in, then we can just use our existing entry.
@@ -285,7 +294,7 @@ process_crontab(uname, fname, tabname, statbuf, new_db, old_db)
 		// Disabled by Boris Bakchiev
 		// log_it(fname, getpid(), "RELOAD", tabname);
 	}
-	u = load_user(crontab_fd, pw, fname);
+	u = load_user(crontab_fd, pw, dbkey);
 	if (u != NULL) {
 		u->mtime = statbuf->st_mtime;
 		link_user(new_db, u);
