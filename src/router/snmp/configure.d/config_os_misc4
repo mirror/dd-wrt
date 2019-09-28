@@ -61,9 +61,9 @@ AC_CACHE_CHECK([for /dev/kmem],
 #
 #  Note that it's OK if this device is not found
 #
-if test "x$ac_cv_HAVE_KMEM" = "x/dev/kmem"; then
-    AC_DEFINE_UNQUOTED(HAVE_KMEM,"$ac_cv_HAVE_KMEM", [Define if you have /dev/kmem])
-fi
+#if test "x$ac_cv_HAVE_KMEM" = "x/dev/kmem"; then
+#    AC_DEFINE_UNQUOTED(HAVE_KMEM,"$ac_cv_HAVE_KMEM", [Define if you have /dev/kmem])
+#fi
 
 
 #       Swap device Location
