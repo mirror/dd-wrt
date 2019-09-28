@@ -353,9 +353,6 @@
 /* Define to 1 if you have the `kinfo_get_cpus' function. */
 #undef HAVE_KINFO_GET_CPUS
 
-/* Define if you have /dev/kmem */
-#undef HAVE_KMEM
-
 /* Define to 1 if you have the `knlist' function. */
 #undef HAVE_KNLIST
 
