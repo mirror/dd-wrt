@@ -3056,7 +3056,6 @@ void setRegulationDomain(char *reg)
 			pairs[EU].rev1 = 938;
 			break;
 		case ROUTER_NETGEAR_R8000:
-		case ROUTER_NETGEAR_R8500:
 			memcpy(pairs, dhd_pairs, sizeof(pairs));
 			pairs[EU].code0 = "EU";
 			pairs[EU].rev0 = 38;
