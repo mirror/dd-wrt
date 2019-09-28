@@ -496,7 +496,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 	fprintf(fp, "Default\n");
 	char wl[32];
 	sprintf(wl, "wl%d", idx);
-	char *dev = getWifiDeviceName(wl);
+	char *dev = getWifiDeviceName(wl, NULL);
 	if (dev && !strcmp(dev, "MT7615 802.11ac"))
 		fprintf(fp, "E2pAccessMode=2\n");
 	else if (idx == 1)
