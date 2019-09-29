@@ -4681,8 +4681,8 @@ void set_security(webs_t wp)
 			sprintf(akm, "%s %s", akm, "psk");
 		if (nvram_nmatch("1", "%s_psk2", ifname))
 			sprintf(akm, "%s %s", akm, "psk2");
-		if (nvram_nmatch("1", "%s_psk2-256", ifname))
-			sprintf(akm, "%s %s", akm, "psk2-256");
+		if (nvram_nmatch("1", "%s_psk2-sha256", ifname))
+			sprintf(akm, "%s %s", akm, "psk2-sha256");
 		if (nvram_nmatch("1", "%s_psk3", ifname))
 			sprintf(akm, "%s %s", akm, "psk3");
 		nvram_set(n2, &akm[1]);
