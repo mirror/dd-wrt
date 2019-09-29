@@ -1139,7 +1139,8 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		}
 
 	}
-	fprintf(fp, "preamble=%s\n", nvram_default_get(preamble, "0"));
+	if (!vapid)
+		fprintf(fp, "preamble=%s\n", nvram_default_get(preamble, "0"));
 	fprintf(fp, "disassoc_low_ack=1\n");
 	char *mode = nvram_nget("%s_mode", ifname);
 	if (!strcmp(mode, "wdsap"))
