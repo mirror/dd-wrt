@@ -1,4 +1,20 @@
 ------------------------------------------------------------------------
+r4775 | brainslayer | 2019-09-29 16:23:37 +0400 (Sun, 29 Sep 2019) | 1 line
+
+optimize a little bit
+------------------------------------------------------------------------
+r4774 | brainslayer | 2019-09-29 15:14:14 +0400 (Sun, 29 Sep 2019) | 1 line
+
+update minstrel algorithm for better performance
+------------------------------------------------------------------------
+r4773 | brainslayer | 2019-09-29 15:10:17 +0400 (Sun, 29 Sep 2019) | 1 line
+
+update mediatek drivers to latest revision#
+------------------------------------------------------------------------
+r4772 | brainslayer | 2019-09-29 14:42:32 +0400 (Sun, 29 Sep 2019) | 1 line
+
+cfg80211: add local BSS receive time to survey information
+------------------------------------------------------------------------
 r4771 | brainslayer | 2019-09-27 15:56:59 +0400 (Fri, 27 Sep 2019) | 1 line
 
 fixes ack timing for 9984
