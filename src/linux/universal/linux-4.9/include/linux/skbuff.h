@@ -858,6 +858,18 @@ static inline bool skb_pkt_type_ok(u32 ptype)
 	return ptype <= PACKET_OTHERHOST;
 }
 
+/* decrement the reference count and return true if we can free the skb */
+static inline bool skb_unref(struct sk_buff *skb)
+{
+	if (unlikely(!skb))
+		return false;
+	if (likely(refcount_read(&skb->users) == 1))
+		smp_rmb();
+	else if (likely(!refcount_dec_and_test(&skb->users)))
+		return false;
+
+	return true;
+}
 
 void kfree_skb(struct sk_buff *skb);
 void kfree_skb_list(struct sk_buff *segs);
