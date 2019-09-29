@@ -4583,6 +4583,11 @@ static int alwaystrue(const char *prefix)
 	return 1;
 }
 
+static int wpa3_support(const char *prefix)
+{
+	return !is_brcmfmac(prefix);
+}
+
 static int noad(const char *prefix)
 {
 
@@ -4601,27 +4606,27 @@ static int nomesh(const char *prefix)
 
 static int aponly_wpa3(const char *prefix)
 {
-	return (aponly(prefix) && has_wpa3(prefix));
+	return (aponly(prefix) && wpa3_support(prefix));
 }
 
 static int aponly_wpa3_gcmp256(const char *prefix)
 {
-	return (aponly(prefix) && has_wpa3(prefix) && has_gcmp_256(prefix));
+	return (aponly(prefix) && wpa3_support(prefix) && has_gcmp_256(prefix));
 }
 
 static int aponly_wpa3_gcmp128(const char *prefix)
 {
-	return (aponly(prefix) && has_wpa3(prefix) && has_gcmp_128(prefix));
+	return (aponly(prefix) && wpa3_support(prefix) && has_gcmp_128(prefix));
 }
 
 static int wpa3_gcmp256(const char *prefix)
 {
-	return (has_wpa3(prefix) && has_gcmp_256(prefix));
+	return (wpa3_support(prefix) && has_gcmp_256(prefix));
 }
 
 static int wpa3_gcmp128(const char *prefix)
 {
-	return (has_wpa3(prefix) && has_gcmp_128(prefix));
+	return (wpa3_support(prefix) && has_gcmp_128(prefix));
 }
 
 static int no_suiteb(const char *prefix)
@@ -4689,8 +4694,8 @@ void show_authtable(webs_t wp, char *prefix, int show80211x)
 	struct pair s_authpair_wpa[] = {
 		{ "wpa.psk", "psk", alwaystrue, alwaystrue, nomesh },
 		{ "wpa.psk2", "psk2", alwaystrue, alwaystrue, nomesh },
-		{ "wpa.psk2_sha256", "psk2-sha256", has_wpa3, is_mac80211, nomesh },
-		{ "wpa.psk3", "psk3", has_wpa3, is_mac80211, alwaystrue },
+		{ "wpa.psk2_sha256", "psk2-sha256", wpa3_support, is_mac80211, nomesh },
+		{ "wpa.psk3", "psk3", wpa3_support, is_mac80211, alwaystrue },
 		{ "wpa.wpa", "wpa", aponly, alwaystrue, nomesh },
 		{ "wpa.wpa2", "wpa2", aponly, alwaystrue, nomesh },
 		{ "wpa.wpa2_sha256", "wpa2-sha256", aponly_wpa3, is_mac80211, nomesh },
@@ -4701,11 +4706,11 @@ void show_authtable(webs_t wp, char *prefix, int show80211x)
 	struct pair s_authpair_80211x[] = {
 		{ "wpa.wpa", "wpa", alwaystrue, alwaystrue, alwaystrue },
 		{ "wpa.wpa2", "wpa2", alwaystrue, alwaystrue, alwaystrue },
-		{ "wpa.wpa2_sha256", "wpa2-sha256", has_wpa3, alwaystrue, alwaystrue },
-		{ "wpa.wpa3", "wpa3", has_wpa3, is_mac80211, alwaystrue },
+		{ "wpa.wpa2_sha256", "wpa2-sha256", wpa3_support, alwaystrue, alwaystrue },
+		{ "wpa.wpa3", "wpa3", wpa3_support, is_mac80211, alwaystrue },
 		{ "wpa.wpa3_128", "wpa3-128", wpa3_gcmp128, has_gmac_128, alwaystrue },
 		{ "wpa.wpa3_192", "wpa3-192", wpa3_gcmp256, has_gmac_256, alwaystrue },
-		{ "wpa.wep_8021x", "802.1x", has_wpa3, alwaystrue, alwaystrue }
+		{ "wpa.wep_8021x", "802.1x", alwaystrue, alwaystrue, alwaystrue }
 	};
 	struct pair s_authmethod[] = {
 		{ "wpa.peap", "peap", alwaystrue, alwaystrue, alwaystrue },
