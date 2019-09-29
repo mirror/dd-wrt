@@ -28,7 +28,11 @@ endif
 ifeq ($(CONFIG_MADWIFI),y)
 SNMP_EXTRACFLAGS+=-DHAVE_MADWIFI -I$(TOP)/madwifi.dev/madwifi.dev -include $(TOP)/madwifi.dev/madwifi.dev/include/compat.h -I$(TOP)/wireless-tools -I$(TOP)/shared -DHEADERS_KERNEL 
 SNMP_EXTRAMIB=,ddwrt/ddwrt
+ifeq ($(CONFIG_WIRELESS_TOOLS),y)
+SNMP_EXTRALIB=-liw -lnl-tiny
+else
 SNMP_EXTRALIB=-lnl-tiny
+endif
 endif
 ifeq ($(CONFIG_ATH9K),y)
 SNMP_EXTRACFLAGS+=-DHAVE_ATH9K
