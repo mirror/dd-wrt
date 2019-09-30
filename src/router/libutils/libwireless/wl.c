@@ -2370,7 +2370,7 @@ static struct wifidevices wdevices[] = {
 	{ "Ubiquiti SRX", CHANNELSURVEY5K, 0x168c, 0x001b, 0x0777, 0x3006 },	//UBNT XR7 offset 10
 	{ "Ubiquiti XR7", CHANNELSURVEY5K, 0x168c, 0x001b, 0x0777, 0x3007 },	//UBNT XR7 offset 10
 	{ "Ubiquiti XR2-2.3", CHANNELSURVEY5K, 0x168c, 0x001b, 0x0777, 0x3b02 },	//UBNT XR2.3
-	{ "Ubiquiti XR2", CHANNELSURVEY5K, 0x168c, 0x001b, 0x0777, 0x3c02 },	//UBNT XR2.6 offset 10
+	{ "Ubiquiti XR2-2.6", CHANNELSURVEY5K, 0x168c, 0x001b, 0x0777, 0x3c02 },	//UBNT XR2.6 offset 10
 	{ "Ubiquiti XR2", CHANNELSURVEY5K, 0x168c, 0x001b, 0x0777, 0x3002 },	//UBNT XR2
 	{ "Ubiquiti XR2", CHANNELSURVEY5K, 0x168c, 0x001b, 0x7777, 0x3002 },	//UBNT XR2
 	{ "Ubiquiti XR3", CHANNELSURVEY5K, 0x168c, 0x001b, 0x0777, 0x3003 },	//UBNT XR3 offset 10
@@ -2406,6 +2406,10 @@ static struct wifidevices wdevices[] = {
 	{ "Mikrotik R52nM", CHANNELSURVEY, 0x168c, 0x0029, 0x19b6, 0x5201 },
 	{ "Mikrotik R5H", CHANNELSURVEY5K, 0x168c, 0x001b, 0x19b6, 0x2201 },
 	{ "Mikrotik R5H", CHANNELSURVEY5K, 0x168c, 0x001b, 0x19b6, 0x2203 },
+	{ "Mikrotik R11e-5HnD", CHANNELSURVEY, 0x168c, 0x0033, 0x19b6, 0xd014 },
+	{ "Mikrotik R11e-5HnDr2", CHANNELSURVEY, 0x168c, 0x0033, 0x19b6, 0xd057 },
+	{ "Mikrotik R11e-2HPnD", CHANNELSURVEY, 0x168c, 0x0033, 0x19b6, 0xd016 },
+	{ "Mikrotik R11e-5HacT", CHANNELSURVEY, 0x168c, 0x003c, 0x19b6, 0xd03c },
 	{ "Wistron DCMA-82", CHANNELSURVEY5K, 0x168c, 0x001b, 0x185f, 0x1600 },
 	{ "Wistron DNMA-92", CHANNELSURVEY, 0x168c, 0x0029, 0x168c, 0x2096 },
 	{ "AR5210 802.11a", CHANNELSURVEY5K, 0x168c, 0x0007 },
