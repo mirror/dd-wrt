@@ -1793,7 +1793,7 @@ int internal_getRouterBrand()
 		{ -1, "LiteBeam M5 XW", 0xe895, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10 },	//
 		{ -1, "PowerBeam M2 XW", 0xe2c2, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10 },	//
 		{ -1, "PowerBeam M5 XW", 0xe3e5, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10 },	//
-		{ -1, "PowerBeam M5 XW", 0xe4e5, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10 },	//
+		{ -1, "PowerBeam M5-400 XW", 0xe4e5, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10 },	//
 		{ -1, "PowerBeam M5 XW", 0xe5e5, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10 },	//
 		{ -1, "PowerBeam M5 XW", 0xe885, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10 },	//
 		{ -1, "ISO Station M5", 0xe7f8, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10 },	//
