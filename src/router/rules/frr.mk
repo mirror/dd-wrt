@@ -18,6 +18,7 @@ frr-configure: ncurses json-c readline libyang
 		--disable-ssd \
 		--disable-doc \
 		--disable-zeromq \
+		--disable-backtrace \
 		--enable-opaque-lsa \
 		--disable-nhrpd \
 		--enable-ospf-te --disable-ospfclient --enable-multipath=32  --enable-ipv6 --prefix=/usr --sysconfdir=/tmp --disable-ospf6d \
