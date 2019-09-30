@@ -2332,7 +2332,7 @@ static void do_syslog(unsigned char method, struct mime_handler *handler, char *
 			websWrite(stream, "<div style=\"height:740px; overflow-y:auto;\"><table>");
 			while (fgets(line, sizeof line, fp) != NULL) {
 				count++;
-				if (offset < count && ((offset + 50) > count)) {	// show 100 lines
+				if (offset <= count && ((offset + 50) > count)) {	// show 100 lines
 					// a few sample colors
 					if (strstr(line, ".warn")) {
 						websWrite(stream, "<tr bgcolor=\"#FFFF00\"><td>%s</td></tr>", line);
