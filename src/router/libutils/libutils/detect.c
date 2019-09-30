@@ -1785,7 +1785,6 @@ int internal_getRouterBrand()
 		{ -1, "Bullet AC IP67", 0xe2c7, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 10 },	//
 		{ -1, "NanoBeam M2 XW", 0xe2c2, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10 },	//
 		{ -1, "NanoBeam M5 XW", 0xe3e5, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10 },	//
-		{ -1, "NanoBeam M5 XW", 0xe4e5, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10 },	// // gigabit
 		{ -1, "NanoBeam M2 XW", 0xe812, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10 },	//
 		{ -1, "NanoBeam M5 XW", 0xe815, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10 },	//
 		{ -1, "NanoBeam M5 XW", 0xe825, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10 },	//
