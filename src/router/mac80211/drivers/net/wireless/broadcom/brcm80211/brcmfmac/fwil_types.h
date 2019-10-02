@@ -601,27 +601,6 @@ struct brcmf_sta_info_le {
 				__le16 vht_mcs[BRCMF_VHT_CAP_MCS_MAP_NSS_MAX];	/* supported mcs index bit map per nss */
 			} rateset_adv;
 		} v5;
-
-		struct {
-			__le32 rx_dur_total;	/* total user RX duration (estimated) */
-			__le16 chanspec;	/** chanspec this sta is on */
-			__le16 pad_1;
-			struct {
-				__le16 version;					/* version */
-				__le16 len;					/* length */
-				__le32 count;					/* # rates in this set */
-				u8 rates[BRCMF_MAXRATES_IN_SET];		/* rates in 500kbps units w/hi bit set if basic */
-				u8 mcs[BRCMF_MCSSET_LEN];			/* supported mcs index bit map */
-				__le16 vht_mcs[BRCMF_VHT_CAP_MCS_MAP_NSS_MAX];	/* supported mcs index bit map per nss */
-				__le16 he_mcs[BRCMF_HE_CAP_MCS_MAP_NSS_MAX];	/* supported he mcs index bit map per nss */
-			} rateset_adv;		/* rateset along with mcs index bitmap */
-			__le16 wpauth;		/* authentication type */
-			u8 algo;		/* crypto algorithm */
-			u8 pad_2;
-			__le32 tx_rspec;	/* Rate of last successful tx frame */
-			__le32 rx_rspec;	/* Rate of last successful rx frame */
-			__le32 wnm_cap;		/* wnm capabilities */
-		} v7;
 	};
 };
 

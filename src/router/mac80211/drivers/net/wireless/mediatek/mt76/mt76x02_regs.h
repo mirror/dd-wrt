@@ -1,17 +1,6 @@
+/* SPDX-License-Identifier: ISC */
 /*
  * Copyright (C) 2016 Felix Fietkau <nbd@nbd.name>
- *
- * Permission to use, copy, modify, and/or distribute this software for any
- * purpose with or without fee is hereby granted, provided that the above
- * copyright notice and this permission notice appear in all copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
- * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
- * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
- * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
- * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
 #ifndef __MT76X02_REGS_H
@@ -19,8 +8,8 @@
 
 #define MT_ASIC_VERSION			0x0000
 
-#define MT76XX_REV_E3		0x22
-#define MT76XX_REV_E4		0x33
+#define MT76XX_REV_E3			0x22
+#define MT76XX_REV_E4			0x33
 
 #define MT_CMB_CTRL			0x0020
 #define MT_CMB_CTRL_XTAL_RDY		BIT(22)
@@ -149,15 +138,15 @@
 
 #define MT_WPDMA_DELAY_INT_CFG		0x0210
 
-#define MT_WMM_AIFSN		0x0214
+#define MT_WMM_AIFSN			0x0214
 #define MT_WMM_AIFSN_MASK		GENMASK(3, 0)
 #define MT_WMM_AIFSN_SHIFT(_n)		((_n) * 4)
 
-#define MT_WMM_CWMIN		0x0218
+#define MT_WMM_CWMIN			0x0218
 #define MT_WMM_CWMIN_MASK		GENMASK(3, 0)
 #define MT_WMM_CWMIN_SHIFT(_n)		((_n) * 4)
 
-#define MT_WMM_CWMAX		0x021c
+#define MT_WMM_CWMAX			0x021c
 #define MT_WMM_CWMAX_MASK		GENMASK(3, 0)
 #define MT_WMM_CWMAX_SHIFT(_n)		((_n) * 4)
 
