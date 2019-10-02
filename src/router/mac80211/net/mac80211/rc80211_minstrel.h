@@ -73,11 +73,12 @@ static inline int minstrel_filter_avg_add(struct minstrel_avg_ctx *ctx, u32 in)
 	val = (MINSTREL_AVG_COEFF1 * (in + in_1) / 2);
 	val += (MINSTREL_AVG_COEFF2 * out_1);
 	val -= (MINSTREL_AVG_COEFF3 * out_2);
-	val >>= MINSTREL_SCALE;
-	if (val > 1 << MINSTREL_SCALE)
-		val = 1 << MINSTREL_SCALE;
 	if (val & (1 << 31))
 		val = 1;
+	if (val > 1 << (MINSTREL_SCALE << 1))
+		val = 1 << MINSTREL_SCALE;
+
+	val >>= MINSTREL_SCALE;
 
 out:
 	ctx->out_2 = out_1;
