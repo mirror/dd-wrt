@@ -102,22 +102,22 @@ int __backport_genl_register_family(struct genl_family *family)
 {
 	int i, ret;
 
-#define __copy(_field) family->family._field = family->_field
-	__copy(id);
-	__copy(hdrsize);
-	__copy(version);
-	__copy(maxattr);
+#define __backport_copy(_field) family->family._field = family->_field
+	__backport_copy(id);
+	__backport_copy(hdrsize);
+	__backport_copy(version);
+	__backport_copy(maxattr);
 	strncpy(family->family.name, family->name, sizeof(family->family.name));
-	__copy(netnsok);
-	__copy(pre_doit);
-	__copy(post_doit);
+	__backport_copy(netnsok);
+	__backport_copy(pre_doit);
+	__backport_copy(post_doit);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
-	__copy(parallel_ops);
+	__backport_copy(parallel_ops);
 #endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,11,0)
-	__copy(module);
+	__backport_copy(module);
 #endif
-#undef __copy
+#undef __backport_copy
 
 	ret = genl_register_family(&family->family);
 	if (ret < 0)

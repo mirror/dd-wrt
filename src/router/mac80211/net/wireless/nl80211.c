@@ -1486,7 +1486,7 @@ struct nl80211_dump_wiphy_state {
 	bool split;
 };
 
-static int nl80211_send_wiphy(struct cfg80211_registered_device *rdev,
+int nl80211_send_wiphy(struct cfg80211_registered_device *rdev,
 			      enum nl80211_commands cmd,
 			      struct sk_buff *msg, u32 portid, u32 seq,
 			      int flags, struct nl80211_dump_wiphy_state *state)
@@ -1498,7 +1498,6 @@ static int nl80211_send_wiphy(struct cfg80211_registered_device *rdev,
 	enum nl80211_band band;
 	struct ieee80211_channel *chan;
 	int i;
-	struct ieee80211_local *local = wiphy_priv(&rdev->wiphy);
 	const struct ieee80211_txrx_stypes *mgmt_stypes =
 				rdev->wiphy.mgmt_stypes;
 	u32 features;
@@ -1548,11 +1547,10 @@ static int nl80211_send_wiphy(struct cfg80211_registered_device *rdev,
 				rdev->wiphy.max_sched_scan_plan_iterations))
 			goto nla_put_failure;
 		
-		if (local && local->ops->set_coverage_class) {
-			if (nla_put_u8(msg, NL80211_ATTR_WIPHY_COVERAGE_CLASS, rdev->wiphy.coverage_class))
-				goto nla_put_failure;
-		}
-		
+		if ((rdev->wiphy.flags & WIPHY_FLAG_SUPPORTS_COVERAGE_CLASS) &&
+		    nla_put_u8(msg, NL80211_ATTR_WIPHY_COVERAGE_CLASS, rdev->wiphy.coverage_class))
+			goto nla_put_failure;
+
 		if ((rdev->wiphy.flags & WIPHY_FLAG_IBSS_RSN) &&
 		    nla_put_flag(msg, NL80211_ATTR_SUPPORT_IBSS_RSN))
 			goto nla_put_failure;
@@ -8234,6 +8232,10 @@ static int nl80211_send_survey(struct sk_buff *msg, u32 portid, u32 seq,
 	if ((survey->filled & SURVEY_INFO_TIME_SCAN) &&
 	    nla_put_u64_64bit(msg, NL80211_SURVEY_INFO_TIME_SCAN,
 			      survey->time_scan, NL80211_SURVEY_INFO_PAD))
+		goto nla_put_failure;
+	if ((survey->filled & SURVEY_INFO_TIME_BSS_RX) &&
+	    nla_put_u64_64bit(msg, NL80211_SURVEY_INFO_TIME_BSS_RX,
+			      survey->time_bss_rx, NL80211_SURVEY_INFO_PAD))
 		goto nla_put_failure;
 
 	nla_nest_end(msg, infoattr);

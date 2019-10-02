@@ -492,7 +492,6 @@ static int brcmf_msgbuf_query_dcmd(struct brcmf_pub *drvr, int ifidx,
 	int timeout;
 	int err;
 
-	brcmf_dbg(MSGBUF, "ifidx=%d, cmd=%d, len=%d\n", ifidx, cmd, len);
 	*fwerr = 0;
 	msgbuf->ctl_completed = false;
 	err = brcmf_msgbuf_tx_ioctl(drvr, ifidx, cmd, buf, len);
@@ -501,6 +500,7 @@ static int brcmf_msgbuf_query_dcmd(struct brcmf_pub *drvr, int ifidx,
 
 	timeout = brcmf_msgbuf_ioctl_resp_wait(msgbuf);
 	if (!timeout) {
+		printk(KERN_INFO "ifidx=%d, cmd=%d, len=%d\n", ifidx, cmd, len);
 		bphy_err(drvr, "Timeout on response for query command\n");
 		return -EIO;
 	}

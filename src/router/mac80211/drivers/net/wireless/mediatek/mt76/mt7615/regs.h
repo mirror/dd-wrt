@@ -65,6 +65,17 @@
 #define MT_WPDMA_ABT_CFG		MT_HIF(0x530)
 #define MT_WPDMA_ABT_CFG1		MT_HIF(0x534)
 
+#define MT_PLE_BASE			0x8000
+#define MT_PLE(ofs)			(MT_PLE_BASE + (ofs))
+
+#define MT_PLE_FL_Q0_CTRL		MT_PLE(0x1b0)
+#define MT_PLE_FL_Q1_CTRL		MT_PLE(0x1b4)
+#define MT_PLE_FL_Q2_CTRL		MT_PLE(0x1b8)
+#define MT_PLE_FL_Q3_CTRL		MT_PLE(0x1bc)
+
+#define MT_PLE_AC_QEMPTY(ac, n)		MT_PLE(0x300 + 0x10 * (ac) + \
+					       ((n) << 2))
+
 #define MT_WF_PHY_BASE			0x10000
 #define MT_WF_PHY(ofs)			(MT_WF_PHY_BASE + (ofs))
 
@@ -125,6 +136,10 @@
 					MT_AGG_ARxCR_LIMIT_SHIFT(_n), \
 					MT_AGG_ARxCR_LIMIT_SHIFT(_n))
 
+#define MT_AGG_ASRCR0			MT_WF_AGG(0x060)
+#define MT_AGG_ASRCR1			MT_WF_AGG(0x064)
+#define MT_AGG_ASRCR_RANGE(val, n)	(((val) >> ((n) << 3)) & GENMASK(5, 0))
+
 #define MT_AGG_ACR0			MT_WF_AGG(0x070)
 #define MT_AGG_ACR1			MT_WF_AGG(0x170)
 #define MT_AGG_ACR_NO_BA_RULE		BIT(0)
@@ -135,13 +150,6 @@
 
 #define MT_AGG_SCR			MT_WF_AGG(0x0fc)
 #define MT_AGG_SCR_NLNAV_MID_PTEC_DIS	BIT(3)
-
-#define MT_WF_ARB_BASE			0x20c00
-#define MT_WF_ARB(ofs)			(MT_WF_ARB_BASE + (ofs))
-
-#define MT_ARB_WMM_BCN0			MT_WF_ARB(0x1e8)
-#define MT_ARB_WMM_AIFS			GENMASK(2, 0)
-#define MT_ARB_WMM_CWMIN		GENMASK(12, 8)
 
 #define MT_WF_TMAC_BASE			0x21000
 #define MT_WF_TMAC(ofs)			(MT_WF_TMAC_BASE + (ofs))
@@ -183,12 +191,37 @@
 #define MT_WF_RFCR_DROP_NDPA		BIT(20)
 #define MT_WF_RFCR_DROP_UNWANTED_CTL	BIT(21)
 
+#define MT_WF_RFCR1			MT_WF_RMAC(0x004)
+#define MT_WF_RFCR1_DROP_ACK		BIT(4)
+#define MT_WF_RFCR1_DROP_BF_POLL	BIT(5)
+#define MT_WF_RFCR1_DROP_BA		BIT(6)
+#define MT_WF_RFCR1_DROP_CFEND		BIT(7)
+#define MT_WF_RFCR1_DROP_CFACK		BIT(8)
+
+#define MT_WF_RMAC_MIB_TIME0		MT_WF_RMAC(0x03c4)
+#define MT_WF_RMAC_MIB_RXTIME_CLR	BIT(31)
+#define MT_WF_RMAC_MIB_RXTIME_EN	BIT(30)
+
+#define MT_WF_RMAC_MIB_AIRTIME0		MT_WF_RMAC(0x0380)
+
+#define MT_WF_RMAC_MIB_TIME5		MT_WF_RMAC(0x03d8)
+#define MT_MIB_OBSSTIME_MASK		GENMASK(23, 0)
+
 #define MT_WF_DMA_BASE			0x21800
 #define MT_WF_DMA(ofs)			(MT_WF_DMA_BASE + (ofs))
 
 #define MT_DMA_DCR0			MT_WF_DMA(0x000)
 #define MT_DMA_DCR0_MAX_RX_LEN		GENMASK(15, 2)
 #define MT_DMA_DCR0_RX_VEC_DROP		BIT(17)
+
+#define MT_DMA_BN0RCFR0			MT_WF_DMA(0x070)
+#define MT_DMA_BN1RCFR0			MT_WF_DMA(0x0b0)
+#define MT_DMA_RCFR0_MCU_RX_MGMT	BIT(2)
+#define MT_DMA_RCFR0_MCU_RX_CTL_NON_BAR	BIT(3)
+#define MT_DMA_RCFR0_MCU_RX_CTL_BAR	BIT(4)
+#define MT_DMA_RCFR0_MCU_RX_BYPASS	BIT(21)
+#define MT_DMA_RCFR0_RX_DROPPED_UCAST	GENMASK(25, 24)
+#define MT_DMA_RCFR0_RX_DROPPED_MCAST	GENMASK(27, 26)
 
 #define MT_WTBL_BASE			0x30000
 #define MT_WTBL_ENTRY_SIZE		256
@@ -205,6 +238,7 @@
 #define MT_WTBL_UPDATE			MT_WTBL_OFF(0x030)
 #define MT_WTBL_UPDATE_WLAN_IDX		GENMASK(7, 0)
 #define MT_WTBL_UPDATE_RXINFO_UPDATE	BIT(11)
+#define MT_WTBL_UPDATE_ADM_COUNT_CLEAR	BIT(12)
 #define MT_WTBL_UPDATE_RATE_UPDATE	BIT(13)
 #define MT_WTBL_UPDATE_TX_COUNT_CLEAR	BIT(14)
 #define MT_WTBL_UPDATE_BUSY		BIT(31)
@@ -245,12 +279,6 @@
 
 #define MT_WTBL_W27_CC_BW_SEL		GENMASK(6, 5)
 
-#define MT_LPON_TOP_BASE		0x24200
-#define MT_LPON_TOP(ofs)		(MT_LPON_TOP_BASE + (ofs))
-
-#define MT_LPON_TCR0			MT_LPON_TOP(0x10)
-#define MT_TSF_TIMER_HW_MODE_FULL_ADHOC	GENMASK(3, 2)
-
 #define MT_LPON_BASE			0x24200
 #define MT_LPON(_n)			(MT_LPON_BASE + (_n))
 
@@ -268,8 +296,18 @@
 #define MT_MIB_RTS_RETRIES_COUNT_MASK	GENMASK(31, 16)
 #define MT_MIB_RTS_COUNT_MASK		GENMASK(15, 0)
 
-#define MT_MIB_SDR16(n)			MT_WF_MIB(0x48 + ((n) << 9))
-#define MT_MIB_BUSY_MASK		GENMASK(23, 0)
+#define MT_MIB_SDR9(n)			MT_WF_MIB(0x02c + ((n) << 9))
+#define MT_MIB_SDR9_BUSY_MASK		GENMASK(23, 0)
+
+#define MT_MIB_SDR16(n)			MT_WF_MIB(0x048 + ((n) << 9))
+#define MT_MIB_SDR16_BUSY_MASK		GENMASK(23, 0)
+
+#define MT_MIB_SDR36(n)			MT_WF_MIB(0x098 + ((n) << 9))
+#define MT_MIB_SDR36_TXTIME_MASK	GENMASK(23, 0)
+#define MT_MIB_SDR37(n)			MT_WF_MIB(0x09c + ((n) << 9))
+#define MT_MIB_SDR37_RXTIME_MASK	GENMASK(23, 0)
+
+#define MT_TX_AGG_CNT(n)		MT_WF_MIB(0xa8 + ((n) << 2))
 
 #define MT_EFUSE_BASE			0x81070000
 #define MT_EFUSE_BASE_CTRL		0x000
@@ -287,25 +325,5 @@
 
 #define MT_EFUSE_WDATA(_i)		(0x010 + ((_i) * 4))
 #define MT_EFUSE_RDATA(_i)		(0x030 + ((_i) * 4))
-
-#define MT_MIB_BASE			0x24800
-#define MT_MIB(_n)			(MT_MIB_BASE + (_n))
-
-#define MT_MIB_CTL			MT_MIB(0x00)
-#define MT_MIB_CTL_PSCCA_TIME		GENMASK(13, 11)
-#define MT_MIB_CTL_CCA_NAV_TX		GENMASK(16, 14)
-#define MT_MIB_CTL_ED_TIME		GENMASK(30, 28)
-#define MT_MIB_CTL_READ_CLR_DIS		BIT(31)
-
-#define MT_MIB_STAT(_n)			MT_MIB(0x10 + (_n) * 4)
-
-#define MT_MIB_STAT_CCA			MT_MIB_STAT(9)
-#define MT_MIB_STAT_CCA_MASK		GENMASK(23, 0)
-
-#define MT_MIB_STAT_PSCCA		MT_MIB_STAT(16)
-#define MT_MIB_STAT_PSCCA_MASK		GENMASK(23, 0)
-
-#define MT_MIB_STAT_ED			MT_MIB_STAT(18)
-#define MT_MIB_STAT_ED_MASK		GENMASK(23, 0)
 
 #endif

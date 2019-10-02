@@ -1,20 +1,10 @@
+// SPDX-License-Identifier: ISC
 /*
  * Copyright (C) 2016 Felix Fietkau <nbd@nbd.name>
- *
- * Permission to use, copy, modify, and/or distribute this software for any
- * purpose with or without fee is hereby granted, provided that the above
- * copyright notice and this permission notice appear in all copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
- * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
- * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
- * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
- * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
 #include "mt76x2.h"
+#include "../mt76x02_mac.h"
 
 static int
 mt76x2_start(struct ieee80211_hw *hw)
@@ -22,10 +12,7 @@ mt76x2_start(struct ieee80211_hw *hw)
 	struct mt76x02_dev *dev = hw->priv;
 	int ret;
 
-	ret = mt76x2_mac_start(dev);
-	if (ret)
-		return ret;
-
+	mt76x02_mac_start(dev);
 	ret = mt76x2_phy_start(dev);
 	if (ret)
 		return ret;
@@ -65,10 +52,7 @@ mt76x2_set_channel(struct mt76x02_dev *dev, struct cfg80211_chan_def *chandef)
 	mt76x2_mac_stop(dev, true);
 	ret = mt76x2_phy_set_channel(dev, chandef);
 
-	/* channel cycle counters read-and-clear */
-	mt76_rr(dev, MT_CH_IDLE);
-	mt76_rr(dev, MT_CH_BUSY);
-
+	mt76x02_mac_cc_reset(dev);
 	mt76x02_dfs_init_params(dev);
 
 	mt76x2_mac_resume(dev);

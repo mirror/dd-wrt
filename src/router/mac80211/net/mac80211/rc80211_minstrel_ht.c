@@ -740,7 +740,7 @@ minstrel_ht_update_stats(struct minstrel_priv *mp, struct minstrel_ht_sta *mi,
 
 			mrs = &mg->rates[i];
 			mrs->retry_updated = false;
-			minstrel_calc_rate_stats(mrs);
+			minstrel_calc_rate_stats(mp, mrs);
 			cur_prob = mrs->prob_ewma;
 
 			if (minstrel_ht_get_tp_avg(mi, group, i, cur_prob) == 0)
@@ -776,6 +776,8 @@ minstrel_ht_update_stats(struct minstrel_priv *mp, struct minstrel_ht_sta *mi,
 
 	/* try to sample all available rates during each interval */
 	mi->sample_count *= 8;
+	if (mp->new_avg)
+		mi->sample_count /= 2;
 
 	if (sample)
 		minstrel_ht_rate_sample_switch(mp, mi);
@@ -892,6 +894,7 @@ minstrel_ht_tx_status(void *priv, struct ieee80211_supported_band *sband,
 	struct ieee80211_tx_rate *ar = info->status.rates;
 	struct minstrel_rate_stats *rate, *rate2, *rate_sample = NULL;
 	struct minstrel_priv *mp = priv;
+	u32 update_interval = mp->update_interval / 2;
 	bool last, update = false;
 	bool sample_status = false;
 	int i;
@@ -946,6 +949,10 @@ minstrel_ht_tx_status(void *priv, struct ieee80211_supported_band *sband,
 
 	switch (mi->sample_mode) {
 	case MINSTREL_SAMPLE_IDLE:
+		if (mp->new_avg &&
+		    (mp->hw->max_rates > 1 ||
+		     mi->total_packets_cur < SAMPLE_SWITCH_THR))
+			update_interval /= 2;
 		break;
 
 	case MINSTREL_SAMPLE_ACTIVE:
@@ -973,23 +980,20 @@ minstrel_ht_tx_status(void *priv, struct ieee80211_supported_band *sband,
 		 */
 		rate = minstrel_get_ratestats(mi, mi->max_tp_rate[0]);
 		if (rate->attempts > 30 &&
-		    MINSTREL_FRAC(rate->success, rate->attempts) <
-		    MINSTREL_FRAC(20, 100)) {
+		    rate->success < rate->attempts / 4) {
 			minstrel_downgrade_rate(mi, &mi->max_tp_rate[0], true);
 			update = true;
 		}
 
 		rate2 = minstrel_get_ratestats(mi, mi->max_tp_rate[1]);
 		if (rate2->attempts > 30 &&
-		    MINSTREL_FRAC(rate2->success, rate2->attempts) <
-		    MINSTREL_FRAC(20, 100)) {
+		    rate2->success < rate2->attempts / 4) {
 			minstrel_downgrade_rate(mi, &mi->max_tp_rate[1], false);
 			update = true;
 		}
 	}
 
-	if (time_after(jiffies, mi->last_stats_update +
-				(mp->update_interval / 2 * HZ) / 1000)) {
+	if (time_after(jiffies, mi->last_stats_update + update_interval)) {
 		update = true;
 		minstrel_ht_update_stats(mp, mi, true);
 	}
@@ -1674,7 +1678,8 @@ minstrel_ht_alloc(struct ieee80211_hw *hw, struct dentry *debugfsdir)
 		mp->has_mrr = true;
 
 	mp->hw = hw;
-	mp->update_interval = 100;
+	mp->update_interval = HZ / 10;
+	mp->new_avg = true;
 
 #ifdef CPTCFG_MAC80211_DEBUGFS
 	mp->fixed_rate_idx = (u32) -1;
@@ -1682,6 +1687,8 @@ minstrel_ht_alloc(struct ieee80211_hw *hw, struct dentry *debugfsdir)
 			   &mp->fixed_rate_idx);
 	debugfs_create_u32("sample_switch", S_IRUGO | S_IWUSR, debugfsdir,
 			   &mp->sample_switch);
+	debugfs_create_bool("new_avg", S_IRUGO | S_IWUSR, debugfsdir,
+			   &mp->new_avg);
 #endif
 
 	minstrel_ht_init_cck_rates(mp);

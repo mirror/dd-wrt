@@ -1,18 +1,7 @@
+// SPDX-License-Identifier: ISC
 /*
  * Copyright (C) 2016 Felix Fietkau <nbd@nbd.name>
  * Copyright (C) 2018 Lorenzo Bianconi <lorenzo.bianconi83@gmail.com>
- *
- * Permission to use, copy, modify, and/or distribute this software for any
- * purpose with or without fee is hereby granted, provided that the above
- * copyright notice and this permission notice appear in all copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
- * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
- * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
- * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
- * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
 #include <linux/kernel.h>
@@ -169,7 +158,9 @@ int mt76x02_tx_prepare_skb(struct mt76_dev *mdev, void *txwi_ptr,
 	/* encode packet rate for no-skb packet id to fix up status reporting */
 	if (pid == MT_PACKET_ID_NO_SKB)
 		pid = MT_PACKET_ID_HAS_RATE |
-		      (le16_to_cpu(txwi->rate) & MT_RXWI_RATE_INDEX);
+		      (le16_to_cpu(txwi->rate) & MT_RXWI_RATE_INDEX) |
+		      FIELD_PREP(MT_PKTID_AC,
+				 skb_get_queue_mapping(tx_info->skb));
 
 	txwi->pktid = pid;
 
@@ -181,6 +172,12 @@ int mt76x02_tx_prepare_skb(struct mt76_dev *mdev, void *txwi_ptr,
 
 	if (!wcid || wcid->hw_key_idx == 0xff || wcid->sw_iv)
 		tx_info->info |= MT_TXD_INFO_WIV;
+
+	if (sta) {
+		struct mt76x02_sta *msta = (struct mt76x02_sta *)sta->drv_priv;
+
+		ewma_pktlen_add(&msta->pktlen, tx_info->skb->len);
+	}
 
 	return 0;
 }

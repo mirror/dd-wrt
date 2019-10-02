@@ -40,10 +40,12 @@ static struct usb_device_id mt76x0_device_table[] = {
 	{ USB_DEVICE(0x20f4, 0x806b) },	/* TRENDnet TEW-806UBH  */
 	{ USB_DEVICE(0x7392, 0xc711) }, /* Devolo Wifi ac Stick */
 	{ USB_DEVICE(0x0df6, 0x0079) }, /* Sitecom Europe B.V. ac  Stick */
-	{ USB_DEVICE(0x2357, 0x0105),
-	  .driver_info = 1,	     }, /* TP-LINK Archer T1U */
-	{ USB_DEVICE_AND_INTERFACE_INFO(0x0E8D, 0x7630, 0xff, 0x2, 0xff)}, /* MT7630U */
-	{ USB_DEVICE_AND_INTERFACE_INFO(0x0E8D, 0x7650, 0xff, 0x2, 0xff)}, /* MT7650U */
+	/* TP-LINK Archer T1U */
+	{ USB_DEVICE(0x2357, 0x0105), .driver_info = 1, },
+	/* MT7630U */
+	{ USB_DEVICE_AND_INTERFACE_INFO(0x0E8D, 0x7630, 0xff, 0x2, 0xff)},
+	/* MT7650U */
+	{ USB_DEVICE_AND_INTERFACE_INFO(0x0E8D, 0x7650, 0xff, 0x2, 0xff)},
 	{ 0, }
 };
 
@@ -108,7 +110,7 @@ static int mt76x0u_start(struct ieee80211_hw *hw)
 	struct mt76x02_dev *dev = hw->priv;
 	int ret;
 
-	ret = mt76x0_mac_start(dev);
+	ret = mt76x02u_mac_start(dev);
 	if (ret)
 		return ret;
 
@@ -170,13 +172,6 @@ static int mt76x0u_init_hardware(struct mt76x02_dev *dev)
 		FIELD_PREP(MT_TXOP_TRUN_EN, 0x3f) |
 		FIELD_PREP(MT_TXOP_EXT_CCA_DLY, 0x58));
 
-	mt76_wr(dev, MT_CH_TIME_CFG,
-		MT_CH_TIME_CFG_TIMER_EN |
-		MT_CH_TIME_CFG_TX_AS_BUSY |
-		MT_CH_TIME_CFG_RX_AS_BUSY |
-		MT_CH_TIME_CFG_NAV_AS_BUSY |
-		MT_CH_TIME_CFG_EIFS_AS_BUSY);
-
 	return 0;
 }
 
@@ -216,6 +211,8 @@ static int mt76x0u_probe(struct usb_interface *usb_intf,
 			 const struct usb_device_id *id)
 {
 	static const struct mt76_driver_ops drv_ops = {
+		.drv_flags = MT_DRV_SW_RX_AIRTIME,
+		.survey_flags = SURVEY_INFO_TIME_TX,
 		.update_survey = mt76x02_update_channel,
 		.tx_prepare_skb = mt76x02u_tx_prepare_skb,
 		.tx_complete_skb = mt76x02u_tx_complete_skb,
