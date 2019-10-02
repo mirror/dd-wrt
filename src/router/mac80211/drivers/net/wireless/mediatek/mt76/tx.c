@@ -1,17 +1,6 @@
+// SPDX-License-Identifier: ISC
 /*
  * Copyright (C) 2016 Felix Fietkau <nbd@nbd.name>
- *
- * Permission to use, copy, modify, and/or distribute this software for any
- * purpose with or without fee is hereby granted, provided that the above
- * copyright notice and this permission notice appear in all copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
- * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
- * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
- * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
- * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
 #include "mt76.h"
@@ -217,8 +206,8 @@ mt76_tx_status_skb_get(struct mt76_dev *dev, struct mt76_wcid *wcid, int pktid,
 		if (cb->pktid == pktid)
 			return skb;
 
-		if (pktid >= 0 &&
-		    !time_after(jiffies, cb->jiffies + MT_TX_STATUS_SKB_TIMEOUT))
+		if (pktid >= 0 && !time_after(jiffies, cb->jiffies +
+					      MT_TX_STATUS_SKB_TIMEOUT))
 			continue;
 
 		__mt76_tx_status_skb_done(dev, skb, MT_TX_CB_TXS_FAILED |
@@ -389,7 +378,7 @@ EXPORT_SYMBOL_GPL(mt76_release_buffered_frames);
 
 static int
 mt76_txq_send_burst(struct mt76_dev *dev, struct mt76_sw_queue *sq,
-		    struct mt76_txq *mtxq, bool *empty)
+		    struct mt76_txq *mtxq)
 {
 	struct ieee80211_txq *txq = mtxq_to_txq(mtxq);
 	enum mt76_txq_id qid = mt76_txq_get_qid(txq);
@@ -403,16 +392,12 @@ mt76_txq_send_burst(struct mt76_dev *dev, struct mt76_sw_queue *sq,
 	bool probe;
 	int idx;
 
-	if (test_bit(MT_WCID_FLAG_PS, &wcid->flags)) {
-		*empty = true;
+	if (test_bit(MT_WCID_FLAG_PS, &wcid->flags))
 		return 0;
-	}
 
 	skb = mt76_txq_dequeue(dev, mtxq, false);
-	if (!skb) {
-		*empty = true;
+	if (!skb)
 		return 0;
-	}
 
 	info = IEEE80211_SKB_CB(skb);
 	if (!(wcid->tx_info & MT_WCID_TX_INFO_SET))
@@ -442,10 +427,8 @@ mt76_txq_send_burst(struct mt76_dev *dev, struct mt76_sw_queue *sq,
 			return -EBUSY;
 
 		skb = mt76_txq_dequeue(dev, mtxq, false);
-		if (!skb) {
-			*empty = true;
+		if (!skb)
 			break;
-		}
 
 		info = IEEE80211_SKB_CB(skb);
 		cur_ampdu = info->flags & IEEE80211_TX_CTL_AMPDU;
@@ -492,8 +475,6 @@ mt76_txq_schedule_list(struct mt76_dev *dev, enum mt76_txq_id qid)
 
 	spin_lock_bh(&hwq->lock);
 	while (1) {
-		bool empty = false;
-
 		if (sq->swq_queued >= 4)
 			break;
 
@@ -524,10 +505,9 @@ mt76_txq_schedule_list(struct mt76_dev *dev, enum mt76_txq_id qid)
 			spin_lock_bh(&hwq->lock);
 		}
 
-		ret += mt76_txq_send_burst(dev, sq, mtxq, &empty);
-		if (skb_queue_empty(&mtxq->retry_q))
-			empty = true;
-		ieee80211_return_txq(dev->hw, txq, !empty);
+		ret += mt76_txq_send_burst(dev, sq, mtxq);
+		ieee80211_return_txq(dev->hw, txq,
+				     !skb_queue_empty(&mtxq->retry_q));
 	}
 	spin_unlock_bh(&hwq->lock);
 

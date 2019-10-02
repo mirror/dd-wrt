@@ -4181,7 +4181,7 @@ brcmf_configure_wpaie(struct brcmf_if *ifp,
 			wpa_auth |= WPA2_AUTH_1X_SHA256;
 			break;
 		default:
-			bphy_err(drvr, "Invalid key mgmt info\n");
+			bphy_err(drvr, "Invalid key mgmt info %d\n", data[offset]);
 		}
 		offset++;
 	}

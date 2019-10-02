@@ -368,11 +368,10 @@ mt76x0_phy_set_chan_rf_params(struct mt76x02_dev *dev, u8 channel,
 
 	band = (rf_band & RF_G_BAND) ? NL80211_BAND_2GHZ : NL80211_BAND_5GHZ;
 	if (mt76x02_ext_pa_enabled(dev, band)) {
-		/*
-		 * MT_RF_MISC (offset: 0x0518)
-		 * [2]1'b1: enable external A band PA,
+		/* MT_RF_MISC (offset: 0x0518)
+		 * [2]1'b1: enable external A band PA
 		 *    1'b0: disable external A band PA
-		 * [3]1'b1: enable external G band PA,
+		 * [3]1'b1: enable external G band PA
 		 *    1'b0: disable external G band PA
 		 */
 		if (rf_band & RF_A_BAND)
@@ -396,7 +395,9 @@ mt76x0_phy_set_chan_rf_params(struct mt76x02_dev *dev, u8 channel,
 		mt76_wr(dev, MT_TX_ALC_CFG_1, mac_reg);
 	} else {
 		mt76_wr(dev, MT_TX0_RF_GAIN_ATTEN, 0x686A7800);
-		/* Set Atten mode = 0 For Ext A band, Disable Tx Inc dcoc Cal. */
+		/* Set Atten mode = 0
+		 * For Ext A band, Disable Tx Inc dcoc Cal.
+		 */
 		mac_reg = mt76_rr(dev, MT_TX_ALC_CFG_1);
 		mac_reg &= 0x890400FF;
 		mt76_wr(dev, MT_TX_ALC_CFG_1, mac_reg);
@@ -1082,7 +1083,7 @@ mt76x0_phy_update_channel_gain(struct mt76x02_dev *dev)
 		dev->cal.avg_rssi_all = -75;
 
 	low_gain = (dev->cal.avg_rssi_all > mt76x02_get_rssi_gain_thresh(dev)) +
-		   (dev->cal.avg_rssi_all > mt76x02_get_low_rssi_gain_thresh(dev));
+		(dev->cal.avg_rssi_all > mt76x02_get_low_rssi_gain_thresh(dev));
 
 	gain_change = dev->cal.low_gain < 0 ||
 		      (dev->cal.low_gain & 2) ^ (low_gain & 2);
@@ -1177,7 +1178,8 @@ static void mt76x0_phy_rf_init(struct mt76x02_dev *dev)
 
 		if (item->bw_band == RF_BW_20)
 			mt76x0_rf_wr(dev, item->rf_bank_reg, item->value);
-		else if (((RF_G_BAND | RF_BW_20) & item->bw_band) == (RF_G_BAND | RF_BW_20))
+		else if (((RF_G_BAND | RF_BW_20) & item->bw_band) ==
+			  (RF_G_BAND | RF_BW_20))
 			mt76x0_rf_wr(dev, item->rf_bank_reg, item->value);
 	}
 
@@ -1189,10 +1191,9 @@ static void mt76x0_phy_rf_init(struct mt76x02_dev *dev)
 		}
 	}
 
-	/*
-	   Frequency calibration
-	   E1: B0.R22<6:0>: xo_cxo<6:0>
-	   E2: B0.R21<0>: xo_cxo<0>, B0.R22<7:0>: xo_cxo<8:1>
+	/* Frequency calibration
+	 * E1: B0.R22<6:0>: xo_cxo<6:0>
+	 * E2: B0.R21<0>: xo_cxo<0>, B0.R22<7:0>: xo_cxo<8:1>
 	 */
 	mt76x0_rf_wr(dev, MT_RF(0, 22),
 		     min_t(u8, dev->cal.rx.freq_offset, 0xbf));

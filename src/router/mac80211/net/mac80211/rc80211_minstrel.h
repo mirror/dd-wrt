@@ -22,6 +22,19 @@
 #define MAX_THR_RATES 4
 
 /*
+ * Coefficients for moving average with noise filter (period=16),
+ * scaled by 10 bits
+ *
+ * a1 = exp(-pi * sqrt(2) / period)
+ * coeff2 = 2 * a1 * cos(sqrt(2) * 2 * pi / period)
+ * coeff3 = -sqr(a1)
+ * coeff1 = 1 - coeff2 - coeff3
+ */
+#define MINSTREL_AVG_COEFF1		0x00000495
+#define MINSTREL_AVG_COEFF2		0x00001499
+#define MINSTREL_AVG_COEFF3		0x0000092e
+
+/*
  * Perform EWMA (Exponentially Weighted Moving Average) calculation
  */
 static inline int
@@ -35,6 +48,44 @@ minstrel_ewma(int old, int new, int weight)
 	return old + incr;
 }
 
+struct minstrel_avg_ctx {
+	u32 in_1;
+	u32 out_1;
+	u32 out_2;
+};
+
+static inline int minstrel_filter_avg_add(struct minstrel_avg_ctx *ctx, u32 in)
+{
+	u32 in_1 = ctx->in_1;
+	u32 out_1 = ctx->out_1;
+	u32 out_2 = ctx->out_2;
+	u32 val;
+
+	if (!in)
+		in++;
+
+	ctx->in_1 = in;
+	if (!in_1) {
+		val = out_1 = in;
+		goto out;
+	}
+
+	val = (MINSTREL_AVG_COEFF1 * (in + in_1) / 2);
+	val += (MINSTREL_AVG_COEFF2 * out_1);
+	val -= (MINSTREL_AVG_COEFF3 * out_2);
+	val >>= MINSTREL_SCALE;
+	if (val > 1 << MINSTREL_SCALE)
+		val = 1 << MINSTREL_SCALE;
+	if (val & (1 << 31))
+		val = 1;
+
+out:
+	ctx->out_2 = out_1;
+	ctx->out_1 = val;
+
+	return val;
+}
+
 struct minstrel_rate_stats {
 	/* current / last sampling period attempts/success counters */
 	u16 attempts, last_attempts;
@@ -42,6 +93,8 @@ struct minstrel_rate_stats {
 
 	/* total attempts/success counters */
 	u32 att_hist, succ_hist;
+
+	struct minstrel_avg_ctx avg;
 
 	/* prob_ewma - exponential weighted moving average of prob */
 	u16 prob_ewma;
@@ -98,6 +151,7 @@ struct minstrel_sta_info {
 struct minstrel_priv {
 	struct ieee80211_hw *hw;
 	bool has_mrr;
+	bool new_avg;
 	u32 sample_switch;
 	unsigned int cw_min;
 	unsigned int cw_max;
@@ -129,7 +183,8 @@ extern const struct rate_control_ops mac80211_minstrel;
 void minstrel_add_sta_debugfs(void *priv, void *priv_sta, struct dentry *dir);
 
 /* Recalculate success probabilities and counters for a given rate using EWMA */
-void minstrel_calc_rate_stats(struct minstrel_rate_stats *mrs);
+void minstrel_calc_rate_stats(struct minstrel_priv *mp,
+			      struct minstrel_rate_stats *mrs);
 int minstrel_get_tp_avg(struct minstrel_rate *mr, int prob_ewma);
 
 /* debugfs */

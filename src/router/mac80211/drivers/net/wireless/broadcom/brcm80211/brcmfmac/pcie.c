@@ -275,6 +275,7 @@ struct brcmf_pciedev_info {
 	void (*write_ptr)(struct brcmf_pciedev_info *devinfo, u32 mem_offset,
 			  u16 value);
 	struct brcmf_mp_device *settings;
+	int first;
 };
 
 struct brcmf_pcie_ringbuf {
@@ -813,21 +814,25 @@ static void brcmf_pcie_bus_console_read(struct brcmf_pciedev_info *devinfo,
 static __used void brcmf_pcie_ringbell_v1(struct brcmf_pciedev_info *devinfo)
 {
 	u32 reg_value;
-
-	brcmf_dbg(PCIE, "RING !\n");
 	reg_value = brcmf_pcie_read_reg32(devinfo,
 					  BRCMF_PCIE_PCIE2REG_MAILBOXINT);
 	reg_value |= BRCMF_PCIE2_INTB;
 	brcmf_pcie_write_reg32(devinfo, BRCMF_PCIE_PCIE2REG_MAILBOXINT,
 			       reg_value);
+	reg_value = brcmf_pcie_read_reg32(devinfo,
+					  BRCMF_PCIE_PCIE2REG_MAILBOXINT);
 }
 
 
 static void brcmf_pcie_ringbell_v2(struct brcmf_pciedev_info *devinfo)
 {
-	brcmf_dbg(PCIE, "RING !\n");
 	/* Any arbitrary value will do, lets use 1 */
-	brcmf_pcie_write_reg32(devinfo, BRCMF_PCIE_PCIE2REG_H2D_MAILBOX_0, 1);
+	if (devinfo->first<2) {
+	    brcmf_info("RING !\n");
+	    devinfo->first++;
+	}
+	brcmf_pcie_write_reg32(devinfo, BRCMF_PCIE_PCIE2REG_H2D_MAILBOX_0, 0x12345678);
+//	brcmf_pcie_write_reg32(devinfo, BRCMF_PCIE_PCIE2REG_H2D_MAILBOX_0, 1);
 }
 
 
@@ -858,7 +863,7 @@ static void brcmf_pcie_hostready(struct brcmf_pciedev_info *devinfo)
 {
 	if (devinfo->shared.flags & BRCMF_PCIE_SHARED_HOSTRDY_DB1)
 		brcmf_pcie_write_reg32(devinfo,
-				       BRCMF_PCIE_PCIE2REG_H2D_MAILBOX_1, 1);
+				       BRCMF_PCIE_PCIE2REG_H2D_MAILBOX_1, 0x12345678);
 }
 
 static irqreturn_t brcmf_pcie_quick_check_isr_v1(int irq, void *arg)
