@@ -455,7 +455,8 @@ void start_openvpn(void)
 	} else
 		fprintf(fp, "mtu-disc yes\n");
 	if (nvram_matchi("openvpncl_certtype", 1))
-		fprintf(fp, "ns-cert-type server\n");
+//                fprintf(fp, "ns-cert-type server\n"); //egc: ns-cert-type deprecated and replaced by remote-cert-tls
+		fprintf(fp, "remote-cert-tls server\n");
 	if (nvram_match("openvpncl_proto", "udp"))
 		fprintf(fp, "fast-io\n");	//experimental!improving CPU efficiency by 5%-10%
 //      if (nvram_match("openvpncl_tuntap", "tun"))
