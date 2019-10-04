@@ -70,7 +70,7 @@ rix_to_ndx(struct minstrel_sta_info *mi, int rix)
 }
 
 /* return current EMWA throughput */
-int minstrel_get_tp_avg(struct minstrel_rate *mr, int prob_ewma)
+static int minstrel_get_tp_avg(struct minstrel_rate *mr, int prob_ewma)
 {
 	int usecs;
 
@@ -156,7 +156,7 @@ minstrel_update_rates(struct minstrel_priv *mp, struct minstrel_sta_info *mi)
 /*
 * Recalculate statistics and counters of a given rate
 */
-void
+static void
 minstrel_calc_rate_stats(struct minstrel_priv *mp,
 			 struct minstrel_rate_stats *mrs)
 {

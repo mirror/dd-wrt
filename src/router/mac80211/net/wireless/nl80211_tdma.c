@@ -23,9 +23,8 @@
 #include "nl80211.h"
 #include "reg.h"
 
-extern struct cfg80211_cached_keys *
-nl80211_parse_connkeys(struct cfg80211_registered_device *rdev,
-		       struct nlattr *keys);
+extern struct cfg80211_cached_keys *nl80211_parse_connkeys(struct cfg80211_registered_device *rdev,
+		       struct nlattr *keys, bool *no_ht);
 extern int nl80211_parse_chandef(struct cfg80211_registered_device *rdev,
 				 struct genl_info *info,
 				 struct cfg80211_chan_def *chandef);
@@ -37,7 +36,7 @@ extern bool nl80211_parse_mcast_rate(struct cfg80211_registered_device *rdev,
 static const unsigned ht20_mcs_rates[] = { 65, 130, 195, 260, 390, 520, 585, 650, 130, 260, 390, 520, 780, 1040, 1170, 1300, 195, 390, 585, 780, 1170, 1560, 1755, 1950, 260, 520, 780, 1040, 1560, 2080, 2340, 2600 };
 static const unsigned ht40_mcs_rates[] = { 135, 270, 405, 540, 810, 1080, 1215, 1350, 270, 540, 810, 1080, 1620, 2160, 2430, 2700 };
 
-static const struct nla_policy nl80211_txattr_policy[NL80211_TXRATE_MAX + 1] = {
+static const struct nla_policy nl80211_txattr_policy_tdma[NL80211_TXRATE_MAX + 1] = {
 	[NL80211_TXRATE_LEGACY] = { .type = NLA_BINARY,
 				    .len = NL80211_MAX_SUPP_RATES },
 	[NL80211_TXRATE_MCS] = { .type = NLA_BINARY,
@@ -114,10 +113,10 @@ int nl80211_join_tdma(struct sk_buff *skb, struct genl_info *info)
 			return -EINVAL;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4,14,0)
 		nla_parse(tb, NL80211_TXRATE_MAX, nla_data(tx_rates),
-			  nla_len(tx_rates), nl80211_txattr_policy, NULL);
+			  nla_len(tx_rates), nl80211_txattr_policy_tdma, NULL);
 #else
 		nla_parse(tb, NL80211_TXRATE_MAX, nla_data(tx_rates),
-			  nla_len(tx_rates), nl80211_txattr_policy);
+			  nla_len(tx_rates), nl80211_txattr_policy_tdma);
 #endif
 		if (tb[NL80211_TXRATE_LEGACY]) {
 		    rates = nla_data(tb[NL80211_TXRATE_LEGACY]);
@@ -169,8 +168,9 @@ int nl80211_join_tdma(struct sk_buff *skb, struct genl_info *info)
 
 	tdma.privacy = !!info->attrs[NL80211_ATTR_PRIVACY];
 	if (tdma.privacy && info->attrs[NL80211_ATTR_KEYS]) {
+		bool no_ht = false;
 		connkeys = nl80211_parse_connkeys(rdev,
-					info->attrs[NL80211_ATTR_KEYS]);
+					info->attrs[NL80211_ATTR_KEYS], &no_ht);
 		if (IS_ERR(connkeys))
 			return PTR_ERR(connkeys);
 	}
