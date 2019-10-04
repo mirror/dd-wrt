@@ -3085,6 +3085,7 @@ static int nl80211_set_interface(struct sk_buff *skb, struct genl_info *info)
 		dev->ieee80211_ptr->use_4addr = params.use_4addr;
 		dev->ieee80211_ptr->use_mtikwds = params.use_mtikwds;
 	}
+//	printk(KERN_INFO "use_4addr %d use_mtikwds %d\n", dev->ieee80211_ptr->use_4addr, dev->ieee80211_ptr->use_mtikwds);
 #if IS_ENABLED(CPTCFG_MAC80211_COMPRESS)
 	params.use_compr = 0;
 	if (info->attrs[NL80211_ATTR_COMPR]) {
@@ -3152,6 +3153,8 @@ static int nl80211_new_interface(struct sk_buff *skb, struct genl_info *info)
 
 	if (info->attrs[NL80211_ATTR_MTIKWDS]) {
 		params.use_mtikwds = !!nla_get_u8(info->attrs[NL80211_ATTR_MTIKWDS]);
+	} else {
+		params.use_mtikwds = 0;
 	}
 
 	err = nl80211_parse_mon_options(rdev, type, info, &params);
