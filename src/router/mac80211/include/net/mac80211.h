@@ -5355,6 +5355,40 @@ void ieee80211_sta_register_airtime(struct ieee80211_sta *pubsta, u8 tid,
 				    u32 tx_airtime, u32 rx_airtime);
 
 /**
+ * ieee80211_sta_register_pending_airtime - register the estimated airtime for
+ * the frames pending in lower layer (firmware/hardware) txq.
+ *
+ * Update the total pending airtime of the frames released to firmware. The
+ * pending airtime is used by AQL to control queue size in the lower layer.
+ *
+ * The airtime is estimated using frame length and the last reported data
+ * rate. The pending airtime for a txq is increased by the estimated
+ * airtime when the frame is relased to the lower layer, and decreased by the
+ * same amount at the tx completion event.
+ *
+ * @pubsta: the station
+ * @tid: the TID to register airtime for
+ * @tx_airtime: the estimated airtime (in usec)
+ * @tx_commpleted: true if called from the tx completion event.
+ */
+void ieee80211_sta_register_pending_airtime(struct ieee80211_sta *pubsta,
+					    u8 tid, u32 tx_airtime,
+					    bool tx_completed);
+
+/**
+ * ieee80211_txq_aritme_check - check if the airtime limit of AQL (Airtime based
+ * queue limit) has been reached.
+ * @hw: pointer obtained from ieee80211_alloc_hw()
+ * @txq: pointer obtained from station or virtual interface
+ * Retrun true if the queue limit has not been reached and txq can continue to
+ * release packets to the lower layer.
+ * Return false if the queue limit has been reached and the txq should not
+ * release more frames to the lower layer.
+ */
+bool
+ieee80211_txq_airtime_check(struct ieee80211_hw *hw, struct ieee80211_txq *txq);
+
+/**
  * ieee80211_iter_keys - iterate keys programmed into the device
  * @hw: pointer obtained from ieee80211_alloc_hw()
  * @vif: virtual interface to iterate, may be %NULL for all
