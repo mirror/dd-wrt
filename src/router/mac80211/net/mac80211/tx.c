@@ -3718,7 +3718,7 @@ struct ieee80211_txq *ieee80211_next_txq(struct ieee80211_hw *hw, u8 ac)
 {
 	struct ieee80211_local *local = hw_to_local(hw);
 	struct ieee80211_txq *ret = NULL;
-	struct txq_info *txqi = NULL;
+	struct txq_info *txqi = NULL, *head = NULL;
 
 	spin_lock_bh(&local->active_txq_lock[ac]);
 
@@ -3729,13 +3729,20 @@ struct ieee80211_txq *ieee80211_next_txq(struct ieee80211_hw *hw, u8 ac)
 	if (!txqi)
 		goto out;
 
+	if (txqi == head)
+		goto out;
+
+	if (!head)
+		head = txqi;
+
 	if (txqi->txq.sta) {
 		struct sta_info *sta = container_of(txqi->txq.sta,
 						struct sta_info, sta);
 
-		if (sta->airtime[txqi->txq.ac].deficit < 0) {
+		if (sta->airtime[txqi->txq.ac].deficit < 0)
 			sta->airtime[txqi->txq.ac].deficit +=
 				sta->airtime_weight;
+		if (!ieee80211_txq_airtime_check(hw, &txqi->txq)) {
 			list_move_tail(&txqi->schedule_order,
 				       &local->active_txqs[txqi->txq.ac]);
 			goto begin;
@@ -3775,9 +3782,7 @@ void __ieee80211_schedule_txq(struct ieee80211_hw *hw,
 		 * get immediately moved to the back of the list on the next
 		 * call to ieee80211_next_txq().
 		 */
-		if (txqi->txq.sta &&
-		    wiphy_ext_feature_isset(local->hw.wiphy,
-					    NL80211_EXT_FEATURE_AIRTIME_FAIRNESS))
+		if (txqi->txq.sta && local->airtime_flags & AIRTIME_USE_TX)
 			list_add(&txqi->schedule_order,
 				 &local->active_txqs[txq->ac]);
 		else
@@ -3788,6 +3793,37 @@ void __ieee80211_schedule_txq(struct ieee80211_hw *hw,
 }
 EXPORT_SYMBOL(__ieee80211_schedule_txq);
 
+bool ieee80211_txq_airtime_check(struct ieee80211_hw *hw,
+			     struct ieee80211_txq *txq)
+{
+	struct sta_info *sta;
+	struct ieee80211_local *local = hw_to_local(hw);
+
+
+	if (!(local->airtime_flags & AIRTIME_USE_TX))
+		return true;
+
+	if (!txq->sta)
+		return true;
+
+	sta = container_of(txq->sta, struct sta_info, sta);
+	if (sta->airtime[txq->ac].deficit < 0)
+		return false;
+
+	if (!(local->airtime_flags & AIRTIME_USE_AQL))
+		return true;
+
+	if ((sta->airtime[txq->ac].aql_tx_pending <
+	     sta->airtime[txq->ac].aql_limit_low) ||
+	    (local->aql_total_pending_airtime < local->aql_interface_limit &&
+	     sta->airtime[txq->ac].aql_tx_pending <
+	     sta->airtime[txq->ac].aql_limit_high))
+		return true;
+	else
+		return false;
+}
+EXPORT_SYMBOL(ieee80211_txq_airtime_check);
+
 bool ieee80211_txq_may_transmit(struct ieee80211_hw *hw,
 				struct ieee80211_txq *txq)
 {
@@ -3796,10 +3832,13 @@ bool ieee80211_txq_may_transmit(struct ieee80211_hw *hw,
 	struct sta_info *sta;
 	u8 ac = txq->ac;
 
-	spin_lock_bh(&local->active_txq_lock[ac]);
-
 	if (!txqi->txq.sta)
-		goto out;
+		return true;
+
+	if (!(local->airtime_flags & AIRTIME_USE_TX))
+		return true;
+
+	spin_lock_bh(&local->active_txq_lock[ac]);
 
 	if (list_empty(&txqi->schedule_order))
 		goto out;
@@ -3821,10 +3860,11 @@ bool ieee80211_txq_may_transmit(struct ieee80211_hw *hw,
 	}
 
 	sta = container_of(txqi->txq.sta, struct sta_info, sta);
-	if (sta->airtime[ac].deficit >= 0)
+	if (ieee80211_txq_airtime_check(hw, &txqi->txq))
 		goto out;
 
-	sta->airtime[ac].deficit += sta->airtime_weight;
+        if (sta->airtime[ac].deficit < 0)
+		sta->airtime[ac].deficit += sta->airtime_weight;
 	list_move_tail(&txqi->schedule_order, &local->active_txqs[ac]);
 	spin_unlock_bh(&local->active_txq_lock[ac]);
 
