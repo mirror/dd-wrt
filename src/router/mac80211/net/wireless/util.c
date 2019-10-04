@@ -1002,9 +1002,10 @@ int cfg80211_change_iface(struct cfg80211_registered_device *rdev,
 
 	WARN_ON(!err && dev->ieee80211_ptr->iftype != ntype);
 
-	if (!err && params && params->use_4addr != -1)
+	if (!err && params && params->use_4addr != -1) {
 		dev->ieee80211_ptr->use_4addr = params->use_4addr;
 		dev->ieee80211_ptr->use_mtikwds = params->use_mtikwds;
+	}
 #if IS_ENABLED(CPTCFG_MAC80211_COMPRESS)
 	if (!err && params && params->set_compr) {
 		dev->ieee80211_ptr->use_compr = params->use_compr;
