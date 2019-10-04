@@ -17,6 +17,7 @@
 #include "sta_info.h"
 #include "rc80211_minstrel.h"
 #include "rc80211_minstrel_ht.h"
+#include "rc80211_minstrel.c"
 
 #define AVG_AMPDU_SIZE	16
 #define AVG_PKT_SIZE	1200
@@ -347,7 +348,7 @@ minstrel_ht_avg_ampdu_len(struct minstrel_ht_sta *mi)
  * Return current throughput based on the average A-MPDU length, taking into
  * account the expected number of retransmissions and their expected length
  */
-int
+static int
 minstrel_ht_get_tp_avg(struct minstrel_ht_sta *mi, int group, int rate,
 		       int prob_ewma)
 {
@@ -1739,7 +1740,7 @@ static const struct rate_control_ops mac80211_minstrel_ht = {
 };
 
 
-static void __init init_sample_table(void)
+static void __init init_sample_table_ht(void)
 {
 	int col, i, new_idx;
 	u8 rnd[MCS_GROUP_RATES];
@@ -1760,7 +1761,7 @@ static void __init init_sample_table(void)
 int __init
 rc80211_minstrel_init(void)
 {
-	init_sample_table();
+	init_sample_table_ht();
 	return ieee80211_rate_control_register(&mac80211_minstrel_ht);
 }
 
@@ -1769,3 +1770,8 @@ rc80211_minstrel_exit(void)
 {
 	ieee80211_rate_control_unregister(&mac80211_minstrel_ht);
 }
+
+#ifdef CPTCFG_MAC80211_DEBUGFS
+#include "rc80211_minstrel_debugfs.c"
+#include "rc80211_minstrel_ht_debugfs.c"
+#endif
