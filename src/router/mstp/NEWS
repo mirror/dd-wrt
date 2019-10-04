@@ -1,6 +1,27 @@
 mstpd: Multiple Spanning Tree Protocol Daemon
 =============================================
 
+Version: 0.0.8
+---------------------------------------------
+- "BPDU Port Filter" option ("setportbpdufilter") - Disable STP processing on
+  a specific port
+  - Mark Gillott mgillott@vyatta.att-mail.com
+- Fix to build with musl library
+  - fidomax adobegitler@gmail.com
+- Support for mstpctl batch commands
+  - Alexandru Ardelean ardeleanalex@gmail.com
+
+Version: 0.0.7
+---------------------------------------------
+- JSON output format support
+  - Anton Kikin a.kikin@tano-systems.com
+- More counters are now displayed
+  - Anton Kikin a.kikin@tano-systems.com
+- New shellcheck warnings addressed
+  - Paul Donohue git@PaulSD.com
+- Leaks fixed & some sanity stuff
+  - Mark Gillott mgillott@vyatta.att-mail.com
+
 Version: 0.0.6
 ---------------------------------------------
 - Tagging this version as 0.0.6, since internally
@@ -36,6 +57,6 @@ Version: 0.05
   - Paul Donohue <git@PaulSD.com>
 - Various improvements in mstpd's shell scripts
   - Paul Donohue <git@PaulSD.com>
-  - dvlemplgk <guenther.kelleter@devolo.de> 
+  - dvlemplgk <guenther.kelleter@devolo.de>
 - Stop bridges on exit to prevent loops
   - Felix Kaiser <felix.kaiser@fxkr.net>

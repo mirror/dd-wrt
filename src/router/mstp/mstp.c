@@ -580,14 +580,6 @@ void MSTP_IN_rx_bpdu(port_t *prt, bpdu_t *bpdu, int size)
     int mstis_size;
     bridge_t *br = prt->bridge;
 
-    if(prt->bpduFilterPort)
-    {
-        LOG_PRTNAME(br, prt,
-                   "Received BPDU on BPDU Filtered Port - discarded");
-        ++(prt->num_rx_bpdu_filtered);
-        return;
-    }
-
     ++(prt->num_rx_bpdu);
 
     if(prt->BpduGuardPort)
@@ -596,6 +588,14 @@ void MSTP_IN_rx_bpdu(port_t *prt, bpdu_t *bpdu, int size)
         ERROR_PRTNAME(br, prt,
                       "Received BPDU on BPDU Guarded Port - Port Down");
         MSTP_OUT_shutdown_port(prt);
+        return;
+    }
+
+    if(prt->bpduFilterPort)
+    {
+        LOG_PRTNAME(br, prt,
+                   "Received BPDU on BPDU Filtered Port - discarded");
+        ++(prt->num_rx_bpdu_filtered);
         return;
     }
 

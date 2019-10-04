@@ -166,6 +166,7 @@ typedef enum {
     PARAM_NUMRXTCN,
     PARAM_NUMTRANSFWD,
     PARAM_NUMTRANSBLK,
+    PARAM_NUMBPDUFILTERED,
     PARAM_RCVDBPDU,
     PARAM_RCVDSTP,
     PARAM_RCVDRSTP,
@@ -713,6 +714,7 @@ static const cmd_param_t cist_port_params[] = {
     { PARAM_NUMRXTCN,       "num-rx-tcn" },
     { PARAM_NUMTRANSFWD,    "num-transition-fwd" },
     { PARAM_NUMTRANSBLK,    "num-transition-blk" },
+    { PARAM_NUMBPDUFILTERED,"num-rx-bpdu-filtered" },
     { PARAM_RCVDBPDU,       "received-bpdu" },
     { PARAM_RCVDSTP,        "received-stp" },
     { PARAM_RCVDRSTP,       "received-rstp" },
@@ -919,6 +921,9 @@ static int do_showport_fmt_plain(const CIST_PortStatus *s,
         case PARAM_NUMTRANSBLK:
             printf("%u\n", s->num_trans_blk);
             break;
+        case PARAM_NUMBPDUFILTERED:
+            printf("%u\n", s->num_rx_bpdu_filtered);
+            break;
         case PARAM_RCVDBPDU:
             printf("%s\n", BOOL_STR(s->rcvdBpdu));
             break;
@@ -1006,12 +1011,16 @@ static int do_showport_fmt_json(const CIST_PortStatus *s,
                        BOOL_STR(s->bpdu_guard_port));
                 printf("\"bpdu-guard-error\":\"%s\",",
                        BOOL_STR(s->bpdu_guard_error));
+                printf("\"bpdu-filter-port\":\"%s\",",
+                       BOOL_STR(s->bpdu_filter_port));
                 printf("\"network-port\":\"%s\",",
                        BOOL_STR(s->network_port));
                 printf("\"ba-inconsistent\":\"%s\",",
                        BOOL_STR(s->ba_inconsistent));
                 printf("\"num-tx-bpdu\":\"%u\",", s->num_tx_bpdu);
                 printf("\"num-rx-bpdu\":\"%u\",", s->num_rx_bpdu);
+                printf("\"num-rx-bpdu-filtered\":\"%u\",",
+                       s->num_rx_bpdu_filtered);
                 printf("\"num-tx-tcn\":\"%u\",", s->num_tx_tcn);
                 printf("\"num-rx-tcn\":\"%u\",", s->num_rx_tcn);
                 printf("\"num-transition-fwd\":\"%u\",",
@@ -1094,6 +1103,7 @@ static int do_showport_fmt_json(const CIST_PortStatus *s,
         case PARAM_NUMRXTCN:
         case PARAM_NUMTRANSFWD:
         case PARAM_NUMTRANSBLK:
+        case PARAM_NUMBPDUFILTERED:
         case PARAM_RCVDBPDU:
         case PARAM_RCVDSTP:
         case PARAM_RCVDRSTP:
@@ -2300,24 +2310,158 @@ static void help(void)
     printf("options:\n");
     printf("  -h | --help              Show this help text\n");
     printf("  -V | --version           Show version\n");
+    printf("  -b | --batch <file>      Process file with mstpctl commands\n");
+    printf("  -s | --stdin             Process mstpctl commands from stdin\n");
+    printf("                           Make sure to provide newlines between\n");
+    printf("                           commands. Won't work if `batch` is used\n");
+    printf("  -i | --ignore            Ignore failing commands during batch\n");
+    printf("                           processing\n");
     printf("  -f | --format <format>   Select output format (json, plain)\n");
     printf("commands:\n");
     command_helpall();
 }
 
+static const struct command *command_lookup_and_validate(int argc,
+                                                         char *const *argv,
+                                                         int line_num)
+{
+    const struct command *cmd;
+
+    cmd = command_lookup(argv[0]);
+    if(!cmd)
+    {
+        if (line_num > 0)
+            fprintf(stderr, "Error on line %d:\n", line_num);
+        fprintf(stderr, "Unknown command [%s]\n", argv[0]);
+        if (line_num == 0)
+            help();
+        return NULL;
+    }
+
+    if(argc < cmd->nargs + 1 || argc > cmd->nargs + cmd->optargs + 1)
+    {
+        if (line_num > 0)
+            fprintf(stderr, "Error on line %d:\n", line_num);
+        fprintf(stderr, "Incorrect number of arguments for command '%s'\n",
+                cmd->name);
+        fprintf(stderr, "Usage: mstpctl %s %s\n  %s\n",
+                cmd->name, cmd->format, cmd->help);
+        return NULL;
+    }
+
+    return cmd;
+}
+
+static int split_line_into_parts(char *line, char **argv, int argv_size)
+{
+    const char *delim = " \n";
+    char *ptr = strtok(line, delim);
+    int cnt = 0;
+    while (ptr) {
+        argv[cnt] = ptr;
+        ptr = strtok(NULL, delim);
+        cnt++;
+        if (cnt >= argv_size)
+            return -1;
+    }
+    return cnt;
+}
+
+bool skip_line(const char *line)
+{
+    /* empty line or comment; comment is marked as # at beginning of line */
+    if (line[0] == '\0' || line[0] == '\n' || line[0] == '#')
+        return true;
+    return false;
+}
+
+static int __process_batch_cmds(FILE *batch_file, bool run, bool ignore)
+{
+    const struct command *cmd;
+    char line[64], *argv[8];
+    int line_num, argc, cmds, rc;
+
+    cmds = 0;
+    line_num = 0;
+    while (fgets(line, sizeof(line), batch_file)) {
+        line_num++;
+        if (skip_line(line))
+            continue;
+        argc = split_line_into_parts(line, argv, 8);
+        if (argc < 0) {
+            fprintf(stderr, "Too many elements on line '%d'\n", line_num);
+            return -1;
+        }
+        /* ignore lines with whitespace */
+        if (argc == 0)
+            continue;
+        cmd = command_lookup_and_validate(argc, argv, line_num);
+        if (!cmd) {
+            if (ignore)
+                continue;
+            return -1;
+        }
+        if (run) {
+            rc = cmd->func(argc, argv);
+            if (rc) {
+                if (ignore)
+                    continue;
+                return -1;
+            }
+        }
+        cmds++;
+    }
+
+    return cmds;
+}
+
+static int process_batch_cmds(FILE *batch_file, bool ignore, bool is_stdin)
+{
+    int rc;
+
+    if (is_stdin)
+        goto skip_batch_validation;
+
+    /* Do some basic argv + argc validation for all commands first */
+    rc = __process_batch_cmds(batch_file, false, ignore);
+
+    if (rc < 0)
+        return 1;
+
+    /* nothing do, exit with no error */
+    if (rc == 0)
+        return 0;
+
+    /* go at beginning of file and start over*/
+    fseek(batch_file, 0, SEEK_SET);
+
+skip_batch_validation:
+    rc = __process_batch_cmds(batch_file, true, ignore);
+    if (rc < 0)
+        return 1;
+
+    return 0;
+}
+
 int main(int argc, char *const *argv)
 {
     const struct command *cmd;
-    int f;
+    int f, rc;
     static const struct option options[] =
     {
         {.name = "help",    .val = 'h'},
         {.name = "version", .val = 'V'},
+        {.name = "batch",   .val = 'b', .has_arg = 1},
+        {.name = "stdin",   .val = 's'},
+        {.name = "ignore",  .val = 'i'},
         {.name = "format",  .val = 'f', .has_arg = 1},
         {0}
     };
+    FILE *batch_file = NULL;
+    bool is_stdin = false;
+    bool ignore = false;
 
-    while(EOF != (f = getopt_long(argc, argv, "Vhf:", options, NULL)))
+    while(EOF != (f = getopt_long(argc, argv, "Vhf:b:is", options, NULL)))
         switch(f)
         {
             case 'h':
@@ -2326,6 +2470,32 @@ int main(int argc, char *const *argv)
             case 'V':
                 printf(PACKAGE_VERSION "\n");
                 return 0;
+            case 'b':
+                if (is_stdin) {
+                    fprintf(stderr, "Cannot mix stdin & batch file\n");
+                    goto help;
+                }
+                if (!optarg || !strlen(optarg)) {
+                    fprintf(stderr, "No batch file provided\n");
+                    goto help;
+                }
+                batch_file = fopen(optarg, "rb");
+                if (!batch_file) {
+                    fprintf(stderr, "Could not open file '%s'\n", optarg);
+                    goto help;
+                }
+                break;
+            case 's':
+                if (batch_file) {
+                    fprintf(stderr, "Cannot mix stdin & batch file\n");
+                    goto help;
+                }
+                batch_file = stdin;
+                is_stdin = true;
+                break;
+            case 'i':
+                ignore = true;
+                break;
             case 'f':
                 if (!strcmp(optarg, "json"))
                     format = FORMAT_JSON;
@@ -2342,7 +2512,7 @@ int main(int argc, char *const *argv)
                 goto help;
         }
 
-    if(argc == optind)
+    if((argc == optind) && !batch_file)
         goto help;
 
     if(ctl_client_init())
@@ -2351,21 +2521,19 @@ int main(int argc, char *const *argv)
         return 1;
     }
 
-    argc -= optind;
-    argv += optind;
-    if(NULL == (cmd = command_lookup(argv[0])))
-    {
-        fprintf(stderr, "never heard of command [%s]\n", argv[0]);
-        goto help;
+    if (batch_file) {
+        rc = process_batch_cmds(batch_file, ignore, is_stdin);
+        if (!is_stdin)
+            fclose(batch_file);
+        return rc;
     }
 
-    if(argc < cmd->nargs + 1 || argc > cmd->nargs + cmd->optargs + 1)
-    {
-        printf("Incorrect number of arguments for command\n");
-        printf("Usage: mstpctl %s %s\n  %s\n",
-               cmd->name, cmd->format, cmd->help);
+    argc -= optind;
+    argv += optind;
+
+    cmd = command_lookup_and_validate(argc, argv, 0);
+    if(!cmd)
         return 1;
-    }
 
     return cmd->func(argc, argv);
 
