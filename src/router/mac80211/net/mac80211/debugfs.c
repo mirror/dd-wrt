@@ -150,6 +150,81 @@ static const struct file_operations aqm_ops = {
 	.llseek = default_llseek,
 };
 
+static ssize_t aql_txq_limit_read(struct file *file,
+				  char __user *user_buf,
+				  size_t count,
+				  loff_t *ppos)
+{
+	struct ieee80211_local *local = file->private_data;
+	char buf[400];
+	int len = 0;
+
+	rcu_read_lock();
+	len = scnprintf(buf, sizeof(buf),
+			"AC	AQL limit low	AQL limit high\n"
+			"0	%u		%u\n"
+			"1	%u		%u\n"
+			"2	%u		%u\n"
+			"3	%u		%u\n",
+			local->aql_txq_limit_low[0],
+			local->aql_txq_limit_high[0],
+			local->aql_txq_limit_low[1],
+			local->aql_txq_limit_high[1],
+			local->aql_txq_limit_low[2],
+			local->aql_txq_limit_high[2],
+			local->aql_txq_limit_low[3],
+			local->aql_txq_limit_high[3]);
+	rcu_read_unlock();
+	return simple_read_from_buffer(user_buf, count, ppos,
+				       buf, len);
+}
+
+static ssize_t aql_txq_limit_write(struct file *file,
+				   const char __user *user_buf,
+				   size_t count,
+				   loff_t *ppos)
+{
+	struct ieee80211_local *local = file->private_data;
+	char buf[100];
+	size_t len;
+	u32	ac, q_limit_low, q_limit_high;
+	struct sta_info *sta;
+
+	if (count > sizeof(buf))
+		return -EINVAL;
+
+	if (copy_from_user(buf, user_buf, count))
+		return -EFAULT;
+
+	buf[sizeof(buf) - 1] = '\0';
+	len = strlen(buf);
+	if (len > 0 && buf[len - 1] == '\n')
+		buf[len - 1] = 0;
+
+	if (sscanf(buf, "%u %u %u", &ac, &q_limit_low, &q_limit_high) == 3) {
+		if (ac < IEEE80211_NUM_ACS) {
+			local->aql_txq_limit_low[ac] = q_limit_low;
+			local->aql_txq_limit_high[ac] = q_limit_high;
+
+			mutex_lock(&local->sta_mtx);
+			list_for_each_entry(sta, &local->sta_list, list) {
+				sta->airtime[ac].aql_limit_low = q_limit_low;
+				sta->airtime[ac].aql_limit_high = q_limit_high;
+			}
+			mutex_unlock(&local->sta_mtx);
+			return count;
+		}
+	}
+	return -EINVAL;
+}
+
+static const struct file_operations aql_txq_limit_ops = {
+	.write = aql_txq_limit_write,
+	.read = aql_txq_limit_read,
+	.open = simple_open,
+	.llseek = default_llseek,
+};
+
 #ifdef CONFIG_PM
 static ssize_t reset_write(struct file *file, const char __user *user_buf,
 			   size_t count, loff_t *ppos)
@@ -387,6 +462,10 @@ void debugfs_hw_add(struct ieee80211_local *local)
 
 	debugfs_create_u16("airtime_flags", 0600,
 			   phyd, &local->airtime_flags);
+
+	DEBUGFS_ADD(aql_txq_limit);
+	debugfs_create_u32("aql_interface_limit", 0600,
+			   phyd, &local->aql_interface_limit);
 
 	statsd = debugfs_create_dir("statistics", phyd);
 

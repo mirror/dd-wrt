@@ -656,8 +656,13 @@ struct ieee80211_hw *ieee80211_alloc_hw_nm(size_t priv_data_len,
 	for (i = 0; i < IEEE80211_NUM_ACS; i++) {
 		INIT_LIST_HEAD(&local->active_txqs[i]);
 		spin_lock_init(&local->active_txq_lock[i]);
+		local->aql_txq_limit_low[i] = IEEE80211_DEFAULT_AQL_TXQ_LIMIT_L;
+		local->aql_txq_limit_high[i] = IEEE80211_DEFAULT_AQL_TXQ_LIMIT_H;
 	}
-	local->airtime_flags = AIRTIME_USE_TX | AIRTIME_USE_RX;
+
+	local->airtime_flags =
+		AIRTIME_USE_TX | AIRTIME_USE_RX | AIRTIME_USE_AQL;
+	local->aql_interface_limit = IEEE80211_DEFAULT_AQL_INTERFACE_LIMIT;
 
 	INIT_LIST_HEAD(&local->chanctx_list);
 	mutex_init(&local->chanctx_mtx);
