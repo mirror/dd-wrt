@@ -1,5 +1,5 @@
 AC_PREREQ([2.61])
-AC_INIT([mstpd], [0.0.6], [https://github.com/mstpd/mstpd])
+AC_INIT([mstpd], [0.0.8], [https://github.com/mstpd/mstpd])
 
 # bridge-stp must be installed in /sbin/, and the associated scripts and
 # executables should be installed outside of /usr/ by default.  If `./configure`

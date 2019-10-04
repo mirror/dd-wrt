@@ -1,4 +1,4 @@
-mstpd (0.0.6) unstable; urgency=medium
+mstpd (0.0.8) unstable; urgency=medium
 
   * Build Debian package.
 
