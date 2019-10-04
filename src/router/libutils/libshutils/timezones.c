@@ -23,7 +23,6 @@
 #include <utils.h>
 #include <stdlib.h>
 #include <bcmnvram.h>
-
 TIMEZONE_TO_TZSTRING allTimezones[] = {
 	{ "Africa/Abidjan", "GMT0" }
 	,
@@ -53,7 +52,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{ "Africa/Cairo", "EET-2" }
 	,
-	{ "Africa/Casablanca", "m5= " }
+	{ "Africa/Casablanca", "<+01>-1" }
 	,
 	{ "Africa/Ceuta", "CET-1CEST,M3.5.0,M10.5.0/3" }
 	,
@@ -67,7 +66,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{ "Africa/Douala", "WAT-1" }
 	,
-	{ "Africa/El_Aaiun", "m5= " }
+	{ "Africa/El_Aaiun", "<+01>-1" }
 	,
 	{ "Africa/Freetown", "GMT0" }
 	,
@@ -199,7 +198,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{ "America/Cambridge_Bay", "MST7MDT,M3.2.0,M11.1.0" }
 	,
-	{ "America/Campo_Grande", "<-04>4<-03>,M11.1.0/0,M2.3.0/0" }
+	{ "America/Campo_Grande", "<-04>4" }
 	,
 	{ "America/Cancun", "EST5" }
 	,
@@ -223,7 +222,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{ "America/Creston", "MST7" }
 	,
-	{ "America/Cuiaba", "<-04>4<-03>,M11.1.0/0,M2.3.0/0" }
+	{ "America/Cuiaba", "<-04>4" }
 	,
 	{ "America/Curacao", "AST4" }
 	,
@@ -419,7 +418,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{ "America/Santo_Domingo", "AST4" }
 	,
-	{ "America/Sao_Paulo", "<-03>3<-02>,M11.1.0/0,M2.3.0/0" }
+	{ "America/Sao_Paulo", "<-03>3" }
 	,
 	{ "America/Scoresbysund", "<-01>1<+00>,M3.5.0/0,M10.5.0/1" }
 	,
@@ -553,11 +552,11 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{ "Asia/Famagusta", "EET-2EEST,M3.5.0/3,M10.5.0/4" }
 	,
-	{ "Asia/Gaza", "EET-2EEST,M3.4.4/49,M10.5.6/1" }
+	{ "Asia/Gaza", "EET-2EEST,M3.5.5/0,M10.5.6/1" }
 	,
 	{ "Asia/Harbin", "CST-8" }
 	,
-	{ "Asia/Hebron", "EET-2EEST,M3.4.4/49,M10.5.6/1" }
+	{ "Asia/Hebron", "EET-2EEST,M3.5.5/0,M10.5.6/1" }
 	,
 	{ "Asia/Ho_Chi_Minh", "<+07>-7" }
 	,
@@ -765,7 +764,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{ "Brazil/DeNoronha", "<-02>2" }
 	,
-	{ "Brazil/East", "<-03>3<-02>,M11.1.0/0,M2.3.0/0" }
+	{ "Brazil/East", "<-03>3" }
 	,
 	{ "Brazil/West", "<-04>4" }
 	,
