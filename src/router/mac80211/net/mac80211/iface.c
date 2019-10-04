@@ -1799,8 +1799,10 @@ int ieee80211_if_change_type(struct ieee80211_sub_if_data *sdata,
 	}
 
 	/* reset some values that shouldn't be kept across type changes */
-	if (type == NL80211_IFTYPE_STATION)
+	if (type == NL80211_IFTYPE_STATION) {
 		sdata->u.mgd.use_4addr = false;
+		sdata->u.mgd.use_mtikwds = false;
+	}
 
 	return 0;
 }
