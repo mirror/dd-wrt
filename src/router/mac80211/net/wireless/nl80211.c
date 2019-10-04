@@ -3066,6 +3066,8 @@ static int nl80211_set_interface(struct sk_buff *skb, struct genl_info *info)
 	if (info->attrs[NL80211_ATTR_MTIKWDS]) {
 		params.use_mtikwds = !!nla_get_u8(info->attrs[NL80211_ATTR_MTIKWDS]);
 		change = true;
+	} else {
+		params.use_4addr = 0;
 	}
 
 	err = nl80211_parse_mon_options(rdev, ntype, info, &params);
