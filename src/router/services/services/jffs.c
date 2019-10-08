@@ -37,7 +37,7 @@ void start_jffs2(void)
 	int itworked = 0;
 	char dev[64];
 #if defined(HAVE_R9000)
-	int mtd = getMTD("ddwrt");
+	int mtd = getMTD("plex");
 #else
 	int mtd = getMTD("ddwrt");
 #endif
