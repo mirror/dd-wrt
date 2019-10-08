@@ -2548,26 +2548,26 @@ char *getWifiDeviceName(const char *prefix, int *flags)
 }
 
 #ifdef HAVE_ATH9K
-static int flagcheck(const char *prefix, int flag)
+static int flagcheck(const char *prefix, int flag, int nullvalid)
 {
 	int i;
-	int flags;
+	int flags = 0;
 	if (!is_mac80211(prefix))
 		return 0;
 	char *wifiname = getWifiDeviceName(prefix, &flags);
-	if (!wifiname)
+	if (!wifiname && nullvalid)
 		return 1;
 	return (flags & flag);
 }
 
 int has_channelsurvey(const char *prefix)
 {
-	return flagcheck(prefix, CHANNELSURVEY);
+	return flagcheck(prefix, CHANNELSURVEY, 1);
 }
 
 int has_qboost(const char *prefix)
 {
-	return flagcheck(prefix, QBOOST);
+	return flagcheck(prefix, QBOOST, 0);
 }
 #endif
 
