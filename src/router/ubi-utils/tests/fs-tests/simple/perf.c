@@ -66,7 +66,7 @@ static unsigned speed(size_t bytes, long long usecs)
 	return (unsigned) k;
 }
 
-void perf(void)
+static void perf(void)
 {
 	pid_t pid;
 	int fd, i;
@@ -155,14 +155,14 @@ void perf(void)
 
 /* Title of this test */
 
-const char *perf_get_title(void)
+static const char *perf_get_title(void)
 {
 	return "Measure file system read and write speed";
 }
 
 /* Description of this test */
 
-const char *perf_get_description(void)
+static const char *perf_get_description(void)
 {
 	return
 		"Syncs the file system (a newly created empty file system is " \

@@ -79,7 +79,7 @@ static const unsigned short crc_ccitt_table[] = {
 //CRC to calculate out to 0xf0b8 (the hardcoded value at the end)
 //and returns TRUE if it is and FALSE if it doesn't.
 //Why don't people document better!!!!
-void check_crc_ccitt(char *filename)
+static void check_crc_ccitt(char *filename)
 {
   FILE *fp;
   unsigned short crc = 0xffff;
@@ -127,7 +127,7 @@ void check_crc_ccitt(char *filename)
  contents, and then appends the checksum at the end of the file,
  closes the file and returns.
 */
-void checksum(char *filename){
+static void checksum(char *filename){
 
   FILE *fp;
   unsigned short crc = 0xffff;

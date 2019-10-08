@@ -33,7 +33,6 @@
 
 #include <libubi.h>
 #include "common.h"
-#include "ubiutils-common.h"
 
 /* The variables below are set by command line arguments */
 struct args {
@@ -45,6 +44,7 @@ struct args {
 	const char *name;
 	const char *node;
 	int maxavs;
+	int skipcheck;
 };
 
 static struct args args = {
@@ -69,16 +69,17 @@ static const char optionsstr[] =
 "                              eraseblocks\n"
 "-m, --maxavsize               set volume size to maximum available size\n"
 "-t, --type=<static|dynamic>   volume type (dynamic, static), default is dynamic\n"
+"-k, --skipcheck               skip the CRC check done at volume open time\n"
 "-h, -?, --help                print help message\n"
 "-V, --version                 print program version";
 
 
 static const char usage[] =
 "Usage: " PROGRAM_NAME " <UBI device node file name> [-h] [-a <alignment>] [-n <volume ID>] [-N <name>]\n"
-"\t\t\t[-s <bytes>] [-S <LEBs>] [-t <static|dynamic>] [-V] [-m]\n"
+"\t\t\t[-s <bytes>] [-S <LEBs>] [-t <static|dynamic>] [-V] [-m] [-k]\n"
 "\t\t\t[--alignment=<alignment>][--vol_id=<volume ID>] [--name=<name>]\n"
 "\t\t\t[--size=<bytes>] [--lebs=<LEBs>] [--type=<static|dynamic>] [--help]\n"
-"\t\t\t[--version] [--maxavsize]\n\n"
+"\t\t\t[--version] [--maxavsize] [--skipcheck]\n\n"
 "Example: " PROGRAM_NAME " /dev/ubi0 -s 20MiB -N config_data - create a 20 Megabytes volume\n"
 "         named \"config_data\" on UBI device /dev/ubi0.";
 
@@ -92,6 +93,7 @@ static const struct option long_options[] = {
 	{ .name = "help",      .has_arg = 0, .flag = NULL, .val = 'h' },
 	{ .name = "version",   .has_arg = 0, .flag = NULL, .val = 'V' },
 	{ .name = "maxavsize", .has_arg = 0, .flag = NULL, .val = 'm' },
+	{ .name = "skipcheck", .has_arg = 0, .flag = NULL, .val = 'k' },
 	{ NULL, 0, NULL, 0},
 };
 
@@ -114,6 +116,9 @@ static int param_sanity_check(void)
 	if (len > UBI_MAX_VOLUME_NAME)
 		return errmsg("too long name (%d symbols), max is %d", len, UBI_MAX_VOLUME_NAME);
 
+	if (args.skipcheck && args.vol_type != UBI_STATIC_VOLUME)
+		return errmsg("skipcheck is only valid for static volumes");
+
 	return 0;
 }
 
@@ -122,7 +127,7 @@ static int parse_opt(int argc, char * const argv[])
 	while (1) {
 		int key, error = 0;
 
-		key = getopt_long(argc, argv, "a:n:N:s:S:t:h?Vm", long_options, NULL);
+		key = getopt_long(argc, argv, "a:n:N:s:S:t:h?Vmk", long_options, NULL);
 		if (key == -1)
 			break;
 
@@ -137,7 +142,7 @@ static int parse_opt(int argc, char * const argv[])
 			break;
 
 		case 's':
-			args.bytes = ubiutils_get_bytes(optarg);
+			args.bytes = util_get_bytes(optarg);
 			if (args.bytes <= 0)
 				return errmsg("bad volume size: \"%s\"", optarg);
 			break;
@@ -165,11 +170,16 @@ static int parse_opt(int argc, char * const argv[])
 			break;
 
 		case 'h':
-		case '?':
 			printf("%s\n\n", doc);
 			printf("%s\n\n", usage);
 			printf("%s\n", optionsstr);
 			exit(EXIT_SUCCESS);
+
+		case '?':
+			printf("%s\n\n", doc);
+			printf("%s\n\n", usage);
+			printf("%s\n", optionsstr);
+			return -1;
 
 		case 'V':
 			common_print_version();
@@ -177,6 +187,10 @@ static int parse_opt(int argc, char * const argv[])
 
 		case 'm':
 			args.maxavs = 1;
+			break;
+
+		case 'k':
+			args.skipcheck = 1;
 			break;
 
 		case ':':
@@ -207,7 +221,7 @@ int main(int argc, char * const argv[])
 	libubi_t libubi;
 	struct ubi_dev_info dev_info;
 	struct ubi_vol_info vol_info;
-	struct ubi_mkvol_request req;
+	struct ubi_mkvol_request req = { };
 
 	err = parse_opt(argc, argv);
 	if (err)
@@ -262,6 +276,9 @@ int main(int argc, char * const argv[])
 	req.vol_type = args.vol_type;
 	req.name = args.name;
 
+	if (args.skipcheck)
+		req.flags |= UBI_VOL_SKIP_CRC_CHECK_FLG;
+
 	err = ubi_mkvol(libubi, args.node, &req);
 	if (err < 0) {
 		sys_errmsg("cannot UBI create volume");
@@ -278,9 +295,9 @@ int main(int argc, char * const argv[])
 	}
 
 	printf("Volume ID %d, size %d LEBs (", vol_info.vol_id, vol_info.rsvd_lebs);
-	ubiutils_print_bytes(vol_info.rsvd_bytes, 0);
+	util_print_bytes(vol_info.rsvd_bytes, 0);
 	printf("), LEB size ");
-	ubiutils_print_bytes(vol_info.leb_size, 1);
+	util_print_bytes(vol_info.leb_size, 1);
 	printf(", %s, name \"%s\", alignment %d\n",
 	       req.vol_type == UBI_DYNAMIC_VOLUME ? "dynamic" : "static",
 	       vol_info.name, vol_info.alignment);

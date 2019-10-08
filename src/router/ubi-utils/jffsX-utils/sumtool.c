@@ -113,8 +113,6 @@ static const char helptext[] =
 "                            eraseblock\n\n";
 
 
-static const char revtext[] = "$Revision: 1.9 $";
-
 static unsigned char ffbuf[16] = {
 	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
@@ -122,7 +120,7 @@ static unsigned char ffbuf[16] = {
 
 static void full_write(void *target_buff, const void *buf, int len);
 
-void setup_cleanmarker(void)
+static void setup_cleanmarker(void)
 {
 	cleanmarker.magic = cpu_to_je16(JFFS2_MAGIC_BITMASK);
 	cleanmarker.nodetype = cpu_to_je16(JFFS2_NODETYPE_CLEANMARKER);
@@ -130,7 +128,7 @@ void setup_cleanmarker(void)
 	cleanmarker.hdr_crc = cpu_to_je32(mtd_crc32(0, &cleanmarker, sizeof(struct jffs2_unknown_node)-4));
 }
 
-void process_options (int argc, char **argv)
+static void process_options (int argc, char **argv)
 {
 	int opt,c;
 
@@ -158,15 +156,18 @@ void process_options (int argc, char **argv)
 				target_endian = __LITTLE_ENDIAN;
 				break;
 			case 'h':
+				puts(helptext);
+				exit(EXIT_SUCCESS);
 			case '?':
-				errmsg_die("%s", helptext);
+				puts(helptext);
+				exit(EXIT_FAILURE);
 			case 'v':
 				verbose = 1;
 				break;
 
 			case 'V':
-				errmsg_die("revision %.*s\n",
-						(int) strlen(revtext) - 13, revtext + 11);
+				common_print_version();
+				exit(EXIT_SUCCESS);
 
 			case 'e': {
 						  char *next;
@@ -226,24 +227,24 @@ void process_options (int argc, char **argv)
 }
 
 
-void init_buffers(void)
+static void init_buffers(void)
 {
 	data_buffer = xmalloc(erase_block_size);
 	file_buffer = xmalloc(erase_block_size);
 }
 
-void init_sumlist(void)
+static void init_sumlist(void)
 {
 	sum_collected = xzalloc(sizeof(*sum_collected));
 }
 
-void clean_buffers(void)
+static void clean_buffers(void)
 {
 	free(data_buffer);
 	free(file_buffer);
 }
 
-void clean_sumlist(void)
+static void clean_sumlist(void)
 {
 	union jffs2_sum_mem *temp;
 
@@ -263,7 +264,7 @@ void clean_sumlist(void)
 	}
 }
 
-int load_next_block(void)
+static int load_next_block(void)
 {
 	int ret;
 	ret = read(in_fd, file_buffer, erase_block_size);
@@ -274,7 +275,7 @@ int load_next_block(void)
 	return ret;
 }
 
-void write_buff_to_file(void)
+static void write_buff_to_file(void)
 {
 	int ret;
 	int len = data_ofs;
@@ -298,7 +299,7 @@ void write_buff_to_file(void)
 	data_ofs = 0;
 }
 
-void dump_sum_records(void)
+static void dump_sum_records(void)
 {
 
 	struct jffs2_raw_summary isum;
@@ -474,7 +475,7 @@ static inline void pad_block_if_less_than(int req,int plus)
 	}
 }
 
-void flush_buffers(void)
+static void flush_buffers(void)
 {
 
 	if ((add_cleanmarkers == 1) && (found_cleanmarkers == 1)) { /* CLEANMARKER */
@@ -512,7 +513,7 @@ void flush_buffers(void)
 	}
 }
 
-int add_sum_mem(union jffs2_sum_mem *item)
+static int add_sum_mem(union jffs2_sum_mem *item)
 {
 
 	if (!sum_collected->sum_list_head)
@@ -548,7 +549,7 @@ int add_sum_mem(union jffs2_sum_mem *item)
 	return 0;
 }
 
-void add_sum_inode_mem(union jffs2_node_union *node)
+static void add_sum_inode_mem(union jffs2_node_union *node)
 {
 	struct jffs2_sum_inode_mem *temp = xmalloc(sizeof(*temp));
 
@@ -562,7 +563,7 @@ void add_sum_inode_mem(union jffs2_node_union *node)
 	add_sum_mem((union jffs2_sum_mem *) temp);
 }
 
-void add_sum_dirent_mem(union jffs2_node_union *node)
+static void add_sum_dirent_mem(union jffs2_node_union *node)
 {
 	struct jffs2_sum_dirent_mem *temp = xmalloc(sizeof(*temp) + node->d.nsize);
 
@@ -580,7 +581,7 @@ void add_sum_dirent_mem(union jffs2_node_union *node)
 	add_sum_mem((union jffs2_sum_mem *) temp);
 }
 
-void add_sum_xattr_mem(union jffs2_node_union *node)
+static void add_sum_xattr_mem(union jffs2_node_union *node)
 {
 	struct jffs2_sum_xattr_mem *temp = xmalloc(sizeof(*temp));
 
@@ -594,7 +595,7 @@ void add_sum_xattr_mem(union jffs2_node_union *node)
 	add_sum_mem((union jffs2_sum_mem *) temp);
 }
 
-void add_sum_xref_mem(union jffs2_node_union *node)
+static void add_sum_xref_mem(union jffs2_node_union *node)
 {
 	struct jffs2_sum_xref_mem *temp = xmalloc(sizeof(*temp));
 
@@ -605,7 +606,7 @@ void add_sum_xref_mem(union jffs2_node_union *node)
 	add_sum_mem((union jffs2_sum_mem *) temp);
 }
 
-void write_dirent_to_buff(union jffs2_node_union *node)
+static void write_dirent_to_buff(union jffs2_node_union *node)
 {
 	pad_block_if_less_than(je32_to_cpu (node->d.totlen),JFFS2_SUMMARY_DIRENT_SIZE(node->d.nsize));
 	add_sum_dirent_mem(node);
@@ -614,7 +615,7 @@ void write_dirent_to_buff(union jffs2_node_union *node)
 }
 
 
-void write_inode_to_buff(union jffs2_node_union *node)
+static void write_inode_to_buff(union jffs2_node_union *node)
 {
 	pad_block_if_less_than(je32_to_cpu (node->i.totlen),JFFS2_SUMMARY_INODE_SIZE);
 	add_sum_inode_mem(node);	/* Add inode summary mem to summary list */
@@ -622,7 +623,7 @@ void write_inode_to_buff(union jffs2_node_union *node)
 	padword();
 }
 
-void write_xattr_to_buff(union jffs2_node_union *node)
+static void write_xattr_to_buff(union jffs2_node_union *node)
 {
 	pad_block_if_less_than(je32_to_cpu(node->x.totlen), JFFS2_SUMMARY_XATTR_SIZE);
 	add_sum_xattr_mem(node);	/* Add xdatum summary mem to summary list */
@@ -630,7 +631,7 @@ void write_xattr_to_buff(union jffs2_node_union *node)
 	padword();
 }
 
-void write_xref_to_buff(union jffs2_node_union *node)
+static void write_xref_to_buff(union jffs2_node_union *node)
 {
 	pad_block_if_less_than(je32_to_cpu(node->r.totlen), JFFS2_SUMMARY_XREF_SIZE);
 	add_sum_xref_mem(node);		/* Add xref summary mem to summary list */
@@ -638,7 +639,7 @@ void write_xref_to_buff(union jffs2_node_union *node)
 	padword();
 }
 
-void create_summed_image(int inp_size)
+static void create_summed_image(int inp_size)
 {
 	uint8_t *p = file_buffer;
 	union jffs2_node_union *node;

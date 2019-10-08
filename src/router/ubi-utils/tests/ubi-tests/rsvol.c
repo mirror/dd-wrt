@@ -54,6 +54,7 @@ static int test_basic(int type)
 	req.bytes = MIN_AVAIL_EBS * dev_info.leb_size;
 	req.vol_type = type;
 	req.name = name;
+	req.flags = 0;
 
 	if (ubi_mkvol(libubi, node, &req)) {
 		failed("ubi_mkvol");
@@ -107,32 +108,39 @@ static int test_rsvol1(struct ubi_vol_info *vol_info)
 	long long bytes;
 	struct ubi_vol_info vol_info1;
 	char vol_node[strlen(UBI_VOLUME_PATTERN) + 100];
-	unsigned char buf[vol_info->rsvd_bytes];
+	unsigned char *buf;
 	int fd, i, ret;
+	int ret1 = -1;
+
+	buf = malloc(vol_info->rsvd_bytes);
+	if (!buf) {
+		failed("malloc");
+		goto out;
+	}
 
 	/* Make the volume smaller and check basic volume I/O */
 	bytes = vol_info->rsvd_bytes - vol_info->leb_size;
 	if (ubi_rsvol(libubi, node, vol_info->vol_id, bytes - 1)) {
 		failed("ubi_rsvol");
-		return -1;
+		goto out;
 	}
 
 	if (ubi_get_vol_info1(libubi, vol_info->dev_num, vol_info->vol_id,
 			     &vol_info1)) {
 		failed("ubi_get_vol_info");
-		return -1;
+		goto out;
 	}
 
 	if (vol_info1.rsvd_bytes != bytes) {
 		errorm("rsvd_bytes %lld, must be %lld",
 		       vol_info1.rsvd_bytes, bytes);
-		return -1;
+		goto out;
 	}
 
 	if (vol_info1.rsvd_lebs != vol_info->rsvd_lebs - 1) {
 		errorm("rsvd_lebs %d, must be %d",
 		       vol_info1.rsvd_lebs, vol_info->rsvd_lebs - 1);
-		return -1;
+		goto out;
 	}
 
 	/* Write data to the volume */
@@ -143,7 +151,7 @@ static int test_rsvol1(struct ubi_vol_info *vol_info)
 	if (fd == -1) {
 		failed("open");
 		errorm("cannot open \"%s\"\n", vol_node);
-		return -1;
+		goto out;
 	}
 
 	bytes = vol_info->rsvd_bytes - vol_info->leb_size - 1;
@@ -165,20 +173,20 @@ static int test_rsvol1(struct ubi_vol_info *vol_info)
 
 	if (ubi_rsvol(libubi, node, vol_info->vol_id, bytes)) {
 		failed("ubi_rsvol");
-		return -1;
+		goto out;
 	}
 
 	if (ubi_rsvol(libubi, node, vol_info->vol_id,
 		      (long long)vol_info->leb_size * dev_info.avail_lebs)) {
 		failed("ubi_rsvol");
-		return -1;
+		goto out;
 	}
 
 	fd = open(vol_node, O_RDWR);
 	if (fd == -1) {
 		failed("open");
 		errorm("cannot open \"%s\"\n", vol_node);
-		return -1;
+		goto out;
 	}
 
 	/* Read data back */
@@ -200,12 +208,12 @@ static int test_rsvol1(struct ubi_vol_info *vol_info)
 		}
 	}
 
-	close(fd);
-	return 0;
-
+	ret1 = 0;
 close:
 	close(fd);
-	return -1;
+out:
+	free(buf);
+	return ret1;
 }
 
 /**
@@ -230,6 +238,7 @@ static int test_rsvol(int type)
 		req.vol_id = UBI_VOL_NUM_AUTO;
 		req.vol_type = type;
 		req.name = name;
+		req.flags = 0;
 
 		req.alignment = alignments[i];
 		req.alignment -= req.alignment % dev_info.min_io_size;

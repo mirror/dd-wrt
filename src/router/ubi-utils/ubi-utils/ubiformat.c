@@ -45,7 +45,6 @@
 #include <mtd_swab.h>
 #include <crc32.h>
 #include "common.h"
-#include "ubiutils-common.h"
 
 /* The variables below are set by command line arguments */
 struct args {
@@ -53,7 +52,6 @@ struct args {
 	unsigned int quiet:1;
 	unsigned int verbose:1;
 	unsigned int override_ec:1;
-	unsigned int novtbl:1;
 	unsigned int manual_subpage;
 	int subpage_size;
 	int vid_hdr_offs;
@@ -83,8 +81,6 @@ static const char optionsstr[] =
 "                             physical eraseblock (default is the next\n"
 "                             minimum I/O unit or sub-page after the EC\n"
 "                             header)\n"
-"-n, --no-volume-table        only erase all eraseblock and preserve erase\n"
-"                             counters, do not write empty volume table\n"
 "-f, --flash-image=<file>     flash image file, or '-' for stdin\n"
 "-S, --image-size=<bytes>     bytes in input, if not reading from file\n"
 "-e, --erase-counter=<value>  use <value> as the erase counter value for all\n"
@@ -115,7 +111,6 @@ static const char usage[] =
 static const struct option long_options[] = {
 	{ .name = "sub-page-size",   .has_arg = 1, .flag = NULL, .val = 's' },
 	{ .name = "vid-hdr-offset",  .has_arg = 1, .flag = NULL, .val = 'O' },
-	{ .name = "no-volume-table", .has_arg = 0, .flag = NULL, .val = 'n' },
 	{ .name = "flash-image",     .has_arg = 1, .flag = NULL, .val = 'f' },
 	{ .name = "image-size",      .has_arg = 1, .flag = NULL, .val = 'S' },
 	{ .name = "yes",             .has_arg = 0, .flag = NULL, .val = 'y' },
@@ -125,25 +120,26 @@ static const struct option long_options[] = {
 	{ .name = "ubi-ver",         .has_arg = 1, .flag = NULL, .val = 'x' },
 	{ .name = "help",            .has_arg = 0, .flag = NULL, .val = 'h' },
 	{ .name = "version",         .has_arg = 0, .flag = NULL, .val = 'V' },
+	{ .name = "image-seq",       .has_arg = 1, .flag = NULL, .val = 'Q' },
 	{ NULL, 0, NULL, 0},
 };
 
 static int parse_opt(int argc, char * const argv[])
 {
-	ubiutils_srand();
+	util_srand();
 	args.image_seq = rand();
 
 	while (1) {
 		int key, error = 0;
 		unsigned long int image_seq;
 
-		key = getopt_long(argc, argv, "nh?Vyqve:x:s:O:f:S:", long_options, NULL);
+		key = getopt_long(argc, argv, "nh?Vyqve:x:s:O:f:S:Q:", long_options, NULL);
 		if (key == -1)
 			break;
 
 		switch (key) {
 		case 's':
-			args.subpage_size = ubiutils_get_bytes(optarg);
+			args.subpage_size = util_get_bytes(optarg);
 			if (args.subpage_size <= 0)
 				return errmsg("bad sub-page size: \"%s\"", optarg);
 			if (!is_power_of_2(args.subpage_size))
@@ -170,13 +166,9 @@ static int parse_opt(int argc, char * const argv[])
 			break;
 
 		case 'S':
-			args.image_sz = ubiutils_get_bytes(optarg);
+			args.image_sz = util_get_bytes(optarg);
 			if (args.image_sz <= 0)
 				return errmsg("bad image-size: \"%s\"", optarg);
-			break;
-
-		case 'n':
-			args.novtbl = 1;
 			break;
 
 		case 'y':
@@ -210,11 +202,15 @@ static int parse_opt(int argc, char * const argv[])
 			exit(EXIT_SUCCESS);
 
 		case 'h':
-		case '?':
 			printf("%s\n\n", doc);
 			printf("%s\n\n", usage);
 			printf("%s\n", optionsstr);
 			exit(EXIT_SUCCESS);
+		case '?':
+			printf("%s\n\n", doc);
+			printf("%s\n\n", usage);
+			printf("%s\n", optionsstr);
+			return -1;
 
 		case ':':
 			return errmsg("parameter is missing");
@@ -232,10 +228,6 @@ static int parse_opt(int argc, char * const argv[])
 		return errmsg("MTD device name was not specified (use -h for help)");
 	else if (optind != argc - 1)
 		return errmsg("more then one MTD device specified (use -h for help)");
-
-	if (args.image && args.novtbl)
-		return errmsg("-n cannot be used together with -f");
-
 
 	args.node = argv[optind];
 	return 0;
@@ -651,24 +643,25 @@ static int format(libmtd_t libmtd, const struct mtd_dev_info *mtd,
 	if (!args.quiet && !args.verbose)
 		printf("\n");
 
-	if (!novtbl) {
-		if (eb1 == -1 || eb2 == -1) {
-			errmsg("no eraseblocks for volume table");
-			goto out_free;
-		}
+	if (novtbl)
+		goto out_free;
 
-		verbose(args.verbose, "write volume table to eraseblocks %d and %d", eb1, eb2);
-		vtbl = ubigen_create_empty_vtbl(ui);
-		if (!vtbl)
-			goto out_free;
+	if (eb1 == -1 || eb2 == -1) {
+		errmsg("no eraseblocks for volume table");
+		goto out_free;
+	}
 
-		err = ubigen_write_layout_vol(ui, eb1, eb2, ec1,  ec2, vtbl,
-					      args.node_fd);
-		free(vtbl);
-		if (err) {
-			errmsg("cannot write layout volume");
-			goto out_free;
-		}
+	verbose(args.verbose, "write volume table to eraseblocks %d and %d", eb1, eb2);
+	vtbl = ubigen_create_empty_vtbl(ui);
+	if (!vtbl)
+		goto out_free;
+
+	err = ubigen_write_layout_vol(ui, eb1, eb2, ec1,  ec2, vtbl,
+				args.node_fd);
+	free(vtbl);
+	if (err) {
+		errmsg("cannot write layout volume");
+		goto out_free;
 	}
 
 	free(hdr);
@@ -689,18 +682,17 @@ int main(int argc, char * const argv[])
 	struct ubigen_info ui;
 	struct ubi_scan_info *si;
 
+
+	err = parse_opt(argc, argv);
+	if (err)
+		return -1;
+
 	libmtd = libmtd_open();
 	if (!libmtd)
 		return errmsg("MTD subsystem is not present");
 
-	err = parse_opt(argc, argv);
-	if (err)
-		goto out_close_mtd;
-
 	err = mtd_get_info(libmtd, &mtd_info);
 	if (err) {
-		if (errno == ENODEV)
-			errmsg("MTD is not present");
 		sys_errmsg("cannot get MTD information");
 		goto out_close_mtd;
 	}
@@ -791,9 +783,9 @@ int main(int argc, char * const argv[])
 
 	if (!args.quiet) {
 		normsg_cont("mtd%d (%s), size ", mtd.mtd_num, mtd.type_str);
-		ubiutils_print_bytes(mtd.size, 1);
+		util_print_bytes(mtd.size, 1);
 		printf(", %d eraseblocks of ", mtd.eb_cnt);
-		ubiutils_print_bytes(mtd.eb_size, 1);
+		util_print_bytes(mtd.eb_size, 1);
 		printf(", min. I/O size %d bytes\n", mtd.min_io_size);
 	}
 
@@ -814,7 +806,7 @@ int main(int argc, char * const argv[])
 		goto out_free;
 	}
 
-	if (si->good_cnt < 2 && (!args.novtbl || args.image)) {
+	if (si->good_cnt < 2) {
 		errmsg("too few non-bad eraseblocks (%d) on mtd%d",
 		       si->good_cnt, mtd.mtd_num);
 		goto out_free;
@@ -843,7 +835,7 @@ int main(int argc, char * const argv[])
 	}
 
 	if (!args.override_ec && si->empty_cnt < si->good_cnt) {
-		int percent = ((double)si->ok_cnt)/si->good_cnt * 100;
+		int percent = (si->ok_cnt * 100) / si->good_cnt;
 
 		/*
 		 * Make sure the majority of eraseblocks have valid
@@ -914,11 +906,15 @@ int main(int argc, char * const argv[])
 		if (err < 0)
 			goto out_free;
 
+		/*
+		 * ubinize has create a UBI_LAYOUT_VOLUME_ID volume for image.
+		 * So, we don't need to create again.
+		 */
 		err = format(libmtd, &mtd, &ui, si, err, 1);
 		if (err)
 			goto out_free;
 	} else {
-		err = format(libmtd, &mtd, &ui, si, 0, args.novtbl);
+		err = format(libmtd, &mtd, &ui, si, 0, 0);
 		if (err)
 			goto out_free;
 	}

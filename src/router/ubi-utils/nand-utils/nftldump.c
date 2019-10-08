@@ -39,6 +39,8 @@
 #include <mtd/nftl-user.h>
 #include <mtd_swab.h>
 
+#include "common.h"
+
 static struct NFTLMediaHeader MedHead[2];
 static mtd_info_t meminfo;
 
@@ -73,7 +75,7 @@ static unsigned int find_media_headers(void)
 
 	NumMedHeads = 0;
 	while (ofs < meminfo.size) {
-		pread(fd, &MedHead[NumMedHeads], sizeof(struct NFTLMediaHeader), ofs);
+		pread_nocheck(fd, &MedHead[NumMedHeads], sizeof(struct NFTLMediaHeader), ofs);
 		if (!strncmp(MedHead[NumMedHeads].DataOrgID, "ANAND", 6)) {
 			SWAP16(MedHead[NumMedHeads].NumEraseUnits);
 			SWAP16(MedHead[NumMedHeads].FirstPhysicalEUN);
@@ -93,7 +95,7 @@ static unsigned int find_media_headers(void)
 				/* read BadUnitTable, I don't know why pread() does not work for
 				   larger (7680 bytes) chunks */
 				for (i = 0; i < MAX_ERASE_ZONES; i += 512)
-					pread(fd, &BadUnitTable[i], 512, ofs + 512 + i);
+					pread_nocheck(fd, &BadUnitTable[i], 512, ofs + 512 + i);
 			} else
 				printf("Second NFTL Media Header found at offset 0x%08lx\n",ofs);
 			NumMedHeads++;
@@ -233,10 +235,10 @@ static void dump_virtual_units(void)
 				if (lastgoodEUN == 0xffff)
 					memset(readbuf, 0, 512);
 				else
-					pread(fd, readbuf, 512,
+					pread_nocheck(fd, readbuf, 512,
 							(lastgoodEUN * ERASESIZE) + (j * 512));
 
-				write(ofd, readbuf, 512);
+				write_nocheck(ofd, readbuf, 512);
 			}
 
 		}

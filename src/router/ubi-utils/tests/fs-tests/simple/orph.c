@@ -32,7 +32,7 @@
 
 #define MAX_ORPHANS 1000000
 
-void orph(void)
+static void orph(void)
 {
 	pid_t pid;
 	unsigned i, j, k, n;
@@ -133,14 +133,14 @@ void orph(void)
 
 /* Title of this test */
 
-const char *orph_get_title(void)
+static const char *orph_get_title(void)
 {
 	return "Create many open unlinked files";
 }
 
 /* Description of this test */
 
-const char *orph_get_description(void)
+static const char *orph_get_description(void)
 {
 	return
 		"Create a directory named orph_test_dir_pid, where " \

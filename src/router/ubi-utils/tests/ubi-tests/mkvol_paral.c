@@ -54,6 +54,7 @@ static void * the_thread(void *ptr)
 	req.vol_type = UBI_DYNAMIC_VOLUME;
 	sprintf(nm, "%s:%d", name, n);
 	req.name = nm;
+	req.flags = 0;
 
 	while (iter--) {
 		req.vol_id = UBI_VOL_NUM_AUTO;

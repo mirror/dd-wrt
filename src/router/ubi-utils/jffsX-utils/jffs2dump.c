@@ -50,12 +50,12 @@
 long	imglen;		// length of image
 char	*data;		// image data
 
-void display_help (void)
+static void display_help (int error)
 {
 	printf("Usage: %s [OPTION]... INPUTFILE\n"
 	       "Dump the contents of a binary JFFS2 image.\n\n"
-	       "     --help                   display this help and exit\n"
-	       "     --version                display version information and exit\n"
+	       " -h, --help                   display this help and exit\n"
+	       " -V, --version                display version information and exit\n"
 	       " -b, --bigendian              image is big endian\n"
 	       " -l, --littleendian           image is little endian\n"
 	       " -c, --content                dump image contents\n"
@@ -65,14 +65,13 @@ void display_help (void)
 	       " -o, --oobsize=LEN            size of oob data chunk in binary image (NAND only)\n"
 	       " -v, --verbose                verbose output\n",
 	       PROGRAM_NAME);
-	exit(0);
+	exit(error ? EXIT_FAILURE : EXIT_SUCCESS);
 }
 
-void display_version (void)
+static void display_version (void)
 {
-	printf("%1$s " VERSION "\n"
-			"\n"
-			"Copyright (C) 2003 Thomas Gleixner \n"
+	common_print_version();
+	printf("Copyright (C) 2003 Thomas Gleixner \n"
 			"\n"
 			"%1$s comes with NO WARRANTY\n"
 			"to the extent permitted by law.\n"
@@ -96,16 +95,16 @@ char	cnvfile[256];		// filename for conversion output
 int	datsize;		// Size of data chunks, when oob data is inside the binary image
 int	oobsize;		// Size of oob chunks, when oob data is inside the binary image
 
-void process_options (int argc, char *argv[])
+static void process_options (int argc, char *argv[])
 {
 	int error = 0;
 
 	for (;;) {
 		int option_index = 0;
-		static const char *short_options = "blce:rd:o:v";
+		static const char *short_options = "blce:rd:o:vVh";
 		static const struct option long_options[] = {
-			{"help", no_argument, 0, 0},
-			{"version", no_argument, 0, 0},
+			{"help", no_argument, 0, 'h'},
+			{"version", no_argument, 0, 'V'},
 			{"bigendian", no_argument, 0, 'b'},
 			{"littleendian", no_argument, 0, 'l'},
 			{"content", no_argument, 0, 'c'},
@@ -124,15 +123,11 @@ void process_options (int argc, char *argv[])
 		}
 
 		switch (c) {
-			case 0:
-				switch (option_index) {
-					case 0:
-						display_help();
-						break;
-					case 1:
-						display_version();
-						break;
-				}
+			case 'h':
+				display_help(0);
+				break;
+			case 'V':
+				display_version();
 				break;
 			case 'v':
 				verbose = 1;
@@ -166,7 +161,7 @@ void process_options (int argc, char *argv[])
 	}
 
 	if ((argc - optind) != 1 || error)
-		display_help ();
+		display_help (error);
 
 	img = argv[optind];
 }
@@ -175,7 +170,7 @@ void process_options (int argc, char *argv[])
 /*
  *	Dump image contents
  */
-void do_dumpcontent (void)
+static void do_dumpcontent (void)
 {
 	char			*p = data, *p_free_begin;
 	union jffs2_node_union 	*node;
@@ -484,7 +479,7 @@ void do_dumpcontent (void)
 /*
  *	Convert endianess
  */
-void do_endianconvert (void)
+static void do_endianconvert (void)
 {
 	char			*p = data;
 	union jffs2_node_union 	*node, newnode;
@@ -503,7 +498,7 @@ void do_endianconvert (void)
 
 		/* Skip empty space */
 		if (je16_to_cpu (node->u.magic) == 0xFFFF && je16_to_cpu (node->u.nodetype) == 0xFFFF) {
-			write (fd, p, 4);
+			write_nocheck (fd, p, 4);
 			p += 4;
 			continue;
 		}
@@ -512,7 +507,7 @@ void do_endianconvert (void)
 			printf ("Wrong bitmask  at  0x%08zx, 0x%04x\n", p - data, je16_to_cpu (node->u.magic));
 			newnode.u.magic = cnv_e16 (node->u.magic);
 			newnode.u.nodetype = cnv_e16 (node->u.nodetype);
-			write (fd, &newnode, 4);
+			write_nocheck (fd, &newnode, 4);
 			p += 4;
 			continue;
 		}
@@ -555,8 +550,8 @@ void do_endianconvert (void)
 
 				newnode.i.node_crc = cpu_to_e32 (mtd_crc32 (0, &newnode, sizeof (struct jffs2_raw_inode) - 8));
 
-				write (fd, &newnode, sizeof (struct jffs2_raw_inode));
-				write (fd, p + sizeof (struct jffs2_raw_inode), PAD (je32_to_cpu (node->i.totlen) -  sizeof (struct jffs2_raw_inode)));
+				write_nocheck (fd, &newnode, sizeof (struct jffs2_raw_inode));
+				write_nocheck (fd, p + sizeof (struct jffs2_raw_inode), PAD (je32_to_cpu (node->i.totlen) -  sizeof (struct jffs2_raw_inode)));
 
 				p += PAD(je32_to_cpu (node->i.totlen));
 				break;
@@ -580,8 +575,8 @@ void do_endianconvert (void)
 				else
 					newnode.d.name_crc = cnv_e32 (node->d.name_crc);
 
-				write (fd, &newnode, sizeof (struct jffs2_raw_dirent));
-				write (fd, p + sizeof (struct jffs2_raw_dirent), PAD (je32_to_cpu (node->d.totlen) -  sizeof (struct jffs2_raw_dirent)));
+				write_nocheck (fd, &newnode, sizeof (struct jffs2_raw_dirent));
+				write_nocheck (fd, p + sizeof (struct jffs2_raw_dirent), PAD (je32_to_cpu (node->d.totlen) -  sizeof (struct jffs2_raw_dirent)));
 				p += PAD(je32_to_cpu (node->d.totlen));
 				break;
 
@@ -601,8 +596,8 @@ void do_endianconvert (void)
 					newnode.x.data_crc = cnv_e32 (node->x.data_crc);
 				newnode.x.node_crc = cpu_to_e32 (mtd_crc32 (0, &newnode, sizeof (struct jffs2_raw_xattr) - sizeof (newnode.x.node_crc)));
 
-				write (fd, &newnode, sizeof (struct jffs2_raw_xattr));
-				write (fd, p + sizeof (struct jffs2_raw_xattr), PAD (je32_to_cpu (node->d.totlen) -  sizeof (struct jffs2_raw_xattr)));
+				write_nocheck (fd, &newnode, sizeof (struct jffs2_raw_xattr));
+				write_nocheck (fd, p + sizeof (struct jffs2_raw_xattr), PAD (je32_to_cpu (node->d.totlen) -  sizeof (struct jffs2_raw_xattr)));
 				p += PAD(je32_to_cpu (node->x.totlen));
 				break;
 
@@ -625,10 +620,10 @@ void do_endianconvert (void)
 				newnode.u.totlen = cnv_e32 (node->u.totlen);
 				newnode.u.hdr_crc = cpu_to_e32 (mtd_crc32 (0, &newnode, sizeof (struct jffs2_unknown_node) - 4));
 
-				write (fd, &newnode, sizeof (struct jffs2_unknown_node));
+				write_nocheck (fd, &newnode, sizeof (struct jffs2_unknown_node));
 				len = PAD(je32_to_cpu (node->u.totlen) - sizeof (struct jffs2_unknown_node));
 				if (len > 0)
-					write (fd, p + sizeof (struct jffs2_unknown_node), len);
+					write_nocheck (fd, p + sizeof (struct jffs2_unknown_node), len);
 
 				p += PAD(je32_to_cpu (node->u.totlen));
 				break;
@@ -721,15 +716,15 @@ void do_endianconvert (void)
 														  je32_to_cpu (node->s.totlen) - sizeof (struct jffs2_raw_summary)));
 
 											  // write out new node header
-											  write(fd, &newnode, sizeof (struct jffs2_raw_summary));
+											  write_nocheck(fd, &newnode, sizeof (struct jffs2_raw_summary));
 											  // write out new summary data
-											  write(fd, &node->s.sum, sum_len + sizeof (struct jffs2_sum_marker));
+											  write_nocheck(fd, &node->s.sum, sum_len + sizeof (struct jffs2_sum_marker));
 
 											  break;
 										  }
 
 			case 0xffff:
-										  write (fd, p, 4);
+										  write_nocheck (fd, p, 4);
 										  p += 4;
 										  break;
 
@@ -756,7 +751,7 @@ int main(int argc, char **argv)
 	/* Open the input file */
 	if ((fd = open(img, O_RDONLY)) == -1) {
 		perror("open input file");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	// get image length
@@ -767,7 +762,7 @@ int main(int argc, char **argv)
 	if (!data) {
 		perror("out of memory");
 		close (fd);
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	if (datsize && oobsize) {
@@ -777,8 +772,8 @@ int main(int argc, char **argv)
 		printf ("Peeling data out of combined data/oob image\n");
 		while (len) {
 			// read image data
-			read (fd, &data[idx], datsize);
-			read (fd, oob, oobsize);
+			read_nocheck (fd, &data[idx], datsize);
+			read_nocheck (fd, oob, oobsize);
 			idx += datsize;
 			imglen -= oobsize;
 			len -= datsize + oobsize;
@@ -786,7 +781,7 @@ int main(int argc, char **argv)
 
 	} else {
 		// read image data
-		read (fd, data, imglen);
+		read_nocheck (fd, data, imglen);
 	}
 	// Close the input file
 	close(fd);
@@ -801,5 +796,5 @@ int main(int argc, char **argv)
 	free (data);
 
 	// Return happy
-	exit (0);
+	exit (EXIT_SUCCESS);
 }

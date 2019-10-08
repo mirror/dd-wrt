@@ -32,7 +32,7 @@
 
 #define WRITE_BUFFER_SIZE 32768
 
-void adjust_size(void)
+static void adjust_size(void)
 {
 	char dummy[1024];
 	unsigned long total_memory;
@@ -49,7 +49,7 @@ void adjust_size(void)
 		tests_size_parameter = total_memory / 2;
 }
 
-void run_pdf(void)
+static void run_pdf(void)
 {
 	int fd, i;
 	pid_t pid;
@@ -99,14 +99,14 @@ void run_pdf(void)
 
 /* Title of this test */
 
-const char *run_pdf_get_title(void)
+static const char *run_pdf_get_title(void)
 {
 	return "Create / overwrite a large file in the current directory";
 }
 
 /* Description of this test */
 
-const char *run_pdf_get_description(void)
+static const char *run_pdf_get_description(void)
 {
 	return
 		"Create a file named run_pdf_test_file_pid, " \

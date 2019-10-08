@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 
 #include "mcast_image.h"
+#include "libfec.h"
 #include <crc32.h>
 
 #define ERASE_SIZE 131072

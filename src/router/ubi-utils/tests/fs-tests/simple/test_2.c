@@ -28,7 +28,7 @@
 
 #include "tests.h"
 
-void test_2(void)
+static void test_2(void)
 {
 	pid_t pid;
 	int create, full;
@@ -163,14 +163,14 @@ void test_2(void)
 
 /* Title of this test */
 
-const char *test_2_get_title(void)
+static const char *test_2_get_title(void)
 {
 	return "Repeated write many small files and one big deleted file";
 }
 
 /* Description of this test */
 
-const char *test_2_get_description(void)
+static const char *test_2_get_description(void)
 {
 	return
 		"Create a directory named test_2_test_dir_pid, where " \

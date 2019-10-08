@@ -73,6 +73,7 @@ static int jffs2_lzo_decompress(unsigned char *data_in, unsigned char *cpage_out
 	int ret;
 	lzo_uint dl;
 
+	dl = destlen;
 	ret = lzo1x_decompress_safe(data_in,srclen,cpage_out,&dl,NULL);
 
 	if (ret != LZO_E_OK || dl != destlen)

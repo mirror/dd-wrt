@@ -67,6 +67,7 @@ int main(int argc, char * const argv[])
 	req.bytes = dev_info.leb_size;
 	req.vol_type = UBI_DYNAMIC_VOLUME;
 	req.name = "rmvol";
+	req.flags = 0;
 
 	if (ubi_mkvol(libubi, node, &req)) {
 		failed("ubi_mkvol");

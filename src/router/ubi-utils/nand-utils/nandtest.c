@@ -17,11 +17,12 @@
 #include "mtd/mtd-user.h"
 #include "common.h"
 
-void usage(int status)
+static NORETURN void usage(int status)
 {
 	fprintf(status ? stderr : stdout,
 		"usage: %s [OPTIONS] <device>\n\n"
 		"  -h, --help           Display this help output\n"
+		"  -V, --version        Display version information and exit\n"
 		"  -m, --markbad        Mark blocks bad if they appear so\n"
 		"  -s, --seed           Supply random seed\n"
 		"  -p, --passes         Number of passes\n"
@@ -39,7 +40,8 @@ int fd;
 int markbad=0;
 int seed;
 
-int read_and_compare(loff_t ofs, unsigned char *data, unsigned char *rbuf)
+static int read_and_compare(loff_t ofs, unsigned char *data,
+			    unsigned char *rbuf)
 {
 	ssize_t len;
 	int i;
@@ -88,7 +90,8 @@ int read_and_compare(loff_t ofs, unsigned char *data, unsigned char *rbuf)
 	return 0;
 }
 
-int erase_and_write(loff_t ofs, unsigned char *data, unsigned char *rbuf, int nr_reads)
+static int erase_and_write(loff_t ofs, unsigned char *data, unsigned char *rbuf,
+			   int nr_reads)
 {
 	struct erase_info_user er;
 	ssize_t len;
@@ -160,9 +163,10 @@ int main(int argc, char **argv)
 	seed = time(NULL);
 
 	for (;;) {
-		static const char short_options[] = "hkl:mo:p:r:s:";
+		static const char short_options[] = "hkl:mo:p:r:s:V";
 		static const struct option long_options[] = {
 			{ "help", no_argument, 0, 'h' },
+			{ "version", no_argument, 0, 'V' },
 			{ "markbad", no_argument, 0, 'm' },
 			{ "seed", required_argument, 0, 's' },
 			{ "passes", required_argument, 0, 'p' },
@@ -179,12 +183,13 @@ int main(int argc, char **argv)
 
 		switch (c) {
 		case 'h':
-			usage(0);
+			usage(EXIT_SUCCESS);
+		case 'V':
+			common_print_version();
+			exit(EXIT_SUCCESS);
 			break;
-
 		case '?':
-			usage(1);
-			break;
+			usage(EXIT_FAILURE);
 
 		case 'm':
 			markbad = 1;
@@ -217,7 +222,7 @@ int main(int argc, char **argv)
 		}
 	}
 	if (argc - optind != 1)
-		usage(1);
+		usage(EXIT_FAILURE);
 	if (error)
 		errmsg_die("Try --help for more information");
 

@@ -32,7 +32,7 @@
 
 #define WRITE_BUFFER_SIZE 32768
 
-void stress_3(void)
+static void stress_3(void)
 {
 	int fd, i;
 	pid_t pid;
@@ -79,14 +79,14 @@ void stress_3(void)
 
 /* Title of this test */
 
-const char *stress_3_get_title(void)
+static const char *stress_3_get_title(void)
 {
 	return "Create a file with a large hole and fill it";
 }
 
 /* Description of this test */
 
-const char *stress_3_get_description(void)
+static const char *stress_3_get_description(void)
 {
 	return
 		"Create a file named stress_3_test_file_pid, " \

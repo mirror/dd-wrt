@@ -109,11 +109,16 @@ static int parse_opt(int argc, char * const argv[])
 			break;
 
 		case 'h':
-		case '?':
 			printf("%s\n\n", doc);
 			printf("%s\n\n", usage);
 			printf("%s\n", optionsstr);
 			exit(EXIT_SUCCESS);
+
+		case '?':
+			printf("%s\n\n", doc);
+			printf("%s\n\n", usage);
+			printf("%s\n", optionsstr);
+			return -1;
 
 		case 'V':
 			common_print_version();
@@ -303,9 +308,7 @@ int main(int argc, char * const argv[])
 	if (!libubi) {
 		if (errno == 0)
 			errmsg("UBI is not present in the system");
-		else
-			sys_errmsg("cannot open libubi");
-		goto out_libubi;
+		return sys_errmsg("cannot open libubi");
 	}
 
 	err = ubi_probe_node(libubi, args.node);

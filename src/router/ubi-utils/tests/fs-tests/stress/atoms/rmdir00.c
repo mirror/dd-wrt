@@ -30,7 +30,7 @@
 
 #include "tests.h"
 
-void rmdir00(void)
+static void rmdir00(void)
 {
 	int64_t repeat;
 	int64_t size, this_size;
@@ -77,14 +77,14 @@ void rmdir00(void)
 
 /* Title of this test */
 
-const char *rmdir00_get_title(void)
+static const char *rmdir00_get_title(void)
 {
 	return "Create and remove directories and files";
 }
 
 /* Description of this test */
 
-const char *rmdir00_get_description(void)
+static const char *rmdir00_get_description(void)
 {
 	return
 		"Create a directory named rmdir00_test_dir_pid, where " \

@@ -44,22 +44,22 @@ const char *node;
 	{512},                       \
 	{666},                       \
 	{2048},                      \
-	{(io), (io), PAGE_SIZE},     \
-	{(io)+1, (io)+1, PAGE_SIZE}, \
-	{PAGE_SIZE},                 \
-	{PAGE_SIZE-1},               \
-	{PAGE_SIZE+(io)},            \
+	{(io), (io), MAX_NAND_PAGE_SIZE},     \
+	{(io)+1, (io)+1, MAX_NAND_PAGE_SIZE}, \
+	{MAX_NAND_PAGE_SIZE},                 \
+	{MAX_NAND_PAGE_SIZE-1},               \
+	{MAX_NAND_PAGE_SIZE+(io)},            \
 	{(s)},                       \
 	{(s)-1},                     \
 	{(s)+1},                     \
 	{(io), (s)+1},               \
-	{(s)+(io), PAGE_SIZE},       \
-	{2*(s), PAGE_SIZE},          \
-	{PAGE_SIZE, 2*(s), 1},       \
-	{PAGE_SIZE, 2*(s)},          \
+	{(s)+(io), MAX_NAND_PAGE_SIZE},       \
+	{2*(s), MAX_NAND_PAGE_SIZE},          \
+	{MAX_NAND_PAGE_SIZE, 2*(s), 1},       \
+	{MAX_NAND_PAGE_SIZE, 2*(s)},          \
 	{2*(s)-1, 2*(s)-1},          \
-	{3*(s), PAGE_SIZE + 1},      \
-	{1, PAGE_SIZE},              \
+	{3*(s), MAX_NAND_PAGE_SIZE + 1},      \
+	{1, MAX_NAND_PAGE_SIZE},              \
 	{(io), (s)}                  \
 }
 
@@ -76,8 +76,22 @@ static int test_update1(struct ubi_vol_info *vol_info, int leb_change)
 					     leb_change ? dev_info.min_io_size * 2
 					     		: vol_info->leb_size);
 	char vol_node[strlen(UBI_VOLUME_PATTERN) + 100];
-	unsigned char buf[total_len];
+	unsigned char *buf = NULL;
+	unsigned char *buf1 = NULL;
 	int fd, i, j;
+	int ret1 = -1;
+
+	buf = malloc(total_len);
+	if (!buf) {
+		failed("malloc");
+		goto out;
+	}
+
+	buf1 = malloc(total_len);
+	if (!buf1) {
+		failed("malloc");
+		goto out;
+	}
 
 	sprintf(vol_node, UBI_VOLUME_PATTERN, dev_info.dev_num,
 		vol_info->vol_id);
@@ -86,14 +100,13 @@ static int test_update1(struct ubi_vol_info *vol_info, int leb_change)
 	if (fd == -1) {
 		failed("open");
 		errorm("cannot open \"%s\"\n", node);
-		return -1;
+		goto out;
 	}
 
 	for (i = 0; i < SEQ_SZ; i++) {
 		int ret, stop = 0, len = 0;
 		off_t off = 0;
 		long long test_len;
-		unsigned char buf1[total_len];
 
 		/*
 		 * test_len is LEB size (if we test atomic LEB change) or
@@ -134,7 +147,7 @@ static int test_update1(struct ubi_vol_info *vol_info, int leb_change)
 			rnd_len = rand() % (l + 1);
 			for (n = 0; n < rnd_len; n++)
 				buf[off + n] = (unsigned char)rand();
-				memset(buf + off + rnd_len, 0xFF, l - rnd_len);
+			memset(buf + off + rnd_len, 0xFF, l - rnd_len);
 
 			/*
 			 * Deliberately pass len instead of l (len may be
@@ -189,12 +202,13 @@ static int test_update1(struct ubi_vol_info *vol_info, int leb_change)
 		}
 	}
 
-	close(fd);
-	return 0;
-
+	ret1 = 0;
 close:
 	close(fd);
-	return -1;
+out:
+	free(buf);
+	free(buf1);
+	return ret1;
 }
 
 /**
@@ -219,6 +233,7 @@ static int test_update(int type)
 		req.vol_id = UBI_VOL_NUM_AUTO;
 		req.vol_type = type;
 		req.name = name;
+		req.flags = 0;
 
 		req.alignment = alignments[i];
 		req.alignment -= req.alignment % dev_info.min_io_size;

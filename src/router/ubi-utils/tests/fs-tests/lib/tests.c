@@ -40,9 +40,9 @@
 
 #include "tests.h"
 
-char *tests_file_system_mount_dir = TESTS_DEFAULT_FILE_SYSTEM_MOUNT_DIR;
+const char *tests_file_system_mount_dir = TESTS_DEFAULT_FILE_SYSTEM_MOUNT_DIR;
 
-char *tests_file_system_type = TESTS_DEFAULT_FILE_SYSTEM_TYPE;
+const char *tests_file_system_type = TESTS_DEFAULT_FILE_SYSTEM_TYPE;
 
 int tests_ok_to_sync = 0; /* Whether to use fsync */
 
@@ -62,7 +62,7 @@ int64_t tests_repeat_parameter = 0;
 int64_t tests_sleep_parameter = 0;
 
 /* Program name from argv[0] */
-char *program_name = "unknown";
+const char *program_name = "unknown";
 
 /* General purpose test parameter to specify a file should be unlinked.
    May be used by different tests in different ways or not at all. */
@@ -530,7 +530,7 @@ void tests_check_filled_file(const char *file_name)
 	CHECK(close(fd) != -1);
 }
 
-void tests_sync_directory(const char *file_name)
+static void tests_sync_directory(const char *file_name)
 {
 	char *path;
 	char *dir;
@@ -949,7 +949,7 @@ int64_t tests_remove_entry(void)
 }
 
 /* Read mount information from /proc/mounts or /etc/mtab */
-int tests_get_mount_info(struct mntent *info)
+static int tests_get_mount_info(struct mntent *info)
 {
 	FILE *f;
 	struct mntent *entry;
@@ -1058,8 +1058,8 @@ void tests_remount(void)
 {
 	int err;
 	struct mntent mount_info;
-	char *source, *target, *filesystemtype, *data;
-	char cwd[4096];
+	const char *source, *target, *filesystemtype;
+	char cwd[4096], *data;
 	unsigned long mountflags, flags;
 	unsigned int rorw1, um, um_ro, um_rorw, rorw2;
 
@@ -1152,9 +1152,9 @@ void tests_remount(void)
 static void tests_mnt(int mnt)
 {
 	static struct mntent mount_info;
-	char *source;
-	char *target;
-	char *filesystemtype;
+	const char *source;
+	const char *target;
+	const char *filesystemtype;
 	unsigned long mountflags;
 	char *data;
 	static char cwd[4096];

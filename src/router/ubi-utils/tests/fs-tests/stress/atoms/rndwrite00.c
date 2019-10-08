@@ -52,7 +52,7 @@ static void check_file(int fd, char *data, size_t length)
 	CHECK(n == length);
 }
 
-void rndwrite00(void)
+static void rndwrite00(void)
 {
 	int fd;
 	pid_t pid;
@@ -143,14 +143,14 @@ void rndwrite00(void)
 
 /* Title of this test */
 
-const char *rndwrite00_get_title(void)
+static const char *rndwrite00_get_title(void)
 {
 	return "Randomly write a large test file";
 }
 
 /* Description of this test */
 
-const char *rndwrite00_get_description(void)
+static const char *rndwrite00_get_description(void)
 {
 	return
 		"Create a file named rndwrite00_test_file_pid, where " \
