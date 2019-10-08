@@ -1210,7 +1210,7 @@ int insmod(char *module)
 				target = check;
 			}
 			sprintf(check, "/jffs/modules_debug/%s", word);
-			FILE *fp = fopen(check, "rb");
+			fp = fopen(check, "rb");
 			if (fp) {
 				fclose(fp);
 				target = check;
