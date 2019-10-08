@@ -796,8 +796,9 @@ static int get_options(int argc, char**argv)
 		case 'C':
 		case HASH_ALGO_OPTION:
 		case AUTH_KEY_OPTION:
-		case X509_OPTION:
+//		case X509_OPTION:
 			return err_msg("mkfs.ubifs was built without crypto support.");
+		}
 #endif
 	}
 
