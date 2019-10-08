@@ -36,20 +36,23 @@ void start_jffs2(void)
 	char *rwpart = "ddwrt";
 	int itworked = 0;
 	char dev[64];
+	int mtd = getMTD("ddwrt");
 #if defined(HAVE_R9000)
 	int mtd = getMTD("plex");
-#elif defined(HAVE_MVEBU)
+#else
 	int mtd = getMTD("ddwrt");
 #endif
+	char blockdev[32];
+	sprintf(blockdev, "/dev/mtdblock%d", mtd);
 
 	if (nvram_matchi("sys_enable_jffs2", 1)) {
 		insmod("crc32 lzma_compress lzma_decompress lzo_compress lzo_decompress jffs2");
 		if (nvram_matchi("sys_clean_jffs2", 1)) {
 			nvram_seti("sys_clean_jffs2", 0);
 			nvram_commit();
-#if defined(HAVE_WNDR3700V4)
+#if defined(HAVE_WNDR3700V4) || defined(HAVE_IPQ806X)
 			itworked = eval("erase", rwpart);
-			itworked = eval("mkfs.jffs2", "-o", "/dev/mtdblock3", "-n", "-b", "-e", "131072", "-p");
+			itworked = eval("mkfs.jffs2", "-x", "zlib", "-x", "rtime", "-o", blockdev, "-n", "-b", "-e", "131072", "-p");
 #elif defined(HAVE_MVEBU) || defined(HAVE_R9000)
 			sprintf(dev, "/dev/mtd%d", mtd);
 			itworked = eval("ubidetach", "-p", dev);
@@ -63,7 +66,7 @@ void start_jffs2(void)
 #if defined(HAVE_R9000) || defined(HAVE_MVEBU)
 			itworked += mount("ubi1:ddwrt", "/jffs", "ubifs", MS_MGC_VAL, NULL);
 #else
-			sprintf(dev, "/dev/mtdblock/%d", getMTD("ddwrt"));
+			sprintf(dev, "/dev/mtdblock/%d", mtd);
 			itworked += mount(dev, "/jffs", "jffs2", MS_MGC_VAL, NULL);
 #endif
 			if (itworked) {
