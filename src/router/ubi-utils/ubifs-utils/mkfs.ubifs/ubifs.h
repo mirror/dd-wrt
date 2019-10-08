@@ -330,6 +330,7 @@ struct ubifs_znode
  * @nhead_offs: offset of LPT head
  * @big_lpt: flag that LPT is too big to write whole during commit
  * @space_fixup: flag indicating that free space in LEBs needs to be cleaned up
+ * @double_hash: flag indicating that we can do lookups by hash
  * @lpt_sz: LPT size
  *
  * @ltab_lnum: LEB number of LPT's own lprops table
@@ -341,6 +342,15 @@ struct ubifs_znode
  * @lsave_offs: offset of LPT's save table
  * @lsave: LPT's save table
  * @lscan_lnum: LEB number of last LPT scan
+ *
+ * @hash_algo_name: the name of the hashing algorithm to use
+ * @hash_algo: The hash algo number (from include/linux/hash_info.h)
+ * @auth_key_filename: authentication key file name
+ * @x509_filename: x509 certificate file name for authentication
+ * @hash_len: the length of the hash
+ * @root_idx_hash: The hash of the root index node
+ * @lpt_hash: The hash of the LPT
+ * @mst_hash: The hash of the master node
  */
 struct ubifs_info
 {
@@ -408,6 +418,8 @@ struct ubifs_info
 	int nhead_offs;
 	int big_lpt;
 	int space_fixup;
+	int double_hash;
+	int encrypted;
 	long long lpt_sz;
 
 	int ltab_lnum;
@@ -420,6 +432,14 @@ struct ubifs_info
 	int *lsave;
 	int lscan_lnum;
 
+	char *hash_algo_name;
+	int hash_algo;
+	char *auth_key_filename;
+	char *auth_cert_filename;
+	int hash_len;
+	uint8_t root_idx_hash[UBIFS_MAX_HASH_LEN];
+	uint8_t lpt_hash[UBIFS_MAX_HASH_LEN];
+	uint8_t mst_hash[UBIFS_MAX_HASH_LEN];
 };
 
 /**
@@ -429,7 +449,8 @@ struct ubifs_info
  */
 static inline int ubifs_idx_node_sz(const struct ubifs_info *c, int child_cnt)
 {
-	return UBIFS_IDX_NODE_SZ + (UBIFS_BRANCH_SZ + c->key_len) * child_cnt;
+	return UBIFS_IDX_NODE_SZ + (UBIFS_BRANCH_SZ + c->key_len + c->hash_len)
+				    * child_cnt;
 }
 
 /**
@@ -444,7 +465,7 @@ struct ubifs_branch *ubifs_idx_branch(const struct ubifs_info *c,
 				      int bnum)
 {
 	return (struct ubifs_branch *)((void *)idx->branches +
-				       (UBIFS_BRANCH_SZ + c->key_len) * bnum);
+				       (UBIFS_BRANCH_SZ + c->key_len + c->hash_len) * bnum);
 }
 
 #endif /* __UBIFS_H__ */

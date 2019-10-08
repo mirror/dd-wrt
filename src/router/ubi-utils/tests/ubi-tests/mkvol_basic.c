@@ -59,6 +59,7 @@ static int mkvol_alignment(void)
 
 		req.vol_type = UBI_DYNAMIC_VOLUME;
 		req.name = name;
+		req.flags = 0;
 
 		if (ubi_mkvol(libubi, node, &req)) {
 			failed("ubi_mkvol");
@@ -101,6 +102,7 @@ static int mkvol_basic(void)
 	req.bytes = dev_info.avail_bytes;
 	req.vol_type = UBI_DYNAMIC_VOLUME;
 	req.name = name;
+	req.flags = 0;
 
 	if (ubi_mkvol(libubi, node, &req)) {
 		failed("ubi_mkvol");
@@ -170,12 +172,13 @@ static int mkvol_multiple(void)
 		req.alignment = 1;
 		req.bytes = 1;
 		req.vol_type = UBI_STATIC_VOLUME;
+		req.flags = 0;
 
 		sprintf(nm, "%s:%d", name, i);
 		req.name = nm;
 
 		if (ubi_mkvol(libubi, node, &req)) {
-			if (errno == ENFILE) {
+			if (errno == ENFILE || errno == ENOSPC) {
 				max = i;
 				break;
 			}

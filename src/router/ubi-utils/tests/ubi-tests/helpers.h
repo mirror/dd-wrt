@@ -32,7 +32,7 @@ extern "C" {
 
 #define UBI_VOLUME_PATTERN "/dev/ubi%d_%d"
 #define MIN_AVAIL_EBS 5
-#define PAGE_SIZE 4096
+#define MAX_NAND_PAGE_SIZE 65536
 
 #define errorm(fmt, ...) ({                                                    \
 	__errorm(PROGRAM_NAME, __FUNCTION__, __LINE__, fmt, ##__VA_ARGS__);    \

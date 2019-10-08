@@ -52,6 +52,8 @@ static void display_help(int status)
 "-p         --prettyprint        Print nice (hexdump)\n"
 "-q         --quiet              Don't display progress and status messages\n"
 "-s addr    --startaddress=addr  Start address\n"
+"           --skip-bad-blocks-to-start\n"
+"                                Skip bad blocks when seeking to the start address\n"
 "\n"
 "--bb=METHOD, where METHOD can be `padbad', `dumpbad', or `skipbad':\n"
 "    padbad:  dump flash data, substituting 0xFF for any bad blocks\n"
@@ -63,9 +65,8 @@ static void display_help(int status)
 
 static void display_version(void)
 {
-	printf("%1$s " VERSION "\n"
-			"\n"
-			"%1$s comes with NO WARRANTY\n"
+	common_print_version();
+	printf("%1$s comes with NO WARRANTY\n"
 			"to the extent permitted by law.\n"
 			"\n"
 			"You may redistribute copies of %1$s\n"
@@ -87,6 +88,7 @@ static const char		*dumpfile;		// dump file name
 static bool			quiet = false;		// suppress diagnostic output
 static bool			canonical = false;	// print nice + ascii
 static bool			forcebinary = false;	// force printing binary to tty
+static bool			skip_bad_blocks_to_start = false;
 
 static enum {
 	padbad,   // dump flash data, substituting 0xFF for any bad blocks
@@ -101,11 +103,12 @@ static void process_options(int argc, char * const argv[])
 
 	for (;;) {
 		int option_index = 0;
-		static const char short_options[] = "hs:f:l:opqnca";
+		static const char short_options[] = "hs:f:l:opqncaV";
 		static const struct option long_options[] = {
-			{"version", no_argument, 0, 0},
+			{"version", no_argument, 0, 'V'},
 			{"bb", required_argument, 0, 0},
 			{"omitoob", no_argument, 0, 0},
+			{"skip-bad-blocks-to-start", no_argument, 0, 0 },
 			{"help", no_argument, 0, 'h'},
 			{"forcebinary", no_argument, 0, 'a'},
 			{"canonicalprint", no_argument, 0, 'c'},
@@ -128,9 +131,6 @@ static void process_options(int argc, char * const argv[])
 		switch (c) {
 			case 0:
 				switch (option_index) {
-					case 0:
-						display_version();
-						break;
 					case 1:
 						/* Handle --bb=METHOD */
 						if (!strcmp(optarg, "padbad"))
@@ -150,7 +150,13 @@ static void process_options(int argc, char * const argv[])
 							errmsg_die("--oob and --oomitoob are mutually exclusive");
 						}
 						break;
+					case 3: /* --skip-bad-blocks-to-start */
+						skip_bad_blocks_to_start = true;
+						break;
 				}
+				break;
+			case 'V':
+				display_version();
 				break;
 			case 's':
 				start_addr = simple_strtoll(optarg, &error);
@@ -174,6 +180,7 @@ static void process_options(int argc, char * const argv[])
 				break;
 			case 'c':
 				canonical = true;
+				/* fall-through */
 			case 'p':
 				pretty_print = true;
 				break;
@@ -293,6 +300,31 @@ nil:
 	linebuf[lx++] = '\0';
 }
 
+/**
+ * ofd_write - writes whole buffer to the file associated with a descriptor
+ *
+ * On failure an error (negative number) is returned. Otherwise 0 is returned.
+ */
+static int ofd_write(int ofd, const void *buf, size_t nbyte)
+{
+	const unsigned char *data = buf;
+	ssize_t bytes;
+
+	while (nbyte) {
+		bytes = write(ofd, data, nbyte);
+		if (bytes < 0) {
+			int err = -errno;
+
+			sys_errmsg("Unable to write to output");
+
+			return err;
+		}
+		data += bytes;
+		nbyte -= bytes;
+	}
+
+	return 0;
+}
 
 /*
  * Main program
@@ -309,6 +341,7 @@ int main(int argc, char * const argv[])
 	bool eccstats = false;
 	unsigned char *readbuf = NULL, *oobbuf = NULL;
 	libmtd_t mtd_desc;
+	int err;
 
 	process_options(argc, argv);
 
@@ -372,6 +405,22 @@ int main(int argc, char * const argv[])
 				mtd.min_io_size);
 		goto closeall;
 	}
+	if (skip_bad_blocks_to_start) {
+		long long bbs_offset = 0;
+		while (bbs_offset < start_addr) {
+			err = mtd_is_bad(&mtd, fd, bbs_offset / mtd.eb_size);
+			if (err < 0) {
+				sys_errmsg("%s: MTD get bad block failed", mtddev);
+				goto closeall;
+			} else if (err == 1) {
+				if (!quiet)
+					fprintf(stderr, "Bad block at %llx\n", bbs_offset);
+				start_addr += mtd.eb_size;
+			}
+			bbs_offset += mtd.eb_size;
+		}
+	}
+
 	if (length)
 		end_addr = start_addr + length;
 	if (!length || end_addr > mtd.size)
@@ -443,10 +492,21 @@ int main(int argc, char * const argv[])
 			for (i = 0; i < bs; i += PRETTY_ROW_SIZE) {
 				pretty_dump_to_buffer(readbuf + i, PRETTY_ROW_SIZE,
 						pretty_buf, PRETTY_BUF_LEN, true, canonical, ofs + i);
-				write(ofd, pretty_buf, strlen(pretty_buf));
+				err = ofd_write(ofd, pretty_buf, strlen(pretty_buf));
+				if (err)
+					goto closeall;
 			}
-		} else
-			write(ofd, readbuf, bs);
+		} else {
+			/* Write requested length if oob is omitted */
+			size_t size_left = end_addr - ofs;
+			if (omitoob && (size_left < bs))
+				err = ofd_write(ofd, readbuf, size_left);
+			else
+				err = ofd_write(ofd, readbuf, bs);
+
+			if (err)
+				goto closeall;
+		}
 
 		if (omitoob)
 			continue;
@@ -466,10 +526,15 @@ int main(int argc, char * const argv[])
 			for (i = 0; i < mtd.oob_size; i += PRETTY_ROW_SIZE) {
 				pretty_dump_to_buffer(oobbuf + i, mtd.oob_size - i,
 						pretty_buf, PRETTY_BUF_LEN, false, canonical, 0);
-				write(ofd, pretty_buf, strlen(pretty_buf));
+				err = ofd_write(ofd, pretty_buf, strlen(pretty_buf));
+				if (err)
+					goto closeall;
 			}
-		} else
-			write(ofd, oobbuf, mtd.oob_size);
+		} else {
+			err = ofd_write(ofd, oobbuf, mtd.oob_size);
+			if (err)
+				goto closeall;
+		}
 	}
 
 	/* Close the output file and MTD device, free memory */

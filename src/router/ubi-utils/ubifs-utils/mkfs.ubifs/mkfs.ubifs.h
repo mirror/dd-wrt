@@ -43,8 +43,12 @@
 #include <errno.h>
 #include <libgen.h>
 #include <ctype.h>
-#include <uuid/uuid.h>
+#include <uuid.h>
 #include <sys/file.h>
+
+#ifdef WITH_CRYPTO
+#include <openssl/rand.h>
+#endif
 
 #include <mtd/ubifs-media.h>
 
@@ -59,6 +63,7 @@
 #include "key.h"
 #include "lpt.h"
 #include "compr.h"
+#include "sign.h"
 
 /*
  * Compression flags are duplicated so that compr.c can compile without ubifs.h.
@@ -72,6 +77,9 @@
 #endif
 #if MKFS_UBIFS_COMPR_ZLIB != UBIFS_COMPR_ZLIB
 #error MKFS_UBIFS_COMPR_ZLIB != UBIFS_COMPR_ZLIB
+#endif
+#if MKFS_UBIFS_COMPR_ZSTD != UBIFS_COMPR_ZSTD
+#error MKFS_UBIFS_COMPR_ZSTD != UBIFS_COMPR_ZSTD
 #endif
 
 extern int verbose;

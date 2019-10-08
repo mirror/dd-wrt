@@ -54,7 +54,7 @@
  * @name: device name
  * @buf: contents of /proc/mtd
  * @data_size: how much data was read into @buf
- * @pos: next string in @buf to parse
+ * @next: next string in @buf to parse
  */
 struct proc_parse_info
 {
@@ -146,32 +146,26 @@ static int proc_parse_next(struct proc_parse_info *pi)
 }
 
 /**
- * legacy_libmtd_open - legacy version of 'libmtd_open()'.
+ * legacy_procfs_is_supported - legacy version of 'sysfs_is_supported()'.
  *
- * This function is just checks that MTD is present in the system. Returns
- * zero in case of success and %-1 in case of failure. In case of failure,
- * errno contains zero if MTD is not present in the system, or contains the
- * error code if a real error happened. This is similar to the 'libmtd_open()'
- * return conventions.
+ * Check if we can access the procfs files for the MTD subsystem.
  */
-int legacy_libmtd_open(void)
+int legacy_procfs_is_supported(void)
 {
-	int fd;
-
-	fd = open(MTD_PROC_FILE, O_RDONLY);
-	if (fd == -1) {
-		if (errno == ENOENT)
+	if (access(MTD_PROC_FILE, R_OK) != 0) {
+		if (errno == ENOENT) {
 			errno = 0;
-		return -1;
+		} else {
+			sys_errmsg("cannot read \"%s\"", MTD_PROC_FILE);
+		}
+		return 0;
 	}
-
-	close(fd);
-	return 0;
+	return 1;
 }
 
 /**
- * legacy_dev_presentl - legacy version of 'mtd_dev_present()'.
- * @info: the MTD device information is returned here
+ * legacy_dev_present - legacy version of 'mtd_dev_present()'.
+ * @mtd_num: MTD device number
  *
  * When the kernel does not provide sysfs files for the MTD subsystem,
  * fall-back to parsing the /proc/mtd file to determine whether an mtd device
@@ -219,6 +213,48 @@ int legacy_mtd_get_info(struct mtd_info *info)
 	}
 
 	return 0;
+}
+
+int legacy_get_mtd_oobavail(const char *node)
+{
+	struct stat st;
+	struct nand_ecclayout_user usrlay;
+	int fd, ret;
+
+	if (stat(node, &st))
+		return sys_errmsg("cannot open \"%s\"", node);
+
+	if (!S_ISCHR(st.st_mode)) {
+		errno = EINVAL;
+		return errmsg("\"%s\" is not a character device", node);
+	}
+
+	fd = open(node, O_RDONLY);
+	if (fd == -1)
+		return sys_errmsg("cannot open \"%s\"", node);
+
+	ret = ioctl(fd, ECCGETLAYOUT, &usrlay);
+	if (ret < 0) {
+		if (errno == EOPNOTSUPP)
+			goto out_close;
+		sys_errmsg("ECCGETLAYOUT ioctl request failed");
+		goto out_close;
+	}
+
+	ret = usrlay.oobavail;
+
+out_close:
+	close(fd);
+
+	return ret;
+}
+
+int legacy_get_mtd_oobavail1(int mtd_num)
+{
+	char node[sizeof(MTD_DEV_PATT) + 20];
+
+	sprintf(node, MTD_DEV_PATT, mtd_num);
+	return legacy_get_mtd_oobavail(node);
 }
 
 /**
@@ -341,6 +377,9 @@ int legacy_get_dev_info(const char *node, struct mtd_dev_info *mtd)
 
 	close(fd);
 
+	ret = legacy_get_mtd_oobavail(node);
+	mtd->oobavail = ret > 0 ? ret : 0;
+
 	/*
 	 * Unfortunately, the device name is not available via ioctl, and
 	 * we have to parse /proc/mtd to get it.
@@ -367,7 +406,7 @@ out_close:
 
 /**
  * legacy_get_dev_info1 - legacy version of 'mtd_get_dev_info1()'.
- * @node: name of the MTD device node
+ * @mtd_num: MTD device number
  * @mtd: the MTD device information is returned here
  *
  * This function is similar to 'mtd_get_dev_info1()' and has the same

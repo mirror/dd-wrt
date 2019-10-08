@@ -243,7 +243,7 @@ static void check_erase_block(struct erase_block_info *erase_block, int fd)
 			while (size)
 				if (read_buffer[--size] != 0xff) {
 					fprintf(stderr, "block no. = %d\n" , erase_block->block_number);
-					fprintf(stderr, "offset = %"PRIdoff_t"\n" , gap_start);
+					fprintf(stderr, "offset = %lld\n" , (long long)gap_start);
 					fprintf(stderr, "size = %ld\n" , (long) bytes_read);
 					error_exit("verify 0xff failed");
 				}
@@ -254,7 +254,7 @@ static void check_erase_block(struct erase_block_info *erase_block, int fd)
 		errno = 0;
 		bytes_read = read(fd, read_buffer, w->size);
 		if (bytes_read != w->size) {
-			fprintf(stderr, "offset = %"PRIdoff_t"\n" , w->offset);
+			fprintf(stderr, "offset = %lld\n" , (long long)w->offset);
 			fprintf(stderr, "size = %ld\n" , (long) w->size);
 			fprintf(stderr, "bytes_read = %ld\n" , (long) bytes_read);
 			error_exit("read failed");
@@ -279,7 +279,7 @@ static void check_erase_block(struct erase_block_info *erase_block, int fd)
 		while (size)
 			if (read_buffer[--size] != 0xff) {
 				fprintf(stderr, "block no. = %d\n" , erase_block->block_number);
-				fprintf(stderr, "offset = %"PRIdoff_t"\n" , gap_start);
+				fprintf(stderr, "offset = %lld\n" , (long long)gap_start);
 				fprintf(stderr, "size = %ld\n" , (long) bytes_read);
 				error_exit("verify 0xff failed!");
 			}
@@ -467,6 +467,7 @@ static void operate_on_ubi_device(struct ubi_device_info *ubi_device)
 		req.vol_id = UBI_VOL_NUM_AUTO;
 		req.alignment = 1; /* TODO: What is this? */
 		req.bytes = ubi_device->info.leb_size * max_ebs_per_vol;
+		req.flags = 0;
 		if (req.bytes == 0 || req.bytes > ubi_device->info.avail_bytes)
 			req.bytes = ubi_device->info.avail_bytes;
 		req.vol_type = UBI_DYNAMIC_VOLUME;
@@ -496,7 +497,9 @@ static void operate_on_ubi_device(struct ubi_device_info *ubi_device)
 			/* FIXME: Correctly make node */
 			maj = ubi_major(ubi_device->device_file_name);
 			sprintf(dev_name, "mknod %s c %d %d", s->device_file_name, maj, req.vol_id + 1);
-			system(dev_name);
+			if (system(dev_name))
+				error_exit("Failed to create device file");
+
 		} else if (close(fd) == -1)
 			error_exit("Failed to close volume device file");
 	}
@@ -559,7 +562,9 @@ static void get_ubi_devices_info(void)
 
 static void load_ubi(void)
 {
-	system("rmmod ubi");
+	if (system("modprobe -r ubi"))
+		error_exit("Failed to unload UBI module");
+
 	if (system(ubi_module_load_string) != 0)
 		error_exit("Failed to load UBI module");
 	sleep(1);

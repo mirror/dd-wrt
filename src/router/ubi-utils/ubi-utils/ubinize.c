@@ -37,16 +37,6 @@
 #include <libiniparser.h>
 #include <libubi.h>
 #include "common.h"
-#include "ubiutils-common.h"
-
-static const char doc[] = PROGRAM_NAME " version " VERSION
-" - a tool to generate UBI images. An UBI image may contain one or more UBI "
-"volumes which have to be defined in the input configuration ini-file. The "
-"ini file defines all the UBI volumes - their characteristics and the "
-"contents, but it does not define the characteristics of the flash the UBI "
-"image is generated for. Instead, the flash characteristics are defined via "
-"the command-line options. Note, if not sure about some of the command-line "
-"parameters, do not specify them and let the utility use default values.";
 
 static const char optionsstr[] =
 "-o, --output=<file name>     output file name\n"
@@ -72,49 +62,13 @@ static const char optionsstr[] =
 "                             (by default a random number is picked)\n"
 "-v, --verbose                be verbose\n"
 "-h, --help                   print help message\n"
-"-V, --version                print program version";
+"-V, --version                print program version\n\n";
 
 static const char usage[] =
-"Usage: " PROGRAM_NAME " [-o filename] [-p <bytes>] [-m <bytes>] [-s <bytes>] [-O <num>] [-e <num>]\n"
-"\t\t[-x <num>] [-Q <num>] [-v] [-h] [-V] [--output=<filename>] [--peb-size=<bytes>]\n"
-"\t\t[--min-io-size=<bytes>] [--sub-page-size=<bytes>] [--vid-hdr-offset=<num>]\n"
-"\t\t[--erase-counter=<num>] [--ubi-ver=<num>] [--image-seq=<num>] [--verbose] [--help]\n"
-"\t\t[--version] ini-file\n"
-"Example: " PROGRAM_NAME " -o ubi.img -p 16KiB -m 512 -s 256 cfg.ini - create UBI image\n"
-"         'ubi.img' as described by configuration file 'cfg.ini'";
-
-static const char ini_doc[] = "INI-file format.\n"
-"The input configuration ini-file describes all the volumes which have to\n"
-"be included to the output UBI image. Each volume is described in its own\n"
-"section which may be named arbitrarily. The section consists on\n"
-"\"key=value\" pairs, for example:\n\n"
-"[jffs2-volume]\n"
-"mode=ubi\n"
-"image=../jffs2.img\n"
-"vol_id=1\n"
-"vol_size=30MiB\n"
-"vol_type=dynamic\n"
-"vol_name=jffs2_volume\n"
-"vol_flags=autoresize\n"
-"vol_alignment=1\n\n"
-"This example configuration file tells the utility to create an UBI image\n"
-"with one volume with ID 1, volume size 30MiB, the volume is dynamic, has\n"
-"name \"jffs2_volume\", \"autoresize\" volume flag, and alignment 1. The\n"
-"\"image=../jffs2.img\" line tells the utility to take the contents of the\n"
-"volume from the \"../jffs2.img\" file. The size of the image file has to be\n"
-"less or equivalent to the volume size (30MiB). The \"mode=ubi\" line is\n"
-"mandatory and just tells that the section describes an UBI volume - other\n"
-"section modes may be added in the future.\n"
-"Notes:\n"
-"  * size in vol_size might be specified kilobytes (KiB), megabytes (MiB),\n"
-"    gigabytes (GiB) or bytes (no modifier);\n"
-"  * if \"vol_size\" key is absent, the volume size is assumed to be\n"
-"    equivalent to the size of the image file (defined by \"image\" key);\n"
-"  * if the \"image\" is absent, the volume is assumed to be empty;\n"
-"  * volume alignment must not be greater than the logical eraseblock size;\n"
-"  * one ini file may contain arbitrary number of sections, the utility will\n"
-"    put all the volumes which are described by these section to the output\n"
-"    UBI image file.";
+"Usage: " PROGRAM_NAME " [options] <ini-file>\n\n"
+"Generate UBI images. An UBI image may contain one or more UBI volumes which\n"
+"have to be defined in the input configuration ini-file. The flash\n"
+"characteristics are defined via the command-line options.\n\n";
 
 static const struct option long_options[] = {
 	{ .name = "output",         .has_arg = 1, .flag = NULL, .val = 'o' },
@@ -155,7 +109,7 @@ static struct args args = {
 
 static int parse_opt(int argc, char * const argv[])
 {
-	ubiutils_srand();
+	util_srand();
 	args.image_seq = rand();
 
 	while (1) {
@@ -176,13 +130,13 @@ static int parse_opt(int argc, char * const argv[])
 			break;
 
 		case 'p':
-			args.peb_size = ubiutils_get_bytes(optarg);
+			args.peb_size = util_get_bytes(optarg);
 			if (args.peb_size <= 0)
 				return errmsg("bad physical eraseblock size: \"%s\"", optarg);
 			break;
 
 		case 'm':
-			args.min_io_size = ubiutils_get_bytes(optarg);
+			args.min_io_size = util_get_bytes(optarg);
 			if (args.min_io_size <= 0)
 				return errmsg("bad min. I/O unit size: \"%s\"", optarg);
 			if (!is_power_of_2(args.min_io_size))
@@ -190,7 +144,7 @@ static int parse_opt(int argc, char * const argv[])
 			break;
 
 		case 's':
-			args.subpage_size = ubiutils_get_bytes(optarg);
+			args.subpage_size = util_get_bytes(optarg);
 			if (args.subpage_size <= 0)
 				return errmsg("bad sub-page size: \"%s\"", optarg);
 			if (!is_power_of_2(args.subpage_size))
@@ -227,10 +181,10 @@ static int parse_opt(int argc, char * const argv[])
 			break;
 
 		case 'h':
-			ubiutils_print_text(stdout, doc, 80);
-			printf("\n%s\n\n", ini_doc);
-			printf("%s\n\n", usage);
-			printf("%s\n", optionsstr);
+			fputs(usage, stdout);
+			fputs(optionsstr, stdout);
+			printf("For more information see `man 8 %s`\n\n",
+				PROGRAM_NAME);
 			exit(EXIT_SUCCESS);
 
 		case 'V':
@@ -238,7 +192,8 @@ static int parse_opt(int argc, char * const argv[])
 			exit(EXIT_SUCCESS);
 
 		default:
-			fprintf(stderr, "Use -h for help\n");
+			fputs(usage, stderr);
+			fputs("Use -h for help\n\n", stderr);
 			return -1;
 		}
 	}
@@ -368,7 +323,7 @@ static int read_section(const struct ubigen_info *ui, const char *sname,
 	sprintf(buf, "%s:vol_size", sname);
 	p = iniparser_getstring(args.dict, buf, NULL);
 	if (p) {
-		vi->bytes = ubiutils_get_bytes(p);
+		vi->bytes = util_get_bytes(p);
 		if (vi->bytes <= 0)
 			return errmsg("bad \"vol_size\" key value \"%s\" (section \"%s\")",
 				      p, sname);
@@ -397,7 +352,7 @@ static int read_section(const struct ubigen_info *ui, const char *sname,
 
 		normsg_cont("volume size was not specified in section \"%s\", assume"
 			    " minimum to fit image \"%s\"", sname, *img);
-		ubiutils_print_bytes(vi->bytes, 1);
+		util_print_bytes(vi->bytes, 1);
 		printf("\n");
 	}
 
@@ -430,9 +385,21 @@ static int read_section(const struct ubigen_info *ui, const char *sname,
 	sprintf(buf, "%s:vol_flags", sname);
 	p = iniparser_getstring(args.dict, buf, NULL);
 	if (p) {
+		/*
+		 * For now, the flag can be either autoresize or skip-check, as
+		 * skip-check is reserved for static volumes and autoresize for
+		 * such a volume makes no sense.
+		 * Once we add another flag that isn't incompatible with each
+		 * and every existing flag, we'll have to implement a solution
+		 * that allows multiple flags to be set at the same time in
+		 * vol_flags setting of the section.
+		 */
 		if (!strcmp(p, "autoresize")) {
 			verbose(args.verbose, "autoresize flags found");
 			vi->flags |= UBI_VTBL_AUTORESIZE_FLG;
+		} else if (!strcmp(p, "skip-check")) {
+			verbose(args.verbose, "skip-check flag found");
+			vi->flags |= UBI_VTBL_SKIP_CRC_CHECK_FLG;
 		} else {
 			return errmsg("unknown flags \"%s\" in section \"%s\"",
 				      p, sname);
@@ -475,11 +442,14 @@ int main(int argc, char * const argv[])
 	verbose(args.verbose, "UBI image sequence number: %u", ui.image_seq);
 
 	vtbl = ubigen_create_empty_vtbl(&ui);
-	if (!vtbl)
+	if (!vtbl) {
+		err = -1;
 		goto out;
+	}
 
 	args.dict = iniparser_load(args.f_in);
 	if (!args.dict) {
+		err = -1;
 		errmsg("cannot load the input ini file \"%s\"", args.f_in);
 		goto out_vtbl;
 	}
@@ -489,17 +459,20 @@ int main(int argc, char * const argv[])
 	/* Each section describes one volume */
 	sects = iniparser_getnsec(args.dict);
 	if (sects == -1) {
+		err = -1;
 		errmsg("ini-file parsing error (iniparser_getnsec)");
 		goto out_dict;
 	}
 
 	verbose(args.verbose, "count of sections: %d", sects);
 	if (sects == 0) {
+		err = -1;
 		errmsg("no sections found the ini-file \"%s\"", args.f_in);
 		goto out_dict;
 	}
 
 	if (sects > ui.max_volumes) {
+		err = -1;
 		errmsg("too many sections (%d) in the ini-file \"%s\"",
 		       sects, args.f_in);
 		normsg("each section corresponds to an UBI volume, maximum "
@@ -509,6 +482,7 @@ int main(int argc, char * const argv[])
 
 	vi = calloc(sizeof(struct ubigen_vol_info), sects);
 	if (!vi) {
+		err = -1;
 		errmsg("cannot allocate memory");
 		goto out_dict;
 	}
@@ -567,6 +541,10 @@ int main(int argc, char * const argv[])
 				goto out_free;
 			}
 		}
+
+		if (vi[i].flags & UBI_VTBL_SKIP_CRC_CHECK_FLG &&
+		    vi[i].type != UBI_VID_STATIC)
+			return errmsg("skip-check is only valid for static volumes");
 
 		if (vi[i].flags & UBI_VTBL_AUTORESIZE_FLG) {
 			if (autoresize_was_already)

@@ -46,7 +46,7 @@ struct gcd_pid
 
 struct gcd_pid *gcd_pid_list = NULL;
 
-int add_gcd_pid(const char *number)
+static int add_gcd_pid(const char *number)
 {
 	int pid;
 	FILE *f;
@@ -86,7 +86,7 @@ int add_gcd_pid(const char *number)
 	return pid;
 }
 
-int get_pid_list(void)
+static int get_pid_list(void)
 {
 	DIR *dir;
 	struct dirent *entry;
@@ -107,7 +107,7 @@ int get_pid_list(void)
 	return 0;
 }
 
-int parse_index_number(const char *name)
+static int parse_index_number(const char *name)
 {
 	const char *p, *q;
 	int all_zero;
@@ -133,7 +133,7 @@ int parse_index_number(const char *name)
 	return index;
 }
 
-int get_mtd_index(void)
+static int get_mtd_index(void)
 {
 	FILE *f;
 	struct mntent *entry;
@@ -172,7 +172,7 @@ int get_mtd_index(void)
 	return mtd_index;
 }
 
-int get_gcd_pid()
+static int get_gcd_pid(void)
 {
 	struct gcd_pid *g;
 	int mtd_index;
@@ -188,7 +188,7 @@ int get_gcd_pid()
 	return 0;
 }
 
-void gcd_hupper(void)
+static void gcd_hupper(void)
 {
 	int64_t repeat;
 	int pid;
@@ -213,14 +213,14 @@ void gcd_hupper(void)
 
 /* Title of this test */
 
-const char *gcd_hupper_get_title(void)
+static const char *gcd_hupper_get_title(void)
 {
 	return "Send HUP signals to gcd";
 }
 
 /* Description of this test */
 
-const char *gcd_hupper_get_description(void)
+static const char *gcd_hupper_get_description(void)
 {
 	return
 		"Determine the PID of the gcd process. " \

@@ -31,7 +31,6 @@
 
 #include <libubi.h>
 #include "common.h"
-#include "ubiutils-common.h"
 
 /* The variables below are set by command line arguments */
 struct args {
@@ -211,12 +210,12 @@ static int print_vol_info(libubi_t libubi, int dev_num, int vol_id)
 	printf("Alignment:   %d\n", vol_info.alignment);
 
 	printf("Size:        %d LEBs (", vol_info.rsvd_lebs);
-	ubiutils_print_bytes(vol_info.rsvd_bytes, 0);
+	util_print_bytes(vol_info.rsvd_bytes, 0);
 	printf(")\n");
 
 	if (vol_info.type == UBI_STATIC_VOLUME) {
 		printf("Data bytes:  ");
-		ubiutils_print_bytes(vol_info.data_bytes, 1);
+		util_print_bytes(vol_info.data_bytes, 1);
 		printf("\n");
 	}
 	printf("State:       %s\n", vol_info.corrupted ? "corrupted" : "OK");
@@ -240,15 +239,15 @@ static int print_dev_info(libubi_t libubi, int dev_num, int all)
 	printf("ubi%d\n", dev_info.dev_num);
 	printf("Volumes count:                           %d\n", dev_info.vol_count);
 	printf("Logical eraseblock size:                 ");
-	ubiutils_print_bytes(dev_info.leb_size, 0);
+	util_print_bytes(dev_info.leb_size, 0);
 	printf("\n");
 
 	printf("Total amount of logical eraseblocks:     %d (", dev_info.total_lebs);
-	ubiutils_print_bytes(dev_info.total_bytes, 0);
+	util_print_bytes(dev_info.total_bytes, 0);
 	printf(")\n");
 
 	printf("Amount of available logical eraseblocks: %d (", dev_info.avail_lebs);
-	ubiutils_print_bytes(dev_info.avail_bytes, 0);
+	util_print_bytes(dev_info.avail_bytes, 0);
 	printf(")\n");
 
 	printf("Maximum count of volumes                 %d\n", dev_info.max_vol_count);
@@ -398,6 +397,12 @@ int main(int argc, char * const argv[])
 		err = translate_dev(libubi, args.node);
 		if (err)
 			goto out_libubi;
+	}
+
+	if (args.vol_name && args.devn == -1) {
+		errmsg("volume name is specified, but UBI device number is not "
+			   "(use -h for help)\n");
+		goto out_libubi;
 	}
 
 	if (args.vol_name) {

@@ -89,18 +89,17 @@ int main(int argc, char * const argv[])
 	int err = 0;
 	uint32_t crc = UBI_CRC32_INIT;
 	char buf[BUFSIZE];
-	FILE *fp;
-
-	if (argc > 1) {
-		fp = fopen(argv[1], "r");
-		if (!fp)
-			return sys_errmsg("cannot open \"%s\"", argv[1]);
-	} else
-		fp = stdin;
+	FILE *fp = stdin;
 
 	err = parse_opt(argc, argv);
 	if (err)
 		return err;
+
+	if (optind < argc) {
+		fp = fopen(argv[optind], "r");
+		if (!fp)
+			return sys_errmsg("cannot open \"%s\"", argv[1]);
+	}
 
 	while (!feof(fp)) {
 		size_t read;

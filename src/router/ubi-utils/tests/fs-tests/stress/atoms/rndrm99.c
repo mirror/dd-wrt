@@ -43,7 +43,7 @@ uint32_t dirs_created = 0;
 uint32_t dirs_removed = 0;
 int64_t *size_ptr = 0;
 
-void display_stats(void)
+static void display_stats(void)
 {
 	printf(	"\nrndrm99 stats:\n"
 		"\tNumber of files created = %u\n"
@@ -62,12 +62,12 @@ void display_stats(void)
 struct timeval tv_before;
 struct timeval tv_after;
 
-void before(void)
+static void before(void)
 {
 	CHECK(gettimeofday(&tv_before, NULL) != -1);
 }
 
-void after(const char *msg)
+static void after(const char *msg)
 {
 	time_t diff;
 	CHECK(gettimeofday(&tv_after, NULL) != -1);
@@ -104,7 +104,7 @@ static void init_write_buffer()
 
 /* Write size random bytes into file descriptor fd at the current position,
    returning the number of bytes actually written */
-uint64_t fill_file(int fd, uint64_t size)
+static uint64_t fill_file(int fd, uint64_t size)
 {
 	ssize_t written;
 	size_t sz;
@@ -142,7 +142,7 @@ uint64_t fill_file(int fd, uint64_t size)
 }
 
 /* Create a file of size file_size */
-uint64_t create_file(const char *file_name, uint64_t file_size)
+static uint64_t create_file(const char *file_name, uint64_t file_size)
 {
 	int fd;
 	int flags;
@@ -176,7 +176,7 @@ uint64_t create_file(const char *file_name, uint64_t file_size)
 }
 
 /* Create an empty sub-directory or small file in the current directory */
-int64_t create_entry(char *return_name)
+static int64_t create_entry(char *return_name)
 {
 	int fd;
 	char name[256];
@@ -217,7 +217,7 @@ int64_t create_entry(char *return_name)
 }
 
 /* Remove a random file of empty sub-directory from the current directory */
-int64_t remove_entry(void)
+static int64_t remove_entry(void)
 {
 	DIR *dir;
 	struct dirent *entry;
@@ -291,7 +291,7 @@ int64_t remove_entry(void)
 	return result;
 }
 
-void rndrm99(void)
+static void rndrm99(void)
 {
 	int64_t repeat, loop_cnt;
 	int64_t size, this_size;
@@ -374,14 +374,14 @@ void rndrm99(void)
 
 /* Title of this test */
 
-const char *rndrm99_get_title(void)
+static const char *rndrm99_get_title(void)
 {
 	return "Randomly create and remove directories and files";
 }
 
 /* Description of this test */
 
-const char *rndrm99_get_description(void)
+static const char *rndrm99_get_description(void)
 {
 	return
 		"Create a directory named rndrm99_test_dir_pid, where " \

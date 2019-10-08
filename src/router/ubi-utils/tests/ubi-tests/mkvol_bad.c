@@ -48,6 +48,7 @@ static int test_mkvol(void)
 	req.bytes = dev_info.avail_bytes;
 	req.vol_type = UBI_DYNAMIC_VOLUME;
 	req.name = name;
+	req.flags = 0;
 
 	/* Bad volume ID */
 	req.vol_id = -2;
@@ -199,7 +200,7 @@ static int test_mkvol(void)
 			 * Note, because of gluebi we may be unable to create
 			 * dev_info.max_vol_count devices (MTD restrictions).
 			 */
-			if (errno == ENFILE)
+			if (errno == ENFILE || errno == ENOSPC)
 				break;
 			failed("ubi_mkvol");
 			errorm("vol_id %d", i);
@@ -251,6 +252,7 @@ static int test_rmvol(void)
 	req.bytes = dev_info.avail_bytes;
 	req.vol_type = UBI_DYNAMIC_VOLUME;
 	req.name = name;
+	req.flags = 0;
 	if (ubi_mkvol(libubi, node, &req)) {
 		failed("ubi_mkvol");
 		return -1;

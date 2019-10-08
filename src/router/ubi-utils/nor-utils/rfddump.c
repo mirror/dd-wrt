@@ -10,7 +10,6 @@
  */
 
 #define PROGRAM_NAME "rfddump"
-#define VERSION "$Revision 1.0 $"
 
 #define _XOPEN_SOURCE 500 /* For pread */
 
@@ -27,6 +26,8 @@
 #include <mtd/mtd-user.h>
 #include <linux/types.h>
 #include <mtd_swab.h>
+
+#include "common.h"
 
 /* next is an array of mapping for each corresponding sector */
 #define RFD_MAGIC		0x9193
@@ -54,7 +55,7 @@ struct rfd {
 	int verbose;
 };
 
-void display_help(void)
+static void display_help(int status)
 {
 	printf("Usage: %s [OPTIONS] MTD-device filename\n"
 			"Dumps the contents of a resident flash disk\n"
@@ -64,21 +65,18 @@ void display_help(void)
 			"-v         --verbose		Be verbose\n"
 			"-b size    --blocksize          Block size (defaults to erase unit)\n",
 			PROGRAM_NAME);
-	exit(0);
+	exit(status);
 }
 
-void display_version(void)
+static void display_version(void)
 {
-	printf("%s " VERSION "\n"
-			"\n"
-			"This is free software; see the source for copying conditions.  There is NO\n"
-			"warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n",
-			PROGRAM_NAME);
-
+	common_print_version();
+	printf("This is free software; see the source for copying conditions.  There is NO\n"
+			"warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n");
 	exit(0);
 }
 
-void process_options(int argc, char *argv[], struct rfd *rfd)
+static void process_options(int argc, char *argv[], struct rfd *rfd)
 {
 	int error = 0;
 
@@ -103,7 +101,7 @@ void process_options(int argc, char *argv[], struct rfd *rfd)
 
 		switch (c) {
 			case 'h':
-				display_help();
+				display_help(EXIT_SUCCESS);
 				break;
 			case 'V':
 				display_version();
@@ -121,13 +119,13 @@ void process_options(int argc, char *argv[], struct rfd *rfd)
 	}
 
 	if ((argc - optind) != 2 || error)
-		display_help();
+		display_help(EXIT_FAILURE);
 
 	rfd->mtd_filename = argv[optind];
 	rfd->out_filename = argv[optind + 1];
 }
 
-int build_block_map(struct rfd *rfd, int fd, int block)
+static int build_block_map(struct rfd *rfd, int fd, int block)
 {
 	int  i;
 	int sectors;

@@ -32,14 +32,14 @@
 
 #define WRITE_BUFFER_SIZE 32768
 
-void ftrunc(void)
+static void ftrunc(void)
 {
 	int fd, i;
 	pid_t pid;
 	ssize_t written;
 	int64_t remains;
 	size_t block;
-	char *file_name;
+	const char *file_name;
 	off_t actual;
 	char buf[WRITE_BUFFER_SIZE];
 
@@ -74,14 +74,14 @@ void ftrunc(void)
 
 /* Title of this test */
 
-const char *ftrunc_get_title(void)
+static const char *ftrunc_get_title(void)
 {
 	return "Truncate a large test file";
 }
 
 /* Description of this test */
 
-const char *ftrunc_get_description(void)
+static const char *ftrunc_get_description(void)
 {
 	return
 		"Create a file named ftrunc_test_file. " \

@@ -33,7 +33,6 @@
 
 #include <libubi.h>
 #include "common.h"
-#include "ubiutils-common.h"
 
 /* The variables below are set by command line arguments */
 struct args {
@@ -114,7 +113,7 @@ static int parse_opt(int argc, char * const argv[])
 
 		switch (key) {
 		case 's':
-			args.bytes = ubiutils_get_bytes(optarg);
+			args.bytes = util_get_bytes(optarg);
 			if (args.bytes <= 0)
 				return errmsg("bad volume size: \"%s\"", optarg);
 			break;
@@ -138,11 +137,16 @@ static int parse_opt(int argc, char * const argv[])
 			break;
 
 		case 'h':
-		case '?':
 			printf("%s\n\n", doc);
 			printf("%s\n\n", usage);
 			printf("%s\n", optionsstr);
 			exit(EXIT_SUCCESS);
+
+		case '?':
+			printf("%s\n\n", doc);
+			printf("%s\n\n", usage);
+			printf("%s\n", optionsstr);
+			return -1;
 
 		case 'V':
 			common_print_version();

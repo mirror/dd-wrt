@@ -161,7 +161,7 @@ static const unsigned short crc_ccitt_table[] = {
   Returns file descriptor to open port. Use this fd to write to port
   and close it later, when done.
 */
-int setupSerial (const char *dev) {
+static int setupSerial (const char *dev) {
     int i, fd;
     struct termios tios;
 
@@ -215,7 +215,7 @@ int setupSerial (const char *dev) {
 //CRC to calculate out to 0xf0b8 (the hardcoded value at the end)
 //and returns TRUE if it is and FALSE if it doesn't.
 //Why don't people document better!!!!
-int check_crc_ccitt(char *filename)
+static int check_crc_ccitt(char *filename)
 {
     FILE *fp;
     FILE *logfp;
@@ -306,7 +306,7 @@ int check_crc_ccitt(char *filename)
   initially (and once) created by the separate "makefiles.c"
   program.
 */
-void send_pwrdn_ok(void){
+static void send_pwrdn_ok(void){
 
     int fd;
     FILE *cyclefp;
@@ -363,7 +363,7 @@ void send_pwrdn_ok(void){
   Appends 16bit CRC at the end of numBytes long buffer.
   Make sure buf, extends at least 2 bytes beyond.
  */
-void appendChecksum(char *buf, int numBytes){
+static void appendChecksum(char *buf, int numBytes){
 
     unsigned short crc = 0xffff;
     int index = 0;
@@ -395,7 +395,7 @@ void appendChecksum(char *buf, int numBytes){
   number of int's in it (this is needed to know how much
   data to read and checksum later).
 */
-void make_new_file(char *filename){
+static void make_new_file(char *filename){
 
 
     int dfd; /* data file descriptor */
@@ -486,7 +486,7 @@ void make_new_file(char *filename){
 /*
   Show's help on stdout
  */
-void printHelp(char **argv)
+static void printHelp(char **argv)
 {
     printf("Usage:%s <options, defined below>\n", argv[0]);
     printf("%s </dev/ttyS0,1,2...>: Set com port to send ok to pwr dn msg on\n",
@@ -502,7 +502,7 @@ void printHelp(char **argv)
 
 
 
-void processCmdLine(int argc, char **argv)
+static void processCmdLine(int argc, char **argv)
 {
 
     int cnt;

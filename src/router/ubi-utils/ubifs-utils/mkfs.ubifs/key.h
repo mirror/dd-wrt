@@ -37,6 +37,8 @@
 #ifndef __UBIFS_KEY_H__
 #define __UBIFS_KEY_H__
 
+#include <assert.h>
+
 /**
  * key_mask_hash - mask a valid hash value.
  * @val: value to be masked
@@ -63,8 +65,7 @@ static inline uint32_t key_r5_hash(const char *s, int len)
 	uint32_t a = 0;
 	const signed char *str = (const signed char *)s;
 
-	len = len;
-	while (*str) {
+	while (len--) {
 		a += *str << 4;
 		a += *str >> 4;
 		a *= 11;
@@ -109,11 +110,11 @@ static inline void ino_key_init(union ubifs_key *key, ino_t inum)
  */
 static inline void dent_key_init(const struct ubifs_info *c,
 				 union ubifs_key *key, ino_t inum,
-				 const struct qstr *nm)
+				 const void *name, int name_len)
 {
-	uint32_t hash = c->key_hash(nm->name, nm->len);
+	uint32_t hash = c->key_hash(name, name_len);
 
-	ubifs_assert(!(hash & ~UBIFS_S_KEY_HASH_MASK));
+	assert(!(hash & ~UBIFS_S_KEY_HASH_MASK));
 	key->u32[0] = inum;
 	key->u32[1] = hash | (UBIFS_DENT_KEY << UBIFS_S_KEY_HASH_BITS);
 }
@@ -131,7 +132,7 @@ static inline void xent_key_init(const struct ubifs_info *c,
 {
 	uint32_t hash = c->key_hash(nm->name, nm->len);
 
-	ubifs_assert(!(hash & ~UBIFS_S_KEY_HASH_MASK));
+	assert(!(hash & ~UBIFS_S_KEY_HASH_MASK));
 	key->u32[0] = inum;
 	key->u32[1] = hash | (UBIFS_XENT_KEY << UBIFS_S_KEY_HASH_BITS);
 }
@@ -146,7 +147,7 @@ static inline void xent_key_init(const struct ubifs_info *c,
 static inline void data_key_init(union ubifs_key *key, ino_t inum,
 				 unsigned int block)
 {
-	ubifs_assert(!(block & ~UBIFS_S_KEY_BLOCK_MASK));
+	assert(!(block & ~UBIFS_S_KEY_BLOCK_MASK));
 	key->u32[0] = inum;
 	key->u32[1] = block | (UBIFS_DATA_KEY << UBIFS_S_KEY_BLOCK_BITS);
 }
@@ -159,10 +160,12 @@ static inline void data_key_init(union ubifs_key *key, ino_t inum,
  */
 static inline void key_write(const union ubifs_key *from, void *to)
 {
-	union ubifs_key *t = to;
+	__le32 x[2];
 
-	t->j32[0] = cpu_to_le32(from->u32[0]);
-	t->j32[1] = cpu_to_le32(from->u32[1]);
+	x[0] = cpu_to_le32(from->u32[0]);
+	x[1] = cpu_to_le32(from->u32[1]);
+
+	memcpy(to, &x, 8);
 	memset(to + 8, 0, UBIFS_MAX_KEY_LEN - 8);
 }
 
@@ -174,10 +177,12 @@ static inline void key_write(const union ubifs_key *from, void *to)
  */
 static inline void key_write_idx(const union ubifs_key *from, void *to)
 {
-	union ubifs_key *t = to;
+	__le32 x[2];
 
-	t->j32[0] = cpu_to_le32(from->u32[0]);
-	t->j32[1] = cpu_to_le32(from->u32[1]);
+	x[0] = cpu_to_le32(from->u32[0]);
+	x[1] = cpu_to_le32(from->u32[1]);
+
+	memcpy(to, &x, 8);
 }
 
 /**
@@ -202,6 +207,16 @@ static inline int keys_cmp(const union ubifs_key *key1,
 		return 1;
 
 	return 0;
+}
+
+/**
+ * key_type - get key type.
+ * @c: UBIFS file-system description object
+ * @key: key to get type of
+ */
+static inline int key_type(const union ubifs_key *key)
+{
+	return key->u32[1] >> UBIFS_S_KEY_BLOCK_BITS;
 }
 
 #endif /* !__UBIFS_KEY_H__ */

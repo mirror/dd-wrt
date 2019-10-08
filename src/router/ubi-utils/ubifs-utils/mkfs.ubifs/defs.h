@@ -31,8 +31,6 @@
 
 #define unlikely(x) (x)
 
-#define ubifs_assert(x) ({})
-
 struct qstr
 {
 	char *name;

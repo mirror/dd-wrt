@@ -34,7 +34,7 @@
 
 #define HOLE_BLOCK_SIZE 10000000
 
-void filestress00(void)
+static void filestress00(void)
 {
 	int fd, i, deleted;
 	pid_t pid;
@@ -153,14 +153,14 @@ void filestress00(void)
 
 /* Title of this test */
 
-const char *filestress00_get_title(void)
+static const char *filestress00_get_title(void)
 {
 	return "File stress test 00";
 }
 
 /* Description of this test */
 
-const char *filestress00_get_description(void)
+static const char *filestress00_get_description(void)
 {
 	return
 		"Create a file named filestress00_test_file_pid, where " \

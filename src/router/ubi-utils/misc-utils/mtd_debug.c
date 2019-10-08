@@ -76,7 +76,7 @@ static int getregions(int fd, struct region_info_user *regions, int *n)
 	return 0;
 }
 
-int erase_flash(int fd, u_int32_t offset, u_int32_t bytes)
+static int erase_flash(int fd, u_int32_t offset, u_int32_t bytes)
 {
 	int err;
 	struct erase_info_user erase;
@@ -91,7 +91,7 @@ int erase_flash(int fd, u_int32_t offset, u_int32_t bytes)
 	return 0;
 }
 
-void printsize(u_int32_t x)
+static void printsize(u_int32_t x)
 {
 	int i;
 	static const char *flags = "KMGT";
@@ -103,7 +103,7 @@ void printsize(u_int32_t x)
 		printf("(%u%c)", x, flags[i]);
 }
 
-int flash_to_file(int fd, off_t offset, size_t len, const char *filename)
+static int flash_to_file(int fd, off_t offset, size_t len, const char *filename)
 {
 	u_int8_t *buf = NULL;
 	int outfd, err;
@@ -141,7 +141,10 @@ retry:
 			perror("read()");
 			goto err2;
 		}
-		err = write(outfd, buf, size);
+		if (err < size) {
+			fprintf(stderr, "%s: short read, requested %#x, read %#x\n", __func__, size, err);
+		}
+		err = write(outfd, buf, err);
 		if (err < 0) {
 			fprintf(stderr, "%s: write, size %#x, n %#x\n", __func__, size, n);
 			perror("write()");
@@ -157,7 +160,7 @@ retry:
 	if (buf != NULL)
 		free(buf);
 	close(outfd);
-	printf("Copied %zu bytes from address 0x%.8"PRIxoff_t" in flash to %s\n", len, offset, filename);
+	printf("Copied %zu bytes from address 0x%.8llx in flash to %s\n", len, (unsigned long long)offset, filename);
 	return 0;
 
 err2:
@@ -169,7 +172,8 @@ err0:
 	return 1;
 }
 
-int file_to_flash(int fd, off_t offset, u_int32_t len, const char *filename)
+static int file_to_flash(int fd, off_t offset, u_int32_t len,
+			 const char *filename)
 {
 	u_int8_t *buf = NULL;
 	FILE *fp;
@@ -221,11 +225,11 @@ retry:
 	if (buf != NULL)
 		free(buf);
 	fclose(fp);
-	printf("Copied %d bytes from %s to address 0x%.8"PRIxoff_t" in flash\n", len, filename, offset);
+	printf("Copied %d bytes from %s to address 0x%.8llx in flash\n", len, filename, (unsigned long long)offset);
 	return 0;
 }
 
-int showinfo(int fd)
+static int showinfo(int fd)
 {
 	int i, err, n;
 	struct mtd_info_user mtd;
@@ -268,6 +272,7 @@ int showinfo(int fd)
 			break;
 		case MTD_UBIVOLUME:
 			printf("MTD_UBIVOLUME");
+			break;
 		default:
 			printf("(unknown type - new MTD API maybe?)");
 	}
@@ -281,8 +286,6 @@ int showinfo(int fd)
 		printf("MTD_CAP_NORFLASH");
 	else if (mtd.flags == MTD_CAP_NANDFLASH)
 		printf("MTD_CAP_NANDFLASH");
-	else if (mtd.flags == MTD_WRITEABLE)
-		printf("MTD_WRITEABLE");
 	else {
 		int first = 1;
 		static struct {
@@ -335,7 +338,7 @@ int showinfo(int fd)
 	return 0;
 }
 
-void showusage(void)
+static NORETURN void showusage(void)
 {
 	fprintf(stderr, "usage: %1$s info <device>\n"
 			"       %1$s read <device> <offset> <len> <dest-filename>\n"

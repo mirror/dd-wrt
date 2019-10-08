@@ -164,9 +164,9 @@ int tests_fs_is_currfs(void);
 /* Concatenate a pid to a string in a signal safe way */
 void tests_cat_pid(char *buf, const char *name, pid_t pid);
 
-extern char *tests_file_system_mount_dir;
+extern const char *tests_file_system_mount_dir;
 
-extern char *tests_file_system_type;
+extern const char *tests_file_system_type;
 
 /* General purpose test parameter to specify some aspect of test size.
    May be used by different tests in different ways.
@@ -200,7 +200,7 @@ extern int tests_delete_flag;
 extern int tests_hole_flag;
 
 /* Program name from argv[0] */
-extern char *program_name;
+extern const char *program_name;
 
 /* Maximum file name length of test file system (from statfs) */
 extern long tests_max_fname_len;

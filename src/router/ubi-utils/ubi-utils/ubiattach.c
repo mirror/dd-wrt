@@ -31,7 +31,6 @@
 
 #include <libubi.h>
 #include "common.h"
-#include "ubiutils-common.h"
 
 #define DEFAULT_CTRL_DEV "/dev/ubi_ctrl"
 
@@ -238,11 +237,11 @@ int main(int argc, char * const argv[])
 	}
 
 	printf("UBI device number %d, total %d LEBs (", dev_info.dev_num, dev_info.total_lebs);
-	ubiutils_print_bytes(dev_info.total_bytes, 0);
+	util_print_bytes(dev_info.total_bytes, 0);
 	printf("), available %d LEBs (", dev_info.avail_lebs);
-	ubiutils_print_bytes(dev_info.avail_bytes, 0);
+	util_print_bytes(dev_info.avail_bytes, 0);
 	printf("), LEB size ");
-	ubiutils_print_bytes(dev_info.leb_size, 1);
+	util_print_bytes(dev_info.leb_size, 1);
 	printf("\n");
 
 	libubi_close(libubi);

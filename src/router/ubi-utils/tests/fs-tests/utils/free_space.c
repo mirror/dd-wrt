@@ -25,7 +25,7 @@
 
 int main(int argc, char *argv[])
 {
-	char *dir_name = ".";
+	const char *dir_name = ".";
 	uint64_t free_space;
 	struct statvfs fs_info;
 

@@ -32,7 +32,7 @@
 
 #define WRITE_BUFFER_SIZE 32768
 
-void stress_2(void)
+static void stress_2(void)
 {
 	int fd, i;
 	pid_t pid;
@@ -40,7 +40,7 @@ void stress_2(void)
 	int64_t remains;
 	int64_t repeat;
 	size_t block;
-	char *file_name;
+	const char *file_name;
 	char buf[WRITE_BUFFER_SIZE];
 
 	file_name = "stress_2_test_file";
@@ -77,14 +77,14 @@ void stress_2(void)
 
 /* Title of this test */
 
-const char *stress_2_get_title(void)
+static const char *stress_2_get_title(void)
 {
 	return "Create / overwrite a large deleted file";
 }
 
 /* Description of this test */
 
-const char *stress_2_get_description(void)
+static const char *stress_2_get_description(void)
 {
 	return
 		"Create a file named stress_2_test_file. " \

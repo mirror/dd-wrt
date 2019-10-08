@@ -30,7 +30,7 @@
 
 #include "tests.h"
 
-void rndrm00(void)
+static void rndrm00(void)
 {
 	int64_t repeat;
 	int64_t size, this_size;
@@ -100,14 +100,14 @@ void rndrm00(void)
 
 /* Title of this test */
 
-const char *rndrm00_get_title(void)
+static const char *rndrm00_get_title(void)
 {
 	return "Randomly create and remove directories and files";
 }
 
 /* Description of this test */
 
-const char *rndrm00_get_description(void)
+static const char *rndrm00_get_description(void)
 {
 	return
 		"Create a directory named rndrm00_test_dir_pid, where " \

@@ -28,6 +28,9 @@
 #include <lzo/lzo1x.h>
 #endif
 #include <linux/types.h>
+#ifndef WITHOUT_ZSTD
+#include <zstd.h>
+#endif
 
 #define crc32 __zlib_crc32
 #include <zlib.h>
@@ -105,6 +108,24 @@ static int lzo_compress(void *in_buf, size_t in_len, void *out_buf,
 		return -1;
 	}
 
+	return 0;
+}
+#endif
+
+#ifndef WITHOUT_ZSTD
+static ZSTD_CCtx *zctx;
+
+static int zstd_compress(void *in_buf, size_t in_len, void *out_buf,
+			 size_t *out_len)
+{
+	size_t ret;
+
+	ret = ZSTD_compressCCtx(zctx, out_buf, *out_len, in_buf, in_len, 0);
+	if (ZSTD_isError(ret)) {
+		errcnt += 1;
+		return -1;
+	}
+	*out_len = ret;
 	return 0;
 }
 #endif
@@ -192,6 +213,11 @@ int compress_data(void *in_buf, size_t in_len, void *out_buf, size_t *out_len,
 		case MKFS_UBIFS_COMPR_ZLIB:
 			ret = zlib_deflate(in_buf, in_len, out_buf, out_len);
 			break;
+#ifndef WITHOUT_ZSTD
+		case MKFS_UBIFS_COMPR_ZSTD:
+			ret = zstd_compress(in_buf, in_len, out_buf, out_len);
+			break;
+#endif
 		case MKFS_UBIFS_COMPR_NONE:
 			ret = 1;
 			break;
@@ -219,18 +245,29 @@ int init_compression(void)
 #endif
 
 	zlib_buf = malloc(UBIFS_BLOCK_SIZE * WORST_COMPR_FACTOR);
-	if (!zlib_buf) {
-		free(lzo_mem);
-		return -1;
-	}
+	if (!zlib_buf)
+		goto err;
+
+#ifndef WITHOUT_ZSTD
+	zctx = ZSTD_createCCtx();
+	if (!zctx)
+		goto err;
+#endif
 
 	return 0;
+err:
+	free(zlib_buf);
+	free(lzo_mem);
+	return -1;
 }
 
 void destroy_compression(void)
 {
 	free(zlib_buf);
 	free(lzo_mem);
+#ifndef WITHOUT_ZSTD
+	ZSTD_freeCCtx(zctx);
+#endif
 	if (errcnt)
 		fprintf(stderr, "%llu compression errors occurred\n", errcnt);
 }

@@ -45,6 +45,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "libfec.h"
 
 /*
  * stuff used for testing purposes only
@@ -543,7 +544,7 @@ fail:
  * q = values of the polynomial (known)
  */
 
-int
+static int
 invert_vdm(gf *src, int k)
 {
     int i, j, row, col ;

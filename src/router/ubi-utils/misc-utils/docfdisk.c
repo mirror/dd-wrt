@@ -44,7 +44,7 @@ struct INFTLMediaHeader *mh;
 
 #define MAXSCAN 10
 
-void show_header(int mhoffs) {
+static void show_header(int mhoffs) {
 	int i, unitsize, numunits, bmbits, numpart;
 	int start, end, num, nextunit;
 	unsigned int flags;
@@ -148,7 +148,7 @@ int main(int argc, char **argv)
 	int ret, i, mhblock, unitsize, block;
 	unsigned int nblocks[4], npart;
 	unsigned int totblocks;
-	struct INFTLPartition *ip;
+	struct INFTLPartition *ip = NULL;
 	unsigned char *oobbuf;
 	struct mtd_oob_buf oob;
 	char line[20];
@@ -275,7 +275,11 @@ int main(int argc, char **argv)
 	show_header(mhoffs);
 
 	printf("\nReady to update device.  Type 'yes' to proceed, anything else to abort: ");
-	fgets(line, sizeof(line), stdin);
+	if (!fgets(line, sizeof(line), stdin)) {
+		printf("Failed to retrieve input chars!\n");
+		return 1;
+	}
+
 	if (strcmp("yes\n", line))
 		return 0;
 	printf("Updating MediaHeader...\n");

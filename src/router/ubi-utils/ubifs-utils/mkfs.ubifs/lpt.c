@@ -22,6 +22,10 @@
 
 #include "mkfs.ubifs.h"
 
+#ifdef WITH_CRYPTO
+#include <openssl/evp.h>
+#endif
+
 /**
  * do_calc_lpt_geom - calculate sizes for the LPT area.
  * @c: the UBIFS file-system description object
@@ -374,6 +378,7 @@ int create_lpt(struct ubifs_info *c)
 	struct ubifs_nnode *nnode = NULL;
 	void *buf = NULL, *p;
 	int *lsave = NULL;
+	unsigned int md_len;
 
 	pnode = malloc(sizeof(struct ubifs_pnode));
 	nnode = malloc(sizeof(struct ubifs_nnode));
@@ -385,6 +390,8 @@ int create_lpt(struct ubifs_info *c)
 	}
 	memset(pnode, 0 , sizeof(struct ubifs_pnode));
 	memset(nnode, 0 , sizeof(struct ubifs_nnode));
+
+	hash_digest_init();
 
 	c->lscan_lnum = c->main_first;
 
@@ -429,6 +436,9 @@ int create_lpt(struct ubifs_info *c)
 			}
 		}
 		pack_pnode(c, p, pnode);
+
+		hash_digest_update(p, c->pnode_sz);
+
 		p += c->pnode_sz;
 		len += c->pnode_sz;
 		/*
@@ -438,6 +448,8 @@ int create_lpt(struct ubifs_info *c)
 		 */
 		pnode->num += 1;
 	}
+
+	hash_digest_final(c->lpt_hash, &md_len);
 
 	row = c->lpt_hght - 1;
 	/* Add all nnodes, one level at a time */
