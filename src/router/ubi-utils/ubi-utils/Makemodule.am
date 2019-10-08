@@ -41,9 +41,8 @@ ubihealthd_SOURCES = ubi-utils/ubihealthd.c
 ubihealthd_LDADD = libmtd.a libubi.a
 
 UBI_BINS = \
-	ubiupdatevol ubimkvol ubirmvol ubicrc32 ubinfo ubiattach \
-	ubidetach ubinize ubiformat ubirename mtdinfo ubirsvol ubiblock \
-	ubihealthd
+	ubiupdatevol ubimkvol ubirmvol ubiattach \
+	ubidetach ubinize ubiformat ubirsvol
 
 UBI_MAN = \
 	ubi-utils/ubinize.8
