@@ -50,8 +50,10 @@ void start_jffs2(void)
 	case ROUTER_ASROCK_G10:
 	case ROUTER_LINKSYS_EA8500:
 		ubidev = 0;
+		break;
 	default:
 		ubidev = 1;
+		break;
 	}
 #endif
 	char udev[32];
