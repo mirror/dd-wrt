@@ -38,7 +38,7 @@ struct child_info {
 
 struct child_info *children = 0;
 
-void kill_children(void)
+static void kill_children(void)
 {
 	struct child_info *child;
 
@@ -57,7 +57,7 @@ void kill_children(void)
 	}
 }
 
-void add_child(pid_t child_pid)
+static void add_child(pid_t child_pid)
 {
 	struct child_info *child;
 	size_t sz;
@@ -70,7 +70,7 @@ void add_child(pid_t child_pid)
 	children = child;
 }
 
-void mark_child_gone(pid_t child_pid)
+static void mark_child_gone(pid_t child_pid)
 {
 	struct child_info *child;
 
@@ -84,7 +84,7 @@ void mark_child_gone(pid_t child_pid)
 	}
 }
 
-int have_children(void)
+static int have_children(void)
 {
 	struct child_info *child;
 
@@ -97,7 +97,7 @@ int have_children(void)
 	return 0;
 }
 
-int parse_command_line(char *cmdline, int *pargc, char ***pargv)
+static int parse_command_line(char *cmdline, int *pargc, char ***pargv)
 {
 	char **tmp;
 	char *p, *v, *q;
@@ -131,6 +131,7 @@ int parse_command_line(char *cmdline, int *pargc, char ***pargv)
 					break;
 				}
 				state = 1;
+				/* fall-through */
 			case 1: /* Not quoted */
 				if (c == '\\') {
 					if (*p)
@@ -175,16 +176,18 @@ int parse_command_line(char *cmdline, int *pargc, char ***pargv)
 	return 0;
 }
 
-void signal_handler(int signum)
+static void signal_handler(int signum)
 {
+	(void)signum;
 	kill_children();
 }
 
 int result = 0;
 int alarm_gone_off = 0;
 
-void alarm_handler(int signum)
+static void alarm_handler(int signum)
 {
+	(void)signum;
 	if (!result)
 		alarm_gone_off = 1;
 	kill_children();

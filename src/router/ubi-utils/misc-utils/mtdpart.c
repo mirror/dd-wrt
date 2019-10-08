@@ -34,7 +34,7 @@ static void display_help(int status)
 "Adds a partition to an MTD device, or remove an existing partition from it.\n"
 "\n"
 "  -h, --help    Display this help and exit\n"
-"      --version Output version information and exit\n"
+"  -V, --version Output version information and exit\n"
 "\n"
 "START location and SIZE of the partition are in bytes. They should align on\n"
 "eraseblock size.\n",
@@ -45,9 +45,8 @@ static void display_help(int status)
 
 static void display_version(void)
 {
-	printf("%1$s " VERSION "\n"
-			"\n"
-			"%1$s comes with NO WARRANTY\n"
+	common_print_version();
+	printf("%1$s comes with NO WARRANTY\n"
 			"to the extent permitted by law.\n"
 			"\n"
 			"You may redistribute copies of %1$s\n"
@@ -77,9 +76,9 @@ static void process_options(int argc, char * const argv[])
 
 	for (;;) {
 		int option_index = 0;
-		static const char short_options[] = "h";
+		static const char short_options[] = "hV";
 		static const struct option long_options[] = {
-			{"version", no_argument, 0, 0},
+			{"version", no_argument, 0, 'V'},
 			{"help", no_argument, 0, 'h'},
 			{0, 0, 0, 0},
 		};
@@ -91,7 +90,7 @@ static void process_options(int argc, char * const argv[])
 		}
 
 		switch (c) {
-			case 0:
+			case 'V':
 				display_version();
 				break;
 			case 'h':

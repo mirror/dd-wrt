@@ -62,7 +62,9 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-static char Version_string[] = "$Id: plotJittervsFill.c,v 1.6 2005/11/07 11:15:21 gleixner Exp $";
+#define PROGRAM_NAME "plotJittervsFill"
+#include "common.h"
+
 static char LogFile[250] = "InputLogFile.log";
 
 static int JitterThreshold_ms = 1000;
@@ -73,7 +75,7 @@ static int Debug = 0; /* Debug level. Each "-d" on the cmd line increases the le
 
 #define MIN_JITTER_THRESHOLD 1 /* ms minimum jitter threshold */
 
-void PrintHelpInfo(void)
+static void PrintHelpInfo(void)
 {
     printf("Usage: plotJittervsFill [options] -f [--file] <input log file name> -t [--jitter_threshold] <jitter threshold in ms>\n");
     printf("[options]:\n-v [--version] Print version and exit\n");
@@ -88,7 +90,7 @@ void PrintHelpInfo(void)
  *  This function handles the command line arguments.
  *  output: stack size
  ***********************************************************************/
-void HandleCmdLineArgs(
+static void HandleCmdLineArgs(
     int argc,                       /* number of command-line arguments */
     char *argv[])                   /* ptrs to command-line arguments   */
 {
@@ -103,7 +105,7 @@ void HandleCmdLineArgs(
             if ((strcmp(argv[argNum],"--version") == 0) ||
                 (strcmp(argv[argNum],"-v")        == 0)) {
                 /* Print version information and exit. */
-                printf("%s\n", Version_string);
+                common_print_version();
                 exit(0);
             }
 
@@ -265,7 +267,7 @@ int main(
         }
 
         /* Is the jitter value > threshold value? */
-        if(abs(jitter_ms) > JitterThreshold_ms)
+        if(abs((int)jitter_ms) > JitterThreshold_ms)
         {
             /* Found a jitter line that matches our crietrion.
                Now set flag to be on the look out for the next
@@ -274,7 +276,7 @@ int main(
 
             if(saveJitterCnt < MAX_SAVE_BUFFER)
             {
-                saveJitter[saveJitterCnt] = (int)abs(jitter_ms); /* why keep the (ms) jitter in float */
+                saveJitter[saveJitterCnt] = abs((int)jitter_ms); /* why keep the (ms) jitter in float */
                 dataLineNo[saveJitterCnt] = lineNo;
                 saveJitterCnt++;
                 lookFor_df = TRUE;

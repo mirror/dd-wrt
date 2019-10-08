@@ -36,7 +36,7 @@ static const char *flash_msg[] = {
 	[ REQUEST_ISLOCKED ]	= "check lock status",
 };
 
-static void usage(int status)
+static NORETURN void usage(int status)
 {
 	fprintf(status ? stderr : stdout,
 		"Utility to lock, unlock, or check the lock status of the flash.\n"
@@ -46,7 +46,7 @@ static void usage(int status)
 		"\n"
 		"Options:\n"
 		" -h         --help              Display this help and exit\n"
-		"            --version           Display version information and exit\n"
+		" -V         --version           Display version information and exit\n"
 		" -i         --islocked          Check if flash region is locked\n"
 		" -l         --lock              Lock a region of flash\n"
 		" -u         --unlock            Unlock a region of flash\n"
@@ -59,13 +59,13 @@ static void usage(int status)
 	exit(status);
 }
 
-static const char short_opts[] = "hilu";
+static const char short_opts[] = "hiluV";
 static const struct option long_opts[] = {
 	{ "help",	no_argument,	0, 'h' },
 	{ "islocked",	no_argument,	0, 'i' },
 	{ "lock",	no_argument,	0, 'l' },
 	{ "unlock",	no_argument,	0, 'u' },
-	{ "version",	no_argument,	0, 'v' },
+	{ "version",	no_argument,	0, 'V' },
 	{ NULL,		0,		0, 0 },
 };
 
@@ -87,8 +87,7 @@ static void process_args(int argc, char *argv[])
 
 		switch (c) {
 		case 'h':
-			usage(0);
-			break;
+			usage(EXIT_SUCCESS);
 		case 'i':
 			req = REQUEST_ISLOCKED;
 			req_set++;
@@ -101,18 +100,17 @@ static void process_args(int argc, char *argv[])
 			req = REQUEST_UNLOCK;
 			req_set++;
 			break;
-		case 'v':
+		case 'V':
 			common_print_version();
 			exit(0);
 		default:
-			usage(1);
-			break;
+			usage(EXIT_FAILURE);
 		}
 	}
 
 	if (req_set > 1) {
 		errmsg("cannot specify more than one lock/unlock/islocked option");
-		usage(1);
+		usage(EXIT_FAILURE);
 	}
 
 	arg_idx = optind;
@@ -120,10 +118,10 @@ static void process_args(int argc, char *argv[])
 	/* Sanity checks */
 	if (argc - arg_idx < 1) {
 		errmsg("too few arguments");
-		usage(1);
+		usage(EXIT_FAILURE);
 	} else if (argc - arg_idx > 3) {
 		errmsg("too many arguments");
-		usage(1);
+		usage(EXIT_FAILURE);
 	}
 
 	/* First non-option argument */

@@ -33,12 +33,15 @@
 #include <sys/mount.h>
 #include <errno.h>
 #include <string.h>
+#include <getopt.h>
 
 #include <asm/types.h>
 #include <mtd/mtd-user.h>
 #include <mtd/nftl-user.h>
 #include <mtd/inftl-user.h>
 #include <mtd_swab.h>
+
+#include "common.h"
 
 unsigned char BadUnitTable[MAX_ERASE_ZONES];
 unsigned char *readbuf;
@@ -52,6 +55,12 @@ struct INFTLMediaHeader *INFTLhdr;
 
 static int do_oobcheck = 1;
 static int do_rwecheck = 1;
+
+static const struct option long_opts[] = {
+	{"version", no_argument, 0, 'V'},
+	{"help", no_argument, 0, 'h'},
+	{0, 0, 0, 0},
+};
 
 static unsigned char check_block_1(unsigned long block)
 {
@@ -84,15 +93,15 @@ static unsigned char check_block_2(unsigned long block)
 	erase.start = ofs;
 
 	for (blockofs = 0; blockofs < meminfo.erasesize; blockofs += 512) {
-		pread(fd, readbuf, 512, ofs + blockofs);
+		pread_nocheck(fd, readbuf, 512, ofs + blockofs);
 		if (memcmp(readbuf, writebuf[0], 512)) {
 			/* Block wasn't 0xff after erase */
 			printf(": Block not 0xff after erase\n");
 			return ZONE_BAD_ORIGINAL;
 		}
 
-		pwrite(fd, writebuf[1], 512, blockofs + ofs);
-		pread(fd, readbuf, 512, blockofs + ofs);
+		pwrite_nocheck(fd, writebuf[1], 512, blockofs + ofs);
+		pread_nocheck(fd, readbuf, 512, blockofs + ofs);
 		if (memcmp(readbuf, writebuf[1], 512)) {
 			printf(": Block not zero after clearing\n");
 			return ZONE_BAD_ORIGINAL;
@@ -105,8 +114,8 @@ static unsigned char check_block_2(unsigned long block)
 		return ZONE_BAD_ORIGINAL;
 	}
 	for (blockofs = 0; blockofs < meminfo.erasesize; blockofs += 512) {
-		pwrite(fd, writebuf[2], 512, blockofs + ofs);
-		pread(fd, readbuf, 512, blockofs + ofs);
+		pwrite_nocheck(fd, writebuf[2], 512, blockofs + ofs);
+		pread_nocheck(fd, readbuf, 512, blockofs + ofs);
 		if (memcmp(readbuf, writebuf[2], 512)) {
 			printf(": Block not 0x5a after writing\n");
 			return ZONE_BAD_ORIGINAL;
@@ -118,8 +127,8 @@ static unsigned char check_block_2(unsigned long block)
 		return ZONE_BAD_ORIGINAL;
 	}
 	for (blockofs = 0; blockofs < meminfo.erasesize; blockofs += 512) {
-		pwrite(fd, writebuf[3], 512, blockofs + ofs);
-		pread(fd, readbuf, 512, blockofs + ofs);
+		pwrite_nocheck(fd, writebuf[3], 512, blockofs + ofs);
+		pread_nocheck(fd, readbuf, 512, blockofs + ofs);
 		if (memcmp(readbuf, writebuf[3], 512)) {
 			printf(": Block not 0xa5 after writing\n");
 			return ZONE_BAD_ORIGINAL;
@@ -172,7 +181,7 @@ static int checkbbt(void)
 	unsigned char bits;
 	int i, addr;
 
-	if (pread(fd, bbt, 512, 0x800) < 0) {
+	if (pread_nocheck(fd, bbt, 512, 0x800) < 0) {
 		printf("%s: failed to read BBT, errno=%d\n", PROGRAM_NAME, errno);
 		return (-1);
 	}
@@ -189,10 +198,25 @@ static int checkbbt(void)
 	return (0);
 }
 
-void usage(int rc)
+static NORETURN void usage(int rc)
 {
 	fprintf(stderr, "Usage: %s [-ib] <mtddevice> [<start offset> [<size>]]\n", PROGRAM_NAME);
 	exit(rc);
+}
+
+static void display_version(void)
+{
+	common_print_version();
+	printf("Copyright (C) 2005 Thomas Gleixner \n"
+			"\n"
+			"%1$s comes with NO WARRANTY\n"
+			"to the extent permitted by law.\n"
+			"\n"
+			"You may redistribute copies of %1$s\n"
+			"under the terms of the GNU General Public Licence.\n"
+			"See the file `COPYING' for more information.\n",
+			PROGRAM_NAME);
+	exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char **argv)
@@ -207,16 +231,14 @@ int main(int argc, char **argv)
 	char *mtddevice;
 	const char *nftl;
 	int c, do_inftl = 0, do_bbt = 0;
-
-
-	printf("version 1.24 2005/11/07 11:15:13 gleixner\n");
+	int idx = 0;
 
 	if (argc < 2)
-		usage(1);
+		usage(EXIT_FAILURE);
 
 	nftl = "NFTL";
 
-	while ((c = getopt(argc, argv, "?hib")) > 0) {
+	while ((c = getopt_long(argc, argv, "?hibV", long_opts, &idx)) != -1) {
 		switch (c) {
 			case 'i':
 				nftl = "INFTL";
@@ -227,11 +249,12 @@ int main(int argc, char **argv)
 				break;
 			case 'h':
 			case '?':
-				usage(0);
+				usage(EXIT_SUCCESS);
+			case 'V':
+				display_version();
 				break;
 			default:
-				usage(1);
-				break;
+				usage(EXIT_FAILURE);
 		}
 	}
 
@@ -377,9 +400,9 @@ int main(int argc, char **argv)
 
 	/* Phase 2. Writing NFTL Media Headers and Bad Unit Table */
 	printf("Phase 2.a Writing %s Media Header and Bad Unit Table\n", nftl);
-	pwrite(fd, writebuf[0], 512, MediaUnit1 * meminfo.erasesize + MediaUnitOff1);
+	pwrite_nocheck(fd, writebuf[0], 512, MediaUnit1 * meminfo.erasesize + MediaUnitOff1);
 	for (ezone = 0; ezone < (meminfo.size / meminfo.erasesize); ezone += 512) {
-		pwrite(fd, BadUnitTable + ezone, 512,
+		pwrite_nocheck(fd, BadUnitTable + ezone, 512,
 				(MediaUnit1 * meminfo.erasesize) + 512 * (1 + ezone / 512));
 	}
 
@@ -391,9 +414,9 @@ int main(int argc, char **argv)
 			le32_to_cpu(NFTLhdr->FormattedSize)/512);
 #endif
 	printf("Phase 2.b Writing Spare %s Media Header and Spare Bad Unit Table\n", nftl);
-	pwrite(fd, writebuf[0], 512, MediaUnit2 * meminfo.erasesize + MediaUnitOff2);
+	pwrite_nocheck(fd, writebuf[0], 512, MediaUnit2 * meminfo.erasesize + MediaUnitOff2);
 	for (ezone = 0; ezone < (meminfo.size / meminfo.erasesize); ezone += 512) {
-		pwrite(fd, BadUnitTable + ezone, 512,
+		pwrite_nocheck(fd, BadUnitTable + ezone, 512,
 				(MediaUnit2 * meminfo.erasesize + MediaUnitOff2) + 512 * (1 + ezone / 512));
 	}
 

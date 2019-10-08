@@ -13,7 +13,6 @@
  */
 
 #define PROGRAM_NAME "rfdformat"
-#define VERSION "$Revision 1.0 $"
 
 #define _XOPEN_SOURCE 500 /* For pread/pwrite */
 
@@ -29,7 +28,9 @@
 #include <mtd/mtd-user.h>
 #include <linux/types.h>
 
-void display_help(void)
+#include "common.h"
+
+static void display_help(int status)
 {
 	printf("Usage: %s [OPTIONS] MTD-device\n"
 			"Formats NOR flash for resident flash disk\n"
@@ -37,21 +38,18 @@ void display_help(void)
 			"-h         --help               display this help and exit\n"
 			"-V         --version            output version information and exit\n",
 			PROGRAM_NAME);
-	exit(0);
+	exit(status);
 }
 
-void display_version(void)
+static void display_version(void)
 {
-	printf("%s " VERSION "\n"
-			"\n"
-			"This is free software; see the source for copying conditions.  There is NO\n"
-			"warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n",
-			PROGRAM_NAME);
-
+	common_print_version();
+	printf("This is free software; see the source for copying conditions.  There is NO\n"
+			"warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n");
 	exit(0);
 }
 
-void process_options(int argc, char *argv[], const char **mtd_filename)
+static void process_options(int argc, char *argv[], const char **mtd_filename)
 {
 	int error = 0;
 
@@ -71,7 +69,7 @@ void process_options(int argc, char *argv[], const char **mtd_filename)
 
 		switch (c) {
 			case 'h':
-				display_help();
+				display_help(EXIT_SUCCESS);
 				break;
 			case 'V':
 				display_version();
@@ -83,7 +81,7 @@ void process_options(int argc, char *argv[], const char **mtd_filename)
 	}
 
 	if ((argc - optind) != 1 || error)
-		display_help();
+		display_help(EXIT_FAILURE);
 
 	*mtd_filename = argv[optind];
 }

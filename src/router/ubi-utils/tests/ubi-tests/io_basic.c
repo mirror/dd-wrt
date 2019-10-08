@@ -55,6 +55,7 @@ static int test_basic(int type)
 	req.bytes = dev_info.avail_bytes;
 	req.vol_type = type;
 	req.name = name;
+	req.flags = 0;
 
 	if (ubi_mkvol(libubi, node, &req)) {
 		failed("ubi_mkvol");
@@ -102,6 +103,7 @@ static int test_aligned(int type)
 
 	req.vol_type = type;
 	req.name = name;
+	req.flags = 0;
 
 	for (i = 0; i < sizeof(alignments)/sizeof(int); i++) {
 		req.vol_id = UBI_VOL_NUM_AUTO;

@@ -2,6 +2,7 @@
 #define PROGRAM_NAME "recv_image"
 #define _XOPEN_SOURCE 500
 #define _BSD_SOURCE	/* struct ip_mreq */
+#define _DEFAULT_SOURCE
 
 #include <errno.h>
 #include <stdio.h>
@@ -19,6 +20,7 @@
 #include <crc32.h>
 #include "mtd/mtd-user.h"
 #include "mcast_image.h"
+#include "libfec.h"
 
 #include "common.h"
 

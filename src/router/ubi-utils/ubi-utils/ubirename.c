@@ -34,7 +34,7 @@
 
 static const char usage[] =
 "Usage: " PROGRAM_NAME " <UBI device node file name> [<old name> <new name>|...]\n\n"
-"Example: " PROGRAM_NAME "/dev/ubi0 A B C D - rename volume A to B, and C to D\n\n"
+"Example: " PROGRAM_NAME " /dev/ubi0 A B C D - rename volume A to B, and C to D\n\n"
 "This utility allows re-naming several volumes in one go atomically.\n"
 "For example, if you have volumes A and B, then you may rename A into B\n"
 "and B into A at one go, and the operation will be atomic. This allows\n"
@@ -44,7 +44,7 @@ static const char usage[] =
 "may remove old volume B.\n"
 "It is also allowed to re-name multiple volumes at a time, but 16 max.\n"
 "renames at once, which means you may specify up to 32 volume names.\n"
-"If you have volumes A and B, and re-name A to B, bud do not re-name\n"
+"If you have volumes A and B, and re-name A to B, but do not re-name\n"
 "B to something else in the same request, old volume B will be removed\n"
 "and A will be renamed into B.\n";
 

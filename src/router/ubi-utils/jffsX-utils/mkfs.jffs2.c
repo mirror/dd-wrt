@@ -72,6 +72,7 @@
 #include <byteswap.h>
 #include <crc32.h>
 #include <inttypes.h>
+#include <limits.h>
 
 #include "rbtree.h"
 #include "common.h"
@@ -111,7 +112,7 @@ static int squash_perms = 0;
 static int fake_times = 0;
 int target_endian = __BYTE_ORDER;
 
-uint32_t find_hardlink(struct filesystem_entry *e)
+static uint32_t find_hardlink(struct filesystem_entry *e)
 {
 	struct filesystem_entry *f;
 	struct rb_node **n = &hardlinks.rb_node;
@@ -138,7 +139,7 @@ uint32_t find_hardlink(struct filesystem_entry *e)
 	return 0;
 }
 
-extern char *xreadlink(const char *path)
+static char *xreadlink(const char *path)
 {
 	static const int GROWBY = 80; /* how large we will grow strings by */
 
@@ -1051,7 +1052,7 @@ static void formalize_posix_acl(void *xvalue, int *value_len)
 	if (offset > *value_len) {
 		printf("Length of JFFS2 ACL expression(%u) is longer than general one(%u).\n",
 				offset, *value_len);
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 	memcpy(xvalue, buffer, offset);
 	*value_len = offset;
@@ -1236,8 +1237,8 @@ static void recursive_populate_directory(struct filesystem_entry *dir)
 		} else switch (e->sb.st_mode & S_IFMT) {
 			case S_IFDIR:
 				if (verbose) {
-					printf("\td %04o %9" PRIdoff_t "             %5d:%-3d %s\n",
-							e->sb.st_mode & ~S_IFMT, e->sb.st_size,
+					printf("\td %04o %9lld             %5d:%-3d %s\n",
+							e->sb.st_mode & ~S_IFMT, (long long)e->sb.st_size,
 							(int) (e->sb.st_uid), (int) (e->sb.st_gid),
 							e->name);
 				}
@@ -1246,8 +1247,8 @@ static void recursive_populate_directory(struct filesystem_entry *dir)
 				break;
 			case S_IFSOCK:
 				if (verbose) {
-					printf("\ts %04o %9" PRIdoff_t "             %5d:%-3d %s\n",
-							e->sb.st_mode & ~S_IFMT, e->sb.st_size,
+					printf("\ts %04o %9lld             %5d:%-3d %s\n",
+							e->sb.st_mode & ~S_IFMT, (long long)e->sb.st_size,
 							(int) e->sb.st_uid, (int) e->sb.st_gid, e->name);
 				}
 				write_pipe(e);
@@ -1255,8 +1256,8 @@ static void recursive_populate_directory(struct filesystem_entry *dir)
 				break;
 			case S_IFIFO:
 				if (verbose) {
-					printf("\tp %04o %9" PRIdoff_t "             %5d:%-3d %s\n",
-							e->sb.st_mode & ~S_IFMT, e->sb.st_size,
+					printf("\tp %04o %9lld             %5d:%-3d %s\n",
+							e->sb.st_mode & ~S_IFMT, (long long)e->sb.st_size,
 							(int) e->sb.st_uid, (int) e->sb.st_gid, e->name);
 				}
 				write_pipe(e);
@@ -1284,8 +1285,8 @@ static void recursive_populate_directory(struct filesystem_entry *dir)
 				break;
 			case S_IFLNK:
 				if (verbose) {
-					printf("\tl %04o %9" PRIdoff_t "             %5d:%-3d %s -> %s\n",
-							e->sb.st_mode & ~S_IFMT, e->sb.st_size,
+					printf("\tl %04o %9lld             %5d:%-3d %s -> %s\n",
+							e->sb.st_mode & ~S_IFMT, (long long)e->sb.st_size,
 							(int) e->sb.st_uid, (int) e->sb.st_gid, e->name,
 							e->link);
 				}
@@ -1296,8 +1297,8 @@ static void recursive_populate_directory(struct filesystem_entry *dir)
 				wrote = write_regular_file(e);
 				write_xattr_entry(e);
 				if (verbose) {
-					printf("\tf %04o %9" PRIdoff_t " (%9u) %5d:%-3d %s\n",
-							e->sb.st_mode & ~S_IFMT, e->sb.st_size, wrote,
+					printf("\tf %04o %9lld (%9u) %5d:%-3d %s\n",
+							e->sb.st_mode & ~S_IFMT, (long long)e->sb.st_size, wrote,
 							(int) e->sb.st_uid, (int) e->sb.st_gid, e->name);
 				}
 				break;
@@ -1427,9 +1428,7 @@ static const char helptext[] =
 "  -V, --version           Display version information\n"
 "  -i, --incremental=FILE  Parse FILE and generate appendage output for it\n\n";
 
-static const char revtext[] = "1.60";
-
-int load_next_block() {
+static int load_next_block(void) {
 
 	int ret;
 	ret = read(in_fd, file_buffer, erase_block_size);
@@ -1440,7 +1439,7 @@ int load_next_block() {
 	return ret;
 }
 
-void process_buffer(int inp_size) {
+static void process_buffer(int inp_size) {
 	uint8_t		*p = file_buffer;
 	union jffs2_node_union 	*node;
 	uint16_t	type;
@@ -1543,7 +1542,7 @@ void process_buffer(int inp_size) {
 	}
 }
 
-void parse_image(){
+static void parse_image(void){
 	int ret;
 
 	file_buffer = xmalloc(erase_block_size);
@@ -1630,15 +1629,19 @@ int main(int argc, char **argv)
 				break;
 
 			case 'h':
+				puts(helptext);
+				exit(EXIT_SUCCESS);
 			case '?':
-				errmsg_die("%s", helptext);
+				puts(helptext);
+				exit(EXIT_FAILURE);
 
 			case 'v':
 				verbose = 1;
 				break;
 
 			case 'V':
-				errmsg_die("revision %s\n", revtext);
+				common_print_version();
+				exit(EXIT_SUCCESS);
 
 			case 'e': {
 						  char *next;

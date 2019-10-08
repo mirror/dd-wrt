@@ -24,6 +24,7 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <unistd.h>
 #include <pthread.h>
 #include <sys/types.h>
@@ -55,6 +56,7 @@ static int update_volume(int vol_id, int bytes)
 	char *vol_node = vol_nodes[vol_id];
 	unsigned char *wbuf = wbufs[vol_id];
 	unsigned char *rbuf = rbufs[vol_id];
+	unsigned int seed = seed_random_generator();
 
 	fd = open(vol_node, O_RDWR);
 	if (fd == -1) {
@@ -64,7 +66,7 @@ static int update_volume(int vol_id, int bytes)
 	}
 
 	for (i = 0; i < bytes; i++)
-		wbuf[i] = rand() % 255;
+		wbuf[i] = rand_r(&seed) % 255;
 	memset(rbuf, '\0', bytes);
 
 	ret = ubi_update_start(libubi, fd, bytes);
@@ -75,7 +77,7 @@ static int update_volume(int vol_id, int bytes)
 	}
 
 	while (written < bytes) {
-		int to_write = rand() % (bytes - written);
+		int to_write = rand_r(&seed) % (bytes - written);
 
 		if (to_write == 0)
 			to_write = 1;
@@ -104,7 +106,7 @@ static int update_volume(int vol_id, int bytes)
 
 	/* read data back and check */
 	while (rd < bytes) {
-		int to_read = rand() % (bytes - rd);
+		int to_read = rand_r(&seed) % (bytes - rd);
 
 		if (to_read == 0)
 			to_read = 1;
@@ -136,10 +138,11 @@ err_close:
 static void *update_thread(void *ptr)
 {
 	int vol_id = (long)ptr, i;
+	unsigned int seed = seed_random_generator();
 
 	for (i = 0; i < ITERATIONS; i++) {
-		int ret, bytes = (rand() % (vol_size - 1)) + 1;
-		int remove = !(rand() % 16);
+		int ret, bytes = (rand_r(&seed) % (vol_size - 1)) + 1;
+		int remove = !(rand_r(&seed) % 16);
 
 		/* From time to time remove the volume */
 		if (remove) {
@@ -147,22 +150,22 @@ static void *update_thread(void *ptr)
 			if (ret) {
 				failed("ubi_rmvol");
 				errorm("cannot remove volume %d", vol_id);
-				return NULL;
+				return (void *) -1;
 			}
 			ret = ubi_mkvol(libubi, node, &reqests[vol_id]);
 			if (ret) {
 				failed("ubi_mkvol");
 				errorm("cannot create volume %d", vol_id);
-				return NULL;
+				return (void *) -1;
 			}
 		}
 
 		ret = update_volume(vol_id, bytes);
-		if (ret)
-			return NULL;
+		if (ret != 0)
+			return (void *) -1;
 	}
 
-	return NULL;
+	return (void *) 0;
 }
 
 static void *write_thread(void *ptr)
@@ -171,12 +174,13 @@ static void *write_thread(void *ptr)
 	char *vol_node = vol_nodes[vol_id];
 	unsigned char *wbuf = wbufs[vol_id];
 	unsigned char *rbuf = rbufs[vol_id];
+	unsigned int seed = seed_random_generator();
 
 	fd = open(vol_node, O_RDWR);
 	if (fd == -1) {
 		failed("open");
 		errorm("cannot open \"%s\"\n", vol_node);
-		return NULL;
+		return (void *) -1;
 	}
 
 	ret = ubi_set_property(fd, UBI_VOL_PROP_DIRECT_WRITE, 1);
@@ -186,7 +190,7 @@ static void *write_thread(void *ptr)
 	}
 
 	for (i = 0; i < ITERATIONS * VOL_LEBS; i++) {
-		int j, leb = rand() % VOL_LEBS;
+		int j, leb = rand_r(&seed) % VOL_LEBS;
 		off_t offs = dev_info.leb_size * leb;
 
 		ret = ubi_leb_unmap(fd, leb);
@@ -197,7 +201,7 @@ static void *write_thread(void *ptr)
 		}
 
 		for (j = 0; j < dev_info.leb_size; j++)
-			wbuf[j] = rand() % 255;
+			wbuf[j] = rand_r(&seed) % 255;
 		memset(rbuf, '\0', dev_info.leb_size);
 
 		ret = pwrite(fd, wbuf, dev_info.leb_size, offs);
@@ -225,15 +229,15 @@ static void *write_thread(void *ptr)
 	}
 
 	close(fd);
-	return NULL;
+	return (void *) 0;
 }
 
 int main(int argc, char * const argv[])
 {
-	int i, ret;
+	int i, ret, error=false;
+	intptr_t thread_ret;
 	pthread_t threads[THREADS_NUM];
 
-	seed_random_generator();
 	if (initial_check(argc, argv))
 		return 1;
 
@@ -262,6 +266,7 @@ int main(int argc, char * const argv[])
 		sprintf(vol_name[i], PROGRAM_NAME":%d", i);
 		reqests[i].name = vol_name[i];
 		reqests[i].vol_type = UBI_DYNAMIC_VOLUME;
+		reqests[i].flags = 0;
 		if (i == THREADS_NUM)
 			reqests[i].vol_type = UBI_STATIC_VOLUME;
 		sprintf(vol_nodes[i], UBI_VOLUME_PATTERN, dev_info.dev_num, i);
@@ -299,8 +304,14 @@ int main(int argc, char * const argv[])
 		}
 	}
 
-	for (i = 0; i < THREADS_NUM; i++)
-		pthread_join(threads[i], NULL);
+	for (i = 0; i < THREADS_NUM; i++) {
+		pthread_join(threads[i], (void **) &thread_ret);
+		if (thread_ret != 0)
+			error = true;
+	}
+
+	if (error)
+		goto remove;
 
 	for (i = 0; i <= THREADS_NUM; i++) {
 		if (ubi_rmvol(libubi, node, i)) {

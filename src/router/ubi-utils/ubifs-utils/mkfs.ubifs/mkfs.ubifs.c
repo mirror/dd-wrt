@@ -27,8 +27,20 @@
 #include "common.h"
 #include <sys/types.h>
 #ifndef WITHOUT_XATTR
-#include <attr/xattr.h>
+#include <sys/xattr.h>
 #endif
+
+#ifdef WITH_SELINUX
+#include <selinux/selinux.h>
+#include <selinux/label.h>
+#endif
+
+#ifndef WITHOUT_ZSTD
+#include <zstd.h>
+#endif
+
+#include "crypto.h"
+#include "fscrypt.h"
 
 /* Size (prime number) of hash table for link counting */
 #define HASH_TABLE_SIZE 10099
@@ -40,6 +52,13 @@
 /* Default time granularity in nanoseconds */
 #define DEFAULT_TIME_GRAN 1000000000
 
+
+#ifdef WITH_SELINUX
+#define XATTR_NAME_SELINUX "security.selinux"
+static struct selabel_handle *sehnd;
+static char *secontext;
+#endif
+
 /**
  * struct idx_entry - index entry.
  * @next: next index entry (NULL at end of list)
@@ -49,6 +68,7 @@
  * @lnum: LEB number
  * @offs: offset
  * @len: length
+ * @hash: hash of the node
  *
  * The index is recorded as a linked list which is sorted and used to create
  * the bottom level of the on-flash index tree. The remaining levels of the
@@ -59,9 +79,11 @@ struct idx_entry {
 	struct idx_entry *prev;
 	union ubifs_key key;
 	char *name;
+	int name_len;
 	int lnum;
 	int offs;
 	int len;
+	uint8_t hash[UBIFS_MAX_HASH_LEN];
 };
 
 /**
@@ -110,12 +132,16 @@ int yes;
 
 static char *root;
 static int root_len;
+static struct fscrypt_context *root_fctx;
 static struct stat root_st;
 static char *output;
 static int out_fd;
 static int out_ubi;
 static int squash_owner;
 static int do_create_inum_attr;
+static char *context;
+static int context_len;
+static struct stat context_st;
 
 /* The 'head' (position) which nodes are written */
 static int head_lnum;
@@ -138,7 +164,13 @@ static struct inum_mapping **hash_table;
 /* Inode creation sequence number */
 static unsigned long long creat_sqnum;
 
-static const char *optstring = "d:r:m:o:D:yh?vVe:c:g:f:Fp:k:x:X:j:R:l:j:UQqa";
+static const char *optstring = "d:r:m:o:D:yh?vVe:c:g:f:Fp:k:x:X:j:R:l:j:UQqaK:b:P:C:";
+
+enum {
+	HASH_ALGO_OPTION = CHAR_MAX + 1,
+	AUTH_KEY_OPTION,
+	AUTH_CERT_OPTION,
+};
 
 static const struct option longopts[] = {
 	{"root",               1, NULL, 'r'},
@@ -163,6 +195,14 @@ static const struct option longopts[] = {
 	{"orph-lebs",          1, NULL, 'p'},
 	{"squash-uids" ,       0, NULL, 'U'},
 	{"set-inode-attr",     0, NULL, 'a'},
+	{"selinux",            1, NULL, 's'},
+	{"key",                1, NULL, 'K'},
+	{"key-descriptor",     1, NULL, 'b'},
+	{"padding",            1, NULL, 'P'},
+	{"cipher",             1, NULL, 'C'},
+	{"hash-algo",          1, NULL, HASH_ALGO_OPTION},
+	{"auth-key",           1, NULL, AUTH_KEY_OPTION},
+	{"auth-cert",          1, NULL, AUTH_CERT_OPTION},
 	{NULL, 0, NULL, 0}
 };
 
@@ -184,8 +224,8 @@ static const char *helptext =
 "-o, --output=FILE        output to FILE\n"
 "-j, --jrn-size=SIZE      journal size\n"
 "-R, --reserved=SIZE      how much space should be reserved for the super-user\n"
-"-x, --compr=TYPE         compression type - \"lzo\", \"favor_lzo\", \"zlib\" or\n"
-"                         \"none\" (default: \"lzo\")\n"
+"-x, --compr=TYPE         compression type - \"lzo\", \"favor_lzo\", \"zlib\"\n"
+"                         \"zstd\" or \"none\" (default: \"lzo\")\n"
 "-X, --favor-percent      may only be used with favor LZO compression and defines\n"
 "                         how many percent better zlib should compress to make\n"
 "                         mkfs.ubifs use zlib instead of LZO (default 20%)\n"
@@ -206,6 +246,19 @@ static const char *helptext =
 "-a, --set-inum-attr      create user.image-inode-number extended attribute on files\n"
 "                         added to the image. The attribute will contain the inode\n"
 "                         number the file has in the generated image.\n"
+"-s, --selinux=FILE       Selinux context file\n"
+"-K, --key=FILE           load an encryption key from a specified file.\n"
+"-b, --key-descriptor=HEX specify the key descriptor as a hex string.\n"
+"-P, --padding=NUM        specify padding policy for encrypting filenames\n"
+"                         (default = 4).\n"
+"-C, --cipher=NAME        Specify cipher to use for file level encryption\n"
+"                         (default is \"AES-256-XTS\").\n"
+"    --hash-algo=NAME     hash algorithm to use for signed images\n"
+"                         (Valid options include sha1, sha256, sha512)\n"
+"    --auth-key=FILE      filename or PKCS #11 uri containing the authentication key\n"
+"                         for signing\n"
+"    --auth-cert=FILE     Authentication certificate filename for signing. Unused\n"
+"                         when certificate is provided via PKCS #11\n"
 "-h, --help               display this help text\n\n"
 "Note, SIZE is specified in bytes, but it may also be specified in Kilobytes,\n"
 "Megabytes, and Gigabytes if a KiB, MiB, or GiB suffix is used.\n\n"
@@ -214,8 +267,8 @@ static const char *helptext =
 "really a separate compressor. It is just a method of combining \"lzo\" and \"zlib\"\n"
 "compressors. Namely, mkfs.ubifs tries to compress data with both \"lzo\" and \"zlib\"\n"
 "compressors, then it compares which compressor is better. If \"zlib\" compresses 20\n"
-"or more percent better than \"lzo\", mkfs.ubifs chooses \"lzo\", otherwise it chooses\n"
-"\"zlib\". The \"--favor-percent\" may specify arbitrary threshold instead of the\n"
+"or more percent better than \"lzo\", mkfs.ubifs chooses \"zlib\", otherwise it chooses\n"
+"\"lzo\". The \"--favor-percent\" may specify arbitrary threshold instead of the\n"
 "default 20%.\n\n"
 "The -F parameter is used to set the \"fix up free space\" flag in the superblock,\n"
 "which forces UBIFS to \"fixup\" all the free space which it is going to use. This\n"
@@ -225,7 +278,15 @@ static const char *helptext =
 "when flashing the image and the second time when UBIFS is mounted and writes useful\n"
 "data there. A proper UBI-aware flasher should skip such NAND pages, though. Note, this\n"
 "flag may make the first mount very slow, because the \"free space fixup\" procedure\n"
-"takes time. This feature is supported by the Linux kernel starting from version 3.0.\n";
+"takes time. This feature is supported by the Linux kernel starting from version 3.0.\n"
+"\n"
+"mkfs.ubifs supports building signed images. For this the \"--hash-algo\",\n"
+"\"--auth-key\" and \"--auth-cert\" options have to be specified.\n";
+
+static inline uint8_t *ubifs_branch_hash(struct ubifs_branch *br)
+{
+	return (void *)br + sizeof(*br) + c->key_len;
+}
 
 /**
  * make_path - make a path name from a directory and a name.
@@ -472,22 +533,35 @@ static int open_ubi(const char *node)
 	return 0;
 }
 
-static int get_options(int argc, char**argv)
+static void select_default_compr(void)
 {
-	int opt, i;
-	const char *tbl_file = NULL;
-	struct stat st;
-	char *endp;
+	if (c->encrypted) {
+		c->default_compr = UBIFS_COMPR_NONE;
+		return;
+	}
 
-	c->fanout = 8;
-	c->orph_lebs = 1;
-	c->key_hash = key_r5_hash;
-	c->key_len = UBIFS_SK_LEN;
 #ifdef WITHOUT_LZO
 	c->default_compr = UBIFS_COMPR_ZLIB;
 #else
 	c->default_compr = UBIFS_COMPR_LZO;
 #endif
+}
+
+static int get_options(int argc, char**argv)
+{
+	int opt, i, fscrypt_flags = FS_POLICY_FLAGS_PAD_4;
+	const char *key_file = NULL, *key_desc = NULL;
+	const char *tbl_file = NULL;
+	struct stat st;
+	char *endp;
+#ifdef WITH_CRYPTO
+	const char *cipher_name;
+#endif
+
+	c->fanout = 8;
+	c->orph_lebs = 1;
+	c->key_hash = key_r5_hash;
+	c->key_len = UBIFS_SK_LEN;
 	c->favor_percent = 20;
 	c->lsave_cnt = 256;
 	c->leb_size = -1;
@@ -495,6 +569,9 @@ static int get_options(int argc, char**argv)
 	c->max_leb_cnt = -1;
 	c->max_bud_bytes = -1;
 	c->log_lebs = -1;
+	c->double_hash = 0;
+	c->encrypted = 0;
+	c->default_compr = -1;
 
 	while (1) {
 		opt = getopt_long(argc, argv, optstring, longopts, &i);
@@ -548,15 +625,21 @@ static int get_options(int argc, char**argv)
 			yes = 1;
 			break;
 		case 'h':
+			printf("%s", helptext);
+			exit(EXIT_SUCCESS);
 		case '?':
 			printf("%s", helptext);
-			exit(0);
+#ifdef WITH_CRYPTO
+			printf("\n\nSupported ciphers:\n");
+			list_ciphers(stdout);
+#endif
+			exit(-1);
 		case 'v':
 			verbose = 1;
 			break;
 		case 'V':
 			common_print_version();
-			exit(0);
+			exit(EXIT_SUCCESS);
 		case 'g':
 			debug_level = strtol(optarg, &endp, 0);
 			if (*endp != '\0' || endp == optarg ||
@@ -600,17 +683,23 @@ static int get_options(int argc, char**argv)
 				c->default_compr = UBIFS_COMPR_NONE;
 			else if (strcmp(optarg, "zlib") == 0)
 				c->default_compr = UBIFS_COMPR_ZLIB;
-#ifndef WITHOUT_LZO
-			else if (strcmp(optarg, "favor_lzo") == 0)
-				c->favor_lzo = 1;
-			else if (strcmp(optarg, "lzo") != 0)
-#else
-			else
+#ifndef WITHOUT_ZSTD
+			else if (strcmp(optarg, "zstd") == 0)
+				c->default_compr = UBIFS_COMPR_ZSTD;
 #endif
+#ifndef WITHOUT_LZO
+			else if (strcmp(optarg, "favor_lzo") == 0) {
+				c->default_compr = UBIFS_COMPR_LZO;
+				c->favor_lzo = 1;
+			} else if (strcmp(optarg, "lzo") == 0) {
+				c->default_compr = UBIFS_COMPR_LZO;
+			}
+#endif
+			else
 				return err_msg("bad compressor name");
 			break;
 		case 'X':
-#ifdef WITHOT_LZO
+#ifdef WITHOUT_LZO
 			return err_msg("built without LZO support");
 #else
 			c->favor_percent = strtol(optarg, &endp, 0);
@@ -636,8 +725,80 @@ static int get_options(int argc, char**argv)
 		case 'a':
 			do_create_inum_attr = 1;
 			break;
+		case 's':
+			context_len = strlen(optarg);
+			context = (char *) xmalloc(context_len + 1);
+			if (!context)
+				return err_msg("xmalloc failed\n");
+			memcpy(context, optarg, context_len);
 
+			/* Make sure root directory exists */
+			if (stat(context, &context_st))
+				return sys_err_msg("bad file context %s\n",
+								   context);
+			break;
+		case 'K':
+			if (key_file) {
+				return err_msg("key file specified more than once");
+			}
+			key_file = optarg;
+			break;
+		case 'b':
+			if (key_desc) {
+				return err_msg("key descriptor specified more than once");
+			}
+			key_desc = optarg;
+			break;
+		case 'P': {
+			int error = 0;
+			unsigned long num;
+
+			num = simple_strtoul(optarg, &error);
+			if (error)
+				num = -1;
+
+			fscrypt_flags &= ~FS_POLICY_FLAGS_PAD_MASK;
+
+			switch (num) {
+			case 4:
+				fscrypt_flags |= FS_POLICY_FLAGS_PAD_4;
+				break;
+			case 8:
+				fscrypt_flags |= FS_POLICY_FLAGS_PAD_8;
+				break;
+			case 16:
+				fscrypt_flags |= FS_POLICY_FLAGS_PAD_16;
+				break;
+			case 32:
+				fscrypt_flags |= FS_POLICY_FLAGS_PAD_32;
+				break;
+			default:
+				return errmsg("invalid padding policy '%s'",
+						optarg);
+			}
+			break;
 		}
+#ifdef WITH_CRYPTO
+		case 'C':
+			cipher_name = optarg;
+			break;
+		case HASH_ALGO_OPTION:
+			c->hash_algo_name = xstrdup(optarg);
+			break;
+		case AUTH_KEY_OPTION:
+			c->auth_key_filename = xstrdup(optarg);
+			break;
+		case AUTH_CERT_OPTION:
+			c->auth_cert_filename = xstrdup(optarg);
+			break;
+		}
+#else
+		case 'C':
+		case HASH_ALGO_OPTION:
+		case AUTH_KEY_OPTION:
+		case X509_OPTION:
+			return err_msg("mkfs.ubifs was built without crypto support.");
+#endif
 	}
 
 	if (optind != argc && !output)
@@ -654,6 +815,28 @@ static int get_options(int argc, char**argv)
 		if (c->max_leb_cnt == -1)
 			c->max_leb_cnt = c->vi.rsvd_lebs;
 	}
+	if (key_file || key_desc) {
+#ifdef WITH_CRYPTO
+		if (!key_file)
+			return err_msg("no key file specified");
+
+		c->double_hash = 1;
+		c->encrypted = 1;
+
+		if (cipher_name == NULL)
+			cipher_name = "AES-256-XTS";
+
+		root_fctx = init_fscrypt_context(cipher_name, fscrypt_flags,
+						key_file, key_desc);
+		if (!root_fctx)
+			return -1;
+#else
+		return err_msg("mkfs.ubifs was built without crypto support.");
+#endif
+	}
+
+	if (c->default_compr == -1)
+		select_default_compr();
 
 	if (c->min_io_size == -1)
 		return err_msg("min. I/O unit was not specified "
@@ -723,6 +906,7 @@ static int get_options(int argc, char**argv)
 		printf("\tfanout:       %d\n", c->fanout);
 		printf("\torph_lebs:    %d\n", c->orph_lebs);
 		printf("\tspace_fixup:  %d\n", c->space_fixup);
+		printf("\tselinux file: %s\n", context);
 	}
 
 	if (validate_options())
@@ -770,11 +954,11 @@ int write_leb(int lnum, int len, void *buf)
 			return sys_err_msg("ubi_leb_change_start failed");
 
 	if (lseek(out_fd, pos, SEEK_SET) != pos)
-		return sys_err_msg("lseek failed seeking %"PRIdoff_t, pos);
+		return sys_err_msg("lseek failed seeking %lld", (long long)pos);
 
 	if (write(out_fd, buf, c->leb_size) != c->leb_size)
-		return sys_err_msg("write failed writing %d bytes at pos %"PRIdoff_t,
-				   c->leb_size, pos);
+		return sys_err_msg("write failed writing %d bytes at pos %lld",
+				   c->leb_size, (long long)pos);
 
 	return 0;
 }
@@ -917,9 +1101,10 @@ static void set_lprops(int lnum, int offs, int flags)
  * @lnum: node LEB number
  * @offs: node offset
  * @len: node length
+ * @hash: hash of the node
  */
-static int add_to_index(union ubifs_key *key, char *name, int lnum, int offs,
-			int len)
+static int add_to_index(union ubifs_key *key, char *name, int name_len,
+			int lnum, int offs, int len, const uint8_t *hash)
 {
 	struct idx_entry *e;
 
@@ -929,9 +1114,12 @@ static int add_to_index(union ubifs_key *key, char *name, int lnum, int offs,
 	e->prev = idx_list_last;
 	e->key = *key;
 	e->name = name;
+	e->name_len = name_len;
 	e->lnum = lnum;
 	e->offs = offs;
 	e->len = len;
+	memcpy(e->hash, hash, c->hash_len);
+
 	if (!idx_list_first)
 		idx_list_first = e;
 	if (idx_list_last)
@@ -987,9 +1175,19 @@ static int reserve_space(int len, int *lnum, int *offs)
  * @node: node
  * @len: node length
  */
-static int add_node(union ubifs_key *key, char *name, void *node, int len)
+static int add_node(union ubifs_key *key, char *name, int name_len, void *node, int len)
 {
-	int err, lnum, offs;
+	int err, lnum, offs, type = key_type(key);
+	uint8_t hash[UBIFS_MAX_HASH_LEN];
+
+	if (type == UBIFS_DENT_KEY || type == UBIFS_XENT_KEY) {
+		if (!name)
+			return err_msg("Directory entry or xattr "
+					"without name!");
+	} else {
+		if (name)
+			return err_msg("Name given for non dir/xattr node!");
+	}
 
 	prepare_node(node, len);
 
@@ -1000,86 +1198,59 @@ static int add_node(union ubifs_key *key, char *name, void *node, int len)
 	memcpy(leb_buf + offs, node, len);
 	memset(leb_buf + offs + len, 0xff, ALIGN(len, 8) - len);
 
-	add_to_index(key, name, lnum, offs, len);
+	ubifs_node_calc_hash(node, hash);
+
+	add_to_index(key, name, name_len, lnum, offs, len, hash);
 
 	return 0;
 }
 
-#ifdef WITHOUT_XATTR
-static inline int create_inum_attr(ino_t inum, const char *name)
-{
-	(void)inum;
-	(void)name;
-
-	return 0;
-}
-
-static inline int inode_add_xattr(struct ubifs_ino_node *host_ino,
-				  const char *path_name, struct stat *st, ino_t inum)
-{
-	(void)host_ino;
-	(void)path_name;
-	(void)st;
-	(void)inum;
-
-	return 0;
-}
-#else
-static int create_inum_attr(ino_t inum, const char *name)
-{
-	char *str;
-	int ret;
-
-	if (!do_create_inum_attr)
-		return 0;
-
-	ret = asprintf(&str, "%llu", (unsigned long long)inum);
-	if (ret < 0)
-		return -1;
-
-	ret = lsetxattr(name, "user.image-inode-number", str, ret, 0);
-
-	free(str);
-
-	return ret;
-}
-
-
-static int add_xattr(struct stat *st, ino_t inum, const void *data,
-		     unsigned int data_len, struct qstr *nm)
+static int add_xattr(struct ubifs_ino_node *host_ino, struct stat *st,
+		     ino_t inum, char *name, const void *data,
+		     unsigned int data_len)
 {
 	struct ubifs_ino_node *ino;
 	struct ubifs_dent_node *xent;
+	struct qstr nm;
 	union ubifs_key xkey, nkey;
 	int len, ret;
 
-	xent = xzalloc(sizeof(*xent) + nm->len + 1);
+	nm.len = strlen(name);
+	nm.name = xmalloc(nm.len + 1);
+	memcpy(nm.name, name, nm.len + 1);
+
+	host_ino->xattr_cnt++;
+	host_ino->xattr_size += CALC_DENT_SIZE(nm.len);
+	host_ino->xattr_size += CALC_XATTR_BYTES(data_len);
+	host_ino->xattr_names += nm.len;
+
+	xent = xzalloc(sizeof(*xent) + nm.len + 1);
 	ino = xzalloc(sizeof(*ino) + data_len);
 
-	xent_key_init(c, &xkey, inum, nm);
+	xent_key_init(c, &xkey, inum, &nm);
 	xent->ch.node_type = UBIFS_XENT_NODE;
 	key_write(&xkey, &xent->key);
 
-	len = UBIFS_XENT_NODE_SZ + nm->len + 1;
+	len = UBIFS_XENT_NODE_SZ + nm.len + 1;
 
 	xent->ch.len = len;
 	xent->padding1 = 0;
 	xent->type = UBIFS_ITYPE_DIR;
-	xent->nlen = cpu_to_le16(nm->len);
+	xent->nlen = cpu_to_le16(nm.len);
 
-	memcpy(xent->name, nm->name, nm->len + 1);
+	memcpy(xent->name, nm.name, nm.len + 1);
 
 	inum = ++c->highest_inum;
 	creat_sqnum = ++c->max_sqnum;
 
 	xent->inum = cpu_to_le64(inum);
 
-	ret = add_node(&xkey, nm->name, xent, len);
+	ret = add_node(&xkey, nm.name, nm.len, xent, len);
 	if (ret)
 		goto out;
 
 	ino->creat_sqnum = cpu_to_le64(creat_sqnum);
-	ino->nlink      = cpu_to_le32(st->st_nlink);
+	ino->nlink      = cpu_to_le32(1);
 	/*
 	 * The time fields are updated assuming the default time granularity
 	 * of 1 second. To support finer granularities, utime() would be needed.
@@ -1106,7 +1277,7 @@ static int add_xattr(struct stat *st, ino_t inum, const void *data,
 	if (data_len)
 		memcpy(&ino->data, data, data_len);
 
-	ret = add_node(&nkey, nm->name, ino, UBIFS_INO_NODE_SZ + data_len) ;
+	ret = add_node(&nkey, NULL, 0, ino, UBIFS_INO_NODE_SZ + data_len);
 
 out:
 	free(xent);
@@ -1115,18 +1286,57 @@ out:
 	return ret;
 }
 
+#ifdef WITHOUT_XATTR
+static inline int create_inum_attr(ino_t inum, const char *name)
+{
+	(void)inum;
+	(void)name;
+
+	return 0;
+}
+
+static inline int inode_add_xattr(struct ubifs_ino_node *host_ino,
+				  const char *path_name,
+				  struct stat *st, ino_t inum)
+{
+	(void)host_ino;
+	(void)path_name;
+	(void)st;
+	(void)inum;
+
+	return 0;
+}
+#else
+static int create_inum_attr(ino_t inum, const char *name)
+{
+	char *str;
+	int ret;
+
+	if (!do_create_inum_attr)
+		return 0;
+
+	ret = asprintf(&str, "%llu", (unsigned long long)inum);
+	if (ret < 0)
+		return ret;
+
+	ret = lsetxattr(name, "user.image-inode-number", str, ret, 0);
+
+	free(str);
+
+	return ret;
+}
+
 static int inode_add_xattr(struct ubifs_ino_node *host_ino,
 			   const char *path_name, struct stat *st, ino_t inum)
 {
 	int ret;
-	struct qstr nm;
 	void *buf = NULL;
 	ssize_t len;
 	ssize_t pos = 0;
 
 	len = llistxattr(path_name, NULL, 0);
 	if (len < 0) {
-		if (errno == ENOENT)
+		if (errno == ENOENT || errno == EOPNOTSUPP)
 			return 0;
 
 		sys_err_msg("llistxattr failed on %s", path_name);
@@ -1176,15 +1386,7 @@ static int inode_add_xattr(struct ubifs_ino_node *host_ino,
 			continue;
 		}
 
-		nm.name = name;
-		nm.len = strlen(name);
-
-		host_ino->xattr_cnt++;
-		host_ino->xattr_size += CALC_DENT_SIZE(nm.len);
-		host_ino->xattr_size += CALC_XATTR_BYTES(attrsize);
-		host_ino->xattr_names += nm.len;
-
-		ret = add_xattr(st, inum, attrbuf, attrsize, &nm);
+		ret = add_xattr(host_ino, st, inum, name, attrbuf, attrsize);
 		if (ret < 0)
 			goto out_free;
 	}
@@ -1200,6 +1402,133 @@ out_free:
 }
 #endif
 
+#ifdef WITH_SELINUX
+static int inode_add_selinux_xattr(struct ubifs_ino_node *host_ino,
+			   const char *path_name, struct stat *st, ino_t inum)
+{
+	int ret;
+	char *sepath = NULL;
+	char *name;
+	struct qstr nm;
+	unsigned int con_size;
+
+	if (!context || !sehnd) {
+		secontext = NULL;
+		con_size = 0;
+		return 0;
+	}
+
+	if (path_name[strlen(root)] == '/')
+		sepath = strdup(&path_name[strlen(root)]);
+
+	else if (asprintf(&sepath, "/%s", &path_name[strlen(root)]) < 0)
+		sepath = NULL;
+
+	if (!sepath)
+		return sys_err_msg("could not get sepath\n");
+
+	if (selabel_lookup(sehnd, &secontext, sepath, st->st_mode) < 0) {
+		/* Failed to lookup context, assume unlabeled */
+		secontext = strdup("system_u:object_r:unlabeled_t:s0");
+		dbg_msg(2, "missing context: %s\t%s\t%d\n", secontext, sepath,
+				st->st_mode);
+	}
+
+	dbg_msg(2, "appling selinux context on sepath=%s, secontext=%s\n",
+			sepath, secontext);
+	free(sepath);
+	con_size = strlen(secontext) + 1;
+	name = strdup(XATTR_NAME_SELINUX);
+
+	nm.name = name;
+	nm.len = strlen(name);
+	host_ino->xattr_cnt++;
+	host_ino->xattr_size += CALC_DENT_SIZE(nm.len);
+	host_ino->xattr_size += CALC_XATTR_BYTES(con_size);
+	host_ino->xattr_names += nm.len;
+
+	ret = add_xattr(st, inum, secontext, con_size, &nm);
+	if (ret < 0)
+		dbg_msg(2, "add_xattr failed %d\n", ret);
+	return ret;
+}
+
+#else
+static inline int inode_add_selinux_xattr(struct ubifs_ino_node *host_ino,
+			   const char *path_name, struct stat *st, ino_t inum)
+{
+	(void)host_ino;
+	(void)path_name;
+	(void)st;
+	(void)inum;
+
+	return 0;
+}
+#endif
+
+#ifdef WITH_CRYPTO
+static int set_fscrypt_context(struct ubifs_ino_node *host_ino, ino_t inum,
+			       struct stat *host_st,
+			       struct fscrypt_context *fctx)
+{
+	return add_xattr(host_ino, host_st, inum,
+			 xstrdup(UBIFS_XATTR_NAME_ENCRYPTION_CONTEXT),
+			 fctx, sizeof(*fctx));
+}
+
+static int encrypt_symlink(void *dst, void *data, unsigned int data_len,
+			   struct fscrypt_context *fctx)
+{
+	struct fscrypt_symlink_data *sd;
+	void *outbuf;
+	unsigned int link_disk_len;
+	unsigned int cryptlen;
+	int ret;
+
+	link_disk_len = sizeof(struct fscrypt_symlink_data);
+	link_disk_len += fscrypt_fname_encrypted_size(fctx, data_len);
+
+	ret = encrypt_path(&outbuf, data, data_len, UBIFS_MAX_INO_DATA, fctx);
+	if (ret < 0)
+		return ret;
+	cryptlen = ret;
+
+	sd = xzalloc(link_disk_len);
+	memcpy(sd->encrypted_path, outbuf, cryptlen);
+	sd->len = cpu_to_le16(cryptlen);
+	memcpy(dst, sd, link_disk_len);
+	((char *)dst)[link_disk_len - 1] = '\0';
+
+	free(outbuf);
+	free(sd);
+	return link_disk_len;
+}
+#else
+static int set_fscrypt_context(struct ubifs_ino_node *host_ino, ino_t inum,
+			       struct stat *host_st,
+			       struct fscrypt_context *fctx)
+{
+	(void)host_ino;
+	(void)inum;
+	(void)host_st;
+	(void)fctx;
+
+	assert(0);
+	return -1;
+}
+static int encrypt_symlink(void *dst, void *data, unsigned int data_len,
+			   struct fscrypt_context *fctx)
+{
+	(void)dst;
+	(void)data;
+	(void)data_len;
+	(void)fctx;
+
+	assert(0);
+	return -1;
+}
+#endif
+
 /**
  * add_inode - write an inode.
  * @st: stat information of source inode
@@ -1209,7 +1538,8 @@ out_free:
  * @flags: source inode flags
  */
 static int add_inode(struct stat *st, ino_t inum, void *data,
-		     unsigned int data_len, int flags, const char *xattr_path)
+		     unsigned int data_len, int flags, const char *xattr_path,
+		     struct fscrypt_context *fctx)
 {
 	struct ubifs_ino_node *ino = node_buf;
 	union ubifs_key key;
@@ -1227,7 +1557,8 @@ static int add_inode(struct stat *st, ino_t inum, void *data,
 		use_flags |= UBIFS_APPEND_FL;
 	if (flags & FS_DIRSYNC_FL && S_ISDIR(st->st_mode))
 		use_flags |= UBIFS_DIRSYNC_FL;
-
+	if (fctx)
+		use_flags |= UBIFS_CRYPT_FL;
 	memset(ino, 0, UBIFS_INO_NODE_SZ);
 
 	ino_key_init(&key, inum);
@@ -1250,20 +1581,41 @@ static int add_inode(struct stat *st, ino_t inum, void *data,
 	ino->gid        = cpu_to_le32(st->st_gid);
 	ino->mode       = cpu_to_le32(st->st_mode);
 	ino->flags      = cpu_to_le32(use_flags);
-	ino->data_len   = cpu_to_le32(data_len);
 	ino->compr_type = cpu_to_le16(c->default_compr);
-	if (data_len)
-		memcpy(&ino->data, data, data_len);
+	if (data_len) {
+		if (!fctx) {
+			memcpy(&ino->data, data, data_len);
+		} else {
+			/* TODO: what about device files? */
+			if (!S_ISLNK(st->st_mode))
+				return err_msg("Expected symlink");
 
+			ret = encrypt_symlink(&ino->data, data, data_len, fctx);
+			if (ret < 0)
+				return ret;
+			data_len = ret;
+		}
+	}
+	ino->data_len   = cpu_to_le32(data_len);
 	len = UBIFS_INO_NODE_SZ + data_len;
 
 	if (xattr_path) {
+#ifdef WITH_SELINUX
+		ret = inode_add_selinux_xattr(ino, xattr_path, st, inum);
+#else
 		ret = inode_add_xattr(ino, xattr_path, st, inum);
+#endif
 		if (ret < 0)
 			return ret;
 	}
 
-	return add_node(&key, NULL, ino, len);
+	if (fctx) {
+		ret = set_fscrypt_context(ino, inum, st, fctx);
+		if (ret < 0)
+			return ret;
+	}
+
+	return add_node(&key, NULL, 0, ino, len);
 }
 
 /**
@@ -1280,7 +1632,8 @@ static int add_inode(struct stat *st, ino_t inum, void *data,
  * the device table.
  */
 static int add_dir_inode(const char *path_name, DIR *dir, ino_t inum, loff_t size,
-			 unsigned int nlink, struct stat *st)
+			 unsigned int nlink, struct stat *st,
+			 struct fscrypt_context *fctx)
 {
 	int fd, flags = 0;
 
@@ -1295,7 +1648,7 @@ static int add_dir_inode(const char *path_name, DIR *dir, ino_t inum, loff_t siz
 			flags = 0;
 	}
 
-	return add_inode(st, inum, NULL, 0, flags, path_name);
+	return add_inode(st, inum, NULL, 0, flags, path_name, fctx);
 }
 
 /**
@@ -1309,7 +1662,7 @@ static int add_dev_inode(const char *path_name, struct stat *st, ino_t inum, int
 	union ubifs_dev_desc dev;
 
 	dev.huge = cpu_to_le64(makedev(major(st->st_rdev), minor(st->st_rdev)));
-	return add_inode(st, inum, &dev, 8, flags, path_name);
+	return add_inode(st, inum, &dev, 8, flags, path_name, NULL);
 }
 
 /**
@@ -1320,7 +1673,7 @@ static int add_dev_inode(const char *path_name, struct stat *st, ino_t inum, int
  * @flags: source inode flags
  */
 static int add_symlink_inode(const char *path_name, struct stat *st, ino_t inum,
-			     int flags)
+			     int flags, struct fscrypt_context *fctx)
 {
 	char buf[UBIFS_MAX_INO_DATA + 2];
 	ssize_t len;
@@ -1332,7 +1685,17 @@ static int add_symlink_inode(const char *path_name, struct stat *st, ino_t inum,
 	if (len > UBIFS_MAX_INO_DATA)
 		return err_msg("symlink too long for %s", path_name);
 
-	return add_inode(st, inum, buf, len, flags, path_name);
+	return add_inode(st, inum, buf, len, flags, path_name, fctx);
+}
+
+static void set_dent_cookie(struct ubifs_dent_node *dent)
+{
+#ifdef WITH_CRYPTO
+	if (c->double_hash)
+		RAND_bytes((void *)&dent->cookie, sizeof(dent->cookie));
+	else
+#endif
+		dent->cookie = 0;
 }
 
 /**
@@ -1343,12 +1706,13 @@ static int add_symlink_inode(const char *path_name, struct stat *st, ino_t inum,
  * @type: type of the target inode
  */
 static int add_dent_node(ino_t dir_inum, const char *name, ino_t inum,
-			 unsigned char type)
+			 unsigned char type, struct fscrypt_context *fctx)
 {
 	struct ubifs_dent_node *dent = node_buf;
 	union ubifs_key key;
 	struct qstr dname;
 	char *kname;
+	int kname_len;
 	int len;
 
 	dbg_msg(3, "%s ino %lu type %u dir ino %lu", name, (unsigned long)inum,
@@ -1360,22 +1724,40 @@ static int add_dent_node(ino_t dir_inum, const char *name, ino_t inum,
 
 	dent->ch.node_type = UBIFS_DENT_NODE;
 
-	dent_key_init(c, &key, dir_inum, &dname);
-	key_write(&key, dent->key);
 	dent->inum = cpu_to_le64(inum);
 	dent->padding1 = 0;
 	dent->type = type;
-	dent->nlen = cpu_to_le16(dname.len);
-	memcpy(dent->name, dname.name, dname.len);
-	dent->name[dname.len] = '\0';
+	set_dent_cookie(dent);
 
-	len = UBIFS_DENT_NODE_SZ + dname.len + 1;
+	if (!fctx) {
+		kname_len = dname.len;
+		kname = strdup(name);
+		if (!kname)
+			return err_msg("cannot allocate memory");
+	} else {
+		unsigned int max_namelen = UBIFS_MAX_NLEN;
+		int ret;
 
-	kname = strdup(name);
-	if (!kname)
-		return err_msg("cannot allocate memory");
+		if (type == UBIFS_ITYPE_LNK)
+			max_namelen = UBIFS_MAX_INO_DATA;
 
-	return add_node(&key, kname, dent, len);
+		ret = encrypt_path((void **)&kname, dname.name, dname.len,
+				   max_namelen, fctx);
+		if (ret < 0)
+			return ret;
+
+		kname_len = ret;
+	}
+
+	dent_key_init(c, &key, dir_inum, kname, kname_len);
+	dent->nlen = cpu_to_le16(kname_len);
+	memcpy(dent->name, kname, kname_len);
+	dent->name[kname_len] = '\0';
+	len = UBIFS_DENT_NODE_SZ + kname_len + 1;
+
+	key_write(&key, dent->key);
+
+	return add_node(&key, kname, kname_len, dent, len);
 }
 
 /**
@@ -1431,7 +1813,7 @@ static int all_zero(void *buf, int len)
  * @flags: source inode flags
  */
 static int add_file(const char *path_name, struct stat *st, ino_t inum,
-		    int flags)
+		    int flags, struct fscrypt_context *fctx)
 {
 	struct ubifs_data_node *dn = node_buf;
 	void *buf = block_buf;
@@ -1469,13 +1851,12 @@ static int add_file(const char *path_name, struct stat *st, ino_t inum,
 		}
 		/* Make data node */
 		memset(dn, 0, UBIFS_DATA_NODE_SZ);
-		data_key_init(&key, inum, block_no++);
+		data_key_init(&key, inum, block_no);
 		dn->ch.node_type = UBIFS_DATA_NODE;
 		key_write(&key, &dn->key);
-		dn->size = cpu_to_le32(bytes_read);
 		out_len = NODE_BUFFER_SIZE - UBIFS_DATA_NODE_SZ;
 		if (c->default_compr == UBIFS_COMPR_NONE &&
-		    (flags & FS_COMPR_FL))
+		    !c->encrypted && (flags & FS_COMPR_FL))
 #ifdef WITHOUT_LZO
 			use_compr = UBIFS_COMPR_ZLIB;
 #else
@@ -1486,13 +1867,26 @@ static int add_file(const char *path_name, struct stat *st, ino_t inum,
 		compr_type = compress_data(buf, bytes_read, &dn->data,
 					   &out_len, use_compr);
 		dn->compr_type = cpu_to_le16(compr_type);
+		dn->size = cpu_to_le32(bytes_read);
+
+		if (!fctx) {
+			dn->compr_size = 0;
+		} else {
+			ret = encrypt_data_node(fctx, block_no, dn, out_len);
+			if (ret < 0)
+				return ret;
+			out_len = ret;
+		}
+
 		dn_len = UBIFS_DATA_NODE_SZ + out_len;
 		/* Add data node to file system */
-		err = add_node(&key, NULL, dn, dn_len);
+		err = add_node(&key, NULL, 0, dn, dn_len);
 		if (err) {
 			close(fd);
 			return err;
 		}
+
+		block_no++;
 	} while (ret != 0);
 
 	if (close(fd) == -1)
@@ -1501,7 +1895,7 @@ static int add_file(const char *path_name, struct stat *st, ino_t inum,
 		return err_msg("file size changed during writing file '%s'",
 			       path_name);
 
-	return add_inode(st, inum, NULL, 0, flags, path_name);
+	return add_inode(st, inum, NULL, 0, flags, path_name, fctx);
 }
 
 /**
@@ -1514,7 +1908,8 @@ static int add_file(const char *path_name, struct stat *st, ino_t inum,
  *      creating the UBIFS inode
  */
 static int add_non_dir(const char *path_name, ino_t *inum, unsigned int nlink,
-		       unsigned char *type, struct stat *st)
+		       unsigned char *type, struct stat *st,
+		       struct fscrypt_context *fctx)
 {
 	int fd, flags = 0;
 
@@ -1579,17 +1974,17 @@ static int add_non_dir(const char *path_name, ino_t *inum, unsigned int nlink,
 	creat_sqnum = ++c->max_sqnum;
 
 	if (S_ISREG(st->st_mode))
-		return add_file(path_name, st, *inum, flags);
+		return add_file(path_name, st, *inum, flags, fctx);
 	if (S_ISCHR(st->st_mode))
 		return add_dev_inode(path_name, st, *inum, flags);
 	if (S_ISBLK(st->st_mode))
 		return add_dev_inode(path_name, st, *inum, flags);
 	if (S_ISLNK(st->st_mode))
-		return add_symlink_inode(path_name, st, *inum, flags);
+		return add_symlink_inode(path_name, st, *inum, flags, fctx);
 	if (S_ISSOCK(st->st_mode))
-		return add_inode(st, *inum, NULL, 0, flags, NULL);
+		return add_inode(st, *inum, NULL, 0, flags, NULL, NULL);
 	if (S_ISFIFO(st->st_mode))
-		return add_inode(st, *inum, NULL, 0, flags, NULL);
+		return add_inode(st, *inum, NULL, 0, flags, NULL, NULL);
 
 	return err_msg("file '%s' has unknown inode type", path_name);
 }
@@ -1604,7 +1999,7 @@ static int add_non_dir(const char *path_name, ino_t *inum, unsigned int nlink,
  *            created because it is defined in the device table file.
  */
 static int add_directory(const char *dir_name, ino_t dir_inum, struct stat *st,
-			 int existing)
+			 int existing, struct fscrypt_context *fctx)
 {
 	struct dirent *entry;
 	DIR *dir = NULL;
@@ -1640,6 +2035,7 @@ static int add_directory(const char *dir_name, ino_t dir_inum, struct stat *st,
 	 */
 	for (; existing;) {
 		struct stat dent_st;
+		struct fscrypt_context *new_fctx = NULL;
 
 		errno = 0;
 		entry = readdir(dir);
@@ -1695,14 +2091,18 @@ static int add_directory(const char *dir_name, ino_t dir_inum, struct stat *st,
 
 		inum = ++c->highest_inum;
 
+		if (fctx)
+			new_fctx = inherit_fscrypt_context(fctx);
+
 		if (S_ISDIR(dent_st.st_mode)) {
-			err = add_directory(name, inum, &dent_st, 1);
+			err = add_directory(name, inum, &dent_st, 1, new_fctx);
 			if (err)
 				goto out_free;
 			nlink += 1;
 			type = UBIFS_ITYPE_DIR;
 		} else {
-			err = add_non_dir(name, &inum, 0, &type, &dent_st);
+			err = add_non_dir(name, &inum, 0, &type,
+					  &dent_st, new_fctx);
 			if (err)
 				goto out_free;
 		}
@@ -1711,11 +2111,14 @@ static int add_directory(const char *dir_name, ino_t dir_inum, struct stat *st,
 		if (err)
 			goto out_free;
 
-		err = add_dent_node(dir_inum, entry->d_name, inum, type);
+		err = add_dent_node(dir_inum, entry->d_name, inum, type, fctx);
 		if (err)
 			goto out_free;
 		size += ALIGN(UBIFS_DENT_NODE_SZ + strlen(entry->d_name) + 1,
 			      8);
+
+		if (new_fctx)
+			free_fscrypt_context(new_fctx);
 	}
 
 	/*
@@ -1725,6 +2128,7 @@ static int add_directory(const char *dir_name, ino_t dir_inum, struct stat *st,
 	nh_elt = first_name_htbl_element(ph_elt, &itr);
 	while (nh_elt) {
 		struct stat fake_st;
+		struct fscrypt_context *new_fctx = NULL;
 
 		/*
 		 * We prohibit creating regular files using the device table,
@@ -1742,7 +2146,7 @@ static int add_directory(const char *dir_name, ino_t dir_inum, struct stat *st,
 
 		memcpy(&fake_st, &root_st, sizeof(struct stat));
 		fake_st.st_uid  = nh_elt->uid;
-		fake_st.st_uid  = nh_elt->uid;
+		fake_st.st_gid  = nh_elt->gid;
 		fake_st.st_mode = nh_elt->mode;
 		fake_st.st_rdev = nh_elt->dev;
 		fake_st.st_nlink = 1;
@@ -1751,14 +2155,17 @@ static int add_directory(const char *dir_name, ino_t dir_inum, struct stat *st,
 		name = make_path(dir_name, nh_elt->name);
 		inum = ++c->highest_inum;
 
+		new_fctx = inherit_fscrypt_context(fctx);
+
 		if (S_ISDIR(nh_elt->mode)) {
-			err = add_directory(name, inum, &fake_st, 0);
+			err = add_directory(name, inum, &fake_st, 0, new_fctx);
 			if (err)
 				goto out_free;
 			nlink += 1;
 			type = UBIFS_ITYPE_DIR;
 		} else {
-			err = add_non_dir(name, &inum, 0, &type, &fake_st);
+			err = add_non_dir(name, &inum, 0, &type,
+					  &fake_st, new_fctx);
 			if (err)
 				goto out_free;
 		}
@@ -1767,17 +2174,20 @@ static int add_directory(const char *dir_name, ino_t dir_inum, struct stat *st,
 		if (err)
 			goto out_free;
 
-		err = add_dent_node(dir_inum, nh_elt->name, inum, type);
+		err = add_dent_node(dir_inum, nh_elt->name, inum, type, fctx);
 		if (err)
 			goto out_free;
 		size += ALIGN(UBIFS_DENT_NODE_SZ + strlen(nh_elt->name) + 1, 8);
 
 		nh_elt = next_name_htbl_element(ph_elt, &itr);
+		if (new_fctx)
+			free_fscrypt_context(new_fctx);
 	}
 
 	creat_sqnum = dir_creat_sqnum;
 
-	err = add_dir_inode(dir ? dir_name : NULL, dir, dir_inum, size, nlink, st);
+	err = add_dir_inode(dir ? dir_name : NULL, dir, dir_inum, size,
+			    nlink, st, fctx);
 	if (err)
 		goto out_free;
 
@@ -1808,7 +2218,7 @@ static int add_multi_linked_files(void)
 		for (im = hash_table[i]; im; im = im->next) {
 			dbg_msg(2, "%s", im->path_name);
 			err = add_non_dir(im->path_name, &im->use_inum,
-					  im->use_nlink, &type, &im->st);
+					  im->use_nlink, &type, &im->st, NULL);
 			if (err)
 				return err;
 		}
@@ -1823,16 +2233,31 @@ static int write_data(void)
 {
 	int err;
 	mode_t mode = S_IFDIR | S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH;
+	struct path_htbl_element *ph_elt;
+	struct name_htbl_element *nh_elt;
 
 	if (root) {
 		err = stat(root, &root_st);
 		if (err)
 			return sys_err_msg("bad root file-system directory '%s'",
 					   root);
+		if (squash_owner)
+			root_st.st_uid = root_st.st_gid = 0;
 	} else {
 		root_st.st_mtime = time(NULL);
 		root_st.st_atime = root_st.st_ctime = root_st.st_mtime;
 		root_st.st_mode = mode;
+	}
+
+	/*
+	 * Check for root entry and update permissions if it exists. This will
+	 * also remove the entry from the device table list.
+	 */
+	ph_elt = devtbl_find_path("/");
+	if (ph_elt) {
+		nh_elt = devtbl_find_name(ph_elt, "");
+		if (nh_elt && override_attributes(&root_st, ph_elt, nh_elt))
+			return -1;
 	}
 
 	head_flags = 0;
@@ -1841,7 +2266,7 @@ static int write_data(void)
 	if (err)
 		return err;
 
-	err = add_directory(root, UBIFS_ROOT_INO, &root_st, !!root);
+	err = add_directory(root, UBIFS_ROOT_INO, &root_st, !!root, root_fctx);
 	if (err)
 		return err;
 	err = add_multi_linked_files();
@@ -1850,13 +2275,13 @@ static int write_data(void)
 	return flush_nodes();
 }
 
-static int namecmp(const char *name1, const char *name2)
+static int namecmp(const struct idx_entry *e1, const struct idx_entry *e2)
 {
-	size_t len1 = strlen(name1), len2 = strlen(name2);
+	size_t len1 = e1->name_len, len2 = e2->name_len;
 	size_t clen = (len1 < len2) ? len1 : len2;
 	int cmp;
 
-	cmp = memcmp(name1, name2, clen);
+	cmp = memcmp(e1->name, e2->name, clen);
 	if (cmp)
 		return cmp;
 	return (len1 < len2) ? -1 : 1;
@@ -1871,7 +2296,7 @@ static int cmp_idx(const void *a, const void *b)
 	cmp = keys_cmp(&e1->key, &e2->key);
 	if (cmp)
 		return cmp;
-	return namecmp(e1->name, e2->name);
+	return namecmp(e1, e2);
 }
 
 /**
@@ -1917,6 +2342,7 @@ static int write_index(void)
 	struct ubifs_idx_node *idx;
 	struct ubifs_branch *br;
 	int child_cnt = 0, j, level, blnum, boffs, blen, blast_len, err;
+	uint8_t *hashes;
 
 	dbg_msg(1, "leaf node count: %zd", idx_cnt);
 
@@ -1940,6 +2366,9 @@ static int write_index(void)
 	cnt = idx_cnt / c->fanout;
 	if (idx_cnt % c->fanout)
 		cnt += 1;
+
+	hashes = xmalloc(c->hash_len * cnt);
+
 	p = idx_ptr;
 	blnum = head_lnum;
 	boffs = head_offs;
@@ -1964,8 +2393,11 @@ static int write_index(void)
 			br->lnum = cpu_to_le32((*p)->lnum);
 			br->offs = cpu_to_le32((*p)->offs);
 			br->len = cpu_to_le32((*p)->len);
+			memcpy(ubifs_branch_hash(br), (*p)->hash, c->hash_len);
 		}
 		add_idx_node(idx, child_cnt);
+
+		ubifs_node_calc_hash(idx, hashes + i * c->hash_len);
 	}
 	/* Write level 1 index nodes and above */
 	level = 0;
@@ -2042,14 +2474,23 @@ static int write_index(void)
 				 */
 				boffs += ALIGN(blen, 8);
 				p += pstep;
+
+				memcpy(ubifs_branch_hash(br),
+				       hashes + bn * c->hash_len,
+				       c->hash_len);
 			}
 			add_idx_node(idx, child_cnt);
+			ubifs_node_calc_hash(idx, hashes + i * c->hash_len);
 		}
 	}
 
+	memcpy(c->root_idx_hash, hashes, c->hash_len);
+
 	/* Free stuff */
-	for (i = 0; i < idx_cnt; i++)
+	for (i = 0; i < idx_cnt; i++) {
+		free(idx_ptr[i]->name);
 		free(idx_ptr[i]);
+	}
 	free(idx_ptr);
 	free(idx);
 
@@ -2115,45 +2556,89 @@ static int finalize_leb_cnt(void)
 	return 0;
 }
 
+static int ubifs_format_version(void)
+{
+	if (c->double_hash || c->encrypted)
+		return 5;
+
+	/* Default */
+	return 4;
+}
+
 /**
  * write_super - write the super block.
  */
 static int write_super(void)
 {
-	struct ubifs_sb_node sup;
+	void *buf;
+	struct ubifs_sb_node *sup;
+	struct ubifs_sig_node *sig;
+	int err, len;
 
-	memset(&sup, 0, UBIFS_SB_NODE_SZ);
+	buf = xzalloc(c->leb_size);
 
-	sup.ch.node_type  = UBIFS_SB_NODE;
-	sup.key_hash      = c->key_hash_type;
-	sup.min_io_size   = cpu_to_le32(c->min_io_size);
-	sup.leb_size      = cpu_to_le32(c->leb_size);
-	sup.leb_cnt       = cpu_to_le32(c->leb_cnt);
-	sup.max_leb_cnt   = cpu_to_le32(c->max_leb_cnt);
-	sup.max_bud_bytes = cpu_to_le64(c->max_bud_bytes);
-	sup.log_lebs      = cpu_to_le32(c->log_lebs);
-	sup.lpt_lebs      = cpu_to_le32(c->lpt_lebs);
-	sup.orph_lebs     = cpu_to_le32(c->orph_lebs);
-	sup.jhead_cnt     = cpu_to_le32(c->jhead_cnt);
-	sup.fanout        = cpu_to_le32(c->fanout);
-	sup.lsave_cnt     = cpu_to_le32(c->lsave_cnt);
-	sup.fmt_version   = cpu_to_le32(UBIFS_FORMAT_VERSION);
-	sup.default_compr = cpu_to_le16(c->default_compr);
-	sup.rp_size       = cpu_to_le64(c->rp_size);
-	sup.time_gran     = cpu_to_le32(DEFAULT_TIME_GRAN);
-	uuid_generate_random(sup.uuid);
+	sup = buf;
+	sig = buf + UBIFS_SB_NODE_SZ;
+
+	sup->ch.node_type  = UBIFS_SB_NODE;
+	sup->key_hash      = c->key_hash_type;
+	sup->min_io_size   = cpu_to_le32(c->min_io_size);
+	sup->leb_size      = cpu_to_le32(c->leb_size);
+	sup->leb_cnt       = cpu_to_le32(c->leb_cnt);
+	sup->max_leb_cnt   = cpu_to_le32(c->max_leb_cnt);
+	sup->max_bud_bytes = cpu_to_le64(c->max_bud_bytes);
+	sup->log_lebs      = cpu_to_le32(c->log_lebs);
+	sup->lpt_lebs      = cpu_to_le32(c->lpt_lebs);
+	sup->orph_lebs     = cpu_to_le32(c->orph_lebs);
+	sup->jhead_cnt     = cpu_to_le32(c->jhead_cnt);
+	sup->fanout        = cpu_to_le32(c->fanout);
+	sup->lsave_cnt     = cpu_to_le32(c->lsave_cnt);
+	sup->fmt_version   = cpu_to_le32(ubifs_format_version());
+	sup->default_compr = cpu_to_le16(c->default_compr);
+	sup->rp_size       = cpu_to_le64(c->rp_size);
+	sup->time_gran     = cpu_to_le32(DEFAULT_TIME_GRAN);
+	sup->hash_algo     = cpu_to_le16(c->hash_algo);
+	uuid_generate_random(sup->uuid);
+
 	if (verbose) {
 		char s[40];
 
-		uuid_unparse_upper(sup.uuid, s);
+		uuid_unparse_upper(sup->uuid, s);
 		printf("\tUUID:         %s\n", s);
 	}
 	if (c->big_lpt)
-		sup.flags |= cpu_to_le32(UBIFS_FLG_BIGLPT);
+		sup->flags |= cpu_to_le32(UBIFS_FLG_BIGLPT);
 	if (c->space_fixup)
-		sup.flags |= cpu_to_le32(UBIFS_FLG_SPACE_FIXUP);
+		sup->flags |= cpu_to_le32(UBIFS_FLG_SPACE_FIXUP);
+	if (c->double_hash)
+		sup->flags |= cpu_to_le32(UBIFS_FLG_DOUBLE_HASH);
+	if (c->encrypted)
+		sup->flags |= cpu_to_le32(UBIFS_FLG_ENCRYPTION);
+	if (authenticated()) {
+		sup->flags |= cpu_to_le32(UBIFS_FLG_AUTHENTICATION);
+		memcpy(sup->hash_mst, c->mst_hash, c->hash_len);
+	}
 
-	return write_node(&sup, UBIFS_SB_NODE_SZ, UBIFS_SB_LNUM);
+	prepare_node(sup, UBIFS_SB_NODE_SZ);
+
+	err = sign_superblock_node(sup);
+	if (err)
+		goto out;
+
+	sig = (void *)(sup + 1);
+	prepare_node(sig, UBIFS_SIG_NODE_SZ + le32_to_cpu(sig->len));
+
+	len = do_pad(sig, UBIFS_SIG_NODE_SZ + le32_to_cpu(sig->len));
+
+	err = write_leb(UBIFS_SB_LNUM, UBIFS_SB_NODE_SZ + len, sup);
+	if (err)
+		goto out;
+
+	err = 0;
+out:
+	free(buf);
+
+	return err;
 }
 
 /**
@@ -2196,6 +2681,11 @@ static int write_master(void)
 	mst.total_dark   = cpu_to_le64(c->lst.total_dark);
 	mst.leb_cnt      = cpu_to_le32(c->leb_cnt);
 
+	if (authenticated()) {
+		memcpy(mst.hash_root_idx, c->root_idx_hash, c->hash_len);
+		memcpy(mst.hash_lpt, c->lpt_hash, c->hash_len);
+	}
+
 	err = write_node(&mst, UBIFS_MST_NODE_SZ, UBIFS_MST_LNUM);
 	if (err)
 		return err;
@@ -2203,6 +2693,8 @@ static int write_master(void)
 	err = write_node(&mst, UBIFS_MST_NODE_SZ, UBIFS_MST_LNUM + 1);
 	if (err)
 		return err;
+
+	mst_node_calc_hash(&mst, c->mst_hash);
 
 	return 0;
 }
@@ -2398,6 +2890,18 @@ static int init(void)
 	if (err)
 		return err;
 
+#ifdef WITH_SELINUX
+	if (context) {
+		struct selinux_opt seopts[] = {
+			{ SELABEL_OPT_PATH, context }
+		};
+
+		sehnd = selabel_open(SELABEL_CTX_FILE, seopts, 1);
+		if (!sehnd)
+			return err_msg("could not open selinux context\n");
+	}
+#endif
+
 	return 0;
 }
 
@@ -2422,6 +2926,12 @@ static void destroy_hash_table(void)
  */
 static void deinit(void)
 {
+
+#ifdef WITH_SELINUX
+	if (sehnd)
+		selabel_close(sehnd);
+#endif
+
 	free(c->lpt);
 	free(c->ltab);
 	free(leb_buf);
@@ -2450,6 +2960,10 @@ static int mkfs(void)
 	if (err)
 		goto out;
 
+	err = init_authentication();
+	if (err)
+		goto out;
+
 	err = write_data();
 	if (err)
 		goto out;
@@ -2470,11 +2984,11 @@ static int mkfs(void)
 	if (err)
 		goto out;
 
-	err = write_super();
+	err = write_master();
 	if (err)
 		goto out;
 
-	err = write_master();
+	err = write_super();
 	if (err)
 		goto out;
 
@@ -2492,6 +3006,9 @@ out:
 int main(int argc, char *argv[])
 {
 	int err;
+
+	if (crypto_init())
+		return -1;
 
 	err = get_options(argc, argv);
 	if (err)
@@ -2514,5 +3031,6 @@ int main(int argc, char *argv[])
 	if (verbose)
 		printf("Success!\n");
 
+	crypto_cleanup();
 	return 0;
 }

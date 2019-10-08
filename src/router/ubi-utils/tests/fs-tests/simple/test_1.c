@@ -28,7 +28,7 @@
 
 #include "tests.h"
 
-void test_1(void)
+static void test_1(void)
 {
 	int fd;
 	pid_t pid;
@@ -112,14 +112,14 @@ void test_1(void)
 
 /* Title of this test */
 
-const char *test_1_get_title(void)
+static const char *test_1_get_title(void)
 {
 	return "Fill file system while holding deleted big file descriptor";
 }
 
 /* Description of this test */
 
-const char *test_1_get_description(void)
+static const char *test_1_get_description(void)
 {
 	return
 		"Create a directory named test_1_test_dir_pid, where " \

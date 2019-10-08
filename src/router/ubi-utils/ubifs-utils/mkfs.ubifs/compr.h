@@ -36,6 +36,7 @@ enum compression_type
 	MKFS_UBIFS_COMPR_NONE,
 	MKFS_UBIFS_COMPR_LZO,
 	MKFS_UBIFS_COMPR_ZLIB,
+	MKFS_UBIFS_COMPR_ZSTD,
 };
 
 int compress_data(void *in_buf, size_t in_len, void *out_buf, size_t *out_len,

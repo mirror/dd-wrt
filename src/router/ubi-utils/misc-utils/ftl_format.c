@@ -45,6 +45,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <time.h>
+#include <getopt.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 
@@ -253,9 +254,17 @@ static int format_partition(int fd, int quiet, int interrogate,
 
 /*====================================================================*/
 
+static const struct option long_opts[] = {
+	{"help", no_argument, 0, 'h'},
+	{"version", no_argument, 0, 'V'},
+	{0, 0, 0, 0},
+};
+
+static const char *short_opts = "qir:s:b:Vh";
+
 int main(int argc, char *argv[])
 {
-	int quiet, interrogate, reserve;
+	int quiet, interrogate, reserve, c;
 	int optch, errflg, fd, ret;
 	u_int spare, bootsize;
 	char *s;
@@ -269,7 +278,7 @@ int main(int argc, char *argv[])
 	errflg = 0;
 	bootsize = 0;
 
-	while ((optch = getopt(argc, argv, "qir:s:b:")) != -1) {
+	while ((optch = getopt_long(argc, argv, short_opts, long_opts, &c)) != -1) {
 		switch (optch) {
 			case 'q':
 				quiet = 1; break;
@@ -284,14 +293,19 @@ int main(int argc, char *argv[])
 				if ((*s == 'k') || (*s == 'K'))
 					bootsize *= 1024;
 				break;
-			default:
+			case 'V':
+				common_print_version();
+				exit(EXIT_SUCCESS);
+			case 'h':
 				errflg = 1; break;
+			default:
+				errflg = -1; break;
 		}
 	}
 	if (errflg || (optind != argc-1)) {
 		fprintf(stderr, "usage: %s [-q] [-i] [-s spare-blocks]"
 				" [-r reserve-percent] [-b bootsize] device\n", PROGRAM_NAME);
-		exit(EXIT_FAILURE);
+		exit(errflg > 0 ? EXIT_SUCCESS : EXIT_FAILURE);
 	}
 
 	if (stat(argv[optind], &buf) != 0) {
@@ -319,6 +333,5 @@ int main(int argc, char *argv[])
 	}
 	close(fd);
 
-	exit((ret) ? EXIT_FAILURE : EXIT_SUCCESS);
-	return 0;
+	return ret ? EXIT_FAILURE : EXIT_SUCCESS;
 }
