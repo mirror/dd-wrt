@@ -71,7 +71,7 @@ int pcibios_init(void);
 
 void ap91_pci_init(u8 *cal_data, u8 *mac_addr)
 {
-#ifndef CONFIG_ARCHERC7
+#if !defined(CONFIG_ARCHERC7) || defined(CONFIG_WDR4900V2)
 #ifndef CONFIG_DIR859
 #ifndef CONFIG_LIMA
 #ifndef CONFIG_MMS344
