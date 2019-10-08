@@ -1197,8 +1197,25 @@ int insmod(char *module)
 	char word[256];
 	char *next, *wordlist;
 	int ret = 0;
+	char *target;
 	wordlist = module;
 	foreach(word, wordlist, next) {
+		target = word;
+		if (nvram_match("module_testing", "1")) {
+			char check[256];
+			sprintf(check, "/jffs/modules_debug/%s.ko", word);
+			FILE *fp = fopen(check, "rb");
+			if (fp) {
+				fclose(fp);
+				target = check;
+			}
+			sprintf(check, "/jffs/modules_debug/%s", word);
+			FILE *fp = fopen(check, "rb");
+			if (fp) {
+				fclose(fp);
+				target = check;
+			}
+		}
 		ret |= _evalpid((char *const[]) {
 				"insmod", word, NULL
 				}, ">/dev/null", 0, NULL);
