@@ -1217,7 +1217,7 @@ int insmod(char *module)
 			}
 		}
 		ret |= _evalpid((char *const[]) {
-				"insmod", word, NULL
+				"insmod", target, NULL
 				}, ">/dev/null", 0, NULL);
 	}
 	return ret;
