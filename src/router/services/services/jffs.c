@@ -41,7 +41,7 @@ void start_jffs2(void)
 #else
 	int mtd = getMTD("ddwrt");
 #endif
-	int ubidev = 0;
+	int ubidev = 1;
 
 #ifdef HAVE_IPQ806X
 	int brand = getRouterBrand();
@@ -49,10 +49,10 @@ void start_jffs2(void)
 	case ROUTER_TRENDNET_TEW827:
 	case ROUTER_ASROCK_G10:
 	case ROUTER_LINKSYS_EA8500:
-		ubidev = 0;
+		ubidev = 1;
 		break;
 	default:
-		ubidev = 1;
+		ubidev = 0;
 		break;
 	}
 #endif
