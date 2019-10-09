@@ -40,12 +40,12 @@ static int usb_add_ufd(char *dev);
 #define DUMPFILE	"/tmp/disktype.dump"
 #define DUMPFILE_PART	"/tmp/parttype.dump"
 
-static void run_on_mount(char *path)
+static void run_on_mount(char *p)
 {
 	struct stat tmp_stat;
 	char path[128];
 	if (!nvram_match("usb_runonmount", "")) {
-		sprintf(path, "%s %s", nvram_safe_get("usb_runonmount"), path);
+		snprintf(path, sizeof(path), "%s %s", nvram_safe_get("usb_runonmount"), p);
 		if (stat(path, &tmp_stat) == 0)	//file exists
 		{
 			setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/bin:/opt/bin:/opt/sbin:/opt/usr/bin:/opt/usr/sbin", 1);
