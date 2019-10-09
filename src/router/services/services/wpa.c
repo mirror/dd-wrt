@@ -320,7 +320,6 @@ static void start_nas_wan(int c)
 	}
 }
 
-
 static void stop_nas_process(void)
 {
 	int ret = 0;
@@ -359,7 +358,6 @@ static void stop_nas_process(void)
 	return;
 }
 
-
 #ifdef HAVE_WPA_SUPPLICANT
 extern void setupSupplicant(char *prefix);
 #endif
@@ -372,7 +370,7 @@ void start_nas(void)
 		return;
 	}
 	check = fopen("/tmp/.startnas", "wb");
-	putc('f',check);
+	putc('f', check);
 	fclose(check);
 	sleep(1);
 	char *iface;
@@ -381,7 +379,7 @@ void start_nas(void)
 	int c;
 	int deadcount;
 	int radiostate = -1;
-	stop_nas_process(); // ensure that no nas is running
+	stop_nas_process();	// ensure that no nas is running
 #ifdef HAVE_QTN
 	cnt = 1;
 #endif
@@ -441,13 +439,10 @@ void start_nas(void)
 //      }
 	unlink("/tmp/.startnas");
 	check = fopen("/tmp/.startmon", "wb");
-	putc('f',check);
+	putc('f', check);
 	fclose(check);
 	return;
 }
-
-
-
 
 static void start_nas_single(char *type, char *prefix)
 {
