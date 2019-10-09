@@ -1,4 +1,20 @@
 ------------------------------------------------------------------------
+r4807 | brainslayer | 2019-10-10 00:09:42 +0400 (Thu, 10 Oct 2019) | 1 line
+
+update mt76 code
+------------------------------------------------------------------------
+r4806 | brainslayer | 2019-10-10 00:03:03 +0400 (Thu, 10 Oct 2019) | 1 line
+
+latest minstrel code with mods
+------------------------------------------------------------------------
+r4805 | brainslayer | 2019-10-10 00:01:22 +0400 (Thu, 10 Oct 2019) | 1 line
+
+latest minstrel code with mods
+------------------------------------------------------------------------
+r4804 | brainslayer | 2019-10-09 15:46:06 +0400 (Wed, 09 Oct 2019) | 1 line
+
+increase accuracy. only step dynack if enough packets are served
+------------------------------------------------------------------------
 r4803 | brainslayer | 2019-10-09 04:25:58 +0400 (Wed, 09 Oct 2019) | 1 line
 
 some changes on dynack algorithm for ath10k. still experimental and not ready to be used
