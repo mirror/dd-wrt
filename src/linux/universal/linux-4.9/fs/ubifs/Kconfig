@@ -38,6 +38,14 @@ config UBIFS_FS_ZLIB
 	help
 	  Zlib compresses better than LZO but it is slower. Say 'Y' if unsure.
 
+config UBIFS_FS_XZ
+	bool "XZ decompression support" if UBIFS_FS_ADVANCED_COMPR
+	depends on UBIFS_FS
+	default y
+	help
+	  XZ compresses better the ZLIB but it is slower..
+	  Say 'Y' if unsure.
+
 config UBIFS_ATIME_SUPPORT
 	bool "Access time support" if UBIFS_FS
 	depends on UBIFS_FS
