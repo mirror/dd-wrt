@@ -40,12 +40,12 @@ static int usb_add_ufd(char *link, int host, char *devpath, int mode);
 #define PARTFILE	"/tmp/part.dump"
 #define MOUNTSTAT	"/tmp/mounting"
 
-static void run_on_mount(void)
+static void run_on_mount(char *path)
 {
 	struct stat tmp_stat;
 	char path[128];
 	if (!nvram_match("usb_runonmount", "")) {
-		sprintf(path, "%s", nvram_safe_get("usb_runonmount"));
+		sprintf(path, "%s %s", nvram_safe_get("usb_runonmount"), path);
 		if (stat(path, &tmp_stat) == 0)	//file exists
 		{
 			setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/bin:/opt/bin:/opt/sbin:/opt/usr/bin:/opt/usr/sbin", 1);
@@ -222,8 +222,8 @@ void start_hotplug_block(void)
 			sleep(3);
 		}
 
-		sysprintf("/usr/sbin/disktype /dev/%s", part);
 		sprintf(devname, "/dev/%s", part);
+		sysprintf("/usr/sbin/disktype %s", devname);
 		eval("hdparm", "-S", "242", devname);
 		eval("blockdev", "--setra", nvram_safe_get("drive_ra"), devname);
 		if (!strcmp(action, "add"))
@@ -233,7 +233,6 @@ void start_hotplug_block(void)
 
 		if (!strcmp(action, "add")) {
 			//runs user specified script
-			run_on_mount();
 
 			//finally start services again after mounting all partitions for this drive
 			usb_start_services();
@@ -338,6 +337,8 @@ static void do_mount(char *fs, char *path, char *mount_point, char *dev)
 	} else {
 		sysprintf("echo \"<b>%s</b> mounted to <b>%s</b><hr>\"  >> /tmp/disk/%s", path, mount_point, dev);
 	}
+	if (!ret)
+		run_on_mount(path);
 }
 
  /* 
@@ -592,11 +593,9 @@ static int usb_add_ufd(char *link, int host, char *devpath, int mode)
 				if (strncmp(entry->d_name, "disc", 4) && strncmp(entry->d_name, ".", 1)) {	//only get partitions
 					usb_process_path(part_link, host, entry->d_name, devpath);
 				}
-
 			}
 			closedir(dir);
 		}
-		run_on_mount();
 		usb_start_services();
 	}
 

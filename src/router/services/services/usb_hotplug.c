@@ -40,6 +40,23 @@ static int usb_add_ufd(char *dev);
 #define DUMPFILE	"/tmp/disktype.dump"
 #define DUMPFILE_PART	"/tmp/parttype.dump"
 
+static void run_on_mount(char *path)
+{
+	struct stat tmp_stat;
+	char path[128];
+	if (!nvram_match("usb_runonmount", "")) {
+		sprintf(path, "%s %s", nvram_safe_get("usb_runonmount"), path);
+		if (stat(path, &tmp_stat) == 0)	//file exists
+		{
+			setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/bin:/opt/bin:/opt/sbin:/opt/usr/bin:/opt/usr/sbin", 1);
+			setenv("LD_LIBRARY_PATH", "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib", 1);
+
+			system(path);
+		}
+	}
+	return;
+}
+
 void stop_hotplug_usb(void)
 {
 }
@@ -283,6 +300,8 @@ static int usb_process_path(char *path, char *fs, char *target)
 	eval("startservice_f", "rsync_hotplug");
 	eval("startservice_f", "ftpsrv_hotplug");
 	eval("startservice_f", "dlna_hotplug");
+	if (ret == 0)
+		run_on_mount(path);
 	return ret;
 }
 
@@ -558,8 +577,9 @@ static int usb_add_ufd(char *devpath)
 						sprintf(targetname, "disc%s", entry->d_name);
 					else
 						sprintf(targetname, "%s", entry->d_name);
-					if (usb_process_path(path, fs, targetname) == 0)
+					if (usb_process_path(path, fs, targetname) == 0) {
 						is_mounted = 1;
+					}
 				}
 
 			}
@@ -573,19 +593,6 @@ static int usb_add_ufd(char *devpath)
 				else if (!is_partmounted)
 					fprintf(fp, "Status: <b>Not mounted - Unsupported file system or disk not formated</b>\n");
 				fclose(fp);
-			}
-
-			if (is_mounted && !nvram_match("usb_runonmount", "")) {
-				sprintf(path, "%s", nvram_safe_get("usb_runonmount"));
-				if (stat(path, &tmp_stat) == 0)	//file exists
-				{
-					setenv("PATH",
-					       "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/bin:/opt/bin:/opt/sbin:/opt/usr/bin:/opt/usr/sbin",
-					       1);
-					setenv("LD_LIBRARY_PATH", "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib", 1);
-
-					system(path);
-				}
 			}
 		}
 		if (i < 4)
