@@ -1824,6 +1824,9 @@ service.vpnd_deamon="Daemon";
 service.vpnd_lzoyes="Yes";
 service.vpnd_lzono="No";
 service.vpnd_lzoadaptive="Adaptive";
+service.vpn_tls_btn="tls-key"
+service.vpn_tls_crypt="tls-crypt"
+service.vpn_tls_auth="tls-auth"
 
 //help page
 var hservice=new Object();
