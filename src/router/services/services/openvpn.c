@@ -192,8 +192,12 @@ void start_openvpnserver(void)
 			fprintf(fp, "server-bridge\n" "dev tap2\n");
 		else
 			fprintf(fp, "server-bridge nogw\n" "dev tap2\n");
-		if (*(nvram_safe_get("openvpn_tlsauth")))
-			fprintf(fp, "tls-auth /tmp/openvpn/ta.key 0\n");
+		if (*(nvram_safe_get("openvpn_tlsauth"))) {
+			if (nvram_matchi("openvpn_tls_btn", 1)) 
+				fprintf(fp, "tls-crypt /tmp/openvpn/ta.key\n"); //egc: tls_btn 1 is tls-crypt
+			else
+				fprintf(fp, "tls-auth /tmp/openvpn/ta.key 0\n");
+		}
 		if (*(nvram_safe_get("openvpn_crl")))
 			fprintf(fp, "crl-verify /tmp/openvpn/ca.crl\n");
 		/* for QOS */
@@ -461,8 +465,12 @@ void start_openvpn(void)
 		fprintf(fp, "fast-io\n");	//experimental!improving CPU efficiency by 5%-10%
 //      if (nvram_match("openvpncl_tuntap", "tun"))
 //              fprintf(fp, "tun-ipv6\n");      //enable ipv6 support.
-	if (*(nvram_safe_get("openvpncl_tlsauth")))
-		fprintf(fp, "tls-auth /tmp/openvpncl/ta.key 1\n");
+	if (*(nvram_safe_get("openvpncl_tlsauth"))) {
+		if (nvram_matchi("openvpncl_tls_btn", 1)) 
+			fprintf(fp, "tls-crypt /tmp/openvpncl/ta.key\n"); //egc: tls_btn 1 is tls-crypt
+		else
+			fprintf(fp, "tls-auth /tmp/openvpncl/ta.key 1\n");
+	}
 	if (nvram_invmatchi("openvpncl_tlscip", 0))
 		fprintf(fp, "tls-cipher %s\n", nvram_safe_get("openvpncl_tlscip"));
 	/* for QOS */
