@@ -148,7 +148,26 @@ void start_dnsmasq(void)
 		stop_dnsmasq();
 		return;
 	}
-
+	if (nvram_state("static_leases")) {
+		char *name;
+		char *buf;
+		int NVRAMSPACE = nvram_size();
+		if (!(buf = malloc(NVRAMSPACE)))
+			goto out;
+		nvram_getall(buf, NVRAMSPACE);
+		for (name = buf; *name; name += strlen(name) + 1) {
+			if (strstr(name, "dnsmasq_lease_")) {
+				char buf[128];
+				strncpy(buf, name, 128);
+				char *p = strchr(buf, '=');
+				if (p)
+					*p = 0;
+				nvram_unset(buf);
+			}
+		}
+		nvram_commit();
+	}
+      out:;
 	update_timezone();
 
 #ifdef HAVE_DNSCRYPT
