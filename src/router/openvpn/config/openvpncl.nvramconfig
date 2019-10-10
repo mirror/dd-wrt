@@ -31,3 +31,4 @@
  "openvpncl_upauth" "User Password Authentication" "CHOICE" "2" "0" "1"  "FALSE" "0"
  "openvpncl_user" "Username" "NULL" "FALSE" "0"
  "openvpncl_pass" "Password" "NULL" "FALSE" "0"
+ "openvpncl_tls_btn" "TLS key choice" "CHOICE" "2" "0" "1" "FALSE" "0"

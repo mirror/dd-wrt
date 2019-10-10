@@ -159,6 +159,11 @@
 				<div class="label"><% tran("service.vpn_certtype"); %></div>
 				<input class="spaceradio" type="checkbox" value="1" name="_openvpncl_certtype" <% nvc("openvpncl_certtype","1"); %> />
 			</div>
+			<div class="setting">
+				<div class="label"><% tran("service.vpn_tls_btn"); %></div>
+				<input class="spaceradio" type="radio" name="openvpncl_tls_btn" value="1" <% nvc("openvpncl_tls_btn", "1"); %> /><% tran("service.vpn_tls_crypt"); %>&nbsp;
+				<input class="spaceradio" type="radio" name="openvpncl_tls_btn" value="0" <% nvc("openvpncl_tls_btn", "0"); %> /><% tran("service.vpn_tls_auth"); %>
+			</div>
 			<div class="setting">		
 				<div class="label"><% tran("service.vpnd_tlsauth"); %></div>
 				<textarea cols="60" rows="2" id="openvpncl_tlsauth" name="openvpncl_tlsauth"> </textarea>
