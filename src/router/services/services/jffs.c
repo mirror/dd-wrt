@@ -74,7 +74,7 @@ void start_jffs2(void)
 			itworked = eval("ubidetach", "-p", dev);
 			itworked = eval("mtd", "erase", dev);
 			itworked = eval("ubiattach", "-p", dev);
-			itworked = eval("ubimkvol", ubidev, "-N", "ddwrt", "-m");
+			itworked = eval("ubimkvol", udev, "-N", "ddwrt", "-m");
 #else
 			itworked = eval("mtd", "erase", rwpart);
 #endif
