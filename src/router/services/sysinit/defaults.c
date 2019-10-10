@@ -3128,6 +3128,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "openvpncl_sec", "1" },
 	{ "openvpncl_scramble", "off" },
 	{ "openvpncl_scrmblpw", "o54a72ReutDK" },
+    { "openvpncl_tls_btn", "0" },
 	{ "openvpn_enable", "0" },
 	{ "openvpn_net", "0.0.0.0" },
 	{ "openvpn_mask", "0.0.0.0" },
@@ -3169,6 +3170,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "openvpn_dhcpbl", "0" },
 	{ "openvpn_scramble", "off" },
 	{ "openvpn_scrmblpw", "o54a72ReutDK" },
+	{ "openvpn_tls_btn", "0" },
 #endif
 #ifdef HAVE_KODATA
 	{ "newhttp_username", "bJ/GddyoJuiU2" },
