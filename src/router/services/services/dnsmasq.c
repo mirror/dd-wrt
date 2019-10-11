@@ -148,7 +148,7 @@ void start_dnsmasq(void)
 		stop_dnsmasq();
 		return;
 	}
-	if (nvram_state("static_leases")) {
+	if (nvram_state_change("static_leases")) {
 		char *name;
 		char *buf;
 		int NVRAMSPACE = nvram_size();
@@ -157,14 +157,15 @@ void start_dnsmasq(void)
 		nvram_getall(buf, NVRAMSPACE);
 		for (name = buf; *name; name += strlen(name) + 1) {
 			if (strstr(name, "dnsmasq_lease_")) {
-				char buf[128];
-				strncpy(buf, name, 128);
-				char *p = strchr(buf, '=');
+				char nbuf[128];
+				strncpy(nbuf, name, 128);
+				char *p = strchr(nbuf, '=');
 				if (p)
 					*p = 0;
-				nvram_unset(buf);
+				nvram_unset(nbuf);
 			}
 		}
+		free(buf);
 		nvram_commit();
 	}
       out:;
