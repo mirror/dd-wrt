@@ -1195,6 +1195,7 @@ int is_ap8x(void)
 int insmod(char *module)
 {
 	char word[256];
+	char check[256];
 	char *next, *wordlist;
 	int ret = 0;
 	char *target;
@@ -1202,7 +1203,6 @@ int insmod(char *module)
 	foreach(word, wordlist, next) {
 		target = word;
 		if (nvram_match("module_testing", "1")) {
-			char check[256];
 			sprintf(check, "/jffs/modules_debug/%s.ko", word);
 			FILE *fp = fopen(check, "rb");
 			if (fp) {
