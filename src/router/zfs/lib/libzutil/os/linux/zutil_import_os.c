@@ -72,7 +72,7 @@
 #include <libudev.h>
 #include <sched.h>
 #endif
-#include <blkid/blkid.h>
+#include <blkid.h>
 
 #define	DEFAULT_IMPORT_PATH_SIZE	9
 #define	DEV_BYID_PATH	"/dev/disk/by-id/"
