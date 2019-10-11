@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <mntent.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 
 #ifdef MNTTAB
 #undef MNTTAB

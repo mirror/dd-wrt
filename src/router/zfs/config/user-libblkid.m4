@@ -5,7 +5,7 @@ dnl #
 AC_DEFUN([ZFS_AC_CONFIG_USER_LIBBLKID], [
 	LIBBLKID=
 
-	AC_CHECK_HEADER([blkid/blkid.h], [], [AC_MSG_FAILURE([
+	AC_CHECK_HEADER([blkid.h], [], [AC_MSG_FAILURE([
 	*** blkid.h missing, libblkid-devel package required])])
 
 	AC_SUBST([LIBBLKID], ["-lblkid"])
