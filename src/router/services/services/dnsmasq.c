@@ -157,7 +157,7 @@ void start_dnsmasq(void)
 			goto out;
 		nvram_getall(buf, NVRAMSPACE);
 		for (name = buf; *name; name += strlen(name) + 1) {
-			if (strncmp(name, "dnsmasq_lease_", 14)) {
+			if (!strncmp(name, "dnsmasq_lease_", 14)) {
 				char nbuf[128];
 				strncpy(nbuf, name, 128);
 				char *p = strchr(nbuf, '=');
