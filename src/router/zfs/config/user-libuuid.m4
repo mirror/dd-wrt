@@ -4,7 +4,7 @@ dnl #
 AC_DEFUN([ZFS_AC_CONFIG_USER_LIBUUID], [
 	LIBUUID=
 
-	AC_CHECK_HEADER([uuid/uuid.h], [], [AC_MSG_FAILURE([
+	AC_CHECK_HEADER([uuid.h], [], [AC_MSG_FAILURE([
 	*** uuid/uuid.h missing, libuuid-devel package required])])
 
 	AC_SEARCH_LIBS([uuid_generate], [uuid], [], [AC_MSG_FAILURE([
