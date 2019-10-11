@@ -92,6 +92,9 @@ typedef enum { XXH_OK=0, XXH_ERROR } XXH_errorcode;
 *   `xxhash.c` is automatically included.
 *   It's not useful to compile and link it as a separate module anymore.
 */
+#define XXH_PUBLIC_API static
+
+#if 0
 #ifdef XXH_PRIVATE_API
 #  ifndef XXH_STATIC_LINKING_ONLY
 #    define XXH_STATIC_LINKING_ONLY
@@ -108,7 +111,7 @@ typedef enum { XXH_OK=0, XXH_ERROR } XXH_errorcode;
 #else
 #  define XXH_PUBLIC_API   /* do nothing */
 #endif /* XXH_PRIVATE_API */
-
+#endif
 /*!XXH_NAMESPACE, aka Namespace Emulation :
 
 If you want to include _and expose_ xxHash functions from within your own library,
