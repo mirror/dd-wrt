@@ -132,6 +132,7 @@ extern void nvram_seti(const char *name, const int value);
 
 extern int nvram_states(char *list);
 extern int nvram_state(char *name);
+extern int nvram_state_change(char *name);
 extern int nvram_delstates(char *list);
 
 int nvram_ngeti(const char *fmt, ...);
