@@ -1,9 +1,5 @@
 include $(top_srcdir)/config/Rules.am
 
-DEFAULT_INCLUDES += \
-	-I$(top_srcdir)/include \
-	-I$(top_srcdir)/lib/libspl/include
-
 #
 # Ignore the prefix for the mount helper.  It must be installed in /sbin/
 # because this path is hardcoded in the mount(8) for security reasons.
@@ -18,7 +14,4 @@ mount_zfs_SOURCES = \
 
 mount_zfs_LDADD = \
 	$(top_builddir)/lib/libnvpair/libnvpair.la \
-	$(top_builddir)/lib/libzfs/libzfs.la \
-	$(top_builddir)/lib/libzfs_core/libzfs_core.la \
-	$(top_builddir)/lib/libzutil/libzutil.la \
-	-lssl -lcrypto -ltirpc -luutil
+	$(top_builddir)/lib/libzfs/libzfs.la

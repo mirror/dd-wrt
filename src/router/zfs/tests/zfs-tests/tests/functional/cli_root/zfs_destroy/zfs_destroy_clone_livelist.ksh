@@ -30,7 +30,7 @@
 #	  destroyed
 # 3. Multiple clones with empty livelists
 #	- same as 1. but with multiple clones
-# 4. Multuple clones with populated livelists
+# 4. Multiple clones with populated livelists
 #	- same as 2. but with multiple clones
 
 . $STF_SUITE/include/libtest.shlib
@@ -128,7 +128,7 @@ log_must mkfile 20m /$TESTPOOL/$TESTFS1/atestfile
 log_must zfs snapshot $TESTPOOL/$TESTFS1@snap
 
 # set a small livelist entry size to more easily test multiple entry livelists
-set_tunable64 zfs_livelist_max_entries 0x14
+set_tunable64 zfs_livelist_max_entries 20
 
 test_one_empty
 test_one

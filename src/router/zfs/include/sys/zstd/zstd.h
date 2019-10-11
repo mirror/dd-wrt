@@ -19,9 +19,6 @@ extern "C" {
 #include <stddef.h>   /* size_t */
 
 
-#define ZSTDLIB_API static
-
-#if 0
 /* =====   ZSTDLIB_API : control library symbols visibility   ===== */
 #ifndef ZSTDLIB_VISIBILITY
 #  if defined(__GNUC__) && (__GNUC__ >= 4)
@@ -37,7 +34,7 @@ extern "C" {
 #else
 #  define ZSTDLIB_API ZSTDLIB_VISIBILITY
 #endif
-#endif
+
 
 /*******************************************************************************
   Introduction
@@ -75,7 +72,7 @@ extern "C" {
 /*------   Version   ------*/
 #define ZSTD_VERSION_MAJOR    1
 #define ZSTD_VERSION_MINOR    4
-#define ZSTD_VERSION_RELEASE  1
+#define ZSTD_VERSION_RELEASE  2
 
 #define ZSTD_VERSION_NUMBER  (ZSTD_VERSION_MAJOR *100*100 + ZSTD_VERSION_MINOR *100 + ZSTD_VERSION_RELEASE)
 ZSTDLIB_API unsigned ZSTD_versionNumber(void);   /**< to check runtime library version */

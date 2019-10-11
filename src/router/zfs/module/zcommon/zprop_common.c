@@ -346,7 +346,6 @@ zprop_random_value(int prop, uint64_t seed, zfs_type_t type)
 {
 	zprop_desc_t *prop_tbl;
 	const zprop_index_t *idx_tbl;
-	uint64_t ret;
 
 	ASSERT((uint_t)prop < zprop_get_numprops(type));
 	prop_tbl = zprop_get_proptable(type);
@@ -355,12 +354,7 @@ zprop_random_value(int prop, uint64_t seed, zfs_type_t type)
 	if (idx_tbl == NULL)
 		return (seed);
 
-	ret = idx_tbl[seed % prop_tbl[prop].pd_table_size].pi_value;
-
-	if (prop == ZFS_PROP_COMPRESSION)
-		ret = ret & SPA_COMPRESSMASK;
-
-	return (ret);
+	return (idx_tbl[seed % prop_tbl[prop].pd_table_size].pi_value);
 }
 
 const char *

@@ -1,8 +1,6 @@
 include $(top_srcdir)/config/Rules.am
 
-DEFAULT_INCLUDES += \
-	-I$(top_srcdir)/include \
-	-I$(top_srcdir)/lib/libspl/include
+DEFAULT_INCLUDES += -I.
 
 sbin_PROGRAMS = zpool
 
@@ -13,13 +11,14 @@ zpool_SOURCES = \
 	zpool_util.h \
 	zpool_vdev.c
 
+if BUILD_LINUX
+zpool_SOURCES += os/linux/zpool_vdev_os.c
+endif
+
 zpool_LDADD = \
 	$(top_builddir)/lib/libnvpair/libnvpair.la \
 	$(top_builddir)/lib/libuutil/libuutil.la \
-	$(top_builddir)/lib/libzfs/libzfs.la \
-	$(top_builddir)/lib/libzfs_core/libzfs_core.la \
-	$(top_builddir)/lib/libzutil/libzutil.la \
-	-lssl -lcrypto -ltirpc -luutil
+	$(top_builddir)/lib/libzfs/libzfs.la
 
 zpool_LDADD += -lm $(LIBBLKID)
 
@@ -117,6 +116,9 @@ zpoolconfdefaults = \
 	test_ended
 
 install-data-hook:
-	rm -rf "$(DESTDIR)$(zpoolexecdir)"
-	$(MKDIR_P) "$(DESTDIR)$(zpoolexecdir)"
-	cp -fpR $(dist_zpoolexec_SCRIPTS) $(DESTDIR)$(zpoolexecdir)
+	$(MKDIR_P) "$(DESTDIR)$(zpoolconfdir)"
+	for f in $(zpoolconfdefaults); do \
+	  test -f "$(DESTDIR)$(zpoolconfdir)/$${f}" -o \
+	       -L "$(DESTDIR)$(zpoolconfdir)/$${f}" || \
+	    ln -s "$(zpoolexecdir)/$${f}" "$(DESTDIR)$(zpoolconfdir)"; \
+	done

@@ -44,7 +44,7 @@
 #include <sys/dsl_scan.h>
 #include <sys/metaslab_impl.h>
 #include <sys/time.h>
-#include <sys/trace_zio.h>
+#include <sys/trace_defs.h>
 #include <sys/abd.h>
 #include <sys/dsl_crypt.h>
 #include <sys/cityhash.h>
@@ -542,6 +542,7 @@ error:
 	}
 }
 
+#if 0
 static void
 zio_getcomplevel(zio_t *zio, abd_t *data, uint64_t size)
 {
@@ -562,6 +563,7 @@ zio_getcomplevel(zio_t *zio, abd_t *data, uint64_t size)
 			zio->io_error = SET_ERROR(EIO);
 	}
 }
+#endif
 
 /*
  * ==========================================================================
@@ -905,8 +907,8 @@ zio_root(spa_t *spa, zio_done_func_t *done, void *private, enum zio_flag flags)
 	return (zio_null(NULL, spa, NULL, done, private, flags));
 }
 
-void
-zfs_blkptr_verify(spa_t *spa, const blkptr_t *bp)
+static void
+zfs_blkptr_verify(spa_t *spa, const blkptr_t *bp, boolean_t config_held)
 {
 	if (!DMU_OT_IS_VALID(BP_GET_TYPE(bp))) {
 		zfs_panic_recover("blkptr at %p has invalid TYPE %llu",
@@ -945,6 +947,10 @@ zfs_blkptr_verify(spa_t *spa, const blkptr_t *bp)
 	if (!spa->spa_trust_config)
 		return;
 
+	if (!config_held)
+		spa_config_enter(spa, SCL_VDEV, bp, RW_READER);
+	else
+		ASSERT(spa_config_held(spa, SCL_VDEV, RW_WRITER));
 	/*
 	 * Pool-specific checks.
 	 *
@@ -993,6 +999,8 @@ zfs_blkptr_verify(spa_t *spa, const blkptr_t *bp)
 			    bp, i, (longlong_t)offset);
 		}
 	}
+	if (!config_held)
+		spa_config_exit(spa, SCL_VDEV, bp);
 }
 
 boolean_t
@@ -1032,7 +1040,7 @@ zio_read(zio_t *pio, spa_t *spa, const blkptr_t *bp,
 {
 	zio_t *zio;
 
-	zfs_blkptr_verify(spa, bp);
+	zfs_blkptr_verify(spa, bp, flags & ZIO_FLAG_CONFIG_WRITER);
 
 	zio = zio_create(pio, spa, BP_PHYSICAL_BIRTH(bp), bp,
 	    data, size, size, done, private,
@@ -1125,7 +1133,7 @@ void
 zio_free(spa_t *spa, uint64_t txg, const blkptr_t *bp)
 {
 
-	zfs_blkptr_verify(spa, bp);
+	zfs_blkptr_verify(spa, bp, B_FALSE);
 
 	/*
 	 * The check for EMBEDDED is a performance optimization.  We
@@ -1195,7 +1203,7 @@ zio_claim(zio_t *pio, spa_t *spa, uint64_t txg, const blkptr_t *bp,
 {
 	zio_t *zio;
 
-	zfs_blkptr_verify(spa, bp);
+	zfs_blkptr_verify(spa, bp, flags & ZIO_FLAG_CONFIG_WRITER);
 
 	if (BP_IS_EMBEDDED(bp))
 		return (zio_null(pio, spa, NULL, NULL, NULL, 0));
@@ -1464,19 +1472,10 @@ zio_read_bp_init(zio_t *zio)
 	ASSERT3P(zio->io_bp, ==, &zio->io_bp_copy);
 
 	if (BP_GET_COMPRESS(bp) != ZIO_COMPRESS_OFF &&
-	    zio->io_child_type == ZIO_CHILD_LOGICAL) {
-		if ((zio->io_flags & ZIO_FLAG_RAW_COMPRESS)) {
-			/*
-			 * Even if ZIO_FLAG_RAW_COMPRESS is set, we still need
-			 * to know the compression level.
-			 */
-			zio_push_transform(zio, zio->io_abd, psize,
-			    0, zio_getcomplevel);
-		} else {
-			zio_push_transform(zio,
-			    abd_alloc_sametype(zio->io_abd, psize), psize,
-			    psize, zio_decompress);
-		}
+	    zio->io_child_type == ZIO_CHILD_LOGICAL &&
+	    !(zio->io_flags & ZIO_FLAG_RAW_COMPRESS)) {
+		zio_push_transform(zio, abd_alloc_sametype(zio->io_abd, psize),
+		    psize, psize, zio_decompress);
 	}
 
 	if (((BP_IS_PROTECTED(bp) && !(zio->io_flags & ZIO_FLAG_RAW_ENCRYPT)) ||
@@ -4871,37 +4870,31 @@ zbookmark_subtree_completed(const dnode_phys_t *dnp,
 	    last_block) <= 0);
 }
 
-#if defined(_KERNEL)
 EXPORT_SYMBOL(zio_type_name);
 EXPORT_SYMBOL(zio_buf_alloc);
 EXPORT_SYMBOL(zio_data_buf_alloc);
 EXPORT_SYMBOL(zio_buf_free);
 EXPORT_SYMBOL(zio_data_buf_free);
 
-module_param(zio_slow_io_ms, int, 0644);
-MODULE_PARM_DESC(zio_slow_io_ms,
+/* BEGIN CSTYLED */
+ZFS_MODULE_PARAM(zfs_zio, zio_, slow_io_ms, INT, ZMOD_RW,
 	"Max I/O completion time (milliseconds) before marking it as slow");
 
-module_param(zio_requeue_io_start_cut_in_line, int, 0644);
-MODULE_PARM_DESC(zio_requeue_io_start_cut_in_line, "Prioritize requeued I/O");
+ZFS_MODULE_PARAM(zfs_zio, zio_, requeue_io_start_cut_in_line, INT, ZMOD_RW,
+	"Prioritize requeued I/O");
 
-module_param(zfs_sync_pass_deferred_free, int, 0644);
-MODULE_PARM_DESC(zfs_sync_pass_deferred_free,
+ZFS_MODULE_PARAM(zfs, zfs_, sync_pass_deferred_free,  INT, ZMOD_RW,
 	"Defer frees starting in this pass");
 
-module_param(zfs_sync_pass_dont_compress, int, 0644);
-MODULE_PARM_DESC(zfs_sync_pass_dont_compress,
+ZFS_MODULE_PARAM(zfs, zfs_, sync_pass_dont_compress, INT, ZMOD_RW,
 	"Don't compress starting in this pass");
 
-module_param(zfs_sync_pass_rewrite, int, 0644);
-MODULE_PARM_DESC(zfs_sync_pass_rewrite,
+ZFS_MODULE_PARAM(zfs, zfs_, sync_pass_rewrite, INT, ZMOD_RW,
 	"Rewrite new bps starting in this pass");
 
-module_param(zio_dva_throttle_enabled, int, 0644);
-MODULE_PARM_DESC(zio_dva_throttle_enabled,
+ZFS_MODULE_PARAM(zfs_zio, zio_, dva_throttle_enabled, INT, ZMOD_RW,
 	"Throttle block allocations in the ZIO pipeline");
 
-module_param(zio_deadman_log_all, int, 0644);
-MODULE_PARM_DESC(zio_deadman_log_all,
+ZFS_MODULE_PARAM(zfs_zio, zio_, deadman_log_all, INT, ZMOD_RW,
 	"Log all slow ZIOs, not just those with vdevs");
-#endif
+/* END CSTYLED */

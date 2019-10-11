@@ -33,7 +33,7 @@
 #include <sys/dsl_scan.h>
 #include <sys/zil.h>
 #include <sys/callb.h>
-#include <sys/trace_txg.h>
+#include <sys/trace_defs.h>
 
 /*
  * ZFS Transaction Groups
@@ -644,8 +644,8 @@ txg_quiesce_thread(void *arg)
 
 /*
  * Delay this thread by delay nanoseconds if we are still in the open
- * transaction group and there is already a waiting txg quiesing or quiesced.
- * Abort the delay if this txg stalls or enters the quiesing state.
+ * transaction group and there is already a waiting txg quiescing or quiesced.
+ * Abort the delay if this txg stalls or enters the quiescing state.
  */
 void
 txg_delay(dsl_pool_t *dp, uint64_t txg, hrtime_t delay, hrtime_t resolution)
@@ -768,7 +768,7 @@ txg_wait_open(dsl_pool_t *dp, uint64_t txg, boolean_t should_quiesce)
 
 /*
  * If there isn't a txg syncing or in the pipeline, push another txg through
- * the pipeline by queiscing the open txg.
+ * the pipeline by quiescing the open txg.
  */
 void
 txg_kick(dsl_pool_t *dp)
@@ -1038,7 +1038,6 @@ txg_list_next(txg_list_t *tl, void *p, uint64_t txg)
 	return (tn == NULL ? NULL : (char *)tn - tl->tl_offset);
 }
 
-#if defined(_KERNEL)
 EXPORT_SYMBOL(txg_init);
 EXPORT_SYMBOL(txg_fini);
 EXPORT_SYMBOL(txg_sync_start);
@@ -1054,6 +1053,7 @@ EXPORT_SYMBOL(txg_wait_callbacks);
 EXPORT_SYMBOL(txg_stalled);
 EXPORT_SYMBOL(txg_sync_waiting);
 
-module_param(zfs_txg_timeout, int, 0644);
-MODULE_PARM_DESC(zfs_txg_timeout, "Max seconds worth of delta per txg");
-#endif
+/* BEGIN CSTYLED */
+ZFS_MODULE_PARAM(zfs, zfs_, txg_timeout, INT, ZMOD_RW,
+	"Max seconds worth of delta per txg");
+/* END CSTYLED */

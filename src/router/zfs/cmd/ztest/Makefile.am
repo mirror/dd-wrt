@@ -9,10 +9,6 @@ AM_CFLAGS += $(FRAME_LARGER_THAN)
 # Unconditionally enable ASSERTs
 AM_CPPFLAGS += -DDEBUG -UNDEBUG
 
-DEFAULT_INCLUDES += \
-	-I$(top_srcdir)/include \
-	-I$(top_srcdir)/lib/libspl/include
-
 sbin_PROGRAMS = ztest
 
 ztest_SOURCES = \
@@ -20,10 +16,7 @@ ztest_SOURCES = \
 
 ztest_LDADD = \
 	$(top_builddir)/lib/libnvpair/libnvpair.la \
-	$(top_builddir)/lib/libzpool/libzpool.la \
-	$(top_builddir)/lib/libzfs_core/libzfs_core.la \
-	$(top_builddir)/lib/libzutil/libzutil.la \
-	-lssl -lcrypto -ltirpc -luutil
+	$(top_builddir)/lib/libzpool/libzpool.la
 
 ztest_LDADD += -lm
 ztest_LDFLAGS = -pthread

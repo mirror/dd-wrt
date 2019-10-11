@@ -65,6 +65,7 @@
 #include <sys/procfs_list.h>
 #include <linux/dcache_compat.h>
 #include <linux/utsname_compat.h>
+#include <linux/mod_compat.h>
 
 #else /* _KERNEL */
 
@@ -199,6 +200,16 @@ extern int aok;
 #define	DTRACE_PROBE4(a, b, c, d, e, f, g, h, i) \
 	ZFS_PROBE4(#a, (unsigned long)c, (unsigned long)e, (unsigned long)g, \
 	(unsigned long)i)
+
+/*
+ * Tunables.
+ */
+#define	ZFS_MODULE_PARAM(scope_prefix, name_prefix, name, type, perm, desc)
+
+/*
+ * Exported symbols
+ */
+#define	EXPORT_SYMBOL(x)
 
 /*
  * Threads.
@@ -716,7 +727,8 @@ extern uint32_t zone_get_hostid(void *zonep);
 
 extern char *kmem_vasprintf(const char *fmt, va_list adx);
 extern char *kmem_asprintf(const char *fmt, ...);
-#define	strfree(str) kmem_free((str), strlen(str) + 1)
+#define	kmem_strfree(str) kmem_free((str), strlen(str) + 1)
+#define	kmem_strdup(s)  strdup(s)
 
 /*
  * Hostname information

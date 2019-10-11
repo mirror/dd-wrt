@@ -21,7 +21,7 @@
 
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2011, 2018 by Delphix. All rights reserved.
+ * Copyright (c) 2011, 2019 by Delphix. All rights reserved.
  * Copyright (c) 2014 Integros [integros.com]
  * Copyright 2016 Nexenta Systems, Inc.
  * Copyright (c) 2017, 2018 Lawrence Livermore National Security, LLC.
@@ -103,6 +103,7 @@ extern uint64_t zfs_arc_max, zfs_arc_meta_limit;
 extern int zfs_vdev_async_read_max_active;
 extern boolean_t spa_load_verify_dryrun;
 extern int zfs_reconstruct_indirect_combinations_max;
+extern int zfs_btree_verify_intensity;
 
 static const char cmdname[] = "zdb";
 uint8_t dump_opt[256];
@@ -111,7 +112,7 @@ typedef void object_viewer_t(objset_t *, uint64_t, void *data, size_t size);
 
 uint64_t *zopt_object = NULL;
 static unsigned zopt_objects = 0;
-uint64_t max_inflight = 1000;
+uint64_t max_inflight_bytes = 256 * 1024 * 1024; /* 256MB */
 static int leaked_objects = 0;
 static range_tree_t *mos_refd_objs;
 
@@ -949,16 +950,16 @@ dump_metaslab_stats(metaslab_t *msp)
 {
 	char maxbuf[32];
 	range_tree_t *rt = msp->ms_allocatable;
-	avl_tree_t *t = &msp->ms_allocatable_by_size;
+	zfs_btree_t *t = &msp->ms_allocatable_by_size;
 	int free_pct = range_tree_space(rt) * 100 / msp->ms_size;
 
 	/* max sure nicenum has enough space */
 	CTASSERT(sizeof (maxbuf) >= NN_NUMBUF_SZ);
 
-	zdb_nicenum(metaslab_block_maxsize(msp), maxbuf, sizeof (maxbuf));
+	zdb_nicenum(metaslab_largest_allocatable(msp), maxbuf, sizeof (maxbuf));
 
 	(void) printf("\t %25s %10lu   %7s  %6s   %4s %4d%%\n",
-	    "segments", avl_numnodes(t), "maxsize", maxbuf,
+	    "segments", zfs_btree_numnodes(t), "maxsize", maxbuf,
 	    "freepct", free_pct);
 	(void) printf("\tIn-memory histogram:\n");
 	dump_histogram(rt->rt_histogram, RANGE_TREE_HISTOGRAM_SIZE, 0);
@@ -3141,7 +3142,7 @@ cksum_record_compare(const void *x1, const void *x2)
 	int difference;
 
 	for (int i = 0; i < arraysize; i++) {
-		difference = AVL_CMP(l->cksum.zc_word[i], r->cksum.zc_word[i]);
+		difference = TREE_CMP(l->cksum.zc_word[i], r->cksum.zc_word[i]);
 		if (difference)
 			break;
 	}
@@ -3806,7 +3807,7 @@ zdb_blkptr_done(zio_t *zio)
 	abd_free(zio->io_abd);
 
 	mutex_enter(&spa->spa_scrub_lock);
-	spa->spa_load_verify_ios--;
+	spa->spa_load_verify_bytes -= BP_GET_PSIZE(bp);
 	cv_broadcast(&spa->spa_scrub_io_cv);
 
 	if (ioerr && !(zio->io_flags & ZIO_FLAG_SPECULATIVE)) {
@@ -3877,9 +3878,9 @@ zdb_blkptr_cb(spa_t *spa, zilog_t *zilog, const blkptr_t *bp,
 			flags |= ZIO_FLAG_SPECULATIVE;
 
 		mutex_enter(&spa->spa_scrub_lock);
-		while (spa->spa_load_verify_ios > max_inflight)
+		while (spa->spa_load_verify_bytes > max_inflight_bytes)
 			cv_wait(&spa->spa_scrub_io_cv, &spa->spa_scrub_lock);
-		spa->spa_load_verify_ios++;
+		spa->spa_load_verify_bytes += size;
 		mutex_exit(&spa->spa_scrub_lock);
 
 		zio_nowait(zio_read(NULL, spa, bp, abd, size,
@@ -4063,7 +4064,7 @@ zdb_claim_removing(spa_t *spa, zdb_cb_t *zcb)
 
 	ASSERT0(range_tree_space(svr->svr_allocd_segs));
 
-	range_tree_t *allocs = range_tree_create(NULL, NULL);
+	range_tree_t *allocs = range_tree_create(NULL, RANGE_SEG64, NULL, 0, 0);
 	for (uint64_t msi = 0; msi < vd->vdev_ms_count; msi++) {
 		metaslab_t *msp = vd->vdev_ms[msi];
 
@@ -4895,6 +4896,7 @@ dump_block_stats(spa_t *spa)
 			    ZIO_FLAG_GODFATHER);
 		}
 	}
+	ASSERT0(spa->spa_load_verify_bytes);
 
 	/*
 	 * Done after zio_wait() since zcb_haderrors is modified in
@@ -5390,7 +5392,7 @@ zdb_set_skip_mmp(char *target)
  * the name of the target pool.
  *
  * Note that the checkpointed state's pool name will be the name of
- * the original pool with the above suffix appened to it. In addition,
+ * the original pool with the above suffix appended to it. In addition,
  * if the target is not a pool name (e.g. a path to a dataset) then
  * the new_path parameter is populated with the updated path to
  * reflect the fact that we are looking into the checkpointed state.
@@ -6087,7 +6089,8 @@ dump_zpool(spa_t *spa)
 
 	if (dump_opt['d'] || dump_opt['i']) {
 		spa_feature_t f;
-		mos_refd_objs = range_tree_create(NULL, NULL);
+		mos_refd_objs = range_tree_create(NULL, RANGE_SEG64, NULL, 0,
+		    0);
 		dump_objset(dp->dp_meta_objset);
 
 		if (dump_opt['d'] >= 3) {
@@ -6642,6 +6645,13 @@ main(int argc, char **argv)
 	if (spa_config_path_env != NULL)
 		spa_config_path = spa_config_path_env;
 
+	/*
+	 * For performance reasons, we set this tunable down. We do so before
+	 * the arg parsing section so that the user can override this value if
+	 * they choose.
+	 */
+	zfs_btree_verify_intensity = 3;
+
 	while ((c = getopt(argc, argv,
 	    "AbcCdDeEFGhiI:klLmMo:Op:PqRsSt:uU:vVx:XY")) != -1) {
 		switch (c) {
@@ -6681,10 +6691,10 @@ main(int argc, char **argv)
 			break;
 		/* NB: Sort single match options below. */
 		case 'I':
-			max_inflight = strtoull(optarg, NULL, 0);
-			if (max_inflight == 0) {
+			max_inflight_bytes = strtoull(optarg, NULL, 0);
+			if (max_inflight_bytes == 0) {
 				(void) fprintf(stderr, "maximum number "
-				    "of inflight I/Os must be greater "
+				    "of inflight bytes must be greater "
 				    "than 0\n");
 				usage();
 			}

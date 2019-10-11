@@ -7,10 +7,12 @@ COMMON_H = \
 	$(top_srcdir)/include/sys/arc_impl.h \
 	$(top_srcdir)/include/sys/avl.h \
 	$(top_srcdir)/include/sys/avl_impl.h \
+	$(top_srcdir)/include/sys/bitops.h \
 	$(top_srcdir)/include/sys/blkptr.h \
 	$(top_srcdir)/include/sys/bplist.h \
 	$(top_srcdir)/include/sys/bpobj.h \
 	$(top_srcdir)/include/sys/bptree.h \
+	$(top_srcdir)/include/sys/btree.h \
 	$(top_srcdir)/include/sys/bqueue.h \
 	$(top_srcdir)/include/sys/cityhash.h \
 	$(top_srcdir)/include/sys/dataset_kstats.h \
@@ -52,7 +54,7 @@ COMMON_H = \
 	$(top_srcdir)/include/sys/nvpair_impl.h \
 	$(top_srcdir)/include/sys/objlist.h \
 	$(top_srcdir)/include/sys/pathname.h \
-	$(top_srcdir)/include/sys/policy.h \
+	$(top_srcdir)/include/sys/qat.h \
 	$(top_srcdir)/include/sys/range_tree.h \
 	$(top_srcdir)/include/sys/refcount.h \
 	$(top_srcdir)/include/sys/rrwlock.h \
@@ -70,21 +72,6 @@ COMMON_H = \
 	$(top_srcdir)/include/sys/spa_impl.h \
 	$(top_srcdir)/include/sys/spa_checksum.h \
 	$(top_srcdir)/include/sys/sysevent.h \
-	$(top_srcdir)/include/sys/trace.h \
-	$(top_srcdir)/include/sys/trace_acl.h \
-	$(top_srcdir)/include/sys/trace_arc.h \
-	$(top_srcdir)/include/sys/trace_common.h \
-	$(top_srcdir)/include/sys/trace_dbgmsg.h \
-	$(top_srcdir)/include/sys/trace_dbuf.h \
-	$(top_srcdir)/include/sys/trace_dmu.h \
-	$(top_srcdir)/include/sys/trace_dnode.h \
-	$(top_srcdir)/include/sys/trace_multilist.h \
-	$(top_srcdir)/include/sys/trace_rrwlock.h \
-	$(top_srcdir)/include/sys/trace_txg.h \
-	$(top_srcdir)/include/sys/trace_vdev.h \
-	$(top_srcdir)/include/sys/trace_zil.h \
-	$(top_srcdir)/include/sys/trace_zio.h \
-	$(top_srcdir)/include/sys/trace_zrlock.h \
 	$(top_srcdir)/include/sys/txg.h \
 	$(top_srcdir)/include/sys/txg_impl.h \
 	$(top_srcdir)/include/sys/u8_textprep_data.h \
@@ -116,10 +103,8 @@ COMMON_H = \
 	$(top_srcdir)/include/sys/zfeature.h \
 	$(top_srcdir)/include/sys/zfs_acl.h \
 	$(top_srcdir)/include/sys/zfs_context.h \
-	$(top_srcdir)/include/sys/zfs_ctldir.h \
 	$(top_srcdir)/include/sys/zfs_debug.h \
 	$(top_srcdir)/include/sys/zfs_delay.h \
-	$(top_srcdir)/include/sys/zfs_dir.h \
 	$(top_srcdir)/include/sys/zfs_fuid.h \
 	$(top_srcdir)/include/sys/zfs_project.h \
 	$(top_srcdir)/include/sys/zfs_ratelimit.h \
@@ -127,8 +112,6 @@ COMMON_H = \
 	$(top_srcdir)/include/sys/zfs_sa.h \
 	$(top_srcdir)/include/sys/zfs_stat.h \
 	$(top_srcdir)/include/sys/zfs_sysfs.h \
-	$(top_srcdir)/include/sys/zfs_vfsops.h \
-	$(top_srcdir)/include/sys/zfs_vnops.h \
 	$(top_srcdir)/include/sys/zfs_znode.h \
 	$(top_srcdir)/include/sys/zil.h \
 	$(top_srcdir)/include/sys/zil_impl.h \
@@ -143,9 +126,10 @@ COMMON_H = \
 
 KERNEL_H = \
 	$(top_srcdir)/include/sys/zfs_ioctl.h \
+	$(top_srcdir)/include/sys/zfs_ioctl_impl.h \
 	$(top_srcdir)/include/sys/zfs_onexit.h \
-	${top_srcdir}/include/sys/zpl.h \
-	$(top_srcdir)/include/sys/zvol.h
+	$(top_srcdir)/include/sys/zvol.h \
+	$(top_srcdir)/include/sys/zvol_impl.h
 
 USER_H =
 

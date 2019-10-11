@@ -958,7 +958,7 @@ typedef struct pool_scan_stat {
 	/* values not stored on disk */
 	uint64_t	pss_pass_exam; /* examined bytes per scan pass */
 	uint64_t	pss_pass_start;	/* start time of a scan pass */
-	uint64_t	pss_pass_scrub_pause; /* pause time of a scurb pass */
+	uint64_t	pss_pass_scrub_pause; /* pause time of a scrub pass */
 	/* cumulative time scrub spent paused, needed for rate calculation */
 	uint64_t	pss_pass_scrub_spent_paused;
 	uint64_t	pss_pass_issued; /* issued bytes per scan pass */
@@ -1032,7 +1032,7 @@ typedef struct vdev_stat {
 	uint64_t	vs_fragmentation;	/* device fragmentation */
 	uint64_t	vs_initialize_bytes_done; /* bytes initialized */
 	uint64_t	vs_initialize_bytes_est; /* total bytes to initialize */
-	uint64_t	vs_initialize_state;	/* vdev_initialzing_state_t */
+	uint64_t	vs_initialize_state;	/* vdev_initializing_state_t */
 	uint64_t	vs_initialize_action_time; /* time_t */
 	uint64_t	vs_checkpoint_space;    /* checkpoint-consumed space */
 	uint64_t	vs_resilver_deferred;	/* resilver deferred	*/
@@ -1278,6 +1278,7 @@ typedef enum zfs_ioc {
 	ZFS_IOC_POOL_TRIM,			/* 0x5a50 */
 	ZFS_IOC_REDACT,				/* 0x5a51 */
 	ZFS_IOC_GET_BOOKMARK_PROPS,		/* 0x5a52 */
+	ZFS_IOC_WAIT,				/* 0x5a53 */
 
 	/*
 	 * Linux - 3/64 numbers reserved.
@@ -1341,6 +1342,17 @@ typedef enum {
 	SPA_LOAD_CREATE		/* creation in progress */
 } spa_load_state_t;
 
+typedef enum {
+	ZPOOL_WAIT_CKPT_DISCARD,
+	ZPOOL_WAIT_FREE,
+	ZPOOL_WAIT_INITIALIZE,
+	ZPOOL_WAIT_REPLACE,
+	ZPOOL_WAIT_REMOVE,
+	ZPOOL_WAIT_RESILVER,
+	ZPOOL_WAIT_SCRUB,
+	ZPOOL_WAIT_NUM_ACTIVITIES
+} zpool_wait_activity_t;
+
 /*
  * Bookmark name values.
  */
@@ -1390,6 +1402,13 @@ typedef enum {
 #define	ZPOOL_TRIM_VDEVS		"trim_vdevs"
 #define	ZPOOL_TRIM_RATE			"trim_rate"
 #define	ZPOOL_TRIM_SECURE		"trim_secure"
+
+/*
+ * The following are names used when invoking ZFS_IOC_POOL_WAIT.
+ */
+#define	ZPOOL_WAIT_ACTIVITY		"wait_activity"
+#define	ZPOOL_WAIT_TAG			"wait_tag"
+#define	ZPOOL_WAIT_WAITED		"wait_waited"
 
 /*
  * Flags for ZFS_IOC_VDEV_SET_STATE

@@ -55,74 +55,6 @@ libspl_assertf(const char *file, const char *func, int line, char *format, ...)
 	abort();
 }
 
-
-#ifdef assert
-#undef assert
-#endif
-
-/* Compile time assert */
-#define	CTASSERT_GLOBAL(x)		_CTASSERT(x, __LINE__)
-#define	CTASSERT(x)			{ _CTASSERT(x, __LINE__); }
-#define	_CTASSERT(x, y)			__CTASSERT(x, y)
-#define	__CTASSERT(x, y)						\
-	typedef char __attribute__((unused))				\
-	__compile_time_assertion__ ## y[(x) ? 1 : -1]
-
-#ifdef NDEBUG
-#ifdef verify
-#undef verify
-#endif
-
-#define	VERIFY(cond)	do { if ((cond)) {} } while (0)
-
-#define	verify(cond)	do { if ((cond)) {} } while (0)
-
-
-#define	VERIFY3B(LEFT, OP, RIGHT)					\
-do {									\
-	const boolean_t __left = (boolean_t)(LEFT);			\
-	const boolean_t __right = (boolean_t)(RIGHT);			\
-	if (!(__left OP __right))	{}				\
-} while (0)
-
-#define	VERIFY3S(LEFT, OP, RIGHT)					\
-do {									\
-	const int64_t __left = (int64_t)(LEFT);				\
-	const int64_t __right = (int64_t)(RIGHT);			\
-	if (!(__left OP __right))	{}				\
-} while (0)
-
-#define	VERIFY3U(LEFT, OP, RIGHT)					\
-do {									\
-	const uint64_t __left = (uint64_t)(LEFT);			\
-	const uint64_t __right = (uint64_t)(RIGHT);			\
-	if (!(__left OP __right))	{}				\
-} while (0)
-
-#define	VERIFY3P(LEFT, OP, RIGHT)					\
-do {									\
-	const uintptr_t __left = (uintptr_t)(LEFT);			\
-	const uintptr_t __right = (uintptr_t)(RIGHT);			\
-	if (!(__left OP __right))	{}				\
-} while (0)
-
-#define	VERIFY0(LEFT)							\
-do {									\
-	const uint64_t __left = (uint64_t)(LEFT);			\
-	if (!(__left == 0))	{}					\
-} while (0)
-
-#define	ASSERT3B(x, y, z)	((void)0)
-#define	ASSERT3S(x, y, z)	((void)0)
-#define	ASSERT3U(x, y, z)	((void)0)
-#define	ASSERT3P(x, y, z)	((void)0)
-#define	ASSERT0(x)		((void)0)
-#define	ASSERT(x)		((void)0)
-#define	assert(x)		((void)0)
-#define	ASSERTV(x)
-#define	IMPLY(A, B)		((void)0)
-#define	EQUIV(A, B)		((void)0)
-#else
 #ifdef verify
 #undef verify
 #endif
@@ -182,6 +114,31 @@ do {									\
 		    "%s == 0 (0x%llx == 0)", #LEFT,			\
 		    (u_longlong_t)__left);				\
 } while (0)
+
+#ifdef assert
+#undef assert
+#endif
+
+/* Compile time assert */
+#define	CTASSERT_GLOBAL(x)		_CTASSERT(x, __LINE__)
+#define	CTASSERT(x)			{ _CTASSERT(x, __LINE__); }
+#define	_CTASSERT(x, y)			__CTASSERT(x, y)
+#define	__CTASSERT(x, y)						\
+	typedef char __attribute__((unused))				\
+	__compile_time_assertion__ ## y[(x) ? 1 : -1]
+
+#ifdef NDEBUG
+#define	ASSERT3B(x, y, z)	((void)0)
+#define	ASSERT3S(x, y, z)	((void)0)
+#define	ASSERT3U(x, y, z)	((void)0)
+#define	ASSERT3P(x, y, z)	((void)0)
+#define	ASSERT0(x)		((void)0)
+#define	ASSERT(x)		((void)0)
+#define	assert(x)		((void)0)
+#define	ASSERTV(x)
+#define	IMPLY(A, B)		((void)0)
+#define	EQUIV(A, B)		((void)0)
+#else
 #define	ASSERT3B	VERIFY3B
 #define	ASSERT3S	VERIFY3S
 #define	ASSERT3U	VERIFY3U

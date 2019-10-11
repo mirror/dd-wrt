@@ -15,11 +15,11 @@
 #include "zstd_compress_internal.h" /* ZSTD_hufCTables_t, ZSTD_minGain() */
 
 
-static size_t ZSTD_noCompressLiterals (void* dst, size_t dstCapacity, const void* src, size_t srcSize);
+size_t ZSTD_noCompressLiterals (void* dst, size_t dstCapacity, const void* src, size_t srcSize);
 
-static size_t ZSTD_compressRleLiteralsBlock (void* dst, size_t dstCapacity, const void* src, size_t srcSize);
+size_t ZSTD_compressRleLiteralsBlock (void* dst, size_t dstCapacity, const void* src, size_t srcSize);
 
-static size_t ZSTD_compressLiterals (ZSTD_hufCTables_t const* prevHuf,
+size_t ZSTD_compressLiterals (ZSTD_hufCTables_t const* prevHuf,
                               ZSTD_hufCTables_t* nextHuf,
                               ZSTD_strategy strategy, int disableLiteralCompression,
                               void* dst, size_t dstCapacity,

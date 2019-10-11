@@ -74,7 +74,7 @@
  *
  * To turn this into an overnight stress test, use -T to specify run time.
  *
- * You can ask more more vdevs [-v], datasets [-d], or threads [-t]
+ * You can ask more vdevs [-v], datasets [-d], or threads [-t]
  * to increase the pool capacity, fanout, and overall stress level.
  *
  * Use the -k option to set the desired frequency of kills.
@@ -2863,7 +2863,7 @@ ztest_spa_upgrade(ztest_ds_t *zd, uint64_t id)
 	    zpool_prop_to_name(ZPOOL_PROP_VERSION)));
 	spa_close(spa, FTAG);
 
-	strfree(name);
+	kmem_strfree(name);
 	mutex_exit(&ztest_vdev_lock);
 }
 

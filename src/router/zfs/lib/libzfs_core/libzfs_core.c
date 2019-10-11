@@ -822,7 +822,7 @@ recv_impl(const char *snapname, nvlist_t *recvdprops, nvlist_t *localprops,
 	}
 
 	/*
-	 * All recives with a payload should use the new interface.
+	 * All receives with a payload should use the new interface.
 	 */
 	if (resumable || raw || wkeydata != NULL || payload) {
 		nvlist_t *outnvl = NULL;
@@ -1578,4 +1578,40 @@ lzc_redact(const char *snapshot, const char *bookname, nvlist_t *snapnv)
 	int error = lzc_ioctl(ZFS_IOC_REDACT, snapshot, args, NULL);
 	fnvlist_free(args);
 	return (error);
+}
+
+static int
+wait_common(const char *pool, zpool_wait_activity_t activity, boolean_t use_tag,
+    uint64_t tag, boolean_t *waited)
+{
+	nvlist_t *args = fnvlist_alloc();
+	nvlist_t *result = NULL;
+
+	fnvlist_add_int32(args, ZPOOL_WAIT_ACTIVITY, activity);
+	if (use_tag)
+		fnvlist_add_uint64(args, ZPOOL_WAIT_TAG, tag);
+
+	int error = lzc_ioctl(ZFS_IOC_WAIT, pool, args, &result);
+
+	if (error == 0 && waited != NULL)
+		*waited = fnvlist_lookup_boolean_value(result,
+		    ZPOOL_WAIT_WAITED);
+
+	fnvlist_free(args);
+	fnvlist_free(result);
+
+	return (error);
+}
+
+int
+lzc_wait(const char *pool, zpool_wait_activity_t activity, boolean_t *waited)
+{
+	return (wait_common(pool, activity, B_FALSE, 0, waited));
+}
+
+int
+lzc_wait_tag(const char *pool, zpool_wait_activity_t activity, uint64_t tag,
+    boolean_t *waited)
+{
+	return (wait_common(pool, activity, B_TRUE, tag, waited));
 }

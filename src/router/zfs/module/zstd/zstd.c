@@ -42,26 +42,6 @@
 #include <sys/zstd/zstd_errors.h>
 #include <sys/zstd/error_private.h>
 
-#include "common/zstd_common.c"
-#include "common/fse_decompress.c"
-#include "common/entropy_common.c"
-#include "common/xxhash.c"
-#include "compress/hist.c"
-#include "compress/zstd_compress.c"
-#include "compress/zstd_compress_literals.c"
-#include "compress/zstd_compress_sequences.c"
-#include "compress/fse_compress.c"
-#include "compress/huf_compress.c"
-#include "compress/zstd_double_fast.c"
-#include "compress/zstd_fast.c"
-#include "compress/zstd_lazy.c"
-#include "compress/zstd_ldm.c"
-#include "compress/zstd_opt.c"
-#include "decompress/zstd_ddict.c"
-#include "decompress/zstd_decompress.c"
-#include "decompress/zstd_decompress_block.c"
-#include "decompress/huf_decompress.c"
-
 
 #define	ZSTD_KMEM_MAGIC		0x20160831
 
@@ -178,7 +158,7 @@ zstd_compare(const void *a, const void *b)
 	ASSERT3U(x->kmem_magic, ==, ZSTD_KMEM_MAGIC);
 	ASSERT3U(y->kmem_magic, ==, ZSTD_KMEM_MAGIC);
 
-	return (AVL_CMP(x->kmem_size, y->kmem_size));
+	return (TREE_CMP(x->kmem_size, y->kmem_size));
 }
 
 static enum zio_zstd_levels
@@ -677,5 +657,5 @@ EXPORT_SYMBOL(zstd_get_level);
 
 MODULE_DESCRIPTION("ZSTD Compression for ZFS");
 MODULE_LICENSE("Dual BSD/GPL");
-MODULE_VERSION("1.4.1");
+MODULE_VERSION("1.4.2");
 #endif

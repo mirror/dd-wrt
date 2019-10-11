@@ -160,12 +160,24 @@ AC_DEFUN([ZFS_AC_CONFIG_ALWAYS], [
 	ZFS_AC_CONFIG_ALWAYS_CC_NO_OMIT_FRAME_POINTER
 	ZFS_AC_CONFIG_ALWAYS_CC_ASAN
 	ZFS_AC_CONFIG_ALWAYS_TOOLCHAIN_SIMD
+	ZFS_AC_CONFIG_ALWAYS_SYSTEM
 	ZFS_AC_CONFIG_ALWAYS_ARCH
 	ZFS_AC_CONFIG_ALWAYS_PYTHON
 	ZFS_AC_CONFIG_ALWAYS_PYZFS
 ])
 
 AC_DEFUN([ZFS_AC_CONFIG], [
+
+        dnl # Remove the previous build test directory.
+        rm -Rf build
+
+	AC_ARG_VAR([TEST_JOBS],
+	    [simultaneous jobs during configure (defaults to $(nproc))])
+	if test "x$ac_cv_env_TEST_JOBS_set" != "xset"; then
+		TEST_JOBS=$(nproc)
+	fi
+	AC_SUBST(TEST_JOBS)
+
 	ZFS_CONFIG=all
 	AC_ARG_WITH([config],
 		AS_HELP_STRING([--with-config=CONFIG],
@@ -461,7 +473,7 @@ AC_DEFUN([ZFS_AC_DEFAULT_PACKAGE], [
 	AC_MSG_RESULT([$DEFAULT_INIT_SCRIPT])
 	AC_SUBST(DEFAULT_INIT_SCRIPT)
 
-	AC_MSG_CHECKING([default init config direectory])
+	AC_MSG_CHECKING([default init config directory])
 	case "$VENDOR" in
 		alpine)     DEFAULT_INITCONF_DIR=/etc/conf.d    ;;
 		gentoo)     DEFAULT_INITCONF_DIR=/etc/conf.d    ;;

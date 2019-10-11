@@ -402,7 +402,7 @@ load_zfeature(objset_t *mos, dsl_dataset_t *ds, spa_feature_t f)
 }
 
 /*
- * We have to release the fsid syncronously or we risk that a subsequent
+ * We have to release the fsid synchronously or we risk that a subsequent
  * mount of the same dataset will fail to unique_insert the fsid.  This
  * failure would manifest itself as the fsid of this dataset changing
  * between mounts which makes NFS clients quite unhappy.
@@ -1852,7 +1852,7 @@ dsl_dataset_snapshot_sync_impl(dsl_dataset_t *ds, const char *snapname,
 
 	dsl_dir_snap_cmtime_update(ds->ds_dir);
 
-	spa_history_log_internal_ds(ds->ds_prev, "snapshot", tx, "");
+	spa_history_log_internal_ds(ds->ds_prev, "snapshot", tx, " ");
 }
 
 void
@@ -2097,7 +2097,7 @@ dsl_dataset_sync(dsl_dataset_t *ds, zio_t *zio, dmu_tx_t *tx)
  * snapshot (as opposed to those that are clone only) is below a certain
  * threshold
  */
-boolean_t
+static boolean_t
 dsl_livelist_should_disable(dsl_dataset_t *ds)
 {
 	uint64_t used, referenced;
@@ -2317,7 +2317,7 @@ get_clones_stat(dsl_dataset_t *ds, nvlist_t *nv)
 	 * We use nvlist_alloc() instead of fnvlist_alloc() because the
 	 * latter would allocate the list with NV_UNIQUE_NAME flag.
 	 * As a result, every time a clone name is appended to the list
-	 * it would be (linearly) searched for for a duplicate name.
+	 * it would be (linearly) searched for a duplicate name.
 	 * We already know that all clone names must be unique and we
 	 * want avoid the quadratic complexity of double-checking that
 	 * because we can have a large number of clones.
@@ -2444,7 +2444,7 @@ get_receive_resume_stats_impl(dsl_dataset_t *ds)
 		kmem_free(compressed, packed_size);
 		return (propval);
 	}
-	return (strdup(""));
+	return (kmem_strdup(""));
 }
 
 /*
@@ -2467,7 +2467,7 @@ get_child_receive_stats(dsl_dataset_t *ds)
 		dsl_dataset_rele(recv_ds, FTAG);
 		return (propval);
 	}
-	return (strdup(""));
+	return (kmem_strdup(""));
 }
 
 static void
@@ -2483,9 +2483,9 @@ get_receive_resume_stats(dsl_dataset_t *ds, nvlist_t *nv)
 			dsl_prop_nvlist_add_string(nv,
 			    ZFS_PROP_RECEIVE_RESUME_TOKEN, childval);
 		}
-		strfree(childval);
+		kmem_strfree(childval);
 	}
-	strfree(propval);
+	kmem_strfree(propval);
 }
 
 uint64_t
@@ -2692,7 +2692,7 @@ dsl_get_mountpoint(dsl_dataset_t *ds, const char *dsname, char *value,
 	int error;
 	dsl_pool_t *dp = ds->ds_dir->dd_pool;
 
-	/* Retrieve the mountpoint value stored in the zap opbject */
+	/* Retrieve the mountpoint value stored in the zap object */
 	error = dsl_prop_get_ds(ds, zfs_prop_to_name(ZFS_PROP_MOUNTPOINT), 1,
 	    ZAP_MAXVALUELEN, value, source);
 	if (error != 0) {
@@ -3731,7 +3731,7 @@ dsl_dataset_promote_sync(void *arg, dmu_tx_t *tx)
 	dsl_dir_remove_livelist(origin_ds->ds_dir, tx, B_TRUE);
 
 	/* log history record */
-	spa_history_log_internal_ds(hds, "promote", tx, "");
+	spa_history_log_internal_ds(hds, "promote", tx, " ");
 
 	dsl_dir_rele(odd, FTAG);
 	promote_rele(ddpa, FTAG);
@@ -3970,7 +3970,7 @@ dsl_dataset_clone_swap_check_impl(dsl_dataset_t *clone,
 	 * The clone can't be too much over the head's refquota.
 	 *
 	 * To ensure that the entire refquota can be used, we allow one
-	 * transaction to exceed the the refquota.  Therefore, this check
+	 * transaction to exceed the refquota.  Therefore, this check
 	 * needs to also allow for the space referenced to be more than the
 	 * refquota.  The maximum amount of space that one transaction can use
 	 * on disk is DMU_MAX_ACCESS * spa_asize_inflation.  Allowing this
@@ -4881,20 +4881,19 @@ dsl_dataset_activate_redaction(dsl_dataset_t *ds, uint64_t *redact_snaps,
 	ds->ds_feature[SPA_FEATURE_REDACTED_DATASETS] = ftuaa;
 }
 
-
-#if defined(_KERNEL)
+/* BEGIN CSTYLED */
 #if defined(_LP64)
-module_param(zfs_max_recordsize, int, 0644);
-MODULE_PARM_DESC(zfs_max_recordsize, "Max allowed record size");
+#define	RECORDSIZE_PERM ZMOD_RW
 #else
 /* Limited to 1M on 32-bit platforms due to lack of virtual address space */
-module_param(zfs_max_recordsize, int, 0444);
-MODULE_PARM_DESC(zfs_max_recordsize, "Max allowed record size");
+#define	RECORDSIZE_PERM ZMOD_RD
 #endif
+ZFS_MODULE_PARAM(zfs, zfs_, max_recordsize, INT, RECORDSIZE_PERM,
+	"Max allowed record size");
 
-module_param(zfs_allow_redacted_dataset_mount, int, 0644);
-MODULE_PARM_DESC(zfs_allow_redacted_dataset_mount,
+ZFS_MODULE_PARAM(zfs, zfs_, allow_redacted_dataset_mount, INT, ZMOD_RW,
 	"Allow mounting of redacted datasets");
+/* END CSTYLED */
 
 EXPORT_SYMBOL(dsl_dataset_hold);
 EXPORT_SYMBOL(dsl_dataset_hold_flags);
@@ -4932,4 +4931,3 @@ EXPORT_SYMBOL(dsl_dsobj_to_dsname);
 EXPORT_SYMBOL(dsl_dataset_check_quota);
 EXPORT_SYMBOL(dsl_dataset_clone_swap_check_impl);
 EXPORT_SYMBOL(dsl_dataset_clone_swap_sync_impl);
-#endif

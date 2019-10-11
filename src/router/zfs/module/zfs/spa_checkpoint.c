@@ -102,7 +102,7 @@
  *   Once the synctask is done and the discarding zthr is awake, we discard
  *   the checkpointed data over multiple TXGs by having the zthr prefetching
  *   entries from vdev_checkpoint_sm and then starting a synctask that places
- *   them as free blocks in to their respective ms_allocatable and ms_sm
+ *   them as free blocks into their respective ms_allocatable and ms_sm
  *   structures.
  *   [see spa_checkpoint_discard_thread()]
  *
@@ -191,6 +191,7 @@ spa_checkpoint_discard_complete_sync(void *arg, dmu_tx_t *tx)
 	spa->spa_checkpoint_info.sci_timestamp = 0;
 
 	spa_feature_decr(spa, SPA_FEATURE_POOL_CHECKPOINT, tx);
+	spa_notify_waiters(spa);
 
 	spa_history_log_internal(spa, "spa discard checkpoint", tx,
 	    "finished discarding checkpointed state from the pool");
@@ -524,7 +525,7 @@ spa_checkpoint_sync(void *arg, dmu_tx_t *tx)
 	spa_feature_incr(spa, SPA_FEATURE_POOL_CHECKPOINT, tx);
 
 	spa_history_log_internal(spa, "spa checkpoint", tx,
-	    "checkpointed uberblock txg=%llu", checkpoint.ub_txg);
+	    "checkpointed uberblock txg=%llu", (u_longlong_t)checkpoint.ub_txg);
 }
 
 /*
@@ -624,15 +625,12 @@ spa_checkpoint_discard(const char *pool)
 	    ZFS_SPACE_CHECK_DISCARD_CHECKPOINT));
 }
 
-#if defined(_KERNEL)
 EXPORT_SYMBOL(spa_checkpoint_get_stats);
 EXPORT_SYMBOL(spa_checkpoint_discard_thread);
 EXPORT_SYMBOL(spa_checkpoint_discard_thread_check);
 
 /* BEGIN CSTYLED */
-module_param(zfs_spa_discard_memory_limit, ulong, 0644);
-MODULE_PARM_DESC(zfs_spa_discard_memory_limit,
-    "Maximum memory for prefetching checkpoint space "
-    "map per top-level vdev while discarding checkpoint");
+ZFS_MODULE_PARAM(zfs_spa, zfs_spa_, discard_memory_limit, ULONG, ZMOD_RW,
+	"Limit for memory used in prefetching the checkpoint space map done "
+	"on each vdev while discarding the checkpoint");
 /* END CSTYLED */
-#endif
