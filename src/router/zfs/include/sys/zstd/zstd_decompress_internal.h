@@ -162,7 +162,7 @@ struct ZSTD_DCtx_s
 /*! ZSTD_loadDEntropy() :
  *  dict : must point at beginning of a valid zstd dictionary.
  * @return : size of entropy tables read */
-static size_t ZSTD_loadDEntropy(ZSTD_entropyDTables_t* entropy,
+size_t ZSTD_loadDEntropy(ZSTD_entropyDTables_t* entropy,
                    const void* const dict, size_t const dictSize);
 
 /*! ZSTD_checkContinuity() :
@@ -170,7 +170,7 @@ static size_t ZSTD_loadDEntropy(ZSTD_entropyDTables_t* entropy,
  *  If yes, do nothing (continue on current segment).
  *  If not, classify previous segment as "external dictionary", and start a new segment.
  *  This function cannot fail. */
-static void ZSTD_checkContinuity(ZSTD_DCtx* dctx, const void* dst);
+void ZSTD_checkContinuity(ZSTD_DCtx* dctx, const void* dst);
 
 
 #endif /* ZSTD_DECOMPRESS_INTERNAL_H */

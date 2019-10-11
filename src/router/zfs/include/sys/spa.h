@@ -43,6 +43,7 @@
 #include <sys/spa_checksum.h>
 #include <sys/dmu.h>
 #include <sys/space_map.h>
+#include <sys/bitops.h>
 
 #ifdef	__cplusplus
 extern "C" {
@@ -68,51 +69,6 @@ struct bplist;
 struct dsl_pool;
 struct dsl_dataset;
 struct dsl_crypto_params;
-
-/*
- * General-purpose 32-bit and 64-bit bitfield encodings.
- */
-#define	BF32_DECODE(x, low, len)	P2PHASE((x) >> (low), 1U << (len))
-#define	BF64_DECODE(x, low, len)	P2PHASE((x) >> (low), 1ULL << (len))
-#define	BF32_ENCODE(x, low, len)	(P2PHASE((x), 1U << (len)) << (low))
-#define	BF64_ENCODE(x, low, len)	(P2PHASE((x), 1ULL << (len)) << (low))
-
-#define	BF32_GET(x, low, len)		BF32_DECODE(x, low, len)
-#define	BF64_GET(x, low, len)		BF64_DECODE(x, low, len)
-
-#define	BF32_SET(x, low, len, val) do { \
-	ASSERT3U(val, <, 1U << (len)); \
-	ASSERT3U(low + len, <=, 32); \
-	(x) ^= BF32_ENCODE((x >> low) ^ (val), low, len); \
-_NOTE(CONSTCOND) } while (0)
-
-#define	BF64_SET(x, low, len, val) do { \
-	ASSERT3U(val, <, 1ULL << (len)); \
-	ASSERT3U(low + len, <=, 64); \
-	((x) ^= BF64_ENCODE((x >> low) ^ (val), low, len)); \
-_NOTE(CONSTCOND) } while (0)
-
-#define	BF32_GET_SB(x, low, len, shift, bias)	\
-	((BF32_GET(x, low, len) + (bias)) << (shift))
-#define	BF64_GET_SB(x, low, len, shift, bias)	\
-	((BF64_GET(x, low, len) + (bias)) << (shift))
-
-/*
- * We use ASSERT3U instead of ASSERT in these macros to prevent a lint error in
- * the case where val is a constant.  We can't fix ASSERT because it's used as
- * an expression in several places in the kernel; as a result, changing it to
- * the do{} while() syntax to allow us to _NOTE the CONSTCOND is not an option.
- */
-#define	BF32_SET_SB(x, low, len, shift, bias, val) do { \
-	ASSERT3U(IS_P2ALIGNED(val, 1U << shift), !=, B_FALSE); \
-	ASSERT3S((val) >> (shift), >=, bias); \
-	BF32_SET(x, low, len, ((val) >> (shift)) - (bias)); \
-_NOTE(CONSTCOND) } while (0)
-#define	BF64_SET_SB(x, low, len, shift, bias, val) do { \
-	ASSERT3U(IS_P2ALIGNED(val, 1ULL << shift), !=, B_FALSE); \
-	ASSERT3S((val) >> (shift), >=, bias); \
-	BF64_SET(x, low, len, ((val) >> (shift)) - (bias)); \
-_NOTE(CONSTCOND) } while (0)
 
 /*
  * We currently support block sizes from 512 bytes to 16MB.
@@ -1008,8 +964,8 @@ extern int spa_import_progress_set_state(uint64_t pool_guid,
 
 /* Pool configuration locks */
 extern int spa_config_tryenter(spa_t *spa, int locks, void *tag, krw_t rw);
-extern void spa_config_enter(spa_t *spa, int locks, void *tag, krw_t rw);
-extern void spa_config_exit(spa_t *spa, int locks, void *tag);
+extern void spa_config_enter(spa_t *spa, int locks, const void *tag, krw_t rw);
+extern void spa_config_exit(spa_t *spa, int locks, const void *tag);
 extern int spa_config_held(spa_t *spa, int locks, krw_t rw);
 
 /* Pool vdev add/remove lock */
@@ -1124,7 +1080,6 @@ extern boolean_t spa_has_checkpoint(spa_t *spa);
 extern boolean_t spa_importing_readonly_checkpoint(spa_t *spa);
 extern boolean_t spa_suspend_async_destroy(spa_t *spa);
 extern uint64_t spa_min_claim_txg(spa_t *spa);
-extern void zfs_blkptr_verify(spa_t *spa, const blkptr_t *bp);
 extern boolean_t zfs_dva_valid(spa_t *spa, const dva_t *dva,
     const blkptr_t *bp);
 typedef void (*spa_remap_cb_t)(uint64_t vdev, uint64_t offset, uint64_t size,
@@ -1138,7 +1093,7 @@ extern void spa_set_missing_tvds(spa_t *spa, uint64_t missing);
 extern boolean_t spa_top_vdevs_spacemap_addressable(spa_t *spa);
 extern uint64_t spa_total_metaslabs(spa_t *spa);
 extern boolean_t spa_multihost(spa_t *spa);
-extern unsigned long spa_get_hostid(void);
+extern uint32_t spa_get_hostid(spa_t *spa);
 extern void spa_activate_allocation_classes(spa_t *, dmu_tx_t *);
 extern boolean_t spa_livelist_delete_check(spa_t *spa);
 
@@ -1155,11 +1110,11 @@ extern int spa_history_log_nvl(spa_t *spa, nvlist_t *nvl);
 extern void spa_history_log_version(spa_t *spa, const char *operation,
     dmu_tx_t *tx);
 extern void spa_history_log_internal(spa_t *spa, const char *operation,
-    dmu_tx_t *tx, const char *fmt, ...);
+    dmu_tx_t *tx, const char *fmt, ...) __printflike(4, 5);
 extern void spa_history_log_internal_ds(struct dsl_dataset *ds, const char *op,
-    dmu_tx_t *tx, const char *fmt, ...);
+    dmu_tx_t *tx, const char *fmt, ...)  __printflike(4, 5);
 extern void spa_history_log_internal_dd(dsl_dir_t *dd, const char *operation,
-    dmu_tx_t *tx, const char *fmt, ...);
+    dmu_tx_t *tx, const char *fmt, ...) __printflike(4, 5);
 
 extern const char *spa_state_to_name(spa_t *spa);
 
@@ -1205,6 +1160,14 @@ extern void spa_configfile_set(spa_t *, nvlist_t *, boolean_t);
 /* asynchronous event notification */
 extern void spa_event_notify(spa_t *spa, vdev_t *vdev, nvlist_t *hist_nvl,
     const char *name);
+
+/* waiting for pool activities to complete */
+extern int spa_wait(const char *pool, zpool_wait_activity_t activity,
+    boolean_t *waited);
+extern int spa_wait_tag(const char *name, zpool_wait_activity_t activity,
+    uint64_t tag, boolean_t *waited);
+extern void spa_notify_waiters(spa_t *spa);
+extern void spa_wake_waiters(spa_t *spa);
 
 #ifdef ZFS_DEBUG
 #define	dprintf_bp(bp, fmt, ...) do {				\

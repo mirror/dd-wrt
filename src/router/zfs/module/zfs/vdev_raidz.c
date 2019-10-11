@@ -21,7 +21,7 @@
 
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2014 by Delphix. All rights reserved.
+ * Copyright (c) 2012, 2019 by Delphix. All rights reserved.
  * Copyright (c) 2016 Gvozden Nešković. All rights reserved.
  */
 
@@ -98,7 +98,7 @@
  *	R = 4^n-1 * D_0 + 4^n-2 * D_1 + ... + 4^1 * D_n-2 + 4^0 * D_n-1
  *	  = ((...((D_0) * 4 + D_1) * 4 + ...) * 4 + D_n-2) * 4 + D_n-1
  *
- * We chose 1, 2, and 4 as our generators because 1 corresponds to the trival
+ * We chose 1, 2, and 4 as our generators because 1 corresponds to the trivial
  * XOR operation, and 2 and 4 can be computed quickly and generate linearly-
  * independent coefficients. (There are no additional coefficients that have
  * this property which is why the uncorrected Plank method breaks down.)
@@ -447,7 +447,7 @@ vdev_raidz_map_alloc(zio_t *zio, uint64_t ashift, uint64_t dcols,
 	/*
 	 * If all data stored spans all columns, there's a danger that parity
 	 * will always be on the same device and, since parity isn't read
-	 * during normal operation, that that device's I/O bandwidth won't be
+	 * during normal operation, that device's I/O bandwidth won't be
 	 * used effectively. We therefore switch the parity every 1MB.
 	 *
 	 * ... at least that was, ostensibly, the theory. As a practical
@@ -1638,7 +1638,7 @@ vdev_raidz_io_verify(zio_t *zio, raidz_map_t *rm, int col)
 	vdev_t *vd = zio->io_vd;
 	vdev_t *tvd = vd->vdev_top;
 
-	range_seg_t logical_rs, physical_rs;
+	range_seg64_t logical_rs, physical_rs;
 	logical_rs.rs_start = zio->io_offset;
 	logical_rs.rs_end = logical_rs.rs_start +
 	    vdev_raidz_asize(zio->io_vd, zio->io_size);
@@ -2336,7 +2336,7 @@ vdev_raidz_state_change(vdev_t *vd, int faulted, int degraded)
 /*
  * Determine if any portion of the provided block resides on a child vdev
  * with a dirty DTL and therefore needs to be resilvered.  The function
- * assumes that at least one DTL is dirty which imples that full stripe
+ * assumes that at least one DTL is dirty which implies that full stripe
  * width blocks must be resilvered.
  */
 static boolean_t
@@ -2372,7 +2372,7 @@ vdev_raidz_need_resilver(vdev_t *vd, uint64_t offset, size_t psize)
 }
 
 static void
-vdev_raidz_xlate(vdev_t *cvd, const range_seg_t *in, range_seg_t *res)
+vdev_raidz_xlate(vdev_t *cvd, const range_seg64_t *in, range_seg64_t *res)
 {
 	vdev_t *raidvd = cvd->vdev_parent;
 	ASSERT(raidvd->vdev_ops == &vdev_raidz_ops);

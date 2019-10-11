@@ -22,6 +22,7 @@
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2011, 2019 by Delphix. All rights reserved.
+ * Copyright (c) 2019, loli10K <ezomori.nozomu@gmail.com>. All rights reserved.
  */
 
 #include <sys/zfs_context.h>
@@ -46,7 +47,7 @@
 #include <sys/abd.h>
 #include <sys/vdev_initialize.h>
 #include <sys/vdev_trim.h>
-#include <sys/trace_vdev.h>
+#include <sys/trace_defs.h>
 
 /*
  * This file contains the necessary logic to remove vdevs from a
@@ -197,11 +198,12 @@ spa_vdev_removal_create(vdev_t *vd)
 	spa_vdev_removal_t *svr = kmem_zalloc(sizeof (*svr), KM_SLEEP);
 	mutex_init(&svr->svr_lock, NULL, MUTEX_DEFAULT, NULL);
 	cv_init(&svr->svr_cv, NULL, CV_DEFAULT, NULL);
-	svr->svr_allocd_segs = range_tree_create(NULL, NULL);
+	svr->svr_allocd_segs = range_tree_create(NULL, RANGE_SEG64, NULL, 0, 0);
 	svr->svr_vdev_id = vd->vdev_id;
 
 	for (int i = 0; i < TXG_SIZE; i++) {
-		svr->svr_frees[i] = range_tree_create(NULL, NULL);
+		svr->svr_frees[i] = range_tree_create(NULL, RANGE_SEG64, NULL,
+		    0, 0);
 		list_create(&svr->svr_new_segments[i],
 		    sizeof (vdev_indirect_mapping_entry_t),
 		    offsetof(vdev_indirect_mapping_entry_t, vime_node));
@@ -347,7 +349,7 @@ vdev_remove_initiate_sync(void *arg, dmu_tx_t *tx)
 	    vic->vic_mapping_object);
 
 	spa_history_log_internal(spa, "vdev remove started", tx,
-	    "%s vdev %llu %s", spa_name(spa), vd->vdev_id,
+	    "%s vdev %llu %s", spa_name(spa), (u_longlong_t)vd->vdev_id,
 	    (vd->vdev_path != NULL) ? vd->vdev_path : "-");
 	/*
 	 * Setting spa_vdev_removal causes subsequent frees to call
@@ -697,6 +699,7 @@ spa_finish_removal(spa_t *spa, dsl_scan_state_t state, dmu_tx_t *tx)
 	spa_vdev_removal_destroy(svr);
 
 	spa_sync_removing_state(spa, tx);
+	spa_notify_waiters(spa);
 
 	vdev_config_dirty(spa->spa_root_vdev);
 }
@@ -965,18 +968,15 @@ spa_vdev_copy_segment(vdev_t *vd, range_tree_t *segs,
 		 * the allocation at the end of a segment, thus avoiding
 		 * additional split blocks.
 		 */
-		range_seg_t search;
-		avl_index_t where;
-		search.rs_start = start + maxalloc;
-		search.rs_end = search.rs_start;
-		range_seg_t *rs = avl_find(&segs->rt_root, &search, &where);
-		if (rs == NULL) {
-			rs = avl_nearest(&segs->rt_root, where, AVL_BEFORE);
-		} else {
-			rs = AVL_PREV(&segs->rt_root, rs);
-		}
+		range_seg_max_t search;
+		zfs_btree_index_t where;
+		rs_set_start(&search, segs, start + maxalloc);
+		rs_set_end(&search, segs, start + maxalloc);
+		(void) zfs_btree_find(&segs->rt_root, &search, &where);
+		range_seg_t *rs = zfs_btree_prev(&segs->rt_root, &where,
+		    &where);
 		if (rs != NULL) {
-			size = rs->rs_end - start;
+			size = rs_get_end(rs, segs) - start;
 		} else {
 			/*
 			 * There are no segments that end before maxalloc.
@@ -1009,20 +1009,22 @@ spa_vdev_copy_segment(vdev_t *vd, range_tree_t *segs,
 	 * relative to the start of the range to be copied (i.e. relative to the
 	 * local variable "start").
 	 */
-	range_tree_t *obsolete_segs = range_tree_create(NULL, NULL);
+	range_tree_t *obsolete_segs = range_tree_create(NULL, RANGE_SEG64, NULL,
+	    0, 0);
 
-	range_seg_t *rs = avl_first(&segs->rt_root);
-	ASSERT3U(rs->rs_start, ==, start);
-	uint64_t prev_seg_end = rs->rs_end;
-	while ((rs = AVL_NEXT(&segs->rt_root, rs)) != NULL) {
-		if (rs->rs_start >= start + size) {
+	zfs_btree_index_t where;
+	range_seg_t *rs = zfs_btree_first(&segs->rt_root, &where);
+	ASSERT3U(rs_get_start(rs, segs), ==, start);
+	uint64_t prev_seg_end = rs_get_end(rs, segs);
+	while ((rs = zfs_btree_next(&segs->rt_root, &where, &where)) != NULL) {
+		if (rs_get_start(rs, segs) >= start + size) {
 			break;
 		} else {
 			range_tree_add(obsolete_segs,
 			    prev_seg_end - start,
-			    rs->rs_start - prev_seg_end);
+			    rs_get_start(rs, segs) - prev_seg_end);
 		}
-		prev_seg_end = rs->rs_end;
+		prev_seg_end = rs_get_end(rs, segs);
 	}
 	/* We don't end in the middle of an obsolete range */
 	ASSERT3U(start + size, <=, prev_seg_end);
@@ -1111,7 +1113,7 @@ vdev_remove_complete_sync(void *arg, dmu_tx_t *tx)
 	spa_finish_removal(dmu_tx_pool(tx)->dp_spa, DSS_FINISHED, tx);
 	/* vd->vdev_path is not available here */
 	spa_history_log_internal(spa, "vdev remove completed",  tx,
-	    "%s vdev %llu", spa_name(spa), vd->vdev_id);
+	    "%s vdev %llu", spa_name(spa), (u_longlong_t)vd->vdev_id);
 }
 
 static void
@@ -1266,9 +1268,10 @@ spa_vdev_copy_impl(vdev_t *vd, spa_vdev_removal_t *svr, vdev_copy_arg_t *vca,
 	 * allocated segments that we are copying.  We may also be copying
 	 * free segments (of up to vdev_removal_max_span bytes).
 	 */
-	range_tree_t *segs = range_tree_create(NULL, NULL);
+	range_tree_t *segs = range_tree_create(NULL, RANGE_SEG64, NULL, 0, 0);
 	for (;;) {
-		range_seg_t *rs = range_tree_first(svr->svr_allocd_segs);
+		range_tree_t *rt = svr->svr_allocd_segs;
+		range_seg_t *rs = range_tree_first(rt);
 
 		if (rs == NULL)
 			break;
@@ -1277,17 +1280,17 @@ spa_vdev_copy_impl(vdev_t *vd, spa_vdev_removal_t *svr, vdev_copy_arg_t *vca,
 
 		if (range_tree_is_empty(segs)) {
 			/* need to truncate the first seg based on max_alloc */
-			seg_length =
-			    MIN(rs->rs_end - rs->rs_start, *max_alloc);
+			seg_length = MIN(rs_get_end(rs, rt) - rs_get_start(rs,
+			    rt), *max_alloc);
 		} else {
-			if (rs->rs_start - range_tree_max(segs) >
+			if (rs_get_start(rs, rt) - range_tree_max(segs) >
 			    vdev_removal_max_span) {
 				/*
 				 * Including this segment would cause us to
 				 * copy a larger unneeded chunk than is allowed.
 				 */
 				break;
-			} else if (rs->rs_end - range_tree_min(segs) >
+			} else if (rs_get_end(rs, rt) - range_tree_min(segs) >
 			    *max_alloc) {
 				/*
 				 * This additional segment would extend past
@@ -1296,13 +1299,14 @@ spa_vdev_copy_impl(vdev_t *vd, spa_vdev_removal_t *svr, vdev_copy_arg_t *vca,
 				 */
 				break;
 			} else {
-				seg_length = rs->rs_end - rs->rs_start;
+				seg_length = rs_get_end(rs, rt) -
+				    rs_get_start(rs, rt);
 			}
 		}
 
-		range_tree_add(segs, rs->rs_start, seg_length);
+		range_tree_add(segs, rs_get_start(rs, rt), seg_length);
 		range_tree_remove(svr->svr_allocd_segs,
-		    rs->rs_start, seg_length);
+		    rs_get_start(rs, rt), seg_length);
 	}
 
 	if (range_tree_is_empty(segs)) {
@@ -1481,7 +1485,7 @@ spa_vdev_remove_thread(void *arg)
 
 		vca.vca_msp = msp;
 		zfs_dbgmsg("copying %llu segments for metaslab %llu",
-		    avl_numnodes(&svr->svr_allocd_segs->rt_root),
+		    zfs_btree_numnodes(&svr->svr_allocd_segs->rt_root),
 		    msp->ms_id);
 
 		while (!svr->svr_thread_exit &&
@@ -1757,7 +1761,8 @@ spa_vdev_remove_cancel_sync(void *arg, dmu_tx_t *tx)
 	    vd->vdev_id, dmu_tx_get_txg(tx));
 	spa_history_log_internal(spa, "vdev remove canceled", tx,
 	    "%s vdev %llu %s", spa_name(spa),
-	    vd->vdev_id, (vd->vdev_path != NULL) ? vd->vdev_path : "-");
+	    (u_longlong_t)vd->vdev_id,
+	    (vd->vdev_path != NULL) ? vd->vdev_path : "-");
 }
 
 static int
@@ -1960,6 +1965,9 @@ spa_vdev_remove_top_check(vdev_t *vd)
 	spa_t *spa = vd->vdev_spa;
 
 	if (vd != vd->vdev_top)
+		return (SET_ERROR(ENOTSUP));
+
+	if (!vdev_is_concrete(vd))
 		return (SET_ERROR(ENOTSUP));
 
 	if (!spa_feature_is_enabled(spa, SPA_FEATURE_DEVICE_REMOVAL))
@@ -2289,22 +2297,17 @@ spa_removal_get_stats(spa_t *spa, pool_removal_stat_t *prs)
 	return (0);
 }
 
-#if defined(_KERNEL)
-module_param(zfs_removal_ignore_errors, int, 0644);
-MODULE_PARM_DESC(zfs_removal_ignore_errors,
+/* BEGIN CSTYLED */
+ZFS_MODULE_PARAM(zfs_vdev, zfs_, removal_ignore_errors, INT, ZMOD_RW,
 	"Ignore hard IO errors when removing device");
 
-module_param(zfs_remove_max_segment, int, 0644);
-MODULE_PARM_DESC(zfs_remove_max_segment,
+ZFS_MODULE_PARAM(zfs_vdev, zfs_, remove_max_segment, INT, ZMOD_RW,
 	"Largest contiguous segment to allocate when removing device");
 
-module_param(vdev_removal_max_span, int, 0644);
-MODULE_PARM_DESC(vdev_removal_max_span,
+ZFS_MODULE_PARAM(zfs_vdev, vdev_, removal_max_span, INT, ZMOD_RW,
 	"Largest span of free chunks a remap segment can span");
 
-/* BEGIN CSTYLED */
-module_param(zfs_removal_suspend_progress, int, 0644);
-MODULE_PARM_DESC(zfs_removal_suspend_progress,
+ZFS_MODULE_PARAM(zfs_vdev, zfs_, removal_suspend_progress, INT, ZMOD_RW,
 	"Pause device removal after this many bytes are copied "
 	"(debug use only - causes removal to hang)");
 /* END CSTYLED */
@@ -2318,4 +2321,3 @@ EXPORT_SYMBOL(spa_vdev_remove);
 EXPORT_SYMBOL(spa_vdev_remove_cancel);
 EXPORT_SYMBOL(spa_vdev_remove_suspend);
 EXPORT_SYMBOL(svr_sync);
-#endif

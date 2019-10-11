@@ -23,7 +23,7 @@
  */
 
 #include <sys/types.h>
-#include <linux/simd_aarch64.h>
+#include <sys/simd.h>
 
 #define	__asm __asm__ __volatile__
 
@@ -42,7 +42,7 @@
 /*
  * Here we need registers not used otherwise.
  * They will be used in unused ASM for the case
- * with more registers than required... but GGC
+ * with more registers than required... but GCC
  * will still need to make sure the constraints
  * are correct, and duplicate constraints are illegal
  * ... and we use the "register" number as a name

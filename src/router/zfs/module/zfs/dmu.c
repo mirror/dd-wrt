@@ -49,7 +49,7 @@
 #include <sys/sa.h>
 #include <sys/zfeature.h>
 #include <sys/abd.h>
-#include <sys/trace_dmu.h>
+#include <sys/trace_defs.h>
 #include <sys/zfs_rlock.h>
 #ifdef _KERNEL
 #include <sys/vmsystm.h>
@@ -639,11 +639,11 @@ dmu_buf_rele_array(dmu_buf_t **dbp_fake, int numbufs, void *tag)
 
 /*
  * Issue prefetch i/os for the given blocks.  If level is greater than 0, the
- * indirect blocks prefeteched will be those that point to the blocks containing
+ * indirect blocks prefetched will be those that point to the blocks containing
  * the data starting at offset, and continuing to offset + len.
  *
  * Note that if the indirect blocks above the blocks being prefetched are not
- * in cache, they will be asychronously read in.
+ * in cache, they will be asynchronously read in.
  */
 void
 dmu_prefetch(objset_t *os, uint64_t object, int64_t level, uint64_t offset,
@@ -1090,6 +1090,9 @@ dmu_write(objset_t *os, uint64_t object, uint64_t offset, uint64_t size,
 	dmu_buf_rele_array(dbp, numbufs, FTAG);
 }
 
+/*
+ * Note: Lustre is an external consumer of this interface.
+ */
 void
 dmu_write_by_dnode(dnode_t *dn, uint64_t offset, uint64_t size,
     const void *buf, dmu_tx_t *tx)
@@ -2181,7 +2184,7 @@ dmu_write_policy(objset_t *os, dnode_t *dn, int level, int wp, zio_prop_t *zp)
 		 * Determine dedup setting.  If we are in dmu_sync(),
 		 * we won't actually dedup now because that's all
 		 * done in syncing context; but we do want to use the
-		 * dedup checkum.  If the checksum is not strong
+		 * dedup checksum.  If the checksum is not strong
 		 * enough to ensure unique signatures, force
 		 * dedup_verify.
 		 */
@@ -2481,7 +2484,6 @@ dmu_fini(void)
 	abd_fini();
 }
 
-#if defined(_KERNEL)
 EXPORT_SYMBOL(dmu_bonus_hold);
 EXPORT_SYMBOL(dmu_bonus_hold_by_dnode);
 EXPORT_SYMBOL(dmu_buf_hold_array_by_bonus);
@@ -2515,21 +2517,15 @@ EXPORT_SYMBOL(dmu_buf_hold);
 EXPORT_SYMBOL(dmu_ot);
 
 /* BEGIN CSTYLED */
-module_param(zfs_nopwrite_enabled, int, 0644);
-MODULE_PARM_DESC(zfs_nopwrite_enabled, "Enable NOP writes");
+ZFS_MODULE_PARAM(zfs, zfs_, nopwrite_enabled, INT, ZMOD_RW,
+	"Enable NOP writes");
 
-module_param(zfs_per_txg_dirty_frees_percent, ulong, 0644);
-MODULE_PARM_DESC(zfs_per_txg_dirty_frees_percent,
-	"percentage of dirtied blocks from frees in one TXG");
+ZFS_MODULE_PARAM(zfs, zfs_, per_txg_dirty_frees_percent, ULONG, ZMOD_RW,
+	"Percentage of dirtied blocks from frees in one TXG");
 
-module_param(zfs_dmu_offset_next_sync, int, 0644);
-MODULE_PARM_DESC(zfs_dmu_offset_next_sync,
+ZFS_MODULE_PARAM(zfs, zfs_, dmu_offset_next_sync, INT, ZMOD_RW,
 	"Enable forcing txg sync to find holes");
 
-module_param(dmu_prefetch_max, int, 0644);
-MODULE_PARM_DESC(dmu_prefetch_max,
+ZFS_MODULE_PARAM(zfs, , dmu_prefetch_max, INT, ZMOD_RW,
 	"Limit one prefetch call to this size");
-
 /* END CSTYLED */
-
-#endif

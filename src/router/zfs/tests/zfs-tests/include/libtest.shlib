@@ -742,6 +742,18 @@ function bkmarkexists
 }
 
 #
+# Return 0 if a hold exists; $? otherwise
+#
+# $1 - hold tag
+# $2 - snapshot name
+#
+function holdexists
+{
+	zfs holds "$2" | awk '{ print $2 }' | grep "$1" > /dev/null 2>&1
+	return $?
+}
+
+#
 # Set a property to a certain value on a dataset.
 # Sets a property of the dataset to the value as passed in.
 # @param:
@@ -857,7 +869,7 @@ function zero_partitions #<whole_disk_name>
 # Size should be specified with units as per
 # the `format` command requirements eg. 100mb 3gb
 #
-# NOTE: This entire interface is problematic for the Linux parted utilty
+# NOTE: This entire interface is problematic for the Linux parted utility
 # which requires the end of the partition to be specified.  It would be
 # best to retire this interface and replace it with something more flexible.
 # At the moment a best effort is made.
@@ -954,61 +966,26 @@ function set_partition
 #
 function delete_partitions
 {
-	typeset -i j=1
+	typeset disk
 
-	if [[ -z $DISK_ARRAY_NUM ]]; then
-		DISK_ARRAY_NUM=$(echo ${DISKS} | nawk '{print NF}')
-	fi
 	if [[ -z $DISKSARRAY ]]; then
 		DISKSARRAY=$DISKS
 	fi
 
 	if is_linux; then
-		if (( $DISK_ARRAY_NUM == 1 )); then
-			while ((j < MAX_PARTITIONS)); do
-				parted $DEV_DSKDIR/$DISK -s rm $j \
-				    > /dev/null 2>&1
-				if (( $? == 1 )); then
-					lsblk | egrep ${DISK}${SLICE_PREFIX}${j} > /dev/null
-						if (( $? == 1 )); then
-							log_note "Partitions for $DISK should be deleted"
-						else
-							log_fail "Partition for ${DISK}${SLICE_PREFIX}${j} not deleted"
-						fi
-						return 0
+		typeset -i part
+		for disk in $DISKSARRAY; do
+			for (( part = 1; part < MAX_PARTITIONS; part++ )); do
+				typeset partition=${disk}${SLICE_PREFIX}${part}
+				parted $DEV_DSKDIR/$disk -s rm $part > /dev/null 2>&1
+				if lsblk | grep -qF ${partition}; then
+					log_fail "Partition ${partition} not deleted"
 				else
-					lsblk | egrep ${DISK}${SLICE_PREFIX}${j} > /dev/null
-						if (( $? == 0 )); then
-							log_fail "Partition for ${DISK}${SLICE_PREFIX}${j} not deleted"
-						fi
+					log_note "Partition ${partition} deleted"
 				fi
-				((j = j+1))
 			done
-		else
-			for disk in `echo $DISKSARRAY`; do
-				while ((j < MAX_PARTITIONS)); do
-					parted $DEV_DSKDIR/$disk -s rm $j > /dev/null 2>&1
-					if (( $? == 1 )); then
-						lsblk | egrep ${disk}${SLICE_PREFIX}${j} > /dev/null
-						if (( $? == 1 )); then
-							log_note "Partitions for $disk should be deleted"
-						else
-							log_fail "Partition for ${disk}${SLICE_PREFIX}${j} not deleted"
-						fi
-						j=7
-					else
-						lsblk | egrep ${disk}${SLICE_PREFIX}${j} > /dev/null
-						if (( $? == 0 )); then
-							log_fail "Partition for ${disk}${SLICE_PREFIX}${j} not deleted"
-						fi
-					fi
-					((j = j+1))
-				done
-				j=1
-			done
-		fi
+		done
 	fi
-	return 0
 }
 
 #
@@ -1095,7 +1072,7 @@ function partition_disk	#<slice_size> <whole_disk_name>	<total_slices>
 #	dirnum:	    the maximum number of subdirectories to use, -1 no limit
 #	filenum:    the maximum number of files per subdirectory
 #	bytes:	    number of bytes to write
-#	num_writes: numer of types to write out bytes
+#	num_writes: number of types to write out bytes
 #	data:	    the data that will be written
 #
 #	E.g.
@@ -2153,7 +2130,7 @@ function check_pool_status # pool token keyword <verbose>
 }
 
 #
-# These 6 following functions are instance of check_pool_status()
+# The following functions are instance of check_pool_status()
 #	is_pool_resilvering - to check if the pool is resilver in progress
 #	is_pool_resilvered - to check if the pool is resilver completed
 #	is_pool_scrubbing - to check if the pool is scrub in progress
@@ -2162,6 +2139,7 @@ function check_pool_status # pool token keyword <verbose>
 #	is_pool_scrub_paused - to check if the pool has scrub paused
 #	is_pool_removing - to check if the pool is removing a vdev
 #	is_pool_removed - to check if the pool is remove completed
+#	is_pool_discarding - to check if the pool has checkpoint being discarded
 #
 function is_pool_resilvering #pool <verbose>
 {
@@ -2208,6 +2186,12 @@ function is_pool_removing #pool
 function is_pool_removed #pool
 {
 	check_pool_status "$1" "remove" "completed on"
+	return $?
+}
+
+function is_pool_discarding #pool
+{
+	check_pool_status "$1" "checkpoint" "discarding"
 	return $?
 }
 
@@ -2391,7 +2375,7 @@ function del_user #<logname> <basedir>
 	fi
 
 	if id $user > /dev/null 2>&1; then
-		log_must_retry "currently used" 5 userdel $user
+		log_must_retry "currently used" 6 userdel $user
 	fi
 
 	[[ -d $basedir/$user ]] && rm -fr $basedir/$user
@@ -2891,7 +2875,7 @@ function labelvtoc
 
 #
 # check if the system was installed as zfsroot or not
-# return: 0 ture, otherwise false
+# return: 0 if zfsroot, non-zero if not
 #
 function is_zfsroot
 {
@@ -3606,4 +3590,26 @@ function mdb_ctf_set_int
 	fi
 
 	return 0
+}
+
+#
+# Compute MD5 digest for given file or stdin if no file given.
+# Note: file path must not contain spaces
+#
+function md5digest
+{
+	typeset file=$1
+
+	md5sum -b $file | awk '{ print $1 }'
+}
+
+#
+# Compute SHA256 digest for given file or stdin if no file given.
+# Note: file path must not contain spaces
+#
+function sha256digest
+{
+	typeset file=$1
+
+	sha256sum -b $file | awk '{ print $1 }'
 }

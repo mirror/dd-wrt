@@ -511,7 +511,7 @@ fsavl_compare(const void *arg1, const void *arg2)
 	const fsavl_node_t *fn1 = (const fsavl_node_t *)arg1;
 	const fsavl_node_t *fn2 = (const fsavl_node_t *)arg2;
 
-	return (AVL_CMP(fn1->fn_guid, fn2->fn_guid));
+	return (TREE_CMP(fn1->fn_guid, fn2->fn_guid));
 }
 
 /*
@@ -2479,7 +2479,7 @@ zfs_send(zfs_handle_t *zhp, const char *fromsnap, const char *tosnap,
 		++holdseq;
 		(void) snprintf(sdd.holdtag, sizeof (sdd.holdtag),
 		    ".send-%d-%llu", getpid(), (u_longlong_t)holdseq);
-		sdd.cleanup_fd = open(ZFS_DEV, O_RDWR);
+		sdd.cleanup_fd = open(ZFS_DEV, O_RDWR|O_EXCL);
 		if (sdd.cleanup_fd < 0) {
 			err = errno;
 			goto stderr_out;
@@ -3369,19 +3369,12 @@ created_before(libzfs_handle_t *hdl, avl_tree_t *avl,
  * sent datasets to their final locations in the dataset hierarchy.
  */
 static int
-recv_fix_encryption_hierarchy(libzfs_handle_t *hdl, const char *destname,
+recv_fix_encryption_hierarchy(libzfs_handle_t *hdl, const char *top_zfs,
     nvlist_t *stream_nv, avl_tree_t *stream_avl)
 {
 	int err;
 	nvpair_t *fselem = NULL;
 	nvlist_t *stream_fss;
-	char *cp;
-	char top_zfs[ZFS_MAX_DATASET_NAME_LEN];
-
-	(void) strcpy(top_zfs, destname);
-	cp = strrchr(top_zfs, '@');
-	if (cp != NULL)
-		*cp = '\0';
 
 	VERIFY(0 == nvlist_lookup_nvlist(stream_nv, "fss", &stream_fss));
 
@@ -3408,7 +3401,7 @@ recv_fix_encryption_hierarchy(libzfs_handle_t *hdl, const char *destname,
 			uint64_t guid;
 
 			VERIFY(0 == nvpair_value_uint64(snapel, &guid));
-			err = guid_to_name(hdl, destname, guid, B_FALSE,
+			err = guid_to_name(hdl, top_zfs, guid, B_FALSE,
 			    fsname);
 			if (err == 0)
 				break;
@@ -4009,8 +4002,8 @@ zfs_receive_package(libzfs_handle_t *hdl, int fd, const char *destname,
 		    stream_nv, stream_avl, NULL);
 	}
 
-	if (raw && softerr == 0) {
-		softerr = recv_fix_encryption_hierarchy(hdl, destname,
+	if (raw && softerr == 0 && *top_zfs != NULL) {
+		softerr = recv_fix_encryption_hierarchy(hdl, *top_zfs,
 		    stream_nv, stream_avl);
 	}
 
@@ -4042,10 +4035,11 @@ recv_skip(libzfs_handle_t *hdl, int fd, boolean_t byteswap)
 {
 	dmu_replay_record_t *drr;
 	void *buf = zfs_alloc(hdl, SPA_MAXBLOCKSIZE);
+	uint64_t payload_size;
 	char errbuf[1024];
 
 	(void) snprintf(errbuf, sizeof (errbuf), dgettext(TEXT_DOMAIN,
-	    "cannot receive:"));
+	    "cannot receive"));
 
 	/* XXX would be great to use lseek if possible... */
 	drr = buf;
@@ -4072,9 +4066,14 @@ recv_skip(libzfs_handle_t *hdl, int fd, boolean_t byteswap)
 				drr->drr_u.drr_object.drr_bonuslen =
 				    BSWAP_32(drr->drr_u.drr_object.
 				    drr_bonuslen);
+				drr->drr_u.drr_object.drr_raw_bonuslen =
+				    BSWAP_32(drr->drr_u.drr_object.
+				    drr_raw_bonuslen);
 			}
-			(void) recv_read(hdl, fd, buf,
-			    P2ROUNDUP(drr->drr_u.drr_object.drr_bonuslen, 8),
+
+			payload_size =
+			    DRR_OBJECT_PAYLOAD_SIZE(&drr->drr_u.drr_object);
+			(void) recv_read(hdl, fd, buf, payload_size,
 			    B_FALSE, NULL);
 			break;
 
@@ -4087,7 +4086,7 @@ recv_skip(libzfs_handle_t *hdl, int fd, boolean_t byteswap)
 				    BSWAP_64(
 				    drr->drr_u.drr_write.drr_compressed_size);
 			}
-			uint64_t payload_size =
+			payload_size =
 			    DRR_WRITE_PAYLOAD_SIZE(&drr->drr_u.drr_write);
 			(void) recv_read(hdl, fd, buf,
 			    payload_size, B_FALSE, NULL);
@@ -4096,9 +4095,15 @@ recv_skip(libzfs_handle_t *hdl, int fd, boolean_t byteswap)
 			if (byteswap) {
 				drr->drr_u.drr_spill.drr_length =
 				    BSWAP_64(drr->drr_u.drr_spill.drr_length);
+				drr->drr_u.drr_spill.drr_compressed_size =
+				    BSWAP_64(drr->drr_u.drr_spill.
+				    drr_compressed_size);
 			}
-			(void) recv_read(hdl, fd, buf,
-			    drr->drr_u.drr_spill.drr_length, B_FALSE, NULL);
+
+			payload_size =
+			    DRR_SPILL_PAYLOAD_SIZE(&drr->drr_u.drr_spill);
+			(void) recv_read(hdl, fd, buf, payload_size,
+			    B_FALSE, NULL);
 			break;
 		case DRR_WRITE_EMBEDDED:
 			if (byteswap) {
@@ -4598,11 +4603,18 @@ zfs_receive_one(libzfs_handle_t *hdl, int infd, const char *tosnap,
 		}
 	} else {
 		/*
-		 * if the fs does not exist, look for it based on the
-		 * fromsnap GUID
+		 * If the fs does not exist, look for it based on the
+		 * fromsnap GUID.
 		 */
-		(void) snprintf(errbuf, sizeof (errbuf), dgettext(TEXT_DOMAIN,
-		    "cannot receive incremental stream"));
+		if (resuming) {
+			(void) snprintf(errbuf, sizeof (errbuf),
+			    dgettext(TEXT_DOMAIN,
+			    "cannot receive resume stream"));
+		} else {
+			(void) snprintf(errbuf, sizeof (errbuf),
+			    dgettext(TEXT_DOMAIN,
+			    "cannot receive incremental stream"));
+		}
 
 		(void) strcpy(name, destsnap);
 		*strchr(name, '@') = '\0';
@@ -4702,7 +4714,7 @@ zfs_receive_one(libzfs_handle_t *hdl, int infd, const char *tosnap,
 
 		/*
 		 * Raw sends can not be performed as an incremental on top
-		 * of existing unencryppted datasets. zfs recv -F cant be
+		 * of existing unencrypted datasets. zfs recv -F can't be
 		 * used to blow away an existing encrypted filesystem. This
 		 * is because it would require the dsl dir to point to the
 		 * new key (or lack of a key) and the old key at the same
@@ -4834,12 +4846,36 @@ zfs_receive_one(libzfs_handle_t *hdl, int infd, const char *tosnap,
 	}
 
 	if (flags->dryrun) {
+		void *buf = zfs_alloc(hdl, SPA_MAXBLOCKSIZE);
+
+		/*
+		 * We have read the DRR_BEGIN record, but we have
+		 * not yet read the payload. For non-dryrun sends
+		 * this will be done by the kernel, so we must
+		 * emulate that here, before attempting to read
+		 * more records.
+		 */
+		err = recv_read(hdl, infd, buf, drr->drr_payloadlen,
+		    flags->byteswap, NULL);
+		free(buf);
+		if (err != 0)
+			goto out;
+
 		err = recv_skip(hdl, infd, flags->byteswap);
 		goto out;
 	}
 
-	if (top_zfs && (*top_zfs == NULL || strcmp(*top_zfs, name) == 0))
+	/*
+	 * If this is the top-level dataset, record it so we can use it
+	 * for recursive operations later.
+	 */
+	if (top_zfs != NULL &&
+	    (*top_zfs == NULL || strcmp(*top_zfs, name) == 0)) {
 		toplevel = B_TRUE;
+		if (*top_zfs == NULL)
+			*top_zfs = zfs_strdup(hdl, name);
+	}
+
 	if (drrb->drr_type == DMU_OST_ZVOL) {
 		type = ZFS_TYPE_VOLUME;
 	} else if (drrb->drr_type == DMU_OST_ZFS) {
@@ -5093,34 +5129,14 @@ zfs_receive_one(libzfs_handle_t *hdl, int infd, const char *tosnap,
 	 * children of the target filesystem if we did a replication
 	 * receive (indicated by stream_avl being non-NULL).
 	 */
-	cp = strchr(destsnap, '@');
-	if (cp && (ioctl_err == 0 || !newfs) && !redacted) {
-		zfs_handle_t *h;
-
-		*cp = '\0';
-		h = zfs_open(hdl, destsnap,
-		    ZFS_TYPE_FILESYSTEM | ZFS_TYPE_VOLUME);
-		if (h != NULL) {
-			if (h->zfs_type == ZFS_TYPE_VOLUME) {
-				*cp = '@';
-			} else if (newfs || stream_avl) {
-				/*
-				 * Track the first/top of hierarchy fs,
-				 * for mounting and sharing later.
-				 */
-				if (top_zfs && *top_zfs == NULL)
-					*top_zfs = zfs_strdup(hdl, destsnap);
-			}
-			zfs_close(h);
-		}
-		*cp = '@';
-	}
-
 	if (clp) {
 		if (!flags->nomount)
 			err |= changelist_postfix(clp);
 		changelist_free(clp);
 	}
+
+	if ((newfs || stream_avl) && type == ZFS_TYPE_FILESYSTEM && !redacted)
+		flags->domount = B_TRUE;
 
 	if (prop_errflags & ZPROP_ERR_NOCLEAR) {
 		(void) fprintf(stderr, dgettext(TEXT_DOMAIN, "Warning: "
@@ -5374,37 +5390,12 @@ zfs_receive(libzfs_handle_t *hdl, const char *tosnap, nvlist_t *props,
 		return (-2);
 	}
 
-#ifdef __linux__
-#ifndef F_SETPIPE_SZ
-#define	F_SETPIPE_SZ (F_SETLEASE + 7)
-#endif /* F_SETPIPE_SZ */
-
-#ifndef F_GETPIPE_SZ
-#define	F_GETPIPE_SZ (F_GETLEASE + 7)
-#endif /* F_GETPIPE_SZ */
-
 	/*
 	 * It is not uncommon for gigabytes to be processed in zfs receive.
-	 * Speculatively increase the buffer size via Linux-specific fcntl()
-	 * call.
+	 * Speculatively increase the buffer size if supported by the platform.
 	 */
-	if (S_ISFIFO(sb.st_mode)) {
-		FILE *procf = fopen("/proc/sys/fs/pipe-max-size", "r");
-
-		if (procf != NULL) {
-			unsigned long max_psize;
-			long cur_psize;
-			if (fscanf(procf, "%lu", &max_psize) > 0) {
-				cur_psize = fcntl(infd, F_GETPIPE_SZ);
-				if (cur_psize > 0 &&
-				    max_psize > (unsigned long) cur_psize)
-					(void) fcntl(infd, F_SETPIPE_SZ,
-					    max_psize);
-			}
-			fclose(procf);
-		}
-	}
-#endif /* __linux__ */
+	if (S_ISFIFO(sb.st_mode))
+		libzfs_set_pipe_max(infd);
 
 	if (props) {
 		err = nvlist_lookup_string(props, "origin", &originsnap);
@@ -5412,7 +5403,7 @@ zfs_receive(libzfs_handle_t *hdl, const char *tosnap, nvlist_t *props,
 			return (err);
 	}
 
-	cleanup_fd = open(ZFS_DEV, O_RDWR);
+	cleanup_fd = open(ZFS_DEV, O_RDWR|O_EXCL);
 	VERIFY(cleanup_fd >= 0);
 
 	err = zfs_receive_impl(hdl, tosnap, originsnap, flags, infd, NULL, NULL,
@@ -5420,24 +5411,38 @@ zfs_receive(libzfs_handle_t *hdl, const char *tosnap, nvlist_t *props,
 
 	VERIFY(0 == close(cleanup_fd));
 
-	if (err == 0 && !flags->nomount && top_zfs) {
+	if (err == 0 && !flags->nomount && flags->domount && top_zfs) {
 		zfs_handle_t *zhp = NULL;
 		prop_changelist_t *clp = NULL;
 
-		zhp = zfs_open(hdl, top_zfs, ZFS_TYPE_FILESYSTEM);
-		if (zhp != NULL) {
+		zhp = zfs_open(hdl, top_zfs,
+		    ZFS_TYPE_FILESYSTEM | ZFS_TYPE_VOLUME);
+		if (zhp == NULL) {
+			err = -1;
+			goto out;
+		} else {
+			if (zhp->zfs_type == ZFS_TYPE_VOLUME) {
+				zfs_close(zhp);
+				goto out;
+			}
+
 			clp = changelist_gather(zhp, ZFS_PROP_MOUNTPOINT,
 			    CL_GATHER_MOUNT_ALWAYS, 0);
 			zfs_close(zhp);
-			if (clp != NULL) {
-				/* mount and share received datasets */
-				err = changelist_postfix(clp);
-				changelist_free(clp);
+			if (clp == NULL) {
+				err = -1;
+				goto out;
 			}
+
+			/* mount and share received datasets */
+			err = changelist_postfix(clp);
+			changelist_free(clp);
+			if (err != 0)
+				err = -1;
 		}
-		if (zhp == NULL || clp == NULL || err)
-			err = -1;
 	}
+
+out:
 	if (top_zfs)
 		free(top_zfs);
 

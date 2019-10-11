@@ -39,13 +39,13 @@ function cleanup
 	# reset livelist max size
 	set_tunable64 zfs_livelist_max_entries $ORIGINAL_MAX
 	[[ -f $VIRTUAL_DISK1 ]] && log_must rm $VIRTUAL_DISK1
-	[[ -f $VIRTUAL_DISK2 ]] && lot_must rm $VIRTUAL_DISK2
+	[[ -f $VIRTUAL_DISK2 ]] && log_must rm $VIRTUAL_DISK2
 }
 
 log_onexit cleanup
 
 ORIGINAL_MAX=$(get_tunable zfs_livelist_max_entries)
-set_tunable64 zfs_livelist_max_entries 0x14
+set_tunable64 zfs_livelist_max_entries 20
 
 VIRTUAL_DISK1=/var/tmp/disk1
 VIRTUAL_DISK2=/var/tmp/disk2
@@ -61,7 +61,7 @@ log_must zfs snapshot $TESTPOOL2/$TESTFS@snap
 
 log_must zfs clone $TESTPOOL2/$TESTFS@snap $TESTPOOL2/$TESTCLONE
 
-# Create inital files and pause condense zthr on next execution
+# Create initial files and pause condense zthr on next execution
 log_must mkfile 10m /$TESTPOOL2/$TESTCLONE/A
 log_must mkfile 1m /$TESTPOOL2/$TESTCLONE/B
 log_must zpool sync $TESTPOOL2

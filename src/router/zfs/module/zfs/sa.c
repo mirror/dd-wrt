@@ -83,7 +83,7 @@
  * Layouts are simply an array of the attributes and their
  * ordering i.e. [0, 1, 4, 5, 2]
  *
- * Each distinct layout is given a unique layout number and that is whats
+ * Each distinct layout is given a unique layout number and that is what's
  * stored in the header at the beginning of the SA data buffer.
  *
  * A layout only covers a single dbuf (bonus or spill).  If a set of
@@ -95,7 +95,7 @@
  * Adding a single attribute will cause the entire set of attributes to
  * be rewritten and could result in a new layout number being constructed
  * as part of the rewrite if no such layout exists for the new set of
- * attribues.  The new attribute will be appended to the end of the already
+ * attributes.  The new attribute will be appended to the end of the already
  * existing attributes.
  *
  * Both the attribute registration and attribute layout information are
@@ -252,7 +252,7 @@ layout_num_compare(const void *arg1, const void *arg2)
 	const sa_lot_t *node1 = (const sa_lot_t *)arg1;
 	const sa_lot_t *node2 = (const sa_lot_t *)arg2;
 
-	return (AVL_CMP(node1->lot_num, node2->lot_num));
+	return (TREE_CMP(node1->lot_num, node2->lot_num));
 }
 
 static int
@@ -261,11 +261,11 @@ layout_hash_compare(const void *arg1, const void *arg2)
 	const sa_lot_t *node1 = (const sa_lot_t *)arg1;
 	const sa_lot_t *node2 = (const sa_lot_t *)arg2;
 
-	int cmp = AVL_CMP(node1->lot_hash, node2->lot_hash);
+	int cmp = TREE_CMP(node1->lot_hash, node2->lot_hash);
 	if (likely(cmp))
 		return (cmp);
 
-	return (AVL_CMP(node1->lot_instance, node2->lot_instance));
+	return (TREE_CMP(node1->lot_instance, node2->lot_instance));
 }
 
 boolean_t
@@ -1014,7 +1014,7 @@ sa_setup(objset_t *os, uint64_t sa_obj, sa_attr_reg_t *reg_attrs, int count,
 	}
 
 	sa = kmem_zalloc(sizeof (sa_os_t), KM_SLEEP);
-	mutex_init(&sa->sa_lock, NULL, MUTEX_DEFAULT, NULL);
+	mutex_init(&sa->sa_lock, NULL, MUTEX_NOLOCKDEP, NULL);
 	sa->sa_master_obj = sa_obj;
 
 	os->os_sa = sa;
@@ -1586,7 +1586,7 @@ sa_add_projid(sa_handle_t *hdl, dmu_tx_t *tx, uint64_t projid)
 		    &ctime, 16);
 		SA_ADD_BULK_ATTR(bulk, count, SA_ZPL_CRTIME(zfsvfs), NULL,
 		    &crtime, 16);
-		if (S_ISBLK(ZTOI(zp)->i_mode) || S_ISCHR(ZTOI(zp)->i_mode))
+		if (Z_ISBLK(ZTOTYPE(zp)) || Z_ISCHR(ZTOTYPE(zp)))
 			SA_ADD_BULK_ATTR(bulk, count, SA_ZPL_RDEV(zfsvfs), NULL,
 			    &rdev, 8);
 	} else {
@@ -1625,7 +1625,7 @@ sa_add_projid(sa_handle_t *hdl, dmu_tx_t *tx, uint64_t projid)
 
 	zp->z_projid = projid;
 	zp->z_pflags |= ZFS_PROJID;
-	links = ZTOI(zp)->i_nlink;
+	links = ZTONLNK(zp);
 	count = 0;
 	err = 0;
 
@@ -1646,7 +1646,7 @@ sa_add_projid(sa_handle_t *hdl, dmu_tx_t *tx, uint64_t projid)
 	SA_ADD_BULK_ATTR(attrs, count, SA_ZPL_LINKS(zfsvfs), NULL, &links, 8);
 	SA_ADD_BULK_ATTR(attrs, count, SA_ZPL_PROJID(zfsvfs), NULL, &projid, 8);
 
-	if (S_ISBLK(ZTOI(zp)->i_mode) || S_ISCHR(ZTOI(zp)->i_mode))
+	if (Z_ISBLK(ZTOTYPE(zp)) || Z_ISCHR(ZTOTYPE(zp)))
 		SA_ADD_BULK_ATTR(attrs, count, SA_ZPL_RDEV(zfsvfs), NULL,
 		    &rdev, 8);
 

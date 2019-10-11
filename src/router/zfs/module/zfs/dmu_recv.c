@@ -350,21 +350,25 @@ recv_begin_check_existing_impl(dmu_recv_begin_arg_t *drba, dsl_dataset_t *ds,
 	boolean_t raw = (featureflags & DMU_BACKUP_FEATURE_RAW) != 0;
 	boolean_t embed = (featureflags & DMU_BACKUP_FEATURE_EMBED_DATA) != 0;
 
-	/* temporary clone name must not exist */
+	/* Temporary clone name must not exist. */
 	error = zap_lookup(dp->dp_meta_objset,
 	    dsl_dir_phys(ds->ds_dir)->dd_child_dir_zapobj, recv_clone_name,
 	    8, 1, &val);
 	if (error != ENOENT)
 		return (error == 0 ? SET_ERROR(EBUSY) : error);
 
-	/* new snapshot name must not exist */
+	/* Resume state must not be set. */
+	if (dsl_dataset_has_resume_receive_state(ds))
+		return (SET_ERROR(EBUSY));
+
+	/* New snapshot name must not exist. */
 	error = zap_lookup(dp->dp_meta_objset,
 	    dsl_dataset_phys(ds)->ds_snapnames_zapobj,
 	    drba->drba_cookie->drc_tosnap, 8, 1, &val);
 	if (error != ENOENT)
 		return (error == 0 ? SET_ERROR(EEXIST) : error);
 
-	/* must not have children if receiving a ZVOL */
+	/* Must not have children if receiving a ZVOL. */
 	error = zap_count(dp->dp_meta_objset,
 	    dsl_dir_phys(ds->ds_dir)->dd_child_dir_zapobj, &children);
 	if (error != 0)
@@ -918,7 +922,7 @@ dmu_recv_begin_sync(void *arg, dmu_tx_t *tx)
 
 	drba->drba_cookie->drc_ds = newds;
 
-	spa_history_log_internal_ds(newds, "receive", tx, "");
+	spa_history_log_internal_ds(newds, "receive", tx, " ");
 }
 
 static int
@@ -1096,7 +1100,7 @@ dmu_recv_resume_begin_sync(void *arg, dmu_tx_t *tx)
 
 	drba->drba_cookie->drc_ds = ds;
 
-	spa_history_log_internal_ds(ds, "resume receive", tx, "");
+	spa_history_log_internal_ds(ds, "resume receive", tx, " ");
 }
 
 /*
@@ -1212,7 +1216,7 @@ guid_compare(const void *arg1, const void *arg2)
 	const guid_map_entry_t *gmep1 = (const guid_map_entry_t *)arg1;
 	const guid_map_entry_t *gmep2 = (const guid_map_entry_t *)arg2;
 
-	return (AVL_CMP(gmep1->guid, gmep2->guid));
+	return (TREE_CMP(gmep1->guid, gmep2->guid));
 }
 
 static void
@@ -3207,10 +3211,10 @@ dmu_objset_is_receiving(objset_t *os)
 	    os->os_dsl_dataset->ds_owner == dmu_recv_tag);
 }
 
-#if defined(_KERNEL)
-module_param(zfs_recv_queue_length, int, 0644);
-MODULE_PARM_DESC(zfs_recv_queue_length, "Maximum receive queue length");
+/* BEGIN CSTYLED */
+ZFS_MODULE_PARAM(zfs_recv, zfs_recv_, queue_length, INT, ZMOD_RW,
+	"Maximum receive queue length");
 
-module_param(zfs_recv_queue_ff, int, 0644);
-MODULE_PARM_DESC(zfs_recv_queue_ff, "Receive queue fill fraction");
-#endif
+ZFS_MODULE_PARAM(zfs_recv, zfs_recv_, queue_ff, INT, ZMOD_RW,
+	"Receive queue fill fraction");
+/* END CSTYLED */

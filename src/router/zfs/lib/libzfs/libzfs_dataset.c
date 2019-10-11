@@ -796,7 +796,7 @@ libzfs_mnttab_cache_compare(const void *arg1, const void *arg2)
 
 	rv = strcmp(mtn1->mtn_mt.mnt_special, mtn2->mtn_mt.mnt_special);
 
-	return (AVL_ISIGN(rv));
+	return (TREE_ISIGN(rv));
 }
 
 void
@@ -1451,7 +1451,7 @@ badlabel:
 					 * There was an error in parsing so
 					 * deal with it by issuing an error
 					 * message and leaving after
-					 * uninitializing the the libshare
+					 * uninitializing the libshare
 					 * interface.
 					 */
 					zfs_error_aux(hdl, dgettext(TEXT_DOMAIN,
@@ -1656,7 +1656,7 @@ zfs_add_synthetic_resv(zfs_handle_t *zhp, nvlist_t *nvl)
 
 /*
  * Helper for 'zfs {set|clone} refreservation=auto'.  Must be called after
- * zfs_valid_proplist(), as it is what sets the UINT64_MAX sentinal value.
+ * zfs_valid_proplist(), as it is what sets the UINT64_MAX sentinel value.
  * Return codes must match zfs_add_synthetic_resv().
  */
 static int
