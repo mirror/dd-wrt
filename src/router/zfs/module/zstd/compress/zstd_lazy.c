@@ -497,7 +497,7 @@ size_t ZSTD_HcFindBestMatch_generic (
     const U32 c_current = (U32)(ip-base);
     const U32 maxDistance = 1U << cParams->windowLog;
     const U32 lowestValid = ms->window.lowLimit;
-    const U32 withinMaxDistance = (c_current - lowestValid > maxDistance) ? current - maxDistance : lowestValid;
+    const U32 withinMaxDistance = (c_current - lowestValid > maxDistance) ? c_current - maxDistance : lowestValid;
     const U32 isDictionary = (ms->loadedDictEnd != 0);
     const U32 lowLimit = isDictionary ? lowestValid : withinMaxDistance;
     const U32 minChain = c_current > chainSize ? c_current - chainSize : 0;
