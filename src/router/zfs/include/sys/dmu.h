@@ -337,7 +337,7 @@ int dsl_destroy_snapshots_nvl(struct nvlist *snaps, boolean_t defer,
     struct nvlist *errlist);
 int dmu_objset_snapshot_one(const char *fsname, const char *snapname);
 int dmu_objset_snapshot_tmp(const char *, const char *, int);
-int dmu_objset_find(char *name, int func(const char *, void *), void *arg,
+int dmu_objset_find(const char *name, int func(const char *, void *), void *arg,
     int flags);
 void dmu_objset_byteswap(void *buf, size_t size);
 int dsl_dataset_rename_snapshot(const char *fsname,
@@ -466,7 +466,7 @@ int dmu_object_set_nlevels(objset_t *os, uint64_t object, int nlevels,
 /*
  * Set the data blocksize for an object.
  *
- * The object cannot have any blocks allcated beyond the first.  If
+ * The object cannot have any blocks allocated beyond the first.  If
  * the first block is allocated already, the new size must be greater
  * than the current block size.  If these conditions are not met,
  * ENOTSUP will be returned.

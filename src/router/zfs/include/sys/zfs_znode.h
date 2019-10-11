@@ -192,10 +192,15 @@ typedef struct znode {
 	krwlock_t	z_name_lock;	/* "master" lock for dirent locks */
 	zfs_dirlock_t	*z_dirlocks;	/* directory entry lock list */
 	rangelock_t	z_rangelock;	/* file range locks */
-	uint8_t		z_unlinked;	/* file has been unlinked */
-	uint8_t		z_atime_dirty;	/* atime needs to be synced */
-	uint8_t		z_zn_prefetch;	/* Prefetch znodes? */
-	uint8_t		z_moved;	/* Has this znode been moved? */
+	boolean_t	z_unlinked;	/* file has been unlinked */
+	boolean_t	z_atime_dirty;	/* atime needs to be synced */
+	boolean_t	z_zn_prefetch;	/* Prefetch znodes? */
+	boolean_t	z_moved;	/* Has this znode been moved? */
+	boolean_t	z_is_sa;	/* are we native sa? */
+	boolean_t	z_is_mapped;	/* are we mmap'ed */
+	boolean_t	z_is_ctldir;	/* are we .zfs entry */
+	boolean_t	z_is_stale;	/* are we stale due to rollback? */
+	boolean_t	z_suspended;	/* extra ref from a suspend? */
 	uint_t		z_blksz;	/* block size in bytes */
 	uint_t		z_seq;		/* modification sequence number */
 	uint64_t	z_mapcnt;	/* number of pages mapped to file */
@@ -212,10 +217,6 @@ typedef struct znode {
 	uint64_t	z_projid;	/* project ID */
 	list_node_t	z_link_node;	/* all znodes in fs link */
 	sa_handle_t	*z_sa_hdl;	/* handle to sa data */
-	boolean_t	z_is_sa;	/* are we native sa? */
-	boolean_t	z_is_mapped;	/* are we mmap'ed */
-	boolean_t	z_is_ctldir;	/* are we .zfs entry */
-	boolean_t	z_is_stale;	/* are we stale due to rollback? */
 	struct inode	z_inode;	/* generic vfs inode */
 } znode_t;
 
@@ -257,7 +258,15 @@ zfs_inherit_projid(znode_t *dzp)
 #define	ZTOZSB(znode)	((zfsvfs_t *)(ZTOI(znode)->i_sb->s_fs_info))
 #define	ITOZSB(inode)	((zfsvfs_t *)((inode)->i_sb->s_fs_info))
 
-#define	S_ISDEV(mode)	(S_ISCHR(mode) || S_ISBLK(mode) || S_ISFIFO(mode))
+#define	ZTOTYPE(zp)	(ZTOI(zp)->i_mode)
+#define	ZTOGID(zp) (ZTOI(zp)->i_gid)
+#define	ZTOUID(zp) (ZTOI(zp)->i_uid)
+#define	ZTONLNK(zp) (ZTOI(zp)->i_nlink)
+
+#define	Z_ISBLK(type) S_ISBLK(type)
+#define	Z_ISCHR(type) S_ISCHR(type)
+#define	Z_ISLNK(type) S_ISLNK(type)
+#define	S_ISDEV(type)	(S_ISCHR(type) || S_ISBLK(type) || S_ISFIFO(type))
 
 /* Called on entry to each ZFS inode and vfs operation. */
 #define	ZFS_ENTER_ERROR(zfsvfs, error)				\
@@ -371,7 +380,7 @@ extern void zfs_log_create(zilog_t *zilog, dmu_tx_t *tx, uint64_t txtype,
 extern int zfs_log_create_txtype(zil_create_t, vsecattr_t *vsecp,
     vattr_t *vap);
 extern void zfs_log_remove(zilog_t *zilog, dmu_tx_t *tx, uint64_t txtype,
-    znode_t *dzp, char *name, uint64_t foid);
+    znode_t *dzp, char *name, uint64_t foid, boolean_t unlinked);
 #define	ZFS_NO_OBJECT	0	/* no object id */
 extern void zfs_log_link(zilog_t *zilog, dmu_tx_t *tx, uint64_t txtype,
     znode_t *dzp, znode_t *zp, char *name);

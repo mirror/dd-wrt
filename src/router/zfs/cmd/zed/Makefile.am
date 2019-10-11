@@ -1,10 +1,6 @@
-SUBDIRS = zed.d
-
 include $(top_srcdir)/config/Rules.am
 
-DEFAULT_INCLUDES += \
-	-I$(top_srcdir)/include \
-	-I$(top_srcdir)/lib/libspl/include
+SUBDIRS = zed.d
 
 sbin_PROGRAMS = zed
 
@@ -42,10 +38,7 @@ zed_SOURCES = $(ZED_SRC) $(FMA_SRC)
 zed_LDADD = \
 	$(top_builddir)/lib/libnvpair/libnvpair.la \
 	$(top_builddir)/lib/libuutil/libuutil.la \
-	$(top_builddir)/lib/libzfs/libzfs.la \
-	$(top_builddir)/lib/libzfs_core/libzfs_core.la \
-	$(top_builddir)/lib/libzutil/libzutil.la \
-	-lssl -lcrypto -ltirpc -luutil
+	$(top_builddir)/lib/libzfs/libzfs.la
 
 zed_LDADD += -lrt
 zed_LDFLAGS = -pthread

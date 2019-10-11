@@ -18,7 +18,7 @@
 
 #include <sys/zfs_context.h>
 #include <sys/multilist.h>
-#include <sys/trace_multilist.h>
+#include <sys/trace_defs.h>
 
 /* needed for spa_get_random() */
 #include <sys/spa.h>
@@ -425,13 +425,7 @@ multilist_link_active(multilist_node_t *link)
 	return (list_link_active(link));
 }
 
-#if defined(_KERNEL)
-
 /* BEGIN CSTYLED */
-
-module_param(zfs_multilist_num_sublists, int, 0644);
-MODULE_PARM_DESC(zfs_multilist_num_sublists,
+ZFS_MODULE_PARAM(zfs, zfs_, multilist_num_sublists, INT, ZMOD_RW,
 	"Number of sublists used in each multilist");
-
 /* END CSTYLED */
-#endif

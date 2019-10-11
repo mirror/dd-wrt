@@ -156,6 +156,12 @@ extern void lz4_init(void);
 extern void lz4_fini(void);
 
 /*
+ * specific to zstd user space implementation only
+ */
+extern void zstd_fini(void);
+extern int zstd_init(void);
+
+/*
  * Compression routines.
  */
 extern size_t lzjb_compress(void *src, void *dst, size_t s_len, size_t d_len,
@@ -174,10 +180,6 @@ extern size_t lz4_compress_zfs(void *src, void *dst, size_t s_len, size_t d_len,
     int level);
 extern int lz4_decompress_zfs(void *src, void *dst, size_t s_len, size_t d_len,
     int level);
-
-int zstd_init(void);
-void zstd_fini(void);
-
 extern size_t zstd_compress(void *src, void *dst, size_t s_len, size_t d_len,
     int level);
 extern int zstd_decompress(void *src, void *dst, size_t s_len, size_t d_len,
@@ -185,6 +187,7 @@ extern int zstd_decompress(void *src, void *dst, size_t s_len, size_t d_len,
 extern int zstd_decompress_level(void *src, void *dst, size_t s_len,
     size_t d_len, uint8_t *level);
 extern int zstd_get_level(void *src, size_t s_len, uint8_t *level);
+
 /*
  * Compress and decompress data if necessary.
  */
@@ -196,8 +199,6 @@ extern int zio_decompress_data_buf(enum zio_compress c, void *src, void *dst,
     size_t s_len, size_t d_len, uint8_t *level);
 extern int zio_decompress_getcomplevel(enum zio_compress c, void *src,
     size_t s_len, uint8_t *level);
-extern int zio_decompress_getlevel(enum zio_compress c, abd_t *src, void *dst,
-    size_t s_len, size_t d_len, enum zio_zstd_levels *level);
 extern int zio_compress_to_feature(enum zio_compress comp);
 
 #ifdef	__cplusplus

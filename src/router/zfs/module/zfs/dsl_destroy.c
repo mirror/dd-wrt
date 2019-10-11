@@ -321,14 +321,14 @@ dsl_destroy_snapshot_sync_impl(dsl_dataset_t *ds, boolean_t defer, dmu_tx_t *tx)
 		ASSERT(spa_version(dp->dp_spa) >= SPA_VERSION_USERREFS);
 		dmu_buf_will_dirty(ds->ds_dbuf, tx);
 		dsl_dataset_phys(ds)->ds_flags |= DS_FLAG_DEFER_DESTROY;
-		spa_history_log_internal_ds(ds, "defer_destroy", tx, "");
+		spa_history_log_internal_ds(ds, "defer_destroy", tx, " ");
 		return;
 	}
 
 	ASSERT3U(dsl_dataset_phys(ds)->ds_num_children, <=, 1);
 
 	/* We need to log before removing it from the namespace. */
-	spa_history_log_internal_ds(ds, "destroy", tx, "");
+	spa_history_log_internal_ds(ds, "destroy", tx, " ");
 
 	dsl_scan_ds_destroyed(ds, tx);
 
@@ -413,6 +413,13 @@ dsl_destroy_snapshot_sync_impl(dsl_dataset_t *ds, boolean_t defer, dmu_tx_t *tx)
 		/* Merge our deadlist into next's and free it. */
 		dsl_deadlist_merge(&ds_next->ds_deadlist,
 		    dsl_dataset_phys(ds)->ds_deadlist_obj, tx);
+
+		/*
+		 * We are done with the deadlist tree (generated/used
+		 * by dsl_deadlist_move_bpobj() and dsl_deadlist_merge()).
+		 * Discard it to save memory.
+		 */
+		dsl_deadlist_discard_tree(&ds_next->ds_deadlist);
 	}
 
 	dsl_deadlist_close(&ds->ds_deadlist);
@@ -660,7 +667,7 @@ dsl_destroy_snapshots_nvl(nvlist_t *snaps, boolean_t defer,
 
 	/*
 	 * lzc_destroy_snaps() is documented to fill the errlist with
-	 * int32 values, so we need to covert the int64 values that are
+	 * int32 values, so we need to convert the int64 values that are
 	 * returned from LUA.
 	 */
 	int rv = 0;
@@ -993,7 +1000,7 @@ dsl_destroy_head_sync_impl(dsl_dataset_t *ds, dmu_tx_t *tx)
 	ASSERT(RRW_WRITE_HELD(&dp->dp_config_rwlock));
 
 	/* We need to log before removing it from the namespace. */
-	spa_history_log_internal_ds(ds, "destroy", tx, "");
+	spa_history_log_internal_ds(ds, "destroy", tx, " ");
 
 	rmorigin = (dsl_dir_is_clone(ds->ds_dir) &&
 	    DS_IS_DEFER_DESTROY(ds->ds_prev) &&
@@ -1160,7 +1167,7 @@ dsl_destroy_head_begin_sync(void *arg, dmu_tx_t *tx)
 	dmu_buf_will_dirty(ds->ds_dbuf, tx);
 	dsl_dataset_phys(ds)->ds_flags |= DS_FLAG_INCONSISTENT;
 
-	spa_history_log_internal_ds(ds, "destroy begin", tx, "");
+	spa_history_log_internal_ds(ds, "destroy begin", tx, " ");
 	dsl_dataset_rele(ds, FTAG);
 }
 

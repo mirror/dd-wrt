@@ -872,7 +872,7 @@ ZSTD_compressBlock_opt_generic(ZSTD_matchState_t* ms,
 
     ZSTD_optimal_t* const opt = optStatePtr->priceTable;
     ZSTD_match_t* const matches = optStatePtr->matchTable;
-    ZSTD_optimal_t lastSequence;
+    ZSTD_optimal_t lastSequence = lastSequence;
 
     /* init */
     DEBUGLOG(5, "ZSTD_compressBlock_opt_generic: c_current=%u, prefix=%u, nextToUpdate=%u",

@@ -20,7 +20,7 @@ typedef enum {
     ZSTD_defaultAllowed = 1
 } ZSTD_defaultPolicy_e;
 
-static symbolEncodingType_e
+symbolEncodingType_e
 ZSTD_selectEncodingType(
         FSE_repeat* repeatMode, unsigned const* count, unsigned const max,
         size_t const mostFrequent, size_t nbSeq, unsigned const FSELog,
@@ -29,7 +29,7 @@ ZSTD_selectEncodingType(
         ZSTD_defaultPolicy_e const isDefaultAllowed,
         ZSTD_strategy const strategy);
 
-static size_t
+size_t
 ZSTD_buildCTable(void* dst, size_t dstCapacity,
                 FSE_CTable* nextCTable, U32 FSELog, symbolEncodingType_e type,
                 unsigned* count, U32 max,
@@ -38,7 +38,7 @@ ZSTD_buildCTable(void* dst, size_t dstCapacity,
                 const FSE_CTable* prevCTable, size_t prevCTableSize,
                 void* workspace, size_t workspaceSize);
 
-static size_t ZSTD_encodeSequences(
+size_t ZSTD_encodeSequences(
             void* dst, size_t dstCapacity,
             FSE_CTable const* CTable_MatchLength, BYTE const* mlCodeTable,
             FSE_CTable const* CTable_OffsetBits, BYTE const* ofCodeTable,

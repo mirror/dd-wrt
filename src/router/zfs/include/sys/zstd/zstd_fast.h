@@ -19,15 +19,15 @@ extern "C" {
 #include "mem.h"      /* U32 */
 #include "zstd_compress_internal.h"
 
-static void ZSTD_fillHashTable(ZSTD_matchState_t* ms,
+void ZSTD_fillHashTable(ZSTD_matchState_t* ms,
                         void const* end, ZSTD_dictTableLoadMethod_e dtlm);
-static size_t ZSTD_compressBlock_fast(
+size_t ZSTD_compressBlock_fast(
         ZSTD_matchState_t* ms, seqStore_t* seqStore, U32 rep[ZSTD_REP_NUM],
         void const* src, size_t srcSize);
-static size_t ZSTD_compressBlock_fast_dictMatchState(
+size_t ZSTD_compressBlock_fast_dictMatchState(
         ZSTD_matchState_t* ms, seqStore_t* seqStore, U32 rep[ZSTD_REP_NUM],
         void const* src, size_t srcSize);
-static size_t ZSTD_compressBlock_fast_extDict(
+size_t ZSTD_compressBlock_fast_extDict(
         ZSTD_matchState_t* ms, seqStore_t* seqStore, U32 rep[ZSTD_REP_NUM],
         void const* src, size_t srcSize);
 

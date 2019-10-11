@@ -373,6 +373,37 @@ Use \fB1\fR for yes and \fB0\fR for no (default).
 .sp
 .ne 2
 .na
+\fBzfs_metaslab_max_size_cache_sec\fR (ulong)
+.ad
+.RS 12n
+When we unload a metaslab, we cache the size of the largest free chunk. We use
+that cached size to determine whether or not to load a metaslab for a given
+allocation. As more frees accumulate in that metaslab while it's unloaded, the
+cached max size becomes less and less accurate. After a number of seconds
+controlled by this tunable, we stop considering the cached max size and start
+considering only the histogram instead.
+.sp
+Default value: \fB3600 seconds\fR (one hour)
+.RE
+
+.sp
+.ne 2
+.na
+\fBzfs_metaslab_mem_limit\fR (int)
+.ad
+.RS 12n
+When we are loading a new metaslab, we check the amount of memory being used
+to store metaslab range trees. If it is over a threshold, we attempt to unload
+the least recently used metaslab to prevent the system from clogging all of
+its memory with range trees. This tunable sets the percentage of total system
+memory that is the threshold.
+.sp
+Default value: \fB25 percent\fR
+.RE
+
+.sp
+.ne 2
+.na
 \fBzfs_vdev_default_ms_count\fR (int)
 .ad
 .RS 12n
@@ -436,6 +467,34 @@ greater bandwidth as is typically the case on a modern constant
 angular velocity disk drive.
 .sp
 Use \fB1\fR for yes (default) and \fB0\fR for no.
+.RE
+
+.sp
+.ne 2
+.na
+\fBmetaslab_unload_delay\fR (int)
+.ad
+.RS 12n
+After a metaslab is used, we keep it loaded for this many txgs, to attempt to
+reduce unnecessary reloading. Note that both this many txgs and
+\fBmetaslab_unload_delay_ms\fR milliseconds must pass before unloading will
+occur.
+.sp
+Default value: \fB32\fR.
+.RE
+
+.sp
+.ne 2
+.na
+\fBmetaslab_unload_delay_ms\fR (int)
+.ad
+.RS 12n
+After a metaslab is used, we keep it loaded for this many milliseconds, to
+attempt to reduce unnecessary reloading. Note that both this many
+milliseconds and \fBmetaslab_unload_delay\fR txgs must pass before unloading
+will occur.
+.sp
+Default value: \fB600000\fR (ten minutes).
 .RE
 
 .sp
@@ -527,13 +586,13 @@ Default value: \fB1\fR.
 .sp
 .ne 2
 .na
-\fBspa_load_verify_maxinflight\fR (int)
+\fBspa_load_verify_shift\fR (int)
 .ad
 .RS 12n
-Maximum concurrent I/Os during the traversal performed during an "extreme
-rewind" (\fB-X\fR) pool import.
+Sets the maximum number of bytes to consume during pool import to the log2
+fraction of the target arc size.
 .sp
-Default value: \fB10000\fR.
+Default value: \fB4\fR.
 .RE
 
 .sp
@@ -877,7 +936,7 @@ Default value: \fB0\fR.
 .ad
 .RS 12n
 Minimum time "prescient prefetched" blocks are locked in the ARC, specified
-in ms. These blocks are meant to be prefetched fairly aggresively ahead of
+in ms. These blocks are meant to be prefetched fairly aggressively ahead of
 the code that may use them. A value of \fB0\fR will default to 6000 ms.
 .sp
 Default value: \fB0\fR.
@@ -1912,6 +1971,18 @@ Default value: \fB16,045,690,984,833,335,022\fR (0xdeadbeefdeadbeee).
 .sp
 .ne 2
 .na
+\fBzfs_initialize_chunk_size\fR (ulong)
+.ad
+.RS 12n
+Size of writes used by \fBzpool initialize\fR.
+This option is used by the test suite to facilitate testing.
+.sp
+Default value: \fB1,048,576\fR
+.RE
+
+.sp
+.ne 2
+.na
 \fBzfs_livelist_max_entries\fR (ulong)
 .ad
 .RS 12n
@@ -2403,45 +2474,6 @@ Use \fB1\fR for yes and \fB0\fR for no (default).
 .sp
 .ne 2
 .na
-\fBzfs_qat_checksum_disable\fR (int)
-.ad
-.RS 12n
-This tunable disables qat hardware acceleration for sha256 checksums. It
-may be set after the zfs modules have been loaded to initialize the qat
-hardware as long as support is compiled in and the qat driver is present.
-.sp
-Use \fB1\fR for yes and \fB0\fR for no (default).
-.RE
-
-.sp
-.ne 2
-.na
-\fBzfs_qat_compress_disable\fR (int)
-.ad
-.RS 12n
-This tunable disables qat hardware acceleration for gzip compression. It
-may be set after the zfs modules have been loaded to initialize the qat
-hardware as long as support is compiled in and the qat driver is present.
-.sp
-Use \fB1\fR for yes and \fB0\fR for no (default).
-.RE
-
-.sp
-.ne 2
-.na
-\fBzfs_qat_encrypt_disable\fR (int)
-.ad
-.RS 12n
-This tunable disables qat hardware acceleration for AES-GCM encryption. It
-may be set after the zfs modules have been loaded to initialize the qat
-hardware as long as support is compiled in and the qat driver is present.
-.sp
-Use \fB1\fR for yes and \fB0\fR for no (default).
-.RE
-
-.sp
-.ne 2
-.na
 \fBzfs_read_chunk_size\fR (long)
 .ad
 .RS 12n
@@ -2681,7 +2713,7 @@ Default value: \fB20\fR which is 5% of RAM (1/20).
 .ad
 .RS 12n
 The fraction of the hard limit used to determined the soft limit for I/O sorting
-by the sequential scan algorithm. When we cross this limit from bellow no action
+by the sequential scan algorithm. When we cross this limit from below no action
 is taken. When we cross this limit from above it is because we are issuing
 verification I/O. In this case (unless the metadata scan is done) we stop
 issuing verification I/O and start scanning metadata again until we get to the
@@ -2790,20 +2822,6 @@ Default value: \fB20\fR.
 .sp
 .ne 2
 .na
-\fBzfs_special_class_metadata_reserve_pct\fR (int)
-.ad
-.RS 12n
-Only allow small data blocks to be allocated on the special and dedup vdev
-types when the available free space percentage on these vdevs exceeds this
-value. This ensures reserved space is available for pool meta data as the
-special vdevs approach capacity.
-.sp
-Default value: \fB25\fR.
-.RE
-
-.sp
-.ne 2
-.na
 \fBzfs_recv_queue_length\fR (int)
 .ad
 .RS 12n
@@ -2849,6 +2867,20 @@ Maximum memory used for prefetching a checkpoint's space map on each
 vdev while discarding the checkpoint.
 .sp
 Default value: \fB16,777,216\fR.
+.RE
+
+.sp
+.ne 2
+.na
+\fBzfs_special_class_metadata_reserve_pct\fR (int)
+.ad
+.RS 12n
+Only allow small data blocks to be allocated on the special and dedup vdev
+types when the available free space percentage on these vdevs exceeds this
+value. This ensures reserved space is available for pool meta data as the
+special vdevs approach capacity.
+.sp
+Default value: \fB25\fR.
 .RE
 
 .sp
@@ -3156,8 +3188,10 @@ Default value: \fB32,768\fR.
 \fBzfs_vdev_scheduler\fR (charp)
 .ad
 .RS 12n
-Set the Linux I/O scheduler on whole disk vdevs to this scheduler. Valid options
-are noop, cfq, bfq & deadline
+Set the Linux I/O scheduler on whole disk vdevs to this scheduler.  This
+option has been deprecated and will be removed in a future release.  The
+standard \fB/sys/block/<block>/queue/scheduler\fR interface should be used
+to set a block device scheduler.
 .sp
 Default value: \fBnoop\fR.
 .RE

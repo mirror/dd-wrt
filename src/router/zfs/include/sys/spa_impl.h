@@ -272,7 +272,9 @@ struct spa {
 	boolean_t	spa_extreme_rewind;	/* rewind past deferred frees */
 	kmutex_t	spa_scrub_lock;		/* resilver/scrub lock */
 	uint64_t	spa_scrub_inflight;	/* in-flight scrub bytes */
-	uint64_t	spa_load_verify_ios;	/* in-flight verification IOs */
+
+	/* in-flight verification bytes */
+	uint64_t	spa_load_verify_bytes;
 	kcondvar_t	spa_scrub_io_cv;	/* scrub I/O completion */
 	uint8_t		spa_scrub_active;	/* active or suspended? */
 	uint8_t		spa_scrub_type;		/* type of scrub we're doing */
@@ -409,6 +411,14 @@ struct spa {
 	mmp_thread_t	spa_mmp;		/* multihost mmp thread */
 	list_t		spa_leaf_list;		/* list of leaf vdevs */
 	uint64_t	spa_leaf_list_gen;	/* track leaf_list changes */
+	uint32_t	spa_hostid;		/* cached system hostid */
+
+	/* synchronization for threads in spa_wait */
+	kmutex_t	spa_activities_lock;
+	kcondvar_t	spa_activities_cv;
+	kcondvar_t	spa_waiters_cv;
+	int		spa_waiters;		/* number of waiting threads */
+	boolean_t	spa_waiters_cancel;	/* waiters should return */
 
 	/*
 	 * spa_refcount & spa_config_lock must be the last elements

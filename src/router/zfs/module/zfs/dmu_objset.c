@@ -1044,7 +1044,7 @@ dmu_objset_create_impl_dnstats(spa_t *spa, dsl_dataset_t *ds, blkptr_t *bp,
 
 	/*
 	 * We don't want to have to increase the meta-dnode's nlevels
-	 * later, because then we could do it in quescing context while
+	 * later, because then we could do it in quiescing context while
 	 * we are also accessing it in open context.
 	 *
 	 * This precaution is not necessary for the MOS (ds == NULL),
@@ -1278,7 +1278,7 @@ dmu_objset_create_sync(void *arg, dmu_tx_t *tx)
 		mutex_exit(&ds->ds_lock);
 	}
 
-	spa_history_log_internal_ds(ds, "create", tx, "");
+	spa_history_log_internal_ds(ds, "create", tx, " ");
 	zvol_create_minors(spa, doca->doca_name, B_TRUE);
 
 	dsl_dataset_rele_flags(ds, DS_HOLD_FLAG_DECRYPT, FTAG);
@@ -1391,7 +1391,7 @@ dmu_objset_clone_sync(void *arg, dmu_tx_t *tx)
 	VERIFY0(dsl_dataset_hold_obj(pdd->dd_pool, obj, FTAG, &ds));
 	dsl_dataset_name(origin, namebuf);
 	spa_history_log_internal_ds(ds, "clone", tx,
-	    "origin=%s (%llu)", namebuf, origin->ds_object);
+	    "origin=%s (%llu)", namebuf, (u_longlong_t)origin->ds_object);
 	zvol_create_minors(dp->dp_spa, doca->doca_clone, B_TRUE);
 	dsl_dataset_rele(ds, FTAG);
 	dsl_dataset_rele(origin, FTAG);
@@ -1420,7 +1420,7 @@ dmu_objset_snapshot_one(const char *fsname, const char *snapname)
 	nvlist_t *snaps = fnvlist_alloc();
 
 	fnvlist_add_boolean(snaps, longsnap);
-	strfree(longsnap);
+	kmem_strfree(longsnap);
 	err = dsl_dataset_snapshot(snaps, NULL, NULL);
 	fnvlist_free(snaps);
 	return (err);
@@ -1804,7 +1804,7 @@ userquota_compare(const void *l, const void *r)
 	 */
 	rv = strcmp(luqn->uqn_id, ruqn->uqn_id);
 
-	return (AVL_ISIGN(rv));
+	return (TREE_ISIGN(rv));
 }
 
 static void
@@ -2664,7 +2664,7 @@ dmu_objset_find_dp_cb(void *arg)
 
 	/*
 	 * We need to get a pool_config_lock here, as there are several
-	 * asssert(pool_config_held) down the stack. Getting a lock via
+	 * assert(pool_config_held) down the stack. Getting a lock via
 	 * dsl_pool_config_enter is risky, as it might be stalled by a
 	 * pending writer. This would deadlock, as the write lock can
 	 * only be granted when our parent thread gives up the lock.
@@ -2811,7 +2811,7 @@ dmu_objset_find_impl(spa_t *spa, const char *name,
 			err = dmu_objset_find_impl(spa, child,
 			    func, arg, flags);
 			dsl_pool_config_enter(dp, FTAG);
-			strfree(child);
+			kmem_strfree(child);
 			if (err != 0)
 				break;
 		}
@@ -2849,7 +2849,7 @@ dmu_objset_find_impl(spa_t *spa, const char *name,
 				dsl_pool_config_exit(dp, FTAG);
 				err = func(child, arg);
 				dsl_pool_config_enter(dp, FTAG);
-				strfree(child);
+				kmem_strfree(child);
 				if (err != 0)
 					break;
 			}
@@ -2872,7 +2872,7 @@ dmu_objset_find_impl(spa_t *spa, const char *name,
  * See comment above dmu_objset_find_impl().
  */
 int
-dmu_objset_find(char *name, int func(const char *, void *), void *arg,
+dmu_objset_find(const char *name, int func(const char *, void *), void *arg,
     int flags)
 {
 	spa_t *spa;
@@ -2924,9 +2924,17 @@ dmu_fsname(const char *snapname, char *buf)
 }
 
 /*
- * Call when we think we're going to write/free space in open context to track
- * the amount of dirty data in the open txg, which is also the amount
- * of memory that can not be evicted until this txg syncs.
+ * Call when we think we're going to write/free space in open context
+ * to track the amount of dirty data in the open txg, which is also the
+ * amount of memory that can not be evicted until this txg syncs.
+ *
+ * Note that there are two conditions where this can be called from
+ * syncing context:
+ *
+ * [1] When we just created the dataset, in which case we go on with
+ *     updating any accounting of dirty data as usual.
+ * [2] When we are dirtying MOS data, in which case we only update the
+ *     pool's accounting of dirty data.
  */
 void
 dmu_objset_willuse_space(objset_t *os, int64_t space, dmu_tx_t *tx)
@@ -2936,8 +2944,9 @@ dmu_objset_willuse_space(objset_t *os, int64_t space, dmu_tx_t *tx)
 
 	if (ds != NULL) {
 		dsl_dir_willuse_space(ds->ds_dir, aspace, tx);
-		dsl_pool_dirty_space(dmu_tx_pool(tx), space, tx);
 	}
+
+	dsl_pool_dirty_space(dmu_tx_pool(tx), space, tx);
 }
 
 #if defined(_KERNEL)

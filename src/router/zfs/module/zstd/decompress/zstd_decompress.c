@@ -1484,6 +1484,7 @@ MEM_STATIC size_t ZSTD_limitCopy(void* dst, size_t dstCapacity, const void* src,
     return length;
 }
 
+
 size_t ZSTD_decompressStream(ZSTD_DStream* zds, ZSTD_outBuffer* output, ZSTD_inBuffer* input)
 {
     const char* const istart = (const char*)(input->src) + input->pos;

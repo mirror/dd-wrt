@@ -74,7 +74,7 @@ get_dataset_depth(const char *path)
 
 	/*
 	 * Keep track of nesting until you hit the end of the
-	 * path or found the snapshot/bookmark seperator.
+	 * path or found the snapshot/bookmark separator.
 	 */
 	for (int i = 0; loc[i] != '\0' &&
 	    loc[i] != '@' &&
@@ -417,7 +417,6 @@ pool_namecheck(const char *pool, namecheck_err_t *why, char *what)
 	return (0);
 }
 
-#if defined(_KERNEL)
 EXPORT_SYMBOL(entity_namecheck);
 EXPORT_SYMBOL(pool_namecheck);
 EXPORT_SYMBOL(dataset_namecheck);
@@ -426,6 +425,5 @@ EXPORT_SYMBOL(dataset_nestcheck);
 EXPORT_SYMBOL(get_dataset_depth);
 EXPORT_SYMBOL(zfs_max_dataset_nesting);
 
-module_param(zfs_max_dataset_nesting, int, 0644);
-MODULE_PARM_DESC(zfs_max_dataset_nesting, "Maximum depth of nested datasets");
-#endif
+ZFS_MODULE_PARAM(zfs, zfs_, max_dataset_nesting, INT, ZMOD_RW,
+	"Limit to the amount of nesting a path can have. Defaults to 50.");
