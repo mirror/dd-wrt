@@ -1,0 +1,11 @@
+src = @abs_top_srcdir@/module/spl
+obj = @abs_builddir@
+
+MODULE := spl
+
+obj-$(CONFIG_ZFS) := $(MODULE).o
+
+ccflags-y := $(ZFS_MODULE_CFLAGS) $(ZFS_MODULE_CPPFLAGS)
+
+
+-include @abs_top_builddir@/module/os/linux/spl/Makefile
