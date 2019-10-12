@@ -193,6 +193,10 @@ SPL_SHRINKER_CALLBACK_FWD_DECLARE(spl_kmem_cache_generic_shrinker);
 SPL_SHRINKER_DECLARE(spl_kmem_cache_shrinker,
 	spl_kmem_cache_generic_shrinker, KMC_DEFAULT_SEEKS);
 
+#ifndef __GFP_RECLAIM
+#define	__GFP_RECLAIM		__GFP_WAIT
+#endif
+
 static void *
 kv_alloc(spl_kmem_cache_t *skc, int size, int flags)
 {
