@@ -344,7 +344,7 @@ static int update_state(char *file, char *nvram)
 	if (fp) {
 		fwrite(nv, strlen(nv), 1, fp);
 		fclose(fp);
-	} 
+	}
 	return 1;
 
 }
@@ -362,7 +362,7 @@ static int internal_nvram_state(char *nvram, int zerofirstrun)
 		mkdir("/tmp/nvstate", 0700);
 		int ret = update_state(file, nvram);
 		if (zerofirstrun)
-		    return 0;
+			return 0;
 		return ret;
 	}
 	fseek(fp, 0, SEEK_END);
@@ -388,12 +388,12 @@ static int internal_nvram_state(char *nvram, int zerofirstrun)
 
 int nvram_state(char *nvram)
 {
-    internal_nvram_state(nvram, 0);
+	internal_nvram_state(nvram, 0);
 }
 
 int nvram_state_change(char *nvram)
 {
-    internal_nvram_state(nvram, 1);
+	internal_nvram_state(nvram, 1);
 }
 
 int nvram_states(char *list)
@@ -435,4 +435,3 @@ int nvhas(char *nvname, char *key)
 	return 0;
 
 }
-
