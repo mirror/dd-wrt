@@ -57,27 +57,14 @@ static int checkfs(char *type)
 	if (!strcmp(type, "zfs"))
 		return 1;
 #endif
-	char fscheck[32];
-	sprintf(fscheck, "/sbin/mkfs.%s", type);
-	char fscheck2[32];
-	sprintf(fscheck2, "/usr/bin/mkfs.%s", type);
-	char fscheck3[32];
-	sprintf(fscheck3, "/usr/sbin/mkfs.%s", type);
+	const char *fscheck[] = { "/sbin", "/usr/bin", "/usr/sbin" };
 
-	FILE *p = fopen(fscheck, "rb");
-	if (p) {
-		fclose(p);
-		return 1;
-	}
-	p = fopen(fscheck2, "rb");
-	if (p) {
-		fclose(p);
-		return 1;
-	}
-	p = fopen(fscheck3, "rb");
-	if (p) {
-		fclose(p);
-		return 1;
+	int i;
+	for (i = 0; i < sizeof(fscheck) / sizeof(const char *); i++) {
+		char fsc[32];
+		sprintf(fsc, "%s/mkfs.%s", fscheck[i], type);
+		if (f_exists(fsc))
+			return 1;
 	}
 	return 0;
 }
