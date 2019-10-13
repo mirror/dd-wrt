@@ -54,6 +54,10 @@
 				label = "nvram";
 				reg = <0xff0000 0x10000>;
 			};
+			partition@0000000 {
+				label = "fullflash";
+				reg = <0x000000 0x1000000>;
+			};
 		};
 	};
 };
@@ -66,7 +70,7 @@
 &pcie1 {
 	mt76@0,0 {
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&factory 0x8000>;
+		mediatek,file = "/etc/wlan/MT7615_2G_EEPROM.BIN";
 		ieee80211-freq-limit = <5000000 6000000>;
 	};
 };
@@ -74,7 +78,7 @@
 &pcie0 {
 	mt76@0,0 {
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&factory 0>;
+		mediatek,file = "/etc/wlan/MT7615_5G_EEPROM.BIN";
 		ieee80211-freq-limit = <2400000 2500000>;
 	};
 };
