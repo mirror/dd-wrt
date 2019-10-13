@@ -148,28 +148,8 @@ void start_dnsmasq(void)
 		stop_dnsmasq();
 		return;
 	}
-	if (nvram_state_change("static_leases")) {
-		/* todo, delete only changed leases, for now we delete all leases if the static lease table has been changed */
-		char *name;
-		char *buf;
-		int NVRAMSPACE = nvram_size();
-		if (!(buf = malloc(NVRAMSPACE)))
-			goto out;
-		nvram_getall(buf, NVRAMSPACE);
-		for (name = buf; *name; name += strlen(name) + 1) {
-			if (!strncmp(name, "dnsmasq_lease_", 14)) {
-				char nbuf[128];
-				strncpy(nbuf, name, 128);
-				char *p = strchr(nbuf, '=');
-				if (p)
-					*p = 0;
-				nvram_unset(nbuf);
-			}
-		}
-		free(buf);
-		nvram_commit();
-	}
-      out:;
+	int leasechange = nvram_state_change("static_leases");
+
 	update_timezone();
 
 #ifdef HAVE_DNSCRYPT
@@ -402,6 +382,11 @@ void start_dnsmasq(void)
 				if (mac == NULL || host == NULL || ip == NULL)
 					continue;
 				fprintf(fp, "dhcp-host=%s,%s,%s,", mac, host, ip);
+				char nv[64];
+				sprintf(nv, "dnsmasq_lease_%s", ip);
+				if (leasechange && nvram_exists(nv)) {
+					nvram_unset(nv);
+				}
 				if (!time || !*time)
 					fprintf(fp, "infinite\n");
 				else
