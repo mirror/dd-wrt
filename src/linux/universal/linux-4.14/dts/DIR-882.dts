@@ -70,7 +70,7 @@
 &pcie1 {
 	mt76@0,0 {
 		reg = <0x0000 0 0 0 0>;
-		mediatek,file = "/etc/wlan/MT7615_2G_EEPROM.BIN";
+		mediatek,file = "/etc/wlan/MT7615_2G_EEPROM.bin";
 		ieee80211-freq-limit = <5000000 6000000>;
 	};
 };
@@ -78,7 +78,7 @@
 &pcie0 {
 	mt76@0,0 {
 		reg = <0x0000 0 0 0 0>;
-		mediatek,file = "/etc/wlan/MT7615_5G_EEPROM.BIN";
+		mediatek,file = "/etc/wlan/MT7615_5G_EEPROM.bin";
 		ieee80211-freq-limit = <2400000 2500000>;
 	};
 };
