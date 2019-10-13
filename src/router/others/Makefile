@@ -68,7 +68,7 @@ endif
 ifdef CONFIG_MT7615
 	install -d $(INSTALLDIR)/etc/wlan/
 	cp rt2880/mt7615/*.dat $(INSTALLDIR)/etc/wlan
-	install rt2880/MT7615*.BIN $(INSTALLDIR)/etc/wlan
+	install rt2880/MT7615*.bin $(INSTALLDIR)/etc/wlan
 endif
 ifdef CONFIG_RT3052
 	install -d $(INSTALLDIR)/etc/wlan
