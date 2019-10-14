@@ -22,7 +22,7 @@ endif
 OPENSER_MODULES := sl tm rr maxfwd usrloc registrar dbtext textops exec auth auth_db nathelper
 OPENSER_MODULE_FILES := $(foreach module,$(OPENSER_MODULES),openser/modules/$(module)/$(module).so)
 CONFIG_MUSL=y
-CONFIG_NOOPT=y
+#CONFIG_NOOPT=y
 
 # Source bases
 export PLATFORM LINUXDIR LIBDIR USRLIBDIR
@@ -74,7 +74,12 @@ export BASEOPT:=-Os
 
 export ARCH:= mipsel
 export ARCHITECTURE:= broadcom
+ifeq ($(CONFIG_MIPS32R1),y)
+export COPTS:=$(BASEOPT) -pipe -mips32 -mtune=mips32 -fno-caller-saves -msoft-float -mno-branch-likely -fno-plt
+else
 export COPTS:=$(BASEOPT) -pipe -mips32r2 -mtune=74kc -mdspr2 -fno-caller-saves  -msoft-float  -mno-branch-likely -fno-plt
+endif
+
 export CC := ccache $(CROSS_COMPILE)gcc
 export CXX := ccache $(CROSS_COMPILE)g++
 export AR := $(CROSS_COMPILE)ar
@@ -84,9 +89,15 @@ export NM := $(CROSS_COMPILE)nm
 export RANLIB := $(CROSS_COMPILE)ranlib
 export STRIP := @true
 export SIZE := $(CROSS_COMPILE)size
+ifneq ($(CONFIG_MIPS32R1),y)
 export MIPS16_OPT:= -minterlink-mips16 -mips16
+endif
 
+ifeq ($(CONFIG_MIPS32R1),y)
+export CFLAGS :=$(BASEOPT) -pipe -mips32 -mtune=mips32 -fno-caller-saves  -msoft-float -mno-branch-likely -fno-plt
+else
 export CFLAGS :=$(BASEOPT) -pipe -mips32r2 -mtune=74kc -mdspr2 -fno-caller-saves  -msoft-float  -mno-branch-likely -fno-plt
+endif
 export LDFLAGS := 
 
 #
@@ -169,6 +180,11 @@ else
 	echo "# CONFIG_NVRAM_60K" is not set >> $(LINUXDIR)/.config
 	echo "# CONFIG_NVRAM_64K" is not set >> $(LINUXDIR)/.config
 endif
+endif
+
+ifeq ($(CONFIG_MIPS32R1),y)
+	sed -i 's/\# CONFIG_CPU_MIPS32_R1 is not set/CONFIG_CPU_MIPS32_R1=y/g' $(LINUXDIR)/.config
+	sed -i 's/\CONFIG_CPU_MIPS32_R2/# CONFIG_CPU_MIPS32_R2 is not set/g' $(LINUXDIR)/.config
 endif
 
 #ifeq ($(CONFIG_REGISTER),y)
