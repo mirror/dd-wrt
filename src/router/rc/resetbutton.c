@@ -1136,7 +1136,7 @@ static void resetbtn_period_check(int sig)
 	case ROUTER_BOARD_GW2388:
 	case ROUTER_BOARD_GW6400:
 #ifdef HAVE_LAGUNA
-		val = get_gpio(100);
+		val = !get_gpio(100);
 #else
 		val = get_gpio(240);
 #endif
