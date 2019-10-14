@@ -117,6 +117,8 @@ void start_sysinit(void)
 	stime(&tm);
 	nvram_set("wl0_ifname", "ath0");
 	eval("hwclock", "-s", "-u");
+	eval("i2cset", "-f", "-y", "0", "0x20", "0", "0x0");
+	eval("i2cset", "-f", "-y", "0", "0x20", "11", "0x10");
 	char *modelname = nvram_safe_get("DD_BOARD");
 	if (!strcmp(modelname, "Gateworks Laguna GW2391"))
 		eval("gsp_updater", "-f", "/etc/gsc_2391_v50.txt", "-r", "50");
