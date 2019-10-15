@@ -1543,6 +1543,7 @@ service.vpn_tunnel="Tunnelprotokoll";
 service.vpn_tuntap="Tunnel-Typ";
 service.vpn_srvcert="&Ouml;ffentliches CA-Zertifikat";
 service.vpn_clicert="&Ouml;ffentliches Client-Zertifikat";
+service.vpn_certtype="&Uuml;verpr&uuml;fe Server Zert.";
 service.vpn_certtype="nsCertType Verifikation";
 service.vpn_clikey="Privater Client-Schl&uuml;ssel";
 service.vpn_nat="NAT";
@@ -1556,6 +1557,7 @@ service.vpn_fw="Eingehende Firewall f&uuml;r TUN";
 service.vpnd_lzoyes="Ja";
 service.vpnd_lzono="Nein";
 service.vpnd_lzoadaptive="Adaptiv";
+service.vpn_tls_btn="TLS Schl&uuml;ssel Auswahl";
 
 //help container
 hstatus_vpn.right1="Richtlinienbasiertes Routing:<br><i>IP/Netze der Form 0.0.0.0/0 erzwingen das Verwenden der Standartgateways an den Klienten. Eine Zeile pro IP/Netz!<br><i>IP Adresse/Netzmaske:</i><br>Muss bei der Verwendung eines DHCP-Proxy angegeben werden, wenn das lokale TAP Ger&auml;t nicht &uuml;berbr&uuml;ckt ist.</i>";
