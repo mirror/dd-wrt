@@ -39,15 +39,34 @@
 #include <sbutils.h>
 #include <hndmips.h>
 #include <sflash.h>
+#undef NVRAM_SPACE
+#define NVRAM_SPACE 0x10000
 
 /* In BSS to minimize text size and page aligned so it can be mmap()-ed */
 static char nvram_buf[NVRAM_SPACE] __attribute__((aligned(PAGE_SIZE)));
+int NVRAMSIZE = NVRAM_SPACE;
 
 #ifdef MODULE
 
 #define early_nvram_get(name) nvram_get(name)
 
 #else /* !MODULE */
+
+void *MMALLOC(size_t size)
+{
+	void *ptr = kmalloc(size, GFP_ATOMIC);
+	if (!ptr)
+		ptr = vmalloc(size);
+	return ptr;
+}
+
+void MMFREE(void *ptr)
+{
+	if (is_vmalloc_addr(ptr))
+		vfree(ptr);
+	else
+		kfree(ptr);
+}
 
 /* Global SB handle */
 extern void *bcm947xx_sbh;
@@ -116,8 +135,16 @@ early_nvram_init(void)
 	while (off <= lim) {
 		/* Windowed flash access */
 		header = (struct nvram_header *) KSEG1ADDR(base + off - NVRAM_SPACE);
-		if (header->magic == NVRAM_MAGIC)
+		if (header->magic == NVRAM_MAGIC) {
+			printk(KERN_INFO "found 64kb nvram\n");
 			goto found;
+		}
+		header = (struct nvram_header *) KSEG1ADDR(base + off - (NVRAM_SPACE / 2));
+		if (header->magic == NVRAM_MAGIC) {
+			printk(KERN_INFO "found 32kb nvram\n");
+			NVRAMSIZE = NVRAM_SPACE / 2;
+			goto found;
+		}
 		off <<= 1;
 	}
 
@@ -132,13 +159,13 @@ early_nvram_init(void)
 	
 	printk("early_nvram_init: NVRAM not found\n");
 	return;
-
 found:
+	memset(dst, 0, sizeof(nvram_buf));
 	src = (u32 *) header;
 	dst = (u32 *) nvram_buf;
 	for (i = 0; i < sizeof(struct nvram_header); i += 4)
 		*dst++ = *src++;
-	for (; i < header->len && i < NVRAM_SPACE; i += 4)
+	for (; i < header->len && i < NVRAMSIZE; i += 4)
 		*dst++ = ltoh32(*src++);
 }
 
@@ -147,7 +174,6 @@ static char * __init
 early_nvram_get(const char *name)
 {
 	char *var, *value, *end, *eq;
-
 	if (!name)
 		return NULL;
 
@@ -228,11 +254,11 @@ _nvram_read(char *buf)
 	size_t len;
 
 	if (!nvram_mtd ||
-	    MTD_READ(nvram_mtd, nvram_mtd->size - NVRAM_SPACE, NVRAM_SPACE, &len, buf) ||
-	    len != NVRAM_SPACE ||
+	    MTD_READ(nvram_mtd, nvram_mtd->size - NVRAMSIZE, NVRAMSIZE, &len, buf) ||
+	    len != NVRAMSIZE ||
 	    header->magic != NVRAM_MAGIC) {
 		/* Maybe we can recover some data from early initialization */
-		memcpy(buf, nvram_buf, NVRAM_SPACE);
+		memcpy(buf, nvram_buf, NVRAMSIZE);
 	}
 
 	return 0;
@@ -241,11 +267,11 @@ _nvram_read(char *buf)
 struct nvram_tuple *
 _nvram_realloc(struct nvram_tuple *t, const char *name, const char *value)
 {
-	if ((nvram_offset + strlen(value) + 1) > NVRAM_SPACE)
+	if ((nvram_offset + strlen(value) + 1) > NVRAMSIZE)
 		return NULL;
 
 	if (!t) {
-		if (!(t = kmalloc(sizeof(struct nvram_tuple) + strlen(name) + 1, GFP_ATOMIC)))
+		if (!(t = MMALLOC(sizeof(struct nvram_tuple) + strlen(name) + 1)))
 			return NULL;
 
 		/* Copy name */
@@ -271,7 +297,7 @@ _nvram_free(struct nvram_tuple *t)
 	if (!t)
 		nvram_offset = 0;
 	else
-		kfree(t);
+		MMFREE(t);
 }
 
 int
@@ -284,10 +310,10 @@ nvram_set(const char *name, const char *value)
 	spin_lock_irqsave(&nvram_lock, flags);
 	if ((ret = _nvram_set(name, value))) {
 		/* Consolidate space and try again */
-		if ((header = kmalloc(NVRAM_SPACE, GFP_ATOMIC))) {
+		if ((header = MMALLOC(NVRAMSIZE))) {
 			if (_nvram_commit(header) == 0)
 				ret = _nvram_set(name, value);
-			kfree(header);
+			MMFREE(header);
 		}
 	}
 	spin_unlock_irqrestore(&nvram_lock, flags);
@@ -363,15 +389,15 @@ nvram_commit(void)
 	}
 
 	/* Backup sector blocks to be erased */
-	erasesize = ROUNDUP(NVRAM_SPACE, nvram_mtd->erasesize);
-	if (!(buf = kmalloc(erasesize, GFP_KERNEL))) {
+	erasesize = ROUNDUP(NVRAMSIZE, nvram_mtd->erasesize);
+	if (!(buf = MMALLOC(erasesize))) {
 		printk("nvram_commit: out of memory\n");
 		return -ENOMEM;
 	}
 
 	down(&nvram_sem);
 
-	if ((i = erasesize - NVRAM_SPACE) > 0) {
+	if ((i = erasesize - NVRAMSIZE) > 0) {
 		offset = nvram_mtd->size - erasesize;
 		len = 0;
 		ret = MTD_READ(nvram_mtd, offset, i, &len, buf);
@@ -383,7 +409,7 @@ nvram_commit(void)
 		header = (struct nvram_header *)(buf + i);
 		magic_offset = i + ((void *)&header->magic - (void *)header);
 	} else {
-		offset = nvram_mtd->size - NVRAM_SPACE;
+		offset = nvram_mtd->size - NVRAMSIZE;
 		magic_offset = ((void *)&header->magic - (void *)header);
 		header = (struct nvram_header *)buf;
 	}
@@ -415,7 +441,7 @@ nvram_commit(void)
 
 	/* Erase sector blocks */
 	init_waitqueue_head(&wait_q);
-	for (; offset < nvram_mtd->size - NVRAM_SPACE + header->len; offset += nvram_mtd->erasesize) {
+	for (; offset < nvram_mtd->size - NVRAMSIZE + header->len; offset += nvram_mtd->erasesize) {
 		erase.mtd = nvram_mtd;
 		erase.addr = offset;
 		erase.len = nvram_mtd->erasesize;
@@ -444,7 +470,7 @@ nvram_commit(void)
 	/* Write partition up to end of data area */
 	header->magic = NVRAM_INVALID_MAGIC; /* All ones magic */
 	offset = nvram_mtd->size - erasesize;
-	i = erasesize - NVRAM_SPACE + header->len;
+	i = erasesize - NVRAMSIZE + header->len;
 	ret = MTD_WRITE(nvram_mtd, offset, i, &len, buf);
 	if (ret || len != i) {
 		printk("nvram_commit: write error\n");
@@ -471,7 +497,7 @@ nvram_commit(void)
 
  done:
 	up(&nvram_sem);
-	kfree(buf);
+	MMFREE(buf);
 
 	return ret;
 }
@@ -508,7 +534,7 @@ dev_nvram_read(struct file *file, char *buf, size_t count, loff_t *ppos)
 	unsigned long off;
 
 	if (count > sizeof(tmp)) {
-		if (!(name = kmalloc(count, GFP_KERNEL)))
+		if (!(name = MMALLOC(count)))
 			return -ENOMEM;
 	}
 
@@ -548,7 +574,7 @@ dev_nvram_read(struct file *file, char *buf, size_t count, loff_t *ppos)
  
 done:
 	if (name != tmp)
-		kfree(name);
+		MMFREE(name);
 
 	return ret;
 }
@@ -560,7 +586,7 @@ dev_nvram_write(struct file *file, const char *buf, size_t count, loff_t *ppos)
 	ssize_t ret;
 
 	if (count > sizeof(tmp)) {
-		if (!(name = kmalloc(count, GFP_KERNEL)))
+		if (!(name = MMALLOC(count)))
 			return -ENOMEM;
 	}
 
@@ -578,7 +604,7 @@ dev_nvram_write(struct file *file, const char *buf, size_t count, loff_t *ppos)
 
  done:
 	if (name != tmp)
-		kfree(name);
+		MMFREE(name);
 
 	return ret;
 }	
@@ -594,7 +620,7 @@ dev_nvram_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsign
 		return 0;
 		break;
 	case NVRAM_SPACE_MAGIC:
-		return NVRAM_SPACE;
+		return NVRAMSIZE;
 		break;
 	default:
 		return -EINVAL;
@@ -654,7 +680,7 @@ dev_nvram_exit(void)
 	if (nvram_mtd)
 		put_mtd_device(nvram_mtd);
 
-	while ((PAGE_SIZE << order) < NVRAM_SPACE)
+	while ((PAGE_SIZE << order) < NVRAMSIZE)
 		order++;
 	end = virt_to_page(nvram_buf + (PAGE_SIZE << order) - 1);
 	for (page = virt_to_page(nvram_buf); page <= end; page++)
@@ -671,7 +697,7 @@ dev_nvram_init(void)
 	unsigned int i;
 
 	/* Allocate and reserve memory to mmap() */
-	while ((PAGE_SIZE << order) < NVRAM_SPACE)
+	while ((PAGE_SIZE << order) < NVRAMSIZE)
 		order++;
 	end = virt_to_page(nvram_buf + (PAGE_SIZE << order) - 1);
 	for (page = virt_to_page(nvram_buf); page <= end; page++)
@@ -683,7 +709,7 @@ dev_nvram_init(void)
 		nvram_mtd = get_mtd_device(NULL, i);
 		if (nvram_mtd) {
 			if (!strcmp(nvram_mtd->name, "nvram") &&
-			    nvram_mtd->size >= NVRAM_SPACE)
+			    nvram_mtd->size >= NVRAMSIZE)
 				break;
 			put_mtd_device(nvram_mtd);
 		}
