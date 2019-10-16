@@ -442,6 +442,17 @@ extern struct page * FASTCALL(_alloc_pages(unsigned int gfp_mask, unsigned int o
 extern struct page * FASTCALL(__alloc_pages(unsigned int gfp_mask, unsigned int order, zonelist_t *zonelist));
 extern struct page * alloc_pages_node(int nid, unsigned int gfp_mask, unsigned int order);
 
+static inline int is_vmalloc_addr(const void *x)
+{
+#ifdef CONFIG_MMU
+	unsigned long addr = (unsigned long)x;
+
+	return addr >= VMALLOC_START && addr < VMALLOC_END;
+#else
+	return 0;
+#endif
+}
+
 static inline struct page * alloc_pages(unsigned int gfp_mask, unsigned int order)
 {
 	/*
