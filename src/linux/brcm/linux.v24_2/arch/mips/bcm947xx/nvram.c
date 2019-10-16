@@ -29,6 +29,9 @@ int BCMINIT(_nvram_getall)(char *buf, int count);
 int BCMINIT(_nvram_commit)(struct nvram_header *header);
 int BCMINIT(_nvram_init)(void);
 void BCMINIT(_nvram_exit)(void);
+extern int NVRAMSIZE;
+void *MMALLOC(size_t size);
+void MMFREE(void *ptr);
 
 static struct nvram_tuple * BCMINITDATA(nvram_hash)[257];
 static struct nvram_tuple * nvram_dead;
@@ -83,7 +86,7 @@ BCMINITFN(nvram_rehash)(struct nvram_header *header)
 
 	/* Parse and set "name=value\0 ... \0\0" */
 	name = (char *) &header[1];
-	end = (char *) header + NVRAM_SPACE - 2;
+	end = (char *) header + NVRAMSIZE - 2;
 	end[0] = end[1] = '\0';
 	for (; *name; name = value + strlen(value) + 1) {
 		if (!(eq = strchr(name, '=')))
@@ -252,10 +255,10 @@ BCMINITFN(_nvram_commit)(struct nvram_header *header)
 
 	/* Clear data area */
 	ptr = (char *) header + sizeof(struct nvram_header);
-	bzero(ptr, NVRAM_SPACE - sizeof(struct nvram_header));
+	bzero(ptr, NVRAMSIZE - sizeof(struct nvram_header));
 
 	/* Leave space for a double NUL at the end */
-	end = (char *) header + NVRAM_SPACE - 2;
+	end = (char *) header + NVRAMSIZE - 2;
 
 	/* Write out all tuples */
 	for (i = 0; i < ARRAYSIZE(BCMINIT(nvram_hash)); i++) {
@@ -295,7 +298,7 @@ BCMINITFN(_nvram_init)(void)
 	struct nvram_header *header;
 	int ret;
 
-	if (!(header = (struct nvram_header *) kmalloc(NVRAM_SPACE, GFP_ATOMIC))) {
+	if (!(header = (struct nvram_header *) MMALLOC(NVRAMSIZE))) {
 		return -12; /* -ENOMEM */
 	}
 
@@ -303,7 +306,7 @@ BCMINITFN(_nvram_init)(void)
 	    header->magic == NVRAM_MAGIC)
 		BCMINIT(nvram_rehash)(header);
 
-	kfree(header);
+	MMFREE(header);
 	return ret;
 }
 
