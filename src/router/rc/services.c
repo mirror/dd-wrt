@@ -610,25 +610,14 @@ static void handle_hotspot(void)
 static void handle_pptp(void)
 {
 #ifdef HAVE_SOFTETHER
-	stop_service_f("softether");
+	restart_f("softether");
 #endif
 #ifdef HAVE_PPTPD
-	stop_service_f("pptpd");
+	restart_f("pptpd");
 #endif
 #ifdef HAVE_OPENVPN
-	stop_service_f("openvpnserver");
-	stop_service_f("openvpn");
-#endif
-	stop_running_main(0, NULL);
-#ifdef HAVE_PPTPD
-	start_service_f("pptpd");
-#endif
-#ifdef HAVE_OPENVPN
-	start_service_f("openvpnserver");
-	start_service_f("openvpn");
-#endif
-#ifdef HAVE_SOFTETHER
-	start_service_f("softether");
+	restart_f("openvpnserver");
+	restart_f("openvpn");
 #endif
 }
 
