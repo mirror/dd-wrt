@@ -150,6 +150,7 @@ void atm_dev_deregister(struct atm_dev *dev)
 			       "dev %d to become free. Usage count = %d\n",
 			       dev->number, atomic_read(&dev->refcnt));
 			warning_time = jiffies;
+			break;
 		}
 	}
 
