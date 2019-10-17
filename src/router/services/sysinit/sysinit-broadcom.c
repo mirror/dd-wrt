@@ -2916,7 +2916,7 @@ void start_sysinit(void)
 			case ROUTER_NETGEAR_WNDR4000:
 				nvram_seti("portprio_support", 0);
 #ifdef HAVE_BCMMODERN
-				modules = "bcm57xx switch-core switch-robo";
+				modules = "wl bcm57xx switch-core switch-robo";
 #else
 				modules = "bcm57xxlsys switch-core switch-robo";
 #endif
@@ -3008,9 +3008,9 @@ void start_sysinit(void)
 			case ROUTER_NETGEAR_WNDR4000:
 				nvram_seti("portprio_support", 0);
 #ifdef HAVE_BCMMODERN
-				modules = "bcm57xx switch-core switch-robo";
+				modules = "wl bcm57xx switch-core switch-robo";
 #else
-				modules = "bcm57xxlsys switch-core switch-robo";
+				modules = "wl bcm57xxlsys switch-core switch-robo";
 #endif
 				break;
 			case ROUTER_ASUS_AC66U:
