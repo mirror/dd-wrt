@@ -444,6 +444,10 @@ static int tcp_fragment(struct sock *sk, struct sk_buff *skb, u32 len)
 	int nsize = skb->len - len;
 	u16 flags;
 
+//	if (unlikely((sk->sk_wmem_queued >> 1) > sk->sk_sndbuf)) {
+//		return -ENOMEM;
+//	}
+
 	if (skb_cloned(skb) &&
 	    skb_is_nonlinear(skb) &&
 	    pskb_expand_head(skb, 0, 0, GFP_ATOMIC))
