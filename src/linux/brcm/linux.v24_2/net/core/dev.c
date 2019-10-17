@@ -2776,6 +2776,7 @@ int unregister_netdevice(struct net_device *dev)
 					"become free. Usage count = %d\n",
 					dev->name, atomic_read(&dev->refcnt));
 			warning_time = jiffies;
+			break;
 		}
 	}
 	dev_put(dev);
