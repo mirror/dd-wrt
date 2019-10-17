@@ -36,6 +36,7 @@
 #include <asm/time.h>
 #include <bcm47xx.h>
 #include <bcm47xx_nvram.h>
+#include <asm/idle.h>
 
 union bcm47xx_bus bcm47xx_bus;
 EXPORT_SYMBOL(bcm47xx_bus);
