@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r4820 | brainslayer | 2019-10-18 03:09:49 +0400 (Fri, 18 Oct 2019) | 1 line
+
+some special conditions for mips32r1 wl driver
+------------------------------------------------------------------------
 r4819 | brainslayer | 2019-10-18 02:03:20 +0400 (Fri, 18 Oct 2019) | 1 line
 
 support some older mips32r1 chipsets
