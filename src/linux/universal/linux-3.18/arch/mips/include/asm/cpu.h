@@ -400,6 +400,11 @@ enum cpu_type_enum {
  * CPU ASE encodings
  */
 
+#define MIPS_ASE_MIPS16		0x00000001 /* code compression */
+#define MIPS_ASE_MDMX		0x00000002 /* MIPS digital media extension */
+#define MIPS_ASE_MIPS3D		0x00000004 /* MIPS-3D */
+#define MIPS_ASE_SMARTMIPS	0x00000008 /* SmartMIPS */
+#define MIPS_ASE_DSP		0x00000010 /* Signal Processing ASE */
 #define MIPS_ASE_MIPSMT		0x00000020 /* CPU supports MIPS MT */
 #define MIPS_ASE_DSP2P		0x00000040 /* Signal Processing ASE Rev 2 */
 #define MIPS_ASE_VZ		0x00000080 /* Virtualization ASE */
