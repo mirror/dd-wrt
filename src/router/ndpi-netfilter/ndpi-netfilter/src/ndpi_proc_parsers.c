@@ -648,6 +648,7 @@ int parse_ndpi_proto(struct ndpi_net *n,char *cmd) {
  * hexID disable
  * hexID enable (ToDo)
  * add_custom name
+ * netns name
  */
 	while(*v && (*v == ' ' || *v == '\t')) v++;
 	if(*v == '#') return 0;
@@ -667,6 +668,23 @@ int parse_ndpi_proto(struct ndpi_net *n,char *cmd) {
 		}
 		break;
 	}
+	if(!strcmp(hid,"netns")) {
+		char *e;
+		// v -> name of custom protocol
+		for(e = v; *e && *e != ' ' && *e != '\t'; e++) { // first space or eol
+			if(*e < ' ' || strchr("/&^:;\\\"'",*e)) {
+				if(*e < ' ')
+				    pr_err("NDPI: can't use '\\0x%x' in NS  name\n",*e & 0xff);
+				  else
+				    pr_err("NDPI: can't use '%c' in NS name\n",*e & 0xff);
+				return 1;
+			}
+		}
+		if(*e) *e = '\0';
+		strncpy(n->ns_name,v,sizeof(n->ns_name)-1);
+		return 0;
+	}
+
 	for(m = v; *m && *m != '/';m++);
 
 	if(*m) {

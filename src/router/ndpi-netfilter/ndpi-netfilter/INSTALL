@@ -250,6 +250,9 @@ ndpi_flow_limit:  Limit netflow records. Default 10000000 (~4.3Gb RAM). See FLOW
   "echo 'add_custom protoname' >/proc/net/xt_ndpi/proto"
   (use ip_proto and host_proto for definition)
 
+  Set name for netnamespace (debug info):
+  "echo 'netns xxxxx' >/proc/net/xt_ndpi/proto"
+
   protoid, mark and mask is hex-value.
 
   Examples:

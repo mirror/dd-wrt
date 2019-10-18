@@ -259,7 +259,7 @@ static int parse_ndpi_flow(struct ndpi_net *n,char *buf)
 		if(idx < 1 || idx > 600) return -EINVAL;
 		n->acc_wait = idx;
 		if(flow_read_debug)
-			pr_info("%s: set timeout=%d\n",__func__,n->acc_wait);
+			pr_info("%s:%s set timeout=%d\n",__func__,n->ns_name,n->acc_wait);
 		return 0;
 	}
 	if(sscanf(buf,"limit=%d",&idx) == 1) {
@@ -267,7 +267,7 @@ static int parse_ndpi_flow(struct ndpi_net *n,char *buf)
 			return -EINVAL;
 		n->acc_limit = idx;
 		if(flow_read_debug)
-			pr_info("%s: set limit=%d\n",__func__,n->acc_limit);
+			pr_info("%s:%s set limit=%d\n",__func__,n->ns_name,n->acc_limit);
 		return 0;
 	}
 
@@ -277,7 +277,7 @@ static int parse_ndpi_flow(struct ndpi_net *n,char *buf)
 				n->acc_read_mode = idx;
 			} else return -EINVAL;
 			if(flow_read_debug)
-				pr_info("%s: set read_mode=%d\n",__func__,n->acc_read_mode);
+				pr_info("%s:%s set read_mode=%d\n",__func__,n->ns_name,n->acc_read_mode);
 			return 0;
 		}
 	}
@@ -304,8 +304,8 @@ int nflow_proc_close(struct inode *inode, struct file *file)
 	if(!ndpi_enable_flow) return -EINVAL;
 	generic_proc_close(n,parse_ndpi_flow,W_BUF_FLOW);
 	if(flow_read_debug)
-		pr_info("%s: view %ld dumped %ld deleted %ld\n",
-			__func__,n->cnt_view,n->cnt_out,n->cnt_del);
+		pr_info("%s:%s view %ld dumped %ld deleted %ld\n",
+			__func__,n->ns_name,n->cnt_view,n->cnt_out,n->cnt_del);
 	n->acc_gc = jiffies + n->acc_wait*HZ;
 	atomic_set(&n->acc_open,0);
         return 0;

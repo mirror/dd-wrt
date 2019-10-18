@@ -54,7 +54,7 @@ do {
 		ret = ENOMEM; break;
 	}
 	if(ndpi_log_debug > 1)
-		pr_info("host_ac %px new\n",n->host_ac);
+		pr_info("host_open:%s %px new\n",n->ns_name,n->host_ac);
 
 	n->host_error = 0;
 
@@ -70,8 +70,8 @@ do {
 				ac_pattern.rep.number = np;
 				r = ac_automata_add(n->host_ac, &ac_pattern);
 				if(r != ACERR_SUCCESS) {
-					pr_err("%s: host add '%s' : %s : skipped\n",__func__,
-							host,acerr2txt(r));
+					pr_err("%s:%s host add '%s' : %s : skipped\n",
+						__func__,n->ns_name,host,acerr2txt(r));
 				}
 			}
 		}
@@ -80,8 +80,8 @@ do {
 
 	spin_unlock(&n->host_lock);
 	if(ndpi_log_debug > 1)
-		pr_info("open: host_ac %px old %px\n",
-				(void *)n->host_ac,
+		pr_info("host_open:%s host_ac %px old %px\n",
+				n->ns_name,(void *)n->host_ac,
 				ndpi_automa_host(n->ndpi_struct));
         return ret;
 }
@@ -214,11 +214,11 @@ int n_hostdef_proc_close(struct inode *inode, struct file *file)
 			XCHGP(n->hosts,n->hosts_tmp);
 
 		} else {
-			pr_err("xt_ndpi: Can't update host_proto with errors\n");
+			pr_err("xt_ndpi:%s Can't update host_proto with errors\n",n->ns_name);
 		}
 
 		if(ndpi_log_debug > 1)
-			pr_info("close: release host_ac %px\n",n->host_ac);
+			pr_info("host_open:%s release host_ac %px\n",n->ns_name,n->host_ac);
 
 		ac_automata_release((AC_AUTOMATA_t*)n->host_ac);
 		n->host_ac = NULL;
