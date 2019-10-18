@@ -3564,6 +3564,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "privoxy_advanced", "0" },
 	{ "privoxy_pac_enable", "0" },
 	{ "privoxy_transp_enable", "0" },
+	{ "privoxy_maxclient", "128" },
 #endif
 #ifdef HAVE_SOFTETHER
 	{ "setherclient_enable", "0" },
