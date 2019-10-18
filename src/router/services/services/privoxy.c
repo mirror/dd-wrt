@@ -113,7 +113,11 @@ void start_privoxy(void)
 			"enable-edit-actions 0\n"
 			"tolerate-pipelining 1\n"
 			"buffer-limit 4096\n"
-			"accept-intercepted-requests %d\n" "split-large-forms 0\n" "socket-timeout 60\n" "handle-as-empty-doc-returns-ok 1\n", whitelist ? "/tmp/user.action" : "user.action", ip, mode);
+			"accept-intercepted-requests %d\n"
+			"split-large-forms 0\n"
+			"socket-timeout 60\n"
+			"max-client-connections %d\n"
+			"handle-as-empty-doc-returns-ok 1\n", whitelist ? "/tmp/user.action" : "user.action", ip, mode, nvram_geti("privoxy_maxclient"));
 	}
 	fclose(fp);
 	eval("privoxy", "/tmp/privoxy.conf");
