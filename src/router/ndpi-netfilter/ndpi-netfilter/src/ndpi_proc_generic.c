@@ -31,7 +31,7 @@ generic_proc_close(struct ndpi_net *n,
 	if(w_buf) {
 		if(w_buf->cpos ) {
 			if(ndpi_log_debug > 1)
-			    pr_info("%s: cmd %d:%s\n",__func__,
+			    pr_info("%s:%s cmd %d:%s\n",__func__,n->ns_name,
 					    w_buf->cpos,&w_buf->cmd[0]);
 			ret = (parse_line)(n,&w_buf->cmd[0]);
 		}
@@ -89,7 +89,7 @@ generic_proc_write(struct ndpi_net *n, const char __user *buffer,
 			if(c == '\n' || !c) {
 				if(w_buf->cpos) {
 					if(ndpi_log_debug > 1)
-					    pr_info("%s: cmd %d:%s\n", __func__,
+					    pr_info("%s:%s cmd %d:%s\n", __func__,n->ns_name,
 							    w_buf->cpos,&w_buf->cmd[0]);
 					r = (parse_line)(n,&w_buf->cmd[0]);
 				}
@@ -101,7 +101,8 @@ generic_proc_write(struct ndpi_net *n, const char __user *buffer,
 				if(w_buf->cpos < w_buf->max - 1)
 					w_buf->cmd[w_buf->cpos++] = c;
 				    else {
-					    if(!skip) pr_err("xt_ndpi: Command too long\n");
+					    if(!skip)
+						pr_err("xt_ndpi:%s Command too long\n",n->ns_name);
 					    skip = 1;
 					}
 			}
