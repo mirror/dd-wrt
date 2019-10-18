@@ -893,6 +893,7 @@ privoxy.transp="Transparent Mode";
 privoxy.exclude="Exclude IP";
 privoxy.whitel="Whitelist";
 privoxy.custom="Custom Configuration";
+privoxy.maxclient="Max Client Connection";
 
 var hprivoxy=new Object();
 hprivoxy.right2="Enable Privoxy and configure your clients proxy settings. <br><br>Proxy IP = <b>Router IP</b> <br>Proxy Port = <b>8118</b>";
