@@ -789,6 +789,7 @@ privoxy.legend="Proxy Server";
 privoxy.pac="Proxy Konfiguration bereitstellen";
 privoxy.transp="Transparenter Modus";
 privoxy.custom="Eigene Konfiguration";
+privoxy.maxclient="Maximale Verbindungen";
 
 hprivoxy.right2="Schaltet Privoxy ein und konfiguriert ihn f&uuml;r ihre Clients.<br> Proxy IP = <b>Router IP</b> <br>Proxy Port = <b>8118</b>";
 
