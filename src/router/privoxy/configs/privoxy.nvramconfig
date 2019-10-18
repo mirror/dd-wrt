@@ -5,3 +5,4 @@
  "privoxy_advanced"  "Privoxy Advanced Conf" "CHOICE" "2"  "0"  "1"  "FALSE" "0"
  "privoxy_whitel"  "Privoxy Whitelist"  "NULL"  "FALSE" "0"
  "privoxy_conf"  "Privoxy Config"  "NULL"  "FALSE" "0"
+ "privoxy_maxclient" "Max Client Connections" "NULL" "FALSE" "0"
