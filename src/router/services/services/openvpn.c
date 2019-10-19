@@ -150,9 +150,17 @@ void start_openvpnserver(void)
 		if (nvram_invmatch("openvpn_scramble", "off"))
 			fprintf(fp, "scramble %s\n",	//scramble XOR patch for reordering packet content to protect against DPI
 				nvram_safe_get("openvpn_scramble"));
-		if (nvram_invmatch("openvpn_lzo", "off"))
-			fprintf(fp, "comp-lzo %s\n",	//yes/no/adaptive/disable
-				nvram_safe_get("openvpn_lzo"));
+		if (nvram_invmatch("openvpn_lzo", "off")) {
+			if (nvram_match("openvpn_lzo", "compress lz4"))
+				fprintf(fp, "compress lz4\n");
+			else if (nvram_match("openvpn_lzo", "compress lz4-v2"))
+				fprintf(fp, "compress lz4-v2\n");
+			else if (nvram_match("openvpn_lzo", "compress"))
+				fprintf(fp, "compress\n");
+			else
+				fprintf(fp, "comp-lzo %s\n",	//yes/no/adaptive/disable
+					nvram_safe_get("openvpn_lzo"));
+		}
 		if (nvram_invmatch("openvpn_auth", "none"))	//not needed if we have no auth anyway
 			fprintf(fp, "tls-server\n");
 		if (nvram_matchi("openvpn_dupcn", 1))
@@ -437,9 +445,17 @@ void start_openvpn(void)
 		else
 			fprintf(fp, "scramble %s\n", nvram_safe_get("openvpncl_scramble"));
 	}
-	if (nvram_invmatch("openvpncl_lzo", "off"))
-		fprintf(fp, "comp-lzo %s\n",	//yes/no/adaptive/disable
-			nvram_safe_get("openvpncl_lzo"));
+	if (nvram_invmatch("openvpncl_lzo", "off")) {
+		if (nvram_match("openvpncl_lzo", "compress lz4"))
+			fprintf(fp, "compress lz4\n");
+		else if (nvram_match("openvpncl_lzo", "compress lz4-v2"))
+			fprintf(fp, "compress lz4-v2\n");
+		else if (nvram_match("openvpncl_lzo", "compress"))
+			fprintf(fp, "compress\n");
+		else
+			fprintf(fp, "comp-lzo %s\n",	//yes/no/adaptive/disable
+				nvram_safe_get("openvpncl_lzo"));
+	}
 	if (*(nvram_safe_get("openvpncl_route"))) {	//policy routing: we need redirect-gw so we get gw info
 		fprintf(fp, "redirect-private def1\n");
 		if (nvram_invmatch("openvpncl_tuntap", "tun"))
