@@ -104,6 +104,9 @@
 				<option value="yes" <% nvram_selected("openvpncl_lzo","yes"); %>>Yes</option>
 				<option value="adaptive" <% nvram_selected("openvpncl_lzo","adaptive"); %>>Adaptive</option>
 				<option value="no" <% nvram_selected("openvpncl_lzo","no"); %>>No</option>
+				<option value="compress" <% nvram_selected("openvpncl_lzo","compress"); %>>Compress</option>
+				<option value="compress lz4" <% nvram_selected("openvpncl_lzo","compress lz4"); %>>Compress lz4</option>
+				<option value="compress lz4-v2" <% nvram_selected("openvpncl_lzo","compress lz4-v2"); %>>Compress lz4-v2</option>
 				<option value="off" <% nvram_selected("openvpncl_lzo","off"); %>>Disabled</option>
 				</select>
 			</div>
