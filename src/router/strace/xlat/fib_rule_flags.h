@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat fib_rule_flags[] = {
+static const struct xlat_data fib_rule_flags_xdata[] = {
 #if defined(FIB_RULE_PERMANENT) || (defined(HAVE_DECL_FIB_RULE_PERMANENT) && HAVE_DECL_FIB_RULE_PERMANENT)
   XLAT(FIB_RULE_PERMANENT),
 #endif
@@ -32,8 +31,13 @@ const struct xlat fib_rule_flags[] = {
 #if defined(FIB_RULE_FIND_SADDR) || (defined(HAVE_DECL_FIB_RULE_FIND_SADDR) && HAVE_DECL_FIB_RULE_FIND_SADDR)
   XLAT(FIB_RULE_FIND_SADDR),
 #endif
- XLAT_END
 };
+static
+const struct xlat fib_rule_flags[1] = { {
+ .data = fib_rule_flags_xdata,
+ .size = ARRAY_SIZE(fib_rule_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

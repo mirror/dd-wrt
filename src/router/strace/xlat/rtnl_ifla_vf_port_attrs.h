@@ -26,12 +26,16 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat rtnl_ifla_vf_port_attrs[] = {
- XLAT(IFLA_VF_PORT_UNSPEC),
- XLAT(IFLA_VF_PORT),
- XLAT_END
+static const struct xlat_data rtnl_ifla_vf_port_attrs_xdata[] = {
+ [IFLA_VF_PORT_UNSPEC] = XLAT(IFLA_VF_PORT_UNSPEC),
+ [IFLA_VF_PORT] = XLAT(IFLA_VF_PORT),
 };
+static
+const struct xlat rtnl_ifla_vf_port_attrs[1] = { {
+ .data = rtnl_ifla_vf_port_attrs_xdata,
+ .size = ARRAY_SIZE(rtnl_ifla_vf_port_attrs_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

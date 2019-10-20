@@ -47,15 +47,19 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat sock_alg_options[] = {
+static const struct xlat_data sock_alg_options_xdata[] = {
  [ALG_SET_KEY] = XLAT(ALG_SET_KEY),
  [ALG_SET_IV] = XLAT(ALG_SET_IV),
  [ALG_SET_OP] = XLAT(ALG_SET_OP),
  [ALG_SET_AEAD_ASSOCLEN] = XLAT(ALG_SET_AEAD_ASSOCLEN),
  [ALG_SET_AEAD_AUTHSIZE] = XLAT(ALG_SET_AEAD_AUTHSIZE),
- XLAT_END
 };
+static
+const struct xlat sock_alg_options[1] = { {
+ .data = sock_alg_options_xdata,
+ .size = ARRAY_SIZE(sock_alg_options_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

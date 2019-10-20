@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat cacheflush_scope[] = {
+static const struct xlat_data cacheflush_scope_xdata[] = {
 #if defined(FLUSH_SCOPE_LINE) || (defined(HAVE_DECL_FLUSH_SCOPE_LINE) && HAVE_DECL_FLUSH_SCOPE_LINE)
   XLAT(FLUSH_SCOPE_LINE),
 #endif
@@ -23,8 +22,13 @@ const struct xlat cacheflush_scope[] = {
 #if defined(FLUSH_SCOPE_ALL) || (defined(HAVE_DECL_FLUSH_SCOPE_ALL) && HAVE_DECL_FLUSH_SCOPE_ALL)
   XLAT(FLUSH_SCOPE_ALL),
 #endif
- XLAT_END
 };
+static
+const struct xlat cacheflush_scope[1] = { {
+ .data = cacheflush_scope_xdata,
+ .size = ARRAY_SIZE(cacheflush_scope_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

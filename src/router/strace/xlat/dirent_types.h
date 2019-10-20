@@ -8,7 +8,7 @@
 
 # ifndef IN_MPERS
 
-const struct xlat dirent_types[] = {
+static const struct xlat_data dirent_types_xdata[] = {
 #if defined(DT_UNKNOWN) || (defined(HAVE_DECL_DT_UNKNOWN) && HAVE_DECL_DT_UNKNOWN)
   XLAT(DT_UNKNOWN),
 #endif
@@ -36,8 +36,12 @@ const struct xlat dirent_types[] = {
 #if defined(DT_WHT) || (defined(HAVE_DECL_DT_WHT) && HAVE_DECL_DT_WHT)
   XLAT(DT_WHT),
 #endif
- XLAT_END
 };
+const struct xlat dirent_types[1] = { {
+ .data = dirent_types_xdata,
+ .size = ARRAY_SIZE(dirent_types_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

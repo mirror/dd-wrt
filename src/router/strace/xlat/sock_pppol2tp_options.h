@@ -47,15 +47,19 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat sock_pppol2tp_options[] = {
+static const struct xlat_data sock_pppol2tp_options_xdata[] = {
  [PPPOL2TP_SO_DEBUG] = XLAT(PPPOL2TP_SO_DEBUG),
  [PPPOL2TP_SO_RECVSEQ] = XLAT(PPPOL2TP_SO_RECVSEQ),
  [PPPOL2TP_SO_SENDSEQ] = XLAT(PPPOL2TP_SO_SENDSEQ),
  [PPPOL2TP_SO_LNSMODE] = XLAT(PPPOL2TP_SO_LNSMODE),
  [PPPOL2TP_SO_REORDERTO] = XLAT(PPPOL2TP_SO_REORDERTO),
- XLAT_END
 };
+static
+const struct xlat sock_pppol2tp_options[1] = { {
+ .data = sock_pppol2tp_options_xdata,
+ .size = ARRAY_SIZE(sock_pppol2tp_options_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

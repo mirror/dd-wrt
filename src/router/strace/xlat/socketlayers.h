@@ -292,8 +292,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # ifndef IN_MPERS
 
-const struct xlat socketlayers[] = {
-
+static const struct xlat_data socketlayers_xdata[] = {
  XLAT(SOL_IP),
 #if !(defined __alpha__ || defined __hppa__ || defined __mips__ || defined __sparc__)
  XLAT(SOL_SOCKET),
@@ -338,8 +337,12 @@ const struct xlat socketlayers[] = {
 #if defined __alpha__ || defined __hppa__ || defined __mips__ || defined __sparc__
  XLAT(SOL_SOCKET),
 #endif
- XLAT_END
 };
+const struct xlat socketlayers[1] = { {
+ .data = socketlayers_xdata,
+ .size = ARRAY_SIZE(socketlayers_xdata),
+ .type = XT_SORTED,
+} };
 
 # endif /* !IN_MPERS */
 

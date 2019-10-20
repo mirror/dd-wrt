@@ -40,12 +40,15 @@ libtests_a_SOURCES = \
 	inode_of_sockfd.c \
 	libmmsg.c \
 	libsocketcall.c \
+	lock_file.c \
 	overflowuid.c \
 	pipe_maxfd.c \
 	print_quoted_string.c \
 	print_time.c \
 	printflags.c \
-	printxval.c \
+	printxval-Xabbrev.c \
+	printxval-Xraw.c \
+	printxval-Xverbose.c \
 	signal2name.c \
 	skip_unavailable.c \
 	sprintrc.c \
@@ -85,10 +88,16 @@ check_PROGRAMS = $(PURE_EXECUTABLES) \
 	check_sigign \
 	clone_parent \
 	clone_ptrace \
+	clone3-success \
+	clone3-success-Xabbrev \
+	clone3-success-Xraw \
+	clone3-success-Xverbose \
 	count-f \
 	delay \
 	execve-v \
 	execveat-v \
+	filter_seccomp-flag \
+	filter_seccomp-perf \
 	filter-unavailable \
 	fork-f \
 	fsync-y \
@@ -99,8 +108,13 @@ check_PROGRAMS = $(PURE_EXECUTABLES) \
 	int_0x80 \
 	ioctl_dm-v \
 	ioctl_evdev-success \
+	ioctl_evdev-success-Xabbrev \
+	ioctl_evdev-success-Xraw \
+	ioctl_evdev-success-Xverbose \
 	ioctl_evdev-success-v \
-	ioctl_evdev-v \
+	ioctl_evdev-success-v-Xabbrev \
+	ioctl_evdev-success-v-Xraw \
+	ioctl_evdev-success-v-Xverbose \
 	ioctl_loop-nv \
 	ioctl_loop-v \
 	ioctl_nsfs \
@@ -160,6 +174,7 @@ check_PROGRAMS = $(PURE_EXECUTABLES) \
 	stack-fcall-mangled \
 	status-none-threads \
 	status-unfinished-threads \
+	syslog-success \
 	threads-execve \
 	unblock_reset_raise \
 	unix-pair-send-recv \
@@ -233,6 +248,7 @@ DECODER_TESTS = \
 	caps-abbrev.test \
 	caps.test \
 	clone-flags.test \
+	clone3-success.test \
 	eventfd.test \
 	execve-v.test \
 	execve.test \
@@ -242,7 +258,6 @@ DECODER_TESTS = \
 	int_0x80.test \
 	inotify_init-y.test \
 	ioctl.test \
-	ioctl_evdev-success-v.test \
 	ioctl_evdev-success.test \
 	ioctl_perf-success.test \
 	ipc_msgbuf.test \
@@ -286,6 +301,7 @@ DECODER_TESTS = \
 	seccomp-strict.test \
 	sigaltstack.test \
 	sun_path.test \
+	syslog-success.test \
 	uio.test \
 	umount.test \
 	umount2.test \
@@ -310,6 +326,7 @@ MISC_TESTS = \
 	detach-sleeping.test \
 	detach-stopped.test \
 	fflush.test \
+	filter_seccomp-perf.test \
 	filter-unavailable.test \
 	filtering_fd-syntax.test \
 	filtering_syscall-syntax.test \
@@ -318,7 +335,6 @@ MISC_TESTS = \
 	inject-nf.test \
 	interactive_block.test \
 	kill_child.test \
-	ksysent.test \
 	localtime.test \
 	looping_threads.test \
 	opipe.test \
@@ -360,6 +376,7 @@ MISC_TESTS = \
 	strace-ttt.test \
 	termsig.test \
 	threads-execve.test \
+	umovestr_cached.test \
 	# end of MISC_TESTS
 
 TESTS = $(GEN_TESTS) $(DECODER_TESTS) $(MISC_TESTS) $(STACKTRACE_TESTS)
@@ -392,6 +409,8 @@ EXTRA_DIST = \
 	eventfd.expected \
 	fadvise.h \
 	fcntl-common.c \
+	filter_seccomp.in \
+	filter_seccomp.sh \
 	filter-unavailable.expected \
 	fstatat.c \
 	fstatx.c \
@@ -412,6 +431,7 @@ EXTRA_DIST = \
 	pipe.expected \
 	print_user_desc.c \
 	printsignal.c \
+	printxval.c \
 	process_vm_readv_writev.c \
 	pure_executables.list \
 	qual_fault-exit_group.expected \

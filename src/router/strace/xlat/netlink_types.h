@@ -40,14 +40,18 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat netlink_types[] = {
- XLAT(NLMSG_NOOP),
- XLAT(NLMSG_ERROR),
- XLAT(NLMSG_DONE),
- XLAT(NLMSG_OVERRUN),
- XLAT_END
+static const struct xlat_data netlink_types_xdata[] = {
+ [NLMSG_NOOP] = XLAT(NLMSG_NOOP),
+ [NLMSG_ERROR] = XLAT(NLMSG_ERROR),
+ [NLMSG_DONE] = XLAT(NLMSG_DONE),
+ [NLMSG_OVERRUN] = XLAT(NLMSG_OVERRUN),
 };
+static
+const struct xlat netlink_types[1] = { {
+ .data = netlink_types_xdata,
+ .size = ARRAY_SIZE(netlink_types_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

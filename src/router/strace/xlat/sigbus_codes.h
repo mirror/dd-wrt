@@ -47,10 +47,7 @@ extern const struct xlat sigbus_codes[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat sigbus_codes[] = {
+static const struct xlat_data sigbus_codes_xdata[] = {
  XLAT(BUS_ADRALN),
  XLAT(BUS_ADRERR),
  XLAT(BUS_OBJERR),
@@ -59,8 +56,15 @@ const struct xlat sigbus_codes[] = {
 #endif
  XLAT(BUS_MCEERR_AR),
  XLAT(BUS_MCEERR_AO),
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat sigbus_codes[1] = { {
+ .data = sigbus_codes_xdata,
+ .size = ARRAY_SIZE(sigbus_codes_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

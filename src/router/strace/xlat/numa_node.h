@@ -19,11 +19,15 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat numa_node[] = {
+static const struct xlat_data numa_node_xdata[] = {
  XLAT(NUMA_NO_NODE),
- XLAT_END
 };
+static
+const struct xlat numa_node[1] = { {
+ .data = numa_node_xdata,
+ .size = ARRAY_SIZE(numa_node_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

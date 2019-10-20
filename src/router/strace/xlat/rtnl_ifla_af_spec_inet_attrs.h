@@ -26,12 +26,16 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat rtnl_ifla_af_spec_inet_attrs[] = {
+static const struct xlat_data rtnl_ifla_af_spec_inet_attrs_xdata[] = {
  [IFLA_INET_UNSPEC] = XLAT(IFLA_INET_UNSPEC),
  [IFLA_INET_CONF] = XLAT(IFLA_INET_CONF),
- XLAT_END
 };
+static
+const struct xlat rtnl_ifla_af_spec_inet_attrs[1] = { {
+ .data = rtnl_ifla_af_spec_inet_attrs_xdata,
+ .size = ARRAY_SIZE(rtnl_ifla_af_spec_inet_attrs_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

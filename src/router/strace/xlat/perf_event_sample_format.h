@@ -152,8 +152,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat perf_event_sample_format[] = {
+static const struct xlat_data perf_event_sample_format_xdata[] = {
  XLAT(PERF_SAMPLE_IP),
  XLAT(PERF_SAMPLE_TID),
  XLAT(PERF_SAMPLE_TIME),
@@ -174,8 +173,13 @@ const struct xlat perf_event_sample_format[] = {
  XLAT(PERF_SAMPLE_TRANSACTION),
  XLAT(PERF_SAMPLE_REGS_INTR),
  XLAT(PERF_SAMPLE_PHYS_ADDR),
- XLAT_END
 };
+static
+const struct xlat perf_event_sample_format[1] = { {
+ .data = perf_event_sample_format_xdata,
+ .size = ARRAY_SIZE(perf_event_sample_format_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

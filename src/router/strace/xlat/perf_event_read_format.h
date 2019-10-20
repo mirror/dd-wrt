@@ -40,14 +40,18 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat perf_event_read_format[] = {
+static const struct xlat_data perf_event_read_format_xdata[] = {
  XLAT(PERF_FORMAT_TOTAL_TIME_ENABLED),
  XLAT(PERF_FORMAT_TOTAL_TIME_RUNNING),
  XLAT(PERF_FORMAT_ID),
  XLAT(PERF_FORMAT_GROUP),
- XLAT_END
 };
+static
+const struct xlat perf_event_read_format[1] = { {
+ .data = perf_event_read_format_xdata,
+ .size = ARRAY_SIZE(perf_event_read_format_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

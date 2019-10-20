@@ -12,15 +12,19 @@ extern const struct xlat btrfs_dev_stats_flags[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat btrfs_dev_stats_flags[] = {
+static const struct xlat_data btrfs_dev_stats_flags_xdata[] = {
 #if defined(BTRFS_DEV_STATS_RESET) || (defined(HAVE_DECL_BTRFS_DEV_STATS_RESET) && HAVE_DECL_BTRFS_DEV_STATS_RESET)
   XLAT_TYPE(uint64_t, BTRFS_DEV_STATS_RESET),
 #endif
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat btrfs_dev_stats_flags[1] = { {
+ .data = btrfs_dev_stats_flags_xdata,
+ .size = ARRAY_SIZE(btrfs_dev_stats_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -40,14 +40,18 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat ioprio_class[] = {
- XLAT(IOPRIO_CLASS_NONE),
- XLAT(IOPRIO_CLASS_RT),
- XLAT(IOPRIO_CLASS_BE),
- XLAT(IOPRIO_CLASS_IDLE),
- XLAT_END
+static const struct xlat_data ioprio_class_xdata[] = {
+ [IOPRIO_CLASS_NONE] = XLAT(IOPRIO_CLASS_NONE),
+ [IOPRIO_CLASS_RT] = XLAT(IOPRIO_CLASS_RT),
+ [IOPRIO_CLASS_BE] = XLAT(IOPRIO_CLASS_BE),
+ [IOPRIO_CLASS_IDLE] = XLAT(IOPRIO_CLASS_IDLE),
 };
+static
+const struct xlat ioprio_class[1] = { {
+ .data = ioprio_class_xdata,
+ .size = ARRAY_SIZE(ioprio_class_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

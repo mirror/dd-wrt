@@ -12,16 +12,20 @@
 
 # else
 
-static
-const struct xlat sock_type_flags[] = {
+static const struct xlat_data sock_type_flags_xdata[] = {
 #if defined(SOCK_CLOEXEC) || (defined(HAVE_DECL_SOCK_CLOEXEC) && HAVE_DECL_SOCK_CLOEXEC)
   XLAT(SOCK_CLOEXEC),
 #endif
 #if defined(SOCK_NONBLOCK) || (defined(HAVE_DECL_SOCK_NONBLOCK) && HAVE_DECL_SOCK_NONBLOCK)
   XLAT(SOCK_NONBLOCK),
 #endif
- XLAT_END
 };
+static
+const struct xlat sock_type_flags[1] = { {
+ .data = sock_type_flags_xdata,
+ .size = ARRAY_SIZE(sock_type_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

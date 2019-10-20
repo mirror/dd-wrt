@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat getsock_ipv6_options[] = {
+static const struct xlat_data getsock_ipv6_options_xdata[] = {
 /*
 * Options specific to getsockopt(SOL_IPV6).
 * Common {g,s}etsockopt(SOL_IPV6) options
@@ -32,8 +31,13 @@ const struct xlat getsock_ipv6_options[] = {
 #if defined(IP6T_SO_GET_REVISION_TARGET) || (defined(HAVE_DECL_IP6T_SO_GET_REVISION_TARGET) && HAVE_DECL_IP6T_SO_GET_REVISION_TARGET)
   XLAT(IP6T_SO_GET_REVISION_TARGET),
 #endif
- XLAT_END
 };
+static
+const struct xlat getsock_ipv6_options[1] = { {
+ .data = getsock_ipv6_options_xdata,
+ .size = ARRAY_SIZE(getsock_ipv6_options_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

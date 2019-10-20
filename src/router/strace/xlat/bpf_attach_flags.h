@@ -26,12 +26,16 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat bpf_attach_flags[] = {
+static const struct xlat_data bpf_attach_flags_xdata[] = {
  XLAT(BPF_F_ALLOW_OVERRIDE),
  XLAT(BPF_F_ALLOW_MULTI),
- XLAT_END
 };
+static
+const struct xlat bpf_attach_flags[1] = { {
+ .data = bpf_attach_flags_xdata,
+ .size = ARRAY_SIZE(bpf_attach_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

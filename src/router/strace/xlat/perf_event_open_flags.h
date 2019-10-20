@@ -40,14 +40,18 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat perf_event_open_flags[] = {
+static const struct xlat_data perf_event_open_flags_xdata[] = {
  XLAT(PERF_FLAG_FD_NO_GROUP),
  XLAT(PERF_FLAG_FD_OUTPUT),
  XLAT(PERF_FLAG_PID_CGROUP),
  XLAT(PERF_FLAG_FD_CLOEXEC),
- XLAT_END
 };
+static
+const struct xlat perf_event_open_flags[1] = { {
+ .data = perf_event_open_flags_xdata,
+ .size = ARRAY_SIZE(perf_event_open_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

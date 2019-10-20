@@ -82,9 +82,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat bluetooth_l2_cid[] = {
-
+static const struct xlat_data bluetooth_l2_cid_xdata[] = {
  XLAT(L2CAP_CID_SIGNALING),
  XLAT(L2CAP_CID_CONN_LESS),
  XLAT(L2CAP_CID_A2MP),
@@ -95,8 +93,13 @@ const struct xlat bluetooth_l2_cid[] = {
  XLAT(L2CAP_CID_DYN_START),
  XLAT(L2CAP_CID_LE_DYN_END),
  XLAT(L2CAP_CID_DYN_END),
- XLAT_END
 };
+static
+const struct xlat bluetooth_l2_cid[1] = { {
+ .data = bluetooth_l2_cid_xdata,
+ .size = ARRAY_SIZE(bluetooth_l2_cid_xdata),
+ .type = XT_SORTED,
+} };
 
 # endif /* !IN_MPERS */
 

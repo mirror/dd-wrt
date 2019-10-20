@@ -54,16 +54,20 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat bpf_task_fd_type[] = {
+static const struct xlat_data bpf_task_fd_type_xdata[] = {
  [BPF_FD_TYPE_RAW_TRACEPOINT] = XLAT(BPF_FD_TYPE_RAW_TRACEPOINT),
  [BPF_FD_TYPE_TRACEPOINT] = XLAT(BPF_FD_TYPE_TRACEPOINT),
  [BPF_FD_TYPE_KPROBE] = XLAT(BPF_FD_TYPE_KPROBE),
  [BPF_FD_TYPE_KRETPROBE] = XLAT(BPF_FD_TYPE_KRETPROBE),
  [BPF_FD_TYPE_UPROBE] = XLAT(BPF_FD_TYPE_UPROBE),
  [BPF_FD_TYPE_URETPROBE] = XLAT(BPF_FD_TYPE_URETPROBE),
- XLAT_END
 };
+static
+const struct xlat bpf_task_fd_type[1] = { {
+ .data = bpf_task_fd_type_xdata,
+ .size = ARRAY_SIZE(bpf_task_fd_type_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

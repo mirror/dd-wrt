@@ -15,7 +15,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <asm/unistd.h>
 #include "scno.h"
 
 #ifdef HAVE_LINUX_BPF_H
@@ -35,9 +34,9 @@ static void
 print_bpf_attr(void)
 {
 #if XLAT_RAW
-	printf("{prog_type=0x18"
+	printf("{prog_type=0x19"
 #else
-	printf("{prog_type=0x18 /* BPF_PROG_TYPE_??? */"
+	printf("{prog_type=0x19 /* BPF_PROG_TYPE_??? */"
 #endif
 		", insn_cnt=3134983661"
 		", insns=NULL"
@@ -78,7 +77,7 @@ main(void)
 {
 	long ret;
 	struct BPF_PROG_LOAD_struct prog = {
-		.prog_type = 24,
+		.prog_type = 25,
 		.insn_cnt = 0xbadc0ded,
 		.insns = 0,
 		.license = 0,

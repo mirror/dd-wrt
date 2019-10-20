@@ -2,7 +2,7 @@
  * Check decoding of waitid syscall.
  *
  * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2018 The strace developers.
+ * Copyright (c) 2016-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -16,7 +16,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <sys/resource.h>
-#include <asm/unistd.h>
+#include "scno.h"
 
 static const char *
 sprint_rusage(const struct rusage *const ru)

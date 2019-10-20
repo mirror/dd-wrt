@@ -26,12 +26,16 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat rtnl_mdba_mdb_eattr_attrs[] = {
- XLAT(MDBA_MDB_EATTR_UNSPEC),
- XLAT(MDBA_MDB_EATTR_TIMER),
- XLAT_END
+static const struct xlat_data rtnl_mdba_mdb_eattr_attrs_xdata[] = {
+ [MDBA_MDB_EATTR_UNSPEC] = XLAT(MDBA_MDB_EATTR_UNSPEC),
+ [MDBA_MDB_EATTR_TIMER] = XLAT(MDBA_MDB_EATTR_TIMER),
 };
+static
+const struct xlat rtnl_mdba_mdb_eattr_attrs[1] = { {
+ .data = rtnl_mdba_mdb_eattr_attrs_xdata,
+ .size = ARRAY_SIZE(rtnl_mdba_mdb_eattr_attrs_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

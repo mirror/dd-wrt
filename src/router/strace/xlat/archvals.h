@@ -75,8 +75,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat archvals[] = {
+static const struct xlat_data archvals_xdata[] = {
  XLAT(ARCH_SET_GS),
  XLAT(ARCH_SET_FS),
  XLAT(ARCH_GET_FS),
@@ -86,8 +85,13 @@ const struct xlat archvals[] = {
  XLAT(ARCH_MAP_VDSO_X32),
  XLAT(ARCH_MAP_VDSO_32),
  XLAT(ARCH_MAP_VDSO_64),
- XLAT_END
 };
+static
+const struct xlat archvals[1] = { {
+ .data = archvals_xdata,
+ .size = ARRAY_SIZE(archvals_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

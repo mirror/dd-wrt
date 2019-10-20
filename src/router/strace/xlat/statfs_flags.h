@@ -82,8 +82,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat statfs_flags[] = {
+static const struct xlat_data statfs_flags_xdata[] = {
  XLAT(ST_VALID),
  XLAT(ST_RDONLY),
  XLAT(ST_NOSUID),
@@ -94,8 +93,13 @@ const struct xlat statfs_flags[] = {
  XLAT(ST_NOATIME),
  XLAT(ST_NODIRATIME),
  XLAT(ST_RELATIME),
- XLAT_END
 };
+static
+const struct xlat statfs_flags[1] = { {
+ .data = statfs_flags_xdata,
+ .size = ARRAY_SIZE(statfs_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

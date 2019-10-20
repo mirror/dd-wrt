@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat waitid_types[] = {
+static const struct xlat_data waitid_types_xdata[] = {
 #if defined(P_PID) || (defined(HAVE_DECL_P_PID) && HAVE_DECL_P_PID)
   XLAT(P_PID),
 #endif
@@ -41,8 +40,13 @@ const struct xlat waitid_types[] = {
 #if defined(P_LWPID) || (defined(HAVE_DECL_P_LWPID) && HAVE_DECL_P_LWPID)
   XLAT(P_LWPID),
 #endif
- XLAT_END
 };
+static
+const struct xlat waitid_types[1] = { {
+ .data = waitid_types_xdata,
+ .size = ARRAY_SIZE(waitid_types_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

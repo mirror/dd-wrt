@@ -68,8 +68,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat bootflags3[] = {
+static const struct xlat_data bootflags3_xdata[] = {
  XLAT(LINUX_REBOOT_CMD_RESTART),
  XLAT(LINUX_REBOOT_CMD_HALT),
  XLAT(LINUX_REBOOT_CMD_CAD_ON),
@@ -78,8 +77,13 @@ const struct xlat bootflags3[] = {
  XLAT(LINUX_REBOOT_CMD_RESTART2),
  XLAT(LINUX_REBOOT_CMD_SW_SUSPEND),
  XLAT(LINUX_REBOOT_CMD_KEXEC),
- XLAT_END
 };
+static
+const struct xlat bootflags3[1] = { {
+ .data = bootflags3_xdata,
+ .size = ARRAY_SIZE(bootflags3_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

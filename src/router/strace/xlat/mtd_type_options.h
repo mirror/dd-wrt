@@ -12,10 +12,7 @@ extern const struct xlat mtd_type_options[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat mtd_type_options[] = {
+static const struct xlat_data mtd_type_options_xdata[] = {
 #if defined(MTD_ABSENT) || (defined(HAVE_DECL_MTD_ABSENT) && HAVE_DECL_MTD_ABSENT)
   XLAT(MTD_ABSENT),
 #endif
@@ -40,8 +37,15 @@ const struct xlat mtd_type_options[] = {
 #if defined(MTD_MLCNANDFLASH) || (defined(HAVE_DECL_MTD_MLCNANDFLASH) && HAVE_DECL_MTD_MLCNANDFLASH)
   XLAT(MTD_MLCNANDFLASH),
 #endif
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat mtd_type_options[1] = { {
+ .data = mtd_type_options_xdata,
+ .size = ARRAY_SIZE(mtd_type_options_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -1,7 +1,7 @@
 /*
  * Check decoding of return values injected into a syscall that "never fails".
  *
- * Copyright (c) 2018 The strace developers.
+ * Copyright (c) 2018-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -12,7 +12,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <asm/unistd.h>
+#include "scno.h"
 
 #include "raw_syscall.h"
 

@@ -1,14 +1,14 @@
 /*
  * Check decoding of s390_pci_mmio_read and s390_pci_mmio_write syscalls.
  *
- * Copyright (c) 2018 The strace developers.
+ * Copyright (c) 2018-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "tests.h"
-#include <asm/unistd.h>
+#include "scno.h"
 
 #if defined __NR_s390_pci_mmio_read && defined __NR_s390_pci_mmio_write
 

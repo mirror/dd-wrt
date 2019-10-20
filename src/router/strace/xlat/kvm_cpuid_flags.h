@@ -36,8 +36,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat kvm_cpuid_flags[] = {
+static const struct xlat_data kvm_cpuid_flags_xdata[] = {
 #ifndef BIT
 /*
 * Workaround a bug in kernel headers fixed by linux commit v4.7-rc1~32^2~42.
@@ -48,8 +47,13 @@ const struct xlat kvm_cpuid_flags[] = {
  XLAT(KVM_CPUID_FLAG_SIGNIFCANT_INDEX),
  XLAT(KVM_CPUID_FLAG_STATEFUL_FUNC),
  XLAT(KVM_CPUID_FLAG_STATE_READ_NEXT),
- XLAT_END
 };
+static
+const struct xlat kvm_cpuid_flags[1] = { {
+ .data = kvm_cpuid_flags_xdata,
+ .size = ARRAY_SIZE(kvm_cpuid_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

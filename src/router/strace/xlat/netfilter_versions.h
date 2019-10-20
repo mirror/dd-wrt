@@ -26,12 +26,16 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat netfilter_versions[] = {
- XLAT(NFNETLINK_V0),
- XLAT(NFNETLINK_V1),
- XLAT_END
+static const struct xlat_data netfilter_versions_xdata[] = {
+ [NFNETLINK_V0] = XLAT(NFNETLINK_V0),
+ [NFNETLINK_V1] = XLAT(NFNETLINK_V1),
 };
+static
+const struct xlat netfilter_versions[1] = { {
+ .data = netfilter_versions_xdata,
+ .size = ARRAY_SIZE(netfilter_versions_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -103,8 +103,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat kexec_arch_values[] = {
+static const struct xlat_data kexec_arch_values_xdata[] = {
  XLAT(KEXEC_ARCH_DEFAULT),
  XLAT(KEXEC_ARCH_386),
  XLAT(KEXEC_ARCH_68K),
@@ -118,8 +117,13 @@ const struct xlat kexec_arch_values[] = {
  XLAT(KEXEC_ARCH_MIPS_LE),
  XLAT(KEXEC_ARCH_MIPS),
  XLAT(KEXEC_ARCH_AARCH64),
- XLAT_END
 };
+static
+const struct xlat kexec_arch_values[1] = { {
+ .data = kexec_arch_values_xdata,
+ .size = ARRAY_SIZE(kexec_arch_values_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

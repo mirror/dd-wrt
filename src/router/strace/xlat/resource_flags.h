@@ -8,7 +8,7 @@
 
 # ifndef IN_MPERS
 
-const struct xlat resource_flags[] = {
+static const struct xlat_data resource_flags_xdata[] = {
 #if defined(IPC_CREAT) || (defined(HAVE_DECL_IPC_CREAT) && HAVE_DECL_IPC_CREAT)
   XLAT(IPC_CREAT),
 #endif
@@ -18,8 +18,12 @@ const struct xlat resource_flags[] = {
 #if defined(IPC_NOWAIT) || (defined(HAVE_DECL_IPC_NOWAIT) && HAVE_DECL_IPC_NOWAIT)
   XLAT(IPC_NOWAIT),
 #endif
- XLAT_END
 };
+const struct xlat resource_flags[1] = { {
+ .data = resource_flags_xdata,
+ .size = ARRAY_SIZE(resource_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

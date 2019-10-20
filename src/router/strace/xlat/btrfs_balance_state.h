@@ -33,15 +33,19 @@ extern const struct xlat btrfs_balance_state[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat btrfs_balance_state[] = {
+static const struct xlat_data btrfs_balance_state_xdata[] = {
  XLAT(BTRFS_BALANCE_STATE_RUNNING),
  XLAT(BTRFS_BALANCE_STATE_PAUSE_REQ),
  XLAT(BTRFS_BALANCE_STATE_CANCEL_REQ),
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat btrfs_balance_state[1] = { {
+ .data = btrfs_balance_state_xdata,
+ .size = ARRAY_SIZE(btrfs_balance_state_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

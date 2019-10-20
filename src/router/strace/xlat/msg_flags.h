@@ -180,7 +180,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # ifndef IN_MPERS
 
-const struct xlat msg_flags[] = {
+static const struct xlat_data msg_flags_xdata[] = {
  XLAT(MSG_OOB),
  XLAT(MSG_PEEK),
  XLAT(MSG_DONTROUTE),
@@ -215,8 +215,12 @@ const struct xlat msg_flags[] = {
 # undef MSG_CMSG_COMPAT
 #endif
  XLAT(MSG_CMSG_COMPAT),
- XLAT_END
 };
+const struct xlat msg_flags[1] = { {
+ .data = msg_flags_xdata,
+ .size = ARRAY_SIZE(msg_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

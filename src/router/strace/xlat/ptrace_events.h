@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat ptrace_events[] = {
+static const struct xlat_data ptrace_events_xdata[] = {
 #if defined(PTRACE_EVENT_FORK) || (defined(HAVE_DECL_PTRACE_EVENT_FORK) && HAVE_DECL_PTRACE_EVENT_FORK)
   XLAT(PTRACE_EVENT_FORK),
 #endif
@@ -42,8 +41,13 @@ const struct xlat ptrace_events[] = {
 #if defined(PTRACE_EVENT_MIGRATE) || (defined(HAVE_DECL_PTRACE_EVENT_MIGRATE) && HAVE_DECL_PTRACE_EVENT_MIGRATE)
   XLAT(PTRACE_EVENT_MIGRATE),
 #endif
- XLAT_END
 };
+static
+const struct xlat ptrace_events[1] = { {
+ .data = ptrace_events_xdata,
+ .size = ARRAY_SIZE(ptrace_events_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

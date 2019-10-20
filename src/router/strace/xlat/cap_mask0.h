@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat cap_mask0[] = {
+static const struct xlat_data cap_mask0_xdata[] = {
  XLAT_PAIR(1ULL<<CAP_CHOWN, "1<<CAP_CHOWN"),
  XLAT_PAIR(1ULL<<CAP_DAC_OVERRIDE, "1<<CAP_DAC_OVERRIDE"),
  XLAT_PAIR(1ULL<<CAP_DAC_READ_SEARCH, "1<<CAP_DAC_READ_SEARCH"),
@@ -46,8 +45,13 @@ const struct xlat cap_mask0[] = {
  XLAT_PAIR(1ULL<<CAP_AUDIT_WRITE, "1<<CAP_AUDIT_WRITE"),
  XLAT_PAIR(1ULL<<CAP_AUDIT_CONTROL, "1<<CAP_AUDIT_CONTROL"),
  XLAT_PAIR(1ULL<<CAP_SETFCAP, "1<<CAP_SETFCAP"),
- XLAT_END
 };
+static
+const struct xlat cap_mask0[1] = { {
+ .data = cap_mask0_xdata,
+ .size = ARRAY_SIZE(cap_mask0_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

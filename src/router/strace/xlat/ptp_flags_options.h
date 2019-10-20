@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat ptp_flags_options[] = {
+static const struct xlat_data ptp_flags_options_xdata[] = {
 #if defined(PTP_ENABLE_FEATURE) || (defined(HAVE_DECL_PTP_ENABLE_FEATURE) && HAVE_DECL_PTP_ENABLE_FEATURE)
   XLAT(PTP_ENABLE_FEATURE),
 #endif
@@ -23,8 +22,13 @@ const struct xlat ptp_flags_options[] = {
 #if defined(PTP_FALLING_EDGE) || (defined(HAVE_DECL_PTP_FALLING_EDGE) && HAVE_DECL_PTP_FALLING_EDGE)
   XLAT(PTP_FALLING_EDGE),
 #endif
- XLAT_END
 };
+static
+const struct xlat ptp_flags_options[1] = { {
+ .data = ptp_flags_options_xdata,
+ .size = ARRAY_SIZE(ptp_flags_options_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

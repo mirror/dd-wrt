@@ -250,10 +250,7 @@ extern const struct xlat block_ioctl_cmds[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat block_ioctl_cmds[] = {
+static const struct xlat_data block_ioctl_cmds_xdata[] = {
  XLAT(BLKROSET),
  XLAT(BLKROGET),
  XLAT(BLKRRPART),
@@ -293,8 +290,15 @@ const struct xlat block_ioctl_cmds[] = {
 
  XLAT(BLKGETZONESZ),
  XLAT(BLKGETNRZONES),
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat block_ioctl_cmds[1] = { {
+ .data = block_ioctl_cmds_xdata,
+ .size = ARRAY_SIZE(block_ioctl_cmds_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

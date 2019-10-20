@@ -75,8 +75,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat aio_cmds[] = {
+static const struct xlat_data aio_cmds_xdata[] = {
  [IOCB_CMD_PREAD] = XLAT(IOCB_CMD_PREAD),
  [IOCB_CMD_PWRITE] = XLAT(IOCB_CMD_PWRITE),
  [IOCB_CMD_FSYNC] = XLAT(IOCB_CMD_FSYNC),
@@ -86,8 +85,13 @@ const struct xlat aio_cmds[] = {
  [IOCB_CMD_NOOP] = XLAT(IOCB_CMD_NOOP),
  [IOCB_CMD_PREADV] = XLAT(IOCB_CMD_PREADV),
  [IOCB_CMD_PWRITEV] = XLAT(IOCB_CMD_PWRITEV),
- XLAT_END
 };
+static
+const struct xlat aio_cmds[1] = { {
+ .data = aio_cmds_xdata,
+ .size = ARRAY_SIZE(aio_cmds_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

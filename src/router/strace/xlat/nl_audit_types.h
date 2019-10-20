@@ -681,8 +681,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat nl_audit_types[] = {
+static const struct xlat_data nl_audit_types_xdata[] = {
  XLAT(AUDIT_GET),
  XLAT(AUDIT_SET),
  XLAT(AUDIT_LIST),
@@ -803,8 +802,13 @@ const struct xlat nl_audit_types[] = {
 
  XLAT(AUDIT_FIRST_USER_MSG2),
  XLAT(AUDIT_LAST_USER_MSG2),
- XLAT_END
 };
+static
+const struct xlat nl_audit_types[1] = { {
+ .data = nl_audit_types_xdata,
+ .size = ARRAY_SIZE(nl_audit_types_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

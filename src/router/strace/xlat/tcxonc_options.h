@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat tcxonc_options[] = {
+static const struct xlat_data tcxonc_options_xdata[] = {
 #if defined(TCOOFF) || (defined(HAVE_DECL_TCOOFF) && HAVE_DECL_TCOOFF)
   XLAT(TCOOFF),
 #endif
@@ -26,8 +25,13 @@ const struct xlat tcxonc_options[] = {
 #if defined(TCION) || (defined(HAVE_DECL_TCION) && HAVE_DECL_TCION)
   XLAT(TCION),
 #endif
- XLAT_END
 };
+static
+const struct xlat tcxonc_options[1] = { {
+ .data = tcxonc_options_xdata,
+ .size = ARRAY_SIZE(tcxonc_options_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

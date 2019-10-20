@@ -103,10 +103,7 @@ extern const struct xlat loop_cmds[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat loop_cmds[] = {
+static const struct xlat_data loop_cmds_xdata[] = {
  XLAT(LOOP_SET_FD),
  XLAT(LOOP_CLR_FD),
  XLAT(LOOP_SET_STATUS),
@@ -120,8 +117,15 @@ const struct xlat loop_cmds[] = {
  XLAT(LOOP_CTL_ADD),
  XLAT(LOOP_CTL_REMOVE),
  XLAT(LOOP_CTL_GET_FREE),
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat loop_cmds[1] = { {
+ .data = loop_cmds_xdata,
+ .size = ARRAY_SIZE(loop_cmds_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat sysctl_net_ipv4_conf[] = {
+static const struct xlat_data sysctl_net_ipv4_conf_xdata[] = {
  XLAT(NET_IPV4_CONF_FORWARDING),
  XLAT(NET_IPV4_CONF_MC_FORWARDING),
  XLAT(NET_IPV4_CONF_PROXY_ARP),
@@ -48,8 +47,13 @@ const struct xlat sysctl_net_ipv4_conf[] = {
 #if defined(NET_IPV4_CONF_ARP_NOTIFY) || (defined(HAVE_DECL_NET_IPV4_CONF_ARP_NOTIFY) && HAVE_DECL_NET_IPV4_CONF_ARP_NOTIFY)
   XLAT(NET_IPV4_CONF_ARP_NOTIFY),
 #endif
- XLAT_END
 };
+static
+const struct xlat sysctl_net_ipv4_conf[1] = { {
+ .data = sysctl_net_ipv4_conf_xdata,
+ .size = ARRAY_SIZE(sysctl_net_ipv4_conf_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

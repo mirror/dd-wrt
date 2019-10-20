@@ -12,15 +12,19 @@ extern const struct xlat mq_attr_flags[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat mq_attr_flags[] = {
+static const struct xlat_data mq_attr_flags_xdata[] = {
 #if defined(O_NONBLOCK) || (defined(HAVE_DECL_O_NONBLOCK) && HAVE_DECL_O_NONBLOCK)
   XLAT(O_NONBLOCK),
 #endif
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat mq_attr_flags[1] = { {
+ .data = mq_attr_flags_xdata,
+ .size = ARRAY_SIZE(mq_attr_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

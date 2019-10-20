@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat unshare_flags[] = {
+static const struct xlat_data unshare_flags_xdata[] = {
 #if defined(CLONE_THREAD) || (defined(HAVE_DECL_CLONE_THREAD) && HAVE_DECL_CLONE_THREAD)
   XLAT(CLONE_THREAD),
 #endif
@@ -53,8 +52,13 @@ const struct xlat unshare_flags[] = {
 #if defined(CLONE_NEWCGROUP) || (defined(HAVE_DECL_CLONE_NEWCGROUP) && HAVE_DECL_CLONE_NEWCGROUP)
   XLAT(CLONE_NEWCGROUP),
 #endif
- XLAT_END
 };
+static
+const struct xlat unshare_flags[1] = { {
+ .data = unshare_flags_xdata,
+ .size = ARRAY_SIZE(unshare_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

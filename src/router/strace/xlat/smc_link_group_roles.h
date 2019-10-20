@@ -26,12 +26,16 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat smc_link_group_roles[] = {
- XLAT(SMC_CLNT),
- XLAT(SMC_SERV),
- XLAT_END
+static const struct xlat_data smc_link_group_roles_xdata[] = {
+ [SMC_CLNT] = XLAT(SMC_CLNT),
+ [SMC_SERV] = XLAT(SMC_SERV),
 };
+static
+const struct xlat smc_link_group_roles[1] = { {
+ .data = smc_link_group_roles_xdata,
+ .size = ARRAY_SIZE(smc_link_group_roles_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

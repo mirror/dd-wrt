@@ -33,13 +33,17 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat fan_classes[] = {
+static const struct xlat_data fan_classes_xdata[] = {
  XLAT(FAN_CLASS_NOTIF),
  XLAT(FAN_CLASS_CONTENT),
  XLAT(FAN_CLASS_PRE_CONTENT),
- XLAT_END
 };
+static
+const struct xlat fan_classes[1] = { {
+ .data = fan_classes_xdata,
+ .size = ARRAY_SIZE(fan_classes_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

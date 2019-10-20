@@ -47,15 +47,19 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat mpol_modes[] = {
- XLAT(MPOL_DEFAULT),
- XLAT(MPOL_PREFERRED),
- XLAT(MPOL_BIND),
- XLAT(MPOL_INTERLEAVE),
- XLAT(MPOL_LOCAL),
- XLAT_END
+static const struct xlat_data mpol_modes_xdata[] = {
+ [MPOL_DEFAULT] = XLAT(MPOL_DEFAULT),
+ [MPOL_PREFERRED] = XLAT(MPOL_PREFERRED),
+ [MPOL_BIND] = XLAT(MPOL_BIND),
+ [MPOL_INTERLEAVE] = XLAT(MPOL_INTERLEAVE),
+ [MPOL_LOCAL] = XLAT(MPOL_LOCAL),
 };
+static
+const struct xlat mpol_modes[1] = { {
+ .data = mpol_modes_xdata,
+ .size = ARRAY_SIZE(mpol_modes_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

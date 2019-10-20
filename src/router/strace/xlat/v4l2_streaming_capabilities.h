@@ -12,15 +12,19 @@ extern const struct xlat v4l2_streaming_capabilities[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat v4l2_streaming_capabilities[] = {
+static const struct xlat_data v4l2_streaming_capabilities_xdata[] = {
 #if defined(V4L2_CAP_TIMEPERFRAME) || (defined(HAVE_DECL_V4L2_CAP_TIMEPERFRAME) && HAVE_DECL_V4L2_CAP_TIMEPERFRAME)
   XLAT(V4L2_CAP_TIMEPERFRAME),
 #endif
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat v4l2_streaming_capabilities[1] = { {
+ .data = v4l2_streaming_capabilities_xdata,
+ .size = ARRAY_SIZE(v4l2_streaming_capabilities_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

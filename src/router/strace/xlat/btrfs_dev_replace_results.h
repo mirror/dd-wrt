@@ -12,10 +12,7 @@ extern const struct xlat btrfs_dev_replace_results[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat btrfs_dev_replace_results[] = {
+static const struct xlat_data btrfs_dev_replace_results_xdata[] = {
 #if defined(BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_ERROR) || (defined(HAVE_DECL_BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_ERROR) && HAVE_DECL_BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_ERROR)
   XLAT_TYPE(uint64_t, BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_ERROR),
 #endif
@@ -28,8 +25,15 @@ const struct xlat btrfs_dev_replace_results[] = {
 #if defined(BTRFS_IOCTL_DEV_REPLACE_RESULT_SCRUB_INPROGRESS) || (defined(HAVE_DECL_BTRFS_IOCTL_DEV_REPLACE_RESULT_SCRUB_INPROGRESS) && HAVE_DECL_BTRFS_IOCTL_DEV_REPLACE_RESULT_SCRUB_INPROGRESS)
   XLAT_TYPE(uint64_t, BTRFS_IOCTL_DEV_REPLACE_RESULT_SCRUB_INPROGRESS),
 #endif
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat btrfs_dev_replace_results[1] = { {
+ .data = btrfs_dev_replace_results_xdata,
+ .size = ARRAY_SIZE(btrfs_dev_replace_results_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

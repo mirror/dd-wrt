@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat unix_diag_show[] = {
+static const struct xlat_data unix_diag_show_xdata[] = {
 #if defined(UDIAG_SHOW_NAME) || (defined(HAVE_DECL_UDIAG_SHOW_NAME) && HAVE_DECL_UDIAG_SHOW_NAME)
   XLAT(UDIAG_SHOW_NAME),
 #endif
@@ -32,8 +31,16 @@ const struct xlat unix_diag_show[] = {
 #if defined(UDIAG_SHOW_MEMINFO) || (defined(HAVE_DECL_UDIAG_SHOW_MEMINFO) && HAVE_DECL_UDIAG_SHOW_MEMINFO)
   XLAT(UDIAG_SHOW_MEMINFO),
 #endif
- XLAT_END
+#if defined(UDIAG_SHOW_UID) || (defined(HAVE_DECL_UDIAG_SHOW_UID) && HAVE_DECL_UDIAG_SHOW_UID)
+  XLAT(UDIAG_SHOW_UID),
+#endif
 };
+static
+const struct xlat unix_diag_show[1] = { {
+ .data = unix_diag_show_xdata,
+ .size = ARRAY_SIZE(unix_diag_show_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

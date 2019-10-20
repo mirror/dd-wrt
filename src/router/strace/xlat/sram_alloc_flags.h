@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat sram_alloc_flags[] = {
+static const struct xlat_data sram_alloc_flags_xdata[] = {
 #if defined(L1_INST_SRAM) || (defined(HAVE_DECL_L1_INST_SRAM) && HAVE_DECL_L1_INST_SRAM)
   XLAT(L1_INST_SRAM),
 #endif
@@ -29,8 +28,13 @@ const struct xlat sram_alloc_flags[] = {
 #if defined(L2_SRAM) || (defined(HAVE_DECL_L2_SRAM) && HAVE_DECL_L2_SRAM)
   XLAT(L2_SRAM),
 #endif
- XLAT_END
 };
+static
+const struct xlat sram_alloc_flags[1] = { {
+ .data = sram_alloc_flags_xdata,
+ .size = ARRAY_SIZE(sram_alloc_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

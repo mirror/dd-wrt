@@ -12,13 +12,17 @@
 
 # else
 
-static
-const struct xlat uffd_copy_flags[] = {
+static const struct xlat_data uffd_copy_flags_xdata[] = {
 #if defined(UFFDIO_COPY_MODE_DONTWAKE) || (defined(HAVE_DECL_UFFDIO_COPY_MODE_DONTWAKE) && HAVE_DECL_UFFDIO_COPY_MODE_DONTWAKE)
   XLAT_TYPE(uint64_t, UFFDIO_COPY_MODE_DONTWAKE),
 #endif
- XLAT_END
 };
+static
+const struct xlat uffd_copy_flags[1] = { {
+ .data = uffd_copy_flags_xdata,
+ .size = ARRAY_SIZE(uffd_copy_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

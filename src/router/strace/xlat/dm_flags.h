@@ -138,8 +138,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat dm_flags[] = {
+static const struct xlat_data dm_flags_xdata[] = {
  XLAT(DM_READONLY_FLAG),
  XLAT(DM_SUSPEND_FLAG),
 
@@ -159,8 +158,13 @@ const struct xlat dm_flags[] = {
  XLAT(DM_DATA_OUT_FLAG),
  XLAT(DM_DEFERRED_REMOVE),
  XLAT(DM_INTERNAL_SUSPEND_FLAG),
- XLAT_END
 };
+static
+const struct xlat dm_flags[1] = { {
+ .data = dm_flags_xdata,
+ .size = ARRAY_SIZE(dm_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

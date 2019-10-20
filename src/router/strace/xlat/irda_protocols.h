@@ -26,12 +26,16 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat irda_protocols[] = {
+static const struct xlat_data irda_protocols_xdata[] = {
  [IRDAPROTO_UNITDATA] = XLAT(IRDAPROTO_UNITDATA),
  [IRDAPROTO_ULTRA] = XLAT(IRDAPROTO_ULTRA),
- XLAT_END
 };
+static
+const struct xlat irda_protocols[1] = { {
+ .data = irda_protocols_xdata,
+ .size = ARRAY_SIZE(irda_protocols_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

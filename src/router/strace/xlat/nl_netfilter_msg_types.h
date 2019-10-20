@@ -22,11 +22,15 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # ifndef IN_MPERS
 
-const struct xlat nl_netfilter_msg_types[] = {
+static const struct xlat_data nl_netfilter_msg_types_xdata[] = {
  XLAT(NFNL_MSG_BATCH_BEGIN),
  XLAT(NFNL_MSG_BATCH_END),
- XLAT_END
 };
+const struct xlat nl_netfilter_msg_types[1] = { {
+ .data = nl_netfilter_msg_types_xdata,
+ .size = ARRAY_SIZE(nl_netfilter_msg_types_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

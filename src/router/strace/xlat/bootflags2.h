@@ -40,14 +40,18 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat bootflags2[] = {
+static const struct xlat_data bootflags2_xdata[] = {
  XLAT(LINUX_REBOOT_MAGIC2),
  XLAT(LINUX_REBOOT_MAGIC2A),
  XLAT(LINUX_REBOOT_MAGIC2B),
  XLAT(LINUX_REBOOT_MAGIC2C),
- XLAT_END
 };
+static
+const struct xlat bootflags2[1] = { {
+ .data = bootflags2_xdata,
+ .size = ARRAY_SIZE(bootflags2_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -89,10 +89,7 @@ extern const struct xlat btrfs_features_incompat[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat btrfs_features_incompat[] = {
+static const struct xlat_data btrfs_features_incompat_xdata[] = {
  XLAT_TYPE(uint64_t, BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF),
  XLAT_TYPE(uint64_t, BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL),
  XLAT_TYPE(uint64_t, BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS),
@@ -104,8 +101,15 @@ const struct xlat btrfs_features_incompat[] = {
  XLAT_TYPE(uint64_t, BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA),
  XLAT_TYPE(uint64_t, BTRFS_FEATURE_INCOMPAT_NO_HOLES),
  XLAT_TYPE(uint64_t, BTRFS_FEATURE_INCOMPAT_METADATA_UUID),
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat btrfs_features_incompat[1] = { {
+ .data = btrfs_features_incompat_xdata,
+ .size = ARRAY_SIZE(btrfs_features_incompat_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

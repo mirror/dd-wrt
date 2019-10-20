@@ -170,8 +170,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat sock_rds_options[] = {
+static const struct xlat_data sock_rds_options_xdata[] = {
  XLAT(RDS_CANCEL_SENT_TO),
  XLAT(RDS_GET_MR),
  XLAT(RDS_FREE_MR),
@@ -201,8 +200,13 @@ const struct xlat sock_rds_options[] = {
 #ifdef __hppa__
  XLAT(SO_TIMESTAMP_OLD),
 #endif
- XLAT_END
 };
+static
+const struct xlat sock_rds_options[1] = { {
+ .data = sock_rds_options_xdata,
+ .size = ARRAY_SIZE(sock_rds_options_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

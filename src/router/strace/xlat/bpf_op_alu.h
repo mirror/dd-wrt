@@ -110,8 +110,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat bpf_op_alu[] = {
+static const struct xlat_data bpf_op_alu_xdata[] = {
  XLAT(BPF_ADD),
  XLAT(BPF_SUB),
  XLAT(BPF_MUL),
@@ -126,8 +125,13 @@ const struct xlat bpf_op_alu[] = {
  XLAT(BPF_MOV),
  XLAT(BPF_ARSH),
  XLAT(BPF_END),
- XLAT_END
 };
+static
+const struct xlat bpf_op_alu[1] = { {
+ .data = bpf_op_alu_xdata,
+ .size = ARRAY_SIZE(bpf_op_alu_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

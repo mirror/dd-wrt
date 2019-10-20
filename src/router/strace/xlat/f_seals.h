@@ -47,15 +47,19 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat f_seals[] = {
+static const struct xlat_data f_seals_xdata[] = {
  XLAT(F_SEAL_SEAL),
  XLAT(F_SEAL_SHRINK),
  XLAT(F_SEAL_GROW),
  XLAT(F_SEAL_WRITE),
  XLAT(F_SEAL_FUTURE_WRITE),
- XLAT_END
 };
+static
+const struct xlat f_seals[1] = { {
+ .data = f_seals_xdata,
+ .size = ARRAY_SIZE(f_seals_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

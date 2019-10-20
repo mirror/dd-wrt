@@ -54,16 +54,20 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat adjtimex_state[] = {
+static const struct xlat_data adjtimex_state_xdata[] = {
  [TIME_OK] = XLAT(TIME_OK),
  [TIME_INS] = XLAT(TIME_INS),
  [TIME_DEL] = XLAT(TIME_DEL),
  [TIME_OOP] = XLAT(TIME_OOP),
  [TIME_WAIT] = XLAT(TIME_WAIT),
  [TIME_ERROR] = XLAT(TIME_ERROR),
- XLAT_END
 };
+static
+const struct xlat adjtimex_state[1] = { {
+ .data = adjtimex_state_xdata,
+ .size = ARRAY_SIZE(adjtimex_state_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

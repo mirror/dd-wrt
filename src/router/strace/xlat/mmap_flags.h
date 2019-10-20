@@ -397,7 +397,18 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
 # define MAP_SYNC 0x80000
 #endif
-#if defined MAP_UNINITIALIZED && MAP_UNINITIALIZED > 0
+#if defined MAP_UNINITIALIZED && MAP_UNINITIALIZED == 0
+# ifndef STRACE_WORKAROUND_FOR_MAP_UNINITIALIZED
+#  define STRACE_WORKAROUND_FOR_MAP_UNINITIALIZED
+#  undef MAP_UNINITIALIZED
+# endif
+#endif
+#if defined(MAP_UNINITIALIZED) || (defined(HAVE_DECL_MAP_UNINITIALIZED) && HAVE_DECL_MAP_UNINITIALIZED)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((MAP_UNINITIALIZED) == (0x4000000), "MAP_UNINITIALIZED != 0x4000000");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define MAP_UNINITIALIZED 0x4000000
 #endif
 #if defined __alpha__
 #if defined(MAP_FIXED_NOREPLACE) || (defined(HAVE_DECL_MAP_FIXED_NOREPLACE) && HAVE_DECL_MAP_FIXED_NOREPLACE)
@@ -465,8 +476,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat mmap_flags[] = {
+static const struct xlat_data mmap_flags_xdata[] = {
 
 
  XLAT(MAP_SHARED),
@@ -634,11 +644,15 @@ const struct xlat mmap_flags[] = {
 
  XLAT(MAP_SYNC),
 
-#if defined MAP_UNINITIALIZED && MAP_UNINITIALIZED > 0
-#if defined(MAP_UNINITIALIZED) || (defined(HAVE_DECL_MAP_UNINITIALIZED) && HAVE_DECL_MAP_UNINITIALIZED)
-  XLAT(MAP_UNINITIALIZED),
+#if defined MAP_UNINITIALIZED && MAP_UNINITIALIZED == 0
+
+
+# ifndef STRACE_WORKAROUND_FOR_MAP_UNINITIALIZED
+#  define STRACE_WORKAROUND_FOR_MAP_UNINITIALIZED
+#  undef MAP_UNINITIALIZED
+# endif
 #endif
-#endif
+ XLAT(MAP_UNINITIALIZED),
 
 #if defined __alpha__
  XLAT(MAP_FIXED_NOREPLACE),
@@ -677,8 +691,13 @@ const struct xlat mmap_flags[] = {
   XLAT(_MAP_UNALIGNED),
 #endif
 #endif
- XLAT_END
 };
+static
+const struct xlat mmap_flags[1] = { {
+ .data = mmap_flags_xdata,
+ .size = ARRAY_SIZE(mmap_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

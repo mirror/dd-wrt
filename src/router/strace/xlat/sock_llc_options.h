@@ -82,8 +82,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat sock_llc_options[] = {
+static const struct xlat_data sock_llc_options_xdata[] = {
  [LLC_OPT_UNKNOWN] = XLAT(LLC_OPT_UNKNOWN),
  [LLC_OPT_RETRY] = XLAT(LLC_OPT_RETRY),
  [LLC_OPT_SIZE] = XLAT(LLC_OPT_SIZE),
@@ -94,8 +93,13 @@ const struct xlat sock_llc_options[] = {
  [LLC_OPT_TX_WIN] = XLAT(LLC_OPT_TX_WIN),
  [LLC_OPT_RX_WIN] = XLAT(LLC_OPT_RX_WIN),
  [LLC_OPT_PKTINFO] = XLAT(LLC_OPT_PKTINFO),
- XLAT_END
 };
+static
+const struct xlat sock_llc_options[1] = { {
+ .data = sock_llc_options_xdata,
+ .size = ARRAY_SIZE(sock_llc_options_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

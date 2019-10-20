@@ -19,11 +19,15 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat sparc_kern_features[] = {
+static const struct xlat_data sparc_kern_features_xdata[] = {
  XLAT(KERN_FEATURE_MIXED_MODE_STACK),
- XLAT_END
 };
+static
+const struct xlat sparc_kern_features[1] = { {
+ .data = sparc_kern_features_xdata,
+ .size = ARRAY_SIZE(sparc_kern_features_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

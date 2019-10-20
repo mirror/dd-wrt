@@ -42,8 +42,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat timerfdflags[] = {
+static const struct xlat_data timerfdflags_xdata[] = {
 
 
  XLAT(TFD_TIMER_ABSTIME),
@@ -52,8 +51,13 @@ const struct xlat timerfdflags[] = {
  XLAT(TFD_CLOEXEC),
 #endif
  XLAT(TFD_NONBLOCK),
- XLAT_END
 };
+static
+const struct xlat timerfdflags[1] = { {
+ .data = timerfdflags_xdata,
+ .size = ARRAY_SIZE(timerfdflags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -33,13 +33,17 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat fiemap_flags[] = {
+static const struct xlat_data fiemap_flags_xdata[] = {
  XLAT(FIEMAP_FLAG_SYNC),
  XLAT(FIEMAP_FLAG_XATTR),
  XLAT(FIEMAP_FLAG_CACHE),
- XLAT_END
 };
+static
+const struct xlat fiemap_flags[1] = { {
+ .data = fiemap_flags_xdata,
+ .size = ARRAY_SIZE(fiemap_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

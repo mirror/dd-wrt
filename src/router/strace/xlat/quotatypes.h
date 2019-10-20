@@ -33,13 +33,17 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat quotatypes[] = {
- XLAT(USRQUOTA),
- XLAT(GRPQUOTA),
- XLAT(PRJQUOTA),
- XLAT_END
+static const struct xlat_data quotatypes_xdata[] = {
+ [USRQUOTA] = XLAT(USRQUOTA),
+ [GRPQUOTA] = XLAT(GRPQUOTA),
+ [PRJQUOTA] = XLAT(PRJQUOTA),
 };
+static
+const struct xlat quotatypes[1] = { {
+ .data = quotatypes_xdata,
+ .size = ARRAY_SIZE(quotatypes_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

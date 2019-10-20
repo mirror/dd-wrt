@@ -68,10 +68,7 @@ extern const struct xlat sigill_codes[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat sigill_codes[] = {
+static const struct xlat_data sigill_codes_xdata[] = {
  XLAT(ILL_ILLOPC),
 #if defined(ILL_ILLPARAOP) || (defined(HAVE_DECL_ILL_ILLPARAOP) && HAVE_DECL_ILL_ILLPARAOP)
   XLAT(ILL_ILLPARAOP),
@@ -110,8 +107,15 @@ const struct xlat sigill_codes[] = {
 #if defined(__ILL_BNDMOD) || (defined(HAVE_DECL___ILL_BNDMOD) && HAVE_DECL___ILL_BNDMOD)
   XLAT(__ILL_BNDMOD),
 #endif
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat sigill_codes[1] = { {
+ .data = sigill_codes_xdata,
+ .size = ARRAY_SIZE(sigill_codes_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

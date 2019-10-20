@@ -70,8 +70,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat open_tree_flags[] = {
+static const struct xlat_data open_tree_flags_xdata[] = {
  XLAT(OPEN_TREE_CLONE),
 #if defined OPEN_TREE_CLOEXEC || defined O_CLOEXEC
  XLAT(OPEN_TREE_CLOEXEC),
@@ -82,8 +81,13 @@ const struct xlat open_tree_flags[] = {
  XLAT(AT_NO_AUTOMOUNT),
  XLAT(AT_EMPTY_PATH),
  XLAT(AT_RECURSIVE),
- XLAT_END
 };
+static
+const struct xlat open_tree_flags[1] = { {
+ .data = open_tree_flags_xdata,
+ .size = ARRAY_SIZE(open_tree_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

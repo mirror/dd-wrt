@@ -12,15 +12,19 @@ extern const struct xlat sigprof_codes[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat sigprof_codes[] = {
+static const struct xlat_data sigprof_codes_xdata[] = {
 #if defined(PROF_SIG) || (defined(HAVE_DECL_PROF_SIG) && HAVE_DECL_PROF_SIG)
   XLAT(PROF_SIG),
 #endif
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat sigprof_codes[1] = { {
+ .data = sigprof_codes_xdata,
+ .size = ARRAY_SIZE(sigprof_codes_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

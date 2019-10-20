@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat netlink_new_flags[] = {
+static const struct xlat_data netlink_new_flags_xdata[] = {
 #if defined(NLM_F_REPLACE) || (defined(HAVE_DECL_NLM_F_REPLACE) && HAVE_DECL_NLM_F_REPLACE)
   XLAT(NLM_F_REPLACE),
 #endif
@@ -26,8 +25,13 @@ const struct xlat netlink_new_flags[] = {
 #if defined(NLM_F_APPEND) || (defined(HAVE_DECL_NLM_F_APPEND) && HAVE_DECL_NLM_F_APPEND)
   XLAT(NLM_F_APPEND),
 #endif
- XLAT_END
 };
+static
+const struct xlat netlink_new_flags[1] = { {
+ .data = netlink_new_flags_xdata,
+ .size = ARRAY_SIZE(netlink_new_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

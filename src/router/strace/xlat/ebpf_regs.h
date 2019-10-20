@@ -89,8 +89,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat ebpf_regs[] = {
+static const struct xlat_data ebpf_regs_xdata[] = {
  [BPF_REG_0] = XLAT(BPF_REG_0),
  [BPF_REG_1] = XLAT(BPF_REG_1),
  [BPF_REG_2] = XLAT(BPF_REG_2),
@@ -102,8 +101,13 @@ const struct xlat ebpf_regs[] = {
  [BPF_REG_8] = XLAT(BPF_REG_8),
  [BPF_REG_9] = XLAT(BPF_REG_9),
  [BPF_REG_10] = XLAT(BPF_REG_10),
- XLAT_END
 };
+static
+const struct xlat ebpf_regs[1] = { {
+ .data = ebpf_regs_xdata,
+ .size = ARRAY_SIZE(ebpf_regs_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

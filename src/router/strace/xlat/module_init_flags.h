@@ -26,12 +26,16 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat module_init_flags[] = {
+static const struct xlat_data module_init_flags_xdata[] = {
  XLAT(MODULE_INIT_IGNORE_MODVERSIONS),
  XLAT(MODULE_INIT_IGNORE_VERMAGIC),
- XLAT_END
 };
+static
+const struct xlat module_init_flags[1] = { {
+ .data = module_init_flags_xdata,
+ .size = ARRAY_SIZE(module_init_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

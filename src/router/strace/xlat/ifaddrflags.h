@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat ifaddrflags[] = {
+static const struct xlat_data ifaddrflags_xdata[] = {
 #if defined(IFA_F_SECONDARY) || (defined(HAVE_DECL_IFA_F_SECONDARY) && HAVE_DECL_IFA_F_SECONDARY)
   XLAT(IFA_F_SECONDARY),
 #endif
@@ -50,8 +49,13 @@ const struct xlat ifaddrflags[] = {
 #if defined(IFA_F_STABLE_PRIVACY) || (defined(HAVE_DECL_IFA_F_STABLE_PRIVACY) && HAVE_DECL_IFA_F_STABLE_PRIVACY)
   XLAT(IFA_F_STABLE_PRIVACY),
 #endif
- XLAT_END
 };
+static
+const struct xlat ifaddrflags[1] = { {
+ .data = ifaddrflags_xdata,
+ .size = ARRAY_SIZE(ifaddrflags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

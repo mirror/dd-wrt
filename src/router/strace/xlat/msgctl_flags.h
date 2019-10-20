@@ -61,11 +61,7 @@ extern const struct xlat msgctl_flags[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat msgctl_flags[] = {
-
+static const struct xlat_data msgctl_flags_xdata[] = {
  XLAT(IPC_RMID),
  XLAT(IPC_SET),
  XLAT(IPC_STAT),
@@ -73,8 +69,15 @@ const struct xlat msgctl_flags[] = {
  XLAT(MSG_STAT),
  XLAT(MSG_INFO),
  XLAT(MSG_STAT_ANY),
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat msgctl_flags[1] = { {
+ .data = msgctl_flags_xdata,
+ .size = ARRAY_SIZE(msgctl_flags_xdata),
+ .type = XT_SORTED,
+} };
 
 # endif /* !IN_MPERS */
 

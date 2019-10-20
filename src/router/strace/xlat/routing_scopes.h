@@ -43,14 +43,18 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # ifndef IN_MPERS
 
-const struct xlat routing_scopes[] = {
+static const struct xlat_data routing_scopes_xdata[] = {
  XLAT(RT_SCOPE_UNIVERSE),
  XLAT(RT_SCOPE_SITE),
  XLAT(RT_SCOPE_LINK),
  XLAT(RT_SCOPE_HOST),
  XLAT(RT_SCOPE_NOWHERE),
- XLAT_END
 };
+const struct xlat routing_scopes[1] = { {
+ .data = routing_scopes_xdata,
+ .size = ARRAY_SIZE(routing_scopes_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

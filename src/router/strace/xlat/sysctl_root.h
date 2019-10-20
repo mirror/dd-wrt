@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat sysctl_root[] = {
+static const struct xlat_data sysctl_root_xdata[] = {
  XLAT(CTL_KERN),
  XLAT(CTL_VM),
  XLAT(CTL_NET),
@@ -41,8 +40,13 @@ const struct xlat sysctl_root[] = {
 #if defined(CTL_FRV) || (defined(HAVE_DECL_CTL_FRV) && HAVE_DECL_CTL_FRV)
   XLAT(CTL_FRV),
 #endif
- XLAT_END
 };
+static
+const struct xlat sysctl_root[1] = { {
+ .data = sysctl_root_xdata,
+ .size = ARRAY_SIZE(sysctl_root_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

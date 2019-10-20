@@ -12,10 +12,7 @@ extern const struct xlat v4l2_fields[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat v4l2_fields[] = {
+static const struct xlat_data v4l2_fields_xdata[] = {
 #if defined(V4L2_FIELD_ANY) || (defined(HAVE_DECL_V4L2_FIELD_ANY) && HAVE_DECL_V4L2_FIELD_ANY)
   XLAT(V4L2_FIELD_ANY),
 #endif
@@ -46,8 +43,15 @@ const struct xlat v4l2_fields[] = {
 #if defined(V4L2_FIELD_INTERLACED_BT) || (defined(HAVE_DECL_V4L2_FIELD_INTERLACED_BT) && HAVE_DECL_V4L2_FIELD_INTERLACED_BT)
   XLAT(V4L2_FIELD_INTERLACED_BT),
 #endif
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat v4l2_fields[1] = { {
+ .data = v4l2_fields_xdata,
+ .size = ARRAY_SIZE(v4l2_fields_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

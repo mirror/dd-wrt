@@ -47,15 +47,19 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat hci_channels[] = {
+static const struct xlat_data hci_channels_xdata[] = {
  [HCI_CHANNEL_RAW] = XLAT(HCI_CHANNEL_RAW),
  [HCI_CHANNEL_USER] = XLAT(HCI_CHANNEL_USER),
  [HCI_CHANNEL_MONITOR] = XLAT(HCI_CHANNEL_MONITOR),
  [HCI_CHANNEL_CONTROL] = XLAT(HCI_CHANNEL_CONTROL),
  [HCI_CHANNEL_LOGGING] = XLAT(HCI_CHANNEL_LOGGING),
- XLAT_END
 };
+static
+const struct xlat hci_channels[1] = { {
+ .data = hci_channels_xdata,
+ .size = ARRAY_SIZE(hci_channels_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

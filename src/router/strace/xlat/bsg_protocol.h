@@ -12,13 +12,17 @@
 
 # else
 
-static
-const struct xlat bsg_protocol[] = {
+static const struct xlat_data bsg_protocol_xdata[] = {
 #if defined(BSG_PROTOCOL_SCSI) || (defined(HAVE_DECL_BSG_PROTOCOL_SCSI) && HAVE_DECL_BSG_PROTOCOL_SCSI)
   XLAT(BSG_PROTOCOL_SCSI),
 #endif
- XLAT_END
 };
+static
+const struct xlat bsg_protocol[1] = { {
+ .data = bsg_protocol_xdata,
+ .size = ARRAY_SIZE(bsg_protocol_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

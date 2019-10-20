@@ -54,18 +54,22 @@ extern const struct xlat btrfs_qgroup_limit_flags[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat btrfs_qgroup_limit_flags[] = {
+static const struct xlat_data btrfs_qgroup_limit_flags_xdata[] = {
  XLAT_TYPE(uint64_t, BTRFS_QGROUP_LIMIT_MAX_RFER),
  XLAT_TYPE(uint64_t, BTRFS_QGROUP_LIMIT_MAX_EXCL),
  XLAT_TYPE(uint64_t, BTRFS_QGROUP_LIMIT_RSV_RFER),
  XLAT_TYPE(uint64_t, BTRFS_QGROUP_LIMIT_RSV_EXCL),
  XLAT_TYPE(uint64_t, BTRFS_QGROUP_LIMIT_RFER_CMPR),
  XLAT_TYPE(uint64_t, BTRFS_QGROUP_LIMIT_EXCL_CMPR),
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat btrfs_qgroup_limit_flags[1] = { {
+ .data = btrfs_qgroup_limit_flags_xdata,
+ .size = ARRAY_SIZE(btrfs_qgroup_limit_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

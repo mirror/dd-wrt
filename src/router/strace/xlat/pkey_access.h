@@ -33,13 +33,17 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat pkey_access[] = {
+static const struct xlat_data pkey_access_xdata[] = {
  XLAT(PKEY_DISABLE_ACCESS),
  XLAT(PKEY_DISABLE_WRITE),
  XLAT(PKEY_DISABLE_EXECUTE),
- XLAT_END
 };
+static
+const struct xlat pkey_access[1] = { {
+ .data = pkey_access_xdata,
+ .size = ARRAY_SIZE(pkey_access_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

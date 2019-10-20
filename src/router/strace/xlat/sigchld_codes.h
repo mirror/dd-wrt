@@ -54,18 +54,22 @@ extern const struct xlat sigchld_codes[];
 
 # else
 
+static const struct xlat_data sigchld_codes_xdata[] = {
+ [CLD_EXITED] = XLAT(CLD_EXITED),
+ [CLD_KILLED] = XLAT(CLD_KILLED),
+ [CLD_DUMPED] = XLAT(CLD_DUMPED),
+ [CLD_TRAPPED] = XLAT(CLD_TRAPPED),
+ [CLD_STOPPED] = XLAT(CLD_STOPPED),
+ [CLD_CONTINUED] = XLAT(CLD_CONTINUED),
+};
 #  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
 static
 #  endif
-const struct xlat sigchld_codes[] = {
- XLAT(CLD_EXITED),
- XLAT(CLD_KILLED),
- XLAT(CLD_DUMPED),
- XLAT(CLD_TRAPPED),
- XLAT(CLD_STOPPED),
- XLAT(CLD_CONTINUED),
- XLAT_END
-};
+const struct xlat sigchld_codes[1] = { {
+ .data = sigchld_codes_xdata,
+ .size = ARRAY_SIZE(sigchld_codes_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

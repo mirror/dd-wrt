@@ -75,19 +75,23 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat fib_rule_actions[] = {
- XLAT(FR_ACT_UNSPEC),
- XLAT(FR_ACT_TO_TBL),
- XLAT(FR_ACT_GOTO),
- XLAT(FR_ACT_NOP),
- XLAT(FR_ACT_RES3),
- XLAT(FR_ACT_RES4),
- XLAT(FR_ACT_BLACKHOLE),
- XLAT(FR_ACT_UNREACHABLE),
- XLAT(FR_ACT_PROHIBIT),
- XLAT_END
+static const struct xlat_data fib_rule_actions_xdata[] = {
+ [FR_ACT_UNSPEC] = XLAT(FR_ACT_UNSPEC),
+ [FR_ACT_TO_TBL] = XLAT(FR_ACT_TO_TBL),
+ [FR_ACT_GOTO] = XLAT(FR_ACT_GOTO),
+ [FR_ACT_NOP] = XLAT(FR_ACT_NOP),
+ [FR_ACT_RES3] = XLAT(FR_ACT_RES3),
+ [FR_ACT_RES4] = XLAT(FR_ACT_RES4),
+ [FR_ACT_BLACKHOLE] = XLAT(FR_ACT_BLACKHOLE),
+ [FR_ACT_UNREACHABLE] = XLAT(FR_ACT_UNREACHABLE),
+ [FR_ACT_PROHIBIT] = XLAT(FR_ACT_PROHIBIT),
 };
+static
+const struct xlat fib_rule_actions[1] = { {
+ .data = fib_rule_actions_xdata,
+ .size = ARRAY_SIZE(fib_rule_actions_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat sa_handler_values[] = {
+static const struct xlat_data sa_handler_values_xdata[] = {
 #if defined(SIG_ERR) || (defined(HAVE_DECL_SIG_ERR) && HAVE_DECL_SIG_ERR)
   XLAT_TYPE(unsigned long, SIG_ERR),
 #endif
@@ -23,8 +22,13 @@ const struct xlat sa_handler_values[] = {
 #if defined(SIG_IGN) || (defined(HAVE_DECL_SIG_IGN) && HAVE_DECL_SIG_IGN)
   XLAT_TYPE(unsigned long, SIG_IGN),
 #endif
- XLAT_END
 };
+static
+const struct xlat sa_handler_values[1] = { {
+ .data = sa_handler_values_xdata,
+ .size = ARRAY_SIZE(sa_handler_values_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

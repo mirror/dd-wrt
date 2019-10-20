@@ -8,7 +8,7 @@
 
 # ifndef IN_MPERS
 
-const struct xlat tcp_state_flags[] = {
+static const struct xlat_data tcp_state_flags_xdata[] = {
 
 #if defined(TCP_ESTABLISHED) || (defined(HAVE_DECL_TCP_ESTABLISHED) && HAVE_DECL_TCP_ESTABLISHED)
   XLAT_PAIR(1ULL<<TCP_ESTABLISHED, "1<<TCP_ESTABLISHED"),
@@ -46,8 +46,12 @@ const struct xlat tcp_state_flags[] = {
 #if defined(TCP_NEW_SYN_RECV) || (defined(HAVE_DECL_TCP_NEW_SYN_RECV) && HAVE_DECL_TCP_NEW_SYN_RECV)
   XLAT_PAIR(1ULL<<TCP_NEW_SYN_RECV, "1<<TCP_NEW_SYN_RECV"),
 #endif
- XLAT_END
 };
+const struct xlat tcp_state_flags[1] = { {
+ .data = tcp_state_flags_xdata,
+ .size = ARRAY_SIZE(tcp_state_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -54,16 +54,20 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat move_mount_flags[] = {
+static const struct xlat_data move_mount_flags_xdata[] = {
  XLAT(MOVE_MOUNT_F_SYMLINKS),
  XLAT(MOVE_MOUNT_F_AUTOMOUNTS),
  XLAT(MOVE_MOUNT_F_EMPTY_PATH),
  XLAT(MOVE_MOUNT_T_SYMLINKS),
  XLAT(MOVE_MOUNT_T_AUTOMOUNTS),
  XLAT(MOVE_MOUNT_T_EMPTY_PATH),
- XLAT_END
 };
+static
+const struct xlat move_mount_flags[1] = { {
+ .data = move_mount_flags_xdata,
+ .size = ARRAY_SIZE(move_mount_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

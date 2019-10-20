@@ -33,15 +33,19 @@ extern const struct xlat sigaltstack_flags[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat sigaltstack_flags[] = {
+static const struct xlat_data sigaltstack_flags_xdata[] = {
  XLAT(SS_ONSTACK),
  XLAT(SS_DISABLE),
  XLAT(SS_AUTODISARM),
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat sigaltstack_flags[1] = { {
+ .data = sigaltstack_flags_xdata,
+ .size = ARRAY_SIZE(sigaltstack_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

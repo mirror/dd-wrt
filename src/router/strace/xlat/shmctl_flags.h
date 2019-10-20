@@ -75,11 +75,7 @@ extern const struct xlat shmctl_flags[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat shmctl_flags[] = {
-
+static const struct xlat_data shmctl_flags_xdata[] = {
  XLAT(IPC_RMID),
  XLAT(IPC_SET),
  XLAT(IPC_STAT),
@@ -89,8 +85,15 @@ const struct xlat shmctl_flags[] = {
  XLAT(SHM_STAT),
  XLAT(SHM_INFO),
  XLAT(SHM_STAT_ANY),
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat shmctl_flags[1] = { {
+ .data = shmctl_flags_xdata,
+ .size = ARRAY_SIZE(shmctl_flags_xdata),
+ .type = XT_SORTED,
+} };
 
 # endif /* !IN_MPERS */
 

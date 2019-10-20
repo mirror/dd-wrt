@@ -33,13 +33,17 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat memfd_create_flags[] = {
+static const struct xlat_data memfd_create_flags_xdata[] = {
  XLAT(MFD_CLOEXEC),
  XLAT(MFD_ALLOW_SEALING),
  XLAT(MFD_HUGETLB),
- XLAT_END
 };
+static
+const struct xlat memfd_create_flags[1] = { {
+ .data = memfd_create_flags_xdata,
+ .size = ARRAY_SIZE(memfd_create_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

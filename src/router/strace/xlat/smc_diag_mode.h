@@ -33,13 +33,17 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat smc_diag_mode[] = {
+static const struct xlat_data smc_diag_mode_xdata[] = {
  [SMC_DIAG_MODE_SMCR] = XLAT(SMC_DIAG_MODE_SMCR),
  [SMC_DIAG_MODE_FALLBACK_TCP] = XLAT(SMC_DIAG_MODE_FALLBACK_TCP),
  [SMC_DIAG_MODE_SMCD] = XLAT(SMC_DIAG_MODE_SMCD),
- XLAT_END
 };
+static
+const struct xlat smc_diag_mode[1] = { {
+ .data = smc_diag_mode_xdata,
+ .size = ARRAY_SIZE(smc_diag_mode_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

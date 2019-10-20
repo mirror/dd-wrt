@@ -19,11 +19,15 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat fsmount_flags[] = {
+static const struct xlat_data fsmount_flags_xdata[] = {
  XLAT(FSMOUNT_CLOEXEC),
- XLAT_END
 };
+static
+const struct xlat fsmount_flags[1] = { {
+ .data = fsmount_flags_xdata,
+ .size = ARRAY_SIZE(fsmount_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

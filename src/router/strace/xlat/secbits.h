@@ -68,8 +68,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat secbits[] = {
+static const struct xlat_data secbits_xdata[] = {
  XLAT(SECBIT_NOROOT),
  XLAT(SECBIT_NOROOT_LOCKED),
  XLAT(SECBIT_NO_SETUID_FIXUP),
@@ -78,8 +77,13 @@ const struct xlat secbits[] = {
  XLAT(SECBIT_KEEP_CAPS_LOCKED),
  XLAT(SECBIT_NO_CAP_AMBIENT_RAISE),
  XLAT(SECBIT_NO_CAP_AMBIENT_RAISE_LOCKED),
- XLAT_END
 };
+static
+const struct xlat secbits[1] = { {
+ .data = secbits_xdata,
+ .size = ARRAY_SIZE(secbits_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

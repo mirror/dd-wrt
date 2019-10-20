@@ -61,8 +61,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat mount_attr_flags[] = {
+static const struct xlat_data mount_attr_flags_xdata[] = {
  XLAT(MOUNT_ATTR_RDONLY),
  XLAT(MOUNT_ATTR_NOSUID),
  XLAT(MOUNT_ATTR_NODEV),
@@ -70,8 +69,13 @@ const struct xlat mount_attr_flags[] = {
  XLAT(MOUNT_ATTR_NOATIME),
  XLAT(MOUNT_ATTR_STRICTATIME),
  XLAT(MOUNT_ATTR_NODIRATIME),
- XLAT_END
 };
+static
+const struct xlat mount_attr_flags[1] = { {
+ .data = mount_attr_flags_xdata,
+ .size = ARRAY_SIZE(mount_attr_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

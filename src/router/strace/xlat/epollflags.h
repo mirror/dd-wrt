@@ -21,13 +21,17 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat epollflags[] = {
+static const struct xlat_data epollflags_xdata[] = {
 #if defined EPOLL_CLOEXEC || defined O_CLOEXEC
  XLAT(EPOLL_CLOEXEC),
 #endif
- XLAT_END
 };
+static
+const struct xlat epollflags[1] = { {
+ .data = epollflags_xdata,
+ .size = ARRAY_SIZE(epollflags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

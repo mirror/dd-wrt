@@ -376,8 +376,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat prctl_options[] = {
+static const struct xlat_data prctl_options_xdata[] = {
  XLAT(PR_SET_PDEATHSIG),
  XLAT(PR_GET_PDEATHSIG),
  XLAT(PR_GET_DUMPABLE),
@@ -430,8 +429,13 @@ const struct xlat prctl_options[] = {
  XLAT(PR_SET_SPECULATION_CTRL),
  XLAT(PR_PAC_RESET_KEYS),
  XLAT(PR_SET_VMA),
- XLAT_END
 };
+static
+const struct xlat prctl_options[1] = { {
+ .data = prctl_options_xdata,
+ .size = ARRAY_SIZE(prctl_options_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -141,8 +141,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # ifndef IN_MPERS
 
-const struct xlat iffflags[] = {
-
+static const struct xlat_data iffflags_xdata[] = {
  XLAT(IFF_UP),
  XLAT(IFF_BROADCAST),
  XLAT(IFF_DEBUG),
@@ -162,8 +161,12 @@ const struct xlat iffflags[] = {
  XLAT(IFF_LOWER_UP),
  XLAT(IFF_DORMANT),
  XLAT(IFF_ECHO),
- XLAT_END
 };
+const struct xlat iffflags[1] = { {
+ .data = iffflags_xdata,
+ .size = ARRAY_SIZE(iffflags_xdata),
+ .type = XT_SORTED,
+} };
 
 # endif /* !IN_MPERS */
 

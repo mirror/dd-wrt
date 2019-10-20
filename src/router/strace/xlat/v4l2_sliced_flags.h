@@ -12,10 +12,7 @@ extern const struct xlat v4l2_sliced_flags[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat v4l2_sliced_flags[] = {
+static const struct xlat_data v4l2_sliced_flags_xdata[] = {
 #if defined(V4L2_SLICED_TELETEXT_B) || (defined(HAVE_DECL_V4L2_SLICED_TELETEXT_B) && HAVE_DECL_V4L2_SLICED_TELETEXT_B)
   XLAT(V4L2_SLICED_TELETEXT_B),
 #endif
@@ -34,8 +31,15 @@ const struct xlat v4l2_sliced_flags[] = {
 #if defined(V4L2_SLICED_VBI_625) || (defined(HAVE_DECL_V4L2_SLICED_VBI_625) && HAVE_DECL_V4L2_SLICED_VBI_625)
   XLAT(V4L2_SLICED_VBI_625),
 #endif
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat v4l2_sliced_flags[1] = { {
+ .data = v4l2_sliced_flags_xdata,
+ .size = ARRAY_SIZE(v4l2_sliced_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

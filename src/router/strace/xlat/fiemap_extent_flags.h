@@ -89,8 +89,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat fiemap_extent_flags[] = {
+static const struct xlat_data fiemap_extent_flags_xdata[] = {
  XLAT(FIEMAP_EXTENT_LAST),
  XLAT(FIEMAP_EXTENT_UNKNOWN),
  XLAT(FIEMAP_EXTENT_DELALLOC),
@@ -102,8 +101,13 @@ const struct xlat fiemap_extent_flags[] = {
  XLAT(FIEMAP_EXTENT_UNWRITTEN),
  XLAT(FIEMAP_EXTENT_MERGED),
  XLAT(FIEMAP_EXTENT_SHARED),
- XLAT_END
 };
+static
+const struct xlat fiemap_extent_flags[1] = { {
+ .data = fiemap_extent_flags_xdata,
+ .size = ARRAY_SIZE(fiemap_extent_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

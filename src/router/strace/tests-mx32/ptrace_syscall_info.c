@@ -2,6 +2,7 @@
  * Check decoding of ptrace PTRACE_GET_SYSCALL_INFO request.
  *
  * Copyright (c) 2018 Dmitry V. Levin <ldv@altlinux.org>
+ * Copyright (c) 2018-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -10,7 +11,6 @@
 #include "tests.h"
 
 #include "ptrace.h"
-#include <asm/unistd.h>
 #include "scno.h"
 
 #include <errno.h>
@@ -23,6 +23,10 @@
 #include <linux/audit.h>
 
 #include "xlat.h"
+#define XLAT_MACROS_ONLY
+/* For xlat/audit_arch.h */
+# include "xlat/elf_em.h"
+#undef XLAT_MACROS_ONLY
 #include "xlat/audit_arch.h"
 
 static const char *errstr;

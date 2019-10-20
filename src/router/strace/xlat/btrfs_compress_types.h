@@ -33,15 +33,19 @@ extern const struct xlat btrfs_compress_types[];
 
 # else
 
+static const struct xlat_data btrfs_compress_types_xdata[] = {
+ [BTRFS_COMPRESS_NONE] = XLAT(BTRFS_COMPRESS_NONE),
+ [BTRFS_COMPRESS_ZLIB] = XLAT(BTRFS_COMPRESS_ZLIB),
+ [BTRFS_COMPRESS_LZO] = XLAT(BTRFS_COMPRESS_LZO),
+};
 #  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
 static
 #  endif
-const struct xlat btrfs_compress_types[] = {
- XLAT(BTRFS_COMPRESS_NONE),
- XLAT(BTRFS_COMPRESS_ZLIB),
- XLAT(BTRFS_COMPRESS_LZO),
- XLAT_END
-};
+const struct xlat btrfs_compress_types[1] = { {
+ .data = btrfs_compress_types_xdata,
+ .size = ARRAY_SIZE(btrfs_compress_types_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

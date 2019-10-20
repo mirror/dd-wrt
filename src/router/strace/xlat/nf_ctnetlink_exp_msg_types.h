@@ -40,14 +40,18 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat nf_ctnetlink_exp_msg_types[] = {
- XLAT(IPCTNL_MSG_EXP_NEW),
- XLAT(IPCTNL_MSG_EXP_GET),
- XLAT(IPCTNL_MSG_EXP_DELETE),
- XLAT(IPCTNL_MSG_EXP_GET_STATS_CPU),
- XLAT_END
+static const struct xlat_data nf_ctnetlink_exp_msg_types_xdata[] = {
+ [IPCTNL_MSG_EXP_NEW] = XLAT(IPCTNL_MSG_EXP_NEW),
+ [IPCTNL_MSG_EXP_GET] = XLAT(IPCTNL_MSG_EXP_GET),
+ [IPCTNL_MSG_EXP_DELETE] = XLAT(IPCTNL_MSG_EXP_DELETE),
+ [IPCTNL_MSG_EXP_GET_STATS_CPU] = XLAT(IPCTNL_MSG_EXP_GET_STATS_CPU),
 };
+static
+const struct xlat nf_ctnetlink_exp_msg_types[1] = { {
+ .data = nf_ctnetlink_exp_msg_types_xdata,
+ .size = ARRAY_SIZE(nf_ctnetlink_exp_msg_types_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

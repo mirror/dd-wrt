@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat netlink_diag_show[] = {
+static const struct xlat_data netlink_diag_show_xdata[] = {
 #if defined(NDIAG_SHOW_MEMINFO) || (defined(HAVE_DECL_NDIAG_SHOW_MEMINFO) && HAVE_DECL_NDIAG_SHOW_MEMINFO)
   XLAT(NDIAG_SHOW_MEMINFO),
 #endif
@@ -26,8 +25,13 @@ const struct xlat netlink_diag_show[] = {
 #if defined(NDIAG_SHOW_FLAGS) || (defined(HAVE_DECL_NDIAG_SHOW_FLAGS) && HAVE_DECL_NDIAG_SHOW_FLAGS)
   XLAT(NDIAG_SHOW_FLAGS),
 #endif
- XLAT_END
 };
+static
+const struct xlat netlink_diag_show[1] = { {
+ .data = netlink_diag_show_xdata,
+ .size = ARRAY_SIZE(netlink_diag_show_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

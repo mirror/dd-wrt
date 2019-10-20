@@ -208,8 +208,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat kvm_exit_reason[] = {
+static const struct xlat_data kvm_exit_reason_xdata[] = {
  [KVM_EXIT_UNKNOWN] = XLAT(KVM_EXIT_UNKNOWN),
  [KVM_EXIT_EXCEPTION] = XLAT(KVM_EXIT_EXCEPTION),
  [KVM_EXIT_IO] = XLAT(KVM_EXIT_IO),
@@ -239,8 +238,13 @@ const struct xlat kvm_exit_reason[] = {
  [KVM_EXIT_S390_STSI] = XLAT(KVM_EXIT_S390_STSI),
  [KVM_EXIT_IOAPIC_EOI] = XLAT(KVM_EXIT_IOAPIC_EOI),
  [KVM_EXIT_HYPERV] = XLAT(KVM_EXIT_HYPERV),
- XLAT_END
 };
+static
+const struct xlat kvm_exit_reason[1] = { {
+ .data = kvm_exit_reason_xdata,
+ .size = ARRAY_SIZE(kvm_exit_reason_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

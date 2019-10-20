@@ -35,15 +35,19 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat efd_flags[] = {
+static const struct xlat_data efd_flags_xdata[] = {
  XLAT(EFD_SEMAPHORE),
 #if defined EFD_CLOEXEC || defined O_CLOEXEC
  XLAT(EFD_CLOEXEC),
 #endif
  XLAT(EFD_NONBLOCK),
- XLAT_END
 };
+static
+const struct xlat efd_flags[1] = { {
+ .data = efd_flags_xdata,
+ .size = ARRAY_SIZE(efd_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

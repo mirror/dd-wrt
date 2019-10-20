@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat baud_options[] = {
+static const struct xlat_data baud_options_xdata[] = {
 #if defined(B0) || (defined(HAVE_DECL_B0) && HAVE_DECL_B0)
   XLAT(B0),
 #endif
@@ -113,8 +112,13 @@ const struct xlat baud_options[] = {
 #if defined(EXTB) || (defined(HAVE_DECL_EXTB) && HAVE_DECL_EXTB)
   XLAT(EXTB),
 #endif
- XLAT_END
 };
+static
+const struct xlat baud_options[1] = { {
+ .data = baud_options_xdata,
+ .size = ARRAY_SIZE(baud_options_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

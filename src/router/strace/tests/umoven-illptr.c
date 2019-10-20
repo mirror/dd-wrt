@@ -2,6 +2,7 @@
  * Check decoding of invalid pointer by umoven.
  *
  * Copyright (c) 2016-2018 Dmitry V. Levin <ldv@altlinux.org>
+ * Copyright (c) 2016-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -11,7 +12,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <unistd.h>
-#include <asm/unistd.h>
+#include "scno.h"
 
 int
 main(void)

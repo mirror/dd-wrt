@@ -68,18 +68,22 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat rtnl_ifla_xdp_attrs[] = {
- XLAT(IFLA_XDP_UNSPEC),
- XLAT(IFLA_XDP_FD),
- XLAT(IFLA_XDP_ATTACHED),
- XLAT(IFLA_XDP_FLAGS),
- XLAT(IFLA_XDP_PROG_ID),
- XLAT(IFLA_XDP_DRV_PROG_ID),
- XLAT(IFLA_XDP_SKB_PROG_ID),
- XLAT(IFLA_XDP_HW_PROG_ID),
- XLAT_END
+static const struct xlat_data rtnl_ifla_xdp_attrs_xdata[] = {
+ [IFLA_XDP_UNSPEC] = XLAT(IFLA_XDP_UNSPEC),
+ [IFLA_XDP_FD] = XLAT(IFLA_XDP_FD),
+ [IFLA_XDP_ATTACHED] = XLAT(IFLA_XDP_ATTACHED),
+ [IFLA_XDP_FLAGS] = XLAT(IFLA_XDP_FLAGS),
+ [IFLA_XDP_PROG_ID] = XLAT(IFLA_XDP_PROG_ID),
+ [IFLA_XDP_DRV_PROG_ID] = XLAT(IFLA_XDP_DRV_PROG_ID),
+ [IFLA_XDP_SKB_PROG_ID] = XLAT(IFLA_XDP_SKB_PROG_ID),
+ [IFLA_XDP_HW_PROG_ID] = XLAT(IFLA_XDP_HW_PROG_ID),
 };
+static
+const struct xlat rtnl_ifla_xdp_attrs[1] = { {
+ .data = rtnl_ifla_xdp_attrs_xdata,
+ .size = ARRAY_SIZE(rtnl_ifla_xdp_attrs_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

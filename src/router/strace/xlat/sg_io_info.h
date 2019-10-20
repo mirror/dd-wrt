@@ -29,12 +29,16 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # ifndef IN_MPERS
 
-const struct xlat sg_io_info[] = {
+static const struct xlat_data sg_io_info_xdata[] = {
  XLAT(SG_INFO_CHECK),
  XLAT(SG_INFO_DIRECT_IO),
  XLAT(SG_INFO_MIXED_IO),
- XLAT_END
 };
+const struct xlat sg_io_info[1] = { {
+ .data = sg_io_info_xdata,
+ .size = ARRAY_SIZE(sg_io_info_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

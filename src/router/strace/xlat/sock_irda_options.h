@@ -89,8 +89,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat sock_irda_options[] = {
+static const struct xlat_data sock_irda_options_xdata[] = {
  [IRLMP_ENUMDEVICES] = XLAT(IRLMP_ENUMDEVICES),
  [IRLMP_IAS_SET] = XLAT(IRLMP_IAS_SET),
  [IRLMP_IAS_QUERY] = XLAT(IRLMP_IAS_QUERY),
@@ -102,8 +101,13 @@ const struct xlat sock_irda_options[] = {
  [IRLMP_IAS_DEL] = XLAT(IRLMP_IAS_DEL),
  [IRLMP_HINT_MASK_SET] = XLAT(IRLMP_HINT_MASK_SET),
  [IRLMP_WAITDEVICE] = XLAT(IRLMP_WAITDEVICE),
- XLAT_END
 };
+static
+const struct xlat sock_irda_options[1] = { {
+ .data = sock_irda_options_xdata,
+ .size = ARRAY_SIZE(sock_irda_options_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -68,8 +68,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat ip_cmsg_types[] = {
+static const struct xlat_data ip_cmsg_types_xdata[] = {
  XLAT(IP_TOS),
  XLAT(IP_TTL),
  XLAT(IP_RECVOPTS),
@@ -81,8 +80,13 @@ const struct xlat ip_cmsg_types[] = {
 #if defined(SCM_SECURITY) || (defined(HAVE_DECL_SCM_SECURITY) && HAVE_DECL_SCM_SECURITY)
   XLAT(SCM_SECURITY),
 #endif
- XLAT_END
 };
+static
+const struct xlat ip_cmsg_types[1] = { {
+ .data = ip_cmsg_types_xdata,
+ .size = ARRAY_SIZE(ip_cmsg_types_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

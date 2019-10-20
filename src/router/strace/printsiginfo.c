@@ -24,9 +24,16 @@
 
 #include "nr_prefix.c"
 
+#include "print_fields.h"
+
 #ifndef IN_MPERS
 # include "printsiginfo.h"
 #endif
+
+#define XLAT_MACROS_ONLY
+/* For xlat/audit_arch.h */
+# include "xlat/elf_em.h"
+#undef XLAT_MACROS_ONLY
 
 #include "xlat/audit_arch.h"
 #include "xlat/sigbus_codes.h"
@@ -112,14 +119,8 @@ print_si_code(int si_signo, unsigned int si_code)
 static void
 print_si_info(const siginfo_t *sip)
 {
-	if (sip->si_errno) {
-		tprints(", si_errno=");
-		if ((unsigned) sip->si_errno < nerrnos
-		    && errnoent[sip->si_errno])
-			tprints(errnoent[sip->si_errno]);
-		else
-			tprintf("%d", sip->si_errno);
-	}
+	if (sip->si_errno)
+		PRINT_FIELD_ERR_U(", ", *sip, si_errno);
 
 	if (SI_FROMUSER(sip)) {
 		switch (sip->si_code) {

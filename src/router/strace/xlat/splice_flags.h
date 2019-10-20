@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat splice_flags[] = {
+static const struct xlat_data splice_flags_xdata[] = {
 #if defined(SPLICE_F_MOVE) || (defined(HAVE_DECL_SPLICE_F_MOVE) && HAVE_DECL_SPLICE_F_MOVE)
   XLAT(SPLICE_F_MOVE),
 #endif
@@ -26,8 +25,13 @@ const struct xlat splice_flags[] = {
 #if defined(SPLICE_F_GIFT) || (defined(HAVE_DECL_SPLICE_F_GIFT) && HAVE_DECL_SPLICE_F_GIFT)
   XLAT(SPLICE_F_GIFT),
 #endif
- XLAT_END
 };
+static
+const struct xlat splice_flags[1] = { {
+ .data = splice_flags_xdata,
+ .size = ARRAY_SIZE(splice_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

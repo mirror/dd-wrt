@@ -467,8 +467,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat sock_sctp_options[] = {
+static const struct xlat_data sock_sctp_options_xdata[] = {
  XLAT(SCTP_RTOINFO),
  XLAT(SCTP_ASSOCINFO),
  XLAT(SCTP_INITMSG),
@@ -535,8 +534,13 @@ const struct xlat sock_sctp_options[] = {
  XLAT(SCTP_INTERLEAVING_SUPPORTED),
  XLAT(SCTP_SENDMSG_CONNECT),
  XLAT(SCTP_EVENT),
- XLAT_END
 };
+static
+const struct xlat sock_sctp_options[1] = { {
+ .data = sock_sctp_options_xdata,
+ .size = ARRAY_SIZE(sock_sctp_options_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

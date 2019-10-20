@@ -82,8 +82,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat rtnl_ifla_info_data_tun_attrs[] = {
+static const struct xlat_data rtnl_ifla_info_data_tun_attrs_xdata[] = {
  [IFLA_TUN_UNSPEC] = XLAT(IFLA_TUN_UNSPEC),
  [IFLA_TUN_OWNER] = XLAT(IFLA_TUN_OWNER),
  [IFLA_TUN_GROUP] = XLAT(IFLA_TUN_GROUP),
@@ -94,8 +93,13 @@ const struct xlat rtnl_ifla_info_data_tun_attrs[] = {
  [IFLA_TUN_MULTI_QUEUE] = XLAT(IFLA_TUN_MULTI_QUEUE),
  [IFLA_TUN_NUM_QUEUES] = XLAT(IFLA_TUN_NUM_QUEUES),
  [IFLA_TUN_NUM_DISABLED_QUEUES] = XLAT(IFLA_TUN_NUM_DISABLED_QUEUES),
- XLAT_END
 };
+static
+const struct xlat rtnl_ifla_info_data_tun_attrs[1] = { {
+ .data = rtnl_ifla_info_data_tun_attrs_xdata,
+ .size = ARRAY_SIZE(rtnl_ifla_info_data_tun_attrs_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

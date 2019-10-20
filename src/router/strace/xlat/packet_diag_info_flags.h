@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat packet_diag_info_flags[] = {
+static const struct xlat_data packet_diag_info_flags_xdata[] = {
 #if defined(PDI_RUNNING) || (defined(HAVE_DECL_PDI_RUNNING) && HAVE_DECL_PDI_RUNNING)
   XLAT(PDI_RUNNING),
 #endif
@@ -29,8 +28,13 @@ const struct xlat packet_diag_info_flags[] = {
 #if defined(PDI_LOSS) || (defined(HAVE_DECL_PDI_LOSS) && HAVE_DECL_PDI_LOSS)
   XLAT(PDI_LOSS),
 #endif
- XLAT_END
 };
+static
+const struct xlat packet_diag_info_flags[1] = { {
+ .data = packet_diag_info_flags_xdata,
+ .size = ARRAY_SIZE(packet_diag_info_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

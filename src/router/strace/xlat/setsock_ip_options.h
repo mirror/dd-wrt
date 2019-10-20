@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat setsock_ip_options[] = {
+static const struct xlat_data setsock_ip_options_xdata[] = {
 /*
 * Options specific to setsockopt(SOL_IP).
 * Common {g,s}etsockopt(SOL_IP) options
@@ -89,8 +88,13 @@ const struct xlat setsock_ip_options[] = {
 #if defined(IPT_SO_SET_ADD_COUNTERS) || (defined(HAVE_DECL_IPT_SO_SET_ADD_COUNTERS) && HAVE_DECL_IPT_SO_SET_ADD_COUNTERS)
   XLAT(IPT_SO_SET_ADD_COUNTERS),
 #endif
- XLAT_END
 };
+static
+const struct xlat setsock_ip_options[1] = { {
+ .data = setsock_ip_options_xdata,
+ .size = ARRAY_SIZE(setsock_ip_options_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -47,16 +47,19 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat hw_breakpoint_type[] = {
-
+static const struct xlat_data hw_breakpoint_type_xdata[] = {
  XLAT(HW_BREAKPOINT_EMPTY),
  XLAT(HW_BREAKPOINT_R),
  XLAT(HW_BREAKPOINT_W),
  XLAT(HW_BREAKPOINT_RW),
  XLAT(HW_BREAKPOINT_X),
- XLAT_END
 };
+static
+const struct xlat hw_breakpoint_type[1] = { {
+ .data = hw_breakpoint_type_xdata,
+ .size = ARRAY_SIZE(hw_breakpoint_type_xdata),
+ .type = XT_SORTED,
+} };
 
 # endif /* !IN_MPERS */
 

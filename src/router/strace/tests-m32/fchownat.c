@@ -2,13 +2,14 @@
  * Check decoding of fchownat syscall.
  *
  * Copyright (c) 2016-2018 Dmitry V. Levin <ldv@altlinux.org>
+ * Copyright (c) 2016-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "tests.h"
-#include <asm/unistd.h>
+#include "scno.h"
 #include <fcntl.h>
 
 #if defined __NR_fchownat && defined AT_FDCWD && defined AT_SYMLINK_NOFOLLOW

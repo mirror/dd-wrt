@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat sock_packet_options[] = {
+static const struct xlat_data sock_packet_options_xdata[] = {
 #if defined(PACKET_ADD_MEMBERSHIP) || (defined(HAVE_DECL_PACKET_ADD_MEMBERSHIP) && HAVE_DECL_PACKET_ADD_MEMBERSHIP)
   XLAT(PACKET_ADD_MEMBERSHIP),
 #endif
@@ -77,8 +76,13 @@ const struct xlat sock_packet_options[] = {
 #if defined(PACKET_FANOUT_DATA) || (defined(HAVE_DECL_PACKET_FANOUT_DATA) && HAVE_DECL_PACKET_FANOUT_DATA)
   XLAT(PACKET_FANOUT_DATA),
 #endif
- XLAT_END
 };
+static
+const struct xlat sock_packet_options[1] = { {
+ .data = sock_packet_options_xdata,
+ .size = ARRAY_SIZE(sock_packet_options_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

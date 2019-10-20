@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat inet_diag_extended_flags[] = {
+static const struct xlat_data inet_diag_extended_flags_xdata[] = {
  XLAT(1<<(INET_DIAG_MEMINFO-1)),
  XLAT(1<<(INET_DIAG_INFO-1)),
  XLAT(1<<(INET_DIAG_VEGASINFO-1)),
@@ -31,8 +30,13 @@ const struct xlat inet_diag_extended_flags[] = {
  XLAT(1<<(INET_DIAG_MARK-1)),
  XLAT(1<<(INET_DIAG_BBRINFO-1)),
  XLAT(1<<(INET_DIAG_CLASS_ID-1)),
- XLAT_END
 };
+static
+const struct xlat inet_diag_extended_flags[1] = { {
+ .data = inet_diag_extended_flags_xdata,
+ .size = ARRAY_SIZE(inet_diag_extended_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

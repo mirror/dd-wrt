@@ -2,6 +2,7 @@
  * Check decoding of ioctl SG_IO v4 commands.
  *
  * Copyright (c) 2017-2018 Dmitry V. Levin <ldv@altlinux.org>
+ * Copyright (c) 2017-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -16,8 +17,9 @@
 # include <sys/ioctl.h>
 # include <sys/uio.h>
 # include <linux/bsg.h>
-
-# include "xlat/scsi_sg_commands.h"
+# define XLAT_MACROS_ONLY
+#  include "xlat/scsi_sg_commands.h"
+# undef XLAT_MACROS_ONLY
 
 int
 main(void)

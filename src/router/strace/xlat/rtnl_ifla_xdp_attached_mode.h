@@ -47,15 +47,19 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat rtnl_ifla_xdp_attached_mode[] = {
+static const struct xlat_data rtnl_ifla_xdp_attached_mode_xdata[] = {
  [XDP_ATTACHED_NONE] = XLAT(XDP_ATTACHED_NONE),
  [XDP_ATTACHED_DRV] = XLAT(XDP_ATTACHED_DRV),
  [XDP_ATTACHED_SKB] = XLAT(XDP_ATTACHED_SKB),
  [XDP_ATTACHED_HW] = XLAT(XDP_ATTACHED_HW),
  [XDP_ATTACHED_MULTI] = XLAT(XDP_ATTACHED_MULTI),
- XLAT_END
 };
+static
+const struct xlat rtnl_ifla_xdp_attached_mode[1] = { {
+ .data = rtnl_ifla_xdp_attached_mode_xdata,
+ .size = ARRAY_SIZE(rtnl_ifla_xdp_attached_mode_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -75,8 +75,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat netlink_sk_meminfo_indices[] = {
+static const struct xlat_data netlink_sk_meminfo_indices_xdata[] = {
  [SK_MEMINFO_RMEM_ALLOC] = XLAT(SK_MEMINFO_RMEM_ALLOC),
  [SK_MEMINFO_RCVBUF] = XLAT(SK_MEMINFO_RCVBUF),
  [SK_MEMINFO_WMEM_ALLOC] = XLAT(SK_MEMINFO_WMEM_ALLOC),
@@ -86,8 +85,13 @@ const struct xlat netlink_sk_meminfo_indices[] = {
  [SK_MEMINFO_OPTMEM] = XLAT(SK_MEMINFO_OPTMEM),
  [SK_MEMINFO_BACKLOG] = XLAT(SK_MEMINFO_BACKLOG),
  [SK_MEMINFO_DROPS] = XLAT(SK_MEMINFO_DROPS),
- XLAT_END
 };
+static
+const struct xlat netlink_sk_meminfo_indices[1] = { {
+ .data = netlink_sk_meminfo_indices_xdata,
+ .size = ARRAY_SIZE(netlink_sk_meminfo_indices_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

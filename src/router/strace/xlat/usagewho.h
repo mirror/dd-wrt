@@ -40,14 +40,18 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat usagewho[] = {
+static const struct xlat_data usagewho_xdata[] = {
  XLAT(RUSAGE_SELF),
  XLAT(RUSAGE_CHILDREN),
  XLAT(RUSAGE_BOTH),
  XLAT(RUSAGE_THREAD),
- XLAT_END
 };
+static
+const struct xlat usagewho[1] = { {
+ .data = usagewho_xdata,
+ .size = ARRAY_SIZE(usagewho_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

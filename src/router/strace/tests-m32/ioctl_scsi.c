@@ -2,7 +2,7 @@
  * Check decoding of SCSI ioctl commands.
  *
  * Copyright (c) 2017 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2017-2018 The strace developers.
+ * Copyright (c) 2017-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -15,7 +15,9 @@
 # include <stdio.h>
 # include <sys/ioctl.h>
 # include <scsi/sg.h>
-# include "xlat/scsi_sg_commands.h"
+# define XLAT_MACROS_ONLY
+#  include "xlat/scsi_sg_commands.h"
+# undef XLAT_MACROS_ONLY
 
 # define TEST_NO_ARG(cmd)							\
 	do {									\

@@ -124,9 +124,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat sock_dccp_options[] = {
-
+static const struct xlat_data sock_dccp_options_xdata[] = {
  XLAT(DCCP_SOCKOPT_PACKET_SIZE),
  XLAT(DCCP_SOCKOPT_SERVICE),
  XLAT(DCCP_SOCKOPT_CHANGE_L),
@@ -143,8 +141,13 @@ const struct xlat sock_dccp_options[] = {
  XLAT(DCCP_SOCKOPT_QPOLICY_TXQLEN),
  XLAT(DCCP_SOCKOPT_CCID_RX_INFO),
  XLAT(DCCP_SOCKOPT_CCID_TX_INFO),
- XLAT_END
 };
+static
+const struct xlat sock_dccp_options[1] = { {
+ .data = sock_dccp_options_xdata,
+ .size = ARRAY_SIZE(sock_dccp_options_xdata),
+ .type = XT_SORTED,
+} };
 
 # endif /* !IN_MPERS */
 

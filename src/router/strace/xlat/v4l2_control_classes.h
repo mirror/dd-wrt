@@ -96,11 +96,7 @@ extern const struct xlat v4l2_control_classes[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat v4l2_control_classes[] = {
-
+static const struct xlat_data v4l2_control_classes_xdata[] = {
  XLAT(V4L2_CTRL_CLASS_USER),
  XLAT(V4L2_CTRL_CLASS_MPEG),
  XLAT(V4L2_CTRL_CLASS_CAMERA),
@@ -113,8 +109,15 @@ const struct xlat v4l2_control_classes[] = {
  XLAT(V4L2_CTRL_CLASS_FM_RX),
  XLAT(V4L2_CTRL_CLASS_RF_TUNER),
  XLAT(V4L2_CTRL_CLASS_DETECT),
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat v4l2_control_classes[1] = { {
+ .data = v4l2_control_classes_xdata,
+ .size = ARRAY_SIZE(v4l2_control_classes_xdata),
+ .type = XT_SORTED,
+} };
 
 # endif /* !IN_MPERS */
 

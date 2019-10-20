@@ -12,10 +12,7 @@ extern const struct xlat v4l2_control_types[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat v4l2_control_types[] = {
+static const struct xlat_data v4l2_control_types_xdata[] = {
 #if defined(V4L2_CTRL_TYPE_INTEGER) || (defined(HAVE_DECL_V4L2_CTRL_TYPE_INTEGER) && HAVE_DECL_V4L2_CTRL_TYPE_INTEGER)
   XLAT(V4L2_CTRL_TYPE_INTEGER),
 #endif
@@ -52,8 +49,15 @@ const struct xlat v4l2_control_types[] = {
 #if defined(V4L2_CTRL_TYPE_U32) || (defined(HAVE_DECL_V4L2_CTRL_TYPE_U32) && HAVE_DECL_V4L2_CTRL_TYPE_U32)
   XLAT(V4L2_CTRL_TYPE_U32),
 #endif
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat v4l2_control_types[1] = { {
+ .data = v4l2_control_types_xdata,
+ .size = ARRAY_SIZE(v4l2_control_types_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

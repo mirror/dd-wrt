@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat ipc_msg_flags[] = {
+static const struct xlat_data ipc_msg_flags_xdata[] = {
 #if defined(MSG_NOERROR) || (defined(HAVE_DECL_MSG_NOERROR) && HAVE_DECL_MSG_NOERROR)
   XLAT(MSG_NOERROR),
 #endif
@@ -23,8 +22,13 @@ const struct xlat ipc_msg_flags[] = {
 #if defined(IPC_NOWAIT) || (defined(HAVE_DECL_IPC_NOWAIT) && HAVE_DECL_IPC_NOWAIT)
   XLAT(IPC_NOWAIT),
 #endif
- XLAT_END
 };
+static
+const struct xlat ipc_msg_flags[1] = { {
+ .data = ipc_msg_flags_xdata,
+ .size = ARRAY_SIZE(ipc_msg_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

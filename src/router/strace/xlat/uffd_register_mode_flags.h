@@ -12,16 +12,20 @@
 
 # else
 
-static
-const struct xlat uffd_register_mode_flags[] = {
+static const struct xlat_data uffd_register_mode_flags_xdata[] = {
 #if defined(UFFDIO_REGISTER_MODE_MISSING) || (defined(HAVE_DECL_UFFDIO_REGISTER_MODE_MISSING) && HAVE_DECL_UFFDIO_REGISTER_MODE_MISSING)
   XLAT_TYPE(uint64_t, UFFDIO_REGISTER_MODE_MISSING),
 #endif
 #if defined(UFFDIO_REGISTER_MODE_WP) || (defined(HAVE_DECL_UFFDIO_REGISTER_MODE_WP) && HAVE_DECL_UFFDIO_REGISTER_MODE_WP)
   XLAT_TYPE(uint64_t, UFFDIO_REGISTER_MODE_WP),
 #endif
- XLAT_END
 };
+static
+const struct xlat uffd_register_mode_flags[1] = { {
+ .data = uffd_register_mode_flags_xdata,
+ .size = ARRAY_SIZE(uffd_register_mode_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -82,9 +82,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat perf_hw_id[] = {
-
+static const struct xlat_data perf_hw_id_xdata[] = {
  XLAT(PERF_COUNT_HW_CPU_CYCLES),
  XLAT(PERF_COUNT_HW_INSTRUCTIONS),
  XLAT(PERF_COUNT_HW_CACHE_REFERENCES),
@@ -95,8 +93,13 @@ const struct xlat perf_hw_id[] = {
  XLAT(PERF_COUNT_HW_STALLED_CYCLES_FRONTEND),
  XLAT(PERF_COUNT_HW_STALLED_CYCLES_BACKEND),
  XLAT(PERF_COUNT_HW_REF_CPU_CYCLES),
- XLAT_END
 };
+static
+const struct xlat perf_hw_id[1] = { {
+ .data = perf_hw_id_xdata,
+ .size = ARRAY_SIZE(perf_hw_id_xdata),
+ .type = XT_SORTED,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -33,13 +33,17 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat ioprio_who[] = {
- XLAT(IOPRIO_WHO_PROCESS),
- XLAT(IOPRIO_WHO_PGRP),
- XLAT(IOPRIO_WHO_USER),
- XLAT_END
+static const struct xlat_data ioprio_who_xdata[] = {
+ [IOPRIO_WHO_PROCESS] = XLAT(IOPRIO_WHO_PROCESS),
+ [IOPRIO_WHO_PGRP] = XLAT(IOPRIO_WHO_PGRP),
+ [IOPRIO_WHO_USER] = XLAT(IOPRIO_WHO_USER),
 };
+static
+const struct xlat ioprio_who[1] = { {
+ .data = ioprio_who_xdata,
+ .size = ARRAY_SIZE(ioprio_who_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

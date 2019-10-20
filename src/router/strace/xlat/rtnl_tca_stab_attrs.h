@@ -33,13 +33,17 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat rtnl_tca_stab_attrs[] = {
- XLAT(TCA_STAB_UNSPEC),
- XLAT(TCA_STAB_BASE),
- XLAT(TCA_STAB_DATA),
- XLAT_END
+static const struct xlat_data rtnl_tca_stab_attrs_xdata[] = {
+ [TCA_STAB_UNSPEC] = XLAT(TCA_STAB_UNSPEC),
+ [TCA_STAB_BASE] = XLAT(TCA_STAB_BASE),
+ [TCA_STAB_DATA] = XLAT(TCA_STAB_DATA),
 };
+static
+const struct xlat rtnl_tca_stab_attrs[1] = { {
+ .data = rtnl_tca_stab_attrs_xdata,
+ .size = ARRAY_SIZE(rtnl_tca_stab_attrs_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

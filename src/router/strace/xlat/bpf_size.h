@@ -40,14 +40,18 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat bpf_size[] = {
+static const struct xlat_data bpf_size_xdata[] = {
  XLAT(BPF_W),
  XLAT(BPF_H),
  XLAT(BPF_B),
  XLAT(BPF_DW),
- XLAT_END
 };
+static
+const struct xlat bpf_size[1] = { {
+ .data = bpf_size_xdata,
+ .size = ARRAY_SIZE(bpf_size_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

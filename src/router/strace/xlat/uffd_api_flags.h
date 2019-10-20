@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat uffd_api_flags[] = {
+static const struct xlat_data uffd_api_flags_xdata[] = {
 #if defined(_UFFDIO_REGISTER) || (defined(HAVE_DECL__UFFDIO_REGISTER) && HAVE_DECL__UFFDIO_REGISTER)
   XLAT_TYPE_PAIR(uint64_t, 1ULL<<_UFFDIO_REGISTER, "1<<_UFFDIO_REGISTER"),
 #endif
@@ -23,8 +22,13 @@ const struct xlat uffd_api_flags[] = {
 #if defined(_UFFDIO_API) || (defined(HAVE_DECL__UFFDIO_API) && HAVE_DECL__UFFDIO_API)
   XLAT_TYPE_PAIR(uint64_t, 1ULL<<_UFFDIO_API, "1<<_UFFDIO_API"),
 #endif
- XLAT_END
 };
+static
+const struct xlat uffd_api_flags[1] = { {
+ .data = uffd_api_flags_xdata,
+ .size = ARRAY_SIZE(uffd_api_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

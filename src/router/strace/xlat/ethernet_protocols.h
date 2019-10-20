@@ -500,6 +500,13 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
 # define ETH_P_TIPC 0x88CA
 #endif
+#if defined(ETH_P_LLDP) || (defined(HAVE_DECL_ETH_P_LLDP) && HAVE_DECL_ETH_P_LLDP)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((ETH_P_LLDP) == (0x88CC), "ETH_P_LLDP != 0x88CC");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define ETH_P_LLDP 0x88CC
+#endif
 #if defined(ETH_P_MACSEC) || (defined(HAVE_DECL_ETH_P_MACSEC) && HAVE_DECL_ETH_P_MACSEC)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
 static_assert((ETH_P_MACSEC) == (0x88E5), "ETH_P_MACSEC != 0x88E5");
@@ -652,8 +659,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # ifndef IN_MPERS
 
-const struct xlat ethernet_protocols[] = {
-
+static const struct xlat_data ethernet_protocols_xdata[] = {
  XLAT(ETH_P_802_3),
  XLAT(ETH_P_AX25),
  XLAT(ETH_P_ALL),
@@ -725,6 +731,7 @@ const struct xlat ethernet_protocols[] = {
  XLAT(ETH_P_ERSPAN),
  XLAT(ETH_P_PREAUTH),
  XLAT(ETH_P_TIPC),
+ XLAT(ETH_P_LLDP),
  XLAT(ETH_P_MACSEC),
  XLAT(ETH_P_8021AH),
  XLAT(ETH_P_MVRP),
@@ -746,8 +753,12 @@ const struct xlat ethernet_protocols[] = {
  XLAT(ETH_P_DSA_8021Q),
  XLAT(ETH_P_IFE),
  XLAT(ETH_P_AF_IUCV),
- XLAT_END
 };
+const struct xlat ethernet_protocols[1] = { {
+ .data = ethernet_protocols_xdata,
+ .size = ARRAY_SIZE(ethernet_protocols_xdata),
+ .type = XT_SORTED,
+} };
 
 # endif /* !IN_MPERS */
 

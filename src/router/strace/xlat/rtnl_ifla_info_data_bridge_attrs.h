@@ -341,8 +341,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat rtnl_ifla_info_data_bridge_attrs[] = {
+static const struct xlat_data rtnl_ifla_info_data_bridge_attrs_xdata[] = {
  [IFLA_BR_UNSPEC] = XLAT(IFLA_BR_UNSPEC),
  [IFLA_BR_FORWARD_DELAY] = XLAT(IFLA_BR_FORWARD_DELAY),
  [IFLA_BR_HELLO_TIME] = XLAT(IFLA_BR_HELLO_TIME),
@@ -390,8 +389,13 @@ const struct xlat rtnl_ifla_info_data_bridge_attrs[] = {
  [IFLA_BR_MCAST_MLD_VERSION] = XLAT(IFLA_BR_MCAST_MLD_VERSION),
  [IFLA_BR_VLAN_STATS_PER_PORT] = XLAT(IFLA_BR_VLAN_STATS_PER_PORT),
  [IFLA_BR_MULTI_BOOLOPT] = XLAT(IFLA_BR_MULTI_BOOLOPT),
- XLAT_END
 };
+static
+const struct xlat rtnl_ifla_info_data_bridge_attrs[1] = { {
+ .data = rtnl_ifla_info_data_bridge_attrs_xdata,
+ .size = ARRAY_SIZE(rtnl_ifla_info_data_bridge_attrs_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -8,7 +8,7 @@
 
 # ifndef IN_MPERS
 
-const struct xlat whence_codes[] = {
+static const struct xlat_data whence_codes_xdata[] = {
 #if defined(SEEK_SET) || (defined(HAVE_DECL_SEEK_SET) && HAVE_DECL_SEEK_SET)
   XLAT(SEEK_SET),
 #endif
@@ -24,8 +24,12 @@ const struct xlat whence_codes[] = {
 #if defined(SEEK_HOLE) || (defined(HAVE_DECL_SEEK_HOLE) && HAVE_DECL_SEEK_HOLE)
   XLAT(SEEK_HOLE),
 #endif
- XLAT_END
 };
+const struct xlat whence_codes[1] = { {
+ .data = whence_codes_xdata,
+ .size = ARRAY_SIZE(whence_codes_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -12,12 +12,16 @@ extern const struct xlat btrfs_features_compat[];
 
 # else
 
+static const struct xlat_data btrfs_features_compat_xdata[] = {
+};
 #  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
 static
 #  endif
-const struct xlat btrfs_features_compat[] = {
- XLAT_END
-};
+const struct xlat btrfs_features_compat[1] = { {
+ .data = btrfs_features_compat_xdata,
+ .size = ARRAY_SIZE(btrfs_features_compat_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

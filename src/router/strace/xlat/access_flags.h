@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat access_flags[] = {
+static const struct xlat_data access_flags_xdata[] = {
 #if defined(F_OK) || (defined(HAVE_DECL_F_OK) && HAVE_DECL_F_OK)
   XLAT(F_OK),
 #endif
@@ -32,8 +31,13 @@ const struct xlat access_flags[] = {
 #if defined(EX_OK) || (defined(HAVE_DECL_EX_OK) && HAVE_DECL_EX_OK)
   XLAT(EX_OK),
 #endif
- XLAT_END
 };
+static
+const struct xlat access_flags[1] = { {
+ .data = access_flags_xdata,
+ .size = ARRAY_SIZE(access_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

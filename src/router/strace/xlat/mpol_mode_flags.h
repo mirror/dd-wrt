@@ -26,12 +26,16 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat mpol_mode_flags[] = {
+static const struct xlat_data mpol_mode_flags_xdata[] = {
  XLAT(MPOL_F_STATIC_NODES),
  XLAT(MPOL_F_RELATIVE_NODES),
- XLAT_END
 };
+static
+const struct xlat mpol_mode_flags[1] = { {
+ .data = mpol_mode_flags_xdata,
+ .size = ARRAY_SIZE(mpol_mode_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

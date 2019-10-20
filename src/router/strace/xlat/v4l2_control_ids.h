@@ -2420,10 +2420,7 @@ extern const struct xlat v4l2_control_ids[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat v4l2_control_ids[] = {
+static const struct xlat_data v4l2_control_ids_xdata[] = {
 
  XLAT(V4L2_CID_BRIGHTNESS),
  XLAT(V4L2_CID_CONTRAST),
@@ -2784,8 +2781,15 @@ const struct xlat v4l2_control_ids[] = {
  XLAT(V4L2_CID_DETECT_MD_GLOBAL_THRESHOLD),
  XLAT(V4L2_CID_DETECT_MD_THRESHOLD_GRID),
  XLAT(V4L2_CID_DETECT_MD_REGION_GRID),
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat v4l2_control_ids[1] = { {
+ .data = v4l2_control_ids_xdata,
+ .size = ARRAY_SIZE(v4l2_control_ids_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

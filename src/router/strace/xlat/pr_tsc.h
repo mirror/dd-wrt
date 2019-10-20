@@ -26,12 +26,16 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat pr_tsc[] = {
- XLAT(PR_TSC_ENABLE),
- XLAT(PR_TSC_SIGSEGV),
- XLAT_END
+static const struct xlat_data pr_tsc_xdata[] = {
+ [PR_TSC_ENABLE] = XLAT(PR_TSC_ENABLE),
+ [PR_TSC_SIGSEGV] = XLAT(PR_TSC_SIGSEGV),
 };
+static
+const struct xlat pr_tsc[1] = { {
+ .data = pr_tsc_xdata,
+ .size = ARRAY_SIZE(pr_tsc_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat ioctl_dirs[] = {
+static const struct xlat_data ioctl_dirs_xdata[] = {
 #if defined(_IOC_NONE) || (defined(HAVE_DECL__IOC_NONE) && HAVE_DECL__IOC_NONE)
   XLAT(_IOC_NONE),
 #endif
@@ -23,8 +22,13 @@ const struct xlat ioctl_dirs[] = {
 #if defined(_IOC_WRITE) || (defined(HAVE_DECL__IOC_WRITE) && HAVE_DECL__IOC_WRITE)
   XLAT(_IOC_WRITE),
 #endif
- XLAT_END
 };
+static
+const struct xlat ioctl_dirs[1] = { {
+ .data = ioctl_dirs_xdata,
+ .size = ARRAY_SIZE(ioctl_dirs_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

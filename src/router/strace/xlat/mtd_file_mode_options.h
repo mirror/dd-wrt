@@ -12,16 +12,20 @@ extern const struct xlat mtd_file_mode_options[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat mtd_file_mode_options[] = {
+static const struct xlat_data mtd_file_mode_options_xdata[] = {
  XLAT(MTD_FILE_MODE_NORMAL),
  XLAT(MTD_FILE_MODE_OTP_FACTORY),
  XLAT(MTD_FILE_MODE_OTP_USER),
  XLAT(MTD_FILE_MODE_RAW),
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat mtd_file_mode_options[1] = { {
+ .data = mtd_file_mode_options_xdata,
+ .size = ARRAY_SIZE(mtd_file_mode_options_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

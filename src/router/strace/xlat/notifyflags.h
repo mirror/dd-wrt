@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat notifyflags[] = {
+static const struct xlat_data notifyflags_xdata[] = {
 #if defined(DN_ACCESS) || (defined(HAVE_DECL_DN_ACCESS) && HAVE_DECL_DN_ACCESS)
   XLAT(DN_ACCESS),
 #endif
@@ -35,8 +34,13 @@ const struct xlat notifyflags[] = {
 #if defined(DN_MULTISHOT) || (defined(HAVE_DECL_DN_MULTISHOT) && HAVE_DECL_DN_MULTISHOT)
   XLAT(DN_MULTISHOT),
 #endif
- XLAT_END
 };
+static
+const struct xlat notifyflags[1] = { {
+ .data = notifyflags_xdata,
+ .size = ARRAY_SIZE(notifyflags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

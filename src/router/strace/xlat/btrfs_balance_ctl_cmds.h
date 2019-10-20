@@ -26,14 +26,18 @@ extern const struct xlat btrfs_balance_ctl_cmds[];
 
 # else
 
+static const struct xlat_data btrfs_balance_ctl_cmds_xdata[] = {
+ [BTRFS_BALANCE_CTL_PAUSE] = XLAT(BTRFS_BALANCE_CTL_PAUSE),
+ [BTRFS_BALANCE_CTL_CANCEL] = XLAT(BTRFS_BALANCE_CTL_CANCEL),
+};
 #  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
 static
 #  endif
-const struct xlat btrfs_balance_ctl_cmds[] = {
- XLAT(BTRFS_BALANCE_CTL_PAUSE),
- XLAT(BTRFS_BALANCE_CTL_CANCEL),
- XLAT_END
-};
+const struct xlat btrfs_balance_ctl_cmds[1] = { {
+ .data = btrfs_balance_ctl_cmds_xdata,
+ .size = ARRAY_SIZE(btrfs_balance_ctl_cmds_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

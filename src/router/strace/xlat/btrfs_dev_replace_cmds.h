@@ -12,10 +12,7 @@ extern const struct xlat btrfs_dev_replace_cmds[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat btrfs_dev_replace_cmds[] = {
+static const struct xlat_data btrfs_dev_replace_cmds_xdata[] = {
 #if defined(BTRFS_IOCTL_DEV_REPLACE_CMD_START) || (defined(HAVE_DECL_BTRFS_IOCTL_DEV_REPLACE_CMD_START) && HAVE_DECL_BTRFS_IOCTL_DEV_REPLACE_CMD_START)
   XLAT_TYPE(uint64_t, BTRFS_IOCTL_DEV_REPLACE_CMD_START),
 #endif
@@ -25,8 +22,15 @@ const struct xlat btrfs_dev_replace_cmds[] = {
 #if defined(BTRFS_IOCTL_DEV_REPLACE_CMD_CANCEL) || (defined(HAVE_DECL_BTRFS_IOCTL_DEV_REPLACE_CMD_CANCEL) && HAVE_DECL_BTRFS_IOCTL_DEV_REPLACE_CMD_CANCEL)
   XLAT_TYPE(uint64_t, BTRFS_IOCTL_DEV_REPLACE_CMD_CANCEL),
 #endif
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat btrfs_dev_replace_cmds[1] = { {
+ .data = btrfs_dev_replace_cmds_xdata,
+ .size = ARRAY_SIZE(btrfs_dev_replace_cmds_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

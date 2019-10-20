@@ -61,10 +61,7 @@ extern const struct xlat sigsegv_codes[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat sigsegv_codes[] = {
+static const struct xlat_data sigsegv_codes_xdata[] = {
  XLAT(SEGV_MAPERR),
  XLAT(SEGV_ACCERR),
 #if defined(SEGV_STACKFLOW) || (defined(HAVE_DECL_SEGV_STACKFLOW) && HAVE_DECL_SEGV_STACKFLOW)
@@ -78,8 +75,15 @@ const struct xlat sigsegv_codes[] = {
  XLAT(SEGV_ACCADI),
  XLAT(SEGV_ADIDERR),
  XLAT(SEGV_ADIPERR),
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat sigsegv_codes[1] = { {
+ .data = sigsegv_codes_xdata,
+ .size = ARRAY_SIZE(sigsegv_codes_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

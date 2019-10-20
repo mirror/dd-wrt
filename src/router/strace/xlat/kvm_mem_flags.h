@@ -26,12 +26,16 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat kvm_mem_flags[] = {
+static const struct xlat_data kvm_mem_flags_xdata[] = {
  XLAT(KVM_MEM_LOG_DIRTY_PAGES),
  XLAT(KVM_MEM_READONLY),
- XLAT_END
 };
+static
+const struct xlat kvm_mem_flags[1] = { {
+ .data = kvm_mem_flags_xdata,
+ .size = ARRAY_SIZE(kvm_mem_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

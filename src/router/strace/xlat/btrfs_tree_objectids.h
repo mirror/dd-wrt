@@ -103,10 +103,7 @@ extern const struct xlat btrfs_tree_objectids[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat btrfs_tree_objectids[] = {
+static const struct xlat_data btrfs_tree_objectids_xdata[] = {
  XLAT_TYPE(uint64_t, BTRFS_ROOT_TREE_OBJECTID),
  XLAT_TYPE(uint64_t, BTRFS_EXTENT_TREE_OBJECTID),
  XLAT_TYPE(uint64_t, BTRFS_CHUNK_TREE_OBJECTID),
@@ -120,8 +117,15 @@ const struct xlat btrfs_tree_objectids[] = {
  XLAT_TYPE(uint64_t, BTRFS_FIRST_FREE_OBJECTID),
  XLAT_TYPE(uint64_t, BTRFS_LAST_FREE_OBJECTID),
  XLAT_TYPE(uint64_t, UINT64_MAX),
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat btrfs_tree_objectids[1] = { {
+ .data = btrfs_tree_objectids_xdata,
+ .size = ARRAY_SIZE(btrfs_tree_objectids_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

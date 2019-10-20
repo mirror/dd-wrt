@@ -33,13 +33,17 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat mbind_flags[] = {
+static const struct xlat_data mbind_flags_xdata[] = {
  XLAT(MPOL_MF_STRICT),
  XLAT(MPOL_MF_MOVE),
  XLAT(MPOL_MF_MOVE_ALL),
- XLAT_END
 };
+static
+const struct xlat mbind_flags[1] = { {
+ .data = mbind_flags_xdata,
+ .size = ARRAY_SIZE(mbind_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

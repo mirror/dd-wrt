@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat sysctl_net[] = {
+static const struct xlat_data sysctl_net_xdata[] = {
  XLAT(NET_CORE),
  XLAT(NET_ETHER),
  XLAT(NET_802),
@@ -43,8 +42,13 @@ const struct xlat sysctl_net[] = {
 #if defined(NET_IRDA) || (defined(HAVE_DECL_NET_IRDA) && HAVE_DECL_NET_IRDA)
   XLAT(NET_IRDA),
 #endif
- XLAT_END
 };
+static
+const struct xlat sysctl_net[1] = { {
+ .data = sysctl_net_xdata,
+ .size = ARRAY_SIZE(sysctl_net_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

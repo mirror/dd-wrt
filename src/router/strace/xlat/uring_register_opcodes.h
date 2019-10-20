@@ -40,14 +40,18 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat uring_register_opcodes[] = {
- XLAT(IORING_REGISTER_BUFFERS),
- XLAT(IORING_UNREGISTER_BUFFERS),
- XLAT(IORING_REGISTER_FILES),
- XLAT(IORING_UNREGISTER_FILES),
- XLAT_END
+static const struct xlat_data uring_register_opcodes_xdata[] = {
+ [IORING_REGISTER_BUFFERS] = XLAT(IORING_REGISTER_BUFFERS),
+ [IORING_UNREGISTER_BUFFERS] = XLAT(IORING_UNREGISTER_BUFFERS),
+ [IORING_REGISTER_FILES] = XLAT(IORING_REGISTER_FILES),
+ [IORING_UNREGISTER_FILES] = XLAT(IORING_UNREGISTER_FILES),
 };
+static
+const struct xlat uring_register_opcodes[1] = { {
+ .data = uring_register_opcodes_xdata,
+ .size = ARRAY_SIZE(uring_register_opcodes_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

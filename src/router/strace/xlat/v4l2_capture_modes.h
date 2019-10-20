@@ -12,15 +12,19 @@ extern const struct xlat v4l2_capture_modes[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat v4l2_capture_modes[] = {
+static const struct xlat_data v4l2_capture_modes_xdata[] = {
 #if defined(V4L2_MODE_HIGHQUALITY) || (defined(HAVE_DECL_V4L2_MODE_HIGHQUALITY) && HAVE_DECL_V4L2_MODE_HIGHQUALITY)
   XLAT(V4L2_MODE_HIGHQUALITY),
 #endif
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat v4l2_capture_modes[1] = { {
+ .data = v4l2_capture_modes_xdata,
+ .size = ARRAY_SIZE(v4l2_capture_modes_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

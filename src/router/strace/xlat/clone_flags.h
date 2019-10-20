@@ -173,8 +173,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat clone_flags[] = {
+static const struct xlat_data clone_flags_xdata[] = {
  XLAT(CLONE_VM),
  XLAT(CLONE_FS),
  XLAT(CLONE_FILES),
@@ -189,6 +188,7 @@ const struct xlat clone_flags[] = {
  XLAT(CLONE_SETTLS),
  XLAT(CLONE_PARENT_SETTID),
  XLAT(CLONE_CHILD_CLEARTID),
+
  XLAT(CLONE_UNTRACED),
  XLAT(CLONE_CHILD_SETTID),
  XLAT(CLONE_NEWCGROUP),
@@ -198,8 +198,13 @@ const struct xlat clone_flags[] = {
  XLAT(CLONE_NEWPID),
  XLAT(CLONE_NEWNET),
  XLAT(CLONE_IO),
- XLAT_END
 };
+static
+const struct xlat clone_flags[1] = { {
+ .data = clone_flags_xdata,
+ .size = ARRAY_SIZE(clone_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

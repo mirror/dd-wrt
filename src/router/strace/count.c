@@ -26,6 +26,8 @@ struct call_counts {
 static struct call_counts *countv[SUPPORTED_PERSONALITIES];
 #define counts (countv[current_personality])
 
+static const struct timespec zero_ts;
+
 static struct timespec overhead;
 
 void
@@ -42,64 +44,96 @@ count_syscall(struct tcb *tcp, const struct timespec *syscall_exiting_ts)
 	if (syserror(tcp))
 		cc->errors++;
 
+	struct timespec wts;
 	if (count_wallclock) {
 		/* wall clock time spent while in syscall */
-		struct timespec wts;
 		ts_sub(&wts, syscall_exiting_ts, &tcp->etime);
-
-		ts_add(&cc->time, &cc->time, &wts);
 	} else {
 		/* system CPU time spent while in syscall */
-		ts_add(&cc->time, &cc->time, &tcp->dtime);
+		ts_sub(&wts, &tcp->stime, &tcp->ltime);
 	}
+
+	ts_sub(&wts, &wts, &overhead);
+	ts_add(&cc->time, &cc->time, ts_max(&wts, &zero_ts));
 }
 
 static int
-time_cmp(void *a, void *b)
+time_cmp(const void *a, const void *b)
 {
-	return -ts_cmp(&counts[*((int *) a)].time,
-		       &counts[*((int *) b)].time);
+	const unsigned int *a_int = a;
+	const unsigned int *b_int = b;
+	return -ts_cmp(&counts[*a_int].time, &counts[*b_int].time);
 }
 
 static int
-syscall_cmp(void *a, void *b)
+syscall_cmp(const void *a, const void *b)
 {
-	const char *a_name = sysent[*((int *) a)].sys_name;
-	const char *b_name = sysent[*((int *) b)].sys_name;
+	const unsigned int *a_int = a;
+	const unsigned int *b_int = b;
+	const char *a_name = sysent[*a_int].sys_name;
+	const char *b_name = sysent[*b_int].sys_name;
 	return strcmp(a_name ? a_name : "", b_name ? b_name : "");
 }
 
 static int
-count_cmp(void *a, void *b)
+count_cmp(const void *a, const void *b)
 {
-	int     m = counts[*((int *) a)].calls;
-	int     n = counts[*((int *) b)].calls;
+	const unsigned int *a_int = a;
+	const unsigned int *b_int = b;
+	unsigned int m = counts[*a_int].calls;
+	unsigned int n = counts[*b_int].calls;
 
 	return (m < n) ? 1 : (m > n) ? -1 : 0;
 }
 
-static int (*sortfun)();
+static int
+error_cmp(const void *a, const void *b)
+{
+	const unsigned int *a_int = a;
+	const unsigned int *b_int = b;
+	unsigned int m = counts[*a_int].errors;
+	unsigned int n = counts[*b_int].errors;
+
+	return (m < n) ? 1 : (m > n) ? -1 : 0;
+}
+
+static int (*sortfun)(const void *, const void *);
 
 void
 set_sortby(const char *sortby)
 {
-	if (strcmp(sortby, "time") == 0)
-		sortfun = time_cmp;
-	else if (strcmp(sortby, "calls") == 0)
-		sortfun = count_cmp;
-	else if (strcmp(sortby, "name") == 0)
-		sortfun = syscall_cmp;
-	else if (strcmp(sortby, "nothing") == 0)
-		sortfun = NULL;
-	else {
-		error_msg_and_help("invalid sortby: '%s'", sortby);
+	static const struct {
+		int (*fn)(const void *, const void *);
+		const char *name;
+	} sort_fns[] = {
+		{ time_cmp,	"time" },
+		{ time_cmp,	"time_total" },
+		{ time_cmp,	"total_time" },
+		{ count_cmp,	"calls" },
+		{ count_cmp,	"count" },
+		{ error_cmp,	"error" },
+		{ error_cmp,	"errors" },
+		{ syscall_cmp,	"name" },
+		{ syscall_cmp,	"syscall" },
+		{ syscall_cmp,	"syscall_name" },
+		{ NULL,		"none" },
+		{ NULL,		"nothing" },
+	};
+
+	for (size_t i = 0; i < ARRAY_SIZE(sort_fns); ++i) {
+		if (!strcmp(sort_fns[i].name, sortby)) {
+			sortfun = sort_fns[i].fn;
+			return;
+		}
 	}
+
+	error_msg_and_help("invalid sortby: '%s'", sortby);
 }
 
-void set_overhead(int n)
+int
+set_overhead(const char *str)
 {
-	overhead.tv_sec = n / 1000000;
-	overhead.tv_nsec = n % 1000000 * 1000;
+	return parse_ts(str, &overhead);
 }
 
 static void
@@ -128,10 +162,6 @@ call_summary_pers(FILE *outf)
 		sorted_count[i] = i;
 		if (counts == NULL || counts[i].calls == 0)
 			continue;
-		ts_mul(&dtv, &overhead, counts[i].calls);
-		ts_sub(&counts[i].time, &counts[i].time, &dtv);
-		if (counts[i].time.tv_sec < 0 || counts[i].time.tv_nsec < 0)
-			counts[i].time.tv_sec = counts[i].time.tv_nsec = 0;
 		call_cum += counts[i].calls;
 		error_cum += counts[i].errors;
 		ts_add(&tv_cum, &tv_cum, &counts[i].time);

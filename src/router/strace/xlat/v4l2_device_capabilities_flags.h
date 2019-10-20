@@ -12,10 +12,7 @@ extern const struct xlat v4l2_device_capabilities_flags[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat v4l2_device_capabilities_flags[] = {
+static const struct xlat_data v4l2_device_capabilities_flags_xdata[] = {
 #if defined(V4L2_CAP_VIDEO_CAPTURE) || (defined(HAVE_DECL_V4L2_CAP_VIDEO_CAPTURE) && HAVE_DECL_V4L2_CAP_VIDEO_CAPTURE)
   XLAT(V4L2_CAP_VIDEO_CAPTURE),
 #endif
@@ -103,8 +100,15 @@ const struct xlat v4l2_device_capabilities_flags[] = {
 #if defined(V4L2_CAP_META_CAPTURE) || (defined(HAVE_DECL_V4L2_CAP_META_CAPTURE) && HAVE_DECL_V4L2_CAP_META_CAPTURE)
   XLAT(V4L2_CAP_META_CAPTURE),
 #endif
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat v4l2_device_capabilities_flags[1] = { {
+ .data = v4l2_device_capabilities_flags_xdata,
+ .size = ARRAY_SIZE(v4l2_device_capabilities_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

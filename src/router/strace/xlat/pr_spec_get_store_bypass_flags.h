@@ -54,16 +54,20 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat pr_spec_get_store_bypass_flags[] = {
+static const struct xlat_data pr_spec_get_store_bypass_flags_xdata[] = {
  XLAT(PR_SPEC_NOT_AFFECTED),
  XLAT(PR_SPEC_PRCTL),
  XLAT(PR_SPEC_ENABLE),
  XLAT(PR_SPEC_DISABLE),
  XLAT(PR_SPEC_FORCE_DISABLE),
  XLAT(PR_SPEC_DISABLE_NOEXEC),
- XLAT_END
 };
+static
+const struct xlat pr_spec_get_store_bypass_flags[1] = { {
+ .data = pr_spec_get_store_bypass_flags_xdata,
+ .size = ARRAY_SIZE(pr_spec_get_store_bypass_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 
