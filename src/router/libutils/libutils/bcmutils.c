@@ -94,18 +94,18 @@ int getcpurev(void)
 			}
 			cpurev[i] = 0;
 			fclose(fp);
-			if (strstr(cpurev, "BCM4710 V0.0"))	// BCM4702, BCM4710
+			if (strstr(cpurev, "BCM4710 V0.0") || strstr(cpurev, "BMIPS3300 V0.0"))	// BCM4702, BCM4710
 				// (old 125 MHz)
 				return 0;
-			if (strstr(cpurev, "BCM3302 V0.6"))	// BCM4704
+			if (strstr(cpurev, "BCM3302 V0.6") || strstr(cpurev, "BMIPS3300 V0.6"))	// BCM4704
 				return 6;
-			if (strstr(cpurev, "BCM3302 V0.7"))	// BCM4712, BCM5365
+			if (strstr(cpurev, "BCM3302 V0.7") || strstr(cpurev, "BMIPS3300 V0.7"))	// BCM4712, BCM5365
 				return 7;
-			if (strstr(cpurev, "BCM3302 V0.8"))	// BCM5350, BCM5352
+			if (strstr(cpurev, "BCM3302 V0.8") || strstr(cpurev, "BMIPS3300 V0.8"))	// BCM5350, BCM5352
 				return 8;
-			if (strstr(cpurev, "BCM3302 V2.9"))	// BCM5354
+			if (strstr(cpurev, "BCM3302 V2.9") || strstr(cpurev, "BMIPS3300 V2.9"))	// BCM5354
 				return 29;
-			if (strstr(cpurev, "BCM3302 V1.10"))	// BCM4785 (BCM3302 V1.10)
+			if (strstr(cpurev, "BCM3302 V1.10") || strstr(cpurev, "BMIPS3300 V1.10"))	// BCM4785 (BCM3302 V1.10)
 				return 110;
 			if (strstr(cpurev, "MIPS 74K V4.9"))	// BCM4716B0 (Broadcom BCMB83A chip rev 0)
 				return 50;	// BCM5356B0 (Broadcom BCM5356 chip rev 1) 
