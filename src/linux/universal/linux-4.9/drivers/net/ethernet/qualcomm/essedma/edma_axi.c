@@ -229,7 +229,7 @@ void edma_read_append_stats(struct edma_common_info *edma_cinfo)
 	int i;
 	u32 stat;
 
-	spin_lock(&edma_cinfo->stats_lock);
+	spin_lock_bh(&edma_cinfo->stats_lock);
 	p = (uint32_t *)&(edma_cinfo->edma_ethstats);
 
 	for (i = 0; i < EDMA_MAX_TRANSMIT_QUEUE; i++) {
@@ -256,7 +256,7 @@ void edma_read_append_stats(struct edma_common_info *edma_cinfo)
 		p++;
 	}
 
-	spin_unlock(&edma_cinfo->stats_lock);
+	spin_unlock_bh(&edma_cinfo->stats_lock);
 }
 
 static void edma_statistics_timer(unsigned long data)
