@@ -12,13 +12,17 @@
 
 # else
 
-static
-const struct xlat netlink_delete_flags[] = {
+static const struct xlat_data netlink_delete_flags_xdata[] = {
 #if defined(NLM_F_NONREC) || (defined(HAVE_DECL_NLM_F_NONREC) && HAVE_DECL_NLM_F_NONREC)
   XLAT(NLM_F_NONREC),
 #endif
- XLAT_END
 };
+static
+const struct xlat netlink_delete_flags[1] = { {
+ .data = netlink_delete_flags_xdata,
+ .size = ARRAY_SIZE(netlink_delete_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

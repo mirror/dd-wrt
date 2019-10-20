@@ -26,12 +26,16 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat nfc_protocols[] = {
+static const struct xlat_data nfc_protocols_xdata[] = {
  [NFC_SOCKPROTO_RAW] = XLAT(NFC_SOCKPROTO_RAW),
  [NFC_SOCKPROTO_LLCP] = XLAT(NFC_SOCKPROTO_LLCP),
- XLAT_END
 };
+static
+const struct xlat nfc_protocols[1] = { {
+ .data = nfc_protocols_xdata,
+ .size = ARRAY_SIZE(nfc_protocols_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

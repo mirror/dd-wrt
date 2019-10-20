@@ -12,10 +12,7 @@ extern const struct xlat btrfs_qgroup_ctl_cmds[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat btrfs_qgroup_ctl_cmds[] = {
+static const struct xlat_data btrfs_qgroup_ctl_cmds_xdata[] = {
 #if defined(BTRFS_QUOTA_CTL_ENABLE) || (defined(HAVE_DECL_BTRFS_QUOTA_CTL_ENABLE) && HAVE_DECL_BTRFS_QUOTA_CTL_ENABLE)
   XLAT_TYPE(uint64_t, BTRFS_QUOTA_CTL_ENABLE),
 #endif
@@ -25,8 +22,15 @@ const struct xlat btrfs_qgroup_ctl_cmds[] = {
 #if defined(BTRFS_QUOTA_CTL_RESCAN__NOTUSED) || (defined(HAVE_DECL_BTRFS_QUOTA_CTL_RESCAN__NOTUSED) && HAVE_DECL_BTRFS_QUOTA_CTL_RESCAN__NOTUSED)
   XLAT_TYPE(uint64_t, BTRFS_QUOTA_CTL_RESCAN__NOTUSED),
 #endif
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat btrfs_qgroup_ctl_cmds[1] = { {
+ .data = btrfs_qgroup_ctl_cmds_xdata,
+ .size = ARRAY_SIZE(btrfs_qgroup_ctl_cmds_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -12,12 +12,16 @@
 
 # else
 
-static
-const struct xlat smc_diag_extended_flags[] = {
+static const struct xlat_data smc_diag_extended_flags_xdata[] = {
  XLAT(1<<(SMC_DIAG_CONNINFO-1)),
  XLAT(1<<(SMC_DIAG_LGRINFO-1)),
- XLAT_END
 };
+static
+const struct xlat smc_diag_extended_flags[1] = { {
+ .data = smc_diag_extended_flags_xdata,
+ .size = ARRAY_SIZE(smc_diag_extended_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

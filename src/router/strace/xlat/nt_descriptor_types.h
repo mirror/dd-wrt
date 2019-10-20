@@ -502,8 +502,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat nt_descriptor_types[] = {
+static const struct xlat_data nt_descriptor_types_xdata[] = {
  XLAT(NT_PRSTATUS),
  XLAT(NT_FPREGSET),
  XLAT(NT_PRPSINFO),
@@ -574,8 +573,13 @@ const struct xlat nt_descriptor_types[] = {
  XLAT(NT_MIPS_DSP),
  XLAT(NT_MIPS_FP_MODE),
  XLAT(NT_MIPS_MSA),
- XLAT_END
 };
+static
+const struct xlat nt_descriptor_types[1] = { {
+ .data = nt_descriptor_types_xdata,
+ .size = ARRAY_SIZE(nt_descriptor_types_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

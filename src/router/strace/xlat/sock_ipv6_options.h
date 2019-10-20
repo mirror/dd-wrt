@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat sock_ipv6_options[] = {
+static const struct xlat_data sock_ipv6_options_xdata[] = {
 #if defined(IPV6_ADDRFORM) || (defined(HAVE_DECL_IPV6_ADDRFORM) && HAVE_DECL_IPV6_ADDRFORM)
   XLAT(IPV6_ADDRFORM),
 #endif
@@ -206,8 +205,13 @@ const struct xlat sock_ipv6_options[] = {
 #if defined(IPV6_FREEBIND) || (defined(HAVE_DECL_IPV6_FREEBIND) && HAVE_DECL_IPV6_FREEBIND)
   XLAT(IPV6_FREEBIND),
 #endif
- XLAT_END
 };
+static
+const struct xlat sock_ipv6_options[1] = { {
+ .data = sock_ipv6_options_xdata,
+ .size = ARRAY_SIZE(sock_ipv6_options_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

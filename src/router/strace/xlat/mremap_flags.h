@@ -12,16 +12,20 @@
 
 # else
 
-static
-const struct xlat mremap_flags[] = {
+static const struct xlat_data mremap_flags_xdata[] = {
 #if defined(MREMAP_MAYMOVE) || (defined(HAVE_DECL_MREMAP_MAYMOVE) && HAVE_DECL_MREMAP_MAYMOVE)
   XLAT(MREMAP_MAYMOVE),
 #endif
 #if defined(MREMAP_FIXED) || (defined(HAVE_DECL_MREMAP_FIXED) && HAVE_DECL_MREMAP_FIXED)
   XLAT(MREMAP_FIXED),
 #endif
- XLAT_END
 };
+static
+const struct xlat mremap_flags[1] = { {
+ .data = mremap_flags_xdata,
+ .size = ARRAY_SIZE(mremap_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

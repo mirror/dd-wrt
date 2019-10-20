@@ -74,7 +74,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # ifndef IN_MPERS
 
-const struct xlat socktypes[] = {
+static const struct xlat_data socktypes_xdata[] = {
 #ifdef __mips__
  XLAT(SOCK_DGRAM),
  XLAT(SOCK_STREAM),
@@ -87,8 +87,12 @@ const struct xlat socktypes[] = {
  XLAT(SOCK_SEQPACKET),
  XLAT(SOCK_DCCP),
  XLAT(SOCK_PACKET),
- XLAT_END
 };
+const struct xlat socktypes[1] = { {
+ .data = socktypes_xdata,
+ .size = ARRAY_SIZE(socktypes_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

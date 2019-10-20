@@ -50,15 +50,19 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # ifndef IN_MPERS
 
-const struct xlat at_flags[] = {
+static const struct xlat_data at_flags_xdata[] = {
  XLAT(AT_SYMLINK_NOFOLLOW),
  XLAT(AT_REMOVEDIR),
  XLAT(AT_SYMLINK_FOLLOW),
  XLAT(AT_NO_AUTOMOUNT),
  XLAT(AT_EMPTY_PATH),
  XLAT(AT_RECURSIVE),
- XLAT_END
 };
+const struct xlat at_flags[1] = { {
+ .data = at_flags_xdata,
+ .size = ARRAY_SIZE(at_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

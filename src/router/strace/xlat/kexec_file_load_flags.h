@@ -33,13 +33,17 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat kexec_file_load_flags[] = {
+static const struct xlat_data kexec_file_load_flags_xdata[] = {
  XLAT(KEXEC_FILE_UNLOAD),
  XLAT(KEXEC_FILE_ON_CRASH),
  XLAT(KEXEC_FILE_NO_INITRAMFS),
- XLAT_END
 };
+static
+const struct xlat kexec_file_load_flags[1] = { {
+ .data = kexec_file_load_flags_xdata,
+ .size = ARRAY_SIZE(kexec_file_load_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

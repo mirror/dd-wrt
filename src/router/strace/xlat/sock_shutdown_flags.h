@@ -26,12 +26,16 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat sock_shutdown_flags[] = {
+static const struct xlat_data sock_shutdown_flags_xdata[] = {
  XLAT(RCV_SHUTDOWN),
  XLAT(SEND_SHUTDOWN),
- XLAT_END
 };
+static
+const struct xlat sock_shutdown_flags[1] = { {
+ .data = sock_shutdown_flags_xdata,
+ .size = ARRAY_SIZE(sock_shutdown_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

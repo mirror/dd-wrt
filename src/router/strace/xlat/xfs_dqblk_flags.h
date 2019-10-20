@@ -33,13 +33,17 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat xfs_dqblk_flags[] = {
+static const struct xlat_data xfs_dqblk_flags_xdata[] = {
  XLAT(XFS_USER_QUOTA),
  XLAT(XFS_PROJ_QUOTA),
  XLAT(XFS_GROUP_QUOTA),
- XLAT_END
 };
+static
+const struct xlat xfs_dqblk_flags[1] = { {
+ .data = xfs_dqblk_flags_xdata,
+ .size = ARRAY_SIZE(xfs_dqblk_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -40,16 +40,20 @@ extern const struct xlat sigev_value[];
 
 # else
 
+static const struct xlat_data sigev_value_xdata[] = {
+ [SIGEV_SIGNAL] = XLAT(SIGEV_SIGNAL),
+ [SIGEV_NONE] = XLAT(SIGEV_NONE),
+ [SIGEV_THREAD] = XLAT(SIGEV_THREAD),
+ [SIGEV_THREAD_ID] = XLAT(SIGEV_THREAD_ID),
+};
 #  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
 static
 #  endif
-const struct xlat sigev_value[] = {
- XLAT(SIGEV_SIGNAL),
- XLAT(SIGEV_NONE),
- XLAT(SIGEV_THREAD),
- XLAT(SIGEV_THREAD_ID),
- XLAT_END
-};
+const struct xlat sigev_value[1] = { {
+ .data = sigev_value_xdata,
+ .size = ARRAY_SIZE(sigev_value_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -12,10 +12,7 @@ extern const struct xlat mtd_otp_options[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat mtd_otp_options[] = {
+static const struct xlat_data mtd_otp_options_xdata[] = {
 #if defined(MTD_OTP_OFF) || (defined(HAVE_DECL_MTD_OTP_OFF) && HAVE_DECL_MTD_OTP_OFF)
   XLAT(MTD_OTP_OFF),
 #endif
@@ -25,8 +22,15 @@ const struct xlat mtd_otp_options[] = {
 #if defined(MTD_OTP_USER) || (defined(HAVE_DECL_MTD_OTP_USER) && HAVE_DECL_MTD_OTP_USER)
   XLAT(MTD_OTP_USER),
 #endif
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat mtd_otp_options[1] = { {
+ .data = mtd_otp_options_xdata,
+ .size = ARRAY_SIZE(mtd_otp_options_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

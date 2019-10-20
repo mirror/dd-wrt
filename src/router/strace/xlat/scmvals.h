@@ -83,8 +83,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat scmvals[] = {
+static const struct xlat_data scmvals_xdata[] = {
  XLAT(SCM_RIGHTS),
  XLAT(SCM_CREDENTIALS),
  XLAT(SCM_SECURITY),
@@ -129,8 +128,13 @@ const struct xlat scmvals[] = {
 #else
  XLAT(SCM_TIMESTAMPING_PKTINFO),
 #endif
- XLAT_END
 };
+static
+const struct xlat scmvals[1] = { {
+ .data = scmvals_xdata,
+ .size = ARRAY_SIZE(scmvals_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

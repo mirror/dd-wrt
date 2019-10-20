@@ -2,7 +2,7 @@
  * Check decoding of set_thread_area and get_thread_area syscalls on x86
  * architecture.
  *
- * Copyright (c) 2018 The strace developers.
+ * Copyright (c) 2018-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -10,7 +10,7 @@
 
 #include "tests.h"
 
-#include <asm/unistd.h>
+#include "scno.h"
 
 #if defined __NR_get_thread_area && defined __NR_set_thread_area \
  && defined HAVE_STRUCT_USER_DESC

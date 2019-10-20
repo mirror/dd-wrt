@@ -1,6 +1,6 @@
 #!/bin/sh -efu
 #
-# Copyright (c) 2018 The strace developers.
+# Copyright (c) 2018-2019 The strace developers.
 # All rights reserved.
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
@@ -8,11 +8,15 @@
 . "${srcdir=.}/scno_tampering.sh"
 
 : ${IOCTL_INJECT_START=256}
-: ${IOCTL_INJECT_RETVAL=8}
 
 run_prog
-run_strace -a16 -e trace=ioctl \
-	-e inject=ioctl:retval="${IOCTL_INJECT_RETVAL}":when="${IOCTL_INJECT_START}+" \
-	../ioctl_evdev-success "${IOCTL_INJECT_START}" "${IOCTL_INJECT_RETVAL}"> "$EXP"
-grep -v '^ioctl([012][,<]' < "$LOG" > "$OUT"
-match_diff "$OUT" "$EXP"
+prog="$args"
+
+for ret in 0 2 8 15 16; do
+	run_strace -a26 "$@" -e trace=ioctl \
+		-e inject=ioctl:retval="${ret}":when="${IOCTL_INJECT_START}+" \
+		"$prog" \
+		"${IOCTL_INJECT_START}" "${ret}"> "$EXP.${ret}"
+	grep -v '^ioctl([012][,<]' < "$LOG" > "$OUT.$ret"
+	match_diff "$OUT.$ret" "$EXP.$ret"
+done

@@ -19,11 +19,15 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat futexbitset[] = {
+static const struct xlat_data futexbitset_xdata[] = {
  XLAT(FUTEX_BITSET_MATCH_ANY),
- XLAT_END
 };
+static
+const struct xlat futexbitset[1] = { {
+ .data = futexbitset_xdata,
+ .size = ARRAY_SIZE(futexbitset_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

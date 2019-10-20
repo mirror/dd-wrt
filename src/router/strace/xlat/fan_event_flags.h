@@ -145,8 +145,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat fan_event_flags[] = {
+static const struct xlat_data fan_event_flags_xdata[] = {
  XLAT(FAN_ACCESS),
  XLAT(FAN_MODIFY),
  XLAT(FAN_ATTRIB),
@@ -166,8 +165,13 @@ const struct xlat fan_event_flags[] = {
  XLAT(FAN_OPEN_EXEC_PERM),
  XLAT(FAN_ONDIR),
  XLAT(FAN_EVENT_ON_CHILD),
- XLAT_END
 };
+static
+const struct xlat fan_event_flags[1] = { {
+ .data = fan_event_flags_xdata,
+ .size = ARRAY_SIZE(fan_event_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

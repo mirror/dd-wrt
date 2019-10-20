@@ -12,16 +12,20 @@
 
 # else
 
-static
-const struct xlat netlink_ack_flags[] = {
+static const struct xlat_data netlink_ack_flags_xdata[] = {
 #if defined(NLM_F_CAPPED) || (defined(HAVE_DECL_NLM_F_CAPPED) && HAVE_DECL_NLM_F_CAPPED)
   XLAT(NLM_F_CAPPED),
 #endif
 #if defined(NLM_F_ACK_TLVS) || (defined(HAVE_DECL_NLM_F_ACK_TLVS) && HAVE_DECL_NLM_F_ACK_TLVS)
   XLAT(NLM_F_ACK_TLVS),
 #endif
- XLAT_END
 };
+static
+const struct xlat netlink_ack_flags[1] = { {
+ .data = netlink_ack_flags_xdata,
+ .size = ARRAY_SIZE(netlink_ack_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

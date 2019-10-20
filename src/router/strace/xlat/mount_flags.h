@@ -222,8 +222,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat mount_flags[] = {
+static const struct xlat_data mount_flags_xdata[] = {
  XLAT(MS_RDONLY),
  XLAT(MS_NOSUID),
  XLAT(MS_NODEV),
@@ -254,8 +253,13 @@ const struct xlat mount_flags[] = {
  XLAT(MS_BORN),
  XLAT(MS_ACTIVE),
  XLAT(MS_NOUSER),
- XLAT_END
 };
+static
+const struct xlat mount_flags[1] = { {
+ .data = mount_flags_xdata,
+ .size = ARRAY_SIZE(mount_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

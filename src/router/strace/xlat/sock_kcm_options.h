@@ -19,11 +19,15 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat sock_kcm_options[] = {
+static const struct xlat_data sock_kcm_options_xdata[] = {
  XLAT(KCM_RECV_DISABLE),
- XLAT_END
 };
+static
+const struct xlat sock_kcm_options[1] = { {
+ .data = sock_kcm_options_xdata,
+ .size = ARRAY_SIZE(sock_kcm_options_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

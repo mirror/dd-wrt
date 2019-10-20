@@ -12,10 +12,7 @@ extern const struct xlat v4l2_tuner_capabilities[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat v4l2_tuner_capabilities[] = {
+static const struct xlat_data v4l2_tuner_capabilities_xdata[] = {
 #if defined(V4L2_TUNER_CAP_LOW) || (defined(HAVE_DECL_V4L2_TUNER_CAP_LOW) && HAVE_DECL_V4L2_TUNER_CAP_LOW)
   XLAT(V4L2_TUNER_CAP_LOW),
 #endif
@@ -58,8 +55,15 @@ const struct xlat v4l2_tuner_capabilities[] = {
 #if defined(V4L2_TUNER_CAP_1HZ) || (defined(HAVE_DECL_V4L2_TUNER_CAP_1HZ) && HAVE_DECL_V4L2_TUNER_CAP_1HZ)
   XLAT(V4L2_TUNER_CAP_1HZ),
 #endif
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat v4l2_tuner_capabilities[1] = { {
+ .data = v4l2_tuner_capabilities_xdata,
+ .size = ARRAY_SIZE(v4l2_tuner_capabilities_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

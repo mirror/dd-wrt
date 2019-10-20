@@ -124,8 +124,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat epollevents[] = {
+static const struct xlat_data epollevents_xdata[] = {
  XLAT(EPOLLIN),
  XLAT(EPOLLPRI),
  XLAT(EPOLLOUT),
@@ -142,8 +141,13 @@ const struct xlat epollevents[] = {
  XLAT(EPOLLWAKEUP),
  XLAT(EPOLLONESHOT),
  XLAT(EPOLLET),
- XLAT_END
 };
+static
+const struct xlat epollevents[1] = { {
+ .data = epollevents_xdata,
+ .size = ARRAY_SIZE(epollevents_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

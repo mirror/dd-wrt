@@ -43,14 +43,18 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # ifndef IN_MPERS
 
-const struct xlat routing_table_ids[] = {
+static const struct xlat_data routing_table_ids_xdata[] = {
  XLAT(RT_TABLE_UNSPEC),
  XLAT(RT_TABLE_COMPAT),
  XLAT(RT_TABLE_DEFAULT),
  XLAT(RT_TABLE_MAIN),
  XLAT(RT_TABLE_LOCAL),
- XLAT_END
 };
+const struct xlat routing_table_ids[1] = { {
+ .data = routing_table_ids_xdata,
+ .size = ARRAY_SIZE(routing_table_ids_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

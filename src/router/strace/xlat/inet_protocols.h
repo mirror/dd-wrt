@@ -239,8 +239,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # ifndef IN_MPERS
 
-const struct xlat inet_protocols[] = {
-
+static const struct xlat_data inet_protocols_xdata[] = {
  XLAT(IPPROTO_IP),
  XLAT(IPPROTO_ICMP),
  XLAT(IPPROTO_IGMP),
@@ -274,8 +273,12 @@ const struct xlat inet_protocols[] = {
  XLAT(IPPROTO_MPLS),
  XLAT(IPPROTO_RAW),
  XLAT(IPPROTO_MAX),
- XLAT_END
 };
+const struct xlat inet_protocols[1] = { {
+ .data = inet_protocols_xdata,
+ .size = ARRAY_SIZE(inet_protocols_xdata),
+ .type = XT_SORTED,
+} };
 
 # endif /* !IN_MPERS */
 

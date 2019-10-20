@@ -33,13 +33,17 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat pr_mce_kill_policy[] = {
- XLAT(PR_MCE_KILL_LATE),
- XLAT(PR_MCE_KILL_EARLY),
- XLAT(PR_MCE_KILL_DEFAULT),
- XLAT_END
+static const struct xlat_data pr_mce_kill_policy_xdata[] = {
+ [PR_MCE_KILL_LATE] = XLAT(PR_MCE_KILL_LATE),
+ [PR_MCE_KILL_EARLY] = XLAT(PR_MCE_KILL_EARLY),
+ [PR_MCE_KILL_DEFAULT] = XLAT(PR_MCE_KILL_DEFAULT),
 };
+static
+const struct xlat pr_mce_kill_policy[1] = { {
+ .data = pr_mce_kill_policy_xdata,
+ .size = ARRAY_SIZE(pr_mce_kill_policy_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

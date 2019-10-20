@@ -36,13 +36,17 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # ifndef IN_MPERS
 
-const struct xlat open_access_modes[] = {
+static const struct xlat_data open_access_modes_xdata[] = {
  [O_RDONLY] = XLAT(O_RDONLY),
  [O_WRONLY] = XLAT(O_WRONLY),
  [O_RDWR] = XLAT(O_RDWR),
  [O_ACCMODE] = XLAT(O_ACCMODE),
- XLAT_END
 };
+const struct xlat open_access_modes[1] = { {
+ .data = open_access_modes_xdata,
+ .size = ARRAY_SIZE(open_access_modes_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

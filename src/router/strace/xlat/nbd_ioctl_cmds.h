@@ -89,8 +89,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat nbd_ioctl_cmds[] = {
+static const struct xlat_data nbd_ioctl_cmds_xdata[] = {
  XLAT(NBD_SET_SOCK),
  XLAT(NBD_SET_BLKSIZE),
  XLAT(NBD_SET_SIZE),
@@ -102,8 +101,13 @@ const struct xlat nbd_ioctl_cmds[] = {
  XLAT(NBD_DISCONNECT),
  XLAT(NBD_SET_TIMEOUT),
  XLAT(NBD_SET_FLAGS),
- XLAT_END
 };
+static
+const struct xlat nbd_ioctl_cmds[1] = { {
+ .data = nbd_ioctl_cmds_xdata,
+ .size = ARRAY_SIZE(nbd_ioctl_cmds_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

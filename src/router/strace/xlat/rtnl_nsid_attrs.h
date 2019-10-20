@@ -61,8 +61,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat rtnl_nsid_attrs[] = {
+static const struct xlat_data rtnl_nsid_attrs_xdata[] = {
  XLAT(NETNSA_NSID_NOT_ASSIGNED),
  XLAT(NETNSA_NONE),
  XLAT(NETNSA_NSID),
@@ -70,8 +69,13 @@ const struct xlat rtnl_nsid_attrs[] = {
  XLAT(NETNSA_FD),
  XLAT(NETNSA_TARGET_NSID),
  XLAT(NETNSA_CURRENT_NSID),
- XLAT_END
 };
+static
+const struct xlat rtnl_nsid_attrs[1] = { {
+ .data = rtnl_nsid_attrs_xdata,
+ .size = ARRAY_SIZE(rtnl_nsid_attrs_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

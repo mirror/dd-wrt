@@ -12,10 +12,7 @@ extern const struct xlat v4l2_tuner_rxsubchanses[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat v4l2_tuner_rxsubchanses[] = {
+static const struct xlat_data v4l2_tuner_rxsubchanses_xdata[] = {
 #if defined(V4L2_TUNER_SUB_MONO) || (defined(HAVE_DECL_V4L2_TUNER_SUB_MONO) && HAVE_DECL_V4L2_TUNER_SUB_MONO)
   XLAT(V4L2_TUNER_SUB_MONO),
 #endif
@@ -34,8 +31,15 @@ const struct xlat v4l2_tuner_rxsubchanses[] = {
 #if defined(V4L2_TUNER_SUB_RDS) || (defined(HAVE_DECL_V4L2_TUNER_SUB_RDS) && HAVE_DECL_V4L2_TUNER_SUB_RDS)
   XLAT(V4L2_TUNER_SUB_RDS),
 #endif
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat v4l2_tuner_rxsubchanses[1] = { {
+ .data = v4l2_tuner_rxsubchanses_xdata,
+ .size = ARRAY_SIZE(v4l2_tuner_rxsubchanses_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

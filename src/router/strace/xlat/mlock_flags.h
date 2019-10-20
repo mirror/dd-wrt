@@ -19,11 +19,15 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat mlock_flags[] = {
+static const struct xlat_data mlock_flags_xdata[] = {
  XLAT(MLOCK_ONFAULT),
- XLAT_END
 };
+static
+const struct xlat mlock_flags[1] = { {
+ .data = mlock_flags_xdata,
+ .size = ARRAY_SIZE(mlock_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

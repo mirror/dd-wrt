@@ -2,6 +2,7 @@
  * Check decoding of setitimer and getitimer syscalls.
  *
  * Copyright (c) 2015-2018 Dmitry V. Levin <ldv@altlinux.org>
+ * Copyright (c) 2015-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -12,7 +13,7 @@
 #include <stdint.h>
 #include <sys/time.h>
 #include <unistd.h>
-#include <asm/unistd.h>
+#include "scno.h"
 
 int
 main(void)

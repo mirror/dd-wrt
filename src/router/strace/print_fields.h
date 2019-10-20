@@ -79,21 +79,18 @@
 			      (xlat_), NULL);				\
 	} while (0)
 
-# define PRINT_FIELD_XVAL_SORTED_SIZED(prefix_, where_, field_, xlat_,	\
-				      xlat_size_, dflt_)		\
+# define PRINT_FIELD_ERR_D(prefix_, where_, field_)			\
 	do {								\
 		STRACE_PRINTF("%s%s=", (prefix_), #field_);		\
-		printxval_searchn((xlat_), (xlat_size_),		\
-				  zero_extend_signed_to_ull((where_).field_), \
-				  (dflt_));				\
+		print_err(sign_extend_unsigned_to_ll((where_).field_),	\
+			  true);					\
 	} while (0)
 
-# define PRINT_FIELD_XVAL_INDEX(prefix_, where_, field_, xlat_, dflt_)	\
+# define PRINT_FIELD_ERR_U(prefix_, where_, field_)			\
 	do {								\
 		STRACE_PRINTF("%s%s=", (prefix_), #field_);		\
-		printxval_index((xlat_),				\
-				zero_extend_signed_to_ull((where_).field_), \
-				(dflt_));				\
+		print_err(zero_extend_signed_to_ull((where_).field_),	\
+			  false);					\
 	} while (0)
 
 /*
@@ -262,6 +259,15 @@
 		STRACE_PRINTF("%s%s=", (prefix_), #field_);		\
 		print_mac_addr("", (const uint8_t *) ((where_).field_),	\
 			       (size_));				\
+	} while (0)
+
+# define PRINT_FIELD_HWADDR_SZ(prefix_, where_, field_, size_, hwtype_)	\
+	do {								\
+		static_assert(sizeof(((where_).field_)[0]) == 1,	\
+			      "hwaddress is not a byte array");	\
+		STRACE_PRINTF("%s%s=", (prefix_), #field_);		\
+		print_hwaddr("", (const uint8_t *) ((where_).field_),	\
+			       (size_), (hwtype_));			\
 	} while (0)
 
 #endif /* !STRACE_PRINT_FIELDS_H */

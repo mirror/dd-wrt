@@ -26,12 +26,16 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat bpf_file_mode_flags[] = {
+static const struct xlat_data bpf_file_mode_flags_xdata[] = {
  XLAT(BPF_F_RDONLY),
  XLAT(BPF_F_WRONLY),
- XLAT_END
 };
+static
+const struct xlat bpf_file_mode_flags[1] = { {
+ .data = bpf_file_mode_flags_xdata,
+ .size = ARRAY_SIZE(bpf_file_mode_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat getsock_ip_options[] = {
+static const struct xlat_data getsock_ip_options_xdata[] = {
 /*
 * Options specific to getsockopt(SOL_IP).
 * Common {g,s}etsockopt(SOL_IP) options
@@ -83,8 +82,13 @@ const struct xlat getsock_ip_options[] = {
 #if defined(IPT_SO_GET_REVISION_TARGET) || (defined(HAVE_DECL_IPT_SO_GET_REVISION_TARGET) && HAVE_DECL_IPT_SO_GET_REVISION_TARGET)
   XLAT(IPT_SO_GET_REVISION_TARGET),
 #endif
- XLAT_END
 };
+static
+const struct xlat getsock_ip_options[1] = { {
+ .data = getsock_ip_options_xdata,
+ .size = ARRAY_SIZE(getsock_ip_options_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

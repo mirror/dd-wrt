@@ -33,13 +33,17 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat if_dqinfo_valid[] = {
+static const struct xlat_data if_dqinfo_valid_xdata[] = {
  XLAT(IIF_BGRACE),
  XLAT(IIF_IGRACE),
  XLAT(IIF_FLAGS),
- XLAT_END
 };
+static
+const struct xlat if_dqinfo_valid[1] = { {
+ .data = if_dqinfo_valid_xdata,
+ .size = ARRAY_SIZE(if_dqinfo_valid_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -26,14 +26,18 @@ extern const struct xlat btrfs_features_compat_ro[];
 
 # else
 
+static const struct xlat_data btrfs_features_compat_ro_xdata[] = {
+ XLAT_TYPE(uint64_t, BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE),
+ XLAT_TYPE(uint64_t, BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE_VALID),
+};
 #  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
 static
 #  endif
-const struct xlat btrfs_features_compat_ro[] = {
- XLAT_TYPE(uint64_t, BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE),
- XLAT_TYPE(uint64_t, BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE_VALID),
- XLAT_END
-};
+const struct xlat btrfs_features_compat_ro[1] = { {
+ .data = btrfs_features_compat_ro_xdata,
+ .size = ARRAY_SIZE(btrfs_features_compat_ro_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -12,13 +12,17 @@
 
 # else
 
-static
-const struct xlat cap_version[] = {
+static const struct xlat_data cap_version_xdata[] = {
  XLAT(_LINUX_CAPABILITY_VERSION_1),
  XLAT(_LINUX_CAPABILITY_VERSION_2),
  XLAT(_LINUX_CAPABILITY_VERSION_3),
- XLAT_END
 };
+static
+const struct xlat cap_version[1] = { {
+ .data = cap_version_xdata,
+ .size = ARRAY_SIZE(cap_version_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

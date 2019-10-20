@@ -89,8 +89,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat nbd_ioctl_flags[] = {
+static const struct xlat_data nbd_ioctl_flags_xdata[] = {
 /*
 * Some flags are not defined in <linux/nbd.h>, but are passed anyway.
 * These flags are sent from nbd-server to the client, and the client
@@ -120,8 +119,13 @@ const struct xlat nbd_ioctl_flags[] = {
  XLAT(NBD_FLAG_SEND_RESIZE),
 
  XLAT(NBD_FLAG_SEND_CACHE),
- XLAT_END
 };
+static
+const struct xlat nbd_ioctl_flags[1] = { {
+ .data = nbd_ioctl_flags_xdata,
+ .size = ARRAY_SIZE(nbd_ioctl_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

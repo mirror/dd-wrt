@@ -26,6 +26,7 @@
 #include "largefile_wrappers.h"
 #include "print_utils.h"
 #include "static_assert.h"
+#include "string_to_uint.h"
 #include "xlat.h"
 #include "xstring.h"
 
@@ -89,6 +90,83 @@ ts_mul(struct timespec *tv, const struct timespec *a, int n)
 	long long nsec = a->tv_nsec * n;
 	tv->tv_sec = a->tv_sec * n + nsec / 1000000000;
 	tv->tv_nsec = nsec % 1000000000;
+}
+
+const struct timespec *
+ts_min(const struct timespec *a, const struct timespec *b)
+{
+	return ts_cmp(a, b) < 0 ? a : b;
+}
+
+const struct timespec *
+ts_max(const struct timespec *a, const struct timespec *b)
+{
+	return ts_cmp(a, b) > 0 ? a : b;
+}
+
+int
+parse_ts(const char *s, struct timespec *t)
+{
+	enum { NS_IN_S = 1000000000 };
+
+	static const struct time_unit {
+		const char *s;
+		unsigned int mul;
+	} units[] = {
+		{ "",   1000 }, /* default is microseconds */
+		{ "s",  1000000000 },
+		{ "ms", 1000000 },
+		{ "us", 1000 },
+		{ "ns", 1 },
+	};
+	static const char float_accept[] =  "eE.-+0123456789";
+	static const char int_accept[] = "+0123456789";
+
+	size_t float_len = strspn(s, float_accept);
+	size_t int_len = strspn(s, int_accept);
+	const struct time_unit *unit = NULL;
+	char *endptr = NULL;
+	double float_val = -1;
+	long long int_val = -1;
+
+	if (float_len > int_len) {
+		errno = 0;
+
+		float_val = strtod(s, &endptr);
+
+		if (endptr == s || errno)
+			return -1;
+		if (float_val < 0)
+			return -1;
+	} else {
+		int_val = string_to_uint_ex(s, &endptr, LLONG_MAX, "smun");
+
+		if (int_val < 0)
+			return -1;
+	}
+
+	for (size_t i = 0; i < ARRAY_SIZE(units); i++) {
+		if (strcmp(endptr, units[i].s))
+			continue;
+
+		unit = units + i;
+		break;
+	}
+
+	if (!unit)
+		return -1;
+
+	if (float_len > int_len) {
+		t->tv_sec = float_val / (NS_IN_S / unit->mul);
+		t->tv_nsec = ((uint64_t) ((float_val -
+					   (t->tv_sec * (NS_IN_S / unit->mul)))
+					  * unit->mul)) % NS_IN_S;
+	} else {
+		t->tv_sec = int_val / (NS_IN_S / unit->mul);
+		t->tv_nsec = (int_val % (NS_IN_S / unit->mul)) * unit->mul;
+	}
+
+	return 0;
 }
 
 #if !defined HAVE_STPCPY
@@ -159,10 +237,10 @@ getllval(struct tcb *tcp, unsigned long long *val, int arg_no)
 #if SIZEOF_KERNEL_LONG_T > 4
 # ifndef current_klongsize
 	if (current_klongsize < SIZEOF_KERNEL_LONG_T) {
-#  if defined(AARCH64) || defined(POWERPC64)
+#  if defined(AARCH64) || defined(POWERPC64) || defined(POWERPC64LE)
 		/* Align arg_no to the next even number. */
 		arg_no = (arg_no + 1) & 0xe;
-#  endif /* AARCH64 || POWERPC64 */
+#  endif /* AARCH64 || POWERPC64 || POWERPC64LE */
 		*val = ULONG_LONG(tcp->u_arg[arg_no], tcp->u_arg[arg_no + 1]);
 		arg_no += 2;
 	} else
@@ -281,41 +359,6 @@ printnum_fd(struct tcb *const tcp, const kernel_ulong_t addr)
 	tprints("]");
 	return true;
 }
-
-#ifndef current_wordsize
-bool
-printnum_long_int(struct tcb *const tcp, const kernel_ulong_t addr,
-		  const char *const fmt_long, const char *const fmt_int)
-{
-	if (current_wordsize > sizeof(int)) {
-		return printnum_int64(tcp, addr, fmt_long);
-	} else {
-		return printnum_int(tcp, addr, fmt_int);
-	}
-}
-
-bool
-printnum_addr_long_int(struct tcb *tcp, const kernel_ulong_t addr)
-{
-	if (current_wordsize > sizeof(int)) {
-		return printnum_addr_int64(tcp, addr);
-	} else {
-		return printnum_addr_int(tcp, addr);
-	}
-}
-#endif /* !current_wordsize */
-
-#ifndef current_klongsize
-bool
-printnum_addr_klong_int(struct tcb *tcp, const kernel_ulong_t addr)
-{
-	if (current_klongsize > sizeof(int)) {
-		return printnum_addr_int64(tcp, addr);
-	} else {
-		return printnum_addr_int(tcp, addr);
-	}
-}
-#endif /* !current_klongsize */
 
 /**
  * Prints time to a (static internal) buffer and returns pointer to it.
@@ -1197,6 +1240,24 @@ print_uint64_array_member(struct tcb *tcp, void *elem_buf, size_t elem_size,
 	return true;
 }
 
+bool
+print_xint32_array_member(struct tcb *tcp, void *elem_buf, size_t elem_size,
+			  void *data)
+{
+	tprintf("%#" PRIx32, *(uint32_t *) elem_buf);
+
+	return true;
+}
+
+bool
+print_xint64_array_member(struct tcb *tcp, void *elem_buf, size_t elem_size,
+			  void *data)
+{
+	tprintf("%#" PRIx64, *(uint64_t *) elem_buf);
+
+	return true;
+}
+
 /*
  * Iteratively fetch and print up to nmemb elements of elem_size size
  * from the array that starts at tracee's address start_addr.
@@ -1232,14 +1293,13 @@ bool
 print_array_ex(struct tcb *const tcp,
 	       const kernel_ulong_t start_addr,
 	       const size_t nmemb,
-	       void *const elem_buf,
+	       void *elem_buf,
 	       const size_t elem_size,
 	       tfetch_mem_fn tfetch_mem_func,
 	       print_fn print_func,
 	       void *const opaque_data,
 	       unsigned int flags,
 	       const struct xlat *index_xlat,
-	       size_t index_xlat_size,
 	       const char *index_dflt)
 {
 	if (!start_addr) {
@@ -1256,7 +1316,10 @@ print_array_ex(struct tcb *const tcp,
 	const kernel_ulong_t end_addr = start_addr + size;
 
 	if (end_addr <= start_addr || size / elem_size != nmemb) {
-		printaddr(start_addr);
+		if (tfetch_mem_func)
+			printaddr(start_addr);
+		else
+			tprints("???");
 		return false;
 	}
 
@@ -1271,14 +1334,18 @@ print_array_ex(struct tcb *const tcp,
 		if (cur != start_addr)
 			tprints(", ");
 
-		if (!tfetch_mem_func(tcp, cur, elem_size, elem_buf)) {
-			if (cur == start_addr)
-				printaddr(cur);
-			else {
-				tprints("...");
-				printaddr_comment(cur);
+		if (tfetch_mem_func) {
+			if (!tfetch_mem_func(tcp, cur, elem_size, elem_buf)) {
+				if (cur == start_addr)
+					printaddr(cur);
+				else {
+					tprints("...");
+					printaddr_comment(cur);
+				}
+				break;
 			}
-			break;
+		} else {
+			elem_buf = (void *) (uintptr_t) cur;
 		}
 
 		if (cur == start_addr)
@@ -1295,15 +1362,9 @@ print_array_ex(struct tcb *const tcp,
 
 			if (!index_xlat) {
 				print_xlat_ex(idx, NULL, xlat_style);
-			} else if (flags & PAF_INDEX_XLAT_VALUE_INDEXED) {
-				printxval_indexn_ex(index_xlat,
-						    index_xlat_size, idx,
-						    index_dflt, xlat_style);
 			} else {
-				printxvals_ex(idx, index_dflt, xlat_style,
-					      (flags & PAF_INDEX_XLAT_SORTED)
-						&& idx ? NULL : index_xlat,
-					      NULL);
+				printxval_ex(idx ? NULL : index_xlat, idx,
+					     index_dflt, xlat_style);
 			}
 
 			tprints("] = ");
@@ -1314,8 +1375,17 @@ print_array_ex(struct tcb *const tcp,
 			break;
 		}
 	}
-	if (cur != start_addr)
+
+	if ((cur != start_addr) || !tfetch_mem_func) {
+		if (flags & PAF_ARRAY_TRUNCATED) {
+			if (cur != start_addr)
+				tprints(", ");
+
+			tprints("...");
+		}
+
 		tprints("]");
+	}
 
 	return cur >= end_addr;
 }

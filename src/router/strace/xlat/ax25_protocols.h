@@ -103,9 +103,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat ax25_protocols[] = {
-
+static const struct xlat_data ax25_protocols_xdata[] = {
 
  XLAT(AX25_P_ROSE),
  XLAT(AX25_P_VJCOMP),
@@ -122,8 +120,13 @@ const struct xlat ax25_protocols[] = {
  XLAT(AX25_P_FLEXNET),
  XLAT(AX25_P_NETROM),
  XLAT(AX25_P_TEXT),
- XLAT_END
 };
+static
+const struct xlat ax25_protocols[1] = { {
+ .data = ax25_protocols_xdata,
+ .size = ARRAY_SIZE(ax25_protocols_xdata),
+ .type = XT_SORTED,
+} };
 
 # endif /* !IN_MPERS */
 

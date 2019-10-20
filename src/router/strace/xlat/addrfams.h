@@ -323,7 +323,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # ifndef IN_MPERS
 
-const struct xlat addrfams[] = {
+static const struct xlat_data addrfams_xdata[] = {
  [AF_UNSPEC] = XLAT(AF_UNSPEC),
  [AF_UNIX] = XLAT(AF_UNIX),
  [AF_INET] = XLAT(AF_INET),
@@ -369,8 +369,12 @@ const struct xlat addrfams[] = {
  [AF_QIPCRTR] = XLAT(AF_QIPCRTR),
  [AF_SMC] = XLAT(AF_SMC),
  [AF_XDP] = XLAT(AF_XDP),
- XLAT_END
 };
+const struct xlat addrfams[1] = { {
+ .data = addrfams_xdata,
+ .size = ARRAY_SIZE(addrfams_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2017-2018 The strace developers.
+ * Copyright (c) 2017-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "tests.h"
-#include <asm/unistd.h>
+#include "scno.h"
 
-#ifdef __NR_statx
+#if defined __NR_statx && defined HAVE_STRUCT_STATX
 
 # include <linux/stat.h>
 # include "xlat.h"
@@ -45,6 +45,6 @@ static const char *TEST_SYSCALL_STATX_MASK_STR  = "STATX_ALL";
 
 #else
 
-SKIP_MAIN_UNDEFINED("__NR_statx")
+SKIP_MAIN_UNDEFINED("__NR_statx && HAVE_STRUCT_STATX")
 
 #endif

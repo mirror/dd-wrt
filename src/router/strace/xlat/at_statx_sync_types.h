@@ -40,15 +40,19 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat at_statx_sync_types[] = {
+static const struct xlat_data at_statx_sync_types_xdata[] = {
  XLAT(AT_STATX_SYNC_AS_STAT),
  XLAT(AT_STATX_FORCE_SYNC),
  XLAT(AT_STATX_DONT_SYNC),
 
  XLAT(AT_STATX_SYNC_TYPE),
- XLAT_END
 };
+static
+const struct xlat at_statx_sync_types[1] = { {
+ .data = at_statx_sync_types_xdata,
+ .size = ARRAY_SIZE(at_statx_sync_types_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

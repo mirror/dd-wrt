@@ -12,10 +12,7 @@ extern const struct xlat loop_crypt_type_options[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat loop_crypt_type_options[] = {
+static const struct xlat_data loop_crypt_type_options_xdata[] = {
 #if defined(LO_CRYPT_NONE) || (defined(HAVE_DECL_LO_CRYPT_NONE) && HAVE_DECL_LO_CRYPT_NONE)
   XLAT(LO_CRYPT_NONE),
 #endif
@@ -46,8 +43,15 @@ const struct xlat loop_crypt_type_options[] = {
 #if defined(LO_CRYPT_CRYPTOAPI) || (defined(HAVE_DECL_LO_CRYPT_CRYPTOAPI) && HAVE_DECL_LO_CRYPT_CRYPTOAPI)
   XLAT(LO_CRYPT_CRYPTOAPI),
 #endif
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat loop_crypt_type_options[1] = { {
+ .data = loop_crypt_type_options_xdata,
+ .size = ARRAY_SIZE(loop_crypt_type_options_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

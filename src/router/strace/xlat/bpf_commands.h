@@ -173,8 +173,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat bpf_commands[] = {
+static const struct xlat_data bpf_commands_xdata[] = {
  [BPF_MAP_CREATE] = XLAT(BPF_MAP_CREATE),
  [BPF_MAP_LOOKUP_ELEM] = XLAT(BPF_MAP_LOOKUP_ELEM),
  [BPF_MAP_UPDATE_ELEM] = XLAT(BPF_MAP_UPDATE_ELEM),
@@ -198,8 +197,13 @@ const struct xlat bpf_commands[] = {
  [BPF_TASK_FD_QUERY] = XLAT(BPF_TASK_FD_QUERY),
  [BPF_MAP_LOOKUP_AND_DELETE_ELEM] = XLAT(BPF_MAP_LOOKUP_AND_DELETE_ELEM),
  [BPF_MAP_FREEZE] = XLAT(BPF_MAP_FREEZE),
- XLAT_END
 };
+static
+const struct xlat bpf_commands[1] = { {
+ .data = bpf_commands_xdata,
+ .size = ARRAY_SIZE(bpf_commands_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

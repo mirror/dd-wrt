@@ -61,17 +61,21 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat rtnl_tc_action_attrs[] = {
- XLAT(TCA_ACT_UNSPEC),
- XLAT(TCA_ACT_KIND),
- XLAT(TCA_ACT_OPTIONS),
- XLAT(TCA_ACT_INDEX),
- XLAT(TCA_ACT_STATS),
- XLAT(TCA_ACT_PAD),
- XLAT(TCA_ACT_COOKIE),
- XLAT_END
+static const struct xlat_data rtnl_tc_action_attrs_xdata[] = {
+ [TCA_ACT_UNSPEC] = XLAT(TCA_ACT_UNSPEC),
+ [TCA_ACT_KIND] = XLAT(TCA_ACT_KIND),
+ [TCA_ACT_OPTIONS] = XLAT(TCA_ACT_OPTIONS),
+ [TCA_ACT_INDEX] = XLAT(TCA_ACT_INDEX),
+ [TCA_ACT_STATS] = XLAT(TCA_ACT_STATS),
+ [TCA_ACT_PAD] = XLAT(TCA_ACT_PAD),
+ [TCA_ACT_COOKIE] = XLAT(TCA_ACT_COOKIE),
 };
+static
+const struct xlat rtnl_tc_action_attrs[1] = { {
+ .data = rtnl_tc_action_attrs_xdata,
+ .size = ARRAY_SIZE(rtnl_tc_action_attrs_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

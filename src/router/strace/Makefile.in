@@ -136,7 +136,8 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/ax_code_coverage.m4 \
 	$(top_srcdir)/m4/ax_prog_cc_for_build.m4 \
 	$(top_srcdir)/m4/ax_valgrind_check.m4 \
 	$(top_srcdir)/m4/bpf_attr.m4 $(top_srcdir)/m4/mpers.m4 \
-	$(top_srcdir)/m4/st_demangle.m4 $(top_srcdir)/m4/st_libdw.m4 \
+	$(top_srcdir)/m4/st_demangle.m4 \
+	$(top_srcdir)/m4/st_esyscmd_s.m4 $(top_srcdir)/m4/st_libdw.m4 \
 	$(top_srcdir)/m4/st_libunwind.m4 \
 	$(top_srcdir)/m4/st_save_restore_var.m4 \
 	$(top_srcdir)/m4/st_stacktrace.m4 \
@@ -293,31 +294,32 @@ am__strace_SOURCES_DIST = access.c affinity.c aio.c alpha.c \
 	fetch_struct_msghdr.c fetch_struct_stat.c \
 	fetch_struct_stat64.c fetch_struct_statfs.c \
 	fetch_struct_xfs_quotastat.c file_handle.c file_ioctl.c \
-	filter.h filter_qualify.c flock.c flock.h fs_x_ioctl.c \
-	fsconfig.c fsmount.c fsopen.c fspick.c futex.c gcc_compat.h \
-	get_personality.c get_personality.h get_robust_list.c getcpu.c \
-	getcwd.c getrandom.c hdio.c hostname.c inotify.c \
-	inotify_ioctl.c io.c io_uring.c ioctl.c ioperm.c iopl.c \
-	ioprio.c ipc_defs.h ipc_msg.c ipc_msgctl.c ipc_sem.c ipc_shm.c \
-	ipc_shmctl.c kcmp.c kernel_timespec.h kernel_timeval.h \
-	kernel_timex.h kernel_types.h kexec.c keyctl.c \
-	keyctl_kdf_params.h kill_save_errno.h kvm.c \
-	largefile_wrappers.h ldt.c link.c linux/asm_stat.h \
-	linux/x32/asm_stat.h linux/x86_64/asm_stat.h list.h listen.c \
-	lookup_dcookie.c loop.c lseek.c macros.h mem.c membarrier.c \
-	memfd_create.c mknod.c mmap_notify.c mmap_notify.h mmsghdr.c \
-	mount.c move_mount.c mpers_type.h mq.c msghdr.c msghdr.h mtd.c \
-	native_defs.h nbd_ioctl.c negated_errno.h net.c netlink.c \
-	netlink.h netlink_crypto.c netlink_inet_diag.c \
-	netlink_kobject_uevent.c netlink_kobject_uevent.h \
-	netlink_netfilter.c netlink_netlink_diag.c \
-	netlink_packet_diag.c netlink_route.c netlink_route.h \
-	netlink_selinux.c netlink_smc_diag.c netlink_sock_diag.c \
-	netlink_sock_diag.h netlink_unix_diag.c nlattr.c nlattr.h \
-	nsfs.c nsfs.h nsig.h numa.c number_set.c number_set.h \
-	oldstat.c open.c open_tree.c or1k_atomic.c pathtrace.c perf.c \
-	perf_event_struct.h perf_ioctl.c personality.c pkeys.c poll.c \
-	prctl.c print_aio_sigset.c print_dev_t.c print_fields.h \
+	filter.h filter_qualify.c filter_seccomp.c filter_seccomp.h \
+	flock.c flock.h fs_x_ioctl.c fsconfig.c fsmount.c fsopen.c \
+	fspick.c futex.c gcc_compat.h get_personality.c \
+	get_personality.h get_robust_list.c getcpu.c getcwd.c \
+	getrandom.c hdio.c hostname.c inotify.c inotify_ioctl.c io.c \
+	io_uring.c ioctl.c ioperm.c iopl.c ioprio.c ipc_defs.h \
+	ipc_msg.c ipc_msgctl.c ipc_sem.c ipc_shm.c ipc_shmctl.c kcmp.c \
+	kernel_timespec.h kernel_timeval.h kernel_timex.h \
+	kernel_types.h kexec.c keyctl.c keyctl_kdf_params.h \
+	kill_save_errno.h kvm.c largefile_wrappers.h ldt.c link.c \
+	linux/asm_stat.h linux/x32/asm_stat.h linux/x86_64/asm_stat.h \
+	list.h listen.c lookup_dcookie.c loop.c lseek.c macros.h mem.c \
+	membarrier.c memfd_create.c mknod.c mmap_notify.c \
+	mmap_notify.h mmsghdr.c mount.c move_mount.c mpers_type.h mq.c \
+	msghdr.c msghdr.h mtd.c native_defs.h nbd_ioctl.c \
+	negated_errno.h net.c netlink.c netlink.h netlink_crypto.c \
+	netlink_inet_diag.c netlink_kobject_uevent.c \
+	netlink_kobject_uevent.h netlink_netfilter.c \
+	netlink_netlink_diag.c netlink_packet_diag.c netlink_route.c \
+	netlink_route.h netlink_selinux.c netlink_smc_diag.c \
+	netlink_sock_diag.c netlink_sock_diag.h netlink_unix_diag.c \
+	nlattr.c nlattr.h nsfs.c nsfs.h nsig.h numa.c number_set.c \
+	number_set.h oldstat.c open.c open_tree.c or1k_atomic.c \
+	pathtrace.c perf.c perf_event_struct.h perf_ioctl.c \
+	personality.c pidfd_open.c pkeys.c poll.c prctl.c \
+	print_aio_sigset.c print_dev_t.c print_fields.h \
 	print_group_req.c print_ifindex.c print_instruction_pointer.c \
 	print_kernel_version.c print_mac.c print_mq_attr.c \
 	print_msgbuf.c print_sg_req_info.c print_sigevent.c \
@@ -343,9 +345,9 @@ am__strace_SOURCES_DIST = access.c affinity.c aio.c alpha.c \
 	sysinfo.c syslog.c sysmips.c term.c time.c times.c \
 	trace_event.h truncate.c ubi.c ucopy.c uid.c uid16.c umask.c \
 	umount.c uname.c userfaultfd.c ustat.c util.c utime.c utimes.c \
-	v4l2.c wait.c wait.h xattr.c xfs_quota_stat.h xlat.c xlat.h \
-	xmalloc.c xmalloc.h xstring.h bpf_attr_check.c unwind.c \
-	unwind.h unwind-libdw.c unwind-libunwind.c
+	v4l2.c wait.c wait.h watchdog_ioctl.c xattr.c xfs_quota_stat.h \
+	xlat.c xlat.h xmalloc.c xmalloc.h xstring.h bpf_attr_check.c \
+	unwind.c unwind.h unwind-libdw.c unwind-libunwind.c
 am__objects_3 = strace-bpf_attr_check.$(OBJEXT)
 @ENABLE_STACKTRACE_TRUE@am__objects_4 = strace-unwind.$(OBJEXT)
 @ENABLE_STACKTRACE_TRUE@@USE_LIBDW_TRUE@am__objects_5 = strace-unwind-libdw.$(OBJEXT)
@@ -379,7 +381,8 @@ am_strace_OBJECTS = strace-access.$(OBJEXT) strace-affinity.$(OBJEXT) \
 	strace-fetch_struct_statfs.$(OBJEXT) \
 	strace-fetch_struct_xfs_quotastat.$(OBJEXT) \
 	strace-file_handle.$(OBJEXT) strace-file_ioctl.$(OBJEXT) \
-	strace-filter_qualify.$(OBJEXT) strace-flock.$(OBJEXT) \
+	strace-filter_qualify.$(OBJEXT) \
+	strace-filter_seccomp.$(OBJEXT) strace-flock.$(OBJEXT) \
 	strace-fs_x_ioctl.$(OBJEXT) strace-fsconfig.$(OBJEXT) \
 	strace-fsmount.$(OBJEXT) strace-fsopen.$(OBJEXT) \
 	strace-fspick.$(OBJEXT) strace-futex.$(OBJEXT) \
@@ -421,10 +424,10 @@ am_strace_OBJECTS = strace-access.$(OBJEXT) strace-affinity.$(OBJEXT) \
 	strace-open.$(OBJEXT) strace-open_tree.$(OBJEXT) \
 	strace-or1k_atomic.$(OBJEXT) strace-pathtrace.$(OBJEXT) \
 	strace-perf.$(OBJEXT) strace-perf_ioctl.$(OBJEXT) \
-	strace-personality.$(OBJEXT) strace-pkeys.$(OBJEXT) \
-	strace-poll.$(OBJEXT) strace-prctl.$(OBJEXT) \
-	strace-print_aio_sigset.$(OBJEXT) strace-print_dev_t.$(OBJEXT) \
-	strace-print_group_req.$(OBJEXT) \
+	strace-personality.$(OBJEXT) strace-pidfd_open.$(OBJEXT) \
+	strace-pkeys.$(OBJEXT) strace-poll.$(OBJEXT) \
+	strace-prctl.$(OBJEXT) strace-print_aio_sigset.$(OBJEXT) \
+	strace-print_dev_t.$(OBJEXT) strace-print_group_req.$(OBJEXT) \
 	strace-print_ifindex.$(OBJEXT) \
 	strace-print_instruction_pointer.$(OBJEXT) \
 	strace-print_kernel_version.$(OBJEXT) \
@@ -477,10 +480,10 @@ am_strace_OBJECTS = strace-access.$(OBJEXT) strace-affinity.$(OBJEXT) \
 	strace-userfaultfd.$(OBJEXT) strace-ustat.$(OBJEXT) \
 	strace-util.$(OBJEXT) strace-utime.$(OBJEXT) \
 	strace-utimes.$(OBJEXT) strace-v4l2.$(OBJEXT) \
-	strace-wait.$(OBJEXT) strace-xattr.$(OBJEXT) \
-	strace-xlat.$(OBJEXT) strace-xmalloc.$(OBJEXT) \
-	$(am__objects_3) $(am__objects_4) $(am__objects_5) \
-	$(am__objects_6)
+	strace-wait.$(OBJEXT) strace-watchdog_ioctl.$(OBJEXT) \
+	strace-xattr.$(OBJEXT) strace-xlat.$(OBJEXT) \
+	strace-xmalloc.$(OBJEXT) $(am__objects_3) $(am__objects_4) \
+	$(am__objects_5) $(am__objects_6)
 strace_OBJECTS = $(am_strace_OBJECTS)
 am__DEPENDENCIES_1 =
 @ENABLE_STACKTRACE_TRUE@@USE_LIBDW_TRUE@am__DEPENDENCIES_2 =  \
@@ -664,6 +667,7 @@ am__depfiles_remade = ./$(DEPDIR)/libmpers_m32_a-block.Po \
 	./$(DEPDIR)/strace-file_handle.Po \
 	./$(DEPDIR)/strace-file_ioctl.Po \
 	./$(DEPDIR)/strace-filter_qualify.Po \
+	./$(DEPDIR)/strace-filter_seccomp.Po \
 	./$(DEPDIR)/strace-flock.Po ./$(DEPDIR)/strace-fs_x_ioctl.Po \
 	./$(DEPDIR)/strace-fsconfig.Po ./$(DEPDIR)/strace-fsmount.Po \
 	./$(DEPDIR)/strace-fsopen.Po ./$(DEPDIR)/strace-fspick.Po \
@@ -711,7 +715,8 @@ am__depfiles_remade = ./$(DEPDIR)/libmpers_m32_a-block.Po \
 	./$(DEPDIR)/strace-or1k_atomic.Po \
 	./$(DEPDIR)/strace-pathtrace.Po ./$(DEPDIR)/strace-perf.Po \
 	./$(DEPDIR)/strace-perf_ioctl.Po \
-	./$(DEPDIR)/strace-personality.Po ./$(DEPDIR)/strace-pkeys.Po \
+	./$(DEPDIR)/strace-personality.Po \
+	./$(DEPDIR)/strace-pidfd_open.Po ./$(DEPDIR)/strace-pkeys.Po \
 	./$(DEPDIR)/strace-poll.Po ./$(DEPDIR)/strace-prctl.Po \
 	./$(DEPDIR)/strace-print_aio_sigset.Po \
 	./$(DEPDIR)/strace-print_dev_t.Po \
@@ -783,6 +788,7 @@ am__depfiles_remade = ./$(DEPDIR)/libmpers_m32_a-block.Po \
 	./$(DEPDIR)/strace-ustat.Po ./$(DEPDIR)/strace-util.Po \
 	./$(DEPDIR)/strace-utime.Po ./$(DEPDIR)/strace-utimes.Po \
 	./$(DEPDIR)/strace-v4l2.Po ./$(DEPDIR)/strace-wait.Po \
+	./$(DEPDIR)/strace-watchdog_ioctl.Po \
 	./$(DEPDIR)/strace-xattr.Po ./$(DEPDIR)/strace-xlat.Po \
 	./$(DEPDIR)/strace-xmalloc.Po
 am__mv = mv -f
@@ -1082,7 +1088,8 @@ AM_CPPFLAGS_FOR_BUILD = $(AM_CPPFLAGS)
 XLAT_INPUT_FILES = xlat/access_flags.in xlat/addrfams.in \
 	xlat/adjtimex_modes.in xlat/adjtimex_state.in \
 	xlat/adjtimex_status.in xlat/advise.in xlat/af_packet_types.in \
-	xlat/af_packet_versions.in xlat/aio_cmds.in xlat/archvals.in \
+	xlat/af_packet_versions.in xlat/aio_cmds.in \
+	xlat/aio_iocb_flags.in xlat/archvals.in \
 	xlat/arp_hardware_types.in xlat/at_flags.in \
 	xlat/at_statx_sync_types.in xlat/atomic_ops.in \
 	xlat/audit_arch.in xlat/ax25_protocols.in xlat/baud_options.in \
@@ -1124,8 +1131,8 @@ XLAT_INPUT_FILES = xlat/access_flags.in xlat/addrfams.in \
 	xlat/delete_module_flags.in xlat/dirent_types.in \
 	xlat/dm_flags.in xlat/ebpf_class.in xlat/ebpf_mode.in \
 	xlat/ebpf_op_alu.in xlat/ebpf_op_jmp.in xlat/ebpf_regs.in \
-	xlat/ebpf_size.in xlat/efd_flags.in xlat/epollctls.in \
-	xlat/epollevents.in xlat/epollflags.in \
+	xlat/ebpf_size.in xlat/efd_flags.in xlat/elf_em.in \
+	xlat/epollctls.in xlat/epollevents.in xlat/epollflags.in \
 	xlat/ethernet_protocols.in xlat/evdev_abs.in \
 	xlat/evdev_autorepeat.in xlat/evdev_ev.in \
 	xlat/evdev_ff_status.in xlat/evdev_ff_types.in \
@@ -1302,9 +1309,10 @@ XLAT_INPUT_FILES = xlat/access_flags.in xlat/addrfams.in \
 	xlat/sysctl_net_ipv4_route.in xlat/sysctl_net_ipv6.in \
 	xlat/sysctl_net_ipv6_route.in xlat/sysctl_net_unix.in \
 	xlat/sysctl_root.in xlat/sysctl_vm.in \
-	xlat/syslog_action_type.in xlat/sysmips_operations.in \
-	xlat/tcflsh_options.in xlat/tcp_state_flags.in \
-	xlat/tcp_states.in xlat/tcxonc_options.in xlat/timerfdflags.in \
+	xlat/syslog_action_type.in xlat/syslog_console_levels.in \
+	xlat/sysmips_operations.in xlat/tcflsh_options.in \
+	xlat/tcp_state_flags.in xlat/tcp_states.in \
+	xlat/tcxonc_options.in xlat/timerfdflags.in \
 	xlat/tun_device_types.in xlat/ubi_volume_props.in \
 	xlat/ubi_volume_types.in xlat/uffd_api_features.in \
 	xlat/uffd_api_flags.in xlat/uffd_copy_flags.in \
@@ -1328,13 +1336,14 @@ XLAT_INPUT_FILES = xlat/access_flags.in xlat/addrfams.in \
 	xlat/v4l2_tuner_audmodes.in xlat/v4l2_tuner_capabilities.in \
 	xlat/v4l2_tuner_rxsubchanses.in xlat/v4l2_tuner_types.in \
 	xlat/v4l2_vbi_flags.in xlat/wait4_options.in \
-	xlat/waitid_types.in xlat/whence_codes.in xlat/xattrflags.in \
-	xlat/xdp_flags.in xlat/xfs_dqblk_flags.in \
-	xlat/xfs_quota_flags.in
+	xlat/waitid_types.in xlat/watchdog_ioctl_cmds.in \
+	xlat/whence_codes.in xlat/xattrflags.in xlat/xdp_flags.in \
+	xlat/xfs_dqblk_flags.in xlat/xfs_quota_flags.in
 XLAT_HEADER_FILES = xlat/access_flags.h xlat/addrfams.h \
 	xlat/adjtimex_modes.h xlat/adjtimex_state.h \
 	xlat/adjtimex_status.h xlat/advise.h xlat/af_packet_types.h \
-	xlat/af_packet_versions.h xlat/aio_cmds.h xlat/archvals.h \
+	xlat/af_packet_versions.h xlat/aio_cmds.h \
+	xlat/aio_iocb_flags.h xlat/archvals.h \
 	xlat/arp_hardware_types.h xlat/at_flags.h \
 	xlat/at_statx_sync_types.h xlat/atomic_ops.h xlat/audit_arch.h \
 	xlat/ax25_protocols.h xlat/baud_options.h xlat/bdaddr_types.h \
@@ -1373,11 +1382,12 @@ XLAT_HEADER_FILES = xlat/access_flags.h xlat/addrfams.h \
 	xlat/delete_module_flags.h xlat/dirent_types.h xlat/dm_flags.h \
 	xlat/ebpf_class.h xlat/ebpf_mode.h xlat/ebpf_op_alu.h \
 	xlat/ebpf_op_jmp.h xlat/ebpf_regs.h xlat/ebpf_size.h \
-	xlat/efd_flags.h xlat/epollctls.h xlat/epollevents.h \
-	xlat/epollflags.h xlat/ethernet_protocols.h xlat/evdev_abs.h \
-	xlat/evdev_autorepeat.h xlat/evdev_ev.h xlat/evdev_ff_status.h \
-	xlat/evdev_ff_types.h xlat/evdev_keycode.h xlat/evdev_leds.h \
-	xlat/evdev_misc.h xlat/evdev_mtslots.h xlat/evdev_prop.h \
+	xlat/efd_flags.h xlat/elf_em.h xlat/epollctls.h \
+	xlat/epollevents.h xlat/epollflags.h xlat/ethernet_protocols.h \
+	xlat/evdev_abs.h xlat/evdev_autorepeat.h xlat/evdev_ev.h \
+	xlat/evdev_ff_status.h xlat/evdev_ff_types.h \
+	xlat/evdev_keycode.h xlat/evdev_leds.h xlat/evdev_misc.h \
+	xlat/evdev_mtslots.h xlat/evdev_prop.h \
 	xlat/evdev_relative_axes.h xlat/evdev_snd.h \
 	xlat/evdev_switch.h xlat/f_owner_types.h xlat/f_seals.h \
 	xlat/falloc_flags.h xlat/fan_classes.h xlat/fan_event_flags.h \
@@ -1539,12 +1549,12 @@ XLAT_HEADER_FILES = xlat/access_flags.h xlat/addrfams.h \
 	xlat/sysctl_net_ipv4_route.h xlat/sysctl_net_ipv6.h \
 	xlat/sysctl_net_ipv6_route.h xlat/sysctl_net_unix.h \
 	xlat/sysctl_root.h xlat/sysctl_vm.h xlat/syslog_action_type.h \
-	xlat/sysmips_operations.h xlat/tcflsh_options.h \
-	xlat/tcp_state_flags.h xlat/tcp_states.h xlat/tcxonc_options.h \
-	xlat/timerfdflags.h xlat/tun_device_types.h \
-	xlat/ubi_volume_props.h xlat/ubi_volume_types.h \
-	xlat/uffd_api_features.h xlat/uffd_api_flags.h \
-	xlat/uffd_copy_flags.h xlat/uffd_flags.h \
+	xlat/syslog_console_levels.h xlat/sysmips_operations.h \
+	xlat/tcflsh_options.h xlat/tcp_state_flags.h xlat/tcp_states.h \
+	xlat/tcxonc_options.h xlat/timerfdflags.h \
+	xlat/tun_device_types.h xlat/ubi_volume_props.h \
+	xlat/ubi_volume_types.h xlat/uffd_api_features.h \
+	xlat/uffd_api_flags.h xlat/uffd_copy_flags.h xlat/uffd_flags.h \
 	xlat/uffd_register_ioctl_flags.h \
 	xlat/uffd_register_mode_flags.h xlat/uffd_zeropage_flags.h \
 	xlat/umount_flags.h xlat/unix_diag_attrs.h \
@@ -1564,8 +1574,9 @@ XLAT_HEADER_FILES = xlat/access_flags.h xlat/addrfams.h \
 	xlat/v4l2_tuner_audmodes.h xlat/v4l2_tuner_capabilities.h \
 	xlat/v4l2_tuner_rxsubchanses.h xlat/v4l2_tuner_types.h \
 	xlat/v4l2_vbi_flags.h xlat/wait4_options.h xlat/waitid_types.h \
-	xlat/whence_codes.h xlat/xattrflags.h xlat/xdp_flags.h \
-	xlat/xfs_dqblk_flags.h xlat/xfs_quota_flags.h
+	xlat/watchdog_ioctl_cmds.h xlat/whence_codes.h \
+	xlat/xattrflags.h xlat/xdp_flags.h xlat/xfs_dqblk_flags.h \
+	xlat/xfs_quota_flags.h
 strace_CPPFLAGS = $(AM_CPPFLAGS) $(am__append_3) $(am__append_8) \
 	$(am__append_11) $(CODE_COVERAGE_CPPFLAGS)
 strace_CFLAGS = $(AM_CFLAGS) $(am__append_4) $(CODE_COVERAGE_CFLAGS)
@@ -1607,15 +1618,16 @@ strace_SOURCES = access.c affinity.c aio.c alpha.c arch_defs.h \
 	fetch_struct_mmsghdr.c fetch_struct_msghdr.c \
 	fetch_struct_stat.c fetch_struct_stat64.c \
 	fetch_struct_statfs.c fetch_struct_xfs_quotastat.c \
-	file_handle.c file_ioctl.c filter.h filter_qualify.c flock.c \
-	flock.h fs_x_ioctl.c fsconfig.c fsmount.c fsopen.c fspick.c \
-	futex.c gcc_compat.h get_personality.c get_personality.h \
-	get_robust_list.c getcpu.c getcwd.c getrandom.c hdio.c \
-	hostname.c inotify.c inotify_ioctl.c io.c io_uring.c ioctl.c \
-	ioperm.c iopl.c ioprio.c ipc_defs.h ipc_msg.c ipc_msgctl.c \
-	ipc_sem.c ipc_shm.c ipc_shmctl.c kcmp.c kernel_timespec.h \
-	kernel_timeval.h kernel_timex.h kernel_types.h kexec.c \
-	keyctl.c keyctl_kdf_params.h kill_save_errno.h kvm.c \
+	file_handle.c file_ioctl.c filter.h filter_qualify.c \
+	filter_seccomp.c filter_seccomp.h flock.c flock.h fs_x_ioctl.c \
+	fsconfig.c fsmount.c fsopen.c fspick.c futex.c gcc_compat.h \
+	get_personality.c get_personality.h get_robust_list.c getcpu.c \
+	getcwd.c getrandom.c hdio.c hostname.c inotify.c \
+	inotify_ioctl.c io.c io_uring.c ioctl.c ioperm.c iopl.c \
+	ioprio.c ipc_defs.h ipc_msg.c ipc_msgctl.c ipc_sem.c ipc_shm.c \
+	ipc_shmctl.c kcmp.c kernel_timespec.h kernel_timeval.h \
+	kernel_timex.h kernel_types.h kexec.c keyctl.c \
+	keyctl_kdf_params.h kill_save_errno.h kvm.c \
 	largefile_wrappers.h ldt.c link.c linux/asm_stat.h \
 	linux/x32/asm_stat.h linux/x86_64/asm_stat.h list.h listen.c \
 	lookup_dcookie.c loop.c lseek.c macros.h mem.c membarrier.c \
@@ -1630,17 +1642,17 @@ strace_SOURCES = access.c affinity.c aio.c alpha.c arch_defs.h \
 	netlink_sock_diag.h netlink_unix_diag.c nlattr.c nlattr.h \
 	nsfs.c nsfs.h nsig.h numa.c number_set.c number_set.h \
 	oldstat.c open.c open_tree.c or1k_atomic.c pathtrace.c perf.c \
-	perf_event_struct.h perf_ioctl.c personality.c pkeys.c poll.c \
-	prctl.c print_aio_sigset.c print_dev_t.c print_fields.h \
-	print_group_req.c print_ifindex.c print_instruction_pointer.c \
-	print_kernel_version.c print_mac.c print_mq_attr.c \
-	print_msgbuf.c print_sg_req_info.c print_sigevent.c \
-	print_statfs.c print_struct_stat.c print_time.c \
-	print_timespec.c print_timespec.h print_timespec32.c \
-	print_timespec64.c print_timeval.c print_timeval64.c \
-	print_timex.c print_timex.h print_utils.h printmode.c \
-	printrusage.c printsiginfo.c printsiginfo.h process.c \
-	process_vm.c ptp.c ptrace.h ptrace_syscall_info.c \
+	perf_event_struct.h perf_ioctl.c personality.c pidfd_open.c \
+	pkeys.c poll.c prctl.c print_aio_sigset.c print_dev_t.c \
+	print_fields.h print_group_req.c print_ifindex.c \
+	print_instruction_pointer.c print_kernel_version.c print_mac.c \
+	print_mq_attr.c print_msgbuf.c print_sg_req_info.c \
+	print_sigevent.c print_statfs.c print_struct_stat.c \
+	print_time.c print_timespec.c print_timespec.h \
+	print_timespec32.c print_timespec64.c print_timeval.c \
+	print_timeval64.c print_timex.c print_timex.h print_utils.h \
+	printmode.c printrusage.c printsiginfo.c printsiginfo.h \
+	process.c process_vm.c ptp.c ptrace.h ptrace_syscall_info.c \
 	ptrace_syscall_info.h quota.c random_ioctl.c readahead.c \
 	readlink.c reboot.c regs.h renameat.c resource.c retval.c \
 	retval.h riscv.c rt_sigframe.c rt_sigreturn.c rtc.c \
@@ -1657,9 +1669,10 @@ strace_SOURCES = access.c affinity.c aio.c alpha.c arch_defs.h \
 	sysinfo.c syslog.c sysmips.c term.c time.c times.c \
 	trace_event.h truncate.c ubi.c ucopy.c uid.c uid16.c umask.c \
 	umount.c uname.c userfaultfd.c ustat.c util.c utime.c utimes.c \
-	v4l2.c wait.c wait.h xattr.c xfs_quota_stat.h xlat.c xlat.h \
-	xmalloc.c xmalloc.h xstring.h $(strace_SOURCES_check) \
-	$(am__append_1) $(am__append_2) $(am__append_7)
+	v4l2.c wait.c wait.h watchdog_ioctl.c xattr.c xfs_quota_stat.h \
+	xlat.c xlat.h xmalloc.c xmalloc.h xstring.h \
+	$(strace_SOURCES_check) $(am__append_1) $(am__append_2) \
+	$(am__append_7)
 strace_SOURCES_check = bpf_attr_check.c
 CODE_COVERAGE_BRANCH_COVERAGE = 1
 CODE_COVERAGE_GENHTML_OPTIONS = $(CODE_COVERAGE_GENHTML_OPTIONS_DEFAULT) \
@@ -1987,23 +2000,34 @@ EXTRA_DIST = \
 	linux/powerpc64/syscallent.h	\
 	linux/powerpc64/syscallent1.h	\
 	linux/powerpc64/userent.h	\
+	linux/powerpc64le/arch_defs_.h	\
+	linux/powerpc64le/arch_regs.c	\
+	linux/powerpc64le/arch_rt_sigframe.c	\
+	linux/powerpc64le/errnoent.h	\
+	linux/powerpc64le/get_error.c	\
+	linux/powerpc64le/get_scno.c	\
+	linux/powerpc64le/get_syscall_args.c	\
+	linux/powerpc64le/ioctls_arch0.h	\
+	linux/powerpc64le/ioctls_inc0.h	\
+	linux/powerpc64le/raw_syscall.h	\
+	linux/powerpc64le/rt_sigframe.h	\
+	linux/powerpc64le/set_error.c	\
+	linux/powerpc64le/set_scno.c	\
+	linux/powerpc64le/syscallent.h	\
+	linux/powerpc64le/userent.h	\
 	linux/ptrace_pokeuser.c		\
 	linux/raw_syscall.h		\
-	linux/riscv/arch_defs_.h	\
-	linux/riscv/arch_get_personality.c \
-	linux/riscv/arch_regs.c		\
-	linux/riscv/get_error.c		\
-	linux/riscv/get_scno.c		\
-	linux/riscv/get_syscall_args.c	\
-	linux/riscv/ioctls_arch0.h	\
-	linux/riscv/ioctls_arch1.h	\
-	linux/riscv/ioctls_inc0.h	\
-	linux/riscv/ioctls_inc1.h	\
-	linux/riscv/raw_syscall.h	\
-	linux/riscv/set_error.c		\
-	linux/riscv/set_scno.c		\
-	linux/riscv/syscallent.h	\
-	linux/riscv/syscallent1.h	\
+	linux/riscv64/arch_get_personality.c \
+	linux/riscv64/arch_regs.c		\
+	linux/riscv64/get_error.c		\
+	linux/riscv64/get_scno.c		\
+	linux/riscv64/get_syscall_args.c	\
+	linux/riscv64/ioctls_arch0.h	\
+	linux/riscv64/ioctls_inc0.h	\
+	linux/riscv64/raw_syscall.h	\
+	linux/riscv64/set_error.c		\
+	linux/riscv64/set_scno.c		\
+	linux/riscv64/syscallent.h	\
 	linux/rt_sigframe.h		\
 	linux/s390/arch_defs_.h		\
 	linux/s390/arch_regs.c		\
@@ -2591,6 +2615,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-file_handle.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-file_ioctl.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-filter_qualify.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-filter_seccomp.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-flock.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-fs_x_ioctl.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-fsconfig.Po@am__quote@ # am--include-marker
@@ -2665,6 +2690,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-perf.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-perf_ioctl.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-personality.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-pidfd_open.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-pkeys.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-poll.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-prctl.Po@am__quote@ # am--include-marker
@@ -2770,6 +2796,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-utimes.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-v4l2.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-wait.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-watchdog_ioctl.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-xattr.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-xlat.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-xmalloc.Po@am__quote@ # am--include-marker
@@ -4796,6 +4823,20 @@ strace-filter_qualify.obj: filter_qualify.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o strace-filter_qualify.obj `if test -f 'filter_qualify.c'; then $(CYGPATH_W) 'filter_qualify.c'; else $(CYGPATH_W) '$(srcdir)/filter_qualify.c'; fi`
 
+strace-filter_seccomp.o: filter_seccomp.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT strace-filter_seccomp.o -MD -MP -MF $(DEPDIR)/strace-filter_seccomp.Tpo -c -o strace-filter_seccomp.o `test -f 'filter_seccomp.c' || echo '$(srcdir)/'`filter_seccomp.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/strace-filter_seccomp.Tpo $(DEPDIR)/strace-filter_seccomp.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='filter_seccomp.c' object='strace-filter_seccomp.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o strace-filter_seccomp.o `test -f 'filter_seccomp.c' || echo '$(srcdir)/'`filter_seccomp.c
+
+strace-filter_seccomp.obj: filter_seccomp.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT strace-filter_seccomp.obj -MD -MP -MF $(DEPDIR)/strace-filter_seccomp.Tpo -c -o strace-filter_seccomp.obj `if test -f 'filter_seccomp.c'; then $(CYGPATH_W) 'filter_seccomp.c'; else $(CYGPATH_W) '$(srcdir)/filter_seccomp.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/strace-filter_seccomp.Tpo $(DEPDIR)/strace-filter_seccomp.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='filter_seccomp.c' object='strace-filter_seccomp.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o strace-filter_seccomp.obj `if test -f 'filter_seccomp.c'; then $(CYGPATH_W) 'filter_seccomp.c'; else $(CYGPATH_W) '$(srcdir)/filter_seccomp.c'; fi`
+
 strace-flock.o: flock.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT strace-flock.o -MD -MP -MF $(DEPDIR)/strace-flock.Tpo -c -o strace-flock.o `test -f 'flock.c' || echo '$(srcdir)/'`flock.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/strace-flock.Tpo $(DEPDIR)/strace-flock.Po
@@ -5831,6 +5872,20 @@ strace-personality.obj: personality.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='personality.c' object='strace-personality.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o strace-personality.obj `if test -f 'personality.c'; then $(CYGPATH_W) 'personality.c'; else $(CYGPATH_W) '$(srcdir)/personality.c'; fi`
+
+strace-pidfd_open.o: pidfd_open.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT strace-pidfd_open.o -MD -MP -MF $(DEPDIR)/strace-pidfd_open.Tpo -c -o strace-pidfd_open.o `test -f 'pidfd_open.c' || echo '$(srcdir)/'`pidfd_open.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/strace-pidfd_open.Tpo $(DEPDIR)/strace-pidfd_open.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='pidfd_open.c' object='strace-pidfd_open.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o strace-pidfd_open.o `test -f 'pidfd_open.c' || echo '$(srcdir)/'`pidfd_open.c
+
+strace-pidfd_open.obj: pidfd_open.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT strace-pidfd_open.obj -MD -MP -MF $(DEPDIR)/strace-pidfd_open.Tpo -c -o strace-pidfd_open.obj `if test -f 'pidfd_open.c'; then $(CYGPATH_W) 'pidfd_open.c'; else $(CYGPATH_W) '$(srcdir)/pidfd_open.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/strace-pidfd_open.Tpo $(DEPDIR)/strace-pidfd_open.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='pidfd_open.c' object='strace-pidfd_open.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o strace-pidfd_open.obj `if test -f 'pidfd_open.c'; then $(CYGPATH_W) 'pidfd_open.c'; else $(CYGPATH_W) '$(srcdir)/pidfd_open.c'; fi`
 
 strace-pkeys.o: pkeys.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT strace-pkeys.o -MD -MP -MF $(DEPDIR)/strace-pkeys.Tpo -c -o strace-pkeys.o `test -f 'pkeys.c' || echo '$(srcdir)/'`pkeys.c
@@ -7260,6 +7315,20 @@ strace-wait.obj: wait.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o strace-wait.obj `if test -f 'wait.c'; then $(CYGPATH_W) 'wait.c'; else $(CYGPATH_W) '$(srcdir)/wait.c'; fi`
 
+strace-watchdog_ioctl.o: watchdog_ioctl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT strace-watchdog_ioctl.o -MD -MP -MF $(DEPDIR)/strace-watchdog_ioctl.Tpo -c -o strace-watchdog_ioctl.o `test -f 'watchdog_ioctl.c' || echo '$(srcdir)/'`watchdog_ioctl.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/strace-watchdog_ioctl.Tpo $(DEPDIR)/strace-watchdog_ioctl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='watchdog_ioctl.c' object='strace-watchdog_ioctl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o strace-watchdog_ioctl.o `test -f 'watchdog_ioctl.c' || echo '$(srcdir)/'`watchdog_ioctl.c
+
+strace-watchdog_ioctl.obj: watchdog_ioctl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT strace-watchdog_ioctl.obj -MD -MP -MF $(DEPDIR)/strace-watchdog_ioctl.Tpo -c -o strace-watchdog_ioctl.obj `if test -f 'watchdog_ioctl.c'; then $(CYGPATH_W) 'watchdog_ioctl.c'; else $(CYGPATH_W) '$(srcdir)/watchdog_ioctl.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/strace-watchdog_ioctl.Tpo $(DEPDIR)/strace-watchdog_ioctl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='watchdog_ioctl.c' object='strace-watchdog_ioctl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o strace-watchdog_ioctl.obj `if test -f 'watchdog_ioctl.c'; then $(CYGPATH_W) 'watchdog_ioctl.c'; else $(CYGPATH_W) '$(srcdir)/watchdog_ioctl.c'; fi`
+
 strace-xattr.o: xattr.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT strace-xattr.o -MD -MP -MF $(DEPDIR)/strace-xattr.Tpo -c -o strace-xattr.o `test -f 'xattr.c' || echo '$(srcdir)/'`xattr.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/strace-xattr.Tpo $(DEPDIR)/strace-xattr.Po
@@ -7919,6 +7988,7 @@ distclean: distclean-recursive
 	-rm -f ./$(DEPDIR)/strace-file_handle.Po
 	-rm -f ./$(DEPDIR)/strace-file_ioctl.Po
 	-rm -f ./$(DEPDIR)/strace-filter_qualify.Po
+	-rm -f ./$(DEPDIR)/strace-filter_seccomp.Po
 	-rm -f ./$(DEPDIR)/strace-flock.Po
 	-rm -f ./$(DEPDIR)/strace-fs_x_ioctl.Po
 	-rm -f ./$(DEPDIR)/strace-fsconfig.Po
@@ -7993,6 +8063,7 @@ distclean: distclean-recursive
 	-rm -f ./$(DEPDIR)/strace-perf.Po
 	-rm -f ./$(DEPDIR)/strace-perf_ioctl.Po
 	-rm -f ./$(DEPDIR)/strace-personality.Po
+	-rm -f ./$(DEPDIR)/strace-pidfd_open.Po
 	-rm -f ./$(DEPDIR)/strace-pkeys.Po
 	-rm -f ./$(DEPDIR)/strace-poll.Po
 	-rm -f ./$(DEPDIR)/strace-prctl.Po
@@ -8098,6 +8169,7 @@ distclean: distclean-recursive
 	-rm -f ./$(DEPDIR)/strace-utimes.Po
 	-rm -f ./$(DEPDIR)/strace-v4l2.Po
 	-rm -f ./$(DEPDIR)/strace-wait.Po
+	-rm -f ./$(DEPDIR)/strace-watchdog_ioctl.Po
 	-rm -f ./$(DEPDIR)/strace-xattr.Po
 	-rm -f ./$(DEPDIR)/strace-xlat.Po
 	-rm -f ./$(DEPDIR)/strace-xmalloc.Po
@@ -8292,6 +8364,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f ./$(DEPDIR)/strace-file_handle.Po
 	-rm -f ./$(DEPDIR)/strace-file_ioctl.Po
 	-rm -f ./$(DEPDIR)/strace-filter_qualify.Po
+	-rm -f ./$(DEPDIR)/strace-filter_seccomp.Po
 	-rm -f ./$(DEPDIR)/strace-flock.Po
 	-rm -f ./$(DEPDIR)/strace-fs_x_ioctl.Po
 	-rm -f ./$(DEPDIR)/strace-fsconfig.Po
@@ -8366,6 +8439,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f ./$(DEPDIR)/strace-perf.Po
 	-rm -f ./$(DEPDIR)/strace-perf_ioctl.Po
 	-rm -f ./$(DEPDIR)/strace-personality.Po
+	-rm -f ./$(DEPDIR)/strace-pidfd_open.Po
 	-rm -f ./$(DEPDIR)/strace-pkeys.Po
 	-rm -f ./$(DEPDIR)/strace-poll.Po
 	-rm -f ./$(DEPDIR)/strace-prctl.Po
@@ -8471,6 +8545,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f ./$(DEPDIR)/strace-utimes.Po
 	-rm -f ./$(DEPDIR)/strace-v4l2.Po
 	-rm -f ./$(DEPDIR)/strace-wait.Po
+	-rm -f ./$(DEPDIR)/strace-watchdog_ioctl.Po
 	-rm -f ./$(DEPDIR)/strace-xattr.Po
 	-rm -f ./$(DEPDIR)/strace-xlat.Po
 	-rm -f ./$(DEPDIR)/strace-xmalloc.Po
@@ -8540,6 +8615,8 @@ $(top_srcdir)/xlat/af_packet_types.h: $(top_srcdir)/xlat/af_packet_types.in $(to
 $(top_srcdir)/xlat/af_packet_versions.h: $(top_srcdir)/xlat/af_packet_versions.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/aio_cmds.h: $(top_srcdir)/xlat/aio_cmds.in $(top_srcdir)/xlat/gen.sh
+	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
+$(top_srcdir)/xlat/aio_iocb_flags.h: $(top_srcdir)/xlat/aio_iocb_flags.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/archvals.h: $(top_srcdir)/xlat/archvals.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
@@ -8716,6 +8793,8 @@ $(top_srcdir)/xlat/ebpf_regs.h: $(top_srcdir)/xlat/ebpf_regs.in $(top_srcdir)/xl
 $(top_srcdir)/xlat/ebpf_size.h: $(top_srcdir)/xlat/ebpf_size.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/efd_flags.h: $(top_srcdir)/xlat/efd_flags.in $(top_srcdir)/xlat/gen.sh
+	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
+$(top_srcdir)/xlat/elf_em.h: $(top_srcdir)/xlat/elf_em.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/epollctls.h: $(top_srcdir)/xlat/epollctls.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
@@ -9449,6 +9528,8 @@ $(top_srcdir)/xlat/sysctl_vm.h: $(top_srcdir)/xlat/sysctl_vm.in $(top_srcdir)/xl
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/syslog_action_type.h: $(top_srcdir)/xlat/syslog_action_type.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
+$(top_srcdir)/xlat/syslog_console_levels.h: $(top_srcdir)/xlat/syslog_console_levels.in $(top_srcdir)/xlat/gen.sh
+	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/sysmips_operations.h: $(top_srcdir)/xlat/sysmips_operations.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/tcflsh_options.h: $(top_srcdir)/xlat/tcflsh_options.in $(top_srcdir)/xlat/gen.sh
@@ -9550,6 +9631,8 @@ $(top_srcdir)/xlat/v4l2_vbi_flags.h: $(top_srcdir)/xlat/v4l2_vbi_flags.in $(top_
 $(top_srcdir)/xlat/wait4_options.h: $(top_srcdir)/xlat/wait4_options.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/waitid_types.h: $(top_srcdir)/xlat/waitid_types.in $(top_srcdir)/xlat/gen.sh
+	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
+$(top_srcdir)/xlat/watchdog_ioctl_cmds.h: $(top_srcdir)/xlat/watchdog_ioctl_cmds.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/whence_codes.h: $(top_srcdir)/xlat/whence_codes.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@

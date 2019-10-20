@@ -40,14 +40,18 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat sock_pnp_options[] = {
- XLAT(PNPIPE_ENCAP),
- XLAT(PNPIPE_IFINDEX),
- XLAT(PNPIPE_HANDLE),
- XLAT(PNPIPE_INITSTATE),
- XLAT_END
+static const struct xlat_data sock_pnp_options_xdata[] = {
+ [PNPIPE_ENCAP] = XLAT(PNPIPE_ENCAP),
+ [PNPIPE_IFINDEX] = XLAT(PNPIPE_IFINDEX),
+ [PNPIPE_HANDLE] = XLAT(PNPIPE_HANDLE),
+ [PNPIPE_INITSTATE] = XLAT(PNPIPE_INITSTATE),
 };
+static
+const struct xlat sock_pnp_options[1] = { {
+ .data = sock_pnp_options_xdata,
+ .size = ARRAY_SIZE(sock_pnp_options_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

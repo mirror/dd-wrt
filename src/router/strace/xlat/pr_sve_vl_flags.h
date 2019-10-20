@@ -26,12 +26,16 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat pr_sve_vl_flags[] = {
+static const struct xlat_data pr_sve_vl_flags_xdata[] = {
  XLAT(PR_SVE_SET_VL_ONEXEC),
  XLAT(PR_SVE_VL_INHERIT),
- XLAT_END
 };
+static
+const struct xlat pr_sve_vl_flags[1] = { {
+ .data = pr_sve_vl_flags_xdata,
+ .size = ARRAY_SIZE(pr_sve_vl_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

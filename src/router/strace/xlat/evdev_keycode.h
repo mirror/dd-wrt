@@ -3846,8 +3846,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat evdev_keycode[] = {
+static const struct xlat_data evdev_keycode_xdata[] = {
 
  [KEY_RESERVED] = XLAT(KEY_RESERVED),
  [KEY_ESC] = XLAT(KEY_ESC),
@@ -4474,8 +4473,13 @@ const struct xlat evdev_keycode[] = {
  [BTN_TRIGGER_HAPPY38] = XLAT(BTN_TRIGGER_HAPPY38),
  [BTN_TRIGGER_HAPPY39] = XLAT(BTN_TRIGGER_HAPPY39),
  [BTN_TRIGGER_HAPPY40] = XLAT(BTN_TRIGGER_HAPPY40),
- XLAT_END
 };
+static
+const struct xlat evdev_keycode[1] = { {
+ .data = evdev_keycode_xdata,
+ .size = ARRAY_SIZE(evdev_keycode_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

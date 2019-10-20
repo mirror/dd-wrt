@@ -47,15 +47,19 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat nl_crypto_types[] = {
+static const struct xlat_data nl_crypto_types_xdata[] = {
  XLAT(CRYPTO_MSG_NEWALG),
  XLAT(CRYPTO_MSG_DELALG),
  XLAT(CRYPTO_MSG_UPDATEALG),
  XLAT(CRYPTO_MSG_GETALG),
  XLAT(CRYPTO_MSG_DELRNG),
- XLAT_END
 };
+static
+const struct xlat nl_crypto_types[1] = { {
+ .data = nl_crypto_types_xdata,
+ .size = ARRAY_SIZE(nl_crypto_types_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

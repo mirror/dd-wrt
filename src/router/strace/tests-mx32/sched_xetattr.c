@@ -1,13 +1,13 @@
 /*
  * Copyright (c) 2015-2017 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2015-2018 The strace developers.
+ * Copyright (c) 2015-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "tests.h"
-#include <asm/unistd.h>
+#include "scno.h"
 
 #if defined __NR_sched_getattr && defined __NR_sched_setattr
 

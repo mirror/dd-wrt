@@ -2,6 +2,7 @@
  * Check decoding of sync_file_range syscall.
  *
  * Copyright (c) 2016-2018 Dmitry V. Levin <ldv@altlinux.org>
+ * Copyright (c) 2016-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -9,7 +10,7 @@
 
 #include "tests.h"
 #include <fcntl.h>
-#include <asm/unistd.h>
+#include "scno.h"
 
 #if defined HAVE_SYNC_FILE_RANGE && defined __NR_sync_file_range
 

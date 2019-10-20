@@ -12,12 +12,16 @@
 
 # else
 
-static
-const struct xlat inet_diag_req_attrs[] = {
+static const struct xlat_data inet_diag_req_attrs_xdata[] = {
  XLAT(INET_DIAG_REQ_NONE),
  XLAT(INET_DIAG_REQ_BYTECODE),
- XLAT_END
 };
+static
+const struct xlat inet_diag_req_attrs[1] = { {
+ .data = inet_diag_req_attrs_xdata,
+ .size = ARRAY_SIZE(inet_diag_req_attrs_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

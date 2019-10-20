@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat netlink_socket_flags[] = {
+static const struct xlat_data netlink_socket_flags_xdata[] = {
 #if defined(NDIAG_FLAG_CB_RUNNING) || (defined(HAVE_DECL_NDIAG_FLAG_CB_RUNNING) && HAVE_DECL_NDIAG_FLAG_CB_RUNNING)
   XLAT(NDIAG_FLAG_CB_RUNNING),
 #endif
@@ -32,8 +31,13 @@ const struct xlat netlink_socket_flags[] = {
 #if defined(NDIAG_FLAG_CAP_ACK) || (defined(HAVE_DECL_NDIAG_FLAG_CAP_ACK) && HAVE_DECL_NDIAG_FLAG_CAP_ACK)
   XLAT(NDIAG_FLAG_CAP_ACK),
 #endif
- XLAT_END
 };
+static
+const struct xlat netlink_socket_flags[1] = { {
+ .data = netlink_socket_flags_xdata,
+ .size = ARRAY_SIZE(netlink_socket_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

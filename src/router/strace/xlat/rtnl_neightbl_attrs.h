@@ -82,20 +82,24 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat rtnl_neightbl_attrs[] = {
- XLAT(NDTA_UNSPEC),
- XLAT(NDTA_NAME),
- XLAT(NDTA_THRESH1),
- XLAT(NDTA_THRESH2),
- XLAT(NDTA_THRESH3),
- XLAT(NDTA_CONFIG),
- XLAT(NDTA_PARMS),
- XLAT(NDTA_STATS),
- XLAT(NDTA_GC_INTERVAL),
- XLAT(NDTA_PAD),
- XLAT_END
+static const struct xlat_data rtnl_neightbl_attrs_xdata[] = {
+ [NDTA_UNSPEC] = XLAT(NDTA_UNSPEC),
+ [NDTA_NAME] = XLAT(NDTA_NAME),
+ [NDTA_THRESH1] = XLAT(NDTA_THRESH1),
+ [NDTA_THRESH2] = XLAT(NDTA_THRESH2),
+ [NDTA_THRESH3] = XLAT(NDTA_THRESH3),
+ [NDTA_CONFIG] = XLAT(NDTA_CONFIG),
+ [NDTA_PARMS] = XLAT(NDTA_PARMS),
+ [NDTA_STATS] = XLAT(NDTA_STATS),
+ [NDTA_GC_INTERVAL] = XLAT(NDTA_GC_INTERVAL),
+ [NDTA_PAD] = XLAT(NDTA_PAD),
 };
+static
+const struct xlat rtnl_neightbl_attrs[1] = { {
+ .data = rtnl_neightbl_attrs_xdata,
+ .size = ARRAY_SIZE(rtnl_neightbl_attrs_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

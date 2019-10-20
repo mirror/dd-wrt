@@ -89,10 +89,7 @@ extern const struct xlat btrfs_space_info_flags[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat btrfs_space_info_flags[] = {
+static const struct xlat_data btrfs_space_info_flags_xdata[] = {
  XLAT_TYPE(uint64_t, BTRFS_BLOCK_GROUP_DATA),
  XLAT_TYPE(uint64_t, BTRFS_BLOCK_GROUP_SYSTEM),
  XLAT_TYPE(uint64_t, BTRFS_BLOCK_GROUP_METADATA),
@@ -104,8 +101,15 @@ const struct xlat btrfs_space_info_flags[] = {
  XLAT_TYPE(uint64_t, BTRFS_BLOCK_GROUP_RAID6),
  XLAT_TYPE(uint64_t, BTRFS_AVAIL_ALLOC_BIT_SINGLE),
  XLAT_TYPE(uint64_t, BTRFS_SPACE_INFO_GLOBAL_RSV),
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat btrfs_space_info_flags[1] = { {
+ .data = btrfs_space_info_flags_xdata,
+ .size = ARRAY_SIZE(btrfs_space_info_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

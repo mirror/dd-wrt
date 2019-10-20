@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat shm_resource_flags[] = {
+static const struct xlat_data shm_resource_flags_xdata[] = {
 #if defined(IPC_CREAT) || (defined(HAVE_DECL_IPC_CREAT) && HAVE_DECL_IPC_CREAT)
   XLAT(IPC_CREAT),
 #endif
@@ -26,8 +25,13 @@ const struct xlat shm_resource_flags[] = {
 #if defined(SHM_NORESERVE) || (defined(HAVE_DECL_SHM_NORESERVE) && HAVE_DECL_SHM_NORESERVE)
   XLAT(SHM_NORESERVE),
 #endif
- XLAT_END
 };
+static
+const struct xlat shm_resource_flags[1] = { {
+ .data = shm_resource_flags_xdata,
+ .size = ARRAY_SIZE(shm_resource_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

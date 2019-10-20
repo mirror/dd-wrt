@@ -33,13 +33,17 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat nf_cthelper_msg_types[] = {
- XLAT(NFNL_MSG_CTHELPER_NEW),
- XLAT(NFNL_MSG_CTHELPER_GET),
- XLAT(NFNL_MSG_CTHELPER_DEL),
- XLAT_END
+static const struct xlat_data nf_cthelper_msg_types_xdata[] = {
+ [NFNL_MSG_CTHELPER_NEW] = XLAT(NFNL_MSG_CTHELPER_NEW),
+ [NFNL_MSG_CTHELPER_GET] = XLAT(NFNL_MSG_CTHELPER_GET),
+ [NFNL_MSG_CTHELPER_DEL] = XLAT(NFNL_MSG_CTHELPER_DEL),
 };
+static
+const struct xlat nf_cthelper_msg_types[1] = { {
+ .data = nf_cthelper_msg_types_xdata,
+ .size = ARRAY_SIZE(nf_cthelper_msg_types_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat tcflsh_options[] = {
+static const struct xlat_data tcflsh_options_xdata[] = {
 #if defined(TCIFLUSH) || (defined(HAVE_DECL_TCIFLUSH) && HAVE_DECL_TCIFLUSH)
   XLAT(TCIFLUSH),
 #endif
@@ -23,8 +22,13 @@ const struct xlat tcflsh_options[] = {
 #if defined(TCIOFLUSH) || (defined(HAVE_DECL_TCIOFLUSH) && HAVE_DECL_TCIOFLUSH)
   XLAT(TCIOFLUSH),
 #endif
- XLAT_END
 };
+static
+const struct xlat tcflsh_options[1] = { {
+ .data = tcflsh_options_xdata,
+ .size = ARRAY_SIZE(tcflsh_options_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

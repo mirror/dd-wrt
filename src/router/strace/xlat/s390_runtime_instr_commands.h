@@ -26,12 +26,16 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat s390_runtime_instr_commands[] = {
- XLAT(S390_RUNTIME_INSTR_START),
- XLAT(S390_RUNTIME_INSTR_STOP),
- XLAT_END
+static const struct xlat_data s390_runtime_instr_commands_xdata[] = {
+ [S390_RUNTIME_INSTR_START] = XLAT(S390_RUNTIME_INSTR_START),
+ [S390_RUNTIME_INSTR_STOP] = XLAT(S390_RUNTIME_INSTR_STOP),
 };
+static
+const struct xlat s390_runtime_instr_commands[1] = { {
+ .data = s390_runtime_instr_commands_xdata,
+ .size = ARRAY_SIZE(s390_runtime_instr_commands_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

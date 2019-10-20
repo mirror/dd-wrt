@@ -41,21 +41,20 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 #ifndef XLAT_MACROS_ONLY
 
-# ifdef IN_MPERS
+# ifndef IN_MPERS
 
-#  error static const struct xlat rwf_flags in mpers mode
-
-# else
-
-static
-const struct xlat rwf_flags[] = {
+static const struct xlat_data rwf_flags_xdata[] = {
  XLAT(RWF_HIPRI),
  XLAT(RWF_DSYNC),
  XLAT(RWF_SYNC),
  XLAT(RWF_NOWAIT),
  XLAT(RWF_APPEND),
- XLAT_END
 };
+const struct xlat rwf_flags[1] = { {
+ .data = rwf_flags_xdata,
+ .size = ARRAY_SIZE(rwf_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

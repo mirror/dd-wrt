@@ -19,13 +19,17 @@ extern const struct xlat btrfs_logical_ino_args_flags[];
 
 # else
 
+static const struct xlat_data btrfs_logical_ino_args_flags_xdata[] = {
+ XLAT(BTRFS_LOGICAL_INO_ARGS_IGNORE_OFFSET),
+};
 #  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
 static
 #  endif
-const struct xlat btrfs_logical_ino_args_flags[] = {
- XLAT(BTRFS_LOGICAL_INO_ARGS_IGNORE_OFFSET),
- XLAT_END
-};
+const struct xlat btrfs_logical_ino_args_flags[1] = { {
+ .data = btrfs_logical_ino_args_flags_xdata,
+ .size = ARRAY_SIZE(btrfs_logical_ino_args_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -47,10 +47,7 @@ extern const struct xlat loop_flags_options[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat loop_flags_options[] = {
+static const struct xlat_data loop_flags_options_xdata[] = {
  XLAT(LO_FLAGS_READ_ONLY),
 
  XLAT(LO_FLAGS_USE_AOPS),
@@ -60,8 +57,15 @@ const struct xlat loop_flags_options[] = {
  XLAT(LO_FLAGS_PARTSCAN),
 
  XLAT(LO_FLAGS_DIRECT_IO),
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat loop_flags_options[1] = { {
+ .data = loop_flags_options_xdata,
+ .size = ARRAY_SIZE(loop_flags_options_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

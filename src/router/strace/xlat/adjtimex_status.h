@@ -124,8 +124,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat adjtimex_status[] = {
+static const struct xlat_data adjtimex_status_xdata[] = {
  XLAT(STA_PLL),
  XLAT(STA_PPSFREQ),
  XLAT(STA_PPSTIME),
@@ -142,8 +141,13 @@ const struct xlat adjtimex_status[] = {
  XLAT(STA_NANO),
  XLAT(STA_MODE),
  XLAT(STA_CLK),
- XLAT_END
 };
+static
+const struct xlat adjtimex_status[1] = { {
+ .data = adjtimex_status_xdata,
+ .size = ARRAY_SIZE(adjtimex_status_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -124,9 +124,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat evdev_ff_types[] = {
-
+static const struct xlat_data evdev_ff_types_xdata[] = {
  XLAT(FF_RUMBLE),
  XLAT(FF_PERIODIC),
  XLAT(FF_CONSTANT),
@@ -143,8 +141,13 @@ const struct xlat evdev_ff_types[] = {
  XLAT(FF_CUSTOM),
  XLAT(FF_GAIN),
  XLAT(FF_AUTOCENTER),
- XLAT_END
 };
+static
+const struct xlat evdev_ff_types[1] = { {
+ .data = evdev_ff_types_xdata,
+ .size = ARRAY_SIZE(evdev_ff_types_xdata),
+ .type = XT_SORTED,
+} };
 
 # endif /* !IN_MPERS */
 

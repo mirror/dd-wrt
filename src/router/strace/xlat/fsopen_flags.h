@@ -19,11 +19,15 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat fsopen_flags[] = {
+static const struct xlat_data fsopen_flags_xdata[] = {
  XLAT(FSOPEN_CLOEXEC),
- XLAT_END
 };
+static
+const struct xlat fsopen_flags[1] = { {
+ .data = fsopen_flags_xdata,
+ .size = ARRAY_SIZE(fsopen_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

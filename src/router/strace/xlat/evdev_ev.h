@@ -92,7 +92,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # ifndef IN_MPERS
 
-const struct xlat evdev_ev[] = {
+static const struct xlat_data evdev_ev_xdata[] = {
  XLAT(EV_SYN),
  XLAT(EV_KEY),
  XLAT(EV_REL),
@@ -105,8 +105,12 @@ const struct xlat evdev_ev[] = {
  XLAT(EV_FF),
  XLAT(EV_PWR),
  XLAT(EV_FF_STATUS),
- XLAT_END
 };
+const struct xlat evdev_ev[1] = { {
+ .data = evdev_ev_xdata,
+ .size = ARRAY_SIZE(evdev_ev_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

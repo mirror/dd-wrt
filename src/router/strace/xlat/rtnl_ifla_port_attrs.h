@@ -68,18 +68,22 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat rtnl_ifla_port_attrs[] = {
- XLAT(IFLA_PORT_UNSPEC),
- XLAT(IFLA_PORT_VF),
- XLAT(IFLA_PORT_PROFILE),
- XLAT(IFLA_PORT_VSI_TYPE),
- XLAT(IFLA_PORT_INSTANCE_UUID),
- XLAT(IFLA_PORT_HOST_UUID),
- XLAT(IFLA_PORT_REQUEST),
- XLAT(IFLA_PORT_RESPONSE),
- XLAT_END
+static const struct xlat_data rtnl_ifla_port_attrs_xdata[] = {
+ [IFLA_PORT_UNSPEC] = XLAT(IFLA_PORT_UNSPEC),
+ [IFLA_PORT_VF] = XLAT(IFLA_PORT_VF),
+ [IFLA_PORT_PROFILE] = XLAT(IFLA_PORT_PROFILE),
+ [IFLA_PORT_VSI_TYPE] = XLAT(IFLA_PORT_VSI_TYPE),
+ [IFLA_PORT_INSTANCE_UUID] = XLAT(IFLA_PORT_INSTANCE_UUID),
+ [IFLA_PORT_HOST_UUID] = XLAT(IFLA_PORT_HOST_UUID),
+ [IFLA_PORT_REQUEST] = XLAT(IFLA_PORT_REQUEST),
+ [IFLA_PORT_RESPONSE] = XLAT(IFLA_PORT_RESPONSE),
 };
+static
+const struct xlat rtnl_ifla_port_attrs[1] = { {
+ .data = rtnl_ifla_port_attrs_xdata,
+ .size = ARRAY_SIZE(rtnl_ifla_port_attrs_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

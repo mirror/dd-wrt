@@ -19,11 +19,15 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat bootflags1[] = {
+static const struct xlat_data bootflags1_xdata[] = {
  XLAT(LINUX_REBOOT_MAGIC1),
- XLAT_END
 };
+static
+const struct xlat bootflags1[1] = { {
+ .data = bootflags1_xdata,
+ .size = ARRAY_SIZE(bootflags1_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

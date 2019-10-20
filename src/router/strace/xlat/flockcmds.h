@@ -68,8 +68,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat flockcmds[] = {
+static const struct xlat_data flockcmds_xdata[] = {
  XLAT(LOCK_SH),
  XLAT(LOCK_EX),
  XLAT(LOCK_NB),
@@ -78,8 +77,13 @@ const struct xlat flockcmds[] = {
  XLAT(LOCK_RW),
  XLAT(LOCK_READ),
  XLAT(LOCK_WRITE),
- XLAT_END
 };
+static
+const struct xlat flockcmds[1] = { {
+ .data = flockcmds_xdata,
+ .size = ARRAY_SIZE(flockcmds_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

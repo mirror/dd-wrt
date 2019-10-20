@@ -26,12 +26,16 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat evdev_autorepeat[] = {
+static const struct xlat_data evdev_autorepeat_xdata[] = {
  [REP_DELAY] = XLAT(REP_DELAY),
  [REP_PERIOD] = XLAT(REP_PERIOD),
- XLAT_END
 };
+static
+const struct xlat evdev_autorepeat[1] = { {
+ .data = evdev_autorepeat_xdata,
+ .size = ARRAY_SIZE(evdev_autorepeat_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

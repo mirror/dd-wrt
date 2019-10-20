@@ -89,9 +89,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat sock_ax25_options[] = {
-
+static const struct xlat_data sock_ax25_options_xdata[] = {
  XLAT(AX25_WINDOW),
  XLAT(AX25_T1),
  XLAT(AX25_N2),
@@ -108,8 +106,13 @@ const struct xlat sock_ax25_options[] = {
 #if defined(SO_BINDTODEVICE) || (defined(HAVE_DECL_SO_BINDTODEVICE) && HAVE_DECL_SO_BINDTODEVICE)
   XLAT(SO_BINDTODEVICE),
 #endif
- XLAT_END
 };
+static
+const struct xlat sock_ax25_options[1] = { {
+ .data = sock_ax25_options_xdata,
+ .size = ARRAY_SIZE(sock_ax25_options_xdata),
+ .type = XT_SORTED,
+} };
 
 # endif /* !IN_MPERS */
 

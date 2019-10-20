@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat priorities[] = {
+static const struct xlat_data priorities_xdata[] = {
 #if defined(PRIO_PROCESS) || (defined(HAVE_DECL_PRIO_PROCESS) && HAVE_DECL_PRIO_PROCESS)
   XLAT(PRIO_PROCESS),
 #endif
@@ -23,8 +22,13 @@ const struct xlat priorities[] = {
 #if defined(PRIO_USER) || (defined(HAVE_DECL_PRIO_USER) && HAVE_DECL_PRIO_USER)
   XLAT(PRIO_USER),
 #endif
- XLAT_END
 };
+static
+const struct xlat priorities[1] = { {
+ .data = priorities_xdata,
+ .size = ARRAY_SIZE(priorities_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

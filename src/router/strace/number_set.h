@@ -25,6 +25,10 @@ is_number_in_set_array(unsigned int number, const struct number_set *, unsigned 
 extern bool
 is_complete_set(const struct number_set *, unsigned int max_numbers);
 
+extern bool
+is_complete_set_array(const struct number_set *, const unsigned int *,
+		      const unsigned int nmemb);
+
 extern void
 add_number_to_set(unsigned int number, struct number_set *);
 
@@ -56,5 +60,6 @@ extern struct number_set *read_set;
 extern struct number_set *write_set;
 extern struct number_set *signal_set;
 extern struct number_set *status_set;
+extern struct number_set *trace_set;
 
 #endif /* !STRACE_NUMBER_SET_H */

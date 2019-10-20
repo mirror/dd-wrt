@@ -12,13 +12,17 @@
 
 # else
 
-static
-const struct xlat fdflags[] = {
+static const struct xlat_data fdflags_xdata[] = {
 #if defined(FD_CLOEXEC) || (defined(HAVE_DECL_FD_CLOEXEC) && HAVE_DECL_FD_CLOEXEC)
   XLAT(FD_CLOEXEC),
 #endif
- XLAT_END
 };
+static
+const struct xlat fdflags[1] = { {
+ .data = fdflags_xdata,
+ .size = ARRAY_SIZE(fdflags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

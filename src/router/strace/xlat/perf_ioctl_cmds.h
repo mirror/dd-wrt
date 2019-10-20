@@ -96,10 +96,7 @@ extern const struct xlat perf_ioctl_cmds[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat perf_ioctl_cmds[] = {
+static const struct xlat_data perf_ioctl_cmds_xdata[] = {
  XLAT(PERF_EVENT_IOC_ENABLE),
  XLAT(PERF_EVENT_IOC_DISABLE),
  XLAT(PERF_EVENT_IOC_REFRESH),
@@ -112,8 +109,15 @@ const struct xlat perf_ioctl_cmds[] = {
  XLAT(PERF_EVENT_IOC_PAUSE_OUTPUT),
  XLAT(PERF_EVENT_IOC_QUERY_BPF),
  XLAT(PERF_EVENT_IOC_MODIFY_ATTRIBUTES),
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat perf_ioctl_cmds[1] = { {
+ .data = perf_ioctl_cmds_xdata,
+ .size = ARRAY_SIZE(perf_ioctl_cmds_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

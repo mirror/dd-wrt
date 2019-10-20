@@ -12,10 +12,7 @@ extern const struct xlat v4l2_memories[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat v4l2_memories[] = {
+static const struct xlat_data v4l2_memories_xdata[] = {
 #if defined(V4L2_MEMORY_MMAP) || (defined(HAVE_DECL_V4L2_MEMORY_MMAP) && HAVE_DECL_V4L2_MEMORY_MMAP)
   XLAT(V4L2_MEMORY_MMAP),
 #endif
@@ -28,8 +25,15 @@ const struct xlat v4l2_memories[] = {
 #if defined(V4L2_MEMORY_DMABUF) || (defined(HAVE_DECL_V4L2_MEMORY_DMABUF) && HAVE_DECL_V4L2_MEMORY_DMABUF)
   XLAT(V4L2_MEMORY_DMABUF),
 #endif
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat v4l2_memories[1] = { {
+ .data = v4l2_memories_xdata,
+ .size = ARRAY_SIZE(v4l2_memories_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

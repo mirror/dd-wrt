@@ -12,10 +12,7 @@ extern const struct xlat v4l2_buf_flags[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat v4l2_buf_flags[] = {
+static const struct xlat_data v4l2_buf_flags_xdata[] = {
 #if defined(V4L2_BUF_FLAG_MAPPED) || (defined(HAVE_DECL_V4L2_BUF_FLAG_MAPPED) && HAVE_DECL_V4L2_BUF_FLAG_MAPPED)
   XLAT(V4L2_BUF_FLAG_MAPPED),
 #endif
@@ -73,8 +70,15 @@ const struct xlat v4l2_buf_flags[] = {
 #if defined(V4L2_BUF_FLAG_LAST) || (defined(HAVE_DECL_V4L2_BUF_FLAG_LAST) && HAVE_DECL_V4L2_BUF_FLAG_LAST)
   XLAT(V4L2_BUF_FLAG_LAST),
 #endif
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat v4l2_buf_flags[1] = { {
+ .data = v4l2_buf_flags_xdata,
+ .size = ARRAY_SIZE(v4l2_buf_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

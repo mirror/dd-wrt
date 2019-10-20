@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat packet_mreq_type[] = {
+static const struct xlat_data packet_mreq_type_xdata[] = {
 #if defined(PACKET_MR_MULTICAST) || (defined(HAVE_DECL_PACKET_MR_MULTICAST) && HAVE_DECL_PACKET_MR_MULTICAST)
   XLAT(PACKET_MR_MULTICAST),
 #endif
@@ -26,8 +25,13 @@ const struct xlat packet_mreq_type[] = {
 #if defined(PACKET_MR_UNICAST) || (defined(HAVE_DECL_PACKET_MR_UNICAST) && HAVE_DECL_PACKET_MR_UNICAST)
   XLAT(PACKET_MR_UNICAST),
 #endif
- XLAT_END
 };
+static
+const struct xlat packet_mreq_type[1] = { {
+ .data = packet_mreq_type_xdata,
+ .size = ARRAY_SIZE(packet_mreq_type_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

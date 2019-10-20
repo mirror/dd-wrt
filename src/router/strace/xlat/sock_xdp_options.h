@@ -52,6 +52,13 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
 # define XDP_STATISTICS 7
 #endif
+#if defined(XDP_OPTIONS) || (defined(HAVE_DECL_XDP_OPTIONS) && HAVE_DECL_XDP_OPTIONS)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((XDP_OPTIONS) == (8), "XDP_OPTIONS != 8");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define XDP_OPTIONS 8
+#endif
 
 #ifndef XLAT_MACROS_ONLY
 
@@ -61,8 +68,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat sock_xdp_options[] = {
+static const struct xlat_data sock_xdp_options_xdata[] = {
  [XDP_MMAP_OFFSETS] = XLAT(XDP_MMAP_OFFSETS),
  [XDP_RX_RING] = XLAT(XDP_RX_RING),
  [XDP_TX_RING] = XLAT(XDP_TX_RING),
@@ -70,8 +76,14 @@ const struct xlat sock_xdp_options[] = {
  [XDP_UMEM_FILL_RING] = XLAT(XDP_UMEM_FILL_RING),
  [XDP_UMEM_COMPLETION_RING] = XLAT(XDP_UMEM_COMPLETION_RING),
  [XDP_STATISTICS] = XLAT(XDP_STATISTICS),
- XLAT_END
+ [XDP_OPTIONS] = XLAT(XDP_OPTIONS),
 };
+static
+const struct xlat sock_xdp_options[1] = { {
+ .data = sock_xdp_options_xdata,
+ .size = ARRAY_SIZE(sock_xdp_options_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

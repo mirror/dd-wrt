@@ -19,11 +19,15 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat riscv_flush_icache_flags[] = {
+static const struct xlat_data riscv_flush_icache_flags_xdata[] = {
  XLAT(SYS_RISCV_FLUSH_ICACHE_LOCAL),
- XLAT_END
 };
+static
+const struct xlat riscv_flush_icache_flags[1] = { {
+ .data = riscv_flush_icache_flags_xdata,
+ .size = ARRAY_SIZE(riscv_flush_icache_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

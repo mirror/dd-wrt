@@ -155,14 +155,9 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 #ifndef XLAT_MACROS_ONLY
 
-# ifdef IN_MPERS
+# ifndef IN_MPERS
 
-#  error static const struct xlat pollflags in mpers mode
-
-# else
-
-static
-const struct xlat pollflags[] = {
+static const struct xlat_data pollflags_xdata[] = {
  XLAT(POLLIN),
  XLAT(POLLPRI),
  XLAT(POLLOUT),
@@ -205,8 +200,12 @@ const struct xlat pollflags[] = {
 #endif
 
  XLAT(POLL_BUSY_LOOP),
- XLAT_END
 };
+const struct xlat pollflags[1] = { {
+ .data = pollflags_xdata,
+ .size = ARRAY_SIZE(pollflags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

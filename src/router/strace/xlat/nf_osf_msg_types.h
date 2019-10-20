@@ -26,12 +26,16 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat nf_osf_msg_types[] = {
- XLAT(OSF_MSG_ADD),
- XLAT(OSF_MSG_REMOVE),
- XLAT_END
+static const struct xlat_data nf_osf_msg_types_xdata[] = {
+ [OSF_MSG_ADD] = XLAT(OSF_MSG_ADD),
+ [OSF_MSG_REMOVE] = XLAT(OSF_MSG_REMOVE),
 };
+static
+const struct xlat nf_osf_msg_types[1] = { {
+ .data = nf_osf_msg_types_xdata,
+ .size = ARRAY_SIZE(nf_osf_msg_types_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

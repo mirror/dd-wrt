@@ -54,16 +54,20 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat route_nexthop_flags[] = {
+static const struct xlat_data route_nexthop_flags_xdata[] = {
  XLAT(RTNH_F_DEAD),
  XLAT(RTNH_F_PERVASIVE),
  XLAT(RTNH_F_ONLINK),
  XLAT(RTNH_F_OFFLOAD),
  XLAT(RTNH_F_LINKDOWN),
  XLAT(RTNH_F_UNRESOLVED),
- XLAT_END
 };
+static
+const struct xlat route_nexthop_flags[1] = { {
+ .data = route_nexthop_flags_xdata,
+ .size = ARRAY_SIZE(route_nexthop_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

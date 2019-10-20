@@ -587,7 +587,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # ifndef IN_MPERS
 
-const struct xlat open_mode_flags[] = {
+static const struct xlat_data open_mode_flags_xdata[] = {
 
 
 #if defined __hppa__ || defined __mips__
@@ -797,8 +797,12 @@ const struct xlat open_mode_flags[] = {
 #else
  XLAT(FASYNC),
 #endif
- XLAT_END
 };
+const struct xlat open_mode_flags[1] = { {
+ .data = open_mode_flags_xdata,
+ .size = ARRAY_SIZE(open_mode_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

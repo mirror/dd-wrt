@@ -54,17 +54,20 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat perf_type_id[] = {
-
+static const struct xlat_data perf_type_id_xdata[] = {
  XLAT(PERF_TYPE_HARDWARE),
  XLAT(PERF_TYPE_SOFTWARE),
  XLAT(PERF_TYPE_TRACEPOINT),
  XLAT(PERF_TYPE_HW_CACHE),
  XLAT(PERF_TYPE_RAW),
  XLAT(PERF_TYPE_BREAKPOINT),
- XLAT_END
 };
+static
+const struct xlat perf_type_id[1] = { {
+ .data = perf_type_id_xdata,
+ .size = ARRAY_SIZE(perf_type_id_xdata),
+ .type = XT_SORTED,
+} };
 
 # endif /* !IN_MPERS */
 

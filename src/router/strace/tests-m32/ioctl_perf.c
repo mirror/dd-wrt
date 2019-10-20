@@ -1,7 +1,7 @@
 /*
  * Check decoding of PERF_EVENT_IOC_* commands of ioctl syscall.
  *
- * Copyright (c) 2018 The strace developers.
+ * Copyright (c) 2018-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -16,7 +16,7 @@
 # include <string.h>
 # include <unistd.h>
 # include <sys/ioctl.h>
-# include <asm/unistd.h>
+# include "scno.h"
 # include <linux/perf_event.h>
 
 /*

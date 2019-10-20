@@ -257,8 +257,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat quotacmds[] = {
+static const struct xlat_data quotacmds_xdata[] = {
  XLAT(Q_V1_QUOTAON),
  XLAT(Q_V1_QUOTAOFF),
  XLAT(Q_V1_GETQUOTA),
@@ -297,8 +296,13 @@ const struct xlat quotacmds[] = {
  XLAT(Q_XQUOTASYNC),
  XLAT(Q_XGETQSTATV),
  XLAT(Q_XGETNEXTQUOTA),
- XLAT_END
 };
+static
+const struct xlat quotacmds[1] = { {
+ .data = quotacmds_xdata,
+ .size = ARRAY_SIZE(quotacmds_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

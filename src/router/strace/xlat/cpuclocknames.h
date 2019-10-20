@@ -33,13 +33,17 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat cpuclocknames[] = {
+static const struct xlat_data cpuclocknames_xdata[] = {
  [CPUCLOCK_PROF] = XLAT(CPUCLOCK_PROF),
  [CPUCLOCK_VIRT] = XLAT(CPUCLOCK_VIRT),
  [CPUCLOCK_SCHED] = XLAT(CPUCLOCK_SCHED),
- XLAT_END
 };
+static
+const struct xlat cpuclocknames[1] = { {
+ .data = cpuclocknames_xdata,
+ .size = ARRAY_SIZE(cpuclocknames_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

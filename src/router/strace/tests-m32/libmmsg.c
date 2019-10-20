@@ -2,6 +2,7 @@
  * Wrappers for recvmmsg and sendmmsg syscalls.
  *
  * Copyright (c) 2016-2018 Dmitry V. Levin <ldv@altlinux.org>
+ * Copyright (c) 2016-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -9,7 +10,7 @@
 
 #include "tests.h"
 #include <errno.h>
-#include <asm/unistd.h>
+#include "scno.h"
 
 #ifndef __NR_recvmmsg
 # define __NR_recvmmsg -1

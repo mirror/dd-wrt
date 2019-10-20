@@ -33,13 +33,17 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat epollctls[] = {
- XLAT(EPOLL_CTL_ADD),
- XLAT(EPOLL_CTL_DEL),
- XLAT(EPOLL_CTL_MOD),
- XLAT_END
+static const struct xlat_data epollctls_xdata[] = {
+ [EPOLL_CTL_ADD] = XLAT(EPOLL_CTL_ADD),
+ [EPOLL_CTL_DEL] = XLAT(EPOLL_CTL_DEL),
+ [EPOLL_CTL_MOD] = XLAT(EPOLL_CTL_MOD),
 };
+static
+const struct xlat epollctls[1] = { {
+ .data = epollctls_xdata,
+ .size = ARRAY_SIZE(epollctls_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

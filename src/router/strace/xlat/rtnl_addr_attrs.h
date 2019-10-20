@@ -89,21 +89,25 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat rtnl_addr_attrs[] = {
- XLAT(IFA_UNSPEC),
- XLAT(IFA_ADDRESS),
- XLAT(IFA_LOCAL),
- XLAT(IFA_LABEL),
- XLAT(IFA_BROADCAST),
- XLAT(IFA_ANYCAST),
- XLAT(IFA_CACHEINFO),
- XLAT(IFA_MULTICAST),
- XLAT(IFA_FLAGS),
- XLAT(IFA_RT_PRIORITY),
- XLAT(IFA_TARGET_NETNSID),
- XLAT_END
+static const struct xlat_data rtnl_addr_attrs_xdata[] = {
+ [IFA_UNSPEC] = XLAT(IFA_UNSPEC),
+ [IFA_ADDRESS] = XLAT(IFA_ADDRESS),
+ [IFA_LOCAL] = XLAT(IFA_LOCAL),
+ [IFA_LABEL] = XLAT(IFA_LABEL),
+ [IFA_BROADCAST] = XLAT(IFA_BROADCAST),
+ [IFA_ANYCAST] = XLAT(IFA_ANYCAST),
+ [IFA_CACHEINFO] = XLAT(IFA_CACHEINFO),
+ [IFA_MULTICAST] = XLAT(IFA_MULTICAST),
+ [IFA_FLAGS] = XLAT(IFA_FLAGS),
+ [IFA_RT_PRIORITY] = XLAT(IFA_RT_PRIORITY),
+ [IFA_TARGET_NETNSID] = XLAT(IFA_TARGET_NETNSID),
 };
+static
+const struct xlat rtnl_addr_attrs[1] = { {
+ .data = rtnl_addr_attrs_xdata,
+ .size = ARRAY_SIZE(rtnl_addr_attrs_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -1,12 +1,13 @@
 /*
  * Copyright (c) 2016-2018 Dmitry V. Levin <ldv@altlinux.org>
+ * Copyright (c) 2016-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "tests.h"
-#include <asm/unistd.h>
+#include "scno.h"
 
 #if defined __NR_getxpid && defined __NR_getxuid && defined __NR_getxgid
 

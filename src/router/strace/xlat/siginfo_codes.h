@@ -115,10 +115,7 @@ extern const struct xlat siginfo_codes[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat siginfo_codes[] = {
+static const struct xlat_data siginfo_codes_xdata[] = {
  XLAT(SI_USER),
  XLAT(SI_KERNEL),
  XLAT(SI_QUEUE),
@@ -141,8 +138,15 @@ const struct xlat siginfo_codes[] = {
 #ifdef __sparc__
  XLAT(SI_NOINFO),
 #endif
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat siginfo_codes[1] = { {
+ .data = siginfo_codes_xdata,
+ .size = ARRAY_SIZE(siginfo_codes_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

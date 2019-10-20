@@ -12,16 +12,20 @@
 
 # else
 
-static
-const struct xlat mdb_states[] = {
+static const struct xlat_data mdb_states_xdata[] = {
 #if defined(MDB_TEMPORARY) || (defined(HAVE_DECL_MDB_TEMPORARY) && HAVE_DECL_MDB_TEMPORARY)
   XLAT(MDB_TEMPORARY),
 #endif
 #if defined(MDB_PERMANENT) || (defined(HAVE_DECL_MDB_PERMANENT) && HAVE_DECL_MDB_PERMANENT)
   XLAT(MDB_PERMANENT),
 #endif
- XLAT_END
 };
+static
+const struct xlat mdb_states[1] = { {
+ .data = mdb_states_xdata,
+ .size = ARRAY_SIZE(mdb_states_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

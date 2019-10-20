@@ -235,8 +235,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat madvise_cmds[] = {
+static const struct xlat_data madvise_cmds_xdata[] = {
 
 
  XLAT(MADV_NORMAL),
@@ -312,8 +311,13 @@ const struct xlat madvise_cmds[] = {
  XLAT(MADV_HWPOISON),
 
  XLAT(MADV_SOFT_OFFLINE),
- XLAT_END
 };
+static
+const struct xlat madvise_cmds[1] = { {
+ .data = madvise_cmds_xdata,
+ .size = ARRAY_SIZE(madvise_cmds_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

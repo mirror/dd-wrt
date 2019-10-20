@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat mctl_sync[] = {
+static const struct xlat_data mctl_sync_xdata[] = {
 #if defined(MS_SYNC) || (defined(HAVE_DECL_MS_SYNC) && HAVE_DECL_MS_SYNC)
   XLAT(MS_SYNC),
 #endif
@@ -23,8 +22,13 @@ const struct xlat mctl_sync[] = {
 #if defined(MS_INVALIDATE) || (defined(HAVE_DECL_MS_INVALIDATE) && HAVE_DECL_MS_INVALIDATE)
   XLAT(MS_INVALIDATE),
 #endif
- XLAT_END
 };
+static
+const struct xlat mctl_sync[1] = { {
+ .data = mctl_sync_xdata,
+ .size = ARRAY_SIZE(mctl_sync_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

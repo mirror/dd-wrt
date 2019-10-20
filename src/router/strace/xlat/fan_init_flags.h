@@ -61,8 +61,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat fan_init_flags[] = {
+static const struct xlat_data fan_init_flags_xdata[] = {
  XLAT(FAN_CLOEXEC),
  XLAT(FAN_NONBLOCK),
  XLAT(FAN_UNLIMITED_QUEUE),
@@ -70,8 +69,13 @@ const struct xlat fan_init_flags[] = {
  XLAT(FAN_ENABLE_AUDIT),
  XLAT(FAN_REPORT_TID),
  XLAT(FAN_REPORT_FID),
- XLAT_END
 };
+static
+const struct xlat fan_init_flags[1] = { {
+ .data = fan_init_flags_xdata,
+ .size = ARRAY_SIZE(fan_init_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

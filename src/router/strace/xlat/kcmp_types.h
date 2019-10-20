@@ -68,18 +68,22 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat kcmp_types[] = {
- XLAT(KCMP_FILE),
- XLAT(KCMP_VM),
- XLAT(KCMP_FILES),
- XLAT(KCMP_FS),
- XLAT(KCMP_SIGHAND),
- XLAT(KCMP_IO),
- XLAT(KCMP_SYSVSEM),
- XLAT(KCMP_EPOLL_TFD),
- XLAT_END
+static const struct xlat_data kcmp_types_xdata[] = {
+ [KCMP_FILE] = XLAT(KCMP_FILE),
+ [KCMP_VM] = XLAT(KCMP_VM),
+ [KCMP_FILES] = XLAT(KCMP_FILES),
+ [KCMP_FS] = XLAT(KCMP_FS),
+ [KCMP_SIGHAND] = XLAT(KCMP_SIGHAND),
+ [KCMP_IO] = XLAT(KCMP_IO),
+ [KCMP_SYSVSEM] = XLAT(KCMP_SYSVSEM),
+ [KCMP_EPOLL_TFD] = XLAT(KCMP_EPOLL_TFD),
 };
+static
+const struct xlat kcmp_types[1] = { {
+ .data = kcmp_types_xdata,
+ .size = ARRAY_SIZE(kcmp_types_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

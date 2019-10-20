@@ -68,8 +68,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat neighbor_cache_entry_flags[] = {
+static const struct xlat_data neighbor_cache_entry_flags_xdata[] = {
  XLAT(NTF_USE),
  XLAT(NTF_SELF),
  XLAT(NTF_MASTER),
@@ -78,8 +77,13 @@ const struct xlat neighbor_cache_entry_flags[] = {
  XLAT(NTF_OFFLOADED),
  XLAT(NTF_STICKY),
  XLAT(NTF_ROUTER),
- XLAT_END
 };
+static
+const struct xlat neighbor_cache_entry_flags[1] = { {
+ .data = neighbor_cache_entry_flags_xdata,
+ .size = ARRAY_SIZE(neighbor_cache_entry_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

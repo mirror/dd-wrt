@@ -110,8 +110,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat bpf_op_jmp[] = {
+static const struct xlat_data bpf_op_jmp_xdata[] = {
  XLAT(BPF_JA),
  XLAT(BPF_JEQ),
  XLAT(BPF_JGT),
@@ -126,8 +125,13 @@ const struct xlat bpf_op_jmp[] = {
  XLAT(BPF_JLE),
  XLAT(BPF_JSLT),
  XLAT(BPF_JSLE),
- XLAT_END
 };
+static
+const struct xlat bpf_op_jmp[1] = { {
+ .data = bpf_op_jmp_xdata,
+ .size = ARRAY_SIZE(bpf_op_jmp_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

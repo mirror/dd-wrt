@@ -40,14 +40,18 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat fspick_flags[] = {
+static const struct xlat_data fspick_flags_xdata[] = {
  XLAT(FSPICK_CLOEXEC),
  XLAT(FSPICK_SYMLINK_NOFOLLOW),
  XLAT(FSPICK_NO_AUTOMOUNT),
  XLAT(FSPICK_EMPTY_PATH),
- XLAT_END
 };
+static
+const struct xlat fspick_flags[1] = { {
+ .data = fspick_flags_xdata,
+ .size = ARRAY_SIZE(fspick_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

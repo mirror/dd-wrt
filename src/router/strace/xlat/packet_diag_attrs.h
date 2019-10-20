@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat packet_diag_attrs[] = {
+static const struct xlat_data packet_diag_attrs_xdata[] = {
  XLAT(PACKET_DIAG_INFO),
  XLAT(PACKET_DIAG_MCLIST),
  XLAT(PACKET_DIAG_RX_RING),
@@ -22,8 +21,13 @@ const struct xlat packet_diag_attrs[] = {
  XLAT(PACKET_DIAG_UID),
  XLAT(PACKET_DIAG_MEMINFO),
  XLAT(PACKET_DIAG_FILTER),
- XLAT_END
 };
+static
+const struct xlat packet_diag_attrs[1] = { {
+ .data = packet_diag_attrs_xdata,
+ .size = ARRAY_SIZE(packet_diag_attrs_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

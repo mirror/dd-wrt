@@ -173,8 +173,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat personality_types[] = {
+static const struct xlat_data personality_types_xdata[] = {
  XLAT(PER_LINUX),
  XLAT(PER_LINUX_32BIT),
  XLAT(PER_LINUX_FDPIC),
@@ -198,8 +197,13 @@ const struct xlat personality_types[] = {
  XLAT(PER_OSF4),
  XLAT(PER_HPUX),
  XLAT(PER_MASK),
- XLAT_END
 };
+static
+const struct xlat personality_types[1] = { {
+ .data = personality_types_xdata,
+ .size = ARRAY_SIZE(personality_types_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -33,15 +33,19 @@ extern const struct xlat blkpg_ops[];
 
 # else
 
+static const struct xlat_data blkpg_ops_xdata[] = {
+ [BLKPG_ADD_PARTITION] = XLAT(BLKPG_ADD_PARTITION),
+ [BLKPG_DEL_PARTITION] = XLAT(BLKPG_DEL_PARTITION),
+ [BLKPG_RESIZE_PARTITION] = XLAT(BLKPG_RESIZE_PARTITION),
+};
 #  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
 static
 #  endif
-const struct xlat blkpg_ops[] = {
- XLAT(BLKPG_ADD_PARTITION),
- XLAT(BLKPG_DEL_PARTITION),
- XLAT(BLKPG_RESIZE_PARTITION),
- XLAT_END
-};
+const struct xlat blkpg_ops[1] = { {
+ .data = blkpg_ops_xdata,
+ .size = ARRAY_SIZE(blkpg_ops_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

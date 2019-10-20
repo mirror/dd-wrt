@@ -33,13 +33,17 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat af_packet_versions[] = {
- XLAT(TPACKET_V1),
- XLAT(TPACKET_V2),
- XLAT(TPACKET_V3),
- XLAT_END
+static const struct xlat_data af_packet_versions_xdata[] = {
+ [TPACKET_V1] = XLAT(TPACKET_V1),
+ [TPACKET_V2] = XLAT(TPACKET_V2),
+ [TPACKET_V3] = XLAT(TPACKET_V3),
 };
+static
+const struct xlat af_packet_versions[1] = { {
+ .data = af_packet_versions_xdata,
+ .size = ARRAY_SIZE(af_packet_versions_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

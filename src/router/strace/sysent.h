@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 The strace developers.
+ * Copyright (c) 2016-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -36,5 +36,6 @@ typedef struct sysent {
 # define TRACE_FSTAT			00400000	/* Trace *fstat{,at}{,64} syscalls. */
 # define TRACE_STAT_LIKE		01000000	/* Trace *{,l,f}stat{,x,at}{,64} syscalls. */
 # define TRACE_PURE			02000000	/* Trace getter syscalls with no arguments. */
+# define TRACE_SECCOMP_DEFAULT		04000000	/* Syscall is traced by seccomp filter by default. */
 
 #endif /* !STRACE_SYSENT_H */

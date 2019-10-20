@@ -103,23 +103,27 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat rtnl_neigh_attrs[] = {
- XLAT(NDA_UNSPEC),
- XLAT(NDA_DST),
- XLAT(NDA_LLADDR),
- XLAT(NDA_CACHEINFO),
- XLAT(NDA_PROBES),
- XLAT(NDA_VLAN),
- XLAT(NDA_PORT),
- XLAT(NDA_VNI),
- XLAT(NDA_IFINDEX),
- XLAT(NDA_MASTER),
- XLAT(NDA_LINK_NETNSID),
- XLAT(NDA_SRC_VNI),
- XLAT(NDA_PROTOCOL),
- XLAT_END
+static const struct xlat_data rtnl_neigh_attrs_xdata[] = {
+ [NDA_UNSPEC] = XLAT(NDA_UNSPEC),
+ [NDA_DST] = XLAT(NDA_DST),
+ [NDA_LLADDR] = XLAT(NDA_LLADDR),
+ [NDA_CACHEINFO] = XLAT(NDA_CACHEINFO),
+ [NDA_PROBES] = XLAT(NDA_PROBES),
+ [NDA_VLAN] = XLAT(NDA_VLAN),
+ [NDA_PORT] = XLAT(NDA_PORT),
+ [NDA_VNI] = XLAT(NDA_VNI),
+ [NDA_IFINDEX] = XLAT(NDA_IFINDEX),
+ [NDA_MASTER] = XLAT(NDA_MASTER),
+ [NDA_LINK_NETNSID] = XLAT(NDA_LINK_NETNSID),
+ [NDA_SRC_VNI] = XLAT(NDA_SRC_VNI),
+ [NDA_PROTOCOL] = XLAT(NDA_PROTOCOL),
 };
+static
+const struct xlat rtnl_neigh_attrs[1] = { {
+ .data = rtnl_neigh_attrs_xdata,
+ .size = ARRAY_SIZE(rtnl_neigh_attrs_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

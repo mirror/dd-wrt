@@ -40,14 +40,18 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat bpf_map_update_elem_flags[] = {
+static const struct xlat_data bpf_map_update_elem_flags_xdata[] = {
  [BPF_ANY] = XLAT(BPF_ANY),
  [BPF_NOEXIST] = XLAT(BPF_NOEXIST),
  [BPF_EXIST] = XLAT(BPF_EXIST),
  [BPF_F_LOCK] = XLAT(BPF_F_LOCK),
- XLAT_END
 };
+static
+const struct xlat bpf_map_update_elem_flags[1] = { {
+ .data = bpf_map_update_elem_flags_xdata,
+ .size = ARRAY_SIZE(bpf_map_update_elem_flags_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

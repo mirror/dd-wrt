@@ -12,13 +12,17 @@
 
 # else
 
-static
-const struct xlat mdb_flags[] = {
+static const struct xlat_data mdb_flags_xdata[] = {
 #if defined(MDB_FLAGS_OFFLOAD) || (defined(HAVE_DECL_MDB_FLAGS_OFFLOAD) && HAVE_DECL_MDB_FLAGS_OFFLOAD)
   XLAT(MDB_FLAGS_OFFLOAD),
 #endif
- XLAT_END
 };
+static
+const struct xlat mdb_flags[1] = { {
+ .data = mdb_flags_xdata,
+ .size = ARRAY_SIZE(mdb_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

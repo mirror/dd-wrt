@@ -26,12 +26,16 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat bpf_miscop[] = {
+static const struct xlat_data bpf_miscop_xdata[] = {
  XLAT(BPF_TAX),
  XLAT(BPF_TXA),
- XLAT_END
 };
+static
+const struct xlat bpf_miscop[1] = { {
+ .data = bpf_miscop_xdata,
+ .size = ARRAY_SIZE(bpf_miscop_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

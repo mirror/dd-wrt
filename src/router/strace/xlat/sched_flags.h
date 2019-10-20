@@ -33,13 +33,17 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat sched_flags[] = {
+static const struct xlat_data sched_flags_xdata[] = {
  XLAT(SCHED_FLAG_RESET_ON_FORK),
  XLAT(SCHED_FLAG_RECLAIM),
  XLAT(SCHED_FLAG_DL_OVERRUN),
- XLAT_END
 };
+static
+const struct xlat sched_flags[1] = { {
+ .data = sched_flags_xdata,
+ .size = ARRAY_SIZE(sched_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

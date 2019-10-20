@@ -16,8 +16,7 @@
 
 # else
 
-static
-const struct xlat sigact_flags[] = {
+static const struct xlat_data sigact_flags_xdata[] = {
 #if defined(SA_RESTORER) || (defined(HAVE_DECL_SA_RESTORER) && HAVE_DECL_SA_RESTORER)
   XLAT(SA_RESTORER),
 #endif
@@ -70,8 +69,13 @@ const struct xlat sigact_flags[] = {
 #if defined(SA_NOPTRACE) || (defined(HAVE_DECL_SA_NOPTRACE) && HAVE_DECL_SA_NOPTRACE)
   XLAT(SA_NOPTRACE),
 #endif
- XLAT_END
 };
+static
+const struct xlat sigact_flags[1] = { {
+ .data = sigact_flags_xdata,
+ .size = ARRAY_SIZE(sigact_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

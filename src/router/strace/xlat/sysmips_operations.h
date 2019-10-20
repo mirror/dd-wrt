@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat sysmips_operations[] = {
+static const struct xlat_data sysmips_operations_xdata[] = {
 #if defined(SETNAME) || (defined(HAVE_DECL_SETNAME) && HAVE_DECL_SETNAME)
   XLAT(SETNAME),
 #endif
@@ -29,8 +28,13 @@ const struct xlat sysmips_operations[] = {
 #if defined(MIPS_ATOMIC_SET) || (defined(HAVE_DECL_MIPS_ATOMIC_SET) && HAVE_DECL_MIPS_ATOMIC_SET)
   XLAT(MIPS_ATOMIC_SET),
 #endif
- XLAT_END
 };
+static
+const struct xlat sysmips_operations[1] = { {
+ .data = sysmips_operations_xdata,
+ .size = ARRAY_SIZE(sysmips_operations_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

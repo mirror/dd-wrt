@@ -33,13 +33,17 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat rtnl_mdb_attrs[] = {
- XLAT(MDBA_UNSPEC),
- XLAT(MDBA_MDB),
- XLAT(MDBA_ROUTER),
- XLAT_END
+static const struct xlat_data rtnl_mdb_attrs_xdata[] = {
+ [MDBA_UNSPEC] = XLAT(MDBA_UNSPEC),
+ [MDBA_MDB] = XLAT(MDBA_MDB),
+ [MDBA_ROUTER] = XLAT(MDBA_ROUTER),
 };
+static
+const struct xlat rtnl_mdb_attrs[1] = { {
+ .data = rtnl_mdb_attrs_xdata,
+ .size = ARRAY_SIZE(rtnl_mdb_attrs_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -40,14 +40,18 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat nf_queue_msg_types[] = {
- XLAT(NFQNL_MSG_PACKET),
- XLAT(NFQNL_MSG_VERDICT),
- XLAT(NFQNL_MSG_CONFIG),
- XLAT(NFQNL_MSG_VERDICT_BATCH),
- XLAT_END
+static const struct xlat_data nf_queue_msg_types_xdata[] = {
+ [NFQNL_MSG_PACKET] = XLAT(NFQNL_MSG_PACKET),
+ [NFQNL_MSG_VERDICT] = XLAT(NFQNL_MSG_VERDICT),
+ [NFQNL_MSG_CONFIG] = XLAT(NFQNL_MSG_CONFIG),
+ [NFQNL_MSG_VERDICT_BATCH] = XLAT(NFQNL_MSG_VERDICT_BATCH),
 };
+static
+const struct xlat nf_queue_msg_types[1] = { {
+ .data = nf_queue_msg_types_xdata,
+ .size = ARRAY_SIZE(nf_queue_msg_types_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

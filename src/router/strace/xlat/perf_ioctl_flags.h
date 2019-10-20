@@ -19,13 +19,17 @@ extern const struct xlat perf_ioctl_flags[];
 
 # else
 
+static const struct xlat_data perf_ioctl_flags_xdata[] = {
+ XLAT(PERF_IOC_FLAG_GROUP),
+};
 #  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
 static
 #  endif
-const struct xlat perf_ioctl_flags[] = {
- XLAT(PERF_IOC_FLAG_GROUP),
- XLAT_END
-};
+const struct xlat perf_ioctl_flags[1] = { {
+ .data = perf_ioctl_flags_xdata,
+ .size = ARRAY_SIZE(perf_ioctl_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

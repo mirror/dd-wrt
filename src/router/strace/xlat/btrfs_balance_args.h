@@ -89,10 +89,7 @@ extern const struct xlat btrfs_balance_args[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat btrfs_balance_args[] = {
+static const struct xlat_data btrfs_balance_args_xdata[] = {
  XLAT_TYPE(uint64_t, BTRFS_BALANCE_ARGS_PROFILES),
  XLAT_TYPE(uint64_t, BTRFS_BALANCE_ARGS_USAGE),
  XLAT_TYPE(uint64_t, BTRFS_BALANCE_ARGS_DEVID),
@@ -104,8 +101,15 @@ const struct xlat btrfs_balance_args[] = {
  XLAT_TYPE(uint64_t, BTRFS_BALANCE_ARGS_CONVERT),
  XLAT_TYPE(uint64_t, BTRFS_BALANCE_ARGS_SOFT),
  XLAT_TYPE(uint64_t, BTRFS_BALANCE_ARGS_USAGE_RANGE),
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat btrfs_balance_args[1] = { {
+ .data = btrfs_balance_args_xdata,
+ .size = ARRAY_SIZE(btrfs_balance_args_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

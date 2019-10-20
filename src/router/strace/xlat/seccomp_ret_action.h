@@ -64,7 +64,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # ifndef IN_MPERS
 
-const struct xlat seccomp_ret_action[] = {
+static const struct xlat_data seccomp_ret_action_xdata[] = {
  XLAT(SECCOMP_RET_KILL_PROCESS),
  XLAT(SECCOMP_RET_KILL_THREAD),
  XLAT(SECCOMP_RET_TRAP),
@@ -73,8 +73,12 @@ const struct xlat seccomp_ret_action[] = {
  XLAT(SECCOMP_RET_TRACE),
  XLAT(SECCOMP_RET_LOG),
  XLAT(SECCOMP_RET_ALLOW),
- XLAT_END
 };
+const struct xlat seccomp_ret_action[1] = { {
+ .data = seccomp_ret_action_xdata,
+ .size = ARRAY_SIZE(seccomp_ret_action_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

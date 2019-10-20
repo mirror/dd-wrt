@@ -28,7 +28,7 @@
 #include <sys/uio.h>
 
 /* for __X32_SYSCALL_BIT */
-#include <asm/unistd.h>
+#include "scno.h"
 
 #include "regs.h"
 
@@ -417,13 +417,24 @@ dumpio(struct tcb *tcp)
 	}
 }
 
-const char *
-err_name(unsigned long err)
+static const char *
+err_name(uint64_t err)
 {
-	if ((err < nerrnos) && errnoent[err])
-		return errnoent[err];
+	return err < nerrnos ? errnoent[err] : NULL;
+}
 
-	return NULL;
+void
+print_err(int64_t err, bool negated)
+{
+	const char *str = err_name(negated ? -err : err);
+
+	if (!str || xlat_verbose(xlat_verbosity) != XLAT_STYLE_ABBREV)
+		tprintf(negated ? "%" PRId64 : "%" PRIu64, err);
+	if (!str || xlat_verbose(xlat_verbosity) == XLAT_STYLE_RAW)
+		return;
+	(xlat_verbose(xlat_verbosity) == XLAT_STYLE_ABBREV
+		? tprintf : tprintf_comment)("%s%s",
+					     negated ? "-" : "", str);
 }
 
 static void
@@ -665,9 +676,27 @@ syscall_entering_finish(struct tcb *tcp, int res)
 {
 	tcp->flags |= TCB_INSYSCALL;
 	tcp->sys_func_rval = res;
+
 	/* Measure the entrance time as late as possible to avoid errors. */
 	if ((Tflag || cflag) && !filtered(tcp))
 		clock_gettime(CLOCK_MONOTONIC, &tcp->etime);
+
+	/* Start tracking system time */
+	if (cflag) {
+		if (debug_flag) {
+			struct timespec dt;
+
+			ts_sub(&dt, &tcp->stime, &tcp->ltime);
+
+			if (ts_nz(&dt))
+				debug_func_msg("pid %d: %.9f seconds of system "
+					       "time spent since the last "
+					       "syscall exit",
+					       tcp->pid, ts_float(&dt));
+		}
+
+		tcp->ltime = tcp->stime;
+	}
 }
 
 /* Returns:
@@ -715,7 +744,7 @@ print_syscall_resume(struct tcb *tcp)
 	 * "strace -ff -oLOG test/threaded_execve" corner case.
 	 * It's the only case when -ff mode needs reprinting.
 	 */
-	if ((followfork < 2 && printing_tcp != tcp && tcp->real_outf == NULL)
+	if ((followfork < 2 && printing_tcp != tcp && !tcp->staged_output_data)
 	    || (tcp->flags & TCB_REPRINT)) {
 		tcp->flags &= ~TCB_REPRINT;
 		printleader(tcp);
@@ -921,6 +950,9 @@ syscall_exiting_finish(struct tcb *tcp)
 	tcp->flags &= ~(TCB_INSYSCALL | TCB_TAMPERED | TCB_INJECT_DELAY_EXIT);
 	tcp->sys_func_rval = 0;
 	free_tcb_priv_data(tcp);
+
+	if (cflag)
+		tcp->ltime = tcp->stime;
 }
 
 bool

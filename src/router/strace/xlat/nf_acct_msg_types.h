@@ -47,15 +47,19 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat nf_acct_msg_types[] = {
- XLAT(NFNL_MSG_ACCT_NEW),
- XLAT(NFNL_MSG_ACCT_GET),
- XLAT(NFNL_MSG_ACCT_GET_CTRZERO),
- XLAT(NFNL_MSG_ACCT_DEL),
- XLAT(NFNL_MSG_ACCT_OVERQUOTA),
- XLAT_END
+static const struct xlat_data nf_acct_msg_types_xdata[] = {
+ [NFNL_MSG_ACCT_NEW] = XLAT(NFNL_MSG_ACCT_NEW),
+ [NFNL_MSG_ACCT_GET] = XLAT(NFNL_MSG_ACCT_GET),
+ [NFNL_MSG_ACCT_GET_CTRZERO] = XLAT(NFNL_MSG_ACCT_GET_CTRZERO),
+ [NFNL_MSG_ACCT_DEL] = XLAT(NFNL_MSG_ACCT_DEL),
+ [NFNL_MSG_ACCT_OVERQUOTA] = XLAT(NFNL_MSG_ACCT_OVERQUOTA),
 };
+static
+const struct xlat nf_acct_msg_types[1] = { {
+ .data = nf_acct_msg_types_xdata,
+ .size = ARRAY_SIZE(nf_acct_msg_types_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

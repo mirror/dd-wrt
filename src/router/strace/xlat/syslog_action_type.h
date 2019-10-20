@@ -89,8 +89,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat syslog_action_type[] = {
+static const struct xlat_data syslog_action_type_xdata[] = {
  [SYSLOG_ACTION_CLOSE] = XLAT(SYSLOG_ACTION_CLOSE),
  [SYSLOG_ACTION_OPEN] = XLAT(SYSLOG_ACTION_OPEN),
  [SYSLOG_ACTION_READ] = XLAT(SYSLOG_ACTION_READ),
@@ -102,8 +101,13 @@ const struct xlat syslog_action_type[] = {
  [SYSLOG_ACTION_CONSOLE_LEVEL] = XLAT(SYSLOG_ACTION_CONSOLE_LEVEL),
  [SYSLOG_ACTION_SIZE_UNREAD] = XLAT(SYSLOG_ACTION_SIZE_UNREAD),
  [SYSLOG_ACTION_SIZE_BUFFER] = XLAT(SYSLOG_ACTION_SIZE_BUFFER),
- XLAT_END
 };
+static
+const struct xlat syslog_action_type[1] = { {
+ .data = syslog_action_type_xdata,
+ .size = ARRAY_SIZE(syslog_action_type_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

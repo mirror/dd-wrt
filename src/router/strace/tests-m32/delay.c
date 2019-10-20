@@ -1,13 +1,14 @@
 /*
  * Check delay injection.
  *
- * Copyright (c) 2018 The strace developers.
+ * Copyright (c) 2018-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "tests.h"
+#include <inttypes.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -16,7 +17,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <sys/wait.h>
-#include <asm/unistd.h>
+#include "scno.h"
 
 static int64_t
 usecs_from_tv(const struct timeval *const tv)
@@ -31,6 +32,22 @@ usecs_from_ts(const struct timespec *const ts)
 }
 
 static void
+check_(const int64_t got, const bool ge, const int64_t orig, const int nproc,
+       const int exitcode)
+{
+	const int64_t thresh = (orig * (ge ? nproc - 1 : nproc + 1)) / nproc;
+
+	if (ge ? got >= thresh : got <= thresh)
+		return;
+
+	fprintf(stderr, "Got delay of %" PRId64 ", %s than threshold value of "
+			"%" PRId64 " (expected nominal delay value is %" PRId64
+			")\n", got, ge ? "less" : "more", thresh, orig);
+
+	_exit(exitcode);
+}
+
+static void
 check_delay(const struct timeval *const tv0,
 	    const struct timespec *const ts,
 	    const struct timeval *const tv1,
@@ -42,17 +59,10 @@ check_delay(const struct timeval *const tv0,
 	const int64_t us  = usecs_from_ts(ts);
 	const int64_t us1 = usecs_from_tv(tv1);
 
-	if (us - us0 < delay_exit * (nproc - 1) / nproc)
-		_exit(1);
-
-	if (us - us0 > delay_exit * (nproc + 1) / nproc)
-		_exit(2);
-
-	if (us1 - us < delay_enter * (nproc - 1) / nproc)
-		_exit(3);
-
-	if (us1 - us > delay_enter * (nproc + 1) / nproc)
-		_exit(4);
+	check_(us - us0, true,  delay_exit,  nproc, 1);
+	check_(us - us0, false, delay_exit,  nproc, 2);
+	check_(us1 - us, true,  delay_enter, nproc, 3);
+	check_(us1 - us, false, delay_enter, nproc, 4);
 }
 
 static void

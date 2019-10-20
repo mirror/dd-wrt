@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat xdp_flags[] = {
+static const struct xlat_data xdp_flags_xdata[] = {
 #if defined(XDP_FLAGS_MODES) || (defined(HAVE_DECL_XDP_FLAGS_MODES) && HAVE_DECL_XDP_FLAGS_MODES)
   XLAT(XDP_FLAGS_MODES),
 #endif
@@ -29,8 +28,13 @@ const struct xlat xdp_flags[] = {
 #if defined(XDP_FLAGS_HW_MODE) || (defined(HAVE_DECL_XDP_FLAGS_HW_MODE) && HAVE_DECL_XDP_FLAGS_HW_MODE)
   XLAT(XDP_FLAGS_HW_MODE),
 #endif
- XLAT_END
 };
+static
+const struct xlat xdp_flags[1] = { {
+ .data = xdp_flags_xdata,
+ .size = ARRAY_SIZE(xdp_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

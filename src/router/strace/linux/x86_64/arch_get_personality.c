@@ -1,13 +1,9 @@
 /*
- * Copyright (c) 2010-2018 The strace developers.
+ * Copyright (c) 2010-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
  */
-
-#ifndef AUDIT_ARCH_I386
-# define AUDIT_ARCH_I386 0x40000003
-#endif
 
 int
 get_personality_from_syscall_info(const struct ptrace_syscall_info *sci)

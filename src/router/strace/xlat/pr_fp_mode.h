@@ -26,12 +26,16 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat pr_fp_mode[] = {
+static const struct xlat_data pr_fp_mode_xdata[] = {
  XLAT(PR_FP_MODE_FR),
  XLAT(PR_FP_MODE_FRE),
- XLAT_END
 };
+static
+const struct xlat pr_fp_mode[1] = { {
+ .data = pr_fp_mode_xdata,
+ .size = ARRAY_SIZE(pr_fp_mode_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

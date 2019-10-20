@@ -89,9 +89,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat perf_sw_ids[] = {
-
+static const struct xlat_data perf_sw_ids_xdata[] = {
  XLAT(PERF_COUNT_SW_CPU_CLOCK),
  XLAT(PERF_COUNT_SW_TASK_CLOCK),
  XLAT(PERF_COUNT_SW_PAGE_FAULTS),
@@ -103,8 +101,13 @@ const struct xlat perf_sw_ids[] = {
  XLAT(PERF_COUNT_SW_EMULATION_FAULTS),
  XLAT(PERF_COUNT_SW_DUMMY),
  XLAT(PERF_COUNT_SW_BPF_OUTPUT),
- XLAT_END
 };
+static
+const struct xlat perf_sw_ids[1] = { {
+ .data = perf_sw_ids_xdata,
+ .size = ARRAY_SIZE(perf_sw_ids_xdata),
+ .type = XT_SORTED,
+} };
 
 # endif /* !IN_MPERS */
 

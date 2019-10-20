@@ -40,14 +40,18 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat quota_formats[] = {
- XLAT(QFMT_VFS_OLD),
- XLAT(QFMT_VFS_V0),
- XLAT(QFMT_OCFS2),
- XLAT(QFMT_VFS_V1),
- XLAT_END
+static const struct xlat_data quota_formats_xdata[] = {
+ [QFMT_VFS_OLD] = XLAT(QFMT_VFS_OLD),
+ [QFMT_VFS_V0] = XLAT(QFMT_VFS_V0),
+ [QFMT_OCFS2] = XLAT(QFMT_OCFS2),
+ [QFMT_VFS_V1] = XLAT(QFMT_VFS_V1),
 };
+static
+const struct xlat quota_formats[1] = { {
+ .data = quota_formats_xdata,
+ .size = ARRAY_SIZE(quota_formats_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

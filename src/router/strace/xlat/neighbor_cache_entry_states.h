@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat neighbor_cache_entry_states[] = {
+static const struct xlat_data neighbor_cache_entry_states_xdata[] = {
 #if defined(NUD_INCOMPLETE) || (defined(HAVE_DECL_NUD_INCOMPLETE) && HAVE_DECL_NUD_INCOMPLETE)
   XLAT(NUD_INCOMPLETE),
 #endif
@@ -41,8 +40,13 @@ const struct xlat neighbor_cache_entry_states[] = {
 #if defined(NUD_NONE) || (defined(HAVE_DECL_NUD_NONE) && HAVE_DECL_NUD_NONE)
   XLAT(NUD_NONE),
 #endif
- XLAT_END
 };
+static
+const struct xlat neighbor_cache_entry_states[1] = { {
+ .data = neighbor_cache_entry_states_xdata,
+ .size = ARRAY_SIZE(neighbor_cache_entry_states_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

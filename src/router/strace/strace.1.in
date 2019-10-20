@@ -38,12 +38,8 @@
 strace \- trace system calls and signals
 .SH SYNOPSIS
 .SY strace
-.if '@ENABLE_STACKTRACE_TRUE@'#' .ig end_unwind_opt
-.OP \-ACdffhikqrtttTvVxxy
-.end_unwind_opt
-.if '@ENABLE_STACKTRACE_FALSE@'#' .ig end_no_unwind_opt
-.OP \-ACdffhiqrtttTvVxxy
-.end_no_unwind_opt
+.if '@ENABLE_STACKTRACE_FALSE@'#' .OP \-ACdffhikqqrtttTvVwxxyyzZ
+.if '@ENABLE_STACKTRACE_TRUE@'#' .OP \-ACdffhiqqrtttTvVwxxyyzZ
 .OP \-I n
 .OP \-b execve
 .OM \-e expr
@@ -53,6 +49,7 @@ strace \- trace system calls and signals
 .OP \-X format
 .OM \-P path
 .OM \-p pid
+.OP \-\-seccomp\-bpf
 .BR "" {
 .OR \-p pid
 .BR "" |
@@ -64,7 +61,7 @@ strace \- trace system calls and signals
 .YS
 .SY strace
 .B \-c
-.OP \-df
+.OP \-dfwzZ
 .OP \-I n
 .OP \-b execve
 .OM \-e expr
@@ -72,6 +69,7 @@ strace \- trace system calls and signals
 .OP \-S sortby
 .OM \-P path
 .OM \-p pid
+.OP \-\-seccomp\-bpf
 .BR "" {
 .OR \-p pid
 .BR "" |
@@ -233,161 +231,7 @@ sigprocmask(SIG_UNBLOCK, ~[], NULL) = 0
 .CE
 Here, the second argument represents the full set of all signals.
 .SH OPTIONS
-.SS Output format
-.TP 12
-.BI "\-a " column
-Align return values in a specific column (default column 40).
-.TP
-.B \-i
-Print the instruction pointer at the time of the system call.
-.if '@ENABLE_STACKTRACE_TRUE@'#' .ig end_unwind
-.TP
-.B \-k
-Print the execution stack trace of the traced processes after each system call.
-.end_unwind
-.TP
-.BI "\-o " filename
-Write the trace output to the file
-.I filename
-rather than to stderr.
-.IR filename . pid
-form is used if
-.B \-ff
-option is supplied.
-If the argument begins with '|' or '!', the rest of the
-argument is treated as a command and all output is piped to it.
-This is convenient for piping the debugging output to a program
-without affecting the redirections of executed programs.
-The latter is not compatible with
-.B \-ff
-option currently.
-.TP
-.B \-A
-Open the file provided in the
-.B \-o
-option in append mode.
-.TP
-.B \-q
-Suppress messages about attaching, detaching etc.  This happens
-automatically when output is redirected to a file and the command
-is run directly instead of attaching.
-.TP
-.B \-qq
-If given twice, suppress messages about process exit status.
-.TP
-.B \-r
-Print a relative timestamp upon entry to each system call.  This
-records the time difference between the beginning of successive
-system calls.
-Note that since
-.B \-r
-option uses the monotonic clock time for measuring time difference and not the
-wall clock time, its measurements can differ from the difference in time
-reported by the
-.B \-t
-option.
-.TP
-.BI "\-s " strsize
-Specify the maximum string size to print (the default is 32).  Note
-that filenames are not considered strings and are always printed in
-full.
-.TP
-.B \-t
-Prefix each line of the trace with the wall clock time.
-.TP
-.B \-tt
-If given twice, the time printed will include the microseconds.
-.TP
-.B \-ttt
-If given thrice, the time printed will include the microseconds
-and the leading portion will be printed as the number
-of seconds since the epoch.
-.TP
-.B \-T
-Show the time spent in system calls.  This records the time
-difference between the beginning and the end of each system call.
-.TP
-.B \-x
-Print all non-ASCII strings in hexadecimal string format.
-.TP
-.B \-xx
-Print all strings in hexadecimal string format.
-.TP
-.BI "\-X " format
-Set the format for printing of named constants and flags.
-Supported
-.I format
-values are:
-.RS
-.TP 10
-.B raw
-Raw number output, without decoding.
-.TP
-.B abbrev
-Output a named constant or a set of flags instead of the raw number if they are
-found.
-This is the default
-.B strace
-behaviour.
-.TP
-.B verbose
-Output both the raw value and the decoded string (as a comment).
-.RE
-.TP
-.B \-y
-Print paths associated with file descriptor arguments.
-.TP
-.B \-yy
-Print protocol specific information associated with socket file descriptors,
-and block/character device number associated with device file descriptors.
-.SS Statistics
-.TP 12
-.B \-c
-Count time, calls, and errors for each system call and report a summary on
-program exit, suppressing the regular output.
-This attempts to show system time (CPU time spent running
-in the kernel) independent of wall clock time.  If
-.B \-c
-is used with
-.BR \-f ,
-only aggregate totals for all traced processes are kept.
-.TP
-.B \-C
-Like
-.B \-c
-but also print regular output while processes are running.
-.TP
-.BI "\-O " overhead
-Set the overhead for tracing system calls to
-.I overhead
-microseconds.
-This is useful for overriding the default heuristic for guessing
-how much time is spent in mere measuring when timing system calls using
-the
-.B \-c
-option.  The accuracy of the heuristic can be gauged by timing a given
-program run without tracing (using
-.BR time (1))
-and comparing the accumulated
-system call time to the total produced using
-.BR \-c .
-.TP
-.BI "\-S " sortby
-Sort the output of the histogram printed by the
-.B \-c
-option by the specified criterion.  Legal values are
-.BR time ,
-.BR calls ,
-.BR name ,
-and
-.B nothing
-(default is
-.BR time ).
-.TP
-.B \-w
-Summarise the time difference between the beginning and end of
-each system call.  The default is to summarise the system time.
-.SS Filtering
+.SS General
 .TP 12
 .BI "\-e " expr
 A qualifying expression which modifies which events to trace
@@ -441,390 +285,48 @@ have the obvious meanings.
 Note that some shells use the exclamation point for history
 expansion even inside quoted arguments.  If so, you must escape
 the exclamation point with a backslash.
+.SS Startup
+.TP 12
+\fB\-E\ \fIvar\fR=\,\fIval\fR
+Run command with
+.IR var = val
+in its list of environment variables.
 .TP
-\fB\-e\ trace\fR=\,\fIset\fR
-Trace only the specified set of system calls.  The
-.B \-c
-option is useful for determining which system calls might be useful
-to trace.  For example,
-.BR trace = open,close,read,write
-means to only
-trace those four system calls.  Be careful when making inferences
-about the user/kernel boundary if only a subset of system calls
-are being monitored.  The default is
-.BR trace = all .
+.BI "\-E " var
+Remove
+.IR var
+from the inherited list of environment variables before passing it on to
+the command.
 .TP
-\fB\-e\ trace\fR=/\,\fIregex\fR
-Trace only those system calls that match the
-.IR regex .
-You can use
-.B POSIX
-Extended Regular Expression syntax (see
-.BR regex (7)).
-.TP
-.BR "\-e\ trace" = %file
-.TQ
-.BR "\-e\ trace" = file " (deprecated)"
-Trace all system calls which take a file name as an argument.  You
-can think of this as an abbreviation for
-.BR "\-e\ trace" = open , stat , chmod , unlink ,...
-which is useful to seeing what files the process is referencing.
-Furthermore, using the abbreviation will ensure that you don't
-accidentally forget to include a call like
-.BR lstat (2)
-in the list.  Betchya woulda forgot that one.
-.TP
-.BR "\-e\ trace" = %process
-.TQ
-.BR "\-e\ trace" = process " (deprecated)"
-Trace all system calls which involve process management.  This
-is useful for watching the fork, wait, and exec steps of a process.
-.TP
-.BR "\-e\ trace" = %net
-.TQ
-.BR "\-e\ trace" = %network
-.TQ
-.BR "\-e\ trace" = network " (deprecated)"
-Trace all the network related system calls.
-.TP
-.BR "\-e\ trace" = %signal
-.TQ
-.BR "\-e\ trace" = signal " (deprecated)"
-Trace all signal related system calls.
-.TP
-.BR "\-e\ trace" = %ipc
-.TQ
-.BR "\-e\ trace" = ipc " (deprecated)"
-Trace all IPC related system calls.
-.TP
-.BR "\-e\ trace" = %desc
-.TQ
-.BR "\-e\ trace" = desc " (deprecated)"
-Trace all file descriptor related system calls.
-.TP
-.BR "\-e\ trace" = %memory
-.TQ
-.BR "\-e\ trace" = memory " (deprecated)"
-Trace all memory mapping related system calls.
-.TP
-.BR "\-e\ trace" = %stat
-Trace stat syscall variants.
-.TP
-.BR "\-e\ trace" = %lstat
-Trace lstat syscall variants.
-.TP
-.BR "\-e\ trace" = %fstat
-Trace fstat and fstatat syscall variants.
-.TP
-.BR "\-e\ trace" = %%stat
-Trace syscalls used for requesting file status (stat, lstat, fstat, fstatat,
-statx, and their variants).
-.TP
-.BR "\-e\ trace" = %statfs
-Trace statfs, statfs64, statvfs, osf_statfs, and osf_statfs64 system calls.
-The same effect can be achieved with
-.BR "\-e\ trace" = /^(.*_)?statv?fs
-regular expression.
-.TP
-.BR "\-e\ trace" = %fstatfs
-Trace fstatfs, fstatfs64, fstatvfs, osf_fstatfs, and osf_fstatfs64 system calls.
-The same effect can be achieved with
-.BR "\-e\ trace" = /fstatv?fs
-regular expression.
-.TP
-.BR "\-e\ trace" = %%statfs
-Trace syscalls related to file system statistics (statfs-like, fstatfs-like,
-and ustat).  The same effect can be achieved with
-.BR "\-e\ trace" = /statv?fs|fsstat|ustat
-regular expression.
-.TP
-.BR "\-e\ trace" = %pure
-Trace syscalls that always succeed and have no arguments.
-Currently, this list includes
-.BR arc_gettls "(2), " getdtablesize "(2), " getegid "(2), " getegid32 "(2),"
-.BR geteuid "(2), " geteuid32 "(2), " getgid "(2), " getgid32 "(2),"
-.BR getpagesize "(2), " getpgrp "(2), " getpid "(2), " getppid "(2),"
-.BR get_thread_area (2)
-(on architectures other than x86),
-.BR gettid "(2), " get_tls "(2), " getuid "(2), " getuid32 "(2),"
-.BR getxgid "(2), " getxpid "(2), " getxuid "(2), " kern_features "(2), and"
-.BR metag_get_tls "(2)"
-syscalls.
-.TP
-\fB\-e\ abbrev\fR=\,\fIset\fR
-Abbreviate the output from printing each member of large structures.
-The default is
-.BR abbrev = all .
-The
-.B \-v
-option has the effect of
-.BR abbrev = none .
-.TP
-\fB\-e\ verbose\fR=\,\fIset\fR
-Dereference structures for the specified set of system calls.  The
-default is
-.BR verbose = all .
-.TP
-\fB\-e\ raw\fR=\,\fIset\fR
-Print raw, undecoded arguments for the specified set of system calls.
-This option has the effect of causing all arguments to be printed
-in hexadecimal.  This is mostly useful if you don't trust the
-decoding or you need to know the actual numeric value of an
-argument.
-See also
-.B \-X raw
-option.
-.TP
-\fB\-e\ signal\fR=\,\fIset\fR
-Trace only the specified subset of signals.  The default is
-.BR signal = all .
-For example,
-.BR signal "=!" SIGIO
-(or
-.BR signal "=!" io )
-causes
-.B SIGIO
-signals not to be traced.
-.TP
-\fB\-e\ read\fR=\,\fIset\fR
-Perform a full hexadecimal and ASCII dump of all the data read from
-file descriptors listed in the specified set.  For example, to see
-all input activity on file descriptors
-.I 3
-and
-.I 5
-use
-\fB\-e\ read\fR=\,\fI3\fR,\fI5\fR.
-Note that this is independent from the normal tracing of the
-.BR read (2)
-system call which is controlled by the option
-.BR -e "\ " trace = read .
-.TP
-\fB\-e\ write\fR=\,\fIset\fR
-Perform a full hexadecimal and ASCII dump of all the data written to
-file descriptors listed in the specified set.  For example, to see
-all output activity on file descriptors
-.I 3
-and
-.I 5
-use
-\fB\-e\ write\fR=\,\fI3\fR,\,\fI5\fR.
-Note that this is independent from the normal tracing of the
-.BR write (2)
-system call which is controlled by the option
-.BR -e "\ " trace = write .
-.TP
-\fB\-e\ status\fR=\,\fIset\fR
-Print only system calls with the specified return status.  The default is
-.BR status = all .
-When using the
-.B status
-qualifier, because
+.BI "\-p " pid
+Attach to the process with the process
+.SM ID
+.I pid
+and begin tracing.
+The trace may be terminated
+at any time by a keyboard interrupt signal
+.RB ( CTRL\-C ).
 .B strace
-waits for system calls to return before deciding whether they should be printed
-or not, the traditional order of events may not be preserved anymore.  If two
-system calls are executed by concurrent threads,
-.B strace
-will first print both the entry and exit of the first system call to exit,
-regardless of their respective entry time.  The entry and exit of the second
-system call to exit will be printed afterwards.  Here is an example when
-.BR select (2)
-is called, but a different thread calls
-.BR clock_gettime (2)
-before
-.BR select (2)
-finishes:
-.CW
-[pid 28779] 1130322148.939977 clock_gettime(CLOCK_REALTIME, {1130322148, 939977000}) = 0
-[pid 28772] 1130322148.438139 select(4, [3], NULL, NULL, NULL) = 1 (in [3])
-.CE
-.TP
-.BR "\-e\ status" = successful
-Trace system calls that returned without an error code.  The
-.B -z
-option has the effect of
-.BR status=successful .
-.TP
-.BR "\-e\ status" = failed
-Trace system calls that returned with an error code.  The
-.B -Z
-option has the effect of
-.BR status=failed .
-.TP
-.BR "\-e\ status" = unfinished
-Trace system calls that did not return.  This might happen, for example, due to
-an execve call in a neighbour thread.
-.TP
-.BR "\-e\ status" = unavailable
-Trace system calls that returned but strace failed to fetch the error status.
-.TP
-.BR "\-e\ status" = detached
-Trace system calls for which strace detached before the return.
-.TP
-\fB\-e\ inject\fR=\,\fIset\/\fR[:\fBerror\fR=\,\fIerrno\/\fR|:\fBretval\fR=\,\fIvalue\/\fR][:\fBsignal\fR=\,\fIsig\/\fR][:\fBsyscall\fR=\fIsyscall\fR][:\fBdelay_enter\fR=\,\fIusecs\/\fR][:\fBdelay_exit\fR=\,\fIusecs\/\fR][:\fBwhen\fR=\,\fIexpr\/\fR]
-Perform syscall tampering for the specified set of syscalls.
-
-At least one of
-.BR error ,
-.BR retval ,
-.BR signal ,
-.BR delay_enter ,
-or
-.B delay_exit
-options has to be specified.
-.B error
-and
-.B retval
-are mutually exclusive.
-
-If :\fBerror\fR=\,\fIerrno\/\fR option is specified,
-a fault is injected into a syscall invocation:
-the syscall number is replaced by -1 which corresponds to an invalid syscall
-(unless a syscall is specified with :\fBsyscall=\fR option),
-and the error code is specified using a symbolic
-.I errno
-value like
-.B ENOSYS
-or a numeric value within 1..4095 range.
-
-If :\fBretval\fR=\,\fIvalue\/\fR option is specified,
-success injection is performed: the syscall number is replaced by -1,
-but a bogus success value is returned to the callee.
-
-If :\fBsignal\fR=\,\fIsig\/\fR option is specified with either a symbolic value
-like
-.B SIGSEGV
-or a numeric value within 1..\fBSIGRTMAX\fR range,
-that signal is delivered on entering every syscall specified by the
-.IR set .
-
-If :\fBdelay_enter\fR=\,\fIusecs\/\fR or :\fBdelay_exit\fR=\,\fIusecs\/\fR
-options are specified, delay injection is performed: the tracee is delayed
-by at least
-.IR usecs
-microseconds on entering or exiting the syscall.
-
-If :\fBsignal\fR=\,\fIsig\/\fR option is specified without
-:\fBerror\fR=\,\fIerrno\/\fR, :\fBretval\fR=\,\fIvalue\/\fR or
-:\fBdelay_{enter,exit}\fR=\,\fIusecs\/\fR options,
-then only a signal
-.I sig
-is delivered without a syscall fault or delay injection.
-Conversely, :\fBerror\fR=\,\fIerrno\/\fR or
-:\fBretval\fR=\,\fIvalue\/\fR option without
-:\fBdelay_enter\fR=\,\fIusecs\/\fR,
-:\fBdelay_exit\fR=\,\fIusecs\/\fR or
-:\fBsignal\fR=\,\fIsig\/\fR options injects a fault without delivering a signal
-or injecting a delay, etc.
-
-If both :\fBerror\fR=\,\fIerrno\/\fR or :\fBretval\fR=\,\fIvalue\/\fR
-and :\fBsignal\fR=\,\fIsig\/\fR options are specified, then both
-a fault or success is injected and a signal is delivered.
-
-if :\fBsyscall\fR=\fIsyscall\fR option is specified, the corresponding syscall
-with no side effects is injected instead of -1.
-Currently, only "pure" (see
-.BR "-e trace" = "%pure"
-description) syscalls can be specified there.
-
-Unless a :\fBwhen\fR=\,\fIexpr\fR subexpression is specified,
-an injection is being made into every invocation of each syscall from the
-.IR set .
-
-The format of the subexpression is one of the following:
-.RS
-.IP "" 2
-.I first
-.RS 4
-For every syscall from the
-.IR set ,
-perform an injection for the syscall invocation number
-.I first
-only.
-.RE
-.IP "" 2
-\fIfirst\/\fB+\fR
-.RS 4
-For every syscall from the
-.IR set ,
-perform injections for the syscall invocation number
-.I first
-and all subsequent invocations.
-.RE
-.IP "" 2
-\fIfirst\/\fB+\fIstep\fR
-.RS 4
-For every syscall from the
-.IR set ,
-perform injections for syscall invocations number
-.IR first ,
-.IR first + step ,
-.IR first + step + step ,
-and so on.
-.RE
-.RE
-.IP
-For example, to fail each third and subsequent chdir syscalls with
-.BR ENOENT ,
-use
-\fB\-e\ inject\fR=\,\fIchdir\/\fR:\fBerror\fR=\,\fIENOENT\/\fR:\fBwhen\fR=\,\fI3\/\fB+\fR.
-
-The valid range for numbers
-.I first
-and
-.I step
-is 1..65535.
-
-An injection expression can contain only one
-.BR error =
-or
-.BR retval =
-specification, and only one
-.BR signal =
-specification.  If an injection expression contains multiple
-.BR when =
-specifications, the last one takes precedence.
-
-Accounting of syscalls that are subject to injection
-is done per syscall and per tracee.
-
-Specification of syscall injection can be combined
-with other syscall filtering options, for example,
-\fB\-P \fI/dev/urandom \fB\-e inject\fR=\,\fIfile\/\fR:\fBerror\fR=\,\fIENOENT\fR.
-
-.TP
-\fB\-e\ fault\fR=\,\fIset\/\fR[:\fBerror\fR=\,\fIerrno\/\fR][:\fBwhen\fR=\,\fIexpr\/\fR]
-Perform syscall fault injection for the specified set of syscalls.
-
-This is equivalent to more generic
-\fB\-e\ inject\fR= expression with default value of
-.I errno
-option set to
-.BR ENOSYS .
-.TP
-.BR "\-e\ kvm" = vcpu
-Print the exit reason of kvm vcpu.  Requires Linux kernel version 4.16.0
-or higher.
-
-.TP
-.BI "\-P " path
-Trace only system calls accessing
-.IR path .
+will respond by detaching itself from the traced process(es)
+leaving it (them) to continue running.
 Multiple
-.B \-P
-options can be used to specify several paths.
+.B \-p
+options can be used to attach to many processes in addition to
+.I command
+(which is optional if at least one
+.B \-p
+option is given).
+.B \-p
+"`pidof PROG`" syntax is supported.
 .TP
-.B \-v
-Print unabbreviated versions of environment, stat, termios, etc.
-calls.  These structures are very common in calls and so the default
-behavior displays a reasonable subset of structure members.  Use
-this option to get all of the gory details.
-.TP
-.B \-z
-Print only syscalls that returned without an error code.
-.TP
-.B \-Z
-Print only syscalls that returned with an error code.
+.BI "\-u " username
+Run command with the user \s-1ID\s0, group \s-2ID\s0, and
+supplementary groups of
+.IR username .
+This option is only useful when running as root and enables the
+correct execution of setuid and/or setgid binaries.
+Unless this option is used setuid and setgid programs are executed
+without effective privileges.
 .SS Tracing
 .TP 12
 .BI "\-b " syscall
@@ -902,54 +404,590 @@ not stop on
 default if
 .BR \-D ).
 .RE
-.SS Startup
+.SS Filtering
 .TP 12
-\fB\-E\ \fIvar\fR=\,\fIval\fR
-Run command with
-.IR var = val
-in its list of environment variables.
+\fB\-e\ trace\fR=\,\fIset\fR
+Trace only the specified set of system calls.  The
+.B \-c
+option is useful for determining which system calls might be useful
+to trace.  For example,
+.BR trace = open,close,read,write
+means to only
+trace those four system calls.  Be careful when making inferences
+about the user/kernel boundary if only a subset of system calls
+are being monitored.  The default is
+.BR trace = all .
 .TP
-.BI "\-E " var
-Remove
-.IR var
-from the inherited list of environment variables before passing it on to
-the command.
+\fB\-e\ trace\fR=/\,\fIregex\fR
+Trace only those system calls that match the
+.IR regex .
+You can use
+.B POSIX
+Extended Regular Expression syntax (see
+.BR regex (7)).
 .TP
-.BI "\-p " pid
-Attach to the process with the process
-.SM ID
-.I pid
-and begin tracing.
-The trace may be terminated
-at any time by a keyboard interrupt signal
-.RB ( CTRL\-C ).
+.BR "\-e\ trace" = %file
+.TQ
+.BR "\-e\ trace" = file
+Trace all system calls which take a file name as an argument.  You
+can think of this as an abbreviation for
+.BR "\-e\ trace" = open , stat , chmod , unlink ,...
+which is useful to seeing what files the process is referencing.
+Furthermore, using the abbreviation will ensure that you don't
+accidentally forget to include a call like
+.BR lstat (2)
+in the list.  Betchya woulda forgot that one.
+The syntax without a preceding percent sign
+.RB (\[dq] "-e trace" = file \[dq])
+is deprecated.
+.TP
+.BR "\-e\ trace" = %process
+.TQ
+.BR "\-e\ trace" = process
+Trace all system calls which involve process management.  This
+is useful for watching the fork, wait, and exec steps of a process.
+The syntax without a preceding percent sign
+.RB (\[dq] "-e trace" = process \[dq])
+is deprecated.
+.TP
+.BR "\-e\ trace" = %net
+.TQ
+.BR "\-e\ trace" = %network
+.TQ
+.BR "\-e\ trace" = network
+Trace all the network related system calls.
+The syntax without a preceding percent sign
+.RB (\[dq] "-e trace" = network \[dq])
+is deprecated.
+.TP
+.BR "\-e\ trace" = %signal
+.TQ
+.BR "\-e\ trace" = signal
+Trace all signal related system calls.
+The syntax without a preceding percent sign
+.RB (\[dq] "-e trace" = signal \[dq])
+is deprecated.
+.TP
+.BR "\-e\ trace" = %ipc
+.TQ
+.BR "\-e\ trace" = ipc
+Trace all IPC related system calls.
+The syntax without a preceding percent sign
+.RB (\[dq] "-e trace" = ipc \[dq])
+is deprecated.
+.TP
+.BR "\-e\ trace" = %desc
+.TQ
+.BR "\-e\ trace" = desc
+Trace all file descriptor related system calls.
+The syntax without a preceding percent sign
+.RB (\[dq] "-e trace" = desc \[dq])
+is deprecated.
+.TP
+.BR "\-e\ trace" = %memory
+.TQ
+.BR "\-e\ trace" = memory
+Trace all memory mapping related system calls.
+The syntax without a preceding percent sign
+.RB (\[dq] "-e trace" = memory \[dq])
+is deprecated.
+.TP
+.BR "\-e\ trace" = %stat
+Trace stat syscall variants.
+.TP
+.BR "\-e\ trace" = %lstat
+Trace lstat syscall variants.
+.TP
+.BR "\-e\ trace" = %fstat
+Trace fstat and fstatat syscall variants.
+.TP
+.BR "\-e\ trace" = %%stat
+Trace syscalls used for requesting file status (stat, lstat, fstat, fstatat,
+statx, and their variants).
+.TP
+.BR "\-e\ trace" = %statfs
+Trace statfs, statfs64, statvfs, osf_statfs, and osf_statfs64 system calls.
+The same effect can be achieved with
+.BR "\-e\ trace" = /^(.*_)?statv?fs
+regular expression.
+.TP
+.BR "\-e\ trace" = %fstatfs
+Trace fstatfs, fstatfs64, fstatvfs, osf_fstatfs, and osf_fstatfs64 system calls.
+The same effect can be achieved with
+.BR "\-e\ trace" = /fstatv?fs
+regular expression.
+.TP
+.BR "\-e\ trace" = %%statfs
+Trace syscalls related to file system statistics (statfs-like, fstatfs-like,
+and ustat).  The same effect can be achieved with
+.BR "\-e\ trace" = /statv?fs|fsstat|ustat
+regular expression.
+.TP
+.BR "\-e\ trace" = %pure
+Trace syscalls that always succeed and have no arguments.
+Currently, this list includes
+.BR arc_gettls "(2), " getdtablesize "(2), " getegid "(2), " getegid32 "(2),"
+.BR geteuid "(2), " geteuid32 "(2), " getgid "(2), " getgid32 "(2),"
+.BR getpagesize "(2), " getpgrp "(2), " getpid "(2), " getppid "(2),"
+.BR get_thread_area (2)
+(on architectures other than x86),
+.BR gettid "(2), " get_tls "(2), " getuid "(2), " getuid32 "(2),"
+.BR getxgid "(2), " getxpid "(2), " getxuid "(2), " kern_features "(2), and"
+.BR metag_get_tls "(2)"
+syscalls.
+.TP
+\fB\-e\ signal\fR=\,\fIset\fR
+Trace only the specified subset of signals.  The default is
+.BR signal = all .
+For example,
+.BR signal "=!" SIGIO
+(or
+.BR signal "=!" io )
+causes
+.B SIGIO
+signals not to be traced.
+.TP
+\fB\-e\ status\fR=\,\fIset\fR
+Print only system calls with the specified return status.  The default is
+.BR status = all .
+When using the
+.B status
+qualifier, because
 .B strace
-will respond by detaching itself from the traced process(es)
-leaving it (them) to continue running.
-Multiple
-.B \-p
-options can be used to attach to many processes in addition to
-.I command
-(which is optional if at least one
-.B \-p
-option is given).
-.B \-p
-"`pidof PROG`" syntax is supported.
+waits for system calls to return before deciding whether they should be printed
+or not, the traditional order of events may not be preserved anymore.  If two
+system calls are executed by concurrent threads,
+.B strace
+will first print both the entry and exit of the first system call to exit,
+regardless of their respective entry time.  The entry and exit of the second
+system call to exit will be printed afterwards.  Here is an example when
+.BR select (2)
+is called, but a different thread calls
+.BR clock_gettime (2)
+before
+.BR select (2)
+finishes:
+.CW
+[pid 28779] 1130322148.939977 clock_gettime(CLOCK_REALTIME, {1130322148, 939977000}) = 0
+[pid 28772] 1130322148.438139 select(4, [3], NULL, NULL, NULL) = 1 (in [3])
+.CE
+.I set
+can include the following elements:
+.RS
+.TP 13
+.B successful
+Trace system calls that returned without an error code.
+The
+.B -z
+option has the effect of
+.BR status = successful .
+.TQ
+.B failed
+Trace system calls that returned with an error code.
+The
+.B -Z
+option has the effect of
+.BR status = failed .
+.TQ
+.B unfinished
+Trace system calls that did not return.  This might happen, for example, due to
+an execve call in a neighbour thread.
+.TQ
+.B unavailable
+Trace system calls that returned but strace failed to fetch the error status.
+.TQ
+.B detached
+Trace system calls for which strace detached before the return.
+.RE
 .TP
-.BI "\-u " username
-Run command with the user \s-1ID\s0, group \s-2ID\s0, and
-supplementary groups of
-.IR username .
-This option is only useful when running as root and enables the
-correct execution of setuid and/or setgid binaries.
-Unless this option is used setuid and setgid programs are executed
-without effective privileges.
+.BI "\-P " path
+Trace only system calls accessing
+.IR path .
+Multiple
+.B \-P
+options can be used to specify several paths.
+.TP
+.B \-z
+Print only syscalls that returned without an error code.
+.TP
+.B \-Z
+Print only syscalls that returned with an error code.
+.SS Output format
+.TP 12
+.BI "\-a " column
+Align return values in a specific column (default column 40).
+.TP
+\fB\-e\ abbrev\fR=\,\fIset\fR
+Abbreviate the output from printing each member of large structures.
+The default is
+.BR abbrev = all .
+The
+.B \-v
+option has the effect of
+.BR abbrev = none .
+.TP
+\fB\-e\ verbose\fR=\,\fIset\fR
+Dereference structures for the specified set of system calls.  The
+default is
+.BR verbose = all .
+.TP
+\fB\-e\ raw\fR=\,\fIset\fR
+Print raw, undecoded arguments for the specified set of system calls.
+This option has the effect of causing all arguments to be printed
+in hexadecimal.  This is mostly useful if you don't trust the
+decoding or you need to know the actual numeric value of an
+argument.
+See also
+.B \-X raw
+option.
+.TP
+\fB\-e\ read\fR=\,\fIset\fR
+Perform a full hexadecimal and ASCII dump of all the data read from
+file descriptors listed in the specified set.  For example, to see
+all input activity on file descriptors
+.I 3
+and
+.I 5
+use
+\fB\-e\ read\fR=\,\fI3\fR,\fI5\fR.
+Note that this is independent from the normal tracing of the
+.BR read (2)
+system call which is controlled by the option
+.BR -e "\ " trace = read .
+.TP
+\fB\-e\ write\fR=\,\fIset\fR
+Perform a full hexadecimal and ASCII dump of all the data written to
+file descriptors listed in the specified set.  For example, to see
+all output activity on file descriptors
+.I 3
+and
+.I 5
+use
+\fB\-e\ write\fR=\,\fI3\fR,\,\fI5\fR.
+Note that this is independent from the normal tracing of the
+.BR write (2)
+system call which is controlled by the option
+.BR -e "\ " trace = write .
+.TP
+.BR "\-e\ kvm" = vcpu
+Print the exit reason of kvm vcpu.  Requires Linux kernel version 4.16.0
+or higher.
+
+.TP
+.B \-i
+Print the instruction pointer at the time of the system call.
+.if '@ENABLE_STACKTRACE_FALSE@'#' .TP
+.if '@ENABLE_STACKTRACE_FALSE@'#' .B \-k
+.if '@ENABLE_STACKTRACE_FALSE@'#' Print the execution stack trace of the traced
+.if '@ENABLE_STACKTRACE_FALSE@'#' processes after each system call.
+.TP
+.BI "\-o " filename
+Write the trace output to the file
+.I filename
+rather than to stderr.
+.IR filename . pid
+form is used if
+.B \-ff
+option is supplied.
+If the argument begins with '|' or '!', the rest of the
+argument is treated as a command and all output is piped to it.
+This is convenient for piping the debugging output to a program
+without affecting the redirections of executed programs.
+The latter is not compatible with
+.B \-ff
+option currently.
+.TP
+.B \-A
+Open the file provided in the
+.B \-o
+option in append mode.
+.TP
+.B \-q
+Suppress messages about attaching, detaching etc.  This happens
+automatically when output is redirected to a file and the command
+is run directly instead of attaching.
+.TP
+.B \-qq
+If given twice, suppress messages about process exit status.
+.TP
+.B \-r
+Print a relative timestamp upon entry to each system call.  This
+records the time difference between the beginning of successive
+system calls.
+Note that since
+.B \-r
+option uses the monotonic clock time for measuring time difference and not the
+wall clock time, its measurements can differ from the difference in time
+reported by the
+.B \-t
+option.
+.TP
+.BI "\-s " strsize
+Specify the maximum string size to print (the default is 32).  Note
+that filenames are not considered strings and are always printed in
+full.
+.TP
+.B \-t
+Prefix each line of the trace with the wall clock time.
+.TP
+.B \-tt
+If given twice, the time printed will include the microseconds.
+.TP
+.B \-ttt
+If given thrice, the time printed will include the microseconds
+and the leading portion will be printed as the number
+of seconds since the epoch.
+.TP
+.B \-T
+Show the time spent in system calls.  This records the time
+difference between the beginning and the end of each system call.
+.TP
+.B \-v
+Print unabbreviated versions of environment, stat, termios, etc.
+calls.  These structures are very common in calls and so the default
+behavior displays a reasonable subset of structure members.  Use
+this option to get all of the gory details.
+.TP
+.B \-x
+Print all non-ASCII strings in hexadecimal string format.
+.TP
+.B \-xx
+Print all strings in hexadecimal string format.
+.TP
+.BI "\-X " format
+Set the format for printing of named constants and flags.
+Supported
+.I format
+values are:
+.RS
+.TP 10
+.B raw
+Raw number output, without decoding.
+.TQ
+.B abbrev
+Output a named constant or a set of flags instead of the raw number if they are
+found.
+This is the default
+.B strace
+behaviour.
+.TQ
+.B verbose
+Output both the raw value and the decoded string (as a comment).
+.RE
+.TP
+.B \-y
+Print paths associated with file descriptor arguments.
+.TP
+.B \-yy
+Print protocol specific information associated with socket file descriptors,
+and block/character device number associated with device file descriptors.
+.SS Statistics
+.TP 12
+.B \-c
+Count time, calls, and errors for each system call and report a summary on
+program exit, suppressing the regular output.
+This attempts to show system time (CPU time spent running
+in the kernel) independent of wall clock time.  If
+.B \-c
+is used with
+.BR \-f ,
+only aggregate totals for all traced processes are kept.
+.TP
+.B \-C
+Like
+.B \-c
+but also print regular output while processes are running.
+.TP
+.BI "\-O " overhead
+Set the overhead for tracing system calls to
+.I overhead
+microseconds.
+This is useful for overriding the default heuristic for guessing
+how much time is spent in mere measuring when timing system calls using
+the
+.B \-c
+option.  The accuracy of the heuristic can be gauged by timing a given
+program run without tracing (using
+.BR time (1))
+and comparing the accumulated
+system call time to the total produced using
+.BR \-c .
+.TP
+.BI "\-S " sortby
+Sort the output of the histogram printed by the
+.B \-c
+option by the specified criterion.  Legal values are
+.BR time " (or " time_total " or " total_time ),
+.BR calls " (or " count ),
+.BR errors " (or " error ),
+.BR name " (or " syscall " or " syscall_name ),
+and
+.BR nothing " (or " none );
+default is
+.BR time .
+.TP
+.B \-w
+Summarise the time difference between the beginning and end of
+each system call.  The default is to summarise the system time.
+.SS Tampering
+.TP
+\fB\-e\ inject\fR=\,\fIset\/\fR[:\fBerror\fR=\,\fIerrno\/\fR|:\fBretval\fR=\,\fIvalue\/\fR][:\fBsignal\fR=\,\fIsig\/\fR][:\fBsyscall\fR=\fIsyscall\fR][:\fBdelay_enter\fR=\,\fIusecs\/\fR][:\fBdelay_exit\fR=\,\fIusecs\/\fR][:\fBwhen\fR=\,\fIexpr\/\fR]
+Perform syscall tampering for the specified set of syscalls.
+
+At least one of
+.BR error ,
+.BR retval ,
+.BR signal ,
+.BR delay_enter ,
+or
+.B delay_exit
+options has to be specified.
+.B error
+and
+.B retval
+are mutually exclusive.
+
+If :\fBerror\fR=\,\fIerrno\/\fR option is specified,
+a fault is injected into a syscall invocation:
+the syscall number is replaced by -1 which corresponds to an invalid syscall
+(unless a syscall is specified with :\fBsyscall=\fR option),
+and the error code is specified using a symbolic
+.I errno
+value like
+.B ENOSYS
+or a numeric value within 1..4095 range.
+
+If :\fBretval\fR=\,\fIvalue\/\fR option is specified,
+success injection is performed: the syscall number is replaced by -1,
+but a bogus success value is returned to the callee.
+
+If :\fBsignal\fR=\,\fIsig\/\fR option is specified with either a symbolic value
+like
+.B SIGSEGV
+or a numeric value within 1..\fBSIGRTMAX\fR range,
+that signal is delivered on entering every syscall specified by the
+.IR set .
+
+If :\fBdelay_enter\fR=\,\fIusecs\/\fR or :\fBdelay_exit\fR=\,\fIusecs\/\fR
+options are specified, delay injection is performed: the tracee is delayed
+by at least
+.IR usecs
+microseconds on entering or exiting the syscall.
+
+If :\fBsignal\fR=\,\fIsig\/\fR option is specified without
+:\fBerror\fR=\,\fIerrno\/\fR, :\fBretval\fR=\,\fIvalue\/\fR or
+:\fBdelay_{enter,exit}\fR=\,\fIusecs\/\fR options,
+then only a signal
+.I sig
+is delivered without a syscall fault or delay injection.
+Conversely, :\fBerror\fR=\,\fIerrno\/\fR or
+:\fBretval\fR=\,\fIvalue\/\fR option without
+:\fBdelay_enter\fR=\,\fIusecs\/\fR,
+:\fBdelay_exit\fR=\,\fIusecs\/\fR or
+:\fBsignal\fR=\,\fIsig\/\fR options injects a fault without delivering a signal
+or injecting a delay, etc.
+
+If both :\fBerror\fR=\,\fIerrno\/\fR or :\fBretval\fR=\,\fIvalue\/\fR
+and :\fBsignal\fR=\,\fIsig\/\fR options are specified, then both
+a fault or success is injected and a signal is delivered.
+
+if :\fBsyscall\fR=\fIsyscall\fR option is specified, the corresponding syscall
+with no side effects is injected instead of -1.
+Currently, only "pure" (see
+.BR "-e trace" = "%pure"
+description) syscalls can be specified there.
+
+Unless a :\fBwhen\fR=\,\fIexpr\fR subexpression is specified,
+an injection is being made into every invocation of each syscall from the
+.IR set .
+
+The format of the subexpression is one of the following:
+.RS
+.TP 12
+.I first
+For every syscall from the
+.IR set ,
+perform an injection for the syscall invocation number
+.I first
+only.
+.TQ
+\fIfirst\/\fB+\fR
+For every syscall from the
+.IR set ,
+perform injections for the syscall invocation number
+.I first
+and all subsequent invocations.
+.TQ
+\fIfirst\/\fB+\fIstep\fR
+For every syscall from the
+.IR set ,
+perform injections for syscall invocations number
+.IR first ,
+.IR first + step ,
+.IR first + step + step ,
+and so on.
+.RE
+.IP
+For example, to fail each third and subsequent chdir syscalls with
+.BR ENOENT ,
+use
+\fB\-e\ inject\fR=\,\fIchdir\/\fR:\fBerror\fR=\,\fIENOENT\/\fR:\fBwhen\fR=\,\fI3\/\fB+\fR.
+
+The valid range for numbers
+.I first
+and
+.I step
+is 1..65535.
+
+An injection expression can contain only one
+.BR error =
+or
+.BR retval =
+specification, and only one
+.BR signal =
+specification.  If an injection expression contains multiple
+.BR when =
+specifications, the last one takes precedence.
+
+Accounting of syscalls that are subject to injection
+is done per syscall and per tracee.
+
+Specification of syscall injection can be combined
+with other syscall filtering options, for example,
+\fB\-P \fI/dev/urandom \fB\-e inject\fR=\,\fIfile\/\fR:\fBerror\fR=\,\fIENOENT\fR.
+
+.TP
+\fB\-e\ fault\fR=\,\fIset\/\fR[:\fBerror\fR=\,\fIerrno\/\fR][:\fBwhen\fR=\,\fIexpr\/\fR]
+Perform syscall fault injection for the specified set of syscalls.
+
+This is equivalent to more generic
+\fB\-e\ inject\fR= expression with default value of
+.I errno
+option set to
+.BR ENOSYS .
 .SS Miscellaneous
 .TP 12
 .B \-d
 Show some debugging output of
 .B strace
 itself on the standard error.
+.TP
+.B \-\-seccomp\-bpf
+Enable (experimental) usage of seccomp-bpf to have ptrace(2)-stops only when
+system calls that are being traced occur in the traced processes.  Implies the
+.B \-f
+option.
+An attempt to rely on seccomp-bpf to filter system calls may fail for various
+reasons, e.g. there are too many system calls to filter, the seccomp API is not
+available, or
+.B strace
+itself is being traced.
+.B \-\-seccomp\-bpf
+is also ineffective on processes attached using
+.BR \-p .
+In cases when seccomp-bpf filter setup failed,
+.B strace
+proceeds as usual and stops traced processes on every system call.
 .TP
 .B \-F
 This option is deprecated.  It is retained for backward compatibility only
@@ -962,10 +1000,14 @@ and it is ignored at all if used along with one or more instances of
 .B \-f
 option.
 .TP
-.B \-h
+.BR \-h ,
+.TQ
+.B \-\-help
 Print the help summary.
 .TP
-.B \-V
+.BR \-V ,
+.TQ
+.B \-\-version
 Print the version number of
 .BR strace .
 .SH DIAGNOSTICS
@@ -1037,14 +1079,28 @@ allbox;
 lb lb
 l l.
 Architecture	ABIs supported
-x86_64	i386, x32 (when built as an x86_64 application); i386 (when built as an x32 application)
+x86_64	i386, x32 [1]; i386 [2]
 AArch64	ARM 32-bit EABI
-PowerPC 64-bit	PowerPC 32-bit
-RISC-V 64-bit	RISC-V 32-bit
+PowerPC 64-bit [3]	PowerPC 32-bit
 s390x	s390
 SPARC 64-bit	SPARC 32-bit
 TILE 64-bit	TILE 32-bit
 .TE
+.RS 0
+.TP 5
+[1]
+When
+.B strace
+is built as an x86_64 application
+.TQ
+[2]
+When
+.B strace
+is built as an x32 application
+.TQ
+[3]
+Big endian only
+.RE
 .PP
 This support is optional and relies on ability to generate and parse structure
 definitions during the build time.
@@ -1059,15 +1115,15 @@ has):
 .B m32-mpers
 .B strace
 can trace and properly decode non-native 32-bit binaries.
-.TP
+.TQ
 .B no-m32-mpers
 .B strace
 can trace, but cannot properly decode non-native 32-bit binaries.
-.TP
+.TQ
 .B mx32-mpers
 .B strace
 can trace and properly decode non-native 32-on-64-bit binaries.
-.TP
+.TQ
 .B no-mx32-mpers
 .B strace
 can trace, but cannot properly decode non-native 32-on-64-bit binaries.
@@ -1254,3 +1310,14 @@ mailing list at <strace\-devel@lists.strace.io>.
 .BR time (1),
 .BR ptrace (2),
 .BR proc (5)
+.PP
+.UR https://strace.io/
+.B strace
+Home Page
+.UE
+.SH AUTHORS
+The complete list of
+.B strace
+contributors can be found in the
+.B CREDITS
+file.

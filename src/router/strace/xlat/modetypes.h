@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat modetypes[] = {
+static const struct xlat_data modetypes_xdata[] = {
 #if defined(S_IFREG) || (defined(HAVE_DECL_S_IFREG) && HAVE_DECL_S_IFREG)
   XLAT(S_IFREG),
 #endif
@@ -35,8 +34,13 @@ const struct xlat modetypes[] = {
 #if defined(S_IFCHR) || (defined(HAVE_DECL_S_IFCHR) && HAVE_DECL_S_IFCHR)
   XLAT(S_IFCHR),
 #endif
- XLAT_END
 };
+static
+const struct xlat modetypes[1] = { {
+ .data = modetypes_xdata,
+ .size = ARRAY_SIZE(modetypes_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

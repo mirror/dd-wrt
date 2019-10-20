@@ -68,8 +68,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat fsconfig_cmds[] = {
+static const struct xlat_data fsconfig_cmds_xdata[] = {
  [FSCONFIG_SET_FLAG] = XLAT(FSCONFIG_SET_FLAG),
  [FSCONFIG_SET_STRING] = XLAT(FSCONFIG_SET_STRING),
  [FSCONFIG_SET_BINARY] = XLAT(FSCONFIG_SET_BINARY),
@@ -78,8 +77,13 @@ const struct xlat fsconfig_cmds[] = {
  [FSCONFIG_SET_FD] = XLAT(FSCONFIG_SET_FD),
  [FSCONFIG_CMD_CREATE] = XLAT(FSCONFIG_CMD_CREATE),
  [FSCONFIG_CMD_RECONFIGURE] = XLAT(FSCONFIG_CMD_RECONFIGURE),
- XLAT_END
 };
+static
+const struct xlat fsconfig_cmds[1] = { {
+ .data = fsconfig_cmds_xdata,
+ .size = ARRAY_SIZE(fsconfig_cmds_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

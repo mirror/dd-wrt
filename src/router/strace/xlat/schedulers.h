@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat schedulers[] = {
+static const struct xlat_data schedulers_xdata[] = {
 #if defined(SCHED_OTHER) || (defined(HAVE_DECL_SCHED_OTHER) && HAVE_DECL_SCHED_OTHER)
   XLAT(SCHED_OTHER),
 #endif
@@ -35,8 +34,13 @@ const struct xlat schedulers[] = {
 #if defined(SCHED_DEADLINE) || (defined(HAVE_DECL_SCHED_DEADLINE) && HAVE_DECL_SCHED_DEADLINE)
   XLAT(SCHED_DEADLINE),
 #endif
- XLAT_END
 };
+static
+const struct xlat schedulers[1] = { {
+ .data = schedulers_xdata,
+ .size = ARRAY_SIZE(schedulers_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

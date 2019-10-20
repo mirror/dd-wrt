@@ -2,6 +2,7 @@
  * Invoke a socket syscall, either directly or via __NR_socketcall.
  *
  * Copyright (c) 2016-2018 Dmitry V. Levin <ldv@altlinux.org>
+ * Copyright (c) 2016-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -10,7 +11,7 @@
 #include "tests.h"
 #include <errno.h>
 #include <unistd.h>
-#include <asm/unistd.h>
+#include "scno.h"
 
 /*
  * Invoke a socket syscall, either directly or via __NR_socketcall.

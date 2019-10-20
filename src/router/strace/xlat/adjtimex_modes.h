@@ -103,8 +103,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat adjtimex_modes[] = {
+static const struct xlat_data adjtimex_modes_xdata[] = {
  XLAT(ADJ_OFFSET_SS_READ),
  XLAT(ADJ_OFFSET_SINGLESHOT),
  XLAT(ADJ_OFFSET),
@@ -118,8 +117,13 @@ const struct xlat adjtimex_modes[] = {
  XLAT(ADJ_MICRO),
  XLAT(ADJ_NANO),
  XLAT(ADJ_TICK),
- XLAT_END
 };
+static
+const struct xlat adjtimex_modes[1] = { {
+ .data = adjtimex_modes_xdata,
+ .size = ARRAY_SIZE(adjtimex_modes_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

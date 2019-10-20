@@ -54,16 +54,20 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat caif_protocols[] = {
+static const struct xlat_data caif_protocols_xdata[] = {
  [CAIFPROTO_AT] = XLAT(CAIFPROTO_AT),
  [CAIFPROTO_DATAGRAM] = XLAT(CAIFPROTO_DATAGRAM),
  [CAIFPROTO_DATAGRAM_LOOP] = XLAT(CAIFPROTO_DATAGRAM_LOOP),
  [CAIFPROTO_UTIL] = XLAT(CAIFPROTO_UTIL),
  [CAIFPROTO_RFM] = XLAT(CAIFPROTO_RFM),
  [CAIFPROTO_DEBUG] = XLAT(CAIFPROTO_DEBUG),
- XLAT_END
 };
+static
+const struct xlat caif_protocols[1] = { {
+ .data = caif_protocols_xdata,
+ .size = ARRAY_SIZE(caif_protocols_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -1420,6 +1420,31 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #endif
 #endif
 #if defined __sparc__
+#if defined(SO_BINDTOIFINDEX) || (defined(HAVE_DECL_SO_BINDTOIFINDEX) && HAVE_DECL_SO_BINDTOIFINDEX)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((SO_BINDTOIFINDEX) == (65), "SO_BINDTOIFINDEX != 65");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define SO_BINDTOIFINDEX 65
+#endif
+#elif defined __hppa__
+#if defined(SO_BINDTOIFINDEX) || (defined(HAVE_DECL_SO_BINDTOIFINDEX) && HAVE_DECL_SO_BINDTOIFINDEX)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((SO_BINDTOIFINDEX) == (16439), "SO_BINDTOIFINDEX != 16439");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define SO_BINDTOIFINDEX 16439
+#endif
+#else
+#if defined(SO_BINDTOIFINDEX) || (defined(HAVE_DECL_SO_BINDTOIFINDEX) && HAVE_DECL_SO_BINDTOIFINDEX)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((SO_BINDTOIFINDEX) == (62), "SO_BINDTOIFINDEX != 62");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define SO_BINDTOIFINDEX 62
+#endif
+#endif
+#if defined __sparc__
 #if defined(SO_TIMESTAMP_NEW) || (defined(HAVE_DECL_SO_TIMESTAMP_NEW) && HAVE_DECL_SO_TIMESTAMP_NEW)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
 static_assert((SO_TIMESTAMP_NEW) == (70), "SO_TIMESTAMP_NEW != 70");
@@ -1494,6 +1519,81 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 # define SO_TIMESTAMPING_NEW 65
 #endif
 #endif
+#if defined __sparc__
+#if defined(SO_RCVTIMEO_NEW) || (defined(HAVE_DECL_SO_RCVTIMEO_NEW) && HAVE_DECL_SO_RCVTIMEO_NEW)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((SO_RCVTIMEO_NEW) == (68), "SO_RCVTIMEO_NEW != 68");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define SO_RCVTIMEO_NEW 68
+#endif
+#elif defined __hppa__
+#if defined(SO_RCVTIMEO_NEW) || (defined(HAVE_DECL_SO_RCVTIMEO_NEW) && HAVE_DECL_SO_RCVTIMEO_NEW)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((SO_RCVTIMEO_NEW) == (16448), "SO_RCVTIMEO_NEW != 16448");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define SO_RCVTIMEO_NEW 16448
+#endif
+#else
+#if defined(SO_RCVTIMEO_NEW) || (defined(HAVE_DECL_SO_RCVTIMEO_NEW) && HAVE_DECL_SO_RCVTIMEO_NEW)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((SO_RCVTIMEO_NEW) == (66), "SO_RCVTIMEO_NEW != 66");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define SO_RCVTIMEO_NEW 66
+#endif
+#endif
+#if defined __sparc__
+#if defined(SO_SNDTIMEO_NEW) || (defined(HAVE_DECL_SO_SNDTIMEO_NEW) && HAVE_DECL_SO_SNDTIMEO_NEW)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((SO_SNDTIMEO_NEW) == (69), "SO_SNDTIMEO_NEW != 69");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define SO_SNDTIMEO_NEW 69
+#endif
+#elif defined __hppa__
+#if defined(SO_SNDTIMEO_NEW) || (defined(HAVE_DECL_SO_SNDTIMEO_NEW) && HAVE_DECL_SO_SNDTIMEO_NEW)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((SO_SNDTIMEO_NEW) == (16449), "SO_SNDTIMEO_NEW != 16449");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define SO_SNDTIMEO_NEW 16449
+#endif
+#else
+#if defined(SO_SNDTIMEO_NEW) || (defined(HAVE_DECL_SO_SNDTIMEO_NEW) && HAVE_DECL_SO_SNDTIMEO_NEW)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((SO_SNDTIMEO_NEW) == (67), "SO_SNDTIMEO_NEW != 67");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define SO_SNDTIMEO_NEW 67
+#endif
+#endif
+#if defined __sparc__
+#if defined(SO_DETACH_REUSEPORT_BPF) || (defined(HAVE_DECL_SO_DETACH_REUSEPORT_BPF) && HAVE_DECL_SO_DETACH_REUSEPORT_BPF)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((SO_DETACH_REUSEPORT_BPF) == (71), "SO_DETACH_REUSEPORT_BPF != 71");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define SO_DETACH_REUSEPORT_BPF 71
+#endif
+#elif defined __hppa__
+#if defined(SO_DETACH_REUSEPORT_BPF) || (defined(HAVE_DECL_SO_DETACH_REUSEPORT_BPF) && HAVE_DECL_SO_DETACH_REUSEPORT_BPF)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((SO_DETACH_REUSEPORT_BPF) == (16450), "SO_DETACH_REUSEPORT_BPF != 16450");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define SO_DETACH_REUSEPORT_BPF 16450
+#endif
+#else
+#if defined(SO_DETACH_REUSEPORT_BPF) || (defined(HAVE_DECL_SO_DETACH_REUSEPORT_BPF) && HAVE_DECL_SO_DETACH_REUSEPORT_BPF)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((SO_DETACH_REUSEPORT_BPF) == (68), "SO_DETACH_REUSEPORT_BPF != 68");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define SO_DETACH_REUSEPORT_BPF 68
+#endif
+#endif
 
 #ifndef XLAT_MACROS_ONLY
 
@@ -1503,8 +1603,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat sock_options[] = {
+static const struct xlat_data sock_options_xdata[] = {
 
 
  XLAT(SO_DEBUG),
@@ -1704,6 +1803,8 @@ const struct xlat sock_options[] = {
 #else
  XLAT(SO_BINDTODEVICE),
 #endif
+
+
 
 #if defined __hppa__
  XLAT(SO_DETACH_FILTER),
@@ -1962,12 +2063,21 @@ const struct xlat sock_options[] = {
 #endif
 
 #if defined __sparc__
+ XLAT(SO_BINDTOIFINDEX),
+#elif defined __hppa__
+ XLAT(SO_BINDTOIFINDEX),
+#else
+ XLAT(SO_BINDTOIFINDEX),
+#endif
+
+#if defined __sparc__
  XLAT(SO_TIMESTAMP_NEW),
 #elif defined __hppa__
  XLAT(SO_TIMESTAMP_NEW),
 #else
  XLAT(SO_TIMESTAMP_NEW),
 #endif
+
 #if defined __sparc__
  XLAT(SO_TIMESTAMPNS_NEW),
 #elif defined __hppa__
@@ -1975,6 +2085,7 @@ const struct xlat sock_options[] = {
 #else
  XLAT(SO_TIMESTAMPNS_NEW),
 #endif
+
 #if defined __sparc__
  XLAT(SO_TIMESTAMPING_NEW),
 #elif defined __hppa__
@@ -1982,8 +2093,37 @@ const struct xlat sock_options[] = {
 #else
  XLAT(SO_TIMESTAMPING_NEW),
 #endif
- XLAT_END
+
+#if defined __sparc__
+ XLAT(SO_RCVTIMEO_NEW),
+#elif defined __hppa__
+ XLAT(SO_RCVTIMEO_NEW),
+#else
+ XLAT(SO_RCVTIMEO_NEW),
+#endif
+
+#if defined __sparc__
+ XLAT(SO_SNDTIMEO_NEW),
+#elif defined __hppa__
+ XLAT(SO_SNDTIMEO_NEW),
+#else
+ XLAT(SO_SNDTIMEO_NEW),
+#endif
+
+#if defined __sparc__
+ XLAT(SO_DETACH_REUSEPORT_BPF),
+#elif defined __hppa__
+ XLAT(SO_DETACH_REUSEPORT_BPF),
+#else
+ XLAT(SO_DETACH_REUSEPORT_BPF),
+#endif
 };
+static
+const struct xlat sock_options[1] = { {
+ .data = sock_options_xdata,
+ .size = ARRAY_SIZE(sock_options_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

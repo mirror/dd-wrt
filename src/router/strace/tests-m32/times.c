@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2015 Eugene Syromyatnikov <evgsyr@gmail.com>
  * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2015-2018 The strace developers.
+ * Copyright (c) 2015-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -19,7 +19,7 @@
 #include <time.h>
 #include <unistd.h>
 
-#include <asm/unistd.h>
+#include "scno.h"
 #include <sys/times.h>
 #include <sys/wait.h>
 

@@ -75,9 +75,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat bluetooth_l2_psm[] = {
-
+static const struct xlat_data bluetooth_l2_psm_xdata[] = {
  XLAT(L2CAP_PSM_SDP),
  XLAT(L2CAP_PSM_RFCOMM),
  XLAT(L2CAP_PSM_3DSP),
@@ -87,8 +85,13 @@ const struct xlat bluetooth_l2_psm[] = {
  XLAT(L2CAP_PSM_DYN_START),
  XLAT(L2CAP_PSM_AUTO_END),
  XLAT(L2CAP_PSM_DYN_END),
- XLAT_END
 };
+static
+const struct xlat bluetooth_l2_psm[1] = { {
+ .data = bluetooth_l2_psm_xdata,
+ .size = ARRAY_SIZE(bluetooth_l2_psm_xdata),
+ .type = XT_SORTED,
+} };
 
 # endif /* !IN_MPERS */
 

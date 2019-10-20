@@ -159,9 +159,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat routing_protocols[] = {
-
+static const struct xlat_data routing_protocols_xdata[] = {
  XLAT(RTPROT_UNSPEC),
  XLAT(RTPROT_REDIRECT),
  XLAT(RTPROT_KERNEL),
@@ -183,8 +181,13 @@ const struct xlat routing_protocols[] = {
  XLAT(RTPROT_OSPF),
  XLAT(RTPROT_RIP),
  XLAT(RTPROT_EIGRP),
- XLAT_END
 };
+static
+const struct xlat routing_protocols[1] = { {
+ .data = routing_protocols_xdata,
+ .size = ARRAY_SIZE(routing_protocols_xdata),
+ .type = XT_SORTED,
+} };
 
 # endif /* !IN_MPERS */
 

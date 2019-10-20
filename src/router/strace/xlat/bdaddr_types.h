@@ -33,13 +33,17 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat bdaddr_types[] = {
+static const struct xlat_data bdaddr_types_xdata[] = {
  [BDADDR_BREDR] = XLAT(BDADDR_BREDR),
  [BDADDR_LE_PUBLIC] = XLAT(BDADDR_LE_PUBLIC),
  [BDADDR_LE_RANDOM] = XLAT(BDADDR_LE_RANDOM),
- XLAT_END
 };
+static
+const struct xlat bdaddr_types[1] = { {
+ .data = bdaddr_types_xdata,
+ .size = ARRAY_SIZE(bdaddr_types_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

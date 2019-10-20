@@ -33,13 +33,17 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat sock_iucv_options[] = {
+static const struct xlat_data sock_iucv_options_xdata[] = {
  XLAT(SO_IPRMDATA_MSG),
  XLAT(SO_MSGLIMIT),
  XLAT(SO_MSGSIZE),
- XLAT_END
 };
+static
+const struct xlat sock_iucv_options[1] = { {
+ .data = sock_iucv_options_xdata,
+ .size = ARRAY_SIZE(sock_iucv_options_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

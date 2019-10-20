@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat sysctl_vm[] = {
+static const struct xlat_data sysctl_vm_xdata[] = {
  XLAT(VM_OVERCOMMIT_MEMORY),
  XLAT(VM_PAGE_CLUSTER),
  XLAT(VM_DIRTY_BACKGROUND),
@@ -48,8 +47,13 @@ const struct xlat sysctl_vm[] = {
 #if defined(VM_SWAP_TOKEN_TIMEOUT) || (defined(HAVE_DECL_VM_SWAP_TOKEN_TIMEOUT) && HAVE_DECL_VM_SWAP_TOKEN_TIMEOUT)
   XLAT(VM_SWAP_TOKEN_TIMEOUT),
 #endif
- XLAT_END
 };
+static
+const struct xlat sysctl_vm[1] = { {
+ .data = sysctl_vm_xdata,
+ .size = ARRAY_SIZE(sysctl_vm_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

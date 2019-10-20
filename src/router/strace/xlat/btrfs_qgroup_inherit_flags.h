@@ -12,15 +12,19 @@ extern const struct xlat btrfs_qgroup_inherit_flags[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat btrfs_qgroup_inherit_flags[] = {
+static const struct xlat_data btrfs_qgroup_inherit_flags_xdata[] = {
 #if defined(BTRFS_QGROUP_INHERIT_SET_LIMITS) || (defined(HAVE_DECL_BTRFS_QGROUP_INHERIT_SET_LIMITS) && HAVE_DECL_BTRFS_QGROUP_INHERIT_SET_LIMITS)
   XLAT_TYPE(uint64_t, BTRFS_QGROUP_INHERIT_SET_LIMITS),
 #endif
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat btrfs_qgroup_inherit_flags[1] = { {
+ .data = btrfs_qgroup_inherit_flags_xdata,
+ .size = ARRAY_SIZE(btrfs_qgroup_inherit_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

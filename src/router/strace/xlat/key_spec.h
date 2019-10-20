@@ -68,8 +68,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat key_spec[] = {
+static const struct xlat_data key_spec_xdata[] = {
  XLAT_TYPE(int, KEY_SPEC_THREAD_KEYRING),
  XLAT_TYPE(int, KEY_SPEC_PROCESS_KEYRING),
  XLAT_TYPE(int, KEY_SPEC_SESSION_KEYRING),
@@ -78,8 +77,13 @@ const struct xlat key_spec[] = {
  XLAT_TYPE(int, KEY_SPEC_GROUP_KEYRING),
  XLAT_TYPE(int, KEY_SPEC_REQKEY_AUTH_KEY),
  XLAT_TYPE(int, KEY_SPEC_REQUESTOR_KEYRING),
- XLAT_END
 };
+static
+const struct xlat key_spec[1] = { {
+ .data = key_spec_xdata,
+ .size = ARRAY_SIZE(key_spec_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -12,10 +12,7 @@ extern const struct xlat mtd_flags_options[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat mtd_flags_options[] = {
+static const struct xlat_data mtd_flags_options_xdata[] = {
 #if defined(MTD_WRITEABLE) || (defined(HAVE_DECL_MTD_WRITEABLE) && HAVE_DECL_MTD_WRITEABLE)
   XLAT(MTD_WRITEABLE),
 #endif
@@ -28,8 +25,15 @@ const struct xlat mtd_flags_options[] = {
 #if defined(MTD_POWERUP_LOCK) || (defined(HAVE_DECL_MTD_POWERUP_LOCK) && HAVE_DECL_MTD_POWERUP_LOCK)
   XLAT(MTD_POWERUP_LOCK),
 #endif
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat mtd_flags_options[1] = { {
+ .data = mtd_flags_options_xdata,
+ .size = ARRAY_SIZE(mtd_flags_options_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

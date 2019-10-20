@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat sock_ip_options[] = {
+static const struct xlat_data sock_ip_options_xdata[] = {
 #if defined(IP_TOS) || (defined(HAVE_DECL_IP_TOS) && HAVE_DECL_IP_TOS)
   XLAT(IP_TOS),
 #endif
@@ -164,8 +163,13 @@ const struct xlat sock_ip_options[] = {
 #if defined(IP_UNICAST_IF) || (defined(HAVE_DECL_IP_UNICAST_IF) && HAVE_DECL_IP_UNICAST_IF)
   XLAT(IP_UNICAST_IF),
 #endif
- XLAT_END
 };
+static
+const struct xlat sock_ip_options[1] = { {
+ .data = sock_ip_options_xdata,
+ .size = ARRAY_SIZE(sock_ip_options_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

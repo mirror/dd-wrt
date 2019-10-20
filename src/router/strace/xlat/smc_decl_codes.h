@@ -124,9 +124,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat smc_decl_codes[] = {
-
+static const struct xlat_data smc_decl_codes_xdata[] = {
  XLAT(SMC_CLC_DECL_MEM),
  XLAT(SMC_CLC_DECL_TIMEOUT_CL),
  XLAT(SMC_CLC_DECL_TIMEOUT_AL),
@@ -143,8 +141,13 @@ const struct xlat smc_decl_codes[] = {
  XLAT(SMC_CLC_DECL_ERR_RTOK),
  XLAT(SMC_CLC_DECL_ERR_RDYLNK),
  XLAT(SMC_CLC_DECL_ERR_REGRMB),
- XLAT_END
 };
+static
+const struct xlat smc_decl_codes[1] = { {
+ .data = smc_decl_codes_xdata,
+ .size = ARRAY_SIZE(smc_decl_codes_xdata),
+ .type = XT_SORTED,
+} };
 
 # endif /* !IN_MPERS */
 

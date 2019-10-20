@@ -27,6 +27,10 @@ PURE_EXECUTABLES = \
   clock_nanosleep \
   clock_xettime \
   clone-flags \
+  clone3 \
+  clone3-Xabbrev \
+  clone3-Xraw \
+  clone3-Xverbose \
   copy_file_range \
   creat \
   delete_module \
@@ -132,6 +136,13 @@ PURE_EXECUTABLES = \
   ioctl_block \
   ioctl_dm \
   ioctl_evdev \
+  ioctl_evdev-Xabbrev \
+  ioctl_evdev-Xraw \
+  ioctl_evdev-Xverbose \
+  ioctl_evdev-v \
+  ioctl_evdev-v-Xabbrev \
+  ioctl_evdev-v-Xraw \
+  ioctl_evdev-v-Xverbose \
   ioctl_inotify \
   ioctl_kvm_run \
   ioctl_kvm_run-v \
@@ -149,6 +160,7 @@ PURE_EXECUTABLES = \
   ioctl_sock_gifconf \
   ioctl_uffdio \
   ioctl_v4l2 \
+  ioctl_watchdog \
   ioperm \
   iopl \
   ioprio \
@@ -334,6 +346,9 @@ PURE_EXECUTABLES = \
   personality-Xabbrev \
   personality-Xraw \
   personality-Xverbose \
+  pidfd_open \
+  pidfd_open-P \
+  pidfd_open-y \
   pidfd_send_signal \
   pipe \
   pipe2 \
@@ -385,7 +400,9 @@ PURE_EXECUTABLES = \
   readlinkat \
   readv \
   reboot \
+  recv-MSG_TRUNC \
   recvfrom \
+  recvfrom-MSG_TRUNC \
   recvmmsg-timeout \
   recvmsg \
   remap_file_pages \
@@ -489,6 +506,7 @@ PURE_EXECUTABLES = \
   status-all \
   status-failed \
   status-none \
+  status-none-f \
   status-successful \
   status-unfinished \
   statx \
@@ -520,6 +538,7 @@ PURE_EXECUTABLES = \
   umovestr-illptr \
   umovestr2 \
   umovestr3 \
+  umovestr_cached \
   uname \
   unlink \
   unlinkat \

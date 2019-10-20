@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat atomic_ops[] = {
+static const struct xlat_data atomic_ops_xdata[] = {
 { OR1K_ATOMIC_SWAP,		"SWAP"		},
 { OR1K_ATOMIC_CMPXCHG,		"CMPXCHG"	},
 { OR1K_ATOMIC_XCHG,		"XCHG"		},
@@ -23,8 +22,13 @@ const struct xlat atomic_ops[] = {
 { OR1K_ATOMIC_OR,		"OR"		},
 { OR1K_ATOMIC_UMAX,		"UMAX"		},
 { OR1K_ATOMIC_UMIN,		"UMIN"		},
- XLAT_END
 };
+static
+const struct xlat atomic_ops[1] = { {
+ .data = atomic_ops_xdata,
+ .size = ARRAY_SIZE(atomic_ops_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

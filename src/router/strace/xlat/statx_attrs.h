@@ -54,16 +54,20 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat statx_attrs[] = {
+static const struct xlat_data statx_attrs_xdata[] = {
  XLAT(STATX_ATTR_COMPRESSED),
  XLAT(STATX_ATTR_IMMUTABLE),
  XLAT(STATX_ATTR_APPEND),
  XLAT(STATX_ATTR_NODUMP),
  XLAT(STATX_ATTR_ENCRYPTED),
  XLAT(STATX_ATTR_AUTOMOUNT),
- XLAT_END
 };
+static
+const struct xlat statx_attrs[1] = { {
+ .data = statx_attrs_xdata,
+ .size = ARRAY_SIZE(statx_attrs_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

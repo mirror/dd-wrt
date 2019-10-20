@@ -96,8 +96,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat ipccalls[] = {
+static const struct xlat_data ipccalls_xdata[] = {
  XLAT(SEMOP),
  XLAT(SEMGET),
  XLAT(SEMCTL),
@@ -110,8 +109,13 @@ const struct xlat ipccalls[] = {
  XLAT(SHMDT),
  XLAT(SHMGET),
  XLAT(SHMCTL),
- XLAT_END
 };
+static
+const struct xlat ipccalls[1] = { {
+ .data = ipccalls_xdata,
+ .size = ARRAY_SIZE(ipccalls_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

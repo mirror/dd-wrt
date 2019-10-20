@@ -26,12 +26,16 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat nf_ulog_msg_types[] = {
- XLAT(NFULNL_MSG_PACKET),
- XLAT(NFULNL_MSG_CONFIG),
- XLAT_END
+static const struct xlat_data nf_ulog_msg_types_xdata[] = {
+ [NFULNL_MSG_PACKET] = XLAT(NFULNL_MSG_PACKET),
+ [NFULNL_MSG_CONFIG] = XLAT(NFULNL_MSG_CONFIG),
 };
+static
+const struct xlat nf_ulog_msg_types[1] = { {
+ .data = nf_ulog_msg_types_xdata,
+ .size = ARRAY_SIZE(nf_ulog_msg_types_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

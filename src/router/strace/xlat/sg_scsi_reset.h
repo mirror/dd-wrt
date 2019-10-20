@@ -54,16 +54,20 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat sg_scsi_reset[] = {
+static const struct xlat_data sg_scsi_reset_xdata[] = {
  XLAT(SG_SCSI_RESET_NOTHING),
  XLAT(SG_SCSI_RESET_DEVICE),
  XLAT(SG_SCSI_RESET_BUS),
  XLAT(SG_SCSI_RESET_HOST),
  XLAT(SG_SCSI_RESET_TARGET),
  XLAT(SG_SCSI_RESET_NO_ESCALATE),
- XLAT_END
 };
+static
+const struct xlat sg_scsi_reset[1] = { {
+ .data = sg_scsi_reset_xdata,
+ .size = ARRAY_SIZE(sg_scsi_reset_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

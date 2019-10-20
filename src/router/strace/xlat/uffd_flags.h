@@ -12,16 +12,20 @@
 
 # else
 
-static
-const struct xlat uffd_flags[] = {
+static const struct xlat_data uffd_flags_xdata[] = {
 #if defined(O_NONBLOCK) || (defined(HAVE_DECL_O_NONBLOCK) && HAVE_DECL_O_NONBLOCK)
   XLAT(O_NONBLOCK),
 #endif
 #if defined(O_CLOEXEC) || (defined(HAVE_DECL_O_CLOEXEC) && HAVE_DECL_O_CLOEXEC)
   XLAT(O_CLOEXEC),
 #endif
- XLAT_END
 };
+static
+const struct xlat uffd_flags[1] = { {
+ .data = uffd_flags_xdata,
+ .size = ARRAY_SIZE(uffd_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

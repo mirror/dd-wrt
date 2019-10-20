@@ -367,12 +367,33 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
 # define RTM_GETSTATS 94
 #endif
+#if defined(RTM_NEWCHAIN) || (defined(HAVE_DECL_RTM_NEWCHAIN) && HAVE_DECL_RTM_NEWCHAIN)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((RTM_NEWCHAIN) == (100), "RTM_NEWCHAIN != 100");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define RTM_NEWCHAIN 100
+#endif
+#if defined(RTM_DELCHAIN) || (defined(HAVE_DECL_RTM_DELCHAIN) && HAVE_DECL_RTM_DELCHAIN)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((RTM_DELCHAIN) == (101), "RTM_DELCHAIN != 101");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define RTM_DELCHAIN 101
+#endif
+#if defined(RTM_GETCHAIN) || (defined(HAVE_DECL_RTM_GETCHAIN) && HAVE_DECL_RTM_GETCHAIN)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((RTM_GETCHAIN) == (102), "RTM_GETCHAIN != 102");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define RTM_GETCHAIN 102
+#endif
 
 #ifndef XLAT_MACROS_ONLY
 
 # ifndef IN_MPERS
 
-const struct xlat nl_route_types[] = {
+static const struct xlat_data nl_route_types_xdata[] = {
  XLAT(RTM_NEWLINK),
  XLAT(RTM_DELLINK),
  XLAT(RTM_GETLINK),
@@ -444,8 +465,16 @@ const struct xlat nl_route_types[] = {
 
  XLAT(RTM_NEWSTATS),
  XLAT(RTM_GETSTATS),
- XLAT_END
+
+ XLAT(RTM_NEWCHAIN),
+ XLAT(RTM_DELCHAIN),
+ XLAT(RTM_GETCHAIN),
 };
+const struct xlat nl_route_types[1] = { {
+ .data = nl_route_types_xdata,
+ .size = ARRAY_SIZE(nl_route_types_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

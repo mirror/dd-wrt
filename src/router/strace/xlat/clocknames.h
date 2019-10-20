@@ -92,7 +92,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # ifndef IN_MPERS
 
-const struct xlat clocknames[] = {
+static const struct xlat_data clocknames_xdata[] = {
  [CLOCK_REALTIME] = XLAT(CLOCK_REALTIME),
  [CLOCK_MONOTONIC] = XLAT(CLOCK_MONOTONIC),
  [CLOCK_PROCESS_CPUTIME_ID] = XLAT(CLOCK_PROCESS_CPUTIME_ID),
@@ -105,8 +105,12 @@ const struct xlat clocknames[] = {
  [CLOCK_BOOTTIME_ALARM] = XLAT(CLOCK_BOOTTIME_ALARM),
  [CLOCK_SGI_CYCLE] = XLAT(CLOCK_SGI_CYCLE),
  [CLOCK_TAI] = XLAT(CLOCK_TAI),
- XLAT_END
 };
+const struct xlat clocknames[1] = { {
+ .data = clocknames_xdata,
+ .size = ARRAY_SIZE(clocknames_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

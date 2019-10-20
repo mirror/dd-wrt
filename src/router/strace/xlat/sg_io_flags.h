@@ -54,18 +54,22 @@ extern const struct xlat sg_io_flags[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat sg_io_flags[] = {
+static const struct xlat_data sg_io_flags_xdata[] = {
  XLAT(SG_FLAG_DIRECT_IO),
  XLAT(SG_FLAG_UNUSED_LUN_INHIBIT),
  XLAT(SG_FLAG_MMAP_IO),
  XLAT(SG_FLAG_NO_DXFER),
  XLAT(SG_FLAG_Q_AT_TAIL),
  XLAT(SG_FLAG_Q_AT_HEAD),
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat sg_io_flags[1] = { {
+ .data = sg_io_flags_xdata,
+ .size = ARRAY_SIZE(sg_io_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

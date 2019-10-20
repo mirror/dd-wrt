@@ -12,10 +12,7 @@ extern const struct xlat v4l2_colorspaces[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat v4l2_colorspaces[] = {
+static const struct xlat_data v4l2_colorspaces_xdata[] = {
 #if defined(V4L2_COLORSPACE_SMPTE170M) || (defined(HAVE_DECL_V4L2_COLORSPACE_SMPTE170M) && HAVE_DECL_V4L2_COLORSPACE_SMPTE170M)
   XLAT(V4L2_COLORSPACE_SMPTE170M),
 #endif
@@ -52,8 +49,15 @@ const struct xlat v4l2_colorspaces[] = {
 #if defined(V4L2_COLORSPACE_DCI_P3) || (defined(HAVE_DECL_V4L2_COLORSPACE_DCI_P3) && HAVE_DECL_V4L2_COLORSPACE_DCI_P3)
   XLAT(V4L2_COLORSPACE_DCI_P3),
 #endif
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat v4l2_colorspaces[1] = { {
+ .data = v4l2_colorspaces_xdata,
+ .size = ARRAY_SIZE(v4l2_colorspaces_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

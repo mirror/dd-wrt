@@ -54,16 +54,20 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat sock_udp_options[] = {
+static const struct xlat_data sock_udp_options_xdata[] = {
  XLAT(UDP_CORK),
  XLAT(UDP_ENCAP),
  XLAT(UDP_NO_CHECK6_TX),
  XLAT(UDP_NO_CHECK6_RX),
  XLAT(UDP_SEGMENT),
  XLAT(UDP_GRO),
- XLAT_END
 };
+static
+const struct xlat sock_udp_options[1] = { {
+ .data = sock_udp_options_xdata,
+ .size = ARRAY_SIZE(sock_udp_options_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

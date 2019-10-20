@@ -26,12 +26,16 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat pr_mce_kill[] = {
- XLAT(PR_MCE_KILL_CLEAR),
- XLAT(PR_MCE_KILL_SET),
- XLAT_END
+static const struct xlat_data pr_mce_kill_xdata[] = {
+ [PR_MCE_KILL_CLEAR] = XLAT(PR_MCE_KILL_CLEAR),
+ [PR_MCE_KILL_SET] = XLAT(PR_MCE_KILL_SET),
 };
+static
+const struct xlat pr_mce_kill[1] = { {
+ .data = pr_mce_kill_xdata,
+ .size = ARRAY_SIZE(pr_mce_kill_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -110,8 +110,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat statx_masks[] = {
+static const struct xlat_data statx_masks_xdata[] = {
  XLAT(STATX_ALL),
  XLAT(STATX_BASIC_STATS),
 
@@ -127,8 +126,13 @@ const struct xlat statx_masks[] = {
  XLAT(STATX_SIZE),
  XLAT(STATX_BLOCKS),
  XLAT(STATX_BTIME),
- XLAT_END
 };
+static
+const struct xlat statx_masks[1] = { {
+ .data = statx_masks_xdata,
+ .size = ARRAY_SIZE(statx_masks_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

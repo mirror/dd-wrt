@@ -96,8 +96,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat smc_states[] = {
+static const struct xlat_data smc_states_xdata[] = {
  XLAT(SMC_ACTIVE),
  XLAT(SMC_INIT),
  XLAT(SMC_CLOSED),
@@ -110,8 +109,13 @@ const struct xlat smc_states[] = {
  XLAT(SMC_PEERFINCLOSEWAIT),
  XLAT(SMC_PEERABORTWAIT),
  XLAT(SMC_PROCESSABORT),
- XLAT_END
 };
+static
+const struct xlat smc_states[1] = { {
+ .data = smc_states_xdata,
+ .size = ARRAY_SIZE(smc_states_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

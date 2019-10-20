@@ -1,7 +1,7 @@
 /*
  * This file is part of ioctl_inotify strace test.
  *
- * Copyright (c) 2018 The strace developers.
+ * Copyright (c) 2018-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -13,7 +13,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <asm/unistd.h>
+#include "scno.h"
 #include <linux/ioctl.h>
 
 #ifndef INOTIFY_IOC_SETNEXTWD

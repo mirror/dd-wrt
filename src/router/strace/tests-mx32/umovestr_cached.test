@@ -1,0 +1,31 @@
+#!/bin/sh
+#
+# Check effectiveness of umovestr memory caching.
+#
+# Copyright (c) 2017-2019 Dmitry V. Levin <ldv@altlinux.org>
+# All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+. "${srcdir=.}/init.sh"
+
+run_strace_match_diff -e trace=writev
+
+if [ "$STRACE_ARCH" = ia64 ]; then
+	# ia64 invokes extra process_vm_readv syscalls to obtain syscall
+	# arguments, see linux/ia64/get_syscall_args.c for details.
+	skip_ "the test is not supported on $STRACE_ARCH yet"
+fi
+
+check_prog grep
+
+run_strace -qq -esignal=none -eprocess_vm_readv -z \
+	-o '|grep -c ^process_vm_readv > count' \
+	-- "$STRACE_EXE" -o "$LOG" $args > /dev/null
+
+count="$(cat count)"
+case "$count" in
+	0) skip_ "$STRACE $args made no process_vm_readv syscall invocations" ;;
+	2) ;;
+	*) fail_ "$STRACE $args made $count != 2 process_vm_readv syscall invocations" ;;
+esac

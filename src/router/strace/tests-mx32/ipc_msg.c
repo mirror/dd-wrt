@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2015 Elvira Khabirova <lineprinter0@gmail.com>
  * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2015-2018 The strace developers.
+ * Copyright (c) 2015-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -26,12 +26,12 @@
  * which led to segmentation fault.
  */
 #undef TEST_MSGCTL_BOGUS_ADDR
-#if defined __GLIBC__ && defined POWERPC64
+#if defined __GLIBC__ && (defined POWERPC64 || defined POWERPC64LE)
 # if !(defined __GLIBC_MINOR__) \
    || ((__GLIBC__ << 16) + __GLIBC_MINOR__ < (2 << 16) + 23)
 #  define TEST_MSGCTL_BOGUS_ADDR 0
 # endif
-#endif /* __GLIBC__ && POWERPC64 */
+#endif /* __GLIBC__ && (POWERPC64 || POWERPC64LE) */
 
 #ifndef TEST_MSGCTL_BOGUS_ADDR
 # define TEST_MSGCTL_BOGUS_ADDR 1

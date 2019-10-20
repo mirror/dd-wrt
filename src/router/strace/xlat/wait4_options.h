@@ -35,8 +35,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat wait4_options[] = {
+static const struct xlat_data wait4_options_xdata[] = {
 #if defined(WNOHANG) || (defined(HAVE_DECL_WNOHANG) && HAVE_DECL_WNOHANG)
   XLAT(WNOHANG),
 #endif
@@ -63,8 +62,13 @@ const struct xlat wait4_options[] = {
  XLAT(__WCLONE),
  XLAT(__WALL),
  XLAT(__WNOTHREAD),
- XLAT_END
 };
+static
+const struct xlat wait4_options[1] = { {
+ .data = wait4_options_xdata,
+ .size = ARRAY_SIZE(wait4_options_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

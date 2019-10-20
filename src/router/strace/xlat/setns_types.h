@@ -57,7 +57,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # ifndef IN_MPERS
 
-const struct xlat setns_types[] = {
+static const struct xlat_data setns_types_xdata[] = {
  XLAT(0),
  XLAT(CLONE_NEWNS),
  XLAT(CLONE_NEWCGROUP),
@@ -66,8 +66,12 @@ const struct xlat setns_types[] = {
  XLAT(CLONE_NEWUSER),
  XLAT(CLONE_NEWPID),
  XLAT(CLONE_NEWNET),
- XLAT_END
 };
+const struct xlat setns_types[1] = { {
+ .data = setns_types_xdata,
+ .size = ARRAY_SIZE(setns_types_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

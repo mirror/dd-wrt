@@ -103,8 +103,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat isdn_protocols[] = {
+static const struct xlat_data isdn_protocols_xdata[] = {
  XLAT(ISDN_P_BASE),
  XLAT(ISDN_P_TE_S0),
  XLAT(ISDN_P_NT_S0),
@@ -124,8 +123,13 @@ const struct xlat isdn_protocols[] = {
 */
 
 
- XLAT_END
 };
+static
+const struct xlat isdn_protocols[1] = { {
+ .data = isdn_protocols_xdata,
+ .size = ARRAY_SIZE(isdn_protocols_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

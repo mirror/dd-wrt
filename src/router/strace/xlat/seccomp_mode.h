@@ -33,13 +33,17 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat seccomp_mode[] = {
- XLAT(SECCOMP_MODE_DISABLED),
- XLAT(SECCOMP_MODE_STRICT),
- XLAT(SECCOMP_MODE_FILTER),
- XLAT_END
+static const struct xlat_data seccomp_mode_xdata[] = {
+ [SECCOMP_MODE_DISABLED] = XLAT(SECCOMP_MODE_DISABLED),
+ [SECCOMP_MODE_STRICT] = XLAT(SECCOMP_MODE_STRICT),
+ [SECCOMP_MODE_FILTER] = XLAT(SECCOMP_MODE_FILTER),
 };
+static
+const struct xlat seccomp_mode[1] = { {
+ .data = seccomp_mode_xdata,
+ .size = ARRAY_SIZE(seccomp_mode_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

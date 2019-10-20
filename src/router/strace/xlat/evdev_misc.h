@@ -54,16 +54,20 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat evdev_misc[] = {
+static const struct xlat_data evdev_misc_xdata[] = {
  [MSC_SERIAL] = XLAT(MSC_SERIAL),
  [MSC_PULSELED] = XLAT(MSC_PULSELED),
  [MSC_GESTURE] = XLAT(MSC_GESTURE),
  [MSC_RAW] = XLAT(MSC_RAW),
  [MSC_SCAN] = XLAT(MSC_SCAN),
  [MSC_TIMESTAMP] = XLAT(MSC_TIMESTAMP),
- XLAT_END
 };
+static
+const struct xlat evdev_misc[1] = { {
+ .data = evdev_misc_xdata,
+ .size = ARRAY_SIZE(evdev_misc_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

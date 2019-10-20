@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat sysctl_net_core[] = {
+static const struct xlat_data sysctl_net_core_xdata[] = {
  XLAT(NET_CORE_WMEM_MAX),
  XLAT(NET_CORE_RMEM_MAX),
  XLAT(NET_CORE_WMEM_DEFAULT),
@@ -46,8 +45,13 @@ const struct xlat sysctl_net_core[] = {
 #if defined(NET_CORE_WARNINGS) || (defined(HAVE_DECL_NET_CORE_WARNINGS) && HAVE_DECL_NET_CORE_WARNINGS)
   XLAT(NET_CORE_WARNINGS),
 #endif
- XLAT_END
 };
+static
+const struct xlat sysctl_net_core[1] = { {
+ .data = sysctl_net_core_xdata,
+ .size = ARRAY_SIZE(sysctl_net_core_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

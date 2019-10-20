@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat sysctl_net_ipv4_route[] = {
+static const struct xlat_data sysctl_net_ipv4_route_xdata[] = {
  XLAT(NET_IPV4_ROUTE_FLUSH),
  XLAT(NET_IPV4_ROUTE_MIN_DELAY),
  XLAT(NET_IPV4_ROUTE_MAX_DELAY),
@@ -35,8 +34,13 @@ const struct xlat sysctl_net_ipv4_route[] = {
 #if defined(NET_IPV4_ROUTE_GC_MIN_INTERVAL_MS) || (defined(HAVE_DECL_NET_IPV4_ROUTE_GC_MIN_INTERVAL_MS) && HAVE_DECL_NET_IPV4_ROUTE_GC_MIN_INTERVAL_MS)
   XLAT(NET_IPV4_ROUTE_GC_MIN_INTERVAL_MS),
 #endif
- XLAT_END
 };
+static
+const struct xlat sysctl_net_ipv4_route[1] = { {
+ .data = sysctl_net_ipv4_route_xdata,
+ .size = ARRAY_SIZE(sysctl_net_ipv4_route_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

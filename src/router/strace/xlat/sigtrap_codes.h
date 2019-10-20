@@ -47,10 +47,7 @@ extern const struct xlat sigtrap_codes[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat sigtrap_codes[] = {
+static const struct xlat_data sigtrap_codes_xdata[] = {
 #if defined(TRAP_STEP) || (defined(HAVE_DECL_TRAP_STEP) && HAVE_DECL_TRAP_STEP)
   XLAT(TRAP_STEP),
 #endif
@@ -68,8 +65,15 @@ const struct xlat sigtrap_codes[] = {
 #endif
  XLAT(TRAP_HWBKPT),
  XLAT(TRAP_UNK),
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat sigtrap_codes[1] = { {
+ .data = sigtrap_codes_xdata,
+ .size = ARRAY_SIZE(sigtrap_codes_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -47,15 +47,19 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat nf_cttimeout_msg_types[] = {
- XLAT(IPCTNL_MSG_TIMEOUT_NEW),
- XLAT(IPCTNL_MSG_TIMEOUT_GET),
- XLAT(IPCTNL_MSG_TIMEOUT_DELETE),
- XLAT(IPCTNL_MSG_TIMEOUT_DEFAULT_SET),
- XLAT(IPCTNL_MSG_TIMEOUT_DEFAULT_GET),
- XLAT_END
+static const struct xlat_data nf_cttimeout_msg_types_xdata[] = {
+ [IPCTNL_MSG_TIMEOUT_NEW] = XLAT(IPCTNL_MSG_TIMEOUT_NEW),
+ [IPCTNL_MSG_TIMEOUT_GET] = XLAT(IPCTNL_MSG_TIMEOUT_GET),
+ [IPCTNL_MSG_TIMEOUT_DELETE] = XLAT(IPCTNL_MSG_TIMEOUT_DELETE),
+ [IPCTNL_MSG_TIMEOUT_DEFAULT_SET] = XLAT(IPCTNL_MSG_TIMEOUT_DEFAULT_SET),
+ [IPCTNL_MSG_TIMEOUT_DEFAULT_GET] = XLAT(IPCTNL_MSG_TIMEOUT_DEFAULT_GET),
 };
+static
+const struct xlat nf_cttimeout_msg_types[1] = { {
+ .data = nf_cttimeout_msg_types_xdata,
+ .size = ARRAY_SIZE(nf_cttimeout_msg_types_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -184,10 +184,7 @@ extern const struct xlat v4l2_control_id_bases[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat v4l2_control_id_bases[] = {
+static const struct xlat_data v4l2_control_id_bases_xdata[] = {
  XLAT(V4L2_CID_BASE),
  XLAT(V4L2_CID_USER_MEYE_BASE),
  XLAT(V4L2_CID_USER_BTTV_BASE),
@@ -227,8 +224,15 @@ const struct xlat v4l2_control_id_bases[] = {
  XLAT(V4L2_CID_FM_RX_CLASS_BASE),
  XLAT(V4L2_CID_RF_TUNER_CLASS_BASE),
  XLAT(V4L2_CID_DETECT_CLASS_BASE),
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat v4l2_control_id_bases[1] = { {
+ .data = v4l2_control_id_bases_xdata,
+ .size = ARRAY_SIZE(v4l2_control_id_bases_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

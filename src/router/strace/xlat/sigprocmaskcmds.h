@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat sigprocmaskcmds[] = {
+static const struct xlat_data sigprocmaskcmds_xdata[] = {
 #if defined(SIG_BLOCK) || (defined(HAVE_DECL_SIG_BLOCK) && HAVE_DECL_SIG_BLOCK)
   XLAT(SIG_BLOCK),
 #endif
@@ -26,8 +25,13 @@ const struct xlat sigprocmaskcmds[] = {
 #if defined(SIG_SETMASK32) || (defined(HAVE_DECL_SIG_SETMASK32) && HAVE_DECL_SIG_SETMASK32)
   XLAT(SIG_SETMASK32),
 #endif
- XLAT_END
 };
+static
+const struct xlat sigprocmaskcmds[1] = { {
+ .data = sigprocmaskcmds_xdata,
+ .size = ARRAY_SIZE(sigprocmaskcmds_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

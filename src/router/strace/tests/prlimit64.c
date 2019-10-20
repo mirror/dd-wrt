@@ -2,13 +2,14 @@
  * Check decoding of prlimit64 syscall.
  *
  * Copyright (c) 2016-2018 Dmitry V. Levin <ldv@altlinux.org>
+ * Copyright (c) 2016-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "tests.h"
-#include <asm/unistd.h>
+#include "scno.h"
 
 #ifdef __NR_prlimit64
 
@@ -44,9 +45,13 @@ main(void)
 	unsigned long pid =
 		(unsigned long) 0xdefaced00000000ULL | (unsigned) getpid();
 	uint64_t *const rlimit = tail_alloc(sizeof(*rlimit) * 2);
-	const struct xlat *xlat;
+	const struct xlat_data *xlat;
+	size_t i = 0;
 
-	for (xlat = resources; xlat->str; ++xlat) {
+	for (xlat = resources->data; i < resources->size; ++xlat, ++i) {
+		if (!xlat->str)
+			continue;
+
 		unsigned long res = 0xfacefeed00000000ULL | xlat->val;
 		long rc = syscall(__NR_prlimit64, pid, res, 0, rlimit);
 		if (rc)
