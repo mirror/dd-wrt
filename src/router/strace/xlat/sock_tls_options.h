@@ -26,12 +26,16 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat sock_tls_options[] = {
- XLAT(TLS_TX),
- XLAT(TLS_RX),
- XLAT_END
+static const struct xlat_data sock_tls_options_xdata[] = {
+ [TLS_TX] = XLAT(TLS_TX),
+ [TLS_RX] = XLAT(TLS_RX),
 };
+static
+const struct xlat sock_tls_options[1] = { {
+ .data = sock_tls_options_xdata,
+ .size = ARRAY_SIZE(sock_tls_options_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

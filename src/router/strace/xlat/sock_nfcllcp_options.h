@@ -47,15 +47,19 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat sock_nfcllcp_options[] = {
+static const struct xlat_data sock_nfcllcp_options_xdata[] = {
  [NFC_LLCP_RW] = XLAT(NFC_LLCP_RW),
  [NFC_LLCP_MIUX] = XLAT(NFC_LLCP_MIUX),
  [NFC_LLCP_REMOTE_MIU] = XLAT(NFC_LLCP_REMOTE_MIU),
  [NFC_LLCP_REMOTE_LTO] = XLAT(NFC_LLCP_REMOTE_LTO),
  [NFC_LLCP_REMOTE_RW] = XLAT(NFC_LLCP_REMOTE_RW),
- XLAT_END
 };
+static
+const struct xlat sock_nfcllcp_options[1] = { {
+ .data = sock_nfcllcp_options_xdata,
+ .size = ARRAY_SIZE(sock_nfcllcp_options_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

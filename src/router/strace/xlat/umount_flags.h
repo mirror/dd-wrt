@@ -40,14 +40,18 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat umount_flags[] = {
+static const struct xlat_data umount_flags_xdata[] = {
  XLAT(MNT_FORCE),
  XLAT(MNT_DETACH),
  XLAT(MNT_EXPIRE),
  XLAT(UMOUNT_NOFOLLOW),
- XLAT_END
 };
+static
+const struct xlat umount_flags[1] = { {
+ .data = umount_flags_xdata,
+ .size = ARRAY_SIZE(umount_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

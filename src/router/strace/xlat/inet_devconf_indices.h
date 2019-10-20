@@ -236,8 +236,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat inet_devconf_indices[] = {
+static const struct xlat_data inet_devconf_indices_xdata[] = {
 
  [IPV4_DEVCONF_FORWARDING-1] = XLAT(IPV4_DEVCONF_FORWARDING-1),
  [IPV4_DEVCONF_MC_FORWARDING-1] = XLAT(IPV4_DEVCONF_MC_FORWARDING-1),
@@ -271,8 +270,13 @@ const struct xlat inet_devconf_indices[] = {
  [IPV4_DEVCONF_DROP_UNICAST_IN_L2_MULTICAST-1] = XLAT(IPV4_DEVCONF_DROP_UNICAST_IN_L2_MULTICAST-1),
  [IPV4_DEVCONF_DROP_GRATUITOUS_ARP-1] = XLAT(IPV4_DEVCONF_DROP_GRATUITOUS_ARP-1),
  [IPV4_DEVCONF_BC_FORWARDING-1] = XLAT(IPV4_DEVCONF_BC_FORWARDING-1),
- XLAT_END
 };
+static
+const struct xlat inet_devconf_indices[1] = { {
+ .data = inet_devconf_indices_xdata,
+ .size = ARRAY_SIZE(inet_devconf_indices_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

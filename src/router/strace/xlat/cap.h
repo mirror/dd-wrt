@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat cap[] = {
+static const struct xlat_data cap_xdata[] = {
  XLAT(CAP_CHOWN),
  XLAT(CAP_DAC_OVERRIDE),
  XLAT(CAP_DAC_READ_SEARCH),
@@ -52,8 +51,13 @@ const struct xlat cap[] = {
  XLAT(CAP_WAKE_ALARM),
  XLAT(CAP_BLOCK_SUSPEND),
  XLAT(CAP_AUDIT_READ),
- XLAT_END
 };
+static
+const struct xlat cap[1] = { {
+ .data = cap_xdata,
+ .size = ARRAY_SIZE(cap_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

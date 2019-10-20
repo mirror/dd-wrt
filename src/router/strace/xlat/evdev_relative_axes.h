@@ -103,8 +103,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat evdev_relative_axes[] = {
+static const struct xlat_data evdev_relative_axes_xdata[] = {
  [REL_X] = XLAT(REL_X),
  [REL_Y] = XLAT(REL_Y),
  [REL_Z] = XLAT(REL_Z),
@@ -118,8 +117,13 @@ const struct xlat evdev_relative_axes[] = {
  [REL_RESERVED] = XLAT(REL_RESERVED),
  [REL_WHEEL_HI_RES] = XLAT(REL_WHEEL_HI_RES),
  [REL_HWHEEL_HI_RES] = XLAT(REL_HWHEEL_HI_RES),
- XLAT_END
 };
+static
+const struct xlat evdev_relative_axes[1] = { {
+ .data = evdev_relative_axes_xdata,
+ .size = ARRAY_SIZE(evdev_relative_axes_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

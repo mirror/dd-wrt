@@ -26,8 +26,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat setsock_ipv6_options[] = {
+static const struct xlat_data setsock_ipv6_options_xdata[] = {
 /*
 * Options specific to setsockopt(SOL_IPV6).
 * Common {g,s}etsockopt(SOL_IPV6) options
@@ -36,8 +35,13 @@ const struct xlat setsock_ipv6_options[] = {
 
  XLAT(IP6T_SO_SET_REPLACE),
  XLAT(IP6T_SO_SET_ADD_COUNTERS),
- XLAT_END
 };
+static
+const struct xlat setsock_ipv6_options[1] = { {
+ .data = setsock_ipv6_options_xdata,
+ .size = ARRAY_SIZE(setsock_ipv6_options_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

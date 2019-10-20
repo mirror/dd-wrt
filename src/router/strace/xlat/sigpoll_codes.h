@@ -54,18 +54,22 @@ extern const struct xlat sigpoll_codes[];
 
 # else
 
+static const struct xlat_data sigpoll_codes_xdata[] = {
+ [POLL_IN] = XLAT(POLL_IN),
+ [POLL_OUT] = XLAT(POLL_OUT),
+ [POLL_MSG] = XLAT(POLL_MSG),
+ [POLL_ERR] = XLAT(POLL_ERR),
+ [POLL_PRI] = XLAT(POLL_PRI),
+ [POLL_HUP] = XLAT(POLL_HUP),
+};
 #  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
 static
 #  endif
-const struct xlat sigpoll_codes[] = {
- XLAT(POLL_IN),
- XLAT(POLL_OUT),
- XLAT(POLL_MSG),
- XLAT(POLL_ERR),
- XLAT(POLL_PRI),
- XLAT(POLL_HUP),
- XLAT_END
-};
+const struct xlat sigpoll_codes[1] = { {
+ .data = sigpoll_codes_xdata,
+ .size = ARRAY_SIZE(sigpoll_codes_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

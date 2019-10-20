@@ -12,16 +12,20 @@
 
 # else
 
-static
-const struct xlat smc_diag_attrs[] = {
+static const struct xlat_data smc_diag_attrs_xdata[] = {
  XLAT(SMC_DIAG_NONE),
  XLAT(SMC_DIAG_CONNINFO),
  XLAT(SMC_DIAG_LGRINFO),
  XLAT(SMC_DIAG_SHUTDOWN),
  XLAT(SMC_DIAG_DMBINFO),
  XLAT(SMC_DIAG_FALLBACK),
- XLAT_END
 };
+static
+const struct xlat smc_diag_attrs[1] = { {
+ .data = smc_diag_attrs_xdata,
+ .size = ARRAY_SIZE(smc_diag_attrs_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

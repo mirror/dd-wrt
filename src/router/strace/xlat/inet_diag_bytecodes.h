@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat inet_diag_bytecodes[] = {
+static const struct xlat_data inet_diag_bytecodes_xdata[] = {
  XLAT(INET_DIAG_BC_NOP),
  XLAT(INET_DIAG_BC_JMP),
  XLAT(INET_DIAG_BC_S_GE),
@@ -27,8 +26,13 @@ const struct xlat inet_diag_bytecodes[] = {
  XLAT(INET_DIAG_BC_MARK_COND),
  XLAT(INET_DIAG_BC_S_EQ),
  XLAT(INET_DIAG_BC_D_EQ),
- XLAT_END
 };
+static
+const struct xlat inet_diag_bytecodes[1] = { {
+ .data = inet_diag_bytecodes_xdata,
+ .size = ARRAY_SIZE(inet_diag_bytecodes_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -234,8 +234,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat resources[] = {
+static const struct xlat_data resources_xdata[] = {
  [RLIMIT_CPU] = XLAT(RLIMIT_CPU),
  [RLIMIT_FSIZE] = XLAT(RLIMIT_FSIZE),
  [RLIMIT_DATA] = XLAT(RLIMIT_DATA),
@@ -274,8 +273,13 @@ const struct xlat resources[] = {
  [RLIMIT_NICE] = XLAT(RLIMIT_NICE),
  [RLIMIT_RTPRIO] = XLAT(RLIMIT_RTPRIO),
  [RLIMIT_RTTIME] = XLAT(RLIMIT_RTTIME),
- XLAT_END
 };
+static
+const struct xlat resources[1] = { {
+ .data = resources_xdata,
+ .size = ARRAY_SIZE(resources_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

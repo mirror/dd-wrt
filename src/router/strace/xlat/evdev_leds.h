@@ -89,8 +89,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat evdev_leds[] = {
+static const struct xlat_data evdev_leds_xdata[] = {
  [LED_NUML] = XLAT(LED_NUML),
  [LED_CAPSL] = XLAT(LED_CAPSL),
  [LED_SCROLLL] = XLAT(LED_SCROLLL),
@@ -102,8 +101,13 @@ const struct xlat evdev_leds[] = {
  [LED_MISC] = XLAT(LED_MISC),
  [LED_MAIL] = XLAT(LED_MAIL),
  [LED_CHARGING] = XLAT(LED_CHARGING),
- XLAT_END
 };
+static
+const struct xlat evdev_leds[1] = { {
+ .data = evdev_leds_xdata,
+ .size = ARRAY_SIZE(evdev_leds_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -40,14 +40,18 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat multicast_router_types[] = {
- XLAT(MDB_RTR_TYPE_DISABLED),
- XLAT(MDB_RTR_TYPE_TEMP_QUERY),
- XLAT(MDB_RTR_TYPE_PERM),
- XLAT(MDB_RTR_TYPE_TEMP),
- XLAT_END
+static const struct xlat_data multicast_router_types_xdata[] = {
+ [MDB_RTR_TYPE_DISABLED] = XLAT(MDB_RTR_TYPE_DISABLED),
+ [MDB_RTR_TYPE_TEMP_QUERY] = XLAT(MDB_RTR_TYPE_TEMP_QUERY),
+ [MDB_RTR_TYPE_PERM] = XLAT(MDB_RTR_TYPE_PERM),
+ [MDB_RTR_TYPE_TEMP] = XLAT(MDB_RTR_TYPE_TEMP),
 };
+static
+const struct xlat multicast_router_types[1] = { {
+ .data = multicast_router_types_xdata,
+ .size = ARRAY_SIZE(multicast_router_types_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

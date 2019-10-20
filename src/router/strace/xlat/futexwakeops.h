@@ -47,15 +47,19 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat futexwakeops[] = {
- XLAT(FUTEX_OP_SET),
- XLAT(FUTEX_OP_ADD),
- XLAT(FUTEX_OP_OR),
- XLAT(FUTEX_OP_ANDN),
- XLAT(FUTEX_OP_XOR),
- XLAT_END
+static const struct xlat_data futexwakeops_xdata[] = {
+ [FUTEX_OP_SET] = XLAT(FUTEX_OP_SET),
+ [FUTEX_OP_ADD] = XLAT(FUTEX_OP_ADD),
+ [FUTEX_OP_OR] = XLAT(FUTEX_OP_OR),
+ [FUTEX_OP_ANDN] = XLAT(FUTEX_OP_ANDN),
+ [FUTEX_OP_XOR] = XLAT(FUTEX_OP_XOR),
 };
+static
+const struct xlat futexwakeops[1] = { {
+ .data = futexwakeops_xdata,
+ .size = ARRAY_SIZE(futexwakeops_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

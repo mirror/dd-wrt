@@ -61,17 +61,21 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat lwtunnel_encap_types[] = {
- XLAT(LWTUNNEL_ENCAP_NONE),
- XLAT(LWTUNNEL_ENCAP_MPLS),
- XLAT(LWTUNNEL_ENCAP_IP),
- XLAT(LWTUNNEL_ENCAP_ILA),
- XLAT(LWTUNNEL_ENCAP_IP6),
- XLAT(LWTUNNEL_ENCAP_SEG6),
- XLAT(LWTUNNEL_ENCAP_BPF),
- XLAT_END
+static const struct xlat_data lwtunnel_encap_types_xdata[] = {
+ [LWTUNNEL_ENCAP_NONE] = XLAT(LWTUNNEL_ENCAP_NONE),
+ [LWTUNNEL_ENCAP_MPLS] = XLAT(LWTUNNEL_ENCAP_MPLS),
+ [LWTUNNEL_ENCAP_IP] = XLAT(LWTUNNEL_ENCAP_IP),
+ [LWTUNNEL_ENCAP_ILA] = XLAT(LWTUNNEL_ENCAP_ILA),
+ [LWTUNNEL_ENCAP_IP6] = XLAT(LWTUNNEL_ENCAP_IP6),
+ [LWTUNNEL_ENCAP_SEG6] = XLAT(LWTUNNEL_ENCAP_SEG6),
+ [LWTUNNEL_ENCAP_BPF] = XLAT(LWTUNNEL_ENCAP_BPF),
 };
+static
+const struct xlat lwtunnel_encap_types[1] = { {
+ .data = lwtunnel_encap_types_xdata,
+ .size = ARRAY_SIZE(lwtunnel_encap_types_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

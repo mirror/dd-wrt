@@ -28,14 +28,18 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat inotify_init_flags[] = {
+static const struct xlat_data inotify_init_flags_xdata[] = {
  XLAT(IN_NONBLOCK),
 #if defined IN_CLOEXEC || defined O_CLOEXEC
  XLAT(IN_CLOEXEC),
 #endif
- XLAT_END
 };
+static
+const struct xlat inotify_init_flags[1] = { {
+ .data = inotify_init_flags_xdata,
+ .size = ARRAY_SIZE(inotify_init_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

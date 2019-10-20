@@ -12,12 +12,12 @@
 
 AC_PREREQ(2.57)
 AC_INIT([strace],
-	m4_esyscmd([./git-version-gen .tarball-version]),
+	st_esyscmd_s([./git-version-gen .tarball-version]),
 	[strace-devel@lists.strace.io],
 	[strace],
 	[https://strace.io])
-m4_define([copyright_year], m4_esyscmd([./copyright-year-gen .year]))
-m4_define([manpage_date], m4_esyscmd([./file-date-gen strace.1.in]))
+m4_define([copyright_year], st_esyscmd_s([./copyright-year-gen .year]))
+m4_define([manpage_date], st_esyscmd_s([./file-date-gen strace.1.in]))
 AC_COPYRIGHT([Copyright (c) 1999-]copyright_year[ The strace developers.])
 AC_CONFIG_SRCDIR([strace.c])
 AC_CONFIG_AUX_DIR([.])
@@ -47,6 +47,8 @@ AC_SUBST([COPYRIGHT_YEAR], [copyright_year])
 
 AC_DEFINE([MANPAGE_DATE], "[manpage_date]", [Date])
 AC_SUBST([MANPAGE_DATE], [manpage_date])
+
+AC_C_BIGENDIAN
 
 AC_MSG_CHECKING([for supported architecture])
 arch_m32=
@@ -126,13 +128,24 @@ powerpc*)
 # error 32 bit
 #endif], [], arch=powerpc64, arch=powerpc)
 	if test "$arch" = "powerpc64"; then
-		arch_m32=powerpc
-		AC_DEFINE([POWERPC64], 1, [Define for the PowerPC64 architecture.])
+		# $ac_cv_c_bigendian is defined by AC_C_BIGENDIAN
+		case "$ac_cv_c_bigendian" in
+		no)
+			arch=powerpc64le
+			AC_DEFINE([POWERPC64LE], 1,
+				  [Define for the little endian PowerPC64 architecture.])
+			;;
+		*)
+			arch_m32=powerpc
+			AC_DEFINE([POWERPC64], 1,
+				  [Define for the big endian PowerPC64 architecture.])
+			;;
+		esac
 	fi
 	;;
-riscv*)
-	arch=riscv
-	AC_DEFINE([RISCV], 1, [Define for the RISC-V architecture])
+riscv64*)
+	arch=riscv64
+	AC_DEFINE([RISCV64], 1, [Define for the RISC-V 64-bit architecture])
 	;;
 s390)
 	arch=s390
@@ -243,7 +256,6 @@ esac
 AC_DEFINE_UNQUOTED([ENABLE_ARM_OABI], [$enable_arm_oabi],
 		   [Define to 1 if you want OABI support on ARM EABI.])
 
-AC_C_BIGENDIAN
 AC_C_TYPEOF
 
 AC_TYPE_UID_T
@@ -411,6 +423,7 @@ AC_CHECK_HEADERS(m4_normalize([
 	linux/nsfs.h
 	linux/perf_event.h
 	linux/quota.h
+	linux/sched.h
 	linux/seccomp.h
 	linux/securebits.h
 	linux/sem.h
@@ -467,6 +480,9 @@ AC_CHECK_HEADERS([linux/bpf.h], [
 ])
 
 AC_CHECK_HEADERS([bluetooth/bluetooth.h], [
+	AC_CHECK_MEMBERS([struct sockaddr_hci.hci_channel],,,
+			 [#include <bluetooth/bluetooth.h>
+			 #include <bluetooth/hci.h>])
 	AC_CHECK_MEMBERS([struct sockaddr_l2.l2_bdaddr_type],,,
 			 [#include <bluetooth/bluetooth.h>
 			 #include <bluetooth/l2cap.h>])
@@ -556,6 +572,9 @@ AC_CHECK_TYPES([struct statfs64], [
 ],, [#include <linux/types.h>
 #include <asm/statfs.h>])
 
+AC_CHECK_TYPES([struct statx],,, [#include <linux/types.h>
+#include <linux/stat.h>])
+
 AC_CHECK_TYPES([struct blk_user_trace_setup],,, [#include <linux/blktrace_api.h>])
 
 AC_CHECK_TYPES([struct mtd_write_req],,, [#include <mtd/mtd-abi.h>])
@@ -589,6 +608,13 @@ if test "x$st_cv_linux_signal" = xno; then
 fi
 
 AC_CHECK_TYPES([struct __aio_sigset],,, [#include <linux/aio_abi.h>])
+
+AC_CHECK_MEMBERS(m4_normalize([
+		struct iocb.aio_flags,
+		struct iocb.aio_rw_flags
+		]),,, [#include <linux/aio_abi.h>])
+
+AC_CHECK_TYPES([struct clone_args],,, [#include <linux/sched.h>])
 
 CPPFLAGS="$saved_CPPFLAGS"
 
@@ -923,7 +949,7 @@ AC_ARG_ENABLE([mpers],
 	 esac],
 	[enable_mpers=yes])
 
-st_MPERS([m32], [aarch64|powerpc64|riscv|s390x|sparc64|tile|x32|x86_64])
+st_MPERS([m32], [aarch64|powerpc64|s390x|sparc64|tile|x32|x86_64])
 st_MPERS([mx32], [x86_64])
 
 AX_VALGRIND_DFLT([sgcheck], [off])

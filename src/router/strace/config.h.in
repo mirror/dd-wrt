@@ -877,6 +877,9 @@
 /* Define to 1 if you have the <linux/quota.h> header file. */
 #undef HAVE_LINUX_QUOTA_H
 
+/* Define to 1 if you have the <linux/sched.h> header file. */
+#undef HAVE_LINUX_SCHED_H
+
 /* Define to 1 if you have the <linux/seccomp.h> header file. */
 #undef HAVE_LINUX_SECCOMP_H
 
@@ -1197,6 +1200,9 @@
    btrfs_ioctl_search_args_v2'. */
 #undef HAVE_STRUCT_BTRFS_IOCTL_SEARCH_ARGS_V2_BUF_SIZE
 
+/* Define to 1 if the system has the type `struct clone_args'. */
+#undef HAVE_STRUCT_CLONE_ARGS
+
 /* Define to 1 if the system has the type `struct crypto_report_aead'. */
 #undef HAVE_STRUCT_CRYPTO_REPORT_AEAD
 
@@ -1259,6 +1265,12 @@
 
 /* Define to 1 if `resolution' is a member of `struct input_absinfo'. */
 #undef HAVE_STRUCT_INPUT_ABSINFO_RESOLUTION
+
+/* Define to 1 if `aio_flags' is a member of `struct iocb'. */
+#undef HAVE_STRUCT_IOCB_AIO_FLAGS
+
+/* Define to 1 if `aio_rw_flags' is a member of `struct iocb'. */
+#undef HAVE_STRUCT_IOCB_AIO_RW_FLAGS
 
 /* Define to 1 if the system has the type `struct kcmp_epoll_slot'. */
 #undef HAVE_STRUCT_KCMP_EPOLL_SLOT
@@ -1397,6 +1409,9 @@
 /* Define to 1 if the system has the type `struct sigcontext'. */
 #undef HAVE_STRUCT_SIGCONTEXT
 
+/* Define to 1 if `hci_channel' is a member of `struct sockaddr_hci'. */
+#undef HAVE_STRUCT_SOCKADDR_HCI_HCI_CHANNEL
+
 /* Define to 1 if `l2_bdaddr_type' is a member of `struct sockaddr_l2'. */
 #undef HAVE_STRUCT_SOCKADDR_L2_L2_BDADDR_TYPE
 
@@ -1435,6 +1450,9 @@
 
 /* Define to 1 if `f_fsid.__val' is a member of `struct statfs'. */
 #undef HAVE_STRUCT_STATFS_F_FSID___VAL
+
+/* Define to 1 if the system has the type `struct statx'. */
+#undef HAVE_STRUCT_STATX
 
 /* Define to 1 if `st_mtime_nsec' is a member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_MTIME_NSEC
@@ -1885,11 +1903,14 @@
 /* Define for the PowerPC architecture. */
 #undef POWERPC
 
-/* Define for the PowerPC64 architecture. */
+/* Define for the big endian PowerPC64 architecture. */
 #undef POWERPC64
 
-/* Define for the RISC-V architecture */
-#undef RISCV
+/* Define for the little endian PowerPC64 architecture. */
+#undef POWERPC64LE
+
+/* Define for the RISC-V 64-bit architecture */
+#undef RISCV64
 
 /* Define for the S390 architecture. */
 #undef S390

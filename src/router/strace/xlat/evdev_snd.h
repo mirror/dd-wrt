@@ -33,13 +33,17 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat evdev_snd[] = {
+static const struct xlat_data evdev_snd_xdata[] = {
  [SND_CLICK] = XLAT(SND_CLICK),
  [SND_BELL] = XLAT(SND_BELL),
  [SND_TONE] = XLAT(SND_TONE),
- XLAT_END
 };
+static
+const struct xlat evdev_snd[1] = { {
+ .data = evdev_snd_xdata,
+ .size = ARRAY_SIZE(evdev_snd_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

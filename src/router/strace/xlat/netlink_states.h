@@ -33,14 +33,18 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat netlink_states[] = {
+static const struct xlat_data netlink_states_xdata[] = {
  XLAT(NETLINK_UNCONNECTED),
  XLAT(NETLINK_CONNECTED),
 
  XLAT(TCP_CLOSE),
- XLAT_END
 };
+static
+const struct xlat netlink_states[1] = { {
+ .data = netlink_states_xdata,
+ .size = ARRAY_SIZE(netlink_states_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

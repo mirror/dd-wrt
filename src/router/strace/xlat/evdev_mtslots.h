@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat evdev_mtslots[] = {
+static const struct xlat_data evdev_mtslots_xdata[] = {
 #if defined(ABS_MT_SLOT) || (defined(HAVE_DECL_ABS_MT_SLOT) && HAVE_DECL_ABS_MT_SLOT)
   XLAT(ABS_MT_SLOT),
 #endif
@@ -59,8 +58,13 @@ const struct xlat evdev_mtslots[] = {
 #if defined(ABS_MT_TOOL_Y) || (defined(HAVE_DECL_ABS_MT_TOOL_Y) && HAVE_DECL_ABS_MT_TOOL_Y)
   XLAT(ABS_MT_TOOL_Y),
 #endif
- XLAT_END
 };
+static
+const struct xlat evdev_mtslots[1] = { {
+ .data = evdev_mtslots_xdata,
+ .size = ARRAY_SIZE(evdev_mtslots_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -33,13 +33,17 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat rename_flags[] = {
+static const struct xlat_data rename_flags_xdata[] = {
  XLAT(RENAME_NOREPLACE),
  XLAT(RENAME_EXCHANGE),
  XLAT(RENAME_WHITEOUT),
- XLAT_END
 };
+static
+const struct xlat rename_flags[1] = { {
+ .data = rename_flags_xdata,
+ .size = ARRAY_SIZE(rename_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

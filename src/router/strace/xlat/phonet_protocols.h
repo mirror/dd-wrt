@@ -33,13 +33,17 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat phonet_protocols[] = {
+static const struct xlat_data phonet_protocols_xdata[] = {
  [PN_PROTO_TRANSPORT] = XLAT(PN_PROTO_TRANSPORT),
  [PN_PROTO_PHONET] = XLAT(PN_PROTO_PHONET),
  [PN_PROTO_PIPE] = XLAT(PN_PROTO_PIPE),
- XLAT_END
 };
+static
+const struct xlat phonet_protocols[1] = { {
+ .data = phonet_protocols_xdata,
+ .size = ARRAY_SIZE(phonet_protocols_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

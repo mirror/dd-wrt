@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat lockfcmds[] = {
+static const struct xlat_data lockfcmds_xdata[] = {
 #if defined(F_RDLCK) || (defined(HAVE_DECL_F_RDLCK) && HAVE_DECL_F_RDLCK)
   XLAT(F_RDLCK),
 #endif
@@ -29,8 +28,13 @@ const struct xlat lockfcmds[] = {
 #if defined(F_SHLCK) || (defined(HAVE_DECL_F_SHLCK) && HAVE_DECL_F_SHLCK)
   XLAT(F_SHLCK),
 #endif
- XLAT_END
 };
+static
+const struct xlat lockfcmds[1] = { {
+ .data = lockfcmds_xdata,
+ .size = ARRAY_SIZE(lockfcmds_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

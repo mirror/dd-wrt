@@ -26,12 +26,16 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat tun_device_types[] = {
+static const struct xlat_data tun_device_types_xdata[] = {
  [IFF_TUN] = XLAT(IFF_TUN),
  [IFF_TAP] = XLAT(IFF_TAP),
- XLAT_END
 };
+static
+const struct xlat tun_device_types[1] = { {
+ .data = tun_device_types_xdata,
+ .size = ARRAY_SIZE(tun_device_types_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -470,8 +470,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # ifndef IN_MPERS
 
-const struct xlat arp_hardware_types[] = {
-
+static const struct xlat_data arp_hardware_types_xdata[] = {
  XLAT(ARPHRD_NETROM),
  XLAT(ARPHRD_ETHER),
  XLAT(ARPHRD_EETHER),
@@ -538,8 +537,12 @@ const struct xlat arp_hardware_types[] = {
  XLAT(ARPHRD_VSOCKMON),
  XLAT(ARPHRD_NONE),
  XLAT(ARPHRD_VOID),
- XLAT_END
 };
+const struct xlat arp_hardware_types[1] = { {
+ .data = arp_hardware_types_xdata,
+ .size = ARRAY_SIZE(arp_hardware_types_xdata),
+ .type = XT_SORTED,
+} };
 
 # endif /* !IN_MPERS */
 

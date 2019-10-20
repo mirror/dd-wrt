@@ -12,16 +12,20 @@
 
 # else
 
-static
-const struct xlat semop_flags[] = {
+static const struct xlat_data semop_flags_xdata[] = {
 #if defined(SEM_UNDO) || (defined(HAVE_DECL_SEM_UNDO) && HAVE_DECL_SEM_UNDO)
   XLAT(SEM_UNDO),
 #endif
 #if defined(IPC_NOWAIT) || (defined(HAVE_DECL_IPC_NOWAIT) && HAVE_DECL_IPC_NOWAIT)
   XLAT(IPC_NOWAIT),
 #endif
- XLAT_END
 };
+static
+const struct xlat semop_flags[1] = { {
+ .data = semop_flags_xdata,
+ .size = ARRAY_SIZE(semop_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

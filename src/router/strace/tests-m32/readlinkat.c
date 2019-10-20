@@ -1,13 +1,14 @@
 /*
  * Copyright (c) 2015 Gleb Fotengauer-Malinovskiy <glebfm@altlinux.org>
  * Copyright (c) 2015-2018 Dmitry V. Levin <ldv@altlinux.org>
+ * Copyright (c) 2015-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "tests.h"
-#include <asm/unistd.h>
+#include "scno.h"
 
 #ifdef __NR_readlinkat
 

@@ -54,16 +54,20 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat snmp_icmp6_stats[] = {
+static const struct xlat_data snmp_icmp6_stats_xdata[] = {
  [ICMP6_MIB_NUM] = XLAT(ICMP6_MIB_NUM),
  [ICMP6_MIB_INMSGS] = XLAT(ICMP6_MIB_INMSGS),
  [ICMP6_MIB_INERRORS] = XLAT(ICMP6_MIB_INERRORS),
  [ICMP6_MIB_OUTMSGS] = XLAT(ICMP6_MIB_OUTMSGS),
  [ICMP6_MIB_OUTERRORS] = XLAT(ICMP6_MIB_OUTERRORS),
  [ICMP6_MIB_CSUMERRORS] = XLAT(ICMP6_MIB_CSUMERRORS),
- XLAT_END
 };
+static
+const struct xlat snmp_icmp6_stats[1] = { {
+ .data = snmp_icmp6_stats_xdata,
+ .size = ARRAY_SIZE(snmp_icmp6_stats_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -26,12 +26,16 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat getrandom_flags[] = {
+static const struct xlat_data getrandom_flags_xdata[] = {
  XLAT(GRND_NONBLOCK),
  XLAT(GRND_RANDOM),
- XLAT_END
 };
+static
+const struct xlat getrandom_flags[1] = { {
+ .data = getrandom_flags_xdata,
+ .size = ARRAY_SIZE(getrandom_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

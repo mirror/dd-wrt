@@ -33,14 +33,17 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat perf_hw_cache_op_id[] = {
-
+static const struct xlat_data perf_hw_cache_op_id_xdata[] = {
  XLAT(PERF_COUNT_HW_CACHE_OP_READ),
  XLAT(PERF_COUNT_HW_CACHE_OP_WRITE),
  XLAT(PERF_COUNT_HW_CACHE_OP_PREFETCH),
- XLAT_END
 };
+static
+const struct xlat perf_hw_cache_op_id[1] = { {
+ .data = perf_hw_cache_op_id_xdata,
+ .size = ARRAY_SIZE(perf_hw_cache_op_id_xdata),
+ .type = XT_SORTED,
+} };
 
 # endif /* !IN_MPERS */
 

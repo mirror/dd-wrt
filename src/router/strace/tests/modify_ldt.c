@@ -1,7 +1,7 @@
 /*
  * Check decoding of modify_ldt syscall.
  *
- * Copyright (c) 2018 The strace developers.
+ * Copyright (c) 2018-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -9,7 +9,7 @@
 
 #include "tests.h"
 
-#include <asm/unistd.h>
+#include "scno.h"
 
 #if defined __NR_modify_ldt && defined HAVE_STRUCT_USER_DESC
 

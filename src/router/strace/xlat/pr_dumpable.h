@@ -33,14 +33,18 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat pr_dumpable[] = {
+static const struct xlat_data pr_dumpable_xdata[] = {
 
- XLAT(SUID_DUMP_DISABLE),
- XLAT(SUID_DUMP_USER),
- XLAT(SUID_DUMP_ROOT),
- XLAT_END
+ [SUID_DUMP_DISABLE] = XLAT(SUID_DUMP_DISABLE),
+ [SUID_DUMP_USER] = XLAT(SUID_DUMP_USER),
+ [SUID_DUMP_ROOT] = XLAT(SUID_DUMP_ROOT),
 };
+static
+const struct xlat pr_dumpable[1] = { {
+ .data = pr_dumpable_xdata,
+ .size = ARRAY_SIZE(pr_dumpable_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

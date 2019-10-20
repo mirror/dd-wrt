@@ -166,8 +166,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat inotify_flags[] = {
+static const struct xlat_data inotify_flags_xdata[] = {
  XLAT(IN_ACCESS),
  XLAT(IN_MODIFY),
  XLAT(IN_ATTRIB),
@@ -190,8 +189,13 @@ const struct xlat inotify_flags[] = {
  XLAT(IN_MASK_ADD),
  XLAT(IN_ISDIR),
  XLAT(IN_ONESHOT),
- XLAT_END
 };
+static
+const struct xlat inotify_flags[1] = { {
+ .data = inotify_flags_xdata,
+ .size = ARRAY_SIZE(inotify_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

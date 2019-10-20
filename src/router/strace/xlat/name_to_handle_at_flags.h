@@ -26,12 +26,16 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat name_to_handle_at_flags[] = {
+static const struct xlat_data name_to_handle_at_flags_xdata[] = {
  XLAT(AT_SYMLINK_FOLLOW),
  XLAT(AT_EMPTY_PATH),
- XLAT_END
 };
+static
+const struct xlat name_to_handle_at_flags[1] = { {
+ .data = name_to_handle_at_flags_xdata,
+ .size = ARRAY_SIZE(name_to_handle_at_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

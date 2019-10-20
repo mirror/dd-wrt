@@ -33,13 +33,17 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat uring_setup_flags[] = {
+static const struct xlat_data uring_setup_flags_xdata[] = {
  XLAT(IORING_SETUP_IOPOLL),
  XLAT(IORING_SETUP_SQPOLL),
  XLAT(IORING_SETUP_SQ_AFF),
- XLAT_END
 };
+static
+const struct xlat uring_setup_flags[1] = { {
+ .data = uring_setup_flags_xdata,
+ .size = ARRAY_SIZE(uring_setup_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

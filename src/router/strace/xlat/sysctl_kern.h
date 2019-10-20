@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat sysctl_kern[] = {
+static const struct xlat_data sysctl_kern_xdata[] = {
  XLAT(KERN_OSTYPE),
  XLAT(KERN_OSRELEASE),
  XLAT(KERN_OSREV),
@@ -120,8 +119,13 @@ const struct xlat sysctl_kern[] = {
 #if defined(KERN_PANIC_PRINT) || (defined(HAVE_DECL_KERN_PANIC_PRINT) && HAVE_DECL_KERN_PANIC_PRINT)
   XLAT(KERN_PANIC_PRINT),
 #endif
- XLAT_END
 };
+static
+const struct xlat sysctl_kern[1] = { {
+ .data = sysctl_kern_xdata,
+ .size = ARRAY_SIZE(sysctl_kern_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

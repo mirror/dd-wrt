@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat sysctl_net_ipv6[] = {
+static const struct xlat_data sysctl_net_ipv6_xdata[] = {
  XLAT(NET_IPV6_CONF),
  XLAT(NET_IPV6_NEIGH),
  XLAT(NET_IPV6_ROUTE),
@@ -26,8 +25,13 @@ const struct xlat sysctl_net_ipv6[] = {
 #if defined(NET_IPV6_MLD_MAX_MSF) || (defined(HAVE_DECL_NET_IPV6_MLD_MAX_MSF) && HAVE_DECL_NET_IPV6_MLD_MAX_MSF)
   XLAT(NET_IPV6_MLD_MAX_MSF),
 #endif
- XLAT_END
 };
+static
+const struct xlat sysctl_net_ipv6[1] = { {
+ .data = sysctl_net_ipv6_xdata,
+ .size = ARRAY_SIZE(sysctl_net_ipv6_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

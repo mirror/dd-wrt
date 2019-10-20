@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat sysctl_net_ipv6_route[] = {
+static const struct xlat_data sysctl_net_ipv6_route_xdata[] = {
  XLAT(NET_IPV6_ROUTE_FLUSH),
  XLAT(NET_IPV6_ROUTE_GC_THRESH),
  XLAT(NET_IPV6_ROUTE_MAX_SIZE),
@@ -26,8 +25,13 @@ const struct xlat sysctl_net_ipv6_route[] = {
 #if defined(NET_IPV6_ROUTE_GC_MIN_INTERVAL_MS) || (defined(HAVE_DECL_NET_IPV6_ROUTE_GC_MIN_INTERVAL_MS) && HAVE_DECL_NET_IPV6_ROUTE_GC_MIN_INTERVAL_MS)
   XLAT(NET_IPV6_ROUTE_GC_MIN_INTERVAL_MS),
 #endif
- XLAT_END
 };
+static
+const struct xlat sysctl_net_ipv6_route[1] = { {
+ .data = sysctl_net_ipv6_route_xdata,
+ .size = ARRAY_SIZE(sysctl_net_ipv6_route_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

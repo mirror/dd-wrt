@@ -54,16 +54,20 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat if_dqblk_valid[] = {
+static const struct xlat_data if_dqblk_valid_xdata[] = {
  XLAT(QIF_BLIMITS),
  XLAT(QIF_SPACE),
  XLAT(QIF_ILIMITS),
  XLAT(QIF_INODES),
  XLAT(QIF_BTIME),
  XLAT(QIF_ITIME),
- XLAT_END
 };
+static
+const struct xlat if_dqblk_valid[1] = { {
+ .data = if_dqblk_valid_xdata,
+ .size = ARRAY_SIZE(if_dqblk_valid_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

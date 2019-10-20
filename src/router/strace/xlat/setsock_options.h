@@ -29,15 +29,20 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat setsock_options[] = {
+static const struct xlat_data setsock_options_xdata[] = {
+
 #if defined __hppa__
  XLAT(SO_ATTACH_FILTER),
 #else
  XLAT(SO_ATTACH_FILTER),
 #endif
- XLAT_END
 };
+static
+const struct xlat setsock_options[1] = { {
+ .data = setsock_options_xdata,
+ .size = ARRAY_SIZE(setsock_options_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

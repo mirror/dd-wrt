@@ -12,12 +12,16 @@
 
 # else
 
-static
-const struct xlat ubi_volume_types[] = {
+static const struct xlat_data ubi_volume_types_xdata[] = {
  XLAT(UBI_DYNAMIC_VOLUME),
  XLAT(UBI_STATIC_VOLUME),
- XLAT_END
 };
+static
+const struct xlat ubi_volume_types[1] = { {
+ .data = ubi_volume_types_xdata,
+ .size = ARRAY_SIZE(ubi_volume_types_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

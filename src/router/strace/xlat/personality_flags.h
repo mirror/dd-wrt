@@ -89,8 +89,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat personality_flags[] = {
+static const struct xlat_data personality_flags_xdata[] = {
  XLAT(UNAME26),
  XLAT(ADDR_NO_RANDOMIZE),
  XLAT(FDPIC_FUNCPTRS),
@@ -102,8 +101,13 @@ const struct xlat personality_flags[] = {
  XLAT(WHOLE_SECONDS),
  XLAT(STICKY_TIMEOUTS),
  XLAT(ADDR_LIMIT_3GB),
- XLAT_END
 };
+static
+const struct xlat personality_flags[1] = { {
+ .data = personality_flags_xdata,
+ .size = ARRAY_SIZE(personality_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

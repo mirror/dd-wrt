@@ -19,11 +19,15 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat nf_nft_compat_msg_types[] = {
+static const struct xlat_data nf_nft_compat_msg_types_xdata[] = {
  XLAT(NFNL_MSG_COMPAT_GET),
- XLAT_END
 };
+static
+const struct xlat nf_nft_compat_msg_types[1] = { {
+ .data = nf_nft_compat_msg_types_xdata,
+ .size = ARRAY_SIZE(nf_nft_compat_msg_types_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

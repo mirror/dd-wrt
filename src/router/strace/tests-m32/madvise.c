@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 The strace developers.
+ * Copyright (c) 2017-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <sys/mman.h>
 #include <unistd.h>
-#include <asm/unistd.h>
+#include "scno.h"
 
 static const char *errstr;
 

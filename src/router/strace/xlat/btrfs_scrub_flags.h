@@ -19,13 +19,17 @@ extern const struct xlat btrfs_scrub_flags[];
 
 # else
 
+static const struct xlat_data btrfs_scrub_flags_xdata[] = {
+ XLAT_TYPE(uint64_t, BTRFS_SCRUB_READONLY),
+};
 #  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
 static
 #  endif
-const struct xlat btrfs_scrub_flags[] = {
- XLAT_TYPE(uint64_t, BTRFS_SCRUB_READONLY),
- XLAT_END
-};
+const struct xlat btrfs_scrub_flags[1] = { {
+ .data = btrfs_scrub_flags_xdata,
+ .size = ARRAY_SIZE(btrfs_scrub_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -12,10 +12,7 @@ extern const struct xlat mtd_nandecc_options[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat mtd_nandecc_options[] = {
+static const struct xlat_data mtd_nandecc_options_xdata[] = {
 #if defined(MTD_NANDECC_OFF) || (defined(HAVE_DECL_MTD_NANDECC_OFF) && HAVE_DECL_MTD_NANDECC_OFF)
   XLAT(MTD_NANDECC_OFF),
 #endif
@@ -31,8 +28,15 @@ const struct xlat mtd_nandecc_options[] = {
 #if defined(MTD_NANDECC_AUTOPL_USR) || (defined(HAVE_DECL_MTD_NANDECC_AUTOPL_USR) && HAVE_DECL_MTD_NANDECC_AUTOPL_USR)
   XLAT(MTD_NANDECC_AUTOPL_USR),
 #endif
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat mtd_nandecc_options[1] = { {
+ .data = mtd_nandecc_options_xdata,
+ .size = ARRAY_SIZE(mtd_nandecc_options_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

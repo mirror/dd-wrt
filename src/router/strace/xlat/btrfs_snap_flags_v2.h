@@ -12,10 +12,7 @@ extern const struct xlat btrfs_snap_flags_v2[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat btrfs_snap_flags_v2[] = {
+static const struct xlat_data btrfs_snap_flags_v2_xdata[] = {
 #if defined(BTRFS_SUBVOL_CREATE_ASYNC) || (defined(HAVE_DECL_BTRFS_SUBVOL_CREATE_ASYNC) && HAVE_DECL_BTRFS_SUBVOL_CREATE_ASYNC)
   XLAT_TYPE(uint64_t, BTRFS_SUBVOL_CREATE_ASYNC),
 #endif
@@ -25,8 +22,15 @@ const struct xlat btrfs_snap_flags_v2[] = {
 #if defined(BTRFS_SUBVOL_QGROUP_INHERIT) || (defined(HAVE_DECL_BTRFS_SUBVOL_QGROUP_INHERIT) && HAVE_DECL_BTRFS_SUBVOL_QGROUP_INHERIT)
   XLAT_TYPE(uint64_t, BTRFS_SUBVOL_QGROUP_INHERIT),
 #endif
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat btrfs_snap_flags_v2[1] = { {
+ .data = btrfs_snap_flags_v2_xdata,
+ .size = ARRAY_SIZE(btrfs_snap_flags_v2_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

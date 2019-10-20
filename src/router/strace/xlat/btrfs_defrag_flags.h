@@ -12,18 +12,22 @@ extern const struct xlat btrfs_defrag_flags[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat btrfs_defrag_flags[] = {
+static const struct xlat_data btrfs_defrag_flags_xdata[] = {
 #if defined(BTRFS_DEFRAG_RANGE_COMPRESS) || (defined(HAVE_DECL_BTRFS_DEFRAG_RANGE_COMPRESS) && HAVE_DECL_BTRFS_DEFRAG_RANGE_COMPRESS)
   XLAT_TYPE(uint64_t, BTRFS_DEFRAG_RANGE_COMPRESS),
 #endif
 #if defined(BTRFS_DEFRAG_RANGE_START_IO) || (defined(HAVE_DECL_BTRFS_DEFRAG_RANGE_START_IO) && HAVE_DECL_BTRFS_DEFRAG_RANGE_START_IO)
   XLAT_TYPE(uint64_t, BTRFS_DEFRAG_RANGE_START_IO),
 #endif
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat btrfs_defrag_flags[1] = { {
+ .data = btrfs_defrag_flags_xdata,
+ .size = ARRAY_SIZE(btrfs_defrag_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

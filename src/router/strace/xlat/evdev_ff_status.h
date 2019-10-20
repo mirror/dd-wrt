@@ -26,12 +26,16 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat evdev_ff_status[] = {
+static const struct xlat_data evdev_ff_status_xdata[] = {
  [FF_STATUS_STOPPED] = XLAT(FF_STATUS_STOPPED),
  [FF_STATUS_PLAYING] = XLAT(FF_STATUS_PLAYING),
- XLAT_END
 };
+static
+const struct xlat evdev_ff_status[1] = { {
+ .data = evdev_ff_status_xdata,
+ .size = ARRAY_SIZE(evdev_ff_status_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

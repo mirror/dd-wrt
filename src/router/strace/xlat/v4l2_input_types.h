@@ -12,10 +12,7 @@ extern const struct xlat v4l2_input_types[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat v4l2_input_types[] = {
+static const struct xlat_data v4l2_input_types_xdata[] = {
 #if defined(V4L2_INPUT_TYPE_TUNER) || (defined(HAVE_DECL_V4L2_INPUT_TYPE_TUNER) && HAVE_DECL_V4L2_INPUT_TYPE_TUNER)
   XLAT(V4L2_INPUT_TYPE_TUNER),
 #endif
@@ -25,8 +22,15 @@ const struct xlat v4l2_input_types[] = {
 #if defined(V4L2_INPUT_TYPE_TOUCH) || (defined(HAVE_DECL_V4L2_INPUT_TYPE_TOUCH) && HAVE_DECL_V4L2_INPUT_TYPE_TOUCH)
   XLAT(V4L2_INPUT_TYPE_TOUCH),
 #endif
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat v4l2_input_types[1] = { {
+ .data = v4l2_input_types_xdata,
+ .size = ARRAY_SIZE(v4l2_input_types_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

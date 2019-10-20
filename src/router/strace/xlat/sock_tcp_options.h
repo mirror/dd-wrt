@@ -255,6 +255,13 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
 # define TCP_INQ 36
 #endif
+#if defined(TCP_TX_DELAY) || (defined(HAVE_DECL_TCP_TX_DELAY) && HAVE_DECL_TCP_TX_DELAY)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((TCP_TX_DELAY) == (37), "TCP_TX_DELAY != 37");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define TCP_TX_DELAY 37
+#endif
 
 #ifndef XLAT_MACROS_ONLY
 
@@ -264,8 +271,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat sock_tcp_options[] = {
+static const struct xlat_data sock_tcp_options_xdata[] = {
  [TCP_NODELAY] = XLAT(TCP_NODELAY),
  [TCP_MAXSEG] = XLAT(TCP_MAXSEG),
  [TCP_CORK] = XLAT(TCP_CORK),
@@ -302,8 +308,14 @@ const struct xlat sock_tcp_options[] = {
  [TCP_FASTOPEN_NO_COOKIE] = XLAT(TCP_FASTOPEN_NO_COOKIE),
  [TCP_ZEROCOPY_RECEIVE] = XLAT(TCP_ZEROCOPY_RECEIVE),
  [TCP_INQ] = XLAT(TCP_INQ),
- XLAT_END
+ [TCP_TX_DELAY] = XLAT(TCP_TX_DELAY),
 };
+static
+const struct xlat sock_tcp_options[1] = { {
+ .data = sock_tcp_options_xdata,
+ .size = ARRAY_SIZE(sock_tcp_options_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

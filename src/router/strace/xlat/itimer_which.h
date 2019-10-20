@@ -33,13 +33,17 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat itimer_which[] = {
+static const struct xlat_data itimer_which_xdata[] = {
  [ITIMER_REAL] = XLAT(ITIMER_REAL),
  [ITIMER_VIRTUAL] = XLAT(ITIMER_VIRTUAL),
  [ITIMER_PROF] = XLAT(ITIMER_PROF),
- XLAT_END
 };
+static
+const struct xlat itimer_which[1] = { {
+ .data = itimer_which_xdata,
+ .size = ARRAY_SIZE(itimer_which_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

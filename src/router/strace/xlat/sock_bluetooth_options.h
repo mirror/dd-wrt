@@ -68,9 +68,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat sock_bluetooth_options[] = {
-
+static const struct xlat_data sock_bluetooth_options_xdata[] = {
  XLAT(BT_SECURITY),
  XLAT(BT_DEFER_SETUP),
  XLAT(BT_FLUSHABLE),
@@ -79,8 +77,13 @@ const struct xlat sock_bluetooth_options[] = {
  XLAT(BT_VOICE),
  XLAT(BT_SNDMTU),
  XLAT(BT_RCVMTU),
- XLAT_END
 };
+static
+const struct xlat sock_bluetooth_options[1] = { {
+ .data = sock_bluetooth_options_xdata,
+ .size = ARRAY_SIZE(sock_bluetooth_options_xdata),
+ .type = XT_SORTED,
+} };
 
 # endif /* !IN_MPERS */
 

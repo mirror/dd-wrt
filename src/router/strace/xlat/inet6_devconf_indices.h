@@ -369,8 +369,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat inet6_devconf_indices[] = {
+static const struct xlat_data inet6_devconf_indices_xdata[] = {
  [DEVCONF_FORWARDING] = XLAT(DEVCONF_FORWARDING),
  [DEVCONF_HOPLIMIT] = XLAT(DEVCONF_HOPLIMIT),
  [DEVCONF_MTU6] = XLAT(DEVCONF_MTU6),
@@ -422,8 +421,13 @@ const struct xlat inet6_devconf_indices[] = {
  [DEVCONF_DISABLE_POLICY] = XLAT(DEVCONF_DISABLE_POLICY),
  [DEVCONF_ACCEPT_RA_RT_INFO_MIN_PLEN] = XLAT(DEVCONF_ACCEPT_RA_RT_INFO_MIN_PLEN),
  [DEVCONF_NDISC_TCLASS] = XLAT(DEVCONF_NDISC_TCLASS),
- XLAT_END
 };
+static
+const struct xlat inet6_devconf_indices[1] = { {
+ .data = inet6_devconf_indices_xdata,
+ .size = ARRAY_SIZE(inet6_devconf_indices_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

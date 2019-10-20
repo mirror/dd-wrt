@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat unix_diag_attrs[] = {
+static const struct xlat_data unix_diag_attrs_xdata[] = {
  XLAT(UNIX_DIAG_NAME),
  XLAT(UNIX_DIAG_VFS),
  XLAT(UNIX_DIAG_PEER),
@@ -21,8 +20,14 @@ const struct xlat unix_diag_attrs[] = {
  XLAT(UNIX_DIAG_RQLEN),
  XLAT(UNIX_DIAG_MEMINFO),
  XLAT(UNIX_DIAG_SHUTDOWN),
- XLAT_END
+ XLAT(UNIX_DIAG_UID),
 };
+static
+const struct xlat unix_diag_attrs[1] = { {
+ .data = unix_diag_attrs_xdata,
+ .size = ARRAY_SIZE(unix_diag_attrs_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

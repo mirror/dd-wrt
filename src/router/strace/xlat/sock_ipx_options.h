@@ -12,13 +12,17 @@
 
 # else
 
-static
-const struct xlat sock_ipx_options[] = {
+static const struct xlat_data sock_ipx_options_xdata[] = {
 #if defined(IPX_TYPE) || (defined(HAVE_DECL_IPX_TYPE) && HAVE_DECL_IPX_TYPE)
   XLAT(IPX_TYPE),
 #endif
- XLAT_END
 };
+static
+const struct xlat sock_ipx_options[1] = { {
+ .data = sock_ipx_options_xdata,
+ .size = ARRAY_SIZE(sock_ipx_options_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

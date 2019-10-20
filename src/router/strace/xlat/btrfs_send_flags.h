@@ -33,15 +33,19 @@ extern const struct xlat btrfs_send_flags[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat btrfs_send_flags[] = {
+static const struct xlat_data btrfs_send_flags_xdata[] = {
  XLAT(BTRFS_SEND_FLAG_NO_FILE_DATA),
  XLAT(BTRFS_SEND_FLAG_OMIT_STREAM_HEADER),
  XLAT(BTRFS_SEND_FLAG_OMIT_END_CMD),
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat btrfs_send_flags[1] = { {
+ .data = btrfs_send_flags_xdata,
+ .size = ARRAY_SIZE(btrfs_send_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

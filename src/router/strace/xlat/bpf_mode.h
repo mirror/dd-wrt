@@ -61,8 +61,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat bpf_mode[] = {
+static const struct xlat_data bpf_mode_xdata[] = {
  XLAT(BPF_IMM),
  XLAT(BPF_ABS),
  XLAT(BPF_IND),
@@ -70,8 +69,13 @@ const struct xlat bpf_mode[] = {
  XLAT(BPF_LEN),
  XLAT(BPF_MSH),
  XLAT(BPF_XADD),
- XLAT_END
 };
+static
+const struct xlat bpf_mode[1] = { {
+ .data = bpf_mode_xdata,
+ .size = ARRAY_SIZE(bpf_mode_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

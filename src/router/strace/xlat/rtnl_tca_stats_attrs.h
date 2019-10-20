@@ -68,18 +68,22 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat rtnl_tca_stats_attrs[] = {
- XLAT(TCA_STATS_UNSPEC),
- XLAT(TCA_STATS_BASIC),
- XLAT(TCA_STATS_RATE_EST),
- XLAT(TCA_STATS_QUEUE),
- XLAT(TCA_STATS_APP),
- XLAT(TCA_STATS_RATE_EST64),
- XLAT(TCA_STATS_PAD),
- XLAT(TCA_STATS_BASIC_HW),
- XLAT_END
+static const struct xlat_data rtnl_tca_stats_attrs_xdata[] = {
+ [TCA_STATS_UNSPEC] = XLAT(TCA_STATS_UNSPEC),
+ [TCA_STATS_BASIC] = XLAT(TCA_STATS_BASIC),
+ [TCA_STATS_RATE_EST] = XLAT(TCA_STATS_RATE_EST),
+ [TCA_STATS_QUEUE] = XLAT(TCA_STATS_QUEUE),
+ [TCA_STATS_APP] = XLAT(TCA_STATS_APP),
+ [TCA_STATS_RATE_EST64] = XLAT(TCA_STATS_RATE_EST64),
+ [TCA_STATS_PAD] = XLAT(TCA_STATS_PAD),
+ [TCA_STATS_BASIC_HW] = XLAT(TCA_STATS_BASIC_HW),
 };
+static
+const struct xlat rtnl_tca_stats_attrs[1] = { {
+ .data = rtnl_tca_stats_attrs_xdata,
+ .size = ARRAY_SIZE(rtnl_tca_stats_attrs_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

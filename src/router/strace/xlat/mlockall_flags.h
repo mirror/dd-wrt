@@ -57,8 +57,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat mlockall_flags[] = {
+static const struct xlat_data mlockall_flags_xdata[] = {
 #if defined __alpha__ || defined __powerpc__ || defined __powerpc64__ || defined __sparc__
  XLAT(MCL_CURRENT),
  XLAT(MCL_FUTURE),
@@ -68,8 +67,13 @@ const struct xlat mlockall_flags[] = {
  XLAT(MCL_FUTURE),
  XLAT(MCL_ONFAULT),
 #endif
- XLAT_END
 };
+static
+const struct xlat mlockall_flags[1] = { {
+ .data = mlockall_flags_xdata,
+ .size = ARRAY_SIZE(mlockall_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

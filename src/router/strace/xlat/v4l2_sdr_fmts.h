@@ -68,11 +68,7 @@ extern const struct xlat v4l2_sdr_fmts[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat v4l2_sdr_fmts[] = {
-
+static const struct xlat_data v4l2_sdr_fmts_xdata[] = {
  XLAT(V4L2_SDR_FMT_PCU20BE),
  XLAT(V4L2_SDR_FMT_RU12LE),
  XLAT(V4L2_SDR_FMT_CS14LE),
@@ -81,8 +77,15 @@ const struct xlat v4l2_sdr_fmts[] = {
  XLAT(V4L2_SDR_FMT_CS8),
  XLAT(V4L2_SDR_FMT_CU8),
  XLAT(V4L2_SDR_FMT_PCU18BE),
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat v4l2_sdr_fmts[1] = { {
+ .data = v4l2_sdr_fmts_xdata,
+ .size = ARRAY_SIZE(v4l2_sdr_fmts_xdata),
+ .type = XT_SORTED,
+} };
 
 # endif /* !IN_MPERS */
 

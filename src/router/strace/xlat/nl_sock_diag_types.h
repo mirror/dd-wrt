@@ -40,14 +40,18 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat nl_sock_diag_types[] = {
+static const struct xlat_data nl_sock_diag_types_xdata[] = {
  XLAT(TCPDIAG_GETSOCK),
  XLAT(DCCPDIAG_GETSOCK),
  XLAT(SOCK_DIAG_BY_FAMILY),
  XLAT(SOCK_DESTROY),
- XLAT_END
 };
+static
+const struct xlat nl_sock_diag_types[1] = { {
+ .data = nl_sock_diag_types_xdata,
+ .size = ARRAY_SIZE(nl_sock_diag_types_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

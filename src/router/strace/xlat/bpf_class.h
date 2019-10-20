@@ -68,8 +68,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat bpf_class[] = {
+static const struct xlat_data bpf_class_xdata[] = {
  [BPF_LD] = XLAT(BPF_LD),
  [BPF_LDX] = XLAT(BPF_LDX),
  [BPF_ST] = XLAT(BPF_ST),
@@ -78,8 +77,13 @@ const struct xlat bpf_class[] = {
  [BPF_JMP] = XLAT(BPF_JMP),
  [BPF_RET] = XLAT(BPF_RET),
  [BPF_MISC] = XLAT(BPF_MISC),
- XLAT_END
 };
+static
+const struct xlat bpf_class[1] = { {
+ .data = bpf_class_xdata,
+ .size = ARRAY_SIZE(bpf_class_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

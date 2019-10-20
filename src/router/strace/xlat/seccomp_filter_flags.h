@@ -36,13 +36,17 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # ifndef IN_MPERS
 
-const struct xlat seccomp_filter_flags[] = {
+static const struct xlat_data seccomp_filter_flags_xdata[] = {
  XLAT(SECCOMP_FILTER_FLAG_TSYNC),
  XLAT(SECCOMP_FILTER_FLAG_LOG),
  XLAT(SECCOMP_FILTER_FLAG_SPEC_ALLOW),
  XLAT(SECCOMP_FILTER_FLAG_NEW_LISTENER),
- XLAT_END
 };
+const struct xlat seccomp_filter_flags[1] = { {
+ .data = seccomp_filter_flags_xdata,
+ .size = ARRAY_SIZE(seccomp_filter_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

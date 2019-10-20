@@ -19,13 +19,17 @@ extern const struct xlat sigsys_codes[];
 
 # else
 
+static const struct xlat_data sigsys_codes_xdata[] = {
+ XLAT(SYS_SECCOMP),
+};
 #  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
 static
 #  endif
-const struct xlat sigsys_codes[] = {
- XLAT(SYS_SECCOMP),
- XLAT_END
-};
+const struct xlat sigsys_codes[1] = { {
+ .data = sigsys_codes_xdata,
+ .size = ARRAY_SIZE(sigsys_codes_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -47,15 +47,19 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat s390_guarded_storage_commands[] = {
- XLAT(GS_ENABLE),
- XLAT(GS_DISABLE),
- XLAT(GS_SET_BC_CB),
- XLAT(GS_CLEAR_BC_CB),
- XLAT(GS_BROADCAST),
- XLAT_END
+static const struct xlat_data s390_guarded_storage_commands_xdata[] = {
+ [GS_ENABLE] = XLAT(GS_ENABLE),
+ [GS_DISABLE] = XLAT(GS_DISABLE),
+ [GS_SET_BC_CB] = XLAT(GS_SET_BC_CB),
+ [GS_CLEAR_BC_CB] = XLAT(GS_CLEAR_BC_CB),
+ [GS_BROADCAST] = XLAT(GS_BROADCAST),
 };
+static
+const struct xlat s390_guarded_storage_commands[1] = { {
+ .data = s390_guarded_storage_commands_xdata,
+ .size = ARRAY_SIZE(s390_guarded_storage_commands_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

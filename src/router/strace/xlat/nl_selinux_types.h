@@ -26,12 +26,16 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat nl_selinux_types[] = {
+static const struct xlat_data nl_selinux_types_xdata[] = {
  XLAT(SELNL_MSG_SETENFORCE),
  XLAT(SELNL_MSG_POLICYLOAD),
- XLAT_END
 };
+static
+const struct xlat nl_selinux_types[1] = { {
+ .data = nl_selinux_types_xdata,
+ .size = ARRAY_SIZE(nl_selinux_types_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

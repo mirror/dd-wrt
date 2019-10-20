@@ -19,11 +19,15 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat s390_sthyi_function_codes[] = {
+static const struct xlat_data s390_sthyi_function_codes_xdata[] = {
  XLAT(STHYI_FC_CP_IFL_CAP),
- XLAT_END
 };
+static
+const struct xlat s390_sthyi_function_codes[1] = { {
+ .data = s390_sthyi_function_codes_xdata,
+ .size = ARRAY_SIZE(s390_sthyi_function_codes_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

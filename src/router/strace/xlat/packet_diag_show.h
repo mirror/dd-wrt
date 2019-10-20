@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat packet_diag_show[] = {
+static const struct xlat_data packet_diag_show_xdata[] = {
 #if defined(PACKET_SHOW_INFO) || (defined(HAVE_DECL_PACKET_SHOW_INFO) && HAVE_DECL_PACKET_SHOW_INFO)
   XLAT(PACKET_SHOW_INFO),
 #endif
@@ -32,8 +31,13 @@ const struct xlat packet_diag_show[] = {
 #if defined(PACKET_SHOW_FILTER) || (defined(HAVE_DECL_PACKET_SHOW_FILTER) && HAVE_DECL_PACKET_SHOW_FILTER)
   XLAT(PACKET_SHOW_FILTER),
 #endif
- XLAT_END
 };
+static
+const struct xlat packet_diag_show[1] = { {
+ .data = packet_diag_show_xdata,
+ .size = ARRAY_SIZE(packet_diag_show_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

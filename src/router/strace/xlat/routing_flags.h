@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat routing_flags[] = {
+static const struct xlat_data routing_flags_xdata[] = {
 #if defined(RTM_F_NOTIFY) || (defined(HAVE_DECL_RTM_F_NOTIFY) && HAVE_DECL_RTM_F_NOTIFY)
   XLAT(RTM_F_NOTIFY),
 #endif
@@ -29,8 +28,13 @@ const struct xlat routing_flags[] = {
 #if defined(RTM_F_LOOKUP_TABLE) || (defined(HAVE_DECL_RTM_F_LOOKUP_TABLE) && HAVE_DECL_RTM_F_LOOKUP_TABLE)
   XLAT(RTM_F_LOOKUP_TABLE),
 #endif
- XLAT_END
 };
+static
+const struct xlat routing_flags[1] = { {
+ .data = routing_flags_xdata,
+ .size = ARRAY_SIZE(routing_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

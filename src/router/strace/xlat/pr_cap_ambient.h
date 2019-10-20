@@ -40,14 +40,18 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat pr_cap_ambient[] = {
- XLAT(PR_CAP_AMBIENT_IS_SET),
- XLAT(PR_CAP_AMBIENT_RAISE),
- XLAT(PR_CAP_AMBIENT_LOWER),
- XLAT(PR_CAP_AMBIENT_CLEAR_ALL),
- XLAT_END
+static const struct xlat_data pr_cap_ambient_xdata[] = {
+ [PR_CAP_AMBIENT_IS_SET] = XLAT(PR_CAP_AMBIENT_IS_SET),
+ [PR_CAP_AMBIENT_RAISE] = XLAT(PR_CAP_AMBIENT_RAISE),
+ [PR_CAP_AMBIENT_LOWER] = XLAT(PR_CAP_AMBIENT_LOWER),
+ [PR_CAP_AMBIENT_CLEAR_ALL] = XLAT(PR_CAP_AMBIENT_CLEAR_ALL),
 };
+static
+const struct xlat pr_cap_ambient[1] = { {
+ .data = pr_cap_ambient_xdata,
+ .size = ARRAY_SIZE(pr_cap_ambient_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

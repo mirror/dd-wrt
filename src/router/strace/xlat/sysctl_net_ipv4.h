@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat sysctl_net_ipv4[] = {
+static const struct xlat_data sysctl_net_ipv4_xdata[] = {
  XLAT(NET_IPV4_FORWARD),
  XLAT(NET_IPV4_DYNADDR),
  XLAT(NET_IPV4_CONF),
@@ -152,8 +151,13 @@ const struct xlat sysctl_net_ipv4[] = {
 #if defined(NET_TCP_FRTO_RESPONSE) || (defined(HAVE_DECL_NET_TCP_FRTO_RESPONSE) && HAVE_DECL_NET_TCP_FRTO_RESPONSE)
   XLAT(NET_TCP_FRTO_RESPONSE),
 #endif
- XLAT_END
 };
+static
+const struct xlat sysctl_net_ipv4[1] = { {
+ .data = sysctl_net_ipv4_xdata,
+ .size = ARRAY_SIZE(sysctl_net_ipv4_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

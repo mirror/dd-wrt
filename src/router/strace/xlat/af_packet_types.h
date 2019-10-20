@@ -68,8 +68,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat af_packet_types[] = {
+static const struct xlat_data af_packet_types_xdata[] = {
  [PACKET_HOST] = XLAT(PACKET_HOST),
  [PACKET_BROADCAST] = XLAT(PACKET_BROADCAST),
  [PACKET_MULTICAST] = XLAT(PACKET_MULTICAST),
@@ -78,8 +77,13 @@ const struct xlat af_packet_types[] = {
  [PACKET_LOOPBACK] = XLAT(PACKET_LOOPBACK),
  [PACKET_USER] = XLAT(PACKET_USER),
  [PACKET_KERNEL] = XLAT(PACKET_KERNEL),
- XLAT_END
 };
+static
+const struct xlat af_packet_types[1] = { {
+ .data = af_packet_types_xdata,
+ .size = ARRAY_SIZE(af_packet_types_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

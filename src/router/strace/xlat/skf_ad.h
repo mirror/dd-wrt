@@ -124,8 +124,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat skf_ad[] = {
+static const struct xlat_data skf_ad_xdata[] = {
  XLAT(SKF_AD_PROTOCOL),
  XLAT(SKF_AD_PKTTYPE),
  XLAT(SKF_AD_IFINDEX),
@@ -142,8 +141,13 @@ const struct xlat skf_ad[] = {
  XLAT(SKF_AD_PAY_OFFSET),
  XLAT(SKF_AD_RANDOM),
  XLAT(SKF_AD_VLAN_TPID),
- XLAT_END
 };
+static
+const struct xlat skf_ad[1] = { {
+ .data = skf_ad_xdata,
+ .size = ARRAY_SIZE(skf_ad_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

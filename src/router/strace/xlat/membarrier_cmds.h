@@ -68,8 +68,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat membarrier_cmds[] = {
+static const struct xlat_data membarrier_cmds_xdata[] = {
  XLAT(MEMBARRIER_CMD_QUERY),
  XLAT(MEMBARRIER_CMD_GLOBAL),
  XLAT(MEMBARRIER_CMD_GLOBAL_EXPEDITED),
@@ -78,8 +77,13 @@ const struct xlat membarrier_cmds[] = {
  XLAT(MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED),
  XLAT(MEMBARRIER_CMD_PRIVATE_EXPEDITED_SYNC_CORE),
  XLAT(MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED_SYNC_CORE),
- XLAT_END
 };
+static
+const struct xlat membarrier_cmds[1] = { {
+ .data = membarrier_cmds_xdata,
+ .size = ARRAY_SIZE(membarrier_cmds_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

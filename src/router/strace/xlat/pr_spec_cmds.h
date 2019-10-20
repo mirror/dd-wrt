@@ -26,12 +26,16 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat pr_spec_cmds[] = {
+static const struct xlat_data pr_spec_cmds_xdata[] = {
  [PR_SPEC_STORE_BYPASS] = XLAT(PR_SPEC_STORE_BYPASS),
  [PR_SPEC_INDIRECT_BRANCH] = XLAT(PR_SPEC_INDIRECT_BRANCH),
- XLAT_END
 };
+static
+const struct xlat pr_spec_cmds[1] = { {
+ .data = pr_spec_cmds_xdata,
+ .size = ARRAY_SIZE(pr_spec_cmds_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

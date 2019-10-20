@@ -75,8 +75,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat rtnl_ifla_af_spec_inet6_attrs[] = {
+static const struct xlat_data rtnl_ifla_af_spec_inet6_attrs_xdata[] = {
  [IFLA_INET6_UNSPEC] = XLAT(IFLA_INET6_UNSPEC),
  [IFLA_INET6_FLAGS] = XLAT(IFLA_INET6_FLAGS),
  [IFLA_INET6_CONF] = XLAT(IFLA_INET6_CONF),
@@ -86,8 +85,13 @@ const struct xlat rtnl_ifla_af_spec_inet6_attrs[] = {
  [IFLA_INET6_ICMP6STATS] = XLAT(IFLA_INET6_ICMP6STATS),
  [IFLA_INET6_TOKEN] = XLAT(IFLA_INET6_TOKEN),
  [IFLA_INET6_ADDR_GEN_MODE] = XLAT(IFLA_INET6_ADDR_GEN_MODE),
- XLAT_END
 };
+static
+const struct xlat rtnl_ifla_af_spec_inet6_attrs[1] = { {
+ .data = rtnl_ifla_af_spec_inet6_attrs_xdata,
+ .size = ARRAY_SIZE(rtnl_ifla_af_spec_inet6_attrs_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

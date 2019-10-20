@@ -271,8 +271,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat snmp_ip_stats[] = {
+static const struct xlat_data snmp_ip_stats_xdata[] = {
  [IPSTATS_MIB_NUM] = XLAT(IPSTATS_MIB_NUM),
  [IPSTATS_MIB_INPKTS] = XLAT(IPSTATS_MIB_INPKTS),
  [IPSTATS_MIB_INOCTETS] = XLAT(IPSTATS_MIB_INOCTETS),
@@ -310,8 +309,13 @@ const struct xlat snmp_ip_stats[] = {
  [IPSTATS_MIB_ECT0PKTS] = XLAT(IPSTATS_MIB_ECT0PKTS),
  [IPSTATS_MIB_CEPKTS] = XLAT(IPSTATS_MIB_CEPKTS),
  [IPSTATS_MIB_REASM_OVERLAPS] = XLAT(IPSTATS_MIB_REASM_OVERLAPS),
- XLAT_END
 };
+static
+const struct xlat snmp_ip_stats[1] = { {
+ .data = snmp_ip_stats_xdata,
+ .size = ARRAY_SIZE(snmp_ip_stats_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

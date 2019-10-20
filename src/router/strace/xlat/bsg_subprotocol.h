@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat bsg_subprotocol[] = {
+static const struct xlat_data bsg_subprotocol_xdata[] = {
 #if defined(BSG_SUB_PROTOCOL_SCSI_CMD) || (defined(HAVE_DECL_BSG_SUB_PROTOCOL_SCSI_CMD) && HAVE_DECL_BSG_SUB_PROTOCOL_SCSI_CMD)
   XLAT(BSG_SUB_PROTOCOL_SCSI_CMD),
 #endif
@@ -23,8 +22,13 @@ const struct xlat bsg_subprotocol[] = {
 #if defined(BSG_SUB_PROTOCOL_SCSI_TRANSPORT) || (defined(HAVE_DECL_BSG_SUB_PROTOCOL_SCSI_TRANSPORT) && HAVE_DECL_BSG_SUB_PROTOCOL_SCSI_TRANSPORT)
   XLAT(BSG_SUB_PROTOCOL_SCSI_TRANSPORT),
 #endif
- XLAT_END
 };
+static
+const struct xlat bsg_subprotocol[1] = { {
+ .data = bsg_subprotocol_xdata,
+ .size = ARRAY_SIZE(bsg_subprotocol_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

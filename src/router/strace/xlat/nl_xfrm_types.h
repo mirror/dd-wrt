@@ -173,8 +173,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat nl_xfrm_types[] = {
+static const struct xlat_data nl_xfrm_types_xdata[] = {
  XLAT(XFRM_MSG_NEWSA),
  XLAT(XFRM_MSG_DELSA),
  XLAT(XFRM_MSG_GETSA),
@@ -209,8 +208,13 @@ const struct xlat nl_xfrm_types[] = {
  XLAT(XFRM_MSG_GETSPDINFO),
 
  XLAT(XFRM_MSG_MAPPING),
- XLAT_END
 };
+static
+const struct xlat nl_xfrm_types[1] = { {
+ .data = nl_xfrm_types_xdata,
+ .size = ARRAY_SIZE(nl_xfrm_types_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

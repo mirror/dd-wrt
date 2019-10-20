@@ -299,10 +299,7 @@ extern const struct xlat btrfs_key_types[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat btrfs_key_types[] = {
+static const struct xlat_data btrfs_key_types_xdata[] = {
  XLAT_TYPE(uint64_t, BTRFS_INODE_ITEM_KEY),
  XLAT_TYPE(uint64_t, BTRFS_INODE_REF_KEY),
  XLAT_TYPE(uint64_t, BTRFS_INODE_EXTREF_KEY),
@@ -344,8 +341,15 @@ const struct xlat btrfs_key_types[] = {
  XLAT_TYPE(uint64_t, BTRFS_UUID_KEY_RECEIVED_SUBVOL),
  XLAT_TYPE(uint64_t, BTRFS_STRING_ITEM_KEY),
  XLAT_TYPE(uint64_t, UINT32_MAX),
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat btrfs_key_types[1] = { {
+ .data = btrfs_key_types_xdata,
+ .size = ARRAY_SIZE(btrfs_key_types_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

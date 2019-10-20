@@ -75,8 +75,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat bpf_map_flags[] = {
+static const struct xlat_data bpf_map_flags_xdata[] = {
  XLAT(BPF_F_NO_PREALLOC),
  XLAT(BPF_F_NO_COMMON_LRU),
  XLAT(BPF_F_NUMA_NODE),
@@ -86,8 +85,13 @@ const struct xlat bpf_map_flags[] = {
  XLAT(BPF_F_ZERO_SEED),
  XLAT(BPF_F_RDONLY_PROG),
  XLAT(BPF_F_WRONLY_PROG),
- XLAT_END
 };
+static
+const struct xlat bpf_map_flags[1] = { {
+ .data = bpf_map_flags_xdata,
+ .size = ARRAY_SIZE(bpf_map_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

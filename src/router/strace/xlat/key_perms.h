@@ -208,8 +208,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat key_perms[] = {
+static const struct xlat_data key_perms_xdata[] = {
  XLAT(KEY_POS_VIEW),
  XLAT(KEY_POS_READ),
  XLAT(KEY_POS_WRITE),
@@ -238,8 +237,13 @@ const struct xlat key_perms[] = {
  XLAT(KEY_OTH_LINK),
  XLAT(KEY_OTH_SETATTR),
  XLAT(KEY_OTH_ALL),
- XLAT_END
 };
+static
+const struct xlat key_perms[1] = { {
+ .data = key_perms_xdata,
+ .size = ARRAY_SIZE(key_perms_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

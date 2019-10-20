@@ -89,9 +89,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat sock_tipc_options[] = {
-
+static const struct xlat_data sock_tipc_options_xdata[] = {
  XLAT(TIPC_IMPORTANCE),
  XLAT(TIPC_SRC_DROPPABLE),
  XLAT(TIPC_DEST_DROPPABLE),
@@ -103,8 +101,13 @@ const struct xlat sock_tipc_options[] = {
  XLAT(TIPC_GROUP_JOIN),
  XLAT(TIPC_GROUP_LEAVE),
  XLAT(TIPC_SOCK_RECVQ_USED),
- XLAT_END
 };
+static
+const struct xlat sock_tipc_options[1] = { {
+ .data = sock_tipc_options_xdata,
+ .size = ARRAY_SIZE(sock_tipc_options_xdata),
+ .type = XT_SORTED,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -178,3 +178,49 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
 # define SG_GET_ACCESS_COUNT 0x2289
 #endif
+
+#ifndef XLAT_MACROS_ONLY
+
+# ifdef IN_MPERS
+
+#  error static const struct xlat scsi_sg_commands in mpers mode
+
+# else
+
+static const struct xlat_data scsi_sg_commands_xdata[] = {
+ XLAT(SG_SET_TIMEOUT),
+ XLAT(SG_GET_TIMEOUT),
+ XLAT(SG_EMULATED_HOST),
+ XLAT(SG_SET_TRANSFORM),
+ XLAT(SG_GET_TRANSFORM),
+ XLAT(SG_GET_COMMAND_Q),
+ XLAT(SG_SET_COMMAND_Q),
+ XLAT(SG_GET_RESERVED_SIZE),
+ XLAT(SG_SET_RESERVED_SIZE),
+ XLAT(SG_GET_SCSI_ID),
+ XLAT(SG_SET_FORCE_LOW_DMA),
+ XLAT(SG_GET_LOW_DMA),
+ XLAT(SG_SET_FORCE_PACK_ID),
+ XLAT(SG_GET_PACK_ID),
+ XLAT(SG_GET_NUM_WAITING),
+ XLAT(SG_SET_DEBUG),
+ XLAT(SG_GET_SG_TABLESIZE),
+ XLAT(SG_GET_VERSION_NUM),
+ XLAT(SG_NEXT_CMD_LEN),
+ XLAT(SG_SCSI_RESET),
+ XLAT(SG_IO),
+ XLAT(SG_GET_REQUEST_TABLE),
+ XLAT(SG_SET_KEEP_ORPHAN),
+ XLAT(SG_GET_KEEP_ORPHAN),
+ XLAT(SG_GET_ACCESS_COUNT),
+};
+static
+const struct xlat scsi_sg_commands[1] = { {
+ .data = scsi_sg_commands_xdata,
+ .size = ARRAY_SIZE(scsi_sg_commands_xdata),
+ .type = XT_NORMAL,
+} };
+
+# endif /* !IN_MPERS */
+
+#endif /* !XLAT_MACROS_ONLY */

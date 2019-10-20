@@ -12,13 +12,17 @@
 
 # else
 
-static
-const struct xlat clockflags[] = {
+static const struct xlat_data clockflags_xdata[] = {
 #if defined(TIMER_ABSTIME) || (defined(HAVE_DECL_TIMER_ABSTIME) && HAVE_DECL_TIMER_ABSTIME)
   XLAT(TIMER_ABSTIME),
 #endif
- XLAT_END
 };
+static
+const struct xlat clockflags[1] = { {
+ .data = clockflags_xdata,
+ .size = ARRAY_SIZE(clockflags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -54,16 +54,20 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat sock_rxrpc_options[] = {
+static const struct xlat_data sock_rxrpc_options_xdata[] = {
  [RXRPC_SECURITY_KEY] = XLAT(RXRPC_SECURITY_KEY),
  [RXRPC_SECURITY_KEYRING] = XLAT(RXRPC_SECURITY_KEYRING),
  [RXRPC_EXCLUSIVE_CONNECTION] = XLAT(RXRPC_EXCLUSIVE_CONNECTION),
  [RXRPC_MIN_SECURITY_LEVEL] = XLAT(RXRPC_MIN_SECURITY_LEVEL),
  [RXRPC_UPGRADEABLE_SERVICE] = XLAT(RXRPC_UPGRADEABLE_SERVICE),
  [RXRPC_SUPPORTED_CMSG] = XLAT(RXRPC_SUPPORTED_CMSG),
- XLAT_END
 };
+static
+const struct xlat sock_rxrpc_options[1] = { {
+ .data = sock_rxrpc_options_xdata,
+ .size = ARRAY_SIZE(sock_rxrpc_options_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

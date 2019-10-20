@@ -71,8 +71,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat advise[] = {
+static const struct xlat_data advise_xdata[] = {
  XLAT(POSIX_FADV_NORMAL),
  XLAT(POSIX_FADV_RANDOM),
  XLAT(POSIX_FADV_SEQUENTIAL),
@@ -84,8 +83,13 @@ const struct xlat advise[] = {
  XLAT(POSIX_FADV_DONTNEED),
  XLAT(POSIX_FADV_NOREUSE),
 #endif
- XLAT_END
 };
+static
+const struct xlat advise[1] = { {
+ .data = advise_xdata,
+ .size = ARRAY_SIZE(advise_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

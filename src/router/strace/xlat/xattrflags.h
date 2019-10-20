@@ -26,12 +26,16 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat xattrflags[] = {
+static const struct xlat_data xattrflags_xdata[] = {
  XLAT(XATTR_CREATE),
  XLAT(XATTR_REPLACE),
- XLAT_END
 };
+static
+const struct xlat xattrflags[1] = { {
+ .data = xattrflags_xdata,
+ .size = ARRAY_SIZE(xattrflags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

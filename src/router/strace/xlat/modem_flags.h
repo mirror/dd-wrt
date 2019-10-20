@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat modem_flags[] = {
+static const struct xlat_data modem_flags_xdata[] = {
 #if defined(TIOCM_LE) || (defined(HAVE_DECL_TIOCM_LE) && HAVE_DECL_TIOCM_LE)
   XLAT(TIOCM_LE),
 #endif
@@ -47,8 +46,13 @@ const struct xlat modem_flags[] = {
 #if defined(TIOCM_DSR) || (defined(HAVE_DECL_TIOCM_DSR) && HAVE_DECL_TIOCM_DSR)
   XLAT(TIOCM_DSR),
 #endif
- XLAT_END
 };
+static
+const struct xlat modem_flags[1] = { {
+ .data = modem_flags_xdata,
+ .size = ARRAY_SIZE(modem_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

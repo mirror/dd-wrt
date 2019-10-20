@@ -17,6 +17,13 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
 # define BPF_F_ANY_ALIGNMENT (1U << 1)
 #endif
+#if defined(BPF_F_TEST_RND_HI32) || (defined(HAVE_DECL_BPF_F_TEST_RND_HI32) && HAVE_DECL_BPF_F_TEST_RND_HI32)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((BPF_F_TEST_RND_HI32) == ((1U << 2)), "BPF_F_TEST_RND_HI32 != (1U << 2)");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define BPF_F_TEST_RND_HI32 (1U << 2)
+#endif
 
 #ifndef XLAT_MACROS_ONLY
 
@@ -26,12 +33,17 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat bpf_prog_flags[] = {
+static const struct xlat_data bpf_prog_flags_xdata[] = {
  XLAT(BPF_F_STRICT_ALIGNMENT),
  XLAT(BPF_F_ANY_ALIGNMENT),
- XLAT_END
+ XLAT(BPF_F_TEST_RND_HI32),
 };
+static
+const struct xlat bpf_prog_flags[1] = { {
+ .data = bpf_prog_flags_xdata,
+ .size = ARRAY_SIZE(bpf_prog_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

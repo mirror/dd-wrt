@@ -131,8 +131,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat perf_branch_sample_type[] = {
+static const struct xlat_data perf_branch_sample_type_xdata[] = {
  XLAT(PERF_SAMPLE_BRANCH_USER),
  XLAT(PERF_SAMPLE_BRANCH_KERNEL),
  XLAT(PERF_SAMPLE_BRANCH_HV),
@@ -150,8 +149,13 @@ const struct xlat perf_branch_sample_type[] = {
  XLAT(PERF_SAMPLE_BRANCH_NO_FLAGS),
  XLAT(PERF_SAMPLE_BRANCH_NO_CYCLES),
  XLAT(PERF_SAMPLE_BRANCH_TYPE_SAVE),
- XLAT_END
 };
+static
+const struct xlat perf_branch_sample_type[1] = { {
+ .data = perf_branch_sample_type_xdata,
+ .size = ARRAY_SIZE(perf_branch_sample_type_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

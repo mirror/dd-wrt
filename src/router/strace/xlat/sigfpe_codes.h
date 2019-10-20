@@ -82,10 +82,7 @@ extern const struct xlat sigfpe_codes[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat sigfpe_codes[] = {
+static const struct xlat_data sigfpe_codes_xdata[] = {
  XLAT(FPE_INTDIV),
  XLAT(FPE_INTOVF),
  XLAT(FPE_FLTDIV),
@@ -114,8 +111,15 @@ const struct xlat sigfpe_codes[] = {
 #endif
  XLAT(FPE_FLTUNK),
  XLAT(FPE_CONDTRAP),
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat sigfpe_codes[1] = { {
+ .data = sigfpe_codes_xdata,
+ .size = ARRAY_SIZE(sigfpe_codes_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

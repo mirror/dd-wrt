@@ -187,8 +187,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat futexops[] = {
+static const struct xlat_data futexops_xdata[] = {
  XLAT(FUTEX_WAIT),
  XLAT(FUTEX_WAKE),
  XLAT(FUTEX_FD),
@@ -235,8 +234,13 @@ const struct xlat futexops[] = {
 #if defined(FUTEX_WAIT_REQUEUE_PI_PRIVATE) || (defined(HAVE_DECL_FUTEX_WAIT_REQUEUE_PI_PRIVATE) && HAVE_DECL_FUTEX_WAIT_REQUEUE_PI_PRIVATE)
   XLAT(FUTEX_WAIT_REQUEUE_PI_PRIVATE|FUTEX_CLOCK_REALTIME),
 #endif
- XLAT_END
 };
+static
+const struct xlat futexops[1] = { {
+ .data = futexops_xdata,
+ .size = ARRAY_SIZE(futexops_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

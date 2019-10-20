@@ -40,14 +40,18 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat in6_addr_gen_mode[] = {
+static const struct xlat_data in6_addr_gen_mode_xdata[] = {
  [IN6_ADDR_GEN_MODE_EUI64] = XLAT(IN6_ADDR_GEN_MODE_EUI64),
  [IN6_ADDR_GEN_MODE_NONE] = XLAT(IN6_ADDR_GEN_MODE_NONE),
  [IN6_ADDR_GEN_MODE_STABLE_PRIVACY] = XLAT(IN6_ADDR_GEN_MODE_STABLE_PRIVACY),
  [IN6_ADDR_GEN_MODE_RANDOM] = XLAT(IN6_ADDR_GEN_MODE_RANDOM),
- XLAT_END
 };
+static
+const struct xlat in6_addr_gen_mode[1] = { {
+ .data = in6_addr_gen_mode_xdata,
+ .size = ARRAY_SIZE(in6_addr_gen_mode_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

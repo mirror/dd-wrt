@@ -3,14 +3,14 @@
  *
  * Copyright (c) 2016 JingPiao Chen <chenjingpiao@foxmail.com>
  * Copyright (c) 2016 Eugene Syromyatnikov <evgsyr@gmail.com>
- * Copyright (c) 2016-2018 The strace developers.
+ * Copyright (c) 2016-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "tests.h"
-#include <asm/unistd.h>
+#include "scno.h"
 #include <linux/prctl.h>
 
 #if defined __NR_prctl && defined PR_GET_PDEATHSIG && defined PR_SET_PDEATHSIG

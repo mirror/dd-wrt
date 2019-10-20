@@ -26,12 +26,16 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat smc_protocols[] = {
+static const struct xlat_data smc_protocols_xdata[] = {
  [SMCPROTO_SMC] = XLAT(SMCPROTO_SMC),
  [SMCPROTO_SMC6] = XLAT(SMCPROTO_SMC6),
- XLAT_END
 };
+static
+const struct xlat smc_protocols[1] = { {
+ .data = smc_protocols_xdata,
+ .size = ARRAY_SIZE(smc_protocols_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

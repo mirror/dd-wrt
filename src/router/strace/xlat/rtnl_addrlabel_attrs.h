@@ -26,12 +26,16 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat rtnl_addrlabel_attrs[] = {
- XLAT(IFAL_ADDRESS),
- XLAT(IFAL_LABEL),
- XLAT_END
+static const struct xlat_data rtnl_addrlabel_attrs_xdata[] = {
+ [IFAL_ADDRESS] = XLAT(IFAL_ADDRESS),
+ [IFAL_LABEL] = XLAT(IFAL_LABEL),
 };
+static
+const struct xlat rtnl_addrlabel_attrs[1] = { {
+ .data = rtnl_addrlabel_attrs_xdata,
+ .size = ARRAY_SIZE(rtnl_addrlabel_attrs_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

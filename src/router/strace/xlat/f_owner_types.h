@@ -33,13 +33,17 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat f_owner_types[] = {
- XLAT(F_OWNER_TID),
- XLAT(F_OWNER_PID),
- XLAT(F_OWNER_PGRP),
- XLAT_END
+static const struct xlat_data f_owner_types_xdata[] = {
+ [F_OWNER_TID] = XLAT(F_OWNER_TID),
+ [F_OWNER_PID] = XLAT(F_OWNER_PID),
+ [F_OWNER_PGRP] = XLAT(F_OWNER_PGRP),
 };
+static
+const struct xlat f_owner_types[1] = { {
+ .data = f_owner_types_xdata,
+ .size = ARRAY_SIZE(f_owner_types_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

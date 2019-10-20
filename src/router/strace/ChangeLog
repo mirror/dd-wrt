@@ -1,3 +1,2121 @@
+2019-09-25  Dmitry V. Levin  <ldv@altlinux.org>
+
+	Prepare for 5.3 release.
+	* NEWS: Update for 5.3 release.
+
+	tests: workaround systemd-nspawn habit of disabling unimplemented syscalls
+	* tests/clone3.c (do_clone3_): Do not assume that unimplemented
+	syscalls always fail with ENOSYS.
+
+	Update copyright headers.
+	Headers updated automatically using maint/update_copyright_years.sh
+	script.
+
+2019-09-25  Dmitry V. Levin  <ldv@altlinux.org>
+
+	Fix preprocessor indentation.
+	Indent the C preprocessor directives to reflect their nesting
+	using the following script:
+
+	$ cppi -l $(git grep -El '^[[:space:]]*#[[:space:]]*(if|ifdef|ifndef|elif|else|endif|define|pragma)[[:space:]]' |grep -v '\.sh$') |while read f; do
+		cppi < "$f" > "$f".cppi; mv "$f".cppi "$f"
+	done
+
+2019-09-25  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	Update NEWS.
+
+2019-09-25  Chen Jingpiao  <chenjingpiao@gmail.com>
+	    Paul Chaignon  <paul.chaignon@gmail.com>
+
+	tests: check seccomp-assisted syscall filtering.
+	Test filter_seccomp-perf checks whether seccomp-filter is actually
+	enabled by comparing the number of syscalls performed in a time interval
+	when seccomp-filter is enabled vs. disabled.  The number of syscalls
+	should be at least one order of magnitude higher when seccomp-filter
+	is enabled.
+
+	Test filter_seccomp-flag ensures the audit_arch_vec[].flag constants do
+	not conflict with syscall numbers.  If this test fails, then the number
+	of syscalls grew high enough that the code for seccomp-filter needs to
+	be updated.
+
+	* tests/init.sh (test_prog_set): New function.
+	* tests/status-none-f.c: New file.
+	* tests/filter_seccomp.in: Likewise.
+	* tests/filter_seccomp.sh: Likewise.
+	* tests/filter_seccomp-perf.c: Likewise.
+	* tests/filter_seccomp-flag.c: Likewise.
+	* tests/filter_seccomp-perf.test: New test.
+	* tests/Makefile.am (EXTRA_DIST): Add filter_seccomp.in and
+	filter_seccomp.sh.
+	(MISC_TESTS): Add filter_seccomp-perf.test.
+	(check_PROGRAMS): Add filter_seccomp-perf and filter_seccomp-flag.
+	* tests/pure_executables.list: Add status-none-f.
+	* tests/.gitignore: Add status-none-f, filter_seccomp-perf, and
+	filter_seccomp-flag.
+	* tests/gen_tests.in (filter_seccomp, filter_seccomp-flag): New entries.
+
+	Co-Authored-by: Dmitry V. Levin <ldv@altlinux.org>
+
+2019-09-25  Paul Chaignon  <paul.chaignon@gmail.com>
+
+	filter_seccomp: skip seccomp setup when there's nothing to filter.
+	If the trace_set set is complete (no syscalls are filtered), seccomp
+	filtering is disabled.  This patch adds a new is_complete_set_array
+	function to check whether all sets of a set array are complete.
+
+	* number_set.c (is_complete_set_array): New function.
+	* number_set.h (is_complete_set_array): New prototype.
+	* filter_seccomp.c (check_seccomp_filter): Skip seccomp setup if there is
+	nothing to filter.
+
+2019-09-25  Chen Jingpiao  <chenjingpiao@gmail.com>
+	    Paul Chaignon  <paul.chaignon@gmail.com>
+
+	Introduce seccomp-assisted syscall filtering.
+	With this patch, strace can rely on seccomp to only be stopped at syscalls
+	of interest, instead of stopping at all syscalls.  The seccomp filtering
+	of syscalls is opt-in only; it must be enabled with the --seccomp-bpf
+	option.  Kernel support is first checked with check_seccomp_filter(),
+	which also ensures the BPF program derived from the syscalls to filter
+	is not larger than the kernel's limit.
+
+	The --seccomp-bpf option implies -f, but a warning is emitted if -f is not
+	explicitly specified.  Since a task's children inherit its seccomp
+	filters, we want to ensure all children are also traced to avoid their
+	syscalls failing with ENOSYS (cf. SECCOMP_RET_TRACE in seccomp man page).
+
+	Fork/vfork/clone children of traced processes are marked as not having a
+	seccomp filter until we receive a first seccomp-stop.  They are therefore
+	stopped at every syscall entries and exits until that first seccomp-stop.
+
+	The current BPF program implements a simple linear match of the syscall
+	numbers.  Contiguous sequences of syscall numbers are however matched as
+	an interval, with two instructions only.  The algorithm can be improved
+	or replaced in the future without impacting user-observed behavior.
+
+	The behavior of SECCOMP_RET_TRACE changed between Linux 4.7 and 4.8
+	(cf. PTRACE_EVENT_SECCOMP in ptrace man page).  This patch supports both
+	behaviors by checking the kernel's actual behavior before installing the
+	seccomp filter.
+
+	* filter_seccomp.c: New file.
+	* filter_seccomp.h: New file.
+	* Makefile.am (strace_SOURCES): Add filter_seccomp.c and
+	filter_seccomp.h.
+	* linux/aarch64/arch_defs_.h (PERSONALITY0_AUDIT_ARCH,
+	PERSONALITY1_AUDIT_ARCH): Define for aarch64.
+	* linux/powerpc64/arch_defs_.h (PERSONALITY0_AUDIT_ARCH,
+	PERSONALITY1_AUDIT_ARCH): Likewise for powerpc64.
+	* linux/s390x/arch_defs_.h (PERSONALITY0_AUDIT_ARCH,
+	* linux/sparc64/arch_defs_.h (PERSONALITY0_AUDIT_ARCH,
+	PERSONALITY1_AUDIT_ARCH): Likewise for sparc64.
+	PERSONALITY1_AUDIT_ARCH): Likewise for s390x.
+	* linux/tile/arch_defs_.h (PERSONALITY0_AUDIT_ARCH,
+	PERSONALITY1_AUDIT_ARCH): Likewise for tile.
+	* linux/x32/arch_defs_.h (PERSONALITY0_AUDIT_ARCH,
+	PERSONALITY1_AUDIT_ARCH): Likewise for x32.
+	* linux/x86_64/arch_defs_.h (PERSONALITY0_AUDIT_ARCH,
+	PERSONALITY1_AUDIT_ARCH, PERSONALITY2_AUDIT_ARCH): Likewise for x86_64.
+	* linux/ia64/arch_defs_.h (PERSONALITY0_AUDIT_ARCH): Likewise for IA64.
+	* strace.c (usage): Document --seccomp-bpf option.
+	(startup_child): Mark process has having seccomp filter.
+	(exec_or_die): Initialize seccomp filtering if requested.
+	(init): Handle --seccomp-bpf option and check that seccomp can be
+	enabled.
+	(print_debug_info): Handle PTRACE_EVENT_SECCOMP.
+	(next_event): Capture PTRACE_EVENT_SECCOMP event.
+	(dispatch_event): Handle PTRACE_EVENT_SECCOMP event.
+	* trace_event.h (trace_event): New enumeration entity.
+	* strace.1.in: Document new --seccomp-bpf option.
+	* NEWS: Mention this change.
+
+	Co-Authored-by: Dmitry V. Levin <ldv@altlinux.org>
+
+2019-09-25  Dmitry V. Levin  <ldv@altlinux.org>
+
+	Add support for long options.
+	Recognize --help and --version options as aliases to -h and -V options,
+	respectively.
+
+	* strace.c: Include <getopt.h>.
+	(init): Move short options to optstring, add longopts array, use
+	getopt_long instead of getopt.
+	(usage): Document --help and --version options.
+	* strace.1.in: Likewise.
+	* tests/strace-V.test: Check that "strace --version" output is the same
+	as "strace -V" output.
+
+2019-09-24  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	Handle xlat verbosity in evdev bitset printing.
+	* defs.h (print_xint32_array_member, print_xint64_array_member): New
+	function declarations.
+	(print_xlong_array_member): New static inline function.
+	* util.c (print_xint32_array_member, print_xint64_array_member): New
+	functions.
+	* evdev.c (decode_bitset): Handle xlat verbosity option.
+	* tests/ioctl_evdev-Xabbrev.c: New file.
+	* tests/ioctl_evdev-Xraw.c: Likewise.
+	* tests/ioctl_evdev-Xverbose.c: Likewise.
+	* tests/ioctl_evdev-success-Xabbrev.c: Likewise.
+	* tests/ioctl_evdev-success-Xraw.c: Likewise.
+	* tests/ioctl_evdev-success-Xverbose.c: Likewise.
+	* tests/ioctl_evdev-success-v-Xabbrev.c: Likewise.
+	* tests/ioctl_evdev-success-v-Xraw.c: Likewise.
+	* tests/ioctl_evdev-success-v-Xverbose.c: Likewise.
+	* tests/ioctl_evdev-v-Xabbrev.c: Likewise.
+	* tests/ioctl_evdev-v-Xraw.c: Likewise.
+	* tests/ioctl_evdev-v-Xverbose.c: Likewise.
+	* tests/ioctl_evdev-success.c (test_evdev, print_getbit, main): Update
+	expected output.
+	* tests/ioctl_evdev.c (UNK_CMD): New macro.
+	(print_ffe_common, main): Update expected output.
+	* tests/Makefile.am (check_PROGRAMS): Add ioctl_evdev-success-Xabbrev,
+	ioctl_evdev-success-Xraw, ioctl_evdev-success-Xverbose,
+	ioctl_evdev-success-v-Xabbrev, ioctl_evdev-success-v-Xraw, and
+	ioctl_evdev-success-v-Xverbose.
+	* tests/gen_tests.in (ioctl_evdev-Xabbrev, ioctl_evdev-Xraw,
+	ioctl_evdev-Xverbose, ioctl_evdev-v-Xabbrev, ioctl_evdev-v-Xraw,
+	ioctl_evdev-v-Xverbose, ioctl_evdev-success-Xabbrev,
+	ioctl_evdev-success-Xraw, ioctl_evdev-success-Xverbose,
+	ioctl_evdev-success-v-Xabbrev, ioctl_evdev-success-v-Xraw,
+	ioctl_evdev-success-v-Xverbose tests): New entries.
+	(ioctl_evdev, ioctl_evdev-v): Add alignment option.
+	* tests/pure_executables.list: Add ioctl_evdev-Xabbrev,
+	ioctl_evdev-Xraw, ioctl_evdev-Xverbose, ioctl_evdev-v-Xabbrev,
+	ioctl_evdev-v-Xraw, ioctl_evdev-v-Xverbose.
+	* tests/.gitignore: Likewise.
+
+2019-09-24  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	ioctl: do not print comments twice in -Xverbose.
+	Figure out whether the ioctl code is decoded inside a comment and adjust
+	printflags/printxval calls accordingly.
+
+	* ioctl.c (ioctl_print_code, evdev_decode_number): Add abbrev variable,
+	set it to true if xlat style is not XLAT_STYLE_VERBOSE, do not provide
+	dflt and set xlat style to XLAT_STYLE_ABBREV in printflags/printxval
+	calls (that are now changed to printflags_ex/printxval_ex to accomodate
+	the change).
+
+2019-09-24  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	tests/ioctl_evdev-success: rewrite ABS_MT check.
+	Use null-terminating array instead of providing array size in the first
+	element.
+
+	* tests/ioctl_evdev-success.c (print_mtslots, main): Update
+	mtslots_str/invalid_mtslot_str array usage.
+
+2019-09-24  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	tests: add xlat verbosity support to printxval.
+	* tests/Makefile.am (libtests_a_SOURCES): Remove printxval.c, add
+	printxval-Xabbrev.c, printxval-Xraw.c, and printxval-Xverbose.c.
+	(EXTRA_DIST): Add printxval.c.
+	* tests/printxval.c [!XLAT_RAW] (lookup_xlat): New function.
+	(printxval): Wrap in XLAT_NAME.
+	(sprintxlat, sprintxval): New functions.
+	* tests/printxval-Xabbrev.c: New file.
+	* tests/printxval-Xraw.c: Likewise.
+	* tests/printxval-Xverbose.c: Likewise.
+	* tests/tests.h (printxval): Remove declaration.
+	(printxval_abbrev, printxval_raw, printxval_verbose, sprintxlat_abbrev,
+	sprintxlat_raw, sprintxlat_verbose, sprintxval_abbrev, sprintxval_raw,
+	sprintxval_verbose): New declarations.
+	(printxval, sprintxlat, sprintxval): New macros, defined based on values
+	of XLAT_RAW amd XLAT_VERBOSE macros.
+	* tests/ioprio.c: Simplify the printing code since printxval now has
+	xlat verbosity support.
+
+2019-09-24  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	tests/tests.h: add XLAT_STR macro.
+	XLAT_STR allows describing expected output succintly in some simple
+	cases.
+
+	* tests/tests.h (XLAT_STR): New macro.
+
+2019-09-24  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	Add PAF_ARRAY_TRUNCATED flag for print_array_ex.
+	PAF_ARRAY_TRUNCATED allows enforcing the fact that an array
+	is truncated, which is useful for arrays in local memory that are known
+	as being truncated.
+
+	* defs.h (xlat_style_private_flag_bits): Add PAF_ARRAY_TRUNCATED_BIT.
+	(xlat_style_private_flags): Add PAF_ARRAY_TRUNCATED.
+	* util.c (print_array_ex): Handle PAF_ARRAY_TRUNCATED in flags.
+
+2019-09-24  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	Add support for printing local arrays to print_array.
+	* defs.h (print_array_ex): Describe parameters.
+	(print_local_array): A wrapper for printing arrays in local memory
+	via print_array_ex.
+	* util.c (print_array_ex): Handle case of NULL tfetch_mem_func by
+	printing elements of array in local memory pointed by start_addr
+	parameter.
+
+	tests: move ioctl_evdev-v binary to pure_executables.list.
+	* tests/Makefile.am (check_PROGRAMS): Move ioctl_evdev-v ...
+	* tests/pure_executables.list: ... here.
+
+	tests: implement ioctl_evdev-success-v.test via ioctl_evdev-success.test
+	* tests/ioctl_evdev-success-v.test: Remove.
+	* tests/Makefile.am (DECODER_TESTS): Remove ioctl_evdev-success-v.test.
+	* tests/gen_tests.in: Add ioctl_evdev-success-v as a wrapper for
+	ioctl_evdev-success.test.
+	* tests/ioctl_evdev-success.test: Save "$args" to $prog, increase -a
+	parameter value to 26 columns, inject "$@" into run_strace arguments,
+	call $prog instead of axplicit program name.
+
+2019-09-24  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	riscv64: remove mpers support.
+	There is no riscv32 Linux support in Linux mainline,
+	and no compat support in riscv64 as well.
+
+	* linux/riscv64/arch_defs_.h: Remove.
+	* linux/riscv64/ioctls_arch1.h: Likewise.
+	* linux/riscv64/ioctls_inc1.h: Likewise.
+	* linux/riscv64/syscallent1.h: Likewise.
+	* Makefile.am (EXTRA_DIST): Remove them.
+	* configure.ac (st_MPERS([m32])): Remove riscv64.
+	* strace.1.in (.SH "MULTIPLE PERSONALITY SUPPORT"): Remove RISC-V
+	from the list.
+
+	Co-Authored-by: Dmitry V. Levin <ldv@altlinux.org>
+
+2019-09-23  Dmitry V. Levin  <ldv@altlinux.org>
+
+	riscv: rename to riscv64.
+	The only currently supported RISC-V architecture is the 64-bit RISC-V.
+	As the generic name we use causes confusion [1], rename it to riscv64.
+
+	[1] https://lists.strace.io/pipermail/strace-devel/2019-August/009057.html
+
+	* Makefile.am (EXTRA_DIST): Rename linux/riscv to linux/riscv64.
+	* configure.ac: Rename riscv to riscv64, RISCV to RISCV64.
+	* linux/riscv: Rename to linux/riscv64.
+	* riscv.c: Rename RISCV to RISCV64.
+	* tests/options-syntax.test: Rename riscv to riscv64.
+	* tests/qualify_personality.sh: Likewise.
+	* tests/strace-V.test: Likewise.
+
+2019-09-23  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	clone: implement clone3 syscall decoding.
+	* configure.ac (AC_CHECK_HEADERS): Check for linux/sched.h presence.
+	(AC_CHECK_TYPES): Check for struct clone_args in <linux/sched.h>.
+	* clone.c: Include "print_fields.h".
+	(struct strace_clone_args): New type.
+	(print_nonzero_bytes): New function.
+	(SYS_FUNC(clone3)): New decoder.
+	* linux/syscallent-common.h ([BASE_NR + 435]): Wire up clone3.
+	* NEWS: Mention this change.
+	* tests/clone3.c: New file.
+	* tests/clone3-Xabbrev.c: Likewise.
+	* tests/clone3-Xraw.c: Likewise.
+	* tests/clone3-Xverbose.c: Likewise.
+	* tests/clone3-success.c: Likewise.
+	* tests/clone3-success-Xabbrev.c: Likewise.
+	* tests/clone3-success-Xraw.c: Likewise.
+	* tests/clone3-success-Xverbose.c: Likewise.
+	* tests/clone3-success.test: New test.
+	* tests/Makefile.am (check_PROGRAMS): Add clone3-success,
+	clone3-success-Xabbrev, clone3-success-Xraw, and
+	clone3-success-Xverbose.
+	(DECODER_TESTS): Add clone3-success.test.
+	* tests/gen_tests.in (clone3, clone3-Xabbrev, clone3-Xraw,
+	clone3-Xverbose, clone3-success-Xabbrev, clone3-success-Xraw,
+	clone3-success-Xverbose): New entries.
+	* tests/pure_executables.list: Add clone3, clone3-Xabbrev, clone3-Xraw,
+	and clone3-Xverbose.
+	* tests/.gitignore: Add clone3, clone3-Xabbrev, clone3-Xraw,
+	clone3-Xverbose, clone3-success, clone3-success-Xabbrev,
+	clone3-success-Xraw, and clone3-success-Xverbose.
+
+	Co-Authored-by: Dmitry V. Levin <ldv@altlinux.org>
+
+2019-09-23  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	tests/tests.h: add XLAT_KNOWN and XLAT_UNKNOWN macros.
+	XLAT_KNOWN allows describing expected output succintly in some simple
+	cases.
+
+	* tests/tests.h (XLAT_KNOWN, XLAT_UNKNOWN): New macros, define based
+	on values of XLAT_RAW and XLAT_VERBOSE macros.
+
+2019-09-23  Dmitry V. Levin  <ldv@altlinux.org>
+
+	tests: fix umovestr_cached.test when process_vm_readv is not implemented
+	* tests/umovestr_cached.test: Run strace with -z option to filter out
+	failing process_vm_readv invocations.
+
+2019-09-23  Dmitry V. Levin  <ldv@altlinux.org>
+
+	tests: disable umovestr_cached.test on ia64.
+	ia64 invokes extra process_vm_readv syscalls to obtain syscall
+	arguments, see linux/ia64/get_syscall_args.c for details.
+
+	* tests/umovestr_cached.test [ $STRACE_ARCH == ia64 ]: Skip.
+
+2019-09-15  Paul Chaignon  <paul.chaignon@gmail.com>
+
+	tests: fix format warnings on x32.
+	The type of __X32_SYSCALL_BIT changed from int to unsigned long by Linux
+	kernel commit v5.3-rc1-1-g45e29d119e9923ff14dfb840e3482bef1667bbfb.
+	Consequently, __NR_* macros are now defined to values of an unsigned long
+	integer type on x32.
+
+	tests/prctl-seccomp-filter-v.c (PRINT_ALLOW_SYSCALL, PRINT_DENY_SYSCALL):
+	Fix format warning.
+	tests/seccomp-filter-v.c (PRINT_ALLOW_SYSCALL, PRINT_DENY_SYSCALL):
+	Likewise.
+
+2019-09-15  Dmitry V. Levin  <ldv@altlinux.org>
+
+	Implement memory caching for umove* functions.
+	When the data to be fetched by vm_read_mem resides in a single memory
+	page, fetch the whole page and cache it.  This implementation caches
+	up to two memory pages.
+
+	* defs.h (invalidate_umove_cache): New prototype.
+	* strace.c (next_event): Call invalidate_umove_cache.
+	* ucopy.c (cached_idx, cached_raddr): New static variables.
+	(process_read_mem): New function.
+	(vm_read_mem): Use them.  Implement fetched page caching.
+	* tests/umovestr_cached.test: New test.
+	* tests/Makefile.am (MISC_TESTS): Add umovestr_cached.test.
+	* tests/umovestr_cached.c: New file.
+	* tests/pure_executables.list: Add umovestr_cached.
+	* tests/.gitignore: Likewise.
+
+2019-09-10  Gleb Fotengauer-Malinovskiy  <glebfm@altlinux.org>
+
+	Update ioctl entries from linux v5.3.
+	* linux/32/ioctls_inc_align16.h: Update from linux v5.3-rc8
+	using ioctls_gen.sh.
+	* linux/32/ioctls_inc_align32.h: Likewise.
+	* linux/32/ioctls_inc_align64.h: Likewise.
+	* linux/64/ioctls_inc.h: Likewise.
+	* linux/x32/ioctls_inc0.h: Likewise.
+	* linux/i386/ioctls_arch0.h: Likewise.
+	* linux/s390/ioctls_arch0.h: Likewise.
+	* linux/s390x/ioctls_arch0.h: Likewise.
+	* linux/x86_64/ioctls_arch0.h: Likewise.
+	* NEWS: Mention this.
+
+	maint: update for linux v5.3-rc8.
+	* maint/ioctls_sym.sh (x86_list): Add KVM_SET_PMU_EVENT_FILTER.
+
+2019-09-08  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	Rewrite printnum_{slong,ulong,ptr,kptr} using dispatch_{word,klong}size.
+	* defs.h (printnum_long_int, printnum_addr_long_int, printnum_addr_klong_int):
+	Remove declaration.
+	(printnum_slong, printnum_ulong): Implement unconditionally using
+	dispatch_wordsize and opt_wordsize for the last argument.
+	(printnum_ptr): Implement unconditionally using dispatch_wordsize.
+	(printnum_kptr): Implement unconditionally using dispatch_klongsize.
+	* util.c (printnum_long_int, printnum_addr_long_int, printnum_addr_klong_int):
+	Remove.
+
+	defs.h: introduce {opt,dispatch}_{word,klong}size.
+	* defs.h (set_personality, current_personality, current_wordsize,
+	current_klongsize, max_addr, max_kaddr): Move upwards.
+	(opt_wordsize): New macro, calls the first or the second argument
+	depending on the word size.
+	(dispatch_wordsize): New macro, calls the first or the second function
+	with the rest of macro parameters as arguments depending on the word
+	size.
+	(opt_klongsize): New macro, calls the first or the second argument
+	depending on the kernel long size.
+	(dispatch_klongsize): New macro, calls the first or the second function
+	with the rest of macro parameters as arguments depending on the kernel
+	long size.
+
+2019-09-04  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	s390: fix PRINT_UNKNOWN_TAIL_EX.
+	In the conversion of PRINT_UNKNOWN_TAIL into PRINT_UNKNOWN_TAIL_EX
+	the usage of sizeof(*(hdr_)) hasn't been replaced to (hdr_size_)
+	in all places.  Offset calculation also had to be changed.
+
+	* s390.c (PRINT_UNKNOWN_TAIL_EX): Fix addr and len arguments
+	in is_filled and print_quoted_string calls.
+
+	Fixes: v5.2-97-g210593c "s390: update sthyi decoder"
+	Reported-by: Dan Horák <dan@danny.cz>
+	Resolves: https://github.com/strace/strace/issues/108
+
+2019-09-03  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	xlat: add comment about CLONE_DETACHED to clone_flags.in.
+	It's ignored by kernel, but present in the UAPI header.
+
+	* xlat/clone_flags.in: Add a comment about CLONE_DETACHED.
+
+2019-09-03  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	clone: fix print_tls_arg on x86.
+	When strace is built for (32-bit) x86, it has HAVE_STRUCT_USER_DESC
+	and SUPPORTED_PERSONALITIES == 1, which led to execution of the both
+	branches.  Simplify the logic by including the SUPPORTED_PERSONALITIES
+	into the condition.
+
+	* clone.c (print_tls_arg): Include SUPPORTED_PERSONALITIES into the "if"
+	condition.
+
+2019-09-01  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	s390: update sthyi decoder.
+	Sync up with the description[1].
+
+	[1] https://www.ibm.com/support/knowledgecenter/SSB27U_6.4.0/com.ibm.zvm.v640.hcpb4/hcpb4sth.htm
+
+	* s390.c (struct sthyi_machine): Add fields reserved_1__, infmplnm;
+	update comment for the infmval1 field; update the related static_assert.
+	(struct sthyi_partition): Update infpflg1 comment; update infpval1
+	comment; add infpplnm field; update the related static_assert.
+	(struct sthyi_hypervisor): Update infyflg1 field comment; add
+	infyinsf and infyautf fields; update the related static_assert.
+	(CHECK_SIZE_EX): Rename from CHECK_SIZE; add min_size_ argument, check size_
+	against it.
+	(CHECK_SIZE): New macro, a wrapper for CHECK_SIZE_EX.
+	(PRINT_UNKNOWN_TAIL_EX): Rename from PRINT_UNKNOWN_TAIL, add hdr_size_
+	argument.
+	(PRINT_UNKNOWN_TAIL): New macro, a wrapper for PRINT_UNKNOWN_TAIL_EX.
+	(print_sthyi_machine): New local variable last_decoded; use
+	CHECK_SIZE_EX instead of CHECK_SIZE to check against the initial value
+	of last_decoded; decode reserved_1__ and infmplnm fields if the returned
+	size indicates that they are present; use PRINT_UNKNOWN_TAIL_EX for
+	printing structure's tail.
+	(print_sthyi_partition): New local variable last_decoded; use
+	CHECK_SIZE_EX instead of CHECK_SIZE to check against the initial value
+	of last_decoded; decode infpplnm field if the returned size indicates
+	that it is present; use PRINT_UNKNOWN_TAIL_EX for printing structure's
+	tail.
+	(print_funcs): New function.
+	(print_sthyi_hypervisor): New local variable last_decoded; use
+	CHECK_SIZE_EX instead of CHECK_SIZE to check against the initial value
+	of last_decoded; update infyflg1 field decoding; decode infyinsf
+	and infyautf fields if the returned size indicates that they
+	are present; use PRINT_UNKNOWN_TAIL_EX for printing structure's tail.
+	(s390_sthyi): Update specification URL.
+	* tests/s390_sthyi.c: Update expected output.
+
+2019-09-01  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	s390: replace structure size comments with static_assert's.
+	* s390.c: Add static_assert statements for compile-time check of
+	struct sthyi_hdr, struct sthyi_machine, struct sthyi_partition,
+	struct sthyi_hypervisor, and struct sthyi_guest sizes.
+
+2019-08-31  Dmitry V. Levin  <ldv@altlinux.org>
+
+	tests: convert ksysent.test into a generated test.
+	* tests/ksysent.test: Remove.
+	* tests/Makefile.am (MISC_TESTS): Remove ksysent.test.
+	* tests/gen_tests.in (ksysent): New entry.
+	* ci/run-build-and-tests.sh: Replace ksysent.log with ksysent.gen.log.
+	* strace.spec.in: Likewise.
+
+2019-08-31  Paul Chaignon  <paul.chaignon@gmail.com>
+
+	Add seccomp filter syscall flag.
+	This commit adds a new syscall flag for syscall that are traced by default
+	under seccomp filter.
+
+	The syscallent changes can be reproduced with the following script:
+
+	  git grep -l 'SEN(\(execv\|ipc\|socketcall\|ipc\)' |
+	  xargs -r sed -i -e '/SEN(execv/ s/TP|/&TSD|/' \
+	  -e '/SEN(ipc)/ s/TI/&|TSD/' -e '/SEN(socketcall)/ s/TD/&|TSD/' \
+	  -e '/SEN(syscall)/ s/0,/TSD,/'
+
+	* sysent.h (TRACE_SECCOMP_DEFAULT): Define new flag.
+	* sysent_shorthand_defs.h (TSD): Define new flag shorthand.
+	* linux/32/syscallent.h: Add TSD flag.
+	* linux/64/syscallent.h: Likewise.
+	* linux/alpha/syscallent.h: Likewise.
+	* linux/arm/syscallent.h: Likewise.
+	* linux/avr32/syscallent.h: Likewise.
+	* linux/bfin/syscallent.h: Likewise.
+	* linux/hppa/syscallent.h: Likewise.
+	* linux/i386/syscallent.h: Likewise.
+	* linux/ia64/syscallent.h: Likewise.
+	* linux/m68k/syscallent.h: Likewise.
+	* linux/microblaze/syscallent.h: Likewise.
+	* linux/mips/syscallent-n32.h: Likewise.
+	* linux/mips/syscallent-n64.h: Likewise.
+	* linux/mips/syscallent-o32.h: Likewise.
+	* linux/powerpc/syscallent.h: Likewise.
+	* linux/powerpc64/syscallent.h: Likewise.
+	* linux/s390/syscallent.h: Likewise.
+	* linux/s390x/syscallent.h: Likewise.
+	* linux/sh/syscallent.h: Likewise.
+	* linux/sh64/syscallent.h: Likewise.
+	* linux/sparc/syscallent.h: Likewise.
+	* linux/sparc64/syscallent.h: Likewise.
+	* linux/x32/syscallent.h: Likewise.
+	* linux/x86_64/syscallent.h: Likewise.
+	* linux/xtensa/syscallent.h: Likewise.
+
+2019-08-29  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	strace.spec: lower CentOS version requirement for pkgconfig(bluez)
+	bluez-libs-devel provides pkgconfig(bluez) and the actual headers both
+	in RHEL 6 and RHEL 7, so the version condition for enablement
+	of pkgconfig(bluez) in spec file can be lowered.  However, the package
+	in question is in the "optional" repository in RHEL, and there seems to be
+	no easy way to enable it in OBS (where this spec file is mainly used)
+	so only %centos check is actually changed for now.
+
+	* strace.spec.in: Change "0%{?centos} >= 8" to "0%{?centos} >= 6"
+	for "BuildRequires: pkgconfig(bluez)" enablement.
+
+	References: https://bugzilla.redhat.com/show_bug.cgi?id=1746885
+
+2019-08-29  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	sockaddr: properly decode sockaddr_hci addresses without hci_channel.
+	Before Linux commit v2.6.38-rc1~476^2~14^2~3^2~43^2~9,
+	struct sockaddr_hci did not contain hci_channel field.
+
+	* configure.ac (AC_CHECK_HEADERS([bluetooth/bluetooth.h])): Add check
+	for struct sockaddr_hci.hci_channel.
+	* sockaddr.c (print_sockaddr_data_bt): Decode struct sockaddr_hci
+	without hci_channel field.
+	* tests/net-sockaddr.c (check_hci): Add check for struct sockaddr_hci
+	decoding without hci_channel field; guard hci_channel with #ifdef
+	HAVE_STRUCT_SOCKADDR_HCI_HCI_CHANNEL.
+	(check_raw): Remove "len++", as 4-byte AF_BLUETOOTH socket addresses are
+	interpreted as struct sockaddr_hci without hci_channel field.
+
+2019-08-27  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	strace.1.in: try to be more clear with -e trace=class deprecation notice
+	It was reported that the current way of labelling of the percent-less
+	-e trace=class syntax variant may be confusing, as it can be read
+	as deprecation of the whole option and not specific syntax; try to be
+	more clear by moving the deprecation notices into the option
+	descriptions.
+
+	* strace.1.in (.SS Filtering): Move the deprecation notice
+	of -e trace={file,process,network,signal,ipc,desc,memory} syntax
+	to the descriptions of the respective options.
+
+	Reported-by: Alexey Gladkov <gladkov.alexey@gmail.com>
+
+2019-08-26  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	xlat: normalise fsmagic formatting.
+	For historical reasons, it was this way as there was no support for
+	explicitly defined xlat values, which is no longer the case.
+
+	The following command was used:
+
+	    sed -ri \
+	        -e 's/^\{ ([^]*),[[:space:]]*"([^"]*)"([[:space:]]*)\},$/\2\3\1/' \
+	        -e 's/^([^\t]{14,15}\t)/\1\t/' \
+	        xlat/fsmagic.in
+
+	* xlat/fsmagic.in: Normalise the formatting.
+
+2019-08-23  Rasmus Villemoes  <rasmus.villemoes@prevas.dk>
+
+	Add support for /dev/watchdog ioctls.
+	* watchdog_ioctl.c: New file.
+	* Makefile.am (strace_SOURCES): Add it.
+	* defs.h (DECL_IOCTL): Add watchdog.
+	* ioctl.c (ioctl_decode): Add 'W' case.
+	* xlat/watchdog_ioctl_cmds.in: New file.
+	* tests/ioctl_watchdog.c: New file.
+	* tests/.gitignore: Add ioctl_watchdog.
+	* tests/pure_executables.list: Likewise.
+	* tests/gen_tests.in (ioctl_watchdog): New entry.
+
+2019-08-16  Dmitry V. Levin  <ldv@altlinux.org>
+
+	umoven: use error_func_msg instead of error_msg.
+	* ucopy.c (umoven): Use error_func_msg instead of error_msg.
+
+2019-08-15  Dmitry V. Levin  <ldv@altlinux.org>
+
+	Use perror_func_msg instead of perror_msg where appropriate.
+	* linux/aarch64/set_scno.c (arch_set_scno): Use perror_func_msg
+	instead of perror_msg.
+	* ucopy.c (umoven_peekdata, umoven, umovestr_peekdata, umovestr):
+	Likewise.
+	* upeek.c (upeek): Likewise.
+	* upoke.c (upoke): Likewise.
+
+2019-08-15  Dmitry V. Levin  <ldv@altlinux.org>
+
+	Fix syscall tampering when PTRACE_GET_SYSCALL_INFO is in use on some architectures
+	When PTRACE_GET_SYSCALL_INFO is in use on those architectures
+	that invoke set_regs in arch_set_scno, get_regs is not called,
+	so it has to be invoked explicitly before tampering.
+
+	* linux/arc/set_scno.c (arch_set_scno): Explicitly call get_regs
+	when PTRACE_GET_SYSCALL_INFO is in use.
+	* linux/avr32/set_scno.c: Likewise.
+	* linux/csky/set_scno.c: Likewise.
+	* linux/ia64/set_scno.c: Likewise.
+	* linux/m68k/set_scno.c: Likewise.
+	* linux/metag/set_scno.c: Likewise.
+	* linux/mips/set_scno.c: Likewise.
+	* linux/nios2/set_scno.c: Likewise.
+	* linux/or1k/set_scno.c: Likewise.
+	* linux/riscv/set_scno.c: Likewise.
+	* linux/s390/set_scno.c: Likewise.
+	* linux/sparc/set_scno.c: Likewise.
+	* linux/tile/set_scno.c: Likewise.
+	* NEWS: Mention this fix.
+
+	Thanks-to: Anatoly Pugachev <matorola@gmail.com>
+	Fixes: v5.2~27 "sparc, sparc64: fix syscall tampering when PTRACE_GET_SYSCALL_INFO is in use"
+
+2019-08-15  Dmitry V. Levin  <ldv@altlinux.org>
+
+	sparc, sparc64: fix redundant get_regs invocation.
+	An explicit get_regs invocation was added to arch_set_error and
+	arch_set_success on sparc/sparc64 by commit v5.2~27 in attempt to fix
+	syscall tampering on these architectures when PTRACE_GET_SYSCALL_INFO
+	is in use.
+
+	That change, however, did not fix the bug because set_error and
+	set_success already invoke get_regs on all architectures where
+	ptrace_setregset_or_setregs is defined, this includes sparc and sparc64.
+
+	* linux/sparc/set_error.c (sparc_set_o0_psr): Do not invoke get_regs.
+	* linux/sparc64/set_error.c (sparc64_set_o0_tstate): Likewise.
+	* NEWS (5.2): Remove the statement about syscall tampering fix
+	on sparc and sparc64 when PTRACE_GET_SYSCALL_INFO is in use.
+
+2019-08-15  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	v4l2: avoid shifting left a signed number by 31 bit.
+	cppcheck warns about it with the following diagnostics:
+
+	    error[shiftTooManyBitsSigned]: Shifting signed 32-bit value by 31 bits is
+	    undefined behaviour
+
+	* v4l2.c [!v4l2_fourcc_be] (v4l2_fourcc_be): Shift left 1U and not 1 in
+	order to get 0x80000000.
+
+2019-08-15  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	strace.spec.in: use SPDX shortname format in License: tag.
+	Otherwise some rpm lintians complain about it:
+
+	    strace.src: W: invalid-license LGPL-2.1-or-later
+	    strace.src: W: invalid-license GPL-2.0-or-later
+
+	* strace.spec.in (License): Change license description from
+	"LGPL-2.1-or-later and GPL-2.0-or-later" to "LGPL-2.1+ and GPL-2.0+".
+
+2019-08-15  Dmitry V. Levin  <ldv@altlinux.org>
+
+	Implement decoding of pidfd_open syscall.
+	... introduced by Linux kernel commits v5.3-rc1~142^2~2
+	and v5.3-rc1~142^2~1.
+
+	* pidfd_open.c: New file.
+	* Makefile.am (strace_SOURCES): Add it.
+	* pathtrace.c (pathtrace_match_set): Add SEN_pidfd_open.
+	* linux/syscallent-common.h [BASE_NR + 434]: Wire up pidfd_open.
+	* NEWS: Mention this change.
+	* tests/pidfd_open.c: New file.
+	* tests/pidfd_open-P.c: Likewise.
+	* tests/pidfd_open-y.c: Likewise.
+	* tests/gen_tests.in (pidfd_open, pidfd_open-P, pidfd_open-y): New
+	entries.
+	* tests/pure_executables.list: Add pidfd_open, pidfd_open-P, and
+	pidfd_open-y.
+	* tests/.gitignore: Likewise.
+
+2019-08-14  Dmitry V. Levin  <ldv@altlinux.org>
+
+	xlat/gen.sh: remove #stop support.
+	There are no users of #stop directive anymore.
+
+	* xlat/gen.sh (gen_header): Remove '#stop' support.
+
+2019-08-14  Dmitry V. Levin  <ldv@altlinux.org>
+
+	xlat/skf_off: use XLAT_MACROS_ONLY instead of #stop.
+	* xlat/skf_off.in: Remove #stop.
+	* bpf_sock_filter.c: Wrap "xlat/skf_off.h" inclusion in XLAT_MACROS_ONLY.
+
+	xlat/scsi_sg_commands: use XLAT_MACROS_ONLY instead of #stop.
+	* xlat/scsi_sg_commands.in: Remove #stop.
+	* scsi.c: Wrap "xlat/scsi_sg_commands.h" inclusion in XLAT_MACROS_ONLY.
+	* tests/ioctl_scsi.c: Likewise.
+	* tests/ioctl_sg_io_v4.c: Likewise.
+
+2019-08-14  Dmitry V. Levin  <ldv@altlinux.org>
+
+	xlat: mark as value indexed those files that meet certain criteria.
+	Automatically prepend #value_indexed using the following script:
+
+	for f in xlat/*.in; do
+		awk -n 'BEGINFILE {if (FILENAME ~ /flag/) exit 1; nr=0}
+			(nr == 0 && $1 ~ /^#/) {exit 1}
+			$1 !~ /^[A-Z_0-9]/ {next}
+			NF < 2 || $2 !~ /^[0-9]/ || ($2 - nr != 0 && $2 - nr != 1) {exit 1}
+			{nr++}
+			ENDFILE {if (nr < 2) exit 1}' "$f" &&
+		sed -i '1i#value_indexed' "$f"
+	done
+
+	* xlat/blkpg_ops.in: Prepend #value_indexed.
+	* xlat/btrfs_balance_ctl_cmds.in: Likewise.
+	* xlat/btrfs_compress_types.in: Likewise.
+	* xlat/btrfs_cont_reading_from_srcdev_mode.in: Likewise.
+	* xlat/crypto_nl_attrs.in: Likewise.
+	* xlat/dcb_commands.in: Likewise.
+	* xlat/epollctls.in: Likewise.
+	* xlat/f_owner_types.in: Likewise.
+	* xlat/fib_rule_actions.in: Likewise.
+	* xlat/futexwakecmps.in: Likewise.
+	* xlat/futexwakeops.in: Likewise.
+	* xlat/ioprio_class.in: Likewise.
+	* xlat/ioprio_who.in: Likewise.
+	* xlat/kcmp_types.in: Likewise.
+	* xlat/keyctl_commands.in: Likewise.
+	* xlat/lwtunnel_encap_types.in: Likewise.
+	* xlat/mpol_modes.in: Likewise.
+	* xlat/multicast_router_types.in: Likewise.
+	* xlat/netfilter_versions.in: Likewise.
+	* xlat/netlink_protocols.in: Likewise.
+	* xlat/netlink_types.in: Likewise.
+	* xlat/nf_acct_msg_types.in: Likewise.
+	* xlat/nf_cthelper_msg_types.in: Likewise.
+	* xlat/nf_ctnetlink_exp_msg_types.in: Likewise.
+	* xlat/nf_ctnetlink_msg_types.in: Likewise.
+	* xlat/nf_cttimeout_msg_types.in: Likewise.
+	* xlat/nf_ipset_msg_types.in: Likewise.
+	* xlat/nf_nftables_msg_types.in: Likewise.
+	* xlat/nf_osf_msg_types.in: Likewise.
+	* xlat/nf_queue_msg_types.in: Likewise.
+	* xlat/nf_ulog_msg_types.in: Likewise.
+	* xlat/nl_netfilter_subsys_ids.in: Likewise.
+	* xlat/nlmsgerr_attrs.in: Likewise.
+	* xlat/pr_cap_ambient.in: Likewise.
+	* xlat/pr_dumpable.in: Likewise.
+	* xlat/pr_mce_kill.in: Likewise.
+	* xlat/pr_mce_kill_policy.in: Likewise.
+	* xlat/pr_set_mm.in: Likewise.
+	* xlat/pr_tsc.in: Likewise.
+	* xlat/quota_formats.in: Likewise.
+	* xlat/quotatypes.in: Likewise.
+	* xlat/routing_types.in: Likewise.
+	* xlat/rtnl_addr_attrs.in: Likewise.
+	* xlat/rtnl_addrlabel_attrs.in: Likewise.
+	* xlat/rtnl_dcb_attrs.in: Likewise.
+	* xlat/rtnl_ifla_brport_attrs.in: Likewise.
+	* xlat/rtnl_ifla_events.in: Likewise.
+	* xlat/rtnl_ifla_info_attrs.in: Likewise.
+	* xlat/rtnl_ifla_port_attrs.in: Likewise.
+	* xlat/rtnl_ifla_vf_port_attrs.in: Likewise.
+	* xlat/rtnl_ifla_xdp_attrs.in: Likewise.
+	* xlat/rtnl_link_attrs.in: Likewise.
+	* xlat/rtnl_mdb_attrs.in: Likewise.
+	* xlat/rtnl_mdba_mdb_attrs.in: Likewise.
+	* xlat/rtnl_mdba_mdb_eattr_attrs.in: Likewise.
+	* xlat/rtnl_mdba_mdb_entry_attrs.in: Likewise.
+	* xlat/rtnl_mdba_router_attrs.in: Likewise.
+	* xlat/rtnl_mdba_router_pattr_attrs.in: Likewise.
+	* xlat/rtnl_neigh_attrs.in: Likewise.
+	* xlat/rtnl_neightbl_attrs.in: Likewise.
+	* xlat/rtnl_neightbl_parms_attrs.in: Likewise.
+	* xlat/rtnl_netconf_attrs.in: Likewise.
+	* xlat/rtnl_route_attrs.in: Likewise.
+	* xlat/rtnl_rta_metrics_attrs.in: Likewise.
+	* xlat/rtnl_rule_attrs.in: Likewise.
+	* xlat/rtnl_tc_action_attrs.in: Likewise.
+	* xlat/rtnl_tc_attrs.in: Likewise.
+	* xlat/rtnl_tca_stab_attrs.in: Likewise.
+	* xlat/rtnl_tca_stats_attrs.in: Likewise.
+	* xlat/s390_guarded_storage_commands.in: Likewise.
+	* xlat/s390_runtime_instr_commands.in: Likewise.
+	* xlat/seccomp_mode.in: Likewise.
+	* xlat/seccomp_ops.in: Likewise.
+	* xlat/shutdown_modes.in: Likewise.
+	* xlat/sigchld_codes.in: Likewise.
+	* xlat/sigev_value.in: Likewise.
+	* xlat/sigpoll_codes.in: Likewise.
+	* xlat/smc_link_group_roles.in: Likewise.
+	* xlat/sock_netlink_options.in: Likewise.
+	* xlat/sock_pnp_options.in: Likewise.
+	* xlat/sock_tls_options.in: Likewise.
+	* xlat/socketcalls.in: Likewise.
+	* xlat/tcp_states.in: Likewise.
+	* xlat/uring_register_opcodes.in: Likewise.
+	* tests/socketcall.c (main): Update assertion.
+
+2019-08-14  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	Replace direct usage of err_name/errnoent with print_err.
+	Introduce print_err function that prints error number respecting current
+	xlat verbosity settings, and switch err_name/errnoent callers to use
+	this new function instead.
+
+	* defs.h (err_name): Remove.
+	(print_err): New declaration.
+	* print_fields.h (PRINT_FIELD_ERR_D, PRINT_FIELD_ERR_U): New macros.
+	* syscall.c (err_name): Add static qualifier, change argument type
+	to uint64_t.
+	(print_err): New function.
+	* keyctl.c (keyctl_reject_key): Use print_err for printing error
+	argument.
+	* net.c (print_get_error): Use print_err for printing err.
+	* numa.c (print_status): Use print_err for printing errno.
+	* netlink.c: Include "print_fields.h".
+	(decode_nlmsgerr): Use PRINT_FIELD_ERR_D for printing errno field.
+	* printsiginfo.c: Include "print_fields.h".
+	(print_si_info): Use PRINT_FIELD_ERR_U for printing si_errno field.
+	* ptrace_syscall_info.c (print_ptrace_syscall_info): Use
+	PRINT_FIELD_ERR_D for printing info.exit.rval.
+	* tests/pidfd_send_signal.c (main): Update expected output.
+	* tests/ptrace.c (main): Likewise.
+
+	Co-Authored-by: Dmitry V. Levin <ldv@altlinux.org>
+
+2019-08-13  Dmitry V. Levin  <ldv@altlinux.org>
+
+	netlink_unix_diag: implement UDIAG_SHOW_UID/UNIX_DIAG_UID decoding.
+	... introduced by Linux kernel commit v5.3-rc1~140^2~467.
+
+	* linux/unix_diag.h (UDIAG_SHOW_UID, UNIX_DIAG_FIRST_UNUSED): New macro
+	constants.
+	(UNIX_DIAG_UID): New enum constant.
+	* xlat/unix_diag_attrs.in: Add UNIX_DIAG_UID.
+	* xlat/unix_diag_show.in: Add UDIAG_SHOW_UID.
+	* netlink_unix_diag.c (unix_diag_msg_nla_decoders): Handle
+	UNIX_DIAG_UID.
+	* NEWS: Mention this.
+	* tests/nlattr.c (test_nlattr, test_nla_type): Replace
+	UNIX_DIAG_SHUTDOWN + 1 with UNIX_DIAG_FIRST_UNUSED.
+
+2019-08-13  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	netlink_route: implement RTM_{NEW,DEL,GET}CHAIN decoding.
+	* xlat/nl_route_types.in (RTM_NEWCHAIN, RTM_DELCHAIN, RTM_GETCHAIN): New
+	constants introduced by Linux kernel commit v4.19-rc1~140^2~279^2~9.
+	* netlink_route.c (route_decoders) <[RTM_NEWCHAIN - RTM_BASE],
+	[RTM_DELCHAIN - RTM_BASE], [RTM_GETCHAIN - RTM_BASE]>: Invoke
+	decode_tcmsg.
+	* NEWS: Mention this.
+
+2019-08-13  Dmitry V. Levin  <ldv@altlinux.org>
+
+	xlat: update TCP_* constants.
+	* xlat/sock_tcp_options.in (TCP_TX_DELAY): New constant introduced
+	by Linux kernel commit v5.3-rc1~140^2~269.
+	* NEWS: Mention this.
+
+	xlat: update *_MAGIC constants.
+	* xlat/fsmagic.in (Z3FOLD_MAGIC): New constant introduced
+	by Linux kernel commit v5.3-rc1~31^2~30.
+	(DMA_BUF_MAGIC): New constant introduced by Linux kernel commit
+	v5.3-rc1~22^2~20^2~42.
+	* NEWS: Mention this.
+
+	xlat: update KVM_CAP_* constants.
+	* xlat/kvm_cap.in (KVM_CAP_PMU_EVENT_FILTER): New constant introduced
+	by Linux kernel commit v5.3-rc1~115^2~5.
+	* NEWS: Mention this.
+
+	xlat: update KEYCTL_* constants.
+	* xlat/keyctl_commands.in (KEYCTL_PKEY_QUERY, KEYCTL_PKEY_ENCRYPT,
+	KEYCTL_PKEY_DECRYPT, KEYCTL_PKEY_SIGN, KEYCTL_PKEY_VERIFY): New
+	constants introduced by Linux kernel commit v4.20-rc1~29^2~20.
+	(KEYCTL_MOVE): New constant introduced by Linux kernel commit
+	v5.3-rc1~189^2~3.
+	(KEYCTL_CAPABILITIES): New constant introduced by Linux kernel commit
+	v5.3-rc1~189^2.
+	* NEWS: Mention this.
+
+	xlat: update BPF_* constants.
+	* xlat/bpf_attach_type.in (BPF_CGROUP_GETSOCKOPT,
+	BPF_CGROUP_SETSOCKOPT): New constants introduced by Linux kernel commit
+	v5.3-rc1~140^2~65^2~8^2~8.
+	* xlat/bpf_prog_flags.in (BPF_F_TEST_RND_HI32): New constant
+	introduced by Linux kernel commit v5.3-rc1~140^2~371^2~28^2~12.
+	* xlat/bpf_prog_types.in (BPF_PROG_TYPE_CGROUP_SOCKOPT): New constant
+	introduced by Linux kernel commit v5.3-rc1~140^2~65^2~8^2~8.
+	* NEWS: Mention this.
+	* tests/bpf.c (print_BPF_PROG_LOAD_attr3, print_BPF_PROG_LOAD_attr4,
+	BPF_PROG_LOAD_checks, BPF_PROG_QUERY_checks): Update expected output.
+	* tests/kernel_version.c (print_bpf_attr, main): Likewise.
+
+	xlat: update XDP_* constants.
+	* xlat/sock_xdp_options.in (XDP_OPTIONS): New constant introduced
+	by Linux kernel commit v5.3-rc1~140^2~65^2~9^2~13.
+
+	xlat: update ETH_* constants.
+	* xlat/ethernet_protocols.in (ETH_P_LLDP): New constant introduced
+	by Linux kernel commit v5.3-rc1~140^2~329^2~6.
+
+2019-08-11  Dmitry V. Levin  <ldv@altlinux.org>
+
+	xlat: update SO_* constants.
+	* xlat/sock_options.in (SO_BINDTOIFINDEX): New constant introduced
+	by Linux commit v5.1-rc1~178^2~508.
+	(SO_RCVTIMEO_NEW, SO_SNDTIMEO_NEW): New constants introduced by Linux
+	commit v5.1-rc1~178^2~363^2.
+	(SO_DETACH_REUSEPORT_BPF): New constant introduced by Linux commit
+	v5.3-rc1~140^2~179^2~12.
+
+	* xlat/setsock_options.in: Regenerate using maint/gen_xlat_defs.sh.
+
+2019-08-11  Dmitry V. Levin  <ldv@altlinux.org>
+
+	xlat: provide fallback definition for MAP_UNINITIALIZED.
+	Linux commit v5.3-rc1~65^2~86 fixed the definition of MAP_UNINITIALIZED
+	flag that used to depend on CONFIG_MMAP_ALLOW_UNINITIALIZED.
+
+	* xlat/mmap_flags.in (MAP_UNINITIALIZED): Add fallback definition.
+
+2019-08-08  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	count: add ability to sort on errors field.
+	For completeness.
+
+	* count.c (error_cmp): New function.
+	(set_sortby): Add sort keys for errors field.
+	* strace.1.in (.SH OPTIONS) <-S>: Document it.
+	* strace.c (usage): Likewise.
+	* tests/strace-S.test: Check it.
+
+	Co-Authored-by: Dmitry V. Levin <ldv@altlinux.org>
+
+2019-08-06  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	count: provide alternative names for sorting options.
+	as some might be easier to remember than others.
+
+	* count.c (set_sortby): Add aliases for the existing sorting options.
+	* strace.1.in (.SH OPTIONS) <-S>: Document new aliases.
+	* tests/strace-S.test: Check new sort keys.
+
+	Co-Authored-by: Dmitry V. Levin <ldv@altlinux.org>
+
+2019-08-06  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	count: rewrite sort function selection using a table.
+	* count.c (set_sortby): Replace nested if's with iteration over a table.
+
+	Co-Authored-by: Dmitry V. Levin <ldv@altlinux.org>
+
+2019-08-06  Dmitry V. Levin  <ldv@altlinux.org>
+
+	tests: extend -S option check.
+	* tests/strace-S.test: Check default sorting method and "-S time".
+
+2019-08-06  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	syscall: track syscall system time a bit more explicitly.
+	Before, it relied on implicit assumptions that syscall-exit event is
+	right the next one after syscall-enter.  Also, there's some additional
+	debugging output that might help someone someday.
+
+	* count.c (count_syscall): Calculate system time as difference of tcp's
+	stime and ltime.
+	* defs.h (struct tcb): Add ltime, atime fields, remove dtime.
+	* strace.c (droptcb): Print total system time spent by a tcb.
+	(startup_tcb): Store initial system time in atime.
+	(next_event): Update stime directly.
+	* syscall.c (syscall_entering_finish): Store current system time in
+	tcb's ltime field.
+	(syscall_exiting_finish): Likewise.
+
+2019-08-06  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	count: substract overhead per call.
+	* count.c (zero_ts): New variable.
+	(count_syscall): Calculate the spent time in the wts variable, then add
+	it to cc->time.
+	(call_summary_pers): Do not perform overhead correction.
+
+2019-08-06  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	util: add ts_min and ts_max.
+	* defs.h (ts_min, ts_max): New declarations.
+	* util.c (ts_min, ts_max): New functions.
+
+	Co-Authored-by: Dmitry V. Levin <ldv@altlinux.org>
+
+2019-08-06  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	count: use parse_ts for parsing overhead value.
+	* count.c (set_overhead): Change argument type to const char *, call
+	parse_ts to parse it and set to overhead.
+	* defs.h (set_overhead): Update declaration.
+	* strace.c: (init) <case 'O'>: do not parse argument, pass optarg to
+	set_overhead call.
+	* tests/count.test (GENERIC, WALLCLOCK, WALLCLOCK1, HALFCLOCK): New
+	variables with expected patterns.
+	Add checks for the new -O syntax.
+
+	delay: use parse_ts for parsing delay value.
+	* delay.c (fill_delay_data): Change intval argument to struct timespec
+	*val, assign val to ts.
+	* delay.h (fill_delay_data): Update function declaration.
+	* filter_qualify.c (parse_delay_token): Parse input with parse_ts,
+	supply the resulting struct timespec to fill_delay_data.
+	* tests/delay.c (check_): New function for providing diagnostic in case
+	of check failure.
+	(check_delay): Use it.
+	* tests/delay.test: Check new delay syntax.
+
+	util.c: add parse_ts.
+	* defs.h (parse_ts): New declaration.
+	* util.c (parse_ts): New function.
+
+2019-08-06  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	count: fix types in sorting comparison callbacks.
+	* count.c (time_cmp. syscall_cmp): Change arguments type
+	to "const void *", change indices cast type to "unsigned int *".
+	(count cmp): Likewise.  Change count variables type to unsigned int.
+	(sortfun): Specify types of arguments.
+
+	Co-Authored-by: Dmitry V. Levin <ldv@altlinux.org>
+
+2019-08-05  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	v4l2: improve control ID printing.
+	Control ID space is hierarchical, so, higher bits provide information
+	about control class.
+
+	* v4l2.c (print_v4l2_cid): New function.
+	(print_v4l2_control): Use print_v4l2_cid for printing control ID field.
+	* tests/ioctl_v4l2.c: Add checks for control ID printing.
+
+2019-08-05  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	tests: add syslog-success test.
+	* tests/.gitignore: Add syslog-success
+	* tests/Makefile.am (check_PROGRAMS): Likewise.
+	(DECODER_TESTS): Add syslog-success.test.
+	* tests/syslog-success.c: New file.
+	* tests/syslog-success.test: New test.
+	* tests/syslog.c: Add support for running under syscall retval
+	injection, add checks.
+
+	syslog: decode log level in SYSLOG_ACTION_CONSOLE_LEVEL command.
+	* xlat/syslog_console_levels.in: New file.
+	* syslog.c: Include "xlat/syslog_console_levels.h".
+	(SYS_FUNC(syslog)): Add SYSLOG_ACTION_CONSOLE_LEVEL case.
+	* tests/syslog.c: Add checks.
+
+	syslog: fix argument printing.
+	* syslog.c (SYS_FUNC(syslog)): Store conversion to int of tcp->u_arg[2]
+	in len; print address using printaddr64 (as syslog doesn't use compat
+	for x32), and third argument as int (as it has this type in the syscall
+	handler).
+	* tests/syslog.c: Add checks.
+
+	syslog: do not print bufp and len for commands that ignore them.
+	* syslog.c (SYS_FUNC(syslog)): Defer printing of comma after the first
+	argument to the specific command handlers, return RVAL_DECODED without
+	additional printing for SYSLOG_ACTION_CLOSE, SYSLOG_ACTION_OPEN,
+	SYSLOG_ACTION_CLEAR, SYSLOG_ACTION_CONSOLE_OFF,
+	SYSLOG_ACTION_CONSOLE_ON, SYSLOG_ACTION_SIZE_UNREAD,
+	SYSLOG_ACTION_SIZE_BUFFER.
+	* tests/syslog.c: Add checks.
+
+	syslog: fix switch statement indentation.
+	* syslog.c (SYS_FUNC(syslog)): Decrease indentation level of case
+	clauses in the switch statement.
+
+	syslog: print syslog command with verbose style, as it is not in UAPI.
+	* syslog.c (SYS_FUNC(syslog)): Print syslog_action_type using
+	XLAT_STYLE_VERBOSE.
+	* tests/syslog.c: Update expected output.
+
+2019-08-05  Dmitry V. Levin  <ldv@altlinux.org>
+
+	tests: update hppa workaround in remap_file_pages test.
+	... to cater for the change of MAP_TYPE on hppa introduced
+	by Linux kernel commit v4.17-rc1~146^2~9.
+
+	* tests/remap_file_pages.c (main) [__hppa__ && MAP_TYPE != 0x03]
+	(MAP_TYPE_str): Define to "0x2b /* MAP_??? */".
+
+2019-08-05  Dmitry V. Levin  <ldv@altlinux.org>
+
+	Remove AUDIT_ARCH_* fallback definitions from arch_get_personality.c files
+	Since xlat/audit_arch.h provides definitions for all AUDIT_ARCH_*
+	constants, remove their fallback definitions from other files.
+
+	* get_personality.c [SUPPORTED_PERSONALITIES > 1]: Include
+	"xlat/elf_em.h" and "xlat/audit_arch.h" under XLAT_MACROS_ONLY.
+	* linux/aarch64/arch_get_personality.c (AUDIT_ARCH_ARM): Remove.
+	* linux/powerpc64/arch_get_personality.c (AUDIT_ARCH_PPC): Remove.
+	* linux/riscv/arch_get_personality.c (AUDIT_ARCH_RISCV32): Remove.
+	* linux/s390x/arch_get_personality.c (AUDIT_ARCH_S390): Remove.
+	* linux/sparc64/arch_get_personality.c (AUDIT_ARCH_SPARC): Remove.
+	* linux/tile/arch_get_personality.c (AUDIT_ARCH_TILEGX32,
+	AUDIT_ARCH_TILEPRO): Remove.
+	* linux/x86_64/arch_get_personality.c (AUDIT_ARCH_I386): Remove.
+
+2019-08-05  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	xlat: update audit_arch.in.
+	* xlat/audit_arch.in: Add fallback definitions.
+	(__AUDIT_ARCH_CONVENTION_MIPS64_N32, __AUDIT_ARCH_64BIT,
+	__AUDIT_ARCH_LE): New macros.
+	(AUDIT_ARCH_V850): New constant.
+
+	Co-Authored-by: Dmitry V. Levin <ldv@altlinux.org>
+
+2019-08-05  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	xlat: add elf_em.in.
+	For now, it's a source of fallback values for AUDIT_ARCH_* constants.
+
+	* xlat/elf_em.in: New file.
+	* xlat/audit_arch.in (AUDIT_ARCH_ARM, AUDIT_ARCH_ARMEB, AUDIT_ARCH_FRV,
+	AUDIT_ARCH_MICROBLAZE, AUDIT_ARCH_OPENRISC): Define unconditionally.
+	* printsiginfo.c: Include "xlat/elf_em.h".
+	* tests/ptrace_syscall_info.c: Likewise.
+
+	Co-Authored-by: Dmitry V. Levin <ldv@altlinux.org>
+
+2019-08-04  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	strace.c: sync up strace -h message with the man page.
+	Especially synopsis.
+
+	* strace.c (usage): copy synopsis over from the man page; add "-A"
+	and "-qq" options description.
+
+2019-08-04  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	strace.1.in: add missing options to synopsis.
+	* strace.1.in (.SH SYNOPSIS): add second "-q", "-w", second "-y", "-z",
+	and "-Z" to normal call variant; add "-w", "-z" and "-Z" to syscall
+	statistics call variant.
+
+	strace.c: split lines in strace -h output to fit into 80 columns.
+	* strace.c (usage): split "-yy", "-c", "-e" options descriptions to fit
+	into 80 columns width.
+
+2019-08-04  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	strace.c: move -v to Output format section in strace -h message.
+	And also reword it into a more general and concise form in order to fit
+	into 80-columnt width.
+
+	* strace.c (usage): Move "-v" option to the "Output format" option of
+	the help message, reword its description.
+
+2019-08-04  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	strace.c: add "-k" to strace -h list of options.
+	It is mentioned in the "Output format" section below, but not in the
+	usage section.
+
+	* strace.c (usage): Define K_OPT macro with a value that depends
+	on ENABLE_STACKTRACE macro presence, use it in the help output, undefine
+	it.
+
+2019-08-04  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	strace.1.in: rewrite supported -e status options in a more compact form.
+	* strace.1.in (.SS Filtering): Rewrite -e status value options in a
+	sublist.
+
+2019-08-04  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	strace.1.in: reformat mpers support matrix table.
+	In order to make it much less wider.
+
+	* strace.1.in (.SH MULTIPLE PERSONALITY SUPPORT): Move additional text
+	in x86_64 line to notes under the table, clarify PowerPC specifics.
+
+2019-08-04  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	strace.1.in: compact small named lists.
+	And also rewrite nested .RS/.RE abomination.
+
+	* strace.1.in (.SS Output format): compact -X option values variants
+	using ".TQ".
+	(.SS Tampering): Rewrite -e inject=:when= expression variants using
+	".TP"/".TQ".
+	(.SH MULTIPLE PERSONALITY SUPPORT): compact optional features list using
+	".TQ".
+
+2019-08-04  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	strace.1.in: rewrite conditional parts.
+	The current implementation doesn't work as intended since in case the
+	condition is false, .ig has no effect and it results in "warning: macro
+	'end_unwind_opt' not defined".  Rewrite it into something more dumb and
+	verbose, but hopefully correct.
+
+	* strace.1.in (.SH SYNOPSYS, .SS Output format): Prepend each
+	conditional line with respective ".if" instead of trying to wrap
+	it in ".ig".
+
+2019-08-04  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	strace.1.in: add AUTHORS section.
+	* strace.1.in: Add .SH AUTHORS, refer to the CREDITS file.
+
+	strace.1.in: add a link to the current project's home page.
+	* strace.1.in (.SH SEE ALSO): Add a link to strace's home page.
+
+2019-08-04  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	strace.1.in: reorder options.
+	In an attempt to make the order more sensible.
+
+	* strace.1.in (.SH OPTIONS): Insert ".SS General" at the beginning of
+	the section; move ".SS Startup" after ".SS General"; move ".SS Tracing"
+	after ".SS Startup"; move ".SS Filtering" after ".SS Startup"; insert
+	".SS Tampering" after ".SS Statistics"; move "-e expr" from ".SS
+	Filtering" to ".SS General"; move "-e abbrev", "-e verbose", "-e raw",
+	"-e read", "-e write", "-e kvm=vcpu" and "-v" from ".SS Filtering"
+	to ".SS Output format"; move "-e inject" and "-e fault" from
+	".SS Filtering" to ".SS Tampering".
+
+2019-08-04  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	Treat PowerPC 64 LE as a separate architecture.
+	That seems to be the easiest way to properly handle the fact that
+	PPC64LE does not have a meaningful m32 personality.
+
+	* configure.ac: Move AC_C_BIGENDIAN before arch detection; determine
+	powerpc64/powerpc64le arch based on $ac_cv_c_bigendian value.
+	* linux/dummy.h [POWERPC64LE] (sys_oldselect): Redirect to printargs.
+	* linux/powerpc64le/arch_defs_.h: New file.
+	* linux/powerpc64le/arch_regs.c: Likewise.
+	* linux/powerpc64le/arch_rt_sigframe.c: Likewise.
+	* linux/powerpc64le/errnoent.h: Likewise.
+	* linux/powerpc64le/get_error.c: Likewise.
+	* linux/powerpc64le/get_scno.c: Likewise.
+	* linux/powerpc64le/get_syscall_args.c: Likewise.
+	* linux/powerpc64le/ioctls_arch0.h: Likewise.
+	* linux/powerpc64le/ioctls_inc0.h: Likewise.
+	* linux/powerpc64le/raw_syscall.h: Likewise.
+	* linux/powerpc64le/rt_sigframe.h: Likewise.
+	* linux/powerpc64le/set_error.c: Likewise.
+	* linux/powerpc64le/set_scno.c: Likewise.
+	* linux/powerpc64le/syscallent.h: Likewise.
+	* linux/powerpc64le/userent.h: Likewise.
+	* Makefile.am (EXTRA_DIST): Add them.
+	* tests/ipc_msg.c: Check for POWERPC64LE definition in addition to
+	POWERPC64.
+	* util.c (getllval): Add check for POWERPC64LE definition in addition to
+	POWERPC64.
+	* strace.1.in (.SH MULTIPLE PERSONALITY SUPPORT): Mention that only big
+	endian PowerPC 64 has mpers support.
+
+	Co-Authored-by: Dmitry V. Levin <ldv@altlinux.org>
+
+2019-08-04  Pierre Marsais  <pierre.marsais@lse.epita.fr>
+
+	Fix invalid free in trace_close_memstream.
+	In maybe_switch_tcbs we exchange the pointers to the memstream's buffers
+	between 2 tcb, however the libc doesn't know and keeps updating the
+	tcb->memfptr as if the exchange didn't happen.  This leads to
+	unsynchronized tcb->memfptr and tcb->outf and invalid frees.
+	Adding a new indirection fixes the problem.
+
+	* stage_output.c (struct staged_output_data): New struct.
+	(strace_open_memstream, strace_close_memstream): Use it.
+	* defs.h (struct tcb): Replace real_outf, memfptr, and memfloc
+	with a pointer to struct staged_output_data.
+	* strace.c (maybe_switch_tcbs): Use it.
+	* syscall.c (print_syscall_resume): Ditto.
+
+2019-08-04  Dmitry V. Levin  <ldv@altlinux.org>
+
+	tests: fix expected output for some ipc tests.
+	* tests/gen_tests.in (ipc_msgbuf-Xraw, ipc_shm, ipc_shm-Xabbrev,
+	ipc_shm-Xverbose): Adjust -a argument.
+
+2019-08-02  Dmitry V. Levin  <ldv@altlinux.org>
+
+	tests: check the latest MSG_TRUNC decoding fix.
+	* tests/recv-MSG_TRUNC.c: New file.
+	* tests/recvfrom-MSG_TRUNC.c: Likewise.
+	* tests/gen_tests.in (recv-MSG_TRUNC, recvfrom-MSG_TRUNC): New entries.
+	* tests/pure_executables.list: Add recv-MSG_TRUNC and
+	recvfrom-MSG_TRUNC.
+	* tests/.gitignore: Likewise.
+
+2019-08-02  Jeremy Kerr  <jk@ozlabs.org>
+
+	net: Fix access beyond tracee buffer for MSG_TRUNC receives.
+	The recv(), recvfrom() and recvmsg() calls allow a MSG_TRUNC flag, which
+	indicates that the kernel should return the available size of an
+	incoming message, rather than the received size.
+
+	When strace-ing a truncated recv(), strace will try to access a
+	return-value size area of the tracee's buffer, which may be larger than
+	the actual buffer:
+
+	  $ obj/strace -e trace=recvfrom ~/tmp/recv-test
+	  recvfrom(3, "\1\2\3\4\0\0\0\0", 4, MSG_TRUNC, NULL, NULL) = 8
+
+	If I add a non-readable guard page after the tracee's recv buffer, we
+	see strace failing to read the vm area:
+
+	  $ obj/strace -e trace=recvfrom ~/tmp/recv-test+guard
+	  recvfrom(3, obj/strace: umoven: short read (4 < 8) @0x7f0b0d7ddffc
+	  0x7f0b0d7ddffc, 4, MSG_TRUNC, NULL, NULL) = 8
+
+	This change restricts the maximum read size to the size of the tracee's
+	actual buffer.
+
+	The recvmsg() handler will do the right thing by using the .iov_len
+	data, so no change is required there.
+
+	* net.c (sys_recv, sys_recvfrom): Clamp maximum sockbuf size.
+
+2019-07-24  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	Add xlat description structure.
+	Rename struct xlat to struct xlat_data and make struct xlat an xlat
+	descriptor that contains various information about xlat.
+	So far it's the type and the number of items.
+
+	As a result, xlookup/printxval now have enough information for handling
+	xlat depending on its type, so *index/*_search API is not needed any
+	longer.
+
+	* xlat.h (struct xlat_data): Rename from struct xlat.
+	(struct xlat): New type definition.
+	* xlat.c (xlat_search, printxval_sized, printxval_searchn_ex, xlat_idx,
+	printxval_indexn_ex, printxval_dispatch_ex): Remove.
+	(xlookup): Handle xlat_data based on xlat type.
+	(xlat_search_eq_or_less, xlookup_le): New functions.
+	(sprintflags_ex, printflags_ex): Update.
+	* xlat/gen.sh (gen_header): Add handling for #sorted, generate new
+	struct xlat descriptor.
+	* defs.h (arp_hardware_types_size, ethernet_protocols_size,
+	inet_protocols_size, evdev_abs_size, xlat_search, xlat_idx,
+	printxval_searchn_ex, printxval_searchn, printxval_search,
+	printxval_search_ex, printxval_indexn_ex, printxval_indexn,
+	printxval_index, printxval_index_ex, printxval_dispatch_ex,
+	printxval_dispatch): Remove.
+	(enum xlat_style_private_flag_bits): Remove PAF_INDEX_XLAT_SORTED_BIT
+	and PAF_INDEX_XLAT_VALUE_INDEXED_BIT.
+	(enum xlat_style_private_flag): Remove PAF_INDEX_XLAT_SORTED and
+	PAF_INDEX_XLAT_VALUE_INDEXED.
+	(print_array_ex): Remove index_xlat_size argument.
+	(xlookup_le): New declaration.
+	(printxval_ex): New macro.
+	* dyxlat.c (struct dyxlat): Remove used field (use xlat.size instead),
+	embed struct xlat, add pointer to struct xlat_data.
+	(MARK_END): Remove.
+	(dyxlat_alloc, dyxlat_free, dyxlat_get, dyxlat_add_pair): Update in
+	accordance with the structure changes.
+	* evdev.c (evdev_abs_size): Remove.
+	(keycode_ioctl): Use printxval instead of printxval_index.
+	(decode_bitset): Remove.
+	(decode_bitset_): Rename to decode_bitset, remove decode_nr_size and xt
+	arguments, call printxval instead of printxval_dispatch.
+	(bit_ioctl, evdev_read_ioctl): Do not pass xlat type to decode_bitset.
+	* fsconfig.c (SYS_FUNC(fsconfig)): Use printxval instead of
+	printxval_index.
+	* print_fields.h (PRINT_FIELD_XVAL_SORTED_SIZED,
+	PRINT_FIELD_XVAL_INDEX): Remove.
+	* nlattr.h (struct decode_nla_xlat_opts): Remove xlat_size and xt
+	fields.
+	* nlattr.c (decode_nla_meminfo): Do not pass
+	PAF_INDEX_XLAT_VALUE_INDEXED flag and netlink_sk_meminfo_indices size
+	in a print_array_ex call.
+	(decode_nla_xval): Call printxval_ex instead of printxval_dispatch_ex.
+	(decode_nla_ether_proto, decode_nla_ip_proto): Do not pass xlat_size and
+	xt fields in opts.
+	(decode_nla_flags): Remove XT_INDEXED unsupported warning.
+	* process.c (struct_user_offsets_data): Rename from struct_user_offsets,
+	change type to struct xlat_data[].
+	(struct_user_offsets): New xlat description.
+	(print_user_offset_addr): Rewrite using xlookup_le.
+	* util.c (print_array_ex): Remove index_xlat_size argument, simply call
+	printxval_ex for index printing.
+	* aio.c (tprint_lio_opcode): Use printxval_ex instead of
+	printxval_indexn_ex.
+	* bpf.c: Use printxval instead of printxval_index; use PRINT_FIELD_XVAL
+	instead of PRINT_FIELD_XVAL_INDEX.
+	* bpf_filter.c (print_bpf_filter_code): Use printxval instead of
+	printxval_index.
+	* ioctl.c (evdev_decode_number): Use printxval instead of
+	printxval_indexn.
+	* kvm.c (kvm_ioctl_decode_check_extension): Use printxval64 instead of
+	printxval_index.
+	(kvm_ioctl_run_attach_auxstr): Use xlookup instead of xlat_idx.
+	* net.c: Use printxval instead of printxval_search/printxval_index, use
+	printxval_ex instead of printxval_searchn_ex.
+	* netlink.c (get_fd_nl_family): Rewrite using xlat descriptor structure.
+	* netlink_packet_diag.c (decode_packet_diag_msg): Use PRINT_FIELD_XVAL
+	instead of PRINT_FIELD_XVAL_SORTED_SIZED.
+	* netlink_smc_diag.c (decode_smc_diag_shutdown): Remove ARRSZ_PAIR
+	wrapper.
+	(decode_smc_diag_fallback): Use printxval_ex instead of
+	printxval_search_ex.
+	(decode_smc_diag_msg): Use PRINT_FIELD_XVAL instead of
+	PRINT_FIELD_XVAL_INDEX.
+	* print_statfs.c (print_statfs_type): Use printxval instead of
+	printxval_search.
+	* ptrace_syscall_info.c (print_ptrace_syscall_info): Use
+	PRINT_FIELD_XVAL instead of PRINT_FIELD_XVAL_INDEX.
+	* rtnl_link.c (decode_ifla_inet6_flags, decode_ifla_inet6_agm):
+	Likewise.
+	(decode_nla_tun_type, decode_ifla_xdp_attached): Remove xlat_size,
+	xt fields.
+	(decode_ifla_inet_conf, decode_ifla_inet6_conf, decode_ifla_inet6_stats,
+	decode_ifla_inet6_icmp6_stats): Remove PAF_INDEX_XLAT_VALUE_INDEXED flag
+	and ARRSZ_PAIR wrapper in print_array_ex calls.
+	(decode_ifinfomsg): Use PRINT_FIELD_XVAL instead of
+	PRINT_FIELD_XVAL_SORTED_SIZED.
+	* rtnl_route.c (decode_nla_rt_proto): Use printxval instead of
+	printxval_search.
+	* sock.c (print_ifreq): Use PRINT_FIELD_XVAL instead of
+	PRINT_FIELD_XVAL_SORTED_SIZED.
+	* sockaddr.c (print_sockaddr_data_ll, print_sockaddr_data_bt,
+	print_sockaddr): Use printxval instead of printxval_search and
+	printxval_index.
+	* time.c (getitimer, osf_getitimer, setitimer, osf_setitimer,
+	printclockname): Use printxval instead of printxval_index.
+	(do_adjtimex): Use xlookup instead of xlat_idx.
+	* tests/btrfs.c: Update xlat handling, use struct xlat_data instead of
+	struct xlat for XLAT() arrays.
+	* tests/ioctl_block.c: Likewise.
+	* tests/ioctl_rtc.c: Likewise.
+	* tests/printflags.c: Likewise.
+	* tests/printxval.c: Likewise.
+	* tests/prlimit64.c: Likewise.
+	* tests/setrlimit.c: Likewise.
+	* tests/socketcall.c: Likewise.
+	* tests/xgetrlimit.c: Likewise.
+	* tests/xstatfsx.c: Likewise.
+	* xlat/af_packet_versions.in: Add #value_indexed.
+	* xlat/arp_hardware_types.in: Add #sorted.
+	* xlat/ax25_protocols.in: Likewise.
+	* xlat/bluetooth_l2_cid.in: Likewise.
+	* xlat/bluetooth_l2_psm.in: Likewise.
+	* xlat/ethernet_protocols.in: Likewise.
+	* xlat/evdev_ff_types.in: Likewise.
+	* xlat/fsmagic.in: Likewise.
+	* xlat/hw_breakpoint_type.in: Likewise.
+	* xlat/iffflags.in: Likewise.
+	* xlat/inet6_if_flags.in: Likewise.
+	* xlat/inet_protocols.in: Likewise.
+	* xlat/msgctl_flags.in: Likewise.
+	* xlat/perf_hw_cache_id.in: Likewise.
+	* xlat/perf_hw_cache_op_id.in: Likewise.
+	* xlat/perf_hw_cache_op_result_id.in: Likewise.
+	* xlat/perf_hw_id.in: Likewise.
+	* xlat/perf_sw_ids.in: Likewise.
+	* xlat/perf_type_id.in: Likewise.
+	* xlat/routing_protocols.in: Likewise.
+	* xlat/semctl_flags.in: Likewise.
+	* xlat/shmctl_flags.in: Likewise.
+	* xlat/smc_decl_codes.in: Likewise.
+	* xlat/sock_ax25_options.in: Likewise.
+	* xlat/sock_bluetooth_options.in: Likewise.
+	* xlat/sock_dccp_options.in: Likewise.
+	* xlat/sock_tipc_options.in: Likewise.
+	* xlat/socketlayers.in: Likewise.
+	* xlat/v4l2_control_classes.in: Likewise.
+	* xlat/v4l2_pix_fmts.in: Likewise.
+	* xlat/v4l2_sdr_fmts.in: Likewise.
+
+	Co-Authored-by: Dmitry V. Levin <ldv@altlinux.org>
+
+2019-07-23  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	NEWS: retroactively mention that -z/-Z fix addresses Debian bug #176376.
+
+	xlat/v4l2_pix_fmts.in: work around V4L2_PIX_FMT_BGRA444 value change.
+	* xlat/v4l2_pix_fmts.in: Undefine V4L2_PIX_FMT_BGRA444 as it has changed
+	its value in Linux commit v5.2-rc5-403-g22be8233b34f.
+
+2019-07-18  Anatoly Pugachev  <matorola@gmail.com>
+
+	README-configure: recommend 'make -k check' instead of 'make check'
+	* maint/install.texi: Replace 'make check' with 'make -k check'.
+	* README-configure: Regenerate.
+
+2019-07-18  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	Generalise hardware address printing.
+	* defs.h [!MAX_ADDR_LEN] (MAX_ADDR_LEN): New macro.
+	(sprint_hwaddr): New declaration.
+	(print_hwaddr): New inline function, a wrapper for sprint_hwaddr.
+	* print_fields.h (PRINT_FIELD_HWADDR_SZ): New macro.
+	* print_mac.c: Include "xlat/arp_hardware_types.h" under
+	XLAT_MACROS_ONLY.
+	[!MAX_ADDR_LEN] (MAX_ADDR_LEN): Remove.
+	(sprint_hwaddr): New function.
+	* sock.c (print_ifreq) <SIOCSIFHWADDR, SIOCGIFHWADDR>: Print hardware
+	address using PRINT_FIELD_HWADDR_SZ.
+
+	open: implement sprint_open_modes using sprintflags_ex.
+	* defs.h (sprintflags_ex): Add "sep" argument.
+	(sprintflags): Pass '\0' in "sep" argument.
+	* open.c (sprint_open_modes): Use sprintflags_ex for printing
+	open_mode_flags.
+	* xlat.c (sprintflags_ex): Add "sep" argument, use it as initial
+	separator (if not nul).
+
+2019-07-16  Dmitry V. Levin  <ldv@altlinux.org>
+
+	Consistently define __NR_* constants.
+	Include <asm/unistd.h> from "scno.h", include "scno.h" instead of
+	<asm/unistd.h>, do not include <asm/unistd.h> where "scno.h" is already
+	included.
+
+	* scno.head: Include <asm/unistd.h>.
+	* clone.c: Include "scno.h" instead of <asm/unistd.h>.
+	* syscall.c: Likewise.
+	* tests/_newselect.c: Likewise.
+	* tests/accept.c: Likewise.
+	* tests/accept_compat.h: Likewise.
+	* tests/access.c: Likewise.
+	* tests/acct.c: Likewise.
+	* tests/aio.c: Likewise.
+	* tests/alarm.c: Likewise.
+	* tests/answer.c: Likewise.
+	* tests/attach-f-p.c: Likewise.
+	* tests/brk.c: Likewise.
+	* tests/chmod.c: Likewise.
+	* tests/chown.c: Likewise.
+	* tests/chown32.c: Likewise.
+	* tests/chroot.c: Likewise.
+	* tests/clock_adjtime.c: Likewise.
+	* tests/clock_nanosleep.c: Likewise.
+	* tests/clock_xettime.c: Likewise.
+	* tests/creat.c: Likewise.
+	* tests/delay.c: Likewise.
+	* tests/delete_module.c: Likewise.
+	* tests/dev-yy.c: Likewise.
+	* tests/dup2.c: Likewise.
+	* tests/dup3.c: Likewise.
+	* tests/epoll_create.c: Likewise.
+	* tests/epoll_create1.c: Likewise.
+	* tests/epoll_ctl.c: Likewise.
+	* tests/epoll_pwait.c: Likewise.
+	* tests/epoll_wait.c: Likewise.
+	* tests/eventfd.c: Likewise.
+	* tests/faccessat.c: Likewise.
+	* tests/fadvise64.c: Likewise.
+	* tests/fadvise64_64.c: Likewise.
+	* tests/fallocate.c: Likewise.
+	* tests/fanotify_init.c: Likewise.
+	* tests/fanotify_mark.c: Likewise.
+	* tests/fchdir.c: Likewise.
+	* tests/fchmod.c: Likewise.
+	* tests/fchmodat.c: Likewise.
+	* tests/fchown.c: Likewise.
+	* tests/fchown32.c: Likewise.
+	* tests/fchownat.c: Likewise.
+	* tests/fcntl.c: Likewise.
+	* tests/fcntl64.c: Likewise.
+	* tests/fdatasync.c: Likewise.
+	* tests/file_handle.c: Likewise.
+	* tests/flock.c: Likewise.
+	* tests/fstat.c: Likewise.
+	* tests/fstat64.c: Likewise.
+	* tests/fstatat64.c: Likewise.
+	* tests/fstatfs.c: Likewise.
+	* tests/fstatfs64.c: Likewise.
+	* tests/fsync.c: Likewise.
+	* tests/ftruncate.c: Likewise.
+	* tests/ftruncate64.c: Likewise.
+	* tests/futex.c: Likewise.
+	* tests/futimesat.c: Likewise.
+	* tests/get_mempolicy.c: Likewise.
+	* tests/get_sigset_size.c: Likewise.
+	* tests/getcpu.c: Likewise.
+	* tests/getcwd.c: Likewise.
+	* tests/getdents.c: Likewise.
+	* tests/getdents64.c: Likewise.
+	* tests/getegid32.c: Likewise.
+	* tests/geteuid32.c: Likewise.
+	* tests/getgid.c: Likewise.
+	* tests/getgid32.c: Likewise.
+	* tests/getgroups.c: Likewise.
+	* tests/getgroups32.c: Likewise.
+	* tests/getpgrp.c: Likewise.
+	* tests/getpid.c: Likewise.
+	* tests/getrandom.c: Likewise.
+	* tests/getresgid.c: Likewise.
+	* tests/getresgid32.c: Likewise.
+	* tests/getresuid.c: Likewise.
+	* tests/getresuid32.c: Likewise.
+	* tests/getrlimit.c: Likewise.
+	* tests/getrusage.c: Likewise.
+	* tests/gettid.c: Likewise.
+	* tests/getuid.c: Likewise.
+	* tests/getuid32.c: Likewise.
+	* tests/getxxid.c: Likewise.
+	* tests/init_module.c: Likewise.
+	* tests/inject-nf.c: Likewise.
+	* tests/inotify.c: Likewise.
+	* tests/inotify_init1.c: Likewise.
+	* tests/ioctl_inotify.c: Likewise.
+	* tests/ioctl_loop.c: Likewise.
+	* tests/ioctl_perf.c: Likewise.
+	* tests/ioctl_uffdio.c: Likewise.
+	* tests/ioperm.c: Likewise.
+	* tests/iopl.c: Likewise.
+	* tests/ioprio.c: Likewise.
+	* tests/ipc.c: Likewise.
+	* tests/ipc_msgbuf.c: Likewise.
+	* tests/kexec_load.c: Likewise.
+	* tests/keyctl.c: Likewise.
+	* tests/kill.c: Likewise.
+	* tests/ksysent.c: Likewise.
+	* tests/lchown.c: Likewise.
+	* tests/lchown32.c: Likewise.
+	* tests/libmmsg.c: Likewise.
+	* tests/libsocketcall.c: Likewise.
+	* tests/link.c: Likewise.
+	* tests/linkat.c: Likewise.
+	* tests/llseek.c: Likewise.
+	* tests/localtime.c: Likewise.
+	* tests/lookup_dcookie.c: Likewise.
+	* tests/lseek.c: Likewise.
+	* tests/lstat.c: Likewise.
+	* tests/lstat64.c: Likewise.
+	* tests/madvise.c: Likewise.
+	* tests/migrate_pages.c: Likewise.
+	* tests/mkdir.c: Likewise.
+	* tests/mkdirat.c: Likewise.
+	* tests/mknod.c: Likewise.
+	* tests/mknodat.c: Likewise.
+	* tests/mlock.c: Likewise.
+	* tests/modify_ldt.c: Likewise.
+	* tests/move_pages.c: Likewise.
+	* tests/mq_sendrecv.c: Likewise.
+	* tests/newfstatat.c: Likewise.
+	* tests/nsyscalls.c: Likewise.
+	* tests/old_mmap.c: Likewise.
+	* tests/oldfstat.c: Likewise.
+	* tests/oldlstat.c: Likewise.
+	* tests/oldselect-efault.c: Likewise.
+	* tests/oldselect.c: Likewise.
+	* tests/oldstat.c: Likewise.
+	* tests/open.c: Likewise.
+	* tests/openat.c: Likewise.
+	* tests/osf_utimes.c: Likewise.
+	* tests/pause.c: Likewise.
+	* tests/perf_event_open.c: Likewise.
+	* tests/perf_event_open_nonverbose.c: Likewise.
+	* tests/pipe.c: Likewise.
+	* tests/pipe2.c: Likewise.
+	* tests/poll.c: Likewise.
+	* tests/ppoll.c: Likewise.
+	* tests/prctl-arg2-intptr.c: Likewise.
+	* tests/prctl-dumpable.c: Likewise.
+	* tests/prctl-no-args.c: Likewise.
+	* tests/prctl-pdeathsig.c: Likewise.
+	* tests/prctl-seccomp-filter-v.c: Likewise.
+	* tests/prctl-seccomp-strict.c: Likewise.
+	* tests/prctl-securebits.c: Likewise.
+	* tests/prctl-spec-inject.c: Likewise.
+	* tests/prctl-tid_address.c: Likewise.
+	* tests/prctl-tsc.c: Likewise.
+	* tests/prlimit64.c: Likewise.
+	* tests/process_vm_readv.c: Likewise.
+	* tests/process_vm_writev.c: Likewise.
+	* tests/pselect6.c: Likewise.
+	* tests/ptrace.c: Likewise.
+	* tests/qual_inject-error-signal.c: Likewise.
+	* tests/qual_inject-retval.c: Likewise.
+	* tests/qual_inject-signal.c: Likewise.
+	* tests/quotactl-xfs.c: Likewise.
+	* tests/quotactl.c: Likewise.
+	* tests/read-write.c: Likewise.
+	* tests/readahead.c: Likewise.
+	* tests/readdir.c: Likewise.
+	* tests/readlink.c: Likewise.
+	* tests/readlinkat.c: Likewise.
+	* tests/reboot.c: Likewise.
+	* tests/rename.c: Likewise.
+	* tests/renameat.c: Likewise.
+	* tests/request_key.c: Likewise.
+	* tests/rmdir.c: Likewise.
+	* tests/rt_sigpending.c: Likewise.
+	* tests/rt_sigprocmask.c: Likewise.
+	* tests/rt_sigsuspend.c: Likewise.
+	* tests/rt_sigtimedwait.c: Likewise.
+	* tests/rt_tgsigqueueinfo.c: Likewise.
+	* tests/s390_guarded_storage.c: Likewise.
+	* tests/s390_pci_mmio_read_write.c: Likewise.
+	* tests/s390_runtime_instr.c: Likewise.
+	* tests/s390_sthyi.c: Likewise.
+	* tests/sched_get_priority_mxx.c: Likewise.
+	* tests/sched_rr_get_interval.c: Likewise.
+	* tests/sched_xetaffinity.c: Likewise.
+	* tests/sched_xetattr.c: Likewise.
+	* tests/sched_xetparam.c: Likewise.
+	* tests/sched_xetscheduler.c: Likewise.
+	* tests/sched_yield.c: Likewise.
+	* tests/seccomp-filter-v.c: Likewise.
+	* tests/seccomp-filter.c: Likewise.
+	* tests/seccomp-strict.c: Likewise.
+	* tests/seccomp_get_action_avail.c: Likewise.
+	* tests/select.c: Likewise.
+	* tests/sendfile.c: Likewise.
+	* tests/sendfile64.c: Likewise.
+	* tests/setdomainname.c: Likewise.
+	* tests/setfsgid.c: Likewise.
+	* tests/setfsgid32.c: Likewise.
+	* tests/setfsuid.c: Likewise.
+	* tests/setfsuid32.c: Likewise.
+	* tests/setgid.c: Likewise.
+	* tests/setgid32.c: Likewise.
+	* tests/setgroups.c: Likewise.
+	* tests/setgroups32.c: Likewise.
+	* tests/sethostname.c: Likewise.
+	* tests/setns.c: Likewise.
+	* tests/setregid.c: Likewise.
+	* tests/setregid32.c: Likewise.
+	* tests/setresgid.c: Likewise.
+	* tests/setresgid32.c: Likewise.
+	* tests/setresuid.c: Likewise.
+	* tests/setresuid32.c: Likewise.
+	* tests/setreuid.c: Likewise.
+	* tests/setreuid32.c: Likewise.
+	* tests/setrlimit.c: Likewise.
+	* tests/setuid.c: Likewise.
+	* tests/setuid32.c: Likewise.
+	* tests/sigaction.c: Likewise.
+	* tests/signal.c: Likewise.
+	* tests/signalfd4.c: Likewise.
+	* tests/sigpending.c: Likewise.
+	* tests/sigprocmask.c: Likewise.
+	* tests/sigreturn.c: Likewise.
+	* tests/sigsuspend.c: Likewise.
+	* tests/socketcall.c: Likewise.
+	* tests/splice.c: Likewise.
+	* tests/stack-fcall-3.c: Likewise.
+	* tests/stat.c: Likewise.
+	* tests/stat64.c: Likewise.
+	* tests/statfs.c: Likewise.
+	* tests/statfs64.c: Likewise.
+	* tests/status-none-threads.c: Likewise.
+	* tests/status-unfinished-threads.c: Likewise.
+	* tests/statx.c: Likewise.
+	* tests/swap.c: Likewise.
+	* tests/sxetmask.c: Likewise.
+	* tests/symlink.c: Likewise.
+	* tests/symlinkat.c: Likewise.
+	* tests/sync.c: Likewise.
+	* tests/sync_file_range.c: Likewise.
+	* tests/sync_file_range2.c: Likewise.
+	* tests/syslog.c: Likewise.
+	* tests/tee.c: Likewise.
+	* tests/threads-execve.c: Likewise.
+	* tests/time.c: Likewise.
+	* tests/timer_create.c: Likewise.
+	* tests/timer_xettime.c: Likewise.
+	* tests/timerfd_xettime.c: Likewise.
+	* tests/times-fail.c: Likewise.
+	* tests/times.c: Likewise.
+	* tests/truncate.c: Likewise.
+	* tests/truncate64.c: Likewise.
+	* tests/ugetrlimit.c: Likewise.
+	* tests/umount.c: Likewise.
+	* tests/umount2.c: Likewise.
+	* tests/umoven-illptr.c: Likewise.
+	* tests/umovestr-illptr.c: Likewise.
+	* tests/uname.c: Likewise.
+	* tests/unix-pair-send-recv.c: Likewise.
+	* tests/unlink.c: Likewise.
+	* tests/unlinkat.c: Likewise.
+	* tests/unshare.c: Likewise.
+	* tests/ustat.c: Likewise.
+	* tests/utime.c: Likewise.
+	* tests/utimensat.c: Likewise.
+	* tests/utimes.c: Likewise.
+	* tests/vhangup.c: Likewise.
+	* tests/vmsplice.c: Likewise.
+	* tests/waitid.c: Likewise.
+	* tests/waitpid.c: Likewise.
+	* tests/xet_robust_list.c: Likewise.
+	* tests/xet_thread_area_x86.c: Likewise.
+	* tests/xetitimer.c: Likewise.
+	* tests/xetpgid.c: Likewise.
+	* tests/xetpriority.c: Likewise.
+	* tests/xettimeofday.c: Likewise.
+	* strace.c: Do not include <asm/unistd.h>.
+	* ucopy.c: Likewise.
+	* tests/add_key.c: Likewise.
+	* tests/aio_pgetevents.c: Likewise.
+	* tests/bpf-obj_get_info_by_fd.c: Likewise.
+	* tests/bpf.c: Likewise.
+	* tests/copy_file_range.c: Likewise.
+	* tests/execveat.c: Likewise.
+	* tests/finit_module.c: Likewise.
+	* tests/fsconfig.c: Likewise.
+	* tests/fsmount.c: Likewise.
+	* tests/fsopen.c: Likewise.
+	* tests/fspick.c: Likewise.
+	* tests/getegid.c: Likewise.
+	* tests/geteuid.c: Likewise.
+	* tests/getppid.c: Likewise.
+	* tests/inotify_init.c: Likewise.
+	* tests/io_uring_enter.c: Likewise.
+	* tests/io_uring_register.c: Likewise.
+	* tests/io_uring_setup.c: Likewise.
+	* tests/kcmp.c: Likewise.
+	* tests/kern_features.c: Likewise.
+	* tests/kernel_version.c: Likewise.
+	* tests/kexec_file_load.c: Likewise.
+	* tests/maybe_switch_current_tcp.c: Likewise.
+	* tests/mbind.c: Likewise.
+	* tests/membarrier.c: Likewise.
+	* tests/memfd_create.c: Likewise.
+	* tests/mlock2.c: Likewise.
+	* tests/move_mount.c: Likewise.
+	* tests/open_tree.c: Likewise.
+	* tests/pidfd_send_signal.c: Likewise.
+	* tests/pkey_alloc.c: Likewise.
+	* tests/pkey_free.c: Likewise.
+	* tests/pkey_mprotect.c: Likewise.
+	* tests/preadv2-pwritev2.c: Likewise.
+	* tests/ptrace_syscall_info.c: Likewise.
+	* tests/remap_file_pages.c: Likewise.
+	* tests/renameat2.c: Likewise.
+	* tests/riscv_flush_icache.c: Likewise.
+	* tests/set_mempolicy.c: Likewise.
+	* tests/test_printstrn.c: Likewise.
+	* tests/test_ucopy.c: Likewise.
+	* tests/userfaultfd.c: Likewise.
+
+2019-07-16  Dmitry V. Levin  <ldv@altlinux.org>
+
+	aarch64: remove syscall numbers range [1024...1079] from syscallent.h.
+	Remove support for decoding syscalls in range [1024...1079] on aarch64
+	as this range has never been implemented in mainline kernel releases.
+
+	* linux/aarch64/syscallent.h [1024...1079]: Remove.
+	* NEWS: Mention this change.
+
+2019-07-16  Dmitry V. Levin  <ldv@altlinux.org>
+
+	tests: skip socketcall test on arm eabi.
+	arm eabi has no socketcall even if __NR_socketcall is defined.
+
+	* tests/socketcall.c: Conditionalize on !__ARM_EABI__ along with
+	__NR_socketcall.
+
+2019-07-16  Dmitry V. Levin  <ldv@altlinux.org>
+
+	tests: robustify statx test.
+	Do not assume that <linux/stat.h> defines struct statx.
+
+	* configure.ac (AC_CHECK_TYPES): Check for struct statx in
+	<linux/stat.h>.
+	* tests/statx.c: Conditionalize on HAVE_STRUCT_STATX along with
+	__NR_statx.
+
+2019-07-16  Dmitry V. Levin  <ldv@altlinux.org>
+
+	tests: robustify old_mmap test.
+	Do not assume that old mmap syscall is implemented in the kernel
+	when __NR_mmap is defined.
+
+	* tests/alarm.c (main): Print mmap return code using sprintrc,
+	do not invoke mprotect if mmap is not implemented.
+
+2019-07-16  Dmitry V. Levin  <ldv@altlinux.org>
+
+	tests: robustify alarm test.
+	Do not assume that alarm syscall always succeeds.
+
+	* tests/alarm.c (main): Use sprintrc.
+
+2019-07-16  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	defs.h: add ability to pass style to printxval_index_ex macro.
+	So it matches its name.
+
+	* defs.h (printxval_index_ex): Add style__ macro, pass it as the 5th
+	argument to the printxval_indexn_ex call.
+
+2019-07-16  Bharath Vedartham  <linux.bhar@gmail.com>
+
+	tests: extend coverage of syslog tests.
+	The current syslog test covers only those cases where the type parameter
+	is one of SYSLOG_ACTION_READ, SYSLOG_ACTION_READ_ALL,
+	SYSLOG_ACTION_READ_CLEAR as per codecov.
+
+	Add test case to cover the default case.
+
+	* tests/syslog.c (SYSLOG_ACTION_SIZE_BUFFER): New macro.
+	(main): Check SYSLOG_ACTION_SIZE_BUFFER decoding.
+
+	Co-Authored-by: Eugene Syromyatnikov <evgsyr@gmail.com>
+
+2019-07-16  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	aio: assorted iocb decoder updates.
+	* xlat/aio_iocb_flags.in: New file.
+	* defs.h (pollflags, rwf_flags): New declarations.
+	* configure.ac (AC_CHECK_MEMBERS): Check for aio_flags and aio_rw_flags
+	fields of struct iocb.
+	* aio.c [HAVE_STRUCT_IOCB_AIO_FLAGS]: Include "xlat/aio_iocb_flags.h".
+	(AIO_RW_FLAGS_FIELD): New macro definition, defined based on the
+	presence of HAVE_STRUCT_IOCB_AIO_RW_FLAGS macro.
+	(iocb_sub): Add SUB_POLL.
+	(tprint_lio_opcode): Change IOCB_CMD_POLL subtype to SUB_POLL.
+	(print_common_flags): Conditionalize on HAVE_STRUCT_IOCB_AIO_FLAGS
+	instead of IOCB_FLAG_RESFD.  Print aio_flags using aio_iocb_flags xlat.
+	(print_iocb_header): Always print aio_data.  Print aio_rw_flags if it
+	is non-zero.  Print aio_reqprio based on the presence of
+	IOCB_FLAG_IOPRIO flag in aio_flags (use print_ioprio if it set and print
+	as a signed integer otherwise).
+	(print_iocb): Decode SUB_POLL subtype.
+	* tests/aio.c: Update expected output.
+
+	Co-Authored-by: Dmitry V. Levin <ldv@altlinux.org>
+
+2019-07-16  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	ioprio: add print_ioprio function.
+	That respects xlat style settings.
+
+	* ioprio.c (print_ioprio): New function.
+	* defs.h (print_ioprio): New declaration.
+
+2019-07-15  Dmitry V. Levin  <ldv@altlinux.org>
+
+	tests: serialize bpf-obj_get_info_by_fd based executables.
+	Concurrent execution of many bpf-obj_get_info_by_fd based tests may
+	lead to a temporary resource shortage that causes them to fail with
+	the following error diagnostics:
+
+		BPF_MAP_CREATE failed: Operation not permitted
+
+	Avoid this issue by serializing execution of all relevant tests.
+
+	* tests/lock_file.c: New file.
+	* tests/Makefile.am (libtests_a_SOURCES): Add lock_file.c
+	* tests/tests.h (lock_file_by_dirname): New prototype.
+	* tests/bpf-obj_get_info_by_fd.c (main): Call lock_file_by_dirname
+	to obtain an exclusive lock on bpf-obj_get_info_by_fd executable.
+
+	References: https://github.com/strace/strace/issues/74
+	References: https://github.com/strace/strace/issues/105
+
+2019-07-15  Dmitry V. Levin  <ldv@altlinux.org>
+
+	tests: fix build and run on alpha with fresh kernel headers.
+	Fix tests on alpha with Linux kernel headers containing commits
+	v5.1-rc1~160^2~3^2~12 and v5.1-rc1~160^2~3^2~1.
+
+	* tests/getegid.c: Include "scno.h".
+	(main): Use sprintrc.
+	* tests/geteuid.c: Likewise.
+	* tests/getppid.c: Likewise.
+	* tests/getgid.c [__NR_getgid == __NR_getxgid]: Skip.
+	* tests/getuid.c [__NR_getuid == __NR_getxuid]: Skip.
+	* tests/getpid.c [__NR_getpid == __NR_getxpid]: Skip.
+	* tests/umount2.c (__NR_umount2): Remove.
+	(TEST_SYSCALL_NR): New macro.
+	(main): Use it instead of __NR_umount2.
+	* tests/ksysent.sed: Remove new __NR_get[gup]id aliases to traditional
+	__NR_getx[gup]id names (on alpha).
+	Prioritize __NR_umount over __NR_umount2, __NR_osf_shmat over __NR_shmat.
+	* NEWS: Mention these fixes.
+
+2019-07-15  Dmitry V. Levin  <ldv@altlinux.org>
+
+	copyright-year-gen, file-date-gen: enhance error diagnostics.
+	* copyright-year-gen: Prefix error message with the script name.
+	* file-date-gen: Likewise.  Bail out in case of invalid date.
+
+2019-07-15  Dmitry V. Levin  <ldv@altlinux.org>
+
+	configure.ac: honor exit status of commands run by m4_esyscmd.
+	If the command run by m4_esyscmd exits with non-zero exit status,
+	autom4te shall terminate.
+
+	* m4/st_esyscmd_s.m4: New file.
+	* configure.ac: Replace m4_esyscmd with st_esyscmd_s.
+
+	References: https://github.com/strace/strace/issues/105
+
+2019-07-13  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	tests: test evdev bitset decoding more thoroughly.
+	* tests/ioctl_evdev-success-v.test: Inject various values.
+	* tests/ioctl_evdev-success.test: Likewise.
+	* tests/ioctl_evdev-success.c (NUM_WORDS): New macro.
+	(struct evdev_check): Constify arg_ptr and print_arg args.
+	(invoke_test_syscall, test_evdev, print_input_absinfo, print_input_id,
+	print_mtslots): Add const qualifiers.
+	(print_getbit): Add const qualifiers, rewrite to expect trailing NULL
+	in the string array instead of leading string count.
+	(main): Set size for ev_more, ev_less, ev_zero arrays; replace leading
+	count element in ev_more_str, ev_less_str, ev_zero_str with trailing
+	NULL; replace ev_more_str and ev_less_str with ev_more_str_2/ev_less_str_2
+	and ev_more_str_3/ev_less_str_3 that differ by presence of flags that reside
+	beyond first two bytes; add static and const qualifiers where possible;
+	add key/key_sts_8/key_str_16 values; update a to provide either ev_more_str_2
+	or ev_more_str_3 and either key_str_8 or key_str_16 depending on inject_retval
+	value.
+
+2019-07-13  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	evdev: fix array size calculation in decode_bitset_
+	max_nr is in bits (as it is a number of flags), result is in bytes, and
+	the array allocation has to be in personality words.
+
+	There's still an open question, however, what to do on big-endian
+	architectures when a non-divisible-by-4 value is returned.
+
+	* evdev.c (decode_bitset_): Declare size_bits, initialise it and use it
+	later instead of size; round up size by personality's word boundary.
+
+2019-07-13  Eugene Syromyatnikov  <evgsyr@gmail.com>
+
+	evdev: avoid bit vector decoding on non-successful and 0 return codes.
+	Reported by Clang.
+
+	    strace/evdev.c:157:3: note: The value 0 is assigned to 'size'
+	    #                size = tcp->u_rval * 8;
+	    #                ^~~~~~~~~~~~~~~~~~~~~~
+	    strace/evdev.c:158:2: warning: Declared variable-length array (VLA)
+	    has zero size
+	    #        char decoded_arg[size];
+	    #        ^
+
+	* evdev.c (decode_bitset_): Bail out before decoded_arg VLA definition.
+
+2019-07-13  Chen Jingpiao  <chenjingpiao@gmail.com>
+
+	filter_qualify: export trace_set set.
+	In preparation for seccomp-assisted syscall filtering, export
+	trace_set set, which will be used to derive the BPF program.
+
+	* filter_qualify.c (trace_set): Remove static qualifier.
+	* number_set.h (trace_set): New declaration.
+
+2019-07-13  Dmitry V. Levin  <ldv@altlinux.org>
+
+	Post-release administrivia.
+	* NEWS: Add a header line for the next release.
+	* debian/changelog.in: Add a changelog entry for 5.2-1.
+	* strace.spec.in: Likewise.
+
 2019-07-12  Dmitry V. Levin  <ldv@altlinux.org>
 
 	Prepare for 5.2 release.

@@ -12,15 +12,19 @@
 
 # else
 
-static
-const struct xlat netlink_diag_attrs[] = {
+static const struct xlat_data netlink_diag_attrs_xdata[] = {
  XLAT(NETLINK_DIAG_MEMINFO),
  XLAT(NETLINK_DIAG_GROUPS),
  XLAT(NETLINK_DIAG_RX_RING),
  XLAT(NETLINK_DIAG_TX_RING),
  XLAT(NETLINK_DIAG_FLAGS),
- XLAT_END
 };
+static
+const struct xlat netlink_diag_attrs[1] = { {
+ .data = netlink_diag_attrs_xdata,
+ .size = ARRAY_SIZE(netlink_diag_attrs_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

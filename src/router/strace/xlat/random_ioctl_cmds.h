@@ -61,8 +61,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat random_ioctl_cmds[] = {
+static const struct xlat_data random_ioctl_cmds_xdata[] = {
  XLAT(RNDGETENTCNT),
  XLAT(RNDADDTOENTCNT),
  XLAT(RNDGETPOOL),
@@ -70,8 +69,13 @@ const struct xlat random_ioctl_cmds[] = {
  XLAT(RNDZAPENTCNT),
  XLAT(RNDCLEARPOOL),
  XLAT(RNDRESEEDCRNG),
- XLAT_END
 };
+static
+const struct xlat random_ioctl_cmds[1] = { {
+ .data = random_ioctl_cmds_xdata,
+ .size = ARRAY_SIZE(random_ioctl_cmds_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -393,8 +393,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat fcntlcmds[] = {
+static const struct xlat_data fcntlcmds_xdata[] = {
 
  XLAT(F_DUPFD),
  XLAT(F_GETFD),
@@ -493,8 +492,13 @@ const struct xlat fcntlcmds[] = {
  XLAT(F_GETPIPE_SZ),
  XLAT(F_ADD_SEALS),
  XLAT(F_GET_SEALS),
- XLAT_END
 };
+static
+const struct xlat fcntlcmds[1] = { {
+ .data = fcntlcmds_xdata,
+ .size = ARRAY_SIZE(fcntlcmds_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -8,7 +8,7 @@
 
 # ifndef IN_MPERS
 
-const struct xlat ptrace_cmds[] = {
+static const struct xlat_data ptrace_cmds_xdata[] = {
 #if defined(PTRACE_TRACEME) || (defined(HAVE_DECL_PTRACE_TRACEME) && HAVE_DECL_PTRACE_TRACEME)
   XLAT(PTRACE_TRACEME),
 #endif
@@ -313,8 +313,12 @@ const struct xlat ptrace_cmds[] = {
 #if defined(PTRACE_SETXTREGS) || (defined(HAVE_DECL_PTRACE_SETXTREGS) && HAVE_DECL_PTRACE_SETXTREGS)
   XLAT(PTRACE_SETXTREGS),
 #endif
- XLAT_END
 };
+const struct xlat ptrace_cmds[1] = { {
+ .data = ptrace_cmds_xdata,
+ .size = ARRAY_SIZE(ptrace_cmds_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

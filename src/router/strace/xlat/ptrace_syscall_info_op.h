@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat ptrace_syscall_info_op[] = {
+static const struct xlat_data ptrace_syscall_info_op_xdata[] = {
 #if defined(PTRACE_SYSCALL_INFO_NONE) || (defined(HAVE_DECL_PTRACE_SYSCALL_INFO_NONE) && HAVE_DECL_PTRACE_SYSCALL_INFO_NONE)
   [PTRACE_SYSCALL_INFO_NONE] = XLAT(PTRACE_SYSCALL_INFO_NONE),
 #endif
@@ -26,8 +25,13 @@ const struct xlat ptrace_syscall_info_op[] = {
 #if defined(PTRACE_SYSCALL_INFO_SECCOMP) || (defined(HAVE_DECL_PTRACE_SYSCALL_INFO_SECCOMP) && HAVE_DECL_PTRACE_SYSCALL_INFO_SECCOMP)
   [PTRACE_SYSCALL_INFO_SECCOMP] = XLAT(PTRACE_SYSCALL_INFO_SECCOMP),
 #endif
- XLAT_END
 };
+static
+const struct xlat ptrace_syscall_info_op[1] = { {
+ .data = ptrace_syscall_info_op_xdata,
+ .size = ARRAY_SIZE(ptrace_syscall_info_op_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

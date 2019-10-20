@@ -61,8 +61,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat falloc_flags[] = {
+static const struct xlat_data falloc_flags_xdata[] = {
  XLAT(FALLOC_FL_KEEP_SIZE),
  XLAT(FALLOC_FL_PUNCH_HOLE),
  XLAT(FALLOC_FL_NO_HIDE_STALE),
@@ -70,8 +69,13 @@ const struct xlat falloc_flags[] = {
  XLAT(FALLOC_FL_ZERO_RANGE),
  XLAT(FALLOC_FL_INSERT_RANGE),
  XLAT(FALLOC_FL_UNSHARE_RANGE),
- XLAT_END
 };
+static
+const struct xlat falloc_flags[1] = { {
+ .data = falloc_flags_xdata,
+ .size = ARRAY_SIZE(falloc_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

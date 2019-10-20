@@ -15,10 +15,14 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # ifndef IN_MPERS
 
-const struct xlat ipc_private[] = {
+static const struct xlat_data ipc_private_xdata[] = {
  XLAT(IPC_PRIVATE),
- XLAT_END
 };
+const struct xlat ipc_private[1] = { {
+ .data = ipc_private_xdata,
+ .size = ARRAY_SIZE(ipc_private_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

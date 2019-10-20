@@ -124,8 +124,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat evdev_switch[] = {
+static const struct xlat_data evdev_switch_xdata[] = {
  [SW_LID] = XLAT(SW_LID),
  [SW_TABLET_MODE] = XLAT(SW_TABLET_MODE),
  [SW_HEADPHONE_INSERT] = XLAT(SW_HEADPHONE_INSERT),
@@ -142,8 +141,13 @@ const struct xlat evdev_switch[] = {
  [SW_LINEIN_INSERT] = XLAT(SW_LINEIN_INSERT),
  [SW_MUTE_DEVICE] = XLAT(SW_MUTE_DEVICE),
  [SW_PEN_INSERTED] = XLAT(SW_PEN_INSERTED),
- XLAT_END
 };
+static
+const struct xlat evdev_switch[1] = { {
+ .data = evdev_switch_xdata,
+ .size = ARRAY_SIZE(evdev_switch_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

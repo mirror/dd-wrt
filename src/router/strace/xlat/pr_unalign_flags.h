@@ -26,12 +26,16 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat pr_unalign_flags[] = {
+static const struct xlat_data pr_unalign_flags_xdata[] = {
  XLAT(PR_UNALIGN_NOPRINT),
  XLAT(PR_UNALIGN_SIGBUS),
- XLAT_END
 };
+static
+const struct xlat pr_unalign_flags[1] = { {
+ .data = pr_unalign_flags_xdata,
+ .size = ARRAY_SIZE(pr_unalign_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

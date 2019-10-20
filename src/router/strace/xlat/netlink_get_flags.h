@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat netlink_get_flags[] = {
+static const struct xlat_data netlink_get_flags_xdata[] = {
 #if defined(NLM_F_DUMP) || (defined(HAVE_DECL_NLM_F_DUMP) && HAVE_DECL_NLM_F_DUMP)
   XLAT(NLM_F_DUMP),
 #endif
@@ -26,8 +25,13 @@ const struct xlat netlink_get_flags[] = {
 #if defined(NLM_F_ATOMIC) || (defined(HAVE_DECL_NLM_F_ATOMIC) && HAVE_DECL_NLM_F_ATOMIC)
   XLAT(NLM_F_ATOMIC),
 #endif
- XLAT_END
 };
+static
+const struct xlat netlink_get_flags[1] = { {
+ .data = netlink_get_flags_xdata,
+ .size = ARRAY_SIZE(netlink_get_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

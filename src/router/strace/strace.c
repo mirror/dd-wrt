@@ -20,6 +20,7 @@
 #ifdef HAVE_PATHS_H
 # include <paths.h>
 #endif
+#include <getopt.h>
 #include <pwd.h>
 #include <grp.h>
 #include <dirent.h>
@@ -28,9 +29,9 @@
 #ifdef HAVE_PRCTL
 # include <sys/prctl.h>
 #endif
-#include <asm/unistd.h>
 
 #include "kill_save_errno.h"
+#include "filter_seccomp.h"
 #include "largefile_wrappers.h"
 #include "mmap_cache.h"
 #include "number_set.h"
@@ -230,14 +231,23 @@ print_version(void)
 static void
 usage(void)
 {
+#ifdef ENABLE_STACKTRACE
+# define K_OPT "k"
+#else
+# define K_OPT ""
+#endif
+
 	printf("\
-usage: strace [-CdffhiqrtttTvVwxxy] [-I n] [-e expr]...\n\
-              [-a column] [-o file] [-s strsize] [-P path]...\n\
-              -p pid... / [-D] [-E var=val]... [-u username] PROG [ARGS]\n\
-   or: strace -c[dfw] [-I n] [-e expr]... [-O overhead] [-S sortby]\n\
-              -p pid... / [-D] [-E var=val]... [-u username] PROG [ARGS]\n\
+usage: strace [-ACdffhi" K_OPT "qqrtttTvVwxxyyzZ] [-I n] [-b execve] [-e expr]...\n\
+              [-a column] [-o file] [-s strsize] [-X format] [-P path]...\n\
+              [-p pid]... [--seccomp-bpf]\n\
+	      { -p pid | [-D] [-E var=val]... [-u username] PROG [ARGS] }\n\
+   or: strace -c[dfwzZ] [-I n] [-b execve] [-e expr]... [-O overhead]\n\
+              [-S sortby] [-P path]... [-p pid]... [--seccomp-bpf]\n\
+              { -p pid | [-D] [-E var=val]... [-u username] PROG [ARGS] }\n\
 \n\
 Output format:\n\
+  -A             open the file provided in the -o option in append mode\n\
   -a column      alignment COLUMN for printing syscall results (default %d)\n\
   -i             print instruction pointer at time of syscall\n\
 "
@@ -249,27 +259,33 @@ Output format:\n\
 "\
   -o file        send trace output to FILE instead of stderr\n\
   -q             suppress messages about attaching, detaching, etc.\n\
+  -qq            suppress messages about process exit status as well.\n\
   -r             print relative timestamp\n\
   -s strsize     limit length of print strings to STRSIZE chars (default %d)\n\
   -t             print absolute timestamp\n\
   -tt            print absolute timestamp with usecs\n\
   -T             print time spent in each syscall\n\
+  -v             verbose mode: print entities unabbreviated\n\
   -x             print non-ascii strings in hex\n\
   -xx            print all strings in hex\n\
   -X format      set the format for printing of named constants and flags\n\
   -y             print paths associated with file descriptor arguments\n\
-  -yy            print protocol specific information associated with socket file descriptors\n\
+  -yy            print protocol specific information associated with socket\n\
+                 file descriptors\n\
 \n\
 Statistics:\n\
-  -c             count time, calls, and errors for each syscall and report summary\n\
+  -c             count time, calls, and errors for each syscall and report\n\
+                 summary\n\
   -C             like -c but also print regular output\n\
   -O overhead    set overhead for tracing syscalls to OVERHEAD usecs\n\
-  -S sortby      sort syscall counts by: time, calls, name, nothing (default %s)\n\
+  -S sortby      sort syscall counts by: time, calls, errors, name, nothing\n\
+                 (default %s)\n\
   -w             summarise syscall latency (default is system time)\n\
 \n\
 Filtering:\n\
   -e expr        a qualifying expression: option=[!]all or option=[!]val1[,val2]...\n\
-     options:    trace, abbrev, verbose, raw, signal, read, write, fault, inject, status, kvm\n\
+     options:    trace, abbrev, verbose, raw, signal, read, write, fault,\n\
+                 inject, status, kvm\n\
   -P path        trace accesses to path\n\
   -z             print only syscalls that returned without an error code\n\
   -Z             print only syscalls that returned with an error code\n\
@@ -293,16 +309,18 @@ Startup:\n\
   -u username    run command as username handling setuid and/or setgid\n\
 \n\
 Miscellaneous:\n\
+  --seccomp-bpf  enable seccomp-bpf filtering\n\
   -d             enable debug output to stderr\n\
-  -v             verbose mode: print unabbreviated argv, stat, termios, etc. args\n\
-  -h             print help message\n\
-  -V             print version\n\
+  -h, --help     print help message\n\
+  -V, --version  print version\n\
 "
 /* ancient, no one should use it
 -F -- attempt to follow vforks (deprecated, use -f)\n\
  */
 , DEFAULT_ACOLUMN, DEFAULT_STRLEN, DEFAULT_SORTBY);
 	exit(0);
+
+#undef K_OPT
 }
 
 void ATTRIBUTE_NORETURN
@@ -605,7 +623,7 @@ printleader(struct tcb *tcp)
 
 	if (printing_tcp) {
 		set_current_tcp(printing_tcp);
-		if (tcp->real_outf == NULL && printing_tcp->curcol != 0 &&
+		if (!tcp->staged_output_data && printing_tcp->curcol != 0 &&
 		    (followfork < 2 || printing_tcp == tcp)) {
 			/*
 			 * case 1: we have a shared log (i.e. not -ff), and last line
@@ -786,6 +804,14 @@ droptcb(struct tcb *tcp)
 {
 	if (tcp->pid == 0)
 		return;
+
+	if (cflag && debug_flag) {
+		struct timespec dt;
+
+		ts_sub(&dt, &tcp->stime, &tcp->atime);
+		debug_func_msg("pid %d: %.9f seconds of system time spent "
+			       "since attach", tcp->pid, ts_float(&dt));
+	}
 
 	int p;
 	for (p = 0; p < SUPPORTED_PERSONALITIES; ++p)
@@ -1208,6 +1234,10 @@ exec_or_die(void)
 	if (params_for_tracee.child_sa.sa_handler != SIG_DFL)
 		sigaction(SIGCHLD, &params_for_tracee.child_sa, NULL);
 
+	debug_msg("seccomp filter %s",
+		  seccomp_filtering ? "enabled" : "disabled");
+	if (seccomp_filtering)
+		init_seccomp_filter();
 	execv(params->pathname, params->argv);
 	perror_msg_and_die("exec");
 }
@@ -1446,6 +1476,10 @@ startup_child(char **argv)
 		 * to create a genuine separate stack and execute on it.
 		 */
 	}
+
+	if (seccomp_filtering)
+		tcp->flags |= TCB_SECCOMP_FILTER;
+
 	/*
 	 * A case where straced process is part of a pipe:
 	 * { sleep 1; yes | head -n99999; } | strace -o/dev/null sh -c 'exec <&-; sleep 9'
@@ -1579,11 +1613,24 @@ init(int argc, char *argv[])
 # error Bug in DEFAULT_QUAL_FLAGS
 #endif
 	qualify("signal=all");
-	while ((c = getopt(argc, argv, "+"
+
+	static const char optstring[] = "+"
 #ifdef ENABLE_STACKTRACE
 	    "k"
 #endif
-	    "a:Ab:cCdDe:E:fFhiI:o:O:p:P:qrs:S:tTu:vVwxX:yzZ")) != EOF) {
+	    "a:Ab:cCdDe:E:fFhiI:o:O:p:P:qrs:S:tTu:vVwxX:yzZ";
+
+	enum {
+		SECCOMP_OPTION = 0x100
+	};
+	static const struct option longopts[] = {
+		{ "seccomp-bpf", no_argument, 0, SECCOMP_OPTION },
+		{ "help", no_argument, 0, 'h' },
+		{ "version", no_argument, 0, 'V' },
+		{ 0, 0, 0, 0 }
+	};
+
+	while ((c = getopt_long(argc, argv, optstring, longopts, NULL)) != EOF) {
 		switch (c) {
 		case 'a':
 			acolumn = string_to_uint(optarg);
@@ -1650,10 +1697,8 @@ init(int argc, char *argv[])
 			outfname = optarg;
 			break;
 		case 'O':
-			i = string_to_uint(optarg);
-			if (i < 0)
+			if (set_overhead(optarg) < 0)
 				error_opt_arg(c, optarg);
-			set_overhead(i);
 			break;
 		case 'p':
 			process_opt_p_list(optarg);
@@ -1721,6 +1766,9 @@ init(int argc, char *argv[])
 			add_number_to_set(STATUS_FAILED, status_set);
 			zflags++;
 			break;
+		case SECCOMP_OPTION:
+			seccomp_filtering = true;
+			break;
 		default:
 			error_msg_and_help(NULL);
 			break;
@@ -1736,6 +1784,16 @@ init(int argc, char *argv[])
 
 	if (!argc && daemonized_tracer) {
 		error_msg_and_help("PROG [ARGS] must be specified with -D");
+	}
+
+	if (seccomp_filtering) {
+		if (nprocs && (!argc || debug_flag))
+			error_msg("--seccomp-bpf is not enabled for processes"
+				  " attached with -p");
+		if (!followfork) {
+			error_msg("--seccomp-bpf implies -f");
+			followfork = 1;
+		}
 	}
 
 	if (optF) {
@@ -1813,6 +1871,12 @@ init(int argc, char *argv[])
 		ptrace_setoptions |= PTRACE_O_TRACECLONE |
 				     PTRACE_O_TRACEFORK |
 				     PTRACE_O_TRACEVFORK;
+
+	if (seccomp_filtering)
+		check_seccomp_filter();
+	if (seccomp_filtering)
+		ptrace_setoptions |= PTRACE_O_TRACESECCOMP;
+
 	debug_msg("ptrace_setoptions = %#x", ptrace_setoptions);
 	test_ptrace_seize();
 	test_ptrace_get_syscall_info();
@@ -2000,6 +2064,7 @@ print_debug_info(const int pid, int status)
 			[PTRACE_EVENT_VFORK_DONE] = "VFORK_DONE",
 			[PTRACE_EVENT_EXEC]  = "EXEC",
 			[PTRACE_EVENT_EXIT]  = "EXIT",
+			[PTRACE_EVENT_SECCOMP]  = "SECCOMP",
 			/* [PTRACE_EVENT_STOP (=128)] would make biggish array */
 		};
 		const char *e = "??";
@@ -2095,19 +2160,12 @@ maybe_switch_tcbs(struct tcb *tcp, const int pid)
 	FILE *fp = execve_thread->outf;
 	execve_thread->outf = tcp->outf;
 	tcp->outf = fp;
-	if (execve_thread->real_outf || tcp->real_outf) {
-		char *memfptr;
-		size_t memfloc;
+	if (execve_thread->staged_output_data || tcp->staged_output_data) {
+		struct staged_output_data *staged_output_data;
 
-		fp = execve_thread->real_outf;
-		execve_thread->real_outf = tcp->real_outf;
-		tcp->real_outf = fp;
-		memfptr = execve_thread->memfptr;
-		execve_thread->memfptr = tcp->memfptr;
-		tcp->memfptr = memfptr;
-		memfloc = execve_thread->memfloc;
-		execve_thread->memfloc = tcp->memfloc;
-		tcp->memfloc = memfloc;
+		staged_output_data = execve_thread->staged_output_data;
+		execve_thread->staged_output_data = tcp->staged_output_data;
+		tcp->staged_output_data = staged_output_data;
 	}
 
 	/* And their column positions */
@@ -2221,6 +2279,10 @@ startup_tcb(struct tcb *tcp)
 
 	if ((tcp->flags & TCB_GRABBED) && (get_scno(tcp) == 1))
 		tcp->s_prev_ent = tcp->s_ent;
+
+	if (cflag) {
+		tcp->atime = tcp->stime;
+	}
 }
 
 static void
@@ -2308,6 +2370,8 @@ next_event(void)
 {
 	if (interrupted)
 		return NULL;
+
+	invalidate_umove_cache();
 
 	struct tcb *tcp = NULL;
 	struct list_item *elem;
@@ -2437,12 +2501,8 @@ next_event(void)
 		}
 
 		if (cflag) {
-			struct timespec stime = {
-				.tv_sec = ru.ru_stime.tv_sec,
-				.tv_nsec = ru.ru_stime.tv_usec * 1000
-			};
-			ts_sub(&tcp->dtime, &stime, &tcp->stime);
-			tcp->stime = stime;
+			tcp->stime.tv_sec = ru.ru_stime.tv_sec;
+			tcp->stime.tv_nsec = ru.ru_stime.tv_usec * 1000;
 		}
 
 		tcb_wait_tab_check_size(wait_tab_pos);
@@ -2530,6 +2590,9 @@ next_event(void)
 			case PTRACE_EVENT_EXIT:
 				wd->te = TE_STOP_BEFORE_EXIT;
 				break;
+			case PTRACE_EVENT_SECCOMP:
+				wd->te = TE_SECCOMP;
+				break;
 			default:
 				wd->te = TE_RESTART;
 			}
@@ -2615,7 +2678,7 @@ trace_syscall(struct tcb *tcp, unsigned int *sig)
 static bool
 dispatch_event(const struct tcb_wait_data *wd)
 {
-	unsigned int restart_op = PTRACE_SYSCALL;
+	unsigned int restart_op;
 	unsigned int restart_sig = 0;
 	enum trace_event te = wd ? wd->te : TE_BREAK;
 	/*
@@ -2623,6 +2686,11 @@ dispatch_event(const struct tcb_wait_data *wd)
 	 * around union wait fixed by glibc commit glibc-2.24~391
 	 */
 	int status = wd ? wd->status : 0;
+
+	if (current_tcp && has_seccomp_filter(current_tcp))
+		restart_op = seccomp_filter_restart_operator(current_tcp);
+	else
+		restart_op = PTRACE_SYSCALL;
 
 	switch (te) {
 	case TE_BREAK:
@@ -2633,6 +2701,27 @@ dispatch_event(const struct tcb_wait_data *wd)
 
 	case TE_RESTART:
 		break;
+
+	case TE_SECCOMP:
+		if (!has_seccomp_filter(current_tcp)) {
+			/*
+			 * We don't know if forks/clones have a seccomp filter
+			 * when they are created, but we can detect it when we
+			 * have a seccomp-stop.
+			 * In such a case, if !seccomp_before_sysentry, we have
+			 * already processed the syscall entry, so we avoid
+			 * processing it a second time.
+			 */
+			current_tcp->flags |= TCB_SECCOMP_FILTER;
+			restart_op = PTRACE_SYSCALL;
+			break;
+		}
+
+		if (seccomp_before_sysentry) {
+			restart_op = PTRACE_SYSCALL;
+			break;
+		}
+		ATTRIBUTE_FALLTHROUGH;
 
 	case TE_SYSCALL_STOP:
 		if (trace_syscall(current_tcp, &restart_sig) < 0) {
@@ -2648,6 +2737,42 @@ dispatch_event(const struct tcb_wait_data *wd)
 			 * normally, via WIFEXITED or WIFSIGNALED wait status.
 			 */
 			return true;
+		}
+		if (has_seccomp_filter(current_tcp)) {
+			/*
+			 * Syscall and seccomp stops can happen in different
+			 * orders depending on kernel.  strace tests this in
+			 * check_seccomp_order_tracer().
+			 *
+			 * Linux 3.5--4.7:
+			 * (seccomp-stop before syscall-entry-stop)
+			 *         +--> seccomp-stop ->-PTRACE_SYSCALL->-+
+			 *         |                                     |
+			 *     PTRACE_CONT                   syscall-entry-stop
+			 *         |                                     |
+			 * syscall-exit-stop <---PTRACE_SYSCALL-----<----+
+			 *
+			 * Linux 4.8+:
+			 * (seccomp-stop after syscall-entry-stop)
+			 *                 syscall-entry-stop
+			 *
+			 *         +---->-----PTRACE_CONT---->----+
+			 *         |                              |
+			 *  syscall-exit-stop               seccomp-stop
+			 *         |                              |
+			 *         +----<----PTRACE_SYSCALL---<---+
+			 *
+			 * Note in Linux 4.8+, we restart in PTRACE_CONT
+			 * after syscall-exit to skip the syscall-entry-stop.
+			 * The next seccomp-stop will be treated as a syscall
+			 * entry.
+			 *
+			 * The line below implements this behavior.
+			 * Note that exiting(current_tcp) actually marks
+			 * a syscall-entry-stop because the flag was inverted
+			 * in the above call to trace_syscall.
+			 */
+			restart_op = exiting(current_tcp) ? PTRACE_SYSCALL : PTRACE_CONT;
 		}
 		break;
 

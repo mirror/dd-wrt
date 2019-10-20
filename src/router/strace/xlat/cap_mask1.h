@@ -12,16 +12,20 @@
 
 # else
 
-static
-const struct xlat cap_mask1[] = {
+static const struct xlat_data cap_mask1_xdata[] = {
  XLAT_PAIR(1ULL<<CAP_MAC_OVERRIDE, "1<<CAP_MAC_OVERRIDE"),
  XLAT_PAIR(1ULL<<CAP_MAC_ADMIN, "1<<CAP_MAC_ADMIN"),
  XLAT_PAIR(1ULL<<CAP_SYSLOG, "1<<CAP_SYSLOG"),
  XLAT_PAIR(1ULL<<CAP_WAKE_ALARM, "1<<CAP_WAKE_ALARM"),
  XLAT_PAIR(1ULL<<CAP_BLOCK_SUSPEND, "1<<CAP_BLOCK_SUSPEND"),
  XLAT_PAIR(1ULL<<CAP_AUDIT_READ, "1<<CAP_AUDIT_READ"),
- XLAT_END
 };
+static
+const struct xlat cap_mask1[1] = { {
+ .data = cap_mask1_xdata,
+ .size = ARRAY_SIZE(cap_mask1_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -269,19 +269,23 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
 # define V4L2_PIX_FMT_MPEG1 v4l2_fourcc('M', 'P', 'G', '1')
 #endif
-#if defined(V4L2_PIX_FMT_BGRA444) || (defined(HAVE_DECL_V4L2_PIX_FMT_BGRA444) && HAVE_DECL_V4L2_PIX_FMT_BGRA444)
-DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
-static_assert((V4L2_PIX_FMT_BGRA444) == (v4l2_fourcc('B', 'A', '1', '2')), "V4L2_PIX_FMT_BGRA444 != v4l2_fourcc('B', 'A', '1', '2')");
-DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
-#else
-# define V4L2_PIX_FMT_BGRA444 v4l2_fourcc('B', 'A', '1', '2')
-#endif
 #if defined(V4L2_PIX_FMT_SGRBG12) || (defined(HAVE_DECL_V4L2_PIX_FMT_SGRBG12) && HAVE_DECL_V4L2_PIX_FMT_SGRBG12)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
 static_assert((V4L2_PIX_FMT_SGRBG12) == (v4l2_fourcc('B', 'A', '1', '2')), "V4L2_PIX_FMT_SGRBG12 != v4l2_fourcc('B', 'A', '1', '2')");
 DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
 # define V4L2_PIX_FMT_SGRBG12 v4l2_fourcc('B', 'A', '1', '2')
+#endif
+#ifndef STRACE_WORKAROUND_FOR_V4L2_PIX_FMT_BGRA444
+# define STRACE_WORKAROUND_FOR_V4L2_PIX_FMT_BGRA444
+# undef V4L2_PIX_FMT_BGRA444
+#endif
+#if defined(V4L2_PIX_FMT_BGRA444) || (defined(HAVE_DECL_V4L2_PIX_FMT_BGRA444) && HAVE_DECL_V4L2_PIX_FMT_BGRA444)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((V4L2_PIX_FMT_BGRA444) == (v4l2_fourcc('G', 'A', '1', '2')), "V4L2_PIX_FMT_BGRA444 != v4l2_fourcc('G', 'A', '1', '2')");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define V4L2_PIX_FMT_BGRA444 v4l2_fourcc('G', 'A', '1', '2')
 #endif
 #if defined(V4L2_PIX_FMT_RGBA444) || (defined(HAVE_DECL_V4L2_PIX_FMT_RGBA444) && HAVE_DECL_V4L2_PIX_FMT_RGBA444)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
@@ -1300,11 +1304,7 @@ extern const struct xlat v4l2_pix_fmts[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat v4l2_pix_fmts[] = {
-
+static const struct xlat_data v4l2_pix_fmts_xdata[] = {
  XLAT(V4L2_PIX_FMT_Y10),
  XLAT(V4L2_PIX_FMT_Y12),
  XLAT(V4L2_PIX_FMT_Y4),
@@ -1343,8 +1343,17 @@ const struct xlat v4l2_pix_fmts[] = {
  XLAT(V4L2_PIX_FMT_H264_NO_SC),
  XLAT(V4L2_PIX_FMT_PWC1),
  XLAT(V4L2_PIX_FMT_MPEG1),
- XLAT(V4L2_PIX_FMT_BGRA444),
  XLAT(V4L2_PIX_FMT_SGRBG12),
+#ifndef STRACE_WORKAROUND_FOR_V4L2_PIX_FMT_BGRA444
+# define STRACE_WORKAROUND_FOR_V4L2_PIX_FMT_BGRA444
+/*
+* V4L2_PIX_FMT_BGRA444 was introduced in Linux commit v5.2-rc1~33^2~24 with
+* the value of v4l2_fourcc('B', 'A', '1', '2') and changed in commit
+* v5.2-rc5-403-g22be8233b34f as it clashed with V4L2_PIX_FMT_SGRBG12.
+*/
+# undef V4L2_PIX_FMT_BGRA444
+#endif
+ XLAT(V4L2_PIX_FMT_BGRA444),
  XLAT(V4L2_PIX_FMT_RGBA444),
  XLAT(V4L2_PIX_FMT_ABGR444),
  XLAT(V4L2_PIX_FMT_SGBRG12),
@@ -1489,8 +1498,15 @@ const struct xlat v4l2_pix_fmts[] = {
  XLAT(V4L2_PIX_FMT_Y16_BE),
  XLAT(V4L2_PIX_FMT_ARGB555X),
  XLAT(V4L2_PIX_FMT_XRGB555X),
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat v4l2_pix_fmts[1] = { {
+ .data = v4l2_pix_fmts_xdata,
+ .size = ARRAY_SIZE(v4l2_pix_fmts_xdata),
+ .type = XT_SORTED,
+} };
 
 # endif /* !IN_MPERS */
 

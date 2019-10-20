@@ -19,8 +19,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat shm_flags[] = {
+static const struct xlat_data shm_flags_xdata[] = {
 #if defined(SHM_RDONLY) || (defined(HAVE_DECL_SHM_RDONLY) && HAVE_DECL_SHM_RDONLY)
   XLAT(SHM_RDONLY),
 #endif
@@ -31,8 +30,13 @@ const struct xlat shm_flags[] = {
   XLAT(SHM_REMAP),
 #endif
  XLAT(SHM_EXEC),
- XLAT_END
 };
+static
+const struct xlat shm_flags[1] = { {
+ .data = shm_flags_xdata,
+ .size = ARRAY_SIZE(shm_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

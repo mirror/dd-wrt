@@ -24,3 +24,27 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
 # define SKF_LL_OFF -0x200000
 #endif
+
+#ifndef XLAT_MACROS_ONLY
+
+# ifdef IN_MPERS
+
+#  error static const struct xlat skf_off in mpers mode
+
+# else
+
+static const struct xlat_data skf_off_xdata[] = {
+ XLAT(SKF_AD_OFF),
+ XLAT(SKF_NET_OFF),
+ XLAT(SKF_LL_OFF),
+};
+static
+const struct xlat skf_off[1] = { {
+ .data = skf_off_xdata,
+ .size = ARRAY_SIZE(skf_off_xdata),
+ .type = XT_NORMAL,
+} };
+
+# endif /* !IN_MPERS */
+
+#endif /* !XLAT_MACROS_ONLY */

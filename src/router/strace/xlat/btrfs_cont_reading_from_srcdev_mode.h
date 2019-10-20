@@ -26,14 +26,18 @@ extern const struct xlat btrfs_cont_reading_from_srcdev_mode[];
 
 # else
 
+static const struct xlat_data btrfs_cont_reading_from_srcdev_mode_xdata[] = {
+ [BTRFS_IOCTL_DEV_REPLACE_CONT_READING_FROM_SRCDEV_MODE_ALWAYS] = XLAT(BTRFS_IOCTL_DEV_REPLACE_CONT_READING_FROM_SRCDEV_MODE_ALWAYS),
+ [BTRFS_IOCTL_DEV_REPLACE_CONT_READING_FROM_SRCDEV_MODE_AVOID] = XLAT(BTRFS_IOCTL_DEV_REPLACE_CONT_READING_FROM_SRCDEV_MODE_AVOID),
+};
 #  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
 static
 #  endif
-const struct xlat btrfs_cont_reading_from_srcdev_mode[] = {
- XLAT(BTRFS_IOCTL_DEV_REPLACE_CONT_READING_FROM_SRCDEV_MODE_ALWAYS),
- XLAT(BTRFS_IOCTL_DEV_REPLACE_CONT_READING_FROM_SRCDEV_MODE_AVOID),
- XLAT_END
-};
+const struct xlat btrfs_cont_reading_from_srcdev_mode[1] = { {
+ .data = btrfs_cont_reading_from_srcdev_mode_xdata,
+ .size = ARRAY_SIZE(btrfs_cont_reading_from_srcdev_mode_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

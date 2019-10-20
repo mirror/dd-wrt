@@ -12,10 +12,7 @@ extern const struct xlat v4l2_buf_types[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat v4l2_buf_types[] = {
+static const struct xlat_data v4l2_buf_types_xdata[] = {
 #if defined(V4L2_BUF_TYPE_VIDEO_CAPTURE) || (defined(HAVE_DECL_V4L2_BUF_TYPE_VIDEO_CAPTURE) && HAVE_DECL_V4L2_BUF_TYPE_VIDEO_CAPTURE)
   XLAT(V4L2_BUF_TYPE_VIDEO_CAPTURE),
 #endif
@@ -58,8 +55,15 @@ const struct xlat v4l2_buf_types[] = {
 #if defined(V4L2_BUF_TYPE_META_OUTPUT) || (defined(HAVE_DECL_V4L2_BUF_TYPE_META_OUTPUT) && HAVE_DECL_V4L2_BUF_TYPE_META_OUTPUT)
   XLAT(V4L2_BUF_TYPE_META_OUTPUT),
 #endif
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat v4l2_buf_types[1] = { {
+ .data = v4l2_buf_types_xdata,
+ .size = ARRAY_SIZE(v4l2_buf_types_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

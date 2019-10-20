@@ -187,8 +187,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat bpf_map_types[] = {
+static const struct xlat_data bpf_map_types_xdata[] = {
  [BPF_MAP_TYPE_UNSPEC] = XLAT(BPF_MAP_TYPE_UNSPEC),
  [BPF_MAP_TYPE_HASH] = XLAT(BPF_MAP_TYPE_HASH),
  [BPF_MAP_TYPE_ARRAY] = XLAT(BPF_MAP_TYPE_ARRAY),
@@ -214,8 +213,13 @@ const struct xlat bpf_map_types[] = {
  [BPF_MAP_TYPE_QUEUE] = XLAT(BPF_MAP_TYPE_QUEUE),
  [BPF_MAP_TYPE_STACK] = XLAT(BPF_MAP_TYPE_STACK),
  [BPF_MAP_TYPE_SK_STORAGE] = XLAT(BPF_MAP_TYPE_SK_STORAGE),
- XLAT_END
 };
+static
+const struct xlat bpf_map_types[1] = { {
+ .data = bpf_map_types_xdata,
+ .size = ARRAY_SIZE(bpf_map_types_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

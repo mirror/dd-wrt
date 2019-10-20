@@ -18,3 +18,5 @@
 [BASE_NR + 431] = { 5,	TD|TF,		SEN(fsconfig),			"fsconfig"		},
 [BASE_NR + 432] = { 3,	TD,		SEN(fsmount),			"fsmount"		},
 [BASE_NR + 433] = { 3,	TD|TF,		SEN(fspick),			"fspick"		},
+[BASE_NR + 434] = { 2,	TD,		SEN(pidfd_open),		"pidfd_open"		},
+[BASE_NR + 435] = { 2,	TP,		SEN(clone3),			"clone3"		},

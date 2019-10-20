@@ -110,9 +110,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat semctl_flags[] = {
-
+static const struct xlat_data semctl_flags_xdata[] = {
  XLAT(IPC_RMID),
  XLAT(IPC_SET),
  XLAT(IPC_STAT),
@@ -127,8 +125,13 @@ const struct xlat semctl_flags[] = {
  XLAT(SEM_STAT),
  XLAT(SEM_INFO),
  XLAT(SEM_STAT_ANY),
- XLAT_END
 };
+static
+const struct xlat semctl_flags[1] = { {
+ .data = semctl_flags_xdata,
+ .size = ARRAY_SIZE(semctl_flags_xdata),
+ .type = XT_SORTED,
+} };
 
 # endif /* !IN_MPERS */
 

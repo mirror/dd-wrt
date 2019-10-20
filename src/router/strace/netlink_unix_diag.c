@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2016 Fabien Siron <fabien.siron@epita.fr>
  * Copyright (c) 2017 JingPiao Chen <chenjingpiao@gmail.com>
- * Copyright (c) 2017-2018 The strace developers.
+ * Copyright (c) 2017-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -119,7 +119,8 @@ static const nla_decoder_t unix_diag_msg_nla_decoders[] = {
 	[UNIX_DIAG_ICONS]	= decode_unix_diag_inode,
 	[UNIX_DIAG_RQLEN]	= decode_unix_diag_rqlen,
 	[UNIX_DIAG_MEMINFO]	= decode_nla_meminfo,
-	[UNIX_DIAG_SHUTDOWN]	= decode_nla_u8
+	[UNIX_DIAG_SHUTDOWN]	= decode_nla_u8,
+	[UNIX_DIAG_UID]		= decode_nla_uid
 };
 
 DECL_NETLINK_DIAG_DECODER(decode_unix_diag_msg)

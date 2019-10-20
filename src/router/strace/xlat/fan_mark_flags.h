@@ -75,8 +75,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat fan_mark_flags[] = {
+static const struct xlat_data fan_mark_flags_xdata[] = {
  XLAT(FAN_MARK_ADD),
  XLAT(FAN_MARK_REMOVE),
  XLAT(FAN_MARK_DONT_FOLLOW),
@@ -86,8 +85,13 @@ const struct xlat fan_mark_flags[] = {
  XLAT(FAN_MARK_IGNORED_SURV_MODIFY),
  XLAT(FAN_MARK_FLUSH),
  XLAT(FAN_MARK_FILESYSTEM),
- XLAT_END
 };
+static
+const struct xlat fan_mark_flags[1] = { {
+ .data = fan_mark_flags_xdata,
+ .size = ARRAY_SIZE(fan_mark_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

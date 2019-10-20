@@ -61,8 +61,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat evdev_prop[] = {
+static const struct xlat_data evdev_prop_xdata[] = {
  [INPUT_PROP_POINTER] = XLAT(INPUT_PROP_POINTER),
  [INPUT_PROP_DIRECT] = XLAT(INPUT_PROP_DIRECT),
  [INPUT_PROP_BUTTONPAD] = XLAT(INPUT_PROP_BUTTONPAD),
@@ -70,8 +69,13 @@ const struct xlat evdev_prop[] = {
  [INPUT_PROP_TOPBUTTONPAD] = XLAT(INPUT_PROP_TOPBUTTONPAD),
  [INPUT_PROP_POINTING_STICK] = XLAT(INPUT_PROP_POINTING_STICK),
  [INPUT_PROP_ACCELEROMETER] = XLAT(INPUT_PROP_ACCELEROMETER),
- XLAT_END
 };
+static
+const struct xlat evdev_prop[1] = { {
+ .data = evdev_prop_xdata,
+ .size = ARRAY_SIZE(evdev_prop_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

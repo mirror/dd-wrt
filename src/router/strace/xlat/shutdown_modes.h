@@ -33,13 +33,17 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat shutdown_modes[] = {
- XLAT(SHUT_RD),
- XLAT(SHUT_WR),
- XLAT(SHUT_RDWR),
- XLAT_END
+static const struct xlat_data shutdown_modes_xdata[] = {
+ [SHUT_RD] = XLAT(SHUT_RD),
+ [SHUT_WR] = XLAT(SHUT_WR),
+ [SHUT_RDWR] = XLAT(SHUT_RDWR),
 };
+static
+const struct xlat shutdown_modes[1] = { {
+ .data = shutdown_modes_xdata,
+ .size = ARRAY_SIZE(shutdown_modes_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

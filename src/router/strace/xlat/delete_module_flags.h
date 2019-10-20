@@ -12,16 +12,20 @@
 
 # else
 
-static
-const struct xlat delete_module_flags[] = {
+static const struct xlat_data delete_module_flags_xdata[] = {
 #if defined(O_NONBLOCK) || (defined(HAVE_DECL_O_NONBLOCK) && HAVE_DECL_O_NONBLOCK)
   XLAT(O_NONBLOCK),
 #endif
 #if defined(O_TRUNC) || (defined(HAVE_DECL_O_TRUNC) && HAVE_DECL_O_TRUNC)
   XLAT(O_TRUNC),
 #endif
- XLAT_END
 };
+static
+const struct xlat delete_module_flags[1] = { {
+ .data = delete_module_flags_xdata,
+ .size = ARRAY_SIZE(delete_module_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

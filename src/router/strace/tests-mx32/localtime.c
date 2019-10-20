@@ -1,7 +1,7 @@
 /*
  * Check handling of localtime() returning NULL in printleader().
  *
- * Copyright (c) 2018 The strace developers.
+ * Copyright (c) 2018-2019 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -14,7 +14,7 @@
 #include <time.h>
 #include <unistd.h>
 
-#include <asm/unistd.h>
+#include "scno.h"
 
 int
 main(void)

@@ -12,13 +12,17 @@
 
 # else
 
-static
-const struct xlat sysctl_net_unix[] = {
+static const struct xlat_data sysctl_net_unix_xdata[] = {
  XLAT(NET_UNIX_DESTROY_DELAY),
  XLAT(NET_UNIX_DELETE_DELAY),
  XLAT(NET_UNIX_MAX_DGRAM_QLEN),
- XLAT_END
 };
+static
+const struct xlat sysctl_net_unix[1] = { {
+ .data = sysctl_net_unix_xdata,
+ .size = ARRAY_SIZE(sysctl_net_unix_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

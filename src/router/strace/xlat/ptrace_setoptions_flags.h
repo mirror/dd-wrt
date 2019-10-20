@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat ptrace_setoptions_flags[] = {
+static const struct xlat_data ptrace_setoptions_flags_xdata[] = {
 #if defined(PTRACE_O_TRACESYSGOOD) || (defined(HAVE_DECL_PTRACE_O_TRACESYSGOOD) && HAVE_DECL_PTRACE_O_TRACESYSGOOD)
   XLAT(PTRACE_O_TRACESYSGOOD),
 #endif
@@ -48,8 +47,13 @@ const struct xlat ptrace_setoptions_flags[] = {
 #if defined(PTRACE_O_TRACEMIGRATE) || (defined(HAVE_DECL_PTRACE_O_TRACEMIGRATE) && HAVE_DECL_PTRACE_O_TRACEMIGRATE)
   XLAT(PTRACE_O_TRACEMIGRATE),
 #endif
- XLAT_END
 };
+static
+const struct xlat ptrace_setoptions_flags[1] = { {
+ .data = ptrace_setoptions_flags_xdata,
+ .size = ARRAY_SIZE(ptrace_setoptions_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

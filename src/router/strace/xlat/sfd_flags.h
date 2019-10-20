@@ -28,14 +28,18 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat sfd_flags[] = {
+static const struct xlat_data sfd_flags_xdata[] = {
 #if defined SFD_CLOEXEC || defined O_CLOEXEC
  XLAT(SFD_CLOEXEC),
 #endif
  XLAT(SFD_NONBLOCK),
- XLAT_END
 };
+static
+const struct xlat sfd_flags[1] = { {
+ .data = sfd_flags_xdata,
+ .size = ARRAY_SIZE(sfd_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

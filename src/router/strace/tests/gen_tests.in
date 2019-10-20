@@ -31,6 +31,13 @@ clock	test_trace_expr 'times|fcntl.*' -e/clock
 clock_adjtime	-a37
 clock_nanosleep	-e trace=clock_nanosleep,clock_gettime
 clock_xettime	-a36 -e trace=clock_getres,clock_gettime,clock_settime
+clone3	-a16
+clone3-Xabbrev	-a16 -Xabbrev  -e trace=clone3
+clone3-Xraw	-a16 -Xraw     -e trace=clone3
+clone3-Xverbose	-a16 -Xverbose -e trace=clone3
+clone3-success-Xabbrev	+clone3-success.test -a16 -Xabbrev
+clone3-success-Xraw	+clone3-success.test -a16 -Xraw
+clone3-success-Xverbose	+clone3-success.test -a16 -Xverbose
 copy_file_range
 creat	-a20
 delete_module	-a23
@@ -65,6 +72,8 @@ fcntl64	-a8
 fdatasync	-a14
 file_handle	-e trace=name_to_handle_at,open_by_handle_at
 file_ioctl	+ioctl.test
+filter_seccomp	. "${srcdir=.}/filter_seccomp.sh"; test_prog_set --seccomp-bpf -f
+filter_seccomp-flag	../$NAME
 finit_module	-a25
 flock	-a19
 fork-f	-a26 -qq -f -e signal=none -e trace=chdir
@@ -132,8 +141,21 @@ io_uring_setup	-a26 -y
 ioctl_block	+ioctl.test
 ioctl_dm	+ioctl.test -s9
 ioctl_dm-v	+ioctl.test -v -s9
-ioctl_evdev	+ioctl.test
-ioctl_evdev-v	+ioctl.test -v
+ioctl_evdev	+ioctl.test -a26
+ioctl_evdev-Xabbrev	+ioctl.test -a26 -Xabbrev
+ioctl_evdev-Xraw	+ioctl.test -a28 -Xraw
+ioctl_evdev-Xverbose	+ioctl.test -a41 -Xverbose
+ioctl_evdev-v	+ioctl.test -a26 -v
+ioctl_evdev-v-Xabbrev	+ioctl.test -a26 -v -Xabbrev
+ioctl_evdev-v-Xraw	+ioctl.test -a28 -v -Xraw
+ioctl_evdev-v-Xverbose	+ioctl.test -a41 -v -Xverbose
+ioctl_evdev-success-Xabbrev	+ioctl_evdev-success.test -Xabbrev
+ioctl_evdev-success-Xraw	+ioctl_evdev-success.test -a27 -Xraw
+ioctl_evdev-success-Xverbose	+ioctl_evdev-success.test -a43 -Xverbose
+ioctl_evdev-success-v	+ioctl_evdev-success.test -a26 -v
+ioctl_evdev-success-v-Xabbrev	+ioctl_evdev-success.test -v -Xabbrev
+ioctl_evdev-success-v-Xraw	+ioctl_evdev-success.test -a27 -v -Xraw
+ioctl_evdev-success-v-Xverbose	+ioctl_evdev-success.test -a43 -v -Xverbose
 ioctl_inotify	+ioctl.test
 ioctl_kvm_run	+ioctl.test -a36 -y
 ioctl_kvm_run-v	+ioctl.test -v -a36 -y
@@ -155,6 +177,7 @@ ioctl_sg_io_v4	+ioctl.test
 ioctl_sock_gifconf	+ioctl.test -a28 -s1
 ioctl_uffdio	+ioctl.test
 ioctl_v4l2	+ioctl.test
+ioctl_watchdog	+ioctl.test
 ioperm	-a27
 iopl	-a8
 ioprio	-a18 -e trace=ioprio_get,ioprio_set
@@ -168,16 +191,16 @@ ipc_msg-Xabbrev	+ipc.sh -Xabbrev -a26
 ipc_msg-Xraw	+ipc.sh -Xraw -a16
 ipc_msg-Xverbose	+ipc.sh -Xverbose -a34
 ipc_msgbuf-Xabbrev	+ipc_msgbuf.test -Xabbrev
-ipc_msgbuf-Xraw	+ipc_msgbuf.test -Xraw -a22
+ipc_msgbuf-Xraw	+ipc_msgbuf.test -Xraw -a20
 ipc_msgbuf-Xverbose	+ipc_msgbuf.test -Xverbose
 ipc_sem	+ipc.sh -a29
 ipc_sem-Xabbrev	+ipc.sh -Xabbrev -a29
 ipc_sem-Xraw	+ipc.sh -Xraw -a19
 ipc_sem-Xverbose	+ipc.sh -Xverbose -a36
-ipc_shm	+ipc.sh -a29
-ipc_shm-Xabbrev	+ipc.sh -Xabbrev -a29
+ipc_shm	+ipc.sh -a26
+ipc_shm-Xabbrev	+ipc.sh -Xabbrev -a26
 ipc_shm-Xraw	+ipc.sh -Xraw -a19
-ipc_shm-Xverbose	+ipc.sh -Xverbose -a36
+ipc_shm-Xverbose	+ipc.sh -Xverbose -a34
 kcmp	-a22
 kcmp-y	-a22 -y -e trace=kcmp
 kern_features -a16
@@ -192,6 +215,7 @@ keyctl-Xabbrev	-a31 -s10 -e trace=keyctl -Xabbrev
 keyctl-Xraw	-a13 -s10 -e trace=keyctl -Xraw
 keyctl-Xverbose	-a41 -s10 -e trace=keyctl -Xverbose
 kill	-a12 -esignal=none
+ksysent	../$NAME
 lchown	-a30
 lchown32	-a32
 link
@@ -338,6 +362,9 @@ perf_event_open_unabbrev	-a1 -v -e trace=perf_event_open
 personality-Xabbrev	+personality.test -Xabbrev
 personality-Xraw	+personality.test -a15 -Xraw
 personality-Xverbose	+personality.test -Xverbose
+pidfd_open	-a17
+pidfd_open-P	-a17 -P /dev/full -e trace=pidfd_open
+pidfd_open-y	-a17 -y -e trace=pidfd_open
 pidfd_send_signal
 pipe2	-a15
 pkey_alloc	-a17
@@ -380,7 +407,9 @@ readdir	-a16
 readlink	-xx
 readlinkat	-xx
 reboot		-s 256
+recv-MSG_TRUNC	-a26 -e trace=recv
 recvfrom	-a35
+recvfrom-MSG_TRUNC	-e trace=recvfrom
 recvmmsg-timeout	-a25 -e trace=recvmmsg
 recvmsg	-eread=0 -ewrite=1 -e trace=recvmsg,sendmsg
 regex	test_trace_expr '' -etrace='/^(.*_)?statv?fs'
@@ -498,7 +527,7 @@ sync	-a7
 sync_file_range
 sync_file_range2
 sysinfo	-a14
-syslog	-a36
+syslog	-a35
 tee
 time	-a10
 timer_create

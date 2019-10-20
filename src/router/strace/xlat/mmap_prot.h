@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat mmap_prot[] = {
+static const struct xlat_data mmap_prot_xdata[] = {
 #if defined(PROT_NONE) || (defined(HAVE_DECL_PROT_NONE) && HAVE_DECL_PROT_NONE)
   XLAT(PROT_NONE),
 #endif
@@ -41,8 +40,13 @@ const struct xlat mmap_prot[] = {
 #if defined(PROT_ADI) || (defined(HAVE_DECL_PROT_ADI) && HAVE_DECL_PROT_ADI)
   XLAT(PROT_ADI),
 #endif
- XLAT_END
 };
+static
+const struct xlat mmap_prot[1] = { {
+ .data = mmap_prot_xdata,
+ .size = ARRAY_SIZE(mmap_prot_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

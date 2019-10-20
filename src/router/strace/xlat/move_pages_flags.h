@@ -12,16 +12,20 @@
 
 # else
 
-static
-const struct xlat move_pages_flags[] = {
+static const struct xlat_data move_pages_flags_xdata[] = {
 #if defined(MPOL_MF_MOVE) || (defined(HAVE_DECL_MPOL_MF_MOVE) && HAVE_DECL_MPOL_MF_MOVE)
   XLAT(MPOL_MF_MOVE),
 #endif
 #if defined(MPOL_MF_MOVE_ALL) || (defined(HAVE_DECL_MPOL_MF_MOVE_ALL) && HAVE_DECL_MPOL_MF_MOVE_ALL)
   XLAT(MPOL_MF_MOVE_ALL),
 #endif
- XLAT_END
 };
+static
+const struct xlat move_pages_flags[1] = { {
+ .data = move_pages_flags_xdata,
+ .size = ARRAY_SIZE(move_pages_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

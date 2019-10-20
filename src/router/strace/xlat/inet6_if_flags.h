@@ -47,16 +47,19 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat inet6_if_flags[] = {
-
+static const struct xlat_data inet6_if_flags_xdata[] = {
  XLAT(IF_RS_SENT),
  XLAT(IF_RA_RCVD),
  XLAT(IF_RA_MANAGED),
  XLAT(IF_RA_OTHERCONF),
  XLAT(IF_READY),
- XLAT_END
 };
+static
+const struct xlat inet6_if_flags[1] = { {
+ .data = inet6_if_flags_xdata,
+ .size = ARRAY_SIZE(inet6_if_flags_xdata),
+ .type = XT_SORTED,
+} };
 
 # endif /* !IN_MPERS */
 

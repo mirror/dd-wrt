@@ -33,13 +33,17 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat sync_file_range_flags[] = {
+static const struct xlat_data sync_file_range_flags_xdata[] = {
  XLAT(SYNC_FILE_RANGE_WAIT_BEFORE),
  XLAT(SYNC_FILE_RANGE_WRITE),
  XLAT(SYNC_FILE_RANGE_WAIT_AFTER),
- XLAT_END
 };
+static
+const struct xlat sync_file_range_flags[1] = { {
+ .data = sync_file_range_flags_xdata,
+ .size = ARRAY_SIZE(sync_file_range_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -302,7 +302,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # ifndef IN_MPERS
 
-const struct xlat evdev_abs[] = {
+static const struct xlat_data evdev_abs_xdata[] = {
  [ABS_X] = XLAT(ABS_X),
  [ABS_Y] = XLAT(ABS_Y),
  [ABS_Z] = XLAT(ABS_Z),
@@ -345,8 +345,12 @@ const struct xlat evdev_abs[] = {
  [ABS_MT_DISTANCE] = XLAT(ABS_MT_DISTANCE),
  [ABS_MT_TOOL_X] = XLAT(ABS_MT_TOOL_X),
  [ABS_MT_TOOL_Y] = XLAT(ABS_MT_TOOL_Y),
- XLAT_END
 };
+const struct xlat evdev_abs[1] = { {
+ .data = evdev_abs_xdata,
+ .size = ARRAY_SIZE(evdev_abs_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

@@ -68,8 +68,7 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat bt_protocols[] = {
+static const struct xlat_data bt_protocols_xdata[] = {
  [BTPROTO_L2CAP] = XLAT(BTPROTO_L2CAP),
  [BTPROTO_HCI] = XLAT(BTPROTO_HCI),
  [BTPROTO_SCO] = XLAT(BTPROTO_SCO),
@@ -78,8 +77,13 @@ const struct xlat bt_protocols[] = {
  [BTPROTO_CMTP] = XLAT(BTPROTO_CMTP),
  [BTPROTO_HIDP] = XLAT(BTPROTO_HIDP),
  [BTPROTO_AVDTP] = XLAT(BTPROTO_AVDTP),
- XLAT_END
 };
+static
+const struct xlat bt_protocols[1] = { {
+ .data = bt_protocols_xdata,
+ .size = ARRAY_SIZE(bt_protocols_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

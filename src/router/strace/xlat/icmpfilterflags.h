@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat icmpfilterflags[] = {
+static const struct xlat_data icmpfilterflags_xdata[] = {
 #if defined(ICMP_ECHOREPLY) || (defined(HAVE_DECL_ICMP_ECHOREPLY) && HAVE_DECL_ICMP_ECHOREPLY)
   XLAT_PAIR(1ULL<<ICMP_ECHOREPLY, "1<<ICMP_ECHOREPLY"),
 #endif
@@ -53,8 +52,13 @@ const struct xlat icmpfilterflags[] = {
 #if defined(ICMP_ADDRESSREPLY) || (defined(HAVE_DECL_ICMP_ADDRESSREPLY) && HAVE_DECL_ICMP_ADDRESSREPLY)
   XLAT_PAIR(1ULL<<ICMP_ADDRESSREPLY, "1<<ICMP_ADDRESSREPLY"),
 #endif
- XLAT_END
 };
+static
+const struct xlat icmpfilterflags[1] = { {
+ .data = icmpfilterflags_xdata,
+ .size = ARRAY_SIZE(icmpfilterflags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

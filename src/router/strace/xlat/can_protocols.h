@@ -54,16 +54,20 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat can_protocols[] = {
+static const struct xlat_data can_protocols_xdata[] = {
  [CAN_RAW] = XLAT(CAN_RAW),
  [CAN_BCM] = XLAT(CAN_BCM),
  [CAN_TP16] = XLAT(CAN_TP16),
  [CAN_TP20] = XLAT(CAN_TP20),
  [CAN_MCNET] = XLAT(CAN_MCNET),
  [CAN_ISOTP] = XLAT(CAN_ISOTP),
- XLAT_END
 };
+static
+const struct xlat can_protocols[1] = { {
+ .data = can_protocols_xdata,
+ .size = ARRAY_SIZE(can_protocols_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

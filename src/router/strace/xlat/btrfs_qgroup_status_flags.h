@@ -26,14 +26,18 @@ extern const struct xlat btrfs_qgroup_status_flags[];
 
 # else
 
+static const struct xlat_data btrfs_qgroup_status_flags_xdata[] = {
+ XLAT_TYPE(uint64_t, BTRFS_QGROUP_STATUS_FLAG_ON),
+ XLAT_TYPE(uint64_t, BTRFS_QGROUP_STATUS_FLAG_RESCAN),
+};
 #  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
 static
 #  endif
-const struct xlat btrfs_qgroup_status_flags[] = {
- XLAT_TYPE(uint64_t, BTRFS_QGROUP_STATUS_FLAG_ON),
- XLAT_TYPE(uint64_t, BTRFS_QGROUP_STATUS_FLAG_RESCAN),
- XLAT_END
-};
+const struct xlat btrfs_qgroup_status_flags[1] = { {
+ .data = btrfs_qgroup_status_flags_xdata,
+ .size = ARRAY_SIZE(btrfs_qgroup_status_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

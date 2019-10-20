@@ -8,7 +8,7 @@
 
 # ifndef IN_MPERS
 
-const struct xlat ip_type_of_services[] = {
+static const struct xlat_data ip_type_of_services_xdata[] = {
 #if defined(IPTOS_LOWDELAY) || (defined(HAVE_DECL_IPTOS_LOWDELAY) && HAVE_DECL_IPTOS_LOWDELAY)
   XLAT(IPTOS_LOWDELAY),
 #endif
@@ -21,8 +21,12 @@ const struct xlat ip_type_of_services[] = {
 #if defined(IPTOS_MINCOST) || (defined(HAVE_DECL_IPTOS_MINCOST) && HAVE_DECL_IPTOS_MINCOST)
   XLAT(IPTOS_MINCOST),
 #endif
- XLAT_END
 };
+const struct xlat ip_type_of_services[1] = { {
+ .data = ip_type_of_services_xdata,
+ .size = ARRAY_SIZE(ip_type_of_services_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

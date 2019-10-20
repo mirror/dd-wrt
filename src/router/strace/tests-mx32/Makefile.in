@@ -111,13 +111,23 @@ check_PROGRAMS = $(am__EXEEXT_1) _newselect-P$(EXEEXT) answer$(EXEEXT) \
 	bpf-obj_get_info_by_fd-v$(EXEEXT) bpf-success$(EXEEXT) \
 	bpf-success-v$(EXEEXT) caps-abbrev$(EXEEXT) \
 	check_sigblock$(EXEEXT) check_sigign$(EXEEXT) \
-	clone_parent$(EXEEXT) clone_ptrace$(EXEEXT) count-f$(EXEEXT) \
-	delay$(EXEEXT) execve-v$(EXEEXT) execveat-v$(EXEEXT) \
-	filter-unavailable$(EXEEXT) fork-f$(EXEEXT) fsync-y$(EXEEXT) \
-	getpid$(EXEEXT) getppid$(EXEEXT) gettid$(EXEEXT) \
-	inject-nf$(EXEEXT) int_0x80$(EXEEXT) ioctl_dm-v$(EXEEXT) \
-	ioctl_evdev-success$(EXEEXT) ioctl_evdev-success-v$(EXEEXT) \
-	ioctl_evdev-v$(EXEEXT) ioctl_loop-nv$(EXEEXT) \
+	clone_parent$(EXEEXT) clone_ptrace$(EXEEXT) \
+	clone3-success$(EXEEXT) clone3-success-Xabbrev$(EXEEXT) \
+	clone3-success-Xraw$(EXEEXT) clone3-success-Xverbose$(EXEEXT) \
+	count-f$(EXEEXT) delay$(EXEEXT) execve-v$(EXEEXT) \
+	execveat-v$(EXEEXT) filter_seccomp-flag$(EXEEXT) \
+	filter_seccomp-perf$(EXEEXT) filter-unavailable$(EXEEXT) \
+	fork-f$(EXEEXT) fsync-y$(EXEEXT) getpid$(EXEEXT) \
+	getppid$(EXEEXT) gettid$(EXEEXT) inject-nf$(EXEEXT) \
+	int_0x80$(EXEEXT) ioctl_dm-v$(EXEEXT) \
+	ioctl_evdev-success$(EXEEXT) \
+	ioctl_evdev-success-Xabbrev$(EXEEXT) \
+	ioctl_evdev-success-Xraw$(EXEEXT) \
+	ioctl_evdev-success-Xverbose$(EXEEXT) \
+	ioctl_evdev-success-v$(EXEEXT) \
+	ioctl_evdev-success-v-Xabbrev$(EXEEXT) \
+	ioctl_evdev-success-v-Xraw$(EXEEXT) \
+	ioctl_evdev-success-v-Xverbose$(EXEEXT) ioctl_loop-nv$(EXEEXT) \
 	ioctl_loop-v$(EXEEXT) ioctl_nsfs$(EXEEXT) \
 	ioctl_perf-success$(EXEEXT) ioctl_rtc-v$(EXEEXT) \
 	is_linux_mips_n64$(EXEEXT) kill_child$(EXEEXT) \
@@ -146,8 +156,9 @@ check_PROGRAMS = $(am__EXEEXT_1) _newselect-P$(EXEEXT) answer$(EXEEXT) \
 	set_sigign$(EXEEXT) signal_receive$(EXEEXT) sleep$(EXEEXT) \
 	stack-fcall$(EXEEXT) stack-fcall-mangled$(EXEEXT) \
 	status-none-threads$(EXEEXT) \
-	status-unfinished-threads$(EXEEXT) threads-execve$(EXEEXT) \
-	unblock_reset_raise$(EXEEXT) unix-pair-send-recv$(EXEEXT) \
+	status-unfinished-threads$(EXEEXT) syslog-success$(EXEEXT) \
+	threads-execve$(EXEEXT) unblock_reset_raise$(EXEEXT) \
+	unix-pair-send-recv$(EXEEXT) \
 	unix-pair-sendto-recvfrom$(EXEEXT) vfork-f$(EXEEXT) \
 	wait4-v$(EXEEXT) waitid-v$(EXEEXT) zeroargc$(EXEEXT)
 @ENABLE_STACKTRACE_TRUE@@USE_DEMANGLE_TRUE@am__append_1 = strace-k-demangle.test
@@ -158,7 +169,8 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/ax_code_coverage.m4 \
 	$(top_srcdir)/m4/ax_prog_cc_for_build.m4 \
 	$(top_srcdir)/m4/ax_valgrind_check.m4 \
 	$(top_srcdir)/m4/bpf_attr.m4 $(top_srcdir)/m4/mpers.m4 \
-	$(top_srcdir)/m4/st_demangle.m4 $(top_srcdir)/m4/st_libdw.m4 \
+	$(top_srcdir)/m4/st_demangle.m4 \
+	$(top_srcdir)/m4/st_esyscmd_s.m4 $(top_srcdir)/m4/st_libdw.m4 \
 	$(top_srcdir)/m4/st_libunwind.m4 \
 	$(top_srcdir)/m4/st_save_restore_var.m4 \
 	$(top_srcdir)/m4/st_stacktrace.m4 \
@@ -181,13 +193,15 @@ am__EXEEXT_1 = _newselect$(EXEEXT) accept$(EXEEXT) accept4$(EXEEXT) \
 	btrfs$(EXEEXT) caps$(EXEEXT) chmod$(EXEEXT) chown$(EXEEXT) \
 	chown32$(EXEEXT) chroot$(EXEEXT) clock_adjtime$(EXEEXT) \
 	clock_nanosleep$(EXEEXT) clock_xettime$(EXEEXT) \
-	clone-flags$(EXEEXT) copy_file_range$(EXEEXT) creat$(EXEEXT) \
-	delete_module$(EXEEXT) dev-yy$(EXEEXT) dup$(EXEEXT) \
-	dup2$(EXEEXT) dup3$(EXEEXT) epoll_create$(EXEEXT) \
-	epoll_create1$(EXEEXT) epoll_ctl$(EXEEXT) epoll_pwait$(EXEEXT) \
-	epoll_wait$(EXEEXT) erestartsys$(EXEEXT) eventfd$(EXEEXT) \
-	execve$(EXEEXT) execveat$(EXEEXT) faccessat$(EXEEXT) \
-	fadvise64$(EXEEXT) fadvise64_64$(EXEEXT) fallocate$(EXEEXT) \
+	clone-flags$(EXEEXT) clone3$(EXEEXT) clone3-Xabbrev$(EXEEXT) \
+	clone3-Xraw$(EXEEXT) clone3-Xverbose$(EXEEXT) \
+	copy_file_range$(EXEEXT) creat$(EXEEXT) delete_module$(EXEEXT) \
+	dev-yy$(EXEEXT) dup$(EXEEXT) dup2$(EXEEXT) dup3$(EXEEXT) \
+	epoll_create$(EXEEXT) epoll_create1$(EXEEXT) \
+	epoll_ctl$(EXEEXT) epoll_pwait$(EXEEXT) epoll_wait$(EXEEXT) \
+	erestartsys$(EXEEXT) eventfd$(EXEEXT) execve$(EXEEXT) \
+	execveat$(EXEEXT) faccessat$(EXEEXT) fadvise64$(EXEEXT) \
+	fadvise64_64$(EXEEXT) fallocate$(EXEEXT) \
 	fanotify_init$(EXEEXT) fanotify_mark$(EXEEXT) \
 	fanotify_mark-Xabbrev$(EXEEXT) fanotify_mark-Xraw$(EXEEXT) \
 	fanotify_mark-Xverbose$(EXEEXT) fchdir$(EXEEXT) \
@@ -218,17 +232,22 @@ am__EXEEXT_1 = _newselect$(EXEEXT) accept$(EXEEXT) accept4$(EXEEXT) \
 	inotify_init1$(EXEEXT) inotify_init1-y$(EXEEXT) \
 	io_uring_enter$(EXEEXT) io_uring_register$(EXEEXT) \
 	io_uring_setup$(EXEEXT) ioctl$(EXEEXT) ioctl_block$(EXEEXT) \
-	ioctl_dm$(EXEEXT) ioctl_evdev$(EXEEXT) ioctl_inotify$(EXEEXT) \
+	ioctl_dm$(EXEEXT) ioctl_evdev$(EXEEXT) \
+	ioctl_evdev-Xabbrev$(EXEEXT) ioctl_evdev-Xraw$(EXEEXT) \
+	ioctl_evdev-Xverbose$(EXEEXT) ioctl_evdev-v$(EXEEXT) \
+	ioctl_evdev-v-Xabbrev$(EXEEXT) ioctl_evdev-v-Xraw$(EXEEXT) \
+	ioctl_evdev-v-Xverbose$(EXEEXT) ioctl_inotify$(EXEEXT) \
 	ioctl_kvm_run$(EXEEXT) ioctl_kvm_run-v$(EXEEXT) \
 	ioctl_kvm_run_auxstr_vcpu$(EXEEXT) ioctl_loop$(EXEEXT) \
 	ioctl_mtd$(EXEEXT) ioctl_nbd$(EXEEXT) ioctl_perf$(EXEEXT) \
 	ioctl_ptp$(EXEEXT) ioctl_random$(EXEEXT) ioctl_rtc$(EXEEXT) \
 	ioctl_scsi$(EXEEXT) ioctl_sg_io_v3$(EXEEXT) \
 	ioctl_sg_io_v4$(EXEEXT) ioctl_sock_gifconf$(EXEEXT) \
-	ioctl_uffdio$(EXEEXT) ioctl_v4l2$(EXEEXT) ioperm$(EXEEXT) \
-	iopl$(EXEEXT) ioprio$(EXEEXT) ioprio-Xabbrev$(EXEEXT) \
-	ioprio-Xraw$(EXEEXT) ioprio-Xverbose$(EXEEXT) ip_mreq$(EXEEXT) \
-	ipc$(EXEEXT) ipc_msg$(EXEEXT) ipc_msg-Xabbrev$(EXEEXT) \
+	ioctl_uffdio$(EXEEXT) ioctl_v4l2$(EXEEXT) \
+	ioctl_watchdog$(EXEEXT) ioperm$(EXEEXT) iopl$(EXEEXT) \
+	ioprio$(EXEEXT) ioprio-Xabbrev$(EXEEXT) ioprio-Xraw$(EXEEXT) \
+	ioprio-Xverbose$(EXEEXT) ip_mreq$(EXEEXT) ipc$(EXEEXT) \
+	ipc_msg$(EXEEXT) ipc_msg-Xabbrev$(EXEEXT) \
 	ipc_msg-Xraw$(EXEEXT) ipc_msg-Xverbose$(EXEEXT) \
 	ipc_msgbuf$(EXEEXT) ipc_msgbuf-Xabbrev$(EXEEXT) \
 	ipc_msgbuf-Xraw$(EXEEXT) ipc_msgbuf-Xverbose$(EXEEXT) \
@@ -307,10 +326,11 @@ am__EXEEXT_1 = _newselect$(EXEEXT) accept$(EXEEXT) accept4$(EXEEXT) \
 	openat$(EXEEXT) osf_utimes$(EXEEXT) pause$(EXEEXT) \
 	perf_event_open$(EXEEXT) personality$(EXEEXT) \
 	personality-Xabbrev$(EXEEXT) personality-Xraw$(EXEEXT) \
-	personality-Xverbose$(EXEEXT) pidfd_send_signal$(EXEEXT) \
-	pipe$(EXEEXT) pipe2$(EXEEXT) pkey_alloc$(EXEEXT) \
-	pkey_free$(EXEEXT) pkey_mprotect$(EXEEXT) poll$(EXEEXT) \
-	poll-P$(EXEEXT) ppoll$(EXEEXT) ppoll-P$(EXEEXT) \
+	personality-Xverbose$(EXEEXT) pidfd_open$(EXEEXT) \
+	pidfd_open-P$(EXEEXT) pidfd_open-y$(EXEEXT) \
+	pidfd_send_signal$(EXEEXT) pipe$(EXEEXT) pipe2$(EXEEXT) \
+	pkey_alloc$(EXEEXT) pkey_free$(EXEEXT) pkey_mprotect$(EXEEXT) \
+	poll$(EXEEXT) poll-P$(EXEEXT) ppoll$(EXEEXT) ppoll-P$(EXEEXT) \
 	prctl-arg2-intptr$(EXEEXT) prctl-dumpable$(EXEEXT) \
 	prctl-name$(EXEEXT) prctl-no-args$(EXEEXT) \
 	prctl-pdeathsig$(EXEEXT) prctl-securebits$(EXEEXT) \
@@ -330,7 +350,8 @@ am__EXEEXT_1 = _newselect$(EXEEXT) accept$(EXEEXT) accept4$(EXEEXT) \
 	quotactl-Xraw$(EXEEXT) quotactl-Xverbose$(EXEEXT) \
 	quotactl-xfs$(EXEEXT) read-write$(EXEEXT) readahead$(EXEEXT) \
 	readdir$(EXEEXT) readlink$(EXEEXT) readlinkat$(EXEEXT) \
-	readv$(EXEEXT) reboot$(EXEEXT) recvfrom$(EXEEXT) \
+	readv$(EXEEXT) reboot$(EXEEXT) recv-MSG_TRUNC$(EXEEXT) \
+	recvfrom$(EXEEXT) recvfrom-MSG_TRUNC$(EXEEXT) \
 	recvmmsg-timeout$(EXEEXT) recvmsg$(EXEEXT) \
 	remap_file_pages$(EXEEXT) remap_file_pages-Xabbrev$(EXEEXT) \
 	remap_file_pages-Xraw$(EXEEXT) \
@@ -375,18 +396,19 @@ am__EXEEXT_1 = _newselect$(EXEEXT) accept$(EXEEXT) accept4$(EXEEXT) \
 	sockopt-timestamp$(EXEEXT) splice$(EXEEXT) stat$(EXEEXT) \
 	stat64$(EXEEXT) statfs$(EXEEXT) statfs64$(EXEEXT) \
 	status-all$(EXEEXT) status-failed$(EXEEXT) \
-	status-none$(EXEEXT) status-successful$(EXEEXT) \
-	status-unfinished$(EXEEXT) statx$(EXEEXT) swap$(EXEEXT) \
-	sxetmask$(EXEEXT) symlink$(EXEEXT) symlinkat$(EXEEXT) \
-	sync$(EXEEXT) sync_file_range$(EXEEXT) \
-	sync_file_range2$(EXEEXT) sysinfo$(EXEEXT) syslog$(EXEEXT) \
-	tee$(EXEEXT) time$(EXEEXT) timer_create$(EXEEXT) \
-	timer_xettime$(EXEEXT) timerfd_xettime$(EXEEXT) times$(EXEEXT) \
-	times-fail$(EXEEXT) truncate$(EXEEXT) truncate64$(EXEEXT) \
-	ugetrlimit$(EXEEXT) uio$(EXEEXT) umask$(EXEEXT) \
-	umount$(EXEEXT) umount2$(EXEEXT) umoven-illptr$(EXEEXT) \
-	umovestr$(EXEEXT) umovestr-illptr$(EXEEXT) umovestr2$(EXEEXT) \
-	umovestr3$(EXEEXT) uname$(EXEEXT) unlink$(EXEEXT) \
+	status-none$(EXEEXT) status-none-f$(EXEEXT) \
+	status-successful$(EXEEXT) status-unfinished$(EXEEXT) \
+	statx$(EXEEXT) swap$(EXEEXT) sxetmask$(EXEEXT) \
+	symlink$(EXEEXT) symlinkat$(EXEEXT) sync$(EXEEXT) \
+	sync_file_range$(EXEEXT) sync_file_range2$(EXEEXT) \
+	sysinfo$(EXEEXT) syslog$(EXEEXT) tee$(EXEEXT) time$(EXEEXT) \
+	timer_create$(EXEEXT) timer_xettime$(EXEEXT) \
+	timerfd_xettime$(EXEEXT) times$(EXEEXT) times-fail$(EXEEXT) \
+	truncate$(EXEEXT) truncate64$(EXEEXT) ugetrlimit$(EXEEXT) \
+	uio$(EXEEXT) umask$(EXEEXT) umount$(EXEEXT) umount2$(EXEEXT) \
+	umoven-illptr$(EXEEXT) umovestr$(EXEEXT) \
+	umovestr-illptr$(EXEEXT) umovestr2$(EXEEXT) umovestr3$(EXEEXT) \
+	umovestr_cached$(EXEEXT) uname$(EXEEXT) unlink$(EXEEXT) \
 	unlinkat$(EXEEXT) unshare$(EXEEXT) userfaultfd$(EXEEXT) \
 	ustat$(EXEEXT) utime$(EXEEXT) utimensat$(EXEEXT) \
 	utimensat-Xabbrev$(EXEEXT) utimensat-Xraw$(EXEEXT) \
@@ -415,11 +437,15 @@ am_libtests_a_OBJECTS = libtests_a-create_nl_socket.$(OBJEXT) \
 	libtests_a-inode_of_sockfd.$(OBJEXT) \
 	libtests_a-libmmsg.$(OBJEXT) \
 	libtests_a-libsocketcall.$(OBJEXT) \
+	libtests_a-lock_file.$(OBJEXT) \
 	libtests_a-overflowuid.$(OBJEXT) \
 	libtests_a-pipe_maxfd.$(OBJEXT) \
 	libtests_a-print_quoted_string.$(OBJEXT) \
 	libtests_a-print_time.$(OBJEXT) \
-	libtests_a-printflags.$(OBJEXT) libtests_a-printxval.$(OBJEXT) \
+	libtests_a-printflags.$(OBJEXT) \
+	libtests_a-printxval-Xabbrev.$(OBJEXT) \
+	libtests_a-printxval-Xraw.$(OBJEXT) \
+	libtests_a-printxval-Xverbose.$(OBJEXT) \
 	libtests_a-signal2name.$(OBJEXT) \
 	libtests_a-skip_unavailable.$(OBJEXT) \
 	libtests_a-sprintrc.$(OBJEXT) libtests_a-status.$(OBJEXT) \
@@ -586,6 +612,38 @@ clone_flags_SOURCES = clone-flags.c
 clone_flags_OBJECTS = clone-flags.$(OBJEXT)
 clone_flags_LDADD = $(LDADD)
 clone_flags_DEPENDENCIES = libtests.a
+clone3_SOURCES = clone3.c
+clone3_OBJECTS = clone3.$(OBJEXT)
+clone3_LDADD = $(LDADD)
+clone3_DEPENDENCIES = libtests.a
+clone3_Xabbrev_SOURCES = clone3-Xabbrev.c
+clone3_Xabbrev_OBJECTS = clone3-Xabbrev.$(OBJEXT)
+clone3_Xabbrev_LDADD = $(LDADD)
+clone3_Xabbrev_DEPENDENCIES = libtests.a
+clone3_Xraw_SOURCES = clone3-Xraw.c
+clone3_Xraw_OBJECTS = clone3-Xraw.$(OBJEXT)
+clone3_Xraw_LDADD = $(LDADD)
+clone3_Xraw_DEPENDENCIES = libtests.a
+clone3_Xverbose_SOURCES = clone3-Xverbose.c
+clone3_Xverbose_OBJECTS = clone3-Xverbose.$(OBJEXT)
+clone3_Xverbose_LDADD = $(LDADD)
+clone3_Xverbose_DEPENDENCIES = libtests.a
+clone3_success_SOURCES = clone3-success.c
+clone3_success_OBJECTS = clone3-success.$(OBJEXT)
+clone3_success_LDADD = $(LDADD)
+clone3_success_DEPENDENCIES = libtests.a
+clone3_success_Xabbrev_SOURCES = clone3-success-Xabbrev.c
+clone3_success_Xabbrev_OBJECTS = clone3-success-Xabbrev.$(OBJEXT)
+clone3_success_Xabbrev_LDADD = $(LDADD)
+clone3_success_Xabbrev_DEPENDENCIES = libtests.a
+clone3_success_Xraw_SOURCES = clone3-success-Xraw.c
+clone3_success_Xraw_OBJECTS = clone3-success-Xraw.$(OBJEXT)
+clone3_success_Xraw_LDADD = $(LDADD)
+clone3_success_Xraw_DEPENDENCIES = libtests.a
+clone3_success_Xverbose_SOURCES = clone3-success-Xverbose.c
+clone3_success_Xverbose_OBJECTS = clone3-success-Xverbose.$(OBJEXT)
+clone3_success_Xverbose_LDADD = $(LDADD)
+clone3_success_Xverbose_DEPENDENCIES = libtests.a
 clone_parent_SOURCES = clone_parent.c
 clone_parent_OBJECTS = clone_parent.$(OBJEXT)
 clone_parent_LDADD = $(LDADD)
@@ -760,6 +818,14 @@ file_ioctl_DEPENDENCIES = libtests.a
 filter_unavailable_SOURCES = filter-unavailable.c
 filter_unavailable_OBJECTS = filter-unavailable.$(OBJEXT)
 filter_unavailable_DEPENDENCIES = $(LDADD)
+filter_seccomp_flag_SOURCES = filter_seccomp-flag.c
+filter_seccomp_flag_OBJECTS = filter_seccomp-flag.$(OBJEXT)
+filter_seccomp_flag_LDADD = $(LDADD)
+filter_seccomp_flag_DEPENDENCIES = libtests.a
+filter_seccomp_perf_SOURCES = filter_seccomp-perf.c
+filter_seccomp_perf_OBJECTS = filter_seccomp-perf.$(OBJEXT)
+filter_seccomp_perf_LDADD = $(LDADD)
+filter_seccomp_perf_DEPENDENCIES = libtests.a
 finit_module_SOURCES = finit_module.c
 finit_module_OBJECTS = finit_module.$(OBJEXT)
 finit_module_LDADD = $(LDADD)
@@ -1056,18 +1122,73 @@ ioctl_evdev_SOURCES = ioctl_evdev.c
 ioctl_evdev_OBJECTS = ioctl_evdev.$(OBJEXT)
 ioctl_evdev_LDADD = $(LDADD)
 ioctl_evdev_DEPENDENCIES = libtests.a
+ioctl_evdev_Xabbrev_SOURCES = ioctl_evdev-Xabbrev.c
+ioctl_evdev_Xabbrev_OBJECTS = ioctl_evdev-Xabbrev.$(OBJEXT)
+ioctl_evdev_Xabbrev_LDADD = $(LDADD)
+ioctl_evdev_Xabbrev_DEPENDENCIES = libtests.a
+ioctl_evdev_Xraw_SOURCES = ioctl_evdev-Xraw.c
+ioctl_evdev_Xraw_OBJECTS = ioctl_evdev-Xraw.$(OBJEXT)
+ioctl_evdev_Xraw_LDADD = $(LDADD)
+ioctl_evdev_Xraw_DEPENDENCIES = libtests.a
+ioctl_evdev_Xverbose_SOURCES = ioctl_evdev-Xverbose.c
+ioctl_evdev_Xverbose_OBJECTS = ioctl_evdev-Xverbose.$(OBJEXT)
+ioctl_evdev_Xverbose_LDADD = $(LDADD)
+ioctl_evdev_Xverbose_DEPENDENCIES = libtests.a
 ioctl_evdev_success_SOURCES = ioctl_evdev-success.c
 ioctl_evdev_success_OBJECTS = ioctl_evdev-success.$(OBJEXT)
 ioctl_evdev_success_LDADD = $(LDADD)
 ioctl_evdev_success_DEPENDENCIES = libtests.a
+ioctl_evdev_success_Xabbrev_SOURCES = ioctl_evdev-success-Xabbrev.c
+ioctl_evdev_success_Xabbrev_OBJECTS =  \
+	ioctl_evdev-success-Xabbrev.$(OBJEXT)
+ioctl_evdev_success_Xabbrev_LDADD = $(LDADD)
+ioctl_evdev_success_Xabbrev_DEPENDENCIES = libtests.a
+ioctl_evdev_success_Xraw_SOURCES = ioctl_evdev-success-Xraw.c
+ioctl_evdev_success_Xraw_OBJECTS = ioctl_evdev-success-Xraw.$(OBJEXT)
+ioctl_evdev_success_Xraw_LDADD = $(LDADD)
+ioctl_evdev_success_Xraw_DEPENDENCIES = libtests.a
+ioctl_evdev_success_Xverbose_SOURCES = ioctl_evdev-success-Xverbose.c
+ioctl_evdev_success_Xverbose_OBJECTS =  \
+	ioctl_evdev-success-Xverbose.$(OBJEXT)
+ioctl_evdev_success_Xverbose_LDADD = $(LDADD)
+ioctl_evdev_success_Xverbose_DEPENDENCIES = libtests.a
 ioctl_evdev_success_v_SOURCES = ioctl_evdev-success-v.c
 ioctl_evdev_success_v_OBJECTS = ioctl_evdev-success-v.$(OBJEXT)
 ioctl_evdev_success_v_LDADD = $(LDADD)
 ioctl_evdev_success_v_DEPENDENCIES = libtests.a
+ioctl_evdev_success_v_Xabbrev_SOURCES =  \
+	ioctl_evdev-success-v-Xabbrev.c
+ioctl_evdev_success_v_Xabbrev_OBJECTS =  \
+	ioctl_evdev-success-v-Xabbrev.$(OBJEXT)
+ioctl_evdev_success_v_Xabbrev_LDADD = $(LDADD)
+ioctl_evdev_success_v_Xabbrev_DEPENDENCIES = libtests.a
+ioctl_evdev_success_v_Xraw_SOURCES = ioctl_evdev-success-v-Xraw.c
+ioctl_evdev_success_v_Xraw_OBJECTS =  \
+	ioctl_evdev-success-v-Xraw.$(OBJEXT)
+ioctl_evdev_success_v_Xraw_LDADD = $(LDADD)
+ioctl_evdev_success_v_Xraw_DEPENDENCIES = libtests.a
+ioctl_evdev_success_v_Xverbose_SOURCES =  \
+	ioctl_evdev-success-v-Xverbose.c
+ioctl_evdev_success_v_Xverbose_OBJECTS =  \
+	ioctl_evdev-success-v-Xverbose.$(OBJEXT)
+ioctl_evdev_success_v_Xverbose_LDADD = $(LDADD)
+ioctl_evdev_success_v_Xverbose_DEPENDENCIES = libtests.a
 ioctl_evdev_v_SOURCES = ioctl_evdev-v.c
 ioctl_evdev_v_OBJECTS = ioctl_evdev-v.$(OBJEXT)
 ioctl_evdev_v_LDADD = $(LDADD)
 ioctl_evdev_v_DEPENDENCIES = libtests.a
+ioctl_evdev_v_Xabbrev_SOURCES = ioctl_evdev-v-Xabbrev.c
+ioctl_evdev_v_Xabbrev_OBJECTS = ioctl_evdev-v-Xabbrev.$(OBJEXT)
+ioctl_evdev_v_Xabbrev_LDADD = $(LDADD)
+ioctl_evdev_v_Xabbrev_DEPENDENCIES = libtests.a
+ioctl_evdev_v_Xraw_SOURCES = ioctl_evdev-v-Xraw.c
+ioctl_evdev_v_Xraw_OBJECTS = ioctl_evdev-v-Xraw.$(OBJEXT)
+ioctl_evdev_v_Xraw_LDADD = $(LDADD)
+ioctl_evdev_v_Xraw_DEPENDENCIES = libtests.a
+ioctl_evdev_v_Xverbose_SOURCES = ioctl_evdev-v-Xverbose.c
+ioctl_evdev_v_Xverbose_OBJECTS = ioctl_evdev-v-Xverbose.$(OBJEXT)
+ioctl_evdev_v_Xverbose_LDADD = $(LDADD)
+ioctl_evdev_v_Xverbose_DEPENDENCIES = libtests.a
 ioctl_inotify_SOURCES = ioctl_inotify.c
 ioctl_inotify_OBJECTS = ioctl_inotify.$(OBJEXT)
 ioctl_inotify_LDADD = $(LDADD)
@@ -1157,6 +1278,10 @@ ioctl_v4l2_SOURCES = ioctl_v4l2.c
 ioctl_v4l2_OBJECTS = ioctl_v4l2.$(OBJEXT)
 ioctl_v4l2_LDADD = $(LDADD)
 ioctl_v4l2_DEPENDENCIES = libtests.a
+ioctl_watchdog_SOURCES = ioctl_watchdog.c
+ioctl_watchdog_OBJECTS = ioctl_watchdog.$(OBJEXT)
+ioctl_watchdog_LDADD = $(LDADD)
+ioctl_watchdog_DEPENDENCIES = libtests.a
 ioperm_SOURCES = ioperm.c
 ioperm_OBJECTS = ioperm.$(OBJEXT)
 ioperm_LDADD = $(LDADD)
@@ -1983,6 +2108,18 @@ personality_Xverbose_SOURCES = personality-Xverbose.c
 personality_Xverbose_OBJECTS = personality-Xverbose.$(OBJEXT)
 personality_Xverbose_LDADD = $(LDADD)
 personality_Xverbose_DEPENDENCIES = libtests.a
+pidfd_open_SOURCES = pidfd_open.c
+pidfd_open_OBJECTS = pidfd_open.$(OBJEXT)
+pidfd_open_LDADD = $(LDADD)
+pidfd_open_DEPENDENCIES = libtests.a
+pidfd_open_P_SOURCES = pidfd_open-P.c
+pidfd_open_P_OBJECTS = pidfd_open-P.$(OBJEXT)
+pidfd_open_P_LDADD = $(LDADD)
+pidfd_open_P_DEPENDENCIES = libtests.a
+pidfd_open_y_SOURCES = pidfd_open-y.c
+pidfd_open_y_OBJECTS = pidfd_open-y.$(OBJEXT)
+pidfd_open_y_LDADD = $(LDADD)
+pidfd_open_y_DEPENDENCIES = libtests.a
 pidfd_send_signal_SOURCES = pidfd_send_signal.c
 pidfd_send_signal_OBJECTS = pidfd_send_signal.$(OBJEXT)
 pidfd_send_signal_LDADD = $(LDADD)
@@ -2257,10 +2394,18 @@ reboot_SOURCES = reboot.c
 reboot_OBJECTS = reboot.$(OBJEXT)
 reboot_LDADD = $(LDADD)
 reboot_DEPENDENCIES = libtests.a
+recv_MSG_TRUNC_SOURCES = recv-MSG_TRUNC.c
+recv_MSG_TRUNC_OBJECTS = recv-MSG_TRUNC.$(OBJEXT)
+recv_MSG_TRUNC_LDADD = $(LDADD)
+recv_MSG_TRUNC_DEPENDENCIES = libtests.a
 recvfrom_SOURCES = recvfrom.c
 recvfrom_OBJECTS = recvfrom.$(OBJEXT)
 recvfrom_LDADD = $(LDADD)
 recvfrom_DEPENDENCIES = libtests.a
+recvfrom_MSG_TRUNC_SOURCES = recvfrom-MSG_TRUNC.c
+recvfrom_MSG_TRUNC_OBJECTS = recvfrom-MSG_TRUNC.$(OBJEXT)
+recvfrom_MSG_TRUNC_LDADD = $(LDADD)
+recvfrom_MSG_TRUNC_DEPENDENCIES = libtests.a
 recvmmsg_timeout_SOURCES = recvmmsg-timeout.c
 recvmmsg_timeout_OBJECTS = recvmmsg-timeout.$(OBJEXT)
 recvmmsg_timeout_LDADD = $(LDADD)
@@ -2736,6 +2881,10 @@ status_none_SOURCES = status-none.c
 status_none_OBJECTS = status-none.$(OBJEXT)
 status_none_LDADD = $(LDADD)
 status_none_DEPENDENCIES = libtests.a
+status_none_f_SOURCES = status-none-f.c
+status_none_f_OBJECTS = status-none-f.$(OBJEXT)
+status_none_f_LDADD = $(LDADD)
+status_none_f_DEPENDENCIES = libtests.a
 status_none_threads_SOURCES = status-none-threads.c
 status_none_threads_OBJECTS = status-none-threads.$(OBJEXT)
 status_none_threads_DEPENDENCIES = $(LDADD)
@@ -2791,6 +2940,10 @@ syslog_SOURCES = syslog.c
 syslog_OBJECTS = syslog.$(OBJEXT)
 syslog_LDADD = $(LDADD)
 syslog_DEPENDENCIES = libtests.a
+syslog_success_SOURCES = syslog-success.c
+syslog_success_OBJECTS = syslog-success.$(OBJEXT)
+syslog_success_LDADD = $(LDADD)
+syslog_success_DEPENDENCIES = libtests.a
 tee_SOURCES = tee.c
 tee_OBJECTS = tee.$(OBJEXT)
 tee_LDADD = $(LDADD)
@@ -2869,6 +3022,10 @@ umovestr3_SOURCES = umovestr3.c
 umovestr3_OBJECTS = umovestr3.$(OBJEXT)
 umovestr3_LDADD = $(LDADD)
 umovestr3_DEPENDENCIES = libtests.a
+umovestr_cached_SOURCES = umovestr_cached.c
+umovestr_cached_OBJECTS = umovestr_cached.$(OBJEXT)
+umovestr_cached_LDADD = $(LDADD)
+umovestr_cached_DEPENDENCIES = libtests.a
 uname_SOURCES = uname.c
 uname_OBJECTS = uname.$(OBJEXT)
 uname_LDADD = $(LDADD)
@@ -3035,20 +3192,25 @@ am__depfiles_remade = ./$(DEPDIR)/_newselect-P.Po \
 	./$(DEPDIR)/chown.Po ./$(DEPDIR)/chown32.Po \
 	./$(DEPDIR)/chroot.Po ./$(DEPDIR)/clock_adjtime.Po \
 	./$(DEPDIR)/clock_nanosleep.Po ./$(DEPDIR)/clock_xettime.Po \
-	./$(DEPDIR)/clone-flags.Po ./$(DEPDIR)/clone_parent.Po \
-	./$(DEPDIR)/clone_ptrace.Po ./$(DEPDIR)/copy_file_range.Po \
-	./$(DEPDIR)/count-f.Po ./$(DEPDIR)/creat.Po \
-	./$(DEPDIR)/delay.Po ./$(DEPDIR)/delete_module.Po \
-	./$(DEPDIR)/dev-yy.Po ./$(DEPDIR)/dup.Po ./$(DEPDIR)/dup2.Po \
-	./$(DEPDIR)/dup3.Po ./$(DEPDIR)/epoll_create.Po \
-	./$(DEPDIR)/epoll_create1.Po ./$(DEPDIR)/epoll_ctl.Po \
-	./$(DEPDIR)/epoll_pwait.Po ./$(DEPDIR)/epoll_wait.Po \
-	./$(DEPDIR)/erestartsys.Po ./$(DEPDIR)/eventfd.Po \
-	./$(DEPDIR)/execve-v.Po ./$(DEPDIR)/execve.Po \
-	./$(DEPDIR)/execveat-v.Po ./$(DEPDIR)/execveat.Po \
-	./$(DEPDIR)/faccessat.Po ./$(DEPDIR)/fadvise64.Po \
-	./$(DEPDIR)/fadvise64_64.Po ./$(DEPDIR)/fallocate.Po \
-	./$(DEPDIR)/fanotify_init.Po \
+	./$(DEPDIR)/clone-flags.Po ./$(DEPDIR)/clone3-Xabbrev.Po \
+	./$(DEPDIR)/clone3-Xraw.Po ./$(DEPDIR)/clone3-Xverbose.Po \
+	./$(DEPDIR)/clone3-success-Xabbrev.Po \
+	./$(DEPDIR)/clone3-success-Xraw.Po \
+	./$(DEPDIR)/clone3-success-Xverbose.Po \
+	./$(DEPDIR)/clone3-success.Po ./$(DEPDIR)/clone3.Po \
+	./$(DEPDIR)/clone_parent.Po ./$(DEPDIR)/clone_ptrace.Po \
+	./$(DEPDIR)/copy_file_range.Po ./$(DEPDIR)/count-f.Po \
+	./$(DEPDIR)/creat.Po ./$(DEPDIR)/delay.Po \
+	./$(DEPDIR)/delete_module.Po ./$(DEPDIR)/dev-yy.Po \
+	./$(DEPDIR)/dup.Po ./$(DEPDIR)/dup2.Po ./$(DEPDIR)/dup3.Po \
+	./$(DEPDIR)/epoll_create.Po ./$(DEPDIR)/epoll_create1.Po \
+	./$(DEPDIR)/epoll_ctl.Po ./$(DEPDIR)/epoll_pwait.Po \
+	./$(DEPDIR)/epoll_wait.Po ./$(DEPDIR)/erestartsys.Po \
+	./$(DEPDIR)/eventfd.Po ./$(DEPDIR)/execve-v.Po \
+	./$(DEPDIR)/execve.Po ./$(DEPDIR)/execveat-v.Po \
+	./$(DEPDIR)/execveat.Po ./$(DEPDIR)/faccessat.Po \
+	./$(DEPDIR)/fadvise64.Po ./$(DEPDIR)/fadvise64_64.Po \
+	./$(DEPDIR)/fallocate.Po ./$(DEPDIR)/fanotify_init.Po \
 	./$(DEPDIR)/fanotify_mark-Xabbrev.Po \
 	./$(DEPDIR)/fanotify_mark-Xraw.Po \
 	./$(DEPDIR)/fanotify_mark-Xverbose.Po \
@@ -3059,15 +3221,16 @@ am__depfiles_remade = ./$(DEPDIR)/_newselect-P.Po \
 	./$(DEPDIR)/fcntl64.Po ./$(DEPDIR)/fdatasync.Po \
 	./$(DEPDIR)/fflush.Po ./$(DEPDIR)/file_handle.Po \
 	./$(DEPDIR)/file_ioctl.Po ./$(DEPDIR)/filter-unavailable.Po \
-	./$(DEPDIR)/finit_module.Po ./$(DEPDIR)/flock.Po \
-	./$(DEPDIR)/fork-f.Po ./$(DEPDIR)/fsconfig-P.Po \
-	./$(DEPDIR)/fsconfig.Po ./$(DEPDIR)/fsmount.Po \
-	./$(DEPDIR)/fsopen.Po ./$(DEPDIR)/fspick-P.Po \
-	./$(DEPDIR)/fspick.Po ./$(DEPDIR)/fstat-Xabbrev.Po \
-	./$(DEPDIR)/fstat-Xraw.Po ./$(DEPDIR)/fstat-Xverbose.Po \
-	./$(DEPDIR)/fstat.Po ./$(DEPDIR)/fstat64-Xabbrev.Po \
-	./$(DEPDIR)/fstat64-Xraw.Po ./$(DEPDIR)/fstat64-Xverbose.Po \
-	./$(DEPDIR)/fstat64-fstat64.Po \
+	./$(DEPDIR)/filter_seccomp-flag.Po \
+	./$(DEPDIR)/filter_seccomp-perf.Po ./$(DEPDIR)/finit_module.Po \
+	./$(DEPDIR)/flock.Po ./$(DEPDIR)/fork-f.Po \
+	./$(DEPDIR)/fsconfig-P.Po ./$(DEPDIR)/fsconfig.Po \
+	./$(DEPDIR)/fsmount.Po ./$(DEPDIR)/fsopen.Po \
+	./$(DEPDIR)/fspick-P.Po ./$(DEPDIR)/fspick.Po \
+	./$(DEPDIR)/fstat-Xabbrev.Po ./$(DEPDIR)/fstat-Xraw.Po \
+	./$(DEPDIR)/fstat-Xverbose.Po ./$(DEPDIR)/fstat.Po \
+	./$(DEPDIR)/fstat64-Xabbrev.Po ./$(DEPDIR)/fstat64-Xraw.Po \
+	./$(DEPDIR)/fstat64-Xverbose.Po ./$(DEPDIR)/fstat64-fstat64.Po \
 	./$(DEPDIR)/fstatat64-fstatat64.Po ./$(DEPDIR)/fstatfs.Po \
 	./$(DEPDIR)/fstatfs64.Po ./$(DEPDIR)/fsync-y.Po \
 	./$(DEPDIR)/fsync.Po ./$(DEPDIR)/ftruncate.Po \
@@ -3096,8 +3259,20 @@ am__depfiles_remade = ./$(DEPDIR)/_newselect-P.Po \
 	./$(DEPDIR)/io_uring_register.Po ./$(DEPDIR)/io_uring_setup.Po \
 	./$(DEPDIR)/ioctl.Po ./$(DEPDIR)/ioctl_block.Po \
 	./$(DEPDIR)/ioctl_dm-v.Po ./$(DEPDIR)/ioctl_dm.Po \
+	./$(DEPDIR)/ioctl_evdev-Xabbrev.Po \
+	./$(DEPDIR)/ioctl_evdev-Xraw.Po \
+	./$(DEPDIR)/ioctl_evdev-Xverbose.Po \
+	./$(DEPDIR)/ioctl_evdev-success-Xabbrev.Po \
+	./$(DEPDIR)/ioctl_evdev-success-Xraw.Po \
+	./$(DEPDIR)/ioctl_evdev-success-Xverbose.Po \
+	./$(DEPDIR)/ioctl_evdev-success-v-Xabbrev.Po \
+	./$(DEPDIR)/ioctl_evdev-success-v-Xraw.Po \
+	./$(DEPDIR)/ioctl_evdev-success-v-Xverbose.Po \
 	./$(DEPDIR)/ioctl_evdev-success-v.Po \
 	./$(DEPDIR)/ioctl_evdev-success.Po \
+	./$(DEPDIR)/ioctl_evdev-v-Xabbrev.Po \
+	./$(DEPDIR)/ioctl_evdev-v-Xraw.Po \
+	./$(DEPDIR)/ioctl_evdev-v-Xverbose.Po \
 	./$(DEPDIR)/ioctl_evdev-v.Po ./$(DEPDIR)/ioctl_evdev.Po \
 	./$(DEPDIR)/ioctl_inotify.Po ./$(DEPDIR)/ioctl_kvm_run-v.Po \
 	./$(DEPDIR)/ioctl_kvm_run.Po \
@@ -3111,13 +3286,14 @@ am__depfiles_remade = ./$(DEPDIR)/_newselect-P.Po \
 	./$(DEPDIR)/ioctl_scsi.Po ./$(DEPDIR)/ioctl_sg_io_v3.Po \
 	./$(DEPDIR)/ioctl_sg_io_v4.Po \
 	./$(DEPDIR)/ioctl_sock_gifconf.Po ./$(DEPDIR)/ioctl_uffdio.Po \
-	./$(DEPDIR)/ioctl_v4l2.Po ./$(DEPDIR)/ioperm.Po \
-	./$(DEPDIR)/iopl.Po ./$(DEPDIR)/ioprio-Xabbrev.Po \
-	./$(DEPDIR)/ioprio-Xraw.Po ./$(DEPDIR)/ioprio-Xverbose.Po \
-	./$(DEPDIR)/ioprio.Po ./$(DEPDIR)/ip_mreq.Po \
-	./$(DEPDIR)/ipc.Po ./$(DEPDIR)/ipc_msg-Xabbrev.Po \
-	./$(DEPDIR)/ipc_msg-Xraw.Po ./$(DEPDIR)/ipc_msg-Xverbose.Po \
-	./$(DEPDIR)/ipc_msg.Po ./$(DEPDIR)/ipc_msgbuf-Xabbrev.Po \
+	./$(DEPDIR)/ioctl_v4l2.Po ./$(DEPDIR)/ioctl_watchdog.Po \
+	./$(DEPDIR)/ioperm.Po ./$(DEPDIR)/iopl.Po \
+	./$(DEPDIR)/ioprio-Xabbrev.Po ./$(DEPDIR)/ioprio-Xraw.Po \
+	./$(DEPDIR)/ioprio-Xverbose.Po ./$(DEPDIR)/ioprio.Po \
+	./$(DEPDIR)/ip_mreq.Po ./$(DEPDIR)/ipc.Po \
+	./$(DEPDIR)/ipc_msg-Xabbrev.Po ./$(DEPDIR)/ipc_msg-Xraw.Po \
+	./$(DEPDIR)/ipc_msg-Xverbose.Po ./$(DEPDIR)/ipc_msg.Po \
+	./$(DEPDIR)/ipc_msgbuf-Xabbrev.Po \
 	./$(DEPDIR)/ipc_msgbuf-Xraw.Po \
 	./$(DEPDIR)/ipc_msgbuf-Xverbose.Po ./$(DEPDIR)/ipc_msgbuf.Po \
 	./$(DEPDIR)/ipc_sem-Xabbrev.Po ./$(DEPDIR)/ipc_sem-Xraw.Po \
@@ -3147,12 +3323,15 @@ am__depfiles_remade = ./$(DEPDIR)/_newselect-P.Po \
 	./$(DEPDIR)/libtests_a-inode_of_sockfd.Po \
 	./$(DEPDIR)/libtests_a-libmmsg.Po \
 	./$(DEPDIR)/libtests_a-libsocketcall.Po \
+	./$(DEPDIR)/libtests_a-lock_file.Po \
 	./$(DEPDIR)/libtests_a-overflowuid.Po \
 	./$(DEPDIR)/libtests_a-pipe_maxfd.Po \
 	./$(DEPDIR)/libtests_a-print_quoted_string.Po \
 	./$(DEPDIR)/libtests_a-print_time.Po \
 	./$(DEPDIR)/libtests_a-printflags.Po \
-	./$(DEPDIR)/libtests_a-printxval.Po \
+	./$(DEPDIR)/libtests_a-printxval-Xabbrev.Po \
+	./$(DEPDIR)/libtests_a-printxval-Xraw.Po \
+	./$(DEPDIR)/libtests_a-printxval-Xverbose.Po \
 	./$(DEPDIR)/libtests_a-signal2name.Po \
 	./$(DEPDIR)/libtests_a-skip_unavailable.Po \
 	./$(DEPDIR)/libtests_a-sprintrc.Po \
@@ -3270,14 +3449,16 @@ am__depfiles_remade = ./$(DEPDIR)/_newselect-P.Po \
 	./$(DEPDIR)/personality-Xabbrev.Po \
 	./$(DEPDIR)/personality-Xraw.Po \
 	./$(DEPDIR)/personality-Xverbose.Po ./$(DEPDIR)/personality.Po \
-	./$(DEPDIR)/pidfd_send_signal.Po ./$(DEPDIR)/pipe.Po \
-	./$(DEPDIR)/pipe2.Po ./$(DEPDIR)/pkey_alloc.Po \
-	./$(DEPDIR)/pkey_free.Po ./$(DEPDIR)/pkey_mprotect.Po \
-	./$(DEPDIR)/poll-P.Po ./$(DEPDIR)/poll.Po \
-	./$(DEPDIR)/ppoll-P.Po ./$(DEPDIR)/ppoll-v.Po \
-	./$(DEPDIR)/ppoll.Po ./$(DEPDIR)/prctl-arg2-intptr.Po \
-	./$(DEPDIR)/prctl-dumpable.Po ./$(DEPDIR)/prctl-name.Po \
-	./$(DEPDIR)/prctl-no-args.Po ./$(DEPDIR)/prctl-pdeathsig.Po \
+	./$(DEPDIR)/pidfd_open-P.Po ./$(DEPDIR)/pidfd_open-y.Po \
+	./$(DEPDIR)/pidfd_open.Po ./$(DEPDIR)/pidfd_send_signal.Po \
+	./$(DEPDIR)/pipe.Po ./$(DEPDIR)/pipe2.Po \
+	./$(DEPDIR)/pkey_alloc.Po ./$(DEPDIR)/pkey_free.Po \
+	./$(DEPDIR)/pkey_mprotect.Po ./$(DEPDIR)/poll-P.Po \
+	./$(DEPDIR)/poll.Po ./$(DEPDIR)/ppoll-P.Po \
+	./$(DEPDIR)/ppoll-v.Po ./$(DEPDIR)/ppoll.Po \
+	./$(DEPDIR)/prctl-arg2-intptr.Po ./$(DEPDIR)/prctl-dumpable.Po \
+	./$(DEPDIR)/prctl-name.Po ./$(DEPDIR)/prctl-no-args.Po \
+	./$(DEPDIR)/prctl-pdeathsig.Po \
 	./$(DEPDIR)/prctl-seccomp-filter-v.Po \
 	./$(DEPDIR)/prctl-seccomp-strict.Po \
 	./$(DEPDIR)/prctl-securebits.Po \
@@ -3314,8 +3495,10 @@ am__depfiles_remade = ./$(DEPDIR)/_newselect-P.Po \
 	./$(DEPDIR)/readahead.Po ./$(DEPDIR)/readdir.Po \
 	./$(DEPDIR)/readlink.Po ./$(DEPDIR)/readlinkat.Po \
 	./$(DEPDIR)/readv.Po ./$(DEPDIR)/reboot.Po \
-	./$(DEPDIR)/recvfrom.Po ./$(DEPDIR)/recvmmsg-timeout.Po \
-	./$(DEPDIR)/recvmsg.Po ./$(DEPDIR)/redirect-fds.Po \
+	./$(DEPDIR)/recv-MSG_TRUNC.Po \
+	./$(DEPDIR)/recvfrom-MSG_TRUNC.Po ./$(DEPDIR)/recvfrom.Po \
+	./$(DEPDIR)/recvmmsg-timeout.Po ./$(DEPDIR)/recvmsg.Po \
+	./$(DEPDIR)/redirect-fds.Po \
 	./$(DEPDIR)/remap_file_pages-Xabbrev.Po \
 	./$(DEPDIR)/remap_file_pages-Xraw.Po \
 	./$(DEPDIR)/remap_file_pages-Xverbose.Po \
@@ -3391,6 +3574,7 @@ am__depfiles_remade = ./$(DEPDIR)/_newselect-P.Po \
 	./$(DEPDIR)/stat.Po ./$(DEPDIR)/stat64-stat64.Po \
 	./$(DEPDIR)/statfs-statfs.Po ./$(DEPDIR)/statfs64.Po \
 	./$(DEPDIR)/status-all.Po ./$(DEPDIR)/status-failed.Po \
+	./$(DEPDIR)/status-none-f.Po \
 	./$(DEPDIR)/status-none-threads.Po ./$(DEPDIR)/status-none.Po \
 	./$(DEPDIR)/status-successful.Po \
 	./$(DEPDIR)/status-unfinished-threads.Po \
@@ -3399,17 +3583,18 @@ am__depfiles_remade = ./$(DEPDIR)/_newselect-P.Po \
 	./$(DEPDIR)/symlink.Po ./$(DEPDIR)/symlinkat.Po \
 	./$(DEPDIR)/sync.Po ./$(DEPDIR)/sync_file_range.Po \
 	./$(DEPDIR)/sync_file_range2.Po ./$(DEPDIR)/sysinfo.Po \
-	./$(DEPDIR)/syslog.Po ./$(DEPDIR)/tee.Po \
-	./$(DEPDIR)/threads-execve.Po ./$(DEPDIR)/time.Po \
-	./$(DEPDIR)/timer_create.Po ./$(DEPDIR)/timer_xettime.Po \
-	./$(DEPDIR)/timerfd_xettime.Po ./$(DEPDIR)/times-fail.Po \
-	./$(DEPDIR)/times.Po ./$(DEPDIR)/truncate.Po \
-	./$(DEPDIR)/truncate64-truncate64.Po ./$(DEPDIR)/ugetrlimit.Po \
-	./$(DEPDIR)/uio-uio.Po ./$(DEPDIR)/umask.Po \
-	./$(DEPDIR)/umount.Po ./$(DEPDIR)/umount2.Po \
-	./$(DEPDIR)/umoven-illptr.Po ./$(DEPDIR)/umovestr-illptr.Po \
-	./$(DEPDIR)/umovestr.Po ./$(DEPDIR)/umovestr2.Po \
-	./$(DEPDIR)/umovestr3.Po ./$(DEPDIR)/uname.Po \
+	./$(DEPDIR)/syslog-success.Po ./$(DEPDIR)/syslog.Po \
+	./$(DEPDIR)/tee.Po ./$(DEPDIR)/threads-execve.Po \
+	./$(DEPDIR)/time.Po ./$(DEPDIR)/timer_create.Po \
+	./$(DEPDIR)/timer_xettime.Po ./$(DEPDIR)/timerfd_xettime.Po \
+	./$(DEPDIR)/times-fail.Po ./$(DEPDIR)/times.Po \
+	./$(DEPDIR)/truncate.Po ./$(DEPDIR)/truncate64-truncate64.Po \
+	./$(DEPDIR)/ugetrlimit.Po ./$(DEPDIR)/uio-uio.Po \
+	./$(DEPDIR)/umask.Po ./$(DEPDIR)/umount.Po \
+	./$(DEPDIR)/umount2.Po ./$(DEPDIR)/umoven-illptr.Po \
+	./$(DEPDIR)/umovestr-illptr.Po ./$(DEPDIR)/umovestr.Po \
+	./$(DEPDIR)/umovestr2.Po ./$(DEPDIR)/umovestr3.Po \
+	./$(DEPDIR)/umovestr_cached.Po ./$(DEPDIR)/uname.Po \
 	./$(DEPDIR)/unblock_reset_raise.Po \
 	./$(DEPDIR)/unix-pair-send-recv.Po \
 	./$(DEPDIR)/unix-pair-sendto-recvfrom.Po ./$(DEPDIR)/unlink.Po \
@@ -3454,16 +3639,20 @@ SOURCES = $(libtests_a_SOURCES) _newselect.c _newselect-P.c accept.c \
 	bpf-v.c brk.c btrfs.c caps.c caps-abbrev.c check_sigblock.c \
 	check_sigign.c chmod.c chown.c chown32.c chroot.c \
 	clock_adjtime.c clock_nanosleep.c clock_xettime.c \
-	clone-flags.c clone_parent.c clone_ptrace.c copy_file_range.c \
-	count-f.c creat.c delay.c delete_module.c dev-yy.c dup.c \
-	dup2.c dup3.c epoll_create.c epoll_create1.c epoll_ctl.c \
-	epoll_pwait.c epoll_wait.c erestartsys.c eventfd.c execve.c \
-	execve-v.c execveat.c execveat-v.c faccessat.c fadvise64.c \
-	fadvise64_64.c fallocate.c fanotify_init.c fanotify_mark.c \
+	clone-flags.c clone3.c clone3-Xabbrev.c clone3-Xraw.c \
+	clone3-Xverbose.c clone3-success.c clone3-success-Xabbrev.c \
+	clone3-success-Xraw.c clone3-success-Xverbose.c clone_parent.c \
+	clone_ptrace.c copy_file_range.c count-f.c creat.c delay.c \
+	delete_module.c dev-yy.c dup.c dup2.c dup3.c epoll_create.c \
+	epoll_create1.c epoll_ctl.c epoll_pwait.c epoll_wait.c \
+	erestartsys.c eventfd.c execve.c execve-v.c execveat.c \
+	execveat-v.c faccessat.c fadvise64.c fadvise64_64.c \
+	fallocate.c fanotify_init.c fanotify_mark.c \
 	fanotify_mark-Xabbrev.c fanotify_mark-Xraw.c \
 	fanotify_mark-Xverbose.c fchdir.c fchmod.c fchmodat.c fchown.c \
 	fchown32.c fchownat.c fcntl.c fcntl64.c fdatasync.c fflush.c \
-	file_handle.c file_ioctl.c filter-unavailable.c finit_module.c \
+	file_handle.c file_ioctl.c filter-unavailable.c \
+	filter_seccomp-flag.c filter_seccomp-perf.c finit_module.c \
 	flock.c fork-f.c fsconfig.c fsconfig-P.c fsmount.c fsopen.c \
 	fspick.c fspick-P.c fstat.c fstat-Xabbrev.c fstat-Xraw.c \
 	fstat-Xverbose.c fstat64.c fstat64-Xabbrev.c fstat64-Xraw.c \
@@ -3479,20 +3668,26 @@ SOURCES = $(libtests_a_SOURCES) _newselect.c _newselect-P.c accept.c \
 	inotify_init.c inotify_init-y.c inotify_init1.c \
 	inotify_init1-y.c int_0x80.c io_uring_enter.c \
 	io_uring_register.c io_uring_setup.c ioctl.c ioctl_block.c \
-	ioctl_dm.c ioctl_dm-v.c ioctl_evdev.c ioctl_evdev-success.c \
-	ioctl_evdev-success-v.c ioctl_evdev-v.c ioctl_inotify.c \
-	ioctl_kvm_run.c ioctl_kvm_run-v.c ioctl_kvm_run_auxstr_vcpu.c \
-	ioctl_loop.c ioctl_loop-nv.c ioctl_loop-v.c ioctl_mtd.c \
-	ioctl_nbd.c ioctl_nsfs.c ioctl_perf.c ioctl_perf-success.c \
-	ioctl_ptp.c ioctl_random.c ioctl_rtc.c ioctl_rtc-v.c \
-	ioctl_scsi.c ioctl_sg_io_v3.c ioctl_sg_io_v4.c \
-	ioctl_sock_gifconf.c ioctl_uffdio.c ioctl_v4l2.c ioperm.c \
-	iopl.c ioprio.c ioprio-Xabbrev.c ioprio-Xraw.c \
-	ioprio-Xverbose.c ip_mreq.c ipc.c ipc_msg.c ipc_msg-Xabbrev.c \
-	ipc_msg-Xraw.c ipc_msg-Xverbose.c ipc_msgbuf.c \
-	ipc_msgbuf-Xabbrev.c ipc_msgbuf-Xraw.c ipc_msgbuf-Xverbose.c \
-	ipc_sem.c ipc_sem-Xabbrev.c ipc_sem-Xraw.c ipc_sem-Xverbose.c \
-	ipc_shm.c ipc_shm-Xabbrev.c ipc_shm-Xraw.c ipc_shm-Xverbose.c \
+	ioctl_dm.c ioctl_dm-v.c ioctl_evdev.c ioctl_evdev-Xabbrev.c \
+	ioctl_evdev-Xraw.c ioctl_evdev-Xverbose.c \
+	ioctl_evdev-success.c ioctl_evdev-success-Xabbrev.c \
+	ioctl_evdev-success-Xraw.c ioctl_evdev-success-Xverbose.c \
+	ioctl_evdev-success-v.c ioctl_evdev-success-v-Xabbrev.c \
+	ioctl_evdev-success-v-Xraw.c ioctl_evdev-success-v-Xverbose.c \
+	ioctl_evdev-v.c ioctl_evdev-v-Xabbrev.c ioctl_evdev-v-Xraw.c \
+	ioctl_evdev-v-Xverbose.c ioctl_inotify.c ioctl_kvm_run.c \
+	ioctl_kvm_run-v.c ioctl_kvm_run_auxstr_vcpu.c ioctl_loop.c \
+	ioctl_loop-nv.c ioctl_loop-v.c ioctl_mtd.c ioctl_nbd.c \
+	ioctl_nsfs.c ioctl_perf.c ioctl_perf-success.c ioctl_ptp.c \
+	ioctl_random.c ioctl_rtc.c ioctl_rtc-v.c ioctl_scsi.c \
+	ioctl_sg_io_v3.c ioctl_sg_io_v4.c ioctl_sock_gifconf.c \
+	ioctl_uffdio.c ioctl_v4l2.c ioctl_watchdog.c ioperm.c iopl.c \
+	ioprio.c ioprio-Xabbrev.c ioprio-Xraw.c ioprio-Xverbose.c \
+	ip_mreq.c ipc.c ipc_msg.c ipc_msg-Xabbrev.c ipc_msg-Xraw.c \
+	ipc_msg-Xverbose.c ipc_msgbuf.c ipc_msgbuf-Xabbrev.c \
+	ipc_msgbuf-Xraw.c ipc_msgbuf-Xverbose.c ipc_sem.c \
+	ipc_sem-Xabbrev.c ipc_sem-Xraw.c ipc_sem-Xverbose.c ipc_shm.c \
+	ipc_shm-Xabbrev.c ipc_shm-Xraw.c ipc_shm-Xverbose.c \
 	is_linux_mips_n64.c kcmp.c kcmp-y.c kern_features.c \
 	kernel_version.c kernel_version-Xabbrev.c \
 	kernel_version-Xraw.c kernel_version-Xverbose.c \
@@ -3546,8 +3741,9 @@ SOURCES = $(libtests_a_SOURCES) _newselect.c _newselect-P.c accept.c \
 	open_tree-P.c openat.c orphaned_process_group.c osf_utimes.c \
 	pause.c pc.c perf_event_open.c perf_event_open_nonverbose.c \
 	perf_event_open_unabbrev.c personality.c personality-Xabbrev.c \
-	personality-Xraw.c personality-Xverbose.c pidfd_send_signal.c \
-	pipe.c pipe2.c pkey_alloc.c pkey_free.c pkey_mprotect.c poll.c \
+	personality-Xraw.c personality-Xverbose.c pidfd_open.c \
+	pidfd_open-P.c pidfd_open-y.c pidfd_send_signal.c pipe.c \
+	pipe2.c pkey_alloc.c pkey_free.c pkey_mprotect.c poll.c \
 	poll-P.c ppoll.c ppoll-P.c ppoll-v.c prctl-arg2-intptr.c \
 	prctl-dumpable.c prctl-name.c prctl-no-args.c \
 	prctl-pdeathsig.c prctl-seccomp-filter-v.c \
@@ -3567,22 +3763,22 @@ SOURCES = $(libtests_a_SOURCES) _newselect.c _newselect-P.c accept.c \
 	quotactl-v.c quotactl-xfs.c quotactl-xfs-success.c \
 	quotactl-xfs-success-v.c quotactl-xfs-v.c read-write.c \
 	readahead.c readdir.c readlink.c readlinkat.c readv.c reboot.c \
-	recvfrom.c recvmmsg-timeout.c recvmsg.c redirect-fds.c \
-	remap_file_pages.c remap_file_pages-Xabbrev.c \
-	remap_file_pages-Xraw.c remap_file_pages-Xverbose.c rename.c \
-	renameat.c renameat2.c request_key.c restart_syscall.c \
-	riscv_flush_icache.c rmdir.c rt_sigaction.c rt_sigpending.c \
-	rt_sigprocmask.c rt_sigqueueinfo.c rt_sigreturn.c \
-	rt_sigsuspend.c rt_sigtimedwait.c rt_tgsigqueueinfo.c \
-	run_expect_termsig.c s390_guarded_storage.c \
-	s390_guarded_storage-v.c s390_pci_mmio_read_write.c \
-	s390_runtime_instr.c s390_sthyi.c s390_sthyi-v.c \
-	sched_get_priority_mxx.c sched_rr_get_interval.c \
-	sched_xetaffinity.c sched_xetattr.c sched_xetparam.c \
-	sched_xetscheduler.c sched_yield.c scm_rights.c \
-	seccomp-filter.c seccomp-filter-v.c seccomp-strict.c \
-	seccomp_get_action_avail.c select.c select-P.c semop.c \
-	sendfile.c sendfile64.c set_mempolicy.c \
+	recv-MSG_TRUNC.c recvfrom.c recvfrom-MSG_TRUNC.c \
+	recvmmsg-timeout.c recvmsg.c redirect-fds.c remap_file_pages.c \
+	remap_file_pages-Xabbrev.c remap_file_pages-Xraw.c \
+	remap_file_pages-Xverbose.c rename.c renameat.c renameat2.c \
+	request_key.c restart_syscall.c riscv_flush_icache.c rmdir.c \
+	rt_sigaction.c rt_sigpending.c rt_sigprocmask.c \
+	rt_sigqueueinfo.c rt_sigreturn.c rt_sigsuspend.c \
+	rt_sigtimedwait.c rt_tgsigqueueinfo.c run_expect_termsig.c \
+	s390_guarded_storage.c s390_guarded_storage-v.c \
+	s390_pci_mmio_read_write.c s390_runtime_instr.c s390_sthyi.c \
+	s390_sthyi-v.c sched_get_priority_mxx.c \
+	sched_rr_get_interval.c sched_xetaffinity.c sched_xetattr.c \
+	sched_xetparam.c sched_xetscheduler.c sched_yield.c \
+	scm_rights.c seccomp-filter.c seccomp-filter-v.c \
+	seccomp-strict.c seccomp_get_action_avail.c select.c \
+	select-P.c semop.c sendfile.c sendfile64.c set_mempolicy.c \
 	set_mempolicy-Xabbrev.c set_mempolicy-Xraw.c \
 	set_mempolicy-Xverbose.c set_ptracer_any.c set_sigblock.c \
 	set_sigign.c setdomainname.c setfsgid.c setfsgid32.c \
@@ -3602,22 +3798,22 @@ SOURCES = $(libtests_a_SOURCES) _newselect.c _newselect-P.c accept.c \
 	sockopt-timestamp.c splice.c $(stack_fcall_SOURCES) \
 	$(stack_fcall_mangled_SOURCES) stat.c stat64.c statfs.c \
 	statfs64.c status-all.c status-failed.c status-none.c \
-	status-none-threads.c status-successful.c status-unfinished.c \
-	status-unfinished-threads.c statx.c swap.c sxetmask.c \
-	symlink.c symlinkat.c sync.c sync_file_range.c \
-	sync_file_range2.c sysinfo.c syslog.c tee.c threads-execve.c \
-	time.c timer_create.c timer_xettime.c timerfd_xettime.c \
-	times.c times-fail.c truncate.c truncate64.c ugetrlimit.c \
-	uio.c umask.c umount.c umount2.c umoven-illptr.c umovestr.c \
-	umovestr-illptr.c umovestr2.c umovestr3.c uname.c \
-	unblock_reset_raise.c unix-pair-send-recv.c \
-	unix-pair-sendto-recvfrom.c unlink.c unlinkat.c unshare.c \
-	userfaultfd.c ustat.c utime.c utimensat.c utimensat-Xabbrev.c \
-	utimensat-Xraw.c utimensat-Xverbose.c utimes.c vfork-f.c \
-	vhangup.c vmsplice.c wait4.c wait4-v.c waitid.c waitid-v.c \
-	waitpid.c xattr.c xattr-strings.c xet_robust_list.c \
-	xet_thread_area_x86.c xetitimer.c xetpgid.c xetpriority.c \
-	xettimeofday.c zeroargc.c
+	status-none-f.c status-none-threads.c status-successful.c \
+	status-unfinished.c status-unfinished-threads.c statx.c swap.c \
+	sxetmask.c symlink.c symlinkat.c sync.c sync_file_range.c \
+	sync_file_range2.c sysinfo.c syslog.c syslog-success.c tee.c \
+	threads-execve.c time.c timer_create.c timer_xettime.c \
+	timerfd_xettime.c times.c times-fail.c truncate.c truncate64.c \
+	ugetrlimit.c uio.c umask.c umount.c umount2.c umoven-illptr.c \
+	umovestr.c umovestr-illptr.c umovestr2.c umovestr3.c \
+	umovestr_cached.c uname.c unblock_reset_raise.c \
+	unix-pair-send-recv.c unix-pair-sendto-recvfrom.c unlink.c \
+	unlinkat.c unshare.c userfaultfd.c ustat.c utime.c utimensat.c \
+	utimensat-Xabbrev.c utimensat-Xraw.c utimensat-Xverbose.c \
+	utimes.c vfork-f.c vhangup.c vmsplice.c wait4.c wait4-v.c \
+	waitid.c waitid-v.c waitpid.c xattr.c xattr-strings.c \
+	xet_robust_list.c xet_thread_area_x86.c xetitimer.c xetpgid.c \
+	xetpriority.c xettimeofday.c zeroargc.c
 DIST_SOURCES = $(libtests_a_SOURCES) _newselect.c _newselect-P.c \
 	accept.c accept4.c access.c acct.c add_key.c adjtimex.c aio.c \
 	aio_pgetevents.c alarm.c answer.c attach-f-p.c \
@@ -3628,16 +3824,20 @@ DIST_SOURCES = $(libtests_a_SOURCES) _newselect.c _newselect-P.c \
 	bpf-v.c brk.c btrfs.c caps.c caps-abbrev.c check_sigblock.c \
 	check_sigign.c chmod.c chown.c chown32.c chroot.c \
 	clock_adjtime.c clock_nanosleep.c clock_xettime.c \
-	clone-flags.c clone_parent.c clone_ptrace.c copy_file_range.c \
-	count-f.c creat.c delay.c delete_module.c dev-yy.c dup.c \
-	dup2.c dup3.c epoll_create.c epoll_create1.c epoll_ctl.c \
-	epoll_pwait.c epoll_wait.c erestartsys.c eventfd.c execve.c \
-	execve-v.c execveat.c execveat-v.c faccessat.c fadvise64.c \
-	fadvise64_64.c fallocate.c fanotify_init.c fanotify_mark.c \
+	clone-flags.c clone3.c clone3-Xabbrev.c clone3-Xraw.c \
+	clone3-Xverbose.c clone3-success.c clone3-success-Xabbrev.c \
+	clone3-success-Xraw.c clone3-success-Xverbose.c clone_parent.c \
+	clone_ptrace.c copy_file_range.c count-f.c creat.c delay.c \
+	delete_module.c dev-yy.c dup.c dup2.c dup3.c epoll_create.c \
+	epoll_create1.c epoll_ctl.c epoll_pwait.c epoll_wait.c \
+	erestartsys.c eventfd.c execve.c execve-v.c execveat.c \
+	execveat-v.c faccessat.c fadvise64.c fadvise64_64.c \
+	fallocate.c fanotify_init.c fanotify_mark.c \
 	fanotify_mark-Xabbrev.c fanotify_mark-Xraw.c \
 	fanotify_mark-Xverbose.c fchdir.c fchmod.c fchmodat.c fchown.c \
 	fchown32.c fchownat.c fcntl.c fcntl64.c fdatasync.c fflush.c \
-	file_handle.c file_ioctl.c filter-unavailable.c finit_module.c \
+	file_handle.c file_ioctl.c filter-unavailable.c \
+	filter_seccomp-flag.c filter_seccomp-perf.c finit_module.c \
 	flock.c fork-f.c fsconfig.c fsconfig-P.c fsmount.c fsopen.c \
 	fspick.c fspick-P.c fstat.c fstat-Xabbrev.c fstat-Xraw.c \
 	fstat-Xverbose.c fstat64.c fstat64-Xabbrev.c fstat64-Xraw.c \
@@ -3653,20 +3853,26 @@ DIST_SOURCES = $(libtests_a_SOURCES) _newselect.c _newselect-P.c \
 	inotify_init.c inotify_init-y.c inotify_init1.c \
 	inotify_init1-y.c int_0x80.c io_uring_enter.c \
 	io_uring_register.c io_uring_setup.c ioctl.c ioctl_block.c \
-	ioctl_dm.c ioctl_dm-v.c ioctl_evdev.c ioctl_evdev-success.c \
-	ioctl_evdev-success-v.c ioctl_evdev-v.c ioctl_inotify.c \
-	ioctl_kvm_run.c ioctl_kvm_run-v.c ioctl_kvm_run_auxstr_vcpu.c \
-	ioctl_loop.c ioctl_loop-nv.c ioctl_loop-v.c ioctl_mtd.c \
-	ioctl_nbd.c ioctl_nsfs.c ioctl_perf.c ioctl_perf-success.c \
-	ioctl_ptp.c ioctl_random.c ioctl_rtc.c ioctl_rtc-v.c \
-	ioctl_scsi.c ioctl_sg_io_v3.c ioctl_sg_io_v4.c \
-	ioctl_sock_gifconf.c ioctl_uffdio.c ioctl_v4l2.c ioperm.c \
-	iopl.c ioprio.c ioprio-Xabbrev.c ioprio-Xraw.c \
-	ioprio-Xverbose.c ip_mreq.c ipc.c ipc_msg.c ipc_msg-Xabbrev.c \
-	ipc_msg-Xraw.c ipc_msg-Xverbose.c ipc_msgbuf.c \
-	ipc_msgbuf-Xabbrev.c ipc_msgbuf-Xraw.c ipc_msgbuf-Xverbose.c \
-	ipc_sem.c ipc_sem-Xabbrev.c ipc_sem-Xraw.c ipc_sem-Xverbose.c \
-	ipc_shm.c ipc_shm-Xabbrev.c ipc_shm-Xraw.c ipc_shm-Xverbose.c \
+	ioctl_dm.c ioctl_dm-v.c ioctl_evdev.c ioctl_evdev-Xabbrev.c \
+	ioctl_evdev-Xraw.c ioctl_evdev-Xverbose.c \
+	ioctl_evdev-success.c ioctl_evdev-success-Xabbrev.c \
+	ioctl_evdev-success-Xraw.c ioctl_evdev-success-Xverbose.c \
+	ioctl_evdev-success-v.c ioctl_evdev-success-v-Xabbrev.c \
+	ioctl_evdev-success-v-Xraw.c ioctl_evdev-success-v-Xverbose.c \
+	ioctl_evdev-v.c ioctl_evdev-v-Xabbrev.c ioctl_evdev-v-Xraw.c \
+	ioctl_evdev-v-Xverbose.c ioctl_inotify.c ioctl_kvm_run.c \
+	ioctl_kvm_run-v.c ioctl_kvm_run_auxstr_vcpu.c ioctl_loop.c \
+	ioctl_loop-nv.c ioctl_loop-v.c ioctl_mtd.c ioctl_nbd.c \
+	ioctl_nsfs.c ioctl_perf.c ioctl_perf-success.c ioctl_ptp.c \
+	ioctl_random.c ioctl_rtc.c ioctl_rtc-v.c ioctl_scsi.c \
+	ioctl_sg_io_v3.c ioctl_sg_io_v4.c ioctl_sock_gifconf.c \
+	ioctl_uffdio.c ioctl_v4l2.c ioctl_watchdog.c ioperm.c iopl.c \
+	ioprio.c ioprio-Xabbrev.c ioprio-Xraw.c ioprio-Xverbose.c \
+	ip_mreq.c ipc.c ipc_msg.c ipc_msg-Xabbrev.c ipc_msg-Xraw.c \
+	ipc_msg-Xverbose.c ipc_msgbuf.c ipc_msgbuf-Xabbrev.c \
+	ipc_msgbuf-Xraw.c ipc_msgbuf-Xverbose.c ipc_sem.c \
+	ipc_sem-Xabbrev.c ipc_sem-Xraw.c ipc_sem-Xverbose.c ipc_shm.c \
+	ipc_shm-Xabbrev.c ipc_shm-Xraw.c ipc_shm-Xverbose.c \
 	is_linux_mips_n64.c kcmp.c kcmp-y.c kern_features.c \
 	kernel_version.c kernel_version-Xabbrev.c \
 	kernel_version-Xraw.c kernel_version-Xverbose.c \
@@ -3720,8 +3926,9 @@ DIST_SOURCES = $(libtests_a_SOURCES) _newselect.c _newselect-P.c \
 	open_tree-P.c openat.c orphaned_process_group.c osf_utimes.c \
 	pause.c pc.c perf_event_open.c perf_event_open_nonverbose.c \
 	perf_event_open_unabbrev.c personality.c personality-Xabbrev.c \
-	personality-Xraw.c personality-Xverbose.c pidfd_send_signal.c \
-	pipe.c pipe2.c pkey_alloc.c pkey_free.c pkey_mprotect.c poll.c \
+	personality-Xraw.c personality-Xverbose.c pidfd_open.c \
+	pidfd_open-P.c pidfd_open-y.c pidfd_send_signal.c pipe.c \
+	pipe2.c pkey_alloc.c pkey_free.c pkey_mprotect.c poll.c \
 	poll-P.c ppoll.c ppoll-P.c ppoll-v.c prctl-arg2-intptr.c \
 	prctl-dumpable.c prctl-name.c prctl-no-args.c \
 	prctl-pdeathsig.c prctl-seccomp-filter-v.c \
@@ -3741,22 +3948,22 @@ DIST_SOURCES = $(libtests_a_SOURCES) _newselect.c _newselect-P.c \
 	quotactl-v.c quotactl-xfs.c quotactl-xfs-success.c \
 	quotactl-xfs-success-v.c quotactl-xfs-v.c read-write.c \
 	readahead.c readdir.c readlink.c readlinkat.c readv.c reboot.c \
-	recvfrom.c recvmmsg-timeout.c recvmsg.c redirect-fds.c \
-	remap_file_pages.c remap_file_pages-Xabbrev.c \
-	remap_file_pages-Xraw.c remap_file_pages-Xverbose.c rename.c \
-	renameat.c renameat2.c request_key.c restart_syscall.c \
-	riscv_flush_icache.c rmdir.c rt_sigaction.c rt_sigpending.c \
-	rt_sigprocmask.c rt_sigqueueinfo.c rt_sigreturn.c \
-	rt_sigsuspend.c rt_sigtimedwait.c rt_tgsigqueueinfo.c \
-	run_expect_termsig.c s390_guarded_storage.c \
-	s390_guarded_storage-v.c s390_pci_mmio_read_write.c \
-	s390_runtime_instr.c s390_sthyi.c s390_sthyi-v.c \
-	sched_get_priority_mxx.c sched_rr_get_interval.c \
-	sched_xetaffinity.c sched_xetattr.c sched_xetparam.c \
-	sched_xetscheduler.c sched_yield.c scm_rights.c \
-	seccomp-filter.c seccomp-filter-v.c seccomp-strict.c \
-	seccomp_get_action_avail.c select.c select-P.c semop.c \
-	sendfile.c sendfile64.c set_mempolicy.c \
+	recv-MSG_TRUNC.c recvfrom.c recvfrom-MSG_TRUNC.c \
+	recvmmsg-timeout.c recvmsg.c redirect-fds.c remap_file_pages.c \
+	remap_file_pages-Xabbrev.c remap_file_pages-Xraw.c \
+	remap_file_pages-Xverbose.c rename.c renameat.c renameat2.c \
+	request_key.c restart_syscall.c riscv_flush_icache.c rmdir.c \
+	rt_sigaction.c rt_sigpending.c rt_sigprocmask.c \
+	rt_sigqueueinfo.c rt_sigreturn.c rt_sigsuspend.c \
+	rt_sigtimedwait.c rt_tgsigqueueinfo.c run_expect_termsig.c \
+	s390_guarded_storage.c s390_guarded_storage-v.c \
+	s390_pci_mmio_read_write.c s390_runtime_instr.c s390_sthyi.c \
+	s390_sthyi-v.c sched_get_priority_mxx.c \
+	sched_rr_get_interval.c sched_xetaffinity.c sched_xetattr.c \
+	sched_xetparam.c sched_xetscheduler.c sched_yield.c \
+	scm_rights.c seccomp-filter.c seccomp-filter-v.c \
+	seccomp-strict.c seccomp_get_action_avail.c select.c \
+	select-P.c semop.c sendfile.c sendfile64.c set_mempolicy.c \
 	set_mempolicy-Xabbrev.c set_mempolicy-Xraw.c \
 	set_mempolicy-Xverbose.c set_ptracer_any.c set_sigblock.c \
 	set_sigign.c setdomainname.c setfsgid.c setfsgid32.c \
@@ -3776,22 +3983,22 @@ DIST_SOURCES = $(libtests_a_SOURCES) _newselect.c _newselect-P.c \
 	sockopt-timestamp.c splice.c $(stack_fcall_SOURCES) \
 	$(stack_fcall_mangled_SOURCES) stat.c stat64.c statfs.c \
 	statfs64.c status-all.c status-failed.c status-none.c \
-	status-none-threads.c status-successful.c status-unfinished.c \
-	status-unfinished-threads.c statx.c swap.c sxetmask.c \
-	symlink.c symlinkat.c sync.c sync_file_range.c \
-	sync_file_range2.c sysinfo.c syslog.c tee.c threads-execve.c \
-	time.c timer_create.c timer_xettime.c timerfd_xettime.c \
-	times.c times-fail.c truncate.c truncate64.c ugetrlimit.c \
-	uio.c umask.c umount.c umount2.c umoven-illptr.c umovestr.c \
-	umovestr-illptr.c umovestr2.c umovestr3.c uname.c \
-	unblock_reset_raise.c unix-pair-send-recv.c \
-	unix-pair-sendto-recvfrom.c unlink.c unlinkat.c unshare.c \
-	userfaultfd.c ustat.c utime.c utimensat.c utimensat-Xabbrev.c \
-	utimensat-Xraw.c utimensat-Xverbose.c utimes.c vfork-f.c \
-	vhangup.c vmsplice.c wait4.c wait4-v.c waitid.c waitid-v.c \
-	waitpid.c xattr.c xattr-strings.c xet_robust_list.c \
-	xet_thread_area_x86.c xetitimer.c xetpgid.c xetpriority.c \
-	xettimeofday.c zeroargc.c
+	status-none-f.c status-none-threads.c status-successful.c \
+	status-unfinished.c status-unfinished-threads.c statx.c swap.c \
+	sxetmask.c symlink.c symlinkat.c sync.c sync_file_range.c \
+	sync_file_range2.c sysinfo.c syslog.c syslog-success.c tee.c \
+	threads-execve.c time.c timer_create.c timer_xettime.c \
+	timerfd_xettime.c times.c times-fail.c truncate.c truncate64.c \
+	ugetrlimit.c uio.c umask.c umount.c umount2.c umoven-illptr.c \
+	umovestr.c umovestr-illptr.c umovestr2.c umovestr3.c \
+	umovestr_cached.c uname.c unblock_reset_raise.c \
+	unix-pair-send-recv.c unix-pair-sendto-recvfrom.c unlink.c \
+	unlinkat.c unshare.c userfaultfd.c ustat.c utime.c utimensat.c \
+	utimensat-Xabbrev.c utimensat-Xraw.c utimensat-Xverbose.c \
+	utimes.c vfork-f.c vhangup.c vmsplice.c wait4.c wait4-v.c \
+	waitid.c waitid-v.c waitpid.c xattr.c xattr-strings.c \
+	xet_robust_list.c xet_thread_area_x86.c xetitimer.c xetpgid.c \
+	xetpriority.c xettimeofday.c zeroargc.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -4213,12 +4420,15 @@ libtests_a_SOURCES = \
 	inode_of_sockfd.c \
 	libmmsg.c \
 	libsocketcall.c \
+	lock_file.c \
 	overflowuid.c \
 	pipe_maxfd.c \
 	print_quoted_string.c \
 	print_time.c \
 	printflags.c \
-	printxval.c \
+	printxval-Xabbrev.c \
+	printxval-Xraw.c \
+	printxval-Xverbose.c \
 	signal2name.c \
 	skip_unavailable.c \
 	sprintrc.c \
@@ -4267,6 +4477,10 @@ PURE_EXECUTABLES = \
   clock_nanosleep \
   clock_xettime \
   clone-flags \
+  clone3 \
+  clone3-Xabbrev \
+  clone3-Xraw \
+  clone3-Xverbose \
   copy_file_range \
   creat \
   delete_module \
@@ -4372,6 +4586,13 @@ PURE_EXECUTABLES = \
   ioctl_block \
   ioctl_dm \
   ioctl_evdev \
+  ioctl_evdev-Xabbrev \
+  ioctl_evdev-Xraw \
+  ioctl_evdev-Xverbose \
+  ioctl_evdev-v \
+  ioctl_evdev-v-Xabbrev \
+  ioctl_evdev-v-Xraw \
+  ioctl_evdev-v-Xverbose \
   ioctl_inotify \
   ioctl_kvm_run \
   ioctl_kvm_run-v \
@@ -4389,6 +4610,7 @@ PURE_EXECUTABLES = \
   ioctl_sock_gifconf \
   ioctl_uffdio \
   ioctl_v4l2 \
+  ioctl_watchdog \
   ioperm \
   iopl \
   ioprio \
@@ -4574,6 +4796,9 @@ PURE_EXECUTABLES = \
   personality-Xabbrev \
   personality-Xraw \
   personality-Xverbose \
+  pidfd_open \
+  pidfd_open-P \
+  pidfd_open-y \
   pidfd_send_signal \
   pipe \
   pipe2 \
@@ -4625,7 +4850,9 @@ PURE_EXECUTABLES = \
   readlinkat \
   readv \
   reboot \
+  recv-MSG_TRUNC \
   recvfrom \
+  recvfrom-MSG_TRUNC \
   recvmmsg-timeout \
   recvmsg \
   remap_file_pages \
@@ -4729,6 +4956,7 @@ PURE_EXECUTABLES = \
   status-all \
   status-failed \
   status-none \
+  status-none-f \
   status-successful \
   status-unfinished \
   statx \
@@ -4760,6 +4988,7 @@ PURE_EXECUTABLES = \
   umovestr-illptr \
   umovestr2 \
   umovestr3 \
+  umovestr_cached \
   uname \
   unlink \
   unlinkat \
@@ -4837,6 +5066,9 @@ GEN_TESTS = _newselect.gen.test _newselect-P.gen.test accept.gen.test \
 	btrfs.gen.test chmod.gen.test chown.gen.test chown32.gen.test \
 	chroot.gen.test clock.gen.test clock_adjtime.gen.test \
 	clock_nanosleep.gen.test clock_xettime.gen.test \
+	clone3.gen.test clone3-Xabbrev.gen.test clone3-Xraw.gen.test \
+	clone3-Xverbose.gen.test clone3-success-Xabbrev.gen.test \
+	clone3-success-Xraw.gen.test clone3-success-Xverbose.gen.test \
 	copy_file_range.gen.test creat.gen.test delete_module.gen.test \
 	dev-yy.gen.test dup.gen.test dup2.gen.test dup3.gen.test \
 	epoll_create.gen.test epoll_create1.gen.test \
@@ -4849,11 +5081,13 @@ GEN_TESTS = _newselect.gen.test _newselect-P.gen.test accept.gen.test \
 	fchmod.gen.test fchmodat.gen.test fchown.gen.test \
 	fchown32.gen.test fchownat.gen.test fcntl.gen.test \
 	fcntl64.gen.test fdatasync.gen.test file_handle.gen.test \
-	file_ioctl.gen.test finit_module.gen.test flock.gen.test \
-	fork-f.gen.test fsconfig.gen.test fsconfig-P.gen.test \
-	fsmount.gen.test fsopen.gen.test fspick.gen.test \
-	fspick-P.gen.test fstat.gen.test fstat-Xabbrev.gen.test \
-	fstat-Xraw.gen.test fstat-Xverbose.gen.test fstat64.gen.test \
+	file_ioctl.gen.test filter_seccomp.gen.test \
+	filter_seccomp-flag.gen.test finit_module.gen.test \
+	flock.gen.test fork-f.gen.test fsconfig.gen.test \
+	fsconfig-P.gen.test fsmount.gen.test fsopen.gen.test \
+	fspick.gen.test fspick-P.gen.test fstat.gen.test \
+	fstat-Xabbrev.gen.test fstat-Xraw.gen.test \
+	fstat-Xverbose.gen.test fstat64.gen.test \
 	fstat64-Xabbrev.gen.test fstat64-Xraw.gen.test \
 	fstat64-Xverbose.gen.test fstatat64.gen.test fstatfs.gen.test \
 	fstatfs64.gen.test fsync.gen.test fsync-y.gen.test \
@@ -4873,16 +5107,26 @@ GEN_TESTS = _newselect.gen.test _newselect-P.gen.test accept.gen.test \
 	inotify_init1-y.gen.test io_uring_enter.gen.test \
 	io_uring_register.gen.test io_uring_setup.gen.test \
 	ioctl_block.gen.test ioctl_dm.gen.test ioctl_dm-v.gen.test \
-	ioctl_evdev.gen.test ioctl_evdev-v.gen.test \
-	ioctl_inotify.gen.test ioctl_kvm_run.gen.test \
-	ioctl_kvm_run-v.gen.test ioctl_kvm_run_auxstr_vcpu.gen.test \
-	ioctl_loop.gen.test ioctl_loop-nv.gen.test \
-	ioctl_loop-v.gen.test ioctl_mtd.gen.test ioctl_nbd.gen.test \
-	ioctl_nsfs.gen.test ioctl_perf.gen.test ioctl_ptp.gen.test \
-	ioctl_random.gen.test ioctl_rtc.gen.test ioctl_rtc-v.gen.test \
-	ioctl_scsi.gen.test ioctl_sg_io_v3.gen.test \
-	ioctl_sg_io_v4.gen.test ioctl_sock_gifconf.gen.test \
-	ioctl_uffdio.gen.test ioctl_v4l2.gen.test ioperm.gen.test \
+	ioctl_evdev.gen.test ioctl_evdev-Xabbrev.gen.test \
+	ioctl_evdev-Xraw.gen.test ioctl_evdev-Xverbose.gen.test \
+	ioctl_evdev-v.gen.test ioctl_evdev-v-Xabbrev.gen.test \
+	ioctl_evdev-v-Xraw.gen.test ioctl_evdev-v-Xverbose.gen.test \
+	ioctl_evdev-success-Xabbrev.gen.test \
+	ioctl_evdev-success-Xraw.gen.test \
+	ioctl_evdev-success-Xverbose.gen.test \
+	ioctl_evdev-success-v.gen.test \
+	ioctl_evdev-success-v-Xabbrev.gen.test \
+	ioctl_evdev-success-v-Xraw.gen.test \
+	ioctl_evdev-success-v-Xverbose.gen.test ioctl_inotify.gen.test \
+	ioctl_kvm_run.gen.test ioctl_kvm_run-v.gen.test \
+	ioctl_kvm_run_auxstr_vcpu.gen.test ioctl_loop.gen.test \
+	ioctl_loop-nv.gen.test ioctl_loop-v.gen.test \
+	ioctl_mtd.gen.test ioctl_nbd.gen.test ioctl_nsfs.gen.test \
+	ioctl_perf.gen.test ioctl_ptp.gen.test ioctl_random.gen.test \
+	ioctl_rtc.gen.test ioctl_rtc-v.gen.test ioctl_scsi.gen.test \
+	ioctl_sg_io_v3.gen.test ioctl_sg_io_v4.gen.test \
+	ioctl_sock_gifconf.gen.test ioctl_uffdio.gen.test \
+	ioctl_v4l2.gen.test ioctl_watchdog.gen.test ioperm.gen.test \
 	iopl.gen.test ioprio.gen.test ioprio-Xabbrev.gen.test \
 	ioprio-Xraw.gen.test ioprio-Xverbose.gen.test ip_mreq.gen.test \
 	ipc.gen.test ipc_msg.gen.test ipc_msg-Xabbrev.gen.test \
@@ -4898,9 +5142,9 @@ GEN_TESTS = _newselect.gen.test _newselect-P.gen.test accept.gen.test \
 	kernel_version-Xverbose.gen.test kexec_file_load.gen.test \
 	kexec_load.gen.test keyctl.gen.test keyctl-Xabbrev.gen.test \
 	keyctl-Xraw.gen.test keyctl-Xverbose.gen.test kill.gen.test \
-	lchown.gen.test lchown32.gen.test link.gen.test \
-	linkat.gen.test lookup_dcookie.gen.test lstat.gen.test \
-	lstat64.gen.test madvise.gen.test \
+	ksysent.gen.test lchown.gen.test lchown32.gen.test \
+	link.gen.test linkat.gen.test lookup_dcookie.gen.test \
+	lstat.gen.test lstat64.gen.test madvise.gen.test \
 	maybe_switch_current_tcp.gen.test mbind.gen.test \
 	mbind-Xabbrev.gen.test mbind-Xraw.gen.test \
 	mbind-Xverbose.gen.test membarrier.gen.test \
@@ -4966,11 +5210,13 @@ GEN_TESTS = _newselect.gen.test _newselect-P.gen.test accept.gen.test \
 	perf_event_open_nonverbose.gen.test \
 	perf_event_open_unabbrev.gen.test personality-Xabbrev.gen.test \
 	personality-Xraw.gen.test personality-Xverbose.gen.test \
-	pidfd_send_signal.gen.test pipe2.gen.test pkey_alloc.gen.test \
-	pkey_free.gen.test pkey_mprotect.gen.test ppoll.gen.test \
-	ppoll-P.gen.test ppoll-v.gen.test pread64-pwrite64.gen.test \
-	preadv.gen.test preadv-pwritev.gen.test \
-	preadv2-pwritev2.gen.test printpath-umovestr.gen.test \
+	pidfd_open.gen.test pidfd_open-P.gen.test \
+	pidfd_open-y.gen.test pidfd_send_signal.gen.test \
+	pipe2.gen.test pkey_alloc.gen.test pkey_free.gen.test \
+	pkey_mprotect.gen.test ppoll.gen.test ppoll-P.gen.test \
+	ppoll-v.gen.test pread64-pwrite64.gen.test preadv.gen.test \
+	preadv-pwritev.gen.test preadv2-pwritev2.gen.test \
+	printpath-umovestr.gen.test \
 	printpath-umovestr-peekdata.gen.test \
 	printpath-umovestr-undumpable.gen.test \
 	printsignal-Xabbrev.gen.test printsignal-Xraw.gen.test \
@@ -4984,7 +5230,8 @@ GEN_TESTS = _newselect.gen.test _newselect-P.gen.test accept.gen.test \
 	quotactl-v.gen.test quotactl-xfs.gen.test \
 	quotactl-xfs-v.gen.test read-write.gen.test readahead.gen.test \
 	readdir.gen.test readlink.gen.test readlinkat.gen.test \
-	reboot.gen.test recvfrom.gen.test recvmmsg-timeout.gen.test \
+	reboot.gen.test recv-MSG_TRUNC.gen.test recvfrom.gen.test \
+	recvfrom-MSG_TRUNC.gen.test recvmmsg-timeout.gen.test \
 	recvmsg.gen.test regex.gen.test remap_file_pages.gen.test \
 	remap_file_pages-Xabbrev.gen.test \
 	remap_file_pages-Xraw.gen.test \
@@ -5074,6 +5321,7 @@ DECODER_TESTS = \
 	caps-abbrev.test \
 	caps.test \
 	clone-flags.test \
+	clone3-success.test \
 	eventfd.test \
 	execve-v.test \
 	execve.test \
@@ -5083,7 +5331,6 @@ DECODER_TESTS = \
 	int_0x80.test \
 	inotify_init-y.test \
 	ioctl.test \
-	ioctl_evdev-success-v.test \
 	ioctl_evdev-success.test \
 	ioctl_perf-success.test \
 	ipc_msgbuf.test \
@@ -5127,6 +5374,7 @@ DECODER_TESTS = \
 	seccomp-strict.test \
 	sigaltstack.test \
 	sun_path.test \
+	syslog-success.test \
 	uio.test \
 	umount.test \
 	umount2.test \
@@ -5151,6 +5399,7 @@ MISC_TESTS = \
 	detach-sleeping.test \
 	detach-stopped.test \
 	fflush.test \
+	filter_seccomp-perf.test \
 	filter-unavailable.test \
 	filtering_fd-syntax.test \
 	filtering_syscall-syntax.test \
@@ -5159,7 +5408,6 @@ MISC_TESTS = \
 	inject-nf.test \
 	interactive_block.test \
 	kill_child.test \
-	ksysent.test \
 	localtime.test \
 	looping_threads.test \
 	opipe.test \
@@ -5201,6 +5449,7 @@ MISC_TESTS = \
 	strace-ttt.test \
 	termsig.test \
 	threads-execve.test \
+	umovestr_cached.test \
 	# end of MISC_TESTS
 
 XFAIL_TESTS_ = 
@@ -5228,6 +5477,8 @@ EXTRA_DIST = \
 	eventfd.expected \
 	fadvise.h \
 	fcntl-common.c \
+	filter_seccomp.in \
+	filter_seccomp.sh \
 	filter-unavailable.expected \
 	fstatat.c \
 	fstatx.c \
@@ -5248,6 +5499,7 @@ EXTRA_DIST = \
 	pipe.expected \
 	print_user_desc.c \
 	printsignal.c \
+	printxval.c \
 	process_vm_readv_writev.c \
 	pure_executables.list \
 	qual_fault-exit_group.expected \
@@ -5523,6 +5775,38 @@ clone-flags$(EXEEXT): $(clone_flags_OBJECTS) $(clone_flags_DEPENDENCIES) $(EXTRA
 	@rm -f clone-flags$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(clone_flags_OBJECTS) $(clone_flags_LDADD) $(LIBS)
 
+clone3$(EXEEXT): $(clone3_OBJECTS) $(clone3_DEPENDENCIES) $(EXTRA_clone3_DEPENDENCIES) 
+	@rm -f clone3$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(clone3_OBJECTS) $(clone3_LDADD) $(LIBS)
+
+clone3-Xabbrev$(EXEEXT): $(clone3_Xabbrev_OBJECTS) $(clone3_Xabbrev_DEPENDENCIES) $(EXTRA_clone3_Xabbrev_DEPENDENCIES) 
+	@rm -f clone3-Xabbrev$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(clone3_Xabbrev_OBJECTS) $(clone3_Xabbrev_LDADD) $(LIBS)
+
+clone3-Xraw$(EXEEXT): $(clone3_Xraw_OBJECTS) $(clone3_Xraw_DEPENDENCIES) $(EXTRA_clone3_Xraw_DEPENDENCIES) 
+	@rm -f clone3-Xraw$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(clone3_Xraw_OBJECTS) $(clone3_Xraw_LDADD) $(LIBS)
+
+clone3-Xverbose$(EXEEXT): $(clone3_Xverbose_OBJECTS) $(clone3_Xverbose_DEPENDENCIES) $(EXTRA_clone3_Xverbose_DEPENDENCIES) 
+	@rm -f clone3-Xverbose$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(clone3_Xverbose_OBJECTS) $(clone3_Xverbose_LDADD) $(LIBS)
+
+clone3-success$(EXEEXT): $(clone3_success_OBJECTS) $(clone3_success_DEPENDENCIES) $(EXTRA_clone3_success_DEPENDENCIES) 
+	@rm -f clone3-success$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(clone3_success_OBJECTS) $(clone3_success_LDADD) $(LIBS)
+
+clone3-success-Xabbrev$(EXEEXT): $(clone3_success_Xabbrev_OBJECTS) $(clone3_success_Xabbrev_DEPENDENCIES) $(EXTRA_clone3_success_Xabbrev_DEPENDENCIES) 
+	@rm -f clone3-success-Xabbrev$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(clone3_success_Xabbrev_OBJECTS) $(clone3_success_Xabbrev_LDADD) $(LIBS)
+
+clone3-success-Xraw$(EXEEXT): $(clone3_success_Xraw_OBJECTS) $(clone3_success_Xraw_DEPENDENCIES) $(EXTRA_clone3_success_Xraw_DEPENDENCIES) 
+	@rm -f clone3-success-Xraw$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(clone3_success_Xraw_OBJECTS) $(clone3_success_Xraw_LDADD) $(LIBS)
+
+clone3-success-Xverbose$(EXEEXT): $(clone3_success_Xverbose_OBJECTS) $(clone3_success_Xverbose_DEPENDENCIES) $(EXTRA_clone3_success_Xverbose_DEPENDENCIES) 
+	@rm -f clone3-success-Xverbose$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(clone3_success_Xverbose_OBJECTS) $(clone3_success_Xverbose_LDADD) $(LIBS)
+
 clone_parent$(EXEEXT): $(clone_parent_OBJECTS) $(clone_parent_DEPENDENCIES) $(EXTRA_clone_parent_DEPENDENCIES) 
 	@rm -f clone_parent$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(clone_parent_OBJECTS) $(clone_parent_LDADD) $(LIBS)
@@ -5698,6 +5982,14 @@ file_ioctl$(EXEEXT): $(file_ioctl_OBJECTS) $(file_ioctl_DEPENDENCIES) $(EXTRA_fi
 filter-unavailable$(EXEEXT): $(filter_unavailable_OBJECTS) $(filter_unavailable_DEPENDENCIES) $(EXTRA_filter_unavailable_DEPENDENCIES) 
 	@rm -f filter-unavailable$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(filter_unavailable_OBJECTS) $(filter_unavailable_LDADD) $(LIBS)
+
+filter_seccomp-flag$(EXEEXT): $(filter_seccomp_flag_OBJECTS) $(filter_seccomp_flag_DEPENDENCIES) $(EXTRA_filter_seccomp_flag_DEPENDENCIES) 
+	@rm -f filter_seccomp-flag$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(filter_seccomp_flag_OBJECTS) $(filter_seccomp_flag_LDADD) $(LIBS)
+
+filter_seccomp-perf$(EXEEXT): $(filter_seccomp_perf_OBJECTS) $(filter_seccomp_perf_DEPENDENCIES) $(EXTRA_filter_seccomp_perf_DEPENDENCIES) 
+	@rm -f filter_seccomp-perf$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(filter_seccomp_perf_OBJECTS) $(filter_seccomp_perf_LDADD) $(LIBS)
 
 finit_module$(EXEEXT): $(finit_module_OBJECTS) $(finit_module_DEPENDENCIES) $(EXTRA_finit_module_DEPENDENCIES) 
 	@rm -f finit_module$(EXEEXT)
@@ -5995,17 +6287,65 @@ ioctl_evdev$(EXEEXT): $(ioctl_evdev_OBJECTS) $(ioctl_evdev_DEPENDENCIES) $(EXTRA
 	@rm -f ioctl_evdev$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(ioctl_evdev_OBJECTS) $(ioctl_evdev_LDADD) $(LIBS)
 
+ioctl_evdev-Xabbrev$(EXEEXT): $(ioctl_evdev_Xabbrev_OBJECTS) $(ioctl_evdev_Xabbrev_DEPENDENCIES) $(EXTRA_ioctl_evdev_Xabbrev_DEPENDENCIES) 
+	@rm -f ioctl_evdev-Xabbrev$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(ioctl_evdev_Xabbrev_OBJECTS) $(ioctl_evdev_Xabbrev_LDADD) $(LIBS)
+
+ioctl_evdev-Xraw$(EXEEXT): $(ioctl_evdev_Xraw_OBJECTS) $(ioctl_evdev_Xraw_DEPENDENCIES) $(EXTRA_ioctl_evdev_Xraw_DEPENDENCIES) 
+	@rm -f ioctl_evdev-Xraw$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(ioctl_evdev_Xraw_OBJECTS) $(ioctl_evdev_Xraw_LDADD) $(LIBS)
+
+ioctl_evdev-Xverbose$(EXEEXT): $(ioctl_evdev_Xverbose_OBJECTS) $(ioctl_evdev_Xverbose_DEPENDENCIES) $(EXTRA_ioctl_evdev_Xverbose_DEPENDENCIES) 
+	@rm -f ioctl_evdev-Xverbose$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(ioctl_evdev_Xverbose_OBJECTS) $(ioctl_evdev_Xverbose_LDADD) $(LIBS)
+
 ioctl_evdev-success$(EXEEXT): $(ioctl_evdev_success_OBJECTS) $(ioctl_evdev_success_DEPENDENCIES) $(EXTRA_ioctl_evdev_success_DEPENDENCIES) 
 	@rm -f ioctl_evdev-success$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(ioctl_evdev_success_OBJECTS) $(ioctl_evdev_success_LDADD) $(LIBS)
+
+ioctl_evdev-success-Xabbrev$(EXEEXT): $(ioctl_evdev_success_Xabbrev_OBJECTS) $(ioctl_evdev_success_Xabbrev_DEPENDENCIES) $(EXTRA_ioctl_evdev_success_Xabbrev_DEPENDENCIES) 
+	@rm -f ioctl_evdev-success-Xabbrev$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(ioctl_evdev_success_Xabbrev_OBJECTS) $(ioctl_evdev_success_Xabbrev_LDADD) $(LIBS)
+
+ioctl_evdev-success-Xraw$(EXEEXT): $(ioctl_evdev_success_Xraw_OBJECTS) $(ioctl_evdev_success_Xraw_DEPENDENCIES) $(EXTRA_ioctl_evdev_success_Xraw_DEPENDENCIES) 
+	@rm -f ioctl_evdev-success-Xraw$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(ioctl_evdev_success_Xraw_OBJECTS) $(ioctl_evdev_success_Xraw_LDADD) $(LIBS)
+
+ioctl_evdev-success-Xverbose$(EXEEXT): $(ioctl_evdev_success_Xverbose_OBJECTS) $(ioctl_evdev_success_Xverbose_DEPENDENCIES) $(EXTRA_ioctl_evdev_success_Xverbose_DEPENDENCIES) 
+	@rm -f ioctl_evdev-success-Xverbose$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(ioctl_evdev_success_Xverbose_OBJECTS) $(ioctl_evdev_success_Xverbose_LDADD) $(LIBS)
 
 ioctl_evdev-success-v$(EXEEXT): $(ioctl_evdev_success_v_OBJECTS) $(ioctl_evdev_success_v_DEPENDENCIES) $(EXTRA_ioctl_evdev_success_v_DEPENDENCIES) 
 	@rm -f ioctl_evdev-success-v$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(ioctl_evdev_success_v_OBJECTS) $(ioctl_evdev_success_v_LDADD) $(LIBS)
 
+ioctl_evdev-success-v-Xabbrev$(EXEEXT): $(ioctl_evdev_success_v_Xabbrev_OBJECTS) $(ioctl_evdev_success_v_Xabbrev_DEPENDENCIES) $(EXTRA_ioctl_evdev_success_v_Xabbrev_DEPENDENCIES) 
+	@rm -f ioctl_evdev-success-v-Xabbrev$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(ioctl_evdev_success_v_Xabbrev_OBJECTS) $(ioctl_evdev_success_v_Xabbrev_LDADD) $(LIBS)
+
+ioctl_evdev-success-v-Xraw$(EXEEXT): $(ioctl_evdev_success_v_Xraw_OBJECTS) $(ioctl_evdev_success_v_Xraw_DEPENDENCIES) $(EXTRA_ioctl_evdev_success_v_Xraw_DEPENDENCIES) 
+	@rm -f ioctl_evdev-success-v-Xraw$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(ioctl_evdev_success_v_Xraw_OBJECTS) $(ioctl_evdev_success_v_Xraw_LDADD) $(LIBS)
+
+ioctl_evdev-success-v-Xverbose$(EXEEXT): $(ioctl_evdev_success_v_Xverbose_OBJECTS) $(ioctl_evdev_success_v_Xverbose_DEPENDENCIES) $(EXTRA_ioctl_evdev_success_v_Xverbose_DEPENDENCIES) 
+	@rm -f ioctl_evdev-success-v-Xverbose$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(ioctl_evdev_success_v_Xverbose_OBJECTS) $(ioctl_evdev_success_v_Xverbose_LDADD) $(LIBS)
+
 ioctl_evdev-v$(EXEEXT): $(ioctl_evdev_v_OBJECTS) $(ioctl_evdev_v_DEPENDENCIES) $(EXTRA_ioctl_evdev_v_DEPENDENCIES) 
 	@rm -f ioctl_evdev-v$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(ioctl_evdev_v_OBJECTS) $(ioctl_evdev_v_LDADD) $(LIBS)
+
+ioctl_evdev-v-Xabbrev$(EXEEXT): $(ioctl_evdev_v_Xabbrev_OBJECTS) $(ioctl_evdev_v_Xabbrev_DEPENDENCIES) $(EXTRA_ioctl_evdev_v_Xabbrev_DEPENDENCIES) 
+	@rm -f ioctl_evdev-v-Xabbrev$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(ioctl_evdev_v_Xabbrev_OBJECTS) $(ioctl_evdev_v_Xabbrev_LDADD) $(LIBS)
+
+ioctl_evdev-v-Xraw$(EXEEXT): $(ioctl_evdev_v_Xraw_OBJECTS) $(ioctl_evdev_v_Xraw_DEPENDENCIES) $(EXTRA_ioctl_evdev_v_Xraw_DEPENDENCIES) 
+	@rm -f ioctl_evdev-v-Xraw$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(ioctl_evdev_v_Xraw_OBJECTS) $(ioctl_evdev_v_Xraw_LDADD) $(LIBS)
+
+ioctl_evdev-v-Xverbose$(EXEEXT): $(ioctl_evdev_v_Xverbose_OBJECTS) $(ioctl_evdev_v_Xverbose_DEPENDENCIES) $(EXTRA_ioctl_evdev_v_Xverbose_DEPENDENCIES) 
+	@rm -f ioctl_evdev-v-Xverbose$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(ioctl_evdev_v_Xverbose_OBJECTS) $(ioctl_evdev_v_Xverbose_LDADD) $(LIBS)
 
 ioctl_inotify$(EXEEXT): $(ioctl_inotify_OBJECTS) $(ioctl_inotify_DEPENDENCIES) $(EXTRA_ioctl_inotify_DEPENDENCIES) 
 	@rm -f ioctl_inotify$(EXEEXT)
@@ -6094,6 +6434,10 @@ ioctl_uffdio$(EXEEXT): $(ioctl_uffdio_OBJECTS) $(ioctl_uffdio_DEPENDENCIES) $(EX
 ioctl_v4l2$(EXEEXT): $(ioctl_v4l2_OBJECTS) $(ioctl_v4l2_DEPENDENCIES) $(EXTRA_ioctl_v4l2_DEPENDENCIES) 
 	@rm -f ioctl_v4l2$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(ioctl_v4l2_OBJECTS) $(ioctl_v4l2_LDADD) $(LIBS)
+
+ioctl_watchdog$(EXEEXT): $(ioctl_watchdog_OBJECTS) $(ioctl_watchdog_DEPENDENCIES) $(EXTRA_ioctl_watchdog_DEPENDENCIES) 
+	@rm -f ioctl_watchdog$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(ioctl_watchdog_OBJECTS) $(ioctl_watchdog_LDADD) $(LIBS)
 
 ioperm$(EXEEXT): $(ioperm_OBJECTS) $(ioperm_DEPENDENCIES) $(EXTRA_ioperm_DEPENDENCIES) 
 	@rm -f ioperm$(EXEEXT)
@@ -6923,6 +7267,18 @@ personality-Xverbose$(EXEEXT): $(personality_Xverbose_OBJECTS) $(personality_Xve
 	@rm -f personality-Xverbose$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(personality_Xverbose_OBJECTS) $(personality_Xverbose_LDADD) $(LIBS)
 
+pidfd_open$(EXEEXT): $(pidfd_open_OBJECTS) $(pidfd_open_DEPENDENCIES) $(EXTRA_pidfd_open_DEPENDENCIES) 
+	@rm -f pidfd_open$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(pidfd_open_OBJECTS) $(pidfd_open_LDADD) $(LIBS)
+
+pidfd_open-P$(EXEEXT): $(pidfd_open_P_OBJECTS) $(pidfd_open_P_DEPENDENCIES) $(EXTRA_pidfd_open_P_DEPENDENCIES) 
+	@rm -f pidfd_open-P$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(pidfd_open_P_OBJECTS) $(pidfd_open_P_LDADD) $(LIBS)
+
+pidfd_open-y$(EXEEXT): $(pidfd_open_y_OBJECTS) $(pidfd_open_y_DEPENDENCIES) $(EXTRA_pidfd_open_y_DEPENDENCIES) 
+	@rm -f pidfd_open-y$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(pidfd_open_y_OBJECTS) $(pidfd_open_y_LDADD) $(LIBS)
+
 pidfd_send_signal$(EXEEXT): $(pidfd_send_signal_OBJECTS) $(pidfd_send_signal_DEPENDENCIES) $(EXTRA_pidfd_send_signal_DEPENDENCIES) 
 	@rm -f pidfd_send_signal$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(pidfd_send_signal_OBJECTS) $(pidfd_send_signal_LDADD) $(LIBS)
@@ -7191,9 +7547,17 @@ reboot$(EXEEXT): $(reboot_OBJECTS) $(reboot_DEPENDENCIES) $(EXTRA_reboot_DEPENDE
 	@rm -f reboot$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(reboot_OBJECTS) $(reboot_LDADD) $(LIBS)
 
+recv-MSG_TRUNC$(EXEEXT): $(recv_MSG_TRUNC_OBJECTS) $(recv_MSG_TRUNC_DEPENDENCIES) $(EXTRA_recv_MSG_TRUNC_DEPENDENCIES) 
+	@rm -f recv-MSG_TRUNC$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(recv_MSG_TRUNC_OBJECTS) $(recv_MSG_TRUNC_LDADD) $(LIBS)
+
 recvfrom$(EXEEXT): $(recvfrom_OBJECTS) $(recvfrom_DEPENDENCIES) $(EXTRA_recvfrom_DEPENDENCIES) 
 	@rm -f recvfrom$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(recvfrom_OBJECTS) $(recvfrom_LDADD) $(LIBS)
+
+recvfrom-MSG_TRUNC$(EXEEXT): $(recvfrom_MSG_TRUNC_OBJECTS) $(recvfrom_MSG_TRUNC_DEPENDENCIES) $(EXTRA_recvfrom_MSG_TRUNC_DEPENDENCIES) 
+	@rm -f recvfrom-MSG_TRUNC$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(recvfrom_MSG_TRUNC_OBJECTS) $(recvfrom_MSG_TRUNC_LDADD) $(LIBS)
 
 recvmmsg-timeout$(EXEEXT): $(recvmmsg_timeout_OBJECTS) $(recvmmsg_timeout_DEPENDENCIES) $(EXTRA_recvmmsg_timeout_DEPENDENCIES) 
 	@rm -f recvmmsg-timeout$(EXEEXT)
@@ -7663,6 +8027,10 @@ status-none$(EXEEXT): $(status_none_OBJECTS) $(status_none_DEPENDENCIES) $(EXTRA
 	@rm -f status-none$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(status_none_OBJECTS) $(status_none_LDADD) $(LIBS)
 
+status-none-f$(EXEEXT): $(status_none_f_OBJECTS) $(status_none_f_DEPENDENCIES) $(EXTRA_status_none_f_DEPENDENCIES) 
+	@rm -f status-none-f$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(status_none_f_OBJECTS) $(status_none_f_LDADD) $(LIBS)
+
 status-none-threads$(EXEEXT): $(status_none_threads_OBJECTS) $(status_none_threads_DEPENDENCIES) $(EXTRA_status_none_threads_DEPENDENCIES) 
 	@rm -f status-none-threads$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(status_none_threads_OBJECTS) $(status_none_threads_LDADD) $(LIBS)
@@ -7718,6 +8086,10 @@ sysinfo$(EXEEXT): $(sysinfo_OBJECTS) $(sysinfo_DEPENDENCIES) $(EXTRA_sysinfo_DEP
 syslog$(EXEEXT): $(syslog_OBJECTS) $(syslog_DEPENDENCIES) $(EXTRA_syslog_DEPENDENCIES) 
 	@rm -f syslog$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(syslog_OBJECTS) $(syslog_LDADD) $(LIBS)
+
+syslog-success$(EXEEXT): $(syslog_success_OBJECTS) $(syslog_success_DEPENDENCIES) $(EXTRA_syslog_success_DEPENDENCIES) 
+	@rm -f syslog-success$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(syslog_success_OBJECTS) $(syslog_success_LDADD) $(LIBS)
 
 tee$(EXEEXT): $(tee_OBJECTS) $(tee_DEPENDENCIES) $(EXTRA_tee_DEPENDENCIES) 
 	@rm -f tee$(EXEEXT)
@@ -7798,6 +8170,10 @@ umovestr2$(EXEEXT): $(umovestr2_OBJECTS) $(umovestr2_DEPENDENCIES) $(EXTRA_umove
 umovestr3$(EXEEXT): $(umovestr3_OBJECTS) $(umovestr3_DEPENDENCIES) $(EXTRA_umovestr3_DEPENDENCIES) 
 	@rm -f umovestr3$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(umovestr3_OBJECTS) $(umovestr3_LDADD) $(LIBS)
+
+umovestr_cached$(EXEEXT): $(umovestr_cached_OBJECTS) $(umovestr_cached_DEPENDENCIES) $(EXTRA_umovestr_cached_DEPENDENCIES) 
+	@rm -f umovestr_cached$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(umovestr_cached_OBJECTS) $(umovestr_cached_LDADD) $(LIBS)
 
 uname$(EXEEXT): $(uname_OBJECTS) $(uname_DEPENDENCIES) $(EXTRA_uname_DEPENDENCIES) 
 	@rm -f uname$(EXEEXT)
@@ -7972,6 +8348,14 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/clock_nanosleep.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/clock_xettime.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/clone-flags.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/clone3-Xabbrev.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/clone3-Xraw.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/clone3-Xverbose.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/clone3-success-Xabbrev.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/clone3-success-Xraw.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/clone3-success-Xverbose.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/clone3-success.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/clone3.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/clone_parent.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/clone_ptrace.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/copy_file_range.Po@am__quote@ # am--include-marker
@@ -8016,6 +8400,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/file_handle.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/file_ioctl.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/filter-unavailable.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/filter_seccomp-flag.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/filter_seccomp-perf.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/finit_module.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/flock.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fork-f.Po@am__quote@ # am--include-marker
@@ -8089,8 +8475,20 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ioctl_block.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ioctl_dm-v.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ioctl_dm.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ioctl_evdev-Xabbrev.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ioctl_evdev-Xraw.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ioctl_evdev-Xverbose.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ioctl_evdev-success-Xabbrev.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ioctl_evdev-success-Xraw.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ioctl_evdev-success-Xverbose.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ioctl_evdev-success-v-Xabbrev.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ioctl_evdev-success-v-Xraw.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ioctl_evdev-success-v-Xverbose.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ioctl_evdev-success-v.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ioctl_evdev-success.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ioctl_evdev-v-Xabbrev.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ioctl_evdev-v-Xraw.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ioctl_evdev-v-Xverbose.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ioctl_evdev-v.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ioctl_evdev.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ioctl_inotify.Po@am__quote@ # am--include-marker
@@ -8115,6 +8513,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ioctl_sock_gifconf.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ioctl_uffdio.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ioctl_v4l2.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ioctl_watchdog.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ioperm.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iopl.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ioprio-Xabbrev.Po@am__quote@ # am--include-marker
@@ -8170,12 +8569,15 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libtests_a-inode_of_sockfd.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libtests_a-libmmsg.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libtests_a-libsocketcall.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libtests_a-lock_file.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libtests_a-overflowuid.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libtests_a-pipe_maxfd.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libtests_a-print_quoted_string.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libtests_a-print_time.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libtests_a-printflags.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libtests_a-printxval.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libtests_a-printxval-Xabbrev.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libtests_a-printxval-Xraw.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libtests_a-printxval-Xverbose.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libtests_a-signal2name.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libtests_a-skip_unavailable.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libtests_a-sprintrc.Po@am__quote@ # am--include-marker
@@ -8349,6 +8751,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/personality-Xraw.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/personality-Xverbose.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/personality.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pidfd_open-P.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pidfd_open-y.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pidfd_open.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pidfd_send_signal.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pipe.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pipe2.Po@am__quote@ # am--include-marker
@@ -8416,6 +8821,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/readlinkat.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/readv.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reboot.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/recv-MSG_TRUNC.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/recvfrom-MSG_TRUNC.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/recvfrom.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/recvmmsg-timeout.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/recvmsg.Po@am__quote@ # am--include-marker
@@ -8541,6 +8948,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/statfs64.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/status-all.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/status-failed.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/status-none-f.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/status-none-threads.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/status-none.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/status-successful.Po@am__quote@ # am--include-marker
@@ -8555,6 +8963,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sync_file_range.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sync_file_range2.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sysinfo.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/syslog-success.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/syslog.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tee.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/threads-execve.Po@am__quote@ # am--include-marker
@@ -8576,6 +8985,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/umovestr.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/umovestr2.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/umovestr3.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/umovestr_cached.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uname.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/unblock_reset_raise.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/unix-pair-send-recv.Po@am__quote@ # am--include-marker
@@ -8797,6 +9207,20 @@ libtests_a-libsocketcall.obj: libsocketcall.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libtests_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libtests_a-libsocketcall.obj `if test -f 'libsocketcall.c'; then $(CYGPATH_W) 'libsocketcall.c'; else $(CYGPATH_W) '$(srcdir)/libsocketcall.c'; fi`
 
+libtests_a-lock_file.o: lock_file.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libtests_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libtests_a-lock_file.o -MD -MP -MF $(DEPDIR)/libtests_a-lock_file.Tpo -c -o libtests_a-lock_file.o `test -f 'lock_file.c' || echo '$(srcdir)/'`lock_file.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libtests_a-lock_file.Tpo $(DEPDIR)/libtests_a-lock_file.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lock_file.c' object='libtests_a-lock_file.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libtests_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libtests_a-lock_file.o `test -f 'lock_file.c' || echo '$(srcdir)/'`lock_file.c
+
+libtests_a-lock_file.obj: lock_file.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libtests_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libtests_a-lock_file.obj -MD -MP -MF $(DEPDIR)/libtests_a-lock_file.Tpo -c -o libtests_a-lock_file.obj `if test -f 'lock_file.c'; then $(CYGPATH_W) 'lock_file.c'; else $(CYGPATH_W) '$(srcdir)/lock_file.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libtests_a-lock_file.Tpo $(DEPDIR)/libtests_a-lock_file.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lock_file.c' object='libtests_a-lock_file.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libtests_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libtests_a-lock_file.obj `if test -f 'lock_file.c'; then $(CYGPATH_W) 'lock_file.c'; else $(CYGPATH_W) '$(srcdir)/lock_file.c'; fi`
+
 libtests_a-overflowuid.o: overflowuid.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libtests_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libtests_a-overflowuid.o -MD -MP -MF $(DEPDIR)/libtests_a-overflowuid.Tpo -c -o libtests_a-overflowuid.o `test -f 'overflowuid.c' || echo '$(srcdir)/'`overflowuid.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libtests_a-overflowuid.Tpo $(DEPDIR)/libtests_a-overflowuid.Po
@@ -8867,19 +9291,47 @@ libtests_a-printflags.obj: printflags.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libtests_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libtests_a-printflags.obj `if test -f 'printflags.c'; then $(CYGPATH_W) 'printflags.c'; else $(CYGPATH_W) '$(srcdir)/printflags.c'; fi`
 
-libtests_a-printxval.o: printxval.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libtests_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libtests_a-printxval.o -MD -MP -MF $(DEPDIR)/libtests_a-printxval.Tpo -c -o libtests_a-printxval.o `test -f 'printxval.c' || echo '$(srcdir)/'`printxval.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libtests_a-printxval.Tpo $(DEPDIR)/libtests_a-printxval.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='printxval.c' object='libtests_a-printxval.o' libtool=no @AMDEPBACKSLASH@
+libtests_a-printxval-Xabbrev.o: printxval-Xabbrev.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libtests_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libtests_a-printxval-Xabbrev.o -MD -MP -MF $(DEPDIR)/libtests_a-printxval-Xabbrev.Tpo -c -o libtests_a-printxval-Xabbrev.o `test -f 'printxval-Xabbrev.c' || echo '$(srcdir)/'`printxval-Xabbrev.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libtests_a-printxval-Xabbrev.Tpo $(DEPDIR)/libtests_a-printxval-Xabbrev.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='printxval-Xabbrev.c' object='libtests_a-printxval-Xabbrev.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libtests_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libtests_a-printxval.o `test -f 'printxval.c' || echo '$(srcdir)/'`printxval.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libtests_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libtests_a-printxval-Xabbrev.o `test -f 'printxval-Xabbrev.c' || echo '$(srcdir)/'`printxval-Xabbrev.c
 
-libtests_a-printxval.obj: printxval.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libtests_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libtests_a-printxval.obj -MD -MP -MF $(DEPDIR)/libtests_a-printxval.Tpo -c -o libtests_a-printxval.obj `if test -f 'printxval.c'; then $(CYGPATH_W) 'printxval.c'; else $(CYGPATH_W) '$(srcdir)/printxval.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libtests_a-printxval.Tpo $(DEPDIR)/libtests_a-printxval.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='printxval.c' object='libtests_a-printxval.obj' libtool=no @AMDEPBACKSLASH@
+libtests_a-printxval-Xabbrev.obj: printxval-Xabbrev.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libtests_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libtests_a-printxval-Xabbrev.obj -MD -MP -MF $(DEPDIR)/libtests_a-printxval-Xabbrev.Tpo -c -o libtests_a-printxval-Xabbrev.obj `if test -f 'printxval-Xabbrev.c'; then $(CYGPATH_W) 'printxval-Xabbrev.c'; else $(CYGPATH_W) '$(srcdir)/printxval-Xabbrev.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libtests_a-printxval-Xabbrev.Tpo $(DEPDIR)/libtests_a-printxval-Xabbrev.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='printxval-Xabbrev.c' object='libtests_a-printxval-Xabbrev.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libtests_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libtests_a-printxval.obj `if test -f 'printxval.c'; then $(CYGPATH_W) 'printxval.c'; else $(CYGPATH_W) '$(srcdir)/printxval.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libtests_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libtests_a-printxval-Xabbrev.obj `if test -f 'printxval-Xabbrev.c'; then $(CYGPATH_W) 'printxval-Xabbrev.c'; else $(CYGPATH_W) '$(srcdir)/printxval-Xabbrev.c'; fi`
+
+libtests_a-printxval-Xraw.o: printxval-Xraw.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libtests_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libtests_a-printxval-Xraw.o -MD -MP -MF $(DEPDIR)/libtests_a-printxval-Xraw.Tpo -c -o libtests_a-printxval-Xraw.o `test -f 'printxval-Xraw.c' || echo '$(srcdir)/'`printxval-Xraw.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libtests_a-printxval-Xraw.Tpo $(DEPDIR)/libtests_a-printxval-Xraw.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='printxval-Xraw.c' object='libtests_a-printxval-Xraw.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libtests_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libtests_a-printxval-Xraw.o `test -f 'printxval-Xraw.c' || echo '$(srcdir)/'`printxval-Xraw.c
+
+libtests_a-printxval-Xraw.obj: printxval-Xraw.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libtests_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libtests_a-printxval-Xraw.obj -MD -MP -MF $(DEPDIR)/libtests_a-printxval-Xraw.Tpo -c -o libtests_a-printxval-Xraw.obj `if test -f 'printxval-Xraw.c'; then $(CYGPATH_W) 'printxval-Xraw.c'; else $(CYGPATH_W) '$(srcdir)/printxval-Xraw.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libtests_a-printxval-Xraw.Tpo $(DEPDIR)/libtests_a-printxval-Xraw.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='printxval-Xraw.c' object='libtests_a-printxval-Xraw.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libtests_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libtests_a-printxval-Xraw.obj `if test -f 'printxval-Xraw.c'; then $(CYGPATH_W) 'printxval-Xraw.c'; else $(CYGPATH_W) '$(srcdir)/printxval-Xraw.c'; fi`
+
+libtests_a-printxval-Xverbose.o: printxval-Xverbose.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libtests_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libtests_a-printxval-Xverbose.o -MD -MP -MF $(DEPDIR)/libtests_a-printxval-Xverbose.Tpo -c -o libtests_a-printxval-Xverbose.o `test -f 'printxval-Xverbose.c' || echo '$(srcdir)/'`printxval-Xverbose.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libtests_a-printxval-Xverbose.Tpo $(DEPDIR)/libtests_a-printxval-Xverbose.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='printxval-Xverbose.c' object='libtests_a-printxval-Xverbose.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libtests_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libtests_a-printxval-Xverbose.o `test -f 'printxval-Xverbose.c' || echo '$(srcdir)/'`printxval-Xverbose.c
+
+libtests_a-printxval-Xverbose.obj: printxval-Xverbose.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libtests_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libtests_a-printxval-Xverbose.obj -MD -MP -MF $(DEPDIR)/libtests_a-printxval-Xverbose.Tpo -c -o libtests_a-printxval-Xverbose.obj `if test -f 'printxval-Xverbose.c'; then $(CYGPATH_W) 'printxval-Xverbose.c'; else $(CYGPATH_W) '$(srcdir)/printxval-Xverbose.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libtests_a-printxval-Xverbose.Tpo $(DEPDIR)/libtests_a-printxval-Xverbose.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='printxval-Xverbose.c' object='libtests_a-printxval-Xverbose.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libtests_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libtests_a-printxval-Xverbose.obj `if test -f 'printxval-Xverbose.c'; then $(CYGPATH_W) 'printxval-Xverbose.c'; else $(CYGPATH_W) '$(srcdir)/printxval-Xverbose.c'; fi`
 
 libtests_a-signal2name.o: signal2name.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libtests_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libtests_a-signal2name.o -MD -MP -MF $(DEPDIR)/libtests_a-signal2name.Tpo -c -o libtests_a-signal2name.o `test -f 'signal2name.c' || echo '$(srcdir)/'`signal2name.c
@@ -9599,6 +10051,14 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/clock_nanosleep.Po
 	-rm -f ./$(DEPDIR)/clock_xettime.Po
 	-rm -f ./$(DEPDIR)/clone-flags.Po
+	-rm -f ./$(DEPDIR)/clone3-Xabbrev.Po
+	-rm -f ./$(DEPDIR)/clone3-Xraw.Po
+	-rm -f ./$(DEPDIR)/clone3-Xverbose.Po
+	-rm -f ./$(DEPDIR)/clone3-success-Xabbrev.Po
+	-rm -f ./$(DEPDIR)/clone3-success-Xraw.Po
+	-rm -f ./$(DEPDIR)/clone3-success-Xverbose.Po
+	-rm -f ./$(DEPDIR)/clone3-success.Po
+	-rm -f ./$(DEPDIR)/clone3.Po
 	-rm -f ./$(DEPDIR)/clone_parent.Po
 	-rm -f ./$(DEPDIR)/clone_ptrace.Po
 	-rm -f ./$(DEPDIR)/copy_file_range.Po
@@ -9643,6 +10103,8 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/file_handle.Po
 	-rm -f ./$(DEPDIR)/file_ioctl.Po
 	-rm -f ./$(DEPDIR)/filter-unavailable.Po
+	-rm -f ./$(DEPDIR)/filter_seccomp-flag.Po
+	-rm -f ./$(DEPDIR)/filter_seccomp-perf.Po
 	-rm -f ./$(DEPDIR)/finit_module.Po
 	-rm -f ./$(DEPDIR)/flock.Po
 	-rm -f ./$(DEPDIR)/fork-f.Po
@@ -9716,8 +10178,20 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/ioctl_block.Po
 	-rm -f ./$(DEPDIR)/ioctl_dm-v.Po
 	-rm -f ./$(DEPDIR)/ioctl_dm.Po
+	-rm -f ./$(DEPDIR)/ioctl_evdev-Xabbrev.Po
+	-rm -f ./$(DEPDIR)/ioctl_evdev-Xraw.Po
+	-rm -f ./$(DEPDIR)/ioctl_evdev-Xverbose.Po
+	-rm -f ./$(DEPDIR)/ioctl_evdev-success-Xabbrev.Po
+	-rm -f ./$(DEPDIR)/ioctl_evdev-success-Xraw.Po
+	-rm -f ./$(DEPDIR)/ioctl_evdev-success-Xverbose.Po
+	-rm -f ./$(DEPDIR)/ioctl_evdev-success-v-Xabbrev.Po
+	-rm -f ./$(DEPDIR)/ioctl_evdev-success-v-Xraw.Po
+	-rm -f ./$(DEPDIR)/ioctl_evdev-success-v-Xverbose.Po
 	-rm -f ./$(DEPDIR)/ioctl_evdev-success-v.Po
 	-rm -f ./$(DEPDIR)/ioctl_evdev-success.Po
+	-rm -f ./$(DEPDIR)/ioctl_evdev-v-Xabbrev.Po
+	-rm -f ./$(DEPDIR)/ioctl_evdev-v-Xraw.Po
+	-rm -f ./$(DEPDIR)/ioctl_evdev-v-Xverbose.Po
 	-rm -f ./$(DEPDIR)/ioctl_evdev-v.Po
 	-rm -f ./$(DEPDIR)/ioctl_evdev.Po
 	-rm -f ./$(DEPDIR)/ioctl_inotify.Po
@@ -9742,6 +10216,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/ioctl_sock_gifconf.Po
 	-rm -f ./$(DEPDIR)/ioctl_uffdio.Po
 	-rm -f ./$(DEPDIR)/ioctl_v4l2.Po
+	-rm -f ./$(DEPDIR)/ioctl_watchdog.Po
 	-rm -f ./$(DEPDIR)/ioperm.Po
 	-rm -f ./$(DEPDIR)/iopl.Po
 	-rm -f ./$(DEPDIR)/ioprio-Xabbrev.Po
@@ -9797,12 +10272,15 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/libtests_a-inode_of_sockfd.Po
 	-rm -f ./$(DEPDIR)/libtests_a-libmmsg.Po
 	-rm -f ./$(DEPDIR)/libtests_a-libsocketcall.Po
+	-rm -f ./$(DEPDIR)/libtests_a-lock_file.Po
 	-rm -f ./$(DEPDIR)/libtests_a-overflowuid.Po
 	-rm -f ./$(DEPDIR)/libtests_a-pipe_maxfd.Po
 	-rm -f ./$(DEPDIR)/libtests_a-print_quoted_string.Po
 	-rm -f ./$(DEPDIR)/libtests_a-print_time.Po
 	-rm -f ./$(DEPDIR)/libtests_a-printflags.Po
-	-rm -f ./$(DEPDIR)/libtests_a-printxval.Po
+	-rm -f ./$(DEPDIR)/libtests_a-printxval-Xabbrev.Po
+	-rm -f ./$(DEPDIR)/libtests_a-printxval-Xraw.Po
+	-rm -f ./$(DEPDIR)/libtests_a-printxval-Xverbose.Po
 	-rm -f ./$(DEPDIR)/libtests_a-signal2name.Po
 	-rm -f ./$(DEPDIR)/libtests_a-skip_unavailable.Po
 	-rm -f ./$(DEPDIR)/libtests_a-sprintrc.Po
@@ -9976,6 +10454,9 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/personality-Xraw.Po
 	-rm -f ./$(DEPDIR)/personality-Xverbose.Po
 	-rm -f ./$(DEPDIR)/personality.Po
+	-rm -f ./$(DEPDIR)/pidfd_open-P.Po
+	-rm -f ./$(DEPDIR)/pidfd_open-y.Po
+	-rm -f ./$(DEPDIR)/pidfd_open.Po
 	-rm -f ./$(DEPDIR)/pidfd_send_signal.Po
 	-rm -f ./$(DEPDIR)/pipe.Po
 	-rm -f ./$(DEPDIR)/pipe2.Po
@@ -10043,6 +10524,8 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/readlinkat.Po
 	-rm -f ./$(DEPDIR)/readv.Po
 	-rm -f ./$(DEPDIR)/reboot.Po
+	-rm -f ./$(DEPDIR)/recv-MSG_TRUNC.Po
+	-rm -f ./$(DEPDIR)/recvfrom-MSG_TRUNC.Po
 	-rm -f ./$(DEPDIR)/recvfrom.Po
 	-rm -f ./$(DEPDIR)/recvmmsg-timeout.Po
 	-rm -f ./$(DEPDIR)/recvmsg.Po
@@ -10168,6 +10651,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/statfs64.Po
 	-rm -f ./$(DEPDIR)/status-all.Po
 	-rm -f ./$(DEPDIR)/status-failed.Po
+	-rm -f ./$(DEPDIR)/status-none-f.Po
 	-rm -f ./$(DEPDIR)/status-none-threads.Po
 	-rm -f ./$(DEPDIR)/status-none.Po
 	-rm -f ./$(DEPDIR)/status-successful.Po
@@ -10182,6 +10666,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/sync_file_range.Po
 	-rm -f ./$(DEPDIR)/sync_file_range2.Po
 	-rm -f ./$(DEPDIR)/sysinfo.Po
+	-rm -f ./$(DEPDIR)/syslog-success.Po
 	-rm -f ./$(DEPDIR)/syslog.Po
 	-rm -f ./$(DEPDIR)/tee.Po
 	-rm -f ./$(DEPDIR)/threads-execve.Po
@@ -10203,6 +10688,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/umovestr.Po
 	-rm -f ./$(DEPDIR)/umovestr2.Po
 	-rm -f ./$(DEPDIR)/umovestr3.Po
+	-rm -f ./$(DEPDIR)/umovestr_cached.Po
 	-rm -f ./$(DEPDIR)/uname.Po
 	-rm -f ./$(DEPDIR)/unblock_reset_raise.Po
 	-rm -f ./$(DEPDIR)/unix-pair-send-recv.Po
@@ -10319,6 +10805,14 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/clock_nanosleep.Po
 	-rm -f ./$(DEPDIR)/clock_xettime.Po
 	-rm -f ./$(DEPDIR)/clone-flags.Po
+	-rm -f ./$(DEPDIR)/clone3-Xabbrev.Po
+	-rm -f ./$(DEPDIR)/clone3-Xraw.Po
+	-rm -f ./$(DEPDIR)/clone3-Xverbose.Po
+	-rm -f ./$(DEPDIR)/clone3-success-Xabbrev.Po
+	-rm -f ./$(DEPDIR)/clone3-success-Xraw.Po
+	-rm -f ./$(DEPDIR)/clone3-success-Xverbose.Po
+	-rm -f ./$(DEPDIR)/clone3-success.Po
+	-rm -f ./$(DEPDIR)/clone3.Po
 	-rm -f ./$(DEPDIR)/clone_parent.Po
 	-rm -f ./$(DEPDIR)/clone_ptrace.Po
 	-rm -f ./$(DEPDIR)/copy_file_range.Po
@@ -10363,6 +10857,8 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/file_handle.Po
 	-rm -f ./$(DEPDIR)/file_ioctl.Po
 	-rm -f ./$(DEPDIR)/filter-unavailable.Po
+	-rm -f ./$(DEPDIR)/filter_seccomp-flag.Po
+	-rm -f ./$(DEPDIR)/filter_seccomp-perf.Po
 	-rm -f ./$(DEPDIR)/finit_module.Po
 	-rm -f ./$(DEPDIR)/flock.Po
 	-rm -f ./$(DEPDIR)/fork-f.Po
@@ -10436,8 +10932,20 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/ioctl_block.Po
 	-rm -f ./$(DEPDIR)/ioctl_dm-v.Po
 	-rm -f ./$(DEPDIR)/ioctl_dm.Po
+	-rm -f ./$(DEPDIR)/ioctl_evdev-Xabbrev.Po
+	-rm -f ./$(DEPDIR)/ioctl_evdev-Xraw.Po
+	-rm -f ./$(DEPDIR)/ioctl_evdev-Xverbose.Po
+	-rm -f ./$(DEPDIR)/ioctl_evdev-success-Xabbrev.Po
+	-rm -f ./$(DEPDIR)/ioctl_evdev-success-Xraw.Po
+	-rm -f ./$(DEPDIR)/ioctl_evdev-success-Xverbose.Po
+	-rm -f ./$(DEPDIR)/ioctl_evdev-success-v-Xabbrev.Po
+	-rm -f ./$(DEPDIR)/ioctl_evdev-success-v-Xraw.Po
+	-rm -f ./$(DEPDIR)/ioctl_evdev-success-v-Xverbose.Po
 	-rm -f ./$(DEPDIR)/ioctl_evdev-success-v.Po
 	-rm -f ./$(DEPDIR)/ioctl_evdev-success.Po
+	-rm -f ./$(DEPDIR)/ioctl_evdev-v-Xabbrev.Po
+	-rm -f ./$(DEPDIR)/ioctl_evdev-v-Xraw.Po
+	-rm -f ./$(DEPDIR)/ioctl_evdev-v-Xverbose.Po
 	-rm -f ./$(DEPDIR)/ioctl_evdev-v.Po
 	-rm -f ./$(DEPDIR)/ioctl_evdev.Po
 	-rm -f ./$(DEPDIR)/ioctl_inotify.Po
@@ -10462,6 +10970,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/ioctl_sock_gifconf.Po
 	-rm -f ./$(DEPDIR)/ioctl_uffdio.Po
 	-rm -f ./$(DEPDIR)/ioctl_v4l2.Po
+	-rm -f ./$(DEPDIR)/ioctl_watchdog.Po
 	-rm -f ./$(DEPDIR)/ioperm.Po
 	-rm -f ./$(DEPDIR)/iopl.Po
 	-rm -f ./$(DEPDIR)/ioprio-Xabbrev.Po
@@ -10517,12 +11026,15 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/libtests_a-inode_of_sockfd.Po
 	-rm -f ./$(DEPDIR)/libtests_a-libmmsg.Po
 	-rm -f ./$(DEPDIR)/libtests_a-libsocketcall.Po
+	-rm -f ./$(DEPDIR)/libtests_a-lock_file.Po
 	-rm -f ./$(DEPDIR)/libtests_a-overflowuid.Po
 	-rm -f ./$(DEPDIR)/libtests_a-pipe_maxfd.Po
 	-rm -f ./$(DEPDIR)/libtests_a-print_quoted_string.Po
 	-rm -f ./$(DEPDIR)/libtests_a-print_time.Po
 	-rm -f ./$(DEPDIR)/libtests_a-printflags.Po
-	-rm -f ./$(DEPDIR)/libtests_a-printxval.Po
+	-rm -f ./$(DEPDIR)/libtests_a-printxval-Xabbrev.Po
+	-rm -f ./$(DEPDIR)/libtests_a-printxval-Xraw.Po
+	-rm -f ./$(DEPDIR)/libtests_a-printxval-Xverbose.Po
 	-rm -f ./$(DEPDIR)/libtests_a-signal2name.Po
 	-rm -f ./$(DEPDIR)/libtests_a-skip_unavailable.Po
 	-rm -f ./$(DEPDIR)/libtests_a-sprintrc.Po
@@ -10696,6 +11208,9 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/personality-Xraw.Po
 	-rm -f ./$(DEPDIR)/personality-Xverbose.Po
 	-rm -f ./$(DEPDIR)/personality.Po
+	-rm -f ./$(DEPDIR)/pidfd_open-P.Po
+	-rm -f ./$(DEPDIR)/pidfd_open-y.Po
+	-rm -f ./$(DEPDIR)/pidfd_open.Po
 	-rm -f ./$(DEPDIR)/pidfd_send_signal.Po
 	-rm -f ./$(DEPDIR)/pipe.Po
 	-rm -f ./$(DEPDIR)/pipe2.Po
@@ -10763,6 +11278,8 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/readlinkat.Po
 	-rm -f ./$(DEPDIR)/readv.Po
 	-rm -f ./$(DEPDIR)/reboot.Po
+	-rm -f ./$(DEPDIR)/recv-MSG_TRUNC.Po
+	-rm -f ./$(DEPDIR)/recvfrom-MSG_TRUNC.Po
 	-rm -f ./$(DEPDIR)/recvfrom.Po
 	-rm -f ./$(DEPDIR)/recvmmsg-timeout.Po
 	-rm -f ./$(DEPDIR)/recvmsg.Po
@@ -10888,6 +11405,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/statfs64.Po
 	-rm -f ./$(DEPDIR)/status-all.Po
 	-rm -f ./$(DEPDIR)/status-failed.Po
+	-rm -f ./$(DEPDIR)/status-none-f.Po
 	-rm -f ./$(DEPDIR)/status-none-threads.Po
 	-rm -f ./$(DEPDIR)/status-none.Po
 	-rm -f ./$(DEPDIR)/status-successful.Po
@@ -10902,6 +11420,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/sync_file_range.Po
 	-rm -f ./$(DEPDIR)/sync_file_range2.Po
 	-rm -f ./$(DEPDIR)/sysinfo.Po
+	-rm -f ./$(DEPDIR)/syslog-success.Po
 	-rm -f ./$(DEPDIR)/syslog.Po
 	-rm -f ./$(DEPDIR)/tee.Po
 	-rm -f ./$(DEPDIR)/threads-execve.Po
@@ -10923,6 +11442,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/umovestr.Po
 	-rm -f ./$(DEPDIR)/umovestr2.Po
 	-rm -f ./$(DEPDIR)/umovestr3.Po
+	-rm -f ./$(DEPDIR)/umovestr_cached.Po
 	-rm -f ./$(DEPDIR)/uname.Po
 	-rm -f ./$(DEPDIR)/unblock_reset_raise.Po
 	-rm -f ./$(DEPDIR)/unix-pair-send-recv.Po
@@ -11074,6 +11594,27 @@ $(srcdir)/clock_nanosleep.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tes
 $(srcdir)/clock_xettime.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 	$(AM_V_GEN) $^ $@
 
+$(srcdir)/clone3.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/clone3-Xabbrev.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/clone3-Xraw.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/clone3-Xverbose.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/clone3-success-Xabbrev.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/clone3-success-Xraw.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/clone3-success-Xverbose.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
 $(srcdir)/copy_file_range.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 	$(AM_V_GEN) $^ $@
 
@@ -11174,6 +11715,12 @@ $(srcdir)/file_handle.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.i
 	$(AM_V_GEN) $^ $@
 
 $(srcdir)/file_ioctl.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/filter_seccomp.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/filter_seccomp-flag.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 	$(AM_V_GEN) $^ $@
 
 $(srcdir)/finit_module.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
@@ -11380,7 +11927,46 @@ $(srcdir)/ioctl_dm-v.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 $(srcdir)/ioctl_evdev.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 	$(AM_V_GEN) $^ $@
 
+$(srcdir)/ioctl_evdev-Xabbrev.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/ioctl_evdev-Xraw.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/ioctl_evdev-Xverbose.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
 $(srcdir)/ioctl_evdev-v.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/ioctl_evdev-v-Xabbrev.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/ioctl_evdev-v-Xraw.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/ioctl_evdev-v-Xverbose.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/ioctl_evdev-success-Xabbrev.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/ioctl_evdev-success-Xraw.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/ioctl_evdev-success-Xverbose.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/ioctl_evdev-success-v.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/ioctl_evdev-success-v-Xabbrev.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/ioctl_evdev-success-v-Xraw.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/ioctl_evdev-success-v-Xverbose.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 	$(AM_V_GEN) $^ $@
 
 $(srcdir)/ioctl_inotify.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
@@ -11444,6 +12030,9 @@ $(srcdir)/ioctl_uffdio.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.
 	$(AM_V_GEN) $^ $@
 
 $(srcdir)/ioctl_v4l2.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/ioctl_watchdog.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 	$(AM_V_GEN) $^ $@
 
 $(srcdir)/ioperm.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
@@ -11555,6 +12144,9 @@ $(srcdir)/keyctl-Xverbose.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tes
 	$(AM_V_GEN) $^ $@
 
 $(srcdir)/kill.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/ksysent.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 	$(AM_V_GEN) $^ $@
 
 $(srcdir)/lchown.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
@@ -11995,6 +12587,15 @@ $(srcdir)/personality-Xraw.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_te
 $(srcdir)/personality-Xverbose.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 	$(AM_V_GEN) $^ $@
 
+$(srcdir)/pidfd_open.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/pidfd_open-P.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/pidfd_open-y.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
 $(srcdir)/pidfd_send_signal.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 	$(AM_V_GEN) $^ $@
 
@@ -12121,7 +12722,13 @@ $(srcdir)/readlinkat.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 $(srcdir)/reboot.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 	$(AM_V_GEN) $^ $@
 
+$(srcdir)/recv-MSG_TRUNC.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
 $(srcdir)/recvfrom.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
+	$(AM_V_GEN) $^ $@
+
+$(srcdir)/recvfrom-MSG_TRUNC.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in
 	$(AM_V_GEN) $^ $@
 
 $(srcdir)/recvmmsg-timeout.gen.test: $(abs_srcdir)/gen_tests.sh $(srcdir)/gen_tests.in

@@ -54,16 +54,20 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat perf_attr_size[] = {
+static const struct xlat_data perf_attr_size_xdata[] = {
  XLAT(PERF_ATTR_SIZE_VER0),
  XLAT(PERF_ATTR_SIZE_VER1),
  XLAT(PERF_ATTR_SIZE_VER2),
  XLAT(PERF_ATTR_SIZE_VER3),
  XLAT(PERF_ATTR_SIZE_VER4),
  XLAT(PERF_ATTR_SIZE_VER5),
- XLAT_END
 };
+static
+const struct xlat perf_attr_size[1] = { {
+ .data = perf_attr_size_xdata,
+ .size = ARRAY_SIZE(perf_attr_size_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

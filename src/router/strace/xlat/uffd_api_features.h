@@ -12,8 +12,7 @@
 
 # else
 
-static
-const struct xlat uffd_api_features[] = {
+static const struct xlat_data uffd_api_features_xdata[] = {
 #if defined(UFFD_FEATURE_PAGEFAULT_FLAG_WP) || (defined(HAVE_DECL_UFFD_FEATURE_PAGEFAULT_FLAG_WP) && HAVE_DECL_UFFD_FEATURE_PAGEFAULT_FLAG_WP)
   XLAT_TYPE(uint64_t, UFFD_FEATURE_PAGEFAULT_FLAG_WP),
 #endif
@@ -41,8 +40,13 @@ const struct xlat uffd_api_features[] = {
 #if defined(UFFD_FEATURE_THREAD_ID) || (defined(HAVE_DECL_UFFD_FEATURE_THREAD_ID) && HAVE_DECL_UFFD_FEATURE_THREAD_ID)
   XLAT_TYPE(uint64_t, UFFD_FEATURE_THREAD_ID),
 #endif
- XLAT_END
 };
+static
+const struct xlat uffd_api_features[1] = { {
+ .data = uffd_api_features_xdata,
+ .size = ARRAY_SIZE(uffd_api_features_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

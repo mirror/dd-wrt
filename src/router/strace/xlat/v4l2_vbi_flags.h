@@ -12,10 +12,7 @@ extern const struct xlat v4l2_vbi_flags[];
 
 # else
 
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
-const struct xlat v4l2_vbi_flags[] = {
+static const struct xlat_data v4l2_vbi_flags_xdata[] = {
 #if defined(V4L2_VBI_UNSYNC) || (defined(HAVE_DECL_V4L2_VBI_UNSYNC) && HAVE_DECL_V4L2_VBI_UNSYNC)
   XLAT(V4L2_VBI_UNSYNC),
 #endif
@@ -34,8 +31,15 @@ const struct xlat v4l2_vbi_flags[] = {
 #if defined(V4L2_VBI_ITU_625_F2_START) || (defined(HAVE_DECL_V4L2_VBI_ITU_625_F2_START) && HAVE_DECL_V4L2_VBI_ITU_625_F2_START)
   XLAT(V4L2_VBI_ITU_625_F2_START),
 #endif
- XLAT_END
 };
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat v4l2_vbi_flags[1] = { {
+ .data = v4l2_vbi_flags_xdata,
+ .size = ARRAY_SIZE(v4l2_vbi_flags_xdata),
+ .type = XT_NORMAL,
+} };
 
 # endif /* !IN_MPERS */
 

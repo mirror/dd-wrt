@@ -19,11 +19,15 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat kcm_protocols[] = {
+static const struct xlat_data kcm_protocols_xdata[] = {
  [KCMPROTO_CONNECTED] = XLAT(KCMPROTO_CONNECTED),
- XLAT_END
 };
+static
+const struct xlat kcm_protocols[1] = { {
+ .data = kcm_protocols_xdata,
+ .size = ARRAY_SIZE(kcm_protocols_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 

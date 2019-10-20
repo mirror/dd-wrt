@@ -40,14 +40,18 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 # else
 
-static
-const struct xlat nlmsgerr_attrs[] = {
- XLAT(NLMSGERR_ATTR_UNUSED),
- XLAT(NLMSGERR_ATTR_MSG),
- XLAT(NLMSGERR_ATTR_OFFS),
- XLAT(NLMSGERR_ATTR_COOKIE),
- XLAT_END
+static const struct xlat_data nlmsgerr_attrs_xdata[] = {
+ [NLMSGERR_ATTR_UNUSED] = XLAT(NLMSGERR_ATTR_UNUSED),
+ [NLMSGERR_ATTR_MSG] = XLAT(NLMSGERR_ATTR_MSG),
+ [NLMSGERR_ATTR_OFFS] = XLAT(NLMSGERR_ATTR_OFFS),
+ [NLMSGERR_ATTR_COOKIE] = XLAT(NLMSGERR_ATTR_COOKIE),
 };
+static
+const struct xlat nlmsgerr_attrs[1] = { {
+ .data = nlmsgerr_attrs_xdata,
+ .size = ARRAY_SIZE(nlmsgerr_attrs_xdata),
+ .type = XT_INDEXED,
+} };
 
 # endif /* !IN_MPERS */
 
