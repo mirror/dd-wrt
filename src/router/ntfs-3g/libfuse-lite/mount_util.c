@@ -14,7 +14,6 @@
 #include <string.h>
 #include <dirent.h>
 #include <errno.h>
-#include <paths.h>
 #include <limits.h>
 #include <paths.h>
 #include <sys/stat.h>

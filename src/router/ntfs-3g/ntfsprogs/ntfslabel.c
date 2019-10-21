@@ -414,15 +414,13 @@ int main(int argc, char **argv)
 	int result = 0;
 	ntfs_volume *vol;
 
-#ifdef DEBUG
 	ntfs_log_set_handler(ntfs_log_handler_outerr);
-#endif
+
 	result = parse_options(argc, argv);
 	if (result >= 0)
 		return (result);
- 
-	result = 0;
 
+	result = 0;
 	utils_set_locale();
 
 	if ((opts.label || opts.new_serial)

@@ -4,7 +4,7 @@
  * Copyright (c) 2005-2007 Yura Pakhuchiy
  * Copyright (c) 2005 Yuval Fledel
  * Copyright (c) 2006-2009 Szabolcs Szakacsits
- * Copyright (c) 2007-2017 Jean-Pierre Andre
+ * Copyright (c) 2007-2019 Jean-Pierre Andre
  * Copyright (c) 2009 Erik Larsson
  *
  * This file is originated from the Linux-NTFS project.
@@ -263,7 +263,7 @@ static const char *usage_msg =
 "\n"
 "Copyright (C) 2005-2007 Yura Pakhuchiy\n"
 "Copyright (C) 2006-2009 Szabolcs Szakacsits\n"
-"Copyright (C) 2007-2017 Jean-Pierre Andre\n"
+"Copyright (C) 2007-2019 Jean-Pierre Andre\n"
 "Copyright (C) 2009 Erik Larsson\n"
 "\n"
 "Usage:    %s [-o option[,...]] <device|image_file> <mount_point>\n"
@@ -1074,10 +1074,9 @@ static void ntfs_fuse_readlink(fuse_req_t req, fuse_ino_t ino)
 		REPARSE_POINT *reparse;
 
 		res = CALL_REPARSE_PLUGIN(ni, readlink, &buf);
-		if (res) {
+		if (res || !buf) {
 			buf = strdup(ntfs_bad_reparse);
-			if (!buf)
-				res = -errno;
+			res = (buf ? 0 : -errno);
 		}
 #else /* DISABLE_PLUGINS */
 		errno = 0;
@@ -3152,7 +3151,7 @@ static ntfs_inode *ntfs_check_access_xattr(fuse_req_t req,
 		|| !(ctx->secure_flags & (1 << SECURITY_ACL))
 		|| (setting && ctx->inherit))
 	    && foracl) {
-		if (ctx->silent)
+		if (ctx->silent && !ctx->security.mapping[MAPUSERS])
 			errno = 0;
 		else
 			errno = EOPNOTSUPP;
@@ -4322,7 +4321,7 @@ static void setup_logging(char *parsed_options)
 		if (daemon(0, ctx->debug))
 			ntfs_log_error("Failed to daemonize.\n");
 		else if (!ctx->debug) {
-#ifdef DEBUG
+#ifndef DEBUG
 			ntfs_log_set_handler(ntfs_log_handler_syslog);
 			/* Override default libntfs identify. */
 			openlog(EXEC_NAME, LOG_PID, LOG_DAEMON);
@@ -4380,9 +4379,8 @@ int main(int argc, char *argv[])
 		return NTFS_VOLUME_NO_PRIVILEGE;
         
 	ntfs_set_locale();
-#ifdef DEBUG
 	ntfs_log_set_handler(ntfs_log_handler_stderr);
-#endif
+
 	if (ntfs_parse_options(&opts, usage, argc, argv)) {
 		usage();
 		return NTFS_VOLUME_SYNTAX_ERROR;
@@ -4412,7 +4410,8 @@ int main(int argc, char *argv[])
 	else {
 		ctx->abs_mnt_point = (char*)ntfs_malloc(PATH_MAX);
 		if (ctx->abs_mnt_point) {
-			if (getcwd(ctx->abs_mnt_point,
+			if ((strlen(opts.mnt_point) < PATH_MAX)
+			    && getcwd(ctx->abs_mnt_point,
 				     PATH_MAX - strlen(opts.mnt_point) - 1)) {
 				strcat(ctx->abs_mnt_point, "/");
 				strcat(ctx->abs_mnt_point, opts.mnt_point);
@@ -4420,6 +4419,9 @@ int main(int argc, char *argv[])
 			/* Solaris also wants the absolute mount point */
 				opts.mnt_point = ctx->abs_mnt_point;
 #endif /* defined(__sun) && defined (__SVR4) */
+			} else {
+				free(ctx->abs_mnt_point);
+				ctx->abs_mnt_point = (char*)NULL;
 			}
 		}
 	}

@@ -2149,13 +2149,11 @@ int main(int argc, char *argv[])
 	ntfs_volume *vol;
 	int result = 1;
 	int flags = 0;
-	int i, j;
 	int res;
+	int i, j;
 	enum action act = act_info;
 
-#ifdef DEBUG
 	ntfs_log_set_handler(ntfs_log_handler_outerr);
-#endif
 
 	res = parse_options(argc, argv);
 	if (res >= 0)

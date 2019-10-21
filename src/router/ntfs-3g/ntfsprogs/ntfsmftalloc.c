@@ -291,9 +291,8 @@ int main(int argc, char **argv)
 	unsigned long mnt_flags, ul;
 	int err;
 
-#ifdef DEBUG
 	ntfs_log_set_handler(ntfs_log_handler_outerr);
-#endif
+
 	/* Initialize opts to zero / required values. */
 	memset(&opts, 0, sizeof(opts));
 	/* Parse command line options. */
