@@ -2879,7 +2879,7 @@ static ntfs_inode *ntfs_check_access_xattr(struct SECURITY_CONTEXT *security,
 			|| !(ctx->secure_flags & (1 << SECURITY_ACL))
 			|| (setting && ctx->inherit))
 		    && foracl) {
-			if (ctx->silent)
+			if (ctx->silent && !ctx->security.mapping[MAPUSERS])
 				errno = 0;
 			else
 				errno = EOPNOTSUPP;
@@ -4059,7 +4059,7 @@ static void setup_logging(char *parsed_options)
 		if (daemon(0, ctx->debug))
 			ntfs_log_error("Failed to daemonize.\n");
 		else if (!ctx->debug) {
-#ifdef DEBUG
+#ifndef DEBUG
 			ntfs_log_set_handler(ntfs_log_handler_syslog);
 			/* Override default libntfs identify. */
 			openlog(EXEC_NAME, LOG_PID, LOG_DAEMON);
@@ -4117,9 +4117,8 @@ int main(int argc, char *argv[])
 		return NTFS_VOLUME_NO_PRIVILEGE;
 	
 	ntfs_set_locale();
-#ifdef DEBUG
 	ntfs_log_set_handler(ntfs_log_handler_stderr);
-#endif
+
 	if (ntfs_parse_options(&opts, usage, argc, argv)) {
 		usage();
 		return NTFS_VOLUME_SYNTAX_ERROR;
@@ -4149,7 +4148,8 @@ int main(int argc, char *argv[])
 	else {
 		ctx->abs_mnt_point = (char*)ntfs_malloc(PATH_MAX);
 		if (ctx->abs_mnt_point) {
-			if (getcwd(ctx->abs_mnt_point,
+			if ((strlen(opts.mnt_point) < PATH_MAX)
+			    && getcwd(ctx->abs_mnt_point,
 				     PATH_MAX - strlen(opts.mnt_point) - 1)) {
 				strcat(ctx->abs_mnt_point, "/");
 				strcat(ctx->abs_mnt_point, opts.mnt_point);
@@ -4157,6 +4157,9 @@ int main(int argc, char *argv[])
 			/* Solaris also wants the absolute mount point */
 				opts.mnt_point = ctx->abs_mnt_point;
 #endif /* defined(__sun) && defined (__SVR4) */
+			} else {
+				free(ctx->abs_mnt_point);
+				ctx->abs_mnt_point = (char*)NULL;
 			}
 		}
 	}

@@ -328,9 +328,7 @@ static struct XATTRMAPPING *getmappingitem(FILEREADER reader, void *fileid,
 				item->next = (struct XATTRMAPPING*)NULL;
 			}
 		} else {
-#ifdef DEBUG
 			ntfs_log_early_error("Bad xattr mapping item, aborting\n");
-#endif
 		}
 	}
 	*psrc = src;
@@ -383,9 +381,7 @@ static struct XATTRMAPPING *ntfs_read_xattr_mapping(FILEREADER reader,
 						duplicated = TRUE;
 				if (duplicated) {
 					free(item);
-#ifdef DEBUG
 					ntfs_log_early_error("Conflicting xattr mapping ignored\n");
-#endif
 				} else {
 					item->next = (struct XATTRMAPPING*)NULL;
 					if (lastitem)
@@ -437,9 +433,7 @@ struct XATTRMAPPING *ntfs_xattr_build_mapping(ntfs_volume *vol,
 			notfound = TRUE;
 	}
 	if (notfound && strcmp(xattrmap_path, XATTRMAPPINGFILE)) {
-#ifdef DEBUG
 		ntfs_log_early_error("Could not open \"%s\"\n",xattrmap_path);
-#endif
 	}
 	if (vol->efs_raw) {
 		user_efs = TRUE;

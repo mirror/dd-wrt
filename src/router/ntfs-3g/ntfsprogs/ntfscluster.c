@@ -490,9 +490,8 @@ int main(int argc, char *argv[])
 	char *unix_name;
 #endif
 
-#ifdef DEBUG
 	ntfs_log_set_handler(ntfs_log_handler_outerr);
-#endif
+
 	res = parse_options(argc, argv);
 	if (res >= 0)
 		return (res);

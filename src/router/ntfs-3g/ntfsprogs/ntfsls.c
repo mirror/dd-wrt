@@ -641,9 +641,8 @@ int main(int argc, char **argv)
 	ntfs_inode *ni;
 	ntfsls_dirent dirent;
 
-#ifdef DEBUG
 	ntfs_log_set_handler(ntfs_log_handler_outerr);
-#endif
+
 	if (!parse_options(argc, argv)) {
 		// FIXME: Print error... (AIA)
 		return 1;

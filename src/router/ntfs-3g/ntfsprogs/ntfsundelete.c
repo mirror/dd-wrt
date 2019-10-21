@@ -5,7 +5,7 @@
  * Copyright (c) 2004-2005 Holger Ohmacht
  * Copyright (c) 2005      Anton Altaparmakov
  * Copyright (c) 2007      Yura Pakhuchiy
- * Copyright (c) 2013-2014 Jean-Pierre Andre
+ * Copyright (c) 2013-2018 Jean-Pierre Andre
  *
  * This utility will recover deleted files from an NTFS volume.
  *
@@ -392,7 +392,7 @@ static void version(void)
 			"Copyright (c) 2004-2005 Holger Ohmacht\n"
 			"Copyright (c) 2005      Anton Altaparmakov\n"
 			"Copyright (c) 2007      Yura Pakhuchiy\n"
-			"Copyright (c) 2013-2014 Jean-Pierre Andre\n");
+			"Copyright (c) 2013-2018 Jean-Pierre Andre\n");
 	ntfs_log_info("\n%s\n%s%s\n", ntfs_gpl, ntfs_bugs, ntfs_home);
 }
 
@@ -1337,9 +1337,8 @@ static struct ufile * read_record(ntfs_volume *vol, long long record)
 	ATTR_RECORD *attr10, *attr20, *attr90;
 	struct ufile *file;
 	ntfs_attr *mft;
-#ifdef DEBUG
 	u32 log_levels;
-#endif
+
 	if (!vol)
 		return NULL;
 
@@ -1378,9 +1377,7 @@ static struct ufile * read_record(ntfs_volume *vol, long long record)
 	mft = NULL;
 
 	/* disable errors logging, while examining suspicious records */
-#ifdef DEBUG
 	log_levels = ntfs_log_clear_levels(NTFS_LOG_LEVEL_PERROR);
-#endif
 	attr10 = find_first_attribute(AT_STANDARD_INFORMATION,	file->mft);
 	attr20 = find_first_attribute(AT_ATTRIBUTE_LIST,	file->mft);
 	attr90 = find_first_attribute(AT_INDEX_ROOT,		file->mft);
@@ -1405,10 +1402,9 @@ static struct ufile * read_record(ntfs_volume *vol, long long record)
 	if (get_data(file, vol) < 0) {
 		ntfs_log_error("ERROR: Couldn't get data streams.\n");
 	}
-#ifdef DEBUG
 	/* restore errors logging */
 	ntfs_log_set_levels(log_levels);
-#endif
+
 	return file;
 }
 
@@ -1839,19 +1835,49 @@ static unsigned int write_data(int fd, const char *buffer,
 static int create_pathname(const char *dir, const char *name,
 	const char *stream, char *buffer, int bufsize)
 {
+	struct stat st;
+	int s;
+	int len;
+	int suffix;
+
 	if (!name)
 		name = UNKNOWN;
 
-	if (dir)
+	if (dir) {
+#ifdef HAVE_WINDOWS_H
 		if (stream)
-			snprintf(buffer, bufsize, "%s/%s:%s", dir, name, stream);
+			snprintf(buffer, bufsize, "%s\\%s:%s", dir, name,
+					 stream);
+		else
+			snprintf(buffer, bufsize, "%s\\%s", dir, name);
+#else
+		if (stream)
+			snprintf(buffer, bufsize, "%s/%s:%s", dir, name,
+					 stream);
 		else
 			snprintf(buffer, bufsize, "%s/%s", dir, name);
-	else
+#endif
+	} else
 		if (stream)
 			snprintf(buffer, bufsize, "%s:%s", name, stream);
 		else
 			snprintf(buffer, bufsize, "%s", name);
+	len = strlen(buffer);
+	suffix = 0;
+#ifdef HAVE_WINDOWS_H
+	s = stat(buffer, &st);
+#else
+	s = lstat(buffer, &st);
+#endif
+	while (!s && (suffix < 999)) {
+		suffix++;
+		snprintf(&buffer[len], bufsize - len, ".%d", suffix);
+#ifdef HAVE_WINDOWS_H
+		s = stat(buffer, &st);
+#else
+		s = lstat(buffer, &st);
+#endif
+	}
 
 	return strlen(buffer);
 }
@@ -2016,7 +2042,8 @@ static int undelete_file(ntfs_volume *vol, long long inode)
 		if (d->resident) {
 			fd = open_file(pathname);
 			if (fd < 0) {
-				ntfs_log_perror("Couldn't create file");
+				ntfs_log_perror("Couldn't create file %s",
+						pathname);
 				goto free;
 			}
 
@@ -2045,7 +2072,8 @@ static int undelete_file(ntfs_volume *vol, long long inode)
 
 			fd = open_file(pathname);
 			if (fd < 0) {
-				ntfs_log_perror("Couldn't create output file");
+				ntfs_log_perror("Couldn't create file %s",
+						pathname);
 				goto free;
 			}
 
@@ -2155,9 +2183,11 @@ static int undelete_file(ntfs_volume *vol, long long inode)
 		}
 		set_date(pathname, file->date);
 		if (d->name)
-			ntfs_log_quiet("Undeleted '%s:%s' successfully.\n", file->pref_name, d->name);
+			ntfs_log_quiet("Undeleted '%s:%s' successfully to %s.\n",
+					file->pref_name, d->name, pathname);
 		else
-			ntfs_log_quiet("Undeleted '%s' successfully.\n", file->pref_name);
+			ntfs_log_quiet("Undeleted '%s' successfully to %s.\n",
+					file->pref_name, pathname);
 	}
 	result = 1;
 free:
@@ -2352,7 +2382,7 @@ static int copy_mft(ntfs_volume *vol, long long mft_begin, long long mft_end)
 	create_pathname(opts.dest, name, NULL, pathname, sizeof(pathname));
 	fd = open_file(pathname);
 	if (fd < 0) {
-		ntfs_log_perror("Couldn't open output file '%s'", name);
+		ntfs_log_perror("Couldn't create output file '%s'", name);
 		goto attr;
 	}
 
@@ -2380,6 +2410,7 @@ static int copy_mft(ntfs_volume *vol, long long mft_begin, long long mft_end)
 	}
 
 	ntfs_log_verbose("Read %lld MFT Records\n", mft_end - mft_begin + 1);
+	ntfs_log_quiet("MFT extracted to file %s\n", pathname);
 	result = 0;
 close:
 	close(fd);
@@ -2445,9 +2476,8 @@ int main(int argc, char *argv[])
 	ntfs_volume *vol;
 	int result = 1;
 
-#ifdef DEBUG
 	ntfs_log_set_handler(ntfs_log_handler_outerr);
-#endif
+
 	with_regex = 0;
 	avoid_duplicate_printing = 0;
 

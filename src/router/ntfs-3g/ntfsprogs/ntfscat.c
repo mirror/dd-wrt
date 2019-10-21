@@ -406,9 +406,8 @@ int main(int argc, char *argv[])
 	int res;
 	int result = 1;
 
-#ifdef DEBUG
 	ntfs_log_set_handler(ntfs_log_handler_stderr);
-#endif
+
 	res = parse_options(argc, argv);
 	if (res >= 0)
 		return (res);
