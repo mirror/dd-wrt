@@ -45,6 +45,7 @@ KERNEL_C = \
 	abd.c \
 	aggsum.c \
 	arc.c \
+	arc_os.c \
 	blkptr.c \
 	bplist.c \
 	bpobj.c \
