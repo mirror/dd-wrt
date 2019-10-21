@@ -822,9 +822,8 @@ int main(int argc, char **argv)
 		return RETURN_USAGE_OR_SYNTAX_ERROR;
 	name = argv[1];
 
-#ifdef DEBUG
 	ntfs_log_set_handler(ntfs_log_handler_outerr);
-#endif	//ntfs_log_set_levels(NTFS_LOG_LEVEL_DEBUG | NTFS_LOG_LEVEL_TRACE | NTFS_LOG_LEVEL_QUIET | NTFS_LOG_LEVEL_INFO | NTFS_LOG_LEVEL_VERBOSE | NTFS_LOG_LEVEL_PROGRESS);
+	//ntfs_log_set_levels(NTFS_LOG_LEVEL_DEBUG | NTFS_LOG_LEVEL_TRACE | NTFS_LOG_LEVEL_QUIET | NTFS_LOG_LEVEL_INFO | NTFS_LOG_LEVEL_VERBOSE | NTFS_LOG_LEVEL_PROGRESS);
 
 	/* Allocate an ntfs_device structure. */
 	dev = ntfs_device_alloc(name, 0, &ntfs_device_default_io_ops, NULL);

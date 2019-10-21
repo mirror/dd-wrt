@@ -1608,9 +1608,8 @@ int main(int argc, char **argv)
 	int ret = 1; /* failure */
 	BOOL force = FALSE;
 
-#ifdef DEBUG
 	ntfs_log_set_handler(ntfs_log_handler_outerr);
-#endif
+
 	parse_options(argc, argv);
 
 	if (!ntfs_check_if_mounted(opt.volume, &mnt_flags)) {

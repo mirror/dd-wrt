@@ -149,9 +149,8 @@ int main(int argc, char *argv[])
 {
 	int err;
 
-#ifdef DEBUG
 	ntfs_log_set_handler(ntfs_log_handler_stderr);
-#endif
+
 	if (parse_options(argc, argv)) {
 		usage();
 		exit(NTFS_VOLUME_SYNTAX_ERROR);

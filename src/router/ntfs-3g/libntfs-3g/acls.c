@@ -4245,10 +4245,8 @@ static struct MAPLIST *getmappingitem(FILEREADER reader, void *fileid,
 			if (pu && pg)
 				*pu = *pg = '\0';
 			else {
-#ifdef DEBUG
 				ntfs_log_early_error("Bad mapping item \"%s\"\n",
 					item->maptext);
-#endif
 				free(item);
 				item = (struct MAPLIST*)NULL;
 			}
@@ -4375,11 +4373,9 @@ struct MAPPING *ntfs_do_user_mapping(struct MAPLIST *firstitem)
 				pwd = getpwnam(item->uidstr);
 				if (pwd)
 					uid = pwd->pw_uid;
-#ifdef DEBUG
 				else
 					ntfs_log_early_error("Invalid user \"%s\"\n",
 						item->uidstr);
-#endif
 			}
 		}
 			/*
@@ -4463,11 +4459,9 @@ struct MAPPING *ntfs_do_group_mapping(struct MAPLIST *firstitem)
 					grp = getgrnam(item->gidstr);
 					if (grp)
 						gid = grp->gr_gid;
-#ifdef DEBUG
 					else
 						ntfs_log_early_error("Invalid group \"%s\"\n",
 							item->gidstr);
-#endif
 				}
 			}
 			/*

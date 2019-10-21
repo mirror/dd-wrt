@@ -1,7 +1,7 @@
 /**
  * ntfs-3g_common.c - Common definitions for ntfs-3g and lowntfs-3g.
  *
- * Copyright (c) 2010-2018 Jean-Pierre Andre
+ * Copyright (c) 2010-2019 Jean-Pierre Andre
  * Copyright (c) 2010      Erik Larsson
  *
  * This program/include file is free software; you can redistribute it and/or
@@ -809,9 +809,7 @@ const struct plugin_operations *select_reparse_plugin(ntfs_fuse_context_t *ctx,
 	reparse = ntfs_get_reparse_point(ni);
 	if (reparse) {
 		tag = reparse->reparse_tag;
-		seltag = tag;
-		if (tag & IO_REPARSE_TAG_WITH_FLAGS)
-			seltag &= IO_REPARSE_PLUGIN_SELECT;
+		seltag = tag & IO_REPARSE_PLUGIN_SELECT;
 		for (plugin=ctx->plugins; plugin && (plugin->tag != seltag);
 						plugin = plugin->next) { }
 		if (plugin) {
@@ -843,6 +841,7 @@ const struct plugin_operations *select_reparse_plugin(ntfs_fuse_context_t *ctx,
 				if (!ops)
 					dlclose(handle);
 			} else {
+				errno = ELIBACC;
 				if (!(ctx->errors_logged & ERR_PLUGIN)) {
 					ntfs_log_perror(
 						"Could not load plugin %s",

@@ -666,9 +666,8 @@ int main(int argc, char **argv)
 	logfile_file logfile;
 	u8 *buf;
 
-#ifdef DEBUG
 	ntfs_log_set_handler(ntfs_log_handler_outerr);
-#endif
+
 	ntfs_log_info("\n");
 	if (argc < 2 || argc > 3)
 		/* print usage and exit */
