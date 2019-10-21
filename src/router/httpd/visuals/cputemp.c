@@ -169,7 +169,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	for (i = 0; i < cc; i++) {
 
 		strcpy(buf, "phy_tempsense");
-		char *ifname = get_wl_instance_name(i)
+		char *ifname = get_wl_instance_name(i);
 		if (nvram_nmatch("disabled", "wl%d_net_mode", i) || (ret = wl_ioctl(ifname, WLC_GET_VAR, buf, sizeof(buf)))) {
 			present[i] = 0;
 			continue;
