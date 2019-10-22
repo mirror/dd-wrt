@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r4826 | brainslayer | 2019-10-22 05:50:04 +0400 (Tue, 22 Oct 2019) | 1 line
+
+revert
+------------------------------------------------------------------------
+r4825 | brainslayer | 2019-10-22 05:42:16 +0400 (Tue, 22 Oct 2019) | 1 line
+
+fix compile bug which caused failed builds for broadcom arm/mipsel targets
+------------------------------------------------------------------------
 r4824 | brainslayer | 2019-10-20 23:56:14 +0400 (Sun, 20 Oct 2019) | 1 line
 
 allow dead code elimination
