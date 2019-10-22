@@ -45,7 +45,7 @@
 #endif
 
 /* For enabling BCM4710 cache workarounds */
-#ifndef CONFIG_MIPS_BRCM
+#if !defined(CONFIG_BCM47XX)
 #define bcm4710 0
 #else
 int bcm4710 = 0;
@@ -1716,7 +1716,7 @@ void __cpuinit r4k_cache_init(void)
 #endif /* endif CONFIG_IFX_VPE_CACHE_SPLIT */
 
 	/* Check if special workarounds are required */
-#ifdef CONFIG_BCM47XX
+#if defined(CONFIG_BCM47XX) && !defined(CONFIG_CPU_MIPS32_R2)
 	if (current_cpu_data.cputype == CPU_BMIPS32 && (current_cpu_data.processor_id & 0xff) == 0) {
 		printk("Enabling BCM4710A0 cache workarounds.\n");
 		bcm4710 = 1;
