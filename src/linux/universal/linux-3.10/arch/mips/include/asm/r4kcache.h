@@ -17,7 +17,7 @@
 #include <asm/cpu-features.h>
 #include <asm/mipsmtregs.h>
 
-#ifdef CONFIG_BCM47XX
+#if defined(CONFIG_BCM47XX) && !defined(CONFIG_CPU_MIPS32_R2)
 #include <asm/paccess.h>
 #include <linux/ssb/ssb.h>
 #define BCM4710_DUMMY_RREG() bcm4710_dummy_rreg()
@@ -175,6 +175,7 @@ extern void mt_cflush_release(void);
 static inline void flush_icache_line_indexed(unsigned long addr)
 {
 	__iflush_prologue
+	BCM4710_DUMMY_RREG();
 	cache_op(Index_Invalidate_I, addr);
 	__iflush_epilogue
 }
@@ -195,6 +196,7 @@ static inline void flush_scache_line_indexed(unsigned long addr)
 static inline void flush_icache_line(unsigned long addr)
 {
 	__iflush_prologue
+	BCM4710_DUMMY_RREG();
 	cache_op(Hit_Invalidate_I, addr);
 	__iflush_epilogue
 }
@@ -376,7 +378,7 @@ static inline void invalidate_tcache_page(unsigned long addr)
 		: "r" (base),						\
 		  "i" (op));
 
-#ifdef CONFIG_MIPS_BRCM
+#if defined(CONFIG_BCM47XX) && !defined(CONFIG_CPU_MIPS32_R2)
 static inline void blast_dcache(void)
 {
 	unsigned long start = KSEG0;
@@ -479,7 +481,7 @@ static inline void blast_##pfx##cache##lsize##_page_indexed(unsigned long page) 
 	__##pfx##flush_epilogue						\
 }
 
-#ifdef CONFIG_BCM47XX
+#if defined(CONFIG_BCM47XX) && !defined(CONFIG_CPU_MIPS32_R2)
 __BUILD_BLAST_CACHE(d, dcache, Index_Writeback_Inv_D, Hit_Writeback_Inv_D, 16, )
 __BUILD_BLAST_CACHE(i, icache, Index_Invalidate_I, Hit_Invalidate_I, 16, BCM4710_FILL_TLB(start);)
 __BUILD_BLAST_CACHE(s, scache, Index_Writeback_Inv_SD, Hit_Writeback_Inv_SD, 16, )
@@ -523,70 +525,24 @@ static inline void prot##blast_##pfx##cache##_range(unsigned long start, \
 						    unsigned long end)	\
 {									\
 	unsigned long lsize = cpu_##desc##_line_size();			\
-	unsigned long lsize_2 = lsize * 2;				\
-	unsigned long lsize_3 = lsize * 3;				\
-	unsigned long lsize_4 = lsize * 4;				\
-	unsigned long lsize_5 = lsize * 5;				\
-	unsigned long lsize_6 = lsize * 6;				\
-	unsigned long lsize_7 = lsize * 7;				\
-	unsigned long lsize_8 = lsize * 8;				\
 	unsigned long addr = start & ~(lsize - 1);			\
-	unsigned long aend = (end + lsize - 1) & ~(lsize - 1);		\
-	int lines = (aend - addr) / lsize;				\
+	unsigned long aend = (end - 1) & ~(lsize - 1);			\
 	war								\
 									\
 	__##pfx##flush_prologue						\
 									\
-	while (lines >= 8) {						\
-		war2						\
+	while (1) {							\
+		war2							\
 		prot##cache_op(hitop, addr);				\
-		war2						\
-		prot##cache_op(hitop, addr + lsize);			\
-		war2						\
-		prot##cache_op(hitop, addr + lsize_2);			\
-		war2						\
-		prot##cache_op(hitop, addr + lsize_3);			\
-		war2						\
-		prot##cache_op(hitop, addr + lsize_4);			\
-		war2						\
-		prot##cache_op(hitop, addr + lsize_5);			\
-		war2						\
-		prot##cache_op(hitop, addr + lsize_6);			\
-		war2						\
-		prot##cache_op(hitop, addr + lsize_7);			\
-		addr += lsize_8;					\
-		lines -= 8;						\
-	}								\
-									\
-	if (lines & 0x4) {						\
-		war2						\
-		prot##cache_op(hitop, addr);				\
-		war2						\
-		prot##cache_op(hitop, addr + lsize);			\
-		war2						\
-		prot##cache_op(hitop, addr + lsize_2);			\
-		war2						\
-		prot##cache_op(hitop, addr + lsize_3);			\
-		addr += lsize_4;					\
-	}								\
-									\
-	if (lines & 0x2) {						\
-		war2						\
-		prot##cache_op(hitop, addr);				\
-		war2						\
-		prot##cache_op(hitop, addr + lsize);			\
-		addr += lsize_2;					\
-	}								\
-									\
-	if (lines & 0x1) {						\
-		war2						\
-		prot##cache_op(hitop, addr);				\
+		if (addr == aend)					\
+			break;						\
+		addr += lsize;						\
 	}								\
 									\
 	__##pfx##flush_epilogue						\
 }
 
-#ifdef CONFIG_BCM47XX
+#if defined(CONFIG_BCM47XX) && !defined(CONFIG_CPU_MIPS32_R2)
 __BUILD_BLAST_CACHE_RANGE(d, dcache, Hit_Writeback_Inv_D, protected_, BCM4710_PROTECTED_FILL_TLB(addr); BCM4710_PROTECTED_FILL_TLB(aend);, BCM4710_DUMMY_RREG();)
 __BUILD_BLAST_CACHE_RANGE(s, scache, Hit_Writeback_Inv_SD, protected_,, )
 __BUILD_BLAST_CACHE_RANGE(i, icache, Hit_Invalidate_I, protected_,, )
