@@ -50,6 +50,18 @@ void plat_irq_dispatch(void)
 		do_IRQ(6);
 }
 
+#define DEFINE_HWx_IRQDISPATCH(x)					\
+	static void bcm47xx_hw ## x ## _irqdispatch(void)		\
+	{								\
+		do_IRQ(x);						\
+	}
+DEFINE_HWx_IRQDISPATCH(2)
+DEFINE_HWx_IRQDISPATCH(3)
+DEFINE_HWx_IRQDISPATCH(4)
+DEFINE_HWx_IRQDISPATCH(5)
+DEFINE_HWx_IRQDISPATCH(6)
+DEFINE_HWx_IRQDISPATCH(7)
+
 void __init arch_init_irq(void)
 {
 #ifdef CONFIG_BCM47XX_BCMA
@@ -64,4 +76,15 @@ void __init arch_init_irq(void)
 	}
 #endif
 	mips_cpu_irq_init();
+
+
+	if (cpu_has_vint) {
+		pr_info("Setting up vectored interrupts\n");
+		set_vi_handler(2, bcm47xx_hw2_irqdispatch);
+		set_vi_handler(3, bcm47xx_hw3_irqdispatch);
+		set_vi_handler(4, bcm47xx_hw4_irqdispatch);
+		set_vi_handler(5, bcm47xx_hw5_irqdispatch);
+		set_vi_handler(6, bcm47xx_hw6_irqdispatch);
+		set_vi_handler(7, bcm47xx_hw7_irqdispatch);
+	}
 }

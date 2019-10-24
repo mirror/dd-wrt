@@ -128,7 +128,7 @@ static void __cpuinit r4k_blast_dcache_page_setup(void)
 {
 	unsigned long  dc_lsize = cpu_dcache_line_size();
 
-#ifdef CONFIG_MIPS_BRCM
+#if defined(CONFIG_BCM47XX) && !defined(CONFIG_CPU_MIPS32_R2)
 	if (bcm4710)
 		r4k_blast_dcache_page = blast_dcache_page;
 	else
@@ -149,7 +149,7 @@ static void __cpuinit r4k_blast_dcache_page_indexed_setup(void)
 {
 	unsigned long dc_lsize = cpu_dcache_line_size();
 
-#ifdef CONFIG_MIPS_BRCM
+#if defined(CONFIG_BCM47XX) && !defined(CONFIG_CPU_MIPS32_R2)
 	if (bcm4710)
 		r4k_blast_dcache_page_indexed = blast_dcache_page_indexed;
 	else
@@ -171,7 +171,7 @@ static void __cpuinit r4k_blast_dcache_setup(void)
 {
 	unsigned long dc_lsize = cpu_dcache_line_size();
 
-#ifdef CONFIG_MIPS_BRCM
+#if defined(CONFIG_BCM47XX) && !defined(CONFIG_CPU_MIPS32_R2)
 	if (bcm4710)
 		r4k_blast_dcache = blast_dcache;
 	else
