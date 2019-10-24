@@ -1,5 +1,5 @@
 sispmctl-configure: comgt
-	cd sispmctl && ./configure --prefix=/usr --host=$(ARCH)-linux CC="$(CC)" CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/usb_modeswitch/libusb-compat/libusb -L$(TOP)/usb_modeswitch/libusb-compat/libusb/.libs -ffunction-sections -fdata-sections -Wl,--gc-sections  -Drpl_malloc=malloc" 
+	cd sispmctl && ./configure --prefix=/usr --host=$(ARCH)-linux CC="$(CC)" CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/usb_modeswitch/libusb-compat/libusb -L$(TOP)/usb_modeswitch/libusb-compat/libusb/.libs -ffunction-sections -fdata-sections -Wl,--gc-sections -DNEED_PRINTF  -Drpl_malloc=malloc" 
 
 sispmctl:
 	$(MAKE) -C sispmctl
