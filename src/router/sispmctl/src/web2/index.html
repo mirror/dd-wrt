@@ -1,0 +1,41 @@
+HTTP/1.0 200 OK
+Server: pmctl
+Date: Sat, 04 Feb 2006 16:03:35 +0100
+Content-Type: text/html
+Connection: close
+Vary: *
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML>
+<HEAD>
+  <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+  <HTTP-EQUIV="PRAGMA" CONTENT="NO-CACHE">
+    <META HTTP-EQUIV="Expires" CONTENT="-1">
+  <LINK REL="stylesheet" TYPE="text/css" HREF="style.css">
+  <TITLE>sispmctl_http</TITLE>
+</HEAD>
+<BODY>
+  <TABLE CELLSPACING=0>
+    <TR><TH CLASS="title1"COLSPAN=2 STYLE="border:12px solid #86CFFF"><H3><FONT COLOR="RED">SiS PM<BR>Control $$version()$$</FONT></H3></TH></TR>
+    <TR><TD CLASS="gif2" COLSPAN=2>&nbsp;</TD></TR>
+    <TR>
+	<TD CLASS="gif1"><A HREF="$$status(1)?off1.html"><IMG SRC="on.gif" ALT="ON">:on1.html"><IMG SRC="off.gif" ALT="OFF">$$</A></TD>
+	<TH CLASS="title1"><FONT $$status(1)?COLOR="RED":$$>Socket 1</FONT></TH>
+    </TR>
+    <TR>
+	<TD CLASS="gif2"><A HREF="$$status(2)?off2.html"><IMG SRC="on.gif" ALT="ON">:on2.html"><IMG SRC="off.gif" ALT="OFF">$$</A></TD>
+	<TH CLASS="title2"><FONT $$status(2)?COLOR="RED":$$>Socket 2</FONT></TH>
+    </TR>
+    <TR>
+	<TD CLASS="gif3"><A HREF="$$status(3)?off3.html"><IMG SRC="on.gif" ALT="ON">:on3.html"><IMG SRC="off.gif" ALT="OFF">$$</A></TD>
+	<TH CLASS="title3"><FONT $$status(3)?COLOR="RED":$$>Socket 3</FONT></TH>
+    </TR>
+    <TR>
+	<TD CLASS="gif4"><A HREF="$$status(4)?off4.html"><IMG SRC="on.gif" ALT="ON">:on4.html"><IMG SRC="off.gif" ALT="OFF">$$</A></TD>
+	<TH CLASS="title4"><FONT $$status(4)?COLOR="RED":$$>Socket 4</FONT></TH>
+    </TR>
+    <TR><TD CLASS="gif1" COLSPAN=2>&nbsp;</TD></TR>
+  </TABLE>
+</BODY>
+</HTML>
+

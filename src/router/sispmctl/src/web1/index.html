@@ -1,0 +1,47 @@
+HTTP/1.0 200 OK
+Server: sispm_http
+Date: Sat, 04 Feb 2006 16:03:35 +0100
+Content-Type: text/html
+Connection: close
+Vary: *
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+        <HTML><HEAD>
+                <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+                <HTTP-EQUIV="PRAGMA" CONTENT="NO-CACHE">
+                  <META HTTP-EQUIV="Expires" CONTENT="-1">
+                <LINK REL="stylesheet" TYPE="text/css" HREF="style.css">
+                <TITLE>sispmctl_http</TITLE>
+              </HEAD>
+              <BODY>
+                <DIV STYLE="height: 70px;">&nbsp;</DIV>
+                <DIV ALIGN="center">
+                <TABLE WIDTH="60%" CELLSPACING=0>
+                  <TR><TH COLSPAN=3><H1>SiS PM Control for Linux $$version()$$</H1></TH><TH WIDTH="100">
+                    <IMG SRC="logo.png" ALT="sispm_http logo"></TH></TR>
+                  <TR><TD COLSPAN=4>&nbsp;</TD></TR>
+                  <TR><TD>&nbsp;</TD>
+                    <TD CLASS="o1">Socket 1</TD>
+                    <TD CLASS="o1" ALIGN="CENTER">
+                    <A HREF="$$status(1)?off1.html"><IMG SRC="status1.png" ALT="On" :on1.html"><IMG SRC="status0.png" ALT="Off"$$>
+                    </A></TD><TD>&nbsp;</TD></TR>
+                  <TR><TD>&nbsp;</TD>
+                    <TD CLASS="o2">Socket 2</TD>
+                    <TD CLASS="o2" ALIGN="CENTER">
+                    <A HREF="$$status(2)?off2.html"><IMG SRC="status1.png" ALT="On" :on2.html"><IMG SRC="status0.png" ALT="Off"$$>
+                    </A></TD><TD>&nbsp;</TD></TR>
+                  <TR><TD>&nbsp;</TD>
+                    <TD CLASS="o3">Socket 3</TD>
+                    <TD CLASS="o3" ALIGN="CENTER">
+                    <A HREF="$$status(3)?off3.html"><IMG SRC="status1.png" ALT="On" :on3.html"><IMG SRC="status0.png" ALT="Off"$$>
+                    </A></TD><TD>&nbsp;</TD></TR>
+                  <TR><TD>&nbsp;</TD>
+                    <TD CLASS="o4">Socket 4</TD>
+                    <TD CLASS="o4" ALIGN="CENTER">
+                    <A HREF="$$status(4)?off4.html"><IMG SRC="status1.png" ALT="On" :on4.html"><IMG SRC="status0.png" ALT="Off"$$>
+                    </A></TD><TD>&nbsp;</TD></TR>
+                  <TR><TD COLSPAN=4>&nbsp;</TD></TR>
+		</TABLE></DIV>
+              </BODY>
+        </HTML>
+

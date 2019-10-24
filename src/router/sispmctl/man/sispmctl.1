@@ -1,0 +1,196 @@
+.\" Process this file with
+.\" groff -man -Tascii foo.1
+.\"
+.TH sispmctl 1 "Nov 2018" Linux "User Manuals"
+
+.SH NAME
+sispmctl \- Gembird Silver Shield PM ConTroL program
+
+.SH SYNOPSIS
+.BI "sispmctl " \-s
+.P
+.BI "sispmctl [ "\-q " ] [ "\-n " ] [ " \-d " 0... ] [ " \-D " ... ] " \-b
+.B <on|off>
+.P
+.BI "sispmctl [ " \-q " ] [ " \-n " ] [ " \-d " 0... ] [ " \-D
+.BI " ... ] < "\-o " | " \-f " | " \-t " | " \-g " | " \-m " >
+.B <1..4|all>
+.P
+.BI "sispmctl [ " \-q " ] [ " \-n " ] [ " \-d " 0... ] [ " \-D
+.BI " ... ] < "\-a " | " \-A " >
+.BI "<1..4|all> [ " \-\-Aat " '...' ] [ " \-\-Aafter " ... ] [ " \-\-Ado
+.BI " <on|off> ] ... [ " \-\-Aloop " ... ]
+.P
+.BI "sispmctl [ " \-d " 0... ] [ " \-D " ... ] [ " \-i 
+.BI "<ip>]  [ " \-p
+.BI "<#port> ] [ " \-u
+.BI "<path> ] " \-l
+.P
+
+.SH DESCRIPTION
+.B sispmctl
+is a tool to switch the USB controlled outlets of Gembird Silver Shield PM.
+It is known by many names, e.g. Revolt Power Switch.
+.P
+It is coded in C and uses the usb specific library (LibUSB).
+This allows you a portable and fast solution.
+
+.SH OPTIONS
+.IP \-h
+print usage information
+.IP \-s
+scan for supported GEMBIRD devices
+.IP \-l
+daemonize and start to listening as a simple http webserver (default port: 2638)
+.IP \-p
+IP network port (default: 2638) for listener. There is no authentication
+implemented yet.
+.IP \-u
+give the directory path where pages lie, that are served (default:
+/usr/local/share/doc/sispmctl/skin.
+The Web path component is completely ignored for security reasons.
+.IP \-b
+switch the buzzer on and off
+.IP \-o
+switch the given outlet(s) to "ON"
+.IP \-f
+switch the given outlet(s) to "OFF"
+.IP \-t
+toggle the state of the given outlet(s)
+.IP \-g
+show the status of the given outlet(s)
+.IP \-m
+get power supply status for the given outlet(s)
+.IP \-d
+Use not the first but the given device in the sequence of detected devices,
+starting with "0" for the first device (see scan option)
+.IP \-D
+Same as \-d, but choose by serial number (see scan option)
+.IP \-n
+do not print "ON" and "OFF", but "1" and "0" instead
+.IP \-q
+do neither print explanations nor disclaimers except it is requested
+.IP \-a
+get schedule for given outlet
+.IP \-A
+set schedule for given outlet
+.br
+\-\-Aat date     \- sets an event time as a date '%Y\-%m\-%d %H:%M' in the
+current local time zone (not considering day light saving time switches)
+.br
+\-\-Aafter N     \- sets an event time as N minutes after the previous one
+.br
+\-\-Ado <on|off> \- sets the current event's action
+.br
+\-\-Aloop N      \- loops to 1st event's action after N minutes
+.IP \-v
+print version & copyright
+
+.SH WEB INTERFACE
+
+The sispmctl program provides a web interface when started with the
+.I \-l
+option. No additional http server is needed.
+Each selected usb device is blocked by sispmctl while running.
+.P
+After installation, the first of two web\-interfaces is selected.
+The default location of the HTML files is /usr/local/share/doc/sispmctl/skin
+which is a symbolic link to /usr/local/shared/doc/sispmctl/httpd/skin1.
+.P
+The HTTP capabilities of sispmctl are limited.
+Technically speaking, only the first line of each HTTP request is parsed.
+The terminating path component, i.e. file name, is looked up in the repository
+directory.
+If present the file is parsed and in absence of control sequences sent as is.
+The files must include the HTTP header portion.
+.P
+Control sequences start and end with double dollar `$$'.
+.P
+To display the version of the software use
+.IR $$version()$$ .
+Other control sequences consist of a command portion separated by a question
+mark `?' from alternative outputs which are separated by the first colon `:'.
+The command portion is a token followed by an embraced number that references
+the outlet, e.g.
+.IB $$command(1)?positive:negative$$
+while command is one of
+.BR status ,
+.BR toggle ,
+.B on
+or
+.BR off .
+It is advisable to avoid the on/off/toggle commands in pages that may be
+reloaded.
+Best is to redirect to other pages that only include status requests.
+
+.SH SCHEDULING
+
+The sispmctl allows to define schedules. Schedules can be used to turn given
+outlets of the device "ON" or "OFF" at or after a given time. Schedules can also
+be set to loop after a given number of minutes.
+.P
+To show the schedule for a given outlet use the option
+.I \-a
+and specify the wanted outlet(s). The option
+.I \-A
+plus any of the options
+.I \-\-Aat
+,
+.I \-\-Aafter
+,
+.I \-\-Ado
+and
+.I \-\-Aloop
+will create a new schedule for the given output. If only
+.I \-A
+plus an outlet is called, the schedule for the outlet will be deleted.
+
+
+.SH EXAMPLES
+Switch off the first outlet of the first SiS-PM and the third outlet of the
+second SiS-PM:
+.P
+.B sispmctl \-f 1 \-d 1 \-f 3
+
+Print the status of the forth outlet as zero or one:
+.P
+.B sispmctl \-nqg 4
+
+Set a schedule so outlet 2 on the first device gets turned "ON" on the
+given date and time:
+.P
+.B sispmctl \-A 2 \-\-Aat '2011\-07\-27 20:45' \-\-Ado on
+
+Set a schedule so outlet 3 on the second device gets turned "ON" after 2
+minutes and "OFF" after another 10 minutes. The schedule will loop after
+1 hour:
+.P
+.B sispmctl \-d 1 \-A 3 \-\-Aafter 2 \-\-Ado on \-\-Aafter 10 \-\-Ado off
+.B \-\-Aloop 60
+
+Run sispmctl on the second device as a web server:
+.P
+.B sispmctl \-d 1 \-l
+
+You can connect to it from the same machine by pointing to
+http://localhost:2638 with your web browser.
+
+Run sispmctl as a web server on the interface with address 192.168.1.42,
+port 4242 using skin2:
+.P
+.B sispmctl \-i 192.168.1.42 \-p 4242
+.B \-u /usr/local/share/doc/sispmctl/httpd/skin2/ \-l
+
+.SH BUGS
+.P
+For bug reports and feature requests please refer to
+.IR https://sourceforge.net/projects/sispmctl/support .
+.P
+Your contribution to this software this is highly appreciated. The
+easiest approach is a pull request for the Git repository located at
+.IR https://sourceforge.net/p/sispmctl/git/ci/master/tree/ .
+
+.SH AUTHOR
+.P
+First version by Mondrian Nuessle, web integration and man page by Andreas
+Neuper, scheduling by Olivier Matheret, further contributors see Git log.

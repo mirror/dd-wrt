@@ -1,0 +1,51 @@
+HTTP/1.0 200 OK
+Server: sispm_http
+Date: Sat, 04 Feb 2006 16:03:35 +0100
+Content-Type: text/css
+Connection: close
+
+body {
+	font-family:Verdana,Helvetica,sans-serif;
+	font-size:12px;
+	font-style:normal;
+	color:#FFFFFF;
+	background-color:#222222;
+	margin:0px;
+}
+
+a:visited, a:link, a:active {
+	text-decoration:none;
+    	color:#9DC9FF;
+}
+
+a img {
+	border:0px solid #000000;
+}
+
+table {
+	font:inherit;
+	border:3px solid #555555;
+	background-color:#666666;
+}
+
+th {
+	border:1px solid #555555;
+	background-color:#555555;
+	font-size:18px;
+	text-align:center;
+}
+
+td {
+	border:0px solid #555555;
+	background-color:#666666;
+	font-size:24px;
+	padding:8px;
+}
+
+td.o1, td.o3 {
+	background-color:#BBBBBB;
+}
+
+td.o2, td.o4 {
+	background-color:#999999;
+}
