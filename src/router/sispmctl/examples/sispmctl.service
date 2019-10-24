@@ -1,0 +1,30 @@
+# Systemd service definition for running sispmctl as web sever. Install with
+# cp sispmctl.service /lib/systemd/system
+#
+# The required user can be created on Debian/Ubuntu with
+# adduser sispmctl --system --group --disabled-login --no-create-home
+#
+# The required authorizations can be granted with
+# cp 60-sispmctl.rules /lib/udev/rules.d/60-sispmctl.rules
+#
+# Enable and start the service with
+# systemctl enable sispmctl.service
+# systemctl start sispmctl.service
+
+[Unit]
+Description=SiS PM Control for Linux
+Wants=network-online.target
+After=network-online.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+User=sispmctl
+Group=sispmctl
+Type=forking
+WorkingDirectory=/
+ExecStart=/usr/local/bin/sispmctl -p 2638 -l
+SyslogIdentifier=sispmctl
+Restart=on-failure
+RestartSec=5
