@@ -333,6 +333,7 @@ obj-$(CONFIG_NEWPORT) += cpt8x
 obj-$(CONFIG_RSYNC) += rsync
 obj-$(CONFIG_CAKE) += cake
 obj-$(CONFIG_CAKE) += fq_codel_fast
+obj-$(CONFIG_SISPMCTL) += comgt sispmctl
 
 obj-y+=configs
 
