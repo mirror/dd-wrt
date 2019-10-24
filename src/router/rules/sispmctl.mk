@@ -17,3 +17,6 @@ sispmctl-install:
 	rm -f $(INSTALLDIR)/sispmctl/usr/lib/*.a
 	rm -f $(INSTALLDIR)/sispmctl/usr/lib/*.la
 	rm -rf $(INSTALLDIR)/sispmctl/usr/share/man
+#	install -D usb_modeswitch/libusb-compat/libusb/.libs/libusb.so $(INSTALLDIR)/sispmctl/usr/lib/libusb.so
+	install -D usb_modeswitch/libusb-compat/libusb/.libs/libusb-0.1.so.4 $(INSTALLDIR)/sispmctl/usr/lib/libusb-0.1.so.4
+#	install -D usb_modeswitch/libusb-compat/libusb/.libs/libusb-0.1.so.4.4.4 $(INSTALLDIR)/sispmctl/usr/lib/libusb-0.1.so.4.4.4
