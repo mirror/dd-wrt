@@ -1,0 +1,14 @@
+sispmctl-configure: comgt
+	cd sispmctl && ./configure --prefix=/usr --host=$(ARCH)-linux CC="$(CC)" CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/usb_modeswitch/libusb-compat/libusb -L$(TOP)/usb_modeswitch/libusb-compat/libusb/.libs -ffunction-sections -fdata-sections -Wl,--gc-sections  -Drpl_malloc=malloc" 
+
+sispmctl:
+	$(MAKE) -C sispmctl
+
+sispmctl-clean:
+	$(MAKE) -C sispmctl clean
+
+sispmctl-install:
+	$(MAKE) -C sispmctl install DESTDIR=$(INSTALLDIR)/sispmctl
+	rm -f $(INSTALLDIR)/sispmctl/usr/lib/*.a
+	rm -f $(INSTALLDIR)/sispmctl/usr/lib/*.la
+	rm -rf $(INSTALLDIR)/sispmctl/usr/share/man
