@@ -680,13 +680,13 @@ void generate_wep_key(webs_t wp)
 #endif
 	char var[80];
 
-	sprintf(var, "%s_wep_bit", prefix);
+	snprintf(var, sizeof(var), "%s_wep_bit", prefix);
 	bit = websGetVar(wp, var, NULL);
 	if (bit != NULL)
 		nvram_set("wl_wep_bit", bit);
-	sprintf(var, "%s_passphrase", prefix);
+	snprintf(var, sizeof(var), "%s_passphrase", prefix);
 	passphrase = websGetVar(wp, var, NULL);
-	sprintf(var, "%s_key", prefix);
+	snprintf(var, sizeof(var), "%s_key", prefix);
 	tx = websGetVar(wp, var, NULL);
 	cprintf("gen wep key: bits = %s\n", bit);
 
