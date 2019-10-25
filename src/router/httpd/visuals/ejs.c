@@ -2966,12 +2966,13 @@ int tf_webWriteJS(webs_t wp, const char *s)
 	n = 0;
 	r = 0;
 	for (; *s; s++) {
-		if (*s == '<') {
+		if (strlen(s) >= 4 && !strncmp(s, "\x27", 4)) {
+			continue;
+		} else if (*s == '<') {
 			n += sprintf(buf + n, "&lt;");
 		} else if (*s == '>') {
 			n += sprintf(buf + n, "&gt;");
-		} else if ((*s != '"') && (*s != '\\') && (*s != '/')
-			   && (*s != '*') && (*s != '\'') && (isprint(*s))) {
+		} else if ((*s != '"') && (*s != '\\') && (*s != '/') && (*s != '*') && (*s != '\'') && (isprint(*s))) {
 			buf[n++] = *s;
 		} else {
 			n += sprintf(&buf[n], "\\x%02x", *s);
@@ -3036,9 +3037,7 @@ void ej_show_upgrade_options(webs_t wp, int argc, char_t ** argv)
 	show_onlineupdates(wp, argc, argv);
 #endif
 #endif
-}
-
-void ej_getsetuppage(webs_t wp, int argc, char_t ** argv)
+} void ej_getsetuppage(webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_BUFFALO
 	if (endswith(wp->request_url, ".asp") || endswith(wp->request_url, ".htm")
