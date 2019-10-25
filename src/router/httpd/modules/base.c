@@ -2513,10 +2513,13 @@ static void do_apply_cgi(unsigned char method, struct mime_handler *handler, cha
 	if (stream->post == 1) {
 		query = stream->post_buf;
 		path = url;
-	} else {
+	} 
+	else {
 		query = url;
 		path = strsep(&query, "?") ? : url;
+#if 0
 		init_cgi(stream, query);
+#endif
 	}
 
 	if (!query)
