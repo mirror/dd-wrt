@@ -782,7 +782,7 @@ static void *handle_request(void *arg)
 	char *file = NULL;
 	int len;
 	struct mime_handler *handler = NULL;;
-	int content_length = 0, flags;
+	unsigned long content_length = 0, flags;
 	char *line;
 	long method_type;
 	conn_fp->p = &global_vars;
@@ -1225,7 +1225,7 @@ static void *handle_request(void *arg)
 				conn_fp->post = 1;
 			}
 
-			if (handler->input && content_length > 0) {
+			if (handler->input) {
 				handler->input(file, conn_fp, content_length, boundary);
 			}
 #if defined(linux)
