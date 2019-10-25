@@ -2966,13 +2966,15 @@ int tf_webWriteJS(webs_t wp, const char *s)
 	n = 0;
 	r = 0;
 	for (; *s; s++) {
-		if (strlen(s) >= 4 && !strncmp(s, "\x27", 4)) {
-			continue;
+		if (*s == '<') {
+			n += sprintf(buf + n, "&lt;");
 		} else if (*s == '<') {
 			n += sprintf(buf + n, "&lt;");
+		} else if (*s == '\'') {
+			continue;
 		} else if (*s == '>') {
 			n += sprintf(buf + n, "&gt;");
-		} else if ((*s != '"') && (*s != '\\') && (*s != '/') && (*s != '*') && (*s != '\'') && (isprint(*s))) {
+		} else if ((*s != '"') && (*s != '\\') && (*s != '/') && (*s != '*') && (isprint(*s))) {
 			buf[n++] = *s;
 		} else {
 			n += sprintf(&buf[n], "\\x%02x", *s);
