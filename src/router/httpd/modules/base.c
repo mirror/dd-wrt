@@ -1324,9 +1324,9 @@ static int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 	}
 
 	next_page = websGetVar(wp, "next_page", NULL);
-	if (next_page)
+	if (next_page && *next_page!='/' && *next_page!='.') {
 		sprintf(path, "%s", next_page);
-	else
+	} else
 		sprintf(path, "%s.asp", submit_button);
 	if (!strncmp(path, "WL_FilterTable", 14))
 		do_filtertable(METHOD_GET, NULL, path, wp);	// refresh
