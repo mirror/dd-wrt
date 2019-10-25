@@ -1308,9 +1308,9 @@ void save_wireless_advanced(webs_t wp)
 	char *wlface = websGetVar(wp, "interface", NULL);
 
 	if (!strcmp(wlface, "wl0"))
-		sprintf(set_prefix, "%s", "wl");
+		snprintf(set_prefix, sizeof(set_prefix), "%s", "wl");
 	else
-		sprintf(set_prefix, "%s", wlface);
+		snprintf(set_prefix, sizeof(set_prefix), "%s", wlface);
 
 	sprintf(prefix, wlface);
 
