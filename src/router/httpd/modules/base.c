@@ -442,7 +442,6 @@ static char *insert(webs_t wp, char *ifname, char *index, char *filename)
 	int ai = 0;
 	int length = calclength(webfile, ifname);
 	char *temp = calloc(length + 4, 1);
-
 	for (i = 0; i < weblen; i++) {
 		if (webfile[i] == '%') {
 			i++;
@@ -451,8 +450,10 @@ static char *insert(webs_t wp, char *ifname, char *index, char *filename)
 				temp[ai++] = '%';
 				break;
 			case 'd':
-				strcpy(&temp[ai], index);
-				ai++;
+				if (index && strlen(index)) {
+					strcpy(&temp[ai], index);
+					ai++;
+				}
 				break;
 			case 's':
 				strcpy(&temp[ai], ifname);
@@ -587,7 +588,6 @@ static void do_filtertable(unsigned char method, struct mime_handler *handler, c
 	idx = strrchr(ifname, '.');
 	if (idx)
 		*idx = 0;
-
 	if (!*(ifname))
 		return;
 	rep(ifname, '.', 'X');
@@ -876,7 +876,10 @@ static void do_wds(unsigned char method, struct mime_handler *handler, char *pat
 	filteralphanum(ifname);
 
 	idx = strrchr(ifname, '.');
-	*idx = 0;
+	if (idx)
+	    *idx = 0;
+	if (!*(ifname))
+		return;
 	char *temp = insert(stream, ifname, "0", "Wireless_WDS.asp");
 	do_ej_buffer(temp, stream);
 	free(temp);
@@ -897,11 +900,13 @@ static void do_wireless_adv(unsigned char method, struct mime_handler *handler, 
 	if (!idx)
 		return;
 	*idx = 0;
-	char index[2];
+	char index[32];
 	int strl = strlen(ifname);
-	if (strl > 0)
+	if (strl > 2)
 		substring(strl - 1, strl, ifname, index);
 	else
+		return;
+	if (!strlen(index))
 		return;
 	char *temp = insert(stream, ifname, index, "Wireless_Advanced.asp");
 	do_ej_buffer(temp, stream);
