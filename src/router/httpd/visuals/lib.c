@@ -57,8 +57,14 @@ void ej_get_backup_name(webs_t wp, int argc, char_t ** argv)
 	char *name = nvram_safe_get("router_name");
 	char *printname;
 	asprintf(&printname, "nvrambak_r%s%s%s_%s.bin", SVN_REVISION, *name ? "_" : "", *name ? name : "", nvram_safe_get("DD_BOARD"));
+	if (!printname)
+	    return;
 	int len = strlen(printname);
 	char *target = malloc(len * 3 + 1);
+	if (!target) {
+	    free(printname);
+	    return;
+	}
 	int i, t = 0;
 	for (i = 0; i < len; i++) {
 		if (printname[i] == ' ') {

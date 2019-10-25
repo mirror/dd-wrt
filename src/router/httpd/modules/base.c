@@ -426,8 +426,15 @@ static char *_tran_string(char *buf, char *str)
 static char *readweb(webs_t wp, char *filename)
 {
 	FILE *web = getWebsFile(wp, filename);
+	if (!web) {
+	    return NULL;
+	}
 	unsigned int len = getWebsFileLen(wp, filename);
 	char *webfile = (char *)safe_malloc(len + 1);
+	if (!webfile) {
+	    fclose(web);
+	    return NULL;
+	}
 	fread(webfile, len, 1, web);
 	fclose(web);
 	webfile[len] = 0;
@@ -700,6 +707,10 @@ static void do_radiuscert(unsigned char method, struct mime_handler *handler, ch
 			rewind(fp);
 			char *serial = safe_malloc(len + 1);
 			char *output = safe_malloc(len + 1);
+			if (!serial || !output) {
+			    fclose(fp);
+			    return;
+			}
 			fread(serial, len, 1, fp);
 			fclose(fp);
 			//look for existing entry
@@ -1825,6 +1836,10 @@ do_apply_post(char *url, webs_t stream, int len, char *boundary)
 		 * Slurp anything remaining in the request 
 		 */
 		char *buf = malloc(len);
+		if (!buf) {
+			cprintf("The POST data exceed length limit!\n");
+			return;		
+		}
 		wfgets(buf, len, stream);
 		free(buf);
 		init_cgi(stream, stream->post_buf);

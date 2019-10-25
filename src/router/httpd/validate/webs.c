@@ -2398,6 +2398,8 @@ void remove_mdhcp(char *iface)
 		len = strlen(mdhcpds) - strlen(start);
 		if (len > 0) {
 			pref = safe_malloc(len);
+			if (!pref)
+			    return;
 			strncpy(pref, mdhcpds, len - 1);
 			pref[len - 1] = '\0';
 		} else {
