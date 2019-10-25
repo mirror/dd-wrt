@@ -1312,7 +1312,7 @@ void save_wireless_advanced(webs_t wp)
 	else
 		snprintf(set_prefix, sizeof(set_prefix), "%s", wlface);
 
-	sprintf(prefix, wlface);
+	snprintf(prefix, sizeof(prefix), wlface);
 
 	copytonv2(wp, prefix, set_prefix, "auth");
 	copytonv2(wp, prefix, set_prefix, "rateset");
