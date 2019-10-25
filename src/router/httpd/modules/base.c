@@ -825,6 +825,16 @@ static void do_spectral_scan(unsigned char method, struct mime_handler *handler,
 }
 #endif
 
+static void filteralphanum(char *str)
+{
+	int len = strlen(str);
+	int i;
+	for (i = 0; i < len; i++) {
+		if (!isalnum(str[i]) && str[i] != '.')
+			str[i] = 0;
+	}
+}
+
 static void do_activetable(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
 {
 	char ifname[32];
@@ -841,6 +851,7 @@ static void do_activetable(unsigned char method, struct mime_handler *handler, c
 			strcpy(ifname, temp3);
 		}
 	}
+	filteralphanum(ifname);
 
 	idx = strrchr(ifname, '.');
 	if (idx)
@@ -860,6 +871,8 @@ static void do_wds(unsigned char method, struct mime_handler *handler, char *pat
 	char *temp2 = idx + 1;
 	char ifname[32];
 	strlcpy(ifname, temp2, sizeof(ifname) - 1);
+	filteralphanum(ifname);
+
 	idx = strrchr(ifname, '.');
 	*idx = 0;
 	char *temp = insert(stream, ifname, "0", "Wireless_WDS.asp");
@@ -877,6 +890,7 @@ static void do_wireless_adv(unsigned char method, struct mime_handler *handler, 
 
 	strlcpy(ifname, temp2, sizeof(ifname) - 1);
 
+	filteralphanum(ifname);
 	idx = strrchr(ifname, '.');
 	if (!idx)
 		return;
@@ -1749,7 +1763,7 @@ static int do_auth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 
 static int do_cauth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 {
-	if (nvram_matchi("info_passwd", 0))
+	if(nvram_matchi("info_passwd", 0))
 		return 1;
 	return do_auth(wp, auth_check);
 }
@@ -1757,7 +1771,7 @@ static int do_cauth(webs_t wp, int (*auth_check)(webs_t conn_fp))
 #ifdef HAVE_REGISTER
 static int do_auth_reg(webs_t wp, int (*auth_check)(webs_t conn_fp))
 {
-	if (!wp->isregistered)
+	if(!wp->isregistered)
 		return 1;
 	return do_auth(wp, auth_check);
 }
@@ -2513,8 +2527,7 @@ static void do_apply_cgi(unsigned char method, struct mime_handler *handler, cha
 	if (stream->post == 1) {
 		query = stream->post_buf;
 		path = url;
-	} 
-	else {
+	} else {
 		query = url;
 		path = strsep(&query, "?") ? : url;
 #if 0
