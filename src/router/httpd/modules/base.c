@@ -864,6 +864,8 @@ static void do_activetable(unsigned char method, struct mime_handler *handler, c
 			strcpy(ifname, temp3);
 		}
 	}
+	if (!*(ifname))
+		return;
 	filteralphanum(ifname);
 
 	idx = strrchr(ifname, '.');
@@ -884,6 +886,8 @@ static void do_wds(unsigned char method, struct mime_handler *handler, char *pat
 	char *temp2 = idx + 1;
 	char ifname[32];
 	strlcpy(ifname, temp2, sizeof(ifname) - 1);
+	if (!*(ifname))
+		return;
 	filteralphanum(ifname);
 
 	idx = strrchr(ifname, '.');
@@ -905,6 +909,8 @@ static void do_wireless_adv(unsigned char method, struct mime_handler *handler, 
 	char ifname[32];
 
 	strlcpy(ifname, temp2, sizeof(ifname) - 1);
+	if (!*(ifname))
+		return;
 
 	filteralphanum(ifname);
 	idx = strrchr(ifname, '.');
