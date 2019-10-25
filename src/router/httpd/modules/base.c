@@ -406,6 +406,17 @@ static int calclength(char *webfile, char *ifname)
 	return len + 1;
 }
 
+static void filteralphanum(char *str)
+{
+	int len = strlen(str);
+	int i;
+	for (i = 0; i < len; i++) {
+		if (!isalnum(str[i]) && str[i] != '.')
+			str[i] = 0;
+	}
+}
+
+
 static char *_tran_string(char *buf, char *str)
 {
 	sprintf(buf, "<script type=\"text/javascript\">Capture(%s)</script>", str);
@@ -572,6 +583,7 @@ static void do_filtertable(unsigned char method, struct mime_handler *handler, c
 			strcpy(ifname, temp3);
 		}
 	}
+	filteralphanum(ifname);
 	idx = strrchr(ifname, '.');
 	if (idx)
 		*idx = 0;
@@ -824,16 +836,6 @@ static void do_spectral_scan(unsigned char method, struct mime_handler *handler,
 
 }
 #endif
-
-static void filteralphanum(char *str)
-{
-	int len = strlen(str);
-	int i;
-	for (i = 0; i < len; i++) {
-		if (!isalnum(str[i]) && str[i] != '.')
-			str[i] = 0;
-	}
-}
 
 static void do_activetable(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
 {
