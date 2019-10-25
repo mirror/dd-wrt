@@ -858,7 +858,7 @@ static void do_activetable(unsigned char method, struct mime_handler *handler, c
 	idx = strrchr(ifname, '.');
 	if (idx)
 		*idx = 0;
-	if (!*(ifname))
+	if (!*(ifname) || strlen(ifname) < 2)
 		return;
 	char *temp = insert(stream, ifname, "0", "WL_ActiveTable.asp");
 	do_ej_buffer(temp, stream);
@@ -878,7 +878,7 @@ static void do_wds(unsigned char method, struct mime_handler *handler, char *pat
 	idx = strrchr(ifname, '.');
 	if (idx)
 	    *idx = 0;
-	if (!*(ifname))
+	if (!*(ifname) || strlen(ifname) < 2)
 		return;
 	char *temp = insert(stream, ifname, "0", "Wireless_WDS.asp");
 	do_ej_buffer(temp, stream);
@@ -906,7 +906,7 @@ static void do_wireless_adv(unsigned char method, struct mime_handler *handler, 
 		substring(strl - 1, strl, ifname, index);
 	else
 		return;
-	if (!strlen(index))
+	if (!strlen(index) || strlen(ifname) < 2)
 		return;
 	char *temp = insert(stream, ifname, index, "Wireless_Advanced.asp");
 	do_ej_buffer(temp, stream);

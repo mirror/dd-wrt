@@ -782,7 +782,7 @@ static void *handle_request(void *arg)
 	char *file = NULL;
 	int len;
 	struct mime_handler *handler = NULL;;
-	int cl = 0, flags;
+	int content_length = 0, flags;
 	char *line;
 	long method_type;
 	conn_fp->p = &global_vars;
@@ -875,7 +875,7 @@ static void *handle_request(void *arg)
 		} else if (strncasecmp(cur, "Content-Length:", 15) == 0) {
 			cp = &cur[15];
 			cp += strspn(cp, " \t");
-			cl = strtoul(cp, NULL, 0);
+			content_length = strtoul(cp, NULL, 0);
 
 		} else if ((cp = strstr(cur, "boundary="))) {
 			boundary = &cp[9];
@@ -1225,8 +1225,8 @@ static void *handle_request(void *arg)
 				conn_fp->post = 1;
 			}
 
-			if (handler->input) {
-				handler->input(file, conn_fp, cl, boundary);
+			if (handler->input && content_length > 0) {
+				handler->input(file, conn_fp, content_length, boundary);
 			}
 #if defined(linux)
 			if (!DO_SSL(conn_fp) && (flags = fcntl(fileno(conn_fp->fp), F_GETFL)) != -1 && fcntl(fileno(conn_fp->fp), F_SETFL, flags | O_NONBLOCK) != -1) {
