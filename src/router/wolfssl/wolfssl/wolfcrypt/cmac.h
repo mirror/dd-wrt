@@ -1,6 +1,6 @@
 /* cmac.h
  *
- * Copyright (C) 2006-2017 wolfSSL Inc.
+ * Copyright (C) 2006-2019 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -41,7 +41,11 @@
 #if !defined(HAVE_FIPS) || \
     (defined(HAVE_FIPS_VERSION) && (HAVE_FIPS_VERSION >= 2))
 
-typedef struct Cmac {
+#ifndef WC_CMAC_TYPE_DEFINED
+    typedef struct Cmac Cmac;
+    #define WC_CMAC_TYPE_DEFINED
+#endif
+struct Cmac {
     Aes aes;
     byte buffer[AES_BLOCK_SIZE]; /* partially stored block */
     byte digest[AES_BLOCK_SIZE]; /* running digest */
@@ -49,7 +53,8 @@ typedef struct Cmac {
     byte k2[AES_BLOCK_SIZE];
     word32 bufferSz;
     word32 totalSz;
-} Cmac;
+};
+
 
 
 typedef enum CmacType {

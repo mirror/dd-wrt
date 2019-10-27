@@ -1,6 +1,6 @@
 /* memory.h
  *
- * Copyright (C) 2006-2017 wolfSSL Inc.
+ * Copyright (C) 2006-2019 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -29,7 +29,9 @@
 #ifndef WOLFSSL_MEMORY_H
 #define WOLFSSL_MEMORY_H
 
+#ifndef STRING_USER
 #include <stdlib.h>
+#endif
 #include <wolfssl/wolfcrypt/types.h>
 
 #ifdef __cplusplus
@@ -100,17 +102,41 @@ WOLFSSL_API int wolfSSL_GetAllocators(wolfSSL_Malloc_cb*,
     #ifndef WOLFMEM_BUCKETS
         #ifndef SESSION_CERTS
             /* default size of chunks of memory to separate into */
-            #define WOLFMEM_BUCKETS 64,128,256,512,1024,2432,3456,4544,16128
+            #ifndef LARGEST_MEM_BUCKET
+                #define LARGEST_MEM_BUCKET 16128
+            #endif
+            #define WOLFMEM_BUCKETS 64,128,256,512,1024,2432,3456,4544,\
+                                    LARGEST_MEM_BUCKET
+        #elif defined (OPENSSL_EXTRA)
+            /* extra storage in structs for multiple attributes and order */
+            #ifndef LARGEST_MEM_BUCKET
+                #define LARGEST_MEM_BUCKET 25536
+            #endif
+            #define WOLFMEM_BUCKETS 64,128,256,512,1024,2432,3360,4480,\
+                                    LARGEST_MEM_BUCKET
         #elif defined (WOLFSSL_CERT_EXT)
             /* certificate extensions requires 24k for the SSL struct */
-            #define WOLFMEM_BUCKETS 64,128,256,512,1024,2432,3456,4544,24576
+            #ifndef LARGEST_MEM_BUCKET
+                #define LARGEST_MEM_BUCKET 24576
+            #endif
+            #define WOLFMEM_BUCKETS 64,128,256,512,1024,2432,3456,4544,\
+                                    LARGEST_MEM_BUCKET
         #else
             /* increase 23k for object member of WOLFSSL_X509_NAME_ENTRY */
-            #define WOLFMEM_BUCKETS 64,128,256,512,1024,2432,3456,4544,23440
+            #ifndef LARGEST_MEM_BUCKET
+                #define LARGEST_MEM_BUCKET 23440
+            #endif
+            #define WOLFMEM_BUCKETS 64,128,256,512,1024,2432,3456,4544,\
+                                    LARGEST_MEM_BUCKET
         #endif
     #endif
     #ifndef WOLFMEM_DIST
-        #define WOLFMEM_DIST    49,10,6,14,5,6,9,1,1
+        #ifndef WOLFSSL_STATIC_MEMORY_SMALL
+            #define WOLFMEM_DIST    49,10,6,14,5,6,9,1,1
+        #else
+            /* Low resource and not RSA */
+            #define WOLFMEM_DIST    29, 7,6, 9,4,4,0,0,0
+        #endif
     #endif
 
     /* flags for loading static memory (one hot bit) */
@@ -191,6 +217,13 @@ WOLFSSL_API int wolfSSL_GetAllocators(wolfSSL_Malloc_cb*,
     WOLFSSL_API int wolfSSL_StaticBufferSz(byte* buffer, word32 sz, int flag);
     WOLFSSL_API int wolfSSL_MemoryPaddingSz(void);
 #endif /* WOLFSSL_STATIC_MEMORY */
+
+#ifdef WOLFSSL_STACK_LOG
+    WOLFSSL_API void __attribute__((no_instrument_function))
+            __cyg_profile_func_enter(void *func,  void *caller);
+    WOLFSSL_API void __attribute__((no_instrument_function))
+            __cyg_profile_func_exit(void *func, void *caller);
+#endif /* WOLFSSL_STACK_LOG */
 
 #ifdef __cplusplus
     }  /* extern "C" */

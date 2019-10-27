@@ -3,6 +3,7 @@
 #
 
 EXTRA_DIST += \
+	     certs/ca-cert-chain.der \
 	     certs/ca-cert.pem \
 	     certs/ca-key.pem \
 	     certs/client-cert.pem \
@@ -12,6 +13,7 @@ EXTRA_DIST += \
 	     certs/client-relative-uri.pem \
 	     certs/ecc-key.pem \
 	     certs/ecc-privkey.pem \
+	     certs/ecc-privkeyPkcs8.der \
 	     certs/ecc-privkeyPkcs8.pem \
 	     certs/ecc-keyPkcs8Enc.pem \
 	     certs/ecc-keyPkcs8Enc.der \
@@ -41,6 +43,7 @@ EXTRA_DIST += \
 	     certs/server-revoked-key.pem \
 	     certs/wolfssl-website-ca.pem \
 	     certs/test-degenerate.p7b \
+	     certs/test-ber-exp02-05-2022.p7b \
 	     certs/test-servercert.p12 \
 	     certs/ecc-rsa-server.p12 \
 	     certs/dsaparams.pem \
@@ -100,3 +103,4 @@ include certs/external/include.am
 include certs/ocsp/include.am
 include certs/test/include.am
 include certs/test-pathlen/include.am
+include certs/intermediate/include.am

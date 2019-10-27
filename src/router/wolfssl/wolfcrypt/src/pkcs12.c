@@ -1,6 +1,6 @@
 /* pkcs12.c
  *
- * Copyright (C) 2006-2017 wolfSSL Inc.
+ * Copyright (C) 2006-2019 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -26,7 +26,7 @@
 
 #include <wolfssl/wolfcrypt/settings.h>
 
-#if !defined(NO_ASN) && !defined(NO_PWDBASED)
+#if !defined(NO_ASN) && !defined(NO_PWDBASED) && defined(HAVE_PKCS12)
 
 #include <wolfssl/wolfcrypt/asn.h>
 #include <wolfssl/wolfcrypt/asn_public.h>
@@ -79,7 +79,7 @@ typedef struct ContentInfo {
     struct ContentInfo* next;
     word32 encC;  /* encryptedContent */
     word32 dataSz;
-    int type; /* DATA / encrypted / envelpoed */
+    int type; /* DATA / encrypted / enveloped */
 } ContentInfo;
 
 
@@ -98,7 +98,7 @@ typedef struct MacData {
     word32 oid;
     word32 digestSz;
     word32 saltSz;
-    int itt; /* number of itterations when creating HMAC key */
+    int itt; /* number of iterations when creating HMAC key */
 } MacData;
 
 
@@ -198,6 +198,7 @@ static int GetSafeContent(WC_PKCS12* pkcs12, const byte* input,
     word32 localIdx = *idx;
     int ret;
     int size = 0;
+    byte tag;
 
     safe = (AuthenticatedSafe*)XMALLOC(sizeof(AuthenticatedSafe), pkcs12->heap,
                                        DYNAMIC_TYPE_PKCS);
@@ -215,7 +216,12 @@ static int GetSafeContent(WC_PKCS12* pkcs12, const byte* input,
 
     safe->oid = oid;
     /* check tag, length */
-    if (input[localIdx++] != (ASN_CONSTRUCTED | ASN_CONTEXT_SPECIFIC)) {
+    if (GetASNTag(input, &localIdx, &tag, maxIdx) < 0) {
+        freeSafe(safe, pkcs12->heap);
+        return ASN_PARSE_E;
+    }
+
+    if (tag != (ASN_CONSTRUCTED | ASN_CONTEXT_SPECIFIC)) {
         WOLFSSL_MSG("Unexpected tag in PKCS12 DER");
         freeSafe(safe, pkcs12->heap);
         return ASN_PARSE_E;
@@ -233,7 +239,12 @@ static int GetSafeContent(WC_PKCS12* pkcs12, const byte* input,
         case WC_PKCS12_DATA:
             WOLFSSL_MSG("Found PKCS12 OBJECT: DATA");
             /* get octets holding contents */
-            if (input[localIdx++] != ASN_OCTET_STRING) {
+            if (GetASNTag(input, &localIdx, &tag, maxIdx) < 0) {
+                freeSafe(safe, pkcs12->heap);
+                return ASN_PARSE_E;
+            }
+
+            if (tag != ASN_OCTET_STRING) {
                 WOLFSSL_MSG("Wrong tag with content PKCS12 type DATA");
                 freeSafe(safe, pkcs12->heap);
                 return ASN_PARSE_E;
@@ -256,7 +267,7 @@ static int GetSafeContent(WC_PKCS12* pkcs12, const byte* input,
     *idx = localIdx;
 
     /* an instance of AuthenticatedSafe is created from
-     * ContentInfo's strung together in a SEQUENCE. Here we itterate
+     * ContentInfo's strung together in a SEQUENCE. Here we iterate
      * through the ContentInfo's and add them to our
      * AuthenticatedSafe struct */
     localIdx = 0;
@@ -347,6 +358,7 @@ static int GetSignData(WC_PKCS12* pkcs12, const byte* mem, word32* idx,
     word32 curIdx = *idx;
     word32 oid = 0;
     int size, ret;
+    byte tag;
 
     /* Digest Info : Sequence
      *      DigestAlgorithmIdentifier
@@ -380,7 +392,12 @@ static int GetSignData(WC_PKCS12* pkcs12, const byte* mem, word32* idx,
 #endif
 
     /* Digest: should be octet type holding digest */
-    if (mem[curIdx++] != ASN_OCTET_STRING) {
+    if (GetASNTag(mem, &curIdx, &tag, totalSz) < 0) {
+        XFREE(mac, pkcs12->heap, DYNAMIC_TYPE_PKCS);
+        return ASN_PARSE_E;
+    }
+
+    if (tag != ASN_OCTET_STRING) {
         WOLFSSL_MSG("Failed to get digest");
         XFREE(mac, pkcs12->heap, DYNAMIC_TYPE_PKCS);
         return ASN_PARSE_E;
@@ -411,12 +428,16 @@ static int GetSignData(WC_PKCS12* pkcs12, const byte* mem, word32* idx,
     curIdx += mac->digestSz;
 
     /* get salt, should be octet string */
-    if (mem[curIdx++] != ASN_OCTET_STRING) {
+    if (GetASNTag(mem, &curIdx, &tag, totalSz) < 0) {
+        ERROR_OUT(ASN_PARSE_E, exit_gsd);
+    }
+
+    if (tag != ASN_OCTET_STRING) {
         WOLFSSL_MSG("Failed to get salt");
         ERROR_OUT(ASN_PARSE_E, exit_gsd);
     }
 
-    if ((ret = GetLength(mem, &curIdx, &size, totalSz)) <= 0) {
+    if ((ret = GetLength(mem, &curIdx, &size, totalSz)) < 0) {
         goto exit_gsd;
     }
     mac->saltSz = size;
@@ -449,7 +470,7 @@ static int GetSignData(WC_PKCS12* pkcs12, const byte* mem, word32* idx,
     }
 
 #ifdef WOLFSSL_DEBUG_PKCS12
-    printf("\t\tITTERATIONS : %d\n", mac->itt);
+    printf("\t\tITERATIONS : %d\n", mac->itt);
 #endif
 
     *idx = curIdx;
@@ -592,7 +613,7 @@ static int wc_PKCS12_verify(WC_PKCS12* pkcs12, byte* data, word32 dataSz,
 
 
 /* Convert DER format stored in der buffer to WC_PKCS12 struct
- * Puts the raw contents of Content Info into structure without completly
+ * Puts the raw contents of Content Info into structure without completely
  * parsing or decoding.
  * der    : pointer to der buffer holding PKCS12
  * derSz  : size of der buffer
@@ -629,7 +650,7 @@ int wc_d2i_PKCS12(const byte* der, word32 derSz, WC_PKCS12* pkcs12)
     printf("version = %d\n", version);
 #endif
 
-    if (version != 3) {
+    if (version != WC_PKCS12_VERSION_DEFAULT) {
         WOLFSSL_MSG("PKCS12 unsupported version!");
         return ASN_VERSION_E;
     }
@@ -670,6 +691,191 @@ int wc_d2i_PKCS12(const byte* der, word32 derSz, WC_PKCS12* pkcs12)
     return ret;
 }
 
+/* Convert WC_PKCS12 struct to allocated DER buffer.
+ * pkcs12 : non-null pkcs12 pointer
+ * der    : pointer-pointer to der buffer. If NULL space will be
+ *          allocated for der, which must be freed by application.
+ * derSz  : size of buffer passed in when der is not NULL. NULL arg disables
+ *          sanity checks on buffer read/writes. Max size gets set to derSz when
+ *          the "der" buffer passed in is NULL and LENGTH_ONLY_E is returned.
+ * return size of DER on success and negative on failure.
+ */
+int wc_i2d_PKCS12(WC_PKCS12* pkcs12, byte** der, int* derSz)
+{
+    int ret = 0;
+    word32 seqSz = 0, verSz = 0, totalSz = 0, idx = 0, sdBufSz = 0;
+    byte *buf = NULL;
+    byte ver[MAX_VERSION_SZ];
+    byte seq[MAX_SEQ_SZ];
+    byte *sdBuf = NULL;
+
+    if ((pkcs12 == NULL) || (pkcs12->safe == NULL) ||
+            (der == NULL && derSz == NULL)) {
+        return BAD_FUNC_ARG;
+    }
+
+    /* Create the MAC portion */
+    if ((ret == 0) && (pkcs12->signData != NULL)) {
+        MacData *mac = (MacData*)pkcs12->signData;
+        word32 aSz = (2 + (2 + 5) + (2));
+        word32 bSz = (2 + mac->digestSz);
+        word32 cSz = (2 + mac->saltSz);
+        word32 dSz = (2 + sizeof(short int));
+        word32 innerSz = aSz + bSz;
+        word32 outerSz = 2 + innerSz + cSz + dSz;
+
+        sdBufSz = 2 + outerSz;
+        sdBuf = (byte*)XMALLOC(sdBufSz, pkcs12->heap, DYNAMIC_TYPE_PKCS);
+        if (sdBuf == NULL) {
+            ret = MEMORY_E;
+        }
+
+        if (ret == 0) {
+            idx += SetSequence(outerSz, sdBuf);
+            idx += SetSequence(innerSz, &sdBuf[idx]);
+
+            /* Set Algorithm Identifier */
+            {
+                word32 algoIdSz;
+
+                algoIdSz = SetAlgoID(mac->oid, &sdBuf[idx], oidHashType, 0);
+                if (algoIdSz == 0) {
+                    ret = ALGO_ID_E;
+                }
+                else {
+                    idx += algoIdSz;
+                }
+            }
+        }
+
+        if (ret == 0) {
+            /* Octet string holding digest */
+            sdBuf[idx++] = ASN_OCTET_STRING;
+            idx += SetLength(mac->digestSz, &sdBuf[idx]);
+            XMEMCPY(&sdBuf[idx], mac->digest, mac->digestSz);
+            idx += mac->digestSz;
+
+            /* Set salt */
+            sdBuf[idx++] = ASN_OCTET_STRING;
+            idx += SetLength(mac->saltSz, &sdBuf[idx]);
+            XMEMCPY(&sdBuf[idx], mac->salt, mac->saltSz);
+            idx += mac->saltSz;
+
+            /* MAC iterations */
+            {
+                int tmpSz;
+                word32 tmpIdx = 0;
+                byte ar[MAX_LENGTH_SZ + 2];
+                tmpSz = SetShortInt(ar, &tmpIdx, mac->itt, MAX_LENGTH_SZ + 2);
+                XMEMCPY(&sdBuf[idx], ar, tmpSz);
+            }
+
+            totalSz += sdBufSz;
+        }
+    }
+
+    /* Calculate size of der */
+    if (ret == 0) {
+        totalSz += pkcs12->safe->dataSz;
+
+        totalSz += 4; /* Octet string */
+
+        totalSz += 4; /* Element */
+
+        totalSz += 2 + sizeof(WC_PKCS12_DATA_OID);
+
+        totalSz += 4; /* Seq */
+
+        ret = SetMyVersion(WC_PKCS12_VERSION_DEFAULT, ver, FALSE);
+        if (ret > 0) {
+            verSz = (word32)ret;
+            ret   = 0; /* value larger than 0 is success */
+            totalSz += verSz;
+
+            seqSz = SetSequence(totalSz, seq);
+            totalSz += seqSz;
+
+            /* check if getting length only */
+            if (der == NULL && derSz != NULL) {
+                *derSz = totalSz;
+                XFREE(sdBuf, pkcs12->heap, DYNAMIC_TYPE_PKCS);
+                return LENGTH_ONLY_E;
+            }
+
+            if (*der == NULL) {
+                /* Allocate if requested */
+                buf = (byte*)XMALLOC(totalSz, NULL, DYNAMIC_TYPE_PKCS);
+            }
+            else {
+                buf = *der;
+
+                /* sanity check on buffer size if passed in */
+                if (derSz != NULL) {
+                    if (*derSz < (int)totalSz) {
+                        WOLFSSL_MSG("Buffer passed in is too small");
+                        ret = BUFFER_E;
+                    }
+                }
+            }
+        }
+    }
+
+    if (buf == NULL) {
+        ret = MEMORY_E;
+    }
+
+    if (ret == 0) {
+        idx = 0;
+
+        /* Copy parts to buf */
+        XMEMCPY(&buf[idx], seq, seqSz);
+        idx += seqSz;
+
+        XMEMCPY(&buf[idx], ver, verSz);
+        idx += verSz;
+
+        seqSz = SetSequence(totalSz - sdBufSz - idx - 4, seq);
+        XMEMCPY(&buf[idx], seq, seqSz);
+        idx += seqSz;
+
+        /* OID */
+        idx += SetObjectId(sizeof(WC_PKCS12_DATA_OID), &buf[idx]);
+        XMEMCPY(&buf[idx], WC_PKCS12_DATA_OID, sizeof(WC_PKCS12_DATA_OID));
+        idx += sizeof(WC_PKCS12_DATA_OID);
+
+        /* Element */
+        buf[idx++] = ASN_CONSTRUCTED | ASN_CONTEXT_SPECIFIC;
+        idx += SetLength(totalSz - sdBufSz - idx - 3, &buf[idx]);
+
+        /* Octet string */
+        idx += SetOctetString(totalSz - sdBufSz - idx - 4, &buf[idx]);
+
+        XMEMCPY(&buf[idx], pkcs12->safe->data, pkcs12->safe->dataSz);
+        idx += pkcs12->safe->dataSz;
+
+        if (pkcs12->signData != NULL) {
+            XMEMCPY(&buf[idx], sdBuf, sdBufSz);
+        }
+
+        if (*der == NULL) {
+            /* Point to start of data allocated for DER */
+            *der = buf;
+        }
+        else {
+            /* Increment pointer to byte past DER */
+            *der = &buf[totalSz];
+        }
+
+        /* Return size of der */
+        ret = totalSz;
+    }
+
+    XFREE(sdBuf, pkcs12->heap, DYNAMIC_TYPE_PKCS);
+    /* Allocation of buf was the last time ret could be a failure,
+     * so no need to free here */
+
+    return ret;
+}
 
 /* helper function to free WC_DerCertList */
 void wc_FreeCertList(WC_DerCertList* list, void* heap)
@@ -787,13 +993,18 @@ int wc_PKCS12_parse(WC_PKCS12* pkcs12, const char* psw,
         byte*  data;
         word32 idx = 0;
         int    size, totalSz;
+        byte   tag;
 
         if (ci->type == WC_PKCS12_ENCRYPTED_DATA) {
             int number;
 
             WOLFSSL_MSG("Decrypting PKCS12 Content Info Container");
             data = ci->data;
-            if (data[idx++] != (ASN_CONSTRUCTED | ASN_CONTEXT_SPECIFIC)) {
+            if (GetASNTag(data, &idx, &tag, ci->dataSz) < 0) {
+                ERROR_OUT(ASN_PARSE_E, exit_pk12par);
+            }
+
+            if (tag != (ASN_CONSTRUCTED | ASN_CONTEXT_SPECIFIC)) {
                 ERROR_OUT(ASN_PARSE_E, exit_pk12par);
             }
             if ((ret = GetLength(data, &idx, &size, ci->dataSz)) < 0) {
@@ -851,13 +1062,21 @@ int wc_PKCS12_parse(WC_PKCS12* pkcs12, const char* psw,
         else { /* type DATA */
             WOLFSSL_MSG("Parsing PKCS12 DATA Content Info Container");
             data = ci->data;
-            if (data[idx++] != (ASN_CONSTRUCTED | ASN_CONTEXT_SPECIFIC)) {
+            if (GetASNTag(data, &idx, &tag, ci->dataSz) < 0) {
+                ERROR_OUT(ASN_PARSE_E, exit_pk12par);
+            }
+
+            if (tag != (ASN_CONSTRUCTED | ASN_CONTEXT_SPECIFIC)) {
                 ERROR_OUT(ASN_PARSE_E, exit_pk12par);
             }
             if ((ret = GetLength(data, &idx, &size, ci->dataSz)) <= 0) {
                 goto exit_pk12par;
             }
-            if (data[idx++] != ASN_OCTET_STRING) {
+
+            if (GetASNTag(data, &idx, &tag, ci->dataSz) < 0) {
+                ERROR_OUT(ASN_PARSE_E, exit_pk12par);
+            }
+            if (tag != ASN_OCTET_STRING) {
                 ERROR_OUT(ASN_PARSE_E, exit_pk12par);
             }
             if ((ret = GetLength(data, &idx, &size, ci->dataSz)) < 0) {
@@ -887,11 +1106,15 @@ int wc_PKCS12_parse(WC_PKCS12* pkcs12, const char* psw,
             switch (oid) {
                 case WC_PKCS12_KeyBag: /* 667 */
                     WOLFSSL_MSG("PKCS12 Key Bag found");
-                    if (data[idx++] !=
-                                     (ASN_CONSTRUCTED | ASN_CONTEXT_SPECIFIC)) {
+                    if (GetASNTag(data, &idx, &tag, ci->dataSz) < 0) {
+                        ERROR_OUT(ASN_PARSE_E, exit_pk12par);
+                    }
+                    if (tag != (ASN_CONSTRUCTED | ASN_CONTEXT_SPECIFIC)) {
                         ERROR_OUT(ASN_PARSE_E, exit_pk12par);
                     }
                     if ((ret = GetLength(data, &idx, &size, ci->dataSz)) <= 0) {
+                        if (ret == 0)
+                            ret = ASN_PARSE_E;
                         goto exit_pk12par;
                     }
                     if (*pkey == NULL) {
@@ -921,8 +1144,10 @@ int wc_PKCS12_parse(WC_PKCS12* pkcs12, const char* psw,
                         byte* k;
 
                         WOLFSSL_MSG("PKCS12 Shrouded Key Bag found");
-                        if (data[idx++] !=
-                                     (ASN_CONSTRUCTED | ASN_CONTEXT_SPECIFIC)) {
+                        if (GetASNTag(data, &idx, &tag, ci->dataSz) < 0) {
+                            ERROR_OUT(ASN_PARSE_E, exit_pk12par);
+                        }
+                        if (tag != (ASN_CONSTRUCTED | ASN_CONTEXT_SPECIFIC)) {
                             ERROR_OUT(ASN_PARSE_E, exit_pk12par);
                         }
                         if ((ret = GetLength(data, &idx, &size,
@@ -983,8 +1208,10 @@ int wc_PKCS12_parse(WC_PKCS12* pkcs12, const char* psw,
                 {
                     WC_DerCertList* node;
                     WOLFSSL_MSG("PKCS12 Cert Bag found");
-                    if (data[idx++] !=
-                                     (ASN_CONSTRUCTED | ASN_CONTEXT_SPECIFIC)) {
+                    if (GetASNTag(data, &idx, &tag, ci->dataSz) < 0) {
+                        ERROR_OUT(ASN_PARSE_E, exit_pk12par);
+                    }
+                    if (tag != (ASN_CONSTRUCTED | ASN_CONTEXT_SPECIFIC)) {
                         ERROR_OUT(ASN_PARSE_E, exit_pk12par);
                     }
                     if ((ret = GetLength(data, &idx, &size, ci->dataSz)) < 0) {
@@ -1005,15 +1232,23 @@ int wc_PKCS12_parse(WC_PKCS12* pkcs12, const char* psw,
                         case WC_PKCS12_CertBag_Type1:  /* 675 */
                             /* type 1 */
                             WOLFSSL_MSG("PKCS12 cert bag type 1");
-                            if (data[idx++] !=
-                                     (ASN_CONSTRUCTED | ASN_CONTEXT_SPECIFIC)) {
+                            if (GetASNTag(data, &idx, &tag, ci->dataSz) < 0) {
+                                ERROR_OUT(ASN_PARSE_E, exit_pk12par);
+                            }
+                            if (tag != (ASN_CONSTRUCTED |
+                                        ASN_CONTEXT_SPECIFIC)) {
                                 ERROR_OUT(ASN_PARSE_E, exit_pk12par);
                             }
                             if ((ret = GetLength(data, &idx, &size, ci->dataSz))
                                                                          <= 0) {
+                                if (ret == 0)
+                                    ret = ASN_PARSE_E;
                                 goto exit_pk12par;
                             }
-                            if (data[idx++] != ASN_OCTET_STRING) {
+                            if (GetASNTag(data, &idx, &tag, ci->dataSz) < 0) {
+                                ERROR_OUT(ASN_PARSE_E, exit_pk12par);
+                            }
+                            if (tag != ASN_OCTET_STRING) {
                                 ERROR_OUT(ASN_PARSE_E, exit_pk12par);
 
                             }
@@ -1108,6 +1343,7 @@ int wc_PKCS12_parse(WC_PKCS12* pkcs12, const char* psw,
         /* free list, not wanted */
         wc_FreeCertList(certList, pkcs12->heap);
     }
+    (void)tailList; /* not used */
 
     ret = 0; /* success */
 
@@ -1306,7 +1542,7 @@ static int wc_PKCS12_create_key_bag(WC_PKCS12* pkcs12, WC_RNG* rng,
     XFREE(tmp, heap, DYNAMIC_TYPE_TMP_BUFFER);
     totalSz += length;
 
-    /* set begining sequence */
+    /* set beginning sequence */
     tmpSz = SetSequence(totalSz, out);
     XMEMMOVE(out + tmpSz, out + MAX_SEQ_SZ, totalSz);
 
@@ -2075,4 +2311,4 @@ void* wc_PKCS12_GetHeap(WC_PKCS12* pkcs12)
 
 #undef ERROR_OUT
 
-#endif /* !NO_ASN && !NO_PWDBASED */
+#endif /* !NO_ASN && !NO_PWDBASED && HAVE_PKCS12 */

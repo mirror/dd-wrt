@@ -78,6 +78,7 @@ tests/unit
 testsuite/testsuite.test
 tests/unit.test
 tests/bio_write_test.txt
+test-write-dhparams.pem
 testsuite/*.der
 testsuite/*.pem
 testsuite/*.raw
@@ -295,6 +296,7 @@ Backup
 UpgradeLog.htm
 *.aps
 *.VC.db
+*.filters
 
 IDE/INTIME-RTOS/Debug_*
 IDE/VS-ARM/.vs
@@ -318,3 +320,17 @@ scripts/memtest.txt
 doc/doxygen_warnings
 doc/html
 doc/pdf
+
+# XCODE Index
+IDE/XCODE/Index
+
+# ARM DS-5
+\.settings/
+\.cproject
+\.project
+
+# Renesas e2studio
+/IDE/Renesas/e2studio/Projects/test/src/smc_gen
+/IDE/Renesas/e2studio/Projects/test/trash
+/IDE/Renesas/e2studio/Projects/test/*.launch
+/IDE/Renesas/e2studio/Projects/test/*.scfg

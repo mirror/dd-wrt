@@ -37,7 +37,10 @@ ${MKDCMD} ${WOLFSSLLIB_TRG_DIR}/
 
 ${MKDCMD} ${WOLFSSLLIB_TRG_DIR}/src
 ${MKDCMD} ${WOLFSSLLIB_TRG_DIR}/wolfcrypt
+${MKDCMD} ${WOLFSSLLIB_TRG_DIR}/wolfcrypt/src
 ${MKDCMD} ${WOLFSSLLIB_TRG_DIR}/wolfssl
+${MKDCMD} ${WOLFSSLLIB_TRG_DIR}/test
+${MKDCMD} ${WOLFSSLLIB_TRG_DIR}/include
 
 popd > /dev/null             # $WOLFSSL_ESPIDFDIR
 pushd ${BASEDIR} > /dev/null # WOLFSSL TOP DIR
@@ -45,12 +48,20 @@ pushd ${BASEDIR} > /dev/null # WOLFSSL TOP DIR
 # copying ... files in src/ into $WOLFSSLLIB_TRG_DIR/src
 ${CPDCMD} ./src/*.c ${WOLFSSLLIB_TRG_DIR}/src/
 
-${CPDCMD} -r ./wolfcrypt/src/ ${WOLFSSLLIB_TRG_DIR}/wolfcrypt/
+
+${CPDCMD} -r ./wolfcrypt/src/*.{c,i} ${WOLFSSLLIB_TRG_DIR}/wolfcrypt/src/
+${CPDCMD} -r ./wolfcrypt/src/port  ${WOLFSSLLIB_TRG_DIR}/wolfcrypt/src/port/
 ${CPDCMD} -r ./wolfcrypt/test ${WOLFSSLLIB_TRG_DIR}/wolfcrypt/
 ${CPDCMD} -r ./wolfcrypt/benchmark ${WOLFSSLLIB_TRG_DIR}/wolfcrypt/
 
 ${CPDCMD} -r ./wolfssl/*.h ${WOLFSSLLIB_TRG_DIR}/wolfssl/
 ${CPDCMD} -r ./wolfssl/wolfcrypt ${WOLFSSLLIB_TRG_DIR}/wolfssl/
+# user_settings.h
+${CPDCMD} -r ${WOLFSSL_ESPIDFDIR}/user_settings.h ${WOLFSSLLIB_TRG_DIR}/include/
+${CPDCMD} -r ${WOLFSSL_ESPIDFDIR}/dummy_config_h ${WOLFSSLLIB_TRG_DIR}/include/config.h
+
+# unit test app
+${CPDCMD} -r ${WOLFSSL_ESPIDFDIR}/test/* ${WOLFSSLLIB_TRG_DIR}/test/
 
 popd > /dev/null # 
 
@@ -63,23 +74,19 @@ pushd ${BASEDIR} > /dev/null # WOLFSSL TOP DIR
 ${RMDCMD} ${WOLFSSLEXP_TRG_DIR}/wolfssl_benchmark/
 ${MKDCMD} ${WOLFSSLEXP_TRG_DIR}/wolfssl_benchmark/
 ${MKDCMD} ${WOLFSSLEXP_TRG_DIR}/wolfssl_benchmark/main/
-${MKDCMD} ${WOLFSSLEXP_TRG_DIR}/wolfssl_benchmark/main/include
 
 ${CPDCMD} -r ./wolfcrypt/benchmark/benchmark.c ${WOLFSSLEXP_TRG_DIR}/wolfssl_benchmark/main/
 ${CPDCMD} -r ${WOLFSSL_ESPIDFDIR}/examples/wolfssl_benchmark/* ${WOLFSSLEXP_TRG_DIR}/wolfssl_benchmark/
 ${CPDCMD} -r ${WOLFSSL_ESPIDFDIR}/examples/wolfssl_benchmark/main/* ${WOLFSSLEXP_TRG_DIR}/wolfssl_benchmark/main/
-${CPDCMD} -r ${WOLFSSL_ESPIDFDIR}/examples/wolfssl_benchmark/main/include/* ${WOLFSSLEXP_TRG_DIR}/wolfssl_benchmark/main/include/
 
 # Crypt Test program
 ${RMDCMD} ${WOLFSSLEXP_TRG_DIR}/wolfssl_test/
 ${MKDCMD} ${WOLFSSLEXP_TRG_DIR}/wolfssl_test/
 ${MKDCMD} ${WOLFSSLEXP_TRG_DIR}/wolfssl_test/main/
-${MKDCMD} ${WOLFSSLEXP_TRG_DIR}/wolfssl_test/main/include
 
 ${CPDCMD} -r ./wolfcrypt/test/test.c ${WOLFSSLEXP_TRG_DIR}/wolfssl_test/main/
 ${CPDCMD} -r ${WOLFSSL_ESPIDFDIR}/examples/wolfssl_test/* ${WOLFSSLEXP_TRG_DIR}/wolfssl_test/
 ${CPDCMD} -r ${WOLFSSL_ESPIDFDIR}/examples/wolfssl_test/main/* ${WOLFSSLEXP_TRG_DIR}/wolfssl_test/main/
-${CPDCMD} -r ${WOLFSSL_ESPIDFDIR}/examples/wolfssl_test/main/include/* ${WOLFSSLEXP_TRG_DIR}/wolfssl_test/main/include/
 
 # TLS Client program
 ${RMDCMD} ${WOLFSSLEXP_TRG_DIR}/wolfssl_client/

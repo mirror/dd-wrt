@@ -1,6 +1,6 @@
 /* pwdbased.c
  *
- * Copyright (C) 2006-2017 wolfSSL Inc.
+ * Copyright (C) 2006-2019 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -41,6 +41,8 @@
     #include <wolfcrypt/src/misc.c>
 #endif
 
+
+#ifdef HAVE_PBKDF1
 
 /* PKCS#5 v1.5 with non standard extension to optionally derive the extra data (IV) */
 int wc_PBKDF1_ex(byte* key, int keyLen, byte* iv, int ivLen,
@@ -165,6 +167,9 @@ int wc_PBKDF1(byte* output, const byte* passwd, int pLen, const byte* salt,
         passwd, pLen, salt, sLen, iterations, hashType, NULL);
 }
 
+#endif /* HAVE_PKCS5 */
+
+#ifdef HAVE_PBKDF2
 
 int wc_PBKDF2(byte* output, const byte* passwd, int pLen, const byte* salt,
            int sLen, int iterations, int kLen, int hashType)
@@ -198,8 +203,10 @@ int wc_PBKDF2(byte* output, const byte* passwd, int pLen, const byte* salt,
     if (buffer == NULL)
         return MEMORY_E;
     hmac = (Hmac*)XMALLOC(sizeof(Hmac), NULL, DYNAMIC_TYPE_HMAC);
-    if (buffer == NULL)
+    if (hmac == NULL) {
+        XFREE(buffer, NULL, DYNAMIC_TYPE_TMP_BUFFER);
         return MEMORY_E;
+    }
 #endif
 
     ret = wc_HmacInit(hmac, NULL, INVALID_DEVID);
@@ -262,6 +269,10 @@ int wc_PBKDF2(byte* output, const byte* passwd, int pLen, const byte* salt,
 
     return ret;
 }
+
+#endif /* HAVE_PBKDF2 */
+
+#ifdef HAVE_PKCS12
 
 /* helper for PKCS12_PBKDF(), does hash operation */
 static int DoPKCS12Hash(int hashType, byte* buffer, word32 totalLen,
@@ -500,6 +511,8 @@ int wc_PKCS12_PBKDF_ex(byte* output, const byte* passwd, int passLen,
     return ret;
 }
 
+#endif /* HAVE_PKCS12 */
+
 #ifdef HAVE_SCRYPT
 /* Rotate the 32-bit value a by b bits to the left.
  *
@@ -735,9 +748,6 @@ end:
 
     return ret;
 }
-#endif
-
-#undef WC_MAX_DIGEST_SIZE
+#endif /* HAVE_SCRYPT */
 
 #endif /* NO_PWDBASED */
-

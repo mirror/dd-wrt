@@ -11,7 +11,7 @@
 #
 #     $ ./fips-check [version] [keep]
 #
-#     - version: linux (default), ios, android, windows, freertos, linux-ecc, netbsd-selftest, linuxv2
+#     - version: linux (default), ios, android, windows, freertos, linux-ecc, netbsd-selftest, linuxv2, fips-ready, stm32l4-v2
 #
 #     - keep: (default off) XXX-fips-test temp dir around for inspection
 #
@@ -31,6 +31,9 @@ Platform is one of:
     sgx
     netos-7.6
     linuxv2 (FIPSv2, use for Win10)
+    fips-ready
+    stm32l4-v2 (FIPSv2, use for STM32L4)
+    wolfrand
 Keep (default off) retains the XXX-fips-test temp dir for inspection.
 
 Example:
@@ -47,10 +50,6 @@ LINUX_ECC_FIPS_VERSION=v3.10.3
 LINUX_ECC_FIPS_REPO=git@github.com:wolfSSL/fips.git
 LINUX_ECC_CRYPT_VERSION=v3.2.6
 LINUX_ECC_CRYPT_REPO=git@github.com:cyassl/cyassl.git
-
-LINUXV2_FIPS_VERSION=WCv4-stable
-LINUXV2_FIPS_REPO=git@github.com:wolfSSL/fips.git
-LINUXV2_CRYPT_VERSION=WCv4-stable
 
 IOS_FIPS_VERSION=v3.4.8a
 IOS_FIPS_REPO=git@github.com:wolfSSL/fips.git
@@ -93,16 +92,21 @@ NETOS_7_6_CRYPT_REPO=git@github.com:cyassl/cyassl.git
 
 # non-FIPS, CAVP only but pull in selftest
 # will reset above variables below in platform switch
-NETBSD_FIPS_VERSION=v3.14.2a
+NETBSD_FIPS_VERSION=v3.14.2b
 NETBSD_FIPS_REPO=git@github.com:wolfssl/fips.git
 NETBSD_CRYPT_VERSION=v3.14.2
 NETBSD_CRYPT_REPO=git@github.com:wolfssl/wolfssl.git
+
+STM32L4_V2_FIPS_VERSION=WCv4.0.1-stable
+STM32L4_V2_FIPS_REPO=git@github.com:wolfSSL/fips.git
+STM32L4_V2_CRYPT_VERSION=WCv4.0.1-stable
 
 FIPS_SRCS=( fips.c fips_test.c )
 WC_MODS=( aes des3 sha sha256 sha512 rsa hmac random )
 TEST_DIR=XXX-fips-test
 CRYPT_INC_PATH=cyassl/ctaocrypt
 CRYPT_SRC_PATH=ctaocrypt/src
+RNG_VERSION=v3.6.0
 FIPS_OPTION=v1
 CAVP_SELFTEST_ONLY="no"
 GIT="git -c advice.detachedHead=false"
@@ -156,14 +160,13 @@ linux-ecc)
   CRYPT_REPO=$LINUX_ECC_CRYPT_REPO
   ;;
 linuxv2)
-  FIPS_VERSION=$LINUXV2_FIPS_VERSION
-  FIPS_REPO=$LINUXV2_FIPS_REPO
-  CRYPT_VERSION=$LINUXV2_CRYPT_VERSION
+  FIPS_VERSION=WCv4-stable
+  FIPS_REPO=git@github.com:wolfssl/fips.git
+  CRYPT_VERSION=WCv4-stable
   CRYPT_INC_PATH=wolfssl/wolfcrypt
   CRYPT_SRC_PATH=wolfcrypt/src
-# Replace the WC_MODS list for now. Do not want to copy over random.c yet.
-  WC_MODS=( aes des3 sha sha256 sha512 rsa hmac )
-  WC_MODS+=( cmac dh ecc )
+  WC_MODS+=( cmac dh ecc sha3 )
+  RNG_VERSION=WCv4-rng-stable
   FIPS_SRCS+=( wolfcrypt_first.c wolfcrypt_last.c )
   FIPS_INCS=( fips.h )
   FIPS_OPTION=v2
@@ -191,6 +194,41 @@ netos-7.6)
   CRYPT_VERSION=$NETOS_7_6_CRYPT_VERSION
   CRYPT_REPO=$NETOS_7_6_CRYPT_REPO
   ;;
+fips-ready)
+  FIPS_REPO="git@github.com:wolfssl/fips.git"
+  CRYPT_REPO="git@github.com:wolfssl/wolfssl.git"
+  CRYPT_INC_PATH=wolfssl/wolfcrypt
+  CRYPT_SRC_PATH=wolfcrypt/src
+  FIPS_SRCS+=( wolfcrypt_first.c wolfcrypt_last.c )
+  FIPS_INCS=( fips.h )
+  FIPS_OPTION=ready
+  ;;
+stm32l4-v2)
+  FIPS_VERSION=$STM32L4_V2_FIPS_VERSION
+  FIPS_REPO=$STM32L4_V2_FIPS_REPO
+  CRYPT_VERSION=$STM32L4_V2_CRYPT_VERSION
+  CRYPT_INC_PATH=wolfssl/wolfcrypt
+  CRYPT_SRC_PATH=wolfcrypt/src
+# Replace the WC_MODS list for now. Do not want to copy over random.c yet.
+  WC_MODS=( aes des3 sha sha256 sha512 rsa hmac )
+  WC_MODS+=( cmac dh ecc )
+  FIPS_SRCS+=( wolfcrypt_first.c wolfcrypt_last.c )
+  FIPS_INCS=( fips.h )
+  FIPS_OPTION=v2
+  ;;
+wolfrand)
+  FIPS_REPO=git@github.com:wolfssl/fips.git
+  FIPS_VERSION=WRv4-stable
+  CRYPT_REPO=git@github.com:wolfssl/wolfssl.git
+  CRYPT_VERSION=WCv4-stable
+  CRYPT_INC_PATH=wolfssl/wolfcrypt
+  CRYPT_SRC_PATH=wolfcrypt/src
+  RNG_VERSION=WCv4-rng-stable
+  WC_MODS=( hmac sha256 random )
+  FIPS_SRCS+=( wolfcrypt_first.c wolfcrypt_last.c )
+  FIPS_INCS=( fips.h )
+  FIPS_OPTION=rand
+  ;;
 *)
   Usage
   exit 1
@@ -217,32 +255,52 @@ then
         cp "old-tree/$CRYPT_INC_PATH/${MOD}.h" $CRYPT_INC_PATH
     done
 
-    # The following is temporary. We are using random.c from a separate release
+    # We are using random.c from a separate release.
     # This is forcefully overwriting any other checkout of the cyassl sources.
     # Removing this as default behavior for SGX and netos projects.
     if [ "x$CAVP_SELFTEST_ONLY" == "xno" ] && [ "x$PLATFORM" != "xsgx" ] && \
        [ "x$PLATFORM" != "xnetos-7.6" ];
     then
         pushd old-tree || exit 2
-        $GIT fetch origin v3.6.0
+        $GIT fetch origin $RNG_VERSION
         $GIT checkout FETCH_HEAD
         popd || exit 2
         cp "old-tree/$CRYPT_SRC_PATH/random.c" $CRYPT_SRC_PATH
         cp "old-tree/$CRYPT_INC_PATH/random.h" $CRYPT_INC_PATH
     fi
-else
+elif [ "x$FIPS_OPTION" == "xv2" ] || [ "x$FIPS_OPTION" == "xrand" ]
+then
     $GIT branch --no-track "my$CRYPT_VERSION" $CRYPT_VERSION
     # Checkout the fips versions of the wolfCrypt files from the repo.
     for MOD in "${WC_MODS[@]}"
     do
         $GIT checkout "my$CRYPT_VERSION" -- "$CRYPT_SRC_PATH/$MOD.c" "$CRYPT_INC_PATH/$MOD.h"
     done
+
+    $GIT branch --no-track "my$RNG_VERSION" $RNG_VERSION
+    # Checkout the fips versions of the wolfCrypt files from the repo.
+    $GIT checkout "my$RNG_VERSION" -- "$CRYPT_SRC_PATH/random.c" "$CRYPT_INC_PATH/random.h"
+elif [ "x$FIPS_OPTION" == "xready" ]
+then
+    echo "Don't need to copy anything in particular for FIPS Ready."
+else
+    echo "fips-check: Invalid FIPS option."
+    exit 1
 fi
 
 # clone the FIPS repository
-if ! $GIT clone --depth 1 -b $FIPS_VERSION $FIPS_REPO fips; then
-    echo "fips-check: Couldn't checkout the FIPS repository."
-    exit 1
+if [ "x$FIPS_OPTION" != "xready" ]
+then
+    if ! $GIT clone --depth 1 -b $FIPS_VERSION $FIPS_REPO fips; then
+        echo "fips-check: Couldn't checkout the FIPS repository."
+        exit 1
+    fi
+else
+    if ! $GIT clone --depth 1 $FIPS_REPO fips; then
+        echo "fips-check: Couldn't checkout the FIPS repository."
+        exit 1
+    fi
+    FIPS_OPTION="v2"
 fi
 
 for SRC in "${FIPS_SRCS[@]}"

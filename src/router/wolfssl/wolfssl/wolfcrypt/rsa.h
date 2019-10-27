@@ -1,6 +1,6 @@
 /* rsa.h
  *
- * Copyright (C) 2006-2017 wolfSSL Inc.
+ * Copyright (C) 2006-2019 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -80,6 +80,10 @@
 #include "xsecure_rsa.h"
 #endif
 
+#if defined(WOLFSSL_CRYPTOCELL)
+    #include <wolfssl/wolfcrypt/port/arm/cryptoCell.h>
+#endif
+
 #ifdef __cplusplus
     extern "C" {
 #endif
@@ -155,7 +159,7 @@ struct RsaKey {
 #ifdef WC_RSA_BLINDING
     WC_RNG* rng;                              /* for PrivateDecrypt blinding */
 #endif
-#ifdef WOLF_CRYPTO_DEV
+#ifdef WOLF_CRYPTO_CB
     int   devId;
 #endif
 #ifdef WOLFSSL_ASYNC_CRYPT
@@ -178,6 +182,13 @@ struct RsaKey {
 #endif
 #ifdef WC_RSA_NONBLOCK
     RsaNb* nb;
+#endif
+#ifdef WOLFSSL_AFALG_XILINX_RSA
+    int alFd;
+    int rdFd;
+#endif
+#if defined(WOLFSSL_CRYPTOCELL)
+    rsa_context_t ctx;
 #endif
 };
 
@@ -309,7 +320,7 @@ WOLFSSL_API int wc_RsaDirect(byte* in, word32 inLen, byte* out, word32* outSz,
                    RsaKey* key, int type, WC_RNG* rng);
 #endif
 
-#endif /* HAVE_FIPS*/
+#endif /* HAVE_FIPS */
 
 WOLFSSL_API int  wc_RsaFlattenPublicKey(RsaKey*, byte*, word32*, byte*,
                                                                        word32*);

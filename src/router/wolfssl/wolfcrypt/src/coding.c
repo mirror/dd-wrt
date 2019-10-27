@@ -1,6 +1,6 @@
 /* coding.c
  *
- * Copyright (C) 2006-2017 wolfSSL Inc.
+ * Copyright (C) 2006-2019 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -130,6 +130,10 @@ int Base64_Decode(const byte* in, word32 inLen, byte* out, word32* outLen)
             }
         }
     }
+/* If the output buffer has a room for an extra byte, add a null terminator */
+    if (out && *outLen > i)
+        out[i]= '\0';
+
     *outLen = i;
 
     return 0;
@@ -320,10 +324,15 @@ static int DoBase64_Encode(const byte* in, word32 inLen, byte* out,
 
     if (i != outSz && escaped != 1 && ret == 0)
         return ASN_INPUT_E;
+/* If the output buffer has a room for an extra byte, add a null terminator */
+    if (out && *outLen > i)
+        out[i]= '\0';
 
     *outLen = i;
-    if(ret == 0)
+
+    if (ret == 0)
         return getSzOnly ? LENGTH_ONLY_E : 0;
+
     return ret;
 }
 

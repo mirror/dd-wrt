@@ -1,6 +1,6 @@
 /* port/ti/ti-hash.c
  *
- * Copyright (C) 2006-2017 wolfSSL Inc.
+ * Copyright (C) 2006-2019 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -104,6 +104,8 @@ static int hashGetHash(wolfssl_TI_Hash *hash, byte* result, word32 algo, word32 
 #else
     (void) hash;
     (void) algo;
+
+    XMEMSET(h, 0, sizeof(h));
 #endif
     XMEMCPY(result, h, hsize);
 
