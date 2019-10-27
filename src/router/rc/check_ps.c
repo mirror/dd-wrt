@@ -79,7 +79,7 @@ struct mon mons[] = {
 	{ "upnp", M_LAN, "upnp_enable", "1", NULL, NULL, NULL },
 #endif
 	{ "process_monitor", M_LAN, NULL, NULL, NULL, NULL, NULL },
-	{ "httpd", M_LAN, "http_enable", "1", "https_enable", "1", &check_httpd},
+	{ "httpd", M_LAN, "http_enable", "1", "https_enable", "1", &check_httpd },
 #ifdef HAVE_UDHCPD
 	{ "udhcpd", M_LAN, NULL, NULL, NULL, NULL, NULL },
 #endif
