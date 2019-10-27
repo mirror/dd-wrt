@@ -42,7 +42,7 @@ static void *load_service(const char *name)
 {
 	void *handle = dlopen(SERVICE_MODULE, RTLD_LAZY);
 	if (!handle) {
-		fprintf(stderr, "Cannot open library: %s", dlerror());
+		dd_logerror("servicemanager", "Cannot open library: %s", dlerror());
 	}
 
 	if (handle == NULL && name != NULL) {
@@ -51,7 +51,7 @@ static void *load_service(const char *name)
 		sprintf(dl, "/usr/lib/%s_service.so", name);
 		handle = dlopen(dl, RTLD_LAZY);
 		if (handle == NULL) {
-			fprintf(stderr, "cannot load %s\n", dl);
+			dd_logerror("servicemanager", "cannot load %s\n", dl);
 			return NULL;
 		}
 	}
@@ -156,7 +156,7 @@ static int handle_service(const int method, const char *name, int force)
 			char dep_name[64];
 			char proc_name[64];
 			snprintf(dep_name, sizeof(dep_name), "%s_deps", name);
-			char *(*dep_func)(void) = (char *(*)(void))dlsym(handle, dep_name);
+			char *(*dep_func)(void) =(char * (*)(void))dlsym(handle, dep_name);
 			if (dep_func) {
 				deps = dep_func();
 				dd_debug(DEBUG_SERVICE, "%s exists, check nvram params %s\n", dep_name, deps);
@@ -164,7 +164,7 @@ static int handle_service(const int method, const char *name, int force)
 			}
 			if (!state) {
 				snprintf(proc_name, sizeof(proc_name), "%s_proc", name);
-				char *(*proc_func)(void) = (char *(*)(void))dlsym(handle, proc_name);
+				char *(*proc_func)(void) =(char * (*)(void))dlsym(handle, proc_name);
 				if (proc_func) {
 					dd_debug(DEBUG_SERVICE, "%s exists, check process\n", proc_name);
 					char *proc = proc_func();
@@ -257,7 +257,7 @@ static void start_servicei(char *name, int param)
 	if (fptr)
 		(*fptr) (param);
 	else
-		fprintf(stderr, "function %s not found \n", service);
+		dd_logerror("servicemanager", "function %s not found \n", service);
 	dlclose(handle);
 	return;
 }
@@ -283,7 +283,7 @@ static int start_main(char *name, int argc, char **argv)
 	if (fptr)
 		ret = (*fptr) (argc, argv);
 	else
-		fprintf(stderr, "function %s not found \n", service);
+		dd_logerror("servicemanager", "function %s not found \n", service);
 	dlclose(handle);
 	return ret;
 }
@@ -304,15 +304,15 @@ static int stop_running_main(int argc, char **argv)
 	while (stops_running != NULL && stop_running() && dead < 100) {
 #if (!defined(HAVE_X86) && !defined(HAVE_NEWPORT) && !defined(HAVE_RB600)) || defined(HAVE_WDR4900)
 		if (nvram_matchi("service_debugrunnings", 1))
-			fprintf(stderr, "%s: dead: %d running %d\n", __func__, dead, *stops_running);
+			dd_loginfo("servicemanager", "%s: dead: %d running %d\n", __func__, dead, *stops_running);
 #endif
 		if (dead == 0)
-			fprintf(stderr, "waiting for services to finish (%d)...\n", *stops_running);
+			dd_loginfo("servicemanager", "waiting for services to finish (%d)...\n", *stops_running);
 		usleep(100 * 1000);
 		dead++;
 	}
 	if (dead == 50) {
-		fprintf(stderr, "stopping processes taking too long!!!\n");
+		dd_logerror("servicemanager", "stopping processes taking too long!!!\n");
 	} else if (stops_running != NULL && *stops_running == 0) {
 		int *run = stops_running;
 		stops_running = NULL;

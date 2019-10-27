@@ -439,7 +439,8 @@ static int write_main(int argc, char *argv[])
 				}
 			}
 			if (fail) {
-				dd_logerror("flash", "Error: board id! but %s expected %s %s %s %s %s\n", board_id, c?netgear_ids[i].name:"", c==2?"and":"or", c>1?netgear_ids[i].name2:"", c>2?" or ":"", c>2?netgear_ids[i].name3:"");
+				dd_logerror("flash", "Error: board id! but %s expected %s %s %s %s %s\n", board_id, c ? netgear_ids[i].name : "", c == 2 ? "and" : "or", c > 1 ? netgear_ids[i].name2 : "",
+					    c > 2 ? " or " : "", c > 2 ? netgear_ids[i].name3 : "");
 				return -1;
 			}
 			if (i == (sizeof(netgear_ids) / sizeof(netgear_ids[0]))) {
@@ -499,12 +500,12 @@ static int write_main(int argc, char *argv[])
 	// #endif
 	mtdtype = mtd_info.type;
 	if (mtdtype == MTD_NANDFLASH)
-		dd_loginfo("flash",  "Flash is NAND\n");
+		dd_loginfo("flash", "Flash is NAND\n");
 
 	/* 
 	 * See if we have enough memory to store the whole file 
 	 */
-	dd_loginfo("flash",  "freeram=[%ld] bufferram=[%ld]\n", info.freeram, info.bufferram);
+	dd_loginfo("flash", "freeram=[%ld] bufferram=[%ld]\n", info.freeram, info.bufferram);
 	int mul = 1;		// temporarily use 1 instead of 4 until we
 
 	// found a a solution
@@ -531,7 +532,7 @@ static int write_main(int argc, char *argv[])
 		erase_info.length = mtd_info.erasesize * mul;
 		dd_loginfo("flash", "The free memory is not enough, writing image per %d bytes.\n", erase_info.length);
 		if (!(buf = malloc(erase_info.length))) {
-			dd_logerror("flash", "memory allocation of %d bytes failed\n", erase_info.length); 
+			dd_logerror("flash", "memory allocation of %d bytes failed\n", erase_info.length);
 			perror("malloc");
 			goto fail;
 		}

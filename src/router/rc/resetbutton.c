@@ -794,8 +794,7 @@ static void handle_reset(void)
 {
 
 	if ((brand & 0x000f) != 0x000f) {
-		fprintf(stderr, "resetbutton: factory default.\n");
-		dd_syslog(LOG_DEBUG, "Reset button: restoring factory defaults now!\n");
+		dd_loginfo("resetbutton", "factory default.\n");
 #if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_GATEWORX) && !defined(HAVE_LS2) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_LS5) && !defined(HAVE_LSX) && !defined(HAVE_SOLO51)
 		led_control(LED_DIAG, LED_ON);
 #elif defined(HAVE_WHRHPGN)  || defined(HAVE_WZRG300NH) || defined(HAVE_WZRHPAG300NH) || defined(HAVE_WZRG450)
@@ -1651,7 +1650,7 @@ static void resetbtn_period_check(int sig)
 		}
 		if (++_count > RESET_WAIT_COUNT) {
 			if (action != ACT_IDLE) {	// Don't execute during upgrading
-				fprintf(stderr, "resetbutton: nothing to do...\n");
+				dd_loginfo("resetbutton", "nothing to do...\n");
 				resetbtn_alarmtimer(0, 0);	/* Stop the timer alarm */
 				return;
 			}
@@ -1660,7 +1659,7 @@ static void resetbtn_period_check(int sig)
 	} else if ((sesgpio != 0xfff) && (((sesgpio & 0x100) == 0 && (val & pushses)) || ((sesgpio & 0x100) == 0x100 && !(val & pushses)))) {
 		if (!ses_pushed && (++_count > SES_WAIT)) {
 			if (action != ACT_IDLE) {	// Don't execute during upgrading
-				fprintf(stderr, "resetbutton: nothing to do...\n");
+				dd_loginfo("resetbutton", "nothing to do...\n");
 				resetbtn_alarmtimer(0, 0);	/* Stop the timer alarm */
 				return;
 			}
@@ -1671,7 +1670,7 @@ static void resetbtn_period_check(int sig)
 	} else if ((wifi24gpio != 0xfff && wifi5gpio == 0xfff) && (((wifi24gpio & 0x100) == 0 && (val & pushwifi24)) || ((wifi24gpio & 0x100) == 0x100 && !(val & pushwifi24)))) {
 		if (!wifi24_pushed && (++_count > SES_WAIT)) {
 			if (action != ACT_IDLE) {	// Don't execute during upgrading
-				fprintf(stderr, "resetbutton: nothing to do...\n");
+				dd_loginfo("resetbutton", "nothing to do...\n");
 				resetbtn_alarmtimer(0, 0);	/* Stop the timer alarm */
 				return;
 			}
@@ -1683,7 +1682,7 @@ static void resetbtn_period_check(int sig)
 	} else if ((wifi24gpio != 0xfff && wifi5gpio != 0xfff) && (((wifi24gpio & 0x100) == 0 && (val & pushwifi24)) || ((wifi24gpio & 0x100) == 0x100 && !(val & pushwifi24)))) {
 		if (!wifi24_pushed && (++_count > SES_WAIT)) {
 			if (action != ACT_IDLE) {	// Don't execute during upgrading
-				fprintf(stderr, "resetbutton: nothing to do...\n");
+				dd_loginfo("resetbutton", "nothing to do...\n");
 				resetbtn_alarmtimer(0, 0);	/* Stop the timer alarm */
 				return;
 			}
@@ -1694,7 +1693,7 @@ static void resetbtn_period_check(int sig)
 	} else if ((wifi24gpio != 0xfff && wifi5gpio != 0xfff) && (((wifi5gpio & 0x100) == 0 && (val & pushwifi5)) || ((wifi5gpio & 0x100) == 0x100 && !(val & pushwifi5)))) {
 		if (!wifi5_pushed && (++_count > SES_WAIT)) {
 			if (action != ACT_IDLE) {	// Don't execute during upgrading
-				fprintf(stderr, "resetbutton: nothing to do...\n");
+				dd_loginfo("resetbutton", "nothing to do...\n");
 				resetbtn_alarmtimer(0, 0);	/* Stop the timer alarm */
 				return;
 			}
@@ -1720,21 +1719,21 @@ static void resetbtn_period_check(int sig)
 
 				char *upgrade_script = "firmware_upgrade.sh";
 				char call[32];
-				fprintf(stderr, "[RESETBUTTON] check:%d count:%d\n", pidof(upgrade_script), _count);
+				dd_loginfo("resetbutton", "[RESETBUTTON] check:%d count:%d\n", pidof(upgrade_script), _count);
 				if (pidof(upgrade_script) < 0) {
 					sprintf(call, "/%s/%s", nvram_safe_get("fw_upgrade_dir"), upgrade_script);
 					if (f_exists(call)) {
-						fprintf(stderr, "[RESETBUTTON] trigger update script: %s\n", call);
+						dd_loginfo("resetbutton", "[RESETBUTTON] trigger update script: %s\n", call);
 						system(call);
 					} else {
-						fprintf(stderr, "[RESETBUTTON] upgrade script not found\n");
+						dd_loginfo("resetbutton", "[RESETBUTTON] upgrade script not found\n");
 						led_control(LED_DIAG, LED_OFF);
 					}
 				}
 			}
 #else
 			if (action != ACT_IDLE) {	// Don't execute during upgrading
-				fprintf(stderr, "resetbutton: nothing to do...\n");
+				dd_loginfo("resetbutton", "nothing to do...\n");
 				resetbtn_alarmtimer(0, 0);	/* Stop the timer alarm */
 				return;
 			}
