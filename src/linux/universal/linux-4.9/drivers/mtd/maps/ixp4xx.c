@@ -58,15 +58,15 @@
  */
 #ifndef __ARMEB__
 #ifndef CONFIG_MTD_CFI_BE_BYTE_SWAP
-#  error CONFIG_MTD_CFI_BE_BYTE_SWAP required
+#error CONFIG_MTD_CFI_BE_BYTE_SWAP required
 #endif
 
-static inline u16 flash_read16(void __iomem *addr)
+static inline u16 flash_read16(void __iomem * addr)
 {
 	return be16_to_cpu(__raw_readw((void __iomem *)((unsigned long)addr ^ 0x2)));
 }
 
-static inline void flash_write16(u16 d, void __iomem *addr)
+static inline void flash_write16(u16 d, void __iomem * addr)
 {
 	__raw_writew(cpu_to_be16(d), (void __iomem *)((unsigned long)addr ^ 0x2));
 }
@@ -76,12 +76,12 @@ static inline void flash_write16(u16 d, void __iomem *addr)
 
 #else
 
-static inline u16 flash_read16(const void __iomem *addr)
+static inline u16 flash_read16(const void __iomem * addr)
 {
 	return __raw_readw(addr);
 }
 
-static inline void flash_write16(u16 d, void __iomem *addr)
+static inline void flash_write16(u16 d, void __iomem * addr)
 {
 	__raw_writew(d, addr);
 }
@@ -102,10 +102,9 @@ static map_word ixp4xx_read16(struct map_info *map, unsigned long ofs)
  * when attached to a 16-bit wide device (such as the 28F128J3A),
  * so we can't just memcpy_fromio().
  */
-static void ixp4xx_copy_from(struct map_info *map, void *to,
-			     unsigned long from, ssize_t len)
+static void ixp4xx_copy_from(struct map_info *map, void *to, unsigned long from, ssize_t len)
 {
-	u8 *dest = (u8 *) to;
+	u8 *dest = (u8 *)to;
 	void __iomem *src = map->virt + from;
 
 	if (len <= 0)
@@ -113,7 +112,7 @@ static void ixp4xx_copy_from(struct map_info *map, void *to,
 
 	if (from & 1) {
 		*dest++ = BYTE1(flash_read16(src));
-                src++;
+		src++;
 		--len;
 	}
 
@@ -123,7 +122,7 @@ static void ixp4xx_copy_from(struct map_info *map, void *to,
 		*dest++ = BYTE1(data);
 		src += 2;
 		len -= 2;
-        }
+	}
 
 	if (len > 0)
 		*dest++ = BYTE0(flash_read16(src));
@@ -154,32 +153,42 @@ struct ixp4xx_flash_info {
 	struct resource *res;
 };
 
-static const char * const probes[] = { "RedBoot", "cmdlinepart", NULL };
+static const char *const probes[] = { "RedBoot", "cmdlinepart", NULL };
 
 struct fis_image_desc {
-    unsigned char name[16];      // Null terminated name
-    unsigned long flash_base;    // Address within FLASH of image
-    unsigned long mem_base;      // Address in memory where it executes
-    unsigned long size;          // Length of image
-    unsigned long entry_point;   // Execution entry point
-    unsigned long data_length;   // Length of actual data
-    unsigned char _pad[256-(16+7*sizeof(unsigned long))];
-    unsigned long desc_cksum;    // Checksum over image descriptor
-    unsigned long file_cksum;    // Checksum over image data
+	unsigned char name[16];	// Null terminated name
+	unsigned long flash_base;	// Address within FLASH of image
+	unsigned long mem_base;	// Address in memory where it executes
+	unsigned long size;	// Length of image
+	unsigned long entry_point;	// Execution entry point
+	unsigned long data_length;	// Length of actual data
+	unsigned char _pad[256 - (16 + 7 * sizeof(unsigned long))];
+	unsigned long desc_cksum;	// Checksum over image descriptor
+	unsigned long file_cksum;	// Checksum over image data
 };
-
+#define BOOT 0
+#define LINUX 0x1
+#define ROOTFS 0x2
+#define DDWRT 0x3
+#define MAMPF 0x4
+#define NVRAM 0x5
+#define FIS 0x6
+#define DIR 0x7
 
 static struct mtd_partition dir_parts[] = {
-        { name: "RedBoot", offset: 0, size: 0x30000, },//, mask_flags: MTD_WRITEABLE, },
-        { name: "linux", offset: 0x30000, size: 0x390000, },
-        { name: "rootfs", offset: 0x0, size: 0x2b0000,}, //must be detected
-        { name: "ddwrt", offset: 0x0, size: 0x2b0000,}, //must be detected
-        { name: "mampf", offset: 0x3d0000, size: 0x10000, },
-        { name: "nvram", offset: 0x3d0000, size: 0x10000, },
-        { name: "FIS directory", offset: 0x3e0000, size: 0x10000, },
-        { name: "RedBoot config", offset: 0x3e0000, size: 0x10000, },
-        { name: "fullflash", offset: 0x3e0000, size: 0x10000, },
-        { name: NULL, },
+      { name: "RedBoot", offset: 0, size:0x30000, },
+				//, mask_flags: MTD_WRITEABLE, },
+      { name: "linux", offset: 0x30000, size:0x390000, },
+      { name: "rootfs", offset: 0x0, size:0x2b0000, },
+				//must be detected
+      { name: "ddwrt", offset: 0x0, size:0x2b0000, },
+				//must be detected
+      { name: "mampf", offset: 0x3d0000, size:0x10000, },
+      { name: "nvram", offset: 0x3d0000, size:0x10000, },
+      { name: "FIS directory", offset: 0x3e0000, size:0x10000, },
+      { name: "RedBoot config", offset: 0x3e0000, size:0x10000, },
+      { name: "fullflash", offset: 0x3e0000, size:0x10000, },
+      { name:NULL, },
 };
 
 /*static struct mtd_partition ixp_parts[] = {
@@ -196,7 +205,7 @@ static int ixp4xx_flash_remove(struct platform_device *dev)
 	struct flash_platform_data *plat = dev_get_platdata(&dev->dev);
 	struct ixp4xx_flash_info *info = platform_get_drvdata(dev);
 
-	if(!info)
+	if (!info)
 		return 0;
 
 	if (info->mtd) {
@@ -224,18 +233,17 @@ static int ixp4xx_flash_remove(struct platform_device *dev)
 
 #define AP71_MTDP_NUM 7
 
-
 static int ixp4xx_flash_probe(struct platform_device *dev)
 {
 	struct flash_platform_data *plat = dev_get_platdata(&dev->dev);
 	struct ixp4xx_flash_info *info;
-   	int result = -1;
+	int result = -1;
 	struct mtd_info *mtd;
 	int err = -1;
-	int offset=0;
+	int offset = 0;
 	char *buf;
 	unsigned char *p;
-	struct fis_image_desc *fis;  
+	struct fis_image_desc *fis;
 
 	if (!plat)
 		return -ENODEV;
@@ -246,13 +254,12 @@ static int ixp4xx_flash_probe(struct platform_device *dev)
 			return err;
 	}
 
-	info = devm_kzalloc(&dev->dev, sizeof(struct ixp4xx_flash_info),
-			    GFP_KERNEL);
-	if(!info) {
+	info = devm_kzalloc(&dev->dev, sizeof(struct ixp4xx_flash_info), GFP_KERNEL);
+	if (!info) {
 		err = -ENOMEM;
 		goto Error;
 	}
-	memset(info,0,sizeof(struct ixp4xx_flash_info));
+	memset(info, 0, sizeof(struct ixp4xx_flash_info));
 
 	platform_set_drvdata(dev, info);
 
@@ -271,9 +278,8 @@ static int ixp4xx_flash_probe(struct platform_device *dev)
 	info->map.bankwidth = 2;
 	info->map.name = dev_name(&dev->dev);
 	info->map.read = ixp4xx_read16,
-	info->map.write = ixp4xx_probe_write16,
-	info->map.copy_from = ixp4xx_copy_from,
-	printk(KERN_ERR "try to reserve 0x%08X with size of 0x%08X\n",dev->resource->start,dev->resource->end - dev->resource->start + 1);
+	    info->map.write = ixp4xx_probe_write16,
+	    info->map.copy_from = ixp4xx_copy_from, printk(KERN_ERR "try to reserve 0x%08X with size of 0x%08X\n", dev->resource->start, dev->resource->end - dev->resource->start + 1);
 	info->map.virt = devm_ioremap_resource(&dev->dev, dev->resource);
 	if (IS_ERR(info->map.virt)) {
 		err = PTR_ERR(info->map.virt);
@@ -288,165 +294,147 @@ static int ixp4xx_flash_probe(struct platform_device *dev)
 	info->mtd->dev.parent = &dev->dev;
 
 	/* Use the fast version */
-	info->map.write = ixp4xx_write16,
-
-	printk(KERN_EMERG "scanning for root partition\n");
+	info->map.write = ixp4xx_write16, printk(KERN_EMERG "scanning for root partition\n");
 	mtd = info->mtd;
 	offset = 0;
 	buf = info->map.virt;
-	int foundconfig=0;
-	int foundfis=0;
-	int filesyssize=0;
+	int foundconfig = 0;
+	int foundfis = 0;
+	int filesyssize = 0;
 	int tmplen;
 	int erasesize = mtd->erasesize;
-	#ifdef CONFIG_TONZE
-	erasesize=0x20000;
-	#endif
-	#ifdef CONFIG_NOP8670
-	erasesize=0x20000;
-	#endif
-	while((offset+erasesize)<mtd->size)
-	    {
-	    printk(KERN_EMERG "[0x%08X]\r",offset);
-	    if (*((__u32 *) buf) == SQUASHFS_MAGIC_SWAP || *((__u16 *) buf) == 0x1985) 
-		{
-	        struct squashfs_super_block *sb = (struct squashfs_super_block *) buf;
-		if (*((__u16 *) buf) != 0x1985)
-			{
-			filesyssize = le64_to_cpu(sb->bytes_used);
-			tmplen = offset + filesyssize;
-			tmplen +=  (erasesize - 1);
-			tmplen &= ~(erasesize - 1);
-			filesyssize = tmplen - offset;
+#ifdef CONFIG_TONZE
+	erasesize = 0x20000;
+#endif
+#ifdef CONFIG_NOP8670
+	erasesize = 0x20000;
+#endif
+	while ((offset + erasesize) < mtd->size) {
+		printk(KERN_EMERG "[0x%08X]\r", offset);
+		if (*((__u32 *)buf) == SQUASHFS_MAGIC_SWAP || *((__u16 *)buf) == 0x1985) {
+			struct squashfs_super_block *sb = (struct squashfs_super_block *)buf;
+			if (*((__u16 *)buf) != 0x1985) {
+				filesyssize = le64_to_cpu(sb->bytes_used);
+				tmplen = offset + filesyssize;
+				tmplen += (erasesize - 1);
+				tmplen &= ~(erasesize - 1);
+				filesyssize = tmplen - offset;
 			}
 
+			printk(KERN_EMERG "\nfound squashfs/jffs2 at %X\n", offset);
+			dir_parts[ROOTFS].offset = offset;
+			//detect now compex board
+			//printk(KERN_EMERG "id = %s\n",(char*)(info->map.virt+0x23d6));
+			if (!strncmp((char *)(info->map.virt + 0x23d6), "myloram.bin", 11)) {
+				printk(KERN_EMERG "Compex WP188 detected!\n");
+				dir_parts[BOOT].size = 0x40000;
+				dir_parts[BOOT].offset = 0;
+				dir_parts[DIR].size = 0x1000;
+				dir_parts[DIR].offset = mtd->size - 0x1000;
+				dir_parts[FIS].size = erasesize;
+				dir_parts[FIS].offset = mtd->size - erasesize;
 
-		printk(KERN_EMERG "\nfound squashfs/jffs2 at %X\n",offset);
-		dir_parts[2].offset = offset;
-		//detect now compex board
-		//printk(KERN_EMERG "id = %s\n",(char*)(info->map.virt+0x23d6));
-		if (!strncmp((char*)(info->map.virt+0x23d6),"myloram.bin",11))
-		    {
-		    printk(KERN_EMERG "Compex WP188 detected!\n");
-		    dir_parts[0].size=0x40000;
-		    dir_parts[0].offset=0;
-		    dir_parts[7].size=0x1000;
-		    dir_parts[7].offset = mtd->size-0x1000;
-		    dir_parts[6].size=erasesize;
-		    dir_parts[6].offset = mtd->size-erasesize;
+				long highest = dir_parts[FIS].offset;
+#ifdef CONFIG_TONZE
+				highest &= ~(erasesize - 1);
+#endif
+				dir_parts[ROOTFS].size = (highest - (erasesize * 2)) - dir_parts[ROOTFS].offset;
+				dir_parts[MAMPF].offset = highest - erasesize * 2;
+				dir_parts[MAMPF].size = erasesize;
+				dir_parts[NVRAM].offset = highest - erasesize;
+				dir_parts[NVRAM].size = erasesize;
+				dir_parts[LINUX].offset = 0x40000;
+				dir_parts[LINUX].size = dir_parts[ROOTFS].offset - dir_parts[LINUX].offset + dir_parts[ROOTFS].size;
+				goto def;
+			}
 
-		    long highest=dir_parts[6].offset;
-		    #ifdef CONFIG_TONZE
-		    highest&= ~(erasesize-1); 
-		    #endif
-		    dir_parts[2].size=(highest - (erasesize*2)) - dir_parts[2].offset;
-		    dir_parts[4].offset=highest - erasesize*2;
-		    dir_parts[4].size=erasesize;
-		    dir_parts[5].offset=highest - erasesize;
-		    dir_parts[5].size=erasesize;
-		    dir_parts[1].offset=0x40000;
-		    dir_parts[1].size=dir_parts[2].offset-dir_parts[1].offset+dir_parts[2].size;
-		    goto def;
-		    }
-		
-		
-		
-		//now scan for linux offset
+			//now scan for linux offset
 #ifdef CONFIG_NOP8670
-    		p=(unsigned char*)(info->map.virt+mtd->size-erasesize);
+			p = (unsigned char *)(info->map.virt + mtd->size - erasesize);
 #elif CONFIG_TONZE
-    		p=(unsigned char*)(info->map.virt+mtd->size-0x8000);
+			p = (unsigned char *)(info->map.virt + mtd->size - 0x8000);
 #else
-    		p=(unsigned char*)(info->map.virt+mtd->size-erasesize);
+			p = (unsigned char *)(info->map.virt + mtd->size - erasesize);
 #endif
-		fis = (struct fis_image_desc*)p;
-		printk(KERN_EMERG "scan redboot from %p\n",fis);
-		while(1)
-		{
-		if (fis->name[0]==0xff)
-		    {
-		    goto def;
-		    }
-		if (!strncmp(fis->name,"RedBoot",7) && strncmp(fis->name,"RedBoot config",14))
-		    {
-		    printk(KERN_EMERG "found RedBoot partition at [0x%08lX]\n",fis->flash_base);
-		    dir_parts[0].size=fis->size;
-		    }
-		if (!strncmp(fis->name,"RedBoot config",14))
-		    {
-		    printk(KERN_EMERG "found RedBoot config partition at [0x%08lX]\n",fis->flash_base);
-		    dir_parts[7].size=mtd->erasesize;
-		    dir_parts[7].offset=fis->flash_base&(mtd->size-1);
+			fis = (struct fis_image_desc *)p;
+			printk(KERN_EMERG "scan redboot from %p\n", fis);
+			while (1) {
+				if (fis->name[BOOT] == 0xff) {
+					goto def;
+				}
+				if (!strncmp(fis->name, "RedBoot", 7) && strncmp(fis->name, "RedBoot config", 14)) {
+					printk(KERN_EMERG "found RedBoot partition at [0x%08lX]\n", fis->flash_base);
+					dir_parts[BOOT].size = fis->size;
+				}
+				if (!strncmp(fis->name, "RedBoot config", 14)) {
+					printk(KERN_EMERG "found RedBoot config partition at [0x%08lX]\n", fis->flash_base);
+					dir_parts[DIR].size = mtd->erasesize;
+					dir_parts[DIR].offset = fis->flash_base & (mtd->size - 1);
 #ifdef CONFIG_TONZE
-		    dir_parts[7].offset&= ~(erasesize-1);
-#endif		    
-		    if (foundfis)
-		    {
-		    long highest=dir_parts[5].offset;
-		    if (dir_parts[6].offset<highest)
-			highest=dir_parts[6].offset;
-#ifdef CONFIG_TONZE
-		    highest&= ~(erasesize-1); 
+					dir_parts[DIR].offset &= ~(erasesize - 1);
 #endif
-		    dir_parts[2].size=(highest - (erasesize*2)) - dir_parts[2].offset;
-		    dir_parts[4].offset=highest - erasesize*2;
-		    dir_parts[4].size=erasesize;
-		    dir_parts[5].offset=highest - erasesize;
-		    dir_parts[5].size=erasesize;
-		    }
-		    foundconfig=1;
-		    }
-		if (!strncmp(fis->name,"linux",5) || !strncmp(fis->name,"vmlinux",7) || !strncmp(fis->name,"kernel",6))
-		    {
-		    printk(KERN_EMERG "found linux partition at [0x%08lX]\n",fis->flash_base);
-		    dir_parts[1].offset=fis->flash_base&(mtd->size-1);
-		    dir_parts[1].size=dir_parts[2].offset-dir_parts[1].offset+dir_parts[2].size;
-		    }
-		if (!strncmp(fis->name,"FIS directory",13))
-		    {
-		    printk(KERN_EMERG "found config partition at [0x%08lX]\n",fis->flash_base);
-		    dir_parts[6].offset=(fis->flash_base&(mtd->size-1));
-		    dir_parts[6].size=mtd->erasesize;
+					if (foundfis) {
+						long highest = dir_parts[NVRAM].offset;
+						if (dir_parts[FIS].offset < highest)
+							highest = dir_parts[FIS].offset;
 #ifdef CONFIG_TONZE
-		    dir_parts[6].offset&= ~(erasesize-1);
-#endif		    
-		    if (foundconfig)
-		    {
-		    long highest=dir_parts[6].offset;
-		    if (dir_parts[7].offset<highest)
-			highest=dir_parts[7].offset;
-#ifdef CONFIG_TONZE
-		    highest&= ~(erasesize-1); 
+						highest &= ~(erasesize - 1);
 #endif
-		    dir_parts[2].size=(highest - (erasesize*2)) - dir_parts[2].offset;
-		    dir_parts[4].offset=highest - erasesize*2;
-		    dir_parts[4].size=erasesize;
-		    dir_parts[5].offset=highest - erasesize;
-		    dir_parts[5].size=erasesize;
-		    }
-		    foundfis=1;
-		    }
-		p+=sizeof(struct fis_image_desc);
-		fis = (struct fis_image_desc*)p;
-		}
-		break;
+						dir_parts[ROOTFS].size = (highest - (erasesize * 2)) - dir_parts[ROOTFS].offset;
+						dir_parts[MAMPF].offset = highest - erasesize * 2;
+						dir_parts[MAMPF].size = erasesize;
+						dir_parts[NVRAM].offset = highest - erasesize;
+						dir_parts[NVRAM].size = erasesize;
+					}
+					foundconfig = 1;
+				}
+				if (!strncmp(fis->name, "linux", 5) || !strncmp(fis->name, "vmlinux", 7) || !strncmp(fis->name, "kernel", 6)) {
+					printk(KERN_EMERG "found linux partition at [0x%08lX]\n", fis->flash_base);
+					dir_parts[LINUX].offset = fis->flash_base & (mtd->size - 1);
+					dir_parts[LINUX].size = dir_parts[ROOTFS].offset - dir_parts[LINUX].offset + dir_parts[ROOTFS].size;
+				}
+				if (!strncmp(fis->name, "FIS directory", 13)) {
+					printk(KERN_EMERG "found config partition at [0x%08lX]\n", fis->flash_base);
+					dir_parts[FIS].offset = (fis->flash_base & (mtd->size - 1));
+					dir_parts[FIS].size = mtd->erasesize;
+#ifdef CONFIG_TONZE
+					dir_parts[FIS].offset &= ~(erasesize - 1);
+#endif
+					if (foundconfig) {
+						long highest = dir_parts[FIS].offset;
+						if (dir_parts[DIR].offset < highest)
+							highest = dir_parts[DIR].offset;
+#ifdef CONFIG_TONZE
+						highest &= ~(erasesize - 1);
+#endif
+						dir_parts[ROOTFS].size = (highest - (erasesize * 2)) - dir_parts[ROOTFS].offset;
+						dir_parts[MAMPF].offset = highest - erasesize * 2;
+						dir_parts[MAMPF].size = erasesize;
+						dir_parts[NVRAM].offset = highest - erasesize;
+						dir_parts[NVRAM].size = erasesize;
+					}
+					foundfis = 1;
+				}
+				p += sizeof(struct fis_image_desc);
+				fis = (struct fis_image_desc *)p;
+			}
+			break;
 		}
 #ifdef CONFIG_TONZE
-	    offset+=0x1000;
-	    buf+=0x1000;
+		offset += 0x1000;
+		buf += 0x1000;
 #else
-	    offset+=erasesize;
-	    buf+=erasesize;
+		offset += erasesize;
+		buf += erasesize;
 #endif
-	    }
-	def:;
-	info->partitions=dir_parts;
-	if (filesyssize)
-	    {
-	    dir_parts[2].size = filesyssize;    
-	    }
-	dir_parts[3].offset = dir_parts[2].offset+dir_parts[2].size;
-	dir_parts[3].size = dir_parts[4].offset-dir_parts[3].offset;
+	}
+      def:;
+	info->partitions = dir_parts;
+	if (filesyssize) {
+		dir_parts[ROOTFS].size = filesyssize;
+	}
+	dir_parts[DDWRT].offset = dir_parts[ROOTFS].offset + dir_parts[ROOTFS].size;
+	dir_parts[DDWRT].size = dir_parts[MAMPF].offset - dir_parts[DDWRT].offset;
 
 	dir_parts[8].offset = 0;
 	dir_parts[8].size = mtd->size;
@@ -476,11 +464,11 @@ Error:
 }
 
 static struct platform_driver ixp4xx_flash_driver = {
-	.probe		= ixp4xx_flash_probe,
-	.remove		= ixp4xx_flash_remove,
-	.driver		= {
-		.name	= "IXP4XX-Flash",
-	},
+	.probe = ixp4xx_flash_probe,
+	.remove = ixp4xx_flash_remove,
+	.driver = {
+		   .name = "IXP4XX-Flash",
+		    },
 };
 
 module_platform_driver(ixp4xx_flash_driver);
