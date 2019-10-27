@@ -122,7 +122,7 @@ static void *load_visual_service(char *name)
 		cprintf("not found, try to load alternate\n");
 		char dl[64];
 
-		sprintf(dl, "/lib/%s_visual.so", name);
+		snprintf(dl, sizeof(dl), "/lib/%s_visual.so", name);
 		cprintf("try to load %s\n", dl);
 		handle = dlopen(name, RTLD_LAZY | RTLD_GLOBAL);
 		if (handle == NULL) {
@@ -145,7 +145,7 @@ static void *load_service(char *name)
 		cprintf("not found, try to load alternate\n");
 		char dl[64];
 
-		sprintf(dl, "/lib/%s_validate.so", name);
+		snprintf(dl, sizeof(dl), "/lib/%s_validate.so", name);
 		cprintf("try to load %s\n", dl);
 		handle = dlopen(dl, RTLD_LAZY | RTLD_GLOBAL);
 		if (handle == NULL) {
@@ -178,7 +178,7 @@ static void start_gozila(char *name, webs_t wp)
 
 	int (*fptr)(webs_t wp);
 
-	sprintf(service, "%s", name);
+	snprintf(service, sizeof(service), "%s", name);
 	cprintf("resolving %s\n", service);
 	fptr = (int (*)(webs_t wp))dlsym(s_service, service);
 	if (fptr)
@@ -207,7 +207,7 @@ static int start_validator(char *name, webs_t wp, char *value, struct variable *
 
 	int (*fptr)(webs_t wp, char *value, struct variable * v);
 
-	sprintf(service, "%s", name);
+	snprintf(service, sizeof(service), "%s", name);
 	cprintf("resolving %s\n", service);
 	fptr = (int (*)(webs_t wp, char *value, struct variable * v))
 	    dlsym(s_service, service);
@@ -238,7 +238,7 @@ static void *start_validator_nofree(char *name, void *handle, webs_t wp, char *v
 	}
 	void (*fptr)(webs_t wp, char *value, struct variable * v);
 
-	sprintf(service, "%s", name);
+	snprintf(service, sizeof(service), "%s", name);
 	cprintf("resolving %s\n", service);
 	fptr = (void (*)(webs_t wp, char *value, struct variable * v))
 	    dlsym(handle, service);
@@ -279,7 +279,7 @@ static void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** ar
 	cprintf("pointer init\n");
 	void (*fptr)(webs_t wp, int argc, char_t ** argv);
 
-	sprintf(service, "ej_%s", name);
+	snprintf(service, sizeof(service),"ej_%s", name);
 	cprintf("resolving %s\n", service);
 	fptr = (void (*)(webs_t wp, int argc, char_t ** argv))dlsym(handle, service);
 
