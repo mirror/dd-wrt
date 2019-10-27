@@ -4973,7 +4973,9 @@ static void dc_parse_string(void)
 	xc_parse_pushInst_and_Index(XC_INST_STR, len);
 	bc_vec_push(&G.prog.strs, &str);
 
-	// Explanation needed here
+	// Add an empty function so that if zdc_program_execStr ever needs to
+	// parse the string into code (from the 'x' command) there's somewhere
+	// to store the bytecode.
 	xc_program_add_fn();
 	p->func = xc_program_func(p->fidx);
 
@@ -5454,11 +5456,13 @@ static void xc_program_printString(const char *str)
 			char *n;
 
 			c = *str++;
-			n = strchr(esc, c); // note: c can be NUL
-			if (!n) {
+			n = strchr(esc, c); // note: if c is NUL, n = \0 at end of esc
+			if (!n || !c) {
 				// Just print the backslash and following character
 				bb_putchar('\\');
 				++G.prog.nchars;
+				// But if we're at the end of the string, stop
+				if (!c) break;
 			} else {
 				if (n - esc == 0) // "\n" ?
 					G.prog.nchars = SIZE_MAX;
@@ -6398,7 +6402,11 @@ static BC_STATUS zdc_program_asciify(void)
 	str = xzalloc(2);
 	str[0] = c;
 	//str[1] = '\0'; - already is
-	bc_vec_push(&G.prog.strs, &str);
+	idx = bc_vec_push(&G.prog.strs, &str);
+	// Add an empty function so that if zdc_program_execStr ever needs to
+	// parse the string into code (from the 'x' command) there's somewhere
+	// to store the bytecode.
+	xc_program_add_fn();
  dup:
 	res.t = XC_RESULT_STR;
 	res.d.id.idx = idx;
@@ -6521,7 +6529,7 @@ static BC_STATUS zdc_program_execStr(char *code, size_t *bgn, bool cond)
 			if (s || !BC_PROG_STR(n)) goto exit;
 			sidx = n->rdx;
 		} else
-			goto exit;
+			goto exit_nopop;
 	}
 
 	fidx = sidx + BC_PROG_REQ_FUNCS;
@@ -6561,6 +6569,7 @@ static BC_STATUS zdc_program_execStr(char *code, size_t *bgn, bool cond)
 	RETURN_STATUS(BC_STATUS_SUCCESS);
  exit:
 	bc_vec_pop(&G.prog.results);
+ exit_nopop:
 	RETURN_STATUS(s);
 }
 #define zdc_program_execStr(...) (zdc_program_execStr(__VA_ARGS__) COMMA_SUCCESS)
